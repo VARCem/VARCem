@@ -1139,7 +1139,7 @@ static void es1371_get_buffer(int32_t *buffer, int len, void *p)
 	es1371->pos = 0;
 }
 
-static void *es1371_init()
+static void *es1371_init(void)
 {
 	es1371_t *es1371 = malloc(sizeof(es1371_t));
 	memset(es1371, 0, sizeof(es1371_t));

@@ -1036,7 +1036,7 @@ void sb_pro_mcv_write(int port, uint8_t val, void *p)
         sb_dsp_setdma8(&sb->dsp, sb->pos_regs[4] & 3);
 }
 
-void *sb_1_init()
+void *sb_1_init(struct _device_ *dev)
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1063,7 +1063,7 @@ void *sb_1_init()
         sound_add_handler(sb_get_buffer_sb2, sb);
         return sb;
 }
-void *sb_15_init()
+void *sb_15_init(struct _device_ *dev)
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1090,7 +1090,7 @@ void *sb_15_init()
         return sb;
 }
 
-void *sb_mcv_init()
+void *sb_mcv_init(struct _device_ *dev)
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x6, 2xA, 2xC, 2xE -> DSP chip
@@ -1113,7 +1113,7 @@ void *sb_mcv_init()
         sb->pos_regs[1] = 0x50;
         return sb;
 }
-void *sb_2_init()
+void *sb_2_init(struct _device_ *dev)
 {
         /*sb2 port mappings. 220h or 240h.
           2x0 to 2x3 -> CMS chip
@@ -1154,7 +1154,7 @@ void *sb_2_init()
         return sb;
 }
 
-void *sb_pro_v1_init()
+void *sb_pro_v1_init(struct _device_ *dev)
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (9*2 voices)
@@ -1188,7 +1188,7 @@ void *sb_pro_v1_init()
         return sb;
 }
 
-void *sb_pro_v2_init()
+void *sb_pro_v2_init(struct _device_ *dev)
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip (18 voices)
@@ -1221,7 +1221,7 @@ void *sb_pro_v2_init()
         return sb;
 }
 
-void *sb_pro_mcv_init()
+void *sb_pro_mcv_init(struct _device_ *dev)
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (18 voices)
@@ -1246,7 +1246,7 @@ void *sb_pro_mcv_init()
         return sb;
 }
 
-void *sb_16_init()
+void *sb_16_init(struct _device_ *dev)
 {
         sb_t *sb = malloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
@@ -1280,7 +1280,7 @@ int sb_awe32_available()
         return rom_present(L"roms/sound/awe32.raw");
 }
 
-void *sb_awe32_init()
+void *sb_awe32_init(struct _device_ *dev)
 {
         sb_t *sb = malloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
