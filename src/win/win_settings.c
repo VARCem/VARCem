@@ -3603,7 +3603,7 @@ static BOOL CALLBACK
 #endif
 win_settings_hard_disks_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND h;
+	HWND h = INVALID_HANDLE_VALUE;
 	int old_sel = 0;
 	int b = 0;
 	int assign = 0;
@@ -4646,7 +4646,7 @@ static BOOL CALLBACK
 #endif
 win_settings_floppy_drives_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND h;
+	HWND h = INVALID_HANDLE_VALUE;
 	int i = 0;
 	int old_sel = 0;
 	WCHAR szText[256];
@@ -4781,7 +4781,7 @@ static BOOL CALLBACK
 #endif
 win_settings_other_removable_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND h;
+	HWND h = INVALID_HANDLE_VALUE;
 	int old_sel = 0;
 	int b = 0;
 	int b2 = 0;
