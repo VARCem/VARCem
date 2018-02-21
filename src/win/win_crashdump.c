@@ -112,7 +112,7 @@ LONG CALLBACK MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
      */
     GetSystemTime(&SystemTime);
     sprintf(CurrentBufferPointer,
-	"%s-%d%02d%02d-%02d-%02d-%02d-%03d.dmp", EMU_NAME.
+	"%s-%d%02d%02d-%02d-%02d-%02d-%03d.dmp", EMU_NAME,
 	SystemTime.wYear,
 	SystemTime.wMonth,
 	SystemTime.wDay,
