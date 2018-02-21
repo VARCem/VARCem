@@ -59,6 +59,9 @@
 #include "vid_svga.h"
 #include "vid_voodoo.h"
 #include "vid_voodoo_dither.h"
+#ifdef _MSC_VER
+#include <malloc.h>
+#endif
 
 #ifdef MIN
 #undef MIN
@@ -7227,7 +7230,16 @@ static void voodoo_filterline_v1(voodoo_t *voodoo, uint8_t *fil, int column, uin
 	int x;
 	
 	// Scratchpad for avoiding feedback streaks
+#ifdef _MSC_VER
+        if ((voodoo->h_disp) * 3 > 512 * 1024)
+        {
+            pclog("voodoo_filterline_v1: possible stack overflow detected. h_disp is %d", voodoo->h_disp);
+            return;
+        }
+        uint8_t *fil3 = (uint8_t *)_alloca((voodoo->h_disp) * 3);
+#else
         uint8_t fil3[(voodoo->h_disp) * 3];  
+#endif
 
 	/* 16 to 32-bit */
         for (x=0; x<column;x++)
@@ -7293,7 +7305,16 @@ static void voodoo_filterline_v2(voodoo_t *voodoo, uint8_t *fil, int column, uin
 	int x;
 
 	// Scratchpad for blending filter
-        uint8_t fil3[(voodoo->h_disp) * 3];  
+#ifdef _MSC_VER
+        if ((voodoo->h_disp) * 3 > 512 * 1024)
+        {
+                pclog("voodoo_filterline_v2: possible stack overflow detected. h_disp is %d", voodoo->h_disp);
+                return;
+        }
+        uint8_t *fil3 = (uint8_t *)_alloca((voodoo->h_disp) * 3);
+#else
+        uint8_t fil3[(voodoo->h_disp) * 3];
+#endif
 	
 	/* 16 to 32-bit */
         for (x=0; x<column;x++)
@@ -7402,7 +7423,16 @@ void voodoo_callback(void *p)
                                 
                                 if (voodoo->scrfilter && voodoo->scrfilterEnabled)
                                 {
-                                        uint8_t fil[(voodoo->h_disp) * 3];              /* interleaved 24-bit RGB */
+#ifdef _MSC_VER
+                                    if ((voodoo->h_disp) * 3 > 512 * 1024)
+                                    {
+                                        pclog("voodoo_callback: possible stack overflow detected. h_disp is %d", voodoo->h_disp);
+                                        return;
+                                    }
+                                    uint8_t *fil = (uint8_t *)_alloca((voodoo->h_disp) * 3);
+#else
+                                    uint8_t fil[(voodoo->h_disp) * 3];              /* interleaved 24-bit RGB */
+#endif
 
                 			if (voodoo->type == VOODOO_2)
 	                                        voodoo_filterline_v2(voodoo, fil, voodoo->h_disp, src, voodoo->line);
@@ -7748,7 +7778,7 @@ void *voodoo_card_init()
         return voodoo;
 }
 
-void *voodoo_init()
+void *voodoo_init(struct _device_ *dev)
 {
         voodoo_set_t *voodoo_set = malloc(sizeof(voodoo_set_t));
         uint32_t tmuConfig = 1;
