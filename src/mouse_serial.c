@@ -1,0 +1,334 @@
+/*
+ * VARCem	Virtual Archaelogical Computer EMulator.
+ *		An emulator of (mostly) x86-based PC systems and devices,
+ *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+ *		spanning the era between 1981 and 1995.
+ *
+ *		This file is part of the VARCem Project.
+ *
+ *		Implementation of Serial Mouse devices.
+ *
+ * TODO:	Add the Genius Serial Mouse.
+ *
+ * Version:	@(#)mouse_serial.c	1.0.1	2018/02/14
+ *
+ * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *
+ *		Copyright 2017,2018 Fred N. van Kempen.
+ *
+ *		Redistribution and  use  in source  and binary forms, with
+ *		or  without modification, are permitted  provided that the
+ *		following conditions are met:
+ *
+ *		1. Redistributions of  source  code must retain the entire
+ *		   above notice, this list of conditions and the following
+ *		   disclaimer.
+ *
+ *		2. Redistributions in binary form must reproduce the above
+ *		   copyright  notice,  this list  of  conditions  and  the
+ *		   following disclaimer in  the documentation and/or other
+ *		   materials provided with the distribution.
+ *
+ *		3. Neither the  name of the copyright holder nor the names
+ *		   of  its  contributors may be used to endorse or promote
+ *		   products  derived from  this  software without specific
+ *		   prior written permission.
+ *
+ * THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+ * HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+ * THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include "emu.h"
+#include "config.h"
+#include "device.h"
+#include "timer.h"
+#include "serial.h"
+#include "mouse.h"
+
+
+#define SERMOUSE_PORT	0			/* attach to Serial0 */
+
+
+typedef struct {
+    const char	*name;				/* name of this device */
+    int8_t	type,				/* type of this device */
+		port;
+    uint8_t	flags;				/* device flags */
+
+    int		pos;
+    int64_t	delay;
+    int		oldb;
+
+    SERIAL	*serial;
+} mouse_t;
+#define FLAG_INPORT	0x80			/* device is MS InPort */
+#define FLAG_3BTN	0x20			/* enable 3-button mode */
+#define FLAG_SCALED	0x10			/* enable delta scaling */
+#define FLAG_INTR	0x04			/* dev can send interrupts */
+#define FLAG_FROZEN	0x02			/* do not update counters */
+#define FLAG_ENABLED	0x01			/* dev is enabled for use */
+
+
+/* Callback from serial driver: RTS was toggled. */
+static void
+sermouse_callback(struct SERIAL *serial, void *priv)
+{
+    mouse_t *dev = (mouse_t *)priv;
+
+    /* Start a timer to wake us up in a little while. */
+    dev->pos = -1;
+    serial_clear_fifo((SERIAL *) serial);
+    dev->delay = 5000LL * (1LL << TIMER_SHIFT);
+}
+
+
+/* Callback timer expired, now send our "mouse ID" to the serial port. */
+static void
+sermouse_timer(void *priv)
+{
+    mouse_t *dev = (mouse_t *)priv;
+
+    dev->delay = 0LL;
+
+    if (dev->pos != -1) return;
+
+    dev->pos = 0;
+    switch(dev->type) {
+	case MOUSE_TYPE_MSYSTEMS:
+		/* Identifies Mouse Systems serial mouse. */
+		serial_write_fifo(dev->serial, 'H');
+		break;
+
+	case MOUSE_TYPE_MICROSOFT:
+		/* Identifies a two-button Microsoft Serial mouse. */
+		serial_write_fifo(dev->serial, 'M');
+		break;
+
+	case MOUSE_TYPE_LOGITECH:
+		/* Identifies a two-button Logitech Serial mouse. */
+		serial_write_fifo(dev->serial, 'M');
+		serial_write_fifo(dev->serial, '3');
+		break;
+
+	case MOUSE_TYPE_MSWHEEL:
+		/* Identifies multi-button Microsoft Wheel Mouse. */
+		serial_write_fifo(dev->serial, 'M');
+		serial_write_fifo(dev->serial, 'Z');
+		break;
+
+	default:
+		pclog("%s: unsupported mouse type %d?\n", dev->type);
+    }
+}
+
+
+static int
+sermouse_poll(int x, int y, int z, int b, void *priv)
+{
+    mouse_t *dev = (mouse_t *)priv;
+    uint8_t buff[16];
+    int len;
+
+    if (!x && !y && b == dev->oldb) return(1);
+
+#if 0
+    pclog("%s: poll(%d,%d,%d,%02x)\n", dev->name, x, y, z, b);
+#endif
+
+    dev->oldb = b;
+
+    if (x > 127) x = 127;
+    if (y > 127) y = 127;
+    if (x <- 128) x = -128;
+    if (y <- 128) y = -128;
+
+    len = 0;
+    switch(dev->type) {
+	case MOUSE_TYPE_MSYSTEMS:
+		buff[0] = 0x80;
+		buff[0] |= (b & 0x01) ? 0x00 : 0x04;	/* left button */
+		buff[0] |= (b & 0x02) ? 0x00 : 0x01;	/* middle button */
+		buff[0] |= (b & 0x04) ? 0x00 : 0x02;	/* right button */
+		buff[1] = x;
+		buff[2] = -y;
+		buff[3] = x;				/* same as byte 1 */
+		buff[4] = -y;				/* same as byte 2 */
+		len = 5;
+		break;
+
+	case MOUSE_TYPE_MICROSOFT:
+	case MOUSE_TYPE_LOGITECH:
+	case MOUSE_TYPE_MSWHEEL:
+		buff[0] = 0x40;
+		buff[0] |= (((y >> 6) & 0x03) << 2);
+		buff[0] |= ((x >> 6) & 0x03);
+		if (b & 0x01) buff[0] |= 0x20;
+		if (b & 0x02) buff[0] |= 0x10;
+		buff[1] = x & 0x3F;
+		buff[2] = y & 0x3F;
+		if (dev->type == MOUSE_TYPE_LOGITECH) {
+			len = 3;
+			if (b & 0x04) {
+				buff[3] = 0x20;
+				len++;
+			}
+		} else if (dev->type == MOUSE_TYPE_MSWHEEL) {
+			len = 4;
+			buff[3] = z & 0x0F;
+			if (b & 0x04)
+				buff[3] |= 0x10;
+		} else
+			len = 3;
+		break;
+    }
+
+#if 0
+    pclog("%s: [", dev->name);
+    for (b=0; b<len; b++) pclog(" %02X", buff[b]);
+    pclog(" ] (%d)\n", len);
+#endif
+
+    /* Send the packet to the bottom-half of the attached port. */
+    if (dev->serial != NULL) {
+	for (b=0; b<len; b++)
+		serial_write_fifo(dev->serial, buff[b]);
+    }
+
+    return(0);
+}
+
+
+static void
+sermouse_close(void *priv)
+{
+    mouse_t *dev = (mouse_t *)priv;
+
+    /* Detach serial port from the mouse. */
+    if ((dev != NULL) && (dev->serial != NULL)) {
+	dev->serial->rcr_callback = NULL;
+	dev->serial->rcr_callback_p = NULL;
+    }
+
+    free(dev);
+}
+
+
+/* Initialize the device for use by the user. */
+static void *
+sermouse_init(device_t *info)
+{
+    mouse_t *dev;
+    int i;
+
+    dev = (mouse_t *)malloc(sizeof(mouse_t));
+    memset(dev, 0x00, sizeof(mouse_t));
+    dev->name = info->name;
+    i = device_get_config_int("buttons");
+    if (i > 2)
+	dev->flags |= FLAG_3BTN;
+
+    if (info->local == MOUSE_TYPE_MSYSTEMS)
+	dev->type = info->local;
+    else {
+	switch(i) {
+		case 2:
+		default:
+			dev->type = MOUSE_TYPE_MICROSOFT;
+			break;
+		case 3:
+			dev->type = MOUSE_TYPE_LOGITECH;
+			break;
+		case 4:
+			dev->type = MOUSE_TYPE_MSWHEEL;
+			break;
+	}
+    }
+
+    dev->port = device_get_config_int("port");
+
+    /* Attach a serial port to the mouse. */
+    if (dev->port == 0)
+	dev->serial = &serial1;
+      else
+	dev->serial = &serial2;
+    dev->serial->rcr_callback = sermouse_callback;
+    dev->serial->rcr_callback_p = dev;
+
+    pclog("%s: port=COM%d\n", dev->name, dev->port+1);
+
+    timer_add(sermouse_timer, &dev->delay, &dev->delay, dev);
+
+    /* Tell them how many buttons we have. */
+    mouse_set_buttons((dev->flags & FLAG_3BTN) ? 3 : 2);
+
+    /* Return our private data to the I/O layer. */
+    return(dev);
+}
+
+
+static device_config_t sermouse_config[] = {
+    {
+	"port", "Serial Port", CONFIG_SELECTION, "", 0, {
+		{
+			"COM1", 0
+		},
+		{
+			"COM2", 1
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"buttons", "Buttons", CONFIG_SELECTION, "", 2, {
+		{
+			"Two", 2
+		},
+		{
+			"Three", 3
+		},
+		{
+			"Wheel", 4
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
+};
+
+
+device_t mouse_mssystems_device = {
+    "Mouse Systems Serial Mouse",
+    0,
+    MOUSE_TYPE_MSYSTEMS,
+    sermouse_init, sermouse_close, NULL,
+    sermouse_poll, NULL, NULL, NULL,
+    sermouse_config
+};
+
+device_t mouse_msserial_device = {
+    "Microsoft/Logitech Serial Mouse",
+    0,
+    0,
+    sermouse_init, sermouse_close, NULL,
+    sermouse_poll, NULL, NULL, NULL,
+    sermouse_config
+};

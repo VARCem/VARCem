@@ -1,0 +1,102 @@
+/*
+ * VARCem	Virtual Archaelogical Computer EMulator.
+ *		An emulator of (mostly) x86-based PC systems and devices,
+ *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+ *		spanning the era between 1981 and 1995.
+ *
+ *		This file is part of the VARCem Project.
+ *
+ *		Resource info for the pcap_if.exe tool.
+ *
+ * NOTE:	Will be moved to the tools/ folder soon.
+ *
+ * Version:	@(#)pcap_if.rc	1.0.1	2018/02/14
+ *
+ * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *
+ *		Copyright 2017,2018 Fred N. van Kempen.
+ *
+ *		Redistribution and  use  in source  and binary forms, with
+ *		or  without modification, are permitted  provided that the
+ *		following conditions are met:
+ *
+ *		1. Redistributions of  source  code must retain the entire
+ *		   above notice, this list of conditions and the following
+ *		   disclaimer.
+ *
+ *		2. Redistributions in binary form must reproduce the above
+ *		   copyright  notice,  this list  of  conditions  and  the
+ *		   following disclaimer in  the documentation and/or other
+ *		   materials provided with the distribution.
+ *
+ *		3. Neither the  name of the copyright holder nor the names
+ *		   of  its  contributors may be used to endorse or promote
+ *		   products  derived from  this  software without specific
+ *		   prior written permission.
+ *
+ * THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+ * HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+ * THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+#ifdef _WIN32
+#include <windows.h>
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+
+/*
+ * Icons by Devcore
+ * - https://commons.wikimedia.org/wiki/File:Icon_PC_256x256.png
+ */
+#ifdef RELEASE_BUILD
+100                     ICON    DISCARDABLE     "win/icons/emu-rb.ico"
+#else
+100                     ICON    DISCARDABLE     "win/icons/emu.ico"
+#endif
+
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,2,0
+ PRODUCTVERSION 1,0,2,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "IRC #VARCem on FreeNode\0"
+            VALUE "FileDescription", "PCap_IF - test tool for WinPcap\0"
+            VALUE "FileVersion", "1.0.2\0"
+            VALUE "InternalName", "pcap_if\0"
+            VALUE "LegalCopyright", "Copyright 2017,2018 Fred N. van Kempen\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "pcap_if.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "WinPcap Test Tool\0"
+            VALUE "ProductVersion", "1.0.2\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

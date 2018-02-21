@@ -1,0 +1,117 @@
+#
+# VARCem	Virtual Archaelogical Computer EMulator.
+#		An emulator of (mostly) x86-based PC systems and devices,
+#		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+#		spanning the era between 1981 and 1995.
+#
+#		This file is part of the VARCem Project.
+#
+#		Prefix for localizing the general Makefile.mingw for local
+#		settings, so we can avoid changing the main one for all of
+#		our local setups.
+#
+# Version:	@(#)Makefile.local	1.0.1	2018/02/14
+#
+# Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+#
+#		Copyright 2017,2018 Fred N. van Kempen.
+#
+#		Redistribution and  use  in source  and binary forms, with
+#		or  without modification, are permitted  provided that the
+#		following conditions are met:
+#
+#		1. Redistributions of  source  code must retain the entire
+#		   above notice, this list of conditions and the following
+#		   disclaimer.
+#
+#		2. Redistributions in binary form must reproduce the above
+#		   copyright  notice,  this list  of  conditions  and  the
+#		   following disclaimer in  the documentation and/or other
+#		   materials provided with the distribution.
+#
+#		3. Neither the  name of the copyright holder nor the names
+#		   of  its  contributors may be used to endorse or promote
+#		   products  derived from  this  software without specific
+#		   prior written permission.
+#
+# THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+# "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+# HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+# THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#########################################################################
+#    Anything here will override defaults in the Platform Makefile.	#
+#########################################################################
+
+
+# Name of the executable.
+#PROG	:= yourexe
+
+
+# Various compile-time options.
+# -DROM_TRACE=0xc800 traces ROM access from segment C800
+# -DIO_TRACE=0x66 traces I/O on port 0x66
+# -DIO_CATCH enables I/O range catch logs
+STUFF	:=
+
+# Add feature selections here.
+# -DANSI_CFG forces the config file to ANSI encoding.
+# -DENABLE_VRAM_DUMP enables Video Ram dumping.
+# -DENABLE_LOG_BREAKPOINT enables extra logging.
+# -DENABLE_KEYBOARD_AMSTRAD_LOG=N sets logging level at N.
+# -DENABLE_KEYBOARD_AT_LOG=N sets logging level at N.
+# -DENABLE_KEYBOARD_LOG=N sets logging level at N.
+# -DENABLE_PCI_LOG=N sets logging level at N.
+# -DENABLE_CDROM_LOG=N sets logging level at N.
+# -DENABLE_HDD_LOG=N sets logging level at N.
+# -DENABLE_IDE_LOG=N sets logging level at N.
+# -DENABLE_FDC_LOG=N sets logging level at N.
+# -DENABLE_D86F_LOG=N sets logging level at N.
+# -DENABLE_NIC_LOG=N sets logging level at N.
+# -DENABLE_SCSI_BUS_LOG=N sets logging level at N.
+# -DENABLE_SCSI_DISK_LOG=N sets logging level at N.
+# -DENABLE_X54X_LOG=N sets logging level at N.
+# -DENABLE_AHA154X_LOG=N sets logging level at N.
+# -DENABLE_BUSLOGIC_LOG=N sets logging level at N.
+# -DENABLE_NCR5380_LOG=N sets logging level at N.
+# -DENABLE_NCR53C810_LOG=N sets logging level at N.
+# -DENABLE_AUDIOPCI_LOG=N sets logging level at N.
+# -DENABLE_EMU8K_LOG=N sets logging level at N.
+# -DENABLE_VOODOO_LOG=N sets logging level at N.
+# -DENABLE_SERIAL_LOG=N sets logging level at N.
+EXTRAS		:=
+
+
+AUTODEP		:= n
+CRASHDUMP	:= n
+DEBUG		:= n
+OPTIM		:= n
+X64		:= n
+RELEASE		:= n
+USB		:= n
+VNC		:= n
+RDP		:= n
+DEV_BUILD	:= n
+DEV_BRANCH	:= n
+NV_RIVA		:= n
+OPENAL		:= y
+FLUIDSYNTH	:= y
+MUNT		:= y
+PAS16		:= n
+DYNAREC		:= y
+
+
+#########################################################################
+#	    Include the master Makefile.MinGW for the rest.		#
+#########################################################################
+include win/Makefile.mingw
+
+
+# End of Makefile.local.
