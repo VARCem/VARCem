@@ -1236,10 +1236,17 @@ void codegen_init()
         block_pos = (block_pos + 15) & ~15;
         mem_check_write_l = (uint32_t)gen_MEM_CHECK_WRITE_L();
         
+#ifndef _MSC_VER
         asm(
                 "fstcw %0\n"
                 : "=m" (cpu_state.old_npxc)
         );
+#else
+        __asm
+        {
+                fstcw cpu_state.old_npxc
+        }
+#endif
 }
 
 void codegen_reset()

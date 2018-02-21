@@ -38,6 +38,9 @@
  */
 #include <math.h>
 #include <fenv.h>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 #define fplog 0
 
@@ -270,7 +273,7 @@ static __inline uint16_t x87_compare(double a, double b)
 		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))
 		{
 			/* pclog("Comparing infinity\n"); */
-
+#ifndef _MSC_VER
 		        __asm volatile ("" : : : "memory");
         
 		        __asm(
@@ -282,11 +285,23 @@ static __inline uint16_t x87_compare(double a, double b)
 		                : "=m" (out)
 		                : "m" (a), "m" (a)
 		        );
+#else
+                _ReadWriteBarrier();
+                __asm
+                {
+                        fld a
+                        fld a
+                        fclex
+                        fcompp
+                        fnstsw out
+                }
+#endif
 
 		        return out & (C0|C2|C3);
 		}
 	}
         
+#ifndef _MSC_VER
         /* Memory barrier, to force GCC to write to the input parameters
          * before the compare rather than after */
         __asm volatile ("" : : : "memory");
@@ -300,6 +315,17 @@ static __inline uint16_t x87_compare(double a, double b)
                 : "=m" (out)
                 : "m" (a), "m" (b)
         );
+#else
+        _ReadWriteBarrier();
+        _asm
+        {
+                fld b
+                fld a
+                fclex
+                fcompp
+                fnstsw out
+        }
+#endif
 
         return out & (C0|C2|C3);
 #else
@@ -337,6 +363,7 @@ static __inline uint16_t x87_ucompare(double a, double b)
 #if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
         uint32_t out;
         
+#ifndef _MSC_VER
         /* Memory barrier, to force GCC to write to the input parameters
          * before the compare rather than after */
         __asm volatile ("" : : : "memory");
@@ -350,6 +377,17 @@ static __inline uint16_t x87_ucompare(double a, double b)
                 : "=m" (out)
                 : "m" (a), "m" (b)
         );
+#else
+        _ReadWriteBarrier();
+        _asm
+        {
+                fld b
+                fld a
+                fclex
+                fcompp
+                fnstsw out
+        }
+#endif
 
         return out & (C0|C2|C3);
 #else
