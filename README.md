@@ -31,7 +31,7 @@ Community and Support
 ---------------------
 Information, downloads, additional modules and such can be found on our
 [Website](http://varcem.dyndns.org/). Live support and general help can
-also be found on our [IRC channel](https://kiwiirc.com/client/irc.rol.im/?nick=VARCem_Guest|?#VARCem)
+also be found on our [IRC channel](https://kiwiirc.com/client/irc.freenode.net/?nick=VARCem_Guest|?#VARCem)
 
 
 LEGAL
