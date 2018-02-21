@@ -1,7 +1,7 @@
 Welcome to VARCem, the Virtual Archaelogical Computer EMulator.
 
 VARCem is a software application which emulates a selection of of (mostly)
-x86-based PC systems and devices based on the ISA,EISA,VLB,MCA and PCI
+x86-based PC systems and devices based on the ISA, EISA, VLB, MCA and PCI
 system buses.
 
 The program tries to be cycle-exact, meaning the guest software (the software
@@ -30,8 +30,8 @@ credits and specific copyrights can be found in each of the source files.
 Community and Support
 ---------------------
 Information, downloads, additional modules and such can be found on our
-[![Website](http://varcem.dyndns.org/)]. Live support and general help can
-also be found on our [![IRC channel(https://kiwiirc.com/client/irc.rol.im/?nick=VARCem_Guest|?#VARCem)]
+[Website](http://varcem.dyndns.org/). Live support and general help can
+also be found on our [IRC channel](https://kiwiirc.com/client/irc.rol.im/?nick=VARCem_Guest|?#VARCem)
 
 
 LEGAL
