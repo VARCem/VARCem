@@ -265,7 +265,7 @@ struct _cpustate_ {
 #define CPU_STATUS_NOTFLATSS  (1 << 17)
 #define CPU_STATUS_MASK 0xffff0000
 
-#ifdef __MSC__
+#ifdef _MSC_VER
 # define COMPILE_TIME_ASSERT(expr)	/*nada*/
 #else
 # define COMPILE_TIME_ASSERT(expr) typedef char COMP_TIME_ASSERT[(expr) ? 1 : 0];
