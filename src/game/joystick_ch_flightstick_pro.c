@@ -47,7 +47,7 @@
 #include "joystick_standard.h"
 
 
-static void *ch_flightstick_pro_init()
+static void *ch_flightstick_pro_init(void)
 {
 	return NULL;
 }

@@ -47,7 +47,7 @@
 #include "joystick_standard.h"
 
 
-static void *joystick_standard_init()
+static void *joystick_standard_init(void)
 {
 	return NULL;
 }

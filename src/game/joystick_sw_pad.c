@@ -126,7 +126,7 @@ static int sw_parity(uint16_t data)
         return bits_set & 1;
 }
 
-static void *sw_init()
+static void *sw_init(void)
 {
         sw_data *sw = (sw_data *)malloc(sizeof(sw_data));
         memset(sw, 0, sizeof(sw_data));
