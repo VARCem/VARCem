@@ -180,7 +180,7 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
 {
     HRESULT hr = D3D_OK;
     HRESULT hbsr = D3D_OK;
-    VOID* pVoid;
+    VOID* pVoid = 0;
     D3DLOCKED_RECT dr;
     RECT w_rect;
     int yy;
