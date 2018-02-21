@@ -228,7 +228,7 @@ BEGIN
     VK_PRIOR,IDM_VID_FULLSCREEN,     VIRTKEY, CONTROL , ALT
     VK_F11,  IDM_ACTION_SCREENSHOT,  VIRTKEY, CONTROL
     VK_F12,  IDM_ACTION_RESET_CAD,   VIRTKEY, CONTROL
-    VK_PAUSE,IDM_ACTION_PAUSE
+    VK_PAUSE,IDM_ACTION_PAUSE,       VIRTKEY, CONTROL
 END
 
 
@@ -243,7 +243,7 @@ FONT 9, "Segoe UI"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,129,94,71,12
     ICON            100,IDC_ABOUT_ICON,7,7,20,20
-    LTEXT           "Virtual Archaelogical Computer EMulator\n\nBased on earlier works like PCem and 86Box.\n\nAuthors: Sarah Walker, Miran Grca, Fred N. van Kempen, TheCollector1995, reenigne, JohnElliott, greatpsycho, and others.\n\nReleased under the BSD 3-Clause License, and the GNU General Public License (version 2 or up) for existing, imported code from other projects. See LICENSE.txt for more information.",
+    LTEXT           "Virtual Archaelogical Computer EMulator\n\nBased on earlier works like PCem and 86Box.\n\nAuthors: Sarah Walker, Miran Grca, Fred N. van Kempen, TheCollector1995, reenigne, JohnElliott, greatpsycho, and others.\n\nSee LICENSE.txt for more information.",
                     IDC_ABOUT_ICON,54,7,146,73
     CONTROL         "",IDC_ABOUT_ICON,"Static",SS_BLACKFRAME | SS_SUNKEN,0,
                     86,208,1
@@ -586,7 +586,7 @@ BEGIN
     CONTROL         "List1",IDC_LIST_ZIP_DRIVES,"SysListView32",LVS_REPORT | 
                     LVS_SHOWSELALWAYS | LVS_SINGLESEL | WS_BORDER | 
                     WS_TABSTOP,7,117,253,60
-    LTEXT           "ZIP drives:",IDT_1739,7,107,50,8
+    LTEXT           "ZIP drives:",IDT_1758,7,107,50,8
     COMBOBOX        IDC_COMBO_ZIP_BUS,33,184,90,12,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     LTEXT           "Bus:",IDT_1753,7,185,24,8
