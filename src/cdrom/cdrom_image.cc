@@ -386,6 +386,11 @@ static int image_is_track_audio(uint8_t id, uint32_t pos, int ismsf)
         return attr == AUDIO_TRACK;
 }
 
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#define __attribute__(x)
+#endif
+
 typedef struct __attribute__((__packed__))
 {
 	uint8_t user_data[2048];
@@ -432,6 +437,11 @@ typedef union __attribute__((__packed__))
 	cdrom_sector_t cdrom_sector;
 	uint8_t buffer[2856];
 } sector_buffer_t;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#undef __attribute__
+#endif
 
 sector_buffer_t cdrom_sector_buffer;
 
