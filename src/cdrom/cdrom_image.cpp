@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cc	1.0.2	2018/02/21
+ * Version:	@(#)cdrom_image.cpp	1.0.3	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

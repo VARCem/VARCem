@@ -8,7 +8,7 @@
 #
 #		Makefile for Win32 (MinGW32) environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.1	2018/02/14
+# Version:	@(#)Makefile.mingw	1.0.2	2018/02/22
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -584,10 +584,6 @@ ifeq ($(AUTODEP), y)
 		@echo $<
 		@$(CC) $(CFLAGS) $(DEPS) -c $<
 
-%.o:		%.cc
-		@echo $<
-		@$(CPP) $(CXXFLAGS) $(DEPS) -c $<
-
 %.o:		%.cpp
 		@echo $<
 		@$(CPP) $(CXXFLAGS) $(DEPS) -c $<
@@ -596,10 +592,6 @@ else
 		@echo $<
 		@$(CC) $(CFLAGS) -c $<
 
-%.o:		%.cc
-		@echo $<
-		@$(CPP) $(CXXFLAGS) -c $<
-
 %.o:		%.cpp
 		@echo $<
 		@$(CPP) $(CXXFLAGS) -c $<
@@ -607,10 +599,6 @@ else
 %.d:		%.c $(wildcard $*.d)
 		@echo $<
 		@$(CC) $(CFLAGS) $(DEPS) -E $< >NUL
-
-%.d:		%.cc $(wildcard $*.d)
-		@echo $<
-		@$(CPP) $(CXXFLAGS) $(DEPS) -E $< >NUL
 
 %.d:		%.cpp $(wildcard $*.d)
 		@echo $<
