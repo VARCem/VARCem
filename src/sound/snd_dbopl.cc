@@ -43,6 +43,7 @@
   /* for _alloca() and printing of the related error message with pclog() */
 # include <stdio.h>
 # include <malloc.h>
+# include <stdint.h>
 # include "../emu.h"
 #endif
 #include "dbopl.h"
