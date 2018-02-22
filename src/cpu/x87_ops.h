@@ -8,7 +8,7 @@
  *
  *		x87 FPU instructions core.
  *
- * Version:	@(#)x87_ops.h	1.0.1	2018/02/14
+ * Version:	@(#)x87_ops.h	1.0.2	2018/02/21
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -39,7 +39,7 @@
 #include <math.h>
 #include <fenv.h>
 #ifdef _MSC_VER
-#include <intrin.h>
+# include <intrin.h>
 #endif
 
 #define fplog 0

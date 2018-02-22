@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.1	2018/02/14
+ * Version:	@(#)win.h	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,21 +39,19 @@
 #ifndef PLAT_WIN_H
 # define PLAT_WIN_H
 
- #ifdef __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-# define UNICODE
-# define BITMAP WINDOWS_BITMAP
-# if 0
-#  ifdef _WIN32_WINNT
-#   undef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0501
-#  endif
+#define UNICODE
+#if 0
+# ifdef _WIN32_WINNT
+#  undef _WIN32_WINNT
+#  define _WIN32_WINNT 0x0501
 # endif
-# include <windows.h>
-# include "resource.h"
-# undef BITMAP
+#endif
+#include <windows.h>
+#include "resource.h"
 
 
 /* Class names and such. */
@@ -148,7 +146,8 @@ extern void	StatusWindowCreate(HWND hwnd);
 
 /* Functions in win_stbar.c: */
 extern HWND	hwndSBAR;
-extern void	StatusBarCreate(HWND hwndParent, uintptr_t idStatus, HINSTANCE hInst);
+extern void	StatusBarCreate(HWND hwndParent, uintptr_t idStatus,
+				HINSTANCE hInst);
 
 
 /* Functions in win_dialog.c: */

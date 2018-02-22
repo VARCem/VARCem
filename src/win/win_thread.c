@@ -8,7 +8,7 @@
  *
  *		Implement threads and mutexes for the Win32 platform.
  *
- * Version:	@(#)win_thread.c	1.0.1	2018/02/14
+ * Version:	@(#)win_thread.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -35,11 +35,9 @@
  *   USA.
  */
 #define UNICODE
-#define BITMAP WINDOWS_BITMAP
 #include <windows.h>
 #include <windowsx.h>
 #include <process.h>
-#undef BITMAP
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

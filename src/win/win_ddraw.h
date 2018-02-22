@@ -8,7 +8,7 @@
  *
  *		Definitions for the DirectDraw 9 rendering module.
  *
- * Version:	@(#)win_ddraw.h	1.0.1	2018/02/14
+ * Version:	@(#)win_ddraw.h	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,9 +39,7 @@
 #ifndef WIN_DDRAW_H
 # define WIN_DDRAW_H
 # define UNICODE
-# define BITMAP WINDOWS_BITMAP
 # include <ddraw.h>
-# undef BITMAP
 
 
 #ifdef __cplusplus

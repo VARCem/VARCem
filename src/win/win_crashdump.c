@@ -8,7 +8,7 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.1	2018/02/14
+ * Version:	@(#)win_crashdump.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Riley (Rain-chan),
@@ -54,7 +54,8 @@ static char	*ExceptionHandlerBuffer,
 		*CurrentBufferPointer;
 
 
-LONG CALLBACK MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
+static LONG CALLBACK
+MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
 {
     SYSTEMTIME SystemTime;
     HANDLE hDumpFile;
@@ -160,8 +161,8 @@ LONG CALLBACK MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
 		GetModuleInformation(GetCurrentProcess(),
 				     hMods[i], &modInfo, sizeof(MODULEINFO));
 		/* If the exception address is in the range of this module.. */
-		if ( (ExceptionInfo->ExceptionRecord->ExceptionAddress >= modInfo.lpBaseOfDll) &&
-		   (ExceptionInfo->ExceptionRecord->ExceptionAddress < ((char *)modInfo.lpBaseOfDll + modInfo.SizeOfImage))) {
+		if ( ((char *)ExceptionInfo->ExceptionRecord->ExceptionAddress >= (char *)modInfo.lpBaseOfDll) &&
+		   ((char *)ExceptionInfo->ExceptionRecord->ExceptionAddress < ((char *)modInfo.lpBaseOfDll + modInfo.SizeOfImage))) {
 			/* ...this is the module we're looking for! */
 			ipModule = hMods[i];
 			break;

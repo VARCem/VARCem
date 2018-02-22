@@ -8,7 +8,10 @@
  *
  *		Joystick interface to host device.
  *
- * Version:	@(#)win_joystick.cpp	1.0.1	2018/02/14
+ * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
+ *		be updated to 11 or 12 or so.  --FvK
+ *
+ * Version:	@(#)win_joystick.cpp	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,8 +42,10 @@
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #ifndef DIDEVTYPE_JOYSTICK
-/* TODO: This is a crude hack to fix compilation on MSVC ... it needs a rework at some point */
-#define DIDEVTYPE_JOYSTICK 4
+  /* TODO: This is a crude hack to fix compilation on MSVC ...
+   * it needs a rework at some point
+   */
+# define DIDEVTYPE_JOYSTICK 4
 #endif
 #include <math.h>
 #include <stdio.h>

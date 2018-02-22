@@ -29,7 +29,7 @@
  *		- Some DOS stuff will write to 0x201 while a packet is
  *		  being transferred. This seems to be ignored.
  *
- * Version:	@(#)sw_pad.c	1.0.1	2018/02/14
+ * Version:	@(#)sw_pad.c	1.0.2	2018/02/21
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>

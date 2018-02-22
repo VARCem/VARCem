@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cc	1.0.1	2018/02/14
+ * Version:	@(#)cdrom_image.cc	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -386,44 +386,41 @@ static int image_is_track_audio(uint8_t id, uint32_t pos, int ismsf)
         return attr == AUDIO_TRACK;
 }
 
-#ifdef _MSC_VER
-#pragma pack(push, 1)
-#define __attribute__(x)
-#endif
 
-typedef struct __attribute__((__packed__))
+#pragma pack(push, 1)
+typedef struct
 {
 	uint8_t user_data[2048];
 	uint8_t ecc[288];
 } m1_data_t;
 
-typedef struct __attribute__((__packed__))
+typedef struct
 {
 	uint8_t sub_header[8];
 	uint8_t user_data[2328];
 } m2_data_t;
 
-typedef union __attribute__((__packed__))
+typedef union
 {
 	m1_data_t m1_data;
 	m2_data_t m2_data;
 	uint8_t raw_data[2336];
 } sector_data_t;
 
-typedef struct __attribute__((__packed__))
+typedef struct
 {
 	uint8_t sync[12];
 	uint8_t header[4];
 	sector_data_t data;
 } sector_raw_data_t;
 
-typedef union __attribute__((__packed__))
+typedef union
 {
 	sector_raw_data_t sector_data;
 	uint8_t raw_data[2352];
 } sector_t;
 
-typedef struct __attribute__((__packed__))
+typedef struct
 {
 	sector_t sector;
 	uint8_t c2[296];
@@ -432,16 +429,12 @@ typedef struct __attribute__((__packed__))
 	uint8_t subchannel_rw[96];
 } cdrom_sector_t;
 
-typedef union __attribute__((__packed__))
+typedef union
 {
 	cdrom_sector_t cdrom_sector;
 	uint8_t buffer[2856];
 } sector_buffer_t;
-
-#ifdef _MSC_VER
 #pragma pack(pop)
-#undef __attribute__
-#endif
 
 sector_buffer_t cdrom_sector_buffer;
 

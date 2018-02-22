@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.1	2018/02/11
+ * Version:	@(#)plat.h	1.0.2	2018/02/21
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -75,11 +75,11 @@
 
 
 #ifndef _MSC_VER
-/* A hack (GCC-specific?) to allow us to ignore unused parameters. */
-#define UNUSED(arg)	__attribute__((unused))arg
+  /* A hack (GCC-specific?) to allow us to ignore unused parameters. */
+# define UNUSED(arg)	__attribute__((unused))arg
 #else
-/* MSVC does not have __attribute__((unused)). */
-#define UNUSED(arg) arg
+  /* MSVC does not have __attribute__((unused)). */
+# define UNUSED(arg) arg
 #endif
 
 /* Return the size (in wchar's) of a wchar_t array. */

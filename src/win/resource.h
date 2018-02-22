@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.1	2018/02/14
+ * Version:	@(#)resource.h	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -121,7 +121,7 @@
 #define IDC_CHECK_SYNC		1008
 /* Leave this as is until we finally get into localization in. */
 #if 0
-#define IDC_COMBO_LANG		1009
+# define IDC_COMBO_LANG		1009
 #endif
 
 #define IDC_COMBO_MACHINE	1010	/* machine/cpu config */
@@ -131,7 +131,7 @@
 #define IDC_CHECK_FPU		1014
 #define IDC_COMBO_WS		1015
 #ifdef USE_DYNAREC
-#define IDC_CHECK_DYNAREC	1016
+# define IDC_CHECK_DYNAREC	1016
 #endif
 #define IDC_MEMTEXT		1017
 #define IDC_MEMSPIN		1018

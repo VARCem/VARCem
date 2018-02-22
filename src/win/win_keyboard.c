@@ -8,7 +8,7 @@
  *
  *		Windows raw keyboard input handler.
  *
- * Version:	@(#)win_keyboard.c	1.0.1	2018/02/14
+ * Version:	@(#)win_keyboard.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,10 +36,8 @@
  */
 #define UNICODE
 #define  _WIN32_WINNT 0x0501
-#define BITMAP WINDOWS_BITMAP
 #include <windows.h>
 #include <windowsx.h>
-#undef BITMAP
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

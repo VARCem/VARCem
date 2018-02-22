@@ -8,7 +8,7 @@
  *
  *		Handle the About dialog.
  *
- * Version:	@(#)win_about.c	1.0.1	2018/02/14
+ * Version:	@(#)win_about.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -35,10 +35,8 @@
  *   USA.
  */
 #define UNICODE
-#define BITMAP WINDOWS_BITMAP
 #include <windows.h>
 #include <windowsx.h>
-#undef BITMAP
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

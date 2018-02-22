@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_voodoo.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#ifdef _MSC_VER
+# include <malloc.h>
+#endif
 #include <wchar.h>
 #include <math.h>
 #include "../emu.h"
@@ -59,9 +62,6 @@
 #include "vid_svga.h"
 #include "vid_voodoo.h"
 #include "vid_voodoo_dither.h"
-#ifdef _MSC_VER
-#include <malloc.h>
-#endif
 
 #ifdef MIN
 #undef MIN

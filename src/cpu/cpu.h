@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.h	1.0.1	2018/02/14
+ * Version:	@(#)cpu.h	1.0.2	2018/02/21
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -265,6 +265,7 @@ struct _cpustate_ {
 #define CPU_STATUS_NOTFLATSS  (1 << 17)
 #define CPU_STATUS_MASK 0xffff0000
 
+/* FIXME: why not use #if sizeof(cpu_state) <= 128 #error?  --FvK */
 #ifdef _MSC_VER
 # define COMPILE_TIME_ASSERT(expr)	/*nada*/
 #else

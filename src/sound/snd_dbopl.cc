@@ -8,7 +8,9 @@
  *
  *		DOSbox OPL emulation.
  *
- * Version:	@(#)snd_dbopl.c	1.0.1	2018/02/14
+ * NOTE:	See MSC_ macros for allocation on stack. --FvK
+ *
+ * Version:	@(#)snd_dbopl.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,15 +39,15 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifdef _MSC_VER
+  /* for _alloca() and printing of the related error message with pclog() */
+# include <stdio.h>
+# include <malloc.h>
+# include "../emu.h"
+#endif
 #include "dbopl.h"
 #include "nukedopl.h"
 #include "snd_dbopl.h"
-#ifdef _MSC_VER
-/* for _alloca() and printing of the related error message with pclog() */
-#include <stdio.h>
-#include <malloc.h>
-#include "../emu.h"
-#endif
 
 
 int opl3_type = 0;

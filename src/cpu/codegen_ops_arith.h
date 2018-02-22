@@ -8,7 +8,7 @@
  *
  *		Miscellaneous instructions.
  *
- * Version:	@(#)codegen_ops_arith.h	1.0.1	2018/02/14
+ * Version:	@(#)codegen_ops_arith.h	1.0.2	2018/02/21
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>

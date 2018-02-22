@@ -13,7 +13,7 @@
  *		- c386sx16 BIOS fails checksum
  *		- the loadfont() calls should be done elsewhere
  *
- * Version:	@(#)rom.c	1.0.1	2018/02/14
+ * Version:	@(#)rom.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -276,6 +276,7 @@ rom_load_bios(int rom_id)
 {
     FILE *f;
 
+    /* FIXME: do this in the video card driver. */
     loadfont(L"roms/video/mda/mda.rom", 0);
     loadfont(L"roms/video/wyse700/wy700.rom", 3);
     loadfont(L"roms/video/genius/8x12.bin", 4);
@@ -425,7 +426,7 @@ rom_load_bios(int rom_id)
 		if (! rom_load_interleaved(
 			L"roms/machines/portableii/109740-001.rom",
 			L"roms/machines/portableii/109739-001.rom",
-			0x000000, 32768, 0, rom)) break;
+			0x008000, 32768, 0, rom)) break;
 		biosmask = 0x7fff;
 		return(1);
 
@@ -676,6 +677,7 @@ rom_load_bios(int rom_id)
 
 #if 0
 	case ROM_586MC1:
+		/* FIXME: no ROM? --FvK */
 		if (! rom_load_linear(
 			L"roms/machines/586mc1/is.34",
 			0x000000, 131072, 0, rom)) break;

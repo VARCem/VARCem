@@ -8,7 +8,7 @@
  *
  *		Direct3D 9 rendererer and screenshots taking.
  *
- * Version:	@(#)win_d3d.h	1.0.1	2018/02/14
+ * Version:	@(#)win_d3d.h	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,10 +39,8 @@
 #ifndef WIN_D3D_H
 # define WIN_D3D_H
 # define UNICODE
-# define BITMAP WINDOWS_BITMAP
 # include <d3d9.h>
 # include <d3dx9tex.h>
-# undef BITMAP
 
 
 #ifdef __cplusplus

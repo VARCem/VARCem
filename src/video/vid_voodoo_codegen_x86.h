@@ -8,7 +8,7 @@
  *
  *		Implementation of the Voodoo Recompiler (32bit.)
  *
- * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,7 +56,7 @@
 #endif
 
 #ifdef _MSC_VER
-#include <emmintrin.h>
+# include <emmintrin.h>
 #endif
 #include <xmmintrin.h>
 

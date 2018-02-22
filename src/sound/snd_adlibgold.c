@@ -8,7 +8,9 @@
  *
  *		Implementation of the Adlib Gold sound device.
  *
- * Version:	@(#)snd_adlibgold.c	1.0.1	2018/02/14
+ * TODO:	Stack allocation of big buffers (line 688 et al.)
+ *
+ * Version:	@(#)snd_adlibgold.c	1.0.2	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
