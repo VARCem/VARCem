@@ -39,6 +39,10 @@
 #ifndef PLAT_WIN_H
 # define PLAT_WIN_H
 
+ #ifdef __cplusplus
+extern "C" {
+#endif
+
 # define UNICODE
 # define BITMAP WINDOWS_BITMAP
 # if 0
@@ -83,10 +87,6 @@ extern WCHAR		wopenfilestring[260];
 
 extern uint8_t		filterindex;
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifdef USE_CRASHDUMP
 extern void	InitCrashDump(void);
