@@ -54,9 +54,10 @@
 /* String ID numbers. */
 #include "lang/language.h"
 
-/* The Win32 API uses _wcsicmp. */
+/* The Win32 API uses _wcsicmp and _stricmp. */
 #ifdef _WIN32
 # define wcscasecmp	_wcsicmp
+# define strcasecmp	_stricmp
 #endif
 
 #if defined(UNIX) && defined(FREEBSD)
