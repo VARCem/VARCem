@@ -2769,7 +2769,7 @@ static BOOL CALLBACK
 #endif
 win_settings_hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND h;
+	HWND h = INVALID_HANDLE_VALUE;
 	int64_t i = 0;
 	uint64_t temp;
 	FILE *f;
