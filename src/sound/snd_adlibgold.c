@@ -692,7 +692,7 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
             pclog("adgold_get_buffer: possible stack overflow detected. Buffer size was %d bytes", 2 * len);
             return;
         }
-        int16_t *adgold_buffer = (int16_t *)_alloca(len * 2);
+        int16_t *adgold_buffer = (int16_t *)_alloca(sizeof(int16_t) * len * 2);
 #else
         int16_t adgold_buffer[len*2];
 #endif
