@@ -10,7 +10,7 @@
 #		settings, so we can avoid changing the main one for all of
 #		our local setups.
 #
-# Version:	@(#)Makefile.local	1.0.1	2018/02/14
+# Version:	@(#)Makefile.local	1.0.2	2018/02/22
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -100,7 +100,6 @@ VNC		:= n
 RDP		:= n
 DEV_BUILD	:= n
 DEV_BRANCH	:= n
-NV_RIVA		:= n
 OPENAL		:= y
 FLUIDSYNTH	:= y
 MUNT		:= y

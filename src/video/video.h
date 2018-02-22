@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.1	2018/02/14
+ * Version:	@(#)video.h	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -90,11 +90,6 @@ enum {
     GFX_MACH64VT2,  		/* ATI Mach64 VT2 */
     GFX_CL_GD5428,  		/* Diamond SpeedStar PRO (Cirrus Logic CL-GD 5428) */
     GFX_CL_GD5429,  		/* Cirrus Logic CL-GD 5429 */
-#if defined(DEV_BRANCH) && defined(USE_RIVA)
-    GFX_RIVATNT,		/* nVidia Riva TNT */
-    GFX_RIVATNT2,		/* nVidia Riva TNT2 */
-    GFX_RIVA128,		/* nVidia Riva 128 */
-#endif
     GFX_OTI067,     		/* Oak OTI-067 */
     GFX_OTI077,     		/* Oak OTI-077 */
     GFX_PVGA1A,			/* Paradise PVGA1A Standalone */

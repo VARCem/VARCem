@@ -8,7 +8,7 @@
 #
 #		Makefile for Win32 (MinGW32) environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.2	2018/02/22
+# Version:	@(#)Makefile.mingw	1.0.3	2018/02/22
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -104,9 +104,6 @@ ifndef AMD_K
 AMD_K		:= n
 endif
 endif
-ifndef NV_RIVA
-NV_RIVA		:= n
-endif
 ifndef OPENAL
 OPENAL		:= y
 endif
@@ -153,7 +150,6 @@ GREENB		:= y
 PORTABLE3	:= y
 LASERXT		:= y
 PAS16		:= y
-NV_RIVA		:= y
 STEALTH32	:= y
 XL24		:= y
 endif
@@ -366,11 +362,6 @@ OPTS		+= -DUSE_LASERXT
 DEVBROBJ	+= m_xt_laserxt.o
 endif
   
-ifeq ($(NV_RIVA), y)
-OPTS		+= -DUSE_RIVA
-DEVBROBJ	+= vid_nv_riva128.o
-endif
-
 ifeq ($(STEALTH32), y)
 OPTS		+= -DUSE_STEALTH32
 DEVBROBJ        += vid_icd2061.o
