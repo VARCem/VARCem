@@ -10,7 +10,7 @@
  *
  * NOTE:	See MSC_ macros for allocation on stack. --FvK
  *
- * Version:	@(#)snd_dbopl.c	1.0.2	2018/02/21
+ * Version:	@(#)snd_dbopl.c	1.0.3	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
   /* for _alloca() and printing of the related error message with pclog() */
 # include <stdio.h>
 # include <malloc.h>
+# include <stdint.h>
 # include "../emu.h"
 #endif
 #include "dbopl.h"
@@ -199,7 +200,7 @@ void opl2_update(int nr, int16_t *buffer, int samples)
             pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
             return;
         }
-        Bit32s *buffer_32 = (Bit32s *)_alloca(samples);
+        Bit32s *buffer_32 = (Bit32s *)_alloca(sizeof(Bit32s) * samples);
 #else
         Bit32s buffer_32[samples];
 #endif
@@ -220,7 +221,7 @@ void opl3_update(int nr, int16_t *buffer, int samples)
             pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
             return;
         }
-        Bit32s *buffer_32 = (Bit32s *)_alloca(samples);
+        Bit32s *buffer_32 = (Bit32s *)_alloca(sizeof(Bit32s) * samples);
 #else
         Bit32s buffer_32[samples*2];
 #endif

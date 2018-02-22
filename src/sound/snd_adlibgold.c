@@ -10,7 +10,7 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.2	2018/02/21
+ * Version:	@(#)snd_adlibgold.c	1.0.3	2018/02/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -692,7 +692,7 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
             pclog("adgold_get_buffer: possible stack overflow detected. Buffer size was %d bytes", 2 * len);
             return;
         }
-        int16_t *adgold_buffer = (int16_t *)_alloca(len * 2);
+        int16_t *adgold_buffer = (int16_t *)_alloca(sizeof(int16_t) * len * 2);
 #else
         int16_t adgold_buffer[len*2];
 #endif
