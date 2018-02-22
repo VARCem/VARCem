@@ -699,6 +699,7 @@ x54x_mbi(x54x_t *dev)
 	DMAPageWrite(Incoming + 1, (uint8_t *)&CCBPointer, 3);
 	x54x_log("%i bytes of 24-bit mailbox written to: %08X\n", sizeof(Mailbox_t), Incoming);
     } else {
+	U32_TO_ADDR(CCBPointer, req->CCBPointer);
 	x54x_log("Mailbox 32-bit: Status=0x%02X, CCB at 0x%04X\n", req->MailboxCompletionCode, CCBPointer);
 	DMAPageWrite(Incoming, (uint8_t *)&(req->CCBPointer), 4);
 	DMAPageWrite(Incoming + 4, &(req->HostStatus), 1);

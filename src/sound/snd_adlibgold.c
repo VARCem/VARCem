@@ -683,7 +683,17 @@ void adgold_timer_poll(void *p)
 static void adgold_get_buffer(int32_t *buffer, int len, void *p)
 {
         adgold_t *adgold = (adgold_t *)p;
+#ifdef _MSC_VER
+        /* TODO: Fix this to use a static buffer */
+        if (len > 512 * 1024)
+        {
+            pclog("adgold_get_buffer: possible stack overflow detected. Buffer size was %d bytes", 2 * len);
+            return;
+        }
+        int16_t *adgold_buffer = (int16_t *)_alloca(len * 2);
+#else
         int16_t adgold_buffer[len*2];
+#endif
         
         int c;
 

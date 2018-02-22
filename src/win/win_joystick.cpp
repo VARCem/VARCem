@@ -38,6 +38,10 @@
  */
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
+#ifndef DIDEVTYPE_JOYSTICK
+/* TODO: This is a crude hack to fix compilation on MSVC ... it needs a rework at some point */
+#define DIDEVTYPE_JOYSTICK 4
+#endif
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>

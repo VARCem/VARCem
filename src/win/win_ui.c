@@ -763,7 +763,7 @@ ui_init(int nCmdShow)
     WCHAR title[200];
     WNDCLASSEX wincl;			/* buffer for main window's class */
     MSG messages;			/* received-messages buffer */
-    HWND hwnd;				/* handle for our window */
+    HWND hwnd = 0;        	/* handle for our window */
     HACCEL haccel;			/* handle to accelerator table */
     int bRet;
 

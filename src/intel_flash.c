@@ -270,25 +270,25 @@ void *intel_flash_init(uint8_t type)
         return flash;
 }
 
-void *intel_flash_bxb_ami_init()
+void *intel_flash_bxb_ami_init(void)
 {
 	return intel_flash_init(FLASH_IS_BXB | FLASH_INVERT);
 }
 
 /* For AMI BIOS'es - Intel 28F001BXT with high address pin inverted. */
-void *intel_flash_bxt_ami_init()
+void *intel_flash_bxt_ami_init(void)
 {
 	return intel_flash_init(FLASH_INVERT);
 }
 
 /* For Award BIOS'es - Intel 28F001BXT with high address pin not inverted. */
-void *intel_flash_bxt_init()
+void *intel_flash_bxt_init(void)
 {
 	return intel_flash_init(0);
 }
 
 /* For Acer BIOS'es - Intel 28F001BXB. */
-void *intel_flash_bxb_init()
+void *intel_flash_bxb_init(void)
 {
 	return intel_flash_init(FLASH_IS_BXB);
 }

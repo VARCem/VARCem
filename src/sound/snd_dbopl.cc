@@ -40,6 +40,12 @@
 #include "dbopl.h"
 #include "nukedopl.h"
 #include "snd_dbopl.h"
+#ifdef _MSC_VER
+/* for _alloca() and printing of the related error message with pclog() */
+#include <stdio.h>
+#include <malloc.h>
+#include "../emu.h"
+#endif
 
 
 int opl3_type = 0;
@@ -184,7 +190,17 @@ uint8_t opl_read(int nr, uint16_t addr)
 void opl2_update(int nr, int16_t *buffer, int samples)
 {
         int c;
+#ifdef _MSC_VER
+        /* TODO: Fix this to use a static buffer */
+        if (samples > 512*1024)
+        {
+            pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
+            return;
+        }
+        Bit32s *buffer_32 = (Bit32s *)_alloca(samples);
+#else
         Bit32s buffer_32[samples];
+#endif
         
         opl[nr].chip.GenerateBlock2(samples, buffer_32);
         
@@ -195,7 +211,17 @@ void opl2_update(int nr, int16_t *buffer, int samples)
 void opl3_update(int nr, int16_t *buffer, int samples)
 {
         int c;
+#ifdef _MSC_VER
+        /* TODO: Fix this to use a static buffer */
+        if (samples > 512 * 1024)
+        {
+            pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
+            return;
+        }
+        Bit32s *buffer_32 = (Bit32s *)_alloca(samples);
+#else
         Bit32s buffer_32[samples*2];
+#endif
 
 	if (opl3_type)
 	{

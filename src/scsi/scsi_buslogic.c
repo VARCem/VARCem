@@ -1475,10 +1475,10 @@ buslogic_init(device_t *info)
     uint16_t bios_rom_size;
     uint16_t bios_rom_mask;
     uint8_t has_autoscsi_rom;
-    wchar_t *autoscsi_rom_name;
+    wchar_t *autoscsi_rom_name = 0;
     uint16_t autoscsi_rom_size;
     uint8_t has_scam_rom;
-    wchar_t *scam_rom_name;
+    wchar_t *scam_rom_name = 0;
     uint16_t scam_rom_size;
     FILE *f;
     buslogic_data_t *bl;

@@ -220,7 +220,7 @@ uint32_t svga_mask_changedaddr(uint32_t addr, svga_t *svga);
 
 extern uint32_t shade[5][256];
 
-static __inline__ uint32_t svga_color_transform(uint32_t color)
+static __inline uint32_t svga_color_transform(uint32_t color)
 {
 	uint8_t *clr8 = (uint8_t *) &color;
 	if (!video_grayscale && !invert_display)

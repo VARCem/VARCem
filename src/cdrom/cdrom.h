@@ -39,6 +39,9 @@
 #ifndef EMU_CDROM_H
 #define EMU_CDROM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CDROM_NUM		4
 
@@ -242,11 +245,6 @@ extern cdrom_ioctl_t	cdrom_ioctl[CDROM_NUM];
 #define cdrom_asc cdrom[id].sense[12]
 #define cdrom_ascq cdrom[id].sense[13]
 #define cdrom_drive cdrom_drives[id].host_drive
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 extern int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length);
 extern int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length);

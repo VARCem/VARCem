@@ -55,6 +55,9 @@
 # include <windows.h>
 #endif
 
+#ifdef _MSC_VER
+#include <emmintrin.h>
+#endif
 #include <xmmintrin.h>
 
 #define BLOCK_NUM 8

@@ -54,9 +54,10 @@
 /* String ID numbers. */
 #include "lang/language.h"
 
-/* The Win32 API uses _wcsicmp. */
+/* The Win32 API uses _wcsicmp and _stricmp. */
 #ifdef _WIN32
 # define wcscasecmp	_wcsicmp
+# define strcasecmp	_stricmp
 #endif
 
 #if defined(UNIX) && defined(FREEBSD)
@@ -65,11 +66,21 @@
 # define fseeko64       fseeko
 # define ftello64       ftello
 # define off64_t        off_t
+#elif defined(_MSC_VER)
+# define fopen64        fopen
+# define fseeko64       _fseeki64
+# define ftello64       _ftelli64
+# define off64_t        off_t
 #endif
 
 
+#ifndef _MSC_VER
 /* A hack (GCC-specific?) to allow us to ignore unused parameters. */
 #define UNUSED(arg)	__attribute__((unused))arg
+#else
+/* MSVC does not have __attribute__((unused)). */
+#define UNUSED(arg) arg
+#endif
 
 /* Return the size (in wchar's) of a wchar_t array. */
 #define sizeof_w(x)	(sizeof((x)) / sizeof(wchar_t))

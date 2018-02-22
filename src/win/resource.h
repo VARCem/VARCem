@@ -109,7 +109,7 @@
 #define IDT_1755		1755	/* LUN: */
 #define IDT_1756		1756	/* Channel: */
 #define IDT_1757		1757	/* Progress: */
-
+#define IDT_1758		1758	/* ZIP drives: */
 
 /*
  * To try to keep these organized, we now group the
