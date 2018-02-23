@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_s3_virge.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3811,7 +3811,7 @@ static void *s3_virge_init(device_t *info)
 
 	virge->pci = !!(info->flags & DEVICE_PCI);
 
-        rom_init(&virge->bios_rom, L"roms/video/s3virge/s3virge.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+        rom_init(&virge->bios_rom, L"roms/video/s3/s3virge/s3virge.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         if (info->flags & DEVICE_PCI)
                 mem_mapping_disable(&virge->bios_rom.mapping);
 
@@ -3910,7 +3910,7 @@ static void *s3_virge_988_init(device_t *info)
 
 	virge->pci = !!(info->flags & DEVICE_PCI);
 
-        rom_init(&virge->bios_rom, L"roms/video/s3virge/diamondstealth3000.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+        rom_init(&virge->bios_rom, L"roms/video/s3/s3virge/diamondstealth3000.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         if (info->flags & DEVICE_PCI)
                 mem_mapping_disable(&virge->bios_rom.mapping);
 
@@ -4094,12 +4094,12 @@ static void *s3_virge_375_init(device_t *info, wchar_t *romfn)
 
 static void *s3_virge_375_1_init(device_t *info)
 {
-	return s3_virge_375_init(info, L"roms/video/s3virge/86c375_1.bin");
+	return s3_virge_375_init(info, L"roms/video/s3/s3virge/86c375_1.bin");
 }
 
 static void *s3_virge_375_4_init(device_t *info)
 {
-	return s3_virge_375_init(info, L"roms/video/s3virge/86c375_4.bin");
+	return s3_virge_375_init(info, L"roms/video/s3/s3virge/86c375_4.bin");
 }
 
 static void s3_virge_close(void *p)
@@ -4127,22 +4127,22 @@ static void s3_virge_close(void *p)
 
 static int s3_virge_available(void)
 {
-        return rom_present(L"roms/video/s3virge/s3virge.bin");
+        return rom_present(L"roms/video/s3/s3virge/s3virge.bin");
 }
 
 static int s3_virge_988_available(void)
 {
-        return rom_present(L"roms/video/s3virge/diamondstealth3000.vbi");
+        return rom_present(L"roms/video/s3/s3virge/diamondstealth3000.vbi");
 }
 
 static int s3_virge_375_1_available(void)
 {
-        return rom_present(L"roms/video/s3virge/86c375_1.bin");
+        return rom_present(L"roms/video/s3/s3virge/86c375_1.bin");
 }
 
 static int s3_virge_375_4_available(void)
 {
-        return rom_present(L"roms/video/s3virge/86c375_4.bin");
+        return rom_present(L"roms/video/s3/s3virge/86c375_4.bin");
 }
 
 static void s3_virge_speed_changed(void *p)

@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_ega.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,9 +55,9 @@
 #include "vid_ega_render.h"
 
 
-#define BIOS_IBM_PATH	L"roms/video/ega/ibm_6277356_ega_card_u44_27128.bin"
-#define BIOS_CPQ_PATH	L"roms/video/ega/108281-001.bin"
-#define BIOS_SEGA_PATH	L"roms/video/ega/lega.vbi"
+#define BIOS_IBM_PATH	L"roms/video/ibm/ega/ibm_6277356_ega_card_u44_27128.bin"
+#define BIOS_CPQ_PATH	L"roms/video/compaq/ega/108281-001.bin"
+#define BIOS_SEGA_PATH	L"roms/video/phoenix/ega/lega.vbi"
 
 
 enum {
@@ -1157,8 +1157,8 @@ void *jega_standalone_init(device_t *info)
 {
         ega_t *ega = (ega_t *)ega_standalone_init(info);
 
-	LoadFontxFile(L"roms/video/ega/JPNHN19X.FNT");
-	LoadFontxFile(L"roms/video/ega/JPNZN16X.FNT");
+	LoadFontxFile(L"roms/video/ibm/ega/JPNHN19X.FNT");
+	LoadFontxFile(L"roms/video/ibm/ega/JPNZN16X.FNT");
 
 	ega->is_jega = 1;
 

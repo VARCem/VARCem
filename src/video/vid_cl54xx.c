@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (currently only the
  *		GD5428 is fully supported.)
  *
- * Version:	@(#)vid_cl54xx.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_cl54xx.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,8 +58,8 @@
 #include "vid_cl54xx.h"
 
 
-#define BIOS_GD5428_PATH		L"roms/video/cirruslogic/Diamond SpeedStar PRO VLB (Cirrus Logic 5428)_v3.04.bin"
-#define BIOS_GD5429_PATH		L"roms/video/cirruslogic/5429.vbi"
+#define BIOS_GD5428_PATH	L"roms/video/cirruslogic/diamond speedstar pro vlb (cirrus logic 5428)_v3.04.bin"
+#define BIOS_GD5429_PATH	L"roms/video/cirruslogic/5429.vbi"
 
 #define CIRRUS_ID_CLGD5428		0x98
 #define CIRRUS_ID_CLGD5429		0x9c

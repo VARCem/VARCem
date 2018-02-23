@@ -13,7 +13,7 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.2	2018/02/21
+ * Version:	@(#)scsi_buslogic.c	1.0.3	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1542,7 +1542,7 @@ buslogic_init(device_t *info)
     {
 	case CHIP_BUSLOGIC_ISA_542:
 		strcpy(dev->name, "BT-542BH");
-		bios_rom_name = L"roms/scsi/buslogic/BT-542BH_BIOS.rom";
+		bios_rom_name = L"roms/scsi/buslogic/bt-542bh_bios.rom";
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 0;
@@ -1552,18 +1552,18 @@ buslogic_init(device_t *info)
 	case CHIP_BUSLOGIC_ISA:
 	default:
 		strcpy(dev->name, "BT-545S");
-		bios_rom_name = L"roms/scsi/buslogic/BT-545S_BIOS.rom";
+		bios_rom_name = L"roms/scsi/buslogic/bt-545s_bios.rom";
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 1;
-		autoscsi_rom_name = L"roms/scsi/buslogic/BT-545S_AutoSCSI.rom";
+		autoscsi_rom_name = L"roms/scsi/buslogic/bt-545s_autoscsi.rom";
 		autoscsi_rom_size = 0x4000;
 		has_scam_rom = 0;
 		dev->fw_rev = "AA421E";
 		break;
 	case CHIP_BUSLOGIC_MCA:
 		strcpy(dev->name, "BT-640A");
-		bios_rom_name = L"roms/scsi/buslogic/BT-640A_BIOS.rom";
+		bios_rom_name = L"roms/scsi/buslogic/bt-640a_bios.rom";
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 0;
@@ -1576,11 +1576,11 @@ buslogic_init(device_t *info)
 		break;
 	case CHIP_BUSLOGIC_VLB:
 		strcpy(dev->name, "BT-445S");
-		bios_rom_name = L"roms/scsi/buslogic/BT-445S_BIOS.rom";
+		bios_rom_name = L"roms/scsi/buslogic/bt-445s_bios.rom";
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 1;
-		autoscsi_rom_name = L"roms/scsi/buslogic/BT-445S_AutoSCSI.rom";
+		autoscsi_rom_name = L"roms/scsi/buslogic/bt-445s_autoscsi.rom";
 		autoscsi_rom_size = 0x4000;
 		has_scam_rom = 0;
 		dev->fw_rev = "AA421E";
@@ -1588,14 +1588,14 @@ buslogic_init(device_t *info)
 		break;
 	case CHIP_BUSLOGIC_PCI:
 		strcpy(dev->name, "BT-958D");
-		bios_rom_name = L"roms/scsi/buslogic/BT-958D_BIOS.rom";
+		bios_rom_name = L"roms/scsi/buslogic/bt-958d_bios.rom";
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 1;
-		autoscsi_rom_name = L"roms/scsi/buslogic/BT-958D_AutoSCSI.rom";
+		autoscsi_rom_name = L"roms/scsi/buslogic/bt-958d_autoscsi.rom";
 		autoscsi_rom_size = 0x8000;
 		has_scam_rom = 1;
-		scam_rom_name = L"roms/scsi/buslogic/BT-958D_SCAM.rom";
+		scam_rom_name = L"roms/scsi/buslogic/bt-958d_scam.rom";
 		scam_rom_size = 0x0200;
 		dev->fw_rev = "AA507B";
 		dev->cdrom_boot = 1;

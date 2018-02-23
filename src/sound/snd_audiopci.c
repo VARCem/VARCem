@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.2	2018/02/21
+ * Version:	@(#)snd_audiopci.c	1.0.3	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1139,7 +1139,7 @@ static void es1371_get_buffer(int32_t *buffer, int len, void *p)
 	es1371->pos = 0;
 }
 
-static void *es1371_init(void)
+static void *es1371_init(device_t *info)
 {
 	es1371_t *es1371 = malloc(sizeof(es1371_t));
 	memset(es1371, 0, sizeof(es1371_t));

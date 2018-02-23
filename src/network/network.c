@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.1	2018/02/14
+ * Version:	@(#)network.c	1.0.2	2018/02/22
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -106,6 +106,7 @@ static struct {
 # define is_print(c)	(isalnum((int)(c)) || ((c) == ' '))
 
 
+#if 0
 /* Dump a buffer in hex, standard output. */
 static void
 hexdump(uint8_t *bufp, int len)
@@ -139,6 +140,7 @@ hexdump(uint8_t *bufp, int len)
 	printf("  | %s |\n", asci);
     }
 }
+#endif
 
 
 /* Dump a buffer in hex to output buffer. */

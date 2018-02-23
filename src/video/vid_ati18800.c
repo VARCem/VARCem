@@ -8,7 +8,7 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_ati18800.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,9 +53,9 @@
 #include "vid_svga.h"
 
 
-#define BIOS_ROM_PATH_WONDER	L"roms/video/ati18800/VGA_Wonder_V3-1.02.bin"
-#define BIOS_ROM_PATH_VGA88	L"roms/video/ati18800/vga88.bin"
-#define BIOS_ROM_PATH_EDGE16	L"roms/video/ati18800/vgaedge16.vbi"
+#define BIOS_ROM_PATH_WONDER	L"roms/video/ati/ati18800/vga_wonder_v3-1.02.bin"
+#define BIOS_ROM_PATH_VGA88	L"roms/video/ati/ati18800/vga88.bin"
+#define BIOS_ROM_PATH_EDGE16	L"roms/video/ati/ati18800/vgaedge16.vbi"
 
 enum {
 	ATI18800_WONDER = 0,

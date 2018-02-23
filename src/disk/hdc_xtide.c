@@ -21,7 +21,7 @@
  *		already on their way out, the newer IDE standard based on the
  *		PC/AT controller and 16b design became the IDE we now know.
  *
- * Version:	@(#)hdc_xtide.c	1.0.1	2018/02/14
+ * Version:	@(#)hdc_xtide.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,7 +63,7 @@
 
 #define ROM_PATH_XT	L"roms/hdd/xtide/ide_xt.bin"
 #define ROM_PATH_AT	L"roms/hdd/xtide/ide_at.bin"
-#define ROM_PATH_PS2	L"roms/hdd/xtide/SIDE1V12.BIN"
+#define ROM_PATH_PS2	L"roms/hdd/xtide/side1v12.bin"
 #define ROM_PATH_PS2AT	L"roms/hdd/xtide/ide_at_1_1_5.bin"
 
 

@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger)
  *
- * Version:	@(#)vid_ati28800.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_ati28800.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,15 +56,15 @@
 #include "vid_svga_render.h"
 
 
-#define BIOS_VGAXL_EVEN_PATH	L"roms/video/ati28800/xleven.bin"
-#define BIOS_VGAXL_ODD_PATH	L"roms/video/ati28800/xlodd.bin"
+#define BIOS_VGAXL_EVEN_PATH	L"roms/video/ati/ati28800/xleven.bin"
+#define BIOS_VGAXL_ODD_PATH	L"roms/video/ati/ati28800/xlodd.bin"
 
 #if defined(DEV_BRANCH) && defined(USE_XL24)
-#define BIOS_XL24_EVEN_PATH	L"roms/video/ati28800/112-14318-102.bin"
-#define BIOS_XL24_ODD_PATH	L"roms/video/ati28800/112-14319-102.bin"
+#define BIOS_XL24_EVEN_PATH	L"roms/video/ati/ati28800/112-14318-102.bin"
+#define BIOS_XL24_ODD_PATH	L"roms/video/ati/ati28800/112-14319-102.bin"
 #endif
 
-#define BIOS_ROM_PATH		L"roms/video/ati28800/bios.bin"
+#define BIOS_ROM_PATH		L"roms/video/ati/ati28800/bios.bin"
 
 
 typedef struct ati28800_t

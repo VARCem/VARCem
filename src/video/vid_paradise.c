@@ -10,7 +10,10 @@
  *		 PC2086, PC3086 use PVGA1A
  *		 MegaPC uses W90C11A
  *
- * Version:	@(#)vid_paradise.c	1.0.1	2018/02/14
+ * NOTE:	The MegaPC video device should be moved to the MegaPC
+ *		machine file.
+ *
+ * Version:	@(#)vid_paradise.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -432,14 +435,14 @@ static void *paradise_pvga1a_standalone_init(device_t *info)
         paradise = paradise_pvga1a_init(info, memory);
         
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/video/pvga1a/BIOS.BIN", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"roms/video/paradise/pvga1a/bios.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         return paradise;
 }
 
 static int paradise_pvga1a_standalone_available(void)
 {
-        return rom_present(L"roms/video/pvga1a/BIOS.BIN");
+        return rom_present(L"roms/video/paradise/pvga1a/bios.bin");
 }
 
 static void *paradise_wd90c11_megapc_init(device_t *info)
@@ -448,8 +451,8 @@ static void *paradise_wd90c11_megapc_init(device_t *info)
         
         if (paradise)
                 rom_init_interleaved(&paradise->bios_rom,
-                                     L"roms/machines/megapc/41651-bios lo.u18",
-                                     L"roms/machines/megapc/211253-bios hi.u19",
+                                     L"roms/machines/amstrad/megapc/41651-bios lo.u18",
+                                     L"roms/machines/amstrad/megapc/211253-bios hi.u19",
                                      0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         return paradise;
@@ -460,14 +463,14 @@ static void *paradise_wd90c11_standalone_init(device_t *info)
         paradise_t *paradise = paradise_wd90c11_init(info);
         
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/video/wd90c11/WD90C11.VBI", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"roms/video/wd/wd90c11/wd90c11.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         return paradise;
 }
 
 static int paradise_wd90c11_standalone_available(void)
 {
-        return rom_present(L"roms/video/wd90c11/WD90C11.VBI");
+        return rom_present(L"roms/video/wd/wd90c11/wd90c11.vbi");
 }
 
 static void *paradise_wd90c30_standalone_init(device_t *info)
@@ -481,14 +484,14 @@ static void *paradise_wd90c30_standalone_init(device_t *info)
         paradise = paradise_wd90c30_init(info, memory);
         
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/video/wd90c30/90C30-LR.VBI", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"roms/video/wd/wd90c30/90c30-lr.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
         return paradise;
 }
 
 static int paradise_wd90c30_standalone_available(void)
 {
-        return rom_present(L"roms/video/wd90c30/90C30-LR.VBI");
+        return rom_present(L"roms/video/wd/wd90c30/90c30-lr.vbi");
 }
 
 void paradise_close(void *p)

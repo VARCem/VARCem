@@ -8,7 +8,7 @@
  *
  *		Oak OTI067/077 emulation.
  *
- * Version:	@(#)vid_oti067.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_oti067.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

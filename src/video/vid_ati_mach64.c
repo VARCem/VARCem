@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_ati_mach64.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,10 +60,10 @@
 #undef CLAMP
 #endif
 
-#define BIOS_ROM_PATH		L"roms/video/mach64/bios.bin"
-#define BIOS_ISA_ROM_PATH	L"roms/video/mach64/M64-1994.VBI"
-#define BIOS_VLB_ROM_PATH	L"roms/video/mach64/mach64_vlb_vram.bin"
-#define BIOS_ROMVT2_PATH	L"roms/video/mach64/atimach64vt2pci.bin"
+#define BIOS_ROM_PATH		L"roms/video/ati/mach64/bios.bin"
+#define BIOS_ISA_ROM_PATH	L"roms/video/ati/mach64/m64-1994.vbi"
+#define BIOS_VLB_ROM_PATH	L"roms/video/ati/mach64/mach64_vlb_vram.bin"
+#define BIOS_ROMVT2_PATH	L"roms/video/ati/mach64/atimach64vt2pci.bin"
 
 
 #define FIFO_SIZE 65536

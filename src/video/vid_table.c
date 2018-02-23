@@ -8,7 +8,7 @@
  *
  *		Define all known video cards.
  *
- * Version:	@(#)vid_table.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_table.c	1.0.3	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -182,6 +182,11 @@ video_reset(int card)
 	(card == GFX_INTERNAL) || machines[machine].fixed_gfxcard) return;
 
 pclog("VIDEO: initializing '%s'\n", video_cards[video_old_to_new(card)].name);
+    /* Initialize the video font tables. */
+    loadfont(L"roms/video/ibm/mda/mda.rom", 0);
+    loadfont(L"roms/video/wyse/wyse700/wy700.rom", 3);
+    loadfont(L"roms/video/mdsi/genius/8x12.bin", 4);
+
     /* Initialize the video card. */
     device_add(video_cards[video_old_to_new(card)].device);
 

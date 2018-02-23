@@ -8,7 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_et4000.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,7 +52,7 @@
 #include "vid_et4000.h"
 
 
-#define BIOS_ROM_PATH	L"roms/video/et4000/et4000.bin"
+#define BIOS_ROM_PATH	L"roms/video/tseng/et4000/et4000.bin"
 
 
 typedef struct et4000_t

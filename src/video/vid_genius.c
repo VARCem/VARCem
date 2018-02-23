@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_genius.c	1.0.2	2018/02/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -108,7 +108,7 @@
 #include "vid_genius.h"
 
 
-#define BIOS_ROM_PATH	L"roms/video/genius/8x12.bin"
+#define BIOS_ROM_PATH	L"roms/video/mdsi/genius/8x12.bin"
 
 
 #define GENIUS_XSIZE 728
