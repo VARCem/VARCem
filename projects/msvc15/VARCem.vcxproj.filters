@@ -66,9 +66,6 @@
     <ClCompile Include="..\..\src\cdrom\cdrom_dosbox.cpp">
       <Filter>cdrom</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cdrom\cdrom_image.cc">
-      <Filter>cdrom</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\cdrom\cdrom_null.c">
       <Filter>cdrom</Filter>
     </ClCompile>
@@ -432,9 +429,6 @@
     <ClCompile Include="..\..\src\sound\snd_cms.c">
       <Filter>sound</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\sound\snd_dbopl.cc">
-      <Filter>sound</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\sound\snd_emu8k.c">
       <Filter>sound</Filter>
     </ClCompile>
@@ -457,9 +451,6 @@
       <Filter>sound</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\sound\snd_pssj.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\snd_resid.cc">
       <Filter>sound</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\sound\snd_sb.c">
@@ -549,57 +540,6 @@
     <ClCompile Include="..\..\src\sound\munt\sha1\sha1.cpp">
       <Filter>sound\munt\sha1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\convolve.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\convolve-sse.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\envelope.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\extfilt.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\filter.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\pot.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\sid.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\voice.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave6581__ST.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave6581_P_T.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave6581_PS_.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave6581_PST.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave8580__ST.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave8580_P_T.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave8580_PS_.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound\resid-fp\wave8580_PST.cc">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\video\vid_ati_eeprom.c">
       <Filter>video</Filter>
     </ClCompile>
@@ -664,9 +604,6 @@
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\video\vid_mda.c">
-      <Filter>video</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\video\vid_nv_riva128.c">
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\video\vid_oti067.c">
@@ -842,6 +779,66 @@
     <ClCompile Include="..\..\src\sio_w83877f.c" />
     <ClCompile Include="..\..\src\timer.c" />
     <ClCompile Include="..\..\src\zip.c" />
+    <ClCompile Include="..\..\src\sound\resid-fp\wave8580_PST.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\voice.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave6581__ST.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave6581_P_T.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave6581_PS_.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave6581_PST.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave8580__ST.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave8580_P_T.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\wave8580_PS_.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\sid.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\pot.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\filter.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\extfilt.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\envelope.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\convolve-sse.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\resid-fp\convolve.cpp">
+      <Filter>sound\resid-fp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\snd_dbopl.cpp">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sound\snd_resid.cpp">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cdrom\cdrom_image.cpp">
+      <Filter>cdrom</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cdrom\cdrom.h">
@@ -1508,9 +1505,6 @@
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\video\vid_mda.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\video\vid_nv_riva128.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\video\vid_oti067.h">
