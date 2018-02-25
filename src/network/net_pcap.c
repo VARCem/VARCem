@@ -49,7 +49,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <pcap.h>
+#include <pcap/pcap.h>
 #include "../emu.h"
 #include "../config.h"
 #include "../device.h"

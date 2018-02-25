@@ -10,7 +10,7 @@
  *
  * NOTE:	FIXME: Strings 2176 and 2193 are same.
  *
- * Version:	@(#)language.h	1.0.1	2018/02/14
+ * Version:	@(#)language.h	1.0.2	2018/02/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -181,6 +181,7 @@
 #define IDS_2175	2175		// "ZIP images (*.IM?)\0*.IM..."
 #define IDS_2176	2176		// "ZIP images (*.IM?)\0*.IM..."
 #define IDS_2177	2177		// "ZIP %i (%03i): %ls"
+#define IDS_2178	2178		// "Unable to initialize OpenAL.."
 
 #define IDS_4096	4096		// "Hard disk (%s)"
 #define IDS_4097	4097		// "%01i:%01i"
@@ -261,7 +262,7 @@
 
 #define IDS_LANG_ENUS	IDS_7168
 
-#define STR_NUM_2048	130
+#define STR_NUM_2048	131
 #define STR_NUM_3072	11
 #define STR_NUM_4096	20
 #define STR_NUM_4352	7

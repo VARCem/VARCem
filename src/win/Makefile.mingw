@@ -6,9 +6,9 @@
 #
 #		This file is part of the VARCem Project.
 #
-#		Makefile for Win32 (MinGW32) environment.
+#		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.3	2018/02/22
+# Version:	@(#)Makefile.mingw	1.0.4	2018/02/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -61,6 +61,9 @@ AUTODEP		:= n
 endif
 ifndef CRASHDUMP
 CRASHDUMP	:= n
+endif
+ifndef CROSS
+CROSS		:= n
 endif
 ifndef DEBUG
 DEBUG		:= n
@@ -143,7 +146,6 @@ ifeq ($(DEV_BUILD), y)
 DEBUG		:= y
 CRASHDUMP	:= y
 DEV_BRANCH	:= y
-VNC		:= y
 I686		:= y
 AMD_K		:= y
 GREENB		:= y
@@ -197,14 +199,45 @@ VPATH		:= $(EXPATH) . cpu \
 		    sound/munt/srchelper \
 		    sound/resid-fp \
 		   scsi video lzf network network/slirp win
-ifeq ($(X64), y)
-CPP		:= g++ -m64
-CC		:= gcc -m64
+
+#
+# Select the required build environment. We have, uhm, many..
+#
+#
+ifneq ($(CROSS), n)
+ # Cross-compiling (under Linux), select proper version.
+ ifeq ($(X64), y)
+  MINGW		:= x86_64-w64-mingw32
+ else
+  MINGW		:= i686-w64-mingw32
+ endif
+
+ ifeq ($(X64), y)
+  CPP		:= /usr/bin/$(MINGW)-g++ -m64
+  CC		:= /usr/bin/$(MINGW)-gcc -m64
+ else
+  CPP		:= /usr/bin/$(MINGW)-g++ -m32
+  CC		:= /usr/bin/$(MINGW)-gcc -m32
+ endif
+ WINDRES	:= /usr/bin/$(MINGW)-windres
+
+ SYSINC		:= -I/usr/$(MINGW)/include -I../mingw/include
+ SYSLIB		:= -L/usr/$(MINGW)/lib
 else
-CPP		:= g++ -m32
-CC		:= gcc -m32
+ # Native compilation using MinGW for Windows.
+ ifeq ($(X64), y)
+  CPP		:= g++ -m64
+  CC		:= gcc -m64
+ else
+  CPP		:= g++ -m32
+  CC		:= gcc -m32
+ endif
+ WINDRES	:= windres
+
+ SYSINC		:=
+ SYSLIB		:=
 endif
-WINDRES		:= windres
+
 DEPS		= -MMD -MF $*.d -c $<
 DEPFILE		:= win/.depends
 
@@ -215,6 +248,10 @@ OPTS		+= $(EXFLAGS)
 endif
 ifdef EXINC
 OPTS		+= -I$(EXINC)
+endif
+OPTS		+= $(SYSINC)
+ifneq ($(CROSS), n)
+ OPTS		+= -DUSE_CROSS
 endif
 ifeq ($(X64), y)
  ifeq ($(OPTIM), y)
@@ -550,7 +587,6 @@ endif
 LZFOBJ		:= lzf_c.o lzf_d.o
 
 LIBS		:= -mwindows \
-		   -lopenal.dll \
 		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
 		   -lcomctl32 -lwinmm
 ifeq ($(VNC), y)

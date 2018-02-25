@@ -10,7 +10,7 @@
  *
  *		Based on the "libpcap" examples.
  *
- * Version:	@(#)pcap_if.c	1.0.8	2018/02/14
+ * Version:	@(#)pcap_if.c	1.0.9	2018/02/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,7 +52,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <pcap.h>
+#include <pcap/pcap.h>
 #include <time.h>
 #include "../emu.h"
 #include "../plat.h"

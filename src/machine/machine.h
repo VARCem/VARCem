@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.2	2018/02/22
+ * Version:	@(#)machine.h	1.0.3	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,16 +60,16 @@
 
 
 typedef struct _machine_ {
-    const char	*name;
-    int		id;
-    const char	*internal_name;
-    const char	*bios_path;
+    const char		*name;
+    int			id;
+    const char		*internal_name;
+    const char		*bios_path;
     struct {
-	const char *name;
+	const char	*name;
 #ifdef EMU_CPU_H
-	CPU *cpus;
+	CPU		*cpus;
 #else
-	void *cpus;
+	void		*cpus;
 #endif
     }		cpu[5];
     int		fixed_gfxcard;

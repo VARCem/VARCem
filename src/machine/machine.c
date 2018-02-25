@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.1	2018/02/14
+ * Version:	@(#)machine.c	1.0.2	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,17 +51,24 @@
 #include "../serial.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
+#include "../plat.h"
 #include "machine.h"
 
 
-int machine;
-int AT, PCI;
-int romset;
+#define PATH_ROM_BIOS	"roms/machines"
+
+
+int	romset;
+int	machine;
+int	AT, PCI;
 
 
 void
 machine_init(void)
 {
+    char temp[1024];
+    int i;
+
     pclog("Initializing as \"%s\"\n", machine_getname());
 
     ide_set_bus_master(NULL, NULL, NULL);
@@ -71,7 +78,21 @@ machine_init(void)
     PCI = IS_ARCH(machine, MACHINE_PCI);
 
     /* Load the machine's ROM BIOS. */
+#if 0
+    strcpy(temp, PATH_ROM_BIOS);
+    i = strlen(temp);
+#ifdef _WIN32
+    temp[i++] = '\\';
+#else
+    temp[i++] = '/';
+#endif
+    strcpy(&temp[i], machines[machine].bios_path);
+    rom_load_bios(temp);
+#else
     rom_load_bios(romset);
+#endif
+
+    /* Activate the ROM BIOS. */
     mem_add_bios();
 
     /* All good, boot the machine! */

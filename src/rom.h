@@ -8,7 +8,7 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.1	2018/02/14
+ * Version:	@(#)rom.h	1.0.2	2018/02/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -60,12 +60,27 @@
 		 romset==ROM_WIN486)
 #endif
 
+#define ROMDEF_NFILES	8		/* max number of rom image files */
+
 
 typedef struct {
     uint8_t		*rom;
     uint32_t		mask;
     mem_mapping_t	mapping;
 } rom_t;
+
+typedef struct {
+    int		mode;
+    int		nfiles;
+    uint32_t	offset;
+    uint32_t	total;
+    struct romfile {
+	char		path[1024];
+	int		mode;
+	uint32_t	offset;
+	uint32_t	skip;
+    }		files[ROMDEF_NFILES];
+} romdef_t;
 
 
 enum {
@@ -212,7 +227,7 @@ extern int	rom_init_interleaved(rom_t *rom, wchar_t *fn_low,
 				     int size, int mask, int file_offset,
 				     uint32_t flags);
 
-extern int	rom_load_bios(int rom_id);
+extern int	rom_load_bios(int romset);
 
 
 #endif	/*EMU_ROM_H*/

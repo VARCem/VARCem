@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.2	2018/02/21
+ * Version:	@(#)VARCem.rc	1.0.3	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -974,6 +974,7 @@ BEGIN
     IDS_2175	"ZIP images (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0All files (*.*)\0*.*\0"
     IDS_2176	"ZIP images (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
     IDS_2177	"ZIP %i (%03i): %ls"
+    IDS_2178	"Unable to initialize OpenAL, make sure you have the following library\nin your program folder:\n\nlibopenal-1.dll"
 
     IDS_4096    "Hard disk (%s)"
     IDS_4097	"%01i:%01i"
