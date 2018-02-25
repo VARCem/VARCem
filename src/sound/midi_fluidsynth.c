@@ -8,6 +8,15 @@
  *
  *		Interface to FluidSynth MIDI.
  *
+ *		Note that on Windows, the fluidsynth DLL is not normally
+ *		installed, and it can be a pain to find it. Many people
+ *		have reported that the files offered on the:
+ *
+ *		  https://zdoom.org/wiki/FluidSynth
+ *
+ *		website (for 32bit and 64bit Windows) are working, and
+ *		need no additional support files other than sound fonts.
+ *
  * Version:	@(#)midi_fluidsynth.c	1.0.2	2018/02/24
  *
  *		Code borrowed from scummvm.
@@ -144,7 +153,7 @@ fluidsynth_t fsdev;
 static int
 fluidsynth_available(void)
 {
-    return(1);
+    return((fluidsynth_handle != NULL)?1:0);
 }
 
 
@@ -356,7 +365,7 @@ fluidsynth_init(device_t *info)
 
     al_set_midi(data->samplerate, data->buf_size);
 
-#if 0
+#if 1
     pclog("fluidsynth (%s) initialized, samplerate %d, buf_size %d\n", f_fluid_version_str(), data->samplerate, data->buf_size);
 #endif
 

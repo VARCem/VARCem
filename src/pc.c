@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.1	2018/02/14
+ * Version:	@(#)pc.c	1.0.2	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,10 +74,10 @@
 #include "disk/hdd.h"
 #include "disk/hdc.h"
 #include "disk/hdc_ide.h"
+#include "disk/zip.h"
 #include "cdrom/cdrom.h"
 #include "cdrom/cdrom_image.h"
 #include "cdrom/cdrom_null.h"
-#include "zip.h"
 #include "scsi/scsi.h"
 #include "network/network.h"
 #include "sound/sound.h"

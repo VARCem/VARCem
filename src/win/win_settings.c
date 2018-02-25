@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.3	2018/02/22
+ * Version:	@(#)win_settings.c	1.0.4	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,11 +54,11 @@
 #include "../game/gameport.h"
 #include "../lpt.h"
 #include "../mouse.h"
-#include "../cdrom/cdrom.h"
-#include "../zip.h"
 #include "../disk/hdd.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
+#include "../disk/zip.h"
+#include "../cdrom/cdrom.h"
 #include "../floppy/fdd.h"
 #include "../scsi/scsi.h"
 #include "../network/network.h"

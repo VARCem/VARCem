@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy Image dialog.
  *
- * Version:	@(#)win_new_floppy.c	1.0.2	2018/02/21
+ * Version:	@(#)win_new_floppy.c	1.0.3	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,7 @@
 #include "../plat.h"
 #include "../random.h"
 #include "../ui.h"
-#include "../zip.h"
+#include "../disk/zip.h"
 #include "win.h"
 
 

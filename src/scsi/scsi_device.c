@@ -8,7 +8,7 @@
  *
  *		The generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.c	1.0.1	2018/02/14
+ * Version:	@(#)scsi_device.c	1.0.2	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,8 +41,8 @@
 #include "../emu.h"
 #include "../device.h"
 #include "../cdrom/cdrom.h"
-#include "../zip.h"
 #include "../disk/hdd.h"
+#include "../disk/zip.h"
 #include "scsi.h"
 #include "scsi_disk.h"
 

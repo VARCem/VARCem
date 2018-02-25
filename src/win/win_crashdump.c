@@ -8,7 +8,7 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.2	2018/02/21
+ * Version:	@(#)win_crashdump.c	1.0.3	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Riley (Rain-chan),
@@ -60,6 +60,7 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
     SYSTEMTIME SystemTime;
     HANDLE hDumpFile;
     char *BufPtr;
+    int i;
 
     /*
      * Win32-specific functions will be used wherever possible,
@@ -104,7 +105,7 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
 
 	BufPtr = &ExceptionHandlerBuffer[strlen(ExceptionHandlerBuffer)];
     }
-	
+
     /*
      * What would a good filename be?
      *
@@ -135,13 +136,13 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
 					// creates a new file if it doesn't.
 	FILE_ATTRIBUTE_NORMAL,		// File attributes / etc don't matter.
 	NULL);				// A template file is not being used.
-	
+
     /* Check to make sure the file was actually created. */
     if (hDumpFile == INVALID_HANDLE_VALUE) {
 	/* CreateFile() failed, so just do nothing more. */
 	return(EXCEPTION_CONTINUE_SEARCH);
     }
-	
+
     /*
      * Write the data we were passed out in a human-readable format.
      *
@@ -150,26 +151,26 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
     HMODULE hMods[1024];
     MODULEINFO modInfo;
     HMODULE ipModule = 0;
-    DWORD cbNeeded;
+    DWORD cbNeeded, w;
 
     /* Try to get a list of all loaded modules. */
     if (EnumProcessModules(GetCurrentProcess(),
 			   hMods, sizeof(hMods), &cbNeeded)) {
 	/* Got it, now walk through all modules.. */
-	for (DWORD i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
+	for (w=0; w<(cbNeeded / sizeof(HMODULE)); w++) {
 		/* For each module, get the module information. */
 		GetModuleInformation(GetCurrentProcess(),
-				     hMods[i], &modInfo, sizeof(MODULEINFO));
+				     hMods[w], &modInfo, sizeof(MODULEINFO));
 		/* If the exception address is in the range of this module.. */
 		if ( ((char *)ExceptionInfo->ExceptionRecord->ExceptionAddress >= (char *)modInfo.lpBaseOfDll) &&
 		   ((char *)ExceptionInfo->ExceptionRecord->ExceptionAddress < ((char *)modInfo.lpBaseOfDll + modInfo.SizeOfImage))) {
 			/* ...this is the module we're looking for! */
-			ipModule = hMods[i];
+			ipModule = hMods[w];
 			break;
 		}
 	}
     }
-	
+
     /* Start to put the crash-dump string into the buffer. */
     sprintf(ExceptionHandlerBuffer,
 	"#\r\n# %s\r\n#\r\n"
@@ -199,12 +200,12 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
 		BufPtr += 1;
 	}
     }
-	
+
     sprintf(BufPtr,
 	"\r\nNumber of parameters: %lu\r\nException parameters: ",
 	ExceptionInfo->ExceptionRecord->NumberParameters);
-	
-    for (int i = 0; i < ExceptionInfo->ExceptionRecord->NumberParameters; i++) {
+
+    for (i=0; i<ExceptionInfo->ExceptionRecord->NumberParameters; i++) {
 	BufPtr = &ExceptionHandlerBuffer[strlen(ExceptionHandlerBuffer)];
 	sprintf(BufPtr,"0x%p ",
 	    (void *)ExceptionInfo->ExceptionRecord->ExceptionInformation[i]);

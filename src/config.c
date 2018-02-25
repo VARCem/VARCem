@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.1	2018/02/14
+ * Version:	@(#)config.c	1.0.2	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,10 +54,10 @@
 #include "device.h"
 #include "lpt.h"
 #include "cdrom/cdrom.h"
-#include "zip.h"
 #include "disk/hdd.h"
 #include "disk/hdc.h"
 #include "disk/hdc_ide.h"
+#include "disk/zip.h"
 #include "floppy/fdd.h"
 #include "floppy/fdc.h"
 #include "game/gameport.h"
