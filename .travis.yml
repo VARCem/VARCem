@@ -20,3 +20,10 @@ addons:
       - gcc-mingw-w64-x86-64
       - gcc-mingw-w64
       - mingw-w64
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#varcem"
+    template:
+      - "%{repository}/%{branch} (%{commit} - %{author}): %{message}"
