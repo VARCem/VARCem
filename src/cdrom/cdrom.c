@@ -1945,7 +1945,7 @@ cdrom_readtoc_fallback:
 					b[6] = (MMC_PROFILE_DVD_ROM >> 8) & 0xff;
 					b[7] = MMC_PROFILE_DVD_ROM & 0xff;
 					ret = 1;
-				} else if (len <= CD_MAX_SECTORS) {
+				} else {
 					b[6] = (MMC_PROFILE_CD_ROM >> 8) & 0xff;
 					b[7] = MMC_PROFILE_CD_ROM & 0xff;
 					ret = 0;

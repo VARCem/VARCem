@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.2	2018/02/21
+ * Version:	@(#)scsi_x54x.c	1.0.3	2018/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1398,7 +1398,7 @@ x54x_in(uint16_t port, void *priv)
 		else {
 			dev->Geometry++;
 			switch(dev->Geometry & 3) {
-				case 0: ret = 'A'; break;
+				case 0: default: ret = 'A'; break;
 				case 1: ret = 'D'; break;
 				case 2: ret = 'A'; break;
 				case 3: ret = 'P'; break;
