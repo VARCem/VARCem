@@ -1,3 +1,9 @@
 # Used by IntelliJ CLion
 .idea
 CMakeLists.txt
+
+#used by MSVC
+**/*.aps
+src/win/msvc15/.vs/
+src/win/msvc15/Debug/
+src/win/msvc15/Release/
