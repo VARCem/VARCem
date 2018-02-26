@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.2	2018/02/21
+ * Version:	@(#)win_d3d.cpp	1.0.3	2018/02/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -419,6 +419,8 @@ d3d_init_objects(void)
 int
 d3d_init(HWND h)
 {
+    HRESULT result;
+
     d3d_hwnd = h;
 
     cgapal_rebuild();
@@ -440,11 +442,12 @@ d3d_init(HWND h)
     d3dpp.BackBufferWidth = 0;
     d3dpp.BackBufferHeight = 0;
 
-    if (FAILED(d3d->CreateDevice(D3DADAPTER_DEFAULT,
-				 D3DDEVTYPE_HAL, h,
-				 D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-				 &d3dpp, &d3ddev)))
-	fatal("CreateDevice failed\n");
+    result = d3d->CreateDevice(D3DADAPTER_DEFAULT,
+        D3DDEVTYPE_HAL, h,
+        D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+        &d3dpp, &d3ddev);
+    if (FAILED(result))
+        fatal("CreateDevice failed, result = 0x%08x\n", result);
 
     d3d_init_objects();
 

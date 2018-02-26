@@ -1,69 +1,56 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="cdrom">
-      <UniqueIdentifier>{69e2513c-1659-477c-9344-9b231ece2a86}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="cpu">
-      <UniqueIdentifier>{394484c6-8edd-4c7a-b725-59ce97316964}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="crcspeed">
-      <UniqueIdentifier>{ad1696e2-c2ca-4137-9625-79ab0e568358}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="disk">
-      <UniqueIdentifier>{0e80f090-ba1b-4742-b521-57640a5e7409}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="floppy">
-      <UniqueIdentifier>{b4e8f582-13b4-42b9-a728-d386257f820e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="game">
-      <UniqueIdentifier>{b2b26f7e-4730-45e6-a7dd-9d81acf5d9a9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lang">
-      <UniqueIdentifier>{1cbc69cc-abf3-4c3f-9045-daa90d321744}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lzf">
-      <UniqueIdentifier>{457389db-e409-4241-b97d-092998f7e1eb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="machine">
-      <UniqueIdentifier>{b465915e-1bb4-47a0-9282-195835d10527}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="network">
-      <UniqueIdentifier>{9e35190e-96a0-4f69-805e-2f06ce93664a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="network\slirp">
-      <UniqueIdentifier>{8011339f-543c-45cd-bd16-bcd69d5fe800}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scsi">
-      <UniqueIdentifier>{a823d659-3f80-40e4-ab99-109af8ed3310}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sound">
-      <UniqueIdentifier>{3b7f4688-3464-43cb-82c4-28bf8bbf9008}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sound\munt">
-      <UniqueIdentifier>{cf05d527-ca0f-4dea-b5cd-5a3684f5d117}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sound\munt\sha1">
-      <UniqueIdentifier>{cd17d813-c024-462b-a1f3-93e91bbce743}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sound\munt\c_interface">
-      <UniqueIdentifier>{2058cdb5-46fe-4746-9e0d-1fe616e59cbd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sound\resid-fp">
-      <UniqueIdentifier>{c3116352-12eb-4f63-a311-ae64e220b19e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="video">
-      <UniqueIdentifier>{f1fcd10c-95aa-45e9-80a6-a27563d0549b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="win">
-      <UniqueIdentifier>{631aa0fe-dc9f-4e98-853b-6c8e82e555a1}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
+    <ClCompile Include="..\..\bugger.c" />
+    <ClCompile Include="..\..\config.c" />
+    <ClCompile Include="..\..\device.c" />
+    <ClCompile Include="..\..\dma.c" />
+    <ClCompile Include="..\..\i82335.c" />
+    <ClCompile Include="..\..\intel.c" />
+    <ClCompile Include="..\..\intel_flash.c" />
+    <ClCompile Include="..\..\intel_piix.c" />
+    <ClCompile Include="..\..\intel_piix4.c" />
+    <ClCompile Include="..\..\intel_sio.c" />
+    <ClCompile Include="..\..\io.c" />
+    <ClCompile Include="..\..\keyboard.c" />
+    <ClCompile Include="..\..\keyboard_at.c" />
+    <ClCompile Include="..\..\keyboard_xt.c" />
+    <ClCompile Include="..\..\lpt.c" />
+    <ClCompile Include="..\..\mca.c" />
+    <ClCompile Include="..\..\mcr.c" />
+    <ClCompile Include="..\..\mem.c" />
+    <ClCompile Include="..\..\memregs.c" />
+    <ClCompile Include="..\..\mouse.c" />
+    <ClCompile Include="..\..\mouse_bus.c" />
+    <ClCompile Include="..\..\mouse_ps2.c" />
+    <ClCompile Include="..\..\mouse_serial.c" />
+    <ClCompile Include="..\..\nmi.c" />
+    <ClCompile Include="..\..\nvr.c" />
+    <ClCompile Include="..\..\nvr_at.c" />
+    <ClCompile Include="..\..\nvr_ps2.c" />
+    <ClCompile Include="..\..\pc.c" />
+    <ClCompile Include="..\..\pci.c" />
+    <ClCompile Include="..\..\pic.c" />
+    <ClCompile Include="..\..\pit.c" />
+    <ClCompile Include="..\..\ppi.c" />
+    <ClCompile Include="..\..\random.c" />
+    <ClCompile Include="..\..\rom.c" />
+    <ClCompile Include="..\..\serial.c" />
+    <ClCompile Include="..\..\sio_detect.c" />
+    <ClCompile Include="..\..\sio_fdc37c669.c" />
+    <ClCompile Include="..\..\sio_fdc37c66x.c" />
+    <ClCompile Include="..\..\sio_fdc37c93x.c" />
+    <ClCompile Include="..\..\sio_pc87306.c" />
+    <ClCompile Include="..\..\sio_um8669f.c" />
+    <ClCompile Include="..\..\sio_w83877f.c" />
+    <ClCompile Include="..\..\timer.c" />
     <ClCompile Include="..\..\cdrom\cdrom.c">
       <Filter>cdrom</Filter>
     </ClCompile>
     <ClCompile Include="..\..\cdrom\cdrom_dosbox.cpp">
+      <Filter>cdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cdrom\cdrom_image.cpp">
       <Filter>cdrom</Filter>
     </ClCompile>
     <ClCompile Include="..\..\cdrom\cdrom_null.c">
@@ -157,8 +144,8 @@
       <Filter>disk</Filter>
     </ClCompile>
     <ClCompile Include="..\..\disk\zip.c">
-	<Filter>disk</Filter>
-      </ClCompile>
+      <Filter>disk</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\floppy\fdc.c">
       <Filter>floppy</Filter>
     </ClCompile>
@@ -192,16 +179,16 @@
     <ClCompile Include="..\..\game\gameport.c">
       <Filter>game</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\game\joystick_ch_flightstick_pro.c">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\game\joystick_standard.c">
+    <ClCompile Include="..\..\game\joystick_tm_fcs.c">
       <Filter>game</Filter>
     </ClCompile>
     <ClCompile Include="..\..\game\joystick_sw_pad.c">
       <Filter>game</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\game\joystick_tm_fcs.c">
+    <ClCompile Include="..\..\game\joystick_standard.c">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game\joystick_ch_flightstick_pro.c">
       <Filter>game</Filter>
     </ClCompile>
     <ClCompile Include="..\..\lzf\lzf_c.c">
@@ -306,18 +293,6 @@
     <ClCompile Include="..\..\machine\machine_table.c">
       <Filter>machine</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\net_ne2000.c">
-      <Filter>network</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\net_pcap.c">
-      <Filter>network</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\net_slirp.c">
-      <Filter>network</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\network.c">
-      <Filter>network</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\network\slirp\bootp.c">
       <Filter>network\slirp</Filter>
     </ClCompile>
@@ -372,6 +347,18 @@
     <ClCompile Include="..\..\network\slirp\udp.c">
       <Filter>network\slirp</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\network\net_ne2000.c">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\net_pcap.c">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\net_slirp.c">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\network.c">
+      <Filter>network</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\scsi\scsi.c">
       <Filter>scsi</Filter>
     </ClCompile>
@@ -399,86 +386,62 @@
     <ClCompile Include="..\..\scsi\scsi_x54x.c">
       <Filter>scsi</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\dbopl.cpp">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\convolve.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\midi.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\convolve-sse.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\midi_mt32.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\envelope.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\midi_system.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\extfilt.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\nukedopl.cpp">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\filter.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\openal.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\pot.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_ad1848.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\sid.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_adlib.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\voice.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_adlibgold.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_audiopci.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave6581__ST.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_cms.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave6581_P_T.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_emu8k.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave6581_PS_.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_gus.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave6581_PST.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_lpt_dac.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave8580__ST.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_lpt_dss.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave8580_P_T.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_mpu401.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave8580_PS_.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_opl.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\resid-fp\wave8580_PST.cpp">
+      <Filter>sound\resid-fp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_pas16.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\munt\sha1\sha1.cpp">
+      <Filter>sound\munt\sha1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\snd_pssj.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_sb.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_sb_dsp.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_sn76489.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_speaker.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_ssi2001.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_wss.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_ym7128.c">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\sound.c">
-      <Filter>sound</Filter>
+    <ClCompile Include="..\..\sound\munt\c_interface\c_interface.cpp">
+      <Filter>sound\munt\c_interface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\sound\munt\Analog.cpp">
       <Filter>sound\munt</Filter>
@@ -537,11 +500,92 @@
     <ClCompile Include="..\..\sound\munt\TVP.cpp">
       <Filter>sound\munt</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\munt\c_interface\c_interface.cpp">
-      <Filter>sound\munt\c_interface</Filter>
+    <ClCompile Include="..\..\sound\dbopl.cpp">
+      <Filter>sound</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sound\munt\sha1\sha1.cpp">
-      <Filter>sound\munt\sha1</Filter>
+    <ClCompile Include="..\..\sound\midi.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\midi_mt32.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\midi_system.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\nukedopl.cpp">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\openal.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_adlib.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_ad1848.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_adlibgold.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_audiopci.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_cms.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_dbopl.cpp">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_emu8k.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_gus.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_lpt_dac.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_lpt_dss.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_mpu401.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_opl.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_pas16.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_pssj.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_resid.cpp">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_sb.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_sb_dsp.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_sn76489.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_speaker.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_ssi2001.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_wss.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\snd_ym7128.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sound\sound.c">
+      <Filter>sound</Filter>
     </ClCompile>
     <ClCompile Include="..\..\video\vid_ati_eeprom.c">
       <Filter>video</Filter>
@@ -738,111 +782,42 @@
     <ClCompile Include="..\..\win\win_ui.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\bugger.c" />
-    <ClCompile Include="..\..\config.c" />
-    <ClCompile Include="..\..\device.c" />
-    <ClCompile Include="..\..\dma.c" />
-    <ClCompile Include="..\..\i82335.c" />
-    <ClCompile Include="..\..\intel.c" />
-    <ClCompile Include="..\..\intel_flash.c" />
-    <ClCompile Include="..\..\intel_piix.c" />
-    <ClCompile Include="..\..\intel_piix4.c" />
-    <ClCompile Include="..\..\intel_sio.c" />
-    <ClCompile Include="..\..\io.c" />
-    <ClCompile Include="..\..\keyboard.c" />
-    <ClCompile Include="..\..\keyboard_at.c" />
-    <ClCompile Include="..\..\keyboard_xt.c" />
-    <ClCompile Include="..\..\lpt.c" />
-    <ClCompile Include="..\..\mca.c" />
-    <ClCompile Include="..\..\mcr.c" />
-    <ClCompile Include="..\..\mem.c" />
-    <ClCompile Include="..\..\memregs.c" />
-    <ClCompile Include="..\..\mouse.c" />
-    <ClCompile Include="..\..\mouse_bus.c" />
-    <ClCompile Include="..\..\mouse_ps2.c" />
-    <ClCompile Include="..\..\mouse_serial.c" />
-    <ClCompile Include="..\..\nmi.c" />
-    <ClCompile Include="..\..\nvr.c" />
-    <ClCompile Include="..\..\nvr_at.c" />
-    <ClCompile Include="..\..\nvr_ps2.c" />
-    <ClCompile Include="..\..\pc.c" />
-    <ClCompile Include="..\..\pci.c" />
-    <ClCompile Include="..\..\pic.c" />
-    <ClCompile Include="..\..\pit.c" />
-    <ClCompile Include="..\..\ppi.c" />
-    <ClCompile Include="..\..\random.c" />
-    <ClCompile Include="..\..\rom.c" />
-    <ClCompile Include="..\..\serial.c" />
-    <ClCompile Include="..\..\sio_detect.c" />
-    <ClCompile Include="..\..\sio_fdc37c66x.c" />
-    <ClCompile Include="..\..\sio_fdc37c93x.c" />
-    <ClCompile Include="..\..\sio_fdc37c669.c" />
-    <ClCompile Include="..\..\sio_pc87306.c" />
-    <ClCompile Include="..\..\sio_um8669f.c" />
-    <ClCompile Include="..\..\sio_w83877f.c" />
-    <ClCompile Include="..\..\timer.c" />
-    <ClCompile Include="..\..\sound\resid-fp\wave8580_PST.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\voice.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave6581__ST.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave6581_P_T.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave6581_PS_.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave6581_PST.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave8580__ST.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave8580_P_T.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\wave8580_PS_.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\sid.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\pot.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\filter.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\extfilt.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\envelope.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\convolve-sse.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\resid-fp\convolve.cpp">
-      <Filter>sound\resid-fp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_dbopl.cpp">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sound\snd_resid.cpp">
-      <Filter>sound</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\cdrom\cdrom_image.cpp">
-      <Filter>cdrom</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\bugger.h" />
+    <ClInclude Include="..\..\config.h" />
+    <ClInclude Include="..\..\device.h" />
+    <ClInclude Include="..\..\dma.h" />
+    <ClInclude Include="..\..\emu.h" />
+    <ClInclude Include="..\..\i82335.h" />
+    <ClInclude Include="..\..\intel.h" />
+    <ClInclude Include="..\..\intel_flash.h" />
+    <ClInclude Include="..\..\intel_piix.h" />
+    <ClInclude Include="..\..\intel_sio.h" />
+    <ClInclude Include="..\..\io.h" />
+    <ClInclude Include="..\..\keyboard.h" />
+    <ClInclude Include="..\..\lpt.h" />
+    <ClInclude Include="..\..\mca.h" />
+    <ClInclude Include="..\..\mem.h" />
+    <ClInclude Include="..\..\memregs.h" />
+    <ClInclude Include="..\..\mouse.h" />
+    <ClInclude Include="..\..\nmi.h" />
+    <ClInclude Include="..\..\nvr.h" />
+    <ClInclude Include="..\..\nvr_ps2.h" />
+    <ClInclude Include="..\..\pci.h" />
+    <ClInclude Include="..\..\pic.h" />
+    <ClInclude Include="..\..\pit.h" />
+    <ClInclude Include="..\..\plat.h" />
+    <ClInclude Include="..\..\plat_dynld.h" />
+    <ClInclude Include="..\..\plat_joystick.h" />
+    <ClInclude Include="..\..\plat_midi.h" />
+    <ClInclude Include="..\..\ppi.h" />
+    <ClInclude Include="..\..\random.h" />
+    <ClInclude Include="..\..\rom.h" />
+    <ClInclude Include="..\..\serial.h" />
+    <ClInclude Include="..\..\sio.h" />
+    <ClInclude Include="..\..\timer.h" />
+    <ClInclude Include="..\..\ui.h" />
     <ClInclude Include="..\..\cdrom\cdrom.h">
       <Filter>cdrom</Filter>
     </ClInclude>
@@ -1073,7 +1048,7 @@
     </ClInclude>
     <ClInclude Include="..\..\disk\zip.h">
       <Filter>disk</Filter>
-    </ClInclde>
+    </ClInclude>
     <ClInclude Include="..\..\floppy\fdc.h">
       <Filter>floppy</Filter>
     </ClInclude>
@@ -1107,25 +1082,25 @@
     <ClInclude Include="..\..\game\gameport.h">
       <Filter>game</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\game\joystick_ch_flightstick_pro.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\game\joystick_standard.h">
+    <ClInclude Include="..\..\game\joystick_tm_fcs.h">
       <Filter>game</Filter>
     </ClInclude>
     <ClInclude Include="..\..\game\joystick_sw_pad.h">
       <Filter>game</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\game\joystick_tm_fcs.h">
+    <ClInclude Include="..\..\game\joystick_standard.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game\joystick_ch_flightstick_pro.h">
       <Filter>game</Filter>
     </ClInclude>
     <ClInclude Include="..\..\lang\language.h">
       <Filter>lang</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\lzf\lzf.h">
+    <ClInclude Include="..\..\lzf\lzfP.h">
       <Filter>lzf</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\lzf\lzfP.h">
+    <ClInclude Include="..\..\lzf\lzf.h">
       <Filter>lzf</Filter>
     </ClInclude>
     <ClInclude Include="..\..\machine\m_at_t3100e.h">
@@ -1133,15 +1108,6 @@
     </ClInclude>
     <ClInclude Include="..\..\machine\machine.h">
       <Filter>machine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\bswap.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\net_ne2000.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\network.h">
-      <Filter>network</Filter>
     </ClInclude>
     <ClInclude Include="..\..\network\slirp\bootp.h">
       <Filter>network\slirp</Filter>
@@ -1212,6 +1178,15 @@
     <ClInclude Include="..\..\network\slirp\udp.h">
       <Filter>network\slirp</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\network\bswap.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\net_ne2000.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\network.h">
+      <Filter>network</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\scsi\queue.h">
       <Filter>scsi</Filter>
     </ClInclude>
@@ -1238,6 +1213,126 @@
     </ClInclude>
     <ClInclude Include="..\..\scsi\scsi_x54x.h">
       <Filter>scsi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\envelope.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\extfilt.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\filter.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\pot.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\sid.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\siddefs-fp.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\voice.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\resid-fp\wave.h">
+      <Filter>sound\resid-fp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\sha1\sha1.h">
+      <Filter>sound\munt\sha1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\c_interface\c_interface.h">
+      <Filter>sound\munt\c_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\c_interface\c_types.h">
+      <Filter>sound\munt\c_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\c_interface\cpp_interface.h">
+      <Filter>sound\munt\c_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\config.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Analog.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\BReverbModel.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Enumerations.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\File.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\FileStream.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\globals.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\internals.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\LA32FloatWaveGenerator.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\LA32Ramp.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\LA32WaveGenerator.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\MemoryRegion.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\MidiEventQueue.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\MidiStreamParser.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\mmath.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\mt32emu.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Part.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Partial.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\PartialManager.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Poly.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\ROMInfo.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Structures.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Synth.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Tables.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\TVA.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\TVF.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\TVP.h">
+      <Filter>sound\munt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sound\munt\Types.h">
+      <Filter>sound\munt</Filter>
     </ClInclude>
     <ClInclude Include="..\..\sound\dbopl.h">
       <Filter>sound</Filter>
@@ -1326,125 +1421,8 @@
     <ClInclude Include="..\..\sound\sound.h">
       <Filter>sound</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Analog.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\BReverbModel.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\config.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Enumerations.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\File.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\FileStream.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\globals.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\internals.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\LA32FloatWaveGenerator.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\LA32Ramp.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\LA32WaveGenerator.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\MemoryRegion.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\MidiEventQueue.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\MidiStreamParser.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\mmath.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\mt32emu.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Part.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Partial.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\PartialManager.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Poly.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\ROMInfo.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Structures.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Synth.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Tables.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\TVA.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\TVF.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\TVP.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\Types.h">
-      <Filter>sound\munt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\c_interface\c_interface.h">
-      <Filter>sound\munt\c_interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\c_interface\c_types.h">
-      <Filter>sound\munt\c_interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\c_interface\cpp_interface.h">
-      <Filter>sound\munt\c_interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\munt\sha1\sha1.h">
-      <Filter>sound\munt\sha1</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\envelope.h">
-      <Filter>sound\resid-fp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\extfilt.h">
-      <Filter>sound\resid-fp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\filter.h">
-      <Filter>sound\resid-fp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\pot.h">
-      <Filter>sound\resid-fp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\sid.h">
-      <Filter>sound\resid-fp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\siddefs-fp.h">
-      <Filter>sound\resid-fp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\voice.h">
-      <Filter>sound\resid-fp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sound\resid-fp\wave.h">
-      <Filter>sound\resid-fp</Filter>
+    <ClInclude Include="..\..\video\video.h">
+      <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\video\vid_ati_eeprom.h">
       <Filter>video</Filter>
@@ -1572,9 +1550,6 @@
     <ClInclude Include="..\..\video\vid_wy700.h">
       <Filter>video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\video\video.h">
-      <Filter>video</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\win\plat_dir.h">
       <Filter>win</Filter>
     </ClInclude>
@@ -1593,43 +1568,68 @@
     <ClInclude Include="..\..\win\win_png.h">
       <Filter>win</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\bugger.h" />
-    <ClInclude Include="..\..\config.h" />
-    <ClInclude Include="..\..\device.h" />
-    <ClInclude Include="..\..\dma.h" />
-    <ClInclude Include="..\..\emu.h" />
-    <ClInclude Include="..\..\i82335.h" />
-    <ClInclude Include="..\..\intel.h" />
-    <ClInclude Include="..\..\intel_flash.h" />
-    <ClInclude Include="..\..\intel_piix.h" />
-    <ClInclude Include="..\..\intel_sio.h" />
-    <ClInclude Include="..\..\io.h" />
-    <ClInclude Include="..\..\keyboard.h" />
-    <ClInclude Include="..\..\lpt.h" />
-    <ClInclude Include="..\..\mca.h" />
-    <ClInclude Include="..\..\mem.h" />
-    <ClInclude Include="..\..\memregs.h" />
-    <ClInclude Include="..\..\mouse.h" />
-    <ClInclude Include="..\..\nmi.h" />
-    <ClInclude Include="..\..\nvr.h" />
-    <ClInclude Include="..\..\nvr_ps2.h" />
-    <ClInclude Include="..\..\pci.h" />
-    <ClInclude Include="..\..\pic.h" />
-    <ClInclude Include="..\..\pit.h" />
-    <ClInclude Include="..\..\plat.h" />
-    <ClInclude Include="..\..\plat_dynld.h" />
-    <ClInclude Include="..\..\plat_joystick.h" />
-    <ClInclude Include="..\..\plat_midi.h" />
-    <ClInclude Include="..\..\ppi.h" />
-    <ClInclude Include="..\..\random.h" />
-    <ClInclude Include="..\..\rom.h" />
-    <ClInclude Include="..\..\serial.h" />
-    <ClInclude Include="..\..\sio.h" />
-    <ClInclude Include="..\..\timer.h" />
-    <ClInclude Include="..\..\ui.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\win\VARCem.rc">
+    <Filter Include="cdrom">
+      <UniqueIdentifier>{33d139d2-8501-4ec5-adf5-30695fd66b58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cpu">
+      <UniqueIdentifier>{7a5514af-a83b-483a-bfac-af1e20215c22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crcspeed">
+      <UniqueIdentifier>{1e841add-1ce9-42dd-aaf8-c0ed686448a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="disk">
+      <UniqueIdentifier>{0eb40b0a-0704-4966-b094-dc23e7fb1224}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="floppy">
+      <UniqueIdentifier>{a9a86e4f-b4eb-4687-a979-f97b394db706}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game">
+      <UniqueIdentifier>{542ab504-19c9-43b6-91b6-b3a205ffeb97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lang">
+      <UniqueIdentifier>{232b8441-5106-47b6-939d-ebd46589c0b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lzf">
+      <UniqueIdentifier>{cb8b17b6-bd02-4712-a3c2-97f66710e84e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="machine">
+      <UniqueIdentifier>{a99de26d-e4fd-4223-952c-21f1657a20e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network">
+      <UniqueIdentifier>{7cae45b9-af45-4f82-9c53-a4e3094ddee4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network\slirp">
+      <UniqueIdentifier>{c0afa9df-08d3-40a6-a4d4-88fb97816009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scsi">
+      <UniqueIdentifier>{515f18e5-5eab-42f6-8364-37f02bc4f964}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sound">
+      <UniqueIdentifier>{2617b8d7-3afc-4f23-a0c8-936dab6c38b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sound\munt">
+      <UniqueIdentifier>{b28a24be-02cf-4896-9c96-aee25851df13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sound\resid-fp">
+      <UniqueIdentifier>{74dd2459-6b2f-4123-bddd-37f561ea710d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sound\munt\c_interface">
+      <UniqueIdentifier>{b8b30a24-da56-40f2-9a15-9c90ec2a98ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sound\munt\sha1">
+      <UniqueIdentifier>{144b7265-aa9e-453b-9855-78cd74ef9b76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="video">
+      <UniqueIdentifier>{99b35c64-342c-4f15-89b0-47c15f8db344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win">
+      <UniqueIdentifier>{cb655d08-c712-4197-9eb8-2f5b7f49eed1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\VARCem.rc">
       <Filter>win</Filter>
     </ResourceCompile>
   </ItemGroup>
