@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.1	2018/02/14
+ * Version:	@(#)ui.h	1.0.2	2018/03/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -61,6 +61,7 @@ extern "C" {
 #define MBX_INFO	1
 #define MBX_ERROR	2
 #define MBX_QUESTION	3
+#define MBX_CONFIG	4
 #define MBX_FATAL	0x20
 #define MBX_ANSI	0x80
 

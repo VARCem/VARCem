@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.1	2018/02/14
+ * Version:	@(#)win.c	1.0.2	2018/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -269,22 +269,58 @@ CreateConsole(int init)
     /* Not logging to file, attach to console. */
     if (! AttachConsole(ATTACH_PARENT_PROCESS)) {
 	/* Parent has no console, create one. */
-	AllocConsole();
+	if (! AllocConsole()) {
+#ifdef DEBUG
+		fp = fopen("error.txt", "w");
+		fprintf(fp, "AllocConsole failed: %lu\n", GetLastError());
+		fclose(fp);
+#endif
+		return;
+	}
     }
 
-    h = GetStdHandle(STD_OUTPUT_HANDLE);
+    if ((h = GetStdHandle(STD_OUTPUT_HANDLE)) == NULL) {
+#ifdef DEBUG
+	fp = fopen("error.txt", "w");
+	fprintf(fp, "GetStdHandle(OUT) failed: %lu\n", GetLastError());
+	fclose(fp);
+#endif
+	return;
+    }
     i = _open_osfhandle((intptr_t)h, _O_TEXT);
-    fp = _fdopen(i, "w");
-    setvbuf(fp, NULL, _IONBF, 1);
-    *stdout = *fp;
+    if (i != -1) {
+	fp = _fdopen(i, "w");
+	if (fp == NULL) {
+#ifdef DEBUG
+		fp = fopen("error.txt", "w");
+		fprintf(fp, "FdOpen(%i) failed: %lu\n", i, GetLastError());
+		fclose(fp);
+#endif
+		return;
+	}
+	setvbuf(fp, NULL, _IONBF, 1);
+	*stdout = *fp;
+    } else {
+#ifdef DEBUG
+	fp = fopen("error.txt", "w");
+	fprintf(fp, "GetOSfHandle(%p) failed: %lu\n", h, GetLastError());
+	fclose(fp);
+#endif
+    }
 
+#if NOTUSED
     h = GetStdHandle(STD_ERROR_HANDLE);
-    i = _open_osfhandle((intptr_t)h, _O_TEXT);
-    fp = _fdopen(i, "w");
-    setvbuf(fp, NULL, _IONBF, 1);
-    *stderr = *fp;
+    if (h != NULL) {
+	i = _open_osfhandle((intptr_t)h, _O_TEXT);
+	if (i != -1) {
+		fp = _fdopen(i, "w");
+		if (fp != NULL) {
+			setvbuf(fp, NULL, _IONBF, 1);
+			*stderr = *fp;
+		}
+	}
+    }
 
-#if 0
     /* Set up stdin as well. */
     h = GetStdHandle(STD_INPUT_HANDLE);
     i = _open_osfhandle((intptr_t)h, _O_TEXT);

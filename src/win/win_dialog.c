@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.1	2018/02/14
+ * Version:	@(#)win_dialog.c	1.0.2	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -110,22 +110,27 @@ ui_msgbox(int flags, void *arg)
     switch(flags & 0x1f) {
 	case MBX_INFO:		/* just an informational message */
 		fl = (MB_OK | MB_ICONINFORMATION);
-		cap = plat_get_string(IDS_STRINGS);	    /* "VARCem" */
+		cap = EMU_NAME_W;
 		break;
 
 	case MBX_ERROR:		/* error message */
 		if (flags & MBX_FATAL) {
 			fl = (MB_OK | MB_ICONERROR);
-			cap = plat_get_string(IDS_2050);    /* "Fatal Error"*/
+			cap = plat_get_string(IDS_2049);    /* "Fatal Error"*/
 		} else {
 			fl = (MB_OK | MB_ICONWARNING);
-			cap = plat_get_string(IDS_2049);    /* "Error" */
+			cap = plat_get_string(IDS_2048);    /* "Error" */
 		}
 		break;
 
 	case MBX_QUESTION:	/* question */
 		fl = (MB_YESNOCANCEL | MB_ICONQUESTION);
-		cap = plat_get_string(IDS_STRINGS);	    /* "VARCem" */
+		cap = EMU_NAME_W;
+		break;
+
+	case MBX_CONFIG:	/* configuration */
+		fl = (MB_YESNO | MB_ICONERROR);
+		cap = EMU_NAME_W;
 		break;
     }
 
@@ -160,9 +165,17 @@ ui_msgbox(int flags, void *arg)
 		    fl);
 
     /* Convert return values to generic ones. */
-    if (fl == IDNO) fl = 1;
-     else if (fl == IDCANCEL) fl = -1;
-     else fl = 0;
+    switch(fl) {
+	case IDNO:
+		fl = 1; break;
+
+	case IDYES:
+	case IDOK:
+		fl = 0; break;
+
+	case IDCANCEL:
+		fl = -1; break;
+    }
 
     return(fl);
 }

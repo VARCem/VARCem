@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.1	2018/02/14
+ * Version:	@(#)keyboard.h	1.0.2	2018/02/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,6 +101,10 @@ extern uint8_t	keyboard_get_shift(void);
 extern void	keyboard_get_states(uint8_t *cl, uint8_t *nl, uint8_t *sl);
 extern void	keyboard_set_states(uint8_t cl, uint8_t nl, uint8_t sl);
 extern int	keyboard_recv(uint16_t key);
+extern void	keyboard_send_scan(uint8_t val);
+extern void	keyboard_send_cad(void);
+extern void	keyboard_send_cae(void);
+extern void	keyboard_send_cab(void);
 extern int	keyboard_isfsexit(void);
 extern int	keyboard_ismsexit(void);
 

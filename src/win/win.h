@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.2	2018/02/21
+ * Version:	@(#)win.h	1.0.3	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,7 +117,7 @@ extern uint8_t	joystickconfig_open(HWND hwnd, int joy_nr, int type);
 extern int	getfile(HWND hwnd, char *f, char *fn);
 extern int	getsfile(HWND hwnd, char *f, char *fn);
 
-extern void	win_settings_open(HWND hwnd);
+extern int	win_settings_open(HWND hwnd, int ask);
 
 extern void	hard_disk_add_open(HWND hwnd, int is_existing);
 extern int	hard_disk_was_added(void);

@@ -10,7 +10,7 @@
  *
  * NOTE:	FIXME: Strings 2176 and 2193 are same.
  *
- * Version:	@(#)language.h	1.0.2	2018/02/24
+ * Version:	@(#)language.h	1.0.3	2018/03/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,9 +51,9 @@
 
 
 /* String IDs. */
-#define IDS_STRINGS	2048		// "VARCem"
-#define IDS_2049	2049		// "Error"
-#define IDS_2050	2050		// "Fatal Error"
+#define IDS_2048	2048		// "Error"
+#define IDS_2049	2049		// "Fatal Error"
+#define IDS_2050	2050		// "Configuration Error"
 #define IDS_2051	2051		// "This will reset the emulator.."
 #define IDS_2052	2052		// "DirectDraw Screenshot Error"
 #define IDS_2053	2053		// "Invalid number of sectors.."
@@ -65,7 +65,7 @@
 #define IDS_2059	2059		// "(Turbo)"
 #define IDS_2060	2060		// "On"
 #define IDS_2061	2061		// "Off"
-#define IDS_2062	2062		// "VARCem was unable to find any.."
+#define IDS_2062	2062		// "Changes saved, please restart.."
 #define IDS_2063	2063		// "Configured ROM set not avai.."
 #define IDS_2064	2064		// "Configured video BIOS not.."
 #define IDS_2065	2065		// "Machine"

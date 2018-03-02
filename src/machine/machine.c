@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.2	2018/02/24
+ * Version:	@(#)machine.c	1.0.3	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,9 +55,6 @@
 #include "machine.h"
 
 
-#define PATH_ROM_BIOS	"roms/machines"
-
-
 int	romset;
 int	machine;
 int	AT, PCI;
@@ -66,8 +63,7 @@ int	AT, PCI;
 void
 machine_init(void)
 {
-    char temp[1024];
-    int i;
+    wchar_t temp[1024];
 
     pclog("Initializing as \"%s\"\n", machine_getname());
 
@@ -78,25 +74,58 @@ machine_init(void)
     PCI = IS_ARCH(machine, MACHINE_PCI);
 
     /* Load the machine's ROM BIOS. */
-#if 0
-    strcpy(temp, PATH_ROM_BIOS);
-    i = strlen(temp);
-#ifdef _WIN32
-    temp[i++] = '\\';
-#else
-    temp[i++] = '/';
-#endif
-    strcpy(&temp[i], machines[machine].bios_path);
-    rom_load_bios(temp);
-#else
-    rom_load_bios(romset);
-#endif
+    wcscpy(temp, MACHINES_PATH);
+    plat_path_slash(temp);
+    wcscat(temp, machines[machine].bios_path);
+    (void)rom_load_bios(temp, 0);
 
     /* Activate the ROM BIOS. */
     mem_add_bios();
 
     /* All good, boot the machine! */
     machines[machine].init(&machines[machine]);
+}
+
+
+/* Check if the machine's ROM files are present. */
+int
+machine_available(int id)
+{
+    wchar_t temp[1024];
+    int i;
+
+    wcscpy(temp, MACHINES_PATH);
+    plat_path_slash(temp);
+    wcscat(temp, machines[id].bios_path);
+    i = rom_load_bios(temp, 1);
+
+    return(i);
+}
+
+
+/* Check for the availability of all the defined machines. */
+int
+machine_detect(void)
+{
+    int c, i;
+
+    pclog("Scanning for ROM images:\n");
+
+    c = 0;
+    for (i=0; i<ROM_MAX; i++) {
+	romspresent[i] = machine_available(i);
+	c += romspresent[i];
+    }
+
+    if (c == 0) {
+	/* No usable ROMs found, aborting. */
+	pclog("No usable machines have been found.\n");
+	return(0);
+    }
+
+    pclog("A total of %d machines are available.\n", c);
+
+    return(c);
 }
 
 

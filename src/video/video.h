@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.2	2018/02/22
+ * Version:	@(#)video.h	1.0.3	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -218,6 +218,7 @@ extern void	(*video_recalctimings)(void);
 
 /* Table functions. */
 extern int	video_card_available(int card);
+extern int	video_detect(void);
 extern char	*video_card_getname(int card);
 #ifdef EMU_DEVICE_H
 extern device_t	*video_card_getdevice(int card);

@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.1	2018/02/14
+ * Version:	@(#)video.c	1.0.2	2018/02/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -690,7 +690,7 @@ loadfont(wchar_t *s, int format)
     FILE *f;
     int c,d;
 
-    f = rom_fopen(s, L"rb");
+    f = rom_fopen(s);
     if (f == NULL) {
 	pclog("VIDEO: cannot load font '%ls', fmt=%d\n", s, format);
 	return;

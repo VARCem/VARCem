@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.3	2018/02/24
+ * Version:	@(#)machine.h	1.0.5	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,7 +63,7 @@ typedef struct _machine_ {
     const char		*name;
     int			id;
     const char		*internal_name;
-    const char		*bios_path;
+    const wchar_t	*bios_path;
     struct {
 	const char	*name;
 #ifdef EMU_CPU_H
@@ -101,6 +101,8 @@ extern int	machine_getmachine(int romset);
 extern char	*machine_getname(void);
 extern char	*machine_get_internal_name(void);
 extern int	machine_get_machine_from_internal_name(char *s);
+extern int	machine_available(int id);
+extern int	machine_detect(void);
 extern void	machine_init(void);
 #ifdef EMU_DEVICE_H
 extern device_t	*machine_getdevice(int machine);

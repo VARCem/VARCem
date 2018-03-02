@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.1	2018/02/14
+ * Version:	@(#)scsi_aha154x.c	1.0.2	2018/02/26
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -626,7 +626,7 @@ aha_setbios(x54x_t *dev)
 
     /* Open the BIOS image file and make sure it exists. */
     aha_log("%s: loading BIOS from '%ls'\n", dev->name, dev->bios_path);
-    if ((f = rom_fopen(dev->bios_path, L"rb")) == NULL) {
+    if ((f = rom_fopen(dev->bios_path)) == NULL) {
 	aha_log("%s: BIOS ROM not found!\n", dev->name);
 	return;
     }

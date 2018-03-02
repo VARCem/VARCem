@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.2	2018/02/21
+ * Version:	@(#)resource.h	1.0.3	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

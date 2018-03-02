@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.1	2018/02/14
+ * Version:	@(#)keyboard.c	1.0.2	2018/02/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,9 +99,10 @@ fake_shift_needed(uint16_t scan)
 	case 0x151:
 	case 0x152:
 	case 0x153:
-		return 1;
+		return(1);
+
 	default:
-		return 0;
+		return(0);
     }
 }
 
@@ -165,18 +166,23 @@ keyboard_input(int down, uint16_t scan)
 			case 0x01c:	/* Left Ctrl */
 				shift |= 0x01;
 				break;
+
 			case 0x11c:	/* Right Ctrl */
 				shift |= 0x10;
 				break;
+
 			case 0x02a:	/* Left Shift */
 				shift |= 0x02;
 				break;
+
 			case 0x036:	/* Right Shift */
 				shift |= 0x20;
 				break;
+
 			case 0x038:	/* Left Alt */
 				shift |= 0x03;
 				break;
+
 			case 0x138:	/* Right Alt */
 				shift |= 0x30;
 				break;
@@ -186,27 +192,35 @@ keyboard_input(int down, uint16_t scan)
 			case 0x01c:	/* Left Ctrl */
 				shift &= ~0x01;
 				break;
+
 			case 0x11c:	/* Right Ctrl */
 				shift &= ~0x10;
 				break;
+
 			case 0x02a:	/* Left Shift */
 				shift &= ~0x02;
 				break;
+
 			case 0x036:	/* Right Shift */
 				shift &= ~0x20;
 				break;
+
 			case 0x038:	/* Left Alt */
 				shift &= ~0x03;
 				break;
+
 			case 0x138:	/* Right Alt */
 				shift &= ~0x30;
 				break;
+
 			case 0x03a:	/* Caps Lock */
 				caps_lock ^= 1;
 				break;
+
 			case 0x045:
 				num_lock ^= 1;
 				break;
+
 			case 0x046:
 				scroll_lock ^= 1;
 				break;
@@ -214,11 +228,19 @@ keyboard_input(int down, uint16_t scan)
 	}
     }
 
-    /* NOTE: Shouldn't this be some sort of bit shift? An array of 8 unsigned 64-bit integers
-	     should be enough. */
-    /* recv_key[scan >> 6] |= ((uint64_t) down << ((uint64_t) scan & 0x3fLL)); */
+    /*
+     * NOTE: Shouldn't this be some sort of bit shift?
+     * An array of 8 unsigned 64-bit integers should be enough.
+     */
+#if 0
+    recv_key[scan >> 6] |= ((uint64_t) down << ((uint64_t) scan & 0x3fLL));
+#endif
 
-    /* pclog("Received scan code: %03X (%s)\n", scan & 0x1ff, down ? "down" : "up"); */
+#if 0
+    pclog("Received scan code: %03X (%s)\n",
+	scan & 0x1ff, down ? "down" : "up");
+#endif
+
     recv_key[scan & 0x1ff] = down;
 
     key_process(scan & 0x1ff, down);
@@ -231,49 +253,54 @@ keyboard_do_break(uint16_t scan)
     scancode *codes = scan_table;
 
     if (AT && ((keyboard_mode & 3) == 3)) {
-	if (!keyboard_set3_all_break &&
-	    !recv_key[scan] &&
+	if (!keyboard_set3_all_break && !recv_key[scan] &&
 	    !(keyboard_set3_flags[codes[scan].mk[0]] & 2))
-		return 0;
-	else
-		return 1;
-    } else
-	return 1;
+		return(0);
+	  else
+		return(1);
+    }
+
+    return(1);
 }
 
 
-/* Also called by the emulated keyboard controller to update the states of
-   Caps Lock, Num Lock, and Scroll Lock when receving the "Set keyboard LEDs"
-   command. */
+/*
+ * Also called by the emulated keyboard controller to update the states
+ * of Caps Lock, Num Lock, and Scroll Lock when receving the "Set LEDs"
+ * keyboard command.
+ */
 void
 keyboard_update_states(uint8_t cl, uint8_t nl, uint8_t sl)
 {
-	caps_lock = cl;
-	num_lock = nl;
-	scroll_lock = sl;
+    caps_lock = cl;
+    num_lock = nl;
+    scroll_lock = sl;
 }
 
 
 uint8_t
 keyboard_get_shift(void)
 {
-	return shift;
+    return(shift);
 }
 
 
 void
 keyboard_get_states(uint8_t *cl, uint8_t *nl, uint8_t *sl)
 {
-	if (cl)
-		*cl = caps_lock;
-	if (nl)
-		*nl = num_lock;
-	if (sl)
-		*sl = scroll_lock;
+    if (cl)
+	*cl = caps_lock;
+    if (nl)
+	*nl = num_lock;
+    if (sl)
+	*sl = scroll_lock;
 }
 
 
-/* Called by the UI to update the states of Caps Lock, Num Lock, and Scroll Lock. */
+/*
+ * Called by the UI to update the states of Caps Lock,
+ * Num Lock, and Scroll Lock.
+ */
 void
 keyboard_set_states(uint8_t cl, uint8_t nl, uint8_t sl)
 {
@@ -321,7 +348,57 @@ keyboard_set_states(uint8_t cl, uint8_t nl, uint8_t sl)
 int
 keyboard_recv(uint16_t key)
 {
-	return recv_key[key];
+    return(recv_key[key]);
+}
+
+
+/* Insert keystrokes into the machine's keyboard buffer. */
+void
+keyboard_send_scan(uint8_t val)
+{
+    if (AT)
+	keyboard_at_adddata_keyboard_raw(val);
+      else
+	keyboard_send(val);
+}
+
+
+/* Send the machine a Control-Alt-DEL sequence. */
+void
+keyboard_send_cad(void)
+{
+    keyboard_send_scan(29);		/* Ctrl key pressed */
+    keyboard_send_scan(56);		/* Alt key pressed */
+    keyboard_send_scan(83);		/* Delete key pressed */
+    keyboard_send_scan(157);		/* Ctrl key released */
+    keyboard_send_scan(184);		/* Alt key released */
+    keyboard_send_scan(211);		/* Delete key released */
+}
+
+
+/* Send the machine a Control-Alt-ESC sequence. */
+void
+keyboard_send_cae(void)
+{
+    keyboard_send_scan(29);		/* Ctrl key pressed */
+    keyboard_send_scan(56);		/* Alt key pressed */
+    keyboard_send_scan(1);		/* Esc key pressed */
+    keyboard_send_scan(129);		/* Esc key released */
+    keyboard_send_scan(184);		/* Alt key released */
+    keyboard_send_scan(157);		/* Ctrl key released */
+}
+
+
+/* Send the machine a Control-Alt-Break sequence. */
+void
+keyboard_send_cab(void)
+{
+    keyboard_send_scan(29);		/* Ctrl key pressed */
+    keyboard_send_scan(56);		/* Alt key pressed */
+    keyboard_send_scan(1);		/* Esc key pressed */
+    keyboard_send_scan(157);		/* Ctrl key released */
+    keyboard_send_scan(184);		/* Alt key released */
+    keyboard_send_scan(129);		/* Esc key released */
 }
 
 

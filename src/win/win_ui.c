@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.2	2018/02/21
+ * Version:	@(#)win_ui.c	1.0.3	2018/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -328,7 +328,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDM_ACTION_CTRL_ALT_ESC:
-				pc_send_cae();
+				keyboard_send_cae();
 				break;
 
 			case IDM_ACTION_RCTRL_IS_LALT:
@@ -343,7 +343,10 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDM_CONFIG:
-				win_settings_open(hwnd);
+				plat_pause(1);
+				if (win_settings_open(hwnd, 1) == 2)
+					pc_reset_hard_init();
+				plat_pause(0);
 				break;
 
 			case IDM_ABOUT:
@@ -724,7 +727,10 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_SHOWSETTINGS:
-		win_settings_open(hwnd);
+		plat_pause(1);
+		if (win_settings_open(hwnd, 1) == 2)
+			pc_reset_hard_init();
+		plat_pause(0);
 		break;
 
 	case WM_PAUSE:
@@ -763,9 +769,9 @@ ui_init(int nCmdShow)
     WCHAR title[200];
     WNDCLASSEX wincl;			/* buffer for main window's class */
     MSG messages;			/* received-messages buffer */
-    HWND hwnd = 0;        	/* handle for our window */
+    HWND hwnd = 0;			/* handle for our window */
     HACCEL haccel;			/* handle to accelerator table */
-    int bRet;
+    int ret;
 
 #if 0
     /* We should have an application-wide at_exit catcher. */
@@ -782,7 +788,7 @@ ui_init(int nCmdShow)
 		return(6);
 	}
 
-	win_settings_open(NULL);
+	win_settings_open(NULL, 0);
 	return(0);
     }
 
@@ -887,14 +893,26 @@ ui_init(int nCmdShow)
 			      0, 0, 1, 1, hwnd, NULL, hinstance, NULL);
     MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
 
-    /* All done, fire up the actual emulated machine. */
-    if (! pc_init_modules()) {
-	/* Dang, no ROMs found at all! */
-	MessageBox(hwnd,
-		   plat_get_string(IDS_2056),
-		   plat_get_string(IDS_2050),
-		   MB_OK | MB_ICONERROR);
-	return(6);
+    /* That looks good, now continue setting up the machine. */
+    switch (pc_init_modules()) {
+	case -1:	/* General failure during init, give up. */
+		return(6);
+
+	case 0:		/* Configuration error, user wants to exit. */
+		return(0);
+
+	case 1:		/* All good. */
+		break;
+
+	case 2:		/* Configuration error, user wants to re-config. */
+		if (win_settings_open(NULL, 0)) {
+			/* Save the new configuration to file. */
+			config_save();
+
+			/* Remind them to restart. */
+			ui_msgbox(MBX_INFO, (wchar_t *)IDS_2062);
+		}
+		return(0);
     }
 
     /* Initialize the configured Video API. */
@@ -936,11 +954,11 @@ ui_init(int nCmdShow)
 
     /* Run the message loop. It will run until GetMessage() returns 0 */
     while (! quited) {
-	bRet = GetMessage(&messages, NULL, 0, 0);
-	if ((bRet == 0) || quited) break;
+	ret = GetMessage(&messages, NULL, 0, 0);
+	if ((ret == 0) || quited) break;
 
-	if (bRet == -1) {
-		fatal("bRet is -1\n");
+	if (ret == -1) {
+		fatal("ret is -1\n");
 	}
 
 	if (messages.message == WM_QUIT) {

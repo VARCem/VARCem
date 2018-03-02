@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.4	2018/02/24
+ * Version:	@(#)win_settings.c	1.0.5	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -121,8 +121,8 @@ static zip_drive_t temp_zip_drives[ZIP_NUM];
 static HWND hwndParentDialog, hwndChildDialog;
 
 static int displayed_category = 0;
+static int ask_sure = 0;
 
-extern int is486;
 static int romstolist[ROM_MAX], listtomachine[ROM_MAX], romstomachine[ROM_MAX], machinetolist[ROM_MAX];
 static int settings_sound_to_list[20], settings_list_to_sound[20];
 static int settings_midi_to_list[20], settings_list_to_midi[20];
@@ -153,329 +153,304 @@ settings_msgbox(int type, void *arg)
 
 
 /* This does the initial read of global variables into the temporary ones. */
-static void win_settings_init(void)
+static void
+settings_init(void)
 {
-	int i = 0;
+    int i = 0;
 
-	/* Machine category */
-	temp_machine = machine;
-	temp_cpu_m = cpu_manufacturer;
-	temp_wait_states = cpu_waitstates;
-	temp_cpu = cpu;
-	temp_mem_size = mem_size;
+    /* Machine category */
+    temp_machine = machine;
+    temp_cpu_m = cpu_manufacturer;
+    temp_wait_states = cpu_waitstates;
+    temp_cpu = cpu;
+    temp_mem_size = mem_size;
 #ifdef USE_DYNAREC
-	temp_dynarec = cpu_use_dynarec;
+    temp_dynarec = cpu_use_dynarec;
 #endif
-	temp_fpu = enable_external_fpu;
-	temp_sync = enable_sync;
+    temp_fpu = enable_external_fpu;
+    temp_sync = enable_sync;
 
-	/* Video category */
-	temp_gfxcard = gfxcard;
-	temp_video_speed = video_speed;
-	temp_voodoo = voodoo_enabled;
+    /* Video category */
+    temp_gfxcard = gfxcard;
+    temp_video_speed = video_speed;
+    temp_voodoo = voodoo_enabled;
 
-	/* Input devices category */
-	temp_mouse = mouse_type;
-	temp_joystick = joystick_type;
+    /* Input devices category */
+    temp_mouse = mouse_type;
+    temp_joystick = joystick_type;
 
-	/* Sound category */
-	temp_sound_card = sound_card_current;
-	temp_midi_device = midi_device_current;
-	temp_mpu401 = mpu401_standalone_enable;
-	temp_SSI2001 = SSI2001;
-	temp_GAMEBLASTER = GAMEBLASTER;
-	temp_GUS = GUS;
-	temp_opl3_type = opl3_type;
-	temp_float = sound_is_float;
+    /* Sound category */
+    temp_sound_card = sound_card_current;
+    temp_midi_device = midi_device_current;
+    temp_mpu401 = mpu401_standalone_enable;
+    temp_SSI2001 = SSI2001;
+    temp_GAMEBLASTER = GAMEBLASTER;
+    temp_GUS = GUS;
+    temp_opl3_type = opl3_type;
+    temp_float = sound_is_float;
 
-	/* Network category */
-	temp_net_type = network_type;
-	memset(temp_pcap_dev, 0, sizeof(temp_pcap_dev));
-	strcpy(temp_pcap_dev, network_pcap);
-	temp_net_card = network_card;
+    /* Network category */
+    temp_net_type = network_type;
+    memset(temp_pcap_dev, 0, sizeof(temp_pcap_dev));
+    strcpy(temp_pcap_dev, network_pcap);
+    temp_net_card = network_card;
 
-	/* Ports category */
-	for (i = 0; i < 3; i++)
-		strncpy(temp_lpt_device_names[i], lpt_device_names[i], sizeof(temp_lpt_device_names[i]) - 1);
-	temp_serial[0] = serial_enabled[0];
-	temp_serial[1] = serial_enabled[1];
-	temp_lpt = lpt_enabled;
+    /* Ports category */
+    for (i = 0; i < 3; i++)
+	strncpy(temp_lpt_device_names[i], lpt_device_names[i], sizeof(temp_lpt_device_names[i]) - 1);
+    temp_serial[0] = serial_enabled[0];
+    temp_serial[1] = serial_enabled[1];
+    temp_lpt = lpt_enabled;
 
-	/* Other peripherals category */
-	temp_scsi_card = scsi_card_current;
-	strncpy(temp_hdc_name, hdc_name, sizeof(temp_hdc_name) - 1);
-	temp_ide_ter = ide_enable[2];
-	temp_ide_ter_irq = ide_irq[2];
-	temp_ide_qua = ide_enable[3];
-	temp_ide_qua_irq = ide_irq[3];
-	temp_bugger = bugger_enabled;
+    /* Other peripherals category */
+    temp_scsi_card = scsi_card_current;
+    strncpy(temp_hdc_name, hdc_name, sizeof(temp_hdc_name) - 1);
+    temp_ide_ter = ide_enable[2];
+    temp_ide_ter_irq = ide_irq[2];
+    temp_ide_qua = ide_enable[3];
+    temp_ide_qua_irq = ide_irq[3];
+    temp_bugger = bugger_enabled;
 
-	mfm_tracking = xtide_tracking = esdi_tracking = ide_tracking = 0;
-	for (i = 0; i < 16; i++)
-		scsi_tracking[i] = 0;
+    mfm_tracking = xtide_tracking = esdi_tracking = ide_tracking = 0;
+    for (i = 0; i < 16; i++)
+	scsi_tracking[i] = 0;
 
-	/* Hard disks category */
-	memcpy(temp_hdd, hdd, HDD_NUM * sizeof(hard_disk_t));
-	for (i = 0; i < HDD_NUM; i++)
-	{
-		if (hdd[i].bus == HDD_BUS_MFM)
-			mfm_tracking |= (1 << (hdd[i].mfm_channel << 3));
-		else if (hdd[i].bus == HDD_BUS_XTIDE)
-			xtide_tracking |= (1 << (hdd[i].xtide_channel << 3));
-		else if (hdd[i].bus == HDD_BUS_ESDI)
-			esdi_tracking |= (1 << (hdd[i].esdi_channel << 3));
-		else if (hdd[i].bus == HDD_BUS_IDE_PIO_ONLY)
-			ide_tracking |= (1 << (hdd[i].ide_channel << 3));
-		else if (hdd[i].bus == HDD_BUS_IDE_PIO_AND_DMA)
-			ide_tracking |= (1 << (hdd[i].ide_channel << 3));
-		else if (hdd[i].bus == HDD_BUS_SCSI)
-			scsi_tracking[hdd[i].scsi_id] |= (1 << (hdd[i].scsi_lun << 3));
-		else if (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)
-			scsi_tracking[hdd[i].scsi_id] |= (1 << (hdd[i].scsi_lun << 3));
-	}
+    /* Hard disks category */
+    memcpy(temp_hdd, hdd, HDD_NUM * sizeof(hard_disk_t));
+    for (i=0; i<HDD_NUM; i++) {
+	if (hdd[i].bus == HDD_BUS_MFM)
+		mfm_tracking |= (1 << (hdd[i].mfm_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_XTIDE)
+		xtide_tracking |= (1 << (hdd[i].xtide_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_ESDI)
+		esdi_tracking |= (1 << (hdd[i].esdi_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_IDE_PIO_ONLY)
+		ide_tracking |= (1 << (hdd[i].ide_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_IDE_PIO_AND_DMA)
+		ide_tracking |= (1 << (hdd[i].ide_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_SCSI)
+		scsi_tracking[hdd[i].scsi_id] |= (1 << (hdd[i].scsi_lun << 3));
+	else if (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)
+		scsi_tracking[hdd[i].scsi_id] |= (1 << (hdd[i].scsi_lun << 3));
+    }
 
-	/* Floppy drives category */
-	for (i = 0; i < FDD_NUM; i++)
-	{
-		temp_fdd_types[i] = fdd_get_type(i);
-		temp_fdd_turbo[i] = fdd_get_turbo(i);
-		temp_fdd_check_bpb[i] = fdd_get_check_bpb(i);
-	}
+    /* Floppy drives category */
+    for (i=0; i<FDD_NUM; i++) {
+	temp_fdd_types[i] = fdd_get_type(i);
+	temp_fdd_turbo[i] = fdd_get_turbo(i);
+	temp_fdd_check_bpb[i] = fdd_get_check_bpb(i);
+    }
 
-	/* Other removable devices category */
-	memcpy(temp_cdrom_drives, cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
-	for (i = 0; i < CDROM_NUM; i++)
-	{
-		if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY)
-			ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
-		else if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA)
-			ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
-		else if (cdrom_drives[i].bus_type == CDROM_BUS_SCSI)
-			scsi_tracking[cdrom_drives[i].scsi_device_id] |= (2 << (cdrom_drives[i].scsi_device_lun << 3));
-	}
-	memcpy(temp_zip_drives, zip_drives, ZIP_NUM * sizeof(zip_drive_t));
-	for (i = 0; i < ZIP_NUM; i++)
-	{
-		if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_ONLY)
-			ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
-		else if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA)
-			ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
-		else if (zip_drives[i].bus_type == ZIP_BUS_SCSI)
-			scsi_tracking[zip_drives[i].scsi_device_id] |= (4 << (zip_drives[i].scsi_device_lun << 3));
-	}
+    /* Other removable devices category */
+    memcpy(temp_cdrom_drives, cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
+    for (i=0; i<CDROM_NUM; i++) {
+	if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY)
+		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
+	else if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA)
+		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
+	else if (cdrom_drives[i].bus_type == CDROM_BUS_SCSI)
+		scsi_tracking[cdrom_drives[i].scsi_device_id] |= (2 << (cdrom_drives[i].scsi_device_lun << 3));
+    }
 
-	temp_deviceconfig = 0;
+    memcpy(temp_zip_drives, zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+    for (i=0; i<ZIP_NUM; i++) {
+	if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_ONLY)
+		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
+	else if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA)
+		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
+	else if (zip_drives[i].bus_type == ZIP_BUS_SCSI)
+		scsi_tracking[zip_drives[i].scsi_device_id] |= (4 << (zip_drives[i].scsi_device_lun << 3));
+    }
+
+    temp_deviceconfig = 0;
 }
 
 
 /* This returns 1 if any variable has changed, 0 if not. */
-static int win_settings_changed(void)
+static int
+settings_changed(void)
 {
-	int i = 0;
-	int j = 0;
+    int i = 0;
+    int j = 0;
 
-	/* Machine category */
-	i = i || (machine != temp_machine);
-	i = i || (cpu_manufacturer != temp_cpu_m);
-	i = i || (cpu_waitstates != temp_wait_states);
-	i = i || (cpu != temp_cpu);
-	i = i || (mem_size != temp_mem_size);
+    /* Machine category */
+    i = i || (machine != temp_machine);
+    i = i || (cpu_manufacturer != temp_cpu_m);
+    i = i || (cpu_waitstates != temp_wait_states);
+    i = i || (cpu != temp_cpu);
+    i = i || (mem_size != temp_mem_size);
 #ifdef USE_DYNAREC
-	i = i || (temp_dynarec != cpu_use_dynarec);
+    i = i || (temp_dynarec != cpu_use_dynarec);
 #endif
-	i = i || (temp_fpu != enable_external_fpu);
-	i = i || (temp_sync != enable_sync);
+    i = i || (temp_fpu != enable_external_fpu);
+    i = i || (temp_sync != enable_sync);
 
-	/* Video category */
-	i = i || (gfxcard != temp_gfxcard);
-	i = i || (video_speed != temp_video_speed);
-	i = i || (voodoo_enabled != temp_voodoo);
+    /* Video category */
+    i = i || (gfxcard != temp_gfxcard);
+    i = i || (video_speed != temp_video_speed);
+    i = i || (voodoo_enabled != temp_voodoo);
 
-	/* Input devices category */
-	i = i || (mouse_type != temp_mouse);
-	i = i || (joystick_type != temp_joystick);
+    /* Input devices category */
+    i = i || (mouse_type != temp_mouse);
+    i = i || (joystick_type != temp_joystick);
 
-	/* Sound category */
-	i = i || (sound_card_current != temp_sound_card);
-	i = i || (midi_device_current != temp_midi_device);
-	i = i || (mpu401_standalone_enable != temp_mpu401);
-	i = i || (SSI2001 != temp_SSI2001);
-	i = i || (GAMEBLASTER != temp_GAMEBLASTER);
-	i = i || (GUS != temp_GUS);
-	i = i || (opl3_type != temp_opl3_type);
-	i = i || (sound_is_float != temp_float);
+    /* Sound category */
+    i = i || (sound_card_current != temp_sound_card);
+    i = i || (midi_device_current != temp_midi_device);
+    i = i || (mpu401_standalone_enable != temp_mpu401);
+    i = i || (SSI2001 != temp_SSI2001);
+    i = i || (GAMEBLASTER != temp_GAMEBLASTER);
+    i = i || (GUS != temp_GUS);
+    i = i || (opl3_type != temp_opl3_type);
+    i = i || (sound_is_float != temp_float);
 
-	/* Network category */
-	i = i || (network_type != temp_net_type);
-	i = i || strcmp(temp_pcap_dev, network_pcap);
-	i = i || (network_card != temp_net_card);
+    /* Network category */
+    i = i || (network_type != temp_net_type);
+    i = i || strcmp(temp_pcap_dev, network_pcap);
+    i = i || (network_card != temp_net_card);
 
-	/* Ports category */
-	for (j = 0; j < 3; j++)
-		i = i || strncmp(temp_lpt_device_names[j], lpt_device_names[j], sizeof(temp_lpt_device_names[j]) - 1);
-	i = i || (temp_serial[0] != serial_enabled[0]);
-	i = i || (temp_serial[1] != serial_enabled[1]);
-	i = i || (temp_lpt != lpt_enabled);
+    /* Ports category */
+    for (j = 0; j < 3; j++)
+	i = i || strncmp(temp_lpt_device_names[j], lpt_device_names[j], sizeof(temp_lpt_device_names[j]) - 1);
+    i = i || (temp_serial[0] != serial_enabled[0]);
+    i = i || (temp_serial[1] != serial_enabled[1]);
+    i = i || (temp_lpt != lpt_enabled);
 
-	/* Peripherals category */
-	i = i || (scsi_card_current != temp_scsi_card);
-	i = i || strncmp(temp_hdc_name, hdc_name, sizeof(temp_hdc_name) - 1);
-	i = i || (temp_ide_ter != ide_enable[2]);
-	i = i || (temp_ide_ter_irq != ide_irq[2]);
-	i = i || (temp_ide_qua != ide_enable[3]);
-	i = i || (temp_ide_qua_irq != ide_irq[3]);
-	i = i || (temp_bugger != bugger_enabled);
+    /* Peripherals category */
+    i = i || (scsi_card_current != temp_scsi_card);
+    i = i || strncmp(temp_hdc_name, hdc_name, sizeof(temp_hdc_name) - 1);
+    i = i || (temp_ide_ter != ide_enable[2]);
+    i = i || (temp_ide_ter_irq != ide_irq[2]);
+    i = i || (temp_ide_qua != ide_enable[3]);
+    i = i || (temp_ide_qua_irq != ide_irq[3]);
+    i = i || (temp_bugger != bugger_enabled);
 
-	/* Hard disks category */
-	i = i || memcmp(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
+    /* Hard disks category */
+    i = i || memcmp(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
 
-	/* Floppy drives category */
-	for (j = 0; j < FDD_NUM; j++)
-	{
-		i = i || (temp_fdd_types[j] != fdd_get_type(j));
-		i = i || (temp_fdd_turbo[j] != fdd_get_turbo(j));
-		i = i || (temp_fdd_check_bpb[j] != fdd_get_check_bpb(j));
-	}
+    /* Floppy drives category */
+    for (j=0; j<FDD_NUM; j++) {
+	i = i || (temp_fdd_types[j] != fdd_get_type(j));
+	i = i || (temp_fdd_turbo[j] != fdd_get_turbo(j));
+	i = i || (temp_fdd_check_bpb[j] != fdd_get_check_bpb(j));
+    }
 
-	/* Other removable devices category */
-	i = i || memcmp(cdrom_drives, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
-	i = i || memcmp(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+    /* Other removable devices category */
+    i = i || memcmp(cdrom_drives, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
+    i = i || memcmp(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
 
-	i = i || !!temp_deviceconfig;
+    i = i || !!temp_deviceconfig;
 
-	return i;
+    return(i);
 }
 
 
-static int settings_msgbox_reset(void)
+static int
+msgbox_reset(void)
 {
-	int i = 0;
-	int changed = 0;
+    int i = 0;
+    int changed = 0;
 
-	changed = win_settings_changed();
+    changed = settings_changed();
 
-	if (changed)
-	{
-		i = settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051);
+    if (changed) {
+	i = settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051);
 
-		if (i == 1) return(1);	/* no */
+	if (i == 1) return(1);	/* no */
 
-		if (i < 0) return(0);	/* cancel */
+	if (i < 0) return(0);	/* cancel */
 
-		return(2);		/* yes */
-	} else {
-		return(1);
-	}
+	return(2);		/* yes */
+    } else {
+	return(1);
+    }
 }
 
 
 /* This saves the settings back to the global variables. */
-static void win_settings_save(void)
+static void
+settings_save(void)
 {
-	int i = 0;
+    int i = 0;
 
-	pc_reset_hard_close();
+    pc_reset_hard_close();
 
-	/* Machine category */
-	machine = temp_machine;
-	romset = machine_getromset();
-	cpu_manufacturer = temp_cpu_m;
-	cpu_waitstates = temp_wait_states;
-	cpu = temp_cpu;
-	mem_size = temp_mem_size;
+    /* Machine category */
+    machine = temp_machine;
+    romset = machine_getromset();
+    cpu_manufacturer = temp_cpu_m;
+    cpu_waitstates = temp_wait_states;
+    cpu = temp_cpu;
+    mem_size = temp_mem_size;
 #ifdef USE_DYNAREC
-	cpu_use_dynarec = temp_dynarec;
+    cpu_use_dynarec = temp_dynarec;
 #endif
-	enable_external_fpu = temp_fpu;
-	enable_sync = temp_sync;
+    enable_external_fpu = temp_fpu;
+    enable_sync = temp_sync;
 
-	/* Video category */
-	gfxcard = temp_gfxcard;
-	video_speed = temp_video_speed;
-	voodoo_enabled = temp_voodoo;
+    /* Video category */
+    gfxcard = temp_gfxcard;
+    video_speed = temp_video_speed;
+    voodoo_enabled = temp_voodoo;
 
-	/* Input devices category */
-	mouse_type = temp_mouse;
-	joystick_type = temp_joystick;
+    /* Input devices category */
+    mouse_type = temp_mouse;
+    joystick_type = temp_joystick;
 
-	/* Sound category */
-	sound_card_current = temp_sound_card;
-	midi_device_current = temp_midi_device;
-	mpu401_standalone_enable = temp_mpu401;
-	SSI2001 = temp_SSI2001;
-	GAMEBLASTER = temp_GAMEBLASTER;
-	GUS = temp_GUS;
-	opl3_type = temp_opl3_type;
-	sound_is_float = temp_float;
+    /* Sound category */
+    sound_card_current = temp_sound_card;
+    midi_device_current = temp_midi_device;
+    mpu401_standalone_enable = temp_mpu401;
+    SSI2001 = temp_SSI2001;
+    GAMEBLASTER = temp_GAMEBLASTER;
+    GUS = temp_GUS;
+    opl3_type = temp_opl3_type;
+    sound_is_float = temp_float;
 
-	/* Network category */
-	network_type = temp_net_type;
-	memset(network_pcap, '\0', sizeof(network_pcap));
-	strcpy(network_pcap, temp_pcap_dev);
-	network_card = temp_net_card;
+    /* Network category */
+    network_type = temp_net_type;
+    memset(network_pcap, '\0', sizeof(network_pcap));
+    strcpy(network_pcap, temp_pcap_dev);
+    network_card = temp_net_card;
 
-	/* Ports category */
-	for (i = 0; i < 3; i++)
-		strncpy(lpt_device_names[i], temp_lpt_device_names[i], sizeof(temp_lpt_device_names[i]) - 1);
-	serial_enabled[0] = temp_serial[0];
-	serial_enabled[1] = temp_serial[1];
-	lpt_enabled = temp_lpt;
+    /* Ports category */
+    for (i = 0; i < 3; i++)
+	strncpy(lpt_device_names[i], temp_lpt_device_names[i], sizeof(temp_lpt_device_names[i]) - 1);
+    serial_enabled[0] = temp_serial[0];
+    serial_enabled[1] = temp_serial[1];
+    lpt_enabled = temp_lpt;
 
-	/* Peripherals category */
-	scsi_card_current = temp_scsi_card;
-	if (hdc_name) {
-		free(hdc_name);
-		hdc_name = NULL;
-	}
-	hdc_name = (char *) malloc(sizeof(temp_hdc_name));
-	strncpy(hdc_name, temp_hdc_name, sizeof(temp_hdc_name) - 1);
-	hdc_init(hdc_name);
-	ide_enable[2] = temp_ide_ter;
-	ide_irq[2] = temp_ide_ter_irq;
-	ide_enable[3] = temp_ide_qua;
-	ide_irq[3] = temp_ide_qua_irq;
-	bugger_enabled = temp_bugger;
+    /* Peripherals category */
+    scsi_card_current = temp_scsi_card;
+    if (hdc_name) {
+	free(hdc_name);
+	hdc_name = NULL;
+    }
+    hdc_name = (char *)malloc(sizeof(temp_hdc_name));
+    strncpy(hdc_name, temp_hdc_name, sizeof(temp_hdc_name) - 1);
+    hdc_init(hdc_name);
+    ide_enable[2] = temp_ide_ter;
+    ide_irq[2] = temp_ide_ter_irq;
+    ide_enable[3] = temp_ide_qua;
+    ide_irq[3] = temp_ide_qua_irq;
+    bugger_enabled = temp_bugger;
 
-	/* Hard disks category */
-	memcpy(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
+    /* Hard disks category */
+    memcpy(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
 
-	/* Floppy drives category */
-	for (i = 0; i < FDD_NUM; i++)
-	{
-		fdd_set_type(i, temp_fdd_types[i]);
-		fdd_set_turbo(i, temp_fdd_turbo[i]);
-		fdd_set_check_bpb(i, temp_fdd_check_bpb[i]);
-	}
+    /* Floppy drives category */
+    for (i=0; i<FDD_NUM; i++) {
+	fdd_set_type(i, temp_fdd_types[i]);
+	fdd_set_turbo(i, temp_fdd_turbo[i]);
+	fdd_set_check_bpb(i, temp_fdd_check_bpb[i]);
+    }
 
-	/* Removable devices category */
-	memcpy(cdrom_drives, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
-	memcpy(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+    /* Removable devices category */
+    memcpy(cdrom_drives, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
+    memcpy(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
 
-	/* Mark configuration as changed. */
-	config_changed = 1;
-
-#if 1
-	pc_reset_hard_init();
-#else
-	mem_resize();
-	rom_load_bios(romset);
-
-	ui_sb_update_panes();
-
-	sound_realloc_buffers();
-
-	pc_reset_hard_init();
-
-	cpu_set();
-
-	cpu_update_waitstates();
-
-	config_save();
-
-	pc_speed_changed();
-
-	if (joystick_type != 7)  gameport_update_joystick_type();
-#endif
+    /* Mark configuration as changed. */
+    config_changed = 1;
 }
 
 
@@ -657,7 +632,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h;
 	int c = 0;
@@ -869,7 +844,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h;
 	LPTSTR lptsTemp;
@@ -1013,7 +988,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	wchar_t str[128];
 	HWND h;
@@ -1196,7 +1171,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h;
 	int c = 0;
@@ -1441,7 +1416,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h;
 	int c = 0;
@@ -1618,7 +1593,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h;
 	int c = 0;
@@ -1853,7 +1828,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h;
 	int c = 0;
@@ -2765,7 +2740,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h = INVALID_HANDLE_VALUE;
 	int64_t i = 0;
@@ -3535,7 +3510,7 @@ void hard_disk_add_open(HWND hwnd, int is_existing)
 {
 	existing = is_existing;
 	hard_disk_added = 0;
-        DialogBox(hinstance, (LPCWSTR)DLG_CFG_HARD_DISKS_ADD, hwnd, win_settings_hard_disks_add_proc);
+        DialogBox(hinstance, (LPCWSTR)DLG_CFG_HARD_DISKS_ADD, hwnd, hard_disks_add_proc);
 }
 
 static void hard_disk_track(uint8_t id)
@@ -3599,7 +3574,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_hard_disks_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+hard_disks_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h = INVALID_HANDLE_VALUE;
 	int old_sel = 0;
@@ -4642,7 +4617,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_floppy_drives_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+floppy_drives_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h = INVALID_HANDLE_VALUE;
 	int i = 0;
@@ -4777,7 +4752,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_other_removable_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+other_removable_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h = INVALID_HANDLE_VALUE;
 	int old_sel = 0;
@@ -5161,210 +5136,228 @@ zip_bus_skip:
 	return FALSE;
 }
 
-#define SETTINGS_PAGE_MACHINE	0
-#define SETTINGS_PAGE_VIDEO	1
-#define SETTINGS_PAGE_INPUT	2
-#define SETTINGS_PAGE_SOUND	3
-#define SETTINGS_PAGE_NETWORK	4
-#define SETTINGS_PAGE_PORTS		5
-#define SETTINGS_PAGE_PERIPHERALS	6
-#define SETTINGS_PAGE_HARD_DISKS	7
-#define SETTINGS_PAGE_FLOPPY_DRIVES	8
-#define SETTINGS_PAGE_OTHER_REMOVABLE_DEVICES	9
 
-void win_settings_show_child(HWND hwndParent, DWORD child_id)
+#define PAGE_MACHINE			0
+#define PAGE_VIDEO			1
+#define PAGE_INPUT			2
+#define PAGE_SOUND			3
+#define PAGE_NETWORK			4
+#define PAGE_PORTS			5
+#define PAGE_PERIPHERALS		6
+#define PAGE_HARD_DISKS			7
+#define PAGE_FLOPPY_DRIVES		8
+#define PAGE_OTHER_REMOVABLE_DEVICES	9
+
+
+static void
+show_child(HWND hwndParent, DWORD child_id)
 {
-	if (child_id == displayed_category)
-	{
+    if (child_id == displayed_category) return;
+
+    displayed_category = child_id;
+
+    SendMessage(hwndChildDialog, WM_SAVESETTINGS, 0, 0);
+
+    DestroyWindow(hwndChildDialog);
+
+    switch(child_id) {
+	case PAGE_MACHINE:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_MACHINE, hwndParent, machine_proc);
+		break;
+
+	case PAGE_VIDEO:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_VIDEO, hwndParent, video_proc);
+		break;
+
+	case PAGE_INPUT:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_INPUT, hwndParent, input_proc);
+		break;
+
+	case PAGE_SOUND:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_SOUND, hwndParent, sound_proc);
+		break;
+
+	case PAGE_NETWORK:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_NETWORK, hwndParent, network_proc);
+		break;
+
+	case PAGE_PORTS:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_PORTS, hwndParent, ports_proc);
+		break;
+
+	case PAGE_PERIPHERALS:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_PERIPHERALS, hwndParent, peripherals_proc);
+		break;
+
+	case PAGE_HARD_DISKS:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_HARD_DISKS, hwndParent, hard_disks_proc);
+		break;
+
+	case PAGE_FLOPPY_DRIVES:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_FLOPPY_DRIVES, hwndParent, floppy_drives_proc);
+		break;
+
+	case PAGE_OTHER_REMOVABLE_DEVICES:
+		hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_OTHER_REMOVABLE_DEVICES, hwndParent, other_removable_devices_proc);
+		break;
+
+	default:
+		fatal("Invalid child dialog ID\n");
 		return;
-	}
-	else
-	{
-		displayed_category = child_id;
-	}
+    }
 
-	SendMessage(hwndChildDialog, WM_SAVESETTINGS, 0, 0);
-
-	DestroyWindow(hwndChildDialog);
-
-	switch(child_id)
-	{
-		case SETTINGS_PAGE_MACHINE:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_MACHINE, hwndParent, win_settings_machine_proc);
-			break;
-		case SETTINGS_PAGE_VIDEO:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_VIDEO, hwndParent, win_settings_video_proc);
-			break;
-		case SETTINGS_PAGE_INPUT:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_INPUT, hwndParent, win_settings_input_proc);
-			break;
-		case SETTINGS_PAGE_SOUND:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_SOUND, hwndParent, win_settings_sound_proc);
-			break;
-		case SETTINGS_PAGE_NETWORK:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_NETWORK, hwndParent, win_settings_network_proc);
-			break;
-		case SETTINGS_PAGE_PORTS:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_PORTS, hwndParent, win_settings_ports_proc);
-			break;
-		case SETTINGS_PAGE_PERIPHERALS:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_PERIPHERALS, hwndParent, win_settings_peripherals_proc);
-			break;
-		case SETTINGS_PAGE_HARD_DISKS:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_HARD_DISKS, hwndParent, win_settings_hard_disks_proc);
-			break;
-		case SETTINGS_PAGE_FLOPPY_DRIVES:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_FLOPPY_DRIVES, hwndParent, win_settings_floppy_drives_proc);
-			break;
-		case SETTINGS_PAGE_OTHER_REMOVABLE_DEVICES:
-			hwndChildDialog = CreateDialog(hinstance, (LPCWSTR)DLG_CFG_OTHER_REMOVABLE_DEVICES, hwndParent, win_settings_other_removable_devices_proc);
-			break;
-		default:
-			fatal("Invalid child dialog ID\n");
-			return;
-	}
-
-	ShowWindow(hwndChildDialog, SW_SHOWNORMAL);
+    ShowWindow(hwndChildDialog, SW_SHOWNORMAL);
 }
 
-static BOOL win_settings_main_image_list_init(HWND hwndList)
+
+static BOOL
+image_list_init(HWND hwndList)
 {
-	HICON hiconItem;
-	HIMAGELIST hSmall;
+    HICON hiconItem;
+    HIMAGELIST hSmall;
+    int i = 0;
 
-	int i = 0;
+    hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
+			      GetSystemMetrics(SM_CYSMICON),
+			      ILC_MASK | ILC_COLOR32, 1, 1);
 
-	hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
-                                  GetSystemMetrics(SM_CYSMICON),
-                                  ILC_MASK | ILC_COLOR32, 1, 1);
+    for (i=0; i<10; i++) {
+	hiconItem = LoadIcon(hinstance, (LPCWSTR) (256 + (uintptr_t) i));
+	ImageList_AddIcon(hSmall, hiconItem);
+	DestroyIcon(hiconItem);
+    }
 
-	for (i = 0; i < 10; i++)
-	{
-		hiconItem = LoadIcon(hinstance, (LPCWSTR) (256 + (uintptr_t) i));
-		ImageList_AddIcon(hSmall, hiconItem);
-		DestroyIcon(hiconItem);
-	}
+    ListView_SetImageList(hwndList, hSmall, LVSIL_SMALL);
 
-	ListView_SetImageList(hwndList, hSmall, LVSIL_SMALL);
-
-	return TRUE;
+    return(TRUE);
 }
 
-static BOOL win_settings_main_insert_categories(HWND hwndList)
+
+static BOOL
+insert_categories(HWND hwndList)
 {
-	LVITEM lvI;
-	int i = 0;
+    LVITEM lvI;
+    int i = 0;
 
-	lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
-	lvI.stateMask = lvI.iSubItem = lvI.state = 0;
+    lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
+    lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
-	for (i = 0; i < 10; i++)
-	{
-		lvI.pszText = plat_get_string(IDS_2065+i);
-		lvI.iItem = i;
-		lvI.iImage = i;
+    for (i=0; i<10; i++) {
+	lvI.pszText = plat_get_string(IDS_2065+i);
+	lvI.iItem = i;
+	lvI.iImage = i;
 
-		if (ListView_InsertItem(hwndList, &lvI) == -1)
-			return FALSE;
-	}
+	if (ListView_InsertItem(hwndList, &lvI) == -1)
+		return(FALSE);
+    }
 
-	return TRUE;
+    return(TRUE);
 }
+
 
 #ifdef __amd64__
 static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-win_settings_main_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+main_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND h;
-	int category;
-	int i = 0;
-	int j = 0;
+    HWND h;
+    int category;
+    int i = 0;
+    int j = 0;
 
-	hwndParentDialog = hdlg;
+    hwndParentDialog = hdlg;
 
-        switch (message)
-        {
-		case WM_INITDIALOG:
-			plat_pause(1);
-			win_settings_init();
-			displayed_category = -1;
-			h = GetDlgItem(hdlg, IDC_SETTINGSCATLIST);
-			win_settings_main_image_list_init(h);
-			win_settings_main_insert_categories(h);
-			ListView_SetItemState(h, 0, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);
-/* Leave this commented out until we do localization. */
+    switch (message) {
+	case WM_INITDIALOG:
+		settings_init();
+		displayed_category = -1;
+		h = GetDlgItem(hdlg, IDC_SETTINGSCATLIST);
+		image_list_init(h);
+		insert_categories(h);
+		ListView_SetItemState(h, 0, LVIS_FOCUSED|LVIS_SELECTED, 0x000F);
 #if 0
-			h = GetDlgItem(hdlg, IDC_COMBO_LANG);	/* This is currently disabled, I am going to add localization options in the future. */
-			EnableWindow(h, FALSE);
-			ShowWindow(h, SW_HIDE);
-			h = GetDlgItem(hdlg, IDS_LANG_ENUS);	/*was:2047 !*/
-			EnableWindow(h, FALSE);
-			ShowWindow(h, SW_HIDE);
+		/*Leave this commented out until we do localization. */
+		h = GetDlgItem(hdlg, IDC_COMBO_LANG);	/* This is currently disabled, I am going to add localization options in the future. */
+		EnableWindow(h, FALSE);
+		ShowWindow(h, SW_HIDE);
+		h = GetDlgItem(hdlg, IDS_LANG_ENUS);	/*was:2047 !*/
+		EnableWindow(h, FALSE);
+		ShowWindow(h, SW_HIDE);
 #endif
-			return TRUE;
-		case WM_NOTIFY:
-			if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_SETTINGSCATLIST))
-			{
-				category = -1;
-				for (i = 0; i < 10; i++)
-				{
-					h = GetDlgItem(hdlg, IDC_SETTINGSCATLIST);
-					j = ListView_GetItemState(h, i, LVIS_SELECTED);
-					if (j)
-					{
-						category = i;
-						/* pclog("Category %i selected\n", i); */
-					}
-				}
-				if (category != -1)
-				{
-					/* pclog("Showing child: %i\n", category); */
-					win_settings_show_child(hdlg, category);
-				}
-			}
-			break;
-		case WM_COMMAND:
-                	switch (LOWORD(wParam))
-	                {
-				case IDOK:
-					/* pclog("Saving settings...\n"); */
-					SendMessage(hwndChildDialog, WM_SAVESETTINGS, 0, 0);
-					i = settings_msgbox_reset();
-					if (i > 0)
-					{
-						if (i == 2)
-						{
-							win_settings_save();
-						}
+		return(TRUE);
 
-						/* pclog("Destroying window...\n"); */
-						DestroyWindow(hwndChildDialog);
-	                                        EndDialog(hdlg, 0);
-        	                                plat_pause(0);
-	                                        return TRUE;
-					}
-					else
-					{
-						return FALSE;
-					}
-				case IDCANCEL:
-					DestroyWindow(hwndChildDialog);
-                		        EndDialog(hdlg, 0);
-        	                	plat_pause(0);
-		                        return TRUE;
+	case WM_NOTIFY:
+		if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_SETTINGSCATLIST)) {
+			category = -1;
+			for (i=0; i<10; i++) {
+				h = GetDlgItem(hdlg, IDC_SETTINGSCATLIST);
+				j = ListView_GetItemState(h, i, LVIS_SELECTED);
+				if (j) category = i;
 			}
-			break;
-		default:
-			return FALSE;
-	}
+			if (category != -1)
+				show_child(hdlg, category);
+		}
+		break;
 
-	return FALSE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+			case IDOK:
+				SendMessage(hwndChildDialog, WM_SAVESETTINGS, 0, 0);
+				if (ask_sure) {
+					i = msgbox_reset();
+					if (i == 0) {
+						/* CANCEL, just kidding! */
+						return(FALSE);
+					}
+				} else {
+					i = 2;
+				}
+
+				if (i == 2) {
+					/* YES, reset system. */
+					settings_save();
+				}
+
+				DestroyWindow(hwndChildDialog);
+				EndDialog(hdlg, i);
+				return(TRUE);
+
+			case IDCANCEL:
+				DestroyWindow(hwndChildDialog);
+				EndDialog(hdlg, 0);
+				return(TRUE);
+		}
+		break;
+
+	default:
+		return(FALSE);
+    }
+
+    return(FALSE);
 }
 
-void win_settings_open(HWND hwnd)
+
+int
+win_settings_open(HWND hwnd, int ask)
 {
-        DialogBox(hinstance, (LPCWSTR)DLG_CONFIG, hwnd, win_settings_main_proc);
+    int i, m, v;
+
+    /* Enumerate the available machines. */
+    m = machine_detect();
+
+    /* Enumerate the available video cards. */
+    v = video_detect();
+
+    if (m == 0 || v == 0) {
+	ui_msgbox(MBX_ERROR|MBX_FATAL, (wchar_t *)IDS_2056);
+
+	return(0);
+    }
+
+    ask_sure = ask;
+    i = DialogBox(hinstance, (LPCWSTR)DLG_CONFIG, hwnd, main_proc);
+
+    return(i);
 }

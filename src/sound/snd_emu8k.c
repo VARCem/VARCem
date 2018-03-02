@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_emu8k.c	1.0.2	2018/02/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2176,7 +2176,7 @@ void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram)
         int c;
         double out;
  
-        f = rom_fopen(L"roms/sound/awe32.raw", L"rb");
+        f = rom_fopen(L"roms/sound/awe32.raw");
         if (!f)
                 fatal("AWE32.RAW not found\n");
         

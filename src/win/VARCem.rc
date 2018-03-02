@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.3	2018/02/24
+ * Version:	@(#)VARCem.rc	1.0.4	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -820,10 +820,10 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    2048	"VARCem"
-    IDS_2049	"Error"
-    IDS_2050	"Fatal Error"
-    IDS_2051	"This will reset the emulator.\nAre you sure you want to save the settings?"
+    IDS_2048	"Error"
+    IDS_2049	"Fatal Error"
+    IDS_2050	"Configuration Error"
+    IDS_2051	"Are you sure you want to save these settings?\n\n(A restart may be needed...)"
     IDS_2052	"DirectDraw Screenshot Error"
     IDS_2053	"Invalid number of sectors (valid values are between 1 and 63)"
     IDS_2054	"Invalid number of heads (valid values are between 1 and 16)"
@@ -834,13 +834,13 @@ BEGIN
     IDS_2059	"Turbo"
     IDS_2060	"On"
     IDS_2061	"Off"
-    IDS_2062	"The emulator was unable to find any ROMs.\nAt least one ROM set is required to run."
-    IDS_2063	"Configured ROM set not available.\nDefaulting to an available ROM set."
+    IDS_2062	"Changes saved, please restart the emulator!"
+    IDS_2063	"The configured machine:\n\n  %ls\n\nis not available.\n\nWould you like to enter the Settings menu?"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_2064	"Configured video BIOS not available.\nDefaulting to an available video BIOS."
+    IDS_2064	"Configured video card:\n\n  %ls\n\nis not available.\n\nWould you like to enter the Settings menu?"
     IDS_2065	"Machine"
     IDS_2066	"Display"
     IDS_2067	"Input devices"

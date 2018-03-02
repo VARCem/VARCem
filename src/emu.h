@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.1	2018/02/14
+ * Version:	@(#)emu.h	1.0.3	2018/02/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -61,9 +61,14 @@
 #define EMU_VERSION_W	L"0.1.0"
 
 /* Filename and pathname info. */
-#define CONFIG_FILE	L"varcem.cfg"
-#define NVR_PATH        L"nvr"
+#define NVR_PATH	L"nvr"
+#define ROMS_PATH	L"roms"
+#define MACHINES_PATH	L"machines"
+#define VIDEO_PATH	L"machines"
 #define SCREENSHOT_PATH L"screenshots"
+
+#define CONFIG_FILE	L"varcem.cfg"
+#define BIOS_FILE	L"bios.txt"
 
 
 /*FIXME: move to where it's needed (ui) */
@@ -180,9 +185,6 @@ extern void	pc_reset_hard(void);
 extern void	pc_reset(int hard);
 extern void	pc_full_speed(void);
 extern void	pc_speed_changed(void);
-extern void	pc_send_cad(void);
-extern void	pc_send_cae(void);
-extern void	pc_send_cab(void);
 extern void	pc_thread(void *param);
 extern void	pc_start(void);
 extern void	pc_onesec(void);

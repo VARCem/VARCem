@@ -12,7 +12,7 @@
  *			- Realtek RTL8019AS (ISA 16-bit, PnP);
  *			- Realtek RTL8029AS (PCI).
  *
- * Version:	@(#)net_ne2000.c	1.0.1	2018/02/14
+ * Version:	@(#)net_ne2000.c	1.0.2	2018/02/26
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -2348,7 +2348,7 @@ nic_rom_init(nic_t *dev, wchar_t *s)
 
     if (dev->bios_addr == 0) return;
 
-    if ((f = rom_fopen(s, L"rb")) != NULL) {
+    if ((f = rom_fopen(s)) != NULL) {
 	fseek(f, 0L, SEEK_END);
 	temp = ftell(f);
 	fclose(f);

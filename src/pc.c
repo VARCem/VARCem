@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.2	2018/02/24
+ * Version:	@(#)pc.c	1.0.3	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -299,7 +299,7 @@ fatal(const char *fmt, ...)
 int
 pc_init(int argc, wchar_t *argv[])
 {
-    wchar_t path[2048];
+    wchar_t path[1024];
     wchar_t *cfg = NULL, *p;
     char temp[128];
     struct tm *info;
@@ -587,7 +587,6 @@ pc_reload(wchar_t *fn)
     fdd_load(3, floppyfns[3]);
 
     mem_resize();
-    rom_load_bios(romset);
     network_init();
 
     pc_reset_hard_init();
@@ -598,67 +597,42 @@ pc_reload(wchar_t *fn)
 int
 pc_init_modules(void)
 {
-    int c, i;
-
-    pclog("Scanning for ROM images:\n");
-    for (c=0,i=0; i<ROM_MAX; i++) {
-	romspresent[i] = rom_load_bios(i);
-	c += romspresent[i];
-    }
-    if (c == 0) {
-	/* No usable ROMs found, aborting. */
-	return(0);
-    }
-    pclog("A total of %d ROM sets have been loaded.\n", c);
+    wchar_t temp[1024];
+    wchar_t name[128];
+    wchar_t *str;
 
     /* Load the ROMs for the selected machine. */
-again:
-    if (! rom_load_bios(romset)) {
-	/* Whoops, ROMs not found. */
-	if (romset != -1)
-		ui_msgbox(MBX_INFO, (wchar_t *)IDS_2063);
+    if (! machine_available(machine)) {
+	/* Whoops, selected machine not available. */
+	str = plat_get_string(IDS_2063);
+	mbstowcs(name, machine_getname(), sizeof_w(name));
+	swprintf(temp, sizeof_w(temp), str, name);
 
-	/*
-	 * Select another machine to use.
-	 *
-	 * FIXME:
-	 * We should not do that here.  If something turns out
-	 * to be wrong with the configuration (such as missing
-	 * ROM images, we should just display a fatal message
-	 * in the render window's center, let them click OK,
-	 * and then exit so they can remedy the situation.
-	 */
-	for (c=0; c<ROM_MAX; c++) {
-		if (romspresent[c]) {
-			romset = c;
-			machine = machine_getmachine(romset);
-			config_save();
+	/* Show the messagebox, and abort if 'No' was selected. */
+	if (ui_msgbox(MBX_CONFIG, temp) == 1) return(0);
 
-			/* This can loop if all ROMs are now bad.. */
-			goto again;
-		}
-	}
+	/* OK, user wants to (re-)configure.. */
+	return(2);
     }
 
-    /* Make sure we have a usable video card. */
-    for (c=0; c<GFX_MAX; c++)
-	gfx_present[c] = video_card_available(video_old_to_new(c));
-again2:
     if (! video_card_available(video_old_to_new(gfxcard))) {
-	if (romset != -1) {
-		ui_msgbox(MBX_INFO, (wchar_t *)IDS_2064);
-	}
-	for (c=GFX_MAX-1; c>=0; c--) {
-		if (gfx_present[c]) {
-			gfxcard = c;
-			config_save();
+	/* Whoops, selected video not available. */
+	str = plat_get_string(IDS_2064);
+	mbstowcs(name, machine_getname(), sizeof_w(name));
+	swprintf(temp, sizeof_w(temp), str, name);
 
-			/* This can loop if all cards now bad.. */
-			goto again2;
-		}
-	}
+	/* Show the messagebox, and abort if 'No' was selected. */
+	if (ui_msgbox(MBX_CONFIG, temp) == 1) return(0);
+
+	/* OK, user wants to (re-)configure.. */
+	return(2);
     }
 
+    /*
+     * At this point, we know that the selected machine and
+     * video card are available, so we can proceed with the
+     * initialization of things.
+     */
     cpuspeed2 = (AT) ? 2 : 1;
     atfullspeed = 0;
 
@@ -705,60 +679,6 @@ again2:
     shadowbios = 0;
 
     return(1);
-}
-
-
-/* Insert keystrokes into the machine's keyboard buffer. */
-// FIXME: move to keyboard.c */
-static void
-pc_keyboard_send(uint8_t val)
-{
-    if (AT)
-	keyboard_at_adddata_keyboard_raw(val);
-      else
-	keyboard_send(val);
-}
-
-
-/* Send the machine a Control-Alt-DEL sequence. */
-// FIXME: move to keyboard.c */
-void
-pc_send_cad(void)
-{
-    pc_keyboard_send(29);	/* Ctrl key pressed */
-    pc_keyboard_send(56);	/* Alt key pressed */
-    pc_keyboard_send(83);	/* Delete key pressed */
-    pc_keyboard_send(157);	/* Ctrl key released */
-    pc_keyboard_send(184);	/* Alt key released */
-    pc_keyboard_send(211);	/* Delete key released */
-}
-
-
-/* Send the machine a Control-Alt-ESC sequence. */
-// FIXME: move to keyboard.c */
-void
-pc_send_cae(void)
-{
-    pc_keyboard_send(29);	/* Ctrl key pressed */
-    pc_keyboard_send(56);	/* Alt key pressed */
-    pc_keyboard_send(1);	/* Esc key pressed */
-    pc_keyboard_send(129);	/* Esc key released */
-    pc_keyboard_send(184);	/* Alt key released */
-    pc_keyboard_send(157);	/* Ctrl key released */
-}
-
-
-/* Send the machine a Control-Alt-Break sequence. */
-// FIXME: move to keyboard.c */
-void
-pc_send_cab(void)
-{
-    pc_keyboard_send(29);	/* Ctrl key pressed */
-    pc_keyboard_send(56);	/* Alt key pressed */
-    pc_keyboard_send(1);	/* Esc key pressed */
-    pc_keyboard_send(157);	/* Ctrl key released */
-    pc_keyboard_send(184);	/* Alt key released */
-    pc_keyboard_send(129);	/* Esc key released */
 }
 
 
@@ -936,7 +856,7 @@ pc_reset(int hard)
     if (hard)
         pc_reset_hard();
       else
-        pc_send_cad();
+        keyboard_send_cad();
 
     plat_pause(0);
 }

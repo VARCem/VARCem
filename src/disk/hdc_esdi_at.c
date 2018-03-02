@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.1	2018/02/14
+ * Version:	@(#)hdc_esdi_at.c	1.0.2	2018/02/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,7 @@
 
 
 #define HDC_TIME		(TIMER_USEC*10LL)
-#define BIOS_FILE		L"roms/hdd/esdi_at/62-000279-061.bin"
+#define ESDI_BIOS_FILE		L"roms/hdd/esdi_at/62-000279-061.bin"
 
 #define STAT_ERR		0x01
 #define STAT_INDEX		0x02
@@ -808,7 +808,7 @@ wd1007vse1_init(device_t *info)
     esdi->error = 1;
 
     rom_init(&esdi->bios_rom,
-	     BIOS_FILE, 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
+	     ESDI_BIOS_FILE, 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
 
     io_sethandler(0x01f0, 1,
 		  esdi_read, esdi_readw, NULL,
@@ -849,7 +849,7 @@ wd1007vse1_close(void *priv)
 static int
 wd1007vse1_available(void)
 {
-    return(rom_present(BIOS_FILE));
+    return(rom_present(ESDI_BIOS_FILE));
 }
 
 

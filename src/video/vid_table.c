@@ -8,7 +8,7 @@
  *
  *		Define all known video cards.
  *
- * Version:	@(#)vid_table.c	1.0.3	2018/02/22
+ * Version:	@(#)vid_table.c	1.0.4	2018/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -165,6 +165,22 @@ video_cards[] = {
     {"[VLB] Trident TGUI9440",                      "tgui9440_vlb",		&tgui9440_vlb_device,            	GFX_TGUI9440_VLB,		{VIDEO_BUS, 4,  8, 16,   4,  8, 16}},
     {"",                                            "",				NULL,                        		-1				}
 };
+
+
+int
+video_detect(void)
+{
+    int c, i;
+
+    /* Make sure we have a usable video card. */
+    c = 0;
+    for (i=0; i<GFX_MAX; i++) {
+	gfx_present[i] = video_card_available(video_old_to_new(i));
+	c += gfx_present[i];
+    }
+
+    return(c);
+}
 
 
 void
