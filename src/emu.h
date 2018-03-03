@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.3	2018/02/28
+ * Version:	@(#)emu.h	1.0.4	2018/03/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -155,7 +155,7 @@ extern int	serial_do_log;
 extern int	nic_do_log;
 #endif
 
-extern wchar_t	exe_path[1024];			/* path (dir) of executable */
+extern wchar_t	emu_path[1024];			/* emu installation path */
 extern wchar_t	usr_path[1024];			/* path (dir) of user data */
 extern wchar_t  cfg_path[1024];			/* full path of config file */
 extern FILE	*stdlog;			/* file to log output to */

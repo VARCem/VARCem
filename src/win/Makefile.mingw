@@ -47,89 +47,89 @@
 
 # Various compile-time options.
 ifndef STUFF
-STUFF		:=
+ STUFF		:=
 endif
 
 # Add feature selections here.
 ifndef EXTRAS
-EXTRAS		:=
+ EXTRAS		:=
 endif
 
 # Defaults for several build options (possibly defined in a chained file.)
 ifndef AUTODEP
-AUTODEP		:= n
+ AUTODEP		:= n
 endif
 ifndef CRASHDUMP
-CRASHDUMP	:= n
+ CRASHDUMP	:= n
 endif
 ifndef CROSS
-CROSS		:= n
+ CROSS		:= n
 endif
 ifndef DEBUG
-DEBUG		:= n
+ DEBUG		:= n
 endif
 ifndef OPTIM
-OPTIM		:= n
+ OPTIM		:= n
 endif
 ifndef RELEASE
-RELEASE		:= n
+ RELEASE	:= n
 endif
 ifndef X64
-X64		:= n
-endif
-ifndef WX
-WX		:= n
-endif
-ifndef USB
-USB		:= n
-endif
-ifndef VNC
-VNC		:= n
-endif
-ifndef RDP
-RDP		:= n
-endif
-ifndef DEV_BUILD
-DEV_BUILD	:= n
-endif
-ifndef DEV_BRANCH
-DEV_BRANCH	:= n
-endif
-ifndef GREENB
-GREENB		:= n
-endif
-ifndef LASERXT
-LASERXT		:= n
-endif
-ifndef I686
-I686		:= n
-ifndef AMD_K
-AMD_K		:= n
-endif
-endif
-ifndef OPENAL
-OPENAL		:= y
-endif
-ifndef PORTABLE3
-PORTABLE3	:= n
-endif
-ifndef FLUIDSYNTH
-FLUIDSYNTH	:= y
-endif
-ifndef MUNT
-MUNT		:= y
-endif
-ifndef PAS16
-PAS16		:= n
-endif
-ifndef STEALTH32
-STEALTH32	:= n
-endif
-ifndef XL24
-XL24		:= n
+ X64		:= n
 endif
 ifndef DYNAREC
-DYNAREC		:= y
+ DYNAREC	:= y
+endif
+ifndef WX
+ WX		:= n
+endif
+ifndef USB
+ USB		:= n
+endif
+ifndef VNC
+ VNC		:= n
+endif
+ifndef RDP
+ RDP		:= n
+endif
+ifndef DEV_BUILD
+ DEV_BUILD	:= n
+endif
+ifndef DEV_BRANCH
+ DEV_BRANCH	:= n
+endif
+ifndef GREENB
+ GREENB		:= n
+endif
+ifndef LASERXT
+ LASERXT	:= n
+endif
+ifndef I686
+ I686		:= n
+endif
+ifndef AMD_K
+ AMD_K		:= n
+endif
+ifndef PORTABLE3
+ PORTABLE3	:= n
+endif
+ifndef OPENAL
+ OPENAL		:= y
+endif
+ifndef FLUIDSYNTH
+ FLUIDSYNTH	:= y
+endif
+ifndef MUNT
+ MUNT		:= y
+endif
+ifndef PAS16
+ PAS16		:= n
+endif
+ifndef STEALTH32
+ STEALTH32	:= n
+endif
+ifndef XL24
+ XL24		:= n
 endif
 
 
@@ -143,17 +143,16 @@ ifndef PROG
 endif
 
 ifeq ($(DEV_BUILD), y)
-DEBUG		:= y
-CRASHDUMP	:= y
-DEV_BRANCH	:= y
-I686		:= y
-AMD_K		:= y
-GREENB		:= y
-PORTABLE3	:= y
-LASERXT		:= y
-PAS16		:= y
-STEALTH32	:= y
-XL24		:= y
+ CRASHDUMP	:= y
+ DEV_BRANCH	:= y
+ I686		:= y
+ AMD_K		:= y
+ GREENB		:= y
+ PORTABLE3	:= y
+ LASERXT	:= y
+ PAS16		:= y
+ STEALTH32	:= y
+ XL24		:= y
 endif
 
 # WxWidgets basic info. Extract using the config program.

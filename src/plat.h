@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.2	2018/02/21
+ * Version:	@(#)plat.h	1.0.3	2018/03/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -101,16 +101,17 @@ GLOBAL char	emu_version[128];		/* version ID string */
 
 
 /* System-related functions. */
-extern wchar_t	*fix_exe_path(wchar_t *str);
+extern wchar_t	*fix_emu_path(wchar_t *str);
 extern FILE	*plat_fopen(wchar_t *path, wchar_t *mode);
 extern void	plat_remove(wchar_t *path);
 extern int	plat_getcwd(wchar_t *bufp, int max);
 extern int	plat_chdir(wchar_t *path);
-extern void	plat_get_exe_name(wchar_t *s, int size);
-extern wchar_t	*plat_get_filename(wchar_t *s);
-extern wchar_t	*plat_get_extension(wchar_t *s);
+extern void	plat_get_exe_name(wchar_t *path, int size);
+extern wchar_t	*plat_get_basename(wchar_t *path);
+extern wchar_t	*plat_get_filename(wchar_t *path);
+extern wchar_t	*plat_get_extension(wchar_t *path);
 extern void	plat_append_filename(wchar_t *dest, wchar_t *s1, wchar_t *s2);
-extern void	plat_put_backslash(wchar_t *s);
+extern void	plat_put_backslash(wchar_t *path);
 extern void	plat_path_slash(wchar_t *path);
 extern int	plat_path_abs(wchar_t *path);
 extern int	plat_dir_check(wchar_t *path);

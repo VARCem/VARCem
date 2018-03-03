@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.2	2018/03/02
+ * Version:	@(#)win.c	1.0.3	2018/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -485,9 +485,9 @@ do_stop(void)
 
 
 void
-plat_get_exe_name(wchar_t *s, int size)
+plat_get_exe_name(wchar_t *bufp, int size)
 {
-    GetModuleFileName(hinstance, s, size);
+    GetModuleFileName(hinstance, bufp, size);
 }
 
 
@@ -543,36 +543,52 @@ plat_path_abs(wchar_t *path)
 }
 
 
+/* Return the last element of a pathname. */
 wchar_t *
-plat_get_filename(wchar_t *s)
+plat_get_basename(wchar_t *path)
 {
-    int c = wcslen(s) - 1;
+    int c = wcslen(path);
 
     while (c > 0) {
-	if (s[c] == L'/' || s[c] == L'\\')
-	   return(&s[c+1]);
+	if (path[c] == L'/' || path[c] == L'\\')
+	   return(&path[c]);
        c--;
     }
 
-    return(s);
+    return(path);
 }
 
 
 wchar_t *
-plat_get_extension(wchar_t *s)
+plat_get_filename(wchar_t *path)
 {
-    int c = wcslen(s) - 1;
+    int c = wcslen(path) - 1;
+
+    while (c > 0) {
+	if (path[c] == L'/' || path[c] == L'\\')
+	   return(&path[c+1]);
+       c--;
+    }
+
+    return(path);
+}
+
+
+wchar_t *
+plat_get_extension(wchar_t *path)
+{
+    int c = wcslen(path) - 1;
 
     if (c <= 0)
-	return(s);
+	return(path);
 
-    while (c && s[c] != L'.')
+    while (c && path[c] != L'.')
 		c--;
 
     if (!c)
-	return(&s[wcslen(s)]);
+	return(&path[wcslen(path)]);
 
-    return(&s[c+1]);
+    return(&path[c+1]);
 }
 
 
@@ -585,12 +601,12 @@ plat_append_filename(wchar_t *dest, wchar_t *s1, wchar_t *s2)
 
 
 void
-plat_put_backslash(wchar_t *s)
+plat_put_backslash(wchar_t *path)
 {
-    int c = wcslen(s) - 1;
+    int c = wcslen(path) - 1;
 
-    if (s[c] != L'/' && s[c] != L'\\')
-	   s[c] = L'/';
+    if (path[c] != L'/' && path[c] != L'\\')
+	   path[c] = L'/';
 }
 
 

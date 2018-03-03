@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.3	2018/03/01
+ * Version:	@(#)pc.c	1.0.4	2018/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -175,7 +175,7 @@ int	clockrate;
 
 int	gfx_present[GFX_MAX];			/* should not be here */
 
-wchar_t	exe_path[1024];				/* path (dir) of executable */
+wchar_t	emu_path[1024];				/* emu installation path */
 wchar_t	usr_path[1024];				/* path (dir) of user data */
 wchar_t	cfg_path[1024];				/* full path of config file */
 FILE	*stdlog = NULL;				/* file to log output to */
@@ -307,9 +307,33 @@ pc_init(int argc, wchar_t *argv[])
     int c;
 
     /* Grab the executable's full path. */
-    plat_get_exe_name(exe_path, sizeof(exe_path)-1);
-    p = plat_get_filename(exe_path);
-    *p = L'\0';
+    plat_get_exe_name(emu_path, sizeof(emu_path)-1);
+    if ((p = plat_get_basename(emu_path)) != NULL)
+	*p = L'\0';
+
+    /*
+     * See if we are perhaps in a "bin/" subfolder of
+     * the installation path, in which case the real
+     * root of the installation is one level up. We
+     * can test this by looking for the 'roms' folder.
+     */
+    wcscpy(path, emu_path);
+    p = plat_get_basename(path);
+    plat_path_slash(path);
+    wcscat(path, ROMS_PATH);
+    if (! plat_dir_check(path)) {
+	/* No 'roms' folder found, so go up one level. */
+	if (p != NULL)
+		*p = L'\0';
+	plat_path_slash(path);
+	wcscat(path, ROMS_PATH);
+	if (plat_dir_check(path)) {
+		if (p != NULL)
+			*p = L'\0';
+		plat_path_slash(path);
+		wcscpy(emu_path, path);
+	}
+    }
 
     /*
      * Get the current working directory.
@@ -481,7 +505,7 @@ usage:
     strftime(temp, sizeof(temp), "%Y/%m/%d %H:%M:%S", info);
     pclog("#\n# %ls v%ls logfile, created %s\n#\n",
 		EMU_NAME_W, EMU_VERSION_W, temp);
-    pclog("# Emulator path: %ls\n", exe_path);
+    pclog("# Emulator path: %ls\n", emu_path);
     pclog("# Userfiles path: %ls\n", usr_path);
     pclog("# Configuration file: %ls\n#\n\n", cfg_path);
 
