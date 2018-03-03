@@ -54,6 +54,8 @@ language: c
 env:
   matrix:
     - CROSS=y
+    - PROG=VACRCem-debug CROSS=y DEBUG=y
+    - PROG=VACRCem-dev CROSS=y DEBUG=y DEV_BUILD=y
 
 script:
   - cd src

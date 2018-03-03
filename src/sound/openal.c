@@ -77,24 +77,24 @@ static ALuint	source[3];		/* audio source */
 static void	*openal_handle = NULL;	/* handle to (open) DLL */
 
 /* Pointers to the real functions. */
-static ALC_API ALCdevice* ALC_APIENTRY (*f_alcOpenDevice)(const ALCchar *devicename);
-static ALC_API ALCboolean ALC_APIENTRY (*f_alcCloseDevice)(ALCdevice *device);
-static ALC_API ALCcontext* ALC_APIENTRY (*f_alcCreateContext)(ALCdevice *device, const ALCint* attrlist);
-static ALC_API void        ALC_APIENTRY (*f_alcDestroyContext)(ALCcontext *context);
-static ALC_API ALCboolean  ALC_APIENTRY (*f_alcMakeContextCurrent)(ALCcontext *context);
-static ALC_API ALCcontext* ALC_APIENTRY (*f_alcGetCurrentContext)(void);
-static ALC_API ALCdevice*  ALC_APIENTRY (*f_alcGetContextsDevice)(ALCcontext *context);
-static AL_API void AL_APIENTRY (*f_alSource3f)(ALuint source, ALenum param, ALfloat value1, ALfloat value2, ALfloat value3);
-static AL_API void AL_APIENTRY (*f_alSourcef)(ALuint source, ALenum param, ALfloat value);
-static AL_API void AL_APIENTRY (*f_alSourcei)(ALuint source, ALenum param, ALint value);
-static AL_API void AL_APIENTRY (*f_alBufferData)(ALuint buffer, ALenum format, const ALvoid *data, ALsizei size, ALsizei freq);
-static AL_API void AL_APIENTRY (*f_alSourceQueueBuffers)(ALuint source, ALsizei nb, const ALuint *buffers);
-static AL_API void AL_APIENTRY (*f_alSourceUnqueueBuffers)(ALuint source, ALsizei nb, ALuint *buffers);
-static AL_API void AL_APIENTRY (*f_alSourcePlay)(ALuint source);
-static AL_API void AL_APIENTRY (*f_alGetSourcei)(ALuint source,  ALenum param, ALint *value);
-static AL_API void AL_APIENTRY (*f_alListenerf)(ALenum param, ALfloat value);
-static AL_API void AL_APIENTRY (*f_alGenBuffers)(ALsizei n, ALuint *buffers);
-static AL_API void AL_APIENTRY (*f_alGenSources)(ALsizei n, ALuint *sources);
+static ALC_API ALCdevice* (ALC_APIENTRY *f_alcOpenDevice)(const ALCchar *devicename);
+static ALC_API ALCboolean (ALC_APIENTRY *f_alcCloseDevice)(ALCdevice *device);
+static ALC_API ALCcontext* (ALC_APIENTRY *f_alcCreateContext)(ALCdevice *device, const ALCint* attrlist);
+static ALC_API void        (ALC_APIENTRY *f_alcDestroyContext)(ALCcontext *context);
+static ALC_API ALCboolean  (ALC_APIENTRY *f_alcMakeContextCurrent)(ALCcontext *context);
+static ALC_API ALCcontext* (ALC_APIENTRY *f_alcGetCurrentContext)(void);
+static ALC_API ALCdevice*  (ALC_APIENTRY *f_alcGetContextsDevice)(ALCcontext *context);
+static AL_API void (AL_APIENTRY *f_alSource3f)(ALuint source, ALenum param, ALfloat value1, ALfloat value2, ALfloat value3);
+static AL_API void (AL_APIENTRY *f_alSourcef)(ALuint source, ALenum param, ALfloat value);
+static AL_API void (AL_APIENTRY *f_alSourcei)(ALuint source, ALenum param, ALint value);
+static AL_API void (AL_APIENTRY *f_alBufferData)(ALuint buffer, ALenum format, const ALvoid *data, ALsizei size, ALsizei freq);
+static AL_API void (AL_APIENTRY *f_alSourceQueueBuffers)(ALuint source, ALsizei nb, const ALuint *buffers);
+static AL_API void (AL_APIENTRY *f_alSourceUnqueueBuffers)(ALuint source, ALsizei nb, ALuint *buffers);
+static AL_API void (AL_APIENTRY *f_alSourcePlay)(ALuint source);
+static AL_API void (AL_APIENTRY *f_alGetSourcei)(ALuint source,  ALenum param, ALint *value);
+static AL_API void (AL_APIENTRY *f_alListenerf)(ALenum param, ALfloat value);
+static AL_API void (AL_APIENTRY *f_alGenBuffers)(ALsizei n, ALuint *buffers);
+static AL_API void (AL_APIENTRY *f_alGenSources)(ALsizei n, ALuint *sources);
 
 static dllimp_t openal_imports[] = {
   { "alcOpenDevice",		&f_alcOpenDevice		},
