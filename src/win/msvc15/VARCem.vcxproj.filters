@@ -653,9 +653,6 @@
     <ClCompile Include="..\..\video\vid_mda.c">
       <Filter>video</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\video\vid_oti067.c">
-      <Filter>video</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\video\vid_paradise.c">
       <Filter>video</Filter>
     </ClCompile>
@@ -678,9 +675,6 @@
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\video\vid_svga_render.c">
-      <Filter>video</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\video\vid_t3100e.c">
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\video\vid_table.c">
@@ -782,6 +776,24 @@
     <ClCompile Include="..\..\win\win_ui.c">
       <Filter>win</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\video\vid_oak_oti.c">
+      <Filter>video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\machine\m_at_t3100e_vid.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\machine\m_xt_t1000.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\machine\m_xt_t1000_vid.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\machine\m_xt_xi8088.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\nvr_tc8521.c" />
+    <ClCompile Include="..\..\rom_load.c" />
+    <ClCompile Include="..\..\rtc_tc8521.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\bugger.h" />
@@ -1490,9 +1502,6 @@
     <ClInclude Include="..\..\video\vid_mda.h">
       <Filter>video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\video\vid_oti067.h">
-      <Filter>video</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\video\vid_paradise.h">
       <Filter>video</Filter>
     </ClInclude>
@@ -1515,9 +1524,6 @@
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\video\vid_svga_render.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\video\vid_t3100e.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\video\vid_tgui9440.h">
@@ -1568,6 +1574,17 @@
     <ClInclude Include="..\..\win\win_png.h">
       <Filter>win</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\video\vid_oak_oti.h">
+      <Filter>video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\machine\m_xt_xi8088.h">
+      <Filter>machine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\machine\m_xt_t1000.h">
+      <Filter>machine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\nvr_tc8521.h" />
+    <ClInclude Include="..\..\rtc_tc8521.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cdrom">
