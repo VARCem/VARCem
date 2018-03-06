@@ -9,12 +9,12 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.2	2018/02/24
+ * Version:	@(#)zip.c	1.0.3	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -474,8 +474,6 @@ static const mode_sense_pages_t zip_250_mode_sense_pages_changeable =
 static mode_sense_pages_t zip_mode_sense_pages_saved[ZIP_NUM];
 
 
-//FIXME: move to Makefile
-#define ENABLE_ZIP_LOG 1
 #ifdef ENABLE_ZIP_LOG
 int zip_do_log = ENABLE_ZIP_LOG;
 #endif
@@ -924,13 +922,18 @@ void zip_update_request_length(uint8_t id, int len, int block_len)
 {
 	uint32_t bt;
 
+	if (!zip[id].request_length)
+		zip[id].max_transfer_len = 65534;
+	else
+		zip[id].max_transfer_len = zip[id].request_length;
+
 	/* For media access commands, make sure the requested DRQ length matches the block length. */
 	switch (zip[id].current_cdb[0]) {
 		case 0x08:
 		case 0x28:
 		case 0xa8:
-			if (zip[id].request_length < block_len)
-				zip[id].request_length = block_len;
+			if (zip[id].max_transfer_len < block_len)
+				zip[id].max_transfer_len = block_len;
 			bt = (zip[id].requested_blocks * block_len);
 			if (len > bt)
 				len = bt;
@@ -939,11 +942,11 @@ void zip_update_request_length(uint8_t id, int len, int block_len)
 			break;
 	}
 	/* If the DRQ length is odd, and the total remaining length is bigger, make sure it's even. */
-	if ((zip[id].request_length & 1) && (zip[id].request_length < len))
-		zip[id].request_length &= 0xfffe;
+	if ((zip[id].max_transfer_len & 1) && (zip[id].max_transfer_len < len))
+		zip[id].max_transfer_len &= 0xfffe;
 	/* If the DRQ length is smaller or equal in size to the total remaining length, set it to that. */
-	if (len <= zip[id].request_length)
-		zip[id].request_length = len;
+	if (len <= zip[id].max_transfer_len)
+		zip[id].max_transfer_len = len;
 	return;
 }
 
@@ -1002,13 +1005,6 @@ static void zip_command_write_dma(uint8_t id)
 	zip_command_common(id);
 }
 
-static int zip_request_length_is_zero(uint8_t id)
-{
-	if ((zip[id].request_length == 0) && (zip_drives[id].bus_type < ZIP_BUS_SCSI))
-		return 1;
-	return 0;
-}
-
 /* id = Current ZIP device ID;
    len = Total transfer length;
    block_len = Length of a single block (why does it matter?!);
@@ -1023,7 +1019,8 @@ static void zip_data_command_finish(uint8_t id, int len, int block_len, int allo
 			len = alloc_len;
 		}
 	}
-	if (zip_request_length_is_zero(id) || (len == 0) || (zip_current_mode(id) == 0)) {
+
+	if ((len == 0) || (zip_current_mode(id) == 0)) {
 		if (zip_drives[id].bus_type != ZIP_BUS_SCSI) {
 			zip[id].packet_len = 0;
 		}
@@ -2214,8 +2211,8 @@ void zip_pio_request(uint8_t id, uint8_t out)
 
 		/* If less than (packet length) bytes are remaining, update packet length
 		   accordingly. */
-		if ((zip[id].packet_len - zip[id].pos) < (zip[id].request_length))
-			zip[id].request_length = zip[id].packet_len - zip[id].pos;
+		if ((zip[id].packet_len - zip[id].pos) < (zip[id].max_transfer_len))
+			zip[id].max_transfer_len = zip[id].packet_len - zip[id].pos;
 
 		old_pos = zip[id].pos;
 		zip[id].packet_status = out ? ZIP_PHASE_DATA_OUT : ZIP_PHASE_DATA_IN;
@@ -2283,7 +2280,7 @@ int zip_read_from_dma(uint8_t id)
 		in_data_length = *BufLen;
 		zip_log("ZIP %i: SCSI Input data length: %i\n", id, in_data_length);
 	} else {
-		in_data_length = zip[id].request_length;
+		in_data_length = zip[id].max_transfer_len;
 		zip_log("ZIP %i: ATAPI Input data length: %i\n", id, in_data_length);
 	}
 
@@ -2473,7 +2470,7 @@ uint32_t zip_read(uint8_t channel, int length)
 	}
 
 	if (zip[id].packet_status == ZIP_PHASE_DATA_IN) {
-		if ((zip[id].request_pos >= zip[id].request_length) || (zip[id].pos >= zip[id].packet_len)) {
+		if ((zip[id].request_pos >= zip[id].max_transfer_len) || (zip[id].pos >= zip[id].packet_len)) {
 			/* Time for a DRQ. */
 			// zip_log("ZIP %i: Issuing read callback\n", id);
 			zip_pio_request(id, 0);
@@ -2529,7 +2526,7 @@ void zip_write(uint8_t channel, uint32_t val, int length)
 	}
 
 	if (zip[id].packet_status == ZIP_PHASE_DATA_OUT) {
-		if ((zip[id].request_pos >= zip[id].request_length) || (zip[id].pos >= zip[id].packet_len)) {
+		if ((zip[id].request_pos >= zip[id].max_transfer_len) || (zip[id].pos >= zip[id].packet_len)) {
 			/* Time for a DRQ. */
 			zip_pio_request(id, 1);
 		}

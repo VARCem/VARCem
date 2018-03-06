@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.2	2018/02/21
+ * Version:	@(#)vid_svga.h	1.0.3	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,6 +94,8 @@ typedef struct svga_t
         uint8_t writemask;
         uint32_t charseta, charsetb;
         
+	int set_reset_disabled;
+
         uint8_t egapal[16];
         uint32_t pallook[256];
         PALETTE vgapal;
@@ -193,9 +195,11 @@ void     svga_write(uint32_t addr, uint8_t val, void *p);
 void     svga_writew(uint32_t addr, uint16_t val, void *p);
 void     svga_writel(uint32_t addr, uint32_t val, void *p);
 uint8_t  svga_read_linear(uint32_t addr, void *p);
+uint8_t  svga_readb_linear(uint32_t addr, void *p);
 uint16_t svga_readw_linear(uint32_t addr, void *p);
 uint32_t svga_readl_linear(uint32_t addr, void *p);
 void     svga_write_linear(uint32_t addr, uint8_t val, void *p);
+void     svga_writeb_linear(uint32_t addr, uint8_t val, void *p);
 void     svga_writew_linear(uint32_t addr, uint16_t val, void *p);
 void     svga_writel_linear(uint32_t addr, uint32_t val, void *p);
 

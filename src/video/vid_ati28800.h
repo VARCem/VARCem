@@ -8,7 +8,7 @@
  *
  *		Definitions for the ATI28800 driver.
  *
- * Version:	@(#)vid_ati28800.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_ati28800.h	1.0.2	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 
 
 extern device_t ati28800_device;
+extern device_t ati28800k_device;
 extern device_t compaq_ati28800_device;
 #if defined(DEV_BRANCH) && defined(USE_XL24)
 extern device_t ati28800_wonderxl24_device;

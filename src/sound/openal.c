@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.2	2018/02/24
+ * Version:	@(#)openal.c	1.0.3	2018/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,6 +56,7 @@
 #include "../plat_dynld.h"
 #include "../ui.h"
 #include "sound.h"
+#include "midi.h"
 
 
 #define FREQ	48000
@@ -200,7 +201,17 @@ void
 initalmain(int argc, char *argv[])
 {
 #ifdef USE_OPENAL
+    char *str;
+
     if (openal_handle != NULL) return;
+
+    /*
+     * If the current MIDI device is neither "none", nor system MIDI,
+     * initialize the MIDI buffer and source, otherwise, do not.
+     */
+    str = midi_device_get_internal_name(midi_device_current);
+    if (!strcmp(str, "none") ||
+	!strcmp(str, SYSTEM_MIDI_INTERNAL_NAME)) return;
 
     /* Try loading the DLL. */
     openal_handle = dynld_module(PATH_AL_DLL, openal_imports);

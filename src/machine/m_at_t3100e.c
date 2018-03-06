@@ -117,7 +117,7 @@
  *                       bit 2 set for single-pixel LCD font
  *                       bits 0,1 for display font
  *
- * Version:	@(#)m_at_t3100e.c	1.0.1	2018/02/14
+ * Version:	@(#)m_at_t3100e.c	1.0.3	2018/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -159,7 +159,6 @@
 #include "../cpu/cpu.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
-#include "../video/vid_t3100e.h"
 #include "machine.h"
 #include "m_at_t3100e.h"
 
@@ -425,14 +424,11 @@ void t3100e_turbo_set(uint8_t value)
 	t3100e_ems.turbo = value;
 	if (!value)
 	{
-		int c = cpu;
-		cpu = 0;	/* 286/6 */
-		cpu_set();
-		cpu = c;
+		cpu_dynamic_switch(0);	/* 286/6 */
 	}
 	else
 	{
-		cpu_set();
+		cpu_dynamic_switch(cpu);
 	}
 }
 

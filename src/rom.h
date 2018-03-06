@@ -8,7 +8,7 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.3	2018/02/28
+ * Version:	@(#)rom.h	1.0.4	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -94,10 +94,11 @@ enum {
     ROM_PXXT,
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
     ROM_LTXT,
-
     ROM_LXT3,
 #endif
-
+    ROM_T1000,
+    ROM_T1200,
+    ROM_XI8088,
     ROM_IBMPCJR,
     ROM_TANDY,
     ROM_TANDY1000HX,
@@ -118,22 +119,22 @@ enum {
 #if defined(DEV_BRANCH) && defined(USE_PORTABLE3)
     ROM_PORTABLEIII,
 #endif
+    ROM_GW286CT,
     ROM_SUPER286TR,	/* Hyundai Super-286TR/SCAT/Award */
     ROM_IBMAT,
     ROM_IBMPS1_2011,
     ROM_IBMPS2_M30_286,
     ROM_IBMXT286,
     ROM_SPC4200P,	/* Samsung SPC-4200P/SCAT/Phoenix */
-#ifdef WALTJE
-    ROM_OPENAT,		/* PC/AT clone with Open BIOS */
-#endif
+    ROM_SPC4216P,	/* Samsung SPC-4216P/SCAT */
 
     ROM_IBMPS2_M50,
 
     ROM_AMI386SX,
+    ROM_KMXC02,
     ROM_MEGAPC,
     ROM_AWARD386SX_OPTI495,
-#if defined(DEV_BRANCH) && defined(USE_PORTABLE3)
+#if defined(DEV_BRANCH) && defined(USE_DESKPRO386)
     ROM_DESKPRO_386,
 #endif
     ROM_DTK386,
@@ -163,10 +164,6 @@ enum {
     ROM_4GPV31,		/* Green-B 4GPV3.1 ISA/VLB 486/Pentium, AMI */
 #endif
     ROM_IBMPS1_2133,
-
-#ifdef WALTJE
-    ROM_IBMPS2_M80_486,
-#endif
 
     ROM_R418,		/* Rise Computer R418/SiS 496/497/Award/SMC FDC37C665 */
 

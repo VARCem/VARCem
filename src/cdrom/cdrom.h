@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.2	2018/02/21
+ * Version:	@(#)cdrom.h	1.0.3	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -127,6 +127,7 @@ typedef struct {
 	uint8_t error;
 	uint8_t features;
 	uint16_t request_length;
+	uint16_t max_transfer_len;
 	uint8_t status;
 	uint8_t phase;
 

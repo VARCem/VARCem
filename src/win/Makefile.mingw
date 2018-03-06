@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.6	2018/03/02
+# Version:	@(#)Makefile.mingw	1.0.7	2018/03/05
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -436,8 +436,8 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #########################################################################
 MAINOBJ		:= pc.o config.o random.o timer.o io.o dma.o nmi.o pic.o \
 		   pit.o ppi.o pci.o mca.o mcr.o mem.o memregs.o rom.o \
-		   rom_load.o device.o nvr.o nvr_at.o nvr_ps2.o \
-		   $(VNCOBJ) $(RDPOBJ)
+		   rom_load.o device.o nvr.o nvr_tc8521.o rtc_tc8521.o \
+		   nvr_at.o nvr_ps2.o $(VNCOBJ) $(RDPOBJ)
 
 INTELOBJ	:= intel.o \
 		    intel_flash.o \
@@ -450,6 +450,8 @@ CPUOBJ		:= cpu.o cpu_table.o \
 
 MCHOBJ		:= machine.o machine_table.o \
 		    m_xt.o m_xt_compaq.o \
+		    m_xt_t1000.o m_xt_t1000_vid.o \
+		    m_xt_xi8088.o \
 		    m_pcjr.o \
 		    m_amstrad.o \
 		    m_europc.o m_europc_hdc.o \
@@ -457,7 +459,7 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_at.o \
 		    m_at_ali1429.o m_at_commodore.o \
 		    m_at_neat.o m_at_headland.o \
-		    m_at_t3100e.o \
+		    m_at_t3100e.o m_at_t3100e_vid.o \
 		    m_ps1.o \
 		    m_ps2_isa.o m_ps2_mca.o \
 		    m_at_opti495.o m_at_scat.o \
@@ -546,7 +548,6 @@ VIDOBJ		:= video.o \
 		    vid_hercules.o vid_herculesplus.o vid_incolor.o \
 		    vid_colorplus.o \
 		    vid_genius.o \
-		    vid_t3100e.o \
 		    vid_wy700.o \
 		    vid_ega.o vid_ega_render.o \
 		    vid_svga.o vid_svga_render.o \
@@ -558,7 +559,7 @@ VIDOBJ		:= video.o \
 		    vid_cl54xx.o \
 		    vid_et4000.o vid_sc1502x_ramdac.o \
 		    vid_et4000w32.o vid_stg_ramdac.o \
-		    vid_oti067.o \
+		    vid_oak_oti.o \
 		    vid_paradise.o \
 		    vid_ti_cf62011.o \
 		    vid_tvga.o \

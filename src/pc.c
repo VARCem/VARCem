@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.4	2018/03/02
+ * Version:	@(#)pc.c	1.0.5	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -537,7 +537,7 @@ pc_full_speed(void)
     if (! atfullspeed) {
 	pclog("Set fullspeed - %i %i %i\n", is386, AT, cpuspeed2);
 	if (AT)
-		setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu].rspeed);
+		setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
 	  else
 		setpitclock(14318184.0);
     }
@@ -551,7 +551,7 @@ void
 pc_speed_changed(void)
 {
     if (AT)
-	setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu].rspeed);
+	setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
       else
 	setpitclock(14318184.0);
 
@@ -851,7 +851,7 @@ pc_reset_hard_init(void)
     cpu_cache_int_enabled = cpu_cache_ext_enabled = 0;
 
     if (AT)
-	setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu].rspeed);
+	setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
     else
 	setpitclock(14318184.0);
 }
@@ -984,7 +984,7 @@ pc_thread(void *param)
 
 		/* Run a block of code. */
 		startblit();
-		clockrate = machines[machine].cpu[cpu_manufacturer].cpus[cpu].rspeed;
+		clockrate = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed;
 
 		if (is386) {
 #ifdef USE_DYNAREC
@@ -1058,8 +1058,8 @@ pc_thread(void *param)
 
 		if (title_update) {
 			mbstowcs(wmachine, machine_getname(), strlen(machine_getname())+1);
-			mbstowcs(wcpu, machines[machine].cpu[cpu_manufacturer].cpus[cpu].name,
-				 strlen(machines[machine].cpu[cpu_manufacturer].cpus[cpu].name)+1);
+			mbstowcs(wcpu, machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name,
+				 strlen(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name)+1);
 			swprintf(temp, sizeof_w(temp),
 				 L"%ls v%ls - %i%% - %ls - %ls - %ls",
 				 EMU_NAME_W,EMU_VERSION_W,fps,wmachine,wcpu,
@@ -1144,10 +1144,10 @@ set_screen_size(int x, int y)
 	dty = (double)temp_overscan_y;
 
 	/* Account for possible overscan. */
-	if (!(VGA) && (temp_overscan_y == 16)) {
+	if (!(video_is_ega_vga()) && (temp_overscan_y == 16)) {
 		/* CGA */
 		dy = (((dx - dtx) / 4.0) * 3.0) + dty;
-	} else if (!(VGA) && (temp_overscan_y < 16)) {
+	} else if (!(video_is_ega_vga()) && (temp_overscan_y < 16)) {
 		/* MDA/Hercules */
 		dy = (x / 4.0) * 3.0;
 	} else {

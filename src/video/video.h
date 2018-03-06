@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.3	2018/03/01
+ * Version:	@(#)video.h	1.0.5	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,6 +38,9 @@
  */
 #ifndef EMU_VIDEO_H
 # define EMU_VIDEO_H
+
+
+#define FONT_ATIKOR_PATH	L"roms/video/ati/ati28800/ati_ksc5601.rom"
 
 
 #define makecol(r, g, b)    ((b) | ((g) << 8) | ((r) << 16))
@@ -74,8 +77,9 @@ enum {
     GFX_N9_9FX_VLB,		/* S3 764/Trio64 (Number Nine 9FX) VLB */
     GFX_N9_9FX_PCI,		/* S3 764/Trio64 (Number Nine 9FX) PCI */
     GFX_TGUI9400CXI,   		/* Trident TGUI9400CXi VLB */
-    GFX_TGUI9440_VLB,   	/* Trident TGUI9440 VLB */
-    GFX_TGUI9440_PCI,   	/* Trident TGUI9440 PCI */
+    GFX_TGUI9440_VLB,   	/* Trident TGUI9440AGi VLB */
+    GFX_TGUI9440_PCI,   	/* Trident TGUI9440AGi PCI */
+    GFX_ATIKOREANVGA,		/* ATI Korean VGA (28800-5) */
     GFX_VGA88,  		/* ATI VGA-88 (18800-1) */
     GFX_VGAEDGE16,  		/* ATI VGA Edge-16 (18800-1) */
     GFX_VGACHARGER, 		/* ATI VGA Charger (28800-5) */
@@ -88,8 +92,19 @@ enum {
     GFX_MACH64GX_VLB,		/* ATI Graphics Pro Turbo (Mach64) VLB */
     GFX_MACH64GX_PCI,		/* ATI Graphics Pro Turbo (Mach64) PCI */
     GFX_MACH64VT2,  		/* ATI Mach64 VT2 */
-    GFX_CL_GD5428,  		/* Diamond SpeedStar PRO (Cirrus Logic CL-GD 5428) */
-    GFX_CL_GD5429,  		/* Cirrus Logic CL-GD 5429 */
+    GFX_CL_GD5424_ISA, 		/* Cirrus Logic GD5424 ISA */
+    GFX_CL_GD5424_VLB, 		/* Cirrus Logic GD5424 VLB */
+    GFX_CL_GD5428_ISA, 		/* Cirrus Logic GD5428 ISA */
+    GFX_CL_GD5428_VLB,		/* Diamond SpeedStar PRO (Cirrus Logic GD5428) VLB */
+    GFX_CL_GD5429_ISA, 		/* Cirrus Logic GD5429 ISA */
+    GFX_CL_GD5429_VLB,		/* Cirrus Logic GD5429 VLB */
+    GFX_CL_GD5430_VLB,		/* Diamond SpeedStar PRO SE (Cirrus Logic GD5430) PCI */
+    GFX_CL_GD5430_PCI,		/* Cirrus Logic GD5430 PCI */
+    GFX_CL_GD5434_ISA, 		/* Cirrus Logic GD5434 ISA */
+    GFX_CL_GD5434_VLB,		/* Cirrus Logic GD5434 VLB */
+    GFX_CL_GD5434_PCI,		/* Cirrus Logic GD5434 PCI */
+    GFX_CL_GD5436_PCI,		/* Cirrus Logic CL-GD 5436 PCI */
+    GFX_OTI037C,     		/* Oak OTI-037C */
     GFX_OTI067,     		/* Oak OTI-067 */
     GFX_OTI077,     		/* Oak OTI-077 */
     GFX_PVGA1A,			/* Paradise PVGA1A Standalone */
@@ -117,20 +132,6 @@ enum {
 
     GFX_MAX
 };
-
-#define MDA	( (gfxcard >= GFX_MDA) && \
-		  (gfxcard <  GFX_EGA) && \
-		 ((romset  <  ROM_TANDY) || \
-		  (romset  >= ROM_AMI286)))
-
-#define EGA	((gfxcard >= GFX_EGA) && \
-		 (gfxcard <  GFX_VGA))
-
-#define VGA	((gfxcard >= GFX_VGA))
-
-#define EGA_VGA	( (EGA || VGA) && \
-		 ((romset   < ROM_TANDY) || \
-		  (romset  >= ROM_AMI286)))
 
 enum {
     FULLSCR_SCALE_FULL = 0,
@@ -182,6 +183,7 @@ extern int	video_fullscreen,
 extern int	fullchange;
 extern uint8_t	fontdat[2048][8];
 extern uint8_t	fontdatm[2048][16];
+extern uint8_t	fontdatksc5601[16384][32];
 extern uint32_t	*video_6to8,
 		*video_15to32,
 		*video_16to32;
@@ -230,6 +232,9 @@ extern int	video_old_to_new(int card);
 extern int	video_new_to_old(int card);
 extern char	*video_get_internal_name(int card);
 extern int	video_get_video_from_internal_name(char *s);
+extern int 	video_is_mda(void);
+extern int 	video_is_cga(void);
+extern int 	video_is_ega_vga(void);
 
 
 extern void	video_setblit(void(*blit)(int,int,int,int,int,int));

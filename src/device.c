@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.1	2018/02/14
+ * Version:	@(#)device.c	1.0.2	2018/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,8 +84,12 @@ device_add(device_t *d)
 
     if (d->init != NULL) {
 	priv = d->init(d);
-	if (priv == NULL)
-		fatal("device_add: device init failed\n");
+	if (priv == NULL) {
+		if (d->name)
+			fatal("device_add: device '%s' init failed\n", d->name);
+		  else
+			fatal("device_add: device init failed\n");
+	}
     }
 
     devices[c] = d;

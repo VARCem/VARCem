@@ -14,7 +14,7 @@
  *		of those batteries would create corrosion issues later on
  *		in mainboard life...
  *
- * Version:	@(#)nvr_at.c	1.0.1	2018/02/14
+ * Version:	@(#)nvr_at.c	1.0.2	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,6 +66,8 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
 
+    cycles -= ISA_CYCLES(8);
+
     if (! (addr & 1)) {
 	nvr->addr = (val & nvr->mask);
 	if (!(machines[machine].flags & MACHINE_MCA) && (romset != ROM_IBMPS1_2133))
@@ -84,6 +86,8 @@ nvr_read(uint16_t addr, void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     uint8_t ret;
+
+    cycles -= ISA_CYCLES(8);
 
     if (addr & 1) {
 	/* Read from the chip's registers. */

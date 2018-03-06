@@ -9,7 +9,7 @@
  *		Implementation of the IDE emulation for hard disks and ATAPI
  *		CD-ROM devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.2	2018/02/24
+ * Version:	@(#)hdc_ide.c	1.0.4	2018/03/05
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -465,6 +465,7 @@ static void ide_atapi_identify(IDE *ide)
 	ide->buffer[48] = 1;   /*Dword transfers supported*/
 	ide->buffer[49] = 0x200; /* LBA supported */
 	ide->buffer[51] = 2 << 8; /*PIO timing mode*/
+	ide->buffer[126] = 0xfffe; /* Interpret zero byte count limit as maximum length */
 
 	if (PCI && (ide->board < 2) && (cdrom_drives[cdrom_id].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA))
 	{
@@ -516,6 +517,8 @@ static void ide_atapi_zip_identify(IDE *ide)
 	/* Note by Kotori: Look at this if this is supported by ZIP at all. */
 	ide->buffer[48] = 1;   /*Dword transfers supported*/
 	ide->buffer[51] = 2 << 8; /*PIO timing mode*/
+
+	ide->buffer[126] = 0xfffe; /* Interpret zero byte count limit as maximum length */
 
 	if (PCI && (ide->board < 2) && (zip_drives[zip_id].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA))
 	{
@@ -1155,6 +1158,33 @@ void writeide(int ide_board, uint16_t addr, uint8_t val)
 		{
 			cdrom[atapi_cdrom_drives[ide->channel]].error = 0;
 		}
+		if (((val >= WIN_RESTORE) && (val <= 0x1F)) || ((val >= WIN_SEEK) && (val <= 0x7F)))
+		{
+			if (ide_drive_is_zip(ide))
+			{
+				zip[atapi_zip_drives[ide->channel]].status = READY_STAT;
+			}
+			else if (ide_drive_is_cdrom(ide))
+			{
+				cdrom[atapi_cdrom_drives[ide->channel]].status = READY_STAT;
+			}
+			else
+			{
+				ide->atastat = BUSY_STAT;
+			}
+			timer_process();
+			if (ide_drive_is_zip(ide))
+			{
+				zip[atapi_zip_drives[ide->channel]].callback = 100LL*IDE_TIME;
+			}
+			if (ide_drive_is_cdrom(ide))
+			{
+				cdrom[atapi_cdrom_drives[ide->channel]].callback = 100LL*IDE_TIME;
+			}
+			idecallback[ide_board]=40000LL * TIMER_USEC /*100LL*IDE_TIME*/;
+			timer_update_outstanding();
+			return;
+		}
 		switch (val)
 		{
 			case WIN_SRST: /* ATAPI Device Reset */
@@ -1182,33 +1212,6 @@ void writeide(int ide_board, uint16_t addr, uint8_t val)
                 	        idecallback[ide_board]=100LL*IDE_TIME;
 	                        timer_update_outstanding();
         	                return;
-
-			case WIN_RESTORE:
-			case WIN_SEEK:
-				if (ide_drive_is_zip(ide))
-				{
-					zip[atapi_zip_drives[ide->channel]].status = READY_STAT;
-				}
-				else if (ide_drive_is_cdrom(ide))
-				{
-					cdrom[atapi_cdrom_drives[ide->channel]].status = READY_STAT;
-				}
-				else
-				{
-					ide->atastat = READY_STAT;
-				}
-				timer_process();
-				if (ide_drive_is_zip(ide))
-				{
-					zip[atapi_zip_drives[ide->channel]].callback = 100LL*IDE_TIME;
-				}
-				if (ide_drive_is_cdrom(ide))
-				{
-					cdrom[atapi_cdrom_drives[ide->channel]].callback = 100LL*IDE_TIME;
-				}
-				idecallback[ide_board]=100LL*IDE_TIME;
-				timer_update_outstanding();
-				return;
 
 			case WIN_READ_MULTIPLE:
 				/* Fatal removed in accordance with the official ATAPI reference:
@@ -1906,6 +1909,24 @@ void callbackide(int ide_board)
 	zip_id = atapi_zip_drives[cur_ide[ide_board]];
 	zip_id_other = atapi_zip_drives[cur_ide[ide_board] ^ 1];
 
+	if (((ide->command >= WIN_RESTORE) && (ide->command <= 0x1F)) || ((ide->command >= WIN_SEEK) && (ide->command <= 0x7F)))
+	{
+		if (ide_drive_is_zip(ide) || ide_drive_is_cdrom(ide))
+		{
+			goto abort_cmd;
+		}
+		if ((ide->command >= WIN_SEEK) && (ide->command <= 0x7F))
+		{
+			full_size /= ide->t_hpc;
+			full_size /= ide->t_spt;
+
+			if ((ide->cylinder >= full_size) || (ide->head >= ide->t_hpc) || !ide->sector || (ide->sector > ide->t_spt))
+				goto id_not_found;
+		}
+		ide->atastat = READY_STAT | DSC_STAT;
+		ide_irq_raise(ide);
+		return;
+	}
 	switch (ide->command)
 	{
 		/* Initialize the Task File Registers as follows: Status = 00h, Error = 01h, Sector Count = 01h, Sector Number = 01h,
@@ -1937,12 +1958,6 @@ void callbackide(int ide_board)
 			}
 			return;
 
-	        case WIN_RESTORE:
-        	case WIN_SEEK:
-			if (ide_drive_is_zip(ide) || ide_drive_is_cdrom(ide))
-			{
-				goto abort_cmd;
-			}
 		case WIN_NOP:
 		case WIN_STANDBYNOW1:
 		case WIN_IDLENOW1:

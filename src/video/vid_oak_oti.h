@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the Toshiba 3100e driver.
+ *		Definitions for the OAK067 driver.
  *
- * Version:	@(#)vid_t3100e.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_oti067.h	1.0.2	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,15 +36,14 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef VIDEO_T3100E_H
-# define VIDEO_T3100E_H
+#ifndef VIDEO_OTI067_H
+# define VIDEO_OTI067_H
 
 
-extern device_t t3100e_device;
+extern device_t oti037c_device;
+extern device_t oti067_device;
+extern device_t oti067_acer386_device;
+extern device_t oti077_device;
 
 
-void t3100e_video_options_set(uint8_t options);
-void t3100e_display_set(uint8_t internal);
-
-
-#endif	/*VIDEO_T3100E_H*/
+#endif	/*VIDEO_OTI067_H*/

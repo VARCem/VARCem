@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.1	2018/02/14
+ * Version:	@(#)cpu.c	1.0.2	2018/03/04
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -115,6 +115,7 @@ enum
 };
 
 CPU *cpu_s;
+int cpu_effective;
 int cpu_multi;
 int cpu_iscyrix;
 int cpu_16bitbus;
@@ -195,9 +196,21 @@ int timing_misaligned;
 msr_t msr;
 
 
+void cpu_dynamic_switch(int new_cpu)
+{
+        if (cpu_effective == new_cpu)
+                return;
+
+        int c = cpu;
+        cpu = new_cpu;
+        cpu_set();
+        pc_speed_changed();
+        cpu = c;
+}
+
 void cpu_set_edx()
 {
-        EDX = machines[machine].cpu[cpu_manufacturer].cpus[cpu].edx_reset;
+        EDX = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].edx_reset;
 }
 
 
@@ -212,7 +225,8 @@ void cpu_set()
                 cpu = 0;
         }
         
-        cpu_s = &machines[machine].cpu[cpu_manufacturer].cpus[cpu];
+	cpu_effective = cpu;
+        cpu_s = &machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective];
 
         CPUID    = cpu_s->cpuid_model;
         cpuspeed = cpu_s->speed;
@@ -1287,7 +1301,7 @@ cpu_current_pc(char *bufp)
 
 void cpu_CPUID()
 {
-        switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type)
+        switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type)
         {
                 case CPU_i486DX:
                 if (!EAX)
@@ -1716,7 +1730,7 @@ void cpu_CPUID()
 
 void cpu_RDMSR()
 {
-        switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type)
+        switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type)
         {
                 case CPU_WINCHIP:
                 EAX = EDX = 0;
@@ -1942,7 +1956,7 @@ i686_invalid_rdmsr:
 
 void cpu_WRMSR()
 {
-        switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type)
+        switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type)
         {
                 case CPU_WINCHIP:
                 switch (ECX)
@@ -1965,7 +1979,7 @@ void cpu_WRMSR()
                         if (EAX & (1 << 29))
                                 CPUID = 0;
                         else
-                                CPUID = machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpuid_model;
+                                CPUID = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpuid_model;
                         break;
                         case 0x108:
                         msr.fcr2 = EAX | ((uint64_t)EDX << 32);
@@ -2032,7 +2046,7 @@ void cpu_WRMSR()
                         tsc = EAX | ((uint64_t)EDX << 32);
                         break;
 			case 0x17:
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type != CPU_PENTIUM2D)  goto i686_invalid_wrmsr;
+			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type != CPU_PENTIUM2D)  goto i686_invalid_wrmsr;
 			ecx17_msr = EAX | ((uint64_t)EDX << 32);
 			break;
 			case 0x1B:
@@ -2060,15 +2074,15 @@ void cpu_WRMSR()
 			ecx11e_msr = EAX | ((uint64_t)EDX << 32);
 			break;
 			case 0x174:
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type == CPU_PENTIUMPRO)  goto i686_invalid_wrmsr;
+			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type == CPU_PENTIUMPRO)  goto i686_invalid_wrmsr;
 			cs_msr = EAX & 0xFFFF;
 			break;
 			case 0x175:
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type == CPU_PENTIUMPRO)  goto i686_invalid_wrmsr;
+			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type == CPU_PENTIUMPRO)  goto i686_invalid_wrmsr;
 			esp_msr = EAX;
 			break;
 			case 0x176:
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type == CPU_PENTIUMPRO)  goto i686_invalid_wrmsr;
+			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type == CPU_PENTIUMPRO)  goto i686_invalid_wrmsr;
 			eip_msr = EAX;
 			break;
 			case 0x186:
@@ -2146,10 +2160,10 @@ void cyrix_write(uint16_t addr, uint8_t val, void *priv)
                 if ((ccr3 & 0xf0) == 0x10)
                 {
                         ccr4 = val;
-                        if (machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type >= CPU_Cx6x86)
+                        if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_Cx6x86)
                         {
                                 if (val & 0x80)
-                                        CPUID = machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpuid_model;
+                                        CPUID = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpuid_model;
                                 else
                                         CPUID = 0;
                         }
@@ -2179,11 +2193,11 @@ uint8_t cyrix_read(uint16_t addr, void *priv)
                         case 0xe8: return ((ccr3 & 0xf0) == 0x10) ? ccr4 : 0xff;
                         case 0xe9: return ((ccr3 & 0xf0) == 0x10) ? ccr5 : 0xff;
                         case 0xea: return ((ccr3 & 0xf0) == 0x10) ? ccr6 : 0xff;
-                        case 0xfe: return machines[machine].cpu[cpu_manufacturer].cpus[cpu].cyrix_id & 0xff;
-                        case 0xff: return machines[machine].cpu[cpu_manufacturer].cpus[cpu].cyrix_id >> 8;
+                        case 0xfe: return machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cyrix_id & 0xff;
+                        case 0xff: return machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cyrix_id >> 8;
                 }
                 if ((cyrix_addr & 0xf0) == 0xc0) return 0xff;
-                if (cyrix_addr == 0x20 && machines[machine].cpu[cpu_manufacturer].cpus[cpu].cpu_type == CPU_Cx5x86) return 0xff;
+                if (cyrix_addr == 0x20 && machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type == CPU_Cx5x86) return 0xff;
         }
         return 0xff;
 }
@@ -2206,7 +2220,7 @@ void x86_setopcodes(OpFn *opcodes, OpFn *opcodes_0f)
 
 void cpu_update_waitstates()
 {
-        cpu_s = &machines[machine].cpu[cpu_manufacturer].cpus[cpu];
+        cpu_s = &machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective];
         
         cpu_prefetch_width = cpu_16bitbus ? 2 : 4;
         

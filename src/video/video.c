@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.2	2018/02/26
+ * Version:	@(#)video.c	1.0.4	2018/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,6 +100,7 @@ uint8_t		fontdat[2048][8];		/* IBM CGA font */
 uint8_t		fontdatm[2048][16];		/* IBM MDA font */
 uint8_t		fontdatw[512][32];		/* Wyse700 font */
 uint8_t		fontdat8x12[256][16];		/* MDSI Genius font */
+uint8_t		fontdatksc5601[16384][32];	/* Korean KSC-5601 font */
 uint32_t	pal_lookup[256];
 int		xsize = 1,
 		ysize = 1;
@@ -366,11 +367,13 @@ static video_timings_t timing_pc1512   = {VIDEO_BUS, 0,0,0, 0,0,0}; /*PC1512 vid
 static video_timings_t timing_pc1640   = {VIDEO_ISA, 8,16,32, 8,16,32};
 static video_timings_t timing_pc200    = {VIDEO_ISA, 8,16,32, 8,16,32};
 static video_timings_t timing_m24      = {VIDEO_ISA, 8,16,32, 8,16,32};
+static video_timings_t timing_t1000    = {VIDEO_ISA, 8,16,32, 8,16,32};
 static video_timings_t timing_pvga1a   = {VIDEO_ISA, 6, 8,16, 6, 8,16};
 static video_timings_t timing_wd90c11  = {VIDEO_ISA, 3, 3, 6, 5, 5,10};
 static video_timings_t timing_vga      = {VIDEO_ISA, 8,16,32, 8,16,32};
 static video_timings_t timing_ps1_svga = {VIDEO_ISA, 6, 8,16, 6, 8,16};
 static video_timings_t timing_t3100e   = {VIDEO_ISA, 8,16,32, 8,16,32};
+static video_timings_t timing_endeavor = {VIDEO_BUS, 3, 2, 4,25,25,40};
 
 void
 video_update_timing(void)
@@ -400,6 +403,10 @@ video_update_timing(void)
 		case ROM_OLIM24:
 			timing = &timing_m24;
 			break;
+		case ROM_T1000:
+		case ROM_T1200:
+			timing = &timing_t1000;
+			break;
 		case ROM_PC2086:
 		case ROM_PC3086:
 			timing = &timing_pvga1a;
@@ -421,6 +428,9 @@ video_update_timing(void)
 			break;
 		case ROM_T3100E:
 			timing = &timing_t3100e;
+			break;
+		case ROM_ENDEAVOR:
+			timing = &timing_endeavor;
 			break;
 		default:
 			new_gfxcard = video_old_to_new(gfxcard);
@@ -745,35 +755,29 @@ loadfont(wchar_t *s, int format)
 		break;
 
 	case 5: /* Toshiba 3100e */
-		for (d = 0; d < 2048; d += 512)	/* Four languages... */
-		{
+		for (d = 0; d < 2048; d += 512) {    /* Four languages... */
 	                for (c = d; c < d+256; c++)
-                	{
                        		fread(&fontdatm[c][8], 1, 8, f);
-                	}
                 	for (c = d+256; c < d+512; c++)
-                	{
                         	fread(&fontdatm[c][8], 1, 8, f);
-                	}
 	                for (c = d; c < d+256; c++)
-                	{
                         	fread(&fontdatm[c][0], 1, 8, f);
-                	}
                 	for (c = d+256; c < d+512; c++)
-                	{
                         	fread(&fontdatm[c][0], 1, 8, f);
-                	}
 			fseek(f, 4096, SEEK_CUR);	/* Skip blank section */
 	                for (c = d; c < d+256; c++)
-                	{
                        		fread(&fontdat[c][0], 1, 8, f);
-                	}
                 	for (c = d+256; c < d+512; c++)
-                	{
                         	fread(&fontdat[c][0], 1, 8, f);
-                	}
 		}
                 break;
+
+	case 6: /* Korean KSC-5601 */
+		for (c=0;c<16384;c++) {
+			for (d=0;d<32;d++)
+				fontdatksc5601[c][d]=getc(f);
+		}
+		break;
     }
 
     (void)fclose(f);

@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.3	2018/02/24
+ * Version:	@(#)scsi_x54x.c	1.0.5	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1393,16 +1393,29 @@ x54x_in(uint16_t port, void *priv)
 		break;
 
 	case 3:
+		/* Bits according to ASPI4DOS.SYS v3.36:
+		 *   0		Not checked
+		 *   1		Must be 0
+		 *   2		Must be 0-0-0-1
+		 *   3		Must be 0
+		 *   4		Must be 0-1-0-0
+		 *   5		Must be 0
+		 *   6		Not checked
+		 *   7		Not checked
+		 */
 		if (dev->int_geom_writable)
 			ret = dev->Geometry;
 		else {
-			dev->Geometry++;
-			switch(dev->Geometry & 3) {
+			switch(dev->Geometry) {
 				case 0: default: ret = 'A'; break;
 				case 1: ret = 'D'; break;
 				case 2: ret = 'A'; break;
 				case 3: ret = 'P'; break;
 			}
+			ret ^= 1;
+			dev->Geometry++;
+			dev->Geometry &= 0x03;
+			break;
 		}
 		break;
     }
@@ -1464,7 +1477,7 @@ static void
 x54x_reset(x54x_t *dev)
 {
     clear_irq(dev);
-    if (dev->int_geom_writable == 1)
+    if (dev->int_geom_writable)
 	dev->Geometry = 0x80;
       else
 	dev->Geometry = 0x00;
@@ -1820,7 +1833,7 @@ x54x_out(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 3:
-		if (dev->int_geom_writable == 1)
+		if (dev->int_geom_writable)
 			dev->Geometry = val;
 		break;
     }

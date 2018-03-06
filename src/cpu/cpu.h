@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.h	1.0.2	2018/02/21
+ * Version:	@(#)cpu.h	1.0.3	2018/03/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -347,6 +347,8 @@ extern int		cpl_override;
 extern int		CPUID;
 extern int		xt_cpu_multi;
 extern int		isa_cycles;
+extern int		cpu_effective;
+
 extern uint16_t		flags,eflags;
 extern uint32_t		oldds,oldss,olddslimit,oldsslimit,olddslimitw,oldsslimitw;
 extern int		ins,output;
@@ -436,6 +438,7 @@ extern void	loadseg(uint16_t seg, x86seg *s);
 extern void	loadcs(uint16_t seg);
 
 extern char	*cpu_current_pc(char *bufp);
+extern void	cpu_dynamic_switch(int new_cpu);
 
 extern void	cpu_update_waitstates(void);
 extern void	cpu_set(void);

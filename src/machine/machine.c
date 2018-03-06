@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.3	2018/03/01
+ * Version:	@(#)machine.c	1.0.4	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,7 +119,7 @@ machine_detect(void)
 
     if (c == 0) {
 	/* No usable ROMs found, aborting. */
-	pclog("No usable machines have been found.\n");
+	pclog("No usable machine has been found!\n");
 	return(0);
     }
 

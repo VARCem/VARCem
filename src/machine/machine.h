@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.5	2018/03/01
+ * Version:	@(#)machine.h	1.0.6	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -162,6 +162,7 @@ extern void	machine_at_neat_ami_init(machine_t *);
 extern void	machine_at_opti495_init(machine_t *);
 extern void	machine_at_opti495_ami_init(machine_t *);
 extern void	machine_at_scat_init(machine_t *);
+extern void	machine_at_scatsx_init(machine_t *);
 extern void	machine_at_compaq_init(machine_t *);
 
 extern void	machine_at_dtk486_init(machine_t *);
@@ -183,9 +184,6 @@ extern void	machine_ps2_m30_286_init(machine_t *);
 extern void	machine_ps2_model_50_init(machine_t *);
 extern void	machine_ps2_model_55sx_init(machine_t *);
 extern void	machine_ps2_model_80_init(machine_t *);
-#ifdef WALTJE
-extern void	machine_ps2_model_80_486_init(machine_t *);
-#endif
 
 extern void	machine_amstrad_init(machine_t *);
 
@@ -207,11 +205,21 @@ extern void	machine_xt_compaq_init(machine_t *);
 extern void	machine_xt_laserxt_init(machine_t *);
 #endif
 
+extern void	machine_xt_t1000_init(machine_t *);
+extern void	machine_xt_t1200_init(machine_t *);
+
+extern void	machine_xt_xi8088_init(machine_t *);
+
 #ifdef EMU_DEVICE_H
+extern device_t	*xi8088_get_device(void);
+
 extern device_t	*pcjr_get_device(void);
 
 extern device_t	*tandy1k_get_device(void);
 extern device_t	*tandy1k_hx_get_device(void);
+
+extern device_t	*t1000_get_device(void);
+extern device_t	*t1200_get_device(void);
 
 extern device_t	*at_endeavor_get_device(void);
 #endif

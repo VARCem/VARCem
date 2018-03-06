@@ -8,7 +8,7 @@
  *
  *		Implement the PIT (Programmable Interval Timer.)
  *
- * Version:	@(#)pit.c	1.0.1	2018/02/14
+ * Version:	@(#)pit.c	1.0.2	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,7 +85,7 @@ void setpitclock(float clock)
         bus_timing = clock/(double)cpu_busspeed;
         video_update_timing();
         
-        xt_cpu_multi = (int64_t)((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu].rspeed);
+        xt_cpu_multi = (int64_t)((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
         RTCCONST=clock/32768.0;
         TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
         device_speed_changed();
@@ -348,7 +348,7 @@ int64_t pit_get_timer_0()
 static int64_t pit_read_timer(PIT *pit, int64_t t)
 {
         timer_clock();
-        if (pit->using_timer[t])
+        if (pit->using_timer[t] && !(pit->m[t] == 3 && !pit->gate[t]))
         {
                 int64_t read = (int64_t)((pit->c[t] + ((1 << TIMER_SHIFT) - 1)) / PITCONST) >> TIMER_SHIFT;
                 if (pit->m[t] == 2)

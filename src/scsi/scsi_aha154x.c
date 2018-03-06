@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.2	2018/02/26
+ * Version:	@(#)scsi_aha154x.c	1.0.3	2018/03/03
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -807,11 +807,7 @@ aha_init(device_t *info)
 		switch(dev->Base) {
 			case 0x0330:
 				dev->bios_path =
-#if 0
 				    L"roms/scsi/adaptec/aha1540b320_330.bin";
-#else
-				    L"roms/scsi/adaptec/aha1540b310.bin";
-#endif
 				break;
 
 			case 0x0334:
@@ -819,14 +815,8 @@ aha_init(device_t *info)
 				    L"roms/scsi/adaptec/aha1540b320_334.bin";
 				break;
 		}
-#if 0
-		dev->fw_rev = "A001";
-#else
 		dev->fw_rev = "A005";	/* The 3.2 microcode says A012. */
-#endif
-		/* This is configurable from the configuration for the 154xB, the rest of the controllers read it from the EEPROM. */
 		dev->HostID = device_get_config_int("hostid");
-		dev->int_geom_writable = 2;
 		dev->rom_shram = 0x3F80;	/* shadow RAM address base */
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
 		break;

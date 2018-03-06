@@ -13,7 +13,7 @@
  *		- c386sx16 BIOS fails checksum
  *		- the loadfont() calls should be done elsewhere
  *
- * Version:	@(#)rom.c	1.0.5	2018/03/02
+ * Version:	@(#)rom.c	1.0.5	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -169,6 +169,38 @@ rom_load_linear(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 
     (void)fseek(f, off, SEEK_SET);
     (void)fread(ptr+addr, sz, 1, f);
+    (void)fclose(f);
+
+    return(1);
+}
+
+
+/* Load a ROM BIOS from its chips, linear mode with high bit flipped. */
+int
+rom_load_linear_inverted(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
+{
+    FILE *f = rom_fopen(fn);
+
+    if (f == NULL) {
+	pclog("ROM: image '%ls' not found\n", fn);
+	return(0);
+    }
+
+    /* Make sure we only look at the base-256K offset. */
+    if (addr >= 0x40000)
+	addr = 0;
+      else
+	addr &= 0x03ffff;
+
+    (void)fseek(f, 0, SEEK_END);
+    if (ftell(f) < sz) {
+	(void)fclose(f);
+	return(0);
+    }
+
+    (void)fseek(f, off, SEEK_SET);
+    (void)fread(ptr+addr+0x10000, sz >> 1, 1, f);
+    (void)fread(ptr+addr, sz >> 1, 1, f);
     (void)fclose(f);
 
     return(1);

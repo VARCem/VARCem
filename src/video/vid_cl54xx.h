@@ -8,7 +8,7 @@
  *
  *		Definitions for the CLGD5428 driver.
  *
- * Version:	@(#)vid_cl54xx.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_cl54xx.h	1.0.3	2018/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,8 +40,16 @@
 # define VIDEO_CL54XX_H
 
 
-extern device_t gd5428_device;
-extern device_t gd5429_device;
+extern device_t gd5428_isa_device;
+extern device_t gd5428_vlb_device;
+extern device_t gd5429_isa_device;
+extern device_t gd5429_vlb_device;
+extern device_t gd5430_vlb_device;
+extern device_t gd5430_pci_device;
+extern device_t gd5434_isa_device;
+extern device_t gd5434_vlb_device;
+extern device_t gd5434_pci_device;
+extern device_t gd5436_pci_device;
 
 
 #endif	/*VIDEO_CL54XX_H*/

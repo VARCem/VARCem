@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the OAK067 driver.
+ *		Definitions for the Toshiba T1000/T1200 machines.
  *
- * Version:	@(#)vid_oti067.h	1.0.1	2018/02/14
+ * Version:	@(#)m_xt_t1000.h	1.0.1	2018/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,14 +36,24 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef VIDEO_OTI067_H
-# define VIDEO_OTI067_H
+#ifndef MACHINE_T1000_H
+# define MACHINE_T1000_H
 
 
-extern device_t oti037_device;
-extern device_t oti067_device;
-extern device_t oti067_acer386_device;
-extern device_t oti077_device;
+extern device_t t1000_device;
+extern device_t t1200_device;
 
 
-#endif	/*VIDEO_OTI067_H*/
+extern void	t1000_syskey(uint8_t amask, uint8_t omask, uint8_t xmask);
+
+extern void	t1000_configsys_loadnvr(void);
+extern void	t1000_emsboard_loadnvr(void);
+
+extern void	t1000_configsys_savenvr(void);
+extern void	t1000_emsboard_savenvr(void);
+
+extern void	t1000_video_options_set(uint8_t options);
+extern void	t1000_display_set(uint8_t internal);
+
+
+#endif	/*MACHINE_T1000_H*/

@@ -8,7 +8,7 @@
  *
  *		Memory handling and MMU.
  *
- * Version:	@(#)mem.c	1.0.1	2018/02/14
+ * Version:	@(#)mem.c	1.0.3	2018/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include "cpu/x86_ops.h"
 #include "cpu/x86.h"
 #include "machine/machine.h"
+#include "machine/m_xt_xi8088.h"
 #include "config.h"
 #include "io.h"
 #include "mem.h"
@@ -1055,10 +1056,6 @@ void mem_write_raml(uint32_t addr, uint32_t val, void *priv)
 
 uint8_t mem_read_bios(uint32_t addr, void *priv)
 {
-	if (AMIBIOS && (addr&0xFFFFF)==0xF8281) /*This is read constantly during AMIBIOS POST, but is never written to. It's clearly a status register of some kind, but for what?*/
-	{
-		return 0x40;
-	}
         return rom[addr & biosmask];
 }
 uint16_t mem_read_biosw(uint32_t addr, void *priv)
@@ -1317,7 +1314,7 @@ void mem_set_mem_state(uint32_t base, uint32_t size, int state)
 
 void mem_add_bios()
 {
-        if (AT)
+        if (AT || (romset == ROM_XI8088 && xi8088_bios_128kb()))
         {
                 mem_mapping_add(&bios_mapping[0], 0xe0000, 0x04000, mem_read_bios,   mem_read_biosw,   mem_read_biosl,   mem_write_null, mem_write_nullw, mem_write_nulll, rom,                        MEM_MAPPING_EXTERNAL, 0);
                 mem_mapping_add(&bios_mapping[1], 0xe4000, 0x04000, mem_read_bios,   mem_read_biosw,   mem_read_biosl,   mem_write_null, mem_write_nullw, mem_write_nulll, rom + (0x4000  & biosmask), MEM_MAPPING_EXTERNAL, 0);

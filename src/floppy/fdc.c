@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.1	2018/02/14
+ * Version:	@(#)fdc.c	1.0.2	2018/03/04
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1158,7 +1158,7 @@ fdc_write(uint16_t addr, uint8_t val, void *priv)
 }
 
 
-static uint8_t
+uint8_t
 fdc_read(uint16_t addr, void *priv)
 {
     fdc_t *fdc = (fdc_t *) priv;

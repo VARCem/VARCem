@@ -22,7 +22,7 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)vid_t3100e.c	1.0.1	2018/02/14
+ * Version:	@(#)m_at_t3100e_vid.c	1.0.2	2018/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,9 +61,9 @@
 #include "../mem.h"
 #include "../timer.h"
 #include "../cpu/cpu.h"
-#include "video.h"
-#include "vid_cga.h"
-#include "vid_t3100e.h"
+#include "../video/video.h"
+#include "../video/vid_cga.h"
+#include "m_at_t3100e.h"
 
 
 #define T3100E_XSIZE 640

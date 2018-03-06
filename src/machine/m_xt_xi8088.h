@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the Toshiba T3100e system.
+ *		Definitions for the Xi8088 open-source machine.
  *
- * Version:	@(#)m_at_t3100e.h	1.0.2	2018/03/05
+ * Version:	@(#)m_xt_xi8088.h	1.0.1	2018/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,23 +36,19 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef MACHINE_T3100E_H
-# define MACHINE_T3100E_H
+#ifndef MACHINE_XI8088_H
+# define MACHINE_XI8088_H
 
 
-extern device_t t3100e_device;
+#ifdef EMU_DEVICE_H
+extern device_t	xi8088_device;
+#endif
 
 
-extern void	t3100e_notify_set(uint8_t value);
-extern void	t3100e_display_set(uint8_t value);
-extern uint8_t	t3100e_display_get(void);
-extern uint8_t	t3100e_config_get(void);
-extern void	t3100e_turbo_set(uint8_t value);
-extern uint8_t	t3100e_mono_get(void);
-extern void	t3100e_mono_set(uint8_t value);
-
-extern void	t3100e_video_options_set(uint8_t options);
-extern void	t3100e_display_set(uint8_t internal);
+extern uint8_t	xi8088_turbo_get();
+extern void	xi8088_turbo_set(uint8_t value);
+extern void	xi8088_bios_128kb_set(int val);
+extern int	xi8088_bios_128kb();
 
 
-#endif	/*MACHINE_T3100E_H*/
+#endif	/*MACHINE_XI8088_H*/
