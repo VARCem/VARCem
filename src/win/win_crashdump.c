@@ -8,7 +8,7 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.4	2018/03/07
+ * Version:	@(#)win_crashdump.c	1.0.5	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Riley (Rai-chan),
@@ -61,7 +61,7 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
     SYSTEMTIME SystemTime;
     HANDLE hDumpFile;
     char *BufPtr;
-    int i;
+    DWORD i;
 
     /*
      * Win32-specific functions will be used wherever possible,
