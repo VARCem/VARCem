@@ -106,6 +106,7 @@
     <ClCompile Include="..\..\machine\m_at_sis_85c496.c" />
     <ClCompile Include="..\..\machine\m_at_sis_85c50x.c" />
     <ClCompile Include="..\..\machine\m_at_t3100e.c" />
+    <ClCompile Include="..\..\machine\m_at_t3100e_vid.c" />
     <ClCompile Include="..\..\machine\m_at_wd76c10.c" />
     <ClCompile Include="..\..\machine\m_europc.c" />
     <ClCompile Include="..\..\machine\m_europc_hdc.c" />
@@ -117,6 +118,9 @@
     <ClCompile Include="..\..\machine\m_tandy.c" />
     <ClCompile Include="..\..\machine\m_xt.c" />
     <ClCompile Include="..\..\machine\m_xt_compaq.c" />
+    <ClCompile Include="..\..\machine\m_xt_t1000.c" />
+    <ClCompile Include="..\..\machine\m_xt_t1000_vid.c" />
+    <ClCompile Include="..\..\machine\m_xt_xi8088.c" />
     <ClCompile Include="..\..\mca.c" />
     <ClCompile Include="..\..\mcr.c" />
     <ClCompile Include="..\..\mem.c" />
@@ -151,6 +155,7 @@
     <ClCompile Include="..\..\nvr.c" />
     <ClCompile Include="..\..\nvr_at.c" />
     <ClCompile Include="..\..\nvr_ps2.c" />
+    <ClCompile Include="..\..\nvr_tc8521.c" />
     <ClCompile Include="..\..\pc.c" />
     <ClCompile Include="..\..\pci.c" />
     <ClCompile Include="..\..\pic.c" />
@@ -158,6 +163,8 @@
     <ClCompile Include="..\..\ppi.c" />
     <ClCompile Include="..\..\random.c" />
     <ClCompile Include="..\..\rom.c" />
+    <ClCompile Include="..\..\rom_load.c" />
+    <ClCompile Include="..\..\rtc_tc8521.c" />
     <ClCompile Include="..\..\scsi\scsi.c" />
     <ClCompile Include="..\..\scsi\scsi_aha154x.c" />
     <ClCompile Include="..\..\scsi\scsi_bus.c" />
@@ -266,7 +273,7 @@
     <ClCompile Include="..\..\video\vid_ics2595.c" />
     <ClCompile Include="..\..\video\vid_incolor.c" />
     <ClCompile Include="..\..\video\vid_mda.c" />
-    <ClCompile Include="..\..\video\vid_oti067.c" />
+    <ClCompile Include="..\..\video\vid_oak_oti.c" />
     <ClCompile Include="..\..\video\vid_paradise.c" />
     <ClCompile Include="..\..\video\vid_s3.c" />
     <ClCompile Include="..\..\video\vid_s3_virge.c" />
@@ -275,7 +282,6 @@
     <ClCompile Include="..\..\video\vid_stg_ramdac.c" />
     <ClCompile Include="..\..\video\vid_svga.c" />
     <ClCompile Include="..\..\video\vid_svga_render.c" />
-    <ClCompile Include="..\..\video\vid_t3100e.c" />
     <ClCompile Include="..\..\video\vid_table.c" />
     <ClCompile Include="..\..\video\vid_tgui9440.c" />
     <ClCompile Include="..\..\video\vid_ti_cf62011.c" />
@@ -420,6 +426,8 @@
     <ClInclude Include="..\..\lzf\lzfP.h" />
     <ClInclude Include="..\..\machine\machine.h" />
     <ClInclude Include="..\..\machine\m_at_t3100e.h" />
+    <ClInclude Include="..\..\machine\m_xt_t1000.h" />
+    <ClInclude Include="..\..\machine\m_xt_xi8088.h" />
     <ClInclude Include="..\..\mca.h" />
     <ClInclude Include="..\..\mem.h" />
     <ClInclude Include="..\..\memregs.h" />
@@ -453,6 +461,7 @@
     <ClInclude Include="..\..\nmi.h" />
     <ClInclude Include="..\..\nvr.h" />
     <ClInclude Include="..\..\nvr_ps2.h" />
+    <ClInclude Include="..\..\nvr_tc8521.h" />
     <ClInclude Include="..\..\pci.h" />
     <ClInclude Include="..\..\pic.h" />
     <ClInclude Include="..\..\pit.h" />
@@ -463,6 +472,7 @@
     <ClInclude Include="..\..\ppi.h" />
     <ClInclude Include="..\..\random.h" />
     <ClInclude Include="..\..\rom.h" />
+    <ClInclude Include="..\..\rtc_tc8521.h" />
     <ClInclude Include="..\..\scsi\queue.h" />
     <ClInclude Include="..\..\scsi\scsi.h" />
     <ClInclude Include="..\..\scsi\scsi_aha154x.h" />
@@ -568,7 +578,7 @@
     <ClInclude Include="..\..\video\vid_ics2595.h" />
     <ClInclude Include="..\..\video\vid_incolor.h" />
     <ClInclude Include="..\..\video\vid_mda.h" />
-    <ClInclude Include="..\..\video\vid_oti067.h" />
+    <ClInclude Include="..\..\video\vid_oak_oti.h" />
     <ClInclude Include="..\..\video\vid_paradise.h" />
     <ClInclude Include="..\..\video\vid_s3.h" />
     <ClInclude Include="..\..\video\vid_s3_virge.h" />
@@ -577,7 +587,6 @@
     <ClInclude Include="..\..\video\vid_stg_ramdac.h" />
     <ClInclude Include="..\..\video\vid_svga.h" />
     <ClInclude Include="..\..\video\vid_svga_render.h" />
-    <ClInclude Include="..\..\video\vid_t3100e.h" />
     <ClInclude Include="..\..\video\vid_tgui9440.h" />
     <ClInclude Include="..\..\video\vid_ti_cf62011.h" />
     <ClInclude Include="..\..\video\vid_tkd8001_ramdac.h" />
