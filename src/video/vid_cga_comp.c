@@ -9,7 +9,7 @@
  *		IBM CGA composite filter, borrowed from reenigne's DOSBox
  *		patch and ported to C.
  *
- * Version:	@(#)vid_cga_comp.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_cga_comp.c	1.0.2	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -209,9 +209,9 @@ Bit8u * Composite_Process(uint8_t cgamode, Bit8u border, Bit32u blocks/*, bool d
         c = i[0]+i[0]; \
         d = i[-1]+i[1]; \
         y = ((c+d)<<8) + video_sharpness*(c-d); \
-        rr = y + video_ri*(I) + video_rq*(Q); \
-        gg = y + video_gi*(I) + video_gq*(Q); \
-        bb = y + video_bi*(I) + video_bq*(Q); \
+        rr = (int)(y + video_ri*(I) + video_rq*(Q)); \
+        gg = (int)(y + video_gi*(I) + video_gq*(Q)); \
+        bb = (int)(y + video_bi*(I) + video_bq*(Q)); \
         ++i; \
         ++ap; \
         ++bp; \

@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.3	2018/03/06
+ * Version:	@(#)vid_s3.c	1.0.4	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -641,7 +641,7 @@ static void s3_accel_write_fifo_w(s3_t *s3, uint32_t addr, uint16_t val)
 {
         if (addr & 0x8000)
         {
-                s3_accel_write_fifo(s3, addr,     val);
+                s3_accel_write_fifo(s3, addr,     val & 0xff);
                 s3_accel_write_fifo(s3, addr + 1, val >> 8);
         }
         else
@@ -1163,7 +1163,7 @@ static float s3_trio64_getclock(int clock, void *p)
         m  = svga->seqregs[0x13] + 2;
         n1 = (svga->seqregs[0x12] & 0x1f) + 2;
         n2 = ((svga->seqregs[0x12] >> 5) & 0x07);
-        t = (14318184.0 * ((float)m / (float)n1)) / (float)(1 << n2);
+        t = (14318184.0f * (float)m / (float)n1) / (float)(1 << n2);
         return t;
 }
 

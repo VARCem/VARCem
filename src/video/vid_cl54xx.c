@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.5	2018/03/07
+ * Version:	@(#)vid_cl54xx.c	1.0.6	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -669,7 +669,7 @@ gd54xx_recalctimings(svga_t *svga)
 	int n = gd54xx->vclk_n[clocksel] & 0x7f;
 	int d = (gd54xx->vclk_d[clocksel] & 0x3e) >> 1;
 	int m = gd54xx->vclk_d[clocksel] & 0x01 ? 2 : 1;
-	float freq = (14318184.0 * ((float)n / ((float)d * m)));
+	float freq = (14318184.0f * (float)n) / ((float)d * m);
 	switch (svga->seqregs[7] & ((svga->crtc[0x27] >= CIRRUS_ID_CLGD5434) ? 0xe : 6))
 	{
 			 case 2:
@@ -847,7 +847,7 @@ gd54xx_writew(uint32_t addr, uint16_t val, void *p)
 	
 	if (gd54xx->blt.sys_tx)
 	{
-		gd54xx_write(addr, val, gd54xx);
+		gd54xx_write(addr, val & 0xff, gd54xx);
 		gd54xx_write(addr+1, val >> 8, gd54xx);
 		return;
 	}
@@ -858,7 +858,7 @@ gd54xx_writew(uint32_t addr, uint16_t val, void *p)
     if (svga->writemode < 4)
 	svga_writew_linear(addr, val, svga);
     else {
-	gd54xx_write_linear(addr, val, gd54xx);
+	gd54xx_write_linear(addr, val & 0xff, gd54xx);
 	gd54xx_write_linear(addr+1, val >> 8, gd54xx);
     }
 }
@@ -1359,7 +1359,7 @@ gd54xx_writew_linear(uint32_t addr, uint16_t val, void *p)
     }
 
     if (gd54xx->blt.sys_tx) {
-	gd54xx_writeb_linear(addr, val, svga);
+	gd54xx_writeb_linear(addr, val & 0xff, svga);
 	gd54xx_writeb_linear(addr+1, val >> 8, svga);
 	return;
     }
@@ -1729,7 +1729,7 @@ gd543x_mmio_writew(uint32_t addr, uint16_t val, void *p)
 	gd543x_mmio_write(addr, val & 0xff, gd54xx);
 	gd543x_mmio_write(addr+1, val >> 8, gd54xx);		
     } else if (gd54xx->mmio_vram_overlap) {
-	gd54xx_write(addr, val, gd54xx);
+	gd54xx_write(addr, val & 0xff, gd54xx);
 	gd54xx_write(addr+1, val >> 8, gd54xx);
     }
 }

@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_hercules_plus.c	1.0.2	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -203,7 +203,7 @@ void herculesplus_recalctimings(herculesplus_t *herculesplus)
 
 static void herculesplus_draw_char_rom(herculesplus_t *herculesplus, int x, uint8_t chr, uint8_t attr)
 {
-	unsigned            i;
+	int                 i;
 	int                 elg, blk;
 	unsigned            ull;
 	unsigned            val;
@@ -281,7 +281,7 @@ static void herculesplus_draw_char_rom(herculesplus_t *herculesplus, int x, uint
 
 static void herculesplus_draw_char_ram4(herculesplus_t *herculesplus, int x, uint8_t chr, uint8_t attr)
 {
-	unsigned            i;
+	int                 i;
 	int                 elg, blk;
 	unsigned            ull;
 	unsigned            val;
@@ -365,7 +365,7 @@ static void herculesplus_draw_char_ram4(herculesplus_t *herculesplus, int x, uin
 
 static void herculesplus_draw_char_ram48(herculesplus_t *herculesplus, int x, uint8_t chr, uint8_t attr)
 {
-	unsigned            i;
+	int                 i;
 	int                 elg, blk, ul, ol, bld;
 	unsigned            ull, oll, ulc = 0, olc = 0;
 	unsigned            val;

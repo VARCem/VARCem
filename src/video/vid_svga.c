@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.4	2018/03/05
+ * Version:	@(#)vid_svga.c	1.0.5	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -535,7 +535,7 @@ extern int cyc_total;
 void svga_poll(void *p)
 {
         svga_t *svga = (svga_t *)p;
-        int x;
+        uint32_t x;
 
         if (!svga->linepos) {
                 if (svga->displine == svga->hwcursor_latch.y && svga->hwcursor_latch.ena) {
@@ -1304,7 +1304,8 @@ void svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
 {
 	int y_add = (enable_overscan) ? overscan_y : 0;
 	int x_add = (enable_overscan) ? 16 : 0;
-	uint32_t *p, i, j;
+	uint32_t *p;
+	int i, j;
 
         svga->frames++;
 
@@ -1370,7 +1371,7 @@ void svga_writew(uint32_t addr, uint16_t val, void *p)
         svga_t *svga = (svga_t *)p;
         if (!svga->fast)
         {
-                svga_write(addr, val, p);
+                svga_write(addr, val & 0xff, p);
                 svga_write(addr + 1, val >> 8, p);
                 return;
         }
@@ -1492,7 +1493,7 @@ void svga_writew_linear(uint32_t addr, uint16_t val, void *p)
         
         if (!svga->fast)
         {
-                svga_write_linear(addr, val, p);
+                svga_write_linear(addr, val & 0xff, p);
                 svga_write_linear(addr + 1, val >> 8, p);
                 return;
         }

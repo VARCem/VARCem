@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_incolor.c	1.0.2	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -411,7 +411,7 @@ void incolor_recalctimings(incolor_t *incolor)
 
 static void incolor_draw_char_rom(incolor_t *incolor, int x, uint8_t chr, uint8_t attr)
 {
-	unsigned            i;
+	int                 i;
 	int                 elg, blk;
 	unsigned            ull;
 	unsigned            val;
@@ -511,7 +511,7 @@ static void incolor_draw_char_rom(incolor_t *incolor, int x, uint8_t chr, uint8_
 
 static void incolor_draw_char_ram4(incolor_t *incolor, int x, uint8_t chr, uint8_t attr)
 {
-	unsigned            i;
+	int                 i;
 	int                 elg, blk;
 	unsigned            ull;
 	unsigned            val[4];
@@ -631,7 +631,7 @@ static void incolor_draw_char_ram4(incolor_t *incolor, int x, uint8_t chr, uint8
 
 static void incolor_draw_char_ram48(incolor_t *incolor, int x, uint8_t chr, uint8_t attr)
 {
-	unsigned            i;
+	int                 i;
 	int                 elg, blk, ul, ol, bld;
 	unsigned            ull, oll, ulc = 0, olc = 0;
 	unsigned            val[4];

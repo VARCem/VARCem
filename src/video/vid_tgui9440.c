@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_tgui9440.c	1.0.3	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1128,7 +1128,7 @@ void tgui_accel_command(int count, uint32_t cpu_dat, tgui_t *tgui)
 	int x, y;
 	int c, d;
 	uint16_t src_dat, dst_dat, pat_dat;
-	uint16_t out;
+	uint8_t out;
 	int xdir = (tgui->accel.flags & 0x200) ? -1 : 1;
 	int ydir = (tgui->accel.flags & 0x100) ? -1 : 1;
 	uint16_t trans_col = (tgui->accel.flags & TGUI_TRANSREV) ? tgui->accel.fg_col : tgui->accel.bg_col;
@@ -1593,7 +1593,7 @@ void tgui_accel_write(uint32_t addr, uint8_t val, void *p)
 void tgui_accel_write_w(uint32_t addr, uint16_t val, void *p)
 {
         tgui_t *tgui = (tgui_t *)p;
-	tgui_accel_write(addr, val, tgui);
+	tgui_accel_write(addr, val & 0xff, tgui);
 	tgui_accel_write(addr + 1, val >> 8, tgui);
 }
 

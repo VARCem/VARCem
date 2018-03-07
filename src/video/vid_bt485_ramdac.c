@@ -11,7 +11,7 @@
  *		Currently only a dummy stub for logging and passing output
  *		to the generic SVGA handler.
  *
- * Version:	@(#)vid_bt485_ramdac.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_bt485_ramdac.c	1.0.2	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -206,7 +206,7 @@ float bt485_getclock(int clock, void *p)
         m  =  (ramdac->regs[clock] & 0x7f) + 2;
         n1 = ((ramdac->regs[clock] >>  8) & 0x1f) + 2;
         n2 = ((ramdac->regs[clock] >> 13) & 0x07);
-        t = (14318184.0 * ((float)m / (float)n1)) / (float)(1 << n2);
+        t = ((14318184.0f * (float)m / (float)n1)) / (float)(1 << n2);
 //        pclog("BT485 clock %i %i %i %f %04X  %f %i\n", m, n1, n2, t, ramdac->regs[2], 14318184.0 * ((float)m / (float)n1), 1 << n2);
         return t;
 }
