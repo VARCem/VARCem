@@ -461,9 +461,10 @@ void svga_render_4bpp_lowres(svga_t *svga)
                 for (x = 0; x <= svga->hdisp; x += 16)
                 {
                         uint8_t edat[4];
+			uint32_t *pp = (uint32_t *)edat;
                         uint8_t dat;
 
-                        *(uint32_t *)(&edat[0]) = *(uint32_t *)(&svga->vram[svga->ma]);                        
+                        *pp = *((uint32_t *)&svga->vram[svga->ma]);                        
                         svga->ma += 4; 
                         svga->ma &= svga->vram_display_mask;
 
@@ -507,9 +508,10 @@ void svga_render_4bpp_highres(svga_t *svga)
                 for (x = 0; x <= svga->hdisp; x += 8)
                 {
                         uint8_t edat[4];
+			uint32_t *pp = (uint32_t *)edat;
                         uint8_t dat;
 
-			*(uint32_t *)(&edat[0]) = *(uint32_t *)(&svga->vram[svga->ma | ((svga->sc & ~svga->crtc[0x17] & 3)) * 0x8000]);
+			*pp = *(uint32_t *)(&svga->vram[svga->ma | ((svga->sc & ~svga->crtc[0x17] & 3)) * 0x8000]);
 
                         svga->ma += 4;
                         svga->ma &= svga->vram_display_mask;

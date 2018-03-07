@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_s3.c	1.0.3	2018/03/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -138,8 +138,8 @@ typedef struct s3_t
 
         struct
         {
-                uint8_t subsys_cntl;
-                uint8_t setup_md;
+                uint16_t subsys_cntl;
+                uint16_t setup_md;
                 uint8_t advfunc_cntl;
                 uint16_t cur_y;
                 uint16_t cur_x;
