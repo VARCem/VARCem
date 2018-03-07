@@ -275,7 +275,7 @@ else
  ifeq ($(OPTIM), y)
   AOPTIM	:= -mtune=native
   ifndef COPTIM
-   COPTIM	:= -O6
+   COPTIM	:= -O3
   endif
  else
   ifndef COPTIM
