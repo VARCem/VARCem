@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.7	2018/03/05
+# Version:	@(#)Makefile.mingw	1.0.8	2018/03/07
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -275,7 +275,7 @@ else
  ifeq ($(OPTIM), y)
   AOPTIM	:= -mtune=native
   ifndef COPTIM
-   COPTIM	:= -O6
+   COPTIM	:= -O3
   endif
  else
   ifndef COPTIM
