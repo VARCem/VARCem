@@ -1,5 +1,5 @@
 #
-# VARCem	Virtual Archaelogical Computer EMulator.
+# VARCem	Virtual ARchaeological Computer EMulator.
 #		An emulator of (mostly) x86-based PC systems and devices,
 #		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
 #		spanning the era between 1981 and 1995.
@@ -8,7 +8,7 @@
 #
 #		Project file for the Travis-CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.1	2018/02/24
+# Version:	@(#).travis.yml	1.0.3	2018/03/08
 #
 # Authors:	Natalia Portillo, <claunia@claunia.com>
 #		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -53,7 +53,7 @@ language: c
 
 env:
   matrix:
-    - CROSS=y
+    - PROG=VARCem CROSS=y DEBUG=n
     - PROG=VACRCem-debug CROSS=y DEBUG=y
     - PROG=VACRCem-dev CROSS=y DEBUG=y DEV_BUILD=y
 
@@ -78,6 +78,7 @@ notifications:
     template:
       - "Commit %{commit} by %{author} in %{branch} %{result} after %{duration}."
       - "Commit changes: %{commit_subject}"
-      - "Details on %{build_url}, changes on %{compare_url}"
+      - "Build details on %{build_url}
+#     - "Details on %{build_url}, changes on %{compare_url}"
 
 # End of file.
