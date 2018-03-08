@@ -1,5 +1,5 @@
 /*
- * VARCem	Virtual Archaelogical Computer EMulator.
+ * VARCem	Virtual ARchaeological Computer EMulator.
  *		An emulator of (mostly) x86-based PC systems and devices,
  *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
  *		spanning the era between 1981 and 1995.
@@ -244,7 +244,7 @@ FONT 9, "Segoe UI"
 BEGIN
     ICON            100,IDC_ABOUT_ICON,5,5,20,20
     CTEXT           "",IDT_TITLE,55,10,195,20
-    CTEXT           "Virtual Archaelogical Computer EMulator",
+    CTEXT           "Virtual ARchaeological Computer EMulator",
                     IDC_ABOUT_ICON,55,30,195,10
     CTEXT           "",IDT_VERSION,55,40,195,10
     CONTROL         "",IDC_ABOUT_ICON,"Static",SS_BLACKFRAME | SS_SUNKEN,
@@ -1090,7 +1090,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "IRC #VARCem on FreeNode"
-            VALUE "FileDescription", "VARCem - Virtual Archaelogical Computer EMulator"
+            VALUE "FileDescription", "VARCem - Virtual ARchaeological Computer EMulator"
             VALUE "FileVersion", EMU_VERSION
             VALUE "InternalName", EMU_NAME
             VALUE "LegalCopyright", "Copyright Fred N. van Kempen and others, 2007-2018, Released under a mixed BSD 3-Clause and GPL License"

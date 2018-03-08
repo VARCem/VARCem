@@ -7,7 +7,7 @@
     name="VARCem.exe"
     type="win32"
 />
-<description>Virtual Archaelogical Computer EMulator</description>
+<description>Virtual ARchaeological Computer EMulator</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity

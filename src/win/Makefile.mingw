@@ -1,5 +1,5 @@
 #
-# VARCem	Virtual Archaelogical Computer EMulator.
+# VARCem	Virtual ARchaeological Computer EMulator.
 #		An emulator of (mostly) x86-based PC systems and devices,
 #		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
 #		spanning the era between 1981 and 1995.
@@ -57,7 +57,7 @@ endif
 
 # Defaults for several build options (possibly defined in a chained file.)
 ifndef AUTODEP
- AUTODEP		:= n
+ AUTODEP	:= n
 endif
 ifndef CRASHDUMP
  CRASHDUMP	:= n
