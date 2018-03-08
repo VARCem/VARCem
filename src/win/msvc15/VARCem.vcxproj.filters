@@ -36,13 +36,6 @@
     <ClCompile Include="..\..\random.c" />
     <ClCompile Include="..\..\rom.c" />
     <ClCompile Include="..\..\serial.c" />
-    <ClCompile Include="..\..\sio_detect.c" />
-    <ClCompile Include="..\..\sio_fdc37c669.c" />
-    <ClCompile Include="..\..\sio_fdc37c66x.c" />
-    <ClCompile Include="..\..\sio_fdc37c93x.c" />
-    <ClCompile Include="..\..\sio_pc87306.c" />
-    <ClCompile Include="..\..\sio_um8669f.c" />
-    <ClCompile Include="..\..\sio_w83877f.c" />
     <ClCompile Include="..\..\timer.c" />
     <ClCompile Include="..\..\cdrom\cdrom.c">
       <Filter>cdrom</Filter>
@@ -794,6 +787,27 @@
     <ClCompile Include="..\..\nvr_tc8521.c" />
     <ClCompile Include="..\..\rom_load.c" />
     <ClCompile Include="..\..\rtc_tc8521.c" />
+    <ClCompile Include="..\..\sio\sio_detect.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sio\sio_fdc37c66x.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sio\sio_fdc37c93x.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sio\sio_fdc37c669.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sio\sio_pc87306.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sio\sio_um8669f.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sio\sio_w83877f.c">
+      <Filter>sio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\bugger.h" />
@@ -827,7 +841,6 @@
     <ClInclude Include="..\..\random.h" />
     <ClInclude Include="..\..\rom.h" />
     <ClInclude Include="..\..\serial.h" />
-    <ClInclude Include="..\..\sio.h" />
     <ClInclude Include="..\..\timer.h" />
     <ClInclude Include="..\..\ui.h" />
     <ClInclude Include="..\..\cdrom\cdrom.h">
@@ -1585,6 +1598,10 @@
     </ClInclude>
     <ClInclude Include="..\..\nvr_tc8521.h" />
     <ClInclude Include="..\..\rtc_tc8521.h" />
+    <ClInclude Include="..\..\sio\sio.h">
+      <Filter>sio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cdrom">
@@ -1643,6 +1660,9 @@
     </Filter>
     <Filter Include="win">
       <UniqueIdentifier>{cb655d08-c712-4197-9eb8-2f5b7f49eed1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sio">
+      <UniqueIdentifier>{4fc4a59c-bb7c-45d7-a467-a06198e71472}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

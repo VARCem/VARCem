@@ -175,13 +175,13 @@
     <ClCompile Include="..\..\scsi\scsi_ncr53c810.c" />
     <ClCompile Include="..\..\scsi\scsi_x54x.c" />
     <ClCompile Include="..\..\serial.c" />
-    <ClCompile Include="..\..\sio_detect.c" />
-    <ClCompile Include="..\..\sio_fdc37c669.c" />
-    <ClCompile Include="..\..\sio_fdc37c66x.c" />
-    <ClCompile Include="..\..\sio_fdc37c93x.c" />
-    <ClCompile Include="..\..\sio_pc87306.c" />
-    <ClCompile Include="..\..\sio_um8669f.c" />
-    <ClCompile Include="..\..\sio_w83877f.c" />
+    <ClCompile Include="..\..\sio\sio_detect.c" />
+    <ClCompile Include="..\..\sio\sio_fdc37c669.c" />
+    <ClCompile Include="..\..\sio\sio_fdc37c66x.c" />
+    <ClCompile Include="..\..\sio\sio_fdc37c93x.c" />
+    <ClCompile Include="..\..\sio\sio_pc87306.c" />
+    <ClCompile Include="..\..\sio\sio_um8669f.c" />
+    <ClCompile Include="..\..\sio\sio_w83877f.c" />
     <ClCompile Include="..\..\sound\dbopl.cpp" />
     <ClCompile Include="..\..\sound\midi.c" />
     <ClCompile Include="..\..\sound\midi_mt32.c" />
@@ -483,7 +483,7 @@
     <ClInclude Include="..\..\scsi\scsi_ncr53c810.h" />
     <ClInclude Include="..\..\scsi\scsi_x54x.h" />
     <ClInclude Include="..\..\serial.h" />
-    <ClInclude Include="..\..\sio.h" />
+    <ClInclude Include="..\..\sio\sio.h" />
     <ClInclude Include="..\..\sound\dbopl.h" />
     <ClInclude Include="..\..\sound\filters.h" />
     <ClInclude Include="..\..\sound\midi.h" />
@@ -555,6 +555,7 @@
     <ClInclude Include="..\..\sound\sound.h" />
     <ClInclude Include="..\..\timer.h" />
     <ClInclude Include="..\..\ui.h" />
+    <ClInclude Include="..\..\version.h" />
     <ClInclude Include="..\..\video\video.h" />
     <ClInclude Include="..\..\video\vid_ati18800.h" />
     <ClInclude Include="..\..\video\vid_ati28800.h" />
@@ -665,7 +666,6 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -673,7 +673,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -695,6 +694,7 @@
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SKIP_MANIFEST</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -735,6 +735,7 @@
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SKIP_MANIFEST</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
