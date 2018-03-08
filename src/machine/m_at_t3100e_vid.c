@@ -22,7 +22,7 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_at_t3100e_vid.c	1.0.2	2018/03/05
+ * Version:	@(#)m_at_t3100e_vid.c	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,7 +84,7 @@ static uint32_t normcols[256][2];
  * Bits 0,1: Font set (not currently implemented) 
  */
 static uint8_t st_video_options;
-static uint8_t st_display_internal = -1;
+static int8_t st_display_internal = -1;
 
 void t3100e_video_options_set(uint8_t options)
 {

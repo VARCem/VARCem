@@ -8,7 +8,7 @@
  *
  *		CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.1	2018/02/14
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.2	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -284,7 +284,7 @@ bool CDROM_Interface_Image::LoadIsoFile(char* filename)
 	tracks.clear();
 	
 	// data track
-	Track track = {0, 0, 0, 0, 0, 0, 0, false, NULL};
+	Track track = {0, 0, 0, 0, 0, 0, 0, 0, false, NULL};
 	bool error;
 	track.file = new BinaryFile(filename, error);
 	if (error) {
@@ -364,7 +364,7 @@ static string dirname(char * file) {
 
 bool CDROM_Interface_Image::LoadCueSheet(char *cuefile)
 {
-	Track track = {0, 0, 0, 0, 0, 0, 0, false, NULL};
+	Track track = {0, 0, 0, 0, 0, 0, 0, 0, false, NULL};
 	tracks.clear();
 	uint64_t shift = 0;
 	uint64_t currPregap = 0;

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430VX PCISet chip.
  *
- * Version:	@(#)m_at_430vx.c	1.0.1	2018/02/14
+ * Version:	@(#)m_at_430vx.c	1.0.2	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,7 @@
 #include "../device.h"
 #include "../intel_piix.h"
 #include "../intel_flash.h"
-#include "../sio.h"
+#include "../sio/sio.h"
 #include "machine.h"
 
 

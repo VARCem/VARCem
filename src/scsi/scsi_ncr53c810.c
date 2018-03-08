@@ -326,6 +326,7 @@ sextract32(uint32_t value, int start, int length)
 }
 
 
+#if NOTUSED
 static __inline uint32_t
 deposit32(uint32_t value, int start, int length,
                                  uint32_t fieldval)
@@ -334,6 +335,7 @@ deposit32(uint32_t value, int start, int length,
     mask = (~0U >> (32 - length)) << start;
     return (value & ~mask) | ((fieldval << start) & mask);
 }
+#endif
 
 
 static __inline int
@@ -600,7 +602,7 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 
     sd = &SCSIDevices[id][dev->current_lun];
 
-    if ((((id) == -1) && !scsi_device_present(id, dev->current_lun))) {
+    if (((id == 0xff) && !scsi_device_present(id, dev->current_lun))) {
 	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Device not present when attempting to do DMA\n", id, dev->current_lun, dev->last_command);
 	return;
     }
@@ -681,7 +683,7 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
     dev->command_complete = 0;
 
     sd = &SCSIDevices[id][dev->current_lun];
-    if (((id == -1) || !scsi_device_present(id, dev->current_lun))) {
+    if (((id == 0xff) || !scsi_device_present(id, dev->current_lun))) {
 	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Bad Selection\n", id, dev->current_lun, buf[0]);
 	ncr53c810_bad_selection(dev, id);
 	return;

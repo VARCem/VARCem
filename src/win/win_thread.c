@@ -8,7 +8,7 @@
  *
  *		Implement threads and mutexes for the Win32 platform.
  *
- * Version:	@(#)win_thread.c	1.0.2	2018/02/21
+ * Version:	@(#)win_thread.c	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -35,8 +35,8 @@
  *   USA.
  */
 #define UNICODE
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <process.h>
 #include <stdio.h>
 #include <stdint.h>

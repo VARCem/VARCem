@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.2	2018/03/01
+ * Version:	@(#)rom_load.c	1.0.3	2018/03/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -314,8 +314,8 @@ rom_load_bios(wchar_t *fn, int test_only)
     int c, i;
 
     /* Generate the full script pathname. */
-    wcscpy(script, ROMS_PATH); plat_path_slash(script);
-    wcscat(script, fn); plat_path_slash(script);
+    wcscpy(script, ROMS_PATH); plat_append_slash(script);
+    wcscat(script, fn); plat_append_slash(script);
     wcscpy(path, script);
     wcscat(script, BIOS_FILE);
 

@@ -9,7 +9,7 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_xt_t1000_vid.c	1.0.2	2018/03/05
+ * Version:	@(#)m_xt_t1000_vid.c	1.0.3	2018/03/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,7 +69,7 @@ static uint8_t  language;
  * Bit  0:   Thin font
  */
 static uint8_t st_video_options;
-static uint8_t st_display_internal = -1;
+static int8_t st_display_internal = -1;
 
 void t1000_video_options_set(uint8_t options)
 {
@@ -79,12 +79,12 @@ void t1000_video_options_set(uint8_t options)
 
 void t1000_display_set(uint8_t internal)
 {
-	st_display_internal = internal;
+	st_display_internal = (int8_t)internal;
 }
 
 uint8_t t1000_display_get()
 {
-	return st_display_internal;
+	return (uint8_t)st_display_internal;
 }
 
 

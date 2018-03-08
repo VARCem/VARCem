@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.4	2018/03/01
+ * Version:	@(#)VARCem.rc	1.0.5	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,6 +38,7 @@
 #define IN_RESOURCE_H
 #include "resource.h"
 #include "../emu.h"
+#include "../version.h"
 #include "../plat.h"
 #undef IN_RESOURCE_H
 
@@ -236,17 +237,26 @@ END
 //
 // Dialog
 //
-DLG_ABOUT DIALOG DISCARDABLE  0, 0, 209, 114
+DLG_ABOUT DIALOG DISCARDABLE  0, 0, 250, 170
 STYLE DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About VARCem"
 FONT 9, "Segoe UI"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,129,94,71,12
-    ICON            100,IDC_ABOUT_ICON,7,7,20,20
-    LTEXT           "Virtual Archaelogical Computer EMulator\n\nBased on earlier works like PCem and 86Box.\n\nAuthors: Sarah Walker, Miran Grca, Fred N. van Kempen, TheCollector1995, reenigne, JohnElliott, greatpsycho, and others.\n\nSee LICENSE.txt for more information.",
-                    IDC_ABOUT_ICON,54,7,146,73
-    CONTROL         "",IDC_ABOUT_ICON,"Static",SS_BLACKFRAME | SS_SUNKEN,0,
-                    86,208,1
+    ICON            100,IDC_ABOUT_ICON,5,5,20,20
+    CTEXT           "",IDT_TITLE,55,10,195,20
+    CTEXT           "Virtual Archaelogical Computer EMulator",
+                    IDC_ABOUT_ICON,55,30,195,10
+    CTEXT           "",IDT_VERSION,55,40,195,10
+    CONTROL         "",IDC_ABOUT_ICON,"Static",SS_BLACKFRAME | SS_SUNKEN,
+                    57,52,190,1
+    LTEXT           "Authors:", IDC_ABOUT_ICON,5,60,40,10
+    LTEXT           "Fred N. van Kempen, Miran Grca, Sarah Walker, TheCollector1995, reenigne, John Elliott, greatpsycho, and others.",
+                    IDC_ABOUT_ICON,5,70,240,30
+    LTEXT           "Based on earlier works like 86Box, PCem, MAME, DOSbox and Qemu.",
+                    IDC_ABOUT_ICON,5,100,240,20
+    LTEXT           "Released under the BSD 3-Clause License, and the GNU General Public License (version 2 or up) for existing, imported code from other projects. See LICENSE.txt for more information.",
+                    IDC_ABOUT_ICON,5,120,240,30
+    DEFPUSHBUTTON   "OK",IDOK,169,150,71,12
 END
 
 DLG_STATUS DIALOG DISCARDABLE  0, 0, 186, 386
@@ -1063,8 +1073,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,1,0,0
- PRODUCTVERSION 0,1,0,0
+ FILEVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
+ PRODUCTVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -1079,18 +1089,17 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", "IRC #VARCem on FreeNode\0"
-            VALUE "FileDescription", "VARCem - Virtual Archaelogical Computer EMulator\0"
-            VALUE "FileVersion", "0.1.0\0"
-            VALUE "InternalName", "VARCem\0"
-            VALUE "LegalCopyright", "Copyright Fred N. van Kempen and others, 2007-2018, Released under the BSD 3-Clause License\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "VARCem.exe\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "VARCem Emulator\0"
-            VALUE "ProductVersion", "0.1.0\0"
-            VALUE "SpecialBuild", "\0"
+            VALUE "CompanyName", "IRC #VARCem on FreeNode"
+            VALUE "FileDescription", "VARCem - Virtual Archaelogical Computer EMulator"
+            VALUE "FileVersion", EMU_VERSION
+            VALUE "InternalName", EMU_NAME
+            VALUE "LegalCopyright", "Copyright Fred N. van Kempen and others, 2007-2018, Released under a mixed BSD 3-Clause and GPL License"
+            VALUE "OriginalFilename", "VARCem.exe"
+            VALUE "ProductName", "VARCem Emulator"
+            VALUE "ProductVersion", EMU_VERSION
+#ifndef RELEASE_BUILD
+            VALUE "SpecialBuild", "Internal Development Build"
+#endif
         END
     END
     BLOCK "VarFileInfo"

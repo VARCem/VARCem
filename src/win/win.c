@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.3	2018/03/02
+ * Version:	@(#)win.c	1.0.5	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include <time.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../version.h"
 #include "../config.h"
 #include "../device.h"
 #include "../mouse.h"
@@ -270,7 +271,7 @@ CreateConsole(int init)
     if (! AttachConsole(ATTACH_PARENT_PROCESS)) {
 	/* Parent has no console, create one. */
 	if (! AllocConsole()) {
-#ifdef DEBUG
+#ifdef _DEBUG
 		fp = fopen("error.txt", "w");
 		fprintf(fp, "AllocConsole failed: %lu\n", GetLastError());
 		fclose(fp);
@@ -280,7 +281,7 @@ CreateConsole(int init)
     }
 
     if ((h = GetStdHandle(STD_OUTPUT_HANDLE)) == NULL) {
-#ifdef DEBUG
+#ifdef _DEBUG
 	fp = fopen("error.txt", "w");
 	fprintf(fp, "GetStdHandle(OUT) failed: %lu\n", GetLastError());
 	fclose(fp);
@@ -291,7 +292,7 @@ CreateConsole(int init)
     if (i != -1) {
 	fp = _fdopen(i, "w");
 	if (fp == NULL) {
-#ifdef DEBUG
+#ifdef _DEBUG
 		fp = fopen("error.txt", "w");
 		fprintf(fp, "FdOpen(%i) failed: %lu\n", i, GetLastError());
 		fclose(fp);
@@ -301,7 +302,7 @@ CreateConsole(int init)
 	setvbuf(fp, NULL, _IONBF, 1);
 	*stdout = *fp;
     } else {
-#ifdef DEBUG
+#ifdef _DEBUG
 	fp = fopen("error.txt", "w");
 	fprintf(fp, "GetOSfHandle(%p) failed: %lu\n", h, GetLastError());
 	fclose(fp);
@@ -409,8 +410,8 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     /* We need this later. */
     hinstance = hInst;
 
-    /* Set the application version ID string. */
-    sprintf(emu_version, "%s v%s", EMU_NAME, EMU_VERSION);
+    /* Initialize the version data. CrashDump needs it early. */
+    pc_version("Windows");
 
 #ifdef USE_CRASHDUMP
     /* Enable crash dump services. */
@@ -523,7 +524,7 @@ plat_remove(wchar_t *path)
 
 /* Make sure a path ends with a trailing (back)slash. */
 void
-plat_path_slash(wchar_t *path)
+plat_append_slash(wchar_t *path)
 {
     if ((path[wcslen(path)-1] != L'\\') &&
 	(path[wcslen(path)-1] != L'/')) {
@@ -597,16 +598,6 @@ plat_append_filename(wchar_t *dest, wchar_t *s1, wchar_t *s2)
 {
     wcscat(dest, s1);
     wcscat(dest, s2);
-}
-
-
-void
-plat_put_backslash(wchar_t *path)
-{
-    int c = wcslen(path) - 1;
-
-    if (path[c] != L'/' && path[c] != L'\\')
-	   path[c] = L'/';
 }
 
 

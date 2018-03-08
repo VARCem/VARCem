@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy Image dialog.
  *
- * Version:	@(#)win_new_floppy.c	1.0.4	2018/03/04
+ * Version:	@(#)win_new_floppy.c	1.0.5	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -35,8 +35,8 @@
  *   USA.
  */
 #define UNICODE
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <commctrl.h>
 #include <stdio.h>
 #include <stdint.h>

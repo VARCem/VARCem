@@ -8,7 +8,7 @@
  *
  *		Handle the About dialog.
  *
- * Version:	@(#)win_about.c	1.0.2	2018/02/21
+ * Version:	@(#)win_about.c	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,9 +34,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#define UNICODE
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -47,6 +46,31 @@
 #include "win.h"
 
 
+static void
+set_font_bold(HWND hdlg, int item)
+{
+    LOGFONT logFont;
+    HFONT font;
+    HWND h;
+
+    /* Get a handle to the speficied control in the dialog. */
+    h = GetDlgItem(hdlg, item);
+
+    /* Get that control's current font, and create a LOGFONT for it. */
+    font = (HFONT)SendMessage(h, WM_GETFONT, 0, 0);
+    GetObject(font, sizeof(logFont), &logFont);
+ 
+    /* Modify the font to have BOLD enabled. */
+    logFont.lfWeight = FW_BOLD;
+    logFont.lfHeight *= 2;
+    logFont.lfWidth *= 2;
+    font = CreateFontIndirect(&logFont);
+ 
+    /* Set the new font for the control. */
+    SendMessage(h, WM_SETFONT, (WPARAM)font, 0);
+}
+
+
 #ifdef __amd64__
 static LRESULT CALLBACK
 #else
@@ -54,21 +78,30 @@ static BOOL CALLBACK
 #endif
 AboutDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    char temp[128];
     HWND h;
 
     switch (message) {
 	case WM_INITDIALOG:
-		plat_pause(1);
+		/* Center in the main window. */
+		dialog_center(hdlg);
+
 		h = GetDlgItem(hdlg, IDC_ABOUT_ICON);
 		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON,
 		  (LPARAM)LoadImage(hinstance,(PCTSTR)100,IMAGE_ICON,64,64,0));
+		SendDlgItemMessage(hdlg, IDT_TITLE, WM_SETTEXT,
+				   (WPARAM)NULL, (LPARAM)emu_title);
+		set_font_bold(hdlg, IDT_TITLE);
+
+		sprintf(temp, "v%s", emu_version);
+		SendDlgItemMessage(hdlg, IDT_VERSION, WM_SETTEXT,
+				   (WPARAM)NULL, (LPARAM)temp);
 		break;
 
 	case WM_COMMAND:
                 switch (LOWORD(wParam)) {
 			case IDOK:
 				EndDialog(hdlg, 0);
-				plat_pause(0);
 				return TRUE;
 
 			default:
@@ -84,5 +117,9 @@ AboutDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 void
 AboutDialogCreate(HWND hwnd)
 {
+    plat_pause(1);
+
     DialogBox(hinstance, (LPCTSTR)DLG_ABOUT, hwnd, AboutDialogProcedure);
+
+    plat_pause(0);
 }

@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.3	2018/03/01
+ * Version:	@(#)win.h	1.0.4	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,14 +43,6 @@
 extern "C" {
 #endif
 
-#define UNICODE
-#if 0
-# ifdef _WIN32_WINNT
-#  undef _WIN32_WINNT
-#  define _WIN32_WINNT 0x0501
-# endif
-#endif
-#include <windows.h>
 #include "resource.h"
 
 
@@ -151,13 +143,15 @@ extern void	StatusBarCreate(HWND hwndParent, uintptr_t idStatus,
 
 
 /* Functions in win_dialog.c: */
+extern void	dialog_center(HWND hdlg);
+
+extern wchar_t	*BrowseFolder(wchar_t *saved_path, wchar_t *title);
+
 extern int	file_dlg_w(HWND hwnd, WCHAR *f, WCHAR *fn, int save);
 extern int	file_dlg(HWND hwnd, WCHAR *f, char *fn, int save);
 extern int	file_dlg_mb(HWND hwnd, char *f, char *fn, int save);
 extern int	file_dlg_w_st(HWND hwnd, int i, WCHAR *fn, int save);
 extern int	file_dlg_st(HWND hwnd, int i, char *fn, int save);
-
-extern wchar_t	*BrowseFolder(wchar_t *saved_path, wchar_t *title);
 
 
 #ifdef __cplusplus

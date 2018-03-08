@@ -8,7 +8,7 @@
  *
  *		Mouse interface to host device.
  *
- * Version:	@(#)win_mouse.cpp	1.0.1	2018/02/14
+ * Version:	@(#)win_mouse.cpp	1.0.2	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,6 +36,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#include <windows.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <stdio.h>

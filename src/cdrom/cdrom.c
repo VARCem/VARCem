@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)cdrom.c	1.0.2	2018/03/04
+ * Version:	@(#)cdrom.c	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,7 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
+#include "../version.h"
 #include "../config.h"
 #include "../timer.h"
 #include "../device.h"

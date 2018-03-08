@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.1	2018/02/14
+ * Version:	@(#)scsi_disk.c	1.0.2	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
+#include "../version.h"
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"

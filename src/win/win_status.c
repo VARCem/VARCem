@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Window dialog.
  *
- * Version:	@(#)win_status.c	1.0.2	2018/02/21
+ * Version:	@(#)win_status.c	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,8 +36,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

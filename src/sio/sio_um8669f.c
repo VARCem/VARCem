@@ -29,7 +29,7 @@
  *			70 - IRQ
  *			74 - DMA
  *
- * Version:	@(#)sio_um8669f.c	1.0.1	2018/02/14
+ * Version:	@(#)sio_um8669f.c	1.0.2	2018/03/07
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -59,14 +59,14 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#include "emu.h"
-#include "device.h"
-#include "io.h"
-#include "pci.h"
-#include "lpt.h"
-#include "serial.h"
-#include "floppy/fdd.h"
-#include "floppy/fdc.h"
+#include "../emu.h"
+#include "../device.h"
+#include "../io.h"
+#include "../pci.h"
+#include "../lpt.h"
+#include "../serial.h"
+#include "../floppy/fdd.h"
+#include "../floppy/fdc.h"
 #include "sio.h"
 
 

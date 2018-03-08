@@ -8,7 +8,7 @@
  *
  *		Imlementation of the Device Configuration dialog.
  *
- * Version:	@(#)win_devconf.c	1.0.2	2018/02/24
+ * Version:	@(#)win_devconf.c	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,8 +36,12 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define UNICODE
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
@@ -47,7 +51,6 @@
 #include "../plat_midi.h"
 #include "../ui.h"
 #include "win.h"
-#include <windowsx.h>
 
 
 static device_t *config_device;

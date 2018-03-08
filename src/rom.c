@@ -13,7 +13,7 @@
  *		- c386sx16 BIOS fails checksum
  *		- the loadfont() calls should be done elsewhere
  *
- * Version:	@(#)rom.c	1.0.5	2018/03/04
+ * Version:	@(#)rom.c	1.0.6	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,7 +64,7 @@ rom_fopen(wchar_t *fn)
     wchar_t temp[1024];
 
     wcscpy(temp, emu_path);
-    plat_put_backslash(temp);
+    plat_append_slash(temp);
     wcscat(temp, fn);
 
     return(plat_fopen(temp, L"rb"));
@@ -77,7 +77,7 @@ rom_getfile(wchar_t *fn, wchar_t *s, int size)
     FILE *f;
 
     wcscpy(s, emu_path);
-    plat_put_backslash(s);
+    plat_append_slash(s);
     wcscat(s, fn);
 
     f = plat_fopen(s, L"rb");

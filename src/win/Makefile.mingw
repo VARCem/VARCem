@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.7	2018/03/05
+# Version:	@(#)Makefile.mingw	1.0.8	2018/03/07
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -192,7 +192,7 @@ endif
 #		Nothing should need changing from here on..		#
 #########################################################################
 VPATH		:= $(EXPATH) . cpu \
-		   cdrom disk floppy game machine \
+		   cdrom disk floppy game sio machine \
 		   sound \
 		    sound/munt sound/munt/c_interface sound/munt/sha1 \
 		    sound/munt/srchelper \
@@ -218,6 +218,7 @@ ifneq ($(CROSS), n)
   CPP		:= /usr/bin/$(MINGW)-g++ -m32
   CC		:= /usr/bin/$(MINGW)-gcc -m32
  endif
+ PREPROC	:= /usr/bin/$(MINGW)-cpp
  WINDRES	:= /usr/bin/$(MINGW)-windres
 
  SYSINC		:= -I/usr/$(MINGW)/include -Iwin/mingw/include
@@ -231,6 +232,7 @@ else
   CPP		:= g++ -m32
   CC		:= gcc -m32
  endif
+ PREPROC	:= cpp
  WINDRES	:= windres
 
  SYSINC		:= -Iwin/mingw/include
@@ -242,15 +244,24 @@ DEPFILE		:= win/.depends
 
 # Set up the correct toolchain flags.
 OPTS		:= $(EXTRAS) $(STUFF)
+ifdef BUILD
+ OPTS		+= -DBUILD=$(BUILD)
+endif
+ifdef COMMIT
+ OPTS		+= -DCOMMIT=0x$(COMMIT)
+endif
+ifdef UPSTREAM
+ OPTS		+= -DUPSTREAM=0x$(UPSTREAM)
+endif
 ifdef EXFLAGS
-OPTS		+= $(EXFLAGS)
+ OPTS		+= $(EXFLAGS)
 endif
 ifdef EXINC
-OPTS		+= -I$(EXINC)
+ OPTS		+= -I$(EXINC)
 endif
-OPTS		+= $(SYSINC)
+ OPTS		+= $(SYSINC)
 ifneq ($(CROSS), n)
- OPTS		+= -DUSE_CROSS
+  OPTS		+= -DUSE_CROSS
 endif
 ifeq ($(X64), y)
  ifeq ($(OPTIM), y)
@@ -275,7 +286,7 @@ else
  ifeq ($(OPTIM), y)
   AOPTIM	:= -mtune=native
   ifndef COPTIM
-   COPTIM	:= -O6
+   COPTIM	:= -O3
   endif
  else
   ifndef COPTIM
@@ -637,7 +648,10 @@ endif
 all:		$(PROG).exe pcap_if.exe
 
 
-VARCem.res:	VARCem.rc
+VARCem.res:	VARCem.rc VARCem.mpp
+		@echo Generating Manifest file..
+		@-rm -f win/VARCem.manifest 2>NUL
+		@$(PREPROC) -P win/VARCem.mpp >win/VARCem.manifest
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o VARCem.res
 
@@ -675,6 +689,7 @@ clobber:	clean
 		@echo Cleaning executables..
 		@-rm -f *.d 2>NUL
 		@-rm -f *.exe 2>NUL
+		@-rm -f win/*.manifest 2>NUL
 #		@-rm -f $(DEPFILE) 2>NUL
 
 ifneq ($(AUTODEP), y)

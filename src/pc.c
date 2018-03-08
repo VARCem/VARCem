@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.5	2018/03/04
+ * Version:	@(#)pc.c	1.0.6	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "emu.h"
+#include "version.h"
 #include "config.h"
 #include "cpu/cpu.h"
 #ifdef USE_DYNAREC
@@ -175,6 +176,8 @@ int	clockrate;
 
 int	gfx_present[GFX_MAX];			/* should not be here */
 
+char	emu_title[128];				/* full name of application */
+char	emu_version[128];			/* version ID string */
 wchar_t	emu_path[1024];				/* emu installation path */
 wchar_t	usr_path[1024];				/* path (dir) of user data */
 wchar_t	cfg_path[1024];				/* full path of config file */
@@ -289,6 +292,33 @@ fatal(const char *fmt, ...)
 }
 
 
+/* Set the application version ID string. */
+void
+pc_version(const char *platform)
+{
+    char temp[128];
+
+    sprintf(emu_title, "%s for %s", EMU_NAME, platform);
+
+    sprintf(emu_version, "%s", EMU_VERSION);
+
+#ifdef BUILD
+    sprintf(temp, " (Build %d", BUILD);
+    strcat(emu_version, temp);
+#ifdef COMMIT
+    sprintf(temp, " [Commit #%x])", COMMIT);
+    strcat(emu_version, temp);
+#endif
+    strcat(emu_version, ")");
+#endif
+
+#ifdef UPSTREAM
+    sprintf(temp, " [Upstream #%x]", UPSTREAM);
+    strcat(emu_version, temp);
+#endif
+}
+
+
 /*
  * Perform initial startup of the PC.
  *
@@ -319,18 +349,18 @@ pc_init(int argc, wchar_t *argv[])
      */
     wcscpy(path, emu_path);
     p = plat_get_basename(path);
-    plat_path_slash(path);
+    plat_append_slash(path);
     wcscat(path, ROMS_PATH);
     if (! plat_dir_check(path)) {
 	/* No 'roms' folder found, so go up one level. */
 	if (p != NULL)
 		*p = L'\0';
-	plat_path_slash(path);
+	plat_append_slash(path);
 	wcscat(path, ROMS_PATH);
 	if (plat_dir_check(path)) {
 		if (p != NULL)
 			*p = L'\0';
-		plat_path_slash(path);
+		plat_append_slash(path);
 		wcscpy(emu_path, path);
 	}
     }
@@ -351,23 +381,24 @@ pc_init(int argc, wchar_t *argv[])
 
 	if (!wcscasecmp(argv[c], L"--help") || !wcscasecmp(argv[c], L"-?")) {
 usage:
+		printf("\n%s version %s\n", emu_title, emu_version);
 		printf("\nUsage: varcem [options] [cfg-file]\n\n");
 		printf("Valid options are:\n\n");
-		printf("-? or --help         - show this information\n");
-		printf("-C or --dumpcfg      - dump config file after loading\n");
+		printf("  -? or --help         - show this information\n");
+		printf("  -C or --dumpcfg      - dump config file after loading\n");
 #ifdef _WIN32
-		printf("-D or --debug        - force debug output logging\n");
+		printf("  -D or --debug        - force debug output logging\n");
 #endif
-		printf("-F or --fullscreen   - start in fullscreen mode\n");
-		printf("-M or --memdump      - dump memory on exit\n");
-		printf("-L or --logfile path - set 'path' to be the logfile\n");
-		printf("-P or --vmpath path  - set 'path' to be root for vm\n");
+		printf("  -F or --fullscreen   - start in fullscreen mode\n");
+		printf("  -M or --memdump      - dump memory on exit\n");
+		printf("  -L or --logfile path - set 'path' to be the logfile\n");
+		printf("  -P or --vmpath path  - set 'path' to be root for vm\n");
 #ifdef USE_WX
-		printf("-R or --fps num      - set render speed to 'num' fps\n");
+		printf("  -R or --fps num      - set render speed to 'num' fps\n");
 #endif
-		printf("-S or --settings     - show only the settings dialog\n");
+		printf("  -S or --settings     - show only the settings dialog\n");
 #ifdef _WIN32
-		printf("-H or --hwnd id,hwnd - sends back the main dialog's hwnd\n");
+		printf("  -H or --hwnd id,hwnd - sends back the main dialog's hwnd\n");
 #endif
 		printf("\nA config file can be specified. If none is, the default file will be used.\n");
 		return(0);
@@ -443,7 +474,7 @@ usage:
 		 * Add it to the current working directory
 		 * to convert it (back) to an absolute path.
 		 */
-		plat_path_slash(usr_path);
+		plat_append_slash(usr_path);
 		wcscat(usr_path, path);
 	} else {
 		/*
@@ -455,7 +486,7 @@ usage:
     }
 
     /* Make sure we have a trailing backslash. */
-    plat_path_slash(usr_path);
+    plat_append_slash(usr_path);
 
     /* Grab the name of the configuration file. */
     if (cfg == NULL)
@@ -490,7 +521,7 @@ usage:
 		wcscat(usr_path, cfg);
 
 	/* Make sure we have a trailing backslash. */
-	plat_path_slash(usr_path);
+	plat_append_slash(usr_path);
     }
 
     /* At this point, we can safely create the full path name. */
@@ -503,8 +534,8 @@ usage:
     (void)time(&now);
     info = localtime(&now);
     strftime(temp, sizeof(temp), "%Y/%m/%d %H:%M:%S", info);
-    pclog("#\n# %ls v%ls logfile, created %s\n#\n",
-		EMU_NAME_W, EMU_VERSION_W, temp);
+    pclog("#\n# %s v%s\n\n# Logfile created %s\n#\n",
+		emu_title, emu_version, temp);
     pclog("# Emulator path: %ls\n", emu_path);
     pclog("# Userfiles path: %ls\n", usr_path);
     pclog("# Configuration file: %ls\n#\n\n", cfg_path);
@@ -948,8 +979,7 @@ pc_close(thread_t *ptr)
 void
 pc_thread(void *param)
 {
-    wchar_t temp[200], wcpu[2048];
-    wchar_t wmachine[2048];
+    wchar_t temp[200];
     uint64_t start_time, end_time;
     uint32_t old_time, new_time;
     int status_update_needed;
@@ -1057,12 +1087,10 @@ pc_thread(void *param)
 		}
 
 		if (title_update) {
-			mbstowcs(wmachine, machine_getname(), strlen(machine_getname())+1);
-			mbstowcs(wcpu, machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name,
-				 strlen(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name)+1);
 			swprintf(temp, sizeof_w(temp),
-				 L"%ls v%ls - %i%% - %ls - %ls - %ls",
-				 EMU_NAME_W,EMU_VERSION_W,fps,wmachine,wcpu,
+				 L"%S v%S - %i%% - %S - %S - %s",
+				 EMU_NAME,emu_version,fps,machine_getname(),
+				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name,
 				 (!mouse_capture) ? plat_get_string(IDS_2077)
 				  : (mouse_get_buttons() > 2) ? plat_get_string(IDS_2078) : plat_get_string(IDS_2079));
 

@@ -666,7 +666,7 @@ static uint32_t ropFCHS(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint3
                 return op_pc;                                                                                                   \
         }
 
-opFLDimm(1, 1.0)
+opFLDimm(1, (1.0))
 opFLDimm(L2T, 3.3219280948873623)
 opFLDimm(L2E, 1.4426950408889634);
 opFLDimm(PI, 3.141592653589793);

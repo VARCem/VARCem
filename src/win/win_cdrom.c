@@ -8,7 +8,7 @@
  *
  *		Handle the platform-side of CDROM drives.
  *
- * Version:	@(#)win_cdrom.c	1.0.3	2018/02/24
+ * Version:	@(#)win_cdrom.c	1.0.4	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -35,8 +35,8 @@
  *   USA.
  */
 #define UNICODE
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

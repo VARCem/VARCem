@@ -8,7 +8,7 @@
  *
  *		Implementation of the System MIDI interface.
  *
- * Version:	@(#)win_midi.c	1.0.1	2018/02/14
+ * Version:	@(#)win_midi.c	1.0.2	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,6 +36,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <mmsystem.h>
 #include <stdio.h>
@@ -47,6 +48,7 @@
 #include "../sound/midi.h"
 #include "../plat.h"
 #include "../plat_midi.h"
+#include "win.h"
 
 
 int midi_id = 0;

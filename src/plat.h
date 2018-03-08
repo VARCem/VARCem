@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.3	2018/03/02
+ * Version:	@(#)plat.h	1.0.4	2018/03/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -97,7 +97,6 @@ GLOBAL int	dopause,			/* system is paused */
 		mouse_capture;			/* mouse is captured in app */
 GLOBAL uint64_t	timer_freq;
 GLOBAL int	infocus;
-GLOBAL char	emu_version[128];		/* version ID string */
 
 
 /* System-related functions. */
@@ -111,8 +110,7 @@ extern wchar_t	*plat_get_basename(wchar_t *path);
 extern wchar_t	*plat_get_filename(wchar_t *path);
 extern wchar_t	*plat_get_extension(wchar_t *path);
 extern void	plat_append_filename(wchar_t *dest, wchar_t *s1, wchar_t *s2);
-extern void	plat_put_backslash(wchar_t *path);
-extern void	plat_path_slash(wchar_t *path);
+extern void	plat_append_slash(wchar_t *path);
 extern int	plat_path_abs(wchar_t *path);
 extern int	plat_dir_check(wchar_t *path);
 extern int	plat_dir_create(wchar_t *path);

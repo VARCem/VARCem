@@ -6,13 +6,13 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Try to load a support DLL.
+ *		Define application version and build info.
  *
- * Version:	@(#)win_dynld.c	1.0.2	2018/03/07
+ * Version:	@(#)version.h	1.0.1	2018/03/07
  *
- * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2018 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -44,52 +44,34 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <wchar.h>
-#include "../emu.h"
-#include "../plat_dynld.h"
+#ifndef EMU_VERSION_H
+# define EMU_VERSION_H
 
 
-void *
-dynld_module(const char *name, dllimp_t *table)
-{
-    HMODULE h;
-    dllimp_t *imp;
-    void *func;
+/* Application name. */
+#define EMU_NAME	"VARCem"
 
-    /* See if we can load the desired module. */
-    if ((h = LoadLibrary(name)) == NULL) {
-	pclog("DynLd(\"%s\"): library not found!\n", name);
-	return(NULL);
-    }
-
-    /* Now load the desired function pointers. */
-    for (imp=table; imp->name!=NULL; imp++) {
-	func = GetProcAddress(h, imp->name);
-	if (func == NULL) {
-		pclog("DynLd(\"%s\"): function '%s' not found!\n",
-						name, imp->name);
-		CloseHandle(h);
-		return(NULL);
-	}
-
-	/* To overcome typing issues.. */
-	*(char **)imp->func = (char *)func;
-    }
-
-    /* All good. */
-    return((void *)h);
-}
+/* Version info. */
+#define EMU_VER_MAJOR	0
+#define EMU_VER_MINOR	1
+#define EMU_VER_REV	2
 
 
-void
-dynld_close(void *handle)
-{
-    if (handle != NULL)
-	FreeLibrary((HMODULE)handle);
-}
+/* Standard C preprocessor macros. */
+#define STR_HLP(x)	#x
+#define STR(x)		STR_HLP(x)
+
+
+/* These are used in the application. */
+#define EMU_VER_NUM	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV
+#define EMU_VER_NUM_4	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV.0
+#define EMU_VERSION	STR(EMU_VER_NUM)
+#define EMU_VERSION_4	STR(EMU_VER_NUM_4)
+
+
+/* Global variables. */
+
+
+
+
+#endif	/*EMU_VERSION_H*/

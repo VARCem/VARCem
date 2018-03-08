@@ -8,13 +8,13 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.3	2018/02/24
+ * Version:	@(#)win_crashdump.c	1.0.4	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
- *		Riley (Rain-chan),
+ *		Riley (Rai-chan),
  *
  *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2017 Riley (Rain-chan),
+ *		Copyright 2016-2017 Riley (Rai-chan).
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
  *   USA.
  */
 #define _WIN32_WINNT 0x0501
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <psapi.h>
 #include <stdio.h>
@@ -42,8 +43,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../emu.h"
+#include "../version.h"
 #include "../plat.h"
-#include "win.h"
 
 
 #define ExceptionHandlerBufferSize (10240)

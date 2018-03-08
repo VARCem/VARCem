@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.3	2018/02/26
+ * Version:	@(#)win_d3d.cpp	1.0.4	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,9 +36,14 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define UNICODE
+#include <windows.h>
+#include <d3d9.h>
+#include <d3dx9tex.h>
 #include <stdio.h>
 #include <stdint.h>
 #include "../emu.h"
+#include "../version.h"
 #include "../device.h"
 #include "../video/video.h"
 #include "../plat.h"
@@ -470,7 +475,7 @@ d3d_init_fs(HWND h)
     d3d_hwnd = h;
 
     /*FIXME: should be done once, in win.c */
-    _swprintf(title, L"%s v%s", EMU_NAME_W, EMU_VERSION_W);
+    _swprintf(title, L"%s v%s", TEXT(EMU_NAME), TEXT(EMU_VERSION));
     d3d_device_window = CreateWindowEx (
 		0,
 		SUB_CLASS_NAME,

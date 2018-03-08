@@ -9,7 +9,7 @@
  *		Implementation of the IDE emulation for hard disks and ATAPI
  *		CD-ROM devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.4	2018/03/05
+ * Version:	@(#)hdc_ide.c	1.0.5	2018/03/07
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -46,6 +46,7 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
+#include "../version.h"
 #include "../cpu/cpu.h"
 #include "../machine/machine.h"
 #include "../io.h"

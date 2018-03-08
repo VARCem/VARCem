@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.2	2018/03/01
+ * Version:	@(#)win_dialog.c	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,8 +37,8 @@
  *   USA.
  */
 #define UNICODE
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <shlobj.h>
 #include <commdlg.h>
 #include <stdio.h>
@@ -46,6 +46,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../version.h"
 #include "../device.h"
 #include "../plat.h"
 #include "../ui.h"
@@ -65,6 +66,33 @@ BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
 	SendMessage(hwnd, BFFM_SETSELECTION, TRUE, lpData);
 
     return(0);
+}
+
+
+void
+dialog_center(HWND hdlg)
+{
+    RECT r, r1, r2;
+    HWND owner;
+
+    /* Get handle to owner window. Use desktop if needed. */
+    if ((owner = GetParent(hdlg)) == NULL)
+	owner = GetDesktopWindow();
+
+    /* Get owner and dialog rects. */
+    GetWindowRect(hdlg, &r1); 
+    GetWindowRect(owner, &r2);
+    CopyRect(&r, &r2); 
+
+    /* Center the dialog within the owner's space. */
+    OffsetRect(&r1, -r1.left, -r1.top); 
+    OffsetRect(&r, -r.left, -r.top); 
+    OffsetRect(&r, -r1.right, -r1.bottom); 
+
+    /* Move the dialog window. */
+    SetWindowPos(hdlg, HWND_TOP,
+		 r2.left + (r.right / 2), r2.top + (r.bottom / 2),
+		 0, 0, SWP_NOSIZE);
 }
 
 
@@ -110,7 +138,7 @@ ui_msgbox(int flags, void *arg)
     switch(flags & 0x1f) {
 	case MBX_INFO:		/* just an informational message */
 		fl = (MB_OK | MB_ICONINFORMATION);
-		cap = EMU_NAME_W;
+		cap = TEXT(EMU_NAME);
 		break;
 
 	case MBX_ERROR:		/* error message */
@@ -125,12 +153,12 @@ ui_msgbox(int flags, void *arg)
 
 	case MBX_QUESTION:	/* question */
 		fl = (MB_YESNOCANCEL | MB_ICONQUESTION);
-		cap = EMU_NAME_W;
+		cap = TEXT(EMU_NAME);
 		break;
 
 	case MBX_CONFIG:	/* configuration */
 		fl = (MB_YESNO | MB_ICONERROR);
-		cap = EMU_NAME_W;
+		cap = plat_get_string(IDS_2050); /* "Configuration Error" */
 		break;
     }
 

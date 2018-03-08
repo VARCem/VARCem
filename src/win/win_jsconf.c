@@ -8,7 +8,7 @@
  *
  *		Implementation of the Joystick Configuration dialog.
  *
- * Version:	@(#)win_jsconf.c	1.0.1	2018/02/14
+ * Version:	@(#)win_jsconf.c	1.0.2	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,10 +36,11 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"

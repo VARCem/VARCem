@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.4	2018/03/02
+ * Version:	@(#)emu.h	1.0.5	2018/03/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -53,12 +53,6 @@
 #define PARALLEL_MAX	1
 #define SCREEN_RES_X	640
 #define SCREEN_RES_Y	480
-
-/* Version info. */
-#define EMU_NAME	"VARCem"
-#define EMU_NAME_W	L"VARCem"
-#define EMU_VERSION	"0.1.0"
-#define EMU_VERSION_W	L"0.1.0"
 
 /* Filename and pathname info. */
 #define NVR_PATH	L"nvr"
@@ -155,6 +149,8 @@ extern int	serial_do_log;
 extern int	nic_do_log;
 #endif
 
+extern char	emu_title[128];			/* full name of application */
+extern char	emu_version[128];		/* version ID string */
 extern wchar_t	emu_path[1024];			/* emu installation path */
 extern wchar_t	usr_path[1024];			/* path (dir) of user data */
 extern wchar_t  cfg_path[1024];			/* full path of config file */
@@ -173,9 +169,7 @@ extern void	pclog_ex(const char *fmt, va_list);
 #endif
 extern void	pclog(const char *fmt, ...);
 extern void	fatal(const char *fmt, ...);
-extern void	set_screen_size(int x, int y);
-extern void	set_screen_size_natural(void);
-extern void	pc_reload(wchar_t *fn);
+extern void	pc_version(const char *platform);
 extern int	pc_init_modules(void);
 extern int	pc_init(int argc, wchar_t *argv[]);
 extern void	pc_close(void *threadid);
@@ -183,11 +177,14 @@ extern void	pc_reset_hard_close(void);
 extern void	pc_reset_hard_init(void);
 extern void	pc_reset_hard(void);
 extern void	pc_reset(int hard);
+extern void	pc_reload(wchar_t *fn);
 extern void	pc_full_speed(void);
 extern void	pc_speed_changed(void);
 extern void	pc_thread(void *param);
 extern void	pc_start(void);
 extern void	pc_onesec(void);
+extern void	set_screen_size(int x, int y);
+extern void	set_screen_size_natural(void);
 
 #ifdef __cplusplus
 }

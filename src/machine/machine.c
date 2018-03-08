@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.4	2018/03/04
+ * Version:	@(#)machine.c	1.0.5	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -75,9 +75,9 @@ machine_init(void)
 
     /* Load the machine's ROM BIOS. */
     wcscpy(temp, MACHINES_PATH);
-    plat_path_slash(temp);
+    plat_append_slash(temp);
     wcscat(temp, machines[machine].bios_path);
-    (void)rom_load_bios(temp, 0);
+    if (! rom_load_bios(temp, 0)) return;
 
     /* Activate the ROM BIOS. */
     mem_add_bios();
@@ -95,7 +95,7 @@ machine_available(int id)
     int i;
 
     wcscpy(temp, MACHINES_PATH);
-    plat_path_slash(temp);
+    plat_append_slash(temp);
     wcscat(temp, machines[id].bios_path);
     i = rom_load_bios(temp, 1);
 

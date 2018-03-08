@@ -11,7 +11,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.2	2018/02/21
+ * Version:	@(#)win_joystick.cpp	1.0.3	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#include <windows.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #ifndef DIDEVTYPE_JOYSTICK
@@ -47,9 +48,9 @@
    */
 # define DIDEVTYPE_JOYSTICK 4
 #endif
-#include <math.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 #include "../emu.h"
 #include "../device.h"
 #include "../plat.h"

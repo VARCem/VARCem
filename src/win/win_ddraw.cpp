@@ -11,7 +11,7 @@
  * NOTES:	This code should be re-merged into a single init() with a
  *		'fullscreen' argument, indicating FS mode is requested.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.1	2018/02/14
+ * Version:	@(#)win_ddraw.cpp	1.0.2	2018/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,20 +39,19 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define UNICODE
+#include <windows.h>
+#include <ddraw.h>
 #include <stdio.h>
 #include <stdint.h>
-#define UNICODE
-#define BITMAP WINDOWS_BITMAP
-#include <windows.h>
-#undef BITMAP
 #include "../emu.h"
 #include "../device.h"
 #include "../video/video.h"
 #include "../plat.h"
 #include "../ui.h"
+#include "win.h"
 #include "win_ddraw.h"
 #include "win_png.h"
-#include "win.h"
 
 
 static LPDIRECTDRAW		lpdd = NULL;

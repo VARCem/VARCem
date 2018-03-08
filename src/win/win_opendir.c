@@ -10,7 +10,7 @@
  *
  *		Based on old original code @(#)dir_win32.c 1.2.0 2007/04/19
  *
- * Version:	@(#)win_opendir.c	1.0.1	2018/02/14
+ * Version:	@(#)win_opendir.c	1.0.2	2018/03/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -47,6 +47,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #define UNICODE
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <io.h>
 #include <stdio.h>

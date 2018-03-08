@@ -8,7 +8,7 @@
  *
  *		Implementation of the SMC FDC37C669 Super I/O Chip.
  *
- * Version:	@(#)sio_fdc37c669.c	1.0.1	2018/02/14
+ * Version:	@(#)sio_fdc37c669.c	1.0.2	2018/03/07
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -36,16 +36,16 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#include "emu.h"
-#include "io.h"
-#include "device.h"
-#include "pci.h"
-#include "lpt.h"
-#include "serial.h"
-#include "disk/hdc.h"
-#include "disk/hdc_ide.h"
-#include "floppy/fdd.h"
-#include "floppy/fdc.h"
+#include "../emu.h"
+#include "../io.h"
+#include "../device.h"
+#include "../pci.h"
+#include "../lpt.h"
+#include "../serial.h"
+#include "../floppy/fdd.h"
+#include "../floppy/fdc.h"
+#include "../disk/hdc.h"
+#include "../disk/hdc_ide.h"
 #include "sio.h"
 
 
