@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.5	2018/03/07
+ * Version:	@(#)win.c	1.0.6	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,6 +66,9 @@
 #else
 # include "win_ddraw.h"
 # include "win_d3d.h"
+#endif
+#ifdef _MSC_VER
+# include <io.h>    /* for _open_osfhandle() */
 #endif
 #include "win.h"
 

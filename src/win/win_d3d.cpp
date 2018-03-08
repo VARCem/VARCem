@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.4	2018/03/07
+ * Version:	@(#)win_d3d.cpp	1.0.5	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -220,8 +220,8 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
 
     d3d_verts[0].tu = d3d_verts[2].tu = d3d_verts[3].tu = 0;
     d3d_verts[0].tv = d3d_verts[3].tv = d3d_verts[4].tv = 0;
-    d3d_verts[1].tu = d3d_verts[4].tu = d3d_verts[5].tu = (float)w / 2048.0;
-    d3d_verts[1].tv = d3d_verts[2].tv = d3d_verts[5].tv = (float)h / 2048.0;
+    d3d_verts[1].tu = d3d_verts[4].tu = d3d_verts[5].tu = (float)w / 2048.0f;
+    d3d_verts[1].tv = d3d_verts[2].tv = d3d_verts[5].tv = (float)h / 2048.0f;
     d3d_verts[0].color = d3d_verts[1].color = d3d_verts[2].color =
     d3d_verts[3].color = d3d_verts[4].color = d3d_verts[5].color =
     d3d_verts[6].color = d3d_verts[7].color = d3d_verts[8].color =
@@ -230,22 +230,22 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
     GetClientRect(d3d_device_window, &w_rect);
     d3d_size(w_rect, &l, &t, &r, &b, w, h);
 
-    d3d_verts[0].x = l;
-    d3d_verts[0].y = t;
-    d3d_verts[1].x = r;
-    d3d_verts[1].y = b;
-    d3d_verts[2].x = l;
-    d3d_verts[2].y = b;
-    d3d_verts[3].x = l;
-    d3d_verts[3].y = t;
-    d3d_verts[4].x = r;
-    d3d_verts[4].y = t;
-    d3d_verts[5].x = r;
-    d3d_verts[5].y = b;
-    d3d_verts[6].x = d3d_verts[8].x = d3d_verts[9].x = r - 40.5;
-    d3d_verts[6].y = d3d_verts[9].y = d3d_verts[10].y = t + 8.5;
-    d3d_verts[7].x = d3d_verts[10].x = d3d_verts[11].x = r - 8.5;
-    d3d_verts[7].y = d3d_verts[8].y = d3d_verts[11].y = t + 14.5;
+    d3d_verts[0].x = (float)l;
+    d3d_verts[0].y = (float)t;
+    d3d_verts[1].x = (float)r;
+    d3d_verts[1].y = (float)b;
+    d3d_verts[2].x = (float)l;
+    d3d_verts[2].y = (float)b;
+    d3d_verts[3].x = (float)l;
+    d3d_verts[3].y = (float)t;
+    d3d_verts[4].x = (float)r;
+    d3d_verts[4].y = (float)t;
+    d3d_verts[5].x = (float)r;
+    d3d_verts[5].y = (float)b;
+    d3d_verts[6].x = d3d_verts[8].x = d3d_verts[9].x = (float)r - 40.5f;
+    d3d_verts[6].y = d3d_verts[9].y = d3d_verts[10].y = (float)t + 8.5f;
+    d3d_verts[7].x = d3d_verts[10].x = d3d_verts[11].x = (float)r - 8.5f;
+    d3d_verts[7].y = d3d_verts[8].y = d3d_verts[11].y = (float)t + 14.5f;
 
     if (hr == D3D_OK)
 	hr = v_buffer->Lock(0, 0, (void**)&pVoid, 0);
@@ -325,22 +325,22 @@ d3d_blit(int x, int y, int y1, int y2, int w, int h)
 
     d3d_verts[0].tu = d3d_verts[2].tu = d3d_verts[3].tu = 0;//0.5 / 2048.0;
     d3d_verts[0].tv = d3d_verts[3].tv = d3d_verts[4].tv = 0;//0.5 / 2048.0;
-    d3d_verts[1].tu = d3d_verts[4].tu = d3d_verts[5].tu = (float)w / 2048.0;
-    d3d_verts[1].tv = d3d_verts[2].tv = d3d_verts[5].tv = (float)h / 2048.0;
+    d3d_verts[1].tu = d3d_verts[4].tu = d3d_verts[5].tu = (float)w / 2048.0f;
+    d3d_verts[1].tv = d3d_verts[2].tv = d3d_verts[5].tv = (float)h / 2048.0f;
     d3d_verts[0].color = d3d_verts[1].color = d3d_verts[2].color =
     d3d_verts[3].color = d3d_verts[4].color = d3d_verts[5].color =
     d3d_verts[6].color = d3d_verts[7].color = d3d_verts[8].color =
     d3d_verts[9].color = d3d_verts[10].color = d3d_verts[11].color = 0xffffff;
 
     GetClientRect(d3d_hwnd, &r);
-    d3d_verts[0].x = d3d_verts[2].x = d3d_verts[3].x = -0.5;
-    d3d_verts[0].y = d3d_verts[3].y = d3d_verts[4].y = -0.5;
-    d3d_verts[1].x = d3d_verts[4].x = d3d_verts[5].x = (r.right-r.left)-0.5;
-    d3d_verts[1].y = d3d_verts[2].y = d3d_verts[5].y = (r.bottom-r.top)-0.5;
-    d3d_verts[6].x = d3d_verts[8].x = d3d_verts[9].x = (r.right-r.left)-40.5;
-    d3d_verts[6].y = d3d_verts[9].y = d3d_verts[10].y = 8.5;
-    d3d_verts[7].x = d3d_verts[10].x = d3d_verts[11].x = (r.right-r.left)-8.5;
-    d3d_verts[7].y = d3d_verts[8].y = d3d_verts[11].y = 14.5;
+    d3d_verts[0].x = d3d_verts[2].x = d3d_verts[3].x = -0.5f;
+    d3d_verts[0].y = d3d_verts[3].y = d3d_verts[4].y = -0.5f;
+    d3d_verts[1].x = d3d_verts[4].x = d3d_verts[5].x = (r.right-r.left)-0.5f;
+    d3d_verts[1].y = d3d_verts[2].y = d3d_verts[5].y = (r.bottom-r.top)-0.5f;
+    d3d_verts[6].x = d3d_verts[8].x = d3d_verts[9].x = (r.right-r.left)-40.5f;
+    d3d_verts[6].y = d3d_verts[9].y = d3d_verts[10].y = 8.5f;
+    d3d_verts[7].x = d3d_verts[10].x = d3d_verts[11].x = (r.right-r.left)-8.5f;
+    d3d_verts[7].y = d3d_verts[8].y = d3d_verts[11].y = 14.5f;
 
     if (hr == D3D_OK)
 	hr = v_buffer->Lock(0, 0, (void**)&pVoid, 0);    // lock the vertex buffer

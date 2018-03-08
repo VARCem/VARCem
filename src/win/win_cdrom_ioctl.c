@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM host drive IOCTL interface for
  *		Windows using SCSI Passthrough Direct.
  *
- * Version:	@(#)cdrom_ioctl.c	1.0.3	2018/03/07
+ * Version:	@(#)cdrom_ioctl.c	1.0.4	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -359,7 +359,7 @@ static int ioctl_get_last_block(uint8_t id, unsigned char starttrack, int msf, i
 	unsigned long size;
 	int c, d = 0;
 	CDROM_TOC lbtoc;
-	int lb = 0;
+	uint32_t lb = 0;
 	if (!cdrom_drives[id].host_drive)
 	{
 		return 0;

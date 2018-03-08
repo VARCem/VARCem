@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.6	2018/03/07
+ * Version:	@(#)win_settings.c	1.0.7	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -220,19 +220,19 @@ settings_init(void)
     memcpy(temp_hdd, hdd, HDD_NUM * sizeof(hard_disk_t));
     for (i=0; i<HDD_NUM; i++) {
 	if (hdd[i].bus == HDD_BUS_MFM)
-		mfm_tracking |= (1 << (hdd[i].mfm_channel << 3));
+		mfm_tracking |= (1ULL << (hdd[i].mfm_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_XTIDE)
-		xtide_tracking |= (1 << (hdd[i].xtide_channel << 3));
+		xtide_tracking |= (1ULL << (hdd[i].xtide_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_ESDI)
-		esdi_tracking |= (1 << (hdd[i].esdi_channel << 3));
+		esdi_tracking |= (1ULL << (hdd[i].esdi_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_IDE_PIO_ONLY)
-		ide_tracking |= (1 << (hdd[i].ide_channel << 3));
+		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_IDE_PIO_AND_DMA)
-		ide_tracking |= (1 << (hdd[i].ide_channel << 3));
+		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_SCSI)
-		scsi_tracking[hdd[i].scsi_id] |= (1 << (hdd[i].scsi_lun << 3));
+		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
 	else if (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)
-		scsi_tracking[hdd[i].scsi_id] |= (1 << (hdd[i].scsi_lun << 3));
+		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
     }
 
     /* Floppy drives category */
@@ -2099,7 +2099,7 @@ static void add_locations(HWND hdlg)
 
 static uint8_t next_free_binary_channel(uint64_t *tracking)
 {
-	int64_t i;
+	int8_t i;
 
 	for (i = 0; i < 2; i++) {
 		if (!(*tracking & (0xffLL << (i << 3LL))))
@@ -2111,7 +2111,7 @@ static uint8_t next_free_binary_channel(uint64_t *tracking)
 
 static uint8_t next_free_ide_channel(void)
 {
-	int64_t i;
+	int8_t i;
 
 	for (i = 0; i < 8; i++) {
 		if (!(ide_tracking & (0xffLL << (i << 3LL))))
@@ -2123,7 +2123,7 @@ static uint8_t next_free_ide_channel(void)
 
 static void next_free_scsi_id_and_lun(uint8_t *id, uint8_t *lun)
 {
-	int64_t i, j;
+	uint8_t i, j;
 
 	for (j = 0; j < 8; j++) {
 		for (i = 0; i < 16; i++) {
@@ -2274,23 +2274,23 @@ static void recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 
 static int bus_full(uint64_t *tracking, int count)
 {
-	int full = 0;
+	uint64_t full = 0;
 	switch(count) {
 		case 2:
 		default:
-			full = (*tracking & 0xFF00LL);
-			full = full && (*tracking & 0x00FFLL);
-			return full;
+			full = (*tracking & 0xFF00ULL);
+			full = full && (*tracking & 0x00FFULL);
+			return full != 0;
 		case 8:
-			full = (*tracking & 0xFF00000000000000LL);
-			full = full && (*tracking & 0x00FF000000000000LL);
-			full = full && (*tracking & 0x0000FF0000000000LL);
-			full = full && (*tracking & 0x000000FF00000000LL);
-			full = full && (*tracking & 0x00000000FF000000LL);
-			full = full && (*tracking & 0x0000000000FF0000LL);
-			full = full && (*tracking & 0x000000000000FF00LL);
-			full = full && (*tracking & 0x00000000000000FFLL);
-			return full;
+			full = (*tracking & 0xFF00000000000000ULL);
+			full = full && (*tracking & 0x00FF000000000000ULL);
+			full = full && (*tracking & 0x0000FF0000000000ULL);
+			full = full && (*tracking & 0x000000FF00000000ULL);
+			full = full && (*tracking & 0x00000000FF000000ULL);
+			full = full && (*tracking & 0x0000000000FF0000ULL);
+			full = full && (*tracking & 0x000000000000FF00ULL);
+			full = full && (*tracking & 0x00000000000000FFULL);
+			return full != 0;
 	}
 }
 
@@ -2685,7 +2685,7 @@ wchar_t hd_file_name[512];
 
 static hard_disk_t *hdd_ptr;
 
-static int hdconf_initialize_hdt_combo(HWND hdlg)
+static uint64_t hdconf_initialize_hdt_combo(HWND hdlg)
 {
         HWND h;
 	int i = 0;
@@ -2709,7 +2709,7 @@ static int hdconf_initialize_hdt_combo(HWND hdlg)
 	}
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_4100));
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_4101));
-	SendMessage(h, CB_SETCURSEL, selection, 0);
+	SendMessage(h, CB_SETCURSEL, selection & 0xffff, 0);
 	return selection;
 }
 
@@ -2731,7 +2731,7 @@ static void recalc_selection(HWND hdlg)
 	{
 		selection = 128;
 	}
-	SendMessage(h, CB_SETCURSEL, selection, 0);
+	SendMessage(h, CB_SETCURSEL, selection & 0xffff, 0);
 }
 
 static int chs_enabled = 0;
@@ -2744,7 +2744,7 @@ static BOOL CALLBACK
 hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h = INVALID_HANDLE_VALUE;
-	int64_t i = 0;
+	uint64_t i = 0;
 	uint64_t temp;
 	FILE *f;
 	uint32_t sector_size = 512;
@@ -2885,7 +2885,7 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					if (!(existing & 2))
 					{
 						h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-						hdd_ptr->bus = SendMessage(h, CB_GETCURSEL, 0, 0) + 1;
+						hdd_ptr->bus = (SendMessage(h, CB_GETCURSEL, 0, 0) + 1) & 0xff;
 					}
 
 					/* Make sure no file name is allowed with removable SCSI hard disks. */
@@ -2925,27 +2925,27 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						{
 							case HDD_BUS_MFM:
 								h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-								hdd_ptr->mfm_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+								hdd_ptr->mfm_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 								break;
 							case HDD_BUS_ESDI:
 								h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-								hdd_ptr->esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+								hdd_ptr->esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 								break;
 							case HDD_BUS_XTIDE:
 								h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-								hdd_ptr->xtide_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+								hdd_ptr->xtide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 								break;
 							case HDD_BUS_IDE_PIO_ONLY:
 							case HDD_BUS_IDE_PIO_AND_DMA:
 								h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
-								hdd_ptr->ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+								hdd_ptr->ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 								break;
 							case HDD_BUS_SCSI:
 							case HDD_BUS_SCSI_REMOVABLE:
 								h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
-								hdd_ptr->scsi_id = SendMessage(h, CB_GETCURSEL, 0, 0);
+								hdd_ptr->scsi_id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 								h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
-								hdd_ptr->scsi_lun = SendMessage(h, CB_GETCURSEL, 0, 0);
+								hdd_ptr->scsi_lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 								break;
 						}
 					}
@@ -3518,21 +3518,21 @@ static void hard_disk_track(uint8_t id)
 {
 	switch(temp_hdd[id].bus) {
 		case HDD_BUS_MFM:
-			mfm_tracking |= (1 << (temp_hdd[id].mfm_channel << 3));
+			mfm_tracking |= (1ULL << (temp_hdd[id].mfm_channel << 3));
 			break;
 		case HDD_BUS_ESDI:
-			esdi_tracking |= (1 << (temp_hdd[id].esdi_channel << 3));
+			esdi_tracking |= (1ULL << (temp_hdd[id].esdi_channel << 3));
 			break;
 		case HDD_BUS_XTIDE:
-			xtide_tracking |= (1 << (temp_hdd[id].xtide_channel << 3));
+			xtide_tracking |= (1ULL << (temp_hdd[id].xtide_channel << 3));
 			break;
 		case HDD_BUS_IDE_PIO_ONLY:
 		case HDD_BUS_IDE_PIO_AND_DMA:
-			ide_tracking |= (1 << (temp_hdd[id].ide_channel << 3));
+			ide_tracking |= (1ULL << (temp_hdd[id].ide_channel << 3));
 			break;
 		case HDD_BUS_SCSI:
 		case HDD_BUS_SCSI_REMOVABLE:
-			scsi_tracking[temp_hdd[id].scsi_id] |= (1 << (temp_hdd[id].scsi_lun << 3));
+			scsi_tracking[temp_hdd[id].scsi_id] |= (1ULL << (temp_hdd[id].scsi_lun << 3));
 			break;
 	}
 }
@@ -3684,15 +3684,15 @@ hd_bus_skip:
 					hard_disk_untrack(hdlv_current_sel);
 					if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_MFM)
 					{
-						temp_hdd[hdlv_current_sel].mfm_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+						temp_hdd[hdlv_current_sel].mfm_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					}
 					else if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_ESDI)
 					{
-						temp_hdd[hdlv_current_sel].esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+						temp_hdd[hdlv_current_sel].esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					}
 					else if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_XTIDE)
 					{
-						temp_hdd[hdlv_current_sel].xtide_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+						temp_hdd[hdlv_current_sel].xtide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					}
 					hard_disk_track(hdlv_current_sel);
 					h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
@@ -3709,7 +3709,7 @@ hd_bus_skip:
 					ignore_change = 1;
 					h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
 					hard_disk_untrack(hdlv_current_sel);
-					temp_hdd[hdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_hdd[hdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					hard_disk_track(hdlv_current_sel);
 					h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 					win_settings_hard_disks_update_item(h, hdlv_current_sel, 0);
@@ -3725,7 +3725,7 @@ hd_bus_skip:
 					ignore_change = 1;
 					h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
 					hard_disk_untrack(hdlv_current_sel);
-					temp_hdd[hdlv_current_sel].scsi_id = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_hdd[hdlv_current_sel].scsi_id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					hard_disk_track(hdlv_current_sel);
 					h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 					win_settings_hard_disks_update_item(h, hdlv_current_sel, 0);
@@ -3741,7 +3741,7 @@ hd_bus_skip:
 					ignore_change = 1;
 					h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
 					hard_disk_untrack(hdlv_current_sel);
-					temp_hdd[hdlv_current_sel].scsi_lun = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_hdd[hdlv_current_sel].scsi_lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					hard_disk_track(hdlv_current_sel);
 					h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 					win_settings_hard_disks_update_item(h, hdlv_current_sel, 0);
@@ -4562,7 +4562,7 @@ static void cdrom_track(uint8_t id)
 	if ((temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY) || (temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY))
 		ide_tracking |= (2 << (temp_cdrom_drives[id].ide_channel << 3));
 	else if (temp_cdrom_drives[id].bus_type == CDROM_BUS_SCSI)
-		scsi_tracking[temp_cdrom_drives[id].scsi_device_id] |= (1 << temp_cdrom_drives[id].scsi_device_lun);
+		scsi_tracking[temp_cdrom_drives[id].scsi_device_id] |= (1ULL << temp_cdrom_drives[id].scsi_device_lun);
 }
 
 static void cdrom_untrack(uint8_t id)
@@ -4570,7 +4570,7 @@ static void cdrom_untrack(uint8_t id)
 	if ((temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY) || (temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY))
 		ide_tracking &= ~(2 << (temp_cdrom_drives[id].ide_channel << 3));
 	else if (temp_cdrom_drives[id].bus_type == CDROM_BUS_SCSI)
-		scsi_tracking[temp_cdrom_drives[id].scsi_device_id] &= ~(1 << temp_cdrom_drives[id].scsi_device_lun);
+		scsi_tracking[temp_cdrom_drives[id].scsi_device_id] &= ~(1ULL << temp_cdrom_drives[id].scsi_device_lun);
 }
 
 #if 0
@@ -4587,17 +4587,17 @@ static void cdrom_track_all(void)
 static void zip_track(uint8_t id)
 {
 	if ((temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY) || (temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY))
-		ide_tracking |= (1 << temp_zip_drives[id].ide_channel);
+		ide_tracking |= (1ULL << temp_zip_drives[id].ide_channel);
 	else if (temp_zip_drives[id].bus_type == ZIP_BUS_SCSI)
-		scsi_tracking[temp_zip_drives[id].scsi_device_id] |= (1 << temp_zip_drives[id].scsi_device_lun);
+		scsi_tracking[temp_zip_drives[id].scsi_device_id] |= (1ULL << temp_zip_drives[id].scsi_device_lun);
 }
 
 static void zip_untrack(uint8_t id)
 {
 	if ((temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY) || (temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY))
-		ide_tracking &= ~(1 << temp_zip_drives[id].ide_channel);
+		ide_tracking &= ~(1ULL << temp_zip_drives[id].ide_channel);
 	else if (temp_zip_drives[id].bus_type == ZIP_BUS_SCSI)
-		scsi_tracking[temp_zip_drives[id].scsi_device_id] &= ~(1 << temp_zip_drives[id].scsi_device_lun);
+		scsi_tracking[temp_zip_drives[id].scsi_device_id] &= ~(1ULL << temp_zip_drives[id].scsi_device_lun);
 }
 
 #if 0
@@ -5017,7 +5017,7 @@ cdrom_bus_skip:
 					rd_ignore_change = 1;
 					h = GetDlgItem(hdlg, IDC_COMBO_CD_CHANNEL_IDE);
 					cdrom_untrack(cdlv_current_sel);
-					temp_cdrom_drives[cdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_cdrom_drives[cdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					cdrom_track(cdlv_current_sel);
 					h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 					win_settings_cdrom_drives_update_item(h, cdlv_current_sel);
@@ -5108,7 +5108,7 @@ zip_bus_skip:
 					rd_ignore_change = 1;
 					h = GetDlgItem(hdlg, IDC_COMBO_ZIP_CHANNEL_IDE);
 					zip_untrack(zdlv_current_sel);
-					temp_zip_drives[zdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_zip_drives[zdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					zip_track(zdlv_current_sel);
 					h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 					win_settings_zip_drives_update_item(h, zdlv_current_sel);

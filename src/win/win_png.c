@@ -20,7 +20,7 @@
  * TODO:	Compression is currently not supported, until I figure out
  *		how ZLIB works so I can interface with it here.
  *
- * Version:	@(#)win_png.c	1.0.1	2018/02/14
+ * Version:	@(#)win_png.c	1.0.2	2018/03/08
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -375,7 +375,7 @@ png_write(png_t *png, uint8_t *bitmap, uint32_t pixels)
 
 	/* See how many pixels we can write for this scanline. */
 	n = cnt;
-	if ((png->lwidth - png->col) < n)
+	if ((uint32_t)(png->lwidth - png->col) < n)
 		n = (png->lwidth - png->col);
 	if ((DEFL_MAX_BLKSZ - png->bufcnt) < n)
 		n = (DEFL_MAX_BLKSZ - png->bufcnt);

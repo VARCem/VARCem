@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.3	2018/03/05
+ * Version:	@(#)vid_ati_mach64.c	1.0.4	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -858,7 +858,7 @@ static void mach64_accel_write_fifo_w(mach64_t *mach64, uint32_t addr, uint16_t 
 #ifdef MACH64_DEBUG
                 pclog("  ");
 #endif
-                mach64_accel_write_fifo(mach64, addr, val);
+                mach64_accel_write_fifo(mach64, addr, val & 0xff);
 #ifdef MACH64_DEBUG
                 pclog("  ");
 #endif
@@ -1473,7 +1473,7 @@ void mach64_blit(uint32_t cpu_dat, int count, mach64_t *mach64)
                         {
                                 if (mach64->dst_cntl & DST_Y_MAJOR)
                                         draw_pixel = 1;
-                                else if ((mach64->dst_cntl & DST_X_DIR) && mach64->accel.err < (mach64->dst_bres_dec + mach64->dst_bres_inc)) /*X+*/
+                                else if ((mach64->dst_cntl & DST_X_DIR) && mach64->accel.err < (int64_t)(mach64->dst_bres_dec + mach64->dst_bres_inc)) /*X+*/
                                         draw_pixel = 1;
                                 else if (!(mach64->dst_cntl & DST_X_DIR) && mach64->accel.err >= 0) /*X-*/
                                         draw_pixel = 1;
@@ -2398,7 +2398,7 @@ void mach64_ext_writew(uint32_t addr, uint16_t val, void *p)
 #ifdef MACH64_DEBUG
                 pclog("nmach64_ext_writew: addr=%04x val=%04x %04x(%08x):%08x\n", addr, val, CS, cs, cpu_state.pc);
 #endif
-                mach64_ext_writeb(addr, val, p);
+                mach64_ext_writeb(addr, val & 0xff, p);
                 mach64_ext_writeb(addr + 1, val >> 8, p);
         }
         else if (addr & 0x300)
@@ -2411,7 +2411,7 @@ void mach64_ext_writew(uint32_t addr, uint16_t val, void *p)
 #ifdef MACH64_DEBUG
                 pclog("  ");
 #endif
-                mach64_ext_writeb(addr, val, p);
+                mach64_ext_writeb(addr, val & 0xff, p);
 #ifdef MACH64_DEBUG
                 pclog("  ");
 #endif
@@ -2742,7 +2742,7 @@ void mach64_ext_outw(uint16_t port, uint16_t val, void *p)
 #ifdef MACH64_DEBUG
                 pclog("  ");
 #endif
-                mach64_ext_outb(port, val, p);
+                mach64_ext_outb(port, val & 0xff, p);
 #ifdef MACH64_DEBUG
                 pclog("  ");
 #endif

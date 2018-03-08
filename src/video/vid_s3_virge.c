@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_s3_virge.c	1.0.3	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1378,7 +1378,7 @@ static void s3_virge_mmio_write_w(uint32_t addr, uint16_t val, void *p)
         else switch (addr & 0xfffe)
         {
                 case 0x83d4:
-                s3_virge_mmio_write(addr, val, p);
+                s3_virge_mmio_write(addr, val & 0xff, p);
                 s3_virge_mmio_write(addr + 1, val >> 8, p);
                 break;
         }

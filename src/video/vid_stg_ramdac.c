@@ -8,7 +8,7 @@
  *
  *		STG1702 true color RAMDAC emulation.
  *
- * Version:	@(#)vid_stg_ramdac.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_stg_ramdac.c	1.0.2	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -195,7 +195,7 @@ float stg_getclock(int clock, void *p)
         n2 = ((*c >> 13) & 0x07);	/* D */
 	b  = (float) m;
 	n1 = (float) n;
-	d = (double) (1 << n2);
-	t = (14318184.0 * (b / d)) / n1;
+	d = (float) (1 << n2);
+	t = (14318184.0f * b / d) / n1;
         return t;
 }

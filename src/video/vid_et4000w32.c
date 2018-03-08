@@ -10,7 +10,7 @@
  *
  * Known bugs:	Accelerator doesn't work in planar modes
  *
- * Version:	@(#)vid_et4000w32.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_et4000w32.c	1.0.3	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -701,19 +701,19 @@ uint8_t et4000w32p_mmu_read(uint32_t addr, void *p)
                         case 0x7f85: return et4000->acl.internal.source_addr >> 8;
                         case 0x7f86: return et4000->acl.internal.source_addr >> 16;
                         case 0x7f87: return et4000->acl.internal.source_addr >> 24;
-                        case 0x7f88: return et4000->acl.internal.pattern_off;
+                        case 0x7f88: return et4000->acl.internal.pattern_off & 0xff;
                         case 0x7f89: return et4000->acl.internal.pattern_off >> 8;
-                        case 0x7f8a: return et4000->acl.internal.source_off;
+                        case 0x7f8a: return et4000->acl.internal.source_off & 0xff;
                         case 0x7f8b: return et4000->acl.internal.source_off >> 8;
-                        case 0x7f8c: return et4000->acl.internal.dest_off;
+                        case 0x7f8c: return et4000->acl.internal.dest_off & 0xff;
                         case 0x7f8d: return et4000->acl.internal.dest_off >> 8;
                         case 0x7f8e: return et4000->acl.internal.pixel_depth;
                         case 0x7f8f: return et4000->acl.internal.xy_dir;
                         case 0x7f90: return et4000->acl.internal.pattern_wrap;
                         case 0x7f92: return et4000->acl.internal.source_wrap;
-                        case 0x7f98: return et4000->acl.internal.count_x;
+                        case 0x7f98: return et4000->acl.internal.count_x & 0xff;
                         case 0x7f99: return et4000->acl.internal.count_x >> 8;
-                        case 0x7f9a: return et4000->acl.internal.count_y;
+                        case 0x7f9a: return et4000->acl.internal.count_y & 0xff;
                         case 0x7f9b: return et4000->acl.internal.count_y >> 8;
                         case 0x7f9c: return et4000->acl.internal.ctrl_routing;
                         case 0x7f9d: return et4000->acl.internal.ctrl_reload;

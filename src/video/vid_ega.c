@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_ega.c	1.0.3	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -428,7 +428,8 @@ void ega_poll(void *p)
 	int x_add = enable_overscan ? 8 : 0;
 	int y_add_ex = enable_overscan ? overscan_y : 0;
 	int x_add_ex = enable_overscan ? 16 : 0;
-	uint32_t *q, i, j;
+	uint32_t *q;
+	int i, j;
 	int wx = 640, wy = 350;
 
         if (!ega->linepos)

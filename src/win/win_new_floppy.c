@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy Image dialog.
  *
- * Version:	@(#)win_new_floppy.c	1.0.5	2018/03/07
+ * Version:	@(#)win_new_floppy.c	1.0.6	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -566,7 +566,7 @@ NewFloppyDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     int i = 0;
     int wcs_len, ext_offs;
     wchar_t *ext;
-    uint8_t disk_size, rpm_mode;
+    uint32_t disk_size, rpm_mode;
     int ret;
     FILE *f;
     int zip_types;

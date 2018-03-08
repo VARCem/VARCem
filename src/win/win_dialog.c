@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.3	2018/03/07
+ * Version:	@(#)win_dialog.c	1.0.4	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,7 +56,7 @@
 WCHAR	path[MAX_PATH];
 WCHAR	wopenfilestring[260];
 char	openfilestring[260];
-uint8_t	filterindex = 0;
+DWORD	filterindex = 0;
 
 
 static int CALLBACK

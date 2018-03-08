@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.4	2018/03/07
+ * Version:	@(#)win.h	1.0.5	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -75,7 +75,7 @@ extern int		status_is_open;
 extern char		openfilestring[260];
 extern WCHAR		wopenfilestring[260];
 
-extern uint8_t		filterindex;
+extern DWORD		filterindex;
 
 
 #ifdef USE_CRASHDUMP

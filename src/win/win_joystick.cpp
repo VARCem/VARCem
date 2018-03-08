@@ -11,7 +11,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.3	2018/03/07
+ * Version:	@(#)win_joystick.cpp	1.0.4	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -227,7 +227,7 @@ static int joystick_get_axis(int joystick_nr, int mapping)
                 if (LOWORD(pov) == 0xFFFF)
                         return 0;
                 else
-                        return sin((2*M_PI * (double)pov) / 36000.0) * 32767;
+                        return (int)sin((2*M_PI * (double)pov) / 36000.0) * 32767;
         }
         else if (mapping & POV_Y)
         {
@@ -236,7 +236,7 @@ static int joystick_get_axis(int joystick_nr, int mapping)
                 if (LOWORD(pov) == 0xFFFF)
                         return 0;
                 else
-                        return -cos((2*M_PI * (double)pov) / 36000.0) * 32767;
+                        return (int)-cos((2*M_PI * (double)pov) / 36000.0) * 32767;
         }
         else
                 return plat_joystick_state[joystick_nr].a[plat_joystick_state[joystick_nr].axis[mapping].id];
