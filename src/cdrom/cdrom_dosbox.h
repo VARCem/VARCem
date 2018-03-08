@@ -8,7 +8,7 @@
  *
  *		Definitions for the CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.h	1.0.1	2018/02/14
+ * Version:	@(#)cdrom_dosbox.h	1.0.2	2018/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,12 +69,12 @@ typedef size_t PhysPt;
 
 #define CD_FPS  75
 #define FRAMES_TO_MSF(f, M,S,F) {                                       \
-        int value = f;                                                  \
-        *(F) = value%CD_FPS;                                            \
+        uint64_t value = f;                                             \
+        *(F) = (value%CD_FPS) & 0xff;                                   \
         value /= CD_FPS;                                                \
-        *(S) = value%60;                                                \
+        *(S) = (value%60) & 0xff;                                       \
         value /= 60;                                                    \
-        *(M) = value;                                                   \
+        *(M) = value & 0xff;                                            \
 }
 #define MSF_TO_FRAMES(M, S, F)  ((M)*60*CD_FPS+(S)*CD_FPS+(F))
 
@@ -119,7 +119,7 @@ class CDROM_Interface_Image : public CDROM_Interface
 private:
 	class TrackFile {
 	public:
-		virtual bool read(Bit8u *buffer, uint64_t seek, uint64_t count) = 0;
+		virtual bool read(Bit8u *buffer, uint64_t seek, size_t count) = 0;
 		virtual uint64_t getLength() = 0;
 		virtual ~TrackFile() { };
 	};
@@ -128,7 +128,7 @@ private:
 	public:
 		BinaryFile(const char *filename, bool &error);
 		~BinaryFile();
-		bool read(Bit8u *buffer, uint64_t seek, uint64_t count);
+		bool read(Bit8u *buffer, uint64_t seek, size_t count);
 		uint64_t getLength();
 	private:
 		BinaryFile();
@@ -144,7 +144,7 @@ private:
 		uint64_t start;
 		uint64_t length;
 		uint64_t skip;
-		uint64_t sectorSize;
+		int sectorSize;
 		bool mode2;
 		TrackFile *file;
 	};
