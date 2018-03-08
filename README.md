@@ -1,4 +1,4 @@
-Welcome to **VARCem**, the Virtual Archaelogical Computer EMulator.
+Welcome to **VARCem**, the Virtual Archaeological Computer EMulator.
 
 VARCem is a software application which emulates a selection of of (mostly)
 x86-based PC systems and devices based on the ISA, EISA, VLB, MCA and PCI
@@ -49,4 +49,4 @@ can work on it, and/or talk to us on the IRC channel. We cannot promise a
 fix, but will try the best we can !
 
 
-Last Updated: 2/20/2018
+Last Updated: 3/08/2018
