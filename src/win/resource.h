@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.4	2018/03/07
+ * Version:	@(#)resource.h	1.0.5	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -112,6 +112,7 @@
 #define IDT_1758		1758	/* ZIP drives: */
 #define IDT_TITLE		1759	/* "VARCem for Plaform" */
 #define IDT_VERSION		1760	/* "version.." */
+#define IDT_1761		1761	/* Speed: */
 
 /*
  * To try to keep these organized, we now group the
@@ -216,6 +217,7 @@
 #define IDC_COMBO_ZIP_LUN	1163
 #define IDC_COMBO_ZIP_CHANNEL_IDE 1164
 #define IDC_CHECK250		1165
+#define IDC_COMBO_CD_SPEED	1166
 
 #define IDC_SLIDER_GAIN		1180	/* sound gain dialog */
 

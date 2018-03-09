@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.8	2018/03/07
+# Version:	@(#)Makefile.mingw	1.0.9	2018/03/08
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -98,20 +98,23 @@ endif
 ifndef DEV_BRANCH
  DEV_BRANCH	:= n
 endif
-ifndef GREENB
- GREENB		:= n
+ifndef AMD_K
+ AMD_K		:= n
 endif
 ifndef LASERXT
  LASERXT	:= n
 endif
-ifndef I686
- I686		:= n
-endif
-ifndef AMD_K
- AMD_K		:= n
-endif
 ifndef PORTABLE3
  PORTABLE3	:= n
+endif
+ifndef GREENB
+ GREENB		:= n
+endif
+ifndef MRTHOR
+ MRTHOR		:= y
+endif
+ifndef I686
+ I686		:= n
 endif
 ifndef OPENAL
  OPENAL		:= y
@@ -145,11 +148,12 @@ endif
 ifeq ($(DEV_BUILD), y)
  CRASHDUMP	:= y
  DEV_BRANCH	:= y
- I686		:= y
  AMD_K		:= y
- GREENB		:= y
- PORTABLE3	:= y
  LASERXT	:= y
+ PORTABLE3	:= y
+ GREENB		:= y
+ MRTHOR		:= y
+ I686		:= y
  PAS16		:= y
  STEALTH32	:= y
  XL24		:= y
@@ -383,45 +387,49 @@ endif
 
 # Options for the DEV branch.
 ifeq ($(DEV_BRANCH), y)
-OPTS		+= -DDEV_BRANCH
-DEVBROBJ	:=
+ OPTS		+= -DDEV_BRANCH
+ DEVBROBJ	:=
 
-ifeq ($(I686), y)
-OPTS		+= -DUSE_I686
-DEVBROBJ	+= m_at_440fx.o
-endif
+ ifeq ($(AMD_K), y)
+  OPTS		+= -DUSE_AMD_K
+ endif
 
-ifeq ($(AMD_K), y)
-OPTS		+= -DUSE_AMD_K
-endif
+ ifeq ($(LASERXT), y)
+  OPTS		+= -DUSE_LASERXT
+  DEVBROBJ	+= m_xt_laserxt.o
+ endif
 
-ifeq ($(GREENB), y)
-OPTS		+= -DUSE_GREENB
-DEVBROBJ	+= m_at_4gpv31.o
-endif
+ ifeq ($(PORTABLE3), y)
+  OPTS		+= -DUSE_PORTABLE3
+ endif
 
-ifeq ($(PORTABLE3), y)
-OPTS		+= -DUSE_PORTABLE3
-endif
+ ifeq ($(GREENB), y)
+  OPTS		+= -DUSE_GREENB
+  DEVBROBJ	+= m_at_4gpv31.o
+ endif
 
-ifeq ($(LASERXT), y)
-OPTS		+= -DUSE_LASERXT
-DEVBROBJ	+= m_xt_laserxt.o
-endif
-  
-ifeq ($(STEALTH32), y)
-OPTS		+= -DUSE_STEALTH32
-DEVBROBJ        += vid_icd2061.o
-endif
+ ifeq ($(MRTHOR), y)
+  OPTS		+= -DUSE_MRTHOR
+ endif
 
-ifeq ($(XL24), y)
-OPTS		+= -DUSE_XL24
-endif
+ ifeq ($(I686), y)
+  OPTS		+= -DUSE_I686
+  DEVBROBJ	+= m_at_440fx.o
+ endif
 
-ifeq ($(PAS16), y)
-OPTS		+= -DUSE_PAS16
-DEVBROBJ	+= snd_pas16.o
-endif
+ ifeq ($(STEALTH32), y)
+  OPTS		+= -DUSE_STEALTH32
+  DEVBROBJ	+= vid_icd2061.o
+ endif
+
+ ifeq ($(XL24), y)
+  OPTS		+= -DUSE_XL24
+ endif
+
+ ifeq ($(PAS16), y)
+  OPTS		+= -DUSE_PAS16
+  DEVBROBJ	+= snd_pas16.o
+ endif
 
 endif
 

@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.2	2018/02/21
+ * Version:	@(#)scsi_ncr53c810.c	1.0.3	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -289,6 +289,9 @@ typedef struct {
 
     uint8_t regop;
     uint32_t adder;
+
+    int64_t timer_period;
+    int64_t timer_enabled;
 } ncr53c810_t;
 
 
@@ -349,6 +352,8 @@ static void
 ncr53c810_soft_reset(ncr53c810_t *dev)
 {
     ncr53c810_log("LSI Reset\n");
+    dev->timer_period = dev->timer_enabled = 0;
+
     dev->carry = 0;
 
     dev->msg_action = 0;
@@ -519,6 +524,7 @@ ncr53c810_script_scsi_interrupt(ncr53c810_t *dev, int stat0, int stat1)
     if ((dev->sist0 & mask0) || (dev->sist1 & mask1)) {
 	ncr53c810_log("NCR 810: IRQ-mandated stop\n");
 	dev->sstop = 1;
+	dev->timer_period = dev->timer_enabled = 0;
     }
     ncr53c810_update_irq(dev);
 }
@@ -532,6 +538,7 @@ ncr53c810_script_dma_interrupt(ncr53c810_t *dev, int stat)
     dev->dstat |= stat;
     ncr53c810_update_irq(dev);
     dev->sstop = 1;
+    dev->timer_period = dev->timer_enabled = 0;
 }
 
 
@@ -549,6 +556,7 @@ ncr53c810_bad_phase(ncr53c810_t *dev, int out, int new_phase)
     ncr53c810_log("Phase mismatch interrupt\n");
     ncr53c810_script_scsi_interrupt(dev, NCR_SIST0_MA, 0);
     dev->sstop = 1;
+    dev->timer_period = dev->timer_enabled = 0;
     ncr53c810_set_phase(dev, new_phase);
 }
 
@@ -672,6 +680,7 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
 {
     scsi_device_t *sd;
     uint8_t buf[12];
+    double period;
 
     memset(buf, 0, 12);
     DMAPageRead(dev->dnad, buf, MIN(12, dev->dbc));
@@ -713,9 +722,19 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
     if ((sd->Phase == SCSI_PHASE_DATA_IN) && (sd->BufferLength > 0)) {
 	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DI\n", id, dev->current_lun, buf[0]);
 	ncr53c810_set_phase(dev, PHASE_DI);
+	dev->timer_period = scsi_device_get_callback(dev->current->tag, dev->current_lun);
+	if (dev->timer_period <= 0LL) {
+	        period = ((double) sd->BufferLength) * 0.2 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
+		dev->timer_period = (int64_t) period;
+	}
     } else if ((sd->Phase == SCSI_PHASE_DATA_OUT) && (sd->BufferLength > 0)) {
 	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DO\n", id, dev->current_lun, buf[0]);
 	ncr53c810_set_phase(dev, PHASE_DO);
+	dev->timer_period = scsi_device_get_callback(dev->current->tag, dev->current_lun);
+	if (dev->timer_period <= 0LL) {
+	        period = ((double) sd->BufferLength) * 0.2 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
+		dev->timer_period = (int64_t) period;
+	}
     } else
 	ncr53c810_command_complete(dev, sd->Status);
 }
@@ -930,7 +949,7 @@ ncr53c810_memcpy(ncr53c810_t *dev, uint32_t dest, uint32_t src, int count)
 
 
 static void
-ncr53c810_execute_script(ncr53c810_t *dev)
+ncr53c810_process_script(ncr53c810_t *dev)
 {
     uint32_t insn, addr, id, buf[2], dest;
     int opcode, insn_processed = 0, reg, operator, cond, jmp, n, i;
@@ -959,6 +978,7 @@ again:
 		if (dev->sist1 & NCR_SIST1_STO) {
 		ncr53c810_log("Delayed select timeout\n");
 			dev->sstop = 1;
+			dev->timer_period = dev->timer_enabled = 0;
 			break;
 		}
 		ncr53c810_log("Block Move DBC=%d\n", dev->dbc);
@@ -1004,7 +1024,9 @@ again:
 			case PHASE_CMD:
 				ncr53c810_log("Command Phase\n");
 				ncr53c810_do_command(dev, dev->sdid);
-				break;
+				dev->dfifo = dev->dbc & 0xff;
+				dev->ctest5 = (dev->ctest5 & 0xfc) | ((dev->dbc >> 8) & 3);
+				return;
 			case PHASE_ST:
 				ncr53c810_log("Status Phase\n");
 				ncr53c810_do_status(dev);
@@ -1176,6 +1198,7 @@ again:
 		if (dev->sist1 & NCR_SIST1_STO) {
 			ncr53c810_log("Delayed select timeout\n");
 			dev->sstop = 1;
+			dev->timer_period = dev->timer_enabled = 0;
 			break;
 		}
 		cond = jmp = (insn & (1 << 19)) != 0;
@@ -1285,7 +1308,8 @@ again:
 		ncr53c810_script_dma_interrupt(dev, NCR_DSTAT_SSI);
 	} else {
 		ncr53c810_log("NCR 810: SCRIPTS: Normal mode\n");
-		goto again;
+		if (insn_processed < 100)
+			goto again;
 	}
     } else {
 	if (dev->sstop)
@@ -1295,6 +1319,35 @@ again:
     }
 
     ncr53c810_log("SCRIPTS execution stopped\n");
+}
+
+
+static void
+ncr53c810_execute_script(ncr53c810_t *dev)
+{
+    dev->timer_period = 10LL * TIMER_USEC;
+    dev->timer_enabled = 1;
+}
+
+
+static void
+ncr53c810_callback(void *p)
+{
+    ncr53c810_t *dev = (ncr53c810_t *) p;
+
+    dev->timer_period = 0;
+    if (!dev->waiting)
+    	ncr53c810_process_script(dev);
+
+    if (dev->sstop) {
+	dev->timer_period = 0;
+	dev->timer_enabled = 0;
+	return;
+    } else
+	dev->timer_enabled = 1;
+
+    if (dev->timer_period == 0)
+	dev->timer_period = 50LL * TIMER_USEC;
 }
 
 
@@ -1400,7 +1453,9 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 			ncr53c810_log("Woken by SIGP\n");
 			dev->waiting = 0;
 			dev->dsp = dev->dnad;
+#if 0
 			ncr53c810_execute_script(dev);
+#endif
 		}
 		if ((val & NCR_ISTAT_SRST) && !(tmp & NCR_ISTAT_SRST)) {
 			ncr53c810_soft_reset(dev);
@@ -2098,6 +2153,9 @@ ncr53c810_init(device_t *info)
     ncr53c810_mem_disable(dev);
 
     ncr53c810_soft_reset(dev);
+
+    timer_add(ncr53c810_callback,
+	      &dev->timer_period, &dev->timer_enabled, dev);
 
     return(dev);
 }

@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.1	2018/02/14
+ * Version:	@(#)fdd.c	1.0.2	2018/03/08
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -541,11 +541,13 @@ double fdd_real_period(int drive)
 		return (32.0 * dusec);
 	}
 
+#if defined(DEV_BRANCH) && defined(USE_MRTHOR)
 	if (romset == ROM_MRTHOR)
 	{
 		return (ddbp * dusec) / 4.0;
 	}
 	else
+#endif
 	{
 		return (ddbp * dusec);
 	}

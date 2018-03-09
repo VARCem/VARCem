@@ -8,7 +8,7 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.1	2018/02/14
+ * Version:	@(#)scsi_x54x.h	1.0.2	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -347,6 +347,10 @@ typedef struct {
     char	vendor[16];			/* name of device vendor */
     char	name[16];			/* name of device */
 
+    int64_t	timer_period, temp_period;
+    int64_t	media_period;
+    double	ha_bps;				/* bytes per second */
+
     int8_t	Irq;
     uint8_t	IrqEnabled;
 
@@ -444,8 +448,8 @@ typedef struct {
     /* Pointer to a structure of vendor-specific data that only the vendor-specific code can understand */
     void	*ven_data;
 
-    /* Pointer to a function that performs vendor-specific operation during the thread */
-    void	(*ven_thread)(void *p);
+    /* Pointer to a function that performs vendor-specific operation during the timer callback */
+    void	(*ven_callback)(void *p);
     /* Pointer to a function that executes the second parameter phase of the vendor-specific command */
     void	(*ven_cmd_phase1)(void *p);
     /* Pointer to a function that gets the host adapter ID in case it has to be read from a non-standard location */
@@ -502,10 +506,6 @@ typedef struct
 
 
 extern void	x54x_reset_ctrl(x54x_t *dev, uint8_t Reset);
-extern void	x54x_busy(uint8_t set);
-extern void	x54x_thread_start(x54x_t *dev);
-extern void	x54x_set_wait_event(void);
-extern uint8_t	x54x_is_busy(void);
 extern void	x54x_buf_alloc(uint8_t id, uint8_t lun, int length);
 extern void	x54x_buf_free(uint8_t id, uint8_t lun);
 extern uint8_t	x54x_mbo_process(x54x_t *dev);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.7	2018/03/08
+ * Version:	@(#)win_settings.c	1.0.8	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3955,6 +3955,7 @@ static BOOL win_settings_cdrom_drives_recalc_list(HWND hwndList)
 	{
 		fsid = combo_id_to_format_string_id(temp_cdrom_drives[i].bus_type);
 
+		lvI.iSubItem = 0;
 		switch (temp_cdrom_drives[i].bus_type)
 		{
 			case CDROM_BUS_DISABLED:
@@ -3983,6 +3984,21 @@ static BOOL win_settings_cdrom_drives_recalc_list(HWND hwndList)
 
 		if (ListView_InsertItem(hwndList, &lvI) == -1)
 			return FALSE;
+
+		lvI.iSubItem = 1;
+		if (temp_cdrom_drives[i].bus_type == CDROM_BUS_DISABLED)
+			lvI.pszText = plat_get_string(IDS_2152);
+		else {
+			wsprintf(szText, L"%ix", temp_cdrom_drives[i].speed);
+			lvI.pszText = szText;
+		}
+		lvI.iItem = i;
+		lvI.iImage = 0;
+
+		if (ListView_SetItem(hwndList, &lvI) == -1)
+		{
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -4096,10 +4112,21 @@ static BOOL win_settings_cdrom_drives_init_columns(HWND hwndList)
 	lvc.iSubItem = 0;
 	lvc.pszText = plat_get_string(IDS_2082);
 
-	lvc.cx = 392;
+	lvc.cx = 342;
 	lvc.fmt = LVCFMT_LEFT;
 
 	if (ListView_InsertColumn(hwndList, 0, &lvc) == -1)
+	{
+		return FALSE;
+	}
+
+	lvc.iSubItem = 1;
+	lvc.pszText = plat_get_string(IDS_2179);
+
+	lvc.cx = 50;
+	lvc.fmt = LVCFMT_LEFT;
+
+	if (ListView_InsertColumn(hwndList, 1, &lvc) == -1)
 	{
 		return FALSE;
 	}
@@ -4123,7 +4150,6 @@ static BOOL win_settings_zip_drives_init_columns(HWND hwndList)
 	{
 		return FALSE;
 	}
-
 
 	lvc.iSubItem = 1;
 	lvc.pszText = plat_get_string(IDS_2143);
@@ -4288,6 +4314,21 @@ static void win_settings_cdrom_drives_update_item(HWND hwndList, int i)
 	{
 		return;
 	}
+
+	lvI.iSubItem = 1;
+	if (temp_cdrom_drives[i].bus_type == CDROM_BUS_DISABLED)
+		lvI.pszText = plat_get_string(IDS_2152);
+	else {
+		wsprintf(szText, L"%ix", temp_cdrom_drives[i].speed);
+		lvI.pszText = szText;
+	}
+	lvI.iItem = i;
+	lvI.iImage = 0;
+
+	if (ListView_SetItem(hwndList, &lvI) == -1)
+	{
+		return;
+	}
 }
 
 static void win_settings_zip_drives_update_item(HWND hwndList, int i)
@@ -4361,6 +4402,13 @@ static void cdrom_add_locations(HWND hdlg)
 		}
 	}
 
+	h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
+	for (i = 1; i <= 56; i++)
+	{
+		wsprintf(lptsTemp, L"%ix", i);
+		SendMessage(h, CB_ADDSTRING, 0, (LPARAM) lptsTemp);
+	}
+
 	h = GetDlgItem(hdlg, IDC_COMBO_CD_ID);
 	for (i = 0; i < 16; i++)
 	{
@@ -4384,6 +4432,7 @@ static void cdrom_add_locations(HWND hdlg)
 
 	free(lptsTemp);
 }
+
 static void cdrom_recalc_location_controls(HWND hdlg, int assign_id)
 {
 	int i = 0;
@@ -4409,6 +4458,16 @@ static void cdrom_recalc_location_controls(HWND hdlg, int assign_id)
 	h = GetDlgItem(hdlg, IDC_COMBO_CD_CHANNEL_IDE);
 	EnableWindow(h, FALSE);
 	ShowWindow(h, SW_HIDE);
+
+	h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
+	if (bus == CDROM_BUS_DISABLED) {
+		EnableWindow(h, FALSE);
+		ShowWindow(h, SW_HIDE);
+	} else {
+		ShowWindow(h, SW_SHOW);
+		EnableWindow(h, TRUE);
+		SendMessage(h, CB_SETCURSEL, temp_cdrom_drives[cdlv_current_sel].speed - 1, 0);
+	}
 
 	switch(bus)
 	{
@@ -4490,6 +4549,7 @@ static void zip_add_locations(HWND hdlg)
 
 	free(lptsTemp);
 }
+
 static void zip_recalc_location_controls(HWND hdlg, int assign_id)
 {
 	int i = 0;
@@ -4963,6 +5023,8 @@ other_removable_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lPar
 					}
 					cdrom_untrack(cdlv_current_sel);
 					assign = (temp_cdrom_drives[cdlv_current_sel].bus_type == b2) ? 0 : 1;
+					if (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_DISABLED)
+						temp_cdrom_drives[cdlv_current_sel].speed = 8;
 					if ((b2 == CDROM_BUS_ATAPI_PIO_ONLY) && (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA))
 						assign = 0;
 					else if ((b2 == CDROM_BUS_ATAPI_PIO_AND_DMA) && (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_ATAPI_PIO_ONLY))
@@ -5019,6 +5081,20 @@ cdrom_bus_skip:
 					cdrom_untrack(cdlv_current_sel);
 					temp_cdrom_drives[cdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 					cdrom_track(cdlv_current_sel);
+					h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
+					win_settings_cdrom_drives_update_item(h, cdlv_current_sel);
+					rd_ignore_change = 0;
+					return FALSE;
+
+				case IDC_COMBO_CD_SPEED:
+					if (rd_ignore_change)
+					{
+						return FALSE;
+					}
+
+					rd_ignore_change = 1;
+					h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
+					temp_cdrom_drives[cdlv_current_sel].speed = SendMessage(h, CB_GETCURSEL, 0, 0) + 1;
 					h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 					win_settings_cdrom_drives_update_item(h, cdlv_current_sel);
 					rd_ignore_change = 0;

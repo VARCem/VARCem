@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.3	2018/03/03
+ * Version:	@(#)scsi_aha154x.c	1.0.4	2018/03/08
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -290,10 +290,7 @@ aha_fast_cmds(void *p, uint8_t cmd)
     x54x_t *dev = (x54x_t *)p;
 
     if (cmd == CMD_BIOS_SCSI) {
-	x54x_busy(1);
 	dev->BIOSMailboxReq++;
-	x54x_set_wait_event();
-	x54x_busy(0);
 	return 1;
     }
 
@@ -385,7 +382,6 @@ aha_cmds(void *p)
 
 		case CMD_BIOS_MBINIT: /* BIOS Mailbox Initialization */
 			/* Sent by CF BIOS. */
-			x54x_busy(1);
 			dev->Mbx24bit = 1;
 
 			mbi = (MailboxInit_t *)dev->CmdBuf;
@@ -401,7 +397,6 @@ aha_cmds(void *p)
 
 			dev->Status &= ~STAT_INIT;
 			dev->DataReplyLeft = 0;
-			x54x_busy(0);
 			break;
 
 		case CMD_MEMORY_MAP_1:	/* AHA memory mapper */
@@ -490,16 +485,12 @@ aha_do_bios_mail(x54x_t *dev)
 
 
 static void
-aha_thread(void *p)
+aha_callback(void *p)
 {
     x54x_t *dev = (x54x_t *)p;
 
     if (dev->BIOSMailboxInit && dev->BIOSMailboxReq)
-    {
-	x54x_wait_for_poll();
-
 	aha_do_bios_mail(dev);
-    }
 }
 
 
@@ -750,14 +741,11 @@ aha_setnvr(x54x_t *dev)
     memset(dev->nvr, 0x00, NVR_SIZE);
 
     f = nvr_fopen(dev->nvr_path, L"rb");
-    if (f)
-    {
+    if (f != NULL) {
 	fread(dev->nvr, 1, NVR_SIZE, f);
 	fclose(f);
 	f = NULL;
-    }
-    else
-    {
+    } else {
 	aha_initnvr(dev);
     }
 }
@@ -791,7 +779,7 @@ aha_init(device_t *info)
     dev->bit32 = 0;
     dev->lba_bios = 0;
 
-    dev->ven_thread = aha_thread;
+    dev->ven_callback = aha_callback;
     dev->ven_cmd_is_fast = aha_cmd_is_fast;
     dev->ven_fast_cmds = aha_fast_cmds;
     dev->get_ven_param_len = aha_param_len;
@@ -819,6 +807,7 @@ aha_init(device_t *info)
 		dev->HostID = device_get_config_int("hostid");
 		dev->rom_shram = 0x3F80;	/* shadow RAM address base */
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
+		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
 
 	case AHA_154xC:
@@ -833,6 +822,7 @@ aha_init(device_t *info)
 		dev->ven_get_host_id = aha_get_host_id;	/* function to return host ID from EEPROM */
 		dev->ven_get_irq = aha_get_irq;		/* function to return IRQ from EEPROM */
 		dev->ven_get_dma = aha_get_dma;		/* function to return DMA channel from EEPROM */
+		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
 
 	case AHA_154xCF:
@@ -848,6 +838,7 @@ aha_init(device_t *info)
 		dev->ven_get_host_id = aha_get_host_id;	/* function to return host ID from EEPROM */
 		dev->ven_get_irq = aha_get_irq;		/* function to return IRQ from EEPROM */
 		dev->ven_get_dma = aha_get_dma;		/* function to return DMA channel from EEPROM */
+		dev->ha_bps = 10000000.0;	/* fast SCSI */
 		break;
 
 	case AHA_154xCP:
@@ -862,6 +853,7 @@ aha_init(device_t *info)
 		dev->ven_get_host_id = aha_get_host_id;	/* function to return host ID from EEPROM */
 		dev->ven_get_irq = aha_get_irq;		/* function to return IRQ from EEPROM */
 		dev->ven_get_dma = aha_get_dma;		/* function to return DMA channel from EEPROM */
+		dev->ha_bps = 10000000.0;	/* fast SCSI */
 		break;
 
 	case AHA_1640:
@@ -875,6 +867,7 @@ aha_init(device_t *info)
 		dev->pos_regs[0] = 0x1F;	/* MCA board ID */
 		dev->pos_regs[1] = 0x0F;	
 		mca_add(aha_mca_read, aha_mca_write, dev);
+		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
     }	
 

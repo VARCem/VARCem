@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.h	1.0.1	2018/02/14
+ * Version:	@(#)scsi_device.h	1.0.2	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,25 +38,26 @@
 # define SCSI_DEVICE_H
 
 
-typedef struct
-{
-	int state;
-	int new_state;
-	int clear_req;
-	uint32_t bus_in, bus_out;
-	int dev_id;
+typedef struct {
+    int		state;
+    int		new_state;
+    int		clear_req;
+    uint32_t	bus_in, bus_out;
+    int		dev_id;
 
-	int command_pos;
-	uint8_t command[20];
-	int data_pos;
-	
-	int change_state_delay;
-	int new_req_delay;	
+    int		command_pos;
+    uint8_t	command[20];
+    int		data_pos;
+
+    int		change_state_delay;
+    int		new_req_delay;	
 } scsi_bus_t;
+
 
 extern uint8_t	*scsi_device_sense(uint8_t id, uint8_t lun);
 extern void	scsi_device_type_data(uint8_t id, uint8_t lun,
 				      uint8_t *type, uint8_t *rmb);
+extern int64_t	scsi_device_get_callback(uint8_t scsi_id, uint8_t scsi_lun);
 extern void	scsi_device_request_sense(uint8_t scsi_id, uint8_t scsi_lun,
 					  uint8_t *buffer,
 					  uint8_t alloc_length);

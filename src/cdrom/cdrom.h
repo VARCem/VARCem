@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.3	2018/03/04
+ * Version:	@(#)cdrom.h	1.0.4	2018/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -193,6 +193,8 @@ typedef struct {
 	
 	unsigned int sound_on;
 	unsigned int atapi_dma;
+
+	uint8_t speed;
 } cdrom_drive_t;
 
 typedef struct {
