@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.h	1.0.3	2018/03/05
+ * Version:	@(#)cpu.h	1.0.4	2018/03/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -447,7 +447,7 @@ extern void	cpu_CPUID(void);
 extern void	cpu_RDMSR(void);
 extern void	cpu_WRMSR(void);
 
-extern int      checkio(int port);
+extern int  checkio(uint32_t port);
 extern void	codegen_block_end(void);
 extern void	codegen_reset(void);
 extern void	cpu_set_edx(void);
@@ -467,7 +467,7 @@ extern void	resetx86(void);
 extern void	refreshread(void);
 extern void	resetreadlookup(void);
 extern void	softresetx86(void);
-extern void	x86_int_sw(int num);
+extern void	x86_int_sw(uint32_t num);
 extern int	x86_int_sw_rm(int num);
 extern void	x86gpf(char *s, uint16_t error);
 extern void	x86np(char *s, uint16_t error);

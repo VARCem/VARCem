@@ -20,7 +20,7 @@
  *		  - PMMX decode queue
  *		  - MMX latencies
  *
- * Version:	@(#)codegen_timing_pentium.c	1.0.1	2018/02/14
+ * Version:	@(#)codegen_timing_pentium.c	1.0.2	2018/03/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -859,7 +859,7 @@ static inline int COUNT(uint64_t timings, uint64_t deps, int op_32)
         
         fatal("Illegal COUNT %016llx\n", timings);
                 
-        return timings;
+        return timings & 0xffffffff;
 }
 
 static int codegen_fpu_latencies(uint64_t deps, int reg)

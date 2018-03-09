@@ -8,7 +8,7 @@
  *
  *		x87 FPU instructions core.
  *
- * Version:	@(#)x87_ops.h	1.0.2	2018/02/21
+ * Version:	@(#)x87_ops.h	1.0.4	2018/03/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -214,7 +214,7 @@ static __inline void x87_st80(double d)
        	test.begin = (((int16_t)sign80)<<15)| (int16_t)exp80final;
        	test.eind.ll = mant80final;
 
-	writememl(easeg,cpu_state.eaaddr,test.eind.ll);
+	writememl(easeg,cpu_state.eaaddr,test.eind.ll & 0xffffffff);
 	writememl(easeg,cpu_state.eaaddr+4,test.eind.ll>>32);
 	writememw(easeg,cpu_state.eaaddr+8,test.begin);
 }
@@ -266,7 +266,7 @@ static __inline void x87_stmmx(MMX_REG r)
 static __inline uint16_t x87_compare(double a, double b)
 {
 #if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
-        uint32_t out;
+        uint32_t result;
 
 	if (!is386)
 	{
@@ -282,7 +282,7 @@ static __inline uint16_t x87_compare(double a, double b)
 		                "fclex\n"
 		                "fcompp\n"                
 		                "fnstsw %0\n"
-		                : "=m" (out)
+		                : "=m" (result)
 		                : "m" (a), "m" (a)
 		        );
 #else
@@ -293,11 +293,11 @@ static __inline uint16_t x87_compare(double a, double b)
                         fld a
                         fclex
                         fcompp
-                        fnstsw out
+                        fnstsw result
                 }
 #endif
 
-		        return out & (C0|C2|C3);
+		        return result & (C0|C2|C3);
 		}
 	}
         
@@ -312,7 +312,7 @@ static __inline uint16_t x87_compare(double a, double b)
                 "fclex\n"
                 "fcompp\n"                
                 "fnstsw %0\n"
-                : "=m" (out)
+                : "=m" (result)
                 : "m" (a), "m" (b)
         );
 #else
@@ -323,11 +323,11 @@ static __inline uint16_t x87_compare(double a, double b)
                 fld a
                 fclex
                 fcompp
-                fnstsw out
+                fnstsw result
         }
 #endif
 
-        return out & (C0|C2|C3);
+        return result & (C0|C2|C3);
 #else
         /* Generic C version is known to give incorrect results in some
          * situations, eg comparison of infinity (Unreal) */
@@ -337,31 +337,31 @@ static __inline uint16_t x87_compare(double a, double b)
 	{
 		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))
 		{
-			out |= C3;
-			return out;
+			result |= C3;
+			return result;
 		}
 
 	        if (a == b)
-        	        out |= C3;
+	                result |= C3;
 	        else if (a < b)
-	                out |= C0;
+	                result |= C0;
 	}
 	else
 	{
 	        if (a == b)
-        	        out |= C3;
+	                result |= C3;
 	        else if (a < b)
-	                out |= C0;
+	                result |= C0;
 	}
                 
-        return out;
+        return result;
 #endif
 }
 
 static __inline uint16_t x87_ucompare(double a, double b)
 {
 #if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
-        uint32_t out;
+        uint32_t result;
         
 #ifndef _MSC_VER
         /* Memory barrier, to force GCC to write to the input parameters
@@ -374,7 +374,7 @@ static __inline uint16_t x87_ucompare(double a, double b)
                 "fclex\n"
                 "fucompp\n"                
                 "fnstsw %0\n"
-                : "=m" (out)
+                : "=m" (result)
                 : "m" (a), "m" (b)
         );
 #else
@@ -385,22 +385,22 @@ static __inline uint16_t x87_ucompare(double a, double b)
                 fld a
                 fclex
                 fcompp
-                fnstsw out
+                fnstsw result
         }
 #endif
 
-        return out & (C0|C2|C3);
+        return result & (C0|C2|C3);
 #else
         /* Generic C version is known to give incorrect results in some
          * situations, eg comparison of infinity (Unreal) */
-        uint32_t out = 0;
+        uint32_t result = 0;
         
         if (a == b)
-                out |= C3;
+                result |= C3;
         else if (a < b)
-                out |= C0;
+                result |= C0;
                 
-        return out;
+        return result;
 #endif
 }
 

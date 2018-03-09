@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.1	2018/02/14
+ * Version:	@(#)386_common.h	1.0.2	2018/03/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -281,4 +281,4 @@ static __inline void seteaq(uint64_t v)
 #define rmdat rmdat32
 #define fetchdat rmdat32
 
-void x86_int(int num);
+void x86_int(uint32_t num);

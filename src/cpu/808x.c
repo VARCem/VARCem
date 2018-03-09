@@ -18,7 +18,7 @@
  *		2 clocks - fetch opcode 1       2 clocks - execute
  *		2 clocks - fetch opcode 2  etc
  *
- * Version:	@(#)808x.c	1.0.1	2018/02/14
+ * Version:	@(#)808x.c	1.0.2	2018/03/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1230,7 +1230,7 @@ void execx86(int cycs)
                         break;
                         case 0x14: /*ADC AL,#8*/
                         tempw=FETCH();
-                        setadc8(AL,tempw);
+                        setadc8(AL,tempw & 0xff);
                         AL+=tempw+tempc;
                         cycles-=4;
                         break;
@@ -2968,7 +2968,7 @@ void execx86(int cycs)
                                 if (temp)
                                 {
                                         tempw2=tempw%temp;
-                                                AH=tempw2;
+                                                AH=tempw2 & 0xff;
                                                 tempw/=temp;
                                                 AL=tempw&0xFF;
                                 }

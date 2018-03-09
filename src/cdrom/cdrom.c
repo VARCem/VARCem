@@ -706,7 +706,7 @@ uint32_t cdrom_mode_sense(uint8_t id, uint8_t *buf, uint32_t pos, uint8_t type, 
 
 void cdrom_update_request_length(uint8_t id, int len, int block_len)
 {
-	uint32_t bt;
+	int bt;
 	cdrom[id].max_transfer_len = cdrom[id].request_length;
 
 	/* For media access commands, make sure the requested DRQ length matches the block length. */
@@ -1088,7 +1088,7 @@ void cdrom_update_cdb(uint8_t *cdb, int lba_pos, int number_of_blocks)
 int cdrom_read_data(uint8_t id, int msf, int type, int flags, uint32_t *len)
 {
 	int ret = 0;
-	int cdsize = 0;
+	uint32_t cdsize = 0;
 
 	int i = 0;
 	int temp_len = 0;
@@ -1516,7 +1516,7 @@ void cdrom_set_buf_len(uint8_t id, int32_t *BufLen, uint32_t *src_len)
 		if (*BufLen == -1)
 			*BufLen = *src_len;
 		else {
-			*BufLen = MIN(*src_len, *BufLen);
+			*BufLen = MIN((int)*src_len, *BufLen);
 			*src_len = *BufLen;
 		}
 		cdrom_log("CD-ROM %i: Actual transfer length: %i\n", id, *BufLen);
@@ -2363,7 +2363,7 @@ cdrom_readtoc_fallback:
 						if (*BufLen == -1)
 							*BufLen = len;
 						else {
-							*BufLen = MIN(len, *BufLen);
+							*BufLen = MIN((int)len, *BufLen);
 							len = *BufLen;
 						}
 					}
@@ -3040,7 +3040,7 @@ void cdrom_write(uint8_t channel, uint32_t val, int length)
 		}
 		return;
 	} else if (cdrom[id].packet_status == CDROM_PHASE_IDLE) {
-		if (cdrom[id].pos >= cdrom[id].cdb_len) {
+		if (cdrom[id].pos >= (uint32_t)cdrom[id].cdb_len) {
 			cdrom[id].pos=0;
 			cdrom[id].status = BUSY_STAT;
 			cdrom[id].packet_status = CDROM_PHASE_COMMAND;

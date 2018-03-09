@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU.
  *
- * Version:	@(#)386.c	1.0.1	2018/02/14
+ * Version:	@(#)386.c	1.0.2	2018/03/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -263,14 +263,14 @@ void exec386(int cycs)
         uint8_t temp;
         uint32_t addr;
         int tempi;
-        int cycdiff;
+        int64_t cycdiff;
         int oldcyc;
 
         cycles+=cycs;
         /* output=3; */
         while (cycles>0)
         {
-                int cycle_period = (timer_count >> TIMER_SHIFT) + 1;
+                int64_t cycle_period = (timer_count >> TIMER_SHIFT) + 1;
                 
 		x86_was_reset = 0;
                 cycdiff=0;
