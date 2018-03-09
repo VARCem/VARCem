@@ -8,7 +8,7 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.1	2018/02/14
+ * Version:	@(#)x86seg.c	1.0.2	2018/03/09
  *
  * Authors:	Sarah Walker, <http://pcem-emulator.co.uk/>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -282,14 +282,14 @@ static void check_seg_valid(x86seg *s)
 
         if (s->seg & 4)
         {
-                if ((s->seg & ~7) >= ldt.limit)
+                if ((s->seg & ~7U) >= ldt.limit)
                 {
                         valid = 0;
                 }
         }
         else
         {
-                if ((s->seg & ~7) >= gdt.limit)
+                if ((s->seg & ~7U) >= gdt.limit)
                 {
                         valid = 0;
                 }

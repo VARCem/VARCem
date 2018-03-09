@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.1	2018/02/14
+ * Version:	@(#)386_dynarec.c	1.0.2	2018/03/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -226,7 +226,7 @@ static __inline void fetch_ea_16_long(uint32_t rmdat)
 
 #include "x86_flags.h"
 
-void x86_int(int num)
+void x86_int(uint32_t num)
 {
         uint32_t addr;
         flags_rebuild();
@@ -279,7 +279,7 @@ void x86_int(int num)
         CPU_BLOCK_END();
 }
 
-void x86_int_sw(int num)
+void x86_int_sw(uint32_t num)
 {
         uint32_t addr;
         flags_rebuild();
@@ -446,7 +446,7 @@ static void prefetch_flush()
 #define PREFETCH_FLUSH() prefetch_flush()
 
 
-int checkio(int port)
+int checkio(uint32_t port)
 {
         uint16_t t;
         uint8_t d;
