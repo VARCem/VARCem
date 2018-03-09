@@ -621,9 +621,9 @@ END
 //
 // 24
 //
-
+#ifndef SKIP_MANIFEST
 1                       24      MOVEABLE PURE   "VARCem.manifest"
-
+#endif
 /////////////////////////////////////////////////////////////////////////////
 //
 // Icon
