@@ -184,12 +184,6 @@
     <ClCompile Include="..\..\game\joystick_ch_flightstick_pro.c">
       <Filter>game</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\lzf\lzf_c.c">
-      <Filter>lzf</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\lzf\lzf_d.c">
-      <Filter>lzf</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\machine\m_amstrad.c">
       <Filter>machine</Filter>
     </ClCompile>
@@ -784,9 +778,7 @@
     <ClCompile Include="..\..\machine\m_xt_xi8088.c">
       <Filter>machine</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\nvr_tc8521.c" />
     <ClCompile Include="..\..\rom_load.c" />
-    <ClCompile Include="..\..\rtc_tc8521.c" />
     <ClCompile Include="..\..\sio\sio_detect.c">
       <Filter>sio</Filter>
     </ClCompile>
@@ -807,6 +799,12 @@
     </ClCompile>
     <ClCompile Include="..\..\sio\sio_w83877f.c">
       <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\floppy\lzf\lzf_c.c">
+      <Filter>floppy\lzf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\floppy\lzf\lzf_d.c">
+      <Filter>floppy\lzf</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -834,9 +832,6 @@
     <ClInclude Include="..\..\pic.h" />
     <ClInclude Include="..\..\pit.h" />
     <ClInclude Include="..\..\plat.h" />
-    <ClInclude Include="..\..\plat_dynld.h" />
-    <ClInclude Include="..\..\plat_joystick.h" />
-    <ClInclude Include="..\..\plat_midi.h" />
     <ClInclude Include="..\..\ppi.h" />
     <ClInclude Include="..\..\random.h" />
     <ClInclude Include="..\..\rom.h" />
@@ -1121,12 +1116,6 @@
     </ClInclude>
     <ClInclude Include="..\..\lang\language.h">
       <Filter>lang</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\lzf\lzfP.h">
-      <Filter>lzf</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\lzf\lzf.h">
-      <Filter>lzf</Filter>
     </ClInclude>
     <ClInclude Include="..\..\machine\m_at_t3100e.h">
       <Filter>machine</Filter>
@@ -1596,12 +1585,22 @@
     <ClInclude Include="..\..\machine\m_xt_t1000.h">
       <Filter>machine</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\nvr_tc8521.h" />
-    <ClInclude Include="..\..\rtc_tc8521.h" />
     <ClInclude Include="..\..\sio\sio.h">
       <Filter>sio</Filter>
     </ClInclude>
     <ClInclude Include="..\..\version.h" />
+    <ClInclude Include="..\..\floppy\lzf\config.h">
+      <Filter>floppy\lzf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\floppy\lzf\crc32.h">
+      <Filter>floppy\lzf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\floppy\lzf\lzf.h">
+      <Filter>floppy\lzf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\floppy\lzf\lzfP.h">
+      <Filter>floppy\lzf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cdrom">
@@ -1624,9 +1623,6 @@
     </Filter>
     <Filter Include="lang">
       <UniqueIdentifier>{232b8441-5106-47b6-939d-ebd46589c0b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lzf">
-      <UniqueIdentifier>{cb8b17b6-bd02-4712-a3c2-97f66710e84e}</UniqueIdentifier>
     </Filter>
     <Filter Include="machine">
       <UniqueIdentifier>{a99de26d-e4fd-4223-952c-21f1657a20e7}</UniqueIdentifier>
@@ -1663,6 +1659,9 @@
     </Filter>
     <Filter Include="sio">
       <UniqueIdentifier>{4fc4a59c-bb7c-45d7-a467-a06198e71472}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="floppy\lzf">
+      <UniqueIdentifier>{98d7b877-02b8-4c6b-b2b6-d2cc49f357bc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
