@@ -12,7 +12,7 @@
  *		addition of get_last_head and C++ callability by Thomas
  *		Harte.
  *
- * Version:	@(#)fdi2raw.c	1.0.1	2018/02/14
+ * Version:	@(#)fdi2raw.c	1.0.2	2018/03/12
  *
  * Authors:	Toni Wilen, <twilen@arabuusimiehet.com>
  *		and Vincent Joguin,
@@ -1880,7 +1880,7 @@ static int decode_lowlevel_track (FDI *fdi, int track, struct fdi_cache *cache)
 	indexoffset = 0;
 	p1 = idxp;
 	for (i = 0; i < pulses; i++) {
-		if (p1[idx_off1] + p1[idx_off2] > maxidx)
+		if ((uint32_t)p1[idx_off1] + (uint32_t)p1[idx_off2] > maxidx)
 			maxidx = p1[idx_off1] + p1[idx_off2];
 		p1 += idx_off3;
 	}
@@ -1916,7 +1916,7 @@ static int decode_lowlevel_track (FDI *fdi, int track, struct fdi_cache *cache)
 	totalavg = 0;
 	weakbits = 0;
 	for (i = 0; i < pulses; i++) {
-		int sum = p1[idx_off1] + p1[idx_off2];
+		uint32_t sum = p1[idx_off1] + p1[idx_off2];
 		if (sum >= maxidx) {
 			totalavg += *p2;
 		} else {

@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.3	2018/03/11
+ * Version:	@(#)fdd_86f.c	1.0.4	2018/03/12
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -1134,7 +1134,7 @@ static void d86f_calccrc(int drive, uint8_t byte)
 
 int d86f_word_is_aligned(int drive, int side, uint32_t base_pos)
 {
-	int adjusted_track_pos = d86f[drive].track_pos;
+	uint32_t adjusted_track_pos = d86f[drive].track_pos;
 
 	if (base_pos == 0xFFFFFFFF)
 	{
@@ -1756,8 +1756,8 @@ void d86f_write_direct_common(int drive, int side, uint16_t byte, uint8_t type, 
 	if (fdc_get_diswr(d86f_fdc))
 		return;
 
-	dbyte.byte = byte;
-	dpbyte.byte = d86f[drive].preceding_bit[side];
+	dbyte.byte = byte & 0xff;
+	dpbyte.byte = d86f[drive].preceding_bit[side] & 0xff;
 
 	if (type == 0)
 	{
@@ -2086,7 +2086,7 @@ void d86f_turbo_read(int drive, int side)
 	}
 	else
 	{
-		if (d86f[drive].data_find.bytes_obtained < (128 << d86f[drive].last_sector.id.n))
+		if (d86f[drive].data_find.bytes_obtained < (128UL << d86f[drive].last_sector.id.n))
 		{
 			if (d86f[drive].state != STATE_16_VERIFY_DATA)
 			{
@@ -2756,7 +2756,7 @@ uint16_t d86f_prepare_sector(int drive, int side, int prev_pos, uint8_t *id_buf,
 
 void d86f_construct_encoded_buffer(int drive, int side)
 {
-	int i = 0;
+	uint32_t i = 0;
 	/* *_fuzm are fuzzy bit masks, *_holm are hole masks, dst_neim are masks is mask for bits that are neither fuzzy nor holes in both,
 	   and src1_d and src2_d are filtered source data. */
 	uint16_t src1_fuzm, src2_fuzm, dst_fuzm, src1_holm, src2_holm, dst_holm, dst_neim, src1_d, src2_d;
@@ -2806,7 +2806,7 @@ void d86f_construct_encoded_buffer(int drive, int side)
 /* Decomposition is easier since we at most have to care about the holes. */
 void d86f_decompose_encoded_buffer(int drive, int side)
 {
-	int i = 0;
+	uint32_t i = 0;
 	uint16_t temp, temp2;
 	uint32_t len;
 	uint16_t *dst = d86f[drive].track_encoded_data[side];
@@ -3294,7 +3294,7 @@ void d86f_add_track(int drive, int track, int side)
 
 void d86f_common_format(int drive, int side, int rate, uint8_t fill, int proxy)
 {
-	int i = 0;
+	uint32_t i = 0;
 	uint16_t temp, temp2;
 	uint32_t array_size;
 
