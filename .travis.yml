@@ -78,7 +78,7 @@ notifications:
     template:
       - "Commit %{commit} by %{author} in %{branch} %{result} after %{duration}."
       - "Commit changes: %{commit_subject}"
-      - "Build details on %{build_url}
+      - "Build details on %{build_url}"
 #     - "Details on %{build_url}, changes on %{compare_url}"
 
 # End of file.
