@@ -8,7 +8,7 @@
  *
  *		Various definitions for portable byte-swapping.
  *
- * Version:	@(#)bswap.h	1.0.1	2018/02/14
+ * Version:	@(#)bswap.h	1.0.2	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		neozeed,
@@ -171,7 +171,7 @@ static __inline void cpu_to_le16wu(uint16_t *p, uint16_t v)
 {
     uint8_t *p1 = (uint8_t *)p;
 
-    p1[0] = v;
+    p1[0] = v & 0xff;
     p1[1] = v >> 8;
 }
 
@@ -202,7 +202,7 @@ static __inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
     uint8_t *p1 = (uint8_t *)p;
 
     p1[0] = v >> 8;
-    p1[1] = v;
+    p1[1] = v & 0xff;
 }
 
 static __inline void cpu_to_be32wu(uint32_t *p, uint32_t v)
