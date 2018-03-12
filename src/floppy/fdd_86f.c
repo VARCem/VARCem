@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.2	2018/03/08
+ * Version:	@(#)fdd_86f.c	1.0.3	2018/03/11
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -41,7 +41,6 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <wchar.h>
-#include "../lzf/lzf.h"
 #define HAVE_STDARG_H
 #include "../emu.h"
 #include "../config.h"
@@ -53,6 +52,7 @@
 #include "fdd.h"
 #include "fdc.h"
 #include "fdd_86f.h"
+#include "lzf/lzf.h"
 
 
 #define CHUNK 16384

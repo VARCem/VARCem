@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.3	2018/03/03
+ * Version:	@(#)openal.c	1.0.4	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,7 +53,6 @@
 #endif
 #include "../emu.h"
 #include "../plat.h"
-#include "../plat_dynld.h"
 #include "../ui.h"
 #include "sound.h"
 #include "midi.h"

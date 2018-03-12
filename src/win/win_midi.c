@@ -8,7 +8,7 @@
  *
  *		Implementation of the System MIDI interface.
  *
- * Version:	@(#)win_midi.c	1.0.2	2018/03/07
+ * Version:	@(#)win_midi.c	1.0.3	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,6 @@
 #include "../config.h"
 #include "../sound/midi.h"
 #include "../plat.h"
-#include "../plat_midi.h"
 #include "win.h"
 
 

@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.4	2018/03/07
+ * Version:	@(#)plat.h	1.0.5	2018/03/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -132,6 +132,17 @@ extern void	set_language(int id);
 extern wchar_t	*plat_get_string(int id);
 
 
+/* Dynamic Module Loader interface. */
+typedef struct {
+    const char	*name;
+    void	*func;
+} dllimp_t;
+
+
+extern void	*dynld_module(const char *, dllimp_t *);
+extern void	dynld_close(void *);
+
+
 /* Emulator start/stop support functions. */
 extern void	do_start(void);
 extern void	do_stop(void);
@@ -152,6 +163,14 @@ extern void	removable_disk_reload(uint8_t id);
 extern int      ioctl_open(uint8_t id, char d);
 extern void     ioctl_reset(uint8_t id);
 extern void     ioctl_close(uint8_t id);
+
+extern void	plat_midi_init(void);
+extern void	plat_midi_close(void);
+extern void	plat_midi_play_msg(uint8_t* val);
+extern void	plat_midi_play_sysex(uint8_t* data, unsigned int len);
+extern int	plat_midi_write(uint8_t val);
+extern int	plat_midi_get_num_devs();
+extern void	plat_midi_get_dev_name(int num, char *s);
 
 
 /* Thread support. */

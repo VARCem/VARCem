@@ -8,7 +8,7 @@
  *
  *		Interface to system MIDI driver.
  *
- * Version:	@(#)midi_system.c	1.0.1	2018/02/14
+ * Version:	@(#)midi_system.c	1.0.2	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,6 @@
 #include "../emu.h"
 #include "../device.h"
 #include "../plat.h"
-#include "../plat_midi.h"
 #include "midi.h"
 #include "midi_system.h"
 

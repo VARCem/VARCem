@@ -10,7 +10,7 @@
  *
  *		Based on the "libpcap" examples.
  *
- * Version:	@(#)pcap_if.c	1.0.9	2018/02/24
+ * Version:	@(#)pcap_if.c	1.0.10	2018/03/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -56,7 +56,6 @@
 #include <time.h>
 #include "../emu.h"
 #include "../plat.h"
-#include "../plat_dynld.h"
 
 
 static void	*pcap_handle;		/* handle to WinPcap DLL */

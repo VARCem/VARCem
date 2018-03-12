@@ -8,7 +8,7 @@
  *
  *		Try to load a support DLL.
  *
- * Version:	@(#)win_dynld.c	1.0.2	2018/03/07
+ * Version:	@(#)win_dynld.c	1.0.3	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,7 +52,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
-#include "../plat_dynld.h"
+#include "../plat.h"
 
 
 void *

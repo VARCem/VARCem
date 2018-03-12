@@ -8,7 +8,7 @@
  *
  *		Implementation of the Joystick Configuration dialog.
  *
- * Version:	@(#)win_jsconf.c	1.0.2	2018/03/07
+ * Version:	@(#)win_jsconf.c	1.0.3	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,6 @@
 #include "../device.h"
 #include "../game/gameport.h"
 #include "../plat.h"
-#include "../plat_joystick.h"
 #include "win.h"
 
 

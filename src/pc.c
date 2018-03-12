@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.6	2018/03/07
+ * Version:	@(#)pc.c	1.0.7	2018/03/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,7 @@
 # include "cpu/codegen.h"
 #endif
 #include "cpu/x86_ops.h"
+#include "machine/machine.h"
 #include "io.h"
 #include "mem.h"
 #include "rom.h"
@@ -63,7 +64,6 @@
 #include "timer.h"
 #include "device.h"
 #include "nvr.h"
-#include "machine/machine.h"
 #include "bugger.h"
 #include "lpt.h"
 #include "serial.h"
@@ -94,8 +94,6 @@
 #include "video/video.h"
 #include "ui.h"
 #include "plat.h"
-#include "plat_joystick.h"
-#include "plat_midi.h"
 
 
 /* Commandline options. */
@@ -148,6 +146,7 @@ int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
 	cpu_use_dynarec = 0,			/* (C) cpu uses/needs Dyna */
 	cpu = 3,				/* (C) cpu type */
 	enable_external_fpu = 0;		/* (C) enable external FPU */
+int	enable_sync = 0;			/* (C) enable time sync */
 
 
 /* Statistics. */
@@ -536,7 +535,7 @@ usage:
     (void)time(&now);
     info = localtime(&now);
     strftime(temp, sizeof(temp), "%Y/%m/%d %H:%M:%S", info);
-    pclog("#\n# %s v%s\n\n# Logfile created %s\n#\n",
+    pclog("#\n# %s v%s\n#\n# Logfile created %s\n#\n",
 		emu_title, emu_version, temp);
     pclog("# Emulator path: %ls\n", emu_path);
     pclog("# Userfiles path: %ls\n", usr_path);
@@ -575,8 +574,6 @@ pc_full_speed(void)
 		setpitclock(14318184.0);
     }
     atfullspeed = 1;
-
-    nvr_recalc();
 }
 
 
@@ -587,8 +584,6 @@ pc_speed_changed(void)
 	setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
       else
 	setpitclock(14318184.0);
-
-    nvr_recalc();
 }
 
 

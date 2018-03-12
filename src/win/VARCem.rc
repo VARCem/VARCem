@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.6	2018/03/08
+ * Version:	@(#)VARCem.rc	1.0.7	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -980,7 +980,7 @@ BEGIN
     IDS_2168	"&Image..."
     IDS_2169	"Image (&Write-protected)..."
     IDS_2170	"Check BPB"
-    IDS_2171	"Unable to initialize FluidSynth, make sure you have the following libraries\nin your program folder:\n\nlibfluidsynth.dll\nlibglib-2.0-0.dll\nlibiconv-2.dll\nlibintl-8.dll\nlibpcre-1.dll"
+    IDS_2171	"Unable to initialize FluidSynth, make sure you have the following library\nin your program folder:\n\nlibfluidsynth.dll"
     IDS_2172	"E&xport to 86F..."
     IDS_2173	"Surface images (*.86F)\0*.86F\0"
     IDS_2174	"All images (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Basic sector images (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Surface images (*.86F)\0*.86F\0"

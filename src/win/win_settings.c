@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.8	2018/03/08
+ * Version:	@(#)win_settings.c	1.0.9	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -70,7 +70,6 @@
 #include "../video/video.h"
 #include "../video/vid_voodoo.h"
 #include "../plat.h"
-#include "../plat_midi.h"
 #include "../ui.h"
 #include "win.h"
 

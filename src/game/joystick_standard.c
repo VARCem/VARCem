@@ -8,7 +8,7 @@
  *
  *		Implementation of a standard joystick.
  *
- * Version:	@(#)joystick_standard.c	1.0.2	2018/02/21
+ * Version:	@(#)joystick_standard.c	1.0.3	2018/03/10
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -42,7 +42,6 @@
 #include "../emu.h"
 #include "../device.h"
 #include "../timer.h"
-#include "../plat_joystick.h"
 #include "gameport.h"
 #include "joystick_standard.h"
 

@@ -11,9 +11,8 @@
  * NOTES:	- pc2386 BIOS is corrupt (JMP at F000:FFF0 points to RAM)
  *		- pc2386 video BIOS is underdumped (16k instead of 24k)
  *		- c386sx16 BIOS fails checksum
- *		- the loadfont() calls should be done elsewhere
  *
- * Version:	@(#)rom.c	1.0.6	2018/03/07
+ * Version:	@(#)rom.c	1.0.7	2018/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,11 +50,7 @@
 #include "cpu/cpu.h"
 #include "mem.h"
 #include "rom.h"
-#include "video/video.h"		/* for loadfont() */
 #include "plat.h"
-
-
-int	romspresent[ROM_MAX];
 
 
 FILE *

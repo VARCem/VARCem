@@ -58,6 +58,7 @@
 int	romset;
 int	machine;
 int	AT, PCI;
+int     romspresent[ROM_MAX];
 
 
 void

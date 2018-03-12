@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.5	2018/03/07
+ * Version:	@(#)emu.h	1.0.6	2018/03/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -137,6 +137,7 @@ extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
 		cpu,				/* (C) cpu type */
 		cpu_use_dynarec,		/* (C) cpu uses/needs Dyna */
 		enable_external_fpu;		/* (C) enable external FPU */
+extern int	enable_sync;			/* (C) enable time sync */
 
 
 #ifdef ENABLE_LOG_TOGGLES

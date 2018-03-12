@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.2	2018/03/04
+ * Version:	@(#)keyboard_at.c	1.0.3	2018/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "pit.h"
 #include "ppi.h"
 #include "mem.h"
-#include "rom.h"
 #include "device.h"
 #include "timer.h"
 #include "machine/machine.h"

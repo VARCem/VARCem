@@ -23,16 +23,16 @@
  *		used for TV and LCD displays, and we're emulating a CRT.
  *
  * TODO:	This module is not complete yet:
- *
- * PC1512:	The BIOS assumes 512K RAM, because I cannot figure out how to
+ *  PC1512:	The BIOS assumes 512K RAM, because I cannot figure out how to
  *		read the status of the LK4 jumper on the mainboard, which is
  *		somehow linked to the bus gate array on the NDMACS line...
- *
- * PC1612:	EGA mode does not seem to work in the PC1640; it works fine
+ *  PC1612:	EGA mode does not seem to work in the PC1640; it works fine
  *		in alpha mode, but in highres ("ECD350") mode, it displays
  *		some semi-random junk. Video-memory pointer maybe?
+ *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
+ *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.1	2018/02/14
+ * Version:	@(#)m_amstrad.c	1.0.2	2018/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -542,6 +542,9 @@ vid_init_1512(amstrad_t *ams)
     vid->cgacol = 7;
     vid->cgamode = 0x12;
 
+    /* Load the PC1512 CGA Character Set ROM. */
+    loadfont(L"roms/machines/amstrad/pc1512/40078", 2);
+
     timer_add(vid_poll_1512, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
     mem_mapping_add(&vid->cga.mapping, 0xb8000, 0x08000,
 		    vid_read_1512, NULL, NULL, vid_write_1512, NULL, NULL,
@@ -840,6 +843,9 @@ vid_init_200(amstrad_t *ams)
     cga = &vid->cga;
     cga->vram = malloc(0x4000);
     cga_init(cga);
+
+    /* Load the PC200 CGA Character Set ROM. */
+    loadfont(L"roms/machines/amstrad/pc200/40109.bin", 1);
 
     mem_mapping_add(&vid->cga.mapping, 0xb8000, 0x08000,
 	cga_read, NULL, NULL, cga_write, NULL, NULL, NULL, 0, cga);
@@ -1243,62 +1249,50 @@ machine_amstrad_init(machine_t *model)
     io_sethandler(0x007a, 1,
 		  ms_read, NULL, NULL, ms_write, NULL, NULL, ams);
 
-// 		device_add(&fdc_at_actlow_device);
-
-    switch(romset) {
+    switch(model->id) {
 	case ROM_PC1512:
 		device_add(&fdc_xt_device);
+		if (gfxcard == GFX_INTERNAL) {
+			vid_init_1512(ams);
+			device_add_ex(&vid_1512_device, ams->vid);
+		}
 		break;
 
 	case ROM_PC1640:
 		device_add(&fdc_xt_device);
+		if (gfxcard == GFX_INTERNAL) {
+			vid_init_1640(ams);
+			device_add_ex(&vid_1640_device, ams->vid);
+		}
 		break;
 
 	case ROM_PC200:
 		device_add(&fdc_xt_device);
+		if (gfxcard == GFX_INTERNAL) {
+			vid_init_200(ams);
+			device_add_ex(&vid_200_device, ams->vid);
+		}
 		break;
 
 	case ROM_PC2086:
 		device_add(&fdc_at_actlow_device);
+		if (gfxcard == GFX_INTERNAL) {
+			device_add(&paradise_pvga1a_pc2086_device);
+		}
 		break;
 
 	case ROM_PC3086:
 		device_add(&fdc_at_actlow_device);
+		if (gfxcard == GFX_INTERNAL) {
+			device_add(&paradise_pvga1a_pc3086_device);
+		}
 		break;
 
 	case ROM_MEGAPC:
 		device_add(&fdc_at_actlow_device);
-		break;
-    }
-
-    if (gfxcard == GFX_INTERNAL) switch(romset) {
-	case ROM_PC1512:
-                loadfont(L"roms/machines/pc1512/40078", 2);
-		vid_init_1512(ams);
-		device_add_ex(&vid_1512_device, ams->vid);
-		break;
-
-	case ROM_PC1640:
-		vid_init_1640(ams);
-		device_add_ex(&vid_1640_device, ams->vid);
-		break;
-
-	case ROM_PC200:
-		loadfont(L"roms/machines/pc200/40109.bin", 1);
-		vid_init_200(ams);
-		device_add_ex(&vid_200_device, ams->vid);
-		break;
-
-	case ROM_PC2086:
-		device_add(&paradise_pvga1a_pc2086_device);
-		break;
-
-	case ROM_PC3086:
-		device_add(&paradise_pvga1a_pc3086_device);
-		break;
-
-	case ROM_MEGAPC:
-		device_add(&paradise_wd90c11_megapc_device);
+		if (gfxcard == GFX_INTERNAL) {
+			device_add(&paradise_wd90c11_megapc_device);
+		}
 		break;
     }
 

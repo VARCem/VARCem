@@ -8,7 +8,7 @@
  *
  *		Imlementation of the Device Configuration dialog.
  *
- * Version:	@(#)win_devconf.c	1.0.3	2018/03/07
+ * Version:	@(#)win_devconf.c	1.0.4	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,6 @@
 #include "../config.h"
 #include "../device.h"
 #include "../plat.h"
-#include "../plat_midi.h"
 #include "../ui.h"
 #include "win.h"
 

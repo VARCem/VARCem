@@ -8,7 +8,7 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.1	2018/02/14
+ * Version:	@(#)net_pcap.c	1.0.2	2018/03/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,7 +54,6 @@
 #include "../config.h"
 #include "../device.h"
 #include "../plat.h"
-#include "../plat_dynld.h"
 #include "network.h"
 
 

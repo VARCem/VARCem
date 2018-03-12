@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.3	2018/03/08
+ * Version:	@(#)config.c	1.0.4	2018/03/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,30 +41,30 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <inttypes.h>
 #include "emu.h"
-#include "cpu/cpu.h"
-#include "nvr.h"
 #include "config.h"
+#include "cpu/cpu.h"
+#include "machine/machine.h"
+#include "nvr.h"
 #include "device.h"
 #include "lpt.h"
-#include "cdrom/cdrom.h"
+#include "mouse.h"
+#include "game/gameport.h"
+#include "floppy/fdd.h"
+#include "floppy/fdc.h"
 #include "disk/hdd.h"
 #include "disk/hdc.h"
 #include "disk/hdc_ide.h"
 #include "disk/zip.h"
-#include "floppy/fdd.h"
-#include "floppy/fdc.h"
-#include "game/gameport.h"
-#include "machine/machine.h"
-#include "mouse.h"
-#include "network/network.h"
+#include "cdrom/cdrom.h"
 #include "scsi/scsi.h"
+#include "network/network.h"
 #include "sound/sound.h"
 #include "sound/midi.h"
 #include "sound/snd_dbopl.h"
@@ -73,8 +73,6 @@
 #include "sound/sound.h"
 #include "video/video.h"
 #include "plat.h"
-#include "plat_joystick.h"
-#include "plat_midi.h"
 #include "ui.h"
 
 

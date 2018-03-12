@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.9	2018/03/08
+# Version:	@(#)Makefile.mingw	1.0.10	2018/03/11
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -196,12 +196,12 @@ endif
 #		Nothing should need changing from here on..		#
 #########################################################################
 VPATH		:= $(EXPATH) . cpu \
-		   cdrom disk floppy game sio machine \
+		   cdrom disk floppy floppy/lzf game sio machine \
 		   sound \
 		    sound/munt sound/munt/c_interface sound/munt/sha1 \
 		    sound/munt/srchelper \
 		    sound/resid-fp \
-		   scsi video lzf network network/slirp win
+		   scsi video network network/slirp win
 
 #
 # Select the required build environment. We have, uhm, many..
@@ -455,8 +455,8 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #########################################################################
 MAINOBJ		:= pc.o config.o random.o timer.o io.o dma.o nmi.o pic.o \
 		   pit.o ppi.o pci.o mca.o mcr.o mem.o memregs.o rom.o \
-		   rom_load.o device.o nvr.o nvr_tc8521.o rtc_tc8521.o \
-		   nvr_at.o nvr_ps2.o $(VNCOBJ) $(RDPOBJ)
+		   rom_load.o device.o nvr.o nvr_at.o nvr_ps2.o \
+		   $(VNCOBJ) $(RDPOBJ)
 
 INTELOBJ	:= intel.o \
 		    intel_flash.o \
@@ -501,7 +501,7 @@ DEVOBJ		:= bugger.o lpt.o $(SERIAL) \
 FDDOBJ		:= fdc.o \
 		   fdd.o \
 		    fdd_common.o fdd_86f.o \
-		    fdd_fdi.o fdi2raw.o \
+		    fdd_fdi.o fdi2raw.o lzf_c.o lzf_d.o \
 		    fdd_imd.o fdd_img.o fdd_json.o fdd_td0.o
 
 HDDOBJ		:= hdd.o \
@@ -604,7 +604,6 @@ ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif
 
-LZFOBJ		:= lzf_c.o lzf_d.o
 
 LIBS		:= -mwindows \
 		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
@@ -663,9 +662,9 @@ VARCem.res:	VARCem.rc VARCem.mpp
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o VARCem.res
 
-$(PROG).exe:	$(OBJ) $(LZFOBJ) VARCem.res
+$(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		@$(CC) -o $(PROG).exe $(OBJ) $(LZFOBJ) VARCem.res $(LIBS)
+		@$(CC) -o $(PROG).exe $(OBJ) VARCem.res $(LIBS)
 ifneq ($(DEBUG), y)
 		@strip $(PROG).exe
 endif

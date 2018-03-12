@@ -22,7 +22,7 @@
  *
  *		Based on the original "xebec.c" from Sarah Walker.
  *
- * Version:	@(#)m_europc_hdc.c	1.0.1	2018/02/14
+ * Version:	@(#)m_europc_hdc.c	1.0.2	2018/03/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -81,7 +81,7 @@
 #include "machine.h"
 
 
-#define HDC_DEBUG	1
+#define HDC_DEBUG	0
 #define HDC_NEWPARAMS	1			/* use NEW parameter block */
 
 #define HDD_IOADDR	0x0320

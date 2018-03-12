@@ -9,7 +9,7 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_xt_t1000_vid.c	1.0.3	2018/03/06
+ * Version:	@(#)m_xt_t1000_vid.c	1.0.4	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,10 @@
 #include "../video/vid_cga.h"
 #include "m_xt_t1000.h"
 
+
 #define T1000_XSIZE 640
 #define T1000_YSIZE 200
+
 
 /* Mapping of attributes to colours */
 static uint32_t blue, grey;
@@ -61,6 +63,7 @@ static uint8_t  boldcols[256];		/* Which attributes use the bold font */
 static uint32_t blinkcols[256][2];
 static uint32_t normcols[256][2];
 static uint8_t  language;
+
 
 /* Video options set by the motherboard; they will be picked up by the card
  * on the next poll.
@@ -726,33 +729,25 @@ static device_config_t t1000_config[] =
 };
 
 
-device_t t1000_device =
-{
-        "Toshiba T1000",
-        0,
-        0,
-        t1000_init,
-        t1000_close,
-        NULL,
-        NULL,
-        t1000_speed_changed,
-        NULL,
-        NULL,
-	t1000_config
+device_t t1000_video_device = {
+    "Toshiba T1000 Video",
+    0, 0,
+    t1000_init, t1000_close, NULL,
+    NULL,
+    t1000_speed_changed,
+    NULL,
+    NULL,
+    t1000_config
 };
 
 
-device_t t1200_device =
-{
-        "Toshiba T1200",
-        0,
-        0,
-        t1000_init,
-        t1000_close,
-        NULL,
-        NULL,
-        t1000_speed_changed,
-        NULL,
-        NULL,
-	t1000_config
+device_t t1200_video_device = {
+    "Toshiba T1200 Video",
+    0, 0,
+    t1000_init, t1000_close, NULL,
+    NULL,
+    t1000_speed_changed,
+    NULL,
+    NULL,
+    t1000_config
 };

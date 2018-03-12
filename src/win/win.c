@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.6	2018/03/08
+ * Version:	@(#)win.c	1.0.7	2018/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,7 +53,6 @@
 #include "../video/video.h"
 #define GLOBAL
 #include "../plat.h"
-#include "../plat_midi.h"
 #include "../ui.h"
 #ifdef USE_VNC
 # include "../vnc.h"

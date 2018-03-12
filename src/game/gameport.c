@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)gameport.c	1.0.1	2018/02/14
+ * Version:	@(#)gameport.c	1.0.2	2018/03/10
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -50,7 +50,6 @@
 #include "joystick_standard.h"
 #include "joystick_sw_pad.h"
 #include "joystick_tm_fcs.h"
-#include "../plat_joystick.h"
 
 
 int joystick_type;
