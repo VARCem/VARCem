@@ -67,6 +67,8 @@
     <ClCompile Include="..\..\floppy\fdd_json.c" />
     <ClCompile Include="..\..\floppy\fdd_td0.c" />
     <ClCompile Include="..\..\floppy\fdi2raw.c" />
+    <ClCompile Include="..\..\floppy\lzf\lzf_c.c" />
+    <ClCompile Include="..\..\floppy\lzf\lzf_d.c" />
     <ClCompile Include="..\..\game\gameport.c" />
     <ClCompile Include="..\..\game\joystick_ch_flightstick_pro.c" />
     <ClCompile Include="..\..\game\joystick_standard.c" />
@@ -83,8 +85,6 @@
     <ClCompile Include="..\..\keyboard_at.c" />
     <ClCompile Include="..\..\keyboard_xt.c" />
     <ClCompile Include="..\..\lpt.c" />
-    <ClCompile Include="..\..\lzf\lzf_c.c" />
-    <ClCompile Include="..\..\lzf\lzf_d.c" />
     <ClCompile Include="..\..\machine\machine.c" />
     <ClCompile Include="..\..\machine\machine_table.c" />
     <ClCompile Include="..\..\machine\m_amstrad.c" />
@@ -155,7 +155,6 @@
     <ClCompile Include="..\..\nvr.c" />
     <ClCompile Include="..\..\nvr_at.c" />
     <ClCompile Include="..\..\nvr_ps2.c" />
-    <ClCompile Include="..\..\nvr_tc8521.c" />
     <ClCompile Include="..\..\pc.c" />
     <ClCompile Include="..\..\pci.c" />
     <ClCompile Include="..\..\pic.c" />
@@ -164,7 +163,6 @@
     <ClCompile Include="..\..\random.c" />
     <ClCompile Include="..\..\rom.c" />
     <ClCompile Include="..\..\rom_load.c" />
-    <ClCompile Include="..\..\rtc_tc8521.c" />
     <ClCompile Include="..\..\scsi\scsi.c" />
     <ClCompile Include="..\..\scsi\scsi_aha154x.c" />
     <ClCompile Include="..\..\scsi\scsi_bus.c" />
@@ -408,6 +406,10 @@
     <ClInclude Include="..\..\floppy\fdd_json.h" />
     <ClInclude Include="..\..\floppy\fdd_td0.h" />
     <ClInclude Include="..\..\floppy\fdi2raw.h" />
+    <ClInclude Include="..\..\floppy\lzf\config.h" />
+    <ClInclude Include="..\..\floppy\lzf\crc32.h" />
+    <ClInclude Include="..\..\floppy\lzf\lzf.h" />
+    <ClInclude Include="..\..\floppy\lzf\lzfP.h" />
     <ClInclude Include="..\..\game\gameport.h" />
     <ClInclude Include="..\..\game\joystick_ch_flightstick_pro.h" />
     <ClInclude Include="..\..\game\joystick_standard.h" />
@@ -422,8 +424,6 @@
     <ClInclude Include="..\..\keyboard.h" />
     <ClInclude Include="..\..\lang\language.h" />
     <ClInclude Include="..\..\lpt.h" />
-    <ClInclude Include="..\..\lzf\lzf.h" />
-    <ClInclude Include="..\..\lzf\lzfP.h" />
     <ClInclude Include="..\..\machine\machine.h" />
     <ClInclude Include="..\..\machine\m_at_t3100e.h" />
     <ClInclude Include="..\..\machine\m_xt_t1000.h" />
@@ -461,18 +461,13 @@
     <ClInclude Include="..\..\nmi.h" />
     <ClInclude Include="..\..\nvr.h" />
     <ClInclude Include="..\..\nvr_ps2.h" />
-    <ClInclude Include="..\..\nvr_tc8521.h" />
     <ClInclude Include="..\..\pci.h" />
     <ClInclude Include="..\..\pic.h" />
     <ClInclude Include="..\..\pit.h" />
     <ClInclude Include="..\..\plat.h" />
-    <ClInclude Include="..\..\plat_dynld.h" />
-    <ClInclude Include="..\..\plat_joystick.h" />
-    <ClInclude Include="..\..\plat_midi.h" />
     <ClInclude Include="..\..\ppi.h" />
     <ClInclude Include="..\..\random.h" />
     <ClInclude Include="..\..\rom.h" />
-    <ClInclude Include="..\..\rtc_tc8521.h" />
     <ClInclude Include="..\..\scsi\queue.h" />
     <ClInclude Include="..\..\scsi\scsi.h" />
     <ClInclude Include="..\..\scsi\scsi_aha154x.h" />
