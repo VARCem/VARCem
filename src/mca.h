@@ -8,7 +8,7 @@
  *
  *		Definitions for the MCA bus handlers.
  *
- * Version:	@(#)mca.h	1.0.1	2018/02/14
+ * Version:	@(#)mca.h	1.0.2	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,8 @@ extern void mca_add(uint8_t (*read)(int addr, void *priv), void (*write)(int add
 extern void mca_set_index(int index);
 extern uint8_t mca_read(uint16_t port);
 extern void mca_write(uint16_t port, uint8_t val);
+
+extern void ps2_cache_clean(void);
 
 
 #endif	/*EMU_MCA_H*/

@@ -51,7 +51,7 @@
  * NOTE:	Still need to figure out a way to load/save ConfigSys and
  *		HardRAM stuff. Needs to be linked in to the NVR code.
  *
- * Version:	@(#)m_xt_t1000.c	1.0.2	2018/03/11
+ * Version:	@(#)m_xt_t1000.c	1.0.3	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -192,8 +192,8 @@ tc8521_time_set(uint8_t *regs, struct tm *tm)
     regs[TC8521_WEEKDAY] = tm->tm_wday;
     regs[TC8521_DAY1] = (tm->tm_mday % 10);
     regs[TC8521_DAY10] = (tm->tm_mday / 10);
-    regs[TC8521_MONTH1] = ((tm->tm_mon + 1) / 10);
-    regs[TC8521_MONTH10] = ((tm->tm_mon + 1) % 10);
+    regs[TC8521_MONTH1] = ((tm->tm_mon + 1) % 10);
+    regs[TC8521_MONTH10] = ((tm->tm_mon + 1) / 10);
     regs[TC8521_YEAR1] = ((tm->tm_year - 80) % 10);
     regs[TC8521_YEAR10] = (((tm->tm_year - 80) % 100) / 10);
 }

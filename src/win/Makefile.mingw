@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.10	2018/03/11
+# Version:	@(#)Makefile.mingw	1.0.11	2018/03/12
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -110,9 +110,6 @@ endif
 ifndef GREENB
  GREENB		:= n
 endif
-ifndef MRTHOR
- MRTHOR		:= y
-endif
 ifndef I686
  I686		:= n
 endif
@@ -152,7 +149,6 @@ ifeq ($(DEV_BUILD), y)
  LASERXT	:= y
  PORTABLE3	:= y
  GREENB		:= y
- MRTHOR		:= y
  I686		:= y
  PAS16		:= y
  STEALTH32	:= y
@@ -406,10 +402,6 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(GREENB), y)
   OPTS		+= -DUSE_GREENB
   DEVBROBJ	+= m_at_4gpv31.o
- endif
-
- ifeq ($(MRTHOR), y)
-  OPTS		+= -DUSE_MRTHOR
  endif
 
  ifeq ($(I686), y)

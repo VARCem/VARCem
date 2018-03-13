@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.6	2018/03/08
+ * Version:	@(#)scsi_x54x.c	1.0.7	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1083,6 +1083,7 @@ x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 
     /* Fetch data from the Command Control Block. */
     DMAPageRead(CCBPointer, (uint8_t *)&req->CmdBlock, sizeof(CCB32));
+    x54x_add_to_period(sizeof(CCB32));
 
     req->Is24bit = dev->Mbx24bit;
     req->CCBPointer = CCBPointer;

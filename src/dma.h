@@ -8,7 +8,7 @@
  *
  *		Definitions for the Intel DMA controller.
  *
- * Version:	@(#)dma.h	1.0.1	2018/02/14
+ * Version:	@(#)dma.h	1.0.2	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,31 +45,24 @@
 #define DMA_VERIFY	0x20000
 
 
-typedef struct DMA {
-    uint32_t	ab[4],
-		ac[4];
-    uint16_t	cb[4];
-    int		cc[4];
+typedef struct {
+    uint32_t	ab, ac;
+    uint16_t	cb;
+    int		cc;
     int		wp;
-    uint8_t	m,
-		mode[4];
-    uint8_t	page[4];
-    uint8_t	stat,
-		stat_rq;
+    uint8_t	m, mode;
+    uint8_t	page;
+    uint8_t	stat, stat_rq;
     uint8_t	command;
-    uint8_t	request;
+    int		size;
 
-    int		xfr_command,
-		xfr_channel;
-    int		byte_ptr;
-
-    int		is_ps2;
-    uint8_t	arb_level[4];
-    uint8_t	ps2_mode[4];
-} DMA;
+    uint8_t	ps2_mode;
+    uint8_t	arb_level;
+    uint16_t	io_addr;
+} dma_t;
 
 
-extern DMA	dma, dma16;
+extern dma_t	dma[8];
 
 
 extern void	dma_init(void);

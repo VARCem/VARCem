@@ -12,7 +12,7 @@
  *		- pc2386 video BIOS is underdumped (16k instead of 24k)
  *		- c386sx16 BIOS fails checksum
  *
- * Version:	@(#)rom.c	1.0.7	2018/03/09
+ * Version:	@(#)rom.c	1.0.8	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -260,7 +260,7 @@ rom_init(rom_t *rom, wchar_t *fn, uint32_t addr, int sz, int mask, int off, uint
 		    addr, sz,
 		    rom_read, rom_readw, rom_readl,
 		    mem_write_null, mem_write_nullw, mem_write_nulll,
-		    rom->rom, flags, rom);
+		    rom->rom, flags | MEM_MAPPING_ROM, rom);
 
     return(0);
 }
@@ -287,7 +287,7 @@ rom_init_interleaved(rom_t *rom, wchar_t *fnl, wchar_t *fnh, uint32_t addr, int 
 		    addr, sz,
 		    rom_read, rom_readw, rom_readl,
 		    mem_write_null, mem_write_nullw, mem_write_nulll,
-		    rom->rom, flags, rom);
+		    rom->rom, flags | MEM_MAPPING_ROM, rom);
 
     return(0);
 }

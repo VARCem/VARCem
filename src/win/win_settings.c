@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.9	2018/03/10
+ * Version:	@(#)win_settings.c	1.0.10	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -4402,7 +4402,7 @@ static void cdrom_add_locations(HWND hdlg)
 	}
 
 	h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
-	for (i = 1; i <= 56; i++)
+	for (i = 1; i <= 72; i++)
 	{
 		wsprintf(lptsTemp, L"%ix", i);
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM) lptsTemp);

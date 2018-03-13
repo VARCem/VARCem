@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.8	2018/03/11
+ * Version:	@(#)machine.h	1.0.9	2018/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -137,6 +137,9 @@ enum {
 #endif
     ROM_IBMPS1_2133,
 
+    ROM_IBMPS2_M70_TYPE3,
+    ROM_IBMPS2_M70_TYPE4,
+
     ROM_R418,		/* Rise Computer R418/SiS 496/497/Award/SMC FDC37C665 */
 
     ROM_REVENGE,	/* Intel Premiere/PCI I/430LX/AMI/SMC FDC37C665 */
@@ -153,9 +156,7 @@ enum {
     ROM_PRESIDENT,	/* President Award 430FX PCI/430FX/Award/Unknown SIO */
 
     ROM_THOR,		/* Intel Advanced_ATX/430FX/AMI/NS PC87306 */
-#if defined(DEV_BRANCH) && defined(USE_MRTHOR)
     ROM_MRTHOR,		/* Intel Advanced_ATX/430FX/MR.BIOS/NS PC87306 */
-#endif
 
     ROM_ACERM3A,	/* Acer M3A/430HX/Acer/SMC FDC37C932FR */
     ROM_ACERV35N,	/* Acer V35N/430HX/Acer/SMC FDC37C932FR */
@@ -320,6 +321,8 @@ extern void	machine_ps1_m2133_init(machine_t *);
 extern void	machine_ps2_m30_286_init(machine_t *);
 extern void	machine_ps2_model_50_init(machine_t *);
 extern void	machine_ps2_model_55sx_init(machine_t *);
+extern void	machine_ps2_model_70_type3_init(machine_t *);
+extern void	machine_ps2_model_70_type4_init(machine_t *);
 extern void	machine_ps2_model_80_init(machine_t *);
 
 extern void	machine_amstrad_init(machine_t *);

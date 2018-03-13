@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic NVRAM/CMOS driver.
  *
- * Version:	@(#)nvr.h	1.0.2	2018/03/11
+ * Version:	@(#)nvr.h	1.0.3	2018/03/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -59,8 +59,8 @@
 /* Define a generic RTC/NVRAM device. */
 typedef struct _nvr_ {
     uint8_t	regs[NVR_MAXSIZE];	/* these are the registers */
-    wchar_t	*fn;			/* pathname of image file */
-    uint16_t	size;			/* device configuration */
+    wchar_t	*fn;			/* pathname of image file */
+    uint16_t	size;			/* device configuration */
     int8_t	irq;
 
     int8_t	upd_stat,		/* FIXME: move to private struct */
