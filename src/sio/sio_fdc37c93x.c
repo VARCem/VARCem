@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.2	2018/03/07
+ * Version:	@(#)sio_fdc37c93x.c	1.0.3	2018/03/12
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -55,7 +55,7 @@ static int fdc37c93x_curreg = 0;
 static int fdc37c93x_gpio_reg = 0;
 static uint8_t fdc37c93x_regs[48];
 static uint8_t fdc37c93x_ld_regs[10][256];
-static uint8_t fdc37c93x_gpio_base = 0x00EA;
+static uint16_t fdc37c93x_gpio_base = 0x00EA;
 static fdc_t *fdc37c93x_fdc;
 
 static uint8_t tries;

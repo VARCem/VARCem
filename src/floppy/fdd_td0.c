@@ -8,7 +8,7 @@
  *
  *		Implementation of the Teledisk floppy image format.
  *
- * Version:	@(#)fdd_td0.c	1.0.1	2018/02/14
+ * Version:	@(#)fdd_td0.c	1.0.2	2018/03/12
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Milodrag Milanovic,
@@ -96,7 +96,7 @@ typedef struct {
 typedef struct
 {
 	FILE *fdd_file;
-	uint64_t fdd_file_offset;
+	off_t fdd_file_offset;
 
 	tdlzhuf tdctl;
 	uint8_t text_buf[N + F - 1];
@@ -177,7 +177,7 @@ int td0_state_data_read(td0dsk_t *state, uint8_t *buf, uint16_t size)
 	fseek(state->fdd_file, 0, SEEK_END);
 	image_size = ftell(state->fdd_file);
 	if (size > image_size - state->fdd_file_offset) {
-		size = image_size - state->fdd_file_offset;
+		size = (image_size - state->fdd_file_offset) & 0xffff;
 	}
 	fseek(state->fdd_file, state->fdd_file_offset, SEEK_SET);
 	fread(buf, 1, size, state->fdd_file);
@@ -486,8 +486,8 @@ int td0_state_Decode(td0dsk_t *state, uint8_t *buf, int len)  /* Decoding/Uncomp
 				if((c = td0_state_DecodeChar(state)) < 0)
 					return(count); /* fatal error */
 				if (c < 256) {
-					*(buf++) = c;
-					state->text_buf[state->tdctl.r++] = c;
+					*(buf++) = c & 0xff;
+					state->text_buf[state->tdctl.r++] = c & 0xff;
 					state->tdctl.r &= (N - 1);
 					count++;
 				}
@@ -502,9 +502,9 @@ int td0_state_Decode(td0dsk_t *state, uint8_t *buf, int len)  /* Decoding/Uncomp
 			else { /* still chars from last string */
 				while( state->tdctl.bufndx < state->tdctl.bufcnt && count < len ) {
 					c = state->text_buf[(state->tdctl.bufpos + state->tdctl.bufndx) & (N - 1)];
-					*(buf++) = c;
+					*(buf++) = c & 0xff;
 					state->tdctl.bufndx++;
-					state->text_buf[state->tdctl.r++] = c;
+					state->text_buf[state->tdctl.r++] = c & 0xff;
 					state->tdctl.r &= (N - 1);
 					count++;
 				}
@@ -536,8 +536,8 @@ void td0_init()
 
 void d86f_register_td0(int drive);
 
-const int max_size = 4*1024*1024; /* 4MB ought to be large enough for any floppy */
-const int max_processed_size = 5*1024*1024;
+const size_t max_size = 4*1024*1024; /* 4MB ought to be large enough for any floppy */
+const size_t max_processed_size = 5*1024*1024;
 uint8_t imagebuf[4*1024*1024];
 uint8_t processed_buf[5*1024*1024];
 uint8_t header[12];
@@ -1220,7 +1220,7 @@ uint16_t td0_disk_flags(int drive)
 uint16_t td0_side_flags(int drive)
 {
 	int side = 0;
-	uint8_t sflags = 0;
+	uint16_t sflags = 0;
 	side = fdd_get_head(drive);
 	sflags = td0[drive].current_side_flags[side];
 	return sflags;

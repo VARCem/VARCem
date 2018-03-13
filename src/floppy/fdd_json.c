@@ -8,7 +8,7 @@
  *
  *		Implementation of the PCjs JSON floppy image format.
  *
- * Version:	@(#)fdd_json.c	1.0.1	2018/02/14
+ * Version:	@(#)fdd_json.c	1.0.2	2018/03/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -423,8 +423,10 @@ json_seek(int drive, int track)
 		id[0] = track;
 		id[1] = side;
 		id[2] = rsec;
-		id[3] = img->sects[track][side][asec].size;
-		ssize = fdd_sector_code_size(img->sects[track][side][asec].size);
+		if (img->sects[track][side][asec].size > 255)
+			perror("fdd_json.c: json_seek: sector size too big.");
+		id[3] = img->sects[track][side][asec].size & 0xff;
+		ssize = fdd_sector_code_size(img->sects[track][side][asec].size & 0xff);
 
 		pos = d86f_prepare_sector(
 				drive, side, pos, id,

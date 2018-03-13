@@ -8,7 +8,7 @@
  *
  *		Implementation of the IMD floppy image format.
  *
- * Version:	@(#)fdd_imd.c	1.0.2	2018/02/21
+ * Version:	@(#)fdd_imd.c	1.0.3	2018/03/12
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -697,7 +697,7 @@ uint16_t imd_disk_flags(int drive)
 uint16_t imd_side_flags(int drive)
 {
 	int side = 0;
-	uint8_t sflags = 0;
+	uint16_t sflags = 0;
 	side = fdd_get_head(drive);
 	sflags = imd[drive].current_side_flags[side];
 	return sflags;

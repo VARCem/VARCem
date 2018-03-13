@@ -29,7 +29,7 @@
  *		- Some DOS stuff will write to 0x201 while a packet is
  *		  being transferred. This seems to be ignored.
  *
- * Version:	@(#)sw_pad.c	1.0.3	2018/03/10
+ * Version:	@(#)sw_pad.c	1.0.4	2018/03/12
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -174,7 +174,7 @@ static uint8_t sw_read(void *p)
 static void sw_write(void *p)
 {
         sw_data *sw = (sw_data *)p;
-        int time_since_last = sw->trigger_time / TIMER_USEC;
+        int64_t time_since_last = sw->trigger_time / TIMER_USEC;
 
         if (!JOYSTICK_PRESENT(0))
                 return;
@@ -212,7 +212,7 @@ static void sw_write(void *p)
 
                         for (c = 0; c < 4; c++)
                         {
-                                uint64_t data = 0x3fff;
+                                uint16_t data = 0x3fff;
                                 int b;
                                 
                                 if (!JOYSTICK_PRESENT(c))

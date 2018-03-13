@@ -9,7 +9,7 @@
  *		Implementation of the IDE emulation for hard disks and ATAPI
  *		CD-ROM devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.6	2018/03/08
+ * Version:	@(#)hdc_ide.c	1.0.7	2018/03/12
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -2465,34 +2465,11 @@ id_not_found:
 	ide_irq_raise(ide);
 }
 
-void ide_callback_pri()
+void ide_callback(void *priv)
 {
-	idecallback[0] = 0LL;
-	callbackide(0);
-}
-
-void ide_callback_sec()
-{
-	idecallback[1] = 0LL;
-	callbackide(1);
-}
-
-void ide_callback_ter()
-{
-	idecallback[2] = 0LL;
-	callbackide(2);
-}
-
-void ide_callback_qua()
-{
-	idecallback[3] = 0LL;
-	callbackide(3);
-}
-
-void ide_callback_xtide()
-{
-	idecallback[4] = 0LL;
-	callbackide(4);
+    int drivenum = (int)priv;
+    idecallback[drivenum] = 0LL;
+    callbackide(drivenum);
 }
 
 void ide_write_pri(uint16_t addr, uint8_t val, void *priv)
@@ -2688,7 +2665,7 @@ void ide_ter_init(void)
 {
 	ide_ter_enable();
 
-	timer_add(ide_callback_ter, &idecallback[2], &idecallback[2],  NULL);
+	timer_add(ide_callback, &idecallback[2], &idecallback[2],  (void *)2);
 }
 
 void ide_qua_enable(void)
@@ -2715,7 +2692,7 @@ void ide_qua_init(void)
 {
 	ide_qua_enable();
 
-	timer_add(ide_callback_qua, &idecallback[3], &idecallback[3],  NULL);
+	timer_add(ide_callback, &idecallback[3], &idecallback[3],  (void *)3);
 }
 
 
@@ -2741,7 +2718,7 @@ void ide_xtide_init(void)
 {
 	ide_bus_master_read = ide_bus_master_write = NULL;
 
-	timer_add(ide_callback_xtide, &idecallback[4], &idecallback[4],  NULL);
+	timer_add(ide_callback, &idecallback[4], &idecallback[4],  (void *)4);
 }
 
 void ide_set_bus_master(int (*read)(int channel, uint8_t *data, int transfer_length), int (*write)(int channel, uint8_t *data, int transfer_length), void (*set_irq)(int channel))
@@ -2793,13 +2770,13 @@ ide_sainit(device_t *info)
 	case 10:	/* PCI, dual-channel */
 		if (!ide_init_ch[0]) {
 			ide_pri_enable();
-			timer_add(ide_callback_pri, &idecallback[0], &idecallback[0],  NULL);
+			timer_add(ide_callback, &idecallback[0], &idecallback[0],  0);
 			ide_init_ch[0] = 1;
 		}
 
 		if ((info->local & 2) && !ide_init_ch[1]) {
 			ide_sec_enable();
-			timer_add(ide_callback_sec, &idecallback[1], &idecallback[1],  NULL);
+			timer_add(ide_callback, &idecallback[1], &idecallback[1],  (void *)1);
 			ide_init_ch[1] = 1;
 
 			if (info->local & 1)
