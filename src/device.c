@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.2	2018/03/05
+ * Version:	@(#)device.c	1.0.3	2018/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,13 +72,13 @@ device_add(device_t *d)
 
     for (c=0; c<256; c++) {
 	if (devices[c] == d) {
-		fatal("device_add: device already exists!\n");
-		break;
+		pclog("DEVICE: device already exists!\n");
+		return(NULL);
 	}
 	if (devices[c] == NULL) break;
     }
     if (c >= DEVICE_MAX)
-	fatal("device_add: too many devices\n");
+	fatal("DEVICE: too many devices\n");
 
     device_current = d;
 
@@ -86,16 +86,17 @@ device_add(device_t *d)
 	priv = d->init(d);
 	if (priv == NULL) {
 		if (d->name)
-			fatal("device_add: device '%s' init failed\n", d->name);
+			pclog("DEVICE: device '%s' init failed\n", d->name);
 		  else
-			fatal("device_add: device init failed\n");
+			pclog("DEVICE: device init failed\n");
+		return(NULL);
 	}
     }
 
     devices[c] = d;
     device_priv[c] = priv;
 
-    return priv;
+    return(priv);
 }
 
 
@@ -385,50 +386,28 @@ device_set_config_mac(char *s, int val)
 
 
 int
-device_is_valid(device_t *device, int machine_flags)
+device_is_valid(device_t *device, int mflags)
 {
-    if (!device)
-    {
-	return 1;
-    }
+    if (device == NULL) return(1);
 
-    if ((device->flags & DEVICE_AT) && !(machine_flags & MACHINE_AT)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_AT) && !(mflags & MACHINE_AT)) return(0);
 
-    if ((device->flags & DEVICE_CBUS) && !(machine_flags & MACHINE_CBUS)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_CBUS) && !(mflags & MACHINE_CBUS)) return(0);
 
-    if ((device->flags & DEVICE_ISA) && !(machine_flags & MACHINE_ISA)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_ISA) && !(mflags & MACHINE_ISA)) return(0);
 
-    if ((device->flags & DEVICE_MCA) && !(machine_flags & MACHINE_MCA)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_MCA) && !(mflags & MACHINE_MCA)) return(0);
 
-    if ((device->flags & DEVICE_EISA) && !(machine_flags & MACHINE_EISA)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_EISA) && !(mflags & MACHINE_EISA)) return(0);
 
-    if ((device->flags & DEVICE_VLB) && !(machine_flags & MACHINE_VLB)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_VLB) && !(mflags & MACHINE_VLB)) return(0);
 
-    if ((device->flags & DEVICE_PCI) && !(machine_flags & MACHINE_PCI)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_PCI) && !(mflags & MACHINE_PCI)) return(0);
 
-    if ((device->flags & DEVICE_PS2) && !(machine_flags & MACHINE_HDC_PS2)) {
-	return 0;
-    }
+    if ((device->flags & DEVICE_PS2) && !(mflags & MACHINE_HDC_PS2)) return(0);
+    if ((device->flags & DEVICE_AGP) && !(mflags & MACHINE_AGP)) return(0);
 
-    if ((device->flags & DEVICE_AGP) && !(machine_flags & MACHINE_AGP)) {
-	return 0;
-    }
-
-    return 1;
+    return(1);
 }
 
 

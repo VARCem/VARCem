@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.4	2018/03/12
+ * Version:	@(#)keyboard_at.c	1.0.5	2018/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,6 +98,7 @@
 #define KBC_VEN_QUADTEL		0x0C
 #define KBC_VEN_TOSHIBA		0x10
 #define KBC_VEN_MASK		0x1C
+
 
 typedef struct {
     int		initialized;
@@ -671,16 +672,13 @@ kbd_poll(void *priv)
 	}
     }
 
-    if (kbd->out_new == -1 && !(kbd->status & STAT_OFULL) && 
-	key_ctrl_queue_start != key_ctrl_queue_end) {
+    if (kbd->out_new == -1 && !(kbd->status & STAT_OFULL) && key_ctrl_queue_start != key_ctrl_queue_end) {
 	kbd->out_new = key_ctrl_queue[key_ctrl_queue_start] | 0x200;
 	key_ctrl_queue_start = (key_ctrl_queue_start + 1) & 0xf;
-    } else if (!(kbd->status & STAT_OFULL) && kbd->out_new == -1 && 
-            kbd->out_delayed != -1) {
+    } else if (!(kbd->status & STAT_OFULL) && kbd->out_new == -1 && kbd->out_delayed != -1) {
             kbd->out_new = kbd->out_delayed;
             kbd->out_delayed = -1;
-    } else if (!(kbd->status & STAT_OFULL) && kbd->out_new == -1 &&
-             !(kbd->mem[0] & 0x10) && kbd->out_delayed != -1) {
+    } else if (!(kbd->status & STAT_OFULL) && kbd->out_new == -1 && !(kbd->mem[0] & 0x10) && kbd->out_delayed != -1) {
             kbd->out_new = kbd->out_delayed;
             kbd->out_delayed = -1;
     } else if (!(kbd->status & STAT_OFULL) && kbd->out_new == -1/* && !(kbd->mem[0] & 0x20)*/ &&
@@ -976,8 +974,7 @@ kbd_cmd_write(atkbd_t *kbd, uint8_t val)
 	kbd->wantirq = 0;
 
     /* PS/2 type 2 keyboard controllers always force the XLAT bit to 0. */
-    if (((kbd->flags & KBC_VEN_MASK) == KBC_VEN_AMI) ||
-        ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1)) {
+    if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
 	val &= ~CCB_TRANSLATE;
 	kbd->mem[0] &= ~CCB_TRANSLATE;
     }
@@ -992,7 +989,8 @@ kbd_cmd_write(atkbd_t *kbd, uint8_t val)
 
     /* ISA AT keyboard controllers use bit 5 for keyboard mode (1 = PC/XT, 2 = AT);
        PS/2 (and EISA/PCI) keyboard controllers use it as the PS/2 mouse enable switch. */
-    if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
+    if (((kbd->flags & KBC_VEN_MASK) == KBC_VEN_AMI) ||
+        ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1)) {
 	keyboard_mode &= ~CCB_PCMODE;
 
 	mouse_scan = !(val & 0x20);
