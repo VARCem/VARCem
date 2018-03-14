@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.11	2018/03/12
+# Version:	@(#)Makefile.mingw	1.0.12	2018/03/14
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -67,6 +67,9 @@ ifndef CROSS
 endif
 ifndef DEBUG
  DEBUG		:= n
+endif
+ifndef PROFILER 
+ PROFILER	:= n
 endif
 ifndef OPTIM
  OPTIM		:= n
@@ -296,6 +299,10 @@ else
 endif
 AFLAGS		:= -msse2 -mfpmath=sse
 RFLAGS		:= --input-format=rc -O coff
+LDFLAGS		:=
+ifeq ($(PROFILER), y)
+LDFLAGS		+= -Xlinker -Map=$(PROG).map
+endif
 ifeq ($(CRASHDUMP), y)
 OPTS		+= -DUSE_CRASHDUMP
 endif
@@ -316,6 +323,14 @@ PLATCG		:= codegen_x86.o
 CGOPS		:= codegen_ops_x86.h
 VCG		:= vid_voodoo_codegen_x86.h
 endif
+LIBS		:= -mwindows \
+		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
+		   -lcomctl32 -lwinmm
+LIBS		+= -lkernel32 -lwsock32 -liphlpapi -lpsapi
+LIBS		+= -lpthread -static -lstdc++ -lgcc
+ifneq ($(X64), y)
+LIBS		+= -Wl,--large-address-aware
+endif
 
 
 # Optional modules.
@@ -332,7 +347,7 @@ endif
 
 ifneq ($(WX), n)
  OPTS		+= -DUSE_WX $(WX_FLAGS)
- LIBS		+= $(WX_LIBS)
+ LIBS		+= $(WX_LIBS) -lz -lm
  UIOBJ		:= wx_main.o wx_ui.o wx_stbar.o wx_render.o
 else
  UIOBJ		:= win_ui.o win_ddraw.o win_d3d.o win_png.o \
@@ -368,6 +383,7 @@ RFLAGS		+= -DUSE_VNC
  endif
 VNCLIB		+= -lvncserver
 VNCOBJ		:= vnc.o vnc_keymap.o
+LIBS		+= $(VNCLIB) -lws2_32 -lz
 endif
 
 ifeq ($(RDP), y)
@@ -379,6 +395,7 @@ RFLAGS		+= -DUSE_RDP
  endif
 RDPLIB		+= -lrdp
 RDPOBJ		:= rdp.o
+LIBS		+= $(RDPLIB)
 endif
 
 # Options for the DEV branch.
@@ -597,25 +614,6 @@ OBJ		+= $(EXOBJ)
 endif
 
 
-LIBS		:= -mwindows \
-		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
-		   -lcomctl32 -lwinmm
-ifeq ($(VNC), y)
-LIBS		+= $(VNCLIB) -lws2_32 -lz
-endif
-ifeq ($(RDP), y)
-LIBS		+= $(RDPLIB)
-endif
-ifneq ($(WX), n)
-LIBS		+= $(WX_LIBS) -lz -lm
-endif
-LIBS		+= -lkernel32 -lwsock32 -liphlpapi -lpsapi
-LIBS		+= -lpthread -static -lstdc++ -lgcc
-ifneq ($(X64), y)
-LIBS		+= -Wl,--large-address-aware
-endif
-
-
 # Build module rules.
 ifeq ($(AUTODEP), y)
 %.o:		%.c
@@ -656,7 +654,8 @@ VARCem.res:	VARCem.rc VARCem.mpp
 
 $(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		@$(CC) -o $(PROG).exe $(OBJ) VARCem.res $(LIBS)
+		@$(CC) $(LDFLAGS) -o $(PROG).exe \
+			$(OBJ) VARCem.res $(LIBS)
 ifneq ($(DEBUG), y)
 		@strip $(PROG).exe
 endif
@@ -667,7 +666,8 @@ pcap_if.res:	pcap_if.rc
 
 pcap_if.exe:	pcap_if.o win_dynld.o pcap_if.res
 		@echo Linking pcap_if.exe ..
-		@$(CC) -o pcap_if.exe pcap_if.o win_dynld.o pcap_if.res
+		@$(CC) $(LDFLAGS) -o pcap_if.exe \
+			pcap_if.o win_dynld.o pcap_if.res
 ifneq ($(DEBUG), y)
 		@strip pcap_if.exe
 endif
