@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.3	2018/03/12
+ * Version:	@(#)sio_fdc37c93x.c	1.0.4	2018/03/13
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -141,12 +141,12 @@ static void fdc37c93x_auxio_handler(void)
 {
 	uint16_t ld_port = 0;
 
-	uint8_t local_enable = !!fdc37c93x_ld_regs[3][0x30];
+	uint8_t local_enable = !!fdc37c93x_ld_regs[8][0x30];
 
         io_removehandler(fdc37c93x_gpio_base, 0x0001, fdc37c93x_gpio_read, NULL, NULL, fdc37c93x_gpio_write, NULL, NULL,  NULL);
 	if (local_enable)
 	{
-		fdc37c93x_gpio_base = ld_port = make_port(3);
+		fdc37c93x_gpio_base = ld_port = make_port(8);
 		/* pclog("fdc37c93x: Setting Auxiliary I/O port to %04X\n", ld_port); */
 		if ((ld_port >= 0x0100) && (ld_port <= 0x0FFF))
 		        io_sethandler(fdc37c93x_gpio_base, 0x0001, fdc37c93x_gpio_read, NULL, NULL, fdc37c93x_gpio_write, NULL, NULL,  NULL);
@@ -396,7 +396,7 @@ process_value:
 			}
 			break;
 		case 8:
-			/* Serial port 2 */
+			/* Auxiliary I/O */
 			switch(fdc37c93x_curreg)
 			{
 				case 0x30:

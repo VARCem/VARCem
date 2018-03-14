@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.2	2018/03/12
+ * Version:	@(#)dma.c	1.0.3	2018/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,11 +56,13 @@ dma_t		dma[8];
 static uint8_t	dmaregs[16];
 static uint8_t	dma16regs[16];
 static uint8_t	dmapages[16];
-static int	dma_wp, dma16_wp;
+static int	dma_wp,
+		dma16_wp;
 static uint8_t	dma_m;
 static uint8_t	dma_stat;
 static uint8_t	dma_stat_rq;
-static uint8_t	dma_command, dma16_command;
+static uint8_t	dma_command,
+		dma16_command;
 static struct {	
     int	xfr_command,
 	xfr_channel;
@@ -289,6 +291,14 @@ dma_ps2_write(uint16_t addr, uint8_t val, void *priv)
 
 	case 0x1a:
 		switch (dma_ps2.xfr_command) {
+			case 0: /*I/O address*/
+				if (dma_ps2.byte_ptr)
+					dma_c->io_addr = (dma_c->io_addr & 0x00ff) | (val << 8);
+				  else
+					dma_c->io_addr = (dma_c->io_addr & 0xff00) | val;
+				dma_ps2.byte_ptr = (dma_ps2.byte_ptr + 1) & 1;
+				break;
+
 			case 2: /*Address*/
 				switch (dma_ps2.byte_ptr) {
 					case 0:
@@ -325,7 +335,7 @@ dma_ps2_write(uint16_t addr, uint8_t val, void *priv)
 				if ((val & DMA_PS2_XFER_MASK) == DMA_PS2_XFER_MEM_TO_IO)
 					mode |= 8;
 				  else if ((val & DMA_PS2_XFER_MASK) == DMA_PS2_XFER_IO_TO_MEM)
-				mode |= 4;
+					mode |= 4;
 				dma_c->mode = (dma_c->mode & ~0x2c) | mode;
 				dma_c->ps2_mode = val;
 				dma_c->size = val & DMA_PS2_SIZE16;

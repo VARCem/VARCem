@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.5	2018/03/13
+ * Version:	@(#)keyboard_at.c	1.0.6	2018/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -685,7 +685,6 @@ kbd_poll(void *priv)
 	    (mouse_queue_start != mouse_queue_end)) {
 	kbd->out_new = mouse_queue[mouse_queue_start] | 0x100;
 	mouse_queue_start = (mouse_queue_start + 1) & 0xf;
-	kbd->out_new = key_ctrl_queue[key_ctrl_queue_start];
     } else if (!(kbd->status&STAT_OFULL) && kbd->out_new == -1 &&
 	       !(kbd->mem[0]&0x10) && (key_queue_start != key_queue_end)) {
 	kbd->out_new = key_queue[key_queue_start];
@@ -974,7 +973,7 @@ kbd_cmd_write(atkbd_t *kbd, uint8_t val)
 	kbd->wantirq = 0;
 
     /* PS/2 type 2 keyboard controllers always force the XLAT bit to 0. */
-    if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
+    if ((kbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2) {
 	val &= ~CCB_TRANSLATE;
 	kbd->mem[0] &= ~CCB_TRANSLATE;
     }
