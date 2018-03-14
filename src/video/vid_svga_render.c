@@ -8,7 +8,7 @@
  *
  *		SVGA renderers.
  *
- * Version:	@(#)vid_svga_render.c	1.0.5	2018/03/12
+ * Version:	@(#)vid_svga_render.c	1.0.6	2018/03/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -296,7 +296,7 @@ void svga_render_text_80_ksc5601(svga_t *svga)
                 int x, xx;
                 int drawcursor;
                 uint8_t chr, attr, dat, nextchr;
-                uint32_t charaddr;
+                uint32_t charaddr = 0;
                 int fg, bg;
                 int xinc = (svga->seqregs[1] & 1) ? 8 : 9;
 
