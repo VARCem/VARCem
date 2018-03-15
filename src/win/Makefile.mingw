@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.12	2018/03/14
+# Version:	@(#)Makefile.mingw	1.0.13	2018/03/14
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -688,6 +688,9 @@ clobber:	clean
 		@echo Cleaning executables..
 		@-rm -f *.d 2>NUL
 		@-rm -f *.exe 2>NUL
+ifneq ($(PROFILER), y)
+		@-rm -f *.map 2>NUL
+endif
 		@-rm -f win/*.manifest 2>NUL
 #		@-rm -f $(DEPFILE) 2>NUL
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Teledisk floppy image format.
  *
- * Version:	@(#)fdd_td0.c	1.0.2	2018/03/12
+ * Version:	@(#)fdd_td0.c	1.0.3	2018/03/14
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Milodrag Milanovic,
@@ -1127,8 +1127,8 @@ void td0_seek(int drive, int track)
 	d86f_reset_index_hole_pos(drive, 0);
 	d86f_reset_index_hole_pos(drive, 1);
 
-	d86f_zero_bit_field(drive, 0);
-	d86f_zero_bit_field(drive, 1);
+	d86f_destroy_linked_lists(drive, 0);
+	d86f_destroy_linked_lists(drive, 1);
 
 	if (track > td0[drive].tracks)
 	{

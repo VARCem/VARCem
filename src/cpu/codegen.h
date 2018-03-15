@@ -8,7 +8,7 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen.h	1.0.1	2018/02/14
+ * Version:	@(#)codegen.h	1.0.2	2018/03/14
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -303,7 +303,7 @@ void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t 
 void codegen_generate_seg_restore();
 void codegen_set_op32();
 void codegen_flush();
-void codegen_check_flush(struct page_t *page, uint64_t mask, uint32_t phys_addr);
+void codegen_check_flush(page_t *page, uint64_t mask, uint32_t phys_addr);
 
 extern int cpu_block_end;
 extern uint32_t codegen_endpc;

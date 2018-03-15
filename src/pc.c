@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.8	2018/03/13
+ * Version:	@(#)pc.c	1.0.9	2018/03/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -640,7 +640,8 @@ pc_reload(wchar_t *fn)
     fdd_load(2, floppyfns[2]);
     fdd_load(3, floppyfns[3]);
 
-    mem_resize();
+    mem_reset();
+
     network_init();
 
     pc_reset_hard_init();
@@ -777,7 +778,7 @@ pc_reset_hard_init(void)
 
     /* Reset the general machine support modules. */
     io_init();
-    mem_resize();
+    mem_reset();
     timer_reset();
     device_init();
 

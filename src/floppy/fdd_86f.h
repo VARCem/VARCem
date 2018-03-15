@@ -8,7 +8,7 @@
  *
  *		Definitions for the 86F floppy image format.
  *
- * Version:	@(#)floppy_86f.h	1.0.1	2018/02/14
+ * Version:	@(#)floppy_86f.h	1.0.2	2018/03/14
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -86,7 +86,9 @@ extern int gap4_size[2];
 #define D86FVER		0x020B
 
 extern void d86f_initialize_last_sector_id(int drive, int c, int h, int r, int n);
-extern void d86f_zero_bit_field(int drive, int side);
+
+extern void d86f_initialize_linked_lists(int drive);
+extern void d86f_destroy_linked_lists(int drive, int side);
 
 
 #endif	/*EMU_FLOPPY_86F_H*/

@@ -9,7 +9,7 @@
  *		Implementation of the raw sector-based floppy image format,
  *		as well as the Japanese FDI, CopyQM, and FDF formats.
  *
- * Version:	@(#)fdd_img.c	1.0.1	2018/02/14
+ * Version:	@(#)fdd_img.c	1.0.2	2018/03/14
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -978,8 +978,8 @@ void img_seek(int drive, int track)
 	d86f_reset_index_hole_pos(drive, 0);
 	d86f_reset_index_hole_pos(drive, 1);
 
-	d86f_zero_bit_field(drive, 0);
-	d86f_zero_bit_field(drive, 1);
+	d86f_destroy_linked_lists(drive, 0);
+	d86f_destroy_linked_lists(drive, 1);
 
 	if (track > img[drive].tracks)
 	{

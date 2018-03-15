@@ -8,7 +8,7 @@
  *
  *		Definitions for the floppy drive emulation.
  *
- * Version:	@(#)fdd.h	1.0.1	2018/02/14
+ * Version:	@(#)fdd.h	1.0.2	2018/03/14
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -281,7 +281,7 @@ typedef union
 void d86f_set_version(int drive, uint16_t version);
 
 void d86f_initialize_last_sector_id(int drive, int c, int h, int r, int n);
-void d86f_zero_bit_field(int drive, int side);
+void d86f_destroy_linked_lists(int drive, int side);
 
 void d86f_set_fdc(void *fdc);
 void fdi_set_fdc(void *fdc);
