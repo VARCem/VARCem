@@ -8,7 +8,11 @@
  *
  *		Memory handling and MMU.
  *
- * Version:	@(#)mem.c	1.0.7	2018/03/17
+ * NOTE:	Experimenting with dynamically allocated lookup tables;
+ *		the DYNAMIC_TABLES=1 enables this. Will eventually go
+ *		away, either way...
+ *
+ * Version:	@(#)mem.c	1.0.8	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,6 +63,9 @@
 # define PAGE_MASK_MASK		63
 # define PAGE_MASK_SHIFT	4
 #endif
+
+
+#define DYNAMIC_TABLES		0		/* experimental */
 
 
 mem_mapping_t		ram_low_mapping;
@@ -135,7 +142,7 @@ static mem_mapping_t	base_mapping;
 static mem_mapping_t	ram_remapped_mapping;
 static mem_mapping_t	ram_split_mapping;
 
-#if 0
+#if FIXME
 static uint8_t		ff_array[0x1000];
 #else
 static uint8_t		ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
@@ -150,20 +157,34 @@ resetreadlookup(void)
     int c;
 
     /* This is NULL after app startup, when mem_init() has not yet run. */
-    if (page_lookup == NULL) return;
+#if DYNAMIC_TABLES
+pclog("MEM: reset_lookup: pages=%08lx, lookup=%08lx, pages_sz=%i\n", pages, page_lookup, pages_sz);
+#endif
 
-    memset(page_lookup, 0x00, pages_sz * sizeof(page_t *));
+    /* Initialize the page lookup table. */
+#if DYNAMIC_TABLES
+    memset(page_lookup, 0x00, pages_sz*sizeof(page_t *));
+#else
+    memset(page_lookup, 0x00, (1<<20)*sizeof(page_t *));
+#endif
 
-    for (c = 0; c < 256; c++)
+    /* Initialize the tables for lower (<= 1024K) RAM. */
+    for (c = 0; c < 256; c++) {
 	readlookup[c] = 0xffffffff;
-    memset(readlookup2, 0xff, pages_sz*sizeof(uintptr_t));
-    readlnext = 0;
-
-    for (c = 0; c < 256; c++)
 	writelookup[c] = 0xffffffff;
-    memset(writelookup2, 0xff, pages_sz*sizeof(uintptr_t));
-    writelnext = 0;
+    }
 
+    /* Initialize the tables for high (> 1024K) RAM. */
+#if DYNAMIC_TABLES
+    memset(readlookup2, 0xff, pages_sz*sizeof(uintptr_t));
+    memset(writelookup2, 0xff, pages_sz*sizeof(uintptr_t));
+#else
+    memset(readlookup2, 0xff, (1<<20)*sizeof(uintptr_t));
+    memset(writelookup2, 0xff, (1<<20)*sizeof(uintptr_t));
+#endif
+
+    readlnext = 0;
+    writelnext = 0;
     pccache = 0xffffffff;
 }
 
@@ -1544,15 +1565,11 @@ mem_reset(void)
 
     split_mapping_enabled = 0;
 
-    /* Free existing memory and tables. */
-    if (ram != NULL) free(ram);
-    if (rom != NULL) free(rom);
-    if (pages != NULL) free(pages);
-    if (page_lookup != NULL) free(page_lookup);
-    if (readlookup2 != NULL) free(readlookup2);
-    if (writelookup2 != NULL) free(writelookup2);
-
-    /* Reset the ROM size mask. */
+    /* Free the ROM memory and reset size mask. */
+    if (rom != NULL) {
+	free(rom);
+	rom = NULL;
+    }
     biosmask = 0xffff;
 
     /*
@@ -1564,7 +1581,8 @@ mem_reset(void)
 	m = 1024UL * 16384;
       else
 	m = 1024UL * (mem_size + 384);	/* 386 extra kB for top remapping */
-    ram = malloc(m);			/* allocate and clear the RAM block */
+    if (ram != NULL) free(ram);
+    ram = (uint8_t *)malloc(m);		/* allocate and clear the RAM block */
     memset(ram, 0x00, m);
 
     /*
@@ -1589,23 +1607,43 @@ mem_reset(void)
 	m = 256;
     }
 
-    pages_sz = m;
-    pages = (page_t *)malloc(m * sizeof(page_t));
-    memset(pages, 0x00, m * sizeof(page_t));
-    for (c=0; c<m; c++) {
-	pages[c].mem = &ram[c << 12];
-	pages[c].write_b = mem_write_ramb_page;
-	pages[c].write_w = mem_write_ramw_page;
-	pages[c].write_l = mem_write_raml_page;
-    }
-    page_lookup = (page_t **)malloc(pages_sz * sizeof(page_t *));
-    memset(page_lookup, 0x00, pages_sz * sizeof(page_t *));
+    /*
+     * Allocate and initialize the (new) page table.
+     * We only do this if the size of the page table has changed.
+     */
+#if DYNAMIC_TABLES
+pclog("MEM: reset: previous pages=%08lx, pages_sz=%i\n", pages, pages_sz);
+#endif
+    if (pages_sz != m) {
+	pages_sz = m;
+	free(pages);
+	pages = (page_t *)malloc(m*sizeof(page_t));
+	memset(pages, 0x00, m*sizeof(page_t));
+#if DYNAMIC_TABLES
+pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
+#endif
+	for (c=0; c<m; c++) {
+		pages[c].mem = &ram[c << 12];
+		pages[c].write_b = mem_write_ramb_page;
+		pages[c].write_w = mem_write_ramw_page;
+		pages[c].write_l = mem_write_raml_page;
+	}
 
-    /* Allocate and initialize the lookup tables. */
-    readlookup2  = malloc(pages_sz * sizeof(uintptr_t));
-    memset(readlookup2, 0xff, pages_sz * sizeof(page_t *));
-    writelookup2 = malloc(pages_sz * sizeof(uintptr_t));
-    memset(writelookup2, 0xff, pages_sz * sizeof(page_t *));
+#if DYNAMIC_TABLES
+	/* Allocate the (new) lookup tables. */
+	if (page_lookup != NULL) free(page_lookup);
+	page_lookup = (page_t **)malloc(pages_sz*sizeof(page_t *));
+
+	if (readlookup2 != NULL) free(readlookup2);
+	readlookup2  = malloc(pages_sz*sizeof(uintptr_t));
+
+	if (writelookup2 != NULL) free(writelookup2);
+	writelookup2 = malloc(pages_sz*sizeof(uintptr_t));
+#endif
+    }
+
+    /* Initialize the tables. */
+    resetreadlookup();
 
     memset(isram, 0x00, sizeof(isram));
     for (c = 0; c < (mem_size / 64); c++) {
@@ -1691,13 +1729,23 @@ mem_init(void)
     /* Perform a one-time init. */
     ram = rom = NULL;
     pages = NULL;
+#if DYNAMIC_TABLES
     page_lookup = NULL;
     readlookup2 = NULL;
     writelookup2 = NULL;
 
+#else
+    /* Allocate the lookup tables. */
+    page_lookup = (page_t **)malloc((1<<20)*sizeof(page_t *));
+
+    readlookup2  = malloc((1<<20)*sizeof(uintptr_t));
+
+    writelookup2 = malloc((1<<20)*sizeof(uintptr_t));
+#endif
+
     memset(ram_mapped_addr, 0x00, 64 * sizeof(uint32_t));
 
-#if 0
+#if FIXME
     memset(ff_array, 0xff, sizeof(ff_array));
 #endif
 

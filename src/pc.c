@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.10	2018/03/16
+ * Version:	@(#)pc.c	1.0.11	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -308,7 +308,7 @@ pc_version(const char *platform)
     strcat(emu_version, temp);
 #endif
 #ifdef COMMIT
-    sprintf(temp, " [Commit #%x])", COMMIT);
+    sprintf(temp, " [Commit #%x]", COMMIT);
     strcat(emu_version, temp);
 #endif
 #ifdef BUILD
