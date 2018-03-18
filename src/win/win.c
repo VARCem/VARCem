@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.7	2018/03/10
+ * Version:	@(#)win.c	1.0.8	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -833,32 +833,27 @@ take_screenshot(void)
 
     wcscat(path, L"\\");
 
+    wcsftime(fn, 128, L"%Y%m%d_%H%M%S.png", info);
+    wcscat(path, fn);
+
     switch(vid_api) {
 #ifdef USE_WX
 	case 0:
 	case 1:
-		wcsftime(fn, 128, L"%Y%m%d_%H%M%S.png", info);
-		wcscat(path, fn);
 		wx_screenshot(path);
 		break;
 #else
 	case 0:		/* ddraw */
-		wcsftime(fn, 128, L"%Y%m%d_%H%M%S.bmp", info);
-		wcscat(path, fn);
 		ddraw_take_screenshot(path);
 		break;
 
 	case 1:		/* d3d9 */
-		wcsftime(fn, 128, L"%Y%m%d_%H%M%S.png", info);
-		wcscat(path, fn);
 		d3d_take_screenshot(path);
 		break;
 #endif
 
 #ifdef USE_VNC
 	case 2:		/* vnc */
-		wcsftime(fn, 128, L"%Y%m%d_%H%M%S.png", info);
-		wcscat(path, fn);
 		vnc_take_screenshot(path);
 		break;
 #endif

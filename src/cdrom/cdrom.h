@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.4	2018/03/08
+ * Version:	@(#)cdrom.h	1.0.5	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -172,6 +172,8 @@ typedef struct {
 	int block_descriptor_len;
 	
 	int init_length;
+
+	int16_t cd_buffer[BUF_SIZE];
 } cdrom_t;
 
 typedef struct {
@@ -211,7 +213,6 @@ typedef struct {
 	int cd_state;
 	uint32_t cd_pos;
 	uint32_t cd_end;
-	int16_t cd_buffer[BUF_SIZE];
 	int cd_buflen;
 } cdrom_image_t;
 

@@ -8,7 +8,7 @@
  *
  *		Define all known video cards.
  *
- * Version:	@(#)vid_table.c	1.0.9	2018/03/15
+ * Version:	@(#)vid_table.c	1.0.10	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -163,7 +163,7 @@ video_cards[] = {
     {"[VLB] Cardex Tseng ET4000/w32p",			"et4000w32p_vlb",	&et4000w32p_cardex_vlb_device,		VID_ET4000W32_CARDEX_VLB,	VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  4,  10, 10, 10}},
     {"[VLB] Cirrus Logic GD5429",			"cl_gd5429_vlb",	&gd5429_vlb_device,			VID_CL_GD5429_VLB,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  8,  10, 10, 20}},
     {"[VLB] Cirrus Logic GD5434",			"cl_gd5434_vlb",	&gd5434_vlb_device,			VID_CL_GD5434_VLB,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  8,  10, 10, 20}},
-    {"[VLB] Diamond SpeedStar PRO (CL GD5428)",		"cl_gd5428_vlb",	&gd5428_vlb_device,			VID_CL_GD5428_VLB,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  8,  10, 10, 20}},
+    {"[VLB] Diamond SpeedStar PRO (CL-GD5426)",		"cl_gd5426_vlb",	&gd5426_vlb_device,			VID_CL_GD5426_VLB,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  8,  10, 10, 20}},
     {"[VLB] Diamond SpeedStar PRO SE (CL GD5430)",	"cl_gd5430_vlb",	&gd5430_vlb_device,			VID_CL_GD5430_VLB,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  8,  10, 10, 20}},
 #if defined(DEV_BRANCH) && defined(USE_STEALTH32)
     {"[VLB] Diamond Stealth 32 (Tseng ET4000/w32p)",	"stealth32_vlb",	&et4000w32p_vlb_device,			VID_ET4000W32_VLB,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  4,  10, 10, 10}},
@@ -219,6 +219,11 @@ video_reset(int card)
     /* Do not initialize internal cards here. */
     if ((card == VID_NONE) || \
 	(card == VID_INTERNAL) || machines[machine].fixed_vidcard) return;
+
+    if (fontdatksc5601 != NULL) {
+	free(fontdatksc5601);
+	fontdatksc5601 = NULL;
+    }
 
     /* Initialize the video card. */
     device_add(video_cards[video_old_to_new(card)].device);

@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.6	2018/03/15
+ * Version:	@(#)video.h	1.0.8	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,11 +94,12 @@ enum {
     VID_MACH64VT2,  		/* ATI Mach64 VT2 */
     VID_CL_GD5424_ISA, 		/* Cirrus Logic GD5424 ISA */
     VID_CL_GD5424_VLB, 		/* Cirrus Logic GD5424 VLB */
+    VID_CL_GD5426_VLB, 		/* Diamond SpeedStar PRO (Cirrus Logic GD5426) VLB */
     VID_CL_GD5428_ISA, 		/* Cirrus Logic GD5428 ISA */
-    VID_CL_GD5428_VLB,		/* Diamond SpeedStar PRO (Cirrus Logic GD5428) VLB */
+    VID_CL_GD5428_VLB,		/* Cirrus Logic GD5428 VLB */
     VID_CL_GD5429_ISA, 		/* Cirrus Logic GD5429 ISA */
     VID_CL_GD5429_VLB,		/* Cirrus Logic GD5429 VLB */
-    VID_CL_GD5430_VLB,		/* Diamond SpeedStar PRO SE (Cirrus Logic GD5430) PCI */
+    VID_CL_GD5430_VLB,		/* Diamond SpeedStar PRO SE (Cirrus Logic GD5430) VLB */
     VID_CL_GD5430_PCI,		/* Cirrus Logic GD5430 PCI */
     VID_CL_GD5434_ISA, 		/* Cirrus Logic GD5434 ISA */
     VID_CL_GD5434_VLB,		/* Cirrus Logic GD5434 VLB */
@@ -163,6 +164,10 @@ typedef struct {
     uint8_t	r, g, b;
 } rgb_t;
 
+typedef struct {
+    uint8_t	chr[32];
+} dbcs_font_t;
+
 typedef rgb_t PALETTE[256];
 
 
@@ -183,7 +188,7 @@ extern int	video_fullscreen,
 extern int	fullchange;
 extern uint8_t	fontdat[2048][8];
 extern uint8_t	fontdatm[2048][16];
-extern uint8_t	fontdatksc5601[16384][32];
+extern dbcs_font_t	*fontdatksc5601;
 extern uint32_t	*video_6to8,
 		*video_15to32,
 		*video_16to32;

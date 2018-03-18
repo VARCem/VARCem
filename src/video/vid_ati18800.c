@@ -8,7 +8,7 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.3	2018/03/15
+ * Version:	@(#)vid_ati18800.c	1.0.4	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@
 #include "vid_ati18800.h"
 #include "vid_ati_eeprom.h"
 #include "vid_svga.h"
+#include "vid_svga_render.h"
 
 
 #define BIOS_ROM_PATH_WONDER	L"roms/video/ati/ati18800/vga_wonder_v3-1.02.bin"
@@ -169,6 +170,39 @@ static uint8_t ati18800_in(uint16_t addr, void *p)
                 case 0x3D5:
                 temp = svga->crtc[svga->crtcreg];
                 break;
+		case 0x3DA:
+                svga->attrff = 0;
+                svga->attrff = 0;
+                svga->cgastat &= ~0x30;
+                /* copy color diagnostic info from the overscan color register */
+                switch (svga->attrregs[0x12] & 0x30)
+                {
+                        case 0x00: /* P0 and P2 */
+                        if (svga->attrregs[0x11] & 0x01)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x04)
+                                svga->cgastat |= 0x20;
+                        break;
+                        case 0x10: /* P4 and P5 */
+                        if (svga->attrregs[0x11] & 0x10)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x20)
+                                svga->cgastat |= 0x20;
+                        break;
+                        case 0x20: /* P1 and P3 */
+                        if (svga->attrregs[0x11] & 0x02)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x08)
+                                svga->cgastat |= 0x20;
+                        break;
+                        case 0x30: /* P6 and P7 */
+                        if (svga->attrregs[0x11] & 0x40)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x80)
+                                svga->cgastat |= 0x20;
+                        break;
+                }
+                return svga->cgastat;
                 default:
                 temp = svga_in(addr, svga);
                 break;
@@ -177,6 +211,28 @@ static uint8_t ati18800_in(uint16_t addr, void *p)
         if (addr != 0x3da) pclog("%02X  %04X:%04X\n", temp, CS,cpu_state.pc);
 #endif
         return temp;
+}
+
+static void ati18800_recalctimings(svga_t *svga)
+{
+        ati18800_t *ati18800 = (ati18800_t *)svga->p;
+
+        if(svga->crtc[0x17] & 4)
+        {
+                svga->vtotal <<= 1;
+                svga->dispend <<= 1;
+                svga->vsyncstart <<= 1;
+                svga->split <<= 1;
+                svga->vblankstart <<= 1;
+        }
+
+        if (!svga->scrblank && (ati18800->regs[0xb0] & 0x20)) /*Extended 256 colour modes*/
+        {
+                svga->render = svga_render_8bpp_highres;
+				svga->bpp = 8;
+                svga->rowoffset <<= 1;
+                svga->ma <<= 1;
+        }
 }
 
 static void *ati18800_init(const device_t *info)
@@ -198,7 +254,7 @@ static void *ati18800_init(const device_t *info)
 	};
         
         svga_init(&ati18800->svga, ati18800, 1 << 19, /*512kb*/
-                   NULL,
+                   ati18800_recalctimings,
                    ati18800_in, ati18800_out,
                    NULL,
                    NULL);

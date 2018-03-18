@@ -11,7 +11,7 @@
  * NOTES:	This code should be re-merged into a single init() with a
  *		'fullscreen' argument, indicating FS mode is requested.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.2	2018/03/07
+ * Version:	@(#)win_ddraw.cpp	1.0.3	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,10 @@
 #include <ddraw.h>
 #include <stdio.h>
 #include <stdint.h>
+#ifdef USE_LIBPNG
+# define PNG_DEBUG 0
+# include <png.h>
+#endif
 #include "../emu.h"
 #include "../device.h"
 #include "../video/video.h"
@@ -51,7 +55,6 @@
 #include "../ui.h"
 #include "win.h"
 #include "win_ddraw.h"
-#include "win_png.h"
 
 
 static LPDIRECTDRAW		lpdd = NULL;
@@ -65,6 +68,10 @@ static HWND			ddraw_hwnd;
 static HBITMAP			hbitmap;
 static int			ddraw_w, ddraw_h,
 				xs, ys, ys2;
+#ifdef USE_LIBPNG
+static png_structp		png_ptr;
+static png_infop		png_info_ptr;
+#endif
 
 
 static void
@@ -88,6 +95,159 @@ CopySurface(IDirectDrawSurface4 *pDDSurface)
 }
 
 
+#ifdef USE_LIBPNG
+static void
+bgra_to_rgb(png_bytep *b_rgb, uint8_t *bgra, int width, int height)
+{
+    int i, j;
+    uint8_t *r, *b;
+
+    for (i = 0; i < height; i++) {
+	for (j = 0; j < width; j++) {
+		r = &b_rgb[(height - 1) - i][j * 3];
+		b = &bgra[((i * width) + j) * 4];
+		r[0] = b[2];
+		r[1] = b[1];
+		r[2] = b[0];
+	}
+    }
+}
+
+
+static void
+SavePNG(wchar_t *szFilename, HBITMAP hBitmap)
+{
+    static WCHAR szMessage[512];
+    BITMAPFILEHEADER bmpFileHeader; 
+    BITMAPINFO bmpInfo;
+    HDC hdc;
+    LPVOID pBuf = NULL;
+    LPVOID pBuf2 = NULL;
+    png_bytep *b_rgb = NULL;
+    FILE *fp;
+    int i;
+
+    /* Create file. */
+    fp = plat_fopen(szFilename, (wchar_t *) L"wb");
+    if (fp == NULL) {
+	pclog("[SavePNG] File %ls could not be opened for writing", szFilename);
+	_swprintf(szMessage, plat_get_string(IDS_2088), szFilename);
+	ui_msgbox(MBX_ERROR, szMessage);
+	return;
+    }
+
+    /* Initialize PNG stuff. */
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+				      NULL, NULL, NULL);
+    if (png_ptr == NULL) {
+	fclose(fp);
+	pclog("[SavePNG] png_create_write_struct failed");
+	_swprintf(szMessage, plat_get_string(IDS_2088), szFilename);
+	ui_msgbox(MBX_ERROR, szMessage);
+	return;
+    }
+
+    png_info_ptr = png_create_info_struct(png_ptr);
+    if (png_info_ptr == NULL) {
+	fclose(fp);
+	pclog("[SavePNG] png_create_info_struct failed");
+	_swprintf(szMessage, plat_get_string(IDS_2088), szFilename);
+	ui_msgbox(MBX_ERROR, szMessage);
+	return;
+    }
+
+    png_init_io(png_ptr, fp);
+
+    hdc = GetDC(NULL);
+
+    ZeroMemory(&bmpInfo, sizeof(BITMAPINFO));
+    bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+
+    GetDIBits(hdc, hBitmap, 0, 0, NULL, &bmpInfo, DIB_RGB_COLORS);
+    if (bmpInfo.bmiHeader.biSizeImage <= 0)
+	bmpInfo.bmiHeader.biSizeImage =
+		bmpInfo.bmiHeader.biWidth*abs(bmpInfo.bmiHeader.biHeight)*(bmpInfo.bmiHeader.biBitCount+7)/8;
+
+    if ((pBuf = malloc(bmpInfo.bmiHeader.biSizeImage)) == NULL) {
+	fclose(fp);
+	pclog("[SavePNG] Unable to Allocate Bitmap Memory");
+	_swprintf(szMessage, plat_get_string(IDS_2088), szFilename);
+	ui_msgbox(MBX_ERROR, szMessage);
+	return;
+    }
+
+    if (ys2 <= 250) {
+	bmpInfo.bmiHeader.biSizeImage <<= 1;
+
+	if ((pBuf2 = malloc(bmpInfo.bmiHeader.biSizeImage)) == NULL) {
+		fclose(fp);
+		free(pBuf);
+		pclog("[SavePNG] Unable to Allocate Secondary Bitmap Memory");
+		_swprintf(szMessage, plat_get_string(IDS_2088), szFilename);
+		ui_msgbox(MBX_ERROR, szMessage);
+		return;
+	}
+
+	bmpInfo.bmiHeader.biHeight <<= 1;
+    }
+
+#if 0
+    pclog("save png w=%i h=%i\n",
+	bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight);
+#endif
+
+    bmpInfo.bmiHeader.biCompression = BI_RGB;
+
+    GetDIBits(hdc, hBitmap, 0,
+	      bmpInfo.bmiHeader.biHeight, pBuf, &bmpInfo, DIB_RGB_COLORS);
+
+    png_set_IHDR(png_ptr, png_info_ptr,
+		 bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight,
+		 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+		 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+    b_rgb = (png_bytep *)malloc(sizeof(png_bytep)*bmpInfo.bmiHeader.biHeight));
+    if (b_rgb == NULL) {
+	fclose(fp);
+	free(pBuf);
+	free(pBuf2);
+	pclog("[SavePNG] Unable to Allocate RGB Bitmap Memory");
+	_swprintf(szMessage, plat_get_string(IDS_2088), szFilename);
+	ui_msgbox(MBX_ERROR, szMessage);
+	return;
+    }
+
+    for (i = 0; i < bmpInfo.bmiHeader.biHeight; i++)
+	b_rgb[i] = (png_byte *)malloc(png_get_rowbytes(png_ptr, info_ptr));
+
+    if (pBuf2) {
+	DoubleLines((uint8_t *)pBuf2, (uint8_t *)pBuf);
+	bgra_to_rgb(b_rgb, (uint8_t *)pBuf2,
+		    bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight);
+    } else
+	bgra_to_rgb(b_rgb, (uint8_t *)pBuf,
+		    bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight);
+
+    png_write_info(png_ptr, png_info_ptr);
+
+    png_write_image(png_ptr, b_rgb);
+
+    png_write_end(png_ptr, NULL);
+
+    /* Clean up. */
+    if (hdc) ReleaseDC(NULL,hdc); 
+
+    for (i = 0; i < bmpInfo.bmiHeader.biHeight; i++)
+	if (b_rgb[i]) free(b_rgb[i]);
+
+    if (b_rgb) free(b_rgb);
+
+    if (pBuf) free(pBuf); 
+    if (pBuf2) free(pBuf2); 
+
+    if (fp != NULL) fclose(fp);
+}
+#else
 static void
 DoubleLines(uint8_t *dst, uint8_t *src)
 {
@@ -101,7 +261,7 @@ DoubleLines(uint8_t *dst, uint8_t *src)
 
 
 static void
-SaveBitmap(wchar_t *szFilename, HBITMAP hBitmap)
+SaveBMP(wchar_t *szFilename, HBITMAP hBitmap)
 {
     static WCHAR szMessage[512];
     BITMAPFILEHEADER bmpFileHeader; 
@@ -170,6 +330,7 @@ SaveBitmap(wchar_t *szFilename, HBITMAP hBitmap)
 
     if (fp) fclose(fp);
 }
+#endif
 
 
 static void
@@ -442,7 +603,11 @@ ddraw_take_screenshot(wchar_t *fn)
 
     CopySurface(lpdds_back2);
 
-    SaveBitmap(fn, hbitmap);
+#ifdef USE_LIBPNG
+    SavePNG(fn, hbitmap);
+#else
+    SaveBMP(fn, hbitmap);
+#endif
 }
 
 

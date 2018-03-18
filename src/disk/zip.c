@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.4	2018/03/08
+ * Version:	@(#)zip.c	1.0.5	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,7 +89,7 @@ uint8_t scsi_zip_drives[16][8] =	{	{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0
 
 
 /* Table of all SCSI commands and their flags, needed for the new disc change / not ready handler. */
-uint8_t zip_command_flags[0x100] =
+static const uint8_t zip_command_flags[0x100] =
 {
     IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x00 */
     IMPLEMENTED | ALLOW_UA | NONDATA | SCSI_ONLY,		/* 0x01 */
@@ -1105,12 +1105,6 @@ static void zip_unit_attention(uint8_t id)
 	zip[id].callback = 50LL * ZIP_TIME;
 	zip_set_callback(id);
 	zip_log("ZIP %i: UNIT ATTENTION\n", id);
-}
-
-static void zip_bus_master_error(uint8_t id)
-{
-	zip_sense_key = zip_asc = zip_ascq = 0;
-	zip_cmd_error(id);
 }
 
 static void zip_not_ready(uint8_t id)
@@ -2243,16 +2237,10 @@ int zip_read_from_ide_dma(uint8_t channel)
 		return 0;
 
 	if (ide_bus_master_write) {
-		if (ide_bus_master_write(channel >> 1, zipbufferb, zip[id].packet_len)) {
-			zip_bus_master_error(id);
-			zip_phase_callback(id);
+		if (ide_bus_master_write(channel >> 1, zipbufferb, zip[id].packet_len))
 			return 0;
-		} else
+		  else
 			return 1;
-	} else {
-		zip_bus_master_error(id);
-		zip_phase_callback(id);
-		return 0;
 	}
 
 	return 0;
@@ -2269,6 +2257,12 @@ int zip_read_from_scsi_dma(uint8_t scsi_id, uint8_t scsi_lun)
 	zip_log("Reading from SCSI DMA: SCSI ID %02X, init length %i\n", scsi_id, *BufLen);
 	memcpy(zipbufferb, SCSIDevices[scsi_id][scsi_lun].CmdBuffer, *BufLen);
 	return 1;
+}
+
+void zip_irq_raise(uint8_t id)
+{
+	if (zip_drives[id].bus_type < ZIP_BUS_SCSI)
+		ide_irq_raise(&(ide_drives[zip_drives[id].ide_channel]));
 }
 
 int zip_read_from_dma(uint8_t id)
@@ -2296,11 +2290,19 @@ int zip_read_from_dma(uint8_t id)
 	}
 
 	ret = zip_phase_data_out(id);
-	if (!ret) {
-		zip_phase_callback(id);
-		return 0;
-	} else
-		return 1;
+
+	if (ret || (zip_drives[id].bus_type == ZIP_BUS_SCSI)) {
+		zip_buf_free(id);
+		zip[id].packet_status = ZIP_PHASE_COMPLETE;
+		zip[id].status = READY_STAT;
+		zip[id].phase = 3;
+		ui_sb_update_icon(SB_ZIP | id, 0);
+		zip_irq_raise(id);
+		if (ret)
+			return 1;
+		else
+			return 0;
+	}
 
 	return 0;
 }
@@ -2315,21 +2317,10 @@ int zip_write_to_ide_dma(uint8_t channel)
 	}
 
 	if (ide_bus_master_read) {
-		if (ide_bus_master_read(channel >> 1, zipbufferb, zip[id].packet_len)) {
-			zip_log("ZIP %i: ATAPI DMA error\n", id);
-			zip_bus_master_error(id);
-			zip_phase_callback(id);
+		if (ide_bus_master_read(channel >> 1, zipbufferb, zip[id].packet_len))
 			return 0;
-		}
-		else {
-			zip_log("ZIP %i: ATAPI DMA success\n", id);
+		else
 			return 1;
-		}
-	} else {
-		zip_log("ZIP %i: No bus master\n", id);
-		zip_bus_master_error(id);
-		zip_phase_callback(id);
-		return 0;
 	}
 
 	return 0;
@@ -2360,16 +2351,20 @@ int zip_write_to_dma(uint8_t id)
 	} else
 		ret = zip_write_to_ide_dma(zip_drives[id].ide_channel);
 
-	if (!ret)
-		return 0;
+	if (ret || (zip_drives[id].bus_type == ZIP_BUS_SCSI)) {
+		zip_buf_free(id);
+		zip[id].packet_status = ZIP_PHASE_COMPLETE;
+		zip[id].status = READY_STAT;
+		zip[id].phase = 3;
+		ui_sb_update_icon(SB_ZIP | id, 0);
+		zip_irq_raise(id);
+		if (ret)
+			return 1;
+		else
+			return 0;
+	}
 
-	return 1;
-}
-
-void zip_irq_raise(uint8_t id)
-{
-	if (zip_drives[id].bus_type < ZIP_BUS_SCSI)
-		ide_irq_raise(&(ide_drives[zip_drives[id].ide_channel]));
+	return 0;
 }
 
 /* If the result is 1, issue an IRQ, otherwise not. */
@@ -2405,12 +2400,6 @@ void zip_phase_callback(uint8_t id)
 		case ZIP_PHASE_DATA_OUT_DMA:
 			zip_log("ZIP %i: ZIP_PHASE_DATA_OUT_DMA\n", id);
 			zip_read_from_dma(id);
-			zip_buf_free(id);
-			zip[id].packet_status = ZIP_PHASE_COMPLETE;
-			zip[id].status = READY_STAT;
-			zip[id].phase = 3;
-			ui_sb_update_icon(SB_ZIP | id, 0);
-			zip_irq_raise(id);
 			return;
 		case ZIP_PHASE_DATA_IN:
 			zip_log("ZIP %i: ZIP_PHASE_DATA_IN\n", id);
@@ -2421,12 +2410,6 @@ void zip_phase_callback(uint8_t id)
 		case ZIP_PHASE_DATA_IN_DMA:
 			zip_log("ZIP %i: ZIP_PHASE_DATA_IN_DMA\n", id);
 			zip_write_to_dma(id);
-			zip_buf_free(id);
-			zip[id].packet_status = ZIP_PHASE_COMPLETE;
-			zip[id].status = READY_STAT;
-			zip[id].phase = 3;
-			ui_sb_update_icon(SB_ZIP | id, 0);
-			zip_irq_raise(id);
 			return;
 		case ZIP_PHASE_ERROR:
 			zip_log("ZIP %i: ZIP_PHASE_ERROR\n", id);
