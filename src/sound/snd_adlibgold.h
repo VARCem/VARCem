@@ -8,7 +8,7 @@
  *
  *		Definitions for the Adlib Gold driver.
  *
- * Version:	@(#)snd_adlibgold.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_adlibgold.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define SOUND_ADLIBGOLD_H
 
 
-extern device_t adgold_device;
+extern const device_t adgold_device;
 
 
 #endif	/*SOUND_ADLIBGOLD_H*/

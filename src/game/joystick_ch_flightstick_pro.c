@@ -8,7 +8,7 @@
  *
  *		Implementation of the Flight Stick Pro.
  *
- * Version:	@(#)flightstick_pro.c	1.0.3	2018/03/10
+ * Version:	@(#)flightstick_pro.c	1.0.4	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -113,7 +113,7 @@ static void ch_flightstick_pro_a0_over(void *p)
 {
 }
 
-joystick_if_t joystick_ch_flightstick_pro =
+const joystick_if_t joystick_ch_flightstick_pro =
 {
         "CH Flightstick Pro",
         ch_flightstick_pro_init,

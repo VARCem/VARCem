@@ -8,7 +8,7 @@
  *
  *		Definitions for the SSI2001 driver.
  *
- * Version:	@(#)snd_si2001.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_si2001.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define SOUND_SSI2001_H
 
 
-extern device_t ssi2001_device;
+extern const device_t ssi2001_device;
 
 
 #endif	/*SOUND_SSI2001_H*/

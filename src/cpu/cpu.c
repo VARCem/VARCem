@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.3	2018/03/12
+ * Version:	@(#)cpu.c	1.0.4	2018/03/15
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -127,6 +127,7 @@ int cpu_hasVME;
 int cpu_cyrix_alignment;
 int hasfpu;
 int cpuspeed;
+int CPUID;
 
 uint64_t cpu_CR4_mask;
 

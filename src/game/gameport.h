@@ -10,7 +10,7 @@
  *
  * NOTE:	This module needs a good cleanup someday.
  *
- * Version:	@(#)gameport.h	1.0.2	2018/02/10
+ * Version:	@(#)gameport.h	1.0.3	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -114,8 +114,8 @@ extern "C" {
 #endif
 
 #ifdef EMU_DEVICE_H
-extern device_t	gameport_device;
-extern device_t gameport_201_device;
+extern const device_t	gameport_device;
+extern const device_t	gameport_201_device;
 #endif
 
 extern plat_joystick_t	plat_joystick_state[MAX_PLAT_JOYSTICKS];
@@ -129,14 +129,14 @@ extern void	joystick_init(void);
 extern void	joystick_close(void);
 extern void	joystick_process(void);
 
-extern char	*joystick_get_name(int64_t joystick);
-extern int64_t	joystick_get_max_joysticks(int64_t joystick);
-extern int64_t	joystick_get_axis_count(int64_t joystick);
-extern int64_t	joystick_get_button_count(int64_t joystick);
-extern int64_t	joystick_get_pov_count(int64_t joystick);
-extern char	*joystick_get_axis_name(int64_t joystick, int64_t id);
-extern char	*joystick_get_button_name(int64_t joystick, int64_t id);
-extern char	*joystick_get_pov_name(int64_t joystick, int64_t id);
+extern char	*joystick_get_name(int js);
+extern int	joystick_get_max_joysticks(int js);
+extern int	joystick_get_axis_count(int js);
+extern int	joystick_get_button_count(int js);
+extern int	joystick_get_pov_count(int js);
+extern char	*joystick_get_axis_name(int js, int id);
+extern char	*joystick_get_button_name(int js, int id);
+extern char	*joystick_get_pov_name(int js, int id);
 
 extern void	gameport_update_joystick_type(void);
 

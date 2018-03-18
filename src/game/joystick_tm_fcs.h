@@ -8,7 +8,7 @@
  *
  *		Definitions for the Flight Control System driver.
  *
- * Version:	@(#)joystick_tm_fcs.h	1.0.1	2018/02/14
+ * Version:	@(#)joystick_tm_fcs.h	1.0.2	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -35,4 +35,4 @@
  *   USA.
  */
 
-extern joystick_if_t joystick_tm_fcs;
+extern const joystick_if_t joystick_tm_fcs;

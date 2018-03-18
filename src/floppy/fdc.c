@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.3	2018/03/12
+ * Version:	@(#)fdc.c	1.0.5	2018/03/16
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -60,7 +60,7 @@
 extern int64_t motoron[FDD_NUM];
 
 
-int command_has_drivesel[256] = {
+const int command_has_drivesel[256] = {
 	0, 0,
 	1,			/* READ TRACK */
 	0,
@@ -2037,7 +2037,7 @@ fdc_close(void *priv)
 
 
 static void *
-fdc_init(device_t *info)
+fdc_init(const device_t *info)
 {
     fdc_t *fdc = (fdc_t *) malloc(sizeof(fdc_t));
     memset(fdc, 0, sizeof(fdc_t));
@@ -2075,7 +2075,7 @@ fdc_3f1_enable(fdc_t *fdc, int enable)
 }
 
 
-device_t fdc_xt_device = {
+const device_t fdc_xt_device = {
     "PC/XT Floppy Drive Controller",
     0,
     0,
@@ -2085,7 +2085,7 @@ device_t fdc_xt_device = {
     NULL, NULL, NULL, NULL
 };
 
-device_t fdc_pcjr_device = {
+const device_t fdc_pcjr_device = {
     "PCjr Floppy Drive Controller",
     0,
     FDC_FLAG_PCJR,
@@ -2095,7 +2095,7 @@ device_t fdc_pcjr_device = {
     NULL, NULL, NULL, NULL
 };
 
-device_t fdc_at_device = {
+const device_t fdc_at_device = {
     "PC/AT Floppy Drive Controller",
     0,
     FDC_FLAG_AT,
@@ -2105,7 +2105,7 @@ device_t fdc_at_device = {
     NULL, NULL, NULL, NULL
 };
 
-device_t fdc_at_actlow_device = {
+const device_t fdc_at_actlow_device = {
     "PC/AT Floppy Drive Controller (Active low)",
     0,
     FDC_FLAG_DISKCHG_ACTLOW | FDC_FLAG_AT,
@@ -2115,7 +2115,7 @@ device_t fdc_at_actlow_device = {
     NULL, NULL, NULL, NULL
 };
 
-device_t fdc_at_ps1_device = {
+const device_t fdc_at_ps1_device = {
     "PC/AT Floppy Drive Controller (PS/1, PS/2 ISA)",
     0,
     FDC_FLAG_DISKCHG_ACTLOW | FDC_FLAG_AT | FDC_FLAG_PS1,
@@ -2125,7 +2125,7 @@ device_t fdc_at_ps1_device = {
     NULL, NULL, NULL, NULL
 };
 
-device_t fdc_at_smc_device = {
+const device_t fdc_at_smc_device = {
     "PC/AT Floppy Drive Controller (SM(s)C FDC37Cxxx)",
     0,
     FDC_FLAG_AT | FDC_FLAG_SUPERIO,
@@ -2135,7 +2135,7 @@ device_t fdc_at_smc_device = {
     NULL, NULL, NULL, NULL
 };
 
-device_t fdc_at_winbond_device = {
+const device_t fdc_at_winbond_device = {
     "PC/AT Floppy Drive Controller (Winbond W83x77F)",
     0,
     FDC_FLAG_AT | FDC_FLAG_SUPERIO | FDC_FLAG_START_RWC_1 | FDC_FLAG_MORE_TRACKS,
@@ -2145,7 +2145,7 @@ device_t fdc_at_winbond_device = {
     NULL, NULL, NULL, NULL
 };
 
-device_t fdc_at_nsc_device = {
+const device_t fdc_at_nsc_device = {
     "PC/AT Floppy Drive Controller (NSC PC8730x)",
     0,
     FDC_FLAG_AT | FDC_FLAG_MORE_TRACKS | FDC_FLAG_NSC,

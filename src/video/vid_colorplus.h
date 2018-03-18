@@ -8,7 +8,7 @@
  *
  *		Definitions for the ColorPlus driver.
  *
- * Version:	@(#)vid_colorplus.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_colorplus.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,7 @@ uint8_t colorplus_read(uint32_t addr, void *p);
 void    colorplus_recalctimings(colorplus_t *colorplus);
 void    colorplus_poll(void *p);
 
-extern device_t colorplus_device;
+extern const device_t colorplus_device;
 
 
 #endif	/*VIDEO_COLORPLUS_H*/

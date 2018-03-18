@@ -21,7 +21,7 @@
  *		already on their way out, the newer IDE standard based on the
  *		PC/AT controller and 16b design became the IDE we now know.
  *
- * Version:	@(#)hdc_xtide.c	1.0.2	2018/02/22
+ * Version:	@(#)hdc_xtide.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -143,7 +143,7 @@ xtide_read(uint16_t port, void *priv)
 
 
 static void *
-xtide_init(device_t *info)
+xtide_init(const device_t *info)
 {
     xtide_t *xtide = malloc(sizeof(xtide_t));
 
@@ -170,7 +170,7 @@ xtide_available(void)
 
 
 static void *
-xtide_at_init(device_t *info)
+xtide_at_init(const device_t *info)
 {
     xtide_t *xtide = malloc(sizeof(xtide_t));
 
@@ -193,7 +193,7 @@ xtide_at_available(void)
 
 
 static void *
-xtide_acculogic_init(device_t *info)
+xtide_acculogic_init(const device_t *info)
 {
     xtide_t *xtide = malloc(sizeof(xtide_t));
 
@@ -220,7 +220,7 @@ xtide_acculogic_available(void)
 
 
 static void *
-xtide_at_ps2_init(device_t *info)
+xtide_at_ps2_init(const device_t *info)
 {
     xtide_t *xtide = malloc(sizeof(xtide_t));
 
@@ -251,7 +251,7 @@ xtide_close(void *priv)
 }
 
 
-device_t xtide_device = {
+const device_t xtide_device = {
     "XTIDE",
     DEVICE_ISA,
     0,
@@ -260,7 +260,7 @@ device_t xtide_device = {
     NULL
 };
 
-device_t xtide_at_device = {
+const device_t xtide_at_device = {
     "XTIDE (AT)",
     DEVICE_ISA | DEVICE_AT,
     0,
@@ -269,7 +269,7 @@ device_t xtide_at_device = {
     NULL
 };
 
-device_t xtide_acculogic_device = {
+const device_t xtide_acculogic_device = {
     "XTIDE (Acculogic)",
     DEVICE_ISA,
     0,
@@ -278,7 +278,7 @@ device_t xtide_acculogic_device = {
     NULL
 };
 
-device_t xtide_at_ps2_device = {
+const device_t xtide_at_ps2_device = {
     "XTIDE (AT) (1.1.5)",
     DEVICE_ISA | DEVICE_PS2,
     0,

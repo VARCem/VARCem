@@ -8,7 +8,7 @@
  *
  *		IBM VGA emulation.
  *
- * Version:	@(#)vid_vga.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_vga.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,7 +117,7 @@ uint8_t vga_in(uint16_t addr, void *p)
 }
 
 
-static void *vga_init(device_t *info)
+static void *vga_init(const device_t *info)
 {
         vga_t *vga = malloc(sizeof(vga_t));
         memset(vga, 0, sizeof(vga_t));
@@ -140,7 +140,7 @@ static void *vga_init(device_t *info)
 
 
 #ifdef DEV_BRANCH
-static void *trigem_unk_init(device_t *info)
+static void *trigem_unk_init(const device_t *info)
 {
         vga_t *vga = malloc(sizeof(vga_t));
         memset(vga, 0, sizeof(vga_t));
@@ -167,7 +167,7 @@ static void *trigem_unk_init(device_t *info)
 #endif
 
 /*PS/1 uses a standard VGA controller, but with no option ROM*/
-void *ps1vga_init(device_t *info)
+void *ps1vga_init(const device_t *info)
 {
         vga_t *vga = malloc(sizeof(vga_t));
         memset(vga, 0, sizeof(vga_t));
@@ -221,7 +221,7 @@ void vga_add_status_info(char *s, int max_len, void *p)
         svga_add_status_info(s, max_len, &vga->svga);
 }
 
-device_t vga_device =
+const device_t vga_device =
 {
         "VGA",
         DEVICE_ISA,
@@ -235,7 +235,7 @@ device_t vga_device =
         vga_add_status_info
 };
 #ifdef DEV_BRANCH
-device_t trigem_unk_device =
+const device_t trigem_unk_device =
 {
         "VGA",
         DEVICE_ISA,
@@ -249,7 +249,7 @@ device_t trigem_unk_device =
         vga_add_status_info
 };
 #endif
-device_t ps1vga_device =
+const device_t ps1vga_device =
 {
         "PS/1 VGA",
         0,

@@ -9,11 +9,13 @@
  *		Implementation of the raw sector-based floppy image format,
  *		as well as the Japanese FDI, CopyQM, and FDF formats.
  *
- * Version:	@(#)floppy_img.h	1.0.1	2018/02/14
+ * Version:	@(#)floppy_img.h	1.0.2	2018/03/17
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -39,10 +41,9 @@
 # define EMU_FLOPPY_IMG_H
 
 
-extern void img_init(void);
-extern void img_load(int drive, wchar_t *fn);
-extern void img_close(int drive);
-extern void img_seek(int drive, int track);
+extern void	img_init(void);
+extern void	img_load(int drive, wchar_t *fn);
+extern void	img_close(int drive);
 
 
 #endif	/*EMU_FLOPPY_IMG_H*/

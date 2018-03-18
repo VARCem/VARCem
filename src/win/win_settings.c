@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.10	2018/03/12
+ * Version:	@(#)win_settings.c	1.0.11	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,7 +81,7 @@ static int temp_dynarec;
 #endif
 
 /* Video category */
-static int temp_gfxcard, temp_video_speed, temp_voodoo;
+static int temp_vid_card, temp_video_speed, temp_voodoo;
 
 /* Input devices category */
 static int temp_mouse, temp_joystick;
@@ -92,7 +92,7 @@ static int temp_float;
 
 /* Network category */
 static int temp_net_type, temp_net_card;
-static char temp_pcap_dev[520];
+static char temp_host_dev[520];
 
 /* Ports category */
 static char temp_lpt_device_names[3][16];
@@ -171,7 +171,7 @@ settings_init(void)
     temp_sync = enable_sync;
 
     /* Video category */
-    temp_gfxcard = gfxcard;
+    temp_vid_card = vid_card;
     temp_video_speed = video_speed;
     temp_voodoo = voodoo_enabled;
 
@@ -191,8 +191,8 @@ settings_init(void)
 
     /* Network category */
     temp_net_type = network_type;
-    memset(temp_pcap_dev, 0, sizeof(temp_pcap_dev));
-    strcpy(temp_pcap_dev, network_pcap);
+    memset(temp_host_dev, 0, sizeof(temp_host_dev));
+    strcpy(temp_host_dev, network_host);
     temp_net_card = network_card;
 
     /* Ports category */
@@ -286,7 +286,7 @@ settings_changed(void)
     i = i || (temp_sync != enable_sync);
 
     /* Video category */
-    i = i || (gfxcard != temp_gfxcard);
+    i = i || (vid_card != temp_vid_card);
     i = i || (video_speed != temp_video_speed);
     i = i || (voodoo_enabled != temp_voodoo);
 
@@ -306,7 +306,7 @@ settings_changed(void)
 
     /* Network category */
     i = i || (network_type != temp_net_type);
-    i = i || strcmp(temp_pcap_dev, network_pcap);
+    i = i || strcmp(temp_host_dev, network_host);
     i = i || (network_card != temp_net_card);
 
     /* Ports category */
@@ -389,7 +389,7 @@ settings_save(void)
     enable_sync = temp_sync;
 
     /* Video category */
-    gfxcard = temp_gfxcard;
+    vid_card = temp_vid_card;
     video_speed = temp_video_speed;
     voodoo_enabled = temp_voodoo;
 
@@ -409,8 +409,8 @@ settings_save(void)
 
     /* Network category */
     network_type = temp_net_type;
-    memset(network_pcap, '\0', sizeof(network_pcap));
-    strcpy(network_pcap, temp_pcap_dev);
+    memset(network_host, '\0', sizeof(network_host));
+    strcpy(network_host, temp_host_dev);
     network_card = temp_net_card;
 
     /* Ports category */
@@ -774,7 +774,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			if (machines[temp_machine].flags & MACHINE_VIDEO)
 			{
-				gfxcard = GFX_INTERNAL;
+				vid_card = VID_INTERNAL;
 			}
 			free(stransi);
 			free(lptsTemp);
@@ -810,12 +810,12 @@ static void recalc_vid_list(HWND hdlg)
                 if (!s[0])
                         break;
 
-                if (video_card_available(c) && gfx_present[video_new_to_old(c)] &&
+                if (video_card_available(c) && vid_present[video_new_to_old(c)] &&
                     device_is_valid(video_card_getdevice(c), machines[temp_machine].flags))
                 {
 			mbstowcs(szText, s, strlen(s) + 1);
                         SendMessage(h, CB_ADDSTRING, 0, (LPARAM) szText);
-                        if (video_new_to_old(c) == temp_gfxcard)
+                        if (video_new_to_old(c) == temp_vid_card)
                         {
 
                                 SendMessage(h, CB_SETCURSEL, d, 0);
@@ -829,7 +829,7 @@ static void recalc_vid_list(HWND hdlg)
         }
         if (!found_card)
                 SendMessage(h, CB_SETCURSEL, 0, 0);
-        EnableWindow(h, machines[temp_machine].fixed_gfxcard ? FALSE : TRUE);
+        EnableWindow(h, machines[temp_machine].fixed_vidcard ? FALSE : TRUE);
 
         h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
         EnableWindow(h, (machines[temp_machine].flags & MACHINE_PCI) ? TRUE : FALSE);
@@ -903,7 +903,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		                        SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM) lptsTemp);
 					wcstombs(stransi, lptsTemp, 512);
 					gfx = video_card_getid(stransi);
-		                        temp_gfxcard = video_new_to_old(gfx);
+		                        temp_vid_card = video_new_to_old(gfx);
 
 					h = GetDlgItem(hdlg, IDC_CONFIGURE_VID);
 					if (video_card_has_config(gfx))
@@ -953,7 +953,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
                         h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
                         SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM) lptsTemp);
 			wcstombs(stransi, lptsTemp, 512);
-                        temp_gfxcard = video_new_to_old(video_card_getid(stransi));
+                        temp_vid_card = video_new_to_old(video_card_getid(stransi));
 
                         h = GetDlgItem(hdlg, IDC_COMBO_VIDEO_SPEED);
 			temp_video_speed = SendMessage(h, CB_GETCURSEL, 0, 0) - 1;
@@ -973,7 +973,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 static int mouse_valid(int num, int m)
 {
-	device_t *dev;
+	const device_t *dev;
 
 	if ((num == MOUSE_TYPE_INTERNAL) &&
 	    !(machines[m].flags & MACHINE_MOUSE)) return(0);
@@ -1177,7 +1177,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	int c = 0;
 	int d = 0;
 	LPTSTR lptsTemp;
-	device_t *sound_dev/*, *midi_dev*/;
+	const device_t *sound_dev/*, *midi_dev*/;
 	char *s;
 
         switch (message)
@@ -1599,7 +1599,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	int c = 0;
 	int d = 0;
 	LPTSTR lptsTemp;
-	device_t *scsi_dev;
+	const device_t *scsi_dev;
 
         switch (message)
         {
@@ -1794,7 +1794,7 @@ static void network_recalc_combos(HWND hdlg)
 		EnableWindow(h, TRUE);
 	}
 	else if ((temp_net_type == NET_TYPE_PCAP) &&
-		 (network_dev_to_id(temp_pcap_dev) > 0))
+		 (network_dev_to_id(temp_host_dev) > 0))
 	{
 		EnableWindow(h, TRUE);
 	}
@@ -1811,7 +1811,7 @@ static void network_recalc_combos(HWND hdlg)
 	}
 	else if (network_card_has_config(temp_net_card) &&
 	         (temp_net_type == NET_TYPE_PCAP) &&
-		  (network_dev_to_id(temp_pcap_dev) > 0))
+		  (network_dev_to_id(temp_host_dev) > 0))
 	{
 		EnableWindow(h, TRUE);
 	}
@@ -1862,7 +1862,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				mbstowcs(lptsTemp, network_devs[c].description, strlen(network_devs[c].description) + 1);
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM) lptsTemp);
 			}
-			SendMessage(h, CB_SETCURSEL, network_dev_to_id(temp_pcap_dev), 0);
+			SendMessage(h, CB_SETCURSEL, network_dev_to_id(temp_host_dev), 0);
 
 			/*NIC config*/
 			h = GetDlgItem(hdlg, IDC_COMBO_NET);
@@ -1927,8 +1927,8 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 
 					h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
-					memset(temp_pcap_dev, '\0', sizeof(temp_pcap_dev));
-					strcpy(temp_pcap_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
+					memset(temp_host_dev, '\0', sizeof(temp_host_dev));
+					strcpy(temp_host_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
 
 					network_recalc_combos(hdlg);
 					break;
@@ -1964,8 +1964,8 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			temp_net_type = SendMessage(h, CB_GETCURSEL, 0, 0);
 
 			h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
-			memset(temp_pcap_dev, '\0', sizeof(temp_pcap_dev));
-			strcpy(temp_pcap_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
+			memset(temp_host_dev, '\0', sizeof(temp_host_dev));
+			strcpy(temp_host_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
 
 			h = GetDlgItem(hdlg, IDC_COMBO_NET);
 			temp_net_card = settings_list_to_network[SendMessage(h, CB_GETCURSEL, 0, 0)];

@@ -51,15 +51,15 @@
  * NOTE:	Still need to figure out a way to load/save ConfigSys and
  *		HardRAM stuff. Needs to be linked in to the NVR code.
  *
- * Version:	@(#)m_xt_t1000.c	1.0.3	2018/03/12
+ * Version:	@(#)m_xt_t1000.c	1.0.4	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
+ *		John Elliott, <jce@seasip.info>
  *
  *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
- *		Copyright 2018 Sarah Walker.
+ *		Copyright 2017,2018 John Elliott.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -784,7 +784,7 @@ t1000_read_roml(uint32_t addr, void *priv)
 }
 
 
-device_t *
+const device_t *
 t1000_get_device(void)
 {
     return(&t1000_video_device);
@@ -792,7 +792,7 @@ t1000_get_device(void)
 
 
 void
-machine_xt_t1000_init(machine_t *model)
+machine_xt_t1000_init(const machine_t *model)
 {
     FILE *f;
     int pg;
@@ -862,7 +862,7 @@ machine_xt_t1000_init(machine_t *model)
 }
 
 
-device_t *
+const device_t *
 t1200_get_device(void)
 {
     return(&t1200_video_device);
@@ -870,7 +870,7 @@ t1200_get_device(void)
 
 
 void
-machine_xt_t1200_init(machine_t *model)
+machine_xt_t1200_init(const machine_t *model)
 {
     int pg;
 

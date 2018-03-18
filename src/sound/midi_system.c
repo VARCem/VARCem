@@ -8,7 +8,7 @@
  *
  *		Interface to system MIDI driver.
  *
- * Version:	@(#)midi_system.c	1.0.2	2018/03/10
+ * Version:	@(#)midi_system.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,7 @@
 #include "midi_system.h"
 
 
-void* system_midi_init(device_t *info)
+void* system_midi_init(const device_t *info)
 {
         midi_device_t* dev = malloc(sizeof(midi_device_t));
         memset(dev, 0, sizeof(midi_device_t));
@@ -76,7 +76,7 @@ int system_midi_available(void)
         return plat_midi_get_num_devs();
 }
 
-static device_config_t system_midi_config[] =
+static const device_config_t system_midi_config[] =
 {
         {
                 .name = "midi",
@@ -89,7 +89,7 @@ static device_config_t system_midi_config[] =
         }
 };
 
-device_t system_midi_device =
+const device_t system_midi_device =
 {
         SYSTEM_MIDI_NAME,
         0, 0,

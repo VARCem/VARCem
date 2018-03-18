@@ -8,7 +8,7 @@
  *
  *		Definitions for the Compaq CGA driver.
  *
- * Version:	@(#)vid_cga_compaq.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_cga_compaq.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,8 +40,8 @@
 
 
 #ifdef EMU_DEVICE_H
-extern device_t compaq_cga_device;
-extern device_t compaq_cga_2_device;
+extern const device_t compaq_cga_device;
+extern const device_t compaq_cga_2_device;
 #endif
 
 

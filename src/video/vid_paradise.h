@@ -8,7 +8,7 @@
  *
  *		Definitions for the Paradise driver.
  *
- * Version:	@(#)vid_paradise.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_paradise.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,12 +40,12 @@
 # define VIDEO_PARADISE_H
 
 
-extern device_t paradise_pvga1a_pc2086_device;
-extern device_t paradise_pvga1a_pc3086_device;
-extern device_t paradise_pvga1a_device;
-extern device_t paradise_wd90c11_megapc_device;
-extern device_t paradise_wd90c11_device;
-extern device_t paradise_wd90c30_device;
+extern const device_t paradise_pvga1a_pc2086_device;
+extern const device_t paradise_pvga1a_pc3086_device;
+extern const device_t paradise_pvga1a_device;
+extern const device_t paradise_wd90c11_megapc_device;
+extern const device_t paradise_wd90c11_device;
+extern const device_t paradise_wd90c30_device;
 
 
 #endif	/*VIDEO_PARADISE_H*/

@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.1	2018/02/14
+ * Version:	@(#)m_tandy.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -141,7 +141,7 @@ typedef struct {
 } tandy_t;
 
 
-static scancode scancode_tandy[512] = {
+static const scancode scancode_tandy[512] = {
     { {-1},       {-1}       }, { {0x01, -1}, {0x81, -1} },
     { {0x02, -1}, {0x82, -1} }, { {0x03, -1}, {0x83, -1} },
     { {0x04, -1}, {0x84, -1} }, { {0x05, -1}, {0x85, -1} },
@@ -1373,7 +1373,7 @@ vid_init(tandy_t *dev)
 }
 
 
-static device_config_t vid_config[] = {
+static const device_config_t vid_config[] = {
     {
 	"display_type", "Display type", CONFIG_SELECTION, "", TANDY_RGB,
 	{
@@ -1394,7 +1394,7 @@ static device_config_t vid_config[] = {
 };
 
 
-static device_t vid_device = {
+static const device_t vid_device = {
     "Tandy 1000",
     0, 0,
     NULL, vid_close, NULL,
@@ -1405,7 +1405,7 @@ static device_t vid_device = {
     vid_config
 };
 
-static device_t vid_device_hx = {
+static const device_t vid_device_hx = {
     "Tandy 1000 HX",
     0, 0,
     NULL, vid_close, NULL,
@@ -1416,7 +1416,7 @@ static device_t vid_device_hx = {
     vid_config
 };
 
-static device_t vid_device_sl = {
+static const device_t vid_device_sl = {
     "Tandy 1000SL2",
     0, 1,
     NULL, vid_close, NULL,
@@ -1428,14 +1428,14 @@ static device_t vid_device_sl = {
 };
 
 
-device_t *
+const device_t *
 tandy1k_get_device(void)
 {
     return &vid_device;
 }
 
 
-device_t *
+const device_t *
 tandy1k_hx_get_device(void)
 {
     return &vid_device_hx;
@@ -1521,7 +1521,7 @@ eep_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static void *
-eep_init(device_t *info)
+eep_init(const device_t *info)
 {
     t1keep_t *eep;
     FILE *f = NULL;
@@ -1568,7 +1568,7 @@ eep_close(void *priv)
 }
 
 
-static device_t eep_device = {
+static const device_t eep_device = {
     "Tandy 1000 EEPROM",
     0, 0,
     eep_init, eep_close, NULL,
@@ -1712,7 +1712,7 @@ init_rom(tandy_t *dev)
 
 
 void
-machine_tandy1k_init(machine_t *model)
+machine_tandy1k_init(const machine_t *model)
 {
     tandy_t *dev;
 

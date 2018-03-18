@@ -8,7 +8,7 @@
  *
  *		Definitions for the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xt_xi8088.h	1.0.1	2018/03/05
+ * Version:	@(#)m_xt_xi8088.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,7 @@
 
 
 #ifdef EMU_DEVICE_H
-extern device_t	xi8088_device;
+extern const device_t	xi8088_device;
 #endif
 
 

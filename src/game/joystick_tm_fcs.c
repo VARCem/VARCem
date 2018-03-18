@@ -8,7 +8,7 @@
  *
  *		Implementation of Thrust Master Flight Control System.
  *
- * Version:	@(#)tm_fcs.c	1.0.2	2018/03/10
+ * Version:	@(#)tm_fcs.c	1.0.3	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -112,7 +112,7 @@ static void tm_fcs_a0_over(void *p)
 {
 }
 
-joystick_if_t joystick_tm_fcs =
+const joystick_if_t joystick_tm_fcs =
 {
         "Thrustmaster Flight Control System",
         tm_fcs_init,

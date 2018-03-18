@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.2	2018/02/28
+ * Version:	@(#)keyboard.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,7 +55,7 @@ static int	oldkey[512];
 #if 0
 static int	keydelay[512];
 #endif
-static scancode	*scan_table;		/* scancode table for keyboard */
+static const scancode	*scan_table;	/* scancode table for keyboard */
 
 static uint8_t	caps_lock = 0;
 static uint8_t	num_lock = 0;
@@ -79,7 +79,7 @@ keyboard_init(void)
 
 
 void
-keyboard_set_table(scancode *ptr)
+keyboard_set_table(const scancode *ptr)
 {
     scan_table = ptr;
 }
@@ -110,7 +110,7 @@ fake_shift_needed(uint16_t scan)
 void
 key_process(uint16_t scan, int down)
 {
-    scancode *codes = scan_table;
+    const scancode *codes = scan_table;
     int c;
 
     if (! keyboard_scan) return;
@@ -250,7 +250,7 @@ keyboard_input(int down, uint16_t scan)
 static uint8_t
 keyboard_do_break(uint16_t scan)
 {
-    scancode *codes = scan_table;
+    const scancode *codes = scan_table;
 
     if (AT && ((keyboard_mode & 3) == 3)) {
 	if (!keyboard_set3_all_break && !recv_key[scan] &&
@@ -304,7 +304,7 @@ keyboard_get_states(uint8_t *cl, uint8_t *nl, uint8_t *sl)
 void
 keyboard_set_states(uint8_t cl, uint8_t nl, uint8_t sl)
 {
-    scancode *codes = scan_table;
+    const scancode *codes = scan_table;
 
     int i;
 

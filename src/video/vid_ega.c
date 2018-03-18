@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.3	2018/03/08
+ * Version:	@(#)vid_ega.c	1.0.4	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1009,7 +1009,7 @@ void ega_init(ega_t *ega, int monitor_type, int is_mono)
 }
 
 
-static void *ega_standalone_init(device_t *info)
+static void *ega_standalone_init(const device_t *info)
 {
         ega_t *ega = malloc(sizeof(ega_t));
         int monitor_type;
@@ -1154,7 +1154,7 @@ static void LoadFontxFile(wchar_t *fname)
 	fclose(mfile);
 }
 
-void *jega_standalone_init(device_t *info)
+void *jega_standalone_init(const device_t *info)
 {
         ega_t *ega = (ega_t *)ega_standalone_init(info);
 
@@ -1203,7 +1203,7 @@ static void ega_speed_changed(void *p)
 }
 
 
-static device_config_t ega_config[] =
+static const device_config_t ega_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 256,
@@ -1264,7 +1264,7 @@ static device_config_t ega_config[] =
 };
 
 
-device_t ega_device =
+const device_t ega_device =
 {
         "EGA",
         DEVICE_ISA,
@@ -1277,7 +1277,7 @@ device_t ega_device =
         ega_config
 };
 
-device_t cpqega_device =
+const device_t cpqega_device =
 {
         "Compaq EGA",
         DEVICE_ISA,
@@ -1290,7 +1290,7 @@ device_t cpqega_device =
         ega_config
 };
 
-device_t sega_device =
+const device_t sega_device =
 {
         "SuperEGA",
         DEVICE_ISA,
@@ -1304,7 +1304,7 @@ device_t sega_device =
 };
 
 #ifdef JEGA
-device_t jega_device =
+const device_t jega_device =
 {
         "AX JEGA",
         DEVICE_ISA,

@@ -8,10 +8,12 @@
  *
  *		Definitions for the IMD floppy image format.
  *
- * Version:	@(#)floppy_imd.h	1.0.1	2018/02/14
+ * Version:	@(#)floppy_imd.h	1.0.2	2018/03/17
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,7 +41,6 @@
 extern void imd_init(void);
 extern void imd_load(int drive, wchar_t *fn);
 extern void imd_close(int drive);
-extern void imd_seek(int drive, int track);
 
 
 #endif	/*EMU_FLOPPY_IMD_H*/

@@ -9,11 +9,13 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.h	1.0.2	2018/03/04
+ * Version:	@(#)fdc.h	1.0.3	2018/03/17
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -48,8 +50,8 @@
 #define FDC_FLAG_MORE_TRACKS	0x40	/* W83877F, W83977F, PC87306, PC87309 */
 #define FDC_FLAG_NSC		0x80	/* PC87306, PC87309 */
 
-typedef struct
-{
+
+typedef struct {
     uint8_t	dor, stat, command, dat, st0, swap;
     uint8_t	swwp, disable_write;
     uint8_t	params[256], res[256];
@@ -97,6 +99,7 @@ typedef struct
     int64_t	time;
     int64_t	watchdog_timer, watchdog_count;
 } fdc_t;
+
 
 extern void	fdc_remove(fdc_t *fdc);
 extern void	fdc_poll(fdc_t *fdc);
@@ -167,7 +170,9 @@ extern void	fdc_set_base(fdc_t *fdc, int base);
 extern int	fdc_getdata(fdc_t *fdc, int last);
 extern int	fdc_data(fdc_t *fdc, uint8_t data);
 
-extern void	fdc_sectorid(fdc_t *fdc, uint8_t track, uint8_t side, uint8_t sector, uint8_t size, uint8_t crc1, uint8_t crc2);
+extern void	fdc_sectorid(fdc_t *fdc, uint8_t track, uint8_t side,
+			     uint8_t sector, uint8_t size, uint8_t crc1,
+			     uint8_t crc2);
 
 extern uint8_t	fdc_read(uint16_t addr, void *priv);
 extern void	fdc_reset(void *priv);
@@ -175,14 +180,14 @@ extern void	fdc_reset(void *priv);
 extern uint8_t	fdc_ps1_525(void);
 
 #ifdef EMU_DEVICE_H
-extern device_t	fdc_xt_device;
-extern device_t	fdc_pcjr_device;
-extern device_t	fdc_at_device;
-extern device_t	fdc_at_actlow_device;
-extern device_t	fdc_at_ps1_device;
-extern device_t	fdc_at_smc_device;
-extern device_t	fdc_at_winbond_device;
-extern device_t	fdc_at_nsc_device;
+extern const device_t	fdc_xt_device;
+extern const device_t	fdc_pcjr_device;
+extern const device_t	fdc_at_device;
+extern const device_t	fdc_at_actlow_device;
+extern const device_t	fdc_at_ps1_device;
+extern const device_t	fdc_at_smc_device;
+extern const device_t	fdc_at_winbond_device;
+extern const device_t	fdc_at_nsc_device;
 #endif
 
 

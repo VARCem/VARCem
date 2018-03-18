@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_mfm_xt.c	1.0.1	2018/02/14
+ * Version:	@(#)hdc_mfm_xt.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -826,7 +826,7 @@ mfm_set_switches(mfm_t *mfm)
 
 
 static void *
-xebec_init(device_t *info)
+xebec_init(const device_t *info)
 {
     int i, c = 0;
 
@@ -881,7 +881,7 @@ xebec_available(void)
 }
 
 
-device_t mfm_xt_xebec_device = {
+const device_t mfm_xt_xebec_device = {
     "IBM PC Fixed Disk Adapter",
     DEVICE_ISA,
     0,
@@ -892,7 +892,7 @@ device_t mfm_xt_xebec_device = {
 
 
 static void *
-dtc5150x_init(device_t *info)
+dtc5150x_init(const device_t *info)
 {
     int i, c = 0;
 
@@ -936,7 +936,7 @@ dtc5150x_available(void)
 }
 
 
-device_t mfm_xt_dtc5150x_device = {
+const device_t mfm_xt_dtc5150x_device = {
     "DTC 5150X",
     DEVICE_ISA,
     0,

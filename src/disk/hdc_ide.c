@@ -9,7 +9,7 @@
  *		Implementation of the IDE emulation for hard disks and ATAPI
  *		CD-ROM devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.7	2018/03/12
+ * Version:	@(#)hdc_ide.c	1.0.9	2018/03/16
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -38,11 +38,12 @@
 #define __USE_LARGEFILE64
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdarg.h>
-#include <inttypes.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
@@ -757,6 +758,25 @@ void ide_ter_disable_cond();
 void ide_qua_disable_cond();
 
 
+void ide_destroy_buffers(void)
+{
+	int d;
+
+	for (d = 0; d < (IDE_NUM+XTIDE_NUM); d++)
+	{
+		if (ide_drives[d].buffer) {
+			free(ide_drives[d].buffer);
+			ide_drives[d].buffer = NULL;
+		}
+
+		if (ide_drives[d].sector_buffer) {
+			free(ide_drives[d].sector_buffer);
+			ide_drives[d].sector_buffer = NULL;
+		}
+	}
+}
+
+
 void ide_reset(void)
 {
 	int c, d;
@@ -782,8 +802,18 @@ void ide_reset(void)
 		ide_drives[d].atastat = READY_STAT | DSC_STAT;
 		ide_drives[d].service = 0;
 		ide_drives[d].board = d >> 1;
+
+		if (ide_drives[d].buffer) {
+			free(ide_drives[d].buffer);
+			ide_drives[d].buffer = NULL;
+		}
+
+		if (ide_drives[d].sector_buffer) {
+			free(ide_drives[d].sector_buffer);
+			ide_drives[d].sector_buffer = NULL;
+		}
 	}
-		
+
 	idecallback[0]=idecallback[1]=0LL;
 	idecallback[2]=idecallback[3]=0LL;
 	idecallback[4]=0LL;
@@ -796,12 +826,14 @@ void ide_reset(void)
 		{
 			ide_log("Found IDE hard disk on channel %i\n", hdd[d].ide_channel);
 			loadhd(&ide_drives[hdd[d].ide_channel], d, hdd[d].fn);
+			ide_drives[hdd[d].ide_channel].sector_buffer = (uint8_t *) malloc(256*512);
 			if (++c >= (IDE_NUM+XTIDE_NUM)) break;
 		}
 		if ((hdd[d].bus==HDD_BUS_XTIDE) && (hdd[d].xtide_channel < XTIDE_NUM))
 		{
 			ide_log("Found XT IDE hard disk on channel %i\n", hdd[d].xtide_channel);
 			loadhd(&ide_drives[hdd[d].xtide_channel | 8], d, hdd[d].fn);
+			ide_drives[hdd[d].xtide_channel | 8].sector_buffer = (uint8_t *) malloc(256*512);
 			if (++c >= (IDE_NUM+XTIDE_NUM)) break;
 		}
 	}
@@ -809,14 +841,13 @@ void ide_reset(void)
 
 	for (d = 0; d < IDE_NUM; d++)
 	{
-		if (ide_drive_is_zip(&ide_drives[d]) && (ide_drives[d].type != IDE_HDD))
-		{
+		if (ide_drive_is_zip(&ide_drives[d]) && (ide_drives[d].type == IDE_NONE))
 			ide_drives[d].type = IDE_ZIP;
-		}
-		else if (ide_drive_is_cdrom(&ide_drives[d]) && (ide_drives[d].type != IDE_HDD))
-		{
+		else if (ide_drive_is_cdrom(&ide_drives[d]) && (ide_drives[d].type == IDE_NONE))
 			ide_drives[d].type = IDE_CDROM;
-		}
+
+		if (ide_drives[d].type != IDE_NONE)
+			ide_drives[d].buffer = (uint16_t *) malloc(65536 * sizeof(uint16_t));
 
 		ide_set_signature(&ide_drives[d]);
 
@@ -2758,7 +2789,7 @@ void secondary_ide_check(void)
  * keeping a zillion of duplicate functions around.
  */
 static void *
-ide_sainit(device_t *info)
+ide_sainit(const device_t *info)
 {
     switch(info->local) {
 	case 0:		/* ISA, single-channel */
@@ -2788,7 +2819,7 @@ ide_sainit(device_t *info)
 		break;
     }
 
-    return(info);
+    return((void *)info);
 }
 
 
@@ -2800,7 +2831,7 @@ ide_saclose(void *priv)
 }
 
 
-device_t ide_isa_device = {
+const device_t ide_isa_device = {
     "ISA PC/AT IDE Controller",
     DEVICE_ISA | DEVICE_AT,
     0,
@@ -2809,7 +2840,7 @@ device_t ide_isa_device = {
     NULL
 };
 
-device_t ide_isa_2ch_device = {
+const device_t ide_isa_2ch_device = {
     "ISA PC/AT IDE Controller (Dual-Channel)",
     DEVICE_ISA | DEVICE_AT,
     2,
@@ -2818,7 +2849,7 @@ device_t ide_isa_2ch_device = {
     NULL
 };
 
-device_t ide_isa_2ch_opt_device = {
+const device_t ide_isa_2ch_opt_device = {
     "ISA PC/AT IDE Controller (Single/Dual)",
     DEVICE_ISA | DEVICE_AT,
     3,
@@ -2827,7 +2858,7 @@ device_t ide_isa_2ch_opt_device = {
     NULL
 };
 
-device_t ide_vlb_device = {
+const device_t ide_vlb_device = {
     "VLB IDE Controller",
     DEVICE_VLB | DEVICE_AT,
     4,
@@ -2836,7 +2867,7 @@ device_t ide_vlb_device = {
     NULL
 };
 
-device_t ide_vlb_2ch_device = {
+const device_t ide_vlb_2ch_device = {
     "VLB IDE Controller (Dual-Channel)",
     DEVICE_VLB | DEVICE_AT,
     6,
@@ -2845,7 +2876,7 @@ device_t ide_vlb_2ch_device = {
     NULL
 };
 
-device_t ide_pci_device = {
+const device_t ide_pci_device = {
     "PCI IDE Controller",
     DEVICE_PCI | DEVICE_AT,
     8,
@@ -2854,7 +2885,7 @@ device_t ide_pci_device = {
     NULL
 };
 
-device_t ide_pci_2ch_device = {
+const device_t ide_pci_2ch_device = {
     "PCI IDE Controller (Dual-Channel)",
     DEVICE_PCI | DEVICE_AT,
     10,

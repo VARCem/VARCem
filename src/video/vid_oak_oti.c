@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.5	2018/03/05
+ * Version:	@(#)vid_oak_oti.c	1.0.6	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -242,7 +242,7 @@ oti_recalctimings(svga_t *svga)
 
 
 static void *
-oti_init(device_t *info)
+oti_init(const device_t *info)
 {
     oti_t *oti = malloc(sizeof(oti_t));
     wchar_t *romfn = NULL;
@@ -340,7 +340,7 @@ oti067_available(void)
 }
 
 
-static device_config_t oti067_config[] =
+static const device_config_t oti067_config[] =
 {
 	{
 		"memory", "Memory size", CONFIG_SELECTION, "", 512,
@@ -369,7 +369,7 @@ oti077_available(void)
 }
 
 
-static device_config_t oti077_config[] =
+static const device_config_t oti077_config[] =
 {
 	{
 		"memory", "Memory size", CONFIG_SELECTION, "", 1024,
@@ -393,7 +393,7 @@ static device_config_t oti077_config[] =
 	}
 };
 
-device_t oti037c_device =
+const device_t oti037c_device =
 {
 	"Oak OTI-037C",
 	DEVICE_ISA,
@@ -406,7 +406,7 @@ device_t oti037c_device =
 	oti067_config
 };
 
-device_t oti067_device =
+const device_t oti067_device =
 {
 	"Oak OTI-067",
 	DEVICE_ISA,
@@ -419,7 +419,7 @@ device_t oti067_device =
 	oti067_config
 };
 
-device_t oti077_device =
+const device_t oti077_device =
 {
 	"Oak OTI-077",
 	DEVICE_ISA,

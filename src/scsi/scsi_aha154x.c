@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.4	2018/03/08
+ * Version:	@(#)scsi_aha154x.c	1.0.5	2018/03/15
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -753,7 +753,7 @@ aha_setnvr(x54x_t *dev)
 
 /* General initialization routine for all boards. */
 static void *
-aha_init(device_t *info)
+aha_init(const device_t *info)
 {
     x54x_t *dev;
 
@@ -897,7 +897,7 @@ aha_init(device_t *info)
 }
 
 
-static device_config_t aha_154xb_config[] = {
+static const device_config_t aha_154xb_config[] = {
         {
 		"base", "Address", CONFIG_HEX16, "", 0x334,
                 {
@@ -1028,7 +1028,7 @@ static device_config_t aha_154xb_config[] = {
 };
 
 
-static device_config_t aha_154x_config[] = {
+static const device_config_t aha_154x_config[] = {
         {
 		"base", "Address", CONFIG_HEX16, "", 0x334,
                 {
@@ -1127,7 +1127,7 @@ static device_config_t aha_154x_config[] = {
 };
 
 
-device_t aha1540b_device = {
+const device_t aha1540b_device = {
     "Adaptec AHA-1540B",
     DEVICE_ISA | DEVICE_AT,
     AHA_154xB,
@@ -1136,7 +1136,7 @@ device_t aha1540b_device = {
     aha_154xb_config
 };
 
-device_t aha1542c_device = {
+const device_t aha1542c_device = {
     "Adaptec AHA-1542C",
     DEVICE_ISA | DEVICE_AT,
     AHA_154xC,
@@ -1145,7 +1145,7 @@ device_t aha1542c_device = {
     aha_154x_config
 };
 
-device_t aha1542cf_device = {
+const device_t aha1542cf_device = {
     "Adaptec AHA-1542CF",
     DEVICE_ISA | DEVICE_AT,
     AHA_154xCF,
@@ -1154,7 +1154,7 @@ device_t aha1542cf_device = {
     aha_154x_config
 };
 
-device_t aha1640_device = {
+const device_t aha1640_device = {
     "Adaptec AHA-1640",
     DEVICE_MCA,
     AHA_1640,

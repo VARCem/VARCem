@@ -688,7 +688,7 @@ clobber:	clean
 		@echo Cleaning executables..
 		@-rm -f *.d 2>NUL
 		@-rm -f *.exe 2>NUL
-ifneq ($(PROFILER), y)
+ifeq ($(PROFILER), y)
 		@-rm -f *.map 2>NUL
 endif
 		@-rm -f win/*.manifest 2>NUL

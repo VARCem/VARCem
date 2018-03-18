@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Blaster driver.
  *
- * Version:	@(#)sound_sb.h	1.0.1	2018/02/14
+ * Version:	@(#)sound_sb.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,15 +53,15 @@
 #define SND_PAS16	10	/* Pro Audio Spectrum 16 */
 
 
-extern device_t sb_1_device;
-extern device_t sb_15_device;
-extern device_t sb_mcv_device;
-extern device_t sb_2_device;
-extern device_t sb_pro_v1_device;
-extern device_t sb_pro_v2_device;
-extern device_t sb_pro_mcv_device;
-extern device_t sb_16_device;
-extern device_t sb_awe32_device;
+extern const device_t sb_1_device;
+extern const device_t sb_15_device;
+extern const device_t sb_mcv_device;
+extern const device_t sb_2_device;
+extern const device_t sb_pro_v1_device;
+extern const device_t sb_pro_v2_device;
+extern const device_t sb_pro_mcv_device;
+extern const device_t sb_16_device;
+extern const device_t sb_awe32_device;
 
 
 #endif	/*SOUND_SNDB_H*/

@@ -8,7 +8,7 @@
  *
  *		Definitions for the PCjs JSON floppy image format.
  *
- * Version:	@(#)floppy_json.h	1.0.1	2018/02/14
+ * Version:	@(#)floppy_json.h	1.0.2	2018/03/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -48,10 +48,9 @@
 # define EMU_FLOPPY_JSON_H
 
 
-//extern void	json_init(void);
+extern void	json_init(void);
 extern void	json_load(int drive, wchar_t *fn);
 extern void	json_close(int drive);
-//extern void	json_seek(int drive, int track);
 
 
 #endif	/*EMU_FLOPPY_JSON_H*/

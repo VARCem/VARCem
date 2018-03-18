@@ -8,7 +8,7 @@
  *
  *		Definitions for the TVGA driver.
  *
- * Version:	@(#)vid_tvga.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_tvga.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define VIDEO_TVGA_H
 
 
-extern device_t tvga8900d_device;
+extern const device_t tvga8900d_device;
 
 
 #endif	/*VIDEO_TVGA_H*/

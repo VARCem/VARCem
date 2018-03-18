@@ -8,7 +8,7 @@
  *
  *		Handling of the PS/2 series CMOS devices.
  *
- * Version:	@(#)nvr_ps2.c	1.0.4	2018/03/12
+ * Version:	@(#)nvr_ps2.c	1.0.5	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -101,7 +101,7 @@ ps2_nvr_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void *
-ps2_nvr_init(device_t *info)
+ps2_nvr_init(const device_t *info)
 {
     ps2_nvr_t *nvr;
     FILE *f = NULL;
@@ -167,7 +167,7 @@ ps2_nvr_close(void *priv)
 }
 
 
-device_t ps2_nvr_device = {
+const device_t ps2_nvr_device = {
     "PS/2 Secondary NVRAM",
     0, 0,
     ps2_nvr_init, ps2_nvr_close, NULL,

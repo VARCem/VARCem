@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.1	2018/02/14
+ * Version:	@(#)m_ps2_isa.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -186,7 +186,7 @@ static void ps2board_init(void)
 
 
 void
-machine_ps2_m30_286_init(machine_t *model)
+machine_ps2_m30_286_init(const machine_t *model)
 {
         machine_common_init(model);
 	device_add(&fdc_at_ps1_device);

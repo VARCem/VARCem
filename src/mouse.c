@@ -11,7 +11,7 @@
  * TODO:	Add the Genius bus- and serial mouse.
  *		Remove the '3-button' flag from mouse types.
  *
- * Version:	@(#)mouse.c	1.0.1	2018/02/14
+ * Version:	@(#)mouse.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,8 +59,8 @@
 
 
 typedef struct {
-    const char  *internal_name;
-    device_t    *device;
+    const char		*internal_name;
+    const device_t	*device;
 } mouse_t;
 
 
@@ -71,14 +71,14 @@ int	mouse_x,
 	mouse_buttons;
 
 
-static device_t mouse_none_device = {
+static const device_t mouse_none_device = {
     "None",
     0, MOUSE_TYPE_NONE,
     NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL
 };
-static device_t mouse_internal_device = {
+static const device_t mouse_internal_device = {
     "Internal Mouse",
     0, MOUSE_TYPE_INTERNAL,
     NULL, NULL, NULL,
@@ -87,7 +87,7 @@ static device_t mouse_internal_device = {
 };
 
 
-static mouse_t mouse_devices[] = {
+static const mouse_t mouse_devices[] = {
     { "none",		&mouse_none_device	},
     { "internal",	&mouse_internal_device	},
     { "logibus",	&mouse_logibus_device	},
@@ -102,9 +102,9 @@ static mouse_t mouse_devices[] = {
 };
 
 
-static device_t	*mouse_curr;
 static void	*mouse_priv;
 static int	mouse_nbut;
+static device_t	mouse_dev;
 
 
 /* Initialize the mouse module. */
@@ -116,7 +116,6 @@ mouse_init(void)
     mouse_buttons = 0x00;
 
     mouse_type = MOUSE_TYPE_NONE;
-    mouse_curr = NULL;
     mouse_priv = NULL;
     mouse_nbut = 0;
 }
@@ -125,11 +124,11 @@ mouse_init(void)
 void
 mouse_close(void)
 {
-    if (mouse_curr == NULL) return;
+    if (mouse_type == MOUSE_TYPE_NONE) return;
 
-    mouse_curr = NULL;
     mouse_priv = NULL;
     mouse_nbut = 0;
+    mouse_type = MOUSE_TYPE_NONE;
 }
 
 
@@ -137,7 +136,7 @@ void
 mouse_reset(void)
 {
     /* Abort if already initialized by a machine with internal mouse. */
-    if (mouse_curr != NULL) return;
+    if (mouse_type == MOUSE_TYPE_NONE) return;
 
     pclog("MOUSE: reset(type=%d, '%s')\n",
 	mouse_type, mouse_devices[mouse_type].device->name);
@@ -149,10 +148,12 @@ mouse_reset(void)
     /* If no mouse configured, we're done. */
     if (mouse_type == 0) return;
 
-    mouse_curr = mouse_devices[mouse_type].device;
-
-    if (mouse_curr != NULL)
-	mouse_priv = device_add(mouse_curr);
+    /* Copy the (R/O) mouse info. */
+    if (mouse_devices[mouse_type].device != NULL) {
+	memcpy(&mouse_dev, mouse_devices[mouse_type].device,
+					sizeof(device_t));
+	mouse_priv = device_add(&mouse_dev);
+    }
 }
 
 
@@ -169,14 +170,14 @@ mouse_process(void)
 {
     static int poll_delay = 2;
 
-    if (mouse_curr == NULL) return;
+    if (mouse_devices[mouse_type].device == NULL) return;
 
     if (--poll_delay) return;
 
     mouse_poll();
 
-    if (mouse_curr->available != NULL) {
-    	mouse_curr->available(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv);
+    if (mouse_dev.available != NULL) {
+    	mouse_dev.available(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv);
 
 	/* Reset mouse deltas. */
 	mouse_x = mouse_y = mouse_z = 0;
@@ -191,7 +192,7 @@ mouse_set_poll(int (*func)(int,int,int,int,void *), void *arg)
 {
     if (mouse_type != MOUSE_TYPE_INTERNAL) return;
 
-    mouse_curr->available = func;
+    mouse_dev.available = func;
     mouse_priv = arg;
 }
 
@@ -235,7 +236,7 @@ mouse_has_config(int mouse)
 }
 
 
-device_t *
+const device_t *
 mouse_get_device(int mouse)
 {
     return(mouse_devices[mouse].device);

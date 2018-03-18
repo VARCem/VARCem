@@ -9,7 +9,7 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_xt_t1000_vid.c	1.0.4	2018/03/10
+ * Version:	@(#)m_xt_t1000_vid.c	1.0.5	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,45 +74,50 @@ static uint8_t  language;
 static uint8_t st_video_options;
 static int8_t st_display_internal = -1;
 
-void t1000_video_options_set(uint8_t options)
-{
-	st_video_options = options & 1;
-	st_video_options |= language;
-}
 
-void t1000_display_set(uint8_t internal)
+void
+t1000_video_options_set(uint8_t options)
 {
-	st_display_internal = (int8_t)internal;
-}
-
-uint8_t t1000_display_get()
-{
-	return (uint8_t)st_display_internal;
+    st_video_options = options & 1;
+    st_video_options |= language;
 }
 
 
-typedef struct t1000_t
+void
+t1000_display_set(uint8_t internal)
 {
-        mem_mapping_t mapping;
+    st_display_internal = (int8_t)internal;
+}
 
-	cga_t cga;		/* The CGA is used for the external 
+
+uint8_t
+t1000_display_get(void)
+{
+    return((uint8_t)st_display_internal);
+}
+
+
+typedef struct t1000_t {
+    mem_mapping_t mapping;
+
+    cga_t cga;			/* The CGA is used for the external 
 				 * display; most of its registers are
 				 * ignored by the plasma display. */
 
-	int font;		/* Current font, 0-3 */
-	int enabled;		/* Hardware enabled, 0 or 1 */
-	int internal;		/* Using internal display? */
-	uint8_t	attrmap;	/* Attribute mapping register */
+    int font;			/* Current font, 0-3 */
+    int enabled;		/* Hardware enabled, 0 or 1 */
+    int internal;		/* Using internal display? */
+    uint8_t	attrmap;	/* Attribute mapping register */
 
-        int dispontime, dispofftime;
-        
-        int linepos, displine;
-        int vc;
-        int dispon;
-        int vsynctime;
-	uint8_t video_options;
+    int dispontime, dispofftime;
 
-        uint8_t *vram;
+    int linepos, displine;
+    int vc;
+    int dispon;
+    int vsynctime;
+    uint8_t video_options;
+
+    uint8_t *vram;
 } t1000_t;
 
 
@@ -122,7 +127,8 @@ static uint8_t t1000_read(uint32_t addr, void *p);
 static void t1000_recalcattrs(t1000_t *t1000);
 
 
-static void t1000_out(uint16_t addr, uint8_t val, void *p)
+static void
+t1000_out(uint16_t addr, uint8_t val, void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
         switch (addr)
@@ -158,7 +164,9 @@ static void t1000_out(uint16_t addr, uint8_t val, void *p)
         }
 }
 
-static uint8_t t1000_in(uint16_t addr, void *p)
+
+static uint8_t
+t1000_in(uint16_t addr, void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
 	uint8_t val;
@@ -178,9 +186,8 @@ static uint8_t t1000_in(uint16_t addr, void *p)
 }
 
 
-
-
-static void t1000_write(uint32_t addr, uint8_t val, void *p)
+static void
+t1000_write(uint32_t addr, uint8_t val, void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
         egawrites++;
@@ -189,8 +196,10 @@ static void t1000_write(uint32_t addr, uint8_t val, void *p)
         t1000->vram[addr & 0x3fff] = val;
         cycles -= 4;
 }
-	
-static uint8_t t1000_read(uint32_t addr, void *p)
+
+
+static uint8_t
+t1000_read(uint32_t addr, void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
         egareads++;
@@ -201,8 +210,8 @@ static uint8_t t1000_read(uint32_t addr, void *p)
 }
 
 
-
-static void t1000_recalctimings(t1000_t *t1000)
+static void
+t1000_recalctimings(t1000_t *t1000)
 {
         double disptime;
 	double _dispontime, _dispofftime;
@@ -219,8 +228,10 @@ static void t1000_recalctimings(t1000_t *t1000)
 	t1000->dispofftime = (int)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
+
 /* Draw a row of text in 80-column mode */
-static void t1000_text_row80(t1000_t *t1000)
+static void
+t1000_text_row80(t1000_t *t1000)
 {
 	uint32_t cols[2];
 	int x, c;
@@ -291,8 +302,10 @@ static void t1000_text_row80(t1000_t *t1000)
 	}
 }
 
+
 /* Draw a row of text in 40-column mode */
-static void t1000_text_row40(t1000_t *t1000)
+static void
+t1000_text_row40(t1000_t *t1000)
 {
 	uint32_t cols[2];
 	int x, c;
@@ -367,8 +380,10 @@ static void t1000_text_row40(t1000_t *t1000)
 	}
 }
 
+
 /* Draw a line in CGA 640x200 mode */
-static void t1000_cgaline6(t1000_t *t1000)
+static void
+t1000_cgaline6(t1000_t *t1000)
 {
 	int x, c;
 	uint8_t dat;
@@ -399,9 +414,11 @@ static void t1000_cgaline6(t1000_t *t1000)
 	}
 }
 
+
 /* Draw a line in CGA 320x200 mode. Here the CGA colours are converted to
  * dither patterns: colour 1 to 25% grey, colour 2 to 50% grey */
-static void t1000_cgaline4(t1000_t *t1000)
+static void
+t1000_cgaline4(t1000_t *t1000)
 {
 	int x, c;
 	uint8_t dat, pattern;
@@ -455,7 +472,9 @@ static void t1000_cgaline4(t1000_t *t1000)
 	}
 }
 
-static void t1000_poll(void *p)
+
+static void
+t1000_poll(void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
 
@@ -561,7 +580,9 @@ static void t1000_poll(void *p)
         }
 }
 
-static void t1000_recalcattrs(t1000_t *t1000)
+
+static void
+t1000_recalcattrs(t1000_t *t1000)
 {
 	int n;
 
@@ -658,7 +679,8 @@ static void t1000_recalcattrs(t1000_t *t1000)
 }
 
 
-static void *t1000_init(device_t *info)
+static void *
+t1000_init(const device_t *info)
 {
         t1000_t *t1000 = malloc(sizeof(t1000_t));
         memset(t1000, 0, sizeof(t1000_t));
@@ -689,7 +711,9 @@ static void *t1000_init(device_t *info)
         return t1000;
 }
 
-static void t1000_close(void *p)
+
+static void
+t1000_close(void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
 
@@ -697,14 +721,17 @@ static void t1000_close(void *p)
         free(t1000);
 }
 
-static void t1000_speed_changed(void *p)
+
+static void
+t1000_speed_changed(void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
         
         t1000_recalctimings(t1000);
 }
 
-static device_config_t t1000_config[] = 
+
+static const device_config_t t1000_config[] = 
 {
 	{
 		.name = "display_language",
@@ -729,7 +756,7 @@ static device_config_t t1000_config[] =
 };
 
 
-device_t t1000_video_device = {
+const device_t t1000_video_device = {
     "Toshiba T1000 Video",
     0, 0,
     t1000_init, t1000_close, NULL,
@@ -740,8 +767,7 @@ device_t t1000_video_device = {
     t1000_config
 };
 
-
-device_t t1200_video_device = {
+const device_t t1200_video_device = {
     "Toshiba T1200 Video",
     0, 0,
     t1000_init, t1000_close, NULL,

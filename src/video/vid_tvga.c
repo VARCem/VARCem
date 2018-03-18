@@ -8,7 +8,7 @@
  *
  *		Trident TVGA (8900D) emulation.
  *
- * Version:	@(#)vid_tvga.c	1.0.3	2018/03/04
+ * Version:	@(#)vid_tvga.c	1.0.4	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -313,7 +313,7 @@ void tvga_recalctimings(svga_t *svga)
 }
 
 
-static void *tvga8900d_init(device_t *info)
+static void *tvga8900d_init(const device_t *info)
 {
         tvga_t *tvga = malloc(sizeof(tvga_t));
         memset(tvga, 0, sizeof(tvga_t));
@@ -369,7 +369,7 @@ void tvga_add_status_info(char *s, int max_len, void *p)
         svga_add_status_info(s, max_len, &tvga->svga);
 }
 
-static device_config_t tvga_config[] =
+static const device_config_t tvga_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 1024,
@@ -394,7 +394,7 @@ static device_config_t tvga_config[] =
         }
 };
 
-device_t tvga8900d_device =
+const device_t tvga8900d_device =
 {
         "Trident TVGA 8900D",
         DEVICE_ISA,

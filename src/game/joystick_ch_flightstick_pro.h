@@ -8,7 +8,7 @@
  *
  *		Definitions for the Flight Stick Pro driver.
  *
- * Version:	@(#)joystick_ch_flightstickpro.h	1.0.1	2018/02/14
+ * Version:	@(#)joystick_ch_flightstickpro.h	1.0.2	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -35,4 +35,4 @@
  *   USA.
  */
 
-extern joystick_if_t joystick_ch_flightstick_pro;
+extern const joystick_if_t joystick_ch_flightstick_pro;

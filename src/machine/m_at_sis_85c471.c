@@ -12,7 +12,7 @@
  *
  *		Used by DTK PKM-0038S E-2
  *
- * Version:	@(#)m_at_sis85c471.c	1.0.2	2018/03/07
+ * Version:	@(#)m_at_sis85c471.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -263,7 +263,7 @@ static void sis_85c471_init(void)
 
 
 void
-machine_at_dtk486_init(machine_t *model)
+machine_at_dtk486_init(const machine_t *model)
 {
         machine_at_ide_init(model);
 	device_add(&fdc_at_device);

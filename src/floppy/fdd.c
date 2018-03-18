@@ -8,11 +8,13 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.4	2018/03/14
+ * Version:	@(#)fdd.c	1.0.5	2018/03/16
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -84,8 +86,9 @@ int fdc_indexcount = 52;
 
 fdc_t *fdd_fdc;
 
+d86f_handler_t   d86f_handler[FDD_NUM];
 
-static struct
+static const struct
 {
         wchar_t *ext;
         void (*load)(int drive, wchar_t *fn);
@@ -168,7 +171,7 @@ int	ui_writeprot[FDD_NUM] = {0, 0, 0, 0};
 #define FLAG_IGNORE_DENSEL	 512
 #define FLAG_PS2		1024
 
-static struct
+static const struct
 {
         int max_track;
 	int flags;
@@ -225,12 +228,12 @@ static struct
 
 char *fdd_getname(int type)
 {
-        return drive_types[type].name;
+        return (char *)drive_types[type].name;
 }
 
 char *fdd_get_internal_name(int type)
 {
-        return drive_types[type].internal_name;
+        return (char *)drive_types[type].internal_name;
 }
 
 int fdd_get_from_internal_name(char *s)
@@ -239,7 +242,7 @@ int fdd_get_from_internal_name(char *s)
 	
 	while (strlen(drive_types[c].internal_name))
 	{
-		if (!strcmp(drive_types[c].internal_name, s))
+		if (!strcmp((char *)drive_types[c].internal_name, s))
 			return c;
 		c++;
 	}
@@ -451,6 +454,9 @@ void fdd_load(int drive, wchar_t *fn)
         int c = 0, size;
         wchar_t *p;
         FILE *f;
+
+	pclog("FDD: loading drive %d with '%ls'\n", drive, fn);
+
         if (!fn) return;
         p = plat_get_extension(fn);
         if (!p) return;
@@ -465,7 +471,7 @@ void fdd_load(int drive, wchar_t *fn)
                 {
                         driveloaders[drive] = c;
                         memcpy(floppyfns[drive], fn, (wcslen(fn) << 1) + 2);
-			d86f_initialize_linked_lists(drive);
+			d86f_setup(drive);
                         loaders[c].load(drive, floppyfns[drive]);
                         drive_empty[drive] = 0;
                         fdd_forced_seek(drive, 0);
@@ -474,7 +480,7 @@ void fdd_load(int drive, wchar_t *fn)
                 }
                 c++;
         }
-        pclog("Couldn't load %ls %s\n",fn,p);
+        pclog("FDD: could not load '%ls' %s\n",fn,p);
         drive_empty[drive] = 1;
 	fdd_set_head(drive, 0);
 	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
@@ -483,12 +489,13 @@ void fdd_load(int drive, wchar_t *fn)
 
 void fdd_close(int drive)
 {
+	pclog("FDD: closing drive %d\n", drive);
+
         if (loaders[driveloaders[drive]].close) loaders[driveloaders[drive]].close(drive);
         drive_empty[drive] = 1;
 	fdd_set_head(drive, 0);
         floppyfns[drive][0] = 0;
-	d86f_destroy_linked_lists(drive, 0);
-	d86f_destroy_linked_lists(drive, 1);
+	d86f_destroy(drive);
         drives[drive].hole = NULL;
         drives[drive].poll = NULL;
         drives[drive].seek = NULL;
@@ -712,6 +719,7 @@ void fdd_init(void)
     d86f_init();
     td0_init();
     imd_init();
+    json_init();
 
     fdd_load(0, floppyfns[0]);
     fdd_load(1, floppyfns[1]);

@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.6	2018/03/11
+ * Version:	@(#)emu.h	1.0.7	2018/03/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -117,6 +117,7 @@ extern int	vid_cga_contrast,		/* (C) video */
 		video_fullscreen_scale,		/* (C) video */
 		enable_overscan,		/* (C) video */
 		force_43,			/* (C) video */
+		vid_card,			/* (C) graphics/video card */
 		video_speed;			/* (C) video */
 extern int	serial_enabled[],		/* (C) enable serial ports */
 		lpt_enabled,			/* (C) enable LPT ports */
@@ -126,7 +127,6 @@ extern int	update_icons;			/* (C) enable icons updates */
 #ifdef WALTJE
 extern int	romdos_enabled;			/* (C) enable ROM DOS */
 #endif
-extern int	gfxcard;			/* (C) graphics/video card */
 extern int	sound_is_float,			/* (C) sound uses FP values */
 		GAMEBLASTER,			/* (C) sound option */
 		GUS,				/* (C) sound option */
@@ -138,6 +138,9 @@ extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
 		cpu_use_dynarec,		/* (C) cpu uses/needs Dyna */
 		enable_external_fpu;		/* (C) enable external FPU */
 extern int	enable_sync;			/* (C) enable time sync */
+extern int	network_type;			/* (C) net provider type */
+extern int	network_card;			/* (C) net interface num */
+extern char	network_host[512];		/* (C) host network intf */
 
 
 #ifdef ENABLE_LOG_TOGGLES

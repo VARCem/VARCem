@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.3	2018/03/13
+ * Version:	@(#)device.c	1.0.4	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,8 @@
 #define DEVICE_MAX	256			/* max # of devices */
 
 
-static device_t	*devices[DEVICE_MAX];
 static void	*device_priv[DEVICE_MAX];
+static device_t	*devices[DEVICE_MAX];
 static device_t	*device_current;
 
 
@@ -65,13 +65,13 @@ device_init(void)
 
 
 void *
-device_add(device_t *d)
+device_add(const device_t *d)
 {
     void *priv = NULL;
     int c;
 
     for (c=0; c<256; c++) {
-	if (devices[c] == d) {
+	if (devices[c] == (device_t *)d) {
 		pclog("DEVICE: device already exists!\n");
 		return(NULL);
 	}
@@ -80,7 +80,7 @@ device_add(device_t *d)
     if (c >= DEVICE_MAX)
 	fatal("DEVICE: too many devices\n");
 
-    device_current = d;
+    device_current = (device_t *)d;
 
     if (d->init != NULL) {
 	priv = d->init(d);
@@ -93,7 +93,7 @@ device_add(device_t *d)
 	}
     }
 
-    devices[c] = d;
+    devices[c] = (device_t *)d;
     device_priv[c] = priv;
 
     return(priv);
@@ -102,12 +102,12 @@ device_add(device_t *d)
 
 /* For devices that do not have an init function (internal video etc.) */
 void
-device_add_ex(device_t *d, void *priv)
+device_add_ex(const device_t *d, void *priv)
 {
     int c;
 
     for (c=0; c<256; c++) {
-	if (devices[c] == d) {
+	if (devices[c] == (device_t *)d) {
 		fatal("device_add: device already exists!\n");
 		break;
 	}
@@ -116,9 +116,9 @@ device_add_ex(device_t *d, void *priv)
     if (c >= DEVICE_MAX)
 	fatal("device_add: too many devices\n");
 
-    device_current = d;
+    device_current = (device_t *)d;
 
-    devices[c] = d;
+    devices[c] = (device_t *)d;
     device_priv[c] = priv;
 }
 
@@ -153,7 +153,7 @@ device_reset_all(void)
 
 
 void *
-device_get_priv(device_t *d)
+device_get_priv(const device_t *d)
 {
     int c;
 
@@ -169,7 +169,7 @@ device_get_priv(device_t *d)
 
 
 int
-device_available(device_t *d)
+device_available(const device_t *d)
 {
 #ifdef RELEASE_BUILD
     if (d->flags & DEVICE_NOT_WORKING) return(0);
@@ -228,7 +228,7 @@ device_add_status_info(char *s, int max_len)
 char *
 device_get_config_string(char *s)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name))
@@ -244,7 +244,7 @@ device_get_config_string(char *s)
 int
 device_get_config_int(char *s)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name))
@@ -260,7 +260,7 @@ device_get_config_int(char *s)
 int
 device_get_config_int_ex(char *s, int default_int)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name))
@@ -276,7 +276,7 @@ device_get_config_int_ex(char *s, int default_int)
 int
 device_get_config_hex16(char *s)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name))
@@ -292,7 +292,7 @@ device_get_config_hex16(char *s)
 int
 device_get_config_hex20(char *s)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name))
@@ -308,7 +308,7 @@ device_get_config_hex20(char *s)
 int
 device_get_config_mac(char *s, int default_int)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name))
@@ -324,7 +324,7 @@ device_get_config_mac(char *s, int default_int)
 void
 device_set_config_int(char *s, int val)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name)) {
@@ -340,7 +340,7 @@ device_set_config_int(char *s, int val)
 void
 device_set_config_hex16(char *s, int val)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name)) {
@@ -356,7 +356,7 @@ device_set_config_hex16(char *s, int val)
 void
 device_set_config_hex20(char *s, int val)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name)) {
@@ -372,7 +372,7 @@ device_set_config_hex20(char *s, int val)
 void
 device_set_config_mac(char *s, int val)
 {
-    device_config_t *c = device_current->config;
+    const device_config_t *c = device_current->config;
 
     while (c && c->type != -1) {
 	if (! strcmp(s, c->name)) {
@@ -386,7 +386,7 @@ device_set_config_mac(char *s, int val)
 
 
 int
-device_is_valid(device_t *device, int mflags)
+device_is_valid(const device_t *device, int mflags)
 {
     if (device == NULL) return(1);
 
@@ -414,8 +414,8 @@ device_is_valid(device_t *device, int mflags)
 int
 machine_get_config_int(char *s)
 {
-    device_t *d = machine_getdevice(machine);
-    device_config_t *c;
+    const device_t *d = machine_getdevice(machine);
+    const device_config_t *c;
 
     if (d == NULL) return(0);
 
@@ -434,8 +434,8 @@ machine_get_config_int(char *s)
 char *
 machine_get_config_string(char *s)
 {
-    device_t *d = machine_getdevice(machine);
-    device_config_t *c;
+    const device_t *d = machine_getdevice(machine);
+    const device_config_t *c;
 
     if (d == NULL) return(0);
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the ET4000w32 driver.
  *
- * Version:	@(#)vid_et4000w32.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_et4000w32.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,12 +41,12 @@
 
 
 #if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-extern device_t et4000w32p_vlb_device;
-extern device_t et4000w32p_pci_device;
+extern const device_t et4000w32p_vlb_device;
+extern const device_t et4000w32p_pci_device;
 #endif
 
-extern device_t et4000w32p_cardex_vlb_device;
-extern device_t et4000w32p_cardex_pci_device;
+extern const device_t et4000w32p_cardex_vlb_device;
+extern const device_t et4000w32p_cardex_pci_device;
 
 
 #endif	/*VIDEO_ET4000W32_H*/

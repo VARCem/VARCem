@@ -8,7 +8,7 @@
  *
  *		Definitions for the ATi Mach64 driver.
  *
- * Version:	@(#)vid_ati_mach64.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_ati_mach64.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,10 +40,10 @@
 # define VIDEO_ATI_MACH64_H
 
 
-extern device_t mach64gx_isa_device;
-extern device_t mach64gx_vlb_device;
-extern device_t mach64gx_pci_device;
-extern device_t mach64vt2_device;
+extern const device_t mach64gx_isa_device;
+extern const device_t mach64gx_vlb_device;
+extern const device_t mach64gx_pci_device;
+extern const device_t mach64vt2_device;
 
 
 #endif	/*VIDEO_ATI_MACH64_H*/

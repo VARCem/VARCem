@@ -260,7 +260,7 @@ Note:	the block address is forced to be a multiple of the block size by
 	  ignoring the appropriate number of the least-significant bits
 SeeAlso: #P0178,#P0187
  *
- * Version:	@(#)m_at_opti495.c	1.0.1	2018/02/14
+ * Version:	@(#)m_at_opti495.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -303,81 +303,85 @@ SeeAlso: #P0178,#P0187
 #include "machine.h"
 
 
-static uint8_t optiregs[0x10];
-static int optireg;
+static uint8_t	optiregs[0x10];
+static int	optireg;
 
 
-static void opti495_write(uint16_t addr, uint8_t val, void *p)
+static void
+opti495_write(uint16_t addr, uint8_t val, void *p)
 {
-        switch (addr)
-        {
-                case 0x22:
-                optireg=val;
-                break;
-                case 0x24:
-                pclog("OPTI: writing reg %02X %02X\n",optireg,val);
-                if (optireg>=0x20 && optireg<=0x2C)
-                {
-                        optiregs[optireg-0x20]=val;
-                        if (optireg == 0x21)
-                        {
-                                cpu_cache_ext_enabled = val & 0x10;
-                                cpu_update_waitstates();
-                        }
-                        if (optireg == 0x22)
-                        {
-                                shadowbios = !(val & 0x80);
-                                shadowbios_write = val & 0x80;
-                                if (shadowbios)
-                                        mem_set_mem_state(0xf0000, 0x10000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
-                                else
-                                        mem_set_mem_state(0xf0000, 0x10000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
-                        }
-                }
-                break;
-        }
+    switch (addr) {
+	case 0x22:
+		optireg=val;
+		break;
+
+	case 0x24:
+		pclog("OPTI: writing reg %02X %02X\n",optireg,val);
+		if (optireg>=0x20 && optireg<=0x2C) {
+			optiregs[optireg-0x20]=val;
+			if (optireg == 0x21) {
+				cpu_cache_ext_enabled = val & 0x10;
+				cpu_update_waitstates();
+			}
+			if (optireg == 0x22) {
+				shadowbios = !(val & 0x80);
+				shadowbios_write = val & 0x80;
+				if (shadowbios)
+					mem_set_mem_state(0xf0000, 0x10000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
+				else
+					mem_set_mem_state(0xf0000, 0x10000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
+			}
+		}
+		break;
+    }
 }
 
 
-static uint8_t opti495_read(uint16_t addr, void *p)
+static uint8_t
+opti495_read(uint16_t addr, void *p)
 {
-        switch (addr)
-        {
-                case 0x24:
-                if (optireg>=0x20 && optireg<=0x2C) return optiregs[optireg-0x20];
-                break;
-        }
-        return 0xFF;
+    switch (addr) {
+	case 0x24:
+		if (optireg>=0x20 && optireg<=0x2c)
+			return(optiregs[optireg-0x20]);
+		break;
+    }
+
+    return(0xff);
 }
 
 
-static void opti495_init(void)
+static void
+opti495_init(void)
 {
-        io_sethandler(0x0022, 0x0001, opti495_read, NULL, NULL, opti495_write, NULL, NULL, NULL);
-        io_sethandler(0x0024, 0x0001, opti495_read, NULL, NULL, opti495_write, NULL, NULL, NULL);
-        optiregs[0x22-0x20] = 0x80;
-}
+    io_sethandler(0x0022, 1,
+		  opti495_read,NULL,NULL, opti495_write,NULL,NULL, NULL);
+    io_sethandler(0x0024, 1,
+		  opti495_read,NULL,NULL, opti495_write,NULL,NULL, NULL);
 
-
-void
-machine_at_opti495_init(machine_t *model)
-{
-        machine_at_common_ide_init(model);
-
-	device_add(&keyboard_at_device);
-	device_add(&fdc_at_device);
-
-        opti495_init();
+    optiregs[0x22-0x20] = 0x80;
 }
 
 
 void
-machine_at_opti495_ami_init(machine_t *model)
+machine_at_opti495_init(const machine_t *model)
 {
-        machine_at_common_ide_init(model);
+    machine_at_common_ide_init(model);
 
-	device_add(&keyboard_at_ami_device);
-	device_add(&fdc_at_device);
+    device_add(&keyboard_at_device);
+    device_add(&fdc_at_device);
 
-        opti495_init();
+    opti495_init();
+}
+
+
+void
+machine_at_opti495_ami_init(const machine_t *model)
+{
+    machine_at_common_ide_init(model);
+
+    device_add(&keyboard_at_ami_device);
+    device_add(&fdc_at_device);
+
+    opti495_init();
 }

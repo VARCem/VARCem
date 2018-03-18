@@ -8,10 +8,12 @@
  *
  *		Definitions for the 86F floppy image format.
  *
- * Version:	@(#)floppy_86f.h	1.0.2	2018/03/14
+ * Version:	@(#)floppy_86f.h	1.0.4	2018/03/17
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,6 +38,9 @@
 # define EMU_FLOPPY_86F_H
 
 
+#define D86FVER		0x020B
+
+
 extern void	d86f_init(void);
 extern void	d86f_load(int drive, wchar_t *fn);
 extern void	d86f_close(int drive);
@@ -56,6 +61,10 @@ extern void	d86f_prepare_track_layout(int drive, int side);
 extern void	d86f_set_version(int drive, uint16_t version);
 extern uint16_t	d86f_side_flags(int drive);
 extern uint16_t	d86f_track_flags(int drive);
+extern void	d86f_initialize_last_sector_id(int drive, int c, int h,
+					       int r, int n);
+extern void	d86f_initialize_linked_lists(int drive);
+extern void	d86f_destroy_linked_lists(int drive, int side);
 
 #define length_gap0	80
 #define length_gap1	50
@@ -75,20 +84,6 @@ extern uint16_t	d86f_track_flags(int drive);
 #define pre_gap		length_sync + length_am + 4 + length_crc
 #define pre_data	length_sync + length_am
 #define post_gap	length_crc
-
-#if 0
-extern int raw_tsize[2];
-extern int gap2_size[2];
-extern int gap3_size[2];
-extern int gap4_size[2];
-#endif
-
-#define D86FVER		0x020B
-
-extern void d86f_initialize_last_sector_id(int drive, int c, int h, int r, int n);
-
-extern void d86f_initialize_linked_lists(int drive);
-extern void d86f_destroy_linked_lists(int drive, int side);
 
 
 #endif	/*EMU_FLOPPY_86F_H*/

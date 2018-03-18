@@ -8,7 +8,7 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.1	2018/02/14
+ * Version:	@(#)network.h	1.0.2	2018/03/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -68,18 +68,17 @@ typedef void (*NETRXCB)(void *, uint8_t *, int);
 
 
 typedef struct {
-    const char	*name;
-    const char	*internal_name;
-    device_t	*device;
-    void	*priv;
-    int		(*poll)(void *);
-    NETRXCB	rx;
-    uint8_t	*mac;
+    const char		*name;
+    const char		*internal_name;
+    const device_t	*device;
+    void		*priv;
+    int			(*poll)(void *);
+    NETRXCB		rx;
 } netcard_t;
 
 typedef struct {
-    char	device[128];
-    char	description[128];
+    char		device[128];
+    char		description[128];
 } netdev_t;
 
 
@@ -89,9 +88,6 @@ extern "C" {
 
 /* Global variables. */
 extern int	nic_do_log;				/* config */
-extern int	network_card;				/* config */
-extern int	network_type;				/* config */
-extern char	network_pcap[512];			/* config */
 extern int      network_ndev;
 extern netdev_t network_devs[32];
 
@@ -111,12 +107,12 @@ extern void	network_tx(uint8_t *, int);
 
 extern int	net_pcap_prepare(netdev_t *);
 extern int	net_pcap_init(void);
-extern int	net_pcap_reset(netcard_t *);
+extern int	net_pcap_reset(const netcard_t *, uint8_t *);
 extern void	net_pcap_close(void);
 extern void	net_pcap_in(uint8_t *, int);
 
 extern int	net_slirp_init(void);
-extern int	net_slirp_reset(netcard_t *);
+extern int	net_slirp_reset(const netcard_t *, uint8_t *);
 extern void	net_slirp_close(void);
 extern void	net_slirp_in(uint8_t *, int);
 
@@ -126,7 +122,7 @@ extern char	*network_card_getname(int);
 extern int	network_card_has_config(int);
 extern char	*network_card_get_internal_name(int);
 extern int	network_card_get_from_internal_name(char *);
-extern device_t	*network_card_getdevice(int);
+extern const device_t	*network_card_getdevice(int);
 
 #ifdef __cplusplus
 }

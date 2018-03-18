@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85C50x PCI chips.
  *
- * Version:	@(#)m_at_sis_85c50x.c	1.0.1	2018/02/14
+ * Version:	@(#)m_at_sis_85c50x.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

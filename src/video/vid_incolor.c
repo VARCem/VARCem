@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.2	2018/03/08
+ * Version:	@(#)vid_incolor.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1045,7 +1045,7 @@ void incolor_poll(void *p)
         }
 }
 
-void *incolor_init(device_t *info)
+void *incolor_init(const device_t *info)
 {
         int c;
         incolor_t *incolor = malloc(sizeof(incolor_t));
@@ -1093,7 +1093,7 @@ void incolor_speed_changed(void *p)
         incolor_recalctimings(incolor);
 }
 
-device_t incolor_device =
+const device_t incolor_device =
 {
         "Hercules InColor",
         DEVICE_ISA, 0,

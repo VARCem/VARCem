@@ -29,7 +29,7 @@
  *		- Some DOS stuff will write to 0x201 while a packet is
  *		  being transferred. This seems to be ignored.
  *
- * Version:	@(#)sw_pad.c	1.0.4	2018/03/12
+ * Version:	@(#)sw_pad.c	1.0.5	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -270,7 +270,7 @@ static void sw_a0_over(void *p)
         sw->trigger_time = TIMER_USEC * 10000;
 }
         
-joystick_if_t joystick_sw_pad =
+const joystick_if_t joystick_sw_pad =
 {
         "Microsoft SideWinder Pad",
         sw_init,

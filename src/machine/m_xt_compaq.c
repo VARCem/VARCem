@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq XT-class PC's.
  *
- * Version:	@(#)m_xt_compaq.c	1.0.2	2018/03/04
+ * Version:	@(#)m_xt_compaq.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,7 @@
 
 
 void
-machine_xt_compaq_init(machine_t *model)
+machine_xt_compaq_init(const machine_t *model)
 {
     machine_common_init(model);
 

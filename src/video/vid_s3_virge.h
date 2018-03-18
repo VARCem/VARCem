@@ -8,7 +8,7 @@
  *
  *		Definitions for the S3 Virge driver.
  *
- * Version:	@(#)vid_s3_virge.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_s3_virge.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,14 +40,14 @@
 # define VIDEO_S3_VIRGE_H
 
 
-extern device_t s3_virge_vlb_device;
-extern device_t s3_virge_pci_device;
-extern device_t s3_virge_988_vlb_device;
-extern device_t s3_virge_988_pci_device;
-extern device_t s3_virge_375_vlb_device;
-extern device_t s3_virge_375_pci_device;
-extern device_t s3_virge_375_4_vlb_device;
-extern device_t s3_virge_375_4_pci_device;
+extern const device_t s3_virge_vlb_device;
+extern const device_t s3_virge_pci_device;
+extern const device_t s3_virge_988_vlb_device;
+extern const device_t s3_virge_988_pci_device;
+extern const device_t s3_virge_375_vlb_device;
+extern const device_t s3_virge_375_pci_device;
+extern const device_t s3_virge_375_4_vlb_device;
+extern const device_t s3_virge_375_4_pci_device;
 
 
 #endif	/*VIDEO_S3_VIRGE_H*/

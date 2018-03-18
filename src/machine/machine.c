@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.5	2018/03/07
+ * Version:	@(#)machine.c	1.0.7	2018/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,11 +68,12 @@ machine_init(void)
 
     pclog("Initializing as \"%s\"\n", machine_getname());
 
-    ide_set_bus_master(NULL, NULL, NULL);
-
     /* Set up the architecture flags. */
     AT = IS_ARCH(machine, MACHINE_AT);
     PCI = IS_ARCH(machine, MACHINE_PCI);
+
+    /* Reset memory and the MMU. */
+    mem_reset();
 
     /* Load the machine's ROM BIOS. */
     wcscpy(temp, MACHINES_PATH);
@@ -82,6 +83,8 @@ machine_init(void)
 
     /* Activate the ROM BIOS. */
     mem_add_bios();
+
+    ide_set_bus_master(NULL, NULL, NULL);
 
     /* All good, boot the machine! */
     machines[machine].init(&machines[machine]);
@@ -131,7 +134,7 @@ machine_detect(void)
 
 
 void
-machine_common_init(machine_t *model)
+machine_common_init(const machine_t *model)
 {
     /* System devices first. */
     dma_init();

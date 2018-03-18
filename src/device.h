@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.1	2018/02/14
+ * Version:	@(#)device.h	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,7 +98,7 @@ typedef struct _device_ {
     uint32_t	flags;		/* system flags */
     uint32_t	local;		/* flags local to device */
 
-    void	*(*init)(struct _device_ *);
+    void	*(*init)(const struct _device_ *);
     void	(*close)(void *p);
     void	(*reset)(void *p);
     int		(*available)(/*void*/);
@@ -106,7 +106,7 @@ typedef struct _device_ {
     void	(*force_redraw)(void *p);
     void	(*add_status_info)(char *s, int max_len, void *p);
 
-    device_config_t *config;
+    const device_config_t *config;
 } device_t;
 
 
@@ -115,12 +115,12 @@ extern "C" {
 #endif
 
 extern void	device_init(void);
-extern void	*device_add(device_t *d);
-extern void	device_add_ex(device_t *d, void *priv);
+extern void	*device_add(const device_t *d);
+extern void	device_add_ex(const device_t *d, void *priv);
 extern void	device_close_all(void);
 extern void	device_reset_all(void);
-extern void	*device_get_priv(device_t *d);
-extern int	device_available(device_t *d);
+extern void	*device_get_priv(const device_t *d);
+extern int	device_available(const device_t *d);
 extern void	device_speed_changed(void);
 extern void	device_force_redraw(void);
 extern void	device_add_status_info(char *s, int max_len);
@@ -135,7 +135,7 @@ extern void	device_set_config_hex16(char *s, int val);
 extern void	device_set_config_hex20(char *s, int val);
 extern void	device_set_config_mac(char *s, int val);
 extern char	*device_get_config_string(char *name);
-extern int	device_is_valid(device_t *device, int machine_flags);
+extern int	device_is_valid(const device_t *device, int machine_flags);
 
 extern int	machine_get_config_int(char *s);
 extern char	*machine_get_config_string(char *s);

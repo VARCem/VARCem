@@ -8,7 +8,7 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)sound_sb.c	1.0.2	2018/02/21
+ * Version:	@(#)sound_sb.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1036,7 +1036,7 @@ void sb_pro_mcv_write(int port, uint8_t val, void *p)
         sb_dsp_setdma8(&sb->dsp, sb->pos_regs[4] & 3);
 }
 
-void *sb_1_init(struct _device_ *dev)
+void *sb_1_init(const device_t *info)
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1063,7 +1063,7 @@ void *sb_1_init(struct _device_ *dev)
         sound_add_handler(sb_get_buffer_sb2, sb);
         return sb;
 }
-void *sb_15_init(struct _device_ *dev)
+void *sb_15_init(const device_t *info)
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1090,7 +1090,7 @@ void *sb_15_init(struct _device_ *dev)
         return sb;
 }
 
-void *sb_mcv_init(struct _device_ *dev)
+void *sb_mcv_init(const device_t *info)
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x6, 2xA, 2xC, 2xE -> DSP chip
@@ -1113,7 +1113,7 @@ void *sb_mcv_init(struct _device_ *dev)
         sb->pos_regs[1] = 0x50;
         return sb;
 }
-void *sb_2_init(struct _device_ *dev)
+void *sb_2_init(const device_t *info)
 {
         /*sb2 port mappings. 220h or 240h.
           2x0 to 2x3 -> CMS chip
@@ -1154,7 +1154,7 @@ void *sb_2_init(struct _device_ *dev)
         return sb;
 }
 
-void *sb_pro_v1_init(struct _device_ *dev)
+void *sb_pro_v1_init(const device_t *info)
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (9*2 voices)
@@ -1188,7 +1188,7 @@ void *sb_pro_v1_init(struct _device_ *dev)
         return sb;
 }
 
-void *sb_pro_v2_init(struct _device_ *dev)
+void *sb_pro_v2_init(const device_t *info)
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip (18 voices)
@@ -1221,7 +1221,7 @@ void *sb_pro_v2_init(struct _device_ *dev)
         return sb;
 }
 
-void *sb_pro_mcv_init(struct _device_ *dev)
+void *sb_pro_mcv_init(const device_t *info)
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (18 voices)
@@ -1246,7 +1246,7 @@ void *sb_pro_mcv_init(struct _device_ *dev)
         return sb;
 }
 
-void *sb_16_init(struct _device_ *dev)
+void *sb_16_init(const device_t *info)
 {
         sb_t *sb = malloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
@@ -1280,7 +1280,7 @@ int sb_awe32_available()
         return rom_present(L"roms/sound/awe32.raw");
 }
 
-void *sb_awe32_init(struct _device_ *dev)
+void *sb_awe32_init(const device_t *info)
 {
         sb_t *sb = malloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
@@ -1358,7 +1358,7 @@ void sb_add_status_info(char *s, int max_len, void *p)
         sb_dsp_add_status_info(s, max_len, &sb->dsp);
 }
 
-static device_config_t sb_config[] =
+static const device_config_t sb_config[] =
 {
         {
                 "base", "Address", CONFIG_HEX16, "", 0x220,
@@ -1416,7 +1416,7 @@ static device_config_t sb_config[] =
         }
 };
 
-static device_config_t sb_mcv_config[] =
+static const device_config_t sb_mcv_config[] =
 {
         {
                 "irq", "IRQ", CONFIG_SELECTION, "", 7,
@@ -1457,7 +1457,7 @@ static device_config_t sb_mcv_config[] =
         }
 };
 
-static device_config_t sb_pro_config[] =
+static const device_config_t sb_pro_config[] =
 {
         {
                 "base", "Address", CONFIG_HEX16, "", 0x220,
@@ -1515,7 +1515,7 @@ static device_config_t sb_pro_config[] =
         }
 };
 
-static device_config_t sb_16_config[] =
+static const device_config_t sb_16_config[] =
 {
         {
                 "base", "Address", CONFIG_HEX16, "", 0x220,
@@ -1653,7 +1653,7 @@ static device_config_t sb_16_config[] =
         }
 };
 
-static device_config_t sb_awe32_config[] =
+static const device_config_t sb_awe32_config[] =
 {
         {
                 "base", "Address", CONFIG_HEX16, "", 0x220,
@@ -1834,7 +1834,7 @@ static device_config_t sb_awe32_config[] =
         }
 };
 
-device_t sb_1_device =
+const device_t sb_1_device =
 {
         "Sound Blaster v1.0",
         DEVICE_ISA,
@@ -1845,7 +1845,7 @@ device_t sb_1_device =
         sb_add_status_info,
         sb_config
 };
-device_t sb_15_device =
+const device_t sb_15_device =
 {
         "Sound Blaster v1.5",
         DEVICE_ISA,
@@ -1856,7 +1856,7 @@ device_t sb_15_device =
         sb_add_status_info,
         sb_config
 };
-device_t sb_mcv_device =
+const device_t sb_mcv_device =
 {
         "Sound Blaster MCV",
         DEVICE_MCA,
@@ -1867,7 +1867,7 @@ device_t sb_mcv_device =
         sb_add_status_info,
         sb_mcv_config
 };
-device_t sb_2_device =
+const device_t sb_2_device =
 {
         "Sound Blaster v2.0",
         DEVICE_ISA,
@@ -1878,7 +1878,7 @@ device_t sb_2_device =
         sb_add_status_info,
         sb_config
 };
-device_t sb_pro_v1_device =
+const device_t sb_pro_v1_device =
 {
         "Sound Blaster Pro v1",
         DEVICE_ISA,
@@ -1889,7 +1889,7 @@ device_t sb_pro_v1_device =
         sb_add_status_info,
         sb_pro_config
 };
-device_t sb_pro_v2_device =
+const device_t sb_pro_v2_device =
 {
         "Sound Blaster Pro v2",
         DEVICE_ISA,
@@ -1900,7 +1900,7 @@ device_t sb_pro_v2_device =
         sb_add_status_info,
         sb_pro_config
 };
-device_t sb_pro_mcv_device =
+const device_t sb_pro_mcv_device =
 {
         "Sound Blaster Pro MCV",
         DEVICE_MCA,
@@ -1911,7 +1911,7 @@ device_t sb_pro_mcv_device =
         sb_add_status_info,
         NULL
 };
-device_t sb_16_device =
+const device_t sb_16_device =
 {
         "Sound Blaster 16",
         DEVICE_ISA,
@@ -1922,7 +1922,7 @@ device_t sb_16_device =
         sb_add_status_info,
         sb_16_config
 };
-device_t sb_awe32_device =
+const device_t sb_awe32_device =
 {
         "Sound Blaster AWE32",
         DEVICE_ISA,

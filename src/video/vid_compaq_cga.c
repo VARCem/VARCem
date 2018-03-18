@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_cga_compaq.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -397,7 +397,7 @@ void compaq_cga_poll(void *p)
 
 }
 
-void *compaq_cga_init(device_t *info)
+void *compaq_cga_init(const device_t *info)
 {
 	int display_type;
         int c;
@@ -469,9 +469,9 @@ void compaq_cga_speed_changed(void *p)
 	} 
 }
 
-extern device_config_t cga_config[];
+extern const device_config_t cga_config[];
 
-device_t compaq_cga_device =
+const device_t compaq_cga_device =
 {
         "Compaq CGA",
         DEVICE_ISA, 0,
@@ -485,7 +485,7 @@ device_t compaq_cga_device =
         cga_config
 };
 
-device_t compaq_cga_2_device =
+const device_t compaq_cga_2_device =
 {
         "Compaq CGA 2",
         DEVICE_ISA, 1,

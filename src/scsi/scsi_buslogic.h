@@ -7,7 +7,7 @@
  *		Emulation of BusLogic BT-542B ISA and BT-958D PCI SCSI
  *		controllers.
  *
- * Version:	@(#)scsi_buslogic.h	1.0.1	2018/02/14
+ * Version:	@(#)scsi_buslogic.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,11 +37,11 @@
 # define SCSI_BUSLOGIC_H
 
 
-extern device_t buslogic_device;
-extern device_t buslogic_545s_device;
-extern device_t buslogic_640a_device;
-extern device_t buslogic_445s_device;
-extern device_t buslogic_pci_device;
+extern const device_t buslogic_device;
+extern const device_t buslogic_545s_device;
+extern const device_t buslogic_640a_device;
+extern const device_t buslogic_445s_device;
+extern const device_t buslogic_pci_device;
 
 extern void	BuslogicDeviceReset(void *p);
   

@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496 chipset.
  *
- * Version:	@(#)m_at_sis_85c496.c	1.0.2	2018/03/07
+ * Version:	@(#)m_at_sis_85c496.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -197,7 +197,7 @@ static void sis_85c496_init(void)
 
 
 static void
-machine_at_sis_85c496_common_init(machine_t *model)
+machine_at_sis_85c496_common_init(const machine_t *model)
 {
 	machine_at_ps2_init(model);
 	device_add(&ide_pci_device);
@@ -215,7 +215,7 @@ machine_at_sis_85c496_common_init(machine_t *model)
 
 
 void
-machine_at_r418_init(machine_t *model)
+machine_at_r418_init(const machine_t *model)
 {
 	machine_at_sis_85c496_common_init(model);
 

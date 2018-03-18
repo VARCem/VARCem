@@ -8,7 +8,7 @@
  *
  *		Memory handling and MMU.
  *
- * Version:	@(#)mem.c	1.0.5	2018/03/14
+ * Version:	@(#)mem.c	1.0.6	2018/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,10 +54,10 @@
 #ifdef USE_DYNAREC
 # include "cpu/codegen.h"
 #else
-#define PAGE_MASK_INDEX_MASK 3
-#define PAGE_MASK_INDEX_SHIFT 10
-#define PAGE_MASK_MASK 63
-#define PAGE_MASK_SHIFT 4
+# define PAGE_MASK_INDEX_MASK	3
+# define PAGE_MASK_INDEX_SHIFT	10
+# define PAGE_MASK_MASK		63
+# define PAGE_MASK_SHIFT	4
 #endif
 
 
@@ -68,17 +68,18 @@ mem_mapping_t		bios_mapping[8];
 mem_mapping_t		bios_high_mapping[8];
 mem_mapping_t		romext_mapping;
 
-page_t			*pages,
-			**page_lookup;
-uint32_t		page_lookup_sz;
+page_t			*pages,			/* RAM page table */
+			**page_lookup;		/* pagetable lookup */
+uint32_t		pages_sz;		/* #pages in table */
 
 uint8_t			isram[0x10000];
 
-uint8_t			*ram;
+uint8_t			*ram;			/* the virtual RAM */
 uint32_t		rammask;
 
-uint8_t			*rom;
+uint8_t			*rom;			/* the virtual ROM */
 uint8_t			romext[32768];
+uint32_t		biosmask;
 
 uint32_t		pccache;
 uint8_t			*pccache2;
@@ -96,9 +97,6 @@ uint32_t		mem_logical_addr;
 
 int			shadowbios = 0,
 			shadowbios_write;
-
-int			mem_size;
-uint32_t		biosmask;
 int			readlnum = 0,
 			writelnum = 0;
 int			pctrans = 0;
@@ -137,7 +135,11 @@ static mem_mapping_t	base_mapping;
 static mem_mapping_t	ram_remapped_mapping;
 static mem_mapping_t	ram_split_mapping;
 
+#if 0
 static uint8_t		ff_array[0x1000];
+#else
+static uint8_t		ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
+#endif
 
 static int		port_92_reg = 0;
 
@@ -150,16 +152,16 @@ resetreadlookup(void)
     /* This is NULL after app startup, when mem_init() has not yet run. */
     if (page_lookup == NULL) return;
 
-    memset(page_lookup, 0x00, page_lookup_sz);
+    memset(page_lookup, 0x00, pages_sz * sizeof(page_t *));
 
     for (c = 0; c < 256; c++)
 	readlookup[c] = 0xffffffff;
-    memset(readlookup2, 0xff, 1024*1024*sizeof(uintptr_t));
+    memset(readlookup2, 0xff, pages_sz*sizeof(uintptr_t));
     readlnext = 0;
 
     for (c = 0; c < 256; c++)
 	writelookup[c] = 0xffffffff;
-    memset(writelookup2, 0xff, 1024*1024*sizeof(uintptr_t));
+    memset(writelookup2, 0xff, pages_sz*sizeof(uintptr_t));
     writelnext = 0;
 
     pccache = 0xffffffff;
@@ -460,7 +462,11 @@ getpccache(uint32_t a)
 
     pclog("Bad getpccache %08X\n", a);
 
+#if 0
     return &ff_array[0-(uintptr_t)(a2 & ~0xfff)];
+#else
+    return (uint8_t *)&ff_pccache;
+#endif
 }
 
 
@@ -1534,14 +1540,20 @@ mem_a20_init(void)
 void
 mem_reset(void)
 {
-    uint32_t c, m, p;
+    uint32_t c, m;
 
     split_mapping_enabled = 0;
 
-    /* Free existing memory. */
+    /* Free existing memory and tables. */
     if (ram != NULL) free(ram);
+    if (rom != NULL) free(rom);
     if (pages != NULL) free(pages);
     if (page_lookup != NULL) free(page_lookup);
+    if (readlookup2 != NULL) free(readlookup2);
+    if (writelookup2 != NULL) free(writelookup2);
+
+    /* Reset the ROM size mask. */
+    biosmask = 0xffff;
 
     /*
      * Always allocate the full 16 MB memory space if memory size
@@ -1560,24 +1572,40 @@ mem_reset(void)
      * We re-allocate the table on each (hard) reset, as the
      * memory amount could have changed.
      */
-    if (m <= (1 << 24))			/* 80286 max address space (16M) */
-	p = (m / 4096);			/* allocated mem size / pagesize */
-     else
-	p = (1 << 20);			/* entire 4GB address space */
-pclog("MEM: mem_size=%i, m=%i, p=%i\n", mem_size, m, p);
-    pages = (page_t *)malloc(p * sizeof(page_t));
-    memset(pages, 0x00, p * sizeof(page_t));
-    for (c = 0; c < p; c++) {
+    if (AT) {
+	if (cpu_16bitbus) {
+		/* 80186/286; maximum address space is 16MB. */
+		m = 4096;
+	} else {
+		/* 80386+; maximum address space is 4GB. */
+		m = (mem_size + 384) >> 2;
+		if ((m << 2) < (mem_size + 384))
+			m++;
+		if (m < 4096)
+			m = 4096;
+	}
+    } else {
+	/* 8088/86; maximum address space is 1MB. */
+	m = 256;
+    }
+
+    pages_sz = m;
+    pages = (page_t *)malloc(m * sizeof(page_t));
+    memset(pages, 0x00, m * sizeof(page_t));
+    for (c=0; c<m; c++) {
 	pages[c].mem = &ram[c << 12];
 	pages[c].write_b = mem_write_ramb_page;
 	pages[c].write_w = mem_write_ramw_page;
 	pages[c].write_l = mem_write_raml_page;
     }
-pclog("MEM: pages done (c=%i)\n", c);
-    page_lookup = malloc(p * sizeof(page_t *));
-    page_lookup_sz = (p * sizeof(page_t *));
-    memset(page_lookup, 0x00, page_lookup_sz);
-pclog("MEM: page_lookup done\n");
+    page_lookup = (page_t **)malloc(pages_sz * sizeof(page_t *));
+    memset(page_lookup, 0x00, pages_sz * sizeof(page_t *));
+
+    /* Allocate and initialize the lookup tables. */
+    readlookup2  = malloc(pages_sz * sizeof(uintptr_t));
+    memset(readlookup2, 0xff, pages_sz * sizeof(page_t *));
+    writelookup2 = malloc(pages_sz * sizeof(uintptr_t));
+    memset(writelookup2, 0xff, pages_sz * sizeof(page_t *));
 
     memset(isram, 0x00, sizeof(isram));
     for (c = 0; c < (mem_size / 64); c++) {
@@ -1586,7 +1614,6 @@ pclog("MEM: page_lookup done\n");
 	    (cpu_16bitbus && c >= 0xfe && c <= 0xff))
 		isram[c] = 0;
     }
-pclog("MEM: isram done\n");
 
     memset(_mem_read_b,  0x00, sizeof(_mem_read_b));
     memset(_mem_read_w,  0x00, sizeof(_mem_read_w));
@@ -1655,7 +1682,6 @@ pclog("MEM: isram done\n");
     mem_mapping_disable(&ram_split_mapping);
 
     mem_a20_init();
-pclog("MEM: reset done\n");
 }
 
 
@@ -1663,24 +1689,20 @@ void
 mem_init(void)
 {
     /* Perform a one-time init. */
-    ram = NULL;
+    ram = rom = NULL;
     pages = NULL;
     page_lookup = NULL;
-
-    /* FIXME: move to reset? */
-    rom = NULL;
-    biosmask = 0xffff;
-
-    readlookup2  = malloc(1024 * 1024 * sizeof(uintptr_t));
-    writelookup2 = malloc(1024 * 1024 * sizeof(uintptr_t));
+    readlookup2 = NULL;
+    writelookup2 = NULL;
 
     memset(ram_mapped_addr, 0x00, 64 * sizeof(uint32_t));
 
+#if 0
     memset(ff_array, 0xff, sizeof(ff_array));
+#endif
 
     /* Reset the memory state. */
     mem_reset();
-pclog("MEM: init done\n");
 }
 
 
@@ -1720,67 +1742,6 @@ void
 mem_remap_top_384k(void)
 {
     mem_remap_top(384);
-}
-
-
-void
-mem_split_enable(int max_size, uint32_t addr)
-{
-    uint8_t *mem_split_buffer = &ram[0x80000];
-    int c;
-
-    if (split_mapping_enabled) return;
-
-#if 0
-    pclog("Split mapping enable at %08X\n", addr);
-#endif
-
-    mem_set_mem_state(addr, max_size * 1024,
-		      MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-    mem_mapping_set_addr(&ram_split_mapping, addr, max_size * 1024);
-    mem_mapping_set_exec(&ram_split_mapping, &ram[addr]);
-
-    if (max_size == 384)
-	memcpy(&ram[addr], mem_split_buffer, max_size);
-      else
-	memcpy(&ram[addr], &mem_split_buffer[128 * 1024], max_size);
-
-    for (c = ((addr/1024)/64); c < (((addr/1024)+max_size-1)/64); c++)
-	isram[c] = 1;
-
-    flushmmucache();
-
-    split_mapping_enabled = 1;
-}
-
-
-void
-mem_split_disable(int max_size, uint32_t addr)
-{
-    uint8_t *mem_split_buffer = &ram[0x80000];
-    int c;
-
-    if (! split_mapping_enabled) return;
-
-#if 0
-    pclog("Split mapping disable at %08X\n", addr);
-#endif
-
-    if (max_size == 384)
-	memcpy(mem_split_buffer, &ram[addr], max_size);
-      else
-	memcpy(&mem_split_buffer[128 * 1024], &ram[addr], max_size);
-
-    mem_mapping_disable(&ram_split_mapping);
-    mem_set_mem_state(addr, max_size * 1024, 0);
-    mem_mapping_set_exec(&ram_split_mapping, NULL);
-
-    for (c = ((addr/1024)/64); c < (((addr/1024)+max_size-1)/64); c++)
-	isram[c] = 0;
-
-    flushmmucache();
-
-    split_mapping_enabled = 0;
 }
 
 

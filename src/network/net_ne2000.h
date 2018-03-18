@@ -8,7 +8,7 @@
  *
  *		Definitions for the NE2000 ethernet controller.
  *
- * Version:	@(#)net_ne2000.h	1.0.1	2018/02/14
+ * Version:	@(#)net_ne2000.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -45,10 +45,10 @@ enum {
 };
 
 
-extern device_t	ne1000_device;
-extern device_t	ne2000_device;
-extern device_t	rtl8019as_device;
-extern device_t	rtl8029as_device;
+extern const device_t	ne1000_device;
+extern const device_t	ne2000_device;
+extern const device_t	rtl8019as_device;
+extern const device_t	rtl8029as_device;
 
 
 #endif	/*NET_NE2000_H*/

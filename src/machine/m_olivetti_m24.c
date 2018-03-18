@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.2	2018/03/09
+ * Version:	@(#)m_olivetti_m24.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -812,7 +812,7 @@ vid_close(void *priv)
 }
 
 
-device_t m24_device = {
+const device_t m24_device = {
     "Olivetti M24 Video",
     0, 0,
     NULL, vid_close, NULL,
@@ -824,7 +824,7 @@ device_t m24_device = {
 
 
 void
-machine_olim24_init(machine_t *model)
+machine_olim24_init(const machine_t *model)
 {
     olim24_t *m24;
 

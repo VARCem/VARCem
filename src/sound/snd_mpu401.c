@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_mpu401.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -915,7 +915,7 @@ mpu401_device_add(void)
 
 
 static void *
-mpu401_standalone_init(device_t *info)
+mpu401_standalone_init(const device_t *info)
 {
     mpu_t *mpu;
 
@@ -938,7 +938,7 @@ mpu401_standalone_close(void *priv)
 }
 
 
-static device_config_t mpu401_standalone_config[] =
+static const device_config_t mpu401_standalone_config[] =
 {
         {
                 "base", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
@@ -1000,7 +1000,7 @@ static device_config_t mpu401_standalone_config[] =
 };
 
 
-device_t mpu401_device = {
+const device_t mpu401_device = {
     "MPU-401 (Standalone)",
     0, 0,
     mpu401_standalone_init, mpu401_standalone_close, NULL,

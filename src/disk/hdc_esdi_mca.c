@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.1	2018/02/14
+ * Version:	@(#)hdc_esdi_mca.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1059,7 +1059,7 @@ esdi_mca_write(int port, uint8_t val, void *priv)
 
 
 static void *
-esdi_init(device_t *info)
+esdi_init(const device_t *info)
 {
     drive_t *drive;
     esdi_t *dev;
@@ -1153,7 +1153,7 @@ esdi_available(void)
 }
 
 
-device_t esdi_ps2_device = {
+const device_t esdi_ps2_device = {
     "IBM ESDI Fixed Disk Adapter (MCA)",
     DEVICE_MCA, 0,
     esdi_init, esdi_close, NULL,

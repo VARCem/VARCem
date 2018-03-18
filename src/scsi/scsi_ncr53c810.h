@@ -8,7 +8,7 @@
  *
  *		Definitions for the NCR 53C810 SCSI Host Adapter driver.
  *
- * Version:	@(#)scsi_ncr53c810.h	1.0.1	2018/02/14
+ * Version:	@(#)scsi_ncr53c810.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,7 @@
 # define SCSI_NCR53C810_H
 
 
-extern device_t ncr53c810_pci_device;
+extern const device_t ncr53c810_pci_device;
 
 
 #endif	/*SCSI_NCR53C810_H*/

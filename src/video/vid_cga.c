@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_cga.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -488,7 +488,7 @@ void cga_init(cga_t *cga)
         cga->composite = 0;
 }
 
-void *cga_standalone_init(device_t *info)
+void *cga_standalone_init(const device_t *info)
 {
         int display_type;
         cga_t *cga = malloc(sizeof(cga_t));
@@ -530,7 +530,7 @@ void cga_speed_changed(void *p)
         cga_recalctimings(cga);
 }
 
-device_config_t cga_config[] =
+const device_config_t cga_config[] =
 {
         {
                 "display_type", "Display type", CONFIG_SELECTION, "", CGA_RGB,
@@ -591,7 +591,7 @@ device_config_t cga_config[] =
         }
 };
 
-device_t cga_device =
+const device_t cga_device =
 {
         "CGA",
         DEVICE_ISA, 0,

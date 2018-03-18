@@ -8,7 +8,7 @@
  *
  *		Implementation of the HEADLAND AT286 chipset.
  *
- * Version:	@(#)m_at_headland.c	1.0.1	2018/02/14
+ * Version:	@(#)m_at_headland.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,61 +56,60 @@ static int headland_index;
 static uint8_t headland_regs[256];
 
 
-static void headland_write(uint16_t addr, uint8_t val, void *priv)
+static void
+headland_write(uint16_t addr, uint8_t val, void *priv)
 {
-	uint8_t old_val;
+    uint8_t old_val;
 
-        if (addr & 1)
-        {
-		old_val = headland_regs[headland_index];
+    if (addr & 1) {
+	old_val = headland_regs[headland_index];
 
-                if (headland_index == 0xc1 && !is486) val = 0;
-                headland_regs[headland_index] = val;
-                if (headland_index == 0x82)
-                {
-                        shadowbios = val & 0x10;
-                        shadowbios_write = !(val & 0x10);
-                        if (shadowbios)
-                                mem_set_mem_state(0xf0000, 0x10000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
-                        else
-                                mem_set_mem_state(0xf0000, 0x10000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
-                }
-                else if (headland_index == 0x87)
-                {
-                        if ((val & 1) && !(old_val & 1))
-                                softresetx86();
-                }
-        }
-        else
-                headland_index = val;
+	if (headland_index == 0xc1 && !is486) val = 0;
+	headland_regs[headland_index] = val;
+	if (headland_index == 0x82) {
+		shadowbios = val & 0x10;
+		shadowbios_write = !(val & 0x10);
+		if (shadowbios)
+			mem_set_mem_state(0xf0000, 0x10000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
+		else
+			mem_set_mem_state(0xf0000, 0x10000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
+	} else if (headland_index == 0x87) {
+		if ((val & 1) && !(old_val & 1))
+			softresetx86();
+	}
+    } else
+	headland_index = val;
 }
 
 
-static uint8_t headland_read(uint16_t addr, void *priv)
+static uint8_t
+headland_read(uint16_t addr, void *priv)
 {
-        if (addr & 1) 
-        {
-                if ((headland_index >= 0xc0 || headland_index == 0x20) && cpu_iscyrix)
-                        return 0xff; /*Don't conflict with Cyrix config registers*/
-                return headland_regs[headland_index];
-        }
-        return headland_index;
+    if (addr & 1)  {
+	if ((headland_index >= 0xc0 || headland_index == 0x20) && cpu_iscyrix)
+		return(0xff); /*Don't conflict with Cyrix config registers*/
+	return(headland_regs[headland_index]);
+    }
+
+    return(headland_index);
 }
 
 
-static void headland_init(void)
+static void
+headland_init(void)
 {
-        io_sethandler(0x0022, 0x0002, headland_read, NULL, NULL, headland_write, NULL, NULL, NULL);
+    io_sethandler(0x0022, 2,
+		  headland_read,NULL,NULL, headland_write,NULL,NULL, NULL);
 }
 
 
 void
-machine_at_headland_init(machine_t *model)
+machine_at_headland_init(const machine_t *model)
 {
-        machine_at_common_ide_init(model);
+    machine_at_common_ide_init(model);
 
-	device_add(&keyboard_at_ami_device);
-	device_add(&fdc_at_device);
+    device_add(&keyboard_at_ami_device);
+    device_add(&fdc_at_device);
 
-        headland_init();
+    headland_init();
 }

@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.2	2018/02/24
+ * Version:	@(#)scsi.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,10 +77,10 @@ mutex_t		*scsiMutex;
 
 
 typedef struct {
-    const char	*name;
-    const char	*internal_name;
-    device_t	*device;
-    void	(*reset)(void *p);
+    const char		*name;
+    const char		*internal_name;
+    const device_t	*device;
+    void		(*reset)(void *p);
 } SCSI_CARD;
 
 
@@ -124,7 +124,7 @@ scsi_card_getname(int card)
 }
 
 
-device_t *
+const device_t *
 scsi_card_getdevice(int card)
 {
     return(scsi_cards[card].device);

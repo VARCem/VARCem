@@ -8,7 +8,7 @@
  *
  *		Definitions for the MIDI module.
  *
- * Version:	@(#)midi.h	1.0.1	2018/02/14
+ * Version:	@(#)midi.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,7 +46,7 @@ extern int midi_device_current;
 int midi_device_available(int card);
 char *midi_device_getname(int card);
 #ifdef EMU_DEVICE_H
-device_t *midi_device_getdevice(int card);
+const device_t *midi_device_getdevice(int card);
 #endif
 int midi_device_has_config(int card);
 char *midi_device_get_internal_name(int card);

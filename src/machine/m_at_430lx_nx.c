@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430LX and 430NX PCISet chips.
  *
- * Version:	@(#)m_at_430lx_nx.c	1.0.2	2018/03/07
+ * Version:	@(#)m_at_430lx_nx.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -231,7 +231,7 @@ static void i430nx_init(void)
 
 
 static void
-machine_at_premiere_common_init(machine_t *model)
+machine_at_premiere_common_init(const machine_t *model)
 {
         machine_at_common_init(model);
 	device_add(&keyboard_ps2_ami_device);
@@ -253,7 +253,7 @@ machine_at_premiere_common_init(machine_t *model)
 
 
 void
-machine_at_batman_init(machine_t *model)
+machine_at_batman_init(const machine_t *model)
 {
 	machine_at_premiere_common_init(model);
 
@@ -262,7 +262,7 @@ machine_at_batman_init(machine_t *model)
 
 
 void
-machine_at_plato_init(machine_t *model)
+machine_at_plato_init(const machine_t *model)
 {
 	machine_at_premiere_common_init(model);
 

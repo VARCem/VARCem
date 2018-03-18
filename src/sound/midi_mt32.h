@@ -8,7 +8,7 @@
  *
  *		Definitions for the MuNT32 synthesizer interface.
  *
- * Version:	@(#)midi_mt32.h	1.0.1	2018/02/14
+ * Version:	@(#)midi_mt32.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,8 +40,8 @@
 # define SOUND_MIDI_MT32_H
 
 
-extern device_t mt32_device;
-extern device_t cm32l_device;
+extern const device_t mt32_device;
+extern const device_t cm32l_device;
 
 
 #endif	/*SOUND_MIDI_MT32_H*/

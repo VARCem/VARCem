@@ -8,7 +8,7 @@
  *
  *		Definitions for the GUS device.
  *
- * Version:	@(#)snd_gus.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_gus.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define SOUND_GUS_H
 
 
-extern device_t gus_device;
+extern const device_t gus_device;
 
 
 #endif	/*SOUND_GUS_H*/

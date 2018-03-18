@@ -8,7 +8,7 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_ati18800.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -179,7 +179,7 @@ static uint8_t ati18800_in(uint16_t addr, void *p)
         return temp;
 }
 
-static void *ati18800_init(device_t *info)
+static void *ati18800_init(const device_t *info)
 {
         ati18800_t *ati18800 = malloc(sizeof(ati18800_t));
         memset(ati18800, 0, sizeof(ati18800_t));
@@ -258,7 +258,7 @@ static void ati18800_add_status_info(char *s, int max_len, void *p)
         svga_add_status_info(s, max_len, &ati18800->svga);
 }
 
-device_t ati18800_wonder_device =
+const device_t ati18800_wonder_device =
 {
         "ATI-18800",
         DEVICE_ISA, ATI18800_WONDER,
@@ -272,7 +272,7 @@ device_t ati18800_wonder_device =
 	NULL
 };
 
-device_t ati18800_vga88_device =
+const device_t ati18800_vga88_device =
 {
         "ATI-18800-1",
         DEVICE_ISA, ATI18800_VGA88,
@@ -286,7 +286,7 @@ device_t ati18800_vga88_device =
 	NULL
 };
 
-device_t ati18800_device =
+const device_t ati18800_device =
 {
         "ATI-18800-5",
         DEVICE_ISA, ATI18800_EDGE16,

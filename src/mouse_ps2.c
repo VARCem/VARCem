@@ -8,7 +8,7 @@
  *
  *		Implementation of PS/2 series Mouse devices.
  *
- * Version:	@(#)mouse_ps2.c	1.0.1	2018/02/14
+ * Version:	@(#)mouse_ps2.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -248,7 +248,7 @@ ps2_poll(int x, int y, int z, int b, void *priv)
  * We also get called from the various machines.
  */
 void *
-mouse_ps2_init(device_t *info)
+mouse_ps2_init(const device_t *info)
 {
     mouse_t *dev;
     int i;
@@ -288,7 +288,7 @@ ps2_close(void *priv)
 }
 
 
-static device_config_t ps2_config[] = {
+static const device_config_t ps2_config[] = {
     {
 	"buttons", "Buttons", CONFIG_SELECTION, "", 2, {
 		{
@@ -311,7 +311,7 @@ static device_config_t ps2_config[] = {
 };
 
 
-device_t mouse_ps2_device = {
+const device_t mouse_ps2_device = {
     "Standard PS/2 Mouse",
     0,
     MOUSE_TYPE_PS2,

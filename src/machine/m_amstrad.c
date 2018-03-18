@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.2	2018/03/09
+ * Version:	@(#)m_amstrad.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -578,7 +578,7 @@ vid_speed_change_1512(void *priv)
 }
 
 
-static device_t vid_1512_device = {
+static const device_t vid_1512_device = {
     "Amstrad PC1512 (video)",
     0, 0,
     NULL, vid_close_1512, NULL,
@@ -742,7 +742,7 @@ vid_speed_changed_1640(void *priv)
 }
 
 
-static device_t vid_1640_device = {
+static const device_t vid_1640_device = {
     "Amstrad PC1640 (video)",
     0, 0,
     NULL, vid_close_1640, NULL,
@@ -880,7 +880,7 @@ vid_speed_changed_200(void *priv)
 }
 
 
-static device_t vid_200_device = {
+static const device_t vid_200_device = {
     "Amstrad PC200 (video)",
     0, 0,
     NULL, vid_close_200, NULL,
@@ -1222,7 +1222,7 @@ ams_read(uint16_t port, void *priv)
 
 
 void
-machine_amstrad_init(machine_t *model)
+machine_amstrad_init(const machine_t *model)
 {
     amstrad_t *ams;
 
@@ -1252,7 +1252,7 @@ machine_amstrad_init(machine_t *model)
     switch(model->id) {
 	case ROM_PC1512:
 		device_add(&fdc_xt_device);
-		if (gfxcard == GFX_INTERNAL) {
+		if (vid_card == VID_INTERNAL) {
 			vid_init_1512(ams);
 			device_add_ex(&vid_1512_device, ams->vid);
 		}
@@ -1260,7 +1260,7 @@ machine_amstrad_init(machine_t *model)
 
 	case ROM_PC1640:
 		device_add(&fdc_xt_device);
-		if (gfxcard == GFX_INTERNAL) {
+		if (vid_card == VID_INTERNAL) {
 			vid_init_1640(ams);
 			device_add_ex(&vid_1640_device, ams->vid);
 		}
@@ -1268,7 +1268,7 @@ machine_amstrad_init(machine_t *model)
 
 	case ROM_PC200:
 		device_add(&fdc_xt_device);
-		if (gfxcard == GFX_INTERNAL) {
+		if (vid_card == VID_INTERNAL) {
 			vid_init_200(ams);
 			device_add_ex(&vid_200_device, ams->vid);
 		}
@@ -1276,21 +1276,21 @@ machine_amstrad_init(machine_t *model)
 
 	case ROM_PC2086:
 		device_add(&fdc_at_actlow_device);
-		if (gfxcard == GFX_INTERNAL) {
+		if (vid_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc2086_device);
 		}
 		break;
 
 	case ROM_PC3086:
 		device_add(&fdc_at_actlow_device);
-		if (gfxcard == GFX_INTERNAL) {
+		if (vid_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc3086_device);
 		}
 		break;
 
 	case ROM_MEGAPC:
 		device_add(&fdc_at_actlow_device);
-		if (gfxcard == GFX_INTERNAL) {
+		if (vid_card == VID_INTERNAL) {
 			device_add(&paradise_wd90c11_megapc_device);
 		}
 		break;

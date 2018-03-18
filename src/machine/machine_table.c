@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.10	2018/03/13
+ * Version:	@(#)machine_table.c	1.0.11	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,7 +52,7 @@
 #include "machine.h"
 
 
-machine_t machines[] = {
+const machine_t machines[] = {
     { "[8088] AMI XT clone",			ROM_AMIXT,		"ami_xt",		L"generic/ami/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
     { "[8088] Compaq Portable",			ROM_PORTABLE,		"compaq_portable",	L"compaq/portable",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,	       machine_xt_compaq_init, NULL,			NULL			},
     { "[8088] DTK XT clone",			ROM_DTKXT,		"dtk_xt",		L"dtk/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
@@ -233,7 +233,7 @@ machine_getname(void)
 }
 
 
-device_t *
+const device_t *
 machine_getdevice(int machine)
 {
     if (machines[machine].get_device)

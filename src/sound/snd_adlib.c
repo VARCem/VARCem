@@ -8,7 +8,7 @@
  *
  *		Implementation of the ADLIB sound device.
  *
- * Version:	@(#)snd_adlib.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_adlib.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,7 +101,7 @@ void adlib_mca_write(int port, uint8_t val, void *p)
         adlib->pos_regs[port & 7] = val;
 }
 
-void *adlib_init(device_t *info)
+void *adlib_init(const device_t *info)
 {
         adlib_t *adlib = malloc(sizeof(adlib_t));
         memset(adlib, 0, sizeof(adlib_t));
@@ -113,7 +113,7 @@ void *adlib_init(device_t *info)
         return adlib;
 }
 
-void *adlib_mca_init(device_t *info)
+void *adlib_mca_init(const device_t *info)
 {
         adlib_t *adlib = adlib_init(info);
         
@@ -132,7 +132,7 @@ void adlib_close(void *p)
         free(adlib);
 }
 
-device_t adlib_device =
+const device_t adlib_device =
 {
         "AdLib",
         DEVICE_ISA,
@@ -142,7 +142,7 @@ device_t adlib_device =
         NULL
 };
 
-device_t adlib_mca_device =
+const device_t adlib_mca_device =
 {
         "AdLib (MCA)",
         DEVICE_MCA,

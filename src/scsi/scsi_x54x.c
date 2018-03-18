@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.7	2018/03/12
+ * Version:	@(#)scsi_x54x.c	1.0.8	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1909,7 +1909,7 @@ x54x_mem_disable(x54x_t *dev)
 
 /* General initialization routine for all boards. */
 void *
-x54x_init(device_t *info)
+x54x_init(const device_t *info)
 {
     x54x_t *dev;
 

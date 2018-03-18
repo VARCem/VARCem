@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.5	2018/03/12
+ * Version:	@(#)vid_ati28800.c	1.0.6	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,13 +83,15 @@ typedef struct ati28800_t
 } ati28800_t;
 
 
+int		ksc5601_mode_enabled;
+
+
 static uint8_t	port_03dd_val;
 static uint16_t	get_korean_font_kind;
 static int	in_get_korean_font_kind_set;
 static int	get_korean_font_enabled;
 static int	get_korean_font_index;
 static uint16_t	get_korean_font_base;
-int		ksc5601_mode_enabled;
 
 
 static void ati28800_out(uint16_t addr, uint8_t val, void *p)
@@ -363,7 +365,7 @@ static void ati28800_recalctimings(svga_t *svga)
 }
 
 static void *
-ati28800_init(device_t *info)
+ati28800_init(const device_t *info)
 {
     ati28800_t *ati;
 
@@ -373,7 +375,7 @@ ati28800_init(device_t *info)
     ati->memory = device_get_config_int("memory");
 
     switch(info->local) {
-	case GFX_VGAWONDERXL:
+	case VID_VGAWONDERXL:
 		rom_init_interleaved(&ati->bios_rom,
 				     BIOS_VGAXL_EVEN_PATH,
 				     BIOS_VGAXL_ODD_PATH,
@@ -382,7 +384,7 @@ ati28800_init(device_t *info)
 		break;
 
 #if defined(DEV_BRANCH) && defined(USE_XL24)
-	case GFX_VGAWONDERXL24:
+	case VID_VGAWONDERXL24:
 		rom_init_interleaved(&ati->bios_rom,
 				     BIOS_XL24_EVEN_PATH,
 				     BIOS_XL24_ODD_PATH,
@@ -430,7 +432,7 @@ void ati28800k_recalctimings(svga_t *svga)
 }
 
 void *
-ati28800k_init(device_t *info)
+ati28800k_init(const device_t *info)
 {
         ati28800_t *ati28800 = malloc(sizeof(ati28800_t));
         memset(ati28800, 0, sizeof(ati28800_t));
@@ -472,16 +474,18 @@ ati28800_available(void)
 
 
 static int
-ati28800k_available()
+ati28800k_available(void)
 {
-    return((rom_present(BIOS_ATIKOR_PATH) && rom_present(FONT_ATIKOR_PATH)));
+    return((rom_present(BIOS_ATIKOR_PATH) &&
+	   rom_present(FONT_ATIKOR_PATH)));
 }
 
 
 static int
 compaq_ati28800_available(void)
 {
-    return((rom_present(BIOS_VGAXL_EVEN_PATH) && rom_present(BIOS_VGAXL_ODD_PATH)));
+    return((rom_present(BIOS_VGAXL_EVEN_PATH) &&
+	   rom_present(BIOS_VGAXL_ODD_PATH)));
 }
 
 
@@ -489,7 +493,8 @@ compaq_ati28800_available(void)
 static int
 ati28800_wonderxl24_available(void)
 {
-    return((rom_present(BIOS_XL24_EVEN_PATH) && rom_present(BIOS_XL24_ODD_PATH)));
+    return((rom_present(BIOS_XL24_EVEN_PATH) &&
+	   rom_present(BIOS_XL24_ODD_PATH)));
 }
 #endif
 
@@ -541,7 +546,7 @@ static void ati28800_add_status_info(char *s, int max_len, void *priv)
 }
 
 
-static device_config_t ati28800_config[] =
+static const device_config_t ati28800_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 512,
@@ -566,7 +571,7 @@ static device_config_t ati28800_config[] =
 };
 
 #if defined(DEV_BRANCH) && defined(USE_XL24)
-static device_config_t ati28800_wonderxl_config[] =
+static const device_config_t ati28800_wonderxl_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 512,
@@ -591,56 +596,52 @@ static device_config_t ati28800_wonderxl_config[] =
 };
 #endif
 
-device_t ati28800_device =
-{
-        "ATI-28800",
-        DEVICE_ISA,
-	0,
-        ati28800_init, ati28800_close, NULL,
-        ati28800_available,
-        ati28800_speed_changed,
-        ati28800_force_redraw,
-        ati28800_add_status_info,
-	ati28800_config
+const device_t ati28800_device = {
+    "ATI-28800",
+    DEVICE_ISA,
+    0,
+    ati28800_init, ati28800_close, NULL,
+    ati28800_available,
+    ati28800_speed_changed,
+    ati28800_force_redraw,
+    ati28800_add_status_info,
+    ati28800_config
 };
 
-device_t ati28800k_device =
-{
-        "ATI Korean VGA",
-        DEVICE_ISA,
-	0,
-        ati28800k_init, ati28800_close, NULL,
-        ati28800k_available,
-        ati28800_speed_changed,
-        ati28800_force_redraw,
-        ati28800k_add_status_info,
-	ati28800_config
+const device_t ati28800k_device = {
+    "ATI Korean VGA",
+    DEVICE_ISA,
+    VID_ATIKOREANVGA,
+    ati28800k_init, ati28800_close, NULL,
+    ati28800k_available,
+    ati28800_speed_changed,
+    ati28800_force_redraw,
+    ati28800k_add_status_info,
+    ati28800_config
 };
 
-device_t compaq_ati28800_device =
-{
-        "Compaq ATI-28800",
-        DEVICE_ISA,
-	GFX_VGAWONDERXL,
-        ati28800_init, ati28800_close, NULL,
-        compaq_ati28800_available,
-        ati28800_speed_changed,
-        ati28800_force_redraw,
-        ati28800_add_status_info,
-	ati28800_config
+const device_t compaq_ati28800_device = {
+    "Compaq ATI-28800",
+    DEVICE_ISA,
+    VID_VGAWONDERXL,
+    ati28800_init, ati28800_close, NULL,
+    compaq_ati28800_available,
+    ati28800_speed_changed,
+    ati28800_force_redraw,
+    ati28800_add_status_info,
+    ati28800_config
 };
 
 #if defined(DEV_BRANCH) && defined(USE_XL24)
-device_t ati28800_wonderxl24_device =
-{
-        "ATI-28800 (VGA Wonder XL24)",
-        DEVICE_ISA,
-	GFX_VGAWONDERXL24,
-        ati28800_init, ati28800_close, NULL,
-        ati28800_wonderxl24_available,
-        ati28800_speed_changed,
-        ati28800_force_redraw,
-        ati28800_add_status_info,
-	ati28800_wonderxl_config
+const device_t ati28800_wonderxl24_device = {
+    "ATI-28800 (VGA Wonder XL24)",
+    DEVICE_ISA,
+    VID_VGAWONDERXL24,
+    ati28800_init, ati28800_close, NULL,
+    ati28800_wonderxl24_available,
+    ati28800_speed_changed,
+    ati28800_force_redraw,
+    ati28800_add_status_info,
+    ati28800_wonderxl_config
 };
 #endif

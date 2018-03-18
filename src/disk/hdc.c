@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.1	2018/02/14
+ * Version:	@(#)hdc.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,7 +49,7 @@ int	hdc_current;
 
 
 static void *
-null_init(device_t *info)
+null_init(const device_t *info)
 {
     return(NULL);
 }
@@ -61,7 +61,7 @@ null_close(void *priv)
 }
 
 
-static device_t null_device = {
+static const device_t null_device = {
     "Null HDC", 0, 0,
     null_init, null_close, NULL,
     NULL, NULL, NULL, NULL, NULL
@@ -69,7 +69,7 @@ static device_t null_device = {
 
 
 static void *
-inthdc_init(device_t *info)
+inthdc_init(const device_t *info)
 {
     return(NULL);
 }
@@ -81,18 +81,18 @@ inthdc_close(void *priv)
 }
 
 
-static device_t inthdc_device = {
+static const device_t inthdc_device = {
     "Internal Controller", 0, 0,
     inthdc_init, inthdc_close, NULL,
     NULL, NULL, NULL, NULL, NULL
 };
 
 
-static struct {
-    char	*name;
-    char	*internal_name;
-    device_t	*device;
-    int		is_mfm;
+static const struct {
+    const char		*name;
+    const char		*internal_name;
+    const device_t	*device;
+    int			is_mfm;
 } controllers[] = {
     { "None",						"none",		
       &null_device,					0		},
@@ -158,7 +158,7 @@ hdc_init(char *name)
     pclog("HDC: initializing..\n");
 
     for (c=0; controllers[c].device; c++) {
-	if (! strcmp(name, controllers[c].internal_name)) {
+	if (! strcmp(name, (char *)controllers[c].internal_name)) {
 		hdc_current = c;
 		break;
 	}
@@ -182,18 +182,18 @@ hdc_reset(void)
 char *
 hdc_get_name(int hdc)
 {
-    return(controllers[hdc].name);
+    return((char *)controllers[hdc].name);
 }
 
 
 char *
 hdc_get_internal_name(int hdc)
 {
-    return(controllers[hdc].internal_name);
+    return((char *)controllers[hdc].internal_name);
 }
 
 
-device_t *
+const device_t *
 hdc_get_device(int hdc)
 {
     return(controllers[hdc].device);

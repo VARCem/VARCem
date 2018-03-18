@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_mpu401.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -112,7 +112,7 @@ void mpu401_init(mpu_t *mpu, uint16_t addr, int irq, int mode);
 extern int mpu401_standalone_enable;
 
 void mpu401_device_add(void);
-device_t mpu401_device;
+extern const device_t mpu401_device;
 
 void mpu401_uart_init(mpu_t *mpu, uint16_t addr);
 

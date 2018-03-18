@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.1	2018/02/14
+ * Version:	@(#)m_pcjr.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -693,8 +693,6 @@ kbd_adddata(uint16_t val)
 }
 
 
-
-
 static void
 kbd_adddata_ex(uint16_t val)
 {
@@ -711,7 +709,7 @@ speed_changed(void *priv)
 }
 
 
-static device_config_t pcjr_config[] = {
+static const device_config_t pcjr_config[] = {
     {
 	"display_type", "Display type", CONFIG_SELECTION, "", PCJR_RGB,
 	{
@@ -732,7 +730,7 @@ static device_config_t pcjr_config[] = {
 };
 
 
-static device_t pcjr_device = {
+static const device_t pcjr_device = {
     "IBM PCjr",
     0, 0,
     NULL, NULL, NULL,
@@ -744,7 +742,7 @@ static device_t pcjr_device = {
 };
 
 
-device_t *
+const device_t *
 pcjr_get_device(void)
 {
     return &pcjr_device;
@@ -752,7 +750,7 @@ pcjr_get_device(void)
 
 
 void
-machine_pcjr_init(machine_t *model)
+machine_pcjr_init(const machine_t *model)
 {
     int display_type;
     pcjr_t *pcjr;

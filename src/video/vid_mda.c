@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_mda.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -300,7 +300,7 @@ void mda_poll(void *p)
 }
 
 
-void *mda_init(device_t *info)
+void *mda_init(const device_t *info)
 {
         int c;
         mda_t *mda = malloc(sizeof(mda_t));
@@ -360,7 +360,7 @@ void mda_speed_changed(void *p)
         mda_recalctimings(mda);
 }
 
-static device_config_t mda_config[] =
+static const device_config_t mda_config[] =
 {
         {
                 "rgb_type", "Display type", CONFIG_SELECTION, "", 0,
@@ -388,7 +388,7 @@ static device_config_t mda_config[] =
 };
 
 
-device_t mda_device =
+const device_t mda_device =
 {
         "MDA",
         DEVICE_ISA, 0,

@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT-based DSS sound device.
  *
- * Version:	@(#)snd_lpt_dss.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_lpt_dss.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -148,7 +148,7 @@ static void dss_close(void *p)
         free(dss);
 }
 
-lpt_device_t dss_device =
+const lpt_device_t dss_device =
 {
         "Disney Sound Source",
         dss_init,

@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_cga.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,8 +85,8 @@ uint8_t cga_read(uint32_t addr, void *p);
 void    cga_recalctimings(cga_t *cga);
 void    cga_poll(void *p);
 
-extern device_config_t cga_config[];
-extern device_t cga_device;
+extern const device_config_t cga_config[];
+extern const device_t cga_device;
 
 
 #endif	/*VIDEO_CGA_H*/

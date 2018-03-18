@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq PC's.
  *
- * Version:	@(#)m_at_compaq.c	1.0.2	2018/03/09
+ * Version:	@(#)m_at_compaq.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -118,7 +118,7 @@ write_raml(uint32_t addr, uint32_t val, void *priv)
 
 
 void
-machine_at_compaq_init(machine_t *model)
+machine_at_compaq_init(const machine_t *model)
 {
     machine_at_top_remap_init(model);
     device_add(&fdc_at_device);

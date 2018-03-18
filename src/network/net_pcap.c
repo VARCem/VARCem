@@ -8,7 +8,7 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.2	2018/03/10
+ * Version:	@(#)net_pcap.c	1.0.3	2018/03/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -60,7 +60,7 @@
 static volatile void		*pcap_handle;	/* handle to WinPcap DLL */
 static volatile pcap_t		*pcap;		/* handle to WinPcap library */
 static volatile thread_t	*poll_tid;
-static netcard_t		*poll_card;	/* netcard linked to us */
+static const netcard_t		*poll_card;	/* netcard linked to us */
 static event_t			*poll_state;
 
 
@@ -233,9 +233,7 @@ net_pcap_init(void)
     pclog("PCAP: initializing, %s\n", errbuf);
 
     /* Get the value of our capture interface. */
-    if ((network_pcap == NULL) ||
-	(network_pcap[0] == '\0') ||
-	!strcmp(network_pcap, "none")) {
+    if ((network_host[0] == '\0') || !strcmp(network_host, "none")) {
 	pclog("PCAP: no interface configured!\n");
 	return(-1);
     }
@@ -303,33 +301,30 @@ net_pcap_close(void)
  * tries to attach to the network module.
  */
 int
-net_pcap_reset(netcard_t *card)
+net_pcap_reset(const netcard_t *card, uint8_t *mac)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     char filter_exp[255];
     struct bpf_program fp;
 
     /* Open a PCAP live channel. */
-    if ((pcap = f_pcap_open_live(network_pcap,		/* interface name */
+    if ((pcap = f_pcap_open_live(network_host,		/* interface name */
 				 1518,			/* max packet size */
 				 1,			/* promiscuous mode? */
 				 10,			/* timeout in msec */
 			         errbuf)) == NULL) {	/* error buffer */
-	pclog(" Unable to open device: %s!\n", network_pcap);
+	pclog(" Unable to open device: %s!\n", network_host);
 	return(-1);
     }
-    pclog("PCAP: interface: %s\n", network_pcap);
+    pclog("PCAP: interface: %s\n", network_host);
 
     /* Create a MAC address based packet filter. */
     pclog("PCAP: installing filter for MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-			card->mac[0], card->mac[1], card->mac[2],
-			card->mac[3], card->mac[4], card->mac[5]);
+			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     sprintf(filter_exp,
 	"( ((ether dst ff:ff:ff:ff:ff:ff) or (ether dst %02x:%02x:%02x:%02x:%02x:%02x)) and not (ether src %02x:%02x:%02x:%02x:%02x:%02x) )",
-		card->mac[0], card->mac[1], card->mac[2],
-		card->mac[3], card->mac[4], card->mac[5],
-		card->mac[0], card->mac[1], card->mac[2],
-		card->mac[3], card->mac[4], card->mac[5]);
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     if (f_pcap_compile((pcap_t *)pcap, &fp, filter_exp, 0, 0xffffffff) != -1) {
 	if (f_pcap_setfilter((pcap_t *)pcap, &fp) != 0) {
 		pclog("PCAP: error installing filter (%s) !\n", filter_exp);
@@ -347,7 +342,7 @@ net_pcap_reset(netcard_t *card)
 
     pclog("PCAP: starting thread..\n");
     poll_state = thread_create_event();
-    poll_tid = thread_create(poll_thread, card->mac);
+    poll_tid = thread_create(poll_thread, mac);
     thread_wait_event(poll_state, -1);
 
     return(0);

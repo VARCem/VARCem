@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_hercules.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -351,7 +351,7 @@ void hercules_poll(void *p)
 }
 
 
-void *hercules_init(device_t *info)
+void *hercules_init(const device_t *info)
 {
         int c;
         hercules_t *hercules = malloc(sizeof(hercules_t));
@@ -411,7 +411,7 @@ void hercules_speed_changed(void *p)
         hercules_recalctimings(hercules);
 }
 
-static device_config_t hercules_config[] =
+static const device_config_t hercules_config[] =
 {
         {
                 "rgb_type", "Display type", CONFIG_SELECTION, "", 0,
@@ -439,7 +439,7 @@ static device_config_t hercules_config[] =
 };
 
 
-device_t hercules_device =
+const device_t hercules_device =
 {
         "Hercules",
         DEVICE_ISA, 0,

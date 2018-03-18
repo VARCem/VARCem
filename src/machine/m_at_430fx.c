@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430FX PCISet chip.
  *
- * Version:	@(#)m_at_430fx.c	1.0.3	2018/03/07
+ * Version:	@(#)m_at_430fx.c	1.0.5	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -227,7 +227,7 @@ static void i430fx_init(void)
 
 
 void
-machine_at_p54tp4xe_init(machine_t *model)
+machine_at_p54tp4xe_init(const machine_t *model)
 {
         machine_at_ps2_init(model);
 
@@ -248,7 +248,7 @@ machine_at_p54tp4xe_init(machine_t *model)
 
 
 void
-machine_at_endeavor_init(machine_t *model)
+machine_at_endeavor_init(const machine_t *model)
 {
         machine_at_common_init(model);
 	device_add(&keyboard_ps2_ami_device);
@@ -268,12 +268,12 @@ machine_at_endeavor_init(machine_t *model)
 
         device_add(&intel_flash_bxt_ami_device);
 
-	if (gfxcard == GFX_INTERNAL)
+	if (vid_card == VID_INTERNAL)
 		device_add(&s3_phoenix_trio64_onboard_pci_device);
 }
 
 
-device_t *
+const device_t *
 at_endeavor_get_device(void)
 {
     return &s3_phoenix_trio64_onboard_pci_device;
@@ -281,7 +281,7 @@ at_endeavor_get_device(void)
 
 
 void
-machine_at_zappa_init(machine_t *model)
+machine_at_zappa_init(const machine_t *model)
 {
         machine_at_common_init(model);
 	device_add(&keyboard_ps2_ami_device);
@@ -302,7 +302,7 @@ machine_at_zappa_init(machine_t *model)
 
 
 void
-machine_at_mb500n_init(machine_t *model)
+machine_at_mb500n_init(const machine_t *model)
 {
         machine_at_ps2_init(model);
 
@@ -322,7 +322,7 @@ machine_at_mb500n_init(machine_t *model)
 
 
 void
-machine_at_president_init(machine_t *model)
+machine_at_president_init(const machine_t *model)
 {
         machine_at_ps2_init(model);
 
@@ -343,7 +343,7 @@ machine_at_president_init(machine_t *model)
 
 
 void
-machine_at_thor_init(machine_t *model)
+machine_at_thor_init(const machine_t *model)
 {
         machine_at_common_init(model);
 	device_add(&keyboard_ps2_ami_device);

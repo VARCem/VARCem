@@ -8,7 +8,7 @@
  *
  *		Implementation of a standard joystick.
  *
- * Version:	@(#)joystick_standard.c	1.0.3	2018/03/10
+ * Version:	@(#)joystick_standard.c	1.0.4	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -195,7 +195,7 @@ static void joystick_standard_a0_over(void *p)
 {
 }
 
-joystick_if_t joystick_standard =
+const joystick_if_t joystick_standard =
 {
         "Standard 2-button joystick(s)",
         joystick_standard_init,
@@ -211,7 +211,7 @@ joystick_if_t joystick_standard =
         {"X axis", "Y axis"},
         {"Button 1", "Button 2"}
 };
-joystick_if_t joystick_standard_4button =
+const joystick_if_t joystick_standard_4button =
 {
         "Standard 4-button joystick",
         joystick_standard_init,
@@ -227,7 +227,7 @@ joystick_if_t joystick_standard_4button =
         {"X axis", "Y axis"},
         {"Button 1", "Button 2", "Button 3", "Button 4"}
 };
-joystick_if_t joystick_standard_6button =
+const joystick_if_t joystick_standard_6button =
 {
         "Standard 6-button joystick",
         joystick_standard_init,
@@ -243,7 +243,7 @@ joystick_if_t joystick_standard_6button =
         {"X axis", "Y axis"},
         {"Button 1", "Button 2", "Button 3", "Button 4", "Button 5", "Button 6"}
 };
-joystick_if_t joystick_standard_8button =
+const joystick_if_t joystick_standard_8button =
 {
         "Standard 8-button joystick",
         joystick_standard_init,

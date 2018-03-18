@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_xt_laserxt.c	1.0.1	2018/02/14
+ * Version:	@(#)m_xt_laserxt.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -169,7 +169,7 @@ static void laserxt_init(void)
 
 
 void
-machine_xt_laserxt_init(machine_t *model)
+machine_xt_laserxt_init(const machine_t *model)
 {
         machine_xt_init(model);
 

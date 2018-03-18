@@ -8,7 +8,7 @@
  *
  *		Handle SLiRP library processing.
  *
- * Version:	@(#)net_slirp.c	1.0.1	2018/02/14
+ * Version:	@(#)net_slirp.c	1.0.2	2018/03/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -60,7 +60,7 @@
 
 static volatile queueADT	slirpq;		/* SLiRP library handle */
 static volatile thread_t	*poll_tid;
-static netcard_t		*poll_card;	/* netcard attached to us */
+static const netcard_t		*poll_card;	/* netcard attached to us */
 static event_t			*poll_state;
 
 
@@ -173,14 +173,14 @@ net_slirp_init(void)
 
 /* Initialize SLiRP for use. */
 int
-net_slirp_reset(netcard_t *card)
+net_slirp_reset(const netcard_t *card, uint8_t *mac)
 {
     /* Save the callback info. */
     poll_card = card;
 
     pclog("SLiRP: creating thread..\n");
     poll_state = thread_create_event();
-    poll_tid = thread_create(poll_thread, card->mac);
+    poll_tid = thread_create(poll_thread, mac);
     thread_wait_event(poll_state, -1);
 
     return(0);

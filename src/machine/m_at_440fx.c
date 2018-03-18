@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 440FX PCISet chip.
  *
- * Version:	@(#)m_at_440fx.c	1.0.2	2018/03/07
+ * Version:	@(#)m_at_440fx.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -215,7 +215,7 @@ static void i440fx_init(void)
 
 
 void
-machine_at_i440fx_init(machine_t *model)
+machine_at_i440fx_init(const machine_t *model)
 {
 	machine_at_ps2_init(model);
 
@@ -237,7 +237,7 @@ machine_at_i440fx_init(machine_t *model)
 
 
 void
-machine_at_s1668_init(machine_t *model)
+machine_at_s1668_init(const machine_t *model)
 {
 	machine_at_common_init(model);
 	device_add(&keyboard_ps2_ami_device);

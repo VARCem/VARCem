@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.3	2018/03/10
+ * Version:	@(#)midi_fluidsynth.c	1.0.4	2018/03/15
  *
  *		Code borrowed from scummvm.
  *
@@ -280,7 +280,7 @@ fluidsynth_sysex(uint8_t *data, unsigned int len)
 
 
 static void *
-fluidsynth_init(device_t *info)
+fluidsynth_init(const device_t *info)
 {
     fluidsynth_t* data = &fsdev;
 
@@ -423,8 +423,7 @@ fluidsynth_close(void* priv)
 }
 
 
-static device_config_t
-fluidsynth_config[] = {
+static const device_config_t fluidsynth_config[] = {
 	{
 		.name = "sound_font",
 		.description = "Sound Font",
@@ -600,7 +599,7 @@ fluidsynth_config[] = {
 };
 
 
-device_t fluidsynth_device = {
+const device_t fluidsynth_device = {
     "FluidSynth",
     0, 0,
     fluidsynth_init,

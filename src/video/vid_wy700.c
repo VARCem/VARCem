@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_wy700.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -917,7 +917,7 @@ void wy700_poll(void *p)
 }
 
 
-void *wy700_init(device_t *info)
+void *wy700_init(const device_t *info)
 {
         int c;
         wy700_t *wy700 = malloc(sizeof(wy700_t));
@@ -1025,7 +1025,7 @@ void wy700_speed_changed(void *p)
         wy700_recalctimings(wy700);
 }
 
-device_t wy700_device =
+const device_t wy700_device =
 {
         "Wyse 700",
         DEVICE_ISA, 0,

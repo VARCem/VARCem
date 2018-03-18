@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.3	2018/02/26
+ * Version:	@(#)vid_voodoo.c	1.0.5	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -91,7 +91,7 @@ enum
         VOODOO_2 = 2
 };
 
-static uint32_t texture_offset[LOD_MAX+3] =
+static const uint32_t texture_offset[LOD_MAX+3] =
 {
         0,
         256*256,
@@ -167,7 +167,16 @@ typedef struct
         uint32_t val;
 } fifo_entry_t;
 
-static rgba8_t rgb332[0x100], ai44[0x100], rgb565[0x10000], argb1555[0x10000], argb4444[0x10000], ai88[0x10000];
+/*
+ * To conserve space in the .bss segment, these
+ * are allocated on the heap at card activation.
+ */
+static rgba8_t	*rgb332,
+		*ai44,
+		*rgb565,
+		*argb1555,
+		*argb4444,
+		*ai88;
 
 typedef struct voodoo_params_t
 {
@@ -7778,13 +7787,20 @@ void *voodoo_card_init()
         return voodoo;
 }
 
-void *voodoo_init(struct _device_ *dev)
+void *voodoo_init(const device_t *info)
 {
         voodoo_set_t *voodoo_set = malloc(sizeof(voodoo_set_t));
         uint32_t tmuConfig = 1;
         int type;
         memset(voodoo_set, 0, sizeof(voodoo_set_t));
         
+        rgb332 = (rgba8_t *)malloc(sizeof(rgba8_t)*0x100);
+        ai44 = (rgba8_t *)malloc(sizeof(rgba8_t)*0x100);
+        rgb565 = (rgba8_t *)malloc(sizeof(rgba8_t)*0x10000);
+        argb1555 = (rgba8_t *)malloc(sizeof(rgba8_t)*0x10000);
+        argb4444 = (rgba8_t *)malloc(sizeof(rgba8_t)*0x10000);
+        ai88 = (rgba8_t *)malloc(sizeof(rgba8_t)*0x10000);
+
         type = device_get_config_int("type");
         
         voodoo_set->nr_cards = device_get_config_int("sli") ? 2 : 1;
@@ -7891,10 +7907,17 @@ void voodoo_close(void *p)
                 voodoo_card_close(voodoo_set->voodoos[1]);
         voodoo_card_close(voodoo_set->voodoos[0]);
         
+        free(rgb332);
+        free(ai44);
+        free(rgb565);
+        free(argb1555);
+        free(argb4444);
+        free(ai88);
+        
         free(voodoo_set);
 }
 
-static device_config_t voodoo_config[] =
+static const device_config_t voodoo_config[] =
 {
         {
                 .name = "type",
@@ -8011,7 +8034,7 @@ static device_config_t voodoo_config[] =
         }
 };
 
-device_t voodoo_device =
+const device_t voodoo_device =
 {
         "3DFX Voodoo Graphics",
         DEVICE_PCI,

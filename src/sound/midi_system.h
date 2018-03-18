@@ -8,7 +8,7 @@
  *
  *		Definitions for the System MIDI driver.
  *
- * Version:	@(#)midi_system.h	1.0.1	2018/02/14
+ * Version:	@(#)midi_system.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define SOUND_MIDI_SYSTEM_H
 
 
-extern device_t system_midi_device;
+extern const device_t system_midi_device;
 
 
 #endif	/*SOUND_MIDI_SYSTEM_H*/

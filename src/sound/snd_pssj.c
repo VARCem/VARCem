@@ -10,7 +10,7 @@
  *
  * NOTE:	Should be moved to the Tandy machine file.
  *
- * Version:	@(#)snd_pssj.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_pssj.c	1.0.1	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -224,7 +224,7 @@ static void pssj_get_buffer(int32_t *buffer, int len, void *p)
         pssj->pos = 0;
 }
 
-void *pssj_init(device_t *info)
+void *pssj_init(const device_t *info)
 {
         pssj_t *pssj = malloc(sizeof(pssj_t));
         memset(pssj, 0, sizeof(pssj_t));
@@ -245,7 +245,7 @@ void pssj_close(void *p)
         free(pssj);        
 }
 
-device_t pssj_device =
+const device_t pssj_device =
 {
         "Tandy PSSJ",
         0, 0,

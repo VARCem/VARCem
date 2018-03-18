@@ -8,7 +8,7 @@
  *
  *		Implementation of the TI SN74689 PSG sound devices.
  *
- * Version:	@(#)snd_sn76489.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_sn76489.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -243,7 +243,7 @@ void sn76489_init(sn76489_t *sn76489, uint16_t base, uint16_t size, int type, in
         io_sethandler(base, size, NULL, NULL, NULL, sn76489_write, NULL, NULL, sn76489);
 }
 
-void *sn76489_device_init(device_t *info)
+void *sn76489_device_init(const device_t *info)
 {
         sn76489_t *sn76489 = malloc(sizeof(sn76489_t));
         memset(sn76489, 0, sizeof(sn76489_t));
@@ -252,7 +252,7 @@ void *sn76489_device_init(device_t *info)
 
         return sn76489;
 }
-void *ncr8496_device_init(device_t *info)
+void *ncr8496_device_init(const device_t *info)
 {
         sn76489_t *sn76489 = malloc(sizeof(sn76489_t));
         memset(sn76489, 0, sizeof(sn76489_t));
@@ -269,7 +269,7 @@ void sn76489_device_close(void *p)
         free(sn76489);        
 }
 
-device_t sn76489_device =
+const device_t sn76489_device =
 {
         "TI SN74689 PSG",
         0,
@@ -279,7 +279,7 @@ device_t sn76489_device =
 	NULL, NULL, NULL, NULL,
         NULL
 };
-device_t ncr8496_device =
+const device_t ncr8496_device =
 {
         "NCR8496 PSG",
         0,

@@ -8,7 +8,7 @@
  *
  *		Definitions for the CF62011 driver.
  *
- * Version:	@(#)vid_ti_cf62011.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_ti_cf62011.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,9 +41,9 @@
 
 
 #if defined(DEV_BRANCH) && defined(USE_TI)
-extern device_t ti_cf62011_device;
+extern const device_t ti_cf62011_device;
 #endif
-extern device_t ibm_ps1_2121_device;
+extern const device_t ibm_ps1_2121_device;
 
 
 #endif	/*VIDEO_TI_CF62011_H*/

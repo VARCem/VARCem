@@ -8,7 +8,7 @@
  *
  *		Definitions for the GeniusVHR driver.
  *
- * Version:	@(#)vid_genius.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_genius.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define VIDEO_GENIUS_H
 
 
-extern device_t genius_device;
+extern const device_t genius_device;
 
 
 #endif	/*VIDEO_GENIUS_H*/

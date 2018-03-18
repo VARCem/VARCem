@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.3	2018/03/08
+ * Version:	@(#)scsi_disk.c	1.0.4	2018/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,7 +101,7 @@ uint8_t scsi_hard_disks[16][8] = {
 
 
 /* Table of all SCSI commands and their flags, needed for the new disc change / not ready handler. */
-uint8_t scsi_hd_command_flags[0x100] = {
+const uint8_t scsi_hd_command_flags[0x100] = {
     IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x00 */
     IMPLEMENTED | ALLOW_UA | NONDATA | SCSI_ONLY,		/* 0x01 */
     0,

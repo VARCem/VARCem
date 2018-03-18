@@ -8,7 +8,7 @@
  *
  *		Definitions for the joystick driver.
  *
- * Version:	@(#)joystick_standard.h	1.0.1	2018/02/14
+ * Version:	@(#)joystick_standard.h	1.0.2	2018/03/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -35,7 +35,7 @@
  *   USA.
  */
 
-extern joystick_if_t joystick_standard;
-extern joystick_if_t joystick_standard_4button;
-extern joystick_if_t joystick_standard_6button;
-extern joystick_if_t joystick_standard_8button;
+extern const joystick_if_t joystick_standard;
+extern const joystick_if_t joystick_standard_4button;
+extern const joystick_if_t joystick_standard_6button;
+extern const joystick_if_t joystick_standard_8button;

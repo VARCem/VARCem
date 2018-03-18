@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.1	2018/02/14
+ * Version:	@(#)mouse_serial.c	1.0.2	2018/03/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -228,7 +228,7 @@ sermouse_close(void *priv)
 
 /* Initialize the device for use by the user. */
 static void *
-sermouse_init(device_t *info)
+sermouse_init(const device_t *info)
 {
     mouse_t *dev;
     int i;
@@ -279,7 +279,7 @@ sermouse_init(device_t *info)
 }
 
 
-static device_config_t sermouse_config[] = {
+static const device_config_t sermouse_config[] = {
     {
 	"port", "Serial Port", CONFIG_SELECTION, "", 0, {
 		{
@@ -315,7 +315,7 @@ static device_config_t sermouse_config[] = {
 };
 
 
-device_t mouse_mssystems_device = {
+const device_t mouse_mssystems_device = {
     "Mouse Systems Serial Mouse",
     0,
     MOUSE_TYPE_MSYSTEMS,
@@ -324,7 +324,7 @@ device_t mouse_mssystems_device = {
     sermouse_config
 };
 
-device_t mouse_msserial_device = {
+const device_t mouse_msserial_device = {
     "Microsoft/Logitech Serial Mouse",
     0,
     0,

@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.2	2018/02/26
+ * Version:	@(#)snd_emu8k.c	1.0.3	2018/03/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,7 +68,7 @@
 
 //#define EMU8K_DEBUG_REGISTERS
 
-char *PORT_NAMES[][8] =
+const char *PORT_NAMES[][8] =
 {
         /* Data 0 ( 0x620/0x622) */
         {       "AWE_CPF",
@@ -151,23 +151,23 @@ int dmawritebit = 0;
 #define CUBIC_RESOLUTION_LOG 10
 #define CUBIC_RESOLUTION (1<<CUBIC_RESOLUTION_LOG)
 /* cubic_table coefficients. */
-static float cubic_table[CUBIC_RESOLUTION*4];
+static float *cubic_table;
 
 /* conversion from current pitch to linear frequency change (in 32.32 fixed point). */
-static int64_t freqtable[65536];
+static int64_t *freqtable;
 /* Conversion from initial attenuation to 16 bit unsigned lineal amplitude (currently only a way to update volume target register) */
-static int32_t attentable[256];
+static int32_t *attentable;
 /* Conversion from envelope dbs (once rigth shifted) (0 = 0dBFS, 65535 = -96dbFS and silence ) to 16 bit unsigned lineal amplitude,
  * to convert to current volume. (0 to 65536) */
-static int32_t env_vol_db_to_vol_target[65537];
+static int32_t *env_vol_db_to_vol_target;
 /* Same as above, but to convert amplitude (once rigth shifted) (0 to 65536) to db (0 = 0dBFS, 65535 = -96dbFS and silence ). 
  * it is needed so that the delay, attack and hold phase can be added to initial attenuation and tremolo */
-static int32_t env_vol_amplitude_to_db[65537];
+static int32_t *env_vol_amplitude_to_db;
 /* Conversion from envelope herts (once right shifted) to octave . it is needed so that the delay, attack and hold phase can be
  * added to initial pitch ,lfos pitch , initial filter and lfo filter */
-static int32_t env_mod_hertz_to_octave[65537];
+static int32_t *env_mod_hertz_to_octave;
 /* Conversion from envelope amount to time in samples. */
-static int32_t env_attack_to_samples[128];
+static int32_t *env_attack_to_samples;
 /* This table has been generated using the following formula:
  * Get the amount of dBs that have to be added each sample to reach 96dBs in the amount 
  * of time determined by the encoded value "i".
@@ -178,7 +178,7 @@ static int32_t env_attack_to_samples[128];
  * env_vol_db_to_vol_target and shifting by 8
  * In other words, the unit of the table is the 1/21845th of a dB per sample frame, to be added or
  * substracted to the accumulating value_db of the envelope. */ 
-static int32_t env_decay_to_dbs_or_oct[128] =
+static const int32_t env_decay_to_dbs_or_oct[128] =
 {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
         16, 17, 18, 19, 20, 20, 21, 22, 23, 24, 25, 27, 28, 29, 30, 32,
@@ -194,7 +194,7 @@ static int32_t env_decay_to_dbs_or_oct[128] =
  * I tried calculating it using the instructions in awe32p10 from Judge Dredd, but the formula there
  * is wrong.
  *
-static int32_t env_decay_to_millis[128] = {
+static const int32_t env_decay_to_millis[128] = {
 0, 45120, 22614, 15990, 11307, 9508, 7995, 6723, 5653, 5184, 4754, 4359, 3997, 3665, 3361, 3082,
 2828, 2765, 2648, 2535, 2428, 2325, 2226, 2132, 2042, 1955, 1872, 1793, 1717, 1644, 1574, 1507,
 1443, 1382, 1324, 1267, 1214, 1162, 1113, 1066, 978, 936, 897, 859, 822, 787, 754, 722,
@@ -207,12 +207,12 @@ static int32_t env_decay_to_millis[128] = {
 */
 
 /* Table represeting the LFO waveform (signed 16bits with 32768 max int. >> 15 to move back to +/-1 range). */
-static int32_t lfotable[65536];
+static int32_t *lfotable;
 /* Table to transform the speed parameter to emu8k_mem_internal_t range. */
-static int64_t lfofreqtospeed[256];
+static int64_t *lfofreqtospeed;
 
 /* LFO used for the chorus. a sine wave.(signed 16bits with 32768 max int. >> 15 to move back to +/-1 range). */
-static double chortable[65536];
+static double *chortable;
 
 static const int REV_BUFSIZE_STEP=242;
 
@@ -248,7 +248,7 @@ Coeff  Low Fc(Hz)Low Q(dB)High Fc(kHz)High Q(dB)DC Attenuation(dB)
 * 15          100      28      7.0        18       -11.0
 *
 * Attenuation as above, codified in amplitude.*/
-static int32_t filter_atten[16] =
+static const int32_t filter_atten[16] =
 {
     65536, 61869, 57079, 53269, 49145, 44820, 40877, 34792, 32845, 30653, 28607,
         26392, 24630, 22463, 20487, 18470
@@ -2194,6 +2194,21 @@ void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram)
         emu8k->empty = malloc(2*BLOCK_SIZE_WORDS); 
         memset(emu8k->empty, 0, 2*BLOCK_SIZE_WORDS);
 
+	/*
+	 * To save on .bss space, we allocate these on the
+	 * heap as needed, and free them on device close.
+	 */
+	cubic_table = (float *)malloc(CUBIC_RESOLUTION*4*sizeof(float));
+	freqtable = (int64_t *)malloc(65536*sizeof(int64_t));
+	attentable = (int32_t *)malloc(256*sizeof(int32_t));
+	env_vol_db_to_vol_target = (int32_t *)malloc(65537*sizeof(int32_t));
+	env_vol_amplitude_to_db = (int32_t *)malloc(65537*sizeof(int32_t));
+	env_mod_hertz_to_octave = (int32_t *)malloc(65537*sizeof(int32_t));
+	env_attack_to_samples = (int32_t *)malloc(128*sizeof(int32_t));
+	lfotable = (int32_t *)malloc(65536*sizeof(int32_t));
+	lfofreqtospeed = (int64_t *)malloc(256*sizeof(int64_t));
+	chortable = (double *)malloc(65536*sizeof(double));
+
         int j=0;
         for (;j<0x8;j++)
         {
@@ -2420,5 +2435,17 @@ void emu8k_close(emu8k_t *emu8k)
 {
         free(emu8k->rom);
         free(emu8k->ram);
+
+	/* Release the allocated buffers. */
+	free(cubic_table); cubic_table = NULL;
+	free(freqtable); freqtable = NULL;
+	free(attentable); attentable = NULL;
+	free(env_vol_db_to_vol_target); env_vol_db_to_vol_target = NULL;
+	free(env_vol_amplitude_to_db); env_vol_amplitude_to_db = NULL;
+	free(env_mod_hertz_to_octave); env_mod_hertz_to_octave = NULL;
+	free(env_attack_to_samples); env_attack_to_samples = NULL;
+	free(lfotable); lfotable = NULL;
+	free(lfofreqtospeed); lfofreqtospeed = NULL;
+	free(chortable); chortable = NULL;
 }
 

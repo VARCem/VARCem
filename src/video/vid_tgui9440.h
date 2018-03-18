@@ -8,7 +8,7 @@
  *
  *		Definitions for the TGUI9440 driver.
  *
- * Version:	@(#)vid_tgui9440.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_tgui9440.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,9 +40,9 @@
 # define VIDEO_TGUI9440_H
 
 
-extern device_t tgui9400cxi_device;
-extern device_t tgui9440_vlb_device;
-extern device_t tgui9440_pci_device;
+extern const device_t tgui9400cxi_device;
+extern const device_t tgui9440_vlb_device;
+extern const device_t tgui9440_pci_device;
 
 
 #endif	/*VIDEO_TGUI9440_H*/

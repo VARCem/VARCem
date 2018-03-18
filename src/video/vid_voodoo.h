@@ -8,7 +8,7 @@
  *
  *		Definitions for the Voodoo driver.
  *
- * Version:	@(#)vid_voodoo.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_voodoo.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define VIDEO_VOODOO_H
 
 
-extern device_t voodoo_device;
+extern const device_t voodoo_device;
 
 
 #endif	/*VIDEO_VOODOO_H*/

@@ -8,7 +8,7 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.2	2018/03/08
+ * Version:	@(#)scsi_x54x.h	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -516,7 +516,7 @@ extern void	x54x_mem_init(x54x_t *dev, uint32_t addr);
 extern void	x54x_mem_enable(x54x_t *dev);
 extern void	x54x_mem_set_addr(x54x_t *dev, uint32_t base);
 extern void	x54x_mem_disable(x54x_t *dev);
-extern void	*x54x_init(device_t *info);
+extern void	*x54x_init(const device_t *info);
 extern void	x54x_close(void *priv);
 extern void	x54x_device_reset(void *priv);
 

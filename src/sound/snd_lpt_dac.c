@@ -8,7 +8,7 @@
  *
  *		Implemantation of LPT-based sound devices.
  *
- * Version:	@(#)snd_lpt_dac.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_lpt_dac.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -142,7 +142,7 @@ static void dac_close(void *p)
         free(lpt_dac);
 }
 
-lpt_device_t lpt_dac_device =
+const lpt_device_t lpt_dac_device =
 {
         "LPT DAC / Covox Speech Thing",
         dac_init,
@@ -151,7 +151,7 @@ lpt_device_t lpt_dac_device =
         dac_write_ctrl,
         dac_read_status
 };
-lpt_device_t lpt_dac_stereo_device =
+const lpt_device_t lpt_dac_stereo_device =
 {
         "Stereo LPT DAC",
         dac_stereo_init,

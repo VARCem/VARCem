@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 2 Mbit 8-bit flash devices.
  *
- * Version:	@(#)intel_flash.c	1.0.3	2018/02/22
+ * Version:	@(#)intel_flash.c	1.0.4	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -270,25 +270,25 @@ void *intel_flash_init(uint8_t type)
         return flash;
 }
 
-void *intel_flash_bxb_ami_init(device_t *info)
+void *intel_flash_bxb_ami_init(const device_t *info)
 {
 	return intel_flash_init(info->local);
 }
 
 /* For AMI BIOS'es - Intel 28F001BXT with high address pin inverted. */
-void *intel_flash_bxt_ami_init(device_t *info)
+void *intel_flash_bxt_ami_init(const device_t *info)
 {
 	return intel_flash_init(info->local);
 }
 
 /* For Award BIOS'es - Intel 28F001BXT with high address pin not inverted. */
-void *intel_flash_bxt_init(device_t *info)
+void *intel_flash_bxt_init(const device_t *info)
 {
 	return intel_flash_init(info->local);
 }
 
 /* For Acer BIOS'es - Intel 28F001BXB. */
-void *intel_flash_bxb_init(device_t *info)
+void *intel_flash_bxb_init(const device_t *info)
 {
 	return intel_flash_init(info->local);
 }
@@ -308,7 +308,7 @@ void intel_flash_close(void *p)
 }
 
 
-device_t intel_flash_bxt_ami_device =
+const device_t intel_flash_bxt_ami_device =
 {
         "Intel 28F001BXT Flash BIOS",
         0, FLASH_INVERT,
@@ -318,7 +318,7 @@ device_t intel_flash_bxt_ami_device =
         NULL, NULL, NULL, NULL, NULL
 };
 
-device_t intel_flash_bxb_ami_device =
+const device_t intel_flash_bxb_ami_device =
 {
         "Intel 28F001BXB Flash BIOS",
         0, FLASH_IS_BXB | FLASH_INVERT,
@@ -328,7 +328,7 @@ device_t intel_flash_bxb_ami_device =
         NULL, NULL, NULL, NULL, NULL
 };
 
-device_t intel_flash_bxt_device =
+const device_t intel_flash_bxt_device =
 {
         "Intel 28F001BXT Flash BIOS",
         0, 0,
@@ -338,7 +338,7 @@ device_t intel_flash_bxt_device =
         NULL, NULL, NULL, NULL, NULL
 };
 
-device_t intel_flash_bxb_device =
+const device_t intel_flash_bxb_device =
 {
         "Intel 28F001BXB Flash BIOS",
         0, FLASH_IS_BXB,

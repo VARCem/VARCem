@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.9	2018/03/14
+ * Version:	@(#)pc.c	1.0.10	2018/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -126,6 +126,7 @@ int	vid_cga_contrast = 0,			/* (C) video */
 	video_fullscreen_first = 0,		/* (C) video */
 	enable_overscan = 0,			/* (C) video */
 	force_43 = 0,				/* (C) video */
+	vid_card = 0,				/* (C) graphics/video card */
 	video_speed = 0;			/* (C) video */
 int	serial_enabled[SERIAL_MAX] = {0,0},	/* (C) enable serial ports */
 	lpt_enabled = 0,			/* (C) enable LPT ports */
@@ -135,7 +136,6 @@ int	update_icons;				/* (C) enable icons updates */
 #ifdef WALTJE
 int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
-int	gfxcard = 0;				/* (C) graphics/video card */
 int	sound_is_float = 1,			/* (C) sound uses FP values */
 	GAMEBLASTER = 0,			/* (C) sound option */
 	GUS = 0,				/* (C) sound option */
@@ -147,6 +147,10 @@ int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
 	cpu = 3,				/* (C) cpu type */
 	enable_external_fpu = 0;		/* (C) enable external FPU */
 int	enable_sync = 0;			/* (C) enable time sync */
+int	network_type;				/* (C) net provider type */
+int	network_card;				/* (C) net interface num */
+char	network_host[512];			/* (C) host network intf */
+
 
 
 /* Statistics. */
@@ -167,13 +171,9 @@ int	insc = 0;				/* cpu */
 int	emu_fps = 0, fps;			/* video */
 int	framecount;
 
-int	CPUID;
-int	output;
 int	atfullspeed;
 int	cpuspeed2;
 int	clockrate;
-
-int	gfx_present[GFX_MAX];			/* should not be here */
 
 char	emu_title[128];				/* full name of application */
 char	emu_version[128];			/* version ID string */
@@ -640,8 +640,6 @@ pc_reload(wchar_t *fn)
     fdd_load(2, floppyfns[2]);
     fdd_load(3, floppyfns[3]);
 
-    mem_reset();
-
     network_init();
 
     pc_reset_hard_init();
@@ -670,7 +668,7 @@ pc_init_modules(void)
 	return(2);
     }
 
-    if (! video_card_available(video_old_to_new(gfxcard))) {
+    if (! video_card_available(video_old_to_new(vid_card))) {
 	/* Whoops, selected video not available. */
 	str = plat_get_string(IDS_2064);
 	mbstowcs(name, machine_getname(), sizeof_w(name));
@@ -778,7 +776,6 @@ pc_reset_hard_init(void)
 
     /* Reset the general machine support modules. */
     io_init();
-    mem_reset();
     timer_reset();
     device_init();
 
@@ -823,7 +820,7 @@ pc_reset_hard_init(void)
     mouse_reset();
 
     /* Reset the video card. */
-    video_reset(gfxcard);
+    video_reset(vid_card);
 
     /* Reset the Hard Disk Controller module. */
     hdc_reset();
@@ -966,6 +963,8 @@ pc_close(thread_t *ptr)
     network_close();
 
     sound_cd_thread_end();
+
+    ide_destroy_buffers();
 }
 
 
@@ -1088,7 +1087,11 @@ pc_thread(void *param)
 
 		if (title_update) {
 			swprintf(temp, sizeof_w(temp),
+#ifdef _WIN32
 				 L"%S v%S - %i%% - %S - %S - %s",
+#else
+				 L"%s v%s - %i%% - %s - %s - %s",
+#endif
 				 EMU_NAME,emu_version,fps,machine_getname(),
 				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name,
 				 (!mouse_capture) ? plat_get_string(IDS_2077)

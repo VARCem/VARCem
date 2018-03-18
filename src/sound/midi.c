@@ -8,7 +8,7 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.2	2018/03/10
+ * Version:	@(#)midi.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,25 +58,24 @@ int midi_device_current = 0;
 static int midi_device_last = 0;
 
 
-typedef struct
-{
-        const char *name;
-        const char *internal_name;
-        device_t *device;
+typedef struct {
+        const char	*name;
+        const char	*internal_name;
+        const device_t	*device;
 } MIDI_DEVICE;
 
-static MIDI_DEVICE devices[] =
-{
-        {"None",                        "none",                         NULL},
+
+static const MIDI_DEVICE devices[] = {
+    {"None",                        "none",                         NULL},
 #ifdef USE_FLUIDSYNTH
-        {"FluidSynth",                  "fluidsynth",                   &fluidsynth_device},
+    {"FluidSynth",                  "fluidsynth",                   &fluidsynth_device},
 #endif
 #ifdef USE_MUNT
-        {"Roland MT-32 Emulation",      "mt32",                         &mt32_device},
-        {"Roland CM-32L Emulation",     "cm32l",                        &cm32l_device},
+    {"Roland MT-32 Emulation",      "mt32",                         &mt32_device},
+    {"Roland CM-32L Emulation",     "cm32l",                        &cm32l_device},
 #endif
-        {SYSTEM_MIDI_NAME,              SYSTEM_MIDI_INTERNAL_NAME,      &system_midi_device},
-        {"", "", NULL}
+    {SYSTEM_MIDI_NAME,              SYSTEM_MIDI_INTERNAL_NAME,      &system_midi_device},
+    {"", "", NULL}
 };
 
 static midi_device_t* m_device = NULL;
@@ -94,7 +93,7 @@ char *midi_device_getname(int card)
         return (char *) devices[card].name;
 }
 
-device_t *midi_device_getdevice(int card)
+const device_t *midi_device_getdevice(int card)
 {
         return devices[card].device;
 }

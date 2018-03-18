@@ -8,7 +8,7 @@
  *
  *		Definitions for the TI SN74689 PSG driver.
  *
- * Version:	@(#)snd_sn76489.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_sn76489.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,8 +47,8 @@ enum
         PSSJ
 };
 
-extern device_t sn76489_device;
-extern device_t ncr8496_device;
+extern const device_t sn76489_device;
+extern const device_t ncr8496_device;
 
 extern int sn76489_mute;
 

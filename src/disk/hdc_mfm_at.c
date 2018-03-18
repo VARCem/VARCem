@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_mfm_at.c	1.0.1	2018/02/14
+ * Version:	@(#)hdc_mfm_at.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -725,7 +725,7 @@ loadhd(mfm_t *mfm, int c, int d, const wchar_t *fn)
 
 
 static void *
-mfm_init(device_t *info)
+mfm_init(const device_t *info)
 {
     mfm_t *mfm;
     int c, d;
@@ -782,7 +782,7 @@ mfm_close(void *priv)
 }
 
 
-device_t mfm_at_wd1003_device = {
+const device_t mfm_at_wd1003_device = {
     "WD1003 AT MFM/RLL Controller",
     DEVICE_ISA | DEVICE_AT,
     0,

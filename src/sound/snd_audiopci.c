@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.3	2018/02/22
+ * Version:	@(#)snd_audiopci.c	1.0.4	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1139,7 +1139,7 @@ static void es1371_get_buffer(int32_t *buffer, int len, void *p)
 	es1371->pos = 0;
 }
 
-static void *es1371_init(device_t *info)
+static void *es1371_init(const device_t *info)
 {
 	es1371_t *es1371 = malloc(sizeof(es1371_t));
 	memset(es1371, 0, sizeof(es1371_t));
@@ -1167,7 +1167,7 @@ static void es1371_speed_changed(void *p)
 	es1371->dac[1].latch = (int)((double)TIMER_USEC * (1000000.0 / 48000.0));
 }
 
-device_t es1371_device =
+const device_t es1371_device =
 {
 	"Ensoniq AudioPCI (ES1371)",
 	DEVICE_PCI,

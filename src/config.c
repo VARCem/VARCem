@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.4	2018/03/11
+ * Version:	@(#)config.c	1.0.5	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -536,12 +536,17 @@ load_video(void)
     char *cat = "Video";
     char *p;
 
-    if (machines[machine].fixed_gfxcard) {
-	config_delete_var(cat, "gfxcard");
+    if (machines[machine].fixed_vidcard) {
+	config_delete_var(cat, "video_card");
 	config_delete_var(cat, "voodoo");
-	gfxcard = GFX_INTERNAL;
+	vid_card = VID_INTERNAL;
     } else {
-	p = config_get_string(cat, "gfxcard", NULL);
+	p = config_get_string(cat, "video_card", NULL);
+	if (p == NULL) {
+		p = config_get_string(cat, "gfxcard", NULL);
+		if (p != NULL)
+			config_delete_var(cat, "gfxcard");
+	}
 	if (p == NULL) {
 		if (machines[machine].flags & MACHINE_VIDEO) {
 			p = (char *)malloc((strlen("internal")+1)*sizeof(char));
@@ -551,7 +556,7 @@ load_video(void)
 			strcpy(p, "none");
 		}
 	}
-	gfxcard = video_get_video_from_internal_name(p);
+	vid_card = video_get_video_from_internal_name(p);
 
 	video_speed = config_get_int(cat, "video_speed", -1);
 
@@ -664,22 +669,27 @@ load_network(void)
     } else
 	network_type = NET_TYPE_NONE;
 
-    memset(network_pcap, '\0', sizeof(network_pcap));
-    p = config_get_string(cat, "net_pcap_device", NULL);
+    memset(network_host, '\0', sizeof(network_host));
+    p = config_get_string(cat, "net_host_device", NULL);
+    if (p == NULL) {
+	p = config_get_string(cat, "net_pcap_device", NULL);
+	if (p != NULL)
+		config_delete_var(cat, "net_pcap_device");
+    }
     if (p != NULL) {
 	if ((network_dev_to_id(p) == -1) || (network_ndev == 1)) {
-		if ((network_ndev == 1) && strcmp(network_pcap, "none")) {
+		if ((network_ndev == 1) && strcmp(network_host, "none")) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2140);
 		} else if (network_dev_to_id(p) == -1) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2141);
 		}
 
-		strcpy(network_pcap, "none");
+		strcpy(network_host, "none");
 	} else {
-		strcpy(network_pcap, p);
+		strcpy(network_host, p);
 	}
     } else
-	strcpy(network_pcap, "none");
+	strcpy(network_host, "none");
 
     p = config_get_string(cat, "net_card", NULL);
     if (p != NULL)
@@ -1445,7 +1455,7 @@ config_load(void)
 	plat_langid = 0x0409;
 #endif
 	scale = 1;
-	gfxcard = GFX_CGA;
+	vid_card = VID_CGA;
 	vid_api = plat_vidapi("default");;
 	enable_sync = 1;
 	joystick_type = 7;
@@ -1632,8 +1642,8 @@ save_video(void)
 {
     char *cat = "Video";
 
-    config_set_string(cat, "gfxcard",
-	video_get_internal_name(video_old_to_new(gfxcard)));
+    config_set_string(cat, "video_card",
+	video_get_internal_name(video_old_to_new(vid_card)));
 
     if (video_speed == 3)
 	config_delete_var(cat, "video_speed");
@@ -1773,14 +1783,13 @@ save_network(void)
 	config_set_string(cat, "net_type",
 		(network_type == NET_TYPE_SLIRP) ? "slirp" : "pcap");
 
-    if (network_pcap[0] != '\0') {
-	if (! strcmp(network_pcap, "none"))
-		config_delete_var(cat, "net_pcap_device");
+    if (network_host[0] != '\0') {
+	if (! strcmp(network_host, "none"))
+		config_delete_var(cat, "net_host_device");
 	  else
-		config_set_string(cat, "net_pcap_device", network_pcap);
+		config_set_string(cat, "net_host_device", network_host);
     } else {
-	/* config_set_string(cat, "net_pcap_device", "none"); */
-	config_delete_var(cat, "net_pcap_device");
+	config_delete_var(cat, "net_host_device");
     }
 
     if (network_card == 0)

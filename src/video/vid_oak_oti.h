@@ -8,7 +8,7 @@
  *
  *		Definitions for the OAK067 driver.
  *
- * Version:	@(#)vid_oti067.h	1.0.2	2018/03/04
+ * Version:	@(#)vid_oti067.h	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,10 +40,10 @@
 # define VIDEO_OTI067_H
 
 
-extern device_t oti037c_device;
-extern device_t oti067_device;
-extern device_t oti067_acer386_device;
-extern device_t oti077_device;
+extern const device_t oti037c_device;
+extern const device_t oti067_device;
+extern const device_t oti067_acer386_device;
+extern const device_t oti077_device;
 
 
 #endif	/*VIDEO_OTI067_H*/

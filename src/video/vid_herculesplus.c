@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.2	2018/03/08
+ * Version:	@(#)vid_hercules_plus.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -698,7 +698,7 @@ void herculesplus_poll(void *p)
         }
 }
 
-void *herculesplus_init(device_t *info)
+void *herculesplus_init(const device_t *info)
 {
         int c;
         herculesplus_t *herculesplus = malloc(sizeof(herculesplus_t));
@@ -749,7 +749,7 @@ void herculesplus_speed_changed(void *p)
         herculesplus_recalctimings(herculesplus);
 }
 
-device_t herculesplus_device =
+const device_t herculesplus_device =
 {
         "Hercules Plus",
         DEVICE_ISA, 0,

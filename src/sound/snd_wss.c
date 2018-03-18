@@ -8,7 +8,7 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_wss.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -111,7 +111,7 @@ static void wss_get_buffer(int32_t *buffer, int len, void *p)
         wss->ad1848.pos = 0;
 }
 
-void *wss_init(device_t *info)
+void *wss_init(const device_t *info)
 {
         wss_t *wss = malloc(sizeof(wss_t));
 
@@ -146,7 +146,7 @@ void wss_speed_changed(void *p)
         ad1848_speed_changed(&wss->ad1848);
 }
 
-device_t wss_device =
+const device_t wss_device =
 {
         "Windows Sound System",
         DEVICE_ISA, 0,

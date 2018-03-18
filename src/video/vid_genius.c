@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.2	2018/02/22
+ * Version:	@(#)vid_genius.c	1.0.3	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -594,7 +594,7 @@ void genius_poll(void *p)
         }
 }
 
-void *genius_init(device_t *info)
+void *genius_init(const device_t *info)
 {
         int c;
         genius_t *genius = malloc(sizeof(genius_t));
@@ -662,7 +662,7 @@ void genius_speed_changed(void *p)
         genius_recalctimings(genius);
 }
 
-device_t genius_device =
+const device_t genius_device =
 {
         "Genius VHR",
         DEVICE_ISA, 0,

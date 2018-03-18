@@ -8,7 +8,7 @@
  *
  *		Imlementation of the Device Configuration dialog.
  *
- * Version:	@(#)win_devconf.c	1.0.4	2018/03/10
+ * Version:	@(#)win_devconf.c	1.0.5	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,7 +72,7 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     int num;
     int changed;
     int cid;
-    device_config_t *config;
+    const device_config_t *config;
     char s[80];
     wchar_t ws[512];
     LPTSTR lptsTemp;
@@ -87,7 +87,7 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			while (config->type != -1)
 			{
-				device_config_selection_t *selection = config->selection;
+				const device_config_selection_t *selection = config->selection;
 				h = GetDlgItem(hdlg, id);
 
 				switch (config->type)
@@ -204,7 +204,7 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				while (config->type != -1)
 				{
-					device_config_selection_t *selection = config->selection;
+					const device_config_selection_t *selection = config->selection;
 					h = GetDlgItem(hdlg, id);
 
 					switch (config->type)
@@ -316,7 +316,7 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				
 				while (config->type != -1)
 				{
-					device_config_selection_t *selection = config->selection;
+					const device_config_selection_t *selection = config->selection;
 					h = GetDlgItem(hdlg, id);
 
 					switch (config->type)
@@ -396,7 +396,7 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		    else
 		    {
 				int id = IDC_CONFIG_BASE;
-				device_config_t *config = config_device->config;
+				const device_config_t *config = config_device->config;
 
 				while (config->type != -1)
 				{
@@ -478,7 +478,7 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 uint8_t deviceconfig_open(HWND hwnd, device_t *device)
 {
-	device_config_t *config = device->config;
+	const device_config_t *config = device->config;
 	uint16_t *data_block = malloc(16384);
 	uint16_t *data;
 	DLGTEMPLATE *dlg = (DLGTEMPLATE *)data_block;

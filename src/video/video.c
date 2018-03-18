@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.4	2018/03/05
+ * Version:	@(#)video.c	1.0.5	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,6 +93,7 @@ enum {
 };
 
 
+int		vid_present[VID_MAX];
 bitmap_t	*screen = NULL,
 		*buffer = NULL,
 		*buffer32 = NULL;
@@ -134,7 +135,6 @@ int		video_timing[6][4] = {
     { VIDEO_BUS, 4,  5, 10	},
     { VIDEO_BUS, 3,  3,  4	}
 };
-static int	video_force_resize;
 PALETTE		cgapal = {
     {0,0,0},    {0,42,0},   {42,0,0},   {42,21,0},
     {0,0,0},    {0,42,42},  {42,0,42},  {42,42,42},
@@ -212,6 +212,7 @@ static struct {
     event_t	*blit_complete;
     event_t	*buffer_not_in_use;
 }		blit_data;
+static int	video_force_resize;
 
 
 static void (*blit_func)(int x, int y, int y1, int y2, int w, int h);
@@ -378,12 +379,13 @@ static video_timings_t timing_endeavor = {VIDEO_BUS, 3, 2, 4,25,25,40};
 void
 video_update_timing(void)
 {
-    video_timings_t *timing;
-    int new_gfxcard;
+    const video_timings_t *timing;
+    int new_card;
 
     if (video_speed == -1) {
-	new_gfxcard = 0;
+	new_card = 0;
 
+	/* FIXME: should be in machines[] table. */
 	switch(romset) {
 		case ROM_IBMPCJR:
 		case ROM_TANDY:
@@ -433,8 +435,8 @@ video_update_timing(void)
 			timing = &timing_endeavor;
 			break;
 		default:
-			new_gfxcard = video_old_to_new(gfxcard);
-			timing = video_card_gettiming(new_gfxcard);
+			new_card = video_old_to_new(vid_card);
+			timing = video_card_gettiming(new_card);
 			break;
 	}
 

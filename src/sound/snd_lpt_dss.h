@@ -8,7 +8,7 @@
  *
  *		Definitions for the LPT-based DSS driver.
  *
- * Version:	@(#)snd_lpt_dss.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_lpt_dss.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define SOUND_LPT_DSS_H
 
 
-extern lpt_device_t dss_device;
+extern const lpt_device_t dss_device;
 
 
 #endif	/*SOUND_LPT_DSS_H*/

@@ -8,7 +8,7 @@
  *
  *		Definitions for the IBM EGA driver.
  *
- * Version:	@(#)vid_ega.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_ega.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -133,13 +133,13 @@ typedef struct ega_t {
 
 
 #ifdef EMU_DEVICE_H
-extern device_t ega_device;
-extern device_t cpqega_device;
-extern device_t sega_device;
+extern const device_t ega_device;
+extern const device_t cpqega_device;
+extern const device_t sega_device;
 #endif
 #ifdef JEGA
-extern uint8_t jfont_sbcs_19[SBCS19_LEN];	/* 256 * 19( * 8) */
-extern uint8_t jfont_dbcs_16[DBCS16_LEN];	/* 65536 * 16 * 2 (* 8) */
+extern const uint8_t jfont_sbcs_19[SBCS19_LEN];	/* 256 * 19( * 8) */
+extern const uint8_t jfont_dbcs_16[DBCS16_LEN];	/* 65536 * 16 * 2 (* 8) */
 #endif
 
 extern int update_overscan;

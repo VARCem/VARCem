@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.4	2018/03/08
+ * Version:	@(#)vid_s3.c	1.0.5	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2187,7 +2187,7 @@ static int vram_sizes[] =
         3 /*8 MB*/
 };
 
-static void *s3_init(device_t *info, wchar_t *bios_fn, int chip)
+static void *s3_init(const device_t *info, wchar_t *bios_fn, int chip)
 {
         s3_t *s3 = malloc(sizeof(s3_t));
         svga_t *svga = &s3->svga;
@@ -2281,7 +2281,7 @@ static void *s3_init(device_t *info, wchar_t *bios_fn, int chip)
         return s3;
 }
 
-void *s3_vision864_init(device_t *info, wchar_t *bios_fn)
+void *s3_vision864_init(const device_t *info, wchar_t *bios_fn)
 {
 	s3_t *s3 = s3_init(info, bios_fn, S3_VISION864);
 
@@ -2296,13 +2296,13 @@ void *s3_vision864_init(device_t *info, wchar_t *bios_fn)
 }
 
 
-static void *s3_bahamas64_init(device_t *info)
+static void *s3_bahamas64_init(const device_t *info)
 {
 	s3_t *s3 = s3_vision864_init(info, L"roms/video/s3/s3/bahamas64.bin");
 	return s3;
 }
 
-static void *s3_phoenix_vision864_init(device_t *info)
+static void *s3_phoenix_vision864_init(const device_t *info)
 {
 	s3_t *s3 = s3_vision864_init(info, L"roms/video/s3/s3/86c864p.bin");
 	return s3;
@@ -2318,7 +2318,7 @@ static int s3_phoenix_vision864_available(void)
         return rom_present(L"roms/video/s3/s3/86c864p.bin");
 }
 
-static void *s3_phoenix_trio32_init(device_t *info)
+static void *s3_phoenix_trio32_init(const device_t *info)
 {
         s3_t *s3 = s3_init(info, L"roms/video/s3/s3/86c732p.bin", S3_TRIO32);
 
@@ -2338,7 +2338,7 @@ static int s3_phoenix_trio32_available(void)
         return rom_present(L"roms/video/s3/s3/86c732p.bin");
 }
 
-static void *s3_trio64_init(device_t *info, wchar_t *bios_fn)
+static void *s3_trio64_init(const device_t *info, wchar_t *bios_fn)
 {
         s3_t *s3 = s3_init(info, bios_fn, S3_TRIO64);
 
@@ -2352,13 +2352,13 @@ static void *s3_trio64_init(device_t *info, wchar_t *bios_fn)
         return s3;
 }
 
-static void *s3_9fx_init(device_t *info)
+static void *s3_9fx_init(const device_t *info)
 {
 	s3_t *s3 = s3_trio64_init(info, L"roms/video/s3/s3/s3_764.bin");
 	return s3;
 }
 
-static void *s3_phoenix_trio64_init(device_t *info)
+static void *s3_phoenix_trio64_init(const device_t *info)
 {
 	s3_t *s3 = s3_trio64_init(info, L"roms/video/s3/s3/86c764x1.bin");
         if (device_get_config_int("memory") == 1)
@@ -2366,7 +2366,7 @@ static void *s3_phoenix_trio64_init(device_t *info)
 	return s3;
 }
 
-static void *s3_phoenix_trio64_onboard_init(device_t *info)
+static void *s3_phoenix_trio64_onboard_init(const device_t *info)
 {
 	s3_t *s3 = s3_trio64_init(info, NULL);
         if (device_get_config_int("memory") == 1)
@@ -2374,7 +2374,7 @@ static void *s3_phoenix_trio64_onboard_init(device_t *info)
 	return s3;
 }
 
-static void *s3_diamond_stealth64_init(device_t *info)
+static void *s3_diamond_stealth64_init(const device_t *info)
 {
 	s3_t *s3 = s3_trio64_init(info, L"roms/video/s3/s3/stealt64.bin");
         if (device_get_config_int("memory") == 1)
@@ -2442,7 +2442,7 @@ static void s3_add_status_info(char *s, int max_len, void *p)
         s3->blitter_time = 0;
 }
 
-static device_config_t s3_bahamas64_config[] =
+static const device_config_t s3_bahamas64_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 4,
@@ -2467,7 +2467,7 @@ static device_config_t s3_bahamas64_config[] =
         }
 };
 
-static device_config_t s3_9fx_config[] =
+static const device_config_t s3_9fx_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 2,
@@ -2503,7 +2503,7 @@ static device_config_t s3_9fx_config[] =
         }
 };
 
-static device_config_t s3_phoenix_trio32_config[] =
+static const device_config_t s3_phoenix_trio32_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 2,
@@ -2527,7 +2527,7 @@ static device_config_t s3_phoenix_trio32_config[] =
         }
 };
 
-static device_config_t s3_phoenix_trio64_onboard_config[] =
+static const device_config_t s3_phoenix_trio64_onboard_config[] =
 {
         {
                 "memory", "Video memory size", CONFIG_SELECTION, "", 4,
@@ -2551,7 +2551,7 @@ static device_config_t s3_phoenix_trio64_onboard_config[] =
         }
 };
 
-static device_config_t s3_phoenix_trio64_config[] =
+static const device_config_t s3_phoenix_trio64_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 4,
@@ -2575,7 +2575,7 @@ static device_config_t s3_phoenix_trio64_config[] =
         }
 };
 
-device_t s3_bahamas64_vlb_device =
+const device_t s3_bahamas64_vlb_device =
 {
         "Paradise Bahamas 64 (S3 Vision864) VLB",
         DEVICE_VLB,
@@ -2590,7 +2590,7 @@ device_t s3_bahamas64_vlb_device =
         s3_bahamas64_config
 };
 
-device_t s3_bahamas64_pci_device =
+const device_t s3_bahamas64_pci_device =
 {
         "Paradise Bahamas 64 (S3 Vision864) PCI",
         DEVICE_PCI,
@@ -2605,7 +2605,7 @@ device_t s3_bahamas64_pci_device =
         s3_bahamas64_config
 };
 
-device_t s3_9fx_vlb_device =
+const device_t s3_9fx_vlb_device =
 {
         "Number 9 9FX (S3 Trio64) VLB",
         DEVICE_VLB,
@@ -2620,7 +2620,7 @@ device_t s3_9fx_vlb_device =
         s3_9fx_config
 };
 
-device_t s3_9fx_pci_device =
+const device_t s3_9fx_pci_device =
 {
         "Number 9 9FX (S3 Trio64) PCI",
         DEVICE_PCI,
@@ -2635,7 +2635,7 @@ device_t s3_9fx_pci_device =
         s3_9fx_config
 };
 
-device_t s3_phoenix_trio32_vlb_device =
+const device_t s3_phoenix_trio32_vlb_device =
 {
         "Phoenix S3 Trio32 VLB",
         DEVICE_VLB,
@@ -2650,7 +2650,7 @@ device_t s3_phoenix_trio32_vlb_device =
         s3_phoenix_trio32_config
 };
 
-device_t s3_phoenix_trio32_pci_device =
+const device_t s3_phoenix_trio32_pci_device =
 {
         "Phoenix S3 Trio32 PCI",
         DEVICE_PCI,
@@ -2665,7 +2665,7 @@ device_t s3_phoenix_trio32_pci_device =
         s3_phoenix_trio32_config
 };
 
-device_t s3_phoenix_trio64_vlb_device =
+const device_t s3_phoenix_trio64_vlb_device =
 {
         "Phoenix S3 Trio64 VLB",
         DEVICE_VLB,
@@ -2680,7 +2680,7 @@ device_t s3_phoenix_trio64_vlb_device =
         s3_phoenix_trio64_config
 };
 
-device_t s3_phoenix_trio64_onboard_pci_device =
+const device_t s3_phoenix_trio64_onboard_pci_device =
 {
         "Phoenix S3 Trio64 On-Board PCI",
         DEVICE_PCI,
@@ -2695,7 +2695,7 @@ device_t s3_phoenix_trio64_onboard_pci_device =
         s3_phoenix_trio64_onboard_config
 };
 
-device_t s3_phoenix_trio64_pci_device =
+const device_t s3_phoenix_trio64_pci_device =
 {
         "Phoenix S3 Trio64 PCI",
         DEVICE_PCI,
@@ -2710,7 +2710,7 @@ device_t s3_phoenix_trio64_pci_device =
         s3_phoenix_trio64_config
 };
 
-device_t s3_phoenix_vision864_vlb_device =
+const device_t s3_phoenix_vision864_vlb_device =
 {
         "Phoenix S3 Vision864 VLB",
         DEVICE_VLB,
@@ -2725,7 +2725,7 @@ device_t s3_phoenix_vision864_vlb_device =
         s3_bahamas64_config
 };
 
-device_t s3_phoenix_vision864_pci_device =
+const device_t s3_phoenix_vision864_pci_device =
 {
         "Phoenix S3 Vision864 PCI",
         DEVICE_PCI,
@@ -2740,7 +2740,7 @@ device_t s3_phoenix_vision864_pci_device =
         s3_bahamas64_config
 };
 
-device_t s3_diamond_stealth64_vlb_device =
+const device_t s3_diamond_stealth64_vlb_device =
 {
         "S3 Trio64 (Diamond Stealth64 DRAM) VLB",
         DEVICE_PCI,
@@ -2755,7 +2755,7 @@ device_t s3_diamond_stealth64_vlb_device =
         s3_phoenix_trio64_config
 };
 
-device_t s3_diamond_stealth64_pci_device =
+const device_t s3_diamond_stealth64_pci_device =
 {
         "S3 Trio64 (Diamond Stealth64 DRAM) PCI",
         DEVICE_PCI,

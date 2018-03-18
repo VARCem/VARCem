@@ -8,7 +8,7 @@
  *
  *		Definitions for the VGA driver.
  *
- * Version:	@(#)vid_vga.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_vga.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,9 +40,9 @@
 # define VIDEO_VGA_H
 
 
-extern device_t vga_device;
-extern device_t trigem_unk_device;
-extern device_t ps1vga_device;
+extern const device_t vga_device;
+extern const device_t trigem_unk_device;
+extern const device_t ps1vga_device;
 
 
 #endif	/*VIDEO_VGA_H*/

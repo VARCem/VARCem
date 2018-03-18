@@ -79,7 +79,7 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_pas16.c	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -758,7 +758,7 @@ void pas16_get_buffer(int32_t *buffer, int len, void *p)
 }
 
 
-static void *pas16_init(device_t *info)
+static void *pas16_init(const device_t *info)
 {
         pas16_t *pas16 = malloc(sizeof(pas16_t));
         memset(pas16, 0, sizeof(pas16_t));
@@ -782,7 +782,7 @@ static void pas16_close(void *p)
         free(pas16);
 }
 
-device_t pas16_device =
+const device_t pas16_device =
 {
         "Pro Audio Spectrum 16",
         DEVICE_ISA | DEVICE_NOT_WORKING,

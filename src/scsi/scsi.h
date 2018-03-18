@@ -8,7 +8,7 @@
  *
  *		SCSI controller handler header.
  *
- * Version:	@(#)scsi.h	1.0.1	2018/02/14
+ * Version:	@(#)scsi.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -311,7 +311,7 @@ extern int scsi_card_current;
 extern int scsi_card_available(int card);
 extern char *scsi_card_getname(int card);
 #ifdef EMU_DEVICE_H
-extern device_t *scsi_card_getdevice(int card);
+extern const device_t *scsi_card_getdevice(int card);
 #endif
 extern int scsi_card_has_config(int card);
 extern char *scsi_card_get_internal_name(int card);
@@ -379,6 +379,8 @@ typedef struct {
 #define MODE_SELECT_PHASE_PAGE_HEADER	3
 #define MODE_SELECT_PHASE_PAGE		4
 
-#endif	/*EMU_SCSI_H*/
 
 extern void	scsi_mutex_wait(uint8_t wait);
+
+
+#endif	/*EMU_SCSI_H*/

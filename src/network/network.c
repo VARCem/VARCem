@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.2	2018/02/22
+ * Version:	@(#)network.c	1.0.3	2018/03/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -66,17 +66,17 @@
 
 static netcard_t net_cards[] = {
     { "None",				"none",		NULL,
-      NULL,			NULL					},
+      NULL								},
     { "[ISA] Novell NE1000",		"ne1k",		&ne1000_device,
-      NULL,			NULL					},
+      NULL								},
     { "[ISA] Novell NE2000",		"ne2k",		&ne2000_device,
-      NULL,			NULL					},
+      NULL								},
     { "[ISA] Realtek RTL8019AS",	"ne2kpnp",	&rtl8019as_device,
-      NULL,			NULL					},
+      NULL								},
     { "[PCI] Realtek RTL8029AS",	"ne2kpci",	&rtl8029as_device,
-      NULL,			NULL					},
+      NULL								},
     { "",				"",		NULL,
-      NULL,			NULL					}
+      NULL								}
 };
 
 
@@ -84,12 +84,13 @@ static netcard_t net_cards[] = {
 int		network_type;
 int		network_ndev;
 int		network_card;
-netdev_t	network_devs[32];
 char		network_pcap[512];
+netdev_t	network_devs[32];
 #ifdef ENABLE_NIC_LOG
 int		nic_do_log = ENABLE_NIC_LOG;
 #endif
 static mutex_t	*network_mutex;
+static uint8_t	*network_mac;
 
 
 static struct {
@@ -263,7 +264,7 @@ network_attach(void *dev, uint8_t *mac, NETRXCB rx)
     /* Save the card's info. */
     net_cards[network_card].priv = dev;
     net_cards[network_card].rx = rx;
-    net_cards[network_card].mac = mac;
+    network_mac = mac;
 
     /* Create the network events. */
     poll_data.wake_poll_thread = thread_create_event();
@@ -272,11 +273,11 @@ network_attach(void *dev, uint8_t *mac, NETRXCB rx)
     /* Activate the platform module. */
     switch(network_type) {
 	case NET_TYPE_PCAP:
-		(void)net_pcap_reset(&net_cards[network_card]);
+		(void)net_pcap_reset(&net_cards[network_card], network_mac);
 		break;
 
 	case NET_TYPE_SLIRP:
-		(void)net_slirp_reset(&net_cards[network_card]);
+		(void)net_slirp_reset(&net_cards[network_card], network_mac);
 		break;
     }
 }
@@ -308,6 +309,7 @@ network_close(void)
     /* Close the network thread mutex. */
     thread_close_mutex(network_mutex);
     network_mutex = NULL;
+    network_mac = NULL;
 
     pclog("NETWORK: closed.\n");
 }
@@ -455,7 +457,7 @@ network_card_getname(int card)
 
 
 /* UI */
-device_t *
+const device_t *
 network_card_getdevice(int card)
 {
     return(net_cards[card].device);

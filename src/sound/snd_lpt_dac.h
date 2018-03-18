@@ -8,7 +8,7 @@
  *
  *		Definitions for the LPT-based sound devices.
  *
- * Version:	@(#)snd_lpt_dac.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_lpt_dac.h	1.0.2	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,8 +40,8 @@
 # define SOUND_LPT_DAC_H
 
 
-extern lpt_device_t lpt_dac_device;
-extern lpt_device_t lpt_dac_stereo_device;
+extern const lpt_device_t lpt_dac_device;
+extern const lpt_device_t lpt_dac_stereo_device;
 
 
 #endif	/*SOUND_LPT_DAC_H*/

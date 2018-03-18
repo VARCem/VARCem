@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.5	2018/03/12
+ * Version:	@(#)vid_ati_mach64.c	1.0.6	2018/03/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3403,7 +3403,7 @@ void mach64_pci_write(int func, int addr, uint8_t val, void *p)
         }
 }
 
-static void *mach64_common_init(device_t *info)
+static void *mach64_common_init(const device_t *info)
 {
         mach64_t *mach64 = malloc(sizeof(mach64_t));
         memset(mach64, 0, sizeof(mach64_t));
@@ -3449,7 +3449,7 @@ static void *mach64_common_init(device_t *info)
         return mach64;
 }
 
-static void *mach64gx_init(device_t *info)
+static void *mach64gx_init(const device_t *info)
 {
         mach64_t *mach64 = mach64_common_init(info);
 
@@ -3474,7 +3474,7 @@ static void *mach64gx_init(device_t *info)
                 
         return mach64;
 }
-static void *mach64vt2_init(device_t *info)
+static void *mach64vt2_init(const device_t *info)
 {
         mach64_t *mach64 = mach64_common_init(info);
         svga_t *svga = &mach64->svga;
@@ -3587,7 +3587,7 @@ void mach64_add_status_info(char *s, int max_len, void *p)
         mach64->blitter_time = 0;
 }
 
-static device_config_t mach64gx_config[] =
+static const device_config_t mach64gx_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 4,
@@ -3611,7 +3611,7 @@ static device_config_t mach64gx_config[] =
         }
 };
 
-static device_config_t mach64vt2_config[] =
+static const device_config_t mach64vt2_config[] =
 {
         {
                 "memory", "Memory size", CONFIG_SELECTION, "", 4,
@@ -3632,7 +3632,7 @@ static device_config_t mach64vt2_config[] =
         }
 };
 
-device_t mach64gx_isa_device =
+const device_t mach64gx_isa_device =
 {
         "ATI Mach64GX ISA",
         DEVICE_AT | DEVICE_ISA,
@@ -3645,7 +3645,7 @@ device_t mach64gx_isa_device =
         mach64gx_config
 };
 
-device_t mach64gx_vlb_device =
+const device_t mach64gx_vlb_device =
 {
         "ATI Mach64GX VLB",
         DEVICE_VLB,
@@ -3658,7 +3658,7 @@ device_t mach64gx_vlb_device =
         mach64gx_config
 };
 
-device_t mach64gx_pci_device =
+const device_t mach64gx_pci_device =
 {
         "ATI Mach64GX PCI",
         DEVICE_PCI,
@@ -3671,7 +3671,7 @@ device_t mach64gx_pci_device =
         mach64gx_config
 };
 
-device_t mach64vt2_device =
+const device_t mach64vt2_device =
 {
         "ATI Mach64VT2",
         DEVICE_PCI,
