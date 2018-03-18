@@ -193,7 +193,7 @@ gameport_write(uint16_t addr, uint8_t val, void *priv)
 static uint8_t
 gameport_read(uint16_t addr, void *priv)
 {
-    gameport_t *p = (gameport_t *)p;
+    gameport_t *p = (gameport_t *)priv;
     uint8_t ret;
 
     timer_clock();

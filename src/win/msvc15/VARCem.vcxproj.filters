@@ -742,9 +742,6 @@
     <ClCompile Include="..\..\win\win_opendir.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\win\win_png.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\win\win_settings.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -1571,9 +1568,6 @@
       <Filter>win</Filter>
     </ClInclude>
     <ClInclude Include="..\..\win\win_ddraw.h">
-      <Filter>win</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\win\win_png.h">
       <Filter>win</Filter>
     </ClInclude>
     <ClInclude Include="..\..\video\vid_oak_oti.h">

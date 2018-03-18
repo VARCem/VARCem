@@ -305,7 +305,6 @@
     <ClCompile Include="..\..\win\win_mouse.cpp" />
     <ClCompile Include="..\..\win\win_new_floppy.c" />
     <ClCompile Include="..\..\win\win_opendir.c" />
-    <ClCompile Include="..\..\win\win_png.c" />
     <ClCompile Include="..\..\win\win_settings.c" />
     <ClCompile Include="..\..\win\win_snd_gain.c" />
     <ClCompile Include="..\..\win\win_status.c" />
@@ -598,7 +597,6 @@
     <ClInclude Include="..\..\win\win.h" />
     <ClInclude Include="..\..\win\win_d3d.h" />
     <ClInclude Include="..\..\win\win_ddraw.h" />
-    <ClInclude Include="..\..\win\win_png.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\VARCem.rc" />
