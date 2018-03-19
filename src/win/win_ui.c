@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.5	2018/03/10
+ * Version:	@(#)win_ui.c	1.0.6	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1087,6 +1087,9 @@ void
 plat_mouse_capture(int on)
 {
     RECT rect;
+
+    /* Do not try to capture the mouse if no mouse configured. */
+    if (mouse_type == MOUSE_TYPE_NONE) return;
 
     if (on && !mouse_capture) {
 	/* Enable the in-app mouse. */

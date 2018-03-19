@@ -11,7 +11,7 @@
  * TODO:	Add the Genius bus- and serial mouse.
  *		Remove the '3-button' flag from mouse types.
  *
- * Version:	@(#)mouse.c	1.0.2	2018/03/15
+ * Version:	@(#)mouse.c	1.0.3	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -124,19 +124,16 @@ mouse_init(void)
 void
 mouse_close(void)
 {
-    if (mouse_type == MOUSE_TYPE_NONE) return;
-
     mouse_priv = NULL;
     mouse_nbut = 0;
-    mouse_type = MOUSE_TYPE_NONE;
 }
 
 
 void
 mouse_reset(void)
 {
-    /* Abort if already initialized by a machine with internal mouse. */
-    if (mouse_type == MOUSE_TYPE_NONE) return;
+    /* Nothing to do if no mouse, or a machine-internal one. */
+    if (mouse_type <= MOUSE_TYPE_INTERNAL) return;
 
     pclog("MOUSE: reset(type=%d, '%s')\n",
 	mouse_type, mouse_devices[mouse_type].device->name);
@@ -144,9 +141,6 @@ mouse_reset(void)
     /* Clear local data. */
     mouse_x = mouse_y = mouse_z = 0;
     mouse_buttons = 0x00;
-
-    /* If no mouse configured, we're done. */
-    if (mouse_type == 0) return;
 
     /* Copy the (R/O) mouse info. */
     if (mouse_devices[mouse_type].device != NULL) {
@@ -217,9 +211,8 @@ mouse_get_from_internal_name(char *s)
     int c = 0;
 
     while (mouse_devices[c].internal_name != NULL) {
-	if (! strcmp((char *)mouse_devices[c].internal_name, s)) {
+	if (! strcmp((char *)mouse_devices[c].internal_name, s))
 		return(c);
-	}
 	c++;
     }
 

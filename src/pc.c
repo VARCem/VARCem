@@ -152,7 +152,6 @@ int	network_card;				/* (C) net interface num */
 char	network_host[512];			/* (C) host network intf */
 
 
-
 /* Statistics. */
 extern int
 	mmuflush,
@@ -709,8 +708,8 @@ pc_init_modules(void)
     cdrom_global_reset();
     zip_global_reset();
 
-    device_init();        
-                       
+    device_init();
+
     timer_reset();
 
     sound_reset();
