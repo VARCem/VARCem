@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq XT-class PC's.
  *
- * Version:	@(#)m_xt_compaq.c	1.0.3	2018/03/15
+ * Version:	@(#)m_xt_compaq.c	1.0.4	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,7 +66,7 @@ machine_xt_compaq_init(const machine_t *model)
     device_add(&keyboard_xt_device);
     device_add(&fdc_xt_device);
     nmi_init();
-    if (joystick_type != 7)
+    if (joystick_type != JOYSTICK_TYPE_NONE)
 	device_add(&gameport_device);
 
     switch(model->id) {

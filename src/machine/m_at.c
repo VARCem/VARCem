@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.2	2018/03/15
+ * Version:	@(#)m_at.c	1.0.3	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,9 +68,9 @@ machine_at_common_init(const machine_t *model)
     if (lpt_enabled)
 	lpt2_remove();
 
-    nvr_at_init(8);
+    device_add(&at_nvr_device);
 
-    if (joystick_type != 7)
+    if (joystick_type != JOYSTICK_TYPE_NONE)
 	device_add(&gameport_device);
 }
 

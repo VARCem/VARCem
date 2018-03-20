@@ -8,7 +8,7 @@
  *
  *		SCSI controller handler header.
  *
- * Version:	@(#)scsi.h	1.0.2	2018/03/15
+ * Version:	@(#)scsi.h	1.0.3	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -320,7 +320,7 @@ extern void scsi_mutex(uint8_t start);
 extern void scsi_card_init(void);
 extern void scsi_card_reset(void);
 
-extern uint8_t scsi_hard_disks[16][8];
+extern uint8_t scsi_disks[16][8];
 
 extern int scsi_hd_err_stat_to_scsi(uint8_t id);
 extern int scsi_hd_phase_to_scsi(uint8_t id);

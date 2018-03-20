@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.7	2018/03/15
+ * Version:	@(#)keyboard_at.c	1.0.8	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -616,27 +616,23 @@ kbdlog(const char *fmt, ...)
 static void
 kbd_setmap(atkbd_t *kbd)
 {
-    const scancode *map = NULL;
-
     switch (keyboard_mode & 3) {
 	case 1:
 	default:
-		map = scancode_set1;
+		keyboard_set_table(scancode_set1);
 		break;
 
 	case 2:
-		map = scancode_set2;
+		keyboard_set_table(scancode_set2);
 		break;
 
 	case 3:
-		map = scancode_set3;
+		keyboard_set_table(scancode_set3);
 		break;
     }
 
     if (keyboard_mode & 0x20)
-	map = scancode_set1;
-
-    keyboard_set_table(map);
+	keyboard_set_table(scancode_set1);
 }
 
 
@@ -997,11 +993,6 @@ kbd_cmd_write(atkbd_t *kbd, uint8_t val)
 
 	kbdlog("ATkbd: mouse interrupt is now %s\n",  (val & 0x02) ? "enabled" : "disabled");
     }
-
-#if 0
-    /* Reset scancode map. */
-    kbd_setmap(kbd);
-#endif
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.11	2018/03/18
+ * Version:	@(#)pc.c	1.0.13	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,7 +71,7 @@
 #include "mouse.h"
 #include "game/gameport.h"
 #include "floppy/fdd.h"
-#include "floppy/fdc.h"
+#include "floppy/fdd_common.h"
 #include "disk/hdd.h"
 #include "disk/hdc.h"
 #include "disk/hdc_ide.h"
@@ -141,6 +141,7 @@ int	sound_is_float = 1,			/* (C) sound uses FP values */
 	GUS = 0,				/* (C) sound option */
 	SSI2001 = 0,				/* (C) sound option */
 	voodoo_enabled = 0;			/* (C) video option */
+int	joystick_type = 0;			/* (C) joystick type */
 int	mem_size = 0;				/* (C) memory size */
 int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
 	cpu_use_dynarec = 0,			/* (C) cpu uses/needs Dyna */
@@ -597,16 +598,11 @@ pc_reload(wchar_t *fn)
 
     config_write(cfg_path);
 
-    for (i=0; i<FDD_NUM; i++)
-	fdd_close(i);
+    floppy_close();
+
     for (i=0; i<CDROM_NUM; i++) {
 	cdrom_drives[i].handler->exit(i);
-	if (cdrom_drives[i].host_drive == 200)
-		image_close(i);
-	  else if ((cdrom_drives[i].host_drive >= 'A') && (cdrom_drives[i].host_drive <= 'Z'))
-		ioctl_close(i);
-	  else
-		null_close(i);
+	cdrom_close(i);
     }
 
     pc_reset_hard_close();
@@ -705,25 +701,21 @@ pc_init_modules(void)
 
     ide_init_first();
 
-    cdrom_global_reset();
-    zip_global_reset();
-
     device_init();
 
     timer_reset();
 
     sound_reset();
 
-    fdd_init();
+    floppy_init();
 
     sound_init();
 
+    /* FIXME: should be disk_init(). */
     hdc_init(hdc_name);
-
-    ide_reset_hard();
-
     cdrom_hard_reset();
     zip_hard_reset();
+    ide_reset_hard();
 
     scsi_card_init();
 
@@ -778,6 +770,7 @@ pc_reset_hard_init(void)
     timer_reset();
     device_init();
 
+    /* FIXME: should all be in sound_reset(). */
     midi_device_init();
     inital();
     sound_reset();
@@ -821,24 +814,15 @@ pc_reset_hard_init(void)
     /* Reset the video card. */
     video_reset(vid_card);
 
+    /* FIXME: these, and hdc_reset, should be in disk_reset(). */
+    cdrom_hard_reset();
+    zip_hard_reset();
+
     /* Reset the Hard Disk Controller module. */
     hdc_reset();
 
-    /* Reconfire and reset the IDE layer. */
-    // FIXME: this should have been done via hdc_reset() above.. --FvK
-    ide_ter_disable();
-    ide_qua_disable();
-    if (ide_enable[2])
-	ide_ter_init();
-    if (ide_enable[3])
-	ide_qua_init();
-    ide_reset_hard();
-
     /* Reset and reconfigure the SCSI layer. */
     scsi_card_init();
-
-    cdrom_hard_reset();
-    zip_hard_reset();
 
     /* Reset and reconfigure the Network Card layer. */
     network_reset();
@@ -855,7 +839,7 @@ pc_reset_hard_init(void)
     if (SSI2001)
 	device_add(&ssi2001_device);
 
-    if (joystick_type != 7)
+    if (joystick_type != JOYSTICK_TYPE_NONE)
 	gameport_update_joystick_type();
 
     if (config_changed) {
@@ -902,6 +886,8 @@ pc_reset(int hard)
 
     nvr_save();
 
+    machine_close();
+
     config_save();
 
     if (hard)
@@ -934,6 +920,8 @@ pc_close(thread_t *ptr)
 
     nvr_save();
 
+    machine_close();
+
     config_save();
 
     plat_mouse_capture(0);
@@ -946,8 +934,7 @@ pc_close(thread_t *ptr)
     for (i=0; i<CDROM_NUM; i++)
 	cdrom_drives[i].handler->exit(i);
 
-    for (i=0; i<FDD_NUM; i++)
-       fdd_close(i);
+    floppy_close();
 
     if (dump_on_exit)
 	dumppic();
@@ -964,6 +951,8 @@ pc_close(thread_t *ptr)
     sound_cd_thread_end();
 
     ide_destroy_buffers();
+
+    cdrom_destroy_drives();
 }
 
 

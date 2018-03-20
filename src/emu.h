@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.7	2018/03/15
+ * Version:	@(#)emu.h	1.0.9	2018/03/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -81,6 +81,7 @@
 #endif
 
 #define MIN(a, b)             ((a) < (b) ? (a) : (b))
+#define ABS(x)		      ((x) > 0 ? (x) : -(x))
 
 
 #ifdef __cplusplus
@@ -132,6 +133,7 @@ extern int	sound_is_float,			/* (C) sound uses FP values */
 		GUS,				/* (C) sound option */
 		SSI2001,			/* (C) sound option */
 		voodoo_enabled;			/* (C) video option */
+extern int	joystick_type;			/* (C) joystick type */
 extern int	mem_size;			/* (C) memory size */
 extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
 		cpu,				/* (C) cpu type */

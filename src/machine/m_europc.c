@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)europc.c	1.0.3	2018/03/15
+ * Version:	@(#)m_europc.c	1.0.4	2018/03/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -621,7 +621,7 @@ europc_boot(const device_t *info)
     b = (sys->nvr.regs[MRTC_CONF_C] & 0xfc);
     if (mouse_type == MOUSE_TYPE_LOGIBUS) {
 	b |= 0x01;	/* enable port as MOUSE */
-    } else if (joystick_type != 7) {
+    } else if (joystick_type != JOYSTICK_TYPE_NONE) {
 	b |= 0x02;	/* enable port as joysticks */
 	device_add(&gameport_device);
     }

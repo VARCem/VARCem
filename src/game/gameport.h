@@ -10,7 +10,7 @@
  *
  * NOTE:	This module needs a good cleanup someday.
  *
- * Version:	@(#)gameport.h	1.0.3	2018/03/15
+ * Version:	@(#)gameport.h	1.0.4	2018/03/19
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -39,6 +39,8 @@
 #ifndef EMU_GAMEPORT_H
 # define EMU_GAMEPORT_H
 
+
+#define JOYSTICK_TYPE_NONE	0		/* no joystick defined */
 
 #define MAX_PLAT_JOYSTICKS	8
 #define MAX_JOYSTICKS		4
@@ -121,8 +123,6 @@ extern const device_t	gameport_201_device;
 extern plat_joystick_t	plat_joystick_state[MAX_PLAT_JOYSTICKS];
 extern joystick_t	joystick_state[MAX_JOYSTICKS];
 extern int		joysticks_present;
-
-extern int	joystick_type;
 
 
 extern void	joystick_init(void);

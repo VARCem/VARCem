@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.5	2018/03/16
+ * Version:	@(#)fdd.c	1.0.6	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,75 +58,63 @@
 #include "fdc.h"
 
 
-extern int driveempty[4];
+/* FIXME: these should be compined. */
+DRIVE		drives[FDD_NUM];
+wchar_t		floppyfns[4][512];
+int		fdd_cur_track[FDD_NUM];
+int		writeprot[FDD_NUM], fwriteprot[FDD_NUM];
+int64_t		fdd_poll_time[FDD_NUM] = { 16LL, 16LL, 16LL, 16LL };
+int		drive_type[FDD_NUM];
+int		drive_empty[FDD_NUM] = {1, 1, 1, 1};
+int		fdd_changed[FDD_NUM];
+int64_t		motoron[FDD_NUM];
+d86f_handler_t	d86f_handler[FDD_NUM];
 
-wchar_t floppyfns[4][512];
+int		defaultwriteprot = 0;
+int		curdrive = 0;
+int		motorspin;
+int		fdc_indexcount = 52;
 
-int64_t fdd_poll_time[FDD_NUM] = { 16LL, 16LL, 16LL, 16LL };
+static fdc_t	*fdd_fdc;
 
-int fdd_cur_track[FDD_NUM];
-int writeprot[FDD_NUM], fwriteprot[FDD_NUM];
 
-DRIVE drives[FDD_NUM];
-int drive_type[FDD_NUM];
-
-int curdrive = 0;
-
-int defaultwriteprot = 0;
-
-int fdc_ready;
-
-int drive_empty[FDD_NUM] = {1, 1, 1, 1};
-int fdd_changed[FDD_NUM];
-
-int motorspin;
-int64_t motoron[FDD_NUM];
-
-int fdc_indexcount = 52;
-
-fdc_t *fdd_fdc;
-
-d86f_handler_t   d86f_handler[FDD_NUM];
-
-static const struct
-{
-        wchar_t *ext;
-        void (*load)(int drive, wchar_t *fn);
-        void (*close)(int drive);
-        int size;
-} loaders[]=
-{
-        {L"001", img_load,       img_close, -1},
-        {L"002", img_load,       img_close, -1},
-        {L"003", img_load,       img_close, -1},
-        {L"004", img_load,       img_close, -1},
-        {L"005", img_load,       img_close, -1},
-        {L"006", img_load,       img_close, -1},
-        {L"007", img_load,       img_close, -1},
-        {L"008", img_load,       img_close, -1},
-        {L"009", img_load,       img_close, -1},
-        {L"010", img_load,       img_close, -1},
-        {L"12",  img_load,       img_close, -1},
-        {L"144", img_load,       img_close, -1},
-        {L"360", img_load,       img_close, -1},
-        {L"720", img_load,       img_close, -1},
-        {L"86F", d86f_load,     d86f_close, -1},
-        {L"BIN", img_load,       img_close, -1},
-        {L"CQ",  img_load,       img_close, -1},
-        {L"CQM", img_load,       img_close, -1},
-        {L"DSK", img_load,       img_close, -1},
-        {L"FDI", fdi_load,       fdi_close, -1},
-        {L"FDF", img_load,       img_close, -1},
-        {L"FLP", img_load,       img_close, -1},
-        {L"HDM", img_load,       img_close, -1},
-        {L"IMA", img_load,       img_close, -1},
-        {L"IMD", imd_load,       imd_close, -1},
-        {L"IMG", img_load,       img_close, -1},
-	{L"JSON", json_load,    json_close, -1},
-	{L"TD0", td0_load,       td0_close, -1},
-        {L"VFD", img_load,       img_close, -1},
-	{L"XDF", img_load,       img_close, -1},
-        {0,0,0}
+static const struct {
+    wchar_t	*ext;
+    void	(*load)(int drive, wchar_t *fn);
+    void	(*close)(int drive);
+    int		size;
+} loaders[]= {
+    { L"001",	img_load,	img_close,	-1 },
+    { L"002",	img_load,	img_close,	-1 },
+    { L"003",	img_load,	img_close,	-1 },
+    { L"004",	img_load,	img_close,	-1 },
+    { L"005",	img_load,	img_close,	-1 },
+    { L"006",	img_load,	img_close,	-1 },
+    { L"007",	img_load,	img_close,	-1 },
+    { L"008",	img_load,	img_close,	-1 },
+    { L"009",	img_load,	img_close,	-1 },
+    { L"010",	img_load,	img_close,	-1 },
+    { L"12", 	img_load,	img_close,	-1 },
+    { L"144",	img_load,	img_close,	-1 },
+    { L"360",	img_load,	img_close,	-1 },
+    { L"720",	img_load,	img_close,	-1 },
+    { L"86F",	d86f_load,     d86f_close,	-1 },
+    { L"BIN",	img_load,	img_close,	-1 },
+    { L"CQ", 	img_load,	img_close,	-1 },
+    { L"CQM",	img_load,	img_close,	-1 },
+    { L"DSK",	img_load,	img_close,	-1 },
+    { L"FDI",	fdi_load,	fdi_close,	-1 },
+    { L"FDF",	img_load,	img_close,	-1 },
+    { L"FLP",	img_load,	img_close,	-1 },
+    { L"HDM",	img_load,	img_close,	-1 },
+    { L"IMA",	img_load,	img_close,	-1 },
+    { L"IMD",	imd_load,	imd_close,	-1 },
+    { L"IMG",	img_load,	img_close,	-1 },
+    { L"JSON",	json_load,	json_close,	-1 },
+    { L"TD0",	td0_load,	td0_close,	-1 },
+    { L"VFD",	img_load,	img_close,	-1 },
+    { L"XDF",	img_load,	img_close,	-1 },
+    { NULL,	NULL,		NULL,		-1 }
 };
 
 static int driveloaders[4];
@@ -706,23 +694,4 @@ void fdd_stop(int drive)
 void fdd_set_fdc(void *fdc)
 {
 	fdd_fdc = (fdc_t *) fdc;
-}
-
-void fdd_init(void)
-{
-    drives[0].poll = drives[1].poll = drives[2].poll = drives[3].poll = 0;
-    drives[0].seek = drives[1].seek = drives[2].seek = drives[3].seek = 0;
-    drives[0].readsector = drives[1].readsector = drives[2].readsector = drives[3].readsector = 0;
-    fdd_reset();
-
-    img_init();
-    d86f_init();
-    td0_init();
-    imd_init();
-    json_init();
-
-    fdd_load(0, floppyfns[0]);
-    fdd_load(1, floppyfns[1]);
-    fdd_load(2, floppyfns[2]);
-    fdd_load(3, floppyfns[3]);
 }

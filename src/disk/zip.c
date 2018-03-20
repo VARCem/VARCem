@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.5	2018/03/17
+ * Version:	@(#)zip.c	1.0.6	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -973,13 +973,12 @@ static void zip_command_common(uint8_t id)
 				bytes_per_second =  8333333.333333333333333;	/* 8.3 MB/s PIO-2 speed */
 		} else
 			bytes_per_second = 3333333.333333333333333;		/* 3.3 MB/s PIO-0 speed */
- 	
-	}
 
-	period = 1000000.0 / bytes_per_second;
-	dusec = (double) TIMER_USEC;
-	dusec = dusec * period * (double) (zip[id].packet_len);
-	zip[id].callback = ((int64_t) dusec);
+		period = 1000000.0 / bytes_per_second;
+		dusec = (double) TIMER_USEC;
+		dusec = dusec * period * (double) (zip[id].packet_len);
+		zip[id].callback = ((int64_t) dusec);
+	}
 
 	zip_set_callback(id);
 }
@@ -2538,14 +2537,6 @@ void zip_write(uint8_t channel, uint32_t val, int length)
 	}
 }
 
-void zip_hard_reset(void)
-{
-    int i = 0;
-
-    for (i=0; i<ZIP_NUM; i++)
-	zip_mode_sense_load(i);
-}
-
 
 /* Peform a master init on the entire module. */
 void
@@ -2558,7 +2549,7 @@ zip_global_init(void)
 
 
 void
-zip_global_reset(void)
+zip_hard_reset(void)
 {
     int c;
 
@@ -2566,8 +2557,10 @@ zip_global_reset(void)
 	if (zip_drives[c].bus_type)
 		SCSIReset(zip_drives[c].scsi_device_id, zip_drives[c].scsi_device_lun);
 
-zip_log("ZIP global_reset drive=%d host=%02x\n", c, zip_drives[c].host_drive);
+zip_log("ZIP hard_reset drive=%d host=%02x\n", c, zip_drives[c].host_drive);
 	if (wcslen(zip_drives[c].image_path))
 		zip_load(c, zip_drives[c].image_path);
+
+	zip_mode_sense_load(c);
     }
 }

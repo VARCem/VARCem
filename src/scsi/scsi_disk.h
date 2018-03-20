@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.h	1.0.1	2018/02/14
+ * Version:	@(#)scsi_disk.h	1.0.2	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,10 +81,10 @@ typedef struct {
 	int block_descriptor_len;
 
 	uint8_t *temp_buffer;
-} scsi_hard_disk_t;
+} scsi_disk_t;
 
 
-extern scsi_hard_disk_t shdc[HDD_NUM];
+extern scsi_disk_t	shdc[HDD_NUM];
 extern FILE		*shdf[HDD_NUM];
 
 

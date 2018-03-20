@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.3	2018/03/15
+ * Version:	@(#)m_olivetti_m24.c	1.0.4	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -832,7 +832,6 @@ machine_olim24_init(const machine_t *model)
     memset(m24, 0x00, sizeof(olim24_t));
 
     machine_common_init(model);
-    device_add(&fdc_xt_device);
 
     io_sethandler(0x0066, 2,
 		  m24_read,NULL,NULL, NULL,NULL,NULL, m24);
@@ -870,11 +869,13 @@ machine_olim24_init(const machine_t *model)
     mouse_reset();
     mouse_set_poll(ms_poll, m24);
 
-    if (joystick_type != 7)
+    if (joystick_type != JOYSTICK_TYPE_NONE)
 	device_add(&gameport_device);
 
     /* FIXME: make sure this is correct?? */
-    nvr_at_init(8);
+    device_add(&at_nvr_device);
+
+    device_add(&fdc_xt_device);
 
     nmi_init();
 }

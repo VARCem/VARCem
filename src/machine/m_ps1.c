@@ -28,7 +28,7 @@
  *		boot. Sometimes, they do, and then it shows an "Incorrect
  *		DOS" error message??  --FvK
  *
- * Version:	@(#)m_ps1.c	1.0.3	2018/03/15
+ * Version:	@(#)m_ps1.c	1.0.5	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -564,7 +564,7 @@ ps1_common_init(const machine_t *model)
     dma16_init();
     pic2_init();
 
-    nvr_at_init(8);
+    device_add(&at_nvr_device);
 
     if (romset != ROM_IBMPS1_2011)
 	device_add(&ide_isa_device);
@@ -582,7 +582,7 @@ ps1_common_init(const machine_t *model)
     }
 
     /* Audio uses ports 200h and 202-207h, so only initialize gameport on 201h. */
-    if (joystick_type != 7)
+    if (joystick_type != JOYSTICK_TYPE_NONE)
 	device_add(&gameport_201_device);
 }
 

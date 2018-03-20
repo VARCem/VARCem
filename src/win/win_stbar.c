@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Bar module.
  *
- * Version:	@(#)win_stbar.c	1.0.3	2018/03/07
+ * Version:	@(#)win_stbar.c	1.0.4	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1089,10 +1089,8 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if (!file_dlg_w_st(hwnd, IDS_2075, cdrom_image[id].image_path, 0)) {
 					cdrom_drives[id].prev_host_drive = cdrom_drives[id].host_drive;
 					wcscpy(temp_path, wopenfilestring);
-					if ((wcscmp(cdrom_image[id].image_path, temp_path) == 0) && (cdrom_drives[id].host_drive == 200)) {
-						/* Switching from image to the same image. Do nothing. */
-						break;
-					}
+					if (!cdrom_image[id].prev_image_path)
+						cdrom_image[id].prev_image_path = (wchar_t *) malloc(1024);
 					wcscpy(cdrom_image[id].prev_image_path, cdrom_image[id].image_path);
 					cdrom_drives[id].handler->exit(id);
 					cdrom_close(id);

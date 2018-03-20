@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.4	2018/03/15
+ * Version:	@(#)midi_fluidsynth.c	1.0.5	2018/03/19
  *
  *		Code borrowed from scummvm.
  *
@@ -78,7 +78,7 @@ extern void al_set_midi(int freq, int buf_size);
 extern int soundon;
 
 
-static void	*fluidsynth_handle;		/* handle to FluidSynth DLL */
+static void	*fluidsynth_handle = NULL;	/* handle to FluidSynth DLL */
 
 /* Pointers to the real functions. */
 static fluid_settings_t*(*f_new_fluid_settings)(void);

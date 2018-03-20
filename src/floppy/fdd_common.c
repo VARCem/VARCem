@@ -8,7 +8,7 @@
  *
  *		Shared code for all the floppy modules.
  *
- * Version:	@(#)fdd_common.c	1.0.2	2018/03/16
+ * Version:	@(#)fdd_common.c	1.0.3	2018/03/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -40,6 +40,14 @@
 #include "../emu.h"
 #include "fdd.h"
 #include "fdd_common.h"
+
+/* Temporary until the rewrite is done. */
+#include "fdd_86f.h"
+#include "fdd_fdi.h"
+#include "fdd_imd.h"
+#include "fdd_img.h"
+#include "fdd_json.h"
+#include "fdd_td0.h"
 
 
 const uint8_t fdd_holes[6] = { 0, 0, 0, 1, 1, 2 };
@@ -455,4 +463,42 @@ fdd_interleave(int sector, int skew, int spt)
     }
 
     return(adjusted_r);
+}
+
+
+void
+floppy_init(void)
+{
+    int i;
+
+    /* Initialize all the image formats. */
+    img_init();
+    d86f_init();
+    td0_init();
+    imd_init();
+    json_init();
+
+    /* Reset all drives. */
+    for (i = 0; i < FDD_NUM; i++) {
+	drives[i].poll = 0;
+	drives[i].seek = 0;
+	drives[i].readsector = 0;
+    }
+
+    /* Perform the reset. */
+    fdd_reset();
+
+    /* Mount all configured drives. */
+    for (i = 0; i < FDD_NUM; i++)
+	fdd_load(i, floppyfns[i]);
+}
+
+
+void
+floppy_close(void)
+{
+    int i;
+
+    for (i = 0; i < FDD_NUM; i++)
+        fdd_close(i);
 }

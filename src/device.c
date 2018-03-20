@@ -130,6 +130,7 @@ device_close_all(void)
 
     for (c=0; c<DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
+pclog("DEVICE: closing device '%s'\n", devices[c]->name);
 		if (devices[c]->close != NULL)
 			devices[c]->close(device_priv[c]);
 		devices[c] = device_priv[c] = NULL;

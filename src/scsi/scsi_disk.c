@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.4	2018/03/16
+ * Version:	@(#)scsi_disk.c	1.0.4	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,8 +45,8 @@
 #include "../version.h"
 #include "../timer.h"
 #include "../device.h"
-#include "../nvr.h"
 #include "../intel_piix.h"
+#include "../nvr.h"
 #include "../cdrom/cdrom.h"
 #include "../disk/hdd.h"
 #include "../disk/hdc.h"
@@ -77,10 +77,10 @@
 #define scsi_hd_ascq shdc[id].sense[13]
 
 
-scsi_hard_disk_t shdc[HDD_NUM];
-FILE *shdf[HDD_NUM];
+scsi_disk_t	shdc[HDD_NUM];
+FILE		*shdf[HDD_NUM];
 
-uint8_t scsi_hard_disks[16][8] = {
+uint8_t scsi_disks[16][8] = {
     { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
     { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
     { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
@@ -255,7 +255,7 @@ scsi_loadhd(int scsi_id, int scsi_lun, int id)
 {
     if (! hdd_image_load(id)) {
 	if (hdd[id].bus != HDD_BUS_SCSI_REMOVABLE) {
-		scsi_hard_disks[scsi_id][scsi_lun] = 0xff;
+		scsi_disks[scsi_id][scsi_lun] = 0xff;
 	}
     } else {
 	scsi_disk_insert(id);
@@ -296,15 +296,15 @@ build_scsi_hd_map(void)
     uint8_t i, j;
 
     for (i=0; i<16; i++)
-	memset(scsi_hard_disks[i], 0xff, 8);
+	memset(scsi_disks[i], 0xff, 8);
 
     for (i=0; i<16; i++) {
 	for (j=0; j<8; j++) {
-		scsi_hard_disks[i][j] = find_hdd_for_scsi_id(i, j);
-		if (scsi_hard_disks[i][j] != 0xff) {
-			memset(&(shdc[scsi_hard_disks[i][j]]), 0, sizeof(shdc[scsi_hard_disks[i][j]]));
-			if (wcslen(hdd[scsi_hard_disks[i][j]].fn) > 0) {
-				scsi_loadhd(i, j, scsi_hard_disks[i][j]);
+		scsi_disks[i][j] = find_hdd_for_scsi_id(i, j);
+		if (scsi_disks[i][j] != 0xff) {
+			memset(&(shdc[scsi_disks[i][j]]), 0, sizeof(shdc[scsi_disks[i][j]]));
+			if (wcslen(hdd[scsi_disks[i][j]].fn) > 0) {
+				scsi_loadhd(i, j, scsi_disks[i][j]);
 			}
 		}
 	}

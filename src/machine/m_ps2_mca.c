@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.3	2018/03/16
+ * Version:	@(#)m_ps2_mca.c	1.0.4	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1260,15 +1260,17 @@ static void
 machine_ps2_common_init(const machine_t *model)
 {
         machine_common_init(model);
-	device_add(&fdc_at_device);
 
         dma16_init();
-        ps2_dma_init();
-	device_add(&keyboard_ps2_mca_device);
-        nvr_at_init(8);
         pic2_init();
-
+        ps2_dma_init();
         pit_ps2_init();
+
+        device_add(&at_nvr_device);
+
+	device_add(&keyboard_ps2_mca_device);
+
+	device_add(&fdc_at_device);
 
 	nmi_mask = 0x80;
 }

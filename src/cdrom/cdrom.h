@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.5	2018/03/17
+ * Version:	@(#)cdrom.h	1.0.7	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,9 @@ extern "C" {
 #endif
 
 #define CDROM_NUM		4
+
+#define CDROM_SPEED_DEFAULT	8
+
 
 #define CD_STATUS_EMPTY		0
 #define CD_STATUS_DATA_ONLY	1
@@ -145,6 +148,7 @@ typedef struct {
 	int callback;
 
 	int data_pos;
+	uint32_t seek_diff;
 
 	int cdb_len_setting;
 	int cdb_len;
@@ -174,6 +178,22 @@ typedef struct {
 	int init_length;
 
 	int16_t cd_buffer[BUF_SIZE];
+
+	uint8_t rcbuf[16];
+	uint8_t sub_q_data_format[16];
+	uint8_t sub_q_channel_data[256];
+	int last_subchannel_pos;
+
+	uint32_t cd_end;
+	uint32_t cdrom_capacity;
+
+	int cd_buflen;
+	int cd_state;
+
+	int handler_inited;
+	int disc_changed;
+
+	int cur_speed;
 } cdrom_t;
 
 typedef struct {
@@ -196,64 +216,52 @@ typedef struct {
 	unsigned int sound_on;
 	unsigned int atapi_dma;
 
-	uint8_t speed;
+	uint8_t speed_idx;		/* index into table */
 } cdrom_drive_t;
 
 typedef struct {
 	int image_is_iso;
-
-	uint32_t last_block;
-	uint32_t cdrom_capacity;
-	int image_inited;
 	wchar_t image_path[1024];
-	wchar_t prev_image_path[1024];
+	wchar_t *prev_image_path;
 	FILE* image;
-	int image_changed;
-
-	int cd_state;
-	uint32_t cd_pos;
-	uint32_t cd_end;
-	int cd_buflen;
 } cdrom_image_t;
 
 typedef struct {
-	uint32_t last_block;
-	uint32_t cdrom_capacity;
-	int ioctl_inited;
 	char ioctl_path[8];
-	int tocvalid;
-	int cd_state;
-	uint32_t cd_end;
-	int16_t cd_buffer[BUF_SIZE];
-	int cd_buflen;
 	int actual_requested_blocks;
 	int last_track_pos;
 	int last_track_nr;
 	int capacity_read;
-	uint8_t rcbuf[16];
-	uint8_t sub_q_data_format[16];
-	uint8_t sub_q_channel_data[256];
-	int last_subchannel_pos;
 } cdrom_ioctl_t;
 
+typedef struct {
+	int8_t	speed;
+	double	seek1;
+	double	seek2;
+} cdrom_speed_t;
 
-extern cdrom_t		cdrom[CDROM_NUM];
+
+extern const cdrom_speed_t	cdrom_speeds[];
+
+extern cdrom_t		*cdrom[CDROM_NUM];
 extern cdrom_drive_t	cdrom_drives[CDROM_NUM];
-extern uint8_t		atapi_cdrom_drives[8];
-extern uint8_t		scsi_cdrom_drives[16][8];
 extern cdrom_image_t	cdrom_image[CDROM_NUM];
 extern cdrom_ioctl_t	cdrom_ioctl[CDROM_NUM];
+extern uint8_t		atapi_cdrom_drives[8];
+extern uint8_t		scsi_cdrom_drives[16][8];
 
-#define cdrom_sense_error cdrom[id].sense[0]
-#define cdrom_sense_key cdrom[id].sense[2]
-#define cdrom_asc cdrom[id].sense[12]
-#define cdrom_ascq cdrom[id].sense[13]
+#define cdrom_sense_error cdrom[id]->sense[0]
+#define cdrom_sense_key cdrom[id]->sense[2]
+#define cdrom_asc cdrom[id]->sense[12]
+#define cdrom_ascq cdrom[id]->sense[13]
 #define cdrom_drive cdrom_drives[id].host_drive
 
 extern int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length);
 extern int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length);
 extern void	(*ide_bus_master_set_irq)(int channel);
 extern void	ioctl_close(uint8_t id);
+
+extern int	cdrom_speed_idx(int realspeed);
 
 extern uint32_t	cdrom_mode_sense_get_channel(uint8_t id, int channel);
 extern uint32_t	cdrom_mode_sense_get_volume(uint8_t id, int channel);
@@ -267,6 +275,7 @@ extern uint32_t	cdrom_read(uint8_t channel, int length);
 extern void	cdrom_write(uint8_t channel, uint32_t val, int length);
 
 extern int	cdrom_lba_to_msf_accurate(int lba);
+extern void	cdrom_destroy_drives(void);
 
 extern void     cdrom_close(uint8_t id);
 extern void	cdrom_reset(uint8_t id);
@@ -274,6 +283,7 @@ extern void	cdrom_set_signature(int id);
 extern void	cdrom_request_sense_for_scsi(uint8_t id, uint8_t *buffer, uint8_t alloc_length);
 extern void	cdrom_update_cdb(uint8_t *cdb, int lba_pos, int number_of_blocks);
 extern void	cdrom_insert(uint8_t id);
+extern void	cdrom_new_image(uint8_t id);
 
 extern int	find_cdrom_for_scsi_id(uint8_t scsi_id, uint8_t scsi_lun);
 extern int	cdrom_read_capacity(uint8_t id, uint8_t *cdb, uint8_t *buffer, uint32_t *len);

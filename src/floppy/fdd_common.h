@@ -8,7 +8,7 @@
  *
  *		Shared code for all the floppy modules.
  *
- * Version:	@(#)fdd_common.h	1.0.2	2018/03/16
+ * Version:	@(#)fdd_common.h	1.0.3	2018/03/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -48,6 +48,9 @@ extern uint8_t	fdd_sector_size_code(int size);
 extern int	fdd_sector_code_size(uint8_t code);
 extern int	fdd_bps_valid(uint16_t bps);
 extern int	fdd_interleave(int sector, int skew, int spt);
+
+extern void	floppy_init(void);
+extern void	floppy_close(void);
 
 
 #endif	/*FDD_COMMON_H*/

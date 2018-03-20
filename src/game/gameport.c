@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)gameport.c	1.0.3	2018/03/15
+ * Version:	@(#)gameport.c	1.0.4	2018/03/19
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -68,9 +68,6 @@ typedef struct _gameport_ {
 } gameport_t;
 
 
-int	joystick_type;
-
-
 static const joystick_if_t joystick_none = {
     "No joystick",
     NULL,
@@ -84,8 +81,8 @@ static const joystick_if_t joystick_none = {
     0
 };
 
-
 static const joystick_if_t *joystick_list[] = {
+    &joystick_none,
     &joystick_standard,
     &joystick_standard_4button,
     &joystick_standard_6button,
@@ -93,7 +90,6 @@ static const joystick_if_t *joystick_list[] = {
     &joystick_ch_flightstick_pro,
     &joystick_sw_pad,
     &joystick_tm_fcs,
-    &joystick_none,
     NULL
 };
 static gameport_t *gameport_global = NULL;
@@ -268,7 +264,7 @@ gameport_init(const device_t *info)
 {
     gameport_t *p = NULL;
 
-    if (joystick_type == 7) {
+    if (joystick_type == JOYSTICK_TYPE_NONE) {
 	p = NULL;
 	return(p);
     }
@@ -287,7 +283,7 @@ gameport_201_init(const device_t *info)
 {
     gameport_t *p;
 
-    if (joystick_type == 7) {
+    if (joystick_type == JOYSTICK_TYPE_NONE) {
 	p = NULL;
 	return(p);
     }

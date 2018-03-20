@@ -79,7 +79,6 @@ extern char	*hdc_get_internal_name(int hdc);
 extern const device_t	*hdc_get_device(int hdc);
 extern int	hdc_get_flags(int hdc);
 extern int	hdc_available(int hdc);
-extern int	hdc_current_is_mfm(void);
 
 
 #endif	/*EMU_HDC_H*/

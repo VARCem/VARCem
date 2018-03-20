@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.8	2018/03/18
+ * Version:	@(#)mem.c	1.0.9	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1622,12 +1622,6 @@ pclog("MEM: reset: previous pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 #if DYNAMIC_TABLES
 pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 #endif
-	for (c=0; c<m; c++) {
-		pages[c].mem = &ram[c << 12];
-		pages[c].write_b = mem_write_ramb_page;
-		pages[c].write_w = mem_write_ramw_page;
-		pages[c].write_l = mem_write_raml_page;
-	}
 
 #if DYNAMIC_TABLES
 	/* Allocate the (new) lookup tables. */
@@ -1640,6 +1634,14 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 	if (writelookup2 != NULL) free(writelookup2);
 	writelookup2 = malloc(pages_sz*sizeof(uintptr_t));
 #endif
+    }
+
+    /* Initialize the page table. */
+    for (c = 0; c < m; c++) {
+	pages[c].mem = &ram[c << 12];
+	pages[c].write_b = mem_write_ramb_page;
+	pages[c].write_w = mem_write_ramw_page;
+	pages[c].write_l = mem_write_raml_page;
     }
 
     /* Initialize the tables. */

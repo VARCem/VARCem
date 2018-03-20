@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.2	2018/03/15
+ * Version:	@(#)hdc.c	1.0.3	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include "../machine/machine.h"
 #include "../device.h"
 #include "hdc.h"
+#include "hdc_ide.h"
 
 
 char	*hdc_name;		/* configured HDC name */
@@ -176,6 +177,15 @@ hdc_reset(void)
     /* If we have a valid controller, add its device. */
     if (hdc_current > 1)
 	device_add(controllers[hdc_current].device);
+
+    /* Reconfire and reset the IDE layer. */
+    ide_ter_disable();
+    ide_qua_disable();
+    if (ide_enable[2])
+	ide_ter_init();
+    if (ide_enable[3])
+	ide_qua_init();
+    ide_reset_hard();
 }
 
 
@@ -211,11 +221,4 @@ int
 hdc_available(int hdc)
 {
     return(device_available(controllers[hdc].device));
-}
-
-
-int
-hdc_current_is_mfm(void)
-{
-    return(controllers[hdc_current].is_mfm);
 }

@@ -8,7 +8,7 @@
  *
  *		SVGA renderers.
  *
- * Version:	@(#)vid_svga_render.c	1.0.7	2018/03/17
+ * Version:	@(#)vid_svga_render.c	1.0.8	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -330,7 +330,10 @@ void svga_render_text_80_ksc5601(svga_t *svga)
                         dat = svga->vram[charaddr + (svga->sc << 2)];
                         if(x + xinc < svga->hdisp && (chr & nextchr & 0x80))
                         {
-                                dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc];
+                                if((chr == 0xc9 || chr == 0xfe) && (nextchr > 0xa0 && nextchr < 0xff))
+                                        dat = fontdatksc5601_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20].chr[svga->sc];
+                                else
+                                        dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc];
                         }
                         else
                         {
@@ -377,7 +380,10 @@ void svga_render_text_80_ksc5601(svga_t *svga)
                                         }
                                 }
 
-                                dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc + 16];
+                                if((chr == 0xc9 || chr == 0xfe) && (nextchr > 0xa0 && nextchr < 0xff))
+                                        dat = fontdatksc5601_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20].chr[svga->sc + 16];
+                                else
+                                        dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc + 16];
                                 if (svga->seqregs[1] & 1) 
                                 { 
                                         for (xx = 0; xx < 8; xx++) 

@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.3	2018/03/11
+ * Version:	@(#)nvr_at.c	1.0.4	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -277,9 +277,6 @@
 # define REGD_VRT	0x80
 #define RTC_CENTURY	0x32		/* century register */
 #define RTC_REGS	14		/* number of registers */
-
-
-static nvr_t *nvrp;
 
 
 /* Get the current NVR time. */
@@ -380,7 +377,7 @@ check_alarm(uint8_t *regs, int8_t addr)
 
 /* Update the NVR registers from the internal clock. */
 static void
-update_timer(void *priv)
+timer_update(void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     struct tm tm;
@@ -429,7 +426,7 @@ update_timer(void *priv)
 
 /* Re-calculate the timer values. */
 static void
-rtc_timer_recalc(nvr_t *nvr, int add)
+timer_recalc(nvr_t *nvr, int add)
 {
     int64_t c, nt;
 
@@ -443,7 +440,7 @@ rtc_timer_recalc(nvr_t *nvr, int add)
 
 
 static void
-rtc_timer(void *priv)
+timer_intr(void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
 
@@ -453,7 +450,7 @@ rtc_timer(void *priv)
     }
 
     /* Update our timer interval. */
-    rtc_timer_recalc(nvr, 1);
+    timer_recalc(nvr, 1);
 
     nvr->regs[RTC_REGC] |= REGC_PF;
     if (nvr->regs[RTC_REGB] & REGB_PIE) {
@@ -468,7 +465,7 @@ rtc_timer(void *priv)
 
 /* Callback from internal clock, another second passed. */
 static void
-tick_timer(nvr_t *nvr)
+timer_tick(nvr_t *nvr)
 {
     if (nvr->regs[RTC_REGB] & REGB_SET) return;
 
@@ -494,7 +491,7 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
 		case RTC_REGA:
 			nvr->regs[RTC_REGA] = val;
 			if (val & REGA_RS)
-				rtc_timer_recalc(nvr, 1);
+				timer_recalc(nvr, 1);
 			  else
 				nvr->rtctime = 0x7fffffff;
 			break;
@@ -577,7 +574,7 @@ nvr_read(uint16_t addr, void *priv)
 
 /* Reset the RTC state to 1980/01/01 00:00. */
 static void
-nvr_at_reset(nvr_t *nvr)
+nvr_reset(nvr_t *nvr)
 {
     memset(nvr->regs, 0x00, RTC_REGS);
     nvr->regs[RTC_DOM] = 1;
@@ -589,7 +586,7 @@ nvr_at_reset(nvr_t *nvr)
 
 /* Process after loading from file. */
 static void
-nvr_at_start(nvr_t *nvr)
+nvr_start(nvr_t *nvr)
 {
     struct tm tm;
 
@@ -607,10 +604,82 @@ nvr_at_start(nvr_t *nvr)
     /* Start the RTC. */
     nvr->regs[RTC_REGA] = (REGA_RS2|REGA_RS1);
     nvr->regs[RTC_REGB] = REGB_2412;
-    rtc_timer_recalc(nvr, 0);
+    timer_recalc(nvr, 0);
 }
 
 
+static void *
+nvr_init_common(int irq)
+{
+    nvr_t *nvr;
+
+    /* Allocate an NVR for this machine. */
+    nvr = (nvr_t *)malloc(sizeof(nvr_t));
+    if (nvr == NULL) return(NULL);
+    memset(nvr, 0x00, sizeof(nvr_t));
+
+    /* This is machine specific. */
+    nvr->size = machines[machine].nvrsz;
+    nvr->irq = irq;
+
+    /* Set up any local handlers here. */
+    nvr->reset = nvr_reset;
+    nvr->start = nvr_start;
+    nvr->tick = timer_tick;
+
+    /* Initialize the generic NVR. */
+    nvr_init(nvr);
+
+    /* Start the timers. */
+    timer_add(timer_update, &nvr->upd_ecount, &nvr->upd_ecount, nvr);
+    timer_add(timer_intr, &nvr->rtctime, TIMER_ALWAYS_ENABLED, nvr);
+
+    /* Set up the I/O handler for this device. */
+    io_sethandler(0x0070, 2,
+		  nvr_read,NULL,NULL, nvr_write,NULL,NULL, nvr);
+
+    return(nvr);
+}
+
+
+static void *
+nvr_at_init(const device_t *info)
+{
+    /* The PC/AT and compatibles use IRQ8, Amstrad uses IRQ1. */
+    return(nvr_init_common(info->local));
+}
+
+
+static void
+nvr_at_close(void *priv)
+{
+    nvr_t *nvr = (nvr_t *)priv;
+
+    if (nvr->fn != NULL)
+	free(nvr->fn);
+
+    free(nvr);
+}
+
+
+const device_t at_nvr_device = {
+    "PC/AT NVRAM",
+    MACHINE_ISA | MACHINE_AT,
+    8,
+    nvr_at_init, nvr_at_close, NULL,
+    NULL, NULL, NULL,
+    NULL
+};
+
+const device_t amstrad_nvr_device = {
+    "Amstrad NVRAM",
+    MACHINE_ISA | MACHINE_AT,
+    1,
+    nvr_at_init, nvr_at_close, NULL,
+    NULL, NULL, NULL,
+    NULL
+};
+#if 0
 void
 nvr_at_init(int irq)
 {
@@ -626,16 +695,16 @@ nvr_at_init(int irq)
     nvr->irq = irq;
 
     /* Set up any local handlers here. */
-    nvr->reset = nvr_at_reset;
-    nvr->start = nvr_at_start;
-    nvr->tick = tick_timer;
+    nvr->reset = nvr_reset;
+    nvr->start = nvr_start;
+    nvr->tick = timer_tick;
 
     /* Initialize the generic NVR. */
     nvr_init(nvr);
 
     /* Start the timers. */
-    timer_add(update_timer, &nvr->upd_ecount, &nvr->upd_ecount, nvr);
-    timer_add(rtc_timer, &nvr->rtctime, TIMER_ALWAYS_ENABLED, nvr);
+    timer_add(timer_update, &nvr->upd_ecount, &nvr->upd_ecount, nvr);
+    timer_add(timer_intr, &nvr->rtctime, TIMER_ALWAYS_ENABLED, nvr);
 
     /* Set up the I/O handler for this device. */
     io_sethandler(0x0070, 2,
@@ -657,3 +726,4 @@ nvr_at_close(void)
 
     nvrp = NULL;
 }
+#endif

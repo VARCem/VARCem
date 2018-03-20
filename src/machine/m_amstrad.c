@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.3	2018/03/15
+ * Version:	@(#)m_amstrad.c	1.0.5	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1229,11 +1229,11 @@ machine_amstrad_init(const machine_t *model)
     ams = (amstrad_t *)malloc(sizeof(amstrad_t));
     memset(ams, 0x00, sizeof(amstrad_t));
 
-    nvr_at_init(1);
-
     machine_common_init(model);
 
     nmi_init();
+
+    device_add(&amstrad_nvr_device);
 
     lpt2_remove_ams();
 
@@ -1309,6 +1309,6 @@ machine_amstrad_init(const machine_t *model)
     mouse_reset();
     mouse_set_poll(ms_poll, ams);
 
-    if (joystick_type != 7)
+    if (joystick_type != JOYSTICK_TYPE_NONE)
 	device_add(&gameport_device);
 }

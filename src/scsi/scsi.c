@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.3	2018/03/15
+ * Version:	@(#)scsi.c	1.0.4	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -186,7 +186,7 @@ scsi_card_init(void)
 	
     for (i=0; i<SCSI_ID_MAX; i++) {
 	for (j=0; j<SCSI_LUN_MAX; j++) {
-		if (scsi_hard_disks[i][j] != 0xff) {
+		if (scsi_disks[i][j] != 0xff) {
 			SCSIDevices[i][j].LunType = SCSI_DISK;
 		} else if (scsi_cdrom_drives[i][j] != 0xff) {
 			SCSIDevices[i][j].LunType = SCSI_CDROM;
@@ -227,7 +227,7 @@ SCSIReset(uint8_t id, uint8_t lun)
 {
     uint8_t cdrom_id = scsi_cdrom_drives[id][lun];
     uint8_t zip_id = scsi_zip_drives[id][lun];
-    uint8_t hdd_id = scsi_hard_disks[id][lun];
+    uint8_t hdd_id = scsi_disks[id][lun];
 
     if (hdd_id != 0xff) {
 	scsi_hd_reset(hdd_id);

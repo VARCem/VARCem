@@ -8,7 +8,7 @@
  *
  *		Handle the platform-side of CDROM drives.
  *
- * Version:	@(#)win_cdrom.c	1.0.4	2018/03/07
+ * Version:	@(#)win_cdrom.c	1.0.5	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,7 +94,13 @@ cdrom_eject(uint8_t id)
 		IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), MF_UNCHECKED);
     }
 
+    if (cdrom_image[id].prev_image_path) {
+	free(cdrom_image[id].prev_image_path);
+	cdrom_image[id].prev_image_path = NULL;
+    }
+
     if (cdrom_drives[id].host_drive == 200) {
+	cdrom_image[id].prev_image_path = (wchar_t *)malloc(1024);
 	wcscpy(cdrom_image[id].prev_image_path, cdrom_image[id].image_path);
     }
     cdrom_drives[id].prev_host_drive = cdrom_drives[id].host_drive;
@@ -131,6 +137,8 @@ cdrom_reload(uint8_t id)
 
     if (cdrom_drives[id].prev_host_drive == 200) {
 	wcscpy(cdrom_image[id].image_path, cdrom_image[id].prev_image_path);
+	free(cdrom_image[id].prev_image_path);
+	cdrom_image[id].prev_image_path = NULL;
 	image_open(id, cdrom_image[id].image_path);
 	if (cdrom_drives[id].bus_type) {
 		/* Signal disc change to the emulated machine. */

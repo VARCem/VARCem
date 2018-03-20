@@ -48,10 +48,7 @@
  *		hold a single BCD digit. Hence everything has 'ones' and
  *		'tens' digits.
  *
- * NOTE:	Still need to figure out a way to load/save ConfigSys and
- *		HardRAM stuff. Needs to be linked in to the NVR code.
- *
- * Version:	@(#)m_xt_t1000.c	1.0.4	2018/03/15
+ * Version:	@(#)m_xt_t1000.c	1.0.5	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -141,7 +138,9 @@ typedef struct {
     mem_mapping_t rom_mapping;
 
     /* CONFIG.SYS drive. */
-    uint8_t	config[160];
+    wchar_t	cfgsys_fn[128];
+    uint16_t	cfgsys_len;
+    uint8_t	*cfgsys;
 
     /* System control registers */
     uint8_t	sys_ctl[16];
@@ -153,6 +152,7 @@ typedef struct {
     uint8_t	nvr_tick;
     int		nvr_addr;
     uint8_t	nvr_active;
+    mem_mapping_t nvr_mapping;		/* T1200 NVRAM mapping */
 
     /* EMS data */
     uint8_t	ems_reg[4];
@@ -598,6 +598,80 @@ read_ctl(uint16_t addr, void *priv)
 }
 
 
+/* Load contents of "CONFIG.SYS" device from file. */
+static void
+cfgsys_load(t1000_t *dev)
+{
+    char temp[128];
+    FILE *f;
+
+    /* Set up the file's name. */
+    sprintf(temp, "%s_cfgsys.nvr", machine_get_internal_name());
+    mbstowcs(dev->cfgsys_fn, temp, sizeof_w(dev->cfgsys_fn));
+
+    /* Now attempt to load the file. */
+    memset(dev->cfgsys, 0x1a, dev->cfgsys_len);
+    f = plat_fopen(nvr_path(dev->cfgsys_fn), L"rb");
+    if (f != NULL) {
+	pclog("NVR: loaded CONFIG.SYS from '%ls'\n", dev->cfgsys_fn);
+	(void)fread(dev->cfgsys, dev->cfgsys_len, 1, f);
+	fclose(f);
+    }
+	else pclog("NVR: initialized CONFIG.SYS for '%ls'\n", dev->cfgsys_fn);
+}
+
+
+/* Write the contents of "CONFIG.SYS" to file. */
+static void
+cfgsys_save(t1000_t *dev)
+{
+    FILE *f;
+
+    /* Avoids writing empty files. */
+    if (dev->cfgsys_len < 160) return;
+
+    f = plat_fopen(nvr_path(dev->cfgsys_fn), L"wb");
+    if (f != NULL) {
+	pclog("NVR: saved CONFIG.SYS to '%ls'\n", dev->cfgsys_fn);
+	(void)fwrite(dev->cfgsys, dev->cfgsys_len, 1, f);
+	fclose(f);
+    }
+}
+
+
+#if NOTUSED
+/* All RAM beyond 512K is non-volatile */
+static void
+emsboard_load(t1000_t *dev)
+{
+    FILE *f;
+
+    if (mem_size > 512) {
+	f = plat_fopen(nvr_path(L"t1000_ems.nvr"), L"rb");
+	if (f != NULL) {
+		fread(&ram[512 * 1024], 1024, (mem_size - 512), f);
+		fclose(f);
+	}
+    }
+}
+
+
+static void
+emsboard_save(t1000_t *dev)
+{
+    FILE *f;
+
+    if (mem_size > 512) {
+	f = plat_fopen(nvr_path(L"t1000_ems.nvr"), L"wb");
+	if (f != NULL) {
+		fwrite(&ram[512 * 1024], 1024, (mem_size - 512), f);
+		fclose(f);
+	}
+    }
+}
+#endif
+
+
 static void
 t1200_turbo_set(uint8_t value)
 {
@@ -662,7 +736,7 @@ t1000_read_nvram(uint16_t addr, void *priv)
     switch (addr) {
 	case 0xc2: /* Read next byte from NVRAM */
 		if (sys->nvr_addr >= 0 && sys->nvr_addr < 160)
-			tmp = sys->config[sys->nvr_addr];
+			tmp = sys->cfgsys[sys->nvr_addr];
 		sys->nvr_addr++;
 		break;
 
@@ -696,9 +770,9 @@ t1000_write_nvram(uint16_t addr, uint8_t val, void *priv)
 
 	case 0xc1:	/* Write next byte to NVRAM */
 		if (sys->nvr_addr >= 0 && sys->nvr_addr < 160) {
-			if (sys->config[sys->nvr_addr] != val) 
+			if (sys->cfgsys[sys->nvr_addr] != val) 
 				nvr_dosave = 1;
-			sys->config[sys->nvr_addr] = val;
+			sys->cfgsys[sys->nvr_addr] = val;
 		}
 		sys->nvr_addr++;
 		break;
@@ -836,9 +910,12 @@ machine_xt_t1000_init(const machine_t *model)
     }
 
     /* Non-volatile RAM for CONFIG.SYS */
+    t1000.cfgsys_len = 160;
+    t1000.cfgsys = (uint8_t *)malloc(t1000.cfgsys_len);
     io_sethandler(0xc0, 4,
 		  t1000_read_nvram,NULL,NULL,
 		  t1000_write_nvram,NULL,NULL, &t1000);
+    cfgsys_load(&t1000);
 
     /* ROM drive */
     io_sethandler(0xc8, 1,
@@ -859,6 +936,27 @@ machine_xt_t1000_init(const machine_t *model)
     tc8521_init(&t1000.nvr, model->nvrsz);
 
     device_add(&t1000_video_device);
+}
+
+
+static
+uint8_t t1200_nvram_read(uint32_t addr, void *priv)
+{
+    t1000_t *sys = (t1000_t *)priv;
+
+    return(sys->cfgsys[addr & 0x7ff]);
+}
+
+
+static void
+t1200_nvram_write(uint32_t addr, uint8_t value, void *priv)
+{
+    t1000_t *sys = (t1000_t *)priv;
+
+    if (sys->cfgsys[addr & 0x7ff] != value) 
+	nvr_dosave = 1;
+
+    sys->cfgsys[addr & 0x7ff] = value;
 }
 
 
@@ -898,6 +996,16 @@ machine_xt_t1200_init(const machine_t *model)
 
     machine_common_init(model);
 
+    /* Non-volatile RAM for CONFIG.SYS */
+    t1000.cfgsys_len = 2048;
+    t1000.cfgsys = (uint8_t *)malloc(t1000.cfgsys_len);
+    mem_mapping_add(&t1000.nvr_mapping,
+		    0x000f0000, t1000.cfgsys_len,
+		    t1200_nvram_read,NULL,NULL,
+		    t1200_nvram_write,NULL,NULL, 
+		    NULL, 0, &t1000);
+    cfgsys_load(&t1000);
+
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
     device_add(&keyboard_xt_device);
     t1000.fdc = device_add(&fdc_xt_device);
@@ -910,69 +1018,16 @@ machine_xt_t1200_init(const machine_t *model)
 
 
 void
+machine_xt_t1x00_close(void)
+{
+    cfgsys_save(&t1000);
+}
+
+
+void
 t1000_syskey(uint8_t andmask, uint8_t ormask, uint8_t xormask)
 {
     t1000.syskeys &= ~andmask;
     t1000.syskeys |= ormask;
     t1000.syskeys ^= xormask;
 }
-
-
-#if 0
-void
-t1000_configsys_load(void)
-{
-    FILE *f;
-
-    memset(config_sys, 0x1a, sizeof(config_sys));
-    f = plat_fopen(nvr_path(L"t1000_config.nvr"), L"rb");
-    if (f != NULL) {
-	fread(config_sys, sizeof(config_sys), 1, f);
-	fclose(f);
-    }
-}
-
-
-void
-t1000_configsys_save(void)
-{
-    FILE *f;
-
-    f = plat_fopen(nvr_path(L"t1000_config.nvr"), L"wb");
-    if (f != NULL) {
-	fwrite(config_sys, sizeof(config_sys), 1, f);
-	fclose(f);
-    }
-}
-
-
-/* All RAM beyond 512k is non-volatile */
-void
-t1000_emsboard_load(void)
-{
-    FILE *f;
-
-    if (mem_size > 512) {
-	f = plat_fopen(nvr_path(L"t1000_ems.nvr"), L"rb");
-	if (f != NULL) {
-		fread(&ram[512 * 1024], 1024, (mem_size - 512), f);
-		fclose(f);
-	}
-    }
-}
-
-
-void
-t1000_emsboard_save(void)
-{
-    FILE *f;
-
-    if (mem_size > 512) {
-	f = plat_fopen(nvr_path(L"t1000_ems.nvr"), L"wb");
-	if (f != NULL) {
-		fwrite(&ram[512 * 1024], 1024, (mem_size - 512), f);
-		fclose(f);
-	}
-    }
-}
-#endif

@@ -8,7 +8,7 @@
  *
  *		Definitions for the floppy drive emulation.
  *
- * Version:	@(#)fdd.h	1.0.3	2018/03/17
+ * Version:	@(#)fdd.h	1.0.4	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,33 @@
 extern "C" {
 #endif
 
+typedef struct {
+    void	(*seek)(int drive, int track);
+    void	(*readsector)(int drive, int sector, int track, int side,
+			      int density, int sector_size);
+    void	(*writesector)(int drive, int sector, int track, int side,
+			       int density, int sector_size);
+    void	(*comparesector)(int drive, int sector, int track, int side,
+				 int density, int sector_size);
+    void	(*readaddress)(int drive, int side, int density);
+    void	(*format)(int drive, int side, int density, uint8_t fill);
+    int		(*hole)(int drive);
+    double	(*byteperiod)(int drive);
+    void	(*stop)(int drive);
+    void	(*poll)(int drive);
+} DRIVE;
+
+
+extern DRIVE	drives[FDD_NUM];
+extern wchar_t	floppyfns[FDD_NUM][512];
+extern int	driveempty[FDD_NUM];
+extern int64_t	fdd_poll_time[FDD_NUM];
+extern int	ui_writeprot[FDD_NUM];
+
+extern int	fdd_time;
+extern int64_t	floppytime;
+
+
 extern int	fdd_swap;
 
 
@@ -82,35 +109,6 @@ extern char	*fdd_get_internal_name(int type);
 extern int	fdd_get_from_internal_name(char *s);
 
 extern int	fdd_current_track(int drive);
-
-
-typedef struct {
-    void	(*seek)(int drive, int track);
-    void	(*readsector)(int drive, int sector, int track, int side,
-			      int density, int sector_size);
-    void	(*writesector)(int drive, int sector, int track, int side,
-			       int density, int sector_size);
-    void	(*comparesector)(int drive, int sector, int track, int side,
-				 int density, int sector_size);
-    void	(*readaddress)(int drive, int side, int density);
-    void	(*format)(int drive, int side, int density, uint8_t fill);
-    int		(*hole)(int drive);
-    double	(*byteperiod)(int drive);
-    void	(*stop)(int drive);
-    void	(*poll)(int drive);
-} DRIVE;
-
-
-extern DRIVE	drives[FDD_NUM];
-extern wchar_t	floppyfns[FDD_NUM][512];
-extern int	driveempty[FDD_NUM];
-extern int64_t	fdd_poll_time[FDD_NUM];
-extern int	ui_writeprot[FDD_NUM];
-
-extern int	curdrive;
-
-extern int	fdd_time;
-extern int64_t	floppytime;
 
 
 extern void	fdd_load(int drive, wchar_t *fn);

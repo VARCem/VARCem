@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.6	2018/03/17
+ * Version:	@(#)video.c	1.0.7	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,7 +101,8 @@ uint8_t		fontdat[2048][8];		/* IBM CGA font */
 uint8_t		fontdatm[2048][16];		/* IBM MDA font */
 uint8_t		fontdatw[512][32];		/* Wyse700 font */
 uint8_t		fontdat8x12[256][16];		/* MDSI Genius font */
-dbcs_font_t	*fontdatksc5601;		/* Korean KSC-5601 font */
+dbcs_font_t	*fontdatksc5601,		/* Korean KSC-5601 font */
+		*fontdatksc5601_user;		/* Korean KSC-5601 user defined font */
 uint32_t	pal_lookup[256];
 int		xsize = 1,
 		ysize = 1;
@@ -684,6 +685,11 @@ video_close(void)
 	free(fontdatksc5601);
 	fontdatksc5601 = NULL;
     }
+
+    if (fontdatksc5601_user != NULL) {
+	free(fontdatksc5601_user);
+	fontdatksc5601_user = NULL;
+    }
 }
 
 
@@ -783,8 +789,11 @@ loadfont(wchar_t *s, int format)
 		if (fontdatksc5601 == NULL)
 			fontdatksc5601 = malloc(16384 * sizeof(dbcs_font_t));
 
-		for (c=0;c<16384;c++) {
-			for (d=0;d<32;d++)
+		if (fontdatksc5601_user == NULL)
+			fontdatksc5601_user = malloc(192 * sizeof(dbcs_font_t));
+
+		for (c = 0; c < 16384; c++) {
+			for (d = 0; d < 32; d++)
 				fontdatksc5601[c].chr[d]=getc(f);
 		}
 		break;

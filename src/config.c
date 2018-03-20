@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.5	2018/03/15
+ * Version:	@(#)config.c	1.0.7	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -580,7 +580,7 @@ load_input_devices(void)
       else
 	mouse_type = 0;
 
-    joystick_type = config_get_int(cat, "joystick_type", 7);
+    joystick_type = config_get_int(cat, "joystick_type", 0);
 
     for (c=0; c<joystick_get_max_joysticks(joystick_type); c++) {
 	sprintf(temp, "joystick_%i_nr", c);
@@ -1024,8 +1024,6 @@ load_removable_devices(void)
 #endif
 	wcsncpy(floppyfns[c], wp, sizeof_w(floppyfns[c]));
 
-	/* if (*wp != L'\0')
-		pclog("Floppy%d: %ls\n", c, floppyfns[c]); */
 	sprintf(temp, "fdd_%02i_writeprot", c+1);
 	ui_writeprot[c] = !!config_get_int(cat, temp, 0);
 	sprintf(temp, "fdd_%02i_turbo", c + 1);
@@ -1124,7 +1122,6 @@ load_removable_devices(void)
 	} else
 #endif
 	wcsncpy(cdrom_image[c].image_path, wp, sizeof_w(cdrom_image[c].image_path));
-	wcscpy(cdrom_image[c].prev_image_path, cdrom_image[c].image_path);
 
 	if (cdrom_drives[c].host_drive < 'A')
 		cdrom_drives[c].host_drive = 0;
@@ -1195,8 +1192,6 @@ load_floppy_drives(void)
 #endif
 	wcsncpy(floppyfns[c], wp, sizeof_w(floppyfns[c]));
 
-	/* if (*wp != L'\0')
-		pclog("Floppy%d: %ls\n", c, floppyfns[c]); */
 	sprintf(temp, "fdd_%02i_writeprot", c+1);
 	ui_writeprot[c] = !!config_get_int(cat, temp, 0);
 	sprintf(temp, "fdd_%02i_turbo", c + 1);
@@ -1255,7 +1250,7 @@ load_other_removable_devices(void)
 	cdrom_drives[c].bus_type = hdd_string_to_bus(s, 1);
 
 	sprintf(temp, "cdrom_%02i_speed", c+1);
-	cdrom_drives[c].speed = config_get_int(cat, temp, 8);
+	cdrom_drives[c].speed_idx = config_get_int(cat, temp, cdrom_speed_idx(CDROM_SPEED_DEFAULT));
 
 	/* Default values, needed for proper operation of the Settings dialog. */
 	cdrom_drives[c].ide_channel = cdrom_drives[c].scsi_device_id = c + 2;
@@ -1317,7 +1312,6 @@ load_other_removable_devices(void)
 	} else
 #endif
 	wcsncpy(cdrom_image[c].image_path, wp, sizeof_w(cdrom_image[c].image_path));
-	wcscpy(cdrom_image[c].prev_image_path, cdrom_image[c].image_path);
 
 	if (cdrom_drives[c].host_drive < 'A')
 		cdrom_drives[c].host_drive = 0;
@@ -1458,7 +1452,7 @@ config_load(void)
 	vid_card = VID_CGA;
 	vid_api = plat_vidapi("default");;
 	enable_sync = 1;
-	joystick_type = 7;
+	joystick_type = 0;
 	if (hdc_name) {
 		free(hdc_name);
 		hdc_name = NULL;
@@ -1669,30 +1663,7 @@ save_input_devices(void)
 
     config_set_string(cat, "mouse_type", mouse_get_internal_name(mouse_type));
 
-    if ((joystick_type == 0) || (joystick_type == 7)) {
-	if (joystick_type == 7)
-		config_delete_var(cat, "joystick_type");
-	  else
-		config_set_int(cat, "joystick_type", joystick_type);
-
-	for (c=0; c<16; c++) {
-		sprintf(tmp2, "joystick_%i_nr", c);
-		config_delete_var(cat, tmp2);
-
-		for (d=0; d<16; d++) {			
-			sprintf(tmp2, "joystick_%i_axis_%i", c, d);
-			config_delete_var(cat, tmp2);
-		}
-		for (d=0; d<16; d++) {			
-			sprintf(tmp2, "joystick_%i_button_%i", c, d);
-			config_delete_var(cat, tmp2);
-		}
-		for (d=0; d<16; d++) {			
-			sprintf(tmp2, "joystick_%i_pov_%i", c, d);
-			config_delete_var(cat, tmp2);
-		}
-	}
-    } else {
+    if (joystick_type != 0) {
 	config_set_int(cat, "joystick_type", joystick_type);
 
 	for (c=0; c<joystick_get_max_joysticks(joystick_type); c++) {
@@ -1713,6 +1684,26 @@ save_input_devices(void)
 				sprintf(temp, "%i, %i", joystick_state[c].pov_mapping[d][0], joystick_state[c].pov_mapping[d][1]);
 				config_set_string(cat, tmp2, temp);
 			}
+		}
+	}
+    } else {
+	config_delete_var(cat, "joystick_type");
+
+	for (c=0; c<16; c++) {
+		sprintf(tmp2, "joystick_%i_nr", c);
+		config_delete_var(cat, tmp2);
+
+		for (d=0; d<16; d++) {			
+			sprintf(tmp2, "joystick_%i_axis_%i", c, d);
+			config_delete_var(cat, tmp2);
+		}
+		for (d=0; d<16; d++) {			
+			sprintf(tmp2, "joystick_%i_button_%i", c, d);
+			config_delete_var(cat, tmp2);
+		}
+		for (d=0; d<16; d++) {			
+			sprintf(tmp2, "joystick_%i_pov_%i", c, d);
+			config_delete_var(cat, tmp2);
 		}
 	}
     }
@@ -2012,10 +2003,11 @@ save_other_removable_devices(void)
 	}
 
 	sprintf(temp, "cdrom_%02i_speed", c+1);
-	if ((cdrom_drives[c].bus_type == 0) || (cdrom_drives[c].speed == 8)) {
+	if ((cdrom_drives[c].bus_type == 0) ||
+		(cdrom_speeds[cdrom_drives[c].speed_idx].speed == cdrom_speed_idx(CDROM_SPEED_DEFAULT))) {
 		config_delete_var(cat, temp);
 	} else {
-		config_set_int(cat, temp, cdrom_drives[c].speed);
+		config_set_int(cat, temp, cdrom_drives[c].speed_idx);
 	}
 
 	sprintf(temp, "cdrom_%02i_parameters", c+1);

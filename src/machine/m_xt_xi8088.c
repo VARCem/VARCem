@@ -8,7 +8,7 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xt_xi8088.c	1.0.2	2018/03/15
+ * Version:	@(#)m_xt_xi8088.c	1.0.3	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,8 +47,8 @@
 #include "../dma.h"
 #include "../mem.h"
 #include "../nmi.h"
-#include "../nvr.h"
 #include "../device.h"
+#include "../nvr.h"
 #include "../keyboard.h"
 #include "../lpt.h"
 #include "../game/gameport.h"
@@ -146,41 +146,49 @@ static const device_config_t xi8088_config[] =
 };
 
 
-const device_t xi8088_device =
-{
-	"Xi8088",
-	0, 0,
-	xi8088_init, NULL, NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	xi8088_config
+const device_t xi8088_device = {
+    "Xi8088",
+    0, 0,
+    xi8088_init, NULL, NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    xi8088_config
 };
 
 
 const device_t *
 xi8088_get_device(void)
 {
-    return &xi8088_device;
+    return(&xi8088_device);
 }
 
 
 void
 machine_xt_xi8088_init(const machine_t *model)
 {
-	if (biosmask < 0x010000)
-		xi8088_bios_128kb_set(0);
-	  else
-		xi8088_bios_128kb_set(1);
+    if (biosmask < 0x010000)
+	xi8088_bios_128kb_set(0);
+     else
+	xi8088_bios_128kb_set(1);
 
-	/* TODO: set UMBs? See if PCem always sets when we have > 640KB ram and avoids conflicts when a peripheral uses the same memory space */
-	machine_common_init(model);
-	device_add(&fdc_xt_device);
-	device_add(&keyboard_ps2_device);
-	nmi_init();
-	nvr_at_init(8);
-	pic2_init();
-	if (joystick_type != 7)
-		device_add(&gameport_device);
+    /*
+     * TODO: set UMBs?
+     * See if PCem always sets when we have > 640KB ram and avoids
+     * conflicts when a peripheral uses the same memory space
+     */
+    machine_common_init(model);
+
+    nmi_init();
+    pic2_init();
+
+    device_add(&at_nvr_device);
+
+    device_add(&keyboard_ps2_device);
+
+    if (joystick_type != JOYSTICK_TYPE_NONE)
+	device_add(&gameport_device);
+
+    device_add(&fdc_xt_device);
 }

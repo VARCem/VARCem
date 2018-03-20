@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.7	2018/03/16
+ * Version:	@(#)machine.c	1.0.9	2018/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,6 +88,15 @@ machine_init(void)
 
     /* All good, boot the machine! */
     machines[machine].init(&machines[machine]);
+}
+
+
+/* Close down the machine (saving stuff, etc.) */
+void
+machine_close(void)
+{
+    if (machines[machine].close != NULL)
+	machines[machine].close();
 }
 
 

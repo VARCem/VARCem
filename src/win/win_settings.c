@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.11	2018/03/15
+ * Version:	@(#)win_settings.c	1.0.13	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1177,7 +1177,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	int c = 0;
 	int d = 0;
 	LPTSTR lptsTemp;
-	const device_t *sound_dev/*, *midi_dev*/;
+	const device_t *sound_dev;
 	char *s;
 
         switch (message)
@@ -2756,6 +2756,7 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	uint64_t r = 0;
 	uint8_t channel = 0;
 	uint8_t id = 0, lun = 0;
+	wchar_t *twcs;
 
         switch (message)
         {
@@ -3072,6 +3073,16 @@ hd_add_ok_common:
 				case IDC_CFILE:
 		                        if (!file_dlg_w(hdlg, plat_get_string(IDS_4106), L"", !(existing & 1)))
        			                {
+						if (!wcschr(wopenfilestring, L'.')) {
+							if (wcslen(wopenfilestring) && (wcslen(wopenfilestring) <= 256)) {
+								twcs = &wopenfilestring[wcslen(wopenfilestring)];
+								twcs[0] = L'.';
+								twcs[1] = L'i';
+								twcs[2] = L'm';
+								twcs[3] = L'g';
+							}
+						}
+
 						if (!(existing & 1))
 						{
 							f = _wfopen(wopenfilestring, L"rb");
@@ -3988,7 +3999,8 @@ static BOOL win_settings_cdrom_drives_recalc_list(HWND hwndList)
 		if (temp_cdrom_drives[i].bus_type == CDROM_BUS_DISABLED)
 			lvI.pszText = plat_get_string(IDS_2152);
 		else {
-			wsprintf(szText, L"%ix", temp_cdrom_drives[i].speed);
+			wsprintf(szText, L"%ix",
+			  cdrom_speeds[temp_cdrom_drives[i].speed_idx].speed);
 			lvI.pszText = szText;
 		}
 		lvI.iItem = i;
@@ -4318,7 +4330,8 @@ static void win_settings_cdrom_drives_update_item(HWND hwndList, int i)
 	if (temp_cdrom_drives[i].bus_type == CDROM_BUS_DISABLED)
 		lvI.pszText = plat_get_string(IDS_2152);
 	else {
-		wsprintf(szText, L"%ix", temp_cdrom_drives[i].speed);
+		wsprintf(szText, L"%ix",
+			cdrom_speeds[temp_cdrom_drives[i].speed_idx].speed);
 		lvI.pszText = szText;
 	}
 	lvI.iItem = i;
@@ -4401,10 +4414,11 @@ static void cdrom_add_locations(HWND hdlg)
 		}
 	}
 
+	/* Create a list of usable CD-ROM speeds. */
 	h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
-	for (i = 1; i <= 72; i++)
+	for (i = 0; cdrom_speeds[i].speed > 0; i++)
 	{
-		wsprintf(lptsTemp, L"%ix", i);
+		wsprintf(lptsTemp, L"%ix", cdrom_speeds[i]);
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM) lptsTemp);
 	}
 
@@ -4465,7 +4479,7 @@ static void cdrom_recalc_location_controls(HWND hdlg, int assign_id)
 	} else {
 		ShowWindow(h, SW_SHOW);
 		EnableWindow(h, TRUE);
-		SendMessage(h, CB_SETCURSEL, temp_cdrom_drives[cdlv_current_sel].speed - 1, 0);
+		SendMessage(h, CB_SETCURSEL, temp_cdrom_drives[cdlv_current_sel].speed_idx, 0);
 	}
 
 	switch(bus)
@@ -5023,7 +5037,7 @@ other_removable_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lPar
 					cdrom_untrack(cdlv_current_sel);
 					assign = (temp_cdrom_drives[cdlv_current_sel].bus_type == b2) ? 0 : 1;
 					if (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_DISABLED)
-						temp_cdrom_drives[cdlv_current_sel].speed = 8;
+						temp_cdrom_drives[cdlv_current_sel].speed_idx = cdrom_speed_idx(cdrom_speed_idx(CDROM_SPEED_DEFAULT));
 					if ((b2 == CDROM_BUS_ATAPI_PIO_ONLY) && (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA))
 						assign = 0;
 					else if ((b2 == CDROM_BUS_ATAPI_PIO_AND_DMA) && (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_ATAPI_PIO_ONLY))
@@ -5093,7 +5107,7 @@ cdrom_bus_skip:
 
 					rd_ignore_change = 1;
 					h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
-					temp_cdrom_drives[cdlv_current_sel].speed = SendMessage(h, CB_GETCURSEL, 0, 0) + 1;
+					temp_cdrom_drives[cdlv_current_sel].speed_idx = SendMessage(h, CB_GETCURSEL, 0, 0);
 					h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 					win_settings_cdrom_drives_update_item(h, cdlv_current_sel);
 					rd_ignore_change = 0;

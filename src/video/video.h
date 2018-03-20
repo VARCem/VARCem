@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.8	2018/03/17
+ * Version:	@(#)video.h	1.0.9	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -188,7 +188,8 @@ extern int	video_fullscreen,
 extern int	fullchange;
 extern uint8_t	fontdat[2048][8];
 extern uint8_t	fontdatm[2048][16];
-extern dbcs_font_t	*fontdatksc5601;
+extern dbcs_font_t	*fontdatksc5601,
+		*fontdatksc5601_user;
 extern uint32_t	*video_6to8,
 		*video_15to32,
 		*video_16to32;

@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.10	2018/03/15
+ * Version:	@(#)machine.h	1.0.11	2018/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -220,7 +220,7 @@ typedef struct _machine_ {
 #else
     const void	*get_device;
 #endif
-    void	(*nvr_close)(void);
+    void	(*close)(void);
 } machine_t;
 
 
@@ -242,6 +242,7 @@ extern int	machine_get_machine_from_internal_name(char *s);
 extern int	machine_available(int id);
 extern int	machine_detect(void);
 extern void	machine_init(void);
+extern void	machine_close(void);
 #ifdef EMU_DEVICE_H
 extern const device_t	*machine_getdevice(int machine);
 #endif
@@ -347,6 +348,7 @@ extern void	machine_xt_laserxt_init(const machine_t *);
 
 extern void	machine_xt_t1000_init(const machine_t *);
 extern void	machine_xt_t1200_init(const machine_t *);
+extern void	machine_xt_t1x00_close(void);
 
 extern void	machine_xt_xi8088_init(const machine_t *);
 
