@@ -11,7 +11,7 @@
  *		This header file lists the functions provided by
  *		various platform specific cdrom-ioctl files.
  *
- * Version:	@(#)cdrom_image.h	1.0.1	2018/02/14
+ * Version:	@(#)cdrom_image.h	1.0.2	2018/03/20
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		RichardG, <richardg867@gmail.com>
@@ -51,9 +51,6 @@ extern void	image_reset(uint8_t id);
 extern void	image_close(uint8_t id);
 
 extern void	cdrom_set_null_handler(uint8_t id);
-
-//FIXME: delete this!  --FvK
-extern void	update_status_bar_icon_state(int tag, int state);
 
 #ifdef __cplusplus
 }

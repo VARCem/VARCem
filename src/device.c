@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.4	2018/03/15
+ * Version:	@(#)device.c	1.0.5	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -130,7 +130,6 @@ device_close_all(void)
 
     for (c=0; c<DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
-pclog("DEVICE: closing device '%s'\n", devices[c]->name);
 		if (devices[c]->close != NULL)
 			devices[c]->close(device_priv[c]);
 		devices[c] = device_priv[c] = NULL;

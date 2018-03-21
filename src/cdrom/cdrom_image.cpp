@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.5	2018/03/18
+ * Version:	@(#)cdrom_image.cpp	1.0.6	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,8 +99,6 @@ void image_close(uint8_t id);
 void image_audio_callback(uint8_t id, int16_t *output, int len)
 {
 	cdrom_t *dev = cdrom[id];
-
-	return;	/*FIXME: why? */
 
         if (!cdrom_drives[id].sound_on || (dev->cd_state != CD_PLAYING) || cdrom_image[id].image_is_iso)
         {

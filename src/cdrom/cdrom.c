@@ -911,7 +911,6 @@ static void cdrom_command_common(uint8_t id)
 			case 0xb8:
 			case 0xb9:
 			case 0xbe:
-				/* bytes_per_second = 150.0 * 1024.0; */
 				bytes_per_second = (1000000.0 / 12000.0) * 2048.0;	/* Account for seek time. */
 				bytes_per_second *= (double)cdrom_speeds[dev->cur_speed].speed;
 				break;
@@ -921,12 +920,13 @@ static void cdrom_command_common(uint8_t id)
 					dev->callback = -1LL;	/* Speed depends on SCSI controller */
 					return;
 				}
+				break;
 		}
 
 		period = 1000000.0 / bytes_per_second;
 		dusec = (double) TIMER_USEC;
 		dusec = dusec * period * (double) (dev->packet_len);
-		dev->callback = ((int64_t) dusec);
+		dev->callback += ((int64_t) dusec);
 	}
 	cdrom_set_callback(id);
 }
@@ -1573,10 +1573,11 @@ skip_ready_check:
 void cdrom_clear_callback(uint8_t channel)
 {
 	uint8_t id = atapi_cdrom_drives[channel];
-	cdrom_t *dev = cdrom[id];
+	cdrom_t *dev;
 
 	if (id < CDROM_NUM)
 	{
+		dev = cdrom[id];
 		dev->callback = 0LL;
 		cdrom_set_callback(id);
 	}
@@ -1826,9 +1827,7 @@ void cdrom_command(uint8_t id, uint8_t *cdb)
 		case GPCMD_SET_SPEED_ALT:
 			len = (cdb[3] | (cdb[2] << 8)) / 176;
 			dev->cur_speed = cdrom_speed_idx(len);
-			if (dev->cur_speed < 1)
-				dev->cur_speed = 0;
-			else if (dev->cur_speed > cdrom_drives[id].speed_idx)
+			if (dev->cur_speed > cdrom_drives[id].speed_idx)
 				dev->cur_speed = cdrom_drives[id].speed_idx;
 			cdrom_set_phase(id, SCSI_PHASE_STATUS);
 			cdrom_command_complete(id);
@@ -1987,6 +1986,9 @@ cdrom_readtoc_fallback:
 					msf = 0;
 					break;
 			}
+
+			dev->seek_diff = ABS((int) (pos - dev->seek_pos));
+			dev->seek_pos = dev->sector_pos;
 
 			if (!dev->sector_len) {
 				cdrom_set_phase(id, SCSI_PHASE_STATUS);
@@ -2957,12 +2959,6 @@ int cdrom_read_from_ide_dma(uint8_t channel)
 	return 0;
 }
 
-void cdrom_irq_raise(uint8_t id)
-{
-	if (cdrom_drives[id].bus_type < CDROM_BUS_SCSI)
-		ide_irq_raise(&(ide_drives[cdrom_drives[id].ide_channel]));
-}
-
 int cdrom_read_from_scsi_dma(uint8_t scsi_id, uint8_t scsi_lun)
 {
 	uint8_t id = scsi_cdrom_drives[scsi_id][scsi_lun];
@@ -2976,6 +2972,12 @@ int cdrom_read_from_scsi_dma(uint8_t scsi_id, uint8_t scsi_lun)
 	cdrom_log("Reading from SCSI DMA: SCSI ID %02X, init length %i\n", scsi_id, *BufLen);
 	memcpy(cdbufferb, SCSIDevices[scsi_id][scsi_lun].CmdBuffer, *BufLen);
 	return 1;
+}
+
+void cdrom_irq_raise(uint8_t id)
+{
+	if (cdrom_drives[id].bus_type < CDROM_BUS_SCSI)
+		ide_irq_raise(&(ide_drives[cdrom_drives[id].ide_channel]));
 }
 
 int cdrom_read_from_dma(uint8_t id)
