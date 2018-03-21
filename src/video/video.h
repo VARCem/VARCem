@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.9	2018/03/18
+ * Version:	@(#)video.h	1.0.10	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -104,7 +104,10 @@ enum {
     VID_CL_GD5434_ISA, 		/* Cirrus Logic GD5434 ISA */
     VID_CL_GD5434_VLB,		/* Cirrus Logic GD5434 VLB */
     VID_CL_GD5434_PCI,		/* Cirrus Logic GD5434 PCI */
-    VID_CL_GD5436_PCI,		/* Cirrus Logic CL-GD 5436 PCI */
+    VID_CL_GD5436_PCI,		/* Cirrus Logic GD5436 PCI */
+    VID_CL_GD5446_PCI,		/* Cirrus Logic GD5446 PCI */
+    VID_CL_GD5446_STB_PCI,	/* STB Nitro 64V (Cirrus Logic GD5446) PCI */
+    VID_CL_GD5480_PCI,		/* Cirrus Logic GD5480 PCI */
     VID_OTI037C,     		/* Oak OTI-037C */
     VID_OTI067,     		/* Oak OTI-067 */
     VID_OTI077,     		/* Oak OTI-077 */

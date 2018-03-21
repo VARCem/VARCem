@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.1	2018/02/14
+ * Version:	@(#)pci.c	1.0.2	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,7 @@
 #include "cdrom/cdrom.h"
 #include "disk/hdc.h"
 #include "disk/hdc_ide.h"
+#include "disk/zip.h"
 
 
 static uint64_t pci_irq_hold[16];
@@ -692,12 +693,24 @@ static void trc_reset(uint8_t val)
 			pci_reset_handler.super_io_reset();
 		}
 
+#if 0
 		ide_reset();
+#else
+		ide_set_all_signatures();
+#endif
+
 		for (i = 0; i < CDROM_NUM; i++)
 		{
-			if (!cdrom_drives[i].bus_type)
+			if ((cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY) || (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA))
 			{
 				cdrom_reset(i);
+			}
+		}
+		for (i = 0; i < ZIP_NUM; i++)
+		{
+			if ((zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_ONLY) || (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA))
+			{
+				zip_reset(i);
 			}
 		}
 

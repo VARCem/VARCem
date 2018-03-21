@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.6	2018/03/18
+ * Version:	@(#)zip.c	1.0.7	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -589,7 +589,7 @@ void zip_close(uint8_t id)
 	}
 }
 
-void build_atapi_zip_map()
+void build_atapi_zip_map(void)
 {
 	uint8_t i = 0;
 
@@ -613,7 +613,7 @@ int find_zip_for_scsi_id(uint8_t scsi_id, uint8_t scsi_lun)
 	return 0xff;
 }
 
-void build_scsi_zip_map()
+void build_scsi_zip_map(void)
 {
 	uint8_t i = 0;
 	uint8_t j = 0;
@@ -673,7 +673,6 @@ void zip_init(int id, int cdb_len_setting)
 	zip_log("ZIP %i: Bus type %i, bus mode %i\n", id, zip_drives[id].bus_type, zip_drives[id].bus_mode);
 	if (zip_drives[id].bus_type < ZIP_BUS_SCSI)
 		zip_set_signature(id);
-	zip_drives[id].max_blocks_at_once = 85;
 	zip[id].status = READY_STAT | DSC_STAT;
 	zip[id].pos = 0;
 	zip[id].packet_status = 0xff;
@@ -1174,9 +1173,18 @@ static void zip_data_phase_error(uint8_t id)
 
 #define zipbufferb zip[id].buffer
 
-int zip_data(uint8_t id, uint32_t *len, int out)
+int zip_blocks(uint8_t id, uint32_t *len, int first_batch, int out)
 {
-	int i = 0;
+	zip[id].data_pos = 0;
+
+	*len = 0;
+
+	if (!zip[id].sector_len) {
+		zip_command_complete(id);
+		return -1;
+	}
+
+	*len = zip[id].requested_blocks << 9;
 
 	if (zip[id].sector_pos >= zip_drives[id].medium_size) {
 		zip_log("ZIP %i: Trying to %s beyond the end of disk\n", id, out ? "write" : "read");
@@ -1184,40 +1192,15 @@ int zip_data(uint8_t id, uint32_t *len, int out)
 		return 0;
 	}
 
-	*len = 0;
-
-	for (i = 0; i < zip[id].requested_blocks; i++) {
-		fseek(zip_drives[id].f, zip_drives[id].base + (zip[id].sector_pos << 9) + *len, SEEK_SET);
-		if (out)
-			fwrite(zipbufferb + *len, 1, 512, zip_drives[id].f);
-		else
-			fread(zipbufferb + *len, 1, 512, zip_drives[id].f);
-
-		*len += 512;
-	}
-
-	return 1;
-}
-
-int zip_blocks(uint8_t id, uint32_t *len, int first_batch, int out)
-{
-	int ret = 0;
-
-	zip[id].data_pos = 0;
-	
-	if (!zip[id].sector_len) {
-		zip_command_complete(id);
-		return -1;
-	}
-
-	zip_log("%sing %i blocks starting from %i...\n", out ? "Writ" : "Read", zip[id].requested_blocks, zip[id].sector_pos);
-
-	ret = zip_data(id, len, out);
+	zip_log("%s %i bytes of blocks...\n", out ? "Written" : "Read", *len);
+
+	fseek(zip_drives[id].f, zip_drives[id].base + (zip[id].sector_pos << 9), SEEK_SET);
+	if (out)
+		fwrite(zipbufferb, 1, *len, zip_drives[id].f);
+	else
+		fread(zipbufferb, 1, *len, zip_drives[id].f);
 
 	zip_log("%s %i bytes of blocks...\n", out ? "Written" : "Read", *len);
-
-	if (!ret)
-		return 0;
 
 	zip[id].sector_pos += zip[id].requested_blocks;
 	zip[id].sector_len -= zip[id].requested_blocks;
@@ -2414,6 +2397,7 @@ void zip_phase_callback(uint8_t id)
 			zip_log("ZIP %i: ZIP_PHASE_ERROR\n", id);
 			zip[id].status = READY_STAT | ERR_STAT;
 			zip[id].phase = 3;
+			zip[id].packet_status = 0xFF;
 			zip_irq_raise(id);
 			ui_sb_update_icon(SB_ZIP | id, 0);
 			return;

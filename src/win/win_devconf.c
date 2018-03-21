@@ -8,7 +8,7 @@
  *
  *		Imlementation of the Device Configuration dialog.
  *
- * Version:	@(#)win_devconf.c	1.0.5	2018/03/15
+ * Version:	@(#)win_devconf.c	1.0.6	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -262,7 +262,7 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 							val_int = config->spinner.min;
 
 						SendMessage(h, WM_GETTEXT, 79, (LPARAM)ws);
-						wcstombs(s, ws, 79);
+						wcstombs(s, ws, 79); /*tic*/
 						sscanf(s, "%i", &c);
 
 						if (val_int != c)
@@ -351,7 +351,8 @@ deviceconfig_dlgproc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						break;
 
 						case CONFIG_SPINNER:
-						SendMessage(h, WM_GETTEXT, 79, (LPARAM)s);
+                                                SendMessage(h, WM_GETTEXT, 79, (LPARAM)ws);
+						wcstombs(s, ws, 79);
 						sscanf(s, "%i", &c);
 						if (c > config->spinner.max)
 							c = config->spinner.max;

@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.7	2018/03/20
+ * Version:	@(#)cdrom.h	1.0.8	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -197,8 +197,6 @@ typedef struct {
 } cdrom_t;
 
 typedef struct {
-	int max_blocks_at_once;
-
 	CDROM *handler;
 
 	int host_drive;

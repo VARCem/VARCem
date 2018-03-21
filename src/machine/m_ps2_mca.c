@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.4	2018/03/19
+ * Version:	@(#)m_ps2_mca.c	1.0.5	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,7 +99,7 @@ static struct
 
 /*The model 70 type 3/4 BIOS performs cache testing. Since we don't have any
   proper cache emulation, it's faked a bit here.
-  
+
   Port E2 is used for cache diagnostics. Bit 7 seems to be set on a cache miss,
   toggling bit 2 seems to clear this. The BIOS performs at least the following
   tests :
@@ -669,7 +669,7 @@ uint8_t ps2_mca_read(uint16_t port, void *p)
                 else
                         temp = 0xff;
                 break;
-                
+
                 default:
                 temp = 0xff;
                 break;
@@ -752,13 +752,13 @@ static void ps2_mca_board_common_init()
         io_sethandler(0x0094, 0x0001, ps2_mca_read, NULL, NULL, ps2_mca_write, NULL, NULL, NULL);
         io_sethandler(0x0096, 0x0001, ps2_mca_read, NULL, NULL, ps2_mca_write, NULL, NULL, NULL);
         io_sethandler(0x0100, 0x0008, ps2_mca_read, NULL, NULL, ps2_mca_write, NULL, NULL, NULL);
-        
+
 	port_92_reset();
 
         port_92_add();
 
         ps2.setup = 0xff;
-        
+
         lpt1_init(0x3bc);
 }
 
@@ -781,12 +781,12 @@ static void ps2_mem_expansion_write(int port, uint8_t val, void *p)
 }
 
 static void ps2_mca_board_model_50_init()
-{        
+{
         ps2_mca_board_common_init();
 
         mem_remap_top_384k();
         mca_init(4);
-        
+
         ps2.planar_read = model_50_read;
         ps2.planar_write = model_50_write;
 
@@ -846,9 +846,9 @@ static void ps2_mca_board_model_50_init()
 }
 
 static void ps2_mca_board_model_55sx_init()
-{        
+{
         ps2_mca_board_common_init();
-        
+
         mem_mapping_add(&ps2.shadow_mapping,
                     (mem_size+256) * 1024, 
                     128*1024,
@@ -862,10 +862,9 @@ static void ps2_mca_board_model_55sx_init()
                     MEM_MAPPING_INTERNAL,
                     NULL);
 
-
         mem_remap_top_256k();
         ps2.option[3] = 0x10;
-        
+
         memset(ps2.memory_bank, 0xf0, 8);
         switch (mem_size/1024)
         {
@@ -899,10 +898,10 @@ static void ps2_mca_board_model_55sx_init()
                 ps2.memory_bank[0] = 0x01;
                 ps2.memory_bank[1] = 0x01;
                 break;
-        }                
-        
+        }
+
         mca_init(4);
-        
+
         ps2.planar_read = model_55sx_read;
         ps2.planar_write = model_55sx_write;
 
@@ -912,9 +911,9 @@ static void ps2_mca_board_model_55sx_init()
 static void mem_encoding_update()
 {
 	mem_mapping_disable(&ps2.split_mapping);
-                
+
         ps2.split_addr = ((uint32_t) (ps2.mem_regs[0] & 0xf)) << 20;
-        
+
         if (ps2.mem_regs[1] & 2) {
                 mem_set_mem_state(0xe0000, 0x20000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
 		/* pclog("PS/2 Model 80-111: ROM space enabled\n"); */
@@ -992,14 +991,14 @@ static uint8_t mem_encoding_read_cached(uint16_t addr, void *p)
 static void mem_encoding_write_cached(uint16_t addr, uint8_t val, void *p)
 {
         uint8_t old;
-        
+
         switch (addr)
         {
-				case 0xe0:
-				ps2.mem_regs[0] = val;
-				break;
-				case 0xe1:
-				ps2.mem_regs[1] = val;
+		case 0xe0:
+		ps2.mem_regs[0] = val;
+		break;
+		case 0xe1:
+		ps2.mem_regs[1] = val;
                 break;
                 case 0xe2:
                 old = ps2.mem_regs[2];
@@ -1041,20 +1040,20 @@ static void mem_encoding_write_cached(uint16_t addr, uint8_t val, void *p)
 }
 
 static void ps2_mca_board_model_70_type34_init(int is_type4)
-{        
+{
         ps2_mca_board_common_init();
 
         mem_remap_top_256k();
         ps2.split_addr = mem_size * 1024;
         mca_init(4);
-        
+
         ps2.planar_read = model_70_type3_read;
         ps2.planar_write = model_70_type3_write;
-        
+
         device_add(&ps2_nvr_device);
-        
+
         io_sethandler(0x00e0, 0x0003, mem_encoding_read_cached, NULL, NULL, mem_encoding_write_cached, NULL, NULL, NULL);
-        
+
         ps2.mem_regs[1] = 2;
 
         switch (mem_size/1024)
@@ -1077,17 +1076,31 @@ static void ps2_mca_board_model_70_type34_init(int is_type4)
                 ps2.option[2] = 0x02;
                 break;
         }
-        
+
         if (is_type4)
                 ps2.option[2] |= 0x04; /*486 CPU*/
 
+        mem_mapping_add(&ps2.split_mapping,
+                    (mem_size+256) * 1024, 
+                    256*1024,
+                    ps2_read_split_ram,
+                    ps2_read_split_ramw,
+                    ps2_read_split_raml,
+                    ps2_write_split_ram,
+                    ps2_write_split_ramw,
+                    ps2_write_split_raml,
+                    &ram[0xa0000],
+                    MEM_MAPPING_INTERNAL,
+                    NULL);
+        mem_mapping_disable(&ps2.split_mapping);
+
         mem_mapping_add(&ps2.cache_mapping,
-                    0, 
+                    0,
                     is_type4 ? (8 * 1024) : (64 * 1024),
                     ps2_read_cache_ram,
                     ps2_read_cache_ramw,
                     ps2_read_cache_raml,
-					ps2_write_cache_ram,
+                    ps2_write_cache_ram,
                     NULL,
                     NULL,
                     ps2_cache,
@@ -1134,24 +1147,24 @@ static void ps2_mca_board_model_70_type34_init(int is_type4)
                             NULL);
                 mem_mapping_disable(&ps2.expansion_mapping);
         }
-		
-		device_add(&ps1vga_device);
+
+	device_add(&ps1vga_device);
 }
 
 static void ps2_mca_board_model_80_type2_init(int is486)
-{        
+{
         ps2_mca_board_common_init();
 
         ps2.split_addr = mem_size * 1024;
         mca_init(8);
-        
+
         ps2.planar_read = model_80_read;
         ps2.planar_write = model_80_write;
-        
+
         device_add(&ps2_nvr_device);
-        
+
         io_sethandler(0x00e0, 0x0002, mem_encoding_read, NULL, NULL, mem_encoding_write, NULL, NULL, NULL);
-        
+
         ps2.mem_regs[1] = 2;
 
 	/* Note by Kotori: I rewrote this because the original code was using

@@ -8,7 +8,7 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.2	2018/03/15
+ * Version:	@(#)hdc_ide.h	1.0.3	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -105,6 +105,8 @@ extern void	ide_init_first(void);
 
 extern void	ide_reset(void);
 extern void	ide_reset_hard(void);
+
+extern void	ide_set_all_signatures(void);
 
 extern void	ide_xtide_init(void);
 
