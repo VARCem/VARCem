@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.5	2018/03/19
+ * Version:	@(#)m_amstrad.c	1.0.6	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -699,7 +699,7 @@ vid_init_1640(amstrad_t *ams)
     vid = (amsvid_t *)malloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
 
-    rom_init(&vid->bios_rom, L"roms/machines/pc1640/40100",
+    rom_init(&vid->bios_rom, L"roms/machines/amstrad/pc1640/40100",
 	     0xc0000, 0x8000, 0x7fff, 0, 0);
 
     ega_init(&vid->ega, 9, 0);
@@ -1306,8 +1306,10 @@ machine_amstrad_init(const machine_t *model)
     keyboard_scan = 1;
 
     /* Tell mouse driver about our internal mouse. */
-    mouse_reset();
-    mouse_set_poll(ms_poll, ams);
+    if (mouse_type == MOUSE_TYPE_INTERNAL) {
+	mouse_reset();
+	mouse_set_poll(ms_poll, ams);
+    }
 
     if (joystick_type != JOYSTICK_TYPE_NONE)
 	device_add(&gameport_device);
