@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.3	2018/03/19
+ * Version:	@(#)m_tandy.c	1.0.4	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1685,7 +1685,6 @@ init_rom(tandy_t *dev)
 {
     dev->rom = (uint8_t *)malloc(0x80000);
 
-#if 1
     if (! rom_load_interleaved(L"roms/machines/tandy1000sl2/8079047.hu1",
 			       L"roms/machines/tandy1000sl2/8079048.hu2",
 			       0x000000, 0x80000, 0, dev->rom)) {
@@ -1694,16 +1693,6 @@ init_rom(tandy_t *dev)
 	dev->rom = NULL;
 	return;
     }
-#else
-    f  = rom_fopen(L"roms/machines/tandy1000sl2/8079047.hu1", L"rb");
-    ff = rom_fopen(L"roms/machines/tandy1000sl2/8079048.hu2", L"rb");
-    for (c = 0x0000; c < 0x80000; c += 2) {
-	dev->rom[c] = getc(f);
-	dev->rom[c + 1] = getc(ff);
-    }
-    fclose(ff);
-    fclose(f);
-#endif
 
     mem_mapping_add(&dev->rom_mapping, 0xe0000, 0x10000,
 		    read_rom, read_romw, read_roml, NULL, NULL, NULL,
@@ -1712,14 +1701,14 @@ init_rom(tandy_t *dev)
 
 
 void
-machine_tandy1k_init(const machine_t *model)
+machine_tandy1k_init(const machine_t *model, void *arg)
 {
     tandy_t *dev;
 
     dev = malloc(sizeof(tandy_t));
     memset(dev, 0x00, sizeof(tandy_t));
 
-    machine_common_init(model);
+    machine_common_init(model, arg);
 
     nmi_init();
 

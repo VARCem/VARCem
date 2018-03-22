@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430HX PCISet chip.
  *
- * Version:	@(#)m_at_430hx.c	1.0.3	2018/03/15
+ * Version:	@(#)m_at_430hx.c	1.0.4	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -236,9 +236,9 @@ acerm3a_in(uint16_t port, void *p)
 
 
 void
-machine_at_acerm3a_init(const machine_t *model)
+machine_at_acerm3a_init(const machine_t *model, void *arg)
 {
-        machine_at_ps2_init(model);
+        machine_at_ps2_init(model, arg);
 
 	powermate_memregs_init();
         pci_init(PCI_CONFIG_TYPE_1);
@@ -259,9 +259,9 @@ machine_at_acerm3a_init(const machine_t *model)
 
 
 void
-machine_at_acerv35n_init(const machine_t *model)
+machine_at_acerv35n_init(const machine_t *model, void *arg)
 {
-        machine_at_ps2_init(model);
+        machine_at_ps2_init(model, arg);
 
 	powermate_memregs_init();
         pci_init(PCI_CONFIG_TYPE_1);
@@ -282,9 +282,9 @@ machine_at_acerv35n_init(const machine_t *model)
 
 
 void
-machine_at_ap53_init(const machine_t *model)
+machine_at_ap53_init(const machine_t *model, void *arg)
 {
-        machine_at_common_init(model);
+        machine_at_common_init(model, arg);
 	device_add(&keyboard_ps2_ami_device);
 
         memregs_init();
@@ -306,9 +306,9 @@ machine_at_ap53_init(const machine_t *model)
 
 
 void
-machine_at_p55t2p4_init(const machine_t *model)
+machine_at_p55t2p4_init(const machine_t *model, void *arg)
 {
-        machine_at_ps2_init(model);
+        machine_at_ps2_init(model, arg);
 
 	memregs_init();
         pci_init(PCI_CONFIG_TYPE_1);
@@ -327,9 +327,9 @@ machine_at_p55t2p4_init(const machine_t *model)
 
 
 void
-machine_at_p55t2s_init(const machine_t *model)
+machine_at_p55t2s_init(const machine_t *model, void *arg)
 {
-        machine_at_common_init(model);
+        machine_at_common_init(model, arg);
 	device_add(&keyboard_ps2_ami_device);
 
         memregs_init();

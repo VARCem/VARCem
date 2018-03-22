@@ -10,7 +10,7 @@
  *
  * NOTE:	I should re-do 'intclk' using a TM struct.
  *
- * Version:	@(#)nvr.c	1.0.2	2018/03/11
+ * Version:	@(#)nvr.c	1.0.3	2018/03/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -249,7 +249,7 @@ nvr_save(void)
     FILE *f;
 
     /* Make sure we have been initialized. */
-    if (saved_nvr == NULL) return(0);
+    if (config_ro || saved_nvr == NULL) return(0);
 
     if (saved_nvr->size != 0) {
 	pclog("NVR: saving to '%ls'\n", nvr_path(saved_nvr->fn));

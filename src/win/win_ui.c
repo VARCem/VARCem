@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.6	2018/03/18
+ * Version:	@(#)win_ui.c	1.0.7	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include <time.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../version.h"
 #include "../config.h"
 #include "../device.h"
 #include "../keyboard.h"
@@ -815,7 +816,7 @@ ui_init(int nCmdShow)
     menuMain = LoadMenu(hinstance, MENU_NAME);
 
     /* Now create our main window. */
-    mbstowcs(title, emu_version, sizeof_w(title));
+    wsprintf(title, L"%S", emu_version, sizeof_w(title));
     hwnd = CreateWindowEx (
 		0,			/* no extended possibilites */
 		CLASS_NAME,		/* class name */

@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.9	2018/03/19
+ * Version:	@(#)emu.h	1.0.10	2018/03/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -100,6 +100,7 @@ extern uint64_t	source_hwnd;			/* (O) -H hwnd */
 #ifdef USE_WX
 extern int	video_fps;			/* (O) render speed in fps */
 #endif
+extern int	config_ro;			/* (O) dont modify cfg file */
 extern int	settings_only;			/* (O) only the settings dlg */
 extern wchar_t	log_path[1024];			/* (O) full path of logfile */
 
@@ -155,8 +156,9 @@ extern int	serial_do_log;
 extern int	nic_do_log;
 #endif
 
-extern char	emu_title[128];			/* full name of application */
-extern char	emu_version[128];		/* version ID string */
+extern char	emu_title[64];			/* full name of application */
+extern char	emu_version[32];		/* short version ID string */
+extern char	emu_fullversion[128];		/* full version ID string */
 extern wchar_t	emu_path[1024];			/* emu installation path */
 extern wchar_t	usr_path[1024];			/* path (dir) of user data */
 extern wchar_t  cfg_path[1024];			/* full path of config file */
@@ -174,8 +176,8 @@ extern int	config_changed;			/* config has changed */
 extern void	pclog_ex(const char *fmt, va_list);
 #endif
 extern void	pclog(const char *fmt, ...);
-extern void	fatal(const char *fmt, ...);
 extern void	pc_version(const char *platform);
+extern void	fatal(const char *fmt, ...);
 extern int	pc_init_modules(void);
 extern int	pc_init(int argc, wchar_t *argv[]);
 extern void	pc_close(void *threadid);

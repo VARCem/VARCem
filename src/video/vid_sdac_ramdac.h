@@ -8,7 +8,7 @@
  *
  *		Definitions for the SDAC driver.
  *
- * Version:	@(#)vid_sdac_ramdac.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_sdac_ramdac.h	1.0.2	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,8 @@ void sdac_ramdac_out(uint16_t addr, uint8_t val, sdac_ramdac_t *ramdac, svga_t *
 uint8_t sdac_ramdac_in(uint16_t addr, sdac_ramdac_t *ramdac, svga_t *svga);
 
 float sdac_getclock(int clock, void *p);
+
+void sdac_init(sdac_ramdac_t *ramdac);
 
 
 #endif	/*VIDEO_SDAC_RAMDAC_H*/

@@ -8,7 +8,7 @@
  *
  *		Implementation of the HEADLAND AT286 chipset.
  *
- * Version:	@(#)m_at_headland.c	1.0.2	2018/03/15
+ * Version:	@(#)m_at_headland.c	1.0.3	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -104,9 +104,9 @@ headland_init(void)
 
 
 void
-machine_at_headland_init(const machine_t *model)
+machine_at_headland_init(const machine_t *model, void *arg)
 {
-    machine_at_common_ide_init(model);
+    machine_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
     device_add(&fdc_at_device);

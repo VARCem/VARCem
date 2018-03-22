@@ -1618,7 +1618,7 @@ pclog("MEM: reset: previous pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 	pages_sz = m;
 	free(pages);
 	pages = (page_t *)malloc(m*sizeof(page_t));
-	memset(pages, 0x00, m*sizeof(page_t));
+	memset(pages, 0x00, m*sizeof(page_t));
 #if DYNAMIC_TABLES
 pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 #endif

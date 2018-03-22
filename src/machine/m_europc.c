@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.4	2018/03/19
+ * Version:	@(#)m_europc.c	1.0.5	2018/03/21
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -711,13 +711,13 @@ const device_t europc_device = {
  * user.
  */
 void
-machine_europc_init(const machine_t *model)
+machine_europc_init(const machine_t *model, void *arg)
 {
     /* Clear the machine state. */
     memset(&europc, 0x00, sizeof(europc_t));
     europc.jim = 0x0250;
 
-    machine_common_init(model);
+    machine_common_init(model, arg);
     nmi_init();
     mem_add_bios();
 

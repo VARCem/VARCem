@@ -8,7 +8,7 @@
  *
  *		SCSI controller handler header.
  *
- * Version:	@(#)scsi.h	1.0.3	2018/03/19
+ * Version:	@(#)scsi.h	1.0.4	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,6 +67,7 @@
 #define GPCMD_START_STOP_UNIT			0x1b
 #define GPCMD_SEND_DIAGNOSTIC			0x1d
 #define GPCMD_PREVENT_REMOVAL			0x1e
+#define GPCMD_READ_FORMAT_CAPACITIES		0x23
 #define GPCMD_READ_CDROM_CAPACITY		0x25
 #define GPCMD_READ_10				0x28
 #define GPCMD_WRITE_10				0x2a

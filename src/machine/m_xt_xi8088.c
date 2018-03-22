@@ -8,7 +8,7 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xt_xi8088.c	1.0.3	2018/03/19
+ * Version:	@(#)m_xt_xi8088.c	1.0.4	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -166,7 +166,7 @@ xi8088_get_device(void)
 
 
 void
-machine_xt_xi8088_init(const machine_t *model)
+machine_xt_xi8088_init(const machine_t *model, void *arg)
 {
     if (biosmask < 0x010000)
 	xi8088_bios_128kb_set(0);
@@ -178,7 +178,7 @@ machine_xt_xi8088_init(const machine_t *model)
      * See if PCem always sets when we have > 640KB ram and avoids
      * conflicts when a peripheral uses the same memory space
      */
-    machine_common_init(model);
+    machine_common_init(model, arg);
 
     nmi_init();
     pic2_init();

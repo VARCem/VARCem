@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430VX PCISet chip.
  *
- * Version:	@(#)m_at_430vx.c	1.0.3	2018/03/15
+ * Version:	@(#)m_at_430vx.c	1.0.4	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -213,9 +213,9 @@ void i430vx_init(void)
 
 
 void
-machine_at_p55tvp4_init(const machine_t *model)
+machine_at_p55tvp4_init(const machine_t *model, void *arg)
 {
-	machine_at_ps2_init(model);
+	machine_at_ps2_init(model, arg);
 
 	memregs_init();
 	pci_init(PCI_CONFIG_TYPE_1);
@@ -234,9 +234,9 @@ machine_at_p55tvp4_init(const machine_t *model)
 
 
 void
-machine_at_i430vx_init(const machine_t *model)
+machine_at_i430vx_init(const machine_t *model, void *arg)
 {
-	machine_at_ps2_init(model);
+	machine_at_ps2_init(model, arg);
 
 	memregs_init();
 	pci_init(PCI_CONFIG_TYPE_1);
@@ -255,9 +255,9 @@ machine_at_i430vx_init(const machine_t *model)
 
 
 void
-machine_at_p55va_init(const machine_t *model)
+machine_at_p55va_init(const machine_t *model, void *arg)
 {
-	machine_at_ps2_init(model);
+	machine_at_ps2_init(model, arg);
 
 	pci_init(PCI_CONFIG_TYPE_1);
 	pci_register_slot(0x00, PCI_CARD_SPECIAL, 0, 0, 0, 0);

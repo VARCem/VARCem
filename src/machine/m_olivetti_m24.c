@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.4	2018/03/19
+ * Version:	@(#)m_olivetti_m24.c	1.0.5	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -824,14 +824,14 @@ const device_t m24_device = {
 
 
 void
-machine_olim24_init(const machine_t *model)
+machine_olim24_init(const machine_t *model, void *arg)
 {
     olim24_t *m24;
 
     m24 = (olim24_t *)malloc(sizeof(olim24_t));
     memset(m24, 0x00, sizeof(olim24_t));
 
-    machine_common_init(model);
+    machine_common_init(model, arg);
 
     io_sethandler(0x0066, 2,
 		  m24_read,NULL,NULL, NULL,NULL,NULL, m24);

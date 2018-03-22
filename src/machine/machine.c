@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.9	2018/03/19
+ * Version:	@(#)machine.c	1.0.10	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,6 +65,7 @@ void
 machine_init(void)
 {
     wchar_t temp[1024];
+    romdef_t r;
 
     pclog("Initializing as \"%s\"\n", machine_getname());
 
@@ -79,7 +80,7 @@ machine_init(void)
     wcscpy(temp, MACHINES_PATH);
     plat_append_slash(temp);
     wcscat(temp, machines[machine].bios_path);
-    if (! rom_load_bios(temp, 0)) return;
+    if (! rom_load_bios(&r, temp, 0)) return;
 
     /* Activate the ROM BIOS. */
     mem_add_bios();
@@ -87,7 +88,7 @@ machine_init(void)
     ide_set_bus_master(NULL, NULL, NULL);
 
     /* All good, boot the machine! */
-    machines[machine].init(&machines[machine]);
+    machines[machine].init(&machines[machine], &r);
 }
 
 
@@ -105,12 +106,13 @@ int
 machine_available(int id)
 {
     wchar_t temp[1024];
+    romdef_t r;
     int i;
 
     wcscpy(temp, MACHINES_PATH);
     plat_append_slash(temp);
     wcscat(temp, machines[id].bios_path);
-    i = rom_load_bios(temp, 1);
+    i = rom_load_bios(&r, temp, 1);
 
     return(i);
 }
@@ -143,7 +145,7 @@ machine_detect(void)
 
 
 void
-machine_common_init(const machine_t *model)
+machine_common_init(const machine_t *model, UNUSED(void *arg))
 {
     /* System devices first. */
     dma_init();

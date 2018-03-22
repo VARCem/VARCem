@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.2	2018/03/15
+ * Version:	@(#)m_pcjr.c	1.0.3	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,6 +59,7 @@
 #include "../sound/snd_sn76489.h"
 #include "../video/video.h"
 #include "../video/vid_cga_comp.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -750,7 +751,7 @@ pcjr_get_device(void)
 
 
 void
-machine_pcjr_init(const machine_t *model)
+machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
 {
     int display_type;
     pcjr_t *pcjr;

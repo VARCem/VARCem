@@ -8,7 +8,7 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.5	2018/03/08
+ * Version:	@(#)win_crashdump.c	1.0.6	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Riley (Rai-chan),
@@ -174,12 +174,12 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
 
     /* Start to put the crash-dump string into the buffer. */
     sprintf(ExceptionHandlerBuffer,
-	"#\r\n# %s\r\n#\r\n"
+	"#\r\n# %s %s\r\n#\r\n"
 	"# Crash on %d-%02d-%02d at %02d:%02d:%02d.%03d\r\n#\r\n"
 	"\r\n"
 	"Exception details:\r\n"
 	" NTSTATUS code: 0x%08lx\r\n Address: 0x%p",
-	emu_version,
+	emu_title, emu_fullversion,
 	SystemTime.wYear, SystemTime.wMonth, SystemTime.wDay,
 	SystemTime.wHour, SystemTime.wMinute, SystemTime.wSecond,
 	SystemTime.wMilliseconds,

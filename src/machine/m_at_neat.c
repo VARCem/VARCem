@@ -10,7 +10,7 @@
  *
  *		This is the chipset used in the AMI 286 clone model.
  *
- * Version:	@(#)m_at_neat.c	1.0.2	2018/03/15
+ * Version:	@(#)m_at_neat.c	1.0.3	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -131,9 +131,9 @@ neat_init(void)
 
 
 void
-machine_at_neat_init(const machine_t *model)
+machine_at_neat_init(const machine_t *model, void *arg)
 {
-    machine_at_init(model);
+    machine_at_init(model, arg);
     device_add(&fdc_at_device);
 
     neat_init();
@@ -141,9 +141,9 @@ machine_at_neat_init(const machine_t *model)
 
 
 void
-machine_at_neat_ami_init(const machine_t *model)
+machine_at_neat_ami_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model);
+    machine_at_common_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
     device_add(&fdc_at_device);

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.13	2018/03/19
+ * Version:	@(#)pc.c	1.0.14	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -109,6 +109,7 @@ uint64_t source_hwnd = 0;			/* (O) -H hwnd */
 int	video_fps = RENDER_FPS;			/* (O) render speed in fps */
 #endif
 int	settings_only = 0;			/* (O) only the settings dlg */
+int	config_ro = 0;				/* (O) dont modify cfg file */
 wchar_t log_path[1024] = { L'\0'};		/* (O) full path of logfile */
 
 /* Configuration values. */
@@ -175,8 +176,9 @@ int	atfullspeed;
 int	cpuspeed2;
 int	clockrate;
 
-char	emu_title[128];				/* full name of application */
-char	emu_version[128];			/* version ID string */
+char	emu_title[64];				/* full name of application */
+char	emu_version[32];			/* short version ID string */
+char	emu_fullversion[128];			/* full version ID string */
 wchar_t	emu_path[1024];				/* emu installation path */
 wchar_t	usr_path[1024];				/* path (dir) of user data */
 wchar_t	cfg_path[1024];				/* full path of config file */
@@ -301,23 +303,24 @@ pc_version(const char *platform)
 
     sprintf(emu_title, "%s for %s", EMU_NAME, platform);
 
-    sprintf(emu_version, "%s", EMU_VERSION);
+    sprintf(emu_version, "v%s", EMU_VERSION);
+    strcpy(emu_fullversion, emu_version);
 
 #ifdef BUILD
     sprintf(temp, " (Build %d", BUILD);
-    strcat(emu_version, temp);
+    strcat(emu_fullversion, temp);
 #endif
 #ifdef COMMIT
     sprintf(temp, " [Commit #%x]", COMMIT);
-    strcat(emu_version, temp);
+    strcat(emu_fullversion, temp);
 #endif
 #ifdef BUILD
-    strcat(emu_version, ")");
+    strcat(emu_fullversion, ")");
 #endif
 
 #ifdef UPSTREAM
     sprintf(temp, " [Upstream #%x]", UPSTREAM);
-    strcat(emu_version, temp);
+    strcat(emu_fullversion, temp);
 #endif
 }
 
@@ -384,7 +387,7 @@ pc_init(int argc, wchar_t *argv[])
 
 	if (!wcscasecmp(argv[c], L"--help") || !wcscasecmp(argv[c], L"-?")) {
 usage:
-		printf("\n%s version %s\n", emu_title, emu_version);
+		printf("\n%s %s\n", emu_title, emu_fullversion);
 		printf("\nUsage: varcem [options] [cfg-file]\n\n");
 		printf("Valid options are:\n\n");
 		printf("  -? or --help         - show this information\n");
@@ -403,6 +406,7 @@ usage:
 #ifdef _WIN32
 		printf("  -H or --hwnd id,hwnd - sends back the main dialog's hwnd\n");
 #endif
+		printf("  -W or --readonly     - do not modify the config file\n");
 		printf("\nA config file can be specified. If none is, the default file will be used.\n");
 		return(0);
 	} else if (!wcscasecmp(argv[c], L"--dumpcfg") ||
@@ -447,6 +451,9 @@ usage:
 		wcstombs(temp, argv[++c], sizeof(temp));
 		sscanf(temp, "%016" PRIX64 ",%016" PRIX64, &unique_id, &source_hwnd);
 #endif
+	} else if (!wcscasecmp(argv[c], L"--readonly") ||
+		   !wcscasecmp(argv[c], L"-W")) {
+		config_ro = 1;
 	} else if (!wcscasecmp(argv[c], L"--test")) {
 		/* some (undocumented) test function here.. */
 
@@ -537,8 +544,8 @@ usage:
     (void)time(&now);
     info = localtime(&now);
     strftime(temp, sizeof(temp), "%Y/%m/%d %H:%M:%S", info);
-    pclog("#\n# %s v%s\n#\n# Logfile created %s\n#\n",
-		emu_title, emu_version, temp);
+    pclog("#\n# %s %s\n#\n# Logfile created %s\n#\n",
+		emu_title, emu_fullversion, temp);
     pclog("# Emulator path: %ls\n", emu_path);
     pclog("# Userfiles path: %ls\n", usr_path);
     pclog("# Configuration file: %ls\n#\n\n", cfg_path);
@@ -1076,14 +1083,20 @@ pc_thread(void *param)
 		if (title_update) {
 			swprintf(temp, sizeof_w(temp),
 #ifdef _WIN32
-				 L"%S v%S - %i%% - %S - %S - %s",
+				 L"%S %S - %i%% - %S - %S",
 #else
-				 L"%s v%s - %i%% - %s - %s - %s",
+				 L"%s %s - %i%% - %s - %s",
 #endif
 				 EMU_NAME,emu_version,fps,machine_getname(),
-				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name,
-				 (!mouse_capture) ? plat_get_string(IDS_2077)
-				  : (mouse_get_buttons() > 2) ? plat_get_string(IDS_2078) : plat_get_string(IDS_2079));
+				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name);
+			if (mouse_type != MOUSE_TYPE_NONE) {
+				wcscat(temp, L" - ");
+				if (!mouse_capture) {
+					wcscat(temp, plat_get_string(IDS_2077));
+				} else {
+					wcscat(temp, (mouse_get_buttons() > 2) ? plat_get_string(IDS_2078) : plat_get_string(IDS_2079));
+				}
+			}
 
 			ui_window_title(temp);
 

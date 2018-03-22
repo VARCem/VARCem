@@ -8,7 +8,7 @@
  *
  *		Implementation of the Commodore PC3 system.
  *
- * Version:	@(#)m_at_commodore.c	1.0.2	2018/03/15
+ * Version:	@(#)m_at_commodore.c	1.0.3	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -91,9 +91,9 @@ pc3_init(void)
 
 
 void
-machine_at_cmdpc_init(const machine_t *model)
+machine_at_cmdpc_init(const machine_t *model, void *arg)
 {
-    machine_at_ide_top_remap_init(model);
+    machine_at_ide_top_remap_init(model, arg);
 
     device_add(&fdc_at_device);
 

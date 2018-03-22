@@ -270,7 +270,7 @@ config_read(wchar_t *fn)
     while (1) {
 	memset(buff, 0x00, sizeof(buff));
 	fgetws(buff, sizeof_w(buff), f);
-	if (feof(f)) break;
+	if (ferror(f) || feof(f)) break;
 
 	/* Make sure there are no stray newlines or hard-returns in there. */
 	if (buff[wcslen(buff)-1] == L'\n') buff[wcslen(buff)-1] = L'\0';
@@ -2104,7 +2104,9 @@ config_save(void)
     save_floppy_drives();		/* Floppy drives */
     save_other_removable_devices();	/* Other removable devices */
 
-    config_write(cfg_path);
+    /* Not if we are running readonly! */
+    if (config_ro)
+	config_write(cfg_path);
 }
 
 

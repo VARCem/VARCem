@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.14	2018/03/17
+# Version:	@(#)Makefile.mingw	1.0.15	2018/03/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -472,10 +472,10 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
-MAINOBJ		:= pc.o config.o random.o timer.o io.o dma.o nmi.o pic.o \
-		   pit.o ppi.o pci.o mca.o mcr.o mem.o memregs.o rom.o \
-		   rom_load.o device.o nvr.o nvr_at.o nvr_ps2.o \
-		   $(VNCOBJ) $(RDPOBJ)
+MAINOBJ		:= pc.o config.o \
+		   random.o timer.o io.o dma.o nmi.o pic.o pit.o ppi.o \
+		   pci.o mca.o mcr.o mem.o memregs.o rom.o rom_load.o \
+		   device.o nvr.o nvr_at.o nvr_ps2.o $(VNCOBJ) $(RDPOBJ)
 
 INTELOBJ	:= intel.o \
 		    intel_flash.o \

@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.5	2018/03/20
+ * Version:	@(#)m_ps2_mca.c	1.0.6	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1270,9 +1270,9 @@ static void ps2_mca_board_model_80_type2_init(int is486)
 
 
 static void
-machine_ps2_common_init(const machine_t *model)
+machine_ps2_common_init(const machine_t *model, void *arg)
 {
-        machine_common_init(model);
+        machine_common_init(model, arg);
 
         dma16_init();
         pic2_init();
@@ -1290,44 +1290,44 @@ machine_ps2_common_init(const machine_t *model)
 
 
 void
-machine_ps2_model_50_init(const machine_t *model)
+machine_ps2_model_50_init(const machine_t *model, void *arg)
 {
-        machine_ps2_common_init(model);
+        machine_ps2_common_init(model, arg);
 
         ps2_mca_board_model_50_init();
 }
 
 
 void
-machine_ps2_model_55sx_init(const machine_t *model)
+machine_ps2_model_55sx_init(const machine_t *model, void *arg)
 {
-        machine_ps2_common_init(model);
+        machine_ps2_common_init(model, arg);
 
         ps2_mca_board_model_55sx_init();
 }
 
 
 void
-machine_ps2_model_70_type3_init(const machine_t *model)
+machine_ps2_model_70_type3_init(const machine_t *model, void *arg)
 {
-        machine_ps2_common_init(model);
+        machine_ps2_common_init(model, arg);
 
         ps2_mca_board_model_70_type34_init(0);
 }
 
 void
-machine_ps2_model_70_type4_init(const machine_t *model)
+machine_ps2_model_70_type4_init(const machine_t *model, void *arg)
 {
-        machine_ps2_common_init(model);
+        machine_ps2_common_init(model, arg);
 
         ps2_mca_board_model_70_type34_init(1);
 }
 
 
 void
-machine_ps2_model_80_init(const machine_t *model)
+machine_ps2_model_80_init(const machine_t *model, void *arg)
 {
-        machine_ps2_common_init(model);
+        machine_ps2_common_init(model, arg);
 
         ps2_mca_board_model_80_type2_init(0);
 }

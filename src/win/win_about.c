@@ -8,7 +8,7 @@
  *
  *		Handle the About dialog.
  *
- * Version:	@(#)win_about.c	1.0.3	2018/03/07
+ * Version:	@(#)win_about.c	1.0.5	2018/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../version.h"
 #include "../plat.h"
 #include "win.h"
 
@@ -93,7 +94,7 @@ AboutDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				   (WPARAM)NULL, (LPARAM)emu_title);
 		set_font_bold(hdlg, IDT_TITLE);
 
-		sprintf(temp, "v%s", emu_version);
+		sprintf(temp, "%s", emu_fullversion);
 		SendDlgItemMessage(hdlg, IDT_VERSION, WM_SETTEXT,
 				   (WPARAM)NULL, (LPARAM)temp);
 		break;

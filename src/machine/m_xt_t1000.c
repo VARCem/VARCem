@@ -48,7 +48,7 @@
  *		hold a single BCD digit. Hence everything has 'ones' and
  *		'tens' digits.
  *
- * Version:	@(#)m_xt_t1000.c	1.0.5	2018/03/18
+ * Version:	@(#)m_xt_t1000.c	1.0.6	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -319,7 +319,7 @@ tc8521_init(nvr_t *nvr, int size)
     nvr_init(nvr);
 
     io_sethandler(0x02c0, 16,
-		  tc8521_read,NULL,NULL, tc8521_write,NULL,NULL, nvr);
+		  tc8521_read,NULL,NULL, tc8521_write,NULL,NULL, nvr);
 }
 
 
@@ -866,7 +866,7 @@ t1000_get_device(void)
 
 
 void
-machine_xt_t1000_init(const machine_t *model)
+machine_xt_t1000_init(const machine_t *model, void *arg)
 {
     FILE *f;
     int pg;
@@ -926,7 +926,7 @@ machine_xt_t1000_init(const machine_t *model)
     io_sethandler(0xe0, 16,
 		  read_ctl,NULL,NULL, write_ctl,NULL,NULL, &t1000);
 
-    machine_common_init(model);
+    machine_common_init(model, arg);
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
     device_add(&keyboard_xt_device);
@@ -968,7 +968,7 @@ t1200_get_device(void)
 
 
 void
-machine_xt_t1200_init(const machine_t *model)
+machine_xt_t1200_init(const machine_t *model, void *arg)
 {
     int pg;
 
@@ -994,7 +994,7 @@ machine_xt_t1200_init(const machine_t *model)
     io_sethandler(0xe0, 16,
 		  read_ctl,NULL,NULL, write_ctl,NULL,NULL, &t1000);
 
-    machine_common_init(model);
+    machine_common_init(model, arg);
 
     /* Non-volatile RAM for CONFIG.SYS */
     t1000.cfgsys_len = 2048;

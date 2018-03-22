@@ -8,7 +8,7 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.6	2018/03/09
+ * Version:	@(#)rom.h	1.0.7	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,10 +58,14 @@ typedef struct {
 } rom_t;
 
 typedef struct {
-    int		mode;
-    int		nfiles;
+    int8_t	mode;
+    int8_t	fontnum;
+    int16_t	nfiles;
+    uint32_t	vidsz;
     uint32_t	offset;
     uint32_t	total;
+    wchar_t	fontfn[1024];
+    wchar_t	vidfn[1024];
     struct romfile {
 	wchar_t		path[1024];
 	int		mode;
@@ -91,7 +95,7 @@ extern int	rom_init_interleaved(rom_t *rom, wchar_t *fn_low,
 				     int size, int mask, int file_offset,
 				     uint32_t flags);
 
-extern int	rom_load_bios(wchar_t *fn, int test_only);
+extern int	rom_load_bios(romdef_t *r, wchar_t *fn, int test_only);
 
 
 #endif	/*EMU_ROM_H*/

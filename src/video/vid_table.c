@@ -8,7 +8,7 @@
  *
  *		Define all known video cards.
  *
- * Version:	@(#)vid_table.c	1.0.11	2018/03/20
+ * Version:	@(#)vid_table.c	1.0.12	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -217,7 +217,6 @@ video_reset(int card)
     loadfont(L"roms/video/ibm/mda/mda.rom", 0);
     loadfont(L"roms/video/wyse/wyse700/wy700.rom", 3);
     loadfont(L"roms/video/mdsi/genius/8x12.bin", 4);
-    loadfont(FONT_ATIKOR_PATH, 6);
 
     /* Do not initialize internal cards here. */
     if ((card == VID_NONE) || \

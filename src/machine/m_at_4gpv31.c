@@ -11,7 +11,7 @@
  * NOTE:	The NEAT 82c206 code should be moved into a 82c206 module,
  *		so it can be re-used by other boards.
  *
- * Version:	@(#)m_4gpv31.c	1.0.2	2018/03/15
+ * Version:	@(#)m_4gpv31.c	1.0.3	2018/03/21
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -174,10 +174,12 @@ neat_init(void)
 
 
 void
-machine_at_4gpv31_init(const machine_t *model)
+machine_at_4gpv31_init(const machine_t *model, void *arg)
 {
-    machine_at_common_ide_init(model);
+    machine_at_common_ide_init(model, arg);
+
     device_add(&keyboard_at_ami_device);
+
     device_add(&fdc_at_device);
 
     neat_init();

@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.7	2018/03/18
+ * Version:	@(#)video.c	1.0.8	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -128,7 +128,7 @@ int		video_timing_write_b = 0,
 int		video_res_x = 0,
 		video_res_y = 0,
 		video_bpp = 0;
-int		video_timing[6][4] = {
+const int	video_timing[6][4] = {
     { VIDEO_ISA, 8, 16, 32	},
     { VIDEO_ISA, 6,  8, 16	},
     { VIDEO_ISA, 3,  3,  6	},
@@ -744,7 +744,7 @@ loadfont(wchar_t *s, int format)
 		for (c=0; c<256; c++) {
 			for (d=0; d<8; d++)
 				fontdat[c][d] = fgetc(f);
-			for (d=0; d<8; d++) (void)fgetc(f);		
+			for (d=0; d<8; d++) (void)fgetc(f);
 		}
 		break;
 

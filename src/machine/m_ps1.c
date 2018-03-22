@@ -28,7 +28,7 @@
  *		boot. Sometimes, they do, and then it shows an "Incorrect
  *		DOS" error message??  --FvK
  *
- * Version:	@(#)m_ps1.c	1.0.5	2018/03/19
+ * Version:	@(#)m_ps1.c	1.0.6	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,6 +86,7 @@
 #include "../video/video.h"
 #include "../video/vid_vga.h"
 #include "../video/vid_ti_cf62011.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -553,9 +554,9 @@ ps1_setup(int model)
 
 
 static void
-ps1_common_init(const machine_t *model)
+ps1_common_init(const machine_t *model, void *arg)
 {
-    machine_common_init(model);
+    machine_common_init(model, arg);
 
     mem_remap_top_384k();
 
@@ -588,27 +589,27 @@ ps1_common_init(const machine_t *model)
 
 
 void
-machine_ps1_m2011_init(const machine_t *model)
+machine_ps1_m2011_init(const machine_t *model, void *arg)
 {
-    ps1_common_init(model);
+    ps1_common_init(model, arg);
 
     ps1_setup(2011);
 }
 
 
 void
-machine_ps1_m2121_init(const machine_t *model)
+machine_ps1_m2121_init(const machine_t *model, void *arg)
 {
-    ps1_common_init(model);
+    ps1_common_init(model, arg);
 
     ps1_setup(2121);
 }
 
 
 void
-machine_ps1_m2133_init(const machine_t *model)
+machine_ps1_m2133_init(const machine_t *model, void *arg)
 {
-    ps1_common_init(model);
+    ps1_common_init(model, arg);
 
     ps1_setup(2133);
 

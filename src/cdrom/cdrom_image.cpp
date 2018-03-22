@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.6	2018/03/20
+ * Version:	@(#)cdrom_image.cpp	1.0.7	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -801,10 +801,14 @@ read_mode2_xa_form2:
 			return 0;
 		}
 
-		if (mode2)
-			goto read_mode2_non_xa;
-		else
-			goto read_mode1;
+		if (mode2 && (form == 1))
+			goto read_mode2_xa_form1;
+		else if (!mode2)
+ 			goto read_mode1;
+		else {
+			cdrom_image_log("CD-ROM %i: [Any Data] Attempting to read a data sector whose cooked size is not 2048 bytes\n", id);
+			return 0;
+		}
 	} else {
 		if (mode2)
 			if (form == 1)

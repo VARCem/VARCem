@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.7	2018/03/20
+ * Version:	@(#)zip.c	1.0.8	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -118,7 +118,9 @@ static const uint8_t zip_command_flags[0x100] =
     0,
     IMPLEMENTED,						/* 0x1D */
     IMPLEMENTED | CHECK_READY,					/* 0x1E */
-    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0,
+    IMPLEMENTED | ATAPI_ONLY,					/* 0x23 */
+    0,
     IMPLEMENTED | CHECK_READY,					/* 0x25 */
     0, 0,
     IMPLEMENTED | CHECK_READY,					/* 0x28 */
@@ -1192,9 +1194,7 @@ int zip_blocks(uint8_t id, uint32_t *len, int first_batch, int out)
 		return 0;
 	}
 
-	zip_log("%s %i bytes of blocks...\n", out ? "Written" : "Read", *len);
-
-	fseek(zip_drives[id].f, zip_drives[id].base + (zip[id].sector_pos << 9), SEEK_SET);
+	zip_log("%s %i bytes of blocks...\n", out ? "Written" : "Read", *len);  	fseek(zip_drives[id].f, zip_drives[id].base + (zip[id].sector_pos << 9), SEEK_SET);
 	if (out)
 		fwrite(zipbufferb, 1, *len, zip_drives[id].f);
 	else
@@ -2010,7 +2010,7 @@ atapi_out:
 				zip_buf_free(id);
 				return;
 			}
-			
+
 			zip_set_buf_len(id, BufLen, &len);
 
 			zip_data_command_finish(id, len, len, len, 0);
@@ -2020,6 +2020,70 @@ atapi_out:
 			zip_set_phase(id, SCSI_PHASE_STATUS);
 			zip_eject(id);
 			zip_command_complete(id);
+			break;
+
+		case GPCMD_READ_FORMAT_CAPACITIES:
+			len = (cdb[7] << 8) | cdb[8];
+
+			zip_buf_alloc(id, len);
+			memset(zipbufferb, 0, len);
+
+			pos = 0;
+
+			/* List header */
+			zipbufferb[pos++] = 0;
+			zipbufferb[pos++] = 0;
+			zipbufferb[pos++] = 0;
+			if (zip_drives[id].f != NULL)
+				zipbufferb[pos++] = 16;
+			else
+				zipbufferb[pos++] = 8;
+
+			/* Current/Maximum capacity header */
+			if (zip_drives[id].is_250) {
+				if (zip_drives[id].f != NULL) {
+					zipbufferb[pos++] = (zip_drives[id].medium_size >> 24) & 0xff;
+					zipbufferb[pos++] = (zip_drives[id].medium_size >> 16) & 0xff;
+					zipbufferb[pos++] = (zip_drives[id].medium_size >> 8)  & 0xff;
+					zipbufferb[pos++] =  zip_drives[id].medium_size        & 0xff;
+					zipbufferb[pos++] = 2;	/* Current medium capacity */
+				} else {
+					zipbufferb[pos++] = (ZIP_250_SECTORS >> 24) & 0xff;
+					zipbufferb[pos++] = (ZIP_250_SECTORS >> 16) & 0xff;
+					zipbufferb[pos++] = (ZIP_250_SECTORS >> 8)  & 0xff;
+					zipbufferb[pos++] =  ZIP_250_SECTORS        & 0xff;
+					zipbufferb[pos++] = 3;	/* Maximum medium capacity */
+				}
+			} else {
+				zipbufferb[pos++] = (ZIP_SECTORS >> 24) & 0xff;
+				zipbufferb[pos++] = (ZIP_SECTORS >> 16) & 0xff;
+				zipbufferb[pos++] = (ZIP_SECTORS >> 8)  & 0xff;
+				zipbufferb[pos++] =  ZIP_SECTORS        & 0xff;
+				if (zip_drives[id].f != NULL)
+					zipbufferb[pos++] = 2;
+				else
+					zipbufferb[pos++] = 3;
+			}
+
+			zipbufferb[pos++] = 512 >> 16;
+			zipbufferb[pos++] = 512 >> 8;
+			zipbufferb[pos++] = 512 & 0xff;
+
+			if (zip_drives[id].f != NULL) {
+				/* Formattable capacity descriptor */
+				zipbufferb[pos++] = (zip_drives[id].medium_size >> 24) & 0xff;
+				zipbufferb[pos++] = (zip_drives[id].medium_size >> 16) & 0xff;
+				zipbufferb[pos++] = (zip_drives[id].medium_size >> 8)  & 0xff;
+				zipbufferb[pos++] =  zip_drives[id].medium_size        & 0xff;
+				zipbufferb[pos++] = 0;
+				zipbufferb[pos++] = 512 >> 16;
+				zipbufferb[pos++] = 512 >> 8;
+				zipbufferb[pos++] = 512 & 0xff;
+			}
+
+			zip_set_buf_len(id, BufLen, &len);
+
+			zip_data_command_finish(id, len, len, len, 0);
 			break;
 
 		default:

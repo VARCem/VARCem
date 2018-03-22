@@ -8,7 +8,7 @@
  *
  *		CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.5	2018/03/19
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.6	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -380,27 +380,27 @@ bool CDROM_Interface_Image::LoadCueSheet(char *cuefile)
 	ifstream in;
 	in.open(cuefile, ios::in);
 	if (in.fail()) return false;
-	int last_attr = 0x00;
-	
+//	int last_attr = 0x00;
+
 	while(!in.eof()) {
 		// get next line
 		char buf[MAX_LINE_LENGTH];
 		in.getline(buf, MAX_LINE_LENGTH);
 		if (in.fail() && !in.eof()) return false;  // probably a binary file
 		istringstream line(buf);
-		
+
 		string command;
 		GetCueKeyword(command, line);
-		
+
 		if (command == "TRACK") {
 			if (canAddTrack) success = AddTrack(track, shift, prestart, totalPregap, currPregap);
 			else success = true;
-			
+
 			track.start = 0;
 			track.skip = 0;
 			currPregap = 0;
 			prestart = 0;
-	
+
 			line >> track.number;
 			track.track_number = track.number;
 			string type;
@@ -435,6 +435,7 @@ bool CDROM_Interface_Image::LoadCueSheet(char *cuefile)
 				track.attr = DATA_TRACK;
 				track.mode2 = true;
 			} else if (type == "MODE2/2352") {
+				track.form = 1;		/* Assume this is XA Mode 2 Form 1. */
 				track.sectorSize = RAW_SECTOR_SIZE;
 				track.attr = DATA_TRACK;
 				track.mode2 = true;
@@ -451,7 +452,7 @@ bool CDROM_Interface_Image::LoadCueSheet(char *cuefile)
 				track.attr = DATA_TRACK;
 				track.mode2 = true;
 			} else success = false;
-			last_attr = track.attr;
+//			last_attr = track.attr;
 
 			canAddTrack = true;
 		}
@@ -469,7 +470,7 @@ bool CDROM_Interface_Image::LoadCueSheet(char *cuefile)
 			if (canAddTrack) success = AddTrack(track, shift, prestart, totalPregap, currPregap);
 			else success = true;
 			canAddTrack = false;
-			
+
 			string filename;
 			GetCueString(filename, line);
 			GetRealFileName(filename, pathname);
@@ -499,13 +500,13 @@ bool CDROM_Interface_Image::LoadCueSheet(char *cuefile)
 	}
 	// add last track
 	if (!AddTrack(track, shift, prestart, totalPregap, currPregap)) return false;
-	
+
 	// add leadout track
 	track.number++;
 	track.track_number = 0xAA;
 	// track.attr = 0;//sync with load iso
-	// track.attr = 0x16;	/* Was 0x00 but I believe 0x16 is appropriate. */
-	track.attr = last_attr | 0x02;
+	track.attr = 0x16;	/* Was 0x00 but I believe 0x16 is appropriate. */
+	// track.attr = last_attr | 0x02;
 	track.start = 0;
 	track.length = 0;
 	track.file = NULL;
@@ -522,7 +523,7 @@ bool CDROM_Interface_Image::AddTrack(Track &curr, uint64_t &shift, uint64_t pres
 		if (prestart > curr.start) return false;
 		skip = curr.start - prestart;
 	} else skip = 0;
-	
+
 	// first track (track number must be 1)
 	if (tracks.empty()) {
 		if (curr.number != 1) return false;
@@ -532,14 +533,14 @@ bool CDROM_Interface_Image::AddTrack(Track &curr, uint64_t &shift, uint64_t pres
 		tracks.push_back(curr);
 		return true;
 	}
-	
+
 	Track &prev = *(tracks.end() - 1);
-	
+
 	// current track consumes data from the same file as the previous
 	if (prev.file == curr.file) {
 		curr.start += shift;
 		prev.length = curr.start + totalPregap - prev.start - skip;
-		curr.skip += prev.skip + (prev.length * prev.sectorSize) + (skip * curr.sectorSize);	
+		curr.skip += prev.skip + (prev.length * prev.sectorSize) + (skip * curr.sectorSize);
 		totalPregap += currPregap;
 		curr.start += totalPregap;
 	// current track uses a different file as the previous track
@@ -547,13 +548,13 @@ bool CDROM_Interface_Image::AddTrack(Track &curr, uint64_t &shift, uint64_t pres
 		uint64_t tmp = prev.file->getLength() - ((uint64_t) prev.skip);
 		prev.length = tmp / ((uint64_t) prev.sectorSize);
 		if (tmp % prev.sectorSize != 0) prev.length++; // padding
-		
+
 		curr.start += prev.start + prev.length + currPregap;
 		curr.skip = skip * curr.sectorSize;
 		shift += prev.start + prev.length;
 		totalPregap = currPregap;
 	}
-	
+
 	// error checks
 	if (curr.number <= 1) return false;
 	if (prev.number + 1 != curr.number) return false;
@@ -562,7 +563,7 @@ bool CDROM_Interface_Image::AddTrack(Track &curr, uint64_t &shift, uint64_t pres
 	/* curr.length is unsigned, so... --FvK */
 	if (curr.length < 0) return false;
 #endif
-	
+
 	tracks.push_back(curr);
 	return true;
 }
@@ -628,7 +629,7 @@ bool CDROM_Interface_Image::GetCueKeyword(string &keyword, istream &in)
 {
 	in >> keyword;
 	for(Bitu i = 0; i < keyword.size(); i++) keyword[i] = toupper(keyword[i]);
-	
+
 	return true;
 }
 
@@ -639,7 +640,7 @@ bool CDROM_Interface_Image::GetCueFrame(uint64_t &frames, istream &in)
 	int min, sec, fr;
 	bool success = sscanf(msf.c_str(), "%d:%d:%d", &min, &sec, &fr) == 3;
 	frames = MSF_TO_FRAMES(min, sec, fr);
-	
+
 	return success;
 }
 

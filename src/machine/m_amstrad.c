@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.6	2018/03/20
+ * Version:	@(#)m_amstrad.c	1.0.7	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -542,9 +542,6 @@ vid_init_1512(amstrad_t *ams)
     vid->cgacol = 7;
     vid->cgamode = 0x12;
 
-    /* Load the PC1512 CGA Character Set ROM. */
-    loadfont(L"roms/machines/amstrad/pc1512/40078", 2);
-
     timer_add(vid_poll_1512, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
     mem_mapping_add(&vid->cga.mapping, 0xb8000, 0x08000,
 		    vid_read_1512, NULL, NULL, vid_write_1512, NULL, NULL,
@@ -691,7 +688,7 @@ vid_poll_1640(void *priv)
 
 
 static void
-vid_init_1640(amstrad_t *ams)
+vid_init_1640(amstrad_t *ams, wchar_t *fn, int sz)
 {
     amsvid_t *vid;
 
@@ -699,8 +696,8 @@ vid_init_1640(amstrad_t *ams)
     vid = (amsvid_t *)malloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
 
-    rom_init(&vid->bios_rom, L"roms/machines/amstrad/pc1640/40100",
-	     0xc0000, 0x8000, 0x7fff, 0, 0);
+    /* Load the BIOS. */
+    rom_init(&vid->bios_rom, fn, 0xc0000, sz, sz - 1, 0, 0);
 
     ega_init(&vid->ega, 9, 0);
     vid->cga.vram = vid->ega.vram;
@@ -843,9 +840,6 @@ vid_init_200(amstrad_t *ams)
     cga = &vid->cga;
     cga->vram = malloc(0x4000);
     cga_init(cga);
-
-    /* Load the PC200 CGA Character Set ROM. */
-    loadfont(L"roms/machines/amstrad/pc200/40109.bin", 1);
 
     mem_mapping_add(&vid->cga.mapping, 0xb8000, 0x08000,
 	cga_read, NULL, NULL, cga_write, NULL, NULL, NULL, 0, cga);
@@ -1222,14 +1216,15 @@ ams_read(uint16_t port, void *priv)
 
 
 void
-machine_amstrad_init(const machine_t *model)
+machine_amstrad_init(const machine_t *model, void *arg)
 {
+    romdef_t *roms = (romdef_t *)arg;
     amstrad_t *ams;
 
     ams = (amstrad_t *)malloc(sizeof(amstrad_t));
     memset(ams, 0x00, sizeof(amstrad_t));
 
-    machine_common_init(model);
+    machine_common_init(model, arg);
 
     nmi_init();
 
@@ -1253,6 +1248,10 @@ machine_amstrad_init(const machine_t *model)
 	case ROM_PC1512:
 		device_add(&fdc_xt_device);
 		if (vid_card == VID_INTERNAL) {
+			/* Load the PC1512 CGA Character Set ROM. */
+			loadfont(roms->fontfn, roms->fontnum);
+
+			/* Initialize the internal CGA controller. */
 			vid_init_1512(ams);
 			device_add_ex(&vid_1512_device, ams->vid);
 		}
@@ -1261,7 +1260,8 @@ machine_amstrad_init(const machine_t *model)
 	case ROM_PC1640:
 		device_add(&fdc_xt_device);
 		if (vid_card == VID_INTERNAL) {
-			vid_init_1640(ams);
+			/* Load the BIOS for the internal CGA/EGA. */
+			vid_init_1640(ams, roms->vidfn, roms->vidsz);
 			device_add_ex(&vid_1640_device, ams->vid);
 		}
 		break;
@@ -1269,6 +1269,9 @@ machine_amstrad_init(const machine_t *model)
 	case ROM_PC200:
 		device_add(&fdc_xt_device);
 		if (vid_card == VID_INTERNAL) {
+			/* Load the PC200 CGA Character Set ROM. */
+			loadfont(roms->fontfn, roms->fontnum);
+
 			vid_init_200(ams);
 			device_add_ex(&vid_200_device, ams->vid);
 		}

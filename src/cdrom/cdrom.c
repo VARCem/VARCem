@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)cdrom.c	1.0.9	2018/03/20
+ * Version:	@(#)cdrom.c	1.0.10	2018/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,6 +37,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -811,6 +812,7 @@ uint32_t cdrom_mode_sense(uint8_t id, uint8_t *buf, uint32_t pos, uint8_t type, 
 void cdrom_update_request_length(uint8_t id, int len, int block_len)
 {
 	cdrom_t *dev = cdrom[id];
+	uint32_t min_len = 0;
 	int bt;
 
 	dev->max_transfer_len = dev->request_length;
@@ -822,11 +824,24 @@ void cdrom_update_request_length(uint8_t id, int len, int block_len)
 		case 0xa8:
 		case 0xb9:
 		case 0xbe:
-			if (dev->max_transfer_len < block_len)
-				dev->max_transfer_len = block_len;
+			/* Make sure total length is not bigger than sum
+			 * of the lengths of all the requested blocks. */
 			bt = (dev->requested_blocks * block_len);
 			if (len > bt)
 				len = bt;
+
+			min_len = block_len;
+
+			if (len <= block_len) {
+				/* Total length is less or equal to block length. */
+				if (dev->max_transfer_len < block_len) {
+					/* Transfer a minimum of (block size) bytes. */
+					dev->max_transfer_len = block_len;
+					dev->packet_len = block_len;
+					break;
+				}
+			}
+
 		default:
 			dev->packet_len = len;
 			break;
@@ -837,8 +852,10 @@ void cdrom_update_request_length(uint8_t id, int len, int block_len)
 	/* If the DRQ length is smaller or equal in size to the total remaining length, set it to that. */
 	if (!dev->max_transfer_len)
 		dev->max_transfer_len = 65534;
-	if (len <= dev->max_transfer_len)
-		dev->max_transfer_len = len;
+
+	if ((len <= dev->max_transfer_len) && (len >= min_len)) {
+		dev->request_length = dev->max_transfer_len = len;
+	}
 }
 
 
@@ -859,8 +876,8 @@ static double cdrom_seek_time(uint8_t id)
 
 	diff -= MIN_SEEK;
 
-	return cdrom_speeds[cdrom_drives[id].speed_idx].seek1 +
-		((cdrom_speeds[cdrom_drives[id].speed_idx].seek2 * ((double) diff)) / sd);
+	return cdrom_speeds[dev->cur_speed].seek1 +
+	    ((cdrom_speeds[dev->cur_speed].seek2 * ((double) diff)) / sd);
 }
 
 static double cdrom_bus_speed(uint8_t id)
@@ -879,6 +896,17 @@ static double cdrom_bus_speed(uint8_t id)
 		return 3333333.333333333333333;		/* 3.3 MB/s PIO-0 speed */
 }
 
+static void cdrom_command_bus(uint8_t id)
+{
+	cdrom_t *dev = cdrom[id];
+
+	dev->status = BUSY_STAT;
+	dev->phase = 1;
+	dev->pos = 0;
+	dev->callback = 1LL * CDROM_TIME;
+	cdrom_set_callback(id);
+}
+
 static void cdrom_command_common(uint8_t id)
 {
 	cdrom_t *dev = cdrom[id];
@@ -889,6 +917,9 @@ static void cdrom_command_common(uint8_t id)
 	dev->phase = 1;
 	dev->pos = 0;
 	dev->callback = 0LL;
+
+	cdrom_log("CD-ROM %i: Current speed: %ix\n", id, dev->cur_speed);
+
 	if (dev->packet_status == CDROM_PHASE_COMPLETE) {
 		cdrom_phase_callback(id);
 		dev->callback = 0LL;
@@ -901,6 +932,7 @@ static void cdrom_command_common(uint8_t id)
 				period = cdrom_seek_time(id) * ((double) TIMER_USEC);
 				dev->callback += ((int64_t) period);
 				cdrom_set_callback(id);
+				cdrom_log("CD-ROM %i: Seek period: %" PRIu64 " us\n", id, (int64_t)cdrom_seek_time(id));
 				return;
 			case 0x08:
 			case 0x28:
@@ -908,6 +940,7 @@ static void cdrom_command_common(uint8_t id)
 				/* Seek time is in us. */
 				period = cdrom_seek_time(id) * ((double) TIMER_USEC);
 				dev->callback += ((int64_t) period);
+				cdrom_log("CD-ROM %i: Seek period: %" PRIu64 " us\n", id, (int64_t)cdrom_seek_time(id));
 			case 0x25:
 			case 0x42:
 			case 0x43:
@@ -918,7 +951,7 @@ static void cdrom_command_common(uint8_t id)
 			case 0xb8:
 			case 0xb9:
 			case 0xbe:
-				bytes_per_second = (1000000.0 / 12000.0) * 2048.0;	/* Account for seek time. */
+				bytes_per_second = 176.0 * 1024.0;
 				bytes_per_second *= (double)cdrom_speeds[dev->cur_speed].speed;
 				break;
 			default:
@@ -931,8 +964,10 @@ static void cdrom_command_common(uint8_t id)
 		}
 
 		period = 1000000.0 / bytes_per_second;
-		dusec = (double) TIMER_USEC;
-		dusec = dusec * period * (double) (dev->packet_len);
+		cdrom_log("CD-ROM %i: Byte transfer period: %" PRIu64 " us\n", id, (int64_t)period);
+		period = period * (double) (dev->packet_len);
+		cdrom_log("CD-ROM %i: Sector transfer period: %" PRIu64 " us\n", id, (int64_t)period);
+		dusec = period * ((double) TIMER_USEC);
 		dev->callback += ((int64_t) dusec);
 	}
 	cdrom_set_callback(id);
@@ -2459,7 +2494,7 @@ cdrom_readtoc_fallback:
 			max_len |= cdb[8];
 			msf = (cdb[1] >> 1) & 1;
 
-			cdrom_buf_alloc(id, 65536);
+			cdrom_buf_alloc(id, 32);
 
 			cdrom_log("CD-ROM %i: Getting page %i (%s)\n", id, cdb[3], msf ? "MSF" : "LBA");
 			if ((cdrom_drives[id].handler->pass_through) && (cdb[3] != 1)) {
@@ -2548,6 +2583,13 @@ cdrom_readtoc_fallback:
 
 			len = MIN(len, max_len);
 			cdrom_set_buf_len(id, BufLen, &len);
+
+			cdrom_log("CD-ROM %i: Read subchannel:", id);
+			for (i = 0; i < 32; i += 8) {
+				cdrom_log("[%02X] %02X %02X %02X %02X %02X %02X %02X %02X\n", i,
+				      cdbufferb[i], cdbufferb[i + 1], cdbufferb[i + 2], cdbufferb[i + 3],
+				      cdbufferb[i + 4], cdbufferb[i + 5], cdbufferb[i + 6], cdbufferb[i + 7]);
+			}
 
 			cdrom_data_command_finish(id, len, len, len, 0);
 			break;
@@ -3009,19 +3051,10 @@ int cdrom_read_from_dma(uint8_t id)
 
 	ret = cdrom_phase_data_out(id);
 
-	if (ret || (cdrom_drives[id].bus_type == CDROM_BUS_SCSI)) {
-		cdrom_buf_free(id);
-		dev->packet_status = CDROM_PHASE_COMPLETE;
-		dev->status = READY_STAT;
-		dev->phase = 3;
-		ui_sb_update_icon(SB_CDROM | id, 0);
-		cdrom_irq_raise(id);
-		if (ret)
-			return 1;
-		else
-			return 0;
-	} else
-		return 0;
+	if (ret)
+		return 1;
+
+	return 0;
 }
 
 int cdrom_write_to_ide_dma(uint8_t channel)
@@ -3063,6 +3096,7 @@ int cdrom_write_to_scsi_dma(uint8_t scsi_id, uint8_t scsi_lun)
 int cdrom_write_to_dma(uint8_t id)
 {
 	cdrom_t *dev = cdrom[id];
+	int32_t *BufLen = &SCSIDevices[cdrom_drives[id].scsi_device_id][cdrom_drives[id].scsi_device_lun].BufferLength;
 	int ret = 0;
 
 	if (cdrom_drives[id].bus_type == CDROM_BUS_SCSI) {
@@ -3071,25 +3105,22 @@ int cdrom_write_to_dma(uint8_t id)
 	} else
 		ret = cdrom_write_to_ide_dma(cdrom_drives[id].ide_channel);
 
-	if (ret || (cdrom_drives[id].bus_type == CDROM_BUS_SCSI)) {
-		cdrom_buf_free(id);
-		dev->packet_status = CDROM_PHASE_COMPLETE;
-		dev->status = READY_STAT;
-		dev->phase = 3;
-		ui_sb_update_icon(SB_CDROM | id, 0);
-		cdrom_irq_raise(id);
-		if (ret)
-			return 1;
-		else
-			return 0;
-	} else
-		return 0;
+	if (cdrom_drives[id].bus_type == CDROM_BUS_SCSI)
+		cdrom_log("CD-ROM %i: SCSI Output data length: %i\n", id, *BufLen);
+	else
+		cdrom_log("CD-ROM %i: ATAPI Output data length: %i\n", id, dev->packet_len);
+
+	if (ret)
+		return 1;
+
+	return 0;
 }
 
 /* If the result is 1, issue an IRQ, otherwise not. */
 void cdrom_phase_callback(uint8_t id)
 {
 	cdrom_t *dev = cdrom[id];
+	int ret;
 
 	switch(dev->packet_status) {
 		case CDROM_PHASE_IDLE:
@@ -3130,7 +3161,16 @@ void cdrom_phase_callback(uint8_t id)
 			return;
 		case CDROM_PHASE_DATA_IN_DMA:
 			cdrom_log("CD-ROM %i: CDROM_PHASE_DATA_IN_DMA\n", id);
-			cdrom_write_to_dma(id);
+			ret = cdrom_write_to_dma(id);
+
+			if (ret || (cdrom_drives[id].bus_type == CDROM_BUS_SCSI)) {
+				cdrom_log("CD-ROM %i: DMA data in phase done\n");
+				cdrom_buf_free(id);
+				cdrom_command_complete(id);
+			} else {
+				cdrom_log("CD-ROM %i: DMA data in phase failure\n");
+				cdrom_command_bus(id);
+			}
 			return;
 		case CDROM_PHASE_ERROR:
 			cdrom_log("CD-ROM %i: CDROM_PHASE_ERROR\n", id);

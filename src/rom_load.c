@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.3	2018/03/07
+ * Version:	@(#)rom_load.c	1.0.5	2018/03/21
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -100,6 +100,12 @@ process(int ln, int argc, char **argv, romdef_t *r)
 	} else
 		r->files[r->nfiles].offset = r->offset;
 	r->nfiles++;
+    } else if (! strcmp(argv[0], "font")) {
+	r->fontnum = atoi(argv[1]);
+	mbstowcs(r->fontfn, argv[2], sizeof_w(r->fontfn));
+    } else if (! strcmp(argv[0], "video")) {
+	mbstowcs(r->vidfn, argv[1], sizeof_w(r->vidfn));
+	sscanf(argv[2], "%i", &r->vidsz);
     } else {
 	pclog("ROM: invalid command '%s' on line %d.\n", argv[0], ln);
 	return(0);
@@ -305,11 +311,10 @@ parser(FILE *fp, romdef_t *r)
 
 /* Load a BIOS ROM image into memory. */
 int
-rom_load_bios(wchar_t *fn, int test_only)
+rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
 {
     wchar_t path[1024], script[1024];
     wchar_t temp[1024];
-    romdef_t r;
     FILE *fp;
     int c, i;
 
@@ -342,60 +347,80 @@ rom_load_bios(wchar_t *fn, int test_only)
     }
 
     /* Clear ROM definition. */
-    memset(&r, 0x00, sizeof(r));
+    memset(r, 0x00, sizeof(romdef_t));
+    r->fontnum = -1;
 
     /* Parse and process the file. */
-    i = parser(fp, &r);
+    i = parser(fp, r);
 
     (void)fclose(fp);
 
     /* Show the resulting data. */
     if (! test_only) {
-	pclog("Size     : %lu\n", r.total);
-	pclog("Offset   : 0x%06lx (%lu)\n", r.offset, r.offset);
-	pclog("Mode     : %s\n", (r.mode == 1)?"interleaved":"linear");
-	pclog("Files    : %d\n", r.nfiles);
-	for (c=0; c<r.nfiles; c++) {
+	pclog("Size     : %lu\n", r->total);
+	pclog("Offset   : 0x%06lx (%lu)\n", r->offset, r->offset);
+	pclog("Mode     : %s\n", (r->mode == 1)?"interleaved":"linear");
+	pclog("Files    : %d\n", r->nfiles);
+	for (c=0; c<r->nfiles; c++) {
 		pclog(" [%d]     : '%ls', %d, 0x%06lx\n", c+1,
-			r.files[c].path, r.files[c].skip, r.files[c].offset);
+		    r->files[c].path, r->files[c].skip, r->files[c].offset);
 	}
+	if (r->fontnum != -1)
+		pclog("Font     : %i, '%ls'\n", r->fontnum, r->fontfn);
+	if (r->vidsz != 0)
+		pclog("VideoBIOS: '%ls', %i\n", r->vidfn, r->vidsz);
 
 	/* Actually perform the work. */
-	switch(r.mode) {
+	switch(r->mode) {
 		case 0:			/* linear file(s) */
 			/* We loop on all files. */
-			for (c=0; c<r.nfiles; c++) {
+			for (c=0; c<r->nfiles; c++) {
 				wcscpy(script, path);
-				wcscat(script, r.files[c].path);
+				wcscat(script, r->files[c].path);
 				i = rom_load_linear(script,
-						    r.files[c].offset,
-						    r.total,
-						    r.files[c].skip, rom);
+						    r->files[c].offset,
+						    r->total,
+						    r->files[c].skip, rom);
 				if (i != 0) break;
 			}
-			if (r.total >= 0x010000)
-				biosmask = (r.total - 1);
+			if (r->total >= 0x010000)
+				biosmask = (r->total - 1);
 			break;
 
 		case 1:			/* interleaved file(s) */
 			/* We loop on all files. */
-			for (c=0; c<r.nfiles/2; c+=2) {
+			for (c=0; c<r->nfiles/2; c+=2) {
 				wcscpy(script, path);
-				wcscat(script, r.files[c].path);
+				wcscat(script, r->files[c].path);
 				wcscpy(temp, path);
-				wcscat(temp, r.files[c+1].path);
+				wcscat(temp, r->files[c+1].path);
 				i = rom_load_interleaved(script, temp,
-						 	r.files[c].offset,
-						 	r.total,
-						 	r.files[c].skip, rom);
+						 	r->files[c].offset,
+						 	r->total,
+						 	r->files[c].skip, rom);
 				if (i != 0) break;
 			}
-			if (r.total >= 0x010000)
-				biosmask = (r.total - 1);
+			if (r->total >= 0x010000)
+				biosmask = (r->total - 1);
 			break;
 	}
 
-	pclog("ROM: status %d, tot %u, mask 0x%06lx\n", i, r.total, biosmask);
+	/* Create a full pathname for the video font file. */
+	if (r->fontnum != -1) {
+		wcscpy(temp, path);
+		wcscat(temp, r->fontfn);
+		wcscpy(r->fontfn, temp);
+	}
+
+	/* Create a full pathname for the video BIOS file. */
+	if (r->vidsz != 0) {
+		wcscpy(temp, path);
+		wcscat(temp, r->vidfn);
+		wcscpy(r->vidfn, temp);
+	}
+
+	pclog("ROM: status %d, tot %u, mask 0x%06lx\n",
+				i, r->total, biosmask);
     }
 
     return(i);
