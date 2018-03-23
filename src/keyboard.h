@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.3	2018/03/15
+ * Version:	@(#)keyboard.h	1.0.4	2018/03/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,6 +86,7 @@ extern const device_t	keyboard_at_toshiba_device;
 extern const device_t	keyboard_ps2_device;
 extern const device_t	keyboard_ps2_ami_device;
 extern const device_t	keyboard_ps2_mca_device;
+extern const device_t	keyboard_ps2_mca_2_device;
 extern const device_t	keyboard_ps2_quadtel_device;
 #endif
 

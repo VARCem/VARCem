@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.8	2018/03/18
+ * Version:	@(#)keyboard_at.c	1.0.9	2018/03/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1916,6 +1916,14 @@ kbd_init(const device_t *info)
     timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
 
     if ((kbd->flags & KBC_TYPE_MASK) != KBC_TYPE_ISA) {
+    	if ((kbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2) {
+		/*
+		 * These machines force translation off, so the
+		 * the keyboard must start in scan code set 0.
+		 */
+		keyboard_mode &= ~0x03;
+	}
+
 	timer_add(kbd_refresh,
 		  &kbd->refresh_time, TIMER_ALWAYS_ENABLED, kbd);
     }
@@ -2034,6 +2042,16 @@ const device_t keyboard_ps2_mca_device = {
     "PS/2 Keyboard",
     0,
     KBC_TYPE_PS2_1 | KBC_VEN_IBM_MCA,
+    kbd_init,
+    kbd_close,
+    kbd_reset,
+    NULL, NULL, NULL, NULL
+};
+
+const device_t keyboard_ps2_mca_2_device = {
+    "PS/2 Keyboard",
+    0,
+    KBC_TYPE_PS2_2 | KBC_VEN_IBM_MCA,
     kbd_init,
     kbd_close,
     kbd_reset,
