@@ -348,7 +348,7 @@ outw(uint16_t port, uint16_t val)
 	p = p->next;
     }
 
-    outb(port,val);
+    outb(port,val & 0xff);
     outb(port+1,val>>8);
 }
 

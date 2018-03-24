@@ -364,7 +364,7 @@ kbd_poll(void *priv)
 static void
 kbd_adddata(uint16_t val)
 {
-    key_queue[key_queue_end] = val;
+    key_queue[key_queue_end] = val & 0xff;
 #if ENABLE_KEYBOARD_LOG
     pclog("XTkbd: %02X added to key queue at %i\n",
 				val, key_queue_end);

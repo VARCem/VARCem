@@ -76,17 +76,17 @@ int64_t firsttime=1;
 void setpitclock(float clock)
 {
         cpuclock=clock;
-        PITCONST=clock/(1193181.0 + (2.0 / 3.0));
-        CGACONST=(clock/(19687503.0/11.0));
-        MDACONST=(clock/2032125.0);
-        VGACONST1=(clock/25175000.0);
-        VGACONST2=(clock/28322000.0);
-        isa_timing = clock/8000000.0;
-        bus_timing = clock/(double)cpu_busspeed;
+        PITCONST=clock/(1193181.0f + (2.0f / 3.0f));
+        CGACONST=(clock/(19687503.0f/11.0f));
+        MDACONST=(clock/2032125.0f);
+        VGACONST1=(clock/25175000.0f);
+        VGACONST2=(clock/28322000.0f);
+        isa_timing = clock/8000000.0f;
+        bus_timing = clock/(float)cpu_busspeed;
         video_update_timing();
         
-        xt_cpu_multi = (int64_t)((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
-        RTCCONST=clock/32768.0;
+        xt_cpu_multi = (int)((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
+        RTCCONST=clock/32768.0f;
         TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
         device_speed_changed();
 }
@@ -102,9 +102,9 @@ void pit_reset(PIT *pit)
 	memcpy(pit->set_out_funcs, old_set_out_funcs, 3 * sizeof(void *));
 	memcpy(pit->pit_nr, old_pit_nr, 3 * sizeof(PIT_nr));
 
-        pit->l[0] = 0xFFFF; pit->c[0] = 0xFFFFLL*PITCONST;
-        pit->l[1] = 0xFFFF; pit->c[1] = 0xFFFFLL*PITCONST;
-        pit->l[2] = 0xFFFF; pit->c[2] = 0xFFFFLL*PITCONST;
+        pit->l[0] = 0xFFFF; pit->c[0] = (int64_t)(0xFFFFLL*PITCONST);
+        pit->l[1] = 0xFFFF; pit->c[1] = (int64_t)(0xFFFFLL*PITCONST);
+        pit->l[2] = 0xFFFF; pit->c[2] = (int64_t)(0xFFFFLL*PITCONST);
         pit->m[0] = pit->m[1] = pit->m[2] = 0;
         pit->ctrls[0] = pit->ctrls[1] = pit->ctrls[2] = 0;
         pit->thit[0]=1;
@@ -121,9 +121,9 @@ void clearpit()
 float pit_timer0_freq()
 {
         if (pit.l[0])
-                return (1193181.0 + (2.0 / 3.0))/(float)pit.l[0];
+                return (1193181.0f + (2.0f / 3.0f))/(float)pit.l[0];
         else
-                return (1193181.0 + (2.0 / 3.0))/(float)0x10000;
+                return (1193181.0f + (2.0f / 3.0f))/(float)0x10000;
 }
 
 static void pit_set_out(PIT *pit, int64_t t, int64_t out)
@@ -370,7 +370,7 @@ void pit_write(uint16_t addr, uint8_t val, void *p)
 {
         PIT *pit = (PIT *)p;
         int64_t t;
-        cycles -= (int64_t)PITCONST;
+        cycles -= (int)PITCONST;
         
         switch (addr&3)
         {
@@ -467,7 +467,7 @@ void pit_write(uint16_t addr, uint8_t val, void *p)
                         pit->wm[t]=0;
                         break;
                 }
-                speakval=(((float)pit->l[2]/(float)pit->l[0])*0x4000)-0x2000;
+                speakval=(int)(((float)pit->l[2]/(float)pit->l[0])*0x4000)-0x2000;
                 if (speakval>0x2000) speakval=0x2000;
                 break;
         }
@@ -478,7 +478,7 @@ uint8_t pit_read(uint16_t addr, void *p)
         PIT *pit = (PIT *)p;
         int64_t t;
         uint8_t temp = 0xff;
-        cycles -= (int64_t)PITCONST;        
+        cycles -= (int)PITCONST;
         switch (addr&3)
         {
                 case 0: case 1: case 2: /*Timers*/
