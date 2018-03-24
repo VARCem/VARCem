@@ -131,7 +131,7 @@ static void dss_callback(void *p)
         dss->time += (int64_t) (TIMER_USEC * (1000000.0 / 7000.0));
 }
 
-static void *dss_init()
+static void *dss_init(void)
 {
         dss_t *dss = malloc(sizeof(dss_t));
         memset(dss, 0, sizeof(dss_t));
