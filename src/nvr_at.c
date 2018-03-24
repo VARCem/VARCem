@@ -388,7 +388,8 @@ timer_update(void *priv)
 
 	/* Update registers with current time. */
 	time_set(nvr->regs, &tm);
-
+
+
 	/* Clear update status. */
 	nvr->upd_stat = 0x00;
 
@@ -430,7 +431,7 @@ timer_recalc(nvr_t *nvr, int add)
 {
     int64_t c, nt;
 
-    c = 1 << ((nvr->regs[RTC_REGA] & REGA_RS) - 1);
+    c = 1ULL << ((nvr->regs[RTC_REGA] & REGA_RS) - 1);
     nt = (int64_t)(RTCCONST * c * (1<<TIMER_SHIFT));
     if (add)
 	nvr->rtctime += nt;
