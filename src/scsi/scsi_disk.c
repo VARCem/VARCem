@@ -860,13 +860,13 @@ scsi_hd_command(uint8_t id, uint8_t *cdb)
 {
     /* uint8_t *hdbufferb = (uint8_t *) shdc[id].buffer; */
     uint8_t *hdbufferb = SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].CmdBuffer;
-    uint32_t len;
+    int32_t len;
     int pos=0;
     int max_len;
-    unsigned idx = 0;
+    int idx = 0;
     unsigned size_idx;
     unsigned preamble_len;
-    uint32_t alloc_length;
+    int32_t alloc_length;
     char device_identify[9] = {
 	'E','M','U','_','H','D','0','0',0 };
     char device_identify_ex[15] = {
@@ -1450,7 +1450,7 @@ void
 scsi_hd_phase_data_out(uint8_t id)
 {
     uint8_t *hdbufferb = SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].CmdBuffer;
-    int i;
+    uint32_t i;
     int32_t *BufLen = &SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].BufferLength;
     uint32_t last_sector = hdd_image_get_last_sector(id);
     uint32_t last_to_write = 0;
