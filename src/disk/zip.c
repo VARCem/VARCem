@@ -921,7 +921,7 @@ uint32_t zip_mode_sense(uint8_t id, uint8_t *buf, uint32_t pos, uint8_t type, ui
 
 void zip_update_request_length(uint8_t id, int len, int block_len)
 {
-	uint32_t bt;
+	int bt;
 
 	if (!zip[id].request_length)
 		zip[id].max_transfer_len = 65534;
@@ -978,7 +978,7 @@ static void zip_command_common(uint8_t id)
 		period = 1000000.0 / bytes_per_second;
 		dusec = (double) TIMER_USEC;
 		dusec = dusec * period * (double) (zip[id].packet_len);
-		zip[id].callback = ((int64_t) dusec);
+		zip[id].callback = ((int32_t) dusec);
 	}
 
 	zip_set_callback(id);
@@ -2106,7 +2106,7 @@ uint8_t zip_phase_data_out(uint8_t id)
 	uint8_t error = 0;
 	uint8_t page, page_len;
 
-	uint16_t i = 0;
+	uint32_t i = 0;
 
 	uint8_t hdr_len, val, old_val, ch;
 
