@@ -598,7 +598,11 @@ solisten(port, laddr, lport, flags)
 	    (listen(s,1) < 0)) {
 		int tmperrno = errno; /* Don't clobber the real reason we failed */
 		
-		close(s);
+#ifdef _WIN32
+        closesocket(s);
+#else
+        close(s);
+#endif
 		sofree(so);
 		/* Restore the real errno */
 #ifdef _WIN32
