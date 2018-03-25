@@ -164,8 +164,8 @@ typedef struct sb_t
 /* 0 to 7 -> -14dB to 0dB i 2dB steps. 8 to 15 -> 0 to +14dB in 2dB steps.
   Note that for positive dB values, this is not amplitude, it is amplitude-1. */
 const float sb_bass_treble_4bits[]= {
-   0.199526231, 0.25, 0.316227766, 0.398107170, 0.5, 0.63095734, 0.794328234, 1, 
-    0, 0.25892541, 0.584893192, 1, 1.511886431, 2.16227766, 3, 4.011872336
+   0.199526231f, 0.25f, 0.316227766f, 0.398107170f, 0.5f, 0.63095734f, 0.794328234f, 1.0f,
+    0, 0.25892541f, 0.584893192f, 1.0f, 1.511886431f, 2.16227766f, 3.0f, 4.011872336f
 };
 
 /* Attenuation tables for the mixer. Max volume = 32767 in order to give 6dB of 

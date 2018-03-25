@@ -1016,23 +1016,23 @@ void emu8k_outw(uint16_t addr, uint16_t val, void *p)
                                         break;
                                         case 0x7:  emu8k->reverb_engine.link_return_type = (val==0x8474)? 1:0;
                                         break;
-                                        case 0xF:  emu8k->reverb_engine.reflections[0].output_gain = ((val&0xF0)>>4)/15.0;
+                                        case 0xF:  emu8k->reverb_engine.reflections[0].output_gain = ((val&0xF0)>>4)/15.0f;
                                         break;
-                                        case 0x17: emu8k->reverb_engine.reflections[1].output_gain = ((val&0xF0)>>4)/15.0;
+                                        case 0x17: emu8k->reverb_engine.reflections[1].output_gain = ((val&0xF0)>>4)/15.0f;
                                         break;
-                                        case 0x1F: emu8k->reverb_engine.reflections[2].output_gain = ((val&0xF0)>>4)/15.0;
+                                        case 0x1F: emu8k->reverb_engine.reflections[2].output_gain = ((val&0xF0)>>4)/15.0f;
                                         break;
-                                        case 0x9: emu8k->reverb_engine.reflections[0].feedback =  (val&0xF)/15.0;
+                                        case 0x9: emu8k->reverb_engine.reflections[0].feedback =  (val&0xF)/15.0f;
                                         break;
-                                        case 0xB: //emu8k->reverb_engine.reflections[0].feedback_r =  (val&0xF)/15.0;
+                                        case 0xB: //emu8k->reverb_engine.reflections[0].feedback_r =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x11:emu8k->reverb_engine.reflections[1].feedback =  (val&0xF)/15.0;
+                                        case 0x11:emu8k->reverb_engine.reflections[1].feedback =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x13: //emu8k->reverb_engine.reflections[1].feedback_r =  (val&0xF)/15.0;
+                                        case 0x13: //emu8k->reverb_engine.reflections[1].feedback_r =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x19: emu8k->reverb_engine.reflections[2].feedback =  (val&0xF)/15.0;
+                                        case 0x19: emu8k->reverb_engine.reflections[2].feedback =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x1B: //emu8k->reverb_engine.reflections[2].feedback_r =  (val&0xF)/15.0;
+                                        case 0x1B: //emu8k->reverb_engine.reflections[2].feedback_r =  (val&0xF)/15.0f;
                                         break;
                                 }
                         }
@@ -1289,39 +1289,39 @@ void emu8k_outw(uint16_t addr, uint16_t val, void *p)
                                                 emu8k->reverb_engine.tailR.bufsize = (multip+1)*REV_BUFSIZE_STEP;
                                         }
                                         break;
-                                        case 0x7: emu8k->reverb_engine.reflections[3].output_gain = ((val&0xF0)>>4)/15.0;
+                                        case 0x7: emu8k->reverb_engine.reflections[3].output_gain = ((val&0xF0)>>4)/15.0f;
                                         break;
-                                        case 0xf: emu8k->reverb_engine.reflections[4].output_gain = ((val&0xF0)>>4)/15.0;
+                                        case 0xf: emu8k->reverb_engine.reflections[4].output_gain = ((val&0xF0)>>4)/15.0f;
                                         break;
-                                        case 0x17: emu8k->reverb_engine.reflections[5].output_gain = ((val&0xF0)>>4)/15.0;
+                                        case 0x17: emu8k->reverb_engine.reflections[5].output_gain = ((val&0xF0)>>4)/15.0f;
                                         break;
                                         case 0x1d: 
                                         {
                                                 int c;
                                                 for (c=0;c<6;c++)
                                                 {
-                                                        emu8k->reverb_engine.reflections[c].damp1=(val&0xFF)/255.0;
-                                                        emu8k->reverb_engine.reflections[c].damp2=(0xFF-(val&0xFF))/255.0;
+                                                        emu8k->reverb_engine.reflections[c].damp1=(val&0xFF)/255.0f;
+                                                        emu8k->reverb_engine.reflections[c].damp2=(0xFF-(val&0xFF))/255.0f;
                                                         emu8k->reverb_engine.reflections[c].filterstore=0;
                                                 }
-                                                emu8k->reverb_engine.damper.damp1=(val&0xFF)/255.0;
-                                                emu8k->reverb_engine.damper.damp2=(0xFF-(val&0xFF))/255.0;
+                                                emu8k->reverb_engine.damper.damp1=(val&0xFF)/255.0f;
+                                                emu8k->reverb_engine.damper.damp2=(0xFF-(val&0xFF))/255.0f;
                                                 emu8k->reverb_engine.damper.filterstore=0;
                                         }
                                         break;
                                         case 0x1f: /* filter r */
                                         break;
-                                        case 0x1: emu8k->reverb_engine.reflections[3].feedback =  (val&0xF)/15.0;
+                                        case 0x1: emu8k->reverb_engine.reflections[3].feedback =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x3: //emu8k->reverb_engine.reflections[3].feedback_r =  (val&0xF)/15.0;
+                                        case 0x3: //emu8k->reverb_engine.reflections[3].feedback_r =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x9: emu8k->reverb_engine.reflections[4].feedback =  (val&0xF)/15.0;
+                                        case 0x9: emu8k->reverb_engine.reflections[4].feedback =  (val&0xF)/15.0f;
                                         break;
-                                        case 0xb: //emu8k->reverb_engine.reflections[4].feedback_r =  (val&0xF)/15.0;
+                                        case 0xb: //emu8k->reverb_engine.reflections[4].feedback_r =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x11: emu8k->reverb_engine.reflections[5].feedback =  (val&0xF)/15.0;
+                                        case 0x11: emu8k->reverb_engine.reflections[5].feedback =  (val&0xF)/15.0f;
                                         break;
-                                        case 0x13: //emu8k->reverb_engine.reflections[5].feedback_r =  (val&0xF)/15.0;
+                                        case 0x13: //emu8k->reverb_engine.reflections[5].feedback_r =  (val&0xF)/15.0f;
                                         break;
                                 }
                         }
@@ -2317,11 +2317,11 @@ void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram)
                 if (c==0)
                         millis = 0; /* This means never attack. */
                 else if (c < 32)
-                        millis = 11878.0/c;
+                        millis = 11878.0f/c;
                 else
-                        millis = 360*exp((c - 32) /  (16.0/log(1.0/2.0)));
+                        millis = 360*exp((c - 32) /  (16.0f/log(1.0f/2.0f)));
 
-                env_attack_to_samples[c] = 44.1*millis;
+                env_attack_to_samples[c] = 44.1f*millis;
                 /* This is an alternate formula with linear increments, but probably incorrect: 
                  * millis = (256+4096*(0x7F-c)) */
         }

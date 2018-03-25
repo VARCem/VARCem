@@ -734,7 +734,7 @@ dma_channel_write(int channel, uint16_t val)
 	return(DMA_NODATA);
 
     if (! dma_c->size) {
-	_dma_write(dma_c->ac, val);
+	_dma_write(dma_c->ac, val & 0xff);
 
 	if (dma_c->mode & 0x20) {
 		if (dma_ps2.is_ps2)
@@ -748,7 +748,7 @@ dma_channel_write(int channel, uint16_t val)
 			dma_c->ac = (dma_c->ac & 0xff0000) | ((dma_c->ac + 1) & 0xffff);
 	}
     } else {
-	_dma_write(dma_c->ac,     val);
+	_dma_write(dma_c->ac,     val & 0xff);
 	_dma_write(dma_c->ac + 1, val >> 8); 
 
 	if (dma_c->mode & 0x20) {
@@ -889,7 +889,7 @@ dma_mode(int channel)
 void
 DMAPageRead(uint32_t PhysAddress, uint8_t *DataRead, uint32_t TotalSize)
 {
-    int i = 0;
+    uint32_t i = 0;
 
 #if 0
     memcpy(DataRead, &ram[PhysAddress], TotalSize);
@@ -903,7 +903,7 @@ DMAPageRead(uint32_t PhysAddress, uint8_t *DataRead, uint32_t TotalSize)
 void
 DMAPageWrite(uint32_t PhysAddress, const uint8_t *DataWrite, uint32_t TotalSize)
 {
-    int i = 0;
+    uint32_t i = 0;
 
 #if 0
     mem_invalidate_range(PhysAddress, PhysAddress + TotalSize - 1);

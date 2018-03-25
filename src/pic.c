@@ -396,7 +396,7 @@ void pic2_init()
 
 void clearpic()
 {
-        pic.pend=pic.ins=pic_current=0;
+        pic_current=pic.pend=pic.ins=0;
         pic_updatepending();
 }
 

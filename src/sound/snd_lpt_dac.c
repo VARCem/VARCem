@@ -118,7 +118,7 @@ static void dac_get_buffer(int32_t *buffer, int len, void *p)
         lpt_dac->pos = 0;
 }
 
-static void *dac_init()
+static void *dac_init(void)
 {
         lpt_dac_t *lpt_dac = malloc(sizeof(lpt_dac_t));
         memset(lpt_dac, 0, sizeof(lpt_dac_t));
@@ -127,7 +127,7 @@ static void *dac_init()
                 
         return lpt_dac;
 }
-static void *dac_stereo_init()
+static void *dac_stereo_init(void)
 {
         lpt_dac_t *lpt_dac = dac_init();
         

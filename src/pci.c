@@ -355,7 +355,7 @@ void pci_set_mirq(uint8_t mirq)
 		pci_mirq_log("pci_set_mirq(%02X): Using IRQ %i\n", mirq, irq_line);
 	}
 
-	if (pci_irq_is_level(irq_line) && (pci_irq_hold[irq_line] & (1 << (0x1E + mirq))))
+	if (pci_irq_is_level(irq_line) && (pci_irq_hold[irq_line] & (1ULL << (0x1E + mirq))))
 	{
 		/* IRQ already held, do nothing. */
 		pci_mirq_log("pci_set_mirq(%02X): MIRQ is already holding the IRQ\n", mirq);
@@ -384,7 +384,7 @@ void pci_set_mirq(uint8_t mirq)
 	if (level)
 	{
 		pci_mirq_log("pci_set_mirq(%02X): Marking that this card is holding the IRQ\n", mirq);
-		pci_irq_hold[irq_line] |= (1 << (0x1E + mirq));
+		pci_irq_hold[irq_line] |= (1ULL << (0x1E + mirq));
 	}
 	else
 	{
@@ -444,7 +444,7 @@ void pci_set_irq(uint8_t card, uint8_t pci_int)
 		pcilog("pci_set_irq(%02X, %02X): Using IRQ %i\n", card, pci_int, irq_line);
 	}
 
-	if (pci_irq_is_level(irq_line) && (pci_irq_hold[irq_line] & (1 << card)))
+	if (pci_irq_is_level(irq_line) && (pci_irq_hold[irq_line] & (1ULL << card)))
 	{
 		/* IRQ already held, do nothing. */
 		pcilog("pci_set_irq(%02X, %02X): Card is already holding the IRQ\n", card, pci_int);
@@ -473,7 +473,7 @@ void pci_set_irq(uint8_t card, uint8_t pci_int)
 	if (pci_irq_is_level(irq_line))
 	{
 		pcilog("pci_set_irq(%02X, %02X): Marking that this card is holding the IRQ\n", card, pci_int);
-		pci_irq_hold[irq_line] |= (1 << card);
+		pci_irq_hold[irq_line] |= (1ULL << card);
 	}
 	else
 	{
@@ -511,7 +511,7 @@ void pci_clear_mirq(uint8_t mirq)
 		pci_mirq_log("pci_clear_mirq(%02X): Using IRQ %i\n", mirq, irq_line);
 	}
 
-	if (pci_irq_is_level(irq_line) && !(pci_irq_hold[irq_line] & (1 << (0x1E + mirq))))
+	if (pci_irq_is_level(irq_line) && !(pci_irq_hold[irq_line] & (1ULL << (0x1E + mirq))))
 	{
 		/* IRQ not held, do nothing. */
 		pci_mirq_log("pci_clear_mirq(%02X): MIRQ is not holding the IRQ\n", mirq);
@@ -594,7 +594,7 @@ void pci_clear_irq(uint8_t card, uint8_t pci_int)
 		pcilog("pci_clear_irq(%02X, %02X): Using IRQ %i\n", card, pci_int, irq_line);
 	}
 
-	if (pci_irq_is_level(irq_line) && !(pci_irq_hold[irq_line] & (1 << card)))
+	if (pci_irq_is_level(irq_line) && !(pci_irq_hold[irq_line] & (1ULL << card)))
 	{
 		/* IRQ not held, do nothing. */
 		pcilog("pci_clear_irq(%02X, %02X): Card is not holding the IRQ\n", card, pci_int);

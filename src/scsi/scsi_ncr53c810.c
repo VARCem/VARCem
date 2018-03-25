@@ -411,7 +411,7 @@ ncr53c810_soft_reset(ncr53c810_t *dev)
 static void
 ncr53c810_read(ncr53c810_t *dev, uint32_t addr, uint8_t *buf, uint32_t len)
 {
-	int i = 0;
+	uint32_t i = 0;
 
 	ncr53c810_log("ncr53c810_read(): %08X-%08X, length %i\n", addr, (addr + len - 1), len);
 
@@ -429,7 +429,7 @@ ncr53c810_read(ncr53c810_t *dev, uint32_t addr, uint8_t *buf, uint32_t len)
 static void
 ncr53c810_write(ncr53c810_t *dev, uint32_t addr, uint8_t *buf, uint32_t len)
 {
-	int i = 0;
+	uint32_t i = 0;
 
 	ncr53c810_log("ncr53c810_write(): %08X-%08X, length %i\n", addr, (addr + len - 1), len);
 
@@ -604,7 +604,8 @@ ncr53c810_command_complete(void *priv, uint32_t status)
 static void
 ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 {
-    uint32_t addr, count, tdbc;
+    uint32_t addr, tdbc;
+    int32_t count;
 
     scsi_device_t *sd;
 
@@ -767,7 +768,7 @@ ncr53c810_do_status(ncr53c810_t *dev)
 static void
 ncr53c810_do_msgin(ncr53c810_t *dev)
 {
-    int len;
+    uint32_t len;
     ncr53c810_log("Message in len=%d/%d\n", dev->dbc, dev->msg_len);
     dev->sfbr = dev->msg[0];
     len = dev->msg_len;

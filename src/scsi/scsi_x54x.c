@@ -739,7 +739,7 @@ x54x_get_length(Req_t *req, int Is24bit)
     uint32_t SGEntryLength = (Is24bit ? sizeof(SGE) : sizeof(SGE32));
     SGE32 SGBuffer;
     uint32_t DataToTransfer = 0;
-    int i = 0;
+    uint32_t i = 0;
 
     if (Is24bit) {
 	DataPointer = ADDR_TO_U32(req->CmdBlock.old.DataPointer);
@@ -812,8 +812,8 @@ x54x_buf_dma_transfer(Req_t *req, int Is24bit, int TransferLength, int dir)
     uint32_t DataPointer, DataLength;
     uint32_t SGEntryLength = (Is24bit ? sizeof(SGE) : sizeof(SGE32));
     uint32_t Address;
-    int i = 0;
-    int32_t BufLen = SCSIDevices[req->TargetID][req->LUN].BufferLength;
+    uint32_t i = 0;
+    uint32_t BufLen = SCSIDevices[req->TargetID][req->LUN].BufferLength;
     uint8_t read_from_host = (dir && ((req->CmdBlock.common.ControlByte == CCB_DATA_XFER_OUT) || (req->CmdBlock.common.ControlByte == 0x00)));
     uint8_t write_to_host = (!dir && ((req->CmdBlock.common.ControlByte == CCB_DATA_XFER_IN) || (req->CmdBlock.common.ControlByte == 0x00)));
     int sg_pos = 0;
