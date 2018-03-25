@@ -59,16 +59,16 @@
 #include "vid_cl54xx.h"
 
 
-#define BIOS_GD5426_PATH		L"roms/video/cirruslogic/diamond speedstar pro vlb v3.04.bin"
-#define BIOS_GD5428_PATH		L"roms/video/cirruslogic/vlbusjapan.bin"
-#define BIOS_GD5429_PATH		L"roms/video/cirruslogic/gd5429.vbi"
-#define BIOS_GD5430_VLB_PATH		L"roms/video/cirruslogic/diamondvlbus.bin"
-#define BIOS_GD5430_PCI_PATH		L"roms/video/cirruslogic/gd5430pci.bin"
-#define BIOS_GD5434_PATH		L"roms/video/cirruslogic/gd5434.bin"
-#define BIOS_GD5436_PATH		L"roms/video/cirruslogic/gd5436.vbi"
-#define BIOS_GD5446_PATH		L"roms/video/cirruslogic/gd5446bv.vbi"
-#define BIOS_GD5446_STB_PATH		L"roms/video/cirruslogic/stb_nitro64v.bin"
-#define BIOS_GD5480_PATH		L"roms/video/cirruslogic/gd5480.rom"
+#define BIOS_GD5426_PATH	L"roms/video/cirruslogic/diamond speedstar pro vlb v3.04.bin"
+#define BIOS_GD5428_PATH	L"roms/video/cirruslogic/vlbusjapan.bin"
+#define BIOS_GD5429_PATH	L"roms/video/cirruslogic/gd5429.vbi"
+#define BIOS_GD5430_VLB_PATH	L"roms/video/cirruslogic/diamondvlbus.bin"
+#define BIOS_GD5430_PCI_PATH	L"roms/video/cirruslogic/gd5430pci.bin"
+#define BIOS_GD5434_PATH	L"roms/video/cirruslogic/gd5434.bin"
+#define BIOS_GD5436_PATH	L"roms/video/cirruslogic/gd5436.vbi"
+#define BIOS_GD5446_PATH	L"roms/video/cirruslogic/gd5446bv.vbi"
+#define BIOS_GD5446_STB_PATH	L"roms/video/cirruslogic/stb_nitro64v.bin"
+#define BIOS_GD5480_PATH	L"roms/video/cirruslogic/gd5480.rom"
 
 #define CIRRUS_ID_CLGD5426		0x90
 #define CIRRUS_ID_CLGD5428		0x98
