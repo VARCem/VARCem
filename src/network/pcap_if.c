@@ -10,7 +10,7 @@
  *
  *		Based on the "libpcap" examples.
  *
- * Version:	@(#)pcap_if.c	1.0.10	2018/03/10
+ * Version:	@(#)pcap_if.c	1.0.11	2018/03/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,6 +52,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
+#ifdef _WIN32
+# define WIN32
+#endif
 #include <pcap/pcap.h>
 #include <time.h>
 #include "../emu.h"

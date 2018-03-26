@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.5	2018/03/08
+ * Version:	@(#)win_d3d.cpp	1.0.6	2018/03/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

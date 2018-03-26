@@ -11,7 +11,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.5	2018/03/10
+ * Version:	@(#)win_joystick.cpp	1.0.6	2018/03/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,6 +50,9 @@
 #endif
 #include <stdio.h>
 #include <stdint.h>
+#ifdef _WIN32
+# define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 #include "../emu.h"
 #include "../device.h"

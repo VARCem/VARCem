@@ -49,6 +49,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#ifdef _WIN32
+# define WIN32
+#endif
 #include <pcap/pcap.h>
 #include "../emu.h"
 #include "../config.h"

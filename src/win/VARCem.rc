@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.7	2018/03/10
+ * Version:	@(#)VARCem.rc	1.0.8	2018/03/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -599,7 +599,7 @@ BEGIN
     CONTROL         "List1",IDC_LIST_ZIP_DRIVES,"SysListView32",LVS_REPORT | 
                     LVS_SHOWSELALWAYS | LVS_SINGLESEL | WS_BORDER | 
                     WS_TABSTOP,7,137,253,60
-    LTEXT           "ZIP drives:",IDT_1739,7,127,50,8
+    LTEXT           "ZIP drives:",IDT_1762,7,127,50,8
     COMBOBOX        IDC_COMBO_ZIP_BUS,73,204,90,12,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     LTEXT           "Bus:",IDT_1753,57,206,14,8

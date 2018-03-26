@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.5	2018/03/08
+ * Version:	@(#)resource.h	1.0.6	2018/03/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -113,6 +113,7 @@
 #define IDT_TITLE		1759	/* "VARCem for Plaform" */
 #define IDT_VERSION		1760	/* "version.." */
 #define IDT_1761		1761	/* Speed: */
+#define IDT_1762		1762	/* ZIP drives: */
 
 /*
  * To try to keep these organized, we now group the
