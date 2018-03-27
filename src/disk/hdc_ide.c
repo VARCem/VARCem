@@ -358,9 +358,9 @@ static void ide_identify(IDE *ide)
 
 	/* Specify default CHS translation */
 	if (full_size <= 16514064) {
-		ide->buffer[1] = d_tracks;	/* Tracks in default CHS translation. */
-		ide->buffer[3] = d_hpc;		/* Heads in default CHS translation. */
-		ide->buffer[6] = d_spt;		/* Heads in default CHS translation. */
+		ide->buffer[1] = (uint16_t)d_tracks;	/* Tracks in default CHS translation. */
+		ide->buffer[3] = (uint16_t)d_hpc;		/* Heads in default CHS translation. */
+		ide->buffer[6] = (uint16_t)d_spt;		/* Heads in default CHS translation. */
 	} else {
 		ide->buffer[1] = 16383;		/* Tracks in default CHS translation. */
 		ide->buffer[3] = 16;		/* Heads in default CHS translation. */
@@ -398,14 +398,14 @@ static void ide_identify(IDE *ide)
 		ide->buffer[53] |= 1;
 
 		if (ide->specify_success) {
-			ide->buffer[54] = (full_size / ide->t_hpc) / ide->t_spt;
-			ide->buffer[55] = ide->t_hpc;
-			ide->buffer[56] = ide->t_spt;
+			ide->buffer[54] = (uint16_t)((full_size / ide->t_hpc) / ide->t_spt);
+			ide->buffer[55] = (uint16_t)ide->t_hpc;
+			ide->buffer[56] = (uint16_t)ide->t_spt;
 		} else {
 			if (full_size <= 16514064) {
-				ide->buffer[54] = d_tracks;
-				ide->buffer[55] = d_hpc;
-				ide->buffer[56] = d_spt;
+				ide->buffer[54] = (uint16_t)d_tracks;
+				ide->buffer[55] = (uint16_t)d_hpc;
+				ide->buffer[56] = (uint16_t)d_spt;
 			} else {
 				ide->buffer[54] = 16383;
 				ide->buffer[55] = 16;
@@ -795,9 +795,9 @@ static int ide_set_features(IDE *ide)
 	return 1;
 }
 
-void ide_set_sector(IDE *ide, int64_t sector_num)
+void ide_set_sector(IDE *ide, int sector_num)
 {
-	unsigned int cyl, r;
+	uint64_t cyl, r;
 	if (ide->lba)
 	{
 		ide->head = (sector_num >> 24);

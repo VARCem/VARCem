@@ -809,11 +809,11 @@ uint32_t cdrom_mode_sense(uint8_t id, uint8_t *buf, uint32_t pos, uint8_t type, 
 	return pos;
 }
 
-void cdrom_update_request_length(uint8_t id, int len, int block_len)
+void cdrom_update_request_length(uint8_t id, uint32_t len, uint32_t block_len)
 {
 	cdrom_t *dev = cdrom[id];
 	uint32_t min_len = 0;
-	int bt;
+	uint32_t bt;
 
 	dev->max_transfer_len = dev->request_length;
 

@@ -50,9 +50,9 @@ typedef struct {
 	uint8_t fdisk;
 	int pos;
 	int packlen;
-	int spt,hpc;
-	int t_spt,t_hpc;
-	int tracks;
+	uint64_t spt,hpc;
+	uint64_t t_spt,t_hpc;
+	uint64_t tracks;
 	int packetstatus;
 	uint8_t asc;
 	int reset;
