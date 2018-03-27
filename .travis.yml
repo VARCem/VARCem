@@ -8,7 +8,7 @@
 #
 #		Project file for the Travis-CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.3	2018/03/08
+# Version:	@(#).travis.yml	1.0.4	2018/03/26
 #
 # Authors:	Natalia Portillo, <claunia@claunia.com>
 #		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -59,7 +59,7 @@ env:
 
 script:
   - cd src
-  - make -f win/Makefile.mingw
+  - make -f win/mingw/Makefile.MinGW
 
 addons:
   apt:
