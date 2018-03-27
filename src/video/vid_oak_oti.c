@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.6	2018/03/15
+ * Version:	@(#)vid_oak_oti.c	1.0.7	2018/03/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,7 +87,7 @@ oti_out(uint16_t addr, uint8_t val, void *p)
 
 	if (!(oti->enable_register & 1) && addr != 0x3C3)
 			return;	
-	
+
     if ((((addr&0xFFF0) == 0x3D0 || (addr&0xFFF0) == 0x3B0) && addr < 0x3de) &&
 	!(svga->miscout & 1)) addr ^= 0x60;
 
@@ -95,7 +95,7 @@ oti_out(uint16_t addr, uint8_t val, void *p)
 	case 0x3C3:
 		oti->enable_register = val & 1;
 		return;
-		
+
 	case 0x3D4:
 		svga->crtcreg = val;
 		return;
@@ -115,8 +115,8 @@ oti_out(uint16_t addr, uint8_t val, void *p)
 		}
 		break;
 
-	case 0x3DE: 
-		oti->index = val; 
+	case 0x3DE:
+		oti->index = val;
 		return;
 
 	case 0x3DF:
@@ -161,18 +161,18 @@ oti_in(uint16_t addr, void *p)
     oti_t *oti = (oti_t *)p;
     svga_t *svga = &oti->svga;
     uint8_t temp;
-	
+
 	if (!(oti->enable_register & 1) && addr != 0x3C3)
-			return 0xff;	
-	
+			return 0xff;
+
     if ((((addr&0xFFF0) == 0x3D0 || (addr&0xFFF0) == 0x3B0) && addr < 0x3de) &&
 	!(svga->miscout & 1)) addr ^= 0x60;
-	
+
     switch (addr) {
 	case 0x3C3:
 		temp = oti->enable_register;
 		break;
-		
+
 	case 0x3D4:
 		temp = svga->crtcreg;
 		break;
@@ -180,12 +180,46 @@ oti_in(uint16_t addr, void *p)
 	case 0x3D5:
 		temp = svga->crtc[svga->crtcreg & 31];
 		break;
-		
-	case 0x3DE: 
-		temp = oti->index | (oti->chip_id << 5);
-		break;	       
 
-	case 0x3DF: 
+	case 0x3DA:
+                svga->attrff = 0;
+                svga->attrff = 0;
+                svga->cgastat &= ~0x30;
+                /* copy color diagnostic info from the overscan color register */
+                switch (svga->attrregs[0x12] & 0x30)
+                {
+                        case 0x00: /* P0 and P2 */
+                        if (svga->attrregs[0x11] & 0x01)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x04)
+                                svga->cgastat |= 0x20;
+                        break;
+                        case 0x10: /* P4 and P5 */
+                        if (svga->attrregs[0x11] & 0x10)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x20)
+                                svga->cgastat |= 0x20;
+                        break;
+                        case 0x20: /* P1 and P3 */
+                        if (svga->attrregs[0x11] & 0x02)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x08)
+                                svga->cgastat |= 0x20;
+                        break;
+                        case 0x30: /* P6 and P7 */
+                        if (svga->attrregs[0x11] & 0x40)
+                                svga->cgastat |= 0x10;
+                        if (svga->attrregs[0x11] & 0x80)
+                                svga->cgastat |= 0x20;
+                        break;
+                }
+                return svga->cgastat;
+
+	case 0x3DE:
+		temp = oti->index | (oti->chip_id << 5);
+		break;
+
+	case 0x3DF:
 		if ((oti->index & 0x1f)==0x10)
 			temp = 0x18;
 		  else
@@ -225,7 +259,7 @@ oti_pos_in(uint16_t addr, void *p)
     oti_t *oti = (oti_t *)p;
 
     return(oti->pos);
-}	
+}
 
 
 static void
@@ -253,8 +287,8 @@ oti_init(const device_t *info)
     switch(oti->chip_id) {
 	case 0:
 		romfn = BIOS_37C_PATH;
-		break;		
-		
+		break;
+
 	case 2:
 #if 0
 		romfn = BIOS_67_PATH;
@@ -277,11 +311,11 @@ oti_init(const device_t *info)
     io_sethandler(0x03c0, 32,
 		  oti_in, NULL, NULL, oti_out, NULL, NULL, oti);
 	io_sethandler(0x46e8, 1, oti_pos_in,NULL,NULL, oti_pos_out,NULL,NULL, oti);
-    
+
 	oti->svga.miscout = 1;
 
 	oti->regs[0] = 0x08; /* fixme: bios wants to read this at index 0? this index is undocumented */
-	
+
     return(oti);
 }
 
@@ -304,7 +338,7 @@ oti_speed_changed(void *p)
 
     svga_recalctimings(&oti->svga);
 }
-	
+
 
 static void
 oti_force_redraw(void *p)

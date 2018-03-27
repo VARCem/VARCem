@@ -10,7 +10,7 @@
  *
  *		Based on the "libpcap" examples.
  *
- * Version:	@(#)pcap_if.c	1.0.11	2018/03/25
+ * Version:	@(#)pcap_if.c	1.0.12	2018/03/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,7 +52,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WIN32)
 # define WIN32
 #endif
 #include <pcap/pcap.h>

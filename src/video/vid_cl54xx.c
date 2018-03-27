@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.12	2018/03/22
+ * Version:	@(#)vid_cl54xx.c	1.0.13	2018/03/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,8 @@
 
 
 #define BIOS_GD5426_PATH	L"roms/video/cirruslogic/diamond speedstar pro vlb v3.04.bin"
-#define BIOS_GD5428_PATH	L"roms/video/cirruslogic/vlbusjapan.bin"
+#define BIOS_GD5428_ISA_PATH	L"roms/video/cirruslogic/gd5428.bin"
+#define BIOS_GD5428_VLB_PATH	L"roms/video/cirruslogic/vlbusjapan.bin"
 #define BIOS_GD5429_PATH	L"roms/video/cirruslogic/gd5429.vbi"
 #define BIOS_GD5430_VLB_PATH	L"roms/video/cirruslogic/diamondvlbus.bin"
 #define BIOS_GD5430_PCI_PATH	L"roms/video/cirruslogic/gd5430pci.bin"
@@ -183,15 +184,19 @@ typedef struct gd54xx_t
 	uint16_t		scan_cnt;
     } blt;
 
-	int pci, vlb;
+    int pci, vlb;	 
 
-	uint8_t pci_regs[256];
-	uint8_t int_line;
-	int card;
+    uint8_t pci_regs[256];
+    uint8_t int_line;
 
-	uint32_t lfb_base;
+    int card;
 
-	int mmio_vram_overlap;
+    uint32_t lfb_base;
+
+    int mmio_vram_overlap;
+
+    uint32_t extpallook[256];
+    PALETTE extpal;
 } gd54xx_t;
 
 static void 
@@ -222,16 +227,57 @@ gd54xx_out(uint16_t addr, uint8_t val, void *p)
     gd54xx_t *gd54xx = (gd54xx_t *)p;
     svga_t *svga = &gd54xx->svga;
     uint8_t old;
+    int c;
+    uint8_t o;
+    uint32_t o32;
 
     if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) 
 	addr ^= 0x60;
 
     switch (addr) {
+	case 0x3c0:
+	case 0x3c1:
+		if (!svga->attrff) {
+			svga->attraddr = val & 31;
+			if ((val & 0x20) != svga->attr_palette_enable) {
+				svga->fullchange = 3;
+				svga->attr_palette_enable = val & 0x20;
+				svga_recalctimings(svga);
+			}
+		} else {
+			o = svga->attrregs[svga->attraddr & 31];
+			svga->attrregs[svga->attraddr & 31] = val;
+			if (svga->attraddr < 16) 
+				svga->fullchange = changeframecount;
+			if (svga->attraddr == 0x10 || svga->attraddr == 0x14 || svga->attraddr < 0x10) {
+				for (c = 0; c < 16; c++) {
+					if (svga->attrregs[0x10] & 0x80) svga->egapal[c] = (svga->attrregs[c] &  0xf) | ((svga->attrregs[0x14] & 0xf) << 4);
+					else                             svga->egapal[c] = (svga->attrregs[c] & 0x3f) | ((svga->attrregs[0x14] & 0xc) << 4);
+				}
+			}
+			/* Recalculate timings on change of attribute register 0x11 (overscan border color) too. */
+			if (svga->attraddr == 0x10) {
+				if (o != val)
+					svga_recalctimings(svga);
+			} else if (svga->attraddr == 0x11) {
+				if (!(svga->seqregs[0x12] & 0x80)) {
+					svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
+					if (o != val)  svga_recalctimings(svga);
+				}
+			} else if (svga->attraddr == 0x12) {
+				if ((val & 0xf) != svga->plane_mask)
+					svga->fullchange = changeframecount;
+				svga->plane_mask = val & 0xf;
+			}
+		}
+		svga->attrff ^= 1;
+                return;
 	case 0x3c4:
 		svga->seqaddr = val;
 		break;
 	case 0x3c5:
 		if (svga->seqaddr > 5) {
+			o = svga->seqregs[svga->seqaddr & 0x1f];
 			svga->seqregs[svga->seqaddr & 0x1f] = val;
 			switch (svga->seqaddr & 0x1f) {
 				case 6:
@@ -256,6 +302,11 @@ gd54xx_out(uint16_t addr, uint8_t val, void *p)
 					svga->hwcursor.y = (val << 3) | (svga->seqaddr >> 5);
 					break;
 				case 0x12:
+					if (val & 0x80)
+						svga->overscan_color = gd54xx->extpallook[2];
+					else
+						svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
+					svga_recalctimings(svga);
 					svga->hwcursor.ena = val & CIRRUS_CURSOR_SHOW;
 					svga->hwcursor.xsize = svga->hwcursor.ysize = (val & CIRRUS_CURSOR_LARGE) ? 64 : 32;
 					if (val & CIRRUS_CURSOR_LARGE)
@@ -288,6 +339,42 @@ gd54xx_out(uint16_t addr, uint8_t val, void *p)
 		}
 		gd54xx->ramdac.state = 0;
 		break;
+	case 0x3C9:
+		svga->dac_status = 0;
+		svga->fullchange = changeframecount;
+		switch (svga->dac_pos) {
+			case 0:
+				svga->dac_r = val;
+				svga->dac_pos++; 
+				break;
+			case 1:
+				svga->dac_g = val;
+				svga->dac_pos++; 
+				break;
+                        case 2:
+				if (svga->seqregs[0x12] & 2) {
+					gd54xx->extpal[svga->dac_write].r = svga->dac_r;
+					gd54xx->extpal[svga->dac_write].g = svga->dac_g;
+					gd54xx->extpal[svga->dac_write].b = val; 
+					gd54xx->extpallook[svga->dac_write & 15] = makecol32(video_6to8[gd54xx->extpal[svga->dac_write].r & 0x3f], video_6to8[gd54xx->extpal[svga->dac_write].g & 0x3f], video_6to8[gd54xx->extpal[svga->dac_write].b & 0x3f]);
+					if ((svga->seqregs[0x12] & 0x80) && ((svga->dac_write & 15) == 2)) {
+						o32 = svga->overscan_color;
+						svga->overscan_color = gd54xx->extpallook[2];
+						if (o32 != svga->overscan_color)
+							svga_recalctimings(svga);
+					}
+					svga->dac_write = (svga->dac_write + 1) & 15;
+				} else {
+					svga->vgapal[svga->dac_write].r = svga->dac_r;
+					svga->vgapal[svga->dac_write].g = svga->dac_g;
+					svga->vgapal[svga->dac_write].b = val; 
+					svga->pallook[svga->dac_write] = makecol32(video_6to8[svga->vgapal[svga->dac_write].r & 0x3f], video_6to8[svga->vgapal[svga->dac_write].g & 0x3f], video_6to8[svga->vgapal[svga->dac_write].b & 0x3f]);
+					svga->dac_write = (svga->dac_write + 1) & 255;
+				}
+				svga->dac_pos = 0; 
+                        break;
+                }
+                return;
 	case 0x3cf:
 		if (svga->gdcaddr == 0)
 				gd543x_mmio_write(0xb8000, val, gd54xx);
@@ -514,6 +601,32 @@ gd54xx_in(uint16_t addr, void *p)
 		}
 		gd54xx->ramdac.state++;
 		break;
+	case 0x3c9:
+		svga->dac_status = 3;
+		switch (svga->dac_pos) {
+			case 0:
+				svga->dac_pos++;
+				if (svga->seqregs[0x12] & 2)
+					return gd54xx->extpal[svga->dac_read].r & 0x3f;
+				else
+					return svga->vgapal[svga->dac_read].r & 0x3f;
+			case 1: 
+				svga->dac_pos++;
+				if (svga->seqregs[0x12] & 2)
+					return gd54xx->extpal[svga->dac_read].g & 0x3f;
+				else
+					return svga->vgapal[svga->dac_read].g & 0x3f;
+                        case 2: 
+				svga->dac_pos=0;
+				if (svga->seqregs[0x12] & 2) {
+					svga->dac_read = (svga->dac_read + 1) & 15;
+                        		return gd54xx->extpal[(svga->dac_read - 1) & 15].b & 0x3f;
+				} else {
+					svga->dac_read = (svga->dac_read + 1) & 255;
+                        		return svga->vgapal[(svga->dac_read - 1) & 255].b & 0x3f;
+				}
+                }
+                return 0xFF;
 	case 0x3cf:
 		if (svga->gdcaddr > 8) {
 			return svga->gdcreg[svga->gdcaddr & 0x3f];
@@ -761,43 +874,60 @@ gd54xx_recalctimings(svga_t *svga)
 static
 void gd54xx_hwcursor_draw(svga_t *svga, int displine)
 {
-	int x;
-	uint8_t dat[2];
-	int xx;
-	int offset = svga->hwcursor_latch.x - svga->hwcursor_latch.xoff;
-	int y_add = (enable_overscan && !suppress_overscan) ? 16 : 0;
-	int x_add = (enable_overscan && !suppress_overscan) ? 8 : 0;
-	int pitch = (svga->hwcursor.xsize == 64) ? 16 : 4;
- 
-	if (svga->interlace && svga->hwcursor_oddeven)
-		svga->hwcursor_latch.addr += pitch;
- 
-	for (x = 0; x < svga->hwcursor.xsize; x += 8) {
-		dat[0] = svga->vram[svga->hwcursor_latch.addr];
-		if (svga->hwcursor.xsize == 64)
-			dat[1] = svga->vram[svga->hwcursor_latch.addr + 0x08];
-		else
-			dat[1] = svga->vram[svga->hwcursor_latch.addr + 0x80];
-		for (xx = 0; xx < 8; xx++) {
-			if (offset >= svga->hwcursor_latch.x) {
-				if (dat[1] & 0x80)
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] = 0;
-				if (dat[0] & 0x80)
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
-			}
-           
-			offset++;
-			dat[0] <<= 1;
-			dat[1] <<= 1;
-		}
-		svga->hwcursor_latch.addr++;
-	}
- 
+    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
+    int x, xx, comb, b0, b1;
+    uint8_t dat[2];
+    int offset = svga->hwcursor_latch.x - svga->hwcursor_latch.xoff;
+    int y_add = (enable_overscan && !suppress_overscan) ? 16 : 0;
+    int x_add = (enable_overscan && !suppress_overscan) ? 8 : 0;
+    int pitch = (svga->hwcursor.xsize == 64) ? 16 : 4;
+    uint32_t bgcol = gd54xx->extpallook[0x00];
+    uint32_t fgcol = gd54xx->extpallook[0x0f];
+
+    if (svga->interlace && svga->hwcursor_oddeven)
+	svga->hwcursor_latch.addr += pitch;
+
+    for (x = 0; x < svga->hwcursor.xsize; x += 8) {
+	dat[0] = svga->vram[svga->hwcursor_latch.addr];
 	if (svga->hwcursor.xsize == 64)
-		svga->hwcursor_latch.addr += 8;
+		dat[1] = svga->vram[svga->hwcursor_latch.addr + 0x08];
+	else
+		dat[1] = svga->vram[svga->hwcursor_latch.addr + 0x80];
+	for (xx = 0; xx < 8; xx++) {
+		b0 = (dat[0] >> (7 - xx)) & 1;
+		b1 = (dat[1] >> (7 - xx)) & 1;
+		comb = (b1 | (b0 << 1));
+		if (offset >= svga->hwcursor_latch.x) {
+			switch(comb) {
+				case 0:
+					/* The original screen pixel is shown (invisible cursor) */
+					break;
+				case 1:
+					/* The pixel is shown in the cursor background color */
+					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] = bgcol;
+					break;
+				case 2:
+					/* The pixel is shown as the inverse of the original screen pixel
+					   (XOR cursor) */
+					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+					break;
+				case 3:
+					/* The pixel is shown in the cursor foreground color */
+					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] = fgcol;
+					break;
+			}
+		}
+
+		offset++;
+	}
+	svga->hwcursor_latch.addr++;
+    }
  
-	if (svga->interlace && !svga->hwcursor_oddeven)
-		svga->hwcursor_latch.addr += pitch;
+    if (svga->hwcursor.xsize == 64)
+	svga->hwcursor_latch.addr += 8;
+ 
+    if (svga->interlace && !svga->hwcursor_oddeven)
+	svga->hwcursor_latch.addr += pitch;
 }
 
 
@@ -2249,7 +2379,10 @@ gd54xx_init(const device_t *info)
 		break;
 
 	case CIRRUS_ID_CLGD5428:
-		romfn = BIOS_GD5428_PATH;
+		if (gd54xx->vlb)
+			romfn = BIOS_GD5428_VLB_PATH;
+		else
+			romfn = BIOS_GD5428_ISA_PATH;
 		break;
 
 	case CIRRUS_ID_CLGD5429:
@@ -2286,19 +2419,29 @@ gd54xx_init(const device_t *info)
     gd54xx->vram_size = device_get_config_int("memory");
     gd54xx->vram_mask = (gd54xx->vram_size << 20) - 1;
 
-	rom_init(&gd54xx->bios_rom, romfn, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+    rom_init(&gd54xx->bios_rom, romfn,
+	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
     svga_init(&gd54xx->svga, gd54xx, gd54xx->vram_size << 20,
 	      gd54xx_recalctimings, gd54xx_in, gd54xx_out,
 	      gd54xx_hwcursor_draw, NULL);
 
-    mem_mapping_set_handler(&svga->mapping, gd54xx_read, gd54xx_readw, gd54xx_readl, gd54xx_write, gd54xx_writew, gd54xx_writel);
+    mem_mapping_set_handler(&svga->mapping,
+			    gd54xx_read,gd54xx_readw,gd54xx_readl,
+			    gd54xx_write,gd54xx_writew,gd54xx_writel);
     mem_mapping_set_p(&svga->mapping, gd54xx);
 
-    mem_mapping_add(&gd54xx->mmio_mapping, 0, 0, gd543x_mmio_read, gd543x_mmio_readw, gd543x_mmio_readl, gd543x_mmio_write, gd543x_mmio_writew, gd543x_mmio_writel,  NULL, 0, gd54xx);
-    mem_mapping_add(&gd54xx->linear_mapping, 0, 0, gd54xx_readb_linear, gd54xx_readw_linear, gd54xx_readl_linear, gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear,  NULL, 0, svga);
+    mem_mapping_add(&gd54xx->mmio_mapping, 0, 0,
+		    gd543x_mmio_read,gd543x_mmio_readw,gd543x_mmio_readl,
+		    gd543x_mmio_write,gd543x_mmio_writew,gd543x_mmio_writel,
+		    NULL, 0, gd54xx);
+    mem_mapping_add(&gd54xx->linear_mapping, 0, 0,
+		    gd54xx_readb_linear,gd54xx_readw_linear,gd54xx_readl_linear,
+		    gd54xx_writeb_linear,gd54xx_writew_linear,gd54xx_writel_linear,
+		    NULL, 0, svga);
 
-    io_sethandler(0x03c0, 0x0020, gd54xx_in, NULL, NULL, gd54xx_out, NULL, NULL, gd54xx);
+    io_sethandler(0x03c0, 32,
+		  gd54xx_in,NULL,NULL, gd54xx_out,NULL,NULL, gd54xx);
 
     svga->hwcursor.yoff = 32;
     svga->hwcursor.xoff = 0;
@@ -2318,9 +2461,9 @@ gd54xx_init(const device_t *info)
     gd54xx->pci_regs[0x30] = 0x00;
     gd54xx->pci_regs[0x32] = 0x0c;
     gd54xx->pci_regs[0x33] = 0x00;
-	
+
     svga->crtc[0x27] = id;
-	
+
     return gd54xx;
 }
 
@@ -2331,9 +2474,15 @@ gd5426_available(void)
 }
 
 static int
-gd5428_available(void)
+gd5428_isa_available(void)
 {
-    return rom_present(BIOS_GD5428_PATH);
+    return rom_present(BIOS_GD5428_ISA_PATH);
+}
+
+static int
+gd5428_vlb_available(void)
+{
+    return rom_present(BIOS_GD5428_VLB_PATH);
 }
 
 static int
@@ -2500,7 +2649,7 @@ const device_t gd5428_isa_device =
     gd54xx_init, 
     gd54xx_close, 
     NULL,
-    gd5428_available,
+    gd5428_isa_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     gd54xx_add_status_info,
@@ -2515,7 +2664,7 @@ const device_t gd5428_vlb_device =
     gd54xx_init, 
     gd54xx_close, 
     NULL,
-    gd5428_available,
+    gd5428_vlb_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     gd54xx_add_status_info,

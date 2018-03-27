@@ -8,7 +8,7 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.3	2018/03/15
+ * Version:	@(#)net_pcap.c	1.0.4	2018/03/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,7 +49,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WIN32)
 # define WIN32
 #endif
 #include <pcap/pcap.h>

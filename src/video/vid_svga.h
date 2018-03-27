@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.3	2018/03/04
+ * Version:	@(#)vid_svga.h	1.0.4	2018/03/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,7 +46,6 @@ typedef struct svga_t
 
 	int enabled;
 
-        
         uint8_t crtcreg;
         uint8_t crtc[128];
         uint8_t gdcreg[64];
@@ -56,7 +55,7 @@ typedef struct svga_t
         int attr_palette_enable;
         uint8_t seqregs[64];
         int seqaddr;
-        
+
         uint8_t miscout;
         int vidclock;
 
@@ -65,7 +64,7 @@ typedef struct svga_t
           1MB-2MB - VRAM mirror
           2MB-4MB - open bus
           4MB-xMB - mirror of above
-          
+
           For the example memory map, decode_mask would be 4MB-1 (4MB address space), vram_max would be 2MB
           (present video memory only responds to first 2MB), vram_mask would be 1MB-1 (video memory wraps at 1MB)
         */
@@ -74,17 +73,17 @@ typedef struct svga_t
         uint32_t vram_mask;
 
         uint8_t la, lb, lc, ld;
-        
+
         uint8_t dac_mask, dac_status;
         int dac_read, dac_write, dac_pos;
         int dac_r, dac_g;
-                
+
         uint8_t cgastat;
-        
+
         uint8_t plane_mask;
-        
+
         int fb_only;
-        
+
         int fast;
         uint8_t colourcompare, colournocare;
         int readmode, writemode, readplane;
@@ -93,13 +92,13 @@ typedef struct svga_t
 	int extvram;
         uint8_t writemask;
         uint32_t charseta, charsetb;
-        
+
 	int set_reset_disabled;
 
         uint8_t egapal[16];
         uint32_t pallook[256];
         PALETTE vgapal;
-        
+
         int ramdac_type;
 
         int vtotal, dispend, vsyncstart, split, vblankstart;
@@ -109,12 +108,12 @@ typedef struct svga_t
         double clock;
         uint32_t ma_latch;
         int bpp;
-        
+
         int64_t dispontime, dispofftime;
         int64_t vidtime;
-        
+
         uint8_t scrblank;
-        
+
         int dispon;
         int hdisp_on;
 
@@ -124,20 +123,20 @@ typedef struct svga_t
         int linepos, vslines, linecountff, oddeven;
         int con, cursoron, blink;
         int scrollcache;
-        
+
         int firstline, lastline;
         int firstline_draw, lastline_draw;
         int displine;
-        
+
         uint8_t *vram;
         uint8_t *changedvram;
         int vram_display_mask;
         uint32_t banked_mask;
 
         uint32_t write_bank, read_bank;
-                
+
         int fullchange;
-        
+
         int video_res_x, video_res_y, video_bpp;
         int frames, fps;
 
@@ -151,13 +150,21 @@ typedef struct svga_t
 		uint32_t pitch;
                 int v_acc, h_acc;
         } hwcursor, hwcursor_latch, overlay, overlay_latch;
-        
+
         int hwcursor_on;
         int overlay_on;
-        
+
         int hwcursor_oddeven;
         int overlay_oddeven;
-        
+
+        /*If set then another device is driving the monitor output and the SVGA
+          card should not attempt to display anything */
+        int override;
+        void *p;
+
+        uint32_t linear_base;
+	uint32_t overscan_color;
+
         void (*render)(struct svga_t *svga);
         void (*recalctimings_ex)(struct svga_t *svga);
 
@@ -167,15 +174,8 @@ typedef struct svga_t
         void (*hwcursor_draw)(struct svga_t *svga, int displine);
 
         void (*overlay_draw)(struct svga_t *svga, int displine);
-        
+
         void (*vblank_start)(struct svga_t *svga);
-
-        /*If set then another device is driving the monitor output and the SVGA
-          card should not attempt to display anything */
-        int override;
-        void *p;
-
-        uint32_t linear_base;
 } svga_t;
 
 extern int svga_init(svga_t *svga, void *p, int memsize, 

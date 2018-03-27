@@ -10,7 +10,7 @@
  *
  * Known bugs:	Accelerator doesn't work in planar modes
  *
- * Version:	@(#)vid_et4000w32.c	1.0.4	2018/03/15
+ * Version:	@(#)vid_et4000w32.c	1.0.5	2018/03/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -305,6 +305,15 @@ uint8_t et4000w32p_in(uint16_t addr, void *p)
                 case 0x214B: case 0x215B: case 0x216B: case 0x217B:
                 if (et4000->index==0xec) 
                         return (et4000->regs[0xec] & 0xf) | 0x60; /*ET4000/W32p rev D*/
+		if (et4000->index == 0xee) /*Preliminary implementation*/
+		{
+			if (svga->bpp == 8)
+				return 3;
+			else if (svga->bpp == 16)
+				return 4;
+			else
+				break;
+		}
                 if (et4000->index == 0xef) 
                 {
                         if (et4000->pci) return et4000->regs[0xef] | 0xe0;       /*PCI*/
