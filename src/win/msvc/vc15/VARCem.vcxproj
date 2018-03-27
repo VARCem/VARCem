@@ -1,0 +1,759 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\bugger.c" />
+    <ClCompile Include="..\..\..\cdrom\cdrom.c" />
+    <ClCompile Include="..\..\..\cdrom\cdrom_dosbox.cpp" />
+    <ClCompile Include="..\..\..\cdrom\cdrom_image.cpp" />
+    <ClCompile Include="..\..\..\cdrom\cdrom_null.c" />
+    <ClCompile Include="..\..\..\config.c" />
+    <ClCompile Include="..\..\..\cpu\386.c" />
+    <ClCompile Include="..\..\..\cpu\386_dynarec.c" />
+    <ClCompile Include="..\..\..\cpu\386_dynarec_ops.c" />
+    <ClCompile Include="..\..\..\cpu\808x.c" />
+    <ClCompile Include="..\..\..\cpu\codegen.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_ops.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_timing_486.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_timing_686.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_timing_common.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_timing_pentium.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_timing_winchip.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_x86-64.c" />
+    <ClCompile Include="..\..\..\cpu\codegen_x86.c" />
+    <ClCompile Include="..\..\..\cpu\cpu.c" />
+    <ClCompile Include="..\..\..\cpu\cpu_table.c" />
+    <ClCompile Include="..\..\..\cpu\x86seg.c" />
+    <ClCompile Include="..\..\..\cpu\x87.c" />
+    <ClCompile Include="..\..\..\crcspeed\crc64speed.c" />
+    <ClCompile Include="..\..\..\crcspeed\crcspeed.c" />
+    <ClCompile Include="..\..\..\device.c" />
+    <ClCompile Include="..\..\..\disk\hdc.c" />
+    <ClCompile Include="..\..\..\disk\hdc_esdi_at.c" />
+    <ClCompile Include="..\..\..\disk\hdc_esdi_mca.c" />
+    <ClCompile Include="..\..\..\disk\hdc_ide.c" />
+    <ClCompile Include="..\..\..\disk\hdc_mfm_at.c" />
+    <ClCompile Include="..\..\..\disk\hdc_mfm_xt.c" />
+    <ClCompile Include="..\..\..\disk\hdc_xtide.c" />
+    <ClCompile Include="..\..\..\disk\hdd.c" />
+    <ClCompile Include="..\..\..\disk\hdd_image.c" />
+    <ClCompile Include="..\..\..\disk\hdd_table.c" />
+    <ClCompile Include="..\..\..\disk\zip.c" />
+    <ClCompile Include="..\..\..\dma.c" />
+    <ClCompile Include="..\..\..\floppy\fdc.c" />
+    <ClCompile Include="..\..\..\floppy\fdd.c" />
+    <ClCompile Include="..\..\..\floppy\fdd_86f.c" />
+    <ClCompile Include="..\..\..\floppy\fdd_common.c" />
+    <ClCompile Include="..\..\..\floppy\fdd_fdi.c" />
+    <ClCompile Include="..\..\..\floppy\fdd_imd.c" />
+    <ClCompile Include="..\..\..\floppy\fdd_img.c" />
+    <ClCompile Include="..\..\..\floppy\fdd_json.c" />
+    <ClCompile Include="..\..\..\floppy\fdd_td0.c" />
+    <ClCompile Include="..\..\..\floppy\fdi2raw.c" />
+    <ClCompile Include="..\..\..\floppy\lzf\lzf_c.c" />
+    <ClCompile Include="..\..\..\floppy\lzf\lzf_d.c" />
+    <ClCompile Include="..\..\..\game\gameport.c" />
+    <ClCompile Include="..\..\..\game\joystick_ch_flightstick_pro.c" />
+    <ClCompile Include="..\..\..\game\joystick_standard.c" />
+    <ClCompile Include="..\..\..\game\joystick_sw_pad.c" />
+    <ClCompile Include="..\..\..\game\joystick_tm_fcs.c" />
+    <ClCompile Include="..\..\..\i82335.c" />
+    <ClCompile Include="..\..\..\intel.c" />
+    <ClCompile Include="..\..\..\intel_flash.c" />
+    <ClCompile Include="..\..\..\intel_piix.c" />
+    <ClCompile Include="..\..\..\intel_piix4.c" />
+    <ClCompile Include="..\..\..\intel_sio.c" />
+    <ClCompile Include="..\..\..\io.c" />
+    <ClCompile Include="..\..\..\keyboard.c" />
+    <ClCompile Include="..\..\..\keyboard_at.c" />
+    <ClCompile Include="..\..\..\keyboard_xt.c" />
+    <ClCompile Include="..\..\..\lpt.c" />
+    <ClCompile Include="..\..\..\machine\machine.c" />
+    <ClCompile Include="..\..\..\machine\machine_table.c" />
+    <ClCompile Include="..\..\..\machine\m_amstrad.c" />
+    <ClCompile Include="..\..\..\machine\m_at.c" />
+    <ClCompile Include="..\..\..\machine\m_at_430fx.c" />
+    <ClCompile Include="..\..\..\machine\m_at_430hx.c" />
+    <ClCompile Include="..\..\..\machine\m_at_430lx_nx.c" />
+    <ClCompile Include="..\..\..\machine\m_at_430vx.c" />
+    <ClCompile Include="..\..\..\machine\m_at_440fx.c" />
+    <ClCompile Include="..\..\..\machine\m_at_4gpv31.c" />
+    <ClCompile Include="..\..\..\machine\m_at_ali1429.c" />
+    <ClCompile Include="..\..\..\machine\m_at_commodore.c" />
+    <ClCompile Include="..\..\..\machine\m_at_compaq.c" />
+    <ClCompile Include="..\..\..\machine\m_at_headland.c" />
+    <ClCompile Include="..\..\..\machine\m_at_neat.c" />
+    <ClCompile Include="..\..\..\machine\m_at_opti495.c" />
+    <ClCompile Include="..\..\..\machine\m_at_scat.c" />
+    <ClCompile Include="..\..\..\machine\m_at_sis_85c471.c" />
+    <ClCompile Include="..\..\..\machine\m_at_sis_85c496.c" />
+    <ClCompile Include="..\..\..\machine\m_at_sis_85c50x.c" />
+    <ClCompile Include="..\..\..\machine\m_at_t3100e.c" />
+    <ClCompile Include="..\..\..\machine\m_at_t3100e_vid.c" />
+    <ClCompile Include="..\..\..\machine\m_at_wd76c10.c" />
+    <ClCompile Include="..\..\..\machine\m_europc.c" />
+    <ClCompile Include="..\..\..\machine\m_europc_hdc.c" />
+    <ClCompile Include="..\..\..\machine\m_olivetti_m24.c" />
+    <ClCompile Include="..\..\..\machine\m_pcjr.c" />
+    <ClCompile Include="..\..\..\machine\m_ps1.c" />
+    <ClCompile Include="..\..\..\machine\m_ps2_isa.c" />
+    <ClCompile Include="..\..\..\machine\m_ps2_mca.c" />
+    <ClCompile Include="..\..\..\machine\m_tandy.c" />
+    <ClCompile Include="..\..\..\machine\m_xt.c" />
+    <ClCompile Include="..\..\..\machine\m_xt_compaq.c" />
+    <ClCompile Include="..\..\..\machine\m_xt_t1000.c" />
+    <ClCompile Include="..\..\..\machine\m_xt_t1000_vid.c" />
+    <ClCompile Include="..\..\..\machine\m_xt_xi8088.c" />
+    <ClCompile Include="..\..\..\mca.c" />
+    <ClCompile Include="..\..\..\mcr.c" />
+    <ClCompile Include="..\..\..\mem.c" />
+    <ClCompile Include="..\..\..\memregs.c" />
+    <ClCompile Include="..\..\..\mouse.c" />
+    <ClCompile Include="..\..\..\mouse_bus.c" />
+    <ClCompile Include="..\..\..\mouse_ps2.c" />
+    <ClCompile Include="..\..\..\mouse_serial.c" />
+    <ClCompile Include="..\..\..\network\network.c" />
+    <ClCompile Include="..\..\..\network\net_ne2000.c" />
+    <ClCompile Include="..\..\..\network\net_pcap.c" />
+    <ClCompile Include="..\..\..\network\net_slirp.c" />
+    <ClCompile Include="..\..\..\network\slirp\bootp.c" />
+    <ClCompile Include="..\..\..\network\slirp\cksum.c" />
+    <ClCompile Include="..\..\..\network\slirp\debug.c" />
+    <ClCompile Include="..\..\..\network\slirp\if.c" />
+    <ClCompile Include="..\..\..\network\slirp\ip_icmp.c" />
+    <ClCompile Include="..\..\..\network\slirp\ip_input.c" />
+    <ClCompile Include="..\..\..\network\slirp\ip_output.c" />
+    <ClCompile Include="..\..\..\network\slirp\mbuf.c" />
+    <ClCompile Include="..\..\..\network\slirp\misc.c" />
+    <ClCompile Include="..\..\..\network\slirp\queue.c" />
+    <ClCompile Include="..\..\..\network\slirp\sbuf.c" />
+    <ClCompile Include="..\..\..\network\slirp\slirp.c" />
+    <ClCompile Include="..\..\..\network\slirp\socket.c" />
+    <ClCompile Include="..\..\..\network\slirp\tcp_input.c" />
+    <ClCompile Include="..\..\..\network\slirp\tcp_output.c" />
+    <ClCompile Include="..\..\..\network\slirp\tcp_subr.c" />
+    <ClCompile Include="..\..\..\network\slirp\tcp_timer.c" />
+    <ClCompile Include="..\..\..\network\slirp\udp.c" />
+    <ClCompile Include="..\..\..\nmi.c" />
+    <ClCompile Include="..\..\..\nvr.c" />
+    <ClCompile Include="..\..\..\nvr_at.c" />
+    <ClCompile Include="..\..\..\nvr_ps2.c" />
+    <ClCompile Include="..\..\..\pc.c" />
+    <ClCompile Include="..\..\..\pci.c" />
+    <ClCompile Include="..\..\..\pic.c" />
+    <ClCompile Include="..\..\..\pit.c" />
+    <ClCompile Include="..\..\..\ppi.c" />
+    <ClCompile Include="..\..\..\random.c" />
+    <ClCompile Include="..\..\..\rom.c" />
+    <ClCompile Include="..\..\..\rom_load.c" />
+    <ClCompile Include="..\..\..\scsi\scsi.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_aha154x.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_bus.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_buslogic.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_device.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_disk.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_ncr5380.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_ncr53c810.c" />
+    <ClCompile Include="..\..\..\scsi\scsi_x54x.c" />
+    <ClCompile Include="..\..\..\serial.c" />
+    <ClCompile Include="..\..\..\sio\sio_detect.c" />
+    <ClCompile Include="..\..\..\sio\sio_fdc37c669.c" />
+    <ClCompile Include="..\..\..\sio\sio_fdc37c66x.c" />
+    <ClCompile Include="..\..\..\sio\sio_fdc37c93x.c" />
+    <ClCompile Include="..\..\..\sio\sio_pc87306.c" />
+    <ClCompile Include="..\..\..\sio\sio_um8669f.c" />
+    <ClCompile Include="..\..\..\sio\sio_w83877f.c" />
+    <ClCompile Include="..\..\..\sound\dbopl.cpp" />
+    <ClCompile Include="..\..\..\sound\midi.c" />
+    <ClCompile Include="..\..\..\sound\midi_mt32.c" />
+    <ClCompile Include="..\..\..\sound\midi_system.c" />
+    <ClCompile Include="..\..\..\sound\munt\Analog.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\BReverbModel.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\c_interface\c_interface.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\File.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\FileStream.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\LA32FloatWaveGenerator.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\LA32Ramp.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\LA32WaveGenerator.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\MidiStreamParser.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\Part.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\Partial.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\PartialManager.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\Poly.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\ROMInfo.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\SampleRateConverter_dummy.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\sha1\sha1.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\Synth.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\Tables.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\TVA.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\TVF.cpp" />
+    <ClCompile Include="..\..\..\sound\munt\TVP.cpp" />
+    <ClCompile Include="..\..\..\sound\nukedopl.cpp" />
+    <ClCompile Include="..\..\..\sound\openal.c" />
+    <ClCompile Include="..\..\..\sound\resid-fp\convolve-sse.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\convolve.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\envelope.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\extfilt.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\filter.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\pot.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\sid.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\voice.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave6581_PST.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave6581_PS_.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave6581_P_T.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave6581__ST.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave8580_PST.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave8580_PS_.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave8580_P_T.cpp" />
+    <ClCompile Include="..\..\..\sound\resid-fp\wave8580__ST.cpp" />
+    <ClCompile Include="..\..\..\sound\snd_ad1848.c" />
+    <ClCompile Include="..\..\..\sound\snd_adlib.c" />
+    <ClCompile Include="..\..\..\sound\snd_adlibgold.c" />
+    <ClCompile Include="..\..\..\sound\snd_audiopci.c" />
+    <ClCompile Include="..\..\..\sound\snd_cms.c" />
+    <ClCompile Include="..\..\..\sound\snd_dbopl.cpp" />
+    <ClCompile Include="..\..\..\sound\snd_emu8k.c" />
+    <ClCompile Include="..\..\..\sound\snd_gus.c" />
+    <ClCompile Include="..\..\..\sound\snd_lpt_dac.c" />
+    <ClCompile Include="..\..\..\sound\snd_lpt_dss.c" />
+    <ClCompile Include="..\..\..\sound\snd_mpu401.c" />
+    <ClCompile Include="..\..\..\sound\snd_opl.c" />
+    <ClCompile Include="..\..\..\sound\snd_pas16.c" />
+    <ClCompile Include="..\..\..\sound\snd_pssj.c" />
+    <ClCompile Include="..\..\..\sound\snd_resid.cpp" />
+    <ClCompile Include="..\..\..\sound\snd_sb.c" />
+    <ClCompile Include="..\..\..\sound\snd_sb_dsp.c" />
+    <ClCompile Include="..\..\..\sound\snd_sn76489.c" />
+    <ClCompile Include="..\..\..\sound\snd_speaker.c" />
+    <ClCompile Include="..\..\..\sound\snd_ssi2001.c" />
+    <ClCompile Include="..\..\..\sound\snd_wss.c" />
+    <ClCompile Include="..\..\..\sound\snd_ym7128.c" />
+    <ClCompile Include="..\..\..\sound\sound.c" />
+    <ClCompile Include="..\..\..\timer.c" />
+    <ClCompile Include="..\..\..\video\video.c" />
+    <ClCompile Include="..\..\..\video\vid_ati18800.c" />
+    <ClCompile Include="..\..\..\video\vid_ati28800.c" />
+    <ClCompile Include="..\..\..\video\vid_ati68860_ramdac.c" />
+    <ClCompile Include="..\..\..\video\vid_ati_eeprom.c" />
+    <ClCompile Include="..\..\..\video\vid_ati_mach64.c" />
+    <ClCompile Include="..\..\..\video\vid_bt485_ramdac.c" />
+    <ClCompile Include="..\..\..\video\vid_cga.c" />
+    <ClCompile Include="..\..\..\video\vid_cga_comp.c" />
+    <ClCompile Include="..\..\..\video\vid_cl54xx.c" />
+    <ClCompile Include="..\..\..\video\vid_colorplus.c" />
+    <ClCompile Include="..\..\..\video\vid_compaq_cga.c" />
+    <ClCompile Include="..\..\..\video\vid_ega.c" />
+    <ClCompile Include="..\..\..\video\vid_ega_render.c" />
+    <ClCompile Include="..\..\..\video\vid_et4000.c" />
+    <ClCompile Include="..\..\..\video\vid_et4000w32.c" />
+    <ClCompile Include="..\..\..\video\vid_genius.c" />
+    <ClCompile Include="..\..\..\video\vid_hercules.c" />
+    <ClCompile Include="..\..\..\video\vid_herculesplus.c" />
+    <ClCompile Include="..\..\..\video\vid_icd2061.c" />
+    <ClCompile Include="..\..\..\video\vid_ics2595.c" />
+    <ClCompile Include="..\..\..\video\vid_incolor.c" />
+    <ClCompile Include="..\..\..\video\vid_mda.c" />
+    <ClCompile Include="..\..\..\video\vid_oak_oti.c" />
+    <ClCompile Include="..\..\..\video\vid_paradise.c" />
+    <ClCompile Include="..\..\..\video\vid_s3.c" />
+    <ClCompile Include="..\..\..\video\vid_s3_virge.c" />
+    <ClCompile Include="..\..\..\video\vid_sc1502x_ramdac.c" />
+    <ClCompile Include="..\..\..\video\vid_sdac_ramdac.c" />
+    <ClCompile Include="..\..\..\video\vid_stg_ramdac.c" />
+    <ClCompile Include="..\..\..\video\vid_svga.c" />
+    <ClCompile Include="..\..\..\video\vid_svga_render.c" />
+    <ClCompile Include="..\..\..\video\vid_table.c" />
+    <ClCompile Include="..\..\..\video\vid_tgui9440.c" />
+    <ClCompile Include="..\..\..\video\vid_ti_cf62011.c" />
+    <ClCompile Include="..\..\..\video\vid_tkd8001_ramdac.c" />
+    <ClCompile Include="..\..\..\video\vid_tvga.c" />
+    <ClCompile Include="..\..\..\video\vid_vga.c" />
+    <ClCompile Include="..\..\..\video\vid_voodoo.c" />
+    <ClCompile Include="..\..\..\video\vid_wy700.c" />
+    <ClCompile Include="..\..\..\win\win.c" />
+    <ClCompile Include="..\..\..\win\win_about.c" />
+    <ClCompile Include="..\..\..\win\win_cdrom.c" />
+    <ClCompile Include="..\..\..\win\win_cdrom_ioctl.c" />
+    <ClCompile Include="..\..\..\win\win_crashdump.c" />
+    <ClCompile Include="..\..\..\win\win_d3d.cpp" />
+    <ClCompile Include="..\..\..\win\win_ddraw.cpp" />
+    <ClCompile Include="..\..\..\win\win_devconf.c" />
+    <ClCompile Include="..\..\..\win\win_dialog.c" />
+    <ClCompile Include="..\..\..\win\win_dynld.c" />
+    <ClCompile Include="..\..\..\win\win_joystick.cpp" />
+    <ClCompile Include="..\..\..\win\win_jsconf.c" />
+    <ClCompile Include="..\..\..\win\win_keyboard.c" />
+    <ClCompile Include="..\..\..\win\win_midi.c" />
+    <ClCompile Include="..\..\..\win\win_mouse.cpp" />
+    <ClCompile Include="..\..\..\win\win_new_floppy.c" />
+    <ClCompile Include="..\..\..\win\win_opendir.c" />
+    <ClCompile Include="..\..\..\win\win_settings.c" />
+    <ClCompile Include="..\..\..\win\win_snd_gain.c" />
+    <ClCompile Include="..\..\..\win\win_status.c" />
+    <ClCompile Include="..\..\..\win\win_stbar.c" />
+    <ClCompile Include="..\..\..\win\win_thread.c" />
+    <ClCompile Include="..\..\..\win\win_ui.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\bugger.h" />
+    <ClInclude Include="..\..\..\cdrom\cdrom.h" />
+    <ClInclude Include="..\..\..\cdrom\cdrom_dosbox.h" />
+    <ClInclude Include="..\..\..\cdrom\cdrom_image.h" />
+    <ClInclude Include="..\..\..\cdrom\cdrom_null.h" />
+    <ClInclude Include="..\..\..\config.h" />
+    <ClInclude Include="..\..\..\cpu\386.h" />
+    <ClInclude Include="..\..\..\cpu\386_common.h" />
+    <ClInclude Include="..\..\..\cpu\386_ops.h" />
+    <ClInclude Include="..\..\..\cpu\codegen.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_arith.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_fpu.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_jump.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_logic.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_misc.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_mmx.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_mov.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_shift.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_stack.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_x86-64.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_x86.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_ops_xchg.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_timing_common.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_x86-64.h" />
+    <ClInclude Include="..\..\..\cpu\codegen_x86.h" />
+    <ClInclude Include="..\..\..\cpu\cpu.h" />
+    <ClInclude Include="..\..\..\cpu\x86.h" />
+    <ClInclude Include="..\..\..\cpu\x86seg.h" />
+    <ClInclude Include="..\..\..\cpu\x86_flags.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_amd.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_arith.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_atomic.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_bcd.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_bit.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_bitscan.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_call.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_flag.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_fpu.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_i686.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_inc_dec.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_int.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_io.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_jump.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_misc.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mmx.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mmx_arith.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mmx_cmp.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mmx_logic.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mmx_mov.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mmx_pack.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mmx_shift.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mov.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_movx.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mov_ctrl.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mov_seg.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_msr.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_mul.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_pmode.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_prefix.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_rep.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_ret.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_set.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_shift.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_stack.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_string.h" />
+    <ClInclude Include="..\..\..\cpu\x86_ops_xchg.h" />
+    <ClInclude Include="..\..\..\cpu\x87.h" />
+    <ClInclude Include="..\..\..\cpu\x87_ops.h" />
+    <ClInclude Include="..\..\..\cpu\x87_ops_arith.h" />
+    <ClInclude Include="..\..\..\cpu\x87_ops_loadstore.h" />
+    <ClInclude Include="..\..\..\cpu\x87_ops_misc.h" />
+    <ClInclude Include="..\..\..\crcspeed\crc64speed.h" />
+    <ClInclude Include="..\..\..\crcspeed\crcspeed.h" />
+    <ClInclude Include="..\..\..\device.h" />
+    <ClInclude Include="..\..\..\disk\hdc.h" />
+    <ClInclude Include="..\..\..\disk\hdc_ide.h" />
+    <ClInclude Include="..\..\..\disk\hdd.h" />
+    <ClInclude Include="..\..\..\disk\zip.h" />
+    <ClInclude Include="..\..\..\dma.h" />
+    <ClInclude Include="..\..\..\emu.h" />
+    <ClInclude Include="..\..\..\floppy\fdc.h" />
+    <ClInclude Include="..\..\..\floppy\fdd.h" />
+    <ClInclude Include="..\..\..\floppy\fdd_86f.h" />
+    <ClInclude Include="..\..\..\floppy\fdd_common.h" />
+    <ClInclude Include="..\..\..\floppy\fdd_fdi.h" />
+    <ClInclude Include="..\..\..\floppy\fdd_imd.h" />
+    <ClInclude Include="..\..\..\floppy\fdd_img.h" />
+    <ClInclude Include="..\..\..\floppy\fdd_json.h" />
+    <ClInclude Include="..\..\..\floppy\fdd_td0.h" />
+    <ClInclude Include="..\..\..\floppy\fdi2raw.h" />
+    <ClInclude Include="..\..\..\floppy\lzf\config.h" />
+    <ClInclude Include="..\..\..\floppy\lzf\crc32.h" />
+    <ClInclude Include="..\..\..\floppy\lzf\lzf.h" />
+    <ClInclude Include="..\..\..\floppy\lzf\lzfP.h" />
+    <ClInclude Include="..\..\..\game\gameport.h" />
+    <ClInclude Include="..\..\..\game\joystick_ch_flightstick_pro.h" />
+    <ClInclude Include="..\..\..\game\joystick_standard.h" />
+    <ClInclude Include="..\..\..\game\joystick_sw_pad.h" />
+    <ClInclude Include="..\..\..\game\joystick_tm_fcs.h" />
+    <ClInclude Include="..\..\..\i82335.h" />
+    <ClInclude Include="..\..\..\intel.h" />
+    <ClInclude Include="..\..\..\intel_flash.h" />
+    <ClInclude Include="..\..\..\intel_piix.h" />
+    <ClInclude Include="..\..\..\intel_sio.h" />
+    <ClInclude Include="..\..\..\io.h" />
+    <ClInclude Include="..\..\..\keyboard.h" />
+    <ClInclude Include="..\..\..\lang\language.h" />
+    <ClInclude Include="..\..\..\lpt.h" />
+    <ClInclude Include="..\..\..\machine\machine.h" />
+    <ClInclude Include="..\..\..\machine\m_at_t3100e.h" />
+    <ClInclude Include="..\..\..\machine\m_xt_t1000.h" />
+    <ClInclude Include="..\..\..\machine\m_xt_xi8088.h" />
+    <ClInclude Include="..\..\..\mca.h" />
+    <ClInclude Include="..\..\..\mem.h" />
+    <ClInclude Include="..\..\..\memregs.h" />
+    <ClInclude Include="..\..\..\mouse.h" />
+    <ClInclude Include="..\..\..\network\bswap.h" />
+    <ClInclude Include="..\..\..\network\network.h" />
+    <ClInclude Include="..\..\..\network\net_ne2000.h" />
+    <ClInclude Include="..\..\..\network\slirp\bootp.h" />
+    <ClInclude Include="..\..\..\network\slirp\config-host.h" />
+    <ClInclude Include="..\..\..\network\slirp\config.h" />
+    <ClInclude Include="..\..\..\network\slirp\ctl.h" />
+    <ClInclude Include="..\..\..\network\slirp\debug.h" />
+    <ClInclude Include="..\..\..\network\slirp\icmp_var.h" />
+    <ClInclude Include="..\..\..\network\slirp\if.h" />
+    <ClInclude Include="..\..\..\network\slirp\ip.h" />
+    <ClInclude Include="..\..\..\network\slirp\ip_icmp.h" />
+    <ClInclude Include="..\..\..\network\slirp\libslirp.h" />
+    <ClInclude Include="..\..\..\network\slirp\main.h" />
+    <ClInclude Include="..\..\..\network\slirp\mbuf.h" />
+    <ClInclude Include="..\..\..\network\slirp\misc.h" />
+    <ClInclude Include="..\..\..\network\slirp\queue.h" />
+    <ClInclude Include="..\..\..\network\slirp\sbuf.h" />
+    <ClInclude Include="..\..\..\network\slirp\slirp.h" />
+    <ClInclude Include="..\..\..\network\slirp\slirp_config.h" />
+    <ClInclude Include="..\..\..\network\slirp\socket.h" />
+    <ClInclude Include="..\..\..\network\slirp\tcp.h" />
+    <ClInclude Include="..\..\..\network\slirp\tcpip.h" />
+    <ClInclude Include="..\..\..\network\slirp\tcp_timer.h" />
+    <ClInclude Include="..\..\..\network\slirp\tcp_var.h" />
+    <ClInclude Include="..\..\..\network\slirp\udp.h" />
+    <ClInclude Include="..\..\..\nmi.h" />
+    <ClInclude Include="..\..\..\nvr.h" />
+    <ClInclude Include="..\..\..\nvr_ps2.h" />
+    <ClInclude Include="..\..\..\pci.h" />
+    <ClInclude Include="..\..\..\pic.h" />
+    <ClInclude Include="..\..\..\pit.h" />
+    <ClInclude Include="..\..\..\plat.h" />
+    <ClInclude Include="..\..\..\ppi.h" />
+    <ClInclude Include="..\..\..\random.h" />
+    <ClInclude Include="..\..\..\rom.h" />
+    <ClInclude Include="..\..\..\scsi\queue.h" />
+    <ClInclude Include="..\..\..\scsi\scsi.h" />
+    <ClInclude Include="..\..\..\scsi\scsi_aha154x.h" />
+    <ClInclude Include="..\..\..\scsi\scsi_buslogic.h" />
+    <ClInclude Include="..\..\..\scsi\scsi_device.h" />
+    <ClInclude Include="..\..\..\scsi\scsi_disk.h" />
+    <ClInclude Include="..\..\..\scsi\scsi_ncr5380.h" />
+    <ClInclude Include="..\..\..\scsi\scsi_ncr53c810.h" />
+    <ClInclude Include="..\..\..\scsi\scsi_x54x.h" />
+    <ClInclude Include="..\..\..\serial.h" />
+    <ClInclude Include="..\..\..\sio\sio.h" />
+    <ClInclude Include="..\..\..\sound\dbopl.h" />
+    <ClInclude Include="..\..\..\sound\filters.h" />
+    <ClInclude Include="..\..\..\sound\midi.h" />
+    <ClInclude Include="..\..\..\sound\midi_mt32.h" />
+    <ClInclude Include="..\..\..\sound\midi_system.h" />
+    <ClInclude Include="..\..\..\sound\munt\Analog.h" />
+    <ClInclude Include="..\..\..\sound\munt\BReverbModel.h" />
+    <ClInclude Include="..\..\..\sound\munt\config.h" />
+    <ClInclude Include="..\..\..\sound\munt\c_interface\cpp_interface.h" />
+    <ClInclude Include="..\..\..\sound\munt\c_interface\c_interface.h" />
+    <ClInclude Include="..\..\..\sound\munt\c_interface\c_types.h" />
+    <ClInclude Include="..\..\..\sound\munt\Enumerations.h" />
+    <ClInclude Include="..\..\..\sound\munt\File.h" />
+    <ClInclude Include="..\..\..\sound\munt\FileStream.h" />
+    <ClInclude Include="..\..\..\sound\munt\globals.h" />
+    <ClInclude Include="..\..\..\sound\munt\internals.h" />
+    <ClInclude Include="..\..\..\sound\munt\LA32FloatWaveGenerator.h" />
+    <ClInclude Include="..\..\..\sound\munt\LA32Ramp.h" />
+    <ClInclude Include="..\..\..\sound\munt\LA32WaveGenerator.h" />
+    <ClInclude Include="..\..\..\sound\munt\MemoryRegion.h" />
+    <ClInclude Include="..\..\..\sound\munt\MidiEventQueue.h" />
+    <ClInclude Include="..\..\..\sound\munt\MidiStreamParser.h" />
+    <ClInclude Include="..\..\..\sound\munt\mmath.h" />
+    <ClInclude Include="..\..\..\sound\munt\mt32emu.h" />
+    <ClInclude Include="..\..\..\sound\munt\Part.h" />
+    <ClInclude Include="..\..\..\sound\munt\Partial.h" />
+    <ClInclude Include="..\..\..\sound\munt\PartialManager.h" />
+    <ClInclude Include="..\..\..\sound\munt\Poly.h" />
+    <ClInclude Include="..\..\..\sound\munt\ROMInfo.h" />
+    <ClInclude Include="..\..\..\sound\munt\sha1\sha1.h" />
+    <ClInclude Include="..\..\..\sound\munt\Structures.h" />
+    <ClInclude Include="..\..\..\sound\munt\Synth.h" />
+    <ClInclude Include="..\..\..\sound\munt\Tables.h" />
+    <ClInclude Include="..\..\..\sound\munt\TVA.h" />
+    <ClInclude Include="..\..\..\sound\munt\TVF.h" />
+    <ClInclude Include="..\..\..\sound\munt\TVP.h" />
+    <ClInclude Include="..\..\..\sound\munt\Types.h" />
+    <ClInclude Include="..\..\..\sound\nukedopl.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\envelope.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\extfilt.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\filter.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\pot.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\sid.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\siddefs-fp.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\voice.h" />
+    <ClInclude Include="..\..\..\sound\resid-fp\wave.h" />
+    <ClInclude Include="..\..\..\sound\snd_ad1848.h" />
+    <ClInclude Include="..\..\..\sound\snd_adlib.h" />
+    <ClInclude Include="..\..\..\sound\snd_adlibgold.h" />
+    <ClInclude Include="..\..\..\sound\snd_audiopci.h" />
+    <ClInclude Include="..\..\..\sound\snd_cms.h" />
+    <ClInclude Include="..\..\..\sound\snd_dbopl.h" />
+    <ClInclude Include="..\..\..\sound\snd_emu8k.h" />
+    <ClInclude Include="..\..\..\sound\snd_gus.h" />
+    <ClInclude Include="..\..\..\sound\snd_lpt_dac.h" />
+    <ClInclude Include="..\..\..\sound\snd_lpt_dss.h" />
+    <ClInclude Include="..\..\..\sound\snd_mpu401.h" />
+    <ClInclude Include="..\..\..\sound\snd_opl.h" />
+    <ClInclude Include="..\..\..\sound\snd_pas16.h" />
+    <ClInclude Include="..\..\..\sound\snd_pssj.h" />
+    <ClInclude Include="..\..\..\sound\snd_resid.h" />
+    <ClInclude Include="..\..\..\sound\snd_sb.h" />
+    <ClInclude Include="..\..\..\sound\snd_sb_dsp.h" />
+    <ClInclude Include="..\..\..\sound\snd_sn76489.h" />
+    <ClInclude Include="..\..\..\sound\snd_speaker.h" />
+    <ClInclude Include="..\..\..\sound\snd_ssi2001.h" />
+    <ClInclude Include="..\..\..\sound\snd_wss.h" />
+    <ClInclude Include="..\..\..\sound\snd_ym7128.h" />
+    <ClInclude Include="..\..\..\sound\sound.h" />
+    <ClInclude Include="..\..\..\timer.h" />
+    <ClInclude Include="..\..\..\ui.h" />
+    <ClInclude Include="..\..\..\version.h" />
+    <ClInclude Include="..\..\..\video\video.h" />
+    <ClInclude Include="..\..\..\video\vid_ati18800.h" />
+    <ClInclude Include="..\..\..\video\vid_ati28800.h" />
+    <ClInclude Include="..\..\..\video\vid_ati68860_ramdac.h" />
+    <ClInclude Include="..\..\..\video\vid_ati_eeprom.h" />
+    <ClInclude Include="..\..\..\video\vid_ati_mach64.h" />
+    <ClInclude Include="..\..\..\video\vid_bt485_ramdac.h" />
+    <ClInclude Include="..\..\..\video\vid_cga.h" />
+    <ClInclude Include="..\..\..\video\vid_cga_comp.h" />
+    <ClInclude Include="..\..\..\video\vid_cl54xx.h" />
+    <ClInclude Include="..\..\..\video\vid_colorplus.h" />
+    <ClInclude Include="..\..\..\video\vid_compaq_cga.h" />
+    <ClInclude Include="..\..\..\video\vid_ega.h" />
+    <ClInclude Include="..\..\..\video\vid_ega_render.h" />
+    <ClInclude Include="..\..\..\video\vid_et4000.h" />
+    <ClInclude Include="..\..\..\video\vid_et4000w32.h" />
+    <ClInclude Include="..\..\..\video\vid_genius.h" />
+    <ClInclude Include="..\..\..\video\vid_hercules.h" />
+    <ClInclude Include="..\..\..\video\vid_herculesplus.h" />
+    <ClInclude Include="..\..\..\video\vid_icd2061.h" />
+    <ClInclude Include="..\..\..\video\vid_ics2595.h" />
+    <ClInclude Include="..\..\..\video\vid_incolor.h" />
+    <ClInclude Include="..\..\..\video\vid_mda.h" />
+    <ClInclude Include="..\..\..\video\vid_oak_oti.h" />
+    <ClInclude Include="..\..\..\video\vid_paradise.h" />
+    <ClInclude Include="..\..\..\video\vid_s3.h" />
+    <ClInclude Include="..\..\..\video\vid_s3_virge.h" />
+    <ClInclude Include="..\..\..\video\vid_sc1502x_ramdac.h" />
+    <ClInclude Include="..\..\..\video\vid_sdac_ramdac.h" />
+    <ClInclude Include="..\..\..\video\vid_stg_ramdac.h" />
+    <ClInclude Include="..\..\..\video\vid_svga.h" />
+    <ClInclude Include="..\..\..\video\vid_svga_render.h" />
+    <ClInclude Include="..\..\..\video\vid_tgui9440.h" />
+    <ClInclude Include="..\..\..\video\vid_ti_cf62011.h" />
+    <ClInclude Include="..\..\..\video\vid_tkd8001_ramdac.h" />
+    <ClInclude Include="..\..\..\video\vid_tvga.h" />
+    <ClInclude Include="..\..\..\video\vid_vga.h" />
+    <ClInclude Include="..\..\..\video\vid_voodoo.h" />
+    <ClInclude Include="..\..\..\video\vid_voodoo_codegen_x86-64.h" />
+    <ClInclude Include="..\..\..\video\vid_voodoo_codegen_x86.h" />
+    <ClInclude Include="..\..\..\video\vid_voodoo_dither.h" />
+    <ClInclude Include="..\..\..\video\vid_wy700.h" />
+    <ClInclude Include="..\..\..\win\plat_dir.h" />
+    <ClInclude Include="..\..\..\win\resource.h" />
+    <ClInclude Include="..\..\..\win\win.h" />
+    <ClInclude Include="..\..\..\win\win_d3d.h" />
+    <ClInclude Include="..\..\..\win\win_ddraw.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\VARCem.rc" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{6E445F28-CA8F-430F-8CCF-C59C53516AC5}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>VARCem</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="global.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="global.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="global.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="global.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SKIP_MANIFEST</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SKIP_MANIFEST</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

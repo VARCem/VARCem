@@ -6,9 +6,9 @@
 #
 #		This file is part of the VARCem Project.
 #
-#		Makefile for Windows systems using Visual Studio 2015.
+#		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VS	1.0.1	2018/03/25
+# Version:	@(#)Makefile.VC	1.0.2	2018/03/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -227,18 +227,23 @@ PREPROC		:= cl -nologo -EP
 LINK		:= link -nologo
 WINDRES		:= rc -nologo -r
 
-SYSINC		:= -Iwin/mingw/include -Iwin/msvc14/include
+SYSINC		:= -Iwin/msvc/Include -Iwin/mingw/include
 SYSLIB		:=
 
 DEPS		= -MMD -MF $*.d -c $<
-DEPFILE		:= win\.depends-msvc14
+DEPFILE		:= win\.depends-msvc
 
 # Set up the correct toolchain flags.
-OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) $(WPCAPINC) $(SYSINC)
-COPTS		:= -W1  #-W4
+OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
+		   -D_USE_MATH_DEFINES \
+		   -D_CRT_NONSTDC_NO_DEPRECATE \
+		   -D_WINSOCK_DEPRECATED_NO_WARNINGS \
+		   -D_CRT_SECURE_NO_WARNINGS \
+		   $(WPCAPINC) $(SYSINC)
+COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 
-LOPTS		:= -LIBPATH:win\msvc14\Lib\$(ARCH)
+LOPTS		:= -LIBPATH:win\msvc\Lib\$(ARCH)
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
 endif
@@ -300,7 +305,7 @@ endif
 LIBS		:= ddraw.lib dinput8.lib dxguid.lib d3d9.lib d3dx9.lib \
 		   comctl32.lib winmm.lib comdlg32.lib advapi32.lib \
 		   gdi32.lib shell32.lib user32.lib kernel32.lib \
-		   wsock32.lib iphlpapi.lib
+		   wsock32.lib iphlpapi.lib psapi.lib
 
 
 # Optional modules.
@@ -626,7 +631,7 @@ VARCem.res:	win/VARCem.rc win/VARCem.mpp
 
 $(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		$(LINK) $(LDFLAGS) -OUT:$(PROG).exe \
+		@$(LINK) $(LDFLAGS) -OUT:$(PROG).exe \
 			$(OBJ) VARCem.res $(LIBS)
 
 pcap_if.res:	pcap_if.rc

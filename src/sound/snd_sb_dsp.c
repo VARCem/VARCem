@@ -14,7 +14,7 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.2	2018/03/25
+ * Version:	@(#)snd_sb_dsp.c	1.0.3	2018/03/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,9 +46,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#ifdef _WIN32
-# define _USE_MATH_DEFINES
-#endif
 #include <math.h>
 #include <wchar.h>
 #include "../emu.h"
