@@ -77,10 +77,12 @@ Building the emulator is also possible using the free **MinGW** compiler toolset
     "base setup" for GCC and friends with the command:
 
       `pacman -S --needed base-devel mingw-w64-i686-toolchain \`
-   
-      `mingw-w64-x86_64-toolchain git subversion mercurial \`
-      
-	  `mingw-w64-i686-cmake mingw-w64-x86_64-cmake`
+
+              `mingw-w64-x86_64-toolchain git subversion mercurial \`
+
+              `mingw-w64-i686-cmake mingw-w64-x86_64-cmake \`
+
+              `mingw-w64-i686-libpng mingw-w64-x86_64-libpng`
 
     (the backslashes are only for clarity; you can type it as one
     single line if you wish.)
