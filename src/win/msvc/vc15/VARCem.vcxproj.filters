@@ -1659,7 +1659,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\VARCem.rc">
+    <ResourceCompile Include="..\..\VARCem.rc">
       <Filter>win</Filter>
     </ResourceCompile>
   </ItemGroup>
