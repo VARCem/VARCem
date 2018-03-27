@@ -145,7 +145,7 @@ typedef struct {
 
 	uint32_t pos;
 
-	int callback;
+	int64_t callback;
 
 	int data_pos;
 	uint32_t seek_diff;
