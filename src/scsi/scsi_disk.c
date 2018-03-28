@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.4	2018/03/19
+ * Version:	@(#)scsi_disk.c	1.0.5	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1417,7 +1417,7 @@ scsi_hd_phase_data_in(uint8_t id)
 	case GPCMD_READ_10:
 	case GPCMD_READ_12:
 		if ((shdc[id].requested_blocks > 0) && (*BufLen > 0)) {
-			if (shdc[id].packet_len > *BufLen) {
+			if (shdc[id].packet_len > (uint32_t)*BufLen) {
 				hdd_image_read(id, shdc[id].sector_pos, *BufLen >> 9, hdbufferb);
 			} else {
 				hdd_image_read(id, shdc[id].sector_pos, shdc[id].requested_blocks, hdbufferb);
@@ -1479,7 +1479,7 @@ scsi_hd_phase_data_out(uint8_t id)
 	case GPCMD_WRITE_12:
 	case GPCMD_WRITE_AND_VERIFY_12:
 		if ((shdc[id].requested_blocks > 0) && (*BufLen > 0)) {
-			if (shdc[id].packet_len > *BufLen) {
+			if (shdc[id].packet_len > (uint32_t)*BufLen) {
 				hdd_image_write(id, shdc[id].sector_pos, *BufLen >> 9, hdbufferb);
 			} else {
 				hdd_image_write(id, shdc[id].sector_pos, shdc[id].requested_blocks, hdbufferb);
@@ -1500,8 +1500,8 @@ scsi_hd_phase_data_out(uint8_t id)
 				hdbufferb[3] = i & 0xff;
 			} else if (shdc[id].current_cdb[1] & 4) {
 				s = (i % hdd[id].spt);
-				h = ((i - s) / hdd[id].spt) % hdd[id].hpc;
-				c = ((i - s) / hdd[id].spt) / hdd[id].hpc;
+				h = (uint32_t)(((i - s) / hdd[id].spt) % hdd[id].hpc);
+				c = (uint32_t)(((i - s) / hdd[id].spt) / hdd[id].hpc);
 				hdbufferb[0] = (c >> 16) & 0xff;
 				hdbufferb[1] = (c >> 8) & 0xff;
 				hdbufferb[2] = c & 0xff;

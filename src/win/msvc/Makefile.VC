@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.2	2018/03/26
+# Version:	@(#)Makefile.VC	1.0.3	2018/03/27
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #

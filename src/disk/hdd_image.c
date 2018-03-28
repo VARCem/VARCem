@@ -8,7 +8,7 @@
  *
  *		Handling of hard disk image files.
  *
- * Version:	@(#)hdd_image.c	1.0.1	2018/02/14
+ * Version:	@(#)hdd_image.c	1.0.2	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -303,7 +303,7 @@ int hdd_image_load(int id)
 	}
 
 	fseeko64(hdd_images[id].file, 0, SEEK_END);
-	if (ftello64(hdd_images[id].file) < (full_size + hdd_images[id].base)) {
+	if (ftello64(hdd_images[id].file) < (int64_t)(full_size + hdd_images[id].base)) {
 		s = (full_size + hdd_images[id].base) - ftello64(hdd_images[id].file);
 prepare_new_hard_disk:
 		s >>= 9;
@@ -398,7 +398,7 @@ int hdd_image_write_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buf
 
 void hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
 {
-	int i = 0;
+	uint32_t i;
 
 	fseeko64(hdd_images[id].file, ((uint64_t)sector * 512) + hdd_images[id].base, SEEK_SET);
 	for (i = 0; i < count; i++)
@@ -407,7 +407,7 @@ void hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
 
 int hdd_image_zero_ex(uint8_t id, uint32_t sector, uint32_t count)
 {
-	int i = 0;
+	uint32_t i;
 
 	uint32_t transfer_sectors = count;
 	uint32_t sectors = hdd_sectors(id);

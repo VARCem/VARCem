@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)gameport.c	1.0.4	2018/03/19
+ * Version:	@(#)gameport.c	1.0.5	2018/03/27
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -162,7 +162,7 @@ gameport_time(int axis)
     axis = (axis * 100) / 65; /*Axis now in ohms*/
     axis = (axis * 11) / 1000;
 
-    return(TIMER_USEC * (axis + 24)); /*max = 11.115 ms*/
+    return((int)(TIMER_USEC * (axis + 24))); /*max = 11.115 ms*/
 }
 
 

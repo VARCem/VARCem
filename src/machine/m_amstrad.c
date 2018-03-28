@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.7	2018/03/21
+ * Version:	@(#)m_amstrad.c	1.0.8	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -935,7 +935,7 @@ ms_poll(int x, int y, int z, int b, void *priv)
 static void
 kbd_adddata(uint16_t val)
 {
-    key_queue[key_queue_end] = val;
+    key_queue[key_queue_end] = (uint8_t)(val&0xff);
 #if ENABLE_KEYBOARD_LOG
     pclog("keyboard_amstrad : %02X added to key queue at %i\n",
 					val, key_queue_end);

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.16	2018/03/25
+# Version:	@(#)Makefile.mingw	1.0.17	2018/03/27
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -691,22 +691,22 @@ endif
 
 clean:
 		@echo Cleaning objects..
-		@-rm -f *.o 2>NUL
-		@-rm -f *.res 2>NUL
+		@-rm -f *.o
+		@-rm -f *.res
 
 clobber:	clean
 		@echo Cleaning executables..
-		@-rm -f *.d 2>NUL
-		@-rm -f *.exe 2>NUL
+		@-rm -f *.d
+		@-rm -f *.exe
 ifeq ($(PROFILER), y)
-		@-rm -f *.map 2>NUL
+		@-rm -f *.map
 endif
-		@-rm -f win/*.manifest 2>NUL
-#		@-rm -f $(DEPFILE) 2>NUL
+		@-rm -f win/*.manifest
+#		@-rm -f $(DEPFILE)
 
 ifneq ($(AUTODEP), y)
 depclean:
-		@-rm -f $(DEPFILE) 2>NUL
+		@-rm -f $(DEPFILE)
 		@echo Creating dependencies..
 		@echo # Run "make depends" to re-create this file. >$(DEPFILE)
 

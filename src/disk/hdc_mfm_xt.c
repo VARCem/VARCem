@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_mfm_xt.c	1.0.2	2018/03/15
+ * Version:	@(#)hdc_mfm_xt.c	1.0.3	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -780,9 +780,9 @@ loadhd(mfm_t *mfm, int c, int d, const wchar_t *fn)
 	return;
     }
 	
-    drive->spt = hdd[c].spt;
-    drive->hpc = hdd[c].hpc;
-    drive->tracks = hdd[c].tracks;
+    drive->spt = (uint8_t)hdd[c].spt;
+    drive->hpc = (uint8_t)hdd[c].hpc;
+    drive->tracks = (uint8_t)hdd[c].tracks;
     drive->hdd_num = c;
     drive->present = 1;
 }

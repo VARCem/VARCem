@@ -1635,7 +1635,8 @@ d86f_write_sector_data(int drive, int side, int mfm, uint16_t am)
 			/* We're in the data field of the sector, read byte from FDC and request new byte. */
 			dev->current_byte[side] = d86f_get_data(drive, 1);
 			if (! fdc_get_diswr(d86f_fdc))
-				d86f_handler[drive].write_data(drive, side, dev->data_find.bytes_obtained - 1, dev->current_byte[side]);
+				/* FIXME: Kotori, is this right?? */
+				d86f_handler[drive].write_data(drive, side, (uint16_t)((dev->data_find.bytes_obtained - 1)&0xffff), (uint8_t)(dev->current_byte[side] & 0xff));
 		} else {
 			/* We're in the data field of the sector, use a CRC byte. */
 			dev->current_byte[side] = dev->calc_crc.bytes[(dev->data_find.bytes_obtained & 1)];
@@ -1662,7 +1663,8 @@ d86f_write_sector_data(int drive, int side, int mfm, uint16_t am)
 			if (! dev->data_find.bytes_obtained) {
 				fdd_calccrc(decodefm(drive, am), &(dev->calc_crc));
 			} else {
-				fdd_calccrc(dev->current_byte[side], &(dev->calc_crc));
+				/*FIXME: Kotori, is this right? */
+				fdd_calccrc((uint8_t)(dev->current_byte[side]&0xff), &(dev->calc_crc));
 			}
 		}
 	}

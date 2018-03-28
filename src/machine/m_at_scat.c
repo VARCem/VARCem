@@ -10,7 +10,7 @@
  *
  *		Re-worked version based on the 82C235 datasheet and errata.
  *
- * Version:	@(#)m_at_scat.c	1.0.5	2018/03/21
+ * Version:	@(#)m_at_scat.c	1.0.6	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -229,7 +229,7 @@ scat_set_xms_bound(uint8_t val)
 	pclog("SCAT: set XMS bound(%02X) = %06X(%dKbytes for EMS access)\n", val, scat_xms_bound, ((mem_size << 10) - scat_xms_bound) >> 10);
 	if (scat_xms_bound > 0x100000)
 		mem_set_mem_state(0x100000, scat_xms_bound - 0x100000, MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-	if (scat_xms_bound < (mem_size << 10))
+	if (scat_xms_bound < ((uint32_t)mem_size << 10))
 		mem_set_mem_state(scat_xms_bound, (mem_size << 10) - scat_xms_bound, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
     }
 }
@@ -246,12 +246,12 @@ get_scat_addr(uint32_t addr, scat_t *p)
 		addr = (addr & ~0x780000) | ((addr & 0x600000) >> 2);
 	else if((scat_regs[SCAT_DRAM_CONFIGURATION] & 0x0F) < 8 && (scat_regs[SCAT_EXTENDED_BOUNDARY] & 0x40) == 0) {
 		addr &= ~0x600000;
-		if(mem_size > 2048 || (mem_size == 2048 && (scat_regs[SCAT_DRAM_CONFIGURATION] & 0x0F) < 6))
+		if(mem_size > 2048 || ((uint32_t)mem_size == 2048 && (scat_regs[SCAT_DRAM_CONFIGURATION] & 0x0F) < 6))
 			addr |= (addr & 0x180000) << 2;
 	}
 
 	if ((scat_regs[SCAT_EXTENDED_BOUNDARY] & 0x40) == 0 && (scat_regs[SCAT_DRAM_CONFIGURATION] & 0x0F) == 3 && (addr & ~0x600000) >= 0x100000 && (addr & ~0x600000) < 0x160000)
-		addr ^= mem_size < 2048 ? 0x1F0000 : 0x670000;
+		addr ^= (uint32_t)mem_size < 2048 ? 0x1F0000 : 0x670000;
     } else {
 	if ((scat_regs[SCAT_DRAM_CONFIGURATION] & 0x1F) == 3 && (addr & ~0x600000) >= 0x100000 && (addr & ~0x600000) < 0x160000)
 		addr ^= 0x1F0000;
@@ -269,14 +269,14 @@ scat_memmap_state_update(void)
 
     for(i=16;i<24;i++) {
 	addr = get_scat_addr(0x40000 + (i << 14), NULL);
-	mem_mapping_set_exec(&scat_4000_9FFF_mapping[i], addr < (mem_size << 10) ? ram + addr : NULL);
+	mem_mapping_set_exec(&scat_4000_9FFF_mapping[i], addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
     }
 
     addr = get_scat_addr(0xA0000, NULL);
-    mem_mapping_set_exec(&scat_A000_BFFF_mapping, addr < (mem_size << 10) ? ram + addr : NULL);
+    mem_mapping_set_exec(&scat_A000_BFFF_mapping, addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
     for (i=0;i<6;i++) {
 	addr = get_scat_addr(0x100000 + (i << 16), NULL);
-	mem_mapping_set_exec(&scat_shadowram_mapping[i], addr < (mem_size << 10) ? ram + addr : NULL);
+	mem_mapping_set_exec(&scat_shadowram_mapping[i], addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
     }
 
     flushmmucache();
@@ -297,7 +297,7 @@ scat_set_global_EMS_state(int state)
 		virt_addr = get_scat_addr(base_addr, &scat_stat[i]);
 		if (i < 24) mem_mapping_disable(&scat_4000_9FFF_mapping[i]);
 		mem_mapping_enable(&scat_mapping[i]);
-		if (virt_addr < (mem_size << 10))
+		if (virt_addr < ((uint32_t)mem_size << 10))
 			mem_mapping_set_exec(&scat_mapping[i], ram+virt_addr);
 		else
 			mem_mapping_set_exec(&scat_mapping[i], NULL);
@@ -358,20 +358,20 @@ scat_write(uint16_t port, uint8_t val, void *priv)
 			case SCAT_DRAM_CONFIGURATION:
 				if ((((scat_regs[SCAT_VERSION] & 0xF0) == 0) && (scat_regs[SCAT_EXTENDED_BOUNDARY] & 0x40) == 0) || ((scat_regs[SCAT_VERSION] & 0xF0) != 0)) {
 					if ((((scat_regs[SCAT_VERSION] & 0xF0) == 0) && (val & 0x0F) == 3) || (((scat_regs[SCAT_VERSION] & 0xF0) != 0) && (val & 0x1F) == 3)) {
-						if (mem_size > 1024)
+						if ((uint32_t)mem_size > 1024)
 							mem_mapping_disable(&ram_high_mapping);
 						for (index=0;index<6;index++)
 							mem_mapping_enable(&scat_shadowram_mapping[index]);
 					} else {
 						for (index=0;index<6;index++)
 							mem_mapping_disable(&scat_shadowram_mapping[index]);
-						if (mem_size > 1024)
+						if ((uint32_t)mem_size > 1024)
 							mem_mapping_enable(&ram_high_mapping);
 					}
 				} else {
 					for (index=0;index<6;index++)
 						mem_mapping_disable(&scat_shadowram_mapping[index]);
-					if (mem_size > 1024)
+					if ((uint32_t)mem_size > 1024)
 						mem_mapping_enable(&ram_high_mapping);
 				}
 				scat_map_update = 1;
@@ -460,7 +460,7 @@ scat_write(uint16_t port, uint8_t val, void *priv)
 
 			if ((scat_regs[SCAT_EMS_CONTROL] & 0x80) && (scat_stat[index].regs_2x9 & 0x80)) {
 				virt_addr = get_scat_addr(base_addr, &scat_stat[index]);
-				if (virt_addr < (mem_size << 10))
+				if (virt_addr < ((uint32_t)mem_size << 10))
 					mem_mapping_set_exec(&scat_mapping[index], ram + virt_addr);
 				else
 					mem_mapping_set_exec(&scat_mapping[index], NULL);
@@ -487,7 +487,7 @@ scat_write(uint16_t port, uint8_t val, void *priv)
 					virt_addr = get_scat_addr(base_addr, &scat_stat[index]);
 					if (index < 24)
 						mem_mapping_disable(&scat_4000_9FFF_mapping[index]);
-					if (virt_addr < (mem_size << 10))
+					if (virt_addr < ((uint32_t)mem_size << 10))
 						mem_mapping_set_exec(&scat_mapping[index], ram + virt_addr);
 					else
 						mem_mapping_set_exec(&scat_mapping[index], NULL);
@@ -597,7 +597,7 @@ mem_read_scatems(uint32_t addr, void *priv)
     uint8_t val = 0xff;
 
     addr = get_scat_addr(addr, stat);
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	val = mem_read_ram(addr, priv);
 
     return val;
@@ -610,7 +610,7 @@ mem_write_scatems(uint32_t addr, uint8_t val, void *priv)
     scat_t *stat = (scat_t *)priv;
 
     addr = get_scat_addr(addr, stat);
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	mem_write_ram(addr, val, priv);
 }
 

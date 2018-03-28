@@ -210,15 +210,15 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 
           if (len < 7)
             {
-              *op++ = (off >> 8) + (len << 5);
+              *op++ = (u8) ((off >> 8) + (len << 5));
             }
           else
             {
-              *op++ = (off >> 8) + (  7 << 5);
-              *op++ = len - 7;
+              *op++ = (u8)((off >> 8) + (  7 << 5));
+              *op++ = (u8) (len - 7);
             }
 
-          *op++ = off;
+          *op++ = (u8)off;
 
           lit = 0; op++; /* start run */
 

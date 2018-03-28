@@ -22,7 +22,7 @@
  *
  *		Based on the original "xebec.c" from Sarah Walker.
  *
- * Version:	@(#)m_europc_hdc.c	1.0.3	2018/03/15
+ * Version:	@(#)m_europc_hdc.c	1.0.4	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -926,9 +926,9 @@ hd20_init(const device_t *info)
 		}
 
 		/* These are the "hardware" parameters (from the image.) */
-		drive->spt = hdd[i].spt;
-		drive->hpc = hdd[i].hpc;
-		drive->tracks = hdd[i].tracks;
+		drive->spt = (uint8_t)(hdd[i].spt & 0xff);
+		drive->hpc = (uint8_t)(hdd[i].hpc & 0xff);
+		drive->tracks = (uint8_t)(hdd[i].tracks & 0xff);
 
 		/* Use them as "configured" parameters until overwritten. */
 		drive->cfg_spt = drive->spt;

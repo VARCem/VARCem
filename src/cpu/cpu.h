@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.h	1.0.5	2018/03/12
+ * Version:	@(#)cpu.h	1.0.6	2018/03/27
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -91,7 +91,7 @@ typedef struct {
     const char	*name;
     int		cpu_type;
     int		speed;
-    int		rspeed;
+    uint32_t	rspeed;
     int		multi;
     int		pci_speed;
     uint32_t	edx_reset;
@@ -447,7 +447,7 @@ extern void	cpu_CPUID(void);
 extern void	cpu_RDMSR(void);
 extern void	cpu_WRMSR(void);
 
-extern int  checkio(uint32_t port);
+extern int	checkio(uint32_t port);
 extern void	codegen_block_end(void);
 extern void	codegen_reset(void);
 extern void	cpu_set_edx(void);

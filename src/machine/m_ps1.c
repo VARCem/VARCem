@@ -28,7 +28,7 @@
  *		boot. Sometimes, they do, and then it shows an "Incorrect
  *		DOS" error message??  --FvK
  *
- * Version:	@(#)m_ps1.c	1.0.6	2018/03/21
+ * Version:	@(#)m_ps1.c	1.0.7	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -162,7 +162,7 @@ snd_read(uint16_t port, void *priv)
 		 * thecurrent value, but the PS/1 BIOS and Stunt Island
 		 * expect it not to change.
 		 */
-		ret = snd->timer_latch;
+		ret = (uint8_t)(snd->timer_latch & 0xff);
 		break;
 
 	case 4:

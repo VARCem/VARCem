@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.5	2018/03/21
+ * Version:	@(#)m_olivetti_m24.c	1.0.6	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -568,7 +568,7 @@ kbd_poll(void *priv)
 static void
 kbd_adddata(uint16_t val)
 {
-    key_queue[key_queue_end] = val;
+    key_queue[key_queue_end] = (uint8_t)(val&0xff);
     key_queue_end = (key_queue_end + 1) & 0xf;
 }
 

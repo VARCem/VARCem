@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.8	2018/03/21
+ * Version:	@(#)zip.c	1.0.9	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1392,7 +1392,7 @@ void zip_set_buf_len(uint8_t id, int32_t *BufLen, uint32_t *src_len)
 		if (*BufLen == -1)
 			*BufLen = *src_len;
 		else {
-			*BufLen = MIN(*src_len, *BufLen);
+			*BufLen = MIN(*src_len, (uint32_t)*BufLen);
 			*src_len = *BufLen;
 		}
 		zip_log("ZIP %i: Actual transfer length: %i\n", id, *BufLen);
@@ -2573,7 +2573,7 @@ void zip_write(uint8_t channel, uint32_t val, int length)
 		}
 		return;
 	} else if (zip[id].packet_status == ZIP_PHASE_IDLE) {
-		if (zip[id].pos >= zip[id].cdb_len) {
+		if (zip[id].pos >= (uint32_t)zip[id].cdb_len) {
 			zip[id].pos=0;
 			zip[id].status = BUSY_STAT;
 			zip[id].packet_status = ZIP_PHASE_COMMAND;

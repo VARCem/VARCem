@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_mfm_at.c	1.0.2	2018/03/15
+ * Version:	@(#)hdc_mfm_at.c	1.0.3	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -716,9 +716,9 @@ loadhd(mfm_t *mfm, int c, int d, const wchar_t *fn)
 	return;
     }
 
-    drive->spt = hdd[d].spt;
-    drive->hpc = hdd[d].hpc;
-    drive->tracks = hdd[d].tracks;
+    drive->spt = (uint8_t)hdd[d].spt;
+    drive->hpc = (uint8_t)hdd[d].hpc;
+    drive->tracks = (uint8_t)hdd[d].tracks;
     drive->hdd_num = d;
     drive->present = 1;
 }

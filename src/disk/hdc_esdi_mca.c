@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.2	2018/03/15
+ * Version:	@(#)hdc_esdi_mca.c	1.0.3	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -111,11 +111,12 @@
 
 
 typedef struct esdi_drive {
-    int spt, hpc;
-    int tracks;
-    int sectors;
-    int present;
-    int hdd_num;
+    uint8_t	spt,
+		hpc;
+    uint16_t	tracks;
+    uint32_t	sectors;
+    int8_t	present;
+    int8_t	hdd_num;
 } drive_t;
 
 typedef struct esdi {
@@ -1095,10 +1096,10 @@ esdi_init(const device_t *info)
 		}
 
 		/* OK, so fill in geometry info. */
-       		drive->spt = hdd[i].spt;
-       		drive->hpc = hdd[i].hpc;
-       		drive->tracks = hdd[i].tracks;
-       		drive->sectors = hdd[i].spt*hdd[i].hpc*hdd[i].tracks;
+       		drive->spt = (uint8_t)hdd[i].spt;
+       		drive->hpc = (uint8_t)hdd[i].hpc;
+       		drive->tracks = (uint16_t)hdd[i].tracks;
+       		drive->sectors = (uint32_t)(hdd[i].spt*hdd[i].hpc*hdd[i].tracks);
 		drive->hdd_num = i;
 
 		/* Mark drive as present. */

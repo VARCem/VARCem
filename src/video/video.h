@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.10	2018/03/20
+ * Version:	@(#)video.h	1.0.11	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -160,7 +160,7 @@ typedef struct {
 typedef struct {
     int		w, h;
     uint8_t	*dat;
-    uint8_t	*line[];
+    uint8_t	**line;
 } bitmap_t;
 
 typedef struct {

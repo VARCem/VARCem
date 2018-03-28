@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.3	2018/03/15
+ * Version:	@(#)hdc_esdi_at.c	1.0.4	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -779,9 +779,9 @@ loadhd(esdi_t *esdi, int hdd_num, int d, const wchar_t *fn)
 	return;
     }
 
-    drive->cfg_spt = drive->real_spt = hdd[d].spt;
-    drive->cfg_hpc = drive->real_hpc = hdd[d].hpc;
-    drive->real_tracks = hdd[d].tracks;
+    drive->cfg_spt = drive->real_spt = (uint8_t)hdd[d].spt;
+    drive->cfg_hpc = drive->real_hpc = (uint8_t)hdd[d].hpc;
+    drive->real_tracks = (uint8_t)hdd[d].tracks;
     drive->hdd_num = d;
     drive->present = 1;
 }

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.13	2018/03/20
+ * Version:	@(#)win_settings.c	1.0.14	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -5107,7 +5107,7 @@ cdrom_bus_skip:
 
 					rd_ignore_change = 1;
 					h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
-					temp_cdrom_drives[cdlv_current_sel].speed_idx = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_cdrom_drives[cdlv_current_sel].speed_idx = (uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0);
 					h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 					win_settings_cdrom_drives_update_item(h, cdlv_current_sel);
 					rd_ignore_change = 0;

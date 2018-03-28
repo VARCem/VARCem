@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.14	2018/03/20
+ * Version:	@(#)pc.c	1.0.16	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -578,7 +578,7 @@ pc_full_speed(void)
     if (! atfullspeed) {
 	pclog("Set fullspeed - %i %i %i\n", is386, AT, cpuspeed2);
 	if (AT)
-		setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
+		setpitclock((float)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
 	  else
 		setpitclock(14318184.0);
     }
@@ -590,7 +590,7 @@ void
 pc_speed_changed(void)
 {
     if (AT)
-	setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
+	setpitclock((float)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
       else
 	setpitclock(14318184.0);
 }
@@ -806,10 +806,7 @@ pc_reset_hard_init(void)
     serial_reset();
     lpt_devices_init();
 
-    /* Reset keyboard and/or mouse. */
-    // FIXME: do we really have to reset the *AT* keyboard?? --FvK
     shadowbios = 0;
-    keyboard_at_reset();
 
     /*
      * This has to be after the serial initialization so that
@@ -869,7 +866,7 @@ pc_reset_hard_init(void)
     cpu_cache_int_enabled = cpu_cache_ext_enabled = 0;
 
     if (AT)
-	setpitclock(machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
+	setpitclock((float)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
     else
 	setpitclock(14318184.0);
 }

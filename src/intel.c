@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.1	2018/02/14
+ * Version:	@(#)intel.c	1.0.2	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,7 +93,7 @@ static uint8_t batman_timer_read(uint16_t addr, void *p)
         if (batman_timer < 0)
                 return 0;
         
-        batman_timer_latch = batman_timer / TIMER_USEC;
+        batman_timer_latch = (uint16_t)(batman_timer / TIMER_USEC);
 
         if (addr & 1)
                 return batman_timer_latch >> 8;

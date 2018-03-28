@@ -8,7 +8,7 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.3	2018/03/20
+ * Version:	@(#)hdc_ide.h	1.0.4	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,47 +41,54 @@
 
 
 typedef struct {
-	int type;
-	int board;
-	uint8_t atastat;
-	uint8_t error;
-	int secount,sector,cylinder,head,drive,cylprecomp;
-	uint8_t command;
-	uint8_t fdisk;
-	int pos;
-	int packlen;
-	uint64_t spt,hpc;
-	uint64_t t_spt,t_hpc;
-	uint64_t tracks;
-	int packetstatus;
-	uint8_t asc;
-	int reset;
-	uint16_t *buffer;
-	int irqstat;
-	int service;
-	int lba;
-	int channel;
-	uint32_t lba_addr;
-	int skip512;
-	int blocksize, blockcount;
-	uint16_t dma_identify_data[3];
-	int hdi,base;
-	int hdd_num;
-	uint8_t specify_success;
-	int mdma_mode;
-	uint8_t *sector_buffer;
-	int do_initial_read;
-	int sector_pos;
+    int8_t	type;
+    int8_t	board;
+    uint8_t	atastat;
+    uint8_t	error;
+    int		secount,
+		sector,
+		cylinder,
+		head,
+		drive,
+		cylprecomp;
+    uint8_t	command;
+    uint8_t	fdisk;
+    int		pos;
+    int		packlen;
+    uint8_t	spt,
+		hpc;
+    uint64_t	t_spt,
+		t_hpc;
+    uint64_t	tracks;
+    int		packetstatus;
+    uint8_t	asc;
+    int		reset;
+    uint16_t	*buffer;
+    int		irqstat;
+    int		service;
+    int		lba;
+    int		channel;
+    uint32_t	lba_addr;
+    int		skip512;
+    int		blocksize,
+		blockcount;
+    uint16_t	dma_identify_data[3];
+    int		hdi,
+		base;
+    int		hdd_num;
+    uint8_t	specify_success;
+    int		mdma_mode;
+    uint8_t	*sector_buffer;
+    int		do_initial_read;
+    int		sector_pos;
 } IDE;
 
 
-extern int ideboard;
-
-extern int ide_enable[5];
-extern int ide_irq[5];
-
-extern IDE ide_drives[IDE_NUM + XTIDE_NUM];
-extern int64_t idecallback[5];
+extern int	ideboard;
+extern int	ide_enable[5];
+extern int	ide_irq[5];
+extern IDE	ide_drives[IDE_NUM + XTIDE_NUM];
+extern int64_t	idecallback[5];
 
 
 extern void	ide_irq_raise(IDE *ide);

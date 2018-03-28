@@ -8,7 +8,7 @@
  *
  *		Emulation of hard disk, CD-ROM and ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.12	2018/03/20
+ * Version:	@(#)hdc_ide.c	1.0.13	2018/03/27
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -600,8 +600,8 @@ static off64_t ide_get_sector(IDE *ide)
         }
         else
         {
-        	uint32_t heads = ide->t_hpc;
-        	uint32_t sectors = ide->t_spt;
+        	uint32_t heads = (uint32_t)ide->t_hpc;
+        	uint32_t sectors = (uint32_t)ide->t_spt;
 
         	return ((((off64_t) ide->cylinder * heads) + ide->head) *
         	          sectors) + (ide->sector - 1) + ide->skip512;
@@ -640,8 +640,8 @@ static void loadhd(IDE *ide, int d, const wchar_t *fn)
 		return;
 	}
 
-	ide->spt = hdd[d].spt;
-	ide->hpc = hdd[d].hpc;
+	ide->spt = (uint8_t)hdd[d].spt;
+	ide->hpc = (uint8_t)hdd[d].hpc;
 	ide->tracks = hdd[d].tracks;
 	ide->type = IDE_HDD;
 	ide->hdd_num = d;
@@ -808,9 +808,9 @@ void ide_set_sector(IDE *ide, int sector_num)
 	{
 		cyl = sector_num / (hdd[ide->hdd_num].hpc * hdd[ide->hdd_num].spt);
 		r = sector_num % (hdd[ide->hdd_num].hpc * hdd[ide->hdd_num].spt);
-		ide->cylinder = cyl;
+		ide->cylinder = (int)cyl;
 		ide->head = ((r / hdd[ide->hdd_num].spt) & 0x0f);
-		ide->sector = (r % hdd[ide->hdd_num].spt) + 1;
+		ide->sector = (int)(r % hdd[ide->hdd_num].spt) + 1;
 	}
 }
 
@@ -2525,7 +2525,7 @@ void callbackide(int ide_board)
 			snum = hdd[ide->hdd_num].spt;
 			snum *= hdd[ide->hdd_num].hpc;
 			snum *= hdd[ide->hdd_num].tracks;
-			ide_set_sector(ide, snum - 1);
+			ide_set_sector(ide, (int)(snum - 1));
 			ide->atastat = READY_STAT | DSC_STAT;
 			ide_irq_raise(ide);
 			return;

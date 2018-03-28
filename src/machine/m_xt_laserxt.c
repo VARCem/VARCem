@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_xt_laserxt.c	1.0.3	2018/03/21
+ * Version:	@(#)m_xt_laserxt.c	1.0.4	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -138,7 +138,7 @@ mem_write_ems(uint32_t addr, uint8_t val, void *priv)
 {
     addr = get_ems_addr(addr);
 
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	ram[addr] = val;
 }
 
@@ -150,7 +150,7 @@ mem_read_ems(uint32_t addr, void *priv)
 
     addr = get_ems_addr(addr);
 
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 		val = ram[addr];
 
     return val;
