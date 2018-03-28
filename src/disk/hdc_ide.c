@@ -8,7 +8,7 @@
  *
  *		Emulation of hard disk, CD-ROM and ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.13	2018/03/27
+ * Version:	@(#)hdc_ide.c	1.0.15	2018/03/27
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -642,7 +642,7 @@ static void loadhd(IDE *ide, int d, const wchar_t *fn)
 
 	ide->spt = (uint8_t)hdd[d].spt;
 	ide->hpc = (uint8_t)hdd[d].hpc;
-	ide->tracks = hdd[d].tracks;
+	ide->tracks = (uint8_t)hdd[d].tracks;
 	ide->type = IDE_HDD;
 	ide->hdd_num = d;
 	ide->hdi = hdd_image_get_type(d);
@@ -731,7 +731,7 @@ static int ide_set_features(IDE *ide)
 					{
 						return 0;
 					}
-					ide->mdma_mode = (1 << submode) | 0x400;
+ 					ide->mdma_mode = -1;
 					ide_log("IDE %02X: Setting DPIO mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
 					break;
 
@@ -740,7 +740,7 @@ static int ide_set_features(IDE *ide)
 					{
 						return 0;
 					}
-					ide->mdma_mode = -1;
+ 					ide->mdma_mode = (1 << submode) | 0x400;
 					ide_log("IDE %02X: Setting  PIO mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
 					break;
 
@@ -795,19 +795,19 @@ static int ide_set_features(IDE *ide)
 	return 1;
 }
 
-void ide_set_sector(IDE *ide, int sector_num)
+void ide_set_sector(IDE *ide, int64_t sector_num)
 {
-	uint64_t cyl, r;
+	uint32_t cyl, r;
 	if (ide->lba)
 	{
-		ide->head = (sector_num >> 24);
-		ide->cylinder = (sector_num >> 8);
-		ide->sector = (sector_num);
+		ide->head = (int)(sector_num >> 24);
+		ide->cylinder = (int)(sector_num >> 8);
+		ide->sector = (int)(sector_num);
 	}
 	else
 	{
-		cyl = sector_num / (hdd[ide->hdd_num].hpc * hdd[ide->hdd_num].spt);
-		r = sector_num % (hdd[ide->hdd_num].hpc * hdd[ide->hdd_num].spt);
+		cyl = (uint32_t) (sector_num / (hdd[ide->hdd_num].hpc * hdd[ide->hdd_num].spt));
+		r = (uint32_t) (sector_num % (hdd[ide->hdd_num].hpc * hdd[ide->hdd_num].spt));
 		ide->cylinder = (int)cyl;
 		ide->head = ((r / hdd[ide->hdd_num].spt) & 0x0f);
 		ide->sector = (int)(r % hdd[ide->hdd_num].spt) + 1;
@@ -2599,6 +2599,36 @@ void ide_callback(void *priv)
     callbackide(drivenum);
 }
 
+void ide_callback_pri(void *priv)
+{
+	idecallback[0] = 0LL;
+	callbackide(0);
+}
+
+void ide_callback_sec(void *priv)
+{
+	idecallback[1] = 0LL;
+	callbackide(1);
+}
+
+void ide_callback_ter(void *priv)
+{
+	idecallback[2] = 0LL;
+	callbackide(2);
+}
+
+void ide_callback_qua(void *priv)
+{
+	idecallback[3] = 0LL;
+	callbackide(3);
+}
+
+void ide_callback_xtide(void *priv)
+{
+	idecallback[4] = 0LL;
+	callbackide(4);
+}
+
 void ide_write_pri(uint16_t addr, uint8_t val, void *priv)
 {
 	writeide(0, addr, val);
@@ -2792,7 +2822,7 @@ void ide_ter_init(void)
 {
 	ide_ter_enable();
 
-	timer_add(ide_callback, &idecallback[2], &idecallback[2],  (void *)2);
+	timer_add(ide_callback_ter, &idecallback[2], &idecallback[2],  NULL);
 }
 
 void ide_qua_enable(void)
@@ -2819,7 +2849,7 @@ void ide_qua_init(void)
 {
 	ide_qua_enable();
 
-	timer_add(ide_callback, &idecallback[3], &idecallback[3],  (void *)3);
+	timer_add(ide_callback_qua, &idecallback[3], &idecallback[3],  NULL);
 }
 
 
@@ -2845,7 +2875,7 @@ void ide_xtide_init(void)
 {
 	ide_bus_master_read = ide_bus_master_write = NULL;
 
-	timer_add(ide_callback, &idecallback[4], &idecallback[4],  (void *)4);
+	timer_add(ide_callback_xtide, &idecallback[4], &idecallback[4],  NULL);
 }
 
 void ide_set_bus_master(int (*read)(int channel, uint8_t *data, int transfer_length), int (*write)(int channel, uint8_t *data, int transfer_length), void (*set_irq)(int channel))
@@ -2897,13 +2927,13 @@ ide_sainit(const device_t *info)
 	case 10:	/* PCI, dual-channel */
 		if (!ide_init_ch[0]) {
 			ide_pri_enable();
-			timer_add(ide_callback, &idecallback[0], &idecallback[0],  0);
+			timer_add(ide_callback_pri, &idecallback[0], &idecallback[0],  NULL);
 			ide_init_ch[0] = 1;
 		}
 
 		if ((info->local & 2) && !ide_init_ch[1]) {
 			ide_sec_enable();
-			timer_add(ide_callback, &idecallback[1], &idecallback[1],  (void *)1);
+			timer_add(ide_callback_sec, &idecallback[1], &idecallback[1],  NULL);
 			ide_init_ch[1] = 1;
 
 			if (info->local & 1)

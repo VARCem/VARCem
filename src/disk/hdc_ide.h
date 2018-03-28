@@ -8,7 +8,7 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.4	2018/03/27
+ * Version:	@(#)hdc_ide.h	1.0.5	2018/03/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,9 +57,9 @@ typedef struct {
     int		packlen;
     uint8_t	spt,
 		hpc;
-    uint64_t	t_spt,
+    int		t_spt,
 		t_hpc;
-    uint64_t	tracks;
+    int		tracks;
     int		packetstatus;
     uint8_t	asc;
     int		reset;
