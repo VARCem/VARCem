@@ -8,7 +8,7 @@
 #
 #		Project file for the Travis-CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.5	2018/03/27
+# Version:	@(#).travis.yml	1.0.6	2018/03/28
 #
 # Authors:	Natalia Portillo, <claunia@claunia.com>
 #		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -70,7 +70,7 @@ addons:
       - gcc-mingw-w64-x86-64
       - gcc-mingw-w64
       - mingw-w64
-      - mingw-w64-i686-libpng
+#     - mingw-w64-i686-libpng (not available as APT)
 
 notifications:
   irc:
