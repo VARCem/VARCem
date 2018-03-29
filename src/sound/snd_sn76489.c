@@ -8,7 +8,7 @@
  *
  *		Implementation of the TI SN74689 PSG sound devices.
  *
- * Version:	@(#)snd_sn76489.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_sn76489.c	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,16 +72,16 @@ void sn76489_update(sn76489_t *sn76489)
                         if (sn76489->latch[c] > 256) result += (int16_t) (volslog[sn76489->vol[c]] * sn76489->stat[c]);
                         else                         result += (int16_t) (volslog[sn76489->vol[c]] * 127);
 
-                        sn76489->count[c] -= (256 * sn76489->psgconst);
+                        sn76489->count[c] -= (int) ((256 * sn76489->psgconst));
                         while ((int)sn76489->count[c] < 0)
                         {
                                 sn76489->count[c] += sn76489->latch[c];
                                 sn76489->stat[c] = -sn76489->stat[c];
                         }
                 }
-                result += (((sn76489->shift & 1) ^ 1) * 127 * volslog[sn76489->vol[0]] * 2);
+                result += (int16_t) ((((sn76489->shift & 1) ^ 1) * 127 * volslog[sn76489->vol[0]] * 2));
 
-                sn76489->count[0] -= (512 * sn76489->psgconst);
+                sn76489->count[0] -= (int) ((512 * sn76489->psgconst));
                 while ((int)sn76489->count[0] < 0 && sn76489->latch[0])
                 {
                         sn76489->count[0] += (sn76489->latch[0] * 4);
@@ -228,7 +228,7 @@ void sn76489_init(sn76489_t *sn76489, uint16_t base, uint16_t size, int type, in
         sn76489->vol[0] = 0;
         sn76489->vol[1] = sn76489->vol[2] = sn76489->vol[3] = 8;
         sn76489->stat[0] = sn76489->stat[1] = sn76489->stat[2] = sn76489->stat[3] = 127;
-        srand(time(NULL));
+        srand((int)time(NULL));
         sn76489->count[0] = 0;
         sn76489->count[1] = (rand()&0x3FF)<<6;
         sn76489->count[2] = (rand()&0x3FF)<<6;

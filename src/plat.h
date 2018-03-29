@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.5	2018/03/10
+ * Version:	@(#)plat.h	1.0.6	2018/03/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -139,7 +139,7 @@ typedef struct {
 } dllimp_t;
 
 
-extern void	*dynld_module(const char *, dllimp_t *);
+extern void	*dynld_module(const char *, const dllimp_t *);
 extern void	dynld_close(void *);
 
 

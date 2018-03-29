@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_mpu401.c	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -237,7 +237,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
 		case 0x8:	/* Play */
 //			pclog("MPU-401:Intelligent mode playback started");
 			mpu->state.playing = 1;
-			mpu401_event_callback = (MPU401_TIMECONSTANT / (mpu->clock.tempo*mpu->clock.timebase)) * 1000LL * TIMER_USEC;
+			mpu401_event_callback = (int64_t) ((MPU401_TIMECONSTANT / (mpu->clock.tempo*mpu->clock.timebase)) * 1000LL * TIMER_USEC);
 			ClrQueue(mpu);
 			break;
 	}
@@ -353,7 +353,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
 
 	case 0xff:	/* Reset MPU-401 */
 		pclog("MPU-401:Reset %X\n",val);
-		mpu401_reset_callback = MPU401_RESETBUSY * 33LL * TIMER_USEC;
+		mpu401_reset_callback = (int64_t) (MPU401_RESETBUSY * 33LL * TIMER_USEC);
 		mpu->state.reset=1;
 		MPU401_Reset(mpu);
 #if 0
@@ -857,7 +857,7 @@ next_event:
 	mpu401_event_callback = 0LL;
 	return;
     } else {
-	mpu401_event_callback += (MPU401_TIMECONSTANT/new_time) * 1000LL * TIMER_USEC;
+	mpu401_event_callback += (int64_t) ((MPU401_TIMECONSTANT/new_time) * 1000LL * TIMER_USEC);
 	pclog("Next event after %i us (time constant: %i)\n", (int) ((MPU401_TIMECONSTANT/new_time) * 1000 * TIMER_USEC), (int) MPU401_TIMECONSTANT);
     }
 }

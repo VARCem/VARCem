@@ -8,7 +8,7 @@
  *
  *		Try to load a support DLL.
  *
- * Version:	@(#)win_dynld.c	1.0.3	2018/03/10
+ * Version:	@(#)win_dynld.c	1.0.4	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -56,10 +56,10 @@
 
 
 void *
-dynld_module(const char *name, dllimp_t *table)
+dynld_module(const char *name, const dllimp_t *table)
 {
     HMODULE h;
-    dllimp_t *imp;
+    const dllimp_t *imp;
     void *func;
 
     /* See if we can load the desired module. */

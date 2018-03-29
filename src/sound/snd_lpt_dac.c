@@ -8,7 +8,7 @@
  *
  *		Implemantation of LPT-based sound devices.
  *
- * Version:	@(#)snd_lpt_dac.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_lpt_dac.c	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,113 +50,127 @@
 #include "filters.h"
 #include "snd_lpt_dac.h"
 
-typedef struct lpt_dac_t
-{
-        uint8_t dac_val_l, dac_val_r;
-        
-        int is_stereo;
-        int channel;
-        
-        int16_t buffer[2][SOUNDBUFLEN];
-        int pos;
+
+typedef struct {
+    uint8_t	dac_val_l,
+		dac_val_r;
+
+    int8_t	is_stereo;
+    int8_t	channel;
+
+    int16_t	buffer[2][SOUNDBUFLEN];
+    int		pos;
 } lpt_dac_t;
 
-static void dac_update(lpt_dac_t *lpt_dac)
+
+static void
+dac_update(lpt_dac_t *dev)
 {
-        for (; lpt_dac->pos < sound_pos_global; lpt_dac->pos++)
-        {
-                lpt_dac->buffer[0][lpt_dac->pos] = (int8_t)(lpt_dac->dac_val_l ^ 0x80) * 0x40;
-                lpt_dac->buffer[1][lpt_dac->pos] = (int8_t)(lpt_dac->dac_val_r ^ 0x80) * 0x40;
-        }
+    for (; dev->pos < sound_pos_global; dev->pos++) {
+	dev->buffer[0][dev->pos] = (int8_t)(dev->dac_val_l ^ 0x80) * 0x40;
+	dev->buffer[1][dev->pos] = (int8_t)(dev->dac_val_r ^ 0x80) * 0x40;
+    }
 }
 
 
-static void dac_write_data(uint8_t val, void *p)
+static void
+dac_write_data(uint8_t val, void *priv)
 {
-        lpt_dac_t *lpt_dac = (lpt_dac_t *)p;
-        
-        timer_clock();
+    lpt_dac_t *dev = (lpt_dac_t *)priv;
 
-        if (lpt_dac->is_stereo)
-        {
-                if (lpt_dac->channel)
-                        lpt_dac->dac_val_r = val;
-                else
-                        lpt_dac->dac_val_l = val;
-        }
-        else        
-                lpt_dac->dac_val_l = lpt_dac->dac_val_r = val;
-        dac_update(lpt_dac);
-}
+    timer_clock();
 
-static void dac_write_ctrl(uint8_t val, void *p)
-{
-        lpt_dac_t *lpt_dac = (lpt_dac_t *)p;
+    if (dev->is_stereo) {
+	if (dev->channel)
+		dev->dac_val_r = val;
+	else
+		dev->dac_val_l = val;
+    } else {
+	dev->dac_val_l = dev->dac_val_r = val;
+    }
 
-        if (lpt_dac->is_stereo)
-                lpt_dac->channel = val & 0x01;
-}
-
-static uint8_t dac_read_status(void *p)
-{
-        return 0;
+    dac_update(dev);
 }
 
 
-static void dac_get_buffer(int32_t *buffer, int len, void *p)
+static void
+dac_write_ctrl(uint8_t val, void *priv)
 {
-        lpt_dac_t *lpt_dac = (lpt_dac_t *)p;
-        int c;
-        
-        dac_update(lpt_dac);
-        
-        for (c = 0; c < len; c++)
-        {
-                buffer[c*2]     += dac_iir(0, lpt_dac->buffer[0][c]);
-                buffer[c*2 + 1] += dac_iir(1, lpt_dac->buffer[1][c]);
-        }
-        lpt_dac->pos = 0;
+    lpt_dac_t *dev = (lpt_dac_t *)priv;
+
+    if (dev->is_stereo)
+	dev->channel = val & 0x01;
 }
 
-static void *dac_init(void)
-{
-        lpt_dac_t *lpt_dac = malloc(sizeof(lpt_dac_t));
-        memset(lpt_dac, 0, sizeof(lpt_dac_t));
 
-        sound_add_handler(dac_get_buffer, lpt_dac);
-                
-        return lpt_dac;
-}
-static void *dac_stereo_init(void)
+static uint8_t
+dac_read_status(void *priv)
 {
-        lpt_dac_t *lpt_dac = dac_init();
-        
-        lpt_dac->is_stereo = 1;
-                
-        return lpt_dac;
-}
-static void dac_close(void *p)
-{
-        lpt_dac_t *lpt_dac = (lpt_dac_t *)p;
-        
-        free(lpt_dac);
+    return 0;
 }
 
-const lpt_device_t lpt_dac_device =
+
+static void
+dac_get_buffer(int32_t *buffer, int len, void *priv)
 {
-        "LPT DAC / Covox Speech Thing",
-        dac_init,
-        dac_close,
-        dac_write_data,
-        dac_write_ctrl,
-        dac_read_status
+    lpt_dac_t *dev = (lpt_dac_t *)priv;
+    int c;
+
+    dac_update(dev);
+
+    for (c = 0; c < len; c++) {
+	buffer[c*2]     += (int32_t)dac_iir(0, dev->buffer[0][c]);
+	buffer[c*2 + 1] += (int32_t)dac_iir(1, dev->buffer[1][c]);
+    }
+
+    dev->pos = 0;
+}
+
+
+static void *
+dac_init(const lpt_device_t *info)
+{
+    lpt_dac_t *dev = malloc(sizeof(lpt_dac_t));
+
+    memset(dev, 0x00, sizeof(lpt_dac_t));
+
+    switch(info->type) {
+	case 1:
+		dev->is_stereo = 1;
+		break;
+    }
+
+    sound_add_handler(dac_get_buffer, dev);
+
+    return dev;
+}
+
+
+static void
+dac_close(void *priv)
+{
+    lpt_dac_t *dev = (lpt_dac_t *)priv;
+	
+    free(dev);
+}
+
+
+const lpt_device_t lpt_dac_device = {
+    "LPT DAC / Covox Speech Thing",
+    0,
+    dac_init,
+    dac_close,
+    dac_write_data,
+    dac_write_ctrl,
+    dac_read_status
 };
-const lpt_device_t lpt_dac_stereo_device =
-{
-        "Stereo LPT DAC",
-        dac_stereo_init,
-        dac_close,
-        dac_write_data,
-        dac_write_ctrl,
-        dac_read_status
+
+const lpt_device_t lpt_dac_stereo_device = {
+    "Stereo LPT DAC",
+    1,
+    dac_init,
+    dac_close,
+    dac_write_data,
+    dac_write_ctrl,
+    dac_read_status
 };

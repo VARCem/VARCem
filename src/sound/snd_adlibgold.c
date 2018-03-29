@@ -10,7 +10,7 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.4	2018/03/15
+ * Version:	@(#)snd_adlibgold.c	1.0.5	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -743,7 +743,7 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
                 /*Filter left channel, leave right channel unchanged*/
                 /*Filter cutoff is largely a guess*/
                 for (c = 0; c < len * 2; c += 2)
-                        adgold_buffer[c] += adgold_pseudo_stereo_iir(adgold_buffer[c]);
+                        adgold_buffer[c] += (int16_t)adgold_pseudo_stereo_iir(adgold_buffer[c]);
                 break;
                 case 0x18: /*Spatial stereo*/
                 /*Quite probably wrong, I only have the diagram in the TDA8425 datasheet
@@ -765,8 +765,8 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
                 
                 /*Output is deliberately halved to avoid clipping*/
                 temp = ((int32_t)adgold_buffer[c] * adgold->vol_l) >> 17;
-                lowpass = adgold_lowpass_iir(0, temp);
-                highpass = adgold_highpass_iir(0, temp);
+                lowpass = (int32_t)adgold_lowpass_iir(0, (float)temp);
+                highpass = (int32_t)adgold_highpass_iir(0, (float)temp);
                 if (adgold->bass > 6)
                         temp += (lowpass * bass_attenuation[adgold->bass]) >> 14;
                 else if (adgold->bass < 6)
@@ -782,8 +782,8 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
                 buffer[c] += temp;
 
                 temp = ((int32_t)adgold_buffer[c+1] * adgold->vol_r) >> 17;
-                lowpass = adgold_lowpass_iir(1, temp);
-                highpass = adgold_highpass_iir(1, temp);
+                lowpass = (int32_t)adgold_lowpass_iir(1, (float)temp);
+                highpass = (int32_t)adgold_highpass_iir(1, (float)temp);
                 if (adgold->bass > 6)
                         temp += (lowpass * bass_attenuation[adgold->bass]) >> 14;
                 else if (adgold->bass < 6)

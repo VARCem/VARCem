@@ -14,7 +14,7 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.3	2018/03/26
+ * Version:	@(#)snd_sb_dsp.c	1.0.4	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -165,7 +165,7 @@ static inline double sinc(double x)
 static void recalc_sb16_filter(int playback_freq)
 {
         /*Cutoff frequency = playback / 2*/
-        float fC = ((float)playback_freq / 2.0) / 48000.0;
+        float fC = (float) (((float)playback_freq / 2.0) / 48000.0);
         float gain;
         int n;
         
@@ -177,7 +177,7 @@ static void recalc_sb16_filter(int playback_freq)
                 double h = sinc(2.0 * fC * ((double)n - ((double)(SB16_NCoef-1) / 2.0)));
                 
                 /*Create windowed-sinc filter*/
-                low_fir_sb16_coef[n] = w * h;
+                low_fir_sb16_coef[n] = (float)(w * h);
         }
         
         low_fir_sb16_coef[(SB16_NCoef - 1) / 2] = 1.0;
@@ -1047,7 +1047,7 @@ void pollsb(void *p)
                 if (dsp->sb_8_length < 0)
                 {
                         if (dsp->sb_8_autoinit) dsp->sb_8_length = dsp->sb_8_autolen;
-                        else                    dsp->sb_8_enable = dsp->sbenable=0;
+                        else                    dsp->sbenable = dsp->sb_8_enable=0;
                         sb_irq(dsp, 1);
                 }
         }
@@ -1083,7 +1083,7 @@ void pollsb(void *p)
                 {
 //                        pclog("16DMA over %i\n",dsp->sb_16_autoinit);
                         if (dsp->sb_16_autoinit) dsp->sb_16_length = dsp->sb_16_autolen;
-                        else                     dsp->sb_16_enable = dsp->sbenable = 0;
+                        else                     dsp->sbenable = dsp->sb_16_enable = 0;
                         sb_irq(dsp, 0);
                 }
         }
@@ -1161,7 +1161,7 @@ void sb_poll_i(void *p)
                 {
 //                        pclog("Input DMA over %i\n",sb_8_autoinit);
                         if (dsp->sb_8_autoinit) dsp->sb_8_length = dsp->sb_8_autolen;
-                        else                    dsp->sb_8_enable = dsp->sb_enable_i = 0;
+                        else                    dsp->sb_enable_i = dsp->sb_8_enable = 0;
                         sb_irq(dsp, 1);
                 }
                 processed=1;
@@ -1228,7 +1228,7 @@ void sb_poll_i(void *p)
                 {
 //                        pclog("16iDMA over %i\n",sb_16_autoinit);
                         if (dsp->sb_16_autoinit) dsp->sb_16_length = dsp->sb_16_autolen;
-                        else                     dsp->sb_16_enable = dsp->sb_enable_i = 0;
+                        else                     dsp->sb_enable_i = dsp->sb_16_enable = 0;
                         sb_irq(dsp, 0);
                 }
                 processed=1;
@@ -1271,9 +1271,9 @@ void sb_dsp_add_status_info(char *s, int max_len, sb_dsp_t *dsp)
         int freq;
 
         if (dsp->sb_timeo < 256LL)
-                freq = 1000000 / (256LL - dsp->sb_timeo);
+                freq = (int) (1000000 / (256LL - dsp->sb_timeo));
         else
-                freq = dsp->sb_timeo - 256LL;
+                freq = (int) (dsp->sb_timeo - 256LL);
 
         if (dsp->sb_8_enable && dsp->sb_8_output)
         {

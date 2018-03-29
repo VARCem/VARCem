@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_gus.c	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -735,10 +735,10 @@ uint8_t readgus(uint16_t addr, void *p)
                         val = gus->gp2;
                         break;
                         case 3:
-                        val = gus->gp1_addr;
+                        val = (uint8_t)(gus->gp1_addr & 0xff);
                         break;
                         case 4:
-                        val = gus->gp2_addr;
+                        val = (uint8_t)(gus->gp2_addr & 0xff);
                         break;
                 }                
                 break;
@@ -903,8 +903,8 @@ void gus_poll_wave(void *p)
                                         v = (int16_t)(int8_t)((gus->ram[(gus->cur[d] >> 9) & 0xFFFFF] ^ 0x80) - 0x80);
                         }
 
-                        if ((gus->rcur[d] >> 14) > 4095) v = (int16_t)(float)(v) * 24.0 * vol16bit[4095];
-                        else                            v = (int16_t)(float)(v) * 24.0 * vol16bit[(gus->rcur[d]>>10) & 4095];
+                        if ((gus->rcur[d] >> 14) > 4095) v = (int16_t)((float)v * 24.0 * vol16bit[4095]);
+                        else                            v = (int16_t)((float)v * 24.0 * vol16bit[(gus->rcur[d]>>10) & 4095]);
 
                         gus->out_l += (v * gus->pan_l[d]) / 7;
                         gus->out_r += (v * gus->pan_r[d]) / 7;

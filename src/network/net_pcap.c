@@ -8,7 +8,7 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.4	2018/03/26
+ * Version:	@(#)net_pcap.c	1.0.5	2018/03/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -68,17 +68,17 @@ static event_t			*poll_state;
 
 
 /* Pointers to the real functions. */
-static const char	*(*f_pcap_lib_version)(void);
-static int		(*f_pcap_findalldevs)(pcap_if_t **,char *);
-static void		(*f_pcap_freealldevs)(pcap_if_t *);
-static pcap_t		*(*f_pcap_open_live)(const char *,int,int,int,char *);
-static int		(*f_pcap_compile)(pcap_t *,struct bpf_program *,
-					 const char *,int,bpf_u_int32);
-static int		(*f_pcap_setfilter)(pcap_t *,struct bpf_program *);
-static const u_char	*(*f_pcap_next)(pcap_t *,struct pcap_pkthdr *);
-static int		(*f_pcap_sendpacket)(pcap_t *,const u_char *,int);
-static void		(*f_pcap_close)(pcap_t *);
-static dllimp_t pcap_imports[] = {
+static char	*const (*f_pcap_lib_version)(void);
+static int	(*f_pcap_findalldevs)(pcap_if_t **,char *);
+static void	(*f_pcap_freealldevs)(pcap_if_t *);
+static pcap_t	*(*f_pcap_open_live)(const char *,int,int,int,char *);
+static int	(*f_pcap_compile)(pcap_t *,struct bpf_program *,
+				  const char *,int,bpf_u_int32);
+static int	(*f_pcap_setfilter)(pcap_t *,struct bpf_program *);
+static u_char	*const (*f_pcap_next)(pcap_t *,struct pcap_pkthdr *);
+static int	(*f_pcap_sendpacket)(pcap_t *,const u_char *,int);
+static void	(*f_pcap_close)(pcap_t *);
+static const dllimp_t pcap_imports[] = {
   { "pcap_lib_version",	&f_pcap_lib_version	},
   { "pcap_findalldevs",	&f_pcap_findalldevs	},
   { "pcap_freealldevs",	&f_pcap_freealldevs	},

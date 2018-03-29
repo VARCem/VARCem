@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.2	2018/03/15
+ * Version:	@(#)sound.c	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -286,8 +286,8 @@ static void sound_cd_thread(void *param)
 
 					if (sound_is_float)
 					{
-						cd_out_buffer[c] += (cd_buffer_temp2[0] / 32768.0);
-						cd_out_buffer[c+1] += (cd_buffer_temp2[1] / 32768.0);
+						cd_out_buffer[c] += (float)(cd_buffer_temp2[0] / 32768.0);
+						cd_out_buffer[c+1] += (float)(cd_buffer_temp2[1] / 32768.0);
 					}
 					else
 					{
@@ -300,8 +300,8 @@ static void sound_cd_thread(void *param)
 						if (cd_buffer_temp2[1] < -32768)
 							cd_buffer_temp2[1] = -32768;
 
-						cd_out_buffer_int16[c] += cd_buffer_temp2[0];
-						cd_out_buffer_int16[c+1] += cd_buffer_temp2[1];
+						cd_out_buffer_int16[c] += (int16_t)cd_buffer_temp2[0];
+						cd_out_buffer_int16[c+1] += (int16_t)cd_buffer_temp2[1];
 					}
 				}
 			}
@@ -419,7 +419,7 @@ void sound_poll(void *priv)
 		{
 			if (sound_is_float)
 			{
-				outbuffer_ex[c] = ((float) outbuffer[c]) / 32768.0;
+				outbuffer_ex[c] = (float)((outbuffer[c]) / 32768.0);
 			}
 			else
 			{

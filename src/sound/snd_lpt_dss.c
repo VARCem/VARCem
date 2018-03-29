@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT-based DSS sound device.
  *
- * Version:	@(#)snd_lpt_dss.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_lpt_dss.c	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,109 +51,125 @@
 #include "snd_lpt_dss.h"
 
 
-typedef struct dss_t
-{
-        uint8_t fifo[16];
-        int read_idx, write_idx;
-        
-        uint8_t dac_val;
-        
-        int64_t time;
-        
-        int16_t buffer[SOUNDBUFLEN];
-        int pos;
+typedef struct {
+    uint8_t	fifo[16];
+    int8_t	read_idx,
+		write_idx;
+
+    uint8_t	dac_val;
+
+    int64_t	time;
+
+    int16_t	buffer[SOUNDBUFLEN];
+    int		pos;
 } dss_t;
 
-static void dss_update(dss_t *dss)
+
+static void
+dss_update(dss_t *dev)
 {
-        for (; dss->pos < sound_pos_global; dss->pos++)
-                dss->buffer[dss->pos] = (int8_t)(dss->dac_val ^ 0x80) * 0x40;
+    for (; dev->pos < sound_pos_global; dev->pos++)
+	dev->buffer[dev->pos] = (int8_t)(dev->dac_val ^ 0x80) * 0x40;
 }
 
 
-static void dss_write_data(uint8_t val, void *p)
+static void
+dss_write_data(uint8_t val, void *priv)
 {
-        dss_t *dss = (dss_t *)p;
+    dss_t *dev = (dss_t *)priv;
 
-        timer_clock();
+    timer_clock();
 
-        if ((dss->write_idx - dss->read_idx) < 16)
-        {
-                dss->fifo[dss->write_idx & 15] = val;
-                dss->write_idx++;
-        }
-}
-
-static void dss_write_ctrl(uint8_t val, void *p)
-{
-}
-
-static uint8_t dss_read_status(void *p)
-{
-        dss_t *dss = (dss_t *)p;
-
-        if ((dss->write_idx - dss->read_idx) >= 16)
-                return 0x40;
-        return 0;
+    if ((dev->write_idx - dev->read_idx) < 16) {
+	dev->fifo[dev->write_idx & 15] = val;
+	dev->write_idx++;
+    }
 }
 
 
-static void dss_get_buffer(int32_t *buffer, int len, void *p)
+static void
+dss_write_ctrl(uint8_t val, void *priv)
 {
-        dss_t *dss = (dss_t *)p;
-        int c;
-        
-        dss_update(dss);
-        
-        for (c = 0; c < len*2; c += 2)
-        {
-                int16_t val = (int16_t)dss_iir((float)dss->buffer[c >> 1]);
-                
-                buffer[c] += val;
-                buffer[c+1] += val;
-        }
-
-        dss->pos = 0;
 }
 
-static void dss_callback(void *p)
+
+static uint8_t
+dss_read_status(void *priv)
 {
-        dss_t *dss = (dss_t *)p;
+    dss_t *dev = (dss_t *)priv;
 
-        dss_update(dss);
-
-        if ((dss->write_idx - dss->read_idx) > 0)
-        {
-                dss->dac_val = dss->fifo[dss->read_idx & 15];
-                dss->read_idx++;
-        }
-        
-        dss->time += (int64_t) (TIMER_USEC * (1000000.0 / 7000.0));
+    if ((dev->write_idx - dev->read_idx) >= 16)
+		return 0x40;
+    return 0;
 }
 
-static void *dss_init(void)
-{
-        dss_t *dss = malloc(sizeof(dss_t));
-        memset(dss, 0, sizeof(dss_t));
 
-        sound_add_handler(dss_get_buffer, dss);
-        timer_add(dss_callback, &dss->time, TIMER_ALWAYS_ENABLED, dss);
-                
-        return dss;
-}
-static void dss_close(void *p)
+static void
+dss_get_buffer(int32_t *buffer, int len, void *priv)
 {
-        dss_t *dss = (dss_t *)p;
-        
-        free(dss);
+    dss_t *dev = (dss_t *)priv;
+    int16_t val;
+    int c;
+
+    dss_update(dev);
+
+    for (c = 0; c < len*2; c += 2) {
+	val = (int16_t)dss_iir((float)dev->buffer[c >> 1]);
+
+	buffer[c] += val;
+	buffer[c+1] += val;
+    }
+
+    dev->pos = 0;
 }
 
-const lpt_device_t dss_device =
+
+static void
+dss_callback(void *priv)
 {
-        "Disney Sound Source",
-        dss_init,
-        dss_close,
-        dss_write_data,
-        dss_write_ctrl,
-        dss_read_status
+    dss_t *dev = (dss_t *)priv;
+
+    dss_update(dev);
+
+    if ((dev->write_idx - dev->read_idx) > 0) {
+	dev->dac_val = dev->fifo[dev->read_idx & 15];
+	dev->read_idx++;
+    }
+
+    dev->time += (int64_t) (TIMER_USEC * (1000000.0 / 7000.0));
+}
+
+
+static void *
+dss_init(const lpt_device_t *info)
+{
+    dss_t *dev = malloc(sizeof(dss_t));
+
+    memset(dev, 0x00, sizeof(dss_t));
+
+    sound_add_handler(dss_get_buffer, dev);
+
+    timer_add(dss_callback, &dev->time, TIMER_ALWAYS_ENABLED, dev);
+	
+    return dev;
+}
+
+
+static void
+dss_close(void *priv)
+{
+    dss_t *dev = (dss_t *)priv;
+
+    free(dev);
+}
+
+
+const lpt_device_t dss_device = {
+    "Disney Sound Source",
+    0,
+    dss_init,
+    dss_close,
+    dss_write_data,
+    dss_write_ctrl,
+    dss_read_status
 };

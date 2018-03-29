@@ -8,7 +8,7 @@
  *
  *		Emulation of the AD1848 (Windows Sound System) CODEC.
  *
- * Version:	@(#)snd_ad1848.c	1.0.1	2018/02/14
+ * Version:	@(#)snd_ad1848.c	1.0.2	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -96,7 +96,7 @@ void ad1848_write(uint16_t addr, uint8_t val, void *p)
                 switch (ad1848->index)
                 {
                         case 8:
-                        freq = (val & 1) ? 16934400LL : 24576000LL;
+                        freq = (double) ((val & 1) ? 16934400LL : 24576000LL);
                         switch ((val >> 1) & 7)
                         {
                                 case 0: freq /= 3072; break;
@@ -108,7 +108,7 @@ void ad1848_write(uint16_t addr, uint8_t val, void *p)
                                 case 6: freq /= 512;  break;
                                 case 7: freq /= 2560; break;
                         }
-                        ad1848->freq = freq;
+                        ad1848->freq = (int64_t)freq;
                         ad1848->timer_latch = (int64_t)((double)TIMER_USEC * (1000000.0 / (double)ad1848->freq));
                         break;
                         

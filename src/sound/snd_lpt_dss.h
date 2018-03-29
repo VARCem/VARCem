@@ -8,7 +8,7 @@
  *
  *		Definitions for the LPT-based DSS driver.
  *
- * Version:	@(#)snd_lpt_dss.h	1.0.2	2018/03/15
+ * Version:	@(#)snd_lpt_dss.h	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

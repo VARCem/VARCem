@@ -8,7 +8,7 @@
  *
  *		Definitions for the LPT parallel port handlerss.
  *
- * Version:	@(#)lpt.h	1.0.1	2018/02/14
+ * Version:	@(#)lpt.h	1.0.2	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,9 +40,10 @@
 # define EMU_LPT_H
 
 
-typedef struct {
-    char	name[80];
-    void	*(*init)(void);
+typedef struct _lpt_device_ {
+    const char	*name;
+    int		type;
+    void	*(*init)(const struct _lpt_device_ *);
     void	(*close)(void *priv);
     void	(*write_data)(uint8_t val, void *priv);
     void	(*write_ctrl)(uint8_t val, void *priv);
@@ -65,7 +66,7 @@ extern void	lpt3_remove(void);
 extern void	lpt_devices_init(void);
 extern void	lpt_devices_close(void);
 
-extern char	*lpt_device_get_name(int id);
+extern const char *lpt_device_get_name(int id);
 extern char	*lpt_device_get_internal_name(int id);
 
 

@@ -108,11 +108,11 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 #if !LZF_STATE_ARG
   LZF_STATE htab;
 #endif
-  const u8 *ip = (const u8 *)in_data;
+  u8 const *ip = (const u8 *)in_data;
         u8 *op = (u8 *)out_data;
   const u8 *in_end  = ip + in_len;
         u8 *out_end = op + out_len;
-  const u8 *ref;
+        u8 *ref;
 
   /* off requires a type wide enough to hold a general pointer difference.
    * ISO C doesn't have that (size_t might not be enough and ptrdiff_t only
@@ -145,7 +145,8 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 
       hval = NEXT (hval, ip);
       hslot = htab + IDX (hval);
-      ref = *hslot + LZF_HSLOT_BIAS; *hslot = ip - LZF_HSLOT_BIAS;
+      ref = *hslot + LZF_HSLOT_BIAS;
+      *hslot = *(LZF_HSLOT *)(ip - LZF_HSLOT_BIAS);
 
       if (1
 #if INIT_HTAB
@@ -235,7 +236,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
           hval = FRST (ip);
 
           hval = NEXT (hval, ip);
-          htab[IDX (hval)] = ip - LZF_HSLOT_BIAS;
+          htab[IDX (hval)] = *(LZF_HSLOT *)(ip - LZF_HSLOT_BIAS);
           ip++;
 
 # if VERY_FAST && !ULTRA_FAST

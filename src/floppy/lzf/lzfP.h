@@ -160,7 +160,7 @@ typedef unsigned char u8;
   typedef unsigned int LZF_HSLOT;
 #else
 # define LZF_HSLOT_BIAS 0
-  typedef const u8 *LZF_HSLOT;
+  typedef u8 *LZF_HSLOT;
 #endif
 
 typedef LZF_HSLOT LZF_STATE[1 << (HLOG)];

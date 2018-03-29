@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT style parallel ports.
  *
- * Version:	@(#)lpt.c	1.0.2	2018/03/15
+ * Version:	@(#)lpt.c	1.0.3	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -274,13 +274,13 @@ lpt_devices_init(void)
 	  else {
 		lpt_device_ts[i] = lpt_devices[c].device;
 		if (lpt_device_ts[i])
-			lpt_device_ps[i] = lpt_device_ts[i]->init();
+			lpt_device_ps[i] = lpt_device_ts[i]->init(lpt_devices[c].device);
 	}
     }
 }
 
 
-char *
+const char *
 lpt_device_get_name(int id)
 {
     if (strlen((char *)lpt_devices[id].name) == 0)

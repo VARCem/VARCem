@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.5	2018/03/26
+ * Version:	@(#)snd_emu8k.c	1.0.6	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -396,7 +396,7 @@ static inline int32_t EMU8K_READ_INTERP_CUBIC(emu8k_t *emu8k, uint32_t int_addr,
         const int32_t dat3 = EMU8K_READ(emu8k, int_addr+2);
         const int32_t dat4 = EMU8K_READ(emu8k, int_addr+3);
         /* Note: I've ended using float for the table values to avoid some cases of integer overflow. */
-        dat2 = dat1*table[0] + dat2*table[1] + dat3*table[2] + dat4*table[3];
+        dat2 = (int32_t) (dat1*table[0] + dat2*table[1] + dat3*table[2] + dat4*table[3]);
         return dat2;
 }
 
@@ -1456,7 +1456,7 @@ void emu8k_outw(uint16_t addr, uint16_t val, void *p)
                 {
                         case 0:
                         emu8k->voice[emu8k->cur_voice].ip = val;
-                        emu8k->voice[emu8k->cur_voice].ptrx_pit_target = freqtable[val] >> 18;
+                        emu8k->voice[emu8k->cur_voice].ptrx_pit_target = (uint16_t) (freqtable[val] >> 18);
                         return;
                         
                         case 1:
@@ -1583,7 +1583,7 @@ void emu8k_work_chorus(int32_t *inbuf, int32_t *outbuf, emu8k_chorus_eng_t *engi
                 /* Work left */
                 double readdouble = (double)engine->write - (double)engine->delay_samples_central - offset_lfo;
                 int read = (int32_t)floor(readdouble);
-                int fraction_part = (readdouble - (double)read)*65536.0;
+                int fraction_part = (int)((readdouble - (double)read)*65536.0);
                 int next_value = read + 1;
                 if(read < 0)
                 {
@@ -1641,15 +1641,15 @@ int32_t emu8k_reverb_comb_work(emu8k_reverb_combfilter_t* comb, int32_t in)
         /* get echo */
         int32_t output = comb->reflection[comb->read_pos];
         /* apply lowpass */
-        comb->filterstore = (output*comb->damp2) + (comb->filterstore*comb->damp1);
+        comb->filterstore = (int32_t) ((output*comb->damp2) + (comb->filterstore*comb->damp1));
         /* appply feedback */
-        bufin = in - (comb->filterstore*comb->feedback);
+        bufin = (int32_t) (in - (comb->filterstore*comb->feedback));
         /* store new value in delayed buffer */
         comb->reflection[comb->read_pos] = bufin;
 
         if(++comb->read_pos>=comb->bufsize) comb->read_pos = 0;
 
-        return output*comb->output_gain;
+        return (int32_t) (output*comb->output_gain);
 }
 
 int32_t emu8k_reverb_diffuser_work(emu8k_reverb_combfilter_t* comb, int32_t in)
@@ -1657,8 +1657,8 @@ int32_t emu8k_reverb_diffuser_work(emu8k_reverb_combfilter_t* comb, int32_t in)
      
         int32_t bufout = comb->reflection[comb->read_pos];
         /*diffuse*/
-        int32_t bufin = -in + (bufout*comb->feedback);
-        int32_t output = bufout - (bufin*comb->feedback);
+        int32_t bufin = (int32_t) (-in + (bufout*comb->feedback));
+        int32_t output = (int32_t) (bufout - (bufin*comb->feedback));
         /* store new value in delayed buffer */
         comb->reflection[comb->read_pos] = bufin;
 
@@ -1685,7 +1685,7 @@ int32_t emu8k_reverb_tail_work(emu8k_reverb_combfilter_t* comb, emu8k_reverb_com
 int32_t emu8k_reverb_damper_work(emu8k_reverb_combfilter_t* comb, int32_t in)
 {
         /* apply lowpass */
-        comb->filterstore = (in*comb->damp2) + (comb->filterstore*comb->damp1);
+        comb->filterstore = (int32_t) ((in*comb->damp2) + (comb->filterstore*comb->damp1));
         return comb->filterstore;
 }
 
@@ -1827,7 +1827,7 @@ void emu8k_update(emu8k_t *emu8k)
                                 /*move to 24bits*/
                                 dat <<= 8;
                                 
-                                dat -= (coef2 * emu_voice->filt_buffer[4]) >> 24; /*feedback*/
+                                dat -= (int32_t) ((coef2 * emu_voice->filt_buffer[4]) >> 24); /*feedback*/
                                 int64_t t1 = emu_voice->filt_buffer[1];
                                 emu_voice->filt_buffer[1] = ((dat + emu_voice->filt_buffer[0]) * coef0 - emu_voice->filt_buffer[1] * coef1) >> 24;
                                 emu_voice->filt_buffer[1] = ClipBuffer(emu_voice->filt_buffer[1]);
@@ -2099,7 +2099,7 @@ void emu8k_update(emu8k_t *emu8k)
 
                                 emu_voice->vtft_vol_target = env_vol_db_to_vol_target[attenuation >> 5];
                                 emu_voice->vtft_filter_target = filtercut >> 5;
-                                emu_voice->ptrx_pit_target = freqtable[currentpitch]>>18;
+                                emu_voice->ptrx_pit_target = (int16_t) (freqtable[currentpitch]>>18);
 
                         }
 /*
@@ -2319,9 +2319,9 @@ void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram)
                 else if (c < 32)
                         millis = 11878.0f/c;
                 else
-                        millis = 360*exp((c - 32) /  (16.0f/log(1.0f/2.0f)));
+                        millis = (float)(360*exp((c - 32) /  (16.0f/log(1.0f/2.0f))));
 
-                env_attack_to_samples[c] = 44.1f*millis;
+                env_attack_to_samples[c] = (int32_t) (44.1f * millis);
                 /* This is an alternate formula with linear increments, but probably incorrect: 
                  * millis = (256+4096*(0x7F-c)) */
         }
@@ -2367,11 +2367,11 @@ void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram)
                         filt_coeffs[qidx][c][1] = 16777216.0;
                         filt_coeffs[qidx][c][2] = (int32_t)((1.0f / (0.7071f + q)) * 16777216.0);
 #elif defined FILTER_MOOG 
-                        float w0 = sin(2.0*M_PI*out / 44100.0);
+                        float w0 = (float) (sin(2.0*M_PI*out / 44100.0));
                         float q_factor = 1.0f - w0;
                         float p = w0 + 0.8f * w0 * q_factor;
                         float f = p + p - 1.0f;
-                        float resonance = (1.0-pow(2.0,-qidx*24.0/90.0))*0.8;
+                        float resonance = (float) ((1.0-pow(2.0,-qidx*24.0/90.0))*0.8);
                         float q = resonance * (1.0f + 0.5f * q_factor * (w0 + 5.6f * q_factor * q_factor));
                         filt_coeffs[qidx][c][0] = (int32_t)(p * 16777216.0);
                         filt_coeffs[qidx][c][1] = (int32_t)(f * 16777216.0);
@@ -2418,10 +2418,10 @@ void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram)
         {
                 double x = (double)c * resdouble;
                 /* Cubic resolution is made of four table, but I've put them all in one table to optimize memory access. */
-                cubic_table[c*4]   = (-0.5 * x * x * x +       x * x - 0.5 * x)       ;
-                cubic_table[c*4+1] = ( 1.5 * x * x * x - 2.5 * x * x           + 1.0) ;
-                cubic_table[c*4+2] = (-1.5 * x * x * x + 2.0 * x * x + 0.5 * x)       ;
-                cubic_table[c*4+3] = ( 0.5 * x * x * x - 0.5 * x * x)                 ;
+                cubic_table[c*4]   = (float) ((-0.5 * x * x * x +       x * x - 0.5 * x)      );
+                cubic_table[c*4+1] = (float) (( 1.5 * x * x * x - 2.5 * x * x           + 1.0));
+                cubic_table[c*4+2] = (float) ((-1.5 * x * x * x + 2.0 * x * x + 0.5 * x)      );
+                cubic_table[c*4+3] = (float) (( 0.5 * x * x * x - 0.5 * x * x)                );
         }
         /* Even when the documentation says that this has to be written by applications to initialize the card, 
          * several applications and drivers ( aweman on windows, linux oss driver..) read it to detect an AWE card. */

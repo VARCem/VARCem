@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.7	2018/03/26
+ * Version:	@(#)snd_audiopci.c	1.0.8	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1246,7 +1246,7 @@ static void generate_es1371_filter()
                 double h = sinc(2.0 * fC * ((double)n - ((double)(ES1371_NCoef-1) / 2.0)));
                 
                 /*Create windowed-sinc filter*/
-                low_fir_es1371_coef[n] = w * h;
+                low_fir_es1371_coef[n] = (float)(w * h);
         }
         
         low_fir_es1371_coef[(ES1371_NCoef - 1) / 2] = 1.0;

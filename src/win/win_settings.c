@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.14	2018/03/27
+ * Version:	@(#)win_settings.c	1.0.15	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1421,7 +1421,7 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	HWND h;
 	int c = 0;
 	int d = 0;
-	char *s;
+	const char *s;
 	LPTSTR lptsTemp;
 	int i;
 

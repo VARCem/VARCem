@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.4	2018/03/10
+ * Version:	@(#)openal.c	1.0.5	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -331,7 +331,7 @@ givealbuffer_common(void *buf, uint8_t src, int size, int freq)
     f_alGetSourcei(source[src], AL_BUFFERS_PROCESSED, &processed);
     if (processed >= 1) {
 	gain = pow(10.0, (double)sound_gain / 20.0);
-	f_alListenerf(AL_GAIN, gain);
+	f_alListenerf(AL_GAIN, (float)gain);
 
 	f_alSourceUnqueueBuffers(source[src], 1, &buffer);
 

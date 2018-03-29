@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.5	2018/03/27
+ * Version:	@(#)scsi_disk.c	1.0.6	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1369,7 +1369,7 @@ atapi_out:
 	case GPCMD_READ_CDROM_CAPACITY:
 		shdc[id].temp_buffer = (uint8_t *) malloc(8);
 
-		if (scsi_hd_read_capacity(id, shdc[id].current_cdb, shdc[id].temp_buffer, &len) == 0) {
+		if (scsi_hd_read_capacity(id, shdc[id].current_cdb, shdc[id].temp_buffer, (uint32_t *)&len) == 0) {
 			scsi_hd_set_phase(id, SCSI_PHASE_STATUS);
 			return;
 		}
