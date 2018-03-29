@@ -10,7 +10,7 @@
  *
  * NOTE:	FIXME: Strings 2176 and 2193 are same.
  *
- * Version:	@(#)language.h	1.0.4	2018/03/08
+ * Version:	@(#)language.h	1.0.5	2018/03/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -147,14 +147,14 @@
 #define IDS_2141	2141		// "Invalid PCap device"
 #define IDS_2142	2142		// "&Notify disk change"
 #define IDS_2143	2143		// "Type"
-#define IDS_2144	2144		// "Standard 2-button joystick(s)"
-#define IDS_2145	2145		// "Standard 4-button joystick"
-#define IDS_2146	2146		// "Standard 6-button joystick"
-#define IDS_2147	2147		// "Standard 8-button joystick"
-#define IDS_2148	2148		// "CH Flightstick Pro"
-#define IDS_2149	2149		// "Microsoft SideWinder Pad"
-#define IDS_2150	2150		// "Thrustmaster Flight Cont.."
-#define IDS_2151	2151		// "Disabled"
+#define IDS_2144	2144		// "Disabled"
+#define IDS_2145	2145		// "Standard 2-button joystick(s)"
+#define IDS_2146	2146		// "Standard 4-button joystick"
+#define IDS_2147	2147		// "Standard 6-button joystick"
+#define IDS_2148	2148		// "Standard 8-button joystick"
+#define IDS_2149	2149		// "CH Flightstick Pro"
+#define IDS_2150	2150		// "Microsoft SideWinder Pad"
+#define IDS_2151	2151		// "Thrustmaster Flight Cont.."
 #define IDS_2152	2152		// "None"
 #define IDS_2153	2153		// "Unable to load Accelerators"
 #define IDS_2154	2154		// "Unable to register Raw Input"

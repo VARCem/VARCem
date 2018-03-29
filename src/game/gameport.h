@@ -10,7 +10,7 @@
  *
  * NOTE:	This module needs a good cleanup someday.
  *
- * Version:	@(#)gameport.h	1.0.4	2018/03/19
+ * Version:	@(#)gameport.h	1.0.5	2018/03/28
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -40,7 +40,7 @@
 # define EMU_GAMEPORT_H
 
 
-#define JOYSTICK_TYPE_NONE	0		/* no joystick defined */
+#define JOYSTICK_TYPE_NONE	0		/* no joystick defined */
 
 #define MAX_PLAT_JOYSTICKS	8
 #define MAX_JOYSTICKS		4

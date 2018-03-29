@@ -11,7 +11,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.7	2018/03/26
+ * Version:	@(#)win_joystick.cpp	1.0.8	2018/03/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -125,11 +125,11 @@ BOOL CALLBACK DIEnumDeviceObjectsCallback(
         return DIENUM_CONTINUE;
 }
 
-void joystick_init()
+void joystick_init(void)
 {
         int c;
 
-	if (joystick_type == 7)  return;
+	if (joystick_type == JOYSTICK_TYPE_NONE) return;
 
         atexit(joystick_close);
         
@@ -203,7 +203,7 @@ void joystick_init()
         }
 }
 
-void joystick_close()
+void joystick_close(void)
 {
         if (lpdi_joystick[1])
         {
@@ -245,7 +245,7 @@ void joystick_process(void)
 {
         int c, d;
 
-	if (joystick_type == 7) return;
+	if (joystick_type == JOYSTICK_TYPE_NONE) return;
 
         for (c = 0; c < joysticks_present; c++)
         {                
@@ -318,4 +318,3 @@ void joystick_process(void)
                 }
         }
 }
-

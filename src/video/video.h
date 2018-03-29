@@ -160,7 +160,7 @@ typedef struct {
 typedef struct {
     int		w, h;
     uint8_t	*dat;
-    uint8_t	**line;
+    uint8_t	*line[];
 } bitmap_t;
 
 typedef struct {
