@@ -77,7 +77,7 @@ mem_mapping_t		romext_mapping;
 
 page_t			*pages,			/* RAM page table */
 			**page_lookup;		/* pagetable lookup */
-uint32_t		pages_sz;		/* #pages in table */
+uint32_t		pages_sz = 0;		/* #pages in table */
 
 uint8_t			isram[0x10000];
 
@@ -1614,7 +1614,7 @@ mem_reset(void)
 #if DYNAMIC_TABLES
 pclog("MEM: reset: previous pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 #endif
-    if (pages_sz != m) {
+    if (pages_sz != m || pages_sz == 0) {
 	pages_sz = m;
 	free(pages);
 	pages = (page_t *)malloc(m*sizeof(page_t));
@@ -1802,7 +1802,7 @@ mem_reset_page_blocks(void)
 
     if (pages == NULL) return;
 
-    for (c = 0; c < ((mem_size * 1024) >> 12); c++) {
+    for (c = 0; c < ((mem_size) >> 12); c++) {
 	pages[c].write_b = mem_write_ramb_page;
 	pages[c].write_w = mem_write_ramw_page;
 	pages[c].write_l = mem_write_raml_page;

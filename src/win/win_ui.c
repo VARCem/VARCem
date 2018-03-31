@@ -891,7 +891,6 @@ ui_init(int nCmdShow)
     /* Create the Machine Rendering window. */
     hwndRender = CreateWindow(L"STATIC", NULL, WS_CHILD|SS_BITMAP,
 			      0, 0, 1, 1, hwnd, NULL, hinstance, NULL);
-    MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
 
     /* That looks good, now continue setting up the machine. */
     switch (pc_init_modules()) {
@@ -916,7 +915,8 @@ ui_init(int nCmdShow)
     }
 
     /* Initialize the configured Video API. */
-    if (! plat_setvid(vid_api)) {
+
+if (! plat_setvid(vid_api)) {
 	MessageBox(hwnd,
 		   plat_get_string(IDS_2095),
 		   plat_get_string(IDS_2050),
@@ -927,6 +927,8 @@ ui_init(int nCmdShow)
     /* Initialize the rendering window, or fullscreen. */
     if (start_in_fullscreen)
 	plat_setfullscreen(1);
+
+	MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
 
     /* Set up the current window size. */
     plat_resize(scrnsz_x, scrnsz_y);
