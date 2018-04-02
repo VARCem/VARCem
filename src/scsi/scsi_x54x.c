@@ -857,8 +857,10 @@ x54x_buf_dma_transfer(Req_t *req, int Is24bit, int TransferLength, int dir)
 				sg_pos += SGBuffer.Segment;
 
 				BufLen -= SGBuffer.Segment;
+#if BUFLEN_IS_UNSIGNED
 				if (BufLen < 0)
 					BufLen = 0;
+#endif
 
 				x54x_log("After S/G segment done: %i, %i\n", sg_pos, BufLen);
 			}

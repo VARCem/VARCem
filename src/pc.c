@@ -337,7 +337,7 @@ pc_version(const char *platform)
 void
 pc_path(wchar_t *dst, int sz, wchar_t *src)
 {
-    if ((src != NULL) && !wcsnicmp(src, usr_path, wcslen(usr_path)))
+    if ((src != NULL) && !wcscasecmp(src, usr_path))
 	src += wcslen(usr_path);
 
     /*
