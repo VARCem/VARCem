@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.7	2018/03/31
+ * Version:	@(#)win_devconf.c	1.0.8	2018/04/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -437,11 +437,13 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
+#define DATABLOCK_SIZE	16384
 uint8_t
 deviceconfig_open(HWND hwnd, device_t *device)
 {
+    char temp[128];
     const device_config_t *config = device->config;
-    uint16_t *data_block = malloc(16384);
+    uint16_t *data_block = malloc(DATABLOCK_SIZE);
     uint16_t *data;
     DLGTEMPLATE *dlg = (DLGTEMPLATE *)data_block;
     DLGITEMTEMPLATE *item;
@@ -450,10 +452,9 @@ deviceconfig_open(HWND hwnd, device_t *device)
 
     deviceconfig_changed = 0;
 
-    memset(data_block, 0x00, sizeof(16384));
+    memset(data_block, 0x00, DATABLOCK_SIZE);
 
-    dlg->style = DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | \
-		 WS_POPUP | WS_CAPTION | WS_SYSMENU;
+    dlg->style = DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU;
     dlg->x  = 10;
     dlg->y  = 10;
     dlg->cx = 220;
@@ -463,8 +464,8 @@ deviceconfig_open(HWND hwnd, device_t *device)
 
     *data++ = 0; /*no menu*/
     *data++ = 0; /*predefined dialog box class*/
-    data += MultiByteToWideChar(CP_ACP, 0,
-				"Device Configuration", -1, data, 50);
+    sprintf(temp, "%s Configuration", device->name);
+    data += MultiByteToWideChar(CP_ACP, 0, temp, -1, data, 50);
 
     *data++ = 9; /*Point*/
     data += MultiByteToWideChar(CP_ACP, 0, "Segoe UI", -1, data, 50);
@@ -509,8 +510,7 @@ deviceconfig_open(HWND hwnd, device_t *device)
 			item->cx = 140;
 			item->cy = 150;
 
-			item->style = WS_CHILD | WS_VISIBLE | \
-				      CBS_DROPDOWN | WS_VSCROLL;
+			item->style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | WS_VSCROLL;
 
 			data = (uint16_t *)(item + 1);
 			*data++ = 0xFFFF;
@@ -558,8 +558,7 @@ deviceconfig_open(HWND hwnd, device_t *device)
 			item->cx = 140;
 			item->cy = 14;
 
-			item->style = WS_CHILD | WS_VISIBLE | \
-				      ES_AUTOHSCROLL | ES_NUMBER;
+			item->style = WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_NUMBER;
 			item->dwExtendedStyle = WS_EX_CLIENTEDGE;
 
 			data = (uint16_t *)(item + 1);

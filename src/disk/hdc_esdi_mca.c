@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.4	2018/03/31
+ * Version:	@(#)hdc_esdi_mca.c	1.0.5	2018/04/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -757,7 +757,7 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if 0
+#if ENABLE_HDC_LOG > 1
     pclog("ESDI: wr(%04x, %02x)\n", port-dev->base, val);
 #endif
     switch (port-dev->base) {
@@ -888,7 +888,7 @@ esdi_writew(uint16_t port, uint16_t val, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if 0
+#if ENABLE_HDC_LOG > 1
     pclog("ESDI: wrw(%04x, %04x)\n", port-dev->base, val);
 #endif
     switch (port-dev->base) {
@@ -922,7 +922,7 @@ esdi_mca_read(int port, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if 0
+#if ENABLE_HDC_LOG > 1
     pclog("ESDI: mcard(%04x)\n", port);
 #endif
     return(dev->pos_regs[port & 7]);
@@ -934,7 +934,7 @@ esdi_mca_write(int port, uint8_t val, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if 0
+#if ENABLE_HDC_LOG > 1
     pclog("ESDI: mcawr(%04x, %02x)  pos[2]=%02x pos[3]=%02x\n",
 		port, val, dev->pos_regs[2], dev->pos_regs[3]);
 #endif

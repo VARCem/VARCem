@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.5	2018/03/31
+ * Version:	@(#)hdc_esdi_at.c	1.0.6	2018/04/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -238,7 +238,7 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 {
     esdi_t *esdi = (esdi_t *)priv;
 
-#ifdef ENABLE_HDD_LOG
+#if ENABLE_HDC_LOG > 1
     pclog("WD1007 write(%04x, %02x)\n", port, val);
 #endif
 
@@ -282,7 +282,7 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 		esdi->command = val;
 		esdi->error = 0;
 
-#ifdef ENABLE_HDD_LOG
+#if ENABLE_HDC_LOG
 		pclog("WD1007: command %02x\n", val & 0xf0);
 #endif
 		switch (val & 0xf0) {
@@ -478,7 +478,7 @@ esdi_read(uint16_t port, void *priv)
 		break;
     }
 
-#ifdef ENABLE_HDD_LOG
+#if ENABLE_HDC_LOG > 1
     pclog("WD1007 read(%04x) = %02x\n", port, temp);
 #endif
 
@@ -508,7 +508,7 @@ esdi_callback(void *priv)
 	return;
     }
 
-#ifdef ENABLE_HDD_LOG
+#if ENABLE_HDC_LOG
     pclog("WD1007: command %02x\n", esdi->command);
 #endif
 
@@ -656,7 +656,7 @@ esdi_callback(void *priv)
 
 		drive->cfg_spt = esdi->secount;
 		drive->cfg_hpc = esdi->head+1;
-#ifdef ENABLE_HDD_LOG
+#if ENABLE_HDC_LOG
 		pclog("WD1007: parameters: spt=%i hpc=%i\n", drive->cfg_spt,drive->cfg_hpc);
 #endif
 		if (! esdi->secount)
