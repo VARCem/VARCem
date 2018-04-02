@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.2	2018/03/15
+ * Version:	@(#)sound.h	1.0.3	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,6 +77,7 @@ extern void	sound_speed_changed(void);
 
 extern void	sound_realloc_buffers(void);
 
+extern void	sound_global_init(void);
 extern void	sound_init(void);
 extern void	sound_reset(void);
 

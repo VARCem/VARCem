@@ -8,7 +8,7 @@
  *
  *		Handling of the PS/2 series CMOS devices.
  *
- * Version:	@(#)nvr_ps2.c	1.0.5	2018/03/15
+ * Version:	@(#)nvr_ps2.c	1.0.6	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -45,6 +45,7 @@
 #include "device.h"
 #include "io.h"
 #include "nvr.h"
+#include "plat.h"
 #include "nvr_ps2.h"
 
 
@@ -114,15 +115,15 @@ ps2_nvr_init(const device_t *info)
 
     switch (romset) {
 	case ROM_IBMPS2_M70_TYPE3:
-		f = nvr_fopen(L"ibmps2_m70_type3_sec.nvr", L"rb");
+		f = plat_fopen(nvr_path(L"ibmps2_m70_type3_sec.nvr"), L"rb");
 		break;
 
 	case ROM_IBMPS2_M70_TYPE4:
-		f = nvr_fopen(L"ibmps2_m70_type4_sec.nvr", L"rb");
+		f = plat_fopen(nvr_path(L"ibmps2_m70_type4_sec.nvr"), L"rb");
 		break;
 
 	case ROM_IBMPS2_M80:
-		f = nvr_fopen(L"ibmps2_m80_sec.nvr", L"rb");
+		f = plat_fopen(nvr_path(L"ibmps2_m80_sec.nvr"), L"rb");
 		break;
     }
 
@@ -144,15 +145,15 @@ ps2_nvr_close(void *priv)
 
     switch (romset) {
 	case ROM_IBMPS2_M70_TYPE3:
-		f = nvr_fopen(L"ibmps2_m70_type3_sec.nvr", L"wb");
+		f = plat_fopen(nvr_path(L"ibmps2_m70_type3_sec.nvr"), L"wb");
 		break;
 
 	case ROM_IBMPS2_M70_TYPE4:
-		f = nvr_fopen(L"ibmps2_m70_type4_sec.nvr", L"wb");
+		f = plat_fopen(nvr_path(L"ibmps2_m70_type4_sec.nvr"), L"wb");
 		break;
 
 	case ROM_IBMPS2_M80:
-		f = nvr_fopen(L"ibmps2_m80_sec.nvr", L"wb");
+		f = plat_fopen(nvr_path(L"ibmps2_m80_sec.nvr"), L"wb");
 		break;
     }
 

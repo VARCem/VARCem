@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.4	2018/03/08
+ * Version:	@(#)win_dialog.c	1.0.5	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,22 +53,12 @@
 #include "win.h"
 
 
-WCHAR	path[MAX_PATH];
-WCHAR	wopenfilestring[260];
-char	openfilestring[260];
+WCHAR	wopenfilestring[1024];
+char	openfilestring[1024];
 DWORD	filterindex = 0;
 
 
-static int CALLBACK
-BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
-{
-    if (uMsg == BFFM_INITIALIZED)
-	SendMessage(hwnd, BFFM_SETSELECTION, TRUE, lpData);
-
-    return(0);
-}
-
-
+/* Center a dialog window with respect to the main window. */
 void
 dialog_center(HWND hdlg)
 {
@@ -93,37 +83,6 @@ dialog_center(HWND hdlg)
     SetWindowPos(hdlg, HWND_TOP,
 		 r2.left + (r.right / 2), r2.top + (r.bottom / 2),
 		 0, 0, SWP_NOSIZE);
-}
-
-
-wchar_t *
-BrowseFolder(wchar_t *saved_path, wchar_t *title)
-{
-    BROWSEINFO bi = { 0 };
-    LPITEMIDLIST pidl;
-    IMalloc *imalloc;
-
-    bi.lpszTitle  = title;
-    bi.ulFlags    = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-    bi.lpfn       = BrowseCallbackProc;
-    bi.lParam     = (LPARAM) saved_path;
-
-    pidl = SHBrowseForFolder(&bi);
-    if (pidl != 0) {
-	/* Get the name of the folder and put it in path. */
-	SHGetPathFromIDList(pidl, path);
-
-	/* Free memory used. */
-	imalloc = 0;
-	if (SUCCEEDED(SHGetMalloc(&imalloc))) {
-		imalloc->lpVtbl->Free(imalloc, pidl);
-		imalloc->lpVtbl->Release(imalloc);
-	}
-
-	return(path);
-    }
-
-    return(L"");
 }
 
 
@@ -209,101 +168,78 @@ ui_msgbox(int flags, void *arg)
 }
 
 
-#if 0
 int
-msgbox_reset_yn(HWND hwnd)
-{
-    return(MessageBox(hwnd, plat_get_string(IDS_2051),
-#endif
-
-
-int
-file_dlg_w(HWND hwnd, WCHAR *f, WCHAR *fn, int save)
+file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save)
 {
     OPENFILENAME ofn;
+    wchar_t fn[1024];
+    char temp[1024];
     BOOL r;
-    /* DWORD err; */
+    DWORD err; 
 
-    /* Initialize OPENFILENAME */
-    ZeroMemory(&ofn, sizeof(ofn));
+    /* Clear out the ("initial") pathname. */
+    memset(fn, 0x00, sizeof(fn));
+
+    /* Initialize OPENFILENAME. */
+    memset(&ofn, 0x00, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = hwnd;
-    ofn.lpstrFile = wopenfilestring;
 
-    /*
-     * Set lpstrFile[0] to '\0' so that GetOpenFileName does
-     * not use the contents of szFile to initialize itself.
-     */
-    memcpy(ofn.lpstrFile, fn, (wcslen(fn) << 1) + 2);
-    ofn.nMaxFile = 259;
-    ofn.lpstrFilter = f;
+    /* This is the buffer in which to place the resulting filename. */
+    ofn.lpstrFile = fn;
+    ofn.nMaxFile = sizeof_w(fn);
+
+    /* Set up the "file types" filter. */
+    ofn.lpstrFilter = filt;
     ofn.nFilterIndex = 1;
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
+
+    /* Tell the dialog where to go initially. */
+    ofn.lpstrInitialDir = usr_path;
+
+    /* Set up the flags for this dialog. */
     ofn.Flags = OFN_PATHMUSTEXIST;
     if (! save)
 	ofn.Flags |= OFN_FILEMUSTEXIST;
 
     /* Display the Open dialog box. */
-    if (save) {
-//	pclog("GetSaveFileName - lpstrFile = %s\n", ofn.lpstrFile);
+    if (save)
 	r = GetSaveFileName(&ofn);
-    } else {
-//	pclog("GetOpenFileName - lpstrFile = %s\n", ofn.lpstrFile);
+      else
 	r = GetOpenFileName(&ofn);
-    }
 
+    /* OK, just to make sure the dialog did not change our CWD. */
     plat_chdir(usr_path);
 
     if (r) {
+	/* All good, see if we can make this a relative path. */
+	pc_path(wopenfilestring, sizeof_w(wopenfilestring), fn);
+
+	/* All good, create an ASCII copy of the string as well. */
 	wcstombs(openfilestring, wopenfilestring, sizeof(openfilestring));
+
+	/* Remember the file type for next time. */
 	filterindex = ofn.nFilterIndex;
-//	pclog("File dialog return true\n");
 
 	return(0);
     }
 
-    /* pclog("File dialog return false\n"); */
-    /* err = CommDlgExtendedError();
-    pclog("CommDlgExtendedError return %04X\n", err); */
+    /* If an error occurred, log this. */
+    err = CommDlgExtendedError();
+    if (err != NO_ERROR) {
+	sprintf(temp, "OpenFile(%ls, %d):\n\n    error 0x%08lx",
+					usr_path, save, err);
+	pclog("%s\n", temp);
+	(void)ui_msgbox(MBX_ERROR|MBX_ANSI, temp);
+    }
 
     return(1);
 }
 
 
 int
-file_dlg(HWND hwnd, WCHAR *f, char *fn, int save)
-{
-    WCHAR ufn[512];
-
-    mbstowcs(ufn, fn, strlen(fn) + 1);
-
-    return(file_dlg_w(hwnd, f, ufn, save));
-}
-
-
-int
-file_dlg_mb(HWND hwnd, char *f, char *fn, int save)
-{
-    WCHAR uf[512], ufn[512];
-
-    mbstowcs(uf, f, strlen(fn) + 1);
-    mbstowcs(ufn, fn, strlen(fn) + 1);
-
-    return(file_dlg_w(hwnd, uf, ufn, save));
-}
-
-
-int
-file_dlg_w_st(HWND hwnd, int id, WCHAR *fn, int save)
-{
-    return(file_dlg_w(hwnd, plat_get_string(id), fn, save));
-}
-
-
-int
-file_dlg_st(HWND hwnd, int id, char *fn, int save)
+file_dlg_st(HWND hwnd, int id, WCHAR *fn, int save)
 {
     return(file_dlg(hwnd, plat_get_string(id), fn, save));
 }

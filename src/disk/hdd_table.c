@@ -8,7 +8,7 @@
  *
  *		Define the available hard disk types.
  *
- * Version:	@(#)hdd_table.c	1.0.1	2018/02/14
+ * Version:	@(#)hdd_table.c	1.0.2	2018/03/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,7 @@
 #include "hdd.h"
 
 
-uint64_t hdd_table[128][3] = {
+const hddtab_t hdd_table[128] = {
     {  306,  4, 17 },		/* 0 - 7 */
     {  615,  2, 17 },
     {  306,  4, 26 },

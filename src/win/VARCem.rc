@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.9	2018/03/28
+ * Version:	@(#)VARCem.rc	1.0.11	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,8 +66,6 @@ MainMenu MENU DISCARDABLE
 BEGIN
     POPUP "&Action"
     BEGIN
-        MENUITEM "&Right CTRL is left ALT",	IDM_ACTION_RCTRL_IS_LALT
-        MENUITEM SEPARATOR
         MENUITEM "&Hard Reset",                 IDM_ACTION_HRESET
         MENUITEM "&Ctrl+Alt+Del\tCtrl+F12",     IDM_ACTION_RESET_CAD
         MENUITEM SEPARATOR
@@ -133,6 +131,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "F&orce 4:3 display ratio",    IDM_VID_FORCE43
         MENUITEM "Change contrast for &monochrome display", IDM_VID_CGACON
+	MENUITEM SEPARATOR
+	MENUITEM "R&ight CTRL is left ALT",	IDM_KBD_RCTRL_IS_LALT
     END
     POPUP "&Tools"
     BEGIN
@@ -631,13 +631,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-#ifdef RELEASE_BUILD
-/* Icon by Devcore - https://commons.wikimedia.org/wiki/File:Icon_PC_256x256.png */
-100                     ICON    DISCARDABLE     "win/icons/emu-rb.ico"
-#else
-/* Icon by Devcore - https://commons.wikimedia.org/wiki/File:Icon_PC2_256x256.png */
-100                     ICON    DISCARDABLE     "win/icons/emu.ico"
-#endif
+100                     ICON    DISCARDABLE     "win/icons/varcem.ico"
 128                     ICON    DISCARDABLE     "win/icons/floppy_525.ico"
 129                     ICON    DISCARDABLE     "win/icons/floppy_525_active.ico"
 144                     ICON    DISCARDABLE     "win/icons/floppy_35.ico"
@@ -966,7 +960,7 @@ BEGIN
     IDS_2154	"Unable to register Raw Input!"
     IDS_2155	"IRQ %i"
     IDS_2156	"%" PRIu64
-    IDS_2157	"%" PRIu64 " MB (CHS: %" PRIu64 ", %" PRIu64 ", %" PRIu64 ")"
+    IDS_2157	"%" PRIu64 " MB (CHS: %u, %u, %u)"
     IDS_2158	"Floppy %i (%s): %ls"
     IDS_2159	"All images (*.0??;*.1??;*.360;*.720;*.86F;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.XDF)\0*.0??;*.1??;*.360;*.720;*.86F;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.XDF\0Advanced sector images (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Basic sector images (*.0??;*.1??;*.360;*.720;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.360;*.720;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Flux images (*.FDI)\0*.FDI\0Surface images (*.86F)\0*.86F\0All files (*.*)\0*.*\0"
     IDS_2160	"Configuration files (*.CFG)\0*.CFG\0All files (*.*)\0*.*\0"
@@ -1077,8 +1071,13 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
+#ifdef EMU_VER_PATCH
+ FILEVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,EMU_VER_PATCH
+ PRODUCTVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,EMU_VER_PATCH
+#else
  FILEVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
  PRODUCTVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
+#endif
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L

@@ -10,7 +10,7 @@
  *
  * NOTE:	I should re-do 'intclk' using a TM struct.
  *
- * Version:	@(#)nvr.c	1.0.3	2018/03/20
+ * Version:	@(#)nvr.c	1.0.4	2018/03/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -197,6 +197,31 @@ nvr_init(nvr_t *nvr)
 }
 
 
+/* Get path to the NVR folder. */
+wchar_t *
+nvr_path(wchar_t *str)
+{
+    static wchar_t temp[1024];
+
+    /* Get the full prefix in place. */
+    wcscpy(temp, usr_path);
+    wcscat(temp, NVR_PATH);
+
+    /* Create the directory if needed. */
+    if (! plat_dir_check(temp))
+	plat_dir_create(temp);
+
+    /* Now append the actual filename. */
+    plat_append_slash(temp);
+    wcscat(temp, str);
+
+    /* Make sure path is clean. */
+    pc_path(temp, sizeof_w(temp), NULL);
+
+    return(temp);
+}
+
+
 /*
  * Load an NVR from file.
  *
@@ -211,6 +236,7 @@ nvr_init(nvr_t *nvr)
 int
 nvr_load(void)
 {
+    wchar_t *path;
     FILE *f;
 
     /* Make sure we have been initialized. */
@@ -225,8 +251,9 @@ nvr_load(void)
 
     /* Load the (relevant) part of the NVR contents. */
     if (saved_nvr->size != 0) {
-	pclog("NVR: loading from '%ls'\n", nvr_path(saved_nvr->fn));
-	f = plat_fopen(nvr_path(saved_nvr->fn), L"rb");
+	path = nvr_path(saved_nvr->fn);
+	pclog("NVR: loading from '%ls'\n", path);
+	f = plat_fopen(path, L"rb");
 	if (f != NULL) {
 		/* Read NVR contents from file. */
 		(void)fread(saved_nvr->regs, saved_nvr->size, 1, f);
@@ -246,14 +273,16 @@ nvr_load(void)
 int
 nvr_save(void)
 {
+    wchar_t *path;
     FILE *f;
 
     /* Make sure we have been initialized. */
     if (config_ro || saved_nvr == NULL) return(0);
 
     if (saved_nvr->size != 0) {
-	pclog("NVR: saving to '%ls'\n", nvr_path(saved_nvr->fn));
-	f = plat_fopen(nvr_path(saved_nvr->fn), L"wb");
+	path = nvr_path(saved_nvr->fn);
+	pclog("NVR: saving to '%ls'\n", path);
+	f = plat_fopen(path, L"wb");
 	if (f != NULL) {
 		/* Save NVR contents to file. */
 		(void)fwrite(saved_nvr->regs, saved_nvr->size, 1, f);
@@ -301,35 +330,4 @@ nvr_time_set(struct tm *tm)
     intclk.mday = tm->tm_mday;
     intclk.mon = (tm->tm_mon + 1);
     intclk.year = (tm->tm_year + 1900);
-}
-
-
-/* Get an absolute path to the NVR folder. */
-wchar_t *
-nvr_path(wchar_t *str)
-{
-    static wchar_t temp[1024];
-
-    /* Get the full prefix in place. */
-    memset(temp, 0x00, sizeof(temp));
-    wcscpy(temp, usr_path);
-    wcscat(temp, NVR_PATH);
-
-    /* Create the directory if needed. */
-    if (! plat_dir_check(temp))
-	plat_dir_create(temp);
-
-    /* Now append the actual filename. */
-    plat_append_slash(temp);
-    wcscat(temp, str);
-
-    return(temp);
-}
-
-
-/* Open or create a file in the NVR area. */
-FILE *
-nvr_fopen(wchar_t *str, wchar_t *mode)
-{
-    return(plat_fopen(nvr_path(str), mode));
 }

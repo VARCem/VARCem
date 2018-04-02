@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.4	2018/03/27
+ * Version:	@(#)hdc_esdi_at.c	1.0.5	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,7 @@
 
 
 #define HDC_TIME		(TIMER_USEC*10LL)
-#define ESDI_BIOS_FILE		L"roms/hdd/esdi_at/62-000279-061.bin"
+#define ESDI_BIOS_FILE		L"hdd/esdi_at/62-000279-061.bin"
 
 #define STAT_ERR		0x01
 #define STAT_INDEX		0x02

@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_mfm_xt.c	1.0.3	2018/03/27
+ * Version:	@(#)hdc_mfm_xt.c	1.0.5	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -90,8 +90,8 @@
 
 
 #define MFM_TIME	(2000LL*TIMER_USEC)
-#define XEBEC_BIOS_FILE	L"roms/hdd/mfm_xebec/ibm_xebec_62x0822_1985.bin"
-#define DTC_BIOS_FILE	L"roms/hdd/mfm_xebec/dtc_cxd21a.bin"
+#define XEBEC_BIOS_FILE	L"hdd/mfm_xebec/ibm_xebec_62x0822_1985.bin"
+#define DTC_BIOS_FILE	L"hdd/mfm_xebec/dtc_cxd21a.bin"
 
 
 enum {
@@ -108,34 +108,38 @@ enum {
 
 
 typedef struct {
-    int spt, hpc;
-    int tracks;
-    int cfg_spt;
-    int cfg_hpc;
-    int cfg_cyl;
-    int current_cylinder;
-    int present;
-    int hdd_num;
+    int		spt,
+		hpc;
+    int		tracks;
+    int		cfg_spt;
+    int		cfg_hpc;
+    int		cfg_cyl;
+    int		current_cylinder;
+    int		present;
+    int		hdd_num;
 } drive_t;
 
 typedef struct {
-    rom_t bios_rom;
-    int64_t callback;
-    int state;
-    uint8_t status;
-    uint8_t command[6];
-    int command_pos;
-    uint8_t data[512];
-    int data_pos, data_len;
-    uint8_t sector_buf[512];
-    uint8_t irq_dma_mask;
-    uint8_t completion_byte;
-    uint8_t error;
-    int drive_sel;
-    drive_t drives[2];
-    int sector, head, cylinder;
-    int sector_count;
-    uint8_t switches;
+    rom_t	bios_rom;
+    int64_t	callback;
+    int		state;
+    uint8_t	status;
+    uint8_t	command[6];
+    int		command_pos;
+    uint8_t	data[512];
+    int		data_pos,
+		data_len;
+    uint8_t	sector_buf[512];
+    uint8_t	irq_dma_mask;
+    uint8_t	completion_byte;
+    uint8_t	error;
+    int		drive_sel;
+    drive_t	drives[2];
+    int		sector,
+		head,
+		cylinder;
+    int		sector_count;
+    uint8_t	switches;
 } mfm_t;
 
 #define STAT_IRQ 0x20
@@ -173,46 +177,46 @@ typedef struct {
 static uint8_t
 mfm_read(uint16_t port, void *priv)
 {
-    mfm_t *mfm = (mfm_t *)priv;
+    mfm_t *dev = (mfm_t *)priv;
     uint8_t temp = 0xff;
 
     switch (port) {
 	case 0x320: /*Read data*/
-		mfm->status &= ~STAT_IRQ;
-		switch (mfm->state) {
+		dev->status &= ~STAT_IRQ;
+		switch (dev->state) {
 			case STATE_COMPLETION_BYTE:
-				if ((mfm->status & 0xf) != (STAT_CD | STAT_IO | STAT_REQ | STAT_BSY))
-					fatal("Read data STATE_COMPLETION_BYTE, status=%02x\n", mfm->status);
+				if ((dev->status & 0xf) != (STAT_CD | STAT_IO | STAT_REQ | STAT_BSY))
+					fatal("Read data STATE_COMPLETION_BYTE, status=%02x\n", dev->status);
 
-				temp = mfm->completion_byte;
-				mfm->status = 0;
-				mfm->state = STATE_IDLE;
+				temp = dev->completion_byte;
+				dev->status = 0;
+				dev->state = STATE_IDLE;
 				break;
 			
 			case STATE_SEND_DATA:
-				if ((mfm->status & 0xf) != (STAT_IO | STAT_REQ | STAT_BSY))
-					fatal("Read data STATE_COMPLETION_BYTE, status=%02x\n", mfm->status);
-				if (mfm->data_pos >= mfm->data_len)
+				if ((dev->status & 0xf) != (STAT_IO | STAT_REQ | STAT_BSY))
+					fatal("Read data STATE_COMPLETION_BYTE, status=%02x\n", dev->status);
+				if (dev->data_pos >= dev->data_len)
 					fatal("Data write with full data!\n");
-				temp = mfm->data[mfm->data_pos++];
-				if (mfm->data_pos == mfm->data_len) {
-					mfm->status = STAT_BSY;
-					mfm->state = STATE_SENT_DATA;
-					mfm->callback = MFM_TIME;
+				temp = dev->data[dev->data_pos++];
+				if (dev->data_pos == dev->data_len) {
+					dev->status = STAT_BSY;
+					dev->state = STATE_SENT_DATA;
+					dev->callback = MFM_TIME;
 				}
 				break;
 
 			default:
-				fatal("Read data register - %i, %02x\n", mfm->state, mfm->status);
+				fatal("Read data register - %i, %02x\n", dev->state, dev->status);
 		}
 		break;
 
 	case 0x321: /*Read status*/
-		temp = mfm->status;
+		temp = dev->status;
 		break;
 
 	case 0x322: /*Read option jumpers*/
-		temp = mfm->switches;
+		temp = dev->switches;
 		break;
     }
 
@@ -223,129 +227,130 @@ mfm_read(uint16_t port, void *priv)
 static void
 mfm_write(uint16_t port, uint8_t val, void *priv)
 {
-    mfm_t *mfm = (mfm_t *)priv;
+    mfm_t *dev = (mfm_t *)priv;
 
     switch (port) {
 	case 0x320: /*Write data*/
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_RECEIVE_COMMAND:
-				if ((mfm->status & 0xf) != (STAT_BSY | STAT_CD | STAT_REQ))
-					fatal("Bad write data state - STATE_START_COMMAND, status=%02x\n", mfm->status);
-				if (mfm->command_pos >= 6)
+				if ((dev->status & 0xf) != (STAT_BSY | STAT_CD | STAT_REQ))
+					fatal("Bad write data state - STATE_START_COMMAND, status=%02x\n", dev->status);
+				if (dev->command_pos >= 6)
 					fatal("Command write with full command!\n");
 				/*Command data*/
-				mfm->command[mfm->command_pos++] = val;
-				if (mfm->command_pos == 6) {
-					mfm->status = STAT_BSY;
-					mfm->state = STATE_START_COMMAND;
-					mfm->callback = MFM_TIME;
+				dev->command[dev->command_pos++] = val;
+				if (dev->command_pos == 6) {
+					dev->status = STAT_BSY;
+					dev->state = STATE_START_COMMAND;
+					dev->callback = MFM_TIME;
 				}
 				break;
 
 				case STATE_RECEIVE_DATA:
-				if ((mfm->status & 0xf) != (STAT_BSY | STAT_REQ))
-					fatal("Bad write data state - STATE_RECEIVE_DATA, status=%02x\n", mfm->status);
-				if (mfm->data_pos >= mfm->data_len)
+				if ((dev->status & 0xf) != (STAT_BSY | STAT_REQ))
+					fatal("Bad write data state - STATE_RECEIVE_DATA, status=%02x\n", dev->status);
+				if (dev->data_pos >= dev->data_len)
 					fatal("Data write with full data!\n");
 				/*Command data*/
-				mfm->data[mfm->data_pos++] = val;
-				if (mfm->data_pos == mfm->data_len) {
-					mfm->status = STAT_BSY;
-					mfm->state = STATE_RECEIVED_DATA;
-					mfm->callback = MFM_TIME;
+				dev->data[dev->data_pos++] = val;
+				if (dev->data_pos == dev->data_len) {
+					dev->status = STAT_BSY;
+					dev->state = STATE_RECEIVED_DATA;
+					dev->callback = MFM_TIME;
 				}
 				break;
 
 			default:
-				fatal("Write data unknown state - %i %02x\n", mfm->state, mfm->status);
+				fatal("Write data unknown state - %i %02x\n", dev->state, dev->status);
 		}
 		break;
 
 	case 0x321: /*Controller reset*/
-		mfm->status = 0;
+		dev->status = 0;
 		break;
 
 	case 0x322: /*Generate controller-select-pulse*/
-		mfm->status = STAT_BSY | STAT_CD | STAT_REQ;
-		mfm->command_pos = 0;
-		mfm->state = STATE_RECEIVE_COMMAND;
+		dev->status = STAT_BSY | STAT_CD | STAT_REQ;
+		dev->command_pos = 0;
+		dev->state = STATE_RECEIVE_COMMAND;
 		break;
 
 	case 0x323: /*DMA/IRQ mask register*/
-		mfm->irq_dma_mask = val;
+		dev->irq_dma_mask = val;
 		break;
     }
 }
 
 
-static void mfm_complete(mfm_t *mfm)
+static void
+mfm_complete(mfm_t *dev)
 {
-    mfm->status = STAT_REQ | STAT_CD | STAT_IO | STAT_BSY;
-    mfm->state = STATE_COMPLETION_BYTE;
+    dev->status = STAT_REQ | STAT_CD | STAT_IO | STAT_BSY;
+    dev->state = STATE_COMPLETION_BYTE;
 
-    if (mfm->irq_dma_mask & IRQ_ENA) {
-	mfm->status |= STAT_IRQ;
+    if (dev->irq_dma_mask & IRQ_ENA) {
+	dev->status |= STAT_IRQ;
 	picint(1 << 5);
     }
 }
 
 
 static void
-mfm_error(mfm_t *mfm, uint8_t error)
+mfm_error(mfm_t *dev, uint8_t error)
 {
-    mfm->completion_byte |= 0x02;
-    mfm->error = error;
+    dev->completion_byte |= 0x02;
+    dev->error = error;
 
-    pclog("mfm_error - %02x\n", mfm->error);
+    pclog("mfm_error - %02x\n", dev->error);
 }
 
 
 static int
-get_sector(mfm_t *mfm, off64_t *addr)
+get_sector(mfm_t *dev, off64_t *addr)
 {
-    drive_t *drive = &mfm->drives[mfm->drive_sel];
+    drive_t *drive = &dev->drives[dev->drive_sel];
     int heads = drive->cfg_hpc;
 
-    if (drive->current_cylinder != mfm->cylinder) {
+    if (drive->current_cylinder != dev->cylinder) {
 	pclog("mfm_get_sector: wrong cylinder\n");
-	mfm->error = ERR_ILLEGAL_SECTOR_ADDRESS;
+	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
-    if (mfm->head > heads) {
+    if (dev->head > heads) {
 	pclog("mfm_get_sector: past end of configured heads\n");
-	mfm->error = ERR_ILLEGAL_SECTOR_ADDRESS;
+	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
-    if (mfm->head > drive->hpc) {
+    if (dev->head > drive->hpc) {
 	pclog("mfm_get_sector: past end of heads\n");
-	mfm->error = ERR_ILLEGAL_SECTOR_ADDRESS;
+	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
-    if (mfm->sector >= 17) {
+    if (dev->sector >= 17) {
 	pclog("mfm_get_sector: past end of sectors\n");
-	mfm->error = ERR_ILLEGAL_SECTOR_ADDRESS;
+	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
 
-    *addr = ((((off64_t) mfm->cylinder * heads) + mfm->head) *
-			  17) + mfm->sector;
+    *addr = ((((off64_t) dev->cylinder * heads) + dev->head) *
+			  17) + dev->sector;
 	
     return(0);
 }
 
 
 static void
-next_sector(mfm_t *mfm)
+next_sector(mfm_t *dev)
 {
-    drive_t *drive = &mfm->drives[mfm->drive_sel];
+    drive_t *drive = &dev->drives[dev->drive_sel];
 	
-    mfm->sector++;
-    if (mfm->sector >= 17) {
-	mfm->sector = 0;
-	mfm->head++;
-	if (mfm->head >= drive->cfg_hpc) {
-		mfm->head = 0;
-		mfm->cylinder++;
+    dev->sector++;
+    if (dev->sector >= 17) {
+	dev->sector = 0;
+	dev->head++;
+	if (dev->head >= drive->cfg_hpc) {
+		dev->head = 0;
+		dev->cylinder++;
 		drive->current_cylinder++;
 		if (drive->current_cylinder >= drive->cfg_cyl)
 			drive->current_cylinder = drive->cfg_cyl-1;
@@ -357,423 +362,422 @@ next_sector(mfm_t *mfm)
 static void
 mfm_callback(void *priv)
 {
-    mfm_t *mfm = (mfm_t *)priv;
+    mfm_t *dev = (mfm_t *)priv;
     drive_t *drive;
     off64_t addr;
 
-    mfm->callback = 0LL;
+    dev->callback = 0LL;
 
-    mfm->drive_sel = (mfm->command[1] & 0x20) ? 1 : 0;
-    mfm->completion_byte = mfm->drive_sel & 0x20;
-    drive = &mfm->drives[mfm->drive_sel];
+    dev->drive_sel = (dev->command[1] & 0x20) ? 1 : 0;
+    dev->completion_byte = dev->drive_sel & 0x20;
+    drive = &dev->drives[dev->drive_sel];
 
-    switch (mfm->command[0]) {
+    switch (dev->command[0]) {
 	case CMD_TEST_DRIVE_READY:
 		if (!drive->present)
-			mfm_error(mfm, ERR_NOT_READY);
-		mfm_complete(mfm);
+			mfm_error(dev, ERR_NOT_READY);
+		mfm_complete(dev);
 		break;
 
 	case CMD_RECALIBRATE:
 		if (!drive->present)
-			mfm_error(mfm, ERR_NOT_READY);
+			mfm_error(dev, ERR_NOT_READY);
 		else {
-			mfm->cylinder = 0;
+			dev->cylinder = 0;
 			drive->current_cylinder = 0;
 		}
-		mfm_complete(mfm);
+		mfm_complete(dev);
 		break;
 
 	case CMD_READ_STATUS:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->state = STATE_SEND_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 4;
-				mfm->status = STAT_BSY | STAT_IO | STAT_REQ;
-				mfm->data[0] = mfm->error;
-				mfm->data[1] = mfm->drive_sel ? 0x20 : 0;
-				mfm->data[2] = mfm->data[3] = 0;
-				mfm->error = 0;
+				dev->state = STATE_SEND_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 4;
+				dev->status = STAT_BSY | STAT_IO | STAT_REQ;
+				dev->data[0] = dev->error;
+				dev->data[1] = dev->drive_sel ? 0x20 : 0;
+				dev->data[2] = dev->data[3] = 0;
+				dev->error = 0;
 				break;
 
 			case STATE_SENT_DATA:
-				mfm_complete(mfm);
+				mfm_complete(dev);
 				break;
 		}
 		break;
 
 	case CMD_VERIFY_SECTORS:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->cylinder = mfm->command[3] | ((mfm->command[2] & 0xc0) << 2);
-				drive->current_cylinder = (mfm->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : mfm->cylinder;
-				mfm->head = mfm->command[1] & 0x1f;
-				mfm->sector = mfm->command[2] & 0x1f;
-				mfm->sector_count = mfm->command[4];
+				dev->cylinder = dev->command[3] | ((dev->command[2] & 0xc0) << 2);
+				drive->current_cylinder = (dev->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : dev->cylinder;
+				dev->head = dev->command[1] & 0x1f;
+				dev->sector = dev->command[2] & 0x1f;
+				dev->sector_count = dev->command[4];
 				do {
-					if (get_sector(mfm, &addr)) {
+					if (get_sector(dev, &addr)) {
 						pclog("get_sector failed\n");
-						mfm_error(mfm, mfm->error);
-						mfm_complete(mfm);
+						mfm_error(dev, dev->error);
+						mfm_complete(dev);
 						return;
 					}
 
-					next_sector(mfm);
+					next_sector(dev);
 
-					mfm->sector_count = (mfm->sector_count-1) & 0xff;
-				} while (mfm->sector_count);
+					dev->sector_count = (dev->sector_count-1) & 0xff;
+				} while (dev->sector_count);
 
-				mfm_complete(mfm);
+				mfm_complete(dev);
 
 				ui_sb_update_icon(SB_HDD | HDD_BUS_MFM, 1);
 				break;
 
 			default:
-				fatal("CMD_VERIFY_SECTORS: bad state %i\n", mfm->state);
+				fatal("CMD_VERIFY_SECTORS: bad state %i\n", dev->state);
 		}
 		break;
 
 	case CMD_FORMAT_TRACK:
-		mfm->cylinder = mfm->command[3] | ((mfm->command[2] & 0xc0) << 2);
-		drive->current_cylinder = (mfm->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : mfm->cylinder;
-		mfm->head = mfm->command[1] & 0x1f;
+		dev->cylinder = dev->command[3] | ((dev->command[2] & 0xc0) << 2);
+		drive->current_cylinder = (dev->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : dev->cylinder;
+		dev->head = dev->command[1] & 0x1f;
 
-		if (get_sector(mfm, &addr)) {
+		if (get_sector(dev, &addr)) {
 			pclog("get_sector failed\n");
-			mfm_error(mfm, mfm->error);
-			mfm_complete(mfm);
+			mfm_error(dev, dev->error);
+			mfm_complete(dev);
 			return;
 		}
 
 		hdd_image_zero(drive->hdd_num, addr, 17);
 				
-		mfm_complete(mfm);
+		mfm_complete(dev);
 		break;			       
 
 	case CMD_READ_SECTORS:		
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->cylinder = mfm->command[3] | ((mfm->command[2] & 0xc0) << 2);
-				drive->current_cylinder = (mfm->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : mfm->cylinder;
-				mfm->head = mfm->command[1] & 0x1f;
-				mfm->sector = mfm->command[2] & 0x1f;
-				mfm->sector_count = mfm->command[4];
-				mfm->state = STATE_SEND_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 512;
+				dev->cylinder = dev->command[3] | ((dev->command[2] & 0xc0) << 2);
+				drive->current_cylinder = (dev->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : dev->cylinder;
+				dev->head = dev->command[1] & 0x1f;
+				dev->sector = dev->command[2] & 0x1f;
+				dev->sector_count = dev->command[4];
+				dev->state = STATE_SEND_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 512;
 
-				if (get_sector(mfm, &addr)) {
-					mfm_error(mfm, mfm->error);
-					mfm_complete(mfm);
+				if (get_sector(dev, &addr)) {
+					mfm_error(dev, dev->error);
+					mfm_complete(dev);
 					return;
 				}
 
 				hdd_image_read(drive->hdd_num, addr, 1,
-					       (uint8_t *) mfm->sector_buf);
+					       (uint8_t *) dev->sector_buf);
 				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
 
-				if (mfm->irq_dma_mask & DMA_ENA)
-					mfm->callback = MFM_TIME;
+				if (dev->irq_dma_mask & DMA_ENA)
+					dev->callback = MFM_TIME;
 				else {
-					mfm->status = STAT_BSY | STAT_IO | STAT_REQ;
-					memcpy(mfm->data, mfm->sector_buf, 512);
+					dev->status = STAT_BSY | STAT_IO | STAT_REQ;
+					memcpy(dev->data, dev->sector_buf, 512);
 				}
 				break;
 
 			case STATE_SEND_DATA:
-				mfm->status = STAT_BSY;
-				if (mfm->irq_dma_mask & DMA_ENA) {
-					for (; mfm->data_pos < 512; mfm->data_pos++) {
-						int val = dma_channel_write(3, mfm->sector_buf[mfm->data_pos]);
+				dev->status = STAT_BSY;
+				if (dev->irq_dma_mask & DMA_ENA) {
+					for (; dev->data_pos < 512; dev->data_pos++) {
+						int val = dma_channel_write(3, dev->sector_buf[dev->data_pos]);
 
 						if (val == DMA_NODATA) {
 							pclog("CMD_READ_SECTORS out of data!\n");
-							mfm->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
-							mfm->callback = MFM_TIME;
+							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
+							dev->callback = MFM_TIME;
 							return;
 						}
 					}
-					mfm->state = STATE_SENT_DATA;
-					mfm->callback = MFM_TIME;
+					dev->state = STATE_SENT_DATA;
+					dev->callback = MFM_TIME;
 				} else
 					fatal("Read sectors no DMA! - shouldn't get here\n");
 				break;
 
 			case STATE_SENT_DATA:
-				next_sector(mfm);
+				next_sector(dev);
 
-				mfm->data_pos = 0;
+				dev->data_pos = 0;
 
-				mfm->sector_count = (mfm->sector_count-1) & 0xff;
+				dev->sector_count = (dev->sector_count-1) & 0xff;
 
-				if (mfm->sector_count) {
-					if (get_sector(mfm, &addr)) {
-						mfm_error(mfm, mfm->error);
-						mfm_complete(mfm);
+				if (dev->sector_count) {
+					if (get_sector(dev, &addr)) {
+						mfm_error(dev, dev->error);
+						mfm_complete(dev);
 						return;
 					}
 
 					hdd_image_read(drive->hdd_num, addr, 1,
-						(uint8_t *) mfm->sector_buf);
+						(uint8_t *) dev->sector_buf);
 					ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
 
-					mfm->state = STATE_SEND_DATA;
+					dev->state = STATE_SEND_DATA;
 
-					if (mfm->irq_dma_mask & DMA_ENA)
-						mfm->callback = MFM_TIME;
+					if (dev->irq_dma_mask & DMA_ENA)
+						dev->callback = MFM_TIME;
 					else {
-						mfm->status = STAT_BSY | STAT_IO | STAT_REQ;
-						memcpy(mfm->data, mfm->sector_buf, 512);
+						dev->status = STAT_BSY | STAT_IO | STAT_REQ;
+						memcpy(dev->data, dev->sector_buf, 512);
 					}
 				} else {
-					mfm_complete(mfm);
+					mfm_complete(dev);
 					ui_sb_update_icon(SB_HDD | HDD_BUS_MFM, 0);
 				}
 				break;
 
 			default:
-				fatal("CMD_READ_SECTORS: bad state %i\n", mfm->state);
+				fatal("CMD_READ_SECTORS: bad state %i\n", dev->state);
 		}
 		break;
 
 	case CMD_WRITE_SECTORS:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->cylinder = mfm->command[3] | ((mfm->command[2] & 0xc0) << 2);
-				drive->current_cylinder = (mfm->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : mfm->cylinder;
-				mfm->head = mfm->command[1] & 0x1f;
-				mfm->sector = mfm->command[2] & 0x1f;
-				mfm->sector_count = mfm->command[4];
-				mfm->state = STATE_RECEIVE_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 512;
-				if (mfm->irq_dma_mask & DMA_ENA)
-					mfm->callback = MFM_TIME;
+				dev->cylinder = dev->command[3] | ((dev->command[2] & 0xc0) << 2);
+				drive->current_cylinder = (dev->cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : dev->cylinder;
+				dev->head = dev->command[1] & 0x1f;
+				dev->sector = dev->command[2] & 0x1f;
+				dev->sector_count = dev->command[4];
+				dev->state = STATE_RECEIVE_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 512;
+				if (dev->irq_dma_mask & DMA_ENA)
+					dev->callback = MFM_TIME;
 				else
-					mfm->status = STAT_BSY | STAT_REQ;
+					dev->status = STAT_BSY | STAT_REQ;
 				break;
 
 			case STATE_RECEIVE_DATA:
-				mfm->status = STAT_BSY;
-				if (mfm->irq_dma_mask & DMA_ENA) {
-					for (; mfm->data_pos < 512; mfm->data_pos++) {
+				dev->status = STAT_BSY;
+				if (dev->irq_dma_mask & DMA_ENA) {
+					for (; dev->data_pos < 512; dev->data_pos++) {
 						int val = dma_channel_read(3);
 
 						if (val == DMA_NODATA) {
 							pclog("CMD_WRITE_SECTORS out of data!\n");
-							mfm->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
-							mfm->callback = MFM_TIME;
+							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
+							dev->callback = MFM_TIME;
 							return;
 						}
 
-						mfm->sector_buf[mfm->data_pos] = val & 0xff;
+						dev->sector_buf[dev->data_pos] = val & 0xff;
 					}
 
-					mfm->state = STATE_RECEIVED_DATA;
-					mfm->callback = MFM_TIME;
+					dev->state = STATE_RECEIVED_DATA;
+					dev->callback = MFM_TIME;
 				} else
 					fatal("Write sectors no DMA! - should never get here\n");
 				break;
 
 			case STATE_RECEIVED_DATA:
-				if (! (mfm->irq_dma_mask & DMA_ENA))
-					memcpy(mfm->sector_buf, mfm->data, 512);
+				if (! (dev->irq_dma_mask & DMA_ENA))
+					memcpy(dev->sector_buf, dev->data, 512);
 
-				if (get_sector(mfm, &addr))
-				{
-					mfm_error(mfm, mfm->error);
-					mfm_complete(mfm);
+				if (get_sector(dev, &addr)) {
+					mfm_error(dev, dev->error);
+					mfm_complete(dev);
 					return;
 				}
 
 				hdd_image_write(drive->hdd_num, addr, 1,
-						(uint8_t *) mfm->sector_buf);
+						(uint8_t *) dev->sector_buf);
 				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
 
-				next_sector(mfm);
-				mfm->data_pos = 0;
-				mfm->sector_count = (mfm->sector_count-1) & 0xff;
+				next_sector(dev);
+				dev->data_pos = 0;
+				dev->sector_count = (dev->sector_count-1) & 0xff;
 
-				if (mfm->sector_count) {
-					mfm->state = STATE_RECEIVE_DATA;
-					if (mfm->irq_dma_mask & DMA_ENA)
-						mfm->callback = MFM_TIME;
+				if (dev->sector_count) {
+					dev->state = STATE_RECEIVE_DATA;
+					if (dev->irq_dma_mask & DMA_ENA)
+						dev->callback = MFM_TIME;
 					else
-						mfm->status = STAT_BSY | STAT_REQ;
+						dev->status = STAT_BSY | STAT_REQ;
 				} else
-					mfm_complete(mfm);
+					mfm_complete(dev);
 				break;
 
 			default:
-				fatal("CMD_WRITE_SECTORS: bad state %i\n", mfm->state);
+				fatal("CMD_WRITE_SECTORS: bad state %i\n", dev->state);
 		}
 		break;
 
 	case CMD_SEEK:
 		if (! drive->present)
-			mfm_error(mfm, ERR_NOT_READY);
+			mfm_error(dev, ERR_NOT_READY);
 		else {
-			int cylinder = mfm->command[3] | ((mfm->command[2] & 0xc0) << 2);
+			int cylinder = dev->command[3] | ((dev->command[2] & 0xc0) << 2);
 
 			drive->current_cylinder = (cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : cylinder;
 
 			if (cylinder != drive->current_cylinder)
-				mfm_error(mfm, ERR_SEEK_ERROR);
+				mfm_error(dev, ERR_SEEK_ERROR);
 		}
-		mfm_complete(mfm);
+		mfm_complete(dev);
 		break;
 
 	case CMD_INIT_DRIVE_PARAMS:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->state = STATE_RECEIVE_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 8;
-				mfm->status = STAT_BSY | STAT_REQ;
+				dev->state = STATE_RECEIVE_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 8;
+				dev->status = STAT_BSY | STAT_REQ;
 				break;
 
 			case STATE_RECEIVED_DATA:
-				drive->cfg_cyl = mfm->data[1] | (mfm->data[0] << 8);
-				drive->cfg_hpc = mfm->data[2];
-				pclog("Drive %i: cylinders=%i, heads=%i\n", mfm->drive_sel, drive->cfg_cyl, drive->cfg_hpc);
-				mfm_complete(mfm);
+				drive->cfg_cyl = dev->data[1] | (dev->data[0] << 8);
+				drive->cfg_hpc = dev->data[2];
+				pclog("Drive %i: cylinders=%i, heads=%i\n", dev->drive_sel, drive->cfg_cyl, drive->cfg_hpc);
+				mfm_complete(dev);
 				break;
 
 			default:
-				fatal("CMD_INIT_DRIVE_PARAMS bad state %i\n", mfm->state);
+				fatal("CMD_INIT_DRIVE_PARAMS bad state %i\n", dev->state);
 		}
 		break;
 
 	case CMD_WRITE_SECTOR_BUFFER:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->state = STATE_RECEIVE_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 512;
-				if (mfm->irq_dma_mask & DMA_ENA)
-					mfm->callback = MFM_TIME;
+				dev->state = STATE_RECEIVE_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 512;
+				if (dev->irq_dma_mask & DMA_ENA)
+					dev->callback = MFM_TIME;
 				else
-					mfm->status = STAT_BSY | STAT_REQ;
+					dev->status = STAT_BSY | STAT_REQ;
 				break;
 
 			case STATE_RECEIVE_DATA:
-				if (mfm->irq_dma_mask & DMA_ENA) {
-					mfm->status = STAT_BSY;
+				if (dev->irq_dma_mask & DMA_ENA) {
+					dev->status = STAT_BSY;
 
-					for (; mfm->data_pos < 512; mfm->data_pos++) {
+					for (; dev->data_pos < 512; dev->data_pos++) {
 						int val = dma_channel_read(3);
 
 						if (val == DMA_NODATA) {
 							pclog("CMD_WRITE_SECTOR_BUFFER out of data!\n");
-							mfm->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
-							mfm->callback = MFM_TIME;
+							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
+							dev->callback = MFM_TIME;
 							return;
 						}
 					
-						mfm->data[mfm->data_pos] = val & 0xff;
+						dev->data[dev->data_pos] = val & 0xff;
 					}
 
-					mfm->state = STATE_RECEIVED_DATA;
-					mfm->callback = MFM_TIME;
+					dev->state = STATE_RECEIVED_DATA;
+					dev->callback = MFM_TIME;
 				} else
 					fatal("CMD_WRITE_SECTOR_BUFFER - should never get here!\n");
 				break;
 
 			case STATE_RECEIVED_DATA:
-				memcpy(mfm->sector_buf, mfm->data, 512);
-				mfm_complete(mfm);
+				memcpy(dev->sector_buf, dev->data, 512);
+				mfm_complete(dev);
 				break;
 
 			default:
-				fatal("CMD_WRITE_SECTOR_BUFFER bad state %i\n", mfm->state);
+				fatal("CMD_WRITE_SECTOR_BUFFER bad state %i\n", dev->state);
 		}
 		break;
 
 	case CMD_BUFFER_DIAGNOSTIC:
 	case CMD_CONTROLLER_DIAGNOSTIC:
-		mfm_complete(mfm);
+		mfm_complete(dev);
 		break;
 
 	case 0xfa:
-		mfm_complete(mfm);
+		mfm_complete(dev);
 		break;
 
 	case CMD_DTC_SET_STEP_RATE:
-		mfm_complete(mfm);
+		mfm_complete(dev);
 		break;
 
 	case CMD_DTC_GET_DRIVE_PARAMS:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->state = STATE_SEND_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 4;
-				mfm->status = STAT_BSY | STAT_IO | STAT_REQ;
-				memset(mfm->data, 0, 4);
-				mfm->data[0] = drive->tracks & 0xff;
-				mfm->data[1] = 17 | ((drive->tracks >> 2) & 0xc0);
-				mfm->data[2] = drive->hpc-1;
-				pclog("Get drive params %02x %02x %02x %i\n", mfm->data[0], mfm->data[1], mfm->data[2], drive->tracks);
+				dev->state = STATE_SEND_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 4;
+				dev->status = STAT_BSY | STAT_IO | STAT_REQ;
+				memset(dev->data, 0, 4);
+				dev->data[0] = drive->tracks & 0xff;
+				dev->data[1] = 17 | ((drive->tracks >> 2) & 0xc0);
+				dev->data[2] = drive->hpc-1;
+				pclog("Get drive params %02x %02x %02x %i\n", dev->data[0], dev->data[1], dev->data[2], drive->tracks);
 				break;
 
 			case STATE_SENT_DATA:
-				mfm_complete(mfm);
+				mfm_complete(dev);
 				break;
 
 			default:
-				fatal("CMD_INIT_DRIVE_PARAMS bad state %i\n", mfm->state);
+				fatal("CMD_INIT_DRIVE_PARAMS bad state %i\n", dev->state);
 		}
 		break;
 
 	case CMD_DTC_GET_GEOMETRY:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->state = STATE_SEND_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 16;
-				mfm->status = STAT_BSY | STAT_IO | STAT_REQ;
-				memset(mfm->data, 0, 16);
-				mfm->data[0x4] = drive->tracks & 0xff;
-				mfm->data[0x5] = (drive->tracks >> 8) & 0xff;
-				mfm->data[0xa] = drive->hpc;
+				dev->state = STATE_SEND_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 16;
+				dev->status = STAT_BSY | STAT_IO | STAT_REQ;
+				memset(dev->data, 0, 16);
+				dev->data[0x4] = drive->tracks & 0xff;
+				dev->data[0x5] = (drive->tracks >> 8) & 0xff;
+				dev->data[0xa] = drive->hpc;
 				break;
 
 			case STATE_SENT_DATA:
-				mfm_complete(mfm);
+				mfm_complete(dev);
 				break;
 		}
 		break;
 
 	case CMD_DTC_SET_GEOMETRY:
-		switch (mfm->state) {
+		switch (dev->state) {
 			case STATE_START_COMMAND:
-				mfm->state = STATE_RECEIVE_DATA;
-				mfm->data_pos = 0;
-				mfm->data_len = 16;
-				mfm->status = STAT_BSY | STAT_REQ;
+				dev->state = STATE_RECEIVE_DATA;
+				dev->data_pos = 0;
+				dev->data_len = 16;
+				dev->status = STAT_BSY | STAT_REQ;
 				break;
 
 			case STATE_RECEIVED_DATA:
 				/*Bit of a cheat here - we always report the actual geometry of the drive in use*/
-				mfm_complete(mfm);
+				mfm_complete(dev);
 			break;
 		}
 		break;
 
 	default:
 		fatal("Unknown Xebec command - %02x %02x %02x %02x %02x %02x\n",
-			mfm->command[0], mfm->command[1],
-			mfm->command[2], mfm->command[3],
-			mfm->command[4], mfm->command[5]);
+			dev->command[0], dev->command[1],
+			dev->command[2], dev->command[3],
+			dev->command[4], dev->command[5]);
     }
 }
 
 
 static void
-loadhd(mfm_t *mfm, int c, int d, const wchar_t *fn)
+loadhd(mfm_t *dev, int c, int d, const wchar_t *fn)
 {
-    drive_t *drive = &mfm->drives[d];
+    drive_t *drive = &dev->drives[d];
 
     if (! hdd_image_load(d)) {
 	drive->present = 0;
@@ -782,14 +786,15 @@ loadhd(mfm_t *mfm, int c, int d, const wchar_t *fn)
 	
     drive->spt = (uint8_t)hdd[c].spt;
     drive->hpc = (uint8_t)hdd[c].hpc;
-    drive->tracks = (uint8_t)hdd[c].tracks;
+    drive->tracks = (uint16_t)hdd[c].tracks;
     drive->hdd_num = c;
     drive->present = 1;
 }
 
 
-static struct {
-    int tracks, hpc;
+static const struct {
+    uint16_t	tracks;
+    uint8_t	hpc;
 } hd_types[4] = {
     { 306, 4 },	/* Type 0 */
     { 612, 4 }, /* Type 16 */
@@ -799,14 +804,14 @@ static struct {
 
 
 static void
-mfm_set_switches(mfm_t *mfm)
+mfm_set_switches(mfm_t *dev)
 {
     int c, d;
 	
-    mfm->switches = 0;
+    dev->switches = 0;
 	
     for (d=0; d<2; d++) {
-	drive_t *drive = &mfm->drives[d];
+	drive_t *drive = &dev->drives[d];
 
 	if (! drive->present) continue;
 
@@ -814,118 +819,88 @@ mfm_set_switches(mfm_t *mfm)
 		if (drive->spt == 17 &&
 		    drive->hpc == hd_types[c].hpc &&
 		    drive->tracks == hd_types[c].tracks) {
-			mfm->switches |= (c << (d ? 0 : 2));
+			dev->switches |= (c << (d ? 0 : 2));
 			break;
 		}
 	}
 
 	if (c == 4)
-	pclog("WARNING: Drive %c: has format not supported by Fixed Disk Adapter", d ? 'D' : 'C');
+		pclog("WARNING: drive %d has unsupported format %d/%d/%d !\n",
+			d, drive->tracks, drive->hpc, drive->spt);
     }
 }
 
 
 static void *
-xebec_init(const device_t *info)
+mfm_init(const device_t *info)
 {
-    int i, c = 0;
+    wchar_t *fn = NULL;
+    mfm_t *dev;
+    int i, c;
 
-    mfm_t *xebec = malloc(sizeof(mfm_t));
-    memset(xebec, 0x00, sizeof(mfm_t));
+    dev = malloc(sizeof(mfm_t));
+    memset(dev, 0x00, sizeof(mfm_t));
 
     pclog("MFM: looking for disks..\n");
+    c = 0;
     for (i=0; i<HDD_NUM; i++) {
 	if ((hdd[i].bus == HDD_BUS_MFM) && (hdd[i].mfm_channel < MFM_NUM)) {
 		pclog("Found MFM hard disk on channel %i\n", hdd[i].mfm_channel);
-		loadhd(xebec, i, hdd[i].mfm_channel, hdd[i].fn);
+		loadhd(dev, i, hdd[i].mfm_channel, hdd[i].fn);
 
 		if (++c > MFM_NUM) break;
 	}
     }
     pclog("MFM: %d disks loaded.\n", c);
 
-    mfm_set_switches(xebec);
+    switch(info->local) {
+	case 0:		/* Xebec */
+		fn = XEBEC_BIOS_FILE;
+		mfm_set_switches(dev);
+		break;
 
-    rom_init(&xebec->bios_rom, XEBEC_BIOS_FILE,
+	case 1:		/* DTC5150 */
+		fn = DTC_BIOS_FILE;
+		dev->switches = 0xff;
+		dev->drives[0].cfg_cyl = dev->drives[0].tracks;
+		dev->drives[0].cfg_hpc = dev->drives[0].hpc;
+		dev->drives[1].cfg_cyl = dev->drives[1].tracks;
+		dev->drives[1].cfg_hpc = dev->drives[1].hpc;
+		break;
+    }
+
+    rom_init(&dev->bios_rom, fn,
 	     0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
-
+		
     io_sethandler(0x0320, 4,
-		  mfm_read, NULL, NULL, mfm_write, NULL, NULL, xebec);
+		  mfm_read,NULL,NULL, mfm_write,NULL,NULL, dev);
 
-    timer_add(mfm_callback, &xebec->callback, &xebec->callback, xebec);
-	
-    return(xebec);
+    timer_add(mfm_callback, &dev->callback, &dev->callback, dev);
+
+    return(dev);
 }
 
 
 static void
 mfm_close(void *priv)
 {
-    mfm_t *mfm = (mfm_t *)priv;
+    mfm_t *dev = (mfm_t *)priv;
     int d;
 
     for (d=0; d<2; d++) {
-	drive_t *drive = &mfm->drives[d];
+	drive_t *drive = &dev->drives[d];
 
 	hdd_image_close(drive->hdd_num);
     }
-	
-    free(mfm);
+
+    free(dev);
 }
 
 
 static int
 xebec_available(void)
 {
-	return(rom_present(XEBEC_BIOS_FILE));
-}
-
-
-const device_t mfm_xt_xebec_device = {
-    "IBM PC Fixed Disk Adapter",
-    DEVICE_ISA,
-    0,
-    xebec_init, mfm_close, NULL,
-    xebec_available, NULL, NULL, NULL,
-    NULL
-};
-
-
-static void *
-dtc5150x_init(const device_t *info)
-{
-    int i, c = 0;
-
-    mfm_t *dtc = malloc(sizeof(mfm_t));
-    memset(dtc, 0x00, sizeof(mfm_t));
-
-    pclog("MFM: looking for disks..\n");
-    for (i=0; i<HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_MFM) && (hdd[i].mfm_channel < MFM_NUM)) {
-		pclog("Found MFM hard disk on channel %i\n", hdd[i].mfm_channel);
-		loadhd(dtc, i, hdd[i].mfm_channel, hdd[i].fn);
-
-		if (++c > MFM_NUM) break;
-	}
-    }
-    pclog("MFM: %d disks loaded.\n", c);
-
-    dtc->switches = 0xff;
-
-    dtc->drives[0].cfg_cyl = dtc->drives[0].tracks;
-    dtc->drives[0].cfg_hpc = dtc->drives[0].hpc;
-    dtc->drives[1].cfg_cyl = dtc->drives[1].tracks;
-    dtc->drives[1].cfg_hpc = dtc->drives[1].hpc;
-
-    rom_init(&dtc->bios_rom, DTC_BIOS_FILE,
-	     0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
-		
-    io_sethandler(0x0320, 4,
-		  mfm_read, NULL, NULL, mfm_write, NULL, NULL, dtc);
-
-    timer_add(mfm_callback, &dtc->callback, &dtc->callback, dtc);
-
-    return(dtc);
+    return(rom_present(XEBEC_BIOS_FILE));
 }
 
 
@@ -936,11 +911,20 @@ dtc5150x_available(void)
 }
 
 
+const device_t mfm_xt_xebec_device = {
+    "IBM PC Fixed Disk Adapter",
+    DEVICE_ISA,
+    0,
+    mfm_init, mfm_close, NULL,
+    xebec_available, NULL, NULL, NULL,
+    NULL
+};
+
 const device_t mfm_xt_dtc5150x_device = {
     "DTC 5150X",
     DEVICE_ISA,
-    0,
-    dtc5150x_init, mfm_close, NULL,
+    1,
+    mfm_init, mfm_close, NULL,
     dtc5150x_available, NULL, NULL, NULL,
     NULL
 };

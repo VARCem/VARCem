@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.5	2018/03/08
+ * Version:	@(#)win.h	1.0.6	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,9 +72,8 @@ extern HICON		hIcon[512];
 
 extern int		status_is_open;
 
-extern char		openfilestring[260];
-extern WCHAR		wopenfilestring[260];
-
+extern char		openfilestring[];
+extern WCHAR		wopenfilestring[];
 extern DWORD		filterindex;
 
 
@@ -144,14 +143,8 @@ extern void	StatusBarCreate(HWND hwndParent, uintptr_t idStatus,
 
 /* Functions in win_dialog.c: */
 extern void	dialog_center(HWND hdlg);
-
-extern wchar_t	*BrowseFolder(wchar_t *saved_path, wchar_t *title);
-
-extern int	file_dlg_w(HWND hwnd, WCHAR *f, WCHAR *fn, int save);
-extern int	file_dlg(HWND hwnd, WCHAR *f, char *fn, int save);
-extern int	file_dlg_mb(HWND hwnd, char *f, char *fn, int save);
-extern int	file_dlg_w_st(HWND hwnd, int i, WCHAR *fn, int save);
-extern int	file_dlg_st(HWND hwnd, int i, char *fn, int save);
+extern int	file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save);
+extern int	file_dlg_st(HWND hwnd, int i, WCHAR *fn, int save);
 
 
 #ifdef __cplusplus

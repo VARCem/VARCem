@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.12	2018/03/21
+ * Version:	@(#)machine.h	1.0.13	2018/03/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -341,6 +341,9 @@ extern void	machine_tandy1k_init(const machine_t *, void *);
 extern int	tandy1k_eeprom_read(void);
 
 extern void	machine_xt_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t	*xt_get_device(void);
+#endif
 extern void	machine_xt_compaq_init(const machine_t *, void *);
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
 extern void	machine_xt_laserxt_init(const machine_t *, void *);

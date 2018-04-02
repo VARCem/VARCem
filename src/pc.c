@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.16	2018/03/27
+ * Version:	@(#)pc.c	1.0.17	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,8 +102,6 @@ int	do_dump_config = 0;			/* (O) dump config on load */
 int	start_in_fullscreen = 0;		/* (O) start in fullscreen */
 #ifdef _WIN32
 int	force_debug = 0;			/* (O) force debug output */
-uint64_t unique_id = 0;				/* (O) -H id */
-uint64_t source_hwnd = 0;			/* (O) -H hwnd */
 #endif
 #ifdef USE_WX
 int	video_fps = RENDER_FPS;			/* (O) render speed in fps */
@@ -326,6 +324,45 @@ pc_version(const char *platform)
 
 
 /*
+ * NOTE:
+ *
+ * Although we now use relative pathnames in the code,
+ * we may still bump into old configuration files that
+ * still have old, absolute pathnames.
+ *
+ * We try to "fix" those by stripping the "usr_path"
+ * component from them, if they have that.  If another
+ * path, well, nothing we can do here.
+ */
+void
+pc_path(wchar_t *dst, int sz, wchar_t *src)
+{
+    if ((src != NULL) && !wcsnicmp(src, usr_path, wcslen(usr_path)))
+	src += wcslen(usr_path);
+
+    /*
+     * Fix all the slashes.
+     *
+     * Since Windows will handle both \ and / paths, we
+     * now convert ALL paths to the latter format, so it
+     * is always the same.
+     */
+    if (src == NULL)
+	src = dst;
+    while ((sz > 0) && (*src != L'\0')) {
+	if (*src == L'\\')
+		*dst = L'/';
+	  else
+		*dst = *src;
+	src++;
+	dst++;
+	sz--;
+    }
+    *dst = L'\0';
+}
+
+
+/*
  * Perform initial startup of the PC.
  *
  * This is the platform-indepenent part of the startup,
@@ -387,6 +424,9 @@ pc_init(int argc, wchar_t *argv[])
 
 	if (!wcscasecmp(argv[c], L"--help") || !wcscasecmp(argv[c], L"-?")) {
 usage:
+#ifdef _WIN32
+		plat_console(1);
+#endif
 		printf("\n%s %s\n", emu_title, emu_fullversion);
 		printf("\nUsage: varcem [options] [cfg-file]\n\n");
 		printf("Valid options are:\n\n");
@@ -403,9 +443,6 @@ usage:
 		printf("  -R or --fps num      - set render speed to 'num' fps\n");
 #endif
 		printf("  -S or --settings     - show only the settings dialog\n");
-#ifdef _WIN32
-		printf("  -H or --hwnd id,hwnd - sends back the main dialog's hwnd\n");
-#endif
 		printf("  -W or --readonly     - do not modify the config file\n");
 		printf("\nA config file can be specified. If none is, the default file will be used.\n");
 		return(0);
@@ -442,15 +479,6 @@ usage:
 	} else if (!wcscasecmp(argv[c], L"--settings") ||
 		   !wcscasecmp(argv[c], L"-S")) {
 		settings_only = 1;
-#ifdef _WIN32
-	} else if (!wcscasecmp(argv[c], L"--hwnd") ||
-		   !wcscasecmp(argv[c], L"-H")) {
-
-		if ((c+1) == argc) goto usage;
-
-		wcstombs(temp, argv[++c], sizeof(temp));
-		sscanf(temp, "%016" PRIX64 ",%016" PRIX64, &unique_id, &source_hwnd);
-#endif
 	} else if (!wcscasecmp(argv[c], L"--readonly") ||
 		   !wcscasecmp(argv[c], L"-W")) {
 		config_ro = 1;
@@ -537,10 +565,22 @@ usage:
     /* At this point, we can safely create the full path name. */
     plat_append_filename(cfg_path, usr_path, p);
 
+    /* If no extension was given, tack on the default one. */
+    if ((cfg = wcschr(p, L'.')) == NULL)
+	wcscat(cfg_path, CONFIG_FILE_EXT);
+
     /*
      * This is where we start outputting to the log file,
      * if there is one. Create a little info header first.
+     *
+     * For the Windows version, if we do not have a console
+     * meaning, not logging to file..), request one if we
+     * have force_debug set.
      */
+#ifdef _WIN32
+    if (force_debug)
+	plat_console(1);
+#endif
     (void)time(&now);
     info = localtime(&now);
     strftime(temp, sizeof(temp), "%Y/%m/%d %H:%M:%S", info);
@@ -556,11 +596,12 @@ usage:
      * disks are an example) so we have to initialize those
      * modules before we load the config..
      */
-    hdd_init();
-    network_init();
     mouse_init();
+    sound_global_init();
+    hdd_init();
     cdrom_global_init();
     zip_global_init();
+    network_init();
 
     /* Load the configuration file. */
     config_load();

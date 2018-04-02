@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)cdrom.c	1.0.10	2018/03/21
+ * Version:	@(#)cdrom.c	1.0.11	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2866,7 +2866,7 @@ uint8_t cdrom_phase_data_out(uint8_t id)
 	switch(dev->current_cdb[0]) {
 		case GPCMD_MODE_SELECT_6:
 		case GPCMD_MODE_SELECT_10:
-			f = nvr_fopen(L"modeselect.bin", L"wb");
+			f = plat_fopen(nvr_path(L"modeselect.bin"), L"wb");
 			fwrite(cdbufferb, 1, dev->total_length, f);
 			fclose(f);
 

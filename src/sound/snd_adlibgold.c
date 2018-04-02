@@ -10,7 +10,7 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.5	2018/03/28
+ * Version:	@(#)snd_adlibgold.c	1.0.6	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,7 @@
 #include "../nvr.h"
 #include "../timer.h"
 #include "../device.h"
+#include "../plat.h"
 #include "sound.h"
 #include "filters.h"
 #include "snd_opl.h"
@@ -827,10 +828,10 @@ void *adgold_init(const device_t *info)
         for (; c >= 0; c--)
                 attenuation[c] = 0;
 
-        f = nvr_fopen(L"adgold.bin", L"rb");
-        if (f)
+        f = plat_fopen(nvr_path(L"adgold.bin"), L"rb");
+        if (f != NULL)
         {
-                fread(adgold->adgold_eeprom, 0x18, 1, f);
+                (void)fread(adgold->adgold_eeprom, 0x18, 1, f);
                 fclose(f);
         }
 
@@ -867,10 +868,10 @@ void adgold_close(void *p)
         FILE *f;
         adgold_t *adgold = (adgold_t *)p;
         
-        f = nvr_fopen(L"adgold.bin", L"wb");
-        if (f)
+        f = plat_fopen(nvr_path(L"adgold.bin"), L"wb");
+        if (f != NULL)
         {
-                fwrite(adgold->adgold_eeprom, 0x18, 1, f);
+                (void)fwrite(adgold->adgold_eeprom, 0x18, 1, f);
                 fclose(f);
         }
 

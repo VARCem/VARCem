@@ -85,6 +85,7 @@ machine_init(void)
     /* Activate the ROM BIOS. */
     mem_add_bios();
 
+    /* Reset the IDE bus master pointers. */
     ide_set_bus_master(NULL, NULL, NULL);
 
     /* All good, boot the machine! */

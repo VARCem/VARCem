@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.6	2018/03/25
+ * Version:	@(#)resource.h	1.0.7	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -249,7 +249,6 @@
 
 #define IDM_ABOUT		40001
 #define  IDC_ABOUT_ICON		65535
-#define IDM_ACTION_RCTRL_IS_LALT	40010
 #define IDM_ACTION_SCREENSHOT	40011
 #define IDM_ACTION_HRESET	40012
 #define IDM_ACTION_RESET_CAD	40013
@@ -289,6 +288,7 @@
 #define IDM_VID_GRAY_AMBER	40092
 #define IDM_VID_GRAY_GREEN	40093
 #define IDM_VID_GRAY_WHITE	40094
+#define IDM_KBD_RCTRL_IS_LALT	40101
 
 #define IDM_LOG_BREAKPOINT	51201
 #define IDM_DUMP_VRAM		51202	// should be an Action

@@ -12,7 +12,7 @@
  *		- pc2386 video BIOS is underdumped (16k instead of 24k)
  *		- c386sx16 BIOS fails checksum
  *
- * Version:	@(#)rom.c	1.0.8	2018/03/12
+ * Version:	@(#)rom.c	1.0.10	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,44 +53,32 @@
 #include "plat.h"
 
 
-FILE *
-rom_fopen(wchar_t *fn)
+/* Return the base path for ROM images. */
+wchar_t *
+rom_path(wchar_t *str)
 {
-    wchar_t temp[1024];
+    static wchar_t temp[1024];
 
+    /* Get the full path in place. */
     wcscpy(temp, emu_path);
+    wcscat(temp, ROMS_PATH);
     plat_append_slash(temp);
-    wcscat(temp, fn);
+    wcscat(temp, str);
 
-    return(plat_fopen(temp, L"rb"));
+    /* Make sure path is clean. */
+    pc_path(temp, sizeof_w(temp), NULL);
+
+    return(temp);
 }
 
 
-int
-rom_getfile(wchar_t *fn, wchar_t *s, int size)
-{
-    FILE *f;
-
-    wcscpy(s, emu_path);
-    plat_append_slash(s);
-    wcscat(s, fn);
-
-    f = plat_fopen(s, L"rb");
-    if (f != NULL) {
-	(void)fclose(f);
-	return(1);
-    }
-
-    return(0);
-}
-
-
+/* Used by the available() functions to check if a file exists. */
 int
 rom_present(wchar_t *fn)
 {
     FILE *f;
 
-    f = rom_fopen(fn);
+    f = plat_fopen(rom_path(fn), L"rb");
     if (f != NULL) {
 	(void)fclose(f);
 	return(1);
@@ -149,8 +137,9 @@ rom_readl(uint32_t addr, void *priv)
 int
 rom_load_linear(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
-    FILE *f = rom_fopen(fn);
-        
+    FILE *f;
+ 
+    f = plat_fopen(rom_path(fn), L"rb");
     if (f == NULL) {
 	pclog("ROM: image '%ls' not found\n", fn);
 	return(0);
@@ -174,8 +163,9 @@ rom_load_linear(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 int
 rom_load_linear_inverted(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
-    FILE *f = rom_fopen(fn);
+    FILE *f;
 
+    f = plat_fopen(rom_path(fn), L"rb");
     if (f == NULL) {
 	pclog("ROM: image '%ls' not found\n", fn);
 	return(0);
@@ -206,8 +196,8 @@ rom_load_linear_inverted(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *p
 int
 rom_load_interleaved(wchar_t *fnl, wchar_t *fnh, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
-    FILE *fl = rom_fopen(fnl);
-    FILE *fh = rom_fopen(fnh);
+    FILE *fl = plat_fopen(rom_path(fnl), L"rb");
+    FILE *fh = plat_fopen(rom_path(fnh), L"rb");
     int c;
 
     if (fl == NULL || fh == NULL) {

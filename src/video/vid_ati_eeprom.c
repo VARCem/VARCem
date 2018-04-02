@@ -8,7 +8,7 @@
  *
  *		Emulation of the EEPROM on select ATI cards.
  *
- * Version:	@(#)vid_ati_eeprom.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_ati_eeprom.c	1.0.2	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
 #include "../emu.h"
 #include "../mem.h"
 #include "../nvr.h"
+#include "../plat.h"
 #include "vid_ati_eeprom.h"
 
 
@@ -76,24 +77,27 @@ enum
 void ati_eeprom_load(ati_eeprom_t *eeprom, wchar_t *fn, int type)
 {
         FILE *f;
+
         eeprom->type = type;
+        memset(eeprom->data, 0, eeprom->type ? 512 : 128);
+
         wcscpy(eeprom->fn, fn);
-        f = nvr_fopen(eeprom->fn, L"rb");
-        if (!f)
+        f = plat_fopen(nvr_path(eeprom->fn), L"rb");
+        if (f != NULL)
         {
-                memset(eeprom->data, 0, eeprom->type ? 512 : 128);
-                return;
+        	(void)fread(eeprom->data, 1, eeprom->type ? 512 : 128, f);
+        	fclose(f);
         }
-        fread(eeprom->data, 1, eeprom->type ? 512 : 128, f);
-        fclose(f);
 }
 
 void ati_eeprom_save(ati_eeprom_t *eeprom)
 {
-        FILE *f = nvr_fopen(eeprom->fn, L"wb");
-        if (!f) return;
-        fwrite(eeprom->data, 1, eeprom->type ? 512 : 128, f);
-        fclose(f);
+        FILE *f = plat_fopen(nvr_path(eeprom->fn), L"wb");
+
+        if (f != NULL) {
+        	(void)fwrite(eeprom->data, 1, eeprom->type ? 512 : 128, f);
+        	fclose(f);
+	}
 }
 
 void ati_eeprom_write(ati_eeprom_t *eeprom, int ena, int clk, int dat)

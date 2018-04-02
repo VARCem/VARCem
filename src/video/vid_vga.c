@@ -8,7 +8,7 @@
  *
  *		IBM VGA emulation.
  *
- * Version:	@(#)vid_vga.c	1.0.3	2018/03/15
+ * Version:	@(#)vid_vga.c	1.0.4	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -122,7 +122,7 @@ static void *vga_init(const device_t *info)
         vga_t *vga = malloc(sizeof(vga_t));
         memset(vga, 0, sizeof(vga_t));
 
-        rom_init(&vga->bios_rom, L"roms/video/ibm/vga/ibm_vga.bin", 0xc0000, 0x8000, 0x7fff, 0x2000, MEM_MAPPING_EXTERNAL);
+        rom_init(&vga->bios_rom, L"video/ibm/vga/ibm_vga.bin", 0xc0000, 0x8000, 0x7fff, 0x2000, MEM_MAPPING_EXTERNAL);
 
         svga_init(&vga->svga, vga, 1 << 18, /*256kb*/
                    NULL,
@@ -145,7 +145,7 @@ static void *trigem_unk_init(const device_t *info)
         vga_t *vga = malloc(sizeof(vga_t));
         memset(vga, 0, sizeof(vga_t));
 
-        rom_init(&vga->bios_rom, L"roms/video/ibm/vga/ibm_vga.bin", 0xc0000, 0x8000, 0x7fff, 0x2000, MEM_MAPPING_EXTERNAL);
+        rom_init(&vga->bios_rom, L"video/ibm/vga/ibm_vga.bin", 0xc0000, 0x8000, 0x7fff, 0x2000, MEM_MAPPING_EXTERNAL);
 
         svga_init(&vga->svga, vga, 1 << 18, /*256kb*/
                    NULL,
@@ -188,7 +188,7 @@ void *ps1vga_init(const device_t *info)
 
 static int vga_available(void)
 {
-        return rom_present(L"roms/video/ibm/vga/ibm_vga.bin");
+        return rom_present(L"video/ibm/vga/ibm_vga.bin");
 }
 
 void vga_close(void *p)

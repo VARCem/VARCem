@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.14	2018/03/22
+ * Version:	@(#)machine_table.c	1.0.15	2018/03/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,13 +53,13 @@
 
 
 const machine_t machines[] = {
-    { "[8088] AMI XT clone",			ROM_AMIXT,		"ami_xt",		L"generic/ami/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
-    { "[8088] Compaq Portable",			ROM_PORTABLE,		"compaq_portable",	L"compaq/portable",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,	       machine_xt_compaq_init, NULL,			NULL			},
-    { "[8088] DTK XT clone",			ROM_DTKXT,		"dtk_xt",		L"dtk/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
-    { "[8088] IBM PC",				ROM_IBMPC,		"ibm_pc",		L"ibm/pc",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  32,   0,		      machine_xt_init, NULL,			NULL			},
+    { "[8088] IBM PC",				ROM_IBMPC,		"ibm_pc",		L"ibm/pc",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  32,   0,		      machine_xt_init, xt_get_device,		NULL			},
     { "[8088] IBM PCjr",			ROM_IBMPCJR,		"ibm_pcjr",		L"ibm/pcjr",			{{"", cpus_pcjr},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,		    machine_pcjr_init, pcjr_get_device,		NULL			},
-    { "[8088] IBM XT",				ROM_IBMXT,		"ibm_xt",		L"ibm/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
-    { "[8088] Generic XT clone",		ROM_GENXT,		"open_xt",		L"generic/open_xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
+    { "[8088] IBM XT",				ROM_IBMXT,		"ibm_xt",		L"ibm/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
+    { "[8088] OpenXT Generic Clone",		ROM_GENXT,		"open_xt",		L"generic/open_xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
+    { "[8088] AMI XT clone",			ROM_AMIXT,		"ami_xt",		L"generic/ami/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
+    { "[8088] Compaq Portable",			ROM_PORTABLE,		"compaq_portable",	L"compaq/portable",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,	       machine_xt_compaq_init, NULL,			NULL			},
+    { "[8088] DTK XT clone",			ROM_DTKXT,		"dtk_xt",		L"dtk/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
     { "[8088] Juko XT clone",			ROM_JUKOPC,		"juko_pc",		L"juko/pc",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
     { "[8088] Phoenix XT clone",		ROM_PXXT,		"phoenix_xt",		L"generic/phoenix/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
     { "[8088] Schneider EuroPC",		ROM_EUROPC,		"schneider_europc",	L"schneider/europc",		{{"Siemens", cpus_europc},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,						512,  640, 128,  16,		  machine_europc_init, NULL,			NULL			},
@@ -69,8 +69,8 @@ const machine_t machines[] = {
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
     { "[8088] VTech Laser Turbo XT",		ROM_LTXT,		"vtech_ltxt",		L"vtech/ltxt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												512,  512, 256,   0,	      machine_xt_laserxt_init, NULL,			NULL			},
 #endif
-
     { "[8088] Xi8088",				ROM_XI8088,		"malinov_xi8088",	L"malinov/xi8088",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA /*| MACDHINE_AT*/ | MACHINE_PS2,								 64, 1024, 128, 128,	       machine_xt_xi8088_init, NULL,			NULL			},
+
     { "[8086] Amstrad PC1512",			ROM_PC1512,		"amstrad_pc1512",	L"amstrad/pc1512",		{{"", cpus_pc1512},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								512,  640, 128,  64,		 machine_amstrad_init, NULL,			NULL			},
     { "[8086] Amstrad PC1640",			ROM_PC1640,		"amstrad_pc1640",	L"amstrad/pc1640",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								640,  640,   0,  64,		 machine_amstrad_init, NULL,			NULL			},
     { "[8086] Amstrad PC2086",			ROM_PC2086,		"amstrad_pc2086",	L"amstrad/pc2086",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								640,  640,   0,  64,		 machine_amstrad_init, NULL,			NULL			},

@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.11	2018/03/27
+ * Version:	@(#)video.h	1.0.12	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define EMU_VIDEO_H
 
 
-#define FONT_ATIKOR_PATH	L"roms/video/ati/ati28800/ati_ksc5601.rom"
+#define FONT_ATIKOR_PATH	L"video/ati/ati28800/ati_ksc5601.rom"
 
 
 #define makecol(r, g, b)    ((b) | ((g) << 8) | ((r) << 16))

@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.5	2018/03/15
+ * Version:	@(#)scsi_aha154x.c	1.0.6	2018/03/31
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -47,7 +47,6 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
-#include "../cpu/cpu.h"		// for debug, temporary
 #include "../io.h"
 #include "../mca.h"
 #include "../mem.h"
@@ -64,6 +63,14 @@
 #include "scsi_x54x.h"
 
 
+#define AHA1540B_330_BIOS_PATH	L"scsi/adaptec/aha1540b320_330.bin"
+#define AHA1540B_334_BIOS_PATH	L"scsi/adaptec/aha1540b320_334.bin"
+#define AHA1540C_BIOS_PATH	L"scsi/adaptec/aha1542c102.bin"
+#define AHA1540CF_BIOS_PATH	L"scsi/adaptec/aha1542cf211.bin"
+#define AHA1540CP_BIOS_PATH	L"scsi/adaptec/aha1542cp102.bin"
+#define AHA1640_BIOS_PATH	L"scsi/adaptec/aha1640.bin"
+
+
 enum {
     AHA_154xB,
     AHA_154xC,
@@ -73,12 +80,12 @@ enum {
 };
 
 
-#define CMD_WRITE_EEPROM 0x22		/* UNDOC: Write EEPROM */
-#define CMD_READ_EEPROM	0x23		/* UNDOC: Read EEPROM */
+#define CMD_WR_EEPROM	0x22		/* UNDOC: Write EEPROM */
+#define CMD_RD_EEPROM	0x23		/* UNDOC: Read EEPROM */
 #define CMD_SHADOW_RAM	0x24		/* UNDOC: BIOS shadow ram */
 #define CMD_BIOS_MBINIT	0x25		/* UNDOC: BIOS mailbox initialization */
-#define CMD_MEMORY_MAP_1 0x26		/* UNDOC: Memory Mapper */
-#define CMD_MEMORY_MAP_2 0x27		/* UNDOC: Memory Mapper */
+#define CMD_MEM_MAP_1	0x26		/* UNDOC: Memory Mapper */
+#define CMD_MEM_MAP_2	0x27		/* UNDOC: Memory Mapper */
 #define CMD_EXTBIOS     0x28		/* UNDOC: return extended BIOS info */
 #define CMD_MBENABLE    0x29		/* set mailbox interface enable */
 #define CMD_BIOS_SCSI	0x82		/* start ROM BIOS SCSI command */
@@ -114,8 +121,6 @@ aha_log(const char *fmt, ...)
     va_list ap;
 
     if (aha_do_log) {
-// for debug, temporary
-pclog("In %s mode: ",(msw&1)?((eflags&VM_FLAG)?"V86":"protected"):"real");
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
@@ -135,7 +140,7 @@ pclog("In %s mode: ",(msw&1)?((eflags&VM_FLAG)?"V86":"protected"):"real");
  * We enable/disable this memory through AHA command 0x24.
  */
 static void
-aha_mem_write(uint32_t addr, uint8_t val, void *priv)
+mem_write(uint32_t addr, uint8_t val, void *priv)
 {
     x54x_t *dev = (x54x_t *)priv;
 
@@ -147,7 +152,7 @@ aha_mem_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-aha_mem_read(uint32_t addr, void *priv)
+mem_read(uint32_t addr, void *priv)
 {
     x54x_t *dev = (x54x_t *)priv;
     rom_t *rom = &dev->bios;
@@ -162,7 +167,7 @@ aha_mem_read(uint32_t addr, void *priv)
 
 
 static uint8_t
-aha154x_shram(x54x_t *dev, uint8_t cmd)
+shram_cmd(x54x_t *dev, uint8_t cmd)
 {
     /* If not supported, give up. */
     if (dev->rom_shram == 0x0000) return(0x04);
@@ -177,13 +182,12 @@ aha154x_shram(x54x_t *dev, uint8_t cmd)
 
 
 static void
-aha_eeprom_save(x54x_t *dev)
+eeprom_save(x54x_t *dev)
 {
     FILE *f;
 
-    f = nvr_fopen(dev->nvr_path, L"wb");
-    if (f)
-    {
+    f = plat_fopen(nvr_path(dev->nvr_path), L"wb");
+    if (f != NULL) {
 	fwrite(dev->nvr, 1, NVR_SIZE, f);
 	fclose(f);
 	f = NULL;
@@ -192,7 +196,7 @@ aha_eeprom_save(x54x_t *dev)
 
 
 static uint8_t
-aha154x_eeprom(x54x_t *dev, uint8_t cmd,uint8_t arg,uint8_t len,uint8_t off,uint8_t *bufp)
+eeprom_cmd(x54x_t *dev, uint8_t cmd,uint8_t arg,uint8_t len,uint8_t off,uint8_t *bufp)
 {
     uint8_t r = 0xff;
     int c;
@@ -209,7 +213,7 @@ aha154x_eeprom(x54x_t *dev, uint8_t cmd,uint8_t arg,uint8_t len,uint8_t off,uint
 		dev->nvr[(off + c) & 0xff] = bufp[c];
 	r = 0;
 
-	aha_eeprom_save(dev);
+	eeprom_save(dev);
     }
 
     if (cmd == 0x23) {
@@ -225,7 +229,7 @@ aha154x_eeprom(x54x_t *dev, uint8_t cmd,uint8_t arg,uint8_t len,uint8_t off,uint
 
 /* Map either the main or utility (Select) ROM into the memory space. */
 static uint8_t
-aha154x_mmap(x54x_t *dev, uint8_t cmd)
+mmap_cmd(x54x_t *dev, uint8_t cmd)
 {
     aha_log("%s: MEMORY cmd=%02x\n", dev->name, cmd);
 
@@ -246,211 +250,208 @@ aha154x_mmap(x54x_t *dev, uint8_t cmd)
 
 
 static uint8_t
-aha_get_host_id(void *p)
+get_host_id(void *p)
 {
     x54x_t *dev = (x54x_t *)p;
 
-    return dev->nvr[0] & 0x07;
+    return(dev->nvr[0] & 0x07);
 }
 
 
 static uint8_t
-aha_get_irq(void *p)
+get_irq(void *p)
 {
     x54x_t *dev = (x54x_t *)p;
 
-    return (dev->nvr[1] & 0x07) + 9;
+    return((dev->nvr[1] & 0x07) + 9);
 }
 
 
 static uint8_t
-aha_get_dma(void *p)
+get_dma(void *p)
 {
     x54x_t *dev = (x54x_t *)p;
 
-    return (dev->nvr[1] >> 4) & 0x07;
+    return((dev->nvr[1] >> 4) & 0x07);
 }
 
 
 static uint8_t
-aha_cmd_is_fast(void *p)
+cmd_is_fast(void *p)
 {
     x54x_t *dev = (x54x_t *)p;
 
     if (dev->Command == CMD_BIOS_SCSI)
-	return 1;
-    else
-	return 0;
+	return(1);
+
+    return(0);
 }
 
 
 static uint8_t
-aha_fast_cmds(void *p, uint8_t cmd)
+fast_cmds(void *p, uint8_t cmd)
 {
     x54x_t *dev = (x54x_t *)p;
 
     if (cmd == CMD_BIOS_SCSI) {
 	dev->BIOSMailboxReq++;
-	return 1;
+	return(1);
     }
 
-    return 0;
+    return(0);
 }
 
 
 static uint8_t
-aha_param_len(void *p)
+param_len(void *p)
 {
     x54x_t *dev = (x54x_t *)p;
 
     switch (dev->Command) {
 	case CMD_BIOS_MBINIT:
 		/* Same as 0x01 for AHA. */
-		return sizeof(MailboxInit_t);
+		return(sizeof(MailboxInit_t));
 		break;
 
 	case CMD_SHADOW_RAM:
-		return 1;
+		return(1);
 		break;	
 
-	case CMD_WRITE_EEPROM:
-		return 3+32;
+	case CMD_WR_EEPROM:
+		return(3+32);
 		break;
 
-	case CMD_READ_EEPROM:
-		return 3;
+	case CMD_RD_EEPROM:
+		return(3);
 
 	case CMD_MBENABLE:
-		return 2;
+		return(2);
 
 	default:
-		return 0;
+		break;
     }
+
+    return(0);
 }
 
 
 static uint8_t
-aha_cmds(void *p)
+aha_cmds(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
     MailboxInit_t *mbi;
 
-    if (! dev->CmdParamLeft) {
-	aha_log("Running Operation Code 0x%02X\n", dev->Command);
-	switch (dev->Command) {
-		case CMD_WRITE_EEPROM:	/* write EEPROM */
-			/* Sent by CF BIOS. */
-			dev->DataReplyLeft =
-			    aha154x_eeprom(dev,
-					   dev->Command,
-					   dev->CmdBuf[0],
-					   dev->CmdBuf[1],
-					   dev->CmdBuf[2],
-					   &(dev->CmdBuf[3]));
-			if (dev->DataReplyLeft == 0xff) {
-				dev->DataReplyLeft = 0;
-				dev->Status |= STAT_INVCMD;
-			}
-			break;
+    if (dev->CmdParamLeft) return(0);
 
-		case CMD_READ_EEPROM: /* read EEPROM */
-			/* Sent by CF BIOS. */
-			dev->DataReplyLeft =
-			    aha154x_eeprom(dev,
-					   dev->Command,
-					   dev->CmdBuf[0],
-					   dev->CmdBuf[1],
-					   dev->CmdBuf[2],
-					   dev->DataBuf);
-			if (dev->DataReplyLeft == 0xff) {
-				dev->DataReplyLeft = 0;
-				dev->Status |= STAT_INVCMD;
-			}
-			break;
-
-		case CMD_SHADOW_RAM: /* Shadow RAM */
-			/*
-			 * For AHA1542CF, this is the command
-			 * to play with the Shadow RAM.  BIOS
-			 * gives us one argument (00,02,03)
-			 * and expects a 0x04 back in the INTR
-			 * register.  --FvK
-			 */
-			/* dev->Interrupt = aha154x_shram(dev,val); */
-			dev->Interrupt = aha154x_shram(dev, dev->CmdBuf[0]);
-			break;
-
-		case CMD_BIOS_MBINIT: /* BIOS Mailbox Initialization */
-			/* Sent by CF BIOS. */
-			dev->Mbx24bit = 1;
-
-			mbi = (MailboxInit_t *)dev->CmdBuf;
-
-			dev->BIOSMailboxInit = 1;
-			dev->BIOSMailboxCount = mbi->Count;
-			dev->BIOSMailboxOutAddr = ADDR_TO_U32(mbi->Address);
-
-			aha_log("Initialize BIOS Mailbox: MBO=0x%08lx, %d entries at 0x%08lx\n",
-				dev->BIOSMailboxOutAddr,
-				mbi->Count,
-				ADDR_TO_U32(mbi->Address));
-
-			dev->Status &= ~STAT_INIT;
-			dev->DataReplyLeft = 0;
-			break;
-
-		case CMD_MEMORY_MAP_1:	/* AHA memory mapper */
-		case CMD_MEMORY_MAP_2:	/* AHA memory mapper */
-			/* Sent by CF BIOS. */
-			dev->DataReplyLeft =
-			    aha154x_mmap(dev, dev->Command);
-			break;
-
-		case CMD_EXTBIOS: /* Return extended BIOS information */
-			dev->DataBuf[0] = 0x08;
-			dev->DataBuf[1] = dev->Lock;
-			dev->DataReplyLeft = 2;
-			break;
-					
-		case CMD_MBENABLE: /* Mailbox interface enable Command */
-			dev->DataReplyLeft = 0;
-			if (dev->CmdBuf[1] == dev->Lock) {
-				if (dev->CmdBuf[0] & 1) {
-					dev->Lock = 1;
-				} else {
-					dev->Lock = 0;
-				}
-			}
-			break;
-
-		case 0x2C:	/* AHA-1542CP sends this */
-			dev->DataBuf[0] = 0x00;
-			dev->DataReplyLeft = 1;
-			break;
-
-		case 0x33:	/* AHA-1542CP sends this */
-			dev->DataBuf[0] = 0x00;
-			dev->DataBuf[1] = 0x00;
-			dev->DataBuf[2] = 0x00;
-			dev->DataBuf[3] = 0x00;
-			dev->DataReplyLeft = 256;
-			break;
-
-		default:
+    aha_log("Running Operation Code 0x%02X\n", dev->Command);
+    switch (dev->Command) {
+	case CMD_WR_EEPROM:	/* write EEPROM */
+		/* Sent by CF BIOS. */
+		dev->DataReplyLeft = eeprom_cmd(dev,
+						dev->Command,
+						dev->CmdBuf[0],
+						dev->CmdBuf[1],
+						dev->CmdBuf[2],
+						&(dev->CmdBuf[3]));
+		if (dev->DataReplyLeft == 0xff) {
 			dev->DataReplyLeft = 0;
 			dev->Status |= STAT_INVCMD;
-			break;
-	}
+		}
+		break;
+
+	case CMD_RD_EEPROM: /* read EEPROM */
+		/* Sent by CF BIOS. */
+		dev->DataReplyLeft = eeprom_cmd(dev,
+						dev->Command,
+						dev->CmdBuf[0],
+						dev->CmdBuf[1],
+						dev->CmdBuf[2],
+						dev->DataBuf);
+		if (dev->DataReplyLeft == 0xff) {
+			dev->DataReplyLeft = 0;
+			dev->Status |= STAT_INVCMD;
+		}
+		break;
+
+	case CMD_SHADOW_RAM: /* Shadow RAM */
+		/*
+		 * For AHA1542CF, this is the command
+		 * to play with the Shadow RAM.  BIOS
+		 * gives us one argument (00,02,03)
+		 * and expects a 0x04 back in the INTR
+		 * register.  --FvK
+		 */
+		dev->Interrupt = shram_cmd(dev, dev->CmdBuf[0]);
+		break;
+
+	case CMD_BIOS_MBINIT: /* BIOS Mailbox Initialization */
+		/* Sent by CF BIOS. */
+		dev->Mbx24bit = 1;
+
+		mbi = (MailboxInit_t *)dev->CmdBuf;
+
+		dev->BIOSMailboxInit = 1;
+		dev->BIOSMailboxCount = mbi->Count;
+		dev->BIOSMailboxOutAddr = ADDR_TO_U32(mbi->Address);
+
+		aha_log("Initialize BIOS Mailbox: MBO=0x%08lx, %d entries at 0x%08lx\n",
+			dev->BIOSMailboxOutAddr,
+			mbi->Count,
+			ADDR_TO_U32(mbi->Address));
+
+		dev->Status &= ~STAT_INIT;
+		dev->DataReplyLeft = 0;
+		break;
+
+	case CMD_MEM_MAP_1:	/* AHA memory mapper */
+	case CMD_MEM_MAP_2:	/* AHA memory mapper */
+		/* Sent by CF BIOS. */
+		dev->DataReplyLeft = mmap_cmd(dev, dev->Command);
+		break;
+
+	case CMD_EXTBIOS: /* Return extended BIOS information */
+		dev->DataBuf[0] = 0x08;
+		dev->DataBuf[1] = dev->Lock;
+		dev->DataReplyLeft = 2;
+		break;
+					
+	case CMD_MBENABLE: /* Mailbox interface enable Command */
+		dev->DataReplyLeft = 0;
+		if (dev->CmdBuf[1] == dev->Lock) {
+			if (dev->CmdBuf[0] & 1)
+				dev->Lock = 1;
+			  else
+				dev->Lock = 0;
+		}
+		break;
+
+	case 0x2c:	/* AHA-1542CP sends this */
+		dev->DataBuf[0] = 0x00;
+		dev->DataReplyLeft = 1;
+		break;
+
+	case 0x33:	/* AHA-1542CP sends this */
+		dev->DataBuf[0] = 0x00;
+		dev->DataBuf[1] = 0x00;
+		dev->DataBuf[2] = 0x00;
+		dev->DataBuf[3] = 0x00;
+		dev->DataReplyLeft = 256;
+		break;
+
+	default:
+		dev->DataReplyLeft = 0;
+		dev->Status |= STAT_INVCMD;
+		break;
     }
 
-    return 0;
+    return(0);
 }
 
 
 static void
-aha_setup_data(void *p)
+setup_data(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
     ReplyInquireSetupInformation *ReplyISI;
     aha_setup_t *aha_setup;
 
@@ -461,17 +462,17 @@ aha_setup_data(void *p)
     ReplyISI->fParityCheckingEnabled = dev->parity & 1;
 
     U32_TO_ADDR(aha_setup->BIOSMailboxAddress, dev->BIOSMailboxOutAddr);
-    aha_setup->uChecksum = 0xA3;
-    aha_setup->uUnknown = 0xC2;
+    aha_setup->uChecksum = 0xa3;
+    aha_setup->uUnknown = 0xc2;
 }
 
 
 static void
-aha_do_bios_mail(x54x_t *dev)
+do_bios_mail(x54x_t *dev)
 {
     dev->MailboxIsBIOS = 1;
 
-    if (!dev->BIOSMailboxCount) {
+    if (! dev->BIOSMailboxCount) {
 	aha_log("aha_do_bios_mail(): No BIOS Mailboxes\n");
 	return;
     }
@@ -485,12 +486,12 @@ aha_do_bios_mail(x54x_t *dev)
 
 
 static void
-aha_callback(void *p)
+call_back(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
 
     if (dev->BIOSMailboxInit && dev->BIOSMailboxReq)
-	aha_do_bios_mail(dev);
+	do_bios_mail(dev);
 }
 
 
@@ -528,27 +529,27 @@ aha_mca_write(int port, uint8_t val, void *priv)
     /* Extract the BIOS ROM address info. */
     if (! (dev->pos_regs[2] & 0x80)) switch(dev->pos_regs[3] & 0x38) {
 	case 0x38:		/* [1]=xx11 1xxx */
-		dev->rom_addr = 0xDC000;
+		dev->rom_addr = 0xdc000;
 		break;
 
 	case 0x30:		/* [1]=xx11 0xxx */
-		dev->rom_addr = 0xD8000;
+		dev->rom_addr = 0xd8000;
 		break;
 
 	case 0x28:		/* [1]=xx10 1xxx */
-		dev->rom_addr = 0xD4000;
+		dev->rom_addr = 0xd4000;
 		break;
 
 	case 0x20:		/* [1]=xx10 0xxx */
-		dev->rom_addr = 0xD0000;
+		dev->rom_addr = 0xd0000;
 		break;
 
 	case 0x18:		/* [1]=xx01 1xxx */
-		dev->rom_addr = 0xCC000;
+		dev->rom_addr = 0xcc000;
 		break;
 
 	case 0x10:		/* [1]=xx01 0xxx */
-		dev->rom_addr = 0xC8000;
+		dev->rom_addr = 0xc8000;
 		break;
     } else {
 	/* Disabled. */
@@ -604,7 +605,7 @@ aha_mca_write(int port, uint8_t val, void *priv)
 
 /* Initialize the board's ROM BIOS. */
 static void
-aha_setbios(x54x_t *dev)
+set_bios(x54x_t *dev)
 {
     uint32_t size;
     uint32_t mask;
@@ -617,7 +618,7 @@ aha_setbios(x54x_t *dev)
 
     /* Open the BIOS image file and make sure it exists. */
     aha_log("%s: loading BIOS from '%ls'\n", dev->name, dev->bios_path);
-    if ((f = rom_fopen(dev->bios_path)) == NULL) {
+    if ((f = plat_fopen(rom_path(dev->bios_path), L"rb")) == NULL) {
 	aha_log("%s: BIOS ROM not found!\n", dev->name);
 	return;
     }
@@ -680,8 +681,8 @@ aha_setbios(x54x_t *dev)
 
     /* Map this system into the memory map. */
     mem_mapping_add(&dev->bios.mapping, dev->rom_addr, size,
-		    aha_mem_read, NULL, NULL, /* aha_mem_readw, aha_mem_readl, */
-		    aha_mem_write, NULL, NULL,
+		    mem_read, NULL, NULL, /* aha_mem_readw, aha_mem_readl, */
+		    mem_write, NULL, NULL,
 		    dev->bios.rom, MEM_MAPPING_EXTERNAL, dev);
     mem_mapping_disable(&dev->bios.mapping);
 
@@ -704,6 +705,7 @@ aha_setbios(x54x_t *dev)
 		return;
 	}
 	dev->bios.rom[dev->rom_ioaddr] = (uint8_t)i;
+
 	/* Negation of the DIP switches to satify the checksum. */
 	dev->bios.rom[dev->rom_ioaddr + 1] = (uint8_t)((i ^ 0xff) + 1);
     }
@@ -711,7 +713,7 @@ aha_setbios(x54x_t *dev)
 
 
 static void
-aha_initnvr(x54x_t *dev)
+init_nvr(x54x_t *dev)
 {
     /* Initialize the on-board EEPROM. */
     dev->nvr[0] = dev->HostID;			/* SCSI ID 7 */
@@ -729,7 +731,7 @@ aha_initnvr(x54x_t *dev)
 
 /* Initialize the board's EEPROM (NVR.) */
 static void
-aha_setnvr(x54x_t *dev)
+set_nvr(x54x_t *dev)
 {
     FILE *f;
 
@@ -740,13 +742,13 @@ aha_setnvr(x54x_t *dev)
     dev->nvr = (uint8_t *)malloc(NVR_SIZE);
     memset(dev->nvr, 0x00, NVR_SIZE);
 
-    f = nvr_fopen(dev->nvr_path, L"rb");
+    f = plat_fopen(nvr_path(dev->nvr_path), L"rb");
     if (f != NULL) {
-	fread(dev->nvr, 1, NVR_SIZE, f);
+	(void)fread(dev->nvr, 1, NVR_SIZE, f);
 	fclose(f);
 	f = NULL;
     } else {
-	aha_initnvr(dev);
+	init_nvr(dev);
     }
 }
 
@@ -779,12 +781,12 @@ aha_init(const device_t *info)
     dev->bit32 = 0;
     dev->lba_bios = 0;
 
-    dev->ven_callback = aha_callback;
-    dev->ven_cmd_is_fast = aha_cmd_is_fast;
-    dev->ven_fast_cmds = aha_fast_cmds;
-    dev->get_ven_param_len = aha_param_len;
+    dev->ven_callback = call_back;
+    dev->ven_cmd_is_fast = cmd_is_fast;
+    dev->ven_fast_cmds = fast_cmds;
+    dev->get_ven_param_len = param_len;
     dev->ven_cmds = aha_cmds;
-    dev->get_ven_data = aha_setup_data;
+    dev->get_ven_data = setup_data;
 
     strcpy(dev->vendor, "Adaptec");
 
@@ -794,88 +796,86 @@ aha_init(const device_t *info)
 		strcpy(dev->name, "AHA-154xB");
 		switch(dev->Base) {
 			case 0x0330:
-				dev->bios_path =
-				    L"roms/scsi/adaptec/aha1540b320_330.bin";
+				dev->bios_path = AHA1540B_330_BIOS_PATH;
 				break;
 
 			case 0x0334:
-				dev->bios_path =
-				    L"roms/scsi/adaptec/aha1540b320_334.bin";
+				dev->bios_path = AHA1540B_334_BIOS_PATH;
 				break;
 		}
 		dev->fw_rev = "A005";	/* The 3.2 microcode says A012. */
 		dev->HostID = device_get_config_int("hostid");
-		dev->rom_shram = 0x3F80;	/* shadow RAM address base */
+		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
 		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
 
 	case AHA_154xC:
 		strcpy(dev->name, "AHA-154xC");
-		dev->bios_path = L"roms/scsi/adaptec/aha1542c102.bin";
+		dev->bios_path = AHA1540C_BIOS_PATH;
 		dev->nvr_path = L"aha1542c.nvr";
 		dev->fw_rev = "D001";
-		dev->rom_shram = 0x3F80;	/* shadow RAM address base */
+		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
-		dev->rom_ioaddr = 0x3F7E;	/* [2:0] idx into addr table */
+		dev->rom_ioaddr = 0x3f7e;	/* [2:0] idx into addr table */
 		dev->rom_fwhigh = 0x0022;	/* firmware version (hi/lo) */
-		dev->ven_get_host_id = aha_get_host_id;	/* function to return host ID from EEPROM */
-		dev->ven_get_irq = aha_get_irq;		/* function to return IRQ from EEPROM */
-		dev->ven_get_dma = aha_get_dma;		/* function to return DMA channel from EEPROM */
+		dev->ven_get_host_id = get_host_id;	/* function to return host ID from EEPROM */
+		dev->ven_get_irq = get_irq;	/* function to return IRQ from EEPROM */
+		dev->ven_get_dma = get_dma;	/* function to return DMA channel from EEPROM */
 		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
 
 	case AHA_154xCF:
 		strcpy(dev->name, "AHA-154xCF");
-		dev->bios_path = L"roms/scsi/adaptec/aha1542cf211.bin";
+		dev->bios_path = AHA1540CF_BIOS_PATH;
 		dev->nvr_path = L"aha1542cf.nvr";
 		dev->fw_rev = "E001";
-		dev->rom_shram = 0x3F80;	/* shadow RAM address base */
+		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
-		dev->rom_ioaddr = 0x3F7E;	/* [2:0] idx into addr table */
+		dev->rom_ioaddr = 0x3f7e;	/* [2:0] idx into addr table */
 		dev->rom_fwhigh = 0x0022;	/* firmware version (hi/lo) */
     		dev->cdrom_boot = 1;
-		dev->ven_get_host_id = aha_get_host_id;	/* function to return host ID from EEPROM */
-		dev->ven_get_irq = aha_get_irq;		/* function to return IRQ from EEPROM */
-		dev->ven_get_dma = aha_get_dma;		/* function to return DMA channel from EEPROM */
+		dev->ven_get_host_id = get_host_id;	/* function to return host ID from EEPROM */
+		dev->ven_get_irq = get_irq;	/* function to return IRQ from EEPROM */
+		dev->ven_get_dma = get_dma;	/* function to return DMA channel from EEPROM */
 		dev->ha_bps = 10000000.0;	/* fast SCSI */
 		break;
 
 	case AHA_154xCP:
 		strcpy(dev->name, "AHA-154xCP");
-		dev->bios_path = L"roms/scsi/adaptec/aha1542cp102.bin";
+		dev->bios_path = AHA1540CP_BIOS_PATH;
 		dev->nvr_path = L"aha1540cp.nvr";
 		dev->fw_rev = "F001";
-		dev->rom_shram = 0x3F80;	/* shadow RAM address base */
+		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
-		dev->rom_ioaddr = 0x3F7E;	/* [2:0] idx into addr table */
+		dev->rom_ioaddr = 0x3f7e;	/* [2:0] idx into addr table */
 		dev->rom_fwhigh = 0x0055;	/* firmware version (hi/lo) */
-		dev->ven_get_host_id = aha_get_host_id;	/* function to return host ID from EEPROM */
-		dev->ven_get_irq = aha_get_irq;		/* function to return IRQ from EEPROM */
-		dev->ven_get_dma = aha_get_dma;		/* function to return DMA channel from EEPROM */
+		dev->ven_get_host_id = get_host_id;	/* function to return host ID from EEPROM */
+		dev->ven_get_irq = get_irq;	/* function to return IRQ from EEPROM */
+		dev->ven_get_dma = get_dma;	/* function to return DMA channel from EEPROM */
 		dev->ha_bps = 10000000.0;	/* fast SCSI */
 		break;
 
 	case AHA_1640:
 		strcpy(dev->name, "AHA-1640");
-		dev->bios_path = L"roms/scsi/adaptec/aha1640.bin";
+		dev->bios_path = AHA1640_BIOS_PATH;
 		dev->fw_rev = "BB01";
 
 		dev->lba_bios = 1;
 
 		/* Enable MCA. */
-		dev->pos_regs[0] = 0x1F;	/* MCA board ID */
-		dev->pos_regs[1] = 0x0F;	
+		dev->pos_regs[0] = 0x1f;	/* MCA board ID */
+		dev->pos_regs[1] = 0x0f;	
 		mca_add(aha_mca_read, aha_mca_write, dev);
 		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
     }	
 
     /* Initialize ROM BIOS if needed. */
-    aha_setbios(dev);
+    set_bios(dev);
 
     /* Initialize EEPROM (NVR) if needed. */
-    aha_setnvr(dev);
+    set_nvr(dev);
 
     if (dev->Base != 0) {
 	/* Initialize the device. */

@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.10	2018/03/27
+ * Version:	@(#)mem.c	1.0.11	2018/03/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,7 +77,7 @@ mem_mapping_t		romext_mapping;
 
 page_t			*pages,			/* RAM page table */
 			**page_lookup;		/* pagetable lookup */
-uint32_t		pages_sz;		/* #pages in table */
+uint32_t		pages_sz = 0;		/* #pages in table */
 
 uint8_t			isram[0x10000];
 
@@ -1614,7 +1614,7 @@ mem_reset(void)
 #if DYNAMIC_TABLES
 pclog("MEM: reset: previous pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 #endif
-    if (pages_sz != m) {
+    if (pages_sz != m || pages_sz == 0) {
 	pages_sz = m;
 	free(pages);
 	pages = (page_t *)malloc(m*sizeof(page_t));

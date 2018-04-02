@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.7	2018/03/26
+ * Version:	@(#)vid_oak_oti.c	1.0.8	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,11 +51,11 @@
 #include "vid_svga.h"
 
 
-#define BIOS_37C_PATH	L"roms/video/oti/oti037c/bios.bin"
+#define BIOS_37C_PATH	L"video/oti/oti037c/bios.bin"
 #if 0
-# define BIOS_67_PATH	L"roms/video/oti/bios.bin"
+# define BIOS_67_PATH	L"video/oti/bios.bin"
 #endif
-#define BIOS_77_PATH	L"roms/video/oti/oti077.vbi"
+#define BIOS_77_PATH	L"video/oti/oti077.vbi"
 
 
 typedef struct {

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.15	2018/03/28
+ * Version:	@(#)win_settings.c	1.0.17	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2122,11 +2122,11 @@ static uint8_t next_free_ide_channel(void)
 
 static void next_free_scsi_id_and_lun(uint8_t *id, uint8_t *lun)
 {
-	uint8_t i, j;
+	int i, j;
 
-	for (j = 0; j < 8; j++) {
-		for (i = 0; i < 16; i++) {
-			if (!(scsi_tracking[i] & (0xffLL << (j << 3LL)))) {
+	for (i = 0; i < 16; i++) {
+		for (j = 0; j < 8; j++) {
+			if (! (scsi_tracking[i] & (0xffULL << (j << 3LL)))) {
 				*id = i;
 				*lun = j;
 				return;
@@ -2697,11 +2697,12 @@ static uint64_t hdconf_initialize_hdt_combo(HWND hdlg)
 	h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
 	for (i = 0; i < 127; i++)
 	{	
-		temp_size = hdd_table[i][0] * hdd_table[i][1] * hdd_table[i][2];
+		temp_size = hdd_table[i].cyls * hdd_table[i].head * hdd_table[i].sect;
 		size_mb = temp_size >> 11;
-                swprintf(szText, 255, plat_get_string(IDS_2157), size_mb, hdd_table[i][0], hdd_table[i][1], hdd_table[i][2]);
+                swprintf(szText, 255, plat_get_string(IDS_2157), size_mb,
+		    hdd_table[i].cyls, hdd_table[i].head, hdd_table[i].sect);
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM) szText);
-		if ((tracks == hdd_table[i][0]) && (hpc == hdd_table[i][1]) && (spt == hdd_table[i][2]))
+		if ((tracks == hdd_table[i].cyls) && (hpc == hdd_table[i].head) && (spt == hdd_table[i].sect))
 		{
 			selection = i;
 		}
@@ -2721,7 +2722,7 @@ static void recalc_selection(HWND hdlg)
 	h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
 	for (i = 0; i < 127; i++)
 	{	
-		if ((tracks == hdd_table[i][0]) && (hpc == hdd_table[i][1]) && (spt == hdd_table[i][2]))
+		if ((tracks == hdd_table[i].cyls) && (hpc == hdd_table[i].head) && (spt == hdd_table[i].sect))
 		{
 			selection = i;
 		}
@@ -2742,6 +2743,7 @@ static BOOL CALLBACK
 #endif
 hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	char buf[512], *big_buf;
 	HWND h = INVALID_HANDLE_VALUE;
 	uint64_t i = 0;
 	uint64_t temp;
@@ -2750,8 +2752,6 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	uint32_t zero = 0;
 	uint32_t base = 0x1000;
 	uint64_t signature = 0xD778A82044445459ll;
-	char buf[512];
-	char *big_buf;
 	int b = 0;
 	uint64_t r = 0;
 	uint8_t channel = 0;
@@ -2784,6 +2784,7 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			set_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, tracks);
 			size = (tracks * hpc * spt) << 9;
 			set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
+
 			hdconf_initialize_hdt_combo(hdlg);
 			if (existing & 1)
 			{
@@ -2803,7 +2804,9 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				chs_enabled = 1;
 			}
+
 			add_locations(hdlg);
+
 			h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
 			if (existing & 2)
 			{
@@ -2820,6 +2823,7 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			SendMessage(h, CB_SETCURSEL, hdd_ptr->bus, 0);
 			max_tracks = 266305;
 			recalc_location_controls(hdlg, 1, 0);
+
 			if (existing & 2)
 			{
 				/* We're functioning as a load image dialog for a removable SCSI hard disk,
@@ -2898,15 +2902,19 @@ hard_disks_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					else if ((wcslen(hd_file_name) == 0) && (hdd_ptr->bus == HDD_BUS_SCSI_REMOVABLE))
 					{
 						/* Mark hard disk added but return empty - it will signify the disk was ejected. */
-						hdd_ptr->spt = hdd_ptr->hpc = hdd_ptr->tracks = 0;
+						hdd_ptr->tracks = 0;
+						hdd_ptr->spt = hdd_ptr->hpc = 0;
 						memset(hdd_ptr->fn, 0, sizeof(hdd_ptr->fn));
 
 						goto hd_add_ok_common;
 					}
 
-					get_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, &(hdd_ptr->spt));
-					get_edit_box_contents(hdlg, IDC_EDIT_HD_HPC, &(hdd_ptr->hpc));
-					get_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, &(hdd_ptr->tracks));
+					get_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, &i);
+					hdd_ptr->spt = (uint8_t)i;
+					get_edit_box_contents(hdlg, IDC_EDIT_HD_HPC, &i);
+					hdd_ptr->hpc = (uint8_t)i;
+					get_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, &i);
+					hdd_ptr->tracks = (uint16_t)i;
 					spt = hdd_ptr->spt;
 					hpc = hdd_ptr->hpc;
 					tracks = hdd_ptr->tracks;
@@ -3071,7 +3079,7 @@ hd_add_ok_common:
 					return TRUE;
 
 				case IDC_CFILE:
-		                        if (!file_dlg_w(hdlg, plat_get_string(IDS_4106), L"", !(existing & 1)))
+		                        if (!file_dlg(hdlg, plat_get_string(IDS_4106), L"", !(existing & 1)))
        			                {
 						if (!wcschr(wopenfilestring, L'.')) {
 							if (wcslen(wopenfilestring) && (wcslen(wopenfilestring) <= 256)) {
@@ -3324,9 +3332,9 @@ hdd_add_file_open_error:
 					if ((temp != selection) && (temp != 127) && (temp != 128))
 					{
 						selection = temp;
-						tracks = hdd_table[selection][0];
-						hpc = hdd_table[selection][1];
-						spt = hdd_table[selection][2];
+						tracks = hdd_table[selection].cyls;
+						hpc = hdd_table[selection].head;
+						spt = hdd_table[selection].sect;
 						size = (tracks * hpc * spt) << 9;
 						set_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, tracks);
 						set_edit_box_contents(hdlg, IDC_EDIT_HD_HPC, hpc);

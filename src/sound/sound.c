@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.3	2018/03/28
+ * Version:	@(#)sound.c	1.0.4	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,9 @@
 #include "snd_adlibgold.h"
 #include "snd_audiopci.h"
 #include "snd_mpu401.h"
+#ifdef USE_FLUIDSYNTH
+# include "midi_fluidsynth.h"
+#endif
 #if defined(DEV_BRANCH) && defined(USE_PAS16)
 # include "snd_pas16.h"
 #endif
@@ -539,4 +542,14 @@ void sound_cd_thread_reset(void)
 	}
 
 	cd_thread_enable = available_cdrom_drives ? 1 : 0;
+}
+
+
+/* Called once, at application startup. */
+void
+sound_global_init(void)
+{
+#ifdef USE_FLUIDSYNTH
+    fluidsynth_global_init();
+#endif
 }

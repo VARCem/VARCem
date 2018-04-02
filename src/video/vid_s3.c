@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.6	2018/03/21
+ * Version:	@(#)vid_s3.c	1.0.7	2018/03/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2366,29 +2366,29 @@ void *s3_vision864_init(const device_t *info, wchar_t *bios_fn)
 
 static void *s3_bahamas64_init(const device_t *info)
 {
-	s3_t *s3 = s3_vision864_init(info, L"roms/video/s3/s3/bahamas64.bin");
+	s3_t *s3 = s3_vision864_init(info, L"video/s3/s3/bahamas64.bin");
 	return s3;
 }
 
 static void *s3_phoenix_vision864_init(const device_t *info)
 {
-	s3_t *s3 = s3_vision864_init(info, L"roms/video/s3/s3/86c864p.bin");
+	s3_t *s3 = s3_vision864_init(info, L"video/s3/s3/86c864p.bin");
 	return s3;
 }
 
 static int s3_bahamas64_available(void)
 {
-        return rom_present(L"roms/video/s3/s3/bahamas64.bin");
+        return rom_present(L"video/s3/s3/bahamas64.bin");
 }
 
 static int s3_phoenix_vision864_available(void)
 {
-        return rom_present(L"roms/video/s3/s3/86c864p.bin");
+        return rom_present(L"video/s3/s3/86c864p.bin");
 }
 
 static void *s3_phoenix_trio32_init(const device_t *info)
 {
-        s3_t *s3 = s3_init(info, L"roms/video/s3/s3/86c732p.bin", S3_TRIO32);
+        s3_t *s3 = s3_init(info, L"video/s3/s3/86c732p.bin", S3_TRIO32);
 
         s3->id = 0xe1; /*Trio32*/
         s3->id_ext = 0x10;
@@ -2403,7 +2403,7 @@ static void *s3_phoenix_trio32_init(const device_t *info)
 
 static int s3_phoenix_trio32_available(void)
 {
-        return rom_present(L"roms/video/s3/s3/86c732p.bin");
+        return rom_present(L"video/s3/s3/86c732p.bin");
 }
 
 static void *s3_trio64_init(const device_t *info, wchar_t *bios_fn)
@@ -2422,13 +2422,13 @@ static void *s3_trio64_init(const device_t *info, wchar_t *bios_fn)
 
 static void *s3_9fx_init(const device_t *info)
 {
-	s3_t *s3 = s3_trio64_init(info, L"roms/video/s3/s3/s3_764.bin");
+	s3_t *s3 = s3_trio64_init(info, L"video/s3/s3/s3_764.bin");
 	return s3;
 }
 
 static void *s3_phoenix_trio64_init(const device_t *info)
 {
-	s3_t *s3 = s3_trio64_init(info, L"roms/video/s3/s3/86c764x1.bin");
+	s3_t *s3 = s3_trio64_init(info, L"video/s3/s3/86c764x1.bin");
         if (device_get_config_int("memory") == 1)
                 s3->svga.vram_max = 1 << 20; /*Phoenix BIOS does not expect VRAM to be mirrored*/
 	return s3;
@@ -2444,7 +2444,7 @@ static void *s3_phoenix_trio64_onboard_init(const device_t *info)
 
 static void *s3_diamond_stealth64_init(const device_t *info)
 {
-	s3_t *s3 = s3_trio64_init(info, L"roms/video/s3/s3/stealt64.bin");
+	s3_t *s3 = s3_trio64_init(info, L"video/s3/s3/stealt64.bin");
         if (device_get_config_int("memory") == 1)
                 s3->svga.vram_max = 1 << 20; /*Phoenix BIOS does not expect VRAM to be mirrored*/
 	return s3;
@@ -2452,17 +2452,17 @@ static void *s3_diamond_stealth64_init(const device_t *info)
 
 static int s3_9fx_available(void)
 {
-        return rom_present(L"roms/video/s3/s3/s3_764.bin");
+        return rom_present(L"video/s3/s3/s3_764.bin");
 }
 
 static int s3_phoenix_trio64_available(void)
 {
-        return rom_present(L"roms/video/s3/s3/86c764x1.bin");
+        return rom_present(L"video/s3/s3/86c764x1.bin");
 }
 
 static int s3_diamond_stealth64_available(void)
 {
-        return rom_present(L"roms/video/s3/s3/stealt64.bin");
+        return rom_present(L"video/s3/s3/stealt64.bin");
 }
 
 static void s3_close(void *p)

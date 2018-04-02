@@ -10,7 +10,7 @@
  *
  * Known bugs:	Accelerator doesn't work in planar modes
  *
- * Version:	@(#)vid_et4000w32.c	1.0.5	2018/03/26
+ * Version:	@(#)vid_et4000w32.c	1.0.6	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,9 +60,9 @@
 
 
 #if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-# define BIOS_ROM_PATH_DIAMOND	L"roms/video/tseng/et4000w32/et4000w32.bin"
+# define BIOS_ROM_PATH_DIAMOND	L"video/tseng/et4000w32/et4000w32.bin"
 #endif
-#define BIOS_ROM_PATH_CARDEX	L"roms/video/tseng/et4000w32/cardex.vbi"
+#define BIOS_ROM_PATH_CARDEX	L"video/tseng/et4000w32/cardex.vbi"
 
 
 #define FIFO_SIZE 65536

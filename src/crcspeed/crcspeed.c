@@ -98,7 +98,7 @@ void crcspeed16big_init(crcfn16 fn, uint16_t big_table[8][256]) {
     crcspeed16little_init(fn, big_table);
     for (int k = 0; k < 8; k++) {
         for (int n = 0; n < 256; n++) {
-            big_table[k][n] = rev8(big_table[k][n]);
+            big_table[k][n] = (uint16_t)rev8(big_table[k][n]);
         }
     }
 }
@@ -242,7 +242,7 @@ uint16_t crcspeed16big(uint16_t big_table[8][256], uint16_t crc_in, void *buf,
         len--;
     }
 
-    return rev8(crc);
+    return (uint16_t)rev8(crc);
 }
 
 /* Return the CRC of buf[0..len-1] with initial crc, processing eight bytes

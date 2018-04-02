@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.5	2018/03/19
+ * Version:	@(#)midi_fluidsynth.c	1.0.6	2018/03/31
  *
  *		Code borrowed from scummvm.
  *
@@ -286,13 +286,6 @@ fluidsynth_init(const device_t *info)
 
     memset(data, 0x00, sizeof(fluidsynth_t));
 
-    /* Try loading the DLL. */
-    fluidsynth_handle = dynld_module(PATH_FS_DLL, fluidsynth_imports);
-    if (fluidsynth_handle == NULL) {
-	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2171);
-	return(NULL);
-    }
-
     data->settings = f_new_fluid_settings();
 
     f_fluid_settings_setnum(data->settings, "synth.sample-rate", 44100);
@@ -386,6 +379,11 @@ fluidsynth_close(void* priv)
 {
     if (priv == NULL) return;
 
+    if (fluidsynth_handle == NULL) {
+	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2171);
+	return;
+    }
+
     fluidsynth_t* data = &fsdev;
 
     if (data->sound_font != -1) {
@@ -420,6 +418,14 @@ fluidsynth_close(void* priv)
 	dynld_close(fluidsynth_handle);
 	fluidsynth_handle = NULL;
     }
+}
+
+
+void
+fluidsynth_global_init(void)
+{
+    /* Try loading the DLL. */
+    fluidsynth_handle = dynld_module(PATH_FS_DLL, fluidsynth_imports);
 }
 
 

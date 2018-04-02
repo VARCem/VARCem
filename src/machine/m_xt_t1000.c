@@ -48,7 +48,9 @@
  *		hold a single BCD digit. Hence everything has 'ones' and
  *		'tens' digits.
  *
- * Version:	@(#)m_xt_t1000.c	1.0.6	2018/03/21
+ * FIXME:	The ROM drive should be re-done using the "option file".
+ *
+ * Version:	@(#)m_xt_t1000.c	1.0.7	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,7 +104,8 @@
 #include "m_xt_t1000.h"
 
 
-#define T1000_ROMSIZE	(512*1024UL)	/* Maximum ROM drive size is 512k */
+#define T1000_ROMDOS_SIZE	(512*1024UL)	/* Max romdrive size is 512k */
+#define T1000_ROMDOS_PATH	L"machines/toshiba/t1000/t1000dos.rom"
 
 
 enum TC8521_ADDR {
@@ -814,7 +817,7 @@ t1000_write_rom_ctl(uint16_t addr, uint8_t val, void *priv)
     sys->rom_ctl = val;
     if (sys->romdrive && (val & 0x80)) {
 	/* Enable */
-	sys->rom_offset = ((val & 0x7f) * 0x10000) % T1000_ROMSIZE;
+	sys->rom_offset = ((val & 0x7f) * 0x10000) % T1000_ROMDOS_SIZE;
 	mem_mapping_set_addr(&sys->rom_mapping, 0xa0000, 0x10000);
 	mem_mapping_set_exec(&sys->rom_mapping, sys->romdrive + sys->rom_offset);
 	mem_mapping_enable(&sys->rom_mapping);	
@@ -876,7 +879,7 @@ machine_xt_t1000_init(const machine_t *model, void *arg)
     t1000.ems_port_index = 7;	/* EMS disabled */
 
     /* Load the T1000 CGA Font ROM. */
-    loadfont(L"roms/machines/toshiba/t1000/t1000font.rom", 2);
+    loadfont(L"machines/toshiba/t1000/t1000font.rom", 2);
 
     /*
      * The ROM drive is optional.
@@ -884,12 +887,12 @@ machine_xt_t1000_init(const machine_t *model, void *arg)
      * If the file is missing, continue to boot; the BIOS will
      * complain 'No ROM drive' but boot normally from floppy.
      */
-    f = rom_fopen(L"roms/machines/toshiba/t1000/t1000dos.rom");
+    f = plat_fopen(rom_path(T1000_ROMDOS_PATH), L"rb");
     if (f != NULL) {
-	t1000.romdrive = malloc(T1000_ROMSIZE);
+	t1000.romdrive = malloc(T1000_ROMDOS_SIZE);
 	if (t1000.romdrive) {
-		memset(t1000.romdrive, 0xff, T1000_ROMSIZE);
-		fread(t1000.romdrive, T1000_ROMSIZE, 1, f);
+		memset(t1000.romdrive, 0xff, T1000_ROMDOS_SIZE);
+		fread(t1000.romdrive, T1000_ROMDOS_SIZE, 1, f);
 	}
 	fclose(f);
     }
@@ -976,7 +979,7 @@ machine_xt_t1200_init(const machine_t *model, void *arg)
     t1000.ems_port_index = 7;	/* EMS disabled */
 
     /* Load the T1200 CGA Font ROM. */
-    loadfont(L"roms/machines/toshiba/t1200/t1000font.bin", 2);
+    loadfont(L"machines/toshiba/t1200/t1000font.bin", 2);
 
     /* Map the EMS page frame */
     for (pg = 0; pg < 4; pg++) {

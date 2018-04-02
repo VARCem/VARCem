@@ -9,7 +9,7 @@
  *		Implementation of the NCR 5380 series of SCSI Host Adapters
  *		made by NCR. These controllers were designed for the ISA bus.
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.4	2018/03/15
+ * Version:	@(#)scsi_ncr5380.c	1.0.5	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,10 +62,10 @@
 #include "scsi_ncr5380.h"
 
 
-#define LCS6821N_ROM	L"roms/scsi/ncr5380/longshine lcs-6821n - bios version 1.04.bin"
-#define RT1000B_ROM	L"roms/scsi/ncr5380/rancho_rt1000_rtbios_version_8.10r.bin"
-#define T130B_ROM	L"roms/scsi/ncr5380/trantor_t130b_bios_v2.14.bin"
-#define SCSIAT_ROM	L"roms/scsi/ncr5380/sumo_scsiat_bios_v6.3.bin"
+#define LCS6821N_ROM	L"scsi/ncr5380/longshine lcs-6821n - bios version 1.04.bin"
+#define RT1000B_ROM	L"scsi/ncr5380/rancho_rt1000_rtbios_version_8.10r.bin"
+#define T130B_ROM	L"scsi/ncr5380/trantor_t130b_bios_v2.14.bin"
+#define SCSIAT_ROM	L"scsi/ncr5380/sumo_scsiat_bios_v6.3.bin"
 
 
 #define NCR_CURDATA	0		/* current SCSI data (read only) */

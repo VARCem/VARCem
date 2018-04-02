@@ -8,7 +8,7 @@
  *
  *		Definitions for the FluidSynth driver.
  *
- * Version:	@(#)midi_fluidsynth.h	1.0.2	2018/03/15
+ * Version:	@(#)midi_fluidsynth.h	1.0.3	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,9 @@
 
 
 extern const device_t fluidsynth_device;
+
+
+extern void	fluidsynth_global_init(void);
 
 
 #endif	/*SOUND_MIDI_FLUIDSYNTH_H*/

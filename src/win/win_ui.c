@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.7	2018/03/20
+ * Version:	@(#)win_ui.c	1.0.8	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -151,7 +151,7 @@ ResetAllMenus(void)
     EnableMenuItem(menuMain, IDM_CONFIG_SAVE, MF_DISABLED);
 #endif
 
-    CheckMenuItem(menuMain, IDM_ACTION_RCTRL_IS_LALT, MF_UNCHECKED);
+    CheckMenuItem(menuMain, IDM_KBD_RCTRL_IS_LALT, MF_UNCHECKED);
 
     CheckMenuItem(menuMain, IDM_UPDATE_ICONS, MF_UNCHECKED);
 
@@ -213,7 +213,7 @@ ResetAllMenus(void)
     CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+3, MF_UNCHECKED);
     CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+4, MF_UNCHECKED);
 
-    CheckMenuItem(menuMain, IDM_ACTION_RCTRL_IS_LALT, rctrl_is_lalt ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(menuMain, IDM_KBD_RCTRL_IS_LALT, rctrl_is_lalt ? MF_CHECKED : MF_UNCHECKED);
 
     CheckMenuItem(menuMain, IDM_UPDATE_ICONS, update_icons ? MF_CHECKED : MF_UNCHECKED);
 
@@ -329,12 +329,6 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDM_ACTION_CTRL_ALT_ESC:
 				keyboard_send_cae();
-				break;
-
-			case IDM_ACTION_RCTRL_IS_LALT:
-				rctrl_is_lalt ^= 1;
-				CheckMenuItem(hmenu, IDM_ACTION_RCTRL_IS_LALT, rctrl_is_lalt ? MF_CHECKED : MF_UNCHECKED);
-				config_save();
 				break;
 
 			case IDM_ACTION_PAUSE:
@@ -510,6 +504,12 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				config_save();
 				break;
 
+			case IDM_KBD_RCTRL_IS_LALT:
+				rctrl_is_lalt ^= 1;
+				CheckMenuItem(hmenu, IDM_KBD_RCTRL_IS_LALT, rctrl_is_lalt ? MF_CHECKED : MF_UNCHECKED);
+				config_save();
+				break;
+
 #ifdef ENABLE_LOG_TOGGLES
 # ifdef ENABLE_BUSLOGIC_LOG
 			case IDM_LOG_BUSLOGIC:
@@ -575,7 +575,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDM_CONFIG_LOAD:
 				plat_pause(1);
-				if (!file_dlg_st(hwnd, IDS_2160, "", 0) &&
+				if (! file_dlg_st(hwnd, IDS_2160, L"", 0) &&
 				    (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051) == IDYES)) {
 					pc_reload(wopenfilestring);
 					ResetAllMenus();
@@ -585,7 +585,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDM_CONFIG_SAVE:
 				plat_pause(1);
-				if (! file_dlg_st(hwnd, IDS_2160, "", 1)) {
+				if (! file_dlg_st(hwnd, IDS_2160, L"", 1)) {
 					config_write(wopenfilestring);
 				}
 				plat_pause(0);
@@ -891,7 +891,6 @@ ui_init(int nCmdShow)
     /* Create the Machine Rendering window. */
     hwndRender = CreateWindow(L"STATIC", NULL, WS_CHILD|SS_BITMAP,
 			      0, 0, 1, 1, hwnd, NULL, hinstance, NULL);
-    MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
 
     /* That looks good, now continue setting up the machine. */
     switch (pc_init_modules()) {
@@ -928,21 +927,19 @@ ui_init(int nCmdShow)
     if (start_in_fullscreen)
 	plat_setfullscreen(1);
 
+    /* Activate the render window, this will also set the screen size. */
+    MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
+
+#if 0
     /* Set up the current window size. */
     plat_resize(scrnsz_x, scrnsz_y);
+#endif
 
     /* Fire up the machine. */
     pc_reset_hard();
 
     /* Set the PAUSE mode depending on the renderer. */
     plat_pause(0);
-
-    /* If so requested via the command line, inform the
-     * application that started us of our HWND, using the
-     * the hWnd and unique ID the application has given
-     * us. */
-    if (source_hwnd)
-	SendMessage((HWND) (uintptr_t) source_hwnd, WM_SENDHWND, (WPARAM) unique_id, (LPARAM) hwndMain);
 
     /*
      * Everything has been configured, and all seems to work,

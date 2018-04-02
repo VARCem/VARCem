@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.7	2018/03/20
+ * Version:	@(#)config.c	1.0.9	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,6 +74,9 @@
 #include "video/video.h"
 #include "plat.h"
 #include "ui.h"
+
+
+#define ANSI_CFG		1		/* for now, always */
 
 
 typedef struct _list_ {
@@ -450,6 +453,7 @@ load_general(void)
     video_graytype = config_get_int(cat, "video_graytype", 0);
 
     rctrl_is_lalt = config_get_int(cat, "rctrl_is_lalt", 0);
+
     update_icons = config_get_int(cat, "update_icons", 1);
 
     window_remember = config_get_int(cat, "window_remember", 0);
@@ -492,20 +496,6 @@ load_machine(void)
     if (machine >= machine_count())
 	machine = machine_count() - 1;
 
-    /* This is for backwards compatibility. */
-    p = config_get_string(cat, "model", NULL);
-    if (p != NULL) {
-	/* Detect the old model typos and fix them. */
-	if (! strcmp(p, "p55r2p4")) {
-		machine = machine_get_machine_from_internal_name("p55t2p4");
-	} else {
-		machine = machine_get_machine_from_internal_name(p);
-	}
-	config_delete_var(cat, "model");
-    }
-    if (machine >= machine_count())
-	machine = machine_count() - 1;
-
     romset = machine_getromset();
     cpu_manufacturer = config_get_int(cat, "cpu_manufacturer", 0);
     cpu = config_get_int(cat, "cpu", 0);
@@ -523,9 +513,6 @@ load_machine(void)
     enable_external_fpu = !!config_get_int(cat, "cpu_enable_fpu", 0);
 
     enable_sync = !!config_get_int(cat, "enable_sync", 1);
-
-    /* Remove this after a while.. */
-    config_delete_var(cat, "nvr_path");
 }
 
 
@@ -542,6 +529,8 @@ load_video(void)
 	vid_card = VID_INTERNAL;
     } else {
 	p = config_get_string(cat, "video_card", NULL);
+
+	/* Remove this after 01-JUL-2018. --FvK */
 	if (p == NULL) {
 		p = config_get_string(cat, "gfxcard", NULL);
 		if (p != NULL)
@@ -614,7 +603,15 @@ load_sound(void)
     char temp[512];
     char *p;
 
-    p = config_get_string(cat, "sndcard", NULL);
+    p = config_get_string(cat, "sound_card", NULL);
+
+    /* Remove this after 01-JUL-2018. --FvK */
+    if (p == NULL) {
+	p = config_get_string(cat, "sndcard", NULL);
+	if (p != NULL)
+		config_delete_var(cat, "sndcard");
+    }
+
     if (p != NULL)
 	sound_card_current = sound_card_get_from_internal_name(p);
       else
@@ -706,9 +703,9 @@ load_ports(void)
     char *cat = "Ports (COM & LPT)";
     char *p;
 
-    serial_enabled[0] = !!config_get_int(cat, "serial1_enabled", 1);
-    serial_enabled[1] = !!config_get_int(cat, "serial2_enabled", 1);
-    lpt_enabled = !!config_get_int(cat, "lpt_enabled", 1);
+    serial_enabled[0] = !!config_get_int(cat, "serial1_enabled", 0);
+    serial_enabled[1] = !!config_get_int(cat, "serial2_enabled", 0);
+    lpt_enabled = !!config_get_int(cat, "lpt_enabled", 0);
 
     p = (char *)config_get_string(cat, "lpt1_device", NULL);
     if (p != NULL)
@@ -738,7 +735,15 @@ load_other_peripherals(void)
     char temp[512], *p;
     int c;
 
-    p = config_get_string(cat, "scsicard", NULL);
+    p = config_get_string(cat, "scsi_card", NULL);
+
+    /* Remove this after 01-JUL-2018. --FvK */
+    if (p == NULL) {
+	p = config_get_string(cat, "scsicard", NULL);
+	if (p != NULL)
+		config_delete_var(cat, "scsicard");
+    }
+
     if (p != NULL)
 	scsi_card_current = scsi_card_get_from_internal_name(p);
       else
@@ -749,11 +754,6 @@ load_other_peripherals(void)
 	hdc_name = NULL;
     }
     p = config_get_string(cat, "hdc", NULL);
-    if (p == NULL) {
-	p = config_get_string(cat, "hdd_controller", NULL);
-	if (p != NULL)
-		config_delete_var(cat, "hdd_controller");
-    }
     if (p == NULL) {
 	if (machines[machine].flags & MACHINE_HDC) {
 		hdc_name = (char *) malloc((strlen("internal") + 1) * sizeof(char));
@@ -778,8 +778,8 @@ load_other_peripherals(void)
     }
 
     bugger_enabled = !!config_get_int(cat, "bugger_enabled", 0);
-#ifdef WALTJE
 
+#ifdef WALTJE
     romdos_enabled = !!config_get_int(cat, "romdos_enabled", 0);
 #endif
 }
@@ -818,12 +818,12 @@ load_hard_disks(void)
 	sprintf(temp, "hdd_%02i_parameters", c+1);
 	p = config_get_string(cat, temp, "0, 0, 0, 0, none");
 	if (tally_char(p, ',') == 3) {
-		sscanf(p, "%" PRIu64 ", %" PRIu64", %" PRIu64 ", %s",
-			&hdd[c].spt, &hdd[c].hpc, &hdd[c].tracks, s);
+		sscanf(p, "%u, %u, %u, %s",
+			(int *)&hdd[c].spt, (int *)&hdd[c].hpc, (int *)&hdd[c].tracks, s);
 		hdd[c].wp = 0;
 	} else {
-		sscanf(p, "%" PRIu64 ", %" PRIu64", %" PRIu64 ", %i, %s",
-			&hdd[c].spt, &hdd[c].hpc, &hdd[c].tracks, (int *)&hdd[c].wp, s);
+		sscanf(p, "%u, %u, %u, %d, %s",
+			(int *)&hdd[c].spt, (int *)&hdd[c].hpc, (int *)&hdd[c].tracks, (int *)&hdd[c].wp, s);
 	}
 
 	hdd[c].bus = hdd_string_to_bus(s, 0);
@@ -935,24 +935,8 @@ load_hard_disks(void)
 	sprintf(temp, "hdd_%02i_fn", c+1);
 	wp = config_get_wstring(cat, temp, L"");
 
-#if 0
-	/*
-	 * NOTE:
-	 * Temporary hack to remove the absolute
-	 * path currently saved in most config
-	 * files.  We should remove this before
-	 * finalizing this release!  --FvK
-	 */
-	if (! wcsnicmp(wp, usr_path, wcslen(usr_path))) {
-		/*
-		 * Yep, its absolute and prefixed
-		 * with the CFG path.  Just strip
-		 * that off for now...
-		 */
-		wcsncpy(hdd[c].fn, &wp[wcslen(usr_path)], sizeof_w(hdd[c].fn));
-	} else
-#endif
-	wcsncpy(hdd[c].fn, wp, sizeof_w(hdd[c].fn));
+	/* Try to make relative, and copy to destination. */
+	pc_path(hdd[c].fn, sizeof_w(hdd[c].fn), wp);
 
 	/* If disk is empty or invalid, mark it for deletion. */
 	if (! hdd_is_valid(c)) {
@@ -1005,24 +989,8 @@ load_removable_devices(void)
 	sprintf(temp, "fdd_%02i_fn", c + 1);
 	wp = config_get_wstring(cat, temp, L"");
 
-#if 0
-	/*
-	 * NOTE:
-	 * Temporary hack to remove the absolute
-	 * path currently saved in most config
-	 * files.  We should remove this before
-	 * finalizing this release!  --FvK
-	 */
-	if (! wcsnicmp(wp, usr_path, wcslen(usr_path))) {
-		/*
-		 * Yep, its absolute and prefixed
-		 * with the EXE path.  Just strip
-		 * that off for now...
-		 */
-		wcsncpy(floppyfns[c], &wp[wcslen(usr_path)], sizeof_w(floppyfns[c]));
-	} else
-#endif
-	wcsncpy(floppyfns[c], wp, sizeof_w(floppyfns[c]));
+	/* Try to make relative, and copy to destination. */
+	pc_path(floppyfns[c], sizeof_w(floppyfns[c]), wp);
 
 	sprintf(temp, "fdd_%02i_writeprot", c+1);
 	ui_writeprot[c] = !!config_get_int(cat, temp, 0);
@@ -1104,24 +1072,8 @@ load_removable_devices(void)
 	sprintf(temp, "cdrom_%02i_image_path", c+1);
 	wp = config_get_wstring(cat, temp, L"");
 
-#if 0
-	/*
-	 * NOTE:
-	 * Temporary hack to remove the absolute
-	 * path currently saved in most config
-	 * files.  We should remove this before
-	 * finalizing this release!  --FvK
-	 */
-	if (! wcsnicmp(wp, usr_path, wcslen(usr_path))) {
-		/*
-		 * Yep, its absolute and prefixed
-		 * with the EXE path.  Just strip
-		 * that off for now...
-		 */
-		wcsncpy(cdrom_image[c].image_path, &wp[wcslen(usr_path)], sizeof_w(cdrom_image[c].image_path));
-	} else
-#endif
-	wcsncpy(cdrom_image[c].image_path, wp, sizeof_w(cdrom_image[c].image_path));
+	/* Try to make relative, and copy to destination. */
+	pc_path(cdrom_image[c].image_path, sizeof_w(cdrom_image[c].image_path), wp);
 
 	if (cdrom_drives[c].host_drive < 'A')
 		cdrom_drives[c].host_drive = 0;
@@ -1173,24 +1125,8 @@ load_floppy_drives(void)
 	sprintf(temp, "fdd_%02i_fn", c + 1);
 	wp = config_get_wstring(cat, temp, L"");
 
-#if 0
-	/*
-	 * NOTE:
-	 * Temporary hack to remove the absolute
-	 * path currently saved in most config
-	 * files.  We should remove this before
-	 * finalizing this release!  --FvK
-	 */
-	if (! wcsnicmp(wp, usr_path, wcslen(usr_path))) {
-		/*
-		 * Yep, its absolute and prefixed
-		 * with the EXE path.  Just strip
-		 * that off for now...
-		 */
-		wcsncpy(floppyfns[c], &wp[wcslen(usr_path)], sizeof_w(floppyfns[c]));
-	} else
-#endif
-	wcsncpy(floppyfns[c], wp, sizeof_w(floppyfns[c]));
+	/* Try to make relative, and copy to destination. */
+	pc_path(floppyfns[c], sizeof_w(floppyfns[c]), wp);
 
 	sprintf(temp, "fdd_%02i_writeprot", c+1);
 	ui_writeprot[c] = !!config_get_int(cat, temp, 0);
@@ -1294,24 +1230,8 @@ load_other_removable_devices(void)
 	sprintf(temp, "cdrom_%02i_image_path", c+1);
 	wp = config_get_wstring(cat, temp, L"");
 
-#if 0
-	/*
-	 * NOTE:
-	 * Temporary hack to remove the absolute
-	 * path currently saved in most config
-	 * files.  We should remove this before
-	 * finalizing this release!  --FvK
-	 */
-	if (! wcsnicmp(wp, usr_path, wcslen(usr_path))) {
-		/*
-		 * Yep, its absolute and prefixed
-		 * with the EXE path.  Just strip
-		 * that off for now...
-		 */
-		wcsncpy(cdrom_image[c].image_path, &wp[wcslen(usr_path)], sizeof_w(cdrom_image[c].image_path));
-	} else
-#endif
-	wcsncpy(cdrom_image[c].image_path, wp, sizeof_w(cdrom_image[c].image_path));
+	/* Try to make relative, and copy to destination. */
+	pc_path(cdrom_image[c].image_path, sizeof_w(cdrom_image[c].image_path), wp);
 
 	if (cdrom_drives[c].host_drive < 'A')
 		cdrom_drives[c].host_drive = 0;
@@ -1394,24 +1314,8 @@ load_other_removable_devices(void)
 	sprintf(temp, "zip_%02i_image_path", c+1);
 	wp = config_get_wstring(cat, temp, L"");
 
-#if 0
-	/*
-	 * NOTE:
-	 * Temporary hack to remove the absolute
-	 * path currently saved in most config
-	 * files.  We should remove this before
-	 * finalizing this release!  --FvK
-	 */
-	if (! wcsnicmp(wp, usr_path, wcslen(usr_path))) {
-		/*
-		 * Yep, its absolute and prefixed
-		 * with the EXE path.  Just strip
-		 * that off for now...
-		 */
-		wcsncpy(zip_drives[c].image_path, &wp[wcslen(usr_path)], sizeof_w(zip_drives[c].image_path));
-	} else
-#endif
-	wcsncpy(zip_drives[c].image_path, wp, sizeof_w(zip_drives[c].image_path));
+	/* Try to make relative, and copy to destination. */
+	pc_path(zip_drives[c].image_path, sizeof_w(zip_drives[c].image_path), wp);
 
 	/* If the CD-ROM is disabled, delete all its variables. */
 	if (zip_drives[c].bus_type == ZIP_BUS_DISABLED) {
@@ -1719,9 +1623,9 @@ save_sound(void)
     char *cat = "Sound";
 
     if (sound_card_current == 0)
-	config_delete_var(cat, "sndcard");
+	config_delete_var(cat, "sound_card");
       else
-	config_set_string(cat, "sndcard", sound_card_get_internal_name(sound_card_current));
+	config_set_string(cat, "sound_card", sound_card_get_internal_name(sound_card_current));
 
     if (!strcmp(midi_device_get_internal_name(midi_device_current), "none"))
 	config_delete_var(cat, "midi_device");
@@ -1800,34 +1704,34 @@ save_ports(void)
     char *cat = "Ports (COM & LPT)";
 
     if (serial_enabled[0])
-	config_delete_var(cat, "serial1_enabled");
-      else
 	config_set_int(cat, "serial1_enabled", serial_enabled[0]);
+      else
+	config_delete_var(cat, "serial1_enabled");
 
     if (serial_enabled[1])
-	config_delete_var(cat, "serial2_enabled");
-      else
 	config_set_int(cat, "serial2_enabled", serial_enabled[1]);
+      else
+	config_delete_var(cat, "serial2_enabled");
 
     if (lpt_enabled)
-	config_delete_var(cat, "lpt_enabled");
-      else
 	config_set_int(cat, "lpt_enabled", lpt_enabled);
-
-    if (!strcmp(lpt_device_names[0], "none"))
-	config_delete_var(cat, "lpt1_device");
       else
+	config_delete_var(cat, "lpt_enabled");
+
+    if (strcmp(lpt_device_names[0], "none"))
 	config_set_string(cat, "lpt1_device", lpt_device_names[0]);
-
-    if (!strcmp(lpt_device_names[1], "none"))
-	config_delete_var(cat, "lpt2_device");
       else
+	config_delete_var(cat, "lpt1_device");
+
+    if (strcmp(lpt_device_names[1], "none"))
 	config_set_string(cat, "lpt2_device", lpt_device_names[1]);
-
-    if (!strcmp(lpt_device_names[2], "none"))
-	config_delete_var(cat, "lpt3_device");
       else
+	config_delete_var(cat, "lpt2_device");
+
+    if (strcmp(lpt_device_names[2], "none"))
 	config_set_string(cat, "lpt3_device", lpt_device_names[2]);
+      else
+	config_delete_var(cat, "lpt3_device");
 
     delete_section_if_empty(cat);
 }
@@ -1842,9 +1746,9 @@ save_other_peripherals(void)
     int c;
 
     if (scsi_card_current == 0)
-	config_delete_var(cat, "scsicard");
+	config_delete_var(cat, "scsi_card");
       else
-	config_set_string(cat, "scsicard",
+	config_set_string(cat, "scsi_card",
 			  scsi_card_get_internal_name(scsi_card_current));
 
     config_set_string(cat, "hdc", hdc_name);
@@ -1882,7 +1786,7 @@ save_hard_disks(void)
 	sprintf(temp, "hdd_%02i_parameters", c+1);
 	if (hdd_is_valid(c)) {
 		p = hdd_bus_to_string(hdd[c].bus, 0);
-		sprintf(tmp2, "%" PRIu64 ", %" PRIu64", %" PRIu64 ", %i, %s",
+		sprintf(tmp2, "%u, %u, %u, %d, %s",
 			hdd[c].spt, hdd[c].hpc, hdd[c].tracks, hdd[c].wp, p);
 		config_set_string(cat, temp, tmp2);
 	} else {
@@ -2105,7 +2009,7 @@ config_save(void)
     save_other_removable_devices();	/* Other removable devices */
 
     /* Not if we are running readonly! */
-    if (config_ro)
+    if (! config_ro)
 	config_write(cfg_path);
 }
 

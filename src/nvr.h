@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic NVRAM/CMOS driver.
  *
- * Version:	@(#)nvr.h	1.0.4	2018/03/19
+ * Version:	@(#)nvr.h	1.0.5	2018/03/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -85,6 +85,7 @@ extern const device_t amstrad_nvr_device;
 
 
 extern void	nvr_init(nvr_t *);
+extern wchar_t	*nvr_path(wchar_t *fn);
 extern int	nvr_load(void);
 extern int	nvr_save(void);
 
@@ -92,14 +93,6 @@ extern int	nvr_is_leap(int year);
 extern int	nvr_get_days(int month, int year);
 extern void	nvr_time_get(struct tm *);
 extern void	nvr_time_set(struct tm *);
-
-extern wchar_t	*nvr_path(wchar_t *str);
-extern FILE	*nvr_fopen(wchar_t *str, wchar_t *mode);
-
-#if 0
-extern void	nvr_at_init(int irq);
-extern void	nvr_at_close(void);
-#endif
 
 
 #endif	/*EMU_NVR_H*/

@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.4	2018/03/15
+ * Version:	@(#)vid_tgui9440.c	1.0.5	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -832,22 +832,22 @@ static void *tgui_init(const device_t *info, wchar_t *bios_fn, int type)
 
 static void *tgui9400cxi_init(const device_t *info)
 {
-        return tgui_init(info, L"roms/video/trident/tgui9440/9400cxi.vbi", TGUI_9400CXI);
+        return tgui_init(info, L"video/trident/tgui9440/9400cxi.vbi", TGUI_9400CXI);
 }
 
 static void *tgui9440_init(const device_t *info)
 {
-        return tgui_init(info, L"roms/video/trident/tgui9440/9440.vbi", TGUI_9440);
+        return tgui_init(info, L"video/trident/tgui9440/9440.vbi", TGUI_9440);
 }
 
 static int tgui9400cxi_available()
 {
-        return rom_present(L"roms/video/trident/tgui9440/9400cxi.vbi");
+        return rom_present(L"video/trident/tgui9440/9400cxi.vbi");
 }
 
 static int tgui9440_available()
 {
-        return rom_present(L"roms/video/trident/tgui9440/9440.vbi");
+        return rom_present(L"video/trident/tgui9440/9440.vbi");
 }
 
 void tgui_close(void *p)

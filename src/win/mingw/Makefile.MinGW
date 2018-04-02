@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.17	2018/03/27
+# Version:	@(#)Makefile.mingw	1.0.18	2018/03/31
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -240,6 +240,9 @@ else
  endif
  PREPROC	:= cpp
  WINDRES	:= windres
+ ifndef CAT
+  CAT		:= cat
+ endif
 
  SYSINC		:= -Iwin/mingw/include
  SYSLIB		:=
@@ -688,6 +691,9 @@ ifneq ($(DEBUG), y)
 		@strip hello.exe
 endif
 
+foo.exe:	foo.o
+		@$(CC) $(LDFLAGS) -o foo.exe \
+			foo.o $(LIBS)
 
 clean:
 		@echo Cleaning objects..
@@ -712,8 +718,8 @@ depclean:
 
 depends:	DEPOBJ=$(OBJ:%.o=%.d)
 depends:	depclean $(OBJ:%.o=%.d)
-		@-cat $(DEPOBJ) >>$(DEPFILE)
-		@-rm -f $(DEPOBJ)
+		@$(CAT) $(DEPOBJ) >>$(DEPFILE)
+#		@-rm -f $(DEPOBJ)
 
 $(DEPFILE):
 endif

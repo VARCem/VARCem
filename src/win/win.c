@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.9	2018/03/20
+ * Version:	@(#)win.c	1.0.10	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -249,10 +249,75 @@ plat_get_string(int i)
 }
 
 
+/* Process the commandline, and create standard argc/argv array. */
+static int
+ProcessCommandLine(wchar_t ***argw)
+{
+    WCHAR *cmdline;
+    wchar_t *argbuf;
+    wchar_t **args;
+    int argc_max;
+    int i, q, argc;
+
+    cmdline = GetCommandLine();
+    i = wcslen(cmdline) + 1;
+    argbuf = (wchar_t *)malloc(sizeof(wchar_t)*i);
+    wcscpy(argbuf, cmdline);
+
+    argc = 0;
+    argc_max = 64;
+    args = (wchar_t **)malloc(sizeof(wchar_t *) * argc_max);
+    if (args == NULL) {
+	free(argbuf);
+	return(0);
+    }
+
+    /* parse commandline into argc/argv format */
+    i = 0;
+    while (argbuf[i]) {
+	while (argbuf[i] == L' ')
+		  i++;
+
+	if (argbuf[i]) {
+		if ((argbuf[i] == L'\'') || (argbuf[i] == L'"')) {
+			q = argbuf[i++];
+			if (!argbuf[i])
+				break;
+		} else
+			q = 0;
+
+		args[argc++] = &argbuf[i];
+
+		if (argc >= argc_max) {
+			argc_max += 64;
+			args = realloc(args, sizeof(wchar_t *)*argc_max);
+			if (args == NULL) {
+				free(argbuf);
+				return(0);
+			}
+		}
+
+		while ((argbuf[i]) && ((q)
+			? (argbuf[i]!=q) : (argbuf[i]!=L' '))) i++;
+
+		if (argbuf[i]) {
+			argbuf[i] = 0;
+			i++;
+		}
+	}
+    }
+
+    args[argc] = NULL;
+    *argw = args;
+
+    return(argc);
+}
+
+
 #ifndef USE_WX
 /* Create a console if we don't already have one. */
-static void
-CreateConsole(int init)
+void
+plat_console(int init)
 {
     HANDLE h;
     FILE *fp;
@@ -334,71 +399,6 @@ CreateConsole(int init)
 }
 
 
-/* Process the commandline, and create standard argc/argv array. */
-static int
-ProcessCommandLine(wchar_t ***argw)
-{
-    WCHAR *cmdline;
-    wchar_t *argbuf;
-    wchar_t **args;
-    int argc_max;
-    int i, q, argc;
-
-    cmdline = GetCommandLine();
-    i = wcslen(cmdline) + 1;
-    argbuf = (wchar_t *)malloc(sizeof(wchar_t)*i);
-    wcscpy(argbuf, cmdline);
-
-    argc = 0;
-    argc_max = 64;
-    args = (wchar_t **)malloc(sizeof(wchar_t *) * argc_max);
-    if (args == NULL) {
-	free(argbuf);
-	return(0);
-    }
-
-    /* parse commandline into argc/argv format */
-    i = 0;
-    while (argbuf[i]) {
-	while (argbuf[i] == L' ')
-		  i++;
-
-	if (argbuf[i]) {
-		if ((argbuf[i] == L'\'') || (argbuf[i] == L'"')) {
-			q = argbuf[i++];
-			if (!argbuf[i])
-				break;
-		} else
-			q = 0;
-
-		args[argc++] = &argbuf[i];
-
-		if (argc >= argc_max) {
-			argc_max += 64;
-			args = realloc(args, sizeof(wchar_t *)*argc_max);
-			if (args == NULL) {
-				free(argbuf);
-				return(0);
-			}
-		}
-
-		while ((argbuf[i]) && ((q)
-			? (argbuf[i]!=q) : (argbuf[i]!=L' '))) i++;
-
-		if (argbuf[i]) {
-			argbuf[i] = 0;
-			i++;
-		}
-	}
-    }
-
-    args[argc] = NULL;
-    *argw = args;
-
-    return(argc);
-}
-
-
 /* For the Windows platform, this is the start of the application. */
 int WINAPI
 WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
@@ -424,7 +424,8 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     set_language(0x0409);
 
     /* Create console window. */
-    CreateConsole(1);
+    if (force_debug)
+	plat_console(1);
 
     /* Process the command line for options. */
     argc = ProcessCommandLine(&argw);
@@ -432,13 +433,13 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     /* Pre-initialize the system, this loads the config file. */
     if (! pc_init(argc, argw)) {
 	/* Detach from console. */
-	CreateConsole(0);
+	plat_console(0);
 	return(1);
     }
 
     /* Cleanup: we may no longer need the console. */
     if (! force_debug)
-	CreateConsole(0);
+	plat_console(0);
 
     /* Handle our GUI. */
     i = ui_init(nCmdShow);

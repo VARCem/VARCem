@@ -13,7 +13,7 @@
  * NOTE:	The MegaPC video device should be moved to the MegaPC
  *		machine file.
  *
- * Version:	@(#)vid_paradise.c	1.0.3	2018/03/15
+ * Version:	@(#)vid_paradise.c	1.0.4	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -410,7 +410,7 @@ static void *paradise_pvga1a_pc2086_init(const device_t *info)
         paradise_t *paradise = paradise_pvga1a_init(info, 1 << 18);
         
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/machines/pc2086/40186.ic171", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"machines/pc2086/40186.ic171", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
                 
         return paradise;
 }
@@ -419,7 +419,7 @@ static void *paradise_pvga1a_pc3086_init(const device_t *info)
         paradise_t *paradise = paradise_pvga1a_init(info, 1 << 18);
 
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/machines/pc3086/c000.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"machines/pc3086/c000.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
                 
         return paradise;
 }
@@ -435,14 +435,14 @@ static void *paradise_pvga1a_standalone_init(const device_t *info)
         paradise = paradise_pvga1a_init(info, memory);
         
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/video/paradise/pvga1a/bios.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"video/paradise/pvga1a/bios.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         return paradise;
 }
 
 static int paradise_pvga1a_standalone_available(void)
 {
-        return rom_present(L"roms/video/paradise/pvga1a/bios.bin");
+        return rom_present(L"video/paradise/pvga1a/bios.bin");
 }
 
 static void *paradise_wd90c11_megapc_init(const device_t *info)
@@ -451,8 +451,8 @@ static void *paradise_wd90c11_megapc_init(const device_t *info)
         
         if (paradise)
                 rom_init_interleaved(&paradise->bios_rom,
-                                     L"roms/machines/amstrad/megapc/41651-bios lo.u18",
-                                     L"roms/machines/amstrad/megapc/211253-bios hi.u19",
+                                     L"machines/amstrad/megapc/41651-bios lo.u18",
+                                     L"machines/amstrad/megapc/211253-bios hi.u19",
                                      0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         return paradise;
@@ -463,14 +463,14 @@ static void *paradise_wd90c11_standalone_init(const device_t *info)
         paradise_t *paradise = paradise_wd90c11_init(info);
         
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/video/wd/wd90c11/wd90c11.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"video/wd/wd90c11/wd90c11.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         return paradise;
 }
 
 static int paradise_wd90c11_standalone_available(void)
 {
-        return rom_present(L"roms/video/wd/wd90c11/wd90c11.vbi");
+        return rom_present(L"video/wd/wd90c11/wd90c11.vbi");
 }
 
 static void *paradise_wd90c30_standalone_init(const device_t *info)
@@ -484,14 +484,14 @@ static void *paradise_wd90c30_standalone_init(const device_t *info)
         paradise = paradise_wd90c30_init(info, memory);
         
         if (paradise)
-                rom_init(&paradise->bios_rom, L"roms/video/wd/wd90c30/90c30-lr.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+                rom_init(&paradise->bios_rom, L"video/wd/wd90c30/90c30-lr.vbi", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
         return paradise;
 }
 
 static int paradise_wd90c30_standalone_available(void)
 {
-        return rom_present(L"roms/video/wd/wd90c30/90c30-lr.vbi");
+        return rom_present(L"video/wd/wd90c30/90c30-lr.vbi");
 }
 
 void paradise_close(void *p)

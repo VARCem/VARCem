@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Bar module.
  *
- * Version:	@(#)win_stbar.c	1.0.4	2018/03/18
+ * Version:	@(#)win_stbar.c	1.0.5	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1023,7 +1023,7 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if ((part == -1) || (sb_menu_handles == NULL))
 					break;
 
-				ret = file_dlg_w_st(hwnd, IDS_2159, floppyfns[id], 0);
+				ret = file_dlg_st(hwnd, IDS_2159, floppyfns[id], 0);
 				if (! ret)
 					ui_sb_mount_floppy_img(id, part, (item_id == IDM_FLOPPY_IMAGE_EXISTING_WP) ? 1 : 0, wopenfilestring);
 				break;
@@ -1048,7 +1048,7 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if ((part == -1) || (sb_menu_handles == NULL))
 					break;
 
-				ret = file_dlg_w_st(hwnd, IDS_2173, floppyfns[id], 1);
+				ret = file_dlg_st(hwnd, IDS_2173, floppyfns[id], 1);
 				if (! ret) {
 					plat_pause(1);
 					ret = d86f_export(id, wopenfilestring);
@@ -1086,7 +1086,7 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if ((part == -1) || (sb_menu_handles == NULL))
 						break;
 
-				if (!file_dlg_w_st(hwnd, IDS_2075, cdrom_image[id].image_path, 0)) {
+				if (!file_dlg_st(hwnd, IDS_2075, cdrom_image[id].image_path, 0)) {
 					cdrom_drives[id].prev_host_drive = cdrom_drives[id].host_drive;
 					wcscpy(temp_path, wopenfilestring);
 					if (!cdrom_image[id].prev_image_path)
@@ -1164,7 +1164,7 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if ((part == -1) || (sb_menu_handles == NULL))
 					break;
 
-				ret = file_dlg_w_st(hwnd, IDS_2175, zip_drives[id].image_path, 0);
+				ret = file_dlg_st(hwnd, IDS_2175, zip_drives[id].image_path, 0);
 				if (! ret)
 					ui_sb_mount_zip_img(id, part, (item_id == IDM_ZIP_IMAGE_EXISTING_WP) ? 1 : 0, wopenfilestring);
 				break;
@@ -1197,7 +1197,7 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_RDISK_IMAGE:
 			case IDM_RDISK_IMAGE_WP:
 				id = item_params & 0x001f;
-				ret = file_dlg_w_st(hwnd, IDS_4106, hdd[id].fn, id);
+				ret = file_dlg_st(hwnd, IDS_4106, hdd[id].fn, id);
 				if (!ret) {
 					removable_disk_unload(id);
 					memset(hdd[id].fn, 0, sizeof(hdd[id].fn));

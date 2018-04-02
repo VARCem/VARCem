@@ -28,7 +28,7 @@
  *		boot. Sometimes, they do, and then it shows an "Incorrect
  *		DOS" error message??  --FvK
  *
- * Version:	@(#)m_ps1.c	1.0.7	2018/03/27
+ * Version:	@(#)m_ps1.c	1.0.8	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -508,7 +508,7 @@ ps1_setup(int model)
 
 #if 0
 	rom_init(&ps->high_rom,
-		 L"roms/machines/ibmps1es/f80000_shell.bin",
+		 L"machines/ibmps1es/f80000_shell.bin",
 		 0xf80000, 0x80000, 0x7ffff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 
@@ -532,11 +532,11 @@ ps1_setup(int model)
 
 #if 1
 	rom_init(&ps->high_rom,
-		 L"roms/machines/ibmps1_2121/fc0000.bin",
+		 L"machines/ibmps1_2121/fc0000.bin",
 		 0xfc0000, 0x20000, 0x1ffff, 0, MEM_MAPPING_EXTERNAL);
 #else
 	rom_init(&ps->high_rom,
-		 L"roms/machines/ibmps1_2121/fc0000_shell.bin",
+		 L"machines/ibmps1_2121/fc0000_shell.bin",
 		 0xfc0000, 0x40000, 0x3ffff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 

@@ -8,7 +8,7 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)sound_sb.c	1.0.3	2018/03/15
+ * Version:	@(#)sound_sb.c	1.0.4	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1277,7 +1277,7 @@ void *sb_16_init(const device_t *info)
 
 int sb_awe32_available()
 {
-        return rom_present(L"roms/sound/awe32.raw");
+        return rom_present(L"sound/awe32.raw");
 }
 
 void *sb_awe32_init(const device_t *info)

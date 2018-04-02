@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.5	2018/03/17
+ * Version:	@(#)vid_voodoo.c	1.0.6	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -7860,14 +7860,20 @@ void voodoo_card_close(voodoo_t *voodoo)
         int c;
         
 #ifndef RELEASE_BUILD        
-        f = nvr_fopen(L"texram.dmp", L"wb");
-        fwrite(voodoo->tex_mem[0], voodoo->texture_size*1024*1024, 1, f);
-        fclose(f);
+        f = plat_fopen(nvr_path(L"texram.dmp"), L"wb");
+	if (f != NULL)
+	{
+        	(void)fwrite(voodoo->tex_mem[0], voodoo->texture_size*1024*1024, 1, f);
+        	fclose(f);
+	}
         if (voodoo->dual_tmus)
         {
-                f = nvr_fopen(L"texram2.dmp", L"wb");
-                fwrite(voodoo->tex_mem[1], voodoo->texture_size*1024*1024, 1, f);
-                fclose(f);
+                f = plat_fopen(nvr_path(L"texram2.dmp"), L"wb");
+		if (f != NULL)
+		{
+                	(void)fwrite(voodoo->tex_mem[1], voodoo->texture_size*1024*1024, 1, f);
+                	fclose(f);
+		}
         }
 #endif
 

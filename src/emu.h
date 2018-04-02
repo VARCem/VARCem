@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.10	2018/03/20
+ * Version:	@(#)emu.h	1.0.12	2018/03/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,10 +58,11 @@
 #define NVR_PATH	L"nvr"
 #define ROMS_PATH	L"roms"
 #define MACHINES_PATH	L"machines"
-#define VIDEO_PATH	L"machines"
+#define VIDEO_PATH	L"video"
 #define SCREENSHOT_PATH L"screenshots"
 
-#define CONFIG_FILE	L"varcem.cfg"
+#define CONFIG_FILE	L"config.varc"
+#define CONFIG_FILE_EXT	L".varc"
 #define BIOS_FILE	L"bios.txt"
 
 
@@ -94,8 +95,6 @@ extern int	do_dump_config;			/* (O) dump cfg after load */
 extern int	start_in_fullscreen;		/* (O) start in fullscreen */
 #ifdef _WIN32
 extern int	force_debug;			/* (O) force debug output */
-extern uint64_t	unique_id;			/* (O) -H id */
-extern uint64_t	source_hwnd;			/* (O) -H hwnd */
 #endif
 #ifdef USE_WX
 extern int	video_fps;			/* (O) render speed in fps */
@@ -176,10 +175,11 @@ extern int	config_changed;			/* config has changed */
 extern void	pclog_ex(const char *fmt, va_list);
 #endif
 extern void	pclog(const char *fmt, ...);
-extern void	pc_version(const char *platform);
 extern void	fatal(const char *fmt, ...);
-extern int	pc_init_modules(void);
+extern void	pc_version(const char *platform);
+extern void	pc_path(wchar_t *dest, int dest_sz, wchar_t *src);
 extern int	pc_init(int argc, wchar_t *argv[]);
+extern int	pc_init_modules(void);
 extern void	pc_close(void *threadid);
 extern void	pc_reset_hard_close(void);
 extern void	pc_reset_hard_init(void);

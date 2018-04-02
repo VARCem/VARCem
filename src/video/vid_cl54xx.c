@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.13	2018/03/26
+ * Version:	@(#)vid_cl54xx.c	1.0.14	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,17 +59,17 @@
 #include "vid_cl54xx.h"
 
 
-#define BIOS_GD5426_PATH	L"roms/video/cirruslogic/diamond speedstar pro vlb v3.04.bin"
-#define BIOS_GD5428_ISA_PATH	L"roms/video/cirruslogic/gd5428.bin"
-#define BIOS_GD5428_VLB_PATH	L"roms/video/cirruslogic/vlbusjapan.bin"
-#define BIOS_GD5429_PATH	L"roms/video/cirruslogic/gd5429.vbi"
-#define BIOS_GD5430_VLB_PATH	L"roms/video/cirruslogic/diamondvlbus.bin"
-#define BIOS_GD5430_PCI_PATH	L"roms/video/cirruslogic/gd5430pci.bin"
-#define BIOS_GD5434_PATH	L"roms/video/cirruslogic/gd5434.bin"
-#define BIOS_GD5436_PATH	L"roms/video/cirruslogic/gd5436.vbi"
-#define BIOS_GD5446_PATH	L"roms/video/cirruslogic/gd5446bv.vbi"
-#define BIOS_GD5446_STB_PATH	L"roms/video/cirruslogic/stb_nitro64v.bin"
-#define BIOS_GD5480_PATH	L"roms/video/cirruslogic/gd5480.rom"
+#define BIOS_GD5426_PATH	L"video/cirruslogic/diamond speedstar pro vlb v3.04.bin"
+#define BIOS_GD5428_ISA_PATH	L"video/cirruslogic/gd5428.bin"
+#define BIOS_GD5428_VLB_PATH	L"video/cirruslogic/vlbusjapan.bin"
+#define BIOS_GD5429_PATH	L"video/cirruslogic/gd5429.vbi"
+#define BIOS_GD5430_VLB_PATH	L"video/cirruslogic/diamondvlbus.bin"
+#define BIOS_GD5430_PCI_PATH	L"video/cirruslogic/gd5430pci.bin"
+#define BIOS_GD5434_PATH	L"video/cirruslogic/gd5434.bin"
+#define BIOS_GD5436_PATH	L"video/cirruslogic/gd5436.vbi"
+#define BIOS_GD5446_PATH	L"video/cirruslogic/gd5446bv.vbi"
+#define BIOS_GD5446_STB_PATH	L"video/cirruslogic/stb_nitro64v.bin"
+#define BIOS_GD5480_PATH	L"video/cirruslogic/gd5480.rom"
 
 #define CIRRUS_ID_CLGD5426		0x90
 #define CIRRUS_ID_CLGD5428		0x98

@@ -12,7 +12,7 @@
  *			- Realtek RTL8019AS (ISA 16-bit, PnP);
  *			- Realtek RTL8029AS (PCI).
  *
- * Version:	@(#)net_ne2000.c	1.0.3	2018/03/15
+ * Version:	@(#)net_ne2000.c	1.0.4	2018/03/31
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -61,6 +61,7 @@
 #include "../pic.h"
 #include "../random.h"
 #include "../device.h"
+#include "../plat.h"
 #include "../ui.h"
 #include "network.h"
 #include "net_ne2000.h"
@@ -76,10 +77,10 @@ enum {
 
 
 /* ROM BIOS file paths. */
-#define ROM_PATH_NE1000		L"roms/network/ne1000/ne1000.rom"
-#define ROM_PATH_NE2000		L"roms/network/ne2000/ne2000.rom"
-#define ROM_PATH_RTL8019	L"roms/network/rtl8019as/rtl8019as.rom"
-#define ROM_PATH_RTL8029	L"roms/network/rtl8029as/rtl8029as.rom"
+#define ROM_PATH_NE1000		L"network/ne1000/ne1000.rom"
+#define ROM_PATH_NE2000		L"network/ne2000/ne2000.rom"
+#define ROM_PATH_RTL8019	L"network/rtl8019as/rtl8019as.rom"
+#define ROM_PATH_RTL8029	L"network/rtl8029as/rtl8029as.rom"
 
 /* PCI info. */
 #define PNP_VENDID		0x4a8c		/* Realtek, Inc */
@@ -2348,7 +2349,7 @@ nic_rom_init(nic_t *dev, wchar_t *s)
 
     if (dev->bios_addr == 0) return;
 
-    if ((f = rom_fopen(s)) != NULL) {
+    if ((f = plat_fopen(rom_path(s), L"rb")) != NULL) {
 	fseek(f, 0L, SEEK_END);
 	temp = ftell(f);
 	fclose(f);

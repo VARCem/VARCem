@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.4	2018/03/21
+ * Version:	@(#)m_tandy.c	1.0.5	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,6 +60,7 @@
 #include "../sound/snd_sn76489.h"
 #include "../video/video.h"
 #include "../video/vid_cga_comp.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -1540,7 +1541,7 @@ eep_init(const device_t *info)
 
     }
 
-    f = nvr_fopen(eep->path, L"rb");
+    f = plat_fopen(nvr_path(eep->path), L"rb");
     if (f != NULL) {
 	fread(eep->store, 128, 1, f);
 	(void)fclose(f);
@@ -1558,7 +1559,7 @@ eep_close(void *priv)
     t1keep_t *eep = (t1keep_t *)priv;
     FILE *f = NULL;
 
-    f = nvr_fopen(eep->path, L"rb");
+    f = plat_fopen(nvr_path(eep->path), L"rb");
     if (f != NULL) {
 	(void)fwrite(eep->store, 128, 1, f);
 	(void)fclose(f);
@@ -1685,8 +1686,8 @@ init_rom(tandy_t *dev)
 {
     dev->rom = (uint8_t *)malloc(0x80000);
 
-    if (! rom_load_interleaved(L"roms/machines/tandy1000sl2/8079047.hu1",
-			       L"roms/machines/tandy1000sl2/8079048.hu2",
+    if (! rom_load_interleaved(L"machines/tandy1000sl2/8079047.hu1",
+			       L"machines/tandy1000sl2/8079048.hu2",
 			       0x000000, 0x80000, 0, dev->rom)) {
 	pclog("TANDY: unable to load BIOS for 1000/SL2 !\n");
 	free(dev->rom);

@@ -8,7 +8,7 @@
  *
  *		Handling of hard disk image files.
  *
- * Version:	@(#)hdd_image.c	1.0.2	2018/03/27
+ * Version:	@(#)hdd_image.c	1.0.3	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -144,10 +144,9 @@ int hdd_image_load(int id)
 	uint32_t sector_size = 512;
 	uint32_t zero = 0;
 	uint64_t signature = 0xD778A82044445459ll;
-	uint64_t full_size = 0;
-	uint64_t spt = 0, hpc = 0, tracks = 0;
-	int c;
-	uint64_t i = 0, s = 0, t = 0;
+	uint64_t s = 0, t, full_size = 0;
+	int spt = 0, hpc = 0, tracks = 0;
+	int c, i;
 	wchar_t *fn = hdd[id].fn;
 	int is_hdx[2] = { 0, 0 };
 
@@ -260,9 +259,9 @@ int hdd_image_load(int id)
 					return 0;
 				}
 			}
-			hdd[id].spt = spt;
-			hdd[id].hpc = hpc;
-			hdd[id].tracks = tracks;
+			hdd[id].spt = (uint8_t)spt;
+			hdd[id].hpc = (uint8_t)hpc;
+			hdd[id].tracks = (uint16_t)tracks;
 			hdd_images[id].type = 1;
 		} else if (is_hdx[1]) {
 			hdd_images[id].base = 0x28;
@@ -290,9 +289,9 @@ int hdd_image_load(int id)
 					return 0;
 				}
 			}
-			hdd[id].spt = spt;
-			hdd[id].hpc = hpc;
-			hdd[id].tracks = tracks;
+			hdd[id].spt = (uint8_t)spt;
+			hdd[id].hpc = (uint8_t)hpc;
+			hdd[id].tracks = (uint16_t)tracks;
 			fread(&(hdd[id].at_spt), 1, 4, hdd_images[id].file);
 			fread(&(hdd[id].at_hpc), 1, 4, hdd_images[id].file);
 			hdd_images[id].type = 2;
@@ -435,11 +434,11 @@ uint8_t hdd_image_get_type(uint8_t id)
 	return hdd_images[id].type;
 }
 
-void hdd_image_specify(uint8_t id, uint64_t hpc, uint64_t spt)
+void hdd_image_specify(uint8_t id, int hpc, int spt)
 {
 	if (hdd_images[id].type == 2) {
-		hdd[id].at_hpc = hpc;
-		hdd[id].at_spt = spt;
+		hdd[id].at_hpc = (uint8_t)hpc;
+		hdd[id].at_spt = (uint8_t)spt;
 		fseeko64(hdd_images[id].file, 0x20, SEEK_SET);
 		fwrite(&(hdd[id].at_spt), 1, 4, hdd_images[id].file);
 		fwrite(&(hdd[id].at_hpc), 1, 4, hdd_images[id].file);

@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.1	2018/02/14
+ * Version:	@(#)hdd.h	1.0.3	2018/03/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,6 +55,13 @@ enum {
 };
 
 
+/* Define a hard disk table entry. */
+typedef struct {
+    uint16_t	cyls;
+    uint8_t	head;
+    uint8_t	sect;
+} hddtab_t;
+
 /* Define the virtual Hard Disk. */
 typedef struct {
     int8_t	is_hdi;			/* image type (should rename) */
@@ -71,11 +78,11 @@ typedef struct {
 
     uint32_t	base;
 
-    uint64_t	spt,
-		hpc,			/* physical geometry parameters */
-		tracks;
+    uint8_t	spt,			/* physical geometry parameters */
+		hpc;
+    uint16_t	tracks;
 
-    uint64_t	at_spt,			/* [Translation] parameters */
+    uint8_t	at_spt,			/* [Translation] parameters */
 		at_hpc;
 
     FILE	*f;			/* current file handle to image */
@@ -86,7 +93,7 @@ typedef struct {
 
 
 extern hard_disk_t      hdd[HDD_NUM];
-extern uint64_t		hdd_table[128][3];
+extern const hddtab_t 	hdd_table[128];
 
 
 extern int	hdd_init(void);
@@ -104,7 +111,7 @@ extern void	hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count);
 extern int	hdd_image_zero_ex(uint8_t id, uint32_t sector, uint32_t count);
 extern uint32_t	hdd_image_get_last_sector(uint8_t id);
 extern uint8_t	hdd_image_get_type(uint8_t id);
-extern void	hdd_image_specify(uint8_t id, uint64_t hpc, uint64_t spt);
+extern void	hdd_image_specify(uint8_t id, int hpc, int spt);
 extern void	hdd_image_unload(uint8_t id, int fn_preserve);
 extern void	hdd_image_close(uint8_t id);
 

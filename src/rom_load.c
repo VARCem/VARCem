@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.5	2018/03/21
+ * Version:	@(#)rom_load.c	1.0.6	2018/03/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -62,23 +62,40 @@
 #include "emu.h"
 #include "mem.h"
 #include "rom.h"
+#include "device.h"
 #include "plat.h"
 
 
-#define PATH_BIOS	"bios.txt"	/* name of the script we run */
 #define MAX_ARGS	16		/* max number of arguments */
+
+
+/* Grab the value from a string. */
+static uint32_t
+get_val(char *str)
+{
+    long unsigned int l = 0UL;
+
+    if ((strlen(str) > 1)  &&			/* hex always is 0x... */
+	(sscanf(str, "0x%lx", &l) == 0))	/* no valid field found */
+	sscanf(str, "%i", (int *)&l);		/* try decimal.. */
+
+    return(l);
+}
 
 
 /* Process a single (logical) command line. */
 static int
 process(int ln, int argc, char **argv, romdef_t *r)
 {
+again:
     if (! strcmp(argv[0], "size")) {
-	sscanf(argv[1], "%i", &r->total);
+	/* Total size of image. */
+	r->total = get_val(argv[1]);
     } else if (! strcmp(argv[0], "offset")) {
-	if (sscanf(argv[1], "0x%lx", (long unsigned int *)&r->offset) == 0)
-		sscanf(argv[1], "%i", &r->offset);
+	/* Offset into the ROM area. */
+	r->offset = get_val(argv[1]);
     } else if (! strcmp(argv[0], "mode")) {
+	/* Loading method to use for this image. */
 	if (! strcmp(argv[1], "linear"))
 		r->mode = 0;
 	  else if (! strcmp(argv[1], "interleaved"))
@@ -87,23 +104,46 @@ process(int ln, int argc, char **argv, romdef_t *r)
 		pclog("ROM: invalid mode '%s' on line %d.\n", argv[1], ln);
 		return(0);
 	}
+    } else if (! strcmp(argv[0], "optional")) {
+	/*
+	 * This is an optional file.
+	 * Next word is the name of the configuration
+	 * variable this depends on, for example "basic"
+	 * or "romdos".
+	 */
+	if (! machine_get_config_int(argv[1])) return(1);
+
+	/* Skip the keyword and variable name, and re-parse. */
+	argv += 2;
+	argc -= 2;
+	goto again;
     } else if (! strcmp(argv[0], "file")) {
+	/* Specify the image filename and/or additional parameters. */
 	mbstowcs(r->files[r->nfiles].path, argv[1],
 		sizeof_w(r->files[r->nfiles].path));
-	if (argc >= 3)
-		sscanf(argv[2], "%i", &r->files[r->nfiles].skip);
-	  else
-		r->files[r->nfiles].skip = 0;
-	if (argc == 4) {
-		if (sscanf(argv[3], "0x%lx", (long unsigned int *)&r->files[r->nfiles].offset) == 0)
-			sscanf(argv[3], "%i", &r->files[r->nfiles].offset);
-	} else
-		r->files[r->nfiles].offset = r->offset;
+	r->files[r->nfiles].skip = 0;
+	r->files[r->nfiles].offset = r->offset;
+	r->files[r->nfiles].size = r->total;
+	switch(argc) {
+		case 5:
+			r->files[r->nfiles].size = get_val(argv[4]);
+			/*FALLTHROUGH*/
+
+		case 4:
+			r->files[r->nfiles].offset = get_val(argv[3]);
+			/*FALLTHROUGH*/
+
+		case 3:
+			r->files[r->nfiles].skip = get_val(argv[2]);
+			break;
+	}
 	r->nfiles++;
     } else if (! strcmp(argv[0], "font")) {
+	/* Load a video controller font. */
 	r->fontnum = atoi(argv[1]);
 	mbstowcs(r->fontfn, argv[2], sizeof_w(r->fontfn));
     } else if (! strcmp(argv[0], "video")) {
+	/* Load a video controller BIOS. */
 	mbstowcs(r->vidfn, argv[1], sizeof_w(r->vidfn));
 	sscanf(argv[2], "%i", &r->vidsz);
     } else {
@@ -313,19 +353,23 @@ parser(FILE *fp, romdef_t *r)
 int
 rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
 {
-    wchar_t path[1024], script[1024];
+    wchar_t path[1024];
     wchar_t temp[1024];
+    wchar_t script[1024];
     FILE *fp;
     int c, i;
 
+    /* Generate the BIOS pathname. */
+    wcscpy(path, fn);
+    plat_append_slash(path);
+
     /* Generate the full script pathname. */
-    wcscpy(script, ROMS_PATH); plat_append_slash(script);
-    wcscat(script, fn); plat_append_slash(script);
-    wcscpy(path, script);
+    wcscpy(script, path);
     wcscat(script, BIOS_FILE);
+    pc_path(script, sizeof_w(script), NULL);
 
     if (! test_only) {
-	pclog("ROM: loading script '%ls'\n", fn);
+	pclog("ROM: loading script '%ls'\n", rom_path(script));
 
 	/* If not done yet, allocate a 128KB buffer for the BIOS ROM. */
 	if (rom == NULL)
@@ -341,8 +385,8 @@ rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
     }
 
     /* Open the script file. */
-    if ((fp = rom_fopen(script)) == NULL) {
-	pclog("ROM: unable to open '%ls'\n", script);
+    if ((fp = plat_fopen(rom_path(script), L"rb")) == NULL) {
+	pclog("ROM: unable to open '%ls'\n", rom_path(script));
 	return(0);
     }
 
@@ -362,8 +406,9 @@ rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
 	pclog("Mode     : %s\n", (r->mode == 1)?"interleaved":"linear");
 	pclog("Files    : %d\n", r->nfiles);
 	for (c=0; c<r->nfiles; c++) {
-		pclog(" [%d]     : '%ls', %d, 0x%06lx\n", c+1,
-		    r->files[c].path, r->files[c].skip, r->files[c].offset);
+		pclog(" [%d]     : '%ls', %i, 0x%06lx, %i\n", c+1,
+			r->files[c].path, r->files[c].skip,
+			r->files[c].offset, r->files[c].size);
 	}
 	if (r->fontnum != -1)
 		pclog("Font     : %i, '%ls'\n", r->fontnum, r->fontfn);
@@ -377,11 +422,12 @@ rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
 			for (c=0; c<r->nfiles; c++) {
 				wcscpy(script, path);
 				wcscat(script, r->files[c].path);
+				pc_path(script, sizeof_w(script), NULL);
 				i = rom_load_linear(script,
 						    r->files[c].offset,
-						    r->total,
+						    r->files[c].size,
 						    r->files[c].skip, rom);
-				if (i != 0) break;
+				if (i != 1) break;
 			}
 			if (r->total >= 0x010000)
 				biosmask = (r->total - 1);
@@ -392,13 +438,15 @@ rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
 			for (c=0; c<r->nfiles/2; c+=2) {
 				wcscpy(script, path);
 				wcscat(script, r->files[c].path);
+				pc_path(script, sizeof_w(script), NULL);
 				wcscpy(temp, path);
 				wcscat(temp, r->files[c+1].path);
+				pc_path(temp, sizeof_w(temp), NULL);
 				i = rom_load_interleaved(script, temp,
 						 	r->files[c].offset,
-						 	r->total,
+						 	r->files[c].size,
 						 	r->files[c].skip, rom);
-				if (i != 0) break;
+				if (i != 1) break;
 			}
 			if (r->total >= 0x010000)
 				biosmask = (r->total - 1);
@@ -409,14 +457,14 @@ rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
 	if (r->fontnum != -1) {
 		wcscpy(temp, path);
 		wcscat(temp, r->fontfn);
-		wcscpy(r->fontfn, temp);
+		pc_path(r->fontfn, sizeof_w(r->fontfn), temp);
 	}
 
 	/* Create a full pathname for the video BIOS file. */
 	if (r->vidsz != 0) {
 		wcscpy(temp, path);
 		wcscat(temp, r->vidfn);
-		wcscpy(r->vidfn, temp);
+		pc_path(r->vidfn, sizeof_w(r->vidfn), temp);
 	}
 
 	pclog("ROM: status %d, tot %u, mask 0x%06lx\n",

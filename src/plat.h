@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.6	2018/03/28
+ * Version:	@(#)plat.h	1.0.7	2018/03/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -100,6 +100,9 @@ GLOBAL int	infocus;
 
 
 /* System-related functions. */
+#ifdef _WIN32
+extern void	plat_console(int on);
+#endif
 extern wchar_t	*fix_emu_path(wchar_t *str);
 extern FILE	*plat_fopen(wchar_t *path, wchar_t *mode);
 extern void	plat_remove(wchar_t *path);
