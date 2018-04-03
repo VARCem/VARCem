@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.3	2018/03/28
+ * Version:	@(#)snd_mpu401.c	1.0.4	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../device.h"
 #include "../io.h"
@@ -67,9 +68,8 @@ static int64_t mpu401_event_callback = 0LL;
 static int64_t mpu401_eoi_callback = 0LL;
 static int64_t mpu401_reset_callback = 0LL;
 
-#ifdef ENABLE_MPU401_LOG
-static int mpu401_do_log = ENABLE_MPU401_LOG;
-static char logfmt[512];
+#ifdef ENABLE_SOUND_MPU401_LOG
+int sound_mpu401_do_log = ENABLE_SOUND_MPU401_LOG;
 #endif
 
 
@@ -78,22 +78,19 @@ static void MPU401_EOIHandlerDispatch(void *p);
 
 
 static void
-mpulog(const char *fmt, ...)
+mpu_log(const char *fmt, ...)
 {
-#ifdef ENABLE_MPU401_LOG
+#ifdef ENABLE_SOUND_MPU401_LOG
     va_list ap;
 
-    if (mpu401_do_log) {
-	va_start(ap, fmt);
-	memset(logfmt, 0, 512);
-	strcpy(logfmt, "MPU-401: ");
-	strcpy(logfmt + strlen(logfmt), fmt);
-	vprintf(logfmt, ap);
-	va_end(ap);
+    if (sound_mpu401_do_log) {
+        va_start(ap, fmt);
+        pclog_ex(fmt, ap);
+        va_end(ap);
     }
 #endif
 }
-#define pclog	mpulog
+#define pclog	mpu_log
 
 
 static void

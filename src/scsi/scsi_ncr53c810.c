@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.5	2018/03/15
+ * Version:	@(#)scsi_ncr53c810.c	1.0.7	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <wchar.h>
 #include "../emu.h"
 #include "../io.h"
@@ -62,6 +61,8 @@
 #include "scsi_device.h"
 #include "scsi_ncr53c810.h"
 
+
+#define ncr53c810_log	scsi_dev_log
 
 #define NCR_SCNTL0_TRG    0x01
 #define NCR_SCNTL0_AAP    0x02
@@ -293,26 +294,6 @@ typedef struct {
     int64_t timer_period;
     int64_t timer_enabled;
 } ncr53c810_t;
-
-
-#ifdef ENABLE_NCR53C810_LOG
-int ncr53c810_do_log = ENABLE_NCR53C810_LOG;
-#endif
-
-
-static void
-ncr53c810_log(const char *fmt, ...)
-{
-#ifdef ENABLE_NCR53C810_LOG
-    va_list ap;
-
-    if (ncr53c810_do_log) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-    }
-#endif
-}
 
 
 static uint8_t	ncr53c810_reg_readb(ncr53c810_t *dev, uint32_t offset);

@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_mfm_at.c	1.0.4	2018/04/01
+ * Version:	@(#)hdc_mfm_at.c	1.0.4	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -128,7 +128,8 @@ typedef struct {
 } mfm_t;
 
 
-static __inline void irq_raise(mfm_t *mfm)
+static __inline void
+irq_raise(mfm_t *mfm)
 {
     /* If not already pending.. */
     if (! mfm->irqstat) {
@@ -144,7 +145,8 @@ static __inline void irq_raise(mfm_t *mfm)
 }
 
 
-static __inline void irq_lower(mfm_t *mfm)
+static __inline void
+irq_lower(mfm_t *mfm)
 {
     /* If raised.. */
     if (mfm->irqstat) {
@@ -178,31 +180,41 @@ get_sector(mfm_t *mfm, off64_t *addr)
     drive_t *drive = &mfm->drives[mfm->drvsel];
 
     if (drive->curcyl != mfm->cylinder) {
-	pclog("WD1003(%d) sector: wrong cylinder\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1003(%d) sector: wrong cylinder\n");
+#endif
 	return(1);
     }
 
     if (mfm->head > drive->cfg_hpc) {
-	pclog("WD1003(%d) get_sector: past end of configured heads\n",
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1003(%d) get_sector: past end of configured heads\n",
 							mfm->drvsel);
+#endif
 	return(1);
     }
 
     if (mfm->sector >= drive->cfg_spt+1) {
-	pclog("WD1003(%d) get_sector: past end of configured sectors\n",
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1003(%d) get_sector: past end of configured sectors\n",
 							mfm->drvsel);
+#endif
 	return(1);
     }
 
 #if 1
     /* We should check this in the SET_DRIVE_PARAMETERS command!  --FvK */
     if (mfm->head > drive->hpc) {
-	pclog("WD1003(%d) get_sector: past end of heads\n", mfm->drvsel);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1003(%d) get_sector: past end of heads\n", mfm->drvsel);
+#endif
 	return(1);
     }
 
     if (mfm->sector >= drive->spt+1) {
-	pclog("WD1003(%d) get_sector: past end of sectors\n", mfm->drvsel);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1003(%d) get_sector: past end of sectors\n", mfm->drvsel);
+#endif
 	return(1);
     }
 #endif
@@ -239,8 +251,10 @@ mfm_cmd(mfm_t *mfm, uint8_t val)
 
     if (! drive->present) {
 	/* This happens if sofware polls all drives. */
-	pclog("WD1003(%d) command %02x on non-present drive\n",
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1003(%d) command %02x on non-present drive\n",
 					mfm->drvsel, val);
+#endif
 	mfm->command = 0xff;
 	mfm->status = STAT_BUSY;
 	timer_clock();
@@ -256,8 +270,8 @@ mfm_cmd(mfm_t *mfm, uint8_t val)
     switch (val & 0xf0) {
 	case CMD_RESTORE:
 		drive->steprate = (val & 0x0f);
-#if ENABLE_HDC_LOG
-		pclog("WD1003(%d) restore, step=%d\n",
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) restore, step=%d\n",
 			mfm->drvsel, drive->steprate);
 #endif
 		drive->curcyl = 0;
@@ -281,8 +295,8 @@ mfm_cmd(mfm_t *mfm, uint8_t val)
 			case CMD_READ+1:
 			case CMD_READ+2:
 			case CMD_READ+3:
-#if ENABLE_HDC_LOG
-				pclog("WD1003(%d) read, opt=%d\n",
+#ifdef ENABLE_HDC_LOG
+				hdc_log("WD1003(%d) read, opt=%d\n",
 					mfm->drvsel, val&0x03);
 #endif
 				mfm->command = (val & 0xf0);
@@ -298,8 +312,8 @@ mfm_cmd(mfm_t *mfm, uint8_t val)
 			case CMD_WRITE+1:
 			case CMD_WRITE+2:
 			case CMD_WRITE+3:
-#if ENABLE_HDC_LOG
-				pclog("WD1003(%d) write, opt=%d\n",
+#ifdef ENABLE_HDC_LOG
+				hdc_log("WD1003(%d) write, opt=%d\n",
 					mfm->drvsel, val & 0x03);
 #endif
 				mfm->command = (val & 0xf0);
@@ -353,13 +367,17 @@ mfm_cmd(mfm_t *mfm, uint8_t val)
 					/* Only accept after RESET or DIAG. */
 					drive->cfg_spt = mfm->secount;
 					drive->cfg_hpc = mfm->head+1;
-					pclog("WD1003(%d) parameters: tracks=%d, spt=%i, hpc=%i\n",
+#ifdef ENABLE_HDC_LOG
+					hdc_log("WD1003(%d) parameters: tracks=%d, spt=%i, hpc=%i\n",
 						mfm->drvsel, drive->tracks,
 						drive->cfg_spt, drive->cfg_hpc);
+#endif
 				} else {
-					pclog("WD1003(%d) parameters: tracks=%d,spt=%i,hpc=%i (IGNORED)\n",
+#ifdef ENABLE_HDC_LOG
+					hdc_log("WD1003(%d) parameters: tracks=%d,spt=%i,hpc=%i (IGNORED)\n",
 						mfm->drvsel, drive->tracks,
 						drive->cfg_spt, drive->cfg_hpc);
+#endif
 				}
 				mfm->command = 0x00;
 				mfm->status = STAT_READY|STAT_DSC;
@@ -368,7 +386,9 @@ mfm_cmd(mfm_t *mfm, uint8_t val)
 				break;
 
 			default:
-				pclog("WD1003: bad command %02X\n", val);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("WD1003: bad command %02X\n", val);
+#endif
 				mfm->status = STAT_BUSY;
 				timer_clock();
 				mfm->callback = 200LL*MFM_TIME;
@@ -402,8 +422,8 @@ mfm_write(uint16_t port, uint8_t val, void *priv)
 {
     mfm_t *mfm = (mfm_t *)priv;
 
-#if ENABLE_HDC_LOG > 1
-    pclog("WD1003 write(%04x, %02x)\n", port, val);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("WD1003 write(%04x, %02x)\n", port, val);
 #endif
     switch (port) {
 	case 0x01f0:	/* data */
@@ -538,8 +558,8 @@ mfm_read(uint16_t port, void *priv)
 	default:
 		break;
     }
-#if ENABLE_HDC_LOG > 1
-    pclog("WD1003 read(%04x) = %02x\n", port, ret);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("WD1003 read(%04x) = %02x\n", port, ret);
 #endif
 
     return(ret);
@@ -551,8 +571,8 @@ do_seek(mfm_t *mfm)
 {
     drive_t *drive = &mfm->drives[mfm->drvsel];
 
-#if ENABLE_HDC_LOG
-    pclog("WD1003(%d) seek(%d) max=%d\n",
+#ifdef ENABLE_HDC_LOG
+    hdc_log("WD1003(%d) seek(%d) max=%d\n",
 	mfm->drvsel,mfm->cylinder,drive->tracks);
 #endif
     if (mfm->cylinder < drive->tracks)
@@ -571,8 +591,8 @@ do_callback(void *priv)
 
     mfm->callback = 0LL;
     if (mfm->reset) {
-#if ENABLE_HDC_LOG
-	pclog("WD1003(%d) reset\n", mfm->drvsel);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1003(%d) reset\n", mfm->drvsel);
 #endif
 	mfm->status = STAT_READY|STAT_DSC;
 	mfm->error = 1;
@@ -593,8 +613,8 @@ do_callback(void *priv)
 
     switch (mfm->command) {
 	case CMD_SEEK:
-#if ENABLE_HDC_LOG
-		pclog("WD1003(%d) seek, step=%d\n",
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) seek, step=%d\n",
 			mfm->drvsel, drive->steprate);
 #endif
 		do_seek(mfm);
@@ -603,8 +623,8 @@ do_callback(void *priv)
 		break;
 
 	case CMD_READ:
-#if ENABLE_HDC_LOG
-		pclog("WD1003(%d) read(%d,%d,%d)\n",
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) read(%d,%d,%d)\n",
 			mfm->drvsel, mfm->cylinder, mfm->head, mfm->sector);
 #endif
 		do_seek(mfm);
@@ -624,8 +644,8 @@ do_callback(void *priv)
 		break;
 
 	case CMD_WRITE:
-#if ENABLE_HDC_LOG
-		pclog("WD1003(%d) write(%d,%d,%d)\n",
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) write(%d,%d,%d)\n",
 			mfm->drvsel, mfm->cylinder, mfm->head, mfm->sector);
 #endif
 		do_seek(mfm);
@@ -653,8 +673,8 @@ do_callback(void *priv)
 		break;
 
 	case CMD_VERIFY:
-#if ENABLE_HDC_LOG
-		pclog("WD1003(%d) verify(%d,%d,%d)\n",
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) verify(%d,%d,%d)\n",
 			mfm->drvsel, mfm->cylinder, mfm->head, mfm->sector);
 #endif
 		do_seek(mfm);
@@ -665,8 +685,8 @@ do_callback(void *priv)
 		break;
 
 	case CMD_FORMAT:
-#if ENABLE_HDC_LOG
-		pclog("WD1003(%d) format(%d,%d)\n",
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) format(%d,%d)\n",
 			mfm->drvsel, mfm->cylinder, mfm->head);
 #endif
 		do_seek(mfm);
@@ -685,8 +705,8 @@ do_callback(void *priv)
 		break;
 
 	case CMD_DIAGNOSE:
-#if ENABLE_HDC_LOG
-		pclog("WD1003(%d) diag\n", mfm->drvsel);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) diag\n", mfm->drvsel);
 #endif
 		drive->steprate = 0x0f;
 		mfm->error = 1;
@@ -695,8 +715,10 @@ do_callback(void *priv)
 		break;
 
 	default:
-		pclog("WD1003(%d) callback on unknown command %02x\n",
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d) callback on unknown command %02x\n",
 					mfm->drvsel, mfm->command);
+#endif
 		mfm->status = STAT_READY|STAT_ERR|STAT_DSC;
 		mfm->error = ERR_ABRT;
 		irq_raise(mfm);
@@ -730,7 +752,9 @@ mfm_init(const device_t *info)
     mfm_t *mfm;
     int c, d;
 
-    pclog("WD1003: ISA MFM/RLL Fixed Disk Adapter initializing ...\n");
+#ifdef ENABLE_HDC_LOG
+    hdc_log("WD1003: ISA MFM/RLL Fixed Disk Adapter initializing ...\n");
+#endif
     mfm = malloc(sizeof(mfm_t));
     memset(mfm, 0x00, sizeof(mfm_t));
 
@@ -739,8 +763,10 @@ mfm_init(const device_t *info)
 	if ((hdd[d].bus == HDD_BUS_MFM) && (hdd[d].mfm_channel < MFM_NUM)) {
 		loadhd(mfm, hdd[d].mfm_channel, d, hdd[d].fn);
 
-		pclog("WD1003(%d): (%ls) geometry %d/%d/%d\n", c, hdd[d].fn,
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1003(%d): (%ls) geometry %d/%d/%d\n", c, hdd[d].fn,
 			(int)hdd[d].tracks, (int)hdd[d].hpc, (int)hdd[d].spt);
+#endif
 
 		if (++c >= MFM_NUM) break;
 	}

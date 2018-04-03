@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.2	2018/03/01
+ * Version:	@(#)ui.h	1.0.3	2018/04/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -55,6 +55,52 @@ extern "C" {
 
 #ifdef USE_WX
 # define RENDER_FPS	30			/* default render speed */
+#endif
+
+
+/* Define whether or not we need the Logging submenu. */
+#if defined(ENABLE_PCI_LOG) || \
+    defined(ENABLE_KEYBOARD_LOG) || \
+    defined(ENABLE_SERIAL_LOG) || \
+    defined(ENABLE_FDC_LOG) || defined(ENABLE_D86F_LOG) || \
+    defined(ENABLE_HDC_LOG) || defined(ENABLE_HDD_LOG) || \
+    defined(ENABLE_ZIP_LOG) || defined(ENABLE_CDROM_LOG) || \
+    defined(ENABLE_CDROM_IMAGE_LOG) || defined(ENABLE_CDROM_IOCTL_LOG) || \
+    defined(ENABLE_SOUND_EMU8K_LOG) || defined(ENABLE_SOUND_MPU401_LOG) || \
+    defined(ENABLE_SOUND_DEV_LOG) || \
+    defined(ENABLE_NIC_LOG) || \
+    defined(ENABLE_SCSI_BUS_LOG) || defined(ENABLE_SCSI_DISK_LOG) || \
+    defined(ENABLE_SCSI_DEV_LOG) || defined(ENABLE_SCSI_X54X_LOG) || \
+    defined(ENABLE_VOODOO_LOG)
+# define ENABLE_LOG_TOGGLES	1
+#endif
+
+#if defined(ENABLE_LOG_BREAKPOINT)
+# define ENABLE_LOG_COMMANDS	1
+#endif
+
+
+#ifdef ENABLE_LOG_TOGGLES
+extern int	pci_do_log;
+extern int	keyboard_do_log;
+extern int	serial_do_log;
+extern int	fdc_do_log;
+extern int	d86f_do_log;
+extern int	hdc_do_log;
+extern int	hdd_do_log;
+extern int	zip_do_log;
+extern int	cdrom_do_log;
+extern int	cdrom_image_do_log;
+extern int	cdrom_ioctl_do_log;
+extern int	sound_emu8k_do_log;
+extern int	sound_mpu401_do_log;
+extern int	sound_dev_do_log;
+extern int	nic_do_log;
+extern int	scsi_bus_do_log;
+extern int	scsi_hd_do_log;
+extern int	scsi_dev_do_log;
+extern int	scsi_x54x_do_log;
+extern int	voodoo_do_log;
 #endif
 
 /* Message Box functions. */

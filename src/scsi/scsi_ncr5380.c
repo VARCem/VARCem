@@ -9,7 +9,7 @@
  *		Implementation of the NCR 5380 series of SCSI Host Adapters
  *		made by NCR. These controllers were designed for the ISA bus.
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.5	2018/03/31
+ * Version:	@(#)scsi_ncr5380.c	1.0.6	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,9 +42,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <wchar.h>
-#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
@@ -61,6 +59,8 @@
 #include "scsi_device.h"
 #include "scsi_ncr5380.h"
 
+
+#define ncr_log		scsi_dev_log
 
 #define LCS6821N_ROM	L"scsi/ncr5380/longshine lcs-6821n - bios version 1.04.bin"
 #define RT1000B_ROM	L"scsi/ncr5380/rancho_rt1000_rtbios_version_8.10r.bin"
@@ -176,26 +176,6 @@ enum {
 };
 
 
-#ifdef ENABLE_NCR5380_LOG
-int ncr5380_do_log = ENABLE_NCR5380_LOG;
-#endif
-
-
-static void
-ncr_log(const char *fmt, ...)
-{
-#ifdef ENABLE_NCR5380_LOG
-    va_list ap;
-
-    if (ncr5380_do_log) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-    }
-#endif
-}
-
-
 static void
 dma_changed(void *priv, int mode, int enable)
 {
@@ -251,7 +231,7 @@ ncr_write(uint16_t port, uint8_t val, void *priv)
     ncr5380_t *ncr = &scsi->ncr;
     int bus_host = 0;
 
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
     ncr_log("NCR5380 write(%04x,%02x) @%04X:%04X\n",port,val,CS,cpu_state.pc);
 #endif
     switch (port & 7) {
@@ -394,7 +374,7 @@ ncr_read(uint16_t port, void *priv)
 		break;
     }
 
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
     ncr_log("NCR5380 read(%04x)=%02x @%04X:%04X\n", port, ret, CS,cpu_state.pc);
 #endif
     return(ret);
@@ -537,7 +517,7 @@ memio_read(uint32_t addr, void *priv)
     uint8_t ret = 0xff;
 
     addr &= 0x3fff;
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
     ncr_log("memio_read %08x\n", addr);
 #endif
 
@@ -549,21 +529,21 @@ memio_read(uint32_t addr, void *priv)
 	ret = scsi->ext_ram[addr - 0x3a00];
     else switch (addr & 0x3f80) {
 	case 0x3800:
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
 		ncr_log("Read intRAM %02x %02x\n", addr & 0x3f, scsi->int_ram[addr & 0x3f]);
 #endif
 		ret = scsi->int_ram[addr & 0x3f];
 		break;
 
 	case 0x3880:
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
 		ncr_log("Read 53c80 %04x\n", addr);
 #endif
 		ret = ncr_read(addr, scsi);
 		break;
 
 	case 0x3900:
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
 		ncr_log(" Read 3900 %i %02x\n", scsi->buffer_host_pos, scsi->status_ctrl);
 #endif
 		if (scsi->buffer_host_pos >= 128 || !(scsi->status_ctrl & CTRL_DATA_DIR))
@@ -599,7 +579,7 @@ memio_read(uint32_t addr, void *priv)
 		break;
     }
 
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
     if (addr >= 0x3880)
 	ncr_log("memio_read(%08x)=%02x\n", addr, ret);
 #endif
@@ -616,7 +596,7 @@ memio_write(uint32_t addr, uint8_t val, void *priv)
 
     addr &= 0x3fff;
 
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
     ncr_log("memio_write(%08x,%02x) @%04X:%04X  %i %02x\n", addr, val, CS,cpu_state.pc,  scsi->buffer_host_pos, scsi->status_ctrl);
 #endif
 
@@ -631,7 +611,7 @@ memio_write(uint32_t addr, uint8_t val, void *priv)
 		break;
 
 	case 0x3880:
-#if ENABLE_NCR5380_LOG
+#ifdef ENABLE_SCSI_DEV_LOG
 		ncr_log("Write 53c80 %04x %02x\n", addr, val);
 #endif
 		ncr_write(addr, val, scsi);

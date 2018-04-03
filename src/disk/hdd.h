@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.3	2018/03/31
+ * Version:	@(#)hdd.h	1.0.4	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,10 +92,12 @@ typedef struct {
 } hard_disk_t;
 
 
-extern hard_disk_t      hdd[HDD_NUM];
 extern const hddtab_t 	hdd_table[128];
+extern hard_disk_t      hdd[HDD_NUM];
+extern int		hdd_do_log;
 
 
+extern void	hdd_log(const char *fmt, ...);
 extern int	hdd_init(void);
 extern int	hdd_string_to_bus(char *str, int cdrom);
 extern char	*hdd_bus_to_string(int bus, int cdrom);

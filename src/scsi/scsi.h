@@ -8,7 +8,7 @@
  *
  *		SCSI controller handler header.
  *
- * Version:	@(#)scsi.h	1.0.4	2018/03/21
+ * Version:	@(#)scsi.h	1.0.5	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,7 @@
 #define EMU_SCSI_H
 
 
-#define SCSI_TIME (5 * 100 * (1 << TIMER_SHIFT))
+#define SCSI_TIME		(5 * 100 * (1 << TIMER_SHIFT))
 
 
 /* Configuration. */
@@ -308,29 +308,31 @@ extern int mode_select_terminate(int force);
 extern int mode_select_write(uint8_t val);
 
 extern int scsi_card_current;
+extern uint8_t scsi_disks[16][8];
 
-extern int scsi_card_available(int card);
-extern char *scsi_card_getname(int card);
+extern void	scsi_dev_log(const char *fmt, ...);
+
+extern int	scsi_card_available(int card);
+extern char	*scsi_card_getname(int card);
 #ifdef EMU_DEVICE_H
 extern const device_t *scsi_card_getdevice(int card);
 #endif
-extern int scsi_card_has_config(int card);
-extern char *scsi_card_get_internal_name(int card);
-extern int scsi_card_get_from_internal_name(char *s);
-extern void scsi_mutex(uint8_t start);
-extern void scsi_card_init(void);
-extern void scsi_card_reset(void);
+extern int	scsi_card_has_config(int card);
+extern char	*scsi_card_get_internal_name(int card);
+extern int	scsi_card_get_from_internal_name(char *s);
+extern void	scsi_mutex(uint8_t start);
+extern void	scsi_mutex_wait(uint8_t wait);
+extern void	scsi_card_init(void);
+extern void	scsi_card_reset(void);
 
-extern uint8_t scsi_disks[16][8];
-
-extern int scsi_hd_err_stat_to_scsi(uint8_t id);
-extern int scsi_hd_phase_to_scsi(uint8_t id);
-extern int find_hdc_for_scsi_id(uint8_t scsi_id, uint8_t scsi_lun);
-extern void build_scsi_hd_map(void);
-extern void scsi_hd_reset(uint8_t id);
-extern void scsi_hd_request_sense_for_scsi(uint8_t id, uint8_t *buffer, uint8_t alloc_length);
-extern void scsi_hd_command(uint8_t id, uint8_t *cdb);
-extern void scsi_hd_callback(uint8_t id);
+extern int	scsi_hd_err_stat_to_scsi(uint8_t id);
+extern int	scsi_hd_phase_to_scsi(uint8_t id);
+extern int	find_hdc_for_scsi_id(uint8_t scsi_id, uint8_t scsi_lun);
+extern void	build_scsi_hd_map(void);
+extern void	scsi_hd_reset(uint8_t id);
+extern void	scsi_hd_request_sense_for_scsi(uint8_t id, uint8_t *buffer, uint8_t alloc_length);
+extern void	scsi_hd_command(uint8_t id, uint8_t *cdb);
+extern void	scsi_hd_callback(uint8_t id);
 
 
 #pragma pack(push,1)
@@ -379,9 +381,6 @@ typedef struct {
 #define MODE_SELECT_PHASE_BLOCK_DESC	2
 #define MODE_SELECT_PHASE_PAGE_HEADER	3
 #define MODE_SELECT_PHASE_PAGE		4
-
-
-extern void	scsi_mutex_wait(uint8_t wait);
 
 
 #endif	/*EMU_SCSI_H*/

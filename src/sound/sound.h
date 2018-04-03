@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.3	2018/03/31
+ * Version:	@(#)sound.h	1.0.4	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,13 +40,13 @@
 # define EMU_SOUND_H
 
 
-extern int sound_gain;
-
 #define SOUNDBUFLEN	(48000/50)
 
 #define CD_FREQ		44100
 #define CD_BUFLEN	(CD_FREQ / 10)
 
+
+extern int	sound_dev_do_log;
 
 extern int	ppispeakon;
 extern int	gated,
@@ -56,6 +56,10 @@ extern int	gated,
 extern int	sound_pos_global;
 extern int	sound_card_current;
 
+extern int sound_gain;
+
+
+extern void	snddev_log(const char *fmt, ...);
 
 extern void	sound_add_handler(void (*get_buffer)(int32_t *buffer, \
 				  int len, void *p), void *p);

@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.5	2018/04/01
+ * Version:	@(#)hdc_esdi_mca.c	1.0.5	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -227,7 +227,6 @@ clear_irq(esdi_t *dev)
 }
 
 
-
 static void
 cmd_unsupported(esdi_t *dev)
 {
@@ -245,6 +244,7 @@ cmd_unsupported(esdi_t *dev)
     dev->status = STATUS_IRQ | STATUS_STATUS_OUT_FULL;
     dev->irq_status = dev->cmd_dev | IRQ_CMD_COMPLETE_FAILURE;
     dev->irq_in_progress = 1;
+
     set_irq(dev);
 }
 
@@ -266,26 +266,30 @@ device_not_present(esdi_t *dev)
     dev->status = STATUS_IRQ | STATUS_STATUS_OUT_FULL;
     dev->irq_status = dev->cmd_dev | IRQ_CMD_COMPLETE_FAILURE;
     dev->irq_in_progress = 1;
+
     set_irq(dev);
 }
 
-static void rba_out_of_range(esdi_t *dev)
-{
-        dev->status_len = 9;
-        dev->status_data[0] = dev->command | STATUS_LEN(9) | dev->cmd_dev;
-        dev->status_data[1] = 0x0e01; /*Command block error, invalid parameter*/
-        dev->status_data[2] = 0x0007; /*RBA out of range*/
-        dev->status_data[3] = 0;
-        dev->status_data[4] = 0;
-        dev->status_data[5] = 0;
-        dev->status_data[6] = 0;                        
-        dev->status_data[7] = 0;                       
-        dev->status_data[8] = 0;
 
-        dev->status = STATUS_IRQ | STATUS_STATUS_OUT_FULL;
-        dev->irq_status = dev->cmd_dev | IRQ_CMD_COMPLETE_FAILURE;
-        dev->irq_in_progress = 1;
-        set_irq(dev);
+static void
+rba_out_of_range(esdi_t *dev)
+{
+    dev->status_len = 9;
+    dev->status_data[0] = dev->command | STATUS_LEN(9) | dev->cmd_dev;
+    dev->status_data[1] = 0x0e01; /*Command block error, invalid parameter*/
+    dev->status_data[2] = 0x0007; /*RBA out of range*/
+    dev->status_data[3] = 0;
+    dev->status_data[4] = 0;
+    dev->status_data[5] = 0;
+    dev->status_data[6] = 0;                        
+    dev->status_data[7] = 0;                       
+    dev->status_data[8] = 0;
+
+    dev->status = STATUS_IRQ | STATUS_STATUS_OUT_FULL;
+    dev->irq_status = dev->cmd_dev | IRQ_CMD_COMPLETE_FAILURE;
+    dev->irq_in_progress = 1;
+
+    set_irq(dev);
 }
 
 #define ESDI_ADAPTER_ONLY() do \
@@ -562,7 +566,7 @@ esdi_callback(void *priv)
                 dev->status_data[5] = drive->hpc | (drive->spt << 16);
 
 #if 0
-		pclog("CMD_GET_DEV_CONFIG %i  %04x %04x %04x %04x %04x %04x\n",
+		hdc_log("CMD_GET_DEV_CONFIG %i  %04x %04x %04x %04x %04x %04x\n",
 			drive->sectors,
 			dev->status_data[0], dev->status_data[1],
 			dev->status_data[2], dev->status_data[3],
@@ -723,7 +727,7 @@ esdi_callback(void *priv)
 		break;
 
 	default:
-		fatal("BAD COMMAND %02x %i\n", dev->command, dev->cmd_dev);
+		hdc_log("BAD COMMAND %02x %i\n", dev->command, dev->cmd_dev);
     }
 }
 
@@ -745,7 +749,7 @@ esdi_read(uint16_t port, void *priv)
 		break;
 
 	default:
-		fatal("esdi_read port=%04x\n", port);
+		hdc_log("esdi_read port=%04x\n", port);
     }
 
     return(ret);
@@ -757,8 +761,8 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if ENABLE_HDC_LOG > 1
-    pclog("ESDI: wr(%04x, %02x)\n", port-dev->base, val);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("ESDI: wr(%04x, %02x)\n", port-dev->base, val);
 #endif
     switch (port-dev->base) {
 	case 2:					/*Basic control register*/
@@ -799,7 +803,7 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
                                			break;
                                
                                		default:
-                               			fatal("Bad attention request %02x\n", val);
+                               			hdc_log("Bad attention request %02x\n", val);
                        		}
                        		break;
 
@@ -821,7 +825,7 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
                                			break;
     
                                		default:
-                               			fatal("Bad attention request %02x\n", val);
+                               			hdc_log("Bad attention request %02x\n", val);
                        		}
                        		break;
 
@@ -843,17 +847,17 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
                                			break;
      
                                		default:
-                               			fatal("Bad attention request %02x\n", val);
+                               			hdc_log("Bad attention request %02x\n", val);
                        		}
                        		break;
 
                        	default:
-                       		fatal("Attention to unknown device %02x\n", val);
+                       		hdc_log("Attention to unknown device %02x\n", val);
                	}
                	break;
 
 	default:
-		fatal("esdi_write port=%04x val=%02x\n", port, val);
+		hdc_log("esdi_write port=%04x val=%02x\n", port, val);
     }
 }
 
@@ -876,7 +880,7 @@ esdi_readw(uint16_t port, void *priv)
                	break;
 
 	default:
-		fatal("esdi_readw port=%04x\n", port);
+		hdc_log("esdi_readw port=%04x\n", port);
     }
         
     return(ret);
@@ -888,8 +892,8 @@ esdi_writew(uint16_t port, uint16_t val, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if ENABLE_HDC_LOG > 1
-    pclog("ESDI: wrw(%04x, %04x)\n", port-dev->base, val);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("ESDI: wrw(%04x, %04x)\n", port-dev->base, val);
 #endif
     switch (port-dev->base) {
 	case 0:					/*Command Interface Register*/
@@ -912,7 +916,7 @@ esdi_writew(uint16_t port, uint16_t val, void *priv)
                	break;
 
 	default:
-		fatal("esdi_writew port=%04x val=%04x\n", port, val);
+		hdc_log("esdi_writew port=%04x val=%04x\n", port, val);
     }
 }
 
@@ -922,8 +926,8 @@ esdi_mca_read(int port, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if ENABLE_HDC_LOG > 1
-    pclog("ESDI: mcard(%04x)\n", port);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("ESDI: mcard(%04x)\n", port);
 #endif
     return(dev->pos_regs[port & 7]);
 }
@@ -934,8 +938,8 @@ esdi_mca_write(int port, uint8_t val, void *priv)
 {
     esdi_t *dev = (esdi_t *)priv;
 
-#if ENABLE_HDC_LOG > 1
-    pclog("ESDI: mcawr(%04x, %02x)  pos[2]=%02x pos[3]=%02x\n",
+#ifdef ENABLE_HDC_LOG
+    hdc_log("ESDI: mcawr(%04x, %02x)  pos[2]=%02x pos[3]=%02x\n",
 		port, val, dev->pos_regs[2], dev->pos_regs[3]);
 #endif
     if (port < 0x102) return;
@@ -1053,7 +1057,7 @@ esdi_mca_write(int port, uint8_t val, void *priv)
 	}
 
 	/* Say hello. */
-	pclog("ESDI: I/O=%04x, IRQ=%d, DMA=%d, BIOS @%05X\n",
+	hdc_log("ESDI: I/O=%04x, IRQ=%d, DMA=%d, BIOS @%05X\n",
 		dev->base, dev->irq, dev->dma, dev->bios);
     }
 }

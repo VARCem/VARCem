@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.17	2018/03/31
+ * Version:	@(#)pc.c	1.0.18	2018/04/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -337,8 +337,10 @@ pc_version(const char *platform)
 void
 pc_path(wchar_t *dst, int sz, wchar_t *src)
 {
-    if ((src != NULL) && !wcscasecmp(src, usr_path))
-	src += wcslen(usr_path);
+    int i = wcslen(usr_path);
+
+    if ((src != NULL) && !wcsncasecmp(src, usr_path, i))
+	src += i;
 
     /*
      * Fix all the slashes.
@@ -561,6 +563,9 @@ usage:
 	/* Make sure we have a trailing backslash. */
 	plat_append_slash(usr_path);
     }
+
+    /* Don't forget to clean up the user path. */
+    pc_path(usr_path, sizeof_w(usr_path), NULL);
 
     /* At this point, we can safely create the full path name. */
     plat_append_filename(cfg_path, usr_path, p);

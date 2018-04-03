@@ -13,7 +13,7 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.8	2018/03/31
+ * Version:	@(#)scsi_buslogic.c	1.0.9	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,9 +44,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <wchar.h>
-#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../io.h"
 #include "../mca.h"
@@ -65,6 +63,8 @@
 #include "scsi_device.h"
 #include "scsi_x54x.h"
 
+
+#define buslogic_log	scsi_dev_log
 
 #define BT542_BIOS_PATH		L"scsi/buslogic/bt-542bh_bios.rom"
 #define BT545_BIOS_PATH		L"scsi/buslogic/bt-545s_bios.rom"
@@ -257,26 +257,6 @@ enum {
     CHIP_BUSLOGIC_VLB,
     CHIP_BUSLOGIC_PCI
 };
-
-
-#ifdef ENABLE_BUSLOGIC_LOG
-int buslogic_do_log = ENABLE_BUSLOGIC_LOG;
-#endif
-
-
-static void
-buslogic_log(const char *fmt, ...)
-{
-#ifdef ENABLE_BUSLOGIC_LOG
-    va_list ap;
-
-    if (buslogic_do_log) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-    }
-#endif
-}
 
 
 static wchar_t *

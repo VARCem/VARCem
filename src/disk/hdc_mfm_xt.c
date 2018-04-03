@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_mfm_xt.c	1.0.5	2018/03/31
+ * Version:	@(#)hdc_mfm_xt.c	1.0.5	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -261,7 +261,7 @@ mfm_write(uint16_t port, uint8_t val, void *priv)
 				break;
 
 			default:
-				fatal("Write data unknown state - %i %02x\n", dev->state, dev->status);
+				hdc_log("Write data unknown state - %i %02x\n", dev->state, dev->status);
 		}
 		break;
 
@@ -301,7 +301,9 @@ mfm_error(mfm_t *dev, uint8_t error)
     dev->completion_byte |= 0x02;
     dev->error = error;
 
-    pclog("mfm_error - %02x\n", dev->error);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("mfm_error - %02x\n", dev->error);
+#endif
 }
 
 
@@ -312,22 +314,30 @@ get_sector(mfm_t *dev, off64_t *addr)
     int heads = drive->cfg_hpc;
 
     if (drive->current_cylinder != dev->cylinder) {
-	pclog("mfm_get_sector: wrong cylinder\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("mfm_get_sector: wrong cylinder\n");
+#endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->head > heads) {
-	pclog("mfm_get_sector: past end of configured heads\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("mfm_get_sector: past end of configured heads\n");
+#endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->head > drive->hpc) {
-	pclog("mfm_get_sector: past end of heads\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("mfm_get_sector: past end of heads\n");
+#endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->sector >= 17) {
-	pclog("mfm_get_sector: past end of sectors\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("mfm_get_sector: past end of sectors\n");
+#endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
@@ -418,7 +428,9 @@ mfm_callback(void *priv)
 				dev->sector_count = dev->command[4];
 				do {
 					if (get_sector(dev, &addr)) {
-						pclog("get_sector failed\n");
+#ifdef ENABLE_HDC_LOG
+						hdc_log("get_sector failed\n");
+#endif
 						mfm_error(dev, dev->error);
 						mfm_complete(dev);
 						return;
@@ -445,7 +457,9 @@ mfm_callback(void *priv)
 		dev->head = dev->command[1] & 0x1f;
 
 		if (get_sector(dev, &addr)) {
-			pclog("get_sector failed\n");
+#ifdef ENABLE_HDC_LOG
+			hdc_log("get_sector failed\n");
+#endif
 			mfm_error(dev, dev->error);
 			mfm_complete(dev);
 			return;
@@ -493,7 +507,9 @@ mfm_callback(void *priv)
 						int val = dma_channel_write(3, dev->sector_buf[dev->data_pos]);
 
 						if (val == DMA_NODATA) {
-							pclog("CMD_READ_SECTORS out of data!\n");
+#ifdef ENABLE_HDC_LOG
+							hdc_log("CMD_READ_SECTORS out of data!\n");
+#endif
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
 							dev->callback = MFM_TIME;
 							return;
@@ -566,7 +582,9 @@ mfm_callback(void *priv)
 						int val = dma_channel_read(3);
 
 						if (val == DMA_NODATA) {
-							pclog("CMD_WRITE_SECTORS out of data!\n");
+#ifdef ENABLE_HDC_LOG
+							hdc_log("CMD_WRITE_SECTORS out of data!\n");
+#endif
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
 							dev->callback = MFM_TIME;
 							return;
@@ -640,7 +658,9 @@ mfm_callback(void *priv)
 			case STATE_RECEIVED_DATA:
 				drive->cfg_cyl = dev->data[1] | (dev->data[0] << 8);
 				drive->cfg_hpc = dev->data[2];
-				pclog("Drive %i: cylinders=%i, heads=%i\n", dev->drive_sel, drive->cfg_cyl, drive->cfg_hpc);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("Drive %i: cylinders=%i, heads=%i\n", dev->drive_sel, drive->cfg_cyl, drive->cfg_hpc);
+#endif
 				mfm_complete(dev);
 				break;
 
@@ -669,7 +689,7 @@ mfm_callback(void *priv)
 						int val = dma_channel_read(3);
 
 						if (val == DMA_NODATA) {
-							pclog("CMD_WRITE_SECTOR_BUFFER out of data!\n");
+							hdc_log("CMD_WRITE_SECTOR_BUFFER out of data!\n");
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
 							dev->callback = MFM_TIME;
 							return;
@@ -718,7 +738,9 @@ mfm_callback(void *priv)
 				dev->data[0] = drive->tracks & 0xff;
 				dev->data[1] = 17 | ((drive->tracks >> 2) & 0xc0);
 				dev->data[2] = drive->hpc-1;
-				pclog("Get drive params %02x %02x %02x %i\n", dev->data[0], dev->data[1], dev->data[2], drive->tracks);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("Get drive params %02x %02x %02x %i\n", dev->data[0], dev->data[1], dev->data[2], drive->tracks);
+#endif
 				break;
 
 			case STATE_SENT_DATA:
@@ -824,9 +846,11 @@ mfm_set_switches(mfm_t *dev)
 		}
 	}
 
+#ifdef ENABLE_HDC_LOG
 	if (c == 4)
-		pclog("WARNING: drive %d has unsupported format %d/%d/%d !\n",
+		hdc_log("WARNING: drive %d has unsupported format %d/%d/%d !\n",
 			d, drive->tracks, drive->hpc, drive->spt);
+#endif
     }
 }
 
@@ -841,17 +865,23 @@ mfm_init(const device_t *info)
     dev = malloc(sizeof(mfm_t));
     memset(dev, 0x00, sizeof(mfm_t));
 
-    pclog("MFM: looking for disks..\n");
+#ifdef ENABLE_HDC_LOG
+    hdc_log("MFM: looking for disks..\n");
+#endif
     c = 0;
     for (i=0; i<HDD_NUM; i++) {
 	if ((hdd[i].bus == HDD_BUS_MFM) && (hdd[i].mfm_channel < MFM_NUM)) {
-		pclog("Found MFM hard disk on channel %i\n", hdd[i].mfm_channel);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("Found MFM hard disk on channel %i\n", hdd[i].mfm_channel);
+#endif
 		loadhd(dev, i, hdd[i].mfm_channel, hdd[i].fn);
 
 		if (++c > MFM_NUM) break;
 	}
     }
-    pclog("MFM: %d disks loaded.\n", c);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("MFM: %d disks loaded.\n", c);
+#endif
 
     switch(info->local) {
 	case 0:		/* Xebec */

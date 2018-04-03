@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.7	2018/03/31
+ * Version:	@(#)snd_emu8k.c	1.0.8	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,11 +37,11 @@
  *   USA.
  */
 #include <inttypes.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <wchar.h>
 #include <math.h>
 #define HAVE_STDARG_H
@@ -335,18 +335,18 @@ uint32_t rep_count_w = 0;
 #endif //EMU8K_DEBUG_REGISTERS 
 
 
-#ifdef ENABLE_EMU8K_LOG
-int emu8k_do_log = ENABLE_EMU8K_LOG;
+#ifdef ENABLE_SOUND_EMU8K_LOG
+int sound_emu8k_do_log = ENABLE_SOUND_EMU8K_LOG;
 #endif
 
 
 static void
 emu8k_log(const char *fmt, ...)
 {
-#ifdef ENABLE_EMU8K_LOG
+#ifdef ENABLE_SOUND_EMU8K_LOG
     va_list ap;
 
-    if (emu8k_do_log) {
+    if (sound_emu8k_do_log) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);

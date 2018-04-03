@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.7	2018/03/31
+ * Version:	@(#)resource.h	1.0.8	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -290,16 +290,29 @@
 #define IDM_VID_GRAY_WHITE	40094
 #define IDM_KBD_RCTRL_IS_LALT	40101
 
-#define IDM_LOG_BREAKPOINT	51201
-#define IDM_DUMP_VRAM		51202	// should be an Action
-
-#define IDM_LOG_SERIAL		51211
-#define IDM_LOG_D86F		51212
-#define IDM_LOG_FDC		51213
-#define IDM_LOG_IDE		51214
-#define IDM_LOG_CDROM		51215
-#define IDM_LOG_NIC		51216
-#define IDM_LOG_BUSLOGIC	51217
+#define IDM_LOGGING		51200
+#define IDM_LOG_BREAKPOINT	(IDM_LOGGING + 0)
+#define IDM_LOG_PCI		(IDM_LOGGING + 1)
+#define IDM_LOG_KEYBOARD	(IDM_LOGGING + 2)
+#define IDM_LOG_SERIAL		(IDM_LOGGING + 3)
+#define IDM_LOG_FDC		(IDM_LOGGING + 4)
+#define IDM_LOG_D86F		(IDM_LOGGING + 5)
+#define IDM_LOG_HDC		(IDM_LOGGING + 6)
+#define IDM_LOG_HDD		(IDM_LOGGING + 7)
+#define IDM_LOG_ZIP		(IDM_LOGGING + 8)
+#define IDM_LOG_CDROM		(IDM_LOGGING + 9)
+#define IDM_LOG_CDROM_IMAGE	(IDM_LOGGING + 10)
+#define IDM_LOG_CDROM_IOCTL	(IDM_LOGGING + 11)
+#define IDM_LOG_NIC		(IDM_LOGGING + 12)
+#define IDM_LOG_SOUND_EMU8K	(IDM_LOGGING + 13)
+#define IDM_LOG_SOUND_MPU401	(IDM_LOGGING + 14)
+#define IDM_LOG_SOUND_DEV	(IDM_LOGGING + 15)
+#define IDM_LOG_SCSI_BUS	(IDM_LOGGING + 16)
+#define IDM_LOG_SCSI_DISK	(IDM_LOGGING + 17)
+#define IDM_LOG_SCSI_DEV	(IDM_LOGGING + 18)
+#define IDM_LOG_SCSI_X54X	(IDM_LOGGING + 19)
+#define IDM_LOG_VOODOO		(IDM_LOGGING + 20)
+ 
 
 /*
  * We need 7 bits for CDROM (2 bits ID and 5 bits for host drive),

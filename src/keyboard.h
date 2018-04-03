@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.4	2018/03/22
+ * Version:	@(#)keyboard.h	1.0.5	2018/04/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -90,6 +90,7 @@ extern const device_t	keyboard_ps2_mca_2_device;
 extern const device_t	keyboard_ps2_quadtel_device;
 #endif
 
+extern void	kbd_log(const char *fmt, ...);
 extern void	keyboard_init(void);
 extern void	keyboard_close(void);
 extern void	keyboard_set_table(const scancode *ptr);

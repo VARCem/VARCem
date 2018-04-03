@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.12	2018/03/31
+ * Version:	@(#)video.h	1.0.13	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -270,10 +270,6 @@ extern void	loadfont(wchar_t *s, int format);
 
 extern int	get_actual_size_x(void);
 extern int	get_actual_size_y(void);
-
-#ifdef ENABLE_VRAM_DUMP
-extern void	svga_dump_vram(void);
-#endif
 
 #ifdef __cplusplus
 }

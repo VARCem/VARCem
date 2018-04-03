@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.7	2018/03/31
+ * Version:	@(#)plat.h	1.0.8	2018/04/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -56,7 +56,9 @@
 
 /* The Win32 API uses _wcsicmp and _stricmp. */
 #ifdef _WIN32
+# define wcsncasecmp	_wcsnicmp
 # define wcscasecmp	_wcsicmp
+# define strncasecmp	_strnicmp
 # define strcasecmp	_stricmp
 #endif
 

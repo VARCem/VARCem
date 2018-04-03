@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.11	2018/03/31
+ * Version:	@(#)VARCem.rc	1.0.12	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include "../emu.h"
 #include "../version.h"
 #include "../plat.h"
+#include "../ui.h"
 #undef IN_RESOURCE_H
 
 #define APSTUDIO_READONLY_SYMBOLS
@@ -67,7 +68,7 @@ BEGIN
     POPUP "&Action"
     BEGIN
         MENUITEM "&Hard Reset",                 IDM_ACTION_HRESET
-        MENUITEM "&Ctrl+Alt+Del\tCtrl+F12",     IDM_ACTION_RESET_CAD
+        MENUITEM "&Ctrl+Alt+Del",		IDM_ACTION_RESET_CAD
         MENUITEM SEPARATOR
 	MENUITEM "Ctrl+Alt+&Esc",		IDM_ACTION_CTRL_ALT_ESC
         MENUITEM SEPARATOR
@@ -138,51 +139,89 @@ BEGIN
     BEGIN
         MENUITEM "&Settings...",                IDM_CONFIG
         MENUITEM SEPARATOR
+#if defined(ENABLE_LOG_TOGGLES) || defined(ENABLE_LOG_COMMANDS)
+	POPUP "&Logging"
+	BEGIN
+
+# ifdef ENABLE_PCI_LOG
+            MENUITEM "Enable PCI bus logs\tCtrl+F1", IDM_LOG_PCI
+# endif
+# ifdef ENABLE_KEYBOARD_LOG
+            MENUITEM "Enable keyboard logs\tCtrl+F2", IDM_LOG_KEYBOARD
+# endif
+# ifdef ENABLE_SERIAL_LOG
+            MENUITEM "Enable Serial Port logs\tCtrl+F3", IDM_LOG_SERIAL
+# endif
+# ifdef ENABLE_FDC_LOG
+            MENUITEM "Enable floppy controller logs\tCtrl+F4", IDM_LOG_FDC
+# endif
+# ifdef ENABLE_D86F_LOG
+            MENUITEM "Enable floppy (86F) logs\tCtrl+F5", IDM_LOG_D86F
+# endif
+# ifdef ENABLE_HDC_LOG
+            MENUITEM "Enable Hard Disk controller logs\tCtrl+F6", IDM_LOG_HDC
+# endif
+# ifdef ENABLE_HDD_LOG
+            MENUITEM "Enable Hard Disk images logs\tCtrl+F7", IDM_LOG_HDD
+# endif
+# ifdef ENABLE_ZIP_LOG
+            MENUITEM "Enable ZIP drive logs\tCtrl+F8", IDM_LOG_ZIP
+# endif
+# ifdef ENABLE_CDROM_LOG
+            MENUITEM "Enable CD-ROM logs\tCtrl+F9", IDM_LOG_CDROM
+# endif
+# ifdef ENABLE_CDROM_IMAGE_LOG
+            MENUITEM "Enable CD-ROM images logs\tCtrl+F10", IDM_LOG_CDROM_IMAGE
+# endif
+# ifdef ENABLE_CDROM_IOCTL_LOG
+            MENUITEM "Enable CD-ROM ioctl logs\tCtrl+F11", IDM_LOG_CDROM_IOCTL
+# endif
+# ifdef ENABLE_NIC_LOG
+            MENUITEM "Enable Network logs\tCtrl+F12", IDM_LOG_NIC
+# endif
+# ifdef ENABLE_SOUND_EMU8K_LOG
+            MENUITEM "Enable sound EMU8K logs\tCtrl+Alt+F1", IDM_LOG_SOUND_EMU8K
+# endif
+# ifdef ENABLE_SOUND_MPU401_LOG
+            MENUITEM "Enable sound MPU401 logs\tCtrl+Alt+F2", IDM_LOG_SOUND_MPU401
+# endif
+# ifdef ENABLE_SOUND_AUDIOPCI_LOG
+            MENUITEM "Enable sound device logs\tCtrl+Alt+F3", IDM_LOG_SOUND_AUDIOPCI
+# endif
+# ifdef ENABLE_SCSI_BUS_LOG
+            MENUITEM "Enable SCSI bus logs\tCtrl+Alt+F4", IDM_LOG_SCSI_BUS
+# endif
+# ifdef ENABLE_SCSI_DISK_LOG
+            MENUITEM "Enable SCSI disk logs\tCtrl+Alt+F5", IDM_LOG_SCSI_DISK
+# endif
+# ifdef ENABLE_SCSI_DEV_LOG
+            MENUITEM "Enable SCSI controller logs\tCtrl+Alt+F6", IDM_LOG_SCSI_DEV
+# endif
+# ifdef ENABLE_SCSI_X54X_LOG
+            MENUITEM "Enable Adaptec/BusLogic command logs\tCtrl+Alt+F7", IDM_LOG_SCSI_X54X
+# endif
+# ifdef ENABLE_VOODOO_LOG
+            MENUITEM "Enable Voodoo logs\tCtrl+Alt+F9", IDM_LOG_VOODOO
+# endif
+
+# if defined(ENABLE_LOG_COMMANDS) && defined(ENABLE_LOG_TOGGLES)
+	    MENUITEM SEPARATOR
+# endif
+
+# ifdef ENABLE_LOG_BREAKPOINT
+	    MENUITEM "&Log breakpoint\tCtrl+Insert", IDM_LOG_BREAKPOINT
+# endif
+	    MENUITEM SEPARATOR
+	END
+#endif
         MENUITEM "S&tatus",                     IDM_STATUS
-        MENUITEM "Take s&creenshot\tCtrl+F11",  IDM_ACTION_SCREENSHOT
+        MENUITEM "Take s&creenshot\tCtrl+Esc",  IDM_ACTION_SCREENSHOT
         MENUITEM SEPARATOR
         MENUITEM "&Update status bar icons",	IDM_UPDATE_ICONS
     END
-#if defined(ENABLE_LOG_TOGGLES) || defined(ENABLE_LOG_COMMANDS)
-    POPUP "&Logging"
-    BEGIN
-# ifdef ENABLE_BUSLOGIC_LOG
-        MENUITEM "Enable BusLogic logs\tCtrl+F4", IDM_LOG_BUSLOGIC
-# endif
-# ifdef ENABLE_CDROM_LOG
-        MENUITEM "Enable CD-ROM logs\tCtrl+F5", IDM_LOG_CDROM
-# endif
-# ifdef ENABLE_D86F_LOG
-        MENUITEM "Enable floppy (86F) logs\tCtrl+F6", IDM_LOG_D86F
-# endif
-# ifdef ENABLE_FDC_LOG
-        MENUITEM "Enable floppy controller logs\tCtrl+F7", IDM_LOG_FDC
-# endif
-# ifdef ENABLE_IDE_LOG
-        MENUITEM "Enable IDE logs\tCtrl+F8", IDM_LOG_IDE
-# endif
-# ifdef ENABLE_SERIAL_LOG
-        MENUITEM "Enable Serial Port logs\tCtrl+F3", IDM_LOG_SERIAL
-# endif
-# ifdef ENABLE_NIC_LOG
-        MENUITEM "Enable Network logs\tCtrl+F9", IDM_LOG_NIC
-# endif
-# ifdef ENABLE_LOG_COMMANDS
-#  ifdef ENABLE_LOG_TOGGLES
-	MENUITEM SEPARATOR
-#  endif
-#  ifdef ENABLE_LOG_BREAKPOINT
-        MENUITEM "&Log breakpoint\tCtrl+F10", IDM_LOG_BREAKPOINT
-#  endif
-#  ifdef ENABLE_VRAM_DUMP
-        MENUITEM "Dump &video RAM\tCtrl+F1", IDM_DUMP_VRAM
-#  endif
-# endif
-    END
-#endif
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About VARCem...",             IDM_ABOUT
+        MENUITEM "&About VARCem...",		IDM_ABOUT
     END
 END
 
@@ -199,37 +238,74 @@ END
 
 MainAccel ACCELERATORS MOVEABLE PURE 
 BEGIN
-#ifdef ENABLE_VRAM_DUMP
-    VK_F1,   IDM_DUMP_VRAM,          CONTROL, VIRTKEY
+#ifdef ENABLE_PCI_LOG
+    VK_F1,   IDM_LOG_PCI,		VIRTKEY, CONTROL
+#endif
+#ifdef ENABLE_KEYBOARD_LOG
+    VK_F2,   IDM_LOG_KEYBOARD,		VIRTKEY, CONTROL
 #endif
 #ifdef ENABLE_SERIAL_LOG
-    VK_F3,   IDM_LOG_SERIAL,         CONTROL, VIRTKEY
-#endif
-#ifdef ENABLE_BUSLOGIC_LOG
-    VK_F4,   IDM_LOG_BUSLOGIC,       CONTROL, VIRTKEY
-#endif
-#ifdef ENABLE_CDROM_LOG
-    VK_F5,   IDM_LOG_CDROM,          CONTROL, VIRTKEY
-#endif
-#ifdef ENABLE_D86F_LOG
-    VK_F6,   IDM_LOG_D86F,           CONTROL, VIRTKEY
+    VK_F3,   IDM_LOG_SERIAL,		VIRTKEY, CONTROL
 #endif
 #ifdef ENABLE_FDC_LOG
-    VK_F7,   IDM_LOG_FDC,            CONTROL, VIRTKEY
+    VK_F4,   IDM_LOG_FDC,		VIRTKEY, CONTROL
 #endif
-#ifdef ENABLE_IDE_LOG
-    VK_F8,   IDM_LOG_IDE,            CONTROL, VIRTKEY
+#ifdef ENABLE_D86F_LOG
+    VK_F5,   IDM_LOG_D86F,		VIRTKEY, CONTROL
+#endif
+#ifdef ENABLE_HDC_LOG
+    VK_F6,   IDM_LOG_HDC,		VIRTKEY, CONTROL
+#endif
+#ifdef ENABLE_HDD_LOG
+    VK_F7,   IDM_LOG_HDD,		VIRTKEY, CONTROL
+#endif
+#ifdef ENABLE_ZIP_LOG
+    VK_F8,   IDM_LOG_ZIP,		VIRTKEY, CONTROL
+#endif
+#ifdef ENABLE_CDROM_LOG
+    VK_F9,   IDM_LOG_CDROM,		VIRTKEY, CONTROL
+#endif
+#ifdef ENABLE_CDROM_IMAGE_LOG
+    VK_F10,  IDM_LOG_CDROM_IMAGE,	VIRTKEY, CONTROL
+#endif
+#ifdef ENABLE_CDROM_IOCTL_LOG
+    VK_F11,  IDM_LOG_CDROM_IOCTL,	VIRTKEY, CONTROL
 #endif
 #ifdef ENABLE_NIC_LOG
-    VK_F9,   IDM_LOG_NIC,            CONTROL, VIRTKEY
+    VK_F12,  IDM_LOG_NIC,		VIRTKEY, CONTROL
 #endif
+
+# ifdef ENABLE_EMU8K_LOG
+    VK_F1,   IDM_LOG_SOUND_EMU8K,	VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_MPU401_LOG
+    VK_F2,   IDM_LOG_SOUND_MPU401,	VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_AUDIOPCI_LOG
+    VK_F3,   IDM_LOG_SOUND_AUDIOPCI,	VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_SCSI_BUS_LOG
+    VK_F4,   IDM_LOG_SCSI_BUS,		VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_SCSI_DISK_LOG
+    VK_F5,   IDM_LOG_SCSI_DISK,		VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_SCSI_DEV_LOG
+    VK_F6,   IDM_LOG_SCSI_DEV,		VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_X54X_LOG
+    VK_F7,   IDM_LOG_SCSI_X54X,		VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_VOODOO_LOG
+    VK_F9,   IDM_LOG_VOODOO,		VIRTKEY, CONTROL, ALT
+# endif
+
 #ifdef ENABLE_LOG_BREAKPOINT
-    VK_F10,  IDM_LOG_BREAKPOINT,     CONTROL, VIRTKEY
+    VK_INSERT, IDM_LOG_BREAKPOINT,	VIRTKEY, CONTROL
 #endif
-    VK_PRIOR,IDM_VID_FULLSCREEN,     VIRTKEY, CONTROL , ALT
-    VK_F11,  IDM_ACTION_SCREENSHOT,  VIRTKEY, CONTROL
-    VK_F12,  IDM_ACTION_RESET_CAD,   VIRTKEY, CONTROL
-    VK_PAUSE,IDM_ACTION_PAUSE,       VIRTKEY, CONTROL
+    VK_PRIOR,IDM_VID_FULLSCREEN,	VIRTKEY, CONTROL, ALT
+    VK_HOME, IDM_ACTION_SCREENSHOT,	VIRTKEY, CONTROL
+    VK_PAUSE,IDM_ACTION_PAUSE,		VIRTKEY, CONTROL
 END
 
 

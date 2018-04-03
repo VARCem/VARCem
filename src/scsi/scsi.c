@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.4	2018/03/19
+ * Version:	@(#)scsi.c	1.0.5	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../mem.h"
 #include "../rom.h"
@@ -60,6 +62,9 @@
 #include "scsi_x54x.h"
 
 
+#ifdef ENABLE_SCSI_DEV_LOG
+int		scsi_dev_do_log = ENABLE_SCSI_DEV_LOG;
+#endif
 scsi_device_t	SCSIDevices[SCSI_ID_MAX][SCSI_LUN_MAX];
 #if 0
 uint8_t		SCSIPhase = 0xff;
@@ -105,6 +110,21 @@ static SCSI_CARD scsi_cards[] = {
     { "[VLB] BusLogic BT-445S",	"bt445s",	&buslogic_445s_device,BuslogicDeviceReset },
     { "",			"",		NULL,		      NULL		  },
 };
+
+
+void
+scsi_dev_log(const char *fmt, ...)
+{
+#ifdef ENABLE_SCSI_DEV_LOG
+    va_list ap;
+
+    if (scsi_dev_do_log) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 int

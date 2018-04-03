@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.8	2018/03/15
+ * Version:	@(#)scsi_x54x.c	1.0.9	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,23 +68,23 @@
 
 #define X54X_RESET_DURATION_US	UINT64_C(50000)
 
-static void	x54x_cmd_callback(void *priv);
 
-static x54x_t	*x54x_dev;
-
-
-#ifdef ENABLE_X54X_LOG
-int x54x_do_log = ENABLE_X54X_LOG;
+#ifdef ENABLE_SCSI_X54X_LOG
+int		scsi_x54x_do_log = ENABLE_SCSI_X54X_LOG;
 #endif
+
+
+static void	x54x_cmd_callback(void *priv);
+static x54x_t	*x54x_dev;
 
 
 static void
 x54x_log(const char *fmt, ...)
 {
-#ifdef ENABLE_X54X_LOG
+#ifdef ENABLE_SCSI_X54X_LOG
     va_list ap;
 
-    if (x54x_do_log) {
+    if (scsi_x54x_do_log) {
 // for debug, temporary
 pclog("In %s mode: ",(msw&1)?((eflags&VM_FLAG)?"V86":"protected"):"real");
 	va_start(ap, fmt);

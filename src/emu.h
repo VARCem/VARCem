@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.12	2018/03/31
+ * Version:	@(#)emu.h	1.0.13	2018/04/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -66,30 +66,15 @@
 #define BIOS_FILE	L"bios.txt"
 
 
-/*FIXME: move to where it's needed (ui) */
-#if defined(ENABLE_BUSLOGIC_LOG) || \
-    defined(ENABLE_CDROM_LOG) || \
-    defined(ENABLE_D86F_LOG) || \
-    defined(ENABLE_FDC_LOG) || \
-    defined(ENABLE_IDE_LOG) || \
-    defined(ENABLE_NIC_LOG)
-# define ENABLE_LOG_TOGGLES	1
-#endif
-
-/*FIXME: move to where it's needed (ui) */
-#if defined(ENABLE_LOG_BREAKPOINT) || defined(ENABLE_VRAM_DUMP)
-# define ENABLE_LOG_COMMANDS	1
-#endif
-
-#define MIN(a, b)             ((a) < (b) ? (a) : (b))
-#define ABS(x)		      ((x) > 0 ? (x) : -(x))
+#define MIN(a, b)	((a) < (b) ? (a) : (b))
+#define ABS(x)		((x) > 0 ? (x) : -(x))
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Global variables. */
+/* Commandline option variables. */
 extern int	dump_on_exit;			/* (O) dump regs on exit*/
 extern int	do_dump_config;			/* (O) dump cfg after load */
 extern int	start_in_fullscreen;		/* (O) start in fullscreen */
@@ -104,6 +89,7 @@ extern int	settings_only;			/* (O) only the settings dlg */
 extern wchar_t	log_path[1024];			/* (O) full path of logfile */
 
 
+/* Configuration variables. */
 extern int	window_w, window_h,		/* (C) window size and */
 		window_x, window_y,		/*     position info */
 		window_remember,
@@ -145,16 +131,7 @@ extern int	network_card;			/* (C) net interface num */
 extern char	network_host[512];		/* (C) host network intf */
 
 
-#ifdef ENABLE_LOG_TOGGLES
-extern int	buslogic_do_log;
-extern int	cdrom_do_log;
-extern int	d86f_do_log;
-extern int	fdc_do_log;
-extern int	ide_do_log;
-extern int	serial_do_log;
-extern int	nic_do_log;
-#endif
-
+/* Global variables. */
 extern char	emu_title[64];			/* full name of application */
 extern char	emu_version[32];		/* short version ID string */
 extern char	emu_fullversion[128];		/* full version ID string */

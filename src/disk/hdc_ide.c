@@ -8,7 +8,7 @@
  *
  *		Emulation of hard disk, CD-ROM and ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.15	2018/03/27
+ * Version:	@(#)hdc_ide.c	1.0.16	2018/04/02
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -44,7 +44,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wchar.h>
-#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../version.h"
 #include "../cpu/cpu.h"
@@ -137,26 +136,6 @@ int cur_ide[5];
 int ide_init_ch[2] = {0, 0};
 
 
-#ifdef ENABLE_IDE_LOG
-int ide_do_log = ENABLE_IDE_LOG;
-#endif
-
-
-static void ide_log(const char *fmt, ...)
-{
-#ifdef ENABLE_IDE_LOG
-   va_list ap;
-
-   if (ide_do_log)
-   {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-   }
-#endif
-}
-
-
 uint8_t getstat(IDE *ide) { return ide->atastat; }
 
 
@@ -213,7 +192,7 @@ int ide_irq[5] = { 14, 15, 10, 11, 0 };
 
 void ide_irq_raise(IDE *ide)
 {
-	/* ide_log("Attempting to raise IRQ %i (board %i)\n", ide_irq[ide->board], ide->board); */
+	/* hdc_log("Attempting to raise IRQ %i (board %i)\n", ide_irq[ide->board], ide->board); */
 
 	if ((ide->board > 3) || ide->irqstat)
 	{
@@ -223,7 +202,9 @@ void ide_irq_raise(IDE *ide)
 		return;
 	}
 
-	ide_log("Raising IRQ %i (board %i)\n", ide_irq[ide->board], ide->board);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("Raising IRQ %i (board %i)\n", ide_irq[ide->board], ide->board);
+#endif
 	
 	if (!(ide->fdisk&2))
 	{
@@ -257,7 +238,9 @@ void ide_irq_lower(IDE *ide)
 		return;
 	}
 
-	ide_log("Lowering IRQ %i (board %i)\n", ide_irq[ide->board], ide->board);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("Lowering IRQ %i (board %i)\n", ide_irq[ide->board], ide->board);
+#endif
 
 	if (pci_use_mirq(0) && (ide->board == 1))
 	{
@@ -342,7 +325,9 @@ static void ide_identify(IDE *ide)
 
 	device_identify[6] = (ide->hdd_num / 10) + 0x30;
 	device_identify[7] = (ide->hdd_num % 10) + 0x30;
-	ide_log("IDE Identify: %s\n", device_identify);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("IDE Identify: %s\n", device_identify);
+#endif
 
 	memset(ide->buffer, 0, 512);
 	d_spt = ide->spt;
@@ -366,7 +351,9 @@ static void ide_identify(IDE *ide)
 		ide->buffer[3] = 16;		/* Heads in default CHS translation. */
 		ide->buffer[6] = 63;		/* Heads in default CHS translation. */
 	}
-	ide_log("Default CHS translation: %i, %i, %i\n", ide->buffer[1], ide->buffer[3], ide->buffer[6]);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("Default CHS translation: %i, %i, %i\n", ide->buffer[1], ide->buffer[3], ide->buffer[6]);
+#endif
 
 	ide_padstr((char *) (ide->buffer + 10), "", 20); /* Serial Number */
 	ide_padstr((char *) (ide->buffer + 23), EMU_VERSION, 8); /* Firmware */
@@ -384,7 +371,9 @@ static void ide_identify(IDE *ide)
 	if ((ide->tracks >= 1024) || (ide->hpc > 16) || (ide->spt > 63))
 	{
 		ide->buffer[49] |= (1 << 9);
-		ide_log("LBA supported\n");
+#ifdef ENABLE_HDC_LOG
+		hdc_log("LBA supported\n");
+#endif
 	}
 	ide->buffer[50] = 0x4000; /* Capabilities */
 	ide->buffer[51] = 2 << 8; /*PIO timing mode*/
@@ -393,7 +382,9 @@ static void ide_identify(IDE *ide)
 	{
 		ide->buffer[60] = full_size & 0xFFFF; /* Total addressable sectors (LBA) */
 		ide->buffer[61] = (full_size >> 16) & 0x0FFF;
-		ide_log("Full size: %" PRIu64 "\n", full_size);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("Full size: %" PRIu64 "\n", full_size);
+#endif
 
 		ide->buffer[53] |= 1;
 
@@ -418,7 +409,9 @@ static void ide_identify(IDE *ide)
 		ide->buffer[57] = full_size & 0xFFFF; /* Total addressable sectors (LBA) */
 		ide->buffer[58] = (full_size >> 16) & 0x0FFF;
 
-		ide_log("Current CHS translation: %i, %i, %i\n", ide->buffer[54], ide->buffer[55], ide->buffer[56]);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("Current CHS translation: %i, %i, %i\n", ide->buffer[54], ide->buffer[55], ide->buffer[56]);
+#endif
 	}
 
 	ide->buffer[59] = ide->blocksize ? (ide->blocksize | 0x100) : 0;
@@ -446,7 +439,9 @@ static void ide_identify(IDE *ide)
 				ide->buffer[64] |= d;
 		    } else
         	    	ide->buffer[62] |= d;
-		    ide_log(" IDENTIFY DMA Mode: %04X, %04X\n", ide->buffer[62], ide->buffer[63]);
+#ifdef ENABLE_HDC_LOG
+		    hdc_log(" IDENTIFY DMA Mode: %04X, %04X\n", ide->buffer[62], ide->buffer[63]);
+#endif
 	        }
 		ide->buffer[65] = 120;
 		ide->buffer[66] = 120;
@@ -471,7 +466,9 @@ static void ide_atapi_identify(IDE *ide)
 	cdrom_id = atapi_cdrom_drives[ide->channel];
 
 	device_identify[7] = cdrom_id + 0x30;
-	ide_log("ATAPI Identify: %s\n", device_identify);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("ATAPI Identify: %s\n", device_identify);
+#endif
 
 	ide->buffer[0] = 0x8000 | (5<<8) | 0x80 | (2<<5); /* ATAPI device, CD-ROM drive, removable media, accelerated DRQ */
 	ide_padstr((char *) (ide->buffer + 10), "", 20); /* Serial Number */
@@ -505,7 +502,9 @@ static void ide_atapi_identify(IDE *ide)
 				ide->buffer[64] |= d;
 		    } else
         	    	ide->buffer[62] |= d;
-		    ide_log("PIDENTIFY DMA Mode: %04X, %04X\n", ide->buffer[62], ide->buffer[63]);
+#ifdef ENABLE_HDC_LOG
+		    hdc_log("PIDENTIFY DMA Mode: %04X, %04X\n", ide->buffer[62], ide->buffer[63]);
+#endif
 	        }
 		ide->buffer[65] = 120;
 		ide->buffer[66] = 120;
@@ -584,7 +583,9 @@ static void ide_atapi_zip_identify(IDE *ide)
 			if ((ide->mdma_mode & 0xff) >= 3)
 				ide->buffer[64] |= d;
 		    }
-		    ide_log("PIDENTIFY DMA Mode: %04X, %04X\n", ide->buffer[62], ide->buffer[63]);
+#ifdef ENABLE_HDC_LOG
+		    hdc_log("PIDENTIFY DMA Mode: %04X, %04X\n", ide->buffer[62], ide->buffer[63]);
+#endif
 	        }
 	}
 }
@@ -712,14 +713,18 @@ static int ide_set_features(IDE *ide)
 			max_pio = 4;
 	}
 
-	ide_log("Features code %02X\n", features);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("Features code %02X\n", features);
 
-	ide_log("IDE %02X: Set features: %02X, %02X\n", ide->channel, features, features_data);
+	hdc_log("IDE %02X: Set features: %02X, %02X\n", ide->channel, features, features_data);
+#endif
 
 	switch(features)
 	{
 		case FEATURE_SET_TRANSFER_MODE:	/* Set transfer mode. */
-			ide_log("Transfer mode %02X\n", features_data >> 3);
+#ifdef ENABLE_HDC_LOG
+			hdc_log("Transfer mode %02X\n", features_data >> 3);
+#endif
 
 			mode = (features_data >> 3);
 			submode = features_data & 7;
@@ -732,7 +737,9 @@ static int ide_set_features(IDE *ide)
 						return 0;
 					}
  					ide->mdma_mode = -1;
-					ide_log("IDE %02X: Setting DPIO mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %02X: Setting DPIO mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#endif
 					break;
 
 				case 0x01:	/* PIO mode */
@@ -741,7 +748,9 @@ static int ide_set_features(IDE *ide)
 						return 0;
 					}
  					ide->mdma_mode = (1 << submode) | 0x400;
-					ide_log("IDE %02X: Setting  PIO mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %02X: Setting  PIO mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#endif
 					break;
 
 				case 0x02:	/* Singleword DMA mode */
@@ -750,7 +759,9 @@ static int ide_set_features(IDE *ide)
 						return 0;
 					}
 					ide->mdma_mode = (1 << submode);
-					ide_log("IDE %02X: Setting SDMA mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %02X: Setting SDMA mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#endif
 					break;
 
 				case 0x04:	/* Multiword DMA mode */
@@ -759,7 +770,9 @@ static int ide_set_features(IDE *ide)
 						return 0;
 					}
 					ide->mdma_mode = (1 << submode) | 0x100;
-					ide_log("IDE %02X: Setting MDMA mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %02X: Setting MDMA mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#endif
 					break;
 
 				case 0x08:	/* Ultra DMA mode */
@@ -768,7 +781,9 @@ static int ide_set_features(IDE *ide)
 						return 0;
 					}
 					ide->mdma_mode = (1 << submode) | 0x200;
-					ide_log("IDE %02X: Setting UDMA mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %02X: Setting UDMA mode: %02X, %08X\n", ide->channel, submode, ide->mdma_mode);
+#endif
 					break;
 
 				default:
@@ -878,13 +893,17 @@ void ide_reset(void)
 	idecallback[2]=idecallback[3]=0LL;
 	idecallback[4]=0LL;
 
-	ide_log("IDE: loading disks...\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("IDE: loading disks...\n");
+#endif
 	c = 0;
 	for (d = 0; d < HDD_NUM; d++)
 	{
 		if (((hdd[d].bus == HDD_BUS_IDE_PIO_ONLY) || (hdd[d].bus == HDD_BUS_IDE_PIO_AND_DMA)) && (hdd[d].ide_channel < IDE_NUM))
 		{
-			ide_log("Found IDE hard disk on channel %i\n", hdd[d].ide_channel);
+#ifdef ENABLE_HDC_LOG
+			hdc_log("Found IDE hard disk on channel %i\n", hdd[d].ide_channel);
+#endif
 			loadhd(&ide_drives[hdd[d].ide_channel], d, hdd[d].fn);
 			ide_drives[hdd[d].ide_channel].sector_buffer = (uint8_t *) malloc(256*512);
 			memset(ide_drives[hdd[d].ide_channel].sector_buffer, 0, 256*512);
@@ -892,14 +911,18 @@ void ide_reset(void)
 		}
 		if ((hdd[d].bus==HDD_BUS_XTIDE) && (hdd[d].xtide_channel < XTIDE_NUM))
 		{
-			ide_log("Found XT IDE hard disk on channel %i\n", hdd[d].xtide_channel);
+#ifdef ENABLE_HDC_LOG
+			hdc_log("Found XT IDE hard disk on channel %i\n", hdd[d].xtide_channel);
+#endif
 			loadhd(&ide_drives[hdd[d].xtide_channel | 8], d, hdd[d].fn);
 			ide_drives[hdd[d].xtide_channel | 8].sector_buffer = (uint8_t *) malloc(256*512);
 			memset(ide_drives[hdd[d].ide_channel].sector_buffer, 0, 256*512);
 			if (++c >= (IDE_NUM+XTIDE_NUM)) break;
 		}
 	}
-	ide_log("IDE: done, loaded %d disks.\n", c);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("IDE: done, loaded %d disks.\n", c);
+#endif
 
 	for (d = 0; d < IDE_NUM; d++)
 	{
@@ -1057,7 +1080,9 @@ void writeide(int ide_board, uint16_t addr, uint8_t val)
 	IDE *ide = &ide_drives[cur_ide[ide_board]];
 	IDE *ide_other = &ide_drives[cur_ide[ide_board] ^ 1];
 
-	ide_log("WriteIDE %04X %02X from %04X(%08X):%08X\n", addr, val, CS, cs, cpu_state.pc);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WriteIDE %04X %02X from %04X(%08X):%08X\n", addr, val, CS, cs, cpu_state.pc);
+#endif
 	addr|=0x90;
 	addr&=0xFFF7;
 
@@ -1073,12 +1098,16 @@ void writeide(int ide_board, uint16_t addr, uint8_t val)
 		case 0x1F1: /* Features */
 			if (ide_drive_is_zip(ide))
 			{
-				ide_log("ATAPI transfer mode: %s\n", (val & 1) ? "DMA" : "PIO");
+#ifdef ENABLE_HDC_LOG
+				hdc_log("ATAPI transfer mode: %s\n", (val & 1) ? "DMA" : "PIO");
+#endif
 				zip[atapi_zip_drives[cur_ide[ide_board]]].features = val;
 			}
 			else if (ide_drive_is_cdrom(ide))
 			{
-				ide_log("ATAPI transfer mode: %s\n", (val & 1) ? "DMA" : "PIO");
+#ifdef ENABLE_HDC_LOG
+				hdc_log("ATAPI transfer mode: %s\n", (val & 1) ? "DMA" : "PIO");
+#endif
 				cdrom[atapi_cdrom_drives[cur_ide[ide_board]]]->features = val;
 			}
 			ide->cylprecomp = val;
@@ -1097,24 +1126,32 @@ void writeide(int ide_board, uint16_t addr, uint8_t val)
 		case 0x1F2: /* Sector count */
 			if (ide_drive_is_zip(ide))
 			{
-				ide_log("Sector count write: %i\n", val);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("Sector count write: %i\n", val);
+#endif
 				zip[atapi_zip_drives[cur_ide[ide_board]]].phase = val;
 			}
 			else if (ide_drive_is_cdrom(ide))
 			{
-				ide_log("Sector count write: %i\n", val);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("Sector count write: %i\n", val);
+#endif
 				cdrom[atapi_cdrom_drives[cur_ide[ide_board]]]->phase = val;
 			}
 			ide->secount = val;
 
 			if (ide_drive_is_zip(ide_other))
 			{
-				ide_log("Other sector count write: %i\n", val);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("Other sector count write: %i\n", val);
+#endif
 				zip[atapi_zip_drives[cur_ide[ide_board] ^ 1]].phase = val;
 			}
 			else if (ide_drive_is_cdrom(ide_other))
 			{
-				ide_log("Other sector count write: %i\n", val);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("Other sector count write: %i\n", val);
+#endif
 				cdrom[atapi_cdrom_drives[cur_ide[ide_board] ^ 1]]->phase = val;
 			}
 			ide_other->secount = val;
@@ -1678,7 +1715,9 @@ uint32_t ide_read_data(int ide_board, int length)
 		ide->pos = 0;
 		if (!ide_drive_is_zip(ide) && !ide_drive_is_cdrom(ide))
 		{
-			ide_log("Drive not ZIP or CD-ROM (position: %i)\n", ide->pos);
+#ifdef ENABLE_HDC_LOG
+			hdc_log("Drive not ZIP or CD-ROM (position: %i)\n", ide->pos);
+#endif
 			return 0;
 		}
 		if (ide_drive_is_zip(ide))
@@ -1920,7 +1959,9 @@ uint8_t readide(int ide_board, uint16_t addr)
 			temp = 0xff;
 			break;
 	}
-	/* if (ide_board) */  ide_log("Read IDEb %04X %02X   %02X %02X %i %04X:%04X %i\n", addr, temp, ide->atastat,(ide->atastat & ~DSC_STAT) | (ide->service ? SERVICE_STAT : 0),cur_ide[ide_board],CS,cpu_state.pc,ide_board);
+#ifdef ENABLE_HDC_LOG
+	/* if (ide_board) */  hdc_log("Read IDEb %04X %02X   %02X %02X %i %04X:%04X %i\n", addr, temp, ide->atastat,(ide->atastat & ~DSC_STAT) | (ide->service ? SERVICE_STAT : 0),cur_ide[ide_board],CS,cpu_state.pc,ide_board);
+#endif
 	return temp;
 }
 
@@ -1965,7 +2006,9 @@ void callbackide(int ide_board)
 	ext_ide = ide;
 
 	if (ide->command==0x30) times30++;
-	/*if (ide_board) */ide_log("CALLBACK %02X %i %i  %i\n",ide->command,times30,ide->reset,cur_ide[ide_board]);
+#ifdef ENABLE_HDC_LOG
+	/*if (ide_board) */hdc_log("CALLBACK %02X %i %i  %i\n",ide->command,times30,ide->reset,cur_ide[ide_board]);
+#endif
 
 	if (ide->reset)
 	{
@@ -2165,12 +2208,16 @@ void callbackide(int ide_board)
 		case WIN_READ_DMA_ALT:
 			if (ide_drive_is_zip(ide) || ide_drive_is_cdrom(ide) || (ide->board >= 2))
 			{
-				ide_log("IDE %i: DMA read aborted (bad device or board)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("IDE %i: DMA read aborted (bad device or board)\n", ide->channel);
+#endif
 				goto abort_cmd;
 			}
 			if (!ide->specify_success)
 			{
-				ide_log("IDE %i: DMA read aborted (SPECIFY failed)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("IDE %i: DMA read aborted (SPECIFY failed)\n", ide->channel);
+#endif
 				goto id_not_found;
 			}
 
@@ -2191,13 +2238,17 @@ void callbackide(int ide_board)
 			{
 				if (ide_bus_master_read(ide_board, ide->sector_buffer, ide->sector_pos * 512))
 				{
-					ide_log("IDE %i: DMA read aborted (failed)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %i: DMA read aborted (failed)\n", ide->channel);
+#endif
 					goto abort_cmd;
 				}
 				else
 				{
 					/*DMA successful*/
-					ide_log("IDE %i: DMA read successful\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %i: DMA read successful\n", ide->channel);
+#endif
 
 					ide->atastat = READY_STAT | DSC_STAT;
 
@@ -2205,7 +2256,9 @@ void callbackide(int ide_board)
 					ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 0);
 				}
 			} else {
-				ide_log("IDE %i: DMA read aborted (no bus master)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("IDE %i: DMA read aborted (no bus master)\n", ide->channel);
+#endif
 				goto abort_cmd;
 			}
 
@@ -2292,12 +2345,16 @@ void callbackide(int ide_board)
 		case WIN_WRITE_DMA_ALT:
 			if (ide_drive_is_zip(ide) || ide_drive_is_cdrom(ide) || (ide_board >= 2))
 			{
-				ide_log("IDE %i: DMA write aborted (bad device type or board)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("IDE %i: DMA write aborted (bad device type or board)\n", ide->channel);
+#endif
 				goto abort_cmd;
 			}
 			if (!ide->specify_success)
 			{
-				ide_log("IDE %i: DMA write aborted (SPECIFY failed)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("IDE %i: DMA write aborted (SPECIFY failed)\n", ide->channel);
+#endif
 				goto id_not_found;
 			}
 
@@ -2310,13 +2367,17 @@ void callbackide(int ide_board)
 
 				if (ide_bus_master_write(ide_board, ide->sector_buffer, ide->sector_pos * 512))
 				{
-					ide_log("IDE %i: DMA write aborted (failed)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %i: DMA write aborted (failed)\n", ide->channel);
+#endif
 					goto abort_cmd;
 				}
 				else
 				{
 					/*DMA successful*/
-					ide_log("IDE %i: DMA write successful\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+					hdc_log("IDE %i: DMA write successful\n", ide->channel);
+#endif
 
 					hdd_image_write(ide->hdd_num, ide_get_sector(ide), ide->sector_pos, ide->sector_buffer);
 
@@ -2326,7 +2387,9 @@ void callbackide(int ide_board)
 					ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 0);
 				}
 			} else {
-				ide_log("IDE %i: DMA write aborted (no bus master)\n", ide->channel);
+#ifdef ENABLE_HDC_LOG
+				hdc_log("IDE %i: DMA write aborted (no bus master)\n", ide->channel);
+#endif
 				goto abort_cmd;
 			}
 
@@ -2555,7 +2618,9 @@ void callbackide(int ide_board)
 				zip_phase_callback(atapi_zip_drives[cur_ide[ide_board]]);
 			else
 				cdrom_phase_callback(atapi_cdrom_drives[cur_ide[ide_board]]);
-			ide_log("IDE callback now: %i\n", idecallback[ide_board]);
+#ifdef ENABLE_HDC_LOG
+			hdc_log("IDE callback now: %i\n", idecallback[ide_board]);
+#endif
 			return;
 
 		case 0xFF:
@@ -2745,12 +2810,16 @@ void ide_pri_enable_ex(void)
 {
 	if (ide_base_main[0] & 0x300)
 	{
-		ide_log("Enabling primary base (%04X)...\n", ide_base_main[0]);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("Enabling primary base (%04X)...\n", ide_base_main[0]);
+#endif
 		io_sethandler(ide_base_main[0], 0x0008, ide_read_pri, ide_read_pri_w, ide_read_pri_l, ide_write_pri, ide_write_pri_w, ide_write_pri_l, NULL);
 	}
 	if (ide_side_main[0] & 0x300)
 	{
-		ide_log("Enabling primary side (%04X)...\n", ide_side_main[0]);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("Enabling primary side (%04X)...\n", ide_side_main[0]);
+#endif
 		io_sethandler(ide_side_main[0], 0x0001, ide_read_pri, NULL,           NULL,           ide_write_pri, NULL,            NULL           , NULL);
 	}
 }

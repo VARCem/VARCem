@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.1	2018/02/14
+ * Version:	@(#)hdd.c	1.0.2	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,7 +37,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../plat.h"
 #include "../ui.h"
@@ -45,6 +47,24 @@
 
 
 hard_disk_t	hdd[HDD_NUM];
+#ifdef ENABLE_HDD_LOG
+int		hdd_do_log = ENABLE_HDD_LOG;
+#endif
+
+
+void
+hdd_log(const char *fmt, ...)
+{
+#ifdef ENABLE_HDD_LOG
+    va_list ap;
+
+    if (hdd_do_log) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 int
@@ -73,8 +93,7 @@ no_cdrom:
 	return(HDD_BUS_MFM);
     }
 
-    /* FIXME: delete 'rll' in a year or so.. --FvK */
-    if (!strcmp(str, "esdi") || !strcmp(str, "rll")) {
+    if (! strcmp(str, "esdi")) {
 	if (cdrom) goto no_cdrom;
 
 	return(HDD_BUS_ESDI);

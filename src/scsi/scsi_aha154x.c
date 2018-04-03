@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.6	2018/03/31
+ * Version:	@(#)scsi_aha154x.c	1.0.7	2018/04/02
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -43,9 +43,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <wchar.h>
-#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../io.h"
 #include "../mca.h"
@@ -62,6 +60,8 @@
 #include "scsi_aha154x.h"
 #include "scsi_x54x.h"
 
+
+#define aha_log	scsi_dev_log
 
 #define AHA1540B_330_BIOS_PATH	L"scsi/adaptec/aha1540b320_330.bin"
 #define AHA1540B_334_BIOS_PATH	L"scsi/adaptec/aha1540b320_334.bin"
@@ -107,26 +107,6 @@ typedef struct {
     addr24	BIOSMailboxAddress;
 } aha_setup_t;
 #pragma pack(pop)
-
-
-#ifdef ENABLE_AHA154X_LOG
-int aha_do_log = ENABLE_AHA154X_LOG;
-#endif
-
-
-static void
-aha_log(const char *fmt, ...)
-{
-#ifdef ENABLE_AHA154X_LOG
-    va_list ap;
-
-    if (aha_do_log) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-    }
-#endif
-}
 
 
 /*

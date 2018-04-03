@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.8	2018/03/31
+ * Version:	@(#)win_ui.c	1.0.9	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -142,6 +142,150 @@ video_toggle_option(HMENU h, int *val, int id)
 }
 
 
+#if defined(ENABLE_LOG_TOGGLES) || defined(ENABLE_LOG_COMMANDS)
+/* Simplest way to handle all these, for now.. */
+static void
+SetLoggingItem(int idm, int val)
+{
+    int *ptr = NULL;
+
+    switch(idm) {
+#ifdef ENABLE_PCI_LOG
+	case IDM_LOG_PCI:
+		ptr = &pci_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_KEYBOARD_LOG
+	case IDM_LOG_KEYBOARD:
+		ptr = &keyboard_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SERIAL_LOG
+	case IDM_LOG_SERIAL:
+		ptr = &serial_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_FDC_LOG
+	case IDM_LOG_FDC:
+		ptr = &fdc_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_D86F_LOG
+	case IDM_LOG_D86F:
+		ptr = &d86f_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_HDC_LOG
+	case IDM_LOG_HDC:
+		ptr = &hdc_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_HDD_LOG
+	case IDM_LOG_HDD:
+		ptr = &hdd_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_ZIP_LOG
+	case IDM_LOG_ZIP:
+		ptr = &zip_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_CDROM_LOG
+	case IDM_LOG_CDROM:
+		ptr = &cdrom_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_CDROM_IMAGE_LOG
+	case IDM_LOG_CDROM_IMAGE:
+		ptr = &cdrom_image_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_CDROM_IOCTL_LOG
+	case IDM_LOG_CDROM_IOCTL:
+		ptr = &cdrom_ioctl_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_NIC_LOG
+	case IDM_LOG_NIC:
+		ptr = &nic_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SOUND_EMU8K_LOG
+	case IDM_LOG_SOUND_EMU8K:
+		ptr = &sound_emu8k_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SOUND_MPU401_LOG
+	case IDM_LOG_SOUND_MPU401:
+		ptr = &sound_mpu401_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SOUND_DEV_LOG
+	case IDM_LOG_SOUND_DEV:
+		ptr = &sound_dev_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SCSI_BUS_LOG
+	case IDM_LOG_SCSI_BUS:
+		ptr = &scsi_bus_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SCSI_DISK_LOG
+	case IDM_LOG_SCSI_DISK:
+		ptr = &scsi_hd_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SCSI_DEV_LOG
+	case IDM_LOG_SCSI_DEV:
+		ptr = &scsi_dev_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_SCSI_X54X_LOG
+	case IDM_LOG_SCSI_X54X:
+		ptr = &scsi_x54x_do_log;
+		break;
+#endif
+
+#ifdef ENABLE_VOODOO_LOG
+	case IDM_LOG_VOODOO:
+		ptr = &voodoo_do_log;
+		break;
+#endif
+    }
+
+    if (ptr != NULL) {
+	/* Set the desired value. */
+	if (val != 0xff) {
+		/* Initialize the logging value. */
+		if (val < 0) *ptr ^= 1;
+		  else *ptr = val;
+	}
+
+	/* And update its menu entry. */
+	CheckMenuItem(menuMain, idm, (*ptr) ? MF_CHECKED : MF_UNCHECKED);
+    }
+}
+#endif
+
+
 static void
 ResetAllMenus(void)
 {
@@ -156,27 +300,26 @@ ResetAllMenus(void)
     CheckMenuItem(menuMain, IDM_UPDATE_ICONS, MF_UNCHECKED);
 
 #ifdef ENABLE_LOG_TOGGLES
-# ifdef ENABLE_BUSLOGIC_LOG
-    CheckMenuItem(menuMain, IDM_LOG_BUSLOGIC, MF_UNCHECKED);
-# endif
-# ifdef ENABLE_CDROM_LOG
-    CheckMenuItem(menuMain, IDM_LOG_CDROM, MF_UNCHECKED);
-# endif
-# ifdef ENABLE_D86F_LOG
-    CheckMenuItem(menuMain, IDM_LOG_D86F, MF_UNCHECKED);
-# endif
-# ifdef ENABLE_FDC_LOG
-    CheckMenuItem(menuMain, IDM_LOG_FDC, MF_UNCHECKED);
-# endif
-# ifdef ENABLE_IDE_LOG
-    CheckMenuItem(menuMain, IDM_LOG_IDE, MF_UNCHECKED);
-# endif
-# ifdef ENABLE_SERIAL_LOG
-    CheckMenuItem(menuMain, IDM_LOG_SERIAL, MF_UNCHECKED);
-# endif
-# ifdef ENABLE_NIC_LOG
-    CheckMenuItem(menuMain, IDM_LOG_NIC, MF_UNCHECKED);
-# endif
+    SetLoggingItem(IDM_LOG_PCI, 0xff);
+    SetLoggingItem(IDM_LOG_KEYBOARD, 0xff);
+    SetLoggingItem(IDM_LOG_SERIAL, 0xff);
+    SetLoggingItem(IDM_LOG_FDC, 0xff);
+    SetLoggingItem(IDM_LOG_D86F, 0xff);
+    SetLoggingItem(IDM_LOG_HDC, 0xff);
+    SetLoggingItem(IDM_LOG_HDD, 0xff);
+    SetLoggingItem(IDM_LOG_ZIP, 0xff);
+    SetLoggingItem(IDM_LOG_CDROM, 0xff);
+    SetLoggingItem(IDM_LOG_CDROM_IMAGE, 0xff);
+    SetLoggingItem(IDM_LOG_CDROM_IOCTL, 0xff);
+    SetLoggingItem(IDM_LOG_NIC, 0xff);
+    SetLoggingItem(IDM_LOG_SOUND_EMU8K, 0xff);
+    SetLoggingItem(IDM_LOG_SOUND_MPU401, 0xff);
+    SetLoggingItem(IDM_LOG_SOUND_DEV, 0xff);
+    SetLoggingItem(IDM_LOG_SCSI_BUS, 0xff);
+    SetLoggingItem(IDM_LOG_SCSI_DISK, 0xff);
+    SetLoggingItem(IDM_LOG_SCSI_DEV, 0xff);
+    SetLoggingItem(IDM_LOG_SCSI_X54X, 0xff);
+    SetLoggingItem(IDM_LOG_VOODOO, 0xff);
 #endif
 
     CheckMenuItem(menuMain, IDM_VID_FORCE43, MF_UNCHECKED);
@@ -216,30 +359,6 @@ ResetAllMenus(void)
     CheckMenuItem(menuMain, IDM_KBD_RCTRL_IS_LALT, rctrl_is_lalt ? MF_CHECKED : MF_UNCHECKED);
 
     CheckMenuItem(menuMain, IDM_UPDATE_ICONS, update_icons ? MF_CHECKED : MF_UNCHECKED);
-
-#ifdef ENABLE_LOG_TOGGLES
-# ifdef ENABLE_BUSLOGIC_LOG
-    CheckMenuItem(menuMain, IDM_LOG_BUSLOGIC, buslogic_do_log?MF_CHECKED:MF_UNCHECKED);
-# endif
-# ifdef ENABLE_CDROM_LOG
-    CheckMenuItem(menuMain, IDM_LOG_CDROM, cdrom_do_log?MF_CHECKED:MF_UNCHECKED);
-# endif
-# ifdef ENABLE_D86F_LOG
-    CheckMenuItem(menuMain, IDM_LOG_D86F, d86f_do_log?MF_CHECKED:MF_UNCHECKED);
-# endif
-# ifdef ENABLE_FDC_LOG
-    CheckMenuItem(menuMain, IDM_LOG_FDC, fdc_do_log?MF_CHECKED:MF_UNCHECKED);
-# endif
-# ifdef ENABLE_IDE_LOG
-    CheckMenuItem(menuMain, IDM_LOG_IDE, ide_do_log?MF_CHECKED:MF_UNCHECKED);
-# endif
-# ifdef ENABLE_SERIAL_LOG
-    CheckMenuItem(menuMain, IDM_LOG_SERIAL, serial_do_log?MF_CHECKED:MF_UNCHECKED);
-# endif
-# ifdef ENABLE_NIC_LOG
-    CheckMenuItem(menuMain, IDM_LOG_NIC, nic_do_log?MF_CHECKED:MF_UNCHECKED);
-# endif
-#endif
 
     CheckMenuItem(menuMain, IDM_VID_FORCE43, force_43?MF_CHECKED:MF_UNCHECKED);
     CheckMenuItem(menuMain, IDM_VID_OVERSCAN, enable_overscan?MF_CHECKED:MF_UNCHECKED);
@@ -510,69 +629,36 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				config_save();
 				break;
 
-#ifdef ENABLE_LOG_TOGGLES
-# ifdef ENABLE_BUSLOGIC_LOG
-			case IDM_LOG_BUSLOGIC:
-				buslogic_do_log ^= 1;
-				CheckMenuItem(hmenu, IDM_LOG_BUSLOGIC, buslogic_do_log ? MF_CHECKED : MF_UNCHECKED);
-				break;
-# endif
-
-# ifdef ENABLE_CDROM_LOG
-			case IDM_LOG_CDROM:
-				cdrom_do_log ^= 1;
-				CheckMenuItem(hmenu, IDM_LOG_CDROM, cdrom_do_log ? MF_CHECKED : MF_UNCHECKED);
-				break;
-# endif
-
-# ifdef ENABLE_D86F_LOG
-			case IDM_LOG_D86F:
-				d86f_do_log ^= 1;
-				CheckMenuItem(hmenu, IDM_LOG_D86F, d86f_do_log ? MF_CHECKED : MF_UNCHECKED);
-				break;
-# endif
-
-# ifdef ENABLE_FDC_LOG
-			case IDM_LOG_FDC:
-				fdc_do_log ^= 1;
-				CheckMenuItem(hmenu, IDM_LOG_FDC, fdc_do_log ? MF_CHECKED : MF_UNCHECKED);
-				break;
-# endif
-
-# ifdef ENABLE_IDE_LOG
-			case IDM_LOG_IDE:
-				ide_do_log ^= 1;
-				CheckMenuItem(hmenu, IDM_LOG_IDE, ide_do_log ? MF_CHECKED : MF_UNCHECKED);
-				break;
-# endif
-
-# ifdef ENABLE_SERIAL_LOG
-			case IDM_LOG_SERIAL:
-				serial_do_log ^= 1;
-				CheckMenuItem(hmenu, IDM_LOG_SERIAL, serial_do_log ? MF_CHECKED : MF_UNCHECKED);
-				break;
-# endif
-
-# ifdef ENABLE_NIC_LOG
-			case IDM_LOG_NIC:
-				nic_do_log ^= 1;
-				CheckMenuItem(hmenu, IDM_LOG_NIC, nic_do_log ? MF_CHECKED : MF_UNCHECKED);
-				break;
-# endif
-#endif
-
 #ifdef ENABLE_LOG_BREAKPOINT
 			case IDM_LOG_BREAKPOINT:
 				pclog("---- LOG BREAKPOINT ----\n");
 				break;
 #endif
 
-#ifdef ENABLE_VRAM_DUMP
-			case IDM_DUMP_VRAM:
-				svga_dump_vram();
+#ifdef ENABLE_LOG_TOGGLES
+			case IDM_LOG_PCI:
+			case IDM_LOG_KEYBOARD:
+			case IDM_LOG_SERIAL:
+			case IDM_LOG_FDC:
+			case IDM_LOG_D86F:
+			case IDM_LOG_HDC:
+			case IDM_LOG_HDD:
+			case IDM_LOG_ZIP:
+			case IDM_LOG_CDROM:
+			case IDM_LOG_CDROM_IMAGE:
+			case IDM_LOG_CDROM_IOCTL:
+			case IDM_LOG_NIC:
+			case IDM_LOG_SOUND_EMU8K:
+			case IDM_LOG_SOUND_MPU401:
+			case IDM_LOG_SOUND_DEV:
+			case IDM_LOG_SCSI_BUS:
+			case IDM_LOG_SCSI_DISK:
+			case IDM_LOG_SCSI_DEV:
+			case IDM_LOG_SCSI_X54X:
+			case IDM_LOG_VOODOO:
+				SetLoggingItem(LOWORD(wParam), -1);
 				break;
 #endif
-
 			case IDM_CONFIG_LOAD:
 				plat_pause(1);
 				if (! file_dlg_st(hwnd, IDS_2160, L"", 0) &&

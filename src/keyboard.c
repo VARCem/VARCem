@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.3	2018/03/15
+ * Version:	@(#)keyboard.c	1.0.4	2018/04/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,12 +39,17 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "emu.h"
 #include "machine/machine.h"
 #include "keyboard.h"
 
 
+#ifdef ENABLE_KEYBOARD_LOG
+int	keyboard_do_log = ENABLE_KEYBOARD_LOG;
+#endif
 int64_t	keyboard_delay;
 int	keyboard_scan;
 void	(*keyboard_send)(uint16_t val);
@@ -52,15 +57,27 @@ void	(*keyboard_send)(uint16_t val);
 
 static int	recv_key[512];		/* keyboard input buffer */
 static int	oldkey[512];
-#if 0
-static int	keydelay[512];
-#endif
 static const scancode	*scan_table;	/* scancode table for keyboard */
 
 static uint8_t	caps_lock = 0;
 static uint8_t	num_lock = 0;
 static uint8_t	scroll_lock = 0;
 static uint8_t  shift = 0;
+
+
+void
+kbd_log(const char *fmt, ...)
+{
+#ifdef ENABLE_KEYBOARD_LOG
+    va_list ap;
+
+    if (keyboard_do_log) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 void
@@ -236,8 +253,8 @@ keyboard_input(int down, uint16_t scan)
     recv_key[scan >> 6] |= ((uint64_t) down << ((uint64_t) scan & 0x3fLL));
 #endif
 
-#if 0
-    pclog("Received scan code: %03X (%s)\n",
+#ifdef ENABLE_KEYBOARD_LOG
+    kbd_log("Received scan code: %03X (%s)\n",
 	scan & 0x1ff, down ? "down" : "up");
 #endif
 

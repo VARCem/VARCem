@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.4	2018/03/15
+ * Version:	@(#)keyboard_xt.c	1.0.5	2018/04/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -351,8 +351,8 @@ kbd_poll(void *priv)
     if (key_queue_start != key_queue_end && !kbd->blocked) {
 	kbd->pa = key_queue[key_queue_start];
 	picint(2);
-#if ENABLE_KEYBOARD_LOG
-	pclog("XTkbd: reading %02X from the key queue at %i\n",
+#ifdef ENABLE_KEYBOARD_LOG
+	kbd_log("XTkbd: reading %02X from the key queue at %i\n",
 				kbd->pa, key_queue_start);
 #endif
 	key_queue_start = (key_queue_start + 1) & 0x0f;
@@ -365,8 +365,8 @@ static void
 kbd_adddata(uint16_t val)
 {
     key_queue[key_queue_end] = val & 0xff;
-#if ENABLE_KEYBOARD_LOG
-    pclog("XTkbd: %02X added to key queue at %i\n",
+#ifdef ENABLE_KEYBOARD_LOG
+    kbd_log("XTkbd: %02X added to key queue at %i\n",
 				val, key_queue_end);
 #endif
     key_queue_end = (key_queue_end + 1) & 0x0f;
@@ -402,6 +402,7 @@ kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val))
 			}
 		}
 		break;
+
 	case FAKE_LSHIFT_OFF:
 		if (num_lock) {
 			if (!shift_states) {
@@ -419,6 +420,7 @@ kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val))
 			}
 		}
 		break;
+
 	default:
 		adddata(val);
 		break;
@@ -441,8 +443,8 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
     if (port != 0x61) return;
 
     if (!(kbd->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
-#if ENABLE_KEYBOARD_LOG
-	pclog("XTkbd: reset keyboard\n");
+#ifdef ENABLE_KEYBOARD_LOG
+	kbd_log("XTkbd: reset keyboard\n");
 #endif
 	key_queue_end = key_queue_start;
 	kbd_adddata(0xaa);
@@ -523,7 +525,9 @@ kbd_read(uint16_t port, void *priv)
 		break;
 
 	default:
-		pclog("XTkbd: bad read %04X\n", port);
+#ifdef ENABLE_KEYBOARD_LOG
+		kbd_log("XTkbd: bad read %04X\n", port);
+#endif
 		ret = 0xff;
     }
 

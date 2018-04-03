@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.6	2018/03/27
+ * Version:	@(#)m_olivetti_m24.c	1.0.7	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -125,26 +125,6 @@ static uint8_t	key_queue[16];
 static int	key_queue_start = 0,
 		key_queue_end = 0;
 
-
-#ifdef ENABLE_M24VID_LOG
-int m24vid_do_log = ENABLE_M24VID_LOG;
-#endif
-
-
-static void
-m24_log(const char *fmt, ...)
-{
-#ifdef ENABLE_M24VID_LOG
-    va_list ap;
-
-    if (m24vid_do_log) {
-	va_start(ap, fmt);
-	vfprintf(stdlog, fmt, ap);
-	va_end(ap);
-	fflush(stdlog);
-    }
-#endif
-}
 
 static void
 recalc_timings(olim24_t *m24)
@@ -546,14 +526,14 @@ kbd_poll(void *priv)
     if (m24->wantirq) {
 	m24->wantirq = 0;
 	picint(2);
-#if ENABLE_KEYBOARD_LOG
-	m24_log("M24: take IRQ\n");
+#ifdef ENABLE_KEYBOARD_LOG
+	kbd_log("M24: take IRQ\n");
 #endif
     }
 
     if (!(m24->status & STAT_OFULL) && key_queue_start != key_queue_end) {
-#if ENABLE_KEYBOARD_LOG
-	m24_log("Reading %02X from the key queue at %i\n",
+#ifdef ENABLE_KEYBOARD_LOG
+	kbd_log("M24: reading %02X from the key queue at %i\n",
 				m24->out, key_queue_start);
 #endif
 	m24->out = key_queue[key_queue_start];
@@ -585,15 +565,10 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 {
     olim24_t *m24 = (olim24_t *)priv;
 
-#if ENABLE_KEYBOARD_LOG
-    m24_log("M24: write %04X %02X\n", port, val);
+#ifdef ENABLE_KEYBOARD_LOG
+    kbd_log("M24: write %04X %02X\n", port, val);
 #endif
 
-#if 0
-    if (ram[8] == 0xc3) {
-	output = 3;
-    }
-#endif
     switch (port) {
 	case 0x60:
 		if (m24->param != m24->param_total) {
@@ -619,7 +594,10 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 						break;
 					
 					default:
-						m24_log("M24: bad keyboard command complete %02X\n", m24->command);
+#ifdef ENABLE_KEYBOARD_LOG
+						kbd_log("M24: bad keyboard command complete %02X\n", m24->command);
+#endif
+						break;
 				}
 			}
 		} else {
@@ -643,7 +621,10 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 					break;
 
 				default:
-					m24_log("M24: bad keyboard command %02X\n", val);
+#ifdef ENABLE_KEYBOARD_LOG
+					kbd_log("M24: bad keyboard command %02X\n", val);
+#endif
+					break;
 			}
 		}
 		break;
@@ -696,7 +677,10 @@ kbd_read(uint16_t port, void *priv)
 		break;
 
 	default:
-		m24_log("\nBad M24 keyboard read %04X\n", port);
+#ifdef ENABLE_KEYBOARD_LOG
+		kbd_log("\nBad M24 keyboard read %04X\n", port);
+#endif
+		break;
     }
 
     return(ret);
@@ -882,6 +866,7 @@ machine_olim24_init(const machine_t *model, void *arg)
 
 
 #if defined(DEV_BRANCH) && defined(USE_PORTABLE3)
+/* Compaq Portable III also seems to use this. */
 void
 machine_olim24_video_init(void)
 {

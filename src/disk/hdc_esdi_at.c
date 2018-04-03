@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.6	2018/04/01
+ * Version:	@(#)hdc_esdi_at.c	1.0.6	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -122,7 +122,8 @@ typedef struct {
 } esdi_t;
 
 
-static __inline void irq_raise(esdi_t *esdi)
+static __inline void
+irq_raise(esdi_t *esdi)
 {
     /* If not already pending.. */
     if (! esdi->irqstat) {
@@ -138,7 +139,8 @@ static __inline void irq_raise(esdi_t *esdi)
 }
 
 
-static __inline void irq_lower(esdi_t *esdi)
+static __inline void
+irq_lower(esdi_t *esdi)
 {
     /* If raised.. */
     if (esdi->irqstat) {
@@ -164,12 +166,16 @@ get_sector(esdi_t *esdi, off64_t *addr)
     int c, h, s;
 
     if (esdi->head > heads) {
-	pclog("esdi_get_sector: past end of configured heads\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("esdi_get_sector: past end of configured heads\n");
+#endif
 	return(1);
     }
 
     if (esdi->sector >= sectors+1) {
-	pclog("esdi_get_sector: past end of configured sectors\n");
+#ifdef ENABLE_HDC_LOG
+	hdc_log("esdi_get_sector: past end of configured sectors\n");
+#endif
 	return(1);
     }
 
@@ -238,8 +244,8 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 {
     esdi_t *esdi = (esdi_t *)priv;
 
-#if ENABLE_HDC_LOG > 1
-    pclog("WD1007 write(%04x, %02x)\n", port, val);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("WD1007 write(%04x, %02x)\n", port, val);
 #endif
 
     switch (port) {
@@ -282,8 +288,8 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 		esdi->command = val;
 		esdi->error = 0;
 
-#if ENABLE_HDC_LOG
-		pclog("WD1007: command %02x\n", val & 0xf0);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1007: command %02x\n", val & 0xf0);
 #endif
 		switch (val & 0xf0) {
 			case CMD_RESTORE:
@@ -374,7 +380,9 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 						break;
 
 					default:
-						pclog("WD1007: bad command %02X\n", val);
+#ifdef ENABLE_HDC_LOG
+						hdc_log("WD1007: bad command %02X\n", val);
+#endif
 					case 0xe8: /*???*/
 						esdi->status = STAT_BUSY;
 						timer_clock();
@@ -478,8 +486,8 @@ esdi_read(uint16_t port, void *priv)
 		break;
     }
 
-#if ENABLE_HDC_LOG > 1
-    pclog("WD1007 read(%04x) = %02x\n", port, temp);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("WD1007 read(%04x) = %02x\n", port, temp);
 #endif
 
     return(temp);
@@ -508,8 +516,8 @@ esdi_callback(void *priv)
 	return;
     }
 
-#if ENABLE_HDC_LOG
-    pclog("WD1007: command %02x\n", esdi->command);
+#ifdef ENABLE_HDC_LOG
+    hdc_log("WD1007: command %02x\n", esdi->command);
 #endif
 
     switch (esdi->command) {
@@ -656,8 +664,8 @@ esdi_callback(void *priv)
 
 		drive->cfg_spt = esdi->secount;
 		drive->cfg_hpc = esdi->head+1;
-#if ENABLE_HDC_LOG
-		pclog("WD1007: parameters: spt=%i hpc=%i\n", drive->cfg_spt,drive->cfg_hpc);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1007: parameters: spt=%i hpc=%i\n", drive->cfg_spt,drive->cfg_hpc);
 #endif
 		if (! esdi->secount)
 			fatal("WD1007: secount=0\n");
@@ -697,8 +705,11 @@ esdi_callback(void *priv)
 				break;
 
 			default:
-				pclog("WD1007: bad read config %02x\n",
+#ifdef ENABLE_HDC_LOG
+				hdc_log("WD1007: bad read config %02x\n",
 						esdi->cylinder >> 8);
+#endif
+				break;
 		}
 		esdi->status = STAT_READY|STAT_DSC;
 		irq_raise(esdi);
@@ -754,7 +765,9 @@ esdi_callback(void *priv)
 		break;
 
 	default:
-		pclog("WD1007: callback on unknown command %02x\n", esdi->command);
+#ifdef ENABLE_HDC_LOG
+		hdc_log("WD1007: callback on unknown command %02x\n", esdi->command);
+#endif
 		/*FALLTHROUGH*/
 
 	case 0xe8:
@@ -774,7 +787,9 @@ loadhd(esdi_t *esdi, int hdd_num, int d, const wchar_t *fn)
     drive_t *drive = &esdi->drives[hdd_num];
 
     if (! hdd_image_load(d)) {
-	pclog("WD1007: drive %d not present!\n", d);
+#ifdef ENABLE_HDC_LOG
+	hdc_log("WD1007: drive %d not present!\n", d);
+#endif
 	drive->present = 0;
 	return;
     }

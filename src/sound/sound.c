@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.4	2018/03/31
+ * Version:	@(#)sound.c	1.0.5	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../device.h"
 #include "../timer.h"
@@ -77,9 +79,12 @@ typedef struct {
 } sound_handler_t;
 
 
-int sound_card_current = 0;
-int sound_pos_global = 0;
-int sound_gain = 0;
+#ifdef ENABLE_SOUND_DEV_LOG
+int	sound_dev_do_log = ENABLE_SOUND_DEV_LOG;
+#endif
+int	sound_card_current = 0;
+int	sound_pos_global = 0;
+int	sound_gain = 0;
 volatile int soundon = 1;
 
 
@@ -123,6 +128,21 @@ static const SOUND_CARD sound_cards[] =
     { "[PCI] Sound Blaster PCI 128",    "sbpci128",  &es1371_device},
     { "",			"",		NULL			}
 };
+
+
+void
+snddev_log(const char *fmt, ...)
+{
+#ifdef ENABLE_SOUND_DEV_LOG
+    va_list ap;
+
+    if (sound_dev_do_log) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 int sound_card_available(int card)
