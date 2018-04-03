@@ -10,7 +10,7 @@
 #		settings, so we can avoid changing the main one for all of
 #		our local setups.
 #
-# Version:	@(#)Makefile.local	1.0.4	2018/03/26
+# Version:	@(#)Makefile.local	1.0.5	2018/04/02
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -64,32 +64,107 @@ BUILD	:= mingw/Makefile.MinGW
 STUFF	:=
 
 # Add feature selections here.
-# -DANSI_CFG forces the config file to ANSI encoding.
-# -DENABLE_VRAM_DUMP enables Video Ram dumping.
-# -DENABLE_LOG_BREAKPOINT enables extra logging.
-# -DENABLE_KEYBOARD_AMSTRAD_LOG=N sets logging level at N.
-# -DENABLE_KEYBOARD_AT_LOG=N sets logging level at N.
-# -DENABLE_KEYBOARD_LOG=N sets logging level at N.
-# -DENABLE_PCI_LOG=N sets logging level at N.
-# -DENABLE_CDROM_LOG=N sets logging level at N.
-# -DENABLE_CDROM_IMAGE_LOG=N sets logging level at N.
-# -DENABLE_CDROM_IOCTL_LOG=N sets logging level at N.
-# -DENABLE_HDD_LOG=N sets logging level at N.
-# -DENABLE_IDE_LOG=N sets logging level at N.
-# -DENABLE_FDC_LOG=N sets logging level at N.
-# -DENABLE_D86F_LOG=N sets logging level at N.
-# -DENABLE_NIC_LOG=N sets logging level at N.
-# -DENABLE_SCSI_BUS_LOG=N sets logging level at N.
-# -DENABLE_SCSI_DISK_LOG=N sets logging level at N.
-# -DENABLE_X54X_LOG=N sets logging level at N.
-# -DENABLE_AHA154X_LOG=N sets logging level at N.
-# -DENABLE_BUSLOGIC_LOG=N sets logging level at N.
-# -DENABLE_NCR5380_LOG=N sets logging level at N.
-# -DENABLE_NCR53C810_LOG=N sets logging level at N.
-# -DENABLE_AUDIOPCI_LOG=N sets logging level at N.
-# -DENABLE_EMU8K_LOG=N sets logging level at N.
-# -DENABLE_VOODOO_LOG=N sets logging level at N.
-# -DENABLE_SERIAL_LOG=N sets logging level at N.
+# -DANSI_CFG			forces the config file to ANSI encoding
+# -DENABLE_LOG_BREAKPOINT	enables setting of breakpoints in the logfile
+# -DENABLE_PCI_LOG=n		enables logging for that module, sets level n
+# -DENABLE_KEYBOARD_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SERIAL_LOG=n		enables logging for that module, sets level n
+# -DENABLE_FDC_LOG=n		enables logging for that module, sets level n
+# -DENABLE_D86F_LOG=n		enables logging for that module, sets level n
+# -DENABLE_HDC_LOG=n		enables logging for that module, sets level n
+# -DENABLE_HDD_LOG=n		enables logging for that module, sets level n
+# -DENABLE_ZIP_LOG=n		enables logging for that module, sets level n
+# -DENABLE_CDROM_LOG=n		enables logging for that module, sets level n
+# -DENABLE_CDROM_IMAGE_LOG=n	enables logging for that module, sets level n
+# -DENABLE_CDROM_IOCTL_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SOUND_EMU8K_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SOUND_MPU401_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SOUND_DEV_LOG=n	enables logging for that module, sets level n
+# -DENABLE_NIC_LOG=n		enables logging for that module, sets level n
+# -DENABLE_SCSI_BUS_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SCSI_DISK_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SCSI_DEV_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SCSI_X54X_LOG=n	enables logging for that module, sets level n
+# -DENABLE_VOODOO_LOG=n		enables logging for that module, sets level n
+
+
+ifeq ($(PLAT), WIN)
+WX		:= n
+else
+WX		:= y
+endif
+
+#ifeq ($(PLAT), WIN)
+# VNC_PATH	:= P:\RETRO\VNC
+#else
+#VNC_PATH	:= /project/retro/vnc-0.7
+#endif
+
+
+# Options for works-in-progress.
+EXFLAGS		:=
+EXPATH		:= waltje
+EXINC		:= waltje
+ifeq ($(PLAT), WIN)
+EXOBJ		+= #win_opendir.o win_serial.o
+endif
+#SERIAL		:= uart.o
+#EXOBJ		+= scsi_wd33c93.o
+
+ifeq ($(WX), local)
+WX_PATH         := /home/wxwidgets
+WX_CONFIG	:= $(WX_PATH)/bin/wx-config
+WX_FLAGS	:= -pthread \
+		   -I$(WX_PATH)/lib/wx/include/gtk2-unicode-3.0 \
+		   -I$(WX_PATH)/include/wx-3.0 \
+		   -D_FILE_OFFSET_BITS=64 -D__WXGTK__
+WX_LIBS		:= -L$(WX_PATH)/lib -pthread \
+		   $(WX_PATH)/lib/libwx_gtk2u_xrc-3.0.a \
+		   $(WX_PATH)/lib/libwx_gtk2u_qa-3.0.a \
+		   $(WX_PATH)/lib/libwx_baseu_net-3.0.a \
+		   $(WX_PATH)/lib/libwx_gtk2u_html-3.0.a \
+		   $(WX_PATH)/lib/libwx_gtk2u_adv-3.0.a \
+		   $(WX_PATH)/lib/libwx_gtk2u_core-3.0.a \
+		   $(WX_PATH)/lib/libwx_baseu_xml-3.0.a \
+		   $(WX_PATH)/lib/libwx_baseu-3.0.a \
+		   -lgtk-x11-2.0 -lgdk-x11-2.0 \
+		   -lpangocairo-1.0 -lpango-1.0 -latk-1.0 \
+		   -lcairo-gobject -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 \
+		   -lgobject-2.0 -lgthread-2.0 -pthread -lglib-2.0 -lX11 \
+		   -lXxf86vm -lSM -lpangocairo-1.0 \
+		   -lpango-1.0 -latk-1.0 -lcairo-gobject -lcairo \
+		   -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0 \
+		   -lpng -lz -ljpeg -lwxregexu-3.0 -lwxtiff-3.0 -lz -ldl -lm 
+endif
+
+
+#########################################################################
+#	    Include the master Makefile.MinGW for the rest.		#
+#########################################################################
+ifeq ($(PLAT), WIN)
+include win/mingw/Makefile.MinGW
+else
+include unix/Makefile.linux
+endif
+
+
+# Local targets.
+install:	all
+		@echo Installing targets..
+ifeq ($(PLAT), WIN)
+		@copy *.exe $(LOCAL) /y >NUL
+else
+endif
+
+test:
+		@echo Build=$(BUILD) Commit=$(COMMIT) Ustream=$(UPSTREAM)
+
+pull:
+		@echo Pulling from GIT master..
+		@$(GIT) pull -v --progress "origin" master
+
+
+# End of Makefile.waltje.
 EXTRAS		:=
 
 
