@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.10	2018/03/31
+ * Version:	@(#)win.c	1.0.11	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,6 +37,7 @@
  *   USA.
  */
 #define UNICODE
+#define _WIN32_WINNT 0x0501
 #include <windows.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -223,27 +224,26 @@ plat_get_string(int i)
 {
     LPTSTR str;
 
-    if ((i >= 2048) && (i <= 3071)) {
+    if ((i >= 2048) && (i <= 3071))
 	str = lpRCstr2048[i-2048].str;
-    } else if ((i >= 4096) && (i <= 4351)) {
+      else if ((i >= 4096) && (i <= 4351))
 	str = lpRCstr4096[i-4096].str;
-    } else if ((i >= 4352) && (i <= 4607)) {
+      else if ((i >= 4352) && (i <= 4607))
 	str = lpRCstr4352[i-4352].str;
-    } else if ((i >= 4608) && (i <= 5119)) {
+      else if ((i >= 4608) && (i <= 5119))
 	str = lpRCstr4608[i-4608].str;
-    } else if ((i >= 5120) && (i <= 5375)) {
+      else if ((i >= 5120) && (i <= 5375))
 	str = lpRCstr5120[i-5120].str;
-    } else if ((i >= 5376) && (i <= 5631)) {
+      else if ((i >= 5376) && (i <= 5631))
 	str = lpRCstr5376[i-5376].str;
-    } else if ((i >= 5632) && (i <= 5887)) {
+      else if ((i >= 5632) && (i <= 5887))
 	str = lpRCstr5632[i-5632].str;
-    } else if ((i >= 5888) && (i <= 6143)) {
+      else if ((i >= 5888) && (i <= 6143))
 	str = lpRCstr5888[i-5888].str;
-    } else if ((i >= 6144) && (i <= 7167)) {
+      else if ((i >= 6144) && (i <= 7167))
 	str = lpRCstr6144[i-6144].str;
-    } else {
+      else
 	str = lpRCstr7168[i-7168].str;
-    }
 
     return((wchar_t *)str);
 }
@@ -338,64 +338,24 @@ plat_console(int init)
     if (! AttachConsole(ATTACH_PARENT_PROCESS)) {
 	/* Parent has no console, create one. */
 	if (! AllocConsole()) {
-#ifdef _DEBUG
-		fp = fopen("error.txt", "w");
-		fprintf(fp, "AllocConsole failed: %lu\n", GetLastError());
-		fclose(fp);
-#endif
+		/* Cannot create console, just give up. */
 		return;
 	}
     }
 
-    if ((h = GetStdHandle(STD_OUTPUT_HANDLE)) == NULL) {
-#ifdef _DEBUG
-	fp = fopen("error.txt", "w");
-	fprintf(fp, "GetStdHandle(OUT) failed: %lu\n", GetLastError());
-	fclose(fp);
-#endif
-	return;
-    }
-    i = _open_osfhandle((intptr_t)h, _O_TEXT);
-    if (i != -1) {
-	fp = _fdopen(i, "w");
-	if (fp == NULL) {
-#ifdef _DEBUG
-		fp = fopen("error.txt", "w");
-		fprintf(fp, "FdOpen(%i) failed: %lu\n", i, GetLastError());
-		fclose(fp);
-#endif
-		return;
-	}
-	setvbuf(fp, NULL, _IONBF, 1);
-	*stdout = *fp;
-    } else {
-#ifdef _DEBUG
-	fp = fopen("error.txt", "w");
-	fprintf(fp, "GetOSfHandle(%p) failed: %lu\n", h, GetLastError());
-	fclose(fp);
-#endif
-    }
-
-#if NOTUSED
-    h = GetStdHandle(STD_ERROR_HANDLE);
-    if (h != NULL) {
-	i = _open_osfhandle((intptr_t)h, _O_TEXT);
-	if (i != -1) {
-		fp = _fdopen(i, "w");
-		if (fp != NULL) {
-			setvbuf(fp, NULL, _IONBF, 1);
-			*stderr = *fp;
+    fp = NULL;
+    if ((h = GetStdHandle(STD_OUTPUT_HANDLE)) != NULL) {
+	/* We got the handle, now open a file descriptor. */
+	if ((i = _open_osfhandle((intptr_t)h, _O_TEXT)) != -1) {
+		/* We got a file descriptor, now allocate a new stream. */
+		if ((fp = _fdopen(i, "w")) != NULL) {
+			/* Got the stream, re-initialize stdout with it. */
+			(void)freopen("CONOUT$", "w", stdout);
+			setvbuf(stdout, NULL, _IONBF, 0);
+			fflush(stdout);
 		}
 	}
     }
-
-    /* Set up stdin as well. */
-    h = GetStdHandle(STD_INPUT_HANDLE);
-    i = _open_osfhandle((intptr_t)h, _O_TEXT);
-    fp = _fdopen(i, "r");
-    setvbuf(fp, NULL, _IONBF, 128);
-    *stdin = *fp;
-#endif
 }
 
 

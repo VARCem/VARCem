@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.18	2018/04/01
+ * Version:	@(#)pc.c	1.0.19	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -393,22 +393,22 @@ pc_init(int argc, wchar_t *argv[])
      * can test this by looking for the 'roms' folder.
      */
     wcscpy(path, emu_path);
-    p = plat_get_basename(path);
     plat_append_slash(path);
     wcscat(path, ROMS_PATH);
     if (! plat_dir_check(path)) {
 	/* No 'roms' folder found, so go up one level. */
-	if (p != NULL)
+	wcscpy(path, emu_path);
+	if ((p = plat_get_basename(path)) != NULL)
 		*p = L'\0';
 	plat_append_slash(path);
 	wcscat(path, ROMS_PATH);
 	if (plat_dir_check(path)) {
 		if (p != NULL)
 			*p = L'\0';
-		plat_append_slash(path);
 		wcscpy(emu_path, path);
 	}
     }
+    plat_append_slash(emu_path);
 
     /*
      * Get the current working directory.
