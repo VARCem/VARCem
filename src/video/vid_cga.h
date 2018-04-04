@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.2	2018/03/15
+ * Version:	@(#)vid_cga.h	1.0.3	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,53 +40,61 @@
 # define VIDEO_CGA_H
 
 
-typedef struct cga_t
-{
-        mem_mapping_t mapping;
-        
-        int crtcreg;
-        uint8_t crtc[32];
-        
-        uint8_t cgastat;
-        
-        uint8_t cgamode, cgacol;
+typedef struct {
+    mem_mapping_t mapping;
 
-	int fontbase;
-        int linepos, displine;
-        int sc, vc;
-        int cgadispon;
-        int con, coff, cursoron, cgablink;
-        int vsynctime, vadj;
-        uint16_t ma, maback;
-        int oddeven;
+    int		crtcreg;
+    uint8_t	crtc[32];
 
-        int64_t dispontime, dispofftime;
-        int64_t vidtime;
-        
-        int firstline, lastline;
-        
-        int drawcursor;
-        
-        uint8_t *vram;
-        
-        uint8_t charbuffer[256];
+    uint8_t	cgastat;
 
-	int revision;
-	int composite;
-	int snow_enabled;
-	int rgb_type;
+    uint8_t	cgamode,
+		cgacol;
+
+    int		fontbase;
+    int		linepos,
+		displine;
+    int		sc, vc;
+    int		cgadispon;
+    int		con, coff, cursoron, cgablink;
+    int		vsynctime, vadj;
+    uint16_t	ma, maback;
+    int		oddeven;
+
+    int64_t	dispontime,
+		dispofftime;
+    int64_t	vidtime;
+
+    int		firstline,
+		lastline;
+
+    int		drawcursor;
+
+    uint8_t	*vram;
+
+    uint8_t	charbuffer[256];
+
+    int		revision;
+    int		composite;
+    int		snow_enabled;
+    int		rgb_type;
+    int		font_type;
 } cga_t;
 
-void    cga_init(cga_t *cga);
-void    cga_out(uint16_t addr, uint8_t val, void *p);
-uint8_t cga_in(uint16_t addr, void *p);
-void    cga_write(uint32_t addr, uint8_t val, void *p);
-uint8_t cga_read(uint32_t addr, void *p);
-void    cga_recalctimings(cga_t *cga);
-void    cga_poll(void *p);
 
+#ifdef EMU_DEVICE_H
 extern const device_config_t cga_config[];
 extern const device_t cga_device;
+#endif
+
+
+extern void    cga_init(cga_t *cga);
+extern void    cga_out(uint16_t addr, uint8_t val, void *p);
+extern uint8_t cga_in(uint16_t addr, void *p);
+extern void    cga_write(uint32_t addr, uint8_t val, void *p);
+extern uint8_t cga_read(uint32_t addr, void *p);
+extern void    cga_recalctimings(cga_t *cga);
+extern void    cga_poll(void *p);
 
 
 #endif	/*VIDEO_CGA_H*/

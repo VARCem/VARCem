@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.2	2018/03/15
+ * Version:	@(#)vid_cga.c	1.0.3	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -483,52 +483,68 @@ void cga_poll(void *p)
         }
 }
 
-void cga_init(cga_t *cga)
+
+void
+cga_init(cga_t *cga)
 {
-        cga->composite = 0;
+    cga->composite = 0;
 }
 
-void *cga_standalone_init(const device_t *info)
+
+void *
+cga_standalone_init(const device_t *info)
 {
-        int display_type;
-        cga_t *cga = malloc(sizeof(cga_t));
-        memset(cga, 0, sizeof(cga_t));
+    int display_type;
+    cga_t *cga = malloc(sizeof(cga_t));
 
-        display_type = device_get_config_int("display_type");
-        cga->composite = (display_type != CGA_RGB);
-        cga->revision = device_get_config_int("composite_type");
-        cga->snow_enabled = device_get_config_int("snow_enabled");
+    memset(cga, 0x00, sizeof(cga_t));
 
-        cga->vram = malloc(0x4000);
+    display_type = device_get_config_int("display_type");
+    cga->composite = (display_type != CGA_RGB);
+    cga->revision = device_get_config_int("composite_type");
+    cga->snow_enabled = device_get_config_int("snow_enabled");
+    cga->font_type = device_get_config_int("font_type");
 
-	cga_comp_init(cga->revision);
-        timer_add(cga_poll, &cga->vidtime, TIMER_ALWAYS_ENABLED, cga);
-        mem_mapping_add(&cga->mapping, 0xb8000, 0x08000, cga_read, NULL, NULL, cga_write, NULL, NULL,  NULL, MEM_MAPPING_EXTERNAL, cga);
-        io_sethandler(0x03d0, 0x0010, cga_in, NULL, NULL, cga_out, NULL, NULL, cga);
+    cga->vram = malloc(0x4000);
 
-        overscan_x = overscan_y = 16;
+    cga_comp_init(cga->revision);
+    timer_add(cga_poll, &cga->vidtime, TIMER_ALWAYS_ENABLED, cga);
+    mem_mapping_add(&cga->mapping, 0xb8000, 0x08000,
+		    cga_read,NULL,NULL, cga_write,NULL,NULL,
+		    NULL, MEM_MAPPING_EXTERNAL, cga);
+    io_sethandler(0x03d0, 16,
+		  cga_in,NULL,NULL, cga_out,NULL,NULL, cga);
 
-        cga->rgb_type = device_get_config_int("rgb_type");
-	cga_palette = (cga->rgb_type << 1);
-	cgapal_rebuild();
+    overscan_x = overscan_y = 16;
 
-        return cga;
+    cga->rgb_type = device_get_config_int("rgb_type");
+    cga_palette = (cga->rgb_type << 1);
+    cgapal_rebuild();
+
+    loadfont(L"video/ibm/cga/cga.rom", (cga->font_type) ? 8 : 2);
+
+    return cga;
 }
 
-void cga_close(void *p)
-{
-        cga_t *cga = (cga_t *)p;
 
-        free(cga->vram);
-        free(cga);
+void
+cga_close(void *p)
+{
+    cga_t *cga = (cga_t *)p;
+
+    free(cga->vram);
+    free(cga);
 }
 
-void cga_speed_changed(void *p)
-{
-        cga_t *cga = (cga_t *)p;
 
-        cga_recalctimings(cga);
+void
+cga_speed_changed(void *p)
+{
+    cga_t *cga = (cga_t *)p;
+
+    cga_recalctimings(cga);
 }
+
 
 const device_config_t cga_config[] =
 {
@@ -584,6 +600,20 @@ const device_config_t cga_config[] =
                 }
         },
         {
+                "font_type", "Font Selection", CONFIG_SELECTION, "", 1,
+                {
+                        {
+                                "Thin", 0
+                        },
+                        {
+                                "Thick", 1
+                        },
+                        {
+                                ""
+                        }
+                }
+        },
+        {
                 "snow_enabled", "Snow emulation", CONFIG_BINARY, "", 1
         },
         {
@@ -591,16 +621,14 @@ const device_config_t cga_config[] =
         }
 };
 
-const device_t cga_device =
-{
-        "CGA",
-        DEVICE_ISA, 0,
-        cga_standalone_init,
-        cga_close,
-	NULL,
-        NULL,
-        cga_speed_changed,
-        NULL,
-        NULL,
-        cga_config
+
+const device_t cga_device = {
+    "CGA",
+    DEVICE_ISA, 0,
+    cga_standalone_init, cga_close, NULL,
+    NULL,
+    cga_speed_changed,
+    NULL,
+    NULL,
+    cga_config
 };

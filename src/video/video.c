@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.10	2018/03/31
+ * Version:	@(#)video.c	1.0.11	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -727,10 +727,12 @@ loadfont(wchar_t *s, int format)
 		for (c=0; c<256; c++)
 			for (d=0; d<8; d++)
 				fontdatm[c][d+8] = fgetc(f);
+#if 0
 		(void)fseek(f, 4096+2048, SEEK_SET);
 		for (c=0; c<256; c++)
 			for (d=0; d<8; d++)
 				fontdat[c][d] = fgetc(f);
+#endif
 		break;
 
 	case 1:		/* PC200 */
@@ -748,8 +750,12 @@ loadfont(wchar_t *s, int format)
 		}
 		break;
 
-	default:
-	case 2:		/* CGA */
+	case 2:		/* CGA, thin font */
+	case 8:		/* CGA, thick font */
+		if (format == 8) {
+			/* Use the second ("thick") font in the ROM. */
+			(void)fseek(f, 2048, SEEK_SET);
+		}
 		for (c=0; c<256; c++)
 		       	for (d=0; d<8; d++)
 				fontdat[c][d] = fgetc(f);
