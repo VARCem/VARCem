@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.5	2018/03/31
+ * Version:	@(#)m_tandy.c	1.0.6	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1374,75 +1374,6 @@ vid_init(tandy_t *dev)
 }
 
 
-static const device_config_t vid_config[] = {
-    {
-	"display_type", "Display type", CONFIG_SELECTION, "", TANDY_RGB,
-	{
-		{
-			"RGB", TANDY_RGB
-		},
-		{
-			"Composite", TANDY_COMPOSITE
-		},
-		{
-			""
-		}
-	}
-    },
-    {
-	"", "", -1
-    }
-};
-
-
-static const device_t vid_device = {
-    "Tandy 1000",
-    0, 0,
-    NULL, vid_close, NULL,
-    NULL,
-    vid_speed_changed,
-    NULL,
-    NULL,
-    vid_config
-};
-
-static const device_t vid_device_hx = {
-    "Tandy 1000 HX",
-    0, 0,
-    NULL, vid_close, NULL,
-    NULL,
-    vid_speed_changed,
-    NULL,
-    NULL,
-    vid_config
-};
-
-static const device_t vid_device_sl = {
-    "Tandy 1000SL2",
-    0, 1,
-    NULL, vid_close, NULL,
-    NULL,
-    vid_speed_changed,
-    NULL,
-    NULL,
-    NULL
-};
-
-
-const device_t *
-tandy1k_get_device(void)
-{
-    return &vid_device;
-}
-
-
-const device_t *
-tandy1k_hx_get_device(void)
-{
-    return &vid_device_hx;
-}
-
-
 static void
 eep_write(uint16_t addr, uint8_t val, void *priv)
 {
@@ -1701,6 +1632,61 @@ init_rom(tandy_t *dev)
 }
 
 
+static const device_config_t vid_config[] = {
+    {
+	"display_type", "Display type", CONFIG_SELECTION, "", TANDY_RGB,
+	{
+		{
+			"RGB", TANDY_RGB
+		},
+		{
+			"Composite", TANDY_COMPOSITE
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
+};
+
+
+const device_t m_tandy1k_device = {
+    "Tandy 1000",
+    0, 0,
+    NULL, vid_close, NULL,
+    NULL,
+    vid_speed_changed,
+    NULL,
+    NULL,
+    vid_config
+};
+
+const device_t m_tandy1k_hx_device = {
+    "Tandy 1000 HX",
+    0, 0,
+    NULL, vid_close, NULL,
+    NULL,
+    vid_speed_changed,
+    NULL,
+    NULL,
+    vid_config
+};
+
+const device_t m_tandy1k_sl2_device = {
+    "Tandy 1000SL2",
+    0, 1,
+    NULL, vid_close, NULL,
+    NULL,
+    vid_speed_changed,
+    NULL,
+    NULL,
+    NULL
+};
+
+
 void
 machine_tandy1k_init(const machine_t *model, void *arg)
 {
@@ -1732,7 +1718,7 @@ machine_tandy1k_init(const machine_t *model, void *arg)
 		io_sethandler(0x00a0, 1,
 			      tandy_read,NULL,NULL,tandy_write,NULL,NULL,dev);
 		vid_init(dev);
-		device_add_ex(&vid_device, dev);
+		device_add_ex(&m_tandy1k_device, dev);
 		device_add(&sn76489_device);
 		break;
 
@@ -1740,7 +1726,7 @@ machine_tandy1k_init(const machine_t *model, void *arg)
 		io_sethandler(0x00a0, 1,
 			      tandy_read,NULL,NULL,tandy_write,NULL,NULL,dev);
 		vid_init(dev);
-		device_add_ex(&vid_device, dev);
+		device_add_ex(&m_tandy1k_hx_device, dev);
 		device_add(&ncr8496_device);
 		device_add(&eep_device);
 		break;
@@ -1751,7 +1737,7 @@ machine_tandy1k_init(const machine_t *model, void *arg)
 		io_sethandler(0xffe8, 8,
 			      tandy_read,NULL,NULL,tandy_write,NULL,NULL,dev);
 		vid_init(dev);
-		device_add_ex(&vid_device_sl, dev);
+		device_add_ex(&m_tandy1k_sl2_device, dev);
 		device_add(&pssj_device);
 		device_add(&eep_device);
     }

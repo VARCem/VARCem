@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.11	2018/03/30
+ * Version:	@(#)mem.c	1.0.12	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -142,11 +142,7 @@ static mem_mapping_t	base_mapping;
 static mem_mapping_t	ram_remapped_mapping;
 static mem_mapping_t	ram_split_mapping;
 
-#if FIXME
-static uint8_t		ff_array[0x1000];
-#else
 static uint8_t		ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
-#endif
 
 static int		port_92_reg = 0;
 
@@ -483,11 +479,7 @@ getpccache(uint32_t a)
 
     pclog("Bad getpccache %08X\n", a);
 
-#if 0
-    return &ff_array[0-(uintptr_t)(a2 & ~0xfff)];
-#else
     return (uint8_t *)&ff_pccache;
-#endif
 }
 
 
@@ -1621,9 +1613,7 @@ pclog("MEM: reset: previous pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 	memset(pages, 0x00, m*sizeof(page_t));
 #if DYNAMIC_TABLES
 pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
-#endif
 
-#if DYNAMIC_TABLES
 	/* Allocate the (new) lookup tables. */
 	if (page_lookup != NULL) free(page_lookup);
 	page_lookup = (page_t **)malloc(pages_sz*sizeof(page_t *));
@@ -1731,6 +1721,7 @@ mem_init(void)
     /* Perform a one-time init. */
     ram = rom = NULL;
     pages = NULL;
+    pages_sz = 0;
 #if DYNAMIC_TABLES
     page_lookup = NULL;
     readlookup2 = NULL;
@@ -1746,10 +1737,6 @@ mem_init(void)
 #endif
 
     memset(ram_mapped_addr, 0x00, 64 * sizeof(uint32_t));
-
-#if FIXME
-    memset(ff_array, 0xff, sizeof(ff_array));
-#endif
 
     /* Reset the memory state. */
     mem_reset();
@@ -1806,8 +1793,10 @@ mem_reset_page_blocks(void)
 	pages[c].write_b = mem_write_ramb_page;
 	pages[c].write_w = mem_write_ramw_page;
 	pages[c].write_l = mem_write_raml_page;
-	pages[c].block[0] = pages[c].block[1] = pages[c].block[2] = pages[c].block[3] = NULL;
-	pages[c].block_2[0] = pages[c].block_2[1] = pages[c].block_2[2] = pages[c].block_2[3] = NULL;
+	pages[c].block[0] = pages[c].block[1] =
+			    pages[c].block[2] = pages[c].block[3] = NULL;
+	pages[c].block_2[0] = pages[c].block_2[1] =
+			      pages[c].block_2[2] = pages[c].block_2[3] = NULL;
     }
 }
 

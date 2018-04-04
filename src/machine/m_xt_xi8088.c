@@ -8,7 +8,7 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xt_xi8088.c	1.0.4	2018/03/21
+ * Version:	@(#)m_xt_xi8088.c	1.0.5	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -110,17 +110,6 @@ xi8088_bios_128kb(void)
 }
 
 
-static void *
-xi8088_init(const device_t *info)
-{
-    /* even though the bios by default turns the turbo off when controlling by hotkeys, we always start at full speed */
-    xi8088.turbo = 1;
-    xi8088.turbo_setting = device_get_config_int("turbo_setting");
-
-    return(&xi8088);
-}
-
-
 static const device_config_t xi8088_config[] =
 {
 	{
@@ -146,10 +135,10 @@ static const device_config_t xi8088_config[] =
 };
 
 
-const device_t xi8088_device = {
+const device_t m_xi8088_device = {
     "Xi8088",
     0, 0,
-    xi8088_init, NULL, NULL,
+    NULL, NULL, NULL,
     NULL,
     NULL,
     NULL,
@@ -158,20 +147,24 @@ const device_t xi8088_device = {
 };
 
 
-const device_t *
-xi8088_get_device(void)
-{
-    return(&xi8088_device);
-}
-
-
 void
 machine_xt_xi8088_init(const machine_t *model, void *arg)
 {
+    /* Initialize local state. */
+    memset(&xi8088, 0x00, sizeof(xi8088_t));
+
     if (biosmask < 0x010000)
 	xi8088_bios_128kb_set(0);
      else
 	xi8088_bios_128kb_set(1);
+
+    /*
+     * Get the selected Turbo Speed setting.
+     * Even though the bios by default turns the turbo off when
+     * controlling by hotkeys, we always start at full speed.
+     */
+    xi8088.turbo = 1;
+    xi8088.turbo_setting = device_get_config_int("turbo_setting");
 
     /*
      * TODO: set UMBs?

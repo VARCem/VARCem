@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.13	2018/03/29
+ * Version:	@(#)machine.h	1.0.14	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -208,19 +208,19 @@ typedef struct _machine_ {
 #else
 	void		*cpus;
 #endif
-    }		cpu[5];
-    int		fixed_vidcard;	/* FIXME: change to "fixed_flags" */
-    int		flags;
-    int		min_ram, max_ram;
-    int		ram_granularity;
-    int		nvrsz;
-    void	(*init)(const struct _machine_ *, void *);
+    }			cpu[5];
+    int			fixed_vidcard;	/* FIXME: change to "fixed_flags" */
+    int			flags;
+    int			min_ram, max_ram;
+    int			ram_granularity;
+    int			nvrsz;
+    void		(*init)(const struct _machine_ *, void *);
 #ifdef EMU_DEVICE_H
-    const device_t	*(*get_device)(void);
+    const device_t	*device;
 #else
-    const void	*get_device;
+    const void		*device;
 #endif
-    void	(*close)(void);
+    void		(*close)(void);
 } machine_t;
 
 
@@ -248,7 +248,7 @@ extern const device_t	*machine_getdevice(int machine);
 #endif
 extern int	machine_getromset_ex(int m);
 extern char	*machine_get_internal_name_ex(int m);
-extern int	machine_get_nvrmask(int m);
+//extern int	machine_get_nvrmask(int m);
 extern void	machine_close(void);
 
 
@@ -270,6 +270,10 @@ extern void	machine_at_t3100e_init(const machine_t *, void *);
 
 extern void	machine_at_p54tp4xe_init(const machine_t *, void *);
 extern void	machine_at_endeavor_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t s3_phoenix_trio64_onboard_pci_device;
+#define m_at_endeavor_device s3_phoenix_trio64_onboard_pci_device
+#endif
 extern void	machine_at_zappa_init(const machine_t *, void *);
 extern void	machine_at_mb500n_init(const machine_t *, void *);
 extern void	machine_at_president_init(const machine_t *, void *);
@@ -314,6 +318,9 @@ extern void	machine_at_4gpv31_init(const machine_t *, void *);
 #endif
 
 extern void	machine_pcjr_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t	m_pcjr_device;
+#endif
 
 extern void	machine_ps1_m2011_init(const machine_t *, void *);
 extern void	machine_ps1_m2121_init(const machine_t *, void *);
@@ -330,43 +337,40 @@ extern void	machine_amstrad_init(const machine_t *, void *);
 
 extern void	machine_europc_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
-extern const device_t europc_device,
-                europc_hdc_device;
+extern const device_t europc_device, europc_hdc_device;
 #endif
 
 extern void	machine_olim24_init(const machine_t *, void *);
 extern void	machine_olim24_video_init(void);
 
 extern void	machine_tandy1k_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t	m_tandy1k_device;
+extern const device_t	m_tandy1k_hx_device;
+extern const device_t	m_tandy1k_sl2_device;
+#endif
 extern int	tandy1k_eeprom_read(void);
 
 extern void	machine_xt_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
-extern const device_t	*xt_get_device(void);
+extern const device_t	m_xt_device;
 #endif
+
 extern void	machine_xt_compaq_init(const machine_t *, void *);
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
 extern void	machine_xt_laserxt_init(const machine_t *, void *);
 #endif
 
 extern void	machine_xt_t1000_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t	m_xt_t1000_device;
+#endif
 extern void	machine_xt_t1200_init(const machine_t *, void *);
 extern void	machine_xt_t1x00_close(void);
 
 extern void	machine_xt_xi8088_init(const machine_t *, void *);
-
 #ifdef EMU_DEVICE_H
-extern const device_t	*xi8088_get_device(void);
-
-extern const device_t	*pcjr_get_device(void);
-
-extern const device_t	*tandy1k_get_device(void);
-extern const device_t	*tandy1k_hx_get_device(void);
-
-extern const device_t	*t1000_get_device(void);
-extern const device_t	*t1200_get_device(void);
-
-extern const device_t	*at_endeavor_get_device(void);
+extern const device_t	m_xi8088_device;
 #endif
 
 

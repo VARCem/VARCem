@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.4	2018/03/27
+ * Version:	@(#)m_pcjr.c	1.0.5	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -731,7 +731,7 @@ static const device_config_t pcjr_config[] = {
 };
 
 
-static const device_t pcjr_device = {
+const device_t m_pcjr_device = {
     "IBM PCjr",
     0, 0,
     NULL, NULL, NULL,
@@ -741,13 +741,6 @@ static const device_t pcjr_device = {
     NULL,
     pcjr_config
 };
-
-
-const device_t *
-pcjr_get_device(void)
-{
-    return &pcjr_device;
-}
 
 
 void
@@ -776,7 +769,7 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
     io_sethandler(0x03d0, 16,
 		  vid_in, NULL, NULL, vid_out, NULL, NULL, pcjr);
     timer_add(vid_poll, &pcjr->vidtime, TIMER_ALWAYS_ENABLED, pcjr);
-    device_add_ex(&pcjr_device, pcjr);
+    device_add_ex(&m_pcjr_device, pcjr);
 
     /* Initialize the keyboard. */
     key_queue_start = key_queue_end = 0;

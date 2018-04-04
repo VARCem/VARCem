@@ -50,7 +50,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_xt_t1000.c	1.0.7	2018/03/31
+ * Version:	@(#)m_xt_t1000.c	1.0.8	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -135,6 +135,7 @@ enum TC8521_ADDR {
 
 typedef struct {
     /* ROM drive */
+    int		rom_dos;
     uint8_t	*romdrive;
     uint8_t	rom_ctl;
     uint32_t	rom_offset;
@@ -861,11 +862,36 @@ t1000_read_roml(uint32_t addr, void *priv)
 }
 
 
-const device_t *
-t1000_get_device(void)
-{
-    return(&t1000_video_device);
-}
+static const device_config_t m_xt_t1000_config[] = {
+    {
+	"rom_dos", "ROM DOS", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
+};
+
+
+const device_t m_xt_t1000_device = {
+    "Toshiba T1000",
+    MACHINE_ISA,
+    0,
+    NULL, NULL, NULL,
+    NULL,
+    NULL, NULL, NULL,
+    m_xt_t1000_config
+};
 
 
 void
@@ -887,19 +913,22 @@ machine_xt_t1000_init(const machine_t *model, void *arg)
      * If the file is missing, continue to boot; the BIOS will
      * complain 'No ROM drive' but boot normally from floppy.
      */
-    f = plat_fopen(rom_path(T1000_ROMDOS_PATH), L"rb");
-    if (f != NULL) {
-	t1000.romdrive = malloc(T1000_ROMDOS_SIZE);
-	if (t1000.romdrive) {
-		memset(t1000.romdrive, 0xff, T1000_ROMDOS_SIZE);
-		fread(t1000.romdrive, T1000_ROMDOS_SIZE, 1, f);
+    t1000.rom_dos = machine_get_config_int("rom_dos");
+    if (t1000.rom_dos) {
+	f = plat_fopen(rom_path(T1000_ROMDOS_PATH), L"rb");
+	if (f != NULL) {
+		t1000.romdrive = malloc(T1000_ROMDOS_SIZE);
+		if (t1000.romdrive) {
+			memset(t1000.romdrive, 0xff, T1000_ROMDOS_SIZE);
+			fread(t1000.romdrive, T1000_ROMDOS_SIZE, 1, f);
+		}
+		fclose(f);
 	}
-	fclose(f);
+	mem_mapping_add(&t1000.rom_mapping, 0xa0000, 0x10000,
+			t1000_read_rom,t1000_read_romw,t1000_read_roml,
+			NULL,NULL,NULL, NULL, MEM_MAPPING_INTERNAL, &t1000);
+			mem_mapping_disable(&t1000.rom_mapping);
     }
-    mem_mapping_add(&t1000.rom_mapping, 0xa0000, 0x10000,
-		    t1000_read_rom,t1000_read_romw,t1000_read_roml,
-		    NULL,NULL,NULL, NULL, MEM_MAPPING_INTERNAL, &t1000);
-    mem_mapping_disable(&t1000.rom_mapping);
 
     /* Map the EMS page frame */
     for (pg = 0; pg < 4; pg++) {
@@ -960,13 +989,6 @@ t1200_nvram_write(uint32_t addr, uint8_t value, void *priv)
 	nvr_dosave = 1;
 
     sys->cfgsys[addr & 0x7ff] = value;
-}
-
-
-const device_t *
-t1200_get_device(void)
-{
-    return(&t1200_video_device);
 }
 
 

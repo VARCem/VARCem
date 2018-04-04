@@ -8,7 +8,7 @@
  *
  *		Definitions for the Toshiba T1000/T1200 machines.
  *
- * Version:	@(#)m_xt_t1000.h	1.0.3	2018/03/15
+ * Version:	@(#)m_xt_t1000.h	1.0.4	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,8 +40,10 @@
 # define MACHINE_T1000_H
 
 
+#ifdef EMU_DEVICE_H
 extern const device_t t1000_video_device;
 extern const device_t t1200_video_device;
+#endif
 
 
 extern void	t1000_video_options_set(uint8_t options);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430FX PCISet chip.
  *
- * Version:	@(#)m_at_430fx.c	1.0.6	2018/03/21
+ * Version:	@(#)m_at_430fx.c	1.0.7	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -270,13 +270,6 @@ machine_at_endeavor_init(const machine_t *model, void *arg)
 
 	if (vid_card == VID_INTERNAL)
 		device_add(&s3_phoenix_trio64_onboard_pci_device);
-}
-
-
-const device_t *
-at_endeavor_get_device(void)
-{
-    return &s3_phoenix_trio64_onboard_pci_device;
 }
 
 

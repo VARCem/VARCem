@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.5	2018/03/29
+ * Version:	@(#)m_xt.c	1.0.6	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,7 @@
 #include "machine.h"
 
 
-/* Nasty, used by config.sys. Will re-do later. --FvK */
-int	rom_basic = 0;			/* is ROM BASIC enabled? */
+static int	rom_basic = 0;			/* is ROM BASIC enabled? */
 
 
 static const device_config_t xt_config[] = {
@@ -77,24 +76,13 @@ static const device_config_t xt_config[] = {
 };
 
 
-static const device_t m_xt_device = {
-    "PC/XT Configuration Device",
-    MACHINE_ISA,
-    0,
-    NULL, NULL, NULL,
-    NULL,
-    NULL, NULL, NULL,
-    xt_config
-};
-
-
 void
 machine_xt_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
 
     /* Check if we support a BASIC ROM. */
-    if (model->get_device != NULL) {
+    if (model->device != NULL) {
 	pclog("This (%s) machine supports a BASIC ROM.\n", model->name);
 
 	rom_basic = machine_get_config_int("rom_basic");
@@ -114,8 +102,12 @@ machine_xt_init(const machine_t *model, void *arg)
 }
 
 
-const device_t *
-xt_get_device(void)
-{
-    return(&m_xt_device);
-}
+const device_t m_xt_device = {
+    "PC/XT",
+    MACHINE_ISA,
+    0,
+    NULL, NULL, NULL,
+    NULL,
+    NULL, NULL, NULL,
+    xt_config
+};

@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.15	2018/03/29
+ * Version:	@(#)machine_table.c	1.0.16	2018/04/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,19 +53,19 @@
 
 
 const machine_t machines[] = {
-    { "[8088] IBM PC",				ROM_IBMPC,		"ibm_pc",		L"ibm/pc",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  32,   0,		      machine_xt_init, xt_get_device,		NULL			},
-    { "[8088] IBM PCjr",			ROM_IBMPCJR,		"ibm_pcjr",		L"ibm/pcjr",			{{"", cpus_pcjr},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,		    machine_pcjr_init, pcjr_get_device,		NULL			},
-    { "[8088] IBM XT",				ROM_IBMXT,		"ibm_xt",		L"ibm/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
-    { "[8088] OpenXT Generic Clone",		ROM_GENXT,		"open_xt",		L"generic/open_xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
-    { "[8088] AMI XT clone",			ROM_AMIXT,		"ami_xt",		L"generic/ami/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
+    { "[8088] IBM PC",				ROM_IBMPC,		"ibm_pc",		L"ibm/pc",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  32,   0,		      machine_xt_init, &m_xt_device,		NULL			},
+    { "[8088] IBM PCjr",			ROM_IBMPCJR,		"ibm_pcjr",		L"ibm/pcjr",			{{"", cpus_pcjr},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,		    machine_pcjr_init, &m_pcjr_device,		NULL			},
+    { "[8088] IBM XT",				ROM_IBMXT,		"ibm_xt",		L"ibm/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
+    { "[8088] OpenXT Generic Clone",		ROM_GENXT,		"open_xt",		L"generic/open_xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
+    { "[8088] AMI XT clone",			ROM_AMIXT,		"ami_xt",		L"generic/ami/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] Compaq Portable",			ROM_PORTABLE,		"compaq_portable",	L"compaq/portable",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,	       machine_xt_compaq_init, NULL,			NULL			},
-    { "[8088] DTK XT clone",			ROM_DTKXT,		"dtk_xt",		L"dtk/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, xt_get_device,		NULL			},
+    { "[8088] DTK XT clone",			ROM_DTKXT,		"dtk_xt",		L"dtk/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] Juko XT clone",			ROM_JUKOPC,		"juko_pc",		L"juko/pc",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
     { "[8088] Phoenix XT clone",		ROM_PXXT,		"phoenix_xt",		L"generic/phoenix/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
     { "[8088] Schneider EuroPC",		ROM_EUROPC,		"schneider_europc",	L"schneider/europc",		{{"Siemens", cpus_europc},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,						512,  640, 128,  16,		  machine_europc_init, NULL,			NULL			},
-    { "[8088] Tandy 1000",			ROM_TANDY,		"tandy_1000",		L"tandy/t1000",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												128,  640, 128,   0,		 machine_tandy1k_init, tandy1k_get_device,	NULL			},
-    { "[8088] Tandy 1000 HX",			ROM_TANDY1000HX,	"tandy_1000hx",		L"tandy/t1000hx",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												256,  640, 128,   0,		 machine_tandy1k_init, tandy1k_hx_get_device,	NULL			},
-    { "[8088] Toshiba 1000",			ROM_T1000,		"toshiba_t1000",	L"toshiba/t1000",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										512, 1280, 768,  64,		machine_xt_t1000_init, NULL,			machine_xt_t1x00_close	},
+    { "[8088] Tandy 1000",			ROM_TANDY,		"tandy_1000",		L"tandy/t1000",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												128,  640, 128,   0,		 machine_tandy1k_init, &m_tandy1k_device,	NULL			},
+    { "[8088] Tandy 1000 HX",			ROM_TANDY1000HX,	"tandy_1000hx",		L"tandy/t1000hx",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												256,  640, 128,   0,		 machine_tandy1k_init, &m_tandy1k_hx_device,	NULL			},
+    { "[8088] Toshiba 1000",			ROM_T1000,		"toshiba_t1000",	L"toshiba/t1000",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										512, 1280, 768,  64,		machine_xt_t1000_init, &m_xt_t1000_device,	machine_xt_t1x00_close	},
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
     { "[8088] VTech Laser Turbo XT",		ROM_LTXT,		"vtech_ltxt",		L"vtech/ltxt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												512,  512, 256,   0,	      machine_xt_laserxt_init, NULL,			NULL			},
 #endif
@@ -77,7 +77,7 @@ const machine_t machines[] = {
     { "[8086] Amstrad PC3086",			ROM_PC3086,		"amstrad_pc3086",	L"amstrad/pc3086",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								640,  640,   0,  64,		 machine_amstrad_init, NULL,			NULL			},
     { "[8086] Amstrad PC20(0)",			ROM_PC200,		"amstrad_pc200",	L"amstrad/pc200",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								512,  640, 128,  64,		 machine_amstrad_init, NULL,			NULL			},
     { "[8086] Olivetti M24",			ROM_OLIM24,		"olivetti_m24",		L"olivetti/m24",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								128,  640, 128,   0,		  machine_olim24_init, NULL,			NULL			},
-    { "[8086] Tandy 1000 SL/2",			ROM_TANDY1000SL2,	"tandy_1000sl2",	L"tandy/t1000sl2",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												512,  768, 128,   0,	         machine_tandy1k_init, NULL,			NULL			},
+    { "[8086] Tandy 1000 SL/2",			ROM_TANDY1000SL2,	"tandy_1000sl2",	L"tandy/t1000sl2",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												512,  768, 128,   0,	         machine_tandy1k_init, &m_tandy1k_sl2_device,	NULL			},
     { "[8086] Toshiba 1200",			ROM_T1200,		"toshiba_t1200",	L"toshiba/t1200",		{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,									       1024, 2048,1024,  64,		machine_xt_t1200_init, NULL,			machine_xt_t1x00_close	},
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
     { "[8086] VTech Laser XT3",			ROM_LXT3,		"vtech_lxt3",		L"vtech/lxt3",			{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												256,  512, 256,   0,	      machine_xt_laserxt_init, NULL,			NULL			},
@@ -142,7 +142,7 @@ const machine_t machines[] = {
     { "[Socket 5 NX] Intel Premiere/PCI II",	ROM_PLATO,		"intel_plato",		L"intel/plato",			{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  2,  128,   2, 128,		machine_at_plato_init, NULL,			NULL			},
 
     { "[Socket 5 FX] ASUS P/I-P54TP4XE",	ROM_P54TP4XE,		"asus_p54tp4xe",	L"asus/p54tp4xe",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	     machine_at_p54tp4xe_init, NULL,			NULL			},
-    { "[Socket 5 FX] Intel Advanced/EV",	ROM_ENDEAVOR,		"intel_endeavor",	L"intel/endeavor",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,	     machine_at_endeavor_init, at_endeavor_get_device,	NULL			},
+    { "[Socket 5 FX] Intel Advanced/EV",	ROM_ENDEAVOR,		"intel_endeavor",	L"intel/endeavor",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,	     machine_at_endeavor_init, &m_at_endeavor_device,	NULL			},
     { "[Socket 5 FX] Intel Advanced/ZP",	ROM_ZAPPA,		"intel_zappa",		L"intel/zappa",			{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,		machine_at_zappa_init, NULL,			NULL			},
     { "[Socket 5 FX] PC Partner MB500N",	ROM_MB500N,		"pcpartner_mb500n",	L"pcpartner/mb500n",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	       machine_at_mb500n_init, NULL,			NULL			},
     { "[Socket 5 FX] President Award 430FX PCI",ROM_PRESIDENT,		"president",		L"president/president",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}}, 	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	    machine_at_president_init, NULL,			NULL			},
@@ -163,7 +163,7 @@ const machine_t machines[] = {
     { "[Socket 5 NX] Intel Premiere/PCI II",	ROM_PLATO,		"intel_plato",		L"intel/plato",			{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  2,  128,   2, 128,		machine_at_plato_init, NULL,			NULL			},
 
     { "[Socket 5 FX] ASUS P/I-P54TP4XE",	ROM_P54TP4XE,		"asus_p54tp4xe",	L"asus/p54tp4xe",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	     machine_at_p54tp4xe_init, NULL,			NULL			},
-    { "[Socket 5 FX] Intel Advanced/EV",	ROM_ENDEAVOR,		"intel_endeavor",	L"intel/endeavor",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,	     machine_at_endeavor_init, at_endeavor_get_device,	NULL			},
+    { "[Socket 5 FX] Intel Advanced/EV",	ROM_ENDEAVOR,		"intel_endeavor",	L"intel/endeavor",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,	     machine_at_endeavor_init, &m_at_endeavor_device,	NULL			},
     { "[Socket 5 FX] Intel Advanced/ZP",	ROM_ZAPPA,		"intel_zappa",		L"intel/zappa",			{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,		machine_at_zappa_init, NULL,			NULL			},
     { "[Socket 5 FX] PC Partner MB500N",	ROM_MB500N,		"pcpartner_mb500n",	L"pcpartner/mb500n",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	       machine_at_mb500n_init, NULL,			NULL			},
     { "[Socket 5 FX] President Award 430FX PCI",ROM_PRESIDENT,		"president",		L"president/president",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	    machine_at_president_init, NULL,			NULL			},
@@ -236,10 +236,7 @@ machine_getname(void)
 const device_t *
 machine_getdevice(int machine)
 {
-    if (machines[machine].get_device)
-	return(machines[machine].get_device());
-
-    return(NULL);
+    return(machines[machine].device);
 }
 
 
