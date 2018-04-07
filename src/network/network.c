@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.3	2018/03/15
+ * Version:	@(#)network.c	1.0.4	2018/04/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -65,18 +65,12 @@
 
 
 static netcard_t net_cards[] = {
-    { "None",				"none",		NULL,
-      NULL								},
-    { "[ISA] Novell NE1000",		"ne1k",		&ne1000_device,
-      NULL								},
-    { "[ISA] Novell NE2000",		"ne2k",		&ne2000_device,
-      NULL								},
-    { "[ISA] Realtek RTL8019AS",	"ne2kpnp",	&rtl8019as_device,
-      NULL								},
-    { "[PCI] Realtek RTL8029AS",	"ne2kpci",	&rtl8029as_device,
-      NULL								},
-    { "",				"",		NULL,
-      NULL								}
+    {"Disabled",		"none",		NULL,			NULL},
+    {"[ISA] Novell NE1000",	"ne1k",		&ne1000_device,		NULL},
+    {"[ISA] Novell NE2000",	"ne2k",		&ne2000_device,		NULL},
+    {"[ISA] Realtek RTL8019AS",	"ne2kpnp",	&rtl8019as_device,	NULL},
+    {"[PCI] Realtek RTL8029AS",	"ne2kpci",	&rtl8029as_device,	NULL},
+    {NULL,			NULL,		NULL,			NULL}
 };
 
 
@@ -488,7 +482,7 @@ network_card_get_from_internal_name(char *s)
 {
     int c = 0;
 	
-    while (strlen((char *)net_cards[c].internal_name)) {
+    while (net_cards[c].internal_name != NULL) {
 	if (! strcmp((char *)net_cards[c].internal_name, s))
 			return(c);
 	c++;

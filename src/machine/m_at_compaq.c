@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq PC's.
  *
- * Version:	@(#)m_at_compaq.c	1.0.4	2018/03/21
+ * Version:	@(#)m_at_compaq.c	1.0.5	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -142,13 +142,13 @@ machine_at_compaq_init(const machine_t *model, void *arg)
 
 	case ROM_PORTABLEIII386:
 		machine_olim24_video_init();
-		if (hdc_current == 1)
+		if (hdc_type == 1)
 			device_add(&ide_isa_device);
 		break;
 #endif
 #if defined(DEV_BRANCH) && defined(USE_DESKPRO386)
 	case ROM_DESKPRO_386:
-		if (hdc_current == 1)
+		if (hdc_type == 1)
 			device_add(&ide_isa_device);
 		break;
 #endif

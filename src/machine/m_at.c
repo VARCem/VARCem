@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.4	2018/03/21
+ * Version:	@(#)m_at.c	1.0.5	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,6 @@
 #include "../mem.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../lpt.h"
 #include "../keyboard.h"
 #include "../game/gameport.h"
 #include "../floppy/fdd.h"
@@ -64,9 +63,6 @@ machine_at_common_init(const machine_t *model, void *arg)
     pit_set_out_func(&pit, 1, pit_refresh_timer_at);
     pic2_init();
     dma16_init();
-
-    if (lpt_enabled)
-	lpt2_remove();
 
     device_add(&at_nvr_device);
 

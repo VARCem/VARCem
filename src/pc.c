@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.19	2018/04/03
+ * Version:	@(#)pc.c	1.0.20	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,8 +65,8 @@
 #include "device.h"
 #include "nvr.h"
 #include "bugger.h"
-#include "lpt.h"
 #include "serial.h"
+#include "parallel.h"
 #include "keyboard.h"
 #include "mouse.h"
 #include "game/gameport.h"
@@ -128,13 +128,15 @@ int	vid_cga_contrast = 0,			/* (C) video */
 	vid_card = 0,				/* (C) graphics/video card */
 	video_speed = 0;			/* (C) video */
 int	serial_enabled[SERIAL_MAX] = {0,0},	/* (C) enable serial ports */
-	lpt_enabled = 0,			/* (C) enable LPT ports */
+	parallel_enabled[PARALLEL_MAX] = {0,0,0},/* (C) enable LPT ports */
 	bugger_enabled = 0;			/* (C) enable ISAbugger */
+char	parallel_device[PARALLEL_MAX][16];	/* (C) set up LPT devices */
 int	rctrl_is_lalt;				/* (C) set R-CTRL as L-ALT */
 int	update_icons;				/* (C) enable icons updates */
 #ifdef WALTJE
 int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
+int	hdc_type = 0;				/* (C) HDC type */
 int	sound_is_float = 1,			/* (C) sound uses FP values */
 	GAMEBLASTER = 0,			/* (C) sound option */
 	GUS = 0,				/* (C) sound option */
@@ -764,12 +766,12 @@ pc_init_modules(void)
 
     sound_init();
 
-    /* FIXME: should be disk_init(). */
-    hdc_init(hdc_name);
+    /* FIXME: should be disk_init() */
     cdrom_hard_reset();
     zip_hard_reset();
     ide_reset_hard();
 
+    /* FIXME: should be scsi_init() */
     scsi_card_init();
 
     pc_full_speed();
@@ -790,7 +792,7 @@ pc_reset_hard_close(void)
 
     mouse_close();
 
-    lpt_devices_close();
+    parallel_devices_close();
 
     device_close_all();
 
@@ -850,7 +852,7 @@ pc_reset_hard_init(void)
     /* Reset some basic devices. */
     speaker_init();
     serial_reset();
-    lpt_devices_init();
+    parallel_devices_init();
 
     shadowbios = 0;
 
@@ -976,7 +978,7 @@ pc_close(thread_t *ptr)
 
     plat_mouse_capture(0);
 
-    lpt_devices_close();
+    parallel_devices_close();
 
     for (i=0; i<ZIP_NUM; i++)
 	zip_close(i);

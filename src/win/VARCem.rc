@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.12	2018/04/02
+ * Version:	@(#)VARCem.rc	1.0.14	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -215,7 +215,7 @@ BEGIN
 	END
 #endif
         MENUITEM "S&tatus",                     IDM_STATUS
-        MENUITEM "Take s&creenshot\tCtrl+Esc",  IDM_ACTION_SCREENSHOT
+        MENUITEM "Take s&creenshot\tCtrl+Home",	IDM_ACTION_SCREENSHOT
         MENUITEM SEPARATOR
         MENUITEM "&Update status bar icons",	IDM_UPDATE_ICONS
     END
@@ -519,25 +519,26 @@ DLG_CFG_PORTS DIALOG DISCARDABLE  97, 0, 267, 99
 STYLE DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
-    LTEXT           "LPT1 Device:",IDT_1716,7,8,61,10
-    COMBOBOX        IDC_COMBO_LPT1,71,7,189,120,CBS_DROPDOWNLIST | 
+    CONTROL         "Parallel port 1",IDC_CHECK_PARALLEL1,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,8,70,10
+    COMBOBOX        IDC_COMBO_PARALLEL1,80,7,159,120,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
 
-    LTEXT           "LPT2 Device:",IDT_1717,7,27,61,10
-    COMBOBOX        IDC_COMBO_LPT2,71,26,189,120,CBS_DROPDOWNLIST | 
+    CONTROL         "Parallel port 2",IDC_CHECK_PARALLEL2,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,27,70,10
+    COMBOBOX        IDC_COMBO_PARALLEL2,80,26,159,120,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
 
-    LTEXT           "LPT3 Device:",IDT_1718,7,46,61,10
-    COMBOBOX        IDC_COMBO_LPT3,71,45,189,120,CBS_DROPDOWNLIST | 
+    CONTROL         "Parallel port 3",IDC_CHECK_PARALLEL3,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,46,70,10
+    COMBOBOX        IDC_COMBO_PARALLEL3,80,45,159,120,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
 
     CONTROL         "Serial port 1",IDC_CHECK_SERIAL1,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,64,94,10
-    CONTROL         "Serial port 2",IDC_CHECK_SERIAL2,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,147,64,94,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,69,94,10
 
-    CONTROL         "Parallel port",IDC_CHECK_PARALLEL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,82,94,10
+    CONTROL         "Serial port 2",IDC_CHECK_SERIAL2,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,88,94,10
 END
 
 DLG_CFG_PERIPHERALS DIALOG DISCARDABLE  97, 0, 267, 97
@@ -565,7 +566,7 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,80,94,10
 END
 
-DLG_CFG_HARD_DISKS DIALOG DISCARDABLE  97, 0, 267, 154
+DLG_CFG_DISK DIALOG DISCARDABLE  97, 0, 267, 154
 STYLE DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
@@ -592,7 +593,7 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
 END
 
-DLG_CFG_HARD_DISKS_ADD DIALOG DISCARDABLE  0, 0, 219, 111
+DLG_CFG_DISK_ADD DIALOG DISCARDABLE  0, 0, 219, 111
 STYLE DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Add Hard Disk"
 FONT 9, "Segoe UI"
@@ -632,7 +633,7 @@ BEGIN
                     WS_BORDER,7,16,204,12
 END
 
-DLG_CFG_FLOPPY_DRIVES DIALOG DISCARDABLE  97, 0, 267, 103
+DLG_CFG_FLOPPY DIALOG DISCARDABLE  97, 0, 267, 103
 STYLE DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
@@ -649,7 +650,7 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,196,86,64,10
 END
 
-DLG_CFG_OTHER_REMOVABLE_DEVICES DIALOG DISCARDABLE  97, 0, 267, 221
+DLG_CFG_RMV_DEVICES DIALOG DISCARDABLE  97, 0, 267, 221
 STYLE DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
@@ -698,7 +699,7 @@ END
 // 24
 //
 #ifndef SKIP_MANIFEST
-1                       24      MOVEABLE PURE   "VARCem.manifest"
+1	24	MOVEABLE PURE	"VARCem.manifest"
 #endif
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -707,44 +708,44 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-100                     ICON    DISCARDABLE     "win/icons/varcem.ico"
-128                     ICON    DISCARDABLE     "win/icons/floppy_525.ico"
-129                     ICON    DISCARDABLE     "win/icons/floppy_525_active.ico"
-144                     ICON    DISCARDABLE     "win/icons/floppy_35.ico"
-145                     ICON    DISCARDABLE     "win/icons/floppy_35_active.ico"
-160                     ICON    DISCARDABLE     "win/icons/cdrom.ico"
-161                     ICON    DISCARDABLE     "win/icons/cdrom_active.ico"
-176                     ICON    DISCARDABLE     "win/icons/zip.ico"
-177                     ICON    DISCARDABLE     "win/icons/zip_active.ico"
-192                     ICON    DISCARDABLE     "win/icons/removable_disk.ico"
-193                     ICON    DISCARDABLE     "win/icons/removable_disk_active.ico"
-208                     ICON    DISCARDABLE     "win/icons/hard_disk.ico"
-209                     ICON    DISCARDABLE     "win/icons/hard_disk_active.ico"
-224                     ICON    DISCARDABLE     "win/icons/network.ico"
-225                     ICON    DISCARDABLE     "win/icons/network_active.ico"
-256                     ICON    DISCARDABLE     "win/icons/machine.ico"
-257                     ICON    DISCARDABLE     "win/icons/display.ico"
-258                     ICON    DISCARDABLE     "win/icons/input_devices.ico"
-259                     ICON    DISCARDABLE     "win/icons/sound.ico"
-260                     ICON    DISCARDABLE     "win/icons/network.ico"
-261                     ICON    DISCARDABLE     "win/icons/ports.ico"
-262                     ICON    DISCARDABLE     "win/icons/other_peripherals.ico"
-263                     ICON    DISCARDABLE     "win/icons/hard_disk.ico"
-264                     ICON    DISCARDABLE     "win/icons/floppy_drives.ico"
-265                     ICON    DISCARDABLE     "win/icons/other_removable_devices.ico"
-384                     ICON    DISCARDABLE     "win/icons/floppy_525_empty.ico"
-385                     ICON    DISCARDABLE     "win/icons/floppy_525_empty_active.ico"
-400                     ICON    DISCARDABLE     "win/icons/floppy_35_empty.ico"
-401                     ICON    DISCARDABLE     "win/icons/floppy_35_empty_active.ico"
-416                     ICON    DISCARDABLE     "win/icons/cdrom_empty.ico"
-417                     ICON    DISCARDABLE     "win/icons/cdrom_empty_active.ico"
-432                     ICON    DISCARDABLE     "win/icons/zip_empty.ico"
-433                     ICON    DISCARDABLE     "win/icons/zip_empty_active.ico"
-448                     ICON    DISCARDABLE     "win/icons/removable_disk_empty.ico"
-449                     ICON    DISCARDABLE     "win/icons/removable_disk_empty_active.ico"
-512                     ICON    DISCARDABLE     "win/icons/floppy_disabled.ico"
-514                     ICON    DISCARDABLE     "win/icons/cdrom_disabled.ico"
-515                     ICON    DISCARDABLE     "win/icons/zip_disabled.ico"
+100	ICON	DISCARDABLE	"win/icons/varcem.ico"
+128	ICON	DISCARDABLE	"win/icons/floppy_525.ico"
+129	ICON	DISCARDABLE	"win/icons/floppy_525_active.ico"
+144	ICON	DISCARDABLE	"win/icons/floppy_35.ico"
+145	ICON	DISCARDABLE	"win/icons/floppy_35_active.ico"
+160	ICON	DISCARDABLE	"win/icons/cdrom.ico"
+161	ICON	DISCARDABLE	"win/icons/cdrom_active.ico"
+176	ICON	DISCARDABLE	"win/icons/zip.ico"
+177	ICON	DISCARDABLE	"win/icons/zip_active.ico"
+192	ICON	DISCARDABLE	"win/icons/removable_disk.ico"
+193	ICON	DISCARDABLE	"win/icons/removable_disk_active.ico"
+208	ICON	DISCARDABLE	"win/icons/hard_disk.ico"
+209	ICON	DISCARDABLE	"win/icons/hard_disk_active.ico"
+224	ICON	DISCARDABLE	"win/icons/network.ico"
+225	ICON	DISCARDABLE	"win/icons/network_active.ico"
+256	ICON	DISCARDABLE	"win/icons/machine.ico"
+257	ICON	DISCARDABLE	"win/icons/display.ico"
+258	ICON	DISCARDABLE	"win/icons/input_devices.ico"
+259	ICON	DISCARDABLE	"win/icons/sound.ico"
+260	ICON	DISCARDABLE	"win/icons/network.ico"
+261	ICON	DISCARDABLE	"win/icons/ports.ico"
+262	ICON	DISCARDABLE	"win/icons/other_peripherals.ico"
+263	ICON	DISCARDABLE	"win/icons/hard_disk.ico"
+264	ICON	DISCARDABLE	"win/icons/floppy_drives.ico"
+265	ICON	DISCARDABLE	"win/icons/other_removable_devices.ico"
+384	ICON	DISCARDABLE	"win/icons/floppy_525_empty.ico"
+385	ICON	DISCARDABLE	"win/icons/floppy_525_empty_active.ico"
+400	ICON	DISCARDABLE	"win/icons/floppy_35_empty.ico"
+401	ICON	DISCARDABLE	"win/icons/floppy_35_empty_active.ico"
+416	ICON	DISCARDABLE	"win/icons/cdrom_empty.ico"
+417	ICON	DISCARDABLE	"win/icons/cdrom_empty_active.ico"
+432	ICON	DISCARDABLE	"win/icons/zip_empty.ico"
+433	ICON	DISCARDABLE	"win/icons/zip_empty_active.ico"
+448	ICON	DISCARDABLE	"win/icons/removable_disk_empty.ico"
+449	ICON	DISCARDABLE	"win/icons/removable_disk_empty_active.ico"
+512	ICON	DISCARDABLE	"win/icons/floppy_disabled.ico"
+514	ICON	DISCARDABLE	"win/icons/cdrom_disabled.ico"
+515	ICON	DISCARDABLE	"win/icons/zip_disabled.ico"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -754,7 +755,7 @@ END
 
 1 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "resource.h\0"
+    "resource.h"
 END
 
 2 TEXTINCLUDE DISCARDABLE 
@@ -763,13 +764,13 @@ BEGIN
     "#include ""windows.h""\r\n"
     "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""resources.h""\r\n"
-    "\0"
+    ""
 END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "\r\n"
-    "\0"
+    ""
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -1023,14 +1024,7 @@ BEGIN
     IDS_2141	"Invalid PCap device"
     IDS_2142	"&Notify disk change"
     IDS_2143	"Type"
-    IDS_2144	"Disabled"
-    IDS_2145	"Standard 2-button joystick(s)"
-    IDS_2146	"Standard 4-button joystick"
-    IDS_2147	"Standard 6-button joystick"
-    IDS_2148	"Standard 8-button joystick"
-    IDS_2149	"CH Flightstick Pro"
-    IDS_2150	"Microsoft SideWinder Pad"
-    IDS_2151	"Thrustmaster Flight Control System"
+ /* IDS_2144-51 available */
     IDS_2152	"None"
     IDS_2153	"Unable to load Keyboard Accelerators!"
     IDS_2154	"Unable to register Raw Input!"
@@ -1039,7 +1033,7 @@ BEGIN
     IDS_2157	"%" PRIu64 " MB (CHS: %u, %u, %u)"
     IDS_2158	"Floppy %i (%s): %ls"
     IDS_2159	"All images (*.0??;*.1??;*.360;*.720;*.86F;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.XDF)\0*.0??;*.1??;*.360;*.720;*.86F;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.XDF\0Advanced sector images (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Basic sector images (*.0??;*.1??;*.360;*.720;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.360;*.720;*.BIN;*.CQ?;*.DSK;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Flux images (*.FDI)\0*.FDI\0Surface images (*.86F)\0*.86F\0All files (*.*)\0*.*\0"
-    IDS_2160	"Configuration files (*.CFG)\0*.CFG\0All files (*.*)\0*.*\0"
+    IDS_2160	"Configuration files (*.VARC)\0*.VARC\0All files (*.*)\0*.*\0"
     IDS_2161	"&New image..."
     IDS_2162	"&Existing image..."
     IDS_2163	"Existing image (&Write-protected)..."

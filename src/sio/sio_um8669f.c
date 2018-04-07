@@ -29,7 +29,7 @@
  *			70 - IRQ
  *			74 - DMA
  *
- * Version:	@(#)sio_um8669f.c	1.0.2	2018/03/07
+ * Version:	@(#)sio_um8669f.c	1.0.3	2018/04/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -63,7 +63,7 @@
 #include "../device.h"
 #include "../io.h"
 #include "../pci.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
@@ -181,9 +181,9 @@ void um8669f_pnp_write(uint16_t port, uint8_t val, void *p)
                                 case DEV_LPT1:
 				if ((um8669f->cur_reg == REG_ENABLE) && valxor)
 				{
-        	                        lpt1_remove();
+        	                        parallel_remove(1);
                 	                if (um8669f->dev[DEV_LPT1].enable & 1)
-                        	                lpt1_init(um8669f->dev[DEV_LPT1].addr);
+                        	                parallel_setup(1, um8669f->dev[DEV_LPT1].addr);
 				}
                                 break;
                         }
@@ -289,10 +289,9 @@ void um8669f_reset(void)
 	serial_remove(2);
 	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
 
-	lpt2_remove();
-
-	lpt1_remove();
-	lpt1_init(0x378);
+	parallel_remove(1);
+	parallel_remove(2);
+	parallel_setup(1, 0x378);
         
 	if (um8669f_global.pnp_active) {
 		io_removehandler(0x0279, 0x0001, NULL, NULL, NULL, um8669f_pnp_write, NULL, NULL, &um8669f_global);

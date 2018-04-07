@@ -50,7 +50,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_xt_t1000.c	1.0.8	2018/04/03
+ * Version:	@(#)m_xt_t1000.c	1.0.9	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,7 +94,7 @@
 #include "../nvr.h"
 #include "../device.h"
 #include "../keyboard.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../game/gameport.h"

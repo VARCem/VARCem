@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq XT-class PC's.
  *
- * Version:	@(#)m_xt_compaq.c	1.0.5	2018/03/21
+ * Version:	@(#)m_xt_compaq.c	1.0.6	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,7 +52,7 @@
 #include "../floppy/fdc.h"
 #include "../game/gameport.h"
 #include "../keyboard.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "machine.h"
 
 
@@ -74,8 +74,8 @@ machine_xt_compaq_init(const machine_t *model, void *arg)
 
     switch(model->id) {
 	case ROM_PORTABLE:
-		lpt1_remove();
-		lpt1_init(0x03bc);
+		parallel_remove(1);
+		parallel_setup(1, 0x03bc);
 		break;
     }
 }

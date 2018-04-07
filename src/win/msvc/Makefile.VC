@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.3	2018/03/27
+# Version:	@(#)Makefile.VC	1.0.4	2018/04/05
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -440,9 +440,10 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
 #		Create the (final) list of objects to build.		#
 #########################################################################
 MAINOBJ		:= pc.obj config.obj \
-		   random.obj timer.obj io.obj dma.obj nmi.obj pic.obj pit.obj ppi.obj \
-		   pci.obj mca.obj mcr.obj mem.obj memregs.obj rom.obj rom_load.obj \
-		   device.obj nvr.obj nvr_at.obj nvr_ps2.obj $(VNCOBJ) $(RDPOBJ)
+		   random.obj timer.obj io.obj dma.obj nmi.obj pic.obj \
+		   pit.obj ppi.obj pci.obj mca.obj mcr.obj mem.obj \
+		   memregs.obj rom.obj rom_load.obj device.obj nvr.obj \
+		   nvr_at.obj nvr_ps2.obj $(VNCOBJ) $(RDPOBJ)
 
 INTELOBJ	:= intel.obj \
 		    intel_flash.obj \
@@ -473,7 +474,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_at_430lx_nx.obj m_at_430fx.obj \
 		    m_at_430hx.obj m_at_430vx.obj
 
-DEVOBJ		:= bugger.obj lpt.obj $(SERIAL) \
+DEVOBJ		:= bugger.obj parallel.obj $(SERIAL) \
 		    sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
 		    sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
 		   keyboard.obj \

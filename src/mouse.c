@@ -11,7 +11,7 @@
  * TODO:	Add the Genius bus- and serial mouse.
  *		Remove the '3-button' flag from mouse types.
  *
- * Version:	@(#)mouse.c	1.0.4	2018/03/29
+ * Version:	@(#)mouse.c	1.0.5	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,7 +72,7 @@ int	mouse_x,
 
 
 static const device_t mouse_none_device = {
-    "None",
+    "Disabled",
     0, MOUSE_TYPE_NONE,
     NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,

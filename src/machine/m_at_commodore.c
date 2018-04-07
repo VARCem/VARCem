@@ -8,7 +8,7 @@
  *
  *		Implementation of the Commodore PC3 system.
  *
- * Version:	@(#)m_at_commodore.c	1.0.3	2018/03/21
+ * Version:	@(#)m_at_commodore.c	1.0.4	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,8 +43,8 @@
 #include "../emu.h"
 #include "../device.h"
 #include "../io.h"
-#include "../lpt.h"
 #include "../serial.h"
+#include "../parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"
@@ -53,30 +53,30 @@
 static void
 pc3_write(uint16_t port, uint8_t val, void *priv)
 {
-    lpt1_remove();
-    lpt2_remove();
+    parallel_remove(1);
+    parallel_remove(2);
 
     switch (val & 3) {
 	case 1:
-		lpt1_init(0x3bc);
+		parallel_setup(1, 0x03bc);
 		break;
 
 	case 2:
-       		lpt1_init(0x378);
+       		parallel_setup(1, 0x0378);
 		break;
 
 	case 3:
-		lpt1_init(0x278);
+		parallel_setup(1, 0x0278);
 		break;
     }
 
     switch (val & 0xc) {
 	case 0x4:
-		serial_setup(1, 0x2f8, 3);
+		serial_setup(1, 0x02f8, 3);
 		break;
 
 	case 0x8:
-		serial_setup(1, 0x3f8, 4);
+		serial_setup(1, 0x03f8, 4);
 		break;
     }
 }

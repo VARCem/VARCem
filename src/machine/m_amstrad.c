@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.8	2018/03/27
+ * Version:	@(#)m_amstrad.c	1.0.9	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -80,7 +80,7 @@
 #include "../keyboard.h"
 #include "../mouse.h"
 #include "../game/gameport.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../sound/sound.h"
@@ -1230,19 +1230,19 @@ machine_amstrad_init(const machine_t *model, void *arg)
 
     device_add(&amstrad_nvr_device);
 
-    lpt2_remove_ams();
-
-    io_sethandler(0x0379, 2,
-		  ams_read, NULL, NULL, NULL, NULL, NULL, ams);
-
-    io_sethandler(0xdead, 1,
-		  ams_read, NULL, NULL, ams_write, NULL, NULL, ams);
+    parallel_remove_amstrad();
 
     io_sethandler(0x0078, 1,
 		  ms_read, NULL, NULL, ms_write, NULL, NULL, ams);
 
     io_sethandler(0x007a, 1,
 		  ms_read, NULL, NULL, ms_write, NULL, NULL, ams);
+
+    io_sethandler(0x0379, 2,
+		  ams_read, NULL, NULL, NULL, NULL, NULL, ams);
+
+    io_sethandler(0xdead, 1,
+		  ams_read, NULL, NULL, ams_write, NULL, NULL, ams);
 
     switch(model->id) {
 	case ROM_PC1512:

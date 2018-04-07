@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.2	2018/03/15
+ * Version:	@(#)vid_hercules.c	1.0.3	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,13 +42,13 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../io.h"
+#include "../pit.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../io.h"
-#include "../lpt.h"
-#include "../pit.h"
 #include "../timer.h"
 #include "../device.h"
+#include "../parallel.h"
 #include "video.h"
 #include "vid_hercules.h"
 
@@ -391,7 +391,7 @@ void *hercules_init(const device_t *info)
 	}
 	cgapal_rebuild();
 
-	lpt3_init(0x3BC);
+	parallel_setup(3, 0x3BC);
 
         return hercules;
 }

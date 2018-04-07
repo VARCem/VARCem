@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.1	2018/02/14
+ * Version:	@(#)serial.h	1.0.2	2018/04/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -48,13 +48,16 @@
 # define EMU_SERIAL_H
 
 
-#ifdef WALTJE_SERIAL
+#define SERIAL_MAX		2	/* two ports supported */
+
 /* Default settings for the standard ports. */
 #define SERIAL1_ADDR		0x03f8
 #define SERIAL1_IRQ		4
 #define SERIAL2_ADDR		0x02f8
 #define SERIAL2_IRQ		3
 
+
+#ifdef WALTJE_SERIAL
 
 /* Supported UART types. */
 #define UART_TYPE_8250		0	/* standard NS8250 */
@@ -138,12 +141,6 @@ void serial_clear_fifo(SERIAL *);
 void serial_write_fifo(SERIAL *serial, uint8_t dat);
 
 extern SERIAL serial1, serial2;
-
-/* Default settings for the standard ports. */
-#define SERIAL1_ADDR		0x03f8
-#define SERIAL1_IRQ		4
-#define SERIAL2_ADDR		0x02f8
-#define SERIAL2_IRQ		3
 #endif
 
 

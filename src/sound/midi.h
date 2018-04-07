@@ -8,7 +8,7 @@
  *
  *		Definitions for the MIDI module.
  *
- * Version:	@(#)midi.h	1.0.2	2018/03/15
+ * Version:	@(#)midi.h	1.0.3	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,17 +66,12 @@ void midi_close();
 void midi_write(uint8_t val);
 void midi_poll();
 
-#if 0
 #ifdef _WIN32
-#define SYSTEM_MIDI_NAME "Windows MIDI"
-#define SYSTEM_MIDI_INTERNAL_NAME "windows_midi"
+# define SYSTEM_MIDI_NAME	"Windows MIDI"
+# define SYSTEM_MIDI_INT	"system_midi"
 #else
-#define SYSTEM_MIDI_NAME "System MIDI"
-#define SYSTEM_MIDI_INTERNAL_NAME "system_midi"
-#endif
-#else
-#define SYSTEM_MIDI_NAME "System MIDI"
-#define SYSTEM_MIDI_INTERNAL_NAME "system_midi"
+# define SYSTEM_MIDI_NAME	"System MIDI"
+# define SYSTEM_MIDI_INT	"system_midi"
 #endif
 
 

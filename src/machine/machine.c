@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.10	2018/03/21
+ * Version:	@(#)machine.c	1.0.11	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,8 +47,8 @@
 #include "../pit.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../lpt.h"
 #include "../serial.h"
+#include "../parallel.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
 #include "../plat.h"
@@ -153,8 +153,17 @@ machine_common_init(const machine_t *model, UNUSED(void *arg))
     pic_init();
     pit_init();
 
-    if (lpt_enabled)
-	lpt_init();
+    /* Disable all LPT ports. */
+    parallel_init();
+
+    if (parallel_enabled[0])
+	parallel_setup(1, PARALLEL1_ADDR);
+
+    if (parallel_enabled[1])
+	parallel_setup(2, PARALLEL2_ADDR);
+
+    if (parallel_enabled[2])
+	parallel_setup(3, PARALLEL3_ADDR);
 
     if (serial_enabled[0])
 	serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);

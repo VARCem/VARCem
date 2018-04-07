@@ -12,7 +12,7 @@
  *
  *		Used by DTK PKM-0038S E-2
  *
- * Version:	@(#)m_at_sis85c471.c	1.0.4	2018/03/21
+ * Version:	@(#)m_at_sis85c471.c	1.0.5	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,8 +46,8 @@
 #include "../io.h"
 #include "../memregs.h"
 #include "../device.h"
-#include "../lpt.h"
 #include "../serial.h"
+#include "../parallel.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
 #include "../floppy/fdd.h"
@@ -100,9 +100,9 @@ sis_write(uint16_t port, uint8_t val, void *priv)
 
 		if (x & 0x10) {
 			if (val & 0x10)
-				lpt1_init(0x378);
+				parallel_setup(1, 0x378);
 			else
-				lpt1_remove();
+				parallel_remove(1);
 		}
 
 		break;
@@ -136,7 +136,7 @@ sis_init(void)
 {
     int i = 0;
 
-    lpt2_remove();
+    parallel_remove(2);
 
     sis_curreg = 0;
     for (i = 0; i < 0x27; i++)

@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.7	2018/03/22
+ * Version:	@(#)m_ps2_mca.c	1.0.8	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,7 @@
 #include "../nvr.h"
 #include "../nvr_ps2.h"
 #include "../keyboard.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../mouse.h"
 #include "../serial.h"
 #include "../video/vid_vga.h"
@@ -357,7 +357,7 @@ static void model_50_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                lpt1_remove();
+                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {
@@ -373,14 +373,14 @@ static void model_50_write(uint16_t port, uint8_t val)
                         switch ((val >> 5) & 3)
                         {
                                 case 0:
-                                lpt1_init(0x3bc);
-                                break;
+                                	parallel_setup(1, 0x3bc);
+                                	break;
                                 case 1:
-                                lpt1_init(0x378);
-                                break;
+                                	parallel_setup(1, 0x378);
+                                	break;
                                 case 2:
-                                lpt1_init(0x278);
-                                break;
+                                	parallel_setup(1, 0x278);
+                                	break;
                         }
                 }
                 ps2.option[0] = val;
@@ -413,7 +413,7 @@ static void model_55sx_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                lpt1_remove();
+                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {
@@ -429,14 +429,14 @@ static void model_55sx_write(uint16_t port, uint8_t val)
                         switch ((val >> 5) & 3)
                         {
                                 case 0:
-                                lpt1_init(0x3bc);
-                                break;
+                                	parallel_setup(1, 0x3bc);
+                                	break;
                                 case 1:
-                                lpt1_init(0x378);
-                                break;
+                                	parallel_setup(1, 0x378);
+                                	break;
                                 case 2:
-                                lpt1_init(0x278);
-                                break;
+                                	parallel_setup(1, 0x278);
+                                	break;
                         }
                 }
                 ps2.option[0] = val;
@@ -489,7 +489,7 @@ static void model_70_type3_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                lpt1_remove();
+                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {
@@ -505,14 +505,14 @@ static void model_70_type3_write(uint16_t port, uint8_t val)
                         switch ((val >> 5) & 3)
                         {
                                 case 0:
-                                lpt1_init(0x3bc);
-                                break;
+                                	parallel_setup(1, 0x3bc);
+                                	break;
                                 case 1:
-                                lpt1_init(0x378);
-                                break;
+                                	parallel_setup(1, 0x378);
+                                	break;
                                 case 2:
-                                lpt1_init(0x278);
-                                break;
+                                	parallel_setup(1, 0x278);
+                                	break;
                         }
                 }
                 ps2.option[0] = val;
@@ -539,7 +539,7 @@ static void model_80_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                lpt1_remove();
+                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {
@@ -555,14 +555,14 @@ static void model_80_write(uint16_t port, uint8_t val)
                         switch ((val >> 5) & 3)
                         {
                                 case 0:
-                                lpt1_init(0x3bc);
-                                break;
+                                	parallel_setup(1, 0x3bc);
+                                	break;
                                 case 1:
-                                lpt1_init(0x378);
-                                break;
+                                	parallel_setup(1, 0x378);
+                                	break;
                                 case 2:
-                                lpt1_init(0x278);
-                                break;
+                                	parallel_setup(1, 0x278);
+                                	break;
                         }
                 }
                 ps2.option[0] = val;
@@ -759,7 +759,7 @@ static void ps2_mca_board_common_init()
 
         ps2.setup = 0xff;
 
-        lpt1_init(0x3bc);
+        parallel_setup(1, 0x3bc);
 }
 
 static uint8_t ps2_mem_expansion_read(int port, void *p)

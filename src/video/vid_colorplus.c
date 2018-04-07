@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.2	2018/03/15
+ * Version:	@(#)vid_colorplus.c	1.0.3	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,11 +45,11 @@
 #include "../emu.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
-#include "../lpt.h"
 #include "../pit.h"
 #include "../mem.h"
 #include "../timer.h"
 #include "../device.h"
+#include "../parallel.h"
 #include "video.h"
 #include "vid_cga.h"
 #include "vid_colorplus.h"
@@ -426,7 +426,7 @@ void *colorplus_standalone_init(const device_t *info)
         mem_mapping_add(&colorplus->cga.mapping, 0xb8000, 0x08000, colorplus_read, NULL, NULL, colorplus_write, NULL, NULL,  NULL, MEM_MAPPING_EXTERNAL, colorplus);
         io_sethandler(0x03d0, 0x0010, colorplus_in, NULL, NULL, colorplus_out, NULL, NULL, colorplus);
 		
-	lpt3_init(0x3BC);
+	parallel_setup(3, 0x3BC);
 
         return colorplus;
 }

@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.9	2018/04/02
+ * Version:	@(#)win_ui.c	1.0.10	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -428,6 +428,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_COMMAND:
+		UpdateWindow(hwnd);
 		hmenu = GetMenu(hwnd);
 		switch (LOWORD(wParam)) {
 			case IDM_ACTION_SCREENSHOT:

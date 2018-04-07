@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the LPT parallel port handlerss.
+ *		Definitions for the "LPT" parallel port handlerss.
  *
- * Version:	@(#)lpt.h	1.0.2	2018/03/28
+ * Version:	@(#)parallel.h	1.0.3	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,8 +36,15 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef EMU_LPT_H
-# define EMU_LPT_H
+#ifndef EMU_PARALLEL_H
+# define EMU_PARALLEL_H
+
+
+#define PARALLEL_MAX	3			/* three ports supported */
+
+#define PARALLEL1_ADDR	0x0378
+#define PARALLEL2_ADDR	0x0278
+#define PARALLEL3_ADDR	0x03BC			/* part of the MDA */
 
 
 typedef struct _lpt_device_ {
@@ -51,23 +58,15 @@ typedef struct _lpt_device_ {
 } lpt_device_t;
 
 
-extern char	lpt_device_names[3][16];
+extern void	parallel_init(void);
+extern void	parallel_setup(int id, uint16_t port);
+extern void	parallel_remove(int id);
+extern void	parallel_remove_amstrad(void);
+
+extern const char *parallel_device_get_name(int id);
+extern char	*parallel_device_get_internal_name(int id);
+extern void	parallel_devices_init(void);
+extern void	parallel_devices_close(void);
 
 
-extern void	lpt_init(void);
-extern void	lpt1_init(uint16_t port);
-extern void	lpt1_remove(void);
-extern void	lpt2_init(uint16_t port);
-extern void	lpt2_remove(void);
-extern void	lpt2_remove_ams(void);
-extern void	lpt3_init(uint16_t port);
-extern void	lpt3_remove(void);
-
-extern void	lpt_devices_init(void);
-extern void	lpt_devices_close(void);
-
-extern const char *lpt_device_get_name(int id);
-extern char	*lpt_device_get_internal_name(int id);
-
-
-#endif	/*EMU_LPT_H*/
+#endif	/*EMU_PARALLEL_H*/

@@ -8,7 +8,7 @@
  *
  *		Implemantation of LPT-based sound devices.
  *
- * Version:	@(#)snd_lpt_dac.c	1.0.3	2018/03/28
+ * Version:	@(#)snd_lpt_dac.c	1.0.4	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,7 @@
 #include "../emu.h"
 #include "../cpu/cpu.h"
 #include "../machine/machine.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../timer.h"
 #include "sound.h"
 #include "filters.h"

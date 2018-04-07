@@ -28,7 +28,7 @@
  *		boot. Sometimes, they do, and then it shows an "Incorrect
  *		DOS" error message??  --FvK
  *
- * Version:	@(#)m_ps1.c	1.0.8	2018/03/31
+ * Version:	@(#)m_ps1.c	1.0.9	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,7 +74,7 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../game/gameport.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../serial.h"
 #include "../keyboard.h"
 #include "../disk/hdc.h"
@@ -350,7 +350,7 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 0x0102:
-		lpt1_remove();
+		parallel_remove(1);
 		if (val & 0x04)
 			serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
 		  else
@@ -358,13 +358,13 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 		if (val & 0x10) {
 			switch ((val >> 5) & 3) {
 				case 0:
-					lpt1_init(0x03bc);
+					parallel_setup(1, 0x03bc);
 					break;
 				case 1:
-					lpt1_init(0x0378);
+					parallel_setup(1, 0x0378);
 					break;
 				case 2:
-					lpt1_init(0x0278);
+					parallel_setup(1, 0x0278);
 					break;
 			}
 		}
@@ -512,9 +512,9 @@ ps1_setup(int model)
 		 0xf80000, 0x80000, 0x7ffff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 
-	lpt1_remove();
-	lpt2_remove();
-	lpt1_init(0x03bc);
+	parallel_remove(1);
+	parallel_remove(2);
+	parallel_setup(1, 0x03bc);
 
 	serial_remove(1);
 	serial_remove(2);
@@ -540,7 +540,7 @@ ps1_setup(int model)
 		 0xfc0000, 0x40000, 0x3ffff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 
-	lpt1_init(0x03bc);
+	parallel_setup(1, 0x03bc);
 
 	/* Initialize the video controller. */
 	if (vid_card == VID_INTERNAL)
@@ -548,7 +548,7 @@ ps1_setup(int model)
     }
 
     if (model == 2133) {
-	lpt1_init(0x03bc);
+	parallel_setup(1, 0x03bc);
     }
 }
 

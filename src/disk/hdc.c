@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.4	2018/04/02
+ * Version:	@(#)hdc.c	1.0.5	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,8 +46,6 @@
 #include "hdc_ide.h"
 
 
-char	*hdc_name;		/* configured HDC name */
-int	hdc_current;
 #ifdef ENABLE_HDC_LOG
 int	hdc_do_log = ENABLE_HDC_LOG;
 #endif
@@ -99,7 +97,7 @@ static const struct {
     const device_t	*device;
     int			is_mfm;
 } controllers[] = {
-    { "None",						"none",		
+    { "Disabled",					"none",		
       &null_device,					0		},
 
     { "Internal Controller",				"internal",
@@ -150,7 +148,7 @@ static const struct {
     { "[VLB] [IDE] PC/AT IDE Adapter (Dual-Channel)",	"vlb_isa_2ch",
       &ide_vlb_2ch_device,				0		},
 
-    { "",						"", NULL, 0	}
+    { NULL,						NULL, NULL, 0	}
 };
 
 
@@ -169,37 +167,18 @@ hdc_log(const char *fmt, ...)
 }
 
 
-/* Initialize the 'hdc_current' value based on configured HDC name. */
-void
-hdc_init(char *name)
-{
-    int c;
-
-#ifdef ENABLE_HDC_LOG
-    hdc_log("HDC: initializing..\n");
-#endif
-
-    for (c=0; controllers[c].device; c++) {
-	if (! strcmp(name, (char *)controllers[c].internal_name)) {
-		hdc_current = c;
-		break;
-	}
-    }
-}
-
-
 /* Reset the HDC, whichever one that is. */
 void
 hdc_reset(void)
 {
 #ifdef ENABLE_HDC_LOG
     hdc_log("HDC: reset(current=%d, internal=%d)\n",
-	hdc_current, (machines[machine].flags & MACHINE_HDC)?1:0);
+	hdc_type, (machines[machine].flags & MACHINE_HDC)?1:0);
 #endif
 
     /* If we have a valid controller, add its device. */
-    if (hdc_current > 1)
-	device_add(controllers[hdc_current].device);
+    if (hdc_type > 1)
+	device_add(controllers[hdc_type].device);
 
     /* Reconfire and reset the IDE layer. */
     ide_ter_disable();
@@ -244,4 +223,19 @@ int
 hdc_available(int hdc)
 {
     return(device_available(controllers[hdc].device));
+}
+
+
+int
+hdc_get_from_internal_name(char *s)
+{
+    int c = 0;
+
+    while (controllers[c].internal_name != NULL) {
+	if (! strcmp((char *)controllers[c].internal_name, s))
+		return(c);
+	c++;
+    }
+
+    return(-1);
 }

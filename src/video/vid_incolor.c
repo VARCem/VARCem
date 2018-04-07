@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.3	2018/03/15
+ * Version:	@(#)vid_incolor.c	1.0.4	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,12 +43,12 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../io.h"
-#include "../lpt.h"
 #include "../pit.h"
 #include "../mem.h"
 #include "../rom.h"
 #include "../timer.h"
 #include "../device.h"
+#include "../parallel.h"
 #include "video.h"
 #include "vid_incolor.h"
 
@@ -1073,7 +1073,7 @@ void *incolor_init(const device_t *info)
 	}
 	incolor->palette_idx = 0;
 
-	lpt3_init(0x3BC);
+	parallel_setup(3, 0x3BC);
 
         return incolor;
 }

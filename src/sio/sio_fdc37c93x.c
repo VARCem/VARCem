@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.4	2018/03/13
+ * Version:	@(#)sio_fdc37c93x.c	1.0.5	2018/04/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -41,7 +41,7 @@
 #include "../io.h"
 #include "../device.h"
 #include "../pci.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
@@ -108,13 +108,13 @@ static void fdc37c93x_lpt_handler(void)
 	uint8_t global_enable = !!(fdc37c93x_regs[0x22] & (1 << 3));
 	uint8_t local_enable = !!fdc37c93x_ld_regs[3][0x30];
 
-	lpt1_remove();
+	parallel_remove(1);
 	if (global_enable && local_enable)
 	{
 		ld_port = make_port(3);
 		/* pclog("fdc37c93x: Setting LPT1 port to %04X\n", ld_port); */
 		if ((ld_port >= 0x0100) && (ld_port <= 0x0FFC))
-			lpt1_init(ld_port);
+			parallel_setup(1, ld_port);
 	}
 }
 
@@ -572,7 +572,7 @@ static void fdc37c935_reset(void)
 
 static void fdc37c93x_init(void)
 {
-	lpt2_remove();
+	parallel_remove(2);
 
 	fdc37c93x_fdc = device_add(&fdc_at_smc_device);
 

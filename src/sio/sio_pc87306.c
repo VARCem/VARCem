@@ -8,7 +8,7 @@
  *
  *		Emulation of the NatSemi PC87306 Super I/O chip.
  *
- * Version:	@(#)sio_pc87306.c	1.0.2	2018/03/07
+ * Version:	@(#)sio_pc87306.c	1.0.3	2018/04/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -40,7 +40,7 @@
 #include "../io.h"
 #include "../device.h"
 #include "../pci.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
@@ -84,6 +84,7 @@ void lpt1_handler()
 {
         int temp;
         uint16_t lptba;
+
 	temp = pc87306_regs[0x01] & 3;
         lptba = ((uint16_t) pc87306_regs[0x19]) << 2;
 	if (pc87306_regs[0x1B] & 0x10) {
@@ -109,7 +110,7 @@ void lpt1_handler()
 		}
 	}
 	if (lpt_port)
-		lpt1_init(lpt_port);
+		parallel_setup(1, lpt_port);
 }
 
 void serial1_handler()
@@ -228,7 +229,7 @@ process_value:
 		case 0:
 			if (valxor & 1)
 			{
-				lpt1_remove();
+				parallel_remove(1);
 				if (val & 1)
 				{
 					lpt1_handler();
@@ -284,7 +285,7 @@ process_value:
 		case 1:
 			if (valxor & 3)
 			{
-				lpt1_remove();
+				parallel_remove(1);
 				if (pc87306_regs[0] & 1)
 				{
 					lpt1_handler();
@@ -320,7 +321,7 @@ process_value:
 			{
 				if (val & 1)
 				{
-					lpt1_remove();
+					parallel_remove(1);
 					serial_remove(1);
 					serial_remove(2);
 					fdc_remove(pc87306_fdc);
@@ -368,7 +369,7 @@ process_value:
 		case 0x19:
 			if (valxor)
 			{
-				lpt1_remove();
+				parallel_remove(1);
 				if (pc87306_regs[0] & 1)
 				{
 					lpt1_handler();
@@ -378,7 +379,7 @@ process_value:
 		case 0x1B:
 			if (valxor & 0x70)
 			{
-				lpt1_remove();
+				parallel_remove(1);
 				if (!(val & 0x40))
 				{
 					pc87306_regs[0x19] = 0xEF;
@@ -475,8 +476,8 @@ void pc87306_reset(void)
 		0 = 360 rpm @ 500 kbps for 3.5"
 		1 = Default, 300 rpm @ 500,300,250,1000 kbps for 3.5"
 	*/
-	lpt1_remove();
-	lpt2_remove();
+	parallel_remove(1);
+	parallel_remove(2);
 	lpt1_handler();
 	serial_remove(1);
 	serial_remove(2);
@@ -490,7 +491,7 @@ void pc87306_init()
 {
 	pc87306_fdc = device_add(&fdc_at_nsc_device);
 
-	lpt2_remove();
+	parallel_remove(2);
 
 	pc87306_reset();
 

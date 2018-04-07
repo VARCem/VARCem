@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.9	2018/03/31
+ * Version:	@(#)config.c	1.0.10	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,7 +53,8 @@
 #include "machine/machine.h"
 #include "nvr.h"
 #include "device.h"
-#include "lpt.h"
+#include "serial.h"
+#include "parallel.h"
 #include "mouse.h"
 #include "game/gameport.h"
 #include "floppy/fdd.h"
@@ -700,30 +701,25 @@ load_network(void)
 static void
 load_ports(void)
 {
+    char temp[128];
     char *cat = "Ports (COM & LPT)";
     char *p;
+    int i;
 
-    serial_enabled[0] = !!config_get_int(cat, "serial1_enabled", 0);
-    serial_enabled[1] = !!config_get_int(cat, "serial2_enabled", 0);
-    lpt_enabled = !!config_get_int(cat, "lpt_enabled", 0);
+    for (i = 0; i < SERIAL_MAX; i++) {
+	sprintf(temp, "serial%i_enabled", i);
+	serial_enabled[i] = !!config_get_int(cat, temp, 0);
+    }
+    for (i = 0; i < PARALLEL_MAX; i++) {
+	sprintf(temp, "parallel%i_enabled", i);
+	parallel_enabled[i] = !!config_get_int(cat, temp, 0);
 
-    p = (char *)config_get_string(cat, "lpt1_device", NULL);
-    if (p != NULL)
-	strcpy(lpt_device_names[0], p);
-      else
-	strcpy(lpt_device_names[0], "none");
-
-    p = (char *)config_get_string(cat, "lpt2_device", NULL);
-    if (p != NULL)
-	strcpy(lpt_device_names[1], p);
-      else
-	strcpy(lpt_device_names[1], "none");
-
-    p = (char *)config_get_string(cat, "lpt3_device", NULL);
-    if (p != NULL)
-	strcpy(lpt_device_names[2], p);
-      else
-	strcpy(lpt_device_names[2], "none");
+	sprintf(temp, "parallel%i_device", i);
+	p = (char *)config_get_string(cat, temp, NULL);
+	if (p == NULL)
+		p = "none";
+	strcpy(parallel_device[i], p);
+    }
 }
 
 
@@ -749,24 +745,14 @@ load_other_peripherals(void)
       else
 	scsi_card_current = 0;
 
-    if (hdc_name) {
-	free(hdc_name);
-	hdc_name = NULL;
-    }
     p = config_get_string(cat, "hdc", NULL);
     if (p == NULL) {
-	if (machines[machine].flags & MACHINE_HDC) {
-		hdc_name = (char *) malloc((strlen("internal") + 1) * sizeof(char));
-		strcpy(hdc_name, "internal");
-	} else {
-		hdc_name = (char *) malloc((strlen("none") + 1) * sizeof(char));
-		strcpy(hdc_name, "none");
-	}
-    } else {
-	hdc_name = (char *) malloc((strlen(p) + 1) * sizeof(char));
-	strcpy(hdc_name, p);
+	if (machines[machine].flags & MACHINE_HDC)
+		p = "internal";
+	  else
+		p = "none";
     }
-    config_set_string(cat, "hdc", hdc_name);
+    hdc_type = hdc_get_from_internal_name(p);
 
     memset(temp, '\0', sizeof(temp));
     for (c=2; c<4; c++) {
@@ -1345,8 +1331,9 @@ load_other_removable_devices(void)
 void
 config_load(void)
 {
-    pclog("Loading config file '%ls'..\n", cfg_path);
+    int i;
 
+    pclog("CONFIG: loading file '%ls'..\n", cfg_path);
     if (! config_read(cfg_path)) {
 	cpu = 0;
 #ifdef USE_LANGUAGE
@@ -1357,20 +1344,18 @@ config_load(void)
 	vid_api = plat_vidapi("default");;
 	enable_sync = 1;
 	joystick_type = 0;
-	if (hdc_name) {
-		free(hdc_name);
-		hdc_name = NULL;
-	}
-	hdc_name = (char *) malloc((strlen("none")+1) * sizeof(char));
-	strcpy(hdc_name, "none");
-	serial_enabled[0] = 0;
-	serial_enabled[1] = 0;
-	lpt_enabled = 0;
+	hdc_type = 0;
+	for (i = 0; i < SERIAL_MAX; i++)
+		serial_enabled[i] = 0;
+	for (i = 0; i < PARALLEL_MAX; i++)
+		parallel_enabled[i] = 0;
 	fdd_set_type(0, 2);
+	fdd_set_check_bpb(0, 1);
 	fdd_set_type(1, 2);
+	fdd_set_check_bpb(1, 1);
 	mem_size = 640;
 
-	pclog("Config file not present or invalid!\n");
+	pclog("CONFIG: file not present or invalid, using defaults!\n");
 	return;
     }
 
@@ -1390,7 +1375,7 @@ config_load(void)
     /* Mark the configuration as changed. */
     config_changed = 1;
 
-    pclog("Config loaded.\n\n");
+    pclog("CONFIG: file loaded.\n\n");
 }
 
 
@@ -1701,37 +1686,31 @@ save_network(void)
 static void
 save_ports(void)
 {
+    char temp[128];
     char *cat = "Ports (COM & LPT)";
+    int i;
 
-    if (serial_enabled[0])
-	config_set_int(cat, "serial1_enabled", serial_enabled[0]);
-      else
-	config_delete_var(cat, "serial1_enabled");
+    for (i = 0; i < SERIAL_MAX; i++) {
+	if (serial_enabled[i]) {
+		sprintf(temp, "serial%i_enabled", i);
+		config_set_int(cat, temp, 1);
+	} else
+		config_delete_var(cat, temp);
+    }
 
-    if (serial_enabled[1])
-	config_set_int(cat, "serial2_enabled", serial_enabled[1]);
-      else
-	config_delete_var(cat, "serial2_enabled");
+    for (i = 0; i < PARALLEL_MAX; i++) {
+	if (parallel_enabled[i]) {
+		sprintf(temp, "parallel%i_enabled", i);
+		config_set_int(cat, temp, 1);
+	} else
+		config_delete_var(cat, temp);
 
-    if (lpt_enabled)
-	config_set_int(cat, "lpt_enabled", lpt_enabled);
-      else
-	config_delete_var(cat, "lpt_enabled");
-
-    if (strcmp(lpt_device_names[0], "none"))
-	config_set_string(cat, "lpt1_device", lpt_device_names[0]);
-      else
-	config_delete_var(cat, "lpt1_device");
-
-    if (strcmp(lpt_device_names[1], "none"))
-	config_set_string(cat, "lpt2_device", lpt_device_names[1]);
-      else
-	config_delete_var(cat, "lpt2_device");
-
-    if (strcmp(lpt_device_names[2], "none"))
-	config_set_string(cat, "lpt3_device", lpt_device_names[2]);
-      else
-	config_delete_var(cat, "lpt3_device");
+	sprintf(temp, "parallel%i_device", i);
+	if (strcmp(parallel_device[i], "none"))
+		config_set_string(cat, temp, parallel_device[i]);
+	  else
+		config_delete_var(cat, temp);
+    }
 
     delete_section_if_empty(cat);
 }
@@ -1751,7 +1730,7 @@ save_other_peripherals(void)
 	config_set_string(cat, "scsi_card",
 			  scsi_card_get_internal_name(scsi_card_current));
 
-    config_set_string(cat, "hdc", hdc_name);
+    config_set_string(cat, "hdc", hdc_get_internal_name(hdc_type));
 
     memset(temp, '\0', sizeof(temp));
     for (c=2; c<4; c++) {

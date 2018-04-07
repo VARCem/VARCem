@@ -11,7 +11,7 @@
  *		Winbond W83877F Super I/O Chip
  *		Used by the Award 430HX
  *
- * Version:	@(#)sio_w83877f.c	1.0.2	2018/03/07
+ * Version:	@(#)sio_w83877f.c	1.0.3	2018/04/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -46,7 +46,7 @@
 #include "../pci.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
@@ -412,8 +412,8 @@ process_value:
 			}
 			if (valxor & 0x80)
 			{
-				lpt1_remove();
-				if (!(w83877f_regs[4] & 0x80))  lpt1_init(make_port(0x23));
+				parallel_remove(1);
+				if (!(w83877f_regs[4] & 0x80))  parallel_setup(1, make_port(0x23));
 			}
 			break;
 		case 6:
@@ -457,8 +457,8 @@ process_value:
 		case 0x23:
 			if (valxor)
 			{
-				lpt1_remove();
-				if (!(w83877f_regs[4] & 0x80))  lpt1_init(make_port(0x23));
+				parallel_remove(1);
+				if (!(w83877f_regs[4] & 0x80))  parallel_setup(1, make_port(0x23));
 			}
 			break;
 		case 0x24:
@@ -517,8 +517,8 @@ uint8_t w83877f_read(uint16_t port, void *priv)
 
 void w83877f_reset(void)
 {
-	lpt1_remove();
-	lpt1_init(0x378);
+	parallel_remove(1);
+	parallel_setup(1, 0x378);
 
 	fdc_reset(w83877f_fdc);
 
@@ -554,7 +554,7 @@ void w83877f_init(void)
 {
 	w83877f_fdc = device_add(&fdc_at_winbond_device);
 
-	lpt2_remove();
+	parallel_remove(2);
 
 	w83877f_reset();
 

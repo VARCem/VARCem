@@ -8,7 +8,7 @@
  *
  *		Implementation of the SMC FDC37C669 Super I/O Chip.
  *
- * Version:	@(#)sio_fdc37c669.c	1.0.2	2018/03/07
+ * Version:	@(#)sio_fdc37c669.c	1.0.3	2018/04/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -40,7 +40,7 @@
 #include "../io.h"
 #include "../device.h"
 #include "../pci.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
@@ -158,11 +158,11 @@ process_value:
 			if (valxor & 4)
 			{
 				/* pclog("Removing LPT1\n"); */
-				lpt1_remove();
+				parallel_remove(1);
 				if ((fdc37c669_regs[1] & 4) && (fdc37c669_regs[0x23] >= 0x40)) 
 				{
 					/* pclog("LPT1 init (%02X)\n", make_port(0x23)); */
-					lpt1_init(make_port(0x23));
+					parallel_setup(1, make_port(0x23));
 				}
 			}
 			if (valxor & 7)
@@ -233,11 +233,11 @@ process_value:
 			if (valxor)
 			{
 				/* pclog("Removing LPT1\n"); */
-				lpt1_remove();
+				parallel_remove(1);
 				if ((fdc37c669_regs[1] & 4) && (fdc37c669_regs[0x23] >= 0x40)) 
 				{
 					/* pclog("LPT1 init (%02X)\n", make_port(0x23)); */
-					lpt1_init(make_port(0x23));
+					parallel_setup(1, make_port(0x23));
 				}
 			}
 			break;
@@ -321,10 +321,9 @@ void fdc37c669_reset(void)
 	serial_remove(2);
 	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
 
-	lpt2_remove();
-
-	lpt1_remove();
-	lpt1_init(0x378);
+	parallel_remove(1);
+	parallel_remove(2);
+	parallel_setup(1, 0x378);
 
 	memset(fdc37c669_regs, 0, 42);
 	fdc37c669_regs[0] = 0x28;

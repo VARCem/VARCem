@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.8	2018/04/02
+ * Version:	@(#)resource.h	1.0.9	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,10 +53,10 @@
 #define  DLG_CFG_NETWORK	115	/* sub-dialog of config */
 #define  DLG_CFG_PORTS		116	/* sub-dialog of config */
 #define  DLG_CFG_PERIPHERALS	117	/* sub-dialog of config */
-#define  DLG_CFG_HARD_DISKS	118	/* sub-dialog of config */
-#define  DLG_CFG_HARD_DISKS_ADD	119	/* sub-dialog of config */
-#define  DLG_CFG_FLOPPY_DRIVES	120	/* sub-dialog of config */
-#define  DLG_CFG_OTHER_REMOVABLE_DEVICES	121	/* sub-dialog of config */
+#define  DLG_CFG_DISK		118	/* sub-dialog of config */
+#define  DLG_CFG_DISK_ADD	119	/* sub-dialog of config */
+#define  DLG_CFG_FLOPPY		120	/* sub-dialog of config */
+#define  DLG_CFG_RMV_DEVICES	121	/* sub-dialog of config */
 
 /* Static text label IDs. */
 #define IDT_1700		1700	/* Language: */
@@ -168,12 +168,14 @@
 #define IDC_COMBO_PCAP		1091
 #define IDC_COMBO_NET		1092
 
-#define IDC_COMBO_LPT1		1110	/* ports config */
-#define IDC_COMBO_LPT2		1111
-#define IDC_COMBO_LPT3		1112
-#define IDC_CHECK_SERIAL1	1113
-#define IDC_CHECK_SERIAL2	1114
-#define IDC_CHECK_PARALLEL	1115
+#define IDC_CHECK_PARALLEL1	1110	/* ports config */
+#define IDC_CHECK_PARALLEL2	1111
+#define IDC_CHECK_PARALLEL3	1112
+#define IDC_COMBO_PARALLEL1	1113
+#define IDC_COMBO_PARALLEL2	1114
+#define IDC_COMBO_PARALLEL3	1115
+#define IDC_CHECK_SERIAL1	1116
+#define IDC_CHECK_SERIAL2	1117
 
 #define IDC_OTHER_PERIPH	1120	/* other periph config */
 #define IDC_COMBO_SCSI		1121

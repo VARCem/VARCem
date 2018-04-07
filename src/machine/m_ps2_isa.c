@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.4	2018/03/21
+ * Version:	@(#)m_ps2_isa.c	1.0.5	2018/04/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,7 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../keyboard.h"
-#include "../lpt.h"
+#include "../parallel.h"
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
@@ -114,24 +114,23 @@ static void ps2_write(uint16_t port, uint8_t val, void *p)
                 ps2_94 = val;
                 break;
                 case 0x102:
-                lpt1_remove();
+                parallel_remove(1);
                 if (val & 0x04)
                         serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
                 else
                         serial_remove(1);
                 if (val & 0x10)
                 {
-                        switch ((val >> 5) & 3)
-                        {
+                        switch ((val >> 5) & 3) {
                                 case 0:
-                                lpt1_init(0x3bc);
-                                break;
+                                	parallel_setup(1, 0x3bc);
+                                	break;
                                 case 1:
-                                lpt1_init(0x378);
-                                break;
+                                	parallel_setup(1, 0x378);
+                                	break;
                                 case 2:
-                                lpt1_init(0x278);
-                                break;
+                                	parallel_setup(1, 0x278);
+                                	break;
                         }
                 }
                 ps2_102 = val;
@@ -179,7 +178,7 @@ static void ps2board_init(void)
 
         ps2_190 = 0;
 
-        lpt1_init(0x3bc);
+        parallel_setup(1, 0x3bc);
         
         memset(&ps2_hd, 0, sizeof(ps2_hd));
 }

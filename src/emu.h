@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.13	2018/04/02
+ * Version:	@(#)emu.h	1.0.14	2018/04/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,8 +49,6 @@
 
 
 /* Configuration values. */
-#define SERIAL_MAX	2
-#define PARALLEL_MAX	1
 #define SCREEN_RES_X	640
 #define SCREEN_RES_Y	480
 
@@ -107,13 +105,15 @@ extern int	vid_cga_contrast,		/* (C) video */
 		vid_card,			/* (C) graphics/video card */
 		video_speed;			/* (C) video */
 extern int	serial_enabled[],		/* (C) enable serial ports */
-		lpt_enabled,			/* (C) enable LPT ports */
+		parallel_enabled[],		/* (C) enable LPT ports */
 		bugger_enabled;			/* (C) enable ISAbugger */
+extern char	parallel_device[3][16];		/* (C) set up LPT devices */
 extern int	rctrl_is_lalt;			/* (C) set R-CTRL as L-ALT */
 extern int	update_icons;			/* (C) enable icons updates */
 #ifdef WALTJE
 extern int	romdos_enabled;			/* (C) enable ROM DOS */
 #endif
+extern int	hdc_type;			/* (C) HDC type */
 extern int	sound_is_float,			/* (C) sound uses FP values */
 		GAMEBLASTER,			/* (C) sound option */
 		GUS,				/* (C) sound option */

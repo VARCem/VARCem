@@ -40,7 +40,7 @@
  *			 	100 joystick port enabled
  *		f000:e1e2-dc0c	CPU speed is 4.77 mhz
  *		f000:e1e5-f9c0	keyboard processor error
- *		f000:e1eb-c617	external lpt1 at 0x3bc
+ *		f000:e1eb-c617	external LPT1 at 0x3bc
  *		f000:e1ee-e8ee	external coms at
  *
  *		Routines:
@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.5	2018/03/21
+ * Version:	@(#)m_europc.c	1.0.6	2018/04/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -120,6 +120,7 @@
 #include "../rom.h"
 #include "../nvr.h"
 #include "../device.h"
+#include "../parallel.h"
 #include "../keyboard.h"
 #include "../mouse.h"
 #include "../game/gameport.h"
@@ -655,7 +656,7 @@ europc_boot(const device_t *info)
      *
      * We only do this if we have not configured another one.
      */
-    if (hdc_current == 1)
+    if (hdc_type == 1)
 	(void)device_add(&europc_hdc_device);
 
     return(sys);
