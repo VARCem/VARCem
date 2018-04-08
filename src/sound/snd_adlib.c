@@ -8,7 +8,7 @@
  *
  *		Implementation of the ADLIB sound device.
  *
- * Version:	@(#)snd_adlib.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_adlib.c	1.0.3	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,7 +46,6 @@
 #include "../mca.h"
 #include "../device.h"
 #include "sound.h"
-#include "snd_adlib.h"
 #include "snd_opl.h"
 
 

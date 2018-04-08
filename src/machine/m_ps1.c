@@ -28,7 +28,7 @@
  *		boot. Sometimes, they do, and then it shows an "Incorrect
  *		DOS" error message??  --FvK
  *
- * Version:	@(#)m_ps1.c	1.0.9	2018/04/05
+ * Version:	@(#)m_ps1.c	1.0.10	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -350,7 +350,6 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 0x0102:
-		parallel_remove(1);
 		if (val & 0x04)
 			serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
 		  else
@@ -512,8 +511,6 @@ ps1_setup(int model)
 		 0xf80000, 0x80000, 0x7ffff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 
-	parallel_remove(1);
-	parallel_remove(2);
 	parallel_setup(1, 0x03bc);
 
 	serial_remove(1);

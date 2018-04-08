@@ -8,7 +8,7 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_wss.c	1.0.3	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "sound.h"
 #include "snd_ad1848.h"
 #include "snd_opl.h"
-#include "snd_wss.h"
 
 
 /*530, 11, 3 - 530=23*/

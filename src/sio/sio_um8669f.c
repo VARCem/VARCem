@@ -29,7 +29,7 @@
  *			70 - IRQ
  *			74 - DMA
  *
- * Version:	@(#)sio_um8669f.c	1.0.3	2018/04/05
+ * Version:	@(#)sio_um8669f.c	1.0.4	2018/04/07
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -181,7 +181,7 @@ void um8669f_pnp_write(uint16_t port, uint8_t val, void *p)
                                 case DEV_LPT1:
 				if ((um8669f->cur_reg == REG_ENABLE) && valxor)
 				{
-        	                        parallel_remove(1);
+//FIXME:        	                        parallel_remove(1);
                 	                if (um8669f->dev[DEV_LPT1].enable & 1)
                         	                parallel_setup(1, um8669f->dev[DEV_LPT1].addr);
 				}
@@ -289,8 +289,8 @@ void um8669f_reset(void)
 	serial_remove(2);
 	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
 
-	parallel_remove(1);
-	parallel_remove(2);
+//FIXME:	parallel_remove(1);
+//FIXME:	parallel_remove(2);
 	parallel_setup(1, 0x378);
         
 	if (um8669f_global.pnp_active) {

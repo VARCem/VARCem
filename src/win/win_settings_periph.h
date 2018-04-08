@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_periph.h	1.0.2	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,9 @@
  *									*
  ************************************************************************/
 
-static char *hdc_names[16];
+static int	scsi_to_list[20],
+		list_to_scsi[20];
+static char	*hdc_names[16];
 static const int valid_ide_irqs[11] = { 2, 3, 4, 5, 7, 9, 10, 11, 12, 14, 15 };
 
 
@@ -142,7 +144,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (! *stransi)
 				break;
 
-			settings_scsi_to_list[c] = d;			
+			scsi_to_list[c] = d;			
 			if (scsi_card_available(c)) {
 				dev = scsi_card_getdevice(c);
 
@@ -153,14 +155,14 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						mbstowcs(temp, stransi, sizeof_w(temp));
 						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 					}
-					settings_list_to_scsi[d] = c;
+					list_to_scsi[d] = c;
 					d++;
 				}
 			}
 
 			c++;
 		}
-		SendMessage(h, CB_SETCURSEL, settings_scsi_to_list[temp_scsi_card], 0);
+		SendMessage(h, CB_SETCURSEL, scsi_to_list[temp_scsi_card], 0);
 		EnableWindow(h, d ? TRUE : FALSE);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
@@ -202,14 +204,14 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 			case IDC_CONFIGURE_SCSI:
 				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-				temp_scsi_card = settings_list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)scsi_card_getdevice(temp_scsi_card));
 				break;
 
 			case IDC_COMBO_SCSI:
 				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-				temp_scsi_card = settings_list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
 				if (scsi_card_has_config(temp_scsi_card))
@@ -229,7 +231,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			temp_hdc_type = 0;
 
 		h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-		temp_scsi_card = settings_list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_IDE_TER);
 		temp_ide_ter = SendMessage(h, CB_GETCURSEL, 0, 0);

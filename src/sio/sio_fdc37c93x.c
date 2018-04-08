@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.5	2018/04/05
+ * Version:	@(#)sio_fdc37c93x.c	1.0.6	2018/04/07
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -108,7 +108,7 @@ static void fdc37c93x_lpt_handler(void)
 	uint8_t global_enable = !!(fdc37c93x_regs[0x22] & (1 << 3));
 	uint8_t local_enable = !!fdc37c93x_ld_regs[3][0x30];
 
-	parallel_remove(1);
+//FIXME:	parallel_remove(1);
 	if (global_enable && local_enable)
 	{
 		ld_port = make_port(3);
@@ -572,7 +572,7 @@ static void fdc37c935_reset(void)
 
 static void fdc37c93x_init(void)
 {
-	parallel_remove(2);
+//FIXME:	parallel_remove(2);
 
 	fdc37c93x_fdc = device_add(&fdc_at_smc_device);
 

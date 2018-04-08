@@ -11,7 +11,7 @@
  *		Winbond W83877F Super I/O Chip
  *		Used by the Award 430HX
  *
- * Version:	@(#)sio_w83877f.c	1.0.3	2018/04/05
+ * Version:	@(#)sio_w83877f.c	1.0.4	2018/04/07
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -412,7 +412,7 @@ process_value:
 			}
 			if (valxor & 0x80)
 			{
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if (!(w83877f_regs[4] & 0x80))  parallel_setup(1, make_port(0x23));
 			}
 			break;
@@ -457,7 +457,7 @@ process_value:
 		case 0x23:
 			if (valxor)
 			{
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if (!(w83877f_regs[4] & 0x80))  parallel_setup(1, make_port(0x23));
 			}
 			break;
@@ -517,7 +517,7 @@ uint8_t w83877f_read(uint16_t port, void *priv)
 
 void w83877f_reset(void)
 {
-	parallel_remove(1);
+//FIXME:	parallel_remove(1);
 	parallel_setup(1, 0x378);
 
 	fdc_reset(w83877f_fdc);
@@ -554,7 +554,7 @@ void w83877f_init(void)
 {
 	w83877f_fdc = device_add(&fdc_at_winbond_device);
 
-	parallel_remove(2);
+//FIXME:	parallel_remove(2);
 
 	w83877f_reset();
 

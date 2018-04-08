@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.5	2018/04/05
+ * Version:	@(#)m_ps2_isa.c	1.0.6	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -111,53 +111,51 @@ static void ps2_write(uint16_t port, uint8_t val, void *p)
         switch (port)
         {
                 case 0x94:
-                ps2_94 = val;
-                break;
+                	ps2_94 = val;
+                	break;
                 case 0x102:
-                parallel_remove(1);
-                if (val & 0x04)
-                        serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
-                else
-                        serial_remove(1);
-                if (val & 0x10)
-                {
-                        switch ((val >> 5) & 3) {
-                                case 0:
-                                	parallel_setup(1, 0x3bc);
-                                	break;
-                                case 1:
-                                	parallel_setup(1, 0x378);
-                                	break;
-                                case 2:
-                                	parallel_setup(1, 0x278);
-                                	break;
-                        }
-                }
-                ps2_102 = val;
-                break;
+                	if (val & 0x04)
+                        	serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
+                	else
+                        	serial_remove(1);
+                	if (val & 0x10)
+                	{
+                        	switch ((val >> 5) & 3) {
+                                	case 0:
+                                		parallel_setup(1, 0x3bc);
+                                		break;
+                                	case 1:
+                                		parallel_setup(1, 0x378);
+                                		break;
+                                	case 2:
+                                		parallel_setup(1, 0x278);
+                                		break;
+                        	}
+                	}
+                	ps2_102 = val;
+                	break;
                 case 0x103:
-                ps2_103 = val;
-                break;
+                	ps2_103 = val;
+                	break;
                 case 0x104:
-                ps2_104 = val;
-                break;
+                	ps2_104 = val;
+                	break;
                 case 0x105:
-                ps2_105 = val;
-                break;
+                	ps2_105 = val;
+                	break;
                 case 0x190:
-                ps2_190 = val;
-                break;
-                
+                	ps2_190 = val;
+                	break;
                 case 0x322:
-                ps2_hd.ctrl = val;
-                if (val & 0x80)
-                        ps2_hd.status |= 0x02;
-                break;
+                	ps2_hd.ctrl = val;
+                	if (val & 0x80)
+                        	ps2_hd.status |= 0x02;
+                	break;
                 case 0x324:
-                ps2_hd.attention = val & 0xf0;
-                if (ps2_hd.attention)
-                        ps2_hd.status = 0x14;
-                break;
+                	ps2_hd.attention = val & 0xf0;
+                	if (ps2_hd.attention)
+                        	ps2_hd.status = 0x14;
+                	break;
         }
 }
 

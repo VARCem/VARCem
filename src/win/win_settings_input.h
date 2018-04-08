@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_input.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_input.h	1.0.2	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,10 @@
  *									*
  ************************************************************************/
 
+static int	mouse_to_list[20],
+		list_to_mouse[20];
+
+
 static int
 mouse_valid(int num, int m)
 {
@@ -74,19 +78,19 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
 		d = 0;
 		for (c = 0; c < mouse_get_ndev(); c++) {
-			settings_mouse_to_list[c] = d;
+			mouse_to_list[c] = d;
 
 			if (mouse_valid(c, temp_machine)) {
 				stransi = mouse_get_name(c);
 				mbstowcs(temp, stransi, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 
-				settings_list_to_mouse[d] = c;
+				list_to_mouse[d] = c;
 				d++;
 			}
 		}
 
-		SendMessage(h, CB_SETCURSEL, settings_mouse_to_list[temp_mouse], 0);
+		SendMessage(h, CB_SETCURSEL, mouse_to_list[temp_mouse], 0);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_MOUSE);
 		if (mouse_has_config(temp_mouse))
@@ -119,7 +123,7 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 			case IDC_COMBO_MOUSE:
 				h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
-				temp_mouse = settings_list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_mouse = list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_MOUSE);
 				if (mouse_has_config(temp_mouse))
@@ -130,7 +134,7 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_MOUSE:
 				h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
-				temp_mouse = settings_list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_mouse = list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
 				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)mouse_get_device(temp_mouse));
 				break;
 
@@ -176,7 +180,7 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVESETTINGS:
 		h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
-		temp_mouse = settings_list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		temp_mouse = list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 		temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);

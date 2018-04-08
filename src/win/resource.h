@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.9	2018/04/05
+ * Version:	@(#)resource.h	1.0.10	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -155,14 +155,12 @@
 
 #define IDC_SOUND		1070	/* sound config */
 #define IDC_COMBO_SOUND		1071
-#define IDC_CHECK_SSI		1072
-#define IDC_CHECK_CMS		1073
-#define IDC_CHECK_GUS		1074
-#define IDC_CHECK_NUKEDOPL	1075
-#define IDC_COMBO_MIDI		1076
-#define IDC_CHECK_MPU401	1077
-#define IDC_CONFIGURE_MPU401	1078
-#define IDC_CHECK_FLOAT		1079
+#define IDC_COMBO_MIDI		1072
+#define IDC_CHECK_NUKEDOPL	1073
+#define IDC_CHECK_FLOAT		1074
+#define IDC_CHECK_MPU401	1075
+#define IDC_CONFIGURE_MPU401	1076
+#define IDC_CHECK_CMS		1077
 
 #define IDC_COMBO_NET_TYPE	1090	/* network config */
 #define IDC_COMBO_PCAP		1091

@@ -15,7 +15,6 @@
     <ClCompile Include="..\..\..\keyboard.c" />
     <ClCompile Include="..\..\..\keyboard_at.c" />
     <ClCompile Include="..\..\..\keyboard_xt.c" />
-    <ClCompile Include="..\..\..\lpt.c" />
     <ClCompile Include="..\..\..\mca.c" />
     <ClCompile Include="..\..\..\mcr.c" />
     <ClCompile Include="..\..\..\mem.c" />
@@ -28,6 +27,8 @@
     <ClCompile Include="..\..\..\nvr.c" />
     <ClCompile Include="..\..\..\nvr_at.c" />
     <ClCompile Include="..\..\..\nvr_ps2.c" />
+    <ClCompile Include="..\..\..\parallel.c" />
+    <ClCompile Include="..\..\..\parallel_dev.c" />
     <ClCompile Include="..\..\..\pc.c" />
     <ClCompile Include="..\..\..\pci.c" />
     <ClCompile Include="..\..\..\pic.c" />
@@ -817,7 +818,6 @@
     <ClInclude Include="..\..\..\intel_sio.h" />
     <ClInclude Include="..\..\..\io.h" />
     <ClInclude Include="..\..\..\keyboard.h" />
-    <ClInclude Include="..\..\..\lpt.h" />
     <ClInclude Include="..\..\..\mca.h" />
     <ClInclude Include="..\..\..\mem.h" />
     <ClInclude Include="..\..\..\memregs.h" />
@@ -825,6 +825,8 @@
     <ClInclude Include="..\..\..\nmi.h" />
     <ClInclude Include="..\..\..\nvr.h" />
     <ClInclude Include="..\..\..\nvr_ps2.h" />
+    <ClInclude Include="..\..\..\parallel.h" />
+    <ClInclude Include="..\..\..\parallel_dev.h" />
     <ClInclude Include="..\..\..\pci.h" />
     <ClInclude Include="..\..\..\pic.h" />
     <ClInclude Include="..\..\..\pit.h" />

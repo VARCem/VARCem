@@ -8,7 +8,7 @@
  *
  *		Emulation of the NatSemi PC87306 Super I/O chip.
  *
- * Version:	@(#)sio_pc87306.c	1.0.3	2018/04/05
+ * Version:	@(#)sio_pc87306.c	1.0.4	2018/04/07
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -229,7 +229,7 @@ process_value:
 		case 0:
 			if (valxor & 1)
 			{
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if (val & 1)
 				{
 					lpt1_handler();
@@ -285,7 +285,7 @@ process_value:
 		case 1:
 			if (valxor & 3)
 			{
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if (pc87306_regs[0] & 1)
 				{
 					lpt1_handler();
@@ -321,7 +321,7 @@ process_value:
 			{
 				if (val & 1)
 				{
-					parallel_remove(1);
+//FIXME:					parallel_remove(1);
 					serial_remove(1);
 					serial_remove(2);
 					fdc_remove(pc87306_fdc);
@@ -369,7 +369,7 @@ process_value:
 		case 0x19:
 			if (valxor)
 			{
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if (pc87306_regs[0] & 1)
 				{
 					lpt1_handler();
@@ -379,7 +379,7 @@ process_value:
 		case 0x1B:
 			if (valxor & 0x70)
 			{
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if (!(val & 0x40))
 				{
 					pc87306_regs[0x19] = 0xEF;
@@ -476,8 +476,8 @@ void pc87306_reset(void)
 		0 = 360 rpm @ 500 kbps for 3.5"
 		1 = Default, 300 rpm @ 500,300,250,1000 kbps for 3.5"
 	*/
-	parallel_remove(1);
-	parallel_remove(2);
+//FIXME:	parallel_remove(1);
+//FIXME:	parallel_remove(2);
 	lpt1_handler();
 	serial_remove(1);
 	serial_remove(2);
@@ -491,7 +491,7 @@ void pc87306_init()
 {
 	pc87306_fdc = device_add(&fdc_at_nsc_device);
 
-	parallel_remove(2);
+//FIXME:	parallel_remove(2);
 
 	pc87306_reset();
 

@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the GUS device.
+ *		Definitions for the parallel port-attached devices.
  *
- * Version:	@(#)snd_gus.h	1.0.2	2018/03/15
+ * Version:	@(#)parallel_dev.h	1.0.1	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,11 +36,27 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef SOUND_GUS_H
-# define SOUND_GUS_H
+#ifndef EMU_PARALLEL_DEV_H
+# define EMU_PARALLE_DEVL_H
 
 
-extern const device_t gus_device;
+typedef struct _lpt_device_ {
+    const char	*name;
+    int		type;
+    void	*(*init)(const struct _lpt_device_ *);
+    void	(*close)(void *priv);
+    void	(*write_data)(uint8_t val, void *priv);
+    void	(*write_ctrl)(uint8_t val, void *priv);
+    uint8_t	(*read_status)(void *priv);
+} lpt_device_t;
 
 
-#endif	/*SOUND_GUS_H*/
+extern const char *parallel_device_get_name(int id);
+extern const char *parallel_device_get_internal_name(int id);
+extern const lpt_device_t *parallel_device_get_device(int id);
+extern int	parallel_device_get_from_internal_name(char *s);
+extern void	parallel_devices_init(void);
+extern void	parallel_devices_close(void);
+
+
+#endif	/*EMU_PARALLEL_DEV_H*/

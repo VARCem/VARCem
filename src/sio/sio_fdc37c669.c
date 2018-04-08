@@ -8,7 +8,7 @@
  *
  *		Implementation of the SMC FDC37C669 Super I/O Chip.
  *
- * Version:	@(#)sio_fdc37c669.c	1.0.3	2018/04/05
+ * Version:	@(#)sio_fdc37c669.c	1.0.4	2018/04/07
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -157,11 +157,9 @@ process_value:
 		case 1:
 			if (valxor & 4)
 			{
-				/* pclog("Removing LPT1\n"); */
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if ((fdc37c669_regs[1] & 4) && (fdc37c669_regs[0x23] >= 0x40)) 
 				{
-					/* pclog("LPT1 init (%02X)\n", make_port(0x23)); */
 					parallel_setup(1, make_port(0x23));
 				}
 			}
@@ -232,11 +230,9 @@ process_value:
 		case 0x23:
 			if (valxor)
 			{
-				/* pclog("Removing LPT1\n"); */
-				parallel_remove(1);
+//FIXME:				parallel_remove(1);
 				if ((fdc37c669_regs[1] & 4) && (fdc37c669_regs[0x23] >= 0x40)) 
 				{
-					/* pclog("LPT1 init (%02X)\n", make_port(0x23)); */
 					parallel_setup(1, make_port(0x23));
 				}
 			}
@@ -321,8 +317,8 @@ void fdc37c669_reset(void)
 	serial_remove(2);
 	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
 
-	parallel_remove(1);
-	parallel_remove(2);
+//FIXME:	parallel_remove(1);
+//FIXME:	parallel_remove(2);
 	parallel_setup(1, 0x378);
 
 	memset(fdc37c669_regs, 0, 42);

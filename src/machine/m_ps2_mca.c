@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.8	2018/04/05
+ * Version:	@(#)m_ps2_mca.c	1.0.9	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -357,7 +357,6 @@ static void model_50_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {
@@ -413,7 +412,6 @@ static void model_55sx_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {
@@ -489,7 +487,6 @@ static void model_70_type3_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {
@@ -539,7 +536,6 @@ static void model_80_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
-                parallel_remove(1);
                 serial_remove(1);
                 if (val & 0x04)
                 {

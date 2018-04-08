@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C663 and FDC37C665 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c66x.c	1.0.3	2018/04/05
+ * Version:	@(#)sio_fdc37c66x.c	1.0.4	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -173,7 +173,7 @@ static void set_serial2_addr()
 
 static void lpt1_handler()
 {
-	parallel_remove(1);
+//FIXME:	parallel_remove(1);
 	switch (fdc37c66x_regs[1] & 3)
 	{
 		case 1:
@@ -303,8 +303,8 @@ static void fdc37c66x_reset(void)
 	serial_remove(2);
 	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
 
-	parallel_remove(1);
-	parallel_remove(2);
+//FIXME:	parallel_remove(1);
+//FIXME:	parallel_remove(2);
 	parallel_setup(1, 0x378);
 
 	fdc_reset(fdc37c66x_fdc);

@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.4	2018/04/02
+ * Version:	@(#)sound.h	1.0.5	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,10 @@
 #define CD_BUFLEN	(CD_FREQ / 10)
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int	sound_dev_do_log;
 
 extern int	ppispeakon;
@@ -55,8 +59,7 @@ extern int	gated,
 
 extern int	sound_pos_global;
 extern int	sound_card_current;
-
-extern int sound_gain;
+extern int	sound_gain;
 
 
 extern void	snddev_log(const char *fmt, ...);
@@ -66,6 +69,7 @@ extern void	sound_add_handler(void (*get_buffer)(int32_t *buffer, \
 extern void	sound_add_process_handler(void (*get_buffer)(int32_t *buffer, \
 				  int len, void *p), void *p);
 
+extern void	snddev_reset(void);
 extern int	sound_card_available(int card);
 extern char	*sound_card_getname(int card);
 #ifdef EMU_DEVICE_H
@@ -75,24 +79,25 @@ extern int	sound_card_has_config(int card);
 extern char	*sound_card_get_internal_name(int card);
 extern int	sound_card_get_from_internal_name(char *s);
 extern void	sound_card_init(void);
-extern void	sound_set_cd_volume(unsigned int vol_l, unsigned int vol_r);
 
 extern void	sound_speed_changed(void);
 
-extern void	sound_realloc_buffers(void);
-
-extern void	sound_global_init(void);
-extern void	sound_init(void);
 extern void	sound_reset(void);
+extern void	sound_init(void);
+extern void	sound_close(void);
 
-extern void	sound_cd_thread_end(void);
-extern void	sound_cd_thread_reset(void);
+extern void	sound_cd_stop(void);
+extern void	sound_cd_set_volume(unsigned int vol_l, unsigned int vol_r);
 
 extern void	closeal(void);
 extern void	initalmain(int argc, char *argv[]);
 extern void	inital(void);
 extern void	givealbuffer(void *buf);
 extern void	givealbuffer_cd(void *buf);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif	/*EMU_SOUND_H*/

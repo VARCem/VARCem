@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.19	2018/04/05
+# Version:	@(#)Makefile.mingw	1.0.21	2018/04/08
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -509,7 +509,7 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_at_430lx_nx.o m_at_430fx.o \
 		    m_at_430hx.o m_at_430vx.o
 
-DEVOBJ		:= bugger.o parallel.o $(SERIAL) \
+DEVOBJ		:= bugger.o parallel.o parallel_dev.o $(SERIAL) \
 		    sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \
 		    sio_pc87306.o sio_w83877f.o sio_um8669f.o \
 		   keyboard.o \
@@ -559,6 +559,7 @@ NETOBJ		:= network.o \
 		    net_ne2000.o
 
 SNDOBJ		:= sound.o \
+		    sound_dev.o \
 		    openal.o \
 		    snd_opl.o snd_dbopl.o \
 		    dbopl.o nukedopl.o \

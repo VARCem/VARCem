@@ -8,7 +8,7 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)sound_sb.c	1.0.4	2018/03/31
+ * Version:	@(#)sound_sb.c	1.0.5	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -549,7 +549,7 @@ void sb_ct1335_mixer_write(uint16_t addr, uint8_t val, void *p)
                 mixer->cd     = sb_att_4dbstep_3bits[(mixer->regs[0x08] >> 1)&0x7];
                 mixer->voice  = sb_att_7dbstep_2bits[(mixer->regs[0x0A] >> 1)&0x3];
 
-                sound_set_cd_volume(((uint32_t)mixer->master * (uint32_t)mixer->cd) / 65535,
+                sound_cd_set_volume(((uint32_t)mixer->master * (uint32_t)mixer->cd) / 65535,
                                     ((uint32_t)mixer->master * (uint32_t)mixer->cd) / 65535);
         }
 }
@@ -670,7 +670,7 @@ void sb_ct1345_mixer_write(uint16_t addr, uint8_t val, void *p)
                 }
                 
                 /* TODO: pcspeaker volume? Or is it not worth? */
-                sound_set_cd_volume(((uint32_t)mixer->master_l * (uint32_t)mixer->cd_l) / 65535,
+                sound_cd_set_volume(((uint32_t)mixer->master_l * (uint32_t)mixer->cd_l) / 65535,
                                     ((uint32_t)mixer->master_r * (uint32_t)mixer->cd_r) / 65535);
         }
 }
@@ -836,7 +836,7 @@ void sb_ct1745_mixer_write(uint16_t addr, uint8_t val, void *p)
                 mixer->treble_r = mixer->regs[0x45] >> 4;
 
                 /*TODO: pcspeaker volume, with "output_selector" check? or better not? */
-                sound_set_cd_volume(((uint32_t)mixer->master_l * (uint32_t)mixer->cd_l) / 65535,
+                sound_cd_set_volume(((uint32_t)mixer->master_l * (uint32_t)mixer->cd_l) / 65535,
                                     ((uint32_t)mixer->master_r * (uint32_t)mixer->cd_r) / 65535);
 //                pclog("sb_ct1745: Received register WRITE: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
         }

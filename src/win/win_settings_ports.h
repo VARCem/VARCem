@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_ports.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_ports.h	1.0.2	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,9 +68,9 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				mbstowcs(temp, stransi, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 
-				if (! strcmp(temp_parallel_device[i], parallel_device_get_internal_name(c)))
+				/* Currently selected device? */
+				if (temp_parallel_device[i] == c)
 					d = c;
-
 				c++;
 			}
 			SendMessage(h, CB_SETCURSEL, d, 0);
@@ -112,7 +112,7 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			h = GetDlgItem(hdlg, IDC_COMBO_PARALLEL1+i);
 			c = SendMessage(h, CB_GETCURSEL, 0, 0);
-			strcpy(temp_parallel_device[i], parallel_device_get_internal_name(c));
+			temp_parallel_device[i] = c;
 		}
 
 		for (i = 0; i < SERIAL_MAX; i++) {

@@ -84,7 +84,8 @@
     <ClCompile Include="..\..\..\keyboard.c" />
     <ClCompile Include="..\..\..\keyboard_at.c" />
     <ClCompile Include="..\..\..\keyboard_xt.c" />
-    <ClCompile Include="..\..\..\lpt.c" />
+    <ClCompile Include="..\..\..\parallel.c" />
+    <ClCompile Include="..\..\..\parallel_dev.c" />
     <ClCompile Include="..\..\..\machine\machine.c" />
     <ClCompile Include="..\..\..\machine\machine_table.c" />
     <ClCompile Include="..\..\..\machine\m_amstrad.c" />
@@ -422,7 +423,6 @@
     <ClInclude Include="..\..\..\io.h" />
     <ClInclude Include="..\..\..\keyboard.h" />
     <ClInclude Include="..\..\..\lang\language.h" />
-    <ClInclude Include="..\..\..\lpt.h" />
     <ClInclude Include="..\..\..\machine\machine.h" />
     <ClInclude Include="..\..\..\machine\m_at_t3100e.h" />
     <ClInclude Include="..\..\..\machine\m_xt_t1000.h" />
@@ -460,6 +460,8 @@
     <ClInclude Include="..\..\..\nmi.h" />
     <ClInclude Include="..\..\..\nvr.h" />
     <ClInclude Include="..\..\..\nvr_ps2.h" />
+    <ClInclude Include="..\..\..\parallel.h" />
+    <ClInclude Include="..\..\..\parallel_dev.h" />
     <ClInclude Include="..\..\..\pci.h" />
     <ClInclude Include="..\..\..\pic.h" />
     <ClInclude Include="..\..\..\pit.h" />

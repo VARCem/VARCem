@@ -79,7 +79,7 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.3	2018/03/28
+ * Version:	@(#)snd_pas16.c	1.0.4	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -126,7 +126,6 @@
 #include "snd_opl.h"
 #include "snd_sb.h"
 #include "snd_sb_dsp.h"
-#include "snd_pas16.h"
 
 
 typedef struct pas16_t

@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.8	2018/03/26
+ * Version:	@(#)vid_svga.c	1.0.9	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -122,7 +122,7 @@ void svga_out(uint16_t addr, uint8_t val, void *p)
 			}
 			else if (svga->attraddr == 0x11)
 			{
-				svga->overscan_color = svga->pallook[svga->overscan_color];
+				svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
                                 if (o != val)
 					svga_recalctimings(svga);
 			}

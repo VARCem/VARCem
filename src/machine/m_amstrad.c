@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.9	2018/04/05
+ * Version:	@(#)m_amstrad.c	1.0.10	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1230,7 +1230,7 @@ machine_amstrad_init(const machine_t *model, void *arg)
 
     device_add(&amstrad_nvr_device);
 
-    parallel_remove_amstrad();
+//FIXME:    parallel_remove_amstrad();
 
     io_sethandler(0x0078, 1,
 		  ms_read, NULL, NULL, ms_write, NULL, NULL, ams);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_machine.h	1.0.2	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,11 @@
  *			    Machine Dialog				*
  *									*
  ************************************************************************/
+
+static int      romstolist[ROM_MAX],
+                romstomachine[ROM_MAX],
+                machinetolist[ROM_MAX], listtomachine[ROM_MAX];
+
 
 static void
 machine_recalc_cpu(HWND hdlg)

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.20	2018/04/05
+ * Version:	@(#)pc.c	1.0.21	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,15 +82,7 @@
 #include "scsi/scsi.h"
 #include "network/network.h"
 #include "sound/sound.h"
-#include "sound/midi.h"
-#include "sound/snd_cms.h"
-#include "sound/snd_dbopl.h"
-#include "sound/snd_mpu401.h"
-#include "sound/snd_opl.h"
-#include "sound/snd_gus.h"
-#include "sound/snd_sb.h"
 #include "sound/snd_speaker.h"
-#include "sound/snd_ssi2001.h"
 #include "video/video.h"
 #include "ui.h"
 #include "plat.h"
@@ -127,10 +119,10 @@ int	vid_cga_contrast = 0,			/* (C) video */
 	force_43 = 0,				/* (C) video */
 	vid_card = 0,				/* (C) graphics/video card */
 	video_speed = 0;			/* (C) video */
-int	serial_enabled[SERIAL_MAX] = {0,0},	/* (C) enable serial ports */
-	parallel_enabled[PARALLEL_MAX] = {0,0,0},/* (C) enable LPT ports */
+int	serial_enabled[] = {0,0},		/* (C) enable serial ports */
+	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
+	parallel_device[] = {0,0,0},		/* (C) set up LPT devices */
 	bugger_enabled = 0;			/* (C) enable ISAbugger */
-char	parallel_device[PARALLEL_MAX][16];	/* (C) set up LPT devices */
 int	rctrl_is_lalt;				/* (C) set R-CTRL as L-ALT */
 int	update_icons;				/* (C) enable icons updates */
 #ifdef WALTJE
@@ -139,8 +131,6 @@ int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 int	hdc_type = 0;				/* (C) HDC type */
 int	sound_is_float = 1,			/* (C) sound uses FP values */
 	GAMEBLASTER = 0,			/* (C) sound option */
-	GUS = 0,				/* (C) sound option */
-	SSI2001 = 0,				/* (C) sound option */
 	voodoo_enabled = 0;			/* (C) video option */
 int	joystick_type = 0;			/* (C) joystick type */
 int	mem_size = 0;				/* (C) memory size */
@@ -604,7 +594,6 @@ usage:
      * modules before we load the config..
      */
     mouse_init();
-    sound_global_init();
     hdd_init();
     cdrom_global_init();
     zip_global_init();
@@ -760,11 +749,9 @@ pc_init_modules(void)
 
     timer_reset();
 
-    sound_reset();
+    sound_init();
 
     floppy_init();
-
-    sound_init();
 
     /* FIXME: should be disk_init() */
     cdrom_hard_reset();
@@ -792,13 +779,7 @@ pc_reset_hard_close(void)
 
     mouse_close();
 
-    parallel_devices_close();
-
     device_close_all();
-
-    midi_close();
-
-    closeal();
 }
 
 
@@ -811,29 +792,21 @@ pc_reset_hard_close(void)
 void
 pc_reset_hard_init(void)
 {
-    /*
-     * First, we reset the modules that are not part of
-     * the actual machine, but which support some of the
-     * modules that are.
-     */
-    sound_realloc_buffers();
-    sound_cd_thread_reset();
-    initalmain(0, NULL);
-
     /* Reset the general machine support modules. */
     io_init();
     timer_reset();
     device_init();
 
-    /* FIXME: should all be in sound_reset(). */
-    midi_device_init();
-    inital();
-    sound_reset();
-
 #ifndef WALTJE_SERIAL
     /* This is needed to initialize the serial timer. */
     serial_init();
 #endif
+
+    /* Reset the parallel ports [before machine!] */
+    parallel_reset();
+
+    sound_reset();
+    speaker_init();
 
     /* Initialize the actual machine and its basic modules. */
     machine_init();
@@ -850,9 +823,7 @@ pc_reset_hard_init(void)
      */
 
     /* Reset some basic devices. */
-    speaker_init();
     serial_reset();
-    parallel_devices_init();
 
     shadowbios = 0;
 
@@ -878,18 +849,6 @@ pc_reset_hard_init(void)
 
     /* Reset and reconfigure the Network Card layer. */
     network_reset();
-
-    /* Reset and reconfigure the Sound Card layer. */
-    // FIXME: should be just one sound_reset() here.  --FvK
-    sound_card_init();
-    if (mpu401_standalone_enable)
-	mpu401_device_add();
-    if (GUS)
-	device_add(&gus_device);
-    if (GAMEBLASTER)
-	device_add(&cms_device);
-    if (SSI2001)
-	device_add(&ssi2001_device);
 
     if (joystick_type != JOYSTICK_TYPE_NONE)
 	gameport_update_joystick_type();
@@ -978,8 +937,6 @@ pc_close(thread_t *ptr)
 
     plat_mouse_capture(0);
 
-    parallel_devices_close();
-
     for (i=0; i<ZIP_NUM; i++)
 	zip_close(i);
 
@@ -996,11 +953,9 @@ pc_close(thread_t *ptr)
 
     device_close_all();
 
-    midi_close();
-
     network_close();
 
-    sound_cd_thread_end();
+    sound_close();
 
     ide_destroy_buffers();
 

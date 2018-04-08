@@ -8,10 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * NOTE:	Have to re-do the "attach" and "detach" stuff for the
- *		 "device" that use the ports. --FvK
- *
- * Version:	@(#)parallel.c	1.0.4	2018/04/05
+ * Version:	@(#)parallel.c	1.0.4	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,25 +42,15 @@
 #include <wchar.h>
 #include "emu.h"
 #include "io.h"
+#include "device.h"
 #include "parallel.h"
-#include "sound/snd_lpt_dac.h"
-#include "sound/snd_lpt_dss.h"
+#include "parallel_dev.h"
 
-
-static const struct {
-    const char	*name;
-    const char	*internal_name;
-    const lpt_device_t *device;
-} parallel_devices[] = {
-    { "None",				"none",			NULL			},
-    { "Disney Sound Source",		"dss",			&dss_device		},
-    { "LPT DAC / Covox Speech Thing",	"lpt_dac",		&lpt_dac_device		},
-    { "Stereo LPT DAC",			"lpt_dac_stereo",	&lpt_dac_stereo_device	},
-    { "",				"",			NULL			}
-};
 
 static const uint16_t addr_list[] = {		/* valid port addresses */
-    0x0378, 0x0278, 0x03bc
+    PARALLEL1_ADDR,
+    PARALLEL2_ADDR,
+    PARALLEL3_ADDR
 };
 
 
@@ -75,9 +62,9 @@ typedef struct {
 			ctrl;			/* port control register */
 
     /* Device stuff. */
-    char		device_name[16];	/* name of attached device */
-    const lpt_device_t	*device_ts;
-    void		*device_ps;
+    int			dev_id;			/* attached device */
+    const lpt_device_t	*dev_ts;
+    void		*dev_ps;
 } parallel_t;
 
 
@@ -93,14 +80,14 @@ parallel_write(uint16_t port, uint8_t val, void *priv)
 
     switch (port & 3) {
 	case 0:
-		if (dev->device_ts != NULL)
-			dev->device_ts->write_data(val, dev->device_ps);
+		if (dev->dev_ts != NULL)
+			dev->dev_ts->write_data(val, dev->dev_ps);
 		dev->dat = val;
 		break;
 
 	case 2:
-		if (dev->device_ts != NULL)
-			dev->device_ts->write_ctrl(val, dev->device_ps);
+		if (dev->dev_ts != NULL)
+			dev->dev_ts->write_ctrl(val, dev->dev_ps);
 		dev->ctrl = val;
 		break;
     }
@@ -120,8 +107,8 @@ parallel_read(uint16_t port, void *priv)
 		break;
 
 	case 1:
-		if (dev->device_ts != NULL)
-			ret = dev->device_ts->read_status(dev->device_ps);
+		if (dev->dev_ts != NULL)
+			ret = dev->dev_ts->read_status(dev->dev_ps);
 		  else ret = 0x00;
 		break;
 
@@ -134,14 +121,94 @@ parallel_read(uint16_t port, void *priv)
 }
 
 
-/* Initialize (all) the parallel ports. */
+static void *
+parallel_init(const device_t *info)
+{
+    parallel_t *dev;
+    int id = info->local - 1;
+
+    /* Get the correct device. */
+    dev = &ports[id];
+
+    /* Clear port. */
+    dev->dat = 0x00;
+    dev->ctrl = 0x00;
+
+    /* Enable the I/O handler for this port. */
+    io_sethandler(dev->base, 3,
+		  parallel_read,NULL,NULL,
+		  parallel_write,NULL,NULL, dev);
+
+    /* If the user configured a device for this port, attach it. */
+    if (parallel_device[id] != 0) {
+	dev->dev_ts = parallel_device_get_device(parallel_device[id]);
+	if (dev->dev_ts != NULL)
+		dev->dev_ps = dev->dev_ts->init(dev->dev_ts);
+    }
+
+    return(dev);
+}
+
+
+static void
+parallel_close(void *priv)
+{
+    parallel_t *dev = (parallel_t *)priv;
+
+    /* Unlink the attached device if there is one. */
+    if (dev->dev_ts != NULL) {
+	dev->dev_ts->close(dev->dev_ps);
+	dev->dev_ts = NULL;
+	dev->dev_ps = NULL;
+    }
+
+    /* Remove the I/O handler. */
+    io_removehandler(dev->base, 3,
+		     parallel_read,NULL,NULL,
+		     parallel_write,NULL,NULL, dev);
+
+    /* Clear port. */
+    dev->dat = 0x00;
+    dev->ctrl = 0x00;
+}
+
+
+const device_t parallel_1_device = {
+    "LPT1:",
+    0,
+    1,
+    parallel_init, parallel_close, NULL,
+    NULL, NULL, NULL,
+    NULL
+};
+
+
+const device_t parallel_2_device = {
+    "LPT2:",
+    0,
+    2,
+    parallel_init, parallel_close, NULL,
+    NULL, NULL, NULL,
+    NULL
+};
+
+
+const device_t parallel_3_device = {
+    "LPT3:",
+    0,
+    3,
+    parallel_init, parallel_close, NULL,
+    NULL, NULL, NULL,
+    NULL
+};
+
+
+/* (Re-)initialize all parallel ports. */
 void
-parallel_init(void)
+parallel_reset(void)
 {
     parallel_t *dev;
     int i;
-
-    pclog("LPT: initializing ports...");
 
     for (i = 0; i < PARALLEL_MAX; i++) {
 	dev = &ports[i];
@@ -149,45 +216,6 @@ parallel_init(void)
 	memset(dev, 0x00, sizeof(parallel_t));
 
 	dev->base = addr_list[i];
-
-	if (parallel_enabled[i]) {
-		io_sethandler(dev->base, 3,
-			      parallel_read,NULL,NULL,
-			      parallel_write,NULL,NULL, dev);
-
-		pclog(" [%i=%04x]", i, dev->base);
-	}
-    }
-
-    pclog("\n");
-}
-
-
-/* Disable one of the parallel ports. */
-void
-parallel_remove(int id)
-{
-    parallel_t *dev = &ports[id-1];
-
-    if (! parallel_enabled[id-1]) return;
-
-    io_removehandler(dev->base, 3,
-		     parallel_read,NULL,NULL,
-		     parallel_write,NULL,NULL, dev);
-
-    dev->base = addr_list[id-1];
-}
-
-
-void
-parallel_remove_amstrad(void)
-{
-    parallel_t *dev = &ports[1];
-
-    if (parallel_enabled[1]) {
-	io_removehandler(dev->base+1, 2,
-			 parallel_read,NULL,NULL,
-			 parallel_write,NULL,NULL, dev);
     }
 }
 
@@ -198,77 +226,11 @@ parallel_setup(int id, uint16_t port)
 {
     parallel_t *dev = &ports[id-1];
 
+#ifdef _DEBUG
+    pclog("PARALLE: setting up LPT%d as %04X [enabled=%d]\n",
+			id, port, parallel_enabled[id-1]);
+#endif
     if (! parallel_enabled[id-1]) return;
 
     dev->base = port;
-    io_sethandler(dev->base, 3,
-		  parallel_read,NULL,NULL,
-		  parallel_write,NULL,NULL, dev);
-}
-
-
-const char *
-parallel_device_get_name(int id)
-{
-    if (strlen((char *)parallel_devices[id].name) == 0)
-	return(NULL);
-
-    return((char *)parallel_devices[id].name);
-}
-
-
-char *
-parallel_device_get_internal_name(int id)
-{
-    if (strlen((char *)parallel_devices[id].internal_name) == 0)
-	return(NULL);
-
-    return((char *)parallel_devices[id].internal_name);
-}
-
-
-/* Attach the configured "LPT" devices. */
-void
-parallel_devices_init(void)
-{
-    parallel_t *dev;
-    int c, i;
-
-    for (i = 0; i < PARALLEL_MAX; i++) {
-	dev = &ports[i];
-
-	c = 0;
-
-#if 0
-	/* FIXME: Gotta re-think this junk... --FvK */
-	while (! strmpdev->device_name, (char *)strcmp(lpt_devices[c].internal_name, lpt_device_names[i]) && strlen((char *)lpt_devices[c].internal_name) != 0)
-		c++;
-
-	if (strlen((char *)lpt_devices[c].internal_name) == 0)
-		lpt_device_ts[i] = NULL;
-	  else {
-		lpt_device_ts[i] = lpt_devices[c].device;
-		if (lpt_device_ts[i])
-			lpt_device_ps[i] = lpt_device_ts[i]->init(lpt_devices[c].device);
-	}
-#endif
-    }
-}
-
-
-void
-parallel_devices_close(void)
-{
-    parallel_t *dev;
-    int i;
-
-    for (i = 0; i < PARALLEL_MAX; i++) {
-	dev = &ports[i];
-
-	if (dev->device_ts != NULL) {
-		dev->device_ts->close(dev->device_ps);
-		dev->device_ts = NULL;
-		dev->device_ps = NULL;
-	}
-    }
 }

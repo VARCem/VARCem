@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq XT-class PC's.
  *
- * Version:	@(#)m_xt_compaq.c	1.0.6	2018/04/05
+ * Version:	@(#)m_xt_compaq.c	1.0.7	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,7 +74,7 @@ machine_xt_compaq_init(const machine_t *model, void *arg)
 
     switch(model->id) {
 	case ROM_PORTABLE:
-		parallel_remove(1);
+//FIXME:		parallel_remove(1);
 		parallel_setup(1, 0x03bc);
 		break;
     }

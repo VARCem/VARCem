@@ -8,7 +8,7 @@
  *
  *		Implementation of the SSI2001 sound device.
  *
- * Version:	@(#)snd_si2001.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_si2001.c	1.0.3	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,79 +49,154 @@
 #include "snd_ssi2001.h"
 
 
-typedef struct ssi2001_t
-{
-        void    *psid;
-        int16_t buffer[SOUNDBUFLEN * 2];
-        int     pos;
+typedef struct {
+    uint16_t	base;
+    int16_t	game;
+
+    void	*psid;
+
+    int		pos;
+    int16_t	buffer[SOUNDBUFLEN * 2];
 } ssi2001_t;
 
-static void ssi2001_update(ssi2001_t *ssi2001)
+
+static void
+ssi_update(ssi2001_t *dev)
 {
-        if (ssi2001->pos >= sound_pos_global)
-                return;
-        
-        sid_fillbuf(&ssi2001->buffer[ssi2001->pos], sound_pos_global - ssi2001->pos, ssi2001->psid);
-        ssi2001->pos = sound_pos_global;
+    if (dev->pos >= sound_pos_global) return;
+
+    sid_fillbuf(&dev->buffer[dev->pos], sound_pos_global-dev->pos, dev->psid);
+
+    dev->pos = sound_pos_global;
 }
 
-static void ssi2001_get_buffer(int32_t *buffer, int len, void *p)
+
+static void
+get_buffer(int32_t *buffer, int len, void *priv)
 {
-        ssi2001_t *ssi2001 = (ssi2001_t *)p;
-        int c;
+    ssi2001_t *dev = (ssi2001_t *)priv;
+    int c;
 
-        ssi2001_update(ssi2001);
-        
-        for (c = 0; c < len * 2; c++)
-                buffer[c] += ssi2001->buffer[c >> 1] / 2;
+    ssi_update(dev);
 
-        ssi2001->pos = 0;
+    for (c = 0; c < len * 2; c++)
+	buffer[c] += dev->buffer[c >> 1] / 2;
+
+    dev->pos = 0;
 }
 
-static uint8_t ssi2001_read(uint16_t addr, void *p)
+
+static uint8_t
+ssi_read(uint16_t addr, void *priv)
 {
-        ssi2001_t *ssi2001 = (ssi2001_t *)p;
-        
-        ssi2001_update(ssi2001);
-        
-        return sid_read(addr, p);
+    ssi2001_t *dev = (ssi2001_t *)priv;
+	
+    ssi_update(dev);
+	
+    return(sid_read(addr, priv));
 }
 
-static void ssi2001_write(uint16_t addr, uint8_t val, void *p)
+
+static void
+ssi_write(uint16_t addr, uint8_t val, void *priv)
 {
-        ssi2001_t *ssi2001 = (ssi2001_t *)p;
-        
-        ssi2001_update(ssi2001);        
-        sid_write(addr, val, p);
+    ssi2001_t *dev = (ssi2001_t *)priv;
+	
+    ssi_update(dev);	
+
+    sid_write(addr, val, priv);
 }
 
-void *ssi2001_init(const device_t *info)
+
+static void *
+ssi_init(const device_t *info)
 {
-        ssi2001_t *ssi2001 = malloc(sizeof(ssi2001_t));
-        memset(ssi2001, 0, sizeof(ssi2001_t));
-        
-        pclog("ssi2001_init\n");
-        ssi2001->psid = sid_init();
-        sid_reset(ssi2001->psid);
-        io_sethandler(0x0280, 0x0020, ssi2001_read, NULL, NULL, ssi2001_write, NULL, NULL, ssi2001);
-        sound_add_handler(ssi2001_get_buffer, ssi2001);
-        return ssi2001;
+    ssi2001_t *dev;
+
+    dev = malloc(sizeof(ssi2001_t));
+    memset(dev, 0x00, sizeof(ssi2001_t));
+
+    /* Get the device configuration. We ignore the game port for now. */
+    dev->base = device_get_config_hex16("base");
+    dev->game = !!device_get_config_int("game_port");
+
+    /* Initialize the 6581 SID. */
+    dev->psid = sid_init();
+    sid_reset(dev->psid);
+
+    /* Set up our I/O handler. */
+    io_sethandler(dev->base, 32,
+		  ssi_read,NULL,NULL, ssi_write,NULL,NULL, dev);
+
+    sound_add_handler(get_buffer, dev);
+
+    return(dev);
 }
 
-void ssi2001_close(void *p)
-{
-        ssi2001_t *ssi2001 = (ssi2001_t *)p;
-        
-        sid_close(ssi2001->psid);
 
-        free(ssi2001);
+static void
+ssi_close(void *priv)
+{
+    ssi2001_t *dev = (ssi2001_t *)priv;
+
+    /* Remove our I/O handler. */
+    io_removehandler(dev->base, 32,
+		     ssi_read,NULL,NULL, ssi_write,NULL,NULL, dev);
+
+    /* Close the SID. */
+    sid_close(dev->psid);
+
+    free(dev);
 }
 
-const device_t ssi2001_device =
+
+static const device_config_t ssi2001_config[] =
 {
-        "Innovation SSI-2001",
-        0, 0,
-        ssi2001_init, ssi2001_close, NULL,
-	NULL, NULL, NULL, NULL,
-        NULL
+	{
+		"base", "Address", CONFIG_HEX16, "", 0x280,
+		{
+			{
+				"0x280", 0x280
+			},
+			{
+				"0x2A0", 0x2a0
+			},
+			{
+				"0x2C0", 0x2c0
+			},
+			{
+				"0x2E0", 0x2e0
+			},
+			{
+				""
+			}
+		},
+	},
+	{
+		"game_port", "Game Port", CONFIG_SELECTION, "", 0,
+		{
+			{
+				"Disabled", 0
+			},
+			{
+				"Enabled", 1
+			},
+			{
+				""
+			}
+		},
+	},
+	{
+		"", "", -1
+	}
+};
+
+
+const device_t ssi2001_device = {
+    "Innovation SSI-2001",
+    DEVICE_ISA,
+    0,
+    ssi_init, ssi_close, NULL,
+    NULL, NULL, NULL, NULL,
+    ssi2001_config
 };

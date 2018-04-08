@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.9	2018/04/02
+ * Version:	@(#)snd_audiopci.c	1.0.11	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,7 +49,6 @@
 #include "../pci.h"
 #include "../timer.h"
 #include "sound.h"
-#include "snd_audiopci.h"
 
 
 #define N 16
@@ -579,9 +578,9 @@ static void es1371_outl(uint16_t port, uint32_t val, void *p)
 				break;
 				case 0x12: /*CD volume*/
 				if (val & 0x8000)
-					sound_set_cd_volume(0, 0);
+					sound_cd_set_volume(0, 0);
 				else
-					sound_set_cd_volume(codec_attn[0x1f - ((val >> 8) & 0x1f)] * 2, codec_attn[0x1f - (val & 0x1f)] * 2);
+					sound_cd_set_volume(codec_attn[0x1f - ((val >> 8) & 0x1f)] * 2, codec_attn[0x1f - (val & 0x1f)] * 2);
 				break;
 			}       
 		}

@@ -8,7 +8,7 @@
  *
  *		Definitions for the ReSid library interface.
  *
- * Version:	@(#)snd_resid.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_resid.h	1.0.2	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,12 +43,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-        void *sid_init();
-        void sid_close(void *p);
-        void sid_reset(void *p);
-        uint8_t sid_read(uint16_t addr, void *p);
-        void sid_write(uint16_t addr, uint8_t val, void *p);
-        void sid_fillbuf(int16_t *buf, int len, void *p);
+
+extern void	*sid_init(void);
+extern void	sid_close(void *priv);
+extern void	sid_reset(void *priv);
+extern uint8_t	sid_read(uint16_t addr, void *priv);
+extern void	sid_write(uint16_t addr, uint8_t val, void *priv);
+extern void	sid_fillbuf(int16_t *buf, int len, void *priv);
+
 #ifdef __cplusplus
 }
 #endif

@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT-based DSS sound device.
  *
- * Version:	@(#)snd_lpt_dss.c	1.0.4	2018/04/05
+ * Version:	@(#)snd_lpt_dss.c	1.0.5	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,7 @@
 #include "../cpu/cpu.h"
 #include "../machine/machine.h"
 #include "../timer.h"
-#include "../parallel.h"
+#include "../parallel_dev.h"
 #include "sound.h"
 #include "filters.h"
 #include "snd_lpt_dss.h"
@@ -62,6 +62,8 @@ typedef struct {
 
     int16_t	buffer[SOUNDBUFLEN];
     int		pos;
+
+    const char	*name;
 } dss_t;
 
 
@@ -145,7 +147,9 @@ dss_init(const lpt_device_t *info)
 {
     dss_t *dev = malloc(sizeof(dss_t));
 
+pclog("SOUND: LPT device '%s' initializing!\n", info->name);
     memset(dev, 0x00, sizeof(dss_t));
+    dev->name = info->name;
 
     sound_add_handler(dss_get_buffer, dev);
 
@@ -159,6 +163,8 @@ static void
 dss_close(void *priv)
 {
     dss_t *dev = (dss_t *)priv;
+
+    pclog("SOUND: LPT device '%s' closed!\n", dev->name);
 
     free(dev);
 }

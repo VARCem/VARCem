@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.14	2018/04/05
+ * Version:	@(#)VARCem.rc	1.0.15	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -390,8 +390,8 @@ BEGIN
 /* Leave this commented out until we get into localization. */
 #if 0
     LTEXT           "Language:",IDT_1700,7,232,41,10
-    COMBOBOX        IDC_COMBO_LANG,48,231,108,120,CBS_DROPDOWN | WS_VSCROLL | 
-                    WS_TABSTOP
+    COMBOBOX        IDC_COMBO_LANG,48,231,108,120,CBS_DROPDOWNLIST |
+		    WS_VSCROLL | WS_TABSTOP
 #endif
 END
 
@@ -483,17 +483,13 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,45,199,10
     PUSHBUTTON      "Configure",IDC_CONFIGURE_MPU401,214,44,46,12
 
-    CONTROL         "Innovation SSI-2001",IDC_CHECK_SSI,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,63,94,10
-    CONTROL         "CMS / Game Blaster",IDC_CHECK_CMS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,147,63,94,10
-
-    CONTROL         "Gravis Ultrasound",IDC_CHECK_GUS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,81,94,10
     CONTROL         "Use Nuked OPL",IDC_CHECK_NUKEDOPL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,147,81,94,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,63,94,10
 
     CONTROL         "Use FLOAT32 sound",IDC_CHECK_FLOAT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,81,94,10
+
+    CONTROL         "CMS / Game Blaster",IDC_CHECK_CMS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,99,94,10
 END
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Blaster driver.
  *
- * Version:	@(#)sound_sb.h	1.0.2	2018/03/15
+ * Version:	@(#)sound_sb.h	1.0.3	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,17 +51,6 @@
 #define SADGOLD		8	/* AdLib Gold */
 #define SND_WSS		9	/* Windows Sound System */
 #define SND_PAS16	10	/* Pro Audio Spectrum 16 */
-
-
-extern const device_t sb_1_device;
-extern const device_t sb_15_device;
-extern const device_t sb_mcv_device;
-extern const device_t sb_2_device;
-extern const device_t sb_pro_v1_device;
-extern const device_t sb_pro_v2_device;
-extern const device_t sb_pro_mcv_device;
-extern const device_t sb_16_device;
-extern const device_t sb_awe32_device;
 
 
 #endif	/*SOUND_SNDB_H*/

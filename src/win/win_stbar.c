@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Bar module.
  *
- * Version:	@(#)win_stbar.c	1.0.6	2018/04/05
+ * Version:	@(#)win_stbar.c	1.0.7	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1059,7 +1059,7 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				cdrom_drives[id].sound_on ^= 1;
 				CheckMenuItem(sb_menu_handles[part], IDM_CDROM_MUTE | id, cdrom_drives[id].sound_on ? MF_UNCHECKED : MF_CHECKED);
 				config_save();
-				sound_cd_thread_reset();
+				sound_cd_stop();
 				break;
 
 			case IDM_CDROM_EMPTY:

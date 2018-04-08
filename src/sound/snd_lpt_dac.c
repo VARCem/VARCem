@@ -8,7 +8,7 @@
  *
  *		Implemantation of LPT-based sound devices.
  *
- * Version:	@(#)snd_lpt_dac.c	1.0.4	2018/04/05
+ * Version:	@(#)snd_lpt_dac.c	1.0.5	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,7 @@
 #include "../emu.h"
 #include "../cpu/cpu.h"
 #include "../machine/machine.h"
-#include "../parallel.h"
+#include "../parallel_dev.h"
 #include "../timer.h"
 #include "sound.h"
 #include "filters.h"
@@ -60,6 +60,8 @@ typedef struct {
 
     int16_t	buffer[2][SOUNDBUFLEN];
     int		pos;
+
+    const char	*name;
 } lpt_dac_t;
 
 
@@ -106,7 +108,7 @@ dac_write_ctrl(uint8_t val, void *priv)
 static uint8_t
 dac_read_status(void *priv)
 {
-    return 0;
+    return(0x00);
 }
 
 
@@ -132,7 +134,11 @@ dac_init(const lpt_device_t *info)
 {
     lpt_dac_t *dev = malloc(sizeof(lpt_dac_t));
 
+    pclog("SOUND: LPT device '%s' [%d] initializing!\n",
+				info->name, info->type);
+
     memset(dev, 0x00, sizeof(lpt_dac_t));
+    dev->name = info->name;
 
     switch(info->type) {
 	case 1:
@@ -142,7 +148,7 @@ dac_init(const lpt_device_t *info)
 
     sound_add_handler(dac_get_buffer, dev);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -150,7 +156,9 @@ static void
 dac_close(void *priv)
 {
     lpt_dac_t *dev = (lpt_dac_t *)priv;
-	
+
+    pclog("SOUND: LPT device '%s' closed!\n", dev->name);
+
     free(dev);
 }
 

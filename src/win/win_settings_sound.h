@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_sound.h	1.0.3	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,10 @@
  *			      Sound Dialog				*
  *									*
  ************************************************************************/
+
+static int	sound_to_list[20], list_to_sound[20];
+static int	midi_to_list[20], list_to_midi[20];
+
 
 static int
 mpu401_present(void)
@@ -100,21 +104,21 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (stransi == NULL)		
 				break;
 
-			settings_sound_to_list[c] = d;
+			sound_to_list[c] = d;
 
 			if (sound_card_available(c)) {
 				dev = sound_card_getdevice(c);
 				if (device_is_valid(dev, machines[temp_machine].flags)) {
 					mbstowcs(temp, stransi, sizeof_w(temp));
 					SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-					settings_list_to_sound[d] = c;
+					list_to_sound[d] = c;
 					d++;
 				}
 			}
 
 			c++;
 		}
-		SendMessage(h, CB_SETCURSEL, settings_sound_to_list[temp_sound_card], 0);
+		SendMessage(h, CB_SETCURSEL, sound_to_list[temp_sound_card], 0);
 
 		EnableWindow(h, d ? TRUE : FALSE);
 
@@ -131,19 +135,19 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (stransi == NULL)
 				break;
 
-			settings_midi_to_list[c] = d;
+			midi_to_list[c] = d;
 
 			if (midi_device_available(c)) {
 				mbstowcs(temp, stransi, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 
-				settings_list_to_midi[d] = c;
+				list_to_midi[d] = c;
 				d++;
 			}
 
 			c++;
 		}
-		SendMessage(h, CB_SETCURSEL, settings_midi_to_list[temp_midi_device], 0);
+		SendMessage(h, CB_SETCURSEL, midi_to_list[temp_midi_device], 0);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_MIDI);
 		if (midi_device_has_config(temp_midi_device))
@@ -161,12 +165,6 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_CHECK_CMS);
 		SendMessage(h, BM_SETCHECK, temp_GAMEBLASTER, 0);
 
-		h = GetDlgItem(hdlg, IDC_CHECK_GUS);
-		SendMessage(h, BM_SETCHECK, temp_GUS, 0);
-
-		h = GetDlgItem(hdlg, IDC_CHECK_SSI);
-		SendMessage(h, BM_SETCHECK, temp_SSI2001, 0);
-
 		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
 		SendMessage(h, BM_SETCHECK, temp_opl3_type, 0);
 
@@ -179,7 +177,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 			case IDC_COMBO_SOUND:
 				h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
-				temp_sound_card = settings_list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_SND);
 				if (sound_card_has_config(temp_sound_card))
@@ -197,14 +195,14 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_SND:
 				h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
-				temp_sound_card = settings_list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)sound_card_getdevice(temp_sound_card));
 				break;
 
 			case IDC_COMBO_MIDI:
 				h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
-				temp_midi_device = settings_list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_MIDI);
 				if (midi_device_has_config(temp_midi_device))
@@ -222,7 +220,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_MIDI:
 				h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
-				temp_midi_device = settings_list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)midi_device_getdevice(temp_midi_device));
 				break;
@@ -243,22 +241,16 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVESETTINGS:
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
-		temp_sound_card = settings_list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
-		temp_midi_device = settings_list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
 		temp_mpu401 = SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_CMS);
 		temp_GAMEBLASTER = SendMessage(h, BM_GETCHECK, 0, 0);
-
-		h = GetDlgItem(hdlg, IDC_CHECK_GUS);
-		temp_GUS = SendMessage(h, BM_GETCHECK, 0, 0);
-
-		h = GetDlgItem(hdlg, IDC_CHECK_SSI);
-		temp_SSI2001 = SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
 		temp_opl3_type = SendMessage(h, BM_GETCHECK, 0, 0);

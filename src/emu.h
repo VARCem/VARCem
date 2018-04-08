@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.14	2018/04/05
+ * Version:	@(#)emu.h	1.0.15	2018/04/08
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -106,8 +106,8 @@ extern int	vid_cga_contrast,		/* (C) video */
 		video_speed;			/* (C) video */
 extern int	serial_enabled[],		/* (C) enable serial ports */
 		parallel_enabled[],		/* (C) enable LPT ports */
+		parallel_device[],		/* (C) set up LPT devices */
 		bugger_enabled;			/* (C) enable ISAbugger */
-extern char	parallel_device[3][16];		/* (C) set up LPT devices */
 extern int	rctrl_is_lalt;			/* (C) set R-CTRL as L-ALT */
 extern int	update_icons;			/* (C) enable icons updates */
 #ifdef WALTJE
@@ -116,8 +116,6 @@ extern int	romdos_enabled;			/* (C) enable ROM DOS */
 extern int	hdc_type;			/* (C) HDC type */
 extern int	sound_is_float,			/* (C) sound uses FP values */
 		GAMEBLASTER,			/* (C) sound option */
-		GUS,				/* (C) sound option */
-		SSI2001,			/* (C) sound option */
 		voodoo_enabled;			/* (C) video option */
 extern int	joystick_type;			/* (C) joystick type */
 extern int	mem_size;			/* (C) memory size */

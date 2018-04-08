@@ -10,7 +10,7 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.6	2018/03/31
+ * Version:	@(#)snd_adlibgold.c	1.0.7	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

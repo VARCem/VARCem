@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.10	2018/04/05
+ * Version:	@(#)config.c	1.0.11	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,6 +55,7 @@
 #include "device.h"
 #include "serial.h"
 #include "parallel.h"
+#include "parallel_dev.h"
 #include "mouse.h"
 #include "game/gameport.h"
 #include "floppy/fdd.h"
@@ -626,9 +627,7 @@ load_sound(void)
 
     mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
 
-    SSI2001 = !!config_get_int(cat, "ssi2001", 0);
     GAMEBLASTER = !!config_get_int(cat, "gameblaster", 0);
-    GUS = !!config_get_int(cat, "gus", 0);
 
     memset(temp, '\0', sizeof(temp));
     p = config_get_string(cat, "opl3_type", "dbopl");
@@ -701,8 +700,8 @@ load_network(void)
 static void
 load_ports(void)
 {
-    char temp[128];
     char *cat = "Ports (COM & LPT)";
+    char temp[128];
     char *p;
     int i;
 
@@ -718,7 +717,7 @@ load_ports(void)
 	p = (char *)config_get_string(cat, temp, NULL);
 	if (p == NULL)
 		p = "none";
-	strcpy(parallel_device[i], p);
+	parallel_device[i] = parallel_device_get_from_internal_name(p);
     }
 }
 
@@ -1385,7 +1384,6 @@ save_general(void)
 {
     char *cat = "General";
     char temp[512];
-
     char *va_name;
 
     config_set_int(cat, "vid_resize", vid_resize);
@@ -1622,20 +1620,10 @@ save_sound(void)
       else
 	config_set_int(cat, "mpu401_standalone", mpu401_standalone_enable);
 
-    if (SSI2001 == 0)
-	config_delete_var(cat, "ssi2001");
-      else
-	config_set_int(cat, "ssi2001", SSI2001);
-
     if (GAMEBLASTER == 0)
 	config_delete_var(cat, "gameblaster");
       else
 	config_set_int(cat, "gameblaster", GAMEBLASTER);
-
-    if (GUS == 0)
-	config_delete_var(cat, "gus");
-      else
-	config_set_int(cat, "gus", GUS);
 
     if (opl3_type == 0)
 	config_delete_var(cat, "opl3_type");
@@ -1686,8 +1674,8 @@ save_network(void)
 static void
 save_ports(void)
 {
-    char temp[128];
     char *cat = "Ports (COM & LPT)";
+    char temp[128];
     int i;
 
     for (i = 0; i < SERIAL_MAX; i++) {
@@ -1699,15 +1687,16 @@ save_ports(void)
     }
 
     for (i = 0; i < PARALLEL_MAX; i++) {
-	if (parallel_enabled[i]) {
-		sprintf(temp, "parallel%i_enabled", i);
+	sprintf(temp, "parallel%i_enabled", i);
+	if (parallel_enabled[i])
 		config_set_int(cat, temp, 1);
-	} else
+	  else
 		config_delete_var(cat, temp);
 
 	sprintf(temp, "parallel%i_device", i);
-	if (strcmp(parallel_device[i], "none"))
-		config_set_string(cat, temp, parallel_device[i]);
+	if (parallel_device[i] != 0)
+		config_set_string(cat, temp,
+			(char *)parallel_device_get_internal_name(parallel_device[i]));
 	  else
 		config_delete_var(cat, temp);
     }

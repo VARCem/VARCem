@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_disk.h	1.0.2	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,23 +43,54 @@
  ************************************************************************/
 
 /* Global variables needed for the Hard Disk dialogs. */
+static uint64_t mfm_tracking, esdi_tracking, xtide_tracking,
+                ide_tracking, scsi_tracking[16];
 static hard_disk_t *hdd_ptr;
-static wchar_t hd_file_name[512];
-static int hard_disk_added = 0;
-static int max_spt = 63;
-static int max_hpc = 255;
-static int max_tracks = 266305;
-static int no_update = 0;
-static int existing = 0;
-static uint64_t selection = 127;
-static uint64_t spt, hpc, tracks, size;
-static int chs_enabled = 0;
-static int ignore_change = 0;
-static int hdc_id_to_listview_index[HDD_NUM];
 static hard_disk_t new_hdd;
-static int hd_listview_items;
-static int hdlv_current_sel;
-static int next_free_id = 0;
+static wchar_t	hd_file_name[512];
+static int	hard_disk_added = 0;
+static int	max_spt = 63;
+static int	max_hpc = 255;
+static int	max_tracks = 266305;
+static int	no_update = 0;
+static int	existing = 0;
+static uint64_t	selection = 127;
+static uint64_t	spt, hpc, tracks, size;
+static int	chs_enabled = 0;
+static int	ignore_change = 0;
+static int	hdc_id_to_listview_index[HDD_NUM];
+static int	hd_listview_items;
+static int	hdlv_current_sel;
+static int	next_free_id = 0;
+
+
+static void
+disk_track_init(void)
+{
+    int i;
+
+    mfm_tracking = xtide_tracking = esdi_tracking = ide_tracking = 0;
+    for (i = 0; i < 16; i++)
+	scsi_tracking[i] = 0;
+
+    for (i=0; i<HDD_NUM; i++) {
+	if (hdd[i].bus == HDD_BUS_MFM)
+		mfm_tracking |= (1ULL << (hdd[i].mfm_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_XTIDE)
+		xtide_tracking |= (1ULL << (hdd[i].xtide_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_ESDI)
+		esdi_tracking |= (1ULL << (hdd[i].esdi_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_IDE_PIO_ONLY)
+		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_IDE_PIO_AND_DMA)
+		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
+	else if (hdd[i].bus == HDD_BUS_SCSI)
+		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
+	else if (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)
+		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
+    }
+}
+
 
 static BOOL
 disk_image_list_init(HWND hwndList)

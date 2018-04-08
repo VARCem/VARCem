@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.18	2018/04/05
+ * Version:	@(#)win_settings.c	1.0.19	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,6 +55,7 @@
 #include "../game/gameport.h"
 #include "../mouse.h"
 #include "../parallel.h"
+#include "../parallel_dev.h"
 #include "../serial.h"
 #include "../disk/hdd.h"
 #include "../disk/hdc.h"
@@ -75,66 +76,58 @@
 #include "win.h"
 
 
-/* Machine category */
-static int temp_machine, temp_cpu_m, temp_cpu, temp_wait_states,
-	   temp_mem_size, temp_fpu, temp_sync;
+/* Machine category. */
+static int	temp_machine,
+		temp_cpu_m, temp_cpu, temp_wait_states,
+		temp_mem_size, temp_fpu, temp_sync;
 #ifdef USE_DYNAREC
-static int temp_dynarec;
+static int	temp_dynarec;
 #endif
 
-/* Video category */
-static int temp_vid_card, temp_video_speed, temp_voodoo;
+/* Video category. */
+static int	temp_vid_card, temp_video_speed, temp_voodoo;
 
-/* Input devices category */
-static int temp_mouse, temp_joystick;
+/* Input devices category. */
+static int	temp_mouse, temp_joystick;
 
-/* Sound category */
-static int temp_sound_card, temp_midi_device, temp_mpu401, temp_SSI2001,
-	   temp_GAMEBLASTER, temp_GUS, temp_opl3_type, temp_float;
+/* Sound category. */
+static int	temp_sound_card, temp_midi_device, temp_mpu401,
+		temp_GAMEBLASTER, temp_opl3_type, temp_float;
 
-/* Network category */
-static int temp_net_type, temp_net_card;
-static char temp_host_dev[520];
+/* Network category. */
+static int	temp_net_type, temp_net_card;
+static char	temp_host_dev[128];
 
-/* Ports category */
-static int temp_serial[SERIAL_MAX], temp_parallel[PARALLEL_MAX];
-static char temp_parallel_device[PARALLEL_MAX][16];
+/* Ports category. */
+static int	temp_serial[SERIAL_MAX],
+		temp_parallel[PARALLEL_MAX],
+		temp_parallel_device[PARALLEL_MAX];
 
-/* Other peripherals category */
+/* Other peripherals category. */
 static int	temp_hdc_type,
 		temp_scsi_card,
 		temp_ide_ter, temp_ide_ter_irq,
 		temp_ide_qua, temp_ide_qua_irq;
 static int	temp_bugger;
 
-static uint8_t temp_deviceconfig;
+/* Floppy drives category. */
+static int	temp_fdd_types[FDD_NUM],
+		temp_fdd_turbo[FDD_NUM],
+		temp_fdd_check_bpb[FDD_NUM];
 
-/* Hard disks category */
+/* Hard disks category. */
 static hard_disk_t temp_hdd[HDD_NUM];
 
-/* Floppy drives category */
-static int temp_fdd_types[FDD_NUM];
-static int temp_fdd_turbo[FDD_NUM];
-static int temp_fdd_check_bpb[FDD_NUM];
-
-/* Other removable devices category */
+/* Other removable devices category. */
 static cdrom_drive_t temp_cdrom_drives[CDROM_NUM];
 static zip_drive_t temp_zip_drives[ZIP_NUM];
 
-static HWND hwndParentDialog, hwndChildDialog;
 
-static int displayed_category = 0;
-static int ask_sure = 0;
-
-static int romstolist[ROM_MAX], listtomachine[ROM_MAX], romstomachine[ROM_MAX], machinetolist[ROM_MAX];
-static int settings_sound_to_list[20], settings_list_to_sound[20];
-static int settings_midi_to_list[20], settings_list_to_midi[20];
-static int settings_mouse_to_list[20], settings_list_to_mouse[20];
-static int settings_scsi_to_list[20], settings_list_to_scsi[20];
-static int settings_network_to_list[20], settings_list_to_network[20];
-
-static uint64_t mfm_tracking, esdi_tracking, xtide_tracking,
-		ide_tracking, scsi_tracking[16];
+static HWND	hwndParentDialog,
+		hwndChildDialog;
+static int	displayed_category = 0;
+static int	ask_sure = 0;
+static uint8_t	temp_deviceconfig;
 
 
 /* Show a MessageBox dialog.  This is nasty, I know.  --FvK */
@@ -153,6 +146,19 @@ settings_msgbox(int type, void *arg)
 
     return(i);
 }
+
+
+/* Load the per-page dialogs. */
+#include "win_settings_machine.h"		/* Machine dialog */
+#include "win_settings_video.h"			/* Video dialog */
+#include "win_settings_input.h"			/* Input dialog */
+#include "win_settings_sound.h"			/* Sound dialog */
+#include "win_settings_ports.h"			/* Ports dialog */
+#include "win_settings_periph.h"		/* Other Peripherals dialog */
+#include "win_settings_network.h"		/* Network dialog */
+#include "win_settings_floppy.h"		/* Floppy dialog */
+#include "win_settings_disk.h"			/* (Hard) Disk dialog */
+#include "win_settings_remov.h"			/* Removable Devices dialog */
 
 
 /* This does the initial read of global variables into the temporary ones. */
@@ -186,9 +192,7 @@ settings_init(void)
     temp_sound_card = sound_card_current;
     temp_midi_device = midi_device_current;
     temp_mpu401 = mpu401_standalone_enable;
-    temp_SSI2001 = SSI2001;
     temp_GAMEBLASTER = GAMEBLASTER;
-    temp_GUS = GUS;
     temp_opl3_type = opl3_type;
     temp_float = sound_is_float;
 
@@ -203,7 +207,7 @@ settings_init(void)
 	temp_serial[i] = serial_enabled[i];
     for (i = 0; i < PARALLEL_MAX; i++) {
 	temp_parallel[i] = parallel_enabled[i];
-	strcpy(temp_parallel_device[i], parallel_device[i]);
+	temp_parallel_device[i] = parallel_device[i];
     }
 
     /* Other peripherals category */
@@ -215,29 +219,6 @@ settings_init(void)
     temp_ide_qua_irq = ide_irq[3];
     temp_bugger = bugger_enabled;
 
-    mfm_tracking = xtide_tracking = esdi_tracking = ide_tracking = 0;
-    for (i = 0; i < 16; i++)
-	scsi_tracking[i] = 0;
-
-    /* Hard disks category */
-    memcpy(temp_hdd, hdd, HDD_NUM * sizeof(hard_disk_t));
-    for (i=0; i<HDD_NUM; i++) {
-	if (hdd[i].bus == HDD_BUS_MFM)
-		mfm_tracking |= (1ULL << (hdd[i].mfm_channel << 3));
-	else if (hdd[i].bus == HDD_BUS_XTIDE)
-		xtide_tracking |= (1ULL << (hdd[i].xtide_channel << 3));
-	else if (hdd[i].bus == HDD_BUS_ESDI)
-		esdi_tracking |= (1ULL << (hdd[i].esdi_channel << 3));
-	else if (hdd[i].bus == HDD_BUS_IDE_PIO_ONLY)
-		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
-	else if (hdd[i].bus == HDD_BUS_IDE_PIO_AND_DMA)
-		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
-	else if (hdd[i].bus == HDD_BUS_SCSI)
-		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
-	else if (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)
-		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
-    }
-
     /* Floppy drives category */
     for (i=0; i<FDD_NUM; i++) {
 	temp_fdd_types[i] = fdd_get_type(i);
@@ -245,26 +226,12 @@ settings_init(void)
 	temp_fdd_check_bpb[i] = fdd_get_check_bpb(i);
     }
 
+    /* Hard disks category */
+    memcpy(temp_hdd, hdd, HDD_NUM * sizeof(hard_disk_t));
+
     /* Other removable devices category */
     memcpy(temp_cdrom_drives, cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
-    for (i=0; i<CDROM_NUM; i++) {
-	if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY)
-		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
-	else if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA)
-		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
-	else if (cdrom_drives[i].bus_type == CDROM_BUS_SCSI)
-		scsi_tracking[cdrom_drives[i].scsi_device_id] |= (2 << (cdrom_drives[i].scsi_device_lun << 3));
-    }
-
     memcpy(temp_zip_drives, zip_drives, ZIP_NUM * sizeof(zip_drive_t));
-    for (i=0; i<ZIP_NUM; i++) {
-	if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_ONLY)
-		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
-	else if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA)
-		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
-	else if (zip_drives[i].bus_type == ZIP_BUS_SCSI)
-		scsi_tracking[zip_drives[i].scsi_device_id] |= (4 << (zip_drives[i].scsi_device_lun << 3));
-    }
 
     temp_deviceconfig = 0;
 }
@@ -301,9 +268,7 @@ settings_changed(void)
     i = i || (sound_card_current != temp_sound_card);
     i = i || (midi_device_current != temp_midi_device);
     i = i || (mpu401_standalone_enable != temp_mpu401);
-    i = i || (SSI2001 != temp_SSI2001);
     i = i || (GAMEBLASTER != temp_GAMEBLASTER);
-    i = i || (GUS != temp_GUS);
     i = i || (opl3_type != temp_opl3_type);
     i = i || (sound_is_float != temp_float);
 
@@ -316,8 +281,8 @@ settings_changed(void)
     for (j = 0; j < SERIAL_MAX; j++)
 	i = i || (temp_serial[j] != serial_enabled[j]);
     for (j = 0; j < PARALLEL_MAX; j++) {
-	i = i || strcmp(temp_parallel_device[j], parallel_device[j]);
 	i = i || (temp_parallel[j] != parallel_enabled[j]);
+	i = i || (temp_parallel_device[j] != parallel_device[j]);
     }
 
     /* Peripherals category */
@@ -405,9 +370,7 @@ settings_save(void)
     sound_card_current = temp_sound_card;
     midi_device_current = temp_midi_device;
     mpu401_standalone_enable = temp_mpu401;
-    SSI2001 = temp_SSI2001;
     GAMEBLASTER = temp_GAMEBLASTER;
-    GUS = temp_GUS;
     opl3_type = temp_opl3_type;
     sound_is_float = temp_float;
 
@@ -422,7 +385,7 @@ settings_save(void)
 	serial_enabled[i] = temp_serial[i];
     for (i = 0; i < PARALLEL_MAX; i++) {
 	parallel_enabled[i] = temp_parallel[i];
-	strcpy(parallel_device[i], temp_parallel_device[i]);
+	parallel_device[i] = temp_parallel_device[i];
     }
 
     /* Peripherals category */
@@ -451,27 +414,6 @@ settings_save(void)
     /* Mark configuration as changed. */
     config_changed = 1;
 }
-
-
-#include "win_settings_machine.h"		/* Machine dialog */
-
-#include "win_settings_video.h"			/* Video dialog */
-
-#include "win_settings_input.h"			/* Input dialog */
-
-#include "win_settings_sound.h"			/* Sound dialog */
-
-#include "win_settings_ports.h"			/* Ports dialog */
-
-#include "win_settings_periph.h"		/* Other Peripherals dialog */
-
-#include "win_settings_network.h"		/* Network dialog */
-
-#include "win_settings_floppy.h"		/* Floppy dialog */
-
-#include "win_settings_disk.h"			/* (Hard) Disk dialog */
-
-#include "win_settings_remov.h"			/* Removable Devices dialog */
 
 
 /************************************************************************
@@ -635,6 +577,11 @@ settings_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INITDIALOG:
 		settings_init();
+
+		disk_track_init();
+		cdrom_track_init();
+		zip_track_init();
+
 		displayed_category = -1;
 		h = GetDlgItem(hdlg, IDC_SETTINGSCATLIST);
 		image_list_init(h);

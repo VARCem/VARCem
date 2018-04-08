@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.5	2018/04/02
+ * Version:	@(#)scsi.c	1.0.6	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -197,11 +197,13 @@ scsi_card_init(void)
 {
     int i, j;
 
-    pclog("Building SCSI hard disk map...\n");
+    pclog("SCSI: building hard disk map...\n");
     build_scsi_hd_map();
-    pclog("Building SCSI CD-ROM map...\n");
+
+    pclog("SCSI: building CD-ROM map...\n");
     build_scsi_cdrom_map();
-    pclog("Building SCSI ZIP map...\n");
+
+    pclog("SCSI: building ZIP map...\n");
     build_scsi_zip_map();
 	
     for (i=0; i<SCSI_ID_MAX; i++) {

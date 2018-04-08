@@ -8,7 +8,7 @@
  *
  *		Implementation of the Create CMS/GameBlaster sound device.
  *
- * Version:	@(#)snd_cms.c	1.0.2	2018/03/15
+ * Version:	@(#)snd_cms.c	1.0.3	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,6 @@
 #include "../io.h"
 #include "../device.h"
 #include "sound.h"
-#include "snd_cms.h"
 
 
 #define MASTER_CLOCK 7159090

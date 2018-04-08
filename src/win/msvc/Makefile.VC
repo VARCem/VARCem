@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.4	2018/04/05
+# Version:	@(#)Makefile.VC	1.0.6	2018/04/08
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -474,7 +474,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_at_430lx_nx.obj m_at_430fx.obj \
 		    m_at_430hx.obj m_at_430vx.obj
 
-DEVOBJ		:= bugger.obj parallel.obj $(SERIAL) \
+DEVOBJ		:= bugger.obj parallel.obj parallel_dev.obj $(SERIAL) \
 		    sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
 		    sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
 		   keyboard.obj \
@@ -524,6 +524,7 @@ NETOBJ		:= network.obj \
 		    net_ne2000.obj
 
 SNDOBJ		:= sound.obj \
+		    sound_dev.obj \
 		    openal.obj \
 		    snd_opl.obj snd_dbopl.obj \
 		    dbopl.obj nukedopl.obj \

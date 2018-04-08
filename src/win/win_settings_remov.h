@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_remov.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_remov.h	1.0.2	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,23 @@
 static int rd_ignore_change = 0;
 static int cdlv_current_sel;
 static int zdlv_current_sel;
+
+
+static void
+cdrom_track_init(void)
+{
+    int i;
+
+    for (i=0; i<CDROM_NUM; i++) {
+	if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY)
+		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
+	else if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA)
+		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
+	else if (cdrom_drives[i].bus_type == CDROM_BUS_SCSI)
+		scsi_tracking[cdrom_drives[i].scsi_device_id] |= (2 << (cdrom_drives[i].scsi_device_lun << 3));
+    }
+}
+
 
 static int
 combo_to_string(int combo_id)
@@ -390,6 +407,22 @@ cdrom_track_all(void)
 	cdrom_track(i);
 }
 #endif
+
+
+static void
+zip_track_init(void)
+{
+    int i;
+
+    for (i=0; i<ZIP_NUM; i++) {
+	if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_ONLY)
+		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
+	else if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA)
+		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
+	else if (zip_drives[i].bus_type == ZIP_BUS_SCSI)
+		scsi_tracking[zip_drives[i].scsi_device_id] |= (4 << (zip_drives[i].scsi_device_lun << 3));
+    }
+}
 
 
 static void

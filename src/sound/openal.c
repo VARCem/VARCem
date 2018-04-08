@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.6	2018/04/05
+ * Version:	@(#)openal.c	1.0.7	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -138,6 +138,8 @@ ALvoid alutInit(ALint *argc, ALbyte **argv)
     ALCcontext *Context;
     ALCdevice *Device;
 
+pclog("SOUND: alutInit(%08lx)\n", openal_handle);
+    /* Only if DLL is loaded. */
     if (openal_handle == NULL) return;
 
     /* Open device */
@@ -159,6 +161,8 @@ alutExit(ALvoid)
     ALCcontext *Context;
     ALCdevice *Device;
 
+pclog("SOUND: alutExit(%08lx)\n", openal_handle);
+    /* Only if DLL is loaded. */
     if (openal_handle == NULL) return;
 
     /* Get active context */
@@ -178,11 +182,13 @@ alutExit(ALvoid)
 	f_alcDestroyContext(Context);
     }
 
+#if 0
     /* Unload the DLL if possible. */
     if (openal_handle != NULL) {
 	dynld_close((void *)openal_handle);
 	openal_handle = NULL;
     }
+#endif
 }
 #endif
 
@@ -190,6 +196,7 @@ alutExit(ALvoid)
 void
 closeal(void)
 {
+pclog("SOUND: closeal()\n");
 #ifdef USE_OPENAL
     alutExit();
 #endif
@@ -199,29 +206,21 @@ closeal(void)
 void
 initalmain(int argc, char *argv[])
 {
+pclog("SOUND: initalmain()\n");
 #ifdef USE_OPENAL
-    char *str;
-
-    if (openal_handle != NULL) return;
-
-    /*
-     * If the current MIDI device is neither "none", nor system MIDI,
-     * initialize the MIDI buffer and source, otherwise, do not.
-     */
-    str = midi_device_get_internal_name(midi_device_current);
-    if (!strcmp(str, "none") || !strcmp(str, SYSTEM_MIDI_INT)) return;
-
-    /* Try loading the DLL. */
-    openal_handle = dynld_module(PATH_AL_DLL, openal_imports);
-    if (openal_handle != NULL) {
-	pclog("SOUND: OpenAL module '%s' loaded.\n", PATH_AL_DLL);
-	alutInit(NULL, NULL);
-	atexit(closeal);
-    } else {
-	pclog("SOUND: unable to load OpenAL module '%s' !\n", PATH_AL_DLL);
-	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2178);
-	return;
+    /* Try loading the DLL if needed. */
+    if (openal_handle == NULL) {
+	openal_handle = dynld_module(PATH_AL_DLL, openal_imports);
+	if (openal_handle == NULL) {
+		pclog("SOUND: unable to load module '%s' !\n", PATH_AL_DLL);
+		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2178);
+		return;
+	} else
+		pclog("SOUND: module '%s' loaded.\n", PATH_AL_DLL);
     }
+
+    alutInit(NULL, NULL);
+    atexit(closeal);
 #endif
 }
 
@@ -233,24 +232,38 @@ inital(void)
     float *buf = NULL, *cd_buf = NULL, *midi_buf = NULL;
     int16_t *buf_int16 = NULL, *cd_buf_int16 = NULL, *midi_buf_int16 = NULL;
     int c;
+#endif
+    int init_midi = 0;
+    char *str;
 
-    if (openal_handle == NULL) return;
+pclog("SOUND: inital()\n");
+    /*
+     * If the current MIDI device is neither "none", nor system MIDI,
+     * initialize the MIDI buffer and source, otherwise, do not.
+     */
+    str = midi_device_get_internal_name(midi_device_current);
+    if (!strcmp(str, "none") || !strcmp(str, SYSTEM_MIDI_INT)) init_midi = 1;
 
+#ifdef USE_OPENAL
     if (sound_is_float) {
 	buf = (float *) malloc((BUFLEN << 1) * sizeof(float));
 	cd_buf = (float *) malloc((CD_BUFLEN << 1) * sizeof(float));
-	midi_buf = (float *) malloc(midi_buf_size * sizeof(float));
+	if (init_midi)
+		midi_buf = (float *) malloc(midi_buf_size * sizeof(float));
     } else {
 	buf_int16 = (int16_t *) malloc((BUFLEN << 1) * sizeof(int16_t));
 	cd_buf_int16 = (int16_t *) malloc((CD_BUFLEN << 1) * sizeof(int16_t));
-	midi_buf_int16 = (int16_t *) malloc(midi_buf_size * sizeof(int16_t));
+	if (init_midi)
+		midi_buf_int16 = (int16_t *) malloc(midi_buf_size * sizeof(int16_t));
     }
 
     f_alGenBuffers(4, buffers);
     f_alGenBuffers(4, buffers_cd);
-    f_alGenBuffers(4, buffers_midi);
-
-    f_alGenSources(3, source);
+    if (init_midi) {
+	f_alGenBuffers(4, buffers_midi);
+	f_alGenSources(3, source);
+    } else
+	f_alGenSources(2, source);
 
     f_alSource3f(source[0], AL_POSITION,        0.0, 0.0, 0.0);
     f_alSource3f(source[0], AL_VELOCITY,        0.0, 0.0, 0.0);
@@ -262,47 +275,57 @@ inital(void)
     f_alSource3f(source[1], AL_DIRECTION,       0.0, 0.0, 0.0);
     f_alSourcef (source[1], AL_ROLLOFF_FACTOR,  0.0          );
     f_alSourcei (source[1], AL_SOURCE_RELATIVE, AL_TRUE      );
-    f_alSource3f(source[2], AL_POSITION,        0.0, 0.0, 0.0);
-    f_alSource3f(source[2], AL_VELOCITY,        0.0, 0.0, 0.0);
-    f_alSource3f(source[2], AL_DIRECTION,       0.0, 0.0, 0.0);
-    f_alSourcef (source[2], AL_ROLLOFF_FACTOR,  0.0          );
-    f_alSourcei (source[2], AL_SOURCE_RELATIVE, AL_TRUE      );
+    if (init_midi) {
+	f_alSource3f(source[2], AL_POSITION,        0.0, 0.0, 0.0);
+	f_alSource3f(source[2], AL_VELOCITY,        0.0, 0.0, 0.0);
+	f_alSource3f(source[2], AL_DIRECTION,       0.0, 0.0, 0.0);
+	f_alSourcef (source[2], AL_ROLLOFF_FACTOR,  0.0          );
+	f_alSourcei (source[2], AL_SOURCE_RELATIVE, AL_TRUE      );
+    }
 
     if (sound_is_float) {
 	memset(buf,0,BUFLEN*2*sizeof(float));
 	memset(cd_buf,0,BUFLEN*2*sizeof(float));
-	memset(midi_buf,0,midi_buf_size*sizeof(float));
+	if (init_midi)
+		memset(midi_buf,0,midi_buf_size*sizeof(float));
     } else {
 	memset(buf_int16,0,BUFLEN*2*sizeof(int16_t));
 	memset(cd_buf_int16,0,BUFLEN*2*sizeof(int16_t));
-	memset(midi_buf_int16,0,midi_buf_size*sizeof(int16_t));
+	if (init_midi)
+		memset(midi_buf_int16,0,midi_buf_size*sizeof(int16_t));
     }
 
     for (c=0; c<4; c++) {
 	if (sound_is_float) {
 		f_alBufferData(buffers[c], AL_FORMAT_STEREO_FLOAT32, buf, BUFLEN*2*sizeof(float), FREQ);
 		f_alBufferData(buffers_cd[c], AL_FORMAT_STEREO_FLOAT32, cd_buf, CD_BUFLEN*2*sizeof(float), CD_FREQ);
-		f_alBufferData(buffers_midi[c], AL_FORMAT_STEREO_FLOAT32, midi_buf, midi_buf_size*sizeof(float), midi_freq);
+		if (init_midi)
+			f_alBufferData(buffers_midi[c], AL_FORMAT_STEREO_FLOAT32, midi_buf, midi_buf_size*sizeof(float), midi_freq);
 	} else {
 		f_alBufferData(buffers[c], AL_FORMAT_STEREO16, buf_int16, BUFLEN*2*sizeof(int16_t), FREQ);
 		f_alBufferData(buffers_cd[c], AL_FORMAT_STEREO16, cd_buf_int16, CD_BUFLEN*2*sizeof(int16_t), CD_FREQ);
-		f_alBufferData(buffers_midi[c], AL_FORMAT_STEREO16, midi_buf_int16, midi_buf_size*sizeof(int16_t), midi_freq);
+		if (init_midi)
+			f_alBufferData(buffers_midi[c], AL_FORMAT_STEREO16, midi_buf_int16, midi_buf_size*sizeof(int16_t), midi_freq);
 	}
     }
 
     f_alSourceQueueBuffers(source[0], 4, buffers);
     f_alSourceQueueBuffers(source[1], 4, buffers_cd);
-    f_alSourceQueueBuffers(source[2], 4, buffers_midi);
+    if (init_midi)
+	f_alSourceQueueBuffers(source[2], 4, buffers_midi);
     f_alSourcePlay(source[0]);
     f_alSourcePlay(source[1]);
-    f_alSourcePlay(source[2]);
+    if (init_midi)
+	f_alSourcePlay(source[2]);
 
     if (sound_is_float) {
-	free(midi_buf);
+	if (init_midi)
+		free(midi_buf);
 	free(cd_buf);
 	free(buf);
     } else {
-	free(midi_buf_int16);
+	if (init_midi)
+		free(midi_buf_int16);
 	free(cd_buf_int16);
 	free(buf_int16);
     }

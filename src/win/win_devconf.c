@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.8	2018/04/01
+ * Version:	@(#)win_devconf.c	1.0.9	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -510,7 +510,7 @@ deviceconfig_open(HWND hwnd, device_t *device)
 			item->cx = 140;
 			item->cy = 150;
 
-			item->style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | WS_VSCROLL;
+			item->style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL;
 
 			data = (uint16_t *)(item + 1);
 			*data++ = 0xFFFF;

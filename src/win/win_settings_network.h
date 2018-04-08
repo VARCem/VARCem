@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_network.h	1.0.2	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,10 @@
  ************************************************************************/
 
 /* Global variables for the Network dialog. */
-static int net_ignore_message = 0;
+static int	nic_to_list[20],
+		list_to_nic[20];
+static int	net_ignore_message = 0;
+
 
 static void
 network_recalc_combos(HWND hdlg)
@@ -123,19 +126,19 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (stransi == NULL)
 				break;
 
-			settings_network_to_list[c] = d;
+			nic_to_list[c] = d;
 
 			if (network_card_available(c) && device_is_valid(network_card_getdevice(c), machines[temp_machine].flags)) {
 				mbstowcs(temp, stransi, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 
-				settings_list_to_network[d] = c;
+				list_to_nic[d] = c;
 				d++;
 			}
 
 			c++;
 		}
-		SendMessage(h, CB_SETCURSEL, settings_network_to_list[temp_net_card], 0);
+		SendMessage(h, CB_SETCURSEL, nic_to_list[temp_net_card], 0);
 
 		EnableWindow(h, d ? TRUE : FALSE);
 		network_recalc_combos(hdlg);
@@ -169,7 +172,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					return FALSE;
 
 				h = GetDlgItem(hdlg, IDC_COMBO_NET);
-				temp_net_card = settings_list_to_network[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				network_recalc_combos(hdlg);
 				break;
@@ -179,7 +182,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					return FALSE;
 
 				h = GetDlgItem(hdlg, IDC_COMBO_NET);
-				temp_net_card = settings_list_to_network[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)network_card_getdevice(temp_net_card));
 				break;
@@ -195,7 +198,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		strcpy(temp_host_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_NET);
-		temp_net_card = settings_list_to_network[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
 		return FALSE;
 
 	default:

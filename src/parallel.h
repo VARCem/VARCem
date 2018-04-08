@@ -8,7 +8,7 @@
  *
  *		Definitions for the "LPT" parallel port handlerss.
  *
- * Version:	@(#)parallel.h	1.0.3	2018/04/05
+ * Version:	@(#)parallel.h	1.0.4	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,26 +47,15 @@
 #define PARALLEL3_ADDR	0x03BC			/* part of the MDA */
 
 
-typedef struct _lpt_device_ {
-    const char	*name;
-    int		type;
-    void	*(*init)(const struct _lpt_device_ *);
-    void	(*close)(void *priv);
-    void	(*write_data)(uint8_t val, void *priv);
-    void	(*write_ctrl)(uint8_t val, void *priv);
-    uint8_t	(*read_status)(void *priv);
-} lpt_device_t;
+#ifdef EMU_DEVICE_H
+extern const device_t parallel_1_device;
+extern const device_t parallel_2_device;
+extern const device_t parallel_3_device;
+#endif
 
 
-extern void	parallel_init(void);
+extern void	parallel_reset(void);
 extern void	parallel_setup(int id, uint16_t port);
-extern void	parallel_remove(int id);
-extern void	parallel_remove_amstrad(void);
-
-extern const char *parallel_device_get_name(int id);
-extern char	*parallel_device_get_internal_name(int id);
-extern void	parallel_devices_init(void);
-extern void	parallel_devices_close(void);
 
 
 #endif	/*EMU_PARALLEL_H*/

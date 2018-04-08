@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the ADLIB driver.
+ *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)snd_adlib.h	1.0.2	2018/03/15
+ * Version:	@(#)parallel_dev.c	1.0.1	2018/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,12 +36,68 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef SOUND_ADLIB_H
-# define SOUND_ADLIB_H
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <wchar.h>
+#include "emu.h"
+#include "io.h"
+#include "parallel.h"
+#include "parallel_dev.h"
+
+#include "sound/snd_lpt_dac.h"
+#include "sound/snd_lpt_dss.h"
 
 
-extern const device_t adlib_device;
-extern const device_t adlib_mca_device;
+static const struct {
+    const char	*name;
+    const char	*internal_name;
+    const lpt_device_t *device;
+} devices[] = {
+    {"None",
+     "none",			NULL					},
+    {"Disney Sound Source",
+     "dss",			&dss_device				},
+    {"LPT DAC / Covox Speech Thing",
+     "lpt_dac",			&lpt_dac_device				},
+    {"Stereo LPT DAC",
+     "lpt_dac_stereo",		&lpt_dac_stereo_device			},
+    {NULL,			NULL,
+     NULL								}
+};
 
 
-#endif	/*SOUND_ADLIB_H*/
+const char *
+parallel_device_get_name(int id)
+{
+    return(devices[id].name);
+}
+
+
+const char *
+parallel_device_get_internal_name(int id)
+{
+    return(devices[id].internal_name);
+}
+
+
+const lpt_device_t *
+parallel_device_get_device(int id)
+{
+    return(devices[id].device);
+}
+
+
+int
+parallel_device_get_from_internal_name(char *s)
+{
+    int c = 0;
+
+    while (devices[c].internal_name != NULL) {
+	if (! strcmp((char *)devices[c].internal_name, s))
+		return(c);
+	c++;
+    }
+
+    return(-1);
+}
