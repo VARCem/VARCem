@@ -10,7 +10,7 @@
  *
  * Known bugs:	Accelerator doesn't work in planar modes
  *
- * Version:	@(#)vid_et4000w32.c	1.0.6	2018/03/31
+ * Version:	@(#)vid_et4000w32.c	1.0.7	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1387,7 +1387,8 @@ const device_t et4000w32p_cardex_pci_device =
 const device_t et4000w32p_vlb_device =
 {
         "Tseng Labs ET4000/w32p VLB (Diamond)",
-        DEVICE_VLB, ET4000W32_DIAMOND,
+        DEVICE_VLB | DEVICE_UNSTABLE,
+	ET4000W32_DIAMOND,
         et4000w32p_init, et4000w32p_close, NULL,
         et4000w32p_available,
         et4000w32p_speed_changed,
@@ -1399,7 +1400,8 @@ const device_t et4000w32p_vlb_device =
 const device_t et4000w32p_pci_device =
 {
         "Tseng Labs ET4000/w32p PCI (Diamond)",
-        DEVICE_PCI, ET4000W32_DIAMOND,
+        DEVICE_PCI | DEVICE_UNSTABLE,
+	ET4000W32_DIAMOND,
         et4000w32p_init, et4000w32p_close, NULL,
         et4000w32p_available,
         et4000w32p_speed_changed,

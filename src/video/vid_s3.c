@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.7	2018/03/11
+ * Version:	@(#)vid_s3.c	1.0.8	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2444,7 +2444,7 @@ static void *s3_phoenix_trio64_onboard_init(const device_t *info)
 
 static void *s3_diamond_stealth64_init(const device_t *info)
 {
-	s3_t *s3 = s3_trio64_init(info, L"video/s3/s3/stealt64.bin");
+	s3_t *s3 = s3_trio64_init(info, L"video/s3/s3/stealth64.bin");
         if (device_get_config_int("memory") == 1)
                 s3->svga.vram_max = 1 << 20; /*Phoenix BIOS does not expect VRAM to be mirrored*/
 	return s3;
@@ -2462,7 +2462,7 @@ static int s3_phoenix_trio64_available(void)
 
 static int s3_diamond_stealth64_available(void)
 {
-        return rom_present(L"video/s3/s3/stealt64.bin");
+        return rom_present(L"video/s3/s3/stealth64.bin");
 }
 
 static void s3_close(void *p)

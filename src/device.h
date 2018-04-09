@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.3	2018/03/15
+ * Version:	@(#)device.h	1.0.4	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,7 +53,7 @@
 
 
 enum {
-    DEVICE_NOT_WORKING = 1,	/* does not currently work correctly and will be disabled in a release build*/
+    DEVICE_UNSTABLE = 1,	/* unstable device, be cautious */
     DEVICE_AT = 2,		/* requires an AT-compatible system */
     DEVICE_PS2 = 4,		/* requires a PS/1 or PS/2 system */
     DEVICE_ISA = 8,		/* requires the ISA bus */

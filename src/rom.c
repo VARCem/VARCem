@@ -12,7 +12,7 @@
  *		- pc2386 video BIOS is underdumped (16k instead of 24k)
  *		- c386sx16 BIOS fails checksum
  *
- * Version:	@(#)rom.c	1.0.10	2018/03/31
+ * Version:	@(#)rom.c	1.0.11	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,7 +82,8 @@ rom_present(wchar_t *fn)
     if (f != NULL) {
 	(void)fclose(f);
 	return(1);
-    }
+    } else
+	pclog("ROM: image for '%ls' not found!\n", fn);
 
     return(0);
 }

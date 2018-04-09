@@ -55,7 +55,7 @@
 #define EMU_VER_MAJOR	0
 #define EMU_VER_MINOR	1
 #define EMU_VER_REV	5
-//#define EMU_VER_PATCH	1
+#define EMU_VER_PATCH	1
 
 
 /* Standard C preprocessor macros. */

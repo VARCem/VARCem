@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.8	2018/03/31
+ * Version:	@(#)vid_oak_oti.c	1.0.9	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,9 +52,7 @@
 
 
 #define BIOS_37C_PATH	L"video/oti/oti037c/bios.bin"
-#if 0
-# define BIOS_67_PATH	L"video/oti/bios.bin"
-#endif
+//#define BIOS_67_PATH	L"video/oti/oti067.bin"
 #define BIOS_77_PATH	L"video/oti/oti077.vbi"
 
 
@@ -290,7 +288,7 @@ oti_init(const device_t *info)
 		break;
 
 	case 2:
-#if 0
+#ifdef BIOS_67_PATH
 		romfn = BIOS_67_PATH;
 		break;
 #endif
@@ -309,12 +307,14 @@ oti_init(const device_t *info)
 	      oti_recalctimings, oti_in, oti_out, NULL, NULL);
 
     io_sethandler(0x03c0, 32,
-		  oti_in, NULL, NULL, oti_out, NULL, NULL, oti);
-	io_sethandler(0x46e8, 1, oti_pos_in,NULL,NULL, oti_pos_out,NULL,NULL, oti);
+		  oti_in,NULL,NULL, oti_out,NULL,NULL, oti);
 
-	oti->svga.miscout = 1;
+    io_sethandler(0x46e8, 1,
+		  oti_pos_in,NULL,NULL, oti_pos_out,NULL,NULL, oti);
 
-	oti->regs[0] = 0x08; /* fixme: bios wants to read this at index 0? this index is undocumented */
+    oti->svga.miscout = 1;
+
+    oti->regs[0] = 0x08; /* fixme: bios wants to read this at index 0? this index is undocumented */
 
     return(oti);
 }
@@ -366,7 +366,7 @@ oti037c_available(void)
 static int
 oti067_available(void)
 {
-#if 0
+#ifdef BIOS_67_PATH
     return(rom_present(BIOS_67_PATH));
 #else
     return(rom_present(BIOS_77_PATH));
@@ -380,10 +380,10 @@ static const device_config_t oti067_config[] =
 		"memory", "Memory size", CONFIG_SELECTION, "", 512,
 		{
 			{
-				"256 kB", 256
+				"256 KB", 256
 			},
 			{
-				"512 kB", 512
+				"512 KB", 512
 			},
 			{
 				""
@@ -409,10 +409,10 @@ static const device_config_t oti077_config[] =
 		"memory", "Memory size", CONFIG_SELECTION, "", 1024,
 		{
 			{
-				"256 kB", 256
+				"256 KB", 256
 			},
 			{
-				"512 kB", 512
+				"512 KB", 512
 			},
 			{
 				"1 MB", 1024

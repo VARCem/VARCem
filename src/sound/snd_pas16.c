@@ -79,7 +79,7 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.4	2018/04/08
+ * Version:	@(#)snd_pas16.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -781,12 +781,12 @@ static void pas16_close(void *p)
         free(pas16);
 }
 
-const device_t pas16_device =
-{
-        "Pro Audio Spectrum 16",
-        DEVICE_ISA | DEVICE_NOT_WORKING,
-	0,
-        pas16_init, pas16_close, NULL,
-        NULL, NULL, NULL, NULL,
-	NULL
+
+const device_t pas16_device = {
+    "Pro Audio Spectrum 16",
+    DEVICE_ISA | DEVICE_UNSTABLE,
+    0,
+    pas16_init, pas16_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };

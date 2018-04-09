@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.6	2018/04/08
+# Version:	@(#)Makefile.VC	1.0.7	2018/04/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -137,6 +137,9 @@ endif
 ifndef XL24
  XL24		:= n
 endif
+ifndef WONDER
+ WONDER		:= n
+endif
 
 
 # Name of the executable.
@@ -159,6 +162,7 @@ ifeq ($(DEV_BUILD), y)
  PAS16		:= y
  STEALTH32	:= y
  XL24		:= y
+ WONDER		:= y
 endif
 
 # Where is the the WinPcap SDK?
@@ -415,6 +419,10 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(XL24), y)
   OPTS		+= -DUSE_XL24
+ endif
+
+ ifeq ($(WONDER), y)
+  OPTS		+= -DUSE_WONDER
  endif
 
  ifeq ($(PAS16), y)
