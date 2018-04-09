@@ -8,7 +8,7 @@
  *
  *		Definitions for the parallel port-attached devices.
  *
- * Version:	@(#)parallel_dev.h	1.0.1	2018/04/07
+ * Version:	@(#)parallel_dev.h	1.0.2	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,7 +37,7 @@
  *   USA.
  */
 #ifndef EMU_PARALLEL_DEV_H
-# define EMU_PARALLE_DEVL_H
+# define EMU_PARALLEL_DEV_H
 
 
 typedef struct _lpt_device_ {

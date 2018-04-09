@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.4	2018/04/05
+ * Version:	@(#)hdc.h	1.0.5	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,10 @@
 				 * least 7 devices, with each device being
 				 * able to support 8 units, but hey... */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef EMU_DEVICE_H
 extern const device_t	mfm_xt_xebec_device;		/* mfm_xt_xebec */
 extern const device_t	mfm_xt_dtc5150x_device;		/* mfm_xt_dtc */
@@ -79,6 +83,10 @@ extern const device_t	*hdc_get_device(int hdc);
 extern int	hdc_get_flags(int hdc);
 extern int	hdc_available(int hdc);
 extern int	hdc_get_from_internal_name(char *s);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif	/*EMU_HDC_H*/
