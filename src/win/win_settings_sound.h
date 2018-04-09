@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.3	2018/04/08
+ * Version:	@(#)win_settings_sound.h	1.0.4	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -162,9 +162,6 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_MPU401);
 		EnableWindow(h, (mpu401_standalone_allow() && temp_mpu401) ? TRUE : FALSE);
 
-		h = GetDlgItem(hdlg, IDC_CHECK_CMS);
-		SendMessage(h, BM_SETCHECK, temp_GAMEBLASTER, 0);
-
 		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
 		SendMessage(h, BM_SETCHECK, temp_opl3_type, 0);
 
@@ -248,9 +245,6 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
 		temp_mpu401 = SendMessage(h, BM_GETCHECK, 0, 0);
-
-		h = GetDlgItem(hdlg, IDC_CHECK_CMS);
-		temp_GAMEBLASTER = SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
 		temp_opl3_type = SendMessage(h, BM_GETCHECK, 0, 0);

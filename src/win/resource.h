@@ -160,7 +160,6 @@
 #define IDC_CHECK_FLOAT		1074
 #define IDC_CHECK_MPU401	1075
 #define IDC_CONFIGURE_MPU401	1076
-#define IDC_CHECK_CMS		1077
 
 #define IDC_COMBO_NET_TYPE	1090	/* network config */
 #define IDC_COMBO_PCAP		1091

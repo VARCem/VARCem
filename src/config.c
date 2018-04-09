@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.11	2018/04/08
+ * Version:	@(#)config.c	1.0.12	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,9 +69,6 @@
 #include "network/network.h"
 #include "sound/sound.h"
 #include "sound/midi.h"
-#include "sound/snd_dbopl.h"
-#include "sound/snd_mpu401.h"
-#include "sound/snd_opl.h"
 #include "sound/sound.h"
 #include "video/video.h"
 #include "plat.h"
@@ -626,8 +623,6 @@ load_sound(void)
 	midi_device_current = 0;
 
     mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
-
-    GAMEBLASTER = !!config_get_int(cat, "gameblaster", 0);
 
     memset(temp, '\0', sizeof(temp));
     p = config_get_string(cat, "opl3_type", "dbopl");
@@ -1619,11 +1614,6 @@ save_sound(void)
 	config_delete_var(cat, "mpu401_standalone");
       else
 	config_set_int(cat, "mpu401_standalone", mpu401_standalone_enable);
-
-    if (GAMEBLASTER == 0)
-	config_delete_var(cat, "gameblaster");
-      else
-	config_set_int(cat, "gameblaster", GAMEBLASTER);
 
     if (opl3_type == 0)
 	config_delete_var(cat, "opl3_type");

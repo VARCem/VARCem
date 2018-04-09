@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.15	2018/04/08
+ * Version:	@(#)emu.h	1.0.16	2018/04/08
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -115,7 +115,8 @@ extern int	romdos_enabled;			/* (C) enable ROM DOS */
 #endif
 extern int	hdc_type;			/* (C) HDC type */
 extern int	sound_is_float,			/* (C) sound uses FP values */
-		GAMEBLASTER,			/* (C) sound option */
+		mpu401_standalone_enable,	/* (C) sound option */
+		opl3_type,			/* (C) sound option */
 		voodoo_enabled;			/* (C) video option */
 extern int	joystick_type;			/* (C) joystick type */
 extern int	mem_size;			/* (C) memory size */

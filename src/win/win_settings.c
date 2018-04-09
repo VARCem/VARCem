@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.19	2018/04/08
+ * Version:	@(#)win_settings.c	1.0.20	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,7 +67,6 @@
 #include "../network/network.h"
 #include "../sound/sound.h"
 #include "../sound/midi.h"
-#include "../sound/snd_dbopl.h"
 #include "../sound/snd_mpu401.h"
 #include "../video/video.h"
 #include "../video/vid_voodoo.h"
@@ -92,7 +91,7 @@ static int	temp_mouse, temp_joystick;
 
 /* Sound category. */
 static int	temp_sound_card, temp_midi_device, temp_mpu401,
-		temp_GAMEBLASTER, temp_opl3_type, temp_float;
+		temp_opl3_type, temp_float;
 
 /* Network category. */
 static int	temp_net_type, temp_net_card;
@@ -192,7 +191,6 @@ settings_init(void)
     temp_sound_card = sound_card_current;
     temp_midi_device = midi_device_current;
     temp_mpu401 = mpu401_standalone_enable;
-    temp_GAMEBLASTER = GAMEBLASTER;
     temp_opl3_type = opl3_type;
     temp_float = sound_is_float;
 
@@ -268,7 +266,6 @@ settings_changed(void)
     i = i || (sound_card_current != temp_sound_card);
     i = i || (midi_device_current != temp_midi_device);
     i = i || (mpu401_standalone_enable != temp_mpu401);
-    i = i || (GAMEBLASTER != temp_GAMEBLASTER);
     i = i || (opl3_type != temp_opl3_type);
     i = i || (sound_is_float != temp_float);
 
@@ -370,7 +367,6 @@ settings_save(void)
     sound_card_current = temp_sound_card;
     midi_device_current = temp_midi_device;
     mpu401_standalone_enable = temp_mpu401;
-    GAMEBLASTER = temp_GAMEBLASTER;
     opl3_type = temp_opl3_type;
     sound_is_float = temp_float;
 

@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.7	2018/04/08
+ * Version:	@(#)sound.c	1.0.8	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,7 +74,6 @@ int		sound_gain = 0;
 volatile int	soundon = 1;
 
 
-//static int	card_last = 0;
 static sndhnd_t	handlers[8];
 static sndhnd_t	process_handlers[8];
 static int	handlers_num;
@@ -333,15 +332,9 @@ sound_reset(void)
 
     /* Initialize the currently selected sound card. */
     snddev_reset();
-//    card_last = sound_card_current;
 
     if (mpu401_standalone_enable)
 	mpu401_device_add();
-
-#if 0
-    if (GAMEBLASTER)
-	device_add(&cms_device);
-#endif
 }
 
 

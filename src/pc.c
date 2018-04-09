@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.21	2018/04/08
+ * Version:	@(#)pc.c	1.0.22	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -130,7 +130,8 @@ int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
 int	hdc_type = 0;				/* (C) HDC type */
 int	sound_is_float = 1,			/* (C) sound uses FP values */
-	GAMEBLASTER = 0,			/* (C) sound option */
+	mpu401_standalone_enable = 0,		/* (C) sound option */
+	opl3_type = 0,				/* (C) sound option */
 	voodoo_enabled = 0;			/* (C) video option */
 int	joystick_type = 0;			/* (C) joystick type */
 int	mem_size = 0;				/* (C) memory size */

@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.15	2018/04/08
+ * Version:	@(#)VARCem.rc	1.0.16	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -488,9 +488,6 @@ BEGIN
 
     CONTROL         "Use FLOAT32 sound",IDC_CHECK_FLOAT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,81,94,10
-
-    CONTROL         "CMS / Game Blaster",IDC_CHECK_CMS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,99,94,10
 END
 
 DLG_CFG_NETWORK DIALOG DISCARDABLE  97, 0, 267, 63

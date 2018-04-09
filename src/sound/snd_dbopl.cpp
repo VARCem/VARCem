@@ -10,7 +10,7 @@
  *
  * NOTE:	See MSC_ macros for allocation on stack. --FvK
  *
- * Version:	@(#)snd_dbopl.cpp	1.0.3	2018/02/22
+ * Version:	@(#)snd_dbopl.cpp	1.0.4	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,9 +49,6 @@
 #include "dbopl.h"
 #include "nukedopl.h"
 #include "snd_dbopl.h"
-
-
-int opl3_type = 0;
 
 
 static struct

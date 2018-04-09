@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.4	2018/04/02
+ * Version:	@(#)snd_mpu401.c	1.0.5	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,15 +62,14 @@ enum {
 };
 
 
-int mpu401_standalone_enable = 0;
+#ifdef ENABLE_SOUND_MPU401_LOG
+int sound_mpu401_do_log = ENABLE_SOUND_MPU401_LOG;
+#endif
+
 
 static int64_t mpu401_event_callback = 0LL;
 static int64_t mpu401_eoi_callback = 0LL;
 static int64_t mpu401_reset_callback = 0LL;
-
-#ifdef ENABLE_SOUND_MPU401_LOG
-int sound_mpu401_do_log = ENABLE_SOUND_MPU401_LOG;
-#endif
 
 
 static void MPU401_WriteCommand(mpu_t *mpu, uint8_t val);

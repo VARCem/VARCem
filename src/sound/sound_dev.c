@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.1	2018/04/08
+ * Version:	@(#)sound_dev.c	1.0.2	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,6 +89,7 @@ static const sound_t	sound_cards[] = {
     {"Disabled",			"none",		NULL		},
     {"[ISA] Adlib",			"adlib",	&adlib_device	},
     {"[ISA] Adlib Gold",		"adlibgold",	&adgold_device	},
+    {"[ISA] Creative Music System",	"cms",		&cms_device	},
     {"[ISA] Gravis Ultra Sound",	"gus",		&gus_device	},
     {"[ISA] Innovation SSI-2001",	"ssi2001",	&ssi2001_device	},
     {"[ISA] Sound Blaster 1.0",		"sb",		&sb_1_device	},
