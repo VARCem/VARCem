@@ -8,7 +8,7 @@
  *
  *		Implementation of the SSI2001 sound device.
  *
- * Version:	@(#)snd_si2001.c	1.0.3	2018/04/08
+ * Version:	@(#)snd_ssi2001.c	1.0.4	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,7 +46,6 @@
 #include "../device.h"
 #include "sound.h"
 #include "snd_resid.h"
-#include "snd_ssi2001.h"
 
 
 typedef struct {

@@ -48,10 +48,9 @@
 #include "../rom.h"
 #include "../device.h"
 #include "video.h"
-#include "vid_ati18800.h"
-#include "vid_ati_eeprom.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
+#include "vid_ati_eeprom.h"
 
 
 #define BIOS_ROM_PATH_WONDER	L"video/ati/ati18800/vga_wonder_v3-1.02.bin"

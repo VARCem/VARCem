@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.2	2018/03/15
+ * Version:	@(#)vid_cga_compaq.c	1.0.3	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,10 +53,12 @@
 #include "vid_cga.h"
 #include "vid_cga_comp.h"
 
+
 #define CGA_RGB 0
 #define CGA_COMPOSITE 1
 
-typedef struct compaq_cga_t 
+
+typedef struct
 {
 	cga_t cga;
 	uint32_t flags;

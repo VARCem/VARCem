@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.20	2018/04/08
+ * Version:	@(#)win_settings.c	1.0.21	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,10 +69,13 @@
 #include "../sound/midi.h"
 #include "../sound/snd_mpu401.h"
 #include "../video/video.h"
-#include "../video/vid_voodoo.h"
 #include "../plat.h"
 #include "../ui.h"
 #include "win.h"
+
+
+/* Defined in the Video module. */
+extern const device_t voodoo_device;
 
 
 /* Machine category. */
@@ -320,7 +323,7 @@ msgbox_reset(void)
     changed = settings_changed();
 
     if (changed) {
-	i = settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051);
+	i = settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_2052);
 
 	if (i == 1) return(1);	/* no */
 

@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.11	2018/04/03
+ * Version:	@(#)video.c	1.0.12	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,6 +117,7 @@ uint8_t		rotatevga[8][256];
 int		frames = 0;
 int		fullchange = 0;
 uint8_t		edatlookup[4][4];
+int		update_overscan = 0;
 int		overscan_x = 0,
 		overscan_y = 0;
 int		video_timing_read_b = 0,

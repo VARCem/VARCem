@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.7	2018/04/09
+# Version:	@(#)Makefile.VC	1.0.8	2018/04/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -544,7 +544,6 @@ SNDOBJ		:= sound.obj \
 		     wave8580_PST.obj wave.obj \
 		    midi.obj midi_system.obj \
 		    snd_speaker.obj \
-		    snd_pssj.obj \
 		    snd_lpt_dac.obj snd_lpt_dss.obj \
 		    snd_adlib.obj snd_adlibgold.obj snd_ad1848.obj snd_audiopci.obj \
 		    snd_cms.obj \
@@ -556,7 +555,7 @@ SNDOBJ		:= sound.obj \
 		    snd_ym7128.obj
 
 VIDOBJ		:= video.obj \
-		    vid_table.obj \
+		    video_dev.obj \
 		    vid_cga.obj vid_cga_comp.obj \
 		    vid_compaq_cga.obj \
 		    vid_mda.obj \

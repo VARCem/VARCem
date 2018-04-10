@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.7	2018/03/31
+ * Version:	@(#)vid_s3_virge.c	1.0.8	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,12 +51,12 @@
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
-#include "vid_s3_virge.h"
 
 
 static uint64_t virge_time = 0;
 static uint64_t status_time = 0;
 static int reg_writes = 0, reg_reads = 0;
+
 
 static const int8_t dither[4][4] =
 {

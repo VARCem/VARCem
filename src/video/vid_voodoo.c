@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.7	2018/04/02
+ * Version:	@(#)vid_voodoo.c	1.0.8	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,7 +62,6 @@
 #include "../plat.h"
 #include "video.h"
 #include "vid_svga.h"
-#include "vid_voodoo.h"
 #include "vid_voodoo_dither.h"
 
 #ifdef MIN

@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.10	2018/04/07
+ * Version:	@(#)m_amstrad.c	1.0.11	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,7 +88,6 @@
 #include "../video/video.h"
 #include "../video/vid_cga.h"
 #include "../video/vid_ega.h"
-#include "../video/vid_paradise.h"
 #include "machine.h"
 
 
@@ -155,6 +154,12 @@ typedef struct {
     /* Video stuff. */
     amsvid_t	*vid;
 } amstrad_t;
+
+
+/* Defined in the video module. */
+extern const device_t paradise_pvga1a_pc2086_device;
+extern const device_t paradise_pvga1a_pc3086_device;
+extern const device_t paradise_wd90c11_megapc_device;
 
 
 static uint8_t	key_queue[16];

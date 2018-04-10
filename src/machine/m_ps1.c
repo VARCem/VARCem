@@ -28,7 +28,7 @@
  *		boot. Sometimes, they do, and then it shows an "Incorrect
  *		DOS" error message??  --FvK
  *
- * Version:	@(#)m_ps1.c	1.0.10	2018/04/07
+ * Version:	@(#)m_ps1.c	1.0.11	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,8 +84,6 @@
 #include "../sound/sound.h"
 #include "../sound/snd_sn76489.h"
 #include "../video/video.h"
-#include "../video/vid_vga.h"
-#include "../video/vid_ti_cf62011.h"
 #include "../plat.h"
 #include "machine.h"
 
@@ -122,6 +120,11 @@ typedef struct {
 	uint8_t attention, ctrl;
     }		hd;
 } ps1_t;
+
+
+/* Defined in the Video module. */
+extern const device_t ps1vga_device;
+extern const device_t ibm_ps1_2121_device;
 
 
 static void
@@ -505,9 +508,9 @@ ps1_setup(int model)
 	io_sethandler(0x0324, 1,
 		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
 
-#if 0
+#if 1
 	rom_init(&ps->high_rom,
-		 L"machines/ibmps1es/f80000_shell.bin",
+		 L"machines/ibm/ps1_2011/f80000_shell.bin",
 		 0xf80000, 0x80000, 0x7ffff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 

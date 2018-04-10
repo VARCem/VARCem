@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.4	2018/03/19
+ * Version:	@(#)nvr_at.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -665,7 +665,7 @@ nvr_at_close(void *priv)
 
 const device_t at_nvr_device = {
     "PC/AT NVRAM",
-    MACHINE_ISA | MACHINE_AT,
+    DEVICE_ISA | DEVICE_AT,
     8,
     nvr_at_init, nvr_at_close, NULL,
     NULL, NULL, NULL,

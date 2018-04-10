@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.3	2018/04/05
+ * Version:	@(#)vid_hercules.c	1.0.4	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "../device.h"
 #include "../parallel.h"
 #include "video.h"
-#include "vid_hercules.h"
 
 
 typedef struct hercules_t

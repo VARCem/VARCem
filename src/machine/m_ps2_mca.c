@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.9	2018/04/07
+ * Version:	@(#)m_ps2_mca.c	1.0.10	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,8 +60,11 @@
 #include "../parallel.h"
 #include "../mouse.h"
 #include "../serial.h"
-#include "../video/vid_vga.h"
 #include "machine.h"
+
+
+/* Defined in the Video module. */
+extern const device_t ps1vga_device;
 
 
 static struct

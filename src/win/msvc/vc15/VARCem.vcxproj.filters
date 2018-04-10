@@ -545,9 +545,6 @@
     <ClCompile Include="..\..\..\sound\snd_pas16.c">
       <Filter>sound</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\sound\snd_pssj.c">
-      <Filter>sound</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\sound\snd_resid.cpp">
       <Filter>sound</Filter>
     </ClCompile>
@@ -573,6 +570,9 @@
       <Filter>sound</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\sound\sound.c">
+      <Filter>sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sound\sound_dev.c">
       <Filter>sound</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\video\vid_ati_eeprom.c">
@@ -1370,25 +1370,10 @@
     <ClInclude Include="..\..\..\sound\snd_ad1848.h">
       <Filter>sound</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_adlib.h">
-      <Filter>sound</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_adlibgold.h">
-      <Filter>sound</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_audiopci.h">
-      <Filter>sound</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_cms.h">
-      <Filter>sound</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\sound\snd_dbopl.h">
       <Filter>sound</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\sound\snd_emu8k.h">
-      <Filter>sound</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_gus.h">
       <Filter>sound</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\sound\snd_lpt_dac.h">
@@ -1401,12 +1386,6 @@
       <Filter>sound</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\sound\snd_opl.h">
-      <Filter>sound</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_pas16.h">
-      <Filter>sound</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_pssj.h">
       <Filter>sound</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\sound\snd_resid.h">
@@ -1424,12 +1403,6 @@
     <ClInclude Include="..\..\..\sound\snd_speaker.h">
       <Filter>sound</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_ssi2001.h">
-      <Filter>sound</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sound\snd_wss.h">
-      <Filter>sound</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\sound\snd_ym7128.h">
       <Filter>sound</Filter>
     </ClInclude>
@@ -1445,12 +1418,6 @@
     <ClInclude Include="..\..\..\video\vid_ati_mach64.h">
       <Filter>video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_ati18800.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_ati28800.h">
-      <Filter>video</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\video\vid_ati68860_ramdac.h">
       <Filter>video</Filter>
     </ClInclude>
@@ -1463,55 +1430,16 @@
     <ClInclude Include="..\..\..\video\vid_cga_comp.h">
       <Filter>video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_cl54xx.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_colorplus.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_compaq_cga.h">
-      <Filter>video</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\video\vid_ega.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\video\vid_ega_render.h">
       <Filter>video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_et4000.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_et4000w32.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_genius.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_hercules.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_herculesplus.h">
-      <Filter>video</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\video\vid_icd2061.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\video\vid_ics2595.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_incolor.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_mda.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_paradise.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_s3.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_s3_virge.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\video\vid_sc1502x_ramdac.h">
@@ -1529,22 +1457,7 @@
     <ClInclude Include="..\..\..\video\vid_svga_render.h">
       <Filter>video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_tgui9440.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_ti_cf62011.h">
-      <Filter>video</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\video\vid_tkd8001_ramdac.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_tvga.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_vga.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_voodoo.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\video\vid_voodoo_codegen_x86.h">
@@ -1554,9 +1467,6 @@
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\video\vid_voodoo_dither.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_wy700.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\win\plat_dir.h">
@@ -1573,9 +1483,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\win\win_ddraw.h">
       <Filter>win</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_oak_oti.h">
-      <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\machine\m_xt_xi8088.h">
       <Filter>machine</Filter>

@@ -10,7 +10,7 @@
  *
  * NOTE:	FIXME: Strings 2176 and 2193 are same.
  *
- * Version:	@(#)language.h	1.0.6	2018/04/05
+ * Version:	@(#)language.h	1.0.7	2018/04/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,8 +54,8 @@
 #define IDS_2048	2048		// "Error"
 #define IDS_2049	2049		// "Fatal Error"
 #define IDS_2050	2050		// "Configuration Error"
-#define IDS_2051	2051		// "This will reset the emulator.."
-#define IDS_2052	2052		// "DirectDraw Screenshot Error"
+#define IDS_2051	2051		// "Warning"
+#define IDS_2052	2052		// "This will reset the emulator.."
 #define IDS_2053	2053		// "Invalid number of sectors.."
 #define IDS_2054	2054		// "Invalid number of heads.."
 #define IDS_2055	2055		// "Invalid number of cylinders.."
@@ -147,7 +147,8 @@
 #define IDS_2141	2141		// "Invalid PCap device"
 #define IDS_2142	2142		// "&Notify disk change"
 #define IDS_2143	2143		// "Type"
-/* IDS_2144-51 available */
+#define IDS_2144	2144		// "The requested device '%ls'.."
+/* IDS_2145-51 available */
 #define IDS_2152	2152		// "None"
 #define IDS_2153	2153		// "Unable to load Accelerators"
 #define IDS_2154	2154		// "Unable to register Raw Input"

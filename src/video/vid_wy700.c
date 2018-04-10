@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.2	2018/03/15
+ * Version:	@(#)vid_wy700.c	1.0.3	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,14 +93,13 @@
 #include "../timer.h"
 #include "../device.h"
 #include "video.h"
-#include "vid_wy700.h"
 
 
 #define WY700_XSIZE 1280
 #define WY700_YSIZE 800
 
 
-extern void updatewindowsize(int x, int y);
+//extern void updatewindowsize(int x, int y);
 
 
 /* The microcontroller sets up the real CRTC with one of five fixed mode

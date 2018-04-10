@@ -8,7 +8,7 @@
  *
  *		IBM VGA emulation.
  *
- * Version:	@(#)vid_vga.c	1.0.4	2018/03/31
+ * Version:	@(#)vid_vga.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,6 @@
 #include "../device.h"
 #include "video.h"
 #include "vid_svga.h"
-#include "vid_vga.h"
 
 
 typedef struct vga_t

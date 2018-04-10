@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.16	2018/04/08
+ * Version:	@(#)VARCem.rc	1.0.17	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -900,8 +900,8 @@ BEGIN
     IDS_2048	"Error"
     IDS_2049	"Fatal Error"
     IDS_2050	"Configuration Error"
-    IDS_2051	"Are you sure you want to save these settings?\n\n(A restart may be needed...)"
-    IDS_2052	"DirectDraw Screenshot Error"
+    IDS_2051	"Warning"
+    IDS_2052	"Are you sure you want to save these settings?\n\n(A restart may be needed...)"
     IDS_2053	"Invalid number of sectors (valid values are between 1 and 63)"
     IDS_2054	"Invalid number of heads (valid values are between 1 and 16)"
     IDS_2055	"Invalid number of cylinders (valid values are between 1 and 266305)"
@@ -1017,7 +1017,8 @@ BEGIN
     IDS_2141	"Invalid PCap device"
     IDS_2142	"&Notify disk change"
     IDS_2143	"Type"
- /* IDS_2144-51 available */
+    IDS_2144	"The requested device '%ls' is currently considered to be `Under Development` and might cause problems.\n\nAre you sure you want to enable it?"
+ /* IDS_2145-51 available */
     IDS_2152	"None"
     IDS_2153	"Unable to load Keyboard Accelerators!"
     IDS_2154	"Unable to register Raw Input!"

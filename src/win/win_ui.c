@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.10	2018/04/05
+ * Version:	@(#)win_ui.c	1.0.11	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,7 +52,6 @@
 #include "../keyboard.h"
 #include "../mouse.h"
 #include "../video/video.h"
-#include "../video/vid_ega.h"		/* for update_overscan */
 #include "../plat.h"
 #include "../ui.h"
 #include "win.h"

@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.4	2018/04/05
+ * Version:	@(#)vid_hercules_plus.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,11 +50,9 @@
 #include "../device.h"
 #include "../parallel.h"
 #include "video.h"
-#include "vid_herculesplus.h"
 
 
 /* extended CRTC registers */
-
 #define HERCULESPLUS_CRTC_XMODE   20 /* xMode register */
 #define HERCULESPLUS_CRTC_UNDER   21	/* Underline */
 #define HERCULESPLUS_CRTC_OVER    22 /* Overstrike */

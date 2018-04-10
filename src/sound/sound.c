@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.8	2018/04/08
+ * Version:	@(#)sound.c	1.0.9	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,6 @@
 #include "snd_sb.h"
 #include "snd_sb_dsp.h"
 #include "snd_speaker.h"
-#include "snd_ssi2001.h"
 #include "filters.h"
 
 

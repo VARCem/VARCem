@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430FX PCISet chip.
  *
- * Version:	@(#)m_at_430fx.c	1.0.7	2018/04/03
+ * Version:	@(#)m_at_430fx.c	1.0.8	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,9 +51,11 @@
 #include "../intel_flash.h"
 #include "../sio/sio.h"
 #include "../video/video.h"
-#include "../video/vid_s3.h"
-#include "../video/vid_cl54xx.h"
 #include "machine.h"
+
+
+/* Defined in the Video module. */
+extern const device_t s3_phoenix_trio64_onboard_pci_device;
 
 
 static uint8_t card_i430fx[256];

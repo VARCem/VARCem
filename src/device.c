@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.5	2018/03/20
+ * Version:	@(#)device.c	1.0.6	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "emu.h"
 #include "cpu/cpu.h"
@@ -47,6 +48,8 @@
 #include "device.h"
 #include "machine/machine.h"
 #include "sound/sound.h"
+#include "plat.h"
+#include "ui.h"
 
 
 #define DEVICE_MAX	256			/* max # of devices */
@@ -67,6 +70,8 @@ device_init(void)
 void *
 device_add(const device_t *d)
 {
+    wchar_t temp[1024];
+    wchar_t devname[64];
     void *priv = NULL;
     int c;
 
@@ -79,6 +84,23 @@ device_add(const device_t *d)
     }
     if (c >= DEVICE_MAX)
 	fatal("DEVICE: too many devices\n");
+
+    /*
+     * If this has the DEVICE_UNSTABLE flag set, it is 
+     * considered "Under Development", and caution should
+     * be taken by the user. Just to avoid screaming bug
+     * reports... we warn them...
+     */
+    if (d->flags & DEVICE_UNSTABLE) {
+	mbstowcs(devname, d->name, sizeof_w(devname));
+        swprintf(temp, sizeof_w(temp), plat_get_string(IDS_2144), devname);
+
+        /* Show the messagebox, and abort if 'No' was selected. */
+        if (ui_msgbox(MBX_WARNING, temp) == 1) return(0);
+
+        /* OK, they are fine with it. Log this! */
+	pclog("UNSTABLE: device '%s' is unstable, user agreed!\n", d->name);
+    }
 
     device_current = (device_t *)d;
 

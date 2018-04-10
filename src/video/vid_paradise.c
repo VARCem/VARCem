@@ -13,7 +13,7 @@
  * NOTE:	The MegaPC video device should be moved to the MegaPC
  *		machine file.
  *
- * Version:	@(#)vid_paradise.c	1.0.4	2018/03/31
+ * Version:	@(#)vid_paradise.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,6 @@
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
-#include "vid_paradise.h"
 
 
 typedef struct paradise_t
@@ -73,10 +72,11 @@ typedef struct paradise_t
         uint32_t read_bank[4], write_bank[4];
 } paradise_t;
 
-void paradise_remap(paradise_t *paradise);
+
+static void paradise_remap(paradise_t *paradise);
 
 
-void paradise_out(uint16_t addr, uint8_t val, void *p)
+static void paradise_out(uint16_t addr, uint8_t val, void *p)
 {
         paradise_t *paradise = (paradise_t *)p;
         svga_t *svga = &paradise->svga;
@@ -177,7 +177,7 @@ void paradise_out(uint16_t addr, uint8_t val, void *p)
         svga_out(addr, val, svga);
 }
 
-uint8_t paradise_in(uint16_t addr, void *p)
+static uint8_t paradise_in(uint16_t addr, void *p)
 {
         paradise_t *paradise = (paradise_t *)p;
         svga_t *svga = &paradise->svga;
@@ -224,7 +224,7 @@ uint8_t paradise_in(uint16_t addr, void *p)
         return svga_in(addr, svga);
 }
 
-void paradise_remap(paradise_t *paradise)
+static void paradise_remap(paradise_t *paradise)
 {
         svga_t *svga = &paradise->svga;
 
@@ -263,7 +263,7 @@ void paradise_remap(paradise_t *paradise)
         }
 }
 
-void paradise_recalctimings(svga_t *svga)
+static void paradise_recalctimings(svga_t *svga)
 {
 	paradise_t *paradise = (paradise_t *) svga->p;
 
@@ -302,7 +302,7 @@ static uint16_t paradise_readw(uint32_t addr, void *p)
         return svga_readw_linear(addr, &paradise->svga);
 }
 
-void *paradise_pvga1a_init(const device_t *info, uint32_t memsize)
+static void *paradise_pvga1a_init(const device_t *info, uint32_t memsize)
 {
         paradise_t *paradise = malloc(sizeof(paradise_t));
         svga_t *svga = &paradise->svga;
@@ -335,7 +335,7 @@ void *paradise_pvga1a_init(const device_t *info, uint32_t memsize)
         return paradise;
 }
 
-void *paradise_wd90c11_init(const device_t *info)
+static void *paradise_wd90c11_init(const device_t *info)
 {
         paradise_t *paradise = malloc(sizeof(paradise_t));
         svga_t *svga = &paradise->svga;
@@ -370,7 +370,7 @@ void *paradise_wd90c11_init(const device_t *info)
         return paradise;
 }
 
-void *paradise_wd90c30_init(const device_t *info, uint32_t memsize)
+static void *paradise_wd90c30_init(const device_t *info, uint32_t memsize)
 {
         paradise_t *paradise = malloc(sizeof(paradise_t));
         svga_t *svga = &paradise->svga;
@@ -494,7 +494,7 @@ static int paradise_wd90c30_standalone_available(void)
         return rom_present(L"video/wd/wd90c30/90c30-lr.vbi");
 }
 
-void paradise_close(void *p)
+static void paradise_close(void *p)
 {
         paradise_t *paradise = (paradise_t *)p;
 
@@ -503,21 +503,21 @@ void paradise_close(void *p)
         free(paradise);
 }
 
-void paradise_speed_changed(void *p)
+static void paradise_speed_changed(void *p)
 {
         paradise_t *paradise = (paradise_t *)p;
         
         svga_recalctimings(&paradise->svga);
 }
 
-void paradise_force_redraw(void *p)
+static void paradise_force_redraw(void *p)
 {
         paradise_t *paradise = (paradise_t *)p;
 
         paradise->svga.fullchange = changeframecount;
 }
 
-void paradise_add_status_info(char *s, int max_len, void *p)
+static void paradise_add_status_info(char *s, int max_len, void *p)
 {
         paradise_t *paradise = (paradise_t *)p;
         

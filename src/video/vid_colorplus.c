@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.3	2018/04/05
+ * Version:	@(#)vid_colorplus.c	1.0.4	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,7 +52,6 @@
 #include "../parallel.h"
 #include "video.h"
 #include "vid_cga.h"
-#include "vid_colorplus.h"
 #include "vid_cga_comp.h"
 
 
@@ -72,9 +71,15 @@
 #define COMPOSITE_NEW 1
 
 
-void cga_recalctimings(cga_t *cga);
+typedef struct
+{
+	cga_t cga;
+        uint8_t control;
+} colorplus_t;
 
-void colorplus_out(uint16_t addr, uint8_t val, void *p)
+
+static void
+colorplus_out(uint16_t addr, uint8_t val, void *p)
 {
         colorplus_t *colorplus = (colorplus_t *)p;
 
@@ -88,14 +93,18 @@ void colorplus_out(uint16_t addr, uint8_t val, void *p)
 	}
 }
 
-uint8_t colorplus_in(uint16_t addr, void *p)
+
+static uint8_t
+colorplus_in(uint16_t addr, void *p)
 {
         colorplus_t *colorplus = (colorplus_t *)p;
 
         return cga_in(addr, &colorplus->cga);
 }
 
-void colorplus_write(uint32_t addr, uint8_t val, void *p)
+
+static void
+colorplus_write(uint32_t addr, uint8_t val, void *p)
 {
         colorplus_t *colorplus = (colorplus_t *)p;
 
@@ -119,7 +128,9 @@ void colorplus_write(uint32_t addr, uint8_t val, void *p)
         cycles -= 4;
 }
 
-uint8_t colorplus_read(uint32_t addr, void *p)
+
+static uint8_t
+colorplus_read(uint32_t addr, void *p)
 {
         colorplus_t *colorplus = (colorplus_t *)p;
 
@@ -143,12 +154,9 @@ uint8_t colorplus_read(uint32_t addr, void *p)
         return colorplus->cga.vram[addr & 0x7fff];
 }
 
-void colorplus_recalctimings(colorplus_t *colorplus)
-{
-	cga_recalctimings(&colorplus->cga);
-}
 
-void colorplus_poll(void *p)
+static void
+colorplus_poll(void *p)
 {
         colorplus_t *colorplus = (colorplus_t *)p;
         int x, c;
@@ -400,16 +408,13 @@ void colorplus_poll(void *p)
         }
 }
 
-void colorplus_init(colorplus_t *colorplus)
-{
-	cga_init(&colorplus->cga);
-}
 
-void *colorplus_standalone_init(const device_t *info)
+static void *
+colorplus_init(const device_t *info)
 {
         int display_type;
-
         colorplus_t *colorplus = malloc(sizeof(colorplus_t));
+
         memset(colorplus, 0, sizeof(colorplus_t));
 
 	/* Copied from the CGA init. Ideally this would be done by 
@@ -431,7 +436,9 @@ void *colorplus_standalone_init(const device_t *info)
         return colorplus;
 }
 
-void colorplus_close(void *p)
+
+static void
+colorplus_close(void *p)
 {
         colorplus_t *colorplus = (colorplus_t *)p;
 
@@ -439,12 +446,15 @@ void colorplus_close(void *p)
         free(colorplus);
 }
 
-void colorplus_speed_changed(void *p)
+
+static void
+colorplus_speed_changed(void *p)
 {
         colorplus_t *colorplus = (colorplus_t *)p;
         
         cga_recalctimings(&colorplus->cga);
 }
+
 
 static const device_config_t colorplus_config[] =
 {
@@ -484,15 +494,14 @@ static const device_config_t colorplus_config[] =
         }
 };
 
-const device_t colorplus_device =
-{
-        "Colorplus",
-        DEVICE_ISA, 0,
-        colorplus_standalone_init,
-        colorplus_close,
-	NULL, NULL,
-        colorplus_speed_changed,
-        NULL,
-        NULL,
-        colorplus_config
+
+const device_t colorplus_device = {
+    "Plantronics ColorPlus",
+    DEVICE_ISA,
+    0,
+    colorplus_init, colorplus_close, NULL,
+    NULL,
+    colorplus_speed_changed,
+    NULL, NULL,
+    colorplus_config
 };

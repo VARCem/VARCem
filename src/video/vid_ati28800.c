@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.11	2018/03/31
+ * Version:	@(#)vid_ati28800.c	1.0.12	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,10 +51,9 @@
 #include "../device.h"
 #include "../timer.h"
 #include "video.h"
-#include "vid_ati28800.h"
-#include "vid_ati_eeprom.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
+#include "vid_ati_eeprom.h"
 
 
 #define BIOS_ATIKOR_PATH	L"video/ati/ati28800/atikorvga.bin"

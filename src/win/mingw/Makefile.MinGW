@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.22	2018/04/09
+# Version:	@(#)Makefile.mingw	1.0.23	2018/04/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -579,7 +579,6 @@ SNDOBJ		:= sound.o \
 		     wave8580_PST.o wave.o \
 		    midi.o midi_system.o \
 		    snd_speaker.o \
-		    snd_pssj.o \
 		    snd_lpt_dac.o snd_lpt_dss.o \
 		    snd_adlib.o snd_adlibgold.o snd_ad1848.o snd_audiopci.o \
 		    snd_cms.o \
@@ -591,7 +590,7 @@ SNDOBJ		:= sound.o \
 		    snd_ym7128.o
 
 VIDOBJ		:= video.o \
-		    vid_table.o \
+		    video_dev.o \
 		    vid_cga.o vid_cga_comp.o \
 		    vid_compaq_cga.o \
 		    vid_mda.o \

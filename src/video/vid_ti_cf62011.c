@@ -42,7 +42,7 @@
  *		which are the same as the XGA. It supports up to 1MB of VRAM,
  *		but we lock it down to 512K. The PS/1 2122 had 256K.
  *
- * Version:	@(#)vid_ti_cf62011.c	1.0.2	2018/03/15
+ * Version:	@(#)vid_ti_cf62011.c	1.0.3	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,10 +81,8 @@
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
-#include "../video/video.h"
-#include "../video/vid_vga.h"
-#include "../video/vid_svga.h"
-#include "vid_ti_cf62011.h"
+#include "video.h"
+#include "vid_svga.h"
 
 
 typedef struct {

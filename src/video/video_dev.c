@@ -8,7 +8,11 @@
  *
  *		Define all known video cards.
  *
- * Version:	@(#)vid_table.c	1.0.15	2018/04/09
+ *		To add a video card to the system, implement it, and put
+ *		an "extern" reference to its device into this file, and
+ *		add an entry for it into the table.
+ *
+ * Version:	@(#)video_dev.c	1.0.15	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,33 +51,7 @@
 #include "../timer.h"
 #include "../plat.h"
 #include "video.h"
-#include "vid_svga.h"
-
-#include "vid_ati18800.h"
-#include "vid_ati28800.h"
-#include "vid_ati_mach64.h"
-#include "vid_cga.h"
-#include "vid_cl54xx.h"
-#include "vid_compaq_cga.h"
-#include "vid_ega.h"
-#include "vid_et4000.h"
-#include "vid_et4000w32.h"
-#include "vid_genius.h"
-#include "vid_hercules.h"
-#include "vid_herculesplus.h"
-#include "vid_incolor.h"
-#include "vid_colorplus.h"
-#include "vid_mda.h"
-#include "vid_oak_oti.h"
-#include "vid_paradise.h"
-#include "vid_s3.h"
-#include "vid_s3_virge.h"
-#include "vid_tgui9440.h"
-#include "vid_ti_cf62011.h"
-#include "vid_tvga.h"
-#include "vid_vga.h"
-#include "vid_voodoo.h"
-#include "vid_wy700.h"
+//#include "vid_svga.h"
 
 
 #define VIDEO_FLAG_TYPE_CGA     0x00
@@ -94,11 +72,154 @@ typedef struct {
     int		legacy_id;
     int		flags;
     video_timings_t	timing;
-} VIDEO_CARD;
+} vidcard_t;
 
 
-static VIDEO_CARD
-video_cards[] = {
+/* ATi 18800 series cards. */
+extern const device_t ati18800_wonder_device;
+extern const device_t ati18800_vga88_device;
+extern const device_t ati18800_device;
+
+/* ATi 28800 series cards. */
+extern const device_t ati28800_device;
+extern const device_t ati28800k_device;
+extern const device_t compaq_ati28800_device;
+#if defined(DEV_BRANCH) && defined(USE_XL24)
+extern const device_t ati28800_wonderxl24_device;
+#endif
+
+/* ATi Mach64 series cards. */
+extern const device_t mach64gx_isa_device;
+extern const device_t mach64gx_vlb_device;
+extern const device_t mach64gx_pci_device;
+extern const device_t mach64vt2_device;
+
+/* IBM CGA and compatibles. */
+extern const device_t cga_device;
+
+/* Cirrus Logic GD-series cards. */
+extern const device_t gd5426_vlb_device;
+extern const device_t gd5428_isa_device;
+extern const device_t gd5428_vlb_device;
+extern const device_t gd5429_isa_device;
+extern const device_t gd5429_vlb_device;
+extern const device_t gd5430_vlb_device;
+extern const device_t gd5430_pci_device;
+extern const device_t gd5434_isa_device;
+extern const device_t gd5434_vlb_device;
+extern const device_t gd5434_pci_device;
+extern const device_t gd5436_pci_device;
+extern const device_t gd5446_pci_device;
+extern const device_t gd5446_stb_pci_device;
+extern const device_t gd5480_pci_device;
+
+/* COMPAQ CGA-derived cards. */
+extern const device_t compaq_cga_device;
+extern const device_t compaq_cga_2_device;
+
+/* IBM EGA and compatibles. */
+extern const device_t ega_device;
+extern const device_t cpqega_device;
+extern const device_t sega_device;
+
+/* Tseng Labs ET4000 series cards. */
+extern const device_t et4000_device;
+
+/* Tseng Labs ET4000-W32 series cards. */
+#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
+extern const device_t et4000w32p_vlb_device;
+extern const device_t et4000w32p_pci_device;
+#endif
+extern const device_t et4000w32p_cardex_vlb_device;
+extern const device_t et4000w32p_cardex_pci_device;
+
+/* MDSI Genius VHR card. */
+extern const device_t genius_device;
+
+/* Hercules series cards and compatibles. */
+extern const device_t hercules_device;
+
+/* HerculesPlus series cards and compatibles. */
+extern const device_t herculesplus_device;
+
+/* Hercules InColor series cards and compatibles. */
+extern const device_t incolor_device;
+
+/* Hercules ColorPlus series cards and compatibles. */
+extern const device_t colorplus_device;
+
+/* IBM MDA and compatibles. */
+extern const device_t mda_device;
+
+/* Oak Technology OTI series cards. */
+extern const device_t oti037c_device;
+extern const device_t oti067_device;
+extern const device_t oti067_acer386_device;
+extern const device_t oti077_device;
+
+/* Paradise PVGA series cards and compatibles. */
+extern const device_t paradise_pvga1a_pc2086_device;
+extern const device_t paradise_pvga1a_pc3086_device;
+extern const device_t paradise_pvga1a_device;
+extern const device_t paradise_wd90c11_megapc_device;
+extern const device_t paradise_wd90c11_device;
+extern const device_t paradise_wd90c30_device;
+
+/* S3, Inc standard series cards. */
+extern const device_t s3_bahamas64_vlb_device;
+extern const device_t s3_bahamas64_pci_device;
+extern const device_t s3_9fx_vlb_device;
+extern const device_t s3_9fx_pci_device;
+extern const device_t s3_phoenix_trio32_vlb_device;
+extern const device_t s3_phoenix_trio32_pci_device;
+extern const device_t s3_phoenix_trio64_vlb_device;
+extern const device_t s3_phoenix_trio64_onboard_pci_device;
+extern const device_t s3_phoenix_trio64_pci_device;
+extern const device_t s3_phoenix_vision864_pci_device;
+extern const device_t s3_phoenix_vision864_vlb_device;
+extern const device_t s3_diamond_stealth64_pci_device;
+extern const device_t s3_diamond_stealth64_vlb_device;
+#if 0
+extern const device_t s3_miro_vision964_device;
+#endif
+
+/* S3, Inc ViRGE series cards. */
+extern const device_t s3_virge_vlb_device;
+extern const device_t s3_virge_pci_device;
+extern const device_t s3_virge_988_vlb_device;
+extern const device_t s3_virge_988_pci_device;
+extern const device_t s3_virge_375_vlb_device;
+extern const device_t s3_virge_375_pci_device;
+extern const device_t s3_virge_375_4_vlb_device;
+extern const device_t s3_virge_375_4_pci_device;
+
+/* Trident 8900 series cards. */
+extern const device_t tvga8900d_device;
+
+/* Trident 9400 series cards. */
+extern const device_t tgui9400cxi_device;
+extern const device_t tgui9440_vlb_device;
+extern const device_t tgui9440_pci_device;
+
+/* TI-derived cards. */
+#if defined(DEV_BRANCH) && defined(USE_TI)
+extern const device_t ti_cf62011_device;
+#endif
+extern const device_t ibm_ps1_2121_device;
+
+/* IBM VGA and compatibles. */
+extern const device_t vga_device;
+extern const device_t trigem_unk_device;
+extern const device_t ps1vga_device;
+
+/* 3Dfx VooDoo-series cards. */
+extern const device_t voodoo_device;
+
+/* Wyse700 cards. */
+extern const device_t wy700_device;
+
+
+static vidcard_t video_cards[] = {
     {"None",						"none",			NULL,					VID_NONE,			VIDEO_FLAG_TYPE_SPECIAL,	{0,         0,  0,  0,   0,  0,  0}},
     {"Internal",					"internal",		NULL,					VID_INTERNAL,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 8, 16, 32,   8, 16, 32}},
     {"[ISA] ATI Graphics Pro Turbo (Mach64 GX)",	"mach64gx_isa",		&mach64gx_isa_device,			VID_MACH64GX_ISA,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 3,  3,  6,   5,  5, 10}},

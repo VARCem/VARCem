@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.5	2018/03/31
+ * Version:	@(#)win_dialog.c	1.0.6	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,6 +98,11 @@ ui_msgbox(int flags, void *arg)
 	case MBX_INFO:		/* just an informational message */
 		fl = (MB_OK | MB_ICONINFORMATION);
 		cap = TEXT(EMU_NAME);
+		break;
+
+	case MBX_WARNING:	/* warning message */
+		fl = (MB_YESNO | MB_ICONWARNING);
+		cap = plat_get_string(IDS_2051);	/* "Warning" */
 		break;
 
 	case MBX_ERROR:		/* error message */

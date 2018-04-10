@@ -54,7 +54,6 @@
 #include "vid_svga.h"
 #include "vid_svga_render.h"
 #include "vid_sdac_ramdac.h"
-#include "vid_s3.h"
 
 
 enum

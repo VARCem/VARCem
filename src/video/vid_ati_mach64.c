@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.9	2018/03/31
+ * Version:	@(#)vid_ati_mach64.c	1.0.10	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,12 +52,13 @@
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
-#include "vid_ati68860_ramdac.h"
 #include "vid_ati_eeprom.h"
+#include "vid_ati68860_ramdac.h"
 #include "vid_ics2595.h"
 
+
 #ifdef CLAMP
-#undef CLAMP
+# undef CLAMP
 #endif
 
 #define BIOS_ROM_PATH		L"video/ati/mach64/bios.bin"

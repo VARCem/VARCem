@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.13	2018/04/02
+ * Version:	@(#)video.h	1.0.14	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -191,6 +191,7 @@ extern int	video_fullscreen,
 extern int	fullchange;
 extern uint8_t	fontdat[2048][8];
 extern uint8_t	fontdatm[2048][16];
+extern uint8_t	fontdat8x12[256][16];
 extern dbcs_font_t	*fontdatksc5601,
 		*fontdatksc5601_user;
 extern uint32_t	*video_6to8,
@@ -198,6 +199,7 @@ extern uint32_t	*video_6to8,
 		*video_16to32;
 extern int	xsize,ysize;
 extern int	enable_overscan;
+extern int	update_overscan;
 extern int	overscan_x,
 		overscan_y;
 extern int	force_43;

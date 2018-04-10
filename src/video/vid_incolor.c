@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.4	2018/04/05
+ * Version:	@(#)vid_incolor.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "../device.h"
 #include "../parallel.h"
 #include "video.h"
-#include "vid_incolor.h"
 
 
 /* extended CRTC registers */
@@ -101,84 +100,81 @@
 
 
 /* Default palette */
-static unsigned char defpal[16] = 
-{
-	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
+static uint8_t defpal[16] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
 static uint32_t incolor_rgb[64];
 
 /* Mapping of inks to RGB */
-static unsigned char init_rgb[64][3] =
-{
+static const uint8_t init_rgb[64][3] = {
 				/* rgbRGB */
-        { 0x00, 0x00, 0x00 },	/* 000000 */
-        { 0x00, 0x00, 0xaa },	/* 000001 */
-        { 0x00, 0xaa, 0x00 },	/* 000010 */
-        { 0x00, 0xaa, 0xaa },	/* 000011 */
-        { 0xaa, 0x00, 0x00 },	/* 000100 */
-        { 0xaa, 0x00, 0xaa },	/* 000101 */
-        { 0xaa, 0xaa, 0x00 },	/* 000110 */
-        { 0xaa, 0xaa, 0xaa },	/* 000111 */
-        { 0x00, 0x00, 0x55 },	/* 001000 */
-        { 0x00, 0x00, 0xff },	/* 001001 */
-        { 0x00, 0xaa, 0x55 },	/* 001010 */
-        { 0x00, 0xaa, 0xff },	/* 001011 */
-        { 0xaa, 0x00, 0x55 },	/* 001100 */
-        { 0xaa, 0x00, 0xff },	/* 001101 */
-        { 0xaa, 0xaa, 0x55 },	/* 001110 */
-        { 0xaa, 0xaa, 0xff },	/* 001111 */
-        { 0x00, 0x55, 0x00 },	/* 010000 */
-        { 0x00, 0x55, 0xaa },	/* 010001 */
-        { 0x00, 0xff, 0x00 },	/* 010010 */
-        { 0x00, 0xff, 0xaa },	/* 010011 */
-        { 0xaa, 0x55, 0x00 },	/* 010100 */
-        { 0xaa, 0x55, 0xaa },	/* 010101 */
-        { 0xaa, 0xff, 0x00 },	/* 010110 */
-        { 0xaa, 0xff, 0xaa },	/* 010111 */
-        { 0x00, 0x55, 0x55 },	/* 011000 */
-        { 0x00, 0x55, 0xff },	/* 011001 */
-        { 0x00, 0xff, 0x55 },	/* 011010 */
-        { 0x00, 0xff, 0xff },	/* 011011 */
-        { 0xaa, 0x55, 0x55 },	/* 011100 */
-        { 0xaa, 0x55, 0xff },	/* 011101 */
-        { 0xaa, 0xff, 0x55 },	/* 011110 */
-        { 0xaa, 0xff, 0xff },	/* 011111 */
-        { 0x55, 0x00, 0x00 },	/* 100000 */
-        { 0x55, 0x00, 0xaa },	/* 100001 */
-        { 0x55, 0xaa, 0x00 },	/* 100010 */
-        { 0x55, 0xaa, 0xaa },	/* 100011 */
-        { 0xff, 0x00, 0x00 },	/* 100100 */
-        { 0xff, 0x00, 0xaa },	/* 100101 */
-        { 0xff, 0xaa, 0x00 },	/* 100110 */
-        { 0xff, 0xaa, 0xaa },	/* 100111 */
-        { 0x55, 0x00, 0x55 },	/* 101000 */
-        { 0x55, 0x00, 0xff },	/* 101001 */
-        { 0x55, 0xaa, 0x55 },	/* 101010 */
-        { 0x55, 0xaa, 0xff },	/* 101011 */
-        { 0xff, 0x00, 0x55 },	/* 101100 */
-        { 0xff, 0x00, 0xff },	/* 101101 */
-        { 0xff, 0xaa, 0x55 },	/* 101110 */
-        { 0xff, 0xaa, 0xff },	/* 101111 */
-        { 0x55, 0x55, 0x00 },	/* 110000 */
-        { 0x55, 0x55, 0xaa },	/* 110001 */
-        { 0x55, 0xff, 0x00 },	/* 110010 */
-        { 0x55, 0xff, 0xaa },	/* 110011 */
-        { 0xff, 0x55, 0x00 },	/* 110100 */
-        { 0xff, 0x55, 0xaa },	/* 110101 */
-        { 0xff, 0xff, 0x00 },	/* 110110 */
-        { 0xff, 0xff, 0xaa },	/* 110111 */
-        { 0x55, 0x55, 0x55 },	/* 111000 */
-        { 0x55, 0x55, 0xff },	/* 111001 */
-        { 0x55, 0xff, 0x55 },	/* 111010 */
-        { 0x55, 0xff, 0xff },	/* 111011 */
-        { 0xff, 0x55, 0x55 },	/* 111100 */
-        { 0xff, 0x55, 0xff },	/* 111101 */
-        { 0xff, 0xff, 0x55 },	/* 111110 */
-        { 0xff, 0xff, 0xff },	/* 111111 */
+    { 0x00, 0x00, 0x00 },	/* 000000 */
+    { 0x00, 0x00, 0xaa },	/* 000001 */
+    { 0x00, 0xaa, 0x00 },	/* 000010 */
+    { 0x00, 0xaa, 0xaa },	/* 000011 */
+    { 0xaa, 0x00, 0x00 },	/* 000100 */
+    { 0xaa, 0x00, 0xaa },	/* 000101 */
+    { 0xaa, 0xaa, 0x00 },	/* 000110 */
+    { 0xaa, 0xaa, 0xaa },	/* 000111 */
+    { 0x00, 0x00, 0x55 },	/* 001000 */
+    { 0x00, 0x00, 0xff },	/* 001001 */
+    { 0x00, 0xaa, 0x55 },	/* 001010 */
+    { 0x00, 0xaa, 0xff },	/* 001011 */
+    { 0xaa, 0x00, 0x55 },	/* 001100 */
+    { 0xaa, 0x00, 0xff },	/* 001101 */
+    { 0xaa, 0xaa, 0x55 },	/* 001110 */
+    { 0xaa, 0xaa, 0xff },	/* 001111 */
+    { 0x00, 0x55, 0x00 },	/* 010000 */
+    { 0x00, 0x55, 0xaa },	/* 010001 */
+    { 0x00, 0xff, 0x00 },	/* 010010 */
+    { 0x00, 0xff, 0xaa },	/* 010011 */
+    { 0xaa, 0x55, 0x00 },	/* 010100 */
+    { 0xaa, 0x55, 0xaa },	/* 010101 */
+    { 0xaa, 0xff, 0x00 },	/* 010110 */
+    { 0xaa, 0xff, 0xaa },	/* 010111 */
+    { 0x00, 0x55, 0x55 },	/* 011000 */
+    { 0x00, 0x55, 0xff },	/* 011001 */
+    { 0x00, 0xff, 0x55 },	/* 011010 */
+    { 0x00, 0xff, 0xff },	/* 011011 */
+    { 0xaa, 0x55, 0x55 },	/* 011100 */
+    { 0xaa, 0x55, 0xff },	/* 011101 */
+    { 0xaa, 0xff, 0x55 },	/* 011110 */
+    { 0xaa, 0xff, 0xff },	/* 011111 */
+    { 0x55, 0x00, 0x00 },	/* 100000 */
+    { 0x55, 0x00, 0xaa },	/* 100001 */
+    { 0x55, 0xaa, 0x00 },	/* 100010 */
+    { 0x55, 0xaa, 0xaa },	/* 100011 */
+    { 0xff, 0x00, 0x00 },	/* 100100 */
+    { 0xff, 0x00, 0xaa },	/* 100101 */
+    { 0xff, 0xaa, 0x00 },	/* 100110 */
+    { 0xff, 0xaa, 0xaa },	/* 100111 */
+    { 0x55, 0x00, 0x55 },	/* 101000 */
+    { 0x55, 0x00, 0xff },	/* 101001 */
+    { 0x55, 0xaa, 0x55 },	/* 101010 */
+    { 0x55, 0xaa, 0xff },	/* 101011 */
+    { 0xff, 0x00, 0x55 },	/* 101100 */
+    { 0xff, 0x00, 0xff },	/* 101101 */
+    { 0xff, 0xaa, 0x55 },	/* 101110 */
+    { 0xff, 0xaa, 0xff },	/* 101111 */
+    { 0x55, 0x55, 0x00 },	/* 110000 */
+    { 0x55, 0x55, 0xaa },	/* 110001 */
+    { 0x55, 0xff, 0x00 },	/* 110010 */
+    { 0x55, 0xff, 0xaa },	/* 110011 */
+    { 0xff, 0x55, 0x00 },	/* 110100 */
+    { 0xff, 0x55, 0xaa },	/* 110101 */
+    { 0xff, 0xff, 0x00 },	/* 110110 */
+    { 0xff, 0xff, 0xaa },	/* 110111 */
+    { 0x55, 0x55, 0x55 },	/* 111000 */
+    { 0x55, 0x55, 0xff },	/* 111001 */
+    { 0x55, 0xff, 0x55 },	/* 111010 */
+    { 0x55, 0xff, 0xff },	/* 111011 */
+    { 0xff, 0x55, 0x55 },	/* 111100 */
+    { 0xff, 0x55, 0xff },	/* 111101 */
+    { 0xff, 0xff, 0x55 },	/* 111110 */
+    { 0xff, 0xff, 0xff },	/* 111111 */
 };
-
 
 
 typedef struct incolor_t
@@ -209,12 +205,12 @@ typedef struct incolor_t
         uint8_t *vram;
 } incolor_t;
 
-void incolor_recalctimings(incolor_t *incolor);
-void incolor_write(uint32_t addr, uint8_t val, void *p);
-uint8_t incolor_read(uint32_t addr, void *p);
+static void incolor_recalctimings(incolor_t *incolor);
+static void incolor_write(uint32_t addr, uint8_t val, void *p);
+static uint8_t incolor_read(uint32_t addr, void *p);
 
 
-void incolor_out(uint16_t addr, uint8_t val, void *p)
+static void incolor_out(uint16_t addr, uint8_t val, void *p)
 {
         incolor_t *incolor = (incolor_t *)p;
 /*        pclog("InColor out %04X %02X\n",addr,val); */
@@ -252,7 +248,7 @@ void incolor_out(uint16_t addr, uint8_t val, void *p)
         }
 }
 
-uint8_t incolor_in(uint16_t addr, void *p)
+static uint8_t incolor_in(uint16_t addr, void *p)
 {
         incolor_t *incolor = (incolor_t *)p;
 /*        pclog("InColor in %04X %02X %04X:%04X %04X\n",addr,(incolor->stat & 0xF) | ((incolor->stat & 8) << 4),CS,pc,CX); */
@@ -271,7 +267,7 @@ uint8_t incolor_in(uint16_t addr, void *p)
         return 0xff;
 }
 
-void incolor_write(uint32_t addr, uint8_t val, void *p)
+static void incolor_write(uint32_t addr, uint8_t val, void *p)
 {
         incolor_t *incolor = (incolor_t *)p;
 
@@ -340,7 +336,7 @@ void incolor_write(uint32_t addr, uint8_t val, void *p)
 	}
 }
 
-uint8_t incolor_read(uint32_t addr, void *p)
+static uint8_t incolor_read(uint32_t addr, void *p)
 {
         incolor_t *incolor = (incolor_t *)p;
 	unsigned plane;
@@ -395,7 +391,7 @@ uint8_t incolor_read(uint32_t addr, void *p)
 
 
 
-void incolor_recalctimings(incolor_t *incolor)
+static void incolor_recalctimings(incolor_t *incolor)
 {
         double disptime;
 	double _dispontime, _dispofftime;
@@ -893,7 +889,7 @@ static void incolor_graphics_line(incolor_t *incolor)
 	}
 }
 
-void incolor_poll(void *p)
+static void incolor_poll(void *p)
 {
         incolor_t *incolor = (incolor_t *)p;
         uint16_t ca = (incolor->crtc[15] | (incolor->crtc[14] << 8)) & 0x3fff;
@@ -1045,7 +1041,7 @@ void incolor_poll(void *p)
         }
 }
 
-void *incolor_init(const device_t *info)
+static void *incolor_init(const device_t *info)
 {
         int c;
         incolor_t *incolor = malloc(sizeof(incolor_t));
@@ -1078,7 +1074,7 @@ void *incolor_init(const device_t *info)
         return incolor;
 }
 
-void incolor_close(void *p)
+static void incolor_close(void *p)
 {
         incolor_t *incolor = (incolor_t *)p;
 
@@ -1086,21 +1082,20 @@ void incolor_close(void *p)
         free(incolor);
 }
 
-void incolor_speed_changed(void *p)
+static void incolor_speed_changed(void *p)
 {
         incolor_t *incolor = (incolor_t *)p;
         
         incolor_recalctimings(incolor);
 }
 
-const device_t incolor_device =
-{
-        "Hercules InColor",
-        DEVICE_ISA, 0,
-        incolor_init, incolor_close, NULL,
-        NULL,
-        incolor_speed_changed,
-	NULL,
-	NULL,
-        NULL
+const device_t incolor_device = {
+    "Hercules InColor",
+    DEVICE_ISA,
+    0,
+    incolor_init, incolor_close, NULL,
+    NULL,
+    incolor_speed_changed,
+    NULL, NULL,
+    NULL
 };

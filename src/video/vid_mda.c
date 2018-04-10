@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.3	2018/04/05
+ * Version:	@(#)vid_mda.c	1.0.4	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "../device.h"
 #include "../parallel.h"
 #include "video.h"
-#include "vid_mda.h"
 
 
 typedef struct mda_t
@@ -78,11 +77,14 @@ typedef struct mda_t
         uint8_t *vram;
 } mda_t;
 
+
 static int mdacols[256][2][2];
 
-void mda_recalctimings(mda_t *mda);
 
-void mda_out(uint16_t addr, uint8_t val, void *p)
+static void mda_recalctimings(mda_t *mda);
+
+
+static void mda_out(uint16_t addr, uint8_t val, void *p)
 {
         mda_t *mda = (mda_t *)p;
         switch (addr)
@@ -105,7 +107,7 @@ void mda_out(uint16_t addr, uint8_t val, void *p)
         }
 }
 
-uint8_t mda_in(uint16_t addr, void *p)
+static uint8_t mda_in(uint16_t addr, void *p)
 {
         mda_t *mda = (mda_t *)p;
         switch (addr)
@@ -120,21 +122,21 @@ uint8_t mda_in(uint16_t addr, void *p)
         return 0xff;
 }
 
-void mda_write(uint32_t addr, uint8_t val, void *p)
+static void mda_write(uint32_t addr, uint8_t val, void *p)
 {
         mda_t *mda = (mda_t *)p;
         egawrites++;
         mda->vram[addr & 0xfff] = val;
 }
 
-uint8_t mda_read(uint32_t addr, void *p)
+static uint8_t mda_read(uint32_t addr, void *p)
 {
         mda_t *mda = (mda_t *)p;
         egareads++;
         return mda->vram[addr & 0xfff];
 }
 
-void mda_recalctimings(mda_t *mda)
+static void mda_recalctimings(mda_t *mda)
 {
 	double _dispontime, _dispofftime, disptime;
         disptime = mda->crtc[0] + 1;
@@ -146,7 +148,7 @@ void mda_recalctimings(mda_t *mda)
 	mda->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
-void mda_poll(void *p)
+static void mda_poll(void *p)
 {
         mda_t *mda = (mda_t *)p;
         uint16_t ca = (mda->crtc[15] | (mda->crtc[14] << 8)) & 0x3fff;
@@ -300,7 +302,7 @@ void mda_poll(void *p)
 }
 
 
-void *mda_init(const device_t *info)
+static void *mda_init(const device_t *info)
 {
         int c;
         mda_t *mda = malloc(sizeof(mda_t));
@@ -345,7 +347,7 @@ void *mda_init(const device_t *info)
         return mda;
 }
 
-void mda_close(void *p)
+static void mda_close(void *p)
 {
         mda_t *mda = (mda_t *)p;
 
@@ -353,7 +355,7 @@ void mda_close(void *p)
         free(mda);
 }
 
-void mda_speed_changed(void *p)
+static void mda_speed_changed(void *p)
 {
         mda_t *mda = (mda_t *)p;
         
@@ -388,14 +390,12 @@ static const device_config_t mda_config[] =
 };
 
 
-const device_t mda_device =
-{
-        "MDA",
-        DEVICE_ISA, 0,
-        mda_init, mda_close, NULL,
-        NULL,
-        mda_speed_changed,
-        NULL,
-        NULL,
-	mda_config
+const device_t mda_device = {
+    "MDA",
+    DEVICE_ISA, 0,
+    mda_init, mda_close, NULL,
+    NULL,
+    mda_speed_changed,
+    NULL, NULL,
+    mda_config
 };

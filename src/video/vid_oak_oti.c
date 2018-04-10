@@ -47,7 +47,6 @@
 #include "../rom.h"
 #include "../device.h"
 #include "video.h"
-#include "vid_oak_oti.h"
 #include "vid_svga.h"
 
 

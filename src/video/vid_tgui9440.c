@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.5	2018/03/31
+ * Version:	@(#)vid_tgui9440.c	1.0.6	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,7 +92,6 @@
 #include "vid_svga.h"
 #include "vid_svga_render.h"
 #include "vid_tkd8001_ramdac.h"
-#include "vid_tgui9440.h"
 
 
 /*TGUI9400CXi has extended write modes, controlled by extended GDC registers :

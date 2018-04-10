@@ -8,7 +8,7 @@
  *
  *		Implementation of the WD76C10 system controller.
  *
- * Version:	@(#)m_at_wd76c10.c	1.0.3	2018/03/21
+ * Version:	@(#)m_at_wd76c10.c	1.0.4	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,8 +48,11 @@
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
-#include "../video/vid_paradise.h"
 #include "machine.h"
+
+
+/* Defined in the Video module. */
+extern const device_t paradise_wd90c11_megapc_device;
 
 
 static uint16_t wd76c10_0092;

@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.5	2018/03/31
+ * Version:	@(#)vid_ega.c	1.0.6	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,8 +77,6 @@ static uint32_t pallook16[256], pallook64[256];
 int egaswitchread,egaswitches=9; /*7=CGA mode (200 lines), 9=EGA mode (350 lines), 8=EGA mode (200 lines)*/
 
 static int old_overscan_color = 0;
-
-int update_overscan = 0;
 
 #ifdef JEGA
 uint8_t jfont_sbcs_19[SBCS19_LEN];	/* 256 * 19( * 8) */

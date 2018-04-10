@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.3	2018/04/03
+ * Version:	@(#)vid_cga.h	1.0.4	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,7 +84,6 @@ typedef struct {
 
 #ifdef EMU_DEVICE_H
 extern const device_config_t cga_config[];
-extern const device_t cga_device;
 #endif
 
 

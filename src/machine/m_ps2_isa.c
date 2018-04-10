@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.6	2018/04/07
+ * Version:	@(#)m_ps2_isa.c	1.0.7	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,8 +55,11 @@
 #include "../serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
-#include "../video/vid_vga.h"
 #include "machine.h"
+
+
+/* Defined in the Video module. */
+extern const device_t ps1vga_device;
 
 
 static uint8_t ps2_94, ps2_102, ps2_103, ps2_104, ps2_105, ps2_190;

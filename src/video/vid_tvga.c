@@ -8,7 +8,7 @@
  *
  *		Trident TVGA (8900D) emulation.
  *
- * Version:	@(#)vid_tvga.c	1.0.5	2018/03/31
+ * Version:	@(#)vid_tvga.c	1.0.6	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "vid_svga.h"
 #include "vid_svga_render.h"
 #include "vid_tkd8001_ramdac.h"
-#include "vid_tvga.h"
 
 
 typedef struct tvga_t
@@ -73,7 +72,7 @@ typedef struct tvga_t
 } tvga_t;
 
 
-static uint8_t crtc_mask[0x40] = {
+static const uint8_t crtc_mask[0x40] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0x7f, 0xff, 0x3f, 0x7f, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xef,
@@ -86,6 +85,8 @@ static uint8_t crtc_mask[0x40] = {
 
 
 static void tvga_recalcbanking(tvga_t *tvga);
+
+
 void tvga_out(uint16_t addr, uint8_t val, void *p)
 {
         tvga_t *tvga = (tvga_t *)p;
