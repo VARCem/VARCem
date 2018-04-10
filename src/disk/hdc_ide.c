@@ -8,7 +8,7 @@
  *
  *		Emulation of hard disk, CD-ROM and ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.16	2018/04/02
+ * Version:	@(#)hdc_ide.c	1.0.17	2018/04/10
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -643,7 +643,7 @@ static void loadhd(IDE *ide, int d, const wchar_t *fn)
 
 	ide->spt = (uint8_t)hdd[d].spt;
 	ide->hpc = (uint8_t)hdd[d].hpc;
-	ide->tracks = (uint8_t)hdd[d].tracks;
+	ide->tracks = (int)hdd[d].tracks;
 	ide->type = IDE_HDD;
 	ide->hdd_num = d;
 	ide->hdi = hdd_image_get_type(d);
@@ -1522,7 +1522,7 @@ void writeide(int ide_board, uint16_t addr, uint8_t val)
 
 			case WIN_DRIVE_DIAGNOSTICS: /* Execute Drive Diagnostics */
 				if (ide_drive_is_zip(ide))
-						zip[atapi_zip_drives[ide->channel]].status = BUSY_STAT;
+					zip[atapi_zip_drives[ide->channel]].status = BUSY_STAT;
 				else if (ide_drive_is_cdrom(ide))
 					cdrom[atapi_cdrom_drives[ide->channel]]->status = BUSY_STAT;
 				else
