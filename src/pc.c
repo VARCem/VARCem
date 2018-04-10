@@ -295,7 +295,7 @@ pc_version(const char *platform)
     sprintf(emu_title, "%s for %s", EMU_NAME, platform);
 
 #ifdef EMU_VER_PATCH
-    sprintf(emu_version, "v%s", EMU_VERSION4);
+    sprintf(emu_version, "v%s", EMU_VERSION_4);
 #else
     sprintf(emu_version, "v%s", EMU_VERSION);
 #endif
