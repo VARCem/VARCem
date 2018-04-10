@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.6	2018/03/19
+ * Version:	@(#)fdd.c	1.0.7	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -479,11 +479,15 @@ void fdd_close(int drive)
 {
 	pclog("FDD: closing drive %d\n", drive);
 
-        if (loaders[driveloaders[drive]].close) loaders[driveloaders[drive]].close(drive);
+        if (loaders[driveloaders[drive]].close)
+		loaders[driveloaders[drive]].close(drive);
+
         drive_empty[drive] = 1;
+
 	fdd_set_head(drive, 0);
+
         floppyfns[drive][0] = 0;
-	d86f_destroy(drive);
+
         drives[drive].hole = NULL;
         drives[drive].poll = NULL;
         drives[drive].seek = NULL;
@@ -494,6 +498,9 @@ void fdd_close(int drive)
         drives[drive].format = NULL;
         drives[drive].byteperiod = NULL;
 	drives[drive].stop = NULL;
+
+	d86f_destroy(drive);
+
 	ui_sb_update_icon_state(drive, 1);
 }
 
