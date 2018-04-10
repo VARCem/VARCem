@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Bar module.
  *
- * Version:	@(#)win_stbar.c	1.0.7	2018/04/08
+ * Version:	@(#)win_stbar.c	1.0.8	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -617,6 +617,7 @@ ui_sb_update_panes(void)
     int c_mfm, c_esdi, c_scsi;
     int c_xtide, c_ide_pio, c_ide_dma;
     int do_net;
+    const char *hdc;
 
     sb_ready = 0;
 
@@ -659,11 +660,15 @@ ui_sb_update_panes(void)
 	if (fdd_get_type(i) != 0)
 		sb_parts++;
     }
+
+    /* Get name of current HDC. */
+    hdc = hdc_get_internal_name(hdc_type);
+
     for (i=0; i<CDROM_NUM; i++) {
 	/* Could be Internal or External IDE.. */
 	if (((cdrom_drives[i].bus_type==CDROM_BUS_ATAPI_PIO_ONLY) &&
 	     (cdrom_drives[i].bus_type==CDROM_BUS_ATAPI_PIO_AND_DMA)) &&
-	    !(hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
 
@@ -680,7 +685,7 @@ ui_sb_update_panes(void)
 	/* Could be Internal or External IDE.. */
 	if (((zip_drives[i].bus_type==ZIP_BUS_ATAPI_PIO_ONLY) &&
 	     (zip_drives[i].bus_type==ZIP_BUS_ATAPI_PIO_AND_DMA)) &&
-	    !(hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
 
@@ -698,22 +703,22 @@ ui_sb_update_panes(void)
 		sb_parts++;
 	}
     }
-    if (c_mfm && (hdint || (hdc_type == hdc_get_from_internal_name("mfm")))) {
+    if (c_mfm && (hdint || !strncmp(hdc, "mfm", 3))) {
 	/* MFM drives, and MFM or Internal controller. */
 	sb_parts++;
     }
-    if (c_esdi && (hdint || (hdc_type == hdc_get_from_internal_name("esdi")))) {
+    if (c_esdi && (hdint || !strncmp(hdc, "esdi", 4))) {
 	/* ESDI drives, and ESDI or Internal controller. */
 	sb_parts++;
     }
-    if (c_xtide && (hdc_type == hdc_get_from_internal_name("ide"))) {
+    if (c_xtide && !strncmp(hdc, "ide", 3)) {
 	sb_parts++;
     }
-    if (c_ide_pio && (hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+    if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3))) {
 	/* IDE_PIO drives, and IDE or Internal controller. */
 	sb_parts++;
     }
-    if (c_ide_dma && (hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+    if (c_ide_dma && (hdint || !strncmp(hdc, "ide", 3))) {
 	/* IDE_DMA drives, and IDE or Internal controller. */
 	sb_parts++;
     }
@@ -747,15 +752,16 @@ ui_sb_update_panes(void)
 		sb_parts++;
 	}
     }
+
     for (i=0; i<CDROM_NUM; i++) {
 	/* Could be Internal or External IDE.. */
 	if ((cdrom_drives[i].bus_type==CDROM_BUS_ATAPI_PIO_ONLY) &&
-	    !(hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
 	/* Could be Internal or External IDE.. */
 	if ((cdrom_drives[i].bus_type==CDROM_BUS_ATAPI_PIO_AND_DMA) &&
-	    !(hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
 	if ((cdrom_drives[i].bus_type == CDROM_BUS_SCSI) && (scsi_card_current == 0)) {
@@ -768,15 +774,16 @@ ui_sb_update_panes(void)
 		sb_parts++;
 	}
     }
+
     for (i=0; i<ZIP_NUM; i++) {
 	/* Could be Internal or External IDE.. */
 	if ((zip_drives[i].bus_type==ZIP_BUS_ATAPI_PIO_ONLY) &&
-	    !(hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
 	/* Could be Internal or External IDE.. */
 	if ((zip_drives[i].bus_type==ZIP_BUS_ATAPI_PIO_AND_DMA) &&
-	    !(hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
 	if ((zip_drives[i].bus_type == ZIP_BUS_SCSI) && (scsi_card_current == 0)) {
@@ -789,6 +796,7 @@ ui_sb_update_panes(void)
 		sb_parts++;
 	}
     }
+
     for (i=0; i<HDD_NUM; i++) {
 	if ((hdd[i].bus==HDD_BUS_SCSI_REMOVABLE) && (scsi_card_current != 0)) {
 		edge += SB_ICON_WIDTH;
@@ -797,31 +805,31 @@ ui_sb_update_panes(void)
 		sb_parts++;
 	}
     }
-    if (c_mfm && (hdint || (hdc_type == hdc_get_from_internal_name("mfm")))) {
+    if (c_mfm && (hdint || !strncmp(hdc, "mfm", 3))) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_MFM;
 	sb_parts++;
     }
-    if (c_esdi && (hdint || (hdc_type == hdc_get_from_internal_name("esdi")))) {
+    if (c_esdi && (hdint || !strncmp(hdc, "esdi", 4))) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_ESDI;
 	sb_parts++;
     }
-    if (c_xtide && (hdc_type == hdc_get_from_internal_name("xtide"))) {
+    if (c_xtide && !strncmp(hdc, "xtide", 5)) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_XTIDE;
 	sb_parts++;
     }
-    if (c_ide_pio && (hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+    if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3))) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_IDE_PIO_ONLY;
 	sb_parts++;
     }
-    if (c_ide_dma && (hdint || (hdc_type == hdc_get_from_internal_name("ide")))) {
+    if (c_ide_dma && (hdint || !strncmp(hdc, "ide", 3))) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_IDE_PIO_AND_DMA;
