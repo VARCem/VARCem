@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.4	2018/04/07
+ * Version:	@(#)parallel.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -227,7 +227,7 @@ parallel_setup(int id, uint16_t port)
     parallel_t *dev = &ports[id-1];
 
 #ifdef _DEBUG
-    pclog("PARALLE: setting up LPT%d as %04X [enabled=%d]\n",
+    pclog("PARALLEL: setting up LPT%d as %04X [enabled=%d]\n",
 			id, port, parallel_enabled[id-1]);
 #endif
     if (! parallel_enabled[id-1]) return;

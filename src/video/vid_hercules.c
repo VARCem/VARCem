@@ -390,6 +390,8 @@ void *hercules_init(const device_t *info)
 	}
 	cgapal_rebuild();
 
+	/* Force the LPT3 port to be enabled. */
+	parallel_enabled[2] = 1;
 	parallel_setup(3, 0x3BC);
 
         return hercules;

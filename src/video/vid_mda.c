@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.4	2018/04/09
+ * Version:	@(#)vid_mda.c	1.0.5	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -342,6 +342,8 @@ static void *mda_init(const device_t *info)
 	}
 	cgapal_rebuild();
 
+        /* Force the LPT3 port to be enabled. */
+        parallel_enabled[2] = 1;
 	parallel_setup(3, 0x3BC);
 
         return mda;

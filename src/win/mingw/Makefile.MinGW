@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.23	2018/04/09
+# Version:	@(#)Makefile.mingw	1.0.24	2018/04/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -257,6 +257,9 @@ DEPFILE		:= win/.depends-mingw
 
 # Set up the correct toolchain flags.
 OPTS		:= $(EXTRAS) $(STUFF)
+AFLAGS		:= -msse2 -mfpmath=sse
+RFLAGS		:= --input-format=rc -O coff
+LDFLAGS		:=
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
 endif
@@ -290,7 +293,8 @@ else
  endif
 endif
 ifeq ($(DEBUG), y)
- DFLAGS		+= -ggdb -DDEBUG
+ DFLAGS		+= -ggdb -D_DEBUG
+ RFLAGS		+= -D_DEBUG
  AOPTIM		:=
  ifndef COPTIM
   COPTIM	:= -Og
@@ -307,9 +311,6 @@ else
   endif
  endif
 endif
-AFLAGS		:= -msse2 -mfpmath=sse
-RFLAGS		:= --input-format=rc -O coff
-LDFLAGS		:=
 ifeq ($(PROFILER), y)
 LDFLAGS		+= -Xlinker -Map=$(PROG).map
 endif

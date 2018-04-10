@@ -8,7 +8,7 @@
  *
  *		Define application version and build info.
  *
- * Version:	@(#)version.h	1.0.6	2018/04/08
+ * Version:	@(#)version.h	1.0.7	2018/04/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *

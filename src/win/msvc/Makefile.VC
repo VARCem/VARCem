@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.8	2018/04/09
+# Version:	@(#)Makefile.VC	1.0.9	2018/04/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -244,6 +244,9 @@ OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
 		   -D_WINSOCK_DEPRECATED_NO_WARNINGS \
 		   -D_CRT_SECURE_NO_WARNINGS \
 		   $(WPCAPINC) $(SYSINC)
+AFLAGS		:= /arch:SSE2
+RFLAGS		:=
+LDFLAGS		:= $(LOPTS)
 COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 
@@ -268,7 +271,8 @@ ifeq ($(OPTIM), y)
  DOPTS		:= -march=native
 endif
 ifeq ($(DEBUG), y)
- DOPTS		+= -Gs -Zi -DDEBUG
+ DOPTS		+= -Gs -Zi -D_DEBUG
+ ROPTS		+= -D_DEBUG
  LOPTS		+= -debug
  AOPTIM		:=
  ifndef COPTIM
@@ -280,9 +284,6 @@ else
   COPTIM	:= -O2
  endif
 endif
-AFLAGS		:= /arch:SSE2
-RFLAGS		:=
-LDFLAGS		:= $(LOPTS)
 ifeq ($(CRASHDUMP), y)
  OPTS		+= -DUSE_CRASHDUMP
 endif

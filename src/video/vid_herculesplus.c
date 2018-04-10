@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.5	2018/04/09
+ * Version:	@(#)vid_hercules_plus.c	1.0.6	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -727,6 +727,8 @@ void *herculesplus_init(const device_t *info)
         mdacols[0x80][0][1] = mdacols[0x80][1][1] = 16;
         mdacols[0x88][0][1] = mdacols[0x88][1][1] = 16;
 
+        /* Force the LPT3 port to be enabled. */
+        parallel_enabled[2] = 1;
 	parallel_setup(3, 0x3BC);
 
         return herculesplus;

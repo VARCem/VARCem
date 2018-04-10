@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.17	2018/04/09
+ * Version:	@(#)VARCem.rc	1.0.18	2018/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 #ifdef _WIN32
@@ -59,9 +60,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
-//
 // Menu
-//
+/////////////////////////////////////////////////////////////////////////////
 
 MainMenu MENU DISCARDABLE 
 BEGIN
@@ -230,11 +230,9 @@ BEGIN
     MENUITEM SEPARATOR
 END
 
-
 /////////////////////////////////////////////////////////////////////////////
-//
 // Accelerator
-//
+/////////////////////////////////////////////////////////////////////////////
 
 MainAccel ACCELERATORS MOVEABLE PURE 
 BEGIN
@@ -310,9 +308,9 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
 // Dialog
-//
+/////////////////////////////////////////////////////////////////////////////
+
 DLG_ABOUT DIALOG DISCARDABLE  0, 0, 250, 170
 STYLE DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About VARCem"
@@ -688,19 +686,17 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-// 24
-//
+// Manifest
+/////////////////////////////////////////////////////////////////////////////
+
 #ifndef SKIP_MANIFEST
 1	24	MOVEABLE PURE	"VARCem.manifest"
 #endif
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
 
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
+/////////////////////////////////////////////////////////////////////////////
+// Icon
+/////////////////////////////////////////////////////////////////////////////
+
 100	ICON	DISCARDABLE	"win/icons/varcem.ico"
 128	ICON	DISCARDABLE	"win/icons/floppy_525.ico"
 129	ICON	DISCARDABLE	"win/icons/floppy_525_active.ico"
@@ -742,9 +738,8 @@ END
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
-//
 // TEXTINCLUDE
-//
+/////////////////////////////////////////////////////////////////////////////
 
 1 TEXTINCLUDE DISCARDABLE 
 BEGIN
@@ -770,9 +765,8 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
 // DESIGNINFO
-//
+/////////////////////////////////////////////////////////////////////////////
 
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
@@ -891,9 +885,8 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
 // String Table
-//
+/////////////////////////////////////////////////////////////////////////////
 
 STRINGTABLE DISCARDABLE 
 BEGIN
@@ -913,10 +906,6 @@ BEGIN
     IDS_2061	"Off"
     IDS_2062	"Changes saved, please restart the emulator!"
     IDS_2063	"The configured machine:\n\n  %ls\n\nis not available.\n\nWould you like to enter the Settings menu?"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_2064	"Configured video card:\n\n  %ls\n\nis not available.\n\nWould you like to enter the Settings menu?"
     IDS_2065	"Machine"
     IDS_2066	"Display"
@@ -933,10 +922,6 @@ BEGIN
     IDS_2077	"Click to capture mouse"
     IDS_2078	"Press F8+F12 to release mouse"
     IDS_2079	"Press F8+F12 or middle button to release mouse"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_2080	"Drive"
     IDS_2081	"Location"
     IDS_2082	"Bus"
@@ -953,10 +938,6 @@ BEGIN
     IDS_2093	"DMA"
     IDS_2094	"KB"
     IDS_2095	"Neither DirectDraw nor Direct3D available !"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_2096	"Slave"
     IDS_2097	"SCSI (ID %s, LUN %s)"
     IDS_2098	"Adapter Type"
@@ -973,10 +954,6 @@ BEGIN
     IDS_2109	"Memory Size"
     IDS_2110	"Display Type"
     IDS_2111	"RGB"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_2112	"Composite"
     IDS_2113	"Composite Type"
     IDS_2114	"Old"
@@ -993,10 +970,6 @@ BEGIN
     IDS_2125	"Dithering"
     IDS_2126	"Framebuffer Memory Size"
     IDS_2127	"Texture Memory Size"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_2128	"Screen Filter"
     IDS_2129	"Render Threads"
     IDS_2130	"Recompiler"
@@ -1008,10 +981,6 @@ BEGIN
     IDS_2136	"Slow VLB/PCI"
     IDS_2137	"Mid  VLB/PCI"
     IDS_2138	"Fast VLB/PCI"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDS_2139	"PCap failed to set up because it may not be initialized"
     IDS_2140	"No PCap devices found"
     IDS_2141	"Invalid PCap device"
@@ -1047,7 +1016,10 @@ BEGIN
     IDS_2177	"ZIP %i (%03i): %ls"
     IDS_2178	"Unable to initialize OpenAL, make sure you have the following library\nin your program folder:\n\nlibopenal-1.dll"
     IDS_2179	"Speed:"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_4096    "Hard disk (%s)"
     IDS_4097	"%01i:%01i"
     IDS_4098	"%i"
@@ -1068,7 +1040,10 @@ BEGIN
     IDS_4113	"Remember to partition and format the new drive"
     IDS_4114	"MFM/RLL or ESDI CD-ROM drives never existed"
     IDS_4115	"Removable disk %i (SCSI): %ls"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_4352    "MFM/RLL"
     IDS_4353    "XT IDE"
     IDS_4354    "ESDI"
@@ -1076,7 +1051,10 @@ BEGIN
     IDS_4356    "IDE (PIO+DMA)"
     IDS_4357    "SCSI"
     IDS_4358    "SCSI (removable)"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_4608	"MFM/RLL (%01i:%01i)"
     IDS_4609	"XT IDE (%01i:%01i)"
     IDS_4610	"ESDI (%01i:%01i)"
@@ -1084,9 +1062,15 @@ BEGIN
     IDS_4612	"IDE (PIO+DMA) (%01i:%01i)"
     IDS_4613	"SCSI (%02i:%02i)"
     IDS_4614	"SCSI (removable) (%02i:%02i)"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_5120	"CD-ROM %i (%s): %s"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_5376	"Disabled"
     IDS_5377    "<Reserved>"
     IDS_5378    "<Reserved>"
@@ -1094,7 +1078,10 @@ BEGIN
     IDS_5380	"ATAPI (PIO-only)"
     IDS_5381	"ATAPI (PIO and DMA)"
     IDS_5382    "SCSI"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_5632	"Disabled"
     IDS_5633    "<Reserved>"
     IDS_5634    "<Reserved>"
@@ -1102,7 +1089,10 @@ BEGIN
     IDS_5636	"ATAPI (PIO-only) (%01i:%01i)"
     IDS_5637	"ATAPI (PIO and DMA) (%01i:%01i)"
     IDS_5638    "SCSI (%02i:%02i)"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_5888	"160 kB"
     IDS_5889	"180 kB"
     IDS_5890	"320 kB"
@@ -1117,12 +1107,18 @@ BEGIN
     IDS_5899	"2.88 MB"
     IDS_5900	"ZIP 100"
     IDS_5901	"ZIP 250"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_6144	"Perfect RPM"
     IDS_6145	"1%% below perfect RPM"
     IDS_6146	"1.5%% below perfect RPM"
     IDS_6147	"2%% below perfect RPM"
+END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_7168	"English (United States)"
 END
 #define IDS_LANG_ENUS	IDS_7168
@@ -1130,34 +1126,41 @@ END
 
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
-//
 // Version
-//
+/////////////////////////////////////////////////////////////////////////////
 
 VS_VERSION_INFO VERSIONINFO
 #ifdef EMU_VER_PATCH
- FILEVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,EMU_VER_PATCH
- PRODUCTVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,EMU_VER_PATCH
+ FILEVERSION	EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,EMU_VER_PATCH
+ PRODUCTVERSION	EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,EMU_VER_PATCH
 #else
- FILEVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
- PRODUCTVERSION EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
+ FILEVERSION	EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
+ PRODUCTVERSION	EMU_VER_MAJOR,EMU_VER_MINOR,EMU_VER_REV,0
 #endif
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
+ FILEFLAGSMASK	0x3fL
+#ifndef RELEASE_BUILD
+# ifdef _DEBUG
+ FILEFLAGS	VS_FF_SPECIALBUILD | VS_FF_DEBUG
+# else
+ FILEFLAGS	VS_FF_SPECIALBUILD
+# endif
 #else
- FILEFLAGS 0x0L
+# ifdef _DEBUG
+ FILEFLAGS	VS_FF_DEBUG
+# else
+ FILEFLAGS	0x0L
+# endif
 #endif
- FILEOS 0x40004L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
-BEGIN
+ FILEOS		VOS_NT_WINDOWS32
+ FILETYPE	VFT_APP
+ FILESUBTYPE	0x0L
+ BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904b0"
+        BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "IRC #VARCem on FreeNode"
-            VALUE "FileDescription", "VARCem - Virtual ARchaeological Computer EMulator"
+            VALUE "FileDescription", "Virtual ARchaeological Computer EMulator"
             VALUE "FileVersion", EMU_VERSION
             VALUE "InternalName", EMU_NAME
             VALUE "LegalCopyright", "Copyright Fred N. van Kempen and others, 2007-2018, Released under a mixed BSD 3-Clause and GPL License"
@@ -1178,16 +1181,3 @@ END
 #endif    // !_MAC
 
 #endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-#ifndef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 3 resource.
-//
-
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
