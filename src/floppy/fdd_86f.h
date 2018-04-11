@@ -8,7 +8,7 @@
  *
  *		Definitions for the 86F floppy image format.
  *
- * Version:	@(#)floppy_86f.h	1.0.4	2018/03/17
+ * Version:	@(#)floppy_86f.h	1.0.5	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,7 @@
 
 
 extern void	d86f_init(void);
-extern void	d86f_load(int drive, wchar_t *fn);
+extern int	d86f_load(int drive, const wchar_t *fn);
 extern void	d86f_close(int drive);
 extern void	d86f_seek(int drive, int track);
 extern int	d86f_hole(int drive);

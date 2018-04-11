@@ -8,7 +8,7 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.4	2018/04/05
+ * Version:	@(#)midi.c	1.0.5	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,7 +82,7 @@ static const midi_t devices[] = {
 };
 
 
-static midi_device_t	*m_device = NULL;
+static const midi_device_t	*m_device = NULL;
 static int		midi_device_last = 0;
 static uint8_t		midi_rt_buf[1024];
 static uint8_t		midi_cmd_buf[1024];
@@ -127,10 +127,10 @@ midi_device_available(int card)
 }
 
 
-char *
+const char *
 midi_device_getname(int card)
 {
-    return((char *)devices[card].name);
+    return(devices[card].name);
 }
 
 
@@ -150,25 +150,26 @@ midi_device_has_config(int card)
 }
 
 
-char *
+const char *
 midi_device_get_internal_name(int card)
 {
-    return((char *)devices[card].internal_name);
+    return(devices[card].internal_name);
 }
 
 
 int
-midi_device_get_from_internal_name(char *s)
+midi_device_get_from_internal_name(const char *s)
 {
     int c = 0;
 	
     while (devices[c].internal_name != NULL) {
-	if (!strcmp(devices[c].internal_name, s))
+	if (! strcmp(devices[c].internal_name, s))
 		return(c);
 	c++;
     }
 
-    return(0);
+    /* Not found. */
+    return(-1);
 }
 
 
@@ -183,7 +184,7 @@ midi_device_init(void)
 
 
 void
-midi_init(midi_device_t* device)
+midi_init(const midi_device_t *device)
 {
     memset(midi_rt_buf, 0, sizeof(midi_rt_buf));
     memset(midi_cmd_buf, 0, sizeof(midi_cmd_buf));

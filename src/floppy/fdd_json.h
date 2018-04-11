@@ -8,7 +8,7 @@
  *
  *		Definitions for the PCjs JSON floppy image format.
  *
- * Version:	@(#)floppy_json.h	1.0.2	2018/03/17
+ * Version:	@(#)floppy_json.h	1.0.3	2018/04/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,7 +49,7 @@
 
 
 extern void	json_init(void);
-extern void	json_load(int drive, wchar_t *fn);
+extern int	json_load(int drive, const wchar_t *fn);
 extern void	json_close(int drive);
 
 

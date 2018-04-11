@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.7	2018/04/09
+ * Version:	@(#)fdd.c	1.0.8	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -79,8 +79,8 @@ static fdc_t	*fdd_fdc;
 
 
 static const struct {
-    wchar_t	*ext;
-    void	(*load)(int drive, wchar_t *fn);
+    const wchar_t	*ext;
+    int		(*load)(int drive, const wchar_t *fn);
     void	(*close)(int drive);
     int		size;
 } loaders[]= {
@@ -163,8 +163,8 @@ static const struct
 {
         int max_track;
 	int flags;
-        char name[64];
-        char internal_name[24];
+        const char *name;
+        const char *internal_name;
 } drive_types[] =
 {
         {       /*None*/
@@ -210,33 +210,36 @@ static const struct
                 86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_HOLE2 | FLAG_DOUBLE_STEP, "3.5\" 2.88M", "35_2ed"
         },
         {       /*End of list*/
-		-1, -1, "", ""
+		-1, -1, NULL, NULL
         }
 };
 
-char *fdd_getname(int type)
+
+const char *fdd_getname(int type)
 {
-        return (char *)drive_types[type].name;
+        return drive_types[type].name;
 }
 
-char *fdd_get_internal_name(int type)
+const char *fdd_get_internal_name(int type)
 {
-        return (char *)drive_types[type].internal_name;
+        return drive_types[type].internal_name;
 }
 
-int fdd_get_from_internal_name(char *s)
+int fdd_get_from_internal_name(const char *s)
 {
 	int c = 0;
 	
-	while (strlen(drive_types[c].internal_name))
+	while (drive_types[c].internal_name != NULL)
 	{
-		if (!strcmp((char *)drive_types[c].internal_name, s))
+		if (! strcmp(drive_types[c].internal_name, s))
 			return c;
 		c++;
 	}
-	
-	return 0;
+
+	/* Not found. */
+	return -1;
 }
+
 
 /* This is needed for the dump as 86F feature. */
 void fdd_do_seek(int drive, int track)
@@ -437,19 +440,20 @@ int fdd_get_densel(int drive)
 	}
 }
 
-void fdd_load(int drive, wchar_t *fn)
+int fdd_load(int drive, const wchar_t *fn)
 {
         int c = 0, size;
+	int ok;
         wchar_t *p;
         FILE *f;
 
 	pclog("FDD: loading drive %d with '%ls'\n", drive, fn);
 
-        if (!fn) return;
+        if (!fn) return(0);
         p = plat_get_extension(fn);
-        if (!p) return;
+        if (!p) return(0);
         f = plat_fopen(fn, L"rb");
-        if (!f) return;
+        if (!f) return(0);
         fseek(f, -1, SEEK_END);
         size = ftell(f) + 1;
         fclose(f);        
@@ -458,21 +462,27 @@ void fdd_load(int drive, wchar_t *fn)
                 if (!wcscasecmp(p, loaders[c].ext) && (size == loaders[c].size || loaders[c].size == -1))
                 {
                         driveloaders[drive] = c;
-                        memcpy(floppyfns[drive], fn, (wcslen(fn) << 1) + 2);
+                        wcsncpy(floppyfns[drive], fn, sizeof_w(floppyfns[drive]));
 			d86f_setup(drive);
-                        loaders[c].load(drive, floppyfns[drive]);
+                        ok = loaders[c].load(drive, floppyfns[drive]);
+			if (! ok)
+				goto no_load;
+
                         drive_empty[drive] = 0;
                         fdd_forced_seek(drive, 0);
                         fdd_changed[drive] = 1;
-                        return;
+                        return(1);
                 }
                 c++;
         }
+no_load:
         pclog("FDD: could not load '%ls' %s\n",fn,p);
         drive_empty[drive] = 1;
 	fdd_set_head(drive, 0);
 	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	ui_sb_update_icon_state(drive, 1);
+
+	return 0;
 }
 
 void fdd_close(int drive)

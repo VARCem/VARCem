@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.5	2018/04/08
+ * Version:	@(#)hdc.h	1.0.6	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,12 +77,12 @@ extern void	hdc_log(const char *fmt, ...);
 extern void	hdc_init(char *name);
 extern void	hdc_reset(void);
 
-extern char	*hdc_get_name(int hdc);
-extern char	*hdc_get_internal_name(int hdc);
+extern const char *hdc_get_name(int hdc);
+extern const char *hdc_get_internal_name(int hdc);
 extern const device_t	*hdc_get_device(int hdc);
 extern int	hdc_get_flags(int hdc);
 extern int	hdc_available(int hdc);
-extern int	hdc_get_from_internal_name(char *s);
+extern int	hdc_get_from_internal_name(const char *s);
 
 #ifdef __cplusplus
 }

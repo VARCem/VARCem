@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.5	2018/04/05
+ * Version:	@(#)hdc.c	1.0.6	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -191,17 +191,17 @@ hdc_reset(void)
 }
 
 
-char *
+const char *
 hdc_get_name(int hdc)
 {
-    return((char *)controllers[hdc].name);
+    return(controllers[hdc].name);
 }
 
 
-char *
+const char *
 hdc_get_internal_name(int hdc)
 {
-    return((char *)controllers[hdc].internal_name);
+    return(controllers[hdc].internal_name);
 }
 
 
@@ -227,15 +227,16 @@ hdc_available(int hdc)
 
 
 int
-hdc_get_from_internal_name(char *s)
+hdc_get_from_internal_name(const char *s)
 {
     int c = 0;
 
     while (controllers[c].internal_name != NULL) {
-	if (! strcmp((char *)controllers[c].internal_name, s))
+	if (! strcmp(controllers[c].internal_name, s))
 		return(c);
 	c++;
     }
 
+    /* Not found. */
     return(-1);
 }

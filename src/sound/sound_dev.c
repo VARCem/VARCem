@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.2	2018/04/08
+ * Version:	@(#)sound_dev.c	1.0.3	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -145,14 +145,15 @@ sound_card_available(int card)
 }
 
 
-char *
+const char *
 sound_card_getname(int card)
 {
-    return((char *)sound_cards[card].name);
+    return(sound_cards[card].name);
 }
 
 
-const device_t *sound_card_getdevice(int card)
+const device_t *
+sound_card_getdevice(int card)
 {
     return(sound_cards[card].device);
 }
@@ -167,23 +168,24 @@ sound_card_has_config(int card)
 }
 
 
-char *
+const char *
 sound_card_get_internal_name(int card)
 {
-    return((char *)sound_cards[card].internal_name);
+    return(sound_cards[card].internal_name);
 }
 
 
 int
-sound_card_get_from_internal_name(char *s)
+sound_card_get_from_internal_name(const char *s)
 {
     int c = 0;
 
     while (sound_cards[c].internal_name != NULL) {
-	if (! strcmp((char *)sound_cards[c].internal_name, s))
+	if (! strcmp(sound_cards[c].internal_name, s))
 		return(c);
 	c++;
     }
 
-    return(0);
+    /* Not found. */
+    return(-1);
 }

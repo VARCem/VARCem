@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.6	2018/03/16
+ * Version:	@(#)fdd_86f.c	1.0.7	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3387,7 +3387,7 @@ d86f_common_handlers(int drive)
 
 
 int
-d86f_export(int drive, wchar_t *fn)
+d86f_export(int drive, const wchar_t *fn)
 {
     uint32_t tt[512];
     d86f_t *dev = d86f[drive];
@@ -3449,8 +3449,8 @@ d86f_export(int drive, wchar_t *fn)
 }
 
 
-void
-d86f_load(int drive, wchar_t *fn)
+int
+d86f_load(int drive, const wchar_t *fn)
 {
     wchar_t temp_file_name[2048];
     d86f_t *dev = d86f[drive];
@@ -3468,9 +3468,8 @@ d86f_load(int drive, wchar_t *fn)
     if (! dev->f) {
 	dev->f = plat_fopen(fn, L"rb");
 	if (! dev->f) {
-		memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 		free(dev);
-		return;
+		return(0);
 	}
 	writeprot[drive] = 1;
     }
@@ -3490,18 +3489,16 @@ d86f_load(int drive, wchar_t *fn)
 	/* File is WAY too small, abort. */
 	fclose(dev->f);
 	dev->f = NULL;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
-	return;
+	return(0);
     }
 
     if ((magic != 0x46423638) && (magic != 0x66623638)) {
 	/* File is not of the valid format, abort. */
 	d86f_log("86F: Unrecognized magic bytes: %08X\n", magic);
 	fclose(dev->f);
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
-	return;
+	return(0);
     }
 
     fread(&(dev->version), 2, 1, dev->f);
@@ -3516,9 +3513,8 @@ d86f_load(int drive, wchar_t *fn)
 	}
 	fclose(dev->f);
 	dev->f = NULL;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
-	return;
+	return(0);
     } else {
 	d86f_log("86F: Recognized file version: %i.%02i\n", dev->version >> 8, dev->version & 0xff);
     }
@@ -3529,9 +3525,8 @@ d86f_load(int drive, wchar_t *fn)
 	/* File too small, abort. */
 	fclose(dev->f);
 	dev->f = NULL;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
-	return;
+	return(0);
     }
 
 #ifdef DO_CRC64
@@ -3552,9 +3547,8 @@ d86f_load(int drive, wchar_t *fn)
 	d86f_log("86F: CRC64 error\n");
 	fclose(dev->f);
 	dev->f = NULL;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
-	return;
+	return(0);
     }
 #endif
 
@@ -3568,9 +3562,8 @@ d86f_load(int drive, wchar_t *fn)
 	dev->f = plat_fopen(temp_file_name, L"wb");
 	if (! dev->f) {
 		d86f_log("86F: Unable to create temporary decompressed file\n");
-		memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 		free(dev);
-		return;
+		return(0);
 	}
 
 	tf = plat_fopen(fn, L"rb");
@@ -3597,9 +3590,8 @@ d86f_load(int drive, wchar_t *fn)
 	if (! temp) {
 		d86f_log("86F: Error decompressing file\n");
 		plat_remove(temp_file_name);
-		memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 		free(dev);
-		return;
+		return(0);
 	}
 
 	dev->f = plat_fopen(temp_file_name, L"rb+");
@@ -3613,9 +3605,8 @@ d86f_load(int drive, wchar_t *fn)
 	if (dev->is_compressed) {
 		plat_remove(temp_file_name);
 	}
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
-	return;
+	return(0);
     }
 
     if (dev->disk_flags & 0x600) {
@@ -3625,9 +3616,8 @@ d86f_load(int drive, wchar_t *fn)
 	dev->f = NULL;
 	if (dev->is_compressed)
 		plat_remove(temp_file_name);
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
-	return;
+	return(0);
     }
 
     if (!writeprot[drive]) {
@@ -3657,10 +3647,9 @@ d86f_load(int drive, wchar_t *fn)
 	d86f_log("86F: No Track 0 side 0\n");
 	fclose(dev->f);
 	dev->f = NULL;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
 	d86f[drive] = NULL;
-	return;
+	return(0);
     }
 
     if ((d86f_get_sides(drive) == 2) && !(dev->track_offset[1])) {
@@ -3668,10 +3657,9 @@ d86f_load(int drive, wchar_t *fn)
 	d86f_log("86F: No Track 0 side 1\n");
 	fclose(dev->f);
 	dev->f = NULL;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
 	free(dev);
 	d86f[drive] = NULL;
-	return;
+	return(0);
     }
 
     /* Load track 0 flags as default. */
@@ -3729,6 +3717,9 @@ d86f_load(int drive, wchar_t *fn)
     d86f_log("86F: Disk is %scompressed and does%s have surface description data\n",
 	dev->is_compressed ? "" : "not ",
 	d86f_has_surface_desc(drive) ? "" : " not");
+
+    /* All good. */
+    return(1);
 }
 
 

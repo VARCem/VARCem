@@ -8,7 +8,7 @@
  *
  *		Implementation of the PCjs JSON floppy image format.
  *
- * Version:	@(#)fdd_json.c	1.0.4	2018/03/17
+ * Version:	@(#)fdd_json.c	1.0.5	2018/04/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -504,8 +504,8 @@ json_init(void)
 }
 
 
-void
-json_load(int drive, wchar_t *fn)
+int
+json_load(int drive, const wchar_t *fn)
 {
     double bit_rate;
     int temp_rate;
@@ -524,8 +524,7 @@ json_load(int drive, wchar_t *fn)
     dev->f = plat_fopen(fn, L"rb");
     if (dev->f == NULL) {
 	free(dev);
-	memset(fn, 0x00, sizeof(wchar_t));
-	return;
+	return(0);
     }
 
     /* Our images are always RO. */
@@ -540,8 +539,7 @@ json_load(int drive, wchar_t *fn)
 	(void)fclose(dev->f);
 	free(dev);
 	images[drive] = NULL;
-	memset(fn, 0x00, sizeof(wchar_t));
-	return;
+	return(0);
     }
 
     pclog("JSON(%d): %ls (%i tracks, %i sides, %i sectors)\n",
@@ -606,8 +604,7 @@ json_load(int drive, wchar_t *fn)
 	dev->f = NULL;
 	free(dev);
 	images[drive] = NULL;
-	memset(fn, 0x00, sizeof(wchar_t));
-	return;
+	return(0);
     }
 
     if (dev->interleave == 2) {
@@ -628,8 +625,7 @@ json_load(int drive, wchar_t *fn)
 	dev->f = NULL;
 	free(dev);
 	images[drive] = NULL;
-	memset(fn, 0x00, sizeof(wchar_t));
-	return;
+	return(0);
     }
 
     dev->track_flags |= (temp_rate & 0x03);	/* data rate */
@@ -660,6 +656,9 @@ json_load(int drive, wchar_t *fn)
     d86f_common_handlers(drive);
 
     drives[drive].seek = json_seek;
+
+    /* All good. */
+    return(1);
 }
 
 

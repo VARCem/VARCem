@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.7	2018/04/07
+ * Version:	@(#)openal.c	1.0.8	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -234,7 +234,7 @@ inital(void)
     int c;
 #endif
     int init_midi = 0;
-    char *str;
+    const char *str;
 
 pclog("SOUND: inital()\n");
     /*

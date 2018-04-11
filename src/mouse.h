@@ -8,7 +8,7 @@
  *
  *		Definitions for the mouse driver.
  *
- * Version:	@(#)mouse.h	1.0.2	2018/03/15
+ * Version:	@(#)mouse.h	1.0.3	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -95,9 +95,9 @@ extern void	mouse_process(void);
 extern void	mouse_set_poll(int (*f)(int,int,int,int,void *), void *);
 extern void	mouse_poll(void);
 
-extern char	*mouse_get_name(int mouse);
-extern char	*mouse_get_internal_name(int mouse);
-extern int	mouse_get_from_internal_name(char *s);
+extern const char *mouse_get_name(int mouse);
+extern const char *mouse_get_internal_name(int mouse);
+extern int	mouse_get_from_internal_name(const char *s);
 extern int	mouse_has_config(int mouse);
 extern int	mouse_get_type(int mouse);
 extern int	mouse_get_ndev(void);

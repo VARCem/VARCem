@@ -8,7 +8,9 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.18	2018/04/09
+ * NOTE:	maybe have to add CBS_HASSTRINGS to all dropdowns for VC.
+ *
+ * Version:	@(#)VARCem.rc	1.0.19	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

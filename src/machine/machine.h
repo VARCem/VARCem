@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.14	2018/04/03
+ * Version:	@(#)machine.h	1.0.15	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -236,9 +236,9 @@ extern int		romspresent[ROM_MAX];
 extern int	machine_count(void);
 extern int	machine_getromset(void);
 extern int	machine_getmachine(int romset);
-extern char	*machine_getname(void);
-extern char	*machine_get_internal_name(void);
-extern int	machine_get_machine_from_internal_name(char *s);
+extern const char	*machine_getname(void);
+extern const char	*machine_get_internal_name(void);
+extern int	machine_get_machine_from_internal_name(const char *s);
 extern int	machine_available(int id);
 extern int	machine_detect(void);
 extern void	machine_init(void);
@@ -247,8 +247,7 @@ extern void	machine_close(void);
 extern const device_t	*machine_getdevice(int machine);
 #endif
 extern int	machine_getromset_ex(int m);
-extern char	*machine_get_internal_name_ex(int m);
-//extern int	machine_get_nvrmask(int m);
+extern const char	*machine_get_internal_name_ex(int m);
 extern void	machine_close(void);
 
 

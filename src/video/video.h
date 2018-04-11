@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.14	2018/04/09
+ * Version:	@(#)video.h	1.0.15	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -232,17 +232,17 @@ extern void	(*video_recalctimings)(void);
 /* Table functions. */
 extern int	video_card_available(int card);
 extern int	video_detect(void);
-extern char	*video_card_getname(int card);
+extern const char	*video_card_getname(int card);
 #ifdef EMU_DEVICE_H
 extern const device_t	*video_card_getdevice(int card);
 #endif
 extern int	video_card_has_config(int card);
 extern const video_timings_t	*video_card_gettiming(int card);
-extern int	video_card_getid(char *s);
+extern int	video_card_getid(const char *s);
 extern int	video_old_to_new(int card);
 extern int	video_new_to_old(int card);
-extern char	*video_get_internal_name(int card);
-extern int	video_get_video_from_internal_name(char *s);
+extern const char	*video_get_internal_name(int card);
+extern int	video_get_video_from_internal_name(const char *s);
 extern int 	video_is_mda(void);
 extern int 	video_is_cga(void);
 extern int 	video_is_ega_vga(void);
@@ -268,7 +268,7 @@ extern uint8_t	video_force_resize_get(void);
 extern void	video_force_resize_set(uint8_t res);
 extern void	video_update_timing(void);
 
-extern void	loadfont(wchar_t *s, int format);
+extern void	loadfont(const wchar_t *s, int format);
 
 extern int	get_actual_size_x(void);
 extern int	get_actual_size_y(void);

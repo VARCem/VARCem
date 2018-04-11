@@ -8,7 +8,7 @@
  *
  *		Implement threads and mutexes for the Win32 platform.
  *
- * Version:	@(#)win_thread.c	1.0.3	2018/03/07
+ * Version:	@(#)win_thread.c	1.0.4	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -147,7 +147,7 @@ thread_destroy_event(event_t *arg)
 
 
 mutex_t *
-thread_create_mutex(wchar_t *name)
+thread_create_mutex(const wchar_t *name)
 {
     return((mutex_t*)CreateMutex(NULL, FALSE, name));
 }

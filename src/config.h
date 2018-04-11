@@ -8,7 +8,7 @@
  *
  *		Configuration file handler header.
  *
- * Version:	@(#)config.h	1.0.1	2018/02/14
+ * Version:	@(#)config.h	1.0.2	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,22 +46,22 @@ extern "C" {
 
 extern void	config_load(void);
 extern void	config_save(void);
-extern void	config_write(wchar_t *fn);
+extern void	config_write(const wchar_t *fn);
 extern void	config_dump(void);
 
-extern void	config_delete_var(char *head, char *name);
-extern int	config_get_int(char *head, char *name, int def);
-extern int	config_get_hex16(char *head, char *name, int def);
-extern int	config_get_hex20(char *head, char *name, int def);
-extern int	config_get_mac(char *head, char *name, int def);
-extern char	*config_get_string(char *head, char *name, char *def);
-extern wchar_t	*config_get_wstring(char *head, char *name, wchar_t *def);
-extern void	config_set_int(char *head, char *name, int val);
-extern void	config_set_hex16(char *head, char *name, int val);
-extern void	config_set_hex20(char *head, char *name, int val);
-extern void	config_set_mac(char *head, char *name, int val);
-extern void	config_set_string(char *head, char *name, char *val);
-extern void	config_set_wstring(char *head, char *name, wchar_t *val);
+extern void	config_delete_var(const char *cat, const char *name);
+extern int	config_get_int(const char *cat, const char *name, int def);
+extern int	config_get_hex16(const char *cat, const char *name, int def);
+extern int	config_get_hex20(const char *cat, const char *name, int def);
+extern int	config_get_mac(const char *cat, const char *name, int def);
+extern char	*config_get_string(const char *cat, const char *name, const char *def);
+extern wchar_t	*config_get_wstring(const char *cat, const char *name, const wchar_t *def);
+extern void	config_set_int(const char *cat, const char *name, int val);
+extern void	config_set_hex16(const char *cat, const char *name, int val);
+extern void	config_set_hex20(const char *cat, const char *name, int val);
+extern void	config_set_mac(const char *cat, const char *name, int val);
+extern void	config_set_string(const char *cat, const char *name, const char *val);
+extern void	config_set_wstring(const char *cat, const char *name, const wchar_t *val);
 
 #ifdef __cplusplus
 }

@@ -186,7 +186,7 @@ const machine_t machines[] = {
     { "[Socket 8 FX] Tyan Titan-Pro AT",	ROM_440FX,		"tyan_440fx",		L"tyan/440fx",			{{"Intel", cpus_PentiumPro},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,					  8, 1024,   8, 128,	       machine_at_i440fx_init, NULL,			NULL			},
     { "[Socket 8 FX] Tyan Titan-Pro ATX",	ROM_S1668,		"tyan_tpatx",		L"tyan/tpatx",			{{"Intel", cpus_PentiumPro},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,					  8, 1024,   8, 128,		machine_at_s1668_init, NULL,			NULL			},
 #endif
-    { "",					-1,			"",			NULL,				{{"", NULL},			{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, 0,													  0,    0,   0, 0,				 NULL, NULL,			NULL			}
+    { NULL,					-1,			NULL,			NULL,				{{"", NULL},			{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, 0,													  0,    0,   0, 0,				 NULL, NULL,			NULL			}
 };
 
 
@@ -222,14 +222,15 @@ machine_getmachine(int romset)
 	c++;
     }
 
-    return(0);
+    /* Not found. */
+    return(-1);
 }
 
 
-char *
+const char *
 machine_getname(void)
 {
-    return((char *)machines[machine].name);
+    return(machines[machine].name);
 }
 
 
@@ -240,30 +241,31 @@ machine_getdevice(int machine)
 }
 
 
-char *
+const char *
 machine_get_internal_name(void)
 {
-    return((char *)machines[machine].internal_name);
+    return(machines[machine].internal_name);
 }
 
 
-char *
+const char *
 machine_get_internal_name_ex(int m)
 {
-    return((char *)machines[m].internal_name);
+    return(machines[m].internal_name);
 }
 
 
 int
-machine_get_machine_from_internal_name(char *s)
+machine_get_machine_from_internal_name(const char *s)
 {
     int c = 0;
 
     while (machines[c].id != -1) {
-	if (!strcmp(machines[c].internal_name, (const char *)s))
+	if (!strcmp(machines[c].internal_name, s))
 		return(c);
 	c++;
     }
 
-    return(0);
+    /* Not found. */
+    return(-1);
 }

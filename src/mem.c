@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.12	2018/04/03
+ * Version:	@(#)mem.c	1.0.13	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1565,6 +1565,20 @@ mem_reset(void)
     biosmask = 0xffff;
 
     /*
+     * Make sure the configured amount of RAM does not
+     * exceed the physical limit of the machine to avoid
+     * nasty crashes all over the place.
+     */
+    c = machines[machine].max_ram;
+    if (AT)
+	c <<= 10;	/* make KB */
+    if (mem_size > c) {
+	pclog("MEM: %luKB exceeds machine limit (%luKB), adjusted!\n",
+							mem_size, c);
+	mem_size = c;
+    }
+
+    /*
      * Always allocate the full 16 MB memory space if memory size
      * is smaller, we'll need this for stupid things like the PS/2
      * split mapping.
@@ -1715,6 +1729,7 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 }
 
 
+/* Perform a one-time memory initialization. */
 void
 mem_init(void)
 {
@@ -1737,9 +1752,6 @@ mem_init(void)
 #endif
 
     memset(ram_mapped_addr, 0x00, 64 * sizeof(uint32_t));
-
-    /* Reset the memory state. */
-    mem_reset();
 }
 
 

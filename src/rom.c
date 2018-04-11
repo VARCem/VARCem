@@ -12,7 +12,7 @@
  *		- pc2386 video BIOS is underdumped (16k instead of 24k)
  *		- c386sx16 BIOS fails checksum
  *
- * Version:	@(#)rom.c	1.0.11	2018/04/09
+ * Version:	@(#)rom.c	1.0.12	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,7 +55,7 @@
 
 /* Return the base path for ROM images. */
 wchar_t *
-rom_path(wchar_t *str)
+rom_path(const wchar_t *str)
 {
     static wchar_t temp[1024];
 
@@ -74,7 +74,7 @@ rom_path(wchar_t *str)
 
 /* Used by the available() functions to check if a file exists. */
 int
-rom_present(wchar_t *fn)
+rom_present(const wchar_t *fn)
 {
     FILE *f;
 
@@ -136,7 +136,7 @@ rom_readl(uint32_t addr, void *priv)
 
 /* Load a ROM BIOS from its chips, interleaved mode. */
 int
-rom_load_linear(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
+rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
     FILE *f;
  
@@ -162,7 +162,7 @@ rom_load_linear(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 
 /* Load a ROM BIOS from its chips, linear mode with high bit flipped. */
 int
-rom_load_linear_inverted(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
+rom_load_linear_inverted(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
     FILE *f;
 
@@ -195,7 +195,7 @@ rom_load_linear_inverted(wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *p
 
 /* Load a ROM BIOS from its chips, interleaved mode. */
 int
-rom_load_interleaved(wchar_t *fnl, wchar_t *fnh, uint32_t addr, int sz, int off, uint8_t *ptr)
+rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
     FILE *fl = plat_fopen(rom_path(fnl), L"rb");
     FILE *fh = plat_fopen(rom_path(fnh), L"rb");
@@ -231,7 +231,7 @@ rom_load_interleaved(wchar_t *fnl, wchar_t *fnh, uint32_t addr, int sz, int off,
 
 /* Read and initialize an option ROM. */
 int
-rom_init(rom_t *rom, wchar_t *fn, uint32_t addr, int sz, int mask, int off, uint32_t flags)
+rom_init(rom_t *rom, const wchar_t *fn, uint32_t addr, int sz, int mask, int off, uint32_t flags)
 {
     /* Allocate a buffer for the image. */
     rom->rom = malloc(sz);
@@ -258,7 +258,7 @@ rom_init(rom_t *rom, wchar_t *fn, uint32_t addr, int sz, int mask, int off, uint
 
 
 int
-rom_init_interleaved(rom_t *rom, wchar_t *fnl, wchar_t *fnh, uint32_t addr, int sz, int mask, int off, uint32_t flags)
+rom_init_interleaved(rom_t *rom, const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int sz, int mask, int off, uint32_t flags)
 {
     /* Allocate a buffer for the image. */
     rom->rom = malloc(sz);

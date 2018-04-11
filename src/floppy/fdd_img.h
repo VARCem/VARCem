@@ -9,7 +9,7 @@
  *		Implementation of the raw sector-based floppy image format,
  *		as well as the Japanese FDI, CopyQM, and FDF formats.
  *
- * Version:	@(#)floppy_img.h	1.0.2	2018/03/17
+ * Version:	@(#)floppy_img.h	1.0.3	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,7 @@
 
 
 extern void	img_init(void);
-extern void	img_load(int drive, wchar_t *fn);
+extern int	img_load(int drive, const wchar_t *fn);
 extern void	img_close(int drive);
 
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the floppy drive emulation.
  *
- * Version:	@(#)fdd.h	1.0.4	2018/03/19
+ * Version:	@(#)fdd.h	1.0.5	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -103,24 +103,23 @@ extern int	fdd_get_type(int drive);
 extern int	fdd_get_flags(int drive);
 extern int	fdd_get_densel(int drive);
 
-extern char	*fdd_getname(int type);
-
-extern char	*fdd_get_internal_name(int type);
-extern int	fdd_get_from_internal_name(char *s);
+extern const char *fdd_getname(int type);
+extern const char *fdd_get_internal_name(int type);
+extern int	fdd_get_from_internal_name(const char *s);
 
 extern int	fdd_current_track(int drive);
 
 
-extern void	fdd_load(int drive, wchar_t *fn);
-extern void	fdd_new(int drive, char *fn);
+extern int	fdd_load(int drive, const wchar_t *fn);
+extern void	fdd_new(int drive, const char *fn);
 extern void	fdd_close(int drive);
 extern void	fdd_init(void);
 extern void	fdd_reset(void);
 extern void	fdd_poll(int drive);
-extern void	fdd_poll_0(void* priv);
-extern void	fdd_poll_1(void* priv);
-extern void	fdd_poll_2(void* priv);
-extern void	fdd_poll_3(void* priv);
+extern void	fdd_poll_0(void *priv);
+extern void	fdd_poll_1(void *priv);
+extern void	fdd_poll_2(void *priv);
+extern void	fdd_poll_3(void *priv);
 extern void	fdd_seek(int drive, int track);
 extern void	fdd_readsector(int drive, int sector, int track,
 				int side, int density, int sector_size);
@@ -185,7 +184,7 @@ extern d86f_handler_t	d86f_handler[FDD_NUM];
 
 extern void	d86f_setup(int drive);
 extern void	d86f_destroy(int drive);
-extern int	d86f_export(int drive, wchar_t *fn);
+extern int	d86f_export(int drive, const wchar_t *fn);
 extern void	d86f_unregister(int drive);
 extern void	d86f_common_handlers(int drive);
 extern void	d86f_set_version(int drive, uint16_t version);

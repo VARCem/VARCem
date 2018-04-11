@@ -8,7 +8,7 @@
  *
  *		Definitions for the parallel port-attached devices.
  *
- * Version:	@(#)parallel_dev.h	1.0.2	2018/04/08
+ * Version:	@(#)parallel_dev.h	1.0.3	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,7 @@ typedef struct _lpt_device_ {
 extern const char *parallel_device_get_name(int id);
 extern const char *parallel_device_get_internal_name(int id);
 extern const lpt_device_t *parallel_device_get_device(int id);
-extern int	parallel_device_get_from_internal_name(char *s);
+extern int	parallel_device_get_from_internal_name(const char *s);
 extern void	parallel_devices_init(void);
 extern void	parallel_devices_close(void);
 

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.23	2018/04/09
+ * Version:	@(#)pc.c	1.0.24	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -699,7 +699,7 @@ pc_init_modules(void)
     wchar_t *str;
 
     /* Load the ROMs for the selected machine. */
-    if (! machine_available(machine)) {
+    if ((machine < 0) || !machine_available(machine)) {
 	/* Whoops, selected machine not available. */
 	str = plat_get_string(IDS_2063);
 	mbstowcs(name, machine_getname(), sizeof_w(name));
@@ -712,7 +712,7 @@ pc_init_modules(void)
 	return(2);
     }
 
-    if (! video_card_available(video_old_to_new(vid_card))) {
+    if ((vid_card < 0) || !video_card_available(video_old_to_new(vid_card))) {
 	/* Whoops, selected video not available. */
 	str = plat_get_string(IDS_2064);
 	mbstowcs(name, machine_getname(), sizeof_w(name));

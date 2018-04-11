@@ -8,7 +8,7 @@
  *
  *		Definitions for the Teledisk floppy image format.
  *
- * Version:	@(#)floppy_td0.h	1.0.2	2018/03/17
+ * Version:	@(#)floppy_td0.h	1.0.3	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,7 @@
 
 
 extern void td0_init(void);
-extern void td0_load(int drive, wchar_t *fn);
+extern int td0_load(int drive, const wchar_t *fn);
 extern void td0_close(int drive);
 
 

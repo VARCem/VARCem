@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.11	2018/04/03
+ * Version:	@(#)win.c	1.0.12	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,7 +99,7 @@ static rc_str_t	*lpRCstr2048,
 		*lpRCstr7168;
 
 
-static struct {
+static const struct {
     char	*name;
     int		local;
     int		(*init)(void *);
@@ -465,21 +465,21 @@ plat_getcwd(wchar_t *bufp, int max)
 
 
 int
-plat_chdir(wchar_t *path)
+plat_chdir(const wchar_t *path)
 {
     return(_wchdir(path));
 }
 
 
 FILE *
-plat_fopen(wchar_t *path, wchar_t *mode)
+plat_fopen(const wchar_t *path, wchar_t *mode)
 {
     return(_wfopen(path, mode));
 }
 
 
 void
-plat_remove(wchar_t *path)
+plat_remove(const wchar_t *path)
 {
     _wremove(path);
 }
@@ -498,7 +498,7 @@ plat_append_slash(wchar_t *path)
 
 /* Check if the given path is absolute or not. */
 int
-plat_path_abs(wchar_t *path)
+plat_path_abs(const wchar_t *path)
 {
     if ((path[1] == L':') || (path[0] == L'\\') || (path[0] == L'/'))
 	return(1);
@@ -509,55 +509,55 @@ plat_path_abs(wchar_t *path)
 
 /* Return the last element of a pathname. */
 wchar_t *
-plat_get_basename(wchar_t *path)
+plat_get_basename(const wchar_t *path)
 {
     int c = wcslen(path);
 
     while (c > 0) {
 	if (path[c] == L'/' || path[c] == L'\\')
-	   return(&path[c]);
+	   return((wchar_t *)&path[c]);
        c--;
     }
 
-    return(path);
+    return((wchar_t *)path);
 }
 
 
 wchar_t *
-plat_get_filename(wchar_t *path)
+plat_get_filename(const wchar_t *path)
 {
     int c = wcslen(path) - 1;
 
     while (c > 0) {
 	if (path[c] == L'/' || path[c] == L'\\')
-	   return(&path[c+1]);
+	   return((wchar_t *)&path[c+1]);
        c--;
     }
 
-    return(path);
+    return((wchar_t *)path);
 }
 
 
 wchar_t *
-plat_get_extension(wchar_t *path)
+plat_get_extension(const wchar_t *path)
 {
     int c = wcslen(path) - 1;
 
     if (c <= 0)
-	return(path);
+	return((wchar_t *)path);
 
     while (c && path[c] != L'.')
 		c--;
 
     if (!c)
-	return(&path[wcslen(path)]);
+	return((wchar_t *)&path[wcslen(path)]);
 
-    return(&path[c+1]);
+    return((wchar_t *)&path[c+1]);
 }
 
 
 void
-plat_append_filename(wchar_t *dest, wchar_t *s1, wchar_t *s2)
+plat_append_filename(wchar_t *dest, const wchar_t *s1, const wchar_t *s2)
 {
     wcscat(dest, s1);
     wcscat(dest, s2);
@@ -565,7 +565,7 @@ plat_append_filename(wchar_t *dest, wchar_t *s1, wchar_t *s2)
 
 
 int
-plat_dir_check(wchar_t *path)
+plat_dir_check(const wchar_t *path)
 {
     DWORD dwAttrib = GetFileAttributes(path);
 
@@ -575,7 +575,7 @@ plat_dir_check(wchar_t *path)
 
 
 int
-plat_dir_create(wchar_t *path)
+plat_dir_create(const wchar_t *path)
 {
     return((int)CreateDirectory(path, NULL));
 }
@@ -608,7 +608,7 @@ plat_delay_ms(uint32_t count)
 
 /* Return the VIDAPI number for the given name. */
 int
-plat_vidapi(char *name)
+plat_vidapi(const char *name)
 {
     int i;
 
@@ -625,7 +625,7 @@ plat_vidapi(char *name)
 
 
 /* Return the VIDAPI name for the given number. */
-char *
+const char *
 plat_vidapi_name(int api)
 {
     char *name = "default";

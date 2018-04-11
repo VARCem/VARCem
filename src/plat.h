@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.8	2018/04/01
+ * Version:	@(#)plat.h	1.0.9	2018/04/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -105,27 +105,27 @@ GLOBAL int	infocus;
 #ifdef _WIN32
 extern void	plat_console(int on);
 #endif
-extern wchar_t	*fix_emu_path(wchar_t *str);
-extern FILE	*plat_fopen(wchar_t *path, wchar_t *mode);
-extern void	plat_remove(wchar_t *path);
+extern wchar_t	*fix_emu_path(const wchar_t *str);
+extern FILE	*plat_fopen(const wchar_t *path, wchar_t *mode);
+extern void	plat_remove(const wchar_t *path);
 extern int	plat_getcwd(wchar_t *bufp, int max);
-extern int	plat_chdir(wchar_t *path);
+extern int	plat_chdir(const wchar_t *path);
 extern void	plat_get_exe_name(wchar_t *path, int size);
-extern wchar_t	*plat_get_basename(wchar_t *path);
-extern wchar_t	*plat_get_filename(wchar_t *path);
-extern wchar_t	*plat_get_extension(wchar_t *path);
-extern void	plat_append_filename(wchar_t *dest, wchar_t *s1, wchar_t *s2);
+extern wchar_t	*plat_get_basename(const wchar_t *path);
+extern wchar_t	*plat_get_filename(const wchar_t *path);
+extern wchar_t	*plat_get_extension(const wchar_t *path);
+extern void	plat_append_filename(wchar_t *dest, const wchar_t *s1, const wchar_t *s2);
 extern void	plat_append_slash(wchar_t *path);
-extern int	plat_path_abs(wchar_t *path);
-extern int	plat_dir_check(wchar_t *path);
-extern int	plat_dir_create(wchar_t *path);
+extern int	plat_path_abs(const wchar_t *path);
+extern int	plat_dir_check(const wchar_t *path);
+extern int	plat_dir_create(const wchar_t *path);
 extern uint64_t	plat_timer_read(void);
 extern uint32_t	plat_get_ticks(void);
 extern void	plat_delay_ms(uint32_t count);
 extern void	plat_pause(int p);
 extern void	plat_mouse_capture(int on);
-extern int	plat_vidapi(char *name);
-extern char	*plat_vidapi_name(int api);
+extern int	plat_vidapi(const char *name);
+extern const char	*plat_vidapi_name(int api);
 extern int	plat_setvid(int api);
 extern void	plat_vidsize(int x, int y);
 extern void	plat_setfullscreen(int on);
@@ -171,8 +171,8 @@ extern void     ioctl_close(uint8_t id);
 
 extern void	plat_midi_init(void);
 extern void	plat_midi_close(void);
-extern void	plat_midi_play_msg(uint8_t* val);
-extern void	plat_midi_play_sysex(uint8_t* data, unsigned int len);
+extern void	plat_midi_play_msg(uint8_t *val);
+extern void	plat_midi_play_sysex(uint8_t *data, unsigned int len);
 extern int	plat_midi_write(uint8_t val);
 extern int	plat_midi_get_num_devs();
 extern void	plat_midi_get_dev_name(int num, char *s);
@@ -192,7 +192,7 @@ extern void	thread_reset_event(event_t *arg);
 extern int	thread_wait_event(event_t *arg, int timeout);
 extern void	thread_destroy_event(event_t *arg);
 
-extern mutex_t	*thread_create_mutex(wchar_t *name);
+extern mutex_t	*thread_create_mutex(const wchar_t *name);
 extern void	thread_close_mutex(mutex_t *arg);
 extern int	thread_wait_mutex(mutex_t *arg);
 extern int	thread_release_mutex(mutex_t *mutex);

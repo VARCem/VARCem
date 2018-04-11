@@ -8,7 +8,7 @@
  *
  *		Implementation of the IMD floppy image format.
  *
- * Version:	@(#)fdd_imd.c	1.0.6	2018/03/18
+ * Version:	@(#)fdd_imd.c	1.0.7	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -568,8 +568,8 @@ imd_init(void)
 }
 
 
-void
-imd_load(int drive, wchar_t *fn)
+int
+imd_load(int drive, const wchar_t *fn)
 {
     uint32_t magic = 0;
     uint32_t fsize = 0;
@@ -604,8 +604,7 @@ imd_load(int drive, wchar_t *fn)
     if (dev->f == NULL) {
 	dev->f = plat_fopen(fn, L"rb");
 	if (dev->f == NULL) {
-		memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-		return;
+		return(0);
 	}
 	writeprot[drive] = 1;
     }
@@ -620,8 +619,7 @@ imd_load(int drive, wchar_t *fn)
 	pclog("IMD: Not a valid ImageDisk image\n");
 	fclose(dev->f);
 	free(dev);;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     } else {
 	pclog("IMD: Valid ImageDisk image\n");
     }
@@ -638,8 +636,7 @@ imd_load(int drive, wchar_t *fn)
 	pclog("IMD: No ASCII EOF character\n");
 	fclose(dev->f);
 	free(dev);
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     } else {
 	pclog("IMD: ASCII EOF character found at offset %08X\n", buffer2 - buffer);
     }
@@ -649,8 +646,7 @@ imd_load(int drive, wchar_t *fn)
 	pclog("IMD: File ends after ASCII EOF character\n");
 	fclose(dev->f);
 	free(dev);
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     } else {
 	pclog("IMD: File continues after ASCII EOF character\n");
     }
@@ -768,8 +764,7 @@ imd_load(int drive, wchar_t *fn)
 				fclose(dev->f);
 				free(dev);
 				imd[drive] = NULL;
-				memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-				return;
+				return(0);
 			}
 		}
 
@@ -812,6 +807,8 @@ imd_load(int drive, wchar_t *fn)
     drives[drive].seek = imd_seek;
 
     d86f_common_handlers(drive);
+
+    return(1);
 }
 
 

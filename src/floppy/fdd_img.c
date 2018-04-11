@@ -13,7 +13,7 @@
  *		re-merged with the other files. Much of it is generic to
  *		all formats.
  *
- * Version:	@(#)fdd_img.c	1.0.5	2018/03/17
+ * Version:	@(#)fdd_img.c	1.0.6	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -597,8 +597,8 @@ img_init(void)
 }
 
 
-void
-img_load(int drive, wchar_t *fn)
+int
+img_load(int drive, const wchar_t *fn)
 {
     uint16_t bpb_bps;
     uint16_t bpb_total;
@@ -636,8 +636,7 @@ img_load(int drive, wchar_t *fn)
 	dev->f = plat_fopen(fn, L"rb");
 	if (dev->f == NULL) {
 		free(dev);
-		memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-		return;
+		return(0);
 	}
 	writeprot[drive] = 1;
     }
@@ -1059,8 +1058,7 @@ jump_if_fdf:
 		pclog("Image is bigger than can fit on an ED floppy, ejecting...\n");
 		fclose(dev->f);
 		free(dev);
-		memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-		return;
+		return(0);
 	}
 
 	bpb_sides = dev->sides;
@@ -1115,8 +1113,7 @@ jump_if_fdf:
 	pclog("Image is bigger than can fit on an ED floppy, ejecting...\n");
 	fclose(dev->f);
 	free(dev);
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     }
 
     dev->gap2_size = (temp_rate == 3) ? 41 : 22;
@@ -1128,8 +1125,7 @@ jump_if_fdf:
 	pclog("ERROR: Floppy image of unknown format was inserted into drive %c:!\n", drive + 0x41);
 	fclose(dev->f);
 	free(dev);
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     }
 
     dev->track_width = 0;
@@ -1174,6 +1170,8 @@ jump_if_fdf:
     drives[drive].seek = img_seek;
 
     d86f_common_handlers(drive);
+
+    return(1);
 }
 
 

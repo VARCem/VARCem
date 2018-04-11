@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.2	2018/04/07
+ * Version:	@(#)win_settings_periph.h	1.0.3	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,7 @@
 
 static int	scsi_to_list[20],
 		list_to_scsi[20];
-static char	*hdc_names[16];
+static const char	*hdc_names[16];
 static const int valid_ide_irqs[11] = { 2, 3, 4, 5, 7, 9, 10, 11, 12, 14, 15 };
 
 
@@ -67,7 +67,7 @@ recalc_hdc_list(HWND hdlg, int machine, int use_selected_hdc)
 {
     WCHAR temp[128];
     char old_name[32];
-    char *stransi;
+    const char *stransi;
     HWND h;
     int valid;
     int c, d;

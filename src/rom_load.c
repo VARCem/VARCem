@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.6	2018/03/31
+ * Version:	@(#)rom_load.c	1.0.7	2018/04/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -351,7 +351,7 @@ parser(FILE *fp, romdef_t *r)
 
 /* Load a BIOS ROM image into memory. */
 int
-rom_load_bios(romdef_t *r, wchar_t *fn, int test_only)
+rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 {
     wchar_t path[1024];
     wchar_t temp[1024];

@@ -8,7 +8,7 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.9	2018/03/31
+ * Version:	@(#)rom.h	1.0.10	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -80,22 +80,23 @@ extern uint8_t	rom_read(uint32_t addr, void *p);
 extern uint16_t	rom_readw(uint32_t addr, void *p);
 extern uint32_t	rom_readl(uint32_t addr, void *p);
 
-extern wchar_t	*rom_path(wchar_t *fn);
-extern int	rom_present(wchar_t *fn);
+extern wchar_t	*rom_path(const wchar_t *fn);
+extern int	rom_present(const wchar_t *fn);
 
-extern int	rom_load_linear(wchar_t *fn, uint32_t addr, int sz,
+extern int	rom_load_linear(const wchar_t *fn, uint32_t addr, int sz,
 				int off, uint8_t *ptr);
-extern int	rom_load_interleaved(wchar_t *fnl, wchar_t *fnh, uint32_t addr,
-				     int sz, int off, uint8_t *ptr);
+extern int	rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh,
+				     uint32_t addr, int sz, int off,
+				     uint8_t *ptr);
 
-extern int	rom_init(rom_t *rom, wchar_t *fn, uint32_t address, int size,
-			 int mask, int file_offset, uint32_t flags);
-extern int	rom_init_interleaved(rom_t *rom, wchar_t *fn_low,
-				     wchar_t *fn_high, uint32_t address,
+extern int	rom_init(rom_t *rom, const wchar_t *fn, uint32_t address,
+			 int size, int mask, int file_offset, uint32_t flags);
+extern int	rom_init_interleaved(rom_t *rom, const wchar_t *fn_low,
+				     const wchar_t *fn_high, uint32_t address,
 				     int size, int mask, int file_offset,
 				     uint32_t flags);
 
-extern int	rom_load_bios(romdef_t *r, wchar_t *fn, int test_only);
+extern int	rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only);
 
 
 #endif	/*EMU_ROM_H*/

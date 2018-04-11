@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.4	2018/04/08
+ * Version:	@(#)win_settings_sound.h	1.0.5	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,7 +49,7 @@ static int	midi_to_list[20], list_to_midi[20];
 static int
 mpu401_present(void)
 {
-    char *stransi;
+    const char *stransi;
 
     stransi = sound_card_get_internal_name(temp_sound_card);
     if (stransi != NULL) {
@@ -64,7 +64,7 @@ mpu401_present(void)
 static int
 mpu401_standalone_allow(void)
 {
-    char *n, *md;
+    const char *n, *md;
 
     n = sound_card_get_internal_name(temp_sound_card);
     md = midi_device_get_internal_name(temp_midi_device);
@@ -90,7 +90,7 @@ static BOOL CALLBACK
 sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
-    char *stransi;
+    const char *stransi;
     const device_t *dev;
     HWND h;
     int c, d;

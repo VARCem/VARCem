@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.2	2018/04/07
+ * Version:	@(#)win_settings_network.h	1.0.3	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,7 +92,7 @@ static BOOL CALLBACK
 network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
-    char *stransi;
+    const char *stransi;
     HWND h;
     int c, d;
 

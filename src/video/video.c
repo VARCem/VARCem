@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.12	2018/04/09
+ * Version:	@(#)video.c	1.0.13	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -709,7 +709,7 @@ video_force_resize_set(uint8_t res)
 
 
 void
-loadfont(wchar_t *s, int format)
+loadfont(const wchar_t *s, int format)
 {
     FILE *f;
     int c,d;

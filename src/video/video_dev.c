@@ -12,7 +12,7 @@
  *		an "extern" reference to its device into this file, and
  *		add an entry for it into the table.
  *
- * Version:	@(#)video_dev.c	1.0.15	2018/04/09
+ * Version:	@(#)video_dev.c	1.0.16	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,6 @@
 #include "../timer.h"
 #include "../plat.h"
 #include "video.h"
-//#include "vid_svga.h"
 
 
 #define VIDEO_FLAG_TYPE_CGA     0x00
@@ -317,7 +316,7 @@ video_detect(void)
 
     /* Make sure we have a usable video card. */
     c = 0;
-    for (i=0; i<VID_MAX; i++) {
+    for (i = 0; i < VID_MAX; i++) {
 	vid_present[i] = video_card_available(video_old_to_new(i));
 	c += vid_present[i];
     }
@@ -369,10 +368,10 @@ video_card_available(int card)
 }
 
 
-char *
+const char *
 video_card_getname(int card)
 {
-    return((char *)video_cards[card].name);
+    return(video_cards[card].name);
 }
 
 
@@ -400,17 +399,18 @@ video_card_gettiming(int card)
 
 
 int
-video_card_getid(char *s)
+video_card_getid(const char *s)
 {
     int c = 0;
 
     while (video_cards[c].legacy_id != -1) {
-	if (! strcmp((char *)video_cards[c].name, s))
+	if (! strcmp(video_cards[c].name, s))
 		return(c);
 	c++;
     }
 
-    return(0);
+    /* Not found. */
+    return(-1);
 }
 
 
@@ -436,25 +436,26 @@ video_new_to_old(int card)
 }
 
 
-char *
+const char *
 video_get_internal_name(int card)
 {
-    return((char *)video_cards[card].internal_name);
+    return(video_cards[card].internal_name);
 }
 
 
 int
-video_get_video_from_internal_name(char *s)
+video_get_video_from_internal_name(const char *s)
 {
     int c = 0;
 
     while (video_cards[c].legacy_id != -1) {
-	if (! strcmp((char *)video_cards[c].internal_name, s))
+	if (! strcmp(video_cards[c].internal_name, s))
 		return(video_cards[c].legacy_id);
 	c++;
     }
 
-    return(0);
+    /* Not found. */
+    return(-1);
 }
 
 

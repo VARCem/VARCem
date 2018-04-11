@@ -8,7 +8,7 @@
  *
  *		Implementation of the Teledisk floppy image format.
  *
- * Version:	@(#)fdd_td0.c	1.0.5	2018/03/18
+ * Version:	@(#)fdd_td0.c	1.0.6	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1113,8 +1113,8 @@ td0_init(void)
 }
 
 
-void
-td0_load(int drive, wchar_t *fn)
+int
+td0_load(int drive, const wchar_t *fn)
 {
     td0_t *dev;
     uint32_t i;
@@ -1129,8 +1129,7 @@ td0_load(int drive, wchar_t *fn)
 
     dev->f = plat_fopen(fn, L"rb");
     if (dev->f == NULL) {
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     }
 
     fwriteprot[drive] = writeprot[drive];
@@ -1139,8 +1138,7 @@ td0_load(int drive, wchar_t *fn)
 	pclog("TD0: Not a valid Teledisk image\n");
 	fclose(dev->f);
 	dev->f = NULL;
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     } else {
 	pclog("TD0: Valid Teledisk image\n");
     }
@@ -1157,8 +1155,7 @@ td0_load(int drive, wchar_t *fn)
 	fclose(dev->f);
 	free(dev->imagebuf);
 	free(dev->processed_buf);
-	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	return;
+	return(0);
     } else {
 	pclog("TD0: Initialized successfully\n");
     }
@@ -1182,6 +1179,8 @@ td0_load(int drive, wchar_t *fn)
     drives[drive].seek = td0_seek;
 
     d86f_common_handlers(drive);
+
+    return(1);
 }
 
 

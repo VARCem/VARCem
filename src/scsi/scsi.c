@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.6	2018/04/07
+ * Version:	@(#)scsi.c	1.0.7	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,10 +86,10 @@ typedef struct {
     const char		*internal_name;
     const device_t	*device;
     void		(*reset)(void *p);
-} SCSI_CARD;
+} scsidev_t;
 
 
-static SCSI_CARD scsi_cards[] = {
+static const scsidev_t scsi_cards[] = {
     { "None",			"none",		NULL,		      NULL		  },
     { "[ISA] Adaptec AHA-1540B","aha1540b",	&aha1540b_device,     x54x_device_reset   },
     { "[ISA] Adaptec AHA-1542C","aha1542c",	&aha1542c_device,     x54x_device_reset   },
@@ -108,7 +108,7 @@ static SCSI_CARD scsi_cards[] = {
     { "[PCI] BusLogic BT-958D",	"bt958d",	&buslogic_pci_device, BuslogicDeviceReset },
     { "[PCI] NCR 53C810",	"ncr53c810",	&ncr53c810_pci_device,NULL		  },
     { "[VLB] BusLogic BT-445S",	"bt445s",	&buslogic_445s_device,BuslogicDeviceReset },
-    { "",			"",		NULL,		      NULL		  },
+    { NULL,			NULL,		NULL,		      NULL		  },
 };
 
 
@@ -137,10 +137,10 @@ scsi_card_available(int card)
 }
 
 
-char *
+const char *
 scsi_card_getname(int card)
 {
-    return((char *)scsi_cards[card].name);
+    return(scsi_cards[card].name);
 }
 
 
@@ -160,25 +160,26 @@ scsi_card_has_config(int card)
 }
 
 
-char *
+const char *
 scsi_card_get_internal_name(int card)
 {
-    return((char *)scsi_cards[card].internal_name);
+    return(scsi_cards[card].internal_name);
 }
 
 
 int
-scsi_card_get_from_internal_name(char *s)
+scsi_card_get_from_internal_name(const char *s)
 {
     int c = 0;
 
-    while (strlen((char *)scsi_cards[c].internal_name)) {
-	if (! strcmp((char *)scsi_cards[c].internal_name, s))
+    while (scsi_cards[c].internal_name != NULL) {
+	if (! strcmp(scsi_cards[c].internal_name, s))
 		return(c);
 	c++;
     }
-	
-    return(0);
+
+    /* Not found. */
+    return(-1);
 }
 
 

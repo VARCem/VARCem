@@ -8,7 +8,7 @@
  *
  *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)parallel_dev.c	1.0.1	2018/04/07
+ * Version:	@(#)parallel_dev.c	1.0.2	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,15 +89,16 @@ parallel_device_get_device(int id)
 
 
 int
-parallel_device_get_from_internal_name(char *s)
+parallel_device_get_from_internal_name(const char *s)
 {
     int c = 0;
 
     while (devices[c].internal_name != NULL) {
-	if (! strcmp((char *)devices[c].internal_name, s))
+	if (! strcmp(devices[c].internal_name, s))
 		return(c);
 	c++;
     }
 
+    /* Not found. */
     return(-1);
 }

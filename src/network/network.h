@@ -8,7 +8,7 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.2	2018/03/15
+ * Version:	@(#)network.h	1.0.3	2018/04/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -116,12 +116,12 @@ extern int	net_slirp_reset(const netcard_t *, uint8_t *);
 extern void	net_slirp_close(void);
 extern void	net_slirp_in(uint8_t *, int);
 
-extern int	network_dev_to_id(char *);
+extern int	network_dev_to_id(const char *);
 extern int	network_card_available(int);
-extern char	*network_card_getname(int);
+extern const char *network_card_getname(int);
 extern int	network_card_has_config(int);
-extern char	*network_card_get_internal_name(int);
-extern int	network_card_get_from_internal_name(char *);
+extern const char *network_card_get_internal_name(int);
+extern int	network_card_get_from_internal_name(const char *);
 extern const device_t	*network_card_getdevice(int);
 
 #ifdef __cplusplus
