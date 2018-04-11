@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic NVRAM/CMOS driver.
  *
- * Version:	@(#)nvr.h	1.0.5	2018/03/31
+ * Version:	@(#)nvr.h	1.0.6	2018/04/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,34 +58,34 @@
 
 /* Define a generic RTC/NVRAM device. */
 typedef struct _nvr_ {
-    uint8_t	regs[NVR_MAXSIZE];	/* these are the registers */
     wchar_t	*fn;			/* pathname of image file */
     uint16_t	size;			/* device configuration */
     int8_t	irq;
 
-    int8_t	upd_stat,		/* FIXME: move to private struct */
-		addr;
-    int64_t	upd_ecount,		/* FIXME: move to private struct */
-		onesec_time,
-		onesec_cnt,
-    		rtctime;
+    uint8_t	onesec_cnt;
+    int64_t	onesec_time;
+
+    void	*data;			/* local data */
 
     /* Hooks to device functions. */
     void	(*reset)(struct _nvr_ *);
     void	(*start)(struct _nvr_ *);
     void	(*tick)(struct _nvr_ *);
+
+    uint8_t	regs[NVR_MAXSIZE];	/* these are the registers */
 } nvr_t;
 
 
 extern int	nvr_dosave;
 #ifdef EMU_DEVICE_H
 extern const device_t at_nvr_device;
+extern const device_t ps_nvr_device;
 extern const device_t amstrad_nvr_device;
 #endif
 
 
 extern void	nvr_init(nvr_t *);
-extern wchar_t	*nvr_path(wchar_t *fn);
+extern wchar_t	*nvr_path(const wchar_t *fn);
 extern int	nvr_load(void);
 extern int	nvr_save(void);
 

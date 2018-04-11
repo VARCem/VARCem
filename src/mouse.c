@@ -217,7 +217,7 @@ mouse_get_from_internal_name(const char *s)
     }
 
     /* Not found. */
-    return(-1);
+    return(0);
 }
 
 

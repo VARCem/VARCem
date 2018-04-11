@@ -11,7 +11,7 @@
  *		This header file lists the functions provided by
  *		various platform specific cdrom-ioctl files.
  *
- * Version:	@(#)cdrom_image.h	1.0.2	2018/03/20
+ * Version:	@(#)cdrom_image.h	1.0.3	2018/04/10
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		RichardG, <richardg867@gmail.com>
@@ -44,6 +44,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern int	cdrom_image_do_log;
+
 
 extern int	image_open(uint8_t id, wchar_t *fn);
 extern void	image_reset(uint8_t id);

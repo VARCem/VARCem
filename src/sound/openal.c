@@ -242,7 +242,8 @@ pclog("SOUND: inital()\n");
      * initialize the MIDI buffer and source, otherwise, do not.
      */
     str = midi_device_get_internal_name(midi_device_current);
-    if (!strcmp(str, "none") || !strcmp(str, SYSTEM_MIDI_INT)) init_midi = 1;
+    if ((str != NULL) &&
+		(!strcmp(str, "none") || !strcmp(str, SYSTEM_MIDI_INT))) init_midi = 1;
 
 #ifdef USE_OPENAL
     if (sound_is_float) {

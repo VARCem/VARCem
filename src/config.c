@@ -454,9 +454,7 @@ load_general(void)
 
     window_remember = config_get_int(cat, "window_remember", 0);
     if (window_remember) {
-	p = config_get_string(cat, "window_coordinates", NULL);
-	if (p == NULL)
-		p = "0, 0, 0, 0";
+	p = config_get_string(cat, "window_coordinates", "0, 0, 0, 0");
 	sscanf(p, "%i, %i, %i, %i", &window_w, &window_h, &window_x, &window_y);
     } else {
 	config_delete_var(cat, "window_remember");
@@ -554,11 +552,8 @@ load_input_devices(void)
     int c, d;
     char *p;
 
-    p = config_get_string(cat, "mouse_type", NULL);
-    if (p != NULL)
+    p = config_get_string(cat, "mouse_type", "none");
 	mouse_type = mouse_get_from_internal_name(p);
-      else
-	mouse_type = 0;
 
     joystick_type = config_get_int(cat, "joystick_type", 0);
 
@@ -602,16 +597,12 @@ load_sound(void)
 		config_delete_var(cat, "sndcard");
     }
 
-    if (p != NULL)
+	if (p == NULL)
+		p = "none";
 	sound_card_current = sound_card_get_from_internal_name(p);
-      else
-	sound_card_current = 0;
 
-    p = config_get_string(cat, "midi_device", NULL);
-    if (p != NULL)
+    p = config_get_string(cat, "midi_device", "none");
 	midi_device_current = midi_device_get_from_internal_name(p);
-      else
-	midi_device_current = 0;
 
     mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
 
@@ -670,11 +661,8 @@ load_network(void)
     } else
 	strcpy(network_host, "none");
 
-    p = config_get_string(cat, "net_card", NULL);
-    if (p != NULL)
+    p = config_get_string(cat, "net_card", "none");
 	network_card = network_card_get_from_internal_name(p);
-      else
-	network_card = 0;
 }
 
 
@@ -696,9 +684,7 @@ load_ports(void)
 	parallel_enabled[i] = !!config_get_int(cat, temp, 0);
 
 	sprintf(temp, "parallel%i_device", i);
-	p = (char *)config_get_string(cat, temp, NULL);
-	if (p == NULL)
-		p = "none";
+	p = (char *)config_get_string(cat, temp, "none");
 	parallel_device[i] = parallel_device_get_from_internal_name(p);
     }
 }
@@ -721,10 +707,9 @@ load_other_peripherals(void)
 		config_delete_var(cat, "scsicard");
     }
 
-    if (p != NULL)
+	if (p == NULL)
+		p = "none";
 	scsi_card_current = scsi_card_get_from_internal_name(p);
-      else
-	scsi_card_current = 0;
 
     p = config_get_string(cat, "hdc", NULL);
     if (p == NULL) {
@@ -737,9 +722,7 @@ load_other_peripherals(void)
 
     for (c=2; c<4; c++) {
 	sprintf(temp, "ide_%02i", c + 1);
-	p = config_get_string(cat, temp, NULL);
-	if (p == NULL)
-		p = "0, 00";
+	p = config_get_string(cat, temp, "0, 00");
 	sscanf(p, "%i, %02i", &ide_enable[c], &ide_irq[c]);
     }
 
@@ -865,16 +848,10 @@ load_hard_disks(void)
 	    (hdd[c].bus == HDD_BUS_IDE_PIO_AND_DMA)) {
 		sprintf(tmp2, "%01u:%01u", c>>1, c&1);
 		p = config_get_string(cat, temp, tmp2);
-		if (! strstr(p, ":")) {
-			sscanf(p, "%i", (int *)&hdd[c].ide_channel);
-			hdd[c].ide_channel &= 7;
-		} else {
-			sscanf(p, "%01u:%01u", &board, &dev);
-
-			board &= 3;
-			dev &= 1;
-			hdd[c].ide_channel = (board<<1) + dev;
-		}
+		sscanf(p, "%01u:%01u", &board, &dev);
+		board &= 3;
+		dev &= 1;
+		hdd[c].ide_channel = (board<<1) + dev;
 
 		if (hdd[c].ide_channel > 7)
 			hdd[c].ide_channel = 7;
@@ -1006,11 +983,8 @@ load_removable_devices(void)
 	cdrom_drives[c].prev_host_drive = cdrom_drives[c].host_drive;
 
 	sprintf(temp, "cdrom_%02i_parameters", c+1);
-	p = config_get_string(cat, temp, NULL);
-	if (p != NULL)
-		sscanf(p, "%01u, %s", &cdrom_drives[c].sound_on, s);
-	  else
-		sscanf("0, none", "%01u, %s", &cdrom_drives[c].sound_on, s);
+	p = config_get_string(cat, temp, "0, none");
+	sscanf(p, "%01u, %s", &cdrom_drives[c].sound_on, s);
 	cdrom_drives[c].bus_type = hdd_string_to_bus(s, 1);
 
 	sprintf(temp, "cdrom_%02i_speed", c+1);
@@ -1092,11 +1066,8 @@ load_removable_devices(void)
 
     for (c = 0; c < ZIP_NUM; c++) {
 	sprintf(temp, "zip_%02i_parameters", c+1);
-	p = config_get_string(cat, temp, NULL);
-	if (p != NULL)
-		sscanf(p, "%01u, %s", &zip_drives[c].is_250, s);
-	  else
-		sscanf("0, none", "%01u, %s", &zip_drives[c].is_250, s);
+	p = config_get_string(cat, temp, "0, none");
+	sscanf(p, "%01u, %s", &zip_drives[c].is_250, s);
 	zip_drives[c].bus_type = hdd_string_to_bus(s, 1);
 
 	/* Default values, needed for proper operation of the Settings dialog. */
@@ -1107,16 +1078,11 @@ load_removable_devices(void)
 	    (zip_drives[c].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA)) {
 		sprintf(tmp2, "%01u:%01u", (c+2)>>1, (c+2)&1);
 		p = config_get_string(cat, temp, tmp2);
-		if (! strstr(p, ":")) {
-			sscanf(p, "%i", (int *)&zip_drives[c].ide_channel);
-			zip_drives[c].ide_channel &= 7;
-		} else {
-			sscanf(p, "%01u:%01u", &board, &dev);
+		sscanf(p, "%01u:%01u", &board, &dev);
 
-			board &= 3;
-			dev &= 1;
-			zip_drives[c].ide_channel = (board<<1)+dev;
-		}
+		board &= 3;
+		dev &= 1;
+		zip_drives[c].ide_channel = (board<<1)+dev;
 
 		if (zip_drives[c].ide_channel > 7)
 			zip_drives[c].ide_channel = 7;

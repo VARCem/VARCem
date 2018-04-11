@@ -141,7 +141,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		c = d = 0;
 		while (1) {
 			stransi = scsi_card_getname(c);
-			if (! *stransi)
+			if (stransi == NULL)
 				break;
 
 			scsi_to_list[c] = d;			

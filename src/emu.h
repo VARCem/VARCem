@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.16	2018/04/08
+ * Version:	@(#)emu.h	1.0.17	2018/04/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,16 +52,17 @@
 #define SCREEN_RES_X	640
 #define SCREEN_RES_Y	480
 
-/* Filename and pathname info. */
+/* Pre-defined directory names. */
+#define MACHINES_PATH	L"machines"
 #define NVR_PATH	L"nvr"
 #define ROMS_PATH	L"roms"
-#define MACHINES_PATH	L"machines"
-#define VIDEO_PATH	L"video"
 #define SCREENSHOT_PATH L"screenshots"
+#define VIDEO_PATH	L"video"
 
+/* Pre-defined file names and extensions. */
+#define BIOS_FILE	L"bios.txt"
 #define CONFIG_FILE	L"config.varc"
 #define CONFIG_FILE_EXT	L".varc"
-#define BIOS_FILE	L"bios.txt"
 
 
 #define MIN(a, b)	((a) < (b) ? (a) : (b))
@@ -104,6 +105,7 @@ extern int	vid_cga_contrast,		/* (C) video */
 		force_43,			/* (C) video */
 		vid_card,			/* (C) graphics/video card */
 		video_speed;			/* (C) video */
+extern int	enable_sync;			/* (C) enable time sync */
 extern int	serial_enabled[],		/* (C) enable serial ports */
 		parallel_enabled[],		/* (C) enable LPT ports */
 		parallel_device[],		/* (C) set up LPT devices */
@@ -124,7 +126,6 @@ extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
 		cpu,				/* (C) cpu type */
 		cpu_use_dynarec,		/* (C) cpu uses/needs Dyna */
 		enable_external_fpu;		/* (C) enable external FPU */
-extern int	enable_sync;			/* (C) enable time sync */
 extern int	network_type;			/* (C) net provider type */
 extern int	network_card;			/* (C) net interface num */
 extern char	network_host[512];		/* (C) host network intf */
@@ -153,7 +154,7 @@ extern void	pclog_ex(const char *fmt, va_list);
 extern void	pclog(const char *fmt, ...);
 extern void	fatal(const char *fmt, ...);
 extern void	pc_version(const char *platform);
-extern void	pc_path(wchar_t *dest, int dest_sz, wchar_t *src);
+extern void	pc_path(wchar_t *dest, int dest_sz, const wchar_t *src);
 extern int	pc_init(int argc, wchar_t *argv[]);
 extern int	pc_init_modules(void);
 extern void	pc_close(void *threadid);
@@ -161,7 +162,7 @@ extern void	pc_reset_hard_close(void);
 extern void	pc_reset_hard_init(void);
 extern void	pc_reset_hard(void);
 extern void	pc_reset(int hard);
-extern void	pc_reload(wchar_t *fn);
+extern void	pc_reload(const wchar_t *fn);
 extern void	pc_full_speed(void);
 extern void	pc_speed_changed(void);
 extern void	pc_thread(void *param);

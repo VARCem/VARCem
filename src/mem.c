@@ -1569,12 +1569,12 @@ mem_reset(void)
      * exceed the physical limit of the machine to avoid
      * nasty crashes all over the place.
      */
+    m = mem_size;
     c = machines[machine].max_ram;
     if (AT)
 	c <<= 10;	/* make KB */
-    if (mem_size > c) {
-	pclog("MEM: %luKB exceeds machine limit (%luKB), adjusted!\n",
-							mem_size, c);
+    if (m > c) {
+	pclog("MEM: %luKB exceeds machine limit (%luKB), adjusted!\n", m, c);
 	mem_size = c;
     }
 

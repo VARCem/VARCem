@@ -10,7 +10,7 @@
  *
  * NOTE:	See MSC_ macros for allocation on stack. --FvK
  *
- * Version:	@(#)snd_dbopl.cpp	1.0.4	2018/04/08
+ * Version:	@(#)snd_dbopl.cpp	1.0.5	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,9 +40,9 @@
  *   USA.
  */
 #ifdef _MSC_VER
-  /* for _alloca() and printing of the related error message with pclog() */
+  /* for malloc() and printing of the related error message with pclog() */
 # include <stdio.h>
-# include <malloc.h>
+# include <stdlib.h>
 # include <stdint.h>
 # include "../emu.h"
 #endif
@@ -189,6 +189,10 @@ uint8_t opl_read(int nr, uint16_t addr)
 
 void opl2_update(int nr, int16_t *buffer, int samples)
 {
+#ifdef _MSC_VER
+        static Bit32s *buffer_32 = NULL;
+	static Bit32s buffer_sz = 0;
+#endif
         int c;
 #ifdef _MSC_VER
         /* TODO: Fix this to use a static buffer */
@@ -197,7 +201,12 @@ void opl2_update(int nr, int16_t *buffer, int samples)
             pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
             return;
         }
-        Bit32s *buffer_32 = (Bit32s *)_alloca(sizeof(Bit32s) * samples);
+	if (sizeof(Bit32s) * samples) > buffer_sz) {
+		if (buffer_32 != NULL)
+			free(buffer_32);
+		buffer_sz = sizeof(Bit32s) * samples);
+		buffer_32 = (Bit32s *)malloc(buffer_sz);
+	}
 #else
         Bit32s buffer_32[samples];
 #endif
@@ -210,6 +219,10 @@ void opl2_update(int nr, int16_t *buffer, int samples)
 
 void opl3_update(int nr, int16_t *buffer, int samples)
 {
+#ifdef _MSC_VER
+        static Bit32s *buffer_32 = NULL;
+	static Bit32s buffer_sz = 0;
+#endif
         int c;
 #ifdef _MSC_VER
         /* TODO: Fix this to use a static buffer */
@@ -218,7 +231,12 @@ void opl3_update(int nr, int16_t *buffer, int samples)
             pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
             return;
         }
-        Bit32s *buffer_32 = (Bit32s *)_alloca(sizeof(Bit32s) * samples);
+	if (sizeof(Bit32s) * samples * 2) > buffer_sz) {
+		if (buffer_32 != NULL)
+			free(buffer_32);
+		buffer_sz = sizeof(Bit32s) * samples * 2);
+		buffer_32 = (Bit32s *)malloc(buffer_sz);
+	}
 #else
         Bit32s buffer_32[samples*2];
 #endif

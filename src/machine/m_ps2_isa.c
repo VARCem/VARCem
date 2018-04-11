@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.7	2018/04/09
+ * Version:	@(#)m_ps2_isa.c	1.0.8	2018/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -195,7 +195,7 @@ machine_ps2_m30_286_init(const machine_t *model, void *arg)
         pit_set_out_func(&pit, 1, pit_refresh_timer_at);
         dma16_init();
 	device_add(&keyboard_ps2_device);
-        device_add(&at_nvr_device);
+        device_add(&ps_nvr_device);
         pic2_init();
         ps2board_init();
 	device_add(&ps1vga_device);

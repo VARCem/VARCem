@@ -218,6 +218,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -239,6 +240,7 @@
 /* RTC registers and bit definitions. */
 #define RTC_SECONDS	0
 #define RTC_ALSECONDS	1
+# define AL_DONTCARE	0xc0		/* Alarm time is not set */
 #define RTC_MINUTES	2
 #define RTC_ALMINUTES	3
 #define RTC_HOURS	4
@@ -275,40 +277,53 @@
 # define REGC_UF	0x10
 #define RTC_REGD	13
 # define REGD_VRT	0x80
-#define RTC_CENTURY	0x32		/* century register */
+#define RTC_CENTURY_AT	0x32		/* century register for AT etc */
+#define RTC_CENTURY_PS	0x37		/* century register for PS/1 PS/2 */
 #define RTC_REGS	14		/* number of registers */
+
+
+typedef struct {
+    int8_t      stat;
+    uint8_t	cent;
+
+    uint16_t	addr;
+
+    int64_t     ecount,
+                rtctime;
+} local_t;
 
 
 /* Get the current NVR time. */
 static void
-time_get(uint8_t *regs, struct tm *tm)
+time_get(nvr_t *nvr, struct tm *tm)
 {
+    local_t *local = (local_t *)nvr->data;
     int8_t temp;
 
-    if (regs[RTC_REGB] & REGB_DM) {
+    if (nvr->regs[RTC_REGB] & REGB_DM) {
 	/* NVR is in Binary data mode. */
-	tm->tm_sec = regs[RTC_SECONDS];
-	tm->tm_min = regs[RTC_MINUTES];
-	temp = regs[RTC_HOURS];
-	tm->tm_wday = (regs[RTC_DOW] - 1);
-	tm->tm_mday = regs[RTC_DOM];
-	tm->tm_mon = (regs[RTC_MONTH] - 1);
-	tm->tm_year = regs[RTC_YEAR];
-	tm->tm_year += (regs[RTC_CENTURY] * 100) - 1900;
+	tm->tm_sec = nvr->regs[RTC_SECONDS];
+	tm->tm_min = nvr->regs[RTC_MINUTES];
+	temp = nvr->regs[RTC_HOURS];
+	tm->tm_wday = (nvr->regs[RTC_DOW] - 1);
+	tm->tm_mday = nvr->regs[RTC_DOM];
+	tm->tm_mon = (nvr->regs[RTC_MONTH] - 1);
+	tm->tm_year = nvr->regs[RTC_YEAR];
+	tm->tm_year += (nvr->regs[local->cent] * 100) - 1900;
     } else {
 	/* NVR is in BCD data mode. */
-	tm->tm_sec = RTC_DCB(regs[RTC_SECONDS]);
-	tm->tm_min = RTC_DCB(regs[RTC_MINUTES]);
-	temp = RTC_DCB(regs[RTC_HOURS]);
-	tm->tm_wday = (RTC_DCB(regs[RTC_DOW]) - 1);
-	tm->tm_mday = RTC_DCB(regs[RTC_DOM]);
-	tm->tm_mon = (RTC_DCB(regs[RTC_MONTH]) - 1);
-	tm->tm_year = RTC_DCB(regs[RTC_YEAR]);
-	tm->tm_year += (RTC_DCB(regs[RTC_CENTURY]) * 100) - 1900;
+	tm->tm_sec = RTC_DCB(nvr->regs[RTC_SECONDS]);
+	tm->tm_min = RTC_DCB(nvr->regs[RTC_MINUTES]);
+	temp = RTC_DCB(nvr->regs[RTC_HOURS]);
+	tm->tm_wday = (RTC_DCB(nvr->regs[RTC_DOW]) - 1);
+	tm->tm_mday = RTC_DCB(nvr->regs[RTC_DOM]);
+	tm->tm_mon = (RTC_DCB(nvr->regs[RTC_MONTH]) - 1);
+	tm->tm_year = RTC_DCB(nvr->regs[RTC_YEAR]);
+	tm->tm_year += (RTC_DCB(nvr->regs[local->cent]) * 100) - 1900;
     }
 
     /* Adjust for 12/24 hour mode. */
-    if (regs[RTC_REGB] & REGB_2412)
+    if (nvr->regs[RTC_REGB] & REGB_2412)
 	tm->tm_hour = temp;
       else
 	tm->tm_hour = ((temp & ~RTC_AMPM)%12) + ((temp&RTC_AMPM) ? 12 : 0);
@@ -317,49 +332,50 @@ time_get(uint8_t *regs, struct tm *tm)
 
 /* Set the current NVR time. */
 static void
-time_set(uint8_t *regs, struct tm *tm)
+time_set(nvr_t *nvr, struct tm *tm)
 {
+    local_t *local = (local_t *)nvr->data;
     int year = (tm->tm_year + 1900);
 
-    if (regs[RTC_REGB] & REGB_DM) {
+    if (nvr->regs[RTC_REGB] & REGB_DM) {
 	/* NVR is in Binary data mode. */
-	regs[RTC_SECONDS] = tm->tm_sec;
-	regs[RTC_MINUTES] = tm->tm_min;
-	regs[RTC_DOW] = (tm->tm_wday + 1);
-	regs[RTC_DOM] = tm->tm_mday;
-	regs[RTC_MONTH] = (tm->tm_mon + 1);
-	regs[RTC_YEAR] = (year % 100);
-	regs[RTC_CENTURY] = (year / 100);
+	nvr->regs[RTC_SECONDS] = tm->tm_sec;
+	nvr->regs[RTC_MINUTES] = tm->tm_min;
+	nvr->regs[RTC_DOW] = (tm->tm_wday + 1);
+	nvr->regs[RTC_DOM] = tm->tm_mday;
+	nvr->regs[RTC_MONTH] = (tm->tm_mon + 1);
+	nvr->regs[RTC_YEAR] = (year % 100);
+	nvr->regs[local->cent] = (year / 100);
 
-	if (regs[RTC_REGB] & REGB_2412) {
+	if (nvr->regs[RTC_REGB] & REGB_2412) {
 		/* NVR is in 24h mode. */
-		regs[RTC_HOURS] = tm->tm_hour;
+		nvr->regs[RTC_HOURS] = tm->tm_hour;
 	} else {
 		/* NVR is in 12h mode. */
-		regs[RTC_HOURS] = (tm->tm_hour % 12) ? (tm->tm_hour % 12) : 12;
+		nvr->regs[RTC_HOURS] = (tm->tm_hour % 12) ? (tm->tm_hour % 12) : 12;
 		if (tm->tm_hour > 11)
-			regs[RTC_HOURS] |= RTC_AMPM;
+			nvr->regs[RTC_HOURS] |= RTC_AMPM;
 	}
     } else {
 	/* NVR is in BCD data mode. */
-	regs[RTC_SECONDS] = RTC_BCD(tm->tm_sec);
-	regs[RTC_MINUTES] = RTC_BCD(tm->tm_min);
-	regs[RTC_DOW] = (RTC_BCD(tm->tm_wday) + 1);
-	regs[RTC_DOM] = RTC_BCD(tm->tm_mday);
-	regs[RTC_MONTH] = (RTC_BCD(tm->tm_mon) + 1);
-	regs[RTC_YEAR] = RTC_BCD(year % 100);
-	regs[RTC_CENTURY] = RTC_BCD(year / 100);
+	nvr->regs[RTC_SECONDS] = RTC_BCD(tm->tm_sec);
+	nvr->regs[RTC_MINUTES] = RTC_BCD(tm->tm_min);
+	nvr->regs[RTC_DOW] = (RTC_BCD(tm->tm_wday) + 1);
+	nvr->regs[RTC_DOM] = RTC_BCD(tm->tm_mday);
+	nvr->regs[RTC_MONTH] = (RTC_BCD(tm->tm_mon) + 1);
+	nvr->regs[RTC_YEAR] = RTC_BCD(year % 100);
+	nvr->regs[local->cent] = RTC_BCD(year / 100);
 
-	if (regs[RTC_REGB] & REGB_2412) {
+	if (nvr->regs[RTC_REGB] & REGB_2412) {
 		/* NVR is in 24h mode. */
-		regs[RTC_HOURS] = RTC_BCD(tm->tm_hour);
+		nvr->regs[RTC_HOURS] = RTC_BCD(tm->tm_hour);
 	} else {
 		/* NVR is in 12h mode. */
-		regs[RTC_HOURS] = (tm->tm_hour % 12)
+		nvr->regs[RTC_HOURS] = (tm->tm_hour % 12)
 					? RTC_BCD(tm->tm_hour % 12)
 					: RTC_BCD(12);
 		if (tm->tm_hour > 11)
-			regs[RTC_HOURS] |= RTC_AMPM;
+			nvr->regs[RTC_HOURS] |= RTC_AMPM;
 	}
     }
 }
@@ -367,11 +383,10 @@ time_set(uint8_t *regs, struct tm *tm)
 
 /* Check if the current time matches a set alarm time. */
 static int8_t
-check_alarm(uint8_t *regs, int8_t addr)
+check_alarm(nvr_t *nvr, int8_t addr)
 {
-#define ALARM_DONTCARE 0xc0
-    return((regs[addr+1] == regs[addr]) ||
-	   ((regs[addr+1] & ALARM_DONTCARE) == ALARM_DONTCARE));
+    return((nvr->regs[addr+1] == nvr->regs[addr]) ||
+	   ((nvr->regs[addr+1] & AL_DONTCARE) == AL_DONTCARE));
 }
 
 
@@ -380,6 +395,7 @@ static void
 timer_update(void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
+    local_t *local = (local_t *)nvr->data;
     struct tm tm;
 
     if (! (nvr->regs[RTC_REGB] & REGB_SET)) {
@@ -387,23 +403,22 @@ timer_update(void *priv)
 	nvr_time_get(&tm);
 
 	/* Update registers with current time. */
-	time_set(nvr->regs, &tm);
-
+	time_set(nvr, &tm);
 
 	/* Clear update status. */
-	nvr->upd_stat = 0x00;
+	local->stat = 0x00;
 
 	/* Check for any alarms we need to handle. */
-	if (check_alarm(nvr->regs, RTC_SECONDS) &&
-	    check_alarm(nvr->regs, RTC_MINUTES) &&
-	    check_alarm(nvr->regs, RTC_HOURS)) {
+	if (check_alarm(nvr, RTC_SECONDS) &&
+	    check_alarm(nvr, RTC_MINUTES) &&
+	    check_alarm(nvr, RTC_HOURS)) {
 		nvr->regs[RTC_REGC] |= REGC_AF;
 		if (nvr->regs[RTC_REGB] & REGB_AIE) {
 			nvr->regs[RTC_REGC] |= REGC_IRQF;
 
 			/* Generate an interrupt. */
 			if (nvr->irq != -1)
-				picint(1<<nvr->irq);
+				picint(1 << nvr->irq);
 		}
 	}
 
@@ -417,11 +432,11 @@ timer_update(void *priv)
 
 		/* Generate an interrupt. */
 		if (nvr->irq != -1)
-			picint(1<<nvr->irq);
+			picint(1 << nvr->irq);
 	}
     }
 
-    nvr->upd_ecount = 0;
+    local->ecount = 0;
 }
 
 
@@ -429,14 +444,15 @@ timer_update(void *priv)
 static void
 timer_recalc(nvr_t *nvr, int add)
 {
+    local_t *local = (local_t *)nvr->data;
     int64_t c, nt;
 
     c = 1ULL << ((nvr->regs[RTC_REGA] & REGA_RS) - 1);
     nt = (int64_t)(RTCCONST * c * (1<<TIMER_SHIFT));
     if (add)
-	nvr->rtctime += nt;
-      else if (nvr->rtctime > nt)
-	nvr->rtctime = nt;
+	local->rtctime += nt;
+      else if (local->rtctime > nt)
+	local->rtctime = nt;
 }
 
 
@@ -444,9 +460,10 @@ static void
 timer_intr(void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
+    local_t *local = (local_t *)nvr->data;
 
     if (! (nvr->regs[RTC_REGA] & REGA_RS)) {
-	nvr->rtctime = 0x7fffffff;
+	local->rtctime = 0x7fffffff;
 	return;
     }
 
@@ -459,7 +476,7 @@ timer_intr(void *priv)
 
 	/* Generate an interrupt. */
 	if (nvr->irq != -1)
-		picint(1<<nvr->irq);
+		picint(1 << nvr->irq);
     }
 }
 
@@ -468,11 +485,18 @@ timer_intr(void *priv)
 static void
 timer_tick(nvr_t *nvr)
 {
-    if (nvr->regs[RTC_REGB] & REGB_SET) return;
+    local_t *local = (local_t *)nvr->data;
 
-    nvr->upd_stat = REGA_UIP;
+    /* Only update it there is no SET in progress. */
+    if (! (nvr->regs[RTC_REGB] & REGB_SET)) {
+	/* Set the UIP bit, announcing the update. */
+	local->stat = REGA_UIP;
 
-    nvr->upd_ecount = (int64_t)((244.0 + 1984.0) * TIMER_USEC);
+	timer_recalc(nvr, 0);
+
+	/* Schedule the actual update. */
+	local->ecount = (int64_t)((244.0 + 1984.0) * TIMER_USEC);
+    }
 }
 
 
@@ -481,20 +505,21 @@ static void
 nvr_write(uint16_t addr, uint8_t val, void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
+    local_t *local = (local_t *)nvr->data;
     struct tm tm;
     uint8_t old;
 
     cycles -= ISA_CYCLES(8);
 
     if (addr & 1) {
-	old = nvr->regs[nvr->addr];
-	switch(nvr->addr) {
+	old = nvr->regs[local->addr];
+	switch(local->addr) {
 		case RTC_REGA:
 			nvr->regs[RTC_REGA] = val;
 			if (val & REGA_RS)
 				timer_recalc(nvr, 1);
 			  else
-				nvr->rtctime = 0x7fffffff;
+				local->rtctime = 0x7fffffff;
 			break;
 
 		case RTC_REGB:
@@ -511,25 +536,25 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
 			break;
 
 		default:		/* non-RTC registers are just NVRAM */
-			if (nvr->regs[nvr->addr] != val) {
-				nvr->regs[nvr->addr] = val;
+			if (nvr->regs[local->addr] != val) {
+				nvr->regs[local->addr] = val;
 				nvr_dosave = 1;
 			}
 			break;
 	}
 
-	if ((nvr->addr < RTC_REGA) || (nvr->addr == RTC_CENTURY)) {
-		if ((nvr->addr != 1) && (nvr->addr != 3) && (nvr->addr != 5)) {
+	if ((local->addr < RTC_REGA) || (local->addr == local->cent)) {
+		if ((local->addr != 1) && (local->addr != 3) && (local->addr != 5)) {
 			if ((old != val) && !enable_sync) {
 				/* Update internal clock. */
-				time_get(nvr->regs, &tm);
+				time_get(nvr, &tm);
 				nvr_time_set(&tm);
 				nvr_dosave = 1;
 			}
 		}
 	}
     } else {
-	nvr->addr = (val & (nvr->size - 1));
+	local->addr = (val & (nvr->size - 1));
 	if (!(machines[machine].flags & MACHINE_MCA) &&
 	    (romset != ROM_IBMPS1_2133))
 		nmi_mask = (~val & 0x80);
@@ -542,17 +567,18 @@ static uint8_t
 nvr_read(uint16_t addr, void *priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
+    local_t *local = (local_t *)nvr->data;
     uint8_t ret;
 
     cycles -= ISA_CYCLES(8);
 
-    if (addr & 1) switch(nvr->addr) {
+    if (addr & 1) switch(local->addr) {
 	case RTC_REGA:
-		ret = (nvr->regs[RTC_REGA] & 0x7f) | nvr->upd_stat;
+		ret = (nvr->regs[RTC_REGA] & 0x7f) | local->stat;
 		break;
 
 	case RTC_REGC:
-		picintc(1<<nvr->irq);
+		picintc(1 << nvr->irq);
 		ret = nvr->regs[RTC_REGC];
 		nvr->regs[RTC_REGC] = 0x00;
 		break;
@@ -563,10 +589,10 @@ nvr_read(uint16_t addr, void *priv)
 		break;
 
 	default:
-		ret = nvr->regs[nvr->addr];
+		ret = nvr->regs[local->addr];
 		break;
     } else {
-	ret = nvr->addr;
+	ret = local->addr;
     }
 
     return(ret);
@@ -577,11 +603,13 @@ nvr_read(uint16_t addr, void *priv)
 static void
 nvr_reset(nvr_t *nvr)
 {
+    local_t *local = (local_t *)nvr->data;
+
     memset(nvr->regs, 0x00, RTC_REGS);
     nvr->regs[RTC_DOM] = 1;
     nvr->regs[RTC_MONTH] = 1;
     nvr->regs[RTC_YEAR] = RTC_BCD(80);
-    nvr->regs[RTC_CENTURY] = RTC_BCD(19);
+    nvr->regs[local->cent] = RTC_BCD(19);
 }
 
 
@@ -595,23 +623,24 @@ nvr_start(nvr_t *nvr)
     if (enable_sync) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
-	time_set(nvr->regs, &tm);
+	time_set(nvr, &tm);
     } else {
 	/* Set the internal clock from the chip time. */
-	time_get(nvr->regs, &tm);
+	time_get(nvr, &tm);
 	nvr_time_set(&tm);
     }
 
     /* Start the RTC. */
     nvr->regs[RTC_REGA] = (REGA_RS2|REGA_RS1);
     nvr->regs[RTC_REGB] = REGB_2412;
-    timer_recalc(nvr, 0);
+    timer_recalc(nvr, 1);
 }
 
 
 static void *
-nvr_init_common(int irq)
+nvr_at_init(const device_t *info)
 {
+    local_t *local;
     nvr_t *nvr;
 
     /* Allocate an NVR for this machine. */
@@ -619,9 +648,28 @@ nvr_init_common(int irq)
     if (nvr == NULL) return(NULL);
     memset(nvr, 0x00, sizeof(nvr_t));
 
+    local = (local_t *)malloc(sizeof(local_t));
+    memset(local, 0x00, sizeof(local_t));
+    nvr->data = local;
+
     /* This is machine specific. */
     nvr->size = machines[machine].nvrsz;
-    nvr->irq = irq;
+    switch(info->local) {
+	case 0:		/* standard AT */
+		nvr->irq = 8;
+		local->cent = RTC_CENTURY_AT;
+		break;
+
+	case 1:		/* PS/1 or PS/2 */
+		nvr->irq = 8;
+		local->cent = RTC_CENTURY_PS;
+		break;
+
+	case 2:		/* Amstrad PC's */
+		nvr->irq = 1;
+		local->cent = RTC_CENTURY_AT;
+		break;
+    }
 
     /* Set up any local handlers here. */
     nvr->reset = nvr_reset;
@@ -632,22 +680,14 @@ nvr_init_common(int irq)
     nvr_init(nvr);
 
     /* Start the timers. */
-    timer_add(timer_update, &nvr->upd_ecount, &nvr->upd_ecount, nvr);
-    timer_add(timer_intr, &nvr->rtctime, TIMER_ALWAYS_ENABLED, nvr);
+    timer_add(timer_update, &local->ecount, &local->ecount, nvr);
+    timer_add(timer_intr, &local->rtctime, TIMER_ALWAYS_ENABLED, nvr);
 
     /* Set up the I/O handler for this device. */
     io_sethandler(0x0070, 2,
 		  nvr_read,NULL,NULL, nvr_write,NULL,NULL, nvr);
 
     return(nvr);
-}
-
-
-static void *
-nvr_at_init(const device_t *info)
-{
-    /* The PC/AT and compatibles use IRQ8, Amstrad uses IRQ1. */
-    return(nvr_init_common(info->local));
 }
 
 
@@ -659,6 +699,9 @@ nvr_at_close(void *priv)
     if (nvr->fn != NULL)
 	free(nvr->fn);
 
+    if (nvr->data != NULL)
+	free(nvr->data);
+
     free(nvr);
 }
 
@@ -666,7 +709,16 @@ nvr_at_close(void *priv)
 const device_t at_nvr_device = {
     "PC/AT NVRAM",
     DEVICE_ISA | DEVICE_AT,
-    8,
+    0,
+    nvr_at_init, nvr_at_close, NULL,
+    NULL, NULL, NULL,
+    NULL
+};
+
+const device_t ps_nvr_device = {
+    "PS/1 or PS/2 NVRAM",
+    DEVICE_PS2,
+    1,
     nvr_at_init, nvr_at_close, NULL,
     NULL, NULL, NULL,
     NULL
@@ -675,56 +727,8 @@ const device_t at_nvr_device = {
 const device_t amstrad_nvr_device = {
     "Amstrad NVRAM",
     MACHINE_ISA | MACHINE_AT,
-    1,
+    2,
     nvr_at_init, nvr_at_close, NULL,
     NULL, NULL, NULL,
     NULL
 };
-#if 0
-void
-nvr_at_init(int irq)
-{
-    nvr_t *nvr;
-
-    /* Allocate an NVR for this machine. */
-    nvr = (nvr_t *)malloc(sizeof(nvr_t));
-    if (nvr == NULL) return;
-    memset(nvr, 0x00, sizeof(nvr_t));
-
-    /* This is machine specific. */
-    nvr->size = machines[machine].nvrsz;
-    nvr->irq = irq;
-
-    /* Set up any local handlers here. */
-    nvr->reset = nvr_reset;
-    nvr->start = nvr_start;
-    nvr->tick = timer_tick;
-
-    /* Initialize the generic NVR. */
-    nvr_init(nvr);
-
-    /* Start the timers. */
-    timer_add(timer_update, &nvr->upd_ecount, &nvr->upd_ecount, nvr);
-    timer_add(timer_intr, &nvr->rtctime, TIMER_ALWAYS_ENABLED, nvr);
-
-    /* Set up the I/O handler for this device. */
-    io_sethandler(0x0070, 2,
-		  nvr_read,NULL,NULL, nvr_write,NULL,NULL, nvr);
-
-    nvrp = nvr;
-}
-
-
-void
-nvr_at_close(void)
-{
-    if (nvrp == NULL) return;
-
-    if (nvrp->fn != NULL)
-	free(nvrp->fn);
-
-    free(nvrp);
-
-    nvrp = NULL;
-}
-#endif

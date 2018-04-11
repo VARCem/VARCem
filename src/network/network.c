@@ -417,7 +417,7 @@ network_dev_to_id(const char *devname)
     }
 
     /* Not found. */
-    return(-1);
+    return(0);
 }
 
 
@@ -489,5 +489,5 @@ network_card_get_from_internal_name(const char *s)
     }
 
     /* Not found. */
-    return(-1);
+    return(0);
 }

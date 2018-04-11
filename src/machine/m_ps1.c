@@ -508,7 +508,7 @@ ps1_setup(int model)
 	io_sethandler(0x0324, 1,
 		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
 
-#if 1
+#if 0
 	rom_init(&ps->high_rom,
 		 L"machines/ibm/ps1_2011/f80000_shell.bin",
 		 0xf80000, 0x80000, 0x7ffff, 0, MEM_MAPPING_EXTERNAL);
@@ -530,11 +530,10 @@ ps1_setup(int model)
 	io_sethandler(0x00e0, 2,
 		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
 
-#if 1
 	rom_init(&ps->high_rom,
-		 L"machines/ibmps1_2121/fc0000.bin",
+		 L"machines/ibm/ps1_2121/rom_shell.bin",
 		 0xfc0000, 0x20000, 0x1ffff, 0, MEM_MAPPING_EXTERNAL);
-#else
+#if 0
 	rom_init(&ps->high_rom,
 		 L"machines/ibmps1_2121/fc0000_shell.bin",
 		 0xfc0000, 0x40000, 0x3ffff, 0, MEM_MAPPING_EXTERNAL);
@@ -565,7 +564,7 @@ ps1_common_init(const machine_t *model, void *arg)
     dma16_init();
     pic2_init();
 
-    device_add(&at_nvr_device);
+    device_add(&ps_nvr_device);
 
     if (romset != ROM_IBMPS1_2011)
 	device_add(&ide_isa_device);

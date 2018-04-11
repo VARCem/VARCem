@@ -1211,7 +1211,7 @@ machine_ps2_common_init(const machine_t *model, void *arg)
         ps2_dma_init();
         pit_ps2_init();
 
-        device_add(&at_nvr_device);
+        device_add(&ps_nvr_device);
 
 	device_add(&keyboard_ps2_mca_device);
 

@@ -119,6 +119,7 @@ int	vid_cga_contrast = 0,			/* (C) video */
 	force_43 = 0,				/* (C) video */
 	vid_card = 0,				/* (C) graphics/video card */
 	video_speed = 0;			/* (C) video */
+int	enable_sync = 0;			/* (C) enable time sync */
 int	serial_enabled[] = {0,0},		/* (C) enable serial ports */
 	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
 	parallel_device[] = {0,0,0},		/* (C) set up LPT devices */
@@ -139,7 +140,6 @@ int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
 	cpu_use_dynarec = 0,			/* (C) cpu uses/needs Dyna */
 	cpu = 3,				/* (C) cpu type */
 	enable_external_fpu = 0;		/* (C) enable external FPU */
-int	enable_sync = 0;			/* (C) enable time sync */
 int	network_type;				/* (C) net provider type */
 int	network_card;				/* (C) net interface num */
 char	network_host[512];			/* (C) host network intf */
@@ -332,7 +332,7 @@ pc_version(const char *platform)
  * path, well, nothing we can do here.
  */
 void
-pc_path(wchar_t *dst, int sz, wchar_t *src)
+pc_path(wchar_t *dst, int sz, const wchar_t *src)
 {
     int i = wcslen(usr_path);
 
@@ -641,7 +641,7 @@ pc_speed_changed(void)
 /* Re-load system configuration and restart. */
 /* FIXME: this has to be reviewed! */
 void
-pc_reload(wchar_t *fn)
+pc_reload(const wchar_t *fn)
 {
     int i;
 
