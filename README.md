@@ -30,7 +30,7 @@ credits and specific copyrights can be found in each of the source files.
 Community and Support
 ---------------------
 Information, downloads, additional modules and such can be found on our
-[Website](http://varcem.dyndns.org/). Live support and general help can
+[Website](http://www.varcem.com/). Live support and general help can
 also be found on our [IRC channel](https://kiwiirc.com/client/irc.freenode.net/?nick=VARCem_Guest|?#VARCem)
 
 
@@ -49,4 +49,4 @@ can work on it, and/or talk to us on the IRC channel. We cannot promise a
 fix, but will try the best we can !
 
 
-Last Updated: 3/08/2018
+Last Updated: 4/16/2018
