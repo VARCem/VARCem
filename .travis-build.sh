@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # VARCem	Virtual ARchaeological Computer EMulator.
 #		An emulator of (mostly) x86-based PC systems and devices,
@@ -6,14 +7,12 @@
 #
 #		This file is part of the VARCem Project.
 #
-#		Project file for the Travis-CI remote builder service.
+#		Build script for the Travis-CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.7	2018/04/17
+# Version:	@(#).travis-build.sh	1.0.1	2018/04/17
 #
-# Authors:	Natalia Portillo, <claunia@claunia.com>
-#		Fred N. van Kempen, <decwiz@yahoo.com>
+# Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2018 Natalia Portillo.
 #		Copyright 2018 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
@@ -46,46 +45,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-sudo: required
-dist: trusty
+    [ "x${DEBUG}" = "xy" ] && TARGET=debug
+    if [ "x${DEV_BUILD}" = "xy" ]; then
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
+    elif [ "x${DEBUG}" = "xy" ]; then
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_debug-x86"
+    else
+	TARGET="win-${TRAVIS_BUILD_NUMBER}-x86"
+    fi
+    echo "Building VARCem, build #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
 
-language: c
+    cd src
 
-env:
-  global:
-    - MAKEFLAGS="-j 4"
+    make -f win/mingw/Makefile.MinGW BUILD=${TRAVIS_BUILD_NUMBER}
 
-  matrix:
-    - PROG=VARCem CROSS=y DEBUG=n
-    - PROG=VACRCem-debug CROSS=y DEBUG=y
-    - PROG=VACRCem-dev CROSS=y DEBUG=y DEV_BUILD=y
+    if [ $? = 0 ]; then
+	echo "Build #${TRAVIS_BUILD_NUMBER} OK, packing up."
 
-script:
-  - ./.travis-build.sh
+	zip -9 ../${TARGET}.zip *.exe
+    fi
 
-addons:
-  apt:
-    packages:
-      - binutils-mingw-w64-i686
-      - gcc-mingw-w64-i686
-      - binutils-mingw-w64-x86-64
-      - gcc-mingw-w64-x86-64
-      - gcc-mingw-w64
-      - mingw-w64
-#     - mingw-w64-i686-libpng (not available as APT)
-
-notifications:
-  irc:
-    channels:
-      - "chat.freenode.net#varcem-dev"
-    template:
-      - "Commit %{commit} by %{author} in %{branch} %{result} after %{duration}."
-      - "Commit changes: %{commit_subject}"
-      - "Build details on %{build_url}"
-#     - "Details on %{build_url}, changes on %{compare_url}"
-
-after_success:
-  - ./.travis-deploy.sh
-
+    exit 0
 
 # End of file.
