@@ -45,6 +45,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+    # Ignore the cron builds.
+    if [ $TRAVIS_EVENT_TYPE -eq "cron" ]; exit 0; fi
+
     [ "x${DEBUG}" = "xy" ] && TARGET=debug
     if [ "x${DEV_BUILD}" = "xy" ]; then
 	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
