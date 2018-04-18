@@ -9,7 +9,7 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.1	2018/04/17
+# Version:	@(#).travis-build.sh	1.0.2	2018/04/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #

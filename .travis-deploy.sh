@@ -7,9 +7,9 @@
 #
 #		This file is part of the VARCem Project.
 #
-#		Build script for the Travis CI remote builder service.
+#		Deployment script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-deploy.sh	1.0.1	2018/04/17
+# Version:	@(#).travis-deploy.sh	1.0.2	2018/04/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -84,7 +84,6 @@
 	exit 1
     fi
 
-    echo Upload done.
     exit 0
 
 # End of file.
