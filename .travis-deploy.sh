@@ -46,7 +46,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     # Ignore the cron builds.
-    [ $TRAVIS_EVENT_TYPE = "cron" ] && exit 0
+    [ "x${TRAVIS_EVENT_TYPE}" = "xcron" ] && exit 0
 
     [ "x${DEBUG}" = "xy" ] && TARGET=debug
     if [ "x${DEV_BUILD}" = "xy" ]; then
@@ -66,12 +66,15 @@
 	exit 1
     fi
 
+    # We only need the first few characters of the commit ID.
+    export COMMIT=${TRAVIS_COMMIT::7}
+
     echo "Uploading VARCem build #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
 
     curl -# -X POST \
        -F "type=${BTYPE}" \
        -F "build=${TRAVIS_BUILD_NUMBER}" \
-       -F "id=${TRAVIS_COMMIT}" \
+       -F "id=${COMMIT}" \
        -F "notes=not available" \
        -F "file_name=@${TARGET}.zip" \
        ${SITE_URL}

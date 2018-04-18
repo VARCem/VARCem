@@ -57,6 +57,10 @@
 
     cd src
 
+    # We only need the first few characters of the commit ID.
+    export COMMIT=${TRAVIS_COMMIT::7}
+
+    # Build the project.
     make -f win/mingw/Makefile.MinGW BUILD=${TRAVIS_BUILD_NUMBER}
 
     if [ $? = 0 ]; then
