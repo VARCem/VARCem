@@ -8,7 +8,7 @@
  *
  *		Implementation of 8250-style serial port.
  *
- * Version:	@(#)serial.c	1.0.2	2018/04/19
+ * Version:	@(#)serial.c	1.0.3	2018/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,10 +117,14 @@ clear_fifo(SERIAL *dev)
 
 
 static void
-write_fifo(SERIAL *dev, uint8_t dat)
+write_fifo(SERIAL *dev, uint8_t *ptr, uint8_t len)
 {
-    dev->fifo[dev->fifo_write] = dat;
-    dev->fifo_write = (dev->fifo_write + 1) & 0xff;
+    while (len-- > 0) {
+	dev->fifo[dev->fifo_write] = *ptr++;
+	dev->fifo_write = (dev->fifo_write + 1) & 0xff;
+	/*OVERFLOW NOT DETECTED*/
+    }
+
     if (! (dev->lsr & 1)) {
 	dev->lsr |= 1;
 	dev->int_status |= SERIAL_INT_RECEIVE;
@@ -182,7 +186,7 @@ serial_write(uint16_t addr, uint8_t val, void *priv)
                 dev->int_status |= SERIAL_INT_TRANSMIT;
                 update_ints(dev);
                 if (dev->mcr & 0x10)
-                        write_fifo(dev, val);
+                        write_fifo(dev, &val, 1);
                 break;
 
 	case 1:

@@ -49,7 +49,7 @@
  *
  *		Based on an early driver for MINIX 1.5.
  *
- * Version:	@(#)mouse_bus.c	1.0.4	2018/04/19
+ * Version:	@(#)mouse_bus.c	1.0.5	2018/04/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -624,8 +624,10 @@ bm_poll(int x, int y, int z, int b, void *priv)
 	return(1);
 
     /* If we are not enabled, return. */
-    if (! (dev->flags & FLAG_ENABLED))
+    if (! (dev->flags & FLAG_ENABLED)) {
 	pclog("bm_poll(): Mouse not enabled\n");
+	return(1);
+    }
 
 #if 0
     pclog("%s: poll(%d,%d,%d,%02x) %d\n",
@@ -679,7 +681,7 @@ bm_poll(int x, int y, int z, int b, void *priv)
 		picint(1 << dev->irq);
     }
 
-    return(0);
+    return(1);
 }
 
 

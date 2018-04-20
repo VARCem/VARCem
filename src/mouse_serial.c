@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.4	2018/04/19
+ * Version:	@(#)mouse_serial.c	1.0.6	2018/04/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -97,6 +97,7 @@ static void
 ser_timer(void *priv)
 {
     mouse_t *dev = (mouse_t *)priv;
+    uint8_t b[2];
 
     dev->delay = 0LL;
 
@@ -106,27 +107,24 @@ ser_timer(void *priv)
     switch(dev->type) {
 	case MOUSE_MSYSTEMS:
 		/* Identifies Mouse Systems serial mouse. */
-		dev->serial->write_fifo(dev->serial, 'H');
+		b[0] = 'H';
+		dev->serial->write_fifo(dev->serial, b, 1);
 		break;
 
 	case MOUSE_MICROSOFT:
-		/* Identifies a Microsoft Serial mouse. */
-		dev->serial->write_fifo(dev->serial, 'M');
-		if (dev->flags & FLAG_3BTN)
-			dev->serial->write_fifo(dev->serial, '3');
-		break;
-
 	case MOUSE_LOGITECH:
-		/* Identifies a Logitech Serial mouse. */
-		dev->serial->write_fifo(dev->serial, 'M');
+		/* Identifies a Microsoft/Logitech Serial mouse. */
+		b[0] = 'M'; b[1] = '3';
 		if (dev->flags & FLAG_3BTN)
-			dev->serial->write_fifo(dev->serial, '3');
+			dev->serial->write_fifo(dev->serial, b, 2);
+		  else
+			dev->serial->write_fifo(dev->serial, b, 1);
 		break;
 
 	case MOUSE_MSWHEEL:
 		/* Identifies multi-button Microsoft Wheel Mouse. */
-		dev->serial->write_fifo(dev->serial, 'M');
-		dev->serial->write_fifo(dev->serial, 'Z');
+		b[0] = 'M'; b[1] = 'Z';
+		dev->serial->write_fifo(dev->serial, b, 2);
 		break;
 
 	default:
@@ -196,12 +194,10 @@ ser_poll(int x, int y, int z, int b, void *priv)
     }
 
     /* Send the packet to the bottom-half of the attached port. */
-    if (dev->serial != NULL) {
-	for (b = 0; b < len; b++)
-		dev->serial->write_fifo(dev->serial, buff[b]);
-    }
+    if (dev->serial != NULL)
+	dev->serial->write_fifo(dev->serial, buff, len);
 
-    return(0);
+    return(1);
 }
 
 
@@ -211,10 +207,8 @@ ser_close(void *priv)
     mouse_t *dev = (mouse_t *)priv;
 
     /* Detach serial port from the mouse. */
-    if ((dev != NULL) && (dev->serial != NULL)) {
-	dev->serial->rts_callback = NULL;
-	dev->serial->rts_callback_p = NULL;
-    }
+    if ((dev != NULL) && (dev->serial != NULL))
+	(void)serial_attach(dev->port + 1, NULL, NULL);
 
     free(dev);
 }

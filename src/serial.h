@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.3	2018/04/19
+ * Version:	@(#)serial.h	1.0.4	2018/04/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -83,11 +83,7 @@ typedef struct SERIAL {
 
     /* Access to internal functions. */
     void	(*clear_fifo)(struct SERIAL *);
-#ifdef WALTJE_SERIAL
-    void	(*write_fifo)(struct SERIAL *, uint8_t, int);
-#else
-    void	(*write_fifo)(struct SERIAL *, uint8_t);
-#endif
+    void	(*write_fifo)(struct SERIAL *, uint8_t *, uint8_t);
 
     /* Data for the RTS-toggle callback. */
     void	(*rts_callback)(struct SERIAL *, void *);

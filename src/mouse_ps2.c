@@ -8,7 +8,7 @@
  *
  *		Implementation of PS/2 series Mouse devices.
  *
- * Version:	@(#)mouse_ps2.c	1.0.4	2018/04/19
+ * Version:	@(#)mouse_ps2.c	1.0.5	2018/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -192,11 +192,11 @@ ps2_poll(int x, int y, int z, int b, void *priv)
     mouse_t *dev = (mouse_t *)priv;
     uint8_t buff[3];
 
-    if (!x && !y && !z && b == dev->b) return(0xff);
+    if (!x && !y && !z && b == dev->b) return(1);
 
-    if (! (dev->flags & FLAG_ENABLED)) return(0xff);
+    if (! (dev->flags & FLAG_ENABLED)) return(1);
 
-    if (! mouse_scan) return(0xff);
+    if (! mouse_scan) return(1);
 
     dev->x += x;
     dev->y -= y;
@@ -238,7 +238,7 @@ ps2_poll(int x, int y, int z, int b, void *priv)
 	dev->x = dev->y = dev->z = 0;
     }
 
-    return(0);
+    return(1);
 }
 
 
