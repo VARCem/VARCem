@@ -11,7 +11,7 @@
  * NOTES:	This code should be re-merged into a single init() with a
  *		'fullscreen' argument, indicating FS mode is requested.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.3	2018/03/17
+ * Version:	@(#)win_ddraw.cpp	1.0.4	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -349,9 +349,9 @@ ddraw_fs_size(RECT w_rect, RECT *r_dest, int w, int h)
     int ratio_w, ratio_h;
     double hsr, gsr, ra, d;
 
-    pclog("video_fullscreen_scale = %i\n", video_fullscreen_scale);
+    pclog("vid_fullscreen_scale = %i\n", vid_fullscreen_scale);
 
-    switch (video_fullscreen_scale) {
+    switch (vid_fullscreen_scale) {
 	case FULLSCR_SCALE_FULL:
 		ddraw_fs_size_default(w_rect, r_dest);
 		break;

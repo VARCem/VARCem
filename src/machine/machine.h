@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.15	2018/04/10
+ * Version:	@(#)machine.h	1.0.17	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -188,10 +188,11 @@ enum {
 #define MACHINE_MCA		0x000100	/* sys has MCA bus */
 #define MACHINE_PCI		0x000200	/* sys has PCI bus */
 #define MACHINE_AGP		0x000400	/* sys has AGP bus */
-#define MACHINE_HDC		0x001000	/* sys has int HDC */
-#define MACHINE_HDC_PS2		0x002000	/* sys has int PS/2 HDC */
-#define MACHINE_MOUSE		0x004000	/* sys has int mouse */
-#define MACHINE_VIDEO		0x008000	/* sys has int video */
+#define MACHINE_HDC		0x011000	/* sys has int HDC */
+#define MACHINE_HDC_PS2		0x022000	/* sys has int PS/2 HDC */
+#define MACHINE_MOUSE		0x044000	/* sys has int mouse */
+#define MACHINE_SOUND		0x080000	/* sys has int sound */
+#define MACHINE_VIDEO		0x100000	/* sys has int video */
 
 #define IS_ARCH(m, a)		(machines[(m)].flags & (a)) ? 1 : 0;
 
@@ -324,6 +325,9 @@ extern const device_t	m_pcjr_device;
 extern void	machine_ps1_m2011_init(const machine_t *, void *);
 extern void	machine_ps1_m2121_init(const machine_t *, void *);
 extern void	machine_ps1_m2133_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t	m_ps1_device;
+#endif
 
 extern void	machine_ps2_m30_286_init(const machine_t *, void *);
 extern void	machine_ps2_model_50_init(const machine_t *, void *);

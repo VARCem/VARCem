@@ -8,11 +8,7 @@
  *
  *		Handling of ROM image files.
  *
- * NOTES:	- pc2386 BIOS is corrupt (JMP at F000:FFF0 points to RAM)
- *		- pc2386 video BIOS is underdumped (16k instead of 24k)
- *		- c386sx16 BIOS fails checksum
- *
- * Version:	@(#)rom.c	1.0.12	2018/04/10
+ * Version:	@(#)rom.c	1.0.13	2018/04/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,8 +78,9 @@ rom_present(const wchar_t *fn)
     if (f != NULL) {
 	(void)fclose(f);
 	return(1);
-    } else
-	pclog("ROM: image for '%ls' not found!\n", fn);
+    }
+
+    pclog("ROM: image for '%ls' not found!\n", fn);
 
     return(0);
 }
@@ -160,39 +157,6 @@ rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 }
 
 
-/* Load a ROM BIOS from its chips, linear mode with high bit flipped. */
-int
-rom_load_linear_inverted(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
-{
-    FILE *f;
-
-    f = plat_fopen(rom_path(fn), L"rb");
-    if (f == NULL) {
-	pclog("ROM: image '%ls' not found\n", fn);
-	return(0);
-    }
-
-    /* Make sure we only look at the base-256K offset. */
-    if (addr >= 0x40000)
-	addr = 0;
-      else
-	addr &= 0x03ffff;
-
-    (void)fseek(f, 0, SEEK_END);
-    if (ftell(f) < sz) {
-	(void)fclose(f);
-	return(0);
-    }
-
-    (void)fseek(f, off, SEEK_SET);
-    (void)fread(ptr+addr+0x10000, sz >> 1, 1, f);
-    (void)fread(ptr+addr, sz >> 1, 1, f);
-    (void)fclose(f);
-
-    return(1);
-}
-
-
 /* Load a ROM BIOS from its chips, interleaved mode. */
 int
 rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int sz, int off, uint8_t *ptr)
@@ -242,7 +206,7 @@ rom_init(rom_t *rom, const wchar_t *fn, uint32_t addr, int sz, int mask, int off
 	/* Nope.. clean up. */
 	free(rom->rom);
 	rom->rom = NULL;
-	return(-1);
+	return(0);
     }
 
     rom->mask = mask;
@@ -253,7 +217,7 @@ rom_init(rom_t *rom, const wchar_t *fn, uint32_t addr, int sz, int mask, int off
 		    mem_write_null, mem_write_nullw, mem_write_nulll,
 		    rom->rom, flags | MEM_MAPPING_ROM, rom);
 
-    return(0);
+    return(1);
 }
 
 
@@ -269,7 +233,7 @@ rom_init_interleaved(rom_t *rom, const wchar_t *fnl, const wchar_t *fnh, uint32_
 	/* Nope.. clean up. */
 	free(rom->rom);
 	rom->rom = NULL;
-	return(-1);
+	return(0);
     }
 
     rom->mask = mask;
@@ -280,5 +244,5 @@ rom_init_interleaved(rom_t *rom, const wchar_t *fnl, const wchar_t *fnh, uint32_
 		    mem_write_null, mem_write_nullw, mem_write_nulll,
 		    rom->rom, flags | MEM_MAPPING_ROM, rom);
 
-    return(0);
+    return(1);
 }

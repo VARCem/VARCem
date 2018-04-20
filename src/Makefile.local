@@ -10,7 +10,7 @@
 #		settings, so we can avoid changing the main one for all of
 #		our local setups.
 #
-# Version:	@(#)Makefile.local	1.0.6	2018/04/18
+# Version:	@(#)Makefile.local	1.0.7	2018/04/18
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -55,7 +55,7 @@
 #PROG	:= yourexe
 
 # Build Platform.
-BUILD	:= mingw/Makefile.MinGW
+SCRIPT	:= mingw/Makefile.MinGW
 
 # Various compile-time options.
 # -DROM_TRACE=0xc800 traces ROM access from segment C800
@@ -112,7 +112,7 @@ DYNAREC		:= y
 #########################################################################
 #	    Include the master Makefile.MinGW for the rest.		#
 #########################################################################
-include win/$(BUILD)
+include win/$(SCRIPT)
 
 
 # End of Makefile.local.

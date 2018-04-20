@@ -12,7 +12,7 @@
  *
  *		Used by DTK PKM-0038S E-2
  *
- * Version:	@(#)m_at_sis85c471.c	1.0.6	2018/04/07
+ * Version:	@(#)m_at_sis85c471.c	1.0.7	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,8 +93,10 @@ sis_write(uint16_t port, uint8_t val, void *priv)
 				serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
 				serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
 			} else {
+#if 0
 				serial_remove(1);
 				serial_remove(2);
+#endif
 			}
 		}
 

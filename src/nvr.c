@@ -148,9 +148,9 @@ nvr_init(nvr_t *nvr)
 
     /* Set up the NVR file's name. */
     sprintf(temp, "%s.nvr", machine_get_internal_name());
-    c = strlen(temp);
-    nvr->fn = (wchar_t *)malloc(c*sizeof(wchar_t) + 1);
-    mbstowcs(nvr->fn, temp, c + 1);
+    c = strlen(temp) + 1;
+    nvr->fn = (wchar_t *)malloc(c*sizeof(wchar_t));
+    mbstowcs(nvr->fn, temp, c);
 
     /* Initialize the internal clock as needed. */
     memset(&intclk, 0x00, sizeof(intclk));
@@ -227,7 +227,8 @@ nvr_load(void)
     if (saved_nvr == NULL) return(0);
 
     /* Clear out any old data. */
-    memset(saved_nvr->regs, 0xff, sizeof(saved_nvr->regs));
+//    memset(saved_nvr->regs, 0xff, sizeof(saved_nvr->regs));
+    memset(saved_nvr->regs, 0x00, sizeof(saved_nvr->regs));
 
     /* Set the defaults. */
     if (saved_nvr->reset != NULL)

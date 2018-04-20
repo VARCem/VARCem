@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.6	2018/04/10
+ * Version:	@(#)hdc.h	1.0.8	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,10 @@
 				 * least 7 devices, with each device being
 				 * able to support 8 units, but hey... */
 
+#define HDC_NONE	0
+#define HDC_INTERNAL	1
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,6 +62,11 @@ extern const device_t	mfm_at_wd1003_device;		/* mfm_at_wd1003 */
 extern const device_t	esdi_at_wd1007vse1_device;	/* esdi_at */
 extern const device_t	esdi_ps2_device;		/* esdi_mca */
 
+extern const device_t	xta_isa_device;			/* xta_isa */
+
+extern const device_t	xtide_device;			/* xtide_xt */
+extern const device_t	xtide_acculogic_device;		/* xtide_ps2 */
+
 extern const device_t	ide_isa_device;			/* isa_ide */
 extern const device_t	ide_isa_2ch_device;		/* isa_ide_2ch */
 extern const device_t	ide_isa_2ch_opt_device;		/* isa_ide_2ch_opt */
@@ -66,9 +75,7 @@ extern const device_t	ide_vlb_2ch_device;		/* vlb_ide_2ch */
 extern const device_t	ide_pci_device;			/* pci_ide */
 extern const device_t	ide_pci_2ch_device;		/* pci_ide_2ch */
 
-extern const device_t	xtide_device;			/* xtide_xt */
 extern const device_t	xtide_at_device;		/* xtide_at */
-extern const device_t	xtide_acculogic_device;		/* xtide_ps2 */
 extern const device_t	xtide_at_ps2_device;		/* xtide_at_ps2 */
 #endif
 

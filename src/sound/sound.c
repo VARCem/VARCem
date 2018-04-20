@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.9	2018/04/09
+ * Version:	@(#)sound.c	1.0.10	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,7 +69,6 @@ typedef struct {
 
 
 int		sound_pos_global = 0;
-int		sound_gain = 0;
 volatile int	soundon = 1;
 
 
@@ -295,7 +294,7 @@ sound_reset(void)
 {
     int i;
 
-    pclog("SOUND: reset (current=%d)\n", sound_card_current);
+    pclog("SOUND: reset (current=%d)\n", sound_card);
 
     /* Kill the CD-Audio thread. */
     sound_cd_stop();

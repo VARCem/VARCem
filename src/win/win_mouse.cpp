@@ -8,7 +8,7 @@
  *
  *		Mouse interface to host device.
  *
- * Version:	@(#)win_mouse.cpp	1.0.2	2018/03/07
+ * Version:	@(#)win_mouse.cpp	1.0.3	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -70,7 +70,7 @@ win_mouse_init(void)
 	fatal("plat_mouse_init: CreateDevice failed\n");
 
     if (FAILED(lpdi_mouse->SetCooperativeLevel(hwndMain,
-	       DISCL_FOREGROUND | (video_fullscreen ? DISCL_EXCLUSIVE : DISCL_NONEXCLUSIVE))))
+	       DISCL_FOREGROUND | (vid_fullscreen ? DISCL_EXCLUSIVE : DISCL_NONEXCLUSIVE))))
 	fatal("plat_mouse_init: SetCooperativeLevel failed\n");
 
     if (FAILED(lpdi_mouse->SetDataFormat(&c_dfDIMouse)))
@@ -101,7 +101,7 @@ mouse_poll(void)
 	lpdi_mouse->GetDeviceState(sizeof(DIMOUSESTATE), (LPVOID)&mousestate);
     }                
 
-    if (mouse_capture || video_fullscreen) {
+    if (mouse_capture || vid_fullscreen) {
 	if (x != mousestate.lX || y != mousestate.lY || z != mousestate.lZ) {
 		mouse_x += mousestate.lX;
 		mouse_y += mousestate.lY;

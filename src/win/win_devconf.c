@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.9	2018/04/07
+ * Version:	@(#)win_devconf.c	1.0.10	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,8 +56,114 @@
 #include "win.h"
 
 
-static device_t	*config_device;
-static uint8_t	deviceconfig_changed = 0;
+static const device_t	*devconf_device;
+static int8_t		devconf_changed = 0;
+
+
+static void
+dlg_init(HWND hdlg)
+{
+    wchar_t temp[512];
+    char ansitmp[512];
+    const device_config_t *cfg;
+    const device_config_selection_t *sel;
+    const device_t *dev = devconf_device;
+    int c, id, num, val;
+    wchar_t* str;
+    HWND h;
+
+    id = IDC_CONFIG_BASE;
+    cfg = dev->config;
+
+    while (cfg->type != -1) {
+	sel = cfg->selection;
+	h = GetDlgItem(hdlg, id);
+
+	switch (cfg->type) {
+		case CONFIG_BINARY:
+			val = config_get_int(dev->name,
+					     cfg->name, cfg->default_int);
+			SendMessage(h, BM_SETCHECK, val, 0);
+			id++;
+			break;
+
+		case CONFIG_SELECTION:
+			val = config_get_int(dev->name,
+					     cfg->name, cfg->default_int);
+			c = 0;
+			while (sel->description && sel->description[0]) {
+				mbstowcs(temp, sel->description, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)temp);
+				if (val == sel->value)
+					SendMessage(h, CB_SETCURSEL, c, 0);
+				sel++;
+				c++;
+			}
+			id += 2;
+			break;
+
+		case CONFIG_MIDI:
+			val = config_get_int(dev->name,
+					     cfg->name, cfg->default_int);
+			num  = plat_midi_get_num_devs();
+			for (c = 0; c < num; c++) {
+				plat_midi_get_dev_name(c, ansitmp);
+				mbstowcs(temp, ansitmp, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)temp);
+				if (val == c)
+					SendMessage(h, CB_SETCURSEL, c, 0);
+			}
+			id += 2;
+			break;
+
+		case CONFIG_SPINNER:
+			val = config_get_int(dev->name,
+					     cfg->name, cfg->default_int);
+			_swprintf(temp, L"%i", val);
+			SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp);
+			id += 2;
+			break;
+
+		case CONFIG_FNAME:
+			str = config_get_wstring(dev->name, cfg->name, NULL);
+			if (str != NULL)
+				SendMessage(h, WM_SETTEXT, 0, (LPARAM)str);
+			id += 3;
+			break;
+
+		case CONFIG_HEX16:
+			val = config_get_hex16(dev->name,
+					       cfg->name, cfg->default_int);
+			c = 0;
+			while (sel->description && sel->description[0]) {
+				mbstowcs(temp, sel->description, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)temp);
+				if (val == sel->value)
+					SendMessage(h, CB_SETCURSEL, c, 0);
+				sel++;
+				c++;
+			}
+			id += 2;
+			break;
+
+		case CONFIG_HEX20:
+			val = config_get_hex20(dev->name,
+					       cfg->name, cfg->default_int);
+			c = 0;
+			while (sel->description && sel->description[0]) {
+				mbstowcs(temp, sel->description, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)temp);
+				if (val == sel->value)
+					SendMessage(h, CB_SETCURSEL, c, 0);
+				sel++;
+				c++;
+			}
+			id += 2;
+			break;
+	}
+	cfg++;
+    }
+}
 
 
 #ifdef __amd64__
@@ -67,235 +173,132 @@ static BOOL CALLBACK
 #endif
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    wchar_t ws[512];
-    char s[512];
+    wchar_t ws[512], temp[512];
+    char s[512], *ansistr;
+    const device_config_selection_t *sel;
+    const device_t *dev = devconf_device;
+    const device_config_t *cfg = dev->config;
+    int c, cid, changed, id, val;
     HWND h;
-    int val_int;
-    int id;
-    int c;
-    int num;
-    int changed;
-    int cid;
-    const device_config_t *config;
-    LPTSTR lptsTemp;
 
     switch (message) {
 	case WM_INITDIALOG:
-		id = IDC_CONFIG_BASE;
-		config = config_device->config;
-		lptsTemp = (LPTSTR)malloc(512);
-
-		while (config->type != -1) {
-			const device_config_selection_t *selection = config->selection;
-			h = GetDlgItem(hdlg, id);
-
-			switch (config->type) {
-				case CONFIG_BINARY:
-					val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
-
-					SendMessage(h, BM_SETCHECK, val_int, 0);
-
-					id++;
-					break;
-
-				case CONFIG_SELECTION:
-					val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
-
-					c = 0;
-					while (selection->description && selection->description[0]) {
-						mbstowcs(lptsTemp, selection->description, strlen(selection->description) + 1);
-						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)lptsTemp);
-						if (val_int == selection->value)
-							SendMessage(h, CB_SETCURSEL, c, 0);
-						selection++;
-						c++;
-					}
-					id += 2;
-					break;
-
-				case CONFIG_MIDI:
-					val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
-
-					num  = plat_midi_get_num_devs();
-					for (c = 0; c < num; c++) {
-						plat_midi_get_dev_name(c, s);
-						mbstowcs(lptsTemp, s, strlen(s) + 1);
-						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)lptsTemp);
-						if (val_int == c)
-							SendMessage(h, CB_SETCURSEL, c, 0);
-					}
-					id += 2;
-					break;
-
-				case CONFIG_SPINNER:
-					val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
-
-					_swprintf(ws, L"%i", val_int);
-					SendMessage(h, WM_SETTEXT, 0, (LPARAM)ws);
-					id += 2;
-					break;
-
-				case CONFIG_FNAME:
-					{
-					wchar_t* str = config_get_wstring((char *)config_device->name, (char *)config->name, 0);
-					if (str)
-						SendMessage(h, WM_SETTEXT, 0, (LPARAM)str);
-					id += 3;
-					}
-					break;
-
-				case CONFIG_HEX16:
-					val_int = config_get_hex16((char *)config_device->name, (char *)config->name, config->default_int);
-
-					c = 0;
-					while (selection->description && selection->description[0]) {
-						mbstowcs(lptsTemp, selection->description, strlen(selection->description) + 1);
-						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)lptsTemp);
-						if (val_int == selection->value)
-							SendMessage(h, CB_SETCURSEL, c, 0);
-						selection++;
-						c++;
-					}
-					id += 2;
-					break;
-
-				case CONFIG_HEX20:
-					val_int = config_get_hex20((char *)config_device->name, (char *)config->name, config->default_int);
-
-					c = 0;
-					while (selection->description && selection->description[0]) {
-						mbstowcs(lptsTemp, selection->description, strlen(selection->description) + 1);
-						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)lptsTemp);
-						if (val_int == selection->value)
-							SendMessage(h, CB_SETCURSEL, c, 0);
-						selection++;
-						c++;
-					}
-					id += 2;
-					break;
-			}
-			config++;
-		}
-
-		free(lptsTemp);
+		dlg_init(hdlg);
 		return TRUE;
 
 	case WM_COMMAND:
 		cid = LOWORD(wParam);
 		if (cid == IDOK) {
 			id = IDC_CONFIG_BASE;
-			config = config_device->config;
 			changed = 0;
 
-			while (config->type != -1) {
-				const device_config_selection_t *selection = config->selection;
+			while (cfg->type != -1) {
+				sel = cfg->selection;
 				h = GetDlgItem(hdlg, id);
 
-				switch (config->type) {
+				switch (cfg->type) {
 					case CONFIG_BINARY:
-						val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
+						val = config_get_int(dev->name, cfg->name, cfg->default_int);
 
-						if (val_int != SendMessage(h, BM_GETCHECK, 0, 0))
+						if (val != SendMessage(h, BM_GETCHECK, 0, 0))
 							changed = 1;
 						id++;
 						break;
 
 					case CONFIG_SELECTION:
-						val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
+						val = config_get_int(dev->name, cfg->name, cfg->default_int);
 
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
 
 						for (; c > 0; c--)
-							selection++;
+							sel++;
 
-						if (val_int != selection->value)
+						if (val != sel->value)
 							changed = 1;
 						id += 2;
 						break;
 
 					case CONFIG_MIDI:
-						val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
+						val = config_get_int(dev->name, cfg->name, cfg->default_int);
 
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
 
-						if (val_int != c)
+						if (val != c)
 							changed = 1;
 						id += 2;
 						break;
 
 					case CONFIG_FNAME:
-						{
-						char* str = config_get_string((char *)config_device->name, (char *)config->name, (char*)"");
-						SendMessage(h, WM_GETTEXT, 511, (LPARAM)s);
-						if (strcmp(str, s))
-								changed = 1;
-							id += 3;
-						}
+						ansistr = config_get_string(dev->name, cfg->name, "");
+						SendMessage(h, WM_GETTEXT, sizeof(s), (LPARAM)s);
+						if (strcmp(ansistr, s))
+							changed = 1;
+						id += 3;
 						break;
 
 					case CONFIG_SPINNER:
-						val_int = config_get_int((char *)config_device->name, (char *)config->name, config->default_int);
-						if (val_int > config->spinner.max)
-							val_int = config->spinner.max;
-						else if (val_int < config->spinner.min)
-							val_int = config->spinner.min;
+						val = config_get_int(dev->name, cfg->name, cfg->default_int);
+						if (val > cfg->spinner.max)
+							val = cfg->spinner.max;
+						else if (val < cfg->spinner.min)
+							val = cfg->spinner.min;
 
-						SendMessage(h, WM_GETTEXT, 79, (LPARAM)ws);
-						wcstombs(s, ws, 79); /*tic*/
+						SendMessage(h, WM_GETTEXT, sizeof_w(temp), (LPARAM)temp);
+						wcstombs(s, temp, 79); /*tic*/
 						sscanf(s, "%i", &c);
 
-						if (val_int != c)
+						if (val != c)
 							changed = 1;
 						id += 2;
 						break;
 
 					case CONFIG_HEX16:
-						val_int = config_get_hex16((char *)config_device->name, (char *)config->name, config->default_int);
+						val = config_get_hex16(dev->name, cfg->name, cfg->default_int);
 
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
 
 						for (; c > 0; c--)
-							selection++;
+							sel++;
 
-						if (val_int != selection->value)
+						if (val != sel->value)
 							changed = 1;
 						id += 2;
 						break;
 
 					case CONFIG_HEX20:
-						val_int = config_get_hex20((char *)config_device->name, (char *)config->name, config->default_int);
+						val = config_get_hex20(dev->name, cfg->name, cfg->default_int);
 
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
 
 						for (; c > 0; c--)
-							selection++;
+							sel++;
 
-						if (val_int != selection->value)
+						if (val != sel->value)
 							changed = 1;
 						id += 2;
 						break;
 				}
-				config++;
+				cfg++;
 			}
 
 			if (! changed) {
-				deviceconfig_changed = 0;
+				devconf_changed = 0;
 				EndDialog(hdlg, 0);
 				return TRUE;
 			}
 
-			deviceconfig_changed = 1;
+			devconf_changed = 1;
 
 			id = IDC_CONFIG_BASE;
-			config = config_device->config;
+			cfg = dev->config;
 				
-			while (config->type != -1) {
-				const device_config_selection_t *selection = config->selection;
+			while (cfg->type != -1) {
+				sel = cfg->selection;
 				h = GetDlgItem(hdlg, id);
 
-				switch (config->type) {
+				switch (cfg->type) {
 					case CONFIG_BINARY:
-						config_set_int((char *)config_device->name, (char *)config->name, SendMessage(h, BM_GETCHECK, 0, 0));
+						config_set_int(dev->name, cfg->name, SendMessage(h, BM_GETCHECK, 0, 0));
 						
 						id++;
 						break;
@@ -303,22 +306,22 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_SELECTION:
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
 						for (; c > 0; c--)
-							selection++;
-						config_set_int((char *)config_device->name, (char *)config->name, selection->value);
+							sel++;
+						config_set_int(dev->name, cfg->name, sel->value);
 
 						id += 2;
 						break;
 
 					case CONFIG_MIDI:
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
-						config_set_int((char *)config_device->name, (char *)config->name, c);
+						config_set_int(dev->name, cfg->name, c);
 
 						id += 2;
 						break;
 
 					case CONFIG_FNAME:
 						SendMessage(h, WM_GETTEXT, 511, (LPARAM)ws);
-						config_set_wstring((char *)config_device->name, (char *)config->name, ws);
+						config_set_wstring(dev->name, cfg->name, ws);
 
 						id += 3;
 						break;
@@ -327,12 +330,12 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 SendMessage(h, WM_GETTEXT, 79, (LPARAM)ws);
 						wcstombs(s, ws, 79);
 						sscanf(s, "%i", &c);
-						if (c > config->spinner.max)
-							c = config->spinner.max;
-						else if (c < config->spinner.min)
-							c = config->spinner.min;
+						if (c > cfg->spinner.max)
+							c = cfg->spinner.max;
+						else if (c < cfg->spinner.min)
+							c = cfg->spinner.min;
 
-						config_set_int((char *)config_device->name, (char *)config->name, c);
+						config_set_int(dev->name, cfg->name, c);
 
 						id += 2;
 						break;
@@ -340,8 +343,8 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_HEX16:
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
 						for (; c > 0; c--)
-							selection++;
-						config_set_hex16((char *)config_device->name, (char *)config->name, selection->value);
+							sel++;
+						config_set_hex16(dev->name, cfg->name, sel->value);
 
 						id += 2;
 						break;
@@ -349,27 +352,27 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_HEX20:
 						c = SendMessage(h, CB_GETCURSEL, 0, 0);
 						for (; c > 0; c--)
-							selection++;
-						config_set_hex20((char *)config_device->name, (char *)config->name, selection->value);
+							sel++;
+						config_set_hex20(dev->name, cfg->name, sel->value);
 
 						id += 2;
 						break;
 				}
-				config++;
+				cfg++;
 			}
 
 			EndDialog(hdlg, 0);
 			return TRUE;
 		} else if (cid == IDCANCEL) {
-			deviceconfig_changed = 0;
+			devconf_changed = 0;
 			EndDialog(hdlg, 0);
 			return TRUE;
 		} else {
-			int id = IDC_CONFIG_BASE;
-			const device_config_t *config = config_device->config;
+			id = IDC_CONFIG_BASE;
+			cfg = dev->config;
 
-			while (config->type != -1) {
-				switch (config->type) {
+			while (cfg->type != -1) {
+				switch (cfg->type) {
 					case CONFIG_BINARY:
 						id++;
 						break;
@@ -389,26 +392,26 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 							file_filter[0] = 0;
 
 							c = 0;
-							while (config->file_filter[c].description && config->file_filter[c].description[0]) {
+							while (cfg->file_filter[c].description && cfg->file_filter[c].description[0]) {
 								if (c > 0)
 									strcat(file_filter, "|");
-								strcat(file_filter, config->file_filter[c].description);
+								strcat(file_filter, cfg->file_filter[c].description);
 								strcat(file_filter, " (");
 								d = 0;
-								while (config->file_filter[c].extensions[d] && config->file_filter[c].extensions[d][0]) {
+								while (cfg->file_filter[c].extensions[d] && cfg->file_filter[c].extensions[d][0]) {
 										if (d > 0)
 									strcat(file_filter, ";");
 									strcat(file_filter, "*.");
-									strcat(file_filter, config->file_filter[c].extensions[d]);
+									strcat(file_filter, cfg->file_filter[c].extensions[d]);
 									d++;
 								}
 								strcat(file_filter, ")|");
 								d = 0;
-								while (config->file_filter[c].extensions[d] && config->file_filter[c].extensions[d][0]) {
+								while (cfg->file_filter[c].extensions[d] && cfg->file_filter[c].extensions[d][0]) {
 									if (d > 0)
 										strcat(file_filter, ";");
 									strcat(file_filter, "*.");
-									strcat(file_filter, config->file_filter[c].extensions[d]);
+									strcat(file_filter, cfg->file_filter[c].extensions[d]);
 									d++;
 								}
 								c++;
@@ -427,7 +430,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						}
 						break;
 				}
-				config++;
+				cfg++;
 			}
 		}
 		break;
@@ -437,63 +440,71 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-#define DATABLOCK_SIZE	16384
+/*
+ * Build the full dialog from the template in
+ * memory, and data taken from the device config.
+ */
+#define DLG_MAX_SIZE	16384
 uint8_t
 deviceconfig_open(HWND hwnd, device_t *device)
 {
     char temp[128];
-    const device_config_t *config = device->config;
-    uint16_t *data_block = malloc(DATABLOCK_SIZE);
-    uint16_t *data;
-    DLGTEMPLATE *dlg = (DLGTEMPLATE *)data_block;
-    DLGITEMTEMPLATE *item;
-    int y = 10;
-    int id = IDC_CONFIG_BASE;
+    const device_config_t *cfg = device->config;
+    uint16_t *blk, *data;
+    DLGITEMTEMPLATE *itm;
+    DLGTEMPLATE *dlg;
+    int id, y;
 
-    deviceconfig_changed = 0;
+    devconf_changed = 0;
 
-    memset(data_block, 0x00, DATABLOCK_SIZE);
+    /* Allocate the dialog data block. */
+    blk = malloc(DLG_MAX_SIZE);
+    memset(blk, 0x00, DLG_MAX_SIZE);
+    dlg = (DLGTEMPLATE *)blk;
 
-    dlg->style = DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU;
+    /* Set up the basic dialog info. */
+    dlg->style = DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | \
+		 WS_POPUP | WS_CAPTION | WS_SYSMENU;
     dlg->x  = 10;
     dlg->y  = 10;
     dlg->cx = 220;
     dlg->cy = 70;
+    y = dlg->y;
 
+    /* Dialog menu bar, title bar, class, etc. */
     data = (uint16_t *)(dlg + 1);
-
-    *data++ = 0; /*no menu*/
-    *data++ = 0; /*predefined dialog box class*/
+    *data++ = 0; /* no menu bar */
+    *data++ = 0; /* predefined dialog box class */
     sprintf(temp, "%s Configuration", device->name);
     data += MultiByteToWideChar(CP_ACP, 0, temp, -1, data, 50);
 
-    *data++ = 9; /*Point*/
+    /* Font style and size to use. */
+    *data++ = 9; /* point size */
     data += MultiByteToWideChar(CP_ACP, 0, "Segoe UI", -1, data, 50);
-
     if (((uintptr_t)data) & 2)
 	data++;
 
-    while (config->type != -1) {
-	switch (config->type) {
+    /* Now add the items from the configuration. */
+    id = IDC_CONFIG_BASE;
+    while (cfg->type != -1) {
+	switch (cfg->type) {
 		case CONFIG_BINARY:
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 10;
-			item->y = y;
-			item->id = id++;
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX;
+			itm->x = 10;
+			itm->y = y;
+			itm->cx = 80;
+			itm->cy = 15;
+			itm->id = id++;
 
-			item->cx = 80;
-			item->cy = 15;
-
-			item->style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
 			*data++ = 0x0080;    /* button class */
-
 			data += MultiByteToWideChar(CP_ACP, 0,
-					config->description, -1, data, 256);
+					cfg->description, -1, data, 256);
 			*data++ = 0;	      /* no creation data */
 
+			/* Move to next available line. */
 			y += 20;
 			break;
 
@@ -501,223 +512,199 @@ deviceconfig_open(HWND hwnd, device_t *device)
 		case CONFIG_MIDI:
 		case CONFIG_HEX16:
 		case CONFIG_HEX20:
-			/*Combo box*/
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 70;
-			item->y = y;
-			item->id = id++;
+			/* combo box */
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE | \
+				     CBS_DROPDOWNLIST | WS_VSCROLL;
+			itm->x = 70;
+			itm->y = y;
+			itm->cx = 140;
+			itm->cy = 150;
+			itm->id = id++;
 
-			item->cx = 140;
-			item->cy = 150;
-
-			item->style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
-			*data++ = 0x0085;    /* combo box class */
-
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
+			*data++ = 0x0085;	/* combo box class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					config->description, -1, data, 256);
-			*data++ = 0;	      /* no creation data */
-
+					cfg->description, -1, data, 256);
+			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
-				data++;
+				data++;		/* align */
 
-			/*Static text*/
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 10;
-			item->y = y;
-			item->id = id++;
+			/* static tex t*/
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE;
+			itm->x = 10;
+			itm->y = y;
+			itm->cx = 60;
+			itm->cy = 15;
+			itm->id = id++;
 
-			item->cx = 60;
-			item->cy = 15;
-
-			item->style = WS_CHILD | WS_VISIBLE;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
-			*data++ = 0x0082;    /* static class */
-
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
+			*data++ = 0x0082;	/* static class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					config->description, -1, data, 256);
-			*data++ = 0;	      /* no creation data */
-
+					cfg->description, -1, data, 256);
+			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
-				data++;
+				data++;		/* align */
 
+			/* Move to next available line. */
 			y += 20;
 			break;
 
 		case CONFIG_SPINNER:
-			/*Spinner*/
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 70;
-			item->y = y;
-			item->id = id++;
+			/* spinner */
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE | \
+				     ES_AUTOHSCROLL | ES_NUMBER;
+			itm->dwExtendedStyle = WS_EX_CLIENTEDGE;
+			itm->x = 70;
+			itm->y = y;
+			itm->cx = 140;
+			itm->cy = 14;
+			itm->id = id++;
 
-			item->cx = 140;
-			item->cy = 14;
-
-			item->style = WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_NUMBER;
-			item->dwExtendedStyle = WS_EX_CLIENTEDGE;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
-			*data++ = 0x0081;    /* edit text class */
-
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
+			*data++ = 0x0081;	/* edit text class */
 			data += MultiByteToWideChar(CP_ACP, 0,
 						    "", -1, data, 256);
-			*data++ = 0;	      /* no creation data */
-
+			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
-				data++;
+				data++;		/* align */
 
 			/* TODO: add up down class */
-			/*Static text*/
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 10;
-			item->y = y;
-			item->id = id++;
+			/* static text */
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE;
+			itm->x = 10;
+			itm->y = y;
+			itm->cx = 60;
+			itm->cy = 15;
+			itm->id = id++;
 
-			item->cx = 60;
-			item->cy = 15;
-
-			item->style = WS_CHILD | WS_VISIBLE;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
-			*data++ = 0x0082;    /* static class */
-
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
+			*data++ = 0x0082;	/* static class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					config->description, -1, data, 256);
-			*data++ = 0;	      /* no creation data */
-
+					cfg->description, -1, data, 256);
+			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
-				data++;
+				data++;		/* align */
 
+			/* Move to next available line. */
 			y += 20;
 			break;
 
 		case CONFIG_FNAME:
-			/*File*/
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 70;
-			item->y = y;
-			item->id = id++;
+			/* file */
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE | ES_READONLY;
+			itm->dwExtendedStyle = WS_EX_CLIENTEDGE;
+			itm->x = 70;
+			itm->y = y;
+			itm->id = id++;
+			itm->cx = 100;
+			itm->cy = 14;
 
-			item->cx = 100;
-			item->cy = 14;
-
-			item->style = WS_CHILD | WS_VISIBLE | ES_READONLY;
-			item->dwExtendedStyle = WS_EX_CLIENTEDGE;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
-			*data++ = 0x0081;    /* edit text class */
-
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
+			*data++ = 0x0081;	/* edit text class */
 			data += MultiByteToWideChar(CP_ACP, 0,
 						"", -1, data, 256);
-			*data++ = 0;	      /* no creation data */
-
+			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
-				data++;
+				data++;		/* align */
 
 			/* Button */
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 175;
-			item->y = y;
-			item->id = id++;
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON;
+			itm->x = 175;
+			itm->y = y;
+			itm->cx = 35;
+			itm->cy = 14;
+			itm->id = id++;
 
-			item->cx = 35;
-			item->cy = 14;
-
-			item->style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
-			*data++ = 0x0080;    /* button class */
-
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
+			*data++ = 0x0080;	/* button class */
 			data += MultiByteToWideChar(CP_ACP, 0,
 						    "Browse", -1, data, 256);
-			*data++ = 0;	      /* no creation data */
-
+			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
-				data++;
+				data++;		/* align */
 
-			/*Static text*/
-			item = (DLGITEMTEMPLATE *)data;
-			item->x = 10;
-			item->y = y;
-			item->id = id++;
+			/* static text */
+			itm = (DLGITEMTEMPLATE *)data;
+			itm->style = WS_CHILD | WS_VISIBLE;
+			itm->x = 10;
+			itm->y = y;
+			itm->cx = 60;
+			itm->cy = 15;
+			itm->id = id++;
 
-			item->cx = 60;
-			item->cy = 15;
-
-			item->style = WS_CHILD | WS_VISIBLE;
-
-			data = (uint16_t *)(item + 1);
-			*data++ = 0xFFFF;
-			*data++ = 0x0082;    /* static class */
-
+			data = (uint16_t *)(itm + 1);
+			*data++ = 0xffff;
+			*data++ = 0x0082;	/* static class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					config->description, -1, data, 256);
-			*data++ = 0;	      /* no creation data */
-
+					cfg->description, -1, data, 256);
+			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
-				data++;
+				data++;		/* align */
 
+			/* Move to next available line. */
 			y += 20;
 			break;
 	}
 
+	/* Align to next 4-byte boundary. */
 	if (((uintptr_t)data) & 2)
 		data++;
 
-	config++;
+	/* Next item in configuration. */
+	cfg++;
     }
 
     dlg->cdit = (id - IDC_CONFIG_BASE) + 2;
 
-    item = (DLGITEMTEMPLATE *)data;
-    item->x = 20;
-    item->y = y;
-    item->cx = 50;
-    item->cy = 14;
-    item->id = IDOK;  /* OK button identifier */
-    item->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
+    itm = (DLGITEMTEMPLATE *)data;
+    itm->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
+    itm->x = 20;
+    itm->y = y;
+    itm->cx = 50;
+    itm->cy = 14;
+    itm->id = IDOK;	/* OK button identifier */
 
-    data = (uint16_t *)(item + 1);
-    *data++ = 0xFFFF;
-    *data++ = 0x0080;    /* button class */
-
+    data = (uint16_t *)(itm + 1);
+    *data++ = 0xffff;
+    *data++ = 0x0080;	/* button class */
     data += MultiByteToWideChar(CP_ACP, 0, "OK", -1, data, 50);
-    *data++ = 0;	      /* no creation data */
-
+    *data++ = 0;	/* no creation data */
     if (((uintptr_t)data) & 2)
-	data++;
+	data++;		/* align */
 
-    item = (DLGITEMTEMPLATE *)data;
-    item->x = 80;
-    item->y = y;
-    item->cx = 50;
-    item->cy = 14;
-    item->id = IDCANCEL;  /* OK button identifier */
-    item->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
-
-    data = (uint16_t *)(item + 1);
-    *data++ = 0xFFFF;
-    *data++ = 0x0080;    /* button class */
-
+    itm = (DLGITEMTEMPLATE *)data;
+    itm->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
+    itm->x = 80;
+    itm->y = y;
+    itm->cx = 50;
+    itm->cy = 14;
+    itm->id = IDCANCEL;	/* CANCEL button identifier */
+    data = (uint16_t *)(itm + 1);
+    *data++ = 0xffff;
+    *data++ = 0x0080;	/* button class */
     data += MultiByteToWideChar(CP_ACP, 0, "Cancel", -1, data, 50);
     *data++ = 0;	      /* no creation data */
 
+    /* Set final height of dialog. */
     dlg->cy = y + 20;
 
-    config_device = device;
+    devconf_device = device;
 
     DialogBoxIndirect(hinstance, dlg, hwnd, dlg_proc);
 
-    free(data_block);
+    free(blk);
 
-    return deviceconfig_changed;
+    return(devconf_changed);
 }

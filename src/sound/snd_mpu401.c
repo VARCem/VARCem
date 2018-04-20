@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.6	2018/04/10
+ * Version:	@(#)snd_mpu401.c	1.0.7	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -901,7 +901,7 @@ mpu401_device_add(void)
 
     if (!mpu401_standalone_enable) return;
 
-    n = sound_card_get_internal_name(sound_card_current);
+    n = sound_card_get_internal_name(sound_card);
     if (n != NULL) {
 	if (!strcmp(n, "sb16") || !strcmp(n, "sbawe32")) return;
     }

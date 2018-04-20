@@ -8,7 +8,7 @@
  *
  *		SCSI controller handler header.
  *
- * Version:	@(#)scsi.h	1.0.6	2018/04/10
+ * Version:	@(#)scsi.h	1.0.7	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -307,7 +307,6 @@ extern int mode_select_init(uint8_t command, uint16_t pl_length, uint8_t do_save
 extern int mode_select_terminate(int force);
 extern int mode_select_write(uint8_t val);
 
-extern int scsi_card_current;
 extern uint8_t scsi_disks[16][8];
 
 extern void	scsi_dev_log(const char *fmt, ...);

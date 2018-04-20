@@ -104,10 +104,8 @@ machine_xt_init(const machine_t *model, void *arg)
 
 const device_t m_xt_device = {
     "PC/XT",
-    MACHINE_ISA,
-    0,
+    0, 0,
     NULL, NULL, NULL,
-    NULL,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     xt_config
 };

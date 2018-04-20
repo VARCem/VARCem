@@ -8,7 +8,7 @@
  *
  *		Implementation of the SMC FDC37C669 Super I/O Chip.
  *
- * Version:	@(#)sio_fdc37c669.c	1.0.4	2018/04/07
+ * Version:	@(#)sio_fdc37c669.c	1.0.5	2018/04/19
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -171,8 +171,10 @@ process_value:
 		case 2:
 			if (valxor & 8)
 			{
+#if 0
 				/* pclog("Removing UART1\n"); */
 				serial_remove(1);
+#endif
 				if ((fdc37c669_regs[2] & 8) && (fdc37c669_regs[0x24] >= 0x40))
 				{
 					/* pclog("UART1 init (%02X, %i)\n", make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4); */
@@ -181,8 +183,10 @@ process_value:
 			}
 			if (valxor & 0x80)
 			{
+#if 0
 				/* pclog("Removing UART2\n"); */
 				serial_remove(2);
+#endif
 				if ((fdc37c669_regs[2] & 0x80) && (fdc37c669_regs[0x25] >= 0x40))
 				{
 					/* pclog("UART2 init (%02X, %i)\n", make_port(0x25), fdc37c669_regs[0x28] & 0x0F); */
@@ -240,8 +244,10 @@ process_value:
 		case 0x24:
 			if (valxor & 0xfe)
 			{
+#if 0
 				/* pclog("Removing UART1\n"); */
 				serial_remove(1);
+#endif
 				if ((fdc37c669_regs[2] & 8) && (fdc37c669_regs[0x24] >= 0x40))
 				{
 					/* pclog("UART1 init (%02X, %i)\n", make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4); */
@@ -252,8 +258,10 @@ process_value:
 		case 0x25:
 			if (valxor & 0xfe)
 			{
+#if 0
 				/* pclog("Removing UART2\n"); */
 				serial_remove(2);
+#endif
 				if ((fdc37c669_regs[2] & 0x80) && (fdc37c669_regs[0x25] >= 0x40))
 				{
 					/* pclog("UART2 init (%02X, %i)\n", make_port(0x25), fdc37c669_regs[0x28] & 0x0F); */
@@ -264,8 +272,10 @@ process_value:
 		case 0x28:
 			if (valxor & 0xf)
 			{
+#if 0
 				/* pclog("Removing UART2\n"); */
 				serial_remove(2);
+#endif
 				if ((fdc37c669_regs[2] & 0x80) && (fdc37c669_regs[0x25] >= 0x40))
 				{
 					/* pclog("UART2 init (%02X, %i)\n", make_port(0x25), fdc37c669_regs[0x28] & 0x0F); */
@@ -274,8 +284,10 @@ process_value:
 			}
 			if (valxor & 0xf0)
 			{
+#if 0
 				/* pclog("Removing UART1\n"); */
 				serial_remove(1);
+#endif
 				if ((fdc37c669_regs[2] & 8) && (fdc37c669_regs[0x24] >= 0x40))
 				{
 					/* pclog("UART1 init (%02X, %i)\n", make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4); */
@@ -311,10 +323,14 @@ void fdc37c669_reset(void)
 {
 	fdc_reset(fdc37c669_fdc);
 
+#if 0
 	serial_remove(1);
+#endif
 	serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
 
+#if 0
 	serial_remove(2);
+#endif
 	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
 
 //FIXME:	parallel_remove(1);

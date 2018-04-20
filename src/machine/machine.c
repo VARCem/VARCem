@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.12	2018/04/07
+ * Version:	@(#)machine.c	1.0.13	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -161,8 +161,7 @@ machine_common_init(const machine_t *model, UNUSED(void *arg))
 	device_add(&parallel_3_device);
 
     if (serial_enabled[0])
-	serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
-
+	device_add(&serial_1_device);
     if (serial_enabled[1])
-	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
+	device_add(&serial_2_device);
 }

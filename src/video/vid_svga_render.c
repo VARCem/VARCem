@@ -8,7 +8,7 @@
  *
  *		SVGA renderers.
  *
- * Version:	@(#)vid_svga_render.c	1.0.8	2018/03/18
+ * Version:	@(#)vid_svga_render.c	1.0.9	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,11 +45,6 @@
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
-
-
-int invert_display = 0;
-int video_grayscale = 0;
-int video_graytype = 0;
 
 
 uint32_t shade[5][256] =

@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.8	2018/04/10
+ * Version:	@(#)m_ps2_isa.c	1.0.9	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,8 +119,10 @@ static void ps2_write(uint16_t port, uint8_t val, void *p)
                 case 0x102:
                 	if (val & 0x04)
                         	serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
+#if 0
                 	else
                         	serial_remove(1);
+#endif
                 	if (val & 0x10)
                 	{
                         	switch ((val >> 5) & 3) {

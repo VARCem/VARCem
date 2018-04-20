@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.6	2018/04/10
+ * Version:	@(#)sound.h	1.0.7	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,9 @@
 #define CD_FREQ		44100
 #define CD_BUFLEN	(CD_FREQ / 10)
 
+#define SOUND_NONE	0
+#define SOUND_INTERNAL	1
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,8 +61,6 @@ extern int	gated,
 		speakon;
 
 extern int	sound_pos_global;
-extern int	sound_card_current;
-extern int	sound_gain;
 
 
 extern void	snddev_log(const char *fmt, ...);

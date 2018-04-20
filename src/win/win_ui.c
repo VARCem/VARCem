@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.11	2018/04/09
+ * Version:	@(#)win_ui.c	1.0.12	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -366,13 +366,13 @@ ResetAllMenus(void)
     if (vid_resize)
 	CheckMenuItem(menuMain, IDM_VID_RESIZE, MF_CHECKED);
     CheckMenuItem(menuMain, IDM_VID_DDRAW+vid_api, MF_CHECKED);
-    CheckMenuItem(menuMain, IDM_VID_FS_FULL+video_fullscreen_scale, MF_CHECKED);
+    CheckMenuItem(menuMain, IDM_VID_FS_FULL+vid_fullscreen_scale, MF_CHECKED);
     CheckMenuItem(menuMain, IDM_VID_REMEMBER, window_remember?MF_CHECKED:MF_UNCHECKED);
     CheckMenuItem(menuMain, IDM_VID_SCALE_1X+scale, MF_CHECKED);
 
     CheckMenuItem(menuMain, IDM_VID_CGACON, vid_cga_contrast?MF_CHECKED:MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAYCT_601+video_graytype, MF_CHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+video_grayscale, MF_CHECKED);
+    CheckMenuItem(menuMain, IDM_VID_GRAYCT_601+vid_graytype, MF_CHECKED);
+    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+vid_grayscale, MF_CHECKED);
 }
 
 
@@ -560,9 +560,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_VID_FS_SQ:                                
 			case IDM_VID_FS_INT:
 			case IDM_VID_FS_KEEPRATIO:
-				CheckMenuItem(hmenu, IDM_VID_FS_FULL+video_fullscreen_scale, MF_UNCHECKED);
-				video_fullscreen_scale = LOWORD(wParam) - IDM_VID_FS_FULL;
-				CheckMenuItem(hmenu, IDM_VID_FS_FULL+video_fullscreen_scale, MF_CHECKED);
+				CheckMenuItem(hmenu, IDM_VID_FS_FULL+vid_fullscreen_scale, MF_UNCHECKED);
+				vid_fullscreen_scale = LOWORD(wParam) - IDM_VID_FS_FULL;
+				CheckMenuItem(hmenu, IDM_VID_FS_FULL+vid_fullscreen_scale, MF_CHECKED);
 				device_force_redraw();
 				config_save();
 				break;
@@ -604,9 +604,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_VID_GRAYCT_601:
 			case IDM_VID_GRAYCT_709:
 			case IDM_VID_GRAYCT_AVE:
-				CheckMenuItem(hmenu, IDM_VID_GRAYCT_601+video_graytype, MF_UNCHECKED);
-				video_graytype = LOWORD(wParam) - IDM_VID_GRAYCT_601;
-				CheckMenuItem(hmenu, IDM_VID_GRAYCT_601+video_graytype, MF_CHECKED);
+				CheckMenuItem(hmenu, IDM_VID_GRAYCT_601+vid_graytype, MF_UNCHECKED);
+				vid_graytype = LOWORD(wParam) - IDM_VID_GRAYCT_601;
+				CheckMenuItem(hmenu, IDM_VID_GRAYCT_601+vid_graytype, MF_CHECKED);
 				device_force_redraw();
 				config_save();
 				break;
@@ -616,9 +616,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_VID_GRAY_AMBER:
 			case IDM_VID_GRAY_GREEN:
 			case IDM_VID_GRAY_WHITE:
-				CheckMenuItem(hmenu, IDM_VID_GRAY_RGB+video_grayscale, MF_UNCHECKED);
-				video_grayscale = LOWORD(wParam) - IDM_VID_GRAY_RGB;
-				CheckMenuItem(hmenu, IDM_VID_GRAY_RGB+video_grayscale, MF_CHECKED);
+				CheckMenuItem(hmenu, IDM_VID_GRAY_RGB+vid_grayscale, MF_UNCHECKED);
+				vid_grayscale = LOWORD(wParam) - IDM_VID_GRAY_RGB;
+				CheckMenuItem(hmenu, IDM_VID_GRAY_RGB+vid_grayscale, MF_CHECKED);
 				device_force_redraw();
 				config_save();
 				break;
@@ -704,7 +704,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_LBUTTONUP:
-		if (! video_fullscreen)
+		if (! vid_fullscreen)
 			plat_mouse_capture(1);
 		break;
 
@@ -787,7 +787,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_RESETD3D:
 		startblit();
-		if (video_fullscreen)
+		if (vid_fullscreen)
 			d3d_reset_fs();
 		  else
 			d3d_reset();
@@ -1059,7 +1059,7 @@ ui_init(int nCmdShow)
 		plat_mouse_capture(0);
         }
 
-	if (video_fullscreen && keyboard_isfsexit()) {
+	if (vid_fullscreen && keyboard_isfsexit()) {
 		/* Signal "exit fullscreen mode". */
 		/* pclog("leave full screen though key combination\n"); */
 		plat_setfullscreen(0);
@@ -1086,7 +1086,7 @@ ui_init(int nCmdShow)
 wchar_t *
 ui_window_title(wchar_t *s)
 {
-    if (! video_fullscreen) {
+    if (! vid_fullscreen) {
 	if (s != NULL)
 		wcscpy(wTitle, s);
 	  else
@@ -1141,7 +1141,7 @@ plat_resize(int x, int y)
     RECT r;
 
 #if 0
-pclog("PLAT: VID[%d,%d] resizing to %dx%d\n", video_fullscreen, vid_api, x, y);
+pclog("PLAT: VID[%d,%d] resizing to %dx%d\n", vid_fullscreen, vid_api, x, y);
 #endif
     /* First, see if we should resize the UI window. */
     if (!vid_resize) {
@@ -1173,7 +1173,7 @@ plat_mouse_capture(int on)
     RECT rect;
 
     /* Do not try to capture the mouse if no mouse configured. */
-    if (mouse_type == MOUSE_TYPE_NONE) return;
+    if (mouse_type == MOUSE_NONE) return;
 
     if (on && !mouse_capture) {
 	/* Enable the in-app mouse. */

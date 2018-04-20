@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Bar module.
  *
- * Version:	@(#)win_stbar.c	1.0.8	2018/04/10
+ * Version:	@(#)win_stbar.c	1.0.9	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -673,7 +673,7 @@ ui_sb_update_panes(void)
 	}
 
 	if ((cdrom_drives[i].bus_type == CDROM_BUS_SCSI) &&
-	    (scsi_card_current == 0)) {
+	    (scsi_card == 0)) {
 		continue;
 	}
 
@@ -690,7 +690,7 @@ ui_sb_update_panes(void)
 	}
 
 	if ((zip_drives[i].bus_type == ZIP_BUS_SCSI) &&
-	    (scsi_card_current == 0)) {
+	    (scsi_card == 0)) {
 		continue;
 	}
 
@@ -699,7 +699,7 @@ ui_sb_update_panes(void)
 	}
     }
     for (i=0; i<HDD_NUM; i++) {
-	if ((hdd[i].bus==HDD_BUS_SCSI_REMOVABLE) && (scsi_card_current != 0)) {
+	if ((hdd[i].bus==HDD_BUS_SCSI_REMOVABLE) && (scsi_card != 0)) {
 		sb_parts++;
 	}
     }
@@ -722,7 +722,7 @@ ui_sb_update_panes(void)
 	/* IDE_DMA drives, and IDE or Internal controller. */
 	sb_parts++;
     }
-    if (c_scsi && (scsi_card_current != 0)) {
+    if (c_scsi && (scsi_card != 0)) {
 	sb_parts++;
     }
     if (do_net) {
@@ -764,7 +764,7 @@ ui_sb_update_panes(void)
 	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
-	if ((cdrom_drives[i].bus_type == CDROM_BUS_SCSI) && (scsi_card_current == 0)) {
+	if ((cdrom_drives[i].bus_type == CDROM_BUS_SCSI) && (scsi_card == 0)) {
 		continue;
 	}
 	if (cdrom_drives[i].bus_type != 0) {
@@ -786,7 +786,7 @@ ui_sb_update_panes(void)
 	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
-	if ((zip_drives[i].bus_type == ZIP_BUS_SCSI) && (scsi_card_current == 0)) {
+	if ((zip_drives[i].bus_type == ZIP_BUS_SCSI) && (scsi_card == 0)) {
 		continue;
 	}
 	if (zip_drives[i].bus_type != 0) {
@@ -798,7 +798,7 @@ ui_sb_update_panes(void)
     }
 
     for (i=0; i<HDD_NUM; i++) {
-	if ((hdd[i].bus==HDD_BUS_SCSI_REMOVABLE) && (scsi_card_current != 0)) {
+	if ((hdd[i].bus==HDD_BUS_SCSI_REMOVABLE) && (scsi_card != 0)) {
 		edge += SB_ICON_WIDTH;
 		iStatusWidths[sb_parts] = edge;
 		sb_part_meanings[sb_parts] = SB_RDISK | i;
@@ -835,7 +835,7 @@ ui_sb_update_panes(void)
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_IDE_PIO_AND_DMA;
 	sb_parts++;
     }
-    if (c_scsi && (scsi_card_current != 0)) {
+    if (c_scsi && (scsi_card != 0)) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_SCSI;

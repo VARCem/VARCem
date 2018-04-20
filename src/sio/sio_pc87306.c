@@ -8,7 +8,7 @@
  *
  *		Emulation of the NatSemi PC87306 Super I/O chip.
  *
- * Version:	@(#)sio_pc87306.c	1.0.4	2018/04/07
+ * Version:	@(#)sio_pc87306.c	1.0.5	2018/04/19
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -238,7 +238,9 @@ process_value:
 
 			if (valxor & 2)
 			{
+#if 0
 				serial_remove(1);
+#endif
 				if (val & 2)
 				{
 					serial1_handler();
@@ -246,7 +248,9 @@ process_value:
 			}
 			if (valxor & 4)
 			{
+#if 0
 				serial_remove(2);
+#endif
 				if (val & 4)
 				{
 					serial2_handler();
@@ -298,10 +302,12 @@ process_value:
 				{
 					serial1_handler();
 				}
+#if 0
 				else
 				{
 					serial_remove(1);
 				}
+#endif
 			}
 
 			if (valxor & 0xf0)
@@ -310,10 +316,12 @@ process_value:
 				{
 					serial2_handler();
 				}
+#if 0
 				else
 				{
 					serial_remove(2);
 				}
+#endif
 			}
 			break;
 		case 2:
@@ -321,9 +329,11 @@ process_value:
 			{
 				if (val & 1)
 				{
+#if 0
 //FIXME:					parallel_remove(1);
 					serial_remove(1);
 					serial_remove(2);
+#endif
 					fdc_remove(pc87306_fdc);
 				}
 				else
@@ -479,8 +489,10 @@ void pc87306_reset(void)
 //FIXME:	parallel_remove(1);
 //FIXME:	parallel_remove(2);
 	lpt1_handler();
+#if 0
 	serial_remove(1);
 	serial_remove(2);
+#endif
 	serial1_handler();
 	serial2_handler();
 	fdc_reset(pc87306_fdc);

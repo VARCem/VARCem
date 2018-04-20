@@ -22,13 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * NOTES:	Floppy does not seem to work.  --FvK
- *		The "ROM DOS" shell does not seem to work. We do have the
- *		correct BIOS images now, and they do load, but they do not
- *		boot. Sometimes, they do, and then it shows an "Incorrect
- *		DOS" error message??  --FvK
- *
- * Version:	@(#)m_ps1.c	1.0.11	2018/04/09
+ * Version:	@(#)m_ps1.c	1.0.12	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,14 +67,15 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../game/gameport.h"
+#include "../keyboard.h"
 #include "../parallel.h"
 #include "../serial.h"
-#include "../keyboard.h"
-#include "../disk/hdc.h"
-#include "../disk/hdc_ide.h"
+#include "../game/gameport.h"
+#include "../mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
+#include "../disk/hdc.h"
+#include "../disk/hdc_ide.h"
 #include "../sound/sound.h"
 #include "../sound/snd_sn76489.h"
 #include "../video/video.h"
@@ -128,7 +123,7 @@ extern const device_t ibm_ps1_2121_device;
 
 
 static void
-update_irq_status(ps1snd_t *snd)
+snd_update_irq(ps1snd_t *snd)
 {
     if (((snd->status & snd->ctrl) & 0x12) && (snd->ctrl & 0x01))
 	picint(1 << 7);
@@ -146,7 +141,7 @@ snd_read(uint16_t port, void *priv)
     switch (port & 7) {
 	case 0:		/* ADC data */
 		snd->status &= ~0x10;
-		update_irq_status(snd);
+		snd_update_irq(snd);
 		ret = 0;
 		break;
 
@@ -196,7 +191,7 @@ snd_write(uint16_t port, uint8_t val, void *priv)
 		snd->ctrl = val;
 		if (! (val & 0x02))
 			snd->status &= ~0x02;
-		update_irq_status(snd);
+		snd_update_irq(snd);
 		break;
 
 	case 3:		/* timer reload value */
@@ -236,7 +231,7 @@ snd_callback(void *priv)
 	snd->status |= 0x02; /*FIFO almost empty*/
 
     snd->status |= 0x10; /*ADC data ready*/
-    update_irq_status(snd);
+    snd_update_irq(snd);
 
     snd->timer_count += snd->timer_latch * TIMER_USEC;
 }
@@ -267,8 +262,10 @@ snd_init(const device_t *info)
 
     sn76489_init(&snd->sn76489, 0x0205, 0x0001, SN76496, 4000000);
 
-    io_sethandler(0x0200, 1, snd_read,NULL,NULL, snd_write,NULL,NULL, snd);
-    io_sethandler(0x0202, 6, snd_read,NULL,NULL, snd_write,NULL,NULL, snd);
+    io_sethandler(0x0200, 1,
+		  snd_read,NULL,NULL, snd_write,NULL,NULL, snd);
+    io_sethandler(0x0202, 6,
+		  snd_read,NULL,NULL, snd_write,NULL,NULL, snd);
 
     timer_add(snd_callback, &snd->timer_count, &snd->timer_enable, snd);
 
@@ -291,9 +288,7 @@ static const device_t snd_device = {
     "PS/1 Audio Card",
     0, 0,
     snd_init, snd_close, NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -355,8 +350,6 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 	case 0x0102:
 		if (val & 0x04)
 			serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
-		  else
-			serial_remove(1);
 		if (val & 0x10) {
 			switch ((val >> 5) & 3) {
 				case 0:
@@ -481,7 +474,7 @@ ps1_read(uint16_t port, void *priv)
 
 
 static void
-ps1_setup(int model)
+ps1_setup(int model, romdef_t *bios)
 {
     ps1_t *ps;
 
@@ -500,54 +493,92 @@ ps1_setup(int model)
     io_sethandler(0x0190, 1,
 		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
 
+    /* Set up the parallel port. */
+    parallel_setup(1, 0x03bc);
+
     if (model == 2011) {
+	/* Force some configuration settings. */
+	video_card = VID_INTERNAL;
+	sound_card = SOUND_INTERNAL;
+	hdc_type = HDC_INTERNAL;
+	mouse_type = MOUSE_PS2;
+
+#if 0
+#if 1
 	io_sethandler(0x0320, 1,
 		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
 	io_sethandler(0x0322, 1,
 		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
 	io_sethandler(0x0324, 1,
 		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
-
-#if 0
-	rom_init(&ps->high_rom,
-		 L"machines/ibm/ps1_2011/f80000_shell.bin",
-		 0xf80000, 0x80000, 0x7ffff, 0, MEM_MAPPING_EXTERNAL);
+#else
+	device_add(&xta_ps1_device);
+#endif
 #endif
 
-	parallel_setup(1, 0x03bc);
-
-	serial_remove(1);
-	serial_remove(2);
+	if (machine_get_config_int("rom_shell")) {
+		pclog("PS1: loading ROM Shell..\n");
+		if (! rom_init(&ps->high_rom,
+			       L"machines/ibm/ps1_2011/fc0000_105775_us.bin",
+			       0xfc0000, 0x20000, 0x01ffff, 0, MEM_MAPPING_EXTERNAL)) {
+			pclog("PS1: unable to load ROM Shell !\n");
+		}
+	}
 
 	/* Enable the PS/1 VGA controller. */
-	if (model == 2011)
+	if (video_card == VID_INTERNAL)
 		device_add(&ps1vga_device);
-	else
-		device_add(&ibm_ps1_2121_device);
+
+	/* Enable the builtin sound chip. */
+	device_add(&snd_device);
+
+ 	/* Enable the builtin FDC. */
+	device_add(&fdc_at_actlow_device);
     }
 
     if (model == 2121) {
+	/* Force some configuration settings. */
+	video_card = VID_INTERNAL;
+	sound_card = SOUND_INTERNAL;
+	hdc_type = HDC_INTERNAL;
+	mouse_type = MOUSE_PS2;
+
 	io_sethandler(0x00e0, 2,
 		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
 
-	rom_init(&ps->high_rom,
-		 L"machines/ibm/ps1_2121/rom_shell.bin",
-		 0xfc0000, 0x20000, 0x1ffff, 0, MEM_MAPPING_EXTERNAL);
-#if 0
-	rom_init(&ps->high_rom,
-		 L"machines/ibmps1_2121/fc0000_shell.bin",
-		 0xfc0000, 0x40000, 0x3ffff, 0, MEM_MAPPING_EXTERNAL);
-#endif
-
-	parallel_setup(1, 0x03bc);
+	if (machine_get_config_int("rom_shell")) {
+		pclog("PS1: loading ROM Shell..\n");
+		if (! rom_init(&ps->high_rom,
+			       L"machines/ibm/ps1_2121/fc0000_92f9674.bin",
+			       0xfc0000, 0x20000, 0x1ffff, 0, MEM_MAPPING_EXTERNAL)) {
+			pclog("PS1: unable to load ROM Shell !\n");
+		}
+	}
 
 	/* Initialize the video controller. */
-	if (vid_card == VID_INTERNAL)
+	if (video_card == VID_INTERNAL)
 		device_add(&ibm_ps1_2121_device);
+
+	/* Enable the builtin sound chip. */
+	device_add(&snd_device);
+
+ 	/* Enable the builtin FDC. */
+	device_add(&fdc_at_ps1_device);
+
+	/* Enable the builtin IDE port. */
+	device_add(&ide_isa_device);
     }
 
     if (model == 2133) {
-	parallel_setup(1, 0x03bc);
+	/* Force some configuration settings. */
+	hdc_type = HDC_INTERNAL;
+	mouse_type = MOUSE_PS2;
+
+	/* Enable the builtin FDC. */
+	device_add(&fdc_at_device);
+
+	/* Enable the builtin IDE port. */
+	device_add(&ide_isa_device);
     }
 }
 
@@ -566,25 +597,44 @@ ps1_common_init(const machine_t *model, void *arg)
 
     device_add(&ps_nvr_device);
 
-    if (romset != ROM_IBMPS1_2011)
-	device_add(&ide_isa_device);
-
     device_add(&keyboard_ps2_device);
 
-    if (romset == ROM_IBMPS1_2133)
-	device_add(&fdc_at_device);
-    else {
-	if ((romset == ROM_IBMPS1_2121) || (romset == ROM_IBMPS1_2121_ISA))
-		device_add(&fdc_at_ps1_device);
-	else
-		device_add(&fdc_at_actlow_device);
-	device_add(&snd_device);
-    }
+    device_add(&mouse_ps2_device);
 
-    /* Audio uses ports 200h and 202-207h, so only initialize gameport on 201h. */
+    /* Audio uses ports 200h,202-207h, so only initialize gameport on 201h. */
     if (joystick_type != JOYSTICK_TYPE_NONE)
 	device_add(&gameport_201_device);
 }
+
+
+static const device_config_t ps1_config[] = {
+    {
+	"rom_shell", "ROM Shell", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
+};
+
+
+const device_t m_ps1_device = {
+    "PS/1",
+    0, 0,
+    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    ps1_config
+};
 
 
 void
@@ -592,7 +642,7 @@ machine_ps1_m2011_init(const machine_t *model, void *arg)
 {
     ps1_common_init(model, arg);
 
-    ps1_setup(2011);
+    ps1_setup(2011, (romdef_t *)arg);
 }
 
 
@@ -601,7 +651,7 @@ machine_ps1_m2121_init(const machine_t *model, void *arg)
 {
     ps1_common_init(model, arg);
 
-    ps1_setup(2121);
+    ps1_setup(2121, (romdef_t *)arg);
 }
 
 
@@ -610,7 +660,7 @@ machine_ps1_m2133_init(const machine_t *model, void *arg)
 {
     ps1_common_init(model, arg);
 
-    ps1_setup(2133);
+    ps1_setup(2133, (romdef_t *)arg);
 
     nmi_mask = 0x80;
 }

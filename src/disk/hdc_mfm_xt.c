@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_mfm_xt.c	1.0.5	2018/04/02
+ * Version:	@(#)hdc_mfm_xt.c	1.0.6	2018/04/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -806,10 +806,10 @@ loadhd(mfm_t *dev, int c, int d, const wchar_t *fn)
 	return;
     }
 	
-    drive->spt = (uint8_t)hdd[c].spt;
-    drive->hpc = (uint8_t)hdd[c].hpc;
-    drive->tracks = (uint16_t)hdd[c].tracks;
-    drive->hdd_num = c;
+    drive->spt = (uint8_t)hdd[d].spt;
+    drive->hpc = (uint8_t)hdd[d].hpc;
+    drive->tracks = (uint16_t)hdd[d].tracks;
+    drive->hdd_num = d;
     drive->present = 1;
 }
 
@@ -874,7 +874,7 @@ mfm_init(const device_t *info)
 #ifdef ENABLE_HDC_LOG
 		hdc_log("Found MFM hard disk on channel %i\n", hdd[i].mfm_channel);
 #endif
-		loadhd(dev, i, hdd[i].mfm_channel, hdd[i].fn);
+		loadhd(dev, hdd[i].mfm_channel, i, hdd[i].fn);
 
 		if (++c > MFM_NUM) break;
 	}

@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.6	2018/04/07
+ * Version:	@(#)sio_fdc37c93x.c	1.0.7	2018/04/19
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -127,7 +127,9 @@ static void fdc37c93x_serial_handler(int uart)
 	uint8_t global_enable = !!(fdc37c93x_regs[0x22] & (1 << uart_no));
 	uint8_t local_enable = !!fdc37c93x_ld_regs[uart_no][0x30];
 
+#if 0
 	serial_remove(uart);
+#endif
 	if (global_enable && local_enable)
 	{
 		ld_port = make_port(uart_no);

@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.13	2018/04/10
+ * Version:	@(#)video.c	1.0.14	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -437,7 +437,7 @@ video_update_timing(void)
 			timing = &timing_endeavor;
 			break;
 		default:
-			new_card = video_old_to_new(vid_card);
+			new_card = video_old_to_new(video_card);
 			timing = video_card_gettiming(new_card);
 			break;
 	}

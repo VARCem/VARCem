@@ -49,7 +49,7 @@
  *
  *		Based on an early driver for MINIX 1.5.
  *
- * Version:	@(#)mouse_bus.c	1.0.2	2018/03/15
+ * Version:	@(#)mouse_bus.c	1.0.4	2018/04/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -713,11 +713,11 @@ bm_init(const device_t *info)
     if (i > 2)
 	dev->flags |= FLAG_3BTN;
 
-    pclog("%s: I/O=%04x, IRQ=%d, buttons=%d\n",
-	dev->name, MOUSE_PORT, dev->irq, i);
+    pclog("MOUSE: %s (I/O=%04x, IRQ=%d, buttons=%d)\n",
+			dev->name, MOUSE_PORT, dev->irq, i);
 
     switch(dev->type) {
-	case MOUSE_TYPE_LOGIBUS:
+	case MOUSE_LOGIBUS:
 		lt_reset(dev);
 
 		/* Initialize I/O handlers. */
@@ -728,7 +728,7 @@ bm_init(const device_t *info)
 		timer_add(bm_timer, &dev->timer, &dev->timer, dev);
 		break;
 
-	case MOUSE_TYPE_INPORT:
+	case MOUSE_INPORT:
 		dev->flags |= FLAG_INPORT;
 		ms_reset(dev);
 
@@ -795,7 +795,7 @@ static const device_config_t bm_config[] = {
 const device_t mouse_logibus_device = {
     "Logitech Bus Mouse",
     DEVICE_ISA,
-    MOUSE_TYPE_LOGIBUS,
+    MOUSE_LOGIBUS,
     bm_init, bm_close, NULL,
     bm_poll, NULL, NULL, NULL,
     bm_config
@@ -804,7 +804,7 @@ const device_t mouse_logibus_device = {
 const device_t mouse_msinport_device = {
     "Microsoft Bus Mouse (InPort)",
     DEVICE_ISA,
-    MOUSE_TYPE_INPORT,
+    MOUSE_INPORT,
     bm_init, bm_close, NULL,
     bm_poll, NULL, NULL, NULL,
     bm_config

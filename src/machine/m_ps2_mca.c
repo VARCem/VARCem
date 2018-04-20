@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.10	2018/04/09
+ * Version:	@(#)m_ps2_mca.c	1.0.11	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -360,7 +360,9 @@ static void model_50_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
+#if 0
                 serial_remove(1);
+#endif
                 if (val & 0x04)
                 {
                         if (val & 0x08)
@@ -368,8 +370,10 @@ static void model_50_write(uint16_t port, uint8_t val)
                         else
                                 serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
                 }
+#if 0
                 else
                         serial_remove(1);
+#endif
                 if (val & 0x10)
                 {
                         switch ((val >> 5) & 3)
@@ -415,7 +419,9 @@ static void model_55sx_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
+#if 0
                 serial_remove(1);
+#endif
                 if (val & 0x04)
                 {
                         if (val & 0x08)
@@ -423,8 +429,10 @@ static void model_55sx_write(uint16_t port, uint8_t val)
                         else
                                 serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
                 }
+#if 0
                 else
                         serial_remove(1);
+#endif
                 if (val & 0x10)
                 {
                         switch ((val >> 5) & 3)
@@ -490,7 +498,9 @@ static void model_70_type3_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
+#if 0
                 serial_remove(1);
+#endif
                 if (val & 0x04)
                 {
                         if (val & 0x08)
@@ -498,8 +508,10 @@ static void model_70_type3_write(uint16_t port, uint8_t val)
                         else
                                 serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
                 }
+#if 0
                 else
                         serial_remove(1);
+#endif
                 if (val & 0x10)
                 {
                         switch ((val >> 5) & 3)
@@ -539,7 +551,9 @@ static void model_80_write(uint16_t port, uint8_t val)
                 case 0x101:
                 break;
                 case 0x102:
+#if 0
                 serial_remove(1);
+#endif
                 if (val & 0x04)
                 {
                         if (val & 0x08)
@@ -547,8 +561,10 @@ static void model_80_write(uint16_t port, uint8_t val)
                         else
                                 serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
                 }
+#if 0
                 else
                         serial_remove(1);
+#endif
                 if (val & 0x10)
                 {
                         switch ((val >> 5) & 3)

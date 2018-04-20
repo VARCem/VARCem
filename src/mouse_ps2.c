@@ -8,7 +8,7 @@
  *
  *		Implementation of PS/2 series Mouse devices.
  *
- * Version:	@(#)mouse_ps2.c	1.0.2	2018/03/15
+ * Version:	@(#)mouse_ps2.c	1.0.4	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -266,7 +266,8 @@ mouse_ps2_init(const device_t *info)
     /* Hook into the general AT Keyboard driver. */
     keyboard_at_set_mouse(ps2_write, dev);
 
-    pclog("%s: buttons=%d\n", dev->name, (dev->flags & FLAG_INTELLI)? 3 : 2);
+    pclog("MOUSE: %s (buttons=%d)\n",
+	dev->name, (dev->flags & FLAG_INTELLI)? 3 : 2);
 
     /* Tell them how many buttons we have. */
     mouse_set_buttons((dev->flags & FLAG_INTELLI) ? 3 : 2);
@@ -314,7 +315,7 @@ static const device_config_t ps2_config[] = {
 const device_t mouse_ps2_device = {
     "Standard PS/2 Mouse",
     0,
-    MOUSE_TYPE_PS2,
+    MOUSE_PS2,
     mouse_ps2_init, ps2_close, NULL,
     ps2_poll, NULL, NULL, NULL,
     ps2_config

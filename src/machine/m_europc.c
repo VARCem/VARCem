@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.6	2018/04/05
+ * Version:	@(#)m_europc.c	1.0.7	2018/04/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -566,7 +566,7 @@ europc_boot(const device_t *info)
      * with values set by the user.
      */
     b = (sys->nvr.regs[MRTC_CONF_D] & ~0x17);
-    switch(vid_card) {
+    switch(video_card) {
 	case VID_CGA:		/* Color, CGA */
 	case VID_COLORPLUS:	/* Color, Hercules ColorPlus */
 		b |= 0x12;	/* external video, CGA80 */
@@ -620,7 +620,7 @@ europc_boot(const device_t *info)
 
     /* Set up game port. */
     b = (sys->nvr.regs[MRTC_CONF_C] & 0xfc);
-    if (mouse_type == MOUSE_TYPE_LOGIBUS) {
+    if (mouse_type == MOUSE_INTERNAL) {
 	b |= 0x01;	/* enable port as MOUSE */
     } else if (joystick_type != JOYSTICK_TYPE_NONE) {
 	b |= 0x02;	/* enable port as joysticks */

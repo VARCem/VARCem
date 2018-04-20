@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.3	2018/04/10
+ * Version:	@(#)sound_dev.c	1.0.4	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,6 +87,7 @@ extern const device_t wss_device;
 
 static const sound_t	sound_cards[] = {
     {"Disabled",			"none",		NULL		},
+    {"Internal",			"internal",	NULL		},
     {"[ISA] Adlib",			"adlib",	&adlib_device	},
     {"[ISA] Adlib Gold",		"adlibgold",	&adgold_device	},
     {"[ISA] Creative Music System",	"cms",		&cms_device	},

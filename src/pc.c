@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.24	2018/04/10
+ * Version:	@(#)pc.c	1.0.26	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -105,20 +105,24 @@ wchar_t log_path[1024] = { L'\0'};		/* (O) full path of logfile */
 /* Configuration values. */
 int	window_w, window_h,			/* (C) window size and */
 	window_x, window_y,			/*     position info */
-	window_remember,
+	window_remember;
+int	vid_api = 0,				/* (C) video renderer */
 	vid_resize,				/* (C) allow resizing */
-	invert_display,				/* (C) invert the display */
-	suppress_overscan = 0;			/* (C) suppress overscans */
-int	scale = 0;				/* (C) screen scale factor */
-int	vid_api = 0;				/* (C) video renderer */
-int	vid_cga_contrast = 0,			/* (C) video */
-	video_fullscreen = 0,			/* (C) video */
-	video_fullscreen_scale = 0,		/* (C) video */
-	video_fullscreen_first = 0,		/* (C) video */
+	vid_cga_contrast = 0,			/* (C) video */
+	vid_fullscreen = 0,			/* (C) video */
+	vid_fullscreen_scale = 0,		/* (C) video */
+	vid_fullscreen_first = 0,		/* (C) video */
+	vid_grayscale = 0,			/* (C) video */
+	vid_graytype = 0,			/* (C) video */
+	invert_display = 0,			/* (C) invert the display */
+	suppress_overscan = 0,			/* (C) suppress overscans */
+	scale = 0,				/* (C) screen scale factor */
 	enable_overscan = 0,			/* (C) video */
 	force_43 = 0,				/* (C) video */
-	vid_card = 0,				/* (C) graphics/video card */
-	video_speed = 0;			/* (C) video */
+	video_card = 0,				/* (C) graphics/video card */
+	video_speed = 0,			/* (C) video */
+	voodoo_enabled = 0;			/* (C) video option */
+int	mouse_type = 0;				/* (C) selected mouse type */
 int	enable_sync = 0;			/* (C) enable time sync */
 int	serial_enabled[] = {0,0},		/* (C) enable serial ports */
 	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
@@ -130,10 +134,13 @@ int	update_icons;				/* (C) enable icons updates */
 int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
 int	hdc_type = 0;				/* (C) HDC type */
-int	sound_is_float = 1,			/* (C) sound uses FP values */
+int	scsi_card = 0;				/* (C) selected SCSI card */
+int	sound_card = 0,				/* (C) selected sound card */
+	sound_is_float = 1,			/* (C) sound uses FP values */
+	sound_gain = 0,				/* (C) sound volume gain */
 	mpu401_standalone_enable = 0,		/* (C) sound option */
 	opl3_type = 0,				/* (C) sound option */
-	voodoo_enabled = 0;			/* (C) video option */
+	midi_device;				/* (C) selected midi device */
 int	joystick_type = 0;			/* (C) joystick type */
 int	mem_size = 0;				/* (C) memory size */
 int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
@@ -712,7 +719,8 @@ pc_init_modules(void)
 	return(2);
     }
 
-    if ((vid_card < 0) || !video_card_available(video_old_to_new(vid_card))) {
+    if ((video_card < 0) ||
+	!video_card_available(video_old_to_new(video_card))) {
 	/* Whoops, selected video not available. */
 	str = plat_get_string(IDS_2064);
 	mbstowcs(name, machine_getname(), sizeof_w(name));
@@ -802,19 +810,18 @@ pc_reset_hard_init(void)
     timer_reset();
     device_init();
 
-#ifndef WALTJE_SERIAL
-    /* This is needed to initialize the serial timer. */
-    serial_init();
-#endif
-
-    /* Reset the parallel ports [before machine!] */
+    /* Reset the ports [before machine!] so they can be configured. */
     parallel_reset();
+    serial_reset();
 
     sound_reset();
     speaker_init();
 
     /* Initialize the actual machine and its basic modules. */
     machine_init();
+
+    /* FIXME: move elsewhere? */
+    shadowbios = 0;
 
     fdd_reset();
 
@@ -828,19 +835,8 @@ pc_reset_hard_init(void)
      */
 
     /* Reset some basic devices. */
-    serial_reset();
-
-    shadowbios = 0;
-
-    /*
-     * This has to be after the serial initialization so that
-     * serial_init() doesn't break the serial mouse by resetting
-     * the RCR callback to NULL.
-     */
     mouse_reset();
-
-    /* Reset the video card. */
-    video_reset(vid_card);
+    video_reset();
 
     /* FIXME: these, and hdc_reset, should be in disk_reset(). */
     cdrom_hard_reset();
@@ -1094,7 +1090,7 @@ pc_thread(void *param)
 #endif
 				 EMU_NAME,emu_version,fps,machine_getname(),
 				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name);
-			if (mouse_type != MOUSE_TYPE_NONE) {
+			if (mouse_type != MOUSE_NONE) {
 				wcscat(temp, L" - ");
 				if (!mouse_capture) {
 					wcscat(temp, plat_get_string(IDS_2077));
@@ -1126,7 +1122,7 @@ pc_thread(void *param)
 	}
 
 	/* If needed, handle a screen resize. */
-	if (doresize && !video_fullscreen) {
+	if (doresize && !vid_fullscreen) {
 		plat_resize(scrnsz_x, scrnsz_y);
 
 		doresize = 0;

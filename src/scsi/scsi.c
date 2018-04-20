@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.7	2018/04/10
+ * Version:	@(#)scsi.c	1.0.8	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,9 +72,6 @@ uint8_t		SCSIStatus = SCSI_STATUS_OK;
 #endif
 char		scsi_fn[SCSI_NUM][512];
 uint16_t	scsi_hd_location[SCSI_NUM];
-
-int		scsi_card_current = 0;
-int		scsi_card_last = 0;
 
 uint32_t	SCSI_BufferLength;
 static volatile
@@ -222,10 +219,8 @@ scsi_card_init(void)
 	}
     }
 
-    if (scsi_cards[scsi_card_current].device)
-	device_add(scsi_cards[scsi_card_current].device);
-
-    scsi_card_last = scsi_card_current;
+    if (scsi_cards[scsi_card].device)
+	device_add(scsi_cards[scsi_card].device);
 }
 
 
@@ -234,11 +229,11 @@ scsi_card_reset(void)
 {
     void *p = NULL;
 
-    if (scsi_cards[scsi_card_current].device) {
-	p = device_get_priv(scsi_cards[scsi_card_current].device);
+    if (scsi_cards[scsi_card].device) {
+	p = device_get_priv(scsi_cards[scsi_card].device);
 	if (p != NULL) {
-		if (scsi_cards[scsi_card_current].reset)
-			scsi_cards[scsi_card_current].reset(p);
+		if (scsi_cards[scsi_card].reset)
+			scsi_cards[scsi_card].reset(p);
 	}
     }
 }

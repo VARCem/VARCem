@@ -12,7 +12,7 @@
  *		an "extern" reference to its device into this file, and
  *		add an entry for it into the table.
  *
- * Version:	@(#)video_dev.c	1.0.16	2018/04/10
+ * Version:	@(#)video_dev.c	1.0.17	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -326,10 +326,10 @@ video_detect(void)
 
 
 void
-video_reset(int card)
+video_reset(void)
 {
-    pclog("VIDEO: reset (romset=%d, vid_card=%d, internal=%d)\n",
-       	romset, card, (machines[machine].flags & MACHINE_VIDEO)?1:0);
+    pclog("VIDEO: reset (romset=%d, video_card=%d, internal=%d)\n",
+       	romset, video_card, (machines[machine].flags & MACHINE_VIDEO)?1:0);
 
     /* Reset the CGA palette. */
     cga_palette = 0;
@@ -341,8 +341,8 @@ video_reset(int card)
     loadfont(L"video/mdsi/genius/8x12.bin", 4);
 
     /* Do not initialize internal cards here. */
-    if ((card == VID_NONE) || \
-	(card == VID_INTERNAL) || machines[machine].fixed_vidcard) return;
+    if ((video_card == VID_NONE) || \
+	(video_card == VID_INTERNAL) || machines[machine].fixed_vidcard) return;
 
     if (fontdatksc5601 != NULL) {
 	free(fontdatksc5601);
@@ -350,7 +350,7 @@ video_reset(int card)
     }
 
     /* Initialize the video card. */
-    device_add(video_cards[video_old_to_new(card)].device);
+    device_add(video_cards[video_old_to_new(video_card)].device);
 
     /* Enable the Voodoo if configured. */
     if (voodoo_enabled)
@@ -487,7 +487,7 @@ video_is_mda(void)
 		return(0);
     }
 
-    return((video_cards[video_old_to_new(vid_card)].flags & VIDEO_FLAG_TYPE_MASK) == VIDEO_FLAG_TYPE_MDA);
+    return((video_cards[video_old_to_new(video_card)].flags & VIDEO_FLAG_TYPE_MASK) == VIDEO_FLAG_TYPE_MDA);
 }
 
 
@@ -521,7 +521,7 @@ video_is_cga(void)
 		return(0);
     }
 
-    return((video_cards[video_old_to_new(vid_card)].flags & VIDEO_FLAG_TYPE_MASK) == VIDEO_FLAG_TYPE_CGA);
+    return((video_cards[video_old_to_new(video_card)].flags & VIDEO_FLAG_TYPE_MASK) == VIDEO_FLAG_TYPE_CGA);
 }
 
 
@@ -555,5 +555,5 @@ video_is_ega_vga(void)
 	return(1);
     }
 
-    return((video_cards[video_old_to_new(vid_card)].flags & VIDEO_FLAG_TYPE_MASK) == VIDEO_FLAG_TYPE_SPECIAL);
+    return((video_cards[video_old_to_new(video_card)].flags & VIDEO_FLAG_TYPE_MASK) == VIDEO_FLAG_TYPE_SPECIAL);
 }

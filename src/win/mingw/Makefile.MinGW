@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.24	2018/04/09
+# Version:	@(#)Makefile.mingw	1.0.26	2018/04/14
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -118,6 +118,9 @@ ifndef GREENB
 endif
 ifndef I686
  I686		:= n
+endif
+ifndef XTA
+ XTA		:= n
 endif
 ifndef OPENAL
  OPENAL		:= y
@@ -444,6 +447,10 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_at_440fx.o
  endif
 
+ ifeq ($(XTA), y)
+  OPTS		+= -DUSE_XTA
+ endif
+
  ifeq ($(STEALTH32), y)
   OPTS		+= -DUSE_STEALTH32
   DEVBROBJ	+= vid_icd2061.o
@@ -542,6 +549,9 @@ HDDOBJ		:= hdd.o \
 		    hdc_mfm_at.o \
 		    hdc_esdi_at.o hdc_esdi_mca.o \
 		    hdc_ide.o
+ifeq ($(XTA), y)
+HDDOBJ		+= hdc_ide_xta.o
+endif
 
 CDROMOBJ	:= cdrom.o \
 		    cdrom_dosbox.o cdrom_image.o cdrom_null.o

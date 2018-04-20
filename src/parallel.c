@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.5	2018/04/09
+ * Version:	@(#)parallel.c	1.0.6	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -78,6 +78,10 @@ parallel_write(uint16_t port, uint8_t val, void *priv)
 {
     parallel_t *dev = (parallel_t *)priv;
 
+#ifdef ENABLE_PARALLEL_LOG
+    pclog("PARALLEL: write(%04X, %02X)\n", port, val);
+#endif
+
     switch (port & 3) {
 	case 0:
 		if (dev->dev_ts != NULL)
@@ -116,6 +120,9 @@ parallel_read(uint16_t port, void *priv)
 		ret = dev->ctrl;
 		break;
     }
+#ifdef ENABLE_PARALLEL_LOG
+    pclog("PARALLEL: read(%04X) => %02X\n", port, ret);
+#endif
 
     return(ret);
 }
@@ -125,10 +132,9 @@ static void *
 parallel_init(const device_t *info)
 {
     parallel_t *dev;
-    int id = info->local - 1;
 
     /* Get the correct device. */
-    dev = &ports[id];
+    dev = &ports[info->local];
 
     /* Clear port. */
     dev->dat = 0x00;
@@ -140,11 +146,14 @@ parallel_init(const device_t *info)
 		  parallel_write,NULL,NULL, dev);
 
     /* If the user configured a device for this port, attach it. */
-    if (parallel_device[id] != 0) {
-	dev->dev_ts = parallel_device_get_device(parallel_device[id]);
+    if (parallel_device[info->local] != 0) {
+	dev->dev_ts = parallel_device_get_device(parallel_device[info->local]);
 	if (dev->dev_ts != NULL)
 		dev->dev_ps = dev->dev_ts->init(dev->dev_ts);
     }
+
+    pclog("PARALLEL: LPT%d (I/O=%04X, device=%d)\n",
+	info->local+1, dev->base, parallel_device[info->local]);
 
     return(dev);
 }
@@ -176,9 +185,9 @@ parallel_close(void *priv)
 const device_t parallel_1_device = {
     "LPT1:",
     0,
-    1,
+    0,
     parallel_init, parallel_close, NULL,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -186,9 +195,9 @@ const device_t parallel_1_device = {
 const device_t parallel_2_device = {
     "LPT2:",
     0,
-    2,
+    1,
     parallel_init, parallel_close, NULL,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -196,9 +205,9 @@ const device_t parallel_2_device = {
 const device_t parallel_3_device = {
     "LPT3:",
     0,
-    3,
+    2,
     parallel_init, parallel_close, NULL,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -209,6 +218,9 @@ parallel_reset(void)
 {
     parallel_t *dev;
     int i;
+
+    pclog("PARALLEL: reset ([%d] [%d] [%d])\n",
+	parallel_enabled[0], parallel_enabled[1], parallel_enabled[2]);
 
     for (i = 0; i < PARALLEL_MAX; i++) {
 	dev = &ports[i];

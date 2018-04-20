@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_video.h	1.0.1	2018/04/05
+ * Version:	@(#)win_settings_video.h	1.0.2	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,7 +69,7 @@ recalc_vid_list(HWND hdlg)
 	    device_is_valid(video_card_getdevice(c), machines[temp_machine].flags)) {
 		mbstowcs(temp, stransi, sizeof_w(temp));
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-		if (video_new_to_old(c) == temp_vid_card) {
+		if (video_new_to_old(c) == temp_video_card) {
 			SendMessage(h, CB_SETCURSEL, d, 0);
 			found_card = 1;
 		}
@@ -141,7 +141,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM)temp);
 				wcstombs(tempA, temp, sizeof(tempA));
 				vid = video_card_getid(tempA);
-				temp_vid_card = video_new_to_old(vid);
+				temp_video_card = video_new_to_old(vid);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_VID);
 				if (video_card_has_config(vid))
@@ -176,7 +176,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
 		SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM)temp);
 		wcstombs(tempA, temp, sizeof(tempA));
-		temp_vid_card = video_new_to_old(video_card_getid(tempA));
+		temp_video_card = video_new_to_old(video_card_getid(tempA));
 
 		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO_SPEED);
 		temp_video_speed = SendMessage(h, CB_GETCURSEL, 0, 0) - 1;

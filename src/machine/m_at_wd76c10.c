@@ -8,7 +8,7 @@
  *
  *		Implementation of the WD76C10 system controller.
  *
- * Version:	@(#)m_at_wd76c10.c	1.0.4	2018/04/09
+ * Version:	@(#)m_at_wd76c10.c	1.0.5	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,24 +101,36 @@ wd76c10_write(uint16_t port, uint16_t val, void *priv)
 	case 0x2072:
 		wd76c10_2072 = val;
 
+#if 0
 		serial_remove(1);
+#endif
 		if (! (val & 0x10)) {
 			switch ((val >> 5) & 7) {
 				case 1: serial_setup(1, 0x3f8, 4); break;
 				case 2: serial_setup(1, 0x2f8, 4); break;
 				case 3: serial_setup(1, 0x3e8, 4); break;
 				case 4: serial_setup(1, 0x2e8, 4); break;
-				default: serial_remove(1); break;
+				default:
+#if 0
+					serial_remove(1);
+#endif
+					break;
 			}
 		}
+#if 0
 		serial_remove(2);
+#endif
 		if (! (val & 0x01)) {
 			switch ((val >> 1) & 7) {
 				case 1: serial_setup(2, 0x3f8, 3); break;
 				case 2: serial_setup(2, 0x2f8, 3); break;
 				case 3: serial_setup(2, 0x3e8, 3); break;
 				case 4: serial_setup(2, 0x2e8, 3); break;
-				default: serial_remove(1); break;
+				default:
+#if 0
+					serial_remove(1);
+#endif
+					break;
 			}
 		}
 		break;

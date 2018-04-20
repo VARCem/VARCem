@@ -9,9 +9,8 @@
  *		Common driver module for MOUSE devices.
  *
  * TODO:	Add the Genius bus- and serial mouse.
- *		Remove the '3-button' flag from mouse types.
  *
- * Version:	@(#)mouse.c	1.0.6	2018/04/10
+ * Version:	@(#)mouse.c	1.0.8	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,7 +63,6 @@ typedef struct {
 } mouse_t;
 
 
-int	mouse_type = 0;
 int	mouse_x,
 	mouse_y,
 	mouse_z,
@@ -73,14 +71,14 @@ int	mouse_x,
 
 static const device_t mouse_none_device = {
     "Disabled",
-    0, MOUSE_TYPE_NONE,
+    0, MOUSE_NONE,
     NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL
 };
 static const device_t mouse_internal_device = {
-    "Internal Mouse",
-    0, MOUSE_TYPE_INTERNAL,
+    "Internal",
+    0, MOUSE_INTERNAL,
     NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -88,17 +86,19 @@ static const device_t mouse_internal_device = {
 
 
 static const mouse_t mouse_devices[] = {
-    { "none",		&mouse_none_device	},
-    { "internal",	&mouse_internal_device	},
-    { "logibus",	&mouse_logibus_device	},
-    { "msbus",		&mouse_msinport_device	},
+    { "none",		&mouse_none_device		},
+    { "internal",	&mouse_internal_device		},
+    { "logibus",	&mouse_logibus_device		},
+    { "msbus",		&mouse_msinport_device		},
 #if 0
-    { "genibus",	&mouse_genibus_device	},
+    { "genibus",	&mouse_genibus_device		},
 #endif
-    { "mssystems",	&mouse_mssystems_device	},
-    { "msserial",	&mouse_msserial_device	},
-    { "ps2",		&mouse_ps2_device	},
-    { NULL,		NULL			}
+    { "mssystems",	&mouse_mssystems_device		},
+    { "msserial",	&mouse_msserial_device		},
+    { "logiserial",	&mouse_logiserial_device	},
+    { "mswhserial",	&mouse_mswhserial_device	},
+    { "ps2",		&mouse_ps2_device		},
+    { NULL,		NULL				}
 };
 
 
@@ -115,9 +115,9 @@ mouse_init(void)
     mouse_x = mouse_y = mouse_z = 0;
     mouse_buttons = 0x00;
 
-    mouse_type = MOUSE_TYPE_NONE;
-    mouse_priv = NULL;
-    mouse_nbut = 0;
+    mouse_type = MOUSE_NONE;
+
+    mouse_close();
 }
 
 
@@ -133,7 +133,7 @@ void
 mouse_reset(void)
 {
     /* Nothing to do if no mouse, or a machine-internal one. */
-    if (mouse_type <= MOUSE_TYPE_INTERNAL) return;
+    if (mouse_type <= MOUSE_INTERNAL) return;
 
     pclog("MOUSE: reset(type=%d, '%s')\n",
 	mouse_type, mouse_devices[mouse_type].device->name);
@@ -164,14 +164,22 @@ mouse_process(void)
 {
     static int poll_delay = 2;
 
-    if (mouse_type == MOUSE_TYPE_NONE) return;
+    if ((mouse_priv == NULL) ||		/* no or no active device */
+	(mouse_type == MOUSE_NONE)) return;
 
     if (--poll_delay) return;
 
     mouse_poll();
 
     if (mouse_dev.available != NULL) {
-    	mouse_dev.available(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv);
+    	if (! mouse_dev.available(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv)) {
+		/* Poll failed, maybe port closed? */
+		mouse_close();
+
+		pclog("MOUSE: device closed, mouse disabled!\n");
+
+		return;
+	}
 
 	/* Reset mouse deltas. */
 	mouse_x = mouse_y = mouse_z = 0;
@@ -184,7 +192,7 @@ mouse_process(void)
 void
 mouse_set_poll(int (*func)(int,int,int,int,void *), void *arg)
 {
-    if (mouse_type != MOUSE_TYPE_INTERNAL) return;
+    if (mouse_type != MOUSE_INTERNAL) return;
 
     mouse_dev.available = func;
     mouse_priv = arg;

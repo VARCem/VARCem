@@ -8,7 +8,7 @@
  *
  *		Definitions for the MIDI module.
  *
- * Version:	@(#)midi.h	1.0.4	2018/04/10
+ * Version:	@(#)midi.h	1.0.5	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,9 +55,6 @@ typedef struct {
     void (*poll)(void);
     int (*write)(uint8_t val);
 } midi_device_t;
-
-
-extern int	midi_device_current;
 
 
 extern int	midi_device_available(int card);

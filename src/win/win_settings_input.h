@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_input.h	1.0.3	2018/04/10
+ * Version:	@(#)win_settings_input.h	1.0.4	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,7 @@ mouse_valid(int num, int m)
 {
     const device_t *dev;
 
-    if ((num == MOUSE_TYPE_INTERNAL) &&
+    if ((num == MOUSE_INTERNAL) &&
 	!(machines[m].flags & MACHINE_MOUSE)) return(0);
 
     dev = mouse_get_device(num);

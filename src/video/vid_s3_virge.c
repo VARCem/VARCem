@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.8	2018/04/09
+ * Version:	@(#)vid_s3_virge.c	1.0.9	2018/04/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -479,7 +479,7 @@ static void s3_virge_out(uint16_t addr, uint8_t val, void *p)
                                 case 2: case 3:  svga->bpp = 15; break;
                                 case 4: case 5:  svga->bpp = 16; break;
                                 case 7:  svga->bpp = 24; break;
-                                case 13: svga->bpp = ((vid_card == VID_VIRGEVX_VLB) || (vid_card == VID_VIRGEVX_PCI)) ? 24 : 32; break;
+                                case 13: svga->bpp = ((video_card == VID_VIRGEVX_VLB) || (video_card == VID_VIRGEVX_PCI)) ? 24 : 32; break;
                                 default: svga->bpp = 8;  break;
                         }
                         break;
@@ -594,7 +594,7 @@ static void s3_virge_recalctimings(svga_t *svga)
                         }
                 }
 
-		if ((vid_card != VID_VIRGEVX_VLB) && (vid_card != VID_VIRGEVX_PCI))
+		if ((video_card != VID_VIRGEVX_VLB) && (video_card != VID_VIRGEVX_PCI))
 		{
 	                if ((svga->bpp == 15) || (svga->bpp == 16))
         	        {
@@ -658,7 +658,7 @@ static void s3_virge_recalctimings(svga_t *svga)
         if (((svga->miscout >> 2) & 3) == 3)
         {
                 int n = svga->seqregs[0x12] & 0x1f;
-                int r = (svga->seqregs[0x12] >> 5) & ((virge->is_375 || ((vid_card == VID_VIRGEVX_VLB) || (vid_card == VID_VIRGEVX_PCI))) ? 7 : 3);
+                int r = (svga->seqregs[0x12] >> 5) & ((virge->is_375 || ((video_card == VID_VIRGEVX_VLB) || (video_card == VID_VIRGEVX_PCI))) ? 7 : 3);
                 int m = svga->seqregs[0x13] & 0x7f;
                 double freq = (((double)m + 2) / (((double)n + 2) * (double)(1 << r))) * 14318184.0;
 

@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.8	2018/04/10
+ * Version:	@(#)openal.c	1.0.9	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -241,9 +241,9 @@ pclog("SOUND: inital()\n");
      * If the current MIDI device is neither "none", nor system MIDI,
      * initialize the MIDI buffer and source, otherwise, do not.
      */
-    str = midi_device_get_internal_name(midi_device_current);
+    str = midi_device_get_internal_name(midi_device);
     if ((str != NULL) &&
-		(!strcmp(str, "none") || !strcmp(str, SYSTEM_MIDI_INT))) init_midi = 1;
+	(!strcmp(str, "none") || !strcmp(str, SYSTEM_MIDI_INT))) init_midi = 1;
 
 #ifdef USE_OPENAL
     if (sound_is_float) {

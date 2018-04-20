@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.17	2018/04/10
+ * Version:	@(#)emu.h	1.0.18	2018/04/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -91,20 +91,24 @@ extern wchar_t	log_path[1024];			/* (O) full path of logfile */
 /* Configuration variables. */
 extern int	window_w, window_h,		/* (C) window size and */
 		window_x, window_y,		/*     position info */
-		window_remember,
+		window_remember;
+extern int	vid_api,			/* (C) video renderer */
 		vid_resize,			/* (C) allow resizing */
+		vid_cga_contrast,		/* (C) video */
+		vid_fullscreen,			/* (C) video */
+		vid_fullscreen_first,		/* (C) video */
+		vid_fullscreen_scale,		/* (C) video */
+		vid_grayscale,			/* (C) video */
+		vid_graytype,			/* (C) video */
 		invert_display,			/* (C) invert the display */
-		suppress_overscan;		/* (C) suppress overscans */
-extern int	scale;				/* (C) screen scale factor */
-extern int	vid_api;			/* (C) video renderer */
-extern int	vid_cga_contrast,		/* (C) video */
-		video_fullscreen,		/* (C) video */
-		video_fullscreen_first,		/* (C) video */
-		video_fullscreen_scale,		/* (C) video */
+		suppress_overscan,		/* (C) suppress overscans */
+		scale,				/* (C) screen scale factor */
 		enable_overscan,		/* (C) video */
-		force_43,			/* (C) video */
-		vid_card,			/* (C) graphics/video card */
-		video_speed;			/* (C) video */
+		force_43;			/* (C) video */
+extern int	video_card,			/* (C) graphics/video card */
+		video_speed,			/* (C) video option */
+		voodoo_enabled;			/* (C) video option */
+extern int	mouse_type;			/* (C) selected mouse type */
 extern int	enable_sync;			/* (C) enable time sync */
 extern int	serial_enabled[],		/* (C) enable serial ports */
 		parallel_enabled[],		/* (C) enable LPT ports */
@@ -116,10 +120,13 @@ extern int	update_icons;			/* (C) enable icons updates */
 extern int	romdos_enabled;			/* (C) enable ROM DOS */
 #endif
 extern int	hdc_type;			/* (C) HDC type */
-extern int	sound_is_float,			/* (C) sound uses FP values */
+extern int	scsi_card;			/* (C) selected SCSI card */
+extern int	sound_card,			/* (C) selected sound card */
+		sound_is_float,			/* (C) sound uses FP values */
+		sound_gain,			/* (C) sound volume gain */
 		mpu401_standalone_enable,	/* (C) sound option */
 		opl3_type,			/* (C) sound option */
-		voodoo_enabled;			/* (C) video option */
+		midi_device;			/* (C) selected midi device */
 extern int	joystick_type;			/* (C) joystick type */
 extern int	mem_size;			/* (C) memory size */
 extern int	cpu_manufacturer,		/* (C) cpu manufacturer */

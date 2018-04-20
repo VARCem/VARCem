@@ -227,25 +227,25 @@ extern uint32_t shade[5][256];
 static __inline uint32_t svga_color_transform(uint32_t color)
 {
 	uint8_t *clr8 = (uint8_t *) &color;
-	if (!video_grayscale && !invert_display)
+	if (!vid_grayscale && !invert_display)
 		return color;
-	if (video_grayscale)
+	if (vid_grayscale)
 	{
-		if (video_graytype)
+		if (vid_graytype)
 		{
-			if (video_graytype == 1)
+			if (vid_graytype == 1)
 				color = ((54 * (uint32_t)clr8[2]) + (183 * (uint32_t)clr8[1]) + (18 * (uint32_t)clr8[0])) / 255;
 			else
 				color = ((uint32_t)clr8[2] + (uint32_t)clr8[1] + (uint32_t)clr8[0]) / 3;
 		}
 		else
 			color = ((76 * (uint32_t)clr8[2]) + (150 * (uint32_t)clr8[1]) + (29 * (uint32_t)clr8[0])) / 255;
-		switch (video_grayscale)
+		switch (vid_grayscale)
 		{
 			case 2:
 			case 3:
 			case 4:
-				color = shade[video_grayscale][color];
+				color = shade[vid_grayscale][color];
 				break;
 			default:
 				clr8[3] = 0;

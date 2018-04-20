@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.21	2018/04/09
+ * Version:	@(#)win_settings.c	1.0.22	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,7 +87,7 @@ static int	temp_dynarec;
 #endif
 
 /* Video category. */
-static int	temp_vid_card, temp_video_speed, temp_voodoo;
+static int	temp_video_card, temp_video_speed, temp_voodoo;
 
 /* Input devices category. */
 static int	temp_mouse, temp_joystick;
@@ -182,7 +182,7 @@ settings_init(void)
     temp_sync = enable_sync;
 
     /* Video category */
-    temp_vid_card = vid_card;
+    temp_video_card = video_card;
     temp_video_speed = video_speed;
     temp_voodoo = voodoo_enabled;
 
@@ -191,8 +191,8 @@ settings_init(void)
     temp_joystick = joystick_type;
 
     /* Sound category */
-    temp_sound_card = sound_card_current;
-    temp_midi_device = midi_device_current;
+    temp_sound_card = sound_card;
+    temp_midi_device = midi_device;
     temp_mpu401 = mpu401_standalone_enable;
     temp_opl3_type = opl3_type;
     temp_float = sound_is_float;
@@ -212,7 +212,7 @@ settings_init(void)
     }
 
     /* Other peripherals category */
-    temp_scsi_card = scsi_card_current;
+    temp_scsi_card = scsi_card;
     temp_hdc_type = hdc_type;
     temp_ide_ter = ide_enable[2];
     temp_ide_ter_irq = ide_irq[2];
@@ -257,7 +257,7 @@ settings_changed(void)
     i = i || (temp_sync != enable_sync);
 
     /* Video category */
-    i = i || (vid_card != temp_vid_card);
+    i = i || (video_card != temp_video_card);
     i = i || (video_speed != temp_video_speed);
     i = i || (voodoo_enabled != temp_voodoo);
 
@@ -266,8 +266,8 @@ settings_changed(void)
     i = i || (joystick_type != temp_joystick);
 
     /* Sound category */
-    i = i || (sound_card_current != temp_sound_card);
-    i = i || (midi_device_current != temp_midi_device);
+    i = i || (sound_card != temp_sound_card);
+    i = i || (midi_device != temp_midi_device);
     i = i || (mpu401_standalone_enable != temp_mpu401);
     i = i || (opl3_type != temp_opl3_type);
     i = i || (sound_is_float != temp_float);
@@ -286,7 +286,7 @@ settings_changed(void)
     }
 
     /* Peripherals category */
-    i = i || (temp_scsi_card != scsi_card_current);
+    i = i || (temp_scsi_card != scsi_card);
     i = i || (temp_hdc_type != hdc_type);
     i = i || (temp_ide_ter != ide_enable[2]);
     i = i || (temp_ide_ter_irq != ide_irq[2]);
@@ -358,7 +358,7 @@ settings_save(void)
     enable_sync = temp_sync;
 
     /* Video category */
-    vid_card = temp_vid_card;
+    video_card = temp_video_card;
     video_speed = temp_video_speed;
     voodoo_enabled = temp_voodoo;
 
@@ -367,8 +367,8 @@ settings_save(void)
     joystick_type = temp_joystick;
 
     /* Sound category */
-    sound_card_current = temp_sound_card;
-    midi_device_current = temp_midi_device;
+    sound_card = temp_sound_card;
+    midi_device = temp_midi_device;
     mpu401_standalone_enable = temp_mpu401;
     opl3_type = temp_opl3_type;
     sound_is_float = temp_float;
@@ -388,7 +388,7 @@ settings_save(void)
     }
 
     /* Peripherals category */
-    scsi_card_current = temp_scsi_card;
+    scsi_card = temp_scsi_card;
     hdc_type = temp_hdc_type;
     ide_enable[2] = temp_ide_ter;
     ide_irq[2] = temp_ide_ter_irq;

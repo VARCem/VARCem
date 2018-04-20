@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.10	2018/04/10
+# Version:	@(#)Makefile.VC	1.0.12	2018/04/14
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -118,6 +118,9 @@ ifndef GREENB
 endif
 ifndef I686
  I686		:= n
+endif
+ifndef XTA
+ XTA		:= n
 endif
 ifndef OPENAL
  OPENAL		:= y
@@ -412,6 +415,10 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_at_440fx.obj
  endif
 
+ ifeq ($(XTA), y)
+  OPTS		+= -DUSE_XTA
+ endif
+
  ifeq ($(STEALTH32), y)
   OPTS		+= -DUSE_STEALTH32
   DEVBROBJ	+= vid_icd2061.obj
@@ -507,6 +514,9 @@ HDDOBJ		:= hdd.obj \
 		    hdc_mfm_at.obj \
 		    hdc_esdi_at.obj hdc_esdi_mca.obj \
 		    hdc_ide.obj
+ifeq ($(XTA), y)
+HDDOBJ		+= hdc_ide_xta.o
+#endif
 
 CDROMOBJ	:= cdrom.obj \
 		    cdrom_dosbox.obj cdrom_image.obj cdrom_null.obj

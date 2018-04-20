@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.11	2018/04/09
+ * Version:	@(#)m_amstrad.c	1.0.12	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1252,7 +1252,7 @@ machine_amstrad_init(const machine_t *model, void *arg)
     switch(model->id) {
 	case ROM_PC1512:
 		device_add(&fdc_xt_device);
-		if (vid_card == VID_INTERNAL) {
+		if (video_card == VID_INTERNAL) {
 			/* Load the PC1512 CGA Character Set ROM. */
 			loadfont(roms->fontfn, roms->fontnum);
 
@@ -1264,7 +1264,7 @@ machine_amstrad_init(const machine_t *model, void *arg)
 
 	case ROM_PC1640:
 		device_add(&fdc_xt_device);
-		if (vid_card == VID_INTERNAL) {
+		if (video_card == VID_INTERNAL) {
 			/* Load the BIOS for the internal CGA/EGA. */
 			vid_init_1640(ams, roms->vidfn, roms->vidsz);
 			device_add_ex(&vid_1640_device, ams->vid);
@@ -1273,7 +1273,7 @@ machine_amstrad_init(const machine_t *model, void *arg)
 
 	case ROM_PC200:
 		device_add(&fdc_xt_device);
-		if (vid_card == VID_INTERNAL) {
+		if (video_card == VID_INTERNAL) {
 			/* Load the PC200 CGA Character Set ROM. */
 			loadfont(roms->fontfn, roms->fontnum);
 
@@ -1284,21 +1284,21 @@ machine_amstrad_init(const machine_t *model, void *arg)
 
 	case ROM_PC2086:
 		device_add(&fdc_at_actlow_device);
-		if (vid_card == VID_INTERNAL) {
+		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc2086_device);
 		}
 		break;
 
 	case ROM_PC3086:
 		device_add(&fdc_at_actlow_device);
-		if (vid_card == VID_INTERNAL) {
+		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc3086_device);
 		}
 		break;
 
 	case ROM_MEGAPC:
 		device_add(&fdc_at_actlow_device);
-		if (vid_card == VID_INTERNAL) {
+		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_wd90c11_megapc_device);
 		}
 		break;
@@ -1314,7 +1314,7 @@ machine_amstrad_init(const machine_t *model, void *arg)
     keyboard_scan = 1;
 
     /* Tell mouse driver about our internal mouse. */
-    if (mouse_type == MOUSE_TYPE_INTERNAL) {
+    if (mouse_type == MOUSE_INTERNAL) {
 	mouse_reset();
 	mouse_set_poll(ms_poll, ams);
     }

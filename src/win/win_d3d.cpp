@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.6	2018/03/25
+ * Version:	@(#)win_d3d.cpp	1.0.7	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -103,7 +103,7 @@ d3d_size(RECT w_rect, double *l, double *t, double *r, double *b, int w, int h)
     int ratio_w, ratio_h;
     double hsr, gsr, ra, d;
 
-    switch (video_fullscreen_scale) {
+    switch (vid_fullscreen_scale) {
 	case FULLSCR_SCALE_FULL:
 		d3d_size_default(w_rect, l, t, r, b);
 		break;

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.2	2018/04/07
+ * Version:	@(#)win_settings_machine.h	1.0.3	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -314,7 +314,13 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		if ((machines[temp_machine].flags & MACHINE_AT) && (machines[temp_machine].ram_granularity < 128))
 			temp_mem_size *= 1024;
 		if (machines[temp_machine].flags & MACHINE_VIDEO)
-			vid_card = VID_INTERNAL;
+			video_card = VID_INTERNAL;
+		if (machines[temp_machine].flags & MACHINE_MOUSE)
+			mouse_type = MOUSE_INTERNAL;
+		if (machines[temp_machine].flags & MACHINE_SOUND)
+			sound_card = SOUND_INTERNAL;
+		if (machines[temp_machine].flags & MACHINE_HDC)
+			hdc_type = HDC_INTERNAL;
 		return FALSE;
 
 	default:

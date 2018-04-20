@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.17	2018/04/10
+ * Version:	@(#)machine_table.c	1.0.18	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,7 +93,7 @@ const machine_t machines[] = {
     { "[286 ISA] GW-286CT GEAR",		ROM_GW286CT,		"gw286ct",		L"unknown/gw286ct",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										512,16384, 128, 128,		 machine_at_scat_init, NULL,			NULL			},
     { "[286 ISA] Hyundai Super-286TR",		ROM_SUPER286TR,		"hyundai_super286tr",	L"hyundai/super286tr",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										512,16384, 128, 128,		 machine_at_scat_init, NULL,			NULL			},
     { "[286 ISA] IBM AT",			ROM_IBMAT,		"ibm_at",		L"ibm/at",			{{"", cpus_ibmat},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										256,15872, 128,  64,		  machine_at_ibm_init, NULL,			NULL			},
-    { "[286 ISA] IBM PS/1 model 2011",		ROM_IBMPS1_2011,	"ibm_ps1_2011",		L"ibm/ps1_2011",		{{"", cpus_ps1_m2011},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,						512,16384, 512,  64,	       machine_ps1_m2011_init, NULL,			NULL			},
+    { "[286 ISA] IBM PS/1 model 2011",		ROM_IBMPS1_2011,	"ibm_ps1_2011",		L"ibm/ps1_2011",		{{"", cpus_ps1_m2011},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_MOUSE | MACHINE_HDC,		512, 6144, 512,  64,	       machine_ps1_m2011_init, &m_ps1_device,		NULL			},
     { "[286 ISA] IBM PS/2 model 30-286",	ROM_IBMPS2_M30_286,	"ibm_ps2_m30_286",	L"ibm/ps2_m30_286",		{{"", cpus_ps2_m30_286},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,						  1,   16,   1,  64,	     machine_ps2_m30_286_init, NULL,			NULL			},
     { "[286 ISA] IBM XT Model 286",		ROM_IBMXT286,		"ibm_xt286",		L"ibm/xt286",			{{"", cpus_ibmxt286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										256,15872, 128, 128,		  machine_at_ibm_init, NULL,			NULL			},
     { "[286 ISA] Samsung SPC-4200P",		ROM_SPC4200P,		"samsung_spc4200p",	L"samsung/spc4200p",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2,								512, 2048, 128, 128,		 machine_at_scat_init, NULL,			NULL			},
@@ -104,10 +104,10 @@ const machine_t machines[] = {
 
     { "[386SX ISA] AMI 386SX clone",		ROM_AMI386SX,		"ami_386",		L"generic/ami/386",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								512,16384, 128, 128,	     machine_at_headland_init, NULL,			NULL			},
     { "[386SX ISA] Amstrad MegaPC",		ROM_MEGAPC,		"amstrad_megapc",	L"amstrad/megapc",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC,				  1,   16,   1, 128,	      machine_at_wd76c10_init, NULL,			NULL			},
-    { "[386SX ISA] Award 386SX clone",		ROM_AWARD386SX_OPTI495,	"award_386sx",		L"generic/award/opti495",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,							  1,   64,   1, 128,	      machine_at_opti495_init, NULL,			NULL			},
+    { "[386SX ISA] Award 386SX clone",		ROM_AWARD386SX_OPTI495,	"award_386sx",		L"generic/award/opti495",	{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,							  1,   64,   1, 128,	      machine_at_opti495_init, NULL,			NULL			},
     { "[386SX ISA] DTK 386SX clone",		ROM_DTK386,		"dtk_386",		L"dtk/386",			{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								512,16384, 128, 128,		 machine_at_neat_init, NULL,			NULL			},
-    { "[386SX ISA] IBM PS/1 model 2121",	ROM_IBMPS1_2121,	"ibm_ps1_2121",		L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, NULL,			NULL			},
-    { "[386SX ISA] IBM PS/1 m.2121+ISA",	ROM_IBMPS1_2121_ISA,	"ibm_ps1_2121_isa",	L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, NULL,			NULL			},
+    { "[386SX ISA] IBM PS/1 model 2121",	ROM_IBMPS1_2121,	"ibm_ps1_2121",		L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, &m_ps1_device,		NULL			},
+    { "[386SX ISA] IBM PS/1 m.2121+ISA",	ROM_IBMPS1_2121_ISA,	"ibm_ps1_2121_isa",	L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, &m_ps1_device,		NULL			},
 
     { "[386SX MCA] IBM PS/2 model 55SX",	ROM_IBMPS2_M55SX,	"ibm_ps2_m55sx",	L"ibm/ps2_m55sx",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,						  1,    8,   1,  64,	  machine_ps2_model_55sx_init, NULL,			NULL			},
     { "[386SX ISA] KMX-C-02",			ROM_KMXC02,		"kmxc02",		L"unknown/kmxc02",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										512,16384, 512, 128,	       machine_at_scatsx_init, NULL,			NULL			},

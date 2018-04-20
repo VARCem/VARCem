@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.15	2018/04/10
+ * Version:	@(#)video.h	1.0.16	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -185,9 +185,6 @@ extern bitmap_t	*screen,
 extern PALETTE	cgapal,
 		cgapal_mono[6];
 extern uint32_t	pal_lookup[256];
-extern int	video_fullscreen,
-		video_fullscreen_scale,
-		video_fullscreen_first;
 extern int	fullchange;
 extern uint8_t	fontdat[2048][8];
 extern uint8_t	fontdatm[2048][16];
@@ -198,11 +195,9 @@ extern uint32_t	*video_6to8,
 		*video_15to32,
 		*video_16to32;
 extern int	xsize,ysize;
-extern int	enable_overscan;
 extern int	update_overscan;
 extern int	overscan_x,
 		overscan_y;
-extern int	force_43;
 extern int	video_timing_read_b,
 		video_timing_read_w,
 		video_timing_read_l;
@@ -213,11 +208,7 @@ extern int	video_speed;
 extern int	video_res_x,
 		video_res_y,
 		video_bpp;
-extern int	vid_resize;
 extern int	cga_palette;
-extern int	vid_cga_contrast;
-extern int	video_grayscale;
-extern int	video_graytype;
 
 extern float	cpuclock;
 extern int	emu_fps,
@@ -263,7 +254,7 @@ extern void	updatewindowsize(int x, int y);
 
 extern void	video_init(void);
 extern void	video_close(void);
-extern void	video_reset(int card);
+extern void	video_reset(void);
 extern uint8_t	video_force_resize_get(void);
 extern void	video_force_resize_set(uint8_t res);
 extern void	video_update_timing(void);

@@ -406,7 +406,8 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 	pclog("Mode     : %s\n", (r->mode == 1)?"interleaved":"linear");
 	pclog("Files    : %d\n", r->nfiles);
 	for (c=0; c<r->nfiles; c++) {
-		pclog(" [%d]     : '%ls', %i, 0x%06lx, %i\n", c+1,
+		pclog("%c[%d]     : '%ls', %i, 0x%06lx, %i\n",
+			(r->files[c].offset==0xffffffff)?'*':' ', c+1,
 			r->files[c].path, r->files[c].skip,
 			r->files[c].offset, r->files[c].size);
 	}
@@ -420,9 +421,14 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 		case 0:			/* linear file(s) */
 			/* We loop on all files. */
 			for (c=0; c<r->nfiles; c++) {
+				/* If this is a no-load file, skip. */
+				if (r->files[c].offset == 0xffffffff)
+					continue;
+
 				wcscpy(script, path);
 				wcscat(script, r->files[c].path);
 				pc_path(script, sizeof_w(script), NULL);
+
 				i = rom_load_linear(script,
 						    r->files[c].offset,
 						    r->files[c].size,
@@ -436,12 +442,17 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 		case 1:			/* interleaved file(s) */
 			/* We loop on all files. */
 			for (c=0; c<r->nfiles/2; c+=2) {
+				/* If this is a no-load file, skip. */
+				if (r->files[c].offset == 0xffffffff)
+					continue;
+
 				wcscpy(script, path);
 				wcscat(script, r->files[c].path);
 				pc_path(script, sizeof_w(script), NULL);
 				wcscpy(temp, path);
 				wcscat(temp, r->files[c+1].path);
 				pc_path(temp, sizeof_w(temp), NULL);
+
 				i = rom_load_interleaved(script, temp,
 						 	r->files[c].offset,
 						 	r->files[c].size,

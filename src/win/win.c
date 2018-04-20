@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.12	2018/04/10
+ * Version:	@(#)win.c	1.0.13	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -367,7 +367,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     int	argc, i;
 
     /* Set this to the default value (windowed mode). */
-    video_fullscreen = 0;
+    vid_fullscreen = 0;
 
     /* We need this later. */
     hinstance = hInst;
@@ -620,7 +620,7 @@ plat_vidapi(const char *name)
     }
 
     /* Default value. */
-    return(1);
+    return(0);
 }
 
 
@@ -644,10 +644,7 @@ plat_vidapi_name(int api)
 		break;
 
 	case 1:
-#if 0
-		/* Direct3D is default. */
 		name = "d3d";
-#endif
 		break;
 #endif
 
@@ -711,11 +708,11 @@ plat_setvid(int api)
 void
 plat_vidsize(int x, int y)
 {
-    if (! vid_apis[video_fullscreen][vid_api].resize) return;
+    if (! vid_apis[vid_fullscreen][vid_api].resize) return;
 
     startblit();
     video_wait_for_blit();
-    vid_apis[video_fullscreen][vid_api].resize(x, y);
+    vid_apis[vid_fullscreen][vid_api].resize(x, y);
     endblit();
 }
 
@@ -723,7 +720,7 @@ plat_vidsize(int x, int y)
 int
 get_vidpause(void)
 {
-    return(vid_apis[video_fullscreen][vid_api].pause());
+    return(vid_apis[vid_fullscreen][vid_api].pause());
 }
 
 
@@ -733,13 +730,13 @@ plat_setfullscreen(int on)
     HWND *hw;
 
     /* Want off and already off? */
-    if (!on && !video_fullscreen) return;
+    if (!on && !vid_fullscreen) return;
 
     /* Want on and already on? */
-    if (on && video_fullscreen) return;
+    if (on && vid_fullscreen) return;
 
-    if (on && video_fullscreen_first) {
-	video_fullscreen_first = 0;
+    if (on && vid_fullscreen_first) {
+	vid_fullscreen_first = 0;
 	ui_msgbox(MBX_INFO, (wchar_t *)IDS_2107);
     }
 
@@ -750,10 +747,10 @@ plat_setfullscreen(int on)
     win_mouse_close();
 
     /* Close the current mode, and open the new one. */
-    vid_apis[video_fullscreen][vid_api].close();
-    video_fullscreen = on;
-    hw = (video_fullscreen) ? &hwndMain : &hwndRender;
-    vid_apis[video_fullscreen][vid_api].init((void *) *hw);
+    vid_apis[vid_fullscreen][vid_api].close();
+    vid_fullscreen = on;
+    hw = (vid_fullscreen) ? &hwndMain : &hwndRender;
+    vid_apis[vid_fullscreen][vid_api].init((void *) *hw);
 
 #ifdef USE_WX
     wx_set_fullscreen(on);
@@ -767,7 +764,7 @@ plat_setfullscreen(int on)
 
     /* Finally, handle the host's mouse cursor. */
     /* pclog("%s full screen, %s cursor\n", on ? "enter" : "leave", on ? "hide" : "show"); */
-    show_cursor(video_fullscreen ? 0 : -1);
+    show_cursor(vid_fullscreen ? 0 : -1);
 }
 
 

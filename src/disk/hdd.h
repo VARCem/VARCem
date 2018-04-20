@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.4	2018/04/02
+ * Version:	@(#)hdd.h	1.0.5	2018/04/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,8 @@ enum {
     HDD_BUS_SCSI_REMOVABLE,
     HDD_BUS_USB
 };
+#define HDD_BUS_IDE	HDD_BUS_IDE_PIO_ONLY
+#define HDD_BUS_EIDE	HDD_BUS_IDE_PIO_AND_DMA
 
 
 /* Define a hard disk table entry. */

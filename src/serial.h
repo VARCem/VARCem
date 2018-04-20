@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.2	2018/04/05
+ * Version:	@(#)serial.h	1.0.3	2018/04/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -56,9 +56,6 @@
 #define SERIAL2_ADDR		0x02f8
 #define SERIAL2_IRQ		3
 
-
-#ifdef WALTJE_SERIAL
-
 /* Supported UART types. */
 #define UART_TYPE_8250		0	/* standard NS8250 */
 #define UART_TYPE_8250A		1	/* updated NS8250(A) */
@@ -68,14 +65,15 @@
 #define UART_TYPE_16670		5	/* 16670 (64b fifo) */
 
 
-typedef struct _serial_ {
+typedef struct SERIAL {
     int8_t	port;			/* port number (1,2,..) */
     int8_t	irq;			/* IRQ channel used */
-    uint16_t	addr;			/* I/O address used */
+    uint16_t	base;			/* I/O address used */
+
     int8_t	type;			/* UART type */
     uint8_t	int_status;
 
-    uint8_t	lsr, thr, mctrl, rcr,	/* UART registers */
+    uint8_t	lsr, thr, mcr, rcr,	/* UART registers */
 		iir, ier, lcr, msr;
     uint8_t	dlab1, dlab2;
     uint8_t	dat,
@@ -83,64 +81,44 @@ typedef struct _serial_ {
     uint8_t	scratch;
     uint8_t	fcr;
 
+    /* Access to internal functions. */
+    void	(*clear_fifo)(struct SERIAL *);
+#ifdef WALTJE_SERIAL
+    void	(*write_fifo)(struct SERIAL *, uint8_t, int);
+#else
+    void	(*write_fifo)(struct SERIAL *, uint8_t);
+#endif
+
     /* Data for the RTS-toggle callback. */
-    void	(*rts_callback)(void *);
+    void	(*rts_callback)(struct SERIAL *, void *);
     void	*rts_callback_p;
 
-    uint8_t	fifo[256];
-    int		fifo_read, fifo_write;
+    int64_t	delay;
 
-    int64_t	receive_delay;
-
+#ifdef WALTJE_SERIAL
     void	*bh;			/* BottomHalf handler */
+#endif
+
+    int		fifo_read,
+		fifo_write;
+    uint8_t	fifo[256];
 } SERIAL;
+
+
+/* Global variables. */
+#ifdef EMU_DEVICE_H
+extern const device_t serial_1_device;
+extern const device_t serial_2_device;
+#endif
 
 
 /* Functions. */
-extern void	serial_init(void);
 extern void	serial_reset(void);
-extern void	serial_setup(int port, uint16_t addr, int irq);
-extern void	serial_remove(int port);
-extern SERIAL	*serial_attach(int, void *, void *);
-extern int	serial_link(int, char *);
+extern void	serial_setup(int port, uint16_t addr, int8_t irq);
+extern SERIAL	*serial_attach(int port, void *func, void *priv);
 
-extern void	serial_clear_fifo(SERIAL *);
-extern void	serial_write_fifo(SERIAL *, uint8_t, int);
-
-
-#else
-
-
-void serial_remove(int port);
-void serial_setup(int port, uint16_t addr, int irq);
-void serial_init(void);
-void serial_reset();
-
-struct SERIAL;
-
-typedef struct
-{
-        uint8_t lsr,thr,mctrl,rcr,iir,ier,lcr,msr;
-        uint8_t dlab1,dlab2;
-        uint8_t dat;
-        uint8_t int_status;
-        uint8_t scratch;
-        uint8_t fcr;
-        
-        int irq;
-
-        void (*rcr_callback)(struct SERIAL *serial, void *p);
-        void *rcr_callback_p;
-        uint8_t fifo[256];
-        int fifo_read, fifo_write;
-        
-        int64_t recieve_delay;
-} SERIAL;
-
-void serial_clear_fifo(SERIAL *);
-void serial_write_fifo(SERIAL *serial, uint8_t dat);
-
-extern SERIAL serial1, serial2;
+#ifdef WALTJE_SERIAL
+extern int	serial_link(int port, char *name);
 #endif
 
 

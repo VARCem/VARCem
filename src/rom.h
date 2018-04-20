@@ -8,7 +8,7 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.10	2018/04/10
+ * Version:	@(#)rom.h	1.0.11	2018/04/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *

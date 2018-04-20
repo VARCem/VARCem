@@ -8,7 +8,7 @@
  *
  *		Definitions for the mouse driver.
  *
- * Version:	@(#)mouse.h	1.0.3	2018/04/10
+ * Version:	@(#)mouse.h	1.0.5	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,25 +50,27 @@
 # define EMU_MOUSE_H
 
 
-#define MOUSE_TYPE_NONE		0	/* no mouse configured */
-#define MOUSE_TYPE_INTERNAL	1	/* machine has internal mouse */
-#define MOUSE_TYPE_LOGIBUS	2	/* Logitech/ATI Bus Mouse */
-#define MOUSE_TYPE_INPORT	3	/* Microsoft InPort Mouse */
+#define MOUSE_NONE		0	/* no mouse configured */
+#define MOUSE_INTERNAL		1	/* machine has internal mouse */
+#define MOUSE_LOGIBUS		2	/* Logitech/ATI Bus Mouse */
+#define MOUSE_INPORT		3	/* Microsoft InPort Mouse */
 #if 0
-# define MOUSE_TYPE_GENIBUS	4	/* Genius Bus Mouse */
+# define MOUSE_GENIBUS		4	/* Genius Bus Mouse */
+# define MOUSE_NEXT		5
+#else
+# define MOUSE_NEXT		4
 #endif
-#define MOUSE_TYPE_MSYSTEMS	5	/* Mouse Systems mouse */
-#define MOUSE_TYPE_MICROSOFT	6	/* Microsoft Serial Mouse */
-#define MOUSE_TYPE_LOGITECH	7	/* Logitech Serial Mouse */
-#define MOUSE_TYPE_MSWHEEL	8	/* Serial Wheel Mouse */
-#define MOUSE_TYPE_PS2		9	/* PS/2 series Bus Mouse */
+#define MOUSE_MSYSTEMS		MOUSE_NEXT+0	/* Mouse Systems mouse */
+#define MOUSE_MICROSOFT		MOUSE_NEXT+1	/* Microsoft Serial Mouse */
+#define MOUSE_LOGITECH		MOUSE_NEXT+2	/* Logitech Serial Mouse */
+#define MOUSE_MSWHEEL		MOUSE_NEXT+3	/* Serial Wheel Mouse */
+#define MOUSE_PS2		MOUSE_NEXT+4	/* PS/2 series Bus Mouse */
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int	mouse_type;
 extern int	mouse_x, mouse_y, mouse_z;
 extern int	mouse_buttons;
 
@@ -84,6 +86,8 @@ extern const device_t	mouse_genibus_device;
 #endif
 extern const device_t	mouse_mssystems_device;
 extern const device_t	mouse_msserial_device;
+extern const device_t	mouse_logiserial_device;
+extern const device_t	mouse_mswhserial_device;
 extern const device_t	mouse_ps2_device;
 #endif
 

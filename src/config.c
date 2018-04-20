@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.13	2018/04/10
+ * Version:	@(#)config.c	1.0.15	2018/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -434,9 +434,9 @@ load_general(void)
     p = config_get_string(cat, "vid_renderer", "default");
     vid_api = plat_vidapi(p);
 
-    video_fullscreen_scale = config_get_int(cat, "video_fullscreen_scale", 0);
+    vid_fullscreen_scale = config_get_int(cat, "video_fullscreen_scale", 0);
 
-    video_fullscreen_first = config_get_int(cat, "video_fullscreen_first", 0);
+    vid_fullscreen_first = config_get_int(cat, "video_fullscreen_first", 0);
 
     force_43 = !!config_get_int(cat, "force_43", 0);
     scale = config_get_int(cat, "scale", 1);
@@ -445,8 +445,8 @@ load_general(void)
 
     enable_overscan = !!config_get_int(cat, "enable_overscan", 0);
     vid_cga_contrast = !!config_get_int(cat, "vid_cga_contrast", 0);
-    video_grayscale = config_get_int(cat, "video_grayscale", 0);
-    video_graytype = config_get_int(cat, "video_graytype", 0);
+    vid_grayscale = config_get_int(cat, "video_grayscale", 0);
+    vid_graytype = config_get_int(cat, "video_graytype", 0);
 
     rctrl_is_lalt = config_get_int(cat, "rctrl_is_lalt", 0);
 
@@ -518,7 +518,7 @@ load_video(void)
     if (machines[machine].fixed_vidcard) {
 	config_delete_var(cat, "video_card");
 	config_delete_var(cat, "voodoo");
-	vid_card = VID_INTERNAL;
+	video_card = VID_INTERNAL;
     } else {
 	p = config_get_string(cat, "video_card", NULL);
 
@@ -534,7 +534,7 @@ load_video(void)
 		  else
 			p = "none";
 	}
-	vid_card = video_get_video_from_internal_name(p);
+	video_card = video_get_video_from_internal_name(p);
 
 	video_speed = config_get_int(cat, "video_speed", -1);
 
@@ -597,12 +597,12 @@ load_sound(void)
 		config_delete_var(cat, "sndcard");
     }
 
-	if (p == NULL)
-		p = "none";
-	sound_card_current = sound_card_get_from_internal_name(p);
+    if (p == NULL)
+	p = "none";
+    sound_card = sound_card_get_from_internal_name(p);
 
     p = config_get_string(cat, "midi_device", "none");
-	midi_device_current = midi_device_get_from_internal_name(p);
+    midi_device = midi_device_get_from_internal_name(p);
 
     mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
 
@@ -707,9 +707,9 @@ load_other_peripherals(void)
 		config_delete_var(cat, "scsicard");
     }
 
-	if (p == NULL)
-		p = "none";
-	scsi_card_current = scsi_card_get_from_internal_name(p);
+    if (p == NULL)
+	p = "none";
+    scsi_card = scsi_card_get_from_internal_name(p);
 
     p = config_get_string(cat, "hdc", NULL);
     if (p == NULL) {
@@ -1147,7 +1147,7 @@ config_load(void)
 	plat_langid = 0x0409;
 #endif
 	scale = 1;
-	vid_card = VID_CGA;
+	video_card = VID_CGA;
 	vid_api = plat_vidapi("default");;
 	enable_sync = 1;
 	joystick_type = 0;
@@ -1204,15 +1204,15 @@ save_general(void)
 	config_set_string(cat, "vid_renderer", str);
     }
 
-    if (video_fullscreen_scale == 0)
+    if (vid_fullscreen_scale == 0)
 	config_delete_var(cat, "video_fullscreen_scale");
       else
-	config_set_int(cat, "video_fullscreen_scale", video_fullscreen_scale);
+	config_set_int(cat, "video_fullscreen_scale", vid_fullscreen_scale);
 
-    if (video_fullscreen_first == 0)
+    if (vid_fullscreen_first == 0)
 	config_delete_var(cat, "video_fullscreen_first");
       else
-	config_set_int(cat, "video_fullscreen_first", video_fullscreen_first);
+	config_set_int(cat, "video_fullscreen_first", vid_fullscreen_first);
 
     if (force_43 == 0)
 	config_delete_var(cat, "force_43");
@@ -1234,15 +1234,15 @@ save_general(void)
       else
 	config_set_int(cat, "vid_cga_contrast", vid_cga_contrast);
 
-    if (video_grayscale == 0)
+    if (vid_grayscale == 0)
 	config_delete_var(cat, "video_grayscale");
       else
-	config_set_int(cat, "video_grayscale", video_grayscale);
+	config_set_int(cat, "video_grayscale", vid_grayscale);
 
-    if (video_graytype == 0)
+    if (vid_graytype == 0)
 	config_delete_var(cat, "video_graytype");
       else
-	config_set_int(cat, "video_graytype", video_graytype);
+	config_set_int(cat, "video_graytype", vid_graytype);
 
     if (rctrl_is_lalt == 0)
 	config_delete_var(cat, "rctrl_is_lalt");
@@ -1331,7 +1331,7 @@ save_video(void)
     const char *cat = "Video";
 
     config_set_string(cat, "video_card",
-		      video_get_internal_name(video_old_to_new(vid_card)));
+		      video_get_internal_name(video_old_to_new(video_card)));
 
     if (video_speed == 3)
 	config_delete_var(cat, "video_speed");
@@ -1412,17 +1412,17 @@ save_sound(void)
 {
     const char *cat = "Sound";
 
-    if (sound_card_current == 0)
+    if (sound_card == 0)
 	config_delete_var(cat, "sound_card");
       else
 	config_set_string(cat, "sound_card",
-			  sound_card_get_internal_name(sound_card_current));
+			  sound_card_get_internal_name(sound_card));
 
-    if (!strcmp(midi_device_get_internal_name(midi_device_current), "none"))
+    if (!strcmp(midi_device_get_internal_name(midi_device), "none"))
 	config_delete_var(cat, "midi_device");
       else
 	config_set_string(cat, "midi_device",
-			  midi_device_get_internal_name(midi_device_current));
+			  midi_device_get_internal_name(midi_device));
 
     if (mpu401_standalone_enable == 0)
 	config_delete_var(cat, "mpu401_standalone");
@@ -1483,8 +1483,8 @@ save_ports(void)
     int i;
 
     for (i = 0; i < SERIAL_MAX; i++) {
+	sprintf(temp, "serial%i_enabled", i);
 	if (serial_enabled[i]) {
-		sprintf(temp, "serial%i_enabled", i);
 		config_set_int(cat, temp, 1);
 	} else
 		config_delete_var(cat, temp);
@@ -1517,11 +1517,11 @@ save_other_peripherals(void)
     char temp[512], tmp2[512];
     int c;
 
-    if (scsi_card_current == 0)
+    if (scsi_card == 0)
 	config_delete_var(cat, "scsi_card");
       else
 	config_set_string(cat, "scsi_card",
-			  scsi_card_get_internal_name(scsi_card_current));
+			  scsi_card_get_internal_name(scsi_card));
 
     config_set_string(cat, "hdc", hdc_get_internal_name(hdc_type));
 

@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.6	2018/04/10
+ * Version:	@(#)hdc.c	1.0.8	2018/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,7 +115,18 @@ static const struct {
     { "[ISA] [ESDI] PC/AT ESDI Fixed Disk Adapter",	"esdi_at",
       &esdi_at_wd1007vse1_device,			0		},
 
-    { "[ISA] [IDE] PC/AT IDE Adapter",			"ide_isa",
+#ifdef USE_XTA
+    { "[ISA] [IDE] PC/XT IDE (XTA) Adapter",		"xta_isa",
+      &xta_isa_device,					0,		},
+#endif
+
+    { "[ISA] [IDE] PC/XT XTIDE (ATA)",			"xtide",
+      &xtide_device,					0		},
+
+    { "[ISA] [IDE] PC/XT Acculogic XT IDE",		"xtide_acculogic",
+      &xtide_acculogic_device,				0		},
+
+    { "[ISA] [IDE] PC/AT IDE (ATA) Adapter",		"ide_isa",
       &ide_isa_device,					0		},
 
     { "[ISA] [IDE] PC/AT IDE Adapter (Dual-Channel)",	"ide_isa_2ch",
@@ -126,12 +137,6 @@ static const struct {
 
     { "[ISA] [IDE] PS/2 AT XTIDE (1.1.5)",		"xtide_at_ps2",
       &xtide_at_ps2_device,				0		},
-
-    { "[ISA] [XT IDE] Acculogic XT IDE",		"xtide_acculogic",
-      &xtide_acculogic_device,				0		},
-
-    { "[ISA] [XT IDE] PC/XT XTIDE",			"xtide",
-      &xtide_device		,			0		},
 
     { "[MCA] [ESDI] IBM PS/2 ESDI Fixed Disk Adapter","esdi_mca",
       &esdi_ps2_device,					1		},
