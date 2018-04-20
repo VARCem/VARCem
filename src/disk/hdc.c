@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.8	2018/04/14
+ * Version:	@(#)hdc.c	1.0.9	2018/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
@@ -160,7 +161,7 @@ static const struct {
 void
 hdc_log(const char *fmt, ...)
 {
-#ifdef ENABLE_IDE_LOG
+#ifdef ENABLE_HDC_LOG
    va_list ap;
 
    if (hdc_do_log) {
