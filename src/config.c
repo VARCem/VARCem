@@ -246,187 +246,10 @@ config_free(void)
 #endif
 
 
-/* Read and parse the configuration file into memory. */
-static int
-config_read(const wchar_t *fn)
-{
-    char sname[128], ename[128];
-    wchar_t buff[1024];
-    section_t *sec, *ns;
-    entry_t *ne;
-    int c, d;
-    FILE *f;
-
-#if defined(ANSI_CFG) || !defined(_WIN32)
-    f = plat_fopen(fn, L"rt");
-#else
-    f = plat_fopen(fn, L"rt, ccs=UNICODE");
-#endif
-    if (f == NULL) return(0);
-	
-    sec = malloc(sizeof(section_t));
-    memset(sec, 0x00, sizeof(section_t));
-    memset(&config_head, 0x00, sizeof(list_t));
-    list_add(&sec->list, &config_head);
-
-    while (1) {
-	memset(buff, 0x00, sizeof(buff));
-	fgetws(buff, sizeof_w(buff), f);
-	if (ferror(f) || feof(f)) break;
-
-	/* Make sure there are no stray newlines or hard-returns in there. */
-	if (buff[wcslen(buff)-1] == L'\n') buff[wcslen(buff)-1] = L'\0';
-	if (buff[wcslen(buff)-1] == L'\r') buff[wcslen(buff)-1] = L'\0';
-
-	/* Skip any leading whitespace. */
-	c = 0;
-	while ((buff[c] == L' ') || (buff[c] == L'\t'))
-		  c++;
-
-	/* Skip empty lines. */
-	if (buff[c] == L'\0') continue;
-
-	/* Skip lines that (only) have a comment. */
-	if ((buff[c] == L'#') || (buff[c] == L';')) continue;
-
-	if (buff[c] == L'[') {	/*Section*/
-		c++;
-		d = 0;
-		while (buff[c] != L']' && buff[c])
-			wctomb(&(sname[d++]), buff[c++]);
-		sname[d] = L'\0';
-
-		/* Is the section name properly terminated? */
-		if (buff[c] != L']') continue;
-
-		/* Create a new section and insert it. */
-		ns = malloc(sizeof(section_t));
-		memset(ns, 0x00, sizeof(section_t));
-		strncpy(ns->name, sname, sizeof(ns->name));
-		list_add(&ns->list, &config_head);
-
-		/* New section is now the current one. */
-		sec = ns;			
-		continue;
-	}
-
-	/* Get the variable name. */
-	d = 0;
-	while ((buff[c] != L'=') && (buff[c] != L' ') && buff[c])
-		wctomb(&(ename[d++]), buff[c++]);
-	ename[d] = L'\0';
-
-	/* Skip incomplete lines. */
-	if (buff[c] == L'\0') continue;
-
-	/* Look for =, skip whitespace. */
-	while ((buff[c] == L'=' || buff[c] == L' ') && buff[c])
-		c++;
-
-	/* Skip incomplete lines. */
-	if (buff[c] == L'\0') continue;
-
-	/* This is where the value part starts. */
-	d = c;
-
-	/* Allocate a new variable entry.. */
-	ne = malloc(sizeof(entry_t));
-	memset(ne, 0x00, sizeof(entry_t));
-	strncpy(ne->name, ename, sizeof(ne->name));
-	wcsncpy(ne->wdata, &buff[d], sizeof_w(ne->wdata));
-	ne->wdata[sizeof_w(ne->wdata)-1] = L'\0';
-	wcstombs(ne->data, ne->wdata, sizeof(ne->data));
-	ne->data[sizeof(ne->data)-1] = '\0';
-
-	/* .. and insert it. */
-	list_add(&ne->list, &sec->entry_head);
-    }
-
-    (void)fclose(f);
-
-    if (do_dump_config)
-	config_dump();
-
-    return(1);
-}
-
-
-/*
- * Write the in-memory configuration to disk.
- * This is a public function, because the Settings UI
- * want to directly write the configuration after it
- * has changed it.
- */
-void
-config_write(const wchar_t *fn)
-{
-    wchar_t wtemp[512];
-    section_t *sec;
-    FILE *f;
-    int fl = 0;
-
-#if defined(ANSI_CFG) || !defined(_WIN32)
-    f = plat_fopen(fn, L"wt");
-#else
-    f = plat_fopen(fn, L"wt, ccs=UNICODE");
-#endif
-    if (f == NULL) return;
-
-    sec = (section_t *)config_head.next;
-    while (sec != NULL) {
-	entry_t *ent;
-
-	if (sec->name[0]) {
-		mbstowcs(wtemp, sec->name, strlen(sec->name)+1);
-		if (fl)
-			fwprintf(f, L"\n[%ls]\n", wtemp);
-		  else
-			fwprintf(f, L"[%ls]\n", wtemp);
-		fl++;
-	}
-
-	ent = (entry_t *)sec->entry_head.next;
-	while (ent != NULL) {
-		if (ent->name[0] != '\0') {
-			mbstowcs(wtemp, ent->name, sizeof_w(wtemp));
-			if (ent->wdata[0] == L'\0')
-				fwprintf(f, L"%ls = \n", wtemp);
-			  else
-				fwprintf(f, L"%ls = %ls\n", wtemp, ent->wdata);
-			fl++;
-		}
-
-		ent = (entry_t *)ent->list.next;
-	}
-
-	sec = (section_t *)sec->list.next;
-    }
-	
-    (void)fclose(f);
-}
-
-
-#if NOT_USED
-static void
-config_new(void)
-{
-#if defined(ANSI_CFG) || !defined(_WIN32)
-    FILE *f = _wfopen(config_file, L"wt");
-#else
-    FILE *f = _wfopen(config_file, L"wt, ccs=UNICODE");
-#endif
-
-    if (file != NULL)
-	(void)fclose(f);
-}
-#endif
-
-
 /* Load "General" section. */
 static void
-load_general(void)
+load_general(const char *cat)
 {
-    const char *cat = "General";
     char *p;
 
     vid_resize = !!config_get_int(cat, "vid_resize", 0);
@@ -475,11 +298,104 @@ load_general(void)
 }
 
 
+/* Save "General" section. */
+static void
+save_general(const char *cat)
+{
+    char temp[512];
+    const char *str;
+
+    config_set_int(cat, "vid_resize", vid_resize);
+    if (vid_resize == 0)
+	config_delete_var(cat, "vid_resize");
+
+    str = plat_vidapi_name(vid_api);
+    if (! strcmp(str, "default")) {
+	config_delete_var(cat, "vid_renderer");
+    } else {
+	config_set_string(cat, "vid_renderer", str);
+    }
+
+    if (vid_fullscreen_scale == 0)
+	config_delete_var(cat, "video_fullscreen_scale");
+      else
+	config_set_int(cat, "video_fullscreen_scale", vid_fullscreen_scale);
+
+    if (vid_fullscreen_first == 0)
+	config_delete_var(cat, "video_fullscreen_first");
+      else
+	config_set_int(cat, "video_fullscreen_first", vid_fullscreen_first);
+
+    if (force_43 == 0)
+	config_delete_var(cat, "force_43");
+      else
+	config_set_int(cat, "force_43", force_43);
+
+    if (scale == 1)
+	config_delete_var(cat, "scale");
+      else
+	config_set_int(cat, "scale", scale);
+
+    if (enable_overscan == 0)
+	config_delete_var(cat, "enable_overscan");
+      else
+	config_set_int(cat, "enable_overscan", enable_overscan);
+
+    if (vid_cga_contrast == 0)
+	config_delete_var(cat, "vid_cga_contrast");
+      else
+	config_set_int(cat, "vid_cga_contrast", vid_cga_contrast);
+
+    if (vid_grayscale == 0)
+	config_delete_var(cat, "video_grayscale");
+      else
+	config_set_int(cat, "video_grayscale", vid_grayscale);
+
+    if (vid_graytype == 0)
+	config_delete_var(cat, "video_graytype");
+      else
+	config_set_int(cat, "video_graytype", vid_graytype);
+
+    if (rctrl_is_lalt == 0)
+	config_delete_var(cat, "rctrl_is_lalt");
+      else
+	config_set_int(cat, "rctrl_is_lalt", rctrl_is_lalt);
+
+    if (update_icons == 1)
+	config_delete_var(cat, "update_icons");
+      else
+	config_set_int(cat, "update_icons", update_icons);
+
+    if (window_remember) {
+	config_set_int(cat, "window_remember", window_remember);
+
+	sprintf(temp, "%i, %i, %i, %i", window_w, window_h, window_x, window_y);
+	config_set_string(cat, "window_coordinates", temp);
+    } else {
+	config_delete_var(cat, "window_remember");
+	config_delete_var(cat, "window_coordinates");
+    }
+
+    if (sound_gain != 0)
+	config_set_int(cat, "sound_gain", sound_gain);
+      else
+	config_delete_var(cat, "sound_gain");
+
+#ifdef USE_LANGUAGE
+    if (plat_langid == 0x0409)
+	config_delete_var(cat, "language");
+      else
+	config_set_hex16(cat, "language", plat_langid);
+#endif
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Machine" section. */
 static void
-load_machine(void)
+load_machine(const char *cat)
 {
-    const char *cat = "Machine";
     char *p;
 
     p = config_get_string(cat, "machine", NULL);
@@ -508,11 +424,52 @@ load_machine(void)
 }
 
 
+/* Save "Machine" section. */
+static void
+save_machine(const char *cat)
+{
+    config_set_string(cat, "machine", machine_get_internal_name());
+
+    if (cpu_manufacturer == 0)
+	config_delete_var(cat, "cpu_manufacturer");
+      else
+	config_set_int(cat, "cpu_manufacturer", cpu_manufacturer);
+
+    if (cpu == 0)
+	config_delete_var(cat, "cpu");
+      else
+	config_set_int(cat, "cpu", cpu);
+
+    if (cpu_waitstates == 0)
+	config_delete_var(cat, "cpu_waitstates");
+      else
+	config_set_int(cat, "cpu_waitstates", cpu_waitstates);
+
+    if (mem_size == 4096)
+	config_delete_var(cat, "mem_size");
+      else
+	config_set_int(cat, "mem_size", mem_size);
+
+    config_set_int(cat, "cpu_use_dynarec", cpu_use_dynarec);
+
+    if (enable_external_fpu == 0)
+	config_delete_var(cat, "cpu_enable_fpu");
+      else
+	config_set_int(cat, "cpu_enable_fpu", enable_external_fpu);
+
+    if (enable_sync == 1)
+	config_delete_var(cat, "enable_sync");
+      else
+	config_set_int(cat, "enable_sync", enable_sync);
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Video" section. */
 static void
-load_video(void)
+load_video(const char *cat)
 {
-    const char *cat = "Video";
     char *p;
 
     if (machines[machine].fixed_vidcard) {
@@ -543,11 +500,31 @@ load_video(void)
 }
 
 
+/* Save "Video" section. */
+static void
+save_video(const char *cat)
+{
+    config_set_string(cat, "video_card",
+		      video_get_internal_name(video_old_to_new(video_card)));
+
+    if (video_speed == 3)
+	config_delete_var(cat, "video_speed");
+      else
+	config_set_int(cat, "video_speed", video_speed);
+
+    if (voodoo_enabled == 0)
+	config_delete_var(cat, "voodoo");
+      else
+	config_set_int(cat, "voodoo", voodoo_enabled);
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Input Devices" section. */
 static void
-load_input_devices(void)
+load_input(const char *cat)
 {
-    const char *cat = "Input devices";
     char temp[512];
     int c, d;
     char *p;
@@ -581,11 +558,68 @@ load_input_devices(void)
 }
 
 
+/* Save "Input Devices" section. */
+static void
+save_input(const char *cat)
+{
+    char temp[512], tmp2[512];
+    int c, d;
+
+    config_set_string(cat, "mouse_type", mouse_get_internal_name(mouse_type));
+
+    if (joystick_type != 0) {
+	config_set_int(cat, "joystick_type", joystick_type);
+
+	for (c=0; c<joystick_get_max_joysticks(joystick_type); c++) {
+		sprintf(tmp2, "joystick_%i_nr", c);
+		config_set_int(cat, tmp2, joystick_state[c].plat_joystick_nr);
+
+		if (joystick_state[c].plat_joystick_nr) {
+			for (d=0; d<joystick_get_axis_count(joystick_type); d++) {			
+				sprintf(tmp2, "joystick_%i_axis_%i", c, d);
+				config_set_int(cat, tmp2, joystick_state[c].axis_mapping[d]);
+			}
+			for (d=0; d<joystick_get_button_count(joystick_type); d++) {			
+				sprintf(tmp2, "joystick_%i_button_%i", c, d);
+				config_set_int(cat, tmp2, joystick_state[c].button_mapping[d]);
+			}
+			for (d=0; d<joystick_get_pov_count(joystick_type); d++) {			
+				sprintf(tmp2, "joystick_%i_pov_%i", c, d);
+				sprintf(temp, "%i, %i", joystick_state[c].pov_mapping[d][0], joystick_state[c].pov_mapping[d][1]);
+				config_set_string(cat, tmp2, temp);
+			}
+		}
+	}
+    } else {
+	config_delete_var(cat, "joystick_type");
+
+	for (c = 0; c < 16; c++) {
+		sprintf(tmp2, "joystick_%i_nr", c);
+		config_delete_var(cat, tmp2);
+
+		for (d = 0; d < 16; d++) {			
+			sprintf(tmp2, "joystick_%i_axis_%i", c, d);
+			config_delete_var(cat, tmp2);
+		}
+		for (d = 0; d < 16; d++) {			
+			sprintf(tmp2, "joystick_%i_button_%i", c, d);
+			config_delete_var(cat, tmp2);
+		}
+		for (d = 0; d < 16; d++) {			
+			sprintf(tmp2, "joystick_%i_pov_%i", c, d);
+			config_delete_var(cat, tmp2);
+		}
+	}
+    }
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Sound" section. */
 static void
-load_sound(void)
+load_sound(const char *cat)
 {
-    const char *cat = "Sound";
     char *p;
 
     p = config_get_string(cat, "sound_card", NULL);
@@ -620,11 +654,45 @@ load_sound(void)
 }
 
 
+/* Save "Sound" section. */
+static void
+save_sound(const char *cat)
+{
+    if (sound_card == 0)
+	config_delete_var(cat, "sound_card");
+      else
+	config_set_string(cat, "sound_card",
+			  sound_card_get_internal_name(sound_card));
+
+    if (!strcmp(midi_device_get_internal_name(midi_device), "none"))
+	config_delete_var(cat, "midi_device");
+      else
+	config_set_string(cat, "midi_device",
+			  midi_device_get_internal_name(midi_device));
+
+    if (mpu401_standalone_enable == 0)
+	config_delete_var(cat, "mpu401_standalone");
+      else
+	config_set_int(cat, "mpu401_standalone", mpu401_standalone_enable);
+
+    if (opl3_type == 0)
+	config_delete_var(cat, "opl3_type");
+      else
+	config_set_string(cat, "opl3_type", (opl3_type == 1) ? "nukedopl" : "dbopl");
+
+    if (sound_is_float == 1)
+	config_delete_var(cat, "sound_type");
+      else
+	config_set_string(cat, "sound_type", (sound_is_float == 1) ? "float" : "int16");
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Network" section. */
 static void
-load_network(void)
+load_network(const char *cat)
 {
-    const char *cat = "Network";
     char *p;
 
     p = config_get_string(cat, "net_type", NULL);
@@ -666,11 +734,39 @@ load_network(void)
 }
 
 
+/* Save "Network" section. */
+static void
+save_network(const char *cat)
+{
+    if (network_type == NET_TYPE_NONE)
+	config_delete_var(cat, "net_type");
+      else
+	config_set_string(cat, "net_type",
+		(network_type == NET_TYPE_SLIRP) ? "slirp" : "pcap");
+
+    if (network_host[0] != '\0') {
+	if (! strcmp(network_host, "none"))
+		config_delete_var(cat, "net_host_device");
+	  else
+		config_set_string(cat, "net_host_device", network_host);
+    } else {
+	config_delete_var(cat, "net_host_device");
+    }
+
+    if (network_card == 0)
+	config_delete_var(cat, "net_card");
+      else
+	config_set_string(cat, "net_card",
+			  network_card_get_internal_name(network_card));
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Ports" section. */
 static void
-load_ports(void)
+load_ports(const char *cat)
 {
-    const char *cat = "Ports (COM & LPT)";
     char temp[128];
     char *p;
     int i;
@@ -690,11 +786,44 @@ load_ports(void)
 }
 
 
+/* Save "Ports" section. */
+static void
+save_ports(const char *cat)
+{
+    char temp[128];
+    int i;
+
+    for (i = 0; i < SERIAL_MAX; i++) {
+	sprintf(temp, "serial%i_enabled", i);
+	if (serial_enabled[i]) {
+		config_set_int(cat, temp, 1);
+	} else
+		config_delete_var(cat, temp);
+    }
+
+    for (i = 0; i < PARALLEL_MAX; i++) {
+	sprintf(temp, "parallel%i_enabled", i);
+	if (parallel_enabled[i])
+		config_set_int(cat, temp, 1);
+	  else
+		config_delete_var(cat, temp);
+
+	sprintf(temp, "parallel%i_device", i);
+	if (parallel_device[i] != 0)
+		config_set_string(cat, temp,
+			parallel_device_get_internal_name(parallel_device[i]));
+	  else
+		config_delete_var(cat, temp);
+    }
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Other Peripherals" section. */
 static void
-load_other_peripherals(void)
+load_other(const char *cat)
 {
-    const char *cat = "Other peripherals";
     char temp[512], *p;
     int c;
 
@@ -734,6 +863,39 @@ load_other_peripherals(void)
 }
 
 
+/* Save "Other Peripherals" section. */
+static void
+save_other(const char *cat)
+{
+    char temp[512], tmp2[512];
+    int c;
+
+    if (scsi_card == 0)
+	config_delete_var(cat, "scsi_card");
+      else
+	config_set_string(cat, "scsi_card",
+			  scsi_card_get_internal_name(scsi_card));
+
+    config_set_string(cat, "hdc", hdc_get_internal_name(hdc_type));
+
+    for (c = 2; c < 4; c++) {
+	sprintf(temp, "ide_%02i", c+1);
+	sprintf(tmp2, "%i, %02i", !!ide_enable[c], ide_irq[c]);
+	if (ide_enable[c] == 0)
+		config_delete_var(cat, temp);
+	  else
+		config_set_string(cat, temp, tmp2);
+    }
+
+    if (bugger_enabled == 0)
+	config_delete_var(cat, "bugger_enabled");
+      else
+	config_set_int(cat, "bugger_enabled", bugger_enabled);
+
+    delete_section_if_empty(cat);
+}
+
+
 static int
 tally_char(const char *str, char c)
 {
@@ -751,9 +913,8 @@ tally_char(const char *str, char c)
 
 /* Load "Hard Disks" section. */
 static void
-load_hard_disks(void)
+load_disks(const char *cat)
 {
-    const char *cat = "Hard disks";
     char temp[512], tmp2[512];
     char s[512];
     int c;
@@ -912,11 +1073,74 @@ load_hard_disks(void)
 }
 
 
+/* Save "Hard Disks" section. */
+static void
+save_disks(const char *cat)
+{
+    char temp[24], tmp2[64];
+    char *p;
+    int c;
+
+    for (c = 0; c < HDD_NUM; c++) {
+	sprintf(temp, "hdd_%02i_parameters", c+1);
+	if (hdd_is_valid(c)) {
+		p = hdd_bus_to_string(hdd[c].bus, 0);
+		sprintf(tmp2, "%u, %u, %u, %d, %s",
+			hdd[c].spt, hdd[c].hpc, hdd[c].tracks, hdd[c].wp, p);
+		config_set_string(cat, temp, tmp2);
+	} else {
+		config_delete_var(cat, temp);
+	}
+
+	sprintf(temp, "hdd_%02i_mfm_channel", c+1);
+	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_MFM))
+		config_set_int(cat, temp, hdd[c].mfm_channel);
+	  else
+		config_delete_var(cat, temp);
+
+	sprintf(temp, "hdd_%02i_xtide_channel", c+1);
+	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_XTIDE))
+		config_set_int(cat, temp, hdd[c].xtide_channel);
+	  else
+		config_delete_var(cat, temp);
+
+	sprintf(temp, "hdd_%02i_esdi_channel", c+1);
+	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_ESDI))
+		config_set_int(cat, temp, hdd[c].esdi_channel);
+	  else
+		config_delete_var(cat, temp);
+
+	sprintf(temp, "hdd_%02i_ide_channel", c+1);
+	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_IDE_PIO_ONLY) && (hdd[c].bus != HDD_BUS_IDE_PIO_AND_DMA))) {
+		config_delete_var(cat, temp);
+	} else {
+		sprintf(tmp2, "%01u:%01u", hdd[c].ide_channel >> 1, hdd[c].ide_channel & 1);
+		config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "hdd_%02i_scsi_location", c+1);
+	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_SCSI) && (hdd[c].bus != HDD_BUS_SCSI_REMOVABLE))) {
+		config_delete_var(cat, temp);
+	} else {
+		sprintf(tmp2, "%02u:%02u", hdd[c].scsi_id, hdd[c].scsi_lun);
+		config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "hdd_%02i_fn", c+1);
+	if (hdd_is_valid(c) && (wcslen(hdd[c].fn) != 0))
+		config_set_wstring(cat, temp, hdd[c].fn);
+	  else
+		config_delete_var(cat, temp);
+    }
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Floppy Drives" section. */
 static void
-load_floppy_drives(void)
+load_floppy(const char *cat)
 {
-    const char *cat = "Floppy drives";
     char temp[512], *p;
     wchar_t *wp;
     int c;
@@ -966,11 +1190,60 @@ load_floppy_drives(void)
 }
 
 
+/* Save "Floppy Drives" section. */
+static void
+save_floppy(const char *cat)
+{
+    char temp[512];
+    int c;
+
+    for (c = 0; c < FDD_NUM; c++) {
+	sprintf(temp, "fdd_%02i_type", c+1);
+	if (fdd_get_type(c) == ((c < 2) ? 2 : 0))
+		config_delete_var(cat, temp);
+	  else
+		config_set_string(cat, temp,
+				  fdd_get_internal_name(fdd_get_type(c)));
+
+	sprintf(temp, "fdd_%02i_fn", c+1);
+	if (wcslen(floppyfns[c]) == 0) {
+		config_delete_var(cat, temp);
+
+		ui_writeprot[c] = 0;
+
+		sprintf(temp, "fdd_%02i_writeprot", c+1);
+		config_delete_var(cat, temp);
+	} else {
+		config_set_wstring(cat, temp, floppyfns[c]);
+	}
+
+	sprintf(temp, "fdd_%02i_writeprot", c+1);
+	if (ui_writeprot[c] == 0)
+		config_delete_var(cat, temp);
+	  else
+		config_set_int(cat, temp, ui_writeprot[c]);
+
+	sprintf(temp, "fdd_%02i_turbo", c+1);
+	if (fdd_get_turbo(c) == 0)
+		config_delete_var(cat, temp);
+	  else
+		config_set_int(cat, temp, fdd_get_turbo(c));
+
+	sprintf(temp, "fdd_%02i_check_bpb", c+1);
+	if (fdd_get_check_bpb(c) == 1)
+		config_delete_var(cat, temp);
+	  else
+		config_set_int(cat, temp, fdd_get_check_bpb(c));
+    }
+
+    delete_section_if_empty(cat);
+}
+
+
 /* Load "Removable Devices" section. */
 static void
-load_removable_devices(void)
+load_removable(const char *cat)
 {
-    const char *cat = "Other removable devices";
     char temp[512], tmp2[512], *p;
     char s[512];
     unsigned int board = 0, dev = 0;
@@ -1134,536 +1407,10 @@ load_removable_devices(void)
 }
 
 
-/* Load the specified or a default configuration file. */
-void
-config_load(void)
-{
-    int i;
-
-    pclog("CONFIG: loading file '%ls'..\n", cfg_path);
-    if (! config_read(cfg_path)) {
-	cpu = 0;
-#ifdef USE_LANGUAGE
-	plat_langid = 0x0409;
-#endif
-	scale = 1;
-	video_card = VID_CGA;
-	vid_api = plat_vidapi("default");;
-	enable_sync = 1;
-	joystick_type = 0;
-	hdc_type = 0;
-	for (i = 0; i < SERIAL_MAX; i++)
-		serial_enabled[i] = 0;
-	for (i = 0; i < PARALLEL_MAX; i++)
-		parallel_enabled[i] = 0;
-	fdd_set_type(0, 2);
-	fdd_set_check_bpb(0, 1);
-	fdd_set_type(1, 2);
-	fdd_set_check_bpb(1, 1);
-	mem_size = 640;
-
-	pclog("CONFIG: file not present or invalid, using defaults!\n");
-	return;
-    }
-
-    load_general();			/* General */
-    load_machine();			/* Machine */
-    load_video();			/* Video */
-    load_input_devices();		/* Input devices */
-    load_sound();			/* Sound */
-    load_network();			/* Network */
-    load_ports();			/* Ports (COM & LPT) */
-    load_other_peripherals();		/* Other peripherals */
-    load_hard_disks();			/* Hard disks */
-    load_floppy_drives();		/* Floppy drives */
-    load_removable_devices();		/* Other removable devices */
-
-    /* Mark the configuration as changed. */
-    config_changed = 1;
-
-    pclog("CONFIG: file loaded.\n\n");
-}
-
-
-/* Save "General" section. */
-static void
-save_general(void)
-{
-    const char *cat = "General";
-    char temp[512];
-    const char *str;
-
-    config_set_int(cat, "vid_resize", vid_resize);
-    if (vid_resize == 0)
-	config_delete_var(cat, "vid_resize");
-
-    str = plat_vidapi_name(vid_api);
-    if (! strcmp(str, "default")) {
-	config_delete_var(cat, "vid_renderer");
-    } else {
-	config_set_string(cat, "vid_renderer", str);
-    }
-
-    if (vid_fullscreen_scale == 0)
-	config_delete_var(cat, "video_fullscreen_scale");
-      else
-	config_set_int(cat, "video_fullscreen_scale", vid_fullscreen_scale);
-
-    if (vid_fullscreen_first == 0)
-	config_delete_var(cat, "video_fullscreen_first");
-      else
-	config_set_int(cat, "video_fullscreen_first", vid_fullscreen_first);
-
-    if (force_43 == 0)
-	config_delete_var(cat, "force_43");
-      else
-	config_set_int(cat, "force_43", force_43);
-
-    if (scale == 1)
-	config_delete_var(cat, "scale");
-      else
-	config_set_int(cat, "scale", scale);
-
-    if (enable_overscan == 0)
-	config_delete_var(cat, "enable_overscan");
-      else
-	config_set_int(cat, "enable_overscan", enable_overscan);
-
-    if (vid_cga_contrast == 0)
-	config_delete_var(cat, "vid_cga_contrast");
-      else
-	config_set_int(cat, "vid_cga_contrast", vid_cga_contrast);
-
-    if (vid_grayscale == 0)
-	config_delete_var(cat, "video_grayscale");
-      else
-	config_set_int(cat, "video_grayscale", vid_grayscale);
-
-    if (vid_graytype == 0)
-	config_delete_var(cat, "video_graytype");
-      else
-	config_set_int(cat, "video_graytype", vid_graytype);
-
-    if (rctrl_is_lalt == 0)
-	config_delete_var(cat, "rctrl_is_lalt");
-      else
-	config_set_int(cat, "rctrl_is_lalt", rctrl_is_lalt);
-
-    if (update_icons == 1)
-	config_delete_var(cat, "update_icons");
-      else
-	config_set_int(cat, "update_icons", update_icons);
-
-    if (window_remember) {
-	config_set_int(cat, "window_remember", window_remember);
-
-	sprintf(temp, "%i, %i, %i, %i", window_w, window_h, window_x, window_y);
-	config_set_string(cat, "window_coordinates", temp);
-    } else {
-	config_delete_var(cat, "window_remember");
-	config_delete_var(cat, "window_coordinates");
-    }
-
-    if (sound_gain != 0)
-	config_set_int(cat, "sound_gain", sound_gain);
-      else
-	config_delete_var(cat, "sound_gain");
-
-#ifdef USE_LANGUAGE
-    if (plat_langid == 0x0409)
-	config_delete_var(cat, "language");
-      else
-	config_set_hex16(cat, "language", plat_langid);
-#endif
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Machine" section. */
-static void
-save_machine(void)
-{
-    const char *cat = "Machine";
-
-    config_set_string(cat, "machine", machine_get_internal_name());
-
-    if (cpu_manufacturer == 0)
-	config_delete_var(cat, "cpu_manufacturer");
-      else
-	config_set_int(cat, "cpu_manufacturer", cpu_manufacturer);
-
-    if (cpu == 0)
-	config_delete_var(cat, "cpu");
-      else
-	config_set_int(cat, "cpu", cpu);
-
-    if (cpu_waitstates == 0)
-	config_delete_var(cat, "cpu_waitstates");
-      else
-	config_set_int(cat, "cpu_waitstates", cpu_waitstates);
-
-    if (mem_size == 4096)
-	config_delete_var(cat, "mem_size");
-      else
-	config_set_int(cat, "mem_size", mem_size);
-
-    config_set_int(cat, "cpu_use_dynarec", cpu_use_dynarec);
-
-    if (enable_external_fpu == 0)
-	config_delete_var(cat, "cpu_enable_fpu");
-      else
-	config_set_int(cat, "cpu_enable_fpu", enable_external_fpu);
-
-    if (enable_sync == 1)
-	config_delete_var(cat, "enable_sync");
-      else
-	config_set_int(cat, "enable_sync", enable_sync);
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Video" section. */
-static void
-save_video(void)
-{
-    const char *cat = "Video";
-
-    config_set_string(cat, "video_card",
-		      video_get_internal_name(video_old_to_new(video_card)));
-
-    if (video_speed == 3)
-	config_delete_var(cat, "video_speed");
-      else
-	config_set_int(cat, "video_speed", video_speed);
-
-    if (voodoo_enabled == 0)
-	config_delete_var(cat, "voodoo");
-      else
-	config_set_int(cat, "voodoo", voodoo_enabled);
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Input Devices" section. */
-static void
-save_input_devices(void)
-{
-    const char *cat = "Input devices";
-    char temp[512], tmp2[512];
-    int c, d;
-
-    config_set_string(cat, "mouse_type", mouse_get_internal_name(mouse_type));
-
-    if (joystick_type != 0) {
-	config_set_int(cat, "joystick_type", joystick_type);
-
-	for (c=0; c<joystick_get_max_joysticks(joystick_type); c++) {
-		sprintf(tmp2, "joystick_%i_nr", c);
-		config_set_int(cat, tmp2, joystick_state[c].plat_joystick_nr);
-
-		if (joystick_state[c].plat_joystick_nr) {
-			for (d=0; d<joystick_get_axis_count(joystick_type); d++) {			
-				sprintf(tmp2, "joystick_%i_axis_%i", c, d);
-				config_set_int(cat, tmp2, joystick_state[c].axis_mapping[d]);
-			}
-			for (d=0; d<joystick_get_button_count(joystick_type); d++) {			
-				sprintf(tmp2, "joystick_%i_button_%i", c, d);
-				config_set_int(cat, tmp2, joystick_state[c].button_mapping[d]);
-			}
-			for (d=0; d<joystick_get_pov_count(joystick_type); d++) {			
-				sprintf(tmp2, "joystick_%i_pov_%i", c, d);
-				sprintf(temp, "%i, %i", joystick_state[c].pov_mapping[d][0], joystick_state[c].pov_mapping[d][1]);
-				config_set_string(cat, tmp2, temp);
-			}
-		}
-	}
-    } else {
-	config_delete_var(cat, "joystick_type");
-
-	for (c = 0; c < 16; c++) {
-		sprintf(tmp2, "joystick_%i_nr", c);
-		config_delete_var(cat, tmp2);
-
-		for (d = 0; d < 16; d++) {			
-			sprintf(tmp2, "joystick_%i_axis_%i", c, d);
-			config_delete_var(cat, tmp2);
-		}
-		for (d = 0; d < 16; d++) {			
-			sprintf(tmp2, "joystick_%i_button_%i", c, d);
-			config_delete_var(cat, tmp2);
-		}
-		for (d = 0; d < 16; d++) {			
-			sprintf(tmp2, "joystick_%i_pov_%i", c, d);
-			config_delete_var(cat, tmp2);
-		}
-	}
-    }
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Sound" section. */
-static void
-save_sound(void)
-{
-    const char *cat = "Sound";
-
-    if (sound_card == 0)
-	config_delete_var(cat, "sound_card");
-      else
-	config_set_string(cat, "sound_card",
-			  sound_card_get_internal_name(sound_card));
-
-    if (!strcmp(midi_device_get_internal_name(midi_device), "none"))
-	config_delete_var(cat, "midi_device");
-      else
-	config_set_string(cat, "midi_device",
-			  midi_device_get_internal_name(midi_device));
-
-    if (mpu401_standalone_enable == 0)
-	config_delete_var(cat, "mpu401_standalone");
-      else
-	config_set_int(cat, "mpu401_standalone", mpu401_standalone_enable);
-
-    if (opl3_type == 0)
-	config_delete_var(cat, "opl3_type");
-      else
-	config_set_string(cat, "opl3_type", (opl3_type == 1) ? "nukedopl" : "dbopl");
-
-    if (sound_is_float == 1)
-	config_delete_var(cat, "sound_type");
-      else
-	config_set_string(cat, "sound_type", (sound_is_float == 1) ? "float" : "int16");
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Network" section. */
-static void
-save_network(void)
-{
-    const char *cat = "Network";
-
-    if (network_type == NET_TYPE_NONE)
-	config_delete_var(cat, "net_type");
-      else
-	config_set_string(cat, "net_type",
-		(network_type == NET_TYPE_SLIRP) ? "slirp" : "pcap");
-
-    if (network_host[0] != '\0') {
-	if (! strcmp(network_host, "none"))
-		config_delete_var(cat, "net_host_device");
-	  else
-		config_set_string(cat, "net_host_device", network_host);
-    } else {
-	config_delete_var(cat, "net_host_device");
-    }
-
-    if (network_card == 0)
-	config_delete_var(cat, "net_card");
-      else
-	config_set_string(cat, "net_card",
-			  network_card_get_internal_name(network_card));
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Ports" section. */
-static void
-save_ports(void)
-{
-    const char *cat = "Ports (COM & LPT)";
-    char temp[128];
-    int i;
-
-    for (i = 0; i < SERIAL_MAX; i++) {
-	sprintf(temp, "serial%i_enabled", i);
-	if (serial_enabled[i]) {
-		config_set_int(cat, temp, 1);
-	} else
-		config_delete_var(cat, temp);
-    }
-
-    for (i = 0; i < PARALLEL_MAX; i++) {
-	sprintf(temp, "parallel%i_enabled", i);
-	if (parallel_enabled[i])
-		config_set_int(cat, temp, 1);
-	  else
-		config_delete_var(cat, temp);
-
-	sprintf(temp, "parallel%i_device", i);
-	if (parallel_device[i] != 0)
-		config_set_string(cat, temp,
-			parallel_device_get_internal_name(parallel_device[i]));
-	  else
-		config_delete_var(cat, temp);
-    }
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Other Peripherals" section. */
-static void
-save_other_peripherals(void)
-{
-    const char *cat = "Other peripherals";
-    char temp[512], tmp2[512];
-    int c;
-
-    if (scsi_card == 0)
-	config_delete_var(cat, "scsi_card");
-      else
-	config_set_string(cat, "scsi_card",
-			  scsi_card_get_internal_name(scsi_card));
-
-    config_set_string(cat, "hdc", hdc_get_internal_name(hdc_type));
-
-    for (c = 2; c < 4; c++) {
-	sprintf(temp, "ide_%02i", c+1);
-	sprintf(tmp2, "%i, %02i", !!ide_enable[c], ide_irq[c]);
-	if (ide_enable[c] == 0)
-		config_delete_var(cat, temp);
-	  else
-		config_set_string(cat, temp, tmp2);
-    }
-
-    if (bugger_enabled == 0)
-	config_delete_var(cat, "bugger_enabled");
-      else
-	config_set_int(cat, "bugger_enabled", bugger_enabled);
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Hard Disks" section. */
-static void
-save_hard_disks(void)
-{
-    const char *cat = "Hard disks";
-    char temp[24], tmp2[64];
-    char *p;
-    int c;
-
-    for (c = 0; c < HDD_NUM; c++) {
-	sprintf(temp, "hdd_%02i_parameters", c+1);
-	if (hdd_is_valid(c)) {
-		p = hdd_bus_to_string(hdd[c].bus, 0);
-		sprintf(tmp2, "%u, %u, %u, %d, %s",
-			hdd[c].spt, hdd[c].hpc, hdd[c].tracks, hdd[c].wp, p);
-		config_set_string(cat, temp, tmp2);
-	} else {
-		config_delete_var(cat, temp);
-	}
-
-	sprintf(temp, "hdd_%02i_mfm_channel", c+1);
-	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_MFM))
-		config_set_int(cat, temp, hdd[c].mfm_channel);
-	  else
-		config_delete_var(cat, temp);
-
-	sprintf(temp, "hdd_%02i_xtide_channel", c+1);
-	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_XTIDE))
-		config_set_int(cat, temp, hdd[c].xtide_channel);
-	  else
-		config_delete_var(cat, temp);
-
-	sprintf(temp, "hdd_%02i_esdi_channel", c+1);
-	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_ESDI))
-		config_set_int(cat, temp, hdd[c].esdi_channel);
-	  else
-		config_delete_var(cat, temp);
-
-	sprintf(temp, "hdd_%02i_ide_channel", c+1);
-	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_IDE_PIO_ONLY) && (hdd[c].bus != HDD_BUS_IDE_PIO_AND_DMA))) {
-		config_delete_var(cat, temp);
-	} else {
-		sprintf(tmp2, "%01u:%01u", hdd[c].ide_channel >> 1, hdd[c].ide_channel & 1);
-		config_set_string(cat, temp, tmp2);
-	}
-
-	sprintf(temp, "hdd_%02i_scsi_location", c+1);
-	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_SCSI) && (hdd[c].bus != HDD_BUS_SCSI_REMOVABLE))) {
-		config_delete_var(cat, temp);
-	} else {
-		sprintf(tmp2, "%02u:%02u", hdd[c].scsi_id, hdd[c].scsi_lun);
-		config_set_string(cat, temp, tmp2);
-	}
-
-	sprintf(temp, "hdd_%02i_fn", c+1);
-	if (hdd_is_valid(c) && (wcslen(hdd[c].fn) != 0))
-		config_set_wstring(cat, temp, hdd[c].fn);
-	  else
-		config_delete_var(cat, temp);
-    }
-
-    delete_section_if_empty(cat);
-}
-
-
-/* Save "Floppy Drives" section. */
-static void
-save_floppy_drives(void)
-{
-    const char *cat = "Floppy drives";
-    char temp[512];
-    int c;
-
-    for (c = 0; c < FDD_NUM; c++) {
-	sprintf(temp, "fdd_%02i_type", c+1);
-	if (fdd_get_type(c) == ((c < 2) ? 2 : 0))
-		config_delete_var(cat, temp);
-	  else
-		config_set_string(cat, temp,
-				  fdd_get_internal_name(fdd_get_type(c)));
-
-	sprintf(temp, "fdd_%02i_fn", c+1);
-	if (wcslen(floppyfns[c]) == 0) {
-		config_delete_var(cat, temp);
-
-		ui_writeprot[c] = 0;
-
-		sprintf(temp, "fdd_%02i_writeprot", c+1);
-		config_delete_var(cat, temp);
-	} else {
-		config_set_wstring(cat, temp, floppyfns[c]);
-	}
-
-	sprintf(temp, "fdd_%02i_writeprot", c+1);
-	if (ui_writeprot[c] == 0)
-		config_delete_var(cat, temp);
-	  else
-		config_set_int(cat, temp, ui_writeprot[c]);
-
-	sprintf(temp, "fdd_%02i_turbo", c+1);
-	if (fdd_get_turbo(c) == 0)
-		config_delete_var(cat, temp);
-	  else
-		config_set_int(cat, temp, fdd_get_turbo(c));
-
-	sprintf(temp, "fdd_%02i_check_bpb", c+1);
-	if (fdd_get_check_bpb(c) == 1)
-		config_delete_var(cat, temp);
-	  else
-		config_set_int(cat, temp, fdd_get_check_bpb(c));
-    }
-
-    delete_section_if_empty(cat);
-}
-
-
 /* Save "Other Removable Devices" section. */
 static void
-save_other_removable_devices(void)
+save_removable(const char *cat)
 {
-    const char *cat = "Other removable devices";
     char temp[512], tmp2[512];
     int c;
 
@@ -1763,22 +1510,255 @@ save_other_removable_devices(void)
 }
 
 
+static const struct {
+    const char	*name;
+    void	(*load)(const char *);
+    void	(*save)(const char *);
+} categories[] = {
+  { "General",		load_general,		save_general		},
+  { "Machine",		load_machine,		save_machine		},
+  { "Video",		load_video,		save_video		},
+  { "Input devices",	load_input,		save_input		},
+  { "Sound",		load_sound,		save_sound		},
+  { "Network",		load_network,		save_network		},
+  { "Ports (COM & LPT)",load_ports,		save_ports		},
+  { "Other peripherals",load_other,		save_other		},
+  { "Hard disks",	load_disks,		save_disks		},
+  { "Floppy drives",	load_floppy,		save_floppy		},
+  { "Other removable devices",load_removable,	save_removable		},
+  { NULL,		NULL,			NULL			}
+};
+
+
+/* Create a usable default configuration. */
+static void
+config_default(void)
+{
+    int i;
+
+    cpu = 0;
+#ifdef USE_LANGUAGE
+    plat_langid = 0x0409;
+#endif
+    scale = 1;
+    video_card = VID_CGA;
+    vid_api = plat_vidapi("default");;
+    enable_sync = 1;
+    joystick_type = 0;
+    hdc_type = 0;
+
+    for (i = 0; i < SERIAL_MAX; i++)
+	serial_enabled[i] = 0;
+
+    for (i = 0; i < PARALLEL_MAX; i++)
+	parallel_enabled[i] = 0;
+
+    fdd_set_type(0, 2);
+    fdd_set_check_bpb(0, 1);
+    fdd_set_type(1, 2);
+    fdd_set_check_bpb(1, 1);
+
+    mem_size = 640;
+}
+
+
+/* Read and parse the configuration file into memory. */
+static int
+config_read(const wchar_t *fn)
+{
+    char sname[128], ename[128];
+    wchar_t buff[1024];
+    section_t *sec, *ns;
+    entry_t *ne;
+    int c, d;
+    FILE *f;
+
+#if defined(ANSI_CFG) || !defined(_WIN32)
+    f = plat_fopen(fn, L"rt");
+#else
+    f = plat_fopen(fn, L"rt, ccs=UNICODE");
+#endif
+    if (f == NULL) return(0);
+	
+    sec = malloc(sizeof(section_t));
+    memset(sec, 0x00, sizeof(section_t));
+    memset(&config_head, 0x00, sizeof(list_t));
+    list_add(&sec->list, &config_head);
+
+    while (1) {
+	memset(buff, 0x00, sizeof(buff));
+	fgetws(buff, sizeof_w(buff), f);
+	if (ferror(f) || feof(f)) break;
+
+	/* Make sure there are no stray newlines or hard-returns in there. */
+	if (buff[wcslen(buff)-1] == L'\n') buff[wcslen(buff)-1] = L'\0';
+	if (buff[wcslen(buff)-1] == L'\r') buff[wcslen(buff)-1] = L'\0';
+
+	/* Skip any leading whitespace. */
+	c = 0;
+	while ((buff[c] == L' ') || (buff[c] == L'\t'))
+		  c++;
+
+	/* Skip empty lines. */
+	if (buff[c] == L'\0') continue;
+
+	/* Skip lines that (only) have a comment. */
+	if ((buff[c] == L'#') || (buff[c] == L';')) continue;
+
+	if (buff[c] == L'[') {	/*Section*/
+		c++;
+		d = 0;
+		while (buff[c] != L']' && buff[c])
+			wctomb(&(sname[d++]), buff[c++]);
+		sname[d] = L'\0';
+
+		/* Is the section name properly terminated? */
+		if (buff[c] != L']') continue;
+
+		/* Create a new section and insert it. */
+		ns = malloc(sizeof(section_t));
+		memset(ns, 0x00, sizeof(section_t));
+		strncpy(ns->name, sname, sizeof(ns->name));
+		list_add(&ns->list, &config_head);
+
+		/* New section is now the current one. */
+		sec = ns;			
+		continue;
+	}
+
+	/* Get the variable name. */
+	d = 0;
+	while ((buff[c] != L'=') && (buff[c] != L' ') && buff[c])
+		wctomb(&(ename[d++]), buff[c++]);
+	ename[d] = L'\0';
+
+	/* Skip incomplete lines. */
+	if (buff[c] == L'\0') continue;
+
+	/* Look for =, skip whitespace. */
+	while ((buff[c] == L'=' || buff[c] == L' ') && buff[c])
+		c++;
+
+	/* Skip incomplete lines. */
+	if (buff[c] == L'\0') continue;
+
+	/* This is where the value part starts. */
+	d = c;
+
+	/* Allocate a new variable entry.. */
+	ne = malloc(sizeof(entry_t));
+	memset(ne, 0x00, sizeof(entry_t));
+	strncpy(ne->name, ename, sizeof(ne->name));
+	wcsncpy(ne->wdata, &buff[d], sizeof_w(ne->wdata));
+	ne->wdata[sizeof_w(ne->wdata)-1] = L'\0';
+	wcstombs(ne->data, ne->wdata, sizeof(ne->data));
+	ne->data[sizeof(ne->data)-1] = '\0';
+
+	/* .. and insert it. */
+	list_add(&ne->list, &sec->entry_head);
+    }
+
+    (void)fclose(f);
+
+    if (do_dump_config)
+	config_dump();
+
+    return(1);
+}
+
+
+/*
+ * Write the in-memory configuration to disk.
+ *
+ * This is a public function, because the Settings UI
+ * want to directly write the configuration after it
+ * has changed it.
+ */
+void
+config_write(const wchar_t *fn)
+{
+    wchar_t wtemp[512];
+    section_t *sec;
+    FILE *f;
+    int fl = 0;
+
+#if defined(ANSI_CFG) || !defined(_WIN32)
+    f = plat_fopen(fn, L"wt");
+#else
+    f = plat_fopen(fn, L"wt, ccs=UNICODE");
+#endif
+    if (f == NULL) return;
+
+    sec = (section_t *)config_head.next;
+    while (sec != NULL) {
+	entry_t *ent;
+
+	if (sec->name[0]) {
+		mbstowcs(wtemp, sec->name, strlen(sec->name)+1);
+		if (fl)
+			fwprintf(f, L"\n[%ls]\n", wtemp);
+		  else
+			fwprintf(f, L"[%ls]\n", wtemp);
+		fl++;
+	}
+
+	ent = (entry_t *)sec->entry_head.next;
+	while (ent != NULL) {
+		if (ent->name[0] != '\0') {
+			mbstowcs(wtemp, ent->name, sizeof_w(wtemp));
+			if (ent->wdata[0] == L'\0')
+				fwprintf(f, L"%ls = \n", wtemp);
+			  else
+				fwprintf(f, L"%ls = %ls\n", wtemp, ent->wdata);
+			fl++;
+		}
+
+		ent = (entry_t *)ent->list.next;
+	}
+
+	sec = (section_t *)sec->list.next;
+    }
+	
+    (void)fclose(f);
+}
+
+
+/* Load the specified or a default configuration file. */
+void
+config_load(void)
+{
+    int i;
+
+    pclog("CONFIG: loading file '%ls'..\n", cfg_path);
+    if (! config_read(cfg_path)) {
+	pclog("CONFIG: file not present or invalid, using defaults!\n");
+
+	config_default();
+
+	return;
+    }
+
+    /* Load all the categories. */
+    for (i = 0; categories[i].name != NULL; i++)
+	categories[i].load(categories[i].name);
+
+    /* Mark the configuration as changed. */
+    config_changed = 1;
+
+    pclog("CONFIG: file loaded.\n\n");
+}
+
+
 void
 config_save(void)
 {
-    save_general();			/* General */
-    save_machine();			/* Machine */
-    save_video();			/* Video */
-    save_input_devices();		/* Input devices */
-    save_sound();			/* Sound */
-    save_network();			/* Network */
-    save_ports();			/* Ports (COM & LPT) */
-    save_other_peripherals();		/* Other peripherals */
-    save_hard_disks();			/* Hard disks */
-    save_floppy_drives();		/* Floppy drives */
-    save_other_removable_devices();	/* Other removable devices */
+    int i;
 
-    /* Not if we are running readonly! */
+    /* Save all the categories. */
+    for (i = 0; categories[i].name != NULL; i++)
+	categories[i].save(categories[i].name);
+
+    /* Write it back to file if enabled. */
     if (! config_ro)
 	config_write(cfg_path);
 }
