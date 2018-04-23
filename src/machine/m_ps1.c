@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.12	2018/04/14
+ * Version:	@(#)m_ps1.c	1.0.14	2018/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,7 +100,8 @@ typedef struct {
 
     rom_t	high_rom;
 
-    uint8_t	ps1_92,
+    uint8_t	ps1_91,
+		ps1_92,
 		ps1_94,
 		ps1_102,
 		ps1_103,
@@ -109,11 +110,6 @@ typedef struct {
 		ps1_190;
     int		ps1_e0_addr;
     uint8_t	ps1_e0_regs[256];
-
-    struct {
-	uint8_t status, int_status;
-	uint8_t attention, ctrl;
-    }		hd;
 } ps1_t;
 
 
@@ -381,22 +377,6 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 	case 0x0190:
 		ps->ps1_190 = val;
 		break;
-
-	case 0x0322:
-		if (ps->model == 2011) {
-			ps->hd.ctrl = val;
-			if (val & 0x80)
-				ps->hd.status |= 0x02;
-		}
-		break;
-
-	case 0x0324:
-		if (ps->model == 2011) {
-			ps->hd.attention = val & 0xf0;
-			if (ps->hd.attention)
-				ps->hd.status = 0x14;
-		}
-		break;
     }
 }
 
@@ -408,8 +388,9 @@ ps1_read(uint16_t port, void *priv)
     uint8_t ret = 0xff;
 
     switch (port) {
-	case 0x0091:
-		ret = 0;
+	case 0x0091:		/* Card Select Feedback register */
+		ret = ps->ps1_91;
+		ps->ps1_91 = 0;
 		break;
 
 	case 0x0092:
@@ -452,19 +433,6 @@ ps1_read(uint16_t port, void *priv)
 		ret = ps->ps1_190;
 		break;
 
-	case 0x0322:
-		if (ps->model == 2011) {
-			ret = ps->hd.status;
-		}
-		break;
-
-	case 0x0324:
-		if (ps->model == 2011) {
-			ret = ps->hd.int_status;
-			ps->hd.int_status &= ~0x02;
-		}
-		break;
-
 	default:
 		break;
     }
@@ -477,6 +445,7 @@ static void
 ps1_setup(int model, romdef_t *bios)
 {
     ps1_t *ps;
+    void *priv;
 
     ps = (ps1_t *)malloc(sizeof(ps1_t));
     memset(ps, 0x00, sizeof(ps1_t));
@@ -499,25 +468,9 @@ ps1_setup(int model, romdef_t *bios)
     if (model == 2011) {
 	/* Force some configuration settings. */
 	video_card = VID_INTERNAL;
-	sound_card = SOUND_INTERNAL;
-	hdc_type = HDC_INTERNAL;
 	mouse_type = MOUSE_PS2;
 
-#if 0
-#if 1
-	io_sethandler(0x0320, 1,
-		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
-	io_sethandler(0x0322, 1,
-		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
-	io_sethandler(0x0324, 1,
-		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
-#else
-	device_add(&xta_ps1_device);
-#endif
-#endif
-
 	if (machine_get_config_int("rom_shell")) {
-		pclog("PS1: loading ROM Shell..\n");
 		if (! rom_init(&ps->high_rom,
 			       L"machines/ibm/ps1_2011/fc0000_105775_us.bin",
 			       0xfc0000, 0x20000, 0x01ffff, 0, MEM_MAPPING_EXTERNAL)) {
@@ -534,13 +487,22 @@ ps1_setup(int model, romdef_t *bios)
 
  	/* Enable the builtin FDC. */
 	device_add(&fdc_at_actlow_device);
+
+ 	/* Enable the builtin HDC. */
+	if (hdc_type == HDC_INTERNAL) {
+		priv = device_add(&ps1_hdc_device);
+
+		/*
+		 * This is nasty, we will have to generalize this
+		 * at some point for all PS/1 and/or PS/2 machines.
+		 */
+		ps1_hdc_inform(priv, ps);
+	}
     }
 
     if (model == 2121) {
 	/* Force some configuration settings. */
 	video_card = VID_INTERNAL;
-	sound_card = SOUND_INTERNAL;
-	hdc_type = HDC_INTERNAL;
 	mouse_type = MOUSE_PS2;
 
 	io_sethandler(0x00e0, 2,
@@ -635,6 +597,16 @@ const device_t m_ps1_device = {
     NULL, NULL, NULL, NULL,
     ps1_config
 };
+
+
+/* Set the Card Selected Flag */
+void
+ps1_set_feedback(void *priv)
+{
+    ps1_t *ps = (ps1_t *)priv;
+
+    ps->ps1_91 |= 0x01;
+}
 
 
 void

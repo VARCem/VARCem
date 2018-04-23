@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.13	2018/04/19
+ * Version:	@(#)machine.c	1.0.13	2018/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -149,8 +149,8 @@ void
 machine_common_init(const machine_t *model, UNUSED(void *arg))
 {
     /* System devices first. */
-    dma_init();
     pic_init();
+    dma_init();
     pit_init();
 
     if (parallel_enabled[0])

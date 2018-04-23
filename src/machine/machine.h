@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.17	2018/04/14
+ * Version:	@(#)machine.h	1.0.19	2018/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -326,7 +326,10 @@ extern void	machine_ps1_m2011_init(const machine_t *, void *);
 extern void	machine_ps1_m2121_init(const machine_t *, void *);
 extern void	machine_ps1_m2133_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
+extern void	ps1_hdc_inform(void *, void *);
+extern void	ps1_set_feedback(void *);
 extern const device_t	m_ps1_device;
+extern const device_t	ps1_hdc_device;
 #endif
 
 extern void	machine_ps2_m30_286_init(const machine_t *, void *);

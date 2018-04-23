@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.12	2018/04/14
+# Version:	@(#)Makefile.VC	1.0.13	2018/04/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -482,7 +482,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_at_ali1429.obj m_at_commodore.obj \
 		    m_at_neat.obj m_at_headland.obj \
 		    m_at_t3100e.obj m_at_t3100e_vid.obj \
-		    m_ps1.obj \
+		    m_ps1.obj m_ps1_hdc.obj \
 		    m_ps2_isa.obj m_ps2_mca.obj \
 		    m_at_opti495.obj m_at_scat.obj \
 		    m_at_compaq.obj m_at_wd76c10.obj \

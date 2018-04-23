@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.6	2018/04/11
+ * Version:	@(#)nvr.c	1.0.7	2018/04/21
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -226,8 +226,7 @@ nvr_load(void)
     /* Make sure we have been initialized. */
     if (saved_nvr == NULL) return(0);
 
-    /* Clear out any old data. */
-//    memset(saved_nvr->regs, 0xff, sizeof(saved_nvr->regs));
+    /* Clear out any old data. NVR is RAM, so zero it. */
     memset(saved_nvr->regs, 0x00, sizeof(saved_nvr->regs));
 
     /* Set the defaults. */

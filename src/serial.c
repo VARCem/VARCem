@@ -8,7 +8,7 @@
  *
  *		Implementation of 8250-style serial port.
  *
- * Version:	@(#)serial.c	1.0.3	2018/04/20
+ * Version:	@(#)serial.c	1.0.4	2018/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -400,7 +400,9 @@ serial_reset(void)
     SERIAL *dev;
     int i;
 
+#ifdef ENABLE_SERIAL_LOG
     pclog("SERIAL: reset ([%d] [%d])\n", serial_enabled[0], serial_enabled[1]);
+#endif
 
     for (i = 0; i < SERIAL_MAX; i++) {
 	dev = &ports[i];
@@ -422,7 +424,7 @@ serial_setup(int id, uint16_t port, int8_t irq)
 {
     SERIAL *dev = &ports[id-1];
 
-#ifdef _DEBUG
+#if defined(ENABLE_SERIAL_LOG) && defined(_DEBUG)
     pclog("SERIAL: setting up COM%d as %04X [enabled=%d]\n",
 			id, port, serial_enabled[id-1]);
 #endif

@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.6	2018/04/19
+ * Version:	@(#)parallel.c	1.0.7	2018/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,6 +67,10 @@ typedef struct {
     void		*dev_ps;
 } parallel_t;
 
+
+#ifdef ENABLE_PARALLEL_LOG
+int			parallel_do_log = ENABLE_PARALLEL_LOG;
+#endif
 
 
 static parallel_t	ports[PARALLEL_MAX];	/* the ports */
@@ -219,8 +223,10 @@ parallel_reset(void)
     parallel_t *dev;
     int i;
 
+#ifdef ENABLE_PARALLEL_LOG
     pclog("PARALLEL: reset ([%d] [%d] [%d])\n",
 	parallel_enabled[0], parallel_enabled[1], parallel_enabled[2]);
+#endif
 
     for (i = 0; i < PARALLEL_MAX; i++) {
 	dev = &ports[i];
@@ -238,7 +244,7 @@ parallel_setup(int id, uint16_t port)
 {
     parallel_t *dev = &ports[id-1];
 
-#ifdef _DEBUG
+#if defined(ENABLE_PARALLEL_LOG) && defined(_DEBUG)
     pclog("PARALLEL: setting up LPT%d as %04X [enabled=%d]\n",
 			id, port, parallel_enabled[id-1]);
 #endif
