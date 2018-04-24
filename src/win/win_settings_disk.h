@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.3	2018/04/23
+ * Version:	@(#)win_settings_disk.h	1.0.4	2018/04/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -164,7 +164,7 @@ disk_add_locations(HWND hdlg)
     int i;
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < 6; i++)
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_4352 + i));
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
