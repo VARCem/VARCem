@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.7	2018/04/23
+ * Version:	@(#)hdc_esdi_mca.c	1.0.8	2018/04/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -102,8 +102,8 @@
 #define ESDI_IOADDR_SEC	0x3518
 #define ESDI_IRQCHAN	14
 
-#define BIOS_FILE_L	L"disk/esdi_mca/90x8969.bin"
-#define BIOS_FILE_H	L"disk/esdi_mca/90x8970.bin"
+#define BIOS_FILE_L	L"disk/esdi/mca/90x8969.bin"
+#define BIOS_FILE_H	L"disk/esdi/mca/90x8970.bin"
 
 
 #define ESDI_TIME	(200LL*TIMER_USEC)

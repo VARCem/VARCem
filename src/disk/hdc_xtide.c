@@ -21,7 +21,7 @@
  *		already on their way out, the newer IDE standard based on the
  *		PC/AT controller and 16b design became the IDE we now know.
  *
- * Version:	@(#)hdc_xtide.c	1.0.6	2018/04/23
+ * Version:	@(#)hdc_xtide.c	1.0.7	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,7 +64,7 @@
 #define ROM_PATH_XT	L"disk/xtide/ide_xt.bin"
 #define ROM_PATH_AT	L"disk/xtide/ide_at.bin"
 #define ROM_PATH_PS2	L"disk/xtide/side1v12.bin"
-#define ROM_PATH_PS2AT	L"disk/xtide/ide_at_1_1_5.bin"
+#define ROM_PATH_PS2_AT	L"disk/xtide/ide_at_1_1_5.bin"
 
 
 typedef struct {
@@ -78,27 +78,27 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
-    switch (port & 0xf) {
-	case 0x0:
+    switch (port & 0x0f) {
+	case 0:
 		writeidew(4, val | (dev->data_high << 8));
 		return;
 
-	case 0x1:
-	case 0x2:
-	case 0x3:
-	case 0x4:
-	case 0x5:
-	case 0x6:
-	case 0x7:
-		writeide(4, (port  & 0xf) | 0x1f0, val);
+	case 1:
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+		writeide(4, 0x01f0 | (port  & 0x0f), val);
 		return;
 
-	case 0x8:
+	case 8:
 		dev->data_high = val;
 		return;
 
-	case 0xe:
-		writeide(4, 0x3f6, val);
+	case 14:
+		writeide(4, 0x03f6, val);
 		return;
     }
 }
@@ -110,28 +110,28 @@ hdc_read(uint16_t port, void *priv)
     hdc_t *dev = (hdc_t *)priv;
     uint16_t tempw = 0xffff;
 
-    switch (port & 0xf) {
-	case 0x0:
+    switch (port & 0x0f) {
+	case 0:
 		tempw = readidew(4);
 		dev->data_high = tempw >> 8;
 		break;
 
-	case 0x1:
-	case 0x2:
-	case 0x3:
-	case 0x4:
-	case 0x5:
-	case 0x6:
-	case 0x7:
-		tempw = readide(4, (port  & 0xf) | 0x1f0);
+	case 1:
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+		tempw = readide(4, 0x01f0 | (port & 0x0f));
 		break;
 
-	case 0x8:
+	case 8:
 		tempw = dev->data_high;
 		break;
 
-	case 0xe:
-		tempw = readide(4, 0x3f6);
+	case 14:
+		tempw = readide(4, 0x03f6);
 		break;
 
 	default:
@@ -172,23 +172,22 @@ xtide_init(const device_t *info)
 
 	case 2:
 		fn = ROM_PATH_PS2;
-		rom_sz = 0x8000;
+		rom_sz = 0x8000;		//FIXME: file is 8KB ?
 		io = 0x360;
 
 		ide_xtide_init();
 		break;
 
 	case 3:
-		fn = ROM_PATH_PS2AT;
-		rom_sz = 0x4000;
+		fn = ROM_PATH_PS2_AT;
+		rom_sz = 0x4000;		//FIXME: no I/O address?
 
 		device_add(&ide_isa_2ch_device);
 		break;
     }
 
-    if (fn != NULL)
-	rom_init(&dev->bios_rom, fn,
-		 0xc8000, rom_sz, rom_sz-1, 0, MEM_MAPPING_EXTERNAL);
+    rom_init(&dev->bios_rom, fn,
+	     0xc8000, rom_sz, rom_sz-1, 0, MEM_MAPPING_EXTERNAL);
 
     if (io != 0)
 	io_sethandler(io, 16,
@@ -228,7 +227,7 @@ xtide_acculogic_available(void)
 static int
 xtide_at_ps2_available(void)
 {
-    return(rom_present(ROM_PATH_PS2AT));
+    return(rom_present(ROM_PATH_PS2_AT));
 }
 
 

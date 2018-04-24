@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.4	2018/04/23
+ * Version:	@(#)m_ps1_hdc.c	1.0.4	2018/04/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -105,7 +105,7 @@
 
 #define HDC_TIME	(200*TIMER_USEC)
 #define HDC_TYPE_USER	47			/* user drive type */
-#define XTA_NUM		1			/* we support 1 drive */
+#define PS1_HDD_NUM	1			/* we support 1 drive */
 
 
 enum {
@@ -406,7 +406,7 @@ typedef struct {
 		sector;			/* requested sector# */
     int		count;			/* requested sector count */
 
-    drive_t	drives[XTA_NUM];	/* the attached drive(s) */
+    drive_t	drives[PS1_HDD_NUM];	/* the attached drive(s) */
 
     uint8_t	data[512];		/* data buffer */
     uint8_t	sector_buf[512];	/* sector buffer */
@@ -909,8 +909,8 @@ do_send:
 
 						/* Copy from sector to data. */
 						memcpy(dev->data,
-						    dev->sector_buf,
-						    (128<<dev->ssb.sect_size));
+						       dev->sector_buf,
+						       dev->buf_len);
 						dev->buf_ptr = dev->data;
 					}
 				}
@@ -1090,8 +1090,9 @@ do_recv:
 			case STATE_RDONE:
 				/* Copy from data to sector if PIO. */
 				if (! (dev->ctrl & ACR_DMA_EN))
-					memcpy(dev->sector_buf, dev->data,
-					       (128<<dev->ssb.sect_size));
+					memcpy(dev->sector_buf,
+					       dev->data,
+					       dev->buf_len);
 
 				/* Get address of sector to write. */
 				if (get_sector(dev, drive, &addr)) {
@@ -1271,6 +1272,7 @@ hdc_read(uint16_t port, void *priv)
 }
 
 
+/* Write to one of the controller registers. */
 static void
 hdc_write(uint16_t port, uint8_t val, void *priv)
 {
@@ -1398,7 +1400,7 @@ ps1_hdc_init(const device_t *info)
     /* Load any disks for this device class. */
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_IDE) && (hdd[i].id.ide_channel < XTA_NUM)) {
+	if ((hdd[i].bus == HDD_BUS_IDE) && (hdd[i].id.ide_channel < PS1_HDD_NUM)) {
 		drive = &dev->drives[hdd[i].id.ide_channel];
 
 		if (! hdd_image_load(i)) {
@@ -1425,7 +1427,7 @@ ps1_hdc_init(const device_t *info)
 			hdd[i].id.ide_channel, drive->type,
 			drive->tracks, drive->hpc, drive->spt, i);
 
-		if (++c > XTA_NUM) break;
+		if (++c > PS1_HDD_NUM) break;
 	}
     }
 
@@ -1455,7 +1457,7 @@ ps1_hdc_close(void *priv)
 		     hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
 
     /* Close all disks and their images. */
-    for (d = 0; d < XTA_NUM; d++) {
+    for (d = 0; d < PS1_HDD_NUM; d++) {
 	drive = &dev->drives[d];
 
 	if (drive->present)
