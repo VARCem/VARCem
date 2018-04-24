@@ -8,7 +8,7 @@
  *
  *		Handle the platform-side of CDROM drives.
  *
- * Version:	@(#)win_cdrom.c	1.0.5	2018/03/18
+ * Version:	@(#)win_cdrom.c	1.0.6	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -219,7 +219,7 @@ removable_disk_unload(uint8_t id)
 	return;
     }
 
-    scsi_unloadhd(hdd[id].scsi_id, hdd[id].scsi_lun, id);
+    scsi_unloadhd(hdd[id].id.scsi.id, hdd[id].id.scsi.lun, id);
     scsi_disk_insert(id);
 }
 

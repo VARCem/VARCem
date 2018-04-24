@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.9	2018/04/20
+ * Version:	@(#)hdc.h	1.0.10	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,9 +38,8 @@
 # define EMU_HDC_H
 
 
-#define MFM_NUM		2	/* 2 drives per controller supported */
+#define ST506_NUM	2	/* 2 drives per controller supported */
 #define ESDI_NUM	2	/* 2 drives per controller supported */
-#define XTIDE_NUM	2	/* 2 drives per controller supported */
 #define IDE_NUM		8
 #define SCSI_NUM	16	/* theoretically the controller can have at
 				 * least 7 devices, with each device being
@@ -55,9 +54,10 @@ extern "C" {
 #endif
 
 #ifdef EMU_DEVICE_H
-extern const device_t	mfm_xt_xebec_device;		/* mfm_xt_xebec */
-extern const device_t	mfm_xt_dtc5150x_device;		/* mfm_xt_dtc */
-extern const device_t	mfm_at_wd1003_device;		/* mfm_at_wd1003 */
+extern const device_t	st506_xt_xebec_device;		/* st506_xt_xebec */
+extern const device_t	st506_xt_dtc5150x_device;	/* st506_xt_dtc */
+
+extern const device_t	st506_at_wd1003_device;		/* st506_at_wd1003 */
 
 extern const device_t	esdi_at_wd1007vse1_device;	/* esdi_at */
 extern const device_t	esdi_ps2_device;		/* esdi_mca */

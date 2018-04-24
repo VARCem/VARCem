@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.9	2018/04/20
+ * Version:	@(#)hdc.c	1.0.10	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,7 +68,8 @@ null_close(void *priv)
 static const device_t null_device = {
     "Null HDC", 0, 0,
     null_init, null_close, NULL,
-    NULL, NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
 
@@ -88,7 +89,8 @@ inthdc_close(void *priv)
 static const device_t inthdc_device = {
     "Internal Controller", 0, 0,
     inthdc_init, inthdc_close, NULL,
-    NULL, NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
 
@@ -96,7 +98,7 @@ static const struct {
     const char		*name;
     const char		*internal_name;
     const device_t	*device;
-    int			is_mfm;
+    int			is_st506;
 } controllers[] = {
     { "Disabled",					"none",		
       &null_device,					0		},
@@ -104,17 +106,11 @@ static const struct {
     { "Internal Controller",				"internal",
       &inthdc_device,					0		},
 
-    { "[ISA] [MFM] IBM PC Fixed Disk Adapter",		"mfm_xt",
-      &mfm_xt_xebec_device,				1		},
+    { "[ISA] [ST506] IBM PC Fixed Disk Adapter",	"st506_xt",
+      &st506_xt_xebec_device,				1		},
 
-    { "[ISA] [MFM] DTC-5150X Fixed Disk Adapter",	"mfm_dtc5150x",
-      &mfm_xt_dtc5150x_device,				1		},
-
-    { "[ISA] [MFM] IBM PC/AT Fixed Disk Adapter",	"mfm_at",
-      &mfm_at_wd1003_device,				1		},
-
-    { "[ISA] [ESDI] PC/AT ESDI Fixed Disk Adapter",	"esdi_at",
-      &esdi_at_wd1007vse1_device,			0		},
+    { "[ISA] [ST506] DTC-5150X Fixed Disk Adapter",	"st506_dtc5150x",
+      &st506_xt_dtc5150x_device,			1		},
 
 #ifdef USE_XTA
     { "[ISA] [IDE] PC/XT IDE (XTA) Adapter",		"xta_isa",
@@ -126,6 +122,12 @@ static const struct {
 
     { "[ISA] [IDE] PC/XT Acculogic XT IDE",		"xtide_acculogic",
       &xtide_acculogic_device,				0		},
+
+    { "[ISA] [ST506] IBM PC/AT Fixed Disk Adapter",	"st506_at",
+      &st506_at_wd1003_device,				1		},
+
+    { "[ISA] [ESDI] PC/AT ESDI Fixed Disk Adapter",	"esdi_at",
+      &esdi_at_wd1007vse1_device,			0		},
 
     { "[ISA] [IDE] PC/AT IDE (ATA) Adapter",		"ide_isa",
       &ide_isa_device,					0		},

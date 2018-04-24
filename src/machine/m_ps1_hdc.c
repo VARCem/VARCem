@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.3	2018/04/23
+ * Version:	@(#)m_ps1_hdc.c	1.0.4	2018/04/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -1398,8 +1398,8 @@ ps1_hdc_init(const device_t *info)
     /* Load any disks for this device class. */
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_IDE) && (hdd[i].mfm_channel < XTA_NUM)) {
-		drive = &dev->drives[hdd[i].ide_channel];
+	if ((hdd[i].bus == HDD_BUS_IDE) && (hdd[i].id.ide_channel < XTA_NUM)) {
+		drive = &dev->drives[hdd[i].id.ide_channel];
 
 		if (! hdd_image_load(i)) {
 			drive->present = 0;
@@ -1422,7 +1422,7 @@ ps1_hdc_init(const device_t *info)
 		drive->present = 1;
 
 		pclog("HDC: drive%d (type %d: cyl=%d,hd=%d,spt=%d), disk %d\n",
-			hdd[i].ide_channel, drive->type,
+			hdd[i].id.ide_channel, drive->type,
 			drive->tracks, drive->hpc, drive->spt, i);
 
 		if (++c > XTA_NUM) break;

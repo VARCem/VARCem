@@ -10,7 +10,7 @@
  *
  * NOTE:	FIXME: Strings 2176 and 2193 are same.
  *
- * Version:	@(#)language.h	1.0.7	2018/04/09
+ * Version:	@(#)language.h	1.0.8	2018/04/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -196,24 +196,22 @@
 #define IDS_4111	4111		// "This image exists and will be.."
 #define IDS_4112	4112		// "Please enter a valid file name"
 #define IDS_4113	4113		// "Remember to partition and fo.."
-#define IDS_4114	4114		// "MFM/RLL or ESDI CD-ROM driv.."
+#define IDS_4114	4114		// "ST506 or ESDI CD-ROM driv.."
 #define IDS_4115	4115		// "Removable disk %i (SCSI): %ls"
 
-#define IDS_4352	4352		// "MFM/RLL"
-#define IDS_4353	4353		// "XT IDE"
-#define IDS_4354	4354		// "ESDI"
-#define IDS_4355	4355		// "IDE (PIO-only)"
-#define IDS_4356	4356		// "IDE (PIO+DMA)"
-#define IDS_4357	4357		// "SCSI"
-#define IDS_4358	4358		// "SCSI (removable)"
+#define IDS_4352	4352		// "ST506"
+#define IDS_4353	4353		// "ESDI"
+#define IDS_4354	4354		// "IDE (PIO-only)"
+#define IDS_4355	4355		// "IDE (PIO+DMA)"
+#define IDS_4356	4356		// "SCSI"
+#define IDS_4357	4357		// "SCSI (removable)"
 
-#define IDS_4608	4608		// "MFM/RLL (%01i:%01i)"
-#define IDS_4609	4609		// "XT IDE (%01i:%01i)"
-#define IDS_4610	4610		// "ESDI (%01i:%01i)"
-#define IDS_4611	4611		// "IDE (PIO-only) (%01i:%01i)"
-#define IDS_4612	4612		// "IDE (PIO+DMA) (%01i:%01i)"
-#define IDS_4613	4613		// "SCSI (%02i:%02i)"
-#define IDS_4614	4614		// "SCSI (removable) (%02i:%02i)"
+#define IDS_4608	4608		// "ST506 (%01i:%01i)"
+#define IDS_4609	4609		// "ESDI (%01i:%01i)"
+#define IDS_4610	4610		// "IDE (PIO-only) (%01i:%01i)"
+#define IDS_4611	4611		// "IDE (PIO+DMA) (%01i:%01i)"
+#define IDS_4612	4612		// "SCSI (%02i:%02i)"
+#define IDS_4613	4613		// "SCSI (removable) (%02i:%02i)"
 
 #define IDS_5120	5120		// "CD-ROM %i (%s): %s"
 
@@ -260,8 +258,8 @@
 #define STR_NUM_2048	132
 #define STR_NUM_3072	11
 #define STR_NUM_4096	20
-#define STR_NUM_4352	7
-#define STR_NUM_4608	7
+#define STR_NUM_4352	6
+#define STR_NUM_4608	6
 #define STR_NUM_5120	1
 #define STR_NUM_5376	7
 #define STR_NUM_5632	7

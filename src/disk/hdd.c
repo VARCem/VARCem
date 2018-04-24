@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.2	2018/04/02
+ * Version:	@(#)hdd.c	1.0.3	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,14 +83,14 @@ hdd_string_to_bus(char *str, int cdrom)
     if (! strcmp(str, "none"))
 	return(HDD_BUS_DISABLED);
 
-    if (! strcmp(str, "mfm")) {
+    if (!strcmp(str, "st506") || !strcmp(str, "mfm")) {
 	if (cdrom) {
 no_cdrom:
 		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_4114);
 		return(0);
 	}
 
-	return(HDD_BUS_MFM);
+	return(HDD_BUS_ST506);
     }
 
     if (! strcmp(str, "esdi")) {
@@ -99,29 +99,20 @@ no_cdrom:
 	return(HDD_BUS_ESDI);
     }
 
-    if (! strcmp(str, "ide_pio_only"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
     if (! strcmp(str, "ide"))
 	return(HDD_BUS_IDE_PIO_ONLY);
 
-    if (! strcmp(str, "atapi_pio_only"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
-    if (! strcmp(str, "atapi"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
-    if (! strcmp(str, "eide"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
-    if (! strcmp(str, "xtide"))
-	return(HDD_BUS_XTIDE);
-
-    if (! strcmp(str, "atide"))
+    if (! strcmp(str, "ide_pio_only"))
 	return(HDD_BUS_IDE_PIO_ONLY);
 
     if (! strcmp(str, "ide_pio_and_dma"))
 	return(HDD_BUS_IDE_PIO_AND_DMA);
+
+    if (! strcmp(str, "atapi"))
+	return(HDD_BUS_IDE_PIO_ONLY);
+
+    if (! strcmp(str, "atapi_pio_only"))
+	return(HDD_BUS_IDE_PIO_ONLY);
 
     if (! strcmp(str, "atapi_pio_and_dma"))
 	return(HDD_BUS_IDE_PIO_AND_DMA);
@@ -164,12 +155,8 @@ hdd_bus_to_string(int bus, int cdrom)
 	default:
 		break;
 
-	case HDD_BUS_MFM:
-		s = "mfm";
-		break;
-
-	case HDD_BUS_XTIDE:
-		s = "xtide";
+	case HDD_BUS_ST506:
+		s = "st506";
 		break;
 
 	case HDD_BUS_ESDI:

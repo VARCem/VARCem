@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.6	2018/03/28
+ * Version:	@(#)scsi_disk.c	1.0.7	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -234,7 +234,7 @@ find_hdd_for_scsi_id(uint8_t scsi_id, uint8_t scsi_lun)
 	if (((hdd[i].spt == 0) || (hdd[i].hpc == 0) || (hdd[i].tracks == 0)) && (hdd[i].bus != HDD_BUS_SCSI_REMOVABLE)) {
 		continue;
 	}
-	if (((hdd[i].bus == HDD_BUS_SCSI) || (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)) && (hdd[i].scsi_id == scsi_id) && (hdd[i].scsi_lun == scsi_lun)) {
+	if (((hdd[i].bus == HDD_BUS_SCSI) || (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)) && (hdd[i].id.scsi.id == scsi_id) && (hdd[i].id.scsi.lun == scsi_lun)) {
 		return i;
 	}
     }
@@ -550,8 +550,8 @@ scsi_hd_sense_clear(int id, int command)
 static void
 scsi_hd_set_phase(uint8_t id, uint8_t phase)
 {
-    uint8_t scsi_id = hdd[id].scsi_id;
-    uint8_t scsi_lun = hdd[id].scsi_lun;
+    uint8_t scsi_id = hdd[id].id.scsi.id;
+    uint8_t scsi_lun = hdd[id].id.scsi.lun;
 
     if ((hdd[id].bus != HDD_BUS_SCSI) &&
 	(hdd[id].bus != HDD_BUS_SCSI_REMOVABLE)) return;
@@ -692,7 +692,7 @@ scsi_hd_pre_execution_check(uint8_t id, uint8_t *cdb)
 {
     int ready = 1;
 
-    if (((shdc[id].request_length >> 5) & 7) != hdd[id].scsi_lun) {
+    if (((shdc[id].request_length >> 5) & 7) != hdd[id].id.scsi.lun) {
 	scsi_hd_log("SCSI HD %i: Attempting to execute a unknown command targeted at SCSI LUN %i\n", id, ((shdc[id].request_length >> 5) & 7));
 	scsi_hd_invalid_lun(id);
 	return 0;
@@ -859,7 +859,7 @@ void
 scsi_hd_command(uint8_t id, uint8_t *cdb)
 {
     /* uint8_t *hdbufferb = (uint8_t *) shdc[id].buffer; */
-    uint8_t *hdbufferb = SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].CmdBuffer;
+    uint8_t *hdbufferb = SCSIDevices[hdd[id].id.scsi.id][hdd[id].id.scsi.lun].CmdBuffer;
     int32_t len;
     int pos=0;
     int max_len;
@@ -873,7 +873,7 @@ scsi_hd_command(uint8_t id, uint8_t *cdb)
 	'E','M','U','_','H','D','0','0',' ','v','1','.','0','0',0 };
     uint32_t last_sector = 0;
     int block_desc = 0;
-    int32_t *BufLen = &SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].BufferLength;
+    int32_t *BufLen = &SCSIDevices[hdd[id].id.scsi.id][hdd[id].id.scsi.lun].BufferLength;
 #if 0
     int CdbLength;
 #endif
@@ -1393,8 +1393,8 @@ atapi_out:
 void
 scsi_hd_phase_data_in(uint8_t id)
 {
-    uint8_t *hdbufferb = SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].CmdBuffer;
-    int32_t *BufLen = &SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].BufferLength;
+    uint8_t *hdbufferb = SCSIDevices[hdd[id].id.scsi.id][hdd[id].id.scsi.lun].CmdBuffer;
+    int32_t *BufLen = &SCSIDevices[hdd[id].id.scsi.id][hdd[id].id.scsi.lun].BufferLength;
 
     if (!*BufLen) {
 	scsi_hd_log("scsi_hd_phase_data_in(): Buffer length is 0\n");
@@ -1449,9 +1449,9 @@ scsi_hd_phase_data_in(uint8_t id)
 void
 scsi_hd_phase_data_out(uint8_t id)
 {
-    uint8_t *hdbufferb = SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].CmdBuffer;
+    uint8_t *hdbufferb = SCSIDevices[hdd[id].id.scsi.id][hdd[id].id.scsi.lun].CmdBuffer;
     uint32_t i;
-    int32_t *BufLen = &SCSIDevices[hdd[id].scsi_id][hdd[id].scsi_lun].BufferLength;
+    int32_t *BufLen = &SCSIDevices[hdd[id].id.scsi.id][hdd[id].id.scsi.lun].BufferLength;
     uint32_t last_sector = hdd_image_get_last_sector(id);
     uint32_t last_to_write = 0;
     uint32_t c, h, s;

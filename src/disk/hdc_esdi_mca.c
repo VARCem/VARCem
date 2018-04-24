@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.5	2018/04/02
+ * Version:	@(#)hdc_esdi_mca.c	1.0.7	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -102,15 +102,15 @@
 #define ESDI_IOADDR_SEC	0x3518
 #define ESDI_IRQCHAN	14
 
-#define BIOS_FILE_L	L"hdd/esdi/90x8969.bin"
-#define BIOS_FILE_H	L"hdd/esdi/90x8970.bin"
+#define BIOS_FILE_L	L"disk/esdi_mca/90x8969.bin"
+#define BIOS_FILE_H	L"disk/esdi_mca/90x8970.bin"
 
 
 #define ESDI_TIME	(200LL*TIMER_USEC)
 #define CMD_ADAPTER	0
 
 
-typedef struct esdi_drive {
+typedef struct {
     uint8_t	spt,
 		hpc;
     uint16_t	tracks;
@@ -119,7 +119,7 @@ typedef struct esdi_drive {
     int8_t	hdd_num;
 } drive_t;
 
-typedef struct esdi {
+typedef struct {
     uint16_t	base;
     int8_t	irq;
     int8_t	dma;
@@ -164,7 +164,7 @@ typedef struct esdi {
     drive_t	drives[2];
 
     uint8_t	pos_regs[8];
-} esdi_t;
+} hdc_t;
 
 #define STATUS_DMA_ENA		(1 << 7)
 #define STATUS_IRQ_PENDING	(1 << 6)
@@ -213,7 +213,7 @@ typedef struct esdi {
 
 
 static __inline void
-set_irq(esdi_t *dev)
+set_irq(hdc_t *dev)
 {
     if (dev->basic_ctrl & CTRL_IRQ_ENA)
 	picint(1 << dev->irq);
@@ -221,14 +221,14 @@ set_irq(esdi_t *dev)
 
 
 static __inline void
-clear_irq(esdi_t *dev)
+clear_irq(hdc_t *dev)
 {
     picintc(1 << dev->irq);
 }
 
 
 static void
-cmd_unsupported(esdi_t *dev)
+cmd_unsupported(hdc_t *dev)
 {
     dev->status_len = 9;
     dev->status_data[0] = dev->command | STATUS_LEN(9) | dev->cmd_dev;
@@ -250,7 +250,7 @@ cmd_unsupported(esdi_t *dev)
 
 
 static void
-device_not_present(esdi_t *dev)
+device_not_present(hdc_t *dev)
 {
     dev->status_len = 9;
     dev->status_data[0] = dev->command | STATUS_LEN(9) | dev->cmd_dev;
@@ -272,7 +272,7 @@ device_not_present(esdi_t *dev)
 
 
 static void
-rba_out_of_range(esdi_t *dev)
+rba_out_of_range(hdc_t *dev)
 {
     dev->status_len = 9;
     dev->status_data[0] = dev->command | STATUS_LEN(9) | dev->cmd_dev;
@@ -316,9 +316,9 @@ rba_out_of_range(esdi_t *dev)
                 
 
 static void
-esdi_callback(void *priv)
+hdc_callback(void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
     drive_t *drive;
     int val;
 
@@ -733,9 +733,9 @@ esdi_callback(void *priv)
 
 
 static uint8_t
-esdi_read(uint16_t port, void *priv)
+hdc_read(uint16_t port, void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port-dev->base) {
@@ -757,9 +757,9 @@ esdi_read(uint16_t port, void *priv)
 
 
 static void
-esdi_write(uint16_t port, uint8_t val, void *priv)
+hdc_write(uint16_t port, uint8_t val, void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
 
 #ifdef ENABLE_HDC_LOG
     hdc_log("ESDI: wr(%04x, %02x)\n", port-dev->base, val);
@@ -863,9 +863,9 @@ esdi_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint16_t
-esdi_readw(uint16_t port, void *priv)
+hdc_readw(uint16_t port, void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
     uint16_t ret = 0xffff;
 
     switch (port-dev->base) {
@@ -888,9 +888,9 @@ esdi_readw(uint16_t port, void *priv)
 
 
 static void
-esdi_writew(uint16_t port, uint16_t val, void *priv)
+hdc_writew(uint16_t port, uint16_t val, void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
 
 #ifdef ENABLE_HDC_LOG
     hdc_log("ESDI: wrw(%04x, %04x)\n", port-dev->base, val);
@@ -922,9 +922,9 @@ esdi_writew(uint16_t port, uint16_t val, void *priv)
 
 
 static uint8_t
-esdi_mca_read(int port, void *priv)
+hdc_mca_read(int port, void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
 
 #ifdef ENABLE_HDC_LOG
     hdc_log("ESDI: mcard(%04x)\n", port);
@@ -934,9 +934,9 @@ esdi_mca_read(int port, void *priv)
 
 
 static void
-esdi_mca_write(int port, uint8_t val, void *priv)
+hdc_mca_write(int port, uint8_t val, void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
 
 #ifdef ENABLE_HDC_LOG
     hdc_log("ESDI: mcawr(%04x, %02x)  pos[2]=%02x pos[3]=%02x\n",
@@ -956,8 +956,8 @@ esdi_mca_write(int port, uint8_t val, void *priv)
      * 		       new base.
      */
     io_removehandler(dev->base, 8,
-		     esdi_read, esdi_readw, NULL,
-		     esdi_write, esdi_writew, NULL, dev);
+		     hdc_read, hdc_readw, NULL,
+		     hdc_write, hdc_writew, NULL, dev);
     mem_mapping_disable(&dev->bios_rom.mapping);
 
     /* Save the new value. */
@@ -1046,8 +1046,8 @@ esdi_mca_write(int port, uint8_t val, void *priv)
     if (dev->pos_regs[2] & 0x01) {
 	/* Card enabled; register (new) I/O handler. */
 	io_sethandler(dev->base, 8,
-		      esdi_read, esdi_readw, NULL,
-		      esdi_write, esdi_writew, NULL, dev);
+		      hdc_read, hdc_readw, NULL,
+		      hdc_write, hdc_writew, NULL, dev);
 
 	/* Enable or disable the BIOS ROM. */
 	if (dev->bios != 0x000000) {
@@ -1067,12 +1067,12 @@ static void *
 esdi_init(const device_t *info)
 {
     drive_t *drive;
-    esdi_t *dev;
+    hdc_t *dev;
     int c, i;
 
-    dev = malloc(sizeof(esdi_t));
+    dev = malloc(sizeof(hdc_t));
     if (dev == NULL) return(NULL);
-    memset(dev, 0x00, sizeof(esdi_t));
+    memset(dev, 0x00, sizeof(hdc_t));
 
     /* Mark as unconfigured. */
     dev->irq_status = 0xff;
@@ -1088,9 +1088,9 @@ esdi_init(const device_t *info)
     dev->drives[0].present = dev->drives[1].present = 0;
 
     for (c=0,i=0; i<HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_ESDI) && (hdd[i].esdi_channel < ESDI_NUM)) {
+	if ((hdd[i].bus == HDD_BUS_ESDI) && (hdd[i].id.esdi_channel < ESDI_NUM)) {
 		/* This is an ESDI drive. */
-		drive = &dev->drives[hdd[i].esdi_channel];
+		drive = &dev->drives[hdd[i].id.esdi_channel];
 
 		/* Try to load an image for the drive. */
 		if (! hdd_image_load(i)) {
@@ -1118,7 +1118,7 @@ esdi_init(const device_t *info)
     dev->pos_regs[1] = 0xdd;
 
     /* Enable the device. */
-    mca_add(esdi_mca_read, esdi_mca_write, dev);
+    mca_add(hdc_mca_read, hdc_mca_write, dev);
 
     /* Mark for a reset. */
     dev->in_reset = 1;
@@ -1126,7 +1126,7 @@ esdi_init(const device_t *info)
     dev->status = STATUS_BUSY;
 
     /* Set the reply timer. */
-    timer_add(esdi_callback, &dev->callback, &dev->callback, dev);
+    timer_add(hdc_callback, &dev->callback, &dev->callback, dev);
 
     return(dev);
 }
@@ -1135,13 +1135,13 @@ esdi_init(const device_t *info)
 static void
 esdi_close(void *priv)
 {
-    esdi_t *dev = (esdi_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
     drive_t *drive;
     int d;
 
     dev->drives[0].present = dev->drives[1].present = 0;
 
-    for (d=0; d<2; d++) {
+    for (d = 0; d < ESDI_NUM; d++) {
 	drive = &dev->drives[d];
 
 	hdd_image_close(drive->hdd_num);
@@ -1162,5 +1162,7 @@ const device_t esdi_ps2_device = {
     "IBM ESDI Fixed Disk Adapter (MCA)",
     DEVICE_MCA, 0,
     esdi_init, esdi_close, NULL,
-    esdi_available, NULL, NULL, NULL, NULL
+    esdi_available,
+    NULL, NULL, NULL,
+    NULL
 };

@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_mfm_xt.c	1.0.6	2018/04/18
+ * Version:	@(#)hdc_st506_xt.c	1.0.7	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -89,9 +89,10 @@
 #include "hdd.h"
 
 
-#define MFM_TIME	(2000LL*TIMER_USEC)
-#define XEBEC_BIOS_FILE	L"hdd/mfm_xebec/ibm_xebec_62x0822_1985.bin"
-#define DTC_BIOS_FILE	L"hdd/mfm_xebec/dtc_cxd21a.bin"
+#define ST506_TIME	(2000LL*TIMER_USEC)
+
+#define XEBEC_BIOS_FILE	L"disk/st506/ibm_xebec_62x0822_1985.bin"
+#define DTC_BIOS_FILE	L"disk/st506/dtc_cxd21a.bin"
 
 
 enum {
@@ -140,7 +141,7 @@ typedef struct {
 		cylinder;
     int		sector_count;
     uint8_t	switches;
-} mfm_t;
+} hdc_t;
 
 #define STAT_IRQ 0x20
 #define STAT_DRQ 0x10
@@ -164,6 +165,7 @@ typedef struct {
 #define CMD_WRITE_SECTOR_BUFFER   0x0f
 #define CMD_BUFFER_DIAGNOSTIC     0xe0
 #define CMD_CONTROLLER_DIAGNOSTIC 0xe4
+
 #define CMD_DTC_GET_DRIVE_PARAMS  0xfb
 #define CMD_DTC_SET_STEP_RATE     0xfc
 #define CMD_DTC_SET_GEOMETRY      0xfe
@@ -175,9 +177,9 @@ typedef struct {
 
 
 static uint8_t
-mfm_read(uint16_t port, void *priv)
+st506_read(uint16_t port, void *priv)
 {
-    mfm_t *dev = (mfm_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
     uint8_t temp = 0xff;
 
     switch (port) {
@@ -202,7 +204,7 @@ mfm_read(uint16_t port, void *priv)
 				if (dev->data_pos == dev->data_len) {
 					dev->status = STAT_BSY;
 					dev->state = STATE_SENT_DATA;
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				}
 				break;
 
@@ -225,9 +227,9 @@ mfm_read(uint16_t port, void *priv)
 
 
 static void
-mfm_write(uint16_t port, uint8_t val, void *priv)
+st506_write(uint16_t port, uint8_t val, void *priv)
 {
-    mfm_t *dev = (mfm_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
 
     switch (port) {
 	case 0x320: /*Write data*/
@@ -242,7 +244,7 @@ mfm_write(uint16_t port, uint8_t val, void *priv)
 				if (dev->command_pos == 6) {
 					dev->status = STAT_BSY;
 					dev->state = STATE_START_COMMAND;
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				}
 				break;
 
@@ -256,7 +258,7 @@ mfm_write(uint16_t port, uint8_t val, void *priv)
 				if (dev->data_pos == dev->data_len) {
 					dev->status = STAT_BSY;
 					dev->state = STATE_RECEIVED_DATA;
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				}
 				break;
 
@@ -283,7 +285,7 @@ mfm_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-mfm_complete(mfm_t *dev)
+st506_complete(hdc_t *dev)
 {
     dev->status = STAT_REQ | STAT_CD | STAT_IO | STAT_BSY;
     dev->state = STATE_COMPLETION_BYTE;
@@ -296,47 +298,47 @@ mfm_complete(mfm_t *dev)
 
 
 static void
-mfm_error(mfm_t *dev, uint8_t error)
+st506_error(hdc_t *dev, uint8_t error)
 {
     dev->completion_byte |= 0x02;
     dev->error = error;
 
 #ifdef ENABLE_HDC_LOG
-    hdc_log("mfm_error - %02x\n", dev->error);
+    hdc_log("st506_error - %02x\n", dev->error);
 #endif
 }
 
 
 static int
-get_sector(mfm_t *dev, off64_t *addr)
+get_sector(hdc_t *dev, off64_t *addr)
 {
     drive_t *drive = &dev->drives[dev->drive_sel];
     int heads = drive->cfg_hpc;
 
     if (drive->current_cylinder != dev->cylinder) {
 #ifdef ENABLE_HDC_LOG
-	hdc_log("mfm_get_sector: wrong cylinder\n");
+	hdc_log("st506_get_sector: wrong cylinder\n");
 #endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->head > heads) {
 #ifdef ENABLE_HDC_LOG
-	hdc_log("mfm_get_sector: past end of configured heads\n");
+	hdc_log("st506_get_sector: past end of configured heads\n");
 #endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->head > drive->hpc) {
 #ifdef ENABLE_HDC_LOG
-	hdc_log("mfm_get_sector: past end of heads\n");
+	hdc_log("st506_get_sector: past end of heads\n");
 #endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->sector >= 17) {
 #ifdef ENABLE_HDC_LOG
-	hdc_log("mfm_get_sector: past end of sectors\n");
+	hdc_log("st506_get_sector: past end of sectors\n");
 #endif
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
@@ -350,7 +352,7 @@ get_sector(mfm_t *dev, off64_t *addr)
 
 
 static void
-next_sector(mfm_t *dev)
+next_sector(hdc_t *dev)
 {
     drive_t *drive = &dev->drives[dev->drive_sel];
 	
@@ -370,9 +372,9 @@ next_sector(mfm_t *dev)
 
 
 static void
-mfm_callback(void *priv)
+st506_callback(void *priv)
 {
-    mfm_t *dev = (mfm_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
     drive_t *drive;
     off64_t addr;
 
@@ -385,18 +387,18 @@ mfm_callback(void *priv)
     switch (dev->command[0]) {
 	case CMD_TEST_DRIVE_READY:
 		if (!drive->present)
-			mfm_error(dev, ERR_NOT_READY);
-		mfm_complete(dev);
+			st506_error(dev, ERR_NOT_READY);
+		st506_complete(dev);
 		break;
 
 	case CMD_RECALIBRATE:
 		if (!drive->present)
-			mfm_error(dev, ERR_NOT_READY);
+			st506_error(dev, ERR_NOT_READY);
 		else {
 			dev->cylinder = 0;
 			drive->current_cylinder = 0;
 		}
-		mfm_complete(dev);
+		st506_complete(dev);
 		break;
 
 	case CMD_READ_STATUS:
@@ -413,7 +415,7 @@ mfm_callback(void *priv)
 				break;
 
 			case STATE_SENT_DATA:
-				mfm_complete(dev);
+				st506_complete(dev);
 				break;
 		}
 		break;
@@ -431,8 +433,8 @@ mfm_callback(void *priv)
 #ifdef ENABLE_HDC_LOG
 						hdc_log("get_sector failed\n");
 #endif
-						mfm_error(dev, dev->error);
-						mfm_complete(dev);
+						st506_error(dev, dev->error);
+						st506_complete(dev);
 						return;
 					}
 
@@ -441,9 +443,9 @@ mfm_callback(void *priv)
 					dev->sector_count = (dev->sector_count-1) & 0xff;
 				} while (dev->sector_count);
 
-				mfm_complete(dev);
+				st506_complete(dev);
 
-				ui_sb_update_icon(SB_HDD | HDD_BUS_MFM, 1);
+				ui_sb_update_icon(SB_HDD | HDD_BUS_ST506, 1);
 				break;
 
 			default:
@@ -460,14 +462,14 @@ mfm_callback(void *priv)
 #ifdef ENABLE_HDC_LOG
 			hdc_log("get_sector failed\n");
 #endif
-			mfm_error(dev, dev->error);
-			mfm_complete(dev);
+			st506_error(dev, dev->error);
+			st506_complete(dev);
 			return;
 		}
 
 		hdd_image_zero(drive->hdd_num, addr, 17);
 				
-		mfm_complete(dev);
+		st506_complete(dev);
 		break;			       
 
 	case CMD_READ_SECTORS:		
@@ -483,17 +485,17 @@ mfm_callback(void *priv)
 				dev->data_len = 512;
 
 				if (get_sector(dev, &addr)) {
-					mfm_error(dev, dev->error);
-					mfm_complete(dev);
+					st506_error(dev, dev->error);
+					st506_complete(dev);
 					return;
 				}
 
 				hdd_image_read(drive->hdd_num, addr, 1,
 					       (uint8_t *) dev->sector_buf);
-				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 
 				if (dev->irq_dma_mask & DMA_ENA)
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				else {
 					dev->status = STAT_BSY | STAT_IO | STAT_REQ;
 					memcpy(dev->data, dev->sector_buf, 512);
@@ -511,12 +513,12 @@ mfm_callback(void *priv)
 							hdc_log("CMD_READ_SECTORS out of data!\n");
 #endif
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
-							dev->callback = MFM_TIME;
+							dev->callback = ST506_TIME;
 							return;
 						}
 					}
 					dev->state = STATE_SENT_DATA;
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				} else
 					fatal("Read sectors no DMA! - shouldn't get here\n");
 				break;
@@ -530,26 +532,26 @@ mfm_callback(void *priv)
 
 				if (dev->sector_count) {
 					if (get_sector(dev, &addr)) {
-						mfm_error(dev, dev->error);
-						mfm_complete(dev);
+						st506_error(dev, dev->error);
+						st506_complete(dev);
 						return;
 					}
 
 					hdd_image_read(drive->hdd_num, addr, 1,
 						(uint8_t *) dev->sector_buf);
-					ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+					ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 
 					dev->state = STATE_SEND_DATA;
 
 					if (dev->irq_dma_mask & DMA_ENA)
-						dev->callback = MFM_TIME;
+						dev->callback = ST506_TIME;
 					else {
 						dev->status = STAT_BSY | STAT_IO | STAT_REQ;
 						memcpy(dev->data, dev->sector_buf, 512);
 					}
 				} else {
-					mfm_complete(dev);
-					ui_sb_update_icon(SB_HDD | HDD_BUS_MFM, 0);
+					st506_complete(dev);
+					ui_sb_update_icon(SB_HDD | HDD_BUS_ST506, 0);
 				}
 				break;
 
@@ -570,7 +572,7 @@ mfm_callback(void *priv)
 				dev->data_pos = 0;
 				dev->data_len = 512;
 				if (dev->irq_dma_mask & DMA_ENA)
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				else
 					dev->status = STAT_BSY | STAT_REQ;
 				break;
@@ -586,7 +588,7 @@ mfm_callback(void *priv)
 							hdc_log("CMD_WRITE_SECTORS out of data!\n");
 #endif
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
-							dev->callback = MFM_TIME;
+							dev->callback = ST506_TIME;
 							return;
 						}
 
@@ -594,7 +596,7 @@ mfm_callback(void *priv)
 					}
 
 					dev->state = STATE_RECEIVED_DATA;
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				} else
 					fatal("Write sectors no DMA! - should never get here\n");
 				break;
@@ -604,14 +606,14 @@ mfm_callback(void *priv)
 					memcpy(dev->sector_buf, dev->data, 512);
 
 				if (get_sector(dev, &addr)) {
-					mfm_error(dev, dev->error);
-					mfm_complete(dev);
+					st506_error(dev, dev->error);
+					st506_complete(dev);
 					return;
 				}
 
 				hdd_image_write(drive->hdd_num, addr, 1,
 						(uint8_t *) dev->sector_buf);
-				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 
 				next_sector(dev);
 				dev->data_pos = 0;
@@ -620,11 +622,11 @@ mfm_callback(void *priv)
 				if (dev->sector_count) {
 					dev->state = STATE_RECEIVE_DATA;
 					if (dev->irq_dma_mask & DMA_ENA)
-						dev->callback = MFM_TIME;
+						dev->callback = ST506_TIME;
 					else
 						dev->status = STAT_BSY | STAT_REQ;
 				} else
-					mfm_complete(dev);
+					st506_complete(dev);
 				break;
 
 			default:
@@ -634,16 +636,16 @@ mfm_callback(void *priv)
 
 	case CMD_SEEK:
 		if (! drive->present)
-			mfm_error(dev, ERR_NOT_READY);
+			st506_error(dev, ERR_NOT_READY);
 		else {
 			int cylinder = dev->command[3] | ((dev->command[2] & 0xc0) << 2);
 
 			drive->current_cylinder = (cylinder >= drive->cfg_cyl) ? drive->cfg_cyl-1 : cylinder;
 
 			if (cylinder != drive->current_cylinder)
-				mfm_error(dev, ERR_SEEK_ERROR);
+				st506_error(dev, ERR_SEEK_ERROR);
 		}
-		mfm_complete(dev);
+		st506_complete(dev);
 		break;
 
 	case CMD_INIT_DRIVE_PARAMS:
@@ -661,7 +663,7 @@ mfm_callback(void *priv)
 #ifdef ENABLE_HDC_LOG
 				hdc_log("Drive %i: cylinders=%i, heads=%i\n", dev->drive_sel, drive->cfg_cyl, drive->cfg_hpc);
 #endif
-				mfm_complete(dev);
+				st506_complete(dev);
 				break;
 
 			default:
@@ -676,7 +678,7 @@ mfm_callback(void *priv)
 				dev->data_pos = 0;
 				dev->data_len = 512;
 				if (dev->irq_dma_mask & DMA_ENA)
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				else
 					dev->status = STAT_BSY | STAT_REQ;
 				break;
@@ -691,7 +693,7 @@ mfm_callback(void *priv)
 						if (val == DMA_NODATA) {
 							hdc_log("CMD_WRITE_SECTOR_BUFFER out of data!\n");
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
-							dev->callback = MFM_TIME;
+							dev->callback = ST506_TIME;
 							return;
 						}
 					
@@ -699,14 +701,14 @@ mfm_callback(void *priv)
 					}
 
 					dev->state = STATE_RECEIVED_DATA;
-					dev->callback = MFM_TIME;
+					dev->callback = ST506_TIME;
 				} else
 					fatal("CMD_WRITE_SECTOR_BUFFER - should never get here!\n");
 				break;
 
 			case STATE_RECEIVED_DATA:
 				memcpy(dev->sector_buf, dev->data, 512);
-				mfm_complete(dev);
+				st506_complete(dev);
 				break;
 
 			default:
@@ -716,15 +718,15 @@ mfm_callback(void *priv)
 
 	case CMD_BUFFER_DIAGNOSTIC:
 	case CMD_CONTROLLER_DIAGNOSTIC:
-		mfm_complete(dev);
+		st506_complete(dev);
 		break;
 
 	case 0xfa:
-		mfm_complete(dev);
+		st506_complete(dev);
 		break;
 
 	case CMD_DTC_SET_STEP_RATE:
-		mfm_complete(dev);
+		st506_complete(dev);
 		break;
 
 	case CMD_DTC_GET_DRIVE_PARAMS:
@@ -744,7 +746,7 @@ mfm_callback(void *priv)
 				break;
 
 			case STATE_SENT_DATA:
-				mfm_complete(dev);
+				st506_complete(dev);
 				break;
 
 			default:
@@ -766,7 +768,7 @@ mfm_callback(void *priv)
 				break;
 
 			case STATE_SENT_DATA:
-				mfm_complete(dev);
+				st506_complete(dev);
 				break;
 		}
 		break;
@@ -782,7 +784,7 @@ mfm_callback(void *priv)
 
 			case STATE_RECEIVED_DATA:
 				/*Bit of a cheat here - we always report the actual geometry of the drive in use*/
-				mfm_complete(dev);
+				st506_complete(dev);
 			break;
 		}
 		break;
@@ -797,7 +799,7 @@ mfm_callback(void *priv)
 
 
 static void
-loadhd(mfm_t *dev, int c, int d, const wchar_t *fn)
+loadhd(hdc_t *dev, int c, int d, const wchar_t *fn)
 {
     drive_t *drive = &dev->drives[d];
 
@@ -826,7 +828,7 @@ static const struct {
 
 
 static void
-mfm_set_switches(mfm_t *dev)
+st506_set_switches(hdc_t *dev)
 {
     int c, d;
 	
@@ -856,37 +858,37 @@ mfm_set_switches(mfm_t *dev)
 
 
 static void *
-mfm_init(const device_t *info)
+st506_init(const device_t *info)
 {
     wchar_t *fn = NULL;
-    mfm_t *dev;
+    hdc_t *dev;
     int i, c;
 
-    dev = malloc(sizeof(mfm_t));
-    memset(dev, 0x00, sizeof(mfm_t));
+    dev = malloc(sizeof(hdc_t));
+    memset(dev, 0x00, sizeof(hdc_t));
 
 #ifdef ENABLE_HDC_LOG
-    hdc_log("MFM: looking for disks..\n");
+    hdc_log("ST506: looking for disks..\n");
 #endif
     c = 0;
     for (i=0; i<HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_MFM) && (hdd[i].mfm_channel < MFM_NUM)) {
+	if ((hdd[i].bus == HDD_BUS_ST506) && (hdd[i].id.st506_channel < ST506_NUM)) {
 #ifdef ENABLE_HDC_LOG
-		hdc_log("Found MFM hard disk on channel %i\n", hdd[i].mfm_channel);
+		hdc_log("Found ST506 hard disk on channel %i\n", hdd[i].id.st506_channel);
 #endif
-		loadhd(dev, hdd[i].mfm_channel, i, hdd[i].fn);
+		loadhd(dev, hdd[i].id.st506_channel, i, hdd[i].fn);
 
-		if (++c > MFM_NUM) break;
+		if (++c > ST506_NUM) break;
 	}
     }
 #ifdef ENABLE_HDC_LOG
-    hdc_log("MFM: %d disks loaded.\n", c);
+    hdc_log("ST506: %d disks loaded.\n", c);
 #endif
 
     switch(info->local) {
 	case 0:		/* Xebec */
 		fn = XEBEC_BIOS_FILE;
-		mfm_set_switches(dev);
+		st506_set_switches(dev);
 		break;
 
 	case 1:		/* DTC5150 */
@@ -903,18 +905,18 @@ mfm_init(const device_t *info)
 	     0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
 		
     io_sethandler(0x0320, 4,
-		  mfm_read,NULL,NULL, mfm_write,NULL,NULL, dev);
+		  st506_read,NULL,NULL, st506_write,NULL,NULL, dev);
 
-    timer_add(mfm_callback, &dev->callback, &dev->callback, dev);
+    timer_add(st506_callback, &dev->callback, &dev->callback, dev);
 
     return(dev);
 }
 
 
 static void
-mfm_close(void *priv)
+st506_close(void *priv)
 {
-    mfm_t *dev = (mfm_t *)priv;
+    hdc_t *dev = (hdc_t *)priv;
     int d;
 
     for (d=0; d<2; d++) {
@@ -941,20 +943,20 @@ dtc5150x_available(void)
 }
 
 
-const device_t mfm_xt_xebec_device = {
+const device_t st506_xt_xebec_device = {
     "IBM PC Fixed Disk Adapter",
     DEVICE_ISA,
     0,
-    mfm_init, mfm_close, NULL,
+    st506_init, st506_close, NULL,
     xebec_available, NULL, NULL, NULL,
     NULL
 };
 
-const device_t mfm_xt_dtc5150x_device = {
+const device_t st506_xt_dtc5150x_device = {
     "DTC 5150X",
     DEVICE_ISA,
     1,
-    mfm_init, mfm_close, NULL,
+    st506_init, st506_close, NULL,
     dtc5150x_available, NULL, NULL, NULL,
     NULL
 };

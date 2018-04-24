@@ -22,7 +22,7 @@
  *
  *		Based on the original "xebec.c" from Sarah Walker.
  *
- * Version:	@(#)m_europc_hdc.c	1.0.4	2018/03/27
+ * Version:	@(#)m_europc_hdc.c	1.0.5	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -255,7 +255,7 @@ typedef struct {
 
     struct dcb	dcb;		/* device control block */
 
-    drive_t	drives[MFM_NUM];
+    drive_t	drives[ST506_NUM];
 
     uint8_t	data[512];	/* data buffer */
     uint8_t	sector_buf[512];
@@ -421,7 +421,7 @@ hd20_callback(void *priv)
 
 			hd20_intr(dev);
 
-			ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+			ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 		}
 		break;
 
@@ -443,7 +443,7 @@ hd20_callback(void *priv)
 
 				hdd_image_zero(drive->hdd_num,addr,drive->spt);
 
-				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 			}
 		}
 		hd20_intr(dev);
@@ -472,7 +472,7 @@ hd20_callback(void *priv)
 
 		hdd_image_zero(drive->hdd_num, addr, drive->spt);
 
-		ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+		ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 
 		hd20_intr(dev);
 		break;
@@ -506,7 +506,7 @@ hd20_callback(void *priv)
 
 				hdd_image_read(drive->hdd_num, addr, 1,
 					       (uint8_t *)dev->sector_buf);
-				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 
 				/* Ready to transfer the data out. */
 				dev->buf_idx = 0;
@@ -545,7 +545,7 @@ hd20_callback(void *priv)
 
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
-					ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 0);
+					ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 0);
 					hd20_intr(dev);
 					return;
 				}
@@ -558,7 +558,7 @@ hd20_callback(void *priv)
 
 				hdd_image_read(drive->hdd_num, addr, 1,
 					       (uint8_t *)dev->sector_buf);
-				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 
 				dev->state = STATE_TXDTA;
 
@@ -640,13 +640,13 @@ hd20_callback(void *priv)
 
 				hdd_image_write(drive->hdd_num, addr, 1,
 						(uint8_t *)dev->sector_buf);
-				ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 1);
+				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
 
 				next_sector(dev, drive);
 
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
-					ui_sb_update_icon(SB_HDD|HDD_BUS_MFM, 0);
+					ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 0);
 					hd20_intr(dev);
 					break;
 				}
@@ -917,8 +917,8 @@ hd20_init(const device_t *info)
     dev->dma = HDD_DMACHAN;
 
     for (c=0,i=0; i<HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_MFM) && (hdd[i].mfm_channel < MFM_NUM)) {
-		drive = &dev->drives[hdd[i].mfm_channel];
+	if ((hdd[i].bus == HDD_BUS_ST506) && (hdd[i].id.st506_channel < ST506_NUM)) {
+		drive = &dev->drives[hdd[i].id.st506_channel];
 
 		if (! hdd_image_load(i)) {
 			drive->present = 0;
@@ -928,7 +928,7 @@ hd20_init(const device_t *info)
 		/* These are the "hardware" parameters (from the image.) */
 		drive->spt = (uint8_t)(hdd[i].spt & 0xff);
 		drive->hpc = (uint8_t)(hdd[i].hpc & 0xff);
-		drive->tracks = (uint8_t)(hdd[i].tracks & 0xff);
+		drive->tracks = (uint16_t)hdd[i].tracks;
 
 		/* Use them as "configured" parameters until overwritten. */
 		drive->cfg_spt = drive->spt;
@@ -939,9 +939,9 @@ hd20_init(const device_t *info)
 		drive->present = 1;
 
 		pclog("HD20: drive%d (cyl=%d,hd=%d,spt=%d), disk %d\n",
-		      hdd[i].mfm_channel,drive->tracks,drive->hpc,drive->spt,i);
+		      hdd[i].id.st506_channel,drive->tracks,drive->hpc,drive->spt,i);
 
-		if (++c > MFM_NUM) break;
+		if (++c > ST506_NUM) break;
 	}
     }
 

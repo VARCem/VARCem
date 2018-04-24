@@ -8,9 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * NOTE:	maybe have to add CBS_HASSTRINGS to all dropdowns for VC.
- *
- * Version:	@(#)VARCem.rc	1.0.19	2018/04/10
+ * Version:	@(#)VARCem.rc	1.0.20	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1046,24 +1044,22 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_4352    "MFM/RLL"
-    IDS_4353    "XT IDE"
-    IDS_4354    "ESDI"
-    IDS_4355    "IDE (PIO-only)"
-    IDS_4356    "IDE (PIO+DMA)"
-    IDS_4357    "SCSI"
-    IDS_4358    "SCSI (removable)"
+    IDS_4352    "ST506"
+    IDS_4353    "ESDI"
+    IDS_4354    "IDE (PIO-only)"
+    IDS_4355    "IDE (PIO+DMA)"
+    IDS_4356    "SCSI"
+    IDS_4357    "SCSI (removable)"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_4608	"MFM/RLL (%01i:%01i)"
-    IDS_4609	"XT IDE (%01i:%01i)"
-    IDS_4610	"ESDI (%01i:%01i)"
-    IDS_4611	"IDE (PIO-only) (%01i:%01i)"
-    IDS_4612	"IDE (PIO+DMA) (%01i:%01i)"
-    IDS_4613	"SCSI (%02i:%02i)"
-    IDS_4614	"SCSI (removable) (%02i:%02i)"
+    IDS_4608	"ST506 (%01i:%01i)"
+    IDS_4609	"ESDI (%01i:%01i)"
+    IDS_4610	"IDE (PIO-only) (%01i:%01i)"
+    IDS_4611	"IDE (PIO+DMA) (%01i:%01i)"
+    IDS_4612	"SCSI (%02i:%02i)"
+    IDS_4613	"SCSI (removable) (%02i:%02i)"
 END
 
 STRINGTABLE DISCARDABLE 

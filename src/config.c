@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.15	2018/04/19
+ * Version:	@(#)config.c	1.0.16	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -947,14 +947,13 @@ load_disks(const char *cat)
 			max_spt = max_hpc = max_tracks = 0;
 			break;
 
-		case HDD_BUS_MFM:
-			max_spt = 17;	/* 26 for RLL */
+		case HDD_BUS_ST506:
+			max_spt = 26;	/* 17=MFM, 26=RLL */
 			max_hpc = 15;
 			max_tracks = 1023;
 			break;
 
 		case HDD_BUS_ESDI:
-		case HDD_BUS_XTIDE:
 			max_spt = 63;
 			max_hpc = 16;
 			max_tracks = 1023;
@@ -982,24 +981,28 @@ load_disks(const char *cat)
 	if (hdd[c].tracks > max_tracks)
 		hdd[c].tracks = max_tracks;
 
-	/* MFM/RLL */
-	sprintf(temp, "hdd_%02i_mfm_channel", c+1);
-	if (hdd[c].bus == HDD_BUS_MFM)
-		hdd[c].mfm_channel = !!config_get_int(cat, temp, c & 1);
-	  else
-		config_delete_var(cat, temp);
+	/* ST506 */
+	sprintf(temp, "hdd_%02i_st506_channel", c+1);
+	if (hdd[c].bus == HDD_BUS_ST506) {
+		/* Try new syntax. */
+		dev = config_get_int(cat, temp, -1);
+		if (dev < 0) {
+			/* Re-try with old syntax. */
+			// FIXME: remove by 01-JUL-2018 --FvK
+			sprintf(temp, "hdd_%02i_mfm_channel", c+1);
+			dev = config_get_int(cat, temp, c & 1);
+			config_delete_var(cat, temp);
 
-	/* XT IDE */
-	sprintf(temp, "hdd_%02i_xtide_channel", c+1);
-	if (hdd[c].bus == HDD_BUS_XTIDE)
-		hdd[c].xtide_channel = !!config_get_int(cat, temp, c & 1);
-	  else
+			/* Set value either way. */
+			hdd[c].id.st506_channel = dev;
+		}
+	} else
 		config_delete_var(cat, temp);
 
 	/* ESDI */
 	sprintf(temp, "hdd_%02i_esdi_channel", c+1);
 	if (hdd[c].bus == HDD_BUS_ESDI)
-		hdd[c].esdi_channel = !!config_get_int(cat, temp, c & 1);
+		hdd[c].id.esdi_channel = !!config_get_int(cat, temp, c & 1);
 	  else
 		config_delete_var(cat, temp);
 
@@ -1012,10 +1015,10 @@ load_disks(const char *cat)
 		sscanf(p, "%01u:%01u", &board, &dev);
 		board &= 3;
 		dev &= 1;
-		hdd[c].ide_channel = (board<<1) + dev;
+		hdd[c].id.ide_channel = (board<<1) + dev;
 
-		if (hdd[c].ide_channel > 7)
-			hdd[c].ide_channel = 7;
+		if (hdd[c].id.ide_channel > 7)
+			hdd[c].id.ide_channel = 7;
 	} else {
 		config_delete_var(cat, temp);
 	}
@@ -1028,12 +1031,12 @@ load_disks(const char *cat)
 		p = config_get_string(cat, temp, tmp2);
 
 		sscanf(p, "%02u:%02u",
-			(int *)&hdd[c].scsi_id, (int *)&hdd[c].scsi_lun);
+			(int *)&hdd[c].id.scsi.id, (int *)&hdd[c].id.scsi.lun);
 
-		if (hdd[c].scsi_id > 15)
-			hdd[c].scsi_id = 15;
-		if (hdd[c].scsi_lun > 7)
-			hdd[c].scsi_lun = 7;
+		if (hdd[c].id.scsi.id > 15)
+			hdd[c].id.scsi.id = 15;
+		if (hdd[c].id.scsi.lun > 7)
+			hdd[c].id.scsi.lun = 7;
 	} else {
 		config_delete_var(cat, temp);
 	}
@@ -1051,9 +1054,6 @@ load_disks(const char *cat)
 		sprintf(temp, "hdd_%02i_parameters", c+1);
 		config_delete_var(cat, temp);
 
-		sprintf(temp, "hdd_%02i_preide_channels", c+1);
-		config_delete_var(cat, temp);
-
 		sprintf(temp, "hdd_%02i_ide_channels", c+1);
 		config_delete_var(cat, temp);
 
@@ -1063,12 +1063,6 @@ load_disks(const char *cat)
 		sprintf(temp, "hdd_%02i_fn", c+1);
 		config_delete_var(cat, temp);
 	}
-
-	sprintf(temp, "hdd_%02i_mfm_channel", c+1);
-	config_delete_var(cat, temp);
-
-	sprintf(temp, "hdd_%02i_ide_channel", c+1);
-	config_delete_var(cat, temp);
     }
 }
 
@@ -1092,21 +1086,15 @@ save_disks(const char *cat)
 		config_delete_var(cat, temp);
 	}
 
-	sprintf(temp, "hdd_%02i_mfm_channel", c+1);
-	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_MFM))
-		config_set_int(cat, temp, hdd[c].mfm_channel);
-	  else
-		config_delete_var(cat, temp);
-
-	sprintf(temp, "hdd_%02i_xtide_channel", c+1);
-	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_XTIDE))
-		config_set_int(cat, temp, hdd[c].xtide_channel);
+	sprintf(temp, "hdd_%02i_st506_channel", c+1);
+	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_ST506))
+		config_set_int(cat, temp, hdd[c].id.st506_channel);
 	  else
 		config_delete_var(cat, temp);
 
 	sprintf(temp, "hdd_%02i_esdi_channel", c+1);
 	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_ESDI))
-		config_set_int(cat, temp, hdd[c].esdi_channel);
+		config_set_int(cat, temp, hdd[c].id.esdi_channel);
 	  else
 		config_delete_var(cat, temp);
 
@@ -1114,7 +1102,7 @@ save_disks(const char *cat)
 	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_IDE_PIO_ONLY) && (hdd[c].bus != HDD_BUS_IDE_PIO_AND_DMA))) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%01u:%01u", hdd[c].ide_channel >> 1, hdd[c].ide_channel & 1);
+		sprintf(tmp2, "%01u:%01u", hdd[c].id.ide_channel >> 1, hdd[c].id.ide_channel & 1);
 		config_set_string(cat, temp, tmp2);
 	}
 
@@ -1122,7 +1110,7 @@ save_disks(const char *cat)
 	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_SCSI) && (hdd[c].bus != HDD_BUS_SCSI_REMOVABLE))) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%02u:%02u", hdd[c].scsi_id, hdd[c].scsi_lun);
+		sprintf(tmp2, "%02u:%02u", hdd[c].id.scsi.id, hdd[c].id.scsi.lun);
 		config_set_string(cat, temp, tmp2);
 	}
 

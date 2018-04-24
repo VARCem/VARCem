@@ -8,7 +8,7 @@
  *
  *		Emulation of hard disk, CD-ROM and ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.17	2018/04/10
+ * Version:	@(#)hdc_ide.c	1.0.18	2018/04/23
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -126,7 +126,7 @@ enum
 };
 
 
-IDE ide_drives[IDE_NUM + XTIDE_NUM];
+IDE ide_drives[IDE_NUM];
 IDE *ext_ide;
 int (*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length);
 int (*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length);
@@ -837,7 +837,7 @@ void ide_destroy_buffers(void)
 {
 	int d;
 
-	for (d = 0; d < (IDE_NUM+XTIDE_NUM); d++)
+	for (d = 0; d < (IDE_NUM); d++)
 	{
 		if (ide_drives[d].buffer) {
 			free(ide_drives[d].buffer);
@@ -860,7 +860,7 @@ void ide_reset(void)
 	build_atapi_zip_map();
 
 	/* Close hard disk image files (if previously open) */
-	for (d = 0; d < (IDE_NUM+XTIDE_NUM); d++)
+	for (d = 0; d < (IDE_NUM); d++)
 	{
 		ide_drives[d].channel = d;
 		ide_drives[d].type = IDE_NONE;
@@ -899,25 +899,15 @@ void ide_reset(void)
 	c = 0;
 	for (d = 0; d < HDD_NUM; d++)
 	{
-		if (((hdd[d].bus == HDD_BUS_IDE_PIO_ONLY) || (hdd[d].bus == HDD_BUS_IDE_PIO_AND_DMA)) && (hdd[d].ide_channel < IDE_NUM))
+		if (((hdd[d].bus == HDD_BUS_IDE_PIO_ONLY) || (hdd[d].bus == HDD_BUS_IDE_PIO_AND_DMA)) && (hdd[d].id.ide_channel < IDE_NUM))
 		{
 #ifdef ENABLE_HDC_LOG
-			hdc_log("Found IDE hard disk on channel %i\n", hdd[d].ide_channel);
+			hdc_log("Found IDE hard disk on channel %i\n", hdd[d].id.ide_channel);
 #endif
-			loadhd(&ide_drives[hdd[d].ide_channel], d, hdd[d].fn);
-			ide_drives[hdd[d].ide_channel].sector_buffer = (uint8_t *) malloc(256*512);
-			memset(ide_drives[hdd[d].ide_channel].sector_buffer, 0, 256*512);
-			if (++c >= (IDE_NUM+XTIDE_NUM)) break;
-		}
-		if ((hdd[d].bus==HDD_BUS_XTIDE) && (hdd[d].xtide_channel < XTIDE_NUM))
-		{
-#ifdef ENABLE_HDC_LOG
-			hdc_log("Found XT IDE hard disk on channel %i\n", hdd[d].xtide_channel);
-#endif
-			loadhd(&ide_drives[hdd[d].xtide_channel | 8], d, hdd[d].fn);
-			ide_drives[hdd[d].xtide_channel | 8].sector_buffer = (uint8_t *) malloc(256*512);
-			memset(ide_drives[hdd[d].ide_channel].sector_buffer, 0, 256*512);
-			if (++c >= (IDE_NUM+XTIDE_NUM)) break;
+			loadhd(&ide_drives[hdd[d].id.ide_channel], d, hdd[d].fn);
+			ide_drives[hdd[d].id.ide_channel].sector_buffer = (uint8_t *) malloc(256*512);
+			memset(ide_drives[hdd[d].id.ide_channel].sector_buffer, 0, 256*512);
+			if (++c >= IDE_NUM) break;
 		}
 	}
 #ifdef ENABLE_HDC_LOG
@@ -940,14 +930,6 @@ void ide_reset(void)
 
 		ide_drives[d].mdma_mode = -1;
 		ide_drives[d].error = 1;
-	}
-
-	for (d = 0; d < XTIDE_NUM; d++)
-	{
-		ide_set_signature(&ide_drives[d | 8]);
-
-		ide_drives[d | 8].mdma_mode = -1;
-		ide_drives[d | 8].error = 1;
 	}
 
 	for (d = 0; d < 5; d++)
@@ -981,7 +963,7 @@ void ide_reset_hard(void)
 {
 	int d;
 
-	for (d = 0; d < (IDE_NUM+XTIDE_NUM); d++)
+	for (d = 0; d < (IDE_NUM); d++)
 	{
 		ide_drives[d].t_spt = ide_drives[d].spt;
 		ide_drives[d].t_hpc = ide_drives[d].hpc;
@@ -2928,7 +2910,7 @@ void ide_init_first(void)
 	int d;
 
 	memset(ide_drives, 0x00, sizeof(ide_drives));
-	for (d = 0; d < (IDE_NUM+XTIDE_NUM); d++)
+	for (d = 0; d < (IDE_NUM); d++)
 	{
 		ide_drives[d].channel = d;
 		ide_drives[d].type = IDE_NONE;

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.2	2018/04/07
+ * Version:	@(#)win_settings_disk.h	1.0.3	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,7 @@
  ************************************************************************/
 
 /* Global variables needed for the Hard Disk dialogs. */
-static uint64_t mfm_tracking, esdi_tracking, xtide_tracking,
+static uint64_t st506_tracking, esdi_tracking,
                 ide_tracking, scsi_tracking[16];
 static hard_disk_t *hdd_ptr;
 static hard_disk_t new_hdd;
@@ -69,25 +69,23 @@ disk_track_init(void)
 {
     int i;
 
-    mfm_tracking = xtide_tracking = esdi_tracking = ide_tracking = 0;
+    st506_tracking = esdi_tracking = ide_tracking = 0;
     for (i = 0; i < 16; i++)
 	scsi_tracking[i] = 0;
 
     for (i=0; i<HDD_NUM; i++) {
-	if (hdd[i].bus == HDD_BUS_MFM)
-		mfm_tracking |= (1ULL << (hdd[i].mfm_channel << 3));
-	else if (hdd[i].bus == HDD_BUS_XTIDE)
-		xtide_tracking |= (1ULL << (hdd[i].xtide_channel << 3));
+	if (hdd[i].bus == HDD_BUS_ST506)
+		st506_tracking |= (1ULL << (hdd[i].id.st506_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_ESDI)
-		esdi_tracking |= (1ULL << (hdd[i].esdi_channel << 3));
+		esdi_tracking |= (1ULL << (hdd[i].id.esdi_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_IDE_PIO_ONLY)
-		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
+		ide_tracking |= (1ULL << (hdd[i].id.ide_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_IDE_PIO_AND_DMA)
-		ide_tracking |= (1ULL << (hdd[i].ide_channel << 3));
+		ide_tracking |= (1ULL << (hdd[i].id.ide_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_SCSI)
-		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
+		scsi_tracking[hdd[i].id.scsi.id] |= (1ULL << (hdd[i].id.scsi.lun << 3));
 	else if (hdd[i].bus == HDD_BUS_SCSI_REMOVABLE)
-		scsi_tracking[hdd[i].scsi_id] |= (1ULL << (hdd[i].scsi_lun << 3));
+		scsi_tracking[hdd[i].id.scsi.id] |= (1ULL << (hdd[i].id.scsi.lun << 3));
     }
 }
 
@@ -303,7 +301,7 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 	bus = SendMessage(h, CB_GETCURSEL, 0, 0) + 1;
 
 	switch(bus) {
-		case HDD_BUS_MFM:		/* MFM */
+		case HDD_BUS_ST506:		/* ST506 MFM/RLL */
 			h = GetDlgItem(hdlg, IDT_1722);
 			ShowWindow(h, SW_SHOW);
 			EnableWindow(h, TRUE);
@@ -312,21 +310,8 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 			ShowWindow(h, SW_SHOW);
 			EnableWindow(h, TRUE);
 			if (assign_id)
-				temp_hdd[hdlv_current_sel].mfm_channel = next_free_binary_channel(&mfm_tracking);
-			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.mfm_channel : temp_hdd[hdlv_current_sel].mfm_channel, 0);
-			break;
-
-		case HDD_BUS_XTIDE:		/* XT IDE */
-			h = GetDlgItem(hdlg, IDT_1722);
-			ShowWindow(h, SW_SHOW);
-			EnableWindow(h, TRUE);
-
-			h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-			ShowWindow(h, SW_SHOW);
-			EnableWindow(h, TRUE);
-			if (assign_id)
-				temp_hdd[hdlv_current_sel].xtide_channel = next_free_binary_channel(&xtide_tracking);
-			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.xtide_channel : temp_hdd[hdlv_current_sel].xtide_channel, 0);
+				temp_hdd[hdlv_current_sel].id.st506_channel = next_free_binary_channel(&st506_tracking);
+			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.id.st506_channel : temp_hdd[hdlv_current_sel].id.st506_channel, 0);
 			break;
 
 		case HDD_BUS_ESDI:		/* ESDI */
@@ -338,8 +323,8 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 			ShowWindow(h, SW_SHOW);
 			EnableWindow(h, TRUE);
 			if (assign_id)
-				temp_hdd[hdlv_current_sel].esdi_channel = next_free_binary_channel(&esdi_tracking);
-			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.esdi_channel : temp_hdd[hdlv_current_sel].esdi_channel, 0);
+				temp_hdd[hdlv_current_sel].id.esdi_channel = next_free_binary_channel(&esdi_tracking);
+			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.id.esdi_channel : temp_hdd[hdlv_current_sel].id.esdi_channel, 0);
 			break;
 
 		case HDD_BUS_IDE_PIO_ONLY:		/* IDE (PIO-only) */
@@ -352,8 +337,8 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 			ShowWindow(h, SW_SHOW);
 			EnableWindow(h, TRUE);
 			if (assign_id)
-				temp_hdd[hdlv_current_sel].ide_channel = next_free_ide_channel();
-			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.ide_channel : temp_hdd[hdlv_current_sel].ide_channel, 0);
+				temp_hdd[hdlv_current_sel].id.ide_channel = next_free_ide_channel();
+			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.id.ide_channel : temp_hdd[hdlv_current_sel].id.ide_channel, 0);
 			break;
 
 		case HDD_BUS_SCSI:		/* SCSI */
@@ -366,17 +351,17 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 			EnableWindow(h, TRUE);
 
 			if (assign_id)
-				next_free_scsi_id_and_lun((uint8_t *) &temp_hdd[hdlv_current_sel].scsi_id, (uint8_t *) &temp_hdd[hdlv_current_sel].scsi_lun);
+				next_free_scsi_id_and_lun((uint8_t *) &temp_hdd[hdlv_current_sel].id.scsi.id, (uint8_t *) &temp_hdd[hdlv_current_sel].id.scsi.lun);
 
 			h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
 			ShowWindow(h, SW_SHOW);
 			EnableWindow(h, TRUE);
-			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.scsi_id : temp_hdd[hdlv_current_sel].scsi_id, 0);
+			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.id.scsi.id : temp_hdd[hdlv_current_sel].id.scsi.id, 0);
 
 			h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
 			ShowWindow(h, SW_SHOW);
 			EnableWindow(h, TRUE);
-			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.scsi_lun : temp_hdd[hdlv_current_sel].scsi_lun, 0);
+			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.id.scsi.lun : temp_hdd[hdlv_current_sel].id.scsi.lun, 0);
 			break;
 	}
     }
@@ -405,9 +390,8 @@ static void
 recalc_next_free_id(HWND hdlg)
 {
     HWND h;
-    int c_mfm = 0;
+    int c_st506 = 0;
     int c_esdi = 0;
-    int c_xtide = 0;
     int c_ide_pio = 0;
     int c_ide_dma = 0;
     int c_scsi = 0;
@@ -417,12 +401,10 @@ recalc_next_free_id(HWND hdlg)
     next_free_id = -1;
 
     for (i = 0; i < HDD_NUM; i++) {
-	if (temp_hdd[i].bus == HDD_BUS_MFM)
-		c_mfm++;
+	if (temp_hdd[i].bus == HDD_BUS_ST506)
+		c_st506++;
 	else if (temp_hdd[i].bus == HDD_BUS_ESDI)
 		c_esdi++;
-	else if (temp_hdd[i].bus == HDD_BUS_XTIDE)
-		c_xtide++;
 	else if (temp_hdd[i].bus == HDD_BUS_IDE_PIO_ONLY)
 		c_ide_pio++;
 	else if (temp_hdd[i].bus == HDD_BUS_IDE_PIO_AND_DMA)
@@ -441,10 +423,9 @@ recalc_next_free_id(HWND hdlg)
     }
 
     enable_add = enable_add || (next_free_id >= 0);
-    enable_add = enable_add && ((c_mfm < MFM_NUM) || (c_esdi < ESDI_NUM) || (c_xtide < XTIDE_NUM) || (c_ide_pio < IDE_NUM) || (c_ide_dma < IDE_NUM) || (c_scsi < SCSI_NUM));
-    enable_add = enable_add && !bus_full(&mfm_tracking, 2);
+    enable_add = enable_add && ((c_st506 < ST506_NUM) || (c_esdi < ESDI_NUM) || (c_ide_pio < IDE_NUM) || (c_ide_dma < IDE_NUM) || (c_scsi < SCSI_NUM));
+    enable_add = enable_add && !bus_full(&st506_tracking, 2);
     enable_add = enable_add && !bus_full(&esdi_tracking, 2);
-    enable_add = enable_add && !bus_full(&xtide_tracking, 2);
     enable_add = enable_add && !bus_full(&ide_tracking, 8);
     for (i = 0; i < 16; i++)
 	enable_add = enable_add && !bus_full(&(scsi_tracking[i]), 8);
@@ -462,7 +443,7 @@ recalc_next_free_id(HWND hdlg)
 	EnableWindow(h, FALSE);
 
     h = GetDlgItem(hdlg, IDC_BUTTON_HDD_REMOVE);
-    if ((c_mfm == 0) && (c_esdi == 0) && (c_xtide == 0) && (c_ide_pio == 0) && (c_ide_dma == 0) && (c_scsi == 0))
+    if ((c_st506 == 0) && (c_esdi == 0) && (c_ide_pio == 0) && (c_ide_dma == 0) && (c_scsi == 0))
 	EnableWindow(h, FALSE);
       else
 	EnableWindow(h, TRUE);
@@ -482,32 +463,28 @@ disk_update_item(HWND hwndList, int i, int column)
 
     if (column == 0) {
 	switch(temp_hdd[i].bus) {
-		case HDD_BUS_MFM:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4608), temp_hdd[i].mfm_channel >> 1, temp_hdd[i].mfm_channel & 1);
-			break;
-
-		case HDD_BUS_XTIDE:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4609), temp_hdd[i].xtide_channel >> 1, temp_hdd[i].xtide_channel & 1);
+		case HDD_BUS_ST506:
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4608), temp_hdd[i].id.st506_channel >> 1, temp_hdd[i].id.st506_channel & 1);
 			break;
 
 		case HDD_BUS_ESDI:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4610), temp_hdd[i].esdi_channel >> 1, temp_hdd[i].esdi_channel & 1);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4609), temp_hdd[i].id.esdi_channel >> 1, temp_hdd[i].id.esdi_channel & 1);
 			break;
 
 		case HDD_BUS_IDE_PIO_ONLY:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4611), temp_hdd[i].ide_channel >> 1, temp_hdd[i].ide_channel & 1);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4610), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
 			break;
 
 		case HDD_BUS_IDE_PIO_AND_DMA:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4612), temp_hdd[i].ide_channel >> 1, temp_hdd[i].ide_channel & 1);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4611), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
 			break;
 
 		case HDD_BUS_SCSI:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4613), temp_hdd[i].scsi_id, temp_hdd[i].scsi_lun);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4612), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
 			break;
 
 		case HDD_BUS_SCSI_REMOVABLE:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4614), temp_hdd[i].scsi_id, temp_hdd[i].scsi_lun);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4613), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
 			break;
 	}
 
@@ -569,32 +546,28 @@ disk_recalc_list(HWND hwndList)
 	hdc_id_to_listview_index[i] = j;
 
 	switch(temp_hdd[i].bus) {
-		case HDD_BUS_MFM:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4608), temp_hdd[i].mfm_channel >> 1, temp_hdd[i].mfm_channel & 1);
-			break;
-
-		case HDD_BUS_XTIDE:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4609), temp_hdd[i].xtide_channel >> 1, temp_hdd[i].xtide_channel & 1);
+		case HDD_BUS_ST506:
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4608), temp_hdd[i].id.st506_channel >> 1, temp_hdd[i].id.st506_channel & 1);
 			break;
 
 		case HDD_BUS_ESDI:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4610), temp_hdd[i].esdi_channel >> 1, temp_hdd[i].esdi_channel & 1);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4609), temp_hdd[i].id.esdi_channel >> 1, temp_hdd[i].id.esdi_channel & 1);
 			break;
 
 		case HDD_BUS_IDE_PIO_ONLY:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4611), temp_hdd[i].ide_channel >> 1, temp_hdd[i].ide_channel & 1);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4610), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
 			break;
 
 		case HDD_BUS_IDE_PIO_AND_DMA:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4612), temp_hdd[i].ide_channel >> 1, temp_hdd[i].ide_channel & 1);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4611), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
 			break;
 
 		case HDD_BUS_SCSI:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4613), temp_hdd[i].scsi_id, temp_hdd[i].scsi_lun);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4612), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
 			break;
 
 		case HDD_BUS_SCSI_REMOVABLE:
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4614), temp_hdd[i].scsi_id, temp_hdd[i].scsi_lun);
+			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_4613), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
 			break;
 	}
 
@@ -896,12 +869,11 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
 			SendMessage(h, CB_SETCURSEL, channel, 0);
 
-			new_hdd.mfm_channel = next_free_binary_channel(&mfm_tracking);
-			new_hdd.esdi_channel = next_free_binary_channel(&esdi_tracking);
-			new_hdd.xtide_channel = next_free_binary_channel(&xtide_tracking);
-			new_hdd.ide_channel = channel;
-			new_hdd.scsi_id = id;
-			new_hdd.scsi_lun = lun;
+			new_hdd.id.st506_channel = next_free_binary_channel(&st506_tracking);
+			new_hdd.id.esdi_channel = next_free_binary_channel(&esdi_tracking);
+			new_hdd.id.ide_channel = channel;
+			new_hdd.id.scsi.id = id;
+			new_hdd.id.scsi.lun = lun;
 		}
 		h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
 		EnableWindow(h, FALSE);
@@ -956,33 +928,28 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 				} else {
 					switch(hdd_ptr->bus) {
-						case HDD_BUS_MFM:
+						case HDD_BUS_ST506:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-							hdd_ptr->mfm_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->id.st506_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 
 						case HDD_BUS_ESDI:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-							hdd_ptr->esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
-							break;
-
-						case HDD_BUS_XTIDE:
-							h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-							hdd_ptr->xtide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->id.esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 
 						case HDD_BUS_IDE_PIO_ONLY:
 						case HDD_BUS_IDE_PIO_AND_DMA:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
-							hdd_ptr->ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->id.ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 
 						case HDD_BUS_SCSI:
 						case HDD_BUS_SCSI_REMOVABLE:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
-							hdd_ptr->scsi_id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->id.scsi.id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
-							hdd_ptr->scsi_lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->id.scsi.lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 					}
 				}
@@ -1369,14 +1336,13 @@ hdd_add_file_open_error:
 						max_spt = max_hpc = max_tracks = 0;
 						break;
 
-					case HDD_BUS_MFM:
-						max_spt = 17;
+					case HDD_BUS_ST506:
+						max_spt = 26;
 						max_hpc = 15;
 						max_tracks = 1023;
 						break;
 
 					case HDD_BUS_ESDI:
-					case HDD_BUS_XTIDE:
 						max_spt = 63;
 						max_hpc = 16;
 						max_tracks = 1023;
@@ -1492,26 +1458,22 @@ static void
 disk_track(uint8_t id)
 {
     switch(temp_hdd[id].bus) {
-	case HDD_BUS_MFM:
-			mfm_tracking |= (1ULL << (temp_hdd[id].mfm_channel << 3));
+	case HDD_BUS_ST506:
+			st506_tracking |= (1ULL << (temp_hdd[id].id.st506_channel << 3));
 			break;
 
 	case HDD_BUS_ESDI:
-			esdi_tracking |= (1ULL << (temp_hdd[id].esdi_channel << 3));
-			break;
-
-	case HDD_BUS_XTIDE:
-			xtide_tracking |= (1ULL << (temp_hdd[id].xtide_channel << 3));
+			esdi_tracking |= (1ULL << (temp_hdd[id].id.esdi_channel << 3));
 			break;
 
 	case HDD_BUS_IDE_PIO_ONLY:
 		case HDD_BUS_IDE_PIO_AND_DMA:
-			ide_tracking |= (1ULL << (temp_hdd[id].ide_channel << 3));
+			ide_tracking |= (1ULL << (temp_hdd[id].id.ide_channel << 3));
 		break;
 
 	case HDD_BUS_SCSI:
 	case HDD_BUS_SCSI_REMOVABLE:
-		scsi_tracking[temp_hdd[id].scsi_id] |= (1ULL << (temp_hdd[id].scsi_lun << 3));
+		scsi_tracking[temp_hdd[id].id.scsi.id] |= (1ULL << (temp_hdd[id].id.scsi.lun << 3));
 		break;
     }
 }
@@ -1521,26 +1483,22 @@ static void
 disk_untrack(uint8_t id)
 {
     switch(temp_hdd[id].bus) {
-	case HDD_BUS_MFM:
-		mfm_tracking &= ~(1 << (temp_hdd[id].mfm_channel << 3));
+	case HDD_BUS_ST506:
+		st506_tracking &= ~(1 << (temp_hdd[id].id.st506_channel << 3));
 		break;
 
 	case HDD_BUS_ESDI:
-		esdi_tracking &= ~(1 << (temp_hdd[id].esdi_channel << 3));
-		break;
-
-	case HDD_BUS_XTIDE:
-		xtide_tracking &= ~(1 << (temp_hdd[id].xtide_channel << 3));
+		esdi_tracking &= ~(1 << (temp_hdd[id].id.esdi_channel << 3));
 		break;
 
 	case HDD_BUS_IDE_PIO_ONLY:
 	case HDD_BUS_IDE_PIO_AND_DMA:
-		ide_tracking &= ~(1 << (temp_hdd[id].ide_channel << 3));
+		ide_tracking &= ~(1 << (temp_hdd[id].id.ide_channel << 3));
 		break;
 
 	case HDD_BUS_SCSI:
 	case HDD_BUS_SCSI_REMOVABLE:
-		scsi_tracking[temp_hdd[id].scsi_id] &= ~(1 << (temp_hdd[id].scsi_lun << 3));
+		scsi_tracking[temp_hdd[id].id.scsi.id] &= ~(1 << (temp_hdd[id].id.scsi.lun << 3));
 		break;
     }
 }
@@ -1660,12 +1618,10 @@ hd_bus_skip:
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
 				disk_untrack(hdlv_current_sel);
-				if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_MFM)
-					temp_hdd[hdlv_current_sel].mfm_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_ST506)
+					temp_hdd[hdlv_current_sel].id.st506_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				else if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_ESDI)
-					temp_hdd[hdlv_current_sel].esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
-				else if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_XTIDE)
-					temp_hdd[hdlv_current_sel].xtide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+					temp_hdd[hdlv_current_sel].id.esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);
@@ -1679,7 +1635,7 @@ hd_bus_skip:
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
 				disk_untrack(hdlv_current_sel);
-				temp_hdd[hdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				temp_hdd[hdlv_current_sel].id.ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);
@@ -1693,7 +1649,7 @@ hd_bus_skip:
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
 				disk_untrack(hdlv_current_sel);
-				temp_hdd[hdlv_current_sel].scsi_id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				temp_hdd[hdlv_current_sel].id.scsi.id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);
@@ -1707,7 +1663,7 @@ hd_bus_skip:
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
 				disk_untrack(hdlv_current_sel);
-				temp_hdd[hdlv_current_sel].scsi_lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				temp_hdd[hdlv_current_sel].id.scsi.lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);

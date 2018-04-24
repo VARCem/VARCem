@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Bar module.
  *
- * Version:	@(#)win_stbar.c	1.0.9	2018/04/14
+ * Version:	@(#)win_stbar.c	1.0.10	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -614,17 +614,16 @@ ui_sb_update_panes(void)
 {
     int i, id, hdint;
     int edge = 0;
-    int c_mfm, c_esdi, c_scsi;
-    int c_xtide, c_ide_pio, c_ide_dma;
+    int c_st506, c_esdi, c_scsi;
+    int c_ide_pio, c_ide_dma;
     int do_net;
     const char *hdc;
 
     sb_ready = 0;
 
     hdint = (machines[machine].flags & MACHINE_HDC) ? 1 : 0;
-    c_mfm = hdd_count(HDD_BUS_MFM);
+    c_st506 = hdd_count(HDD_BUS_ST506);
     c_esdi = hdd_count(HDD_BUS_ESDI);
-    c_xtide = hdd_count(HDD_BUS_XTIDE);
     c_ide_pio = hdd_count(HDD_BUS_IDE_PIO_ONLY);
     c_ide_dma = hdd_count(HDD_BUS_IDE_PIO_AND_DMA);
     c_scsi = hdd_count(HDD_BUS_SCSI);
@@ -703,15 +702,12 @@ ui_sb_update_panes(void)
 		sb_parts++;
 	}
     }
-    if (c_mfm && (hdint || !strncmp(hdc, "mfm", 3))) {
-	/* MFM drives, and MFM or Internal controller. */
+    if (c_st506 && (hdint || !strncmp(hdc, "st506", 5))) {
+	/* ST506 MFM/RLL drives, and MFM or Internal controller. */
 	sb_parts++;
     }
     if (c_esdi && (hdint || !strncmp(hdc, "esdi", 4))) {
 	/* ESDI drives, and ESDI or Internal controller. */
-	sb_parts++;
-    }
-    if (c_xtide && !strncmp(hdc, "ide", 3)) {
 	sb_parts++;
     }
     if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3))) {
@@ -805,22 +801,16 @@ ui_sb_update_panes(void)
 		sb_parts++;
 	}
     }
-    if (c_mfm && (hdint || !strncmp(hdc, "mfm", 3))) {
+    if (c_st506 && (hdint || !strncmp(hdc, "st506", 5))) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
-	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_MFM;
+	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_ST506;
 	sb_parts++;
     }
     if (c_esdi && (hdint || !strncmp(hdc, "esdi", 4))) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_ESDI;
-	sb_parts++;
-    }
-    if (c_xtide && !strncmp(hdc, "xtide", 5)) {
-	edge += SB_ICON_WIDTH;
-	iStatusWidths[sb_parts] = edge;
-	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_XTIDE;
 	sb_parts++;
     }
     if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3))) {
@@ -1203,7 +1193,7 @@ StatusBarProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					memset(hdd[id].fn, 0, sizeof(hdd[id].fn));
 					wcscpy(hdd[id].fn, wopenfilestring);
 					hdd[id].wp = (item_id == IDM_RDISK_IMAGE_WP) ? 1 : 0;
-					scsi_loadhd(hdd[id].scsi_id, hdd[id].scsi_lun, id);
+					scsi_loadhd(hdd[id].id.scsi.id, hdd[id].id.scsi.lun, id);
 					scsi_disk_insert(id);
 					if (wcslen(hdd[id].fn) > 0) {
 						ui_sb_update_icon_state(SB_RDISK | id, 0);

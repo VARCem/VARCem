@@ -8,7 +8,7 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.6	2018/04/02
+ * Version:	@(#)hdc_ide.h	1.0.8	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,7 +87,7 @@ typedef struct {
 extern int	ideboard;
 extern int	ide_enable[5];
 extern int	ide_irq[5];
-extern IDE	ide_drives[IDE_NUM + XTIDE_NUM];
+extern IDE	ide_drives[IDE_NUM];
 extern int64_t	idecallback[5];
 
 

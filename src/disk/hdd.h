@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.5	2018/04/12
+ * Version:	@(#)hdd.h	1.0.6	2018/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,8 +44,7 @@
 /* Hard Disk bus types. */
 enum {
     HDD_BUS_DISABLED = 0,
-    HDD_BUS_MFM,
-    HDD_BUS_XTIDE,
+    HDD_BUS_ST506,
     HDD_BUS_ESDI,
     HDD_BUS_IDE_PIO_ONLY,
     HDD_BUS_IDE_PIO_AND_DMA,
@@ -71,12 +70,17 @@ typedef struct {
 
     uint8_t	bus;
 
-    uint8_t	mfm_channel;		/* should rename and/or unionize */
-    uint8_t	esdi_channel;
-    uint8_t	xtide_channel;
-    uint8_t	ide_channel;
-    uint8_t	scsi_id;
-    uint8_t	scsi_lun;
+    union {
+	uint8_t	st506_channel;		/* bus channel ID's */
+	uint8_t	esdi_channel;
+	uint8_t	xtide_channel;
+	uint8_t	ide_channel;
+	uint8_t	scsi_id;
+	union {
+		uint8_t	id;
+		uint8_t	lun;
+	}	scsi;
+    }		id;
 
     uint32_t	base;
 
