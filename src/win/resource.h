@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.10	2018/04/08
+ * Version:	@(#)resource.h	1.0.11	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -178,9 +178,10 @@
 #define IDC_COMBO_SCSI		1121
 #define IDC_CONFIGURE_SCSI	1122
 #define IDC_COMBO_HDC		1123
-#define IDC_COMBO_IDE_TER	1124
-#define IDC_COMBO_IDE_QUA	1125
-#define IDC_CHECK_BUGGER	1126
+#define IDC_CONFIGURE_HDC	1124
+#define IDC_COMBO_IDE_TER	1125
+#define IDC_COMBO_IDE_QUA	1126
+#define IDC_CHECK_BUGGER	1127
 
 #define IDC_HARD_DISKS		1130	/* hard disk config */
 #define IDC_LIST_HARD_DISKS	1131

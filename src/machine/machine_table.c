@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.19	2018/04/20
+ * Version:	@(#)machine_table.c	1.0.20	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../nvr.h"
@@ -142,7 +143,7 @@ const machine_t machines[] = {
     { "[Socket 5 NX] Intel Premiere/PCI II",	ROM_PLATO,		"intel_plato",		L"intel/plato",			{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  2,  128,   2, 128,		machine_at_plato_init, NULL,			NULL			},
 
     { "[Socket 5 FX] ASUS P/I-P54TP4XE",	ROM_P54TP4XE,		"asus_p54tp4xe",	L"asus/p54tp4xe",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	     machine_at_p54tp4xe_init, NULL,			NULL			},
-    { "[Socket 5 FX] Intel Advanced/EV",	ROM_ENDEAVOR,		"intel_endeavor",	L"intel/endeavor",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,	     machine_at_endeavor_init, &m_at_endeavor_device,	NULL			},
+    { "[Socket 5 FX] Intel Advanced/EV",	ROM_ENDEAVOR,		"intel_endeavor",	L"intel/endeavor",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,	     machine_at_endeavor_init, &s3_phoenix_trio64_onboard_pci_device,	NULL			},
     { "[Socket 5 FX] Intel Advanced/ZP",	ROM_ZAPPA,		"intel_zappa",		L"intel/zappa",			{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,		machine_at_zappa_init, NULL,			NULL			},
     { "[Socket 5 FX] PC Partner MB500N",	ROM_MB500N,		"pcpartner_mb500n",	L"pcpartner/mb500n",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	       machine_at_mb500n_init, NULL,			NULL			},
     { "[Socket 5 FX] President Award 430FX PCI",ROM_PRESIDENT,		"president",		L"president/president",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"AMD", cpus_K5},	{"", NULL},		{"", NULL}}, 	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  8,  128,   8, 128,	    machine_at_president_init, NULL,			NULL			},
@@ -268,4 +269,44 @@ machine_get_machine_from_internal_name(const char *s)
 
     /* Not found. */
     return(-1);
+}
+
+
+int
+machine_get_config_int(const char *s)
+{
+    const device_t *d = machine_getdevice(machine);
+    const device_config_t *c;
+
+    if (d == NULL) return(0);
+
+    c = d->config;
+    while (c && c->type != -1) {
+	if (! strcmp(s, c->name))
+		return(config_get_int(d->name, s, c->default_int));
+
+	c++;
+    }
+
+    return(0);
+}
+
+
+const char *
+machine_get_config_string(const char *s)
+{
+    const device_t *d = machine_getdevice(machine);
+    const device_config_t *c;
+
+    if (d == NULL) return(0);
+
+    c = d->config;
+    while (c && c->type != -1) {
+	if (! strcmp(s, c->name))
+		return(config_get_string(d->name, s, c->default_string));
+
+	c++;
+    }
+
+    return(NULL);
 }

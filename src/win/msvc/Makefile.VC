@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.14	2018/04/23
+# Version:	@(#)Makefile.VC	1.0.16	2018/04/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -118,9 +118,6 @@ ifndef GREENB
 endif
 ifndef I686
  I686		:= n
-endif
-ifndef XTA
- XTA		:= n
 endif
 ifndef OPENAL
  OPENAL		:= y
@@ -415,10 +412,6 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_at_440fx.obj
  endif
 
- ifeq ($(XTA), y)
-  OPTS		+= -DUSE_XTA
- endif
-
  ifeq ($(STEALTH32), y)
   OPTS		+= -DUSE_STEALTH32
   DEVBROBJ	+= vid_icd2061.obj
@@ -475,8 +468,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_xt_t1000.obj m_xt_t1000_vid.obj \
 		    m_xt_xi8088.obj \
 		    m_pcjr.obj \
-		    m_amstrad.obj \
-		    m_europc.obj m_europc_hdc.obj \
+		    m_amstrad.obj m_europc.obj \
 		    m_olivetti_m24.obj m_tandy.obj \
 		    m_at.obj \
 		    m_at_ali1429.obj m_at_commodore.obj \
@@ -512,10 +504,7 @@ HDDOBJ		:= hdd.obj \
 		   hdc.obj \
 		    hdc_st506_xt.obj hdc_st506_at.obj \
 		    hdc_esdi_at.obj hdc_esdi_mca.obj \
-		    hdc_ide.obj hdc_xtide.obj
-ifeq ($(XTA), y)
-HDDOBJ		+= hdc_ide_xta.o
-#endif
+		    hdc_ide.obj hdc_xtide.obj hdc_ide_xta.o
 
 CDROMOBJ	:= cdrom.obj \
 		    cdrom_dosbox.obj cdrom_image.obj cdrom_null.obj

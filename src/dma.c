@@ -163,6 +163,7 @@ dma_write(uint16_t addr, uint8_t val, void *priv)
 			dma_m |=  (1 << (val & 3));
 		  else
 			dma_m &= ~(1 << (val & 3));
+//pclog("DMA: %s mask for channel %d\n", (val&4)?"set":"clear", val&3);
 		return;
 
 	case 0xb: /*Mode*/

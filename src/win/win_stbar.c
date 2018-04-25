@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Bar module.
  *
- * Version:	@(#)win_stbar.c	1.0.10	2018/04/23
+ * Version:	@(#)win_stbar.c	1.0.11	2018/04/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -667,7 +667,7 @@ ui_sb_update_panes(void)
 	/* Could be Internal or External IDE.. */
 	if (((cdrom_drives[i].bus_type==CDROM_BUS_ATAPI_PIO_ONLY) &&
 	     (cdrom_drives[i].bus_type==CDROM_BUS_ATAPI_PIO_AND_DMA)) &&
-	    !(hdint || !strncmp(hdc, "ide", 3))) {
+	    !(hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
 		continue;
 	}
 
@@ -684,7 +684,7 @@ ui_sb_update_panes(void)
 	/* Could be Internal or External IDE.. */
 	if (((zip_drives[i].bus_type==ZIP_BUS_ATAPI_PIO_ONLY) &&
 	     (zip_drives[i].bus_type==ZIP_BUS_ATAPI_PIO_AND_DMA)) &&
-	    !(hdint || !strncmp(hdc, "ide", 3))) {
+	    !(hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
 		continue;
 	}
 
@@ -710,7 +710,7 @@ ui_sb_update_panes(void)
 	/* ESDI drives, and ESDI or Internal controller. */
 	sb_parts++;
     }
-    if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3))) {
+    if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
 	/* IDE_PIO drives, and IDE or Internal controller. */
 	sb_parts++;
     }
@@ -813,7 +813,7 @@ ui_sb_update_panes(void)
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_ESDI;
 	sb_parts++;
     }
-    if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3))) {
+    if (c_ide_pio && (hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
 	edge += SB_ICON_WIDTH;
 	iStatusWidths[sb_parts] = edge;
 	sb_part_meanings[sb_parts] = SB_HDD | HDD_BUS_IDE_PIO_ONLY;

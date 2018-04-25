@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.4	2018/04/09
+ * Version:	@(#)device.h	1.0.5	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,12 +99,12 @@ typedef struct _device_ {
     uint32_t	local;		/* flags local to device */
 
     void	*(*init)(const struct _device_ *);
-    void	(*close)(void *p);
-    void	(*reset)(void *p);
+    void	(*close)(void *priv);
+    void	(*reset)(void *priv);
     int		(*available)(/*void*/);
-    void	(*speed_changed)(void *p);
-    void	(*force_redraw)(void *p);
-    void	(*add_status_info)(char *s, int max_len, void *p);
+    void	(*speed_changed)(void *priv);
+    void	(*force_redraw)(void *priv);
+    void	(*add_status_info)(char *s, int max_len, void *priv);
 
     const device_config_t *config;
 } device_t;
@@ -115,30 +115,28 @@ extern "C" {
 #endif
 
 extern void	device_init(void);
-extern void	*device_add(const device_t *d);
+extern void	*device_add(const device_t *);
 extern void	device_add_ex(const device_t *d, void *priv);
 extern void	device_close_all(void);
 extern void	device_reset_all(void);
-extern void	*device_get_priv(const device_t *d);
-extern int	device_available(const device_t *d);
+extern void	*device_get_priv(const device_t *);
+extern int	device_available(const device_t *);
 extern void	device_speed_changed(void);
 extern void	device_force_redraw(void);
 extern void	device_add_status_info(char *s, int max_len);
 
-extern int	device_get_config_int(char *name);
-extern int	device_get_config_int_ex(char *s, int default_int);
-extern int	device_get_config_hex16(char *name);
-extern int	device_get_config_hex20(char *name);
-extern int	device_get_config_mac(char *name, int default_int);
-extern void	device_set_config_int(char *s, int val);
-extern void	device_set_config_hex16(char *s, int val);
-extern void	device_set_config_hex20(char *s, int val);
-extern void	device_set_config_mac(char *s, int val);
-extern char	*device_get_config_string(char *name);
-extern int	device_is_valid(const device_t *device, int machine_flags);
+extern int	device_is_valid(const device_t *, int machine_flags);
 
-extern int	machine_get_config_int(char *s);
-extern char	*machine_get_config_string(char *s);
+extern int	device_get_config_int(const char *name);
+extern int	device_get_config_int_ex(const char *s, int default_int);
+extern int	device_get_config_hex16(const char *name);
+extern int	device_get_config_hex20(const char *name);
+extern int	device_get_config_mac(const char *name, int default_int);
+extern void	device_set_config_int(const char *s, int val);
+extern void	device_set_config_hex16(const char *s, int val);
+extern void	device_set_config_hex20(const char *s, int val);
+extern void	device_set_config_mac(const char *s, int val);
+extern const char	*device_get_config_string(const char *name);
 
 #ifdef __cplusplus
 }

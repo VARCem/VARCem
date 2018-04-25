@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.20	2018/04/23
+ * Version:	@(#)VARCem.rc	1.0.21	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -542,8 +542,9 @@ BEGIN
     PUSHBUTTON      "Configure",IDC_CONFIGURE_SCSI,214,7,46,12
 
     LTEXT           "HD Controller:",IDT_1717,7,26,61,10
-    COMBOBOX        IDC_COMBO_HDC,71,25,189,120,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_COMBO_HDC,71,25,140,120,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Configure",IDC_CONFIGURE_HDC,214,25,46,12
 
     LTEXT           "Tertiary IDE:",IDT_1718,7,44,61,10
     COMBOBOX        IDC_COMBO_IDE_TER,71,43,189,120,CBS_DROPDOWNLIST | 

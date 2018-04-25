@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.7	2018/04/14
+ * Version:	@(#)m_europc.c	1.0.8	2018/04/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -651,13 +651,16 @@ europc_boot(const device_t *info)
     /* Only after JIM has been initialized. */
     (void)device_add(&keyboard_xt_device);
 
+    /* Enable and set up the FDC. */
+    (void)device_add(&fdc_xt_device);
+
     /*
      * Set up and enable the HD20 disk controller.
      *
      * We only do this if we have not configured another one.
      */
     if (hdc_type == 1)
-	(void)device_add(&europc_hdc_device);
+	(void)device_add(&xta_hd20_device);
 
     return(sys);
 }
@@ -714,13 +717,12 @@ const device_t europc_device = {
 void
 machine_europc_init(const machine_t *model, void *arg)
 {
+    machine_common_init(model, arg);
+    nmi_init();
+
     /* Clear the machine state. */
     memset(&europc, 0x00, sizeof(europc_t));
     europc.jim = 0x0250;
-
-    machine_common_init(model, arg);
-    nmi_init();
-    mem_add_bios();
 
     /* This is machine specific. */
     europc.nvr.size = model->nvrsz;
@@ -733,9 +735,6 @@ machine_europc_init(const machine_t *model, void *arg)
 
     /* Initialize the actual NVR. */
     nvr_init(&europc.nvr);
-
-    /* Enable and set up the FDC. */
-    (void)device_add(&fdc_xt_device);
 
     /* Enable and set up the mainboard device. */
     device_add(&europc_device);

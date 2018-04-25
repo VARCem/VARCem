@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.10	2018/04/14
+ * Version:	@(#)win_devconf.c	1.0.11	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -476,11 +476,11 @@ deviceconfig_open(HWND hwnd, device_t *device)
     *data++ = 0; /* no menu bar */
     *data++ = 0; /* predefined dialog box class */
     sprintf(temp, "%s Configuration", device->name);
-    data += MultiByteToWideChar(CP_ACP, 0, temp, -1, data, 50);
+    data += MultiByteToWideChar(CP_ACP, 0, temp, -1, data, 120);
 
     /* Font style and size to use. */
     *data++ = 9; /* point size */
-    data += MultiByteToWideChar(CP_ACP, 0, "Segoe UI", -1, data, 50);
+    data += MultiByteToWideChar(CP_ACP, 0, "Segoe UI", -1, data, 120);
     if (((uintptr_t)data) & 2)
 	data++;
 

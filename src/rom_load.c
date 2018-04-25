@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.7	2018/04/01
+ * Version:	@(#)rom_load.c	1.0.8	2018/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -60,6 +60,7 @@
 #include <wchar.h>
 #include <ctype.h>
 #include "emu.h"
+#include "machine/machine.h"
 #include "mem.h"
 #include "rom.h"
 #include "device.h"

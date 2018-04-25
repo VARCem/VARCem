@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.10	2018/04/23
+ * Version:	@(#)hdc.c	1.0.12	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -112,10 +112,8 @@ static const struct {
     { "[ISA] [ST506] DTC-5150X Fixed Disk Adapter",	"st506_dtc5150x",
       &st506_xt_dtc5150x_device,			1		},
 
-#ifdef USE_XTA
-    { "[ISA] [IDE] PC/XT IDE (XTA) Adapter",		"xta_isa",
-      &xta_isa_device,					0,		},
-#endif
+    { "[ISA] [IDE] WDXT-150 IDE (XTA) Adapter",		"xta_wdxt150",
+      &xta_wdxt150_device,				0,		},
 
     { "[ISA] [IDE] PC/XT XTIDE (ATA)",			"xtide",
       &xtide_device,					0		},
@@ -213,10 +211,24 @@ hdc_get_internal_name(int hdc)
 }
 
 
+
 const device_t *
 hdc_get_device(int hdc)
 {
     return(controllers[hdc].device);
+}
+
+
+int
+hdc_has_config(int hdc)
+{
+    const device_t *dev = hdc_get_device(hdc);
+
+    if (dev == NULL) return(0);
+
+    if (dev->config == NULL) return(0);
+
+    return(1);
 }
 
 

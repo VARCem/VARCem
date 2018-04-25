@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.3	2018/04/10
+ * Version:	@(#)win_settings_periph.h	1.0.4	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -171,6 +171,12 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		else
 			EnableWindow(h, FALSE);
 
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
+		if (hdc_has_config(temp_hdc_type))
+			EnableWindow(h, TRUE);
+		else
+			EnableWindow(h, FALSE);
+
 		recalc_hdc_list(hdlg, temp_machine, 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_IDE_TER);
@@ -209,12 +215,30 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)scsi_card_getdevice(temp_scsi_card));
 				break;
 
+			case IDC_CONFIGURE_HDC:
+				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
+				temp_hdc_type = hdc_get_from_internal_name(hdc_names[SendMessage(h, CB_GETCURSEL, 0, 0)]);
+
+				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)hdc_get_device(temp_hdc_type));
+				break;
+
 			case IDC_COMBO_SCSI:
 				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
 				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
 				if (scsi_card_has_config(temp_scsi_card))
+					EnableWindow(h, TRUE);
+				else
+					EnableWindow(h, FALSE);
+				break;
+
+			case IDC_COMBO_HDC:
+				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
+				temp_hdc_type = hdc_get_from_internal_name(hdc_names[SendMessage(h, CB_GETCURSEL, 0, 0)]);
+
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
+				if (hdc_has_config(temp_hdc_type))
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);

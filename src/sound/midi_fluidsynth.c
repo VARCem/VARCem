@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.6	2018/03/31
+ * Version:	@(#)midi_fluidsynth.c	1.0.7	2018/04/25
  *
  *		Code borrowed from scummvm.
  *
@@ -293,7 +293,7 @@ fluidsynth_init(const device_t *info)
 
     data->synth = f_new_fluid_synth(data->settings);
 
-    char* sound_font = device_get_config_string("sound_font");
+    const char *sound_font = device_get_config_string("sound_font");
     data->sound_font = f_fluid_synth_sfload(data->synth, sound_font, 1);
 
     if (device_get_config_int("chorus")) {

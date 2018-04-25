@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.28	2018/04/23
+# Version:	@(#)Makefile.mingw	1.0.30	2018/04/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -118,9 +118,6 @@ ifndef GREENB
 endif
 ifndef I686
  I686		:= n
-endif
-ifndef XTA
- XTA		:= n
 endif
 ifndef OPENAL
  OPENAL		:= y
@@ -447,10 +444,6 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_at_440fx.o
  endif
 
- ifeq ($(XTA), y)
-  OPTS		+= -DUSE_XTA
- endif
-
  ifeq ($(STEALTH32), y)
   OPTS		+= -DUSE_STEALTH32
   DEVBROBJ	+= vid_icd2061.o
@@ -510,8 +503,7 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_xt_t1000.o m_xt_t1000_vid.o \
 		    m_xt_xi8088.o \
 		    m_pcjr.o \
-		    m_amstrad.o \
-		    m_europc.o m_europc_hdc.o \
+		    m_amstrad.o m_europc.o \
 		    m_olivetti_m24.o m_tandy.o \
 		    m_at.o \
 		    m_at_ali1429.o m_at_commodore.o \
@@ -547,10 +539,7 @@ HDDOBJ		:= hdd.o \
 		   hdc.o \
 		    hdc_st506_xt.o hdc_st506_at.o \
 		    hdc_esdi_at.o hdc_esdi_mca.o \
-		    hdc_ide.o hdc_xtide.o
-ifeq ($(XTA), y)
-HDDOBJ		+= hdc_ide_xta.o
-endif
+		    hdc_ide.o hdc_xtide.o hdc_ide_xta.o
 
 CDROMOBJ	:= cdrom.o \
 		    cdrom_dosbox.o cdrom_image.o cdrom_null.o

@@ -1596,7 +1596,7 @@ config_read(const wchar_t *fn)
 	if (buff[c] == L'[') {	/*Section*/
 		c++;
 		d = 0;
-		while (buff[c] != L']' && buff[c])
+		while (buff[c] && (buff[c] != L']'))
 			wctomb(&(sname[d++]), buff[c++]);
 		sname[d] = L'\0';
 

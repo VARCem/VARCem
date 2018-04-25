@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.10	2018/04/23
+ * Version:	@(#)hdc.h	1.0.13	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,8 +62,8 @@ extern const device_t	st506_at_wd1003_device;		/* st506_at_wd1003 */
 extern const device_t	esdi_at_wd1007vse1_device;	/* esdi_at */
 extern const device_t	esdi_ps2_device;		/* esdi_mca */
 
-extern const device_t	xta_isa_device;			/* xta_isa */
-extern const device_t	xta_ps1_device;			/* xta_ps1 */
+extern const device_t	xta_wdxt150_device;		/* xta_wdxt150 */
+extern const device_t	xta_hd20_device;		/* EuroPC internal */
 
 extern const device_t	xtide_device;			/* xtide_xt */
 extern const device_t	xtide_acculogic_device;		/* xtide_ps2 */
@@ -87,6 +87,7 @@ extern void	hdc_reset(void);
 
 extern const char *hdc_get_name(int hdc);
 extern const char *hdc_get_internal_name(int hdc);
+extern int	hdc_has_config(int hdc);
 extern const device_t	*hdc_get_device(int hdc);
 extern int	hdc_get_flags(int hdc);
 extern int	hdc_available(int hdc);
