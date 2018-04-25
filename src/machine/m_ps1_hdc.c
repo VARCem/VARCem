@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.4	2018/04/24
+ * Version:	@(#)m_ps1_hdc.c	1.0.5	2018/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -677,7 +677,9 @@ do_format(hdc_t *dev, drive_t *drive, ccb_t *ccb)
     int start_cyl, end_cyl;
     int intr = 0, val;
     off64_t addr;
+#if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
     fcb_t *fcb;
+#endif
 
     /* Get the parameters from the CCB. */
     if (ccb->cmd == CMD_FORMAT_DRIVE) {
@@ -729,9 +731,9 @@ do_format(hdc_t *dev, drive_t *drive, ccb_t *ccb)
 		if (! (dev->ctrl & ACR_DMA_EN))
 			dev->status &= ~ASR_DATA_REQ;
 
+#if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
 		/* Point to the FCB we got. */
 		fcb = (fcb_t *)dev->data;
-#if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
 		dump_fcb(fcb, ccb->count);
 #endif
 		dev->state = STATE_FINIT;
