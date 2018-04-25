@@ -201,10 +201,10 @@ void opl2_update(int nr, int16_t *buffer, int samples)
             pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
             return;
         }
-	if (sizeof(Bit32s) * samples) > buffer_sz) {
+	if ((sizeof(Bit32s) * samples) > buffer_sz) {
 		if (buffer_32 != NULL)
 			free(buffer_32);
-		buffer_sz = sizeof(Bit32s) * samples);
+		buffer_sz = sizeof(Bit32s) * samples;
 		buffer_32 = (Bit32s *)malloc(buffer_sz);
 	}
 #else
@@ -231,10 +231,10 @@ void opl3_update(int nr, int16_t *buffer, int samples)
             pclog("opl2_update: possible stack overflow detected. sample count was %d", samples);
             return;
         }
-	if (sizeof(Bit32s) * samples * 2) > buffer_sz) {
+	if ((sizeof(Bit32s) * samples * 2) > buffer_sz) {
 		if (buffer_32 != NULL)
 			free(buffer_32);
-		buffer_sz = sizeof(Bit32s) * samples * 2);
+		buffer_sz = sizeof(Bit32s) * samples * 2;
 		buffer_32 = (Bit32s *)malloc(buffer_sz);
 	}
 #else

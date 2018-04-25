@@ -116,15 +116,6 @@
     <ClCompile Include="..\..\..\disk\hdc_esdi_mca.c">
       <Filter>disk</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\disk\hdc_ide.c">
-      <Filter>disk</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\disk\hdc_mfm_at.c">
-      <Filter>disk</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\disk\hdc_mfm_xt.c">
-      <Filter>disk</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\disk\hdc_xtide.c">
       <Filter>disk</Filter>
     </ClCompile>
@@ -246,9 +237,6 @@
       <Filter>machine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\m_europc.c">
-      <Filter>machine</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machine\m_europc_hdc.c">
       <Filter>machine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\m_olivetti_m24.c">
@@ -665,9 +653,6 @@
     <ClCompile Include="..\..\..\video\vid_svga_render.c">
       <Filter>video</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\video\vid_table.c">
-      <Filter>video</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\video\vid_tgui9440.c">
       <Filter>video</Filter>
     </ClCompile>
@@ -803,6 +788,22 @@
     </ClCompile>
     <ClCompile Include="..\..\..\floppy\lzf\lzf_d.c">
       <Filter>floppy\lzf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\video\video_dev.c" />
+    <ClCompile Include="..\..\..\disk\hdc_ide_ata.c">
+      <Filter>disk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\disk\hdc_ide_xta.c">
+      <Filter>disk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\disk\hdc_st506_at.c">
+      <Filter>disk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\disk\hdc_st506_xt.c">
+      <Filter>disk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machine\m_ps1_hdc.c">
+      <Filter>machine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1413,9 +1414,6 @@
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\video\vid_ati_eeprom.h">
-      <Filter>video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\video\vid_ati_mach64.h">
       <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\video\vid_ati68860_ramdac.h">
