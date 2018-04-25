@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.30	2018/04/24
+# Version:	@(#)Makefile.mingw	1.0.31	2018/04/25
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -539,7 +539,7 @@ HDDOBJ		:= hdd.o \
 		   hdc.o \
 		    hdc_st506_xt.o hdc_st506_at.o \
 		    hdc_esdi_at.o hdc_esdi_mca.o \
-		    hdc_ide.o hdc_xtide.o hdc_ide_xta.o
+		    hdc_ide_ata.o hdc_ide_xta.o hdc_xtide.o
 
 CDROMOBJ	:= cdrom.o \
 		    cdrom_dosbox.o cdrom_image.o cdrom_null.o

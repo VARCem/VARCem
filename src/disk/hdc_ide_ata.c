@@ -6,9 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Emulation of hard disk, CD-ROM and ZIP IDE/ATAPI devices.
+ *		Emulation of (devices on) the IDE bus, where IDE is the
+ *		ATA (AT-Attached) version, compared to the XT Attachment
+ *		we also support in the XTA driver. These are both IDE, but
+ *		not the same.
+
+ *		Devices currently implemented are hard disk, CD-ROM and
+ *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide.c	1.0.18	2018/04/23
+ * Version:	@(#)hdc_ide_ata.c	1.0.19	2018/04/25
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
