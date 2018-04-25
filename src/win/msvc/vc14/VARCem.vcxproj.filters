@@ -116,13 +116,16 @@
     <ClCompile Include="..\..\..\disk\hdc_esdi_mca.c">
       <Filter>disk</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\disk\hdc_ide.c">
+    <ClCompile Include="..\..\..\disk\hdc_ide_ata.c">
       <Filter>disk</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\disk\hdc_mfm_at.c">
+    <ClCompile Include="..\..\..\disk\hdc_ide_xta.c">
       <Filter>disk</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\disk\hdc_mfm_xt.c">
+    <ClCompile Include="..\..\..\disk\hdc_st506_at.c">
+      <Filter>disk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\disk\hdc_st506_xt.c">
       <Filter>disk</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\disk\hdc_xtide.c">
@@ -248,9 +251,6 @@
     <ClCompile Include="..\..\..\machine\m_europc.c">
       <Filter>machine</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machine\m_europc_hdc.c">
-      <Filter>machine</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\machine\m_olivetti_m24.c">
       <Filter>machine</Filter>
     </ClCompile>
@@ -258,6 +258,9 @@
       <Filter>machine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\m_ps1.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machine\m_ps1_hdc.c">
       <Filter>machine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\m_ps2_isa.c">
@@ -665,9 +668,6 @@
     <ClCompile Include="..\..\..\video\vid_svga_render.c">
       <Filter>video</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\video\vid_table.c">
-      <Filter>video</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\video\vid_tgui9440.c">
       <Filter>video</Filter>
     </ClCompile>
@@ -687,6 +687,9 @@
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\video\vid_wy700.c">
+      <Filter>video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\video\video_dev.c">
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\video\video.c">

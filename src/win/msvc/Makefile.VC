@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.17	2018/04/25
+# Version:	@(#)Makefile.VC	1.0.18	2018/04/25
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -504,7 +504,7 @@ HDDOBJ		:= hdd.obj \
 		   hdc.obj \
 		    hdc_st506_xt.obj hdc_st506_at.obj \
 		    hdc_esdi_at.obj hdc_esdi_mca.obj \
-		    hdc_ide_ata.obj hdc_ide_xta.o hdc_xtide.obj
+		    hdc_ide_ata.obj hdc_ide_xta.obj hdc_xtide.obj
 
 CDROMOBJ	:= cdrom.obj \
 		    cdrom_dosbox.obj cdrom_image.obj cdrom_null.obj

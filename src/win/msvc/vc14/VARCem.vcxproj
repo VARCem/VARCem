@@ -48,9 +48,10 @@
     <ClCompile Include="..\..\..\disk\hdc.c" />
     <ClCompile Include="..\..\..\disk\hdc_esdi_at.c" />
     <ClCompile Include="..\..\..\disk\hdc_esdi_mca.c" />
-    <ClCompile Include="..\..\..\disk\hdc_ide.c" />
-    <ClCompile Include="..\..\..\disk\hdc_mfm_at.c" />
-    <ClCompile Include="..\..\..\disk\hdc_mfm_xt.c" />
+    <ClCompile Include="..\..\..\disk\hdc_ide_ata.c" />
+    <ClCompile Include="..\..\..\disk\hdc_ide_xta.c" />
+    <ClCompile Include="..\..\..\disk\hdc_st506_at.c" />
+    <ClCompile Include="..\..\..\disk\hdc_st506_xt.c" />
     <ClCompile Include="..\..\..\disk\hdc_xtide.c" />
     <ClCompile Include="..\..\..\disk\hdd.c" />
     <ClCompile Include="..\..\..\disk\hdd_image.c" />
@@ -108,10 +109,10 @@
     <ClCompile Include="..\..\..\machine\m_at_t3100e_vid.c" />
     <ClCompile Include="..\..\..\machine\m_at_wd76c10.c" />
     <ClCompile Include="..\..\..\machine\m_europc.c" />
-    <ClCompile Include="..\..\..\machine\m_europc_hdc.c" />
     <ClCompile Include="..\..\..\machine\m_olivetti_m24.c" />
     <ClCompile Include="..\..\..\machine\m_pcjr.c" />
     <ClCompile Include="..\..\..\machine\m_ps1.c" />
+    <ClCompile Include="..\..\..\machine\m_ps1_hdc.c" />
     <ClCompile Include="..\..\..\machine\m_ps2_isa.c" />
     <ClCompile Include="..\..\..\machine\m_ps2_mca.c" />
     <ClCompile Include="..\..\..\machine\m_tandy.c" />

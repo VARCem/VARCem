@@ -10,7 +10,7 @@
  *
  * NOTE:	See MSC_ macros for allocation on stack. --FvK
  *
- * Version:	@(#)snd_dbopl.cpp	1.0.5	2018/04/10
+ * Version:	@(#)snd_dbopl.cpp	1.0.6	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -191,7 +191,7 @@ void opl2_update(int nr, int16_t *buffer, int samples)
 {
 #ifdef _MSC_VER
         static Bit32s *buffer_32 = NULL;
-	static Bit32s buffer_sz = 0;
+	static Bit32u buffer_sz = 0;
 #endif
         int c;
 #ifdef _MSC_VER
@@ -221,7 +221,7 @@ void opl3_update(int nr, int16_t *buffer, int samples)
 {
 #ifdef _MSC_VER
         static Bit32s *buffer_32 = NULL;
-	static Bit32s buffer_sz = 0;
+	static Bit32u buffer_sz = 0;
 #endif
         int c;
 #ifdef _MSC_VER

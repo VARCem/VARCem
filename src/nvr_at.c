@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.5	2018/04/09
+ * Version:	@(#)nvr_at.c	1.0.6	2018/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -286,7 +286,7 @@ typedef struct {
     int8_t      stat;
     uint8_t	cent;
 
-    uint16_t	addr;
+    uint8_t	addr;
 
     int64_t     ecount,
                 rtctime;
