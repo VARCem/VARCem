@@ -3,7 +3,7 @@
 
 #### Fred N. van Kempen, <decwiz@yahoo.com>
 
-#### Last Updated: 03/26/2018
+#### Last Updated: 04/18/2018
 
 
 These instructions guide you in building the **VARCem** emulator from
@@ -17,7 +17,7 @@ platforms will be added as time permits.
 #### Get the sources.
 Get a copy of the source tree (by cloning the GIT repository, or
 by downloading a ZIP archive from GIT, or from the website) and
-unpack (if needed) them into a folder:
+unpack them (if needed) into a folder:
 
   `D:`
   
@@ -27,7 +27,7 @@ unpack (if needed) them into a folder:
   
   `cd src`
   
-  `unzip varcem-0.1.3.zip`
+  `unzip varcem-0.1.5.zip`
 
 which puts the source tree into the *D:\VARCem\src* folder.
 
@@ -121,3 +121,10 @@ With these steps, you have set up a build environment, suitable
 to build (and develop !) the VARCem project application(s) for
 Windows.
 
+There is also a **Makefile.local** file, which you can use as a base for
+yourself.  Copy it to just **Makefile**, and use your favorite text editor
+to update the settings the way you want them. You can now just type
+
+      `make`
+
+and it should build.
