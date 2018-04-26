@@ -103,7 +103,7 @@
 #include "machine.h"
 
 
-#define HDC_TIME	(200*TIMER_USEC)
+#define HDC_TIME	(50*TIMER_USEC)
 #define HDC_TYPE_USER	47			/* user drive type */
 #define PS1_HDD_NUM	1			/* we support 1 drive */
 

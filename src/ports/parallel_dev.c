@@ -8,7 +8,7 @@
  *
  *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)parallel_dev.c	1.0.2	2018/04/10
+ * Version:	@(#)parallel_dev.c	1.0.3	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,13 +40,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#include "emu.h"
-#include "io.h"
+#include "../emu.h"
+#include "../io.h"
 #include "parallel.h"
 #include "parallel_dev.h"
 
-#include "sound/snd_lpt_dac.h"
-#include "sound/snd_lpt_dss.h"
+#include "../sound/snd_lpt_dac.h"
+#include "../sound/snd_lpt_dss.h"
 
 
 static const struct {

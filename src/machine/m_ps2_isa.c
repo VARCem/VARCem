@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.9	2018/04/19
+ * Version:	@(#)m_ps2_isa.c	1.0.10	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,8 +51,8 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../keyboard.h"
-#include "../parallel.h"
-#include "../serial.h"
+#include "../ports/parallel.h"
+#include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

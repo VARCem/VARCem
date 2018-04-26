@@ -6,15 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the Flight Control System driver.
+ *		Definitions for the generic game port handlers.
  *
- * Version:	@(#)joystick_tm_fcs.h	1.0.2	2018/03/15
+ * Version:	@(#)game.h	1.0.6	2018/04/26
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2008-2017 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,5 +34,24 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef EMU_GAME_H
+# define EMU_GAME_H
 
-extern const joystick_if_t joystick_tm_fcs;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef EMU_DEVICE_H
+extern const device_t	game_device;
+extern const device_t	game_201_device;
+#endif
+
+extern void		game_update_joystick_type(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif	/*EMU_GAME_H*/

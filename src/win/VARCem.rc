@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.21	2018/04/25
+ * Version:	@(#)VARCem.rc	1.0.21	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -510,26 +510,29 @@ DLG_CFG_PORTS DIALOG DISCARDABLE  97, 0, 267, 99
 STYLE DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
-    CONTROL         "Parallel port 1",IDC_CHECK_PARALLEL1,"Button",
+    CONTROL         "Game port",IDC_CHECK_GAME,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,8,70,10
-    COMBOBOX        IDC_COMBO_PARALLEL1,80,7,159,120,CBS_DROPDOWNLIST | 
+
+    CONTROL         "Parallel port 1",IDC_CHECK_PARALLEL1,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,27,70,10
+    COMBOBOX        IDC_COMBO_PARALLEL1,80,26,159,120,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
 
     CONTROL         "Parallel port 2",IDC_CHECK_PARALLEL2,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,27,70,10
-    COMBOBOX        IDC_COMBO_PARALLEL2,80,26,159,120,CBS_DROPDOWNLIST | 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,46,70,10
+    COMBOBOX        IDC_COMBO_PARALLEL2,80,45,159,120,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
 
     CONTROL         "Parallel port 3",IDC_CHECK_PARALLEL3,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,46,70,10
-    COMBOBOX        IDC_COMBO_PARALLEL3,80,45,159,120,CBS_DROPDOWNLIST | 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,65,70,10
+    COMBOBOX        IDC_COMBO_PARALLEL3,80,64,159,120,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
 
     CONTROL         "Serial port 1",IDC_CHECK_SERIAL1,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,69,94,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,88,94,10
 
     CONTROL         "Serial port 2",IDC_CHECK_SERIAL2,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,88,94,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,107,94,10
 END
 
 DLG_CFG_PERIPHERALS DIALOG DISCARDABLE  97, 0, 267, 97

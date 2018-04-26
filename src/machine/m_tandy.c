@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.7	2018/04/09
+ * Version:	@(#)m_tandy.c	1.0.9	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,10 +53,9 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
+#include "../keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
-#include "../game/gameport.h"
-#include "../keyboard.h"
 #include "../sound/sound.h"
 #include "../sound/snd_sn76489.h"
 #include "../video/video.h"
@@ -1976,9 +1975,6 @@ machine_tandy1k_init(const machine_t *model, void *arg)
 		device_add(&snd_device);
 		device_add(&eep_device);
     }
-
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	device_add(&gameport_device);
 
     eep_data_out = 0x0000;
 }

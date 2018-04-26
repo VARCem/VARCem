@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.7	2018/04/02
+ * Version:	@(#)m_olivetti_m24.c	1.0.9	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,7 +56,6 @@
 #include "../mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
-#include "../game/gameport.h"
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
 #include "../video/video.h"
@@ -852,9 +851,6 @@ machine_olim24_init(const machine_t *model, void *arg)
     /* Tell mouse driver about our internal mouse. */
     mouse_reset();
     mouse_set_poll(ms_poll, m24);
-
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	device_add(&gameport_device);
 
     /* FIXME: make sure this is correct?? */
     device_add(&at_nvr_device);

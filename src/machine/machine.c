@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.13	2018/04/21
+ * Version:	@(#)machine.c	1.0.14	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,8 +47,9 @@
 #include "../pit.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../serial.h"
-#include "../parallel.h"
+#include "../ports/game.h"
+#include "../ports/serial.h"
+#include "../ports/parallel.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
 #include "../plat.h"
@@ -152,6 +153,9 @@ machine_common_init(const machine_t *model, UNUSED(void *arg))
     pic_init();
     dma_init();
     pit_init();
+
+    if (game_enabled)
+	device_add(&game_device);
 
     if (parallel_enabled[0])
 	device_add(&parallel_1_device);

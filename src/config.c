@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.16	2018/04/23
+ * Version:	@(#)config.c	1.0.18	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,11 +53,12 @@
 #include "machine/machine.h"
 #include "nvr.h"
 #include "device.h"
-#include "serial.h"
-#include "parallel.h"
-#include "parallel_dev.h"
+#include "ports/game_dev.h"
+#include "ports/serial.h"
+#include "ports/parallel.h"
+#include "ports/parallel_dev.h"
 #include "mouse.h"
-#include "game/gameport.h"
+#include "game/joystick.h"
 #include "floppy/fdd.h"
 #include "floppy/fdc.h"
 #include "disk/hdd.h"
@@ -532,22 +533,23 @@ load_input(const char *cat)
     p = config_get_string(cat, "mouse_type", "none");
 	mouse_type = mouse_get_from_internal_name(p);
 
+    //FIXME: should be an internal_name string!!
     joystick_type = config_get_int(cat, "joystick_type", 0);
 
-    for (c=0; c<joystick_get_max_joysticks(joystick_type); c++) {
+    for (c=0; c<gamedev_get_max_joysticks(joystick_type); c++) {
 	sprintf(temp, "joystick_%i_nr", c);
 	joystick_state[c].plat_joystick_nr = config_get_int(cat, temp, 0);
 
 	if (joystick_state[c].plat_joystick_nr) {
-		for (d=0; d<joystick_get_axis_count(joystick_type); d++) {
+		for (d=0; d<gamedev_get_axis_count(joystick_type); d++) {
 			sprintf(temp, "joystick_%i_axis_%i", c, d);
 			joystick_state[c].axis_mapping[d] = config_get_int(cat, temp, d);
 		}
-		for (d=0; d<joystick_get_button_count(joystick_type); d++) {			
+		for (d=0; d<gamedev_get_button_count(joystick_type); d++) {			
 			sprintf(temp, "joystick_%i_button_%i", c, d);
 			joystick_state[c].button_mapping[d] = config_get_int(cat, temp, d);
 		}
-		for (d=0; d<joystick_get_pov_count(joystick_type); d++) {
+		for (d=0; d<gamedev_get_pov_count(joystick_type); d++) {
 			sprintf(temp, "joystick_%i_pov_%i", c, d);
 			p = config_get_string(cat, temp, "0, 0");
 			joystick_state[c].pov_mapping[d][0] = joystick_state[c].pov_mapping[d][1] = 0;
@@ -570,20 +572,20 @@ save_input(const char *cat)
     if (joystick_type != 0) {
 	config_set_int(cat, "joystick_type", joystick_type);
 
-	for (c=0; c<joystick_get_max_joysticks(joystick_type); c++) {
+	for (c=0; c<gamedev_get_max_joysticks(joystick_type); c++) {
 		sprintf(tmp2, "joystick_%i_nr", c);
 		config_set_int(cat, tmp2, joystick_state[c].plat_joystick_nr);
 
 		if (joystick_state[c].plat_joystick_nr) {
-			for (d=0; d<joystick_get_axis_count(joystick_type); d++) {			
+			for (d=0; d<gamedev_get_axis_count(joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_axis_%i", c, d);
 				config_set_int(cat, tmp2, joystick_state[c].axis_mapping[d]);
 			}
-			for (d=0; d<joystick_get_button_count(joystick_type); d++) {			
+			for (d=0; d<gamedev_get_button_count(joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_button_%i", c, d);
 				config_set_int(cat, tmp2, joystick_state[c].button_mapping[d]);
 			}
-			for (d=0; d<joystick_get_pov_count(joystick_type); d++) {			
+			for (d=0; d<gamedev_get_pov_count(joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_pov_%i", c, d);
 				sprintf(temp, "%i, %i", joystick_state[c].pov_mapping[d][0], joystick_state[c].pov_mapping[d][1]);
 				config_set_string(cat, tmp2, temp);
@@ -771,10 +773,14 @@ load_ports(const char *cat)
     char *p;
     int i;
 
+    sprintf(temp, "game_enabled");
+    game_enabled = !!config_get_int(cat, temp, 0);
+
     for (i = 0; i < SERIAL_MAX; i++) {
 	sprintf(temp, "serial%i_enabled", i);
 	serial_enabled[i] = !!config_get_int(cat, temp, 0);
     }
+
     for (i = 0; i < PARALLEL_MAX; i++) {
 	sprintf(temp, "parallel%i_enabled", i);
 	parallel_enabled[i] = !!config_get_int(cat, temp, 0);
@@ -792,6 +798,12 @@ save_ports(const char *cat)
 {
     char temp[128];
     int i;
+
+    sprintf(temp, "game_enabled");
+    if (game_enabled) {
+	config_set_int(cat, temp, 1);
+    } else
+	config_delete_var(cat, temp);
 
     for (i = 0; i < SERIAL_MAX; i++) {
 	sprintf(temp, "serial%i_enabled", i);

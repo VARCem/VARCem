@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.8	2018/04/24
+ * Version:	@(#)m_europc.c	1.0.10	2018/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -120,10 +120,9 @@
 #include "../rom.h"
 #include "../nvr.h"
 #include "../device.h"
-#include "../parallel.h"
 #include "../keyboard.h"
 #include "../mouse.h"
-#include "../game/gameport.h"
+#include "../ports/parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"
@@ -622,9 +621,8 @@ europc_boot(const device_t *info)
     b = (sys->nvr.regs[MRTC_CONF_C] & 0xfc);
     if (mouse_type == MOUSE_INTERNAL) {
 	b |= 0x01;	/* enable port as MOUSE */
-    } else if (joystick_type != JOYSTICK_TYPE_NONE) {
+    } else if (game_enabled) {
 	b |= 0x02;	/* enable port as joysticks */
-	device_add(&gameport_device);
     }
     sys->nvr.regs[MRTC_CONF_C] = b;
 
@@ -718,6 +716,7 @@ void
 machine_europc_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
+
     nmi_init();
 
     /* Clear the machine state. */

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.26	2018/04/19
+ * Version:	@(#)pc.c	1.0.28	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,11 +65,12 @@
 #include "device.h"
 #include "nvr.h"
 #include "bugger.h"
-#include "serial.h"
-#include "parallel.h"
+#include "ports/game.h"
+#include "ports/serial.h"
+#include "ports/parallel.h"
 #include "keyboard.h"
 #include "mouse.h"
-#include "game/gameport.h"
+#include "game/joystick.h"
 #include "floppy/fdd.h"
 #include "floppy/fdd_common.h"
 #include "disk/hdd.h"
@@ -124,7 +125,8 @@ int	vid_api = 0,				/* (C) video renderer */
 	voodoo_enabled = 0;			/* (C) video option */
 int	mouse_type = 0;				/* (C) selected mouse type */
 int	enable_sync = 0;			/* (C) enable time sync */
-int	serial_enabled[] = {0,0},		/* (C) enable serial ports */
+int	game_enabled = 0,			/* (C) enable game port */
+	serial_enabled[] = {0,0},		/* (C) enable serial ports */
 	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
 	parallel_device[] = {0,0,0},		/* (C) set up LPT devices */
 	bugger_enabled = 0;			/* (C) enable ISAbugger */
@@ -851,8 +853,9 @@ pc_reset_hard_init(void)
     /* Reset and reconfigure the Network Card layer. */
     network_reset();
 
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	gameport_update_joystick_type();
+    //FIXME: this needs to be re-done. */
+    if (joystick_type != JOYSTICK_NONE)
+	game_update_joystick_type();
 
     if (config_changed) {
 	ui_sb_update_panes();

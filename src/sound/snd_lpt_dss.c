@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT-based DSS sound device.
  *
- * Version:	@(#)snd_lpt_dss.c	1.0.5	2018/04/07
+ * Version:	@(#)snd_lpt_dss.c	1.0.6	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,7 @@
 #include "../cpu/cpu.h"
 #include "../machine/machine.h"
 #include "../timer.h"
-#include "../parallel_dev.h"
+#include "../ports/parallel_dev.h"
 #include "sound.h"
 #include "filters.h"
 #include "snd_lpt_dss.h"

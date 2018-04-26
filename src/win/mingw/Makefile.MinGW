@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.31	2018/04/25
+# Version:	@(#)Makefile.mingw	1.0.33	2018/04/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -202,7 +202,7 @@ endif
 #		Nothing should need changing from here on..		#
 #########################################################################
 VPATH		:= $(EXPATH) . cpu \
-		   cdrom disk floppy floppy/lzf game sio machine \
+		   cdrom disk floppy floppy/lzf ports game sio machine \
 		   sound \
 		    sound/munt sound/munt/c_interface sound/munt/sha1 \
 		    sound/munt/srchelper \
@@ -365,7 +365,7 @@ else
 		   win_ddraw.o win_d3d.o \
 		   win_dialog.o win_about.o win_status.o win_stbar.o \
 		   win_settings.o win_devconf.o win_snd_gain.o \
-		   win_new_floppy.o win_jsconf.o
+		   win_new_floppy.o
 endif
 
 ifeq ($(OPENAL), y)
@@ -517,16 +517,19 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_at_430lx_nx.o m_at_430fx.o \
 		    m_at_430hx.o m_at_430vx.o
 
-DEVOBJ		:= bugger.o parallel.o parallel_dev.o $(SERIAL) \
-		    sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \
-		    sio_pc87306.o sio_w83877f.o sio_um8669f.o \
+DEVOBJ		:= bugger.o \
+		   game.o game_dev.o \
+		   parallel.o parallel_dev.o \
+		   $(SERIAL) \
+		   sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \
+		   sio_pc87306.o sio_w83877f.o sio_um8669f.o \
 		   keyboard.o \
 		    keyboard_xt.o keyboard_at.o \
-		   gameport.o \
-		    joystick_standard.o joystick_ch_flightstick_pro.o \
-		    joystick_sw_pad.o joystick_tm_fcs.o \
 		   mouse.o \
-		    mouse_serial.o mouse_ps2.o mouse_bus.o
+		    mouse_serial.o mouse_ps2.o mouse_bus.o \
+		   joystick.o \
+		    js_standard.o js_ch_fs_pro.o \
+		    js_sw_pad.o js_tm_fcs.o \
 
 FDDOBJ		:= fdc.o \
 		   fdd.o \

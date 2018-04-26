@@ -12,7 +12,7 @@
  *
  *		Used by DTK PKM-0038S E-2
  *
- * Version:	@(#)m_at_sis85c471.c	1.0.7	2018/04/19
+ * Version:	@(#)m_at_sis85c471.c	1.0.8	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,12 +46,12 @@
 #include "../io.h"
 #include "../memregs.h"
 #include "../device.h"
-#include "../serial.h"
-#include "../parallel.h"
-#include "../disk/hdc.h"
-#include "../disk/hdc_ide.h"
+#include "../ports/serial.h"
+#include "../ports/parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
+#include "../disk/hdc.h"
+#include "../disk/hdc_ide.h"
 #include "machine.h"
 
 

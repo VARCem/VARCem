@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.7	2018/04/21
+ * Version:	@(#)parallel.c	1.0.8	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,9 +40,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#include "emu.h"
-#include "io.h"
-#include "device.h"
+#include "../emu.h"
+#include "../io.h"
+#include "../device.h"
 #include "parallel.h"
 #include "parallel_dev.h"
 

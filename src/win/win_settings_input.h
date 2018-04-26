@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_input.h	1.0.4	2018/04/14
+ * Version:	@(#)win_settings_input.h	1.0.5	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,22 +100,22 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 		c = 0;
-		while ((stransi = joystick_get_name(c)) != NULL) {
+		while ((stransi = gamedev_get_name(c)) != NULL) {
 			mbstowcs(temp, stransi, sizeof_w(temp));
 			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 			c++;
 		}
-		EnableWindow(h, TRUE);
 		SendMessage(h, CB_SETCURSEL, temp_joystick, 0);
+		EnableWindow(h, (temp_game)?TRUE:FALSE);
 
 		h = GetDlgItem(hdlg, IDC_JOY1);
-		EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 1) ? TRUE : FALSE);
+		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 1)) ? TRUE : FALSE);
 		h = GetDlgItem(hdlg, IDC_JOY2);
-		EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 2) ? TRUE : FALSE);
+		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 2)) ? TRUE : FALSE);
 		h = GetDlgItem(hdlg, IDC_JOY3);
-		EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 3) ? TRUE : FALSE);
+		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 3)) ? TRUE : FALSE);
 		h = GetDlgItem(hdlg, IDC_JOY4);
-		EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 4) ? TRUE : FALSE);
+		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 4)) ? TRUE : FALSE);
 
 		return TRUE;
 
@@ -143,13 +143,13 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
 
 				h = GetDlgItem(hdlg, IDC_JOY1);
-				EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 1) ? TRUE : FALSE);
+				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 1) ? TRUE : FALSE);
 				h = GetDlgItem(hdlg, IDC_JOY2);
-				EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 2) ? TRUE : FALSE);
+				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 2) ? TRUE : FALSE);
 				h = GetDlgItem(hdlg, IDC_JOY3);
-				EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 3) ? TRUE : FALSE);
+				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 3) ? TRUE : FALSE);
 				h = GetDlgItem(hdlg, IDC_JOY4);
-				EnableWindow(h, (joystick_get_max_joysticks(temp_joystick) >= 4) ? TRUE : FALSE);
+				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 4) ? TRUE : FALSE);
 				break;
 
 			case IDC_JOY1:

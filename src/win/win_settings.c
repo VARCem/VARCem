@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.22	2018/04/14
+ * Version:	@(#)win_settings.c	1.0.23	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,11 +52,12 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../machine/machine.h"
-#include "../game/gameport.h"
 #include "../mouse.h"
-#include "../parallel.h"
-#include "../parallel_dev.h"
-#include "../serial.h"
+#include "../ports/game_dev.h"
+#include "../ports/parallel.h"
+#include "../ports/parallel_dev.h"
+#include "../ports/serial.h"
+#include "../game/joystick.h"
 #include "../disk/hdd.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
@@ -101,7 +102,8 @@ static int	temp_net_type, temp_net_card;
 static char	temp_host_dev[128];
 
 /* Ports category. */
-static int	temp_serial[SERIAL_MAX],
+static int	temp_game,
+		temp_serial[SERIAL_MAX],
 		temp_parallel[PARALLEL_MAX],
 		temp_parallel_device[PARALLEL_MAX];
 
@@ -204,6 +206,7 @@ settings_init(void)
     temp_net_card = network_card;
 
     /* Ports category */
+    temp_game = game_enabled;
     for (i = 0; i < SERIAL_MAX; i++)
 	temp_serial[i] = serial_enabled[i];
     for (i = 0; i < PARALLEL_MAX; i++) {
@@ -278,6 +281,7 @@ settings_changed(void)
     i = i || (network_card != temp_net_card);
 
     /* Ports category */
+    i = i || (temp_game != game_enabled);
     for (j = 0; j < SERIAL_MAX; j++)
 	i = i || (temp_serial[j] != serial_enabled[j]);
     for (j = 0; j < PARALLEL_MAX; j++) {
@@ -380,6 +384,7 @@ settings_save(void)
     network_card = temp_net_card;
 
     /* Ports category */
+    game_enabled = temp_game;
     for (i = 0; i < SERIAL_MAX; i++)
 	serial_enabled[i] = temp_serial[i];
     for (i = 0; i < PARALLEL_MAX; i++) {

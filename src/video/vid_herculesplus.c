@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.6	2018/04/09
+ * Version:	@(#)vid_hercules_plus.c	1.0.7	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,7 @@
 #include "../rom.h"
 #include "../timer.h"
 #include "../device.h"
-#include "../parallel.h"
+#include "../ports/parallel.h"
 #include "video.h"
 
 

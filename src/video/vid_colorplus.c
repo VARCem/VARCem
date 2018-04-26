@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.5	2018/04/09
+ * Version:	@(#)vid_colorplus.c	1.0.6	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,7 +49,7 @@
 #include "../mem.h"
 #include "../timer.h"
 #include "../device.h"
-#include "../parallel.h"
+#include "../ports/parallel.h"
 #include "video.h"
 #include "vid_cga.h"
 #include "vid_cga_comp.h"

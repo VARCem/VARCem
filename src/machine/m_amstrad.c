@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.12	2018/04/14
+ * Version:	@(#)m_amstrad.c	1.0.14	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -79,8 +79,7 @@
 #include "../nvr.h"
 #include "../keyboard.h"
 #include "../mouse.h"
-#include "../game/gameport.h"
-#include "../parallel.h"
+#include "../ports/parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../sound/sound.h"
@@ -1318,7 +1317,4 @@ machine_amstrad_init(const machine_t *model, void *arg)
 	mouse_reset();
 	mouse_set_poll(ms_poll, ams);
     }
-
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	device_add(&gameport_device);
 }

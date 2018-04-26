@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq XT-class PC's.
  *
- * Version:	@(#)m_xt_compaq.c	1.0.7	2018/04/07
+ * Version:	@(#)m_xt_compaq.c	1.0.9	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,11 +48,10 @@
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
+#include "../ports/parallel.h"
+#include "../keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
-#include "../game/gameport.h"
-#include "../keyboard.h"
-#include "../parallel.h"
 #include "machine.h"
 
 
@@ -69,12 +68,8 @@ machine_xt_compaq_init(const machine_t *model, void *arg)
 
     nmi_init();
 
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	device_add(&gameport_device);
-
     switch(model->id) {
 	case ROM_PORTABLE:
-//FIXME:		parallel_remove(1);
 		parallel_setup(1, 0x03bc);
 		break;
     }

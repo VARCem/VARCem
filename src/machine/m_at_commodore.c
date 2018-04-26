@@ -8,7 +8,7 @@
  *
  *		Implementation of the Commodore PC3 system.
  *
- * Version:	@(#)m_at_commodore.c	1.0.5	2018/04/07
+ * Version:	@(#)m_at_commodore.c	1.0.6	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,8 +43,8 @@
 #include "../emu.h"
 #include "../device.h"
 #include "../io.h"
-#include "../serial.h"
-#include "../parallel.h"
+#include "../ports/parallel.h"
+#include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

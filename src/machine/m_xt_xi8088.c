@@ -8,7 +8,7 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xt_xi8088.c	1.0.6	2018/04/05
+ * Version:	@(#)m_xt_xi8088.c	1.0.8	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,8 +50,7 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../keyboard.h"
-#include "../parallel.h"
-#include "../game/gameport.h"
+#include "../ports/parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"
@@ -179,9 +178,6 @@ machine_xt_xi8088_init(const machine_t *model, void *arg)
     device_add(&at_nvr_device);
 
     device_add(&keyboard_ps2_device);
-
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	device_add(&gameport_device);
 
     device_add(&fdc_xt_device);
 }

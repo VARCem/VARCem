@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.14	2018/04/20
+ * Version:	@(#)m_ps1.c	1.0.16	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,10 +68,10 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../keyboard.h"
-#include "../parallel.h"
-#include "../serial.h"
-#include "../game/gameport.h"
 #include "../mouse.h"
+#include "../ports/game.h"
+#include "../ports/parallel.h"
+#include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"
@@ -548,7 +548,13 @@ ps1_setup(int model, romdef_t *bios)
 static void
 ps1_common_init(const machine_t *model, void *arg)
 {
+    int i;
+
+    /* Hack to prevent Game from being initialized there. */
+    i = game_enabled;
+    game_enabled = 0;
     machine_common_init(model, arg);
+    game_enabled = i;
 
     mem_remap_top_384k();
 
@@ -564,8 +570,8 @@ ps1_common_init(const machine_t *model, void *arg)
     device_add(&mouse_ps2_device);
 
     /* Audio uses ports 200h,202-207h, so only initialize gameport on 201h. */
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	device_add(&gameport_201_device);
+    if (game_enabled)
+	device_add(&game_201_device);
 }
 
 

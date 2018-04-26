@@ -8,7 +8,7 @@
  *
  *		Implementation of 8250-style serial port.
  *
- * Version:	@(#)serial.c	1.0.4	2018/04/21
+ * Version:	@(#)serial.c	1.0.5	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,14 +41,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "emu.h"
-#include "machine/machine.h"
-#include "io.h"
-#include "pic.h"
-#include "mem.h"
-#include "rom.h"
-#include "timer.h"
-#include "device.h"
+#include "../emu.h"
+#include "../machine/machine.h"
+#include "../io.h"
+#include "../pic.h"
+#include "../mem.h"
+#include "../rom.h"
+#include "../timer.h"
+#include "../device.h"
 #include "serial.h"
 
 

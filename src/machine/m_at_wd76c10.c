@@ -8,7 +8,7 @@
  *
  *		Implementation of the WD76C10 system controller.
  *
- * Version:	@(#)m_at_wd76c10.c	1.0.5	2018/04/19
+ * Version:	@(#)m_at_wd76c10.c	1.0.6	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,11 +41,11 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
-#include "../device.h"
 #include "../io.h"
-#include "../keyboard.h"
 #include "../mem.h"
-#include "../serial.h"
+#include "../device.h"
+#include "../keyboard.h"
+#include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

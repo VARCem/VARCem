@@ -6,15 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the joystick driver.
+ *		Definitions for the joystick devices.
  *
- * Version:	@(#)joystick_standard.h	1.0.2	2018/03/15
+ * Version:	@(#)joystick.h	1.0.1	2018/04/25
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2008-2017 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,8 +34,50 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef EMU_JOYSTICK_H
+# define EMU_JOYSTICK_H
 
-extern const joystick_if_t joystick_standard;
-extern const joystick_if_t joystick_standard_4button;
-extern const joystick_if_t joystick_standard_6button;
-extern const joystick_if_t joystick_standard_8button;
+
+#define JOYSTICK_NONE		0		/* no joystick defined */
+
+#define MAX_JOYSTICKS		4
+
+#define POV_X			0x80000000
+#define POV_Y			0x40000000
+
+#define AXIS_NOT_PRESENT	-99999
+
+#define JOYSTICK_PRESENT(n)	(joystick_state[n].plat_joystick_nr != 0)
+
+
+typedef struct {
+    int		axis[8];
+    int		button[32];
+    int		pov[4];
+
+    int		plat_joystick_nr;
+    int		axis_mapping[8];
+    int		button_mapping[32];
+    int		pov_mapping[4][2];
+} joystick_t;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern joystick_t	joystick_state[MAX_JOYSTICKS];
+extern int		joysticks_present;
+
+
+/* Defined in the platform module. */
+extern void		joystick_init(void);
+extern void		joystick_close(void);
+extern void		joystick_process(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif	/*EMU_JOYSTICK_H*/

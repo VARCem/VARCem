@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.6	2018/04/03
+ * Version:	@(#)m_xt.c	1.0.8	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,10 +45,9 @@
 #include "../pit.h"
 #include "../mem.h"
 #include "../device.h"
+#include "../keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
-#include "../game/gameport.h"
-#include "../keyboard.h"
 #include "machine.h"
 
 
@@ -96,9 +95,6 @@ machine_xt_init(const machine_t *model, void *arg)
     device_add(&fdc_xt_device);
 
     nmi_init();
-
-    if (joystick_type != JOYSTICK_TYPE_NONE)
-	device_add(&gameport_device);
 }
 
 

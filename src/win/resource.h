@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.11	2018/04/25
+ * Version:	@(#)resource.h	1.0.12	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -165,14 +165,15 @@
 #define IDC_COMBO_PCAP		1091
 #define IDC_COMBO_NET		1092
 
-#define IDC_CHECK_PARALLEL1	1110	/* ports config */
-#define IDC_CHECK_PARALLEL2	1111
-#define IDC_CHECK_PARALLEL3	1112
-#define IDC_COMBO_PARALLEL1	1113
-#define IDC_COMBO_PARALLEL2	1114
-#define IDC_COMBO_PARALLEL3	1115
-#define IDC_CHECK_SERIAL1	1116
-#define IDC_CHECK_SERIAL2	1117
+#define IDC_CHECK_GAME		1110	/* ports config */
+#define IDC_CHECK_PARALLEL1	1111
+#define IDC_CHECK_PARALLEL2	1112
+#define IDC_CHECK_PARALLEL3	1113
+#define IDC_COMBO_PARALLEL1	1114
+#define IDC_COMBO_PARALLEL2	1115
+#define IDC_COMBO_PARALLEL3	1116
+#define IDC_CHECK_SERIAL1	1117
+#define IDC_CHECK_SERIAL2	1118
 
 #define IDC_OTHER_PERIPH	1120	/* other periph config */
 #define IDC_COMBO_SCSI		1121

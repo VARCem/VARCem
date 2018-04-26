@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.18	2018/04/25
+# Version:	@(#)Makefile.VC	1.0.20	2018/04/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -207,7 +207,7 @@ endif
 #		Nothing should need changing from here on..		#
 #########################################################################
 VPATH		:= $(EXPATH) . cpu \
-		   cdrom disk floppy floppy/lzf game sio machine \
+		   cdrom disk floppy floppy/lzf ports game sio machine \
 		   sound \
 		    sound/munt sound/munt/c_interface sound/munt/sha1 \
 		    sound/munt/srchelper \
@@ -333,7 +333,7 @@ else
 		   win_ddraw.obj win_d3d.obj \
 		   win_dialog.obj win_about.obj win_status.obj win_stbar.obj \
 		   win_settings.obj win_devconf.obj win_snd_gain.obj \
-		   win_new_floppy.obj win_jsconf.obj
+		   win_new_floppy.obj
 endif
 
 ifeq ($(OPENAL), y)
@@ -482,16 +482,19 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_at_430lx_nx.obj m_at_430fx.obj \
 		    m_at_430hx.obj m_at_430vx.obj
 
-DEVOBJ		:= bugger.obj parallel.obj parallel_dev.obj $(SERIAL) \
-		    sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
-		    sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
+DEVOBJ		:= bugger.obj \
+		   game.obj game_dev.obj \
+		   parallel.obj parallel_dev.obj \
+		   $(SERIAL) \
+		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
+		   sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
 		   keyboard.obj \
 		    keyboard_xt.obj keyboard_at.obj \
-		   gameport.obj \
-		    joystick_standard.obj joystick_ch_flightstick_pro.obj \
-		    joystick_sw_pad.obj joystick_tm_fcs.obj \
 		   mouse.obj \
 		    mouse_serial.obj mouse_ps2.obj mouse_bus.obj
+		   joystick.obj \
+		    js_standard.obj js_ch_fs_pro.obj \
+		    js_sw_pad.obj js_tm_fcs.obj
 
 FDDOBJ		:= fdc.obj \
 		   fdd.obj \

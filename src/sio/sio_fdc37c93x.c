@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.7	2018/04/19
+ * Version:	@(#)sio_fdc37c93x.c	1.0.8	2018/04/26
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -39,10 +39,10 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../io.h"
-#include "../device.h"
 #include "../pci.h"
-#include "../parallel.h"
-#include "../serial.h"
+#include "../device.h"
+#include "../ports/parallel.h"
+#include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"

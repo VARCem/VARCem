@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.18	2018/04/14
+ * Version:	@(#)emu.h	1.0.19	2018/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -110,7 +110,8 @@ extern int	video_card,			/* (C) graphics/video card */
 		voodoo_enabled;			/* (C) video option */
 extern int	mouse_type;			/* (C) selected mouse type */
 extern int	enable_sync;			/* (C) enable time sync */
-extern int	serial_enabled[],		/* (C) enable serial ports */
+extern int	game_enabled,			/* (C) enable game port */
+		serial_enabled[],		/* (C) enable serial ports */
 		parallel_enabled[],		/* (C) enable LPT ports */
 		parallel_device[],		/* (C) set up LPT devices */
 		bugger_enabled;			/* (C) enable ISAbugger */
