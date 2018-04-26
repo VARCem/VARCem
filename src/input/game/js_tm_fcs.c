@@ -8,7 +8,7 @@
  *
  *		Implementation of Thrust Master Flight Control System.
  *
- * Version:	@(#)js_tm_fcs.c	1.0.4	2018/04/26
+ * Version:	@(#)js_tm_fcs.c	1.0.5	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -39,9 +39,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../timer.h"
-#include "../ports/game_dev.h"
+#include "../../emu.h"
+#include "../../timer.h"
+#include "../../ports/game_dev.h"
 #include "joystick.h"
 
 

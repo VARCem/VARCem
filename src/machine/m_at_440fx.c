@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 440FX PCISet chip.
  *
- * Version:	@(#)m_at_440fx.c	1.0.4	2018/03/21
+ * Version:	@(#)m_at_440fx.c	1.0.5	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,10 +46,10 @@
 #include "../mem.h"
 #include "../memregs.h"
 #include "../device.h"
-#include "../keyboard.h"
+#include "../sio/sio.h"
+#include "../input/keyboard.h"
 #include "../intel_piix.h"
 #include "../intel_flash.h"
-#include "../sio/sio.h"
 #include "machine.h"
 
 

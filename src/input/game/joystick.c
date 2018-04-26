@@ -8,7 +8,7 @@
  *
  *		Implementation of generic joystick device.
  *
- * Version:	@(#)joystick.c	1.0.1	2018/04/25
+ * Version:	@(#)joystick.c	1.0.2	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -39,8 +39,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../timer.h"
+#include "../../emu.h"
+#include "../../timer.h"
 #include "joystick.h"
 
 

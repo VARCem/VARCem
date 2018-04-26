@@ -8,7 +8,7 @@
  *
  *		Implementation of the Flight Stick Pro.
  *
- * Version:	@(#)js_fs_pro.c	1.0.5	2018/04/26
+ * Version:	@(#)js_fs_pro.c	1.0.6	2018/04/26
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -39,9 +39,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../timer.h"
-#include "../ports/game_dev.h"
+#include "../../emu.h"
+#include "../../timer.h"
+#include "../../ports/game_dev.h"
 #include "joystick.h"
 
 

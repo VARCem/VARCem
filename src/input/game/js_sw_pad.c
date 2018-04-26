@@ -29,7 +29,7 @@
  *		- Some DOS stuff will write to 0x201 while a packet is
  *		  being transferred. This seems to be ignored.
  *
- * Version:	@(#)js_sw_pad.c	1.0.6	2018/04/26
+ * Version:	@(#)js_sw_pad.c	1.0.7	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -60,9 +60,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../timer.h"
-#include "../ports/game_dev.h"
+#include "../../emu.h"
+#include "../../timer.h"
+#include "../../ports/game_dev.h"
 #include "joystick.h"
 
 

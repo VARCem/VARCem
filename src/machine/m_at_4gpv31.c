@@ -11,7 +11,7 @@
  * NOTE:	The NEAT 82c206 code should be moved into a 82c206 module,
  *		so it can be re-used by other boards.
  *
- * Version:	@(#)m_4gpv31.c	1.0.3	2018/03/21
+ * Version:	@(#)m_4gpv31.c	1.0.4	2018/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -55,7 +55,7 @@
 #include "../emu.h"
 #include "../io.h"
 #include "../device.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"
