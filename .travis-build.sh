@@ -9,7 +9,7 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.3	2018/04/25
+# Version:	@(#).travis-build.sh	1.0.4	2018/04/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -62,7 +62,7 @@
 
     # Build the project.
     make -f win/mingw/Makefile.MinGW BUILD=${TRAVIS_BUILD_NUMBER}
-    if [ $? = 1 ]; then
+    if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 
 
 	exit 1
@@ -71,7 +71,7 @@
     echo "Build #${TRAVIS_BUILD_NUMBER} OK, packing up."
 
     zip -9 ../${TARGET}.zip *.exe
-    if [ $? = 1 ]; then
+    if [ $? != 0 ]; then
 	echo "ZIP failed, not uploading." 
 
 	exit 1
