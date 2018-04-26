@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.3	2018/04/25
+ * Version:	@(#)hdc_ide_xta.c	1.0.4	2018/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -793,7 +793,7 @@ do_recv:
 				drive->hpc = params->heads;
 				drive->spt = 17	/*hardcoded*/;
 #ifdef ENABLE_HDC_LOG
-				pclog("%s: set_params(%d) cyl=%d,hd=%d,spt=%d\n",
+				hdc_log("%s: set_params(%d) cyl=%d,hd=%d,spt=%d\n",
 					dev->name, dcb->drvsel, drive->tracks,
 					drive->hpc, drive->spt);
 #endif
@@ -943,7 +943,6 @@ hdc_read(uint16_t port, void *priv)
 				dev->callback = HDC_TIME;
 			}
 		} else if (dev->state == STATE_COMPL) {
-pclog("DCB=%02X  status=%02X comp=%02X\n", dev->dcb.cmd, dev->status, dev->comp);
 			ret = dev->comp;
 			dev->status = 0x00;
 			dev->state = STATE_IDLE;
@@ -1016,7 +1015,6 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 3:		/* DMA/IRQ intr register */
-//pclog("%s: WriteMASK(%02X)\n", dev->name, val);
 		dev->intr = val;
 		break;
     }

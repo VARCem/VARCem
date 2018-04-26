@@ -10,7 +10,7 @@
  *		ATA (AT-Attached) version, compared to the XT Attachment
  *		we also support in the XTA driver. These are both IDE, but
  *		not the same.
-
+ *
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
