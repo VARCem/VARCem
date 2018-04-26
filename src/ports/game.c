@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.8	2018/04/26
+ * Version:	@(#)game.c	1.0.9	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -42,12 +42,12 @@
 #include "../emu.h"
 #include "../machine/machine.h"
 #include "../cpu/cpu.h"
-#include "../device.h"
 #include "../io.h"
 #include "../timer.h"
+#include "../device.h"
+#include "../input/game/joystick.h"
 #include "game.h"
 #include "game_dev.h"
-#include "../game/joystick.h"
 
 
 typedef struct {

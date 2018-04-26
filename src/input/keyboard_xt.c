@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.5	2018/04/01
+ * Version:	@(#)keyboard_xt.c	1.0.6	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,17 +41,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
-#include "emu.h"
-#include "machine/machine.h"
-#include "io.h"
-#include "pic.h"
-#include "pit.h"
-#include "ppi.h"
-#include "timer.h"
-#include "device.h"
-#include "sound/sound.h"
-#include "sound/snd_speaker.h"
-#include "video/video.h"
+#include "../emu.h"
+#include "../machine/machine.h"
+#include "../io.h"
+#include "../pic.h"
+#include "../pit.h"
+#include "../ppi.h"
+#include "../timer.h"
+#include "../device.h"
+#include "../sound/sound.h"
+#include "../sound/snd_speaker.h"
+#include "../video/video.h"
 #include "keyboard.h"
 
 

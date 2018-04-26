@@ -13,7 +13,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.9	2018/04/26
+ * Version:	@(#)win_joystick.cpp	1.0.10	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,7 @@
 #include "../config.h"
 #include "../device.h"
 #include "../ports/game_dev.h"
-#include "../game/joystick.h"
+#include "../input/game/joystick.h"
 #include "../plat.h"
 #include "win.h"
 

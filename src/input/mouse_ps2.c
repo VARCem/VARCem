@@ -8,7 +8,7 @@
  *
  *		Implementation of PS/2 series Mouse devices.
  *
- * Version:	@(#)mouse_ps2.c	1.0.5	2018/04/20
+ * Version:	@(#)mouse_ps2.c	1.0.6	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,9 +41,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "emu.h"
-#include "config.h"
-#include "device.h"
+#include "../emu.h"
+#include "../config.h"
+#include "../device.h"
 #include "keyboard.h"
 #include "mouse.h"
 

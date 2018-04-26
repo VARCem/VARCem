@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.18	2018/04/26
+ * Version:	@(#)config.c	1.0.19	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,8 +57,8 @@
 #include "ports/serial.h"
 #include "ports/parallel.h"
 #include "ports/parallel_dev.h"
-#include "mouse.h"
-#include "game/joystick.h"
+#include "input/mouse.h"
+#include "input/game/joystick.h"
 #include "floppy/fdd.h"
 #include "floppy/fdc.h"
 #include "disk/hdd.h"

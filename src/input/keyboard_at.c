@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.10	2018/04/02
+ * Version:	@(#)keyboard_at.c	1.0.11	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,24 +41,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
-#include "emu.h"
-#include "cpu/cpu.h"
-#include "io.h"
-#include "pic.h"
-#include "pit.h"
-#include "ppi.h"
-#include "mem.h"
-#include "device.h"
-#include "timer.h"
-#include "machine/machine.h"
-#include "machine/m_at_t3100e.h"
-#include "machine/m_xt_xi8088.h"
-#include "floppy/fdd.h"
-#include "floppy/fdc.h"
-#include "sound/sound.h"
-#include "sound/snd_speaker.h"
-#include "video/video.h"
+#include "../emu.h"
+#include "../cpu/cpu.h"
+#include "../machine/machine.h"
+#include "../io.h"
+#include "../pic.h"
+#include "../pit.h"
+#include "../ppi.h"
+#include "../mem.h"
+#include "../timer.h"
+#include "../device.h"
+#include "../floppy/fdd.h"
+#include "../floppy/fdc.h"
+#include "../sound/sound.h"
+#include "../sound/snd_speaker.h"
+#include "../video/video.h"
 #include "keyboard.h"
+
+#include "../machine/m_at_t3100e.h"
+#include "../machine/m_xt_xi8088.h"
 
 
 #define STAT_PARITY     0x80

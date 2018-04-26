@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.16	2018/04/26
+ * Version:	@(#)m_ps1.c	1.0.17	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,11 +67,11 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../keyboard.h"
-#include "../mouse.h"
 #include "../ports/game.h"
 #include "../ports/parallel.h"
 #include "../ports/serial.h"
+#include "../input/keyboard.h"
+#include "../input/mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"

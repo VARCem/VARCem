@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.7	2018/04/26
+ * Version:	@(#)m_at.c	1.0.8	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,7 @@
 #include "../mem.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"

@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.8	2018/04/19
+ * Version:	@(#)mouse.c	1.0.9	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#include "emu.h"
-#include "device.h"
+#include "../emu.h"
+#include "../device.h"
 #include "mouse.h"
 
 

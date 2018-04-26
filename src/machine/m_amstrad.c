@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.14	2018/04/26
+ * Version:	@(#)m_amstrad.c	1.0.15	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,9 +77,9 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../keyboard.h"
-#include "../mouse.h"
 #include "../ports/parallel.h"
+#include "../input/keyboard.h"
+#include "../input/mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../sound/sound.h"

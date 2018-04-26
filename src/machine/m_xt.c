@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.8	2018/04/26
+ * Version:	@(#)m_xt.c	1.0.9	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,7 @@
 #include "../pit.h"
 #include "../mem.h"
 #include "../device.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

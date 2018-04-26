@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.23	2018/04/26
+ * Version:	@(#)win_settings.c	1.0.24	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,18 +52,18 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../machine/machine.h"
-#include "../mouse.h"
 #include "../ports/game_dev.h"
 #include "../ports/parallel.h"
 #include "../ports/parallel_dev.h"
 #include "../ports/serial.h"
-#include "../game/joystick.h"
+#include "../input/mouse.h"
+#include "../input/game/joystick.h"
+#include "../floppy/fdd.h"
 #include "../disk/hdd.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
 #include "../disk/zip.h"
 #include "../cdrom/cdrom.h"
-#include "../floppy/fdd.h"
 #include "../scsi/scsi.h"
 #include "../network/network.h"
 #include "../sound/sound.h"

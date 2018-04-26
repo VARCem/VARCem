@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.9	2018/04/26
+ * Version:	@(#)m_tandy.c	1.0.10	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,7 +53,7 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../sound/sound.h"

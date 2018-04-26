@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.33	2018/04/26
+# Version:	@(#)Makefile.mingw	1.0.34	2018/04/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -202,7 +202,8 @@ endif
 #		Nothing should need changing from here on..		#
 #########################################################################
 VPATH		:= $(EXPATH) . cpu \
-		   cdrom disk floppy floppy/lzf ports game sio machine \
+		   machine sio ports input input/game \
+		   cdrom disk floppy floppy/lzf \
 		   sound \
 		    sound/munt sound/munt/c_interface sound/munt/sha1 \
 		    sound/munt/srchelper \

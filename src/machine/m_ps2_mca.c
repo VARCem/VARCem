@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.12	2018/04/26
+ * Version:	@(#)m_ps2_mca.c	1.0.13	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,10 +54,10 @@
 #include "../device.h"
 #include "../nvr.h"
 #include "../nvr_ps2.h"
-#include "../keyboard.h"
-#include "../mouse.h"
 #include "../ports/parallel.h"
 #include "../ports/serial.h"
+#include "../input/keyboard.h"
+#include "../input/mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

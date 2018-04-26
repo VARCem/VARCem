@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.2	2018/03/20
+ * Version:	@(#)pci.c	1.0.3	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,14 +47,14 @@
 #include "cpu/cpu.h"
 #include "io.h"
 #include "pic.h"
+#include "pci.h"
 #include "mem.h"
 #include "device.h"
-#include "pci.h"
-#include "keyboard.h"
-#include "cdrom/cdrom.h"
+#include "input/keyboard.h"
 #include "disk/hdc.h"
 #include "disk/hdc_ide.h"
 #include "disk/zip.h"
+#include "cdrom/cdrom.h"
 
 
 static uint64_t pci_irq_hold[16];

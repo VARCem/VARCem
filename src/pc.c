@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.28	2018/04/26
+ * Version:	@(#)pc.c	1.0.29	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,9 +68,9 @@
 #include "ports/game.h"
 #include "ports/serial.h"
 #include "ports/parallel.h"
-#include "keyboard.h"
-#include "mouse.h"
-#include "game/joystick.h"
+#include "input/keyboard.h"
+#include "input/mouse.h"
+#include "input/game/joystick.h"
 #include "floppy/fdd.h"
 #include "floppy/fdd_common.h"
 #include "disk/hdd.h"

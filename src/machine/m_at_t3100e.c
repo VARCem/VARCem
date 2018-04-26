@@ -117,7 +117,7 @@
  *                       bit 2 set for single-pixel LCD font
  *                       bits 0,1 for display font
  *
- * Version:	@(#)m_at_t3100e.c	1.0.5	2018/03/21
+ * Version:	@(#)m_at_t3100e.c	1.0.6	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -151,12 +151,12 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../cpu/cpu.h"
 #include "../io.h"
-#include "../mouse.h"
 #include "../mem.h"
 #include "../device.h"
-#include "../keyboard.h"
-#include "../cpu/cpu.h"
+#include "../input/keyboard.h"
+#include "../input/mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

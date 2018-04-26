@@ -49,7 +49,7 @@
  *
  *		Based on an early driver for MINIX 1.5.
  *
- * Version:	@(#)mouse_bus.c	1.0.5	2018/04/20
+ * Version:	@(#)mouse_bus.c	1.0.6	2018/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -90,13 +90,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <inttypes.h>
-#include "emu.h"
-#include "config.h"
-#include "io.h"
-#include "pic.h"
-#include "timer.h"
-#include "device.h"
+#include "../emu.h"
+#include "../config.h"
+#include "../io.h"
+#include "../pic.h"
+#include "../timer.h"
+#include "../device.h"
 #include "mouse.h"
 
 

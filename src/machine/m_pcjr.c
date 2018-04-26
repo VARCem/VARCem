@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.6	2018/04/26
+ * Version:	@(#)m_pcjr.c	1.0.7	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,7 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../ports/serial.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../sound/sound.h"

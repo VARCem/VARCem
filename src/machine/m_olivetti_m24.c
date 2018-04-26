@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.9	2018/04/26
+ * Version:	@(#)m_olivetti_m24.c	1.0.10	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,8 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../keyboard.h"
-#include "../mouse.h"
+#include "../input/keyboard.h"
+#include "../input/mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../sound/sound.h"

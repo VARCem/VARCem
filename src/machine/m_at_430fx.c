@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430FX PCISet chip.
  *
- * Version:	@(#)m_at_430fx.c	1.0.10	2018/04/25
+ * Version:	@(#)m_at_430fx.c	1.0.11	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,15 +41,15 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../pci.h"
 #include "../mem.h"
 #include "../memregs.h"
 #include "../rom.h"
-#include "../pci.h"
 #include "../device.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
+#include "../sio/sio.h"
 #include "../intel_piix.h"
 #include "../intel_flash.h"
-#include "../sio/sio.h"
 #include "../video/video.h"
 #include "machine.h"
 

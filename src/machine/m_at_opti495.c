@@ -260,7 +260,7 @@ Note:	the block address is forced to be a multiple of the block size by
 	  ignoring the appropriate number of the least-significant bits
 SeeAlso: #P0178,#P0187
  *
- * Version:	@(#)m_at_opti495.c	1.0.3	2018/03/21
+ * Version:	@(#)m_at_opti495.c	1.0.4	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -295,9 +295,9 @@ SeeAlso: #P0178,#P0187
 #include "../emu.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
-#include "../device.h"
-#include "../keyboard.h"
 #include "../mem.h"
+#include "../device.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

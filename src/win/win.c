@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.13	2018/04/14
+ * Version:	@(#)win.c	1.0.14	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,7 @@
 #include "../version.h"
 #include "../config.h"
 #include "../device.h"
-#include "../mouse.h"
+#include "../input/mouse.h"
 #include "../video/video.h"
 #define GLOBAL
 #include "../plat.h"

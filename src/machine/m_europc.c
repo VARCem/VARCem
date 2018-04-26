@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.10	2018/04/26
+ * Version:	@(#)m_europc.c	1.0.11	2018/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -120,9 +120,9 @@
 #include "../rom.h"
 #include "../nvr.h"
 #include "../device.h"
-#include "../keyboard.h"
-#include "../mouse.h"
 #include "../ports/parallel.h"
+#include "../input/keyboard.h"
+#include "../input/mouse.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"

@@ -8,7 +8,7 @@
  *
  *		Implementation the ALI M1429 mainboard.
  *
- * Version:	@(#)m_at_ali1429.c	1.0.3	2018/03/21
+ * Version:	@(#)m_at_ali1429.c	1.0.4	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,7 @@
 #include "../io.h"
 #include "../mem.h"
 #include "../device.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"

@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.4	2018/04/01
+ * Version:	@(#)keyboard.c	1.0.5	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,8 +42,8 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
-#include "emu.h"
-#include "machine/machine.h"
+#include "../emu.h"
+#include "../machine/machine.h"
 #include "keyboard.h"
 
 

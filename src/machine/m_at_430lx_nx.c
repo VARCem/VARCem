@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430LX and 430NX PCISet chips.
  *
- * Version:	@(#)m_at_430lx_nx.c	1.0.4	2018/03/21
+ * Version:	@(#)m_at_430lx_nx.c	1.0.5	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,16 +41,16 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../pci.h"
 #include "../mem.h"
 #include "../memregs.h"
 #include "../rom.h"
-#include "../pci.h"
 #include "../device.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
+#include "../sio/sio.h"
 #include "../intel.h"
 #include "../intel_flash.h"
 #include "../intel_sio.h"
-#include "../sio/sio.h"
 #include "machine.h"
 
 

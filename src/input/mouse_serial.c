@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.7	2018/04/26
+ * Version:	@(#)mouse_serial.c	1.0.8	2018/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,11 +51,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "emu.h"
-#include "config.h"
-#include "device.h"
-#include "timer.h"
-#include "ports/serial.h"
+#include "../emu.h"
+#include "../config.h"
+#include "../device.h"
+#include "../timer.h"
+#include "../ports/serial.h"
 #include "mouse.h"
 
 

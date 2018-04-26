@@ -8,7 +8,7 @@
  *
  *		Implementation of the HEADLAND AT286 chipset.
  *
- * Version:	@(#)m_at_headland.c	1.0.3	2018/03/21
+ * Version:	@(#)m_at_headland.c	1.0.4	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,9 +44,9 @@
 #include "../cpu/cpu.h"
 #include "../cpu/x86.h"
 #include "../io.h"
-#include "../device.h"
-#include "../keyboard.h"
 #include "../mem.h"
+#include "../device.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

@@ -12,7 +12,7 @@
  *		    word 0 - base address
  *		    word 1 - bits 1-15 = byte count, bit 31 = end of transfer
  *
- * Version:	@(#)intel_piix.c	1.0.2	2018/03/04
+ * Version:	@(#)intel_piix.c	1.0.3	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,10 +47,10 @@
 #include "emu.h"
 #include "dma.h"
 #include "io.h"
-#include "device.h"
-#include "keyboard.h"
-#include "mem.h"
 #include "pci.h"
+#include "mem.h"
+#include "device.h"
+#include "input/keyboard.h"
 #include "disk/hdc.h"
 #include "disk/hdc_ide.h"
 #include "intel_piix.h"

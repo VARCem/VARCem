@@ -10,7 +10,7 @@
  *
  *		Re-worked version based on the 82C235 datasheet and errata.
  *
- * Version:	@(#)m_at_scat.c	1.0.6	2018/03/27
+ * Version:	@(#)m_at_scat.c	1.0.7	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -44,11 +44,11 @@
 #include "../emu.h"
 #include "../cpu/cpu.h"
 #include "../cpu/x86.h"
-#include "../nmi.h"
 #include "../io.h"
+#include "../nmi.h"
 #include "../mem.h"
 #include "../device.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

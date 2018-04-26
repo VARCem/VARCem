@@ -10,7 +10,7 @@
  *
  *		This is the chipset used in the AMI 286 clone model.
  *
- * Version:	@(#)m_at_neat.c	1.0.3	2018/03/21
+ * Version:	@(#)m_at_neat.c	1.0.4	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,9 +43,9 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
-#include "../device.h"
 #include "../io.h"
-#include "../keyboard.h"
+#include "../device.h"
+#include "../input/keyboard.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "machine.h"

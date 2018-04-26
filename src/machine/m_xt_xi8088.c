@@ -8,7 +8,7 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xt_xi8088.c	1.0.8	2018/04/26
+ * Version:	@(#)m_xt_xi8088.c	1.0.9	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,7 +49,7 @@
 #include "../nmi.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../keyboard.h"
+#include "../input/keyboard.h"
 #include "../ports/parallel.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
