@@ -12,23 +12,14 @@
     <ClCompile Include="..\..\..\intel_piix4.c" />
     <ClCompile Include="..\..\..\intel_sio.c" />
     <ClCompile Include="..\..\..\io.c" />
-    <ClCompile Include="..\..\..\keyboard.c" />
-    <ClCompile Include="..\..\..\keyboard_at.c" />
-    <ClCompile Include="..\..\..\keyboard_xt.c" />
     <ClCompile Include="..\..\..\mca.c" />
     <ClCompile Include="..\..\..\mcr.c" />
     <ClCompile Include="..\..\..\mem.c" />
     <ClCompile Include="..\..\..\memregs.c" />
-    <ClCompile Include="..\..\..\mouse.c" />
-    <ClCompile Include="..\..\..\mouse_bus.c" />
-    <ClCompile Include="..\..\..\mouse_ps2.c" />
-    <ClCompile Include="..\..\..\mouse_serial.c" />
     <ClCompile Include="..\..\..\nmi.c" />
     <ClCompile Include="..\..\..\nvr.c" />
     <ClCompile Include="..\..\..\nvr_at.c" />
     <ClCompile Include="..\..\..\nvr_ps2.c" />
-    <ClCompile Include="..\..\..\parallel.c" />
-    <ClCompile Include="..\..\..\parallel_dev.c" />
     <ClCompile Include="..\..\..\pc.c" />
     <ClCompile Include="..\..\..\pci.c" />
     <ClCompile Include="..\..\..\pic.c" />
@@ -36,7 +27,6 @@
     <ClCompile Include="..\..\..\ppi.c" />
     <ClCompile Include="..\..\..\random.c" />
     <ClCompile Include="..\..\..\rom.c" />
-    <ClCompile Include="..\..\..\serial.c" />
     <ClCompile Include="..\..\..\timer.c" />
     <ClCompile Include="..\..\..\cdrom\cdrom.c">
       <Filter>cdrom</Filter>
@@ -160,21 +150,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\floppy\fdi2raw.c">
       <Filter>floppy</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\game\gameport.c">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_tm_fcs.c">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_sw_pad.c">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_standard.c">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_ch_flightstick_pro.c">
-      <Filter>game</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\m_amstrad.c">
       <Filter>machine</Filter>
@@ -710,9 +685,6 @@
     <ClCompile Include="..\..\..\win\win_joystick.cpp">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_jsconf.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_keyboard.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -805,6 +777,57 @@
     <ClCompile Include="..\..\..\machine\m_ps1_hdc.c">
       <Filter>machine</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\input\game\joystick.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\game\js_ch_fs_pro.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\game\js_standard.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\game\js_sw_pad.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\game\js_tm_fcs.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\keyboard.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\keyboard_at.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\keyboard_xt.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse_bus.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse_ps2.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse_serial.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\game.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\game_dev.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\parallel.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\parallel_dev.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\serial.c">
+      <Filter>ports</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\bugger.h" />
@@ -818,13 +841,9 @@
     <ClInclude Include="..\..\..\intel_piix.h" />
     <ClInclude Include="..\..\..\intel_sio.h" />
     <ClInclude Include="..\..\..\io.h" />
-    <ClInclude Include="..\..\..\keyboard.h" />
-    <ClInclude Include="..\..\..\parallel.h" />
-    <ClInclude Include="..\..\..\parallel_dev.h" />
     <ClInclude Include="..\..\..\mca.h" />
     <ClInclude Include="..\..\..\mem.h" />
     <ClInclude Include="..\..\..\memregs.h" />
-    <ClInclude Include="..\..\..\mouse.h" />
     <ClInclude Include="..\..\..\nmi.h" />
     <ClInclude Include="..\..\..\nvr.h" />
     <ClInclude Include="..\..\..\nvr_ps2.h" />
@@ -837,7 +856,6 @@
     <ClInclude Include="..\..\..\ppi.h" />
     <ClInclude Include="..\..\..\random.h" />
     <ClInclude Include="..\..\..\rom.h" />
-    <ClInclude Include="..\..\..\serial.h" />
     <ClInclude Include="..\..\..\timer.h" />
     <ClInclude Include="..\..\..\ui.h" />
     <ClInclude Include="..\..\..\cdrom\cdrom.h">
@@ -1100,21 +1118,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\floppy\fdi2raw.h">
       <Filter>floppy</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\gameport.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_tm_fcs.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_sw_pad.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_standard.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_ch_flightstick_pro.h">
-      <Filter>game</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\lang\language.h">
       <Filter>lang</Filter>
@@ -1504,6 +1507,30 @@
     <ClInclude Include="..\..\..\floppy\lzf\lzfP.h">
       <Filter>floppy\lzf</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\input\game\joystick.h">
+      <Filter>input\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\input\keyboard.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\input\mouse.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\game.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\game_dev.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\parallel.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\parallel_dev.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\serial.h">
+      <Filter>ports</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cdrom">
@@ -1520,9 +1547,6 @@
     </Filter>
     <Filter Include="floppy">
       <UniqueIdentifier>{a9a86e4f-b4eb-4687-a979-f97b394db706}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="game">
-      <UniqueIdentifier>{542ab504-19c9-43b6-91b6-b3a205ffeb97}</UniqueIdentifier>
     </Filter>
     <Filter Include="lang">
       <UniqueIdentifier>{232b8441-5106-47b6-939d-ebd46589c0b2}</UniqueIdentifier>
@@ -1565,6 +1589,15 @@
     </Filter>
     <Filter Include="floppy\lzf">
       <UniqueIdentifier>{98d7b877-02b8-4c6b-b2b6-d2cc49f357bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="input">
+      <UniqueIdentifier>{923338ef-338a-4592-9839-9f8587d93c52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="input\game">
+      <UniqueIdentifier>{fc7fc92b-b4da-4f3c-a5c7-4d2548b60fb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ports">
+      <UniqueIdentifier>{b9d0388f-b14d-4448-85fe-7179fff3f77f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
