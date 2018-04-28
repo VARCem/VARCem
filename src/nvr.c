@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.7	2018/04/21
+ * Version:	@(#)nvr.c	1.0.8	2018/04/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -285,8 +285,8 @@ nvr_save(void)
 void
 nvr_time_get(struct tm *tm)
 {
-    int8_t dom, mon, sum, wd;
-    int16_t cent, yr;
+    uint8_t dom, mon, sum, wd;
+    uint16_t cent, yr;
 
     tm->tm_sec = intclk.tm_sec;
     tm->tm_min = intclk.tm_min;
@@ -312,6 +312,7 @@ nvr_time_set(struct tm *tm)
     intclk.tm_min = tm->tm_min;
     intclk.tm_hour = tm->tm_hour;
     intclk.tm_mday = tm->tm_mday;
+    intclk.tm_wday = tm->tm_wday;
     intclk.tm_mon = (tm->tm_mon + 1);
     intclk.tm_year = (tm->tm_year + 1900);
 }
