@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.21	2018/04/26
+# Version:	@(#)Makefile.VC	1.0.22	2018/04/29
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -213,7 +213,7 @@ VPATH		:= $(EXPATH) . cpu \
 		    sound/munt sound/munt/c_interface sound/munt/sha1 \
 		    sound/munt/srchelper \
 		    sound/resid-fp \
-		   scsi video network network/slirp win
+		   scsi video network network/slirp ui win
 
 #
 # Select the required build environment.
@@ -455,6 +455,8 @@ MAINOBJ		:= pc.obj config.obj \
 		   memregs.obj rom.obj rom_load.obj device.obj nvr.obj \
 		   nvr_at.obj nvr_ps2.obj $(VNCOBJ) $(RDPOBJ)
 
+UIOBJ		+= ui_main.obj ui_new_floppy.obj ui_stbar.obj
+
 INTELOBJ	:= intel.obj \
 		    intel_flash.obj \
 		    intel_sio.obj \
@@ -597,7 +599,7 @@ endif
 OBJ		:= $(MAINOBJ) $(INTELOBJ) $(CPUOBJ) $(MCHOBJ) $(DEVOBJ) \
 		   $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
-		   $(PLATOBJ) $(UIOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
+		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
 ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif
