@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.7	2018/04/25
+ * Version:	@(#)device.c	1.0.8	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,8 +48,8 @@
 #include "device.h"
 #include "machine/machine.h"
 #include "sound/sound.h"
+#include "ui/ui.h"
 #include "plat.h"
-#include "ui.h"
 
 
 #define DEVICE_MAX	256			/* max # of devices */

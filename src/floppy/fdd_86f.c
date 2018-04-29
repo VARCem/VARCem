@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.7	2018/04/10
+ * Version:	@(#)fdd_86f.c	1.0.8	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,8 +49,8 @@
 #include "../dma.h"
 #include "../nvr.h"
 #include "../random.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "fdd.h"
 #include "fdc.h"
 #include "fdd_86f.h"

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Window dialog.
  *
- * Version:	@(#)win_status.c	1.0.3	2018/03/07
+ * Version:	@(#)win_status.c	1.0.4	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,12 +51,13 @@
 # include "../cpu/codegen.h"
 #endif
 #include "../device.h"
+#include "../ui/ui.h"
 #include "../plat.h"
 #include "win.h"
 
 
 
-HWND	hwndStatus = NULL;
+static HWND	hwndStatus = NULL;
 
 
 extern int sreadlnum, swritelnum, segareads, segawrites, scycles_lost;
@@ -69,7 +70,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-StatusWindowProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     char temp[4096];
     uint64_t new_time;
@@ -139,19 +140,19 @@ StatusWindowProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 void
-StatusWindowCreate(HWND hwndParent)
+dlg_status(void)
 {
     HWND hwnd;
 
-    hwnd = CreateDialog(hinstance, (LPCSTR)DLG_STATUS,
-			hwndParent, StatusWindowProcedure);
+    hwnd = CreateDialog(hinstance, (LPCSTR)DLG_STATUS, hwndMain, dlg_proc);
+
     ShowWindow(hwnd, SW_SHOW);
 }
 
 
 /* Tell the Status window to update. */
 void
-ui_status_update(void)
+dlg_status_update(void)
 {
     SendMessage(hwndStatus, WM_USER, 0, 0);
 }

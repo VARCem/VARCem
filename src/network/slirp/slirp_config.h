@@ -87,7 +87,11 @@
 #endif
 
 /* Define to sizeof(char *) */
-#define SIZEOF_CHAR_P SIZEOF_VOID_P
+#ifdef SIZEOF_VOID_P
+# define SIZEOF_CHAR_P SIZEOF_VOID_P
+#else
+# define SIZEOF_CHAR_P	4	/*FIXME: sizeof() does not work in cpp!*/
+#endif
 
 /* Define if you have random() */
 #undef HAVE_RANDOM

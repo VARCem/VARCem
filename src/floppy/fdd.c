@@ -8,7 +8,9 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.8	2018/04/10
+ * TODO:	Implement the ENABLE_FDD_LOG stuff.
+ *
+ * Version:	@(#)fdd.c	1.0.10	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,8 +48,8 @@
 #include "../rom.h"
 #include "../config.h"
 #include "../timer.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "fdd.h"
 #include "fdd_86f.h"
 #include "fdd_fdi.h"
@@ -480,7 +482,7 @@ no_load:
         drive_empty[drive] = 1;
 	fdd_set_head(drive, 0);
 	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
-	ui_sb_update_icon_state(drive, 1);
+	ui_sb_icon_state(drive, 1);
 
 	return 0;
 }
@@ -511,7 +513,7 @@ void fdd_close(int drive)
 
 	d86f_destroy(drive);
 
-	ui_sb_update_icon_state(drive, 1);
+	ui_sb_icon_state(drive, 1);
 }
 
 int fdd_notfound = 0;

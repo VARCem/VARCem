@@ -11,7 +11,7 @@
  * NOTE:	The NEAT 82c206 code should be moved into a 82c206 module,
  *		so it can be re-used by other boards.
  *
- * Version:	@(#)m_4gpv31.c	1.0.4	2018/04/26
+ * Version:	@(#)m_4gpv31.c	1.0.5	2018/04/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -69,7 +69,7 @@ typedef struct {
 } neat_t;
 
 
-#if NOT_USED
+#if 0	/*NOT_USED*/
 static void
 neat_wrems(uint32_t addr, uint8_t val, void *priv)
 {

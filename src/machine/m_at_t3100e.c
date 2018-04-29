@@ -117,7 +117,7 @@
  *                       bit 2 set for single-pixel LCD font
  *                       bits 0,1 for display font
  *
- * Version:	@(#)m_at_t3100e.c	1.0.6	2018/04/26
+ * Version:	@(#)m_at_t3100e.c	1.0.7	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -285,7 +285,7 @@ port_to_page(uint16_t addr)
 }
 
 
-#if NOTUSED
+#if 0	/*NOT_USED*/
 /* Used to dump the memory mapping table, for debugging. */
 static void
 dump_mappings(void)
@@ -335,7 +335,7 @@ t3100e_map_ram(uint8_t val)
     int32_t upper_len;
     int n;
 
-#if NOTUSED
+#if 0	/*NOT_USED*/
     if (t3100e_log) {	
 	pclog("OUT 0x8084, %02x [ set memory mapping :", val | 0x40); 
 	if (val & 1) pclog("ENABLE_EMS ");
@@ -385,7 +385,7 @@ t3100e_map_ram(uint8_t val)
 	t3100e_ems_out(t3100e_ems_page_reg[n], t3100e_ems.page[n], 
 				&t3100e_ems);
 
-#if NOTUSED
+#if 0	/*NOT_USED*/
     dump_mappings();
 #endif
 }
@@ -399,7 +399,7 @@ t3100e_sys_in(uint16_t addr, void *p)
     /* The low 4 bits always seem to be 0x0C. The high 4 are a 
      * notification sent by the keyboard controller when it detects
      * an [Fn] key combination */
-#if NOTUSED
+#if 0	/*NOT_USED*/
     if (t3100e_log) pclog("IN 0x8084\n");
 #endif
 
@@ -415,7 +415,7 @@ t3100e_sys_out(uint16_t addr, uint8_t val, void *p)
 
     switch (val & 0xE0) {
 	case 0x00:	/* Set serial port IRQs. Not implemented */
-#if NOTUSED
+#if 0	/*NOT_USED*/
 		if (t3100e_log)
 		    pclog("OUT 0x8084, %02x [ set serial port IRQs]\n", val);
 #endif
@@ -430,7 +430,7 @@ t3100e_sys_out(uint16_t addr, uint8_t val, void *p)
 		break;
 
 	default:	/* Other options not implemented. */
-#if NOTUSED
+#if 0	/*NOT_USED*/
 		if (t3100e_log) pclog("OUT 0x8084, %02x\n", val);
 #endif
 		break;
@@ -457,7 +457,7 @@ t3100e_ems_out(uint16_t addr, uint8_t val, void *p)
     int pg = port_to_page(addr);
 
     regs->page_exec[pg & 3] = t3100e_ems_execaddr(regs, pg, val);
-#if UNUSED
+#if 0	/*NOT_USED*/
     if (t3100e_log) pclog("EMS: page %d %02x -> %02x [%06x]\n",
 			pg, regs->page[pg], val, regs->page_exec[pg & 3]);
 #endif
@@ -466,14 +466,14 @@ t3100e_ems_out(uint16_t addr, uint8_t val, void *p)
     /* Bit 7 set if page is enabled, reset if page is disabled */
     pg &= 3;
     if (regs->page_exec[pg]) {
-#if UNUSED
+#if 0	/*NOT_USED*/
 	if (t3100e_log) pclog("Enabling EMS RAM at %05x\n",
 			page_to_addr(pg));
 #endif
 	mem_mapping_enable(&regs->mapping[pg]);
 	mem_mapping_set_exec(&regs->mapping[pg], ram + regs->page_exec[pg]);
     } else {
-#if UNUSED
+#if 0	/*NOT_USED*/
 	if (t3100e_log) pclog("Disabling EMS RAM at %05x\n",
 			page_to_addr(pg));
 #endif
@@ -649,7 +649,7 @@ machine_at_t3100e_init(const machine_t *model, void *arg)
 
     /* Map the EMS page frame */
     for (pg = 0; pg < 4; pg++) {
-#if UNUSED
+#if 0	/*NOT_USED*/
 	if (t3100e_log) pclog("Adding memory map at %x for page %d\n", page_to_addr(pg), pg);
 #endif
 	mem_mapping_add(&t3100e_ems.mapping[pg], 

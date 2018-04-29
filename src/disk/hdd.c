@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.3	2018/04/23
+ * Version:	@(#)hdd.c	1.0.5	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,8 +41,8 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "hdd.h"
 
 
@@ -74,6 +74,21 @@ hdd_init(void)
     memset(hdd, 0x00, sizeof(hdd));
 
     return(0);
+}
+
+
+int
+hdd_count(int bus)
+{
+    int c = 0;
+    int i;
+
+    for (i=0; i<HDD_NUM; i++) {
+	if (hdd[i].bus == bus)
+		c++;
+    }
+
+    return(c);
 }
 
 

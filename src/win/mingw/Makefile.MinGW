@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.34	2018/04/26
+# Version:	@(#)Makefile.mingw	1.0.35	2018/04/28
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -208,7 +208,7 @@ VPATH		:= $(EXPATH) . cpu \
 		    sound/munt sound/munt/c_interface sound/munt/sha1 \
 		    sound/munt/srchelper \
 		    sound/resid-fp \
-		   scsi video network network/slirp win
+		   scsi video network network/slirp ui win
 
 #
 # Select the required build environment. We have, uhm, many..
@@ -474,12 +474,14 @@ endif
 
 # Final versions of the toolchain flags.
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
-		   $(AFLAGS) -fomit-frame-pointer -mstackrealign -Wall
+		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
+		   -Wall -Wundef #-Wunused-parameter -Wmissing-declarations
+
 CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fno-strict-aliasing -fvisibility=hidden \
-		   -Wall -Wundef -fvisibility-inlines-hidden \
-		   -Wunused-parameter -Wno-ctor-dtor-privacy \
-		   -Woverloaded-virtual
+		   -fvisibility-inlines-hidden \
+		   -Wall -Wundef -Wunused-parameter -Wmissing-declarations \
+		   -Wno-ctor-dtor-privacy -Woverloaded-virtual
 
 
 #########################################################################
@@ -489,6 +491,8 @@ MAINOBJ		:= pc.o config.o \
 		   random.o timer.o io.o dma.o nmi.o pic.o pit.o ppi.o \
 		   pci.o mca.o mcr.o mem.o memregs.o rom.o rom_load.o \
 		   device.o nvr.o nvr_at.o nvr_ps2.o $(VNCOBJ) $(RDPOBJ)
+
+UIOBJ		+= ui_main.o ui_new_floppy.o ui_stbar.o
 
 INTELOBJ	:= intel.o \
 		    intel_flash.o \
@@ -632,7 +636,7 @@ endif
 OBJ		:= $(MAINOBJ) $(INTELOBJ) $(CPUOBJ) $(MCHOBJ) $(DEVOBJ) \
 		   $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
-		   $(PLATOBJ) $(UIOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
+		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
 ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif

@@ -8,7 +8,7 @@
  *
  *		Handle the platform-side of CDROM drives.
  *
- * Version:	@(#)win_cdrom.c	1.0.6	2018/04/23
+ * Version:	@(#)win_cdrom.c	1.0.7	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,8 +50,8 @@
 #include "../cdrom/cdrom_null.h"
 #include "../scsi/scsi.h"
 #include "../scsi/scsi_disk.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "win.h"
 
 
@@ -90,8 +90,8 @@ cdrom_eject(uint8_t id)
 
     if ((cdrom_drives[id].host_drive >= 'A') &&
 	(cdrom_drives[id].host_drive <= 'Z')) {
-	ui_sb_check_menu_item(SB_CDROM|id,
-		IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), MF_UNCHECKED);
+	ui_sb_menu_set_item(SB_CDROM | id,
+		IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), 0);
     }
 
     if (cdrom_image[id].prev_image_path) {
@@ -112,12 +112,12 @@ cdrom_eject(uint8_t id)
 	cdrom_insert(id);
     }
 
-    ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, MF_UNCHECKED);
+    ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, 0);
     cdrom_drives[id].host_drive=0;
-    ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, MF_CHECKED);
-    ui_sb_update_icon_state(SB_CDROM|id, 1);
-    ui_sb_enable_menu_item(SB_CDROM|id, IDM_CDROM_RELOAD | id, MF_BYCOMMAND | MF_ENABLED);
-    ui_sb_update_tip(SB_CDROM|id);
+    ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 1);
+    ui_sb_icon_state(SB_CDROM|id, 1);
+    ui_sb_menu_enable_item(SB_CDROM|id, IDM_CDROM_RELOAD | id, 1);
+    ui_sb_tip_update(SB_CDROM|id);
 
     config_save();
 }
@@ -145,15 +145,15 @@ cdrom_reload(uint8_t id)
 		cdrom_insert(id);
 	}
 	if (wcslen(cdrom_image[id].image_path) == 0) {
-		ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, MF_CHECKED);
+		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 1);
 		cdrom_drives[id].host_drive = 0;
-		ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, MF_UNCHECKED);
-		ui_sb_update_icon_state(SB_CDROM|id, 1);
+		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, 0);
+		ui_sb_icon_state(SB_CDROM|id, 1);
 	} else {
-		ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, MF_UNCHECKED);
+		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 0);
 		cdrom_drives[id].host_drive = 200;
-		ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, MF_CHECKED);
-		ui_sb_update_icon_state(SB_CDROM|id, 0);
+		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, 1);
+		ui_sb_icon_state(SB_CDROM|id, 0);
 	}
     } else {
 	new_cdrom_drive = cdrom_drives[id].prev_host_drive;
@@ -162,14 +162,14 @@ cdrom_reload(uint8_t id)
 		/* Signal disc change to the emulated machine. */
 		cdrom_insert(id);
 	}
-	ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, MF_UNCHECKED);
+	ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 0);
 	cdrom_drives[id].host_drive = new_cdrom_drive;
-	ui_sb_check_menu_item(SB_CDROM|id, IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), MF_CHECKED);
-	ui_sb_update_icon_state(SB_CDROM|id, 0);
+	ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), 1);
+	ui_sb_icon_state(SB_CDROM|id, 0);
     }
 
-    ui_sb_enable_menu_item(SB_CDROM|id, IDM_CDROM_RELOAD | id, MF_BYCOMMAND | MF_GRAYED);
-    ui_sb_update_tip(SB_CDROM|id);
+    ui_sb_menu_enable_item(SB_CDROM|id, IDM_CDROM_RELOAD | id, 0);
+    ui_sb_tip_update(SB_CDROM|id);
 
     config_save();
 }
@@ -184,10 +184,10 @@ zip_eject(uint8_t id)
 	zip_insert(id);
     }
 
-    ui_sb_update_icon_state(SB_ZIP | id, 1);
-    ui_sb_enable_menu_item(SB_ZIP|id, IDM_ZIP_EJECT | id, MF_BYCOMMAND | MF_GRAYED);
-    ui_sb_enable_menu_item(SB_ZIP|id, IDM_ZIP_RELOAD | id, MF_BYCOMMAND | MF_ENABLED);
-    ui_sb_update_tip(SB_ZIP | id);
+    ui_sb_icon_state(SB_ZIP | id, 1);
+    ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_EJECT | id, 0);
+    ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_RELOAD | id, 1);
+    ui_sb_tip_update(SB_ZIP | id);
     config_save();
 }
 
@@ -197,15 +197,15 @@ zip_reload(uint8_t id)
 {
     zip_disk_reload(id);
     if (wcslen(zip_drives[id].image_path) == 0) {
-	ui_sb_enable_menu_item(SB_ZIP|id, IDM_ZIP_EJECT | id, MF_BYCOMMAND | MF_GRAYED);
-	ui_sb_update_icon_state(SB_ZIP|id, 1);
+	ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_EJECT | id, 0);
+	ui_sb_icon_state(SB_ZIP|id, 1);
     } else {
-	ui_sb_enable_menu_item(SB_ZIP|id, IDM_ZIP_EJECT | id, MF_BYCOMMAND | MF_ENABLED);
-	ui_sb_update_icon_state(SB_ZIP|id, 0);
+	ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_EJECT | id, 1);
+	ui_sb_icon_state(SB_ZIP|id, 0);
     }
 
-    ui_sb_enable_menu_item(SB_ZIP|id, IDM_ZIP_RELOAD | id, MF_BYCOMMAND | MF_GRAYED);
-    ui_sb_update_tip(SB_ZIP|id);
+    ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_RELOAD | id, 0);
+    ui_sb_tip_update(SB_ZIP|id);
 
     config_save();
 }
@@ -228,12 +228,12 @@ void
 removable_disk_eject(uint8_t id)
 {
     removable_disk_unload(id);
-    ui_sb_update_icon_state(SB_RDISK|id, 1);
-    ui_sb_enable_menu_item(SB_RDISK|id, IDM_RDISK_EJECT | id, MF_BYCOMMAND | MF_GRAYED);
-    ui_sb_enable_menu_item(SB_RDISK|id, IDM_RDISK_RELOAD | id, MF_BYCOMMAND | MF_ENABLED);
-    ui_sb_enable_menu_item(SB_RDISK|id, IDM_RDISK_SEND_CHANGE | id, MF_BYCOMMAND | MF_GRAYED);
+    ui_sb_icon_state(SB_RDISK|id, 1);
+    ui_sb_menu_enable_item(SB_RDISK|id, IDM_RDISK_EJECT | id, 0);
+    ui_sb_menu_enable_item(SB_RDISK|id, IDM_RDISK_RELOAD | id, 1);
+    ui_sb_menu_enable_item(SB_RDISK|id, IDM_RDISK_SEND_CHANGE | id, 0);
 
-    ui_sb_update_tip(SB_RDISK|id);
+    ui_sb_tip_update(SB_RDISK|id);
 
     config_save();
 }
@@ -252,13 +252,13 @@ removable_disk_reload(uint8_t id)
     scsi_disk_insert(id);
 #endif
 
-    ui_sb_update_icon_state(SB_RDISK|id, wcslen(hdd[id].fn) ? 0 : 1);
+    ui_sb_icon_state(SB_RDISK|id, wcslen(hdd[id].fn) ? 0 : 1);
 
-    ui_sb_enable_menu_item(SB_RDISK|id, IDM_RDISK_EJECT | id, MF_BYCOMMAND | (wcslen(hdd[id].fn) ? MF_ENABLED : MF_GRAYED));
-    ui_sb_enable_menu_item(SB_RDISK|id, IDM_RDISK_RELOAD | id, MF_BYCOMMAND | MF_GRAYED);
-    ui_sb_enable_menu_item(SB_RDISK|id, IDM_RDISK_SEND_CHANGE | id, MF_BYCOMMAND | (wcslen(hdd[id].fn) ? MF_ENABLED : MF_GRAYED));
+    ui_sb_menu_enable_item(SB_RDISK|id, IDM_RDISK_EJECT | id, wcslen(hdd[id].fn) ? 1 : 0);
+    ui_sb_menu_enable_item(SB_RDISK|id, IDM_RDISK_RELOAD | id, 0);
+    ui_sb_menu_enable_item(SB_RDISK|id, IDM_RDISK_SEND_CHANGE | id, wcslen(hdd[id].fn) ? 1 : 0);
 
-    ui_sb_update_tip(SB_RDISK|id);
+    ui_sb_tip_update(SB_RDISK|id);
 
     config_save();
 }

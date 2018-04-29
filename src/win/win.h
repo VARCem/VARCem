@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.6	2018/03/31
+ * Version:	@(#)win.h	1.0.8	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,8 @@
 extern "C" {
 #endif
 
-#include "resource.h"
+#include "resource.h"		/* local resources */
+#include "../ui/ui_resource.h"	/* common resources */
 
 
 /* Class names and such. */
@@ -72,8 +73,6 @@ extern HICON		hIcon[512];
 
 extern int		status_is_open;
 
-extern char		openfilestring[];
-extern WCHAR		wopenfilestring[];
 extern DWORD		filterindex;
 
 
@@ -108,44 +107,21 @@ extern uint8_t	joystickconfig_open(HWND hwnd, int joy_nr, int type);
 extern int	getfile(HWND hwnd, char *f, char *fn);
 extern int	getsfile(HWND hwnd, char *f, char *fn);
 
-extern int	win_settings_open(HWND hwnd, int ask);
-
 extern void	hard_disk_add_open(HWND hwnd, int is_existing);
 extern int	hard_disk_was_added(void);
 
-
 /* Platform UI support functions. */
 extern int	ui_init(int nCmdShow);
-
-
-/* Functions in win_about.c: */
-extern void	AboutDialogCreate(HWND hwnd);
-
-
-/* Functions in win_snd_gain.c: */
-extern void	SoundGainDialogCreate(HWND hwnd);
-
-
-/* Functions in win_new_floppy.c: */
-extern void	NewFloppyDialogCreate(HWND hwnd, int id, int part);
-
-
-/* Functions in win_status.c: */
-extern HWND	hwndStatus;
-extern void	StatusWindowCreate(HWND hwnd);
-
 
 /* Functions in win_stbar.c: */
 extern HWND	hwndSBAR;
 extern void	StatusBarCreate(HWND hwndParent, uintptr_t idStatus,
 				HINSTANCE hInst);
 
-
 /* Functions in win_dialog.c: */
 extern void	dialog_center(HWND hdlg);
-extern int	file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save);
-extern int	file_dlg_st(HWND hwnd, int i, WCHAR *fn, int save);
-
+extern int	dlg_file_ex(HWND hwnd, const wchar_t *filt,
+			    const wchar_t *ifn, wchar_t *fn, int save);
 
 #ifdef __cplusplus
 }

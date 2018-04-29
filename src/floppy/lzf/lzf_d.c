@@ -33,7 +33,6 @@
  * provisions above, a recipient may use your version of this file under
  * either the BSD or the GPL.
  */
-
 #include "lzfP.h"
 
 #if AVOID_ERRNO
@@ -43,7 +42,8 @@
 # define SET_ERRNO(n) errno = (n)
 #endif
 
-#if USE_REP_MOVSB /* small win on amd, big loss on intel */
+
+#ifdef USE_REP_MOVSB /* small win on amd, big loss on intel */
 #if (__i386 || __amd64) && __GNUC__ >= 3
 # define lzf_movsb(dst, src, len)                \
    asm ("rep movsb"                              \

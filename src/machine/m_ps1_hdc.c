@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.5	2018/04/25
+ * Version:	@(#)m_ps1_hdc.c	1.0.6	2018/04/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -98,8 +98,8 @@
 #include "../timer.h"
 #include "../disk/hdc.h"
 #include "../disk/hdd.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "machine.h"
 
 
@@ -701,7 +701,7 @@ do_format(hdc_t *dev, drive_t *drive, ccb_t *ccb)
 			dev->buf_len++;		/* must be even */
 
 		/* Enable for PIO or DMA, as needed. */
-#if NOT_USED
+#if 0	/*NOT_USED*/
 		if (dev->ctrl & ACR_DMA_EN)
 			dev->callback = HDC_TIME;
 		  else
@@ -748,7 +748,7 @@ do_fmt:
 #endif
 
 		/* Activate the status icon. */
-		ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
 
 		/* Seek to cylinder. */
 		if (do_seek(dev, drive, start_cyl)) {
@@ -787,7 +787,7 @@ do_fmt:
 		}
 
 		/* De-activate the status icon. */
-		ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 		/* This saves us a LOT of code. */
 		dev->state = STATE_FINIT;
@@ -797,7 +797,7 @@ do_fmt:
     /* If we errored out, go back idle. */
     if (intr) {
 	/* De-activate the status icon. */
-	ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+	ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 	do_finish(dev);
     }
@@ -872,7 +872,7 @@ hdc_callback(void *priv)
 
 			case STATE_SEND:
 				/* Activate the status icon. */
-				ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 1);
+				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
 
 do_send:
 #ifdef ENABLE_HDC_LOG
@@ -885,7 +885,7 @@ do_send:
 				/* Get address of sector to load. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 					do_finish(dev);
 					return;
 				}
@@ -928,7 +928,7 @@ do_send:
 							hdc_log("HDC: CMD_READ_SECTORS out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
 
 							/* De-activate the status icon. */
-							ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+							ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 							dev->intstat |= ISR_EQUIP_CHECK;
 							dev->ssb.need_reset = 1;
@@ -951,7 +951,7 @@ do_send:
 					    drive->id);
 #endif
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 					if (! (dev->ctrl & ACR_DMA_EN))
 						dev->status &= ~(ASR_DATA_REQ|ASR_DIR);
@@ -1038,7 +1038,7 @@ do_send:
 
 			case STATE_RECV:
 				/* Activate the status icon. */
-				ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 1);
+				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
 do_recv:
 #ifdef ENABLE_HDC_LOG
 				hdc_log("HDC write_%s(%d: %d,%d,%d) cnt=%d\n",
@@ -1074,7 +1074,7 @@ do_recv:
 							hdc_log("HDC: CMD_WRITE_SECTORS out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
 
 							/* De-activate the status icon. */
-							ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+							ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 							dev->intstat |= ISR_EQUIP_CHECK;
 							dev->ssb.need_reset = 1;
@@ -1099,7 +1099,7 @@ do_recv:
 				/* Get address of sector to write. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 					do_finish(dev);
 					return;
@@ -1117,7 +1117,7 @@ do_recv:
 					    drive->id);
 #endif
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 					if (! (dev->ctrl & ACR_DMA_EN))
 						dev->status &= ~ASR_DATA_REQ;

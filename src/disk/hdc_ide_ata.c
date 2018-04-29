@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.19	2018/04/25
+ * Version:	@(#)hdc_ide_ata.c	1.0.21	2018/04/28
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -61,8 +61,8 @@
 #include "../device.h"
 #include "../cdrom/cdrom.h"
 #include "../scsi/scsi.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "hdc.h"
 #include "hdc_ide.h"
 #include "hdd.h"
@@ -1767,7 +1767,7 @@ uint32_t ide_read_data(int ide_board, int length)
 			}
 			else
 			{
-				ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 0);
+				ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 0);
 			}
 		}
 	}
@@ -2189,7 +2189,7 @@ void callbackide(int ide_board)
 
 			ide_irq_raise(ide);
 
-			ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 1);
+			ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 1);
 			return;
 
 		case WIN_READ_DMA:
@@ -2241,7 +2241,7 @@ void callbackide(int ide_board)
 					ide->atastat = READY_STAT | DSC_STAT;
 
 					ide_irq_raise(ide);
-					ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 0);
+					ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 0);
 				}
 			} else {
 #ifdef ENABLE_HDC_LOG
@@ -2298,7 +2298,7 @@ void callbackide(int ide_board)
 				ide->blockcount = 0;
 			}
 
-			ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 1);
+			ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 1);
 			return;
 
 		case WIN_WRITE:
@@ -2319,12 +2319,12 @@ void callbackide(int ide_board)
 				ide->atastat = DRQ_STAT | READY_STAT | DSC_STAT;
 				ide->pos=0;
 				ide_next_sector(ide);
-				ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 1);
+				ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 1);
 			}
 			else
 			{
 				ide->atastat = READY_STAT | DSC_STAT;
-				ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 0);
+				ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 0);
 			}
 
 			return;
@@ -2372,7 +2372,7 @@ void callbackide(int ide_board)
 					ide->atastat = READY_STAT | DSC_STAT;
 
 					ide_irq_raise(ide);
-					ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 0);
+					ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 0);
 				}
 			} else {
 #ifdef ENABLE_HDC_LOG
@@ -2405,12 +2405,12 @@ void callbackide(int ide_board)
 				ide->atastat = DRQ_STAT | READY_STAT | DSC_STAT;
 				ide->pos=0;
 				ide_next_sector(ide);
-				ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 1);
+				ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 1);
 			}
 			else
 			{
 				ide->atastat = READY_STAT | DSC_STAT;
-				ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 0);
+				ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 0);
 			}
 			return;
 
@@ -2427,7 +2427,7 @@ void callbackide(int ide_board)
 			ide->pos=0;
 			ide->atastat = READY_STAT | DSC_STAT;
 			ide_irq_raise(ide);
-			ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 1);
+			ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 1);
 			return;
 
 		case WIN_FORMAT:
@@ -2444,7 +2444,7 @@ void callbackide(int ide_board)
 			ide->atastat = READY_STAT | DSC_STAT;
 			ide_irq_raise(ide);
 
-			/* ui_sb_update_icon(SB_HDD | hdd[ide->hdd_num].bus, 1); */
+			/* ui_sb_icon_update(SB_HDD | hdd[ide->hdd_num].bus, 1); */
 			return;
 
 		case WIN_DRIVE_DIAGNOSTICS:

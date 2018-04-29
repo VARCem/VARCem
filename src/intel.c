@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.2	2018/03/27
+ * Version:	@(#)intel.c	1.0.3	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,13 +47,14 @@
 #include "pit.h"
 #include "timer.h"
 #include "intel.h"
+#include "plat.h"
 
 
 static uint16_t batman_timer_latch;
 static int64_t batman_timer = 0;
 
 
-uint8_t batman_brdconfig(uint16_t port, void *p)
+uint8_t batman_brdconfig(uint16_t port, UNUSED(void *p))
 {
         switch (port)
         {
@@ -66,13 +67,13 @@ uint8_t batman_brdconfig(uint16_t port, void *p)
 }
 
 
-static void batman_timer_over(void *p)
+static void batman_timer_over(UNUSED(void *p))
 {
         batman_timer = 0;
 }
 
 
-static void batman_timer_write(uint16_t addr, uint8_t val, void *p)
+static void batman_timer_write(uint16_t addr, uint8_t val, UNUSED(void *p))
 {
         if (addr & 1)
                 batman_timer_latch = (batman_timer_latch & 0xff) | (val << 8);
@@ -82,7 +83,7 @@ static void batman_timer_write(uint16_t addr, uint8_t val, void *p)
 }
 
 
-static uint8_t batman_timer_read(uint16_t addr, void *p)
+static uint8_t batman_timer_read(uint16_t addr, UNUSED(void *p))
 {
         uint16_t batman_timer_latch;
         
@@ -101,7 +102,7 @@ static uint8_t batman_timer_read(uint16_t addr, void *p)
 }
 
 
-void intel_batman_init()
+void intel_batman_init(void)
 {
         io_sethandler(0x0073, 0x0001, batman_brdconfig, NULL, NULL, NULL, NULL, NULL, NULL);
         io_sethandler(0x0075, 0x0001, batman_brdconfig, NULL, NULL, NULL, NULL, NULL, NULL);

@@ -41,7 +41,7 @@ debug_init(file, dbg)
 	dfd = fopen(file,"w");
 	if (dfd != NULL) {
 #if 1
-		fprintf(dfd,"Slirp %s - Debugging Started.\n", SLIRP_VERSION);
+		fprintf(dfd,"Slirp - Debugging Started.\n");
 #endif
 		fprintf(dfd,"Debugging Started level %i.\r\n",dbg);
 		fflush(dfd);

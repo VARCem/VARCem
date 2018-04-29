@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.7	2018/04/23
+ * Version:	@(#)hdc_st506_xt.c	1.0.9	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -83,8 +83,8 @@
 #include "../pic.h"
 #include "../rom.h"
 #include "../timer.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "hdc.h"
 #include "hdd.h"
 
@@ -445,7 +445,7 @@ st506_callback(void *priv)
 
 				st506_complete(dev);
 
-				ui_sb_update_icon(SB_HDD | HDD_BUS_ST506, 1);
+				ui_sb_icon_update(SB_HDD | HDD_BUS_ST506, 1);
 				break;
 
 			default:
@@ -492,7 +492,7 @@ st506_callback(void *priv)
 
 				hdd_image_read(drive->hdd_num, addr, 1,
 					       (uint8_t *) dev->sector_buf);
-				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
+				ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 
 				if (dev->irq_dma_mask & DMA_ENA)
 					dev->callback = ST506_TIME;
@@ -539,7 +539,7 @@ st506_callback(void *priv)
 
 					hdd_image_read(drive->hdd_num, addr, 1,
 						(uint8_t *) dev->sector_buf);
-					ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 
 					dev->state = STATE_SEND_DATA;
 
@@ -551,7 +551,7 @@ st506_callback(void *priv)
 					}
 				} else {
 					st506_complete(dev);
-					ui_sb_update_icon(SB_HDD | HDD_BUS_ST506, 0);
+					ui_sb_icon_update(SB_HDD | HDD_BUS_ST506, 0);
 				}
 				break;
 
@@ -613,7 +613,7 @@ st506_callback(void *priv)
 
 				hdd_image_write(drive->hdd_num, addr, 1,
 						(uint8_t *) dev->sector_buf);
-				ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
+				ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 
 				next_sector(dev);
 				dev->data_pos = 0;

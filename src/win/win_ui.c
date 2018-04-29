@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.13	2018/04/26
+ * Version:	@(#)win_ui.c	1.0.15	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,8 @@
 #include "../input/keyboard.h"
 #include "../input/mouse.h"
 #include "../video/video.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "win.h"
 #include "win_d3d.h"
 
@@ -113,7 +113,7 @@ LoadIconEx(PCTSTR pszIconName)
 
 #if 0
 static void
-win_menu_update(void)
+menu_update(void)
 {
     menuMain = LoadMenu(hinstance, L"MainMenu"));
 
@@ -121,258 +121,26 @@ win_menu_update(void)
 
     initmenu();
 
-    SetMenu(hwndMain, menu);
+    SetMenu(memnuMain, menu);
 
     win_title_update = 1;
 }
 #endif
 
 
-static void
-video_toggle_option(HMENU h, int *val, int id)
+/* Enable or disable a menu item. */
+void
+menu_enable_item(int idm, int val)
 {
-    startblit();
-    video_wait_for_blit();
-    *val ^= 1;
-    CheckMenuItem(h, id, *val ? MF_CHECKED : MF_UNCHECKED);
-    endblit();
-    config_save();
-    device_force_redraw();
+    EnableMenuItem(menuMain, idm, (val) ? MF_ENABLED : MF_DISABLED);
 }
 
 
-#if defined(ENABLE_LOG_TOGGLES) || defined(ENABLE_LOG_COMMANDS)
-/* Simplest way to handle all these, for now.. */
-static void
-SetLoggingItem(int idm, int val)
+/* Set (check) or clear (uncheck) a menu item. */
+void
+menu_set_item(int idm, int val)
 {
-    int *ptr = NULL;
-
-    switch(idm) {
-#ifdef ENABLE_PCI_LOG
-	case IDM_LOG_PCI:
-		ptr = &pci_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_KEYBOARD_LOG
-	case IDM_LOG_KEYBOARD:
-		ptr = &keyboard_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SERIAL_LOG
-	case IDM_LOG_SERIAL:
-		ptr = &serial_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_FDC_LOG
-	case IDM_LOG_FDC:
-		ptr = &fdc_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_D86F_LOG
-	case IDM_LOG_D86F:
-		ptr = &d86f_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_HDC_LOG
-	case IDM_LOG_HDC:
-		ptr = &hdc_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_HDD_LOG
-	case IDM_LOG_HDD:
-		ptr = &hdd_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_ZIP_LOG
-	case IDM_LOG_ZIP:
-		ptr = &zip_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_CDROM_LOG
-	case IDM_LOG_CDROM:
-		ptr = &cdrom_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_CDROM_IMAGE_LOG
-	case IDM_LOG_CDROM_IMAGE:
-		ptr = &cdrom_image_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_CDROM_IOCTL_LOG
-	case IDM_LOG_CDROM_IOCTL:
-		ptr = &cdrom_ioctl_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_NIC_LOG
-	case IDM_LOG_NIC:
-		ptr = &nic_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SOUND_EMU8K_LOG
-	case IDM_LOG_SOUND_EMU8K:
-		ptr = &sound_emu8k_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SOUND_MPU401_LOG
-	case IDM_LOG_SOUND_MPU401:
-		ptr = &sound_mpu401_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SOUND_DEV_LOG
-	case IDM_LOG_SOUND_DEV:
-		ptr = &sound_dev_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SCSI_BUS_LOG
-	case IDM_LOG_SCSI_BUS:
-		ptr = &scsi_bus_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SCSI_DISK_LOG
-	case IDM_LOG_SCSI_DISK:
-		ptr = &scsi_hd_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SCSI_DEV_LOG
-	case IDM_LOG_SCSI_DEV:
-		ptr = &scsi_dev_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_SCSI_X54X_LOG
-	case IDM_LOG_SCSI_X54X:
-		ptr = &scsi_x54x_do_log;
-		break;
-#endif
-
-#ifdef ENABLE_VOODOO_LOG
-	case IDM_LOG_VOODOO:
-		ptr = &voodoo_do_log;
-		break;
-#endif
-    }
-
-    if (ptr != NULL) {
-	/* Set the desired value. */
-	if (val != 0xff) {
-		/* Initialize the logging value. */
-		if (val < 0) *ptr ^= 1;
-		  else *ptr = val;
-	}
-
-	/* And update its menu entry. */
-	CheckMenuItem(menuMain, idm, (*ptr) ? MF_CHECKED : MF_UNCHECKED);
-    }
-}
-#endif
-
-
-static void
-ResetAllMenus(void)
-{
-#ifndef DEV_BRANCH
-    /* FIXME: until we fix these.. --FvK */
-    EnableMenuItem(menuMain, IDM_CONFIG_LOAD, MF_DISABLED);
-    EnableMenuItem(menuMain, IDM_CONFIG_SAVE, MF_DISABLED);
-#endif
-
-    CheckMenuItem(menuMain, IDM_KBD_RCTRL_IS_LALT, MF_UNCHECKED);
-
-    CheckMenuItem(menuMain, IDM_UPDATE_ICONS, MF_UNCHECKED);
-
-#ifdef ENABLE_LOG_TOGGLES
-    SetLoggingItem(IDM_LOG_PCI, 0xff);
-    SetLoggingItem(IDM_LOG_KEYBOARD, 0xff);
-    SetLoggingItem(IDM_LOG_SERIAL, 0xff);
-    SetLoggingItem(IDM_LOG_FDC, 0xff);
-    SetLoggingItem(IDM_LOG_D86F, 0xff);
-    SetLoggingItem(IDM_LOG_HDC, 0xff);
-    SetLoggingItem(IDM_LOG_HDD, 0xff);
-    SetLoggingItem(IDM_LOG_ZIP, 0xff);
-    SetLoggingItem(IDM_LOG_CDROM, 0xff);
-    SetLoggingItem(IDM_LOG_CDROM_IMAGE, 0xff);
-    SetLoggingItem(IDM_LOG_CDROM_IOCTL, 0xff);
-    SetLoggingItem(IDM_LOG_NIC, 0xff);
-    SetLoggingItem(IDM_LOG_SOUND_EMU8K, 0xff);
-    SetLoggingItem(IDM_LOG_SOUND_MPU401, 0xff);
-    SetLoggingItem(IDM_LOG_SOUND_DEV, 0xff);
-    SetLoggingItem(IDM_LOG_SCSI_BUS, 0xff);
-    SetLoggingItem(IDM_LOG_SCSI_DISK, 0xff);
-    SetLoggingItem(IDM_LOG_SCSI_DEV, 0xff);
-    SetLoggingItem(IDM_LOG_SCSI_X54X, 0xff);
-    SetLoggingItem(IDM_LOG_VOODOO, 0xff);
-#endif
-
-    CheckMenuItem(menuMain, IDM_VID_FORCE43, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_OVERSCAN, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_INVERT, MF_UNCHECKED);
-
-    CheckMenuItem(menuMain, IDM_VID_RESIZE, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_DDRAW+0, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_DDRAW+1, MF_UNCHECKED);
-#ifdef USE_VNC
-    CheckMenuItem(menuMain, IDM_VID_DDRAW+2, MF_UNCHECKED);
-#endif
-#ifdef USE_VNC
-    CheckMenuItem(menuMain, IDM_VID_DDRAW+3, MF_UNCHECKED);
-#endif
-    CheckMenuItem(menuMain, IDM_VID_FS_FULL+0, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_FS_FULL+1, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_FS_FULL+2, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_FS_FULL+3, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_FS_FULL+4, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_REMEMBER, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_SCALE_1X+0, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_SCALE_1X+1, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_SCALE_1X+2, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_SCALE_1X+3, MF_UNCHECKED);
-
-    CheckMenuItem(menuMain, IDM_VID_CGACON, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAYCT_601+0, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAYCT_601+1, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAYCT_601+2, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+0, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+1, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+2, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+3, MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+4, MF_UNCHECKED);
-
-    CheckMenuItem(menuMain, IDM_KBD_RCTRL_IS_LALT, rctrl_is_lalt ? MF_CHECKED : MF_UNCHECKED);
-
-    CheckMenuItem(menuMain, IDM_UPDATE_ICONS, update_icons ? MF_CHECKED : MF_UNCHECKED);
-
-    CheckMenuItem(menuMain, IDM_VID_FORCE43, force_43?MF_CHECKED:MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_OVERSCAN, enable_overscan?MF_CHECKED:MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_INVERT, invert_display ? MF_CHECKED : MF_UNCHECKED);
-
-    if (vid_resize)
-	CheckMenuItem(menuMain, IDM_VID_RESIZE, MF_CHECKED);
-    CheckMenuItem(menuMain, IDM_VID_DDRAW+vid_api, MF_CHECKED);
-    CheckMenuItem(menuMain, IDM_VID_FS_FULL+vid_fullscreen_scale, MF_CHECKED);
-    CheckMenuItem(menuMain, IDM_VID_REMEMBER, window_remember?MF_CHECKED:MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_SCALE_1X+scale, MF_CHECKED);
-
-    CheckMenuItem(menuMain, IDM_VID_CGACON, vid_cga_contrast?MF_CHECKED:MF_UNCHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAYCT_601+vid_graytype, MF_CHECKED);
-    CheckMenuItem(menuMain, IDM_VID_GRAY_RGB+vid_grayscale, MF_CHECKED);
+    CheckMenuItem(menuMain, idm, val ? MF_CHECKED : MF_UNCHECKED);
 }
 
 
@@ -412,10 +180,11 @@ LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 static LRESULT CALLBACK
 MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HMENU hmenu;
+//    HMENU hmenu;
     RECT rect;
     int sb_borders[3];
     int temp_x, temp_y;
+    int idm;
 
     switch (message) {
 	case WM_CREATE:
@@ -428,59 +197,18 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_COMMAND:
 		UpdateWindow(hwnd);
-		hmenu = GetMenu(hwnd);
-		switch (LOWORD(wParam)) {
-			case IDM_ACTION_SCREENSHOT:
-				take_screenshot();
-				break;
+// We may need this later.
+//		hmenu = GetMenu(hwnd);
+		idm = LOWORD(wParam);
 
-			case IDM_ACTION_HRESET:
-				pc_reset(1);
-				break;
-
-			case IDM_ACTION_RESET_CAD:
-				pc_reset(0);
-				break;
-
-			case IDM_ACTION_EXIT:
+		/* Let the general UI handle it first, and then we do. */
+		if (! ui_menu_command(idm)) switch(idm) {
+			case IDM_EXIT:
 				PostQuitMessage(0);
 				break;
 
-			case IDM_ACTION_CTRL_ALT_ESC:
-				keyboard_send_cae();
-				break;
-
-			case IDM_ACTION_PAUSE:
-				plat_pause(dopause ^ 1);
-				CheckMenuItem(menuMain, IDM_ACTION_PAUSE, dopause ? MF_CHECKED : MF_UNCHECKED);
-				break;
-
-			case IDM_CONFIG:
-				plat_pause(1);
-				if (win_settings_open(hwnd, 1) == 2)
-					pc_reset_hard_init();
-				plat_pause(0);
-				break;
-
-			case IDM_ABOUT:
-				AboutDialogCreate(hwnd);
-				break;
-
-			case IDM_STATUS:
-				StatusWindowCreate(hwnd);
-				break;
-
-			case IDM_UPDATE_ICONS:
-				update_icons ^= 1;
-				CheckMenuItem(hmenu, IDM_UPDATE_ICONS, update_icons ? MF_CHECKED : MF_UNCHECKED);
-				config_save();
-				break;
-
-			case IDM_VID_RESIZE:
-				vid_resize = !vid_resize;
-				CheckMenuItem(hmenu, IDM_VID_RESIZE, (vid_resize)? MF_CHECKED : MF_UNCHECKED);
+			case IDM_RESIZE:
 				GetWindowRect(hwnd, &rect);
-
 				if (vid_resize)
 					SetWindowLongPtr(hwnd, GWL_STYLE, (WS_OVERLAPPEDWINDOW) | WS_VISIBLE);
 				  else
@@ -508,23 +236,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 					ClipCursor(&rect);
 				}
-
-				if (vid_resize) {
-					CheckMenuItem(hmenu, IDM_VID_SCALE_1X + scale, MF_UNCHECKED);
-					CheckMenuItem(hmenu, IDM_VID_SCALE_2X, MF_CHECKED);
-					scale = 1;
-				}
-				EnableMenuItem(hmenu, IDM_VID_SCALE_1X, vid_resize ? MF_GRAYED : MF_ENABLED);
-				EnableMenuItem(hmenu, IDM_VID_SCALE_2X, vid_resize ? MF_GRAYED : MF_ENABLED);
-				EnableMenuItem(hmenu, IDM_VID_SCALE_3X, vid_resize ? MF_GRAYED : MF_ENABLED);
-				EnableMenuItem(hmenu, IDM_VID_SCALE_4X, vid_resize ? MF_GRAYED : MF_ENABLED);
-				doresize = 1;
-				config_save();
 				break;
 
-			case IDM_VID_REMEMBER:
-				window_remember = !window_remember;
-				CheckMenuItem(hmenu, IDM_VID_REMEMBER, window_remember ? MF_CHECKED : MF_UNCHECKED);
+			case IDM_REMEMBER:
 				GetWindowRect(hwnd, &rect);
 				if (window_remember) {
 					window_x = rect.left;
@@ -534,148 +248,6 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				config_save();
 				break;
-
-			case IDM_VID_DDRAW:
-			case IDM_VID_D3D:
-#ifdef USE_VNC
-			case IDM_VID_VNC:
-#endif
-#ifdef USE_RDP
-			case IDM_VID_RDP:
-#endif
-				CheckMenuItem(hmenu, IDM_VID_DDRAW+vid_api, MF_UNCHECKED);
-				plat_setvid(LOWORD(wParam) - IDM_VID_DDRAW);
-				CheckMenuItem(hmenu, IDM_VID_DDRAW+vid_api, MF_CHECKED);
-				config_save();
-				break;
-
-			case IDM_VID_FULLSCREEN:
-				/* pclog("enter full screen though menu\n"); */
-				plat_setfullscreen(1);
-				config_save();
-				break;
-
-			case IDM_VID_FS_FULL:
-			case IDM_VID_FS_43:
-			case IDM_VID_FS_SQ:                                
-			case IDM_VID_FS_INT:
-			case IDM_VID_FS_KEEPRATIO:
-				CheckMenuItem(hmenu, IDM_VID_FS_FULL+vid_fullscreen_scale, MF_UNCHECKED);
-				vid_fullscreen_scale = LOWORD(wParam) - IDM_VID_FS_FULL;
-				CheckMenuItem(hmenu, IDM_VID_FS_FULL+vid_fullscreen_scale, MF_CHECKED);
-				device_force_redraw();
-				config_save();
-				break;
-
-			case IDM_VID_SCALE_1X:
-			case IDM_VID_SCALE_2X:
-			case IDM_VID_SCALE_3X:
-			case IDM_VID_SCALE_4X:
-				CheckMenuItem(hmenu, IDM_VID_SCALE_1X+scale, MF_UNCHECKED);
-				scale = LOWORD(wParam) - IDM_VID_SCALE_1X;
-				CheckMenuItem(hmenu, IDM_VID_SCALE_1X+scale, MF_CHECKED);
-				device_force_redraw();
-				video_force_resize_set(1);
-				config_save();
-				break;
-
-			case IDM_VID_FORCE43:
-				video_toggle_option(hmenu, &force_43, IDM_VID_FORCE43);
-				video_force_resize_set(1);
-				break;
-
-			case IDM_VID_INVERT:
-				video_toggle_option(hmenu, &invert_display, IDM_VID_INVERT);
-				break;
-
-			case IDM_VID_OVERSCAN:
-				update_overscan = 1;
-				video_toggle_option(hmenu, &enable_overscan, IDM_VID_OVERSCAN);
-				video_force_resize_set(1);
-				break;
-
-			case IDM_VID_CGACON:
-				vid_cga_contrast ^= 1;
-				CheckMenuItem(hmenu, IDM_VID_CGACON, vid_cga_contrast ? MF_CHECKED : MF_UNCHECKED);
-				cgapal_rebuild();
-				config_save();
-				break;
-
-			case IDM_VID_GRAYCT_601:
-			case IDM_VID_GRAYCT_709:
-			case IDM_VID_GRAYCT_AVE:
-				CheckMenuItem(hmenu, IDM_VID_GRAYCT_601+vid_graytype, MF_UNCHECKED);
-				vid_graytype = LOWORD(wParam) - IDM_VID_GRAYCT_601;
-				CheckMenuItem(hmenu, IDM_VID_GRAYCT_601+vid_graytype, MF_CHECKED);
-				device_force_redraw();
-				config_save();
-				break;
-
-			case IDM_VID_GRAY_RGB:
-			case IDM_VID_GRAY_MONO:
-			case IDM_VID_GRAY_AMBER:
-			case IDM_VID_GRAY_GREEN:
-			case IDM_VID_GRAY_WHITE:
-				CheckMenuItem(hmenu, IDM_VID_GRAY_RGB+vid_grayscale, MF_UNCHECKED);
-				vid_grayscale = LOWORD(wParam) - IDM_VID_GRAY_RGB;
-				CheckMenuItem(hmenu, IDM_VID_GRAY_RGB+vid_grayscale, MF_CHECKED);
-				device_force_redraw();
-				config_save();
-				break;
-
-			case IDM_KBD_RCTRL_IS_LALT:
-				rctrl_is_lalt ^= 1;
-				CheckMenuItem(hmenu, IDM_KBD_RCTRL_IS_LALT, rctrl_is_lalt ? MF_CHECKED : MF_UNCHECKED);
-				config_save();
-				break;
-
-#ifdef ENABLE_LOG_BREAKPOINT
-			case IDM_LOG_BREAKPOINT:
-				pclog("---- LOG BREAKPOINT ----\n");
-				break;
-#endif
-
-#ifdef ENABLE_LOG_TOGGLES
-			case IDM_LOG_PCI:
-			case IDM_LOG_KEYBOARD:
-			case IDM_LOG_SERIAL:
-			case IDM_LOG_FDC:
-			case IDM_LOG_D86F:
-			case IDM_LOG_HDC:
-			case IDM_LOG_HDD:
-			case IDM_LOG_ZIP:
-			case IDM_LOG_CDROM:
-			case IDM_LOG_CDROM_IMAGE:
-			case IDM_LOG_CDROM_IOCTL:
-			case IDM_LOG_NIC:
-			case IDM_LOG_SOUND_EMU8K:
-			case IDM_LOG_SOUND_MPU401:
-			case IDM_LOG_SOUND_DEV:
-			case IDM_LOG_SCSI_BUS:
-			case IDM_LOG_SCSI_DISK:
-			case IDM_LOG_SCSI_DEV:
-			case IDM_LOG_SCSI_X54X:
-			case IDM_LOG_VOODOO:
-				SetLoggingItem(LOWORD(wParam), -1);
-				break;
-#endif
-			case IDM_CONFIG_LOAD:
-				plat_pause(1);
-				if (! file_dlg_st(hwnd, IDS_2160, L"", 0) &&
-				    (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051) == IDYES)) {
-					pc_reload(wopenfilestring);
-					ResetAllMenus();
-				}
-				plat_pause(0);
-				break;                        
-
-			case IDM_CONFIG_SAVE:
-				plat_pause(1);
-				if (! file_dlg_st(hwnd, IDS_2160, L"", 1)) {
-					config_write(wopenfilestring);
-				}
-				plat_pause(0);
-				break;                                                
 		}
 		return(0);
 
@@ -814,14 +386,14 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SHOWSETTINGS:
 		plat_pause(1);
-		if (win_settings_open(hwnd, 1) == 2)
+		if (dlg_settings(1) == 2)
 			pc_reset_hard_init();
 		plat_pause(0);
 		break;
 
 	case WM_PAUSE:
 		plat_pause(dopause ^ 1);
-		CheckMenuItem(menuMain, IDM_ACTION_PAUSE, dopause ? MF_CHECKED : MF_UNCHECKED);
+		menu_set_item(IDM_PAUSE, dopause);
 		break;
 
 	case WM_SYSCOMMAND:
@@ -874,7 +446,8 @@ ui_init(int nCmdShow)
 		return(6);
 	}
 
-	win_settings_open(NULL, 0);
+	(void)dlg_settings(0);
+
 	return(0);
     }
 
@@ -933,7 +506,7 @@ ui_init(int nCmdShow)
 	MoveWindow(hwnd, window_x, window_y, window_w, window_h, TRUE);
 
     /* Reset all menus to their defaults. */
-    ResetAllMenus();
+    ui_menu_reset_all();
 
     /* Make the window visible on the screen. */
     ShowWindow(hwnd, nCmdShow);
@@ -990,7 +563,7 @@ ui_init(int nCmdShow)
 		break;
 
 	case 2:		/* Configuration error, user wants to re-config. */
-		if (win_settings_open(NULL, 0)) {
+		if (dlg_settings(0)) {
 			/* Save the new configuration to file. */
 			config_save();
 
@@ -1128,8 +701,7 @@ plat_pause(int p)
     dopause = p;
 
     /* Update the actual menu. */
-    CheckMenuItem(menuMain, IDM_ACTION_PAUSE,
-		  (dopause) ? MF_CHECKED : MF_UNCHECKED);
+    menu_set_item(IDM_PAUSE, dopause);
 }
 
 

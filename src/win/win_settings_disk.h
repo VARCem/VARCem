@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.4	2018/04/24
+ * Version:	@(#)win_settings_disk.h	1.0.6	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -763,6 +763,7 @@ static BOOL CALLBACK
 #endif
 disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    wchar_t temp_path[512];
     char buf[512], *big_buf;
     HWND h = INVALID_HANDLE_VALUE;
     uint64_t i = 0;
@@ -780,6 +781,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_INITDIALOG:
+		dialog_center(hdlg);
 		memset(hd_file_name, 0x00, sizeof(hd_file_name));
 
 		if (existing & 2) {
@@ -1063,10 +1065,10 @@ hd_add_ok_common:
 				return TRUE;
 
 			case IDC_CFILE:
-				if (!file_dlg(hdlg, plat_get_string(IDS_4106), L"", !(existing & 1))) {
-					if (!wcschr(wopenfilestring, L'.')) {
-						if (wcslen(wopenfilestring) && (wcslen(wopenfilestring) <= 256)) {
-							twcs = &wopenfilestring[wcslen(wopenfilestring)];
+				if (! dlg_file_ex(hdlg, plat_get_string(IDS_4106), NULL, temp_path, !(existing & 1))) {
+					if (! wcschr(temp_path, L'.')) {
+						if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
+							twcs = &temp_path[wcslen(temp_path)];
 							twcs[0] = L'.';
 							twcs[1] = L'i';
 							twcs[2] = L'm';
@@ -1075,7 +1077,7 @@ hd_add_ok_common:
 					}
 
 					if (!(existing & 1)) {
-						f = _wfopen(wopenfilestring, L"rb");
+						f = _wfopen(temp_path, L"rb");
 						if (f != NULL) {
 							fclose(f);
 							if (settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_4111) != 0) {	/* yes */
@@ -1084,14 +1086,14 @@ hd_add_ok_common:
 						}
 					}
 
-					f = _wfopen(wopenfilestring, (existing & 1) ? L"rb" : L"wb");
+					f = _wfopen(temp_path, (existing & 1) ? L"rb" : L"wb");
 					if (f == NULL) {
 hdd_add_file_open_error:
 						settings_msgbox(MBX_ERROR, (existing & 1) ? (wchar_t *)IDS_4107 : (wchar_t *)IDS_4108);
 						return TRUE;
 					}
 					if (existing & 1) {
-						if (image_is_hdi(wopenfilestring) || image_is_hdx(wopenfilestring, 1)) {
+						if (image_is_hdi(temp_path) || image_is_hdx(temp_path, 1)) {
 							fseeko64(f, 0x10, SEEK_SET);
 							fread(&sector_size, 1, 4, f);
 							if (sector_size != 512) {
@@ -1161,9 +1163,9 @@ hdd_add_file_open_error:
 				}
 
 				h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
-				SendMessage(h, WM_SETTEXT, 0, (LPARAM)wopenfilestring);
-				memset(hd_file_name, 0, sizeof(hd_file_name));
-				wcscpy(hd_file_name, wopenfilestring);
+				SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path);
+				memset(hd_file_name, 0x00, sizeof(hd_file_name));
+				wcscpy(hd_file_name, temp_path);
 
 				return TRUE;
 

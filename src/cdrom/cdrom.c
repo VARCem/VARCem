@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)cdrom.c	1.0.11	2018/03/31
+ * Version:	@(#)cdrom.c	1.0.13	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,8 +55,8 @@
 #include "../scsi/scsi.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "cdrom.h"
 #include "cdrom_image.h"
 #include "cdrom_null.h"
@@ -2064,9 +2064,9 @@ cdrom_readtoc_fallback:
 
 			dev->all_blocks_total = dev->block_total;
 			if (dev->packet_status != CDROM_PHASE_COMPLETE)
-				ui_sb_update_icon(SB_CDROM | id, 1);
+				ui_sb_icon_update(SB_CDROM | id, 1);
 			else
-				ui_sb_update_icon(SB_CDROM | id, 0);
+				ui_sb_icon_update(SB_CDROM | id, 0);
 			return;
 
 		case GPCMD_READ_HEADER:
@@ -3140,7 +3140,7 @@ void cdrom_phase_callback(uint8_t id)
 			dev->status = READY_STAT;
 			dev->phase = 3;
 			dev->packet_status = 0xFF;
-			ui_sb_update_icon(SB_CDROM | id, 0);
+			ui_sb_icon_update(SB_CDROM | id, 0);
 			cdrom_irq_raise(id);
 			return;
 		case CDROM_PHASE_DATA_OUT:
@@ -3177,7 +3177,7 @@ void cdrom_phase_callback(uint8_t id)
 			dev->status = READY_STAT | ERR_STAT;
 			dev->phase = 3;
 			cdrom_irq_raise(id);
-			ui_sb_update_icon(SB_CDROM | id, 0);
+			ui_sb_icon_update(SB_CDROM | id, 0);
 			return;
 	}
 }

@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.12	2018/04/26
+ * Version:	@(#)resource.h	1.0.13	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -248,113 +248,8 @@
 #define IDC_STATUS		1282
 
 
-#define IDM_ABOUT		40001
-#define  IDC_ABOUT_ICON		65535
-#define IDM_ACTION_SCREENSHOT	40011
-#define IDM_ACTION_HRESET	40012
-#define IDM_ACTION_RESET_CAD	40013
-#define IDM_ACTION_EXIT		40014
-#define IDM_ACTION_CTRL_ALT_ESC 40015
-#define IDM_ACTION_PAUSE	40016
-#define IDM_CONFIG		40020
-#define IDM_CONFIG_LOAD		40021
-#define IDM_CONFIG_SAVE		40022
-#define IDM_STATUS		40030
-#define IDM_UPDATE_ICONS	40040
-#define IDM_VID_RESIZE		40050
-#define IDM_VID_REMEMBER	40051
-#define IDM_VID_DDRAW		40060
-#define IDM_VID_D3D		40061
-#define IDM_VID_VNC		40062
-#define IDM_VID_RDP		40063
-#define IDM_VID_SCALE_1X	40064
-#define IDM_VID_SCALE_2X	40065
-#define IDM_VID_SCALE_3X	40066
-#define IDM_VID_SCALE_4X	40067
-#define IDM_VID_FULLSCREEN	40070
-#define IDM_VID_FS_FULL		40071
-#define IDM_VID_FS_43		40072
-#define IDM_VID_FS_SQ		40073
-#define IDM_VID_FS_INT		40074
-#define IDM_VID_FS_KEEPRATIO	40075
-#define IDM_VID_FORCE43		40076
-#define IDM_VID_OVERSCAN	40077
-#define IDM_VID_INVERT		40079
-#define IDM_VID_CGACON		40080
-#define IDM_VID_GRAYCT_601	40085
-#define IDM_VID_GRAYCT_709	40086
-#define IDM_VID_GRAYCT_AVE	40087
-#define IDM_VID_GRAY_RGB	40090
-#define IDM_VID_GRAY_MONO	40091
-#define IDM_VID_GRAY_AMBER	40092
-#define IDM_VID_GRAY_GREEN	40093
-#define IDM_VID_GRAY_WHITE	40094
-#define IDM_KBD_RCTRL_IS_LALT	40101
-
-#define IDM_LOGGING		51200
-#define IDM_LOG_BREAKPOINT	(IDM_LOGGING + 0)
-#define IDM_LOG_PCI		(IDM_LOGGING + 1)
-#define IDM_LOG_KEYBOARD	(IDM_LOGGING + 2)
-#define IDM_LOG_SERIAL		(IDM_LOGGING + 3)
-#define IDM_LOG_FDC		(IDM_LOGGING + 4)
-#define IDM_LOG_D86F		(IDM_LOGGING + 5)
-#define IDM_LOG_HDC		(IDM_LOGGING + 6)
-#define IDM_LOG_HDD		(IDM_LOGGING + 7)
-#define IDM_LOG_ZIP		(IDM_LOGGING + 8)
-#define IDM_LOG_CDROM		(IDM_LOGGING + 9)
-#define IDM_LOG_CDROM_IMAGE	(IDM_LOGGING + 10)
-#define IDM_LOG_CDROM_IOCTL	(IDM_LOGGING + 11)
-#define IDM_LOG_NIC		(IDM_LOGGING + 12)
-#define IDM_LOG_SOUND_EMU8K	(IDM_LOGGING + 13)
-#define IDM_LOG_SOUND_MPU401	(IDM_LOGGING + 14)
-#define IDM_LOG_SOUND_DEV	(IDM_LOGGING + 15)
-#define IDM_LOG_SCSI_BUS	(IDM_LOGGING + 16)
-#define IDM_LOG_SCSI_DISK	(IDM_LOGGING + 17)
-#define IDM_LOG_SCSI_DEV	(IDM_LOGGING + 18)
-#define IDM_LOG_SCSI_X54X	(IDM_LOGGING + 19)
-#define IDM_LOG_VOODOO		(IDM_LOGGING + 20)
- 
-
-/*
- * We need 7 bits for CDROM (2 bits ID and 5 bits for host drive),
- * and 5 bits for Removable Disks (5 bits for ID), so we use an
- * 8bit (256 entries) space for these devices.
- */
-#define IDM_FLOPPY_IMAGE_NEW		0x1200
-#define IDM_FLOPPY_IMAGE_EXISTING	0x1300
-#define IDM_FLOPPY_IMAGE_EXISTING_WP	0x1400
-#define IDM_FLOPPY_EXPORT_TO_86F	0x1500
-#define IDM_FLOPPY_EJECT		0x1600
-
-#define IDM_CDROM_MUTE			0x2200
-#define IDM_CDROM_EMPTY			0x2300
-#define IDM_CDROM_RELOAD		0x2400
-#define IDM_CDROM_IMAGE			0x2500
-#define IDM_CDROM_HOST_DRIVE		0x2600
-
-#define IDM_ZIP_IMAGE_NEW		0x3200
-#define IDM_ZIP_IMAGE_EXISTING		0x3300
-#define IDM_ZIP_IMAGE_EXISTING_WP	0x3400
-#define IDM_ZIP_EJECT			0x3500
-#define IDM_ZIP_RELOAD			0x3600
-
-#define IDM_RDISK_EJECT			0x4200
-#define IDM_RDISK_RELOAD		0x4300
-#define IDM_RDISK_SEND_CHANGE		0x4400
-#define IDM_RDISK_IMAGE			0x4500
-#define IDM_RDISK_IMAGE_WP		0x4600
-
-
-/* Next default values for new objects */
-#ifdef APSTUDIO_INVOKED
-# ifndef APSTUDIO_READONLY_SYMBOLS
-#  define _APS_NO_MFC			1
-#  define _APS_NEXT_RESOURCE_VALUE	1400
-#  define _APS_NEXT_COMMAND_VALUE	55000
-#  define _APS_NEXT_CONTROL_VALUE	1800
-#  define _APS_NEXT_SYMED_VALUE		200
-#  endif
-#endif
+/* HELP menu. */
+#define   IDC_ABOUT_ICON	65535
 
 
 #endif	/*WIN_RESOURCE_H*/

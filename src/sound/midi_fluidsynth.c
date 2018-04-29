@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.7	2018/04/25
+ * Version:	@(#)midi_fluidsynth.c	1.0.8	2018/04/27
  *
  *		Code borrowed from scummvm.
  *
@@ -56,8 +56,8 @@
 #include "../emu.h"
 #include "../config.h"
 #include "../device.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "midi.h"
 #include "midi_fluidsynth.h"
 #include "sound.h"

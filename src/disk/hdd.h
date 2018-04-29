@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.6	2018/04/23
+ * Version:	@(#)hdd.h	1.0.8	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,10 @@
 
 #define HDD_NUM		30	/* total of 30 images supported */
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Hard Disk bus types. */
 enum {
@@ -105,6 +109,7 @@ extern int		hdd_do_log;
 
 extern void	hdd_log(const char *fmt, ...);
 extern int	hdd_init(void);
+extern int	hdd_count(int bus);
 extern int	hdd_string_to_bus(char *str, int cdrom);
 extern char	*hdd_bus_to_string(int bus, int cdrom);
 extern int	hdd_is_valid(int c);
@@ -125,6 +130,10 @@ extern void	hdd_image_close(uint8_t id);
 
 extern int	image_is_hdi(const wchar_t *s);
 extern int	image_is_hdx(const wchar_t *s, int check_signature);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif	/*EMU_HDD_H*/

@@ -8,7 +8,7 @@
  *
  *		Intel 82335 SX emulation, used by the Phoenix 386 clone.
  *
- * Version:	@(#)i82335.c	1.0.1	2018/02/14
+ * Version:	@(#)i82335.c	1.0.2	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <wchar.h>
 #include "io.h"
 #include "mem.h"
+#include "plat.h"
 
 
 typedef struct {
@@ -54,7 +55,7 @@ static i82335_t i82335;
 
 
 static uint8_t
-i82335_read(uint16_t addr, void *priv)
+i82335_read(uint16_t addr, UNUSED(void *priv))
 {
     // pclog("i82335_read(%04X)\n", addr);
     if (addr == 0x22) {
@@ -70,7 +71,7 @@ i82335_read(uint16_t addr, void *priv)
 
 
 static void
-i82335_write(uint16_t addr, uint8_t val, void *priv)
+i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 {
     int mem_write = 0;
     int i = 0;

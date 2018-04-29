@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.3	2018/03/13
+ * Version:	@(#)dma.c	1.0.4	2018/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include "mem.h"
 #include "io.h"
 #include "dma.h"
+#include "plat.h"
 
 
 dma_t		dma[8];
@@ -84,7 +85,7 @@ static void dma_ps2_run(int channel);
 
 
 static uint8_t
-dma_read(uint16_t addr, void *priv)
+dma_read(uint16_t addr, UNUSED(void *priv))
 {
     int channel = (addr >> 1) & 3;
     uint8_t temp;
@@ -124,7 +125,7 @@ dma_read(uint16_t addr, void *priv)
 
 
 static void
-dma_write(uint16_t addr, uint8_t val, void *priv)
+dma_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 {
     int channel = (addr >> 1) & 3;
 
@@ -197,7 +198,7 @@ dma_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-dma_ps2_read(uint16_t addr, void *priv)
+dma_ps2_read(uint16_t addr, UNUSED(void *priv))
 {
     dma_t *dma_c = &dma[dma_ps2.xfr_channel];
     uint8_t temp = 0xff;
@@ -264,7 +265,7 @@ dma_ps2_read(uint16_t addr, void *priv)
 
 
 static void
-dma_ps2_write(uint16_t addr, uint8_t val, void *priv)
+dma_ps2_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 {
     dma_t *dma_c = &dma[dma_ps2.xfr_channel];
     uint8_t mode;
@@ -355,7 +356,7 @@ dma_ps2_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-dma16_read(uint16_t addr, void *priv)
+dma16_read(uint16_t addr, UNUSED(void *priv))
 {
     int channel = ((addr >> 2) & 3) + 4;
     uint8_t temp;
@@ -398,7 +399,7 @@ dma16_read(uint16_t addr, void *priv)
 
 
 static void
-dma16_write(uint16_t addr, uint8_t val, void *priv)
+dma16_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 {
     int channel = ((addr >> 2) & 3) + 4;
     addr >>= 1;
@@ -477,7 +478,7 @@ dma16_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static void
-dma_page_write(uint16_t addr, uint8_t val, void *priv)
+dma_page_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 {
     dmapages[addr & 0xf] = val;
 
@@ -534,7 +535,7 @@ dma_page_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-dma_page_read(uint16_t addr, void *priv)
+dma_page_read(uint16_t addr, UNUSED(void *priv))
 {
     return(dmapages[addr & 0xf]);
 }
@@ -624,7 +625,7 @@ ps2_dma_init(void)
 
 
 uint8_t
-_dma_read(uint32_t addr)
+_dma_read(int32_t addr)
 {
     uint8_t temp = mem_readb_phys_dma(addr);
 

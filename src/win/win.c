@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.14	2018/04/26
+ * Version:	@(#)win.c	1.0.15	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,9 +52,9 @@
 #include "../device.h"
 #include "../input/mouse.h"
 #include "../video/video.h"
+#include "../ui/ui.h"
 #define GLOBAL
 #include "../plat.h"
-#include "../ui.h"
 #ifdef USE_VNC
 # include "../vnc.h"
 #endif
@@ -631,7 +631,7 @@ plat_vidapi_name(int api)
     char *name = "default";
 
     switch(api) {
-#if USE_WX
+#ifdef USE_WX
 	case 0:
 		break;
 

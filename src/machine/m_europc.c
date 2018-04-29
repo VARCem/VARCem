@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.11	2018/04/26
+ * Version:	@(#)m_europc.c	1.0.12	2018/04/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -225,7 +225,7 @@ rtc_time_get(uint8_t *regs, struct tm *tm)
     tm->tm_mday = RTC_DCB(regs[MRTC_DAYS]);
     tm->tm_mon = (RTC_DCB(regs[MRTC_MONTHS]) - 1);
     tm->tm_year = RTC_DCB(regs[MRTC_YEARS]);
-#if USE_Y2K
+#if 0	/*USE_Y2K*/
     tm->tm_year += (RTC_DCB(regs[MRTC_CENTURY]) * 100) - 1900;
 #endif
 }
@@ -243,7 +243,7 @@ rtc_time_set(uint8_t *regs, struct tm *tm)
     regs[MRTC_DAYS] = RTC_BCD(tm->tm_mday);
     regs[MRTC_MONTHS] = RTC_BCD(tm->tm_mon + 1);
     regs[MRTC_YEARS] = RTC_BCD(tm->tm_year % 100);
-#if USE_Y2K
+#if 0	/*USE_Y2K*/
     regs[MRTC_CENTURY] = RTC_BCD((tm->tm_year+1900) / 100);
 #endif
 }

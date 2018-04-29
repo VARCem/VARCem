@@ -1,75 +1,189 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#define SLIRP_VERSION "Cockatrice special"
 
-#define CONFIG_QEMU
+#define HOST_I386	1
+#define HOST_LONG_BITS	32
+#define CONFIG_WIN32	1
+#define CONFIG_SLIRP	1
+#define CONFIG_UNAME_RELEASE ""
+#define HAVE_STRDUP	1
 
-#ifndef CONFIG_QEMU
-#include "version.h"
+/*
+ * User definable configuration options
+ */
+/* Undefine if you don't want talk emulation */
+#undef EMULATE_TALK
+
+/* Define if you want the connection to be probed */
+/* XXX Not working yet, so ignore this for now */
+#undef PROBE_CONN
+
+/* Define to 1 if you want KEEPALIVE timers */
+#define DO_KEEPALIVE 0
+
+/* Define to MAX interfaces you expect to use at once */
+/* MAX_INTERFACES determines the max. TOTAL number of interfaces (SLIP and PPP) */
+/* MAX_PPP_INTERFACES determines max. number of PPP interfaces */
+#define MAX_INTERFACES 1
+#define MAX_PPP_INTERFACES 1
+
+/* Define if you want slirp's socket in /tmp */
+/* XXXXXX Do this in ./configure */
+#undef USE_TMPSOCKET
+
+/* Define if you want slirp to use cfsetXspeed() on the terminal */
+#undef DO_CFSETSPEED
+
+/* Define this if you want slirp to write to the tty as fast as it can */
+/* This should only be set if you are using load-balancing, slirp does a */
+/* pretty good job on single modems already, and seting this will make */
+/* interactive sessions less responsive */
+/* XXXXX Talk about having fast modem as unit 0 */
+#undef FULL_BOLT
+
+/*
+ * Define if you want slirp to use less CPU
+ * You will notice a small lag in interactive sessions, but it's not that bad
+ * Things like Netscape/ftp/etc. are completely unaffected
+ * This is mainly for sysadmins who have many slirp users
+ */
+#undef USE_LOWCPU
+
+/* Define this if your compiler doesn't like prototypes */
+#ifndef __STDC__
+#define NO_PROTOTYPES
 #endif
-#include "config.h"
-#include "slirp_config.h"
+
+/*********************************************************/
+/*
+ * Autoconf defined configuration options
+ * You shouldn't need to touch any of these
+ */
+
+/* Ignore this */
+#undef DUMMY_PPP
+
+/* XXX: Define according to how time.h should be included */
+#undef TIME_WITH_SYS_TIME
+#define TIME_WITH_SYS_TIME 0
+#undef HAVE_SYS_TIME_H
+
+/* Define if your sprintf returns char * instead of int */
+#undef BAD_SPRINTF
+
+/* Define if you have readv */
+#undef HAVE_READV
+
+/* Define if iovec needs to be declared */
+#undef DECLARE_IOVEC
+#ifdef _WIN32
+#define DECLARE_IOVEC
+#endif
+
+/* Define if a declaration of sprintf/fprintf is needed */
+#undef DECLARE_SPRINTF
+
+/* Define if you have sys/stropts.h */
+#undef HAVE_SYS_STROPTS_H
+
+/* Define if your compiler doesn't like prototypes */
+#undef NO_PROTOTYPES
+
+/* Define if you don't have u_int32_t etc. typedef'd */
+#undef NEED_TYPEDEFS
+#ifdef __sun__
+#define NEED_TYPEDEFS
+#endif
+
+/* Define to sizeof(char *) */
+#ifdef SIZEOF_VOID_P
+# define SIZEOF_CHAR_P SIZEOF_VOID_P
+#else
+# define SIZEOF_CHAR_P	8	/*FIXME: sizeof() does not work in cpp!*/
+#endif
+
+#undef HAVE_RANDOM		/* Define if you have random() */
+#undef HAVE_SRANDOM		/* Define if you have srandom() */
+#undef HAVE_SETENV		/* Define if you have setenv */
+#undef HAVE_INDEX		/* Define if you have index() */
+#undef HAVE_BCMP		/* Define if you have bcmp() */
+#undef HAVE_DRAND48		/* Define if you have drand48 */
+#define HAVE_MEMMOVE		/* Define if you have memmove */
+#undef HAVE_GETHOSTID		/* Define if you have gethostid */
+
+/* Define if you DON'T have unix-domain sockets */
+#ifdef _WIN32
+# define NO_UNIX_SOCKETS
+#else
+# undef NO_UNIX_SOCKETS
+#endif
+
+#undef GETTIMEOFDAY_ONE_ARG	/* Define if gettimeofday only takes one argument */
+
+#undef HAVE_REVOKE		/* Define if you have revoke() */
+
+#undef HAVE_GRANTPTi		/* Define if you have the sysv method of opening pty's (/dev/ptmx, etc.) */
+
+#undef HAVE_FCHMOD		/* Define if you have fchmod */
+
+#undef HAVE_SYS_TYPES32_H	/* Define if you have <sys/type32.h> */
 
 #ifdef _WIN32
-#ifdef __GNUC__		/* MINGW? */
-# include <inttypes.h>	
-typedef uint8_t u_int8_t;
-typedef uint16_t u_int16_t;
-typedef uint32_t u_int32_t;
-typedef uint64_t u_int64_t;
-typedef char *SLIRPcaddr_t;
-typedef int socklen_t;
-typedef unsigned long ioctlsockopt_t;
-#else
-typedef unsigned char 	u_int8_t;
-typedef char			int8_t;
+# ifdef __GNUC__		/* MINGW? */
+#  include <inttypes.h>	
+typedef uint8_t		u_int8_t;
+typedef uint16_t	u_int16_t;
+typedef uint32_t	u_int32_t;
+typedef uint64_t	u_int64_t;
+typedef char		*SLIRPcaddr_t;
+typedef int		socklen_t;
+typedef unsigned long	ioctlsockopt_t;
+# else
+typedef unsigned char	u_int8_t;
+typedef char		int8_t;
 typedef unsigned char	uint8_t;
 typedef unsigned short 	u_int16_t;
 typedef unsigned short 	uint16_t;
-typedef short			int16_t;
+typedef short		int16_t;
 typedef unsigned int 	u_int32_t;
 typedef unsigned int	uint32_t;
-typedef	int				int32_t;
+typedef	int		int32_t;
 
 typedef unsigned __int64 u_int64_t;
 typedef char 		*SLIRPcaddr_t;
 typedef int 		socklen_t;
 typedef unsigned long 	ioctlsockopt_t;
-
-#endif
-
-# include <winsock2.h>	/* needs to be on top otherwise, it'll pull in winsock1 */
+# endif
+# include <winsock2.h>	/* on top otherwise, it'll pull in winsock1 */
 # include <windows.h>
-
 # include <sys/timeb.h>
 # include <iphlpapi.h>
 
-# define USE_FIONBIO 1
-#ifndef EWOULDBLOCK
-# define EWOULDBLOCK WSAEWOULDBLOCK
-#endif
-#ifndef EINPROGRESS
-# define EINPROGRESS WSAEINPROGRESS
-#endif
-#ifndef ENOTCONN
-# define ENOTCONN WSAENOTCONN
-#endif
-#ifndef EHOSTUNREACH
-# define EHOSTUNREACH WSAEHOSTUNREACH
-#endif
-#ifndef ENETUNREACH
-# define ENETUNREACH WSAENETUNREACH
-#endif
-#ifndef ECONNREFUSED
-# define ECONNREFUSED WSAECONNREFUSED
-#endif
+# define USE_FIONBIO	1
+# ifndef EWOULDBLOCK
+#  define EWOULDBLOCK	WSAEWOULDBLOCK
+# endif
+# ifndef EINPROGRESS
+#  define EINPROGRESS	WSAEINPROGRESS
+# endif
+# ifndef ENOTCONN
+#  define ENOTCONN	WSAENOTCONN
+# endif
+# ifndef EHOSTUNREACH
+#  define EHOSTUNREACH	WSAEHOSTUNREACH
+# endif
+# ifndef ENETUNREACH
+#  define ENETUNREACH	WSAENETUNREACH
+# endif
+# ifndef ECONNREFUSED
+#  define ECONNREFUSED	WSAECONNREFUSED
+# endif
 
-/* Basilisk II Router defines those */
 # define udp_read_completion slirp_udp_read_completion
-# define write_udp slirp_write_udp
-# define init_udp slirp_init_udp
-# define final_udp slirp_final_udp
+# define write_udp	slirp_write_udp
+# define init_udp	slirp_init_udp
+# define final_udp	slirp_final_udp
 #else
 # include <inttypes.h>	
 # define HAVE_STDINT_H
@@ -77,15 +191,15 @@ typedef unsigned long 	ioctlsockopt_t;
 # define HAVE_STRING_H
 # define HAVE_UNISTD_H
 # define HAVE_INET_ATON
-typedef uint8_t u_int8_t;
-typedef uint16_t u_int16_t;
-typedef uint32_t u_int32_t;
-typedef uint64_t u_int64_t;
-typedef char *SLIRPcaddr_t;
-typedef int ioctlsockopt_t;
-# define ioctlsocket ioctl
-# define closesocket(s) close(s)
-# define O_BINARY 0
+typedef uint8_t		u_int8_t;
+typedef uint16_t	u_int16_t;
+typedef uint32_t	u_int32_t;
+typedef uint64_t	u_int64_t;
+typedef char		*SLIRPcaddr_t;
+typedef int		ioctlsockopt_t;
+# define ioctlsocket	ioctl
+# define closesocket(s)	close(s)
+# define O_BINARY	0
 #endif
 
 #include <sys/types.h>
@@ -95,11 +209,10 @@ typedef int ioctlsockopt_t;
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
 #endif
-
-#ifndef _MSC_VER
-#include <sys/time.h>
+#ifdef _MSC_VER
+# include <time.h>
 #else
-#include <time.h>
+# include <sys/time.h>
 #endif
 
 #ifdef NEED_TYPEDEFS
@@ -139,23 +252,21 @@ typedef u_int32_t uint32;
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-
 #ifdef HAVE_STDLIB_H
 # include <stdlib.h>
 #endif
-
 #include <stdio.h>
 #include <errno.h>
 
 #ifndef HAVE_MEMMOVE
-#define memmove(x, y, z) bcopy(y, x, z)
+# define memmove(x, y, z) bcopy(y, x, z)
 #endif
 
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -165,11 +276,11 @@ typedef u_int32_t uint32;
 #ifdef HAVE_STRING_H
 # include <string.h>
 #else
-#ifndef _MSC_VER
-# include <strings.h>
-#else
-#include <string.h>
-#endif
+# ifndef _MSC_VER
+#  include <strings.h>
+# else
+#  include <string.h>
+# endif
 #endif
 
 #ifndef _WIN32
@@ -177,20 +288,20 @@ typedef u_int32_t uint32;
 #endif
 
 #ifndef _P
-#ifndef NO_PROTOTYPES
+# ifndef NO_PROTOTYPES
 #  define   _P(x)   x
-#else
+# else
 #  define   _P(x)   ()
-#endif
+# endif
 #endif
 
 #ifndef _WIN32
-#include <netinet/in.h>
-#include <arpa/inet.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
 #endif
 
 #ifdef GETTIMEOFDAY_ONE_ARG
-#define gettimeofday(x, y) gettimeofday(x)
+# define gettimeofday(x, y) gettimeofday(x)
 #endif
 
 /* Systems lacking strdup() definition in <string.h>. */
@@ -236,10 +347,6 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 # include <sys/filio.h>
 #endif
 
-#ifdef USE_PPP
-#include <ppp/slirppp.h>
-#endif
-
 #ifdef __STDC__
 #include <stdarg.h>
 #else
@@ -250,7 +357,13 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 
 /* Avoid conflicting with the libc insque() and remque(), which
    have different prototypes. */
+#ifdef insque
+# undef insque
+#endif
 #define insque slirp_insque
+#ifdef remque
+# undef remque
+#endif
 #define remque slirp_remque
 
 #ifdef HAVE_SYS_STROPTS_H
@@ -289,10 +402,6 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 #include "main.h"
 #include "misc.h"
 #include "ctl.h"
-#ifdef USE_PPP
-#include "ppp/pppd.h"
-#include "ppp/ppp.h"
-#endif
 
 #include "bootp.h"
 #include "tftp.h"

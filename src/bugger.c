@@ -44,7 +44,7 @@
  *		configuration register (CTRL_SPCFG bit set) but have to
  *		remember that stuff first...
  *
- * Version:	@(#)bugger.c	1.0.2	2018/03/15
+ * Version:	@(#)bugger.c	1.0.5	2018/04/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -83,12 +83,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "emu.h"
 #include "io.h"
 #include "device.h"
+#include "ui/ui.h"
 #include "plat.h"
-#include "ui.h"
 #include "bugger.h"
 
 
@@ -114,7 +115,6 @@ static uint8_t	bug_ctrl,		/* control register */
 static uint8_t	bug_buff[FIFO_LEN],	/* serial port data buffer */
 		*bug_bptr;
 # define UISTR_LEN	24
-static char	bug_str[UISTR_LEN];	/* UI output string */
 
 
 extern void	ui_sb_bugui(char *__str);
@@ -124,6 +124,9 @@ extern void	ui_sb_bugui(char *__str);
 static void
 bug_setui(void)
 {
+    wchar_t temp[128];
+    char bug_str[UISTR_LEN];
+
     /* Format all current info in a string. */
     sprintf(bug_str, "%02X:%02X %c%c%c%c%c%c%c%c-%c%c%c%c%c%c%c%c",
 		bug_seg2, bug_seg1,
@@ -136,8 +139,11 @@ bug_setui(void)
 		(bug_ledr&0x08)?'R':'r', (bug_ledr&0x04)?'R':'r',
 		(bug_ledr&0x02)?'R':'r', (bug_ledr&0x01)?'R':'r');
 
+    /* Convert to Unicode. */
+    mbstowcs(temp, bug_str, sizeof_w(temp));
+
     /* Send formatted string to the UI. */
-    ui_sb_bugui(bug_str);
+    ui_sb_text_set_w(temp);
 }
 
 
@@ -285,7 +291,7 @@ bug_reset(void)
 
 /* Handle a WRITE operation to one of our registers. */
 static void
-bug_write(uint16_t port, uint8_t val, void *priv)
+bug_write(uint16_t port, uint8_t val, UNUSED(void *priv))
 {
     switch (port-BUGGER_ADDR) {
 	case BUG_CTRL:		/* control register */
@@ -310,7 +316,7 @@ bug_write(uint16_t port, uint8_t val, void *priv)
 
 /* Handle a READ operation from one of our registers. */
 static uint8_t
-bug_read(uint16_t port, void *priv)
+bug_read(uint16_t port, UNUSED(void *priv))
 {
     uint8_t ret = 0xff;
 

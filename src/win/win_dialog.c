@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.6	2018/04/09
+ * Version:	@(#)win_dialog.c	1.0.8	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,13 +48,11 @@
 #include "../emu.h"
 #include "../version.h"
 #include "../device.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "win.h"
 
 
-WCHAR	wopenfilestring[1024];
-char	openfilestring[1024];
 DWORD	filterindex = 0;
 
 
@@ -173,26 +171,45 @@ ui_msgbox(int flags, void *arg)
 }
 
 
-int
-file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save)
+/* Use a hook to center the OFN dialog. */
+static UINT_PTR CALLBACK
+dlg_file_hook(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
+    OFNOTIFY *np;
+
+    switch (uiMsg) {
+	case WM_NOTIFY:
+		np = (OFNOTIFY *)lParam;
+		if (np->hdr.code == CDN_INITDONE)
+			dialog_center(GetParent(hdlg));
+		break;
+    }
+
+    return(TRUE);
+}
+
+
+/* Implement the main GetFileName dialog. */
+int
+dlg_file_ex(HWND hwnd, const wchar_t *filt, const wchar_t *ifn, wchar_t *fn, int save)
+{
+    wchar_t temp[512];
     OPENFILENAME ofn;
-    wchar_t fn[1024];
-    char temp[1024];
     BOOL r;
     DWORD err; 
 
-    /* Clear out the ("initial") pathname. */
-    memset(fn, 0x00, sizeof(fn));
+    /* Clear the temp path. */
+    memset(temp, 0x00, sizeof(temp));
 
     /* Initialize OPENFILENAME. */
     memset(&ofn, 0x00, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = hwnd;
+    ofn.lpfnHook = dlg_file_hook;
 
     /* This is the buffer in which to place the resulting filename. */
-    ofn.lpstrFile = fn;
-    ofn.nMaxFile = sizeof_w(fn);
+    ofn.lpstrFile = temp;
+    ofn.nMaxFile = sizeof_w(temp);
 
     /* Set up the "file types" filter. */
     ofn.lpstrFilter = filt;
@@ -201,12 +218,20 @@ file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save)
     ofn.nMaxFileTitle = 0;
 
     /* Tell the dialog where to go initially. */
-    ofn.lpstrInitialDir = usr_path;
+    if (ifn == NULL)
+	ifn = usr_path;
+    ofn.lpstrInitialDir = ifn;
 
     /* Set up the flags for this dialog. */
-    ofn.Flags = OFN_PATHMUSTEXIST;
-    if (! save)
+    r = (save & 0x80) ? TRUE : FALSE;
+    save &= 0x7f;
+    ofn.Flags = OFN_ENABLEHOOK | OFN_EXPLORER | OFN_PATHMUSTEXIST;
+
+    if (! save) {
 	ofn.Flags |= OFN_FILEMUSTEXIST;
+	if (r == TRUE)
+		ofn.Flags |= OFN_READONLY;
+    }
 
     /* Display the Open dialog box. */
     if (save)
@@ -219,10 +244,7 @@ file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save)
 
     if (r) {
 	/* All good, see if we can make this a relative path. */
-	pc_path(wopenfilestring, sizeof_w(wopenfilestring), fn);
-
-	/* All good, create an ASCII copy of the string as well. */
-	wcstombs(openfilestring, wopenfilestring, sizeof(openfilestring));
+	pc_path(fn, sizeof_w(temp), temp);
 
 	/* Remember the file type for next time. */
 	filterindex = ofn.nFilterIndex;
@@ -231,12 +253,11 @@ file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save)
     }
 
     /* If an error occurred, log this. */
-    err = CommDlgExtendedError();
-    if (err != NO_ERROR) {
-	sprintf(temp, "OpenFile(%ls, %d):\n\n    error 0x%08lx",
-					usr_path, save, err);
-	pclog("%s\n", temp);
-	(void)ui_msgbox(MBX_ERROR|MBX_ANSI, temp);
+    if ((err = CommDlgExtendedError()) != NO_ERROR) {
+	sprintf((char *)temp,
+		"OpenFile(%ls, %d):\n\n    error 0x%08lx", ifn, save, err);
+	pclog("%s\n", (char *)temp);
+	(void)ui_msgbox(MBX_ERROR|MBX_ANSI, (char *)temp);
     }
 
     return(1);
@@ -244,7 +265,7 @@ file_dlg(HWND hwnd, WCHAR *filt, WCHAR *ifn, int save)
 
 
 int
-file_dlg_st(HWND hwnd, int id, WCHAR *fn, int save)
+dlg_file(const wchar_t *filt, const wchar_t *ifn, wchar_t *ofn, int save)
 {
-    return(file_dlg(hwnd, plat_get_string(id), fn, save));
+    return(dlg_file_ex(hwndMain, filt, ifn, ofn, save));
 }

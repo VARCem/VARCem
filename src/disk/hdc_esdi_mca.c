@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.8	2018/04/24
+ * Version:	@(#)hdc_esdi_mca.c	1.0.10	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -85,14 +85,14 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../device.h"
-#include "../dma.h"
 #include "../io.h"
+#include "../dma.h"
+#include "../pic.h"
 #include "../mca.h"
 #include "../mem.h"
-#include "../pic.h"
 #include "../rom.h"
 #include "../timer.h"
-#include "../ui.h"
+#include "../ui/ui.h"
 #include "hdc.h"
 #include "hdd.h"
 
@@ -375,7 +375,7 @@ hdc_callback(void *priv)
                                         	if (dev->rba >= drive->sectors)
                                                 	fatal("Read past end of drive\n");
 						hdd_image_read(drive->hdd_num, dev->rba, 1, (uint8_t *)dev->data);
-			                	ui_sb_update_icon(SB_HDD | HDD_BUS_ESDI, 1);
+			                	ui_sb_icon_update(SB_HDD | HDD_BUS_ESDI, 1);
                                 	}
 
                                 	while (dev->data_pos < 256) {
@@ -461,11 +461,11 @@ hdc_callback(void *priv)
 					hdd_image_write(drive->hdd_num, dev->rba, 1, (uint8_t *)dev->data);
                                 	dev->rba++;
                                 	dev->sector_pos++;
-		                	ui_sb_update_icon(SB_HDD | HDD_BUS_ESDI, 1);
+		                	ui_sb_icon_update(SB_HDD | HDD_BUS_ESDI, 1);
 
                                 	dev->data_pos = 0;
                         	}
-	                	ui_sb_update_icon(SB_HDD | HDD_BUS_ESDI, 0);
+	                	ui_sb_icon_update(SB_HDD | HDD_BUS_ESDI, 0);
 
                         	dev->status = STATUS_CMD_IN_PROGRESS;
                         	dev->cmd_state = 2;

@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.5	2018/04/23
+ * Version:	@(#)hdc_st506_at.c	1.0.7	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -47,14 +47,14 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
-#include "../device.h"
-#include "../io.h"
-#include "../pic.h"
 #include "../cpu/cpu.h"
 #include "../machine/machine.h"
+#include "../io.h"
+#include "../pic.h"
+#include "../device.h"
 #include "../timer.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "hdc.h"
 #include "hdd.h"
 
@@ -506,7 +506,7 @@ hdc_readw(uint16_t port, void *priv)
 			dev->callback = 6LL*ST506_TIME;
 			timer_update_outstanding();
 		} else {
-			ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 0);
+			ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 0);
 		}
 	}
     }
@@ -606,7 +606,7 @@ do_callback(void *priv)
 
 	dev->reset = 0;
 
-	ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 0);
+	ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 0);
 
 	return;
     }
@@ -640,7 +640,7 @@ do_callback(void *priv)
 		dev->pos = 0;
 		dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
 		irq_raise(dev);
-		ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 		break;
 
 	case CMD_WRITE:
@@ -665,9 +665,9 @@ do_callback(void *priv)
 			dev->status |= STAT_DRQ;
 			dev->pos = 0;
 			next_sector(dev);
-			ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
+			ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 		} else {
-			ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 0);
+			ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 0);
 		}
 		irq_raise(dev);
 		break;
@@ -681,7 +681,7 @@ do_callback(void *priv)
 		dev->pos = 0;
 		dev->status = STAT_READY|STAT_DSC;
 		irq_raise(dev);
-		ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 		break;
 
 	case CMD_FORMAT:
@@ -701,7 +701,7 @@ do_callback(void *priv)
 
 		dev->status = STAT_READY|STAT_DSC;
 		irq_raise(dev);
-		ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 		break;
 
 	case CMD_DIAGNOSE:
@@ -784,7 +784,7 @@ st506_init(const device_t *info)
 
     timer_add(do_callback, &dev->callback, &dev->callback, dev);	
 
-    ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 0);
+    ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 0);
 
     return(dev);
 }
@@ -804,7 +804,7 @@ st506_close(void *priv)
 
     free(dev);
 
-    ui_sb_update_icon(SB_HDD|HDD_BUS_ST506, 0);
+    ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 0);
 }
 
 

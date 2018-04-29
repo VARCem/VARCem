@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.29	2018/04/26
+ * Version:	@(#)pc.c	1.0.30	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,7 +85,7 @@
 #include "sound/sound.h"
 #include "sound/snd_speaker.h"
 #include "video/video.h"
-#include "ui.h"
+#include "ui/ui.h"
 #include "plat.h"
 
 
@@ -120,7 +120,9 @@ int	vid_api = 0,				/* (C) video renderer */
 	scale = 0,				/* (C) screen scale factor */
 	enable_overscan = 0,			/* (C) video */
 	force_43 = 0,				/* (C) video */
-	video_card = 0,				/* (C) graphics/video card */
+	rctrl_is_lalt,				/* (C) set R-CTRL as L-ALT */
+	update_icons = 1;			/* (C) update statbar icons */
+int	video_card = 0,				/* (C) graphics/video card */
 	video_speed = 0,			/* (C) video */
 	voodoo_enabled = 0;			/* (C) video option */
 int	mouse_type = 0;				/* (C) selected mouse type */
@@ -130,8 +132,6 @@ int	game_enabled = 0,			/* (C) enable game port */
 	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
 	parallel_device[] = {0,0,0},		/* (C) set up LPT devices */
 	bugger_enabled = 0;			/* (C) enable ISAbugger */
-int	rctrl_is_lalt;				/* (C) set R-CTRL as L-ALT */
-int	update_icons;				/* (C) enable icons updates */
 #ifdef WALTJE
 int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
@@ -858,7 +858,7 @@ pc_reset_hard_init(void)
 	game_update_joystick_type();
 
     if (config_changed) {
-	ui_sb_update_panes();
+	ui_sb_update();
 
         config_save();
 
@@ -995,7 +995,7 @@ pc_thread(void *param)
     while (! *quitp) {
 	/* Update the Stat(u)s window with the current info. */
 	if (status_update_needed) {
-		ui_status_update();
+		dlg_status_update();
 		status_update_needed = 0;
 	}
 

@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_xt_laserxt.c	1.0.4	2018/03/27
+ * Version:	@(#)m_xt_laserxt.c	1.0.5	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,9 @@
 #include "../mem.h"
 #include "../rom.h"
 #include "machine.h"
+
+
+#if defined(DEV_BRANCH) && defined(USE_LASERXT)
 
 
 static int	ems_page[4];
@@ -198,3 +201,7 @@ machine_xt_laserxt_init(const machine_t *model, void *arg)
 
 	laserxt_init();
 }
+
+
+
+#endif	/*defined(DEV_BRANCH) && defined(USE_LASERXT)*/

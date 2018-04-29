@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.4	2018/04/25
+ * Version:	@(#)hdc_ide_xta.c	1.0.6	2018/04/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -100,14 +100,14 @@
 #include "../rom.h"
 #include "../device.h"
 #include "../timer.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "hdc.h"
 #include "hdd.h"
 
 
 #define HDC_TIME	(50*TIMER_USEC)
-#define XTA_NUM		2			/* we support 2 drives */
+#define XTA_NUM		1			/* we support 1 drive */
 
 #define WD_BIOS_FILE	L"disk/xta/idexywd2.bin"
 
@@ -388,7 +388,7 @@ do_format(hdc_t *dev, drive_t *drive, dcb_t *dcb)
 			drive->id, dev->track, dev->head);
 #endif
 		/* Activate the status icon. */
-		ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
 
 do_fmt:
 		/*
@@ -423,7 +423,7 @@ do_fmt:
     }
 
     /* De-activate the status icon. */
-    ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+    ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 }
 
 
@@ -529,7 +529,7 @@ hdc_callback(void *priv)
 
 			case STATE_SEND:
 				/* Activate the status icon. */
-				ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 1);
+				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
 #ifdef ENABLE_HDC_LOG
 				hdc_log("%s: read_%s(%d: %d,%d,%d) cnt=%d\n",
 				    dev->name, (no_data)?"verify":"sector",
@@ -540,7 +540,7 @@ do_send:
 				/* Get address of sector to load. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 					dev->comp |= COMP_ERR;
 					set_intr(dev);
 					return;
@@ -604,7 +604,7 @@ do_send:
 					    drive->id);
 #endif
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 					set_intr(dev);
 					return;
@@ -652,7 +652,7 @@ do_send:
 
 			case STATE_RECV:
 				/* Activate the status icon. */
-				ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 1);
+				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
 #ifdef ENABLE_HDC_LOG
 				hdc_log("%s: write_%s(%d: %d,%d,%d) cnt=%d\n",
 				    dev->name, (no_data)?"verify":"sector",
@@ -711,7 +711,7 @@ do_recv:
 				/* Get address of sector to write. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 					dev->comp |= COMP_ERR;
 					set_intr(dev);
@@ -730,7 +730,7 @@ do_recv:
 					    drive->id);
 #endif
 					/* De-activate the status icon. */
-					ui_sb_update_icon(SB_HDD|HDD_BUS_IDE, 0);
+					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
 
 					set_intr(dev);
 					return;

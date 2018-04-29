@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.11	2018/04/25
+ * Version:	@(#)win_devconf.c	1.0.14	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,8 +51,8 @@
 #include "../emu.h"
 #include "../config.h"
 #include "../device.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "win.h"
 
 
@@ -183,6 +183,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_INITDIALOG:
+		dialog_center(hdlg);
 		dlg_init(hdlg);
 		return TRUE;
 
@@ -425,8 +426,8 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 								if (ws[c] == L'|')
 									ws[c] = 0;
 
-							if (! file_dlg(hdlg, ws, L"", 0))
-								SendMessage(h, WM_SETTEXT, 0, (LPARAM)wopenfilestring);
+							if (! dlg_file_ex(hdlg, ws, NULL, temp, 0))
+								SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp);
 						}
 						break;
 				}

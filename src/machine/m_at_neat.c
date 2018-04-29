@@ -10,7 +10,7 @@
  *
  *		This is the chipset used in the AMI 286 clone model.
  *
- * Version:	@(#)m_at_neat.c	1.0.4	2018/04/26
+ * Version:	@(#)m_at_neat.c	1.0.5	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,7 +99,7 @@ neat_read(uint16_t port, void *priv)
 }
 
 
-#if NOT_USED
+#if 0	/*NOT_USED*/
 static void
 neat_writeems(uint32_t addr, uint8_t val)
 {

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.24	2018/04/26
+ * Version:	@(#)win_settings.c	1.0.26	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -70,8 +70,8 @@
 #include "../sound/midi.h"
 #include "../sound/snd_mpu401.h"
 #include "../video/video.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "win.h"
 
 
@@ -167,7 +167,7 @@ settings_msgbox(int type, void *arg)
 
 /* This does the initial read of global variables into the temporary ones. */
 static void
-settings_init(void)
+dlg_init(void)
 {
     int i = 0;
 
@@ -569,7 +569,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-settings_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h;
     int category;
@@ -580,7 +580,8 @@ settings_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_INITDIALOG:
-		settings_init();
+		dialog_center(hdlg);
+		dlg_init();
 
 		disk_track_init();
 		cdrom_track_init();
@@ -600,6 +601,8 @@ settings_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
 #endif
+
+//		dialog_center(hdlg);
 		return(TRUE);
 
 	case WM_NOTIFY:
@@ -654,7 +657,7 @@ settings_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 int
-win_settings_open(HWND hwnd, int ask)
+dlg_settings(int ask)
 {
     int i, m, v;
 
@@ -671,7 +674,7 @@ win_settings_open(HWND hwnd, int ask)
     }
 
     ask_sure = ask;
-    i = DialogBox(hinstance, (LPCWSTR)DLG_CONFIG, hwnd, settings_proc);
+    i = DialogBox(hinstance, (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);
 
     return(i);
 }

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Sound Gain dialog.
  *
- * Version:	@(#)win_snd_gain.c	1.0.3	2018/03/07
+ * Version:	@(#)win_snd_gain.c	1.0.4	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,8 +45,9 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
-#include "../plat.h"
 #include "../sound/sound.h"
+#include "../ui/ui.h"
+#include "../plat.h"
 #include "win.h"
 
 
@@ -58,7 +59,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-SoundGainDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h;
 
@@ -104,7 +105,7 @@ SoundGainDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 void
-SoundGainDialogCreate(HWND hwnd)
+dlg_sound_gain(void)
 {
-    DialogBox(hinstance, (LPCTSTR)DLG_SND_GAIN, hwnd, SoundGainDialogProcedure);
+    DialogBox(hinstance, (LPCTSTR)DLG_SND_GAIN, hwndMain, dlg_proc);
 }

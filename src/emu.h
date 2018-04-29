@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.19	2018/04/26
+ * Version:	@(#)emu.h	1.0.20	2018/04/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -104,7 +104,9 @@ extern int	vid_api,			/* (C) video renderer */
 		suppress_overscan,		/* (C) suppress overscans */
 		scale,				/* (C) screen scale factor */
 		enable_overscan,		/* (C) video */
-		force_43;			/* (C) video */
+		force_43,			/* (C) video */
+		rctrl_is_lalt,			/* (C) set R-CTRL as L-ALT */
+		update_icons;			/* (C) update statbar icons */
 extern int	video_card,			/* (C) graphics/video card */
 		video_speed,			/* (C) video option */
 		voodoo_enabled;			/* (C) video option */
@@ -115,8 +117,6 @@ extern int	game_enabled,			/* (C) enable game port */
 		parallel_enabled[],		/* (C) enable LPT ports */
 		parallel_device[],		/* (C) set up LPT devices */
 		bugger_enabled;			/* (C) enable ISAbugger */
-extern int	rctrl_is_lalt;			/* (C) set R-CTRL as L-ALT */
-extern int	update_icons;			/* (C) enable icons updates */
 #ifdef WALTJE
 extern int	romdos_enabled;			/* (C) enable ROM DOS */
 #endif

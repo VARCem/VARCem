@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.8	2018/04/02
+ * Version:	@(#)snd_emu8k.c	1.0.9	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -361,7 +361,7 @@ static inline int16_t EMU8K_READ(emu8k_t *emu8k, uint32_t addr)
         return emu8k->ram_pointers[addrmem.hb_address][addrmem.lw_address];
 }
 
-#if NOTUSED
+#if 0	/*NOT_USED*/
 static inline int16_t EMU8K_READ_INTERP_LINEAR(emu8k_t *emu8k, uint32_t int_addr, uint16_t fract)
 {
         /* The interpolation in AWE32 used a so-called patented 3-point interpolation

@@ -8,7 +8,7 @@
  *
  *		Handle the About dialog.
  *
- * Version:	@(#)win_about.c	1.0.5	2018/03/20
+ * Version:	@(#)win_about.c	1.0.6	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../version.h"
+#include "../ui/ui.h"
 #include "../plat.h"
 #include "win.h"
 
@@ -77,7 +78,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-AboutDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     char temp[128];
     HWND h;
@@ -116,11 +117,11 @@ AboutDialogProcedure(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 void
-AboutDialogCreate(HWND hwnd)
+dlg_about(void)
 {
     plat_pause(1);
 
-    DialogBox(hinstance, (LPCTSTR)DLG_ABOUT, hwnd, AboutDialogProcedure);
+    DialogBox(hinstance, (LPCTSTR)DLG_ABOUT, hwndMain, dlg_proc);
 
     plat_pause(0);
 }

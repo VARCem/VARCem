@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.5	2018/04/10
+ * Version:	@(#)network.c	1.0.7	2018/04/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,8 +58,8 @@
 #endif
 #include "../emu.h"
 #include "../device.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "network.h"
 #include "net_ne2000.h"
 
@@ -329,7 +329,7 @@ network_reset(void)
     pclog("NETWORK: reset (type=%d, card=%d)\n",
 				network_type, network_card);
 #endif
-    ui_sb_update_icon(SB_NETWORK, 0);
+    ui_sb_icon_update(SB_NETWORK, 0);
 
     /* Just in case.. */
     network_close();
@@ -381,7 +381,7 @@ network_reset(void)
 void
 network_tx(uint8_t *bufp, int len)
 {
-    ui_sb_update_icon(SB_NETWORK, 1);
+    ui_sb_icon_update(SB_NETWORK, 1);
 
 #ifdef WALTJE
 {
@@ -401,7 +401,7 @@ network_tx(uint8_t *bufp, int len)
 		break;
     }
 
-    ui_sb_update_icon(SB_NETWORK, 0);
+    ui_sb_icon_update(SB_NETWORK, 0);
 }
 
 

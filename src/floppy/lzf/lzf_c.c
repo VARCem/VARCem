@@ -33,10 +33,15 @@
  * provisions above, a recipient may use your version of this file under
  * either the BSD or the GPL.
  */
-
 #include <stdint.h>
-
 #include "lzfP.h"
+
+#ifndef ULTRA_FAST
+# define ULTRA_FAST	0
+#endif
+#ifndef VERY_FAST
+# define VERY_FAST	0
+#endif
 
 #define HSIZE (1 << (HLOG))
 

@@ -127,4 +127,7 @@ protected:
   bool can_use_sse;
 };
 
+extern float convolve(const float *, const float *, int);
+extern float convolve_sse(const float *, const float *, int);
+
 #endif // not __SID_H__

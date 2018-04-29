@@ -217,7 +217,7 @@ icmp_error(struct SLIRPmbuf *msrc, u_char type, u_char code, int minsize, char *
   /* check msrc */
   if(!msrc) goto end_error;
   ip = mtod(msrc, struct ip *);
-#if SLIRP_DEBUG
+#ifdef SLIRP_DEBUG
   { char bufa[20], bufb[20];
     strcpy(bufa, inet_ntoa(ip->ip_src));
     strcpy(bufb, inet_ntoa(ip->ip_dst));
@@ -274,7 +274,7 @@ icmp_error(struct SLIRPmbuf *msrc, u_char type, u_char code, int minsize, char *
   HTONS(icp->icmp_ip.ip_id);
   HTONS(icp->icmp_ip.ip_off);
 
-#if SLIRP_DEBUG
+#ifdef SLIRP_DEBUG
   if(message) {           /* DEBUG : append message to ICMP packet */
     int message_len;
     char *cpnt;

@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.7	2018/04/02
+ * Version:	@(#)scsi_ncr53c810.c	1.0.8	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -310,7 +310,7 @@ sextract32(uint32_t value, int start, int length)
 }
 
 
-#if NOTUSED
+#if 0	/*NOT_USED*/
 static __inline uint32_t
 deposit32(uint32_t value, int start, int length,
                                  uint32_t fieldval)

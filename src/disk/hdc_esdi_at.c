@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.7	2018/04/23
+ * Version:	@(#)hdc_esdi_at.c	1.0.9	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,16 +45,16 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
-#include "../device.h"
-#include "../io.h"
-#include "../mem.h"
-#include "../pic.h"
-#include "../rom.h"
 #include "../cpu/cpu.h"
 #include "../machine/machine.h"
+#include "../io.h"
+#include "../pic.h"
+#include "../mem.h"
+#include "../rom.h"
+#include "../device.h"
 #include "../timer.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "hdc.h"
 #include "hdd.h"
 
@@ -438,7 +438,7 @@ hdc_readw(uint16_t port, void *priv)
 			dev->callback = 6LL*HDC_TIME;
 			timer_update_outstanding();
 		} else {
-			ui_sb_update_icon(SB_HDD|HDD_BUS_ESDI, 0);
+			ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 0);
 		}
 	}
     }
@@ -513,7 +513,7 @@ hdc_callback(void *priv)
 	dev->cylinder = 0;
 	dev->reset = 0;
 
-	ui_sb_update_icon(SB_HDD|HDD_BUS_ESDI, 0);
+	ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 0);
 
 	return;
     }
@@ -565,7 +565,7 @@ hdc_callback(void *priv)
 		dev->pos = 0;
 		dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
 		irq_raise(dev);
-		ui_sb_update_icon(SB_HDD|HDD_BUS_ESDI, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		break;
 
 	case CMD_WRITE:
@@ -595,7 +595,7 @@ hdc_callback(void *priv)
 		} else {
 			dev->status = STAT_READY|STAT_DSC;
 		}
-		ui_sb_update_icon(SB_HDD|HDD_BUS_ESDI, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		break;
 
 	case CMD_VERIFY:
@@ -616,7 +616,7 @@ hdc_callback(void *priv)
 		hdd_image_read(drive->hdd_num, addr, 1,
 			      (uint8_t *)dev->buffer);
 
-		ui_sb_update_icon(SB_HDD|HDD_BUS_ESDI, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		next_sector(dev);
 		dev->secount = (dev->secount - 1) & 0xff;
 		if (dev->secount)
@@ -647,7 +647,7 @@ hdc_callback(void *priv)
 
 		dev->status = STAT_READY|STAT_DSC;
 		irq_raise(dev);
-		ui_sb_update_icon(SB_HDD|HDD_BUS_ESDI, 1);
+		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		break;
 
 	case CMD_DIAGNOSE:
@@ -779,7 +779,7 @@ hdc_callback(void *priv)
 		break;
     }
 
-    ui_sb_update_icon(SB_HDD|HDD_BUS_ESDI, 0);
+    ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 0);
 }
 
 
@@ -838,7 +838,7 @@ wd1007vse1_init(const device_t *info)
 
     timer_add(hdc_callback, &dev->callback, &dev->callback, dev);
 
-    ui_sb_update_icon(SB_HDD | HDD_BUS_ESDI, 0);
+    ui_sb_icon_update(SB_HDD | HDD_BUS_ESDI, 0);
 
     return(dev);
 }
@@ -859,7 +859,7 @@ wd1007vse1_close(void *priv)
 
     free(dev);
 
-    ui_sb_update_icon(SB_HDD | HDD_BUS_ESDI, 0);
+    ui_sb_icon_update(SB_HDD | HDD_BUS_ESDI, 0);
 }
 
 

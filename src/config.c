@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.19	2018/04/26
+ * Version:	@(#)config.c	1.0.20	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,8 +72,8 @@
 #include "sound/midi.h"
 #include "sound/sound.h"
 #include "video/video.h"
+#include "ui/ui.h"
 #include "plat.h"
-#include "ui.h"
 
 
 #define ANSI_CFG		1		/* for now, always */

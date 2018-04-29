@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.7	2018/03/21
+ * Version:	@(#)cdrom_image.cpp	1.0.8	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -96,7 +96,7 @@ void cdrom_image_log(const char *format, ...)
 
 void image_close(uint8_t id);
 
-void image_audio_callback(uint8_t id, int16_t *output, int len)
+static void image_audio_callback(uint8_t id, int16_t *output, int len)
 {
 	cdrom_t *dev = cdrom[id];
 
@@ -138,7 +138,7 @@ void image_audio_callback(uint8_t id, int16_t *output, int len)
         dev->cd_buflen -= len;
 }
 
-void image_audio_stop(uint8_t id)
+static void image_audio_stop(uint8_t id)
 {
     cdrom_t *dev = cdrom[id];
 

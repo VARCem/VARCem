@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.10	2018/04/02
+ * Version:	@(#)zip.c	1.0.12	2018/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,8 +50,8 @@
 #include "../nvr.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "zip.h"
 
 
@@ -512,7 +512,7 @@ int find_zip_for_channel(uint8_t channel)
 
 void zip_init(int id, int cdb_len_setting);
 
-int zip_load(uint8_t id, wchar_t *fn)
+int zip_load(uint8_t id, const wchar_t *fn)
 {
 	int read_only = zip_drives[id].ui_writeprot;
 	int size = 0;
@@ -1673,9 +1673,9 @@ void zip_command(uint8_t id, uint8_t *cdb)
 
 			zip[id].all_blocks_total = zip[id].block_total;
 			if (zip[id].packet_status != ZIP_PHASE_COMPLETE)
-				ui_sb_update_icon(SB_ZIP | id, 1);
+				ui_sb_icon_update(SB_ZIP | id, 1);
 			else
-				ui_sb_update_icon(SB_ZIP | id, 0);
+				ui_sb_icon_update(SB_ZIP | id, 0);
 			return;
 
 		case GPCMD_VERIFY_6:
@@ -1765,9 +1765,9 @@ void zip_command(uint8_t id, uint8_t *cdb)
 
 			zip[id].all_blocks_total = zip[id].block_total;
 			if (zip[id].packet_status != ZIP_PHASE_COMPLETE)
-				ui_sb_update_icon(SB_ZIP | id, 1);
+				ui_sb_icon_update(SB_ZIP | id, 1);
 			else
-				ui_sb_update_icon(SB_ZIP | id, 0);
+				ui_sb_icon_update(SB_ZIP | id, 0);
 			return;
 
 		case GPCMD_WRITE_SAME_10:
@@ -1831,9 +1831,9 @@ void zip_command(uint8_t id, uint8_t *cdb)
 
 			zip[id].all_blocks_total = zip[id].block_total;
 			if (zip[id].packet_status != ZIP_PHASE_COMPLETE)
-				ui_sb_update_icon(SB_ZIP | id, 1);
+				ui_sb_icon_update(SB_ZIP | id, 1);
 			else
-				ui_sb_update_icon(SB_ZIP | id, 0);
+				ui_sb_icon_update(SB_ZIP | id, 0);
 			return;
 
 		case GPCMD_MODE_SENSE_6:
@@ -2334,7 +2334,7 @@ void zip_pio_request(uint8_t id, uint8_t out)
 				zip_command_complete(id);
 		} else
 			zip_command_complete(id);
-		ui_sb_update_icon(SB_ZIP | id, 0);
+		ui_sb_icon_update(SB_ZIP | id, 0);
 		zip_buf_free(id);
 	} else {
 #ifdef ENABLE_ZIP_LOG
@@ -2436,7 +2436,7 @@ int zip_read_from_dma(uint8_t id)
 		zip[id].packet_status = ZIP_PHASE_COMPLETE;
 		zip[id].status = READY_STAT;
 		zip[id].phase = 3;
-		ui_sb_update_icon(SB_ZIP | id, 0);
+		ui_sb_icon_update(SB_ZIP | id, 0);
 		zip_irq_raise(id);
 		if (ret)
 			return 1;
@@ -2504,7 +2504,7 @@ int zip_write_to_dma(uint8_t id)
 		zip[id].packet_status = ZIP_PHASE_COMPLETE;
 		zip[id].status = READY_STAT;
 		zip[id].phase = 3;
-		ui_sb_update_icon(SB_ZIP | id, 0);
+		ui_sb_icon_update(SB_ZIP | id, 0);
 		zip_irq_raise(id);
 		if (ret)
 			return 1;
@@ -2542,7 +2542,7 @@ void zip_phase_callback(uint8_t id)
 			zip[id].status = READY_STAT;
 			zip[id].phase = 3;
 			zip[id].packet_status = 0xFF;
-			ui_sb_update_icon(SB_ZIP | id, 0);
+			ui_sb_icon_update(SB_ZIP | id, 0);
 			zip_irq_raise(id);
 			return;
 		case ZIP_PHASE_DATA_OUT:
@@ -2581,7 +2581,7 @@ void zip_phase_callback(uint8_t id)
 			zip[id].phase = 3;
 			zip[id].packet_status = 0xFF;
 			zip_irq_raise(id);
-			ui_sb_update_icon(SB_ZIP | id, 0);
+			ui_sb_icon_update(SB_ZIP | id, 0);
 			return;
 	}
 }

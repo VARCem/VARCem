@@ -8,7 +8,7 @@
  *
  *		Definitions for the DOSbox OPL emulator.
  *
- * Version:	@(#)snd_dbopl.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_dbopl.h	1.0.2	2018/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@ extern "C" {
         void opl_init(void (*timer_callback)(void *param, int timer, int64_t period), void *timer_param, int nr, int is_opl3);
         void opl_write(int nr, uint16_t addr, uint8_t val);
         uint8_t opl_read(int nr, uint16_t addr);
+	void opl_status_update(int nr);
         void opl_timer_over(int nr, int timer);
         void opl2_update(int nr, int16_t *buffer, int samples);
         void opl3_update(int nr, int16_t *buffer, int samples);

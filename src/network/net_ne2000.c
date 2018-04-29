@@ -12,7 +12,7 @@
  *			- Realtek RTL8019AS (ISA 16-bit, PnP);
  *			- Realtek RTL8029AS (PCI).
  *
- * Version:	@(#)net_ne2000.c	1.0.4	2018/03/31
+ * Version:	@(#)net_ne2000.c	1.0.6	2018/04/28
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -61,8 +61,8 @@
 #include "../pic.h"
 #include "../random.h"
 #include "../device.h"
+#include "../ui/ui.h"
 #include "../plat.h"
-#include "../ui.h"
 #include "network.h"
 #include "net_ne2000.h"
 #include "bswap.h"
@@ -2195,7 +2195,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
     int endbytes;
 
     //FIXME: move to upper layer
-    ui_sb_update_icon(SB_NETWORK, 1);
+    ui_sb_icon_update(SB_NETWORK, 1);
 
     if (io_len != 60)
 	nelog(2, "%s: rx_frame with length %d\n", dev->name, io_len);
@@ -2227,7 +2227,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 	nelog(1, "%s: no space\n", dev->name);
 
     //FIXME: move to upper layer
-	ui_sb_update_icon(SB_NETWORK, 0);
+	ui_sb_icon_update(SB_NETWORK, 0);
 	return;
     }
 
@@ -2235,7 +2235,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 	nelog(1, "%s: rejected small packet, length %d\n", dev->name, io_len);
 
     //FIXME: move to upper layer
-	ui_sb_update_icon(SB_NETWORK, 0);
+	ui_sb_icon_update(SB_NETWORK, 0);
 	return;
     }
 
@@ -2258,7 +2258,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 			nelog(2, "%s: RX BC disabled\n", dev->name);
 
     //FIXME: move to upper layer
-			ui_sb_update_icon(SB_NETWORK, 0);
+			ui_sb_icon_update(SB_NETWORK, 0);
 			return;
 		}
 	}
@@ -2272,7 +2272,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 #endif
 
     //FIXME: move to upper layer
-			ui_sb_update_icon(SB_NETWORK, 0);
+			ui_sb_icon_update(SB_NETWORK, 0);
 			return;
 		}
 
@@ -2282,7 +2282,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 			nelog(2, "%s: RX MC not listed\n", dev->name);
 
     //FIXME: move to upper layer
-			ui_sb_update_icon(SB_NETWORK, 0);
+			ui_sb_icon_update(SB_NETWORK, 0);
 			return;
 		}
 	}
@@ -2335,7 +2335,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 	nic_interrupt(dev, 1);
 
     //FIXME: move to upper layer
-    ui_sb_update_icon(SB_NETWORK, 0);
+    ui_sb_icon_update(SB_NETWORK, 0);
 }
 
 
