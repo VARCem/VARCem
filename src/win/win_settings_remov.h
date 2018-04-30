@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the Settings dialog.
+ *		Implementation of the "Removable Devices" dialog.
  *
- * Version:	@(#)win_settings_remov.h	1.0.3	2018/04/29
+ * Version:	@(#)win_settings_remov.h	1.0.4	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,7 +53,7 @@ cdrom_track_init(void)
 {
     int i;
 
-    for (i=0; i<CDROM_NUM; i++) {
+    for (i = 0; i < CDROM_NUM; i++) {
 	if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY)
 		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
 	else if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA)

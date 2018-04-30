@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.23	2018/04/30
+ * Version:	@(#)VARCem.rc	1.0.24	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -528,7 +528,7 @@ BEGIN
     PUSHBUTTON      "Configure",IDC_CONFIGURE_NET,214,43,46,12
 END
 
-DLG_CFG_PORTS DIALOG DISCARDABLE  97, 0, 267, 99
+DLG_CFG_PORTS DIALOG DISCARDABLE  97, 0, 267, 120
 STYLE DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
@@ -1098,10 +1098,9 @@ BEGIN
     IDS_5376	"Disabled"
     IDS_5377    "<Reserved>"
     IDS_5378    "<Reserved>"
-    IDS_5379    "<Reserved>"
-    IDS_5380	"ATAPI (PIO-only)"
-    IDS_5381	"ATAPI (PIO and DMA)"
-    IDS_5382    "SCSI"
+    IDS_5379	"ATAPI (PIO-only)"
+    IDS_5380	"ATAPI (PIO and DMA)"
+    IDS_5381    "SCSI"
 END
 
 STRINGTABLE DISCARDABLE
@@ -1109,10 +1108,9 @@ BEGIN
     IDS_5632	"Disabled"
     IDS_5633    "<Reserved>"
     IDS_5634    "<Reserved>"
-    IDS_5635    "<Reserved>"
-    IDS_5636	"ATAPI (PIO-only) (%01i:%01i)"
-    IDS_5637	"ATAPI (PIO and DMA) (%01i:%01i)"
-    IDS_5638    "SCSI (%02i:%02i)"
+    IDS_5635	"ATAPI (PIO-only) (%01i:%01i)"
+    IDS_5636	"ATAPI (PIO and DMA) (%01i:%01i)"
+    IDS_5637    "SCSI (%02i:%02i)"
 END
 
 STRINGTABLE DISCARDABLE

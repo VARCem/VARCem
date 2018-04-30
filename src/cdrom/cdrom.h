@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.8	2018/03/20
+ * Version:	@(#)cdrom.h	1.0.9	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,7 +73,8 @@ extern "C" {
 
 enum {
     CDROM_BUS_DISABLED = 0,
-    CDROM_BUS_ATAPI_PIO_ONLY = 4,
+    /* skip ST506 and ESDI */
+    CDROM_BUS_ATAPI_PIO_ONLY = 3,
     CDROM_BUS_ATAPI_PIO_AND_DMA,
     CDROM_BUS_SCSI,
     CDROM_BUS_USB = 8

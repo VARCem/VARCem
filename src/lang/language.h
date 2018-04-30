@@ -8,9 +8,7 @@
  *
  *		Definitions for the language management module.
  *
- * NOTE:	FIXME: Strings 2176 and 2193 are same.
- *
- * Version:	@(#)language.h	1.0.8	2018/04/23
+ * Version:	@(#)language.h	1.0.9	2018/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -218,18 +216,16 @@
 #define IDS_5376	5376		// "Disabled"
 #define IDS_5377	5377		// "<Reserved>"
 #define IDS_5378	5378		// "<Reserved>"
-#define IDS_5379	5379		// "<Reserved>"
-#define IDS_5380	5380		// "ATAPI (PIO-only)"
-#define IDS_5381	5381		// "ATAPI (PIO and DMA)"
-#define IDS_5382	5382		// "SCSI"
+#define IDS_5379	5379		// "ATAPI (PIO-only)"
+#define IDS_5380	5380		// "ATAPI (PIO and DMA)"
+#define IDS_5381	5381		// "SCSI"
 
 #define IDS_5632	5632		// "Disabled"
 #define IDS_5633	5633		// "<Reserved>"
 #define IDS_5634	5634		// "<Reserved>"
-#define IDS_5635	5635		// "<Reserved>"
-#define IDS_5636	5636		// "ATAPI (PIO-only) (%01i:%01i)"
-#define IDS_5637	5637		// "ATAPI (PIO and DMA) (%01i:%01i)"
-#define IDS_5638	5638		// "SCSI (%02i:%02i)"
+#define IDS_5635	5635		// "ATAPI (PIO-only) (%01i:%01i)"
+#define IDS_5636	5636		// "ATAPI (PIO and DMA) (%01i:%01i)"
+#define IDS_5637	5637		// "SCSI (%02i:%02i)"
 
 #define IDS_5888	5888		// "160 kB"
 #define IDS_5889	5889		// "180 kB"
@@ -261,8 +257,8 @@
 #define STR_NUM_4352	6
 #define STR_NUM_4608	6
 #define STR_NUM_5120	1
-#define STR_NUM_5376	7
-#define STR_NUM_5632	7
+#define STR_NUM_5376	6
+#define STR_NUM_5632	6
 #define STR_NUM_5888	14
 #define STR_NUM_6144	4
 #define STR_NUM_7168	1
