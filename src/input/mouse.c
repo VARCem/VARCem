@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.9	2018/04/26
+ * Version:	@(#)mouse.c	1.0.10	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,6 +63,9 @@ typedef struct {
 } mouse_t;
 
 
+#ifdef ENABLE_MOUSE_LOG
+int	mouse_do_log = ENABLE_MOUSE_LOG;
+#endif
 int	mouse_x,
 	mouse_y,
 	mouse_z,

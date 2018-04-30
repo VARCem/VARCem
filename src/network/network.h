@@ -8,7 +8,7 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.3	2018/04/10
+ * Version:	@(#)network.h	1.0.4	2018/04/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -87,7 +87,8 @@ extern "C" {
 #endif
 
 /* Global variables. */
-extern int	nic_do_log;				/* config */
+extern int	network_do_log,				/* config */
+		network_dev_log;
 extern int      network_ndev;
 extern netdev_t network_devs[32];
 

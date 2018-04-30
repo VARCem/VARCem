@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.8	2018/04/26
+ * Version:	@(#)parallel.c	1.0.9	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../io.h"
 #include "../device.h"
@@ -76,6 +78,21 @@ int			parallel_do_log = ENABLE_PARALLEL_LOG;
 static parallel_t	ports[PARALLEL_MAX];	/* the ports */
 
 
+static void
+parlog(const char *fmt, ...)
+{
+#ifdef ENABLE_PARALLEL_LOG
+    va_list ap;
+
+    if (parallel_do_log) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
+
+
 /* Write a value to a port (and/or its attached device.) */
 static void
 parallel_write(uint16_t port, uint8_t val, void *priv)
@@ -83,7 +100,7 @@ parallel_write(uint16_t port, uint8_t val, void *priv)
     parallel_t *dev = (parallel_t *)priv;
 
 #ifdef ENABLE_PARALLEL_LOG
-    pclog("PARALLEL: write(%04X, %02X)\n", port, val);
+    parlog("PARALLEL: write(%04X, %02X)\n", port, val);
 #endif
 
     switch (port & 3) {
@@ -125,7 +142,7 @@ parallel_read(uint16_t port, void *priv)
 		break;
     }
 #ifdef ENABLE_PARALLEL_LOG
-    pclog("PARALLEL: read(%04X) => %02X\n", port, ret);
+    parlog("PARALLEL: read(%04X) => %02X\n", port, ret);
 #endif
 
     return(ret);
@@ -224,7 +241,7 @@ parallel_reset(void)
     int i;
 
 #ifdef ENABLE_PARALLEL_LOG
-    pclog("PARALLEL: reset ([%d] [%d] [%d])\n",
+    parlog("PARALLEL: reset ([%d] [%d] [%d])\n",
 	parallel_enabled[0], parallel_enabled[1], parallel_enabled[2]);
 #endif
 
@@ -245,7 +262,7 @@ parallel_setup(int id, uint16_t port)
     parallel_t *dev = &ports[id-1];
 
 #if defined(ENABLE_PARALLEL_LOG) && defined(_DEBUG)
-    pclog("PARALLEL: setting up LPT%d as %04X [enabled=%d]\n",
+    parlog("PARALLEL: setting up LPT%d as %04X [enabled=%d]\n",
 			id, port, parallel_enabled[id-1]);
 #endif
     if (! parallel_enabled[id-1]) return;

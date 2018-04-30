@@ -10,7 +10,7 @@
  *
  * TODO:	Implement the ENABLE_FDD_LOG stuff.
  *
- * Version:	@(#)fdd.c	1.0.10	2018/04/28
+ * Version:	@(#)fdd.c	1.0.11	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,6 +76,10 @@ int		defaultwriteprot = 0;
 int		curdrive = 0;
 int		motorspin;
 int		fdc_indexcount = 52;
+#ifdef ENABLE_FDD_LOG
+int		fdd_do_log = ENABLE_FDD_LOG;
+#endif
+
 
 static fdc_t	*fdd_fdc;
 

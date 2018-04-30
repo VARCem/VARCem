@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.22	2018/04/27
+ * Version:	@(#)VARCem.rc	1.0.23	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -35,20 +35,14 @@
  *   USA.
  */
 #include <inttypes.h>
-#define IN_RESOURCE_H
+#include <windows.h>
 #include "../emu.h"
 #include "../version.h"
 #include "../ui/ui.h"
 #include "../ui/ui_resource.h"
 #include "../plat.h"
 #include "resource.h"
-#undef IN_RESOURCE_H
 
-//#define APSTUDIO_READONLY_SYMBOLS
-//#define APSTUDIO_HIDDEN_SYMBOLS
-#include "windows.h"
-//#undef APSTUDIO_READONLY_SYMBOLS
-//#undef APSTUDIO_HIDDEN_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
 // English (U.S.) resources
@@ -71,8 +65,8 @@ BEGIN
         MENUITEM "&Hard Reset",                 IDM_RESET_HARD
         MENUITEM "&Ctrl+Alt+Del",		IDM_RESET
         MENUITEM SEPARATOR
-	MENUITEM "Ctrl+Alt+&Esc",		IDM_CAE
-	MENUITEM "Ctrl+Alt+&Break",		IDM_CAB
+	MENUITEM "Send Ctrl+Alt+&Esc",		IDM_CAE
+	MENUITEM "Send Ctrl+Alt+&Break",	IDM_CAB
         MENUITEM SEPARATOR
         MENUITEM "&Pause",                      IDM_PAUSE
         MENUITEM SEPARATOR
@@ -85,13 +79,13 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Re&nderer"
         BEGIN
-            MENUITEM "&DirectDraw",             IDM_VID_DDRAW
-            MENUITEM "Direct&3D 9",             IDM_VID_D3D
+            MENUITEM "&DirectDraw",             IDM_RENDER_1
+            MENUITEM "Direct&3D 9",             IDM_RENDER_2
 #ifdef USE_VNC
-            MENUITEM "&VNC",                    IDM_VID_VNC
+            MENUITEM "&VNC",                    IDM_RENDER_3
 #endif
 #ifdef USE_RDP
-            MENUITEM "&RDP",                    IDM_VID_RDP
+            MENUITEM "&RDP",                    IDM_RENDER_4
 #endif
         END
         MENUITEM SEPARATOR
@@ -112,32 +106,32 @@ BEGIN
             MENUITEM "&Integer scale",          IDM_STRETCH_INT
             MENUITEM "&Keep size",              IDM_STRETCH_KEEP
         END
-        POPUP "E&GA/(S)VGA settings"
-        BEGIN
-            MENUITEM "&Inverted VGA monitor",   IDM_VGA_INVERT
-            MENUITEM "E&GA/(S)VGA overscan",    IDM_VGA_OVERSCAN
-            POPUP "VGA screen &type"
-            BEGIN
-                MENUITEM "RGB &Color",          IDM_SCREEN_RGB
-                MENUITEM "&RGB Grayscale",      IDM_SCREEN_GRAYSCALE
-                MENUITEM "&Amber monitor",      IDM_SCREEN_AMBER
-                MENUITEM "&Green monitor",      IDM_SCREEN_GREEN
-                MENUITEM "&White monitor",      IDM_SCREEN_WHITE
-            END
-            POPUP "Grayscale &conversion type"
-            BEGIN
-                MENUITEM "BT&601 (NTSC/PAL)",   IDM_GRAY_601
-                MENUITEM "BT&709 (HDTV)",       IDM_GRAY_709
-                MENUITEM "&Average",            IDM_GRAY_AVE
-            END
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "F&orce 4:3 display ratio",    IDM_FORCE_43
-        MENUITEM "Change contrast for &monochrome display", IDM_CGA_CONTR
 	MENUITEM SEPARATOR
 	MENUITEM "R&ight CTRL is left ALT",	IDM_RCTRL_IS_LALT
         MENUITEM SEPARATOR
         MENUITEM "&Update status bar icons",	IDM_UPDATE_ICONS
+    END
+    POPUP "&Display"
+    BEGIN
+        MENUITEM "&Inverted display",           IDM_INVERT
+        MENUITEM "Enable &overscan",            IDM_OVERSCAN
+        POPUP "Display &type"
+        BEGIN
+            MENUITEM "RGB &Color monitor",      IDM_SCREEN_RGB
+            MENUITEM "&Grayscale monitor",      IDM_SCREEN_GRAYSCALE
+            MENUITEM "&Amber monitor",          IDM_SCREEN_AMBER
+            MENUITEM "&Green monitor",          IDM_SCREEN_GREEN
+            MENUITEM "&White monitor",          IDM_SCREEN_WHITE
+        END
+        POPUP "&Grayscale conversion type"
+        BEGIN
+            MENUITEM "BT&601 (NTSC/PAL)",       IDM_GRAY_601
+            MENUITEM "BT&709 (HDTV)",           IDM_GRAY_709
+            MENUITEM "&Average",                IDM_GRAY_AVE
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "F&orce 4:3 display ratio",    IDM_FORCE_43
+        MENUITEM "Change &contrast for monochrome display", IDM_CGA_CONTR
     END
     POPUP "&Tools"
     BEGIN
@@ -229,7 +223,11 @@ BEGIN
 	    MENUITEM SEPARATOR
 	END
 #endif
+        MENUITEM "L&oad configuration",         IDM_LOAD
+        MENUITEM "S&ave configuration",         IDM_SAVE
+	MENUITEM SEPARATOR
         MENUITEM "S&tatus",                     IDM_STATUS
+	MENUITEM SEPARATOR
         MENUITEM "Take s&creenshot\tCtrl+Home",	IDM_SCREENSHOT
     END
     POPUP "&Help"
@@ -474,11 +472,11 @@ DLG_CFG_INPUT DIALOG DISCARDABLE  97, 0, 267, 65
 STYLE DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
-    LTEXT           "Mouse :",IDT_1709,7,8,57,10
+    LTEXT           "Mouse:",IDT_1709,7,8,57,10
     COMBOBOX        IDC_COMBO_MOUSE,71,7,140,120,CBS_DROPDOWNLIST |
 		    WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Configure",IDC_CONFIGURE_MOUSE,214,7,46,12
-    LTEXT           "Joystick :",IDT_1710,7,26,58,10
+    LTEXT           "Joystick:",IDT_1710,7,26,58,10
     COMBOBOX        IDC_COMBO_JOYSTICK,71,25,189,120,CBS_DROPDOWNLIST |
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Joystick 1...",IDC_JOY1,7,44,50,14
@@ -748,7 +746,7 @@ END
 261	ICON	DISCARDABLE	"icons/ports.ico"
 262	ICON	DISCARDABLE	"icons/other_peripherals.ico"
 263	ICON	DISCARDABLE	"icons/hard_disk.ico"
-264	ICON	DISCARDABLE	"/icons/floppy_drives.ico"
+264	ICON	DISCARDABLE	"icons/floppy_drives.ico"
 265	ICON	DISCARDABLE	"icons/other_removable_devices.ico"
 384	ICON	DISCARDABLE	"icons/floppy_525_empty.ico"
 385	ICON	DISCARDABLE	"icons/floppy_525_empty_active.ico"

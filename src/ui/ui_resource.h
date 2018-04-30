@@ -8,7 +8,7 @@
  *
  *		Platform-independent resource identifiers.
  *
- * Version:	@(#)ui_resource.h	1.0.2	2018/04/29
+ * Version:	@(#)ui_resource.h	1.0.4	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,24 +50,31 @@
 # define EMU_UI_RESOURCE_H
 
 
+#ifdef _WIN32
+# define IDM_BASE		40960
+#else
+# define IDM_BASE		16384
+#endif
+
 /* ACTION menu. */
-#define IDM_ACTION		40100
+#define IDM_ACTION		IDM_BASE
 #define IDM_RESET_HARD		(IDM_ACTION+1)
 #define IDM_RESET		(IDM_ACTION+2)
 #define IDM_CAE			(IDM_ACTION+3)
 #define IDM_CAB			(IDM_ACTION+4)
 #define IDM_PAUSE		(IDM_ACTION+5)
+#define IDM_ACTION_END		(IDM_PAUSE+1)
 #define IDM_EXIT		(IDM_ACTION+99)	/* fixed on WxWidgets */
 
 /* VIEW menu. */
-#define IDM_VIEW		40200
+#define IDM_VIEW		(IDM_BASE+100)
 #define IDM_RESIZE		(IDM_VIEW+1)
 #define IDM_REMEMBER		(IDM_VIEW+2)
 #define IDM_RENDER		(IDM_VIEW+10)
-# define IDM_VID_DDRAW		(IDM_RENDER+1)
-# define IDM_VID_D3D		(IDM_RENDER+2)
-# define IDM_VID_VNC		(IDM_RENDER+3)
-# define IDM_VID_RDP		(IDM_RENDER+4)
+# define IDM_RENDER_1		(IDM_RENDER+1)		/* DDraw */
+# define IDM_RENDER_2		(IDM_RENDER+2)		/* D3D */
+# define IDM_RENDER_3		(IDM_RENDER+3)		/* VNC */
+# define IDM_RENDER_4		(IDM_RENDER+4)		/* RDP */
 #define IDM_SCALE		(IDM_VIEW+20)
 # define IDM_SCALE_1		(IDM_SCALE+1)
 # define IDM_SCALE_2		(IDM_SCALE+2)
@@ -80,26 +87,30 @@
 # define IDM_STRETCH_SQ		(IDM_FULLSCREEN+4)
 # define IDM_STRETCH_INT	(IDM_FULLSCREEN+5)
 # define IDM_STRETCH_KEEP	(IDM_FULLSCREEN+6)
-#define IDM_VGA_SETTINGS	(IDM_VIEW+40)
-# define IDM_VGA_INVERT		(IDM_VGA_SETTINGS+1)
-# define IDM_VGA_OVERSCAN	(IDM_VGA_SETTINGS+2)
-# define IDM_VGA_SCREEN		(IDM_VIEW+50)
-#  define IDM_SCREEN_RGB	(IDM_VGA_SCREEN+1)
-#  define IDM_SCREEN_GRAYSCALE	(IDM_VGA_SCREEN+2)
-#  define IDM_SCREEN_AMBER	(IDM_VGA_SCREEN+3)
-#  define IDM_SCREEN_GREEN	(IDM_VGA_SCREEN+4)
-#  define IDM_SCREEN_WHITE	(IDM_VGA_SCREEN+5)
-#define IDM_VGA_GRAYSCALE	(IDM_VIEW+60)
-# define IDM_GRAY_601		(IDM_VGA_GRAYSCALE+1)
-# define IDM_GRAY_709		(IDM_VGA_GRAYSCALE+2)
-# define IDM_GRAY_AVE		(IDM_VGA_GRAYSCALE+3)
-# define IDM_FORCE_43		(IDM_VIEW+3)
-# define IDM_CGA_CONTR		(IDM_VIEW+4)
 #define IDM_RCTRL_IS_LALT	(IDM_VIEW+5)
 #define IDM_UPDATE_ICONS	(IDM_VIEW+6)
+#define IDM_VIEW_END		(IDM_UPDATE_ICONS+1)
+
+/* DISPLAY menu. */
+#define IDM_DISPLAY		(IDM_BASE+200)
+# define IDM_INVERT		(IDM_DISPLAY+1)
+# define IDM_OVERSCAN		(IDM_DISPLAY+2)
+# define IDM_SCREEN		(IDM_DISPLAY+10)
+#  define IDM_SCREEN_RGB	(IDM_SCREEN+1)
+#  define IDM_SCREEN_GRAYSCALE	(IDM_SCREEN+2)
+#  define IDM_SCREEN_AMBER	(IDM_SCREEN+3)
+#  define IDM_SCREEN_GREEN	(IDM_SCREEN+4)
+#  define IDM_SCREEN_WHITE	(IDM_SCREEN+5)
+#define IDM_GRAYSCALE		(IDM_DISPLAY+20)
+# define IDM_GRAY_601		(IDM_GRAYSCALE+1)
+# define IDM_GRAY_709		(IDM_GRAYSCALE+2)
+# define IDM_GRAY_AVE		(IDM_GRAYSCALE+3)
+#define IDM_FORCE_43		(IDM_DISPLAY+3)
+#define IDM_CGA_CONTR		(IDM_DISPLAY+4)
+#define IDM_DISPLAY_END		(IDM_CGA_CONTR+1)
 
 /* TOOLS menu. */
-#define IDM_TOOLS		40300
+#define IDM_TOOLS		(IDM_BASE+300)
 #define IDM_SETTINGS		(IDM_TOOLS+1)
 #define IDM_LOAD		(IDM_TOOLS+2)
 #define IDM_SAVE		(IDM_TOOLS+3)
@@ -133,10 +144,13 @@
 # define IDM_LOG_BREAKPOINT	(IDM_LOGGING+99)
 #define IDM_STATUS		(IDM_TOOLS+4)
 #define IDM_SCREENSHOT		(IDM_TOOLS+5)
+#define IDM_TOOLS_END		(IDM_SCREENSHOT+1)
 
 /* HELP menu. */
-#define IDM_HELP		40400
-# define IDM_ABOUT		(IDM_HELP+1)
+#define IDM_HELP		(IDM_BASE+400)
+#define IDM_ABOUT		(IDM_HELP+1)	/* fixed on WxWidgets */
+
+#define IDM_END			(IDM_HELP+99)
 
 /*
  * Status Bar commands.
@@ -145,7 +159,7 @@
  * and 5 bits for Removable Disks (5 bits for ID), so we use an
  * 8bit (256 entries) space for these devices.
  */
-#define IDM_SBAR			40960	/* 0x0a000 */
+#define IDM_SBAR			(IDM_BASE+1024)
 
 #define IDM_FLOPPY_IMAGE_NEW		(IDM_SBAR + 0x0000)
 #define IDM_FLOPPY_IMAGE_EXISTING	(IDM_SBAR + 0x0100)

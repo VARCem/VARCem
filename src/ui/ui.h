@@ -131,13 +131,13 @@ extern int	voodoo_do_log;
 extern int	ui_msgbox(int type, void *arg);
 extern void	ui_menu_reset_all(void);
 extern int	ui_menu_command(int idm);
-extern void	ui_menu_set_radio_item(int idm, int num, int val);
 extern void	ui_menu_set_logging_item(int idm, int val);
 extern void	ui_menu_toggle_video_item(int idm, int *val);
 
 /* Main GUI helper functions. */
 extern void	menu_enable_item(int idm, int val);
 extern void	menu_set_item(int idm, int val);
+extern void	menu_set_radio_item(int idm, int num, int val);
 extern wchar_t  *ui_window_title(wchar_t *s);
 
 /* Status Bar functions. */

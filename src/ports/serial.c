@@ -8,7 +8,7 @@
  *
  *		Implementation of 8250-style serial port.
  *
- * Version:	@(#)serial.c	1.0.5	2018/04/26
+ * Version:	@(#)serial.c	1.0.6	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../machine/machine.h"
 #include "../io.h"
@@ -74,6 +76,21 @@ static const struct {
     { SERIAL2_ADDR,	3 }
 };
 static SERIAL	ports[SERIAL_MAX];	/* the ports */
+
+
+static void
+serlog(const char *fmt, ...)
+{
+#ifdef ENABLE_SERIAL_LOG
+    va_list ap;
+
+    if (serial_do_log) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 static void
@@ -401,7 +418,7 @@ serial_reset(void)
     int i;
 
 #ifdef ENABLE_SERIAL_LOG
-    pclog("SERIAL: reset ([%d] [%d])\n", serial_enabled[0], serial_enabled[1]);
+    serlog("SERIAL: reset ([%d] [%d])\n", serial_enabled[0], serial_enabled[1]);
 #endif
 
     for (i = 0; i < SERIAL_MAX; i++) {
@@ -425,7 +442,7 @@ serial_setup(int id, uint16_t port, int8_t irq)
     SERIAL *dev = &ports[id-1];
 
 #if defined(ENABLE_SERIAL_LOG) && defined(_DEBUG)
-    pclog("SERIAL: setting up COM%d as %04X [enabled=%d]\n",
+    serlog("SERIAL: setting up COM%d as %04X [enabled=%d]\n",
 			id, port, serial_enabled[id-1]);
 #endif
     if (! serial_enabled[id-1]) return;

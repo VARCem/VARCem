@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.20	2018/04/27
+ * Version:	@(#)config.c	1.0.21	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -267,6 +267,7 @@ load_general(const char *cat)
     if (scale > 3)
 	scale = 3;
 
+    invert_display = !!config_get_int(cat, "invert_display", 0);
     enable_overscan = !!config_get_int(cat, "enable_overscan", 0);
     vid_cga_contrast = !!config_get_int(cat, "vid_cga_contrast", 0);
     vid_grayscale = config_get_int(cat, "video_grayscale", 0);
@@ -336,6 +337,11 @@ save_general(const char *cat)
 	config_delete_var(cat, "scale");
       else
 	config_set_int(cat, "scale", scale);
+
+    if (invert_display == 0)
+	config_delete_var(cat, "invert_display");
+      else
+	config_set_int(cat, "invert_display", invert_display);
 
     if (enable_overscan == 0)
 	config_delete_var(cat, "enable_overscan");

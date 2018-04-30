@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.3	2018/04/26
+ * Version:	@(#)pci.c	1.0.4	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,15 +92,15 @@ static int trc_reg = 0;
 
 PCI_RESET pci_reset_handler;
 
-#ifdef ENABLE_PCI_LOG
-int pci_do_log = ENABLE_PCI_LOG;
+#ifdef ENABLE_BUS_LOG
+int pci_do_log = ENABLE_BUS_LOG;
 #endif
 
 
 static void
 pcilog(const char *fmt, ...)
 {
-#ifdef ENABLE_PCI_LOG
+#ifdef ENABLE_BUS_LOG
 	va_list ap;
 
 	if (pci_do_log)

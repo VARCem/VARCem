@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.4	2018/04/28
+ * Version:	@(#)ui_main.c	1.0.5	2018/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -59,18 +59,6 @@
 #include "../plat.h"
 #include "ui.h"
 #include "ui_resource.h"
-
-
-/* Set a radio group menu item. */
-void
-ui_menu_set_radio_item(int idm, int num, int val)
-{
-    int i;
-
-    for (i = 0; i < num; i++)
-	menu_set_item(idm + i, 0);
-    menu_set_item(idm + val, 1);
-}
 
 
 #if defined(ENABLE_LOG_TOGGLES) || defined(ENABLE_LOG_COMMANDS)
@@ -267,28 +255,28 @@ ui_menu_reset_all(void)
     menu_set_item(IDM_RESIZE, vid_resize);
     menu_set_item(IDM_REMEMBER, window_remember);
 
-    ui_menu_set_radio_item(IDM_VID_DDRAW, 4, -1);
+    menu_set_radio_item(IDM_RENDER_1, 4, -1);
 
-    ui_menu_set_radio_item(IDM_SCALE_1, 4, scale);
+    menu_set_radio_item(IDM_SCALE_1, 4, scale);
 
     menu_set_item(IDM_FULLSCREEN, vid_fullscreen);
 
-    ui_menu_set_radio_item(IDM_STRETCH, 5, vid_fullscreen_scale);
-
-    menu_set_item(IDM_VGA_INVERT, invert_display);
-    menu_set_item(IDM_VGA_OVERSCAN, enable_overscan);
-
-    ui_menu_set_radio_item(IDM_SCREEN_RGB, 5, vid_grayscale);
-
-    ui_menu_set_radio_item(IDM_GRAY_601, 3, vid_graytype);
-
-    menu_set_item(IDM_FORCE_43, force_43);
-
-    menu_set_item(IDM_CGA_CONTR, vid_cga_contrast);
+    menu_set_radio_item(IDM_STRETCH, 5, vid_fullscreen_scale);
 
     menu_set_item(IDM_RCTRL_IS_LALT, rctrl_is_lalt);
 
     menu_set_item(IDM_UPDATE_ICONS, update_icons);
+
+    menu_set_item(IDM_INVERT, invert_display);
+    menu_set_item(IDM_OVERSCAN, enable_overscan);
+
+    menu_set_radio_item(IDM_SCREEN_RGB, 5, vid_grayscale);
+
+    menu_set_radio_item(IDM_GRAY_601, 3, vid_graytype);
+
+    menu_set_item(IDM_FORCE_43, force_43);
+
+    menu_set_item(IDM_CGA_CONTR, vid_cga_contrast);
 
 #ifdef ENABLE_LOG_TOGGLES
     for (i = IDM_LOG_BEGIN; i < IDM_LOG_END; i++)
@@ -301,66 +289,48 @@ ui_menu_reset_all(void)
 int
 ui_menu_command(int idm)
 {
+    wchar_t temp[512];
     int i;
 
     switch (idm) {
-	case IDM_SCREENSHOT:
-		take_screenshot();
-		break;
-
-	case IDM_RESET_HARD:
+	case IDM_RESET_HARD:			/* ACTION menu */
 		pc_reset(1);
 		break;
 
-	case IDM_RESET:
+	case IDM_RESET:				/* ACTION menu */
 		pc_reset(0);
 		break;
 
-	case IDM_EXIT:
-		/*NOTHANDLED*/
-		return(0);
-
-	case IDM_CAE:
+	case IDM_CAE:				/* ACTION menu */
 		keyboard_send_cae();
 		break;
 
-	case IDM_CAB:
+	case IDM_CAB:				/* ACTION menu */
 		keyboard_send_cab();
 		break;
 
-	case IDM_PAUSE:
+	case IDM_PAUSE:				/* ACTION menu */
 		plat_pause(dopause ^ 1);
 		menu_set_item(idm, dopause);
 		break;
 
-	case IDM_SETTINGS:
-		plat_pause(1);
-		if (dlg_settings(1) == 2)
-			pc_reset_hard_init();
-		plat_pause(0);
+#ifdef IDM_Test
+	case IDM_Test:				/* ACTION menu */
+		pclog("TEST\n");
 		break;
+#endif
 
-	case IDM_ABOUT:
-		dlg_about();
-		break;
+	case IDM_EXIT:				/* ACTION menu */
+		/*NOTHANDLED*/
+		return(0);
 
-	case IDM_STATUS:
-		dlg_status();
-		break;
-
-	case IDM_UPDATE_ICONS:
-		update_icons ^= 1;
-		menu_set_item(idm, update_icons);
-		config_save();
-		break;
-
-	case IDM_RESIZE:
+	case IDM_RESIZE:			/* VIEW menu */
 		vid_resize ^= 1;
 		menu_set_item(idm, vid_resize);
 		if (vid_resize) {
 			/* Force scaling to 1.0. */
 			scale = 1;
-			ui_menu_set_radio_item(IDM_SCALE_1, 4, scale);
+			menu_set_radio_item(IDM_SCALE_1, 4, scale);
 		}
 
 		/* Disable scaling settings. */
@@ -370,106 +340,112 @@ ui_menu_command(int idm)
 		config_save();
 		return(0);
 
-	case IDM_REMEMBER:
+	case IDM_REMEMBER:			/* VIEW menu */
 		window_remember ^= 1;
 		menu_set_item(idm, window_remember);
 		return(0);
 
-	case IDM_VID_DDRAW:
-	case IDM_VID_D3D:
-#ifdef USE_VNC
-	case IDM_VID_VNC:
-#endif
-#ifdef USE_RDP
-	case IDM_VID_RDP:
-#endif
-		plat_setvid(idm - IDM_VID_DDRAW);
-		ui_menu_set_radio_item(IDM_VID_DDRAW, 4, vid_api);
+	case IDM_RENDER_1:			/* VIEW menu */
+	case IDM_RENDER_2:
+	case IDM_RENDER_3:
+	case IDM_RENDER_4:
+		plat_setvid(idm - IDM_RENDER_1);
+		menu_set_radio_item(IDM_RENDER_1, 4, vid_api);
 		config_save();
 		break;
 
-	case IDM_FULLSCREEN:
+	case IDM_FULLSCREEN:			/* VIEW menu */
 		plat_setfullscreen(1);
 		config_save();
 		break;
 
-	case IDM_STRETCH:
+	case IDM_STRETCH:			/* VIEW menu */
 	case IDM_STRETCH_43:
 	case IDM_STRETCH_SQ:                                
 	case IDM_STRETCH_INT:
 	case IDM_STRETCH_KEEP:
 		vid_fullscreen_scale = (idm - IDM_STRETCH);
-		ui_menu_set_radio_item(IDM_STRETCH, 5, vid_fullscreen_scale);
+		menu_set_radio_item(IDM_STRETCH, 5, vid_fullscreen_scale);
 		device_force_redraw();
 		config_save();
 		break;
 
-	case IDM_SCALE_1:
+	case IDM_SCALE_1:			/* VIEW menu */
 	case IDM_SCALE_2:
 	case IDM_SCALE_3:
 	case IDM_SCALE_4:
 		scale = (idm - IDM_SCALE_1);
-		ui_menu_set_radio_item(IDM_SCALE_1, 4, scale);
+		menu_set_radio_item(IDM_SCALE_1, 4, scale);
 		device_force_redraw();
 		video_force_resize_set(1);
 		config_save();
 		break;
 
-	case IDM_FORCE_43:
+	case IDM_FORCE_43:			/* VIEW menu */
 		ui_menu_toggle_video_item(idm, &force_43);
 		video_force_resize_set(1);
+		config_save();
 		break;
 
-	case IDM_VGA_INVERT:
+	case IDM_RCTRL_IS_LALT:			/* VIEW menu */
+		rctrl_is_lalt ^= 1;
+		menu_set_item(idm, rctrl_is_lalt);
+		config_save();
+		break;
+
+	case IDM_UPDATE_ICONS:			/* VIEW menu */
+		update_icons ^= 1;
+		menu_set_item(idm, update_icons);
+		config_save();
+		break;
+
+	case IDM_INVERT:			/* DISPLAY menu */
 		ui_menu_toggle_video_item(idm, &invert_display);
+		config_save();
 		break;
 
-	case IDM_VGA_OVERSCAN:
+	case IDM_OVERSCAN:			/* DISPLAY menu */
 		ui_menu_toggle_video_item(idm, &enable_overscan);
 		video_force_resize_set(1);
+		config_save();
 		break;
 
-	case IDM_CGA_CONTR:
+	case IDM_SCREEN_RGB:			/* DISPLAY menu */
+	case IDM_SCREEN_GRAYSCALE:
+	case IDM_SCREEN_AMBER:
+	case IDM_SCREEN_GREEN:
+	case IDM_SCREEN_WHITE:
+		vid_grayscale = (idm - IDM_SCREEN_RGB);
+		menu_set_radio_item(IDM_SCREEN_RGB, 5, vid_grayscale);
+		device_force_redraw();
+		config_save();
+		break;
+
+	case IDM_GRAY_601:			/* DISPLAY menu */
+	case IDM_GRAY_709:
+	case IDM_GRAY_AVE:
+		vid_graytype = (idm - IDM_GRAY_601);
+		menu_set_radio_item(IDM_GRAY_601, 3, vid_graytype);
+		device_force_redraw();
+		config_save();
+		break;
+
+	case IDM_CGA_CONTR:			/* DISPLAY menu */
 		vid_cga_contrast ^= 1;
 		menu_set_item(idm, vid_cga_contrast);
 		cgapal_rebuild();
 		config_save();
 		break;
 
-	case IDM_GRAY_601:
-	case IDM_GRAY_709:
-	case IDM_GRAY_AVE:
-		vid_graytype = (idm - IDM_GRAY_601);
-		ui_menu_set_radio_item(IDM_GRAY_601, 3, vid_graytype);
-		device_force_redraw();
-		config_save();
+	case IDM_SETTINGS:			/* TOOLS menu */
+		plat_pause(1);
+		if (dlg_settings(1) == 2)
+			pc_reset_hard_init();
+		plat_pause(0);
 		break;
-
-	case IDM_SCREEN_RGB:
-	case IDM_SCREEN_GRAYSCALE:
-	case IDM_SCREEN_AMBER:
-	case IDM_SCREEN_GREEN:
-	case IDM_SCREEN_WHITE:
-		vid_grayscale = (idm - IDM_SCREEN_RGB);
-		ui_menu_set_radio_item(IDM_SCREEN_RGB, 5, vid_grayscale);
-		device_force_redraw();
-		config_save();
-		break;
-
-	case IDM_RCTRL_IS_LALT:
-		rctrl_is_lalt ^= 1;
-		menu_set_item(idm, rctrl_is_lalt);
-		config_save();
-		break;
-
-#ifdef ENABLE_LOG_BREAKPOINT
-	case IDM_LOG_BREAKPOINT:
-		pclog("---- LOG BREAKPOINT ----\n");
-		break;
-#endif
 
 #ifdef ENABLE_LOG_TOGGLES
-	case IDM_LOG_BUS:
+	case IDM_LOG_BUS:			/* TOOLS menu */
 	case IDM_LOG_KEYBOARD:
 	case IDM_LOG_MOUSE:
 	case IDM_LOG_GAME:
@@ -497,26 +473,42 @@ ui_menu_command(int idm)
 		break;
 #endif
 
-#if 0
+#ifdef ENABLE_LOG_BREAKPOINT
+	case IDM_LOG_BREAKPOINT:		/* TOOLS menu */
+		pclog("---- LOG BREAKPOINT ----\n");
+		break;
+#endif
+
 	/* FIXME: need to fix these.. */
-	case IDM_LOAD:
+	case IDM_LOAD:				/* TOOLS menu */
 		plat_pause(1);
-		if (! file_dlg_st(hwnd, IDS_2160, L"", 0) &&
-		    (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051) == IDYES)) {
-			pc_reload(wopenfilestring);
-			ResetAllMenus();
+		if (! dlg_file(plat_get_string(IDS_2160), NULL, temp, 0) &&
+		    (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051) == 0)) {
+			pc_reload(temp);
+			ui_menu_reset_all();
 		}
 		plat_pause(0);
 		break;                        
 
-	case IDM_SAVE:
+	case IDM_SAVE:				/* TOOLS menu */
 		plat_pause(1);
-		if (! file_dlg_st(hwnd, IDS_2160, L"", 1)) {
-			config_write(wopenfilestring);
+		if (! dlg_file(plat_get_string(IDS_2160), NULL, temp, 1)) {
+			config_write(temp);
 		}
 		plat_pause(0);
 		break;                                                
-#endif
+
+	case IDM_STATUS:			/* TOOLS menu */
+		dlg_status();
+		break;
+
+	case IDM_SCREENSHOT:			/* TOOLS menu */
+		take_screenshot();
+		break;
+
+	case IDM_ABOUT:				/* HELP menu */
+		dlg_about();
+		break;
     }
 
     return(1);

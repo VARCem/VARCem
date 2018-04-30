@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.15	2018/04/28
+ * Version:	@(#)win_ui.c	1.0.16	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,10 +68,6 @@ HMENU		menuMain;		/* application main menu */
 HICON		hIcon[512];		/* icon data loaded from resources */
 RECT		oldclip;		/* mouse rect */
 int		infocus = 1;
-int		rctrl_is_lalt = 0;
-
-char		openfilestring[260];
-WCHAR		wopenfilestring[260];
 
 
 /* Local data. */
@@ -80,27 +76,6 @@ static RAWINPUTDEVICE	device;
 static HHOOK	hKeyboardHook;
 static int	hook_enabled = 0;
 static int	save_window_pos = 0;
-
-
-static int vis = -1;
-
-/* Set host cursor visible or not. */
-void
-show_cursor(int val)
-{
-    if (val == vis)
-	return;
-
-    if (val == 0) {
-    	while (1) {
-		if (ShowCursor(FALSE) < 0) break;
-	}
-    } else {
-	ShowCursor(TRUE);
-    }
-
-    vis = val;
-}
 
 
 HICON
@@ -126,22 +101,6 @@ menu_update(void)
     win_title_update = 1;
 }
 #endif
-
-
-/* Enable or disable a menu item. */
-void
-menu_enable_item(int idm, int val)
-{
-    EnableMenuItem(menuMain, idm, (val) ? MF_ENABLED : MF_DISABLED);
-}
-
-
-/* Set (check) or clear (uncheck) a menu item. */
-void
-menu_set_item(int idm, int val)
-{
-    CheckMenuItem(menuMain, idm, val ? MF_CHECKED : MF_UNCHECKED);
-}
 
 
 static LRESULT CALLBACK
@@ -180,7 +139,6 @@ LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 static LRESULT CALLBACK
 MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-//    HMENU hmenu;
     RECT rect;
     int sb_borders[3];
     int temp_x, temp_y;
@@ -197,8 +155,6 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_COMMAND:
 		UpdateWindow(hwnd);
-// We may need this later.
-//		hmenu = GetMenu(hwnd);
 		idm = LOWORD(wParam);
 
 		/* Let the general UI handle it first, and then we do. */
@@ -672,6 +628,58 @@ ui_window_title(wchar_t *s)
     }
 
     return(s);
+}
+
+
+/* Set host cursor visible or not. */
+void
+show_cursor(int val)
+{
+    static int vis = -1;
+
+    if (val == vis)
+	return;
+
+    if (val == 0) {
+    	while (1) {
+		if (ShowCursor(FALSE) < 0) break;
+	}
+    } else {
+	ShowCursor(TRUE);
+    }
+
+    vis = val;
+}
+
+
+/* Enable or disable a menu item. */
+void
+menu_enable_item(int idm, int val)
+{
+    EnableMenuItem(menuMain, idm, (val) ? MF_ENABLED : MF_DISABLED);
+}
+
+
+/* Set (check) or clear (uncheck) a menu item. */
+void
+menu_set_item(int idm, int val)
+{
+    CheckMenuItem(menuMain, idm, val ? MF_CHECKED : MF_UNCHECKED);
+}
+
+
+/* Set a radio group menu item. */
+void
+menu_set_radio_item(int idm, int num, int val)
+{
+    int i;
+
+    if (val < 0) return;
+
+    for (i = 0; i < num; i++)
+	menu_set_item(idm + i, 0);
+
+    menu_set_item(idm + val, 1);
 }
 
 

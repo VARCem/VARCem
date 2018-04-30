@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.1	2018/04/29
+ * Version:	@(#)ui_stbar.c	1.0.2	2018/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -210,76 +210,73 @@ ui_sb_tip_update(int tag)
 		drive = sb_tags[part] & 0x0f;
 		stransi = fdd_getname(fdd_get_type(drive));
 		mbstowcs(temp, stransi, sizeof_w(temp));
-		if (wcslen(floppyfns[drive]) == 0) {
-			_swprintf(tip, plat_get_string(IDS_2158),
-		  		drive+1, temp, plat_get_string(IDS_2057));
-		} else {
-			_swprintf(tip, plat_get_string(IDS_2158),
-		  		drive+1, temp, floppyfns[drive]);
-		}
+		str = floppyfns[drive];
+		if (*str == L'\0')
+			str = plat_get_string(IDS_2057);	/*"empty"*/
+		swprintf(tip, sizeof_w(tip),
+			 plat_get_string(IDS_2158), drive+1, temp, str);
 		break;
 
 	case SB_CDROM:
 		drive = sb_tags[part] & 0x0f;
 		bus = cdrom_drives[drive].bus_type;
 		id = IDS_4352 + (bus - 1);
-		str = plat_get_string(id);
+		wcscpy(temp, plat_get_string(id));
+		str = cdrom_image[drive].image_path;
+		if (*str == L'\0')
+			str = plat_get_string(IDS_2057);	/*"empty"*/
 		if (cdrom_drives[drive].host_drive == 200) {
-			if (wcslen(cdrom_image[drive].image_path) == 0) {
-				_swprintf(tip, plat_get_string(IDS_5120),
-				    drive+1, str, plat_get_string(IDS_2057));
-			} else {
-				_swprintf(tip, plat_get_string(IDS_5120),
-				  drive+1, str, cdrom_image[drive].image_path);
-			}
+			swprintf(tip, sizeof_w(tip),
+				 plat_get_string(IDS_5120),
+				 drive+1, temp, str);
 		} else if ((cdrom_drives[drive].host_drive >= 'A') &&
 			   (cdrom_drives[drive].host_drive <= 'Z')) {
-			_swprintf(temp, plat_get_string(IDS_2058),
-				cdrom_drives[drive].host_drive & ~0x20);
-			_swprintf(tip, plat_get_string(IDS_5120),
-						drive+1, str, temp);
+			swprintf(temp, sizeof_w(temp),
+				 plat_get_string(IDS_2058),
+				 cdrom_drives[drive].host_drive & ~0x20);
+			swprintf(tip, sizeof_w(tip),
+				 plat_get_string(IDS_5120),
+				 drive+1, plat_get_string(id), temp);
 		} else {
-			_swprintf(tip, plat_get_string(IDS_5120),
-				drive+1, str, plat_get_string(IDS_2057));
+			swprintf(tip, sizeof_w(tip),
+				 plat_get_string(IDS_5120),
+				 drive+1, temp, str);
 		}
 		break;
 
 	case SB_ZIP:
 		drive = sb_tags[part] & 0x0f;
 		type = zip_drives[drive].is_250 ? 250 : 100;
-		if (wcslen(zip_drives[drive].image_path) == 0) {
-		_swprintf(tip, plat_get_string(IDS_2177),
-			drive+1, type, plat_get_string(IDS_2057));
-		} else {
-			_swprintf(tip, plat_get_string(IDS_2177),
-				drive+1, type, zip_drives[drive].image_path);
-		}
+		str = zip_drives[drive].image_path;
+		if (*str == L'\0')
+			str = plat_get_string(IDS_2057);	/*"empty"*/
+		swprintf(tip, sizeof_w(tip),
+			 plat_get_string(IDS_2177), drive+1, type, str);
 		break;
 
 	case SB_RDISK:
 		drive = sb_tags[part] & 0x1f;
-		if (wcslen(hdd[drive].fn) == 0) {
-			_swprintf(tip, plat_get_string(IDS_4115),
-				drive, plat_get_string(IDS_2057));
-		} else {
-			_swprintf(tip, plat_get_string(IDS_4115),
-					drive, hdd[drive].fn);
-		}
+		str = hdd[drive].fn;
+		if (*str == L'\0')
+			str = plat_get_string(IDS_2057);	/*"empty"*/
+		swprintf(tip, sizeof_w(tip),
+			 plat_get_string(IDS_4115), drive, str);
 		break;
 
 	case SB_HDD:
 		bus = sb_tags[part] & 0x0f;
 		id = IDS_4352 + (bus - 1);
 		str = plat_get_string(id);
-		_swprintf(tip, plat_get_string(IDS_4096), str);
+		swprintf(tip, sizeof_w(tip),
+			 plat_get_string(IDS_4096), str);
 		break;
 
 	case SB_NETWORK:
-		_swprintf(tip, plat_get_string(IDS_2069));
+		swprintf(tip, sizeof_w(tip), plat_get_string(IDS_2069));
 		break;
 
 	case SB_SOUND:
-		_swprintf(tip, plat_get_string(IDS_2068));
+		swprintf(tip, sizeof_w(tip), plat_get_string(IDS_2068));
 		break;
 
 	default:
@@ -376,7 +373,7 @@ menu_cdrom(int part, int drive)
     sb_menu_add_item(part, -1, NULL);
 
     for (i = 3; i < 26; i++) {
-	_swprintf(temp, L"Host CD/DVD Drive (%c:)", i+'A');
+	swprintf(temp, sizeof_w(temp), L"Host CD/DVD Drive (%c:)", i+'A');
 	if (host_cdrom_drive_available[i])
 		sb_menu_add_item(part, IDM_CDROM_HOST_DRIVE | (i << 3)|drive, temp);
     }

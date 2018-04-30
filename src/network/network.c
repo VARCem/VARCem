@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.7	2018/04/28
+ * Version:	@(#)network.c	1.0.8	2018/04/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,10 +52,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <wchar.h>
 #ifdef WALTJE
 # include <ctype.h>
 #endif
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../device.h"
 #include "../ui/ui.h"
@@ -80,8 +82,11 @@ int		network_ndev;
 int		network_card;
 char		network_pcap[512];
 netdev_t	network_devs[32];
-#ifdef ENABLE_NIC_LOG
-int		nic_do_log = ENABLE_NIC_LOG;
+#ifdef ENABLE_NETWORK_LOG
+int		network_do_log = ENABLE_NETWORK_LOG;
+#endif
+#ifdef ENABLE_NETWORK_DEV_LOG
+int		network_dev_do_log = ENABLE_NETWORK_DEV_LOG;
 #endif
 static mutex_t	*network_mutex;
 static uint8_t	*network_mac;
@@ -176,6 +181,21 @@ hexdump_p(char *ptr, uint8_t *bufp, int len)
     }
 }
 #endif
+
+
+static void
+net_log(int lvl, const char *fmt, ...)
+{
+#ifdef ENABLE_NETWORK_LOG
+    va_list ap;
+
+    if (network_do_log >= lvl) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 void
@@ -305,7 +325,7 @@ network_close(void)
     network_mutex = NULL;
     network_mac = NULL;
 
-    pclog("NETWORK: closed.\n");
+    net_log(1, "NETWORK: closed.\n");
 }
 
 
@@ -322,9 +342,9 @@ network_reset(void)
 {
     int i = -1;
 
-#ifdef ENABLE_NIC_LOG
+#ifdef ENABLE_NETWORK_LOG
     pclog("NETWORK: reset (type=%d, card=%d) debug=%d\n",
-			network_type, network_card, nic_do_log);
+			network_type, network_card, network_do_log);
 #else
     pclog("NETWORK: reset (type=%d, card=%d)\n",
 				network_type, network_card);
@@ -364,13 +384,13 @@ network_reset(void)
 	return;
     }
 
-    pclog("NETWORK: set up for %s, card='%s'\n",
+    net_log(0, "NETWORK: set up for %s, card='%s'\n",
 	(network_type==NET_TYPE_SLIRP)?"SLiRP":"Pcap",
 			net_cards[network_card].name);
 
     /* Add the (new?) card to the I/O system. */
     if (net_cards[network_card].device) {
-	pclog("NETWORK: adding device '%s'\n",
+	net_log(1, "NETWORK: adding device '%s'\n",
 		net_cards[network_card].name);
 	device_add(net_cards[network_card].device);
     }
@@ -410,7 +430,7 @@ network_dev_to_id(const char *devname)
 {
     int i = 0;
 
-    for (i=0; i<network_ndev; i++) {
+    for (i = 0; i < network_ndev; i++) {
 	if (! strcmp(network_devs[i].device, devname)) {
 		return(i);
 	}

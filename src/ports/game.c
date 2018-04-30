@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.9	2018/04/26
+ * Version:	@(#)game.c	1.0.11	2018/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -38,7 +38,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../emu.h"
 #include "../machine/machine.h"
 #include "../cpu/cpu.h"
@@ -66,7 +68,27 @@ typedef struct _game_ {
 } game_t;
 
 
+#ifdef ENABLE_GAME_LOG
+int		game_do_log = ENABLE_GAME_LOG;
+#endif
+
+
 static game_t	*game_global = NULL;
+
+
+static void
+gamelog(const char *fmt, ...)
+{
+#ifdef ENABLE_GAME_LOG
+    va_list ap;
+
+    if (game_do_log) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 static int
@@ -87,6 +109,10 @@ game_write(uint16_t addr, uint8_t val, void *priv)
 {
     game_t *dev = (game_t *)priv;
     int i;
+
+#ifdef ENABLE_GAME_LOG
+    gamelog("GAME: write(%04x, %02x)\n", addr, val);
+#endif
 
     timer_clock();
 
@@ -114,6 +140,10 @@ game_read(uint16_t addr, void *priv)
     ret = dev->state | dev->joystick->read(dev->joystick_priv);
 
     cycles -= ISA_CYCLES(8);
+
+#ifdef ENABLE_GAME_LOG
+    gamelog("GAME: read(%04x) = %02x\n", addr, ret);
+#endif
 
     return(ret);
 }

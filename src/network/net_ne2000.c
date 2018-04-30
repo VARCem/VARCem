@@ -12,7 +12,7 @@
  *			- Realtek RTL8019AS (ISA 16-bit, PnP);
  *			- Realtek RTL8029AS (PCI).
  *
- * Version:	@(#)net_ne2000.c	1.0.6	2018/04/28
+ * Version:	@(#)net_ne2000.c	1.0.7	2018/04/29
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -291,10 +291,10 @@ static void	nic_tx(nic_t *, uint32_t);
 static void
 nelog(int lvl, const char *fmt, ...)
 {
-#ifdef ENABLE_NIC_LOG
+#ifdef ENABLE_NETWORK_DEV_LOG
     va_list ap;
 
-    if (nic_do_log >= lvl) {
+    if (network_dev_do_log >= lvl) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
