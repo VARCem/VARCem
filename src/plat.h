@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.9	2018/04/10
+ * Version:	@(#)plat.h	1.0.10	2018/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,8 +51,6 @@
 # define GLOBAL extern
 #endif
 
-/* String ID numbers. */
-#include "lang/language.h"
 
 /* The Win32 API uses _wcsicmp and _stricmp. */
 #ifdef _WIN32
@@ -76,12 +74,11 @@
 #endif
 
 
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+# define UNUSED(arg) arg
+#else
   /* A hack (GCC-specific?) to allow us to ignore unused parameters. */
 # define UNUSED(arg)	__attribute__((unused))arg
-#else
-  /* MSVC does not have __attribute__((unused)). */
-# define UNUSED(arg) arg
 #endif
 
 /* Return the size (in wchar's) of a wchar_t array. */

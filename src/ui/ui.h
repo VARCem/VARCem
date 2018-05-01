@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.5	2018/04/29
+ * Version:	@(#)ui.h	1.0.6	2018/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -46,6 +46,10 @@
  */
 #ifndef EMU_UI_H
 # define EMU_UI_H
+
+
+/* Also include our common resources. */
+#include "ui_resource.h"
 
 
 /* Message Box definitions. */

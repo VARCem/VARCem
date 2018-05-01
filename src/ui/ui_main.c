@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.5	2018/04/30
+ * Version:	@(#)ui_main.c	1.0.6	2018/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,7 +58,6 @@
 #include "../video/video.h"
 #include "../plat.h"
 #include "ui.h"
-#include "ui_resource.h"
 
 
 #if defined(ENABLE_LOG_TOGGLES) || defined(ENABLE_LOG_COMMANDS)
