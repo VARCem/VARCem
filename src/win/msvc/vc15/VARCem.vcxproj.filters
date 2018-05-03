@@ -709,9 +709,6 @@
     <ClCompile Include="..\..\..\win\win_status.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_stbar.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_thread.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -828,6 +825,15 @@
     <ClCompile Include="..\..\..\ports\serial.c">
       <Filter>ports</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_main.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_new_floppy.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_stbar.c">
+      <Filter>ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\bugger.h" />
@@ -847,8 +853,6 @@
     <ClInclude Include="..\..\..\nmi.h" />
     <ClInclude Include="..\..\..\nvr.h" />
     <ClInclude Include="..\..\..\nvr_ps2.h" />
-    <ClInclude Include="..\..\..\parallel.h" />
-    <ClInclude Include="..\..\..\parallel_dev.h" />
     <ClInclude Include="..\..\..\pci.h" />
     <ClInclude Include="..\..\..\pic.h" />
     <ClInclude Include="..\..\..\pit.h" />
@@ -857,7 +861,6 @@
     <ClInclude Include="..\..\..\random.h" />
     <ClInclude Include="..\..\..\rom.h" />
     <ClInclude Include="..\..\..\timer.h" />
-    <ClInclude Include="..\..\..\ui.h" />
     <ClInclude Include="..\..\..\cdrom\cdrom.h">
       <Filter>cdrom</Filter>
     </ClInclude>
@@ -1119,9 +1122,6 @@
     <ClInclude Include="..\..\..\floppy\fdi2raw.h">
       <Filter>floppy</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\lang\language.h">
-      <Filter>lang</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\machine\m_at_t3100e.h">
       <Filter>machine</Filter>
     </ClInclude>
@@ -1129,12 +1129,6 @@
       <Filter>machine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\network\slirp\bootp.h">
-      <Filter>network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\network\slirp\config.h">
-      <Filter>network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\network\slirp\config-host.h">
       <Filter>network\slirp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\network\slirp\ctl.h">
@@ -1531,6 +1525,12 @@
     <ClInclude Include="..\..\..\ports\serial.h">
       <Filter>ports</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\ui\ui.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ui\ui_resource.h">
+      <Filter>ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cdrom">
@@ -1547,9 +1547,6 @@
     </Filter>
     <Filter Include="floppy">
       <UniqueIdentifier>{a9a86e4f-b4eb-4687-a979-f97b394db706}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lang">
-      <UniqueIdentifier>{232b8441-5106-47b6-939d-ebd46589c0b2}</UniqueIdentifier>
     </Filter>
     <Filter Include="machine">
       <UniqueIdentifier>{a99de26d-e4fd-4223-952c-21f1657a20e7}</UniqueIdentifier>
@@ -1598,6 +1595,9 @@
     </Filter>
     <Filter Include="ports">
       <UniqueIdentifier>{b9d0388f-b14d-4448-85fe-7179fff3f77f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ui">
+      <UniqueIdentifier>{7cec753e-1e2c-4ebd-ba5b-e728767c949f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.32	2018/05/01
+ * Version:	@(#)pc.c	1.0.33	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -297,9 +297,7 @@ fatal(const char *fmt, ...)
 void
 pc_version(const char *platform)
 {
-#if defined(BUILD) || defined(COMMIT) || defined(UPSTREAM)
     char temp[128];
-#endif
 
     sprintf(emu_title, "%s for %s", EMU_NAME, platform);
 

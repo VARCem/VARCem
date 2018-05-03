@@ -252,6 +252,9 @@
     <ClCompile Include="..\..\..\sound\sound.c" />
     <ClCompile Include="..\..\..\sound\sound_dev.c" />
     <ClCompile Include="..\..\..\timer.c" />
+    <ClCompile Include="..\..\..\ui\ui_main.c" />
+    <ClCompile Include="..\..\..\ui\ui_new_floppy.c" />
+    <ClCompile Include="..\..\..\ui\ui_stbar.c" />
     <ClCompile Include="..\..\..\video\video.c" />
     <ClCompile Include="..\..\..\video\video_dev.c" />
     <ClCompile Include="..\..\..\video\vid_ati18800.c" />
@@ -311,7 +314,6 @@
     <ClCompile Include="..\..\..\win\win_settings.c" />
     <ClCompile Include="..\..\..\win\win_snd_gain.c" />
     <ClCompile Include="..\..\..\win\win_status.c" />
-    <ClCompile Include="..\..\..\win\win_stbar.c" />
     <ClCompile Include="..\..\..\win\win_thread.c" />
     <ClCompile Include="..\..\..\win\win_ui.c" />
   </ItemGroup>
@@ -421,7 +423,6 @@
     <ClInclude Include="..\..\..\intel_piix.h" />
     <ClInclude Include="..\..\..\intel_sio.h" />
     <ClInclude Include="..\..\..\io.h" />
-    <ClInclude Include="..\..\..\lang\language.h" />
     <ClInclude Include="..\..\..\machine\machine.h" />
     <ClInclude Include="..\..\..\machine\m_at_t3100e.h" />
     <ClInclude Include="..\..\..\machine\m_xt_t1000.h" />
@@ -433,8 +434,6 @@
     <ClInclude Include="..\..\..\network\network.h" />
     <ClInclude Include="..\..\..\network\net_ne2000.h" />
     <ClInclude Include="..\..\..\network\slirp\bootp.h" />
-    <ClInclude Include="..\..\..\network\slirp\config-host.h" />
-    <ClInclude Include="..\..\..\network\slirp\config.h" />
     <ClInclude Include="..\..\..\network\slirp\ctl.h" />
     <ClInclude Include="..\..\..\network\slirp\debug.h" />
     <ClInclude Include="..\..\..\network\slirp\icmp_var.h" />
@@ -541,7 +540,8 @@
     <ClInclude Include="..\..\..\sound\snd_speaker.h" />
     <ClInclude Include="..\..\..\sound\snd_ym7128.h" />
     <ClInclude Include="..\..\..\timer.h" />
-    <ClInclude Include="..\..\..\ui.h" />
+    <ClInclude Include="..\..\..\ui\ui.h" />
+    <ClInclude Include="..\..\..\ui\ui_resource.h" />
     <ClInclude Include="..\..\..\version.h" />
     <ClInclude Include="..\..\..\video\video.h" />
     <ClInclude Include="..\..\..\video\vid_ati68860_ramdac.h" />
@@ -576,7 +576,7 @@
     <ProjectGuid>{6E445F28-CA8F-430F-8CCF-C59C53516AC5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>VARCem</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -652,7 +652,6 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -671,7 +670,6 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -691,7 +689,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -714,7 +711,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
