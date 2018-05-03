@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.5	2018/04/29
+ * Version:	@(#)win_settings_periph.h	1.0.6	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -212,14 +212,14 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
 				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)scsi_card_getdevice(temp_scsi_card));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)scsi_card_getdevice(temp_scsi_card));
 				break;
 
 			case IDC_CONFIGURE_HDC:
 				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
 				temp_hdc_type = hdc_get_from_internal_name(hdc_names[SendMessage(h, CB_GETCURSEL, 0, 0)]);
 
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)hdc_get_device(temp_hdc_type));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)hdc_get_device(temp_hdc_type));
 				break;
 
 			case IDC_COMBO_SCSI:

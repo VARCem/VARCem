@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.15	2018/04/27
+ * Version:	@(#)win.c	1.0.16	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,9 @@
 #define UNICODE
 #define _WIN32_WINNT 0x0501
 #include <windows.h>
+#ifdef _MSC_VER
+# include <io.h>			/* for _open_osfhandle() */
+#endif
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -67,9 +70,6 @@
 # include "win_ddraw.h"
 # include "win_d3d.h"
 #endif
-#ifdef _MSC_VER
-# include <io.h>    /* for _open_osfhandle() */
-#endif
 #include "win.h"
 
 
@@ -79,14 +79,14 @@ typedef struct {
 
 
 /* Platform Public data, specific. */
-HINSTANCE	hinstance;		/* application instance */
-HANDLE		ghMutex;
+HINSTANCE	hInstance;		/* application instance */
 LCID		lang_id;		/* current language ID used */
 DWORD		dwSubLangID;
 
 
 /* Local data. */
-static HANDLE	thMain;
+static HANDLE	hBlitMutex,		/* video mutex */
+		thMain;			/* main thread */
 static rc_str_t	*lpRCstr2048,
 		*lpRCstr4096,
 		*lpRCstr4352,
@@ -165,87 +165,34 @@ LoadCommonStrings(void)
     lpRCstr7168 = (rc_str_t *)malloc(STR_NUM_7168*sizeof(rc_str_t));
 
     for (i=0; i<STR_NUM_2048; i++)
-	LoadString(hinstance, 2048+i, lpRCstr2048[i].str, 512);
+	LoadString(hInstance, 2048+i, lpRCstr2048[i].str, 512);
 
     for (i=0; i<STR_NUM_4096; i++)
-	LoadString(hinstance, 4096+i, lpRCstr4096[i].str, 512);
+	LoadString(hInstance, 4096+i, lpRCstr4096[i].str, 512);
 
     for (i=0; i<STR_NUM_4352; i++)
-	LoadString(hinstance, 4352+i, lpRCstr4352[i].str, 512);
+	LoadString(hInstance, 4352+i, lpRCstr4352[i].str, 512);
 
     for (i=0; i<STR_NUM_4608; i++)
-	LoadString(hinstance, 4608+i, lpRCstr4608[i].str, 512);
+	LoadString(hInstance, 4608+i, lpRCstr4608[i].str, 512);
 
     for (i=0; i<STR_NUM_5120; i++)
-	LoadString(hinstance, 5120+i, lpRCstr5120[i].str, 512);
+	LoadString(hInstance, 5120+i, lpRCstr5120[i].str, 512);
 
     for (i=0; i<STR_NUM_5376; i++)
-	LoadString(hinstance, 5376+i, lpRCstr5376[i].str, 512);
+	LoadString(hInstance, 5376+i, lpRCstr5376[i].str, 512);
 
     for (i=0; i<STR_NUM_5632; i++)
-	LoadString(hinstance, 5632+i, lpRCstr5632[i].str, 512);
+	LoadString(hInstance, 5632+i, lpRCstr5632[i].str, 512);
 
     for (i=0; i<STR_NUM_5888; i++)
-	LoadString(hinstance, 5888+i, lpRCstr5888[i].str, 512);
+	LoadString(hInstance, 5888+i, lpRCstr5888[i].str, 512);
 
     for (i=0; i<STR_NUM_6144; i++)
-	LoadString(hinstance, 6144+i, lpRCstr6144[i].str, 512);
+	LoadString(hInstance, 6144+i, lpRCstr6144[i].str, 512);
 
     for (i=0; i<STR_NUM_7168; i++)
-	LoadString(hinstance, 7168+i, lpRCstr7168[i].str, 512);
-}
-
-
-/* Set (or re-set) the language for the application. */
-void
-set_language(int id)
-{
-    LCID lcidNew = MAKELCID(id, dwSubLangID);
-
-    if (lang_id != lcidNew) {
-	/* Set our new language ID. */
-	lang_id = lcidNew;
-
-	SetThreadLocale(lang_id);
-
-	/* Load the strings table for this ID. */
-	LoadCommonStrings();
-
-#if 0
-	/* Update the menus for this ID. */
-	MenuUpdate();
-#endif
-    }
-}
-
-
-wchar_t *
-plat_get_string(int i)
-{
-    LPTSTR str;
-
-    if ((i >= 2048) && (i <= 3071))
-	str = lpRCstr2048[i-2048].str;
-      else if ((i >= 4096) && (i <= 4351))
-	str = lpRCstr4096[i-4096].str;
-      else if ((i >= 4352) && (i <= 4607))
-	str = lpRCstr4352[i-4352].str;
-      else if ((i >= 4608) && (i <= 5119))
-	str = lpRCstr4608[i-4608].str;
-      else if ((i >= 5120) && (i <= 5375))
-	str = lpRCstr5120[i-5120].str;
-      else if ((i >= 5376) && (i <= 5631))
-	str = lpRCstr5376[i-5376].str;
-      else if ((i >= 5632) && (i <= 5887))
-	str = lpRCstr5632[i-5632].str;
-      else if ((i >= 5888) && (i <= 6143))
-	str = lpRCstr5888[i-5888].str;
-      else if ((i >= 6144) && (i <= 7167))
-	str = lpRCstr6144[i-6144].str;
-      else
-	str = lpRCstr7168[i-7168].str;
-
-    return((wchar_t *)str);
+	LoadString(hInstance, 7168+i, lpRCstr7168[i].str, 512);
 }
 
 
@@ -314,6 +261,128 @@ ProcessCommandLine(wchar_t ***argw)
 }
 
 
+/* Load an icon from the resources. */
+HICON
+LoadIconEx(PCTSTR name)
+{
+    return((HICON)LoadImage(hInstance, name, IMAGE_ICON, 16, 16, LR_SHARED));
+}
+
+
+/* For the Windows platform, this is the start of the application. */
+int WINAPI
+WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
+{
+    wchar_t **argw = NULL;
+    int	argc, i;
+
+    /* Set this to the default value (windowed mode). */
+    vid_fullscreen = 0;
+
+    /* We need this later. */
+    hInstance = hInst;
+
+    /* Initialize the version data. CrashDump needs it early. */
+    pc_version("Windows");
+
+#ifdef USE_CRASHDUMP
+    /* Enable crash dump services. */
+    InitCrashDump();
+#endif
+
+    /* First, set our (default) language. */
+    plat_set_language(0x0409);
+
+    /* Create console window. */
+    if (force_debug)
+	plat_console(1);
+
+    /* Process the command line for options. */
+    argc = ProcessCommandLine(&argw);
+
+    /* Pre-initialize the system, this loads the config file. */
+    if (! pc_init(argc, argw)) {
+	/* Detach from console. */
+	plat_console(0);
+	return(1);
+    }
+
+    /* Cleanup: we may no longer need the console. */
+    if (! force_debug)
+	plat_console(0);
+
+    /* Create a mutex for the video handler. */
+    hBlitMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);
+
+    /* Handle our GUI. */
+    i = ui_init(nCmdShow);
+
+    return(i);
+}
+
+
+/*
+ * We do this here since there is platform-specific stuff
+ * going on here, and we do it in a function separate from
+ * main() so we can call it from the UI module as well.
+ */
+void
+plat_start(void)
+{
+    LARGE_INTEGER qpc;
+
+    /* We have not stopped yet. */
+    quited = 0;
+
+    /* Initialize the high-precision timer. */
+    timeBeginPeriod(1);
+    QueryPerformanceFrequency(&qpc);
+    timer_freq = qpc.QuadPart;
+    pclog("Main timer precision: %llu\n", timer_freq);
+
+    /* Start the emulator, really. */
+    thMain = thread_create(pc_thread, &quited);
+    SetThreadPriority(thMain, THREAD_PRIORITY_HIGHEST);
+}
+
+
+/* Cleanly stop the emulator. */
+void
+plat_stop(void)
+{
+    quited = 1;
+
+    plat_delay_ms(100);
+
+    pc_close(thMain);
+
+    thMain = NULL;
+}
+
+
+/* Set (or re-set) the language for the application. */
+void
+plat_set_language(int id)
+{
+    LCID lcidNew = MAKELCID(id, dwSubLangID);
+
+    if (lang_id != lcidNew) {
+	/* Set our new language ID. */
+	lang_id = lcidNew;
+
+	SetThreadLocale(lang_id);
+
+	/* Load the strings table for this ID. */
+	LoadCommonStrings();
+
+#if 0
+	/* Update the menus for this ID. */
+	MenuUpdate();
+#endif
+    }
+}
+
+
 #ifndef USE_WX
 /* Create a console if we don't already have one. */
 void
@@ -357,101 +426,80 @@ plat_console(int init)
 	}
     }
 }
-
-
-/* For the Windows platform, this is the start of the application. */
-int WINAPI
-WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
-{
-    wchar_t **argw = NULL;
-    int	argc, i;
-
-    /* Set this to the default value (windowed mode). */
-    vid_fullscreen = 0;
-
-    /* We need this later. */
-    hinstance = hInst;
-
-    /* Initialize the version data. CrashDump needs it early. */
-    pc_version("Windows");
-
-#ifdef USE_CRASHDUMP
-    /* Enable crash dump services. */
-    InitCrashDump();
-#endif
-
-    /* First, set our (default) language. */
-    set_language(0x0409);
-
-    /* Create console window. */
-    if (force_debug)
-	plat_console(1);
-
-    /* Process the command line for options. */
-    argc = ProcessCommandLine(&argw);
-
-    /* Pre-initialize the system, this loads the config file. */
-    if (! pc_init(argc, argw)) {
-	/* Detach from console. */
-	plat_console(0);
-	return(1);
-    }
-
-    /* Cleanup: we may no longer need the console. */
-    if (! force_debug)
-	plat_console(0);
-
-    /* Handle our GUI. */
-    i = ui_init(nCmdShow);
-
-    return(i);
-}
 #endif	/*USE_WX*/
 
 
-/*
- * We do this here since there is platform-specific stuff
- * going on here, and we do it in a function separate from
- * main() so we can call it from the UI module as well.
- */
-void
-do_start(void)
+/* Return icon number based on drive type. */
+int
+plat_fdd_icon(int type)
 {
-    LARGE_INTEGER qpc;
+    int ret = 512;
 
-    /* We have not stopped yet. */
-    quited = 0;
+    switch(type) {
+	case 0:
+		break;
 
-    /* Initialize the high-precision timer. */
-    timeBeginPeriod(1);
-    QueryPerformanceFrequency(&qpc);
-    timer_freq = qpc.QuadPart;
-    pclog("Main timer precision: %llu\n", timer_freq);
+	case 1:
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+		ret = 128;
+		break;
 
-    /* Start the emulator, really. */
-    thMain = thread_create(pc_thread, &quited);
-    SetThreadPriority(thMain, THREAD_PRIORITY_HIGHEST);
+	case 7:
+	case 8:
+	case 9:
+	case 10:
+	case 11:
+	case 12:
+	case 13:
+		ret = 144;
+		break;
+
+	default:
+		break;
+    }
+
+    return(ret);
 }
 
 
-/* Cleanly stop the emulator. */
-void
-do_stop(void)
+wchar_t *
+plat_get_string(int i)
 {
-    quited = 1;
+    LPTSTR str;
 
-    plat_delay_ms(100);
+    if ((i >= 2048) && (i <= 3071))
+	str = lpRCstr2048[i-2048].str;
+      else if ((i >= 4096) && (i <= 4351))
+	str = lpRCstr4096[i-4096].str;
+      else if ((i >= 4352) && (i <= 4607))
+	str = lpRCstr4352[i-4352].str;
+      else if ((i >= 4608) && (i <= 5119))
+	str = lpRCstr4608[i-4608].str;
+      else if ((i >= 5120) && (i <= 5375))
+	str = lpRCstr5120[i-5120].str;
+      else if ((i >= 5376) && (i <= 5631))
+	str = lpRCstr5376[i-5376].str;
+      else if ((i >= 5632) && (i <= 5887))
+	str = lpRCstr5632[i-5632].str;
+      else if ((i >= 5888) && (i <= 6143))
+	str = lpRCstr5888[i-5888].str;
+      else if ((i >= 6144) && (i <= 7167))
+	str = lpRCstr6144[i-6144].str;
+      else
+	str = lpRCstr7168[i-7168].str;
 
-    pc_close(thMain);
-
-    thMain = NULL;
+    return((wchar_t *)str);
 }
 
 
 void
 plat_get_exe_name(wchar_t *bufp, int size)
 {
-    GetModuleFileName(hinstance, bufp, size);
+    GetModuleFileName(hInstance, bufp, size);
 }
 
 
@@ -676,9 +724,6 @@ plat_setvid(int api)
 
     /* Close the (old) API. */
     vid_apis[0][vid_api].close();
-//#ifdef USE_WX
-//    ui_check_menu_item(IDM_View_WX+vid_api, 0);
-//#endif
     vid_api = api;
 
 #ifndef USE_WX
@@ -690,11 +735,14 @@ plat_setvid(int api)
 
     /* Initialize the (new) API. */
 #ifdef USE_WX
-//    ui_check_menu_item(IDM_View_WX+vid_api, 1);
     i = vid_apis[0][vid_api].init(NULL);
 #else
     i = vid_apis[0][vid_api].init((void *)hwndRender);
 #endif
+
+    /* Update the menu item. */
+    menu_set_radio_item(IDM_RENDER_1, 4, vid_api);
+
     endblit();
     if (! i) return(0);
 
@@ -763,8 +811,10 @@ plat_setfullscreen(int on)
     device_force_redraw();
 
     /* Finally, handle the host's mouse cursor. */
-    /* pclog("%s full screen, %s cursor\n", on ? "enter" : "leave", on ? "hide" : "show"); */
-    show_cursor(vid_fullscreen ? 0 : -1);
+#if 0
+pclog("%s full screen, %s cursor\n", on ? "enter" : "leave", on ? "hide" : "show");
+#endif
+    ui_show_cursor(vid_fullscreen ? 0 : -1);
 }
 
 
@@ -822,12 +872,12 @@ take_screenshot(void)
 void	/* plat_ */
 startblit(void)
 {
-    WaitForSingleObject(ghMutex, INFINITE);
+    WaitForSingleObject(hBlitMutex, INFINITE);
 }
 
 
 void	/* plat_ */
 endblit(void)
 {
-    ReleaseMutex(ghMutex);
+    ReleaseMutex(hBlitMutex);
 }

@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.13	2018/04/28
+ * Version:	@(#)resource.h	1.0.14	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -243,9 +243,12 @@
 #define  IDC_JOY2		1211
 #define  IDC_JOY3		1212
 #define  IDC_JOY4		1213
+
 #define IDC_HDTYPE		1280
+
 #define IDC_RENDER		1281
-#define IDC_STATUS		1282
+
+#define IDC_STATBAR		1282
 
 
 /* HELP menu. */

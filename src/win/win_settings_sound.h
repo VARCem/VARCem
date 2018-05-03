@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.6	2018/04/29
+ * Version:	@(#)win_settings_sound.h	1.0.7	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -194,7 +194,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
 				temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)sound_card_getdevice(temp_sound_card));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)sound_card_getdevice(temp_sound_card));
 				break;
 
 			case IDC_COMBO_MIDI:
@@ -219,7 +219,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
 				temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)midi_device_getdevice(temp_midi_device));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)midi_device_getdevice(temp_midi_device));
 				break;
 
 			case IDC_CHECK_MPU401:
@@ -231,7 +231,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDC_CONFIGURE_MPU401:
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)&mpu401_device);
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)&mpu401_device);
 				break;
 		}
 		return FALSE;

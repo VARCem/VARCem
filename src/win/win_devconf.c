@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.14	2018/04/29
+ * Version:	@(#)win_devconf.c	1.0.15	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -447,7 +447,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
  */
 #define DLG_MAX_SIZE	16384
 uint8_t
-deviceconfig_open(HWND hwnd, device_t *device)
+dlg_devconf(HWND hwnd, device_t *device)
 {
     char temp[128];
     const device_config_t *cfg = device->config;
@@ -703,7 +703,7 @@ deviceconfig_open(HWND hwnd, device_t *device)
 
     devconf_device = device;
 
-    DialogBoxIndirect(hinstance, dlg, hwnd, dlg_proc);
+    DialogBoxIndirect(hInstance, dlg, hwnd, dlg_proc);
 
     free(blk);
 

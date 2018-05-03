@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.35	2018/04/28
+# Version:	@(#)Makefile.mingw	1.0.37	2018/05/03
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -364,7 +364,7 @@ ifneq ($(WX), n)
 else
  UIOBJ		:= win_ui.o \
 		   win_ddraw.o win_d3d.o \
-		   win_dialog.o win_about.o win_status.o win_stbar.o \
+		   win_dialog.o win_about.o win_status.o \
 		   win_settings.o win_devconf.o win_snd_gain.o \
 		   win_new_floppy.o
 endif
@@ -670,7 +670,7 @@ else
 endif
 
 
-all:		$(PROG).exe pcap_if.exe
+all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
 
 
 VARCem.res:	VARCem.rc VARCem.mpp

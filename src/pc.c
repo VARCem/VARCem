@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.31	2018/04/30
+ * Version:	@(#)pc.c	1.0.32	2018/05/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -309,6 +309,11 @@ pc_version(const char *platform)
     sprintf(emu_version, "v%s", EMU_VERSION);
 #endif
     strcpy(emu_fullversion, emu_version);
+
+#ifdef _MSC_VER
+    sprintf(temp, " [VC%d]", _MSC_VER);
+    strcat(emu_fullversion, temp);
+#endif
 
 #ifdef BUILD
     sprintf(temp, " (Build %d", BUILD);

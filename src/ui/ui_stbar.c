@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.2	2018/04/29
+ * Version:	@(#)ui_stbar.c	1.0.3	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -712,7 +712,7 @@ ui_sb_update(void)
 		case SB_FLOPPY:		/* Floppy */
 			drive = sb_tags[part] & 0x0f;
 			sb_flags[part] = (wcslen(floppyfns[drive]) == 0) ? 256 : 0;
-			sb_icons[part] = sb_fdd_icon(fdd_get_type(drive)) | sb_flags[part];
+			sb_icons[part] = plat_fdd_icon(fdd_get_type(drive)) | sb_flags[part];
 			sb_menu_create(part);
 			menu_floppy(part, drive);
 			ui_sb_tip_update(sb_tags[part]);

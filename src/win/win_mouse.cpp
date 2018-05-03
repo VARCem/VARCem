@@ -8,7 +8,7 @@
  *
  *		Mouse interface to host device.
  *
- * Version:	@(#)win_mouse.cpp	1.0.4	2018/04/26
+ * Version:	@(#)win_mouse.cpp	1.0.5	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,7 +62,7 @@ win_mouse_init(void)
 
     mouse_capture = 0;
 
-    if (FAILED(DirectInput8Create(hinstance, DIRECTINPUT_VERSION,
+    if (FAILED(DirectInput8Create(hInstance, DIRECTINPUT_VERSION,
 	       IID_IDirectInput8A, (void **) &lpdi, NULL)))
 	fatal("plat_mouse_init: DirectInputCreate failed\n"); 
 

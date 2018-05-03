@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.16	2018/04/29
+ * Version:	@(#)win_ui.c	1.0.18	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,7 +38,9 @@
  */
 #define UNICODE
 #include <windows.h>
+#include <windowsx.h>
 #include <commctrl.h>
+#include <commdlg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -58,13 +60,17 @@
 #include "win_d3d.h"
 
 
+#ifndef GWL_WNDPROC
+# define GWL_WNDPROC	GWLP_WNDPROC
+#endif
+
+
 #define TIMER_1SEC	1		/* ID of the one-second timer */
 
 
 /* Platform Public data, specific. */
-HWND		hwndMain,		/* application main window */
-		hwndRender;		/* machine render window */
-HMENU		menuMain;		/* application main menu */
+HWND		hwndMain = NULL,	/* application main window */
+		hwndRender = NULL;	/* machine render window */
 HICON		hIcon[512];		/* icon data loaded from resources */
 RECT		oldclip;		/* mouse rect */
 int		infocus = 1;
@@ -74,33 +80,156 @@ int		infocus = 1;
 static wchar_t	wTitle[512];
 static RAWINPUTDEVICE	device;
 static HHOOK	hKeyboardHook;
+static LONG_PTR	OriginalProcedure;
+static HWND	hwndSBAR = NULL;	/* application status bar */
+static HMENU	menuMain = NULL,	/* application menu bar */
+		menuSBAR = NULL,	/* status bar menu bar */
+		*sb_menu = NULL;
+static int	sb_nparts;
 static int	hook_enabled = 0;
 static int	save_window_pos = 0;
+static int	cruft_x = 0,
+		cruft_y = 0,
+		cruft_sb = 0;
 
 
-HICON
-LoadIconEx(PCTSTR pszIconName)
+static VOID APIENTRY
+PopupMenu(HWND hwnd, POINT pt, int part)
 {
-    return((HICON)LoadImage(hinstance, pszIconName, IMAGE_ICON,
-						16, 16, LR_SHARED));
+    if (part >= (sb_nparts - 1)) return;
+
+    pt.x = part * SB_ICON_WIDTH;	/* justify to the left */
+    pt.y = 1;				/* justify to the top */
+
+    ClientToScreen(hwnd, (LPPOINT)&pt);
+
+    TrackPopupMenu(sb_menu[part],
+		   TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_LEFTBUTTON,
+		   pt.x, pt.y, 0, hwndSBAR, NULL);
 }
 
 
-#if 0
-static void
-menu_update(void)
-{
-    menuMain = LoadMenu(hinstance, L"MainMenu"));
-
-    menuSBAR = LoadMenu(hinstance, L"StatusBarMenu");
-
-    initmenu();
-
-    SetMenu(memnuMain, menu);
-
-    win_title_update = 1;
-}
+/* Handle messages for the Status Bar window. */
+#ifdef __amd64__
+static LRESULT CALLBACK
+#else
+static BOOL CALLBACK
 #endif
+sb_dlg_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    RECT r;
+    POINT pt;
+    int idm, tag;
+
+    switch (message) {
+	case WM_COMMAND:
+		idm = LOWORD(wParam) & 0xff00;		/* low 8 bits */
+		tag = LOWORD(wParam) & 0x00ff;		/* high 8 bits */
+		ui_sb_menu_command(idm, tag);
+		return(0);
+
+	case WM_LBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+		GetClientRect(hwnd, (LPRECT)&r);
+		pt.x = GET_X_LPARAM(lParam);
+		pt.y = GET_Y_LPARAM(lParam);
+		if (PtInRect((LPRECT)&r, pt))
+			PopupMenu(hwnd, pt, (pt.x / SB_ICON_WIDTH));
+		break;
+
+	case WM_LBUTTONDBLCLK:
+		GetClientRect(hwnd, (LPRECT)&r);
+		pt.x = GET_X_LPARAM(lParam);
+		pt.y = GET_Y_LPARAM(lParam);
+		tag = (pt.x / SB_ICON_WIDTH);
+		if (PtInRect((LPRECT)&r, pt))
+			ui_sb_click(tag);
+		break;
+
+	default:
+		return(CallWindowProc((WNDPROC)OriginalProcedure,
+				      hwnd, message, wParam, lParam));
+    }
+
+    return(0);
+}
+
+
+/* Create and set up the Status Bar window. */
+void
+StatusBarCreate(uintptr_t id)
+{
+    int borders[3];
+    intptr_t i;
+    int dw, dh;
+    RECT r;
+
+    /* Load our icons into the cache for faster access. */
+    for (i = 128; i < 130; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 144; i < 146; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 160; i < 162; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 176; i < 178; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 192; i < 194; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 208; i < 210; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 224; i < 226; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 259; i < 260; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 384; i < 386; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 400; i < 402; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 416; i < 418; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 432; i < 434; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+    for (i = 448; i < 450; i++)
+	hIcon[i] = LoadIconEx((PCTSTR)i);
+
+    GetWindowRect(hwndMain, &r);
+    dw = r.right - r.left;
+    dh = r.bottom - r.top;
+
+    /* Load the Common Controls DLL if needed. */
+    InitCommonControls();
+
+    /* Create the window, and make sure it's using the STATUS class. */
+    hwndSBAR = CreateWindow(STATUSCLASSNAME, 
+			    NULL,
+			    SBARS_SIZEGRIP|WS_CHILD|WS_VISIBLE|SBT_TOOLTIPS,
+			    0, dh,
+			    dw, SB_HEIGHT,
+			    hwndMain,
+			    (HMENU)id,
+			    hInstance,
+			    NULL);
+
+    /* Retrieve the width of the border the status bar got. */
+    memset(borders, 0x00, sizeof(borders));
+    SendMessage(hwndSBAR, SB_GETBORDERS, 0, (LPARAM)borders);
+    if (borders[1] == 0)
+	borders[1] = 2;
+    cruft_sb = SB_HEIGHT + (2 * borders[1]) + (2 * SB_PADDING);
+
+    /* Replace the original procedure with ours. */
+    OriginalProcedure = GetWindowLongPtr(hwndSBAR, GWLP_WNDPROC);
+    SetWindowLongPtr(hwndSBAR, GWL_WNDPROC, (LONG_PTR)sb_dlg_proc);
+
+    SendMessage(hwndSBAR, SB_SETMINHEIGHT, (WPARAM)SB_HEIGHT, (LPARAM)0);
+
+    /* Load the dummy menu for this window. */
+    menuSBAR = LoadMenu(hInstance, SB_MENU_NAME);
+
+    /* Clear the menus, just in case.. */
+    sb_nparts = 0;
+    sb_menu = NULL;
+}
 
 
 static LRESULT CALLBACK
@@ -139,9 +268,9 @@ LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 static LRESULT CALLBACK
 MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    DWORD flags;
     RECT rect;
-    int sb_borders[3];
-    int temp_x, temp_y;
+    int x, y;
     int idm;
 
     switch (message) {
@@ -164,34 +293,37 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDM_RESIZE:
-				GetWindowRect(hwnd, &rect);
-				if (vid_resize)
-					SetWindowLongPtr(hwnd, GWL_STYLE, (WS_OVERLAPPEDWINDOW) | WS_VISIBLE);
-				  else
-					SetWindowLongPtr(hwnd, GWL_STYLE, (WS_OVERLAPPEDWINDOW & ~WS_SIZEBOX & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX) | WS_VISIBLE);
-
-				SendMessage(hwndSBAR, SB_GETBORDERS, 0, (LPARAM) sb_borders);
+				/* Set up for resizing if configured. */
+				flags = WS_OVERLAPPEDWINDOW;
+				if (! vid_resize)
+					flags &= ~(WS_SIZEBOX | WS_THICKFRAME |
+						   WS_MAXIMIZEBOX);
+				SetWindowLongPtr(hwnd, GWL_STYLE, flags);
 
 				/* Main Window. */
+				GetWindowRect(hwnd, &rect);
                         	MoveWindow(hwnd, rect.left, rect.top,
-					unscaled_size_x + (GetSystemMetrics(vid_resize ? SM_CXSIZEFRAME : SM_CXFIXEDFRAME) * 2),
-					unscaled_size_y + (GetSystemMetrics(SM_CYEDGE) * 2) + (GetSystemMetrics(vid_resize ? SM_CYSIZEFRAME : SM_CYFIXEDFRAME) * 2) + GetSystemMetrics(SM_CYMENUSIZE) + GetSystemMetrics(SM_CYCAPTION) + 17 + sb_borders[1] + 1,
+					unscaled_size_x + cruft_x,
+					unscaled_size_y + cruft_y + cruft_sb,
 					TRUE);
 
+#if 0
 				/* Render window. */
-				MoveWindow(hwndRender, 0, 0, unscaled_size_x, unscaled_size_y, TRUE);
-				GetWindowRect(hwndRender, &rect);
+				MoveWindow(hwndRender, 0, 0,
+					   unscaled_size_x,
+					   unscaled_size_y,
+					   TRUE);
 
 				/* Status bar. */
+				GetWindowRect(hwndRender, &rect);
 				MoveWindow(hwndSBAR,
-					   0, rect.bottom + GetSystemMetrics(SM_CYEDGE),
-					   unscaled_size_x, 17, TRUE);
 
 				if (mouse_capture) {
 					GetWindowRect(hwndRender, &rect);
 
 					ClipCursor(&rect);
 				}
+#endif
 				break;
 
 			case IDM_REMEMBER:
@@ -245,34 +377,38 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_SIZE:
-		SendMessage(hwndSBAR, SB_GETBORDERS, 0, (LPARAM) sb_borders);
+		/* Note: this is the *client area* size!! */
+		x = (lParam & 0xffff);
+		y = (lParam >> 16);
+		if (cruft_x == 0) {
+			/* Determine the window cruft. */
+			cruft_x = (scrnsz_x - x);
+			cruft_y = (scrnsz_y - y);
 
-		temp_x = (lParam & 0xFFFF);
-		temp_y = (lParam >> 16) - (21 + sb_borders[1]);
-		if (temp_x < 1)
-			temp_x = 1;
-		if (temp_y < 1)
-			temp_y = 1;
+			/* Update window size with cruft. */
+			x += cruft_x;
+			y += (cruft_y + cruft_sb);
+		}
+		y -= cruft_sb;
 
-		if ((temp_x != scrnsz_x) || (temp_y != scrnsz_y))
-			doresize = 1;
+		/* Request a re-size if needed. */
+		if ((x != scrnsz_x) || (y != scrnsz_y)) doresize = 1;
 
- 		scrnsz_x = temp_x;
-		scrnsz_y = temp_y;
+		/* Set the new panel size. */
+ 		scrnsz_x = x;
+		scrnsz_y = y;
 
-		MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
+		/* Update the render window. */
+		if (hwndRender != NULL)
+			MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
 
-		GetWindowRect(hwndRender, &rect);
+		/* Update the Status bar. */
+		MoveWindow(hwndSBAR, 0, scrnsz_y, scrnsz_x, cruft_sb, TRUE);
 
-		/* Status bar. */
-		MoveWindow(hwndSBAR,
-			   0, rect.bottom + GetSystemMetrics(SM_CYEDGE),
-			   scrnsz_x, 17, TRUE);
-
+		/* Update the renderer if needed. */
 		plat_vidsize(scrnsz_x, scrnsz_y);
 
-		MoveWindow(hwndSBAR, 0, scrnsz_y + 6, scrnsz_x, 17, TRUE);
-
+		/* Re-clip the mouse area if needed. */
 		if (mouse_capture) {
 			GetWindowRect(hwndRender, &rect);
 
@@ -280,7 +416,8 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		if (window_remember) {
-			GetWindowRect(hwnd, &rect);
+			GetWindowRect(hwndMain, &rect);
+
 			window_x = rect.left;
 			window_y = rect.top;
 			window_w = rect.right - rect.left;
@@ -292,13 +429,16 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_MOVE:
-		/* If window is not resizable, then tell the main thread to
-		   resize it, as sometimes, moves can mess up the window size. */
-		if (!vid_resize)
+		/*
+		 * If window is not resizable, then tell the main thread			 * to resize it, as sometimes, moves can mess up the window
+		 * size.
+		 */
+		if (! vid_resize)
 			doresize = 1;
 
 		if (window_remember) {
-			GetWindowRect(hwnd, &rect);
+			GetWindowRect(hwndMain, &rect);
+
 			window_x = rect.left;
 			window_y = rect.top;
 			window_w = rect.right - rect.left;
@@ -308,9 +448,8 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
                 
 	case WM_TIMER:
-		if (wParam == TIMER_1SEC) {
+		if (wParam == TIMER_1SEC)
 			pc_onesec();
-		}
 		break;
 
 	case WM_RESETD3D:
@@ -323,7 +462,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_LEAVEFULLSCREEN:
-		/* pclog("leave full screen on window message\n"); */
+#if 0
+		pclog("leave full screen on window message\n");
+#endif
 		plat_setfullscreen(0);
 		config_save();
 		break;
@@ -366,10 +507,11 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return(DefWindowProc(hwnd, message, wParam, lParam));
     }
 
-    return(0);
+    return(FALSE);
 }
 
 
+/* Dummy window procedure, used by D3D when in full-screen mode. */
 static LRESULT CALLBACK
 SubWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -383,8 +525,8 @@ ui_init(int nCmdShow)
     WCHAR title[200];
     WNDCLASSEX wincl;			/* buffer for main window's class */
     MSG messages;			/* received-messages buffer */
-    HWND hwnd = 0;			/* handle for our window */
     HACCEL haccel;			/* handle to accelerator table */
+    DWORD flags;
     int ret;
 
 #if 0
@@ -395,10 +537,7 @@ ui_init(int nCmdShow)
     if (settings_only) {
 	if (! pc_init_modules()) {
 		/* Dang, no ROMs found at all! */
-		MessageBox(hwnd,
-			   plat_get_string(IDS_2056),
-			   plat_get_string(IDS_2050),
-			   MB_OK | MB_ICONERROR);
+		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2056);
 		return(6);
 	}
 
@@ -408,13 +547,13 @@ ui_init(int nCmdShow)
     }
 
     /* Create our main window's class and register it. */
-    wincl.hInstance = hinstance;
+    wincl.hInstance = hInstance;
     wincl.lpszClassName = CLASS_NAME;
     wincl.lpfnWndProc = MainWindowProcedure;
     wincl.style = CS_DBLCLKS;		/* Catch double-clicks */
     wincl.cbSize = sizeof(WNDCLASSEX);
-    wincl.hIcon = LoadIcon(hinstance, (LPCTSTR)100);
-    wincl.hIconSm = LoadIcon(hinstance, (LPCTSTR)100);
+    wincl.hIcon = LoadIcon(hInstance, (LPCTSTR)100);
+    wincl.hIconSm = LoadIcon(hInstance, (LPCTSTR)100);
     wincl.hCursor = NULL;
     wincl.lpszMenuName = NULL;
     wincl.cbClsExtra = 0;
@@ -422,90 +561,78 @@ ui_init(int nCmdShow)
     wincl.hbrBackground = CreateSolidBrush(RGB(0,0,0));
     if (! RegisterClassEx(&wincl))
 			return(2);
-    wincl.lpszClassName = SUB_CLASS_NAME;
+
+    /* Register a class for the Fullscreen renderer window. */
+    wincl.lpszClassName = FS_CLASS_NAME;
     wincl.lpfnWndProc = SubWindowProcedure;
     if (! RegisterClassEx(&wincl))
 			return(2);
 
     /* Load the Window Menu(s) from the resources. */
-    menuMain = LoadMenu(hinstance, MENU_NAME);
+    menuMain = LoadMenu(hInstance, MENU_NAME);
 
-    /* Now create our main window. */
+    /* Set up main window for resizing if configured. */
+    flags = WS_OVERLAPPEDWINDOW;
+    if (! vid_resize)
+	flags &= ~(WS_SIZEBOX | WS_THICKFRAME | WS_MAXIMIZEBOX);
+
+    /*
+     * Create our main window.
+     *
+     * We want our (initial) render panel to be a certain
+     * size (default 640x480), and we have no idea what
+     * our window decorations are, size-wise.
+     *
+     * Rather than depending on the GetSYstemMetrics API
+     * calls (which return incorrect data of Vista+), the
+     * simplest trick is to just set the desired window
+     * size, and create the window.  The first WM_SIZE
+     * message will indicate the client size left after
+     * creating all the decorations, and the difference
+     * is the decoration overhead ('cruft') we need to
+     * always keep in mind when changing the window size.
+     */
     wsprintf(title, L"%S", emu_version, sizeof_w(title));
-    hwnd = CreateWindowEx (
-		0,			/* no extended possibilites */
-		CLASS_NAME,		/* class name */
-		title,			/* Title Text */
-		(WS_OVERLAPPEDWINDOW & ~WS_SIZEBOX) | DS_3DLOOK,
-		CW_USEDEFAULT,		/* Windows decides the position */
-		CW_USEDEFAULT,		/* where window ends up on the screen */
-		scrnsz_x+(GetSystemMetrics(SM_CXFIXEDFRAME)*2),	/* width */
-		scrnsz_y+(GetSystemMetrics(SM_CYFIXEDFRAME)*2)+GetSystemMetrics(SM_CYMENUSIZE)+GetSystemMetrics(SM_CYCAPTION)+1,	/* and height in pixels */
-		HWND_DESKTOP,		/* window is a child to desktop */
-		menuMain,		/* menu */
-		hinstance,		/* Program Instance handler */
-		NULL);			/* no Window Creation data */
-    hwndMain = hwnd;
+    hwndMain = CreateWindow(
+		CLASS_NAME,			/* class name */
+		title,				/* Title Text */
+		flags,				/* style flags */
+		CW_USEDEFAULT, CW_USEDEFAULT,	/* no preset position */
+		scrnsz_x, scrnsz_y,		/* window size in pixels */
+		HWND_DESKTOP,			/* child of desktop */
+		menuMain,			/* menu */
+		hInstance,			/* Program Instance handler */
+		NULL);				/* no Window Creation data */
 
     ui_window_title(title);
 
-    /* Set up main window for resizing if configured. */
-    if (vid_resize)
-	SetWindowLongPtr(hwnd, GWL_STYLE,
-			(WS_OVERLAPPEDWINDOW));
-      else
-	SetWindowLongPtr(hwnd, GWL_STYLE,
-			(WS_OVERLAPPEDWINDOW&~WS_SIZEBOX&~WS_THICKFRAME&~WS_MAXIMIZEBOX));
-
     /* Move to the last-saved position if needed. */
     if (window_remember)
-	MoveWindow(hwnd, window_x, window_y, window_w, window_h, TRUE);
+	MoveWindow(hwndMain, window_x, window_y, window_w, window_h, FALSE);
 
     /* Reset all menus to their defaults. */
     ui_menu_reset_all();
 
-    /* Make the window visible on the screen. */
-    ShowWindow(hwnd, nCmdShow);
-
     /* Load the accelerator table */
-    haccel = LoadAccelerators(hinstance, ACCEL_NAME);
+    haccel = LoadAccelerators(hInstance, ACCEL_NAME);
     if (haccel == NULL) {
-	MessageBox(hwndMain,
-		   plat_get_string(IDS_2153),
-		   plat_get_string(IDS_2050),
-		   MB_OK | MB_ICONERROR);
+	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2153);
 	return(3);
     }
 
-    /* Initialize the input (keyboard, mouse, game) module. */
-    device.usUsagePage = 0x01;
-    device.usUsage = 0x06;
-    device.dwFlags = RIDEV_NOHOTKEYS;
-    device.hwndTarget = hwnd;
-    if (! RegisterRawInputDevices(&device, 1, sizeof(device))) {
-	MessageBox(hwndMain,
-		   plat_get_string(IDS_2154),
-		   plat_get_string(IDS_2050),
-		   MB_OK | MB_ICONERROR);
-	return(4);
-    }
-    keyboard_getkeymap();
-
-    /* Initialize the mouse module. */
-    win_mouse_init();
-
-    /* Create the status bar window. */
-    StatusBarCreate(hwndMain, IDC_STATUS, hinstance);
-
-    /*
-     * Before we can create the Render window, we first have
-     * to prepare some other things that it depends on.
-     */
-    ghMutex = CreateMutex(NULL, FALSE, L"VARCem.BlitMutex");
+    /* Make the window visible on the screen. */
+    ShowWindow(hwndMain, nCmdShow);
 
     /* Create the Machine Rendering window. */
-    hwndRender = CreateWindow(L"STATIC", NULL, WS_CHILD|SS_BITMAP,
-			      0, 0, 1, 1, hwnd, NULL, hinstance, NULL);
+    hwndRender = CreateWindow(L"STATIC",
+			      NULL,
+			      WS_CHILD|SS_BITMAP,
+			      0, 0,
+			      scrnsz_x, scrnsz_y,
+			      hwndMain,
+			      NULL,
+			      hInstance,
+			      NULL);
 
     /* That looks good, now continue setting up the machine. */
     switch (pc_init_modules()) {
@@ -531,10 +658,7 @@ ui_init(int nCmdShow)
 
     /* Initialize the configured Video API. */
     if (! plat_setvid(vid_api)) {
-	MessageBox(hwnd,
-		   plat_get_string(IDS_2095),
-		   plat_get_string(IDS_2050),
-		   MB_OK | MB_ICONERROR);
+	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2095);
 	return(5);
     }
 
@@ -543,12 +667,25 @@ ui_init(int nCmdShow)
 	plat_setfullscreen(1);
 
     /* Activate the render window, this will also set the screen size. */
-    MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
+    if (hwndRender != NULL)
+	MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
 
-#if 0
-    /* Set up the current window size. */
-    plat_resize(scrnsz_x, scrnsz_y);
-#endif
+    /* Create the status bar window. */
+    StatusBarCreate(IDC_STATBAR);
+
+    /* Initialize the input (keyboard, mouse, game) module. */
+    device.usUsagePage = 0x01;
+    device.usUsage = 0x06;
+    device.dwFlags = RIDEV_NOHOTKEYS;
+    device.hwndTarget = hwndMain;
+    if (! RegisterRawInputDevices(&device, 1, sizeof(device))) {
+	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2154);
+	return(4);
+    }
+    keyboard_getkeymap();
+
+    /* Initialize the mouse module. */
+    win_mouse_init();
 
     /* Fire up the machine. */
     pc_reset_hard();
@@ -562,7 +699,7 @@ ui_init(int nCmdShow)
      * real work, and we will hang in here, dealing with the
      * UI until we're done.
      */
-    do_start();
+    plat_start();
 
     /* Run the message loop. It will run until GetMessage() returns 0 */
     while (! quited) {
@@ -578,7 +715,7 @@ ui_init(int nCmdShow)
 		break;
 	}
 
-	if (! TranslateAccelerator(hwnd, haccel, &messages)) {
+	if (! TranslateAccelerator(hwndMain, haccel, &messages)) {
                 TranslateMessage(&messages);
                 DispatchMessage(&messages);
 	}
@@ -601,10 +738,10 @@ ui_init(int nCmdShow)
 	plat_mouse_capture(0);
 
     /* Close down the emulator. */
-    do_stop();
+    plat_stop();
 
-    UnregisterClass(SUB_CLASS_NAME, hinstance);
-    UnregisterClass(CLASS_NAME, hinstance);
+    UnregisterClass(CLASS_NAME, hInstance);
+    UnregisterClass(FS_CLASS_NAME, hInstance);
 
     win_mouse_close();
 
@@ -612,6 +749,23 @@ ui_init(int nCmdShow)
 }
 
 
+/*
+ * Re-load and reset all menus.
+ *
+ * We should have the language ID as a parameter.
+ */
+void
+ui_menu_update(void)
+{
+    menuMain = LoadMenu(hInstance, MENU_NAME);
+    SetMenu(hwndMain, menuMain);
+
+    menuSBAR = LoadMenu(hInstance, SB_MENU_NAME);
+    ui_menu_reset_all();
+}
+
+
+/* Update the application's title bar. */
 wchar_t *
 ui_window_title(wchar_t *s)
 {
@@ -631,9 +785,9 @@ ui_window_title(wchar_t *s)
 }
 
 
-/* Set host cursor visible or not. */
+/* Set cursor visible or not. */
 void
-show_cursor(int val)
+ui_show_cursor(int val)
 {
     static int vis = -1;
 
@@ -683,7 +837,6 @@ menu_set_radio_item(int idm, int num, int val)
 }
 
 
-/* We should have the language ID as a parameter. */
 void
 plat_pause(int p)
 {
@@ -708,7 +861,7 @@ plat_pause(int p)
 
     dopause = p;
 
-    /* Update the actual menu. */
+    /* Update the actual menu item. */
     menu_set_item(IDM_PAUSE, dopause);
 }
 
@@ -717,33 +870,17 @@ plat_pause(int p)
 void
 plat_resize(int x, int y)
 {
-    int sb_borders[3];
     RECT r;
 
-#if 0
-pclog("PLAT: VID[%d,%d] resizing to %dx%d\n", vid_fullscreen, vid_api, x, y);
-#endif
     /* First, see if we should resize the UI window. */
-    if (!vid_resize) {
-	video_wait_for_blit();
-	SendMessage(hwndSBAR, SB_GETBORDERS, 0, (LPARAM) sb_borders);
-	GetWindowRect(hwndMain, &r);
-	MoveWindow(hwndRender, 0, 0, x, y, TRUE);
+    if (vid_resize) return;
 
-	GetWindowRect(hwndMain, &r);
-	MoveWindow(hwndMain, r.left, r.top,
-		   x + (GetSystemMetrics(vid_resize ? SM_CXSIZEFRAME : SM_CXFIXEDFRAME) * 2),
-		   y + (GetSystemMetrics(SM_CYEDGE) * 2) + (GetSystemMetrics(vid_resize ? SM_CYSIZEFRAME : SM_CYFIXEDFRAME) * 2) + GetSystemMetrics(SM_CYMENUSIZE) + GetSystemMetrics(SM_CYCAPTION) + 17 + sb_borders[1] + 1,
-		   TRUE);
-	GetWindowRect(hwndMain, &r);
+    video_wait_for_blit();
 
-	MoveWindow(hwndRender, 0, 0, x, y, TRUE);
-
-	if (mouse_capture) {
-		GetWindowRect(hwndRender, &r);
-		ClipCursor(&r);
-	}
-    }
+    /* Re-position and re-size the main window. */
+    GetWindowRect(hwndMain, &r);
+    MoveWindow(hwndMain, r.left, r.top,
+	       x+cruft_x, y+cruft_y+cruft_sb, TRUE);
 }
 
 
@@ -760,15 +897,113 @@ plat_mouse_capture(int on)
 	GetClipCursor(&oldclip);
 	GetWindowRect(hwndRender, &rect);
 	ClipCursor(&rect);
-	/* pclog("mouse capture off, hide cursor\n"); */
-	show_cursor(0);
+
+	ui_show_cursor(0);
+
 	mouse_capture = 1;
     } else if (!on && mouse_capture) {
 	/* Disable the in-app mouse. */
 	ClipCursor(&oldclip);
-	/* pclog("mouse capture on, show cursor\n"); */
-	show_cursor(-1);
+
+	ui_show_cursor(-1);
 
 	mouse_capture = 0;
     }
+}
+
+
+void
+sb_setup(int parts, const int *widths)
+{
+    SendMessage(hwndSBAR, SB_SETPARTS, (WPARAM)parts, (LPARAM)widths);
+
+    if (sb_menu != NULL)
+	sb_menu_destroy();
+
+    sb_menu = (HMENU *)malloc(parts * sizeof(HMENU));
+    memset(sb_menu, 0x00, parts * sizeof(HMENU));
+
+    sb_nparts = parts;
+}
+
+
+void
+sb_menu_destroy(void)
+{
+    int i;
+
+    if (!sb_nparts || (sb_menu == NULL)) return;
+
+    for (i = 0; i < sb_nparts; i++) {
+	if (sb_menu[i] != NULL)
+		DestroyMenu(sb_menu[i]);
+    }
+
+    free(sb_menu);
+
+    sb_menu = NULL;
+}
+
+
+/* Create a menu for a status bar part. */
+void
+sb_menu_create(int part)
+{
+    HMENU h;
+
+    h = CreatePopupMenu();
+
+    sb_menu[part] = h;
+}
+
+
+/* Add an item to a (status bar) menu. */
+void
+sb_menu_add_item(int part, int idm, const wchar_t *str)
+{
+    if (idm >= 0)
+	AppendMenu(sb_menu[part], MF_STRING, idm, str);
+      else
+	AppendMenu(sb_menu[part], MF_SEPARATOR, 0, NULL);
+}
+
+
+void
+sb_menu_enable_item(int part, int idm, int val)
+{
+    EnableMenuItem(sb_menu[part], idm,
+	val ? MF_BYCOMMAND|MF_ENABLED : MF_BYCOMMAND|MF_GRAYED);
+}
+
+
+void
+sb_menu_set_item(int part, int idm, int val)
+{
+    CheckMenuItem(sb_menu[part], idm, val ? MF_CHECKED : MF_UNCHECKED);
+}
+
+
+void
+sb_set_icon(int part, int icon)
+{
+    HANDLE ptr;
+
+    if (icon == -1) ptr = NULL;
+      else ptr = hIcon[(intptr_t)icon];
+
+    SendMessage(hwndSBAR, SB_SETICON, part, (LPARAM)ptr);
+}
+
+
+void
+sb_set_text(int part, const wchar_t *str)
+{
+    SendMessage(hwndSBAR, SB_SETTEXT, part | SBT_NOBORDERS, (LPARAM)str);
+}
+
+
+void
+sb_set_tooltip(int part, const wchar_t *str)
+{
+    SendMessage(hwndSBAR, SB_SETTIPTEXT, part, (LPARAM)str);
 }

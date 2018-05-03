@@ -13,7 +13,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.10	2018/04/26
+ * Version:	@(#)win_joystick.cpp	1.0.11	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -180,7 +180,7 @@ joystick_init(void)
 	
     joysticks_present = 0;
 	
-    if (FAILED(DirectInput8Create(hinstance,
+    if (FAILED(DirectInput8Create(hInstance,
 	       DIRECTINPUT_VERSION, IID_IDirectInput8A,
 	       (void **) &lpdi, NULL)))
 	fatal("joystick_init : DirectInputCreate failed\n"); 
@@ -615,7 +615,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 
 
 uint8_t
-joystickconfig_open(HWND hwnd, int joy_nr, int type)
+dlg_jsconf(HWND hwnd, int joy_nr, int type)
 {
     uint16_t *data_block = (uint16_t *)malloc(16384);
     uint16_t *data;
@@ -831,7 +831,7 @@ joystickconfig_open(HWND hwnd, int joy_nr, int type)
 
     dlg->cy = y + 20;
 
-    DialogBoxIndirect(hinstance, dlg, hwnd, dlg_proc);
+    DialogBoxIndirect(hInstance, dlg, hwnd, dlg_proc);
 
     free(data_block);
 

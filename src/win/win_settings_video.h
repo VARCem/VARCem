@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_video.h	1.0.3	2018/04/29
+ * Version:	@(#)win_settings_video.h	1.0.4	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -159,14 +159,14 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDC_BUTTON_VOODOO:
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)&voodoo_device);
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)&voodoo_device);
 				break;
 
 			case IDC_CONFIGURE_VID:
 				h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
 				SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM)temp);
 				wcstombs(tempA, temp, sizeof(temp));
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)video_card_getdevice(video_card_getid(tempA)));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)video_card_getdevice(video_card_getid(tempA)));
 
 				break;
 		}

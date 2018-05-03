@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.4	2018/04/29
+ * Version:	@(#)win_settings_network.h	1.0.5	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -184,7 +184,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				h = GetDlgItem(hdlg, IDC_COMBO_NET);
 				temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)network_card_getdevice(temp_net_card));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)network_card_getdevice(temp_net_card));
 				break;
 		}
 		return FALSE;

@@ -8,7 +8,7 @@
  *
  *		Implementation of the "Removable Devices" dialog.
  *
- * Version:	@(#)win_settings_remov.h	1.0.4	2018/04/30
+ * Version:	@(#)win_settings_remov.h	1.0.5	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,11 +88,11 @@ cdrom_image_list_init(HWND hwndList)
 			      GetSystemMetrics(SM_CYSMICON),
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
-    hiconItem = LoadIcon(hinstance, (LPCWSTR)514);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)514);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
-    hiconItem = LoadIcon(hinstance, (LPCWSTR)160);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)160);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
@@ -435,11 +435,11 @@ zip_image_list_init(HWND hwndList)
 			      GetSystemMetrics(SM_CYSMICON),
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
-    hiconItem = LoadIcon(hinstance, (LPCWSTR)515);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)515);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
-    hiconItem = LoadIcon(hinstance, (LPCWSTR)176);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)176);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 

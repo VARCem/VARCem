@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.10	2018/04/30
+ * Version:	@(#)plat.h	1.0.11	2018/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -127,6 +127,7 @@ extern int	plat_setvid(int api);
 extern void	plat_vidsize(int x, int y);
 extern void	plat_setfullscreen(int on);
 extern void	plat_resize(int x, int y);
+extern int	plat_fdd_icon(int);
 
 
 /* Resource management. */

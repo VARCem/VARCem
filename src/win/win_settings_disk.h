@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.6	2018/04/29
+ * Version:	@(#)win_settings_disk.h	1.0.7	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,11 +100,11 @@ disk_image_list_init(HWND hwndList)
 			      GetSystemMetrics(SM_CYSMICON),
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
-    hiconItem = LoadIcon(hinstance, (LPCWSTR)208);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)208);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
-    hiconItem = LoadIcon(hinstance, (LPCWSTR)192);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)192);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
@@ -1452,7 +1452,7 @@ disk_add_open(HWND hwnd, int is_existing)
 
     hard_disk_added = 0;
 
-    DialogBox(hinstance, (LPCWSTR)DLG_CFG_DISK_ADD, hwnd, disk_add_proc);
+    DialogBox(hInstance, (LPCWSTR)DLG_CFG_DISK_ADD, hwnd, disk_add_proc);
 }
 
 

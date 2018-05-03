@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.8	2018/04/29
+ * Version:	@(#)win.h	1.0.10	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,7 @@
 #ifndef PLAT_WIN_H
 # define PLAT_WIN_H
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,80 +49,70 @@ extern "C" {
 
 
 /* Class names and such. */
-#define CLASS_NAME		L"VARCem.MainWnd"
+#define MUTEX_NAME		L"VARCem.BlitMutex"
+#define CLASS_NAME		L"VARCem.MainWindow"
+#define FS_CLASS_NAME		L"VARCem.FullScreen"
 #define MENU_NAME		L"MainMenu"
-#define ACCEL_NAME		L"MainAccel"
-#define SUB_CLASS_NAME		L"VARCem.SubWnd"
-#define SB_CLASS_NAME		L"VARCem.StatusBar"
 #define SB_MENU_NAME		L"StatusBarMenu"
+#define ACCEL_NAME		L"MainAccel"
 
 /* Application-specific window messages. */
-#define WM_RESETD3D		WM_USER
+#define WM_PAUSE		WM_USER
 #define WM_LEAVEFULLSCREEN	WM_USER+1
-#define WM_SAVESETTINGS		0x8888
-#define WM_SHOWSETTINGS		0x8889
-#define WM_PAUSE		0x8890
-#define WM_SENDHWND		0x8891
+#define WM_RESETD3D		WM_USER+2
+#define WM_SAVESETTINGS		WM_USER+3
+#define WM_SHOWSETTINGS		WM_USER+4
 
 
-extern HINSTANCE	hinstance;
+/* Status bar definitions. */
+#define SB_HEIGHT		16		/* for 16x16 icons */
+#define SB_PADDING		1		/* 1px of padding */
+
+
+extern HINSTANCE	hInstance;
+extern HICON		hIcon[512];
 extern HWND		hwndMain,
 			hwndRender;
-extern HANDLE		ghMutex;
+
 extern LCID		lang_id;
-extern HICON		hIcon[512];
 
 extern int		status_is_open;
 
 extern DWORD		filterindex;
 
 
+/* Internal platform support functions. */
 #ifdef USE_CRASHDUMP
 extern void	InitCrashDump(void);
 #endif
-
-extern HICON	LoadIconEx(PCTSTR pszIconName);
-
-/* Emulator start/stop support functions. */
-extern void	do_start(void);
-extern void	do_stop(void);
-
-/* Internal platform support functions. */
-extern void	set_language(int id);
-extern int	get_vidpause(void);
-extern void	show_cursor(int);
-
+extern HICON	LoadIconEx(PCTSTR name);
 extern void	keyboard_getkeymap(void);
 extern void	keyboard_handle(LPARAM lParam, int infocus);
-
 extern void     win_mouse_init(void);
 extern void     win_mouse_close(void);
 
-extern intptr_t	fdd_type_to_icon(int type);
-
-#ifdef EMU_DEVICE_H
-extern uint8_t	deviceconfig_open(HWND hwnd, device_t *device);
-#endif
-extern uint8_t	joystickconfig_open(HWND hwnd, int joy_nr, int type);
-
-extern int	getfile(HWND hwnd, char *f, char *fn);
-extern int	getsfile(HWND hwnd, char *f, char *fn);
-
-extern void	hard_disk_add_open(HWND hwnd, int is_existing);
-extern int	hard_disk_was_added(void);
-
-/* Platform UI support functions. */
-extern int	ui_init(int nCmdShow);
-
-/* Functions in win_stbar.c: */
-extern HWND	hwndSBAR;
-extern void	StatusBarCreate(HWND hwndParent, uintptr_t idStatus,
-				HINSTANCE hInst);
-
-/* Functions in win_dialog.c: */
+/* Internal dialog functions. */
 extern void	dialog_center(HWND hdlg);
 extern int	dlg_file_ex(HWND hwnd, const wchar_t *filt,
 			    const wchar_t *ifn, wchar_t *fn, int save);
+#ifdef EMU_DEVICE_H
+extern uint8_t	dlg_devconf(HWND hwnd, device_t *device);
+#endif
+extern uint8_t	dlg_jsconf(HWND hwnd, int joy_nr, int type);
+
+/* Platform support functions. */
+extern void	plat_set_language(int id);
+extern int	get_vidpause(void);
+extern int	fdd_type_icon(int type);
+
+/* Emulator start/stop support functions. */
+extern void	plat_start(void);
+extern void	plat_stop(void);
+
+/* Platform UI support functions. */
+extern int	ui_init(int nCmdShow);
+extern void	ui_menu_update(void);
+extern void	ui_show_cursor(int);
 
 #ifdef __cplusplus
 }

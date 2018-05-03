@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.26	2018/04/29
+ * Version:	@(#)win_settings.c	1.0.27	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -167,7 +167,7 @@ settings_msgbox(int type, void *arg)
 
 /* This does the initial read of global variables into the temporary ones. */
 static void
-dlg_init(void)
+settings_init(void)
 {
     int i = 0;
 
@@ -451,61 +451,61 @@ show_child(HWND hwndParent, DWORD child_id)
 
     switch(child_id) {
 	case PAGE_MACHINE:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_MACHINE,
 					       hwndParent, machine_proc);
 		break;
 
 	case PAGE_VIDEO:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_VIDEO,
 					       hwndParent, video_proc);
 		break;
 
 	case PAGE_INPUT:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_INPUT,
 					       hwndParent, input_proc);
 		break;
 
 	case PAGE_SOUND:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_SOUND,
 					       hwndParent, sound_proc);
 		break;
 
 	case PAGE_NETWORK:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_NETWORK,
 					       hwndParent, network_proc);
 		break;
 
 	case PAGE_PORTS:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_PORTS,
 					       hwndParent, ports_proc);
 		break;
 
 	case PAGE_PERIPHERALS:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_PERIPHERALS,
 					       hwndParent, peripherals_proc);
 		break;
 
 	case PAGE_HARD_DISKS:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_DISK,
 					       hwndParent, disk_proc);
 		break;
 
 	case PAGE_FLOPPY_DRIVES:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_FLOPPY,
 					       hwndParent, floppy_proc);
 		break;
 
 	case PAGE_OTHER_REMOVABLE_DEVICES:
-		hwndChildDialog = CreateDialog(hinstance,
+		hwndChildDialog = CreateDialog(hInstance,
 					       (LPCWSTR)DLG_CFG_RMV_DEVICES,
 					       hwndParent, rmv_devices_proc);
 		break;
@@ -531,7 +531,7 @@ image_list_init(HWND hwndList)
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
     for (i=0; i<10; i++) {
-	hiconItem = LoadIcon(hinstance, (LPCWSTR) (256 + (uintptr_t) i));
+	hiconItem = LoadIcon(hInstance, (LPCWSTR) (256 + (uintptr_t) i));
 	ImageList_AddIcon(hSmall, hiconItem);
 	DestroyIcon(hiconItem);
     }
@@ -581,7 +581,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INITDIALOG:
 		dialog_center(hdlg);
-		dlg_init();
+		settings_init();
 
 		disk_track_init();
 		cdrom_track_init();
@@ -674,7 +674,7 @@ dlg_settings(int ask)
     }
 
     ask_sure = ask;
-    i = DialogBox(hinstance, (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);
+    i = DialogBox(hInstance, (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);
 
     return(i);
 }

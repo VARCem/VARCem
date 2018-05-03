@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_input.h	1.0.6	2018/04/29
+ * Version:	@(#)win_settings_input.h	1.0.7	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -135,7 +135,7 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_CONFIGURE_MOUSE:
 				h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
 				temp_mouse = list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)mouse_get_device(temp_mouse));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)mouse_get_device(temp_mouse));
 				break;
 
 			case IDC_COMBO_JOYSTICK:
@@ -155,25 +155,25 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_JOY1:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_deviceconfig |= joystickconfig_open(hdlg, 0, temp_joystick);
+				temp_deviceconfig |= dlg_jsconf(hdlg, 0, temp_joystick);
 				break;
 
 			case IDC_JOY2:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_deviceconfig |= joystickconfig_open(hdlg, 1, temp_joystick);
+				temp_deviceconfig |= dlg_jsconf(hdlg, 1, temp_joystick);
 				break;
 
 			case IDC_JOY3:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_deviceconfig |= joystickconfig_open(hdlg, 2, temp_joystick);
+				temp_deviceconfig |= dlg_jsconf(hdlg, 2, temp_joystick);
 				break;
 
 			case IDC_JOY4:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_deviceconfig |= joystickconfig_open(hdlg, 3, temp_joystick);
+				temp_deviceconfig |= dlg_jsconf(hdlg, 3, temp_joystick);
 				break;
 		}
 		return FALSE;

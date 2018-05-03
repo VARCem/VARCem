@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.4	2018/04/29
+ * Version:	@(#)win_settings_machine.h	1.0.5	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -281,7 +281,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
 				temp_machine = listtomachine[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= deviceconfig_open(hdlg, (void *)machine_getdevice(temp_machine));
+				temp_deviceconfig |= dlg_devconf(hdlg, (void *)machine_getdevice(temp_machine));
 				break;
 		}
 

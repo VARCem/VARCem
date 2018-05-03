@@ -18,7 +18,7 @@
  *		2 clocks - fetch opcode 1       2 clocks - execute
  *		2 clocks - fetch opcode 2  etc
  *
- * Version:	@(#)808x.c	1.0.3	2018/04/26
+ * Version:	@(#)808x.c	1.0.4	2018/05/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,112 +64,126 @@
 #include "../plat.h"
 
 
-int xt_cpu_multi;
-int nmi = 0;
-int nmi_auto_clear = 0;
+int		xt_cpu_multi;
+int		nmi = 0;
+int		nmi_auto_clear = 0;
+int		nextcyc = 0;
+int		cycdiff;
+int		is8086 = 0;
+int		nopageerrors = 0;
+uint16_t	oldcs;
+int		oldcpl;
+int		tempc;
+uint8_t		opcode;
+uint16_t	pc2,
+		pc3;
+int		noint = 0;
+int		output = 0;
+int		ins = 0;
+int		fetchcycles = 0,
+		memcycs,
+		fetchclocks;
+uint8_t		prefetchqueue[6];
+uint16_t	prefetchpc;
+int		prefetchw = 0;
 
-int nextcyc=0;
-int cycdiff;
-int is8086=0;
-
-int memcycs;
-int nopageerrors=0;
-
-void FETCHCOMPLETE();
-
-uint8_t readmembl(uint32_t addr);
-void writemembl(uint32_t addr, uint8_t val);
-uint16_t readmemwl(uint32_t seg, uint32_t addr);
-void writememwl(uint32_t seg, uint32_t addr, uint16_t val);
-uint32_t readmemll(uint32_t seg, uint32_t addr);
-void writememll(uint32_t seg, uint32_t addr, uint32_t val);
 
 #undef readmemb
+uint8_t
+readmemb(uint32_t a)
+{
+    if (a != (cs + cpu_state.pc)) memcycs += 4;
+
+    if (readlookup2 == NULL)
+	return(readmembl(a));
+
+    if (readlookup2[(a) >> 12] == -1)
+	return(readmembl(a));
+      else
+	return(*(uint8_t *)(readlookup2[(a) >> 12] + (a)));
+}
+
+
+uint8_t
+readmembf(uint32_t a)
+{
+    if (readlookup2 == NULL)
+	return readmembl(a);
+
+    if (readlookup2[(a)>>12]==-1)
+	return readmembl(a);
+      else
+	return *(uint8_t *)(readlookup2[(a) >> 12] + (a));
+}
+
+
 #undef readmemw
-uint8_t readmemb(uint32_t a)
+uint16_t
+readmemw(uint32_t s, uint16_t a)
 {
-        if (a!=(cs+cpu_state.pc)) memcycs+=4;
-        if (readlookup2 == NULL)  return readmembl(a);
-        if (readlookup2[(a)>>12]==-1) return readmembl(a);
-        else return *(uint8_t *)(readlookup2[(a) >> 12] + (a));
-}
+    if (a != (cs+cpu_state.pc))
+	memcycs += (8 >> is8086);
 
-uint8_t readmembf(uint32_t a)
-{
-        if (readlookup2 == NULL)  return readmembl(a);
-        if (readlookup2[(a)>>12]==-1) return readmembl(a);
-        else return *(uint8_t *)(readlookup2[(a) >> 12] + (a));
-}
+    if (readlookup2 == NULL)
+	return readmemwl(s, a);
 
-uint16_t readmemw(uint32_t s, uint16_t a)
-{
-        if (a!=(cs+cpu_state.pc)) memcycs+=(8>>is8086);
-        if (readlookup2 == NULL) return readmemwl(s,a);
-        if ((readlookup2[((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF)) return readmemwl(s,a);
-        else return *(uint16_t *)(readlookup2[(s + a) >> 12] + s + a);
-}
-
-void refreshread() { /*pclog("Refreshread\n"); */FETCHCOMPLETE(); memcycs+=4; }
-
-#undef fetchea
-#define fetchea()   { rmdat=FETCH();  \
-                    cpu_reg=(rmdat>>3)&7;             \
-                    cpu_mod=(rmdat>>6)&3;             \
-                    cpu_rm=rmdat&7;                   \
-                    if (cpu_mod!=3) fetcheal(); }
-
-void writemembl(uint32_t addr, uint8_t val);
-void writememb(uint32_t a, uint8_t v)
-{
-        memcycs+=4;
-        if (writelookup2 == NULL)  writemembl(a,v);
-        if (writelookup2[(a)>>12]==-1) writemembl(a,v);
-        else *(uint8_t *)(writelookup2[a >> 12] + a) = v;
-}
-void writememwl(uint32_t seg, uint32_t addr, uint16_t val);
-void writememw(uint32_t s, uint32_t a, uint16_t v)
-{
-        memcycs+=(8>>is8086);
-        if (writelookup2 == NULL)  writememwl(s,a,v);
-        if (writelookup2[((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF) writememwl(s,a,v);
-        else *(uint16_t *)(writelookup2[(s + a) >> 12] + s + a) = v;
-}
-void writememll(uint32_t seg, uint32_t addr, uint32_t val);
-void writememl(uint32_t s, uint32_t a, uint32_t v)
-{
-        if (writelookup2 == NULL)  writememll(s,a,v);
-        if (writelookup2[((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF) writememll(s,a,v);
-        else *(uint32_t *)(writelookup2[(s + a) >> 12] + s + a) = v;
+    if ((readlookup2[((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF))
+	return readmemwl(s,a);
+      else
+	return *(uint16_t *)(readlookup2[(s + a) >> 12] + s + a);
 }
 
 
-void dumpregs(int);
-uint16_t oldcs;
-int oldcpl;
+void
+writememb(uint32_t a, uint8_t v)
+{
+    memcycs += 4;
 
-int tempc;
-uint8_t opcode;
-uint16_t pc2,pc3;
-int noint=0;
+    if (writelookup2 == NULL)
+	writemembl(a, v);
 
-int output=0;
+    if (writelookup2[(a)>>12]==-1)
+	writemembl(a,v);
+      else
+	*(uint8_t *)(writelookup2[a >> 12] + a) = v;
+}
 
-#if 0
-/* Also in mem.c */
-int shadowbios=0;
-#endif
 
-int ins=0;
+void
+writememw(uint32_t s, uint32_t a, uint16_t v)
+{
+    memcycs += (8 >> is8086);
 
-int fetchcycles=0,memcycs,fetchclocks;
+    if (writelookup2 == NULL)
+	writememwl(s, a, v);
 
-uint8_t prefetchqueue[6];
-uint16_t prefetchpc;
-int prefetchw=0;
-static __inline uint8_t FETCH()
+    if (writelookup2[((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF)
+	writememwl(s,a,v);
+     else
+	*(uint16_t *)(writelookup2[(s + a) >> 12] + s + a) = v;
+}
+
+
+void
+writememl(uint32_t s, uint32_t a, uint32_t v)
+{
+    if (writelookup2 == NULL)
+	writememll(s, a, v);
+
+    if (writelookup2[((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF)
+	writememll(s, a, v);
+      else
+	*(uint32_t *)(writelookup2[(s + a) >> 12] + s + a) = v;
+}
+
+
+static __inline uint8_t
+FETCH(void)
 {
         uint8_t temp;
-/*        temp=prefetchqueue[0];
+
+#if 0
+        temp=prefetchqueue[0];
         prefetchqueue[0]=prefetchqueue[1];
         prefetchqueue[1]=prefetchqueue[2];
         prefetchqueue[2]=prefetchqueue[3];
@@ -182,7 +196,8 @@ static __inline uint8_t FETCH()
                 {
                         prefetchqueue[prefetchw++]=readmembf(cs+prefetchpc); prefetchpc++;
                 }
-        }*/
+        }
+#endif
 
         if (prefetchw==0)
         {
@@ -213,7 +228,9 @@ static __inline uint8_t FETCH()
         return temp;
 }
 
-static __inline void FETCHADD(int c)
+
+static __inline void
+FETCHADD(int c)
 {
         int d;
         if (c<0) return;
@@ -239,7 +256,19 @@ static __inline void FETCHADD(int c)
         if (fetchcycles>16) fetchcycles=16;
 }
 
-void FETCHCOMPLETE()
+
+static __inline void
+FETCHCLEAR(void)
+{
+        prefetchpc=cpu_state.pc;
+        prefetchw=0;
+        memcycs=cycdiff-cycles;
+        fetchclocks=0;
+}
+
+
+void
+FETCHCOMPLETE(void)
 {
         if (!(fetchcycles&3)) return;
         if (prefetchw>((is8086)?4:3)) return;
@@ -261,19 +290,33 @@ void FETCHCOMPLETE()
                 fetchcycles+=(4-(fetchcycles&3));
 }
 
-static __inline void FETCHCLEAR()
+
+void
+refreshread(void)
 {
-        prefetchpc=cpu_state.pc;
-        prefetchw=0;
-        memcycs=cycdiff-cycles;
-        fetchclocks=0;
+#if 0
+        pclog("Refreshread\n");
+#endif
+        FETCHCOMPLETE();
+
+        memcycs += 4;
 }
 
-static uint16_t getword()
+
+static uint16_t
+getword(void)
 {
         uint8_t temp=FETCH();
         return temp|(FETCH()<<8);
 }
+
+
+#undef fetchea
+#define fetchea()   { rmdat=FETCH();  \
+                    cpu_reg=(rmdat>>3)&7;             \
+                    cpu_mod=(rmdat>>6)&3;             \
+                    cpu_rm=rmdat&7;                   \
+                    if (cpu_mod!=3) fetcheal(); }
 
 
 /*EA calculation*/
@@ -513,10 +556,6 @@ void makeznptable()
                 if (c&0x8000) znptable16[c]|=N_FLAG;
       }      
 }
-#if 1
-/* Also in mem.c */
-int timetolive=0;
-#endif
 
 extern uint32_t oldcs2;
 extern uint32_t oldpc2;
@@ -531,7 +570,7 @@ void dumpregs(int force)
 #endif
 
 	/* Only dump when needed, and only once.. */
-	if (indump || (!force && !dump_on_exit)) return;
+	if (!ram || indump || (!force && !dump_on_exit)) return;
 
 #ifndef RELEASE_BUILD
         indump = 1;

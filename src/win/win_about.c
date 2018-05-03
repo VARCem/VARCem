@@ -8,7 +8,7 @@
  *
  *		Handle the About dialog.
  *
- * Version:	@(#)win_about.c	1.0.6	2018/04/27
+ * Version:	@(#)win_about.c	1.0.7	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -90,7 +90,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_ABOUT_ICON);
 		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON,
-		  (LPARAM)LoadImage(hinstance,(PCTSTR)100,IMAGE_ICON,64,64,0));
+		  (LPARAM)LoadImage(hInstance,(PCTSTR)100,IMAGE_ICON,64,64,0));
 		SendDlgItemMessage(hdlg, IDT_TITLE, WM_SETTEXT,
 				   (WPARAM)NULL, (LPARAM)emu_title);
 		set_font_bold(hdlg, IDT_TITLE);
@@ -121,7 +121,7 @@ dlg_about(void)
 {
     plat_pause(1);
 
-    DialogBox(hinstance, (LPCTSTR)DLG_ABOUT, hwndMain, dlg_proc);
+    DialogBox(hInstance, (LPCTSTR)DLG_ABOUT, hwndMain, dlg_proc);
 
     plat_pause(0);
 }

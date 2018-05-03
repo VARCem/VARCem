@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.8	2018/04/25
+ * Version:	@(#)win_d3d.cpp	1.0.9	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -479,9 +479,8 @@ d3d_init_fs(HWND h)
 
     /*FIXME: should be done once, in win.c */
     _swprintf(title, L"%s v%s", TEXT(EMU_NAME), TEXT(EMU_VERSION));
-    d3d_device_window = CreateWindowEx (
-		0,
-		SUB_CLASS_NAME,
+    d3d_device_window = CreateWindow(
+		FS_CLASS_NAME,
 		title,
 		WS_POPUP,
 		CW_USEDEFAULT,

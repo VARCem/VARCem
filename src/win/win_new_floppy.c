@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy Image dialog.
  *
- * Version:	@(#)win_new_floppy.c	1.0.11	2018/04/29
+ * Version:	@(#)win_new_floppy.c	1.0.12	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -265,5 +265,5 @@ dlg_new_floppy(int idm, int tag)
     fdd_id = idm & 0x7f;
     sb_part = tag;
 
-    DialogBox(hinstance, (LPCTSTR)DLG_NEW_FLOPPY, hwndMain, dlg_proc);
+    DialogBox(hInstance, (LPCTSTR)DLG_NEW_FLOPPY, hwndMain, dlg_proc);
 }

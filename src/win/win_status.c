@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Window dialog.
  *
- * Version:	@(#)win_status.c	1.0.4	2018/04/27
+ * Version:	@(#)win_status.c	1.0.5	2018/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -144,7 +144,7 @@ dlg_status(void)
 {
     HWND hwnd;
 
-    hwnd = CreateDialog(hinstance, (LPCSTR)DLG_STATUS, hwndMain, dlg_proc);
+    hwnd = CreateDialog(hInstance, (LPCSTR)DLG_STATUS, hwndMain, dlg_proc);
 
     ShowWindow(hwnd, SW_SHOW);
 }

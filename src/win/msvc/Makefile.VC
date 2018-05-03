@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.22	2018/04/29
+# Version:	@(#)Makefile.VC	1.0.24	2018/05/03
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -229,13 +229,14 @@ else
  ARCH		:= x86
 endif
 PREPROC		:= cl -nologo -EP
+MCPP		:= mcpp.exe
 LINK		:= link -nologo
 WINDRES		:= rc -nologo -r
 
 SYSINC		:= -Iwin/msvc/Include -Iwin/mingw/include
 SYSLIB		:=
 
-DEPS		= -MMD -MF $*.d -c $<
+DEPS		= -MMD -MF $*.d
 DEPFILE		:= win\.depends-msvc
 
 # Set up the correct toolchain flags.
@@ -251,6 +252,8 @@ COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 
 LOPTS		:= -LIBPATH:win\msvc\Lib\$(ARCH)
+LOPTS_C		:= -SUBSYSTEM:CONSOLE,5.01
+LOPTS_W		:= -SUBSYSTEM:WINDOWS,5.01
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
 endif
@@ -271,7 +274,8 @@ ifeq ($(OPTIM), y)
  DOPTS		:= -march=native
 endif
 ifeq ($(DEBUG), y)
- DOPTS		+= -Gs -Zi -D_DEBUG
+ OPTS		+= -D_DEBUG
+ DOPTS		+= -MTd -Gs -Zi
  ROPTS		+= -D_DEBUG
  LOPTS		+= -debug
  AOPTIM		:=
@@ -279,7 +283,7 @@ ifeq ($(DEBUG), y)
   COPTIM	:= -Od
  endif
 else
- DOPTS		:= -Gs
+ DOPTS		:= -MT -Gs
  ifndef COPTIM
   COPTIM	:= -O2
  endif
@@ -311,6 +315,9 @@ LIBS		:= ddraw.lib dinput8.lib dxguid.lib d3d9.lib d3dx9.lib \
 		   comctl32.lib winmm.lib comdlg32.lib advapi32.lib \
 		   gdi32.lib shell32.lib user32.lib kernel32.lib \
 		   wsock32.lib iphlpapi.lib psapi.lib
+ifeq ($(DEBUG), y)
+LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
+endif
 
 
 # Optional modules.
@@ -332,7 +339,7 @@ ifneq ($(WX), n)
 else
  UIOBJ		:= win_ui.obj \
 		   win_ddraw.obj win_d3d.obj \
-		   win_dialog.obj win_about.obj win_status.obj win_stbar.obj \
+		   win_dialog.obj win_about.obj win_status.obj \
 		   win_settings.obj win_devconf.obj win_snd_gain.obj \
 		   win_new_floppy.obj
 endif
@@ -494,7 +501,7 @@ DEVOBJ		:= bugger.obj \
 		   keyboard.obj \
 		    keyboard_xt.obj keyboard_at.obj \
 		   mouse.obj \
-		    mouse_serial.obj mouse_ps2.obj mouse_bus.obj
+		    mouse_serial.obj mouse_ps2.obj mouse_bus.obj \
 		   joystick.obj \
 		    js_standard.obj js_ch_fs_pro.obj \
 		    js_sw_pad.obj js_tm_fcs.obj
@@ -608,32 +615,28 @@ endif
 # Build module rules.
 ifeq ($(AUTODEP), y)
 %.obj:		%.c
-#		@echo $<
-		@$(CC) $(CFLAGS) $(DEPS) -Fo$@ -c $<
+		@$(CC) $(CFLAGS) -Fo$@ -c $<
+		@$(MCPP) $(OPTS) $(DEPS) $<
 
 %.obj:		%.cpp
-#		@echo $<
-		@$(CPP) $(CXXFLAGS) $(DEPS) -Fo$@ -c $<
+		@$(CPP) $(CXXFLAGS) -Fo$@ -c $<
+		@$(MCPP) $(OPTS) $(DEPS) $<
 else
 %.obj:		%.c
-#		@echo $<
 		@$(CC) $(CFLAGS) -Fo$@ -c $<
 
 %.obj:		%.cpp
-#		@echo $<
 		@$(CPP) $(CXXFLAGS) -Fo$@ -c $<
 
 %.d:		%.c $(wildcard $*.d)
-#		@echo $<
-		@$(CC) $(CFLAGS) $(DEPS) -E $< >NUL
+		$(MCPP) $(OPTS) $(DEPS) $< >NUL
 
 %.d:		%.cpp $(wildcard $*.d)
-#		@echo $<
-		@$(CPP) $(CXXFLAGS) $(DEPS) -E $< >NUL
+		$(MCPP) $(OPTS) $(DEPS) $< >NUL
 endif
 
 
-all:		$(PROG).exe pcap_if.exe
+all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
 
 
 VARCem.res:	win/VARCem.rc win/VARCem.mpp
@@ -645,7 +648,7 @@ VARCem.res:	win/VARCem.rc win/VARCem.mpp
 
 $(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		@$(LINK) $(LDFLAGS) -OUT:$(PROG).exe \
+		@$(LINK) $(LDFLAGS) $(LOPTS_W) -OUT:$(PROG).exe \
 			$(OBJ) VARCem.res $(LIBS)
 
 pcap_if.res:	pcap_if.rc
@@ -654,11 +657,12 @@ pcap_if.res:	pcap_if.rc
 
 pcap_if.exe:	pcap_if.obj win_dynld.obj pcap_if.res
 		@echo Linking pcap_if.exe ..
-		@$(LINK) $(LDFLAGS) -OUT:pcap_if.exe \
+		@$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:pcap_if.exe \
 			pcap_if.obj win_dynld.obj pcap_if.res
 
 hello.exe:	hello.obj
-		$(LINK) $(LDFLAGS) -OUT:hello.exe hello.obj $(WXLIBS) $(LIBS)
+		$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:hello.exe \
+			hello.obj $(WXLIBS) $(LIBS)
 
 
 clean:

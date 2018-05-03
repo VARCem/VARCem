@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU.
  *
- * Version:	@(#)386.c	1.0.2	2018/03/09
+ * Version:	@(#)386.c	1.0.3	2018/05/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,6 +93,7 @@ uint32_t rmdat32;
 #define fetchdat rmdat32
 uint32_t backupregs[16];
 extern int oddeven;
+int timetolive = 0;
 int inttype;
 
 
