@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.4	2018/04/14
+ * Version:	@(#)sound_dev.c	1.0.5	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,6 @@ typedef struct {
 #ifdef ENABLE_SOUND_DEV_LOG
 int		sound_dev_do_log = ENABLE_SOUND_DEV_LOG;
 #endif
-int		sound_card_current = 0;
 
 
 /* Sound card devices. */
@@ -131,8 +130,8 @@ snddev_log(const char *fmt, ...)
 void
 snddev_reset(void)
 {
-    if (sound_cards[sound_card_current].device != NULL)
-	device_add(sound_cards[sound_card_current].device);
+    if (sound_cards[sound_card].device != NULL)
+	device_add(sound_cards[sound_card].device);
 }
 
 

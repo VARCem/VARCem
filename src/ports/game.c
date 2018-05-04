@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.11	2018/04/30
+ * Version:	@(#)game.c	1.0.12	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -47,7 +47,6 @@
 #include "../io.h"
 #include "../timer.h"
 #include "../device.h"
-#include "../input/game/joystick.h"
 #include "game.h"
 #include "game_dev.h"
 
@@ -122,7 +121,7 @@ game_write(uint16_t addr, uint8_t val, void *priv)
 	dev->axis[i].count =
 		game_time(dev->joystick->read_axis(dev->joystick_priv, i));
     }
-//FIXME: removed too much stuff here!  --FvK
+
     dev->joystick->write(dev->joystick_priv);
 
     cycles -= ISA_CYCLES(8);
@@ -172,8 +171,6 @@ game_init(const device_t *info)
 
     pclog("GAME: initializing, type=%d\n", joystick_type);
 
-    if (joystick_type == JOYSTICK_NONE) return(NULL);
-
     dev = (game_t *)malloc(sizeof(game_t));
     memset(dev, 0x00, sizeof(game_t));
     game_global = dev;
@@ -181,6 +178,9 @@ game_init(const device_t *info)
     for (i = 0; i < 4; i++) {
 	dev->axis[i].game = dev;
 	dev->axis[i].axis_nr = i;
+
+	timer_add(game_over,
+		  &dev->axis[i].count, &dev->axis[i].count, &dev->axis[i]);
     }
 
     dev->joystick = gamedev_get_device(joystick_type);
@@ -198,15 +198,6 @@ game_init(const device_t *info)
 		break;
 
     }
-
-    timer_add(game_over,
-	      &dev->axis[0].count, &dev->axis[0].count, &dev->axis[0]);
-    timer_add(game_over,
-	      &dev->axis[1].count, &dev->axis[1].count, &dev->axis[1]);
-    timer_add(game_over,
-	      &dev->axis[2].count, &dev->axis[2].count, &dev->axis[2]);
-    timer_add(game_over,
-	      &dev->axis[3].count, &dev->axis[3].count, &dev->axis[3]);
 
     return(dev);
 }

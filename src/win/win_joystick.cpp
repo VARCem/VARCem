@@ -13,7 +13,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.11	2018/05/02
+ * Version:	@(#)win_joystick.cpp	1.0.12	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -173,6 +173,9 @@ void
 joystick_init(void)
 {
     int c;
+
+    /* Only initialize if the game port is enabled. */
+    if (! game_enabled) return;
 
     pclog("JOYSTICK: initializing (type=%d)\n", joystick_type);
 

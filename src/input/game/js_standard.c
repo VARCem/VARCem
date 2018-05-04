@@ -8,7 +8,7 @@
  *
  *		Implementation of a standard joystick.
  *
- * Version:	@(#)js_standard.c	1.0.7	2018/04/26
+ * Version:	@(#)js_standard.c	1.0.8	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -184,7 +184,7 @@ js_axis_6button(void *priv, int axis)
 		break;
     }
 
-    return(0);
+    return(ret);
 }
 
 
