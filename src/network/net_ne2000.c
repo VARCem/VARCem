@@ -12,7 +12,7 @@
  *			- Realtek RTL8019AS (ISA 16-bit, PnP);
  *			- Realtek RTL8029AS (PCI).
  *
- * Version:	@(#)net_ne2000.c	1.0.7	2018/04/29
+ * Version:	@(#)net_ne2000.c	1.0.8	2018/05/03
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -1072,7 +1072,7 @@ page2_read(nic_t *dev, uint32_t off, unsigned int len)
 {
     nelog(3, "%s: Page2 read from register 0x%02x, len=%u\n",
 					dev->name, off, len);
-  
+
     switch(off) {
 	case 0x01:	/* PSTART */
 		return(dev->page_start);
@@ -1212,7 +1212,7 @@ page2_write(nic_t *dev, uint32_t off, uint32_t val, unsigned len)
 /* Writes to this page are illegal. */
 static uint32_t
 page3_read(nic_t *dev, uint32_t off, unsigned int len)
-{ 
+{
     if (dev->board >= NE2K_RTL8019AS) switch(off) {
 	case 0x1:	/* 9346CR */
 		return(dev->_9346cr);
@@ -1844,7 +1844,7 @@ nic_iocheckremove(nic_t *dev, uint16_t addr)
 
 static void
 nic_ioset(nic_t *dev, uint16_t addr)
-{	
+{
     if (dev->is_pci) {
 	io_sethandler(addr, 16,
 		      nic_readb, nic_readw, nic_readl,
@@ -1903,7 +1903,7 @@ nic_ioremove(nic_t *dev, uint16_t addr)
 	}
 	io_removehandler(addr+0x1f, 1,
 			 nic_readb, NULL, NULL,
-			 nic_writeb, NULL, NULL, dev);	
+			 nic_writeb, NULL, NULL, dev);
     }
 }
 
@@ -1912,14 +1912,14 @@ static void
 nic_update_bios(nic_t *dev)
 {
     int reg_bios_enable;
-	
+
     reg_bios_enable = 1;
 
     if (! dev->has_bios) return;
 
     if (PCI && dev->is_pci)
 	reg_bios_enable = dev->pci_bar[1].addr_regs[0] & 0x01;
-	
+
     /* PCI BIOS stuff, just enable_disable. */
     if (reg_bios_enable) {
 	mem_mapping_set_addr(&dev->bios_rom.mapping,
@@ -2383,7 +2383,7 @@ nic_init(const device_t *info)
     uint32_t mac;
     wchar_t *rom;
     nic_t *dev;
-#ifdef ENABLE_NIC_LOG
+#ifdef ENABLE_NETWORK_DEV_LOG
     int i;
 #endif
     int c;
@@ -2391,9 +2391,9 @@ nic_init(const device_t *info)
     uint64_t *eeprom_pnp_id;
 
     /* Get the desired debug level. */
-#ifdef ENABLE_NIC_LOG
+#ifdef ENABLE_NETWORK_DEV_LOG
     i = device_get_config_int("debug");
-    if (i > 0) nic_do_log = i;
+    if (i > 0) network_dev_do_log = i;
 #endif
 
     dev = malloc(sizeof(nic_t));

@@ -297,7 +297,9 @@ fatal(const char *fmt, ...)
 void
 pc_version(const char *platform)
 {
+#if defined(BUILD) || defined(COMMIT) || defined(UPSTREAM) || defined(_MSC_VER)
     char temp[128];
+#endif
 
     sprintf(emu_title, "%s for %s", EMU_NAME, platform);
 

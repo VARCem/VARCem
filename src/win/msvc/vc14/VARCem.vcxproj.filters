@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\..\bugger.c" />
@@ -12,23 +12,14 @@
     <ClCompile Include="..\..\..\intel_piix4.c" />
     <ClCompile Include="..\..\..\intel_sio.c" />
     <ClCompile Include="..\..\..\io.c" />
-    <ClCompile Include="..\..\..\keyboard.c" />
-    <ClCompile Include="..\..\..\keyboard_at.c" />
-    <ClCompile Include="..\..\..\keyboard_xt.c" />
     <ClCompile Include="..\..\..\mca.c" />
     <ClCompile Include="..\..\..\mcr.c" />
     <ClCompile Include="..\..\..\mem.c" />
     <ClCompile Include="..\..\..\memregs.c" />
-    <ClCompile Include="..\..\..\mouse.c" />
-    <ClCompile Include="..\..\..\mouse_bus.c" />
-    <ClCompile Include="..\..\..\mouse_ps2.c" />
-    <ClCompile Include="..\..\..\mouse_serial.c" />
     <ClCompile Include="..\..\..\nmi.c" />
     <ClCompile Include="..\..\..\nvr.c" />
     <ClCompile Include="..\..\..\nvr_at.c" />
     <ClCompile Include="..\..\..\nvr_ps2.c" />
-    <ClCompile Include="..\..\..\parallel.c" />
-    <ClCompile Include="..\..\..\parallel_dev.c" />
     <ClCompile Include="..\..\..\pc.c" />
     <ClCompile Include="..\..\..\pci.c" />
     <ClCompile Include="..\..\..\pic.c" />
@@ -36,7 +27,7 @@
     <ClCompile Include="..\..\..\ppi.c" />
     <ClCompile Include="..\..\..\random.c" />
     <ClCompile Include="..\..\..\rom.c" />
-    <ClCompile Include="..\..\..\serial.c" />
+    <ClCompile Include="..\..\..\rom_load.c" />
     <ClCompile Include="..\..\..\timer.c" />
     <ClCompile Include="..\..\..\cdrom\cdrom.c">
       <Filter>cdrom</Filter>
@@ -173,20 +164,47 @@
     <ClCompile Include="..\..\..\floppy\fdi2raw.c">
       <Filter>floppy</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\game\gameport.c">
-      <Filter>game</Filter>
+    <ClCompile Include="..\..\..\floppy\lzf\lzf_c.c">
+      <Filter>floppy\lzf</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_tm_fcs.c">
-      <Filter>game</Filter>
+    <ClCompile Include="..\..\..\floppy\lzf\lzf_d.c">
+      <Filter>floppy\lzf</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_sw_pad.c">
-      <Filter>game</Filter>
+    <ClCompile Include="..\..\..\input\game\joystick.c">
+      <Filter>input\game</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_standard.c">
-      <Filter>game</Filter>
+    <ClCompile Include="..\..\..\input\game\js_ch_fs_pro.c">
+      <Filter>input\game</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\game\joystick_ch_flightstick_pro.c">
-      <Filter>game</Filter>
+    <ClCompile Include="..\..\..\input\game\js_standard.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\game\js_sw_pad.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\game\js_tm_fcs.c">
+      <Filter>input\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\keyboard.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\keyboard_at.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\keyboard_xt.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse_bus.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse_ps2.c">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\input\mouse_serial.c">
+      <Filter>input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\m_amstrad.c">
       <Filter>machine</Filter>
@@ -245,6 +263,9 @@
     <ClCompile Include="..\..\..\machine\m_at_t3100e.c">
       <Filter>machine</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\machine\m_at_t3100e_vid.c">
+      <Filter>machine</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\machine\m_at_wd76c10.c">
       <Filter>machine</Filter>
     </ClCompile>
@@ -276,6 +297,15 @@
       <Filter>machine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\m_xt_compaq.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machine\m_xt_t1000.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machine\m_xt_t1000_vid.c">
+      <Filter>machine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machine\m_xt_xi8088.c">
       <Filter>machine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machine\machine.c">
@@ -350,6 +380,21 @@
     <ClCompile Include="..\..\..\network\network.c">
       <Filter>network</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\ports\game.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\game_dev.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\parallel.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\parallel_dev.c">
+      <Filter>ports</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ports\serial.c">
+      <Filter>ports</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\scsi\scsi.c">
       <Filter>scsi</Filter>
     </ClCompile>
@@ -376,6 +421,27 @@
     </ClCompile>
     <ClCompile Include="..\..\..\scsi\scsi_x54x.c">
       <Filter>scsi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sio\sio_detect.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sio\sio_fdc37c66x.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sio\sio_fdc37c93x.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sio\sio_fdc37c669.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sio\sio_pc87306.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sio\sio_um8669f.c">
+      <Filter>sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sio\sio_w83877f.c">
+      <Filter>sio</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\sound\resid-fp\convolve.cpp">
       <Filter>sound\resid-fp</Filter>
@@ -578,6 +644,15 @@
     <ClCompile Include="..\..\..\sound\sound_dev.c">
       <Filter>sound</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_main.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_new_floppy.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_stbar.c">
+      <Filter>ui</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\video\vid_ati_eeprom.c">
       <Filter>video</Filter>
     </ClCompile>
@@ -642,6 +717,9 @@
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\video\vid_mda.c">
+      <Filter>video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\video\vid_oak_oti.c">
       <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\video\vid_paradise.c">
@@ -728,9 +806,6 @@
     <ClCompile Include="..\..\..\win\win_joystick.cpp">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_jsconf.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_keyboard.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -755,57 +830,11 @@
     <ClCompile Include="..\..\..\win\win_status.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_stbar.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_thread.c">
       <Filter>win</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\win\win_ui.c">
       <Filter>win</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\video\vid_oak_oti.c">
-      <Filter>video</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machine\m_at_t3100e_vid.c">
-      <Filter>machine</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machine\m_xt_t1000.c">
-      <Filter>machine</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machine\m_xt_t1000_vid.c">
-      <Filter>machine</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machine\m_xt_xi8088.c">
-      <Filter>machine</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\rom_load.c" />
-    <ClCompile Include="..\..\..\sio\sio_detect.c">
-      <Filter>sio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sio\sio_fdc37c66x.c">
-      <Filter>sio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sio\sio_fdc37c93x.c">
-      <Filter>sio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sio\sio_fdc37c669.c">
-      <Filter>sio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sio\sio_pc87306.c">
-      <Filter>sio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sio\sio_um8669f.c">
-      <Filter>sio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sio\sio_w83877f.c">
-      <Filter>sio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\floppy\lzf\lzf_c.c">
-      <Filter>floppy\lzf</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\floppy\lzf\lzf_d.c">
-      <Filter>floppy\lzf</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -820,16 +849,12 @@
     <ClInclude Include="..\..\..\intel_piix.h" />
     <ClInclude Include="..\..\..\intel_sio.h" />
     <ClInclude Include="..\..\..\io.h" />
-    <ClInclude Include="..\..\..\keyboard.h" />
     <ClInclude Include="..\..\..\mca.h" />
     <ClInclude Include="..\..\..\mem.h" />
     <ClInclude Include="..\..\..\memregs.h" />
-    <ClInclude Include="..\..\..\mouse.h" />
     <ClInclude Include="..\..\..\nmi.h" />
     <ClInclude Include="..\..\..\nvr.h" />
     <ClInclude Include="..\..\..\nvr_ps2.h" />
-    <ClInclude Include="..\..\..\parallel.h" />
-    <ClInclude Include="..\..\..\parallel_dev.h" />
     <ClInclude Include="..\..\..\pci.h" />
     <ClInclude Include="..\..\..\pic.h" />
     <ClInclude Include="..\..\..\pit.h" />
@@ -837,9 +862,8 @@
     <ClInclude Include="..\..\..\ppi.h" />
     <ClInclude Include="..\..\..\random.h" />
     <ClInclude Include="..\..\..\rom.h" />
-    <ClInclude Include="..\..\..\serial.h" />
     <ClInclude Include="..\..\..\timer.h" />
-    <ClInclude Include="..\..\..\ui.h" />
+    <ClInclude Include="..\..\..\version.h" />
     <ClInclude Include="..\..\..\cdrom\cdrom.h">
       <Filter>cdrom</Filter>
     </ClInclude>
@@ -1101,23 +1125,26 @@
     <ClInclude Include="..\..\..\floppy\fdi2raw.h">
       <Filter>floppy</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\game\gameport.h">
-      <Filter>game</Filter>
+    <ClInclude Include="..\..\..\floppy\lzf\config.h">
+      <Filter>floppy\lzf</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_tm_fcs.h">
-      <Filter>game</Filter>
+    <ClInclude Include="..\..\..\floppy\lzf\crc32.h">
+      <Filter>floppy\lzf</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_sw_pad.h">
-      <Filter>game</Filter>
+    <ClInclude Include="..\..\..\floppy\lzf\lzf.h">
+      <Filter>floppy\lzf</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_standard.h">
-      <Filter>game</Filter>
+    <ClInclude Include="..\..\..\floppy\lzf\lzfP.h">
+      <Filter>floppy\lzf</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\game\joystick_ch_flightstick_pro.h">
-      <Filter>game</Filter>
+    <ClInclude Include="..\..\..\input\keyboard.h">
+      <Filter>input</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\lang\language.h">
-      <Filter>lang</Filter>
+    <ClInclude Include="..\..\..\input\mouse.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\input\game\joystick.h">
+      <Filter>input\game</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\machine\m_at_t3100e.h">
       <Filter>machine</Filter>
@@ -1125,13 +1152,13 @@
     <ClInclude Include="..\..\..\machine\machine.h">
       <Filter>machine</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\machine\m_xt_xi8088.h">
+      <Filter>machine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machine\m_xt_t1000.h">
+      <Filter>machine</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\network\slirp\bootp.h">
-      <Filter>network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\network\slirp\config.h">
-      <Filter>network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\network\slirp\config-host.h">
       <Filter>network\slirp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\network\slirp\ctl.h">
@@ -1203,6 +1230,21 @@
     <ClInclude Include="..\..\..\network\network.h">
       <Filter>network</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\ports\game.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\game_dev.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\parallel.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\parallel_dev.h">
+      <Filter>ports</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ports\serial.h">
+      <Filter>ports</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\scsi\queue.h">
       <Filter>scsi</Filter>
     </ClInclude>
@@ -1229,6 +1271,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\scsi\scsi_x54x.h">
       <Filter>scsi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\sio\sio.h">
+      <Filter>sio</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\sound\resid-fp\envelope.h">
       <Filter>sound\resid-fp</Filter>
@@ -1410,6 +1455,12 @@
     <ClInclude Include="..\..\..\sound\sound.h">
       <Filter>sound</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\ui\ui.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ui\ui_resource.h">
+      <Filter>ui</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\video\video.h">
       <Filter>video</Filter>
     </ClInclude>
@@ -1482,28 +1533,6 @@
     <ClInclude Include="..\..\..\win\win_ddraw.h">
       <Filter>win</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\machine\m_xt_xi8088.h">
-      <Filter>machine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\machine\m_xt_t1000.h">
-      <Filter>machine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\sio\sio.h">
-      <Filter>sio</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\version.h" />
-    <ClInclude Include="..\..\..\floppy\lzf\config.h">
-      <Filter>floppy\lzf</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\floppy\lzf\crc32.h">
-      <Filter>floppy\lzf</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\floppy\lzf\lzf.h">
-      <Filter>floppy\lzf</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\floppy\lzf\lzfP.h">
-      <Filter>floppy\lzf</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cdrom">
@@ -1521,11 +1550,14 @@
     <Filter Include="floppy">
       <UniqueIdentifier>{a9a86e4f-b4eb-4687-a979-f97b394db706}</UniqueIdentifier>
     </Filter>
-    <Filter Include="game">
-      <UniqueIdentifier>{542ab504-19c9-43b6-91b6-b3a205ffeb97}</UniqueIdentifier>
+    <Filter Include="floppy\lzf">
+      <UniqueIdentifier>{98d7b877-02b8-4c6b-b2b6-d2cc49f357bc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="lang">
-      <UniqueIdentifier>{232b8441-5106-47b6-939d-ebd46589c0b2}</UniqueIdentifier>
+    <Filter Include="input">
+      <UniqueIdentifier>{923338ef-338a-4592-9839-9f8587d93c52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="input\game">
+      <UniqueIdentifier>{fc7fc92b-b4da-4f3c-a5c7-4d2548b60fb2}</UniqueIdentifier>
     </Filter>
     <Filter Include="machine">
       <UniqueIdentifier>{a99de26d-e4fd-4223-952c-21f1657a20e7}</UniqueIdentifier>
@@ -1536,8 +1568,14 @@
     <Filter Include="network\slirp">
       <UniqueIdentifier>{c0afa9df-08d3-40a6-a4d4-88fb97816009}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ports">
+      <UniqueIdentifier>{b9d0388f-b14d-4448-85fe-7179fff3f77f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scsi">
       <UniqueIdentifier>{515f18e5-5eab-42f6-8364-37f02bc4f964}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sio">
+      <UniqueIdentifier>{4fc4a59c-bb7c-45d7-a467-a06198e71472}</UniqueIdentifier>
     </Filter>
     <Filter Include="sound">
       <UniqueIdentifier>{2617b8d7-3afc-4f23-a0c8-936dab6c38b6}</UniqueIdentifier>
@@ -1554,17 +1592,14 @@
     <Filter Include="sound\munt\sha1">
       <UniqueIdentifier>{144b7265-aa9e-453b-9855-78cd74ef9b76}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ui">
+      <UniqueIdentifier>{7cec753e-1e2c-4ebd-ba5b-e728767c949f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="video">
       <UniqueIdentifier>{99b35c64-342c-4f15-89b0-47c15f8db344}</UniqueIdentifier>
     </Filter>
     <Filter Include="win">
       <UniqueIdentifier>{cb655d08-c712-4197-9eb8-2f5b7f49eed1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sio">
-      <UniqueIdentifier>{4fc4a59c-bb7c-45d7-a467-a06198e71472}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="floppy\lzf">
-      <UniqueIdentifier>{98d7b877-02b8-4c6b-b2b6-d2cc49f357bc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
