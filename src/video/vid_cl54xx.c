@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.15	2018/04/09
+ * Version:	@(#)vid_cl54xx.c	1.0.16	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -871,7 +871,7 @@ gd54xx_recalctimings(svga_t *svga)
 
 
 static
-void gd54xx_hwcursor_draw(svga_t *svga, int displine)
+void gd54xx_hwcursor_draw(svga_t *svga, int disp_line)
 {
     gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
     int x, xx, comb, b0, b1;
@@ -903,16 +903,16 @@ void gd54xx_hwcursor_draw(svga_t *svga, int displine)
 					break;
 				case 1:
 					/* The pixel is shown in the cursor background color */
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] = bgcol;
+					((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add] = bgcol;
 					break;
 				case 2:
 					/* The pixel is shown as the inverse of the original screen pixel
 					   (XOR cursor) */
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+					((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add] ^= 0xffffff;
 					break;
 				case 3:
 					/* The pixel is shown in the cursor foreground color */
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] = fgcol;
+					((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add] = fgcol;
 					break;
 			}
 		}
@@ -2347,8 +2347,8 @@ cl_pci_write(int func, int addr, uint8_t val, void *p)
 	case 0x30: case 0x32: case 0x33:
 		gd54xx->pci_regs[addr] = val;
 		if (gd54xx->pci_regs[0x30] & 0x01) {
-			uint32_t addr = (gd54xx->pci_regs[0x32] << 16) | (gd54xx->pci_regs[0x33] << 24);
-			mem_mapping_set_addr(&gd54xx->bios_rom.mapping, addr, 0x8000);
+			uint32_t a = (gd54xx->pci_regs[0x32] << 16) | (gd54xx->pci_regs[0x33] << 24);
+			mem_mapping_set_addr(&gd54xx->bios_rom.mapping, a, 0x8000);
 		} else
 			mem_mapping_disable(&gd54xx->bios_rom.mapping);
 		return;

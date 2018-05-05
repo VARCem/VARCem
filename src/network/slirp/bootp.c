@@ -120,7 +120,7 @@ static void bootp_reply(struct bootp_t *bp)
     struct SLIRPmbuf *m;
     struct bootp_t *rbp;
     struct sockaddr_in saddr, daddr;
-    struct in_addr dns_addr;
+    struct in_addr dns;
     int dhcp_msg_type, val;
     uint8_t *q;
 
@@ -207,8 +207,8 @@ static void bootp_reply(struct bootp_t *bp)
         
         *q++ = RFC1533_DNS;
         *q++ = 4;
-        dns_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
-        memcpy(q, &dns_addr, 4);
+        dns.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
+        memcpy(q, &dns, 4);
         q += 4;
 
         *q++ = RFC2132_LEASE_TIME;

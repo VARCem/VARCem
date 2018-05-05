@@ -13,7 +13,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.12	2018/05/03
+ * Version:	@(#)win_joystick.cpp	1.0.13	2018/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
@@ -328,7 +329,6 @@ joystick_process(void)
 
 	for (b = 0; b < 4; b++)
 		plat_joystick_state[c].p[b] = joystate.rgdwPOV[b];
-//	pclog("joystick %i - x=%i y=%i b[0]=%i b[1]=%i  %i\n", c, joystick_state[c].x, joystick_state[c].y, joystick_state[c].b[0], joystick_state[c].b[1], joysticks_present);
     }
 
     for (c = 0; c < gamedev_get_max_joysticks(joystick_type); c++) {
@@ -377,7 +377,7 @@ static uint8_t joystickconfig_changed = 0;
 
 
 static void
-rebuild_axis_button_selections(HWND hdlg)
+rebuild_selections(HWND hdlg)
 {
     int id = IDC_CONFIG_BASE + 2;
     int c, d, joystick;
@@ -496,6 +496,76 @@ get_pov(HWND hdlg, int id)
 }
 
 
+static void
+dlg_init(HWND hdlg)
+{
+    HWND h;
+    int joystick;
+    int c, id;
+    int mapping;
+    int nr_axes;
+    int nr_povs;
+
+    h = GetDlgItem(hdlg, IDC_CONFIG_BASE);
+    id = IDC_CONFIG_BASE + 2;
+    joystick = joystick_state[joystick_nr].plat_joystick_nr;
+
+    SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)"None");
+
+    for (c = 0; c < joysticks_present; c++)
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)plat_joystick_state[c].name);
+
+    SendMessage(h, CB_SETCURSEL, joystick, 0);
+
+    rebuild_selections(hdlg);
+
+    if (joystick_state[joystick_nr].plat_joystick_nr) {
+	nr_axes = plat_joystick_state[joystick-1].nr_axes;
+	nr_povs = plat_joystick_state[joystick-1].nr_povs;
+	for (c = 0; c < gamedev_get_axis_count(joystick_config_type); c++) {
+		mapping = joystick_state[joystick_nr].axis_mapping[c];
+
+		h = GetDlgItem(hdlg, id);
+		if (mapping & POV_X)
+			SendMessage(h, CB_SETCURSEL, nr_axes + (mapping & 3)*2, 0);
+		else if (mapping & POV_Y)
+			SendMessage(h, CB_SETCURSEL, nr_axes + (mapping & 3)*2 + 1, 0);
+		else
+			SendMessage(h, CB_SETCURSEL, mapping, 0);
+		id += 2;
+	} 
+
+	for (c = 0; c < gamedev_get_button_count(joystick_config_type); c++) {
+		h = GetDlgItem(hdlg, id);
+		SendMessage(h, CB_SETCURSEL, joystick_state[joystick_nr].button_mapping[c], 0);
+		id += 2;
+	}
+
+	for (c = 0; c < gamedev_get_pov_count(joystick_config_type); c++) {
+		h = GetDlgItem(hdlg, id);
+		mapping = joystick_state[joystick_nr].pov_mapping[c][0];
+		if (mapping & POV_X)
+			SendMessage(h, CB_SETCURSEL, (mapping & 3)*2, 0);
+		else if (mapping & POV_Y)
+			SendMessage(h, CB_SETCURSEL, (mapping & 3)*2 + 1, 0);
+		else
+			SendMessage(h, CB_SETCURSEL, mapping + nr_povs*2, 0);
+		id += 2;
+
+		h = GetDlgItem(hdlg, id);
+		mapping = joystick_state[joystick_nr].pov_mapping[c][1];
+		if (mapping & POV_X)
+			SendMessage(h, CB_SETCURSEL, (mapping & 3)*2, 0);
+		else if (mapping & POV_Y)
+			SendMessage(h, CB_SETCURSEL, (mapping & 3)*2 + 1, 0);
+		else
+			SendMessage(h, CB_SETCURSEL, mapping + nr_povs*2, 0);
+		id += 2;
+	}
+    }
+}
+
+
 #ifdef __amd64__
 static LRESULT CALLBACK
 #else
@@ -504,76 +574,19 @@ static BOOL CALLBACK
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 {
     HWND h;
-    int c;
-    int id;
-    int joystick;
-    int nr_axes;
-    int nr_povs;
-    int mapping;
+    int c, id;
 
     switch (message) {
 	case WM_INITDIALOG:
-		h = GetDlgItem(hdlg, IDC_CONFIG_BASE);
-		id = IDC_CONFIG_BASE + 2;
-		joystick = joystick_state[joystick_nr].plat_joystick_nr;
-
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)"None");
-
-		for (c = 0; c < joysticks_present; c++)
-			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)plat_joystick_state[c].name);
-			
-		SendMessage(h, CB_SETCURSEL, joystick, 0);
-
-		rebuild_axis_button_selections(hdlg);
-
-		if (joystick_state[joystick_nr].plat_joystick_nr) {
-			nr_axes = plat_joystick_state[joystick-1].nr_axes;
-			nr_povs = plat_joystick_state[joystick-1].nr_povs;
-			for (c = 0; c < gamedev_get_axis_count(joystick_config_type); c++) {
-				int mapping = joystick_state[joystick_nr].axis_mapping[c];
-
-				h = GetDlgItem(hdlg, id);
-				if (mapping & POV_X)
-					SendMessage(h, CB_SETCURSEL, nr_axes + (mapping & 3)*2, 0);
-				else if (mapping & POV_Y)
-					SendMessage(h, CB_SETCURSEL, nr_axes + (mapping & 3)*2 + 1, 0);
-				else
-					SendMessage(h, CB_SETCURSEL, mapping, 0);
-				id += 2;
-			} 
-			for (c = 0; c < gamedev_get_button_count(joystick_config_type); c++) {
-				h = GetDlgItem(hdlg, id);
-				SendMessage(h, CB_SETCURSEL, joystick_state[joystick_nr].button_mapping[c], 0);
-				id += 2;
-			}
-			for (c = 0; c < gamedev_get_pov_count(joystick_config_type); c++) {
-				h = GetDlgItem(hdlg, id);
-				mapping = joystick_state[joystick_nr].pov_mapping[c][0];
-				if (mapping & POV_X)
-					SendMessage(h, CB_SETCURSEL, (mapping & 3)*2, 0);
-				else if (mapping & POV_Y)
-					SendMessage(h, CB_SETCURSEL, (mapping & 3)*2 + 1, 0);
-				else
-					SendMessage(h, CB_SETCURSEL, mapping + nr_povs*2, 0);
-				id += 2;
-				h = GetDlgItem(hdlg, id);
-				mapping = joystick_state[joystick_nr].pov_mapping[c][1];
-				if (mapping & POV_X)
-					SendMessage(h, CB_SETCURSEL, (mapping & 3)*2, 0);
-				else if (mapping & POV_Y)
-					SendMessage(h, CB_SETCURSEL, (mapping & 3)*2 + 1, 0);
-				else
-					SendMessage(h, CB_SETCURSEL, mapping + nr_povs*2, 0);
-				id += 2;
-			}
-		}
+		dialog_center(hdlg);
+		dlg_init(hdlg);
 		return TRUE;
 
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 			case IDC_CONFIG_BASE:
 				if (HIWORD(wParam) == CBN_SELCHANGE)
-					rebuild_axis_button_selections(hdlg);
+					rebuild_selections(hdlg);
 				break;
 			
 			case IDOK:
@@ -617,6 +630,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 }
 
 
+/* Create an in-memory dialog template for the Joystick Configuration. */
 uint8_t
 dlg_jsconf(HWND hwnd, int joy_nr, int type)
 {
@@ -714,7 +728,7 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
 	*data++ = 0xFFFF;
 	*data++ = 0x0082;    /* static class */
 	data += MultiByteToWideChar(CP_ACP, 0,
-				gamedev_get_axis_name(type, c), -1, (wchar_t *)data, 256);
+		gamedev_get_axis_name(type, c), -1, (wchar_t *)data, 256);
 	*data++ = 0;	      /* no creation data */
 	if (((uintptr_t)data) & 2)
 		data++;
@@ -735,7 +749,7 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
 	*data++ = 0xFFFF;
 	*data++ = 0x0085;    /* combo box class */
 	data += MultiByteToWideChar(CP_ACP, 0,
-			gamedev_get_button_name(type, c), -1, (wchar_t *)data, 256);
+		gamedev_get_button_name(type, c), -1, (wchar_t *)data, 256);
 	*data++ = 0;	      /* no creation data */
 	if (((uintptr_t)data) & 2)
 		data++;
@@ -752,7 +766,7 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
 	*data++ = 0xFFFF;
 	*data++ = 0x0082;    /* static class */
 	data += MultiByteToWideChar(CP_ACP, 0,
-			gamedev_get_button_name(type, c), -1, (wchar_t *)data, 256);
+		gamedev_get_button_name(type, c), -1, (wchar_t *)data, 256);
 	*data++ = 0;	      /* no creation data */
 	if (((uintptr_t)data) & 2)
 		data++;

@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.13	2018/04/26
+ * Version:	@(#)m_ps2_mca.c	1.0.14	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1147,7 +1147,7 @@ static void ps2_mca_board_model_70_type34_init(int is_type4)
 	device_add(&ps1vga_device);
 }
 
-static void ps2_mca_board_model_80_type2_init(int is486)
+static void ps2_mca_board_model_80_type2_init(int is_486)
 {
         ps2_mca_board_common_init();
 
@@ -1207,7 +1207,7 @@ static void ps2_mca_board_model_80_type2_init(int is486)
                     NULL);
         mem_mapping_disable(&ps2.split_mapping);
 
-        if ((mem_size > 4096) && !is486)
+        if ((mem_size > 4096) && !is_486)
         {
                 /* Only 4 MB supported on planar, create a memory expansion card for the rest */
 		ps2_mca_mem_fffc_init(4);

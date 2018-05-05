@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.14	2018/04/14
+ * Version:	@(#)video.c	1.0.15	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -504,17 +504,17 @@ int
 calc_15to32(int c)
 {
     int b, g, r;
-    double db, dg, dr;
+    double d_b, d_g, d_r;
 
     b = (c & 31);
     g = ((c >> 5) & 31);
     r = ((c >> 10) & 31);
-    db = (((double) b) / 31.0) * 255.0;
-    dg = (((double) g) / 31.0) * 255.0;
-    dr = (((double) r) / 31.0) * 255.0;
-    b = (int) db;
-    g = ((int) dg) << 8;
-    r = ((int) dr) << 16;
+    d_b = (((double) b) / 31.0) * 255.0;
+    d_g = (((double) g) / 31.0) * 255.0;
+    d_r = (((double) r) / 31.0) * 255.0;
+    b = (int) d_b;
+    g = ((int) d_g) << 8;
+    r = ((int) d_r) << 16;
 
     return(b | g | r);
 }
@@ -524,17 +524,17 @@ int
 calc_16to32(int c)
 {
     int b, g, r;
-    double db, dg, dr;
+    double d_b, d_g, d_r;
 
     b = (c & 31);
     g = ((c >> 5) & 63);
     r = ((c >> 11) & 31);
-    db = (((double) b) / 31.0) * 255.0;
-    dg = (((double) g) / 63.0) * 255.0;
-    dr = (((double) r) / 31.0) * 255.0;
-    b = (int) db;
-    g = ((int) dg) << 8;
-    r = ((int) dr) << 16;
+    d_b = (((double) b) / 31.0) * 255.0;
+    d_g = (((double) g) / 63.0) * 255.0;
+    d_r = (((double) r) / 31.0) * 255.0;
+    b = (int) d_b;
+    g = ((int) d_g) << 8;
+    r = ((int) d_r) << 16;
 
     return(b | g | r);
 }

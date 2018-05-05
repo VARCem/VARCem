@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.8	2018/04/27
+ * Version:	@(#)fdd_86f.c	1.0.9	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -293,7 +293,7 @@ d86f_log(const char *format, ...)
 
 
 static void
-setup_crc(uint16_t poly)
+setup_crc(uint16_t __poly)
 {
     int c = 256, bc;
     uint16_t temp;
@@ -304,7 +304,7 @@ setup_crc(uint16_t poly)
 
 	while (bc--) {
 		if (temp & 0x8000)
-			temp = (temp << 1) ^ poly;
+			temp = (temp << 1) ^ __poly;
 		  else
 			temp <<= 1;
 

@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.8	2018/04/09
+ * Version:	@(#)vid_voodoo.c	1.0.9	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2010,7 +2010,7 @@ static inline void voodoo_get_texture(voodoo_t *voodoo, voodoo_params_t *params,
         
         if (voodoo->bilinear_enabled && params->textureMode[tmu] & 6)
         {
-                int _ds, dt;
+                int __ds, dt;
                         
                 state->tex_s -= 1 << (3+tex_lod);
                 state->tex_t -= 1 << (3+tex_lod);
@@ -2018,18 +2018,18 @@ static inline void voodoo_get_texture(voodoo_t *voodoo, voodoo_params_t *params,
                 s = state->tex_s >> tex_lod;
                 t = state->tex_t >> tex_lod;
 
-                _ds = s & 0xf;
+                __ds = s & 0xf;
                 dt = t & 0xf;
 
                 s >>= 4;
                 t >>= 4;
 //if (x == 80)
 //if (voodoo_output)
-//        voodoo_log("s=%08x t=%08x _ds=%02x _dt=%02x\n", s, t, _ds, dt);
-                d[0] = (16 - _ds) * (16 - dt);
-                d[1] =  _ds * (16 - dt);
-                d[2] = (16 - _ds) * dt;
-                d[3] = _ds * dt;
+//        voodoo_log("s=%08x t=%08x _ds=%02x _dt=%02x\n", s, t, __ds, dt);
+                d[0] = (16 - __ds) * (16 - dt);
+                d[1] =  __ds * (16 - dt);
+                d[2] = (16 - __ds) * dt;
+                d[3] = __ds * dt;
 
 //                texture_state.s = s;
 //                texture_state.t = t;
@@ -2924,20 +2924,20 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
                         {
                                 if (x < params->clipLeft)
                                 {
-                                        int dx = params->clipLeft - x;
+                                        int __dx = params->clipLeft - x;
 
-                                        state->ir += params->dRdX*dx;
-                                        state->ig += params->dGdX*dx;
-                                        state->ib += params->dBdX*dx;
-                                        state->ia += params->dAdX*dx;
-                                        state->z += params->dZdX*dx;
-                                        state->tmu0_s += params->tmu[0].dSdX*dx;
-                                        state->tmu0_t += params->tmu[0].dTdX*dx;
-                                        state->tmu0_w += params->tmu[0].dWdX*dx;
-                                        state->tmu1_s += params->tmu[1].dSdX*dx;
-                                        state->tmu1_t += params->tmu[1].dTdX*dx;
-                                        state->tmu1_w += params->tmu[1].dWdX*dx;
-                                        state->w += params->dWdX*dx;
+                                        state->ir += params->dRdX*__dx;
+                                        state->ig += params->dGdX*__dx;
+                                        state->ib += params->dBdX*__dx;
+                                        state->ia += params->dAdX*__dx;
+                                        state->z += params->dZdX*__dx;
+                                        state->tmu0_s += params->tmu[0].dSdX*__dx;
+                                        state->tmu0_t += params->tmu[0].dTdX*__dx;
+                                        state->tmu0_w += params->tmu[0].dWdX*__dx;
+                                        state->tmu1_s += params->tmu[1].dSdX*__dx;
+                                        state->tmu1_t += params->tmu[1].dTdX*__dx;
+                                        state->tmu1_w += params->tmu[1].dWdX*__dx;
+                                        state->w += params->dWdX*__dx;
                                         
                                         x = params->clipLeft;
                                 }
@@ -2948,20 +2948,20 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
                         {
                                 if (x >= params->clipRight)
                                 {
-                                        int dx = (params->clipRight-1) - x;
+                                        int __dx = (params->clipRight-1) - x;
 
-                                        state->ir += params->dRdX*dx;
-                                        state->ig += params->dGdX*dx;
-                                        state->ib += params->dBdX*dx;
-                                        state->ia += params->dAdX*dx;
-                                        state->z += params->dZdX*dx;
-                                        state->tmu0_s += params->tmu[0].dSdX*dx;
-                                        state->tmu0_t += params->tmu[0].dTdX*dx;
-                                        state->tmu0_w += params->tmu[0].dWdX*dx;
-                                        state->tmu1_s += params->tmu[1].dSdX*dx;
-                                        state->tmu1_t += params->tmu[1].dTdX*dx;
-                                        state->tmu1_w += params->tmu[1].dWdX*dx;
-                                        state->w += params->dWdX*dx;
+                                        state->ir += params->dRdX*__dx;
+                                        state->ig += params->dGdX*__dx;
+                                        state->ib += params->dBdX*__dx;
+                                        state->ia += params->dAdX*__dx;
+                                        state->z += params->dZdX*__dx;
+                                        state->tmu0_s += params->tmu[0].dSdX*__dx;
+                                        state->tmu0_t += params->tmu[0].dTdX*__dx;
+                                        state->tmu0_w += params->tmu[0].dWdX*__dx;
+                                        state->tmu1_s += params->tmu[1].dSdX*__dx;
+                                        state->tmu1_t += params->tmu[1].dTdX*__dx;
+                                        state->tmu1_w += params->tmu[1].dWdX*__dx;
+                                        state->w += params->dWdX*__dx;
                                         
                                         x = params->clipRight-1;
                                 }
@@ -4051,7 +4051,6 @@ static void blit_start(voodoo_t *voodoo)
         int size_x = ABS(voodoo->bltSizeX), size_y = ABS(voodoo->bltSizeY);
         int x_dir = (voodoo->bltSizeX > 0) ? 1 : -1;
         int y_dir = (voodoo->bltSizeY > 0) ? 1 : -1;
-        int dst_x;
         int src_y = voodoo->bltSrcY & 0x7ff, dst_y = voodoo->bltDstY & 0x7ff;
         int src_stride = (voodoo->bltCommand & BLTCMD_SRC_TILED) ? ((voodoo->bltSrcXYStride & 0x3f) * 32*2) : (voodoo->bltSrcXYStride & 0xff8);
         int dst_stride = (voodoo->bltCommand & BLTCMD_DST_TILED) ? ((voodoo->bltDstXYStride & 0x3f) * 32*2) : (voodoo->bltDstXYStride & 0xff8);
@@ -4179,6 +4178,7 @@ skip_line_fill:
                 for (y = 0; y <= size_y; y++)
                 {
                         uint64_t *dst;
+			int dst_x;
 
                         /*This may be wrong*/
                         if (!y)
@@ -4383,9 +4383,9 @@ static void wait_for_swap_complete(voodoo_t *voodoo)
         }
 }
 
-static void voodoo_reg_writel(uint32_t addr, uint32_t val, void *p)
+static void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
 {
-        voodoo_t *voodoo = (voodoo_t *)p;
+        voodoo_t *voodoo = (voodoo_t *)priv;
         union
         {
                 uint32_t i;
@@ -7383,9 +7383,9 @@ static void voodoo_filterline_v2(voodoo_t *voodoo, uint8_t *fil, int column, uin
 	fil3[(column-1)*3+2] = voodoo->thefilter	[fil[(column-1)*3+2]][(((src[column] >> 11) & 31) << 3)];
 }
 
-void voodoo_callback(void *p)
+void voodoo_callback(void *priv)
 {
-        voodoo_t *voodoo = (voodoo_t *)p;
+        voodoo_t *voodoo = (voodoo_t *)priv;
 	int y_add = (enable_overscan && !suppress_overscan) ? (overscan_y >> 1) : 0;
 	int x_add = (enable_overscan && !suppress_overscan) ? 8 : 0;
 

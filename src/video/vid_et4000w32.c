@@ -10,7 +10,7 @@
  *
  * Known bugs:	Accelerator doesn't work in planar modes
  *
- * Version:	@(#)vid_et4000w32.c	1.0.8	2018/04/09
+ * Version:	@(#)vid_et4000w32.c	1.0.9	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1202,13 +1202,13 @@ void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
 		et4000->pci_regs[0x33] &= 0xf0;
                 if (et4000->pci_regs[0x30] & 0x01)
                 {
-                        uint32_t addr = (et4000->pci_regs[0x33] << 24);
-			if (!addr)
+                        uint32_t a = (et4000->pci_regs[0x33] << 24);
+			if (!a)
 			{
-				addr = 0xC0000;
+				a = 0xC0000;
 			}
-                        /* pclog("ET4000 bios_rom enabled at %08x\n", addr); */
-                        mem_mapping_set_addr(&et4000->bios_rom.mapping, addr, 0x8000);
+                        /* pclog("ET4000 bios_rom enabled at %08x\n", a); */
+                        mem_mapping_set_addr(&et4000->bios_rom.mapping, a, 0x8000);
                 }
                 else
                 {

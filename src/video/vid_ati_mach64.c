@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.10	2018/04/09
+ * Version:	@(#)vid_ati_mach64.c	1.0.11	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2876,7 +2876,7 @@ uint32_t mach64_readl(uint32_t addr, void *p)
         return svga_readl_linear(addr, svga);
 }
 
-void mach64_hwcursor_draw(svga_t *svga, int displine)
+void mach64_hwcursor_draw(svga_t *svga, int disp_line)
 {
         mach64_t *mach64 = (mach64_t *)svga->p;
         int x, offset;
@@ -2890,17 +2890,17 @@ void mach64_hwcursor_draw(svga_t *svga, int displine)
         for (x = 0; x < 64 - svga->hwcursor_latch.xoff; x += 4)
         {
                 dat = svga->vram[svga->hwcursor_latch.addr + (offset >> 2)];
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 32 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 32 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 32 + x_add]  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 32 + x_add] ^= 0xFFFFFF;
                 dat >>= 2;
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 33 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 33 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 33 + x_add]  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 33 + x_add] ^= 0xFFFFFF;
                 dat >>= 2;
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 34 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 34 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 34 + x_add]  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 34 + x_add] ^= 0xFFFFFF;
                 dat >>= 2;
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 35 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[displine + y_add])[svga->hwcursor_latch.x + x + 35 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 35 + x_add]  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 35 + x_add] ^= 0xFFFFFF;
                 dat >>= 2;
                 offset += 4;
         }
@@ -3042,7 +3042,7 @@ void mach64_hwcursor_draw(svga_t *svga, int displine)
                 }                                                       \
         } while (0)
 
-void mach64_overlay_draw(svga_t *svga, int displine)
+void mach64_overlay_draw(svga_t *svga, int disp_line)
 {
         mach64_t *mach64 = (mach64_t *)svga->p;
         int x;
@@ -3059,7 +3059,7 @@ void mach64_overlay_draw(svga_t *svga, int displine)
         int graphics_key_fn = (mach64->overlay_key_cntl >> 4) & 5;
         int overlay_cmp_mix = (mach64->overlay_key_cntl >> 8) & 0xf;
 
-        p = &((uint32_t *)buffer32->line[displine])[32 + mach64->svga.overlay_latch.x];
+        p = &((uint32_t *)buffer32->line[disp_line])[32 + mach64->svga.overlay_latch.x];
 
         if (mach64->scaler_update)
         {
@@ -3357,9 +3357,9 @@ void mach64_pci_write(int func, int addr, uint8_t val, void *p)
                 mach64->pci_regs[addr] = val;
                 if (mach64->pci_regs[0x30] & 0x01)
                 {
-                        uint32_t addr = (mach64->pci_regs[0x32] << 16) | (mach64->pci_regs[0x33] << 24);
-                        /* pclog("Mach64 bios_rom enabled at %08x\n", addr); */
-                        mem_mapping_set_addr(&mach64->bios_rom.mapping, addr, 0x8000);
+                        uint32_t a = (mach64->pci_regs[0x32] << 16) | (mach64->pci_regs[0x33] << 24);
+                        /* pclog("Mach64 bios_rom enabled at %08x\n", a); */
+                        mem_mapping_set_addr(&mach64->bios_rom.mapping, a, 0x8000);
                 }
                 else
                 {
@@ -3531,7 +3531,6 @@ void mach64_add_status_info(char *s, int max_len, void *p)
         if (((mach64->crtc_gen_cntl >> 24) & 3) == 3)
         {
                 svga_t *svga = &mach64->svga;
-                char temps[128];
                 int bpp = 4;
                 
                 strncat(s, "Mach64 in native mode\n", max_len);

@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.9	2018/04/27
+ * Version:	@(#)snd_emu8k.c	1.0.10	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2176,17 +2176,17 @@ I've recopilated these sentences to get an idea of how to loop
 void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram)
 {
         uint32_t const BLOCK_SIZE_WORDS = 0x10000;
-        FILE *f;
+        FILE *fp;
         int c;
         double out;
  
-        f = plat_fopen(rom_path(EMU8K_ROM_PATH), L"rb");
-        if (f == NULL)
+        fp = plat_fopen(rom_path(EMU8K_ROM_PATH), L"rb");
+        if (fp == NULL)
                 fatal("AWE32.RAW not found\n");
         
         emu8k->rom = malloc(1024 * 1024); 
-        fread(emu8k->rom, 1024 * 1024, 1, f);
-        fclose(f);
+        fread(emu8k->rom, 1024 * 1024, 1, fp);
+        fclose(fp);
         /*AWE-DUMP creates ROM images offset by 2 bytes, so if we detect this
           then correct it*/
         if (emu8k->rom[3] == 0x314d && emu8k->rom[4] == 0x474d)

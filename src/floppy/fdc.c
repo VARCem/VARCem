@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.9	2018/04/28
+ * Version:	@(#)fdc.c	1.0.10	2018/05/04
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1999,9 +1999,9 @@ fdc_get_swwp(fdc_t *fdc)
 
 
 void
-fdc_set_swwp(fdc_t *fdc, uint8_t swwp)
+fdc_set_swwp(fdc_t *fdc, uint8_t __swwp)
 {
-    fdc->swwp = swwp;
+    fdc->swwp = __swwp;
 }
 
 

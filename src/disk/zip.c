@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.12	2018/04/28
+ * Version:	@(#)zip.c	1.0.13	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -882,13 +882,13 @@ uint8_t zip_mode_sense_read(uint8_t id, uint8_t page_control, uint8_t page, uint
 
 uint32_t zip_mode_sense(uint8_t id, uint8_t *buf, uint32_t pos, uint8_t type, uint8_t block_descriptor_len)
 {
-	uint64_t page_flags;
-	uint8_t page_control = (type >> 6) & 3;
+	uint64_t pg_flags;
+	uint8_t pg_control = (type >> 6) & 3;
 
 	if (zip_drives[id].is_250)
-		page_flags = zip_250_mode_sense_page_flags;
+		pg_flags = zip_250_mode_sense_page_flags;
 	else
-		page_flags = zip_mode_sense_page_flags;
+		pg_flags = zip_mode_sense_page_flags;
 
 	int i = 0;
 	int j = 0;
@@ -917,15 +917,15 @@ uint32_t zip_mode_sense(uint8_t id, uint8_t *buf, uint32_t pos, uint8_t type, ui
 
 	for (i = 0; i < 0x40; i++) {
 	        if ((type == GPMODE_ALL_PAGES) || (type == i)) {
-			if (page_flags & (1LL << zip[id].current_page_code)) {
-				buf[pos++] = zip_mode_sense_read(id, page_control, i, 0);
-				msplen = zip_mode_sense_read(id, page_control, i, 1);
+			if (pg_flags & (1LL << zip[id].current_page_code)) {
+				buf[pos++] = zip_mode_sense_read(id, pg_control, i, 0);
+				msplen = zip_mode_sense_read(id, pg_control, i, 1);
 				buf[pos++] = msplen;
 #ifdef ENABLE_ZIP_LOG
 				zip_log("ZIP %i: MODE SENSE: Page [%02X] length %i\n", id, i, msplen);
 #endif
 				for (j = 0; j < msplen; j++)
-					buf[pos++] = zip_mode_sense_read(id, page_control, i, 2 + j);
+					buf[pos++] = zip_mode_sense_read(id, pg_control, i, 2 + j);
 			}
 		}
 	}

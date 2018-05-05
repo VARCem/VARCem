@@ -8,7 +8,7 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen.h	1.0.2	2018/03/14
+ * Version:	@(#)codegen.h	1.0.3	2018/05/04
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -112,10 +112,10 @@ typedef struct codeblock_t
 /*Code block is always entered with the same FPU top-of-stack*/
 #define CODEBLOCK_STATIC_TOP 2
 
-static inline codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t _cs)
+static inline codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t __cs)
 {
         codeblock_t *block = pages[phys >> 12].head;
-        uint64_t a = _cs | ((uint64_t)phys << 32);
+        uint64_t a = __cs | ((uint64_t)phys << 32);
         
         while (block)
         {

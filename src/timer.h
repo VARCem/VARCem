@@ -8,7 +8,7 @@
  *
  *		Definitions for the system timer module.
  *
- * Version:	@(#)timer.h	1.0.1	2018/02/14
+ * Version:	@(#)timer.h	1.0.2	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,8 +48,8 @@ extern int64_t timer_start;
 #define timer_end_period(cycles) 			\
 	do 						\
 	{						\
-                int64_t diff = timer_start - (cycles);      \
-		timer_count -= diff;			\
+                int64_t __diff = timer_start - (cycles);      \
+		timer_count -= __diff;			\
                 timer_start = cycles;                   \
 		if (timer_count <= 0)			\
 		{					\
@@ -61,18 +61,18 @@ extern int64_t timer_start;
 #define timer_clock()                                                   \
 	do 						                \
 	{						                \
-                int64_t diff;                                               \
+                int64_t __diff;                                         \
                 if (AT)                                                 \
                 {                                                       \
-                        diff = timer_start - (cycles << TIMER_SHIFT);   \
+                        __diff = timer_start - (cycles << TIMER_SHIFT); \
                         timer_start = cycles << TIMER_SHIFT;            \
                 }                                                       \
                 else                                                    \
                 {                                                       \
-                        diff = timer_start - (cycles * xt_cpu_multi);   \
+                        __diff = timer_start - (cycles * xt_cpu_multi); \
                         timer_start = cycles * xt_cpu_multi;            \
                 }                                                       \
-		timer_count -= diff;			                \
+		timer_count -= __diff;			                \
 		timer_process();		                        \
         	timer_update_outstanding();	                        \
 	} while (0)

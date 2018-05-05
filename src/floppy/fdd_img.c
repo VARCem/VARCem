@@ -13,7 +13,7 @@
  *		re-merged with the other files. Much of it is generic to
  *		all formats.
  *
- * Version:	@(#)fdd_img.c	1.0.6	2018/04/10
+ * Version:	@(#)fdd_img.c	1.0.7	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -344,9 +344,9 @@ bps_is_valid(uint16_t bps)
 
 
 static int
-first_byte_is_valid(uint8_t first_byte)
+first_byte_is_valid(uint8_t first)
 {
-    switch(first_byte) {
+    switch(first) {
 	case 0x60:
 	case 0xE9:
 	case 0xEB:

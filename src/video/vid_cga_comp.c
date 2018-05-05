@@ -9,7 +9,7 @@
  *		IBM CGA composite filter, borrowed from reenigne's DOSBox
  *		patch and ported to C.
  *
- * Version:	@(#)vid_cga_comp.c	1.0.2	2018/03/08
+ * Version:	@(#)vid_cga_comp.c	1.0.3	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -148,10 +148,10 @@ void update_cga16_color(uint8_t cgamode) {
                 if (!new_cga)
                         v = c + i;
                 else {
-                        double r = intensity[((left >> 2) & 1) | ((right >> 1) & 2)];
-                        double g = intensity[((left >> 1) & 1) | (right & 2)];
-                        double b = intensity[(left & 1) | ((right << 1) & 2)];
-                        v = NEW_CGA(c, i, r, g, b);
+                        double d_r = intensity[((left >> 2) & 1) | ((right >> 1) & 2)];
+                        double d_g = intensity[((left >> 1) & 1) | (right & 2)];
+                        double d_b = intensity[(left & 1) | ((right << 1) & 2)];
+                        v = NEW_CGA(c, i, d_r, d_g, d_b);
                 }
                 CGA_Composite_Table[x] = (int) (v*mode_contrast + mode_brightness);
         }
@@ -197,7 +197,7 @@ Bit8u * Composite_Process(uint8_t cgamode, Bit8u border, Bit32u blocks/*, bool d
 
 	int *o;
 	Bit8u *rgbi;
-	int *b;
+	int *b2;
 	int *i;
 	Bit32u* srgb;
 	int *ap, *bp;
@@ -224,9 +224,9 @@ Bit8u * Composite_Process(uint8_t cgamode, Bit8u border, Bit32u blocks/*, bool d
         /* Simulate CGA composite output */
         o = temp;
         rgbi = TempLine;
-        b = &CGA_Composite_Table[border*68];
+        b2 = &CGA_Composite_Table[border*68];
         for (x = 0; x < 4; ++x)
-                OUT(b[(x+3)&3]);
+                OUT(b2[(x+3)&3]);
         OUT(CGA_Composite_Table[(border<<6) | ((*rgbi)<<2) | 3]);
         for (x = 0; x < w-1; ++x) {
                 OUT(CGA_Composite_Table[(rgbi[0]<<6) | (rgbi[1]<<2) | (x&3)]);
@@ -234,7 +234,7 @@ Bit8u * Composite_Process(uint8_t cgamode, Bit8u border, Bit32u blocks/*, bool d
         }
         OUT(CGA_Composite_Table[((*rgbi)<<6) | (border<<2) | 3]);
         for (x = 0; x < 5; ++x)
-                OUT(b[x&3]);
+                OUT(b2[x&3]);
 
         if ((cgamode & 4) != 0) {
                 /* Decode */

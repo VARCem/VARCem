@@ -14,7 +14,7 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.4	2018/03/28
+ * Version:	@(#)snd_sb_dsp.c	1.0.5	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -397,19 +397,19 @@ int sb_16_write_dma(sb_dsp_t *dsp, uint16_t val)
         return (ret == DMA_NODATA);
 }
 
-void sb_dsp_setirq(sb_dsp_t *dsp, int irq)
+void sb_dsp_setirq(sb_dsp_t *dsp, int irq_ch)
 {
-        dsp->sb_irqnum = irq;
+        dsp->sb_irqnum = irq_ch;
 }
 
-void sb_dsp_setdma8(sb_dsp_t *dsp, int dma)
+void sb_dsp_setdma8(sb_dsp_t *dsp, int dma_ch)
 {
-        dsp->sb_8_dmanum = dma;
+        dsp->sb_8_dmanum = dma_ch;
 }
 
-void sb_dsp_setdma16(sb_dsp_t *dsp, int dma)
+void sb_dsp_setdma16(sb_dsp_t *dsp, int dma_ch)
 {
-        dsp->sb_16_dmanum = dma;
+        dsp->sb_16_dmanum = dma_ch;
 }
 void sb_exec_command(sb_dsp_t *dsp)
 {

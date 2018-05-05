@@ -8,7 +8,7 @@
  *
  *		Implementation of the Voodoo Recompiler (32bit.)
  *
- * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.2	2018/02/21
+ * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.3	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3351,16 +3351,16 @@ static void voodoo_codegen_init(voodoo_t *voodoo)
         for (c = 0; c < 256; c++)
         {
                 int d[4];
-                int _ds = c & 0xf;
+                int __ds = c & 0xf;
                 int dt = c >> 4;
                 
                 alookup[c] = _mm_set_epi32(0, 0, c | (c << 16), c | (c << 16));
                 aminuslookup[c] = _mm_set_epi32(0, 0, (255-c) | ((255-c) << 16), (255-c) | ((255-c) << 16));
 
-                d[0] = (16 - _ds) * (16 - dt);
-                d[1] =  _ds * (16 - dt);
-                d[2] = (16 - _ds) * dt;
-                d[3] = _ds * dt;
+                d[0] = (16 - __ds) * (16 - dt);
+                d[1] =  __ds * (16 - dt);
+                d[2] = (16 - __ds) * dt;
+                d[3] = __ds * dt;
 
                 bilinear_lookup[c*2]     = _mm_set_epi32(d[1] | (d[1] << 16), d[1] | (d[1] << 16), d[0] | (d[0] << 16), d[0] | (d[0] << 16));
                 bilinear_lookup[c*2 + 1] = _mm_set_epi32(d[3] | (d[3] << 16), d[3] | (d[3] << 16), d[2] | (d[2] << 16), d[2] | (d[2] << 16));

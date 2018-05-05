@@ -8,7 +8,7 @@
  *
  *		Handling of ROM image files.
  *
- * Version:	@(#)rom.c	1.0.13	2018/04/12
+ * Version:	@(#)rom.c	1.0.14	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -90,14 +90,14 @@ rom_present(const wchar_t *fn)
 uint8_t
 rom_read(uint32_t addr, void *priv)
 {
-    rom_t *rom = (rom_t *)priv;
+    rom_t *ptr = (rom_t *)priv;
 
 #ifdef ROM_TRACE
-    if (rom->mapping.base==ROM_TRACE)
+    if (ptr->mapping.base==ROM_TRACE)
 	pclog("ROM: read byte from BIOS at %06lX\n", addr);
 #endif
 
-    return(rom->rom[addr & rom->mask]);
+    return(ptr->rom[addr & ptr->mask]);
 }
 
 
@@ -105,14 +105,14 @@ rom_read(uint32_t addr, void *priv)
 uint16_t
 rom_readw(uint32_t addr, void *priv)
 {
-    rom_t *rom = (rom_t *)priv;
+    rom_t *ptr = (rom_t *)priv;
 
 #ifdef ROM_TRACE
-    if (rom->mapping.base==ROM_TRACE)
+    if (ptr->mapping.base==ROM_TRACE)
 	pclog("ROM: read word from BIOS at %06lX\n", addr);
 #endif
 
-    return(*(uint16_t *)&rom->rom[addr & rom->mask]);
+    return(*(uint16_t *)&ptr->rom[addr & ptr->mask]);
 }
 
 
@@ -120,14 +120,14 @@ rom_readw(uint32_t addr, void *priv)
 uint32_t
 rom_readl(uint32_t addr, void *priv)
 {
-    rom_t *rom = (rom_t *)priv;
+    rom_t *ptr = (rom_t *)priv;
 
 #ifdef ROM_TRACE
-    if (rom->mapping.base==ROM_TRACE)
+    if (ptr->mapping.base==ROM_TRACE)
 	pclog("ROM: read long from BIOS at %06lX\n", addr);
 #endif
 
-    return(*(uint32_t *)&rom->rom[addr & rom->mask]);
+    return(*(uint32_t *)&ptr->rom[addr & ptr->mask]);
 }
 
 
@@ -195,54 +195,52 @@ rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int 
 
 /* Read and initialize an option ROM. */
 int
-rom_init(rom_t *rom, const wchar_t *fn, uint32_t addr, int sz, int mask, int off, uint32_t flags)
+rom_init(rom_t *ptr, const wchar_t *fn, uint32_t addr, int sz, int mask, int off, uint32_t fl)
 {
     /* Allocate a buffer for the image. */
-    rom->rom = malloc(sz);
-    memset(rom->rom, 0xff, sz);
+    ptr->rom = malloc(sz);
+    memset(ptr->rom, 0xff, sz);
 
     /* Load the image file into the buffer. */
-    if (! rom_load_linear(fn, addr, sz, off, rom->rom)) {
+    if (! rom_load_linear(fn, addr, sz, off, ptr->rom)) {
 	/* Nope.. clean up. */
-	free(rom->rom);
-	rom->rom = NULL;
+	free(ptr->rom);
+	ptr->rom = NULL;
 	return(0);
     }
 
-    rom->mask = mask;
+    ptr->mask = mask;
 
-    mem_mapping_add(&rom->mapping,
-		    addr, sz,
+    mem_mapping_add(&ptr->mapping, addr, sz,
 		    rom_read, rom_readw, rom_readl,
 		    mem_write_null, mem_write_nullw, mem_write_nulll,
-		    rom->rom, flags | MEM_MAPPING_ROM, rom);
+		    ptr->rom, fl | MEM_MAPPING_ROM, ptr);
 
     return(1);
 }
 
 
 int
-rom_init_interleaved(rom_t *rom, const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int sz, int mask, int off, uint32_t flags)
+rom_init_interleaved(rom_t *ptr, const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int sz, int mask, int off, uint32_t fl)
 {
     /* Allocate a buffer for the image. */
-    rom->rom = malloc(sz);
-    memset(rom->rom, 0xff, sz);
+    ptr->rom = malloc(sz);
+    memset(ptr->rom, 0xff, sz);
 
     /* Load the image file into the buffer. */
-    if (! rom_load_interleaved(fnl, fnh, addr, sz, off, rom->rom)) {
+    if (! rom_load_interleaved(fnl, fnh, addr, sz, off, ptr->rom)) {
 	/* Nope.. clean up. */
-	free(rom->rom);
-	rom->rom = NULL;
+	free(ptr->rom);
+	ptr->rom = NULL;
 	return(0);
     }
 
-    rom->mask = mask;
+    ptr->mask = mask;
 
-    mem_mapping_add(&rom->mapping,
-		    addr, sz,
+    mem_mapping_add(&ptr->mapping, addr, sz,
 		    rom_read, rom_readw, rom_readl,
 		    mem_write_null, mem_write_nullw, mem_write_nulll,
-		    rom->rom, flags | MEM_MAPPING_ROM, rom);
+		    ptr->rom, fl | MEM_MAPPING_ROM, ptr);
 
     return(1);
 }

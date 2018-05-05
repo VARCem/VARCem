@@ -12,7 +12,7 @@
  *		addition of get_last_head and C++ callability by Thomas
  *		Harte.
  *
- * Version:	@(#)fdi2raw.c	1.0.2	2018/03/12
+ * Version:	@(#)fdi2raw.c	1.0.3	2018/05/04
  *
  * Authors:	Toni Wilen, <twilen@arabuusimiehet.com>
  *		and Vincent Joguin,
@@ -1795,16 +1795,16 @@ static void fdi2_decode (FDI *fdi, uint32_t totalavg, uae_u32 *avgp, uae_u32 *mi
 
 #endif
 
-static void fdi2_celltiming (FDI *fdi, uint32_t totalavg, int bitoffset, uae_u16 *out)
+static void fdi2_celltiming (FDI *fdi, uint32_t totalavg, int bit_offset, uae_u16 *out)
 {
 	uae_u16 *pt2, *pt;
 	double avg_bit_len;
 	int i;
 
-	avg_bit_len = (double)totalavg / (double)bitoffset;
+	avg_bit_len = (double)totalavg / (double)bit_offset;
 	pt2 = fdi->track_dst_buffer_timing;
 	pt = out;
-	for (i = 0; i < bitoffset / 8; i++) {
+	for (i = 0; i < bit_offset / 8; i++) {
 		double v = (pt2[0] + pt2[1] + pt2[2] + pt2[3] + pt2[4] + pt2[5] + pt2[6] + pt2[7]) / 8.0;
 		v = 1000.0 * v / avg_bit_len;
 		*pt++ = (uae_u16)v;

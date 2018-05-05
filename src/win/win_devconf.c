@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.15	2018/05/02
+ * Version:	@(#)win_devconf.c	1.0.16	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -178,7 +178,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     const device_config_selection_t *sel;
     const device_t *dev = devconf_device;
     const device_config_t *cfg = dev->config;
-    int c, cid, changed, id, val;
+    int c, cid, changed, d, id, val;
     HWND h;
 
     switch (message) {
@@ -386,8 +386,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 					case CONFIG_FNAME:
 						if (cid == id+1) {
-							int c, d;
-							HWND h = GetDlgItem(hdlg, id);
+							h = GetDlgItem(hdlg, id);
 							SendMessage(h, WM_GETTEXT, 511, (LPARAM)s);
 							char file_filter[512];
 							file_filter[0] = 0;
@@ -482,15 +481,19 @@ dlg_devconf(HWND hwnd, device_t *device)
     /* Font style and size to use. */
     *data++ = 9; /* point size */
     data += MultiByteToWideChar(CP_ACP, 0, "Segoe UI", -1, data, 120);
+
     if (((uintptr_t)data) & 2)
 	data++;
 
     /* Now add the items from the configuration. */
     id = IDC_CONFIG_BASE;
     while (cfg->type != -1) {
+	/* Align 'data' to DWORD */
+if (((uint32_t)data) & 3) pclog("DEVCONF: unaligned data %08lx !\n", data);
+	itm = (DLGITEMTEMPLATE *)data;
+
 	switch (cfg->type) {
 		case CONFIG_BINARY:
-			itm = (DLGITEMTEMPLATE *)data;
 			itm->style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX;
 			itm->x = 10;
 			itm->y = y;
@@ -514,7 +517,6 @@ dlg_devconf(HWND hwnd, device_t *device)
 		case CONFIG_HEX16:
 		case CONFIG_HEX20:
 			/* combo box */
-			itm = (DLGITEMTEMPLATE *)data;
 			itm->style = WS_CHILD | WS_VISIBLE | \
 				     CBS_DROPDOWNLIST | WS_VSCROLL;
 			itm->x = 70;
@@ -556,7 +558,6 @@ dlg_devconf(HWND hwnd, device_t *device)
 
 		case CONFIG_SPINNER:
 			/* spinner */
-			itm = (DLGITEMTEMPLATE *)data;
 			itm->style = WS_CHILD | WS_VISIBLE | \
 				     ES_AUTOHSCROLL | ES_NUMBER;
 			itm->dwExtendedStyle = WS_EX_CLIENTEDGE;
@@ -600,7 +601,6 @@ dlg_devconf(HWND hwnd, device_t *device)
 
 		case CONFIG_FNAME:
 			/* file */
-			itm = (DLGITEMTEMPLATE *)data;
 			itm->style = WS_CHILD | WS_VISIBLE | ES_READONLY;
 			itm->dwExtendedStyle = WS_EX_CLIENTEDGE;
 			itm->x = 70;

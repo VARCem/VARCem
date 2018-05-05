@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.7	2018/04/02
+ * Version:	@(#)scsi_aha154x.c	1.0.8	2018/05/04
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -135,14 +135,14 @@ static uint8_t
 mem_read(uint32_t addr, void *priv)
 {
     x54x_t *dev = (x54x_t *)priv;
-    rom_t *rom = &dev->bios;
+    rom_t *ptr = &dev->bios;
 
     addr &= 0x3fff;
 
     if ((addr >= dev->rom_shram) && (dev->shram_mode & 2))
 	return dev->shadow_ram[addr & (dev->rom_shramsz - 1)];
 
-    return(rom->rom[addr]);
+    return(ptr->rom[addr]);
 }
 
 

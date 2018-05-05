@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.33	2018/05/03
+ * Version:	@(#)pc.c	1.0.34	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -986,7 +986,7 @@ pc_thread(void *param)
     uint64_t start_time, end_time;
     uint32_t old_time, new_time;
     int status_update_needed;
-    int done, drawits, frames;
+    int done, drawits, frm;
     int *quitp = (int *)param;
     int framecountx;
 
@@ -996,7 +996,7 @@ pc_thread(void *param)
     framecountx = 0;
     status_update_needed = title_update = 1;
     old_time = plat_get_ticks();
-    done = drawits = frames = 0;
+    done = drawits = frm = 0;
     while (! *quitp) {
 	/* Update the Stat(u)s window with the current info. */
 	if (status_update_needed) {
@@ -1082,8 +1082,8 @@ pc_thread(void *param)
 			egareads = egawrites = 0;
 			cycles_lost = 0;
 			mmuflush = 0;
-			emu_fps = frames;
-			frames = 0;
+			emu_fps = frm;
+			frm = 0;
 
 			/* We need a Status window update now. */
 			status_update_needed = 1;
@@ -1116,10 +1116,10 @@ pc_thread(void *param)
 		done++;
 
 		/* Every 200 frames we save the machine status. */
-		if (++frames >= 200 && nvr_dosave) {
+		if (++frm >= 200 && nvr_dosave) {
 			nvr_save();
 			nvr_dosave = 0;
-			frames = 0;
+			frm = 0;
 		}
 
 		end_time = plat_timer_read();

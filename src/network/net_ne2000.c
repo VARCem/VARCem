@@ -12,7 +12,7 @@
  *			- Realtek RTL8019AS (ISA 16-bit, PnP);
  *			- Realtek RTL8029AS (PCI).
  *
- * Version:	@(#)net_ne2000.c	1.0.8	2018/05/03
+ * Version:	@(#)net_ne2000.c	1.0.9	2018/05/04
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -2190,7 +2190,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
     nic_t *dev = (nic_t *)priv;
     uint8_t pkthdr[4];
     uint8_t *startptr;
-    int pages, avail;
+    int npg, avail;
     int idx, nextpage;
     int endbytes;
 
@@ -2206,7 +2206,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
      * Add the pkt header + CRC to the length, and work
      * out how many 256-byte pages the frame would occupy.
      */
-    pages = (io_len + sizeof(pkthdr) + sizeof(uint32_t) + 255)/256;
+    npg = (io_len + sizeof(pkthdr) + sizeof(uint32_t) + 255)/256;
     if (dev->curr_page < dev->bound_ptr) {
 	avail = dev->bound_ptr - dev->curr_page;
     } else {
@@ -2219,9 +2219,9 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
      * not attempting to do partial receives. The emulation
      * to handle this condition seems particularly painful.
      */
-    if	((avail < pages)
+    if	((avail < npg)
 #if NE2K_NEVER_FULL_RING
-		 || (avail == pages)
+		 || (avail == npg)
 #endif
 		) {
 	nelog(1, "%s: no space\n", dev->name);
@@ -2293,7 +2293,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 	nelog(2, "%s: RX promiscuous receive\n", dev->name);
     }
 
-    nextpage = dev->curr_page + pages;
+    nextpage = dev->curr_page + npg;
     if (nextpage >= dev->page_stop)
 	nextpage -= (dev->page_stop - dev->page_start);
 
@@ -2314,7 +2314,7 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
 	startptr = &dev->mem[(dev->curr_page * 256) - NE1K_MEMSTART];
     memcpy(startptr, pkthdr, sizeof(pkthdr));
     if ((nextpage > dev->curr_page) ||
-	((dev->curr_page + pages) == dev->page_stop)) {
+	((dev->curr_page + npg) == dev->page_stop)) {
 	memcpy(startptr+sizeof(pkthdr), buf, io_len);
     } else {
 	endbytes = (dev->page_stop - dev->curr_page) * 256;
@@ -2381,7 +2381,7 @@ static void *
 nic_init(const device_t *info)
 {
     uint32_t mac;
-    wchar_t *rom;
+    wchar_t *fn;
     nic_t *dev;
 #ifdef ENABLE_NETWORK_DEV_LOG
     int i;
@@ -2400,7 +2400,7 @@ nic_init(const device_t *info)
     memset(dev, 0x00, sizeof(nic_t));
     dev->name = info->name;
     dev->board = info->local;
-    rom = NULL;
+    fn = NULL;
     switch(dev->board) {
 	case NE2K_NE1000:
 		dev->is_8bit = 1;
@@ -2410,7 +2410,7 @@ nic_init(const device_t *info)
 		dev->maclocal[0] = 0x00;  /* 00:00:D8 (Novell OID) */
 		dev->maclocal[1] = 0x00;
 		dev->maclocal[2] = 0xD8;
-		rom = (dev->board == NE2K_NE1000) ? NULL : ROM_PATH_NE2000;
+		fn = (dev->board == NE2K_NE1000) ? NULL : ROM_PATH_NE2000;
 		break;
 
 	case NE2K_RTL8019AS:
@@ -2419,7 +2419,7 @@ nic_init(const device_t *info)
 		dev->maclocal[0] = 0x00;  /* 00:E0:4C (Realtek OID) */
 		dev->maclocal[1] = 0xE0;
 		dev->maclocal[2] = 0x4C;
-		rom = (dev->board == NE2K_RTL8019AS) ? ROM_PATH_RTL8019 : ROM_PATH_RTL8029;
+		fn = (dev->board == NE2K_RTL8019AS) ? ROM_PATH_RTL8019 : ROM_PATH_RTL8029;
 		break;
     }
 
@@ -2456,7 +2456,7 @@ nic_init(const device_t *info)
 	nic_ioset(dev, dev->base_address);
 
     /* Set up our BIOS ROM space, if any. */
-    nic_rom_init(dev, rom);
+    nic_rom_init(dev, fn);
 
     /* Set up our BIA. */
     if (mac & 0xff000000) {

@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.9	2018/04/15
+ * Version:	@(#)vid_s3_virge.c	1.0.10	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2158,20 +2158,22 @@ static void s3_virge_bitblt(virge_t *virge, int count, uint32_t cpu_dat)
 
                 while (count && virge->s3d.h)
                 {
-                        uint32_t dest_addr = virge->s3d.dest_base + (virge->s3d.dest_x * x_mul) + (virge->s3d.dest_y * virge->s3d.dest_str);
-                        uint32_t source = 0, dest = 0, pattern = virge->s3d.pat_fg_clr;
-                        uint32_t out = 0;
-                        int update = 1;
+                        uint32_t daddr = virge->s3d.dest_base + (virge->s3d.dest_x * x_mul) + (virge->s3d.dest_y * virge->s3d.dest_str);
+                        source = 0;
+			dest = 0;
+			pattern = virge->s3d.pat_fg_clr;
+                        out = 0;
+                        update = 1;
 
                         CLIP(virge->s3d.dest_x, virge->s3d.dest_y);
 
                         if (update)
                         {
-                                READ(dest_addr, dest);
+                                READ(daddr, dest);
 
                                 MIX();
 
-                                WRITE(dest_addr, out);
+                                WRITE(daddr, out);
                         }
 
                         virge->s3d.src_x += x_inc;
@@ -2231,10 +2233,11 @@ static void s3_virge_bitblt(virge_t *virge, int count, uint32_t cpu_dat)
 
                         do
                         {
-                                uint32_t dest_addr = virge->s3d.dest_base + (x * x_mul) + (virge->s3d.dest_y * virge->s3d.dest_str);
-                                uint32_t source = 0, dest = 0, pattern;
-                                uint32_t out = 0;
-                                int update = 1;
+                                uint32_t daddr = virge->s3d.dest_base + (x * x_mul) + (virge->s3d.dest_y * virge->s3d.dest_str);
+                                source = 0;
+				dest = 0;
+                                out = 0;
+                                update = 1;
 
                                 if ((virge->s3d.h == virge->s3d.lycnt || !first_pixel) &&
                                    ((virge->s3d.line_dir && x < virge->s3d.lxend0) ||
@@ -2250,12 +2253,12 @@ static void s3_virge_bitblt(virge_t *virge, int count, uint32_t cpu_dat)
 
                                 if (update)
                                 {
-                                        READ(dest_addr, dest);
+                                        READ(daddr, dest);
                                         pattern = virge->s3d.pat_fg_clr;
 
                                         MIX();
 
-                                        WRITE(dest_addr, out);
+                                        WRITE(daddr, out);
                                 }
 
                                 if (x < new_x)
@@ -2288,20 +2291,21 @@ skip_line:
                         int xdir = (x < xend) ? 1 : -1;
                         do
                         {
-                                uint32_t dest_addr = virge->s3d.dest_base + (x * x_mul) + (y * virge->s3d.dest_str);
-                                uint32_t source = 0, dest = 0, pattern;
-                                uint32_t out = 0;
-                                int update = 1;
+                                uint32_t daddr = virge->s3d.dest_base + (x * x_mul) + (y * virge->s3d.dest_str);
+                                source = 0;
+				dest = 0;
+                                out = 0;
+                                update = 1;
 
                                 CLIP(x, y);
 
                                 if (update)
                                 {
-                                        READ(dest_addr, dest);
+                                        READ(daddr, dest);
                                         pattern = pattern_data[(y & 7)*8 + (x & 7)];
                                         MIX();
 
-                                        WRITE(dest_addr, out);
+                                        WRITE(daddr, out);
                                 }
 
                                 x = (x + xdir) & 0x7ff;
@@ -3369,7 +3373,7 @@ static void queue_triangle(virge_t *virge)
                 thread_set_event(virge->wake_render_thread); /*Wake up render thread if moving from idle*/
 }
 
-static void s3_virge_hwcursor_draw(svga_t *svga, int displine)
+static void s3_virge_hwcursor_draw(svga_t *svga, int disp_line)
 {
         virge_t *virge = (virge_t *)svga->p;
         int x;
@@ -3418,7 +3422,7 @@ static void s3_virge_hwcursor_draw(svga_t *svga, int displine)
                                 if (offset >= svga->hwcursor_latch.x)
                                 {
                                         if (dat[0] & 0x8000)
-                                                ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
+                                                ((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
                                 }
 
                                 offset++;
@@ -3434,9 +3438,9 @@ static void s3_virge_hwcursor_draw(svga_t *svga, int displine)
                                 if (offset >= svga->hwcursor_latch.x)
                                 {
                                         if (!(dat[0] & 0x8000))
-                                           ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
+                                           ((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
                                         else if (dat[1] & 0x8000)
-                                           ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+                                           ((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add] ^= 0xffffff;
                                 }
 
                                 offset++;
@@ -3677,7 +3681,7 @@ static void s3_virge_hwcursor_draw(svga_t *svga, int displine)
                 }                               \
         } while (0)
 
-static void s3_virge_overlay_draw(svga_t *svga, int displine)
+static void s3_virge_overlay_draw(svga_t *svga, int disp_line)
 {
         virge_t *virge = (virge_t *)svga->p;
         int offset = (virge->streams.sec_x - virge->streams.pri_x) + 1;
@@ -3690,7 +3694,7 @@ static void s3_virge_overlay_draw(svga_t *svga, int displine)
 	int y_add = enable_overscan ? 16 : 0;
 	int x_add = enable_overscan ? 8 : 0;
 
-        p = &((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add];
+        p = &((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add];
 
         if ((offset + virge->streams.sec_w) > virge->streams.pri_w)
                 x_size = (virge->streams.pri_w - virge->streams.sec_x) + 1;
@@ -3805,8 +3809,8 @@ static void s3_virge_pci_write(int func, int addr, uint8_t val, void *p)
                 virge->pci_regs[addr] = val;
                 if (virge->pci_regs[0x30] & 0x01)
                 {
-                        uint32_t addr = (virge->pci_regs[0x32] << 16) | (virge->pci_regs[0x33] << 24);
-                        mem_mapping_set_addr(&virge->bios_rom.mapping, addr, 0x8000);
+                        uint32_t a = (virge->pci_regs[0x32] << 16) | (virge->pci_regs[0x33] << 24);
+                        mem_mapping_set_addr(&virge->bios_rom.mapping, a, 0x8000);
                         mem_mapping_enable(&virge->bios_rom.mapping);
                 }
                 else

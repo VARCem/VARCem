@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.17	2018/04/26
+ * Version:	@(#)m_ps1.c	1.0.18	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -234,7 +234,7 @@ snd_callback(void *priv)
 
 
 static void
-snd_get_buffer(int32_t *buffer, int len, void *priv)
+snd_get_buffer(int32_t *bufp, int len, void *priv)
 {
     ps1snd_t *snd = (ps1snd_t *)priv;
     int c;
@@ -242,7 +242,7 @@ snd_get_buffer(int32_t *buffer, int len, void *priv)
     snd_update(snd);
 
     for (c = 0; c < len * 2; c++)
-	buffer[c] += snd->buffer[c >> 1];
+	bufp[c] += snd->buffer[c >> 1];
 
     snd->pos = 0;
 }

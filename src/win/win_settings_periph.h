@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.6	2018/05/02
+ * Version:	@(#)win_settings_periph.h	1.0.7	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,7 +63,7 @@ find_irq_in_array(int irq, int def)
 
 
 static void
-recalc_hdc_list(HWND hdlg, int machine, int use_selected_hdc)
+recalc_hdc_list(HWND hdlg, int m, int use_selected_hdc)
 {
     WCHAR temp[128];
     char old_name[32];
@@ -93,12 +93,12 @@ recalc_hdc_list(HWND hdlg, int machine, int use_selected_hdc)
 	if (stransi == NULL)
 		break;
 
-	if (c==1 && !(machines[temp_machine].flags&MACHINE_HDC)) {
+	if (c==1 && !(machines[m].flags&MACHINE_HDC)) {
 		/* Skip "Internal" if machine doesn't have one. */
 		c++;
 		continue;
 	}
-	if (!hdc_available(c) || !device_is_valid(hdc_get_device(c), machines[temp_machine].flags)) {
+	if (!hdc_available(c) || !device_is_valid(hdc_get_device(c), machines[m].flags)) {
 		c++;
 		continue;
 	}

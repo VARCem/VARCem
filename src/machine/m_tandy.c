@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.10	2018/04/26
+ * Version:	@(#)m_tandy.c	1.0.11	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1555,7 +1555,7 @@ snd_callback(void *priv)
 
 
 static void
-snd_get_buffer(int32_t *buffer, int len, void *priv)
+snd_get_buffer(int32_t *bufp, int len, void *priv)
 {
     t1ksnd_t *dev = (t1ksnd_t *)priv;
     int c;
@@ -1563,7 +1563,7 @@ snd_get_buffer(int32_t *buffer, int len, void *priv)
     snd_update(dev);
 
     for (c = 0; c < len * 2; c++)
-	buffer[c] += dev->buffer[c >> 1];
+	bufp[c] += dev->buffer[c >> 1];
 
     dev->pos = 0;
 }

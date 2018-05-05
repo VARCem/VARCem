@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.8	2018/04/09
+ * Version:	@(#)vid_s3.c	1.0.9	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2030,7 +2030,7 @@ void s3_accel_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat
         }
 }
 
-void s3_hwcursor_draw(svga_t *svga, int displine)
+void s3_hwcursor_draw(svga_t *svga, int disp_line)
 {
 	s3_t *s3 = (s3_t *)svga->p;
         int x;
@@ -2085,9 +2085,9 @@ void s3_hwcursor_draw(svga_t *svga, int displine)
                         if (offset >= svga->hwcursor_latch.x)
                         {
                                 if (!(dat[0] & 0x8000))
-                                   ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
+                                   ((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
                                 else if (dat[1] & 0x8000)
-                                   ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+                                   ((uint32_t *)buffer32->line[disp_line + y_add])[offset + 32 + x_add] ^= 0xffffff;
                         }
                            
                         offset++;
@@ -2225,8 +2225,8 @@ void s3_pci_write(int func, int addr, uint8_t val, void *p)
                 s3->pci_regs[addr] = val;
                 if (s3->pci_regs[0x30] & 0x01)
                 {
-                        uint32_t addr = (s3->pci_regs[0x32] << 16) | (s3->pci_regs[0x33] << 24);
-                        mem_mapping_set_addr(&s3->bios_rom.mapping, addr, 0x8000);
+                        uint32_t a = (s3->pci_regs[0x32] << 16) | (s3->pci_regs[0x33] << 24);
+                        mem_mapping_set_addr(&s3->bios_rom.mapping, a, 0x8000);
                 }
                 else
                 {

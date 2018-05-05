@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.21	2018/04/25
+ * Version:	@(#)machine_table.c	1.0.22	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -213,7 +213,7 @@ machine_getromset_ex(int m)
 
 
 int
-machine_getmachine(int romset)
+machine_getmachine(int rs)
 {
     int c = 0;
 
@@ -236,9 +236,9 @@ machine_getname(void)
 
 
 const device_t *
-machine_getdevice(int machine)
+machine_getdevice(int m)
 {
-    return(machines[machine].device);
+    return(machines[m].device);
 }
 
 

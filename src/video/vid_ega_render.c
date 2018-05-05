@@ -7,8 +7,9 @@
  *		This file is part of the VARCem Project.
  *
  *		EGA renderers.
+ * NOTE:	FIXME: make sure this works (line 99 shadow parameter)
  *
- * Version:	@(#)vid_ega_render.c	1.0.1	2018/02/14
+ * Version:	@(#)vid_ega_render.c	1.0.2	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,7 +89,7 @@ void ega_render_blank(ega_t *ega)
 	}
 }
 
-void ega_render_text_standard(ega_t *ega, int drawcursor)
+void ega_render_text_standard(ega_t *ega, int draw)
 {
         int x, xx;
 	int x_add = (enable_overscan) ? 8 : 0;
@@ -96,7 +97,7 @@ void ega_render_text_standard(ega_t *ega, int drawcursor)
         
         for (x = 0; x < ega->hdisp; x++)
         {
-                int drawcursor = ((ega->ma == ega->ca) && ega->con && ega->cursoron);
+                int do_draw = ((ega->ma == ega->ca) && ega->con && ega->cursoron);
                 uint8_t chr  = ega->vram[(ega->ma << 1) & ega->vrammask];
                 uint8_t attr = ega->vram[((ega->ma << 1) + 1) & ega->vrammask];
                 uint8_t dat;
@@ -108,7 +109,7 @@ void ega_render_text_standard(ega_t *ega, int drawcursor)
                 else
                         charaddr = ega->charseta + (chr * 128);
 
-                if (drawcursor) 
+                if (do_draw) 
                 { 
                         bg = ega->pallook[ega->egapal[attr & 15]]; 
                         fg = ega->pallook[ega->egapal[attr >> 4]]; 
@@ -201,7 +202,7 @@ void ega_jega_render_blit_text(ega_t *ega, int x, int dl, int start, int width, 
 	}
 }
 
-void ega_render_text_jega(ega_t *ega, int drawcursor)
+void ega_render_text_jega(ega_t *ega, int draw)
 {     
 	int dl = ega_display_line(ega);
         uint8_t chr, attr;
@@ -225,7 +226,7 @@ void ega_render_text_jega(ega_t *ega, int drawcursor)
 	{
 		for (x = 0; x < ega->hdisp; x++)
 		{
-			drawcursor = ((ega->ma == ega->ca) && ega->con && ega->cursoron);
+			draw = ((ega->ma == ega->ca) && ega->con && ega->cursoron);
 			chr  = ega->vram[(ega->ma << 1) & ega->vrammask];
 			attr = ega->vram[((ega->ma << 1) + 1) & ega->vrammask];
 
@@ -260,7 +261,7 @@ void ega_render_text_jega(ega_t *ega, int drawcursor)
 					}
 				}
 
-				if (drawcursor) 
+				if (draw) 
 				{ 
 					bg = fg_ex;
 					fg = bg_ex;

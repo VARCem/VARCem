@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.4	2018/03/15
+ * Version:	@(#)cpu.c	1.0.5	2018/05/0
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -209,16 +209,14 @@ void cpu_dynamic_switch(int new_cpu)
         cpu = c;
 }
 
-void cpu_set_edx()
+void cpu_set_edx(void)
 {
         EDX = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].edx_reset;
 }
 
 
-void cpu_set()
+void cpu_set(void)
 {
-        CPU *cpu_s;
-        
         if (!machines[machine].cpu[cpu_manufacturer].cpus)
         {
                 /*CPU is invalid, set to default*/

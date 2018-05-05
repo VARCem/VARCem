@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.13	2018/04/10
+ * Version:	@(#)mem.c	1.0.14	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1219,17 +1219,17 @@ mem_invalidate_range(uint32_t start_addr, uint32_t end_addr)
 
 
 static __inline int
-mem_mapping_read_allowed(uint32_t flags, int state)
+mem_mapping_read_allowed(uint32_t fl, int state)
 {
     switch (state & MEM_READ_MASK) {
 	case MEM_READ_ANY:
 		return 1;
 
 	case MEM_READ_EXTERNAL:
-		return !(flags & MEM_MAPPING_INTERNAL);
+		return !(fl & MEM_MAPPING_INTERNAL);
 
 	case MEM_READ_INTERNAL:
-		return !(flags & MEM_MAPPING_EXTERNAL);
+		return !(fl & MEM_MAPPING_EXTERNAL);
 
 	default:
 		fatal("mem_mapping_read_allowed : bad state %x\n", state);
@@ -1240,7 +1240,7 @@ mem_mapping_read_allowed(uint32_t flags, int state)
 
 
 static __inline int
-mem_mapping_write_allowed(uint32_t flags, int state)
+mem_mapping_write_allowed(uint32_t fl, int state)
 {
     switch (state & MEM_WRITE_MASK) {
 	case MEM_WRITE_DISABLED:
@@ -1248,9 +1248,9 @@ mem_mapping_write_allowed(uint32_t flags, int state)
 	case MEM_WRITE_ANY:
 		return 1;
 	case MEM_WRITE_EXTERNAL:
-		return !(flags & MEM_MAPPING_INTERNAL);
+		return !(fl & MEM_MAPPING_INTERNAL);
 	case MEM_WRITE_INTERNAL:
-		return !(flags & MEM_MAPPING_EXTERNAL);
+		return !(fl & MEM_MAPPING_EXTERNAL);
 	default:
 		fatal("mem_mapping_write_allowed : bad state %x\n", state);
     }
@@ -1331,7 +1331,7 @@ mem_mapping_add(mem_mapping_t *mapping,
 		void (*write_w)(uint32_t addr, uint16_t val, void *p),
 		void (*write_l)(uint32_t addr, uint32_t val, void *p),
 		uint8_t *exec,
-		uint32_t flags,
+		uint32_t fl,
 		void *p)
 {
     mem_mapping_t *dest = &base_mapping;
@@ -1355,7 +1355,7 @@ mem_mapping_add(mem_mapping_t *mapping,
     mapping->write_w = write_w;
     mapping->write_l = write_l;
     mapping->exec    = exec;
-    mapping->flags   = flags;
+    mapping->flags   = fl;
     mapping->p       = p;
     mapping->next    = NULL;
 

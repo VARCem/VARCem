@@ -8,7 +8,7 @@
  *
  *		Emulation of the AD1848 (Windows Sound System) CODEC.
  *
- * Version:	@(#)snd_ad1848.c	1.0.2	2018/03/28
+ * Version:	@(#)snd_ad1848.c	1.0.3	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,14 +52,14 @@
 static int ad1848_vols[64];
 
 
-void ad1848_setirq(ad1848_t *ad1848, int irq)
+void ad1848_setirq(ad1848_t *ad1848, int irq_ch)
 {
-        ad1848->irq = irq;
+        ad1848->irq = irq_ch;
 }
 
-void ad1848_setdma(ad1848_t *ad1848, int dma)
+void ad1848_setdma(ad1848_t *ad1848, int dma_ch)
 {
-        ad1848->dma = dma;
+        ad1848->dma = dma_ch;
 }
 
 uint8_t ad1848_read(uint16_t addr, void *p)

@@ -8,7 +8,7 @@
  *
  *		Implement I/O ports and their operations.
  *
- * Version:	@(#)io.c	1.0.1	2018/02/14
+ * Version:	@(#)io.c	1.0.2	2018/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -127,12 +127,12 @@ io_init(void)
 
 void
 io_sethandler(uint16_t base, int size, 
-	      uint8_t (*inb)(uint16_t addr, void *priv),
-	      uint16_t (*inw)(uint16_t addr, void *priv),
-	      uint32_t (*inl)(uint16_t addr, void *priv),
-	      void (*outb)(uint16_t addr, uint8_t val, void *priv),
-	      void (*outw)(uint16_t addr, uint16_t val, void *priv),
-	      void (*outl)(uint16_t addr, uint32_t val, void *priv),
+	      uint8_t (*f_inb)(uint16_t addr, void *priv),
+	      uint16_t (*f_inw)(uint16_t addr, void *priv),
+	      uint32_t (*f_inl)(uint16_t addr, void *priv),
+	      void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
+	      void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
+	      void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
 	      void *priv)
 {
     io_t *p, *q = NULL;
@@ -150,9 +150,9 @@ io_sethandler(uint16_t base, int size,
 		q->prev = NULL;
 	}
 
-	q->inb = inb; q->inw = inw; q->inl = inl;
+	q->inb = f_inb; q->inw = f_inw; q->inl = f_inl;
 
-	q->outb = outb; q->outw = outw; q->outl = outl;
+	q->outb = f_outb; q->outw = f_outw; q->outl = f_outl;
 
 	q->priv = priv;
 	q->next = NULL;
@@ -164,12 +164,12 @@ io_sethandler(uint16_t base, int size,
 
 void
 io_removehandler(uint16_t base, int size,
-	uint8_t (*inb)(uint16_t addr, void *priv),
-	uint16_t (*inw)(uint16_t addr, void *priv),
-	uint32_t (*inl)(uint16_t addr, void *priv),
-	void (*outb)(uint16_t addr, uint8_t val, void *priv),
-	void (*outw)(uint16_t addr, uint16_t val, void *priv),
-	void (*outl)(uint16_t addr, uint32_t val, void *priv),
+	uint8_t (*f_inb)(uint16_t addr, void *priv),
+	uint16_t (*f_inw)(uint16_t addr, void *priv),
+	uint32_t (*f_inl)(uint16_t addr, void *priv),
+	void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
+	void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
+	void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
 	void *priv)
 {
     io_t *p;
@@ -180,9 +180,9 @@ io_removehandler(uint16_t base, int size,
 	if (p == NULL)
 		continue;
 	while (p != NULL) {
-		if ((p->inb == inb) && (p->inw == inw) &&
-		    (p->inl == inl) && (p->outb == outb) &&
-		    (p->outw == outw) && (p->outl == outl) &&
+		if ((p->inb == f_inb) && (p->inw == f_inw) &&
+		    (p->inl == f_inl) && (p->outb == f_outb) &&
+		    (p->outw == f_outw) && (p->outl == f_outl) &&
 		    (p->priv == priv)) {
 			if (p->prev != NULL)
 				p->prev->next = p->next;
@@ -205,12 +205,12 @@ io_removehandler(uint16_t base, int size,
 #ifdef PC98
 void
 io_sethandler_interleaved(uint16_t base, int size,
-	uint8_t (*inb)(uint16_t addr, void *priv),
-	uint16_t (*inw)(uint16_t addr, void *priv),
-	uint32_t (*inl)(uint16_t addr, void *priv),
-	void (*outb)(uint16_t addr, uint8_t val, void *priv),
-	void (*outw)(uint16_t addr, uint16_t val, void *priv),
-	void (*outl)(uint16_t addr, uint32_t val, void *priv),
+	uint8_t (*f_inb)(uint16_t addr, void *priv),
+	uint16_t (*f_inw)(uint16_t addr, void *priv),
+	uint32_t (*f_inl)(uint16_t addr, void *priv),
+	void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
+	void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
+	void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
 	void *priv)
 {
     io_t *p, *q;
@@ -229,9 +229,9 @@ io_sethandler_interleaved(uint16_t base, int size,
 		q->prev = NULL;
 	}
 
-	q->inb = inb; q->inw = inw; q->inl = inl;
+	q->inb = f_inb; q->inw = f_inw; q->inl = f_inl;
 
-	q->outb = outb; q->outw = outw; q->outl = outl;
+	q->outb = f_outb; q->outw = f_outw; q->outl = f_outl;
 
 	q->priv = priv;
     }
@@ -240,12 +240,12 @@ io_sethandler_interleaved(uint16_t base, int size,
 
 void
 io_removehandler_interleaved(uint16_t base, int size,
-	uint8_t (*inb)(uint16_t addr, void *priv),
-	uint16_t (*inw)(uint16_t addr, void *priv),
-	uint32_t (*inl)(uint16_t addr, void *priv),
-	void (*outb)(uint16_t addr, uint8_t val, void *priv),
-	void (*outw)(uint16_t addr, uint16_t val, void *priv),
-	void (*outl)(uint16_t addr, uint32_t val, void *priv),
+	uint8_t (*f_inb)(uint16_t addr, void *priv),
+	uint16_t (*f_inw)(uint16_t addr, void *priv),
+	uint32_t (*f_inl)(uint16_t addr, void *priv),
+	void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
+	void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
+	void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
 	void *priv)
 {
     io_t *p;
@@ -257,9 +257,9 @@ io_removehandler_interleaved(uint16_t base, int size,
 	if (p == NULL)
 		return;
 	while (p != NULL) {
-		if ((p->inb == inb) && (p->inw == inw) &&
-		    (p->inl == inl) && (p->outb == outb) &&
-		    (p->outw == outw) && (p->outl == outl) &&
+		if ((p->inb == f_inb) && (p->inw == f_inw) &&
+		    (p->inl == f_inl) && (p->outb == f_outb) &&
+		    (p->outw == f_outw) && (p->outl == f_outl) &&
 		    (p->priv == priv)) {
 			if (p->prev != NULL)
 				p->prev->next = p->next;
