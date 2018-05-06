@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.18	2018/05/03
+ * Version:	@(#)win_ui.c	1.0.19	2018/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -535,7 +535,7 @@ ui_init(int nCmdShow)
 #endif
 
     if (settings_only) {
-	if (! pc_init_modules()) {
+	if (! pc_init()) {
 		/* Dang, no ROMs found at all! */
 		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2056);
 		return(6);
@@ -635,7 +635,7 @@ ui_init(int nCmdShow)
 			      NULL);
 
     /* That looks good, now continue setting up the machine. */
-    switch (pc_init_modules()) {
+    switch (pc_init()) {
 	case -1:	/* General failure during init, give up. */
 		return(6);
 

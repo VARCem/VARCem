@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.20	2018/04/28
+ * Version:	@(#)emu.h	1.0.21	2018/05/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -163,8 +163,8 @@ extern void	pclog(const char *fmt, ...);
 extern void	fatal(const char *fmt, ...);
 extern void	pc_version(const char *platform);
 extern void	pc_path(wchar_t *dest, int dest_sz, const wchar_t *src);
-extern int	pc_init(int argc, wchar_t *argv[]);
-extern int	pc_init_modules(void);
+extern int	pc_setup(int argc, wchar_t *argv[]);
+extern int	pc_init(void);
 extern void	pc_close(void *threadid);
 extern void	pc_reset_hard_close(void);
 extern void	pc_reset_hard_init(void);

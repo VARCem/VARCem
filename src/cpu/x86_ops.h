@@ -8,11 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops.h	1.0.2	2018/05/05
  *
- * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
@@ -44,186 +46,188 @@
 typedef int (*OpFn)(uint32_t fetchdat);
 
 #ifdef USE_DYNAREC
-void x86_setopcodes(OpFn *opcodes, OpFn *opcodes_0f, OpFn *dynarec_opcodes, OpFn *dynarec_opcodes_0f);
+void x86_setopcodes(const OpFn *opcodes, const OpFn *opcodes_0f,
+		    const OpFn *dynarec_opcodes,
+		    const OpFn *dynarec_opcodes_0f);
 
-extern OpFn *x86_dynarec_opcodes;
-extern OpFn *x86_dynarec_opcodes_0f;
-extern OpFn *x86_dynarec_opcodes_d8_a16;
-extern OpFn *x86_dynarec_opcodes_d8_a32;
-extern OpFn *x86_dynarec_opcodes_d9_a16;
-extern OpFn *x86_dynarec_opcodes_d9_a32;
-extern OpFn *x86_dynarec_opcodes_da_a16;
-extern OpFn *x86_dynarec_opcodes_da_a32;
-extern OpFn *x86_dynarec_opcodes_db_a16;
-extern OpFn *x86_dynarec_opcodes_db_a32;
-extern OpFn *x86_dynarec_opcodes_dc_a16;
-extern OpFn *x86_dynarec_opcodes_dc_a32;
-extern OpFn *x86_dynarec_opcodes_dd_a16;
-extern OpFn *x86_dynarec_opcodes_dd_a32;
-extern OpFn *x86_dynarec_opcodes_de_a16;
-extern OpFn *x86_dynarec_opcodes_de_a32;
-extern OpFn *x86_dynarec_opcodes_df_a16;
-extern OpFn *x86_dynarec_opcodes_df_a32;
-extern OpFn *x86_dynarec_opcodes_REPE;
-extern OpFn *x86_dynarec_opcodes_REPNE;
+extern const OpFn *x86_dynarec_opcodes;
+extern const OpFn *x86_dynarec_opcodes_0f;
+extern const OpFn *x86_dynarec_opcodes_d8_a16;
+extern const OpFn *x86_dynarec_opcodes_d8_a32;
+extern const OpFn *x86_dynarec_opcodes_d9_a16;
+extern const OpFn *x86_dynarec_opcodes_d9_a32;
+extern const OpFn *x86_dynarec_opcodes_da_a16;
+extern const OpFn *x86_dynarec_opcodes_da_a32;
+extern const OpFn *x86_dynarec_opcodes_db_a16;
+extern const OpFn *x86_dynarec_opcodes_db_a32;
+extern const OpFn *x86_dynarec_opcodes_dc_a16;
+extern const OpFn *x86_dynarec_opcodes_dc_a32;
+extern const OpFn *x86_dynarec_opcodes_dd_a16;
+extern const OpFn *x86_dynarec_opcodes_dd_a32;
+extern const OpFn *x86_dynarec_opcodes_de_a16;
+extern const OpFn *x86_dynarec_opcodes_de_a32;
+extern const OpFn *x86_dynarec_opcodes_df_a16;
+extern const OpFn *x86_dynarec_opcodes_df_a32;
+extern const OpFn *x86_dynarec_opcodes_REPE;
+extern const OpFn *x86_dynarec_opcodes_REPNE;
 
-extern OpFn dynarec_ops_286[1024];
-extern OpFn dynarec_ops_286_0f[1024];
+extern const OpFn dynarec_ops_286[1024];
+extern const OpFn dynarec_ops_286_0f[1024];
 
-extern OpFn dynarec_ops_386[1024];
-extern OpFn dynarec_ops_386_0f[1024];
+extern const OpFn dynarec_ops_386[1024];
+extern const OpFn dynarec_ops_386_0f[1024];
 
-extern OpFn dynarec_ops_486_0f[1024];
+extern const OpFn dynarec_ops_486_0f[1024];
 
-extern OpFn dynarec_ops_winchip_0f[1024];
+extern const OpFn dynarec_ops_winchip_0f[1024];
 
-extern OpFn dynarec_ops_pentium_0f[1024];
-extern OpFn dynarec_ops_pentiummmx_0f[1024];
-extern OpFn dynarec_ops_c6x86mx_0f[1024];
+extern const OpFn dynarec_ops_pentium_0f[1024];
+extern const OpFn dynarec_ops_pentiummmx_0f[1024];
+extern const OpFn dynarec_ops_c6x86mx_0f[1024];
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
-extern OpFn dynarec_ops_k6_0f[1024];
+extern const OpFn dynarec_ops_k6_0f[1024];
 #endif
 
 #if defined(DEV_BRANCH) && defined(USE_I686)
-extern OpFn dynarec_ops_pentiumpro_0f[1024];
-extern OpFn dynarec_ops_pentium2d_0f[1024];
+extern const OpFn dynarec_ops_pentiumpro_0f[1024];
+extern const OpFn dynarec_ops_pentium2d_0f[1024];
 #endif
 
-extern OpFn dynarec_ops_fpu_287_d9_a16[256];
-extern OpFn dynarec_ops_fpu_287_d9_a32[256];
-extern OpFn dynarec_ops_fpu_287_da_a16[256];
-extern OpFn dynarec_ops_fpu_287_da_a32[256];
-extern OpFn dynarec_ops_fpu_287_db_a16[256];
-extern OpFn dynarec_ops_fpu_287_db_a32[256];
-extern OpFn dynarec_ops_fpu_287_dc_a16[32];
-extern OpFn dynarec_ops_fpu_287_dc_a32[32];
-extern OpFn dynarec_ops_fpu_287_dd_a16[256];
-extern OpFn dynarec_ops_fpu_287_dd_a32[256];
-extern OpFn dynarec_ops_fpu_287_de_a16[256];
-extern OpFn dynarec_ops_fpu_287_de_a32[256];
-extern OpFn dynarec_ops_fpu_287_df_a16[256];
-extern OpFn dynarec_ops_fpu_287_df_a32[256];
+extern const OpFn dynarec_ops_fpu_287_d9_a16[256];
+extern const OpFn dynarec_ops_fpu_287_d9_a32[256];
+extern const OpFn dynarec_ops_fpu_287_da_a16[256];
+extern const OpFn dynarec_ops_fpu_287_da_a32[256];
+extern const OpFn dynarec_ops_fpu_287_db_a16[256];
+extern const OpFn dynarec_ops_fpu_287_db_a32[256];
+extern const OpFn dynarec_ops_fpu_287_dc_a16[32];
+extern const OpFn dynarec_ops_fpu_287_dc_a32[32];
+extern const OpFn dynarec_ops_fpu_287_dd_a16[256];
+extern const OpFn dynarec_ops_fpu_287_dd_a32[256];
+extern const OpFn dynarec_ops_fpu_287_de_a16[256];
+extern const OpFn dynarec_ops_fpu_287_de_a32[256];
+extern const OpFn dynarec_ops_fpu_287_df_a16[256];
+extern const OpFn dynarec_ops_fpu_287_df_a32[256];
 
-extern OpFn dynarec_ops_fpu_d8_a16[32];
-extern OpFn dynarec_ops_fpu_d8_a32[32];
-extern OpFn dynarec_ops_fpu_d9_a16[256];
-extern OpFn dynarec_ops_fpu_d9_a32[256];
-extern OpFn dynarec_ops_fpu_da_a16[256];
-extern OpFn dynarec_ops_fpu_da_a32[256];
-extern OpFn dynarec_ops_fpu_db_a16[256];
-extern OpFn dynarec_ops_fpu_db_a32[256];
-extern OpFn dynarec_ops_fpu_dc_a16[32];
-extern OpFn dynarec_ops_fpu_dc_a32[32];
-extern OpFn dynarec_ops_fpu_dd_a16[256];
-extern OpFn dynarec_ops_fpu_dd_a32[256];
-extern OpFn dynarec_ops_fpu_de_a16[256];
-extern OpFn dynarec_ops_fpu_de_a32[256];
-extern OpFn dynarec_ops_fpu_df_a16[256];
-extern OpFn dynarec_ops_fpu_df_a32[256];
-extern OpFn dynarec_ops_nofpu_a16[256];
-extern OpFn dynarec_ops_nofpu_a32[256];
+extern const OpFn dynarec_ops_fpu_d8_a16[32];
+extern const OpFn dynarec_ops_fpu_d8_a32[32];
+extern const OpFn dynarec_ops_fpu_d9_a16[256];
+extern const OpFn dynarec_ops_fpu_d9_a32[256];
+extern const OpFn dynarec_ops_fpu_da_a16[256];
+extern const OpFn dynarec_ops_fpu_da_a32[256];
+extern const OpFn dynarec_ops_fpu_db_a16[256];
+extern const OpFn dynarec_ops_fpu_db_a32[256];
+extern const OpFn dynarec_ops_fpu_dc_a16[32];
+extern const OpFn dynarec_ops_fpu_dc_a32[32];
+extern const OpFn dynarec_ops_fpu_dd_a16[256];
+extern const OpFn dynarec_ops_fpu_dd_a32[256];
+extern const OpFn dynarec_ops_fpu_de_a16[256];
+extern const OpFn dynarec_ops_fpu_de_a32[256];
+extern const OpFn dynarec_ops_fpu_df_a16[256];
+extern const OpFn dynarec_ops_fpu_df_a32[256];
+extern const OpFn dynarec_ops_nofpu_a16[256];
+extern const OpFn dynarec_ops_nofpu_a32[256];
 
-extern OpFn dynarec_ops_fpu_686_da_a16[256];
-extern OpFn dynarec_ops_fpu_686_da_a32[256];
-extern OpFn dynarec_ops_fpu_686_db_a16[256];
-extern OpFn dynarec_ops_fpu_686_db_a32[256];
-extern OpFn dynarec_ops_fpu_686_df_a16[256];
-extern OpFn dynarec_ops_fpu_686_df_a32[256];
+extern const OpFn dynarec_ops_fpu_686_da_a16[256];
+extern const OpFn dynarec_ops_fpu_686_da_a32[256];
+extern const OpFn dynarec_ops_fpu_686_db_a16[256];
+extern const OpFn dynarec_ops_fpu_686_db_a32[256];
+extern const OpFn dynarec_ops_fpu_686_df_a16[256];
+extern const OpFn dynarec_ops_fpu_686_df_a32[256];
 
-extern OpFn dynarec_ops_REPE[1024];
-extern OpFn dynarec_ops_REPNE[1024];
+extern const OpFn dynarec_ops_REPE[1024];
+extern const OpFn dynarec_ops_REPNE[1024];
 #else
-void x86_setopcodes(OpFn *opcodes, OpFn *opcodes_0f);
+void x86_setopcodes(const OpFn *opcodes, const OpFn *opcodes_0f);
 #endif
 
-extern OpFn *x86_opcodes;
-extern OpFn *x86_opcodes_0f;
-extern OpFn *x86_opcodes_d8_a16;
-extern OpFn *x86_opcodes_d8_a32;
-extern OpFn *x86_opcodes_d9_a16;
-extern OpFn *x86_opcodes_d9_a32;
-extern OpFn *x86_opcodes_da_a16;
-extern OpFn *x86_opcodes_da_a32;
-extern OpFn *x86_opcodes_db_a16;
-extern OpFn *x86_opcodes_db_a32;
-extern OpFn *x86_opcodes_dc_a16;
-extern OpFn *x86_opcodes_dc_a32;
-extern OpFn *x86_opcodes_dd_a16;
-extern OpFn *x86_opcodes_dd_a32;
-extern OpFn *x86_opcodes_de_a16;
-extern OpFn *x86_opcodes_de_a32;
-extern OpFn *x86_opcodes_df_a16;
-extern OpFn *x86_opcodes_df_a32;
-extern OpFn *x86_opcodes_REPE;
-extern OpFn *x86_opcodes_REPNE;
+extern const OpFn *x86_opcodes;
+extern const OpFn *x86_opcodes_0f;
+extern const OpFn *x86_opcodes_d8_a16;
+extern const OpFn *x86_opcodes_d8_a32;
+extern const OpFn *x86_opcodes_d9_a16;
+extern const OpFn *x86_opcodes_d9_a32;
+extern const OpFn *x86_opcodes_da_a16;
+extern const OpFn *x86_opcodes_da_a32;
+extern const OpFn *x86_opcodes_db_a16;
+extern const OpFn *x86_opcodes_db_a32;
+extern const OpFn *x86_opcodes_dc_a16;
+extern const OpFn *x86_opcodes_dc_a32;
+extern const OpFn *x86_opcodes_dd_a16;
+extern const OpFn *x86_opcodes_dd_a32;
+extern const OpFn *x86_opcodes_de_a16;
+extern const OpFn *x86_opcodes_de_a32;
+extern const OpFn *x86_opcodes_df_a16;
+extern const OpFn *x86_opcodes_df_a32;
+extern const OpFn *x86_opcodes_REPE;
+extern const OpFn *x86_opcodes_REPNE;
 
-extern OpFn ops_286[1024];
-extern OpFn ops_286_0f[1024];
+extern const OpFn ops_286[1024];
+extern const OpFn ops_286_0f[1024];
 
-extern OpFn ops_386[1024];
-extern OpFn ops_386_0f[1024];
+extern const OpFn ops_386[1024];
+extern const OpFn ops_386_0f[1024];
 
-extern OpFn ops_486_0f[1024];
+extern const OpFn ops_486_0f[1024];
 
-extern OpFn ops_winchip_0f[1024];
+extern const OpFn ops_winchip_0f[1024];
 
-extern OpFn ops_pentium_0f[1024];
-extern OpFn ops_pentiummmx_0f[1024];
+extern const OpFn ops_pentium_0f[1024];
+extern const OpFn ops_pentiummmx_0f[1024];
 
-extern OpFn ops_c6x86mx_0f[1024];
+extern const OpFn ops_c6x86mx_0f[1024];
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
-extern OpFn ops_k6_0f[1024];
+extern const OpFn ops_k6_0f[1024];
 #endif
 
 #if defined(DEV_BRANCH) && defined(USE_I686)
-extern OpFn ops_pentiumpro_0f[1024];
-extern OpFn ops_pentium2d_0f[1024];
+extern const OpFn ops_pentiumpro_0f[1024];
+extern const OpFn ops_pentium2d_0f[1024];
 #endif
 
-extern OpFn ops_fpu_287_d9_a16[256];
-extern OpFn ops_fpu_287_d9_a32[256];
-extern OpFn ops_fpu_287_da_a16[256];
-extern OpFn ops_fpu_287_da_a32[256];
-extern OpFn ops_fpu_287_db_a16[256];
-extern OpFn ops_fpu_287_db_a32[256];
-extern OpFn ops_fpu_287_dc_a16[32];
-extern OpFn ops_fpu_287_dc_a32[32];
-extern OpFn ops_fpu_287_dd_a16[256];
-extern OpFn ops_fpu_287_dd_a32[256];
-extern OpFn ops_fpu_287_de_a16[256];
-extern OpFn ops_fpu_287_de_a32[256];
-extern OpFn ops_fpu_287_df_a16[256];
-extern OpFn ops_fpu_287_df_a32[256];
+extern const OpFn ops_fpu_287_d9_a16[256];
+extern const OpFn ops_fpu_287_d9_a32[256];
+extern const OpFn ops_fpu_287_da_a16[256];
+extern const OpFn ops_fpu_287_da_a32[256];
+extern const OpFn ops_fpu_287_db_a16[256];
+extern const OpFn ops_fpu_287_db_a32[256];
+extern const OpFn ops_fpu_287_dc_a16[32];
+extern const OpFn ops_fpu_287_dc_a32[32];
+extern const OpFn ops_fpu_287_dd_a16[256];
+extern const OpFn ops_fpu_287_dd_a32[256];
+extern const OpFn ops_fpu_287_de_a16[256];
+extern const OpFn ops_fpu_287_de_a32[256];
+extern const OpFn ops_fpu_287_df_a16[256];
+extern const OpFn ops_fpu_287_df_a32[256];
 
-extern OpFn ops_fpu_d8_a16[32];
-extern OpFn ops_fpu_d8_a32[32];
-extern OpFn ops_fpu_d9_a16[256];
-extern OpFn ops_fpu_d9_a32[256];
-extern OpFn ops_fpu_da_a16[256];
-extern OpFn ops_fpu_da_a32[256];
-extern OpFn ops_fpu_db_a16[256];
-extern OpFn ops_fpu_db_a32[256];
-extern OpFn ops_fpu_dc_a16[32];
-extern OpFn ops_fpu_dc_a32[32];
-extern OpFn ops_fpu_dd_a16[256];
-extern OpFn ops_fpu_dd_a32[256];
-extern OpFn ops_fpu_de_a16[256];
-extern OpFn ops_fpu_de_a32[256];
-extern OpFn ops_fpu_df_a16[256];
-extern OpFn ops_fpu_df_a32[256];
-extern OpFn ops_nofpu_a16[256];
-extern OpFn ops_nofpu_a32[256];
+extern const OpFn ops_fpu_d8_a16[32];
+extern const OpFn ops_fpu_d8_a32[32];
+extern const OpFn ops_fpu_d9_a16[256];
+extern const OpFn ops_fpu_d9_a32[256];
+extern const OpFn ops_fpu_da_a16[256];
+extern const OpFn ops_fpu_da_a32[256];
+extern const OpFn ops_fpu_db_a16[256];
+extern const OpFn ops_fpu_db_a32[256];
+extern const OpFn ops_fpu_dc_a16[32];
+extern const OpFn ops_fpu_dc_a32[32];
+extern const OpFn ops_fpu_dd_a16[256];
+extern const OpFn ops_fpu_dd_a32[256];
+extern const OpFn ops_fpu_de_a16[256];
+extern const OpFn ops_fpu_de_a32[256];
+extern const OpFn ops_fpu_df_a16[256];
+extern const OpFn ops_fpu_df_a32[256];
+extern const OpFn ops_nofpu_a16[256];
+extern const OpFn ops_nofpu_a32[256];
 
-extern OpFn ops_fpu_686_da_a16[256];
-extern OpFn ops_fpu_686_da_a32[256];
-extern OpFn ops_fpu_686_db_a16[256];
-extern OpFn ops_fpu_686_db_a32[256];
-extern OpFn ops_fpu_686_df_a16[256];
-extern OpFn ops_fpu_686_df_a32[256];
+extern const OpFn ops_fpu_686_da_a16[256];
+extern const OpFn ops_fpu_686_da_a32[256];
+extern const OpFn ops_fpu_686_db_a16[256];
+extern const OpFn ops_fpu_686_db_a32[256];
+extern const OpFn ops_fpu_686_df_a16[256];
+extern const OpFn ops_fpu_686_df_a32[256];
 
-extern OpFn ops_REPE[1024];
-extern OpFn ops_REPNE[1024];
+extern const OpFn ops_REPE[1024];
+extern const OpFn ops_REPNE[1024];
 
 #endif /*_X86_OPS_H*/

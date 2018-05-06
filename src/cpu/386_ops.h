@@ -8,12 +8,14 @@
  *
  *		286/386+ instruction handlers list.
  *
- * Version:	@(#)386_ops.h	1.0.1	2018/02/14
+ * Version:	@(#)386_ops.h	1.0.2	2018/05/05
  *
- * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
  *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
  *		Copyright 2016-2018 Miran Grca.
@@ -209,6 +211,7 @@ static int ILLEGAL(uint32_t fetchdat)
 #include "x86_ops_string.h"
 #include "x86_ops_xchg.h"
 
+
 static int op0F_w_a16(uint32_t fetchdat)
 {
         int opcode = fetchdat & 0xff;
@@ -250,7 +253,8 @@ static int op0F_l_a32(uint32_t fetchdat)
         return x86_opcodes_0f[opcode | 0x300](fetchdat >> 8);
 }
 
-OpFn OP_TABLE(286_0f)[1024] = 
+
+const OpFn OP_TABLE(286_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -341,7 +345,7 @@ OpFn OP_TABLE(286_0f)[1024] =
 /*f0*/  ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,
 };
 
-OpFn OP_TABLE(386_0f)[1024] = 
+const OpFn OP_TABLE(386_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -432,7 +436,7 @@ OpFn OP_TABLE(386_0f)[1024] =
 /*f0*/  ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,
 };
 
-OpFn OP_TABLE(486_0f)[1024] = 
+const OpFn OP_TABLE(486_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -523,7 +527,7 @@ OpFn OP_TABLE(486_0f)[1024] =
 /*f0*/  ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,
 };
 
-OpFn OP_TABLE(winchip_0f)[1024] = 
+const OpFn OP_TABLE(winchip_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -614,7 +618,7 @@ OpFn OP_TABLE(winchip_0f)[1024] =
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  ILLEGAL,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
 };
 
-OpFn OP_TABLE(pentium_0f)[1024] = 
+const OpFn OP_TABLE(pentium_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -705,7 +709,7 @@ OpFn OP_TABLE(pentium_0f)[1024] =
 /*f0*/  ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,
 };
 
-OpFn OP_TABLE(pentiummmx_0f)[1024] = 
+const OpFn OP_TABLE(pentiummmx_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -797,7 +801,7 @@ OpFn OP_TABLE(pentiummmx_0f)[1024] =
 };
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
-OpFn OP_TABLE(k6_0f)[1024] = 
+const OpFn OP_TABLE(k6_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -889,7 +893,7 @@ OpFn OP_TABLE(k6_0f)[1024] =
 };
 #endif
 
-OpFn OP_TABLE(c6x86mx_0f)[1024] = 
+const OpFn OP_TABLE(c6x86mx_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -982,7 +986,7 @@ OpFn OP_TABLE(c6x86mx_0f)[1024] =
 
 #ifdef DEV_BRANCH
 #ifdef USE_I686
-OpFn OP_TABLE(pentiumpro_0f)[1024] = 
+const OpFn OP_TABLE(pentiumpro_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -1074,7 +1078,7 @@ OpFn OP_TABLE(pentiumpro_0f)[1024] =
 };
 
 #if 0
-OpFn OP_TABLE(pentium2_0f)[1024] = 
+const OpFn OP_TABLE(pentium2_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -1166,7 +1170,7 @@ OpFn OP_TABLE(pentium2_0f)[1024] =
 };
 #endif
 
-OpFn OP_TABLE(pentium2d_0f)[1024] = 
+const OpFn OP_TABLE(pentium2d_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -1259,7 +1263,7 @@ OpFn OP_TABLE(pentium2d_0f)[1024] =
 #endif
 #endif
 
-OpFn OP_TABLE(286)[1024] = 
+const OpFn OP_TABLE(286)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -1350,7 +1354,7 @@ OpFn OP_TABLE(286)[1024] =
 /*f0*/  opLOCK,         opLOCK,         opREPNE,        opREPE,         opHLT,          opCMC,          opF6_a16,       opF7_w_a16,     opCLC,          opSTC,          opCLI,          opSTI,          opCLD,          opSTD,          opINCDEC_b_a16, opFF_w_a16,
 };
 
-OpFn OP_TABLE(386)[1024] = 
+const OpFn OP_TABLE(386)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -1441,7 +1445,7 @@ OpFn OP_TABLE(386)[1024] =
 /*f0*/  opLOCK,         opINT1,         opREPNE,        opREPE,         opHLT,          opCMC,          opF6_a32,       opF7_l_a32,     opCLC,          opSTC,          opCLI,          opSTI,          opCLD,          opSTD,          opINCDEC_b_a32, opFF_l_a32,
 }; 
 
-OpFn OP_TABLE(REPE)[1024] = 
+const OpFn OP_TABLE(REPE)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        
@@ -1532,7 +1536,7 @@ OpFn OP_TABLE(REPE)[1024] =
 /*f0*/  0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,
 };
 
-OpFn OP_TABLE(REPNE)[1024] = 
+const OpFn OP_TABLE(REPNE)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/        

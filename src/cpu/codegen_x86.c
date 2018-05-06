@@ -8,11 +8,13 @@
  *
  *		Dynamic Recompiler for Intel 32-bit systems.
  *
- * Version:	@(#)codegen_x86.c	1.0.2	2018/02/21
+ * Version:	@(#)codegen_x86.c	1.0.3	2018/05/05
  *
- * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
@@ -1887,7 +1889,7 @@ void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t 
         codeblock_t *block = &codeblock[block_current];
         uint32_t op_32 = use32;
         uint32_t op_pc = new_pc;
-        OpFn *op_table = x86_dynarec_opcodes;
+        const OpFn *op_table = x86_dynarec_opcodes;
         RecompOpFn *recomp_op_table = recomp_opcodes;
         int opcode_shift = 0;
         int opcode_mask = 0x3ff;

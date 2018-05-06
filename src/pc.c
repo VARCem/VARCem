@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.34	2018/05/04
+ * Version:	@(#)pc.c	1.0.35	2018/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -376,14 +376,14 @@ pc_path(wchar_t *dst, int sz, const wchar_t *src)
 
 
 /*
- * Perform initial startup of the PC.
+ * Perform initial setup of the PC.
  *
  * This is the platform-indepenent part of the startup,
  * where we check commandline arguments and load a
  * configuration file.
  */
 int
-pc_init(int argc, wchar_t *argv[])
+pc_setup(int argc, wchar_t *argv[])
 {
     wchar_t path[1024];
     wchar_t *cfg = NULL, *p;
@@ -704,9 +704,9 @@ pc_reload(const wchar_t *fn)
 }
 
 
-/* Initialize modules, ran once, after pc_init. */
+/* Initialize the configured PC. Run once, after pc_setup() is done. */
 int
-pc_init_modules(void)
+pc_init(void)
 {
     wchar_t temp[1024];
     wchar_t name[128];
@@ -785,6 +785,60 @@ pc_init_modules(void)
     shadowbios = 0;
 
     return(1);
+}
+
+
+/* Close down a running machine. */
+void
+pc_close(thread_t *ptr)
+{
+    int i;
+
+    /* Wait a while so things can shut down. */
+    plat_delay_ms(200);
+
+    /* Claim the video blitter. */
+    startblit();
+
+    /* Terminate the main thread. */
+    if (ptr != NULL) {
+	thread_kill(ptr);
+
+	/* Wait some more. */
+	plat_delay_ms(200);
+    }
+
+    nvr_save();
+
+    machine_close();
+
+    config_save();
+
+    plat_mouse_capture(0);
+
+    for (i=0; i<ZIP_NUM; i++)
+	zip_close(i);
+
+    for (i=0; i<CDROM_NUM; i++)
+	cdrom_drives[i].handler->exit(i);
+
+    floppy_close();
+
+    if (dump_on_exit)
+	dumppic();
+    dumpregs(0);
+
+    video_close();
+
+    device_close_all();
+
+    network_close();
+
+    sound_close();
+
+    ide_destroy_buffers();
+
+    cdrom_destroy_drives();
 }
 
 
@@ -916,59 +970,6 @@ pc_reset(int hard)
         keyboard_send_cad();
 
     plat_pause(0);
-}
-
-
-void
-pc_close(thread_t *ptr)
-{
-    int i;
-
-    /* Wait a while so things can shut down. */
-    plat_delay_ms(200);
-
-    /* Claim the video blitter. */
-    startblit();
-
-    /* Terminate the main thread. */
-    if (ptr != NULL) {
-	thread_kill(ptr);
-
-	/* Wait some more. */
-	plat_delay_ms(200);
-    }
-
-    nvr_save();
-
-    machine_close();
-
-    config_save();
-
-    plat_mouse_capture(0);
-
-    for (i=0; i<ZIP_NUM; i++)
-	zip_close(i);
-
-    for (i=0; i<CDROM_NUM; i++)
-	cdrom_drives[i].handler->exit(i);
-
-    floppy_close();
-
-    if (dump_on_exit)
-	dumppic();
-    dumpregs(0);
-
-    video_close();
-
-    device_close_all();
-
-    network_close();
-
-    sound_close();
-
-    ide_destroy_buffers();
-
-    cdrom_destroy_drives();
 }
 
 

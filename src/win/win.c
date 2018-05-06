@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.16	2018/05/03
+ * Version:	@(#)win.c	1.0.17	2018/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -301,7 +301,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     argc = ProcessCommandLine(&argw);
 
     /* Pre-initialize the system, this loads the config file. */
-    if (! pc_init(argc, argw)) {
+    if (! pc_setup(argc, argw)) {
 	/* Detach from console. */
 	plat_console(0);
 	return(1);
