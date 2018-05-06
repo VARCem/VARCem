@@ -42,8 +42,6 @@
     <ClCompile Include="..\..\..\cpu\cpu_table.c" />
     <ClCompile Include="..\..\..\cpu\x86seg.c" />
     <ClCompile Include="..\..\..\cpu\x87.c" />
-    <ClCompile Include="..\..\..\crcspeed\crc64speed.c" />
-    <ClCompile Include="..\..\..\crcspeed\crcspeed.c" />
     <ClCompile Include="..\..\..\device.c" />
     <ClCompile Include="..\..\..\disk\hdc.c" />
     <ClCompile Include="..\..\..\disk\hdc_esdi_at.c" />
@@ -391,8 +389,6 @@
     <ClInclude Include="..\..\..\cpu\x87_ops_arith.h" />
     <ClInclude Include="..\..\..\cpu\x87_ops_loadstore.h" />
     <ClInclude Include="..\..\..\cpu\x87_ops_misc.h" />
-    <ClInclude Include="..\..\..\crcspeed\crc64speed.h" />
-    <ClInclude Include="..\..\..\crcspeed\crcspeed.h" />
     <ClInclude Include="..\..\..\device.h" />
     <ClInclude Include="..\..\..\disk\hdc.h" />
     <ClInclude Include="..\..\..\disk\hdc_ide.h" />
