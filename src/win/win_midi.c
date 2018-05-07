@@ -8,7 +8,7 @@
  *
  *		Implementation of the System MIDI interface.
  *
- * Version:	@(#)win_midi.c	1.0.3	2018/03/10
+ * Version:	@(#)win_midi.c	1.0.4	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,13 +45,15 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
-#include "../sound/midi.h"
 #include "../plat.h"
+#include "../devices/sound/midi.h"
 #include "win.h"
 
 
-int midi_id = 0;
-HANDLE m_event;
+int	midi_id = 0;
+HANDLE	m_event;
+MIDIHDR m_hdr;
+
 
 static HMIDIOUT midi_out_device = NULL;
 static uint8_t midi_rt_buf[1024];
@@ -62,108 +64,117 @@ static uint8_t midi_status = 0;
 static unsigned int midi_sysex_start = 0;
 static unsigned int midi_sysex_delay = 0;
 
-void plat_midi_init()
+
+void
+plat_midi_init(void)
 {
-	/* This is for compatibility with old configuration files. */
-	midi_id = config_get_int("Sound", "midi_host_device", -1);
-	if (midi_id == -1)
-	{
-		midi_id = config_get_int(SYSTEM_MIDI_NAME, "midi", 0);
-	}
-	else
-	{
-		config_delete_var("Sound", "midi_host_device");
-		config_set_int(SYSTEM_MIDI_NAME, "midi", midi_id);
-	}
+    MMRESULT hr = MMSYSERR_NOERROR;
 
-        MMRESULT hr = MMSYSERR_NOERROR;
+    /* This is for compatibility with old configuration files. */
+    midi_id = config_get_int("Sound", "midi_host_device", -1);
+    if (midi_id == -1) {
+	midi_id = config_get_int(SYSTEM_MIDI_NAME, "midi", 0);
+    } else {
+	config_delete_var("Sound", "midi_host_device");
+	config_set_int(SYSTEM_MIDI_NAME, "midi", midi_id);
+    }
 
-	memset(midi_rt_buf, 0, sizeof(midi_rt_buf));
-	memset(midi_cmd_buf, 0, sizeof(midi_cmd_buf));
+    memset(midi_rt_buf, 0, sizeof(midi_rt_buf));
+    memset(midi_cmd_buf, 0, sizeof(midi_cmd_buf));
 
-	midi_cmd_pos = midi_cmd_len = 0;
-	midi_status = 0;
+    midi_cmd_pos = midi_cmd_len = 0;
+    midi_status = 0;
 
-	midi_sysex_start = midi_sysex_delay = 0;
+    midi_sysex_start = midi_sysex_delay = 0;
 
-	m_event = CreateEvent(NULL, TRUE, TRUE, NULL);
+    m_event = CreateEvent(NULL, TRUE, TRUE, NULL);
 
-        hr = midiOutOpen(&midi_out_device, midi_id, (uintptr_t) m_event,
-		   0, CALLBACK_EVENT);
-        if (hr != MMSYSERR_NOERROR) {
-                printf("midiOutOpen error - %08X\n",hr);
-                midi_id = 0;
-                hr = midiOutOpen(&midi_out_device, midi_id, (uintptr_t) m_event,
-        		   0, CALLBACK_EVENT);
-                if (hr != MMSYSERR_NOERROR) {
-                        printf("midiOutOpen error - %08X\n",hr);
-                        return;
-                }
-        }
-
-        midiOutReset(midi_out_device);
-}
-
-void plat_midi_close()
-{
-        if (midi_out_device != NULL)
-        {
-                midiOutReset(midi_out_device);
-                midiOutClose(midi_out_device);
-                /* midi_out_device = NULL; */
-		CloseHandle(m_event);
-        }
-}
-
-int plat_midi_get_num_devs()
-{
-        return midiOutGetNumDevs();
-}
-void plat_midi_get_dev_name(int num, char *s)
-{
-        MIDIOUTCAPS caps;
-
-        midiOutGetDevCaps(num, &caps, sizeof(caps));
-        strcpy(s, caps.szPname);
-}
-
-void plat_midi_play_msg(uint8_t *msg)
-{
-	midiOutShortMsg(midi_out_device, *(uint32_t *) msg);
-}
-
-MIDIHDR m_hdr;
-
-void plat_midi_play_sysex(uint8_t *sysex, unsigned int len)
-{
-	MMRESULT result;
-
-	if (WaitForSingleObject(m_event, 2000) == WAIT_TIMEOUT)
-	{
-		pclog("Can't send MIDI message\n");
+    hr = midiOutOpen(&midi_out_device, midi_id, (uintptr_t) m_event,
+		     0, CALLBACK_EVENT);
+    if (hr != MMSYSERR_NOERROR) {
+	pclog("midiOutOpen error - %08X\n",hr);
+	midi_id = 0;
+	hr = midiOutOpen(&midi_out_device, midi_id, (uintptr_t) m_event,
+			 0, CALLBACK_EVENT);
+	if (hr != MMSYSERR_NOERROR) {
+		pclog("midiOutOpen error - %08X\n",hr);
 		return;
 	}
+    }
 
-	midiOutUnprepareHeader(midi_out_device, &m_hdr, sizeof(m_hdr));
-
-	m_hdr.lpData = (char *) sysex;
-	m_hdr.dwBufferLength = len;
-	m_hdr.dwBytesRecorded = len;
-	m_hdr.dwUser = 0;
-
-	result = midiOutPrepareHeader(midi_out_device, &m_hdr, sizeof(m_hdr));
-
-	if (result != MMSYSERR_NOERROR)  return;
-	ResetEvent(m_event);
-	result = midiOutLongMsg(midi_out_device, &m_hdr, sizeof(m_hdr));
-	if (result != MMSYSERR_NOERROR)
-	{
-		SetEvent(m_event);
-		return;
-	}
+    midiOutReset(midi_out_device);
 }
 
-int plat_midi_write(uint8_t val)
+
+void
+plat_midi_close(void)
 {
-	return 0;
+    if (midi_out_device != NULL) {
+	midiOutReset(midi_out_device);
+	midiOutClose(midi_out_device);
+#if 0
+	midi_out_device = NULL;
+#endif
+
+	CloseHandle(m_event);
+    }
+}
+
+
+int
+plat_midi_get_num_devs(void)
+{
+    return midiOutGetNumDevs();
+}
+
+
+void
+plat_midi_get_dev_name(int num, char *s)
+{
+    MIDIOUTCAPS caps;
+
+    midiOutGetDevCaps(num, &caps, sizeof(caps));
+    strcpy(s, caps.szPname);
+}
+
+
+void
+plat_midi_play_msg(uint8_t *msg)
+{
+    midiOutShortMsg(midi_out_device, *(uint32_t *) msg);
+}
+
+
+void
+plat_midi_play_sysex(uint8_t *sysex, unsigned int len)
+{
+    MMRESULT result;
+
+    if (WaitForSingleObject(m_event, 2000) == WAIT_TIMEOUT) {
+	pclog("Can't send MIDI message\n");
+	return;
+    }
+
+    midiOutUnprepareHeader(midi_out_device, &m_hdr, sizeof(m_hdr));
+
+    m_hdr.lpData = (char *) sysex;
+    m_hdr.dwBufferLength = len;
+    m_hdr.dwBytesRecorded = len;
+    m_hdr.dwUser = 0;
+
+    result = midiOutPrepareHeader(midi_out_device, &m_hdr, sizeof(m_hdr));
+    if (result != MMSYSERR_NOERROR) return;
+
+    ResetEvent(m_event);
+
+    result = midiOutLongMsg(midi_out_device, &m_hdr, sizeof(m_hdr));
+    if (result != MMSYSERR_NOERROR)
+	SetEvent(m_event);
+}
+
+
+int
+plat_midi_write(uint8_t val)
+{
+    return 0;
 }

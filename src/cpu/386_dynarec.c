@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.2	2018/03/09
+ * Version:	@(#)386_dynarec.c	1.0.3	2018/05/06
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,11 +50,11 @@
 #include "x87.h"
 #include "../io.h"
 #include "../mem.h"
-#include "../nmi.h"
-#include "../pic.h"
+#include "../devices/system/nmi.h"
+#include "../devices/system/pic.h"
 #include "../timer.h"
-#include "../floppy/fdd.h"
-#include "../floppy/fdc.h"
+//#include "../devices/floppy/fdd.h"
+//#include "../devices/floppy/fdc.h"
 #ifdef USE_DYNAREC
 #include "codegen.h"
 #endif

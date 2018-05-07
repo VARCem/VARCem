@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.9	2018/05/02
+ * Version:	@(#)win_d3d.cpp	1.0.10	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,11 +45,11 @@
 #include "../emu.h"
 #include "../version.h"
 #include "../device.h"
+#include "../plat.h"
 #ifdef _MSC_VER
 # pragma warning(disable: 4200)
 #endif
-#include "../video/video.h"
-#include "../plat.h"
+#include "../devices/video/video.h"
 #include "win.h"
 #include "win_d3d.h"
 

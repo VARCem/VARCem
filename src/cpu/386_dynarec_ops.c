@@ -8,7 +8,7 @@
  *
  *		Dynamic Recompiler for i386 instructions.
  *
- * Version:	@(#)386_dynarec_ops.c	1.0.1	2018/02/14
+ * Version:	@(#)386_dynarec_ops.c	1.0.2	2018/05/06
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,16 +43,16 @@
 # define INFINITY   (__builtin_inff())
 #endif
 #include "../emu.h"
+#include "../io.h"
+#include "../mem.h"
+#include "../devices/system/nmi.h"
+#include "../devices/system/pic.h"
 #include "cpu.h"
 #include "x86.h"
 #include "x86_ops.h"
 #include "x87.h"
 #include "x86_flags.h"
-#include "../io.h"
-#include "../mem.h"
-#include "../nmi.h"
 #include "codegen.h"
-#include "../pic.h"
 
 #define CPU_BLOCK_END() cpu_block_end = 1
 

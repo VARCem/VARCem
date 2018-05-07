@@ -8,7 +8,7 @@
  *
  *		Implementation of the Status Window dialog.
  *
- * Version:	@(#)win_status.c	1.0.5	2018/05/02
+ * Version:	@(#)win_status.c	1.0.6	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,6 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
-#include "../pit.h"
 #include "../mem.h"
 #include "../cpu/cpu.h"
 #include "../cpu/x86_ops.h"
@@ -53,6 +52,7 @@
 #include "../device.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#include "../devices/system/pit.h"
 #include "win.h"
 
 

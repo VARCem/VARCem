@@ -8,7 +8,7 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.2	2018/03/09
+ * Version:	@(#)x86seg.c	1.0.3	2018/05/06
  *
  * Authors:	Sarah Walker, <http://pcem-emulator.co.uk/>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "cpu.h"
-#include "../machine/machine.h"
+#include "../machines/machine.h"
 #include "../mem.h"
 #include "../nvr.h"
 #include "x86.h"

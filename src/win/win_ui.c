@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.19	2018/05/05
+ * Version:	@(#)win_ui.c	1.0.20	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,11 +51,11 @@
 #include "../version.h"
 #include "../config.h"
 #include "../device.h"
-#include "../input/keyboard.h"
-#include "../input/mouse.h"
-#include "../video/video.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#include "../devices/input/keyboard.h"
+#include "../devices/input/mouse.h"
+#include "../devices/video/video.h"
 #include "win.h"
 #include "win_d3d.h"
 

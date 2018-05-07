@@ -8,7 +8,7 @@
  *
  *		Implementation of the Sound Gain dialog.
  *
- * Version:	@(#)win_snd_gain.c	1.0.5	2018/05/01
+ * Version:	@(#)win_snd_gain.c	1.0.6	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,11 +43,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../config.h"
-#include "../sound/sound.h"
+#include "..//emu.h"
+#include "..//config.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#include "../devices/sound/sound.h"
 #include "win.h"
 
 

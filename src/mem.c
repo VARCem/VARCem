@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.14	2018/05/04
+ * Version:	@(#)mem.c	1.0.15	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,8 +49,8 @@
 #include "cpu/cpu.h"
 #include "cpu/x86_ops.h"
 #include "cpu/x86.h"
-#include "machine/machine.h"
-#include "machine/m_xt_xi8088.h"
+#include "machines/machine.h"
+#include "machines/m_xt_xi8088.h"		//FIXME: remove?
 #include "config.h"
 #include "io.h"
 #include "mem.h"

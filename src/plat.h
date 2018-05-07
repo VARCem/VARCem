@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.11	2018/05/03
+ * Version:	@(#)plat.h	1.0.12	2018/05/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -147,8 +147,8 @@ extern void	dynld_close(void *);
 
 
 /* Emulator start/stop support functions. */
-extern void	do_start(void);
-extern void	do_stop(void);
+extern void	plat_start(void);
+extern void	plat_stop(void);
 
 
 /* Platform-specific device support. */

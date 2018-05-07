@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.10	2018/05/03
+ * Version:	@(#)win.h	1.0.11	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -104,10 +104,6 @@ extern uint8_t	dlg_jsconf(HWND hwnd, int joy_nr, int type);
 extern void	plat_set_language(int id);
 extern int	get_vidpause(void);
 extern int	fdd_type_icon(int type);
-
-/* Emulator start/stop support functions. */
-extern void	plat_start(void);
-extern void	plat_stop(void);
 
 /* Platform UI support functions. */
 extern int	ui_init(int nCmdShow);

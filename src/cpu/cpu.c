@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.6	2018/05/05
+ * Version:	@(#)cpu.c	1.0.7	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -45,11 +45,11 @@
 #include "../emu.h"
 #include "cpu.h"
 #include "../device.h"
-#include "../machine/machine.h"
+#include "../machines/machine.h"
 #include "../io.h"
 #include "x86_ops.h"
 #include "../mem.h"
-#include "../pci.h"
+#include "../devices/system/pci.h"
 #ifdef USE_DYNAREC
 # include "codegen.h"
 #endif

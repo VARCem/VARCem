@@ -22,7 +22,7 @@
  * NOTE:	The values are as defined in the Microsoft document named
  *		"Keyboard Scan Code Specification", v1.3a of 2000/03/16.
  *
- * Version:	@(#)vnc_keymap.c	1.0.2	2018/03/16
+ * Version:	@(#)vnc_keymap.c	1.0.3	2018/05/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -65,7 +65,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "emu.h"
-#include "keyboard.h"
+#include "devices/input/keyboard.h"
 #include "plat.h"
 #include "vnc.h"
 

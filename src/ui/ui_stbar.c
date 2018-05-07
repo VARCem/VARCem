@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.3	2018/05/03
+ * Version:	@(#)ui_stbar.c	1.0.4	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,21 +42,21 @@
 #include "../emu.h"
 #include "../config.h"
 #include "../cpu/cpu.h"
+#include "../machines/machine.h"
 #include "../device.h"
-#include "../machine/machine.h"
-#include "../floppy/fdd.h"
-#include "../disk/hdd.h"
-#include "../disk/hdc.h"
-#include "../disk/zip.h"
-#include "../cdrom/cdrom.h"
-#include "../cdrom/cdrom_image.h"
-#include "../cdrom/cdrom_null.h"
-#include "../scsi/scsi.h"
-#include "../scsi/scsi_disk.h"
-#include "../network/network.h"
-#include "../video/video.h"
-#include "../sound/sound.h"
 #include "../plat.h"
+#include "../devices/floppy/fdd.h"
+#include "../devices/disk/hdd.h"
+#include "../devices/disk/hdc.h"
+#include "../devices/disk/zip.h"
+#include "../devices/cdrom/cdrom.h"
+#include "../devices/cdrom/cdrom_image.h"
+#include "../devices/cdrom/cdrom_null.h"
+#include "../devices/scsi/scsi.h"
+#include "../devices/scsi/scsi_disk.h"
+#include "../devices/network/network.h"
+#include "../devices/sound/sound.h"
+#include "../devices/video/video.h"
 #include "ui.h"
 #include "ui_resource.h"
 

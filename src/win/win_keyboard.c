@@ -8,7 +8,7 @@
  *
  *		Windows raw keyboard input handler.
  *
- * Version:	@(#)win_keyboard.c	1.0.5	2018/05/04
+ * Version:	@(#)win_keyboard.c	1.0.6	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,8 +44,8 @@
 #include <stdlib.h>
 #include "../emu.h"
 #include "../device.h"
-#include "../input/keyboard.h"
 #include "../plat.h"
+#include "../devices/input/keyboard.h"
 #include "win.h"
 
 

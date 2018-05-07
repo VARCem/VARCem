@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.21	2018/04/30
+ * Version:	@(#)config.c	1.0.22	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,28 +50,28 @@
 #include "emu.h"
 #include "config.h"
 #include "cpu/cpu.h"
-#include "machine/machine.h"
+#include "machines/machine.h"
 #include "nvr.h"
 #include "device.h"
-#include "ports/game_dev.h"
-#include "ports/serial.h"
-#include "ports/parallel.h"
-#include "ports/parallel_dev.h"
-#include "input/mouse.h"
-#include "input/game/joystick.h"
-#include "floppy/fdd.h"
-#include "floppy/fdc.h"
-#include "disk/hdd.h"
-#include "disk/hdc.h"
-#include "disk/hdc_ide.h"
-#include "disk/zip.h"
-#include "cdrom/cdrom.h"
-#include "scsi/scsi.h"
-#include "network/network.h"
-#include "sound/sound.h"
-#include "sound/midi.h"
-#include "sound/sound.h"
-#include "video/video.h"
+#include "devices/ports/game_dev.h"
+#include "devices/ports/serial.h"
+#include "devices/ports/parallel.h"
+#include "devices/ports/parallel_dev.h"
+#include "devices/input/mouse.h"
+#include "devices/input/game/joystick.h"
+#include "devices/floppy/fdd.h"
+#include "devices/floppy/fdc.h"
+#include "devices/disk/hdd.h"
+#include "devices/disk/hdc.h"
+#include "devices/disk/hdc_ide.h"
+#include "devices/disk/zip.h"
+#include "devices/cdrom/cdrom.h"
+#include "devices/scsi/scsi.h"
+#include "devices/network/network.h"
+#include "devices/sound/sound.h"
+#include "devices/sound/midi.h"
+#include "devices/sound/sound.h"
+#include "devices/video/video.h"
 #include "ui/ui.h"
 #include "plat.h"
 

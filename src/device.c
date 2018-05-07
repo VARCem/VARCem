@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.8	2018/04/27
+ * Version:	@(#)device.c	1.0.9	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,11 +43,11 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "emu.h"
-#include "cpu/cpu.h"
 #include "config.h"
+#include "cpu/cpu.h"
 #include "device.h"
-#include "machine/machine.h"
-#include "sound/sound.h"
+#include "machines/machine.h"
+#include "devices/sound/sound.h"
 #include "ui/ui.h"
 #include "plat.h"
 

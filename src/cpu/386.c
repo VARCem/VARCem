@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU.
  *
- * Version:	@(#)386.c	1.0.3	2018/05/02
+ * Version:	@(#)386.c	1.0.4	2018/05/06
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,13 +47,13 @@
 #include "cpu.h"
 #include "x86.h"
 #include "x87.h"
-#include "../nmi.h"
+#include "../devices/system/nmi.h"
 #include "../mem.h"
-#include "../pic.h"
-#include "../pit.h"
+#include "../devices/system/pic.h"
+#include "../devices/system/pit.h"
 #include "../timer.h"
-#include "../floppy/fdd.h"
-#include "../floppy/fdc.h"
+#include "../devices/floppy/fdd.h"
+#include "../devices/floppy/fdc.h"
 #include "386_common.h"
 
 

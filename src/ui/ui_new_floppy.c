@@ -12,7 +12,7 @@
  *		format handlers, and re-integrated with that code. This is
  *		just the wrong place for it..
  *
- * Version:	@(#)ui_new_floppy.c	1.0.1	2018/04/28
+ * Version:	@(#)ui_new_floppy.c	1.0.2	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,9 +45,9 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../random.h"
-#include "../disk/zip.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#include "../devices/disk/zip.h"
 
 
 typedef struct {

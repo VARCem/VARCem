@@ -8,7 +8,7 @@
  *
  *		Mouse interface to host device.
  *
- * Version:	@(#)win_mouse.cpp	1.0.5	2018/05/02
+ * Version:	@(#)win_mouse.cpp	1.0.6	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,8 +42,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "../emu.h"
-#include "../input/mouse.h"
 #include "../plat.h"
+#include "../devices/input/mouse.h"
 #include "win.h"
 
 

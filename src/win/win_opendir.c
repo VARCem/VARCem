@@ -10,7 +10,7 @@
  *
  *		Based on old original code @(#)dir_win32.c 1.2.0 2007/04/19
  *
- * Version:	@(#)win_opendir.c	1.0.2	2018/03/07
+ * Version:	@(#)win_opendir.c	1.0.3	2018/05/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -55,31 +55,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../plat.h"
+#include "../../emu.h"
+#include "../../plat.h"
 #include "plat_dir.h"
 
 
-#ifdef UNICODE
-# define SUFFIX		L"\\*"
-# define FINDATA	struct _wfinddata_t
-# define FINDFIRST	_wfindfirst
-# define FINDNEXT	_wfindnext
-#else
-# define SUFFIX		"\\*"
-# define FINDATA	struct _finddata_t
-# define FINDFIRST	_findfirst
-# define FINDNEXT	_findnext
-#endif
+#define SUFFIX		L"\\*"
+#define FINDATA		struct _wfinddata_t
+#define FINDFIRST	_wfindfirst
+#define FINDNEXT	_wfindnext
 
 
 /* Open a directory. */
 DIR *
-#ifdef UNICODE
 opendirw(const wchar_t *name)
-#else
-opendir(const char *name)
-#endif
 {
     DIR *p;
 
@@ -101,20 +90,11 @@ opendir(const char *name)
     memset(p->dta, 0x00, sizeof(struct _finddata_t));
 
     /* Add search filespec. */
-#ifdef UNICODE
     wcscpy(p->dir, name);
     wcscat(p->dir, SUFFIX);
-#else
-    strcpy(p->dir, name);
-    strcat(p->dir, SUFFIX);
-#endif
 
     /* Special case: flag if we are in the root directory. */
-#ifdef UNICODE
     if (wcslen(p->dir) == 3)
-#else
-    if (strlen(p->dir) == 3)
-#endif
 	p->flags |= DIR_F_ISROOT;
 
     /* Start the searching by doing a FindFirst. */
@@ -168,29 +148,17 @@ readdir(DIR *p)
     p->dent.d_off = p->offset++;
     switch(p->offset) {
 	case 1:		/* . */
-#ifdef UNICODE
 		wcsncpy(p->dent.d_name, L".", MAXNAMLEN+1);
-#else
-		strncpy(p->dent.d_name, ".", MAXNAMLEN+1);
-#endif
 		p->dent.d_reclen = 1;
 		break;
 
 	case 2:		/* .. */
-#ifdef UNICODE
 		wcsncpy(p->dent.d_name, L"..", MAXNAMLEN+1);
-#else
-		strncpy(p->dent.d_name, "..", MAXNAMLEN+1);
-#endif
 		p->dent.d_reclen = 2;
 		break;
 
 	default:	/* regular entry. */
-#ifdef UNICODE
 		wcsncpy(p->dent.d_name, ffp->name, MAXNAMLEN+1);
-#else
-		strncpy(p->dent.d_name, ffp->name, MAXNAMLEN+1);
-#endif
 		p->dent.d_reclen = (char) wcslen(p->dent.d_name);
     }
 

@@ -11,7 +11,7 @@
  * NOTES:	This code should be re-merged into a single init() with a
  *		'fullscreen' argument, indicating FS mode is requested.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.6	2018/04/27
+ * Version:	@(#)win_ddraw.cpp	1.0.7	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,12 +50,12 @@
 #endif
 #include "../emu.h"
 #include "../device.h"
+#include "../ui/ui.h"
+#include "../plat.h"
 #ifdef _MSC_VER
 # pragma warning(disable: 4200)
 #endif
-#include "../video/video.h"
-#include "../ui/ui.h"
-#include "../plat.h"
+#include "../devices/video/video.h"
 #include "win.h"
 #include "win_ddraw.h"
 

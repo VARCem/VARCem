@@ -8,7 +8,7 @@
  *
  *		Implementation of 8087 opcodes.
  *
- * Version:	@(#)x87.c	1.0.1	2018/02/14
+ * Version:	@(#)x87.c	1.0.2	2018/05/06
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,7 @@
 #include "../emu.h"
 #include "cpu.h"
 #include "../mem.h"
-#include "../pic.h"
+#include "../devices/system/pic.h"
 #include "x86.h"
 #include "x86_flags.h"
 #include "x86_ops.h"

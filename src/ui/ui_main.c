@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.7	2018/04/30
+ * Version:	@(#)ui_main.c	1.0.8	2018/05/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,9 +54,9 @@
 #include "../emu.h"
 #include "../config.h"
 #include "../device.h"
-#include "../input/keyboard.h"
-#include "../video/video.h"
 #include "../plat.h"
+#include "../devices/input/keyboard.h"
+#include "../devices/video/video.h"
 #include "ui.h"
 
 

@@ -29,7 +29,7 @@
  *		16 = 180 MHz
  *		17 = 200 MHz
  *
- * Version:	@(#)cpu_table.c	1.0.1	2018/02/14
+ * Version:	@(#)cpu_table.c	1.0.2	2018/05/06
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -65,7 +65,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "cpu.h"
-#include "../machine/machine.h"
+#include "../machines/machine.h"
 
 
 CPU cpus_8088[] = {

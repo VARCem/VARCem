@@ -12,7 +12,7 @@
  *		Windows and UNIX systems, with support for FTDI and Prolific
  *		USB ports. Support for these has been removed.
  *
- * Version:	@(#)win_serial.c	1.0.2	2018/03/07
+ * Version:	@(#)win_serial.c	1.0.3	2018/05/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,9 +54,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define PLAT_SERIAL_C
-#include "../emu.h"
-#include "../serial.h"
-#include "../plat.h"
+#include "../../emu.h"
+#include "../../plat.h"
+#include "../devices/ports/serial.h"
 
 
 /* Handle the receiving of data from the host port. */

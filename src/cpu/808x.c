@@ -18,7 +18,7 @@
  *		2 clocks - fetch opcode 1       2 clocks - execute
  *		2 clocks - fetch opcode 2  etc
  *
- * Version:	@(#)808x.c	1.0.4	2018/05/02
+ * Version:	@(#)808x.c	1.0.5	2018/05/06
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,16 +51,16 @@
 #include "../emu.h"
 #include "cpu.h"
 #include "x86.h"
-#include "../machine/machine.h"
 #include "../io.h"
-#include "../pic.h"
-#include "../nmi.h"
+#include "../machines/machine.h"
+#include "../devices/system/pic.h"
+#include "../devices/system/nmi.h"
 #include "../mem.h"
 #include "../rom.h"
 #include "../timer.h"
 #include "../device.h"		/* for scsi.h */
-#include "../input/keyboard.h"	/* its WRONG to have this in here!! --FvK */
-#include "../scsi/scsi.h"	/* its WRONG to have this in here!! --FvK */
+#include "../devices/input/keyboard.h"	/* its WRONG to have this in here!! --FvK */
+#include "../devices/scsi/scsi.h"	/* its WRONG to have this in here!! --FvK */
 #include "../plat.h"
 
 

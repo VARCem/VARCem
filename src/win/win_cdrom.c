@@ -8,7 +8,7 @@
  *
  *		Handle the platform-side of CDROM drives.
  *
- * Version:	@(#)win_cdrom.c	1.0.7	2018/04/28
+ * Version:	@(#)win_cdrom.c	1.0.8	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,16 +42,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include "../emu.h"
 #include "../config.h"
-#include "../disk/hdd.h"
-#include "../disk/zip.h"
-#include "../cdrom/cdrom.h"
-#include "../cdrom/cdrom_image.h"
-#include "../cdrom/cdrom_null.h"
-#include "../scsi/scsi.h"
-#include "../scsi/scsi_disk.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#include "../devices/disk/hdd.h"
+#include "../devices/disk/zip.h"
+#include "../devices/cdrom/cdrom.h"
+#include "../devices/cdrom/cdrom_image.h"
+#include "../devices/cdrom/cdrom_null.h"
+#include "../devices/scsi/scsi.h"
+#include "../devices/scsi/scsi_disk.h"
 #include "win.h"
 
 

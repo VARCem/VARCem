@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.17	2018/05/05
+ * Version:	@(#)win.c	1.0.18	2018/05/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,8 +53,6 @@
 #include "../version.h"
 #include "../config.h"
 #include "../device.h"
-#include "../input/mouse.h"
-#include "../video/video.h"
 #include "../ui/ui.h"
 #define GLOBAL
 #include "../plat.h"
@@ -64,6 +62,8 @@
 #ifdef USE_RDP
 # include "../rdp.h"
 #endif
+#include "../devices/input/mouse.h"
+#include "../devices/video/video.h"
 #ifdef USE_WX
 # include "../wx/wx_ui.h"
 #else
