@@ -63,6 +63,8 @@ env:
 script:
 # - sudo apt-get install libz-mingw-w64-dev
 # - sudo apt-get install libpng-mingw-w64-dev
+  - ls -l /usr/i686-w64-mingw32/include
+  - ls -l /usr/i686-w64-mingw32/lib
   - chmod +x .travis-build.sh .travis-deploy.sh
   - ./.travis-build.sh
 
