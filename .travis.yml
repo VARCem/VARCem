@@ -61,6 +61,9 @@ env:
     - PROG=VACRCem-dev CROSS=y DEBUG=y DEV_BUILD=y
 
 before_install:
+  - sudo ps aux | grep apt
+  - sudo rm -f /var/lib/dpkg/lock
+  - sleep 10
   - sudo apt-get install libz-mingw-w64-dev
   - sudo apt-get install libpng-mingw-w64-dev
 
