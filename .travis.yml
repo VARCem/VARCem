@@ -61,7 +61,7 @@ env:
     - PROG=VACRCem-dev CROSS=y DEBUG=y DEV_BUILD=y
 
 script:
-  - apt-get install libz-mingw-w64 libz-mingw-w64-dev
+  - sudo apt-get install libz-mingw-w64 libz-mingw-w64-dev
   - chmod +x .travis-build.sh .travis-deploy.sh
   - ./.travis-build.sh
 
