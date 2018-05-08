@@ -67,7 +67,7 @@ before_install:
   - sudo systemctl disable apt-daily.service
   - sudo systemctl stop apt-daily.service
   - sudo systemctl kill --kill-who=all apt-daily.service
-  - sleep 10
+  - sleep 2
   - sudo rm -f /var/lib/dpkg/lock
   # Now install some packages we need.
   - sudo apt-get install libz-mingw-w64-dev
