@@ -44,7 +44,7 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <stdint.h>
-# include "../emu.h"
+# include "../../emu.h"
 #endif
 #include "dbopl.h"
 #include "nukedopl.h"

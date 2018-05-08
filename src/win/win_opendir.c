@@ -55,8 +55,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../../emu.h"
-#include "../../plat.h"
+#include "../emu.h"
+#include "../plat.h"
 #include "plat_dir.h"
 
 
