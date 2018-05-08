@@ -62,10 +62,11 @@ env:
 
 before_install:
   - sudo ps aux | grep apt
+  - sudo ps aux | grep dpkg
   - sudo rm -f /var/lib/dpkg/lock
   - sleep 10
   - sudo apt-get install libz-mingw-w64-dev
-  - sudo apt-get install libpng-mingw-w64-dev
+# - sudo apt-get install libpng-mingw-w64-dev
 
 script:
   - ls -l /usr/i686-w64-mingw32/include
