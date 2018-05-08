@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.17	2018/05/08
+ * Version:	@(#)m_amstrad.c	1.0.18	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,7 +73,6 @@
 #include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
-#include "../ui/ui.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
@@ -941,7 +940,7 @@ static void
 kbd_adddata(uint16_t val)
 {
     key_queue[key_queue_end] = (uint8_t)(val&0xff);
-#if ENABLE_KEYBOARD_LOG
+#ifdef ENABLE_KEYBOARD_LOG
     pclog("keyboard_amstrad : %02X added to key queue at %i\n",
 					val, key_queue_end);
 #endif
@@ -964,7 +963,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
     int i = 0;
 #endif
 
-#if ENABLE_KEYBOARD_LOG
+#ifdef ENABLE_KEYBOARD_LOG
     pclog("keyboard_amstrad : write %04X %02X %02X\n", port, val, ams->pb);
 #endif
 
@@ -984,11 +983,11 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		 *
 		 * This register is controlled by BIOS and/or ROS.
 		 */
-#if ENABLE_KEYBOARD_LOG
+#ifdef ENABLE_KEYBOARD_LOG
 		pclog("AMSkb: write PB %02x (%02x)\n", val, ams->pb);
 #endif
 		if (!(ams->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
-#if ENABLE_KEYBOARD_LOG
+#ifdef ENABLE_KEYBOARD_LOG
 			pclog("AMSkb: reset keyboard\n");
 #endif
 			kbd_adddata(0xaa);
@@ -1146,14 +1145,14 @@ kbd_poll(void *priv)
 	ams->wantirq = 0;
 	ams->pa = ams->key_waiting;
 	picint(2);
-#if ENABLE_KEYBOARD_LOG
+#ifdef ENABLE_KEYBOARD_LOG
 	pclog("keyboard_amstrad : take IRQ\n");
 #endif
     }
 
     if (key_queue_start != key_queue_end && !ams->pa) {
 	ams->key_waiting = key_queue[key_queue_start];
-#if ENABLE_KEYBOARD_LOG
+#ifdef ENABLE_KEYBOARD_LOG
 	pclog("Reading %02X from the key queue at %i\n",
 			ams->key_waiting, key_queue_start);
 #endif
