@@ -44,7 +44,7 @@
  *		configuration register (CTRL_SPCFG bit set) but have to
  *		remember that stuff first...
  *
- * Version:	@(#)bugger.c	1.0.6	2018/05/06
+ * Version:	@(#)bugger.c	1.0.7	2018/05/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -85,11 +85,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../io.h"
-#include "../device.h"
-#include "../ui/ui.h"
-#include "../plat.h"
+#include "../../emu.h"
+#include "../../io.h"
+#include "../../device.h"
+#include "../../ui/ui.h"
+#include "../../plat.h"
 #include "bugger.h"
 
 

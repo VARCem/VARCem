@@ -49,4 +49,8 @@ can work on it, and/or talk to us on the IRC channel. We cannot promise a
 fix, but will try the best we can !
 
 
-Last Updated: 4/16/2018
+BUILD STATUS
+------------
+The auto-builds handled by Travis-CI are [![Build Status](https://travis-ci.org/VARCem/VARCem.svg?branch=master)](https://travis-ci.org/VARCem/VARCem)
+
+Last Updated: 5/07/2018
