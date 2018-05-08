@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.11	2018/05/06
+ * Version:	@(#)win.h	1.0.12	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,10 +40,6 @@
 # define PLAT_WIN_H
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "resource.h"		/* local resources */
 #include "../ui/ui_resource.h"	/* common resources */
 
@@ -69,16 +65,22 @@ extern "C" {
 #define SB_PADDING		1		/* 1px of padding */
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern HINSTANCE	hInstance;
 extern HICON		hIcon[512];
 extern HWND		hwndMain,
 			hwndRender;
-
 extern LCID		lang_id;
-
-extern int		status_is_open;
-
 extern DWORD		filterindex;
+extern int		status_is_open;
+extern const vidapi_t	*vid_apis[];
+
+/* VidApi initializers. */
+extern const vidapi_t	ddraw_vidapi;
+extern const vidapi_t	d3d_vidapi;
 
 
 /* Internal platform support functions. */
@@ -102,7 +104,6 @@ extern uint8_t	dlg_jsconf(HWND hwnd, int joy_nr, int type);
 
 /* Platform support functions. */
 extern void	plat_set_language(int id);
-extern int	get_vidpause(void);
 extern int	fdd_type_icon(int type);
 
 /* Platform UI support functions. */

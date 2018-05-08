@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.36	2018/05/06
+ * Version:	@(#)pc.c	1.0.37	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,7 +64,6 @@
 #include "timer.h"
 #include "device.h"
 #include "nvr.h"
-#include "bugger.h"
 #include "devices/ports/game.h"
 #include "devices/ports/serial.h"
 #include "devices/ports/parallel.h"
@@ -85,6 +84,7 @@
 #include "devices/sound/sound.h"
 #include "devices/sound/snd_speaker.h"
 #include "devices/video/video.h"
+#include "devices/misc/bugger.h"
 #include "ui/ui.h"
 #include "plat.h"
 
@@ -1132,7 +1132,7 @@ pc_thread(void *param)
 
 	/* If needed, handle a screen resize. */
 	if (doresize && !vid_fullscreen) {
-		plat_resize(scrnsz_x, scrnsz_y);
+		ui_resize(scrnsz_x, scrnsz_y);
 
 		doresize = 0;
 	}

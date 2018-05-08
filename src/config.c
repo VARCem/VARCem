@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.22	2018/05/06
+ * Version:	@(#)config.c	1.0.23	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -256,7 +256,7 @@ load_general(const char *cat)
     vid_resize = !!config_get_int(cat, "vid_resize", 0);
 
     p = config_get_string(cat, "vid_renderer", "default");
-    vid_api = plat_vidapi(p);
+    vid_api = plat_vidapi_from_internal_name(p);
 
     vid_fullscreen_scale = config_get_int(cat, "video_fullscreen_scale", 0);
 
@@ -311,7 +311,7 @@ save_general(const char *cat)
     if (vid_resize == 0)
 	config_delete_var(cat, "vid_resize");
 
-    str = plat_vidapi_name(vid_api);
+    str = plat_vidapi_internal_name(vid_api);
     if (! strcmp(str, "default")) {
 	config_delete_var(cat, "vid_renderer");
     } else {
@@ -1548,7 +1548,7 @@ config_default(void)
 #endif
     scale = 1;
     video_card = VID_CGA;
-    vid_api = plat_vidapi("default");;
+    vid_api = plat_vidapi_from_internal_name("default");;
     enable_sync = 1;
     joystick_type = 0;
     hdc_type = 0;

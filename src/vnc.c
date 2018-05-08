@@ -8,7 +8,9 @@
  *
  *		Implement the VNC remote renderer with LibVNCServer.
  *
- * Version:	@(#)vnc.c	1.0.2	2018/05/06
+ * TODO:	Implement screenshots, and maybe Audio?
+ *
+ * Version:	@(#)vnc.c	1.0.4	2018/05/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -61,18 +63,56 @@
 #include "vnc.h"
 
 
+#ifdef _WIN32
+# define PATH_VNC_DLL	"libvncserver.dll"
+#else
+# define PATH_VNC_DLL	"libvncserver.so"
+#endif
+
 #define VNC_MIN_X	320
 #define VNC_MAX_X	2048
 #define VNC_MIN_Y	200
 #define VNC_MAX_Y	2048
 
 
+static void	*vnc_handle = NULL;	/* handle to libVNCserver DLL */
 static rfbScreenInfoPtr	rfb = NULL;
 static int	clients;
 static int	updatingSize;
 static int	allowedX,
 		allowedY;
 static int	ptr_x, ptr_y, ptr_but;
+
+
+/* Pointers to the real functions. */
+static rfbScreenInfoPtr (*f_rfbGetScreen)(int* argc,char** argv,int width,
+					  int height,int bitsPerSample,
+					  int samplesPerPixel,
+					  int bytesPerPixel);
+static void		(*f_rfbInitServer)(rfbScreenInfoPtr rfbScreen);
+static void		(*f_rfbRunEventLoop)(rfbScreenInfoPtr screenInfo,
+					     long usec,
+					     rfbBool runInBackground);
+static void		(*f_rfbScreenCleanup)(rfbScreenInfoPtr screenInfo);
+static rfbClientIteratorPtr (*f_rfbGetClientIterator)(rfbScreenInfoPtr rfbScreen);
+static rfbClientPtr	(*f_rfbClientIteratorNext)(rfbClientIteratorPtr iterator);
+static void		(*f_rfbMarkRectAsModified)(rfbScreenInfoPtr rfbScreen,
+						   int x1,int y1,int x2,int y2);
+static void		(*f_rfbDefaultPtrAddEvent)(int buttonMask,int x,
+						   int y,rfbClientPtr cl);
+
+
+static dllimp_t vnc_imports[] = {
+  { "rfbGetScreen",			&f_rfbGetScreen			},
+  { "rfbInitServerWithPthreadsAndZRLE",	&f_rfbInitServer		},
+  { "rfbRunEventLoop",			&f_rfbRunEventLoop		},
+  { "rfbScreenCleanup",			&f_rfbScreenCleanup		},
+  { "rfbGetClientIterator",		&f_rfbGetClientIterator		},
+  { "rfbClientIteratorNext",		&f_rfbClientIteratorNext	},
+  { "rfbMarkRectAsModified",		&f_rfbMarkRectAsModified	},
+  { "rfbDefaultPtrAddEvent",		&f_rfbDefaultPtrAddEvent	},
+  { NULL,				NULL				}
+};
 
 
 static void
@@ -108,7 +148,7 @@ vnc_ptrevent(int but, int x, int y, rfbClientPtr cl)
 	}
    }
 
-   rfbDefaultPtrAddEvent(but, x, y, cl);
+   f_rfbDefaultPtrAddEvent(but, x, y, cl);
 }
 
 
@@ -190,13 +230,13 @@ vnc_blit(int x, int y, int y1, int y2, int w, int h)
     video_blit_complete();
 
     if (! updatingSize)
-	rfbMarkRectAsModified(rfb, 0,0, allowedX,allowedY);
+	f_rfbMarkRectAsModified(rfb, 0,0, allowedX,allowedY);
 }
 
 
 /* Initialize VNC for operation. */
-int
-vnc_init(UNUSED(void *arg))
+static int
+vnc_init(int fs)
 {
     static char title[128];
     rfbPixelFormat rpf = {
@@ -212,6 +252,19 @@ vnc_init(UNUSED(void *arg))
 	32, 32, 0, 1, 255,255,255, 16, 8, 0, 0, 0
     };
 
+    /* We do not support fullscreen, folks. */
+    if (fs) {
+	pclog("VNC: fullscreen mode is not supported!\n");
+	return(0);
+    }
+
+    /* Try loading the DLL. */
+    vnc_handle = dynld_module(PATH_VNC_DLL, vnc_imports);
+    if (vnc_handle == NULL) {
+	pclog("VNC: unable to load '%s', VNC not available.\n", PATH_VNC_DLL);
+	return(0);
+    }
+
     cgapal_rebuild();
 
     if (rfb == NULL) {
@@ -220,7 +273,7 @@ vnc_init(UNUSED(void *arg))
 	allowedX = scrnsz_x;
 	allowedY = scrnsz_y;
  
-	rfb = rfbGetScreen(0, NULL, VNC_MAX_X, VNC_MAX_Y, 8, 3, 4);
+	rfb = f_rfbGetScreen(0, NULL, VNC_MAX_X, VNC_MAX_Y, 8, 3, 4);
 	rfb->desktopName = title;
 	rfb->frameBuffer = (char *)malloc(VNC_MAX_X*VNC_MAX_Y*4);
 
@@ -235,9 +288,9 @@ vnc_init(UNUSED(void *arg))
 	rfb->width = allowedX;
 	rfb->height = allowedY;
  
-	rfbInitServer(rfb);
+	f_rfbInitServer(rfb);
 
-	rfbRunEventLoop(rfb, -1, TRUE);
+	f_rfbRunEventLoop(rfb, -1, TRUE);
     }
  
     /* Set up our BLIT handlers. */
@@ -251,7 +304,7 @@ vnc_init(UNUSED(void *arg))
 }
 
 
-void
+static void
 vnc_close(void)
 {
     video_setblit(NULL);
@@ -259,14 +312,20 @@ vnc_close(void)
     if (rfb != NULL) {
 	free(rfb->frameBuffer);
 
-	rfbScreenCleanup(rfb);
+	f_rfbScreenCleanup(rfb);
 
 	rfb = NULL;
+    }
+
+    /* Unload the DLL if possible. */
+    if (vnc_handle != NULL) {
+	dynld_close(vnc_handle);
+	vnc_handle = NULL;
     }
 }
 
 
-void
+static void
 vnc_resize(int x, int y)
 {
     rfbClientIteratorPtr iterator;
@@ -289,8 +348,8 @@ vnc_resize(int x, int y)
 	rfb->width = x;
 	rfb->height = y;
  
-	iterator = rfbGetClientIterator(rfb);
-	while ((cl = rfbClientIteratorNext(iterator)) != NULL) {
+	iterator = f_rfbGetClientIterator(rfb);
+	while ((cl = f_rfbClientIteratorNext(iterator)) != NULL) {
 		LOCK(cl->updateMutex);
 		cl->newFBSizePending = 1;
 		UNLOCK(cl->updateMutex);
@@ -300,15 +359,41 @@ vnc_resize(int x, int y)
  
 
 /* Tell them to pause if we have no clients. */
-int
+static int
 vnc_pause(void)
 {
     return((clients > 0) ? 0 : 1);
 }
 
 
-void
-vnc_take_screenshot(wchar_t *fn)
+static void
+vnc_screenshot(const wchar_t *fn)
 {
     pclog("VNC: take_screenshot\n");
 }
+
+
+/* See if this module is available or not. */
+static int
+vnc_available(void)
+{
+    void *handle;
+
+    handle = dynld_module(PATH_VNC_DLL, NULL);
+    if (handle != NULL) return(1);
+
+    return(0);
+}
+
+
+const vidapi_t vnc_vidapi = {
+    "VNC",
+    0,
+    vnc_init,
+    vnc_close,
+    NULL,
+    vnc_resize,
+    vnc_pause,
+    vnc_screenshot,
+    vnc_available
+};

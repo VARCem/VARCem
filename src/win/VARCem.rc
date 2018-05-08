@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.25	2018/04/30
+ * Version:	@(#)VARCem.rc	1.0.26	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -78,13 +78,26 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Re&nderer"
         BEGIN
-            MENUITEM "&DirectDraw",             IDM_RENDER_1
-            MENUITEM "Direct&3D 9",             IDM_RENDER_2
+            MENUITEM "DirectDraw",              IDM_RENDER_1
+            MENUITEM "Direct3D",                IDM_RENDER_2
+#define IDM_NEXT				IDM_RENDER_2 + 1
+#ifdef USE_SDL
+# define IDM_RENDER_SDL				IDM_NEXT
+            MENUITEM "SDL",                     IDM_RENDER_SDL
+# undef IDM_NEXT
+# define IDM_NEXT				IDM_RENDER_SDL + 1
+#endif
 #ifdef USE_VNC
-            MENUITEM "&VNC",                    IDM_RENDER_3
+# define IDM_RENDER_VNC				IDM_NEXT
+            MENUITEM "VNC Remote",              IDM_RENDER_VNC
+# undef IDM_NEXT
+# define IDM_NEXT				IDM_RENDER_VNC + 1
 #endif
 #ifdef USE_RDP
-            MENUITEM "&RDP",                    IDM_RENDER_4
+# define IDM_RENDER_RDP				IDM_NEXT
+            MENUITEM "RDP Remote",              IDM_RENDER_RDP
+# undef IDM_NEXT
+# define IDM_NEXT				IDM_RENDER_RDP + 1
 #endif
         END
         MENUITEM SEPARATOR
@@ -962,7 +975,7 @@ BEGIN
     IDS_2092	"Bus"
     IDS_2093	"DMA"
     IDS_2094	"KB"
-    IDS_2095	"Neither DirectDraw nor Direct3D available !"
+    IDS_2095	"Selected renderer '%S' not available. Reset to default?"
     IDS_2096	"Slave"
     IDS_2097	"SCSI (ID %s, LUN %s)"
     IDS_2098	"Adapter Type"

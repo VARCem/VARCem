@@ -8,7 +8,7 @@
  *
  *		Platform-independent resource identifiers.
  *
- * Version:	@(#)ui_resource.h	1.0.5	2018/04/30
+ * Version:	@(#)ui_resource.h	1.0.6	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,10 +71,14 @@
 #define IDM_RESIZE		(IDM_VIEW+1)
 #define IDM_REMEMBER		(IDM_VIEW+2)
 #define IDM_RENDER		(IDM_VIEW+10)
-# define IDM_RENDER_1		(IDM_RENDER+1)		/* DDraw */
-# define IDM_RENDER_2		(IDM_RENDER+2)		/* D3D */
-# define IDM_RENDER_3		(IDM_RENDER+3)		/* VNC */
-# define IDM_RENDER_4		(IDM_RENDER+4)		/* RDP */
+# define IDM_RENDER_1		(IDM_RENDER+1)
+# define IDM_RENDER_2		(IDM_RENDER+2)
+# define IDM_RENDER_3		(IDM_RENDER+3)
+# define IDM_RENDER_4		(IDM_RENDER+4)
+# define IDM_RENDER_5		(IDM_RENDER+5)
+# define IDM_RENDER_6		(IDM_RENDER+6)
+# define IDM_RENDER_7		(IDM_RENDER+7)
+# define IDM_RENDER_8		(IDM_RENDER+8)
 #define IDM_SCALE		(IDM_VIEW+20)
 # define IDM_SCALE_1		(IDM_SCALE+1)
 # define IDM_SCALE_2		(IDM_SCALE+2)
@@ -236,7 +240,7 @@
 #define IDS_2092	2092		// "Bus"
 #define IDS_2093	2093		// "DMA"
 #define IDS_2094	2094		// "KB"
-#define IDS_2095	2095		// "Neither DirectDraw nor Dire.."
+#define IDS_2095	2095		// "Selected renderer not avai.."
 #define IDS_2096	2096		// "Slave"
 #define IDS_2097	2097		// "SCSI (ID %s, LUN %s)"
 #define IDS_2098	2098		// "Adapter Type"

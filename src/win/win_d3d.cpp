@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.10	2018/05/06
+ * Version:	@(#)win_d3d.cpp	1.0.11	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,6 @@
 #endif
 #include "../devices/video/video.h"
 #include "win.h"
-#include "win_d3d.h"
 
 
 struct CUSTOMVERTEX {
@@ -384,149 +383,60 @@ d3d_blit(int x, int y, int y1, int y2, int w, int h)
 
 
 static void
-d3d_init_objects(void)
+d3d_reset(int fs)
 {
-    D3DLOCKED_RECT dr;
-    RECT r;
-    int y;
+    HRESULT hr;
 
-    if (FAILED(d3ddev->CreateVertexBuffer(12*sizeof(CUSTOMVERTEX),
-		   0,
-		   D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1,
-		   D3DPOOL_MANAGED,
-		   &v_buffer,
-		   NULL)))
-	fatal("CreateVertexBuffer failed\n");
+    if (d3ddev == NULL) return;
 
-    if (FAILED(d3ddev->CreateTexture(2048, 2048, 1, 0,
-		D3DFMT_X8R8G8B8, D3DPOOL_MANAGED, &d3dTexture, NULL)))
-	fatal("CreateTexture failed\n");
+    memset(&d3dpp, 0x00, sizeof(d3dpp));      
 
-    r.top    = r.left  = 0;
-    r.bottom = r.right = 2047;
-
-    if (FAILED(d3dTexture->LockRect(0, &dr, &r, 0)))
-			fatal("LockRect failed\n");
-
-    for (y = 0; y < 2048; y++) {
-	uint32_t *p = (uint32_t *)((uintptr_t)dr.pBits + (y * dr.Pitch));
-	memset(p, 0, 2048 * 4);
+    d3dpp.Flags = 0;
+    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    if (fs)
+	d3dpp.hDeviceWindow = d3d_device_window;
+      else
+	d3dpp.hDeviceWindow = d3d_hwnd;
+    d3dpp.BackBufferCount = 1;
+    d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
+    d3dpp.MultiSampleQuality = 0;
+    d3dpp.EnableAutoDepthStencil = false;
+    d3dpp.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
+    d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+    if (fs) {
+	d3dpp.Windowed = false;
+	d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
+	d3dpp.BackBufferWidth = d3d_w;
+	d3dpp.BackBufferHeight = d3d_h;
+    } else {
+	d3dpp.Windowed = true;
+	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+	d3dpp.BackBufferWidth = 0;
+	d3dpp.BackBufferHeight = 0;
     }
 
-    d3dTexture->UnlockRect(0);
+    hr = d3ddev->Reset(&d3dpp);
+    if (hr == D3DERR_DEVICELOST) {
+	pclog("D3D: Unable to reset device!\n");
+	return;
+    }
 
-    d3ddev->SetTextureStageState(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
-    d3ddev->SetTextureStageState(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
-    d3ddev->SetTextureStageState(0,D3DTSS_ALPHAOP,   D3DTOP_DISABLE);
+    d3ddev->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+    d3ddev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    d3ddev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_DISABLE);
 
     d3ddev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
     d3ddev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-}
 
-
-int
-d3d_init(HWND h)
-{
-    HRESULT result;
-
-    d3d_hwnd = h;
-
-    cgapal_rebuild();
-
-    d3d = Direct3DCreate9(D3D_SDK_VERSION);
-
-    memset(&d3dpp, 0, sizeof(d3dpp));      
-    d3dpp.Flags = 0;
-    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    d3dpp.hDeviceWindow = h;
-    d3dpp.BackBufferCount = 1;
-    d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
-    d3dpp.MultiSampleQuality = 0;
-    d3dpp.EnableAutoDepthStencil = false;
-    d3dpp.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
-    d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    d3dpp.Windowed = true;
-    d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-    d3dpp.BackBufferWidth = 0;
-    d3dpp.BackBufferHeight = 0;
-
-    result = d3d->CreateDevice(D3DADAPTER_DEFAULT,
-        D3DDEVTYPE_HAL, h,
-        D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-        &d3dpp, &d3ddev);
-    if (FAILED(result))
-        fatal("CreateDevice failed, result = 0x%08x\n", result);
-
-    d3d_init_objects();
-
-    video_setblit(d3d_blit);
-
-    return(1);
-}
-
-
-int
-d3d_init_fs(HWND h)
-{
-    WCHAR title[200];
-
-    cgapal_rebuild();
-
-    d3d_w = GetSystemMetrics(SM_CXSCREEN);
-    d3d_h = GetSystemMetrics(SM_CYSCREEN);
-
-    d3d_hwnd = h;
-
-    /*FIXME: should be done once, in win.c */
-    _swprintf(title, L"%s v%s", TEXT(EMU_NAME), TEXT(EMU_VERSION));
-    d3d_device_window = CreateWindow(
-		FS_CLASS_NAME,
-		title,
-		WS_POPUP,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		640,
-		480,
-		HWND_DESKTOP,
-		NULL,
-		NULL,
-		NULL 
-	);
-	
-    d3d = Direct3DCreate9(D3D_SDK_VERSION);
-
-    memset(&d3dpp, 0, sizeof(d3dpp));      
-    d3dpp.Flags = 0;
-    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    d3dpp.hDeviceWindow = d3d_device_window;
-    d3dpp.BackBufferCount = 1;
-    d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
-    d3dpp.MultiSampleQuality = 0;
-    d3dpp.EnableAutoDepthStencil = false;
-    d3dpp.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
-    d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    d3dpp.Windowed = false;
-    d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
-    d3dpp.BackBufferWidth = d3d_w;
-    d3dpp.BackBufferHeight = d3d_h;
-
-    if (FAILED(d3d->CreateDevice(D3DADAPTER_DEFAULT,
-				 D3DDEVTYPE_HAL, h,
-				 D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-				 &d3dpp, &d3ddev)))
-	fatal("CreateDevice failed\n");
-	
-    d3d_init_objects();
-
-    video_setblit(d3d_blit_fs);
-
-    return(1);
+    device_force_redraw();
 }
 
 
 static void
-d3d_close_objects(void)
-{
+d3d_close(void)
+{       
+    video_setblit(NULL);
+
     if (d3dTexture) {
 	d3dTexture->Release();
 	d3dTexture = NULL;
@@ -535,15 +445,6 @@ d3d_close_objects(void)
 	v_buffer->Release();
 	v_buffer = NULL;
     }
-}
-
-
-void
-d3d_close(void)
-{       
-    video_setblit(NULL);
-
-    d3d_close_objects();
 
     if (d3ddev) {
 	d3ddev->Release();
@@ -561,97 +462,142 @@ d3d_close(void)
 }
 
 
-void
-d3d_reset(void)
+static int
+d3d_init(int fs)
 {
+    WCHAR title[200];
+    D3DLOCKED_RECT dr;
     HRESULT hr;
+    RECT r;
+    int y;
 
-    if (! d3ddev) return;
+    pclog("D3D: init (fs=%d)\n", fs);
 
-    memset(&d3dpp, 0, sizeof(d3dpp));      
+    d3d_hwnd = hwndRender;
 
+    cgapal_rebuild();
+
+    if (fs) {
+	d3d_w = GetSystemMetrics(SM_CXSCREEN);
+	d3d_h = GetSystemMetrics(SM_CYSCREEN);
+
+	_swprintf(title, L"%s v%s", TEXT(EMU_NAME), TEXT(EMU_VERSION));
+	d3d_device_window = CreateWindow(
+					FS_CLASS_NAME,
+					title,
+					WS_POPUP,
+					CW_USEDEFAULT, CW_USEDEFAULT,
+					640, 480,
+					HWND_DESKTOP,
+					NULL,
+					NULL,
+					NULL 
+				);
+    }
+
+    d3d = Direct3DCreate9(D3D_SDK_VERSION);
+
+    memset(&d3dpp, 0x00, sizeof(d3dpp));      
     d3dpp.Flags = 0;
     d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    d3dpp.hDeviceWindow = d3d_hwnd;
+    if (fs)
+	d3dpp.hDeviceWindow = d3d_device_window;
+      else
+	d3dpp.hDeviceWindow = d3d_hwnd;
     d3dpp.BackBufferCount = 1;
     d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
     d3dpp.MultiSampleQuality = 0;
     d3dpp.EnableAutoDepthStencil = false;
     d3dpp.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
     d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    d3dpp.Windowed = true;
-    d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-    d3dpp.BackBufferWidth = 0;
-    d3dpp.BackBufferHeight = 0;
+    if (fs) {
+	d3dpp.Windowed = false;
+	d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
+	d3dpp.BackBufferWidth = d3d_w;
+	d3dpp.BackBufferHeight = d3d_h;
+    } else {
+	d3dpp.Windowed = true;
+	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+	d3dpp.BackBufferWidth = 0;
+	d3dpp.BackBufferHeight = 0;
+    }
 
-    hr = d3ddev->Reset(&d3dpp);
+    hr = d3d->CreateDevice(D3DADAPTER_DEFAULT,
+			   D3DDEVTYPE_HAL, d3d_hwnd,
+			   D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+			   &d3dpp, &d3ddev);
+    if (FAILED(hr)) {
+        pclog("D3D: CreateDevice failed, result = 0x%08x\n", hr);
+	return(0);
+    }
 
-    if (hr == D3DERR_DEVICELOST) return;
+    hr = d3ddev->CreateVertexBuffer(12*sizeof(CUSTOMVERTEX),
+				    0,
+				D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1,
+				    D3DPOOL_MANAGED,
+				    &v_buffer,
+				    NULL);
+    if (FAILED(hr)) {
+	pclog("D3D: CreateVertexBuffer failed, result = %08lx\n", hr);
+	return(0);
+    }
 
-    d3ddev->SetTextureStageState(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
-    d3ddev->SetTextureStageState(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
-    d3ddev->SetTextureStageState(0,D3DTSS_ALPHAOP,   D3DTOP_DISABLE);
+    hr = d3ddev->CreateTexture(2048, 2048,
+			       1,
+			       0,
+			       D3DFMT_X8R8G8B8,
+			       D3DPOOL_MANAGED,
+			       &d3dTexture, NULL);
+    if (FAILED(hr)) {
+	pclog("D3D: CreateTexture failed, result = %08lx\n", hr);
+	return(0);
+    }
+
+    r.top    = r.left  = 0;
+    r.bottom = r.right = 2047;
+    hr = d3dTexture->LockRect(0, &dr, &r, 0);
+    if (FAILED(hr)) {
+	pclog("D3D: LockRect failed, result = %08lx\n", hr);
+	return(0);
+    }
+
+    for (y = 0; y < 2048; y++) {
+	uint32_t *p = (uint32_t *)((uintptr_t)dr.pBits + (y * dr.Pitch));
+	memset(p, 0x00, 2048 * 4);
+    }
+
+    d3dTexture->UnlockRect(0);
+
+    d3ddev->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+    d3ddev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    d3ddev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_DISABLE);
 
     d3ddev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
     d3ddev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 
-    device_force_redraw();
+    if (fs)
+	video_setblit(d3d_blit_fs);
+      else
+	video_setblit(d3d_blit);
+
+    return(1);
 }
 
 
-void
-d3d_reset_fs(void)
-{
-    HRESULT hr;
-
-    memset(&d3dpp, 0, sizeof(d3dpp));      
-    d3dpp.Flags = 0;
-    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    d3dpp.hDeviceWindow = d3d_device_window;
-    d3dpp.BackBufferCount = 1;
-    d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
-    d3dpp.MultiSampleQuality = 0;
-    d3dpp.EnableAutoDepthStencil = false;
-    d3dpp.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
-    d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    d3dpp.Windowed = false;
-    d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
-    d3dpp.BackBufferWidth = d3d_w;
-    d3dpp.BackBufferHeight = d3d_h;
-
-    hr = d3ddev->Reset(&d3dpp);
-    if (hr == D3DERR_DEVICELOST) return;
-
-    d3ddev->SetTextureStageState(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
-    d3ddev->SetTextureStageState(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
-    d3ddev->SetTextureStageState(0,D3DTSS_ALPHAOP,   D3DTOP_DISABLE);
-
-    d3ddev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-    d3ddev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-
-    device_force_redraw();
-}
-
-
-void
+static void
 d3d_resize(int x, int y)
 {
+    if (d3ddev == NULL) return;
+
     d3dpp.BackBufferWidth  = x;
     d3dpp.BackBufferHeight = y;
 
-    d3d_reset();
+    d3d_reset(0);
 }
 
 
-int
-d3d_pause(void)
-{
-    return(0);
-}
-
-
-void
-d3d_take_screenshot(wchar_t *fn)
+static void
+d3d_screenshot(const wchar_t *fn)
 {
     LPDIRECT3DSURFACE9 d3dSurface = NULL;
 
@@ -663,3 +609,16 @@ d3d_take_screenshot(wchar_t *fn)
     d3dSurface->Release();
     d3dSurface = NULL;
 }
+
+
+const vidapi_t d3d_vidapi = {
+    "D3D",
+    1,
+    d3d_init,
+    d3d_close,
+    d3d_reset,
+    d3d_resize,
+    NULL,
+    d3d_screenshot,
+    NULL
+};

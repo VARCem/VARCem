@@ -8,7 +8,7 @@
  *
  *		Definitions for the VNC renderer.
  *
- * Version:	@(#)vnc.h	1.0.1	2018/02/14
+ * Version:	@(#)vnc.h	1.0.2	2018/05/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,14 +52,10 @@
 extern "C" {
 #endif
 
-extern int	vnc_init(void *);
-extern void	vnc_close(void);
-extern void	vnc_resize(int x, int y);
-extern int	vnc_pause(void);
+extern const vidapi_t	vnc_vidapi;
 
-extern void	vnc_kbinput(int, int);
 
-extern void	vnc_take_screenshot(wchar_t *fn);
+extern void		vnc_kbinput(int, int);
 
 #ifdef __cplusplus
 }

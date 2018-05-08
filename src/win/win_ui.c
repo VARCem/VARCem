@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.20	2018/05/06
+ * Version:	@(#)win_ui.c	1.0.21	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,6 @@
 #include "../devices/input/mouse.h"
 #include "../devices/video/video.h"
 #include "win.h"
-#include "win_d3d.h"
 
 
 #ifndef GWL_WNDPROC
@@ -406,7 +405,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		MoveWindow(hwndSBAR, 0, scrnsz_y, scrnsz_x, cruft_sb, TRUE);
 
 		/* Update the renderer if needed. */
-		plat_vidsize(scrnsz_x, scrnsz_y);
+		plat_vidapi_resize(scrnsz_x, scrnsz_y);
 
 		/* Re-clip the mouse area if needed. */
 		if (mouse_capture) {
@@ -454,10 +453,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_RESETD3D:
 		startblit();
-		if (vid_fullscreen)
-			d3d_reset_fs();
-		  else
-			d3d_reset();
+		plat_vidapi_reset();
 		endblit();
 		break;
 
@@ -657,9 +653,28 @@ ui_init(int nCmdShow)
     }
 
     /* Initialize the configured Video API. */
-    if (! plat_setvid(vid_api)) {
-	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2095);
-	return(5);
+again:
+    if (! plat_vidapi_set(vid_api)) {
+	/*
+	 * Selected renderer is not available.
+	 *
+	 * This can happen if one of the optional renderers
+	 * was selected previously, but is currently not
+	 * available for whatever reason.
+	 *
+	 * Inform the user, and ask if they want to reset
+	 * to the system default one instead.
+	 */
+	_swprintf(title, plat_get_string(IDS_2095),
+		  plat_vidapi_internal_name(vid_api));
+	if (ui_msgbox(MBX_CONFIG, title) != 0) {
+		/* Nope, they don't, so just exit. */
+		return(5);
+	}
+
+	/* OK, reset to the default one and retry. */
+	vid_api = plat_vidapi_from_internal_name("default");
+	goto again;
     }
 
     /* Initialize the rendering window, or fullscreen. */
@@ -746,6 +761,24 @@ ui_init(int nCmdShow)
     win_mouse_close();
 
     return(messages.wParam);
+}
+
+
+/* Tell the UI about a new screen resolution. */
+void
+ui_resize(int x, int y)
+{
+    RECT r;
+
+    /* First, see if we should resize the UI window. */
+    if (vid_resize) return;
+
+    video_wait_for_blit();
+
+    /* Re-position and re-size the main window. */
+    GetWindowRect(hwndMain, &r);
+    MoveWindow(hwndMain, r.left, r.top,
+	       x+cruft_x, y+cruft_y+cruft_sb, TRUE);
 }
 
 
@@ -845,7 +878,7 @@ plat_pause(int p)
 
     /* If un-pausing, as the renderer if that's OK. */
     if (p == 0)
-	p = get_vidpause();
+	p = plat_vidapi_pause();
 
     /* If already so, done. */
     if (dopause == p) return;
@@ -863,24 +896,6 @@ plat_pause(int p)
 
     /* Update the actual menu item. */
     menu_set_item(IDM_PAUSE, dopause);
-}
-
-
-/* Tell the UI about a new screen resolution. */
-void
-plat_resize(int x, int y)
-{
-    RECT r;
-
-    /* First, see if we should resize the UI window. */
-    if (vid_resize) return;
-
-    video_wait_for_blit();
-
-    /* Re-position and re-size the main window. */
-    GetWindowRect(hwndMain, &r);
-    MoveWindow(hwndMain, r.left, r.top,
-	       x+cruft_x, y+cruft_y+cruft_sb, TRUE);
 }
 
 

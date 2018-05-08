@@ -8,7 +8,7 @@
  *
  *		Try to load a support DLL.
  *
- * Version:	@(#)win_dynld.c	1.0.4	2018/03/28
+ * Version:	@(#)win_dynld.c	1.0.5	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -66,6 +66,12 @@ dynld_module(const char *name, const dllimp_t *table)
     if ((h = LoadLibrary(name)) == NULL) {
 	pclog("DynLd(\"%s\"): library not found!\n", name);
 	return(NULL);
+    }
+
+    /* If no table was given, we just detect library presence. */
+    if (table == NULL) {
+	CloseHandle(h);
+	return((void *)h);
     }
 
     /* Now load the desired function pointers. */

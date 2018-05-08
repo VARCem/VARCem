@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.6	2018/04/30
+ * Version:	@(#)ui.h	1.0.7	2018/05/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -132,6 +132,7 @@ extern int	voodoo_do_log;
 #endif
 
 /* Main GUI functions. */
+extern void	ui_resize(int x, int y);
 extern int	ui_msgbox(int type, void *arg);
 extern void	ui_menu_reset_all(void);
 extern int	ui_menu_command(int idm);

@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.18	2018/05/06
+ * Version:	@(#)win.c	1.0.19	2018/05/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,6 +56,9 @@
 #include "../ui/ui.h"
 #define GLOBAL
 #include "../plat.h"
+#ifdef USE_SDL
+# include "../sdl.h"
+#endif
 #ifdef USE_VNC
 # include "../vnc.h"
 #endif
@@ -66,9 +69,6 @@
 #include "../devices/video/video.h"
 #ifdef USE_WX
 # include "../wx/wx_ui.h"
-#else
-# include "win_ddraw.h"
-# include "win_d3d.h"
 #endif
 #include "win.h"
 
@@ -99,52 +99,25 @@ static rc_str_t	*lpRCstr2048,
 		*lpRCstr7168;
 
 
-static const struct {
-    char	*name;
-    int		local;
-    int		(*init)(void *);
-    void	(*close)(void);
-    void	(*resize)(int x, int y);
-    int		(*pause)(void);
-} vid_apis[2][4] = {
-  {
+const vidapi_t *vid_apis[] = {
 #ifdef USE_WX
-    {	"WxWidgets", 1, wx_init, wx_close, NULL, wx_pause		},
-    {	"WxWidgets", 1, wx_init, wx_close, NULL, wx_pause		},
+    &wx_vidapi,
 #else
-    {	"DDraw", 1, (int(*)(void*))ddraw_init, ddraw_close, NULL, ddraw_pause		},
-    {	"D3D", 1, (int(*)(void*))d3d_init, d3d_close, d3d_resize, d3d_pause		},
+    &ddraw_vidapi,
+    &d3d_vidapi,
+#endif
+
+#ifdef USE_SDL
+    &sdl_vidapi,
 #endif
 #ifdef USE_VNC
-    {	"VNC", 0, vnc_init, vnc_close, vnc_resize, vnc_pause		},
-#else
-    {	NULL, 0, NULL, NULL, NULL, NULL					},
+    &vnc_vidapi,
 #endif
 #ifdef USE_RDP
-    {	"RDP", 0, rdp_init, rdp_close, rdp_resize, rdp_pause		}
-#else
-    {	NULL, 0, NULL, NULL, NULL, NULL					}
+    &rdp_vidapi,
 #endif
-  },
-  {
-#ifdef USE_WX
-    {	"WxWidgets", 1, wx_init, wx_close, NULL, wx_pause		},
-    {	"WxWidgets", 1, wx_init, wx_close, NULL, wx_pause		},
-#else
-    {	"DDraw", 1, (int(*)(void*))ddraw_init_fs, ddraw_close, NULL, ddraw_pause	},
-    {	"D3D", 1, (int(*)(void*))d3d_init_fs, d3d_close, NULL, d3d_pause		},
-#endif
-#ifdef USE_VNC
-    {	"VNC", 0, vnc_init, vnc_close, vnc_resize, vnc_pause		},
-#else
-    {	NULL, 0, NULL, NULL, NULL, NULL					},
-#endif
-#ifdef USE_RDP
-    {	"RDP", 0, rdp_init, rdp_close, rdp_resize, rdp_pause		}
-#else
-    {	NULL, 0, NULL, NULL, NULL, NULL					}
-#endif
-  },
+
+    NULL
 };
 
 
@@ -654,17 +627,40 @@ plat_delay_ms(uint32_t count)
 }
 
 
+/* Get number of VidApi entries. */
+int
+plat_vidapi_count(void)
+{
+    return((sizeof(vid_apis)/sizeof(vidapi_t *)) - 1);
+}
+
+
+/* Get availability of a VidApi entry. */
+int
+plat_vidapi_available(int api)
+{
+    int ret = 1;
+
+    if (vid_apis[api]->available != NULL)
+	ret = vid_apis[api]->available();
+
+    return(ret);
+}
+
+
 /* Return the VIDAPI number for the given name. */
 int
-plat_vidapi(const char *name)
+plat_vidapi_from_internal_name(const char *name)
 {
-    int i;
+    int i = 0;
 
-    if (!strcasecmp(name, "default") || !strcasecmp(name, "system")) return(1);
+    if (!strcasecmp(name, "default") ||
+	!strcasecmp(name, "system")) return(0);
 
-    for (i=0; i<4; i++) {
-	if (vid_apis[0][i].name &&
-	    !strcasecmp(vid_apis[0][i].name, name)) return(i);
+    while(vid_apis[i] != NULL) {
+	if (! strcasecmp(vid_apis[i]->name, name)) return(i);
+
+	i++;
     }
 
     /* Default value. */
@@ -674,74 +670,44 @@ plat_vidapi(const char *name)
 
 /* Return the VIDAPI name for the given number. */
 const char *
-plat_vidapi_name(int api)
+plat_vidapi_internal_name(int api)
 {
-    char *name = "default";
+    const char *name = "default";
 
-    switch(api) {
-#ifdef USE_WX
-	case 0:
-		break;
-
-	case 1:
-		name = "wxwidgets";
-		break;
-#else
-	case 0:
-		name = "ddraw";
-		break;
-
-	case 1:
-		name = "d3d";
-		break;
-#endif
-
-#ifdef USE_VNC
-	case 2:
-		name = "vnc";
-		break;
-
-#endif
-#ifdef USE_RDP
-	case 3:
-		name = "rdp";
-		break;
-#endif
-    }
+    if (vid_apis[api] != NULL)
+	return(vid_apis[api]->name);
 
     return(name);
 }
 
 
 int
-plat_setvid(int api)
+plat_vidapi_set(int api)
 {
     int i;
 
     pclog("Initializing VIDAPI: api=%d\n", api);
+
     startblit();
     video_wait_for_blit();
 
     /* Close the (old) API. */
-    vid_apis[0][vid_api].close();
-    vid_api = api;
+    vid_apis[vid_api]->close();
 
+    /* Show or hide the render window. */
 #ifndef USE_WX
-    if (vid_apis[0][vid_api].local)
+    if (vid_apis[api]->local)
 	ShowWindow(hwndRender, SW_SHOW);
       else
 	ShowWindow(hwndRender, SW_HIDE);
 #endif
 
     /* Initialize the (new) API. */
-#ifdef USE_WX
-    i = vid_apis[0][vid_api].init(NULL);
-#else
-    i = vid_apis[0][vid_api].init((void *)hwndRender);
-#endif
+    vid_api = api;
+    i = vid_apis[vid_api]->init(vid_fullscreen);
 
     /* Update the menu item. */
-    menu_set_radio_item(IDM_RENDER_1, 4, vid_api);
+    menu_set_radio_item(IDM_RENDER_1, plat_vidapi_count(), vid_api);
 
     endblit();
     if (! i) return(0);
@@ -754,29 +720,44 @@ plat_setvid(int api)
 
 /* Tell the renderers about a new screen resolution. */
 void
-plat_vidsize(int x, int y)
+plat_vidapi_resize(int x, int y)
 {
-    if (! vid_apis[vid_fullscreen][vid_api].resize) return;
+    /* If not defined, not supported or needed. */
+    if (vid_apis[vid_api]->resize == NULL) return;
 
     startblit();
+
     video_wait_for_blit();
-    vid_apis[vid_fullscreen][vid_api].resize(x, y);
+
+    vid_apis[vid_api]->resize(x, y);
+
     endblit();
 }
 
 
 int
-get_vidpause(void)
+plat_vidapi_pause(void)
 {
-    return(vid_apis[vid_fullscreen][vid_api].pause());
+    /* If not defined, assume always OK. */
+    if (vid_apis[vid_api]->pause == NULL) return(0);
+
+    return(vid_apis[vid_api]->pause());
+}
+
+
+void
+plat_vidapi_reset(void)
+{
+    /* If not defined, assume always OK. */
+    if (vid_apis[vid_api]->reset == NULL) return;
+
+    return(vid_apis[vid_api]->reset(vid_fullscreen));
 }
 
 
 void
 plat_setfullscreen(int on)
 {
-    HWND *hw;
-
     /* Want off and already off? */
     if (!on && !vid_fullscreen) return;
 
@@ -795,10 +776,9 @@ plat_setfullscreen(int on)
     win_mouse_close();
 
     /* Close the current mode, and open the new one. */
-    vid_apis[vid_fullscreen][vid_api].close();
+    vid_apis[vid_api]->close();
     vid_fullscreen = on;
-    hw = (vid_fullscreen) ? &hwndMain : &hwndRender;
-    vid_apis[vid_fullscreen][vid_api].init((void *) *hw);
+    vid_apis[vid_api]->init(vid_fullscreen);
 
 #ifdef USE_WX
     wx_set_fullscreen(on);
@@ -811,9 +791,6 @@ plat_setfullscreen(int on)
     device_force_redraw();
 
     /* Finally, handle the host's mouse cursor. */
-#if 0
-pclog("%s full screen, %s cursor\n", on ? "enter" : "leave", on ? "hide" : "show");
-#endif
     ui_show_cursor(vid_fullscreen ? 0 : -1);
 }
 
@@ -826,10 +803,7 @@ take_screenshot(void)
     time_t now;
 
     pclog("Screenshot: video API is: %i\n", vid_api);
-    if ((vid_api < 0) || (vid_api > 1)) return;
-
-    memset(fn, 0, sizeof(fn));
-    memset(path, 0, sizeof(path));
+    if (vid_api < 0) return;
 
     (void)time(&now);
     info = localtime(&now);
@@ -844,28 +818,7 @@ take_screenshot(void)
     wcsftime(fn, 128, L"%Y%m%d_%H%M%S.png", info);
     wcscat(path, fn);
 
-    switch(vid_api) {
-#ifdef USE_WX
-	case 0:
-	case 1:
-		wx_screenshot(path);
-		break;
-#else
-	case 0:		/* ddraw */
-		ddraw_take_screenshot(path);
-		break;
-
-	case 1:		/* d3d9 */
-		d3d_take_screenshot(path);
-		break;
-#endif
-
-#ifdef USE_VNC
-	case 2:		/* vnc */
-		vnc_take_screenshot(path);
-		break;
-#endif
-    }
+    vid_apis[vid_api]->screenshot(path);
 }
 
 

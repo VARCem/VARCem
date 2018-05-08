@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.25	2018/05/06
+# Version:	@(#)Makefile.VC	1.0.26	2018/05/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -211,7 +211,7 @@ VPATH           := $(EXPATH) . cpu \
 		    devices/cdrom devices/disk devices/floppy \
 		    devices/floppy/lzf devices/input devices/input/game \
 		    devices/network devices/network/slirp devices/ports \
-		    devices/sio devices/system devices/scsi \
+		    devices/sio devices/system devices/scsi devices\misc \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \

@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.12	2018/05/06
+ * Version:	@(#)plat.h	1.0.13	2018/05/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -89,6 +89,21 @@
 extern "C" {
 #endif
 
+
+/* Define a "vidapi", or, rather, a Renderer API. */
+typedef struct {
+    const char	*name;
+    int		local;
+    int		(*init)(int fs);
+    void	(*close)(void);
+    void	(*reset)(int fs);
+    void	(*resize)(int x, int y);
+    int		(*pause)(void);
+    void	(*screenshot)(const wchar_t *fn);
+    int		(*available)(void);
+} vidapi_t;
+
+
 /* Global variables residing in the platform module. */
 GLOBAL int	dopause,			/* system is paused */
 		doresize,			/* screen resize requested */
@@ -121,14 +136,18 @@ extern uint32_t	plat_get_ticks(void);
 extern void	plat_delay_ms(uint32_t count);
 extern void	plat_pause(int p);
 extern void	plat_mouse_capture(int on);
-extern int	plat_vidapi(const char *name);
-extern const char	*plat_vidapi_name(int api);
-extern int	plat_setvid(int api);
-extern void	plat_vidsize(int x, int y);
 extern void	plat_setfullscreen(int on);
-extern void	plat_resize(int x, int y);
 extern int	plat_fdd_icon(int);
 
+/* Platform VidApi. */
+extern int		plat_vidapi_count(void);
+extern int		plat_vidapi_available(int api);
+extern int		plat_vidapi_from_internal_name(const char *name);
+extern const char	*plat_vidapi_internal_name(int api);
+extern int		plat_vidapi_set(int api);
+extern void		plat_vidapi_resize(int x, int y);
+extern int		plat_vidapi_pause(void);
+extern void		plat_vidapi_reset(void);
 
 /* Resource management. */
 extern void	set_language(int id);
