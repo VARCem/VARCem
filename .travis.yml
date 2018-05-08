@@ -61,6 +61,7 @@ env:
     - PROG=VACRCem-dev CROSS=y DEBUG=y DEV_BUILD=y
 
 script:
+  - pacman -S --noconfirm zlib-devel
   - chmod +x .travis-build.sh .travis-deploy.sh
   - ./.travis-build.sh
 
