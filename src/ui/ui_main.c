@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.10	2018/05/07
+ * Version:	@(#)ui_main.c	1.0.11	2018/05/08
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -243,9 +243,7 @@ ui_menu_toggle_video_item(int idm, int *val)
 void
 ui_menu_reset_all(void)
 {
-#ifdef ENABLE_LOG_TOGGLES
     int i;
-#endif
 
 #ifndef DEV_BRANCH
     /* FIXME: until we fix these.. --FvK */
