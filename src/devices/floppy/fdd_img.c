@@ -13,7 +13,7 @@
  *		re-merged with the other files. Much of it is generic to
  *		all formats.
  *
- * Version:	@(#)fdd_img.c	1.0.8	2018/05/06
+ * Version:	@(#)fdd_img.c	1.0.9	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,7 +55,6 @@
 
 typedef struct {
     FILE	*f;
-    uint8_t	track_data[2][50000];
     int		sectors, tracks, sides;
     uint8_t	sector_size;
     int		xdf_type;  /* 0 = not XDF, 1-5 = one of the five XDF types */
@@ -67,8 +66,6 @@ typedef struct {
     uint8_t	gap3_size;
     uint16_t	disk_flags;
     uint16_t	track_flags;
-    uint8_t	sector_pos_side[2][256];
-    uint16_t	sector_pos[2][256];
     uint8_t	current_sector_pos_side;
     uint16_t	current_sector_pos;
     uint8_t	*disk_data;
@@ -76,6 +73,13 @@ typedef struct {
     uint8_t	disk_at_once;
     uint8_t	interleave;
     uint8_t	skew;
+char guard1[65536];
+    uint8_t	sector_pos_side[2][256];
+char guard2[65536];
+    uint16_t	sector_pos[2][256];
+char guard3[65536];
+    uint8_t	track_data[2][50000];
+char guard4[65536];
 } img_t;
 
 
@@ -604,7 +608,7 @@ img_load(int drive, const wchar_t *fn)
     uint8_t bpb_mid;	/* Media type ID. */
     uint8_t bpb_sectors;
     uint8_t bpb_sides;
-    uint8_t fdi, cqm, fdf;
+    uint8_t cqm, fdf, fdi;
     uint16_t comment_len = 0;
     int16_t block_len = 0;
     uint32_t cur_pos = 0;
@@ -644,7 +648,8 @@ img_load(int drive, const wchar_t *fn)
 		writeprot[drive] = 1;
     fwriteprot[drive] = writeprot[drive];
 
-    fdi = cqm = 0;
+    /* Clear ALL subtypes. */
+    cqm = fdf = fdi = 0;
 
     dev->interleave = dev->skew = 0;
 
@@ -670,9 +675,7 @@ img_load(int drive, const wchar_t *fn)
 	first_byte = fgetc(dev->f);
 
 	fdi = 1;
-	cqm = 0;
 	dev->disk_at_once = 0;
-	fdf = 0;
     } else {
 	/* Read the first four bytes. */
 	fseek(dev->f, 0x00, SEEK_SET);
@@ -693,7 +696,6 @@ img_load(int drive, const wchar_t *fn)
 		dev->f = plat_fopen(fn, L"rb");
 
 		fdf = 1;
-		cqm = 0;
 		dev->disk_at_once = 1;
 
 		fseek(dev->f, 0x50, SEEK_SET);
@@ -896,12 +898,12 @@ img_load(int drive, const wchar_t *fn)
 
 		cqm = 1;
 		dev->disk_at_once = 1;
-		fdf = 0;
 		first_byte = *dev->disk_data;
 	} else {
-		dev->disk_at_once = 0;
-		/* Read the BPB */
 		pclog("img_load(): File is a raw image...\n");
+		dev->disk_at_once = 0;
+
+		/* Read the BPB */
 		fseek(dev->f, 0x0B, SEEK_SET);
 		fread(&bpb_bps, 1, 2, dev->f);
 		fseek(dev->f, 0x13, SEEK_SET);
@@ -912,8 +914,6 @@ img_load(int drive, const wchar_t *fn)
 		bpb_sectors = fgetc(dev->f);
 		fseek(dev->f, 0x1A, SEEK_SET);
 		bpb_sides = fgetc(dev->f);
-
-		cqm = 0;
 	}
 
 	fseek(dev->f, -1, SEEK_END);
@@ -921,7 +921,6 @@ img_load(int drive, const wchar_t *fn)
 
 jump_if_fdf:
 	dev->base = 0;
-	fdi = 0;
     }
 
     dev->sides = 2;
@@ -1072,7 +1071,7 @@ jump_if_fdf:
 	} else {
 		if (!cqm && !fdf) {
 			/* Number of tracks = number of total sectors divided by sides times sectors per track. */
-			dev->tracks = ((uint32_t) bpb_total) / (((uint32_t) bpb_sides) * ((uint32_t) bpb_sectors));
+			dev->tracks = ((uint32_t)bpb_total) / (((uint32_t)bpb_sides) * ((uint32_t)bpb_sectors));
 		}
 	}
 

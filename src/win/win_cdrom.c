@@ -8,7 +8,7 @@
  *
  *		Handle the platform-side of CDROM drives.
  *
- * Version:	@(#)win_cdrom.c	1.0.8	2018/05/06
+ * Version:	@(#)win_cdrom.c	1.0.9	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -127,7 +127,9 @@ cdrom_eject(uint8_t id)
 void
 cdrom_reload(uint8_t id)
 {
+#ifdef USE_CDROM_IOCTL
     int new_cdrom_drive;
+#endif
 
     if ((cdrom_drives[id].host_drive == cdrom_drives[id].prev_host_drive) || (cdrom_drives[id].prev_host_drive == 0) || (cdrom_drives[id].host_drive != 0)) {
 	/* Switch from empty to empty. Do nothing. */
@@ -156,6 +158,7 @@ cdrom_reload(uint8_t id)
 		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, 1);
 		ui_sb_icon_state(SB_CDROM|id, 0);
 	}
+#ifdef USE_CDROM_IOCTL
     } else {
 	new_cdrom_drive = cdrom_drives[id].prev_host_drive;
 	ioctl_open(id, new_cdrom_drive);
@@ -167,6 +170,7 @@ cdrom_reload(uint8_t id)
 	cdrom_drives[id].host_drive = new_cdrom_drive;
 	ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), 1);
 	ui_sb_icon_state(SB_CDROM|id, 0);
+#endif
     }
 
     ui_sb_menu_enable_item(SB_CDROM|id, IDM_CDROM_RELOAD | id, 0);

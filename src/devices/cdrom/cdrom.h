@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.9	2018/04/30
+ * Version:	@(#)cdrom.h	1.0.10	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -225,6 +225,7 @@ typedef struct {
 	FILE* image;
 } cdrom_image_t;
 
+#ifdef USE_CDROM_IOCTL
 typedef struct {
 	char ioctl_path[8];
 	int actual_requested_blocks;
@@ -232,6 +233,7 @@ typedef struct {
 	int last_track_nr;
 	int capacity_read;
 } cdrom_ioctl_t;
+#endif
 
 typedef struct {
 	int8_t	speed;
@@ -245,7 +247,9 @@ extern const cdrom_speed_t	cdrom_speeds[];
 extern cdrom_t		*cdrom[CDROM_NUM];
 extern cdrom_drive_t	cdrom_drives[CDROM_NUM];
 extern cdrom_image_t	cdrom_image[CDROM_NUM];
+#ifdef USE_CDROM_IOCTL
 extern cdrom_ioctl_t	cdrom_ioctl[CDROM_NUM];
+#endif
 extern uint8_t		atapi_cdrom_drives[8];
 extern uint8_t		scsi_cdrom_drives[16][8];
 
@@ -258,7 +262,9 @@ extern uint8_t		scsi_cdrom_drives[16][8];
 extern int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length);
 extern int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length);
 extern void	(*ide_bus_master_set_irq)(int channel);
+#ifdef USE_CDROM_IOCTL
 extern void	ioctl_close(uint8_t id);
+#endif
 
 extern int	cdrom_speed_idx(int realspeed);
 

@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.19	2018/05/07
+ * Version:	@(#)win.c	1.0.10	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -751,7 +751,7 @@ plat_vidapi_reset(void)
     /* If not defined, assume always OK. */
     if (vid_apis[vid_api]->reset == NULL) return;
 
-    return(vid_apis[vid_api]->reset(vid_fullscreen));
+    vid_apis[vid_api]->reset(vid_fullscreen);
 }
 
 

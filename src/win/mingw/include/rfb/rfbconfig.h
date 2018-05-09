@@ -69,7 +69,9 @@
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #ifndef LIBVNCSERVER_HAVE_LIBPTHREAD 
-#define LIBVNCSERVER_HAVE_LIBPTHREAD  1 
+#ifndef _WIN32
+# define LIBVNCSERVER_HAVE_LIBPTHREAD  1 
+#endif
 #endif
 
 /* Define to 1 if you have the `socket' library (-lsocket). */

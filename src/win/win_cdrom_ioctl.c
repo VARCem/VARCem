@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM host drive IOCTL interface for
  *		Windows using SCSI Passthrough Direct.
  *
- * Version:	@(#)cdrom_ioctl.c	1.0.9	2018/05/06
+ * Version:	@(#)cdrom_ioctl.c	1.0.10	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,9 @@
 #include "../plat.h"
 #include "../devices/scsi/scsi.h"
 #include "../devices/cdrom/cdrom.h"
+
+
+#ifdef USE_CDROM_IOCTL
 
 
 #define MSFtoLBA(m,s,f)  ((((m*60)+s)*75)+f)
@@ -1363,3 +1366,6 @@ static CDROM ioctl_cdrom=
 	ioctl_stop,
 	ioctl_exit
 };
+
+
+#endif

@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.11	2018/05/08
+ * Version:	@(#)ui_main.c	1.0.12	2018/05/08
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -147,8 +147,10 @@ ui_menu_set_logging_item(int idm, int val)
 #endif
 
 #ifdef ENABLE_CDROM_IOCTL_LOG
+# ifdef USE_CDROM_IOCTL
 	case IDM_LOG_CDROM_IOCTL:
 		ptr = &cdrom_ioctl_do_log;
+# endif
 		break;
 #endif
 

@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)cdrom.c	1.0.14	2018/05/06
+ * Version:	@(#)cdrom.c	1.0.15	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -75,7 +75,9 @@
 
 cdrom_t		*cdrom[CDROM_NUM];
 cdrom_image_t	cdrom_image[CDROM_NUM];
+#ifdef USE_CDROM_IOCTL
 cdrom_ioctl_t	cdrom_ioctl[CDROM_NUM];
+#endif
 cdrom_drive_t	cdrom_drives[CDROM_NUM];
 uint8_t atapi_cdrom_drives[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 uint8_t scsi_cdrom_drives[16][8] =	{	{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
@@ -3339,10 +3341,13 @@ cdrom_hard_reset(void)
 		if (cdrom_drives[c].host_drive == 200) {
 			image_open(c, cdrom_image[c].image_path);
 			image_reset(c);
-		} else if ((cdrom_drives[c].host_drive>='A') && (cdrom_drives[c].host_drive <= 'Z')) {
+		} else 
+#ifdef USE_CDROM_IOCTL
+			if ((cdrom_drives[c].host_drive>='A') && (cdrom_drives[c].host_drive <= 'Z')) {
 			ioctl_open(c, cdrom_drives[c].host_drive);
 			ioctl_reset(c);
 		} else
+#endif
 			cdrom_null_open(c, cdrom_drives[c].host_drive);
 	}
 
@@ -3362,7 +3367,9 @@ cdrom_close(uint8_t id)
 		image_close(id);
 		break;
 	default:
+#ifdef USE_CDROM_IOCTL
 		ioctl_close(id);
+#endif
 		break;
     }
 }

@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.4	2018/05/06
+ * Version:	@(#)ui_stbar.c	1.0.5	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -917,7 +917,9 @@ ui_sb_menu_command(int idm, int tag)
 		cdrom_drives[drive].prev_host_drive = cdrom_drives[drive].host_drive;
 		cdrom_drives[drive].handler->exit(drive);
 		cdrom_close(drive);
+#ifdef USE_CDROM_IOCTL
 		ioctl_open(drive, new_cdrom_drive);
+#endif
 
 		/* Signal media change to the emulated machine. */
 		cdrom_insert(drive);

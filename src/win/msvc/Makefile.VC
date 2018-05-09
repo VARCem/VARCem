@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.26	2018/05/06
+# Version:	@(#)Makefile.VC	1.0.27	2018/05/08
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -165,10 +165,6 @@ ifeq ($(DEV_BUILD), y)
  WONDER		:= y
 endif
 
-# Where is the the WinPcap SDK?
-WPCAP		= "C:\Program Files (x86)\WinPcap"
-WPCAPINC	= -I$(WPCAP)\Include
-WPCAPLIB	= $(WPCAP)\Lib
 
 # WxWidgets basic info. Extract using the config program.
 ifneq ($(WX), n)
@@ -206,12 +202,12 @@ endif
 #########################################################################
 #		Nothing should need changing from here on..		#
 #########################################################################
-VPATH           := $(EXPATH) . cpu \
+VPATH		:= $(EXPATH) . cpu \
 		   devices \
 		    devices/cdrom devices/disk devices/floppy \
 		    devices/floppy/lzf devices/input devices/input/game \
 		    devices/network devices/network/slirp devices/ports \
-		    devices/sio devices/system devices/scsi devices\misc \
+		    devices/sio devices/system devices/scsi devices/misc \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
@@ -371,23 +367,20 @@ OPTS		+= -DUSE_VNC
 RFLAGS		+= -DUSE_VNC
  ifneq ($(VNC_PATH), )
   OPTS		+= -I$(VNC_PATH)\INCLUDE
-  VNCLIB	:= -L$(VNC_PATH)\LIB
+  LOPTS		+= $(VNC_PATH)\LIB
+  LIBS		+= -lvncserver
  endif
-VNCLIB		+= -lvncserver
 VNCOBJ		:= vnc.obj vnc_keymap.obj
-LIBS		+= $(VNCLIB) -lws2_32
 endif
 
 ifeq ($(RDP), y)
 OPTS		+= -DUSE_RDP
 RFLAGS		+= -DUSE_RDP
  ifneq ($(RDP_PATH), )
-  OPTS		+= -I$(RDP_PATH)\INCLUDE
-  RDPLIB	:= -L$(RDP_PATH)\LIB
+  LOPTS		+= $(RDP_PATH)\LIB
+  LIBS		+= -lrdpsrvr
  endif
-RDPLIB		+= -lrdp
 RDPOBJ		:= rdp.obj
-LIBS		+= $(RDPLIB)
 endif
 
 ifeq ($(PNG), y)

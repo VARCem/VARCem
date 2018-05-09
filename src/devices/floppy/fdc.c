@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.11	2018/05/06
+ * Version:	@(#)fdc.c	1.0.12	2018/05/08
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -645,7 +645,8 @@ void
 fdc_seek(fdc_t *fdc, int drive, int params)
 {
     fdd_seek(real_drive(fdc, drive), params);
-    fdc->time = 5000 * TIMER_SHIFT;
+
+    fdc->time = 5000 * (1LL << TIMER_SHIFT);
 
     fdc->stat |= (1 << fdc->drive);
 }

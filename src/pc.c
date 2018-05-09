@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.37	2018/05/07
+ * Version:	@(#)pc.c	1.0.38	2018/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -680,9 +680,12 @@ pc_reload(const wchar_t *fn)
 
 	if (cdrom_drives[i].host_drive == 200)
 		image_open(i, cdrom_image[i].image_path);
-	  else if ((cdrom_drives[i].host_drive >= 'A') && (cdrom_drives[i].host_drive <= 'Z'))
+	  else
+#ifdef USE_CDROM_IOCTL
+		if ((cdrom_drives[i].host_drive >= 'A') && (cdrom_drives[i].host_drive <= 'Z'))
 		ioctl_open(i, cdrom_drives[i].host_drive);
 	  else	
+#endif
 	        cdrom_null_open(i, cdrom_drives[i].host_drive);
     }
 

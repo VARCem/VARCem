@@ -2242,8 +2242,9 @@ d86f_sector_is_present(int drive, int side, uint8_t c, uint8_t h, uint8_t r, uin
     if (dev->last_side_sector[side]) {
 	s = dev->last_side_sector[side];
 	while (s) {
-		if ((s->c == c) && (s->h == h) && (s->r == r) && (s->n == n))
+		if ((s->c == c) && (s->h == h) && (s->r == r) && (s->n == n)) {
 			return 1;
+		}
 		if (! s->prev)
 			break;
 		t = s->prev;
