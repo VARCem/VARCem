@@ -13,7 +13,7 @@
  *		re-merged with the other files. Much of it is generic to
  *		all formats.
  *
- * Version:	@(#)fdd_img.c	1.0.9	2018/05/08
+ * Version:	@(#)fdd_img.c	1.0.10	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,13 +73,9 @@ typedef struct {
     uint8_t	disk_at_once;
     uint8_t	interleave;
     uint8_t	skew;
-char guard1[65536];
     uint8_t	sector_pos_side[2][256];
-char guard2[65536];
     uint16_t	sector_pos[2][256];
-char guard3[65536];
     uint8_t	track_data[2][50000];
-char guard4[65536];
 } img_t;
 
 
