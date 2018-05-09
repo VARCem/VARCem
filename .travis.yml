@@ -62,10 +62,8 @@ env:
 
 before_install:
   # Kill off the (most likely running) APT daily update.
-# - sudo systemctl stop apt-daily.timer
-  - sudo systemctl kill --kill-who=all apt-daily.timer
-# - sudo systemctl stop apt-daily.service
-  - sudo systemctl kill --kill-who=all apt-daily.service
+  - sudo systemctl stop apt-daily.service
+# - sudo systemctl kill --kill-who=all apt-daily.service
   - sleep 5
   - sudo rm -f /var/lib/dpkg/lock
   # Now install some packages we need.
