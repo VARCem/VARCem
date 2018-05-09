@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.21	2018/05/07
+ * Version:	@(#)win_ui.c	1.0.22	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <time.h>
 #include <wchar.h>
 #include "../emu.h"
 #include "../version.h"
@@ -405,7 +404,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		MoveWindow(hwndSBAR, 0, scrnsz_y, scrnsz_x, cruft_sb, TRUE);
 
 		/* Update the renderer if needed. */
-		plat_vidapi_resize(scrnsz_x, scrnsz_y);
+		vidapi_resize(scrnsz_x, scrnsz_y);
 
 		/* Re-clip the mouse area if needed. */
 		if (mouse_capture) {
@@ -452,15 +451,12 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_RESETD3D:
-		startblit();
-		plat_vidapi_reset();
-		endblit();
+		plat_startblit();
+		vidapi_reset();
+		plat_endblit();
 		break;
 
 	case WM_LEAVEFULLSCREEN:
-#if 0
-		pclog("leave full screen on window message\n");
-#endif
 		plat_setfullscreen(0);
 		config_save();
 		break;
@@ -515,6 +511,7 @@ SubWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
+/* Initialize the Win32 User Interface module. */
 int
 ui_init(int nCmdShow)
 {
@@ -654,7 +651,7 @@ ui_init(int nCmdShow)
 
     /* Initialize the configured Video API. */
 again:
-    if (! plat_vidapi_set(vid_api)) {
+    if (! vidapi_set(vid_api)) {
 	/*
 	 * Selected renderer is not available.
 	 *
@@ -666,14 +663,14 @@ again:
 	 * to the system default one instead.
 	 */
 	_swprintf(title, plat_get_string(IDS_2095),
-		  plat_vidapi_internal_name(vid_api));
+		  vidapi_internal_name(vid_api));
 	if (ui_msgbox(MBX_CONFIG, title) != 0) {
 		/* Nope, they don't, so just exit. */
 		return(5);
 	}
 
 	/* OK, reset to the default one and retry. */
-	vid_api = plat_vidapi_from_internal_name("default");
+	vid_api = vidapi_from_internal_name("default");
 	goto again;
     }
 
@@ -839,6 +836,119 @@ ui_show_cursor(int val)
 }
 
 
+/* Show or hide the render window. */
+void
+ui_show_render(int on)
+{
+#ifndef USE_WX
+    if (on)
+	ShowWindow(hwndRender, SW_SHOW);
+      else
+	ShowWindow(hwndRender, SW_HIDE);
+#endif
+}
+
+
+/* Set the desired fullscreen/windowed mode. */
+void
+plat_setfullscreen(int on)
+{
+    /* Want off and already off? */
+    if (!on && !vid_fullscreen) return;
+
+    /* Want on and already on? */
+    if (on && vid_fullscreen) return;
+
+    if (on && vid_fullscreen_first) {
+	vid_fullscreen_first = 0;
+	ui_msgbox(MBX_INFO, (wchar_t *)IDS_2107);
+    }
+
+    /* OK, claim the video. */
+    plat_startblit();
+    video_wait_for_blit();
+
+//    win_mouse_close();
+
+    /* Close the current mode, and open the new one. */
+    plat_vidapis[vid_api]->close();
+    vid_fullscreen = on;
+    plat_vidapis[vid_api]->init(vid_fullscreen);
+
+#ifdef USE_WX
+    wx_set_fullscreen(on);
+#endif
+
+//    win_mouse_init();
+
+    /* Release video and make it redraw the screen. */
+    plat_endblit();
+    device_force_redraw();
+
+    /* Finally, handle the host's mouse cursor. */
+    ui_show_cursor(vid_fullscreen ? 0 : -1);
+}
+
+
+/* Pause or unpause the emulator. */
+void
+plat_pause(int p)
+{
+    static wchar_t oldtitle[512];
+    wchar_t title[512];
+
+    /* If un-pausing, as the renderer if that's OK. */
+    if (p == 0)
+	p = vidapi_pause();
+
+    /* If already so, done. */
+    if (dopause == p) return;
+
+    if (p) {
+	wcscpy(oldtitle, ui_window_title(NULL));
+	wcscpy(title, oldtitle);
+	wcscat(title, L" - PAUSED -");
+	ui_window_title(title);
+    } else {
+	ui_window_title(oldtitle);
+    }
+
+    dopause = p;
+
+    /* Update the actual menu item. */
+    menu_set_item(IDM_PAUSE, dopause);
+}
+
+
+/* Enable or disable mouse clipping. */
+void
+plat_mouse_capture(int on)
+{
+    RECT rect;
+
+    /* Do not try to capture the mouse if no mouse configured. */
+    if (mouse_type == MOUSE_NONE) return;
+
+    if (on && !mouse_capture) {
+	/* Enable the in-app mouse. */
+	GetClipCursor(&oldclip);
+	GetWindowRect(hwndRender, &rect);
+	ClipCursor(&rect);
+
+	ui_show_cursor(0);
+
+	mouse_capture = 1;
+    } else if (!on && mouse_capture) {
+	/* Disable the in-app mouse. */
+	ClipCursor(&oldclip);
+
+	ui_show_cursor(-1);
+
+	mouse_capture = 0;
+    }
+}
+
+
 /* Enable or disable a menu item. */
 void
 menu_enable_item(int idm, int val)
@@ -870,63 +980,7 @@ menu_set_radio_item(int idm, int num, int val)
 }
 
 
-void
-plat_pause(int p)
-{
-    static wchar_t oldtitle[512];
-    wchar_t title[512];
-
-    /* If un-pausing, as the renderer if that's OK. */
-    if (p == 0)
-	p = plat_vidapi_pause();
-
-    /* If already so, done. */
-    if (dopause == p) return;
-
-    if (p) {
-	wcscpy(oldtitle, ui_window_title(NULL));
-	wcscpy(title, oldtitle);
-	wcscat(title, L" - PAUSED -");
-	ui_window_title(title);
-    } else {
-	ui_window_title(oldtitle);
-    }
-
-    dopause = p;
-
-    /* Update the actual menu item. */
-    menu_set_item(IDM_PAUSE, dopause);
-}
-
-
-void
-plat_mouse_capture(int on)
-{
-    RECT rect;
-
-    /* Do not try to capture the mouse if no mouse configured. */
-    if (mouse_type == MOUSE_NONE) return;
-
-    if (on && !mouse_capture) {
-	/* Enable the in-app mouse. */
-	GetClipCursor(&oldclip);
-	GetWindowRect(hwndRender, &rect);
-	ClipCursor(&rect);
-
-	ui_show_cursor(0);
-
-	mouse_capture = 1;
-    } else if (!on && mouse_capture) {
-	/* Disable the in-app mouse. */
-	ClipCursor(&oldclip);
-
-	ui_show_cursor(-1);
-
-	mouse_capture = 0;
-    }
-}
-
-
+/* Initialize the status bar. */
 void
 sb_setup(int parts, const int *widths)
 {
@@ -942,6 +996,7 @@ sb_setup(int parts, const int *widths)
 }
 
 
+/* Delete all menus from the status bar. */
 void
 sb_menu_destroy(void)
 {
@@ -983,6 +1038,7 @@ sb_menu_add_item(int part, int idm, const wchar_t *str)
 }
 
 
+/* Enable or disable a status bar menu item. */
 void
 sb_menu_enable_item(int part, int idm, int val)
 {
@@ -991,6 +1047,7 @@ sb_menu_enable_item(int part, int idm, int val)
 }
 
 
+/* Set or reset a status bar menu item. */
 void
 sb_menu_set_item(int part, int idm, int val)
 {
@@ -998,6 +1055,7 @@ sb_menu_set_item(int part, int idm, int val)
 }
 
 
+/* Set the icon ID for a status bar field. */
 void
 sb_set_icon(int part, int icon)
 {
@@ -1010,6 +1068,7 @@ sb_set_icon(int part, int icon)
 }
 
 
+/* Set a text label for a status bar field. */
 void
 sb_set_text(int part, const wchar_t *str)
 {
@@ -1017,6 +1076,7 @@ sb_set_text(int part, const wchar_t *str)
 }
 
 
+/* Set a tooltip for a status bar field. */
 void
 sb_set_tooltip(int part, const wchar_t *str)
 {

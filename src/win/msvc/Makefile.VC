@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.27	2018/05/08
+# Version:	@(#)Makefile.VC	1.0.28	2018/05/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -384,9 +384,9 @@ RDPOBJ		:= rdp.obj
 endif
 
 ifeq ($(PNG), y)
-OPTS		+= -DUSE_PNG
-RFLAGS		+= -DUSE_PNG
-LIBS		+= -lpng -lz
+OPTS		+= -DUSE_LIBPNG
+RFLAGS		+= -DUSE_LIBPNG
+LIBS		+= libpng16.lib zlib.lib
 endif
 
 # Options for the DEV branch.
@@ -459,7 +459,7 @@ MAINOBJ		:= pc.obj config.obj \
 		   memregs.obj rom.obj rom_load.obj device.obj nvr.obj \
 		   nvr_at.obj nvr_ps2.obj $(VNCOBJ) $(RDPOBJ)
 
-UIOBJ		+= ui_main.obj ui_new_floppy.obj ui_stbar.obj
+UIOBJ		+= ui_main.obj ui_new_floppy.obj ui_stbar.obj ui_vidapi.obj
 
 INTELOBJ	:= intel.obj \
 		    intel_flash.obj \

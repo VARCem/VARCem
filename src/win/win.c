@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.10	2018/05/08
+ * Version:	@(#)win.c	1.0.11	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <time.h>
 #include <wchar.h>
 #include "../emu.h"
 #include "../version.h"
@@ -99,7 +98,8 @@ static rc_str_t	*lpRCstr2048,
 		*lpRCstr7168;
 
 
-const vidapi_t *vid_apis[] = {
+/* The list with supported VidAPI modules. */
+const vidapi_t *plat_vidapis[] = {
 #ifdef USE_WX
     &wx_vidapi,
 #else
@@ -121,6 +121,7 @@ const vidapi_t *vid_apis[] = {
 };
 
 
+/* Pre-load the strings from our resource file. */
 static void
 LoadCommonStrings(void)
 {
@@ -627,210 +628,29 @@ plat_delay_ms(uint32_t count)
 }
 
 
-/* Get number of VidApi entries. */
+/*
+ * Get number of VidApi entries.
+ *
+ * This has to be in this module because only we know
+ * the actual size of the plat_vidapis[] array. Not a
+ * nice way to do it, but so it is...
+ */
 int
-plat_vidapi_count(void)
+vidapi_count(void)
 {
-    return((sizeof(vid_apis)/sizeof(vidapi_t *)) - 1);
-}
-
-
-/* Get availability of a VidApi entry. */
-int
-plat_vidapi_available(int api)
-{
-    int ret = 1;
-
-    if (vid_apis[api]->available != NULL)
-	ret = vid_apis[api]->available();
-
-    return(ret);
-}
-
-
-/* Return the VIDAPI number for the given name. */
-int
-plat_vidapi_from_internal_name(const char *name)
-{
-    int i = 0;
-
-    if (!strcasecmp(name, "default") ||
-	!strcasecmp(name, "system")) return(0);
-
-    while(vid_apis[i] != NULL) {
-	if (! strcasecmp(vid_apis[i]->name, name)) return(i);
-
-	i++;
-    }
-
-    /* Default value. */
-    return(0);
-}
-
-
-/* Return the VIDAPI name for the given number. */
-const char *
-plat_vidapi_internal_name(int api)
-{
-    const char *name = "default";
-
-    if (vid_apis[api] != NULL)
-	return(vid_apis[api]->name);
-
-    return(name);
-}
-
-
-int
-plat_vidapi_set(int api)
-{
-    int i;
-
-    pclog("Initializing VIDAPI: api=%d\n", api);
-
-    startblit();
-    video_wait_for_blit();
-
-    /* Close the (old) API. */
-    vid_apis[vid_api]->close();
-
-    /* Show or hide the render window. */
-#ifndef USE_WX
-    if (vid_apis[api]->local)
-	ShowWindow(hwndRender, SW_SHOW);
-      else
-	ShowWindow(hwndRender, SW_HIDE);
-#endif
-
-    /* Initialize the (new) API. */
-    vid_api = api;
-    i = vid_apis[vid_api]->init(vid_fullscreen);
-
-    /* Update the menu item. */
-    menu_set_radio_item(IDM_RENDER_1, plat_vidapi_count(), vid_api);
-
-    endblit();
-    if (! i) return(0);
-
-    device_force_redraw();
-
-    return(1);
-}
-
-
-/* Tell the renderers about a new screen resolution. */
-void
-plat_vidapi_resize(int x, int y)
-{
-    /* If not defined, not supported or needed. */
-    if (vid_apis[vid_api]->resize == NULL) return;
-
-    startblit();
-
-    video_wait_for_blit();
-
-    vid_apis[vid_api]->resize(x, y);
-
-    endblit();
-}
-
-
-int
-plat_vidapi_pause(void)
-{
-    /* If not defined, assume always OK. */
-    if (vid_apis[vid_api]->pause == NULL) return(0);
-
-    return(vid_apis[vid_api]->pause());
+    return((sizeof(plat_vidapis)/sizeof(vidapi_t *)) - 1);
 }
 
 
 void
-plat_vidapi_reset(void)
-{
-    /* If not defined, assume always OK. */
-    if (vid_apis[vid_api]->reset == NULL) return;
-
-    vid_apis[vid_api]->reset(vid_fullscreen);
-}
-
-
-void
-plat_setfullscreen(int on)
-{
-    /* Want off and already off? */
-    if (!on && !vid_fullscreen) return;
-
-    /* Want on and already on? */
-    if (on && vid_fullscreen) return;
-
-    if (on && vid_fullscreen_first) {
-	vid_fullscreen_first = 0;
-	ui_msgbox(MBX_INFO, (wchar_t *)IDS_2107);
-    }
-
-    /* OK, claim the video. */
-    startblit();
-    video_wait_for_blit();
-
-    win_mouse_close();
-
-    /* Close the current mode, and open the new one. */
-    vid_apis[vid_api]->close();
-    vid_fullscreen = on;
-    vid_apis[vid_api]->init(vid_fullscreen);
-
-#ifdef USE_WX
-    wx_set_fullscreen(on);
-#endif
-
-    win_mouse_init();
-
-    /* Release video and make it redraw the screen. */
-    endblit();
-    device_force_redraw();
-
-    /* Finally, handle the host's mouse cursor. */
-    ui_show_cursor(vid_fullscreen ? 0 : -1);
-}
-
-
-void
-take_screenshot(void)
-{
-    wchar_t path[1024], fn[128];
-    struct tm *info;
-    time_t now;
-
-    pclog("Screenshot: video API is: %i\n", vid_api);
-    if (vid_api < 0) return;
-
-    (void)time(&now);
-    info = localtime(&now);
-
-    plat_append_filename(path, usr_path, SCREENSHOT_PATH);
-
-    if (! plat_dir_check(path))
-	plat_dir_create(path);
-
-    wcscat(path, L"\\");
-
-    wcsftime(fn, 128, L"%Y%m%d_%H%M%S.png", info);
-    wcscat(path, fn);
-
-    vid_apis[vid_api]->screenshot(path);
-}
-
-
-void	/* plat_ */
-startblit(void)
+plat_startblit(void)
 {
     WaitForSingleObject(hBlitMutex, INFINITE);
 }
 
 
-void	/* plat_ */
-endblit(void)
+void
+plat_endblit(void)
 {
     ReleaseMutex(hBlitMutex);
 }

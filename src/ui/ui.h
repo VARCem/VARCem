@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.7	2018/05/07
+ * Version:	@(#)ui.h	1.0.8	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -132,6 +132,8 @@ extern int	voodoo_do_log;
 #endif
 
 /* Main GUI functions. */
+extern void	ui_show_cursor(int on);
+extern void	ui_show_render(int on);
 extern void	ui_resize(int x, int y);
 extern int	ui_msgbox(int type, void *arg);
 extern void	ui_menu_reset_all(void);
@@ -182,6 +184,19 @@ extern void     dlg_new_floppy(int idm, int tag);
 extern void	dlg_sound_gain(void);
 extern int      dlg_file(const wchar_t *filt, const wchar_t *ifn,
 			 wchar_t *fn, int save);
+
+/* Platform VidApi. */
+extern int	vidapi_count(void);
+extern int	vidapi_available(int api);
+extern int	vidapi_from_internal_name(const char *name);
+extern const char *vidapi_internal_name(int api);
+extern int	vidapi_set(int api);
+extern void	vidapi_resize(int x, int y);
+extern int	vidapi_pause(void);
+extern void	vidapi_reset(void);
+extern void	vidapi_screenshot(void);
+extern void	plat_startblit(void);
+extern void	plat_endblit(void);
 
 /* Floppy image creation. */
 extern int	floppy_create_86f(const wchar_t *, int8_t sz, int8_t rpm_mode);

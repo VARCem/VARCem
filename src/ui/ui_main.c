@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.12	2018/05/08
+ * Version:	@(#)ui_main.c	1.0.13	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -228,10 +228,10 @@ ui_menu_set_logging_item(int idm, int val)
 void
 ui_menu_toggle_video_item(int idm, int *val)
 {
-    startblit();
+    plat_startblit();
     video_wait_for_blit();
     *val ^= 1;
-    endblit();
+    plat_endblit();
 
     menu_set_item(idm, *val);
 
@@ -263,11 +263,11 @@ ui_menu_reset_all(void)
      * items that are configured in the code. We then
      * disable items that are currently unavailable.
      */
-    for (i = 0; i < plat_vidapi_count(); i++) {
-	if (! plat_vidapi_available(i))
+    for (i = 0; i < vidapi_count(); i++) {
+	if (! vidapi_available(i))
 		menu_enable_item(IDM_RENDER_1 + i, 0);
     }
-    menu_set_radio_item(IDM_RENDER_1, plat_vidapi_count(), vid_api);
+    menu_set_radio_item(IDM_RENDER_1, vidapi_count(), vid_api);
 
     menu_set_radio_item(IDM_SCALE_1, 4, scale);
 
@@ -365,7 +365,7 @@ ui_menu_command(int idm)
 	case IDM_RENDER_6:
 	case IDM_RENDER_7:
 	case IDM_RENDER_8:
-		plat_vidapi_set(idm - IDM_RENDER_1);
+		vidapi_set(idm - IDM_RENDER_1);
 		config_save();
 		break;
 
@@ -518,7 +518,7 @@ ui_menu_command(int idm)
 		break;
 
 	case IDM_SCREENSHOT:			/* TOOLS menu */
-		take_screenshot();
+		vidapi_screenshot();
 		break;
 
 	case IDM_ABOUT:				/* HELP menu */

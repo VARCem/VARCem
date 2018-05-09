@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.13	2018/05/07
+ * Version:	@(#)plat.h	1.0.14	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -111,6 +111,7 @@ GLOBAL int	dopause,			/* system is paused */
 		mouse_capture;			/* mouse is captured in app */
 GLOBAL uint64_t	timer_freq;
 GLOBAL int	infocus;
+GLOBAL const vidapi_t	*plat_vidapis[];
 
 
 /* System-related functions. */
@@ -138,16 +139,6 @@ extern void	plat_pause(int p);
 extern void	plat_mouse_capture(int on);
 extern void	plat_setfullscreen(int on);
 extern int	plat_fdd_icon(int);
-
-/* Platform VidApi. */
-extern int		plat_vidapi_count(void);
-extern int		plat_vidapi_available(int api);
-extern int		plat_vidapi_from_internal_name(const char *name);
-extern const char	*plat_vidapi_internal_name(int api);
-extern int		plat_vidapi_set(int api);
-extern void		plat_vidapi_resize(int x, int y);
-extern int		plat_vidapi_pause(void);
-extern void		plat_vidapi_reset(void);
 
 /* Resource management. */
 extern void	set_language(int id);
@@ -213,12 +204,6 @@ extern mutex_t	*thread_create_mutex(const wchar_t *name);
 extern void	thread_close_mutex(mutex_t *arg);
 extern int	thread_wait_mutex(mutex_t *arg);
 extern int	thread_release_mutex(mutex_t *mutex);
-
-
-/* Other stuff. */
-extern void	startblit(void);
-extern void	endblit(void);
-extern void	take_screenshot(void);
 
 #ifdef __cplusplus
 }

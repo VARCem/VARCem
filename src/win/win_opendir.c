@@ -10,7 +10,7 @@
  *
  *		Based on old original code @(#)dir_win32.c 1.2.0 2007/04/19
  *
- * Version:	@(#)win_opendir.c	1.0.5	2018/05/07
+ * Version:	@(#)win_opendir.c	1.0.6	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -57,7 +57,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../plat.h"
-#include "plat_dir.h"
+#include "win_opendir.h"
 
 
 #define SUFFIX		L"\\*"

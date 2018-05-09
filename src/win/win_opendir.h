@@ -8,7 +8,7 @@
  *
  *		Definitions for the platform OpenDir module.
  *
- * Version:	@(#)plat_dir.h	1.0.1	2018/02/14
+ * Version:	@(#)win_opendir.h	1.0.2	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -44,8 +44,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLAT_DIR_H
-# define PLAT_DIR_H
+#ifndef WIN_OPENDIR_H
+# define WIN_OPENDIR_H
 
 
 #ifdef _MAX_FNAME
@@ -60,11 +60,7 @@ struct direct {
     long		d_ino;
     unsigned short 	d_reclen;
     unsigned short	d_off;
-#ifdef UNICODE
     wchar_t		d_name[MAXNAMLEN + 1];
-#else
-    char		d_name[MAXNAMLEN + 1];
-#endif
 };
 #define	d_namlen	d_reclen
 
@@ -75,11 +71,7 @@ typedef struct {
     long	handle;			/* open handle to Win32 system	*/
     short	sts;			/* last known status code	*/
     char	*dta;			/* internal work data		*/
-#ifdef UNICODE
     wchar_t	dir[MAXDIRLEN+1];	/* open dir			*/
-#else
-    char	dir[MAXDIRLEN+1];	/* open dir			*/
-#endif
     struct direct dent;			/* actual directory entry	*/
 } DIR;
 
@@ -91,11 +83,7 @@ typedef struct {
 
 
 /* Function prototypes. */
-#ifdef UNICODE
 extern DIR		*opendirw(const wchar_t *);
-#else
-extern DIR		*opendir(const char *);
-#endif
 extern struct direct	*readdir(DIR *);
 extern long		telldir(DIR *);
 extern void		seekdir(DIR *, long);
@@ -104,4 +92,4 @@ extern int		closedir(DIR *);
 #define rewinddir(dirp)	seekdir(dirp, 0L)
 
 
-#endif	/*PLAT_DIR_H*/
+#endif	/*WIN_OPENDIR_H*/

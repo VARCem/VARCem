@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.38	2018/05/08
+ * Version:	@(#)pc.c	1.0.39	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -801,7 +801,7 @@ pc_close(thread_t *ptr)
     plat_delay_ms(200);
 
     /* Claim the video blitter. */
-    startblit();
+    plat_startblit();
 
     /* Terminate the main thread. */
     if (ptr != NULL) {
@@ -1020,7 +1020,7 @@ pc_thread(void *param)
 			drawits = 0;
 
 		/* Run a block of code. */
-		startblit();
+		plat_startblit();
 		clockrate = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed;
 
 		if (is386) {
@@ -1040,7 +1040,7 @@ pc_thread(void *param)
 
 		joystick_process();
 
-		endblit();
+		plat_endblit();
 
 		/* Done with this frame, update statistics. */
 		framecount++;

@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.11	2018/05/06
+ * Version:	@(#)openal.c	1.0.12	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -133,12 +133,12 @@ al_set_midi(int freq, int buf_size)
 
 
 #ifdef USE_OPENAL
-ALvoid alutInit(ALint *argc, ALbyte **argv) 
+ALvoid
+alutInit(ALint *argc, ALbyte **argv) 
 {
     ALCcontext *Context;
     ALCdevice *Device;
 
-pclog("SOUND: alutInit(%08lx)\n", openal_handle);
     /* Only if DLL is loaded. */
     if (openal_handle == NULL) return;
 
@@ -161,7 +161,6 @@ alutExit(ALvoid)
     ALCcontext *Context;
     ALCdevice *Device;
 
-pclog("SOUND: alutExit(%08lx)\n", openal_handle);
     /* Only if DLL is loaded. */
     if (openal_handle == NULL) return;
 
@@ -196,7 +195,6 @@ pclog("SOUND: alutExit(%08lx)\n", openal_handle);
 void
 closeal(void)
 {
-pclog("SOUND: closeal()\n");
 #ifdef USE_OPENAL
     alutExit();
 #endif
@@ -206,7 +204,6 @@ pclog("SOUND: closeal()\n");
 void
 initalmain(int argc, char *argv[])
 {
-pclog("SOUND: initalmain()\n");
 #ifdef USE_OPENAL
     /* Try loading the DLL if needed. */
     if (openal_handle == NULL) {
@@ -236,7 +233,6 @@ inital(void)
     int init_midi = 0;
     const char *str;
 
-pclog("SOUND: inital()\n");
     /*
      * If the current MIDI device is neither "none", nor system MIDI,
      * initialize the MIDI buffer and source, otherwise, do not.

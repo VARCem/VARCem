@@ -180,6 +180,18 @@ CopySurface(IDirectDrawSurface4 *pDDSurface)
 }
 
 
+static void
+DoubleLines(uint8_t *dst, uint8_t *src)
+{
+    int i = 0;
+
+    for (i = 0; i < ys; i++) {
+	memcpy(dst + (i * xs * 8), src + (i * xs * 4), xs * 4);
+	memcpy(dst + ((i * xs * 8) + (xs * 4)), src + (i * xs * 4), xs * 4);
+    }
+}
+
+
 #ifdef USE_LIBPNG
 static void
 bgra_to_rgb(png_bytep *b_rgb, uint8_t *bgra, int width, int height)
@@ -290,7 +302,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 		 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
 		 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
-    b_rgb = (png_bytep *)malloc(sizeof(png_bytep)*bmpInfo.bmiHeader.biHeight));
+    b_rgb = (png_bytep *)malloc(sizeof(png_bytep)*bmpInfo.bmiHeader.biHeight);
     if (b_rgb == NULL) {
 	(void)fclose(fp);
 	free(pBuf);
@@ -302,7 +314,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     }
 
     for (i = 0; i < bmpInfo.bmiHeader.biHeight; i++)
-	b_rgb[i] = (png_byte *)malloc(png_get_rowbytes(png_ptr, info_ptr));
+	b_rgb[i] = (png_byte *)malloc(png_get_rowbytes(png_ptr, png_info_ptr));
 
     if (pBuf2) {
 	DoubleLines((uint8_t *)pBuf2, (uint8_t *)pBuf);
@@ -333,18 +345,6 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     if (fp != NULL) fclose(fp);
 }
 #else
-static void
-DoubleLines(uint8_t *dst, uint8_t *src)
-{
-    int i = 0;
-
-    for (i = 0; i < ys; i++) {
-	memcpy(dst + (i * xs * 8), src + (i * xs * 4), xs * 4);
-	memcpy(dst + ((i * xs * 8) + (xs * 4)), src + (i * xs * 4), xs * 4);
-    }
-}
-
-
 static void
 SaveBMP(const wchar_t *fn, HBITMAP hBitmap)
 {

@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.12	2018/05/07
+ * Version:	@(#)win.h	1.0.13	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -109,7 +109,6 @@ extern int	fdd_type_icon(int type);
 /* Platform UI support functions. */
 extern int	ui_init(int nCmdShow);
 extern void	ui_menu_update(void);
-extern void	ui_show_cursor(int);
 
 #ifdef __cplusplus
 }
