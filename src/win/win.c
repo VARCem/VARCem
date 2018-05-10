@@ -72,30 +72,16 @@
 #include "win.h"
 
 
-typedef struct {
-    WCHAR str[512];
-} rc_str_t;
-
-
 /* Platform Public data, specific. */
 HINSTANCE	hInstance;		/* application instance */
 LCID		lang_id;		/* current language ID used */
 DWORD		dwSubLangID;
+const string_t	*plat_strings;
 
 
 /* Local data. */
 static HANDLE	hBlitMutex,		/* video mutex */
 		thMain;			/* main thread */
-static rc_str_t	*lpRCstr2048,
-		*lpRCstr4096,
-		*lpRCstr4352,
-		*lpRCstr4608,
-		*lpRCstr5120,
-		*lpRCstr5376,
-		*lpRCstr5632,
-		*lpRCstr5888,
-		*lpRCstr6144,
-		*lpRCstr7168;
 
 
 /* The list with supported VidAPI modules. */
@@ -125,48 +111,45 @@ const vidapi_t *plat_vidapis[] = {
 static void
 LoadCommonStrings(void)
 {
-    int i;
+    wchar_t temp[512], *str;
+    string_t *array, *tbl;
+    int c = 0, i;
 
-    lpRCstr2048 = (rc_str_t *)malloc(STR_NUM_2048*sizeof(rc_str_t));
-    lpRCstr4096 = (rc_str_t *)malloc(STR_NUM_4096*sizeof(rc_str_t));
-    lpRCstr4352 = (rc_str_t *)malloc(STR_NUM_4352*sizeof(rc_str_t));
-    lpRCstr4608 = (rc_str_t *)malloc(STR_NUM_4608*sizeof(rc_str_t));
-    lpRCstr5120 = (rc_str_t *)malloc(STR_NUM_5120*sizeof(rc_str_t));
-    lpRCstr5376 = (rc_str_t *)malloc(STR_NUM_5376*sizeof(rc_str_t));
-    lpRCstr5632 = (rc_str_t *)malloc(STR_NUM_5632*sizeof(rc_str_t));
-    lpRCstr5888 = (rc_str_t *)malloc(STR_NUM_5888*sizeof(rc_str_t));
-    lpRCstr6144 = (rc_str_t *)malloc(STR_NUM_6144*sizeof(rc_str_t));
-    lpRCstr7168 = (rc_str_t *)malloc(STR_NUM_7168*sizeof(rc_str_t));
+    /*
+     * First, we need to know how many strings are in the table.
+     * Sadly, there is no other way to determine this but to try
+     * to load all possible ID's...
+     */
+    for (i = IDS_BEGIN; i < IDS_END; i++)
+	if (LoadString(hInstance, i, temp, sizeof_w(temp)) > 0) c++;
 
-    for (i=0; i<STR_NUM_2048; i++)
-	LoadString(hInstance, 2048+i, lpRCstr2048[i].str, 512);
+    /*
+     * Now that we know how many strings exist, we can allocate
+     * our string_table array.
+     */
+    i = (c + 1) * sizeof(string_t);
+    array = (string_t *)malloc(i);
+    memset(array, 0x00, i);
 
-    for (i=0; i<STR_NUM_4096; i++)
-	LoadString(hInstance, 4096+i, lpRCstr4096[i].str, 512);
+    /* Now load the actual strings into our string table. */
+    tbl = array;
+    for (i = IDS_BEGIN; i < IDS_END; i++) {
+	c = LoadString(hInstance, i, temp, sizeof_w(temp));
+	if (c == 0) continue;
 
-    for (i=0; i<STR_NUM_4352; i++)
-	LoadString(hInstance, 4352+i, lpRCstr4352[i].str, 512);
+	tbl->id = i;
+	str = (wchar_t *)malloc((c + 1) * sizeof(wchar_t));
+	wcscpy(str, temp);
+	tbl->str = str;
 
-    for (i=0; i<STR_NUM_4608; i++)
-	LoadString(hInstance, 4608+i, lpRCstr4608[i].str, 512);
+	tbl++;
+    }
 
-    for (i=0; i<STR_NUM_5120; i++)
-	LoadString(hInstance, 5120+i, lpRCstr5120[i].str, 512);
+    /* Terminate the table. */
+    tbl->str = NULL;
 
-    for (i=0; i<STR_NUM_5376; i++)
-	LoadString(hInstance, 5376+i, lpRCstr5376[i].str, 512);
-
-    for (i=0; i<STR_NUM_5632; i++)
-	LoadString(hInstance, 5632+i, lpRCstr5632[i].str, 512);
-
-    for (i=0; i<STR_NUM_5888; i++)
-	LoadString(hInstance, 5888+i, lpRCstr5888[i].str, 512);
-
-    for (i=0; i<STR_NUM_6144; i++)
-	LoadString(hInstance, 6144+i, lpRCstr6144[i].str, 512);
-
-    for (i=0; i<STR_NUM_7168; i++)
-	LoadString(hInstance, 7168+i, lpRCstr7168[i].str, 512);
+    /* Consider this table const. */
+    plat_strings = array;
 }
 
 
@@ -437,36 +420,6 @@ plat_fdd_icon(int type)
     }
 
     return(ret);
-}
-
-
-wchar_t *
-plat_get_string(int i)
-{
-    LPTSTR str;
-
-    if ((i >= 2048) && (i <= 3071))
-	str = lpRCstr2048[i-2048].str;
-      else if ((i >= 4096) && (i <= 4351))
-	str = lpRCstr4096[i-4096].str;
-      else if ((i >= 4352) && (i <= 4607))
-	str = lpRCstr4352[i-4352].str;
-      else if ((i >= 4608) && (i <= 5119))
-	str = lpRCstr4608[i-4608].str;
-      else if ((i >= 5120) && (i <= 5375))
-	str = lpRCstr5120[i-5120].str;
-      else if ((i >= 5376) && (i <= 5631))
-	str = lpRCstr5376[i-5376].str;
-      else if ((i >= 5632) && (i <= 5887))
-	str = lpRCstr5632[i-5632].str;
-      else if ((i >= 5888) && (i <= 6143))
-	str = lpRCstr5888[i-5888].str;
-      else if ((i >= 6144) && (i <= 7167))
-	str = lpRCstr6144[i-6144].str;
-      else
-	str = lpRCstr7168[i-7168].str;
-
-    return((wchar_t *)str);
 }
 
 

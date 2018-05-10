@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_pmode.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_pmode.h	1.0.2	2018/05/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -95,7 +95,7 @@ static int opARPL_a32(uint32_t fetchdat)
                                                                                                                 \
                 flags_rebuild();                                                                                \
                 if (!(sel & 0xfffc)) { flags &= ~Z_FLAG; return 0; } /*Null selector*/                          \
-                valid = (sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);                                       \
+                valid = (uint16_t)(sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);                                       \
                 if (valid)                                                                                      \
                 {                                                                                               \
                         cpl_override = 1;                                                                       \
@@ -145,7 +145,7 @@ opLAR(l_a32, fetch_ea_32, 1, 1)
                 flags_rebuild();                                                                                \
                 flags &= ~Z_FLAG;                                                                               \
                 if (!(sel & 0xfffc)) return 0; /*Null selector*/                                                \
-                valid = (sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);                                       \
+                valid = (uint16_t)(sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);                                       \
                 if (valid)                                                                                      \
                 {                                                                                               \
                         cpl_override = 1;                                                                       \
@@ -270,7 +270,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 flags &= ~Z_FLAG;
                 if (!(sel & 0xfffc)) return 0; /*Null selector*/
                 cpl_override = 1;
-                valid = (sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);
+                valid = (uint16_t)(sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);
                 desc = readmemw(0, ((sel & 4) ? ldt.base : gdt.base) + (sel & ~7) + 4);
                 cpl_override = 0;               if (cpu_state.abrt) return 1;
                 if (!(desc & 0x1000)) valid = 0;
@@ -290,7 +290,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 flags &= ~Z_FLAG;
                 if (!(sel & 0xfffc)) return 0; /*Null selector*/
                 cpl_override = 1;
-                valid  = (sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);
+                valid  = (uint16_t)(sel & ~7) < ((sel & 4) ? ldt.limit : gdt.limit);
                 desc = readmemw(0, ((sel & 4) ? ldt.base : gdt.base) + (sel & ~7) + 4);
                 cpl_override = 0;               if (cpu_state.abrt) return 1;
                 if (!(desc & 0x1000)) valid = 0;

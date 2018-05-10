@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.4	2018/03/16
+ * Version:	@(#)mem.h	1.0.5	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -106,7 +106,7 @@ extern uint32_t		biosmask;
 
 extern int		readlookup[256],
 			readlookupp[256];
-extern uintptr_t *	readlookup2;
+extern uintptr_t	*readlookup2;
 extern int		readlnext;
 extern int		writelookup[256],
 			writelookupp[256];
@@ -144,9 +144,18 @@ extern int		mem_a20_state,
 			mem_a20_key;
 
 
-#define readmemb(a) ((readlookup2[(a)>>12]==-1)?readmembl(a):*(uint8_t *)(readlookup2[(a) >> 12] + (a)))
-#define readmemw(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 1))?readmemwl(s,a):*(uint16_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
-#define readmeml(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 3))?readmemll(s,a):*(uint32_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
+#define readmemb(a) ((readlookup2[(a)>>12]== (uintptr_t)-1) \
+		? readmembl(a) \
+		: *(uint8_t *)(readlookup2[(a) >> 12] + (a)))
+
+#define readmemw(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]== (uintptr_t)-1 || \
+		       (s)==0xFFFFFFFF || (((s)+(a)) & 1)) \
+		? readmemwl(s,a) \
+		: *(uint16_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
+#define readmeml(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]== (uintptr_t)-1 || \
+		       (s)==0xFFFFFFFF || (((s)+(a)) & 3)) \
+		? readmemll(s,a) \
+		: *(uint32_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 
 
 extern uint8_t	readmembl(uint32_t addr);

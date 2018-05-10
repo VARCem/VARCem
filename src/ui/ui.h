@@ -145,7 +145,7 @@ extern void	ui_menu_toggle_video_item(int idm, int *val);
 extern void	menu_enable_item(int idm, int val);
 extern void	menu_set_item(int idm, int val);
 extern void	menu_set_radio_item(int idm, int num, int val);
-extern wchar_t  *ui_window_title(wchar_t *s);
+extern wchar_t  *ui_window_title(const wchar_t *s);
 
 /* Status Bar functions. */
 extern void	ui_sb_update(void);

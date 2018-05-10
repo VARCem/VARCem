@@ -89,6 +89,11 @@
 extern "C" {
 #endif
 
+/* Define an entry in the strings table. */
+typedef struct {
+    int                 id;
+    const wchar_t       *str;
+} string_t;
 
 /* Define a "vidapi", or, rather, a Renderer API. */
 typedef struct {
@@ -112,6 +117,7 @@ GLOBAL int	dopause,			/* system is paused */
 GLOBAL uint64_t	timer_freq;
 GLOBAL int	infocus;
 GLOBAL const vidapi_t	*plat_vidapis[];
+extern const string_t	*plat_strings;
 
 
 /* System-related functions. */
@@ -142,7 +148,6 @@ extern int	plat_fdd_icon(int);
 
 /* Resource management. */
 extern void	set_language(int id);
-extern wchar_t	*plat_get_string(int id);
 
 
 /* Dynamic Module Loader interface. */

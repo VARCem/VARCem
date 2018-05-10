@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.5	2018/05/02
+ * Version:	@(#)win_settings_machine.h	1.0.6	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -178,11 +178,11 @@ machine_recalc_machine(HWND hdlg)
     if (!(machines[romstomachine[rs]].flags & MACHINE_AT) || (machines[romstomachine[rs]].ram_granularity >= 128)) {
 	SendMessage(h, UDM_SETPOS, 0, temp_mem_size);
 	h = GetDlgItem(hdlg, IDC_TEXT_MB);
-	SendMessage(h, WM_SETTEXT, 0, (LPARAM)plat_get_string(IDS_2094));
+	SendMessage(h, WM_SETTEXT, 0, (LPARAM)get_string(IDS_2094));
     } else {
 	SendMessage(h, UDM_SETPOS, 0, temp_mem_size / 1024);
 	h = GetDlgItem(hdlg, IDC_TEXT_MB);
-	SendMessage(h, WM_SETTEXT, 0, (LPARAM)plat_get_string(IDS_2087));
+	SendMessage(h, WM_SETTEXT, 0, (LPARAM)get_string(IDS_2087));
     }
 }
 
@@ -223,10 +223,10 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(h, CB_SETCURSEL, machinetolist[temp_machine], 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_WS);
-                SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_2131));
+                SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2131));
 
 		for (c = 0; c < 8; c++) {
-			swprintf(temp, sizeof_w(temp), plat_get_string(2132), c);
+			swprintf(temp, sizeof_w(temp), get_string(2132), c);
         	        SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 		}
 

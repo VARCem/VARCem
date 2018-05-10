@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.2	2018/03/09
+ * Version:	@(#)386_common.h	1.0.3	2018/05/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,14 +40,20 @@ extern uint16_t ea_rseg;
 #undef writememb
 
 
-#define readmemb(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF)?readmemb386l(s,a): *(uint8_t *)(readlookup2[(uint32_t)((s)+(a))>>12] + (uint32_t)((s) + (a))) )
-#define readmemq(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 7))?readmemql(s,a):*(uint64_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
+#define readmemb(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || \
+		       (s)==0xFFFFFFFF) \
+		? readmemb386l(s,a) \
+		: *(uint8_t *)(readlookup2[(uint32_t)((s)+(a))>>12] + (uint32_t)((s) + (a))) )
+#define readmemq(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || \
+		       (s)==0xFFFFFFFF || (((s)+(a)) & 7)) \
+		? readmemql(s,a) \
+		: *(uint64_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 
-#define writememb(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF) writememb386l(s,a,v); else *(uint8_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
+#define writememb(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (s)==0xFFFFFFFF) writememb386l(s,a,v); else *(uint8_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
 
-#define writememw(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 1)) writememwl(s,a,v); else *(uint16_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
-#define writememl(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 3)) writememll(s,a,v); else *(uint32_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
-#define writememq(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 7)) writememql(s,a,v); else *(uint64_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
+#define writememw(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 1)) writememwl(s,a,v); else *(uint16_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
+#define writememl(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 3)) writememll(s,a,v); else *(uint32_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
+#define writememq(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (s)==0xFFFFFFFF || (((s)+(a)) & 7)) writememql(s,a,v); else *(uint64_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
 
 
 #define check_io_perm(port) if (msw&1 && ((CPL > IOPL) || (eflags&VM_FLAG))) \
@@ -103,7 +109,7 @@ extern uint16_t ea_rseg;
         }
 
 #define CHECK_WRITE_REP(chseg, low, high)  \
-        if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high))       \
+        if ((low < (chseg)->limit_low) || ((unsigned)high > (chseg)->limit_high))       \
         {                                       \
                 x86gpf("Limit check (WRITE REP)", 0);       \
                 break;                       \

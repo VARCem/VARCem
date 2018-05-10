@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.7	2018/05/04
+ * Version:	@(#)win_settings_periph.h	1.0.8	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -150,7 +150,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				if (device_is_valid(dev, machines[temp_machine].flags)) {
 					if (c == 0) {
-						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_2152));
+						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2152));
 					} else {
 						mbstowcs(temp, stransi, sizeof_w(temp));
 						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
@@ -180,9 +180,9 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		recalc_hdc_list(hdlg, temp_machine, 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_IDE_TER);
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_5376));
+		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_5376));
 		for (c = 0; c < 11; c++) {
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_2155), valid_ide_irqs[c]);
+			swprintf(temp, sizeof_w(temp), get_string(IDS_2155), valid_ide_irqs[c]);
 			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 		}
 		if (temp_ide_ter)
@@ -191,9 +191,9 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			SendMessage(h, CB_SETCURSEL, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_IDE_QUA);
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_5376));
+		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_5376));
 		for (c = 0; c < 11; c++) {
-			swprintf(temp, sizeof_w(temp), plat_get_string(IDS_2155), valid_ide_irqs[c]);
+			swprintf(temp, sizeof_w(temp), get_string(IDS_2155), valid_ide_irqs[c]);
 			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 		}
 		if (temp_ide_qua)

@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy Image dialog.
  *
- * Version:	@(#)win_new_floppy.c	1.0.13	2018/05/06
+ * Version:	@(#)win_new_floppy.c	1.0.14	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,18 +85,18 @@ dlg_init(HWND hdlg)
 	zip_types = zip_drives[fdd_id].is_250 ? 2 : 1;
 	for (i = 0; i < zip_types; i++)
                 SendMessage(h, CB_ADDSTRING, 0,
-		    (LPARAM)plat_get_string(IDS_5900 + i));
+		    (LPARAM)get_string(IDS_5900 + i));
     } else {
 	for (i = 0; i < 12; i++)
                 SendMessage(h, CB_ADDSTRING, 0,
-		    (LPARAM)plat_get_string(IDS_5888 + i));
+		    (LPARAM)get_string(IDS_5888 + i));
     }
     SendMessage(h, CB_SETCURSEL, 0, 0);
     EnableWindow(h, FALSE);
 
     h = GetDlgItem(hdlg, IDC_COMBO_RPM_MODE);
     for (i = 0; i < 4; i++)
-	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)plat_get_string(IDS_6144 + i));
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_6144 + i));
     SendMessage(h, CB_SETCURSEL, 0, 0);
     EnableWindow(h, FALSE);
     ShowWindow(h, SW_HIDE);
@@ -181,7 +181,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				return TRUE;
 
 			case IDC_CFILE:
-	                        if (! dlg_file_ex(hdlg, plat_get_string(is_zip ? IDS_2176 : IDS_2174), NULL, temp_path, 1)) {
+	                        if (! dlg_file_ex(hdlg, get_string(is_zip ? IDS_2176 : IDS_2174), NULL, temp_path, 1)) {
 					if (! wcschr(temp_path, L'.')) {
 						if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
 							twcs = &temp_path[wcslen(temp_path)];

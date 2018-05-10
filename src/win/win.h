@@ -76,7 +76,6 @@ extern HWND		hwndMain,
 extern LCID		lang_id;
 extern DWORD		filterindex;
 extern int		status_is_open;
-extern const vidapi_t	*vid_apis[];
 
 /* VidApi initializers. */
 extern const vidapi_t	ddraw_vidapi;

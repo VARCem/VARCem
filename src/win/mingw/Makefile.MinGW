@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.41	2018/05/07
+# Version:	@(#)Makefile.mingw	1.0.42	2018/05/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -475,6 +475,7 @@ endif
 
 
 # Final versions of the toolchain flags.
+# FIXME: add the -Wsign-compare option soon!
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
 		   -Wall -Wundef #-Wshadow #-Wunused-parameter -Wmissing-declarations
@@ -489,12 +490,12 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
-MAINOBJ		:= pc.o config.o \
+MAINOBJ		:= pc.o config.o misc.o \
 		   random.o timer.o io.o dma.o nmi.o pic.o pit.o ppi.o \
 		   pci.o mca.o mcr.o mem.o memregs.o rom.o rom_load.o \
 		   device.o nvr.o nvr_at.o nvr_ps2.o $(VNCOBJ) $(RDPOBJ)
 
-UIOBJ		+= ui_main.o ui_new_floppy.o ui_stbar.o
+UIOBJ		+= ui_main.o ui_new_floppy.o ui_stbar.o ui_vidapi.o
 
 INTELOBJ	:= intel.o \
 		    intel_flash.o \
@@ -570,9 +571,10 @@ SCSIOBJ		:= scsi.o \
 NETOBJ		:= network.o \
 		    net_pcap.o \
 		    net_slirp.o \
-		     bootp.o ip_icmp.o misc.o socket.o tcp_timer.o cksum.o \
-		     ip_input.o queue.o tcp_input.o debug.o ip_output.o \
-		     sbuf.o tcp_output.o udp.o if.o mbuf.o slirp.o tcp_subr.o \
+		     bootp.o ip_icmp.o slirp_misc.o socket.o tcp_timer.o \
+		     cksum.o ip_input.o queue.o tcp_input.o debug.o \
+		     ip_output.o sbuf.o tcp_output.o udp.o if.o mbuf.o \
+		     slirp.o tcp_subr.o \
 		    net_ne2000.o
 
 SNDOBJ		:= sound.o \
@@ -661,6 +663,10 @@ else
 %.o:		%.cpp
 		@echo $<
 		@$(CPP) $(CXXFLAGS) -c $<
+
+%.int:		%.c
+		@echo $<
+		@$(PREPROC) $(OPTS) $< >$@
 
 %.d:		%.c $(wildcard $*.d)
 		@echo $<

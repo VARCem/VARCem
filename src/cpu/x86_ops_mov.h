@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mov.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_mov.h	1.0.2	2018/05/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -310,7 +310,7 @@ static int opMOV_AX_a16(uint32_t fetchdat)
 {
 	uint16_t temp;
         uint16_t addr = getwordf();
-        CHECK_READ(cpu_state.ea_seg, addr, addr + 1);
+        CHECK_READ(cpu_state.ea_seg, addr, (uint16_t)(addr + 1));
         temp = readmemw(cpu_state.ea_seg->base, addr);     if (cpu_state.abrt) return 1;
         AX = temp;
         CLOCK_CYCLES((is486) ? 1 : 4);
@@ -332,7 +332,7 @@ static int opMOV_EAX_a16(uint32_t fetchdat)
 {
 	uint32_t temp;
         uint16_t addr = getwordf();
-        CHECK_READ(cpu_state.ea_seg, addr, addr + 3);
+        CHECK_READ(cpu_state.ea_seg, addr, (uint16_t) (addr + 3));
         temp = readmeml(cpu_state.ea_seg->base, addr);     if (cpu_state.abrt) return 1;
         EAX = temp;
         CLOCK_CYCLES((is486) ? 1 : 4);
@@ -372,7 +372,7 @@ static int opMOV_a32_AL(uint32_t fetchdat)
 static int opMOV_a16_AX(uint32_t fetchdat)
 {
         uint16_t addr = getwordf();
-        CHECK_WRITE(cpu_state.ea_seg, addr, addr + 1);
+        CHECK_WRITE(cpu_state.ea_seg, addr, (uint16_t)(addr + 1));
         writememw(cpu_state.ea_seg->base, addr, AX);
         CLOCK_CYCLES((is486) ? 1 : 2);
         PREFETCH_RUN(2, 3, -1, 0,0,1,0, 0);
@@ -390,7 +390,7 @@ static int opMOV_a32_AX(uint32_t fetchdat)
 static int opMOV_a16_EAX(uint32_t fetchdat)
 {
         uint16_t addr = getwordf();
-        CHECK_WRITE(cpu_state.ea_seg, addr, addr + 3);
+        CHECK_WRITE(cpu_state.ea_seg, addr, (uint16_t)(addr + 3));
         writememl(cpu_state.ea_seg->base, addr, EAX);
         CLOCK_CYCLES((is486) ? 1 : 2);
         PREFETCH_RUN(2, 3, -1, 0,0,0,1, 0);

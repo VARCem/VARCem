@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.3	2018/05/06
+ * Version:	@(#)386_dynarec.c	1.0.4	2018/05/09
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -170,9 +170,9 @@ static __inline void fetch_ea_32_long(uint32_t rmdat)
         if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC)
         {
                 uint32_t addr = easeg + cpu_state.eaaddr;
-                if ( readlookup2[addr >> 12] != -1)
+                if (readlookup2[addr >> 12] != (uintptr_t)-1)
                    eal_r = (uint32_t *)(readlookup2[addr >> 12] + addr);
-                if (writelookup2[addr >> 12] != -1)
+                if (writelookup2[addr >> 12] != (uintptr_t)-1)
                    eal_w = (uint32_t *)(writelookup2[addr >> 12] + addr);
         }
 	cpu_state.last_ea = cpu_state.eaaddr;
@@ -213,9 +213,9 @@ static __inline void fetch_ea_16_long(uint32_t rmdat)
         if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC)
         {
                 uint32_t addr = easeg + cpu_state.eaaddr;
-                if ( readlookup2[addr >> 12] != -1)
+                if (readlookup2[addr >> 12] != (uintptr_t)-1)
                    eal_r = (uint32_t *)(readlookup2[addr >> 12] + addr);
-                if (writelookup2[addr >> 12] != -1)
+                if (writelookup2[addr >> 12] != (uintptr_t)-1)
                    eal_w = (uint32_t *)(writelookup2[addr >> 12] + addr);
         }
 	cpu_state.last_ea = cpu_state.eaaddr;

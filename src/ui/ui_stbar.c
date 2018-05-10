@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.5	2018/05/08
+ * Version:	@(#)ui_stbar.c	1.0.6	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -195,7 +195,7 @@ ui_sb_tip_update(int tag)
 {
     wchar_t tip[512];
     wchar_t temp[512];
-    wchar_t *str;
+    const wchar_t *str;
     const char *stransi;
     int bus, drive, id;
     int type, part;
@@ -212,34 +212,34 @@ ui_sb_tip_update(int tag)
 		mbstowcs(temp, stransi, sizeof_w(temp));
 		str = floppyfns[drive];
 		if (*str == L'\0')
-			str = plat_get_string(IDS_2057);	/*"empty"*/
+			str = get_string(IDS_2057);	/*"empty"*/
 		swprintf(tip, sizeof_w(tip),
-			 plat_get_string(IDS_2158), drive+1, temp, str);
+			 get_string(IDS_2158), drive+1, temp, str);
 		break;
 
 	case SB_CDROM:
 		drive = sb_tags[part] & 0x0f;
 		bus = cdrom_drives[drive].bus_type;
 		id = IDS_4352 + (bus - 1);
-		wcscpy(temp, plat_get_string(id));
+		wcscpy(temp, get_string(id));
 		str = cdrom_image[drive].image_path;
 		if (*str == L'\0')
-			str = plat_get_string(IDS_2057);	/*"empty"*/
+			str = get_string(IDS_2057);	/*"empty"*/
 		if (cdrom_drives[drive].host_drive == 200) {
 			swprintf(tip, sizeof_w(tip),
-				 plat_get_string(IDS_5120),
+				 get_string(IDS_5120),
 				 drive+1, temp, str);
 		} else if ((cdrom_drives[drive].host_drive >= 'A') &&
 			   (cdrom_drives[drive].host_drive <= 'Z')) {
 			swprintf(temp, sizeof_w(temp),
-				 plat_get_string(IDS_2058),
+				 get_string(IDS_2058),
 				 cdrom_drives[drive].host_drive & ~0x20);
 			swprintf(tip, sizeof_w(tip),
-				 plat_get_string(IDS_5120),
-				 drive+1, plat_get_string(id), temp);
+				 get_string(IDS_5120),
+				 drive+1, get_string(id), temp);
 		} else {
 			swprintf(tip, sizeof_w(tip),
-				 plat_get_string(IDS_5120),
+				 get_string(IDS_5120),
 				 drive+1, temp, str);
 		}
 		break;
@@ -249,34 +249,34 @@ ui_sb_tip_update(int tag)
 		type = zip_drives[drive].is_250 ? 250 : 100;
 		str = zip_drives[drive].image_path;
 		if (*str == L'\0')
-			str = plat_get_string(IDS_2057);	/*"empty"*/
+			str = get_string(IDS_2057);	/*"empty"*/
 		swprintf(tip, sizeof_w(tip),
-			 plat_get_string(IDS_2177), drive+1, type, str);
+			 get_string(IDS_2177), drive+1, type, str);
 		break;
 
 	case SB_RDISK:
 		drive = sb_tags[part] & 0x1f;
 		str = hdd[drive].fn;
 		if (*str == L'\0')
-			str = plat_get_string(IDS_2057);	/*"empty"*/
+			str = get_string(IDS_2057);	/*"empty"*/
 		swprintf(tip, sizeof_w(tip),
-			 plat_get_string(IDS_4115), drive, str);
+			 get_string(IDS_4115), drive, str);
 		break;
 
 	case SB_HDD:
 		bus = sb_tags[part] & 0x0f;
 		id = IDS_4352 + (bus - 1);
-		str = plat_get_string(id);
+		str = get_string(id);
 		swprintf(tip, sizeof_w(tip),
-			 plat_get_string(IDS_4096), str);
+			 get_string(IDS_4096), str);
 		break;
 
 	case SB_NETWORK:
-		swprintf(tip, sizeof_w(tip), plat_get_string(IDS_2069));
+		swprintf(tip, sizeof_w(tip), get_string(IDS_2069));
 		break;
 
 	case SB_SOUND:
-		swprintf(tip, sizeof_w(tip), plat_get_string(IDS_2068));
+		swprintf(tip, sizeof_w(tip), get_string(IDS_2068));
 		break;
 
 	default:
@@ -316,18 +316,18 @@ static void
 menu_floppy(int part, int drive)
 {
     sb_menu_add_item(part, IDM_FLOPPY_IMAGE_NEW | drive,
-		     plat_get_string(IDS_2161));
+		     get_string(IDS_2161));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_FLOPPY_IMAGE_EXISTING | drive,
-		     plat_get_string(IDS_2162));
+		     get_string(IDS_2162));
     sb_menu_add_item(part, IDM_FLOPPY_IMAGE_EXISTING_WP | drive,
-		     plat_get_string(IDS_2163));
+		     get_string(IDS_2163));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_FLOPPY_EXPORT_TO_86F | drive,
-		     plat_get_string(IDS_2172));
+		     get_string(IDS_2172));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_FLOPPY_EJECT | drive,
-		     plat_get_string(IDS_2164));
+		     get_string(IDS_2164));
 
     if (floppyfns[drive][0] == L'\0') {
 	sb_menu_enable_item(part, IDM_FLOPPY_EJECT | drive, 0);
@@ -344,15 +344,15 @@ menu_cdrom(int part, int drive)
     int i;
 
     sb_menu_add_item(part, IDM_CDROM_MUTE | drive,
-		     plat_get_string(IDS_2165));
+		     get_string(IDS_2165));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_CDROM_EMPTY | drive,
-		     plat_get_string(IDS_2166));
+		     get_string(IDS_2166));
     sb_menu_add_item(part, IDM_CDROM_RELOAD | drive,
-		     plat_get_string(IDS_2167));
+		     get_string(IDS_2167));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_CDROM_IMAGE | drive,
-		     plat_get_string(IDS_2168));
+		     get_string(IDS_2168));
 
     if (host_cdrom_drive_available_num == 0) {
 	if ((cdrom_drives[drive].host_drive >= 'A') &&
@@ -401,15 +401,15 @@ static void
 menu_zip(int part, int drive)
 {
     sb_menu_add_item(part, IDM_ZIP_IMAGE_NEW | drive,
-		     plat_get_string(IDS_2161));
+		     get_string(IDS_2161));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_ZIP_IMAGE_EXISTING | drive,
-		     plat_get_string(IDS_2162));
+		     get_string(IDS_2162));
     sb_menu_add_item(part, IDM_ZIP_IMAGE_EXISTING_WP | drive,
-		     plat_get_string(IDS_2163));
+		     get_string(IDS_2163));
     sb_menu_add_item(part, -1, NULL);
-    sb_menu_add_item(part, IDM_ZIP_EJECT | drive, plat_get_string(IDS_2164));
-    sb_menu_add_item(part, IDM_ZIP_RELOAD | drive, plat_get_string(IDS_2167));
+    sb_menu_add_item(part, IDM_ZIP_EJECT | drive, get_string(IDS_2164));
+    sb_menu_add_item(part, IDM_ZIP_RELOAD | drive, get_string(IDS_2167));
 
     if (zip_drives[drive].image_path[0] == L'\0') {
 	sb_menu_enable_item(part, IDM_ZIP_EJECT | drive, 0);
@@ -426,17 +426,17 @@ static void
 menu_remov(int part, int drive)
 {
     sb_menu_add_item(part, IDM_RDISK_EJECT | drive,
-		     plat_get_string(IDS_2164));
+		     get_string(IDS_2164));
     sb_menu_add_item(part, IDM_RDISK_RELOAD | drive,
-		     plat_get_string(IDS_2167));
+		     get_string(IDS_2167));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_RDISK_SEND_CHANGE | drive,
-		     plat_get_string(IDS_2142));
+		     get_string(IDS_2142));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_RDISK_IMAGE | drive,
-		     plat_get_string(IDS_2168));
+		     get_string(IDS_2168));
     sb_menu_add_item(part, IDM_RDISK_IMAGE_WP | drive,
-		     plat_get_string(IDS_2169));
+		     get_string(IDS_2169));
 }
 
 
@@ -811,7 +811,7 @@ ui_sb_menu_command(int idm, int tag)
 		if (part == -1) break;
 
 		i = (idm == IDM_FLOPPY_IMAGE_EXISTING_WP) ? 0x80 : 0;
-		if (! dlg_file(plat_get_string(IDS_2159),
+		if (! dlg_file(get_string(IDS_2159),
 			       floppyfns[drive], temp, i))
 			ui_sb_mount_floppy(drive, part, i ? 1 : 0, temp);
 		break;
@@ -834,7 +834,7 @@ ui_sb_menu_command(int idm, int tag)
 		part = find_tag(SB_FLOPPY | drive);
 		if (part == -1) break;
 
-		if (! dlg_file(plat_get_string(IDS_2173), floppyfns[drive], temp, 1)) {
+		if (! dlg_file(get_string(IDS_2173), floppyfns[drive], temp, 1)) {
 			plat_pause(1);
 			if (! d86f_export(drive, temp))
 				ui_msgbox(MBX_ERROR, (wchar_t *)IDS_4108);
@@ -869,7 +869,7 @@ ui_sb_menu_command(int idm, int tag)
 		part = find_tag(SB_CDROM | drive);
 		if (part == -1) break;
 
-		if (dlg_file(plat_get_string(IDS_2075),
+		if (dlg_file(get_string(IDS_2075),
 			     cdrom_image[drive].image_path, temp, 0x80)) break;
 
 		cdrom_drives[drive].prev_host_drive = cdrom_drives[drive].host_drive;
@@ -952,7 +952,7 @@ ui_sb_menu_command(int idm, int tag)
 		if (part == -1) break;
 
 		i = (idm == IDM_ZIP_IMAGE_EXISTING_WP) ? 0x80 : 0;
-		if (dlg_file(plat_get_string(IDS_2175),
+		if (dlg_file(get_string(IDS_2175),
 			     zip_drives[drive].image_path, temp, i)) break;
 		ui_sb_mount_zip(drive, part, i ? 1 : 0, temp);
 		break;
@@ -988,7 +988,7 @@ ui_sb_menu_command(int idm, int tag)
 		part = find_tag(idm | drive);
 
 		i = (idm == IDM_RDISK_IMAGE_WP) ? 0x80 : 0;
-		if (dlg_file(plat_get_string(IDS_4106),
+		if (dlg_file(get_string(IDS_4106),
 			     hdd[drive].fn, temp, i)) break;
 
 		removable_disk_unload(drive);

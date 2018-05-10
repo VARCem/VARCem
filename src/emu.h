@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.21	2018/05/05
+ * Version:	@(#)emu.h	1.0.22	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -157,27 +157,30 @@ extern int	config_changed;			/* config has changed */
 
 /* Function prototypes. */
 #ifdef HAVE_STDARG_H
-extern void	pclog_ex(const char *fmt, va_list);
+extern void		pclog_ex(const char *fmt, va_list);
 #endif
-extern void	pclog(const char *fmt, ...);
-extern void	fatal(const char *fmt, ...);
-extern void	pc_version(const char *platform);
-extern void	pc_path(wchar_t *dest, int dest_sz, const wchar_t *src);
-extern int	pc_setup(int argc, wchar_t *argv[]);
-extern int	pc_init(void);
-extern void	pc_close(void *threadid);
-extern void	pc_reset_hard_close(void);
-extern void	pc_reset_hard_init(void);
-extern void	pc_reset_hard(void);
-extern void	pc_reset(int hard);
-extern void	pc_reload(const wchar_t *fn);
-extern void	pc_full_speed(void);
-extern void	pc_speed_changed(void);
-extern void	pc_thread(void *param);
-extern void	pc_start(void);
-extern void	pc_onesec(void);
-extern void	set_screen_size(int x, int y);
-extern void	set_screen_size_natural(void);
+extern void		pclog(const char *fmt, ...);
+extern void		fatal(const char *fmt, ...);
+extern void		pc_version(const char *platform);
+extern void		pc_path(wchar_t *dest, int dest_sz, const wchar_t *src);
+extern int		pc_setup(int argc, wchar_t *argv[]);
+extern int		pc_init(void);
+extern void		pc_close(void *threadid);
+extern void		pc_reset_hard_close(void);
+extern void		pc_reset_hard_init(void);
+extern void		pc_reset_hard(void);
+extern void		pc_reset(int hard);
+extern void		pc_reload(const wchar_t *fn);
+extern void		pc_full_speed(void);
+extern void		pc_speed_changed(void);
+extern void		pc_thread(void *param);
+extern void		pc_start(void);
+extern void		pc_onesec(void);
+extern void		set_screen_size(int x, int y);
+extern void		set_screen_size_natural(void);
+
+extern const wchar_t	*get_string(int id);
+extern uint32_t		get_val(const char *str);
 
 #ifdef __cplusplus
 }

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.28	2018/05/09
+# Version:	@(#)Makefile.VC	1.0.29	2018/05/09
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -453,7 +453,7 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
-MAINOBJ		:= pc.obj config.obj \
+MAINOBJ		:= pc.obj config.obj misc.obj \
 		   random.obj timer.obj io.obj dma.obj nmi.obj pic.obj \
 		   pit.obj ppi.obj pci.obj mca.obj mcr.obj mem.obj \
 		   memregs.obj rom.obj rom_load.obj device.obj nvr.obj \
@@ -535,9 +535,11 @@ SCSIOBJ		:= scsi.obj \
 NETOBJ		:= network.obj \
 		    net_pcap.obj \
 		    net_slirp.obj \
-		     bootp.obj ip_icmp.obj misc.obj socket.obj tcp_timer.obj cksum.obj \
-		     ip_input.obj queue.obj tcp_input.obj debug.obj ip_output.obj \
-		     sbuf.obj tcp_output.obj udp.obj if.obj mbuf.obj slirp.obj tcp_subr.obj \
+		     bootp.obj ip_icmp.obj slirp_misc.obj socket.obj \
+		     tcp_timer.obj cksum.obj ip_input.obj queue.obj \
+		     tcp_input.obj debug.obj ip_output.obj sbuf.obj \
+		     tcp_output.obj udp.obj if.obj mbuf.obj slirp.obj \
+		     tcp_subr.obj \
 		    net_ne2000.obj
 
 SNDOBJ		:= sound.obj \
@@ -624,6 +626,9 @@ else
 
 %.obj:		%.cpp
 		@$(CPP) $(CXXFLAGS) -Fo$@ -c $<
+
+%.int:		%.c
+		@$(PREPROC) $(OPTS) -Fo$@ $<
 
 %.d:		%.c $(wildcard $*.d)
 		$(MCPP) $(OPTS) $(DEPS) $< >NUL

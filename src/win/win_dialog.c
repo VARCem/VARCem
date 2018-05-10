@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.8	2018/04/29
+ * Version:	@(#)win_dialog.c	1.0.9	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,8 +89,8 @@ ui_msgbox(int flags, void *arg)
 {
     WCHAR temp[512];
     DWORD fl = 0;
-    WCHAR *str = NULL;
-    WCHAR *cap = NULL;
+    const WCHAR *str = NULL;
+    const WCHAR *cap = NULL;
 
     switch(flags & 0x1f) {
 	case MBX_INFO:		/* just an informational message */
@@ -100,16 +100,16 @@ ui_msgbox(int flags, void *arg)
 
 	case MBX_WARNING:	/* warning message */
 		fl = (MB_YESNO | MB_ICONWARNING);
-		cap = plat_get_string(IDS_2051);	/* "Warning" */
+		cap = get_string(IDS_2051);		/* "Warning" */
 		break;
 
 	case MBX_ERROR:		/* error message */
 		if (flags & MBX_FATAL) {
 			fl = (MB_OK | MB_ICONERROR);
-			cap = plat_get_string(IDS_2049);    /* "Fatal Error"*/
+			cap = get_string(IDS_2049);	/* "Fatal Error"*/
 		} else {
 			fl = (MB_OK | MB_ICONWARNING);
-			cap = plat_get_string(IDS_2048);    /* "Error" */
+			cap = get_string(IDS_2048);	/* "Error" */
 		}
 		break;
 
@@ -120,7 +120,7 @@ ui_msgbox(int flags, void *arg)
 
 	case MBX_CONFIG:	/* configuration */
 		fl = (MB_YESNO | MB_ICONERROR);
-		cap = plat_get_string(IDS_2050); /* "Configuration Error" */
+		cap = get_string(IDS_2050);		/* "Configuration Error" */
 		break;
     }
 
@@ -145,7 +145,7 @@ ui_msgbox(int flags, void *arg)
 	 * that if the value of 'arg' is low, its an ID..
 	 */
 	if (((uintptr_t)arg) < ((uintptr_t)65636))
-		str = plat_get_string((intptr_t)arg);
+		str = get_string((intptr_t)arg);
     }
 
     /* At any rate, we do have a valid (wide) string now. */

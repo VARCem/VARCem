@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.39	2018/05/09
+ * Version:	@(#)pc.c	1.0.41	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -213,9 +213,17 @@ pclog_ex(const char *fmt, va_list ap)
 	if (log_path[0] != L'\0') {
 		stdlog = plat_fopen(log_path, L"w");
 		if (stdlog == NULL)
+#ifdef _WIN32
 			stdlog = stdout;
+#else
+			stdlog = stderr;
+#endif
 	} else {
+#ifdef _WIN32
 		stdlog = stdout;
+#else
+			stdlog = stderr;
+#endif
 	}
     }
 
@@ -713,12 +721,12 @@ pc_init(void)
 {
     wchar_t temp[1024];
     wchar_t name[128];
-    wchar_t *str;
+    const wchar_t *str;
 
     /* Load the ROMs for the selected machine. */
     if ((machine < 0) || !machine_available(machine)) {
 	/* Whoops, selected machine not available. */
-	str = plat_get_string(IDS_2063);
+	str = get_string(IDS_2063);
 	mbstowcs(name, machine_getname(), sizeof_w(name));
 	swprintf(temp, sizeof_w(temp), str, name);
 
@@ -732,7 +740,7 @@ pc_init(void)
     if ((video_card < 0) ||
 	!video_card_available(video_old_to_new(video_card))) {
 	/* Whoops, selected video not available. */
-	str = plat_get_string(IDS_2064);
+	str = get_string(IDS_2064);
 	mbstowcs(name, machine_getname(), sizeof_w(name));
 	swprintf(temp, sizeof_w(temp), str, name);
 
@@ -1105,9 +1113,9 @@ pc_thread(void *param)
 			if (mouse_type != MOUSE_NONE) {
 				wcscat(temp, L" - ");
 				if (!mouse_capture) {
-					wcscat(temp, plat_get_string(IDS_2077));
+					wcscat(temp, get_string(IDS_2077));
 				} else {
-					wcscat(temp, (mouse_get_buttons() > 2) ? plat_get_string(IDS_2078) : plat_get_string(IDS_2079));
+					wcscat(temp, (mouse_get_buttons() > 2) ? get_string(IDS_2078) : get_string(IDS_2079));
 				}
 			}
 

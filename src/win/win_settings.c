@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.28	2018/05/06
+ * Version:	@(#)win_settings.c	1.0.29	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -552,7 +552,7 @@ insert_categories(HWND hwndList)
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
     for (i=0; i<10; i++) {
-	lvI.pszText = plat_get_string(IDS_2065+i);
+	lvI.pszText = (LPTSTR)get_string(IDS_2065+i);
 	lvI.iItem = i;
 	lvI.iImage = i;
 

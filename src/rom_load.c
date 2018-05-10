@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.9	2018/05/06
+ * Version:	@(#)rom_load.c	1.0.10	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -68,20 +68,6 @@
 
 
 #define MAX_ARGS	16		/* max number of arguments */
-
-
-/* Grab the value from a string. */
-static uint32_t
-get_val(char *str)
-{
-    long unsigned int l = 0UL;
-
-    if ((strlen(str) > 1)  &&			/* hex always is 0x... */
-	(sscanf(str, "0x%lx", &l) == 0))	/* no valid field found */
-	sscanf(str, "%i", (int *)&l);		/* try decimal.. */
-
-    return(l);
-}
 
 
 /* Process a single (logical) command line. */

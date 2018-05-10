@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.9	2018/05/06
+ * Version:	@(#)device.c	1.0.10	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,7 +93,7 @@ device_add(const device_t *d)
      */
     if (d->flags & DEVICE_UNSTABLE) {
 	mbstowcs(devname, d->name, sizeof_w(devname));
-        swprintf(temp, sizeof_w(temp), plat_get_string(IDS_2144), devname);
+        swprintf(temp, sizeof_w(temp), get_string(IDS_2144), devname);
 
         /* Show the messagebox, and abort if 'No' was selected. */
         if (ui_msgbox(MBX_WARNING, temp) == 1) return(0);

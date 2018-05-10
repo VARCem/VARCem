@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.13	2018/05/09
+ * Version:	@(#)ui_main.c	1.0.14	2018/05/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -497,7 +497,7 @@ ui_menu_command(int idm)
 	/* FIXME: need to fix these.. */
 	case IDM_LOAD:				/* TOOLS menu */
 		plat_pause(1);
-		if (! dlg_file(plat_get_string(IDS_2160), NULL, temp, 0) &&
+		if (! dlg_file(get_string(IDS_2160), NULL, temp, 0) &&
 		    (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051) == 0)) {
 			pc_reload(temp);
 			ui_menu_reset_all();
@@ -507,7 +507,7 @@ ui_menu_command(int idm)
 
 	case IDM_SAVE:				/* TOOLS menu */
 		plat_pause(1);
-		if (! dlg_file(plat_get_string(IDS_2160), NULL, temp, 1)) {
+		if (! dlg_file(get_string(IDS_2160), NULL, temp, 1)) {
 			config_write(temp);
 		}
 		plat_pause(0);

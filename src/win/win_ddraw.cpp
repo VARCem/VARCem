@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.8	2018/05/07
+ * Version:	@(#)win_ddraw.cpp	1.0.9	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -228,7 +228,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     fp = plat_fopen(fn, L"wb");
     if (fp == NULL) {
 	pclog("[SavePNG] File %ls could not be opened for writing!\n", fn);
-	_swprintf(temp, plat_get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_2088), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
@@ -238,7 +238,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     if (png_ptr == NULL) {
 	(void)fclose(fp);
 	pclog("[SavePNG] png_create_write_struct failed!\n");
-	_swprintf(temp, plat_get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_2088), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
@@ -247,7 +247,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     if (png_info_ptr == NULL) {
 	(void)fclose(fp);
 	pclog("[SavePNG] png_create_info_struct failed!\n");
-	_swprintf(temp, plat_get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_2088), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
@@ -267,7 +267,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     if ((pBuf = malloc(bmpInfo.bmiHeader.biSizeImage)) == NULL) {
 	(void)fclose(fp);
 	pclog("[SavePNG] Unable to allocate bitmap memory!\n");
-	_swprintf(temp, plat_get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_2088), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
@@ -279,7 +279,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 		(void)fclose(fp);
 		free(pBuf);
 		pclog("[SavePNG] Unable to allocate secondary bitmap memory!\n");
-		_swprintf(temp, plat_get_string(IDS_2088), fn);
+		_swprintf(temp, get_string(IDS_2088), fn);
 		ui_msgbox(MBX_ERROR, temp);
 		return;
 	}
@@ -308,7 +308,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 	free(pBuf);
 	free(pBuf2);
 	pclog("[SavePNG] Unable to allocate RGB bitmap memory!\n");
-	_swprintf(temp, plat_get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_2088), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
@@ -381,7 +381,7 @@ SaveBMP(const wchar_t *fn, HBITMAP hBitmap)
 	GetDIBits(hdc, hBitmap, 0, bmpInfo.bmiHeader.biHeight, pBuf, &bmpInfo, DIB_RGB_COLORS);
 
 	if ((fp = _wfopen(fn, L"wb")) == NULL) {
-		_swprintf(temp, plat_get_string(IDS_2088), fn);
+		_swprintf(temp, get_string(IDS_2088), fn);
 		ui_msgbox(MBX_ERROR, temp);
 		break;
 	} 

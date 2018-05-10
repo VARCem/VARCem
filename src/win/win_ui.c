@@ -662,8 +662,7 @@ again:
 	 * Inform the user, and ask if they want to reset
 	 * to the system default one instead.
 	 */
-	_swprintf(title, plat_get_string(IDS_2095),
-		  vidapi_internal_name(vid_api));
+	_swprintf(title, get_string(IDS_2095), vidapi_internal_name(vid_api));
 	if (ui_msgbox(MBX_CONFIG, title) != 0) {
 		/* Nope, they don't, so just exit. */
 		return(5);
@@ -797,7 +796,7 @@ ui_menu_update(void)
 
 /* Update the application's title bar. */
 wchar_t *
-ui_window_title(wchar_t *s)
+ui_window_title(const wchar_t *s)
 {
     if (! vid_fullscreen) {
 	if (s != NULL)
@@ -811,7 +810,7 @@ ui_window_title(wchar_t *s)
 		s = wTitle;
     }
 
-    return(s);
+    return((wchar_t *)s);
 }
 
 
@@ -868,7 +867,7 @@ plat_setfullscreen(int on)
     plat_startblit();
     video_wait_for_blit();
 
-//    win_mouse_close();
+    win_mouse_close();
 
     /* Close the current mode, and open the new one. */
     plat_vidapis[vid_api]->close();
@@ -879,7 +878,7 @@ plat_setfullscreen(int on)
     wx_set_fullscreen(on);
 #endif
 
-//    win_mouse_init();
+    win_mouse_init();
 
     /* Release video and make it redraw the screen. */
     plat_endblit();

@@ -8,7 +8,7 @@
  *
  *		Platform-independent resource identifiers.
  *
- * Version:	@(#)ui_resource.h	1.0.6	2018/05/07
+ * Version:	@(#)ui_resource.h	1.0.7	2018/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -193,6 +193,8 @@
 
 
 /* String IDs. */
+#define IDS_BEGIN	2048		// start of string IDs
+
 #define IDS_2048	2048		// "Error"
 #define IDS_2049	2049		// "Fatal Error"
 #define IDS_2050	2050		// "Configuration Error"
@@ -392,20 +394,9 @@
 #define IDS_6147	6147		// "2%% below perfect RPM"
 
 #define IDS_7168	7168		// "English (United States)"
-
 #define IDS_LANG_ENUS	IDS_7168
 
-#define STR_NUM_2048	132
-#define STR_NUM_3072	11
-#define STR_NUM_4096	20
-#define STR_NUM_4352	6
-#define STR_NUM_4608	6
-#define STR_NUM_5120	1
-#define STR_NUM_5376	6
-#define STR_NUM_5632	6
-#define STR_NUM_5888	14
-#define STR_NUM_6144	4
-#define STR_NUM_7168	1
+#define IDS_END		8191		// end of string IDs
 
 
 #endif	/*EMU_UI_RESOURCE_H*/
