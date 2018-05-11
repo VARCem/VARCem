@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.42	2018/05/09
+# Version:	@(#)Makefile.mingw	1.0.43	2018/05/10
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -490,12 +490,13 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
-MAINOBJ		:= pc.o config.o misc.o \
-		   random.o timer.o io.o dma.o nmi.o pic.o pit.o ppi.o \
-		   pci.o mca.o mcr.o mem.o memregs.o rom.o rom_load.o \
-		   device.o nvr.o nvr_at.o nvr_ps2.o $(VNCOBJ) $(RDPOBJ)
+MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
+		   rom.o rom_load.o device.o nvr.o $(VNCOBJ) $(RDPOBJ)
 
 UIOBJ		+= ui_main.o ui_new_floppy.o ui_stbar.o ui_vidapi.o
+
+SYSOBJ		:= dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o mcr.o \
+		   memregs.o nvr_at.o nvr_ps2.o
 
 INTELOBJ	:= intel.o \
 		    intel_flash.o \
@@ -637,8 +638,8 @@ PLATOBJ		+= win_crashdump.o
 endif
 
 
-OBJ		:= $(MAINOBJ) $(INTELOBJ) $(CPUOBJ) $(MCHOBJ) $(DEVOBJ) \
-		   $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
+OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
+		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
 		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
 ifdef EXOBJ
@@ -663,10 +664,6 @@ else
 %.o:		%.cpp
 		@echo $<
 		@$(CPP) $(CXXFLAGS) -c $<
-
-%.int:		%.c
-		@echo $<
-		@$(PREPROC) $(OPTS) $< >$@
 
 %.d:		%.c $(wildcard $*.d)
 		@echo $<

@@ -8,7 +8,7 @@
  *
  *		Windows raw keyboard input handler.
  *
- * Version:	@(#)win_keyboard.c	1.0.6	2018/05/06
+ * Version:	@(#)win_keyboard.c	1.0.7	2018/05/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,10 @@
 static uint16_t	scancode_map[768];
 
 
-/* This is so we can disambiguate scan codes that would otherwise conflict and get
-   passed on incorrectly. */
+/*
+ * This is so we can disambiguate scan codes that would otherwise
+ * conflict and get passed on incorrectly.
+ */
 static UINT16
 convert_scan_code(UINT16 code)
 {
@@ -131,113 +133,124 @@ void
 keyboard_handle(LPARAM lParam, int focus)
 {
     static int recv_lalt = 0, recv_ralt = 0, recv_tab = 0;
-    uint32_t ri_size = 0;
-    UINT size;
+    uint32_t ri_size;
+    RAWKEYBOARD rawKB;
+    UINT size = 0;
     RAWINPUT *raw;
     USHORT code;
 
     if (! focus) return;
 
+    /* See how much data the RI has for us, and allocate a buffer. */
     GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL,
 		    &size, sizeof(RAWINPUTHEADER));
+    raw = (RAWINPUT *)malloc(size);
+    if (raw == NULL) {
+	pclog("KBD: out of memory for Raw Input buffer!\n");
+	return;
+    }
 
-    raw = malloc(size);
-    if (raw == NULL) return;
-
-    /* Here we read the raw input data for the keyboard */
+    /* Read the event buffer from RI. */
     ri_size = GetRawInputData((HRAWINPUT)(lParam), RID_INPUT,
 			      raw, &size, sizeof(RAWINPUTHEADER));
-    if (ri_size != size) return;
+    if (ri_size != size) {
+	pclog("KBD: bad event buffer %d/%d\n", size, ri_size);
+	return;
+    }
 
-    /* If the input is keyboard, we process it */
-    if (raw->header.dwType == RIM_TYPEKEYBOARD) {
-	RAWKEYBOARD rawKB = raw->data.keyboard;
-	code = rawKB.MakeCode;
+    /* We only process keyboard events. */
+    if (raw->header.dwType != RIM_TYPEKEYBOARD) {
+	free(raw);
+	return;
+    }
 
-	/* If it's not a scan code that starts with 0xE1 */
-	if (!(rawKB.Flags & RI_KEY_E1)) {
-		if (rawKB.Flags & RI_KEY_E0)
-			code |= (0xE0 << 8);
+    rawKB = raw->data.keyboard;
+    code = rawKB.MakeCode;
 
-		/* Translate the scan code to 9-bit */
-		code = convert_scan_code(code);
+    /* If it's not a scan code that starts with 0xE1 */
+    if (!(rawKB.Flags & RI_KEY_E1)) {
+	if (rawKB.Flags & RI_KEY_E0)
+		code |= (0xE0 << 8);
 
-		/* Remap it according to the list from the Registry */
-                /* pclog("Scan code: %04X (map: %04X)\n", code, scancode_map[code]); */
-		code = scancode_map[code];
+	/* Translate the scan code to 9-bit */
+	code = convert_scan_code(code);
 
-		/* If it's not 0xFFFF, send it to the emulated
-		   keyboard.
-		   We use scan code 0xFFFF to mean a mapping that
-		   has a prefix other than E0 and that is not E1 1D,
-		   which is, for our purposes, invalid. */
-		if ((code == 0x00F) &&
-		    !(rawKB.Flags & RI_KEY_BREAK) &&
-		    (recv_lalt || recv_ralt) &&
-		    !mouse_capture) {
-			/* We received a TAB while ALT was pressed, while the mouse
-			   is not captured, suppress the TAB and send an ALT key up. */
-			if (recv_lalt) {
-				keyboard_input(0, 0x038);
-				/* Extra key press and release so the guest is not stuck in the
-				   menu bar. */
-				keyboard_input(1, 0x038);
-				keyboard_input(0, 0x038);
-				recv_lalt = 0;
-			}
-			if (recv_ralt) {
-				keyboard_input(0, 0x138);
-				/* Extra key press and release so the guest is not stuck in the
-				   menu bar. */
-				keyboard_input(1, 0x138);
-				keyboard_input(0, 0x138);
-				recv_ralt = 0;
-			}
-		} else if (((code == 0x038) || (code == 0x138)) &&
-			   !(rawKB.Flags & RI_KEY_BREAK) &&
-			   recv_tab &&
-			   !mouse_capture) {
-			/* We received an ALT while TAB was pressed, while the mouse
-			   is not captured, suppress the ALT and send a TAB key up. */
-			keyboard_input(0, 0x00F);
-			recv_tab = 0;
-		} else {
-			switch(code) {
-				case 0x00F:
-					recv_tab = !(rawKB.Flags & RI_KEY_BREAK);
-					break;
-				case 0x038:
-					recv_lalt = !(rawKB.Flags & RI_KEY_BREAK);
-					break;
-				case 0x138:
-					recv_ralt = !(rawKB.Flags & RI_KEY_BREAK);
-					break;
-			}
+	/* Remap it according to the list from the Registry */
+#if 0
+	pclog("Scan code: %04X (map: %04X)\n", code, scancode_map[code]);
+#endif
+	code = scancode_map[code];
 
-			/* Translate right CTRL to left ALT if the user has so
-			   chosen. */
-			if ((code == 0x11D) && rctrl_is_lalt)
-				code = 0x038;
-
-			/* Normal scan code pass through, pass it through as is if
-			   it's not an invalid scan code. */
-			if (code != 0xFFFF)
-				keyboard_input(!(rawKB.Flags & RI_KEY_BREAK), code);
+	/*
+	 * If it's not 0xFFFF, send it to the emulated keyboard.
+	 * We use scan code 0xFFFF to mean a mapping that
+	 * has a prefix other than E0 and that is not E1 1D,
+	 * which is, for our purposes, invalid.
+	 */
+	if ((code == 0x00F) && !(rawKB.Flags & RI_KEY_BREAK) &&
+	    (recv_lalt || recv_ralt) && !mouse_capture) {
+		/* We received a TAB while ALT was pressed, while the mouse
+		   is not captured, suppress the TAB and send an ALT key up. */
+		if (recv_lalt) {
+			keyboard_input(0, 0x038);
+			/* Extra key press and release so the guest is not stuck in the
+			   menu bar. */
+			keyboard_input(1, 0x038);
+			keyboard_input(0, 0x038);
+			recv_lalt = 0;
 		}
+		if (recv_ralt) {
+			keyboard_input(0, 0x138);
+			/* Extra key press and release so the guest is not stuck in the
+			   menu bar. */
+			keyboard_input(1, 0x138);
+			keyboard_input(0, 0x138);
+			recv_ralt = 0;
+		}
+	} else if (((code == 0x038) || (code == 0x138)) &&
+		   !(rawKB.Flags & RI_KEY_BREAK) && recv_tab && !mouse_capture) {
+		/* We received an ALT while TAB was pressed, while the mouse
+		   is not captured, suppress the ALT and send a TAB key up. */
+		keyboard_input(0, 0x00F);
+		recv_tab = 0;
 	} else {
-		if (rawKB.MakeCode == 0x1D) {
-			/* Translate E1 1D to 0x100 (which would
-			   otherwise be E0 00 but that is invalid
-			   anyway).
-			   Also, take a potential mapping into
-			   account. */
-			code = scancode_map[0x100];
-		} else
-			code = 0xFFFF;
+		switch(code) {
+			case 0x00F:
+				recv_tab = !(rawKB.Flags & RI_KEY_BREAK);
+				break;
 
+			case 0x038:
+				recv_lalt = !(rawKB.Flags & RI_KEY_BREAK);
+				break;
+
+			case 0x138:
+				recv_ralt = !(rawKB.Flags & RI_KEY_BREAK);
+				break;
+		}
+
+		/* Translate right CTRL to left ALT if the user has so
+		   chosen. */
+		if ((code == 0x11D) && rctrl_is_lalt)
+			code = 0x038;
+
+		/* Normal scan code pass through, pass it through as is if
+		   it's not an invalid scan code. */
 		if (code != 0xFFFF)
 			keyboard_input(!(rawKB.Flags & RI_KEY_BREAK), code);
 	}
+    } else {
+	if (rawKB.MakeCode == 0x1D) {
+		/* Translate E1 1D to 0x100 (which would
+		   otherwise be E0 00 but that is invalid
+		   anyway).
+		   Also, take a potential mapping into
+		   account. */
+		code = scancode_map[0x100];
+	} else
+		code = 0xFFFF;
+
+	if (code != 0xFFFF)
+		keyboard_input(!(rawKB.Flags & RI_KEY_BREAK), code);
     }
 
     free(raw);

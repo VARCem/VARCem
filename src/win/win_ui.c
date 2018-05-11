@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.22	2018/05/09
+ * Version:	@(#)win_ui.c	1.0.23	2018/05/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,7 +76,6 @@ int		infocus = 1;
 
 /* Local data. */
 static wchar_t	wTitle[512];
-static RAWINPUTDEVICE	device;
 static HHOOK	hKeyboardHook;
 static LONG_PTR	OriginalProcedure;
 static HWND	hwndSBAR = NULL;	/* application status bar */
@@ -337,30 +336,6 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		return(0);
 
-	case WM_INPUT:
-		keyboard_handle(lParam, infocus);
-		break;
-
-	case WM_SETFOCUS:
-		infocus = 1;
-		if (! hook_enabled) {
-			hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL,
-							 LowLevelKeyboardProc,
-							 GetModuleHandle(NULL),
-							 0);
-			hook_enabled = 1;
-		}
-		break;
-
-	case WM_KILLFOCUS:
-		infocus = 0;
-		plat_mouse_capture(0);
-		if (hook_enabled) {
-			UnhookWindowsHookEx(hKeyboardHook);
-			hook_enabled = 0;
-		}
-		break;
-
 	case WM_LBUTTONUP:
 		if (! vid_fullscreen)
 			plat_mouse_capture(1);
@@ -517,6 +492,7 @@ ui_init(int nCmdShow)
 {
     WCHAR title[200];
     WNDCLASSEX wincl;			/* buffer for main window's class */
+    RAWINPUTDEVICE ridev;		/* RawInput device */
     MSG messages;			/* received-messages buffer */
     HACCEL haccel;			/* handle to accelerator table */
     DWORD flags;
@@ -616,6 +592,21 @@ ui_init(int nCmdShow)
     /* Make the window visible on the screen. */
     ShowWindow(hwndMain, nCmdShow);
 
+    /* Initialize the RawInput (keyboard) module. */
+    memset(&ridev, 0x00, sizeof(ridev));
+    ridev.usUsagePage = 0x01;
+    ridev.usUsage = 0x06;
+    ridev.dwFlags = RIDEV_NOHOTKEYS;
+    ridev.hwndTarget = NULL;	/* current focus window */
+    if (! RegisterRawInputDevices(&ridev, 1, sizeof(ridev))) {
+	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2154);
+	return(4);
+    }
+    keyboard_getkeymap();
+
+    /* Set up the main window for RawInput. */
+    plat_set_input(hwndMain);
+
     /* Create the Machine Rendering window. */
     hwndRender = CreateWindow(L"STATIC",
 			      NULL,
@@ -684,17 +675,6 @@ again:
     /* Create the status bar window. */
     StatusBarCreate(IDC_STATBAR);
 
-    /* Initialize the input (keyboard, mouse, game) module. */
-    device.usUsagePage = 0x01;
-    device.usUsage = 0x06;
-    device.dwFlags = RIDEV_NOHOTKEYS;
-    device.hwndTarget = hwndMain;
-    if (! RegisterRawInputDevices(&device, 1, sizeof(device))) {
-	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2154);
-	return(4);
-    }
-    keyboard_getkeymap();
-
     /* Initialize the mouse module. */
     win_mouse_init();
 
@@ -757,6 +737,69 @@ again:
     win_mouse_close();
 
     return(messages.wParam);
+}
+
+
+/* Catch WM_INPUT messages for 'current focus' window. */
+static LONG_PTR	input_orig_proc;
+static HWND input_orig_hwnd = NULL;
+#ifdef __amd64__
+static LRESULT CALLBACK
+#else
+static BOOL CALLBACK
+#endif
+input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) {
+	case WM_INPUT:
+pclog("UI: hwnd=%08lx WM_INPUT (infocus=%d) !\n", hwnd, infocus);
+		keyboard_handle(lParam, infocus);
+		break;
+
+	case WM_SETFOCUS:
+pclog("UI: hwnd=%08lx WM_SETFOCUS (infocus=%d) !\n", hwnd, infocus);
+		infocus = 1;
+		if (! hook_enabled) {
+			hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL,
+							 LowLevelKeyboardProc,
+							 GetModuleHandle(NULL),
+							 0);
+			hook_enabled = 1;
+		}
+		break;
+
+	case WM_KILLFOCUS:
+pclog("UI: hwnd=%08lx WM_KILLFOCUS (infocus=%d) !\n", hwnd, infocus);
+		infocus = 0;
+		plat_mouse_capture(0);
+		if (hook_enabled) {
+			UnhookWindowsHookEx(hKeyboardHook);
+			hook_enabled = 0;
+		}
+		break;
+
+	default:
+		return(CallWindowProc((WNDPROC)input_orig_proc,
+				      hwnd, message, wParam, lParam));
+    }
+
+    return(0);
+}
+
+
+void
+plat_set_input(HWND h)
+{
+    /* If needed, rest the old one first. */
+    if (input_orig_hwnd != NULL) {
+	SetWindowLongPtr(input_orig_hwnd, GWL_WNDPROC,
+			 (LONG_PTR)input_orig_proc);
+    }
+
+    /* Redirect the window procedure so we can catch WM_INPUT. */
+    input_orig_proc = GetWindowLongPtr(h, GWLP_WNDPROC);
+    input_orig_hwnd = h;
+    SetWindowLongPtr(h, GWL_WNDPROC, (LONG_PTR)input_proc);
 }
 
 

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.29	2018/05/09
+# Version:	@(#)Makefile.VC	1.0.30	2018/05/10
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -88,6 +88,9 @@ ifndef WX
 endif
 ifndef USB
  USB		:= n
+endif
+ifndef SDL
+ SDL		:= n
 endif
 ifndef VNC
  VNC		:= n
@@ -362,31 +365,64 @@ MUNTOBJ		:= midi_mt32.obj \
 		    Tables.obj TVA.obj TVF.obj TVP.obj sha1.obj c_interface.obj
 endif
 
+ifeq ($(SDL), y)
+ OPTS		+= -DUSE_SDL
+ RFLAGS		+= -DUSE_SDL
+ ifneq ($(SDL_PATH), )
+  OPTS		+= -I$(SDL_PATH)\INCLUDE\MSVC
+  ifeq ($(X64), y)
+    LOPTS	+= -LIBPATH:$(SDL_PATH)\LIB\MSVC\x64
+  else
+    LOPTS	+= -LIBPATH:$(SDL_PATH)\LIB\MSVC\x86
+  endif
+  LIBS		+= sdl2.lib
+ endif
+ SDLOBJ		:= win_sdl.obj
+endif
+
 ifeq ($(VNC), y)
-OPTS		+= -DUSE_VNC
-RFLAGS		+= -DUSE_VNC
+ OPTS		+= -DUSE_VNC
+ RFLAGS		+= -DUSE_VNC
  ifneq ($(VNC_PATH), )
   OPTS		+= -I$(VNC_PATH)\INCLUDE
-  LOPTS		+= $(VNC_PATH)\LIB
-  LIBS		+= -lvncserver
+  LOPTS		+= LIBPATH:$(VNC_PATH)\LIB
+  ifeq ($(X64), y)
+   LOPTS	+= \x64
+  else
+   LOPTS	+= \x86
+  endif
+  LIBS		+= libvncserver.lib
  endif
-VNCOBJ		:= vnc.obj vnc_keymap.obj
+ VNCOBJ		:= vnc.obj vnc_keymap.obj
 endif
 
 ifeq ($(RDP), y)
-OPTS		+= -DUSE_RDP
-RFLAGS		+= -DUSE_RDP
+ OPTS		+= -DUSE_RDP
+ RFLAGS		+= -DUSE_RDP
  ifneq ($(RDP_PATH), )
-  LOPTS		+= $(RDP_PATH)\LIB
-  LIBS		+= -lrdpsrvr
+  LOPTS		+= LIBPATH:$(RDP_PATH)\LIB
+  ifeq ($(X64), y)
+   LOPTS	+= \x64
+  else
+   LOPTS	+= \x86
+  endif
+  LIBS		+= rdpsrvr.lib
  endif
-RDPOBJ		:= rdp.obj
+ RDPOBJ		:= rdp.obj
 endif
 
 ifeq ($(PNG), y)
-OPTS		+= -DUSE_LIBPNG
-RFLAGS		+= -DUSE_LIBPNG
-LIBS		+= libpng16.lib zlib.lib
+ OPTS		+= -DUSE_LIBPNG
+ RFLAGS		+= -DUSE_LIBPNG
+ ifneq ($(PNG_PATH), )
+  LOPTS		+= LIBPATH:$(PNG_PATH)\LIB
+  ifeq ($(X64), y)
+   LOPTS	+= \x64
+  else
+   LOPTS	+= \x86
+  endif
+ endif
+ LIBS		+= libpng16.lib zlib.lib
 endif
 
 # Options for the DEV branch.
@@ -453,18 +489,20 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
-MAINOBJ		:= pc.obj config.obj misc.obj \
-		   random.obj timer.obj io.obj dma.obj nmi.obj pic.obj \
-		   pit.obj ppi.obj pci.obj mca.obj mcr.obj mem.obj \
-		   memregs.obj rom.obj rom_load.obj device.obj nvr.obj \
-		   nvr_at.obj nvr_ps2.obj $(VNCOBJ) $(RDPOBJ)
 
-UIOBJ		+= ui_main.obj ui_new_floppy.obj ui_stbar.obj ui_vidapi.obj
+MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
+		   mem.obj rom.obj rom_load.obj device.obj nvr.obj \
+		   $(SDLOBJ) $(VNCOBJ) $(RDPOBJ)
 
 INTELOBJ	:= intel.obj \
 		    intel_flash.obj \
 		    intel_sio.obj \
 		    intel_piix.obj intel_piix4.obj
+
+UIOBJ		+= ui_main.obj ui_new_floppy.obj ui_stbar.obj ui_vidapi.obj
+
+SYSOBJ		:= dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj mca.obj \
+		   mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj
 
 CPUOBJ		:= cpu.obj cpu_table.obj \
 		    808x.obj 386.obj x86seg.obj x87.obj \
@@ -602,8 +640,8 @@ PLATOBJ		+= win_crashdump.obj
 endif
 
 
-OBJ		:= $(MAINOBJ) $(INTELOBJ) $(CPUOBJ) $(MCHOBJ) $(DEVOBJ) \
-		   $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
+OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
+		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
 		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
 ifdef EXOBJ
@@ -626,9 +664,6 @@ else
 
 %.obj:		%.cpp
 		@$(CPP) $(CXXFLAGS) -Fo$@ -c $<
-
-%.int:		%.c
-		@$(PREPROC) $(OPTS) -Fo$@ $<
 
 %.d:		%.c $(wildcard $*.d)
 		$(MCPP) $(OPTS) $(DEPS) $< >NUL

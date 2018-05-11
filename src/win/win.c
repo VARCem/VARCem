@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.11	2018/05/09
+ * Version:	@(#)win.c	1.0.12	2018/05/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,7 +56,7 @@
 #define GLOBAL
 #include "../plat.h"
 #ifdef USE_SDL
-# include "../sdl.h"
+# include "win_sdl.h"
 #endif
 #ifdef USE_VNC
 # include "../vnc.h"
