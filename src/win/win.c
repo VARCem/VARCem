@@ -62,7 +62,7 @@
 # include "../vnc.h"
 #endif
 #ifdef USE_RDP
-# include "../rdp.h"
+# include <rdp.h>
 #endif
 #include "../devices/input/mouse.h"
 #include "../devices/video/video.h"

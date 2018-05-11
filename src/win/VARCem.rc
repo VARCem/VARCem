@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.26	2018/05/07
+ * Version:	@(#)VARCem.rc	1.0.27	2018/05/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -80,24 +80,23 @@ BEGIN
         BEGIN
             MENUITEM "DirectDraw",              IDM_RENDER_1
             MENUITEM "Direct3D",                IDM_RENDER_2
-#define IDM_NEXT				IDM_RENDER_2 + 1
 #ifdef USE_SDL
-# define IDM_RENDER_SDL				IDM_NEXT
+# define IDM_RENDER_SDL				IDM_RENDER_2+1
             MENUITEM "SDL",                     IDM_RENDER_SDL
-# undef IDM_NEXT
-# define IDM_NEXT				IDM_RENDER_SDL + 1
+#else
+# define IDM_RENDER_SDL				IDM_RENDER_2
 #endif
 #ifdef USE_VNC
-# define IDM_RENDER_VNC				IDM_NEXT
+# define IDM_RENDER_VNC				IDM_RENDER_SDL+1
             MENUITEM "VNC Remote",              IDM_RENDER_VNC
-# undef IDM_NEXT
-# define IDM_NEXT				IDM_RENDER_VNC + 1
+#else
+# define IDM_RENDER_VNC				IDM_RENDER_SDL
 #endif
 #ifdef USE_RDP
-# define IDM_RENDER_RDP				IDM_NEXT
+# define IDM_RENDER_RDP				IDM_RENDER_VNC+1
             MENUITEM "RDP Remote",              IDM_RENDER_RDP
-# undef IDM_NEXT
-# define IDM_NEXT				IDM_RENDER_RDP + 1
+#else
+# define IDM_RENDER_RDP				IDM_RENDER_VNC
 #endif
         END
         MENUITEM SEPARATOR

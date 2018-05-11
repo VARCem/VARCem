@@ -336,16 +336,6 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		return(0);
 
-	case WM_LBUTTONUP:
-		if (! vid_fullscreen)
-			plat_mouse_capture(1);
-		break;
-
-	case WM_MBUTTONUP:
-		if (mouse_get_buttons() < 3)
-			plat_mouse_capture(0);
-		break;
-
 	case WM_ENTERMENULOOP:
 		break;
 
@@ -778,6 +768,18 @@ pclog("UI: hwnd=%08lx WM_KILLFOCUS (infocus=%d) !\n", hwnd, infocus);
 		}
 		break;
 
+	case WM_LBUTTONUP:
+pclog("UI: hwnd=%08lx WM_LBUTTONUP (infocus=%d) !\n", hwnd, infocus);
+		if (! vid_fullscreen)
+			plat_mouse_capture(1);
+		break;
+
+	case WM_MBUTTONUP:
+pclog("UI: hwnd=%08lx WM_MBUTTONUP (infocus=%d) !\n", hwnd, infocus);
+		if (mouse_get_buttons() < 3)
+			plat_mouse_capture(0);
+		break;
+
 	default:
 		return(CallWindowProc((WNDPROC)input_orig_proc,
 				      hwnd, message, wParam, lParam));
@@ -787,6 +789,7 @@ pclog("UI: hwnd=%08lx WM_KILLFOCUS (infocus=%d) !\n", hwnd, infocus);
 }
 
 
+/* Set up a handler for the 'currently active' window. */
 void
 plat_set_input(HWND h)
 {

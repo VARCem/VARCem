@@ -154,6 +154,8 @@ ifndef PROG
  endif
 endif
 
+
+# Which modules to include a development build.
 ifeq ($(DEV_BUILD), y)
  CRASHDUMP	:= y
  DEV_BRANCH	:= y
@@ -217,6 +219,7 @@ VPATH		:= $(EXPATH) . cpu \
 		     devices/sound/resid-fp \
 		    devices/video \
 		   machines ui win
+
 
 #
 # Select the required build environment.
@@ -325,9 +328,9 @@ endif
 
 # Optional modules.
 ifeq ($(DYNAREC), y)
-OPTS		+= -DUSE_DYNAREC
-RFLAGS		+= -DUSE_DYNAREC
-DYNARECOBJ	:= 386_dynarec_ops.obj \
+ OPTS		+= -DUSE_DYNAREC
+ RFLAGS		+= -DUSE_DYNAREC
+ DYNARECOBJ	:= 386_dynarec_ops.obj \
 		    codegen.obj \
 		    codegen_ops.obj \
 		    codegen_timing_common.obj codegen_timing_486.obj \
@@ -335,95 +338,110 @@ DYNARECOBJ	:= 386_dynarec_ops.obj \
 		    codegen_timing_winchip.obj $(PLATCG)
 endif
 
+ifeq ($(OPENAL), y)
+ OPTS		+= -DUSE_OPENAL
+endif
+
+ifeq ($(FLUIDSYNTH), y)
+ OPTS		+= -DUSE_FLUIDSYNTH
+ FSYNTHOBJ	:= midi_fluidsynth.obj
+endif
+
+ifeq ($(MUNT), y)
+ OPTS		+= -DUSE_MUNT
+ MUNTOBJ	:= midi_mt32.obj \
+		    Analog.obj BReverbModel.obj File.obj FileStream.obj \
+		    LA32Ramp.obj LA32FloatWaveGenerator.obj \
+		    LA32WaveGenerator.obj MidiStreamParser.obj Part.obj \
+		    Partial.obj PartialManager.obj Poly.obj ROMInfo.obj \
+		    SampleRateConverter_dummy.obj Synth.obj Tables.obj \
+		    TVA.obj TVF.obj TVP.obj sha1.obj c_interface.obj
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(SDL), n)
+ OPTS		+= -DUSE_SDL
+ RFLAGS		+= -DUSE_SDL
+ ifneq ($(SDL_PATH), )
+  OPTS		+= -I$(SDL_PATH)/include/msvc -I$(SDL_PATH)/include
+  ifeq ($(X64), y)
+   LOPTS	+= -LIBPATH:$(SDL_PATH)\lib\msvc\x64
+  else
+   LOPTS	+= -LIBPATH:$(SDL_PATH)\lib\msvc\x86
+  endif
+ endif
+ ifeq ($(SDL), y)
+  LIBS		+= sdl2.lib
+ endif
+ SDLOBJ		:= win_sdl.obj
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(VNC), n)
+ OPTS		+= -DUSE_VNC
+ RFLAGS		+= -DUSE_VNC
+ ifneq ($(VNC_PATH), )
+  OPTS		+= -I$(VNC_PATH)/include/msvc -I$(VNC_PATH)/include
+  ifeq ($(X64), y)
+   LOPTS	+= LIBPATH:$(VNC_PATH)\lib\x64
+  else
+   LOPTS	+= LIBPATH:$(VNC_PATH)\lib\x86
+  endif
+ endif
+ ifeq ($(VNC), y)
+  LIBS		+= libvncserver.lib
+ endif
+ VNCOBJ		:= vnc.obj vnc_keymap.obj
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(RDP), n)
+ OPTS		+= -DUSE_RDP
+ RFLAGS		+= -DUSE_RDP
+ ifneq ($(RDP_PATH), )
+  OPTS		+= -I$(RDP_PATH)/include/msvc -I$(RDP_PATH)/include
+  ifeq ($(X64), y)
+   LOPTS	+= LIBPATH:$(RDP_PATH)\lib\x64
+  else
+   LOPTS	+= LIBPATH:$(RDP_PATH)\lib\x86
+  endif
+ endif
+ ifeq ($(RDP), y)
+  LIBS		+= rdpsrvr.lib
+ endif
+ RDPOBJ		:= rdp.obj
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(PNG), n)
+ OPTS		+= -DUSE_LIBPNG
+ RFLAGS		+= -DUSE_LIBPNG
+ ifneq ($(PNG_PATH), )
+  OPTS		+= -I$(PNG_PATH)/include/msvc -I$(PNG_PATH)/include
+  ifeq ($(X64), y)
+   LOPTS	+= LIBPATH:$(PNG_PATH)\lib\x64
+  else
+   LOPTS	+= LIBPATH:$(PNG_PATH)\lib\x86
+  endif
+ endif
+ ifeq ($(RDP), y)
+  LIBS		+= libpng16.lib zlib.lib
+ endif
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(WX), n)
  OPTS		+= -DUSE_WX $(WX_FLAGS)
  LIBS		+= $(WX_LIBS) -lm
  UIOBJ		:= wx_main.obj wx_ui.obj wx_stbar.obj wx_render.obj
 else
  UIOBJ		:= win_ui.obj \
-		   win_ddraw.obj win_d3d.obj \
+		   win_ddraw.obj win_d3d.obj $(SDLOBJ) \
 		   win_dialog.obj win_about.obj win_status.obj \
 		   win_settings.obj win_devconf.obj win_snd_gain.obj \
 		   win_new_floppy.obj
 endif
 
-ifeq ($(OPENAL), y)
-OPTS		+= -DUSE_OPENAL
-endif
-ifeq ($(FLUIDSYNTH), y)
-OPTS		+= -DUSE_FLUIDSYNTH
-FSYNTHOBJ	:= midi_fluidsynth.obj
-endif
-
-ifeq ($(MUNT), y)
-OPTS		+= -DUSE_MUNT
-MUNTOBJ		:= midi_mt32.obj \
-		    Analog.obj BReverbModel.obj File.obj FileStream.obj LA32Ramp.obj \
-		    LA32FloatWaveGenerator.obj LA32WaveGenerator.obj \
-		    MidiStreamParser.obj Part.obj Partial.obj PartialManager.obj \
-		    Poly.obj ROMInfo.obj SampleRateConverter_dummy.obj Synth.obj \
-		    Tables.obj TVA.obj TVF.obj TVP.obj sha1.obj c_interface.obj
-endif
-
-ifeq ($(SDL), y)
- OPTS		+= -DUSE_SDL
- RFLAGS		+= -DUSE_SDL
- ifneq ($(SDL_PATH), )
-  OPTS		+= -I$(SDL_PATH)\INCLUDE\MSVC
-  ifeq ($(X64), y)
-    LOPTS	+= -LIBPATH:$(SDL_PATH)\LIB\MSVC\x64
-  else
-    LOPTS	+= -LIBPATH:$(SDL_PATH)\LIB\MSVC\x86
-  endif
-  LIBS		+= sdl2.lib
- endif
- SDLOBJ		:= win_sdl.obj
-endif
-
-ifeq ($(VNC), y)
- OPTS		+= -DUSE_VNC
- RFLAGS		+= -DUSE_VNC
- ifneq ($(VNC_PATH), )
-  OPTS		+= -I$(VNC_PATH)\INCLUDE
-  LOPTS		+= LIBPATH:$(VNC_PATH)\LIB
-  ifeq ($(X64), y)
-   LOPTS	+= \x64
-  else
-   LOPTS	+= \x86
-  endif
-  LIBS		+= libvncserver.lib
- endif
- VNCOBJ		:= vnc.obj vnc_keymap.obj
-endif
-
-ifeq ($(RDP), y)
- OPTS		+= -DUSE_RDP
- RFLAGS		+= -DUSE_RDP
- ifneq ($(RDP_PATH), )
-  LOPTS		+= LIBPATH:$(RDP_PATH)\LIB
-  ifeq ($(X64), y)
-   LOPTS	+= \x64
-  else
-   LOPTS	+= \x86
-  endif
-  LIBS		+= rdpsrvr.lib
- endif
- RDPOBJ		:= rdp.obj
-endif
-
-ifeq ($(PNG), y)
- OPTS		+= -DUSE_LIBPNG
- RFLAGS		+= -DUSE_LIBPNG
- ifneq ($(PNG_PATH), )
-  LOPTS		+= LIBPATH:$(PNG_PATH)\LIB
-  ifeq ($(X64), y)
-   LOPTS	+= \x64
-  else
-   LOPTS	+= \x86
-  endif
- endif
- LIBS		+= libpng16.lib zlib.lib
-endif
 
 # Options for the DEV branch.
 ifeq ($(DEV_BRANCH), y)
@@ -474,12 +492,6 @@ ifeq ($(DEV_BRANCH), y)
 endif
 
 
-# Options for works-in-progress.
-ifndef SERIAL
-SERIAL		:= serial.obj
-endif
-
-
 # Final versions of the toolchain flags.
 LDFLAGS		:= $(LOPTS)
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
@@ -492,12 +504,7 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
 
 MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
 		   mem.obj rom.obj rom_load.obj device.obj nvr.obj \
-		   $(SDLOBJ) $(VNCOBJ) $(RDPOBJ)
-
-INTELOBJ	:= intel.obj \
-		    intel_flash.obj \
-		    intel_sio.obj \
-		    intel_piix.obj intel_piix4.obj
+		   $(VNCOBJ) $(RDPOBJ)
 
 UIOBJ		+= ui_main.obj ui_new_floppy.obj ui_stbar.obj ui_vidapi.obj
 
@@ -527,10 +534,14 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_at_430lx_nx.obj m_at_430fx.obj \
 		    m_at_430hx.obj m_at_430vx.obj
 
+INTELOBJ	:= intel.obj \
+		    intel_flash.obj \
+		    intel_sio.obj \
+		    intel_piix.obj intel_piix4.obj
+
 DEVOBJ		:= bugger.obj \
 		   game.obj game_dev.obj \
-		   parallel.obj parallel_dev.obj \
-		   $(SERIAL) \
+		   parallel.obj parallel_dev.obj serial.obj \
 		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
 		   sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
 		   keyboard.obj \

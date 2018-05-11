@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.43	2018/05/10
+# Version:	@(#)Makefile.mingw	1.0.44	2018/05/10
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -89,8 +89,11 @@ endif
 ifndef USB
  USB		:= n
 endif
+ifndef SDL
+ SDL		:= n
+endif
 ifndef VNC
- VNC		:= y
+ VNC		:= n
 endif
 ifndef RDP
  RDP		:= n
@@ -151,6 +154,8 @@ ifndef PROG
  endif
 endif
 
+
+# Which modules to include a development build.
 ifeq ($(DEV_BUILD), y)
  CRASHDUMP	:= y
  DEV_BRANCH	:= y
@@ -164,6 +169,7 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
 endif
+
 
 # WxWidgets basic info. Extract using the config program.
 ifneq ($(WX), n)
@@ -214,9 +220,9 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/video \
 		   machines ui win
 
+
 #
 # Select the required build environment. We have, uhm, many..
-#
 #
 ifneq ($(CROSS), n)
  # Cross-compiling (under Linux), select proper version.
@@ -317,27 +323,27 @@ else
  endif
 endif
 ifeq ($(PROFILER), y)
-LDFLAGS		+= -Xlinker -Map=$(PROG).map
+ LDFLAGS	+= -Xlinker -Map=$(PROG).map
 endif
 ifeq ($(CRASHDUMP), y)
-OPTS		+= -DUSE_CRASHDUMP
+ OPTS		+= -DUSE_CRASHDUMP
 endif
 ifeq ($(RELEASE), y)
-OPTS		+= -DRELEASE_BUILD
-RFLAGS		+= -DRELEASE_BUILD
+ OPTS		+= -DRELEASE_BUILD
+ RFLAGS		+= -DRELEASE_BUILD
 endif
 ifeq ($(VRAMDUMP), y)
-OPTS		+= -DENABLE_VRAM_DUMP
-RFLAGS		+= -DENABLE_VRAM_DUMP
+ OPTS		+= -DENABLE_VRAM_DUMP
+ RFLAGS		+= -DENABLE_VRAM_DUMP
 endif
 ifeq ($(X64), y)
-PLATCG		:= codegen_x86-64.o
-CGOPS		:= codegen_ops_x86-64.h
-VCG		:= vid_voodoo_codegen_x86-64.h
+ PLATCG		:= codegen_x86-64.o
+ CGOPS		:= codegen_ops_x86-64.h
+ VCG		:= vid_voodoo_codegen_x86-64.h
 else
-PLATCG		:= codegen_x86.o
-CGOPS		:= codegen_ops_x86.h
-VCG		:= vid_voodoo_codegen_x86.h
+ PLATCG		:= codegen_x86.o
+ CGOPS		:= codegen_ops_x86.h
+ VCG		:= vid_voodoo_codegen_x86.h
 endif
 LIBS		:= -mwindows \
 		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
@@ -345,15 +351,15 @@ LIBS		:= -mwindows \
 LIBS		+= -lkernel32 -lwsock32 -liphlpapi -lpsapi
 LIBS		+= -lpthread -static -lstdc++ -lgcc
 ifneq ($(X64), y)
-LIBS		+= -Wl,--large-address-aware
+ LIBS		+= -Wl,--large-address-aware
 endif
 
 
 # Optional modules.
 ifeq ($(DYNAREC), y)
-OPTS		+= -DUSE_DYNAREC
-RFLAGS		+= -DUSE_DYNAREC
-DYNARECOBJ	:= 386_dynarec_ops.o \
+ OPTS		+= -DUSE_DYNAREC
+ RFLAGS		+= -DUSE_DYNAREC
+ DYNARECOBJ	:= 386_dynarec_ops.o \
 		    codegen.o \
 		    codegen_ops.o \
 		    codegen_timing_common.o codegen_timing_486.o \
@@ -361,29 +367,18 @@ DYNARECOBJ	:= 386_dynarec_ops.o \
 		    codegen_timing_winchip.o $(PLATCG)
 endif
 
-ifneq ($(WX), n)
- OPTS		+= -DUSE_WX $(WX_FLAGS)
- LIBS		+= $(WX_LIBS) -lm
- UIOBJ		:= wx_main.o wx_ui.o wx_stbar.o wx_render.o
-else
- UIOBJ		:= win_ui.o \
-		   win_ddraw.o win_d3d.o \
-		   win_dialog.o win_about.o win_status.o \
-		   win_settings.o win_devconf.o win_snd_gain.o \
-		   win_new_floppy.o
+ifeq ($(OPENAL), y)
+ OPTS		+= -DUSE_OPENAL
 endif
 
-ifeq ($(OPENAL), y)
-OPTS		+= -DUSE_OPENAL
-endif
 ifeq ($(FLUIDSYNTH), y)
-OPTS		+= -DUSE_FLUIDSYNTH
-FSYNTHOBJ	:= midi_fluidsynth.o
+ OPTS		+= -DUSE_FLUIDSYNTH
+ FSYNTHOBJ	:= midi_fluidsynth.o
 endif
 
 ifeq ($(MUNT), y)
-OPTS		+= -DUSE_MUNT
-MUNTOBJ		:= midi_mt32.o \
+ OPTS		+= -DUSE_MUNT
+ MUNTOBJ	:= midi_mt32.o \
 		    Analog.o BReverbModel.o File.o FileStream.o LA32Ramp.o \
 		    LA32FloatWaveGenerator.o LA32WaveGenerator.o \
 		    MidiStreamParser.o Part.o Partial.o PartialManager.o \
@@ -391,33 +386,90 @@ MUNTOBJ		:= midi_mt32.o \
 		    Tables.o TVA.o TVF.o TVP.o sha1.o c_interface.o
 endif
 
-ifeq ($(VNC), y)
-OPTS		+= -DUSE_VNC
-RFLAGS		+= -DUSE_VNC
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(SDL), n)
+ OPTS		+= -DUSE_SDL
+ RFLAGS		+= -DUSE_SDL
+ ifneq ($(SDL_PATH), )
+  OPTS		+= -I$(SDL_PATH)/include/mingw -I$(SDL_PATH)/include
+  ifeq ($(X64), y)
+   LIBS		+= -L$(SDL_PATH)/lib/mingw/x64
+  else
+   LIBS		+= -L$(SDL_PATH)/lib/mingw/x86
+  endif
+ endif
+ ifeq ($(SDL), y)
+  LIBS		+= -lsdl2
+ endif
+ SDLOBJ		:= win_sdl.o
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(VNC), n)
+ OPTS		+= -DUSE_VNC
+ RFLAGS		+= -DUSE_VNC
  ifneq ($(VNC_PATH), )
-  OPTS		+= -I$(VNC_PATH)\INCLUDE
-  LIBS		+= -L$(VNC_PATH)\LIB -lvncserver
+  OPTS		+= -I$(VNC_PATH)/include/mingw -I$(VNC_PATH)/include
+  ifeq ($(X64), y)
+   LIBS		+= -L$(VNC_PATH)/lib/x64
+  else
+   LIBS		+= -L$(VNC_PATH)/lib/x86
+  endif
  endif
-VNCOBJ		:= vnc.o vnc_keymap.o
+ ifeq ($(VNC), y)
+  LIBS		+= -lvncserver
+ endif
+ VNCOBJ		:= vnc.o vnc_keymap.o
 endif
 
-ifeq ($(RDP), y)
-OPTS		+= -DUSE_RDP
-RFLAGS		+= -DUSE_RDP
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(RDP), n)
+ OPTS		+= -DUSE_RDP
+ RFLAGS		+= -DUSE_RDP
  ifneq ($(RDP_PATH), )
-  OPTS		+= -I$(RDP_PATH)\INCLUDE
-  RDPLIB	:= -L$(RDP_PATH)\LIB
+  OPTS		+= -I$(RDP_PATH)/include/mingw -I$(RDP_PATH)/include
+  ifeq ($(X64), y)
+   LIBS		+= -L$(RDP_PATH)/lib/x64
+  else
+   LIBS		+= -L$(RDP_PATH)/lib/x86
+  endif
  endif
-RDPLIB		+= -lrdp
-RDPOBJ		:= rdp.o
-LIBS		+= $(RDPLIB)
+ ifeq ($(RDP), y)
+  LIBS		+= -lrdp
+ endif
+ RDPOBJ		:= rdp.o
 endif
 
-ifeq ($(PNG), y)
-OPTS		+= -DUSE_PNG
-RFLAGS		+= -DUSE_PNG
-LIBS		+= -lpng -lz
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(PNG), n)
+ OPTS		+= -DUSE_PNG
+ RFLAGS		+= -DUSE_PNG
+ ifneq ($(PNG_PATH), )
+  OPTS		+= -I$(PNG_PATH)/include
+  ifeq ($(X64), y)
+   LIBS		+= -L$(PNG_PATH)/lib/x64
+  else
+   LIBS		+= -L$(PNG_PATH)/lib/x86
+  endif
+ endif
+ ifeq ($(PNG), y)
+  LIBS		+= -lpng -lz
+ endif
 endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(WX), n)
+ OPTS		+= -DUSE_WX=$(WX) $(WX_FLAGS)
+ LIBS		+= $(WX_LIBS) -lm
+ UIOBJ		:= wx_main.o wx_ui.o wx_stbar.o wx_render.o
+else
+ UIOBJ		:= win_ui.o \
+		   win_ddraw.o win_d3d.o $(SDLOBJ) \
+		   win_dialog.o win_about.o win_status.o \
+		   win_settings.o win_devconf.o win_snd_gain.o \
+		   win_new_floppy.o
+endif
+
 
 # Options for the DEV branch.
 ifeq ($(DEV_BRANCH), y)
@@ -468,12 +520,6 @@ ifeq ($(DEV_BRANCH), y)
 endif
 
 
-# Options for works-in-progress.
-ifndef SERIAL
-SERIAL		:= serial.o
-endif
-
-
 # Final versions of the toolchain flags.
 # FIXME: add the -Wsign-compare option soon!
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
@@ -490,6 +536,7 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
+
 MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
 		   rom.o rom_load.o device.o nvr.o $(VNCOBJ) $(RDPOBJ)
 
@@ -497,11 +544,6 @@ UIOBJ		+= ui_main.o ui_new_floppy.o ui_stbar.o ui_vidapi.o
 
 SYSOBJ		:= dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o mcr.o \
 		   memregs.o nvr_at.o nvr_ps2.o
-
-INTELOBJ	:= intel.o \
-		    intel_flash.o \
-		    intel_sio.o \
-		    intel_piix.o intel_piix4.o
 
 CPUOBJ		:= cpu.o cpu_table.o \
 		    808x.o 386.o x86seg.o x87.o \
@@ -526,10 +568,14 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_at_430lx_nx.o m_at_430fx.o \
 		    m_at_430hx.o m_at_430vx.o
 
+INTELOBJ	:= intel.o \
+		    intel_flash.o \
+		    intel_sio.o \
+		    intel_piix.o intel_piix4.o
+
 DEVOBJ		:= bugger.o \
 		   game.o game_dev.o \
-		   parallel.o parallel_dev.o \
-		   $(SERIAL) \
+		   parallel.o parallel_dev.o serial.o \
 		   sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \
 		   sio_pc87306.o sio_w83877f.o sio_um8669f.o \
 		   keyboard.o \
