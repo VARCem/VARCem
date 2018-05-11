@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.7	2018/05/06
+ * Version:	@(#)hdc_ide_xta.c	1.0.8	2018/05/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -107,7 +107,7 @@
 
 
 #define HDC_TIME	(50*TIMER_USEC)
-#define XTA_NUM		1			/* we support 1 drive */
+#define XTA_NUM		2			/* #supported drives */
 
 #define WD_BIOS_FILE	L"disk/xta/idexywd2.bin"
 
@@ -442,6 +442,7 @@ hdc_callback(void *priv)
     /* Cancel timer. */
     dev->callback = 0;
 
+    /* Get the correct drive for this request. */
     drive = &dev->drives[dcb->drvsel];
     dev->comp = (dcb->drvsel) ? COMP_DRIVE : 0x00;
     dev->status |= STAT_DCB;
