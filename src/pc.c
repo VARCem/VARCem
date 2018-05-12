@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.41	2018/05/09
+ * Version:	@(#)pc.c	1.0.42	2018/05/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -356,10 +356,9 @@ pc_version(const char *platform)
 void
 pc_path(wchar_t *dst, int sz, const wchar_t *src)
 {
+    const wchar_t *str = src;
+    wchar_t *ptr = dst;
     int i = wcslen(usr_path);
-
-    if ((src != NULL) && !wcsncasecmp(src, usr_path, i))
-	src += i;
 
     /*
      * Fix all the slashes.
@@ -368,18 +367,21 @@ pc_path(wchar_t *dst, int sz, const wchar_t *src)
      * now convert ALL paths to the latter format, so it
      * is always the same.
      */
-    if (src == NULL)
-	src = dst;
-    while ((sz > 0) && (*src != L'\0')) {
-	if (*src == L'\\')
-		*dst = L'/';
+    if (str == NULL)
+	str = ptr;
+    while ((sz > 0) && (*str != L'\0')) {
+	if (*str == L'\\')
+		*ptr = L'/';
 	  else
-		*dst = *src;
-	src++;
-	dst++;
+		*ptr = *str;
+	str++;
+	ptr++;
 	sz--;
     }
-    *dst = L'\0';
+    *ptr = L'\0';
+
+    if ((src != NULL) && !wcsncasecmp(dst, usr_path, i))
+	wcscpy(dst, &dst[i]);
 }
 
 

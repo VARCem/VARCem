@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy Image dialog.
  *
- * Version:	@(#)win_new_floppy.c	1.0.14	2018/05/09
+ * Version:	@(#)win_new_floppy.c	1.0.15	2018/05/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -181,7 +181,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				return TRUE;
 
 			case IDC_CFILE:
-	                        if (! dlg_file_ex(hdlg, get_string(is_zip ? IDS_2176 : IDS_2174), NULL, temp_path, 1)) {
+	                        if (dlg_file_ex(hdlg, get_string(is_zip ? IDS_2176 : IDS_2174), NULL, temp_path, DLG_FILE_SAVE)) {
 					if (! wcschr(temp_path, L'.')) {
 						if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
 							twcs = &temp_path[wcslen(temp_path)];

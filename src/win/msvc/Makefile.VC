@@ -253,7 +253,7 @@ OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
 		   -D_CRT_SECURE_NO_WARNINGS \
 		   $(WPCAPINC) $(SYSINC)
 AFLAGS		:= /arch:SSE2
-RFLAGS		:=
+RFLAGS		:= /n
 COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 

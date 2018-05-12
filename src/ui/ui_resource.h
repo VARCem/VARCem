@@ -8,7 +8,7 @@
  *
  *		Platform-independent resource identifiers.
  *
- * Version:	@(#)ui_resource.h	1.0.7	2018/05/09
+ * Version:	@(#)ui_resource.h	1.0.8	2018/05/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -167,9 +167,8 @@
 
 #define IDM_FLOPPY_IMAGE_NEW		(IDM_SBAR + 0x0000)
 #define IDM_FLOPPY_IMAGE_EXISTING	(IDM_SBAR + 0x0100)
-#define IDM_FLOPPY_IMAGE_EXISTING_WP	(IDM_SBAR + 0x0200)
-#define IDM_FLOPPY_EXPORT_TO_86F	(IDM_SBAR + 0x0300)
-#define IDM_FLOPPY_EJECT		(IDM_SBAR + 0x0400)
+#define IDM_FLOPPY_EXPORT_TO_86F	(IDM_SBAR + 0x0200)
+#define IDM_FLOPPY_EJECT		(IDM_SBAR + 0x0300)
 
 #define IDM_CDROM_MUTE			(IDM_SBAR + 0x0800)
 #define IDM_CDROM_EMPTY			(IDM_SBAR + 0x0900)
@@ -179,15 +178,13 @@
 
 #define IDM_ZIP_IMAGE_NEW		(IDM_SBAR + 0x1000)
 #define IDM_ZIP_IMAGE_EXISTING		(IDM_SBAR + 0x1100)
-#define IDM_ZIP_IMAGE_EXISTING_WP	(IDM_SBAR + 0x1200)
-#define IDM_ZIP_EJECT			(IDM_SBAR + 0x1300)
-#define IDM_ZIP_RELOAD			(IDM_SBAR + 0x1400)
+#define IDM_ZIP_EJECT			(IDM_SBAR + 0x1200)
+#define IDM_ZIP_RELOAD			(IDM_SBAR + 0x1300)
 
 #define IDM_RDISK_EJECT			(IDM_SBAR + 0x1800)
 #define IDM_RDISK_RELOAD		(IDM_SBAR + 0x1900)
 #define IDM_RDISK_SEND_CHANGE		(IDM_SBAR + 0x1a00)
 #define IDM_RDISK_IMAGE			(IDM_SBAR + 0x1b00)
-#define IDM_RDISK_IMAGE_WP		(IDM_SBAR + 0x1c00)
 
 #define IDM_SOUND			(IDM_SBAR + 8192)
 
@@ -304,13 +301,13 @@
 #define IDS_2160	2160		// "Configuration files (*.CF.."
 #define IDS_2161	2161		// "&New image..."
 #define IDS_2162	2162		// "&Existing image..."
-#define IDS_2163	2163		// "Existing image (&Write-pr..."
+#define IDS_2163	2163		// "[WP]"
 #define IDS_2164	2164		// "E&ject"
 #define IDS_2165	2165		// "&Mute"
 #define IDS_2166	2166		// "E&mpty"
 #define IDS_2167	2167		// "&Reload previous image"
 #define IDS_2168	2168		// "&Image..."
-#define IDS_2169	2169		// "Image (&Write-protected)..."
+/* IDS_2169 available */
 #define IDS_2170	2170		// "Check BPB"
 #define IDS_2171	2171		// "Unable to initialize Flui.."
 #define IDS_2172	2172		// "E&xport to 86F..."

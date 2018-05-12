@@ -191,12 +191,13 @@ dlg_file_hook(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 
 /* Implement the main GetFileName dialog. */
 int
-dlg_file_ex(HWND hwnd, const wchar_t *filt, const wchar_t *ifn, wchar_t *fn, int save)
+dlg_file_ex(HWND h, const wchar_t *f, const wchar_t *ifn, wchar_t *fn, int fl)
 {
     wchar_t temp[512];
     OPENFILENAME ofn;
-    BOOL r;
     DWORD err; 
+    BOOL r;
+    int ret;
 
     /* Clear the temp path. */
     memset(temp, 0x00, sizeof(temp));
@@ -204,7 +205,7 @@ dlg_file_ex(HWND hwnd, const wchar_t *filt, const wchar_t *ifn, wchar_t *fn, int
     /* Initialize OPENFILENAME. */
     memset(&ofn, 0x00, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = hwnd;
+    ofn.hwndOwner = h;
     ofn.lpfnHook = dlg_file_hook;
 
     /* This is the buffer in which to place the resulting filename. */
@@ -212,7 +213,7 @@ dlg_file_ex(HWND hwnd, const wchar_t *filt, const wchar_t *ifn, wchar_t *fn, int
     ofn.nMaxFile = sizeof_w(temp);
 
     /* Set up the "file types" filter. */
-    ofn.lpstrFilter = filt;
+    ofn.lpstrFilter = f;
     ofn.nFilterIndex = 1;
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
@@ -221,20 +222,20 @@ dlg_file_ex(HWND hwnd, const wchar_t *filt, const wchar_t *ifn, wchar_t *fn, int
     if (ifn == NULL)
 	ifn = usr_path;
     ofn.lpstrInitialDir = ifn;
+    wcscpy(fn, ifn);
 
     /* Set up the flags for this dialog. */
-    r = (save & 0x80) ? TRUE : FALSE;
-    save &= 0x7f;
+    r = (fl & DLG_FILE_RO) ? TRUE : FALSE;
     ofn.Flags = OFN_ENABLEHOOK | OFN_EXPLORER | OFN_PATHMUSTEXIST;
 
-    if (! save) {
+    if (! (fl & DLG_FILE_SAVE)) {
 	ofn.Flags |= OFN_FILEMUSTEXIST;
 	if (r == TRUE)
 		ofn.Flags |= OFN_READONLY;
     }
 
     /* Display the Open dialog box. */
-    if (save)
+    if (fl & DLG_FILE_SAVE)
 	r = GetSaveFileName(&ofn);
       else
 	r = GetOpenFileName(&ofn);
@@ -249,23 +250,28 @@ dlg_file_ex(HWND hwnd, const wchar_t *filt, const wchar_t *ifn, wchar_t *fn, int
 	/* Remember the file type for next time. */
 	filterindex = ofn.nFilterIndex;
 
-	return(0);
+	ret = 1;
+	if (ofn.Flags & OFN_READONLY)
+		ret |= DLG_FILE_RO;
+    } else {
+	/* If an error occurred, log this. */
+	if ((err = CommDlgExtendedError()) != NO_ERROR) {
+		sprintf((char *)temp,
+			"%sFile(%ls, %02x):\n\n    error 0x%08lx",
+			(fl & DLG_FILE_SAVE)?"Save":"Open", ifn, fl, err);
+		pclog("%s\n", (char *)temp);
+		(void)ui_msgbox(MBX_ERROR|MBX_ANSI, (char *)temp);
+	}
+
+	ret = 0;
     }
 
-    /* If an error occurred, log this. */
-    if ((err = CommDlgExtendedError()) != NO_ERROR) {
-	sprintf((char *)temp,
-		"OpenFile(%ls, %d):\n\n    error 0x%08lx", ifn, save, err);
-	pclog("%s\n", (char *)temp);
-	(void)ui_msgbox(MBX_ERROR|MBX_ANSI, (char *)temp);
-    }
-
-    return(1);
+    return(ret);
 }
 
 
 int
-dlg_file(const wchar_t *filt, const wchar_t *ifn, wchar_t *ofn, int save)
+dlg_file(const wchar_t *filt, const wchar_t *ifn, wchar_t *ofn, int flags)
 {
-    return(dlg_file_ex(hwndMain, filt, ifn, ofn, save));
+    return(dlg_file_ex(hwndMain, filt, ifn, ofn, flags));
 }

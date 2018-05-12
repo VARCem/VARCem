@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.6	2018/05/09
+ * Version:	@(#)ui_stbar.c	1.0.7	2018/05/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -215,6 +215,8 @@ ui_sb_tip_update(int tag)
 			str = get_string(IDS_2057);	/*"empty"*/
 		swprintf(tip, sizeof_w(tip),
 			 get_string(IDS_2158), drive+1, temp, str);
+		if (ui_writeprot[drive])
+			wcscat(tip, get_string(IDS_2163));
 		break;
 
 	case SB_CDROM:
@@ -252,6 +254,8 @@ ui_sb_tip_update(int tag)
 			str = get_string(IDS_2057);	/*"empty"*/
 		swprintf(tip, sizeof_w(tip),
 			 get_string(IDS_2177), drive+1, type, str);
+		if (zip_drives[drive].ui_writeprot)
+			wcscat(tip, get_string(IDS_2163));
 		break;
 
 	case SB_RDISK:
@@ -261,6 +265,8 @@ ui_sb_tip_update(int tag)
 			str = get_string(IDS_2057);	/*"empty"*/
 		swprintf(tip, sizeof_w(tip),
 			 get_string(IDS_4115), drive, str);
+		if (0)
+			wcscat(tip, get_string(IDS_2163));
 		break;
 
 	case SB_HDD:
@@ -269,6 +275,8 @@ ui_sb_tip_update(int tag)
 		str = get_string(id);
 		swprintf(tip, sizeof_w(tip),
 			 get_string(IDS_4096), str);
+		if (0)
+			wcscat(tip, get_string(IDS_2163));
 		break;
 
 	case SB_NETWORK:
@@ -320,8 +328,6 @@ menu_floppy(int part, int drive)
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_FLOPPY_IMAGE_EXISTING | drive,
 		     get_string(IDS_2162));
-    sb_menu_add_item(part, IDM_FLOPPY_IMAGE_EXISTING_WP | drive,
-		     get_string(IDS_2163));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_FLOPPY_EXPORT_TO_86F | drive,
 		     get_string(IDS_2172));
@@ -405,8 +411,6 @@ menu_zip(int part, int drive)
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_ZIP_IMAGE_EXISTING | drive,
 		     get_string(IDS_2162));
-    sb_menu_add_item(part, IDM_ZIP_IMAGE_EXISTING_WP | drive,
-		     get_string(IDS_2163));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_ZIP_EJECT | drive, get_string(IDS_2164));
     sb_menu_add_item(part, IDM_ZIP_RELOAD | drive, get_string(IDS_2167));
@@ -435,8 +439,6 @@ menu_remov(int part, int drive)
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_RDISK_IMAGE | drive,
 		     get_string(IDS_2168));
-    sb_menu_add_item(part, IDM_RDISK_IMAGE_WP | drive,
-		     get_string(IDS_2169));
 }
 
 
@@ -791,6 +793,7 @@ ui_sb_menu_command(int idm, int tag)
 {
     wchar_t temp[512];
     int new_cdrom_drive;
+    wchar_t *str;
     int drive;
     int part;
     int i;
@@ -805,15 +808,16 @@ ui_sb_menu_command(int idm, int tag)
 		break;
 
 	case IDM_FLOPPY_IMAGE_EXISTING:
-	case IDM_FLOPPY_IMAGE_EXISTING_WP:
 		drive = tag & 0x0003;
 		part = find_tag(SB_FLOPPY | drive);
 		if (part == -1) break;
 
-		i = (idm == IDM_FLOPPY_IMAGE_EXISTING_WP) ? 0x80 : 0;
-		if (! dlg_file(get_string(IDS_2159),
-			       floppyfns[drive], temp, i))
-			ui_sb_mount_floppy(drive, part, i ? 1 : 0, temp);
+		str = floppyfns[drive];
+		i = dlg_file(get_string(IDS_2159), str, temp, DLG_FILE_LOAD);
+		if (i)  {
+			ui_sb_mount_floppy(drive, part,
+					   !!(i & DLG_FILE_RO), temp);
+		}
 		break;
 
 	case IDM_FLOPPY_EJECT:
@@ -834,7 +838,8 @@ ui_sb_menu_command(int idm, int tag)
 		part = find_tag(SB_FLOPPY | drive);
 		if (part == -1) break;
 
-		if (! dlg_file(get_string(IDS_2173), floppyfns[drive], temp, 1)) {
+		str = floppyfns[drive];
+		if (dlg_file(get_string(IDS_2173), str, temp, DLG_FILE_SAVE)) {
 			plat_pause(1);
 			if (! d86f_export(drive, temp))
 				ui_msgbox(MBX_ERROR, (wchar_t *)IDS_4108);
@@ -869,13 +874,14 @@ ui_sb_menu_command(int idm, int tag)
 		part = find_tag(SB_CDROM | drive);
 		if (part == -1) break;
 
-		if (dlg_file(get_string(IDS_2075),
-			     cdrom_image[drive].image_path, temp, 0x80)) break;
+		str = cdrom_image[drive].image_path;
+		if (! dlg_file(get_string(IDS_2075), str, temp,
+			       DLG_FILE_LOAD|DLG_FILE_RO)) break;
 
 		cdrom_drives[drive].prev_host_drive = cdrom_drives[drive].host_drive;
 		if (! cdrom_image[drive].prev_image_path)
 			cdrom_image[drive].prev_image_path = (wchar_t *)malloc(1024);
-		wcscpy(cdrom_image[drive].prev_image_path, cdrom_image[drive].image_path);
+		wcscpy(cdrom_image[drive].prev_image_path, str);
 		cdrom_drives[drive].handler->exit(drive);
 		cdrom_close(drive);
 		image_open(drive, temp);
@@ -946,15 +952,16 @@ ui_sb_menu_command(int idm, int tag)
 		break;
 
 	case IDM_ZIP_IMAGE_EXISTING:
-	case IDM_ZIP_IMAGE_EXISTING_WP:
 		drive = tag & 0x0003;
 		part = find_tag(SB_ZIP | drive);
 		if (part == -1) break;
 
-		i = (idm == IDM_ZIP_IMAGE_EXISTING_WP) ? 0x80 : 0;
-		if (dlg_file(get_string(IDS_2175),
-			     zip_drives[drive].image_path, temp, i)) break;
-		ui_sb_mount_zip(drive, part, i ? 1 : 0, temp);
+		str = zip_drives[drive].image_path;
+		i = dlg_file(get_string(IDS_2175), str, temp, DLG_FILE_LOAD);
+		if (i) {
+			ui_sb_mount_zip(drive, part,
+					!!(i & DLG_FILE_RO), temp);
+		}
 		break;
 
 	case IDM_ZIP_EJECT:
@@ -983,19 +990,18 @@ ui_sb_menu_command(int idm, int tag)
 		break;
 
 	case IDM_RDISK_IMAGE:
-	case IDM_RDISK_IMAGE_WP:
 		drive = tag & 0x001f;
 		part = find_tag(idm | drive);
 
-		i = (idm == IDM_RDISK_IMAGE_WP) ? 0x80 : 0;
-		if (dlg_file(get_string(IDS_4106),
-			     hdd[drive].fn, temp, i)) break;
+		str = hdd[drive].fn;
+		i = dlg_file(get_string(IDS_4106), str, temp, DLG_FILE_LOAD);
+		if (! i) break;
 
 		removable_disk_unload(drive);
 
 		memset(hdd[drive].fn, 0x00, sizeof(hdd[drive].fn));
 		wcscpy(hdd[drive].fn, temp);
-		hdd[drive].wp = i ? 1 : 0;
+		hdd[drive].wp = !!(i & DLG_FILE_RO);
 
 		scsi_loadhd(hdd[drive].id.scsi.id, hdd[drive].id.scsi.lun, drive);
 		scsi_disk_insert(drive);

@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.8	2018/05/09
+ * Version:	@(#)ui.h	1.0.9	2018/05/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -60,6 +60,11 @@
 #define MBX_CONFIG	5
 #define MBX_FATAL	0x20
 #define MBX_ANSI	0x80
+
+/* FileDialog flags. */
+#define DLG_FILE_LOAD	0x00
+#define DLG_FILE_SAVE	0x01
+#define DLG_FILE_RO	0x80
 
 /* Status Bar definitions. */
 #define SB_ICON_WIDTH	24

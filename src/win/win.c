@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.12	2018/05/10
+ * Version:	@(#)win.c	1.0.13	2018/05/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -139,7 +139,8 @@ LoadCommonStrings(void)
 
 	tbl->id = i;
 	str = (wchar_t *)malloc((c + 1) * sizeof(wchar_t));
-	wcscpy(str, temp);
+	memset(str, 0x00, (c + 1) * sizeof(wchar_t));
+	memcpy(str, temp, c * sizeof(wchar_t));
 	tbl->str = str;
 
 	tbl++;
