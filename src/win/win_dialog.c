@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.9	2018/05/09
+ * Version:	@(#)win_dialog.c	1.0.10	2018/05/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -120,7 +120,7 @@ ui_msgbox(int flags, void *arg)
 
 	case MBX_CONFIG:	/* configuration */
 		fl = (MB_YESNO | MB_ICONERROR);
-		cap = get_string(IDS_2050);		/* "Configuration Error" */
+		cap = get_string(IDS_2050);	/* "Configuration Error" */
 		break;
     }
 
@@ -193,14 +193,12 @@ dlg_file_hook(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 int
 dlg_file_ex(HWND h, const wchar_t *f, const wchar_t *ifn, wchar_t *fn, int fl)
 {
-    wchar_t temp[512];
+    wchar_t temp[512], *str;
+    wchar_t path[512];
     OPENFILENAME ofn;
     DWORD err; 
     BOOL r;
     int ret;
-
-    /* Clear the temp path. */
-    memset(temp, 0x00, sizeof(temp));
 
     /* Initialize OPENFILENAME. */
     memset(&ofn, 0x00, sizeof(OPENFILENAME));
@@ -208,7 +206,36 @@ dlg_file_ex(HWND h, const wchar_t *f, const wchar_t *ifn, wchar_t *fn, int fl)
     ofn.hwndOwner = h;
     ofn.lpfnHook = dlg_file_hook;
 
-    /* This is the buffer in which to place the resulting filename. */
+    /* Tell the dialog where to go initially. */
+    memset(temp, 0x00, sizeof(temp));
+    if ((ifn != NULL) && (*ifn != L'\0')) {
+	/* We seem to have a valid path, use that. */
+	if (! plat_path_abs(ifn))
+		wcscpy(temp, usr_path);
+	wcscat(temp, ifn);
+
+	/* Re-slash the path, OpenFileName does not like forward slashes. */
+	str = temp;
+	while (*str != L'\0') {
+		if (*str == L'/')
+			*str = L'\\';
+		str++;
+	}
+
+	ofn.lpstrInitialDir = NULL;
+    } else {
+	/* Re-slash the path, OpenFileName does not like forward slashes. */
+	wcscpy(path, usr_path);
+    	str = path;
+    	while (*str != L'\0') {
+		if (*str == L'/')
+			*str = L'\\';
+		str++;
+	}
+
+	/* No initial path, use the usr_path value. */
+	ofn.lpstrInitialDir = path;
+    }
     ofn.lpstrFile = temp;
     ofn.nMaxFile = sizeof_w(temp);
 
@@ -218,15 +245,10 @@ dlg_file_ex(HWND h, const wchar_t *f, const wchar_t *ifn, wchar_t *fn, int fl)
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
 
-    /* Tell the dialog where to go initially. */
-    if (ifn == NULL)
-	ifn = usr_path;
-    ofn.lpstrInitialDir = ifn;
-    wcscpy(fn, ifn);
-
     /* Set up the flags for this dialog. */
     r = (fl & DLG_FILE_RO) ? TRUE : FALSE;
-    ofn.Flags = OFN_ENABLEHOOK | OFN_EXPLORER | OFN_PATHMUSTEXIST;
+    ofn.Flags = OFN_ENABLESIZING | OFN_ENABLEHOOK | OFN_EXPLORER | \
+		OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_DONTADDTORECENT;
 
     if (! (fl & DLG_FILE_SAVE)) {
 	ofn.Flags |= OFN_FILEMUSTEXIST;
@@ -240,7 +262,7 @@ dlg_file_ex(HWND h, const wchar_t *f, const wchar_t *ifn, wchar_t *fn, int fl)
       else
 	r = GetOpenFileName(&ofn);
 
-    /* OK, just to make sure the dialog did not change our CWD. */
+    /* As OFN_NOCHANGEDIR does not work (see MSDN), just make sure. */
     plat_chdir(usr_path);
 
     if (r) {
@@ -257,8 +279,8 @@ dlg_file_ex(HWND h, const wchar_t *f, const wchar_t *ifn, wchar_t *fn, int fl)
 	/* If an error occurred, log this. */
 	if ((err = CommDlgExtendedError()) != NO_ERROR) {
 		sprintf((char *)temp,
-			"%sFile(%ls, %02x):\n\n    error 0x%08lx",
-			(fl & DLG_FILE_SAVE)?"Save":"Open", ifn, fl, err);
+			"%sFile('%ls', %02x):\n\n    error 0x%08lx",
+			(fl & DLG_FILE_SAVE)?"Save":"Open", temp, fl, err);
 		pclog("%s\n", (char *)temp);
 		(void)ui_msgbox(MBX_ERROR|MBX_ANSI, (char *)temp);
 	}

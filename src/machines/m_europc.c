@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.13	2018/05/06
+ * Version:	@(#)m_europc.c	1.0.14	2018/05/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -308,7 +308,7 @@ rtc_reset(nvr_t *nvr)
      * [A]	unknown
      *
      * [B]	7	1  bootdrive extern
-     *			0  bootdribe intern
+     *			0  bootdrive intern
      *		6:5	11 invalid hard disk type
      *			10 hard disk installed, type 2
      *			01 hard disk installed, type 1
@@ -319,14 +319,14 @@ rtc_reset(nvr_t *nvr)
      *			00 external drive disabled
      *		2	unknown
      *		1:0	11 invalid internal drive type
-     *			10 internal drive 360K
-     *			01 internal drive 720K
+     *			10 internal drive 720K
+     *			01 internal drive 360K
      *			00 internal drive disabled
      *
      *	 [C]	7:6	unknown
      *		5	monitor detection OFF
      *		4	unknown
-     *		3:2	11 illegal memory size
+     *		3:2	11 illegal memory size (768K ?)
      *			10 512K
      *			01 256K
      *			00 640K
@@ -626,10 +626,34 @@ europc_boot(const device_t *info)
     }
     sys->nvr.regs[MRTC_CONF_C] = b;
 
-#if 0
+    /* Set up hard disks. */
+    b = sys->nvr.regs[MRTC_CONF_B] & 0x84;
+    if (hdc_type != HDC_NONE)
+	b |= 0x20;			/* HD20 #1 */
+
     /* Set up floppy types. */
-    sys->nvr.regs[MRTC_CONF_B] = 0x2a;
-#endif
+    if (fdd_get_type(0) != 0) {
+	/* We have floppy A: */
+	if (fdd_is_dd(0)) {
+		if (fdd_is_525(0))
+			b |= 0x01;	/* 5.25" DD */
+		  else
+			b |= 0x02;	/* 3.5" DD */
+	} else
+		pclog("EuroPC: unsupported HD type for floppy drive 0\n");
+    }
+    if (fdd_get_type(1) != 0) {
+	/* We have floppy B: */
+	if (fdd_is_dd(1)) {
+		b |= 0x04;		/* EXTERNAL */
+		if (fdd_is_525(1))
+			b |= 0x08;	/* 5.25" DD */
+		  else
+			b |= 0x10;	/* 3.5" DD */
+	} else
+		pclog("EuroPC: unsupported HD type for floppy drive 1\n");
+    }
+    sys->nvr.regs[MRTC_CONF_B] = b;
 
     /* Validate the NVR checksum and save. */
     sys->nvr.regs[MRTC_CHECK_LO] = rtc_checksum(sys->nvr.regs);

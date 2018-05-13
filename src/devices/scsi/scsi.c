@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.9	2018/05/06
+ * Version:	@(#)scsi.c	1.0.10	2018/05/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,7 +56,7 @@
 #include "scsi_buslogic.h"
 #include "scsi_ncr5380.h"
 #include "scsi_ncr53c810.h"
-#ifdef WALTJE
+#ifdef USE_WD33C93
 # include "scsi_wd33c93.h"
 #endif
 #include "scsi_x54x.h"
@@ -97,7 +97,7 @@ static const scsidev_t scsi_cards[] = {
     { "[ISA] Ranco RT1000B",	"rt1000b",	&scsi_rt1000b_device, NULL		  },
     { "[ISA] Trantor T130B",	"t130b",	&scsi_t130b_device,   NULL		  },
     { "[ISA] Sumo SCSI-AT",	"scsiat",	&scsi_scsiat_device,  NULL		  },
-#ifdef WALTJE_SCSI
+#ifdef USE_WD33C93
     { "[ISA] Generic WDC33C93",	"wd33c93",	&scsi_wd33c93_device, NULL		  },
 #endif
     { "[MCA] Adaptec AHA-1640",	"aha1640",	&aha1640_device,      x54x_device_reset   },

@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.23	2018/05/10
+ * Version:	@(#)win_ui.c	1.0.24	2018/05/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -742,12 +742,16 @@ input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message) {
 	case WM_INPUT:
+#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
 pclog("UI: hwnd=%08lx WM_INPUT (infocus=%d) !\n", hwnd, infocus);
+#endif
 		keyboard_handle(lParam, infocus);
 		break;
 
 	case WM_SETFOCUS:
+#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
 pclog("UI: hwnd=%08lx WM_SETFOCUS (infocus=%d) !\n", hwnd, infocus);
+#endif
 		infocus = 1;
 		if (! hook_enabled) {
 			hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL,
@@ -759,7 +763,9 @@ pclog("UI: hwnd=%08lx WM_SETFOCUS (infocus=%d) !\n", hwnd, infocus);
 		break;
 
 	case WM_KILLFOCUS:
+#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
 pclog("UI: hwnd=%08lx WM_KILLFOCUS (infocus=%d) !\n", hwnd, infocus);
+#endif
 		infocus = 0;
 		plat_mouse_capture(0);
 		if (hook_enabled) {
@@ -769,13 +775,17 @@ pclog("UI: hwnd=%08lx WM_KILLFOCUS (infocus=%d) !\n", hwnd, infocus);
 		break;
 
 	case WM_LBUTTONUP:
+#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
 pclog("UI: hwnd=%08lx WM_LBUTTONUP (infocus=%d) !\n", hwnd, infocus);
+#endif
 		if (! vid_fullscreen)
 			plat_mouse_capture(1);
 		break;
 
 	case WM_MBUTTONUP:
+#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
 pclog("UI: hwnd=%08lx WM_MBUTTONUP (infocus=%d) !\n", hwnd, infocus);
+#endif
 		if (mouse_get_buttons() < 3)
 			plat_mouse_capture(0);
 		break;
