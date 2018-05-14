@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.9	2018/05/11
+ * Version:	@(#)ui.h	1.0.10	2018/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -185,7 +185,7 @@ extern void	dlg_about(void);
 extern int	dlg_settings(int ask);
 extern void	dlg_status(void);
 extern void	dlg_status_update(void);
-extern void     dlg_new_floppy(int idm, int tag);
+extern void     dlg_new_image(int drive, int part, int is_zip);
 extern void	dlg_sound_gain(void);
 extern int      dlg_file(const wchar_t *filt, const wchar_t *ifn,
 			 wchar_t *fn, int save);
@@ -205,7 +205,7 @@ extern void	plat_endblit(void);
 
 /* Floppy image creation. */
 extern int	floppy_create_86f(const wchar_t *, int8_t sz, int8_t rpm_mode);
-extern int	floppy_create_image(const wchar_t *, int8_t sz, int8_t is_zip, int8_t is_fdi);
+extern int	floppy_create_image(const wchar_t *, int8_t sz, int8_t is_fdi);
 extern int	zip_create_image(const wchar_t *, int8_t sz, int8_t is_zdi);
 
 #ifdef __cplusplus

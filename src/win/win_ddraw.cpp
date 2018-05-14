@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.9	2018/05/09
+ * Version:	@(#)win_ddraw.cpp	1.0.10	2018/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -215,7 +215,6 @@ static void
 SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 {
     WCHAR temp[512];
-    BITMAPFILEHEADER bmpFileHeader; 
     BITMAPINFO bmpInfo;
     HDC hdc;
     LPVOID pBuf = NULL;
@@ -381,6 +380,7 @@ SaveBMP(const wchar_t *fn, HBITMAP hBitmap)
 	GetDIBits(hdc, hBitmap, 0, bmpInfo.bmiHeader.biHeight, pBuf, &bmpInfo, DIB_RGB_COLORS);
 
 	if ((fp = _wfopen(fn, L"wb")) == NULL) {
+		pclog("[SaveBMP] File %ls could not be opened for writing!\n", fn);
 		_swprintf(temp, get_string(IDS_2088), fn);
 		ui_msgbox(MBX_ERROR, temp);
 		break;

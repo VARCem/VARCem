@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the New Floppy Image dialog.
+ *		Implementation of the New Floppy/ZIP Image dialog.
  *
- * Version:	@(#)win_new_floppy.c	1.0.15	2018/05/11
+ * Version:	@(#)win_new_image.c	1.0.16	2018/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,7 +52,7 @@
 
 static wchar_t	fd_file_name[512];
 static int	is_zip;
-static int	fdd_id, sb_part;
+static int	drive_id, sb_part;
 static int	file_type = 0;		/* 0 = IMG, 1 = Japanese FDI, 2 = 86F */
 
 
@@ -82,7 +82,7 @@ dlg_init(HWND hdlg)
 
     h = GetDlgItem(hdlg, IDC_COMBO_DISK_SIZE);
     if (is_zip) {
-	zip_types = zip_drives[fdd_id].is_250 ? 2 : 1;
+	zip_types = zip_drives[drive_id].is_250 ? 2 : 1;
 	for (i = 0; i < zip_types; i++)
                 SendMessage(h, CB_ADDSTRING, 0,
 		    (LPARAM)get_string(IDS_5900 + i));
@@ -162,13 +162,13 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					if (is_zip)
 						ret = zip_create_image(fd_file_name, disk_size, file_type);
 					else
-						ret = floppy_create_image(fd_file_name, disk_size, 0, file_type);
+						ret = floppy_create_image(fd_file_name, disk_size, file_type);
 				}
 				if (ret) {
 					if (is_zip)
-						ui_sb_mount_zip(fdd_id, sb_part, 0, fd_file_name);
+						ui_sb_mount_zip(drive_id, sb_part, 0, fd_file_name);
 					else
-						ui_sb_mount_floppy(fdd_id, sb_part, 0, fd_file_name);
+						ui_sb_mount_floppy(drive_id, sb_part, 0, fd_file_name);
 				} else {
 					msg_box(hdlg, MBX_ERROR, (wchar_t *)IDS_4108);
 					plat_pause(0);
@@ -201,14 +201,17 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					f = _wfopen(temp_path, L"rb");
 					if (f != NULL) {
 						fclose(f);
-						if (msg_box(hdlg, MBX_QUESTION, (wchar_t *)IDS_4111) != 0)	/* yes */
+						if (msg_box(hdlg, MBX_QUESTION, (wchar_t *)IDS_4111) != 0)	/* yes */ {
+pclog("SELECT: != 0 (NO)\n");
 							return FALSE;
+						}
 					}
+pclog("SELECT: YES\n");
 					SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path);
 					memset(fd_file_name, 0x00, sizeof(fd_file_name));
 					wcscpy(fd_file_name, temp_path);
 					h = GetDlgItem(hdlg, IDC_COMBO_DISK_SIZE);
-					if (!is_zip || zip_drives[fdd_id].is_250)
+					if (!is_zip || zip_drives[drive_id].is_250)
 						EnableWindow(h, TRUE);
 					wcs_len = wcslen(temp_path);
 					ext_offs = wcs_len - 4;
@@ -244,6 +247,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 					h = GetDlgItem(hdlg, IDOK);
 					EnableWindow(h, TRUE);
+break;
 					return TRUE;
 				} else
 					return FALSE;
@@ -259,11 +263,11 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 void
-dlg_new_floppy(int idm, int tag)
+dlg_new_image(int drive, int part, int zip)
 {
-    is_zip = !!(idm & 0x80);
-    fdd_id = idm & 0x7f;
-    sb_part = tag;
+    is_zip = zip;
+    drive_id = drive;
+    sb_part = part;
 
     DialogBox(hInstance, (LPCTSTR)DLG_NEW_FLOPPY, hwndMain, dlg_proc);
 }

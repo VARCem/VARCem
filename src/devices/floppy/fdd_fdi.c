@@ -9,7 +9,7 @@
  *		Implementation of the FDI floppy stream image format
  *		interface to the FDI2RAW module.
  *
- * Version:	@(#)fdd_fdi.c	1.0.4	2018/05/06
+ * Version:	@(#)fdd_fdi.c	1.0.5	2018/05/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -319,8 +319,6 @@ fdi_load(int drive, const wchar_t *fn)
     char header[26];
     fdi_t *dev;
 
-    writeprot[drive] = fwriteprot[drive] = 1;
-
     /* Allocate a drive block. */
     dev = (fdi_t *)malloc(sizeof(fdi_t));
     memset(dev, 0x00, sizeof(fdi_t));
@@ -331,6 +329,8 @@ fdi_load(int drive, const wchar_t *fn)
 	return(0);
     }
 
+    writeprot[drive] = fwriteprot[drive] = 1;
+
     d86f_unregister(drive);
 
     fread(header, 1, 25, dev->f);
@@ -338,7 +338,7 @@ fdi_load(int drive, const wchar_t *fn)
     header[25] = 0;
     if (strcmp(header, "Formatted Disk Image file") != 0) {
 	/* This is a Japanese FDI file. */
-	pclog("fdi_load(): Japanese FDI file detected, redirecting to IMG loader\n");
+	fdd_log("FDI: Japanese FDI file detected, redirecting to IMG loader\n");
 	fclose(dev->f);
 	free(dev);
 	return(img_load(drive, fn));
@@ -369,8 +369,6 @@ fdi_load(int drive, const wchar_t *fn)
     d86f_common_handlers(drive);
 
     drives[drive].seek = fdi_seek;
-
-    pclog("Loaded as FDI\n");
 
     return(1);
 }

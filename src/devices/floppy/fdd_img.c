@@ -13,7 +13,7 @@
  *		re-merged with the other files. Much of it is generic to
  *		all formats.
  *
- * Version:	@(#)fdd_img.c	1.0.10	2018/05/09
+ * Version:	@(#)fdd_img.c	1.0.12	2018/05/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -624,8 +624,6 @@ img_load(int drive, const wchar_t *fn)
 
     d86f_unregister(drive);
 
-    writeprot[drive] = 0;
-
     /* Allocate a drive block. */
     dev = (img_t *)malloc(sizeof(img_t));
     memset(dev, 0x00, sizeof(img_t));
@@ -638,7 +636,8 @@ img_load(int drive, const wchar_t *fn)
 		return(0);
 	}
 	writeprot[drive] = 1;
-    }
+    } else
+	writeprot[drive] = 0;
 
     if (ui_writeprot[drive])
 		writeprot[drive] = 1;
@@ -651,7 +650,7 @@ img_load(int drive, const wchar_t *fn)
 
     if (! wcscasecmp(ext, L"FDI")) {
 	/* This is a Japanese FDI image, so let's read the header */
-	pclog("img_load(): File is a Japanese FDI image...\n");
+	fdd_log("FDD: image file type is Japanese FDI\n");
 	fseek(dev->f, 0x10, SEEK_SET);
 	(void)fread(&bpb_bps, 1, 2, dev->f);
 	fseek(dev->f, 0x0C, SEEK_SET);
@@ -686,7 +685,7 @@ img_load(int drive, const wchar_t *fn)
 	if ((first_byte == 0x1A) && (second_byte == 'F') &&
 	    (third_byte == 'D') && (fourth_byte == 'F')) {
 		/* This is a FDF image. */
-		pclog("img_load(): File is a FDF image...\n");
+		fdd_log("FDD: image file type is FDF\n");
 		fwriteprot[drive] = writeprot[drive] = 1;
 		fclose(dev->f);
 		dev->f = plat_fopen(fn, L"rb");
@@ -707,10 +706,10 @@ img_load(int drive, const wchar_t *fn)
 				/* Skip first 3 bytes - their meaning is unknown to us but could be a checksum. */
 				first_byte = fgetc(dev->f);
 				fread(&track_bytes, 1, 2, dev->f);
-				pclog("Block header: %02X %04X ", first_byte, track_bytes);
+				fdd_log("FDD: block header: %02X %04X ", first_byte, track_bytes);
 				/* Read the length of encoded data block. */
 				fread(&track_bytes, 1, 2, dev->f);
-				pclog("%04X\n", track_bytes);
+				fdd_log("%04X\n", track_bytes);
 			}
 
 			if (feof(dev->f)) break;
@@ -761,10 +760,10 @@ img_load(int drive, const wchar_t *fn)
 				/* Skip first 3 bytes - their meaning is unknown to us but could be a checksum. */
 				first_byte = fgetc(dev->f);
 				fread(&track_bytes, 1, 2, dev->f);
-				pclog("Block header: %02X %04X ", first_byte, track_bytes);
+				fdd_log("FDD: block header: %02X %04X ", first_byte, track_bytes);
 				/* Read the length of encoded data block. */
 				fread(&track_bytes, 1, 2, dev->f);
-				pclog("%04X\n", track_bytes);
+				fdd_log("%04X\n", track_bytes);
 			}
 
 			if (feof(dev->f)) break;
@@ -825,7 +824,7 @@ img_load(int drive, const wchar_t *fn)
 
 	if (((first_byte == 'C') && (second_byte == 'Q')) ||
 	    ((first_byte == 'c') && (second_byte == 'q'))) {
-		pclog("img_load(): File is a CopyQM image...\n");
+		fdd_log("FDD: image file type is CopyQM\n");
 		fwriteprot[drive] = writeprot[drive] = 1;
 		fclose(dev->f);
 		dev->f = plat_fopen(fn, L"rb");
@@ -890,13 +889,12 @@ img_load(int drive, const wchar_t *fn)
 				}
 			}
 		}
-		pclog("Finished reading CopyQM image data\n");
 
 		cqm = 1;
 		dev->disk_at_once = 1;
 		first_byte = *dev->disk_data;
 	} else {
-		pclog("img_load(): File is a raw image...\n");
+		fdd_log("FDD: image file type is RAW\n");
 		dev->disk_at_once = 0;
 
 		/* Read the BPB */
@@ -922,27 +920,29 @@ jump_if_fdf:
     dev->sides = 2;
     dev->sector_size = 2;
 
-    pclog("BPB reports %i sides and %i bytes per sector (%i sectors total)\n",
+    fdd_log("FDD: BPB reports %i sides, %i bytes per sector (%i sectors total)\n",
 	bpb_sides, bpb_bps, bpb_total);
 
     guess = (bpb_sides < 1);
-    guess = guess || (bpb_sides > 2);
+    guess = guess || (bpb_sides < 1 || bpb_sides > 2);
+    guess = guess || (bpb_total == 0);
     guess = guess || !bps_is_valid(bpb_bps);
     guess = guess || !first_byte_is_valid(first_byte);
     guess = guess || !fdd_get_check_bpb(drive);
     guess = guess && !fdi;
     guess = guess && !cqm;
+
     if (guess) {
 	/*
 	 * The BPB is giving us a wacky number of sides and/or bytes
 	 * per sector, therefore it is most probably not a BPB at all,
 	 * so we have to guess the parameters from file size.
 	 */
-	if (size <= (160*1024))	{
+	if (size <= (160*1024))	{		/* 1DD 160K */
 		dev->sectors = 8;
 		dev->tracks = 40;
 		dev->sides = 1;
-	} else if (size <= (180*1024)) {
+	} else if (size <= (180*1024)) {	/* 1DD 180K */
 		dev->sectors = 9;
 		dev->tracks = 40;
 		dev->sides = 1;
@@ -950,10 +950,7 @@ jump_if_fdf:
 		dev->sectors = 9;
 		dev->tracks = 70;
 		dev->sides = 1;
-	} else if (size <= (320*1024)) {
-		dev->sectors = 8;
-		dev->tracks = 40;
-	} else if (size <= (320*1024)) {
+	} else if (size <= (320*1024)) {	/* 2DD 320K */
 		dev->sectors = 8;
 		dev->tracks = 40;
 	} else if (size <= (360*1024)) {	/*DD 360K*/
@@ -1049,7 +1046,7 @@ jump_if_fdf:
 		dev->sectors = 42;
 		dev->tracks = 86;
 	} else {
-		pclog("Image is bigger than can fit on an ED floppy, ejecting...\n");
+		fdd_log("FDD: image file size too large; ejecting\n");
 		fclose(dev->f);
 		free(dev);
 		return(0);
@@ -1098,13 +1095,13 @@ jump_if_fdf:
 			dev->dmf = 0;
 		}
 
-		pclog("Image parameters: bit rate 300: %f, temporary rate: %i, hole: %i, DMF: %i, XDF type: %i\n", bit_rate_300, temp_rate, dev->disk_flags >> 1, dev->dmf, dev->xdf_type);
+		fdd_log("FDD: image parameters: bit rate 300: %f, temporary rate: %i, hole: %i, DMF: %i, XDF type: %i\n", bit_rate_300, temp_rate, dev->disk_flags >> 1, dev->dmf, dev->xdf_type);
 		break;
 	}
     }
 
     if (temp_rate == 0xFF) {
-	pclog("Image is bigger than can fit on an ED floppy, ejecting...\n");
+	fdd_log("FDD: invalid media configuration; ejecting\n");
 	fclose(dev->f);
 	free(dev);
 	return(0);
@@ -1116,7 +1113,7 @@ jump_if_fdf:
       else
 	dev->gap3_size = gap3_sizes[temp_rate][dev->sector_size][dev->sectors];
     if (! dev->gap3_size) {
-	pclog("ERROR: Floppy image of unknown format was inserted into drive %c:!\n", drive + 0x41);
+	fdd_log("FDD: unknown media format in drive %c:\n", drive + 0x41);
 	fclose(dev->f);
 	free(dev);
 	return(0);
@@ -1139,7 +1136,7 @@ jump_if_fdf:
 
     dev->is_cqm = cqm;
 
-    pclog("Disk flags: %i, track flags: %i\n",
+    fdd_log("FDD: disk flags: %02x, track flags: %02x\n",
 		dev->disk_flags, dev->track_flags);
 
     /* Set up the drive unit. */

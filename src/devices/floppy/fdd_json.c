@@ -8,7 +8,7 @@
  *
  *		Implementation of the PCjs JSON floppy image format.
  *
- * Version:	@(#)fdd_json.c	1.0.6	2018/05/06
+ * Version:	@(#)fdd_json.c	1.0.7	2018/05/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -182,7 +182,7 @@ handle(json_t *dev, char *name, char *str)
 static int
 unexpect(int c, int state, int level)
 {
-    pclog("JSON: Unexpected '%c' in state %d/%d.\n", c, state, level);
+    fdd_log("JSON: unexpected '%c' in state %d/%d.\n", c, state, level);
 
     return(-1);
 }
@@ -196,13 +196,13 @@ load_image(json_t *dev)
     char *ptr;
 
     if (dev->f == NULL) {
-	pclog("JSON: no file loaded!\n");
+	fdd_log("JSON: no file loaded!\n");
 	return(0);
     }
 
     /* Initialize. */
-    for (i=0; i<NTRACKS; i++) {
-	for (j=0; j<NSIDES; j++)
+    for (i = 0; i < NTRACKS; i++) {
+	for (j = 0; j < NSIDES; j++)
 		memset(dev->sects[i][j], 0x00, sizeof(sector_t));
     }
     dev->track = dev->side = dev->dmf = 0;    /* "dmf" is "sector#" */
@@ -373,7 +373,7 @@ json_seek(int drive, int track)
     int interleave_type;
 
     if (dev->f == NULL) {
-	pclog("JSON: seek: no file loaded!\n");
+	fdd_log("JSON: seek: no file loaded!\n");
 	return;
     }
 
@@ -412,7 +412,7 @@ json_seek(int drive, int track)
 
 	pos = d86f_prepare_pretrack(drive, side, 0);
 
-	for (sector=0; sector<dev->spt[track][side]; sector++) {
+	for (sector = 0; sector < dev->spt[track][side]; sector++) {
 		if (interleave_type == 0) {
 			rsec = dev->sects[track][side][sector].sector;
 			asec = sector;
@@ -476,7 +476,7 @@ set_sector(int drive, int side, uint8_t c, uint8_t h, uint8_t r, uint8_t n)
     dev->side = side;
 
     /* Now loop over all sector ID's on this side to find our sector. */
-    for (i=0; i<dev->spt[c][side]; i++) {
+    for (i = 0; i < dev->spt[c][side]; i++) {
 	if ((dev->sects[dev->track][side][i].track == c) &&
 	    (dev->sects[dev->track][side][i].side == h) &&
 	    (dev->sects[dev->track][side][i].sector == r) &&
@@ -535,15 +535,15 @@ json_load(int drive, const wchar_t *fn)
 
     /* Load all sectors from the image file. */
     if (! load_image(dev)) {
-	pclog("JSON: failed to initialize\n");
+	fdd_log("JSON: failed to initialize\n");
 	(void)fclose(dev->f);
 	free(dev);
 	images[drive] = NULL;
 	return(0);
     }
 
-    pclog("JSON(%d): %ls (%i tracks, %i sides, %i sectors)\n",
-	drive, fn, dev->tracks, dev->sides, dev->spt[0][0]);
+    fdd_log("JSON(%d): %ls (%i tracks, %i sides, %i sectors)\n",
+		drive, fn, dev->tracks, dev->sides, dev->spt[0][0]);
 
     /*
      * If the image has more than 43 tracks, then
@@ -566,7 +566,7 @@ json_load(int drive, const wchar_t *fn)
 
     temp_rate = 0xff;
     sec = &dev->sects[0][0][0];
-    for (i=0; i<6; i++) {
+    for (i = 0; i < 6; i++) {
 	if (dev->spt[0][0] > fdd_max_sectors[sec->size][i]) continue;
 
 	bit_rate = fdd_bit_rates_300[i];
@@ -599,7 +599,7 @@ json_load(int drive, const wchar_t *fn)
     }
 
     if (temp_rate == 0xff) {
-	pclog("JSON: invalid image (temp_rate=0xff)\n");
+	fdd_log("JSON: invalid image (temp_rate=0xff)\n");
 	(void)fclose(dev->f);
 	dev->f = NULL;
 	free(dev);
@@ -619,7 +619,7 @@ json_load(int drive, const wchar_t *fn)
 	dev->gap3_len = fdd_get_gap3_size(temp_rate,sec->size,dev->spt[0][0]);
 
     if (! dev->gap3_len) {
-	pclog("JSON: image of unknown format was inserted into drive %c:!\n",
+	fdd_log("JSON: image of unknown format was inserted into drive %c:!\n",
 								'C'+drive);
 	(void)fclose(dev->f);
 	dev->f = NULL;
@@ -632,9 +632,9 @@ json_load(int drive, const wchar_t *fn)
     if (temp_rate & 0x04)
 	dev->track_flags |= 0x20;		/* RPM */
 
-    pclog("      disk_flags: 0x%02x, track_flags: 0x%02x, GAP3 length: %i\n",
+    fdd_log("      disk_flags: 0x%02x, track_flags: 0x%02x, GAP3 length: %i\n",
 	dev->disk_flags, dev->track_flags, dev->gap3_len);
-    pclog("      bit rate 300: %.2f, temporary rate: %i, hole: %i, DMF: %i\n",
+    fdd_log("      bit rate 300: %.2f, temporary rate: %i, hole: %i, DMF: %i\n",
 		bit_rate, temp_rate, (dev->disk_flags >> 1), dev->dmf);
 
     /* Set up handlers for 86F layer. */
@@ -675,10 +675,10 @@ json_close(int drive)
     d86f_unregister(drive);
 
     /* Release all the sector buffers. */
-    for (t=0; t<256; t++) {
-	for (h=0; h<2; h++) {
+    for (t = 0; t < 256; t++) {
+	for (h = 0; h < 2; h++) {
 		memset(dev->sects[t][h], 0x00, sizeof(sector_t));
-		for (s=0; s<256; s++) {
+		for (s = 0; s < 256; s++) {
 			if (dev->sects[t][h][s].data != NULL)
 				free(dev->sects[t][h][s].data);
 			dev->sects[t][h][s].data = NULL;

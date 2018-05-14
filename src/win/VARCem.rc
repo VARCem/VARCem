@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.28	2018/05/11
+ * Version:	@(#)VARCem.rc	1.0.29	2018/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1032,7 +1032,7 @@ BEGIN
     IDS_2156	"%" PRIu64
     IDS_2157	"%" PRIu64 " MB (CHS: %u, %u, %u)"
     IDS_2158	"Floppy %i (%s): %ls"
-    IDS_2159	"All images\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.ima;*.json;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f\0All files\0*.*\0"
+    IDS_2159	"All images\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f\0All files\0*.*\0"
     IDS_2160	"Configuration files\0*.varc\0All files\0*.*\0"
     IDS_2161	"&New image..."
     IDS_2162	"&Existing image..."

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.30	2018/05/10
+# Version:	@(#)Makefile.VC	1.0.32	2018/05/13
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -383,9 +383,9 @@ ifneq ($(VNC), n)
  ifneq ($(VNC_PATH), )
   OPTS		+= -I$(VNC_PATH)/include/msvc -I$(VNC_PATH)/include
   ifeq ($(X64), y)
-   LOPTS	+= LIBPATH:$(VNC_PATH)\lib\x64
+   LOPTS	+= -LIBPATH:$(VNC_PATH)\lib\x64
   else
-   LOPTS	+= LIBPATH:$(VNC_PATH)\lib\x86
+   LOPTS	+= -LIBPATH:$(VNC_PATH)\lib\x86
   endif
  endif
  ifeq ($(VNC), y)
@@ -401,9 +401,9 @@ ifneq ($(RDP), n)
  ifneq ($(RDP_PATH), )
   OPTS		+= -I$(RDP_PATH)/include/msvc -I$(RDP_PATH)/include
   ifeq ($(X64), y)
-   LOPTS	+= LIBPATH:$(RDP_PATH)\lib\x64
+   LOPTS	+= -LIBPATH:$(RDP_PATH)\lib\x64
   else
-   LOPTS	+= LIBPATH:$(RDP_PATH)\lib\x86
+   LOPTS	+= -LIBPATH:$(RDP_PATH)\lib\x86
   endif
  endif
  ifeq ($(RDP), y)
@@ -419,13 +419,13 @@ ifneq ($(PNG), n)
  ifneq ($(PNG_PATH), )
   OPTS		+= -I$(PNG_PATH)/include/msvc -I$(PNG_PATH)/include
   ifeq ($(X64), y)
-   LOPTS	+= LIBPATH:$(PNG_PATH)\lib\x64
+   LOPTS	+= -LIBPATH:$(PNG_PATH)\lib\x64
   else
-   LOPTS	+= LIBPATH:$(PNG_PATH)\lib\x86
+   LOPTS	+= -LIBPATH:$(PNG_PATH)\lib\x86
   endif
  endif
- ifeq ($(RDP), y)
-  LIBS		+= libpng16.lib zlib.lib
+ ifeq ($(PNG), y)
+  LIBS		+= libpng16_dll.lib #zlib.lib
  endif
 endif
 
@@ -439,7 +439,7 @@ else
 		   win_ddraw.obj win_d3d.obj $(SDLOBJ) \
 		   win_dialog.obj win_about.obj win_status.obj \
 		   win_settings.obj win_devconf.obj win_snd_gain.obj \
-		   win_new_floppy.obj
+		   win_new_image.obj
 endif
 
 
@@ -506,7 +506,7 @@ MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
 		   mem.obj rom.obj rom_load.obj device.obj nvr.obj \
 		   $(VNCOBJ) $(RDPOBJ)
 
-UIOBJ		+= ui_main.obj ui_new_floppy.obj ui_stbar.obj ui_vidapi.obj
+UIOBJ		+= ui_main.obj ui_new_image.obj ui_stbar.obj ui_vidapi.obj
 
 SYSOBJ		:= dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj mca.obj \
 		   mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj

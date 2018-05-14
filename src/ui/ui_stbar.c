@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.7	2018/05/11
+ * Version:	@(#)ui_stbar.c	1.0.8	2018/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -804,7 +804,7 @@ ui_sb_menu_command(int idm, int tag)
 		part = find_tag(SB_FLOPPY | drive);
 		if (part == -1) break;
 
-		dlg_new_floppy(idm, part);
+		dlg_new_image(drive, part, 0);
 		break;
 
 	case IDM_FLOPPY_IMAGE_EXISTING:
@@ -948,7 +948,7 @@ ui_sb_menu_command(int idm, int tag)
 		part = find_tag(SB_ZIP | drive);
 		if (part == -1) break;
 
-		dlg_new_floppy(drive | 0x80, part);
+		dlg_new_image(drive, part, 1);
 		break;
 
 	case IDM_ZIP_IMAGE_EXISTING:

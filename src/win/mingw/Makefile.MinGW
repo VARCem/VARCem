@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.44	2018/05/10
+# Version:	@(#)Makefile.mingw	1.0.45	2018/05/13
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -467,7 +467,7 @@ else
 		   win_ddraw.o win_d3d.o $(SDLOBJ) \
 		   win_dialog.o win_about.o win_status.o \
 		   win_settings.o win_devconf.o win_snd_gain.o \
-		   win_new_floppy.o
+		   win_new_image.o
 endif
 
 
@@ -540,7 +540,7 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
 		   rom.o rom_load.o device.o nvr.o $(VNCOBJ) $(RDPOBJ)
 
-UIOBJ		+= ui_main.o ui_new_floppy.o ui_stbar.o ui_vidapi.o
+UIOBJ		+= ui_main.o ui_new_image.o ui_stbar.o ui_vidapi.o
 
 SYSOBJ		:= dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o mcr.o \
 		   memregs.o nvr_at.o nvr_ps2.o

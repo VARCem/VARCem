@@ -12,7 +12,7 @@
  *		format handlers, and re-integrated with that code. This is
  *		just the wrong place for it..
  *
- * Version:	@(#)ui_new_floppy.c	1.0.2	2018/05/06
+ * Version:	@(#)ui_new_image.c	1.0.3	2018/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -199,7 +199,7 @@ floppy_create_86f(const wchar_t *fn, int8_t ds, int8_t rpm_mode)
 
 /* This function should be moved to the Floppy Image format handler. */
 int
-floppy_create_image(const wchar_t *fn, int8_t ds, int8_t is_zip, int8_t is_fdi)
+floppy_create_image(const wchar_t *fn, int8_t ds, int8_t is_fdi)
 {
     const disk_size_t *dp = &disk_sizes[ds];
     uint8_t *empty;
@@ -230,8 +230,7 @@ floppy_create_image(const wchar_t *fn, int8_t ds, int8_t is_zip, int8_t is_fdi)
     fat2_offs = fat1_offs + fat_size;
     zero_bytes = fat2_offs + fat_size + root_dir_bytes;
 
-    /* FIXME: is_zip is _always_ 0 ... */
-    if (!is_zip && is_fdi) {
+    if (is_fdi) {
 	empty = (uint8_t *)malloc(base);
 	memset(empty, 0x00, base);
 
@@ -250,57 +249,55 @@ floppy_create_image(const wchar_t *fn, int8_t ds, int8_t is_zip, int8_t is_fdi)
     empty = (uint8_t *)malloc(total_size);
     memset(empty, 0x00, zero_bytes);
 
-    if (!is_zip) {
-	memset(empty + zero_bytes, 0xF6, total_size - zero_bytes);
+    memset(empty + zero_bytes, 0xF6, total_size - zero_bytes);
 
-	empty[0x00] = 0xEB;			/* Jump to make MS-DOS happy. */
-	empty[0x01] = 0x58;
-	empty[0x02] = 0x90;
+    empty[0x00] = 0xEB;			/* jump to make DOS happy */
+    empty[0x01] = 0x58;
+    empty[0x02] = 0x90;
 
-	empty[0x03] = 0x38;			/* '86BOX5.0' OEM ID. */
-	empty[0x04] = 0x36;
-	empty[0x05] = 0x42;
-	empty[0x06] = 0x4F;
-	empty[0x07] = 0x58;
-	empty[0x08] = 0x35;
-	empty[0x09] = 0x2E;
-	empty[0x0A] = 0x30;
+    empty[0x03] = (uint8_t)'V';		/* OEM ID */
+    empty[0x04] = (uint8_t)'A';
+    empty[0x05] = (uint8_t)'R';
+    empty[0x06] = (uint8_t)'C';
+    empty[0x07] = (uint8_t)'E';
+    empty[0x08] = (uint8_t)'M';
+    empty[0x09] = (uint8_t)'5';
+    empty[0x0A] = (uint8_t)'0';
 
-	*(uint16_t *) &(empty[0x0B]) = (uint16_t) sector_bytes;
-	*(uint8_t  *) &(empty[0x0D]) = (uint8_t)  dp->spc;
-	*(uint16_t *) &(empty[0x0E]) = (uint16_t) 1;
-	*(uint8_t  *) &(empty[0x10]) = (uint8_t)  dp->num_fats;
-	*(uint16_t *) &(empty[0x11]) = (uint16_t) dp->root_dir_entries;
-	*(uint16_t *) &(empty[0x13]) = (uint16_t) total_sectors;
-	*(uint8_t *)  &(empty[0x15]) = (uint8_t)  dp->media_desc;
-	*(uint16_t *) &(empty[0x16]) = (uint16_t) dp->spfat;
-	*(uint8_t *)  &(empty[0x18]) = (uint8_t)  dp->sectors;
-	*(uint8_t *)  &(empty[0x1A]) = (uint8_t)  dp->sides;
+    *(uint16_t *) &(empty[0x0B]) = (uint16_t) sector_bytes;
+    *(uint8_t  *) &(empty[0x0D]) = (uint8_t)  dp->spc;
+    *(uint16_t *) &(empty[0x0E]) = (uint16_t) 1;
+    *(uint8_t  *) &(empty[0x10]) = (uint8_t)  dp->num_fats;
+    *(uint16_t *) &(empty[0x11]) = (uint16_t) dp->root_dir_entries;
+    *(uint16_t *) &(empty[0x13]) = (uint16_t) total_sectors;
+    *(uint8_t *)  &(empty[0x15]) = (uint8_t)  dp->media_desc;
+    *(uint16_t *) &(empty[0x16]) = (uint16_t) dp->spfat;
+    *(uint8_t *)  &(empty[0x18]) = (uint8_t)  dp->sectors;
+    *(uint8_t *)  &(empty[0x1A]) = (uint8_t)  dp->sides;
 
-	empty[0x26] = 0x29;			/* ')' followed by randomly-generated volume serial number. */
-	empty[0x27] = random_generate();
-	empty[0x28] = random_generate();
-	empty[0x29] = random_generate();
-	empty[0x2A] = random_generate();
+    empty[0x26] = 0x29;		/* ')' followed by random serial number */
+    empty[0x27] = random_generate();
+    empty[0x28] = random_generate();
+    empty[0x29] = random_generate();
+    empty[0x2A] = random_generate();
 
-	memset(&(empty[0x2B]), 0x20, 11);
+    memset(&(empty[0x2B]), 0x20, 11);
 
-	empty[0x36] = 'F';
-	empty[0x37] = 'A';
-	empty[0x38] = 'T';
-	empty[0x39] = '1';
-	empty[0x3A] = '2';
-	empty[0x3B] = ' ';
-	empty[0x3C] = ' ';
-	empty[0x3D] = ' ';
+    empty[0x36] = (uint8_t)'F';
+    empty[0x37] = (uint8_t)'A';
+    empty[0x38] = (uint8_t)'T';
+    empty[0x39] = (uint8_t)'1';
+    empty[0x3A] = (uint8_t)'2';
+    empty[0x3B] = (uint8_t)' ';
+    empty[0x3C] = (uint8_t)' ';
+    empty[0x3D] = (uint8_t)' ';
 
-	empty[0x1FE] = 0x55;
-	empty[0x1FF] = 0xAA;
+    empty[0x1FE] = 0x55;
+    empty[0x1FF] = 0xAA;
 
-	empty[fat1_offs + 0x00] = empty[fat2_offs + 0x00] = empty[0x15];
-	empty[fat1_offs + 0x01] = empty[fat2_offs + 0x01] = 0xFF;
-	empty[fat1_offs + 0x02] = empty[fat2_offs + 0x02] = 0xFF;
-    }
+    empty[fat1_offs + 0x00] = empty[fat2_offs + 0x00] = empty[0x15];
+    empty[fat1_offs + 0x01] = empty[fat2_offs + 0x01] = 0xFF;
+    empty[fat1_offs + 0x02] = empty[fat2_offs + 0x02] = 0xFF;
 
     fwrite(empty, 1, total_size, f);
 
@@ -443,7 +440,7 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
 	*(uint32_t *) &(empty[0x4020]) = 0x0002FFE0;
 	*(uint16_t *) &(empty[0x4024]) = 0x0080;
 
-	empty[0x4026] = 0x29;			/* ')' followed by randomly-generated volume serial number. */
+	empty[0x4026] = 0x29;	/* ')' followed by random serial number */
 	empty[0x4027] = random_generate();
 	empty[0x4028] = random_generate();
 	empty[0x4029] = random_generate();
@@ -452,11 +449,11 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
 	memset(&(empty[0x402B]), 0x00, 0x000B);
 	memset(&(empty[0x4036]), 0x20, 0x0008);
 
-	empty[0x4036] = 'F';
-	empty[0x4037] = 'A';
-	empty[0x4038] = 'T';
-	empty[0x4039] = '1';
-	empty[0x403A] = '6';
+	empty[0x4036] = (uint8_t)'F';
+	empty[0x4037] = (uint8_t)'A';
+	empty[0x4038] = (uint8_t)'T';
+	empty[0x4039] = (uint8_t)'1';
+	empty[0x403A] = (uint8_t)'6';
 
 	empty[0x41FE] = 0x55;
 	empty[0x41FF] = 0xAA;
@@ -513,7 +510,7 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
 	*(uint32_t *) &(empty[0x4020]) = 0x000777E0;
 	*(uint16_t *) &(empty[0x4024]) = 0x0080;
 
-	empty[0x4026] = 0x29;			/* ')' followed by randomly-generated volume serial number. */
+	empty[0x4026] = 0x29;	/* ')' followed by random serial number */
 	empty[0x4027] = random_generate();
 	empty[0x4028] = random_generate();
 	empty[0x4029] = random_generate();
@@ -522,11 +519,11 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
 	memset(&(empty[0x402B]), 0x00, 0x000B);
 	memset(&(empty[0x4036]), 0x20, 0x0008);
 
-	empty[0x4036] = 'F';
-	empty[0x4037] = 'A';
-	empty[0x4038] = 'T';
-	empty[0x4039] = '1';
-	empty[0x403A] = '6';
+	empty[0x4036] = (uint8_t)'F';
+	empty[0x4037] = (uint8_t)'A';
+	empty[0x4038] = (uint8_t)'T';
+	empty[0x4039] = (uint8_t)'1';
+	empty[0x403A] = (uint8_t)'6';
 
 	empty[0x41FE] = 0x55;
 	empty[0x41FF] = 0xAA;

@@ -8,7 +8,7 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.1	2018/05/09
+ * Version:	@(#)ui_vidapi.c	1.0.2	2018/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -195,6 +195,7 @@ vidapi_screenshot(void)
     (void)time(&now);
     info = localtime(&now);
 
+    memset(path, 0x00, sizeof(path));
     plat_append_filename(path, usr_path, SCREENSHOT_PATH);
 
     if (! plat_dir_check(path))
@@ -202,7 +203,7 @@ vidapi_screenshot(void)
 
     wcscat(path, L"\\");
 
-    wcsftime(fn, 128, L"%Y%m%d_%H%M%S.png", info);
+    wcsftime(fn, sizeof_w(fn), L"%Y%m%d_%H%M%S.png", info);
     wcscat(path, fn);
 
     if (plat_vidapis[vid_api]->screenshot != NULL)

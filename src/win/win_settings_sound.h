@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.7	2018/05/02
+ * Version:	@(#)win_settings_sound.h	1.0.8	2018/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,8 +42,12 @@
  *									*
  ************************************************************************/
 
-static int	sound_to_list[20], list_to_sound[20];
-static int	midi_to_list[20], list_to_midi[20];
+#define NUM_SOUND	32
+#define NUM_MIDI	16
+
+
+static int		sound_to_list[NUM_SOUND], list_to_sound[NUM_SOUND];
+static int		midi_to_list[NUM_MIDI], list_to_midi[NUM_MIDI];
 
 
 static int
@@ -97,6 +101,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_INITDIALOG:
+pclog("SND: temp_sound = %d\n", temp_sound_card);
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
 		c = d = 0;
 		while (1) {
@@ -113,6 +118,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 					list_to_sound[d] = c;
 					d++;
+pclog("SND: list[%d] = %d (%s)\n", d, c, stransi);
 				}
 			}
 
@@ -239,6 +245,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SAVESETTINGS:
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
 		temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
+pclog("SND SAVE: temp_sound_card = %d (%d)\n", temp_sound_card, list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)]);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
 		temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];

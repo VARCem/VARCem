@@ -8,7 +8,7 @@
  *
  *		Implementation of the Teledisk floppy image format.
  *
- * Version:	@(#)fdd_td0.c	1.0.7	2018/05/06
+ * Version:	@(#)fdd_td0.c	1.0.8	2018/05/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -611,7 +611,7 @@ td0_initialize(int drive)
     int i, j, k;
 
     if (dev->f == NULL) {
-	pclog("TD0: Attempted to initialize without loading a file first\n");
+	fdd_log("TD0: attempted to initialize without loading a file first\n");
 	return(0);
     }
 
@@ -619,12 +619,12 @@ td0_initialize(int drive)
     file_size = ftell(dev->f);
 
     if (file_size < 12) {
-	pclog("TD0: File is too small to even contain the header\n");
+	fdd_log("TD0: file is too small to even contain the header\n");
 	return(0);
     }
 
     if (file_size > TD0_MAX_BUFSZ) {
-	pclog("TD0: File exceeds the maximum size\n");
+	fdd_log("TD0: file exceeds the maximum size\n");
 	return(0);
     }
 
@@ -633,13 +633,13 @@ td0_initialize(int drive)
     head_count = header[9];
 
     if (header[0] == 't') {
-	pclog("TD0: File is compressed\n");
+	fdd_log("TD0: file is compressed\n");
 	disk_decode.fdd_file = dev->f;
 	state_init_Decode(&disk_decode);
 	disk_decode.fdd_file_offset = 12;
 	state_Decode(&disk_decode, dev->imagebuf, TD0_MAX_BUFSZ);
     } else {
-	pclog("TD0: File is uncompressed\n");
+	fdd_log("TD0: file is uncompressed\n");
 	fseek(dev->f, 12, SEEK_SET);
 	fread(dev->imagebuf, 1, file_size - 12, dev->f);
     }
@@ -650,14 +650,14 @@ td0_initialize(int drive)
     track_spt = dev->imagebuf[offset];
     if (track_spt == 255) {
 	/* Empty file? */
-	pclog("TD0: File has no tracks\n");
+	fdd_log("TD0: file has no tracks\n");
 	return(0);
     }
 
     density = (header[5] >> 1) & 3;
 
     if (density == 3) {
-	pclog("TD0: Unknown density\n");
+	fdd_log("TD0: unknown density\n");
 	return(0);
     }
 
@@ -725,7 +725,7 @@ td0_initialize(int drive)
 
 		size = 128 << hs[3];
 		if ((total_size + size) >= TD0_MAX_BUFSZ) {
-			pclog("TD0: Processed buffer overflow\n");
+			fdd_log("TD0: processed buffer overflow\n");
 			return(0);
 		}
 
@@ -735,7 +735,7 @@ td0_initialize(int drive)
 			offset += 3;
 			switch (hs[8]) {
 				default:
-					pclog("TD0: Image uses an unsupported sector data encoding\n");
+					fdd_log("TD0: image uses an unsupported sector data encoding\n");
 					return(0);
 
 				case 0:
@@ -803,7 +803,7 @@ td0_initialize(int drive)
 			dev->disk_flags |= (3 << 5);
 			if ((raw_tsize - track_size + (fm ? 73 : 146)) < (minimum_gap3 + minimum_gap4)) {
 				/* If we can't fit the sectors with a reasonable minimum gap even at 2% slower RPM, abort. */
-				pclog("TD0: Unable to fit the %i sectors in a track\n", track_spt);
+				fdd_log("TD0: unable to fit the %i sectors in a track\n", track_spt);
 				return 0;
 			}
 		}
@@ -814,7 +814,7 @@ td0_initialize(int drive)
     }
 
     if ((dev->disk_flags & 0x60) == 0x60)
-	pclog("TD0: Disk will rotate 2% below perfect RPM\n");
+	fdd_log("TD0: disk will rotate 2% below perfect RPM\n");
 
     dev->tracks = track_count + 1;
 
@@ -836,7 +836,7 @@ td0_initialize(int drive)
     dev->current_side_flags[0] = dev->side_flags[0][0];
     dev->current_side_flags[1] = dev->side_flags[0][1];
 
-    pclog("TD0: File loaded: %i tracks, %i sides, disk flags: %02X, side flags: %02X, %02X, GAP3 length: %02X\n", dev->tracks, dev->sides, dev->disk_flags, dev->current_side_flags[0], dev->current_side_flags[1], dev->gap3_len);
+    fdd_log("TD0: file loaded: %i tracks, %i sides, disk flags: %02X, side flags: %02X, %02X, GAP3 length: %02X\n", dev->tracks, dev->sides, dev->disk_flags, dev->current_side_flags[0], dev->current_side_flags[1], dev->gap3_len);
 
     return(1);
 }
@@ -1135,12 +1135,12 @@ td0_load(int drive, const wchar_t *fn)
     fwriteprot[drive] = writeprot[drive];
 
     if (! dsk_identify(drive)) {
-	pclog("TD0: Not a valid Teledisk image\n");
+	fdd_log("TD0: not a valid Teledisk image\n");
 	fclose(dev->f);
 	dev->f = NULL;
 	return(0);
     } else {
-	pclog("TD0: Valid Teledisk image\n");
+	fdd_log("TD0: valid Teledisk image\n");
     }
 
     /* Allocate the processing buffers. */
@@ -1151,13 +1151,11 @@ td0_load(int drive, const wchar_t *fn)
     memset(dev->processed_buf, 0x00, i);
 
     if (! td0_initialize(drive)) {
-	pclog("TD0: Failed to initialize\n");
+	fdd_log("TD0: failed to initialize\n");
 	fclose(dev->f);
 	free(dev->imagebuf);
 	free(dev->processed_buf);
 	return(0);
-    } else {
-	pclog("TD0: Initialized successfully\n");
     }
 
     /* Attach this format to the D86F engine. */

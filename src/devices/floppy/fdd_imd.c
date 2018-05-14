@@ -8,7 +8,7 @@
  *
  *		Implementation of the IMD floppy image format.
  *
- * Version:	@(#)fdd_imd.c	1.0.8	2018/05/06
+ * Version:	@(#)fdd_imd.c	1.0.9	2018/05/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -594,8 +594,6 @@ imd_load(int drive, const wchar_t *fn)
 
     d86f_unregister(drive);
 
-    writeprot[drive] = 0;
-
     /* Allocate a drive block. */
     dev = (imd_t *)malloc(sizeof(imd_t));
     memset(dev, 0x00, sizeof(imd_t));
@@ -607,7 +605,8 @@ imd_load(int drive, const wchar_t *fn)
 		return(0);
 	}
 	writeprot[drive] = 1;
-    }
+    } else
+	writeprot[drive] = 0;
 
     if (ui_writeprot[drive])
 	writeprot[drive] = 1;
@@ -616,12 +615,12 @@ imd_load(int drive, const wchar_t *fn)
     fseek(dev->f, 0, SEEK_SET);
     fread(&magic, 1, 4, dev->f);
     if (magic != 0x20444D49) {
-	pclog("IMD: Not a valid ImageDisk image\n");
+	fdd_log("IMD: not a valid ImageDisk image\n");
 	fclose(dev->f);
 	free(dev);;
 	return(0);
     } else {
-	pclog("IMD: Valid ImageDisk image\n");
+	fdd_log("IMD: valid ImageDisk image\n");
     }
 
     fseek(dev->f, 0, SEEK_END);
@@ -633,22 +632,20 @@ imd_load(int drive, const wchar_t *fn)
 
     buffer2 = strchr(buffer, 0x1A);
     if (buffer2 == NULL) {
-	pclog("IMD: No ASCII EOF character\n");
+	fdd_log("IMD: no ASCII EOF found!\n");
 	fclose(dev->f);
 	free(dev);
 	return(0);
     } else {
-	pclog("IMD: ASCII EOF character found at offset %08X\n", buffer2 - buffer);
+	fdd_log("IMD: ASCII EOF found at offset %08X\n", buffer2 - buffer);
     }
 
     buffer2++;
     if ((buffer2 - buffer) == fsize) {
-	pclog("IMD: File ends after ASCII EOF character\n");
+	fdd_log("IMD: file ends after ASCII EOF\n");
 	fclose(dev->f);
 	free(dev);
 	return(0);
-    } else {
-	pclog("IMD: File continues after ASCII EOF character\n");
     }
 
     dev->start_offs = (buffer2 - buffer);
@@ -760,7 +757,7 @@ imd_load(int drive, const wchar_t *fn)
 			dev->disk_flags |= (3 << 5);
 			if ((raw_tsize - track_total + (mfm ? 146 : 73)) < (minimum_gap3 + minimum_gap4)) {
 				/* If we can't fit the sectors with a reasonable minimum gap even at 2% slower RPM, abort. */
-				pclog("IMD: Unable to fit the %i sectors in a track\n", track_spt);
+				fdd_log("IMD: unable to fit the %i sectors in a track\n", track_spt);
 				fclose(dev->f);
 				free(dev);
 				imd[drive] = NULL;

@@ -8,9 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * TODO:	Implement the ENABLE_FDD_LOG stuff.
- *
- * Version:	@(#)fdd.c	1.0.12	2018/05/06
+ * Version:	@(#)fdd.c	1.0.13	2018/05/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +39,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../../emu.h"
 #include "../../machines/machine.h"
 #include "../../mem.h"
@@ -177,13 +177,13 @@ static const struct
                 0, 0, "None", "none"
         },
         {       /*5.25" 1DD*/
-                43, FLAG_RPM_300 | FLAG_525 | FLAG_HOLE0, "5.25\" 180k", "525_1dd"
+                43, FLAG_RPM_300 | FLAG_525 | FLAG_HOLE0, "5.25\" 160/180K", "525_1dd"
         },
         {       /*5.25" DD*/
-                43, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0, "5.25\" 360k", "525_2dd"
+                43, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0, "5.25\" 320/360K", "525_2dd"
         },
         {       /*5.25" QD*/
-                86, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "5.25\" 720k", "525_2qd"
+                86, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "5.25\" 720K", "525_2qd"
         },
         {       /*5.25" HD PS/2*/
                 86, FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL | FLAG_PS2, "5.25\" 1.2M PS/2", "525_2hd_ps2"
@@ -195,10 +195,10 @@ static const struct
                 86, FLAG_RPM_300 | FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP, "5.25\" 1.2M 300/360 RPM", "525_2hd_dualrpm"
         },
         {       /*3.5" 1DD*/
-                86, FLAG_RPM_300 | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "3.5\" 360k", "35_1dd"
+                86, FLAG_RPM_300 | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "3.5\" 360K", "35_1dd"
         },
         {       /*3.5" DD*/
-                86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "3.5\" 720k", "35_2dd"
+                86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "3.5\" 720K", "35_2dd"
         },
         {       /*3.5" HD PS/2*/
                 86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL | FLAG_PS2, "3.5\" 1.44M PS/2", "35_2hd_ps2"
@@ -219,6 +219,22 @@ static const struct
 		-1, -1, NULL, NULL
         }
 };
+
+
+void
+fdd_log(const char *fmt, ...)
+{
+#ifdef ENABLE_FDC_LOG
+	va_list ap;
+
+	if (fdd_do_log)
+	{
+		va_start(ap, fmt);
+		pclog_ex(fmt, ap);
+		va_end(ap);
+	}
+#endif
+}
 
 
 const char *fdd_getname(int type)
@@ -354,7 +370,7 @@ int fdd_can_read_medium(int drive)
 {
 	int hole = fdd_hole(drive);
 
-	hole = 1 << (hole + 3);
+	hole = 1 << (hole + 4);
 
 	return (drive_types[fdd[drive].type].flags & hole) ? 1 : 0;
 }
@@ -406,11 +422,16 @@ int fdd_is_double_sided(int drive)
 
 void fdd_set_head(int drive, int head)
 {
-	fdd[drive].head = head;
+	if (head && !fdd_is_double_sided(drive))
+		fdd[drive].head = 0;
+	else
+		fdd[drive].head = head;
 }
 
 int fdd_get_head(int drive)
 {
+	if (!fdd_is_double_sided(drive))
+		return 0;
 	return fdd[drive].head;
 }
 
@@ -453,7 +474,9 @@ int fdd_load(int drive, const wchar_t *fn)
         wchar_t *p;
         FILE *f;
 
-	pclog("FDD: loading drive %d with '%ls'\n", drive, fn);
+#ifdef ENABLE_FDD_LOG
+	fdd_log("FDD: loading drive %d with '%ls'\n", drive, fn);
+#endif
 
         if (!fn) return(0);
         p = plat_get_extension(fn);
@@ -482,7 +505,9 @@ int fdd_load(int drive, const wchar_t *fn)
                 c++;
         }
 no_load:
-        pclog("FDD: could not load '%ls' %s\n",fn,p);
+#ifdef ENABLE_FDD_LOG
+        fdd_log("FDD: could not load '%ls' %s\n",fn,p);
+#endif
         drive_empty[drive] = 1;
 	fdd_set_head(drive, 0);
 	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
@@ -493,7 +518,9 @@ no_load:
 
 void fdd_close(int drive)
 {
-	pclog("FDD: closing drive %d\n", drive);
+#ifdef ENABLE_FDD_LOG
+	fdd_log("FDD: closing drive %d\n", drive);
+#endif
 
         if (loaders[driveloaders[drive]].close)
 		loaders[driveloaders[drive]].close(drive);
