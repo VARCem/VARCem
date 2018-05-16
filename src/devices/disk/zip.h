@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.h	1.0.5	2018/04/28
+ * Version:	@(#)zip.h	1.0.6	2018/05/16
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -60,7 +60,8 @@
 
 enum {
     ZIP_BUS_DISABLED = 0,
-    ZIP_BUS_ATAPI_PIO_ONLY = 4,
+    /* skip ST506 and ESDI */
+    ZIP_BUS_ATAPI_PIO_ONLY = 3,
     ZIP_BUS_ATAPI_PIO_AND_DMA,
     ZIP_BUS_SCSI,
     ZIP_BUS_USB = 8
