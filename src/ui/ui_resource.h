@@ -8,7 +8,11 @@
  *
  *		Platform-independent resource identifiers.
  *
- * Version:	@(#)ui_resource.h	1.0.8	2018/05/11
+ * NOTE:	Many entries in the strings table do not have an IDS, as
+ *		they are not referenced outside of the platform UI. This
+ *		may change at some point.
+ *
+ * Version:	@(#)ui_resource.h	1.0.14	2018/05/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -116,39 +120,40 @@
 /* TOOLS menu. */
 #define IDM_TOOLS		(IDM_BASE+300)
 #define IDM_SETTINGS		(IDM_TOOLS+1)
+#define IDM_LANGUAGE		(IDM_TOOLS+10)
 #define IDM_LOAD		(IDM_TOOLS+2)
 #define IDM_SAVE		(IDM_TOOLS+3)
-#define IDM_LOGGING		(IDM_TOOLS+10)
-#  define IDM_LOG_BEGIN		(IDM_LOGGING+1)
-# define IDM_LOG_BUS		(IDM_LOG_BEGIN+0)
-# define IDM_LOG_KEYBOARD	(IDM_LOG_BEGIN+1)
-# define IDM_LOG_MOUSE		(IDM_LOG_BEGIN+2)
-# define IDM_LOG_GAME		(IDM_LOG_BEGIN+3)
-# define IDM_LOG_PARALLEL	(IDM_LOG_BEGIN+4)
-# define IDM_LOG_SERIAL		(IDM_LOG_BEGIN+5)
-# define IDM_LOG_FDC		(IDM_LOG_BEGIN+6)
-# define IDM_LOG_FDD		(IDM_LOG_BEGIN+7)
-# define IDM_LOG_D86F		(IDM_LOG_BEGIN+8)
-# define IDM_LOG_HDC		(IDM_LOG_BEGIN+9)
-# define IDM_LOG_HDD		(IDM_LOG_BEGIN+10)
-# define IDM_LOG_ZIP		(IDM_LOG_BEGIN+11)
-# define IDM_LOG_CDROM		(IDM_LOG_BEGIN+12)
-# define IDM_LOG_CDROM_IMAGE	(IDM_LOG_BEGIN+13)
-# define IDM_LOG_CDROM_IOCTL	(IDM_LOG_BEGIN+14)
-# define IDM_LOG_NETWORK	(IDM_LOG_BEGIN+15)
-# define IDM_LOG_NETWORK_DEV	(IDM_LOG_BEGIN+16)
-# define IDM_LOG_SOUND_EMU8K	(IDM_LOG_BEGIN+17)
-# define IDM_LOG_SOUND_MPU401	(IDM_LOG_BEGIN+18)
-# define IDM_LOG_SOUND_DEV	(IDM_LOG_BEGIN+19)
-# define IDM_LOG_SCSI_BUS	(IDM_LOG_BEGIN+20)
-# define IDM_LOG_SCSI_DISK	(IDM_LOG_BEGIN+21)
-# define IDM_LOG_SCSI_DEV	(IDM_LOG_BEGIN+22)
-# define IDM_LOG_VOODOO		(IDM_LOG_BEGIN+23)
-#  define IDM_LOG_END		(IDM_LOG_BEGIN+24)
-# define IDM_LOG_BREAKPOINT	(IDM_LOGGING+99)
+#define IDM_LOGGING		(IDM_TOOLS+50)
+# define IDM_LOG_BREAKPOINT	(IDM_LOGGING+49)
+# define IDM_LOG_BEGIN		(IDM_LOGGING+1)
+# define  IDM_LOG_BUS		(IDM_LOG_BEGIN+0)
+# define  IDM_LOG_KEYBOARD	(IDM_LOG_BEGIN+1)
+# define  IDM_LOG_MOUSE		(IDM_LOG_BEGIN+2)
+# define  IDM_LOG_GAME		(IDM_LOG_BEGIN+3)
+# define  IDM_LOG_PARALLEL	(IDM_LOG_BEGIN+4)
+# define  IDM_LOG_SERIAL	(IDM_LOG_BEGIN+5)
+# define  IDM_LOG_FDC		(IDM_LOG_BEGIN+6)
+# define  IDM_LOG_FDD		(IDM_LOG_BEGIN+7)
+# define  IDM_LOG_D86F		(IDM_LOG_BEGIN+8)
+# define  IDM_LOG_HDC		(IDM_LOG_BEGIN+9)
+# define  IDM_LOG_HDD		(IDM_LOG_BEGIN+10)
+# define  IDM_LOG_ZIP		(IDM_LOG_BEGIN+11)
+# define  IDM_LOG_CDROM		(IDM_LOG_BEGIN+12)
+# define  IDM_LOG_CDROM_IMAGE	(IDM_LOG_BEGIN+13)
+# define  IDM_LOG_CDROM_IOCTL	(IDM_LOG_BEGIN+14)
+# define  IDM_LOG_NETWORK	(IDM_LOG_BEGIN+15)
+# define  IDM_LOG_NETWORK_DEV	(IDM_LOG_BEGIN+16)
+# define  IDM_LOG_SOUND_EMU8K	(IDM_LOG_BEGIN+17)
+# define  IDM_LOG_SOUND_MPU401	(IDM_LOG_BEGIN+18)
+# define  IDM_LOG_SOUND_DEV	(IDM_LOG_BEGIN+19)
+# define  IDM_LOG_SCSI_BUS	(IDM_LOG_BEGIN+20)
+# define  IDM_LOG_SCSI_DISK	(IDM_LOG_BEGIN+21)
+# define  IDM_LOG_SCSI_DEV	(IDM_LOG_BEGIN+22)
+# define  IDM_LOG_VOODOO	(IDM_LOG_BEGIN+23)
+# define IDM_LOG_END		(IDM_LOG_BEGIN+24)
 #define IDM_STATUS		(IDM_TOOLS+4)
 #define IDM_SCREENSHOT		(IDM_TOOLS+5)
-#define IDM_TOOLS_END		(IDM_SCREENSHOT+1)
+#define IDM_TOOLS_END		(IDM_LOG_BREAKPOINT+1)
 
 /* HELP menu. */
 #define IDM_HELP		(IDM_BASE+400)
@@ -190,210 +195,194 @@
 
 
 /* String IDs. */
-#define IDS_BEGIN	2048		// start of string IDs
+#define IDS_BEGIN	2000		// start of accesible string IDs
 
-#define IDS_2048	2048		// "Error"
-#define IDS_2049	2049		// "Fatal Error"
-#define IDS_2050	2050		// "Configuration Error"
-#define IDS_2051	2051		// "Warning"
-#define IDS_2052	2052		// "This will reset the emulator.."
-#define IDS_2053	2053		// "Invalid number of sectors.."
-#define IDS_2054	2054		// "Invalid number of heads.."
-#define IDS_2055	2055		// "Invalid number of cylinders.."
-#define IDS_2056	2056		// "No usable ROM images found!"
-#define IDS_2057	2057		// "(empty)"
-#define IDS_2058	2058		// "(host drive %c:)"
-#define IDS_2059	2059		// "(Turbo)"
-#define IDS_2060	2060		// "On"
-#define IDS_2061	2061		// "Off"
-#define IDS_2062	2062		// "Changes saved, please restart.."
-#define IDS_2063	2063		// "Configured ROM set not avai.."
-#define IDS_2064	2064		// "Configured video BIOS not.."
-#define IDS_2065	2065		// "Machine"
-#define IDS_2066	2066		// "Display"
-#define IDS_2067	2067		// "Input devices"
-#define IDS_2068	2068		// "Sound"
-#define IDS_2069	2069		// "Network"
-#define IDS_2070	2070		// "Ports (COM & LPT)"
-#define IDS_2071	2071		// "Other peripherals"
-#define IDS_2072	2072		// "Hard disks"
-#define IDS_2073	2073		// "Floppy drives"
-#define IDS_2074	2074		// "Other removable devices"
-#define IDS_2075	2075		// "CD-ROM images (*.ISO;*.CU.."
-#define IDS_2076	2076		// "Host CD/DVD Drive (%c:)"
-#define IDS_2077	2077		// "Click to capture mouse"
-#define IDS_2078	2078		// "Press F12-F8 to release mouse"
-#define IDS_2079	2079		// "Press F12-F8 or middle button.."
-#define IDS_2080	2080		// "Drive"
-#define IDS_2081	2081		// "Location"
-#define IDS_2082	2082		// "Bus"
-#define IDS_2083	2083		// "File"
-#define IDS_2084	2084		// "C"
-#define IDS_2085	2085		// "H"
-#define IDS_2086	2086		// "S"
-#define IDS_2087	2087		// "MB"
-#define IDS_2088	2088		// "Unable to create bitmap file: %s"
-#define IDS_2089	2089		// "Enabled"
-#define IDS_2090	2090		// "Mute"
-#define IDS_2091	2091		// "Type"
-#define IDS_2092	2092		// "Bus"
-#define IDS_2093	2093		// "DMA"
-#define IDS_2094	2094		// "KB"
-#define IDS_2095	2095		// "Selected renderer not avai.."
-#define IDS_2096	2096		// "Slave"
-#define IDS_2097	2097		// "SCSI (ID %s, LUN %s)"
-#define IDS_2098	2098		// "Adapter Type"
-#define IDS_2099	2099		// "Base Address"
-#define IDS_2100	2100		// "IRQ"
-#define IDS_2101	2101		// "8-bit DMA"
-#define IDS_2102	2102		// "16-bit DMA"
-#define IDS_2103	2103		// "BIOS"
-#define IDS_2104	2104		// "Network Type"
-#define IDS_2105	2105		// "Surround Module"
-#define IDS_2106	2106		// "MPU-401 Base Address"
-#define IDS_2107	2107		// "Use CTRL+ALT+PAGE DOWN.."
-#define IDS_2108	2108		// "On-board RAM"
-#define IDS_2109	2109		// "Memory Size"
-#define IDS_2110	2110		// "Display Type"
-#define IDS_2111	2111		// "RGB"
-#define IDS_2112	2112		// "Composite"
-#define IDS_2113	2113		// "Composite Type"
-#define IDS_2114	2114		// "Old"
-#define IDS_2115	2115		// "New"
-#define IDS_2116	2116		// "RGB Type"
-#define IDS_2117	2117		// "Color"
-#define IDS_2118	2118		// "Monochrome (Green)"
-#define IDS_2119	2119		// "Monochrome (Amber)"
-#define IDS_2120	2120		// "Monochrome (Gray)"
-#define IDS_2121	2121		// "Color (no brown)"
-#define IDS_2122	2122		// "Monochrome (Default)"
-#define IDS_2123	2123		// "Snow Emulation"
-#define IDS_2124	2124		// "Bilinear Filtering"
-#define IDS_2125	2125		// "Dithering"
-#define IDS_2126	2126		// "Framebuffer Memory Size"
-#define IDS_2127	2127		// "Texture Memory Size"
-#define IDS_2128	2128		// "Screen Filter"
-#define IDS_2129	2129		// "Render Threads"
-#define IDS_2130	2130		// "Recompiler"
-#define IDS_2131	2131		// "System Default"
-#define IDS_2132	2132		// "%i Wait state(s)"
-#define IDS_2133	2133		// "8-bit"
-#define IDS_2134	2134		// "Slow 16-bit"
-#define IDS_2135	2135		// "Fast 16-bit"
-#define IDS_2136	2136		// "Slow VLB/PCI"
-#define IDS_2137	2137		// "Mid  VLB/PCI"
-#define IDS_2138	2138		// "Fast VLB/PCI"
-#define IDS_2139	2139		// "PCap failed to set up.."
-#define IDS_2140	2140		// "No PCap devices found"
-#define IDS_2141	2141		// "Invalid PCap device"
-#define IDS_2142	2142		// "&Notify disk change"
-#define IDS_2143	2143		// "Type"
-#define IDS_2144	2144		// "The requested device '%ls'.."
-/* IDS_2145-51 available */
-#define IDS_2152	2152		// "None"
-#define IDS_2153	2153		// "Unable to load Accelerators"
-#define IDS_2154	2154		// "Unable to register Raw Input"
-#define IDS_2155	2155		// "IRQ %i"
-#define IDS_2156	2156		// "%" PRIu64
-#define IDS_2157	2157		// "%" PRIu64 " MB (CHS: %".."
-#define IDS_2158	2158		// "Floppy %i (%s): %ls"
-#define IDS_2159	2159		// "All floppy images (*.0??;*.."
-#define IDS_2160	2160		// "Configuration files (*.CF.."
-#define IDS_2161	2161		// "&New image..."
-#define IDS_2162	2162		// "&Existing image..."
-#define IDS_2163	2163		// "[WP]"
-#define IDS_2164	2164		// "E&ject"
-#define IDS_2165	2165		// "&Mute"
-#define IDS_2166	2166		// "E&mpty"
-#define IDS_2167	2167		// "&Reload previous image"
-#define IDS_2168	2168		// "&Image..."
-/* IDS_2169 available */
-#define IDS_2170	2170		// "Check BPB"
-#define IDS_2171	2171		// "Unable to initialize Flui.."
-#define IDS_2172	2172		// "E&xport to 86F..."
-#define IDS_2173	2173		// "Surface-based images (*.8.."
-#define IDS_2174	2174		// "All floppy images (*.DSK..."
-#define IDS_2175	2175		// "ZIP images (*.IM?)\0*.IM..."
-#define IDS_2176	2176		// "ZIP images (*.IM?)\0*.IM..."
-#define IDS_2177	2177		// "ZIP %i (%03i): %ls"
-#define IDS_2178	2178		// "Unable to initialize OpenAL.."
-#define IDS_2179	2179		// "Speed"
+/* Unused block (2000.) */
 
-#define IDS_4096	4096		// "Hard disk (%s)"
-#define IDS_4097	4097		// "%01i:%01i"
-#define IDS_4098	4098		// "%i"
-#define IDS_4099	4099		// "Disabled"
-#define IDS_4100	4100		// "Custom..."
-#define IDS_4101	4101		// "Custom (large)..."
-#define IDS_4102	4102		// "Add New Hard Disk"
-#define IDS_4103	4103		// "Add Existing Hard Disk"
-#define IDS_4104	4104		// "Attempting to create a HDI ima.."
-#define IDS_4105	4105		// "Attempting to create a spurio.."
-#define IDS_4106	4106		// "Hard disk images (*.HDI;*.HD.."
-#define IDS_4107	4107		// "Unable to open the file for read"
-#define IDS_4108	4108		// "Unable to open the file for write"
-#define IDS_4109	4109		// "HDI or HDX image with a sect.."
-#define IDS_4110	4110		// "USB is not yet supported"
-#define IDS_4111	4111		// "This image exists and will be.."
-#define IDS_4112	4112		// "Please enter a valid file name"
-#define IDS_4113	4113		// "Remember to partition and fo.."
-#define IDS_4114	4114		// "ST506 or ESDI CD-ROM driv.."
-#define IDS_4115	4115		// "Removable disk %i (SCSI): %ls"
+/* Messagebox classes (2100.) */
+#define IDS_ERROR	2100		// "Error"
+#define IDS_FATAL_ERROR	2101		// "Fatal Error"
+#define IDS_CONFIG_ERROR 2102		// "Configuration Error"
+#define IDS_WARNING	2103		// "Warning"
 
-#define IDS_4352	4352		// "ST506"
-#define IDS_4353	4353		// "ESDI"
-#define IDS_4354	4354		// "IDE (PIO-only)"
-#define IDS_4355	4355		// "IDE (PIO+DMA)"
-#define IDS_4356	4356		// "SCSI"
-#define IDS_4357	4357		// "SCSI (removable)"
+/* System errors (2200.) */
+#define IDS_ERR_ACCEL	2200		// "Unable to load Accelerators"
+#define IDS_ERR_INPUT	2201		// "Unable to register Raw Input"
+#define IDS_ERR_PCAP	2202		// "PCap failed to set up.."
+#define IDS_ERR_PCAP_NO	2203		// "No PCap devices found"
+#define IDS_ERR_PCAP_DEV 2204		// "Invalid PCap device"
+#define IDS_ERR_OPENAL	2205		// "Unable to initialize OpenAL.."
+#define IDS_ERR_FSYNTH	2206		// "Unable to initialize Flui.."
 
-#define IDS_4608	4608		// "ST506 (%01i:%01i)"
-#define IDS_4609	4609		// "ESDI (%01i:%01i)"
-#define IDS_4610	4610		// "IDE (PIO-only) (%01i:%01i)"
-#define IDS_4611	4611		// "IDE (PIO+DMA) (%01i:%01i)"
-#define IDS_4612	4612		// "SCSI (%02i:%02i)"
-#define IDS_4613	4613		// "SCSI (removable) (%02i:%02i)"
+/* Application error messages (2300.) */
+#define IDS_ERR_SCRSHOT	2300		// "Unable to create bitmap file: %s"
+#define IDS_ERR_NOROMS	2301		// "No usable ROM images found!"
+#define IDS_ERR_NOCONF	2302		// "No valid configuration.."
+#define IDS_ERR_NOMACH	2303		// "Configured machine not avai.."
+#define IDS_ERR_NOVIDEO	2304		// "Configured video card not.."
+#define IDS_ERR_NORENDR	2305		// "Selected renderer not avai.."
+#define IDS_ERR_NOCDROM	2306		// "ST506 or ESDI CD-ROM driv.."
+#define IDS_ERR_NO_USB	2307		// "USB is not yet supported"
 
-#define IDS_5120	5120		// "CD-ROM %i (%s): %s"
+/* Application messages (2400.) */
+#define IDS_MSG_SAVE	2400		// "Are you sure you want to save.."
+#define IDS_MSG_RESTART	2401		// "Changes saved, please restart.."
+#define IDS_MSG_UNSTABL	2402		// "The requested device '%ls'.."
+#define IDS_MSG_CAPTURE	2403		// "Click to capture mouse"
+#define IDS_MSG_MRLS_1	2404		// "Press F12-F8 to release mouse"
+#define IDS_MSG_MRLS_2	2405		// "Press F12-F8 or middle button.."
+#define IDS_MSG_WINDOW	2406		// "Use CTRL+ALT+PAGE DOWN.."
 
-#define IDS_5376	5376		// "Disabled"
-#define IDS_5377	5377		// "<Reserved>"
-#define IDS_5378	5378		// "<Reserved>"
-#define IDS_5379	5379		// "ATAPI (PIO-only)"
-#define IDS_5380	5380		// "ATAPI (PIO and DMA)"
-#define IDS_5381	5381		// "SCSI"
+/* Misc application strings (2500.) */
+#define IDS_2500	2500		// "Configuration files (*.CF.."
 
-#define IDS_5632	5632		// "Disabled"
-#define IDS_5633	5633		// "<Reserved>"
-#define IDS_5634	5634		// "<Reserved>"
-#define IDS_5635	5635		// "ATAPI (PIO-only) (%01i:%01i)"
-#define IDS_5636	5636		// "ATAPI (PIO and DMA) (%01i:%01i)"
-#define IDS_5637	5637		// "SCSI (%02i:%02i)"
 
-#define IDS_5888	5888		// "160 kB"
-#define IDS_5889	5889		// "180 kB"
-#define IDS_5890	5890		// "320 kB"
-#define IDS_5891	5891		// "360 kB"
-#define IDS_5892	5892		// "640 kB"
-#define IDS_5893	5893		// "720 kB"
-#define IDS_5894	5894		// "1.2 MB"
-#define IDS_5895	5895		// "1.25 MB"
-#define IDS_5896	5896		// "1.44 MB"
-#define IDS_5897	5897		// "DMF (cluster 1024)"
-#define IDS_5898	5898		// "DMF (cluster 2048)"
-#define IDS_5899	5899		// "2.88 MB"
-#define IDS_5900	5900		// "ZIP 100"
-#define IDS_5901	5901		// "ZIP 250"
+/* UI: common elements (3000.) */
+#define IDS_OK		3000		// "OK"
+#define IDS_CANCEL	3001		// "Cancel"
+#define IDS_CONFIGURE	3002		// "Configure"
+#define IDS_BROWSE	3003		// "Browse"
 
-#define IDS_6144	6144		// "Perfect RPM"
-#define IDS_6145	6145		// "1%% below perfect RPM"
-#define IDS_6146	6146		// "1.5%% below perfect RPM"
-#define IDS_6147	6147		// "2%% below perfect RPM"
 
-#define IDS_7168	7168		// "English (United States)"
-#define IDS_LANG_ENUS	IDS_7168
+/* UI: dialog shared strings (3100.) */
+#define IDS_NONE	3100		// "None"
+#define IDS_DISABLED	3101		// "Disabled"
+#define IDS_ENABLED	3102		// "Enabled"
+#define IDS_OFF		3103		// "Off"
+#define IDS_ON		3104		// "On"
+#define IDS_TYPE	3105		// "Type"
+#define IDS_FILENAME	3106		// "File name:"
+#define IDS_PROGRESS	3107		// "Progress:"
+#define IDS_BUS		3108		// "Bus:"
+#define IDS_CHANNEL	3109		// "Channel:"
+#define IDS_ID		3110		// "ID:"
+#define IDS_LUN		3111		// "LUN:"
+#define IDS_INV_NAME	3112		// "Please enter a valid file name"
+#define IDS_IMG_EXIST	3113		// "This image exists and will be.."
+#define IDS_OPEN_READ	3114		// "Unable to open the file for read"
+#define IDS_OPEN_WRITE	3115		// "Unable to open the file for write"
+#define IDS_DEVCONF_1	3116		// "Configuration"
+#define IDS_DEVCONF_2	3117		// "Device:"
 
-#define IDS_END		8191		// end of string IDs
+
+/* UI: dialog: About (3200.) */
+
+/* UI dialog: Status (3225.) */
+
+/* UI dialog: Sound Gain (3250.) */
+
+/* UI dialog: New Image (3275.) */
+#define IDS_3278	3278		// "Perfect RPM"
+#define IDS_3279	3279		// "1% below perfect RPM"
+#define IDS_3280	3280		// "1.5% below perfect RPM"
+#define IDS_3281	3281		// "2% below perfect RPM"
+#define IDS_3282	3282		// "160 KB"
+#define IDS_3283	3283		// "180 KB"
+#define IDS_3284	3284		// "320 KB"
+#define IDS_3285	3285		// "360 KB"
+#define IDS_3286	3286		// "640 KB"
+#define IDS_3287	3287		// "720 KB"
+#define IDS_3288	3288		// "1.2 MB"
+#define IDS_3289	3289		// "1.25 MB"
+#define IDS_3290	3290		// "1.44 MB"
+#define IDS_3291	3291		// "DMF (cluster 1024)"
+#define IDS_3292	3292		// "DMF (cluster 2048)"
+#define IDS_3293	3293		// "2.88 MB"
+#define IDS_3294	3294		// "ZIP 100"
+#define IDS_3295	3295		// "ZIP 250"
+
+/* UI dialog: Settings (3300.) */
+#define IDS_3310	3310		// "Machine"
+#define IDS_3311	3311		// "Display"
+#define IDS_3312	3312		// "Input devices"
+#define IDS_3313	3313		// "Sound"
+#define IDS_3314	3314		// "Network"
+#define IDS_3315	3315		// "Ports (COM & LPT)"
+#define IDS_3316	3316		// "Other peripherals"
+#define IDS_3317	3317		// "Hard disks"
+#define IDS_3318	3318		// "Floppy drives"
+#define IDS_3319	3319		// "Other removable devices"
+
+/* UI dialog: Settings (Machine, 3325.) */
+#define IDS_3330	3330		// "MB"
+#define IDS_3334	3334		// "KB"
+#define IDS_3335	3335		// "Default"
+
+/* UI dialog: Settings (Video, 3350.) */
+#define IDS_3353	3353		// "Default"
+#define IDS_3354	3354		// "8-bit"
+#define IDS_3355	3355		// "Slow 16-bit"
+#define IDS_3356	3356		// "Fast 16-bit"
+#define IDS_3357	3357		// "Slow VLB/PCI"
+#define IDS_3358	3358		// "Mid  VLB/PCI"
+#define IDS_3359	3359		// "Fast VLB/PCI"
+
+/* UI dialog: Settings (Other Peripherals, 3475.) */
+
+/* UI dialog: Settings (Hard Disks, 3500.) */
+#define IDS_3504	3504		// "Bus"
+#define IDS_3505	3505		// "File"
+#define IDS_3506	3506		// "C"
+#define IDS_3507	3507		// "H"
+#define IDS_3508	3508		// "S"
+#define IDS_3509	3509		// "MB"
+#define IDS_3510	3510		// "MB (CHS: %".."
+#define IDS_3511	3511		// "Custom..."
+#define IDS_3512	3512		// "Custom (large)..."
+#define IDS_3515	3515		// "ST506"
+#define IDS_3516	3516		// "ESDI"
+#define IDS_3517	3517		// "IDE (PIO-only)"
+#define IDS_3518	3518		// "IDE (PIO+DMA)"
+#define IDS_3519	3519		// "SCSI"
+#define IDS_3520	3520		// "SCSI (removable)"
+#define IDS_3526	3526		// "Add New Hard Disk"
+#define IDS_3527	3527		// "Add Existing Hard Disk"
+#define IDS_3533	3533		// "Attempting to create a HDI ima.."
+#define IDS_3534	3534		// "Attempting to create a spurio.."
+#define IDS_3535	3535		// "HDI or HDX image with a sect.."
+#define IDS_3536	3536		// "Hard disk images (*.HDI;*.HD.."
+#define IDS_3537	3537		// "Remember to partition and fo.."
+
+/* UI dialog: Settings (Floppy Drives, 3550.) */
+#define IDS_3554	3554		// "Turbo"
+#define IDS_3555	3555		// "Check BPB"
+
+/* UI dialog: Settings (Removable Devices, 3575) */
+#define IDS_3579	3579		// "Speed"
+#define IDS_3580	3580		// "<Reserved>"
+#define IDS_3581	3581		// "<Reserved>"
+#define IDS_3582	3582		// "ATAPI (PIO-only)"
+#define IDS_3583	3583		// "ATAPI (PIO and DMA)"
+#define IDS_3584	3584		// "SCSI"
+
+/* UI dialog: Status Bar (3900.) */
+#define IDS_3900	3900		// "(empty)"
+#define IDS_3901	3901		// "(host drive %c:)"
+#define IDS_3902	3902		// "[WP]"
+#define IDS_3903	3903		// "&New image..."
+#define IDS_3904	3904		// "&Load image..."
+#define IDS_3905	3905		// "&Reload previous image"
+#define IDS_3906	3906		// "&Unload"
+#define IDS_3910	3910		// "Floppy %i (%s): %ls"
+#define  IDS_3911	3911		// "All floppy images (*.0??;*.."
+#define  IDS_3912	3912		// "All floppy images (*.DSK..."
+#define  IDS_3913	3913		// "Surface-based images (*.8.."
+#define  IDS_3914	3914		// "E&xport to 86F..."
+#define IDS_3920	3920		// "CD-ROM %i (%s): %s"
+#define  IDS_3921	3921		// "Host CD/DVD Drive (%c:)"
+#define  IDS_3922	3922		// "CD-ROM images (*.ISO;*.CU.."
+#define  IDS_3923	3923		// "&Mute"
+#define IDS_3930	3930		// "Hard disk (%s)"
+#define IDS_3940	3940		// "Removable disk %i: %ls"
+#define  IDS_3941	3941		// "&Notify disk change"
+#define IDS_3950	3950		// "ZIP %i (%03i): %ls"
+#define  IDS_3951	3951		// "ZIP images (*.IM?)\0*.IM..."
+#define  IDS_3952	3952		// "ZIP images (*.IM?)\0*.IM..."
+#define IDS_3960	3960		// "Network (%s)
+#define IDS_3970	3970		// "Sound (%s)
+
+
+#define IDS_END		4000		// end of accesible string IDs
 
 
 #endif	/*EMU_UI_RESOURCE_H*/

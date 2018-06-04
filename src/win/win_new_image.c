@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy/ZIP Image dialog.
  *
- * Version:	@(#)win_new_image.c	1.0.16	2018/05/13
+ * Version:	@(#)win_new_image.c	1.0.18	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,18 +85,18 @@ dlg_init(HWND hdlg)
 	zip_types = zip_drives[drive_id].is_250 ? 2 : 1;
 	for (i = 0; i < zip_types; i++)
                 SendMessage(h, CB_ADDSTRING, 0,
-		    (LPARAM)get_string(IDS_5900 + i));
+		    (LPARAM)get_string(IDS_3282 + 12 + i));
     } else {
 	for (i = 0; i < 12; i++)
                 SendMessage(h, CB_ADDSTRING, 0,
-		    (LPARAM)get_string(IDS_5888 + i));
+		    (LPARAM)get_string(IDS_3282 + i));
     }
     SendMessage(h, CB_SETCURSEL, 0, 0);
     EnableWindow(h, FALSE);
 
     h = GetDlgItem(hdlg, IDC_COMBO_RPM_MODE);
     for (i = 0; i < 4; i++)
-	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_6144 + i));
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_3278 + i));
     SendMessage(h, CB_SETCURSEL, 0, 0);
     EnableWindow(h, FALSE);
     ShowWindow(h, SW_HIDE);
@@ -170,7 +170,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					else
 						ui_sb_mount_floppy(drive_id, sb_part, 0, fd_file_name);
 				} else {
-					msg_box(hdlg, MBX_ERROR, (wchar_t *)IDS_4108);
+					msg_box(hdlg, MBX_ERROR, (wchar_t *)IDS_OPEN_WRITE);
 					plat_pause(0);
 					return TRUE;
 				}
@@ -181,7 +181,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				return TRUE;
 
 			case IDC_CFILE:
-	                        if (dlg_file_ex(hdlg, get_string(is_zip ? IDS_2176 : IDS_2174), NULL, temp_path, DLG_FILE_SAVE)) {
+	                        if (dlg_file_ex(hdlg, get_string(is_zip ? IDS_3952 : IDS_3912), NULL, temp_path, DLG_FILE_SAVE)) {
 					if (! wcschr(temp_path, L'.')) {
 						if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
 							twcs = &temp_path[wcslen(temp_path)];
@@ -201,7 +201,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					f = _wfopen(temp_path, L"rb");
 					if (f != NULL) {
 						fclose(f);
-						if (msg_box(hdlg, MBX_QUESTION, (wchar_t *)IDS_4111) != 0)	/* yes */ {
+						if (msg_box(hdlg, MBX_QUESTION, (wchar_t *)IDS_IMG_EXIST) != 0)	/* yes */ {
 pclog("SELECT: != 0 (NO)\n");
 							return FALSE;
 						}
@@ -269,5 +269,5 @@ dlg_new_image(int drive, int part, int zip)
     drive_id = drive;
     sb_part = part;
 
-    DialogBox(hInstance, (LPCTSTR)DLG_NEW_FLOPPY, hwndMain, dlg_proc);
+    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_NEW_FLOPPY, hwndMain, dlg_proc);
 }

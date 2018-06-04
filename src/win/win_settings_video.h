@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_video.h	1.0.5	2018/05/09
+ * Version:	@(#)win_settings_video.h	1.0.6	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,7 +101,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
     char tempA[128];
-    int vid;
+    int vid, i;
     HWND h;
 
     switch (message) {
@@ -109,13 +109,10 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		recalc_vid_list(hdlg);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO_SPEED);
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2131));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2133));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2134));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2135));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2136));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2137));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_2138));
+		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_3353));
+		for (i = 0; i < 6; i++)
+			SendMessage(h, CB_ADDSTRING, 0,
+				    (LPARAM)get_string(IDS_3354 + i));
 		SendMessage(h, CB_SETCURSEL, temp_video_speed+1, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);

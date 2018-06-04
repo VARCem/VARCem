@@ -92,12 +92,6 @@
     <ClCompile Include="..\..\..\cpu\x87.c">
       <Filter>cpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\crcspeed\crc64speed.c">
-      <Filter>crcspeed</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\crcspeed\crcspeed.c">
-      <Filter>crcspeed</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\disk\hdc.c">
       <Filter>disk</Filter>
     </ClCompile>
@@ -1077,12 +1071,6 @@
     <ClInclude Include="..\..\..\cpu\x87_ops_misc.h">
       <Filter>cpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\crcspeed\crc64speed.h">
-      <Filter>crcspeed</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\crcspeed\crcspeed.h">
-      <Filter>crcspeed</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\disk\hdc.h">
       <Filter>disk</Filter>
     </ClInclude>
@@ -1540,9 +1528,6 @@
     </Filter>
     <Filter Include="cpu">
       <UniqueIdentifier>{7a5514af-a83b-483a-bfac-af1e20215c22}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="crcspeed">
-      <UniqueIdentifier>{1e841add-1ce9-42dd-aaf8-c0ed686448a4}</UniqueIdentifier>
     </Filter>
     <Filter Include="disk">
       <UniqueIdentifier>{0eb40b0a-0704-4966-b094-dc23e7fb1224}</UniqueIdentifier>

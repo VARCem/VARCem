@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.12	2018/05/09
+ * Version:	@(#)openal.c	1.0.14	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -209,11 +209,15 @@ initalmain(int argc, char *argv[])
     if (openal_handle == NULL) {
 	openal_handle = dynld_module(PATH_AL_DLL, openal_imports);
 	if (openal_handle == NULL) {
-		pclog("SOUND: unable to load module '%s' !\n", PATH_AL_DLL);
-		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2178);
+		pclog("SOUND: unable to load '%s' - sound disabled!\n",
+							PATH_AL_DLL);
+		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_OPENAL);
 		return;
-	} else
+	} else {
+#ifdef _DEBUG
 		pclog("SOUND: module '%s' loaded.\n", PATH_AL_DLL);
+#endif
+	}
     }
 
     alutInit(NULL, NULL);

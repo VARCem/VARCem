@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.14	2018/05/03
+ * Version:	@(#)resource.h	1.0.16	2018/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,22 +41,23 @@
 
 
 /* Dialog IDs. */
-#define DLG_ABOUT		101	/* top-level dialog */
-#define DLG_STATUS		102	/* top-level dialog */
-#define DLG_SND_GAIN		103	/* top-level dialog */
-#define DLG_NEW_FLOPPY		104	/* top-level dialog */
-#define DLG_CONFIG		110	/* top-level dialog */
-#define  DLG_CFG_MACHINE	111	/* sub-dialog of config */
-#define  DLG_CFG_VIDEO		112	/* sub-dialog of config */
-#define  DLG_CFG_INPUT		113	/* sub-dialog of config */
-#define  DLG_CFG_SOUND		114	/* sub-dialog of config */
-#define  DLG_CFG_NETWORK	115	/* sub-dialog of config */
-#define  DLG_CFG_PORTS		116	/* sub-dialog of config */
-#define  DLG_CFG_PERIPHERALS	117	/* sub-dialog of config */
-#define  DLG_CFG_DISK		118	/* sub-dialog of config */
-#define  DLG_CFG_DISK_ADD	119	/* sub-dialog of config */
-#define  DLG_CFG_FLOPPY		120	/* sub-dialog of config */
-#define  DLG_CFG_RMV_DEVICES	121	/* sub-dialog of config */
+#define DLG_ABOUT		1000	/* top-level dialog */
+# define DLG_LOCALIZE		1001
+#define DLG_STATUS		1010	/* top-level dialog */
+#define DLG_SND_GAIN		1020	/* top-level dialog */
+#define DLG_NEW_FLOPPY		1030	/* top-level dialog */
+#define DLG_CONFIG		1040	/* top-level dialog */
+#define  DLG_CFG_MACHINE	1041	/* sub-dialog of config */
+#define  DLG_CFG_VIDEO		1042	/* sub-dialog of config */
+#define  DLG_CFG_INPUT		1043	/* sub-dialog of config */
+#define  DLG_CFG_SOUND		1044	/* sub-dialog of config */
+#define  DLG_CFG_NETWORK	1045	/* sub-dialog of config */
+#define  DLG_CFG_PORTS		1046	/* sub-dialog of config */
+#define  DLG_CFG_PERIPHERALS	1047	/* sub-dialog of config */
+#define  DLG_CFG_DISK		1048	/* sub-dialog of config */
+#define  DLG_CFG_DISK_ADD	1049	/* sub-dialog of config */
+#define  DLG_CFG_FLOPPY		1050	/* sub-dialog of config */
+#define  DLG_CFG_RMV_DEVICES	1051	/* sub-dialog of config */
 
 /* Static text label IDs. */
 #define IDT_1700		1700	/* Language: */
@@ -110,10 +111,13 @@
 #define IDT_1756		1756	/* Channel: */
 #define IDT_1757		1757	/* Progress: */
 #define IDT_1758		1758	/* ZIP drives: */
-#define IDT_TITLE		1759	/* "VARCem for Plaform" */
-#define IDT_VERSION		1760	/* "version.." */
 #define IDT_1761		1761	/* Speed: */
 #define IDT_1762		1762	/* ZIP drives: */
+
+#define IDT_TITLE		1790	/* "VARCem for Plaform" */
+#define IDT_VERSION		1791	/* "version.." */
+#define IDT_LOCALIZE		1795	/* "Localization done by.." */
+
 
 /*
  * To try to keep these organized, we now group the
@@ -123,10 +127,6 @@
 #define IDC_SETTINGSCATLIST	1001	/* generic config */
 #define IDC_CFILE		1002	/* Select File dialog */
 #define IDC_CHECK_SYNC		1008
-/* Leave this as is until we finally get into localization in. */
-#if 0
-# define IDC_COMBO_LANG		1009
-#endif
 
 #define IDC_COMBO_MACHINE	1010	/* machine/cpu config */
 #define IDC_CONFIGURE_MACHINE	1011
@@ -252,6 +252,9 @@
 
 
 /* HELP menu. */
+#define IDC_LOCALIZE		1290
+#define IDC_DONATE		1291
+#define IDC_SUPPORT		1292
 #define   IDC_ABOUT_ICON	65535
 
 

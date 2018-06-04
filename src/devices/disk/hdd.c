@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.6	2018/05/06
+ * Version:	@(#)hdd.c	1.0.7	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,7 +101,7 @@ hdd_string_to_bus(char *str, int cdrom)
     if (!strcmp(str, "st506") || !strcmp(str, "mfm")) {
 	if (cdrom) {
 no_cdrom:
-		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_4114);
+		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_NOCDROM);
 		return(0);
 	}
 
@@ -154,7 +154,7 @@ no_cdrom:
     }
 
     if (! strcmp(str, "usb"))
-	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_4110);
+	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_NO_USB);
 
     return(0);
 }

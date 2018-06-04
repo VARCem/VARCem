@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.2	2018/05/10
+ * Version:	@(#)win_sdl.c  	1.0.3	2018/05/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -53,6 +53,9 @@
 #define UNICODE
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#ifdef _MSC_VER
+# pragma warning(disable: 4005)
+#endif
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdint.h>

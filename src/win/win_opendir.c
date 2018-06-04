@@ -10,7 +10,7 @@
  *
  *		Based on old original code @(#)dir_win32.c 1.2.0 2007/04/19
  *
- * Version:	@(#)win_opendir.c	1.0.6	2018/05/09
+ * Version:	@(#)win_opendir.c	1.0.7	2018/05/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -68,7 +68,7 @@
 
 /* Open a directory. */
 DIR *
-opendirw(const wchar_t *name)
+opendir(const wchar_t *name)
 {
     DIR *p;
 

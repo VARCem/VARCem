@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.13	2018/05/11
+ * Version:	@(#)win.c	1.0.16	2018/05/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,9 +74,6 @@
 
 /* Platform Public data, specific. */
 HINSTANCE	hInstance;		/* application instance */
-LCID		lang_id;		/* current language ID used */
-DWORD		dwSubLangID;
-const string_t	*plat_strings;
 
 
 /* Local data. */
@@ -105,53 +102,6 @@ const vidapi_t *plat_vidapis[] = {
 
     NULL
 };
-
-
-/* Pre-load the strings from our resource file. */
-static void
-LoadCommonStrings(void)
-{
-    wchar_t temp[512], *str;
-    string_t *array, *tbl;
-    int c = 0, i;
-
-    /*
-     * First, we need to know how many strings are in the table.
-     * Sadly, there is no other way to determine this but to try
-     * to load all possible ID's...
-     */
-    for (i = IDS_BEGIN; i < IDS_END; i++)
-	if (LoadString(hInstance, i, temp, sizeof_w(temp)) > 0) c++;
-
-    /*
-     * Now that we know how many strings exist, we can allocate
-     * our string_table array.
-     */
-    i = (c + 1) * sizeof(string_t);
-    array = (string_t *)malloc(i);
-    memset(array, 0x00, i);
-
-    /* Now load the actual strings into our string table. */
-    tbl = array;
-    for (i = IDS_BEGIN; i < IDS_END; i++) {
-	c = LoadString(hInstance, i, temp, sizeof_w(temp));
-	if (c == 0) continue;
-
-	tbl->id = i;
-	str = (wchar_t *)malloc((c + 1) * sizeof(wchar_t));
-	memset(str, 0x00, (c + 1) * sizeof(wchar_t));
-	memcpy(str, temp, c * sizeof(wchar_t));
-	tbl->str = str;
-
-	tbl++;
-    }
-
-    /* Terminate the table. */
-    tbl->str = NULL;
-
-    /* Consider this table const. */
-    plat_strings = array;
-}
 
 
 /* Process the commandline, and create standard argc/argv array. */
@@ -240,6 +190,9 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     /* We need this later. */
     hInstance = hInst;
 
+    /* First, set our (default) language. */
+    lang_id = (int)GetUserDefaultUILanguage();
+
     /* Initialize the version data. CrashDump needs it early. */
     pc_version("Windows");
 
@@ -247,9 +200,6 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     /* Enable crash dump services. */
     InitCrashDump();
 #endif
-
-    /* First, set our (default) language. */
-    plat_set_language(0x0409);
 
     /* Create console window. */
     if (force_debug)
@@ -259,8 +209,8 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     argc = ProcessCommandLine(&argw);
 
     /* Pre-initialize the system, this loads the config file. */
-    if (! pc_setup(argc, argw)) {
-	/* Detach from console. */
+    if (pc_setup(argc, argw) <= 0) {
+	/* Error, detach from console and abort. */
 	plat_console(0);
 	return(1);
     }
@@ -268,6 +218,9 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     /* Cleanup: we may no longer need the console. */
     if (! force_debug)
 	plat_console(0);
+
+    /* Set the active language for this application. */
+    plat_set_language(lang_id);
 
     /* Create a mutex for the video handler. */
     hBlitMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);
@@ -315,29 +268,6 @@ plat_stop(void)
     pc_close(thMain);
 
     thMain = NULL;
-}
-
-
-/* Set (or re-set) the language for the application. */
-void
-plat_set_language(int id)
-{
-    LCID lcidNew = MAKELCID(id, dwSubLangID);
-
-    if (lang_id != lcidNew) {
-	/* Set our new language ID. */
-	lang_id = lcidNew;
-
-	SetThreadLocale(lang_id);
-
-	/* Load the strings table for this ID. */
-	LoadCommonStrings();
-
-#if 0
-	/* Update the menus for this ID. */
-	MenuUpdate();
-#endif
-    }
 }
 
 
@@ -448,7 +378,7 @@ plat_chdir(const wchar_t *path)
 
 
 FILE *
-plat_fopen(const wchar_t *path, wchar_t *mode)
+plat_fopen(const wchar_t *path, const wchar_t *mode)
 {
     return(_wfopen(path, mode));
 }

@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.14	2018/05/09
+ * Version:	@(#)plat.h	1.0.16	2018/05/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -124,8 +124,9 @@ extern const string_t	*plat_strings;
 #ifdef _WIN32
 extern void	plat_console(int on);
 #endif
+extern void	plat_set_language(int id);
 extern wchar_t	*fix_emu_path(const wchar_t *str);
-extern FILE	*plat_fopen(const wchar_t *path, wchar_t *mode);
+extern FILE	*plat_fopen(const wchar_t *path, const wchar_t *mode);
 extern void	plat_remove(const wchar_t *path);
 extern int	plat_getcwd(wchar_t *bufp, int max);
 extern int	plat_chdir(const wchar_t *path);

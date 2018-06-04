@@ -12,11 +12,11 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.24	2018/05/09
+ * Version:	@(#)config.c	1.0.28	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		Overdoze,
+ *		David Simunic, <simunic.david@outlook.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017,2018 Fred N. van Kempen.
@@ -290,13 +290,7 @@ load_general(const char *cat)
 
     sound_gain = config_get_int(cat, "sound_gain", 0);
 
-#ifdef USE_LANGUAGE
-    /*
-     * Currently, we use English (US) only, but
-     * in the future other languages will be added.
-     */
-    plat_langid = config_get_hex16(cat, "language", 0x0409);
-#endif
+    lang_id = config_get_hex16(cat, "language", lang_id);
 }
 
 
@@ -388,12 +382,10 @@ save_general(const char *cat)
       else
 	config_delete_var(cat, "sound_gain");
 
-#ifdef USE_LANGUAGE
-    if (plat_langid == 0x0409)
+    if (lang_id == 0x0409)
 	config_delete_var(cat, "language");
       else
-	config_set_hex16(cat, "language", plat_langid);
-#endif
+	config_set_hex16(cat, "language", lang_id);
 
     delete_section_if_empty(cat);
 }
@@ -725,9 +717,9 @@ load_network(const char *cat)
     if (p != NULL) {
 	if ((network_dev_to_id(p) == -1) || (network_ndev == 1)) {
 		if ((network_ndev == 1) && strcmp(network_host, "none")) {
-			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2140);
+			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_NO);
 		} else if (network_dev_to_id(p) == -1) {
-			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2141);
+			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_DEV);
 		}
 
 		strcpy(network_host, "none");
@@ -1543,9 +1535,6 @@ config_default(void)
     int i;
 
     cpu = 0;
-#ifdef USE_LANGUAGE
-    plat_langid = 0x0409;
-#endif
     scale = 1;
     video_card = VID_CGA;
     vid_api = vidapi_from_internal_name("default");;
@@ -1664,12 +1653,13 @@ config_read(const wchar_t *fn)
 	list_add(&ne->list, &sec->entry_head);
     }
 
+    c = !ferror(f);
     (void)fclose(f);
 
     if (do_dump_config)
 	config_dump();
 
-    return(1);
+    return(c);
 }
 
 
@@ -1730,28 +1720,28 @@ config_write(const wchar_t *fn)
 
 
 /* Load the specified or a default configuration file. */
-void
+int
 config_load(void)
 {
-    int i;
+    int i = 0;
 
-    pclog("CONFIG: loading file '%ls'..\n", cfg_path);
-    if (! config_read(cfg_path)) {
+    if (config_read(cfg_path)) {
+	/* Load all the categories. */
+	for (i = 0; categories[i].name != NULL; i++)
+		categories[i].load(categories[i].name);
+
+	/* Mark the configuration as changed. */
+	config_changed = 1;
+    } else {
 	pclog("CONFIG: file not present or invalid, using defaults!\n");
 
 	config_default();
 
-	return;
+	/* Flag this as an invalid configuration. */
+	machine = -1;
     }
 
-    /* Load all the categories. */
-    for (i = 0; categories[i].name != NULL; i++)
-	categories[i].load(categories[i].name);
-
-    /* Mark the configuration as changed. */
-    config_changed = 1;
-
-    pclog("CONFIG: file loaded.\n\n");
+    return(i);
 }
 
 

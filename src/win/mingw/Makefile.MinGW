@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.45	2018/05/13
+# Version:	@(#)Makefile.mingw	1.0.48	2018/05/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -240,7 +240,7 @@ ifneq ($(CROSS), n)
   CC		:= /usr/bin/$(MINGW)-gcc -m32
  endif
  PREPROC	:= /usr/bin/$(MINGW)-cpp
- WINDRES	:= /usr/bin/$(MINGW)-windres
+ WINDRES	:= /usr/bin/$(MINGW)-windres -c 1200
 
  SYSINC		:= -I/usr/$(MINGW)/include -Iwin/mingw/include
  SYSLIB		:= -L/usr/$(MINGW)/lib
@@ -347,7 +347,7 @@ else
 endif
 LIBS		:= -mwindows \
 		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
-		   -lcomctl32 -lwinmm
+		   -lversion -lcomctl32 -lwinmm
 LIBS		+= -lkernel32 -lwsock32 -liphlpapi -lpsapi
 LIBS		+= -lpthread -static -lstdc++ -lgcc
 ifneq ($(X64), y)
@@ -442,10 +442,14 @@ endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(PNG), n)
- OPTS		+= -DUSE_PNG
+ ifeq ($(PNG), d)
+  OPTS		+= -DUSE_LIBPNG=2
+ else
+  OPTS		+= -DUSE_LIBPNG=1
+ endif
  RFLAGS		+= -DUSE_PNG
  ifneq ($(PNG_PATH), )
-  OPTS		+= -I$(PNG_PATH)/include
+  OPTS		+= -I$(PNG_PATH)/include/mingw -I$(PNG_PATH)/include
   ifeq ($(X64), y)
    LIBS		+= -L$(PNG_PATH)/lib/x64
   else
@@ -676,7 +680,7 @@ VIDOBJ		:= video.o \
 		    vid_voodoo.o
 
 PLATOBJ		:= win.o \
-		    win_dynld.o win_thread.o \
+		    win_lang.o win_dynld.o win_opendir.o win_thread.o \
 		    win_cdrom.o win_cdrom_ioctl.o win_keyboard.o \
 		    win_mouse.o win_joystick.o win_midi.o
 ifeq ($(CRASHDUMP), y)
@@ -757,9 +761,6 @@ ifneq ($(DEBUG), y)
 		@strip hello.exe
 endif
 
-foo.exe:	foo.o
-		@$(CC) $(LDFLAGS) -o foo.exe \
-			foo.o $(LIBS)
 
 clean:
 		@echo Cleaning objects..

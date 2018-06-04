@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_floppy.h	1.0.5	2018/05/09
+ * Version:	@(#)win_settings_floppy.h	1.0.6	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,7 @@
 /* GLobal variables needed for the Floppy dialog. */
 static int fd_ignore_change = 0;
 static int fdlv_current_sel;
+
 
 static void
 floppy_image_list_init(HWND hwndList)
@@ -85,7 +86,7 @@ floppy_recalc_list(HWND hwndList)
 		mbstowcs(temp, tempA, sizeof_w(temp));
 		lvI.pszText = temp;
 	} else {
-		lvI.pszText = (LPTSTR)get_string(IDS_5376);
+		lvI.pszText = (LPTSTR)get_string(IDS_DISABLED);
 	}
 	lvI.iItem = i;
 	lvI.iImage = temp_fdd_types[i];
@@ -93,14 +94,14 @@ floppy_recalc_list(HWND hwndList)
 		return FALSE;
 
 	lvI.iSubItem = 1;
-	lvI.pszText = (LPTSTR)get_string(temp_fdd_turbo[i] ? IDS_2060 : IDS_2061);
+	lvI.pszText = (LPTSTR)get_string(temp_fdd_turbo[i] ? IDS_ON : IDS_OFF);
 	lvI.iItem = i;
 	lvI.iImage = 0;
 	if (ListView_SetItem(hwndList, &lvI) == -1)
 		return FALSE;
 
 	lvI.iSubItem = 2;
-	lvI.pszText = (LPTSTR)get_string(temp_fdd_check_bpb[i] ? IDS_2060 : IDS_2061);
+	lvI.pszText = (LPTSTR)get_string(temp_fdd_check_bpb[i] ? IDS_ON : IDS_OFF);
 	lvI.iItem = i;
 	lvI.iImage = 0;
 	if (ListView_SetItem(hwndList, &lvI) == -1)
@@ -119,21 +120,21 @@ floppy_init_columns(HWND hwndList)
     lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
     lvc.iSubItem = 0;
-    lvc.pszText = (LPTSTR)get_string(IDS_2143);
+    lvc.pszText = (LPTSTR)get_string(IDS_TYPE);		// "Type"
     lvc.cx = 292;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 0, &lvc) == -1)
 	return FALSE;
 
     lvc.iSubItem = 1;
-    lvc.pszText = (LPTSTR)get_string(IDS_2059);
+    lvc.pszText = (LPTSTR)get_string(IDS_3554);		// "Turbo"
     lvc.cx = 50;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 1, &lvc) == -1)
 	return FALSE;
 
     lvc.iSubItem = 2;
-    lvc.pszText = (LPTSTR)get_string(IDS_2170);
+    lvc.pszText = (LPTSTR)get_string(IDS_3555);		// "bpb"
     lvc.cx = 75;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 2, &lvc) == -1)
@@ -179,21 +180,21 @@ floppy_update_item(HWND hwndList, int i)
 	mbstowcs(temp, tempA, sizeof_w(temp));
 	lvI.pszText = temp;
     } else {
-	lvI.pszText = (LPTSTR)get_string(IDS_5376);
+	lvI.pszText = (LPTSTR)get_string(IDS_DISABLED);
     }
     lvI.iImage = temp_fdd_types[i];
     if (ListView_SetItem(hwndList, &lvI) == -1)
 	return;
 
     lvI.iSubItem = 1;
-    lvI.pszText = (LPTSTR)get_string(temp_fdd_turbo[i] ? IDS_2060 : IDS_2061);
+    lvI.pszText = (LPTSTR)get_string(temp_fdd_turbo[i] ? IDS_ON : IDS_OFF);
     lvI.iItem = i;
     lvI.iImage = 0;
     if (ListView_SetItem(hwndList, &lvI) == -1)
 	return;
 
     lvI.iSubItem = 2;
-    lvI.pszText = (LPTSTR)get_string(temp_fdd_check_bpb[i] ? IDS_2060 : IDS_2061);
+    lvI.pszText = (LPTSTR)get_string(temp_fdd_check_bpb[i] ? IDS_ON : IDS_OFF);
     lvI.iItem = i;
     lvI.iImage = 0;
     if (ListView_SetItem(hwndList, &lvI) == -1)
@@ -226,7 +227,8 @@ floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_COMBO_FD_TYPE);
 		for (i = 0; i < 14; i++) {
 			if (i == 0) {
-				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_5376));
+				SendMessage(h, CB_ADDSTRING, 0,
+					    (LPARAM)get_string(IDS_DISABLED));
 			} else {
 				mbstowcs(temp, fdd_getname(i), sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);

@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.22	2018/05/09
+ * Version:	@(#)emu.h	1.0.25	2018/06/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -53,6 +53,7 @@
 #define SCREEN_RES_Y	480
 
 /* Pre-defined directory names. */
+#define LANGUAGE_PATH	L"lang"
 #define MACHINES_PATH	L"machines"
 #define NVR_PATH	L"nvr"
 #define ROMS_PATH	L"roms"
@@ -60,9 +61,14 @@
 #define VIDEO_PATH	L"video"
 
 /* Pre-defined file names and extensions. */
+#define LANG_FILE	L"VARCem-"
 #define BIOS_FILE	L"bios.txt"
 #define CONFIG_FILE	L"config.varc"
 #define CONFIG_FILE_EXT	L".varc"
+
+/* Pre-defined URLs to websites. */
+#define URL_VARCEM	L"https://www.VARCem.com/"
+#define URL_PAYPAL	L"https://www.paypal.me/VARCem"
 
 
 #define MIN(a, b)	((a) < (b) ? (a) : (b))
@@ -89,6 +95,7 @@ extern wchar_t	log_path[1024];			/* (O) full path of logfile */
 
 
 /* Configuration variables. */
+extern int	lang_id;			/* (C) language ID */
 extern int	window_w, window_h,		/* (C) window size and */
 		window_x, window_y,		/*     position info */
 		window_remember;

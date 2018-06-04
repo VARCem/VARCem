@@ -8,7 +8,7 @@
  *
  *		Implementation of the Voodoo Recompiler (32bit.)
  *
- * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.3	2018/05/04
+ * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.4	2018/05/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,17 +47,18 @@
   fbzColorPath
 */
 
-#ifdef __linux__
-# include <sys/mman.h>
-# include <unistd.h>
-#endif
-#if defined WIN32 || defined _WIN32 || defined _WIN32
+#if defined(WIN32) || defined(_WIN32)
 # include <windows.h>
+# ifdef _MSC_VER
+#  include <emmintrin.h>
+# endif
+#else
+# ifdef __linux__
+#  include <sys/mman.h>
+#  include <unistd.h>
+# endif
 #endif
 
-#ifdef _MSC_VER
-# include <emmintrin.h>
-#endif
 #include <xmmintrin.h>
 
 #define BLOCK_NUM 8

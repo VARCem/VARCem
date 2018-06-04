@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.10	2018/05/09
+ * Version:	@(#)rom_load.c	1.0.11	2018/05/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -129,6 +129,8 @@ again:
 	/* Load a video controller font. */
 	r->fontnum = atoi(argv[1]);
 	mbstowcs(r->fontfn, argv[2], sizeof_w(r->fontfn));
+    } else if (! strcmp(argv[0], "md5sum")) {
+	/* Skip for now. */
     } else if (! strcmp(argv[0], "video")) {
 	/* Load a video controller BIOS. */
 	mbstowcs(r->vidfn, argv[1], sizeof_w(r->vidfn));

@@ -10,7 +10,7 @@
  *
  * NOTE:	Will be moved to the tools/ folder soon.
  *
- * Version:	@(#)pcap_if.rc	1.0.3	2018/03/30
+ * Version:	@(#)pcap_if.rc	1.0.4	2018/05/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -46,14 +46,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifdef _WIN32
 #include <windows.h>
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
 
 
-100                     ICON    DISCARDABLE     "win/icons/varcem.ico"
+100		ICON	DISCARDABLE	"win/icons/varcem.ico"
 
 
 VS_VERSION_INFO VERSIONINFO
@@ -85,6 +81,6 @@ BEGIN
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 1200
+        VALUE "Translation", 0x0409, 1200
     END
 END

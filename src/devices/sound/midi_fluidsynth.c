@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.9	2018/05/06
+ * Version:	@(#)midi_fluidsynth.c	1.0.11	2018/05/24
  *
  *		Code borrowed from scummvm.
  *
@@ -380,7 +380,7 @@ fluidsynth_close(void* priv)
     if (priv == NULL) return;
 
     if (fluidsynth_handle == NULL) {
-	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2171);
+	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_FSYNTH);
 	return;
     }
 
@@ -426,6 +426,10 @@ fluidsynth_global_init(void)
 {
     /* Try loading the DLL. */
     fluidsynth_handle = dynld_module(PATH_FS_DLL, fluidsynth_imports);
+    if (fluidsynth_handle == NULL) {
+	pclog("SOUND: unable to load '%s', FluidSynth not available!\n",
+							PATH_FS_DLL);
+    }
 }
 
 

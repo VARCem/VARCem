@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.24	2018/05/12
+ * Version:	@(#)win_ui.c	1.0.25	2018/05/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,8 +77,10 @@ int		infocus = 1;
 /* Local data. */
 static wchar_t	wTitle[512];
 static HHOOK	hKeyboardHook;
-static LONG_PTR	OriginalProcedure;
-static HWND	hwndSBAR = NULL;	/* application status bar */
+static LONG_PTR	input_orig_proc,
+		stbar_orig_proc;
+static HWND	input_orig_hwnd = NULL,
+		hwndSBAR = NULL;	/* application status bar */
 static HMENU	menuMain = NULL,	/* application menu bar */
 		menuSBAR = NULL,	/* status bar menu bar */
 		*sb_menu = NULL;
@@ -144,7 +146,7 @@ sb_dlg_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	default:
-		return(CallWindowProc((WNDPROC)OriginalProcedure,
+		return(CallWindowProc((WNDPROC)stbar_orig_proc,
 				      hwnd, message, wParam, lParam));
     }
 
@@ -215,7 +217,7 @@ StatusBarCreate(uintptr_t id)
     cruft_sb = SB_HEIGHT + (2 * borders[1]) + (2 * SB_PADDING);
 
     /* Replace the original procedure with ours. */
-    OriginalProcedure = GetWindowLongPtr(hwndSBAR, GWLP_WNDPROC);
+    stbar_orig_proc = GetWindowLongPtr(hwndSBAR, GWLP_WNDPROC);
     SetWindowLongPtr(hwndSBAR, GWL_WNDPROC, (LONG_PTR)sb_dlg_proc);
 
     SendMessage(hwndSBAR, SB_SETMINHEIGHT, (WPARAM)SB_HEIGHT, (LPARAM)0);
@@ -386,9 +388,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			window_w = rect.right - rect.left;
 			window_h = rect.bottom - rect.top;
 			save_window_pos = 1;
-		}
 
-		config_save();
+			config_save();
+		}
 		break;
 
 	case WM_MOVE:
@@ -496,7 +498,7 @@ ui_init(int nCmdShow)
     if (settings_only) {
 	if (! pc_init()) {
 		/* Dang, no ROMs found at all! */
-		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2056);
+		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_NOROMS);
 		return(6);
 	}
 
@@ -528,7 +530,10 @@ ui_init(int nCmdShow)
 			return(2);
 
     /* Load the Window Menu(s) from the resources. */
-    menuMain = LoadMenu(hInstance, MENU_NAME);
+    menuMain = LoadMenu(plat_lang_dll(), MENU_NAME);
+
+    /* Load the Languages into the current menu. */
+    plat_lang_menu();
 
     /* Set up main window for resizing if configured. */
     flags = WS_OVERLAPPEDWINDOW;
@@ -575,7 +580,7 @@ ui_init(int nCmdShow)
     /* Load the accelerator table */
     haccel = LoadAccelerators(hInstance, ACCEL_NAME);
     if (haccel == NULL) {
-	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2153);
+	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_ERR_ACCEL);
 	return(3);
     }
 
@@ -589,7 +594,7 @@ ui_init(int nCmdShow)
     ridev.dwFlags = RIDEV_NOHOTKEYS;
     ridev.hwndTarget = NULL;	/* current focus window */
     if (! RegisterRawInputDevices(&ridev, 1, sizeof(ridev))) {
-	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_2154);
+	ui_msgbox(MBX_CONFIG, (wchar_t *)IDS_ERR_INPUT);
 	return(4);
     }
     keyboard_getkeymap();
@@ -625,10 +630,17 @@ ui_init(int nCmdShow)
 			config_save();
 
 			/* Remind them to restart. */
-			ui_msgbox(MBX_INFO, (wchar_t *)IDS_2062);
+			ui_msgbox(MBX_INFO, (wchar_t *)IDS_MSG_RESTART);
 		}
 		return(0);
     }
+
+    /* Activate the render window, this will also set the screen size. */
+    if (hwndRender != NULL)
+	MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
+
+    /* Create the status bar window. */
+    StatusBarCreate(IDC_STATBAR);
 
     /* Initialize the configured Video API. */
 again:
@@ -643,7 +655,8 @@ again:
 	 * Inform the user, and ask if they want to reset
 	 * to the system default one instead.
 	 */
-	_swprintf(title, get_string(IDS_2095), vidapi_internal_name(vid_api));
+	_swprintf(title, get_string(IDS_ERR_NORENDR),
+		  vidapi_internal_name(vid_api));
 	if (ui_msgbox(MBX_CONFIG, title) != 0) {
 		/* Nope, they don't, so just exit. */
 		return(5);
@@ -657,13 +670,6 @@ again:
     /* Initialize the rendering window, or fullscreen. */
     if (start_in_fullscreen)
 	plat_setfullscreen(1);
-
-    /* Activate the render window, this will also set the screen size. */
-    if (hwndRender != NULL)
-	MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
-
-    /* Create the status bar window. */
-    StatusBarCreate(IDC_STATBAR);
 
     /* Initialize the mouse module. */
     win_mouse_init();
@@ -731,8 +737,6 @@ again:
 
 
 /* Catch WM_INPUT messages for 'current focus' window. */
-static LONG_PTR	input_orig_proc;
-static HWND input_orig_hwnd = NULL;
 #ifdef __amd64__
 static LRESULT CALLBACK
 #else
@@ -835,18 +839,35 @@ ui_resize(int x, int y)
 
 
 /*
- * Re-load and reset all menus.
+ * Re-load and reset the entire UI.
  *
- * We should have the language ID as a parameter.
+ * This is needed after we change the language.
  */
 void
-ui_menu_update(void)
+ui_update(void)
 {
-    menuMain = LoadMenu(hInstance, MENU_NAME);
+    int i;
+
+    /* Load the main menu from the appropriate DLL. */
+    menuMain = LoadMenu(plat_lang_dll(), MENU_NAME);
     SetMenu(hwndMain, menuMain);
 
+    /* Load the statusbar menu. */
     menuSBAR = LoadMenu(hInstance, SB_MENU_NAME);
+
+    /* Reset all main menu items. */
     ui_menu_reset_all();
+
+    /* Load the Languages into the current menu. */
+    plat_lang_menu();
+
+    /* Update the statusbar menus. */
+    ui_sb_update();
+
+    /* Reset the mouse-capture message. */
+    i = mouse_capture;
+    mouse_capture = !mouse_capture;
+    plat_mouse_capture(i);
 }
 
 
@@ -916,7 +937,7 @@ plat_setfullscreen(int on)
 
     if (on && vid_fullscreen_first) {
 	vid_fullscreen_first = 0;
-	ui_msgbox(MBX_INFO, (wchar_t *)IDS_2107);
+	ui_msgbox(MBX_INFO, (wchar_t *)IDS_MSG_WINDOW);
     }
 
     /* OK, claim the video. */
@@ -979,12 +1000,26 @@ plat_pause(int p)
 void
 plat_mouse_capture(int on)
 {
+    const wchar_t *str = NULL;
     RECT rect;
 
     /* Do not try to capture the mouse if no mouse configured. */
     if (mouse_type == MOUSE_NONE) return;
 
-    if (on && !mouse_capture) {
+    if ((on == -1) || (!on && mouse_capture)) {
+	/* Disable the in-app mouse. */
+	if (on == -1)
+		GetClipCursor(&oldclip);
+	  else
+		ClipCursor(&oldclip);
+
+	ui_show_cursor(-1);
+
+	str = get_string(IDS_MSG_CAPTURE);
+
+	/* We no longer have the mouse. */
+	mouse_capture = 0;
+    } else if (on && !mouse_capture) {
 	/* Enable the in-app mouse. */
 	GetClipCursor(&oldclip);
 	GetWindowRect(hwndRender, &rect);
@@ -992,15 +1027,45 @@ plat_mouse_capture(int on)
 
 	ui_show_cursor(0);
 
+	if (mouse_get_buttons() > 2)
+		str = get_string(IDS_MSG_MRLS_1);
+	  else
+		str = get_string(IDS_MSG_MRLS_2);
+
+	/* We got the mouse. */
 	mouse_capture = 1;
-    } else if (!on && mouse_capture) {
-	/* Disable the in-app mouse. */
-	ClipCursor(&oldclip);
-
-	ui_show_cursor(-1);
-
-	mouse_capture = 0;
     }
+
+    /* Set the correct message on the status bar. */
+    if (str != NULL)
+	ui_sb_text_set_w(str);
+}
+
+
+/* Add an item to a menu. */
+void
+menu_add_item(int idm, int new_id, const wchar_t *str)
+{
+    MENUITEMINFO info;
+    HMENU menu;
+
+    /* Get the handle for the intended (sub)menu. */
+    memset(&info, 0x00, sizeof(info));
+    info.cbSize = sizeof(info);
+    info.fMask = MIIM_SUBMENU;
+    if (! GetMenuItemInfo(menuMain, idm, FALSE, &info)) {
+	pclog("UI: cannot find submenu %d\n", idm);
+	return;
+    }
+    menu = info.hSubMenu;
+
+    if (new_id >= 0)
+	AppendMenu(menu, MF_STRING, new_id, str);
+      else
+	AppendMenu(menu, MF_SEPARATOR, 0, NULL);
+
+    /* We changed the menu bar, so redraw it. */
+    DrawMenuBar(hwndMain);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.10	2018/05/13
+ * Version:	@(#)ui.h	1.0.13	2018/05/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -97,11 +97,7 @@
     defined(ENABLE_SCSI_BUS_LOG) || defined(ENABLE_SCSI_DISK_LOG) || \
     defined(ENABLE_SCSI_DEV_LOG) || \
     defined(ENABLE_VOODOO_LOG)
-# define ENABLE_LOG_TOGGLES	1
-#endif
-
-#if defined(ENABLE_LOG_BREAKPOINT)
-# define ENABLE_LOG_COMMANDS	1
+# define ENABLE_LOGGING
 #endif
 
 
@@ -109,7 +105,7 @@
 extern "C" {
 #endif
 
-#ifdef ENABLE_LOG_TOGGLES
+#ifdef ENABLE_LOGGING
 extern int	pci_do_log;
 extern int	keyboard_do_log;
 extern int	mouse_do_log;
@@ -140,13 +136,15 @@ extern int	voodoo_do_log;
 extern void	ui_show_cursor(int on);
 extern void	ui_show_render(int on);
 extern void	ui_resize(int x, int y);
-extern int	ui_msgbox(int type, void *arg);
+extern int	ui_msgbox(int type, const void *arg);
+extern void	ui_update(void);
 extern void	ui_menu_reset_all(void);
 extern int	ui_menu_command(int idm);
 extern void	ui_menu_set_logging_item(int idm, int val);
 extern void	ui_menu_toggle_video_item(int idm, int *val);
 
 /* Main GUI helper functions. */
+extern void	menu_add_item(int idm, int id, const wchar_t *str);
 extern void	menu_enable_item(int idm, int val);
 extern void	menu_set_item(int idm, int val);
 extern void	menu_set_radio_item(int idm, int num, int val);

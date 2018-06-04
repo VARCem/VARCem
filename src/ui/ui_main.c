@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.15	2018/05/11
+ * Version:	@(#)ui_main.c	1.0.17	2018/05/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -50,6 +50,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
@@ -60,165 +61,192 @@
 #include "ui.h"
 
 
-#if defined(ENABLE_LOG_TOGGLES) || defined(ENABLE_LOG_COMMANDS)
+#ifdef ENABLE_LOGGING
 /* Simplest way to handle all these, for now.. */
 void
 ui_menu_set_logging_item(int idm, int val)
 {
-    int *ptr = NULL;
+    char temp[128];
+    wchar_t tmpw[128];
+    void *ptr = NULL;
+    int *iptr, i;
 
     switch(idm) {
 #ifdef ENABLE_BUS_LOG
 	case IDM_LOG_BUS:
-		ptr = &pci_do_log;
+		ptr = (val != -3) ? &pci_do_log : (void *)"Bus";
 		break;
 #endif
 
 #ifdef ENABLE_KEYBOARD_LOG
 	case IDM_LOG_KEYBOARD:
-		ptr = &keyboard_do_log;
+		ptr = (val != -3) ? &keyboard_do_log : (void *)"Keyboard";
 		break;
 #endif
 
 #ifdef ENABLE_MOUSE_LOG
 	case IDM_LOG_MOUSE:
-		ptr = &mouse_do_log;
+		ptr = (val != -3) ? &mouse_do_log : (void *)"Mouse";
 		break;
 #endif
 
 #ifdef ENABLE_GAME_LOG
 	case IDM_LOG_GAME:
-		ptr = &game_do_log;
+		ptr = (val != -3) ? &game_do_log : (void *)"Game Port";
 		break;
 #endif
 
 #ifdef ENABLE_PARALLEL_LOG
 	case IDM_LOG_PARALLEL:
-		ptr = &parallel_do_log;
+		ptr = (val != -3) ? &parallel_do_log : (void *)"Parallel Port";
+		break;
+#endif
+
+#ifdef ENABLE_SERIAL_LOG
+	case IDM_LOG_SERIAL:
+		ptr = (val != -3) ? &serial_do_log : (void *)"Serial Port";
 		break;
 #endif
 
 #ifdef ENABLE_FDC_LOG
 	case IDM_LOG_FDC:
-		ptr = &fdc_do_log;
+		ptr = (val != -3) ? &fdc_do_log : (void *)"FDC";
 		break;
 #endif
 
 #ifdef ENABLE_FDD_LOG
 	case IDM_LOG_FDD:
-		ptr = &fdd_do_log;
+		ptr = (val != -3) ? &fdd_do_log : (void *)"FDD (image)";
 		break;
 #endif
 
 #ifdef ENABLE_D86F_LOG
 	case IDM_LOG_D86F:
-		ptr = &d86f_do_log;
+		ptr = (val != -3) ? &d86f_do_log : (void *)"D86F";
 		break;
 #endif
 
 #ifdef ENABLE_HDC_LOG
 	case IDM_LOG_HDC:
-		ptr = &hdc_do_log;
+		ptr = (val != -3) ? &hdc_do_log : (void *)"HDC";
 		break;
 #endif
 
 #ifdef ENABLE_HDD_LOG
 	case IDM_LOG_HDD:
-		ptr = &hdd_do_log;
+		ptr = (val != -3) ? &hdd_do_log : (void *)"HDD (image)";
 		break;
 #endif
 
 #ifdef ENABLE_ZIP_LOG
 	case IDM_LOG_ZIP:
-		ptr = &zip_do_log;
+		ptr = (val != -3) ? &zip_do_log : (void *)"ZIP";
 		break;
 #endif
 
 #ifdef ENABLE_CDROM_LOG
 	case IDM_LOG_CDROM:
-		ptr = &cdrom_do_log;
+		ptr = (val != -3) ? &cdrom_do_log : (void *)"CD-ROM";
 		break;
 #endif
 
 #ifdef ENABLE_CDROM_IMAGE_LOG
 	case IDM_LOG_CDROM_IMAGE:
-		ptr = &cdrom_image_do_log;
+		ptr = (val != -3) ? &cdrom_image_do_log : (void *)"CD-ROM (image)";
 		break;
 #endif
 
-#ifdef ENABLE_CDROM_IOCTL_LOG
-# ifdef USE_CDROM_IOCTL
+#ifdef USE_CDROM_IOCTL
+# ifdef ENABLE_CDROM_IOCTL_LOG
 	case IDM_LOG_CDROM_IOCTL:
-		ptr = &cdrom_ioctl_do_log;
-# endif
+		ptr = (val != -3) ? &cdrom_ioctl_do_log : (void *)"CD-ROM (ioctl)";
 		break;
+# endif
 #endif
 
 #ifdef ENABLE_NETWORK_LOG
 	case IDM_LOG_NETWORK:
-		ptr = &network_do_log;
+		ptr = (val != -3) ? &network_do_log : (void *)"Network";
 		break;
 #endif
 
 #ifdef ENABLE_NETWORK_DEV_LOG
 	case IDM_LOG_NETWORK_DEV:
-		ptr = &network_dev_do_log;
+		ptr = (val != -3) ? &network_dev_do_log : (void *)"Network Device";
 		break;
 #endif
 
 #ifdef ENABLE_SOUND_EMU8K_LOG
 	case IDM_LOG_SOUND_EMU8K:
-		ptr = &sound_emu8k_do_log;
+		ptr = (val != -3) ? &sound_emu8k_do_log : (void *)"Sound (EMU8K)";
 		break;
 #endif
 
 #ifdef ENABLE_SOUND_MPU401_LOG
 	case IDM_LOG_SOUND_MPU401:
-		ptr = &sound_mpu401_do_log;
+		ptr = (val != -3) ? &sound_mpu401_do_log : (void *)"Sound (MPU401)";
 		break;
 #endif
 
 #ifdef ENABLE_SOUND_DEV_LOG
 	case IDM_LOG_SOUND_DEV:
-		ptr = &sound_dev_do_log;
+		ptr = (val != -3) ? &sound_dev_do_log : (void *)"Sound Device";
 		break;
 #endif
 
 #ifdef ENABLE_SCSI_BUS_LOG
 	case IDM_LOG_SCSI_BUS:
-		ptr = &scsi_bus_do_log;
+		ptr = (val != -3) ? &scsi_bus_do_log : (void *)"SCSI (Bus)";
 		break;
 #endif
 
 #ifdef ENABLE_SCSI_DISK_LOG
 	case IDM_LOG_SCSI_DISK:
-		ptr = &scsi_hd_do_log;
+		ptr = (val != -3) ? &scsi_hd_do_log : (void *)"SCSI (Disk)";
 		break;
 #endif
 
 #ifdef ENABLE_SCSI_DEV_LOG
 	case IDM_LOG_SCSI_DEV:
-		ptr = &scsi_dev_do_log;
+		ptr = (val != -3) ? &scsi_dev_do_log : (void *)"SCSI Device";
 		break;
 #endif
 
 #ifdef ENABLE_VOODOO_LOG
 	case IDM_LOG_VOODOO:
-		ptr = &voodoo_do_log;
+		ptr = (val != -3) ? &voodoo_do_log : (void *)"Video (Voodoo)";
 		break;
 #endif
     }
 
-    if (ptr != NULL) {
-	/* Set the desired value. */
-	if (val != 0xff) {
-		/* Initialize the logging value. */
-		if (val < 0) *ptr ^= 1;
-		  else *ptr = val;
-	}
+    if (ptr == NULL) return;
 
-	/* And update its menu entry. */
-	menu_set_item(idm, *ptr);
+    iptr = ptr;
+    switch(val) {
+	case -3:		/* create menu item */
+		/* Add a menu item. */
+		i = (idm - IDM_LOG_BEGIN);
+		sprintf(temp, "Toggle %s logging\tCtrl%s+F%d",
+			(const char *)ptr,
+			(i >= 12) ? "+Alt" : "",
+			((i >= 12) ? i - 12 : i) + 1);
+		mbstowcs(tmpw, temp, sizeof_w(tmpw));
+		menu_add_item(IDM_LOGGING, IDM_LOG_BEGIN + i, tmpw);
+		break;
+
+	case -2:		/* set current value */
+		menu_set_item(idm, *iptr);
+		break;
+
+	case -1:		/* toggle */
+		*iptr ^= 1;
+		menu_set_item(idm, *iptr);
+		break;
+
+	default:		/* 0 ... n */
+		*iptr = val;
+		menu_set_item(idm, *iptr);
+		break;
     }
 }
 #endif
@@ -245,27 +273,19 @@ ui_menu_toggle_video_item(int idm, int *val)
 void
 ui_menu_reset_all(void)
 {
+    wchar_t temp[128];
     int i;
-
-#ifndef DEV_BRANCH
-    /* FIXME: until we fix these.. --FvK */
-    menu_enable_item(IDM_LOAD, 0);
-    menu_enable_item(IDM_SAVE, 0);
-#endif
 
     menu_set_item(IDM_RESIZE, vid_resize);
     menu_set_item(IDM_REMEMBER, window_remember);
 
-    /*
-     * The Renderer menu is more complicated.
-     *
-     * We first hide all items, and then we show only
-     * items that are configured in the code. We then
-     * disable items that are currently unavailable.
-     */
+    /* Add all renderers to the Renderer menu. */
     for (i = 0; i < vidapi_count(); i++) {
-	if (! vidapi_available(i))
-		menu_enable_item(IDM_RENDER_1 + i, 0);
+	if (vidapi_available(i)) {
+		/* Get name of the renderer and add a menu item. */
+		mbstowcs(temp, vidapi_internal_name(i), sizeof_w(temp));
+		menu_add_item(IDM_RENDER, IDM_RENDER_1 + i, temp);
+	}
     }
     menu_set_radio_item(IDM_RENDER_1, vidapi_count(), vid_api);
 
@@ -290,9 +310,18 @@ ui_menu_reset_all(void)
 
     menu_set_item(IDM_CGA_CONTR, vid_cga_contrast);
 
-#ifdef ENABLE_LOG_TOGGLES
-    for (i = IDM_LOG_BEGIN; i < IDM_LOG_END; i++)
-	ui_menu_set_logging_item(i, 0xff);
+#ifdef ENABLE_LOGGING
+    for (i = IDM_LOG_BEGIN; i < IDM_LOG_END; i++) {
+	ui_menu_set_logging_item(i, -3);
+
+	ui_menu_set_logging_item(i, -2);
+    }
+#endif
+
+#ifndef DEV_BRANCH
+    /* FIXME: until we fix these.. --FvK */
+    menu_enable_item(IDM_LOAD, 0);
+    menu_enable_item(IDM_SAVE, 0);
 #endif
 }
 
@@ -459,7 +488,35 @@ ui_menu_command(int idm)
 		plat_pause(0);
 		break;
 
-#ifdef ENABLE_LOG_TOGGLES
+	case IDM_LANGUAGE+1:			/* select language */
+	case IDM_LANGUAGE+2:
+	case IDM_LANGUAGE+3:
+	case IDM_LANGUAGE+4:
+	case IDM_LANGUAGE+5:
+	case IDM_LANGUAGE+6:
+	case IDM_LANGUAGE+7:
+	case IDM_LANGUAGE+8:
+	case IDM_LANGUAGE+9:
+	case IDM_LANGUAGE+10:
+	case IDM_LANGUAGE+11:
+	case IDM_LANGUAGE+12:
+	case IDM_LANGUAGE+13:
+	case IDM_LANGUAGE+14:
+	case IDM_LANGUAGE+15:
+	case IDM_LANGUAGE+16:
+	case IDM_LANGUAGE+17:
+	case IDM_LANGUAGE+18:
+	case IDM_LANGUAGE+19:
+	case IDM_LANGUAGE+20:
+		plat_set_language(idm - IDM_LANGUAGE - 1);
+		ui_update();
+		break;
+
+#ifdef ENABLE_LOGGING
+	case IDM_LOG_BREAKPOINT:		/* TOOLS menu */
+		pclog("---- LOG BREAKPOINT ----\n");
+		break;
+
 	case IDM_LOG_BUS:			/* TOOLS menu */
 	case IDM_LOG_KEYBOARD:
 	case IDM_LOG_MOUSE:
@@ -488,17 +545,11 @@ ui_menu_command(int idm)
 		break;
 #endif
 
-#ifdef ENABLE_LOG_BREAKPOINT
-	case IDM_LOG_BREAKPOINT:		/* TOOLS menu */
-		pclog("---- LOG BREAKPOINT ----\n");
-		break;
-#endif
-
 	/* FIXME: need to fix these.. */
 	case IDM_LOAD:				/* TOOLS menu */
 		plat_pause(1);
-		i = dlg_file(get_string(IDS_2160), NULL, temp, DLG_FILE_LOAD);
-		if (i && (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_2051) == 0)) {
+		i = dlg_file(get_string(IDS_2500), NULL, temp, DLG_FILE_LOAD);
+		if (i && (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_WARNING) == 0)) {
 			pc_reload(temp);
 			ui_menu_reset_all();
 			config_ro = !!(i & DLG_FILE_RO);
@@ -508,7 +559,7 @@ ui_menu_command(int idm)
 
 	case IDM_SAVE:				/* TOOLS menu */
 		plat_pause(1);
-		if (dlg_file(get_string(IDS_2160), NULL, temp, DLG_FILE_SAVE)) {
+		if (dlg_file(get_string(IDS_2500), NULL, temp, DLG_FILE_SAVE)) {
 			config_write(temp);
 		}
 		plat_pause(0);

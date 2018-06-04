@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.8	2018/05/13
+ * Version:	@(#)win_settings_sound.h	1.0.9	2018/05/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,7 +101,6 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_INITDIALOG:
-pclog("SND: temp_sound = %d\n", temp_sound_card);
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
 		c = d = 0;
 		while (1) {
@@ -118,7 +117,6 @@ pclog("SND: temp_sound = %d\n", temp_sound_card);
 					SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 					list_to_sound[d] = c;
 					d++;
-pclog("SND: list[%d] = %d (%s)\n", d, c, stransi);
 				}
 			}
 

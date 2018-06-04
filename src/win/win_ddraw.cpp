@@ -8,7 +8,15 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.10	2018/05/13
+ * NOTES:	This code should be re-merged into a single init() with a
+ *		'fullscreen' argument, indicating FS mode is requested.
+ *
+ *		If configured with USE_LIBPNG, we try to load the external
+ *		PNG library and use that if found. Otherwise, we fall back
+ *		the original mode, which uses the Windows/DDraw built-in BMP
+ *		format.
+ *
+ * Version:	@(#)win_ddraw.cpp	1.0.13	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,127 +64,87 @@
 #include "win.h"
 
 
-static LPDIRECTDRAW		lpdd = NULL;
-static LPDIRECTDRAW4		lpdd4 = NULL;
-static LPDIRECTDRAWSURFACE4	dds_pri = NULL,
-				dds_back = NULL,
-				dds_back2 = NULL;
-static LPDIRECTDRAWCLIPPER	lpdd_clipper = NULL;
-static DDSURFACEDESC2		ddsd;
-static HWND			ddraw_hwnd;
-static HBITMAP			hbitmap;
-static int			ddraw_w, ddraw_h,
-				xs, ys, ys2;
 #ifdef USE_LIBPNG
-static png_structp		png_ptr;
-static png_infop		png_info_ptr;
+# define PATH_PNG_DLL		"libpng16.dll"
 #endif
 
 
-static const char *
-GetError(HRESULT hr)
-{
-    const char *err = "Unknown";
-
-    switch(hr) {
-	case DDERR_INCOMPATIBLEPRIMARY:
-		err = "Incompatible Primary";
-		break;
-
-	case DDERR_INVALIDCAPS:
-		err = "Invalid Caps";
-		break;
-
-	case DDERR_INVALIDOBJECT:
-		err = "Invalid Object";
-		break;
-
-	case DDERR_INVALIDPARAMS:
-		err = "Invalid Parameters";
-		break;
-
-	case DDERR_INVALIDPIXELFORMAT:
-		err = "Invalid Pixel Format";
-		break;
-
-	case DDERR_NOALPHAHW:
-		err = "Hardware does not support Alpha";
-		break;
-
-	case DDERR_NOCOOPERATIVELEVELSET:
-		err = "No cooperative level set";
-		break;
-
-	case DDERR_NODIRECTDRAWHW:
-		err = "Hardware does not support DirectDraw";
-		break;
-
-	case DDERR_NOEMULATION:
-		err = "No emulation";
-		break;
-
-	case DDERR_NOEXCLUSIVEMODE:
-		err = "No exclusive mode available";
-		break;
-
-	case DDERR_NOFLIPHW:
-		err = "Hardware does not support flipping";
-		break;
-
-	case DDERR_NOMIPMAPHW:
-		err = "Hardware does not support MipMap";
-		break;
-
-	case DDERR_NOOVERLAYHW:
-		err = "Hardware does not support overlays";
-		break;
-
-	case DDERR_NOZBUFFERHW:
-		err = "Hardware does not support Z buffers";
-		break;
-
-	case DDERR_OUTOFMEMORY:
-		err = "Out of memory";
-		break;
-
-	case DDERR_OUTOFVIDEOMEMORY:
-		err = "Out of video memory";
-		break;
-
-	case DDERR_PRIMARYSURFACEALREADYEXISTS:
-		err = "Primary Surface already exists";
-		break;
-
-	case DDERR_UNSUPPORTEDMODE:
-		err = "Mode not supported";
-		break;
-
-	default:
-		break;
-    }
-
-    return(err);
-}
+static LPDIRECTDRAW4		lpdd4 = NULL;
+static LPDIRECTDRAWSURFACE4	lpdds_pri = NULL,
+				lpdds_back = NULL,
+				lpdds_back2 = NULL;
+static LPDIRECTDRAWCLIPPER	lpdd_clipper = NULL;
+static HWND			ddraw_hwnd;
+static int			ddraw_w, ddraw_h,
+				xs, ys, ys2;
+#ifdef USE_LIBPNG
+static void			*png_handle = NULL;	/* handle to DLL */
+# if USE_LIBPNG == 1
+#  define PNGFUNC(x)		png_ ## x
+# else
+#  define PNGFUNC(x)		PNG_ ## x
 
 
-static void
+/* Pointers to the real functions. */
+extern "C" {
+png_structp	(*PNG_create_write_struct)(png_const_charp user_png_ver,
+						png_voidp error_ptr,
+						png_error_ptr error_fn,
+						png_error_ptr warn_fn);
+png_infop	(*PNG_create_info_struct)(png_const_structrp png_ptr);
+void		(*PNG_init_io)(png_structrp png_ptr, png_FILE_p fp);
+void		(*PNG_set_IHDR)(png_const_structrp png_ptr,
+				     png_inforp info_ptr, png_uint_32 width,
+				     png_uint_32 height, int bit_depth,
+				     int color_type, int interlace_method,
+				     int compression_method,
+				     int filter_method);
+png_size_t	(*PNG_get_rowbytes)(png_const_structrp png_ptr,
+				    png_const_inforp info_ptr);
+void		(*PNG_write_info)(png_structrp png_ptr,
+				       png_const_inforp info_ptr);
+void		(*PNG_write_image)(png_structrp png_ptr,
+					png_bytepp image);
+void		(*PNG_write_end)(png_structrp png_ptr,
+				      png_inforp info_ptr);
+};
+
+
+static const dllimp_t png_imports[] = {
+  { "png_create_write_struct",	&PNG_create_write_struct	},
+  { "png_create_info_struct",	&PNG_create_info_struct		},
+  { "png_init_io",		&PNG_init_io			},
+  { "png_set_IHDR",		&PNG_set_IHDR			},
+  { "png_get_rowbytes",		&PNG_get_rowbytes		},
+  { "png_write_info",		&PNG_write_info			},
+  { "png_write_image",		&PNG_write_image		},
+  { "png_write_end",		&PNG_write_end			},
+  { NULL,			NULL				}
+};
+# endif
+#endif
+
+
+static HBITMAP
 CopySurface(IDirectDrawSurface4 *pDDSurface)
 { 
+    HBITMAP hbmp, hbmprev;
+    DDSURFACEDESC2 ddsd;
     HDC hdc, hmemdc;
-    HBITMAP hprevbitmap;
-    DDSURFACEDESC2 ddsd2;
 
     pDDSurface->GetDC(&hdc);
     hmemdc = CreateCompatibleDC(hdc); 
-    ZeroMemory(&ddsd2, sizeof(ddsd2));
-    ddsd2.dwSize = sizeof(ddsd2);
-    pDDSurface->GetSurfaceDesc(&ddsd2);
-    hbitmap = CreateCompatibleBitmap(hdc, xs, ys);
-    hprevbitmap = (HBITMAP)SelectObject(hmemdc, hbitmap);
+    ZeroMemory(&ddsd, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+    pDDSurface->GetSurfaceDesc(&ddsd);
+    hbmp = CreateCompatibleBitmap(hdc, xs, ys);
+    hbmprev = (HBITMAP)SelectObject(hmemdc, hbmp);
     BitBlt(hmemdc, 0, 0, xs, ys, hdc, 0, 0, SRCCOPY);    
-    SelectObject(hmemdc, hprevbitmap);
+    SelectObject(hmemdc, hbmprev); 
     DeleteDC(hmemdc);
     pDDSurface->ReleaseDC(hdc);
+
+    return(hbmp);
 }
 
 
@@ -196,8 +164,8 @@ DoubleLines(uint8_t *dst, uint8_t *src)
 static void
 bgra_to_rgb(png_bytep *b_rgb, uint8_t *bgra, int width, int height)
 {
-    uint8_t *r, *b;
     int i, j;
+    uint8_t *r, *b;
 
     for (i = 0; i < height; i++) {
 	for (j = 0; j < width; j++) {
@@ -211,15 +179,33 @@ bgra_to_rgb(png_bytep *b_rgb, uint8_t *bgra, int width, int height)
 }
 
 
+/* Not strictly needed, but hey.. */
+static void
+png_error_handler(UNUSED(png_structp arg), const char *str)
+{
+    pclog("DDraw: PNG error '%s'\n", str);
+}
+
+
+/* Not strictly needed, but hey.. */
+static void
+png_warning_handler(UNUSED(png_structp arg), const char *str)
+{
+    pclog("DDraw: PNG warning '%s'\n", str);
+}
+
+
 static void
 SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 {
-    WCHAR temp[512];
+    wchar_t temp[512];
     BITMAPINFO bmpInfo;
     HDC hdc;
     LPVOID pBuf = NULL;
     LPVOID pBuf2 = NULL;
     png_bytep *b_rgb = NULL;
+    png_infop info_ptr;
+    png_structp png_ptr;
     FILE *fp;
     int i;
 
@@ -227,31 +213,33 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     fp = plat_fopen(fn, L"wb");
     if (fp == NULL) {
 	pclog("[SavePNG] File %ls could not be opened for writing!\n", fn);
-	_swprintf(temp, get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
 
     /* Initialize PNG stuff. */
-    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_ptr = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
+				      png_error_handler, png_warning_handler);
     if (png_ptr == NULL) {
 	(void)fclose(fp);
 	pclog("[SavePNG] png_create_write_struct failed!\n");
-	_swprintf(temp, get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
 
-    png_info_ptr = png_create_info_struct(png_ptr);
-    if (png_info_ptr == NULL) {
+    info_ptr = PNGFUNC(create_info_struct)(png_ptr);
+    if (info_ptr == NULL) {
+//	PNGFUNC(destroy_write_struct)(&png_ptr, NULL, NULL);
 	(void)fclose(fp);
 	pclog("[SavePNG] png_create_info_struct failed!\n");
-	_swprintf(temp, get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
 
-    png_init_io(png_ptr, fp);
+    PNGFUNC(init_io)(png_ptr, fp);
 
     hdc = GetDC(NULL);
 
@@ -264,9 +252,10 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 		bmpInfo.bmiHeader.biWidth*abs(bmpInfo.bmiHeader.biHeight)*(bmpInfo.bmiHeader.biBitCount+7)/8;
 
     if ((pBuf = malloc(bmpInfo.bmiHeader.biSizeImage)) == NULL) {
+//	PNGFUNC(destroy_write_struct)(&png_ptr, &info_ptr, NULL);
 	(void)fclose(fp);
 	pclog("[SavePNG] Unable to allocate bitmap memory!\n");
-	_swprintf(temp, get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
@@ -275,18 +264,18 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 	bmpInfo.bmiHeader.biSizeImage <<= 1;
 
 	if ((pBuf2 = malloc(bmpInfo.bmiHeader.biSizeImage)) == NULL) {
+//		PNGFUNC(destroy_write_struct)(&png_ptr, &info_ptr, NULL);
 		(void)fclose(fp);
 		free(pBuf);
 		pclog("[SavePNG] Unable to allocate secondary bitmap memory!\n");
-		_swprintf(temp, get_string(IDS_2088), fn);
+		_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
 		ui_msgbox(MBX_ERROR, temp);
 		return;
 	}
 
 	bmpInfo.bmiHeader.biHeight <<= 1;
     }
-
-#if 0
+#if 1
     pclog("save png w=%i h=%i\n",
 	bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight);
 #endif
@@ -296,24 +285,25 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     GetDIBits(hdc, hBitmap, 0,
 	      bmpInfo.bmiHeader.biHeight, pBuf, &bmpInfo, DIB_RGB_COLORS);
 
-    png_set_IHDR(png_ptr, png_info_ptr,
-		 bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight,
-		 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
-		 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+    PNGFUNC(set_IHDR)(png_ptr, info_ptr,
+		      bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight,
+		      8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+		      PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
     b_rgb = (png_bytep *)malloc(sizeof(png_bytep)*bmpInfo.bmiHeader.biHeight);
     if (b_rgb == NULL) {
+//	PNGFUNC(destroy_write_struct)(&png_ptr, NULL, NULL);
 	(void)fclose(fp);
 	free(pBuf);
 	free(pBuf2);
 	pclog("[SavePNG] Unable to allocate RGB bitmap memory!\n");
-	_swprintf(temp, get_string(IDS_2088), fn);
+	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	return;
     }
 
     for (i = 0; i < bmpInfo.bmiHeader.biHeight; i++)
-	b_rgb[i] = (png_byte *)malloc(png_get_rowbytes(png_ptr, png_info_ptr));
+	b_rgb[i] = (png_byte *)malloc(PNGFUNC(get_rowbytes)(png_ptr, info_ptr));
 
     if (pBuf2) {
 	DoubleLines((uint8_t *)pBuf2, (uint8_t *)pBuf);
@@ -323,31 +313,33 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
 	bgra_to_rgb(b_rgb, (uint8_t *)pBuf,
 		    bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight);
 
-    png_write_info(png_ptr, png_info_ptr);
+    PNGFUNC(write_info)(png_ptr, info_ptr);
 
-    png_write_image(png_ptr, b_rgb);
+    PNGFUNC(write_image)(png_ptr, b_rgb);
 
-    png_write_end(png_ptr, NULL);
+    PNGFUNC(write_end)(png_ptr, NULL);
 
     /* Clean up. */
-    if (hdc) ReleaseDC(NULL,hdc); 
+    if (fp != NULL) fclose(fp);
+//  PNGFUNC(destroy_write_struct)(&png_ptr, &info_ptr, NULL);
+    if (hdc) ReleaseDC(NULL, hdc); 
 
-    if (b_rgb) {
+    if (b_rgb != NULL) {
 	for (i = 0; i < bmpInfo.bmiHeader.biHeight; i++)
 		free(b_rgb[i]);
 	free(b_rgb);
     }
 
-    if (pBuf) free(pBuf); 
-    if (pBuf2) free(pBuf2); 
-
-    if (fp != NULL) fclose(fp);
+    if (pBuf != NULL) free(pBuf); 
+    if (pBuf2 != NULL) free(pBuf2); 
 }
-#else
+#endif
+
+
 static void
 SaveBMP(const wchar_t *fn, HBITMAP hBitmap)
 {
-    WCHAR temp[512];
+    wchar_t temp[512];
     BITMAPFILEHEADER bmpFileHeader; 
     BITMAPINFO bmpInfo;
     HDC hdc;
@@ -355,69 +347,64 @@ SaveBMP(const wchar_t *fn, HBITMAP hBitmap)
     LPVOID pBuf = NULL;
     LPVOID pBuf2 = NULL;
 
-    do { 
-	hdc = GetDC(NULL);
+    hdc = GetDC(NULL);
 
-	ZeroMemory(&bmpInfo, sizeof(BITMAPINFO));
-	bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    ZeroMemory(&bmpInfo, sizeof(BITMAPINFO));
+    bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 
-	GetDIBits(hdc, hBitmap, 0, 0, NULL, &bmpInfo, DIB_RGB_COLORS); 
+    GetDIBits(hdc, hBitmap, 0, 0, NULL, &bmpInfo, DIB_RGB_COLORS); 
 
-	if (bmpInfo.bmiHeader.biSizeImage <= 0)
-		bmpInfo.bmiHeader.biSizeImage =
-			bmpInfo.bmiHeader.biWidth*abs(bmpInfo.bmiHeader.biHeight)*(bmpInfo.bmiHeader.biBitCount+7)/8;
+    if (bmpInfo.bmiHeader.biSizeImage <= 0)
+	bmpInfo.bmiHeader.biSizeImage =
+		bmpInfo.bmiHeader.biWidth*abs(bmpInfo.bmiHeader.biHeight)*(bmpInfo.bmiHeader.biBitCount+7)/8;
 
-	if ((pBuf = malloc(bmpInfo.bmiHeader.biSizeImage)) == NULL) {
-//		pclog("ERROR: Unable to Allocate Bitmap Memory");
-		break;
-	}
+    if ((pBuf = malloc(bmpInfo.bmiHeader.biSizeImage)) == NULL) {
+	pclog("[SaveBMP] Unable to allocate bitmap memory!\n");
+	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
+	ui_msgbox(MBX_ERROR, temp);
+	return;
+    }
 
-	if (ys2 <= 250)
-		pBuf2 = malloc(bmpInfo.bmiHeader.biSizeImage * 2);
+    if (ys2 <= 250)
+	pBuf2 = malloc(bmpInfo.bmiHeader.biSizeImage * 2);
 
-	bmpInfo.bmiHeader.biCompression = BI_RGB;
+    bmpInfo.bmiHeader.biCompression = BI_RGB;
 
-	GetDIBits(hdc, hBitmap, 0, bmpInfo.bmiHeader.biHeight, pBuf, &bmpInfo, DIB_RGB_COLORS);
+    GetDIBits(hdc, hBitmap, 0, bmpInfo.bmiHeader.biHeight,
+	      pBuf, &bmpInfo, DIB_RGB_COLORS);
 
-	if ((fp = _wfopen(fn, L"wb")) == NULL) {
-		pclog("[SaveBMP] File %ls could not be opened for writing!\n", fn);
-		_swprintf(temp, get_string(IDS_2088), fn);
-		ui_msgbox(MBX_ERROR, temp);
-		break;
-	} 
+    if ((fp = plat_fopen(fn, L"wb")) == NULL) {
+	pclog("[SaveBMP] File %ls could not be opened for writing!\n", fn);
+	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
+	ui_msgbox(MBX_ERROR, temp);
+	return;
+    } 
 
-	bmpFileHeader.bfReserved1 = 0;
-	bmpFileHeader.bfReserved2 = 0;
-	if (pBuf2) {
-		bmpInfo.bmiHeader.biSizeImage <<= 1;
-		bmpInfo.bmiHeader.biHeight <<= 1;
-	}
-	bmpFileHeader.bfSize = sizeof(BITMAPFILEHEADER) +
-			       sizeof(BITMAPINFOHEADER) +
-			       bmpInfo.bmiHeader.biSizeImage;
-	bmpFileHeader.bfType = 0x4D42;
-	bmpFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) +
-				  sizeof(BITMAPINFOHEADER); 
+    bmpFileHeader.bfReserved1 = 0;
+    bmpFileHeader.bfReserved2 = 0;
+    if (pBuf2) {
+	bmpInfo.bmiHeader.biSizeImage <<= 1;
+	bmpInfo.bmiHeader.biHeight <<= 1;
+    }
+    bmpFileHeader.bfSize=sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+bmpInfo.bmiHeader.biSizeImage;
+    bmpFileHeader.bfType=0x4D42;
+    bmpFileHeader.bfOffBits=sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER); 
 
-	(void)fwrite(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, fp);
-	(void)fwrite(&bmpInfo.bmiHeader, sizeof(BITMAPINFOHEADER), 1, fp);
-	if (pBuf2) {
-		DoubleLines((uint8_t *)pBuf2, (uint8_t *)pBuf);
-		(void)fwrite(pBuf2, bmpInfo.bmiHeader.biSizeImage, 1, fp); 
-	} else {
-		(void)fwrite(pBuf, bmpInfo.bmiHeader.biSizeImage, 1, fp); 
-	}
-    } while(false); 
+    (void)fwrite(&bmpFileHeader,sizeof(BITMAPFILEHEADER),1,fp);
+    (void)fwrite(&bmpInfo.bmiHeader,sizeof(BITMAPINFOHEADER),1,fp);
+    if (pBuf2) {
+	DoubleLines((uint8_t *) pBuf2, (uint8_t *) pBuf);
+	(void)fwrite(pBuf2,bmpInfo.bmiHeader.biSizeImage,1,fp); 
+    } else {
+	(void)fwrite(pBuf,bmpInfo.bmiHeader.biSizeImage,1,fp); 
+    }
 
-    if (hdc) ReleaseDC(NULL, hdc); 
-
-    if (pBuf2) free(pBuf2); 
-
-    if (pBuf) free(pBuf); 
-
-    if (fp) fclose(fp);
+    /* Clean up. */
+    if (fp != NULL) fclose(fp);
+    if (hdc != NULL) ReleaseDC(NULL, hdc); 
+    if (pBuf2 != NULL) free(pBuf2); 
+    if (pBuf != NULL) free(pBuf); 
 }
-#endif
 
 
 static void
@@ -435,8 +422,6 @@ ddraw_fs_size(RECT w_rect, RECT *r_dest, int w, int h)
 {
     int ratio_w, ratio_h;
     double hsr, gsr, ra, d;
-
-    pclog("vid_fullscreen_scale = %i\n", vid_fullscreen_scale);
 
     switch (vid_fullscreen_scale) {
 	case FULLSCR_SCALE_FULL:
@@ -518,13 +503,13 @@ ddraw_fs_size(RECT w_rect, RECT *r_dest, int w, int h)
 static void
 ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
 {
-    RECT r_src, r_dest;
-    RECT w_rect;
+    DDSURFACEDESC2 ddsd;
+    RECT r_src, r_dest, w_rect;
     DDBLTFX ddbltfx;
     HRESULT hr;
     int yy;
 
-    if (dds_back == NULL) {
+    if (lpdds_back == NULL) {
 	video_blit_complete();
 	return; /*Nothing to do*/
     }
@@ -537,11 +522,11 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
     memset(&ddsd, 0, sizeof(ddsd));
     ddsd.dwSize = sizeof(ddsd);
 
-    hr = dds_back->Lock(NULL, &ddsd,
+    hr = lpdds_back->Lock(NULL, &ddsd,
 			  DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT, NULL);
     if (hr == DDERR_SURFACELOST) {
-	dds_back->Restore();
-	dds_back->Lock(NULL, &ddsd,
+	lpdds_back->Restore();
+	lpdds_back->Lock(NULL, &ddsd,
 			 DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT, NULL);
 	device_force_redraw();
     }
@@ -553,7 +538,7 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
     for (yy = y1; yy < y2; yy++)
 	if (buffer32)  memcpy((void *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
     video_blit_complete();
-    dds_back->Unlock(NULL);
+    lpdds_back->Unlock(NULL);
 
     w_rect.left = 0;
     w_rect.top = 0;
@@ -569,19 +554,19 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
     ddbltfx.dwSize = sizeof(ddbltfx);
     ddbltfx.dwFillColor = 0;
 
-    dds_back2->Blt(&w_rect, NULL, NULL,
+    lpdds_back2->Blt(&w_rect, NULL, NULL,
 		     DDBLT_WAIT | DDBLT_COLORFILL, &ddbltfx);
 
-    hr = dds_back2->Blt(&r_dest, dds_back, &r_src, DDBLT_WAIT, NULL);
+    hr = lpdds_back2->Blt(&r_dest, lpdds_back, &r_src, DDBLT_WAIT, NULL);
     if (hr == DDERR_SURFACELOST) {
-	dds_back2->Restore();
-	dds_back2->Blt(&r_dest, dds_back, &r_src, DDBLT_WAIT, NULL);
+	lpdds_back2->Restore();
+	lpdds_back2->Blt(&r_dest, lpdds_back, &r_src, DDBLT_WAIT, NULL);
     }
 	
-    hr = dds_pri->Flip(NULL, DDFLIP_NOVSYNC);	
+    hr = lpdds_pri->Flip(NULL, DDFLIP_NOVSYNC);	
     if (hr == DDERR_SURFACELOST) {
-	dds_pri->Restore();
-	dds_pri->Flip(NULL, DDFLIP_NOVSYNC);
+	lpdds_pri->Restore();
+	lpdds_pri->Flip(NULL, DDFLIP_NOVSYNC);
     }
 }
 
@@ -589,12 +574,13 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
 static void
 ddraw_blit(int x, int y, int y1, int y2, int w, int h)
 {
+    DDSURFACEDESC2 ddsd;
     RECT r_src, r_dest;
-    POINT po;
     HRESULT hr;
+    POINT po;
     int yy;
 
-    if (dds_back == NULL) {
+    if (lpdds_back == NULL) {
 	video_blit_complete();
 	return; /*Nothing to do*/
     }
@@ -607,11 +593,11 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
     memset(&ddsd, 0, sizeof(ddsd));
     ddsd.dwSize = sizeof(ddsd);
 
-    hr = dds_back->Lock(NULL, &ddsd,
+    hr = lpdds_back->Lock(NULL, &ddsd,
 			  DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT, NULL);
     if (hr == DDERR_SURFACELOST) {
-	dds_back->Restore();
-	dds_back->Lock(NULL, &ddsd,
+	lpdds_back->Restore();
+	lpdds_back->Lock(NULL, &ddsd,
 			 DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT, NULL);
 	device_force_redraw();
     }
@@ -627,7 +613,7 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
 			memcpy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
     }
     video_blit_complete();
-    dds_back->Unlock(NULL);
+    lpdds_back->Unlock(NULL);
 
     po.x = po.y = 0;
 	
@@ -640,18 +626,18 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
     r_src.right  = w;
     r_src.bottom = h;
 
-    hr = dds_back2->Blt(&r_src, dds_back, &r_src, DDBLT_WAIT, NULL);
+    hr = lpdds_back2->Blt(&r_src, lpdds_back, &r_src, DDBLT_WAIT, NULL);
     if (hr == DDERR_SURFACELOST) {
-	dds_back2->Restore();
-	dds_back2->Blt(&r_src, dds_back, &r_src, DDBLT_WAIT, NULL);
+	lpdds_back2->Restore();
+	lpdds_back2->Blt(&r_src, lpdds_back, &r_src, DDBLT_WAIT, NULL);
     }
 
-    dds_back2->Unlock(NULL);
+    lpdds_back2->Unlock(NULL);
 	
-    hr = dds_pri->Blt(&r_dest, dds_back2, &r_src, DDBLT_WAIT, NULL);
+    hr = lpdds_pri->Blt(&r_dest, lpdds_back2, &r_src, DDBLT_WAIT, NULL);
     if (hr == DDERR_SURFACELOST) {
-	dds_pri->Restore();
-	dds_pri->Blt(&r_dest, dds_back2, &r_src, DDBLT_WAIT, NULL);
+	lpdds_pri->Restore();
+	lpdds_pri->Blt(&r_dest, lpdds_back2, &r_src, DDBLT_WAIT, NULL);
     }
 }
 
@@ -659,36 +645,257 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
 static void
 ddraw_close(void)
 {
-    pclog("DDRAW: close (fs=%d)\n", (dds_back2 != NULL)?1:0);
+    pclog("DDRAW: close (fs=%d)\n", (lpdds_back2 != NULL)?1:0);
 
     video_setblit(NULL);
 
-    if (dds_back2 != NULL) {
-	dds_back2->Release();
-	dds_back2 = NULL;
+    if (lpdds_back2) {
+	lpdds_back2->Release();
+	lpdds_back2 = NULL;
     }
-    if (dds_back != NULL) {
-	dds_back->Release();
-	dds_back = NULL;
+    if (lpdds_back) {
+	lpdds_back->Release();
+	lpdds_back = NULL;
     }
-    if (dds_pri != NULL) {
-	dds_pri->Release();
-	dds_pri = NULL;
+    if (lpdds_pri) {
+	lpdds_pri->Release();
+	lpdds_pri = NULL;
     }
-    if (lpdd_clipper != NULL) {
+    if (lpdd_clipper) {
 	lpdd_clipper->Release();
 	lpdd_clipper = NULL;
     }
-    if (lpdd4 != NULL) {
+    if (lpdd4) {
 	lpdd4->Release();
 	lpdd4 = NULL;
     }
+
+#if defined(USE_LIBPNG) && USE_LIBPNG == 2
+    /* Unload the DLL if possible. */
+    if (png_handle != NULL) {
+	dynld_close(png_handle);
+	png_handle = NULL;
+    }
+#endif
 }
+
+
+#if 0
+int
+ddraw_init_fs(HWND h)
+{
+    ddraw_w = GetSystemMetrics(SM_CXSCREEN);
+    ddraw_h = GetSystemMetrics(SM_CYSCREEN);
+
+    cgapal_rebuild();
+
+    if (FAILED(DirectDrawCreate(NULL, &lpdd, NULL))) return 0;
+
+    if (FAILED(lpdd->QueryInterface(IID_IDirectDraw4, (LPVOID *)&lpdd4))) return 0;
+
+    lpdd->Release();
+    lpdd = NULL;
+
+    atexit(ddraw_close);
+
+    if (FAILED(lpdd4->SetCooperativeLevel(h,
+					  DDSCL_SETFOCUSWINDOW | \
+					  DDSCL_CREATEDEVICEWINDOW | \
+					  DDSCL_EXCLUSIVE | \
+					  DDSCL_FULLSCREEN | \
+					  DDSCL_ALLOWREBOOT))) return 0;
+
+    if (FAILED(lpdd4->SetDisplayMode(ddraw_w, ddraw_h, 32, 0 ,0))) return 0;
+
+    memset(&ddsd, 0, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+    ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
+    ddsd.dwBackBufferCount = 1;
+    ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_COMPLEX | DDSCAPS_FLIP;
+    if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_pri, NULL))) return 0;
+
+    ddsd.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER;
+    if (FAILED(lpdds_pri->GetAttachedSurface(&ddsd.ddsCaps, &lpdds_back2))) return 0;
+
+    memset(&ddsd, 0, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
+    ddsd.dwWidth  = 2048;
+    ddsd.dwHeight = 2048;
+    ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
+    if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL))) {
+	ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
+	ddsd.dwWidth  = 2048;
+	ddsd.dwHeight = 2048;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+	if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL))) return 0;
+    }
+
+    ddraw_hwnd = h;
+
+    video_setblit(ddraw_blit_fs);
+
+    return(1);
+}
+#endif
 
 
 static int
 ddraw_init(int fs)
 {
+    DDSURFACEDESC2 ddsd;
+    LPDIRECTDRAW lpdd;
+    HWND h = hwndRender;
+
+    pclog("DDraw: initializing (fs=%d)\n", fs);
+
+    cgapal_rebuild();
+
+    if (FAILED(DirectDrawCreate(NULL, &lpdd, NULL))) return(0);
+
+    if (FAILED(lpdd->QueryInterface(IID_IDirectDraw4, (LPVOID *)&lpdd4)))
+					return(0);
+    lpdd->Release();
+
+    atexit(ddraw_close);
+
+    if (FAILED(lpdd4->SetCooperativeLevel(h, DDSCL_NORMAL))) return(0);
+
+    memset(&ddsd, 0, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+
+    ddsd.dwFlags = DDSD_CAPS;
+    ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+    if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_pri, NULL))) return(0);
+
+    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
+    ddsd.dwWidth  = 2048;
+    ddsd.dwHeight = 2048;
+    ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
+    if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL))) {
+	ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
+	ddsd.dwWidth  = 2048;
+	ddsd.dwHeight = 2048;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+	if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL)))
+				fatal("CreateSurface back failed\n");
+    }
+
+    memset(&ddsd, 0, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
+    ddsd.dwWidth  = 2048;
+    ddsd.dwHeight = 2048;
+    ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
+    if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_back2, NULL))) {
+	ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
+	ddsd.dwWidth  = 2048;
+	ddsd.dwHeight = 2048;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+	if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds_back2, NULL)))
+				fatal("CreateSurface back failed\n");
+    }
+
+    if (FAILED(lpdd4->CreateClipper(0, &lpdd_clipper, NULL))) return(0);
+
+    if (FAILED(lpdd_clipper->SetHWnd(0, h))) return(0);
+
+    if (FAILED(lpdds_pri->SetClipper(lpdd_clipper))) return(0);
+
+    ddraw_hwnd = h;
+
+    video_setblit(ddraw_blit);
+
+#ifdef USE_LIBPNG
+# if USE_LIBPNG == 2
+    /* Try loading the DLL. */
+    png_handle = dynld_module(PATH_PNG_DLL, png_imports);
+    if (png_handle == NULL)
+	pclog("DDraw: unable to load '%s', using BMP for screenshots.\n",
+							PATH_PNG_DLL);
+# else
+    png_handle = (void *)1;	/* just to indicate always therse */
+# endif
+#endif
+
+    return(1);
+}
+
+
+static void
+ddraw_screenshot(const wchar_t *fn)
+{
+    wchar_t temp[512];
+    HBITMAP hbmp;
+
+#if 0
+    xs = xsize;
+    ys = ys2 = ysize;
+
+    /* For EGA/(S)VGA, the size is NOT adjusted for overscan. */
+    if ((overscan_y > 16) && enable_overscan) {
+	xs += overscan_x;
+	ys += overscan_y;
+    }
+
+    /* For CGA, the width is adjusted for overscan, but the height is not. */
+    if (overscan_y == 16) {
+	if (ys2 <= 250)
+		ys += (overscan_y >> 1);
+	  else
+		ys += overscan_y;
+    }
+#endif
+
+    xs = get_actual_size_x();
+    ys = ys2 = get_actual_size_y();
+
+    if (ysize <= 250) {
+	ys >>= 1;
+	ys2 >>= 1;
+    }
+
+    hbmp = CopySurface(lpdds_back2);
+
+#ifdef USE_LIBPNG
+    /* Save the screenshot, using PNG if available. */
+    if (png_handle != NULL) {
+	/* Use the PNG library. */
+	SavePNG(fn, hbmp);
+    } else {
+#endif
+	/* Use BMP, so fix the file name. */
+	wcscpy(temp, fn);
+	temp[wcslen(temp)-3] = L'b';
+	temp[wcslen(temp)-2] = L'm';
+	temp[wcslen(temp)-1] = L'p';
+	SaveBMP(temp, hbmp);
+#ifdef USE_LIBPNG
+    }
+#endif
+}
+
+
+const vidapi_t ddraw_vidapi = {
+    "DDraw",
+    1,
+    ddraw_init,
+    ddraw_close,
+    NULL,
+    NULL,
+    NULL,
+    ddraw_screenshot,
+    NULL
+};
+
+
+#if 0
+@@@@@
+static int
+ddraw_init(int fs)
+{
+    DDSURFACEDESC2 ddsd;
+    LPDIRECTDRAW lpdd;
     HRESULT hr;
     HWND h;
     DWORD dw;
@@ -702,13 +909,11 @@ ddraw_init(int fs)
 	pclog("DDRAW: cannot create an instance (%s)\n", GetError(hr));
 	return(0);
     }
-
     hr = lpdd->QueryInterface(IID_IDirectDraw4, (LPVOID *)&lpdd4);
     if (FAILED(hr)) {
 	pclog("DDRAW: no interfaces found (%s)\n", GetError(hr));
 	return(0);
     }
-
     lpdd->Release();
     lpdd = NULL;
 
@@ -740,7 +945,6 @@ ddraw_init(int fs)
 
     memset(&ddsd, 0x00, sizeof(ddsd));
     ddsd.dwSize = sizeof(ddsd);
-
     ddsd.dwFlags = DDSD_CAPS;
     ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
     if (fs) {
@@ -748,23 +952,23 @@ ddraw_init(int fs)
 	ddsd.ddsCaps.dwCaps |= (DDSCAPS_COMPLEX | DDSCAPS_FLIP);
 	ddsd.dwBackBufferCount = 1;
     }
-    hr = lpdd4->CreateSurface(&ddsd, &dds_pri, NULL);
+    hr = lpdd4->CreateSurface(&ddsd, &lpdds_pri, NULL);
     if (FAILED(hr)) {
 	pclog("DDRAW: CreateSurface failed (%s)\n", GetError(hr));
 	return(0);
     }
 
     ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
-    ddsd.dwWidth  = 2048;
+    ddsd.dwWidth = 2048;
     ddsd.dwHeight = 2048;
     ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
-    hr = lpdd4->CreateSurface(&ddsd, &dds_back, NULL);
+    hr = lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL);
     if (FAILED(hr)) {
 	ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
-	ddsd.dwWidth  = 2048;
+	ddsd.dwWidth = 2048;
 	ddsd.dwHeight = 2048;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
-	hr = lpdd4->CreateSurface(&ddsd, &dds_back, NULL);
+	hr = lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL);
 	if (FAILED(hr)) {
 		pclog("DDRAW: CreateSurface back failed (%s)\n", GetError(hr));
 		return(0);
@@ -773,7 +977,7 @@ ddraw_init(int fs)
 
     if (fs) {
 	ddsd.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER;
-	hr = dds_pri->GetAttachedSurface(&ddsd.ddsCaps, &dds_back2);
+	hr = lpdds_pri->GetAttachedSurface(&ddsd.ddsCaps, &lpdds_back2);
 	if (FAILED(hr)) {
 		pclog("DDRAW: GetAttachedSurface failed (%s)\n", GetError(hr));
 		return(0);
@@ -783,22 +987,22 @@ ddraw_init(int fs)
     memset(&ddsd, 0x00, sizeof(ddsd));
     ddsd.dwSize = sizeof(ddsd);
     ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
-    ddsd.dwWidth  = 2048;
+    ddsd.dwWidth = 2048;
     ddsd.dwHeight = 2048;
     ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
     if (fs)
-	hr = lpdd4->CreateSurface(&ddsd, &dds_back, NULL);
+	hr = lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL);
       else
-	hr = lpdd4->CreateSurface(&ddsd, &dds_back2, NULL);
+	hr = lpdd4->CreateSurface(&ddsd, &lpdds_back2, NULL);
     if (FAILED(hr)) {
 	ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
-	ddsd.dwWidth  = 2048;
+	ddsd.dwWidth = 2048;
 	ddsd.dwHeight = 2048;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
 	if (fs)
-		hr = lpdd4->CreateSurface(&ddsd, &dds_back, NULL);
+		hr = lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL);
 	  else
-		hr = lpdd4->CreateSurface(&ddsd, &dds_back2, NULL);
+		hr = lpdd4->CreateSurface(&ddsd, &lpdds_back2, NULL);
 	if (FAILED(hr)) {
 		pclog("DDRAW: CreateSurface(back) failed (%s)\n", GetError(hr));
 		return(0);
@@ -818,14 +1022,14 @@ ddraw_init(int fs)
 		return(0);
 	}
 
-	hr = dds_pri->SetClipper(lpdd_clipper);
+	hr = lpdds_pri->SetClipper(lpdd_clipper);
 	if (FAILED(hr)) {
 		pclog("DDRAW: SetClipper failed (%s)\n", GetError(hr));
 		return(0);
 	}
     }
 
-    ddraw_hwnd = hwndRender;
+    ddraw_hwnd = h;
 
     if (fs)
 	video_setblit(ddraw_blit_fs);
@@ -834,56 +1038,4 @@ ddraw_init(int fs)
 
     return(1);
 }
-
-
-static void
-ddraw_screenshot(const wchar_t *fn)
-{
-#if 0
-    xs = xsize;
-    ys = ys2 = ysize;
-
-    /* For EGA/(S)VGA, the size is NOT adjusted for overscan. */
-    if ((overscan_y > 16) && enable_overscan) {
-	xs += overscan_x;
-	ys += overscan_y;
-    }
-
-    /* For CGA, the width is adjusted for overscan, but the height is not. */
-    if (overscan_y == 16) {
-	if (ys2 <= 250)
-		ys += (overscan_y >> 1);
-	  else
-		ys += overscan_y;
-    }
 #endif
-
-    xs = get_actual_size_x();
-    ys = ys2 = get_actual_size_y();
-
-    if (ysize <= 250) {
-	ys >>= 1;
-	ys2 >>= 1;
-    }
-
-    CopySurface(dds_back2);
-
-#ifdef USE_LIBPNG
-    SavePNG(fn, hbitmap);
-#else
-    SaveBMP(fn, hbitmap);
-#endif
-}
-
-
-const vidapi_t ddraw_vidapi = {
-    "DDraw",
-    1,
-    ddraw_init,
-    ddraw_close,
-    NULL,
-    NULL,
-    NULL,
-    ddraw_screenshot,
-    NULL
-};

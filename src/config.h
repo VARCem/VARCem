@@ -8,7 +8,7 @@
  *
  *		Configuration file handler header.
  *
- * Version:	@(#)config.h	1.0.2	2018/04/10
+ * Version:	@(#)config.h	1.0.3	2018/05/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-extern void	config_load(void);
+extern int	config_load(void);
 extern void	config_save(void);
 extern void	config_write(const wchar_t *fn);
 extern void	config_dump(void);

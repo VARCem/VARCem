@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.42	2018/05/11
+ * Version:	@(#)pc.c	1.0.46	2018/05/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -104,6 +104,7 @@ int	config_ro = 0;				/* (O) dont modify cfg file */
 wchar_t log_path[1024] = { L'\0'};		/* (O) full path of logfile */
 
 /* Configuration values. */
+int	lang_id = 0;				/* (C) language ID */
 int	window_w, window_h,			/* (C) window size and */
 	window_x, window_y,			/*     position info */
 	window_remember;
@@ -400,7 +401,7 @@ pc_setup(int argc, wchar_t *argv[])
     char temp[128];
     struct tm *info;
     time_t now;
-    int c;
+    int c, ret = 0;
 
     /* Grab the executable's full path. */
     plat_get_exe_name(emu_path, sizeof(emu_path)-1);
@@ -442,7 +443,7 @@ pc_setup(int argc, wchar_t *argv[])
     plat_getcwd(usr_path, sizeof_w(usr_path)-1);
     memset(path, 0x00, sizeof(path));
 
-    for (c=1; c<argc; c++) {
+    for (c = 1; c < argc; c++) {
 	if (argv[c][0] != L'-') break;
 
 	if (!wcscasecmp(argv[c], L"--help") || !wcscasecmp(argv[c], L"-?")) {
@@ -459,7 +460,6 @@ usage:
 		printf("  -D or --debug        - force debug output logging\n");
 #endif
 		printf("  -F or --fullscreen   - start in fullscreen mode\n");
-		printf("  -M or --memdump      - dump memory on exit\n");
 		printf("  -L or --logfile path - set 'path' to be the logfile\n");
 		printf("  -P or --vmpath path  - set 'path' to be root for vm\n");
 #ifdef USE_WX
@@ -468,7 +468,7 @@ usage:
 		printf("  -S or --settings     - show only the settings dialog\n");
 		printf("  -W or --readonly     - do not modify the config file\n");
 		printf("\nA config file can be specified. If none is, the default file will be used.\n");
-		return(0);
+		return(ret);
 	} else if (!wcscasecmp(argv[c], L"--dumpcfg") ||
 		   !wcscasecmp(argv[c], L"-C")) {
 		do_dump_config = 1;
@@ -482,21 +482,25 @@ usage:
 		start_in_fullscreen = 1;
 	} else if (!wcscasecmp(argv[c], L"--logfile") ||
 		   !wcscasecmp(argv[c], L"-L")) {
-		if ((c+1) == argc) goto usage;
-
+		if ((c+1) == argc) {
+			ret = -1;
+			goto usage;
+		}
 		wcscpy(log_path, argv[++c]);
-	} else if (!wcscasecmp(argv[c], L"--memdump") ||
-		   !wcscasecmp(argv[c], L"-M")) {
 	} else if (!wcscasecmp(argv[c], L"--vmpath") ||
 		   !wcscasecmp(argv[c], L"-P")) {
-		if ((c+1) == argc) goto usage;
-
+		if ((c+1) == argc) {
+			ret = -1;
+			goto usage;
+		}
 		wcscpy(path, argv[++c]);
 #ifdef USE_WX
 	} else if (!wcscasecmp(argv[c], L"--fps") ||
 		   !wcscasecmp(argv[c], L"-R")) {
-		if ((c+1) == argc) goto usage;
-
+		if ((c+1) == argc) {
+			ret = -1;
+			goto usage;
+		}
 		video_fps = wcstol(argv[++c], NULL, 10);
 #endif
 	} else if (!wcscasecmp(argv[c], L"--settings") ||
@@ -519,7 +523,10 @@ usage:
     /* One argument (config file) allowed. */
     if (c < argc)
 	cfg = argv[c++];
-    if (c != argc) goto usage;
+    if (c != argc) {
+	ret = -2;
+	goto usage;
+    }
 
     /*
      * If the user provided a path for files, use that
@@ -629,9 +636,9 @@ usage:
     network_init();
 
     /* Load the configuration file. */
-    config_load();
+    if (! config_load()) return(2);
 
-    /* All good! */
+    /* All good. */
     return(1);
 }
 
@@ -725,10 +732,23 @@ pc_init(void)
     wchar_t name[128];
     const wchar_t *str;
 
+    /* If no machine selected, force user into Setup Wizard. */
+    if (machine < 0) {
+	str = get_string(IDS_ERR_NOCONF);
+
+	/* Show the messagebox, and abort if 'No' was selected. */
+	if (ui_msgbox(MBX_QUESTION, str) != 0) return(0);
+
+	/* OK, user wants to set up a machine. */
+	machine = 0;
+
+	return(2);
+    }
+
     /* Load the ROMs for the selected machine. */
-    if ((machine < 0) || !machine_available(machine)) {
+    if (! machine_available(machine)) {
 	/* Whoops, selected machine not available. */
-	str = get_string(IDS_2063);
+	str = get_string(IDS_ERR_NOMACH);
 	mbstowcs(name, machine_getname(), sizeof_w(name));
 	swprintf(temp, sizeof_w(temp), str, name);
 
@@ -742,7 +762,7 @@ pc_init(void)
     if ((video_card < 0) ||
 	!video_card_available(video_old_to_new(video_card))) {
 	/* Whoops, selected video not available. */
-	str = get_string(IDS_2064);
+	str = get_string(IDS_ERR_NOVIDEO);
 	mbstowcs(name, machine_getname(), sizeof_w(name));
 	swprintf(temp, sizeof_w(temp), str, name);
 
@@ -827,12 +847,12 @@ pc_close(thread_t *ptr)
 
     config_save();
 
-    plat_mouse_capture(0);
+    plat_mouse_capture(-1);
 
-    for (i=0; i<ZIP_NUM; i++)
+    for (i = 0; i < ZIP_NUM; i++)
 	zip_close(i);
 
-    for (i=0; i<CDROM_NUM; i++)
+    for (i = 0; i < CDROM_NUM; i++)
 	cdrom_drives[i].handler->exit(i);
 
     floppy_close();
@@ -940,6 +960,9 @@ pc_reset_hard_init(void)
     /* Needs the status bar... */
     if (bugger_enabled)
 	device_add(&bugger_device);
+
+    /* Needs the status bar initialized. */
+    plat_mouse_capture(-1);
 
     /* Reset the CPU module. */
     cpu_set();
@@ -1112,15 +1135,6 @@ pc_thread(void *param)
 #endif
 				 EMU_NAME,emu_version,fps,machine_getname(),
 				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name);
-			if (mouse_type != MOUSE_NONE) {
-				wcscat(temp, L" - ");
-				if (!mouse_capture) {
-					wcscat(temp, get_string(IDS_2077));
-				} else {
-					wcscat(temp, (mouse_get_buttons() > 2) ? get_string(IDS_2078) : get_string(IDS_2079));
-				}
-			}
-
 			ui_window_title(temp);
 
 			title_update = 0;

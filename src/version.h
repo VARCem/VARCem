@@ -8,7 +8,7 @@
  *
  *		Define application version and build info.
  *
- * Version:	@(#)version.h	1.0.13	2018/05/11
+ * Version:	@(#)version.h	1.0.15	2018/05/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -59,8 +59,9 @@
 
 
 /* Standard C preprocessor macros. */
-#define STR_HLP(x)	#x
-#define STR(x)		STR_HLP(x)
+#define STR_STRING(x)	#x
+#define STR(x)		STR_STRING(x)
+#define STR_RC(a,e)	a ## , ## e
 
 
 /* These are used in the application. */

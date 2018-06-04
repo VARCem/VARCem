@@ -13,7 +13,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.14	2018/05/06
+ * Version:	@(#)win_joystick.cpp	1.0.17	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,6 +67,7 @@
 
 
 #define MAX_PLAT_JOYSTICKS	8
+#define STR_FONTNAME		"Segoe UI"
 
 
 typedef struct {
@@ -630,6 +631,24 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 }
 
 
+static uint16_t *
+AddWideString(uint16_t *data, int ids)
+{
+    const wchar_t *str;
+    wchar_t *ptr;
+
+    ptr = (wchar_t *)data;
+    str = get_string(ids);
+    if (str != NULL) {
+	while (*str != L'\0')
+		*ptr++ = *str++;
+    }
+    *ptr++ = L'\0';
+
+    return((uint16_t *)ptr);
+}
+
+
 /* Create an in-memory dialog template for the Joystick Configuration. */
 uint8_t
 dlg_jsconf(HWND hwnd, int joy_nr, int type)
@@ -657,10 +676,11 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
     data = (uint16_t *)(dlg + 1);
     *data++ = 0; /*no menu*/
     *data++ = 0; /*predefined dialog box class*/
-    data += MultiByteToWideChar(CP_ACP, 0,
-				"Device Configuration", -1, (wchar_t *)data, 128);
+    data = AddWideString(data, IDS_DEVCONF_1);
+
     *data++ = 8; /*Point*/
-    data += MultiByteToWideChar(CP_ACP, 0, "MS Sans Serif", -1, (wchar_t *)data, 128);
+    data += MultiByteToWideChar(CP_ACP, 0, STR_FONTNAME, -1,
+				(wchar_t *)data, 128);
     if (((uintptr_t)data) & 2)
 	data++;
 
@@ -691,7 +711,7 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
     data = (uint16_t *)(item + 1);
     *data++ = 0xFFFF;
     *data++ = 0x0082;    /* static class */
-    data += MultiByteToWideChar(CP_ACP, 0, "Device:", -1, (wchar_t *)data, 256);
+    data = AddWideString(data, IDS_DEVCONF_2);
     *data++ = 0;	      /* no creation data */
     if (((uintptr_t)data) & 2)
 	data++;
@@ -820,7 +840,7 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
 
     item = (DLGITEMTEMPLATE *)data;
     item->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
-    item->id = IDOK;  /* OK button identifier */
+    item->id = IDOK;
     item->x = 20;
     item->y = y;
     item->cx = 50;
@@ -828,14 +848,14 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
     data = (uint16_t *)(item + 1);
     *data++ = 0xFFFF;
     *data++ = 0x0080;    /* button class */
-    data += MultiByteToWideChar(CP_ACP, 0, "OK", -1, (wchar_t *)data, 50);
+    data = AddWideString(data, IDS_OK);
     *data++ = 0;	      /* no creation data */
     if (((uintptr_t)data) & 2)
 	data++;
 		
     item = (DLGITEMTEMPLATE *)data;
     item->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
-    item->id = IDCANCEL;  /* OK button identifier */
+    item->id = IDCANCEL;
     item->x = 80;
     item->y = y;
     item->cx = 50;
@@ -843,7 +863,7 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
     data = (uint16_t *)(item + 1);
     *data++ = 0xFFFF;
     *data++ = 0x0080;    /* button class */
-    data += MultiByteToWideChar(CP_ACP, 0, "Cancel", -1, (wchar_t *)data, 50);
+    data = AddWideString(data, IDS_CANCEL);
     *data++ = 0;	      /* no creation data */
 
     dlg->cy = y + 20;

@@ -8,7 +8,11 @@
  *
  *		Handle the About dialog.
  *
- * Version:	@(#)win_about.c	1.0.7	2018/05/02
+ * NOTE:	Not quite happy with the Donate button workings, a full
+ *		24bit image would be preferred, but we cant use LoadImage
+ *		for those (and keep transparency...)
+ *
+ * Version:	@(#)win_about.c	1.0.9	2018/06/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,8 +38,11 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#define UNICODE
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <windowsx.h>
+#include <shellapi.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -46,6 +53,15 @@
 #include "../ui/ui.h"
 #include "../plat.h"
 #include "win.h"
+
+
+static void
+donate_handle(HWND hdlg)
+{
+    pclog("UI: DONATE button clicked, opening browser to PayPal\n");
+
+    ShellExecute(NULL, L"open", URL_PAYPAL, NULL, NULL , SW_SHOW);
+}
 
 
 static void
@@ -73,37 +89,71 @@ set_font_bold(HWND hdlg, int item)
 }
 
 
+static void
+localize_disp(HWND hdlg, int idx)
+{
+    WCHAR temp[128];
+    lang_t *lang;
+    HWND h;
+
+    /* Get the correct language for this index. */
+    h = GetDlgItem(hdlg, IDC_LOCALIZE); 
+    lang = (lang_t *)SendMessage(h, LB_GETITEMDATA, idx, 0);
+
+    SetDlgItemText(hdlg, IDT_LOCALIZE+1, lang->version); 
+
+    swprintf(temp, sizeof_w(temp), L"%ls, <%ls>", lang->author, lang->email);
+    SetDlgItemText(hdlg, IDT_LOCALIZE+2, temp); 
+}
+
+
 #ifdef __amd64__
 static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+localize_dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    char temp[128];
+    HBITMAP hBmp;
+    lang_t *lang;
     HWND h;
+    int c;
 
     switch (message) {
 	case WM_INITDIALOG:
 		/* Center in the main window. */
 		dialog_center(hdlg);
 
+		/* Load the main icon. */
+		hBmp = LoadImage(hInstance,(PCTSTR)100, IMAGE_ICON, 64, 64, 0);
 		h = GetDlgItem(hdlg, IDC_ABOUT_ICON);
-		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON,
-		  (LPARAM)LoadImage(hInstance,(PCTSTR)100,IMAGE_ICON,64,64,0));
-		SendDlgItemMessage(hdlg, IDT_TITLE, WM_SETTEXT,
-				   (WPARAM)NULL, (LPARAM)emu_title);
-		set_font_bold(hdlg, IDT_TITLE);
+		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hBmp);
 
-		sprintf(temp, "%s", emu_fullversion);
-		SendDlgItemMessage(hdlg, IDT_VERSION, WM_SETTEXT,
-				   (WPARAM)NULL, (LPARAM)temp);
+		/* Add the languages. */
+		h = GetDlgItem(hdlg, IDC_LOCALIZE);
+		for (lang = languages->next; lang != NULL; lang = lang->next) {
+			c = SendMessage(h, LB_ADDSTRING, 0, (LPARAM)lang->name);
+			SendMessage(h, LB_SETITEMDATA, c, (LPARAM)lang);
+		}
+		SendMessage(h, LB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+		localize_disp(hdlg, 0);
 		break;
 
 	case WM_COMMAND:
                 switch (LOWORD(wParam)) {
 			case IDOK:
 				EndDialog(hdlg, 0);
+				return TRUE;
+
+			case IDC_LOCALIZE:
+				switch (HIWORD(wParam)) { 
+					case LBN_SELCHANGE:
+						h = GetDlgItem(hdlg, IDC_LOCALIZE); 
+						c = (int)SendMessage(h, LB_GETCURSEL, 0, 0); 
+						localize_disp(hdlg, c);
+
+						return TRUE; 
+				} 
 				return TRUE;
 
 			default:
@@ -116,12 +166,104 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
+#ifdef __amd64__
+static LRESULT CALLBACK
+#else
+static BOOL CALLBACK
+#endif
+dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    wchar_t temp[128];
+static    HBITMAP hBmp;
+    HWND h;
+
+    switch (message) {
+	case WM_INITDIALOG:
+		/* Center in the main window. */
+		dialog_center(hdlg);
+
+		hBmp = LoadImage(hInstance,
+				 MAKEINTRESOURCE(100), IMAGE_ICON, 64, 64, 0);
+		h = GetDlgItem(hdlg, IDC_ABOUT_ICON);
+		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hBmp);
+		mbstowcs(temp, emu_title, sizeof_w(temp));
+		SendDlgItemMessage(hdlg, IDT_TITLE, WM_SETTEXT,
+				   (WPARAM)NULL, (LPARAM)temp);
+		set_font_bold(hdlg, IDT_TITLE);
+
+		mbstowcs(temp, emu_fullversion, sizeof_w(temp));
+		SendDlgItemMessage(hdlg, IDT_VERSION, WM_SETTEXT,
+				   (WPARAM)NULL, (LPARAM)temp);
+
+		/* Load the Paypal Donate icon. */
+		h = GetDlgItem(hdlg, IDC_DONATE);
+#if 1
+		hBmp = LoadImage(hInstance, MAKEINTRESOURCE(101),
+				 IMAGE_BITMAP, 105, 50,
+				 LR_LOADTRANSPARENT|LR_LOADMAP3DCOLORS);
+		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
+#else
+		hBmp = LoadImage(hInstance,
+				 MAKEINTRESOURCE(101), IMAGE_ICON, 128, 128, 0);
+		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hBmp);
+#endif
+		break;
+
+	case WM_COMMAND:
+                switch (LOWORD(wParam)) {
+			case IDOK:
+				EndDialog(hdlg, 0);
+				return TRUE;
+
+			case IDC_LOCALIZE:
+				DialogBox(plat_lang_dll(),
+					  (LPCTSTR)DLG_LOCALIZE,
+					  hdlg, localize_dlg_proc);
+				break;
+
+			default:
+				switch (HIWORD(wParam)) {
+					case STN_CLICKED:
+						if ((HWND)lParam == GetDlgItem(hdlg, IDC_DONATE)) {
+							donate_handle(hdlg);
+							return TRUE;
+						}
+						break;
+
+					default:
+						break;
+				}
+				break;
+		}
+		break;
+
+        case WM_CTLCOLORSTATIC:
+                if ((HWND)lParam == GetDlgItem(hdlg, IDC_DONATE)) {
+			HDC hDC = GetDC(hdlg);
+			COLORREF col = GetBkColor(hDC);
+
+			hDC = (HDC)wParam;
+			SetBkColor(hDC, col);
+
+#if 1
+			return (LRESULT)CreateSolidBrush(col);
+#else
+			return (LRESULT)CreateSolidBrush(RGB(0,255,0));
+#endif
+		}
+		return FALSE;
+    }
+
+    return(FALSE);
+}
+
+
 void
 dlg_about(void)
 {
     plat_pause(1);
 
-    DialogBox(hInstance, (LPCTSTR)DLG_ABOUT, hwndMain, dlg_proc);
+    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_ABOUT, hwndMain, dlg_proc);
 
     plat_pause(0);
 }

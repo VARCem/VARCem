@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.9	2018/05/11
+ * Version:	@(#)win_settings_disk.h	1.0.12	2018/05/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,6 +64,16 @@ static int	hdlv_current_sel;
 static int	next_free_id = 0;
 
 
+static int
+combo_to_ids(int id)
+{
+    if (id == 0)
+	return(IDS_DISABLED);
+
+    return(IDS_3515 + id - 1);
+}
+
+
 static void
 disk_track_init(void)
 {
@@ -73,7 +83,7 @@ disk_track_init(void)
     for (i = 0; i < 16; i++)
 	scsi_tracking[i] = 0;
 
-    for (i=0; i<HDD_NUM; i++) {
+    for (i = 0; i < HDD_NUM; i++) {
 	if (hdd[i].bus == HDD_BUS_ST506)
 		st506_tracking |= (1ULL << (hdd[i].id.st506_channel << 3));
 	else if (hdd[i].bus == HDD_BUS_ESDI)
@@ -165,29 +175,30 @@ disk_add_locations(HWND hdlg)
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
     for (i = 0; i < 6; i++)
-	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_4352 + i));
+	SendMessage(h, CB_ADDSTRING, 0,
+		    (LPARAM)get_string(combo_to_ids(i)));
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
     for (i = 0; i < 8; i++) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4097), i >> 1, i & 1);
+	swprintf(temp, sizeof_w(temp), L"%01i:%01i", i >> 1, i & 1);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
     }
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
     for (i = 0; i < 16; i++) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), i);
+	swprintf(temp, sizeof_w(temp), L"%i", i);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
     }
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
     for (i = 0; i < 8; i++) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), i);
+	swprintf(temp, sizeof_w(temp), L"%i", i);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
     }
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
     for (i = 0; i < 8; i++) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4097), i >> 1, i & 1);
+	swprintf(temp, sizeof_w(temp), L"%01i:%01i", i >> 1, i & 1);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
     }
 }
@@ -341,7 +352,7 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 			SendMessage(h, CB_SETCURSEL, is_add_dlg ? new_hdd.id.ide_channel : temp_hdd[hdlv_current_sel].id.ide_channel, 0);
 			break;
 
-		case HDD_BUS_SCSI:		/* SCSI */
+		case HDD_BUS_SCSI:			/* SCSI */
 		case HDD_BUS_SCSI_REMOVABLE:		/* SCSI (removable) */
 			h = GetDlgItem(hdlg, IDT_1723);
 			ShowWindow(h, SW_SHOW);
@@ -464,27 +475,33 @@ disk_update_item(HWND hwndList, int i, int column)
     if (column == 0) {
 	switch(temp_hdd[i].bus) {
 		case HDD_BUS_ST506:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4608), temp_hdd[i].id.st506_channel >> 1, temp_hdd[i].id.st506_channel & 1);
+			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.st506_channel >> 1,
+				 temp_hdd[i].id.st506_channel & 1);
 			break;
 
 		case HDD_BUS_ESDI:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4609), temp_hdd[i].id.esdi_channel >> 1, temp_hdd[i].id.esdi_channel & 1);
+			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.esdi_channel >> 1,
+				 temp_hdd[i].id.esdi_channel & 1);
 			break;
 
 		case HDD_BUS_IDE_PIO_ONLY:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4610), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
-			break;
-
 		case HDD_BUS_IDE_PIO_AND_DMA:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4611), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
+			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.ide_channel >> 1,
+				 temp_hdd[i].id.ide_channel & 1);
 			break;
 
 		case HDD_BUS_SCSI:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4612), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
-			break;
-
 		case HDD_BUS_SCSI_REMOVABLE:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4613), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
+			swprintf(temp, sizeof_w(temp), L"%ls (%02i:%02i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.scsi.id,
+				 temp_hdd[i].id.scsi.lun);
 			break;
 	}
 
@@ -494,19 +511,19 @@ disk_update_item(HWND hwndList, int i, int column)
 	lvI.pszText = temp_hdd[i].fn;
 	lvI.iImage = 0;
     } else if (column == 2) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), temp_hdd[i].tracks);
+	swprintf(temp, sizeof_w(temp), L"%i", temp_hdd[i].tracks);
 	lvI.pszText = temp;
 	lvI.iImage = 0;
     } else if (column == 3) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), temp_hdd[i].hpc);
+	swprintf(temp, sizeof_w(temp), L"%i", temp_hdd[i].hpc);
 	lvI.pszText = temp;
 	lvI.iImage = 0;
     } else if (column == 4) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), temp_hdd[i].spt);
+	swprintf(temp, sizeof_w(temp), L"%i", temp_hdd[i].spt);
 	lvI.pszText = temp;
 	lvI.iImage = 0;
     } else if (column == 5) {
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), (temp_hdd[i].tracks * temp_hdd[i].hpc * temp_hdd[i].spt) >> 11);
+	swprintf(temp, sizeof_w(temp), L"%i", (temp_hdd[i].tracks * temp_hdd[i].hpc * temp_hdd[i].spt) >> 11);
 	lvI.pszText = temp;
 	lvI.iImage = 0;
     }
@@ -547,27 +564,33 @@ disk_recalc_list(HWND hwndList)
 
 	switch(temp_hdd[i].bus) {
 		case HDD_BUS_ST506:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4608), temp_hdd[i].id.st506_channel >> 1, temp_hdd[i].id.st506_channel & 1);
+			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.st506_channel >> 1,
+				 temp_hdd[i].id.st506_channel & 1);
 			break;
 
 		case HDD_BUS_ESDI:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4609), temp_hdd[i].id.esdi_channel >> 1, temp_hdd[i].id.esdi_channel & 1);
+			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.esdi_channel >> 1,
+				 temp_hdd[i].id.esdi_channel & 1);
 			break;
 
 		case HDD_BUS_IDE_PIO_ONLY:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4610), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
-			break;
-
 		case HDD_BUS_IDE_PIO_AND_DMA:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4611), temp_hdd[i].id.ide_channel >> 1, temp_hdd[i].id.ide_channel & 1);
+			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.ide_channel >> 1,
+				 temp_hdd[i].id.ide_channel & 1);
 			break;
 
 		case HDD_BUS_SCSI:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4612), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
-			break;
-
 		case HDD_BUS_SCSI_REMOVABLE:
-			swprintf(temp, sizeof_w(temp), get_string(IDS_4613), temp_hdd[i].id.scsi.id, temp_hdd[i].id.scsi.lun);
+			swprintf(temp, sizeof_w(temp), L"%ls (%02i:%02i)",
+				 get_string(combo_to_ids(temp_hdd[i].bus)),
+				 temp_hdd[i].id.scsi.id,
+				 temp_hdd[i].id.scsi.lun);
 			break;
 	}
 
@@ -583,28 +606,28 @@ disk_recalc_list(HWND hwndList)
 	if (ListView_SetItem(hwndList, &lvI) == -1) return FALSE;
 
 	lvI.iSubItem = 2;
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), temp_hdd[i].tracks);
+	swprintf(temp, sizeof_w(temp), L"%i", temp_hdd[i].tracks);
 	lvI.pszText = temp;
 	lvI.iItem = j;
 	lvI.iImage = 0;
 	if (ListView_SetItem(hwndList, &lvI) == -1) return FALSE;
 
 	lvI.iSubItem = 3;
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), temp_hdd[i].hpc);
+	swprintf(temp, sizeof_w(temp), L"%i", temp_hdd[i].hpc);
 	lvI.pszText = temp;
 	lvI.iItem = j;
 	lvI.iImage = 0;
 	if (ListView_SetItem(hwndList, &lvI) == -1) return FALSE;
 
 	lvI.iSubItem = 4;
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), temp_hdd[i].spt);
+	swprintf(temp, sizeof_w(temp), L"%i", temp_hdd[i].spt);
 	lvI.pszText = temp;
 	lvI.iItem = j;
 	lvI.iImage = 0;
 	if (ListView_SetItem(hwndList, &lvI) == -1) return FALSE;
 
 	lvI.iSubItem = 5;
-	swprintf(temp, sizeof_w(temp), get_string(IDS_4098), (temp_hdd[i].tracks * temp_hdd[i].hpc * temp_hdd[i].spt) >> 11);
+	swprintf(temp, sizeof_w(temp), L"%i", (temp_hdd[i].tracks * temp_hdd[i].hpc * temp_hdd[i].spt) >> 11);
 	lvI.pszText = temp;
 	lvI.iItem = j;
 	lvI.iImage = 0;
@@ -631,31 +654,40 @@ disk_init_columns(HWND hwndList)
 	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
 	lvc.iSubItem = iCol;
-	lvc.pszText = (LPTSTR)get_string(2082 + iCol);
 
 	switch(iCol) {
 		case 0: /* Bus */
+			lvc.pszText = (LPTSTR)get_string(IDS_3504);
 			lvc.cx = 135;
 			lvc.fmt = LVCFMT_LEFT;
 			break;
 
 		case 1: /* File */
+			lvc.pszText = (LPTSTR)get_string(IDS_3505);
 			lvc.cx = 150;
 			lvc.fmt = LVCFMT_LEFT;
 			break;
 
 		case 2: /* Cylinders */
+			lvc.pszText = (LPTSTR)get_string(IDS_3506);
 			lvc.cx = 41;
 			lvc.fmt = LVCFMT_RIGHT;
 			break;
 
 		case 3: /* Heads */
+			lvc.pszText = (LPTSTR)get_string(IDS_3507);
+			lvc.cx = 25;
+			lvc.fmt = LVCFMT_RIGHT;
+			break;
+
 		case 4: /* Sectors */
+			lvc.pszText = (LPTSTR)get_string(IDS_3508);
 			lvc.cx = 25;
 			lvc.fmt = LVCFMT_RIGHT;
 			break;
 
 		case 5: /* Size (MB) 8 */
+			lvc.pszText = (LPTSTR)get_string(IDS_3509);
 			lvc.cx = 41;
 			lvc.fmt = LVCFMT_RIGHT;
 			break;
@@ -699,7 +731,7 @@ set_edit_box_contents(HWND hdlg, int id, uint64_t val)
     HWND h;
 
     h = GetDlgItem(hdlg, id);
-    swprintf(temp, sizeof_w(temp), get_string(IDS_2156), val);
+    swprintf(temp, sizeof_w(temp), L"%" PRIu64, val);
     SendMessage(h, WM_SETTEXT, (WPARAM)wcslen(temp), (LPARAM)temp);
 }
 
@@ -707,7 +739,7 @@ set_edit_box_contents(HWND hdlg, int id, uint64_t val)
 static uint64_t
 disk_initialize_hdt(HWND hdlg)
 {
-    WCHAR temp[128];
+    WCHAR temp[128], temp2[128];
     uint64_t temp_size = 0;
     uint64_t size_mb = 0;
     HWND h;
@@ -719,17 +751,23 @@ disk_initialize_hdt(HWND hdlg)
     for (i = 0; i < 127; i++) {	
 	temp_size = hdd_table[i].cyls * hdd_table[i].head * hdd_table[i].sect;
 	size_mb = temp_size >> 11;
-	swprintf(temp, sizeof_w(temp),
-		 get_string(IDS_2157),
-			size_mb, hdd_table[i].cyls,
-			hdd_table[i].head, hdd_table[i].sect);
+	swprintf(temp, sizeof_w(temp), L"%" PRIu64, size_mb);
+	swprintf(temp2, sizeof_w(temp2), get_string(IDS_3510),
+		 hdd_table[i].cyls, hdd_table[i].head, hdd_table[i].sect);
+	wcscat(temp, L" ");
+	wcscat(temp, temp2);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	if ((tracks == hdd_table[i].cyls) && (hpc == hdd_table[i].head) && (spt == hdd_table[i].sect))
 		selection = i;
     }
 
-    SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_4100));
-    SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_4101));
+    /*
+     * Add the "Custom" and "Custom (large)" strings.
+     * Maybe we should have these first in the list?
+     */
+    SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_3511));
+    SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_3512));
+
     SendMessage(h, CB_SETCURSEL, selection & 0xffff, 0);
 
     return selection;
@@ -745,7 +783,8 @@ disk_recalc_selection(HWND hdlg)
     selection = 127;
     h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
     for (i = 0; i < 127; i++) {	
-	if ((tracks == hdd_table[i].cyls) && (hpc == hdd_table[i].head) && (spt == hdd_table[i].sect))
+	if ((tracks == hdd_table[i].cyls) &&
+	    (hpc == hdd_table[i].head) && (spt == hdd_table[i].sect))
 		selection = i;
     }
 
@@ -791,8 +830,9 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			hdd_ptr = &(temp_hdd[next_free_id]);
 		}
 
-		SetWindowText(hdlg, get_string((existing & 1) ? IDS_4103 : IDS_4102));
-
+		/* Override the window title. */
+		SetWindowText(hdlg, get_string((existing & 1) ? IDS_3527
+							      : IDS_3526));
 		no_update = 1;
 		spt = (existing & 1) ? 0 : 17;
 		set_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, spt);
@@ -838,13 +878,16 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		disk_recalc_location_controls(hdlg, 1, 0);
 
 		if (existing & 2) {
-			/* We're functioning as a load image dialog for a removable SCSI hard disk,
-			   called from win.c, so let's hide the bus selection as we should not
-			   allow it at this point. */
+			/*
+			 * If we are being called as a "load image" dialog
+			 * for a removable disk, disable the bus selection.
+			 */
 			EnableWindow(h, FALSE);
 			ShowWindow(h, SW_HIDE);
 
-			h = GetDlgItem(hdlg, 1798);
+			/* Disable and hide the IDE CHANNEL combo box. */
+			h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
+			EnableWindow(h, FALSE);
 			ShowWindow(h, SW_HIDE);
 
 			/* Disable and hide the SCSI ID and LUN combo boxes. */
@@ -856,9 +899,10 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			EnableWindow(h, FALSE);
 			ShowWindow(h, SW_HIDE);
 
-			/* Set the file name edit box contents to our existing parameters. */
+			/* Set the file name edit box to current name. */
 			h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
-			SendMessage(h, WM_SETTEXT, 0, (LPARAM) hdd[next_free_id].fn);
+			SendMessage(h, WM_SETTEXT, 0,
+				    (LPARAM)hdd[next_free_id].fn);
 		} else {
 			channel = next_free_ide_channel();
 			next_free_scsi_id_and_lun(&id, &lun);
@@ -902,7 +946,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				/* Make sure no file name is allowed with removable SCSI hard disks. */
 				if ((wcslen(hd_file_name) == 0) && (hdd_ptr->bus != HDD_BUS_SCSI_REMOVABLE)) {
 					hdd_ptr->bus = HDD_BUS_DISABLED;
-					settings_msgbox(MBX_ERROR, (wchar_t *)IDS_4112);
+					settings_msgbox(MBX_ERROR, (wchar_t *)IDS_INV_NAME);
 					return TRUE;
 				} else if ((wcslen(hd_file_name) == 0) && (hdd_ptr->bus == HDD_BUS_SCSI_REMOVABLE)) {
 					/* Mark hard disk added but return empty - it will signify the disk was ejected. */
@@ -967,7 +1011,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					if (image_is_hdi(hd_file_name)) {
 						if (size >= 0x100000000ll) {
 							fclose(f);
-							settings_msgbox(MBX_ERROR, (wchar_t *)IDS_4104);
+							settings_msgbox(MBX_ERROR, (wchar_t *)IDS_3536);
 							return TRUE;
 						}
 
@@ -986,7 +1030,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					} else if (image_is_hdx(hd_file_name, 0)) {
 						if (size > 0xffffffffffffffffll) {
 							fclose(f);
-							settings_msgbox(MBX_ERROR, (wchar_t *)IDS_4105);
+							settings_msgbox(MBX_ERROR, (wchar_t *)IDS_3537);
 							return TRUE;							
 						}
 
@@ -1048,7 +1092,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 
 					fclose(f);
-					settings_msgbox(MBX_INFO, (wchar_t *)IDS_4113);				
+					settings_msgbox(MBX_INFO, (wchar_t *)IDS_3537);
 				}
 
 hd_add_ok_common:
@@ -1065,107 +1109,109 @@ hd_add_ok_common:
 				return TRUE;
 
 			case IDC_CFILE:
+				memset(hd_file_name, 0x00, sizeof(hd_file_name));
 				b = (existing&1)?DLG_FILE_LOAD:DLG_FILE_SAVE;
-				if (dlg_file_ex(hdlg, get_string(IDS_4106), NULL, temp_path, b)) {
-					if (! wcschr(temp_path, L'.')) {
-						if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
-							twcs = &temp_path[wcslen(temp_path)];
-							twcs[0] = L'.';
-							twcs[1] = L'i';
-							twcs[2] = L'm';
-							twcs[3] = L'g';
-						}
+				if (! dlg_file_ex(hdlg, get_string(IDS_3536), NULL, temp_path, b)) {
+					return TRUE;
+				}
+
+				if (! wcschr(temp_path, L'.')) {
+					if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
+						twcs = &temp_path[wcslen(temp_path)];
+						twcs[0] = L'.';
+						twcs[1] = L'i';
+						twcs[2] = L'm';
+						twcs[3] = L'g';
 					}
+				}
 
-					if (! (existing & 1)) {
-						f = _wfopen(temp_path, L"rb");
-						if (f != NULL) {
-							fclose(f);
-							if (settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_4111) != 0) {	/* yes */
-								return FALSE;
-							}
-						}
-					}
-
-					f = _wfopen(temp_path, (existing & 1) ? L"rb" : L"wb");
-					if (f == NULL) {
-hdd_add_file_open_error:
-						settings_msgbox(MBX_ERROR, (existing & 1) ? (wchar_t *)IDS_4107 : (wchar_t *)IDS_4108);
-						return TRUE;
-					}
-					if (existing & 1) {
-						if (image_is_hdi(temp_path) || image_is_hdx(temp_path, 1)) {
-							fseeko64(f, 0x10, SEEK_SET);
-							fread(&sector_size, 1, 4, f);
-							if (sector_size != 512) {
-								settings_msgbox(MBX_ERROR, (wchar_t *)IDS_4109);
-								fclose(f);
-								return TRUE;
-							}
-							spt = hpc = tracks = 0;
-							fread(&spt, 1, 4, f);
-							fread(&hpc, 1, 4, f);
-							fread(&tracks, 1, 4, f);
-						} else {
-							fseeko64(f, 0, SEEK_END);
-							size = ftello64(f);
-							fclose(f);
-							if (((size % 17) == 0) && (size <= 142606336)) {
-								spt = 17;
-								if (size <= 26738688) {
-									hpc = 4;
-								} else if (((size % 3072) == 0) && (size <= 53477376)) {
-									hpc = 6;
-								} else {
-									for (i = 5; i < 16; i++) {
-										if (((size % (i << 9)) == 0) && (size <= ((i * 17) << 19)))
-											break;
-										if (i == 5)
-											i++;
-									}
-									hpc = i;
-								}
-							} else {
-								spt = 63;
-								hpc = 16;
-							}
-
-							tracks = ((size >> 9) / hpc) / spt;
-						}
-
-						if ((spt > max_spt) || (hpc > max_hpc) || (tracks > max_tracks)) {
-							goto hdd_add_file_open_error;
-						}
-						no_update = 1;
-
-						set_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, spt);
-						set_edit_box_contents(hdlg, IDC_EDIT_HD_HPC, hpc);
-						set_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, tracks);
-						set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
-						disk_recalc_selection(hdlg);
-
-						h = GetDlgItem(hdlg, IDC_EDIT_HD_SPT);
-						EnableWindow(h, TRUE);
-						h = GetDlgItem(hdlg, IDC_EDIT_HD_HPC);
-						EnableWindow(h, TRUE);
-						h = GetDlgItem(hdlg, IDC_EDIT_HD_CYL);
-						EnableWindow(h, TRUE);
-						h = GetDlgItem(hdlg, IDC_EDIT_HD_SIZE);
-						EnableWindow(h, TRUE);
-						h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
-						EnableWindow(h, TRUE);
-
-						chs_enabled = 1;
-
-						no_update = 0;
-					} else {
+				if (! (existing & 1)) {
+					f = _wfopen(temp_path, L"rb");
+					if (f != NULL) {
 						fclose(f);
+						if (settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_IMG_EXIST) != 0) {	/* yes */
+							return FALSE;
+						}
 					}
+				}
+
+				f = _wfopen(temp_path, (existing & 1) ? L"rb" : L"wb");
+				if (f == NULL) {
+hdd_add_file_open_error:
+					settings_msgbox(MBX_ERROR, (existing & 1) ? (wchar_t *)IDS_OPEN_READ : (wchar_t *)IDS_OPEN_WRITE);
+					return TRUE;
+				}
+				if (existing & 1) {
+					if (image_is_hdi(temp_path) || image_is_hdx(temp_path, 1)) {
+						fseeko64(f, 0x10, SEEK_SET);
+						fread(&sector_size, 1, 4, f);
+						if (sector_size != 512) {
+							settings_msgbox(MBX_ERROR, (wchar_t *)IDS_3535);
+							fclose(f);
+							return TRUE;
+						}
+						spt = hpc = tracks = 0;
+						fread(&spt, 1, 4, f);
+						fread(&hpc, 1, 4, f);
+						fread(&tracks, 1, 4, f);
+					} else {
+						fseeko64(f, 0, SEEK_END);
+						size = ftello64(f);
+						fclose(f);
+						if (((size % 17) == 0) && (size <= 142606336)) {
+							spt = 17;
+							if (size <= 26738688) {
+								hpc = 4;
+							} else if (((size % 3072) == 0) && (size <= 53477376)) {
+								hpc = 6;
+							} else {
+								for (i = 5; i < 16; i++) {
+									if (((size % (i << 9)) == 0) && (size <= ((i * 17) << 19)))
+										break;
+									if (i == 5)
+										i++;
+								}
+								hpc = i;
+							}
+						} else {
+							spt = 63;
+							hpc = 16;
+						}
+
+						tracks = ((size >> 9) / hpc) / spt;
+					}
+
+					if ((spt > max_spt) || (hpc > max_hpc) || (tracks > max_tracks)) {
+						goto hdd_add_file_open_error;
+					}
+					no_update = 1;
+
+					set_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, spt);
+					set_edit_box_contents(hdlg, IDC_EDIT_HD_HPC, hpc);
+					set_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, tracks);
+					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
+					disk_recalc_selection(hdlg);
+
+					h = GetDlgItem(hdlg, IDC_EDIT_HD_SPT);
+					EnableWindow(h, TRUE);
+					h = GetDlgItem(hdlg, IDC_EDIT_HD_HPC);
+					EnableWindow(h, TRUE);
+					h = GetDlgItem(hdlg, IDC_EDIT_HD_CYL);
+					EnableWindow(h, TRUE);
+					h = GetDlgItem(hdlg, IDC_EDIT_HD_SIZE);
+					EnableWindow(h, TRUE);
+					h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
+					EnableWindow(h, TRUE);
+
+					chs_enabled = 1;
+
+					no_update = 0;
+				} else {
+					fclose(f);
 				}
 
 				h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
 				SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path);
-				memset(hd_file_name, 0x00, sizeof(hd_file_name));
 				wcscpy(hd_file_name, temp_path);
 
 				return TRUE;
@@ -1453,7 +1499,7 @@ disk_add_open(HWND hwnd, int is_existing)
 
     hard_disk_added = 0;
 
-    DialogBox(hInstance, (LPCWSTR)DLG_CFG_DISK_ADD, hwnd, disk_add_proc);
+    DialogBox(plat_lang_dll(), (LPCWSTR)DLG_CFG_DISK_ADD, hwnd, disk_add_proc);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.10	2018/05/11
+ * Version:	@(#)win_dialog.c	1.0.12	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,20 +56,20 @@
 DWORD	filterindex = 0;
 
 
-/* Center a dialog window with respect to the main window. */
+/* Center a dialog window relative to its parent window. */
 void
 dialog_center(HWND hdlg)
 {
     RECT r, r1, r2;
-    HWND owner;
+    HWND parent;
 
-    /* Get handle to owner window. Use desktop if needed. */
-    if ((owner = GetParent(hdlg)) == NULL)
-	owner = GetDesktopWindow();
+    /* Get handle to parent window. Use desktop if needed. */
+    if ((parent = GetParent(hdlg)) == NULL)
+	parent = GetDesktopWindow();
 
     /* Get owner and dialog rects. */
     GetWindowRect(hdlg, &r1); 
-    GetWindowRect(owner, &r2);
+    GetWindowRect(parent, &r2);
     CopyRect(&r, &r2); 
 
     /* Center the dialog within the owner's space. */
@@ -84,10 +84,34 @@ dialog_center(HWND hdlg)
 }
 
 
+/* WinHook to allow for centering the messagebox. */
+static LRESULT CALLBACK
+CenterMsgBoxTextProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    HWND hDlg = (HWND)wParam;
+    HWND hTxt;
+
+    if (nCode == HCBT_ACTIVATE) {
+	/* Center dialog. */
+	dialog_center(hDlg);
+
+	/* Find the (STATIC) text label in the control. */
+	hTxt = FindWindowEx(hDlg, NULL, TEXT("STATIC"), NULL);
+
+	if (hTxt != NULL)
+		SetWindowLong(hTxt, GWL_STYLE,
+			      GetWindowLong(hTxt, GWL_STYLE) | SS_CENTER);
+    }
+
+    return(CallNextHookEx(NULL, nCode, wParam, lParam));
+}
+
+
 int
-ui_msgbox(int flags, void *arg)
+ui_msgbox(int flags, const void *arg)
 {
     WCHAR temp[512];
+    HHOOK hHook;
     DWORD fl = 0;
     const WCHAR *str = NULL;
     const WCHAR *cap = NULL;
@@ -100,16 +124,16 @@ ui_msgbox(int flags, void *arg)
 
 	case MBX_WARNING:	/* warning message */
 		fl = (MB_YESNO | MB_ICONWARNING);
-		cap = get_string(IDS_2051);		/* "Warning" */
+		cap = get_string(IDS_WARNING);
 		break;
 
 	case MBX_ERROR:		/* error message */
 		if (flags & MBX_FATAL) {
 			fl = (MB_OK | MB_ICONERROR);
-			cap = get_string(IDS_2049);	/* "Fatal Error"*/
+			cap = get_string(IDS_FATAL_ERROR);
 		} else {
 			fl = (MB_OK | MB_ICONWARNING);
-			cap = get_string(IDS_2048);	/* "Error" */
+			cap = get_string(IDS_ERROR);
 		}
 		break;
 
@@ -120,7 +144,7 @@ ui_msgbox(int flags, void *arg)
 
 	case MBX_CONFIG:	/* configuration */
 		fl = (MB_YESNO | MB_ICONERROR);
-		cap = get_string(IDS_2050);	/* "Configuration Error" */
+		cap = get_string(IDS_CONFIG_ERROR);
 		break;
     }
 
@@ -148,11 +172,19 @@ ui_msgbox(int flags, void *arg)
 		str = get_string((intptr_t)arg);
     }
 
+    /* Create a hook for the MessageBox dialog. */
+    hHook = SetWindowsHookEx(WH_CBT, (HOOKPROC)CenterMsgBoxTextProc,
+			     NULL, GetCurrentThreadId());
+
     /* At any rate, we do have a valid (wide) string now. */
     fl = MessageBox(hwndMain,		/* our main window */
 		    str,		/* error message etc */
 		    cap,		/* window caption */
 		    fl);
+
+    /* Remove the dialog hook. */
+    if (hHook != NULL)
+	UnhookWindowsHookEx(hHook);
 
     /* Convert return values to generic ones. */
     switch(fl) {

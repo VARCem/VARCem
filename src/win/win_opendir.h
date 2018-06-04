@@ -8,7 +8,7 @@
  *
  *		Definitions for the platform OpenDir module.
  *
- * Version:	@(#)win_opendir.h	1.0.2	2018/05/09
+ * Version:	@(#)win_opendir.h	1.0.3	2018/05/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -83,7 +83,7 @@ typedef struct {
 
 
 /* Function prototypes. */
-extern DIR		*opendirw(const wchar_t *);
+extern DIR		*opendir(const wchar_t *);
 extern struct direct	*readdir(DIR *);
 extern long		telldir(DIR *);
 extern void		seekdir(DIR *, long);

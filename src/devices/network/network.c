@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.9	2018/05/06
+ * Version:	@(#)network.c	1.0.10	2018/05/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -372,7 +372,7 @@ network_reset(void)
 
     if (i < 0) {
 	/* Tell user we can't do this (at the moment.) */
-	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_2139);
+	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP);
 
 	// FIXME: we should ask in the dialog if they want to
 	//	  reconfigure or quit, and throw them into the

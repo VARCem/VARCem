@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.17	2018/05/11
+ * Version:	@(#)win_devconf.c	1.0.20	2018/05/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,9 @@
 #include "../ui/ui.h"
 #include "../plat.h"
 #include "win.h"
+
+
+#define STR_FONTNAME	"Segoe UI"
 
 
 static const device_t	*devconf_device;
@@ -416,6 +419,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 								}
 								c++;
 							}
+//FIXME: localize
 							strcat(file_filter, "|All files (*.*)|*.*|");
 							mbstowcs(ws, file_filter, strlen(file_filter) + 1);
 							d = strlen(file_filter);
@@ -437,6 +441,24 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
 
     return FALSE;
+}
+
+
+static uint16_t *
+AddWideString(uint16_t *data, int ids)
+{
+    const wchar_t *str;
+    wchar_t *ptr;
+
+    ptr = (wchar_t *)data;
+    str = get_string(ids);
+    if (str != NULL) {
+	while (*str != L'\0')
+		*ptr++ = *str++;
+    }
+    *ptr++ = L'\0';
+
+    return((uint16_t *)ptr);
 }
 
 
@@ -475,12 +497,14 @@ dlg_devconf(HWND hwnd, device_t *device)
     data = (uint16_t *)(dlg + 1);
     *data++ = 0; /* no menu bar */
     *data++ = 0; /* predefined dialog box class */
-    sprintf(temp, "%s Configuration", device->name);
+    sprintf(temp, "%s ", device->name);
     data += MultiByteToWideChar(CP_ACP, 0, temp, -1, data, 120);
+    data--;	/* back over the NUL */
+    data = AddWideString(data, IDS_DEVCONF_1);
 
     /* Font style and size to use. */
     *data++ = 9; /* point size */
-    data += MultiByteToWideChar(CP_ACP, 0, "Segoe UI", -1, data, 120);
+    data += MultiByteToWideChar(CP_ACP, 0, STR_FONTNAME, -1, data, 120);
 
     if (((uintptr_t)data) & 2)
 	data++;
@@ -489,7 +513,6 @@ dlg_devconf(HWND hwnd, device_t *device)
     id = IDC_CONFIG_BASE;
     while (cfg->type != -1) {
 	/* Align 'data' to DWORD */
-if (((uint32_t)data) & 3) pclog("DEVCONF: unaligned data %08lx !\n", data);
 	itm = (DLGITEMTEMPLATE *)data;
 
 	switch (cfg->type) {
@@ -606,7 +629,7 @@ if (((uint32_t)data) & 3) pclog("DEVCONF: unaligned data %08lx !\n", data);
 			itm->x = 70;
 			itm->y = y;
 			itm->id = id++;
-			itm->cx = 100;
+			itm->cx = 90;
 			itm->cy = 14;
 
 			data = (uint16_t *)(itm + 1);
@@ -621,17 +644,16 @@ if (((uint32_t)data) & 3) pclog("DEVCONF: unaligned data %08lx !\n", data);
 			/* Button */
 			itm = (DLGITEMTEMPLATE *)data;
 			itm->style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON;
-			itm->x = 175;
+			itm->x = 165;
 			itm->y = y;
-			itm->cx = 35;
+			itm->cx = 45;
 			itm->cy = 14;
 			itm->id = id++;
 
 			data = (uint16_t *)(itm + 1);
 			*data++ = 0xffff;
 			*data++ = 0x0080;	/* button class */
-			data += MultiByteToWideChar(CP_ACP, 0,
-						    "Browse", -1, data, 256);
+			data = AddWideString(data, IDS_BROWSE);
 			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
@@ -680,7 +702,7 @@ if (((uint32_t)data) & 3) pclog("DEVCONF: unaligned data %08lx !\n", data);
     data = (uint16_t *)(itm + 1);
     *data++ = 0xffff;
     *data++ = 0x0080;	/* button class */
-    data += MultiByteToWideChar(CP_ACP, 0, "OK", -1, data, 50);
+    data = AddWideString(data, IDS_OK);
     *data++ = 0;	/* no creation data */
     if (((uintptr_t)data) & 2)
 	data++;		/* align */
@@ -695,7 +717,7 @@ if (((uint32_t)data) & 3) pclog("DEVCONF: unaligned data %08lx !\n", data);
     data = (uint16_t *)(itm + 1);
     *data++ = 0xffff;
     *data++ = 0x0080;	/* button class */
-    data += MultiByteToWideChar(CP_ACP, 0, "Cancel", -1, data, 50);
+    data = AddWideString(data, IDS_CANCEL);
     *data++ = 0;	      /* no creation data */
 
     /* Set final height of dialog. */

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.32	2018/05/13
+# Version:	@(#)Makefile.VC	1.0.34	2018/06/02
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -54,6 +54,7 @@ endif
 ifndef EXTRAS
  EXTRAS		:=
 endif
+
 
 # Defaults for several build options (possibly defined in a chained file.)
 ifndef AUTODEP
@@ -207,6 +208,7 @@ endif
 #########################################################################
 #		Nothing should need changing from here on..		#
 #########################################################################
+
 VPATH		:= $(EXPATH) . cpu \
 		   devices \
 		    devices/cdrom devices/disk devices/floppy \
@@ -237,7 +239,7 @@ endif
 PREPROC		:= cl -nologo -EP
 MCPP		:= mcpp.exe
 LINK		:= link -nologo
-WINDRES		:= rc -nologo -r
+WINDRES		:= rc -nologo -r -d_MSC_VER
 
 SYSINC		:= -Iwin/msvc/Include -Iwin/mingw/include
 SYSLIB		:=
@@ -318,9 +320,9 @@ else
  VCG		:= vid_voodoo_codegen_x86.h
 endif
 LIBS		:= ddraw.lib dinput8.lib dxguid.lib d3d9.lib d3dx9.lib \
-		   comctl32.lib winmm.lib comdlg32.lib advapi32.lib \
-		   gdi32.lib shell32.lib user32.lib kernel32.lib \
-		   wsock32.lib iphlpapi.lib psapi.lib
+		   version.lib comctl32.lib winmm.lib comdlg32.lib \
+		   advapi32.lib gdi32.lib shell32.lib user32.lib \
+		   kernel32.lib wsock32.lib iphlpapi.lib psapi.lib
 ifeq ($(DEBUG), y)
 LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
 endif
@@ -414,7 +416,11 @@ endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(PNG), n)
- OPTS		+= -DUSE_LIBPNG
+ ifeq ($(PNG), d)
+  OPTS		+= -DUSE_LIBPNG=2
+ else
+  OPTS		+= -DUSE_LIBPNG=1
+ endif
  RFLAGS		+= -DUSE_LIBPNG
  ifneq ($(PNG_PATH), )
   OPTS		+= -I$(PNG_PATH)/include/msvc -I$(PNG_PATH)/include
@@ -643,7 +649,7 @@ VIDOBJ		:= video.obj \
 		    vid_voodoo.obj
 
 PLATOBJ		:= win.obj \
-		    win_dynld.obj win_thread.obj \
+		    win_lang.obj win_opendir.obj win_dynld.obj win_thread.obj \
 		    win_cdrom.obj win_cdrom_ioctl.obj win_keyboard.obj \
 		    win_mouse.obj win_joystick.obj win_midi.obj
 ifeq ($(CRASHDUMP), y)
@@ -687,6 +693,18 @@ endif
 all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
 
 
+Mklang.cmd:
+		@echo @SET PATH=$(PATH) >Mklang.cmd
+		@echo @cd win\lang >>Mklang.cmd
+		@echo @$(MAKE) -fMakefile.VC "RFLAGS=$(RFLAGS) $(EXTRAS)" %%1% >>Mklang.cmd
+		@echo @cd ..\.. >>Mklang.cmd
+
+
+lang:		Mklang.cmd win/VARCem-common.rc
+		@echo Generating localizations..
+		@Mklang.cmd all
+		@-del Mklang.cmd
+
 VARCem.res:	win/VARCem.rc win/VARCem.mpp
 		@echo Generating Manifest file..
 		@del win\VARCem.manifest 2>NUL
@@ -718,7 +736,7 @@ clean:
 		@del *.obj 2>NUL
 		@del *.res 2>NUL
 
-clobber:	clean
+clobber:	Mklang.cmd clean
 		@echo Cleaning executables..
 		@del *.d 2>NUL
 		@del *.exe 2>NUL
@@ -730,6 +748,8 @@ ifeq ($(PROFILER), y)
 		@del *.map 2>NUL
 endif
 		@del win\*.manifest 2>NUL
+		@Mklang.cmd clobber
+		@-del Mklang.cmd
 #		@del $(DEPFILE) 2>NUL
 
 ifneq ($(AUTODEP), y)

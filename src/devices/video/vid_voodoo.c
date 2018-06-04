@@ -2701,10 +2701,15 @@ static inline void voodoo_tmu_fetch_and_blend(voodoo_t *voodoo, voodoo_params_t 
                 state->tex_a[0] ^= 0xff;
 }
 
-#if ((defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32) && !(defined __amd64__) && (defined USE_DYNAREC))
+#ifdef _WIN32
+#if ((defined(i386) || defined(__i386) || defined(__i386__) || defined(_X86_) || defined(_WIN32)) && !(defined(__amd64__)) && (defined(USE_DYNAREC)))
 #include "vid_voodoo_codegen_x86.h"
-#elif ((defined __amd64__) && (defined USE_DYNAREC))
+#elif ((defined(__amd64__)) && (defined(USE_DYNAREC)))
 #include "vid_voodoo_codegen_x86-64.h"
+#else
+#define NO_CODEGEN
+static int voodoo_recomp = 0;
+#endif
 #else
 #define NO_CODEGEN
 static int voodoo_recomp = 0;

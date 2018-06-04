@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.29	2018/05/09
+ * Version:	@(#)win_settings.c	1.0.31	2018/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -327,7 +327,7 @@ msgbox_reset(void)
     changed = settings_changed();
 
     if (changed) {
-	i = settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_2052);
+	i = settings_msgbox(MBX_QUESTION, (wchar_t *)IDS_MSG_SAVE);
 
 	if (i == 1) return(1);	/* no */
 
@@ -436,6 +436,7 @@ settings_save(void)
 #define PAGE_HARD_DISKS			7
 #define PAGE_FLOPPY_DRIVES		8
 #define PAGE_OTHER_REMOVABLE_DEVICES	9
+#define PAGE_MAX			10
 
 
 static void
@@ -451,61 +452,61 @@ show_child(HWND hwndParent, DWORD child_id)
 
     switch(child_id) {
 	case PAGE_MACHINE:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_MACHINE,
 					       hwndParent, machine_proc);
 		break;
 
 	case PAGE_VIDEO:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_VIDEO,
 					       hwndParent, video_proc);
 		break;
 
 	case PAGE_INPUT:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_INPUT,
 					       hwndParent, input_proc);
 		break;
 
 	case PAGE_SOUND:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_SOUND,
 					       hwndParent, sound_proc);
 		break;
 
 	case PAGE_NETWORK:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_NETWORK,
 					       hwndParent, network_proc);
 		break;
 
 	case PAGE_PORTS:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_PORTS,
 					       hwndParent, ports_proc);
 		break;
 
 	case PAGE_PERIPHERALS:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_PERIPHERALS,
 					       hwndParent, peripherals_proc);
 		break;
 
 	case PAGE_HARD_DISKS:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_DISK,
 					       hwndParent, disk_proc);
 		break;
 
 	case PAGE_FLOPPY_DRIVES:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_FLOPPY,
 					       hwndParent, floppy_proc);
 		break;
 
 	case PAGE_OTHER_REMOVABLE_DEVICES:
-		hwndChildDialog = CreateDialog(hInstance,
+		hwndChildDialog = CreateDialog(plat_lang_dll(),
 					       (LPCWSTR)DLG_CFG_RMV_DEVICES,
 					       hwndParent, rmv_devices_proc);
 		break;
@@ -524,14 +525,14 @@ image_list_init(HWND hwndList)
 {
     HICON hiconItem;
     HIMAGELIST hSmall;
-    int i = 0;
+    int i;
 
     hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
 			      GetSystemMetrics(SM_CYSMICON),
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
-    for (i=0; i<10; i++) {
-	hiconItem = LoadIcon(hInstance, (LPCWSTR) (256 + (uintptr_t) i));
+    for (i = 0; i < PAGE_MAX; i++) {
+	hiconItem = LoadIcon(hInstance, (LPCWSTR)(256 + i));
 	ImageList_AddIcon(hSmall, hiconItem);
 	DestroyIcon(hiconItem);
     }
@@ -551,8 +552,8 @@ insert_categories(HWND hwndList)
     lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
-    for (i=0; i<10; i++) {
-	lvI.pszText = (LPTSTR)get_string(IDS_2065+i);
+    for (i = 0; i < PAGE_MAX; i++) {
+	lvI.pszText = (LPTSTR)get_string(IDS_3310+i);
 	lvI.iItem = i;
 	lvI.iImage = i;
 
@@ -573,8 +574,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h;
     int category;
-    int i = 0;
-    int j = 0;
+    int i, j;
 
     hwndParentDialog = hdlg;
 
@@ -602,13 +602,12 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		ShowWindow(h, SW_HIDE);
 #endif
 
-//		dialog_center(hdlg);
 		return(TRUE);
 
 	case WM_NOTIFY:
 		if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_SETTINGSCATLIST)) {
 			category = -1;
-			for (i=0; i<10; i++) {
+			for (i = 0; i < PAGE_MAX; i++) {
 				h = GetDlgItem(hdlg, IDC_SETTINGSCATLIST);
 				j = ListView_GetItemState(h, i, LVIS_SELECTED);
 				if (j) category = i;
@@ -642,6 +641,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				return(TRUE);
 
 			case IDCANCEL:
+				/* CANCEL, just kidding! */
 				DestroyWindow(hwndChildDialog);
 				EndDialog(hdlg, 0);
 				return(TRUE);
@@ -668,13 +668,13 @@ dlg_settings(int ask)
     v = video_detect();
 
     if (m == 0 || v == 0) {
-	ui_msgbox(MBX_ERROR|MBX_FATAL, (wchar_t *)IDS_2056);
+	ui_msgbox(MBX_ERROR|MBX_FATAL, (wchar_t *)IDS_ERR_NOROMS);
 
 	return(0);
     }
 
     ask_sure = ask;
-    i = DialogBox(hInstance, (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);
+    i = DialogBox(plat_lang_dll(), (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);
 
     return(i);
 }

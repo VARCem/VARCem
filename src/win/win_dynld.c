@@ -8,7 +8,7 @@
  *
  *		Try to load a support DLL.
  *
- * Version:	@(#)win_dynld.c	1.0.5	2018/05/07
+ * Version:	@(#)win_dynld.c	1.0.6	2018/05/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -64,23 +64,25 @@ dynld_module(const char *name, const dllimp_t *table)
 
     /* See if we can load the desired module. */
     if ((h = LoadLibrary(name)) == NULL) {
+#ifdef _DEBUG
 	pclog("DynLd(\"%s\"): library not found!\n", name);
+#endif
 	return(NULL);
     }
 
     /* If no table was given, we just detect library presence. */
     if (table == NULL) {
-	CloseHandle(h);
+	FreeLibrary(h);
 	return((void *)h);
     }
 
     /* Now load the desired function pointers. */
-    for (imp=table; imp->name!=NULL; imp++) {
+    for (imp = table; imp->name != NULL; imp++) {
 	func = GetProcAddress(h, imp->name);
 	if (func == NULL) {
 		pclog("DynLd(\"%s\"): function '%s' not found!\n",
 						name, imp->name);
-		CloseHandle(h);
+		FreeLibrary(h);
 		return(NULL);
 	}
 
