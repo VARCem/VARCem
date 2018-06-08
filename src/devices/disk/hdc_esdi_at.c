@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.10	2018/05/06
+ * Version:	@(#)hdc_esdi_at.c	1.0.11	2018/06/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -235,7 +235,10 @@ hdc_writew(uint16_t port, uint16_t val, void *priv)
 	dev->pos = 0;
 	dev->status = STAT_BUSY;
 	timer_clock();
-      	dev->callback = 6LL*HDC_TIME;
+
+	/* 390.625 us per sector at 10 Mbit/s = 1280 kB/s. */
+	dev->callback = (3125LL * TIMER_USEC) / 8LL;
+
 	timer_update_outstanding();
     }
 }
@@ -412,6 +415,10 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 			dev->status = STAT_BUSY;
 		}
 		dev->fdisk = val;
+
+		/* Lower IRQ on IRQ disable. */
+		if ((val & 2) && !(dev->fdisk & 0x02))
+			picintc(1 << 14);
 		break;
 	}
 }
@@ -435,7 +442,10 @@ hdc_readw(uint16_t port, void *priv)
 			next_sector(dev);
 			dev->status = STAT_BUSY;
 			timer_clock();
-			dev->callback = 6LL*HDC_TIME;
+
+			/* 390.625 us per sector at 10 Mbit/s = 1280 kB/s. */
+			dev->callback = (3125LL * TIMER_USEC) / 8LL;
+
 			timer_update_outstanding();
 		} else {
 			ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 0);

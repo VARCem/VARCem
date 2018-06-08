@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.14	2018/05/12
+ * Version:	@(#)m_europc.c	1.0.15	2018/06/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -264,11 +264,6 @@ rtc_start(nvr_t *nvr)
 	rtc_time_get(nvr->regs, &tm);
 	nvr_time_set(&tm);
     }
-
-#if 0
-    /* Start the RTC - BIOS will do this. */
-    nvr->regs[MRTC_CTRLSTAT] = 0x01;
-#endif
 }
 
 
@@ -281,7 +276,7 @@ rtc_checksum(uint8_t *ptr)
 
     /* Calculate all bytes with XOR. */
     sum = 0x00;
-    for (i=MRTC_CONF_A; i<=MRTC_CONF_E; i++)
+    for (i = MRTC_CONF_A; i <= MRTC_CONF_E; i++)
 	sum += ptr[i];
 
     return(sum);
@@ -620,7 +615,11 @@ europc_boot(const device_t *info)
     /* Set up game port. */
     b = (sys->nvr.regs[MRTC_CONF_C] & 0xfc);
     if (mouse_type == MOUSE_INTERNAL) {
-	b |= 0x01;	/* enable port as MOUSE */
+	/* Enable the Logitech Bus Mouse device. */
+	device_add(&mouse_logibus_internal_device);
+
+	/* Configure the port for (Bus Mouse Compatible) Mouse. */
+	b |= 0x01;
     } else if (game_enabled) {
 	b |= 0x02;	/* enable port as joysticks */
     }

@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.8	2018/05/06
+ * Version:	@(#)hdc_st506_at.c	1.0.9	2018/06/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -131,17 +131,21 @@ typedef struct {
 static __inline void
 irq_raise(hdc_t *dev)
 {
+#if 0
     /* If not already pending.. */
     if (! dev->irqstat) {
+#endif
 	/* If enabled in the control register.. */
-	if (! (dev->fdisk&0x02)) {
+	if (! (dev->fdisk & 0x02)) {
 		/* .. raise IRQ14. */
 		picint(1<<14);
 	}
 
 	/* Remember this. */
 	dev->irqstat = 1;
+#if 0
     }
+#endif
 }
 
 
@@ -151,7 +155,7 @@ irq_lower(hdc_t *dev)
     /* If raised.. */
     if (dev->irqstat) {
 	/* If enabled in the control register.. */
-	if (! (dev->fdisk&0x02)) {
+	if (! (dev->fdisk & 0x02)) {
 		/* .. drop IRQ14. */
 		picintc(1<<14);
 	}
@@ -411,7 +415,10 @@ hdc_writew(uint16_t port, uint16_t val, void *priv)
 	dev->pos = 0;
 	dev->status = STAT_BUSY;
 	timer_clock();
-	dev->callback = 6LL*ST506_TIME;
+
+	/* 781.25 us per sector at 5 Mbit/s = 640 kB/s. */
+	dev->callback = ((3125LL * TIMER_USEC) / 4LL);
+
 	timer_update_outstanding();
     }
 }
@@ -481,6 +488,10 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 			timer_update_outstanding();
 		}
 		dev->fdisk = val;
+
+		/* Lower IRQ on IRQ disable. */
+		if ((val & 2) && !(dev->fdisk & 0x02))
+			picintc(1 << 14);
 		break;
     }
 }
@@ -503,7 +514,10 @@ hdc_readw(uint16_t port, void *priv)
 			next_sector(dev);
 			dev->status = STAT_BUSY;
 			timer_clock();
-			dev->callback = 6LL*ST506_TIME;
+
+			/* 781.25 us per sector at 5 Mbit/s = 640 kB/s. */
+			dev->callback = ((3125LL * TIMER_USEC) / 4LL);
+
 			timer_update_outstanding();
 		} else {
 			ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 0);

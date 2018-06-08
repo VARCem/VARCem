@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.7	2018/05/24
+ * Version:	@(#)hdd.c	1.0.8	2018/06/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,7 +83,7 @@ hdd_count(int bus)
     int c = 0;
     int i;
 
-    for (i=0; i<HDD_NUM; i++) {
+    for (i = 0; i < HDD_NUM; i++) {
 	if (hdd[i].bus == bus)
 		c++;
     }
@@ -93,7 +93,7 @@ hdd_count(int bus)
 
 
 int
-hdd_string_to_bus(char *str, int cdrom)
+hdd_string_to_bus(const char *str, int cdrom)
 {
     if (! strcmp(str, "none"))
 	return(HDD_BUS_DISABLED);
@@ -160,10 +160,10 @@ no_cdrom:
 }
 
 
-char *
+const char *
 hdd_bus_to_string(int bus, int cdrom)
 {
-    char *s = "none";
+    const char *s = "none";
 
     switch (bus) {
 	case HDD_BUS_DISABLED:

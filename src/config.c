@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.28	2018/05/24
+ * Version:	@(#)config.c	1.0.29	2018/06/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1082,15 +1082,15 @@ static void
 save_disks(const char *cat)
 {
     char temp[24], tmp2[64];
-    char *p;
+    const char *str;
     int c;
 
     for (c = 0; c < HDD_NUM; c++) {
 	sprintf(temp, "hdd_%02i_parameters", c+1);
 	if (hdd_is_valid(c)) {
-		p = hdd_bus_to_string(hdd[c].bus, 0);
+		str = hdd_bus_to_string(hdd[c].bus, 0);
 		sprintf(tmp2, "%u, %u, %u, %d, %s",
-			hdd[c].spt, hdd[c].hpc, hdd[c].tracks, hdd[c].wp, p);
+			hdd[c].spt, hdd[c].hpc, hdd[c].tracks, hdd[c].wp, str);
 		config_set_string(cat, temp, tmp2);
 	} else {
 		config_delete_var(cat, temp);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy/ZIP Image dialog.
  *
- * Version:	@(#)win_new_image.c	1.0.18	2018/05/24
+ * Version:	@(#)win_new_image.c	1.0.19	2018/06/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -186,15 +186,20 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
 							twcs = &temp_path[wcslen(temp_path)];
 							twcs[0] = L'.';
-							if (!is_zip && (filterindex == 3)) {
+							if (is_zip) {
+								twcs[1] = L'i';
+								twcs[2] = L'm';
+								twcs[3] = L'g';
+							} else if (filterindex == 3) {
 								twcs[1] = L'8';
 								twcs[2] = L'6';
 								twcs[3] = L'f';
 							} else {
 								twcs[1] = L'i';
 								twcs[2] = L'm';
-								twcs[3] = L'g';
+								twcs[3] = L'a';
 							}
+							twcs[4] = L'\0';
 						}
 					}
 					h = GetDlgItem(hdlg, IDC_EDIT_FILE_NAME);

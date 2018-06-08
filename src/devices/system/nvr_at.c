@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.8	2018/05/06
+ * Version:	@(#)nvr_at.c	1.0.9	2018/06/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -488,15 +488,18 @@ timer_tick(nvr_t *nvr)
     local_t *local = (local_t *)nvr->data;
 
     /* Only update it there is no SET in progress. */
-    if (! (nvr->regs[RTC_REGB] & REGB_SET)) {
-	/* Set the UIP bit, announcing the update. */
-	local->stat = REGA_UIP;
+    if (nvr->regs[RTC_REGB] & REGB_SET) return;
 
-	timer_recalc(nvr, 0);
+    /* Set the UIP bit, announcing the update. */
+    local->stat = REGA_UIP;
 
-	/* Schedule the actual update. */
-	local->ecount = (int64_t)((244.0 + 1984.0) * TIMER_USEC);
-    }
+#if 0
+    /* Not sure if this is needed here. */
+    timer_recalc(nvr, 0);
+#endif
+
+    /* Schedule the actual update. */
+    local->ecount = (int64_t)((244.0 + 1984.0) * TIMER_USEC);
 }
 
 

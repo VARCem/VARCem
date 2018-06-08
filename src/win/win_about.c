@@ -173,8 +173,9 @@ static BOOL CALLBACK
 #endif
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+static HBRUSH brush = NULL;
     wchar_t temp[128];
-static    HBITMAP hBmp;
+    HBITMAP hBmp;
     HWND h;
 
     switch (message) {
@@ -239,17 +240,18 @@ static    HBITMAP hBmp;
 
         case WM_CTLCOLORSTATIC:
                 if ((HWND)lParam == GetDlgItem(hdlg, IDC_DONATE)) {
+			/* Grab background color from dialog window. */
 			HDC hDC = GetDC(hdlg);
 			COLORREF col = GetBkColor(hDC);
 
+			/* Set as background color for static controli.. */
 			hDC = (HDC)wParam;
 			SetBkColor(hDC, col);
 
-#if 1
-			return (LRESULT)CreateSolidBrush(col);
-#else
-			return (LRESULT)CreateSolidBrush(RGB(0,255,0));
-#endif
+			/* .. and also return that as paint color. */
+			if (brush == NULL)
+				brush = CreateSolidBrush(col);
+			return (LRESULT)brush;
 		}
 		return FALSE;
     }

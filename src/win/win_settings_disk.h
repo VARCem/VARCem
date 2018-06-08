@@ -309,7 +309,7 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 
     if ((hd_listview_items > 0) || is_add_dlg) {
 	h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-	bus = SendMessage(h, CB_GETCURSEL, 0, 0) + 1;
+	bus = SendMessage(h, CB_GETCURSEL, 0, 0);
 
 	switch(bus) {
 		case HDD_BUS_ST506:		/* ST506 MFM/RLL */
@@ -940,7 +940,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDOK:
 				if (!(existing & 2)) {
 					h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-					hdd_ptr->bus = (SendMessage(h, CB_GETCURSEL, 0, 0) + 1) & 0xff;
+					hdd_ptr->bus = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				}
 
 				/* Make sure no file name is allowed with removable SCSI hard disks. */
@@ -1600,7 +1600,7 @@ disk_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			ListView_SetItemState(h, 0, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);
 			hdlv_current_sel = 0;
 			h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-			SendMessage(h, CB_SETCURSEL, temp_hdd[0].bus - 1, 0);
+			SendMessage(h, CB_SETCURSEL, temp_hdd[0].bus, 0);
 		} else {
 			hdlv_current_sel = -1;
 		}
@@ -1628,7 +1628,7 @@ disk_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			ignore_change = 1;
 			h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-			SendMessage(h, CB_SETCURSEL, temp_hdd[hdlv_current_sel].bus - 1, 0);
+			SendMessage(h, CB_SETCURSEL, temp_hdd[hdlv_current_sel].bus, 0);
 			disk_recalc_location_controls(hdlg, 0, 0);
 		}
 		ignore_change = 0;
@@ -1642,7 +1642,7 @@ disk_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0) + 1;
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
 				if (b == temp_hdd[hdlv_current_sel].bus)
 					goto hd_bus_skip;
 				disk_untrack(hdlv_current_sel);
@@ -1756,7 +1756,7 @@ hd_bus_skip:
 					ListView_SetItemState(h, 0, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);
 					hdlv_current_sel = 0;
 					h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-					SendMessage(h, CB_SETCURSEL, temp_hdd[0].bus - 1, 0);
+					SendMessage(h, CB_SETCURSEL, temp_hdd[0].bus, 0);
 				} else {
 					hdlv_current_sel = -1;
 				}

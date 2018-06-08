@@ -8,7 +8,7 @@
  *
  *		Common resources for the application.
  *
- * Version:	@(#)VARCem-common.rc	1.0.5	2018/06/02
+ * Version:	@(#)VARCem-common.rc	1.0.6	2018/06/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -197,9 +197,9 @@ BEGIN
 
     LTEXT           STR_3201,IDC_ABOUT_ICON,5,55,40,10
     LTEXT           STR_3202,IDC_ABOUT_ICON,50,55,195,30
-    LTEXT           STR_3203,IDC_ABOUT_ICON,5,85,240,20
+    LTEXT           STR_3203,IDC_ABOUT_ICON,5,85,240,30
 
-    LTEXT           STR_3204,IDC_ABOUT_ICON,5,110,240,10
+    LTEXT           STR_3204,IDC_ABOUT_ICON,5,115,240,10
 
     PUSHBUTTON      STR_LOCALIZE,IDC_LOCALIZE,5,140,60,14
 

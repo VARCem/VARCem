@@ -8,7 +8,7 @@
  *
  *		Handle language support for the platform.
  *
- * Version:	@(#)win_lang.c	1.0.2	2018/05/29
+ * Version:	@(#)win_lang.c	1.0.3	2018/06/04
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -105,25 +105,39 @@ lang_setname(lang_t *ptr)
 
 /* Add a language to the list of supported languages. */
 static void
-lang_add(lang_t *ptr)
+lang_add(lang_t *ptr, int sort)
 {
     lang_t *p, *pp;
+    lang_t *prev;
 
     /* Create a copy of the entry data. */
     pp = (lang_t *)malloc(sizeof(lang_t));
     memcpy(pp, ptr, sizeof(lang_t));
 
-    /* Set the name of this language. */
-    lang_setname(pp);
-
     /* Add this entry to the tail of the list. */
-    if (languages == NULL) {
-	languages = pp;
-    } else {
+    if (sort) {
 	p = languages;
-	while (p->next != NULL)
-		p = p->next;
-	p->next = pp;
+	if ((p == NULL) || (wcscmp(pp->name, p->name) < 0)) {
+		pp->next = p;
+		languages = pp;
+	} else {
+        	while (p != NULL) {
+			if (wcscmp(pp->name, p->name) > 0) {
+				prev = p;
+				p = p->next;
+				continue;
+			} else {
+				prev->next = pp;
+				pp->next = p;
+				break;
+			}
+		}
+		prev->next = pp;
+        }
+    } else {
+	/* Just prepend to beginning. */
+	pp->next = languages;
+	languages = pp;
     }
 
     /* We got one more! */
@@ -149,11 +163,8 @@ lang_scan(void)
     DIR *dir;
     int l;
 
-    /* First, add our native language. */
+    /* None yet.. */
     languages_num = 0;
-    memset(&lang, 0x00, sizeof(lang));
-    lang.id = 0x0409;
-    lang_add(&lang);
 
     /* Open the "language modules" directory. */
     swprintf(path, sizeof_w(temp), L"%ls%ls", emu_path, LANGUAGE_PATH);
@@ -242,11 +253,20 @@ lang_scan(void)
 		wcscpy(ptr, str);
 		lang.email = (const wchar_t *)ptr;
 
+		/* Set the name of this language. */
+		lang_setname(&lang);
+
 		/* Add this language. */
-		lang_add(&lang);
+		lang_add(&lang, 1);
 	}
 	(void)closedir(dir);
     }
+
+    /* Add the application's primary language. */
+    memset(&lang, 0x00, sizeof(lang));
+    lang.id = 0x0409;
+    lang_setname(&lang);
+    lang_add(&lang, 0);
 }
 
 
@@ -404,6 +424,10 @@ plat_lang_menu(void)
 
 	/* Add this language to the Languages menu. */
 	menu_add_item(IDM_LANGUAGE, i, ptr->name);
+
+	/* Add separator after primary language. */
+	if (ptr == languages)
+		menu_add_item(IDM_LANGUAGE, i, NULL);
     }
 
     /* Set active language. */

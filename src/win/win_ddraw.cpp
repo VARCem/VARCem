@@ -125,6 +125,92 @@ static const dllimp_t png_imports[] = {
 #endif
 
 
+static const char *
+GetError(HRESULT hr)
+{
+    const char *err = "Unknown";
+
+    switch(hr) {
+	case DDERR_INCOMPATIBLEPRIMARY:
+		err = "Incompatible Primary";
+		break;
+
+	case DDERR_INVALIDCAPS:
+		err = "Invalid Caps";
+		break;
+
+	case DDERR_INVALIDOBJECT:
+		err = "Invalid Object";
+		break;
+
+	case DDERR_INVALIDPARAMS:
+		err = "Invalid Parameters";
+		break;
+
+	case DDERR_INVALIDPIXELFORMAT:
+		err = "Invalid Pixel Format";
+		break;
+
+	case DDERR_NOALPHAHW:
+		err = "Hardware does not support Alpha";
+		break;
+
+	case DDERR_NOCOOPERATIVELEVELSET:
+		err = "No cooperative level set";
+		break;
+
+	case DDERR_NODIRECTDRAWHW:
+		err = "Hardware does not support DirectDraw";
+		break;
+
+	case DDERR_NOEMULATION:
+		err = "No emulation";
+		break;
+
+	case DDERR_NOEXCLUSIVEMODE:
+		err = "No exclusive mode available";
+		break;
+
+	case DDERR_NOFLIPHW:
+		err = "Hardware does not support flipping";
+		break;
+
+	case DDERR_NOMIPMAPHW:
+		err = "Hardware does not support MipMap";
+		break;
+
+	case DDERR_NOOVERLAYHW:
+		err = "Hardware does not support overlays";
+		break;
+
+	case DDERR_NOZBUFFERHW:
+		err = "Hardware does not support Z buffers";
+		break;
+
+	case DDERR_OUTOFMEMORY:
+		err = "Out of memory";
+		break;
+
+	case DDERR_OUTOFVIDEOMEMORY:
+		err = "Out of video memory";
+		break;
+
+	case DDERR_PRIMARYSURFACEALREADYEXISTS:
+		err = "Primary Surface already exists";
+		break;
+
+	case DDERR_UNSUPPORTEDMODE:
+		err = "Mode not supported";
+		break;
+
+	default:
+		break;
+    }
+
+    return(err);
+}
+
+
 static HBITMAP
 CopySurface(IDirectDrawSurface4 *pDDSurface)
 { 
@@ -181,17 +267,17 @@ bgra_to_rgb(png_bytep *b_rgb, uint8_t *bgra, int width, int height)
 
 /* Not strictly needed, but hey.. */
 static void
-png_error_handler(UNUSED(png_structp arg), const char *str)
+png_error_handler(png_structp arg, const char *str)
 {
-    pclog("DDraw: PNG error '%s'\n", str);
+    pclog("DDraw: PNG error '%08lx'\n", str);
 }
 
 
 /* Not strictly needed, but hey.. */
 static void
-png_warning_handler(UNUSED(png_structp arg), const char *str)
+png_warning_handler(png_structp arg, const char *str)
 {
-    pclog("DDraw: PNG warning '%s'\n", str);
+    pclog("DDraw: PNG warning '%08lx'\n", str);
 }
 
 
@@ -219,7 +305,7 @@ SavePNG(const wchar_t *fn, HBITMAP hBitmap)
     }
 
     /* Initialize PNG stuff. */
-    png_ptr = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
+    png_ptr = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, (char *)1234,
 				      png_error_handler, png_warning_handler);
     if (png_ptr == NULL) {
 	(void)fclose(fp);
@@ -645,7 +731,7 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
 static void
 ddraw_close(void)
 {
-    pclog("DDRAW: close (fs=%d)\n", (lpdds_back2 != NULL)?1:0);
+    pclog("DDRAW: close\n");
 
     video_setblit(NULL);
 
@@ -745,21 +831,42 @@ ddraw_init(int fs)
 {
     DDSURFACEDESC2 ddsd;
     LPDIRECTDRAW lpdd;
-    HWND h = hwndRender;
+    HRESULT hr;
+    DWORD dw;
+    HWND h;
 
     pclog("DDraw: initializing (fs=%d)\n", fs);
 
     cgapal_rebuild();
 
-    if (FAILED(DirectDrawCreate(NULL, &lpdd, NULL))) return(0);
+    hr = DirectDrawCreate(NULL, &lpdd, NULL);
+    if (FAILED(hr)) {
+	pclog("DDRAW: cannot create an instance (%s)\n", GetError(hr));
+	return(0);
+    }
 
-    if (FAILED(lpdd->QueryInterface(IID_IDirectDraw4, (LPVOID *)&lpdd4)))
-					return(0);
+    hr = lpdd->QueryInterface(IID_IDirectDraw4, (LPVOID *)&lpdd4);
+    if (FAILED(hr)) {
+	pclog("DDRAW: no interfaces found (%s)\n", GetError(hr));
+	return(0);
+    }
     lpdd->Release();
 
     atexit(ddraw_close);
 
-    if (FAILED(lpdd4->SetCooperativeLevel(h, DDSCL_NORMAL))) return(0);
+    if (fs) {
+	dw = DDSCL_SETFOCUSWINDOW | DDSCL_CREATEDEVICEWINDOW | \
+	     DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN | DDSCL_ALLOWREBOOT;
+	h = hwndMain;
+    } else {
+	dw = DDSCL_NORMAL;
+	h = hwndRender;
+    }
+    hr = lpdd4->SetCooperativeLevel(h, dw);
+    if (FAILED(hr)) {
+	pclog("DDRAW: SetCooperativeLevel failed (%s)\n", GetError(hr));
+	return(0);
+    }
 
     memset(&ddsd, 0, sizeof(ddsd));
     ddsd.dwSize = sizeof(ddsd);
@@ -891,47 +998,6 @@ const vidapi_t ddraw_vidapi = {
 
 #if 0
 @@@@@
-static int
-ddraw_init(int fs)
-{
-    DDSURFACEDESC2 ddsd;
-    LPDIRECTDRAW lpdd;
-    HRESULT hr;
-    HWND h;
-    DWORD dw;
-
-    pclog("DDRAW: init (fs=%d)\n", fs);
-
-    cgapal_rebuild();
-
-    hr = DirectDrawCreate(NULL, &lpdd, NULL);
-    if (FAILED(hr)) {
-	pclog("DDRAW: cannot create an instance (%s)\n", GetError(hr));
-	return(0);
-    }
-    hr = lpdd->QueryInterface(IID_IDirectDraw4, (LPVOID *)&lpdd4);
-    if (FAILED(hr)) {
-	pclog("DDRAW: no interfaces found (%s)\n", GetError(hr));
-	return(0);
-    }
-    lpdd->Release();
-    lpdd = NULL;
-
-    atexit(ddraw_close);
-
-    if (fs) {
-	dw = DDSCL_SETFOCUSWINDOW | DDSCL_CREATEDEVICEWINDOW | \
-	     DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN | DDSCL_ALLOWREBOOT;
-	h = hwndMain;
-    } else {
-	dw = DDSCL_NORMAL;
-	h = hwndRender;
-    }
-    hr = lpdd4->SetCooperativeLevel(h, dw);
-    if (FAILED(hr)) {
-	pclog("DDRAW: SetCooperativeLevel failed (%s)\n", GetError(hr));
-	return(0);
-    }
 
     if (fs) {
 	ddraw_w = GetSystemMetrics(SM_CXSCREEN);

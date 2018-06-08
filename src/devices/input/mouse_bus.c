@@ -49,7 +49,7 @@
  *
  *		Based on an early driver for MINIX 1.5.
  *
- * Version:	@(#)mouse_bus.c	1.0.7	2018/05/06
+ * Version:	@(#)mouse_bus.c	1.0.8	2018/06/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -101,6 +101,7 @@
 
 #define MOUSE_PORT		0x023c		/* default */
 #define MOUSE_IRQ		5		/* default */
+#define MOUSE_IRQ_INTERNAL	2		/* IRQ for internal mice */
 #define MOUSE_BUTTONS		2		/* default */
 #define MOUSE_DEBUG		0
 
@@ -709,10 +710,15 @@ bm_init(const device_t *info)
     memset(dev, 0x00, sizeof(mouse_t));
     dev->name = info->name;
     dev->type = info->local;
-    dev->irq = device_get_config_int("irq");
-    i = device_get_config_int("buttons");
-    if (i > 2)
-	dev->flags |= FLAG_3BTN;
+    if (info->config != NULL) {
+	dev->irq = device_get_config_int("irq");
+	i = device_get_config_int("buttons");
+	if (i > 2)
+		dev->flags |= FLAG_3BTN;
+    } else {
+	dev->irq = MOUSE_IRQ_INTERNAL;	/*hardwired*/
+	i = 2;
+    }
 
     pclog("MOUSE: %s (I/O=%04x, IRQ=%d, buttons=%d)\n",
 			dev->name, MOUSE_PORT, dev->irq, i);
@@ -800,6 +806,15 @@ const device_t mouse_logibus_device = {
     bm_init, bm_close, NULL,
     bm_poll, NULL, NULL, NULL,
     bm_config
+};
+
+const device_t mouse_logibus_internal_device = {
+    "Logitech Bus Mouse (Internal)",
+    DEVICE_ISA,
+    MOUSE_LOGIBUS,
+    bm_init, bm_close, NULL,
+    bm_poll, NULL, NULL, NULL,
+    NULL
 };
 
 const device_t mouse_msinport_device = {
