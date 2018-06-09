@@ -879,6 +879,9 @@
     <ClCompile Include="..\..\..\ui\ui_new_image.c">
       <Filter>ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\win_lang.c">
+      <Filter>win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\config.h" />
