@@ -1,0 +1,85 @@
+**** Additional strings for the Installer itself ****
+**** (keep the > lines, add translation after :  ****
+
+
+> Select the setup language:
+:
+
+> Desktop (as in "Desktop icons")
+:
+
+
+> Executing file removal operations
+:
+
+> Preparing files for removal
+:
+
+> Restoring removed files
+:
+
+> Extracting files from archive
+:
+
+> Executing file removal
+:
+
+> Preparing file
+:
+
+> Restoring file
+:
+
+> This package can only be run from a bootstrapper.
+:
+
+
+> Several commandline tools
+:
+
+> A set of example configurations to get you started.
+:
+
+> Generic Turbo-XT Clone.
+:
+
+> The original IBM-PC model.
+:
+
+> The new model of the IBM-PC
+:
+
+> Segoe UI Fonts for Windows XP
+:
+
+
+> Additional Languages support files.
+:
+
+> Your virtual machines.
+:
+
+> Runtime files for the FluidSynth MIDI synthesizer
+:
+
+> Various runtime files needed by the application.
+:
+
+> ROM BIOS image files of emulated machines and devices.
+:
+
+> Runtime files needed for the SDL2 renderer.
+:
+
+> The VARCem Application
+:
+
+> License Agreement
+:
+
+> Installer for the [ProductName] application.
+:
+
+> The VARCem Team
+:
+
