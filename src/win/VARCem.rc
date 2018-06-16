@@ -245,6 +245,10 @@ VS_VERSION_INFO VERSIONINFO
     END
     BLOCK "VarFileInfo"
     BEGIN
+#ifdef _MSC_VER
         VALUE "Translation", 0x409, 65001
+#else
+        VALUE "Translation", 0x409, 1252
+#endif
     END
 END
