@@ -1,0 +1,113 @@
+/*
+ * VARCem	Virtual ARchaeological Computer EMulator.
+ *		An emulator of (mostly) x86-based PC systems and devices,
+ *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+ *		spanning the era between 1981 and 1995.
+ *
+ *		This file is part of the VARCem Project.
+ *
+ *		Preprocessor master file for the language pack DLL files,
+ *		which require some weird processing. This file allows us
+ *		to use a single master for all those languages.
+ *
+ * Version:	@(#)VARCem.rpp	1.0.1	2018/06/16
+ *
+ * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *
+ *		Copyright 2018 Fred N. van Kempen.
+ *
+ *		Redistribution and  use  in source  and binary forms, with
+ *		or  without modification, are permitted  provided that the
+ *		following conditions are met:
+ *
+ *		1. Redistributions of  source  code must retain the entire
+ *		   above notice, this list of conditions and the following
+ *		   disclaimer.
+ *
+ *		2. Redistributions in binary form must reproduce the above
+ *		   copyright  notice,  this list  of  conditions  and  the
+ *		   following disclaimer in  the documentation and/or other
+ *		   materials provided with the distribution.
+ *
+ *		3. Neither the  name of the copyright holder nor the names
+ *		   of  its  contributors may be used to endorse or promote
+ *		   products  derived from  this  software without specific
+ *		   prior written permission.
+ *
+ * THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+ * HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+ * THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+PREAMBLE #pragma code_page(65001)
+PREAMBLE #include <inttypes.h>
+PREAMBLE #include <windows.h>
+PREAMBLE #include "../../version.h"
+PREAMBLE #include "../../ui/ui.h"
+PREAMBLE #include "../resource.h"
+
+
+/* Some MacroMagic(tm) .. */
+#define _TEXT_(x)	#x
+#define __HEX4(x)	0x ## x
+#define __INCL(a,b,c)	_TEXT_(../../ui/lang/ ## a ## - ## b ## . ## c)
+#define __DLLNM(a,b,c)	_TEXT_(a ## - ## b ## . ## c)
+#ifdef _MSC_VER
+# define __BLKNM(id)	_TEXT_(id ## 04b0)
+#else
+# define __BLKNM(id)	_TEXT_(id ## 04e4)
+#endf
+#define INCLUDE(l)	__INCL(VARCem, l, str)
+#define DLLNAME(l)	__DLLNM(VARCem, l, dll)
+#define BLOCKNAME(l)	__BLKNM(l)
+
+
+LANGUAGE PRILANG, SUBLANG
+
+
+PREAMBLE #include INCLUDE(LANG)
+
+PREAMBLE #include "../VARCem-common.rc"
+
+
+PREAMBLE #pragma code_page(DEFAULT)
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION	TAG_VERSION,0
+ PRODUCTVERSION	TAG_VERSION,0
+ FILEFLAGSMASK	0x3fL
+ FILEFLAGS	0x0L
+ FILEOS		VOS_NT_WINDOWS32
+ FILETYPE	VFT_DLL
+ FILESUBTYPE	0x0L
+ BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK BLOCKNAME(LANGID)
+        BEGIN
+            VALUE "CompanyName", "IRC #VARCem on FreeNode"
+            VALUE "FileDescription", "VARCem Language Module"
+            VALUE "FileVersion", STR(TAG_VERSION)
+            VALUE "InternalName", EMU_NAME
+            VALUE "LegalCopyright", "Copyright 2018 The VARCem Team"
+            VALUE "OriginalFilename", DLLNAME(LANG)
+            VALUE "ProductName", "VARCem Emulator"
+            VALUE "ProductVersion", EMU_VERSION
+            VALUE "Comments", STR_RC(TAG_AUTHOR,TAG_EMAIL)
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+#ifdef _MSC_VER
+        VALUE "Translation", __HEX4(LANGID), 65001
+#else
+        VALUE "Translation", __HEX4(LANGID), 1252
+#endif
+    END
+END
