@@ -59,7 +59,11 @@ PREAMBLE #include "../resource.h"
 #define __HEX4(x)	0x ## x
 #define __INCL(a,b,c)	_TEXT_(../../ui/lang/ ## a ## - ## b ## . ## c)
 #define __DLLNM(a,b,c)	_TEXT_(a ## - ## b ## . ## c)
-#define __BLKNM(id)	_TEXT_(id ## 04b0)
+#ifdef _MSC_VER
+# define __BLKNM(id)	_TEXT_(id ## fde9)
+#else
+# define __BLKNM(id)	_TEXT_(id ## 04e4)
+#endf
 #define INCLUDE(l)	__INCL(VARCem, l, str)
 #define DLLNAME(l)	__DLLNM(VARCem, l, dll)
 #define BLOCKNAME(l)	__BLKNM(l)
