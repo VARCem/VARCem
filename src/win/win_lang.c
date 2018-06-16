@@ -108,7 +108,7 @@ static void
 lang_add(lang_t *ptr, int sort)
 {
     lang_t *p, *pp;
-    lang_t *prev;
+    lang_t *prev = 0;
 
     /* Create a copy of the entry data. */
     pp = (lang_t *)malloc(sizeof(lang_t));

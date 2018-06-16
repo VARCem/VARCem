@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\bugger.c" />
     <ClCompile Include="..\..\..\config.c" />
     <ClCompile Include="..\..\..\device.c" />
     <ClCompile Include="..\..\..\io.c" />
@@ -104,9 +103,6 @@
     <ClCompile Include="..\..\..\win\win_mouse.cpp">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_new_floppy.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_opendir.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -127,9 +123,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\rom_load.c" />
     <ClCompile Include="..\..\..\ui\ui_main.c">
-      <Filter>ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ui\ui_new_floppy.c">
       <Filter>ui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\ui\ui_stbar.c">
@@ -277,9 +270,6 @@
       <Filter>devices\network\slirp</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\network\slirp\mbuf.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\misc.c">
       <Filter>devices\network\slirp</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\network\slirp\queue.c">
@@ -870,9 +860,30 @@
     <ClCompile Include="..\..\..\devices\video\video_dev.c">
       <Filter>devices\video</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\devices\misc\bugger.c">
+      <Filter>devices\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_vidapi.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\misc.c" />
+    <ClCompile Include="..\..\..\devices\network\slirp\slirp_misc.c">
+      <Filter>devices\network\slirp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\win_new_image.c">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\win_sdl.c">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_new_image.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\win_lang.c">
+      <Filter>win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\bugger.h" />
     <ClInclude Include="..\..\..\config.h" />
     <ClInclude Include="..\..\..\device.h" />
     <ClInclude Include="..\..\..\emu.h" />
@@ -1091,12 +1102,6 @@
       <Filter>win</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\win\win.h">
-      <Filter>win</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\win\win_d3d.h">
-      <Filter>win</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\win\win_ddraw.h">
       <Filter>win</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\version.h" />
@@ -1592,6 +1597,45 @@
     <ClInclude Include="..\..\..\machines\machine.h">
       <Filter>machines</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\devices\misc\bugger.h">
+      <Filter>devices\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_sdl.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_opendir.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_disk.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_floppy.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_input.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_machine.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_network.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_periph.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_ports.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_remov.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_sound.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_video.h">
+      <Filter>win</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cpu">
@@ -1663,10 +1707,18 @@
     <Filter Include="machines">
       <UniqueIdentifier>{c21f8b49-308c-4e25-b69d-b03c1e24617a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="devices\misc">
+      <UniqueIdentifier>{51f1c4aa-4a2a-4639-bcbc-2075ffaf3e27}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\VARCem.rc">
       <Filter>win</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\VARCem.mpp">
+      <Filter>win</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

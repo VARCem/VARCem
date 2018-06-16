@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\bugger.c" />
+    <ClCompile Include="..\..\..\devices\misc\bugger.c" />
     <ClCompile Include="..\..\..\devices\cdrom\cdrom.c" />
     <ClCompile Include="..\..\..\devices\cdrom\cdrom_dosbox.cpp" />
     <ClCompile Include="..\..\..\devices\cdrom\cdrom_image.cpp" />
@@ -63,7 +63,7 @@
     <ClCompile Include="..\..\..\devices\network\slirp\ip_input.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\ip_output.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\mbuf.c" />
-    <ClCompile Include="..\..\..\devices\network\slirp\misc.c" />
+    <ClCompile Include="..\..\..\devices\network\slirp\slirp_misc.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\queue.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\sbuf.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\slirp.c" />
@@ -240,6 +240,7 @@
     <ClCompile Include="..\..\..\devices\network\net_ne2000.c" />
     <ClCompile Include="..\..\..\devices\network\net_pcap.c" />
     <ClCompile Include="..\..\..\devices\network\net_slirp.c" />
+    <ClCompile Include="..\..\..\misc.c" />
     <ClCompile Include="..\..\..\nvr.c" />
     <ClCompile Include="..\..\..\pc.c" />
     <ClCompile Include="..\..\..\devices\ports\game.c" />
@@ -254,7 +255,7 @@
     <ClCompile Include="..\..\..\devices\sound\munt\sha1\sha1.cpp" />
     <ClCompile Include="..\..\..\timer.c" />
     <ClCompile Include="..\..\..\ui\ui_main.c" />
-    <ClCompile Include="..\..\..\ui\ui_new_floppy.c" />
+    <ClCompile Include="..\..\..\ui\ui_new_image.c" />
     <ClCompile Include="..\..\..\ui\ui_stbar.c" />
     <ClCompile Include="..\..\..\devices\video\video.c" />
     <ClCompile Include="..\..\..\devices\video\vid_ati18800.c" />
@@ -295,6 +296,7 @@
     <ClCompile Include="..\..\..\devices\video\vid_vga.c" />
     <ClCompile Include="..\..\..\devices\video\vid_voodoo.c" />
     <ClCompile Include="..\..\..\devices\video\vid_wy700.c" />
+    <ClCompile Include="..\..\..\ui\ui_vidapi.c" />
     <ClCompile Include="..\..\..\win\win.c" />
     <ClCompile Include="..\..\..\win\win_about.c" />
     <ClCompile Include="..\..\..\win\win_cdrom.c" />
@@ -309,16 +311,18 @@
     <ClCompile Include="..\..\..\win\win_keyboard.c" />
     <ClCompile Include="..\..\..\win\win_midi.c" />
     <ClCompile Include="..\..\..\win\win_mouse.cpp" />
-    <ClCompile Include="..\..\..\win\win_new_floppy.c" />
     <ClCompile Include="..\..\..\win\win_opendir.c" />
     <ClCompile Include="..\..\..\win\win_settings.c" />
     <ClCompile Include="..\..\..\win\win_snd_gain.c" />
     <ClCompile Include="..\..\..\win\win_status.c" />
     <ClCompile Include="..\..\..\win\win_thread.c" />
     <ClCompile Include="..\..\..\win\win_ui.c" />
+    <ClCompile Include="..\..\win_lang.c" />
+    <ClCompile Include="..\..\win_new_image.c" />
+    <ClCompile Include="..\..\win_sdl.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\bugger.h" />
+    <ClInclude Include="..\..\..\devices\misc\bugger.h" />
     <ClInclude Include="..\..\..\devices\cdrom\cdrom.h" />
     <ClInclude Include="..\..\..\devices\cdrom\cdrom_dosbox.h" />
     <ClInclude Include="..\..\..\devices\cdrom\cdrom_image.h" />
@@ -564,11 +568,47 @@
     <ClInclude Include="..\..\..\win\plat_dir.h" />
     <ClInclude Include="..\..\..\win\resource.h" />
     <ClInclude Include="..\..\..\win\win.h" />
-    <ClInclude Include="..\..\..\win\win_d3d.h" />
-    <ClInclude Include="..\..\..\win\win_ddraw.h" />
+    <ClInclude Include="..\..\win_opendir.h" />
+    <ClInclude Include="..\..\win_sdl.h" />
+    <ClInclude Include="..\..\win_settings_disk.h" />
+    <ClInclude Include="..\..\win_settings_floppy.h" />
+    <ClInclude Include="..\..\win_settings_input.h" />
+    <ClInclude Include="..\..\win_settings_machine.h" />
+    <ClInclude Include="..\..\win_settings_network.h" />
+    <ClInclude Include="..\..\win_settings_periph.h" />
+    <ClInclude Include="..\..\win_settings_ports.h" />
+    <ClInclude Include="..\..\win_settings_remov.h" />
+    <ClInclude Include="..\..\win_settings_sound.h" />
+    <ClInclude Include="..\..\win_settings_video.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\VARCem.rc" />
+    <ResourceCompile Include="..\..\VARCem.rc">
+      <ShowProgress Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ShowProgress>
+      <ShowProgress Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ShowProgress>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_MSC_VER</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_MSC_VER</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\VARCem.mpp">
+      <FileType>Document</FileType>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating Manifest file...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating Manifest file...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating Manifest file...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating Manifest file...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">VARCem.manifest</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">VARCem.manifest</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VARCem.manifest</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VARCem.manifest</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">VARCem.rc</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">VARCem.rc</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VARCem.rc</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VARCem.rc</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cl -nologo -EP %(FullPath) &gt; $(SolutionDir)..\..\%(Outputs)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cl -nologo -EP %(FullPath) &gt; $(SolutionDir)..\..\%(Outputs)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cl -nologo -EP %(FullPath) &gt; $(SolutionDir)..\..\%(Outputs)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cl -nologo -EP %(FullPath) &gt; $(SolutionDir)..\..\%(Outputs)</Command>
+    </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -629,6 +669,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -638,6 +679,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -655,7 +697,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
@@ -674,7 +716,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
@@ -696,7 +738,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
@@ -719,7 +761,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
