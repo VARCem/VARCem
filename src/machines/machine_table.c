@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.22	2018/05/04
+ * Version:	@(#)machine_table.c	1.0.23	2018/06/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,6 +59,7 @@ const machine_t machines[] = {
     { "[8088] IBM XT",				ROM_IBMXT,		"ibm_xt",		L"ibm/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] OpenXT Generic Clone",		ROM_GENXT,		"open_xt",		L"generic/open_xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] AMI XT clone",			ROM_AMIXT,		"ami_xt",		L"generic/ami/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
+    { "[8088] Award XT clone",			ROM_AWDXT,		"awd_xt",		L"generic/award/xt",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] Compaq Portable",			ROM_PORTABLE,		"compaq_portable",	L"compaq/portable",		{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,	       machine_xt_compaq_init, NULL,			NULL			},
     { "[8088] DTK XT clone",			ROM_DTKXT,		"dtk_xt",		L"dtk/xt",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] Juko XT clone",			ROM_JUKOPC,		"juko_pc",		L"juko/pc",			{{"", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},

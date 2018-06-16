@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.46	2018/05/26
+ * Version:	@(#)pc.c	1.0.47	2018/06/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,6 +87,9 @@
 #include "devices/misc/bugger.h"
 #include "ui/ui.h"
 #include "plat.h"
+
+
+#define PCLOG_BUFF_SIZE	8192			/* has to be big enough!! */
 
 
 /* Commandline options. */
@@ -201,14 +204,18 @@ int64_t	main_time;
  * To avoid excessively-large logfiles because some
  * module repeatedly logs, we keep track of what is
  * being logged, and catch repeating entries.
+ *
+ * Note: we need fairly large buffers here, to allow
+ *       for the network code dumping packet content
+ *       with this.
  */
 void
 pclog_ex(const char *fmt, va_list ap)
 {
 #ifndef RELEASE_BUILD
-    static char buff[1024];
+    static char buff[PCLOG_BUFF_SIZE];
     static int seen = 0;
-    char temp[1024];
+    char temp[PCLOG_BUFF_SIZE];
 
     if (stdlog == NULL) {
 	if (log_path[0] != L'\0') {
@@ -306,9 +313,7 @@ fatal(const char *fmt, ...)
 void
 pc_version(const char *platform)
 {
-#if defined(BUILD) || defined(COMMIT) || defined(UPSTREAM) || defined(_MSC_VER)
     char temp[128];
-#endif
 
     sprintf(emu_title, "%s for %s", EMU_NAME, platform);
 
@@ -319,10 +324,16 @@ pc_version(const char *platform)
 #endif
     strcpy(emu_fullversion, emu_version);
 
-#ifdef _MSC_VER
-    sprintf(temp, " [VC%d]", _MSC_VER);
-    strcat(emu_fullversion, temp);
+#if defined(_MSC_VER)
+    sprintf(temp, " [VC %d]", _MSC_VER);
+#elif defined(__clang_major__)
+    sprintf(temp, " [Clang %d.%d.%d]",
+	__clang_major__, __clang_minor__, __clang_patchlevel__);
+#elif defined(__GNUC__)
+    sprintf(temp, " [GCC %d.%d.%d]",
+	__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #endif
+    strcat(emu_fullversion, temp);
 
 #ifdef BUILD
     sprintf(temp, " (Build %d", BUILD);

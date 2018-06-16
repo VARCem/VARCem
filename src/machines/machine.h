@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.20	2018/04/25
+ * Version:	@(#)machine.h	1.0.21	2018/06/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,6 +58,7 @@
 enum {
     ROM_IBMPC = 0,	/* 301 keyboard error, 131 cassette (!!!) error */
     ROM_AMIXT,		/* XT Clone with AMI BIOS */
+    ROM_AWDXT,		/* XT Clone with Award BIOS */
     ROM_DTKXT,
     ROM_IBMXT,		/* 301 keyboard error */
     ROM_GENXT,		/* 'Generic XT BIOS' */

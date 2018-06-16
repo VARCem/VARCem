@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.10	2018/05/24
+ * Version:	@(#)network.c	1.0.11	2018/06/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,7 +54,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wchar.h>
-#ifdef WALTJE
+#ifdef ENABLE_NETWORK_DUMP
 # include <ctype.h>
 #endif
 #define HAVE_STDARG_H
@@ -102,45 +102,8 @@ static struct {
 } poll_data;
 
 
-#ifdef WALTJE
+#ifdef ENABLE_NETWORK_DUMP
 # define is_print(c)	(isalnum((int)(c)) || ((c) == ' '))
-
-
-#if 0
-/* Dump a buffer in hex, standard output. */
-static void
-hexdump(uint8_t *bufp, int len)
-{
-    char asci[20];
-    uint8_t c;
-    int addr;
-
-    addr = 0;
-    while (len-- > 0) {
-	c = bufp[addr];
-	if ((addr % 16) == 0) {
-		printf("%06X  %02X", addr, c);
-	} else {
-		printf(" %02X", c);
-	}
-	asci[(addr & 15)] = (char)((is_print(c) ? c : '.') & 0xff);
-	if ((++addr % 16) == 0) {
-		asci[16] = '\0';
-		printf("  | %s |\n", asci);
-	}
-    }
-
-    if (addr % 16) {
-	while (addr % 16) {
-		printf("   ");
-		asci[(addr & 15)] = ' ';
-		addr++;
-	}
-	asci[16] = '\0';
-	printf("  | %s |\n", asci);
-    }
-}
-#endif
 
 
 /* Dump a buffer in hex to output buffer. */
@@ -403,9 +366,9 @@ network_tx(uint8_t *bufp, int len)
 {
     ui_sb_icon_update(SB_NETWORK, 1);
 
-#ifdef WALTJE
+#ifdef ENABLE_NETWORK_DUMP
 {
-    char temp[4096];
+    char temp[8192];
     hexdump_p(temp, bufp, len);
     pclog("NETWORK: >> len=%d\n%s\n", len, temp);
 }

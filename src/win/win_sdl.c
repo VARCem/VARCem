@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.3	2018/05/26
+ * Version:	@(#)win_sdl.c  	1.0.4	2018/06/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -138,7 +138,7 @@ sdl_blit(int x, int y, int y1, int y2, int w, int h)
     int pitch;
     int yy;
 
-    if (buffer32 == NULL) {
+    if ((y1 == y2) || (buffer32 == NULL)) {
 	video_blit_complete();
 	return;
     }
@@ -152,7 +152,12 @@ sdl_blit(int x, int y, int y1, int y2, int w, int h)
 
     for (yy = y1; yy < y2; yy++) {
         if ((y + yy) >= 0 && (y + yy) < buffer32->h)
-            memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+#if 0
+		if (video_grayscale || invert_display)
+			video_transform_copy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
+		  else
+#endif
+			memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
     }
 
     video_blit_complete();
@@ -194,10 +199,13 @@ sdl_close(void)
     if (sdl_hwnd != NULL) {
 	plat_set_input(hwndMain);
 
+#if 1
+	ShowWindow(hwndRender, TRUE);
+	SetFocus(hwndMain);
+#endif
+
 	DestroyWindow(sdl_hwnd);
 	sdl_hwnd = NULL;
-
-	SetFocus(hwndMain);
     }
 
     /* Quit and unload the DLL if possible. */
@@ -265,13 +273,6 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
 	/* Now create the SDL window from that. */
 	sdl_win = sdl_CreateWindowFrom((void *)sdl_hwnd);
     } else {
-	/* Redirect RawInput to this new window. */
-	plat_set_input(hwndMain);
-
-	ShowWindow(hwndRender, TRUE);
-
-	SetFocus(hwndMain);
-
 	/* Create the SDL window from the render window. */
 	sdl_win = sdl_CreateWindowFrom((void *)hwndRender);
     }
@@ -329,7 +330,89 @@ sdl_resize(int x, int y)
 static void
 sdl_screenshot(const wchar_t *fn)
 {
-    /* TODO: implement */
+#if 0
+    int i, res, x, y, width = 0, height = 0;
+    unsigned char* rgba = NULL;
+    png_bytep *b_rgb = NULL;
+    FILE *fp = NULL;
+
+    sdl_GetWindowSize(sdl_win, &width, &height);
+
+    /* Create file. */
+    if ((fp = plat_fopen(fn, L"wb")) == NULL) {
+	pclog("SDL: screenshot: file %ls could not be opened for writing\n", fn);
+	return;
+    }
+
+    /* initialize stuff */
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (png_ptr == NULL) {
+	pclog("SDL: screenshot: create_write_struct failed\n");
+	fclose(fp);
+	return;
+    }
+
+    info_ptr = png_create_info_struct(png_ptr);
+    if (info_ptr == NULL) {
+	pclog("SDL: screenshot: create_info_struct failed");
+	fclose(fp);
+	return;
+    }
+
+    png_init_io(png_ptr, fp);
+
+    png_set_IHDR(png_ptr, info_ptr, width, height,
+	8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+	PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+    pixels = (uint8_t *)malloc(width * height * 4);
+    if (pixels == NULL) {
+	pclog("SDL: screenshot: unable to allocate RGBA Bitmap memory\n");
+	fclose(fp);
+	return;
+    }
+
+    res = sdl_RenderReadPixels(sdl_render, NULL,
+			       SDL_PIXELFORMAT_ABGR8888, pixels, width * 4);
+    if (res != 0) {
+	pclog("SDL: screenshot: error reading render pixels\n");
+	free(pixels);
+	fclose(fp);
+	return;
+    }
+
+    if ((b_rgb = (png_bytep *) malloc(sizeof(png_bytep) * height)) == NULL) {
+	sdl_log("[sdl_take_screenshot] Unable to Allocate RGB Bitmap Memory");
+	free(rgba);
+	fclose(fp);
+	return;
+    }
+
+    for (y = 0; y < height; ++y) {
+	b_rgb[y] = (png_byte *) malloc(png_get_rowbytes(png_ptr, info_ptr));
+    	for (x = 0; x < width; ++x) {
+		b_rgb[y][(x) * 3 + 0] = rgba[(y * width + x) * 4 + 0];
+		b_rgb[y][(x) * 3 + 1] = rgba[(y * width + x) * 4 + 1];
+		b_rgb[y][(x) * 3 + 2] = rgba[(y * width + x) * 4 + 2];
+	}
+    }
+
+    png_write_info(png_ptr, info_ptr);
+
+    png_write_image(png_ptr, b_rgb);
+
+    png_write_end(png_ptr, NULL);
+
+    /* cleanup heap allocation */
+    for (i = 0; i < height; i++)
+	if (b_rgb[i])  free(b_rgb[i]);
+
+    if (b_rgb) free(b_rgb);
+
+    if (rgba) free(rgba);
+
+    if (fp) fclose(fp);
+#endif
 }
 
 

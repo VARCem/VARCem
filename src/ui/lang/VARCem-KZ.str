@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem-KZ.str	1.0.0	2018/06/10
+ * Version:	@(#)VARCem-KZ.str	1.0.1	2018/06/10
  *
  * Authors:	Arbars Zagadkin, <arbars.zagadkin@mail.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -52,7 +52,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,0
+#define TAG_VERSION	1,0,1
 #define TAG_AUTHOR	"Arbars Zagadkin"
 #define TAG_EMAIL	"arbars.zagadkin@mail.ru"
 
@@ -128,9 +128,9 @@
 /* UI: dialog: About (3200.) */
 #define STR_ABOUT	"VARCem туралы..."
 #define  STR_3201	"Авторлар:"
-#define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker, TheCollector1995, reenigne, John Elliott, greatpsycho, және тағы басқа."
-#define  STR_3203	"Бағдарлама 86Box, PCem, MAME, DOSbox және Qemu алғашқы жазбахабардан негізделген" 
-#define  STR_3204	"BSD 3 және GNU General Public License (2-ші немесе одан жоғары ңұсқасы) лицензиялар бойынша жарияланған. Мәліметтер LICENSE.txt файлда қараңыз"
+#define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker және тағы басқа.\nБағдарлама 86Box, PCem, MAME, DOSbox және Qemu алғашқы жазбахабардан негізделген" 
+#define  STR_3203	"BSD 3 және GNU General Public License (2-ші немесе одан жоғары ңұсқасы) лицензиялар бойынша жарияланған."
+#define  STR_3204	"Мәліметтер LICENSE.txt файлда қараңыз"
 
 #define STR_LOCALIZE    "Аударма"
 #define  STR_3211        "Анғылыштан басқа тілдерге аудармалар авторлар:"
@@ -347,7 +347,7 @@
 #define  STR_4020	"Рендерер"
 
 /* Menu: View > Window Scale Factor */
-#define  STR_4030	Терезенің ауқығы"
+#define  STR_4030	"Терезенің ауқығы"
 #define   STR_4031	"0.5x"
 #define   STR_4032	"1x"
 #define   STR_4033	"1.5x"

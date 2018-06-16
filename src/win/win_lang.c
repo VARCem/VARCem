@@ -8,7 +8,7 @@
  *
  *		Handle language support for the platform.
  *
- * Version:	@(#)win_lang.c	1.0.3	2018/06/04
+ * Version:	@(#)win_lang.c	1.0.4	2018/06/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -108,7 +108,7 @@ static void
 lang_add(lang_t *ptr, int sort)
 {
     lang_t *p, *pp;
-    lang_t *prev = 0;
+    lang_t *prev = NULL;
 
     /* Create a copy of the entry data. */
     pp = (lang_t *)malloc(sizeof(lang_t));

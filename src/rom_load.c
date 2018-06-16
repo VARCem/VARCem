@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.11	2018/05/27
+ * Version:	@(#)rom_load.c	1.0.12	2018/06/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -470,6 +470,8 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 	pclog("ROM: status %d, tot %u, mask 0x%06lx\n",
 				i, r->total, biosmask);
     }
+
+    if (! i) pclog("ROM: error in script '%ls'\n", script);
 
     return(i);
 }
