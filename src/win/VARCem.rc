@@ -228,11 +228,7 @@ VS_VERSION_INFO VERSIONINFO
  BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-//#ifdef _MSC_VER
         BLOCK "0409fde9"
-//#else
-//        BLOCK "040904e4"
-//#endif
         BEGIN
             VALUE "CompanyName", "IRC #VARCem on FreeNode"
             VALUE "FileDescription", "Virtual ARchaeological Computer EMulator"
@@ -249,10 +245,6 @@ VS_VERSION_INFO VERSIONINFO
     END
     BLOCK "VarFileInfo"
     BEGIN
-//#ifdef _MSC_VER
         VALUE "Translation", 0x409, 65001
-//#else
-//        VALUE "Translation", 0x409, 1252
-//#endif
     END
 END
