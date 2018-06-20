@@ -10,7 +10,7 @@
  *		which require some weird processing. This file allows us
  *		to use a single master for all those languages.
  *
- * Version:	@(#)VARCem.rpp	1.0.1	2018/06/16
+ * Version:	@(#)VARCem.rpp	1.0.1	2018/06/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,15 +49,15 @@
 PREAMBLE #pragma code_page(65001)
 PREAMBLE #include <inttypes.h>
 PREAMBLE #include <windows.h>
-PREAMBLE #include "../../version.h"
-PREAMBLE #include "../../ui/ui.h"
-PREAMBLE #include "../resource.h"
+PREAMBLE #include "../version.h"
+PREAMBLE #include "../ui/ui.h"
+PREAMBLE #include "resource.h"
 
 
 /* Some MacroMagic(tm) .. */
 #define _TEXT_(x)	#x
 #define __HEX4(x)	0x ## x
-#define __INCL(a,b,c)	_TEXT_(../../ui/lang/ ## a ## - ## b ## . ## c)
+#define __INCL(a,b,c)	_TEXT_(../ui/lang/ ## a ## - ## b ## . ## c)
 #define __DLLNM(a,b,c)	_TEXT_(a ## - ## b ## . ## c)
 #define __BLKNM(id)	_TEXT_(id ## fde9)
 #define INCLUDE(l)	__INCL(VARCem, l, str)
@@ -65,12 +65,17 @@ PREAMBLE #include "../resource.h"
 #define BLOCKNAME(l)	__BLKNM(l)
 
 
+PREAMBLE #ifndef SUBLANG
+PREAMBLE # define SUBLANG	0x01		/* Lithuanian, for example */
+PREAMBLE #endif
+
+
 LANGUAGE PRILANG, SUBLANG
 
 
 PREAMBLE #include INCLUDE(LANG)
 
-PREAMBLE #include "../VARCem-common.rc"
+PREAMBLE #include "VARCem-common.rc"
 
 
 PREAMBLE #pragma code_page(DEFAULT)

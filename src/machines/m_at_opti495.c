@@ -312,13 +312,13 @@ opti495_write(uint16_t addr, uint8_t val, void *p)
 {
     switch (addr) {
 	case 0x22:
-		optireg=val;
+		optireg = val;
 		break;
 
 	case 0x24:
-		pclog("OPTI: writing reg %02X %02X\n",optireg,val);
-		if (optireg>=0x20 && optireg<=0x2C) {
-			optiregs[optireg-0x20]=val;
+		pclog("OPTI: writing reg %02X %02X\n", optireg, val);
+		if (optireg >= 0x20 && optireg <= 0x2C) {
+			optiregs[optireg - 0x20] = val;
 			if (optireg == 0x21) {
 				cpu_cache_ext_enabled = val & 0x10;
 				cpu_update_waitstates();
@@ -342,8 +342,8 @@ opti495_read(uint16_t addr, void *p)
 {
     switch (addr) {
 	case 0x24:
-		if (optireg>=0x20 && optireg<=0x2c)
-			return(optiregs[optireg-0x20]);
+		if (optireg >= 0x20 && optireg <= 0x2c)
+			return(optiregs[optireg - 0x20]);
 		break;
     }
 
@@ -359,7 +359,7 @@ opti495_init(void)
     io_sethandler(0x0024, 1,
 		  opti495_read,NULL,NULL, opti495_write,NULL,NULL, NULL);
 
-    optiregs[0x22-0x20] = 0x80;
+    optiregs[0x22 - 0x20] = 0x80;
 }
 
 

@@ -13,7 +13,7 @@
  *		the original mode, which uses the Windows/DDraw built-in BMP
  *		format.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.15	2018/06/11
+ * Version:	@(#)win_ddraw.cpp	1.0.16	2018/06/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -645,29 +645,6 @@ ddraw_init(int fs)
 
 #ifdef USE_LIBPNG
 static void
-bgra_to_rgb(png_bytep *b_rgb, uint8_t *bgra, int width, int height)
-{
-    int h, w;
-    uint8_t *r, *b;
-
-    for (h = 0; h < height; h++) {
-	for (w = 0; w < width; w++) {
-		/* Get pointer to pixel in bitmap data. */
-		b = &bgra[((h * width) + w) * 4];
-
-		/* Get pointer to png row data. */
-		r = &b_rgb[(height - 1) - h][w * 3];
-
-		/* Copy the pixel data. */
-		r[0] = b[2];
-		r[1] = b[1];
-		r[2] = b[0];
-	}
-    }
-}
-
-
-static void
 error_handler(png_structp arg, const char *str)
 {
     pclog("PNG: stream 0x%08lx error '%s'\n", arg, str);
@@ -686,8 +663,8 @@ SavePNG(const wchar_t *fn, BITMAPINFO *bmi, uint8_t *pixels)
 {
     png_structp png = NULL;
     png_infop info = NULL;
+    png_bytepp rows;
     uint8_t *r, *b;
-    png_bytep row;
     FILE *fp;
     int h, w;
 
@@ -724,49 +701,52 @@ error:
 		      PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
 		      PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-pclog("PNG: write_info\n");
     PNGFUNC(write_info)(png, info);
 
-    /* Create a buffer for one scanline of pixels. */
-    row = (png_bytep)malloc(PNGFUNC(get_rowbytes)(png, info));
-
-    /* Process all scanlines in the image. */
-pclog("PNG: convert\n");
+    /* Create a buffer for scanlines of pixels. */
+    rows = (png_bytepp)malloc(sizeof(png_bytep) * bmi->bmiHeader.biHeight);
     for (h = 0; h < bmi->bmiHeader.biHeight; h++) {
-	r = row;
+	/* Create a buffer for this scanline. */
+	rows[h] = (png_bytep)malloc(PNGFUNC(get_rowbytes)(png, info));
+    }
+
+    /*
+     * Process all scanlines in the image.
+     *
+     * Since the bitmap is un bottom-up mode, we have to convert
+     * all pixels to RGB mode, but also 'flip' the image to the
+     * normal top-down mode.
+     */
+    for (h = 0; h < bmi->bmiHeader.biHeight; h++) {
 	for (w = 0; w < bmi->bmiHeader.biWidth; w++) {
 		/* Get pointer to pixel in bitmap data. */
                 b = &pixels[((h * bmi->bmiHeader.biWidth) + w) * 4];
+
+		/* Get pointer to png row data. */
+		r = &rows[(bmi->bmiHeader.biHeight - 1) - h][w * 3];
 
                 /* Copy the pixel data. */
                 r[0] = b[2];
                 r[1] = b[1];
                 r[2] = b[0];
-
-		/* Next pixel on scanline. */
-		r += 3;
 	}
-
-	/* Write this row to the file. */
-//	png_write_row(png, row);
     }
 
-    /* No longer need the row buffer. */
-    free(row);
+    /* Write image to the file. */
+    PNGFUNC(write_image)(png, rows);
 
-#if 0
-pclog("PNG: write_end\n");
+    /* No longer need the row buffers. */
+    for (h = 0; h < bmi->bmiHeader.biHeight; h++)
+	free(rows[h]);
+    free(rows);
+
     PNGFUNC(write_end)(png, NULL);
-#endif
 
-pclog("PNG: destroy\n");
     PNGFUNC(destroy_write_struct)(&png, &info);
 
     /* Clean up. */
-pclog("PNG: fclose\n");
     (void)fclose(fp);
 
-pclog("PNG: done!\n");
     return(1);
 }
 #endif

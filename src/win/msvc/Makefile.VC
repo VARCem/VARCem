@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.34	2018/06/02
+# Version:	@(#)Makefile.VC	1.0.36	2018/06/19
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -259,7 +259,7 @@ RFLAGS		:= /n
 COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 
-LOPTS		:= -LIBPATH:win\msvc\Lib\$(ARCH)
+LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
 LOPTS_C		:= -SUBSYSTEM:CONSOLE,5.01
 LOPTS_W		:= -SUBSYSTEM:WINDOWS,5.01
 ifdef BUILD
@@ -508,6 +508,8 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
 #		Create the (final) list of objects to build.		#
 #########################################################################
 
+RESDLL		:= VARCem-$(LANG)
+
 MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
 		   mem.obj rom.obj rom_load.obj device.obj nvr.obj \
 		   $(VNCOBJ) $(RDPOBJ)
@@ -692,18 +694,43 @@ endif
 
 all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
 
+#
+# This rule creates a script (command file) that figures out which
+# language we want to make (its argument is the 2-letter language
+# name, or none) by looking it up in the database of supported ones,
+# and then it calls the (this) Makefile back with the proper args
+# for that target.
+#
+# We do it this way so it can also be used by the VC project files.
+#
+win/Mklang.cmd:	win/msvc/Makefile.VC
+		@echo @SET PATH=$(PATH) >>win\Mklang.cmd
+		@echo @SETLOCAL >>win\Mklang.cmd
+		@echo @SET LANG=none >>win\Mklang.cmd
+		@echo @FOR /F "eol=# tokens=1,2,3,4* delims=, " %%%%i in (ui\lang\VARCem.lang) do @if "%%1"=="%%%%i" set LANG=%%%%i LANGID=%%%%j PRILANG=%%%%k SUBLANG=%%%%l >>win\Mklang.cmd
+		@echo @IF NOT "%%LANG%%"=="none" @$(MAKE) -fwin/msvc/Makefile.VC "RFLAGS=$(RFLAGS) $(EXTRAS)" LANG=%%LANG%% VARCem-%%1.dll >>win\Mklang.cmd
 
-Mklang.cmd:
-		@echo @SET PATH=$(PATH) >Mklang.cmd
-		@echo @cd win\lang >>Mklang.cmd
-		@echo @$(MAKE) -fMakefile.VC "RFLAGS=$(RFLAGS) $(EXTRAS)" %%1% >>Mklang.cmd
-		@echo @cd ..\.. >>Mklang.cmd
 
-
-lang:		Mklang.cmd win/VARCem-common.rc
+lang:		win/Mklang.cmd
+ifdef LANG
+		@echo Generating localization $(LANG) ..
+else
 		@echo Generating localizations..
-		@Mklang.cmd all
-		@-del Mklang.cmd
+		@FOR /F "eol=# tokens=1 delims=, " %%i in (ui\lang\VARCem.lang) do @win\Mklang %%i
+endif
+		@-del win\Mklang.cmd
+
+win/$(RESDLL).rc:	VARCem.rpp VARCem-common.rc
+		@$(PREPROC) -DPREAMBLE= -DLANG=$(LANG) -DLANGID=$(LANGID) -DPRILANG=$(PRILANG) -DSUBLANG=$(SUBLANG) $< >win\$(RESDLL).rc 2>NUL
+
+$(RESDLL).res:	win/$(RESDLL).rc VARCem-common.rc
+		@echo Processing $(RESDLL).rc ..
+		@$(WINDRES) $(RFLAGS) -fo$@ $<
+
+$(RESDLL).dll:	$(RESDLL).res
+		@echo Linking $(RESDLL).dll ..
+		@$(LINK) /DLL /NOENTRY $(LDFLAGS) -OUT:$@ $(RESDLL).res
+		@-del win\$(RESDLL).rc
 
 VARCem.res:	win/VARCem.rc win/VARCem.mpp
 		@echo Generating Manifest file..
@@ -733,23 +760,22 @@ hello.exe:	hello.obj
 
 clean:
 		@echo Cleaning objects..
-		@del *.obj 2>NUL
-		@del *.res 2>NUL
+		@-del *.obj 2>NUL
+		@-del *.res 2>NUL
 
 clobber:	Mklang.cmd clean
 		@echo Cleaning executables..
-		@del *.d 2>NUL
-		@del *.exe 2>NUL
+		@-del *.d 2>NUL
+		@-del *.exe 2>NUL
 ifeq ($(DEBUG), y)
-		@del *.ilk 2>NUL
-		@del *.pdb 2>NUL
+		@-del *.ilk 2>NUL
+		@-del *.pdb 2>NUL
 endif
 ifeq ($(PROFILER), y)
-		@del *.map 2>NUL
+		@-del *.map 2>NUL
 endif
-		@del win\*.manifest 2>NUL
-		@Mklang.cmd clobber
-		@-del Mklang.cmd
+		@-del win\*.manifest 2>NUL
+		@-del *.dll 2>NUL
 #		@del $(DEPFILE) 2>NUL
 
 ifneq ($(AUTODEP), y)
@@ -776,4 +802,4 @@ include $(wildcard $(DEPFILE))
 endif
 
 
-# End of Makefile.VS.
+# End of Makefile.VC.
