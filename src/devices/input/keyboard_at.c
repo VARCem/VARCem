@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.13	2018/06/26
+ * Version:	@(#)keyboard_at.c	1.0.14	2018/06/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,7 +66,7 @@
 #define STAT_RTIMEOUT		0x40
 #define STAT_TTIMEOUT		0x20
 #define STAT_MFULL		0x20
-#define STAT_LOCK		0x10
+#define STAT_UNLOCKED		0x10
 #define STAT_CD			0x08
 #define STAT_SYSFLAG		0x04
 #define STAT_IFULL		0x02
@@ -1050,11 +1050,6 @@ kbd_keyboard_set(atkbd_t *kbd, uint8_t enable)
     kbd->mem[0] &= 0xef;
     kbd->mem[0] |= (enable ? 0x00 : 0x10);
 
-    if (enable)
-	kbd->status |= STAT_LOCK;
-      else
-	kbd->status &= ~STAT_LOCK;
-
     keyboard_scan = enable;
 }
 
@@ -1884,9 +1879,10 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: kbd reset\n");
 #endif
-						kbd_adddata_keyboard(0xfa);
 						key_queue_start = key_queue_end = 0; /*Clear key queue*/
+						kbd_adddata_keyboard(0xfa);
 						kbd_adddata_keyboard(0xaa);
+
 						/* Set system flag to 1 and scan code set to 2. */
 						keyboard_mode &= 0xFC;
 						keyboard_mode |= 2;
@@ -2121,9 +2117,7 @@ kbd_read(uint16_t port, void *priv)
 
 	case 0x64:
 		ret = (kbd->status & 0xFB) | (keyboard_mode & CCB_SYSTEM);
-#if 0
-		ret |= STAT_LOCK;
-#endif
+		ret |= STAT_UNLOCKED;
 		/* The transmit timeout (TTIMEOUT) flag should *NOT* be cleared, otherwise
 		   the IBM PS/2 Model 80's BIOS gives error 8601 (mouse error). */
 		kbd->status &= ~(STAT_RTIMEOUT/* | STAT_TTIMEOUT*/);
@@ -2156,7 +2150,7 @@ kbd_reset(void *priv)
     kbd->initialized = 0;
     kbd->dtrans = 0;
     kbd->first_write = 1;
-    kbd->status = STAT_LOCK | STAT_CD;
+    kbd->status = STAT_UNLOCKED | STAT_CD;
     kbd->mem[0] = 0x01;
     kbd->wantirq = 0;
     kbd_output_write(kbd, 0xcf);
