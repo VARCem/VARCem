@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.13	2018/05/14
+ * Version:	@(#)fdc.c	1.0.14	2018/06/25
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>

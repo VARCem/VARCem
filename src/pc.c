@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.47	2018/06/10
+ * Version:	@(#)pc.c	1.0.48	2018/06/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -215,7 +215,15 @@ pclog_ex(const char *fmt, va_list ap)
 #ifndef RELEASE_BUILD
     static char buff[PCLOG_BUFF_SIZE];
     static int seen = 0;
+    static int detect = 1;
     char temp[PCLOG_BUFF_SIZE];
+
+    if (fmt == NULL) {
+	/* Initialize. */
+	detect = (ap != NULL) ? 1 : 0;
+	seen = 0;
+	return;
+    }
 
     if (stdlog == NULL) {
 	if (log_path[0] != L'\0') {
@@ -236,7 +244,7 @@ pclog_ex(const char *fmt, va_list ap)
     }
 
     vsprintf(temp, fmt, ap);
-    if (! strcmp(buff, temp)) {
+    if (detect && !strcmp(buff, temp)) {
 	seen++;
     } else {
 	if (seen) {
@@ -264,6 +272,61 @@ pclog(const char *fmt, ...)
     va_end(ap);
 #endif
 }
+
+
+/* Enable or disable detection of repeated info being logged. */
+void
+pclog_repeat(int enabled)
+{
+    pclog_ex(NULL, (va_list)enabled);
+}
+
+
+#ifdef _DEBUG
+/* Log a block of code around the current CS:IP. */
+void
+pclog_dump(int num)
+{
+    char buff[128];
+    char *sp = NULL;
+    int i, k;
+
+    /* We make the current PC be in the middle of the block. */
+    num >>= 1;
+    i = -num;
+
+    /* Disable the repeat-detection. */
+    pclog_repeat(0);
+
+    while (i < num) {
+	if (sp == NULL) {
+		sp = buff;
+		sprintf(sp, "%08lx:", cpu_state.pc + i);
+		sp += strlen(sp);
+	}
+
+	/* Get byte from memory. */
+        k = readmembl(cpu_state.pc + i);
+	i++;
+
+        sprintf(sp, " %02x", k & 0xff);
+	sp += strlen(sp);
+
+	if ((i % 16) == 0) {
+		strcat(sp, "\n");
+		pclog(buff);
+		sp = NULL;
+	}
+    }
+    if (sp != NULL) {
+	strcat(sp, "\n");
+	pclog(buff);
+    }
+
+    /* Re-enable the repeat-detection. */
+    pclog_repeat(1);
+}
+#endif
 
 
 /* Log a fatal error, and display a UI message before exiting. */

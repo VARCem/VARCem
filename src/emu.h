@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.25	2018/06/02
+ * Version:	@(#)emu.h	1.0.26	2018/06/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -167,6 +167,8 @@ extern int	config_changed;			/* config has changed */
 extern void		pclog_ex(const char *fmt, va_list);
 #endif
 extern void		pclog(const char *fmt, ...);
+extern void		pclog_repeat(int enabled);
+extern void		pclog_dump(int num);
 extern void		fatal(const char *fmt, ...);
 extern void		pc_version(const char *platform);
 extern void		pc_path(wchar_t *dest, int dest_sz, const wchar_t *src);

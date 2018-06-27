@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.10	2018/05/06
+ * Version:	@(#)fdd_86f.c	1.0.11	2018/06/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1566,6 +1566,12 @@ d86f_read_sector_data(int drive, int side)
 		dev->data_find.bytes_obtained++;
 
 		if (dev->data_find.bytes_obtained == (crc_pos + fdc_get_gap(d86f_fdc))) {
+#if 0
+			/*
+			 * This code causes errors on Wyse UNIX
+			 * System V/386 V3.2.1A and was disabled
+			 * at Miran Grca's request.  --FvK
+			 */
 			/* We've got the data. */
 			if (dev->dma_over > 1) {
 				dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
@@ -1579,6 +1585,7 @@ d86f_read_sector_data(int drive, int side)
 				dev->data_find.bits_obtained++;
 				return;
 			}
+#endif
 
 			if ((dev->calc_crc.word != dev->track_crc.word) && (dev->state != STATE_02_READ_DATA)) {
 				d86f_log("86F: Data CRC error: %04X != %04X (%08X)\n", dev->track_crc.word, dev->calc_crc.word, dev->last_sector.dword);
@@ -1700,6 +1707,12 @@ d86f_write_sector_data(int drive, int side, int mfm, uint16_t am)
 		dev->data_find.bytes_obtained++;
 
 		if (dev->data_find.bytes_obtained == (crc_pos + fdc_get_gap(d86f_fdc))) {
+#if 0
+			/*
+			 * This code causes errors on Wyse UNIX
+			 * System V/386 V3.2.1A and was disabled
+			 * at Miran Grca's request.  --FvK
+			 */
 			if (dev->dma_over > 1) {
 				dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
 				dev->error_condition = 0;
@@ -1710,6 +1723,7 @@ d86f_write_sector_data(int drive, int side, int mfm, uint16_t am)
 				dev->data_find.bits_obtained++;
 				return;
 			}
+#endif
 
 			/* We've written the data. */
 			dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
@@ -2139,6 +2153,12 @@ d86f_turbo_read(int drive, int side)
 	}
     }
 
+#if 0
+    /*
+     * This code causes errors on Wyse UNIX
+     * System V/386 V3.2.1A and was disabled
+     * at Miran Grca's request.  --FvK
+     */
     if (dev->dma_over > 1) {
 	dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
 	dev->error_condition = 0;
@@ -2147,6 +2167,7 @@ d86f_turbo_read(int drive, int side)
 	fdc_overrun(d86f_fdc);
 	return;
     }
+#endif
 
     if (dev->turbo_pos >= (128 << dev->last_sector.id.n)) {
 	/* CRC is valid. */

@@ -8,7 +8,7 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.12	2018/05/06
+ * Version:	@(#)keyboard_at.c	1.0.13	2018/06/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,29 +62,29 @@
 #include "../../machines/m_xt_xi8088.h"
 
 
-#define STAT_PARITY     0x80
-#define STAT_RTIMEOUT   0x40
-#define STAT_TTIMEOUT   0x20
-#define STAT_MFULL      0x20
-#define STAT_LOCK       0x10
-#define STAT_CD		0x08
-#define STAT_SYSFLAG    0x04
-#define STAT_IFULL      0x02
-#define STAT_OFULL      0x01
+#define STAT_PARITY		0x80
+#define STAT_RTIMEOUT		0x40
+#define STAT_TTIMEOUT		0x20
+#define STAT_MFULL		0x20
+#define STAT_LOCK		0x10
+#define STAT_CD			0x08
+#define STAT_SYSFLAG		0x04
+#define STAT_IFULL		0x02
+#define STAT_OFULL		0x01
 
-#define PS2_REFRESH_TIME (16LL * TIMER_USEC)
+#define PS2_REFRESH_TIME	(16LL * TIMER_USEC)
 
-#define CCB_UNUSED      0x80
-#define CCB_TRANSLATE   0x40
-#define CCB_PCMODE      0x20
-#define CCB_ENABLEKBD   0x10
-#define CCB_IGNORELOCK  0x08
-#define CCB_SYSTEM      0x04
-#define CCB_ENABLEMINT  0x02
-#define CCB_ENABLEKINT  0x01
+#define CCB_UNUSED		0x80
+#define CCB_TRANSLATE		0x40
+#define CCB_PCMODE		0x20
+#define CCB_ENABLEKBD		0x10
+#define CCB_IGNORELOCK		0x08
+#define CCB_SYSTEM		0x04
+#define CCB_ENABLEMINT		0x02
+#define CCB_ENABLEKINT		0x01
 
-#define CCB_MASK	0x68
-#define MODE_MASK       0x6C
+#define CCB_MASK		0x68
+#define MODE_MASK		0x6c
 
 #define KBC_TYPE_ISA		0x00
 #define KBC_TYPE_PS2_1		0x01
@@ -94,9 +94,9 @@
 #define KBC_VEN_GENERIC		0x00
 #define KBC_VEN_AMI		0x04
 #define KBC_VEN_IBM_MCA		0x08
-#define KBC_VEN_QUADTEL		0x0C
+#define KBC_VEN_QUADTEL		0x0c
 #define KBC_VEN_TOSHIBA		0x10
-#define KBC_VEN_MASK		0x1C
+#define KBC_VEN_MASK		0x1c
 
 
 typedef struct {
@@ -142,15 +142,15 @@ typedef struct {
 
 
 /* bit 0 = repeat, bit 1 = makes break code? */
-uint8_t	keyboard_set3_flags[512];
-uint8_t	keyboard_set3_all_repeat;
-uint8_t	keyboard_set3_all_break;
+uint8_t		keyboard_set3_flags[512];
+uint8_t		keyboard_set3_all_repeat;
+uint8_t		keyboard_set3_all_break;
 
 /* Bits 0 - 1 = scan code set, bit 6 = translate or not. */
-uint8_t keyboard_mode = 0x42;
+uint8_t		keyboard_mode = 0x42;
 
-int	mouse_queue_start = 0,
-	mouse_queue_end = 0;
+int		mouse_queue_start = 0,
+		mouse_queue_end = 0;
 
 
 static uint8_t	key_ctrl_queue[16];
@@ -168,38 +168,38 @@ static atkbd_t	*CurrentKbd = NULL;		// FIXME: remove!!! --FvK
 
 /* Non-translated to translated scan codes. */
 static const uint8_t nont_to_t[256] = {
-  0xFF, 0x43, 0x41, 0x3F, 0x3D, 0x3B, 0x3C, 0x58,
-  0x64, 0x44, 0x42, 0x40, 0x3E, 0x0F, 0x29, 0x59,
-  0x65, 0x38, 0x2A, 0x70, 0x1D, 0x10, 0x02, 0x5A,
-  0x66, 0x71, 0x2C, 0x1F, 0x1E, 0x11, 0x03, 0x5B,
-  0x67, 0x2E, 0x2D, 0x20, 0x12, 0x05, 0x04, 0x5C,
-  0x68, 0x39, 0x2F, 0x21, 0x14, 0x13, 0x06, 0x5D,
-  0x69, 0x31, 0x30, 0x23, 0x22, 0x15, 0x07, 0x5E,
-  0x6A, 0x72, 0x32, 0x24, 0x16, 0x08, 0x09, 0x5F,
-  0x6B, 0x33, 0x25, 0x17, 0x18, 0x0B, 0x0A, 0x60,
-  0x6C, 0x34, 0x35, 0x26, 0x27, 0x19, 0x0C, 0x61,
-  0x6D, 0x73, 0x28, 0x74, 0x1A, 0x0D, 0x62, 0x6E,
-  0x3A, 0x36, 0x1C, 0x1B, 0x75, 0x2B, 0x63, 0x76,
-  0x55, 0x56, 0x77, 0x78, 0x79, 0x7A, 0x0E, 0x7B,
-  0x7C, 0x4F, 0x7D, 0x4B, 0x47, 0x7E, 0x7F, 0x6F,
-  0x52, 0x53, 0x50, 0x4C, 0x4D, 0x48, 0x01, 0x45,
-  0x57, 0x4E, 0x51, 0x4A, 0x37, 0x49, 0x46, 0x54,
+  0xff, 0x43, 0x41, 0x3f, 0x3d, 0x3b, 0x3c, 0x58,
+  0x64, 0x44, 0x42, 0x40, 0x3e, 0x0f, 0x29, 0x59,
+  0x65, 0x38, 0x2a, 0x70, 0x1d, 0x10, 0x02, 0x5a,
+  0x66, 0x71, 0x2c, 0x1f, 0x1e, 0x11, 0x03, 0x5b,
+  0x67, 0x2e, 0x2d, 0x20, 0x12, 0x05, 0x04, 0x5c,
+  0x68, 0x39, 0x2f, 0x21, 0x14, 0x13, 0x06, 0x5d,
+  0x69, 0x31, 0x30, 0x23, 0x22, 0x15, 0x07, 0x5e,
+  0x6a, 0x72, 0x32, 0x24, 0x16, 0x08, 0x09, 0x5f,
+  0x6b, 0x33, 0x25, 0x17, 0x18, 0x0b, 0x0a, 0x60,
+  0x6c, 0x34, 0x35, 0x26, 0x27, 0x19, 0x0c, 0x61,
+  0x6d, 0x73, 0x28, 0x74, 0x1a, 0x0d, 0x62, 0x6e,
+  0x3a, 0x36, 0x1c, 0x1b, 0x75, 0x2b, 0x63, 0x76,
+  0x55, 0x56, 0x77, 0x78, 0x79, 0x7a, 0x0e, 0x7b,
+  0x7c, 0x4f, 0x7d, 0x4b, 0x47, 0x7e, 0x7f, 0x6f,
+  0x52, 0x53, 0x50, 0x4c, 0x4d, 0x48, 0x01, 0x45,
+  0x57, 0x4e, 0x51, 0x4a, 0x37, 0x49, 0x46, 0x54,
   0x80, 0x81, 0x82, 0x41, 0x54, 0x85, 0x86, 0x87,
-  0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F,
+  0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
   0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
-  0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F,
-  0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7,
-  0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF,
-  0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7,
-  0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF,
-  0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7,
-  0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF,
-  0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
-  0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF,
-  0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7,
-  0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF,
-  0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7,
-  0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF
+  0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+  0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+  0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
+  0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
+  0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
+  0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
+  0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
+  0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
+  0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf,
+  0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
+  0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef,
+  0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+  0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
 };
 
 static const scancode scancode_set1[512] = {
@@ -742,7 +742,7 @@ kbd_adddata_keyboard(uint16_t val)
     /* Allow for scan code translation. */
     if (translate && (val == 0xf0)) {
 #ifdef ENABLE_KEYBOARD_LOG
-	kbd_log("Translate is on, F0 prefix detected\n");
+	kbd_log("ATkbd: translate is on, F0 prefix detected\n");
 #endif
 	sc_or = 0x80;
 	return;
@@ -751,7 +751,7 @@ kbd_adddata_keyboard(uint16_t val)
     /* Skip break code if translated make code has bit 7 set. */
     if (translate && (sc_or == 0x80) && (val & 0x80)) {
 #ifdef ENABLE_KEYBOARD_LOG
-	kbd_log("Translate is on, skipping scan code: %02X (original: F0 %02X)\n", nont_to_t[val], val);
+	kbd_log("ATkbd: translate is on, skipping scan code: %02X (original: F0 %02X)\n", nont_to_t[val], val);
 #endif
 	sc_or = 0;
 	return;
@@ -779,7 +779,7 @@ kbd_adddata_keyboard(uint16_t val)
     }
 
 #ifdef ENABLE_KEYBOARD_LOG
-    kbd_log("Translate is %s, ", translate ? "on" : "off");
+    kbd_log("ATkbd: translate is %s, ", translate ? "on" : "off");
 #endif
     switch(val) {
 	case FAKE_LSHIFT_ON:
@@ -949,7 +949,7 @@ static void
 kbd_output_write(atkbd_t *kbd, uint8_t val)
 {
 #ifdef ENABLE_KEYBOARD_LOG
-    kbd_log("Write output port: %02X (old: %02X)\n", val, kbd->output_port);
+    kbd_log("ATkbd: write output port: %02X (old: %02X)\n", val, kbd->output_port);
 #endif
     if ((kbd->output_port ^ val) & 0x20) { /*IRQ 12*/
 	if (val & 0x20)
@@ -983,7 +983,7 @@ static void
 kbd_cmd_write(atkbd_t *kbd, uint8_t val)
 {
 #ifdef ENABLE_KEYBOARD_LOG
-    kbd_log("Write command byte: %02X (old: %02X)\n", val, kbd->mem[0]);
+    kbd_log("ATkbd: write command byte: %02X (old: %02X)\n", val, kbd->mem[0]);
 #endif
 
     if ((val & 1) && (kbd->status & STAT_OFULL))
@@ -1003,7 +1003,7 @@ kbd_cmd_write(atkbd_t *kbd, uint8_t val)
 
     keyboard_scan = !(val & 0x10);
 #ifdef ENABLE_KEYBOARD_LOG
-    kbd_log("ATkbd: keyboard is now %s\n",  mouse_scan ? "enabled" : "disabled");
+    kbd_log("ATkbd: keyboard is now %s\n",  keyboard_scan ? "enabled" : "disabled");
     kbd_log("ATkbd: keyboard interrupt is now %s\n",  (val & 0x01) ? "enabled" : "disabled");
 #endif
 
@@ -1049,6 +1049,12 @@ kbd_keyboard_set(atkbd_t *kbd, uint8_t enable)
 {
     kbd->mem[0] &= 0xef;
     kbd->mem[0] |= (enable ? 0x00 : 0x10);
+
+    if (enable)
+	kbd->status |= STAT_LOCK;
+      else
+	kbd->status &= ~STAT_LOCK;
+
     keyboard_scan = enable;
 }
 
@@ -1068,7 +1074,7 @@ kbd_write64_generic(void *p, uint8_t val)
     atkbd_t *kbd = (atkbd_t *)p;
 
     switch (val) {
-	case 0xa4: /*Check if password installed*/
+	case 0xa4:	/*Check if password installed*/
 		if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
 			kbd_log("ATkbd: check if password installed\n");
@@ -1082,7 +1088,7 @@ kbd_write64_generic(void *p, uint8_t val)
 #endif
 		break;
 
-	case 0xa7: /*Disable mouse port*/
+	case 0xa7:	/*Disable mouse port*/
 		if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
 			kbd_log("ATkbd: disable mouse port\n");
@@ -1096,7 +1102,7 @@ kbd_write64_generic(void *p, uint8_t val)
 #endif
 		break;
 
-	case 0xa8: /*Enable mouse port*/
+	case 0xa8:	/*Enable mouse port*/
 		if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
 			kbd_log("ATkbd: enable mouse port\n");
@@ -1110,7 +1116,7 @@ kbd_write64_generic(void *p, uint8_t val)
 #endif
 		break;
 
-	case 0xa9: /*Test mouse port*/
+	case 0xa9:	/*Test mouse port*/
 #ifdef ENABLE_KEYBOARD_LOG
 		kbd_log("ATkbd: test mouse port\n");
 #endif
@@ -1127,14 +1133,14 @@ kbd_write64_generic(void *p, uint8_t val)
 #endif
 		break;
 
-	case 0xaf: /*Read keyboard version*/
+	case 0xaf:	/*Read keyboard version*/
 #ifdef ENABLE_KEYBOARD_LOG
 		kbd_log("ATkbd: read keyboard version\n");
 #endif
 		kbd_adddata(0x00);
 		return 0;
 
-	case 0xc0: /*Read input port*/
+	case 0xc0:	/*Read input port*/
 #ifdef ENABLE_KEYBOARD_LOG
 		kbd_log("ATkbd: read input port\n");
 #endif
@@ -1143,7 +1149,7 @@ kbd_write64_generic(void *p, uint8_t val)
 		kbd->input_port = ((kbd->input_port + 1) & 3) | (kbd->input_port & 0xfc) | fdc_ps1_525();
 		return 0;
 
-	case 0xd3: /*Write mouse output buffer*/
+	case 0xd3:	/*Write mouse output buffer*/
 		if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
 			kbd_log("ATkbd: write mouse output buffer\n");
@@ -1153,7 +1159,7 @@ kbd_write64_generic(void *p, uint8_t val)
 		}
 		break;
 
-	case 0xd4: /*Write to mouse*/
+	case 0xd4:	/*Write to mouse*/
 		if ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
 			kbd_log("ATkbd: write to mouse\n");
@@ -1194,16 +1200,16 @@ kbd_write60_ami(void *p, uint8_t val)
 	case 0x58: case 0x59: case 0x5a: case 0x5b:
 	case 0x5c: case 0x5d: case 0x5e: case 0x5f:
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - alias write to register %08X\n", kbd->command);
+		kbd_log("ATkbd: AMI - alias write to %08X\n", kbd->command);
 #endif
 		kbd->mem[kbd->command & 0x1f] = val;
 		if (kbd->command == 0x60)
 			kbd_cmd_write(kbd, val);
 		return 0;
 
-	case 0xaf: /*AMI - set extended controller RAM*/
+	case 0xaf:	/*AMI - set extended controller RAM*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - set extended controller RAM\n");
+		kbd_log("ATkbd: AMI - set extended controller RAM\n");
 #endif
 		if (kbd->secr_phase == 1) {
 			kbd->mem_addr = val;
@@ -1214,9 +1220,10 @@ kbd_write60_ami(void *p, uint8_t val)
 			kbd->secr_phase = 0;
 		}
 		return 0;
-	case 0xcb: /*AMI - set keyboard mode*/
+
+	case 0xcb:	/*AMI - set keyboard mode*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - set keyboard mode\n");
+		kbd_log("ATkbd: AMI - set keyboard mode\n");
 #endif
 		return 0;
     }
@@ -1240,7 +1247,7 @@ kbd_write64_ami(void *p, uint8_t val)
 	case 0x18: case 0x19: case 0x1a: case 0x1b:
 	case 0x1c: case 0x1d: case 0x1e: case 0x1f:
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - alias read from register %08X\n", val);
+		kbd_log("ATkbd: AMI - alias read from %08X\n", val);
 #endif
 		kbd_adddata(kbd->mem[val]);
 		return 0;
@@ -1254,21 +1261,21 @@ kbd_write64_ami(void *p, uint8_t val)
 	case 0x58: case 0x59: case 0x5a: case 0x5b:
 	case 0x5c: case 0x5d: case 0x5e: case 0x5f:
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - alias write to register %08X\n", kbd->command);
+		kbd_log("ATkbd: AMI - alias write to %08X\n", kbd->command);
 #endif
 		kbd->want60 = 1;
 		return 0;
 
-	case 0xa1: /*AMI - get controller version*/
+	case 0xa1:	/*AMI - get controller version*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - get controller version\n");
+		kbd_log("ATkbd: AMI - get controller version\n");
 #endif
 		return 0;
 
 	case 0xa2: /*AMI - reset keyboard controller lines P22 and P23 low*/
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - reset keyboard controller lines P22 and P23 low\n");
+			kbd_log("ATkbd: AMI - clear KBC lines P22 and P23\n");
 #endif
 			kbd_output_write(kbd, kbd->output_port & 0xf3);
 			kbd_adddata(0x00);
@@ -1279,7 +1286,7 @@ kbd_write64_ami(void *p, uint8_t val)
 	case 0xa3: /*AMI - set keyboard controller lines P22 and P23 high*/
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - set keyboard controller lines P22 and P23 high\n");
+			kbd_log("ATkbd: AMI - set KBC lines P22 and P23\n");
 #endif
 			kbd_output_write(kbd, kbd->output_port | 0x0c);
 			kbd_adddata(0x00);
@@ -1287,66 +1294,67 @@ kbd_write64_ami(void *p, uint8_t val)
 		}
 		break;
 
-	case 0xa4: /* AMI - write clock = low */
+	case 0xa4:	/* AMI - write clock = low */
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - write clock = low\n");
+			kbd_log("ATkbd: AMI - write clock = low\n");
 #endif
 			kbd->ami_stat &= 0xfe;
 			return 0;
 		}
 		break;
 
-	case 0xa5: /* AMI - write clock = high */
+	case 0xa5:	/* AMI - write clock = high */
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - write clock = high\n");
+			kbd_log("ATkbd: AMI - write clock = high\n");
 #endif
 			kbd->ami_stat |= 0x01;
 			return 0;
 		}
 		break;
-	case 0xa6: /* AMI - read clock */
+
+	case 0xa6:	/* AMI - read clock */
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - read clock\n");
+			kbd_log("ATkbd: AMI - read clock\n");
 #endif
 			kbd_adddata(!!(kbd->ami_stat & 1));
 			return 0;
 		}
 		break;
 
-	case 0xa7: /* AMI - write cache bad */
+	case 0xa7:	/* AMI - write cache bad */
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - write cache bad\n");
+			kbd_log("ATkbd: AMI - write cache bad\n");
 #endif
 			kbd->ami_stat &= 0xfd;
 			return 0;
 		}
 		break;
 
-	case 0xa8: /* AMI - write cache good */
+	case 0xa8:	/* AMI - write cache good */
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - write cache good\n");
+			kbd_log("ATkbd: AMI - write cache good\n");
 #endif
 			kbd->ami_stat |= 0x02;
 			return 0;
 		}
 		break;
 
-	case 0xa9: /* AMI - read cache */
+	case 0xa9:	/* AMI - read cache */
 		if ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1) {
 #ifdef ENABLE_KEYBOARD_LOG
-			kbd_log("AMI - read cache\n");
+			kbd_log("ATkbd: AMI - read cache\n");
 #endif
 			kbd_adddata(!!(kbd->ami_stat & 2));
 			return 0;
 		}
 		break;
 
-	case 0xaf: /*Set extended controller RAM*/
+	case 0xaf:	/*Set extended controller RAM*/
 #ifdef ENABLE_KEYBOARD_LOG
 		kbd_log("ATkbd: set extended controller RAM\n");
 #endif
@@ -1386,7 +1394,7 @@ kbd_write64_ami(void *p, uint8_t val)
 			   (allow command D1 to change bits 2 and 3 of the output
 			   port)*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - unblock keyboard controller lines P22 and P23\n");
+		kbd_log("ATkbd: AMI - unblock KBC lines P22 and P23\n");
 #endif
 		kbd->output_locked = 1;
 		return 0;
@@ -1395,28 +1403,28 @@ kbd_write64_ami(void *p, uint8_t val)
 			   (prevent command D1 from changing bits 2 and 3 of the
 			   output port)*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - block keyboard controller lines P22 and P23\n");
+		kbd_log("ATkbd: AMI - block KBC lines P22 and P23\n");
 #endif
 		kbd->output_locked = 1;
 		return 0;
 
-	case 0xca: /*AMI - read keyboard mode*/
+	case 0xca:	/*AMI - read keyboard mode*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - read keyboard mode\n");
+		kbd_log("ATkbd: AMI - read keyboard mode\n");
 #endif
 		kbd_adddata(0x00); /*ISA mode*/
 		return 0;
 
-	case 0xcb: /*AMI - set keyboard mode*/
+	case 0xcb:	/*AMI - set keyboard mode*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("AMI - set keyboard mode\n");
+		kbd_log("ATkbd: AMI - set keyboard mode\n");
 #endif
 		kbd->want60 = 1;
 		return 0;
 
-	case 0xef: /*??? - sent by AMI486*/
+	case 0xef:	/*??? - sent by AMI486*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("??? - sent by AMI486\n");
+		kbd_log("ATkbd: ??? - sent by AMI486\n");
 #endif
 		return 0;
     }
@@ -1449,7 +1457,7 @@ kbd_write64_ibm_mca(void *p, uint8_t val)
 
 	case 0xaf:
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("ATkbd: bad kbc command AF\n");
+		kbd_log("ATkbd: bad KBC command AF\n");
 #endif
 		return 1;
 
@@ -1474,9 +1482,9 @@ kbd_write60_quadtel(void *p, uint8_t val)
     atkbd_t *kbd = (atkbd_t *) p;
 
     switch(kbd->command) {
-	case 0xcf: /*??? - sent by MegaPC BIOS*/
+	case 0xcf:	/*??? - sent by MegaPC BIOS*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("??? - sent by MegaPC BIOS\n");
+		kbd_log("ATkbd: ??? - sent by MegaPC BIOS\n");
 #endif
 		return 0;
     }
@@ -1493,13 +1501,13 @@ kbd_write64_quadtel(void *p, uint8_t val)
     switch (val) {
 	case 0xaf:
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("ATkbd: bad kbc command AF\n");
+		kbd_log("ATkbd: bad KBC command AF\n");
 #endif
 		return 1;
 
-	case 0xcf: /*??? - sent by MegaPC BIOS*/
+	case 0xcf:	/*??? - sent by MegaPC BIOS*/
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("??? - sent by MegaPC BIOS\n");
+		kbd_log("ATkbd: ??? - sent by MegaPC BIOS\n");
 #endif
 		kbd->want60 = 1;
 		return 0;
@@ -1515,7 +1523,7 @@ kbd_write60_toshiba(void *p, uint8_t val)
     atkbd_t *kbd = (atkbd_t *) p;
 
     switch(kbd->command) {
-	case 0xb6: /* T3100e - set colour/mono switch */
+	case 0xb6:	/* T3100e - set color/mono switch */
 		t3100e_mono_set(val);
 		return 0;
     }
@@ -1532,64 +1540,64 @@ kbd_write64_toshiba(void *p, uint8_t val)
     switch (val) {
 	case 0xaf:
 #ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("ATkbd: bad kbc command AF\n");
+		kbd_log("ATkbd: bad KBC command AF\n");
 #endif
 		return 1;
 
-	case 0xb0:		/* T3100e: Turbo on */
+	case 0xb0:	/* T3100e: Turbo on */
 		t3100e_turbo_set(1);
 		return 0;
 
-	case 0xb1:		/* T3100e: Turbo off */
+	case 0xb1:	/* T3100e: Turbo off */
 		t3100e_turbo_set(0);
 		return 0;
 
-	case 0xb2:		/* T3100e: Select external display */
+	case 0xb2:	/* T3100e: Select external display */
 		t3100e_display_set(0x00);
 		return 0;
 
-	case 0xb3:		/* T3100e: Select internal display */
+	case 0xb3:	/* T3100e: Select internal display */
 		t3100e_display_set(0x01);
 		return 0;
 
-	case 0xb4:		/* T3100e: Get configuration / status */
+	case 0xb4:	/* T3100e: Get configuration / status */
 		kbd_adddata(t3100e_config_get());
 		return 0;
 
-	case 0xb5:		/* T3100e: Get colour / mono byte */
+	case 0xb5:	/* T3100e: Get colour / mono byte */
 		kbd_adddata(t3100e_mono_get());
 		return 0;
 
-	case 0xb6:		/* T3100e: Set colour / mono byte */
+	case 0xb6:	/* T3100e: Set colour / mono byte */
 		kbd->want60 = 1;
 		return 0;
 
-	case 0xb7:		/* T3100e: Emulate PS/2 keyboard - not implemented */
-	case 0xb8:		/* T3100e: Emulate AT keyboard - not implemented */
+	case 0xb7:	/* T3100e: Emulate PS/2 keyboard - not implemented */
+	case 0xb8:	/* T3100e: Emulate AT keyboard - not implemented */
 		return 0;
 
-	case 0xbb:		/* T3100e: Read 'Fn' key.
-				   Return it for right Ctrl and right Alt; on the real
-				   T3100e, these keystrokes could only be generated
-				   using 'Fn'. */
+	case 0xbb:	/* T3100e: Read 'Fn' key.
+			   Return it for right Ctrl and right Alt; on the real
+			   T3100e, these keystrokes could only be generated
+			   using 'Fn'. */
 		if (keyboard_recv(0xb8) ||	/* Right Alt */
 		    keyboard_recv(0x9d))	/* Right Ctrl */
 			kbd_adddata(0x04);
 		else	kbd_adddata(0x00);
 		return 0;
 
-	case 0xbc:		/* T3100e: Reset Fn+Key notification */
+	case 0xbc:	/* T3100e: Reset Fn+Key notification */
 		t3100e_notify_set(0x00);
 		return 0;
 
-	case 0xc0: /*Read input port*/
+	case 0xc0:	/*Read input port*/
 #ifdef ENABLE_KEYBOARD_LOG
 		kbd_log("ATkbd: read input port\n");
 #endif
 
 		/* The T3100e returns all bits set except bit 6 which
 		 * is set by t3100e_mono_set() */
-		kbd->input_port = (t3100e_mono_get() & 1) ? 0xFF : 0xBF;
+		kbd->input_port = (t3100e_mono_get() & 1) ? 0xff : 0xbf;
 		kbd_adddata(kbd->input_port);
 		return 0;
 
@@ -1610,6 +1618,9 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
     if (romset == ROM_XI8088 && port == 0x63)
 	port = 0x61;
 
+#ifdef _DEBUG
+    kbd_log("ATkbd: write(%04X, %02X)\n", port, val);
+#endif
     switch (port) {
 	case 0x60:
 		if (kbd->want60) {
@@ -1631,7 +1642,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 				case 0xd1: /*Write output port*/
 #ifdef ENABLE_KEYBOARD_LOG
-					// kbd_log("Write output port\n");
+					// kbd_log("ATkbd: write output port\n");
 #endif
 					if (kbd->output_locked) {
 						/*If keyboard controller lines P22-P23 are blocked,
@@ -1666,7 +1677,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 						mouse_write(val, mouse_p);
 					else if (!mouse_write && ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1)) {
 #ifdef ENABLE_KEYBOARD_LOG
-						pclog("Adding 0xFF to queue\n");
+						kbd_log("ATkbd: adding 0xFF to queue\n");
 #endif
 						keyboard_at_adddata_mouse(0xff);
 					}
@@ -1718,9 +1729,15 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #endif
 						break;
 				}
+
+				/* Keyboard command is now done. */
+				kbd->key_command = 0x00;
 			} else {
-				kbd->key_command = val;
+				/* No keyboard command in progress. */
+				kbd->key_command = 0x00;
+
 				kbd_keyboard_set(kbd, 1);
+
 				switch (val) {
 					case 0x00:
 #ifdef ENABLE_KEYBOARD_LOG
@@ -1731,7 +1748,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 					case 0x05: /*??? - sent by NT 4.0*/
 #ifdef ENABLE_KEYBOARD_LOG
-						kbd_log("ATkbd: nt 4.0 command fe\n");
+						kbd_log("ATkbd: NT4.0 command FE\n");
 #endif
 						kbd_adddata_keyboard(0xfe);
 						break;
@@ -1739,7 +1756,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 					case 0x71: /*These two commands are sent by Pentium-era AMI BIOS'es.*/
 					case 0x82:
 #ifdef ENABLE_KEYBOARD_LOG
-						kbd_log("ATkbd: pentium-era ami bios command %02x\n", val);
+						kbd_log("ATkbd: Pentium-era AMI BIOS command %02X\n", val);
 #endif
 						break;
 
@@ -1747,20 +1764,22 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: set/reset leds\n");
 #endif
-						kbd->key_wantdata = 1;
 						kbd_adddata_keyboard(0xfa);
+
+						kbd->key_wantdata = 1;
+						kbd->key_command = val;
 						break;
 
 					case 0xee: /*Diagnostic echo*/
 #ifdef ENABLE_KEYBOARD_LOG
-						kbd_log("ATkbd: diagnostic echo\n");
+						kbd_log("ATkbd: ECHO\n");
 #endif
 						kbd_adddata_keyboard(0xee);
 						break;
 
 					case 0xef: /*NOP (No OPeration). Reserved for future use.*/
 #ifdef ENABLE_KEYBOARD_LOG
-						kbd_log("ATkbd: kbd nop\n");
+						kbd_log("ATkbd: NOP\n");
 #endif
 						break;
 
@@ -1768,8 +1787,9 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: scan code set\n");
 #endif
-						kbd->key_wantdata = 1;
 						kbd_adddata_keyboard(0xfa);
+						kbd->key_wantdata = 1;
+						kbd->key_command = val;
 						break;
 
 					case 0xf2: /*Read ID*/
@@ -1786,35 +1806,37 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: set typematic rate/delay\n");
 #endif
-						kbd->key_wantdata = 1;
 						kbd_adddata_keyboard(0xfa);
+						kbd->key_wantdata = 1;
+						kbd->key_command = val;
 						break;
 
 					case 0xf4: /*Enable keyboard*/
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: enable keyboard via keyboard\n");
 #endif
-						keyboard_scan = 1;
 						kbd_adddata_keyboard(0xfa);
+						keyboard_scan = 1;
 						break;
 
 					case 0xf5: /*Disable keyboard*/
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: disable keyboard via keyboard\n");
 #endif
-						keyboard_scan = 0;
 						kbd_adddata_keyboard(0xfa);
+						keyboard_scan = 0;
 						break;
 
 					case 0xf6: /*Set defaults*/
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: set defaults\n");
 #endif
+						kbd_adddata_keyboard(0xfa);
+
 						keyboard_set3_all_break = 0;
 						keyboard_set3_all_repeat = 0;
 						memset(keyboard_set3_flags, 0, 512);
 						keyboard_mode = (keyboard_mode & 0xFC) | 0x02;
-						kbd_adddata_keyboard(0xfa);
 						kbd_setmap(kbd);
 						break;
 
@@ -1822,33 +1844,33 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: set all keys to repeat\n");
 #endif
-						keyboard_set3_all_break = 1;
 						kbd_adddata_keyboard(0xfa);
+						keyboard_set3_all_break = 1;
 						break;
 
 					case 0xf8: /*Set all keys to give make/break codes*/
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: set all keys to give make/break codes\n");
 #endif
-						keyboard_set3_all_break = 1;
 						kbd_adddata_keyboard(0xfa);
+						keyboard_set3_all_break = 1;
 						break;
 
 					case 0xf9: /*Set all keys to give make codes only*/
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: set all keys to give make codes only\n");
 #endif
-						keyboard_set3_all_break = 0;
 						kbd_adddata_keyboard(0xfa);
+						keyboard_set3_all_break = 0;
 						break;
 
 					case 0xfa: /*Set all keys to repeat and give make/break codes*/
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: set all keys to repeat and give make/break codes\n");
 #endif
+						kbd_adddata_keyboard(0xfa);
 						keyboard_set3_all_repeat = 1;
 						keyboard_set3_all_break = 1;
-						kbd_adddata_keyboard(0xfa);
 						break;
 
 					case 0xfe: /*Resend last scan code*/
@@ -1862,8 +1884,8 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #ifdef ENABLE_KEYBOARD_LOG
 						kbd_log("ATkbd: kbd reset\n");
 #endif
-						key_queue_start = key_queue_end = 0; /*Clear key queue*/
 						kbd_adddata_keyboard(0xfa);
+						key_queue_start = key_queue_end = 0; /*Clear key queue*/
 						kbd_adddata_keyboard(0xaa);
 						/* Set system flag to 1 and scan code set to 2. */
 						keyboard_mode &= 0xFC;
@@ -1903,8 +1925,26 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 0x64:
+		/*
+		 * Try to recover from bad commands.
+		 *
+		 * If we get a command here, but seem to be still in
+		 * keyboard-command data mode, abort that...
+		 */
+		if (kbd->key_wantdata || kbd->key_command) {
+			kbd_log("ATkbd: *** BUG ALERT *** aborting previous keyboard command 0x%02X (data %d)\n", kbd->key_command, kbd->key_wantdata);
+
+			/* If they were waiting for data.. */
+			kbd_adddata(0xfa);
+
+			/* Abort the previous command. */
+			kbd->key_command = 0x00;
+			kbd->key_wantdata = 0;
+		}
+
 		kbd->want60 = 0;
 		kbd->command = val;
+
 		/*New controller command*/
 		switch (val) {
 			case 0x20: case 0x21: case 0x22: case 0x23:
@@ -1929,9 +1969,9 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 				kbd->want60 = 1;
 				break;
 
-			case 0xaa: /*Self-test*/
+			case 0xaa:	/*Self-test*/
 #ifdef ENABLE_KEYBOARD_LOG
-				kbd_log("Self-test\n");
+				kbd_log("ATkbd: self-test\n");
 #endif
 				if ((kbd->flags & KBC_VEN_MASK) == KBC_VEN_TOSHIBA)
 					kbd->status |= STAT_IFULL;
@@ -1949,79 +1989,79 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 				kbd_adddata(0x55);
 				break;
 
-			case 0xab: /*Interface test*/
+			case 0xab:	/*Interface test*/
 #ifdef ENABLE_KEYBOARD_LOG
 				kbd_log("ATkbd: interface test\n");
 #endif
 				kbd_adddata(0x00); /*no error*/
 				break;
 
-			case 0xac: /*Diagnostic dump*/
+			case 0xac:	/*Diagnostic dump*/
 #ifdef ENABLE_KEYBOARD_LOG
 				kbd_log("ATkbd: diagnostic dump\n");
 #endif
-				for (i=0; i<16; i++)
+				for (i = 0; i < 16; i++)
 					kbd_adddata(kbd->mem[i]);
 				kbd_adddata((kbd->input_port & 0xf0) | 0x80);
 				kbd_adddata(kbd->output_port);
 				kbd_adddata(kbd->status);
 				break;
 
-			case 0xad: /*Disable keyboard*/
+			case 0xad:	/*Disable keyboard*/
 #ifdef ENABLE_KEYBOARD_LOG
 				kbd_log("ATkbd: disable keyboard\n");
 #endif
 				kbd_keyboard_set(kbd, 0);
 				break;
 
-			case 0xae: /*Enable keyboard*/
+			case 0xae:	/*Enable keyboard*/
 #ifdef ENABLE_KEYBOARD_LOG
 				kbd_log("ATkbd: enable keyboard\n");
 #endif
 				kbd_keyboard_set(kbd, 1);
 				break;
 
-			case 0xd0: /*Read output port*/
+			case 0xd0:	/*Read output port*/
 #ifdef ENABLE_KEYBOARD_LOG
 				kbd_log("ATkbd: read output port\n");
 #endif
 				mask = 0xff;
-				if(!keyboard_scan)
+				if (! keyboard_scan)
 					mask &= 0xbf;
-				if(!mouse_scan && ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1))
+				if (!mouse_scan && ((kbd->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1))
 					mask &= 0xf7;
 				kbd_adddata(kbd->output_port & mask);
 				break;
 
-			case 0xd1: /*Write output port*/
+			case 0xd1:	/*Write output port*/
 #ifdef ENABLE_KEYBOARD_LOG
-				// kbd_log("ATkbd: write output port\n");
+				kbd_log("ATkbd: write output port\n");
 #endif
 				kbd->want60 = 1;
 				break;
 
-			case 0xd2: /*Write keyboard output buffer*/
+			case 0xd2:	/*Write keyboard output buffer*/
 #ifdef ENABLE_KEYBOARD_LOG
 				kbd_log("ATkbd: write keyboard output buffer\n");
 #endif
 				kbd->want60 = 1;
 				break;
 
-			case 0xdd: /* Disable A20 Address Line */
+			case 0xdd:	/* Disable A20 Address Line */
 #ifdef ENABLE_KEYBOARD_LOG
-				kbd_log("ATkbd: disable A20 Address Line\n");
+				kbd_log("ATkbd: disable A20\n");
 #endif
 				kbd_output_write(kbd, kbd->output_port & 0xfd);
 				break;
 
-			case 0xdf: /* Enable A20 Address Line */
+			case 0xdf:	/* Enable A20 Address Line */
 #ifdef ENABLE_KEYBOARD_LOG
-				kbd_log("ATkbd: enable A20 address line\n");
+				kbd_log("ATkbd: enable A20\n");
 #endif
 				kbd_output_write(kbd, kbd->output_port | 0x02);
 				break;
 
-			case 0xe0: /*Read test inputs*/
+			case 0xe0:	/*Read test inputs*/
 #ifdef ENABLE_KEYBOARD_LOG
 				kbd_log("ATkbd: read test inputs\n");
 #endif
@@ -2081,12 +2121,18 @@ kbd_read(uint16_t port, void *priv)
 
 	case 0x64:
 		ret = (kbd->status & 0xFB) | (keyboard_mode & CCB_SYSTEM);
+#if 0
 		ret |= STAT_LOCK;
+#endif
 		/* The transmit timeout (TTIMEOUT) flag should *NOT* be cleared, otherwise
 		   the IBM PS/2 Model 80's BIOS gives error 8601 (mouse error). */
 		kbd->status &= ~(STAT_RTIMEOUT/* | STAT_TTIMEOUT*/);
 		break;
     }
+
+#ifdef _DEBUG
+    kbd_log("ATkbd: read(%04X) = %02X\n", port, ret);
+#endif
 
     return(ret);
 }
