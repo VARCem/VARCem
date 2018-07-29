@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.48	2018/06/26
+ * Version:	@(#)pc.c	1.0.49	2018/07/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -301,7 +301,7 @@ pclog_dump(int num)
     while (i < num) {
 	if (sp == NULL) {
 		sp = buff;
-		sprintf(sp, "%08lx:", cpu_state.pc + i);
+		sprintf(sp, "%08lx:", (unsigned long)cpu_state.pc + i);
 		sp += strlen(sp);
 	}
 

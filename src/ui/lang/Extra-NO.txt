@@ -1,0 +1,85 @@
+**** Additional strings for the Installer itself ****
+**** (keep the > lines, add translation after :  ****
+
+
+> Select the setup language:
+: Velg installasjonsspråk:
+
+> Desktop (as in "Desktop icons")
+: Skrivebord
+
+
+> Executing file removal operations
+: Sletter filer
+
+> Preparing files for removal
+: Forbereder sletting av filer
+
+> Restoring removed files
+: Gjenoppretter slettede filer
+
+> Extracting files from archive
+: Pakker ut filer fra arkiv
+
+> Executing file removal
+: Sletter filer
+
+> Preparing file
+: Forbereder fil
+
+> Restoring file
+: Gjenoppretter fil
+
+> This package can only be run from a bootstrapper.
+: Denne pakken kan kun kjøres fra en boostrapper.
+
+
+> Several commandline tools
+: Flere kommandolinjeverktøy
+
+> A set of example configurations to get you started.
+: Et sett med eksempelkonfigurasjoner å starte med
+
+> Generic Turbo-XT Clone.
+: Generisk Turbo-XT-klone.
+
+> The original IBM-PC model.
+: Den originale IBM-PC-modellen.
+
+> The new model of the IBM-PC
+: Den nye modellen av IBM-PC.
+
+> Segoe UI Fonts for Windows XP
+: Segoe typesnitt for brukergrensesnitt i Windows XP
+
+
+> Additional Languages support files.
+: Ytterligere filer for språkstøtte.
+
+> Your virtual machines.
+: Dine virtuelle maskiner.
+
+> Runtime files for the FluidSynth MIDI synthesizer
+: Kjøretidsbiblioteker for FluidSynths MIDI-synthesizer
+
+> Various runtime files needed by the application.
+: Diverse kjøretidsfiler brukt av applikasjonen.
+
+> ROM BIOS image files of emulated machines and devices.
+: ROM BIOS-avtrykksfiler for emulerte maskiner og enheter.
+
+> Runtime files needed for the SDL2 renderer.
+: Kjøretidsfiler brukt av SDL2-rendereren.
+
+> The VARCem Application
+: VARCem-applikasjonen
+
+> License Agreement
+: Lisensavtale
+
+> Installer for the [ProductName] application.
+: Installer for [ProductName]-applikasjonen.
+
+> The VARCem Team
+: VARCem-teamet
+

@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.16	2018/05/20
+ * Version:	@(#)win.c	1.0.17	2018/07/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,6 +58,9 @@
 #ifdef USE_SDL
 # include "win_sdl.h"
 #endif
+#ifdef USE_D2D
+# include "win_d2d.h"
+#endif
 #ifdef USE_VNC
 # include "../vnc.h"
 #endif
@@ -88,6 +91,9 @@ const vidapi_t *plat_vidapis[] = {
 #else
     &ddraw_vidapi,
     &d3d_vidapi,
+#endif
+#ifdef USE_D2D
+    &d2d_vidapi,
 #endif
 
 #ifdef USE_SDL

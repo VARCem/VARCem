@@ -8,7 +8,7 @@
  *
  *		Platform support defintions for Win32.
  *
- * Version:	@(#)win.h	1.0.17	2018/05/28
+ * Version:	@(#)win.h	1.0.18	2018/07/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

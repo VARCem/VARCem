@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.36	2018/06/19
+# Version:	@(#)Makefile.VC	1.0.37	2018/07/28
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -92,6 +92,9 @@ ifndef USB
 endif
 ifndef SDL
  SDL		:= n
+endif
+ifndef D2D
+ D2D		:= n
 endif
 ifndef VNC
  VNC		:= n
@@ -379,6 +382,28 @@ ifneq ($(SDL), n)
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(D2D), n)
+ ifeq ($(D2D), d)
+  OPTS		+= -DUSE_D2D=2
+ else
+  OPTS		+= -DUSE_D2D=1
+ endif
+ RFLAGS		+= -DUSE_D2D
+ ifneq ($(D2D_PATH), )
+  OPTS		+= -I$(D2D_PATH)/include/msvc -I$(D2D_PATH)/include
+  ifeq ($(X64), y)
+   LOPTS	+= -LIBPATH:$(D2D_PATH)\lib\msvc\x64
+  else
+   LOPTS	+= -LIBPATH:$(D2D_PATH)\lib\msvc\x86
+  endif
+ endif
+ ifeq ($(D2D), y)
+  LIBS		+= d2d1.lib
+ endif
+ D2DOBJ		:= win_d2d.obj
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(VNC), n)
  OPTS		+= -DUSE_VNC
  RFLAGS		+= -DUSE_VNC
@@ -442,7 +467,7 @@ ifneq ($(WX), n)
  UIOBJ		:= wx_main.obj wx_ui.obj wx_stbar.obj wx_render.obj
 else
  UIOBJ		:= win_ui.obj \
-		   win_ddraw.obj win_d3d.obj $(SDLOBJ) \
+		   win_ddraw.obj win_d3d.obj $(SDLOBJ) $(D2DOBJ) \
 		   win_dialog.obj win_about.obj win_status.obj \
 		   win_settings.obj win_devconf.obj win_snd_gain.obj \
 		   win_new_image.obj
@@ -711,7 +736,7 @@ win/Mklang.cmd:	win/msvc/Makefile.VC
 		@echo @IF NOT "%%LANG%%"=="none" @$(MAKE) -fwin/msvc/Makefile.VC "RFLAGS=$(RFLAGS) $(EXTRAS)" LANG=%%LANG%% VARCem-%%1.dll >>win\Mklang.cmd
 
 
-lang:		win/Mklang.cmd
+langs:		win/Mklang.cmd
 ifdef LANG
 		@echo Generating localization $(LANG) ..
 else

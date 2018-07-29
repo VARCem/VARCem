@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Define application version and build info.
+ *		Definitions for the Direct2D rendering module.
  *
- * Version:	@(#)version.h	1.0.17	2018/07/28
+ * Version:	@(#)win_d2d.h	    1.0.1	2018/07/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -44,35 +44,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef EMU_VERSION_H
-# define EMU_VERSION_H
+#ifndef WIN_D2D_H
+# define WIN_D2D_H
 
 
-/* Application name. */
-#define EMU_NAME	"VARCem"
-
-/* Version info. */
-#define EMU_VER_MAJOR	0
-#define EMU_VER_MINOR	1
-#define EMU_VER_REV	6
-#define EMU_VER_PATCH	2
-
-
-/* Standard C preprocessor macros. */
-#define STR_STRING(x)	#x
-#define STR(x)		STR_STRING(x)
-#define STR_RC(a,e)	a ## , ## e
-
-
-/* These are used in the application. */
-#define EMU_VER_NUM	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV
-#ifdef EMU_VER_PATCH
-# define EMU_VER_NUM_4	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV.EMU_VER_PATCH
-#else
-# define EMU_VER_NUM_4	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV.0
+#ifdef __cplusplus
+extern "C" {
 #endif
-#define EMU_VERSION	STR(EMU_VER_NUM)
-#define EMU_VERSION_4	STR(EMU_VER_NUM_4)
+
+extern const vidapi_t d2d_vidapi;
+
+#ifdef __cplusplus
+}
+#endif
 
 
-#endif	/*EMU_VERSION_H*/
+#endif	/*WIN_D2D_H*/

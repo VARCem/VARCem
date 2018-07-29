@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mov.h	1.0.2	2018/05/09
+ * Version:	@(#)x86_ops_mov.h	1.0.3	2018/07/28
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -232,6 +232,7 @@ static int opMOV_b_imm_a32(uint32_t fetchdat)
         fetch_ea_32(fetchdat);
 	ILLEGAL_ON((rmdat & 0x38) != 0);
         temp = getbyte();               if (cpu_state.abrt) return 1;
+	CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
         seteab(temp);
         CLOCK_CYCLES(timing_rr);
         PREFETCH_RUN(timing_rr, 3, rmdat, 0,0,(cpu_mod == 3) ? 1:0,0, 1);
@@ -244,6 +245,7 @@ static int opMOV_w_imm_a16(uint32_t fetchdat)
         fetch_ea_16(fetchdat);
 	ILLEGAL_ON((rmdat & 0x38) != 0);
         temp = getword();               if (cpu_state.abrt) return 1;
+	CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
         seteaw(temp);
         CLOCK_CYCLES(timing_rr);
         PREFETCH_RUN(timing_rr, 4, rmdat, 0,0,(cpu_mod == 3) ? 1:0,0, 0);
@@ -255,6 +257,7 @@ static int opMOV_w_imm_a32(uint32_t fetchdat)
         fetch_ea_32(fetchdat);
 	ILLEGAL_ON((rmdat & 0x38) != 0);
         temp = getword();               if (cpu_state.abrt) return 1;
+	CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
         seteaw(temp);
         CLOCK_CYCLES(timing_rr);
         PREFETCH_RUN(timing_rr, 4, rmdat, 0,0,(cpu_mod == 3) ? 1:0,0, 1);
@@ -266,6 +269,7 @@ static int opMOV_l_imm_a16(uint32_t fetchdat)
         fetch_ea_16(fetchdat);
 	ILLEGAL_ON((rmdat & 0x38) != 0);
         temp = getlong();               if (cpu_state.abrt) return 1;
+	CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         seteal(temp);
         CLOCK_CYCLES(timing_rr);
         PREFETCH_RUN(timing_rr, 6, rmdat, 0,0,0,(cpu_mod == 3) ? 1:0, 0);
@@ -277,6 +281,7 @@ static int opMOV_l_imm_a32(uint32_t fetchdat)
         fetch_ea_32(fetchdat);
 	ILLEGAL_ON((rmdat & 0x38) != 0);
         temp = getlong();               if (cpu_state.abrt) return 1;
+	CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         seteal(temp);
         CLOCK_CYCLES(timing_rr);
         PREFETCH_RUN(timing_rr, 6, rmdat, 0,0,0,(cpu_mod == 3) ? 1:0, 1);
