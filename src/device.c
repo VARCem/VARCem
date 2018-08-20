@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.11	2018/05/24
+ * Version:	@(#)device.c	1.0.12	2018/08/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,10 +60,34 @@ static device_t	*devices[DEVICE_MAX];
 static device_t	*device_current;
 
 
+/* Initialize the module for use. */
 void
 device_init(void)
 {
     memset(devices, 0x00, sizeof(devices));
+}
+
+
+/* Clone a master device for multi-instance devices. */
+const device_t *
+device_clone(const device_t *master, int num)
+{
+    char temp[1024], *sp;
+    device_t *dev;
+
+    /* Create a new device. */
+    dev = (device_t *)malloc(sizeof(device_t));
+
+    /* Copy the master info. */
+    memcpy(dev, master, sizeof(device_t));
+
+    /* Set up a clone. */
+    sprintf(temp, "%s #%i", master->name, num);
+    sp = (char *)malloc(strlen(temp) + 1);
+    strcpy(sp, temp);
+    dev->name = (const char *)sp;
+
+    return((const device_t *)dev);
 }
 
 
@@ -75,7 +99,7 @@ device_add(const device_t *d)
     void *priv = NULL;
     int c;
 
-    for (c=0; c<256; c++) {
+    for (c = 0; c < 256; c++) {
 	if (devices[c] == (device_t *)d) {
 		pclog("DEVICE: device already exists!\n");
 		return(NULL);
@@ -128,7 +152,7 @@ device_add_ex(const device_t *d, void *priv)
 {
     int c;
 
-    for (c=0; c<256; c++) {
+    for (c = 0; c < 256; c++) {
 	if (devices[c] == (device_t *)d) {
 		fatal("device_add: device already exists!\n");
 		break;
@@ -150,7 +174,7 @@ device_close_all(void)
 {
     int c;
 
-    for (c=0; c<DEVICE_MAX; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
 		if (devices[c]->close != NULL)
 			devices[c]->close(device_priv[c]);
@@ -165,7 +189,7 @@ device_reset_all(void)
 {
     int c;
 
-    for (c=0; c<DEVICE_MAX; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
 		if (devices[c]->reset != NULL)
 			devices[c]->reset(device_priv[c]);
@@ -179,7 +203,7 @@ device_get_priv(const device_t *d)
 {
     int c;
 
-    for (c=0; c<DEVICE_MAX; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
 		if (devices[c] == d)
 			return(device_priv[c]);
@@ -208,7 +232,7 @@ device_speed_changed(void)
 {
     int c;
 
-    for (c=0; c<DEVICE_MAX; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
 		if (devices[c]->speed_changed != NULL)
 			devices[c]->speed_changed(device_priv[c]);
@@ -224,7 +248,7 @@ device_force_redraw(void)
 {
     int c;
 
-    for (c=0; c<DEVICE_MAX; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
 		if (devices[c]->force_redraw != NULL)
                                 devices[c]->force_redraw(device_priv[c]);
@@ -238,7 +262,7 @@ device_add_status_info(char *s, int max_len)
 {
     int c;
 
-    for (c=0; c<DEVICE_MAX; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
 		if (devices[c]->add_status_info != NULL)
 			devices[c]->add_status_info(s, max_len, device_priv[c]);
