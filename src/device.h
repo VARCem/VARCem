@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.6	2018/08/18
+ * Version:	@(#)device.h	1.0.7	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,7 +115,7 @@ extern "C" {
 #endif
 
 extern void		device_init(void);
-extern const device_t * device_clone(const device_t *master, int num);
+extern const device_t * device_clone(const device_t *master);
 extern void		*device_add(const device_t *);
 extern void		device_add_ex(const device_t *d, void *priv);
 extern void		device_close_all(void);

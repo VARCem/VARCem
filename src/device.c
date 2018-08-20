@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.12	2018/08/18
+ * Version:	@(#)device.c	1.0.13	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,34 +55,72 @@
 #define DEVICE_MAX	256			/* max # of devices */
 
 
-static void	*device_priv[DEVICE_MAX];
-static device_t	*devices[DEVICE_MAX];
-static device_t	*device_current;
+typedef struct clonedev {
+    const device_t	*master;
+    int			count;
+    struct clonedev	*next;
+} clonedev_t;
+
+
+static device_t		*devices[DEVICE_MAX];
+static void		*device_priv[DEVICE_MAX];
+static device_t		*device_current;
+static clonedev_t	*clones;
 
 
 /* Initialize the module for use. */
 void
 device_init(void)
 {
+    clonedev_t *ptr, *cl;
+
     memset(devices, 0x00, sizeof(devices));
+
+    ptr = NULL;
+    for (cl = clones; cl != NULL; cl = ptr->next) {
+	ptr = cl->next;
+	free(cl);
+    }
+    clones = NULL;
 }
 
 
 /* Clone a master device for multi-instance devices. */
 const device_t *
-device_clone(const device_t *master, int num)
+device_clone(const device_t *master)
 {
     char temp[1024], *sp;
+    clonedev_t *cl, *ptr;
     device_t *dev;
+
+    /* Look up the master. */
+    for (ptr = clones; ptr != NULL; ptr = ptr->next)
+	if (ptr->master == master) break;
+
+    /* If not found, add this master to the list. */
+    if (ptr == NULL) {
+	ptr = (clonedev_t *)malloc(sizeof(clonedev_t));
+	memset(ptr, 0x00, sizeof(clonedev_t));
+	if (clones != NULL) {
+		for (cl = clones; cl->next != NULL; cl = cl->next)
+					;
+		cl->next = ptr;
+	} else
+		clones = ptr;
+	ptr->master = master;
+    }
 
     /* Create a new device. */
     dev = (device_t *)malloc(sizeof(device_t));
 
     /* Copy the master info. */
-    memcpy(dev, master, sizeof(device_t));
+    memcpy(dev, ptr->master, sizeof(device_t));
 
     /* Set up a clone. */
-    sprintf(temp, "%s #%i", master->name, num);
+    if (++ptr->count > 1)
+	sprintf(temp, "%s #%i", ptr->master->name, ptr->count);
+      else
+	strcpy(temp, ptr->master->name);
     sp = (char *)malloc(strlen(temp) + 1);
     strcpy(sp, temp);
     dev->name = (const char *)sp;
