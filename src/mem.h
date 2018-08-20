@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.5	2018/05/09
+ * Version:	@(#)mem.h	1.0.6	2018/08/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -77,7 +77,9 @@ typedef struct _mem_mapping_ {
 
     uint32_t	flags;
 
-    void	*p;
+    void	*p;		/* backpointer to mapping or device */
+
+    void	*dev;		/* backpointer to memory device */
 } mem_mapping_t;
 
 typedef struct _page_ {
@@ -114,12 +116,15 @@ extern uintptr_t	*writelookup2;
 extern int		writelnext;
 extern uint32_t		ram_mapped_addr[64];
 
-extern mem_mapping_t	bios_mapping[8],
-			bios_high_mapping[8],
-			romext_mapping,
+mem_mapping_t		base_mapping,
 			ram_low_mapping,
+			ram_high_mapping,
 			ram_mid_mapping,
-			ram_high_mapping;
+			ram_remapped_mapping,
+			ram_split_mapping,
+			bios_mapping[8],
+			bios_high_mapping[8],
+			romext_mapping;
 
 extern uint32_t		mem_logical_addr;
 
@@ -174,7 +179,9 @@ extern uint32_t	mmutranslatereal(uint32_t addr, int rw);
 extern void	addreadlookup(uint32_t virt, uint32_t phys);
 extern void	addwritelookup(uint32_t virt, uint32_t phys);
 
-extern void mem_mapping_add(mem_mapping_t *mapping,
+extern void mem_mapping_del(mem_mapping_t *map);
+
+extern void mem_mapping_add(mem_mapping_t *map,
                     uint32_t base, 
                     uint32_t size, 
                     uint8_t  (*read_b)(uint32_t addr, void *p),
@@ -187,7 +194,7 @@ extern void mem_mapping_add(mem_mapping_t *mapping,
                     uint32_t flags,
                     void *p);
 
-extern void mem_mapping_set_handler(mem_mapping_t *mapping,
+extern void mem_mapping_set_handler(mem_mapping_t *map,
                     uint8_t  (*read_b)(uint32_t addr, void *p),
                     uint16_t (*read_w)(uint32_t addr, void *p),
                     uint32_t (*read_l)(uint32_t addr, void *p),
@@ -195,13 +202,15 @@ extern void mem_mapping_set_handler(mem_mapping_t *mapping,
                     void (*write_w)(uint32_t addr, uint16_t val, void *p),
                     void (*write_l)(uint32_t addr, uint32_t val, void *p));
 
-extern void	mem_mapping_set_p(mem_mapping_t *mapping, void *p);
+extern void	mem_mapping_set_p(mem_mapping_t *map, void *p);
 
-extern void	mem_mapping_set_addr(mem_mapping_t *mapping,
+extern void	mem_mapping_set_dev(mem_mapping_t *map, void *dev);
+
+extern void	mem_mapping_set_addr(mem_mapping_t *map,
 				     uint32_t base, uint32_t size);
-extern void	mem_mapping_set_exec(mem_mapping_t *mapping, uint8_t *exec);
-extern void	mem_mapping_disable(mem_mapping_t *mapping);
-extern void	mem_mapping_enable(mem_mapping_t *mapping);
+extern void	mem_mapping_set_exec(mem_mapping_t *map, uint8_t *exec);
+extern void	mem_mapping_disable(mem_mapping_t *mapg);
+extern void	mem_mapping_enable(mem_mapping_t *map);
 
 extern void	mem_set_mem_state(uint32_t base, uint32_t size, int state);
 
