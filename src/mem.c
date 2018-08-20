@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.16	2018/08/17
+ * Version:	@(#)mem.c	1.0.16	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,11 +69,12 @@
 
 
 mem_mapping_t		base_mapping,
-			ram_low_mapping,
-			ram_high_mapping,
+			ram_low_mapping,	/* 0..640K mapping */
+#if 1
 			ram_mid_mapping,
-			ram_remapped_mapping,
-			ram_split_mapping,
+#endif
+			ram_remapped_mapping,	/* 640..1024K mapping */
+			ram_high_mapping,	/* 1024K+ mapping */
 			bios_mapping[8],
 			bios_high_mapping[8],
 			romext_mapping;
@@ -81,8 +82,6 @@ mem_mapping_t		base_mapping,
 page_t			*pages,			/* RAM page table */
 			**page_lookup;		/* pagetable lookup */
 uint32_t		pages_sz = 0;		/* #pages in table */
-
-uint8_t			isram[0x10000];
 
 uint8_t			*ram;			/* the virtual RAM */
 uint32_t		rammask;
@@ -113,8 +112,6 @@ int			pctrans = 0;
 int			cachesize = 256;
 
 uint32_t		ram_mapped_addr[64];
-
-int			split_mapping_enabled = 0;
 
 uint32_t		get_phys_virt,
 			get_phys_phys;
@@ -1580,8 +1577,6 @@ mem_reset(void)
 {
     uint32_t c, m;
 
-    split_mapping_enabled = 0;
-
     /* Free the ROM memory and reset size mask. */
     if (rom != NULL) {
 	free(rom);
@@ -1676,14 +1671,6 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
     /* Initialize the tables. */
     resetreadlookup();
 
-    memset(isram, 0x00, sizeof(isram));
-    for (c = 0; c < ((uint32_t)mem_size / 64); c++) {
-	isram[c] = 1;
-	if ((c >= 0xa && c <= 0xf) ||
-	    (cpu_16bitbus && c >= 0xfe && c <= 0xff))
-		isram[c] = 0;
-    }
-
     memset(_mem_read_b,  0x00, sizeof(_mem_read_b));
     memset(_mem_read_w,  0x00, sizeof(_mem_read_w));
     memset(_mem_read_l,  0x00, sizeof(_mem_read_l));
@@ -1727,11 +1714,13 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 	}
     }
 
+#if 1
     if (mem_size > 768)
 	mem_mapping_add(&ram_mid_mapping, 0xc0000, 0x40000,
 			mem_read_ram,mem_read_ramw,mem_read_raml,
 			mem_write_ram,mem_write_ramw,mem_write_raml,
 			ram + 0xc0000, MEM_MAPPING_INTERNAL, NULL);
+#endif
 
     if (romset == ROM_IBMPS1_2011)
 	mem_mapping_add(&romext_mapping, 0xc8000, 0x08000,
@@ -1743,12 +1732,6 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 		    mem_write_ram,mem_write_ramw,mem_write_raml,
 		    ram + (1 << 20), MEM_MAPPING_INTERNAL, NULL);
     mem_mapping_disable(&ram_remapped_mapping);
-
-    mem_mapping_add(&ram_split_mapping, mem_size * 1024, 384 * 1024,
-		    mem_read_ram, mem_read_ramw, mem_read_raml,
-		    mem_write_ram,mem_write_ramw,mem_write_raml,
-		    ram + (1 << 20), MEM_MAPPING_INTERNAL, NULL);
-    mem_mapping_disable(&ram_split_mapping);
 
     mem_a20_init();
 }
@@ -1783,25 +1766,23 @@ mem_init(void)
 static void
 mem_remap_top(int max_size)
 {
-    uint32_t c;
+    uint32_t start = (mem_size >= 1024) ? mem_size : 1024;
+    int size = mem_size - 640;
 
-    if (mem_size > 640) {
-	uint32_t start = (mem_size >= 1024) ? mem_size : 1024;
-	int size = mem_size - 640;
-	if (size > max_size)
-		size = max_size;
+pclog("MEM: remapping top %iKB (mem=%i)\n", max_size, mem_size);
+    if (mem_size <= 640) return;
 
-       	for (c = (start / 64); c < ((start + size - 1) / 64); c++)
-      		isram[c] = 1;
+    if (size > max_size)
+	size = max_size;
 
-	mem_set_mem_state(start * 1024, size * 1024,
-			  MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-	mem_mapping_set_addr(&ram_remapped_mapping,
-			     start * 1024, size * 1024);
-	mem_mapping_set_exec(&ram_split_mapping, ram + (start * 1024));
+    mem_set_mem_state(start * 1024, size * 1024,
+		      MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
+    mem_mapping_set_addr(&ram_remapped_mapping, start * 1024, size * 1024);
+#if 0
+    mem_mapping_set_exec(&ram_split_mapping, ram + (start * 1024));
+#endif
 
-	flushmmucache();
-    }
+    flushmmucache();
 }
 
 

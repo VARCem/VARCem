@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.15	2018/05/06
+ * Version:	@(#)m_ps2_mca.c	1.0.16	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1048,10 +1048,13 @@ static void mem_encoding_write_cached(uint16_t addr, uint8_t val, void *p)
                         ps2.pending_cache_miss = 1;
                 if ((val & 0x21) == 0x01 && (old & 0x21) != 0x01)
                         ps2_cache_clean();
+#if 1
+// FIXME: Look into this!!!
                 if (val & 0x01)
                         ram_mid_mapping.flags |= MEM_MAPPING_ROM;
                 else
                         ram_mid_mapping.flags &= ~MEM_MAPPING_ROM;
+#endif
                 break;
         }
 //        pclog("mem_encoding_write: addr=%02x val=%02x %04x:%04x  %02x %02x\n", addr, val, CS,cpu_state.pc, ps2.mem_regs[1],ps2.mem_regs[2]);

@@ -10,7 +10,7 @@
  *
  *		Re-worked version based on the 82C235 datasheet and errata.
  *
- * Version:	@(#)m_at_scat.c	1.0.9	2018/06/12
+ * Version:	@(#)m_at_scat.c	1.0.10	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -1349,7 +1349,6 @@ scat_init(void)
     scat_port_92 = 0;
 
     mem_mapping_disable(&ram_low_mapping);
-    mem_mapping_disable(&ram_mid_mapping);
     mem_mapping_disable(&ram_high_mapping);
     for (i = 0; i < 4; i++)
 	mem_mapping_disable(&bios_mapping[i]);
@@ -1371,8 +1370,6 @@ scat_init(void)
 	scat_stat[i].regs_2x9 = 0x03;
 	mem_mapping_add(&scat_ems_mapping[i], (i + (i >= 24 ? 28 : 16)) << 14, 0x04000, mem_read_scatb, mem_read_scatw, mem_read_scatl, mem_write_scatb, mem_write_scatw, mem_write_scatl, ram + ((i + (i >= 24 ? 28 : 16)) << 14), 0, &scat_stat[i]);
     }
-
-    for(i=4;i<10;i++) isram[i] = 0;
 
     for (i = (scat_regs[SCAT_VERSION] < 4 ? 0 : 8); i < 16; i++) {
 	mem_mapping_add(&scat_high_mapping[i], (i << 14) + 0xFC0000, 0x04000, mem_read_bios, mem_read_biosw, mem_read_biosl, mem_write_null, mem_write_nullw, mem_write_nulll, rom + ((i << 14) & biosmask), 0, NULL);
@@ -1425,7 +1422,6 @@ scatsx_init(void)
     scat_port_92 = 0;
 
     mem_mapping_disable(&ram_low_mapping);
-    mem_mapping_disable(&ram_mid_mapping);
     mem_mapping_disable(&ram_high_mapping);
     for (i = 0; i < 4; i++)
 	mem_mapping_disable(&bios_mapping[i]);
