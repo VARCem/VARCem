@@ -8,7 +8,7 @@
  *
  *		Implementation of the Commodore PC3 system.
  *
- * Version:	@(#)m_at_commodore.c	1.0.7	2018/05/06
+ * Version:	@(#)m_at_commodore.c	1.0.8	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../io.h"
+#include "../mem.h"
 #include "../device.h"
 #include "../devices/ports/parallel.h"
 #include "../devices/ports/serial.h"
@@ -90,7 +91,9 @@ pc3_init(void)
 void
 machine_at_cmdpc_init(const machine_t *model, void *arg)
 {
-    machine_at_ide_top_remap_init(model, arg);
+    machine_at_ide_init(model, arg);
+
+    mem_remap_top(384);
 
     device_add(&fdc_at_device);
 

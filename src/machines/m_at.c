@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.9	2018/05/06
+ * Version:	@(#)m_at.c	1.0.10	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,6 +77,17 @@ machine_at_init(const machine_t *model, void *arg)
 
 
 void
+machine_at_ibm_init(const machine_t *model, void *arg)
+{
+    machine_at_init(model, arg);
+
+    mem_remap_top(384);
+
+    device_add(&fdc_at_device);
+}
+
+
+void
 machine_at_ps2_init(const machine_t *model, void *arg)
 {
     machine_at_common_init(model, arg);
@@ -109,31 +120,4 @@ machine_at_ps2_ide_init(const machine_t *model, void *arg)
     machine_at_ps2_init(model, arg);
 
     device_add(&ide_isa_2ch_opt_device);
-}
-
-
-void
-machine_at_top_remap_init(const machine_t *model, void *arg)
-{
-    machine_at_init(model, arg);
-
-    mem_remap_top_384k();
-}
-
-
-void
-machine_at_ide_top_remap_init(const machine_t *model, void *arg)
-{
-    machine_at_ide_init(model, arg);
-
-    mem_remap_top_384k();
-}
-
-
-void
-machine_at_ibm_init(const machine_t *model, void *arg)
-{
-    machine_at_top_remap_init(model, arg);
-
-    device_add(&fdc_at_device);
 }

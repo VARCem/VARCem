@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.16	2018/08/20
+ * Version:	@(#)m_ps2_mca.c	1.0.17	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -861,7 +861,8 @@ static void ps2_mca_board_model_50_init()
 {
         ps2_mca_board_common_init();
 
-        mem_remap_top_384k();
+        mem_remap_top(384);
+
         mca_init(4);
 
         ps2.planar_read = model_50_read;
@@ -893,7 +894,7 @@ static void ps2_mca_board_model_55sx_init()
                     MEM_MAPPING_INTERNAL,
                     NULL);
 
-        mem_remap_top_256k();
+        mem_remap_top(256);
         ps2.option[3] = 0x10;
 
         memset(ps2.memory_bank, 0xf0, 8);

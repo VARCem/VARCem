@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.21	2018/06/14
+ * Version:	@(#)machine.h	1.0.22	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -259,14 +259,11 @@ extern void		machine_common_init(const machine_t *, void *);
 
 extern void		machine_at_common_init(const machine_t *, void *);
 extern void		machine_at_init(const machine_t *, void *);
+extern void		machine_at_ibm_init(const machine_t *, void *);
 extern void		machine_at_ps2_init(const machine_t *, void *);
 extern void		machine_at_common_ide_init(const machine_t *, void *);
 extern void		machine_at_ide_init(const machine_t *, void *);
 extern void		machine_at_ps2_ide_init(const machine_t *, void *);
-extern void		machine_at_top_remap_init(const machine_t *, void *);
-extern void		machine_at_ide_top_remap_init(const machine_t *, void *);
-
-extern void		machine_at_ibm_init(const machine_t *, void *);
 
 extern void		machine_at_t3100e_init(const machine_t *, void *);
 

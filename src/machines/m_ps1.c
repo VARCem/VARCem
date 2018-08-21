@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.19	2018/05/06
+ * Version:	@(#)m_ps1.c	1.0.20	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -556,7 +556,7 @@ ps1_common_init(const machine_t *model, void *arg)
     machine_common_init(model, arg);
     game_enabled = i;
 
-    mem_remap_top_384k();
+    mem_remap_top(384);
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_at);
 

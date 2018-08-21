@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.8	2018/08/20
+ * Version:	@(#)mem.h	1.0.9	2018/08/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -259,8 +259,7 @@ extern void	mem_add_bios(void);
 
 extern void	mem_init(void);
 extern void	mem_reset(void);
-extern void	mem_remap_top_256k(void);
-extern void	mem_remap_top_384k(void);
+extern void	mem_remap_top(int kb);
 
 extern uint8_t	port_92_read(uint16_t port, void *priv);
 extern void	port_92_write(uint16_t port, uint8_t val, void *priv);
