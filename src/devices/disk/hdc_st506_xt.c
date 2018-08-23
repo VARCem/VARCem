@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.10	2018/05/06
+ * Version:	@(#)hdc_st506_xt.c	1.0.11	2018/08/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -843,16 +843,17 @@ st506_set_switches(hdc_t *dev)
 		if (drive->spt == 17 &&
 		    drive->hpc == hd_types[c].hpc &&
 		    drive->tracks == hd_types[c].tracks) {
-			dev->switches |= (c << (d ? 0 : 2));
+			dev->switches |= (c << (d * 2));
 			break;
 		}
 	}
 
-#ifdef ENABLE_HDC_LOG
+	pclog("ST506: ");
 	if (c == 4)
-		hdc_log("WARNING: drive %d has unsupported format %d/%d/%d !\n",
-			d, drive->tracks, drive->hpc, drive->spt);
-#endif
+		pclog("*WARNING* drive %d has unsupported format", d);
+	  else
+		pclog("drive %d is type %d", d, c);
+	pclog(" (%d/%d/%d)\n", drive->tracks, drive->hpc, drive->spt);
     }
 }
 

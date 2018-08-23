@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.23	2018/06/14
+ * Version:	@(#)machine_table.c	1.0.24	2018/08/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,7 +85,7 @@ const machine_t machines[] = {
     { "[8086] VTech Laser XT3",			ROM_LXT3,		"vtech_lxt3",		L"vtech/lxt3",			{{"", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												256,  512, 256,   0,	      machine_xt_laserxt_init, NULL,			NULL			},
 #endif
 
-    { "[286 ISA] AMI 286 clone",		ROM_AMI286,		"ami_286",		L"generic/ami/286",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										512,16384, 128, 128,	     machine_at_neat_ami_init, NULL,			NULL			},
+    { "[286 ISA] AMI 286 clone",		ROM_AMI286,		"ami_286",		L"generic/ami/286",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										512, 8192, 128, 128,	     machine_at_neat_ami_init, NULL,			NULL			},
     { "[286 ISA] Award 286 clone",		ROM_AWARD286,		"award_286",		L"generic/award/286",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										512,16384, 128, 128,		 machine_at_scat_init, NULL,			NULL			},
     { "[286 ISA] Commodore PC 30 III",		ROM_CMDPC30,		"commodore_pc30",	L"commodore/pc30",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										640,16384, 128, 128,		machine_at_cmdpc_init, NULL,			NULL			},
     { "[286 ISA] Compaq Portable II",		ROM_PORTABLEII,		"compaq_portable2",	L"compaq/portable2",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										640,16384, 128, 128,	       machine_at_compaq_init, NULL,			NULL			},
@@ -107,7 +107,7 @@ const machine_t machines[] = {
     { "[386SX ISA] AMI 386SX clone",		ROM_AMI386SX,		"ami_386",		L"generic/ami/386",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								512,16384, 128, 128,	     machine_at_headland_init, NULL,			NULL			},
     { "[386SX ISA] Amstrad MegaPC",		ROM_MEGAPC,		"amstrad_megapc",	L"amstrad/megapc",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC,				  1,   16,   1, 128,	      machine_at_wd76c10_init, NULL,			NULL			},
     { "[386SX ISA] Award 386SX clone",		ROM_AWARD386SX_OPTI495,	"award_386sx",		L"generic/award/opti495",	{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								  1,   64,   1, 128,	      machine_at_opti495_init, NULL,   			NULL			},
-    { "[386SX ISA] DTK 386SX clone",		ROM_DTK386,		"dtk_386",		L"dtk/386",			{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								512,16384, 128, 128,		 machine_at_neat_init, NULL,			NULL			},
+    { "[386SX ISA] DTK 386SX clone",		ROM_DTK386,		"dtk_386",		L"dtk/386",			{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								512, 8192, 128, 128,		 machine_at_neat_init, NULL,			NULL			},
     { "[386SX ISA] IBM PS/1 model 2121",	ROM_IBMPS1_2121,	"ibm_ps1_2121",		L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, &m_ps1_device,		NULL			},
     { "[386SX ISA] IBM PS/1 m.2121+ISA",	ROM_IBMPS1_2121_ISA,	"ibm_ps1_2121_isa",	L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, &m_ps1_device,		NULL			},
 

@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.17	2018/08/20
+ * Version:	@(#)mem.c	1.0.18	2018/08/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1772,16 +1772,20 @@ mem_remap_top(int kb)
 pclog("MEM: remapping top %iKB (mem=%i)\n", kb, mem_size);
     if (mem_size <= 640) return;
 
+    if (kb == 0) {
+	/* Called to disable the mapping. */
+	mem_mapping_disable(&ram_remapped_mapping);
+
+	return;
+    }
+
     if (size > kb)
 	size = kb;
 
     mem_set_mem_state(start * 1024, size * 1024,
 		      MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
     mem_mapping_set_addr(&ram_remapped_mapping, start * 1024, size * 1024);
-#if 0
-    //FIXME: was this a typo for mem_remapped_mapping?  --FvK
-    mem_mapping_set_exec(&ram_split_mapping, ram + (start * 1024));
-#endif
+    mem_mapping_set_exec(&ram_remapped_mapping, ram + (start * 1024));
 
     flushmmucache();
 }
