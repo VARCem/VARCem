@@ -12,7 +12,7 @@
  *		an "extern" reference to its device into this file, and
  *		add an entry for it into the table.
  *
- * Version:	@(#)video_dev.c	1.0.18	2018/05/06
+ * Version:	@(#)video_dev.c	1.0.19	2018/08/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -122,7 +122,7 @@ extern const device_t cpqega_device;
 extern const device_t sega_device;
 
 /* Tseng Labs ET4000 series cards. */
-extern const device_t et4000_device;
+extern const device_t et4000_isa_device;
 
 /* Tseng Labs ET4000-W32 series cards. */
 #if defined(DEV_BRANCH) && defined(USE_STEALTH32)
@@ -258,7 +258,7 @@ static vidcard_t video_cards[] = {
     {"[ISA] TI CF62011 SVGA",				"ti_cf62011",		&ti_cf62011_device,			VID_TICF62011,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 8, 16, 32,   8, 16, 32}},
 #endif
     {"[ISA] Trident TVGA8900D",				"tvga8900d",		&tvga8900d_device,			VID_TVGA,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 3,  3,  6,   8,  8, 12}},
-    {"[ISA] Tseng ET4000AX",				"et4000ax",		&et4000_device,				VID_ET4000,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 3,  3,  6,   5,  5, 10}},
+    {"[ISA] Tseng ET4000AX",				"et4000ax",		&et4000_isa_device,			VID_ET4000,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 3,  3,  6,   5,  5, 10}},
     {"[ISA] VGA",					"vga",			&vga_device,				VID_VGA,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 8, 16, 32,   8, 16, 32}},
     {"[ISA] Wyse 700",					"wy700",		&wy700_device,				VID_WY700,			VIDEO_FLAG_TYPE_CGA,		{VIDEO_ISA, 8, 16, 32,   8, 16, 32}},
     {"[PCI] ATI Graphics Pro Turbo (Mach64 GX)",	"mach64gx_pci",		&mach64gx_pci_device,			VID_MACH64GX_PCI,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 2,  2,  1,  20, 20, 21}},

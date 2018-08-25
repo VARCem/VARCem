@@ -8,7 +8,10 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * Version:	@(#)keyboard_at.c	1.0.14	2018/06/27
+ * NOTE:	Several changes to disable Mode1 for now, as this breaks 
+ *		 the TSX32 operating system. More cleanups needed..
+ *
+ * Version:	@(#)keyboard_at.c	1.0.15	2018/08/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -202,6 +205,7 @@ static const uint8_t nont_to_t[256] = {
   0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
 };
 
+#if 0
 static const scancode scancode_set1[512] = {
     { {          -1},{               -1} }, { {     0x01,-1},{          0x81,-1} }, { {     0x02,-1},{          0x82,-1} }, { {     0x03,-1},{          0x83,-1} },        /*000*/
     { {     0x04,-1},{          0x84,-1} }, { {     0x05,-1},{          0x85,-1} }, { {     0x06,-1},{          0x86,-1} }, { {     0x07,-1},{          0x87,-1} },        /*004*/
@@ -331,6 +335,7 @@ static const scancode scancode_set1[512] = {
     { {          -1},{               -1} }, { {          -1},{               -1} }, { {          -1},{               -1} }, { {          -1},{               -1} },        /*1f8*/
     { {          -1},{               -1} }, { {          -1},{               -1} }, { {0xe0,0xfe,-1},{               -1} }, { {0xe0,0xff,-1},{               -1} }         /*1fc*/
 };
+#endif
 
 static const scancode scancode_set2[512] = {
     { {          -1},{               -1} }, { {     0x76,-1},{     0xF0,0x76,-1} }, { {     0x16,-1},{     0xF0,0x16,-1} }, { {     0x1E,-1},{     0xF0,0x1E,-1} },        /*000*/
@@ -597,11 +602,14 @@ static void
 kbd_setmap(atkbd_t *kbd)
 {
     switch (keyboard_mode & 3) {
+#if 0
 	case 1:
 	default:
 		keyboard_set_table(scancode_set1);
 		break;
-
+#else
+	default:
+#endif
 	case 2:
 		keyboard_set_table(scancode_set2);
 		break;
@@ -612,7 +620,11 @@ kbd_setmap(atkbd_t *kbd)
     }
 
     if (keyboard_mode & 0x20)
+#if 0
 	keyboard_set_table(scancode_set1);
+#else
+	keyboard_set_table(scancode_set2);
+#endif
 }
 
 
@@ -689,10 +701,18 @@ kbd_adddata(uint8_t val)
 static void
 kbd_adddata_vals(uint8_t *val, uint8_t len)
 {
-    int translate = (keyboard_mode & 0x40) && !(keyboard_mode & 0x20);
+    int xt_mode = (keyboard_mode & 0x20) && ((CurrentKbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1);
+    int translate = (keyboard_mode & 0x40);
     int i;
     uint8_t or = 0;
     uint8_t send;
+
+#if 0
+    translate = translate || (keyboard_mode & 0x40) && !xt_mode;
+#else
+    translate = translate || (keyboard_mode & 0x40) || xt_mode;
+    translate = translate || ((CurrentKbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2);
+#endif
 
     for (i = 0; i < len; i++) {
         if (translate) {
@@ -731,10 +751,17 @@ kbd_adddata_vals(uint8_t *val, uint8_t len)
 static void
 kbd_adddata_keyboard(uint16_t val)
 {
-    int translate = (keyboard_mode & 0x40) && !(keyboard_mode & 0x20);
-
+    int xt_mode = (keyboard_mode & 0x20) && ((CurrentKbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1);
+    int translate = (keyboard_mode & 0x40);
     uint8_t fake_shift[4];
     uint8_t num_lock = 0, shift_states = 0;
+
+#if 0
+    translate = translate || (keyboard_mode & 0x40) && !xt_mode;
+#else
+    translate = translate || (keyboard_mode & 0x40) || xt_mode;
+    translate = translate || ((CurrentKbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2);
+#endif
 
     keyboard_get_states(NULL, &num_lock, NULL);
     shift_states = keyboard_get_shift() & STATE_SHIFT_MASK;
@@ -1020,6 +1047,8 @@ kbd_cmd_write(atkbd_t *kbd, uint8_t val)
 	kbd_log("ATkbd: mouse interrupt is now %s\n",  (val & 0x02) ? "enabled" : "disabled");
 #endif
     }
+
+    kbd_log("Command byte now: %02X (%02X)\n", kbd->mem[0], val);
 }
 
 
@@ -1698,18 +1727,23 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 				kbd->key_wantdata = 0;
 				switch (kbd->key_command) {
 					case 0xed: /*Set/reset LEDs*/
+						/* Command ED does command if command is recognized. */
+						if (val & 0xf8)
+							goto do_command;
 						kbd_adddata_keyboard(0xfa);
 						break;
 
 					case 0xf0: /*Get/set scancode set*/
+						kbd_adddata_keyboard(0xfa);
 						if (val == 0) {
+							kbd_log("ATkbd: get scan code set: %02X\n", keyboard_mode & 3);
 							kbd_adddata_keyboard(keyboard_mode & 3);
 						} else {
-							if (val <= 3) {
-								keyboard_mode &= 0xFC;
+							if ((val <= 3) && (val != 1)) {
+								keyboard_mode &= 0xfc;
 								keyboard_mode |= (val & 3);
+								kbd_log("ATkbd: scan code set now: %02X\n", val);
 							}
-							kbd_adddata_keyboard(0xfa);
 							kbd_setmap(kbd);
 						}
 						break;
@@ -1728,6 +1762,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 				/* Keyboard command is now done. */
 				kbd->key_command = 0x00;
 			} else {
+do_command:
 				/* No keyboard command in progress. */
 				kbd->key_command = 0x00;
 
@@ -1793,8 +1828,10 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 						kbd_log("ATkbd: read keyboard id\n");
 #endif
 						kbd_adddata_keyboard(0xfa);
+#if 0
 						kbd_adddata_keyboard(0xab);
 						kbd_adddata_keyboard(0x83);
+#endif
 						break;
 
 					case 0xf3: /*Set typematic rate/delay*/
@@ -1820,7 +1857,13 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 #endif
 						kbd_adddata_keyboard(0xfa);
 						keyboard_scan = 0;
-						break;
+
+						/*
+						 * Disabling the keyboard also
+						 * resets it to the default
+						 * values.
+						 */
+						/*FALLTHROUGH*/
 
 					case 0xf6: /*Set defaults*/
 #ifdef ENABLE_KEYBOARD_LOG
@@ -1883,9 +1926,8 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 						kbd_adddata_keyboard(0xfa);
 						kbd_adddata_keyboard(0xaa);
 
-						/* Set system flag to 1 and scan code set to 2. */
-						keyboard_mode &= 0xFC;
-						keyboard_mode |= 2;
+						/* Set scan code set to 2. */
+						keyboard_mode = (keyboard_mode & 0xfc) | 0x02;
 						kbd_setmap(kbd);
 						break;
 
@@ -2193,13 +2235,16 @@ kbd_init(const device_t *info)
     timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
 
     if ((kbd->flags & KBC_TYPE_MASK) != KBC_TYPE_ISA) {
+#if 0
     	if ((kbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2) {
 		/*
 		 * These machines force translation off, so the
-		 * the keyboard must start in scan code set 0.
+		 * the keyboard must start in scan code set 1.
 		 */
 		keyboard_mode &= ~0x03;
+		keyboard_mode |= 0x01;
 	}
+#endif
 
 	timer_add(kbd_refresh,
 		  &kbd->refresh_time, TIMER_ALWAYS_ENABLED, kbd);

@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.18	2018/08/22
+ * Version:	@(#)mem.c	1.0.19	2018/08/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1136,6 +1136,75 @@ mem_write_raml(uint32_t addr, uint32_t val, void *priv)
 }
 
 
+static uint8_t
+mem_read_remapped(uint32_t addr, void *priv)
+{
+    if (addr >= (1024UL * mem_size) && addr < (1024UL * (mem_size + 384)))
+	addr = 0xA0000 + (addr - (mem_size * 1024));
+    addreadlookup(mem_logical_addr, addr);
+
+    return ram[addr];
+}
+
+
+static uint16_t
+mem_read_remappedw(uint32_t addr, void *priv)
+{
+    if ((addr >= (1024UL * mem_size)) && (addr < (1024UL * (mem_size + 384))))
+	addr = 0xA0000 + (addr - (mem_size * 1024));
+    addreadlookup(mem_logical_addr, addr);
+
+    return *(uint16_t *)&ram[addr];
+}
+
+
+static uint32_t
+mem_read_remappedl(uint32_t addr, void *priv)
+{
+    if ((addr >= (1024UL * mem_size)) && (addr < (1024UL * (mem_size + 384))))
+	addr = 0xA0000 + (addr - (mem_size * 1024));
+    addreadlookup(mem_logical_addr, addr);
+
+    return *(uint32_t *)&ram[addr];
+}
+
+
+static void
+mem_write_remapped(uint32_t addr, uint8_t val, void *priv)
+{
+    uint32_t oldaddr = addr;
+
+    if ((addr >= (1024UL * mem_size)) && (addr < (1024UL * (mem_size + 384))))
+	addr = 0xA0000 + (addr - (mem_size * 1024));
+    addwritelookup(mem_logical_addr, addr);
+    mem_write_ramb_page(addr, val, &pages[oldaddr >> 12]);
+}
+
+
+static void
+mem_write_remappedw(uint32_t addr, uint16_t val, void *priv)
+{
+    uint32_t oldaddr = addr;
+
+    if ((addr >= (1024UL * mem_size)) && (addr < (1024UL * (mem_size + 384))))
+	addr = 0xA0000 + (addr - (mem_size * 1024));
+    addwritelookup(mem_logical_addr, addr);
+    mem_write_ramw_page(addr, val, &pages[oldaddr >> 12]);
+}
+
+
+static void
+mem_write_remappedl(uint32_t addr, uint32_t val, void *priv)
+{
+    uint32_t oldaddr = addr;
+
+    if ((addr >= (1024UL * mem_size)) && (addr < (1024UL * (mem_size + 384))))
+	addr = 0xA0000 + (addr - (mem_size * 1024));
+    addwritelookup(mem_logical_addr, addr);
+    mem_write_raml_page(addr, val, &pages[oldaddr >> 12]);
+}
+
+
 uint8_t
 mem_read_bios(uint32_t addr, void *priv)
 {
@@ -1606,7 +1675,7 @@ mem_reset(void)
     if (mem_size < 16384)
 	m = 1024UL * 16384;
       else
-	m = 1024UL * (mem_size + 384);	/* 386 extra kB for top remapping */
+	m = 1024UL * mem_size;
     if (ram != NULL) free(ram);
     ram = (uint8_t *)malloc(m);		/* allocate and clear the RAM block */
     memset(ram, 0x00, m);
@@ -1668,6 +1737,15 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 	pages[c].write_l = mem_write_raml_page;
     }
 
+    if (pages_sz > 256) {
+	for (c = ((1024UL * mem_size) >> 12); c < ((1024UL * (mem_size + 256)) >> 12); c++) {
+		pages[c].mem = &ram[0xA0000 + ((c - ((mem_size * 1024) >> 12)) << 12)];
+		pages[c].write_b = mem_write_ramb_page;
+		pages[c].write_w = mem_write_ramw_page;
+		pages[c].write_l = mem_write_raml_page;
+	}
+    }
+
     /* Initialize the tables. */
     resetreadlookup();
 
@@ -1714,23 +1792,21 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 	}
     }
 
-#if 1
     if (mem_size > 768)
 	mem_mapping_add(&ram_mid_mapping, 0xc0000, 0x40000,
 			mem_read_ram,mem_read_ramw,mem_read_raml,
 			mem_write_ram,mem_write_ramw,mem_write_raml,
 			ram + 0xc0000, MEM_MAPPING_INTERNAL, NULL);
-#endif
 
     if (romset == ROM_IBMPS1_2011)
 	mem_mapping_add(&romext_mapping, 0xc8000, 0x08000,
 			mem_read_romext,mem_read_romextw,mem_read_romextl,
 			NULL,NULL, NULL, romext, 0, NULL);
 
-    mem_mapping_add(&ram_remapped_mapping, mem_size * 1024, 384 * 1024,
-		    mem_read_ram,mem_read_ramw,mem_read_raml,
-		    mem_write_ram,mem_write_ramw,mem_write_raml,
-		    ram + (1 << 20), MEM_MAPPING_INTERNAL, NULL);
+    mem_mapping_add(&ram_remapped_mapping, mem_size * 1024, 256 * 1024,
+		    mem_read_remapped,mem_read_remappedw,mem_read_remappedl,
+		    mem_write_remapped,mem_write_remappedw,mem_write_remappedl,
+		    ram + 0xa0000, MEM_MAPPING_INTERNAL, NULL);
     mem_mapping_disable(&ram_remapped_mapping);
 
     mem_a20_init();
