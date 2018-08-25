@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.31	2018/05/24
+ * Version:	@(#)win_settings.c	1.0.32	2018/08/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,6 +58,7 @@
 #include "../devices/ports/parallel.h"
 #include "../devices/ports/parallel_dev.h"
 #include "../devices/ports/serial.h"
+#include "../devices/misc/isamem.h"
 #include "../devices/input/mouse.h"
 #include "../devices/input/game/joystick.h"
 #include "../devices/floppy/fdd.h"
@@ -112,7 +113,8 @@ static int	temp_hdc_type,
 		temp_scsi_card,
 		temp_ide_ter, temp_ide_ter_irq,
 		temp_ide_qua, temp_ide_qua_irq;
-static int	temp_bugger;
+static int	temp_bugger,
+		temp_isamem[ISAMEM_MAX];
 
 /* Floppy drives category. */
 static int	temp_fdd_types[FDD_NUM],
@@ -169,7 +171,7 @@ settings_msgbox(int type, void *arg)
 static void
 settings_init(void)
 {
-    int i = 0;
+    int i;
 
     /* Machine category */
     temp_machine = machine;
@@ -223,8 +225,12 @@ settings_init(void)
     temp_ide_qua_irq = ide_irq[3];
     temp_bugger = bugger_enabled;
 
+    /* ISA memory boards. */
+    for (i = 0; i < ISAMEM_MAX; i++)
+	temp_isamem[i] = isamem_type[i];
+
     /* Floppy drives category */
-    for (i=0; i<FDD_NUM; i++) {
+    for (i = 0; i < FDD_NUM; i++) {
 	temp_fdd_types[i] = fdd_get_type(i);
 	temp_fdd_turbo[i] = fdd_get_turbo(i);
 	temp_fdd_check_bpb[i] = fdd_get_check_bpb(i);
@@ -298,11 +304,15 @@ settings_changed(void)
     i = i || (temp_ide_qua_irq != ide_irq[3]);
     i = i || (temp_bugger != bugger_enabled);
 
+    /* ISA memory boards. */
+    for (j = 0; j < ISAMEM_MAX; j++)
+	i = i || (temp_isamem[j] != isamem_type[j]);
+
     /* Hard disks category */
     i = i || memcmp(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
 
     /* Floppy drives category */
-    for (j=0; j<FDD_NUM; j++) {
+    for (j = 0; j < FDD_NUM; j++) {
 	i = i || (temp_fdd_types[j] != fdd_get_type(j));
 	i = i || (temp_fdd_turbo[j] != fdd_get_turbo(j));
 	i = i || (temp_fdd_check_bpb[j] != fdd_get_check_bpb(j));
@@ -401,11 +411,15 @@ settings_save(void)
     ide_irq[3] = temp_ide_qua_irq;
     bugger_enabled = temp_bugger;
 
+    /* ISA memory boards. */
+    for (i = 0; i < ISAMEM_MAX; i++)
+	isamem_type[i] = temp_isamem[i];
+
     /* Hard disks category */
     memcpy(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
 
     /* Floppy drives category */
-    for (i=0; i<FDD_NUM; i++) {
+    for (i = 0; i < FDD_NUM; i++) {
 	fdd_set_type(i, temp_fdd_types[i]);
 	fdd_set_turbo(i, temp_fdd_turbo[i]);
 	fdd_set_check_bpb(i, temp_fdd_check_bpb[i]);
@@ -547,7 +561,7 @@ static BOOL
 insert_categories(HWND hwndList)
 {
     LVITEM lvI;
-    int i = 0;
+    int i;
 
     lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
@@ -592,16 +606,6 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		image_list_init(h);
 		insert_categories(h);
 		ListView_SetItemState(h, 0, LVIS_FOCUSED|LVIS_SELECTED, 0x000F);
-#if 0
-		/*Leave this commented out until we do localization. */
-		h = GetDlgItem(hdlg, IDC_COMBO_LANG);	/* This is currently disabled, I am going to add localization options in the future. */
-		EnableWindow(h, FALSE);
-		ShowWindow(h, SW_HIDE);
-		h = GetDlgItem(hdlg, IDS_LANG_ENUS);	/*was:2047 !*/
-		EnableWindow(h, FALSE);
-		ShowWindow(h, SW_HIDE);
-#endif
-
 		return(TRUE);
 
 	case WM_NOTIFY:

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.49	2018/07/28
+ * Version:	@(#)pc.c	1.0.50	2018/08/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,6 +85,7 @@
 #include "devices/sound/snd_speaker.h"
 #include "devices/video/video.h"
 #include "devices/misc/bugger.h"
+#include "devices/misc/isamem.h"
 #include "ui/ui.h"
 #include "plat.h"
 
@@ -135,7 +136,8 @@ int	game_enabled = 0,			/* (C) enable game port */
 	serial_enabled[] = {0,0},		/* (C) enable serial ports */
 	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
 	parallel_device[] = {0,0,0},		/* (C) set up LPT devices */
-	bugger_enabled = 0;			/* (C) enable ISAbugger */
+	bugger_enabled = 0,			/* (C) enable ISAbugger */
+	isamem_type[ISAMEM_MAX] = { 0,0,0,0 };	/* (C) enable ISA mem cards */
 #ifdef WALTJE
 int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
@@ -990,6 +992,9 @@ pc_reset_hard_init(void)
 
     /* FIXME: move elsewhere? */
     shadowbios = 0;
+
+    /* Reset any ISA memory cards. */
+    isamem_reset();
 
     fdd_reset();
 

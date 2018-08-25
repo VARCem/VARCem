@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.26	2018/06/25
+ * Version:	@(#)emu.h	1.0.27	2018/08/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -123,7 +123,8 @@ extern int	game_enabled,			/* (C) enable game port */
 		serial_enabled[],		/* (C) enable serial ports */
 		parallel_enabled[],		/* (C) enable LPT ports */
 		parallel_device[],		/* (C) set up LPT devices */
-		bugger_enabled;			/* (C) enable ISAbugger */
+		bugger_enabled,			/* (C) enable ISAbugger */
+		isamem_type[];			/* (C) enable ISA mem cards */
 #ifdef WALTJE
 extern int	romdos_enabled;			/* (C) enable ROM DOS */
 #endif

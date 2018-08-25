@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.29	2018/06/06
+ * Version:	@(#)config.c	1.0.31	2018/08/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,7 @@
 #include "machines/machine.h"
 #include "nvr.h"
 #include "device.h"
+#include "devices/misc/isamem.h"
 #include "devices/ports/game_dev.h"
 #include "devices/ports/serial.h"
 #include "devices/ports/parallel.h"
@@ -409,9 +410,11 @@ load_machine(const char *cat)
     cpu_waitstates = config_get_int(cat, "cpu_waitstates", 0);
 
     mem_size = config_get_int(cat, "mem_size", 4096);
+#if 0
     if (mem_size < (((machines[machine].flags & MACHINE_AT) &&
         (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram))
 	mem_size = (((machines[machine].flags & MACHINE_AT) && (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram);
+#endif
     if (mem_size > 1048576)
 	mem_size = 1048576;
 
@@ -477,13 +480,6 @@ load_video(const char *cat)
 	video_card = VID_INTERNAL;
     } else {
 	p = config_get_string(cat, "video_card", NULL);
-
-	/* Remove this after 01-JUL-2018. --FvK */
-	if (p == NULL) {
-		p = config_get_string(cat, "gfxcard", NULL);
-		if (p != NULL)
-			config_delete_var(cat, "gfxcard");
-	}
 	if (p == NULL) {
 		if (machines[machine].flags & MACHINE_VIDEO)
 			p = "internal";
@@ -622,17 +618,7 @@ load_sound(const char *cat)
 {
     char *p;
 
-    p = config_get_string(cat, "sound_card", NULL);
-
-    /* Remove this after 01-JUL-2018. --FvK */
-    if (p == NULL) {
-	p = config_get_string(cat, "sndcard", NULL);
-	if (p != NULL)
-		config_delete_var(cat, "sndcard");
-    }
-
-    if (p == NULL)
-	p = "none";
+    p = config_get_string(cat, "sound_card", "none");
     sound_card = sound_card_get_from_internal_name(p);
 
     p = config_get_string(cat, "midi_device", "none");
@@ -837,17 +823,7 @@ load_other(const char *cat)
     char temp[512], *p;
     int c;
 
-    p = config_get_string(cat, "scsi_card", NULL);
-
-    /* Remove this after 01-JUL-2018. --FvK */
-    if (p == NULL) {
-	p = config_get_string(cat, "scsicard", NULL);
-	if (p != NULL)
-		config_delete_var(cat, "scsicard");
-    }
-
-    if (p == NULL)
-	p = "none";
+    p = config_get_string(cat, "scsi_card", "none");
     scsi_card = scsi_card_get_from_internal_name(p);
 
     p = config_get_string(cat, "hdc", NULL);
@@ -859,13 +835,20 @@ load_other(const char *cat)
     }
     hdc_type = hdc_get_from_internal_name(p);
 
-    for (c=2; c<4; c++) {
+    for (c = 2; c < 4; c++) {
 	sprintf(temp, "ide_%02i", c + 1);
 	p = config_get_string(cat, temp, "0, 00");
 	sscanf(p, "%i, %02i", &ide_enable[c], &ide_irq[c]);
     }
 
     bugger_enabled = !!config_get_int(cat, "bugger_enabled", 0);
+
+    for (c = 0; c < ISAMEM_MAX; c++) {
+	sprintf(temp, "isamem%d_type", c);
+
+	p = config_get_string(cat, temp, "none");
+	isamem_type[c] = isamem_get_from_internal_name(p);
+    }
 
 #ifdef WALTJE
     romdos_enabled = !!config_get_int(cat, "romdos_enabled", 0);
@@ -901,6 +884,15 @@ save_other(const char *cat)
 	config_delete_var(cat, "bugger_enabled");
       else
 	config_set_int(cat, "bugger_enabled", bugger_enabled);
+
+    for (c = 0; c < ISAMEM_MAX; c++) {
+	sprintf(temp, "isamem%d_type", c);
+	if (isamem_type[c] == 0)
+		config_delete_var(cat, temp);
+	  else
+		config_set_string(cat, temp,
+				  isamem_get_internal_name(isamem_type[c]));
+    }
 
     delete_section_if_empty(cat);
 }
@@ -996,16 +988,7 @@ load_disks(const char *cat)
 	if (hdd[c].bus == HDD_BUS_ST506) {
 		/* Try new syntax. */
 		dev = config_get_int(cat, temp, -1);
-		if (dev < 0) {
-			/* Re-try with old syntax. */
-			// FIXME: remove by 01-JUL-2018 --FvK
-			sprintf(temp, "hdd_%02i_mfm_channel", c+1);
-			dev = config_get_int(cat, temp, c & 1);
-			config_delete_var(cat, temp);
-
-			/* Set value either way. */
-			hdd[c].id.st506_channel = dev;
-		}
+		hdd[c].id.st506_channel = dev;
 	} else
 		config_delete_var(cat, temp);
 
