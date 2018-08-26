@@ -6,14 +6,14 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		String definitions for "English (United States) language.
+ *		String definitions for "English (United States)" language.
  *
  * TRANSLATION:	The application uses English as its primary language, and
  *		this file is the "Master" for all translations. Please use
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem-EN.str	1.0.5	2018/06/02
+ * Version:	@(#)VARCem-EN.str	1.0.7	2018/08/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -236,7 +236,8 @@
 #define  STR_3476	"HD Controller:"
 #define  STR_3477	"Tertiary IDE:"
 #define  STR_3478	"Quaternary IDE:"
-#define  STR_3479	"ISABugger device:"
+#define  STR_3479	"ISABugger device"
+#define  STR_3480	"ISA Memory Expansion"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Hard disks:"

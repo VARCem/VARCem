@@ -1,4 +1,4 @@
-/*
+﻿/*
  * VARCem	Virtual ARchaeological Computer EMulator.
  *		An emulator of (mostly) x86-based PC systems and devices,
  *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
@@ -8,12 +8,7 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * TRANSLATION:	The application uses English as its primary language, and
- *		this file is the "Master" for all translations. Please use
- *		it as the line-by-line base for the translated version, and
- *		update fields as needed.
- *
- * Version:	@(#)VARCem-BY.str	1.0.1	2018/06/07
+ * Version:	@(#)VARCem-BY.str	1.0.2	2018/08/25
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -52,7 +47,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,1
+#define TAG_VERSION	1,0,2
 #define TAG_AUTHOR	"paul_met"
 #define TAG_EMAIL	"paul_met@yandex.ru"
 
@@ -236,7 +231,8 @@
 #define  STR_3476	"Кантролер HD:"
 #define  STR_3477	"Трацічны IDE:"
 #define  STR_3478	"Чацвярцічны IDE:"
-#define  STR_3479	"Прылада ISABugger:"
+#define  STR_3479	"Прылада ISABugger"
+#define  STR_3480       "ISA Memory Expansion"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Жорсткія дыскі:"
