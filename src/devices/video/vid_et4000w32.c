@@ -10,7 +10,7 @@
  *
  * Known bugs:	Accelerator doesn't work in planar modes
  *
- * Version:	@(#)vid_et4000w32.c	1.0.11	2018/08/25
+ * Version:	@(#)vid_et4000w32.c	1.0.12	2018/08/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -387,6 +387,12 @@ et4000w32p_out(uint16_t addr, uint8_t val, void *p)
                 switch (svga->gdcaddr & 15)
                 {
                         case 6:
+			if (!(svga->crtc[0x36] & 0x10) && !(val & 0x08)) {
+		                svga->write_bank = ((et4000->banking2 & 1) << 20) | ((et4000->banking & 0xf) * 65536);
+		                svga->read_bank  = ((et4000->banking2 & 0x10) << 16) | (((et4000->banking >> 4) & 0xf) * 65536);
+			} else
+				svga->write_bank = svga->read_bank = 0;
+
                         svga->gdcreg[svga->gdcaddr & 15] = val;
                         et4000w32p_recalcmapping(et4000);
                         return;
@@ -405,10 +411,11 @@ et4000w32p_out(uint16_t addr, uint8_t val, void *p)
                 old = svga->crtc[svga->crtcreg];
                 svga->crtc[svga->crtcreg] = val;
 		if (svga->crtcreg == 0x36) {
-			if (!(val & 0x10)) {
+			if (!(val & 0x10) && !(svga->gdcreg[6] & 0x08)) {
 	                	svga->write_bank = ((et4000->banking2 & 1) << 20) | ((et4000->banking & 0xf) * 65536);
 		                svga->read_bank  = ((et4000->banking2 & 0x10) << 16) | (((et4000->banking >> 4) & 0xf) * 65536);
-			}
+			} else
+				svga->write_bank = svga->read_bank = 0;
 		}
                 if (old != val)
                 {

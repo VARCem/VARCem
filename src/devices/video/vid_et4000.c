@@ -11,7 +11,7 @@
  * NOTE:	The Korean variants cannot yet be used, we first have to
  *		sync up the SVGA backend with upstream.
  *
- * Version:	@(#)vid_et4000.c	1.0.8	2018/08/25
+ * Version:	@(#)vid_et4000.c	1.0.9	2018/08/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -232,6 +232,16 @@ et4000_out(uint16_t addr, uint8_t val, void *priv)
 		dev->banking = val;
 		return;
 
+	case 0x3cf:
+		if ((svga->gdcaddr & 15) == 6) {
+			if (!(svga->crtc[0x36] & 0x10) && !(val & 0x08)) {
+				svga->write_bank = (dev->banking & 0x0f) * 0x10000;
+				svga->read_bank = ((dev->banking >> 4) & 0x0f) * 0x10000;
+			} else
+				svga->write_bank = svga->read_bank = 0;
+		}
+		break;
+
 	case 0x3d4:
 		svga->crtcreg = val & 0x3f;
 		return;
@@ -246,6 +256,14 @@ et4000_out(uint16_t addr, uint8_t val, void *priv)
 		old = svga->crtc[svga->crtcreg];
 		val &= crtc_mask[svga->crtcreg];
 		svga->crtc[svga->crtcreg] = val;
+
+		if (svga->crtcreg == 0x36) {
+			if (!(val & 0x10) && !(svga->gdcreg[6] & 0x08)) {
+				svga->write_bank = (dev->banking & 0x0f) * 0x10000;
+				svga->read_bank = ((dev->banking >> 4) & 0x0f) * 0x10000;
+			} else
+				svga->write_bank = svga->read_bank = 0;
+		}
 
 		if (old != val) {
 			if (svga->crtcreg < 0x0e || svga->crtcreg > 0x10) {
