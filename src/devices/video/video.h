@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.16	2018/04/14
+ * Version:	@(#)video.h	1.0.17	2018/08/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,6 +66,7 @@ enum {
     VID_VGA,        		/* IBM VGA */
     VID_TVGA,			/* Using Trident TVGA8900D BIOS */
     VID_ET4000,			/* Tseng ET4000 */
+    VID_TGKOREANVGA,		/* Trigem Korean VGA (ET4000AX) */
     VID_ET4000W32_CARDEX_VLB,	/* Tseng ET4000/W32p (Cardex) VLB */
     VID_ET4000W32_CARDEX_PCI,	/* Tseng ET4000/W32p (Cardex) PCI */
 #if defined(DEV_BRANCH) && defined(USE_STEALTH32)

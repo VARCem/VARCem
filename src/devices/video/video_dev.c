@@ -12,7 +12,7 @@
  *		an "extern" reference to its device into this file, and
  *		add an entry for it into the table.
  *
- * Version:	@(#)video_dev.c	1.0.19	2018/08/25
+ * Version:	@(#)video_dev.c	1.0.20	2018/08/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,6 +61,7 @@
 
 enum {
     VIDEO_ISA = 0,
+    VIDEO_MCA,
     VIDEO_BUS
 };
 
@@ -123,6 +124,8 @@ extern const device_t sega_device;
 
 /* Tseng Labs ET4000 series cards. */
 extern const device_t et4000_isa_device;
+extern const device_t et4000_mca_device;
+extern const device_t et4000k_isa_device;
 
 /* Tseng Labs ET4000-W32 series cards. */
 #if defined(DEV_BRANCH) && defined(USE_STEALTH32)
@@ -259,8 +262,10 @@ static vidcard_t video_cards[] = {
 #endif
     {"[ISA] Trident TVGA8900D",				"tvga8900d",		&tvga8900d_device,			VID_TVGA,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 3,  3,  6,   8,  8, 12}},
     {"[ISA] Tseng ET4000AX",				"et4000ax",		&et4000_isa_device,			VID_ET4000,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 3,  3,  6,   5,  5, 10}},
+    {"[ISA] Trigem Korean VGA (ET4000AX)",		"tgkorvga",		&et4000k_isa_device,			VID_TGKOREANVGA,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 3,  3,  6,   5,  5, 10}},
     {"[ISA] VGA",					"vga",			&vga_device,				VID_VGA,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_ISA, 8, 16, 32,   8, 16, 32}},
     {"[ISA] Wyse 700",					"wy700",		&wy700_device,				VID_WY700,			VIDEO_FLAG_TYPE_CGA,		{VIDEO_ISA, 8, 16, 32,   8, 16, 32}},
+    {"[MCA] Tseng ET4000AX",				"et4000ax_mca",		&et4000_mca_device,			VID_ET4000,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_MCA, 3,  3,  6,   5,  5, 10}},
     {"[PCI] ATI Graphics Pro Turbo (Mach64 GX)",	"mach64gx_pci",		&mach64gx_pci_device,			VID_MACH64GX_PCI,		VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 2,  2,  1,  20, 20, 21}},
     {"[PCI] ATI Video Xpression (Mach64 VT2)",		"mach64vt2",		&mach64vt2_device,			VID_MACH64VT2,			VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 2,  2,  1,  20, 20, 21}},
     {"[PCI] Cardex Tseng ET4000/w32p",			"et4000w32p_pci",	&et4000w32p_cardex_pci_device,		VID_ET4000W32_CARDEX_PCI,	VIDEO_FLAG_TYPE_SPECIAL,	{VIDEO_BUS, 4,  4,  4,  10, 10, 10}},

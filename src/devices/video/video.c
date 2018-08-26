@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.16	2018/05/06
+ * Version:	@(#)video.c	1.0.17	2018/08/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,6 +88,7 @@
 
 enum {
     VIDEO_ISA = 0,
+    VIDEO_MCA,
     VIDEO_BUS
 };
 
@@ -128,10 +129,11 @@ int		video_timing_write_b = 0,
 int		video_res_x = 0,
 		video_res_y = 0,
 		video_bpp = 0;
-const int	video_timing[6][4] = {
+const int	video_timing[7][4] = {
     { VIDEO_ISA, 8, 16, 32	},
     { VIDEO_ISA, 6,  8, 16	},
     { VIDEO_ISA, 3,  3,  6	},
+    { VIDEO_MCA, 4,  5, 10	},
     { VIDEO_BUS, 4,  8, 16	},
     { VIDEO_BUS, 4,  5, 10	},
     { VIDEO_BUS, 3,  3,  4	}
