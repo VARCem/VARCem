@@ -10,7 +10,7 @@
  *
  * TODO:	Implement screenshots, and maybe Audio?
  *
- * Version:	@(#)vnc.c	1.0.4	2018/05/07
+ * Version:	@(#)vnc.c	1.0.5	2018/08/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -64,7 +64,11 @@
 
 
 #ifdef _WIN32
-# define PATH_VNC_DLL	"libvncserver.dll"
+# ifdef _DEBUG
+#  define PATH_VNC_DLL	"libvncserver-debug.dll"
+# else
+#  define PATH_VNC_DLL	"libvncserver.dll"
+# endif
 #else
 # define PATH_VNC_DLL	"libvncserver.so"
 #endif

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.51	2018/08/14
+# Version:	@(#)Makefile.mingw	1.0.52	2018/08/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -119,9 +119,6 @@ endif
 ifndef PORTABLE3
  PORTABLE3	:= n
 endif
-ifndef GREENB
- GREENB		:= n
-endif
 ifndef I686
  I686		:= n
 endif
@@ -149,12 +146,17 @@ endif
 
 
 # Name of the executable.
+NETIF		:= pcap_if
 ifndef PROG
  ifneq ($(WX), n)
   PROG		:= WxVARCem
  else
   PROG		:= VARCem
  endif
+endif
+ifeq ($(DEBUG), y)
+ PROG		:= $(PROG)-d
+ NETIF		:= $(NETIF)-d
 endif
 
 
@@ -165,7 +167,6 @@ ifeq ($(DEV_BUILD), y)
  AMD_K		:= y
  LASERXT	:= y
  PORTABLE3	:= y
- GREENB		:= y
  I686		:= y
  PAS16		:= y
  STEALTH32	:= y
@@ -518,11 +519,6 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_PORTABLE3
  endif
 
- ifeq ($(GREENB), y)
-  OPTS		+= -DUSE_GREENB
-  DEVBROBJ	+= m_at_4gpv31.o
- endif
-
  ifeq ($(I686), y)
   OPTS		+= -DUSE_I686
   DEVBROBJ	+= m_at_440fx.o
@@ -751,7 +747,7 @@ else
 endif
 
 
-all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
+all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
 
 
 VARCem.res:	VARCem.rc VARCem.mpp
@@ -763,7 +759,7 @@ VARCem.res:	VARCem.rc VARCem.mpp
 
 $(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		@$(CC) $(LDFLAGS) -o $(PROG).exe \
+		@$(CC) $(LDFLAGS) -o $@ \
 			$(OBJ) VARCem.res $(LIBS)
 ifneq ($(DEBUG), y)
 		@strip $(PROG).exe
@@ -773,18 +769,12 @@ pcap_if.res:	pcap_if.rc
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) -i $< -o pcap_if.res
 
-pcap_if.exe:	pcap_if.o win_dynld.o pcap_if.res
-		@echo Linking pcap_if.exe ..
-		@$(CC) $(LDFLAGS) -o pcap_if.exe \
+$(NETIF).exe:	pcap_if.o win_dynld.o pcap_if.res
+		@echo Linking $(NETIF).exe ..
+		@$(CC) $(LDFLAGS) -o $@ \
 			pcap_if.o win_dynld.o pcap_if.res
 ifneq ($(DEBUG), y)
-		@strip pcap_if.exe
-endif
-
-hello.exe:	hello.o
-		$(CXX) $(LDFLAGS) -o hello.exe hello.o $(WXLIBS) $(LIBS)
-ifneq ($(DEBUG), y)
-		@strip hello.exe
+		@strip $(NETIF).exe
 endif
 
 

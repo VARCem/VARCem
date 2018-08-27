@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.38	2018/08/12
+# Version:	@(#)Makefile.VC	1.0.39	2018/08/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -120,9 +120,6 @@ endif
 ifndef PORTABLE3
  PORTABLE3	:= n
 endif
-ifndef GREENB
- GREENB		:= n
-endif
 ifndef I686
  I686		:= n
 endif
@@ -150,12 +147,17 @@ endif
 
 
 # Name of the executable.
+NETIF		:= pcap_if
 ifndef PROG
  ifneq ($(WX), n)
   PROG		:= WxVARCem
  else
   PROG		:= VARCem
  endif
+endif
+ifeq ($(DEBUG), y)
+  PROG		:= $(PROG)-d
+  NETIF		:= $(NETIF)-d
 endif
 
 
@@ -166,7 +168,6 @@ ifeq ($(DEV_BUILD), y)
  AMD_K		:= y
  LASERXT	:= y
  PORTABLE3	:= y
- GREENB		:= y
  I686		:= y
  PAS16		:= y
  STEALTH32	:= y
@@ -492,11 +493,6 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_PORTABLE3
  endif
 
- ifeq ($(GREENB), y)
-  OPTS		+= -DUSE_GREENB
-  DEVBROBJ	+= m_at_4gpv31.obj
- endif
-
  ifeq ($(I686), y)
   OPTS		+= -DUSE_I686
   DEVBROBJ	+= m_at_440fx.obj
@@ -718,7 +714,7 @@ else
 endif
 
 
-all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
+all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
 
 #
 # This rule creates a script (command file) that figures out which
@@ -774,15 +770,10 @@ pcap_if.res:	pcap_if.rc
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) -fo$@ $<
 
-pcap_if.exe:	pcap_if.obj win_dynld.obj pcap_if.res
-		@echo Linking pcap_if.exe ..
-		@$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:pcap_if.exe \
+$(NETIF).exe:	pcap_if.obj win_dynld.obj pcap_if.res
+		@echo Linking $(NETIF).exe ..
+		@$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:$@ \
 			pcap_if.obj win_dynld.obj pcap_if.res
-
-hello.exe:	hello.obj
-		$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:hello.exe \
-			hello.obj $(WXLIBS) $(LIBS)
-
 
 clean:
 		@echo Cleaning objects..
@@ -802,6 +793,7 @@ ifeq ($(PROFILER), y)
 endif
 		@-del win\*.manifest 2>NUL
 		@-del *.dll 2>NUL
+		@-del win\Mklang.cmd
 #		@del $(DEPFILE) 2>NUL
 
 ifneq ($(AUTODEP), y)

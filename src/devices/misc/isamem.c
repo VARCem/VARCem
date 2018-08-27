@@ -362,6 +362,14 @@ ems_write(uint16_t port, uint8_t val, void *priv)
 		 *
 		 * 00 04 08  Address
 		 * -----------------
+		 * 80 c0 e0  C0000
+		 * 80 c0 e0  C4000
+		 * 80 c0 e0  C8000
+		 * 80 c0 e0  CC000
+		 * 80 c0 e0  D0000
+		 * 80 c0 e0  D4000
+		 * 80 c0 e0  D8000
+		 * 80 c0 e0  DC000
 		 * 80 c0 e0  E0000
                  */
 

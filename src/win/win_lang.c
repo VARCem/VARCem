@@ -8,7 +8,7 @@
  *
  *		Handle language support for the platform.
  *
- * Version:	@(#)win_lang.c	1.0.4	2018/06/09
+ * Version:	@(#)win_lang.c	1.0.5	2018/08/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -167,7 +167,7 @@ lang_scan(void)
     languages_num = 0;
 
     /* Open the "language modules" directory. */
-    swprintf(path, sizeof_w(temp), L"%ls%ls", emu_path, LANGUAGE_PATH);
+    swprintf(path, sizeof_w(temp), L"%ls%ls", exe_path, LANGUAGE_PATH);
     dir = opendir(path);
     if (dir != NULL) {
 	/* Scan all files, and see if we find a usable one. */

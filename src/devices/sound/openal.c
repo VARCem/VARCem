@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.14	2018/05/24
+ * Version:	@(#)openal.c	1.0.15	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,7 +62,11 @@
 #define BUFLEN	SOUNDBUFLEN
 
 #ifdef _WIN32
-# define PATH_AL_DLL	"libopenal-1.dll"
+# ifdef _DEBUG
+#  define PATH_AL_DLL	"libopenal-1-debug.dll"
+# else
+#  define PATH_AL_DLL	"libopenal-1.dll"
+# endif
 #else
 # define PATH_AL_DLL	"libopenal.so.1"
 #endif

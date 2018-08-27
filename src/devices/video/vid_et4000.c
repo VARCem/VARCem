@@ -11,7 +11,7 @@
  * NOTE:	The Korean variants cannot yet be used, we first have to
  *		sync up the SVGA backend with upstream.
  *
- * Version:	@(#)vid_et4000.c	1.0.9	2018/08/26
+ * Version:	@(#)vid_et4000.c	1.0.10	2018/08/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,8 +57,8 @@
 
 
 #define BIOS_ROM_PATH		L"video/tseng/et4000/et4000.bin"
-#define KOREAN_BIOS_ROM_PATH 	L"roms/video/et4000/tgkorvga.bin"
-#define KOREAN_FONT_ROM_PATH 	L"roms/video/et4000/tg_ksc5601.rom"
+#define KOREAN_BIOS_ROM_PATH 	L"video/tseng/et4000/tgkorvga.bin"
+#define KOREAN_FONT_ROM_PATH 	L"video/tseng/et4000/tg_ksc5601.rom"
 
 
 typedef struct {
@@ -270,56 +270,56 @@ et4000_out(uint16_t addr, uint8_t val, void *priv)
 				svga->fullchange = changeframecount;
 				svga_recalctimings(svga);
 			}
+		}				
 
-			/*
-			 * Note - Silly hack to determine video memory
-			 * size automatically by ET4000 BIOS.
-			 */
-			if ((svga->crtcreg == 0x37) && (dev->type != 1)) {
-				switch (val & 0x0b) {
-					case 0x00:
-					case 0x01:
-						if (svga->vram_max == 64 * 1024)
-							mem_mapping_enable(&svga->mapping);
-						else
-							mem_mapping_disable(&svga->mapping);
-						break;
-
-					case 0x02:
-						if (svga->vram_max == 128 * 1024)
-							mem_mapping_enable(&svga->mapping);
-						else
-							mem_mapping_disable(&svga->mapping);
-						break;
-
-					case 0x03:
-					case 0x08:
-					case 0x09:
-						if (svga->vram_max == 256 * 1024)
-							mem_mapping_enable(&svga->mapping);
-						else
-							mem_mapping_disable(&svga->mapping);
-						break;
-
-					case 0x0a:
-						if (svga->vram_max == 512 * 1024)
-							mem_mapping_enable(&svga->mapping);
-						else
-							mem_mapping_disable(&svga->mapping);
-						break;
-
-					case 0x0b:
-						if (svga->vram_max == 1024 * 1024)
-							mem_mapping_enable(&svga->mapping);
-						else
-							mem_mapping_disable(&svga->mapping);
-						break;
-
-					default:
+		/*
+		 * Note - Silly hack to determine video memory
+		 * size automatically by ET4000 BIOS.
+		 */
+		if ((svga->crtcreg == 0x37) && (dev->type != 1)) {
+			switch (val & 0x0b) {
+				case 0x00:
+				case 0x01:
+					if (svga->vram_max == 64 * 1024)
 						mem_mapping_enable(&svga->mapping);
-						break;
-				}
-			}				
+					else
+						mem_mapping_disable(&svga->mapping);
+					break;
+
+				case 0x02:
+					if (svga->vram_max == 128 * 1024)
+						mem_mapping_enable(&svga->mapping);
+					else
+						mem_mapping_disable(&svga->mapping);
+					break;
+
+				case 0x03:
+				case 0x08:
+				case 0x09:
+					if (svga->vram_max == 256 * 1024)
+						mem_mapping_enable(&svga->mapping);
+					else
+						mem_mapping_disable(&svga->mapping);
+					break;
+
+				case 0x0a:
+					if (svga->vram_max == 512 * 1024)
+						mem_mapping_enable(&svga->mapping);
+					else
+						mem_mapping_disable(&svga->mapping);
+					break;
+
+				case 0x0b:
+					if (svga->vram_max == 1024 * 1024)
+						mem_mapping_enable(&svga->mapping);
+					else
+						mem_mapping_disable(&svga->mapping);
+					break;
+
+				default:
+					mem_mapping_enable(&svga->mapping);
+					break;
+			}
 		}
 		break;
     }

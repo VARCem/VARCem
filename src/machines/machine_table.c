@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.24	2018/08/22
+ * Version:	@(#)machine_table.c	1.0.25	2018/08/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -133,10 +133,6 @@ const machine_t machines[] = {
     { "[486 MCA] IBM PS/2 model 70 (type 4)",	ROM_IBMPS2_M70_TYPE4,	"ibm_ps2_m70_type4",	L"ibm/ps2_m70_type4",		{{"Intel", cpus_i486},		{"AMD", cpus_Am486},	{"Cyrix", cpus_Cx486},	{"", NULL},		{"", NULL}},	1, MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,						  2,   16,   2,  64,  machine_ps2_model_70_type4_init, NULL,			NULL			},
 
     { "[486 PCI] Rise Computer R418",		ROM_R418,		"rise_r418",		L"rise/r418",			{{"Intel", cpus_i486},		{"AMD", cpus_Am486},	{"Cyrix", cpus_Cx486},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,					  1,  255,   1, 128,		 machine_at_r418_init, NULL,			NULL			},
-
-#if defined(DEV_BRANCH) && defined(USE_GREENB)
-    { "[486 VLB] Green-B 4GP V3.1",		ROM_4GPV31,		"addtech_4gpv31",	L"addtech/4gpv31",		{{"Intel", cpus_i486},		{"AMD", cpus_Am486},	{"Cyrix", cpus_Cx486},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VLB | MACHINE_AT,							          1,  128,   1, 128,	       machine_at_4gpv31_init, NULL,			NULL			},
-#endif
 
     { "[Socket 4 LX] Intel Premiere/PCI",	ROM_REVENGE,		"intel_revenge",	L"intel/revenge",		{{"Intel", cpus_Pentium5V},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  2,  128,   2, 128,	       machine_at_batman_init, NULL,			NULL			},
 

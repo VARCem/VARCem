@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.22	2018/08/20
+ * Version:	@(#)machine.h	1.0.23	2018/08/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,16 +42,9 @@
 
 /* FIXME: replace these with machine flags! */
 #define PCJR	(romset==ROM_IBMPCJR)
-#if defined(DEV_BRANCH) && defined(USE_GREENB)
-#define AMIBIOS	(romset==ROM_AMI386SX || \
-		 romset==ROM_AMI486 || \
-		 romset==ROM_WIN486 || \
-		 romset==ROM_4GPV31)
-#else
 #define AMIBIOS	(romset==ROM_AMI386SX || \
 		 romset==ROM_AMI486 || \
 		 romset==ROM_WIN486)
-#endif
 
 
 /* FIXME: try to get rid of these... */
@@ -133,9 +126,7 @@ enum {
 #endif
     ROM_AWARD486_OPTI495,
     ROM_DTK486,		/* DTK PKM-0038S E-2/SiS 471/Award/SiS 85C471 */
-#if defined(DEV_BRANCH) && defined(USE_GREENB)
-    ROM_4GPV31,		/* Green-B 4GPV3.1 ISA/VLB 486/Pentium, AMI */
-#endif
+
     ROM_IBMPS1_2133,
 
     ROM_IBMPS2_M70_TYPE3,
@@ -310,10 +301,6 @@ extern void		machine_at_dtk486_init(const machine_t *, void *);
 extern void		machine_at_r418_init(const machine_t *, void *);
 
 extern void		machine_at_wd76c10_init(const machine_t *, void *);
-
-#if defined(DEV_BRANCH) && defined(USE_GREENB)
-extern void		machine_at_4gpv31_init(const machine_t *, void *);
-#endif
 
 extern void		machine_pcjr_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H

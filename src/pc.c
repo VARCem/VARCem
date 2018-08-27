@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.50	2018/08/18
+ * Version:	@(#)pc.c	1.0.51	2018/08/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -185,6 +185,7 @@ int	clockrate;
 char	emu_title[64];				/* full name of application */
 char	emu_version[32];			/* short version ID string */
 char	emu_fullversion[128];			/* full version ID string */
+wchar_t	exe_path[1024];				/* emu executable path */
 wchar_t	emu_path[1024];				/* emu installation path */
 wchar_t	usr_path[1024];				/* path (dir) of user data */
 wchar_t	cfg_path[1024];				/* full path of config file */
@@ -483,6 +484,8 @@ pc_setup(int argc, wchar_t *argv[])
     plat_get_exe_name(emu_path, sizeof(emu_path)-1);
     if ((p = plat_get_basename(emu_path)) != NULL)
 	*p = L'\0';
+    wcscpy(exe_path, emu_path);
+    plat_append_slash(exe_path);
 
     /*
      * See if we are perhaps in a "bin/" subfolder of

@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.27	2018/08/18
+ * Version:	@(#)emu.h	1.0.28	2018/08/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,11 +54,12 @@
 
 /* Pre-defined directory names. */
 #define LANGUAGE_PATH	L"lang"
-#define MACHINES_PATH	L"machines"
 #define NVR_PATH	L"nvr"
+#define PLUGINS_PATH	L"plugins"
 #define ROMS_PATH	L"roms"
+# define MACHINES_PATH	L"machines"
+# define VIDEO_PATH	L"video"
 #define SCREENSHOT_PATH L"screenshots"
-#define VIDEO_PATH	L"video"
 
 /* Pre-defined file names and extensions. */
 #define LANG_FILE	L"VARCem-"
@@ -151,6 +152,7 @@ extern char	network_host[512];		/* (C) host network intf */
 extern char	emu_title[64];			/* full name of application */
 extern char	emu_version[32];		/* short version ID string */
 extern char	emu_fullversion[128];		/* full version ID string */
+extern wchar_t	exe_path[1024];			/* emu executable path */
 extern wchar_t	emu_path[1024];			/* emu installation path */
 extern wchar_t	usr_path[1024];			/* path (dir) of user data */
 extern wchar_t  cfg_path[1024];			/* full path of config file */
