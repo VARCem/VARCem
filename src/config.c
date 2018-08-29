@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.31	2018/08/18
+ * Version:	@(#)config.c	1.0.32	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,7 @@
 #include "nvr.h"
 #include "device.h"
 #include "devices/misc/isamem.h"
+#include "devices/misc/isartc.h"
 #include "devices/ports/game_dev.h"
 #include "devices/ports/serial.h"
 #include "devices/ports/parallel.h"
@@ -850,6 +851,9 @@ load_other(const char *cat)
 	isamem_type[c] = isamem_get_from_internal_name(p);
     }
 
+    p = config_get_string(cat, "isartc_type", "none");
+    isartc_type = isartc_get_from_internal_name(p);
+
 #ifdef WALTJE
     romdos_enabled = !!config_get_int(cat, "romdos_enabled", 0);
 #endif
@@ -893,6 +897,12 @@ save_other(const char *cat)
 		config_set_string(cat, temp,
 				  isamem_get_internal_name(isamem_type[c]));
     }
+
+    if (isartc_type == 0)
+	config_delete_var(cat, "isartc_type");
+      else
+	config_set_string(cat, "isartc_type",
+			  isartc_get_internal_name(isartc_type));
 
     delete_section_if_empty(cat);
 }

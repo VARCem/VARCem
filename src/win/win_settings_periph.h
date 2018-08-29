@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.10	2018/08/18
+ * Version:	@(#)win_settings_periph.h	1.0.11	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -210,12 +210,34 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_CHECK_BUGGER);
 		SendMessage(h, BM_SETCHECK, temp_bugger, 0);
 
+		/* Populate the ISA RTC card dropdown. */
+		h = GetDlgItem(hdlg, IDC_COMBO_ISARTC);
+		for (d = 0; ; d++) {
+			stransi = isartc_get_internal_name(d);
+			if (stransi == NULL)
+				break;
+
+			if (d == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    (LPARAM)get_string(IDS_NONE));
+			} else {
+				stransi = isartc_get_name(d);
+				mbstowcs(temp, stransi, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
+		}
+		SendMessage(h, CB_SETCURSEL, temp_isartc, 0);
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_ISARTC);
+		if (temp_isartc != 0)
+			EnableWindow(h, TRUE);
+		  else
+			EnableWindow(h, FALSE);
+
 		/* Populate the ISA memory card dropdowns. */
 		for (c = 0; c < ISAMEM_MAX; c++) {
 			h = GetDlgItem(hdlg, IDC_COMBO_ISAMEM_1 + c);
-
-			d = 0;
-			for (;;) {
+			for (d = 0; ; d++) {
 				stransi = isamem_get_internal_name(d);
 				if (stransi == NULL)
 					break;
@@ -229,12 +251,8 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					mbstowcs(temp, stransi, sizeof_w(temp));
 					SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 				}
-
-				d++;
 			}
-
 			SendMessage(h, CB_SETCURSEL, temp_isamem[c], 0);
-
 			h = GetDlgItem(hdlg, IDC_CONFIGURE_ISAMEM_1 + c);
 			if (temp_isamem[c] != 0)
 				EnableWindow(h, TRUE);
@@ -282,6 +300,16 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					EnableWindow(h, FALSE);
 				break;
 
+			case IDC_COMBO_ISARTC:
+				h = GetDlgItem(hdlg, IDC_COMBO_ISARTC);
+				temp_isartc = SendMessage(h, CB_GETCURSEL, 0, 0);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_ISARTC);
+				if (temp_isartc != 0)
+					EnableWindow(h, TRUE);
+				else
+					EnableWindow(h, FALSE);
+				break;
+
 			case IDC_COMBO_ISAMEM_1:
 			case IDC_COMBO_ISAMEM_2:
 			case IDC_COMBO_ISAMEM_3:
@@ -297,12 +325,20 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					EnableWindow(h, FALSE);
 				break;
 
+			case IDC_CONFIGURE_ISARTC:
+				dev = isartc_get_device(temp_isartc);
+				if (dev != NULL)
+					temp_deviceconfig |= dlg_devconf(hdlg, (void *)dev);
+				break;
+
 			case IDC_CONFIGURE_ISAMEM_1:
 			case IDC_CONFIGURE_ISAMEM_2:
 			case IDC_CONFIGURE_ISAMEM_3:
 			case IDC_CONFIGURE_ISAMEM_4:
 				c = LOWORD(wParam) - IDC_CONFIGURE_ISAMEM_1;
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)isamem_get_device(c));
+				dev = isamem_get_device(c);
+				if (dev != NULL)
+					temp_deviceconfig |= dlg_devconf(hdlg, (void *)dev);
 				break;
 		}
 		return FALSE;

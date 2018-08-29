@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.9	2018/06/07
+ * Version:	@(#)nvr_at.c	1.0.10	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -700,7 +700,7 @@ nvr_at_close(void *priv)
     nvr_t *nvr = (nvr_t *)priv;
 
     if (nvr->fn != NULL)
-	free(nvr->fn);
+	free((wchar_t *)nvr->fn);
 
     if (nvr->data != NULL)
 	free(nvr->data);

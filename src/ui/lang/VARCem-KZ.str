@@ -233,6 +233,7 @@
 #define  STR_3478	"Төрттік IDE:"
 #define  STR_3479	"ISABugger қурылғы"
 #define  STR_3480       "ISA Memory Expansion"
+#define  STR_3481	"ISA Clock/RTC Card"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"атты табақжадтар:"

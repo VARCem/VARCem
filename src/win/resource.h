@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.17	2018/08/18
+ * Version:	@(#)resource.h	1.0.18	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -113,10 +113,11 @@
 #define IDT_1758		1758	/* ZIP drives: */
 #define IDT_1761		1761	/* Speed: */
 #define IDT_1762		1762	/* ZIP drives: */
-#define IDT_1763		1763	/* Board #1: */
-#define IDT_1764		1764	/* Board #2: */
-#define IDT_1765		1765	/* Board #3: */
-#define IDT_1766		1766	/* Board #4: */
+#define IDT_1763		1763	/* ISAMEM #1: */
+#define IDT_1764		1764	/* ISAMEM #2: */
+#define IDT_1765		1765	/* ISAMEM #3: */
+#define IDT_1766		1766	/* ISAMEM #4: */
+#define IDT_1767		1767	/* ISARTC: */
 
 #define IDT_TITLE		1790	/* "VARCem for Plaform" */
 #define IDT_VERSION		1791	/* "version.." */
@@ -188,6 +189,8 @@
 #define IDC_COMBO_IDE_QUA	1126
 #define IDC_CHECK_BUGGER	1127
 #define IDC_CONFIGURE_BUGGER	1128
+#define IDC_COMBO_ISARTC	1129
+#define IDC_CONFIGURE_ISARTC	1130
 
 #define IDC_GROUP_ISAMEM	1140
 #define IDC_COMBO_ISAMEM_1	1141

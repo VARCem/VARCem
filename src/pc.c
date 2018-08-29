@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.51	2018/08/26
+ * Version:	@(#)pc.c	1.0.52	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,6 +86,7 @@
 #include "devices/video/video.h"
 #include "devices/misc/bugger.h"
 #include "devices/misc/isamem.h"
+#include "devices/misc/isartc.h"
 #include "ui/ui.h"
 #include "plat.h"
 
@@ -137,7 +138,8 @@ int	game_enabled = 0,			/* (C) enable game port */
 	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
 	parallel_device[] = {0,0,0},		/* (C) set up LPT devices */
 	bugger_enabled = 0,			/* (C) enable ISAbugger */
-	isamem_type[ISAMEM_MAX] = { 0,0,0,0 };	/* (C) enable ISA mem cards */
+	isamem_type[ISAMEM_MAX] = { 0,0,0,0 },	/* (C) enable ISA mem cards */
+	isartc_type = 0;			/* (C) enable ISA RTC card */
 #ifdef WALTJE
 int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
@@ -998,6 +1000,9 @@ pc_reset_hard_init(void)
 
     /* Reset any ISA memory cards. */
     isamem_reset();
+
+    /* Reset any ISA RTC cards. */
+    isartc_reset();
 
     fdd_reset();
 

@@ -66,7 +66,7 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.15	2018/06/06
+ * Version:	@(#)m_europc.c	1.0.16	2018/08/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -692,8 +692,10 @@ europc_close(void *priv)
 {
     nvr_t *nvr = &europc.nvr;
 
-    if (nvr->fn != NULL)
-	free(nvr->fn);
+    if (nvr->fn != NULL) {
+	free((wchar_t *)nvr->fn);
+	nvr->fn = NULL;
+    }
 }
 
 

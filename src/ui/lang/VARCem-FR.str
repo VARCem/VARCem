@@ -236,6 +236,7 @@
 #define  STR_3478	"4ème interface IDE:"
 #define  STR_3479	"Carte ISABugger"
 #define  STR_3480	"Carte d'extension mémoire ISA"
+#define  STR_3481	"Carte d'horloge temps réel"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Disques dur:"

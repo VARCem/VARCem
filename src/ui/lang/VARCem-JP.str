@@ -8,7 +8,7 @@
  *
  *		String definitions for "Japanese (Japan)" language.
  *
- * Version:	@(#)VARCem-JP.str	1.0.6	2018/08/25
+ * Version:	@(#)VARCem-JP.str	1.0.7	2018/08/26
  *
  * Authors:	Basic2004, <basic2004@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,6
+#define TAG_VERSION	1,0,7
 #define TAG_AUTHOR	"Basic2004"
 #define TAG_EMAIL	"basic2004@gmail.com"
 
@@ -234,7 +234,8 @@
 #define  STR_3477	"3番目のIDE:"
 #define  STR_3478	"4番目のIDE:"
 #define  STR_3479	"ISABuggerデバイス"
-#define  STR_3480	"ISA Memory Expansion"
+#define  STR_3480	"ISAメモリー拡張ボード"
+#define  STR_3481	"ISA Clock/RTC Card"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"ハードディスク:"

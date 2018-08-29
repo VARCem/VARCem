@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.52	2018/08/26
+# Version:	@(#)Makefile.mingw	1.0.53	2018/08/27
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -599,7 +599,7 @@ INTELOBJ	:= intel.o \
 		    intel_piix.o intel_piix4.o
 
 DEVOBJ		:= bugger.o \
-		   isamem.o \
+		   isamem.o isartc.o \
 		   game.o game_dev.o \
 		   parallel.o parallel_dev.o serial.o \
 		   sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \

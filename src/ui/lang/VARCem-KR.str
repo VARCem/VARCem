@@ -8,7 +8,7 @@
  *
  *		String definitions for "Korean (South Korea)" language.
  *
- * Version:	@(#)VARCem-KR.str	1.0.7	2018/08/25
+ * Version:	@(#)VARCem-KR.str	1.0.9	2018/08/27
  *
  * Authors:	Yeong Uk Jo, <greatpsycho@yahoo.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,7
+#define TAG_VERSION	1,0,9
 #define TAG_AUTHOR	"Yeong Uk Jo"
 #define TAG_EMAIL	"greatpsycho@yahoo.com"
 
@@ -234,7 +234,8 @@
 #define  STR_3477	"3 번째 IDE:"
 #define  STR_3478	"4 번째 IDE:"
 #define  STR_3479	"ISABugger 장치"
-#define  STR_3480	"ISA Memory Expansion"
+#define  STR_3480	"ISA 메모리 확장 카드"
+#define  STR_3481	"ISA 내장 시계 카드"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"하드 디스크:"

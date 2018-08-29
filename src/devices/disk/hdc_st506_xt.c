@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.11	2018/08/23
+ * Version:	@(#)hdc_st506_xt.c	1.0.12	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -819,40 +819,42 @@ loadhd(hdc_t *dev, int c, int d, const wchar_t *fn)
 static const struct {
     uint16_t	tracks;
     uint8_t	hpc;
+    uint8_t	spt;
 } hd_types[4] = {
-    { 306, 4 },	/* Type 0 */
-    { 612, 4 }, /* Type 16 */
-    { 615, 4 }, /* Type 2 */
-    { 306, 8 }  /* Type 13 */
+    { 306, 4, 17 }, /* Type 0 */
+    { 612, 4, 17 }, /* Type 16 */
+    { 615, 4, 17 }, /* Type 2 */
+    { 306, 8, 17 }  /* Type 13 */
 };
 
 
 static void
 st506_set_switches(hdc_t *dev)
 {
+    drive_t *drive;
     int c, d;
-	
+
     dev->switches = 0;
-	
-    for (d=0; d<2; d++) {
-	drive_t *drive = &dev->drives[d];
+
+    for (d = 0; d < 2; d++) {
+	drive = &dev->drives[d];
 
 	if (! drive->present) continue;
 
-	for (c=0; c<4; c++) {
-		if (drive->spt == 17 &&
-		    drive->hpc == hd_types[c].hpc &&
-		    drive->tracks == hd_types[c].tracks) {
-			dev->switches |= (c << (d * 2));
+	for (c = 0; c < 4; c++) {
+		if ((drive->spt == hd_types[c].spt) &&
+		    (drive->hpc == hd_types[c].hpc) &&
+		    (drive->tracks == hd_types[c].tracks)) {
+			dev->switches |= (c << (d ? 0 : 2));
 			break;
 		}
 	}
 
 	pclog("ST506: ");
 	if (c == 4)
-		pclog("*WARNING* drive %d has unsupported format", d);
+		pclog("*WARNING* drive%d unsupported", d);
 	  else
-		pclog("drive %d is type %d", d, c);
+		pclog("drive%d is type %d", d, c);
 	pclog(" (%d/%d/%d)\n", drive->tracks, drive->hpc, drive->spt);
     }
 }
@@ -872,7 +874,7 @@ st506_init(const device_t *info)
     hdc_log("ST506: looking for disks..\n");
 #endif
     c = 0;
-    for (i=0; i<HDD_NUM; i++) {
+    for (i = 0; i < HDD_NUM; i++) {
 	if ((hdd[i].bus == HDD_BUS_ST506) && (hdd[i].id.st506_channel < ST506_NUM)) {
 #ifdef ENABLE_HDC_LOG
 		hdc_log("Found ST506 hard disk on channel %i\n", hdd[i].id.st506_channel);
@@ -920,7 +922,7 @@ st506_close(void *priv)
     hdc_t *dev = (hdc_t *)priv;
     int d;
 
-    for (d=0; d<2; d++) {
+    for (d = 0; d < 2; d++) {
 	drive_t *drive = &dev->drives[d];
 
 	hdd_image_close(drive->hdd_num);

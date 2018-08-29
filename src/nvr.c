@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.10	2018/05/06
+ * Version:	@(#)nvr.c	1.0.11	2018/08/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -143,14 +143,20 @@ nvr_init(nvr_t *nvr)
 {
     char temp[64];
     struct tm *tm;
+    wchar_t *sp;
     time_t now;
     int c;
 
     /* Set up the NVR file's name. */
-    sprintf(temp, "%s.nvr", machine_get_internal_name());
+    if (nvr->fn != NULL)
+	strcpy(temp, (const char *)nvr->fn);
+      else
+	strcpy(temp, machine_get_internal_name());
+    strcat(temp, ".nvr");
     c = strlen(temp) + 1;
-    nvr->fn = (wchar_t *)malloc(c*sizeof(wchar_t));
-    mbstowcs(nvr->fn, temp, c);
+    sp = (wchar_t *)malloc(c*sizeof(wchar_t));
+    mbstowcs(sp, temp, c);
+    nvr->fn = (const wchar_t *)sp;
 
     /* Initialize the internal clock as needed. */
     memset(&intclk, 0x00, sizeof(intclk));

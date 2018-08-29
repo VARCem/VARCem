@@ -8,7 +8,7 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * Version:	@(#)VARCem-BY.str	1.0.2	2018/08/25
+ * Version:	@(#)VARCem-BY.str	1.0.3	2018/08/27
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,7 +47,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,2
+#define TAG_VERSION	1,0,3
 #define TAG_AUTHOR	"paul_met"
 #define TAG_EMAIL	"paul_met@yandex.ru"
 
@@ -232,7 +232,8 @@
 #define  STR_3477	"Трацічны IDE:"
 #define  STR_3478	"Чацвярцічны IDE:"
 #define  STR_3479	"Прылада ISABugger"
-#define  STR_3480       "ISA Memory Expansion"
+#define  STR_3480	"Карта расширения памяти (ISA)"
+#define  STR_3481	"ISA Clock/RTC карта"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Жорсткія дыскі:"

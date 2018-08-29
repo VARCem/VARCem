@@ -32,7 +32,7 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.1	2018/08/18
+ * Version:	@(#)isamem.c	1.0.2	2018/08/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -448,18 +448,25 @@ dev->frame_addr = 0xE0000;
 
     /* Say hello! */
     pclog("ISAMEM: %s (%iKB", info->name, dev->total_size);
-    if (dev->total_size != tot) pclog(", %iKB for RAM", tot);
+    if (tot && (dev->total_size != tot))
+	pclog(", %iKB for RAM", tot);
     if (dev->flags & FLAG_FAST) pclog(", FAST");
     if (dev->flags & FLAG_WIDE) pclog(", 16BIT");
     pclog(")\n");
 
     /* Force (back to) 8-bit bus if needed. */
-    if (AT) {
-	if (! cpu_16bitbus)
-		pclog("ISAMEM: *WARNING* this board will slow down your PC!\n");
+    if (dev->flags & FLAG_WIDE) {
+	if (AT) {
+		if (! cpu_16bitbus)
+			pclog("ISAMEM: *WARNING* this board will slow down your PC!\n");
+	} else {
+		pclog("ISAMEM: not AT+ system, forcing 8-bit mode!\n");
+		dev->flags &= ~FLAG_WIDE;
+	}
     } else {
-	pclog("ISAMEM: not AT+ system, forcing 8-bit mode!\n");
-	dev->flags &= ~FLAG_WIDE;
+	if (AT) {
+		pclog("ISAMEM: *WARNING* this board will slow down your PC!\n");
+	}
     }
 
     /* Allocate and initialize our RAM. */
@@ -624,7 +631,7 @@ dev->frame_addr = 0xE0000;
 	}
     }
 
-    /* Just so its not NULL. */
+    /* Let them know our device instance. */
     return((void *)dev);
 }
 
@@ -659,7 +666,7 @@ static const device_config_t ibmxt_config[] =
 		"size", "Memory Size", CONFIG_SPINNER, "", 128,
 		{ { 0 } },
 		{ { 0 } },
-		{ 0, 256, 16 }
+		{ 0, 512, 16 }
 	},
 	{
 		"start", "Start Address", CONFIG_SPINNER, "", 256,

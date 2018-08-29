@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.32	2018/08/18
+ * Version:	@(#)win_settings.c	1.0.33	2018/08/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,6 +59,7 @@
 #include "../devices/ports/parallel_dev.h"
 #include "../devices/ports/serial.h"
 #include "../devices/misc/isamem.h"
+#include "../devices/misc/isartc.h"
 #include "../devices/input/mouse.h"
 #include "../devices/input/game/joystick.h"
 #include "../devices/floppy/fdd.h"
@@ -114,6 +115,7 @@ static int	temp_hdc_type,
 		temp_ide_ter, temp_ide_ter_irq,
 		temp_ide_qua, temp_ide_qua_irq;
 static int	temp_bugger,
+		temp_isartc,
 		temp_isamem[ISAMEM_MAX];
 
 /* Floppy drives category. */
@@ -224,6 +226,7 @@ settings_init(void)
     temp_ide_qua = ide_enable[3];
     temp_ide_qua_irq = ide_irq[3];
     temp_bugger = bugger_enabled;
+    temp_isartc = isartc_type;
 
     /* ISA memory boards. */
     for (i = 0; i < ISAMEM_MAX; i++)
@@ -303,6 +306,7 @@ settings_changed(void)
     i = i || (temp_ide_qua != ide_enable[3]);
     i = i || (temp_ide_qua_irq != ide_irq[3]);
     i = i || (temp_bugger != bugger_enabled);
+    i = i || (temp_isartc != isartc_type);
 
     /* ISA memory boards. */
     for (j = 0; j < ISAMEM_MAX; j++)
@@ -410,6 +414,7 @@ settings_save(void)
     ide_enable[3] = temp_ide_qua;
     ide_irq[3] = temp_ide_qua_irq;
     bugger_enabled = temp_bugger;
+    isartc_type = temp_isartc;
 
     /* ISA memory boards. */
     for (i = 0; i < ISAMEM_MAX; i++)

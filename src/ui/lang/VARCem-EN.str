@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem-EN.str	1.0.7	2018/08/25
+ * Version:	@(#)VARCem-EN.str	1.0.8	2018/08/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -237,7 +237,8 @@
 #define  STR_3477	"Tertiary IDE:"
 #define  STR_3478	"Quaternary IDE:"
 #define  STR_3479	"ISABugger device"
-#define  STR_3480	"ISA Memory Expansion"
+#define  STR_3480	"ISA Memory Expansion Card"
+#define  STR_3481	"ISA Clock/RTC Card"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Hard disks:"

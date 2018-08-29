@@ -6,13 +6,13 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the generic NVRAM/CMOS driver.
+ *		Definitions for the ISARTC cards.
  *
- * Version:	@(#)nvr.h	1.0.7	2018/08/27
+ * Version:	@(#)isartc.h	1.0.1	2018/08/27
  *
- * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2018 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -44,55 +44,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef EMU_NVR_H
-# define EMU_NVR_H
+#ifndef ISARTC_H
+# define ISARTC_H
 
 
-#define NVR_MAXSIZE	128			/* max size of NVR data */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* Conversion from BCD to Binary and vice versa. */
-#define RTC_BCD(x)      (((x) % 10) | (((x) / 10) << 4))
-#define RTC_DCB(x)      ((((x) & 0xf0) >> 4) * 10 + ((x) & 0x0f))
-#define RTC_BCDINC(x,y)	RTC_BCD(RTC_DCB(x) + y)
-
-
-/* Define a generic RTC/NVRAM device. */
-typedef struct _nvr_ {
-    const wchar_t	*fn;			/* pathname of image file */
-    uint16_t		size;			/* device configuration */
-    int8_t		irq;
-
-    uint8_t		onesec_cnt;
-    int64_t		onesec_time;
-
-    void		*data;			/* local data */
-
-    /* Hooks to device functions. */
-    void		(*reset)(struct _nvr_ *);
-    void		(*start)(struct _nvr_ *);
-    void		(*tick)(struct _nvr_ *);
-
-    uint8_t		regs[NVR_MAXSIZE];	/* these are the registers */
-} nvr_t;
+/* Global variables. */
 
 
-extern int		nvr_dosave;
-#ifdef EMU_DEVICE_H
-extern const device_t	at_nvr_device;
-extern const device_t	ps_nvr_device;
-extern const device_t	amstrad_nvr_device;
+/* Functions. */
+extern void		isartc_reset(void);
+
+extern const char	*isartc_get_name(int t);
+extern const char	*isartc_get_internal_name(int t);
+extern int		isartc_get_from_internal_name(const char *s);
+extern const device_t	*isartc_get_device(int t);
+
+#ifdef __cplusplus
+}
 #endif
 
 
-extern void		nvr_init(nvr_t *);
-extern wchar_t		*nvr_path(const wchar_t *fn);
-extern int		nvr_load(void);
-extern int		nvr_save(void);
-
-extern int		nvr_is_leap(int year);
-extern int		nvr_get_days(int month, int year);
-extern void		nvr_time_get(struct tm *);
-extern void		nvr_time_set(struct tm *);
-
-
-#endif	/*EMU_NVR_H*/
+#endif	/*ISARTC_H*/

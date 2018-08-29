@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.39	2018/08/26
+# Version:	@(#)Makefile.VC	1.0.40	2018/08/27
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -569,7 +569,7 @@ INTELOBJ	:= intel.obj \
 		    intel_piix.obj intel_piix4.obj
 
 DEVOBJ		:= bugger.obj \
-		   isamem.obj \
+		   isamem.obj isartc.obj \
 		   game.obj game_dev.obj \
 		   parallel.obj parallel_dev.obj serial.obj \
 		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \

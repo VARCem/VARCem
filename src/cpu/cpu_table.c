@@ -8,7 +8,7 @@
  *
  *		Define all known processor types.
  *
- * Version:	@(#)cpu_table.c	1.0.3	2018/07/28
+ * Version:	@(#)cpu_table.c	1.0.4	2018/04/29
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,9 @@ CPU cpus_8088[] = {
     {"8088/8",       CPU_8088,  1,  8000000,    1, 0, 0, 0, 0, 0, 0,0,0,0, 1},
 #if 0
     {"8088/7.16",    CPU_8088,  1, 14318184/2,  1, 0, 0, 0, 0, 0, 0,0,0,0, 1},
+#endif
     {"8088/10",      CPU_8088,  2, 10000000,    1, 0, 0, 0, 0, 0, 0,0,0,0, 1},
+#if 0
     {"8088/12",      CPU_8088,  3, 12000000,    1, 0, 0, 0, 0, 0, 0,0,0,0, 1},
     {"8088/16",      CPU_8088,  4, 16000000,    1, 0, 0, 0, 0, 0, 0,0,0,0, 1},
 #endif
