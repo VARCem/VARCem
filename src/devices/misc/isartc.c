@@ -28,7 +28,7 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.1	2018/08/28
+ * Version:	@(#)isartc.c	1.0.2	2018/08/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -130,14 +130,14 @@ typedef struct {
 # define MM67_AL_DONTCARE	0xc0	/* always match in compare */
 #define MM67_ISTAT		16	/* IRQ status */
 #define MM67_ICTRL		17	/* IRQ control */
-# define MM67INT_MON		0x01	/*  Month */
-# define MM67INT_WEEK		0x02	/*  Week */
-# define MM67INT_DAY		0x04	/*  Day */
-# define MM67INT_HOUR		0x08	/*  Hour */
-# define MM67INT_MIN		0x10	/*  Minute */
-# define MM67INT_SEC		0x20	/*  Second */
-# define MM67INT_TENTH		0x40	/*  Tenth */
-# define MM67INT_COMPARE	0x80	/*  Compare */
+# define MM67INT_COMPARE	0x01	/*  Compare */
+# define MM67INT_TENTH		0x02	/*  Tenth */
+# define MM67INT_SEC		0x04	/*  Second */
+# define MM67INT_MIN		0x08	/*  Minute */
+# define MM67INT_HOUR		0x10	/*  Hour */
+# define MM67INT_DAY		0x20	/*  Day */
+# define MM67INT_WEEK		0x40	/*  Week */
+# define MM67INT_MON		0x80	/*  Month */
 #define MM67_RSTCTR		18	/* reset counters */
 #define MM67_RSTRAM		19	/* reset RAM */
 #define MM67_STATUS		20	/* status bit */
@@ -172,36 +172,39 @@ mm67_tick(nvr_t *nvr)
     uint8_t *regs = nvr->regs;
     int mon, year, f = 0;
 
+    /* Update and set interrupt if needed. */
     regs[MM67_SEC] = RTC_BCDINC(nvr->regs[MM67_SEC], 1);
-    if (regs[MM67_SEC] >= RTC_BCD(60)) {
-	/* Set interrupt if needed. */
-	if (regs[MM67_ICTRL] & MM67INT_SEC) f = MM67INT_SEC;
+    if (regs[MM67_ICTRL] & MM67INT_SEC) f = MM67INT_SEC;
 
-	/* Roll over. */
+    /* Roll over? */
+    if (regs[MM67_SEC] >= RTC_BCD(60)) {
+	/* Update and set interrupt if needed. */
 	regs[MM67_SEC] = RTC_BCD(0);
 	regs[MM67_MIN] = RTC_BCDINC(regs[MM67_MIN], 1);
-	if (regs[MM67_MIN] >= RTC_BCD(60)) {
-		/* Set interrupt if needed. */
-		if (regs[MM67_ICTRL] & MM67INT_MIN) f = MM67INT_MIN;
+	if (regs[MM67_ICTRL] & MM67INT_MIN) f = MM67INT_MIN;
 
-		/* Roll over. */
+	/* Roll over? */
+	if (regs[MM67_MIN] >= RTC_BCD(60)) {
+		/* Update and set interrupt if needed. */
 		regs[MM67_MIN] = RTC_BCD(0);
 		regs[MM67_HOUR] = RTC_BCDINC(regs[MM67_HOUR], 1);
-		if (regs[MM67_HOUR] >= RTC_BCD(24)) {
-			/* Set interrupt if needed. */
-			if (regs[MM67_ICTRL] & MM67INT_HOUR) f = MM67INT_HOUR;
+		if (regs[MM67_ICTRL] & MM67INT_HOUR) f = MM67INT_HOUR;
 
-			/* Roll over. */
+		/* Roll over? */
+		if (regs[MM67_HOUR] >= RTC_BCD(24)) {
+			/* Update and set interrupt if needed. */
 			regs[MM67_HOUR] = RTC_BCD(0);
 			regs[MM67_DOW] = RTC_BCDINC(regs[MM67_DOW], 1);
-			if (regs[MM67_DOW] > RTC_BCD(7)) {
-				/* Roll over. */
-				regs[MM67_DOW] = RTC_BCD(1);
+			if (regs[MM67_ICTRL] & MM67INT_DAY) f = MM67INT_DAY;
 
-				/* Set interrupt if needed. */
+			/* Roll over? */
+			if (regs[MM67_DOW] > RTC_BCD(7)) {
+				/* Update and set interrupt if needed. */
+				regs[MM67_DOW] = RTC_BCD(1);
 				if (regs[MM67_ICTRL] & MM67INT_WEEK) f = MM67INT_WEEK;
 			}
 
+			/* Roll over? */
 			regs[MM67_DOM] = RTC_BCDINC(regs[MM67_DOM], 1);
 			mon = RTC_DCB(regs[MM67_MON]);
 			if (dev->year != -1) {
@@ -212,17 +215,14 @@ mm67_tick(nvr_t *nvr)
 				year = 80;
 			year += 1900;
 			if (RTC_DCB(regs[MM67_DOM]) > nvr_get_days(mon, year)) {
-				/* Set interrupt if needed. */
-				if (regs[MM67_ICTRL] & MM67INT_DAY) f = MM67INT_DAY;
-
-				/* Roll over. */
+				/* Update and set interrupt if needed. */
 				regs[MM67_DOM] = RTC_BCD(1);
 				regs[MM67_MON] = RTC_BCDINC(regs[MM67_MON], 1);
-				if (regs[MM67_MON] > RTC_BCD(12)) {
-					/* Set interrupt if needed. */
-					if (regs[MM67_ICTRL] & MM67INT_MON) f = MM67INT_MON;
+				if (regs[MM67_ICTRL] & MM67INT_MON) f = MM67INT_MON;
 
-					/* Roll over. */
+				/* Roll over? */
+				if (regs[MM67_MON] > RTC_BCD(12)) {
+					/* Update. */
 					regs[MM67_MON] = RTC_BCD(1);
 					if (dev->year != -1) {
 						year++;
@@ -403,7 +403,6 @@ mm67_write(uint16_t port, uint8_t val, void *priv)
 	case MM67_ICTRL:		/* intr control */
 		dev->nvr.regs[MM67_ISTAT] = 0x00;
 		dev->nvr.regs[reg] = val;
-pclog("RTC: write ictrl=%02x\n", val);
 		break;
 
 	case MM67_RSTCTR:
