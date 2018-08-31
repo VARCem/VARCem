@@ -28,7 +28,7 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.3	2018/08/31
+ * Version:	@(#)isartc.c	1.0.4	2018/08/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -99,7 +99,7 @@ typedef struct {
     /* Fields for the specific driver. */
     void	(*f_wr)(uint16_t, uint8_t, void *);
     uint8_t	(*f_rd)(uint16_t, void *);
-    uint8_t	year;				/* register for YEAR value */
+    int8_t	year;				/* register for YEAR value */
     char	pad[3];
 
     nvr_t	nvr;				/* RTC/NVR */
@@ -510,6 +510,19 @@ isartc_init(const device_t *info)
 		dev->year = MM67_AL_HUNTEN;	/* year, NON STANDARD */
 		break;
 
+	case 2:		/* Paradise Systems 5PAK */
+		dev->flags |= FLAG_YEAR80;
+		dev->base_addr = 0x02c0;
+		dev->base_addrsz = 32;
+		dev->irq = device_get_config_int("irq");
+		dev->f_rd = mm67_read;
+		dev->f_wr = mm67_write;
+		dev->nvr.reset = mm67_reset;
+		dev->nvr.start = mm67_start;
+		dev->nvr.tick = mm67_tick;
+		dev->year = MM67_AL_DOM;	/* year, NON STANDARD */
+		break;
+
 	default:
 		break;
     }
@@ -630,6 +643,42 @@ static const device_t pii147_device = {
 };
 
 
+static const device_config_t p5pak_config[] = {
+	{
+		"irq", "IRQ", CONFIG_SELECTION, "", -1,
+		{
+			{
+				"Disabled", -1
+			},
+			{
+				"IRQ2", 2
+			},
+			{
+				"IRQ3", 3
+			},
+			{
+				"IRQ5", 5
+			},
+			{
+				""
+			}
+		},
+	},
+	{
+		"", "", -1
+	}
+};
+
+static const device_t p5pak_device = {
+    "Paradise Systems 5-PAK",
+    DEVICE_ISA,
+    2,
+    isartc_init, isartc_close, NULL,
+    NULL, NULL, NULL, NULL,
+    p5pak_config
+};
+
+
 static const struct {
     const char		*internal_name;
     const device_t	*dev;
@@ -637,6 +686,7 @@ static const struct {
     { "none",		NULL,			},
     { "ev170",		&ev170_device,		},
     { "pii147",		&pii147_device,		},
+    { "p5pak",		&p5pak_device,		},
     { NULL,		NULL			}
 };
 
