@@ -28,7 +28,7 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.2	2018/08/29
+ * Version:	@(#)isartc.c	1.0.3	2018/08/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -79,6 +79,9 @@
 #include "../../plat.h"
 #include "../system/pic.h"
 #include "isartc.h"
+
+
+#define ISARTC_DEBUG	0
 
 
 typedef struct {
@@ -150,8 +153,8 @@ typedef struct {
 static int8_t
 mm67_chkalrm(nvr_t *nvr, int8_t addr)
 {
-    return((nvr->regs[addr+8] == nvr->regs[addr]) ||
-	   ((nvr->regs[addr+8] & MM67_AL_DONTCARE) == MM67_AL_DONTCARE));
+    return((nvr->regs[addr-MM67_AL_SEC+MM67_SEC] == nvr->regs[addr]) ||
+	   ((nvr->regs[addr] & MM67_AL_DONTCARE) == MM67_AL_DONTCARE));
 }
 
 
@@ -242,10 +245,11 @@ mm67_tick(nvr_t *nvr)
 
     /* Check for programmed alarm interrupt. */
     if (regs[MM67_ICTRL] & MM67INT_COMPARE) {
-	for (mon = MM67_SEC; mon <= MM67_MON; mon++) {
-		if (mm67_chkalrm(nvr, mon))
-			f |= MM67INT_COMPARE;
-	}
+	year = 1;
+	for (mon = MM67_AL_SEC; mon <= MM67_AL_MON; mon++)
+		if (mon != dev->year)
+			year &= mm67_chkalrm(nvr, mon);
+	f = year ? MM67INT_COMPARE : 0x00;
     }
 
     /* Raise the IRQ if needed (and if we have one..) */
@@ -281,6 +285,9 @@ mm67_time_get(nvr_t *nvr, struct tm *tm)
 #ifdef MM67_CENTURY
 	tm->tm_year += (regs[MM67_CENTURY] * 100) - 1900;
 #endif
+#if ISARTC_DEBUG > 1
+	pclog("ISARTC: get_time: year=%i [%02x]\n", tm->tm_year, regs[dev->year]);
+#endif
     }
 }
 
@@ -301,16 +308,18 @@ mm67_time_set(nvr_t *nvr, struct tm *tm)
     regs[MM67_DOM] = RTC_BCD(tm->tm_mday);
     regs[MM67_MON] = RTC_BCD(tm->tm_mon + 1);
     if (dev->year != -1) {
+	year = tm->tm_year;
 	if (dev->flags & FLAG_YEAR80)
-		year = (tm->tm_year - 80) % 100;
-	  else
-		year = tm->tm_year % 100;
+		year -= 80;
 	if (dev->flags & FLAG_YEARBCD)
-		regs[dev->year] = RTC_BCD(year);
+		regs[dev->year] = RTC_BCD(year % 100);
 	  else
-		regs[dev->year] = regs[dev->year] + 1;
+		regs[dev->year] = year % 100;
 #ifdef MM67_CENTURY
-	regs[MM67_CENTURY] = (tm->tm_year+1900) / 100;
+	regs[MM67_CENTURY] = (year + 1900) / 100;
+#endif
+#if ISARTC_DEBUG > 1
+	pclog("ISARTC: set_time: [%02x] year=%i (%i)\n", regs[dev->year], year, tm->tm_year);
 #endif
     }
 }
@@ -373,7 +382,7 @@ mm67_read(uint16_t port, void *priv)
 		break;
     }
 
-#if 0
+#if  ISARTC_DEBUG
     pclog("ISARTC: read(%04x) = %02x\n", port-dev->base_addr, ret);
 #endif
 
@@ -389,7 +398,7 @@ mm67_write(uint16_t port, uint8_t val, void *priv)
     int reg = port - dev->base_addr;
     int i;
 
-#if 0
+#if  ISARTC_DEBUG
     pclog("ISARTC: write(%04x, %02x)\n", port-dev->base_addr, val);
 #endif
 
@@ -446,8 +455,7 @@ pclog("RTC: write test=%02x\n", val);
 		break;
 
 	default:
-		if (! enable_sync)
-			dev->nvr.regs[reg] = val;
+		dev->nvr.regs[reg] = val;
 		break;
     }
 }
