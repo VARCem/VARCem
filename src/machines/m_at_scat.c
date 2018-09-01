@@ -10,7 +10,7 @@
  *
  *		Re-worked version based on the 82C235 datasheet and errata.
  *
- * Version:	@(#)m_at_scat.c	1.0.10	2018/08/20
+ * Version:	@(#)m_at_scat.c	1.0.11	2018/08/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -253,7 +253,7 @@ set_xms_bound(uint8_t val)
 		scat_xms_bound = max_xms_size;
 	if (scat_xms_bound > 0x100000)
 		mem_set_mem_state(0x100000, scat_xms_bound - 0x100000, MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-	if (scat_xms_bound < (mem_size << 10))
+	if (scat_xms_bound < ((uint32_t)mem_size << 10))
 		mem_set_mem_state(scat_xms_bound, (mem_size << 10) - scat_xms_bound, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
     }
 
@@ -897,7 +897,7 @@ set_global_EMS_state(int state)
 		if(i < 24) mem_mapping_disable(&scat_4000_EFFF_mapping[i]);
 		else mem_mapping_disable(&scat_4000_EFFF_mapping[i + 12]);
 		mem_mapping_enable(&scat_ems_mapping[i]);
-		if(virt_addr < (mem_size << 10)) mem_mapping_set_exec(&scat_ems_mapping[i], ram + virt_addr);
+		if(virt_addr < ((uint32_t)mem_size << 10)) mem_mapping_set_exec(&scat_ems_mapping[i], ram + virt_addr);
 		else mem_mapping_set_exec(&scat_ems_mapping[i], NULL);
 	} else {
 		mem_mapping_set_exec(&scat_ems_mapping[i], ram + base_addr);
@@ -928,16 +928,16 @@ memmap_state_update(void)
 
     for (i= (((scat_regs[SCAT_VERSION] & 0xF0) == 0) ? 0 : 16);i<44;i++) {
 	addr = get_scat_addr(0x40000 + (i << 14), NULL);
-	mem_mapping_set_exec(&scat_4000_EFFF_mapping[i], addr < (mem_size << 10) ? ram + addr : NULL);
+	mem_mapping_set_exec(&scat_4000_EFFF_mapping[i], addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
     }
     addr = get_scat_addr(0, NULL);
-    mem_mapping_set_exec(&scat_low_mapping[0], addr < (mem_size << 10) ? ram + addr : NULL);
+    mem_mapping_set_exec(&scat_low_mapping[0], addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
     addr = get_scat_addr(0xF0000, NULL);
-    mem_mapping_set_exec(&scat_low_mapping[1], addr < (mem_size << 10) ? ram + addr : NULL);
+    mem_mapping_set_exec(&scat_low_mapping[1], addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
 
     for (i = 2; i < 32; i++) {
 	addr = get_scat_addr(i << 19, NULL);
-	mem_mapping_set_exec(&scat_low_mapping[i], addr < (mem_size << 10) ? ram + addr : NULL);
+	mem_mapping_set_exec(&scat_low_mapping[i], addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
     }
 
     if((scat_regs[SCAT_VERSION] & 0xF0) == 0) {
@@ -969,7 +969,7 @@ memmap_state_update(void)
 		mem_mapping_disable(&scat_low_mapping[2]);
 		for(i=0;i<6;i++) {
 			addr = get_scat_addr(0x100000 + (i << 16), NULL);
-			mem_mapping_set_exec(&scat_remap_mapping[i], addr < (mem_size << 10) ? ram + addr : NULL);
+			mem_mapping_set_exec(&scat_remap_mapping[i], addr < ((uint32_t)mem_size << 10) ? ram + addr : NULL);
 			mem_mapping_enable(&scat_remap_mapping[i]);
 		}
 	} else {
@@ -1114,7 +1114,7 @@ scat_write(uint16_t port, uint8_t val, void *priv)
 
 			if((scat_regs[SCAT_EMS_CONTROL] & 0x80) && (scat_stat[index].regs_2x9 & 0x80)) {
 				virt_addr = get_scat_addr(base_addr, &scat_stat[index]);
-				if(virt_addr < (mem_size << 10)) mem_mapping_set_exec(&scat_ems_mapping[index], ram + virt_addr);
+				if(virt_addr < ((uint32_t)mem_size << 10)) mem_mapping_set_exec(&scat_ems_mapping[index], ram + virt_addr);
 				else mem_mapping_set_exec(&scat_ems_mapping[index], NULL);
 				flushmmucache();
 			}
@@ -1135,7 +1135,7 @@ scat_write(uint16_t port, uint8_t val, void *priv)
 					virt_addr = get_scat_addr(base_addr, &scat_stat[index]);
 					if(index < 24) mem_mapping_disable(&scat_4000_EFFF_mapping[index]);
 					else mem_mapping_disable(&scat_4000_EFFF_mapping[index + 12]);
-					if(virt_addr < (mem_size << 10)) mem_mapping_set_exec(&scat_ems_mapping[index], ram + virt_addr);
+					if(virt_addr < ((uint32_t)mem_size << 10)) mem_mapping_set_exec(&scat_ems_mapping[index], ram + virt_addr);
 					else mem_mapping_set_exec(&scat_ems_mapping[index], NULL);
 					mem_mapping_enable(&scat_ems_mapping[index]);
 				} else {
@@ -1226,7 +1226,7 @@ mem_read_scatb(uint32_t addr, void *priv)
     scat_t *stat = (scat_t *)priv;
 
     addr = get_scat_addr(addr, stat);
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	val = ram[addr];
 
     return val;
@@ -1244,7 +1244,7 @@ mem_write_scatb(uint32_t addr, uint8_t val, void *priv)
     if (chkaddr >= 0xC0000 && chkaddr < 0x100000) {
 	if(scat_regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xC0000) >> 15))) return;
     }
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	ram[addr] = val;
 }
 
@@ -1256,7 +1256,7 @@ mem_read_scatw(uint32_t addr, void *priv)
     scat_t *stat = (scat_t *)priv;
 
     addr = get_scat_addr(addr, stat);
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	val = *(uint16_t *)&ram[addr];
 
     return val;
@@ -1274,7 +1274,7 @@ mem_write_scatw(uint32_t addr, uint16_t val, void *priv)
     if (chkaddr >= 0xC0000 && chkaddr < 0x100000) {
 	if(scat_regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xC0000) >> 15))) return;
     }
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	*(uint16_t *)&ram[addr] = val;
 }
 
@@ -1286,7 +1286,7 @@ mem_read_scatl(uint32_t addr, void *priv)
     scat_t *stat = (scat_t *)priv;
 
     addr = get_scat_addr(addr, stat);
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	val = *(uint32_t *)&ram[addr];
 
     return val;
@@ -1304,7 +1304,7 @@ mem_write_scatl(uint32_t addr, uint32_t val, void *priv)
     if (chkaddr >= 0xC0000 && chkaddr < 0x100000) {
 	if(scat_regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xC0000) >> 15))) return;
     }
-    if (addr < (mem_size << 10))
+    if (addr < ((uint32_t)mem_size << 10))
 	*(uint32_t *)&ram[addr] = val;
 }
 

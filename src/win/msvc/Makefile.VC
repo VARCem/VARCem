@@ -522,7 +522,7 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(PRINTERS), y)
   OPTS		+= -DUSE_PRINTERS=1
-  DEVBROBJ	+= printer_escp.obj
+  DEVBROBJ	+= prt_text.obj prt_cpmap.obj prt_escp.obj
  endif
 
 endif

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.54	2018/08/31
+# Version:	@(#)Makefile.mingw	1.0.55	2018/08/31
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -548,7 +548,7 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(PRINTERS), y)
   OPTS		+= -DUSE_PRINTERS=1
-  DEVBROBJ	+= printer_escp.o
+  DEVBROBJ	+= prt_text.o prt_cpmap.o prt_escp.o
  endif
 
 endif
