@@ -8,7 +8,7 @@
  *
  *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)parallel_dev.c	1.0.6	2018/08/31
+ * Version:	@(#)parallel_dev.c	1.0.7	2018/08/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,9 +47,7 @@
 
 #include "../../devices/sound/snd_lpt_dac.h"
 #include "../../devices/sound/snd_lpt_dss.h"
-#if USE_PRINTERS
-# include "../../devices/printer/printer.h"
-#endif
+#include "../../devices/printer/printer.h"
 
 
 static const struct {
@@ -57,26 +55,26 @@ static const struct {
     const char	*internal_name;
     const lpt_device_t *device;
 } devices[] = {
-    {"None",
-     "none",			NULL					},
+    { "None",
+      "none",			NULL				},
 
-    {"Disney Sound Source",
-     "dss",			&dss_device				},
-    {"LPT DAC / Covox Speech Thing",
-     "lpt_dac",			&lpt_dac_device				},
-    {"Stereo LPT DAC",
-     "lpt_dac_stereo",		&lpt_dac_stereo_device			},
+    { "Disney Sound Source",
+      "dss",			&dss_device			},
+    { "LPT DAC / Covox Speech Thing",
+      "lpt_dac",		&lpt_dac_device			},
+    { "Stereo LPT DAC",
+      "lpt_dac_stereo",		&lpt_dac_stereo_device		},
+
+    { "Generic TEXT printer",
+      "lpt_prt_text",		&lpt_prt_text_device		},
 
 #if USE_PRINTERS
-    {"Generic TEXT printer",
-     "lpt_printer_text",	&lpt_printer_text_device		},
-
-    {"Generic ESC/P Dot-Matrix printer",
-     "lpt_printer_escp",	&lpt_printer_escp_device		},
+    { "Generic ESC/P Dot-Matrix printer",
+      "lpt_prt_escp",		&lpt_prt_escp_device		},
 #endif
 
-    {NULL,			NULL,
-     NULL								}
+    { NULL,			NULL,
+      NULL							}
 };
 
 

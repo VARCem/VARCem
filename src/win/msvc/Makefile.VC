@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.41	2018/08/31
+# Version:	@(#)Makefile.VC	1.0.42	2018/08/31
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -522,7 +522,7 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(PRINTERS), y)
   OPTS		+= -DUSE_PRINTERS=1
-  DEVBROBJ	+= prt_text.obj prt_cpmap.obj prt_escp.obj
+  DEVBROBJ	+= prt_cpmap.obj prt_escp.obj
  endif
 
 endif
@@ -580,7 +580,9 @@ INTELOBJ	:= intel.obj \
 DEVOBJ		:= bugger.obj \
 		   isamem.obj isartc.obj \
 		   game.obj game_dev.obj \
-		   parallel.obj parallel_dev.obj serial.obj \
+		   parallel.obj parallel_dev.obj \
+		    prt_text.obj \
+		   serial.obj \
 		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
 		   sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
 		   keyboard.obj \

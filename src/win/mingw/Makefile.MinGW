@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.55	2018/08/31
+# Version:	@(#)Makefile.mingw	1.0.56	2018/08/31
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -548,7 +548,7 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(PRINTERS), y)
   OPTS		+= -DUSE_PRINTERS=1
-  DEVBROBJ	+= prt_text.o prt_cpmap.o prt_escp.o
+  DEVBROBJ	+= prt_cpmap.o prt_escp.o
  endif
 
 endif
@@ -610,7 +610,9 @@ INTELOBJ	:= intel.o \
 DEVOBJ		:= bugger.o \
 		   isamem.o isartc.o \
 		   game.o game_dev.o \
-		   parallel.o parallel_dev.o serial.o \
+		   parallel.o parallel_dev.o \
+		    prt_text.o \
+		   serial.o \
 		   sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \
 		   sio_pc87306.o sio_w83877f.o sio_um8669f.o \
 		   keyboard.o \
