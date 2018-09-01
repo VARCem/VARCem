@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.16	2018/05/18
+ * Version:	@(#)plat.h	1.0.17	2018/08/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -130,6 +130,7 @@ extern FILE	*plat_fopen(const wchar_t *path, const wchar_t *mode);
 extern void	plat_remove(const wchar_t *path);
 extern int	plat_getcwd(wchar_t *bufp, int max);
 extern int	plat_chdir(const wchar_t *path);
+extern void	plat_tempfile(wchar_t *bufp, const wchar_t *prefix, const wchar_t *suffix);
 extern void	plat_get_exe_name(wchar_t *path, int size);
 extern wchar_t	*plat_get_basename(const wchar_t *path);
 extern wchar_t	*plat_get_filename(const wchar_t *path);
