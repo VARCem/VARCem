@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.53	2018/08/27
+# Version:	@(#)Makefile.mingw	1.0.54	2018/08/31
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -143,6 +143,9 @@ endif
 ifndef WONDER
  WONDER		:= n
 endif
+ifndef PRINTERS
+ PRINTERS	:= n
+endif
 
 
 # Name of the executable.
@@ -216,7 +219,8 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/cdrom devices/disk devices/floppy \
 		    devices/floppy/lzf devices/input devices/input/game \
 		    devices/network devices/network/slirp devices/ports \
-		    devices/sio devices/system devices/scsi devices/misc \
+		    devices/printer devices/sio devices/system devices/scsi \
+		    devices/misc \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
@@ -524,6 +528,11 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_at_440fx.o
  endif
 
+ ifeq ($(PAS16), y)
+  OPTS		+= -DUSE_PAS16
+  DEVBROBJ	+= snd_pas16.o
+ endif
+
  ifeq ($(STEALTH32), y)
   OPTS		+= -DUSE_STEALTH32
   DEVBROBJ	+= vid_icd2061.o
@@ -537,9 +546,9 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_XL24
  endif
 
- ifeq ($(PAS16), y)
-  OPTS		+= -DUSE_PAS16
-  DEVBROBJ	+= snd_pas16.o
+ ifeq ($(PRINTERS), y)
+  OPTS		+= -DUSE_PRINTERS=1
+  DEVBROBJ	+= printer_escp.o
  endif
 
 endif

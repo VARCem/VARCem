@@ -8,7 +8,7 @@
  *
  *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)parallel_dev.c	1.0.4	2018/05/06
+ * Version:	@(#)parallel_dev.c	1.0.5	2018/08/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,6 +47,9 @@
 
 #include "../../devices/sound/snd_lpt_dac.h"
 #include "../../devices/sound/snd_lpt_dss.h"
+#if USE_PRINTERS
+# include "../../devices/printer/printer_escp.h"
+#endif
 
 
 static const struct {
@@ -62,6 +65,10 @@ static const struct {
      "lpt_dac",			&lpt_dac_device				},
     {"Stereo LPT DAC",
      "lpt_dac_stereo",		&lpt_dac_stereo_device			},
+#if USE_PRINTERS
+    {"Generic ESC/P Dot-Matrix printer",
+     "lpt_printer_escp",	&lpt_printer_escp_device		},
+#endif
     {NULL,			NULL,
      NULL								}
 };

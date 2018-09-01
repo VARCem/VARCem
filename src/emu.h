@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.29	2018/08/27
+ * Version:	@(#)emu.h	1.0.30	2018/08/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -59,13 +59,18 @@
 #define ROMS_PATH	L"roms"
 # define MACHINES_PATH	L"machines"
 # define VIDEO_PATH	L"video"
+# define PRINTERS_PATH	L"printer"
+# define PFONTS_PATH	L"fonts"
 #define SCREENSHOT_PATH L"screenshots"
+#define PRINTER_PATH	L"printer"
 
 /* Pre-defined file names and extensions. */
+#define PRINTER_FILE	L"print"
 #define LANG_FILE	L"VARCem-"
 #define BIOS_FILE	L"bios.txt"
 #define CONFIG_FILE	L"config.varc"
 #define CONFIG_FILE_EXT	L".varc"
+#define DUMP_FILE_EXT	L".dmp"
 
 /* Pre-defined URLs to websites. */
 #define URL_VARCEM	L"https://www.VARCem.com/"
