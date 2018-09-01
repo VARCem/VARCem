@@ -32,7 +32,7 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.2	2018/08/27
+ * Version:	@(#)isamem.c	1.0.3	2018/08/31
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -405,6 +405,7 @@ isamem_init(const device_t *info)
     tot = 0;
     switch(dev->board) {
 	case 0:		/* IBM PC/XT Memory Expansion Card */
+	case 2:		/* Paradise Systems 5-PAK */
 		dev->total_size = device_get_config_int("size");
 		dev->start_addr = device_get_config_int("start");
 		tot = dev->total_size;
@@ -718,6 +719,35 @@ static const device_t ibmat_device = {
 };
 
 
+static const device_config_t p5pak_config[] =
+{
+	{
+		"size", "Memory Size", CONFIG_SPINNER, "", 128,
+		{ { 0 } },
+		{ { 0 } },
+		{ 0, 384, 64 }
+	},
+	{
+		"start", "Start Address", CONFIG_SPINNER, "", 512,
+		{ { 0 } },
+		{ { 0 } },
+		{ 64, 576, 64 }
+	},
+	{
+		"", "", -1
+	}
+};
+
+static const device_t p5pak_device = {
+    "Paradise Systems 5-PAK",
+    DEVICE_ISA,
+    2,
+    isamem_init, isamem_close, NULL,
+    NULL, NULL, NULL, NULL,
+    p5pak_config
+};
+
+
 static const device_config_t ev159_config[] =
 {
 	{
@@ -930,18 +960,19 @@ static const struct {
     const char		*internal_name;
     const device_t	*dev;
 } boards[] = {
-    { "none",		NULL,			},
-    { "ibmxt",		&ibmxt_device,		},
-    { "ibmat",		&ibmat_device,		},
-    { "ev159",		&ev159_device,		},
+    { "none",		NULL			},
+    { "ibmxt",		&ibmxt_device		},
+    { "ibmat",		&ibmat_device		},
+    { "p5pak",		&p5pak_device		},
+    { "ev159",		&ev159_device		},
 #ifdef USE_ISAMEM_BRAT
-    { "brat",		&brat_device,		},
+    { "brat",		&brat_device		},
 #endif
 #ifdef USE_ISAMEM_RAMPAGE
-    { "rampage",	&rampage_device,	},
+    { "rampage",	&rampage_device		},
 #endif
 #ifdef USE_ISAMEM_IAB
-    { "iab",		&iab_device,		},
+    { "iab",		&iab_device		},
 #endif
     { NULL,		NULL			}
 };
