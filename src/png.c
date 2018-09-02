@@ -8,7 +8,7 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.1	2018/09/01
+ * Version:	@(#)png.c	1.0.2	2018/09/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -64,7 +64,7 @@
 static void			*png_handle = NULL;	/* handle to DLL */
 #if USE_LIBPNG == 1
 # define PNGFUNC(x)		png_ ## x
-# else
+#else
 # define PNGFUNC(x)		PNG_ ## x
 
 
@@ -76,15 +76,15 @@ static png_structp	(*PNG_create_write_struct)(png_const_charp user_png_ver,
 static void		(*PNG_destroy_write_struct)(png_structpp png_ptr_ptr,
 					    png_infopp info_ptr_ptr);
 static png_infop	(*PNG_create_info_struct)(png_const_structrp png_ptr);
-#if USE_CUSTOM_IO
+# if USE_CUSTOM_IO
 static void		(*PNG_set_write_fn)(png_structrp png_ptr,
 					    png_voidp io_ptr,
 					    png_rw_ptr write_data_fn,
 					    png_flush_ptr output_flush_fn);
 static png_voidp	(*PNG_get_io_ptr)(png_const_structrp png_ptr);
-#else
+# else
 static void		(*PNG_init_io)(png_structrp png_ptr, png_FILE_p fp);
-#endif
+# endif
 static void		(*PNG_set_IHDR)(png_const_structrp png_ptr,
 				     png_inforp info_ptr, png_uint_32 width,
 				     png_uint_32 height, int bit_depth,
@@ -109,12 +109,12 @@ static const dllimp_t png_imports[] = {
   { "png_create_write_struct",	&PNG_create_write_struct	},
   { "png_destroy_write_struct",	&PNG_destroy_write_struct	},
   { "png_create_info_struct",	&PNG_create_info_struct		},
-#if USE_CUSTOM_IO
+# if USE_CUSTOM_IO
   { "png_set_write_fn",		&PNG_set_write_fn		},
   { "png_get_io_ptr",		&PNG_get_io_ptr			},
-#else
+# else
   { "png_init_io",		&PNG_init_io			},
-#endif
+# endif
   { "png_set_IHDR",		&PNG_set_IHDR			},
   { "png_get_rowbytes",		&PNG_get_rowbytes		},
   { "png_write_info",		&PNG_write_info			},
@@ -194,9 +194,8 @@ png_unload(void)
     /* Unload the DLL if possible. */
     if (png_handle != NULL)
 	dynld_close(png_handle);
-#else
-    png_handle = NULL;
 #endif
+    png_handle = NULL;
 }
 
 
@@ -218,10 +217,10 @@ png_write_gray(const wchar_t *fn, int inv, uint8_t *pix, int16_t w, int16_t h)
     if (fp == NULL) {
 	/* Yes, this looks weird. */
 	if (fp == NULL)
-		pclog("[PNG] file %ls could not be opened for writing!\n", fn);
+		pclog("PNG: file %ls could not be opened for writing!\n", fn);
 	  else
 error:
-	pclog("[PNG] fatal error, bailing out, error = %i\n", errno);
+	pclog("PNG: fatal error, bailing out, error = %i\n", errno);
 	if (png != NULL)
 		PNGFUNC(destroy_write_struct)(&png, &info);
 	if (fp != NULL)
@@ -233,13 +232,13 @@ error:
     png = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
 				       error_handler, warning_handler);
     if (png == NULL) {
-	pclog("[PNG] create_write_struct failed!\n");
+	pclog("PNG: create_write_struct failed!\n");
 	goto error;
     }
 
     info = PNGFUNC(create_info_struct)(png);
     if (info == NULL) {
-	pclog("[PNG] create_info_struct failed!\n");
+	pclog("PNG: create_info_struct failed!\n");
 	goto error;
     }
 
@@ -319,7 +318,7 @@ png_write_rgb(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h)
     /* Create the image file. */
     fp = plat_fopen(fn, L"wb");
     if (fp == NULL) {
-	pclog("[PNG] File %ls could not be opened for writing!\n", fn);
+	pclog("PNG: File %ls could not be opened for writing!\n", fn);
 error:
 	if (png != NULL)
 		PNGFUNC(destroy_write_struct)(&png, &info);
@@ -332,13 +331,13 @@ error:
     png = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
 				       error_handler, warning_handler);
     if (png == NULL) {
-	pclog("[PNG] create_write_struct failed!\n");
+	pclog("PNG: create_write_struct failed!\n");
 	goto error;
     }
 
     info = PNGFUNC(create_info_struct)(png);
     if (info == NULL) {
-	pclog("[PNG] create_info_struct failed!\n");
+	pclog("PNG: create_info_struct failed!\n");
 	goto error;
     }
 
