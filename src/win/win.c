@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.17	2018/07/28
+ * Version:	@(#)win.c	1.0.18	2018/09/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -374,12 +374,12 @@ plat_tempfile(wchar_t *bufp, const wchar_t *prefix, const wchar_t *suffix)
     char temp[1024];
 
     if (prefix != NULL)
-	sprintf(temp, "%ls", prefix);
+	sprintf(temp, "%ls-", prefix);
       else
-	strcpy(temp, EMU_NAME);
+	strcpy(temp, "");
 
     GetSystemTime(&SystemTime);
-    sprintf(&temp[strlen(temp)], "-%d%02d%02d-%02d-%02d-%02d-%03d%ls",
+    sprintf(&temp[strlen(temp)], "%d%02d%02d-%02d-%02d-%02d-%03d%ls",
         SystemTime.wYear, SystemTime.wMonth, SystemTime.wDay, SystemTime.wHour,
         SystemTime.wMinute, SystemTime.wSecond, SystemTime.wMilliseconds,
 	suffix);

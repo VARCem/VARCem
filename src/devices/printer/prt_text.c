@@ -15,7 +15,7 @@
  *		printer mechanics. This would lead to a page being 66 lines
  *		of 80 characters each.
  *
- * Version:	@(#)prt_text.c	1.0.1	2018/08/31
+ * Version:	@(#)prt_text.c	1.0.2	2018/09/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -61,6 +61,25 @@
 #include "../../plat.h" 
 #include "../ports/parallel_dev.h"
 #include "printer.h"
+
+
+#define FULL_PAGE	1			/* set if no top/bot margins */
+
+
+/* Default page values (for now.) */
+#define PAGE_WIDTH	8.5			/* standard U.S. Letter */
+#define PAGE_HEIGHT	11
+#define PAGE_LMARGIN	0.25			/* 0.25" left and right */
+#define PAGE_RMARGIN	0.25
+#if FULL_PAGE
+# define PAGE_TMARGIN	0
+# define PAGE_BMARGIN	0
+#else
+# define PAGE_TMARGIN	0.25
+# define PAGE_BMARGIN	0.25
+#endif
+#define PAGE_CPI	10.0			/* standard 10 cpi */
+#define PAGE_LPI	6.0			/* standard 6 lpi */
 
 
 typedef struct {
@@ -133,6 +152,7 @@ dump_page(prnt_t *dev)
 	pclog("PRNT: unable to create print page '%ls'\n", path);
 	return;
     }
+    fseek(fp, 0, SEEK_END);
 
     /* If this is not a new file, add a formfeed first. */
     if (ftell(fp) != 0)
@@ -174,14 +194,14 @@ static void
 reset_printer(prnt_t *dev)
 {
     /* TODO: these three should be configurable */
-    dev->page_width = 8.5;
-    dev->page_height = 11;
-    dev->left_margin = 0.25;
-    dev->right_margin = 0.25;
-    dev->top_margin = 0.25;
-    dev->bot_margin = 0.25;
-    dev->cpi = 10.0;
-    dev->lpi = 6.0;
+    dev->page_width = PAGE_WIDTH;
+    dev->page_height = PAGE_HEIGHT;
+    dev->left_margin = PAGE_LMARGIN;
+    dev->right_margin = PAGE_RMARGIN;
+    dev->top_margin = PAGE_TMARGIN;
+    dev->bot_margin = PAGE_BMARGIN;
+    dev->cpi = PAGE_CPI;
+    dev->lpi = PAGE_LPI;
 
     /* Default page layout. */
     dev->max_chars = (int) ((dev->page_width - dev->left_margin - dev->right_margin) * dev->cpi);
@@ -197,7 +217,7 @@ reset_printer(prnt_t *dev)
 	dev->page->dirty = 0;
 
     /* Create a file for this page. */
-    plat_tempfile(dev->filename, PRINTER_FILE, L".txt");
+    plat_tempfile(dev->filename, NULL, L".txt");
 }
 
 
@@ -339,8 +359,6 @@ write_ctrl(uint8_t val, void *priv)
 	/* reset printer */
 	dev->select = 0;
 
-	pclog("PRNT: Printer reset\n");
-
 	reset_printer(dev);
     }
 
@@ -394,8 +412,10 @@ prnt_init(const lpt_device_t *info)
     dev->page->chars = (char *)malloc(dev->page->w * dev->page->h);
     memset(dev->page->chars, 0x00, dev->page->w * dev->page->h);
 
+#if 0
     pclog("PRNT: created a virtual %ix%i page.\n",
 			dev->page->w, dev->page->h);
+#endif
 
     return(dev);
 }
@@ -408,8 +428,6 @@ prnt_close(void *priv)
 
     if (dev == NULL) return;
 
-    pclog("PRNT: Closing LPT printer '%s'\n", dev->name);
-
     /* print last page if it contains data */
     if (dev->page->dirty)
 	dump_page(dev);
@@ -419,8 +437,6 @@ prnt_close(void *priv)
 		free(dev->page->chars);
 	free(dev->page);
     }
-
-    pclog("PRNT: LPT printer '%s' closed.\n", dev->name);
 
     free(dev);
 }

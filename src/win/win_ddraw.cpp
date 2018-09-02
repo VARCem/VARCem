@@ -8,12 +8,7 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- *		If configured with USE_LIBPNG, we try to load the external
- *		PNG library and use that if found. Otherwise, we fall back
- *		the original mode, which uses the Windows/DDraw built-in BMP
- *		format.
- *
- * Version:	@(#)win_ddraw.cpp	1.0.16	2018/06/18
+ * Version:	@(#)win_ddraw.cpp	1.0.17	2018/09/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,24 +41,18 @@
 #include <ddraw.h>
 #include <stdio.h>
 #include <stdint.h>
-#ifdef USE_LIBPNG
-# define PNG_DEBUG 0
-# include <png.h>
-#endif
 #include "../emu.h"
 #include "../device.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#ifdef USE_LIBPNG
+# include "../png.h"
+#endif
 #ifdef _MSC_VER
 # pragma warning(disable: 4200)
 #endif
 #include "../devices/video/video.h"
 #include "win.h"
-
-
-#ifdef USE_LIBPNG
-# define PATH_PNG_DLL		"libpng16.dll"
-#endif
 
 
 static LPDIRECTDRAW4		lpdd4 = NULL;
@@ -74,55 +63,6 @@ static LPDIRECTDRAWCLIPPER	lpdd_clipper = NULL;
 static HWND			ddraw_hwnd;
 static int			ddraw_w, ddraw_h,
 				xs, ys, ys2;
-#ifdef USE_LIBPNG
-static void			*png_handle = NULL;	/* handle to DLL */
-# if USE_LIBPNG == 1
-#  define PNGFUNC(x)		png_ ## x
-# else
-#  define PNGFUNC(x)		PNG_ ## x
-
-
-/* Pointers to the real functions. */
-extern "C" {
-png_structp	(*PNG_create_write_struct)(png_const_charp user_png_ver,
-						png_voidp error_ptr,
-						png_error_ptr error_fn,
-						png_error_ptr warn_fn);
-void		(*PNG_destroy_write_struct)(png_structpp png_ptr_ptr,
-					    png_infopp info_ptr_ptr);
-png_infop	(*PNG_create_info_struct)(png_const_structrp png_ptr);
-void		(*PNG_init_io)(png_structrp png_ptr, png_FILE_p fp);
-void		(*PNG_set_IHDR)(png_const_structrp png_ptr,
-				     png_inforp info_ptr, png_uint_32 width,
-				     png_uint_32 height, int bit_depth,
-				     int color_type, int interlace_method,
-				     int compression_method,
-				     int filter_method);
-png_size_t	(*PNG_get_rowbytes)(png_const_structrp png_ptr,
-				    png_const_inforp info_ptr);
-void		(*PNG_write_info)(png_structrp png_ptr,
-				       png_const_inforp info_ptr);
-void		(*PNG_write_image)(png_structrp png_ptr,
-					png_bytepp image);
-void		(*PNG_write_end)(png_structrp png_ptr,
-				      png_inforp info_ptr);
-};
-
-
-static const dllimp_t png_imports[] = {
-  { "png_create_write_struct",	&PNG_create_write_struct	},
-  { "png_destroy_write_struct",	&PNG_destroy_write_struct	},
-  { "png_create_info_struct",	&PNG_create_info_struct		},
-  { "png_init_io",		&PNG_init_io			},
-  { "png_set_IHDR",		&PNG_set_IHDR			},
-  { "png_get_rowbytes",		&PNG_get_rowbytes		},
-  { "png_write_info",		&PNG_write_info			},
-  { "png_write_image",		&PNG_write_image		},
-  { "png_write_end",		&PNG_write_end			},
-  { NULL,			NULL				}
-};
-# endif
-#endif
 
 
 static const char *
@@ -473,14 +413,6 @@ ddraw_close(void)
 	lpdd4->Release();
 	lpdd4 = NULL;
     }
-
-#if defined(USE_LIBPNG) && USE_LIBPNG == 2
-    /* Unload the DLL if possible. */
-    if (png_handle != NULL) {
-	dynld_close(png_handle);
-	png_handle = NULL;
-    }
-#endif
 }
 
 
@@ -627,129 +559,8 @@ ddraw_init(int fs)
       else
 	video_setblit(ddraw_blit);
 
-#ifdef USE_LIBPNG
-# if USE_LIBPNG == 2
-    /* Try loading the DLL. */
-    png_handle = dynld_module(PATH_PNG_DLL, png_imports);
-    if (png_handle == NULL)
-	pclog("DDraw: unable to load '%s', using BMP for screenshots.\n",
-							PATH_PNG_DLL);
-# else
-    png_handle = (void *)1;	/* just to indicate always therse */
-# endif
-#endif
-
     return(1);
 }
-
-
-#ifdef USE_LIBPNG
-static void
-error_handler(png_structp arg, const char *str)
-{
-    pclog("PNG: stream 0x%08lx error '%s'\n", arg, str);
-}
-
-
-static void
-warning_handler(png_structp arg, const char *str)
-{
-    pclog("PNG: stream 0x%08lx warning '%s'\n", arg, str);
-}
-
-
-static int
-SavePNG(const wchar_t *fn, BITMAPINFO *bmi, uint8_t *pixels)
-{
-    png_structp png = NULL;
-    png_infop info = NULL;
-    png_bytepp rows;
-    uint8_t *r, *b;
-    FILE *fp;
-    int h, w;
-
-    /* Create the image file. */
-    fp = plat_fopen(fn, L"wb");
-    if (fp == NULL) {
-	pclog("[SavePNG] File %ls could not be opened for writing!\n", fn);
-error:
-	if (png != NULL)
-		PNGFUNC(destroy_write_struct)(&png, &info);
-	if (fp != NULL)
-		(void)fclose(fp);
-	return(0);
-    }
-
-    /* Initialize PNG stuff. */
-    png = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
-				       error_handler, warning_handler);
-    if (png == NULL) {
-	pclog("[SavePNG] create_write_struct failed!\n");
-	goto error;
-    }
-
-    info = PNGFUNC(create_info_struct)(png);
-    if (info == NULL) {
-	pclog("[SavePNG] create_info_struct failed!\n");
-	goto error;
-    }
-
-    PNGFUNC(init_io)(png, fp);
-
-    PNGFUNC(set_IHDR)(png, info,
-		      bmi->bmiHeader.biWidth, bmi->bmiHeader.biHeight, 8,
-		      PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
-		      PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-
-    PNGFUNC(write_info)(png, info);
-
-    /* Create a buffer for scanlines of pixels. */
-    rows = (png_bytepp)malloc(sizeof(png_bytep) * bmi->bmiHeader.biHeight);
-    for (h = 0; h < bmi->bmiHeader.biHeight; h++) {
-	/* Create a buffer for this scanline. */
-	rows[h] = (png_bytep)malloc(PNGFUNC(get_rowbytes)(png, info));
-    }
-
-    /*
-     * Process all scanlines in the image.
-     *
-     * Since the bitmap is un bottom-up mode, we have to convert
-     * all pixels to RGB mode, but also 'flip' the image to the
-     * normal top-down mode.
-     */
-    for (h = 0; h < bmi->bmiHeader.biHeight; h++) {
-	for (w = 0; w < bmi->bmiHeader.biWidth; w++) {
-		/* Get pointer to pixel in bitmap data. */
-                b = &pixels[((h * bmi->bmiHeader.biWidth) + w) * 4];
-
-		/* Get pointer to png row data. */
-		r = &rows[(bmi->bmiHeader.biHeight - 1) - h][w * 3];
-
-                /* Copy the pixel data. */
-                r[0] = b[2];
-                r[1] = b[1];
-                r[2] = b[0];
-	}
-    }
-
-    /* Write image to the file. */
-    PNGFUNC(write_image)(png, rows);
-
-    /* No longer need the row buffers. */
-    for (h = 0; h < bmi->bmiHeader.biHeight; h++)
-	free(rows[h]);
-    free(rows);
-
-    PNGFUNC(write_end)(png, NULL);
-
-    PNGFUNC(destroy_write_struct)(&png, &info);
-
-    /* Clean up. */
-    (void)fclose(fp);
-
-    return(1);
-}
-#endif
 
 
 static int
@@ -909,10 +720,10 @@ ddraw_screenshot(const wchar_t *fn)
 
 #ifdef USE_LIBPNG
     /* Save the screenshot, using PNG if available. */
-    if (png_handle != NULL) {
-	/* Use the PNG library. */
-	i = SavePNG(path, &bmi, pixels);
-    } else {
+    i = png_write_rgb(path, pixels,
+		      (int16_t)bmi.bmiHeader.biWidth,
+		      (int16_t)abs(bmi.bmiHeader.biHeight));
+    if (i == 0) {
 #endif
 	/* Use BMP, so fix the file name. */
 	path[wcslen(path)-3] = L'b';

@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.30	2018/08/31
+ * Version:	@(#)emu.h	1.0.31	2018/09/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -65,7 +65,6 @@
 #define PRINTER_PATH	L"printer"
 
 /* Pre-defined file names and extensions. */
-#define PRINTER_FILE	L"print"
 #define LANG_FILE	L"VARCem-"
 #define BIOS_FILE	L"bios.txt"
 #define CONFIG_FILE	L"config.varc"

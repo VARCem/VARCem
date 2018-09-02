@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.42	2018/08/31
+# Version:	@(#)Makefile.VC	1.0.43	2018/09/01
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -541,7 +541,7 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
 RESDLL		:= VARCem-$(LANG)
 
 MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
-		   mem.obj rom.obj rom_load.obj device.obj nvr.obj \
+		   mem.obj rom.obj rom_load.obj device.obj nvr.obj png.obj \
 		   $(VNCOBJ) $(RDPOBJ)
 
 UIOBJ		+= ui_main.obj ui_new_image.obj ui_stbar.obj ui_vidapi.obj

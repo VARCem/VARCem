@@ -8,7 +8,7 @@
  *
  *		Definitions for the printers module.
  *
- * Version:	@(#)printer.h	1.0.1	2018/08/31
+ * Version:	@(#)printer.h	1.0.2	2018/09/02
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -39,6 +39,8 @@
 #ifndef PRINTER_H
 # define PRINTER_H
 
+
+#define FONT_FILE_DOTMATRIX	L"dotmatrix.ttf"
 
 #define FONT_FILE_ROMAN		L"roman.ttf"
 #define FONT_FILE_SANSSERIF	L"sansserif.ttf"
