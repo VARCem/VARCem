@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.43	2018/09/01
+# Version:	@(#)Makefile.VC	1.0.44	2018/09/02
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -337,6 +337,7 @@ endif
 
 
 # Optional modules.
+MISCOBJ		:=
 ifeq ($(DYNAREC), y)
  OPTS		+= -DUSE_DYNAREC
  RFLAGS		+= -DUSE_DYNAREC
@@ -354,12 +355,12 @@ endif
 
 ifeq ($(FLUIDSYNTH), y)
  OPTS		+= -DUSE_FLUIDSYNTH
- FSYNTHOBJ	:= midi_fluidsynth.obj
+ MISCOBJ	+= midi_fluidsynth.obj
 endif
 
 ifeq ($(MUNT), y)
  OPTS		+= -DUSE_MUNT
- MUNTOBJ	:= midi_mt32.obj \
+ MISCOBJ	+= midi_mt32.obj \
 		    Analog.obj BReverbModel.obj File.obj FileStream.obj \
 		    LA32Ramp.obj LA32FloatWaveGenerator.obj \
 		    LA32WaveGenerator.obj MidiStreamParser.obj Part.obj \
@@ -423,7 +424,7 @@ ifneq ($(VNC), n)
  ifeq ($(VNC), y)
   LIBS		+= libvncserver.lib
  endif
- VNCOBJ		:= vnc.obj vnc_keymap.obj
+ MISCOBJ	+= vnc.obj vnc_keymap.obj
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -441,7 +442,7 @@ ifneq ($(RDP), n)
  ifeq ($(RDP), y)
   LIBS		+= rdpsrvr.lib
  endif
- RDPOBJ		:= rdp.obj
+ MISCOBJ	+= rdp.obj
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -463,6 +464,7 @@ ifneq ($(PNG), n)
  ifeq ($(PNG), y)
   LIBS		+= libpng16_dll.lib #zlib.lib
  endif
+ MISCOBJ	+= png.obj
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -541,8 +543,7 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
 RESDLL		:= VARCem-$(LANG)
 
 MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
-		   mem.obj rom.obj rom_load.obj device.obj nvr.obj png.obj \
-		   $(VNCOBJ) $(RDPOBJ)
+		   mem.obj rom.obj rom_load.obj device.obj nvr.obj
 
 UIOBJ		+= ui_main.obj ui_new_image.obj ui_stbar.obj ui_vidapi.obj
 
@@ -695,7 +696,7 @@ endif
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
 		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
-		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
+		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
 ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif

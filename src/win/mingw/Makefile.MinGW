@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.57	2018/09/01
+# Version:	@(#)Makefile.mingw	1.0.58	2018/09/02
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -364,6 +364,7 @@ endif
 
 
 # Optional modules.
+MISCOBJ		:=
 ifeq ($(DYNAREC), y)
  OPTS		+= -DUSE_DYNAREC
  RFLAGS		+= -DUSE_DYNAREC
@@ -381,12 +382,12 @@ endif
 
 ifeq ($(FLUIDSYNTH), y)
  OPTS		+= -DUSE_FLUIDSYNTH
- FSYNTHOBJ	:= midi_fluidsynth.o
+ MISCOBJ	+= midi_fluidsynth.o
 endif
 
 ifeq ($(MUNT), y)
  OPTS		+= -DUSE_MUNT
- MUNTOBJ	:= midi_mt32.o \
+ MISCOBJ	+= midi_mt32.o \
 		    Analog.o BReverbModel.o File.o FileStream.o LA32Ramp.o \
 		    LA32FloatWaveGenerator.o LA32WaveGenerator.o \
 		    MidiStreamParser.o Part.o Partial.o PartialManager.o \
@@ -449,7 +450,7 @@ ifneq ($(VNC), n)
  ifeq ($(VNC), y)
   LIBS		+= -lvncserver
  endif
- VNCOBJ		:= vnc.o vnc_keymap.o
+ MISCOBJ	+= vnc.o vnc_keymap.o
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -467,7 +468,7 @@ ifneq ($(RDP), n)
  ifeq ($(RDP), y)
   LIBS		+= -lrdp
  endif
- RDPOBJ		:= rdp.o
+ MISCOBJ	+= rdp.o
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -489,6 +490,7 @@ ifneq ($(PNG), n)
  ifeq ($(PNG), y)
   LIBS		+= -lpng -lz
  endif
+ MISCOBJ	+= png.o
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -571,8 +573,8 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #		Create the (final) list of objects to build.		#
 #########################################################################
 
-MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o png.o \
-		   rom.o rom_load.o device.o nvr.o $(VNCOBJ) $(RDPOBJ)
+MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
+		   rom.o rom_load.o device.o nvr.o
 
 UIOBJ		+= ui_main.o ui_new_image.o ui_stbar.o ui_vidapi.o
 
@@ -724,7 +726,7 @@ endif
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
 		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
-		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
+		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
 ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif

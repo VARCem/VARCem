@@ -377,7 +377,7 @@ error:
      * image to the normal top-down mode.
      */
     for (y = 0; y < h; y++) {
-	for (x = 0; x < x; x++) {
+	for (x = 0; x < w; x++) {
 		/* Get pointer to pixel in bitmap data. */
                 b = &pix[((y * w) + x) * 4];
 
