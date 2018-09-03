@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.13	2018/08/20
+ * Version:	@(#)device.c	1.0.14	2018/04/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,22 +65,24 @@ typedef struct clonedev {
 static device_t		*devices[DEVICE_MAX];
 static void		*device_priv[DEVICE_MAX];
 static device_t		*device_current;
-static clonedev_t	*clones;
+static clonedev_t	*clones = NULL;
 
 
 /* Initialize the module for use. */
 void
 device_init(void)
 {
-    clonedev_t *ptr, *cl;
+    clonedev_t *ptr;
 
     memset(devices, 0x00, sizeof(devices));
 
     ptr = NULL;
-    for (cl = clones; cl != NULL; cl = ptr->next) {
-	ptr = cl->next;
-	free(cl);
+    while (clones != NULL) {
+	ptr = clones->next;
+	free(clones);
+	clones = ptr;
     }
+
     clones = NULL;
 }
 

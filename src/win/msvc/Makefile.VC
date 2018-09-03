@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.44	2018/09/02
+# Version:	@(#)Makefile.VC	1.0.45	2018/09/03
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -144,8 +144,8 @@ endif
 ifndef WONDER
  WONDER		:= n
 endif
-ifndef PRINTERS
- PRINTERS	:= n
+ifndef PRINTER
+ PRINTER	:= n
 endif
 
 
@@ -522,11 +522,10 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_WONDER
  endif
 
- ifeq ($(PRINTERS), y)
-  OPTS		+= -DUSE_PRINTERS=1
-  DEVBROBJ	+= prt_cpmap.obj prt_escp.obj
+ ifeq ($(PRINTER), y)
+  OPTS		+= -DUSE_PRINTER
+  DEVBROBJ	+= prt_parallel.obj
  endif
-
 endif
 
 
@@ -582,7 +581,7 @@ DEVOBJ		:= bugger.obj \
 		   isamem.obj isartc.obj \
 		   game.obj game_dev.obj \
 		   parallel.obj parallel_dev.obj \
-		    prt_text.obj \
+		    prt_text.obj prt_cpmap.obj prt_escp.obj \
 		   serial.obj \
 		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
 		   sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \

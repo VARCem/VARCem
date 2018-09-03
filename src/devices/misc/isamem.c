@@ -32,7 +32,7 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.3	2018/08/31
+ * Version:	@(#)isamem.c	1.0.4	2018/09/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -83,6 +83,8 @@
 #include "../../plat.h"
 #include "isamem.h"
 
+
+#define ISAMEM_DEBUG	0
 
 #define RAM_TOPMEM	(640 << 10)		/* end of low memory */
 #define RAM_UMAMEM	(384 << 10)		/* upper memory block */
@@ -208,6 +210,9 @@ ems_readb(uint32_t addr, void *priv)
 
     /* Grab the data. */
     ret = *(uint8_t *)(dev->ems[vpage].addr + (addr - map->base));
+#if ISAMEM_DEBUG
+    if ((addr % 4096)==0) pclog("EMS readb(%06x) = %02x\n",addr-map->base,ret);
+#endif
 
     return(ret);
 }
@@ -227,6 +232,9 @@ ems_readw(uint32_t addr, void *priv)
 
     /* Grab the data. */
     ret = *(uint16_t *)(dev->ems[vpage].addr + (addr - map->base));
+#if ISAMEM_DEBUG
+    if ((addr % 4096)==0) pclog("EMS readw(%06x) = %04x\n",addr-map->base,ret);
+#endif
 
     return(ret);
 }
@@ -244,6 +252,9 @@ ems_writeb(uint32_t addr, uint8_t val, void *priv)
     vpage = ((addr & 0xffff) / EMS_PGSIZE);
 
     /* Write the data. */
+#if ISAMEM_DEBUG
+    if ((addr % 4096)==0) pclog("EMS writeb(%06x, %02x)\n",addr-map->base,val);
+#endif
     *(uint8_t *)(dev->ems[vpage].addr + (addr - map->base)) = val;
 }
 
@@ -260,6 +271,9 @@ ems_writew(uint32_t addr, uint16_t val, void *priv)
     vpage = ((addr & 0xffff) / EMS_PGSIZE);
 
     /* Write the data. */
+#if ISAMEM_DEBUG
+    if ((addr % 4096)==0) pclog("EMS writew(%06x, %04x)\n",addr-map->base,val);
+#endif
     *(uint16_t *)(dev->ems[vpage].addr + (addr - map->base)) = val;
 }
 
@@ -274,22 +288,20 @@ ems_read(uint16_t port, void *priv)
 
     /* Get the viewport page number. */
     vpage = (port / EMS_PGSIZE);
+    port &= (EMS_PGSIZE - 1);
 
-    switch(port & 0x02ff) {
-	case 0x0208:		/* page number register */
-	case 0x0218:
-	case 0x0258:
-	case 0x0268:
-	case 0x02a8:
-	case 0x02b8:
-	case 0x02e8:
+    switch(port - dev->base_addr) {
+	case 0x0000:		/* page number register */
 		ret = dev->ems[vpage].page;
 		if (dev->ems[vpage].enabled)
 			ret |= 0x80;
 		break;
+
+	case 0x0001:		/* W/O */
+		break;
     }
 
-#if 0
+#if ISAMEM_DEBUG
     pclog("ISAMEM: read(%04x) = %02x)\n", port, ret);
 #endif
 
@@ -306,19 +318,14 @@ ems_write(uint16_t port, uint8_t val, void *priv)
 
     /* Get the viewport page number. */
     vpage = (port / EMS_PGSIZE);
+    port &= (EMS_PGSIZE - 1);
 
-#if 0
+#if ISAMEM_DEBUG
     pclog("ISAMEM: write(%04x, %02x) page=%d\n", port, val, vpage);
 #endif
 
-    switch(port & 0x02ff) {
-	case 0x0208:		/* page mapping registers */
-	case 0x0218:
-	case 0x0258:
-	case 0x0268:
-	case 0x02a8:
-	case 0x02b8:
-	case 0x02e8:
+    switch(port - dev->base_addr) {
+	case 0x0000:		/* page mapping registers */
 		/* Set the page number. */
 		dev->ems[vpage].enabled = (val & 0x80);
 		dev->ems[vpage].page = (val & 0x7f);
@@ -347,13 +354,7 @@ ems_write(uint16_t port, uint8_t val, void *priv)
 		}
 		break;
 
-	case 0x0209:		/* page frame registers */
-	case 0x0219:
-	case 0x0259:
-	case 0x0269:
-	case 0x02a9:
-	case 0x02b9:
-	case 0x02e9:
+	case 0x0001:		/* page frame registers */
 		/*
 		 * The EV-159 EMM driver configures the frame address
 		 * by setting bits in these registers. The information
@@ -372,7 +373,7 @@ ems_write(uint16_t port, uint8_t val, void *priv)
 		 * 80 c0 e0  DC000
 		 * 80 c0 e0  E0000
                  */
-
+pclog("EMS: write(%02x) to register 1 !\n");
 		dev->ems[vpage].frame = val;
 		if (val)
 			dev->flags |= FLAG_CONFIG;
@@ -416,6 +417,13 @@ isamem_init(const device_t *info)
 		dev->start_addr = device_get_config_int("start");
 		tot = dev->total_size;
 		dev->flags |= FLAG_WIDE;
+		break;
+
+	case 3:		/* Micro Mainframe EMS-5150(T) */
+		dev->base_addr = device_get_config_hex16("base");
+		dev->total_size = device_get_config_int("size");
+		dev->frame_addr = 0xD0000;
+		dev->flags |= (FLAG_EMS | FLAG_CONFIG);
 		break;
 
 	case 10:	/* Everex EV-159 RAM 3000 */
@@ -598,7 +606,7 @@ dev->frame_addr = 0xE0000;
 	dev->ems_start = ptr - dev->ram;
 	dev->ems_size = t >> 10;
 	dev->ems_pages = t / EMS_PGSIZE;
-	pclog("ISAMEM: EMS enabled, I/O=%04xH, %iKB (%i pages)",
+	pclog("ISAMEM: EMS enabled, I/O=%04XH, %iKB (%i pages)",
 		dev->base_addr, dev->ems_size, dev->ems_pages);
 	if (dev->frame_addr > 0)
 		pclog(", Frame=%05XH", dev->frame_addr);
@@ -745,6 +753,52 @@ static const device_t p5pak_device = {
     isamem_init, isamem_close, NULL,
     NULL, NULL, NULL, NULL,
     p5pak_config
+};
+
+
+static const device_config_t ems5150_config[] =
+{
+	{
+		"size", "Memory Size", CONFIG_SPINNER, "", 256,
+		{ { 0 } },
+		{ { 0 } },
+		{ 0, 2048, 64 }
+	},
+	{
+		"base", "Address", CONFIG_HEX16, "", 0,
+		{
+			{
+				"Disabled", 0
+			},
+			{
+				"Board 1", 0x0208
+			},
+			{
+				"Board 2", 0x020a
+			},
+			{
+				"Board 3", 0x020c
+			},
+			{
+				"Board 4", 0x020e
+			},
+			{
+				""
+			}
+		},
+	},
+	{
+		"", "", -1
+	}
+};
+
+static const device_t ems5150_device = {
+    "Micro Mainframe EMS-5150(T)",
+    DEVICE_ISA,
+    3,
+    isamem_init, isamem_close, NULL,
+    NULL, NULL, NULL, NULL,
+    ems5150_config
 };
 
 
@@ -964,6 +1018,7 @@ static const struct {
     { "ibmxt",		&ibmxt_device		},
     { "ibmat",		&ibmat_device		},
     { "p5pak",		&p5pak_device		},
+    { "ems5150",	&ems5150_device		},
     { "ev159",		&ev159_device		},
 #ifdef USE_ISAMEM_BRAT
     { "brat",		&brat_device		},
