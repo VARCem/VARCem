@@ -83,7 +83,7 @@
 #define STR_2305	"Valittu renderer '%S' ei ole saatavilla. Palauta oletusasetus?"
 #define STR_2306	"ST506 tai ESDI CD-ROM-asemia ei ollut koskaan olemassa"
 #define STR_2307	"USB:ta ei vielä tueta"
-#define STR_2308        "You must save your new settings first!"
+#define STR_2308	"Sinun pitää ensin tallentaa uudet asetuksesi!"
 
 
 /* Application messages (2400.) */
@@ -120,7 +120,7 @@
 #define STR_ID		"ID:"
 #define STR_LUN		"LUN:"
 #define STR_INV_NAME	"Anna kelvollinen tiedostonimi"
-#define STR_IMG_EXIST	"This image exists and will be overwritten.\nAre you sure you want to use it?"
+#define STR_IMG_EXIST	"Tämä levykuva on olemassa ja ylikirjoitetaan.\nHaluatko varmasti käyttää sitä?"
 #define STR_OPEN_READ	"Tiedostoa ei voitu avata lukemista varten"
 #define STR_OPEN_WRITE	"Tiedostoa ei voitu avata kirjoittamista varten"
 #define STR_DEVCONF_1	"Konfiguraatio"
@@ -135,8 +135,8 @@
 #define  STR_3204	"LICENSE.txt-tiedostossa on tarkempia tietoja."
 
 /* UI: dialog: Localization (3210.) */
-#define STR_LOCALIZE	"Localization"
-#define  STR_3211	"Translations from English to these other languages contributed by:"
+#define STR_LOCALIZE	"Lokalisaatio"
+#define  STR_3211	"Englannista muille kielille kääntäneet:"
 
 /* UI dialog: Status (3225.) */
 #define STR_STATUS	"Tila"
