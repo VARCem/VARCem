@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem-EN.str	1.0.8	2018/08/26
+ * Version:	@(#)VARCem-EN.str	1.0.9	2018/09/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -81,6 +81,7 @@
 #define STR_2305	"Selected renderer '%S' not available. Reset to default?"
 #define STR_2306	"ST506 or ESDI CD-ROM drives never existed"
 #define STR_2307	"USB is not yet supported"
+#define STR_2308	"You must save your new settings first!"
 
 
 /* Application messages (2400.) */

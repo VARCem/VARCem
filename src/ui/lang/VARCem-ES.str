@@ -8,7 +8,7 @@
  *
  *		String definitions for "Spanish (Spain, Normal Sort)" language.
  *
- * Version:	@(#)VARCem-ES.str	1.0.7	2018/08/26
+ * Version:	@(#)VARCem-ES.str	1.0.8	2018/09/03
  *
  * Authors:	Natalia Portillo, <claunia@claunia.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,7
+#define TAG_VERSION	1,0,8
 #define TAG_AUTHOR	"Natalia Portillo"
 #define TAG_EMAIL	"claunia@claunia.com"
 
@@ -79,6 +79,7 @@
 #define STR_2305	"El renderizador '%S' seleccionado no está disponible. ¿Establecer renderizador por defecto?"
 #define STR_2306	"Las unidades de CD-ROM ST506 o ESDI CD-ROM nunca existieron"
 #define STR_2307	"El USB no está soportado aún"
+#define STR_2308        "You must save your new settings first!"
 
 
 /* Mensajes de aplicación (2400.) */

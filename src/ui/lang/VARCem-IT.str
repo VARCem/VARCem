@@ -8,7 +8,7 @@
  *
  *		String definitions for "Italian (Italy)" language.
  *
- * Version:	@(#)VARCem-IT.str	1.0.6	2018/08/25
+ * Version:	@(#)VARCem-IT.str	1.0.7	2018/09/03
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,6
+#define TAG_VERSION	1,0,7
 #define TAG_AUTHOR	"Miran Grca"
 #define TAG_EMAIL	"mgrca8@gmail.com"
 
@@ -78,6 +78,7 @@
 #define STR_2305	"Il renderer selezionato '%S' non è disponibile. Riporlo all'opzione predefinita?"
 #define STR_2306	"Unità CD-ROM ST506 o ESDI CD-ROM non sono mai esistite"
 #define STR_2307	"USB non è ancora supportato"
+#define STR_2308        "You must save your new settings first!"
 
 
 /* Application messages (2400.) */

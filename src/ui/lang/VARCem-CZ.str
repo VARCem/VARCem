@@ -8,7 +8,7 @@
  *
  *		String definitions for "Czech (Czech Republic)" language.
  *
- * Version:	@(#)VARCem-CZ.str	1.0.2	2018/08/25
+ * Version:	@(#)VARCem-CZ.str	1.0.3	2018/09/03
  *
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,2
+#define TAG_VERSION	1,0,3
 #define TAG_AUTHOR	"David Hrdlička"
 #define TAG_EMAIL	"hrdlickadavid@outlook.com"
 
@@ -78,6 +78,7 @@
 #define STR_2305	"Zvolený renderer '%S' není dostupný. Chcete použít výchozí renderer?"
 #define STR_2306	"CD-ROM jednotky pro ST506 a ESDI nikdy neexistovaly."
 #define STR_2307	"USB není zatím podporováno."
+#define STR_2308        "You must save your new settings first!"
 
 
 /* Application messages (2400.) */

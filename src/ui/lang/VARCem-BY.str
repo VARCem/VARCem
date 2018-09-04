@@ -8,7 +8,7 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * Version:	@(#)VARCem-BY.str	1.0.3	2018/08/27
+ * Version:	@(#)VARCem-BY.str	1.0.4	2018/09/03
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,7 +47,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,3
+#define TAG_VERSION	1,0,4
 #define TAG_AUTHOR	"paul_met"
 #define TAG_EMAIL	"paul_met@yandex.ru"
 
@@ -77,6 +77,7 @@
 #define STR_2305	"Выбранны рэндэрэр '%S' недаступны. Выкарыстоўваць асноўны?"
 #define STR_2306	"ST506 і ESDI дыскаводы CD-ROM ніколі не існавалі"
 #define STR_2307	"USB пакуль не падтрымліваецца"
+#define STR_2308        "You must save your new settings first!"
 
 
 /* Application messages (2400.) */

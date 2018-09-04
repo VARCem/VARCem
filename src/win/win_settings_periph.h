@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.11	2018/08/27
+ * Version:	@(#)win_settings_periph.h	1.0.12	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -339,6 +339,8 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				dev = isamem_get_device(c);
 				if (dev != NULL)
 					temp_deviceconfig |= dlg_devconf(hdlg, (void *)dev);
+				  else
+					ui_msgbox(MBX_INFO, (wchar_t *)IDS_ERR_SAVEIT);
 				break;
 		}
 		return FALSE;

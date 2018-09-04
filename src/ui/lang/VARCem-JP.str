@@ -8,7 +8,7 @@
  *
  *		String definitions for "Japanese (Japan)" language.
  *
- * Version:	@(#)VARCem-JP.str	1.0.7	2018/08/26
+ * Version:	@(#)VARCem-JP.str	1.0.8	2018/09/03
  *
  * Authors:	Basic2004, <basic2004@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,7
+#define TAG_VERSION	1,0,8
 #define TAG_AUTHOR	"Basic2004"
 #define TAG_EMAIL	"basic2004@gmail.com"
 
@@ -78,6 +78,7 @@
 #define STR_2305	"設定したレンダラー「%S」は使用できません。既定値に戻しますか？"
 #define STR_2306	"ST506またはESDI方式のCD-ROMドライブは存在しません"
 #define STR_2307	"USBはまだサポートしません"
+#define STR_2308        "You must save your new settings first!"
 
 
 /* Application messages (2400.) */
