@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.18	2018/09/02
+ * Version:	@(#)win.c	1.0.19	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -188,7 +188,7 @@ int WINAPI
 WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 {
     wchar_t **argw = NULL;
-    int	argc, i;
+    int	argc, i, lang;
 
     /* Set this to the default value (windowed mode). */
     vid_fullscreen = 0;
@@ -197,7 +197,22 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     hInstance = hInst;
 
     /* First, set our (default) language. */
-    lang_id = (int)GetUserDefaultUILanguage();
+    lang = (int)GetUserDefaultUILanguage();
+
+    /*
+     * Set the initial active language for this application.
+     *
+     * We must do this early, because if we are on a localized
+     * Windows system, we must have the language set up so the
+     * "pc_setup" phase (config file etc) can display error
+     * messages... *cough*
+     */
+    if (! plat_set_language(lang)) {
+	/* That did not work. Revert back to default and try again. */
+	lang = lang_id;
+	(void)plat_set_language(lang);
+    }
+    lang_id = lang;
 
     /* Initialize the version data. CrashDump needs it early. */
     pc_version("Windows");
@@ -226,7 +241,11 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 	plat_console(0);
 
     /* Set the active language for this application. */
-    plat_set_language(lang_id);
+    if (! plat_set_language(lang_id)) {
+	/* That did not work. Revert back to default and try again. */
+	lang_id = 0x0409;
+	(void)plat_set_language(lang_id);
+    }
 
     /* Create a mutex for the video handler. */
     hBlitMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);

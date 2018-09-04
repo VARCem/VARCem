@@ -124,7 +124,7 @@ extern const string_t	*plat_strings;
 #ifdef _WIN32
 extern void	plat_console(int on);
 #endif
-extern void	plat_set_language(int id);
+extern int	plat_set_language(int id);
 extern wchar_t	*fix_emu_path(const wchar_t *str);
 extern FILE	*plat_fopen(const wchar_t *path, const wchar_t *mode);
 extern void	plat_remove(const wchar_t *path);
@@ -147,9 +147,6 @@ extern void	plat_pause(int p);
 extern void	plat_mouse_capture(int on);
 extern void	plat_setfullscreen(int on);
 extern int	plat_fdd_icon(int);
-
-/* Resource management. */
-extern void	set_language(int id);
 
 
 /* Dynamic Module Loader interface. */

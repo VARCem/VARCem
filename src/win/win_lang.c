@@ -8,7 +8,7 @@
  *
  *		Handle language support for the platform.
  *
- * Version:	@(#)win_lang.c	1.0.5	2018/08/26
+ * Version:	@(#)win_lang.c	1.0.6	2018/09/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -351,7 +351,7 @@ lang_index(int id)
 
 
 /* Set (or re-set) the language for the application. */
-void
+int
 plat_set_language(int id)
 {
     LANGID lang;
@@ -370,14 +370,14 @@ plat_set_language(int id)
 
     /* Set new language ID if not already set. */
     lang = MAKELANGID(id, dwSubLangID);
-    if (lang_curr == lang) return;
+    if (lang_curr == lang) return(1);
 
     /* Find language in the table. */
     for (ptr = languages; ptr != NULL; ptr = ptr->next)
 	if (ptr->id == id) break;
     if (ptr == NULL) {
 	pclog("UI: language not supported, not setting.\n");
-	return;
+	return(0);
     }
 
     /* Do we need to unload a resource DLL? */
@@ -393,7 +393,7 @@ plat_set_language(int id)
 				    LOAD_LIBRARY_AS_DATAFILE);
 	if (lang_handle == NULL) {
 		pclog("UI: unable to load resource DLL '%ls' !\n", ptr->dll);
-		return;
+		return(0);
 	}
     }
 
@@ -409,6 +409,9 @@ plat_set_language(int id)
     /* This can be removed, it no longer works since Vista+ */
     lcid = MAKELCID(id, SORT_DEFAULT);
     SetThreadLocale(lcid);
+
+    /* All is good, language set! */
+    return(1);
 }
 
 
