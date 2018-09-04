@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.32	2018/08/27
+ * Version:	@(#)config.c	1.0.33	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -411,11 +411,9 @@ load_machine(const char *cat)
     cpu_waitstates = config_get_int(cat, "cpu_waitstates", 0);
 
     mem_size = config_get_int(cat, "mem_size", 4096);
-#if 0
     if (mem_size < (((machines[machine].flags & MACHINE_AT) &&
         (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram))
 	mem_size = (((machines[machine].flags & MACHINE_AT) && (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram);
-#endif
     if (mem_size > 1048576)
 	mem_size = 1048576;
 

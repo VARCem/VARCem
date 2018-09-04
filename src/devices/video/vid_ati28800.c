@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.14	2018/06/11
+ * Version:	@(#)vid_ati28800.c	1.0.15	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,7 @@
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
+#include "vid_sc1502x_ramdac.h"
 #include "vid_ati_eeprom.h"
 
 
@@ -79,6 +80,9 @@ typedef struct {
     int		index;
 
     uint32_t	memory;
+    uint8_t	id;
+
+    sc1502x_ramdac_t ramdac;
 
     uint8_t	port_03dd_val;
     uint16_t	get_korean_font_kind;
@@ -106,21 +110,37 @@ ati28800_out(uint16_t addr, uint8_t val, void *p)
 	addr ^= 0x60;
 
     switch (addr) {
-	case 0x1ce:
+	case 0x1CE:
 		ati->index = val;
 		break;
 
-	case 0x1cf:
+	case 0x1CF:
 		old = ati->regs[ati->index];
 		ati->regs[ati->index] = val;
+#if 0
+		pclog("ATI write reg=%02x\n", ati->index);
+#endif
 		switch (ati->index) {
 			case 0xb2:
+			case 0xbd:
 			case 0xbe:
 				if (ati->regs[0xbe] & 8) /*Read/write bank mode*/ {
-					svga->read_bank  = ((ati->regs[0xb2] >> 5) & 7) * 0x10000;
-					svga->write_bank = ((ati->regs[0xb2] >> 1) & 7) * 0x10000;
-				} else		    /*Single bank mode*/
-					svga->read_bank = svga->write_bank = ((ati->regs[0xb2] >> 1) & 7) * 0x10000;
+					if (ati->regs[0xbd] & 4) {
+						svga->read_bank  = (((ati->regs[0xb2] >> 5) & 7) * 0x20000);
+						svga->write_bank = (((ati->regs[0xb2] >> 1) & 7) * 0x20000);
+					} else {
+						svga->read_bank  = (((ati->regs[0xb2] >> 5) & 7) * 0x10000);
+						svga->write_bank = (((ati->regs[0xb2] >> 1) & 7) * 0x10000);
+					}
+				} else {	/*Single bank mode*/
+					if (ati->regs[0xbd] & 4) {
+						svga->read_bank =  (((ati->regs[0xb2] >> 1) & 7) * 0x20000);
+						svga->write_bank = (((ati->regs[0xb2] >> 1) & 7) * 0x20000);
+					} else {
+						svga->read_bank  = (((ati->regs[0xb2] >> 1) & 7) * 0x10000);
+						svga->write_bank = (((ati->regs[0xb2] >> 1) & 7) * 0x10000);
+					}
+				}
 				break;
 
 			case 0xb3:
@@ -143,6 +163,13 @@ ati28800_out(uint16_t addr, uint8_t val, void *p)
 		}
 		break;
 
+	case 0x3C6:
+	case 0x3C7:
+	case 0x3C8:
+	case 0x3C9:
+		sc1502x_ramdac_out(addr, val, &ati->ramdac, svga);
+		return;					
+				
 	case 0x3D4:
 		svga->crtcreg = val & 0x3f;
 		return;
@@ -162,6 +189,7 @@ ati28800_out(uint16_t addr, uint8_t val, void *p)
 		}
 		break;
     }
+
     svga_out(addr, val, svga);
 }
 
@@ -245,19 +273,24 @@ ati28800_in(uint16_t addr, void *p)
 	 (addr&0xFFF0) == 0x3B0) && !(svga->miscout&1)) addr ^= 0x60;
 
     switch (addr) {
-	case 0x1ce:
+	case 0x1CE:
 		temp = ati->index;
 		break;
 
-	case 0x1cf:
+	case 0x1CF:
 		switch (ati->index) {
+			case 0xaa:
+				temp = ati->id;
+				break;
+
 			case 0xb0:
-				if (ati->memory == 256)
-					return 0x08;
+				if (ati->memory == 1024)
+					temp = 0x08;
 				else if (ati->memory == 512)
-					return 0x10;
+					temp = 0x10;
 				else
-					return 0x18;
+					temp = 0x00;
+				ati->regs[0xb0] |= temp;
 				break;
 
 			case 0xb7:
@@ -272,12 +305,18 @@ ati28800_in(uint16_t addr, void *p)
 		}
 		break;
 
-	case 0x3c2:
+	case 0x3C2:
 		if ((svga->vgapal[0].r + svga->vgapal[0].g + svga->vgapal[0].b) >= 0x50)
 			temp = 0;
 		else
 			temp = 0x10;
 		break;
+
+	case 0x3C6:
+	case 0x3C7:
+	case 0x3C8:
+	case 0x3C9:
+		return sc1502x_ramdac_in(addr, &ati->ramdac, svga);
 
 	case 0x3D4:
 		temp = svga->crtcreg;
@@ -390,10 +429,20 @@ ati28800_recalctimings(svga_t *svga)
 
     if (!svga->scrblank && (ati->regs[0xb0] & 0x20)) {
 	/* Extended 256 color modes. */
-	svga->render = svga_render_8bpp_highres;
-	svga->bpp = 8;
-	svga->rowoffset <<= 1;
-	svga->ma <<= 1;
+	switch (svga->bpp) {
+		case 8:
+			svga->render = svga_render_8bpp_highres;
+			svga->rowoffset <<= 1;
+			svga->ma <<= 1;
+			break;
+
+		case 15:
+			svga->render = svga_render_15bpp_highres;
+			svga->hdisp >>= 1;
+			svga->rowoffset <<= 1;
+			svga->ma <<= 1;
+			break;
+	}
     }
 }
 
@@ -410,6 +459,7 @@ ati28800_init(const device_t *info)
 
     switch(info->local) {
 	case VID_VGAWONDERXL:
+		ati->id = 6;
 		rom_init_interleaved(&ati->bios_rom,
 				     BIOS_VGAXL_EVEN_PATH,
 				     BIOS_VGAXL_ODD_PATH,
@@ -419,6 +469,7 @@ ati28800_init(const device_t *info)
 
 #if defined(DEV_BRANCH) && defined(USE_XL24)
 	case VID_VGAWONDERXL24:
+		ati->id = 6;
 		rom_init_interleaved(&ati->bios_rom,
 				     BIOS_XL24_EVEN_PATH,
 				     BIOS_XL24_ODD_PATH,
@@ -428,6 +479,7 @@ ati28800_init(const device_t *info)
 #endif
 
 	default:
+		ati->id = 5;
 		rom_init(&ati->bios_rom,
 			 BIOS_ROM_PATH,
 			 0xc0000, 0x8000, 0x7fff,

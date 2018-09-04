@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.9	2018/05/21
+ * Version:	@(#)win_settings_sound.h	1.0.10	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,8 +57,9 @@ mpu401_present(void)
 
     stransi = sound_card_get_internal_name(temp_sound_card);
     if (stransi != NULL) {
-	if (!strcmp(stransi, "sb16") || !strcmp(stransi, "sbawe32"))
-		return 1;
+	if (!strcmp(stransi, "sb16") ||
+	    !strcmp(stransi, "sbawe32") ||
+	    !strcmp(stransi, "replysb16")) return 1;
     }
 
     return temp_mpu401 ? 1 : 0;
@@ -73,8 +74,9 @@ mpu401_standalone_allow(void)
     n = sound_card_get_internal_name(temp_sound_card);
     md = midi_device_get_internal_name(temp_midi_device);
     if (n != NULL) {
-	if (!strcmp(n, "sb16") || !strcmp(n, "sbawe32"))
-		return 0;
+	if (!strcmp(n, "sb16") ||
+	    !strcmp(n, "sbawe32") ||
+	    !strcmp(n, "replysb16")) return 0;
     }
 
     if (md != NULL) {
@@ -235,7 +237,15 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDC_CONFIGURE_MPU401:
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)&mpu401_device);
+				stransi = sound_card_get_internal_name(temp_sound_card);
+				if (stransi != NULL) {
+					if (! strcmp(stransi, "ncraudio"))
+						mca_version = 1;
+					  else
+						mca_version = 0;
+				}
+				
+				temp_deviceconfig |= dlg_devconf(hdlg, mca_version ? (void *)&mpu401_mca_device : (void *)&mpu401_device);
 				break;
 		}
 		return FALSE;

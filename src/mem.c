@@ -12,7 +12,7 @@
  *		the DYNAMIC_TABLES=1 enables this. Will eventually go
  *		away, either way...
  *
- * Version:	@(#)mem.c	1.0.19	2018/08/25
+ * Version:	@(#)mem.c	1.0.20	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1337,6 +1337,7 @@ mem_mapping_recalc(uint64_t base, uint64_t size)
 	_mem_read_b[c >> 14] = NULL;
 	_mem_read_w[c >> 14] = NULL;
 	_mem_read_l[c >> 14] = NULL;
+	_mem_exec[c >> 14] = NULL;
 	_mem_priv_r[c >> 14] = NULL;
 	_mem_mapping_r[c >> 14] = NULL;
 	_mem_write_b[c >> 14] = NULL;
@@ -1845,7 +1846,8 @@ mem_remap_top(int kb)
     uint32_t start = (mem_size >= 1024) ? mem_size : 1024;
     int size = mem_size - 640;
 
-pclog("MEM: remapping top %iKB (mem=%i)\n", kb, mem_size);
+    pclog("MEM: remapping top %iKB (mem=%i)\n", kb, mem_size);
+
     if (mem_size <= 640) return;
 
     if (kb == 0) {

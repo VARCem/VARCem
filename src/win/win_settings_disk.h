@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.12	2018/05/27
+ * Version:	@(#)win_settings_disk.h	1.0.13	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1744,7 +1744,7 @@ hd_bus_skip:
 				return FALSE;
 
 			case IDC_BUTTON_HDD_REMOVE:
-				memcpy(temp_hdd[hdlv_current_sel].fn, L"", 4);
+				wcscpy(temp_hdd[hdlv_current_sel].fn, L"");
 				disk_untrack(hdlv_current_sel);
 				temp_hdd[hdlv_current_sel].bus = HDD_BUS_DISABLED;	/* Only set the bus to zero, the list normalize code below will take care of turning this entire entry to a complete zero. */
 				disk_normalize_list();			/* Normalize the hard disks so that non-disabled hard disks start from index 0, and so they are contiguous. */

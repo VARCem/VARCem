@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.h	1.0.3	2018/04/08
+ * Version:	@(#)snd_mpu401.h	1.0.4	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -120,10 +120,14 @@ typedef struct {
 	uint8_t cth_rate,cth_counter;
 	int clock_to_host,cth_active;
     }		clock;
+
+    uint8_t	pos_regs[8];
 } mpu_t;
 
 
-extern const device_t mpu401_device;
+extern int		mca_version;
+extern const device_t	mpu401_device;
+extern const device_t	mpu401_mca_device;
 
 
 extern uint8_t	MPU401_ReadData(mpu_t *mpu);

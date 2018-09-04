@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.8	2018/05/06
+ * Version:	@(#)snd_mpu401.c	1.0.9	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../system/pic.h"
+#include "../system/mca.h"
 #include "sound.h"
 #include "snd_mpu401.h"
 #include "midi.h"
@@ -67,13 +68,15 @@ int sound_mpu401_do_log = ENABLE_SOUND_MPU401_LOG;
 #endif
 
 
-static int64_t mpu401_event_callback = 0LL;
-static int64_t mpu401_eoi_callback = 0LL;
-static int64_t mpu401_reset_callback = 0LL;
+int		mca_version = 0;
+
+static int64_t	mpu401_event_callback = 0LL;
+static int64_t	mpu401_eoi_callback = 0LL;
+static int64_t	mpu401_reset_callback = 0LL;
 
 
-static void MPU401_WriteCommand(mpu_t *mpu, uint8_t val);
-static void MPU401_EOIHandlerDispatch(void *p);
+static void	MPU401_WriteCommand(mpu_t *mpu, uint8_t val);
+static void	MPU401_EOIHandlerDispatch(void *p);
 
 
 static void
@@ -816,30 +819,32 @@ MPU401_Event(void *priv)
 
     pclog("MPU-401 event callback\n");
 
-    if (mpu->mode==M_UART) {
+    if (mpu->mode == M_UART) {
 	mpu401_event_callback = 0LL;
 	return;
     }
 
     if (mpu->state.irq_pending) goto next_event;
 
-    for (i=0;i<8;i++) { /* Decrease counters */
-	if (mpu->state.amask&(1<<i)) {
+    for (i = 0; i < 8; i++) { /* Decrease counters */
+	if (mpu->state.amask & (1 << i)) {
 		mpu->playbuf[i].counter--;
-		if (mpu->playbuf[i].counter<=0) UpdateTrack(mpu, i);
+		if (mpu->playbuf[i].counter <= 0)
+			UpdateTrack(mpu, i);
 	}
     }
 
     if (mpu->state.conductor) {
 	mpu->condbuf.counter--;
-	if (mpu->condbuf.counter<=0) UpdateConductor(mpu);
+	if (mpu->condbuf.counter <= 0)
+		UpdateConductor(mpu);
     }
 
     if (mpu->clock.clock_to_host) {
 	mpu->clock.cth_counter++;
 	if (mpu->clock.cth_counter >= mpu->clock.cth_rate) {
-		mpu->clock.cth_counter=0;
-		mpu->state.req_mask|=(1<<13);
+		mpu->clock.cth_counter = 0;
+		mpu->state.req_mask |= (1 << 13);
 	}
     }
 
@@ -903,34 +908,88 @@ mpu401_device_add(void)
 
     n = sound_card_get_internal_name(sound_card);
     if (n != NULL) {
-	if (!strcmp(n, "sb16") || !strcmp(n, "sbawe32")) return;
+	if (! strcmp(n, "ncraudio"))
+		mca_version = 1;
+	  else
+		mca_version = 0;
+
+	if (!strcmp(n, "sb16") ||
+	    !strcmp(n, "sbawe32") ||
+	    !strcmp(n, "replysb16")) return;
     }
 
-    device_add(&mpu401_device);
+    if (mca_version)
+	device_add(&mpu401_mca_device);
+      else
+	device_add(&mpu401_device);
+}
+
+
+static uint8_t
+mpu401_mca_read(int port, void *priv)
+{
+    mpu_t *dev = (mpu_t *)priv;
+
+    return dev->pos_regs[port & 7];
+}
+
+
+static void
+mpu401_mca_write(int port, uint8_t val, void *priv)
+{
+    mpu_t *dev = (mpu_t *)priv;
+    uint16_t addr;
+
+    if (port < 0x102) return;
+
+    addr = (dev->pos_regs[2] & 2) ? 0x0330 : 0x1330;
+
+    io_removehandler(addr, 2,
+		     mpu401_read,NULL,NULL, mpu401_write,NULL,NULL, dev);
+    io_removehandler(0x2a20, 16,
+		     NULL,NULL,NULL, imf_write,NULL,NULL, dev);	
+
+    dev->pos_regs[port & 7] = val;
+
+    if (dev->pos_regs[2] & 1) {
+	addr = (dev->pos_regs[2] & 2) ? 0x0330 : 0x1330;
+
+	mpu401_init(dev, addr,
+		    device_get_config_int("irq"),
+		    device_get_config_int("mode"));
+    }
 }
 
 
 static void *
 mpu401_standalone_init(const device_t *info)
 {
-    mpu_t *mpu;
+    mpu_t *dev;
 
-    mpu = malloc(sizeof(mpu_t));
-    memset(mpu, 0, sizeof(mpu_t));
+    dev = malloc(sizeof(mpu_t));
+    memset(dev, 0x00, sizeof(mpu_t));
  
-    pclog("mpu_init\n");
-    mpu401_init(mpu, device_get_config_hex16("base"), device_get_config_int("irq"), device_get_config_int("mode"));
+    if (info->flags & DEVICE_MCA) {
+	mca_add(mpu401_mca_read, mpu401_mca_write, dev);
+	dev->pos_regs[0] = 0x0F;
+	dev->pos_regs[1] = 0x6C;		
+    } else {
+	mpu401_init(dev,
+		    device_get_config_hex16("base"),
+		    device_get_config_int("irq"),
+		    device_get_config_int("mode"));
+    }
 
-   return(mpu);
+    return(dev);
 }
 
 
 static void
 mpu401_standalone_close(void *priv)
 {
-    mpu_t *mpu = (mpu_t *)priv;
+    mpu_t *dev = (mpu_t *)priv;
 
-    free(mpu);
+    free(dev);
 }
 
 
@@ -995,14 +1054,74 @@ static const device_config_t mpu401_standalone_config[] =
         }
 };
 
-
 const device_t mpu401_device = {
     "MPU-401 (Standalone)",
-    0, 0,
+    DEVICE_ISA,
+    0,
     mpu401_standalone_init, mpu401_standalone_close, NULL,
     NULL,
     NULL,
     NULL,
     NULL,
     mpu401_standalone_config
+};
+
+
+static const device_config_t mpu401_mca_standalone_config[] =
+{
+        {
+                "irq", "MPU-401 IRQ", CONFIG_SELECTION, "", 9,
+                {
+                        {
+                                "IRQ 9", 9
+                        },
+                        {
+                                "IRQ 3", 3
+                        },
+                        {
+                                "IRQ 4", 4
+                        },
+                        {
+                                "IRQ 5", 5
+                        },
+                        {
+                                "IRQ 7", 7
+                        },
+                        {
+                                "IRQ 10", 10
+                        },
+                        {
+                                ""
+                        }
+                }
+        },
+        {
+                "mode", "Mode", CONFIG_SELECTION, "", 1,
+                {
+                        {
+                                "UART", M_UART
+                        },
+                        {
+                                "Intelligent", M_INTELLIGENT
+                        },
+                        {
+                                ""
+                        }
+                }
+        },
+        {
+                "", "", -1
+        }
+};
+
+const device_t mpu401_mca_device = {
+    "MPU-401 MCA (Standalone)",
+    DEVICE_MCA,
+    0,
+    mpu401_standalone_init, mpu401_standalone_close, NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    mpu401_mca_standalone_config
 };

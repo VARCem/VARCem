@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.52	2018/08/27
+ * Version:	@(#)pc.c	1.0.53	2018/09/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -109,7 +109,7 @@ int	config_ro = 0;				/* (O) dont modify cfg file */
 wchar_t log_path[1024] = { L'\0'};		/* (O) full path of logfile */
 
 /* Configuration values. */
-int	lang_id = 0;				/* (C) language ID */
+int	lang_id = 0x0409;			/* (C) language ID */
 int	window_w, window_h,			/* (C) window size and */
 	window_x, window_y,			/*     position info */
 	window_remember;
