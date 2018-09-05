@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.9	2018/09/03
+ * Version:	@(#)snd_mpu401.c	1.0.10	2018/09/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -326,28 +326,29 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
 		return;
 
 	case 0xb1:	/* Reset relative tempo */
-		mpu->clock.tempo_rel=40;
+		mpu->clock.old_tempo_rel = mpu->clock.tempo_rel;
+		mpu->clock.tempo_rel = 40;
 		break;
 
 	case 0xb9:	/* Clear play map */
 	case 0xb8:	/* Clear play counters */
-		for (i=0xb0;i<0xbf;i++) {
+		for (i = 0xb0; i < 0xbf; i++) {
 			/* All notes off */
 			midi_write(i);
 			midi_write(0x7b);
 			midi_write(0);
 		}
-		for (i=0;i<8;i++) {
-			mpu->playbuf[i].counter=0;
-			mpu->playbuf[i].type=T_OVERFLOW;
+		for (i = 0; i < 8; i++) {
+			mpu->playbuf[i].counter = 0;
+			mpu->playbuf[i].type = T_OVERFLOW;
 		}
-		mpu->condbuf.counter=0;
-		mpu->condbuf.type=T_OVERFLOW;
-		if (!(mpu->state.conductor=mpu->state.cond_set))
-					mpu->state.cond_req=0;
-		mpu->state.amask=mpu->state.tmask;
-		mpu->state.req_mask=0;
-		mpu->state.irq_pending=1;
+		mpu->condbuf.counter = 0;
+		mpu->condbuf.type = T_OVERFLOW;
+		if (! (mpu->state.conductor = mpu->state.cond_set))
+					mpu->state.cond_req = 0;
+		mpu->state.amask = mpu->state.tmask;
+		mpu->state.req_mask = 0;
+		mpu->state.irq_pending = 1;
 		break;
 
 	case 0xff:	/* Reset MPU-401 */
@@ -389,8 +390,8 @@ MPU401_WriteData(mpu_t *mpu, uint8_t val)
 
 	case 0xe1:	/* Set relative tempo */
 		mpu->state.command_byte=0;
-		if (val!=0x40) //default value
-			pclog("MPU-401:Relative tempo change not implemented\n");
+		mpu->clock.old_tempo_rel=mpu->clock.tempo_rel;
+		mpu->clock.tempo_rel=val;
 		return;
 
 	case 0xe7:	/* Set internal clock to host interval */
@@ -799,7 +800,7 @@ mpu401_read(uint16_t addr, void *priv)
 	case 1: //Read Status
 		if (mpu->state.cmd_pending) ret=STATUS_OUTPUT_NOT_READY;
 		if (!mpu->queue_used) ret=STATUS_INPUT_NOT_READY;
-		ret |= 0x3f;	//FIXME: check with MPU401 TechRef
+		ret |= 0x3f;
 
 		pclog("Read Status (0x331) %x\n", ret);
 		break;
@@ -853,7 +854,7 @@ MPU401_Event(void *priv)
 
 next_event:
     /* mpu401_event_callback = 0LL; */
-    new_time = (mpu->clock.tempo * mpu->clock.timebase);
+    new_time = ((mpu->clock.tempo * mpu->clock.timebase * mpu->clock.tempo_rel)/0x40);
     if (new_time == 0) {
 	mpu401_event_callback = 0LL;
 	return;
@@ -867,13 +868,6 @@ next_event:
 void
 mpu401_init(mpu_t *mpu, uint16_t addr, int irq, int mode)
 {
-#if 0
-    if (mode != M_INTELLIGENT) {
-	mpu401_uart_init(mpu, addr);
-	return;
-    }
-#endif
-
     mpu->status = STATUS_INPUT_NOT_READY;
     mpu->irq = irq;
     mpu->queue_used = 0;
