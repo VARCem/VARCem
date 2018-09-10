@@ -646,6 +646,7 @@ setpitclock(float clock)
     MDACONST = (clock/2032125.0f);
     VGACONST1 = (clock/25175000.0f);
     VGACONST2 = (clock/28322000.0f);
+pclog("PIT: clock=%.2f, USEC=%llu, RTC=%f\n", clock, TIMER_USEC, RTCCONST);
 
     isa_timing = clock/8000000.0f;
     bus_timing = clock/(float)cpu_busspeed;

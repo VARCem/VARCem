@@ -1143,6 +1143,7 @@ pc_thread(void *param)
 		plat_startblit();
 		clockrate = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed;
 
+pclog("PC: clockrate=%lu cpuspeed=%lu\n", clockrate, cpuspeed);
 		if (is386) {
 #ifdef USE_DYNAREC
 			if (cpu_use_dynarec)

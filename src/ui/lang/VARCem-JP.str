@@ -8,7 +8,7 @@
  *
  *		String definitions for "Japanese (Japan)" language.
  *
- * Version:	@(#)VARCem-JP.str	1.0.8	2018/09/03
+ * Version:	@(#)VARCem-JP.str	1.0.9	2018/09/09
  *
  * Authors:	Basic2004, <basic2004@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,8
+#define TAG_VERSION	1,0,9
 #define TAG_AUTHOR	"Basic2004"
 #define TAG_EMAIL	"basic2004@gmail.com"
 
@@ -78,7 +78,7 @@
 #define STR_2305	"設定したレンダラー「%S」は使用できません。既定値に戻しますか？"
 #define STR_2306	"ST506またはESDI方式のCD-ROMドライブは存在しません"
 #define STR_2307	"USBはまだサポートしません"
-#define STR_2308        "You must save your new settings first!"
+#define STR_2308        "まずは新規設定を保存してください！"
 
 
 /* Application messages (2400.) */
@@ -125,9 +125,9 @@
 /* UI: dialog: About (3200.) */
 #define STR_ABOUT	"VARCemについて.."
 #define  STR_3201	"著者:"
-#define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker and others.\nBased on earlier works like 86Box, PCem, MAME, DOSbox and Qemu."
-#define  STR_3203	"Released under the BSD 3-Clause License, and the GNU General Public License (version 2 or up) for existing, imported code from other projects."
-#define  STR_3204	"See LICENSE.txt for more information."
+#define  STR_3202	"Fred N. van Kempen、Miran Grca、Sarah Walker 外\nこのプログラムは既存の作品（86Box、PCem、MAME、DOSbox、Qemu）を元にして製作されました。"
+#define  STR_3203	"このプログラムは3条項BSDライセンス、既存または他のプロジェクトからインポートしたコードについてはGNU GPL v2以降のライセンスに基いて配布されています。"
+#define  STR_3204	"詳しい情報は LICENSE.txt をお読みください。"
 
 /* UI: dialog: Localization (3210.) */
 #define STR_LOCALIZE	"多言語化"
@@ -236,7 +236,7 @@
 #define  STR_3478	"4番目のIDE:"
 #define  STR_3479	"ISABuggerデバイス"
 #define  STR_3480	"ISAメモリー拡張ボード"
-#define  STR_3481	"ISA Clock/RTC Card"
+#define  STR_3481	"ISAクロック/RTCカード"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"ハードディスク:"
