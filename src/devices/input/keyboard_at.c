@@ -11,7 +11,7 @@
  * NOTE:	Several changes to disable Mode1 for now, as this breaks 
  *		 the TSX32 operating system. More cleanups needed..
  *
- * Version:	@(#)keyboard_at.c	1.0.15	2018/08/25
+ * Version:	@(#)keyboard_at.c	1.0.16	2018/09/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2135,8 +2135,10 @@ kbd_read(uint16_t port, void *priv)
 	case 0x60:
 		ret = kbd->out;
 		kbd->status &= ~(STAT_OFULL);
-		picintc(kbd->last_irq);
-		kbd->last_irq = 0;
+		if (kbd->last_irq) {
+			picintc(kbd->last_irq);
+			kbd->last_irq = 0;
+		}
 		break;
 
 	case 0x61:
