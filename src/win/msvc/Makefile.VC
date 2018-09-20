@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.45	2018/09/03
+# Version:	@(#)Makefile.VC	1.0.46	2018/09/19
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -292,14 +292,14 @@ endif
 ifeq ($(DEBUG), y)
  OPTS		+= -D_DEBUG
  DOPTS		+= -MTd -Gs -Zi
- ROPTS		+= -D_DEBUG
+ RFLAGS		+= -D_DEBUG
  LOPTS		+= -debug
- AOPTIM		:=
  ifndef COPTIM
   COPTIM	:= -Od
  endif
 else
- DOPTS		:= -MT -Gs
+ LOPTS		+= -LTCG
+ DOPTS		:= -MT -GL
  ifndef COPTIM
   COPTIM	:= -O2
  endif
@@ -330,7 +330,7 @@ endif
 LIBS		:= ddraw.lib dinput8.lib dxguid.lib d3d9.lib d3dx9.lib \
 		   version.lib comctl32.lib winmm.lib comdlg32.lib \
 		   advapi32.lib gdi32.lib shell32.lib user32.lib \
-		   kernel32.lib wsock32.lib iphlpapi.lib psapi.lib
+		   wsock32.lib iphlpapi.lib psapi.lib
 ifeq ($(DEBUG), y)
 LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
 endif
@@ -531,8 +531,8 @@ endif
 
 # Final versions of the toolchain flags.
 LDFLAGS		:= $(LOPTS)
-CFLAGS		:= $(WX_FLAGS) $(OPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
-CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
+CFLAGS		:= $(WX_FLAGS) $(OPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
+CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
 
 
 #########################################################################

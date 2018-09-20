@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.59	2018/09/03
+# Version:	@(#)Makefile.mingw	1.0.60	2018/09/19
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -356,8 +356,8 @@ endif
 LIBS		:= -mwindows \
 		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
 		   -lversion -lcomctl32 -lwinmm
-LIBS		+= -lkernel32 -lwsock32 -liphlpapi -lpsapi
-LIBS		+= -lpthread -static -lstdc++ -lgcc
+LIBS		+= -lwsock32 -liphlpapi -lpsapi #-lpthread
+LIBS		+= -static -lstdc++ -lgcc
 ifneq ($(X64), y)
  LIBS		+= -Wl,--large-address-aware
 endif
