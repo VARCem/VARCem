@@ -578,14 +578,17 @@ void dumpregs(int force)
 	(void)plat_chdir(usr_path);
         nopageerrors=1;
         f=fopen("ram.dmp","wb");
+        if (!f) return;	
         fwrite(ram,mem_size*1024,1,f);
         fclose(f);
         pclog("Dumping rram.dmp\n");
         f=fopen("rram.dmp","wb");
+        if (!f) return;	
         for (c=0;c<0x1000000;c++) putc(readmemb(c),f);
         fclose(f);
         pclog("Dumping rram4.dmp\n");
         f=fopen("rram4.dmp","wb");
+        if (!f) return;	
         for (c=0;c<0x0050000;c++) 
         {
                 cpu_state.abrt = 0;
