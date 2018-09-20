@@ -305,7 +305,7 @@ static uint16_t paradise_readw(uint32_t addr, void *p)
 static void *paradise_pvga1a_init(const device_t *info, uint32_t memsize)
 {
         paradise_t *paradise = malloc(sizeof(paradise_t));
-	if (!paradise) return NULL;
+        if (!paradise) return NULL;
         svga_t *svga = &paradise->svga;
         memset(paradise, 0, sizeof(paradise_t));
         
@@ -339,7 +339,7 @@ static void *paradise_pvga1a_init(const device_t *info, uint32_t memsize)
 static void *paradise_wd90c11_init(const device_t *info)
 {
         paradise_t *paradise = malloc(sizeof(paradise_t));
-	if (!paradise) return NULL;
+        if (!paradise) return NULL;
         svga_t *svga = &paradise->svga;
         memset(paradise, 0, sizeof(paradise_t));
         
@@ -375,7 +375,7 @@ static void *paradise_wd90c11_init(const device_t *info)
 static void *paradise_wd90c30_init(const device_t *info, uint32_t memsize)
 {
         paradise_t *paradise = malloc(sizeof(paradise_t));
-	if (!paradise) return NULL;
+        if (!paradise) return NULL;
         svga_t *svga = &paradise->svga;
         memset(paradise, 0, sizeof(paradise_t));
         
