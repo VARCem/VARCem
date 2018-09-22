@@ -18,7 +18,7 @@
  *		2 clocks - fetch opcode 1       2 clocks - execute
  *		2 clocks - fetch opcode 2  etc
  *
- * Version:	@(#)808x.c	1.0.5	2018/05/06
+ * Version:	@(#)808x.c	1.0.6	2018/09/22
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -182,23 +182,6 @@ FETCH(void)
 {
         uint8_t temp;
 
-#if 0
-        temp=prefetchqueue[0];
-        prefetchqueue[0]=prefetchqueue[1];
-        prefetchqueue[1]=prefetchqueue[2];
-        prefetchqueue[2]=prefetchqueue[3];
-        prefetchqueue[3]=prefetchqueue[4];
-        prefetchqueue[4]=prefetchqueue[5];
-        if (prefetchw<=((is8086)?4:3))
-        {
-                prefetchqueue[prefetchw++]=readmembf(cs+prefetchpc); prefetchpc++;
-                if (is8086 && (prefetchpc&1))
-                {
-                        prefetchqueue[prefetchw++]=readmembf(cs+prefetchpc); prefetchpc++;
-                }
-        }
-#endif
-
         if (prefetchw==0)
         {
                 cycles-=(4-(fetchcycles&3));
@@ -219,8 +202,10 @@ FETCH(void)
                 prefetchqueue[0]=prefetchqueue[1];
                 prefetchqueue[1]=prefetchqueue[2];
                 prefetchqueue[2]=prefetchqueue[3];
-                prefetchqueue[3]=prefetchqueue[4];
-                prefetchqueue[4]=prefetchqueue[5];
+		if (is8086) {
+                	prefetchqueue[3]=prefetchqueue[4];
+                	prefetchqueue[4]=prefetchqueue[5];
+		}
                 prefetchw--;
                 fetchcycles-=4;
                 cpu_state.pc++;
@@ -234,7 +219,7 @@ FETCHADD(int c)
 {
         int d;
         if (c<0) return;
-        if (prefetchw>((is8086)?4:3)) return;
+        if (prefetchw>((is8086)?5:3)) return;
         d=c+(fetchcycles&3);
         while (d>3 && prefetchw<((is8086)?6:4))
         {
@@ -245,7 +230,7 @@ FETCHADD(int c)
                         prefetchpc++;
                         prefetchw++;
                 }
-                if (prefetchw<6)
+                if (prefetchw<(is8086)?6:4)
                 {
                         prefetchqueue[prefetchw]=readmembf(cs+prefetchpc);
                         prefetchpc++;
@@ -271,7 +256,7 @@ void
 FETCHCOMPLETE(void)
 {
         if (!(fetchcycles&3)) return;
-        if (prefetchw>((is8086)?4:3)) return;
+        if (prefetchw>((is8086)?5:3)) return;
         if (!prefetchw) nextcyc=(4-(fetchcycles&3));
         cycles-=(4-(fetchcycles&3));
         fetchclocks+=(4-(fetchcycles&3));
@@ -281,7 +266,7 @@ FETCHCOMPLETE(void)
                         prefetchpc++;
                         prefetchw++;
                 }
-                if (prefetchw<6)
+                if (prefetchw<(is8086)?6:4)
                 {
                         prefetchqueue[prefetchw]=readmembf(cs+prefetchpc);
                         prefetchpc++;

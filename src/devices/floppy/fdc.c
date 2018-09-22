@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.15	2018/09/21
+ * Version:	@(#)fdc.c	1.0.16	2018/09/22
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1341,21 +1341,35 @@ fdc_read(uint16_t addr, void *priv)
 
 	case 7: /*Disk change*/
 		drive = real_drive(fdc, fdc->dor & 3);
-		ret = 0x00;
-
-		if (fdc->flags & FDC_FLAG_TOSHIBA) {
-			/*
-			 * T1200 only has the DSCH bit set for the
-			 * internal 3.5" drive, otherwise it is 0.
-			 */
-			if ((drive == 0) && (fdc->dor & (0x10 << drive)))
-				ret = (fdd_changed[drive] || drive_empty[drive]) ? 0x80 : 0x00;
+		if (fdc->flags & FDC_FLAG_PS1) {
+			if (fdc->dor & (0x10 << drive)) {
+				ret = (fdd_changed[drive] || drive_empty[drive]) ? 0x00 : 0x80;
+				ret |= (fdc->dor & 0x08);
+				ret |= (fdc->rate & 0x03);
+			} else
+				ret = 0x00;
 		} else {
-			if (fdc->dor & (0x10 << drive))
-				ret = (fdd_changed[drive] || drive_empty[drive])?0x80:0;
+			if (fdc->dor & (0x10 << drive)) {
+				/*
+				 * T1200 only has the DSCH bit set for the
+				 * internal 3.5" drive, otherwise it is 0.
+				 */
+				if ((drive == 1) && (fdc->flags & FDC_FLAG_TOSHIBA))
+					ret = 0x00;
+				else
+					ret = (fdd_changed[drive] || drive_empty[drive]) ? 0x80 : 0x00;
+			} else
+				ret = 0x00;
+
+			/* Some controllers reverse this bit. */
 			if (fdc->flags & FDC_FLAG_DISKCHG_ACTLOW)
 				ret ^= 0x80;
-			ret |= 0x01;
+
+			if (fdc->flags & FDC_FLAG_TOSHIBA) {
+				/* 1=ExtFDD off, 2=ExtFDD =A, 3=ExtFDD = B */
+				ret |= (0x03 << 5);
+			} else
+				ret |= 0x01;
 		}
 		break;
 

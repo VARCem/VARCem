@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.53	2018/09/03
+ * Version:	@(#)pc.c	1.0.54	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -365,6 +365,13 @@ fatal(const char *fmt, ...)
 
     dumppic();
     dumpregs(1);
+
+    /*
+     * Attempt to perform a clean exit by terminating the
+     * main loop of the emulator, which hopefully also do
+     * a shutdown of all running threads.
+     */
+    plat_stop();
 
     /* Make sure the message does not have a trailing newline. */
     if ((sp = strchr(temp, '\n')) != NULL) *sp = '\0';
