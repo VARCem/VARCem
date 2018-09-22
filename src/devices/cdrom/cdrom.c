@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)cdrom.c	1.0.15	2018/05/08
+ * Version:	@(#)cdrom.c	1.0.16	2018/09/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -145,7 +145,7 @@ const cdrom_speed_t cdrom_speeds[] = {
 
 
 #pragma pack(push,1)
-static struct
+typedef struct
 {
 	uint8_t opcode;
 	uint8_t polled;
@@ -154,16 +154,16 @@ static struct
 	uint8_t reserved3[2];
 	uint16_t len;
 	uint8_t control;
-} *gesn_cdb;
+} gesn_cdb_t;
 #pragma pack(pop)
 
 #pragma pack(push,1)
-static struct
+typedef struct
 {
 	uint16_t len;
 	uint8_t notification_class;
 	uint8_t supported_events;
-} *gesn_event_header;
+} gesn_event_header_t;
 #pragma pack(pop)
 
 
@@ -401,6 +401,8 @@ static const mode_sense_pages_t cdrom_mode_sense_pages_changeable =
 }	};
 
 static mode_sense_pages_t cdrom_mode_sense_pages_saved[CDROM_NUM];
+static gesn_cdb_t *gesn_cdb;
+static gesn_event_header_t *gesn_event_header;
 
 
 #ifdef ENABLE_CDROM_LOG
@@ -2282,7 +2284,7 @@ cdrom_readtoc_fallback:
 		case GPCMD_GET_EVENT_STATUS_NOTIFICATION:
 			cdrom_set_phase(id, SCSI_PHASE_DATA_IN);
 
-			cdrom_buf_alloc(id, 8 + sizeof(gesn_event_header));
+			cdrom_buf_alloc(id, 8 + sizeof(gesn_event_header_t));
 		
 			gesn_cdb = (void *) cdb;
 			gesn_event_header = (void *) cdbufferb;

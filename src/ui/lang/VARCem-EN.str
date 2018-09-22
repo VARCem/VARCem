@@ -79,9 +79,9 @@
 #define STR_2303	"The configured machine:\n\n  %ls\n\nis not available.\n\nWould you like to enter the Settings dialog?"
 #define STR_2304	"Configured video card:\n\n  %ls\n\nis not available.\n\nWould you like to enter the Settings dialog?"
 #define STR_2305	"Selected renderer '%S' not available. Reset to default?"
-#define STR_2306	"ST506 or ESDI CD-ROM drives never existed"
+#define STR_2306	"ST506/ESDI CDROM drives never existed!"
 #define STR_2307	"USB is not yet supported"
-#define STR_2308	"You must save your new settings first!"
+#define STR_2308	"You must save your settings first!"
 
 
 /* Application messages (2400.) */

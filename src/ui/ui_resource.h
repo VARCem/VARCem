@@ -12,7 +12,7 @@
  *		they are not referenced outside of the platform UI. This
  *		may change at some point.
  *
- * Version:	@(#)ui_resource.h	1.0.15	2018/09/03
+ * Version:	@(#)ui_resource.h	1.0.16	2018/09/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -221,7 +221,7 @@
 #define IDS_ERR_NOMACH	2303		// "Configured machine not avai.."
 #define IDS_ERR_NOVIDEO	2304		// "Configured video card not.."
 #define IDS_ERR_NORENDR	2305		// "Selected renderer not avai.."
-#define IDS_ERR_NOCDROM	2306		// "ST506 or ESDI CD-ROM driv.."
+#define IDS_ERR_NOCDROM	2306		// "ST506/ESDI CDROM drives.."
 #define IDS_ERR_NO_USB	2307		// "USB is not yet supported"
 #define IDS_ERR_SAVEIT	2308		// "Must save new config first.."
 

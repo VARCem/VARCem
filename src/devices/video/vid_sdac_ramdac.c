@@ -10,7 +10,7 @@
  *
  *		Misidentifies as AT&T 21C504.
  *
- * Version:	@(#)vid_sdac_ramdac.c	1.0.4	2018/05/06
+ * Version:	@(#)vid_sdac_ramdac.c	1.0.5	2018/09/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -138,7 +138,7 @@ void sdac_ramdac_out(uint16_t addr, uint8_t val, sdac_ramdac_t *ramdac, svga_t *
 
 uint8_t sdac_ramdac_in(uint16_t addr, sdac_ramdac_t *ramdac, svga_t *svga)
 {
-        uint8_t temp;
+        uint8_t temp = 0xff;
         switch (addr)
         {
                 case 2:

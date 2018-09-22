@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.14	2018/06/25
+ * Version:	@(#)fdc.c	1.0.15	2018/09/21
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1233,8 +1233,8 @@ fdc_write(uint16_t addr, uint8_t val, void *priv)
 		return;
 
 	case 7:
-		if (! (fdc->flags & FDC_FLAG_AT))
-			return;
+		if (!(fdc->flags & FDC_FLAG_AT) &&
+		    !(fdc->flags & FDC_FLAG_TOSHIBA)) return;
 		fdc->rate = val & 3;
 		return;
     }
@@ -1341,13 +1341,22 @@ fdc_read(uint16_t addr, void *priv)
 
 	case 7: /*Disk change*/
 		drive = real_drive(fdc, fdc->dor & 3);
-		if (fdc->dor & (0x10 << drive))
-			ret = (fdd_changed[drive] || drive_empty[drive])?0x80:0;
-		  else
-			ret = 0;
-		if (fdc->flags & FDC_FLAG_DISKCHG_ACTLOW)
-			ret ^= 0x80;
-		ret |= 0x01;
+		ret = 0x00;
+
+		if (fdc->flags & FDC_FLAG_TOSHIBA) {
+			/*
+			 * T1200 only has the DSCH bit set for the
+			 * internal 3.5" drive, otherwise it is 0.
+			 */
+			if ((drive == 0) && (fdc->dor & (0x10 << drive)))
+				ret = (fdd_changed[drive] || drive_empty[drive]) ? 0x80 : 0x00;
+		} else {
+			if (fdc->dor & (0x10 << drive))
+				ret = (fdd_changed[drive] || drive_empty[drive])?0x80:0;
+			if (fdc->flags & FDC_FLAG_DISKCHG_ACTLOW)
+				ret ^= 0x80;
+			ret |= 0x01;
+		}
 		break;
 
 	default:
@@ -2076,6 +2085,8 @@ fdc_set_base(fdc_t *fdc, int base)
 	io_sethandler(base+2, 1, NULL,NULL,NULL, fdc_write,NULL,NULL, fdc);
 	io_sethandler(base+4, 1, fdc_read,NULL,NULL, NULL,NULL,NULL, fdc);
 	io_sethandler(base+5, 1, fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+	if (fdc->flags & FDC_FLAG_TOSHIBA)
+		io_sethandler(base+7, 1, fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
     }
 
     fdc->base_address = base;
@@ -2101,6 +2112,8 @@ fdc_remove(fdc_t *fdc)
 			 fdc_read,NULL,NULL, NULL,NULL,NULL, fdc);
 	io_removehandler(fdc->base_address+5, 1,
 			 fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+	if (fdc->flags & FDC_FLAG_TOSHIBA)
+		io_removehandler(fdc->base_address+7, 1, fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
     }
 
     fdc_log("FDC: removed (%04X)\n", fdc->base_address);
@@ -2224,6 +2237,15 @@ const device_t fdc_xt_device = {
     "PC/XT Floppy Drive Controller",
     0,
     0,
+    fdc_init, fdc_close, fdc_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t fdc_xt_toshiba_device = {
+    "Toshiba TC8565 Floppy Drive Controller",
+    0,
+    FDC_FLAG_TOSHIBA,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL

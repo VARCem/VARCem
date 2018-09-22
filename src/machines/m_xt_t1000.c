@@ -50,7 +50,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_xt_t1000.c	1.0.13	2018/05/06
+ * Version:	@(#)m_xt_t1000.c	1.0.14	2018/09/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1032,7 +1032,7 @@ machine_xt_t1200_init(const machine_t *model, void *arg)
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
     device_add(&keyboard_xt_device);
-    t1000.fdc = device_add(&fdc_xt_device);
+    t1000.fdc = device_add(&fdc_xt_toshiba_device);
     nmi_init();
 
     tc8521_init(&t1000.nvr, model->nvrsz);

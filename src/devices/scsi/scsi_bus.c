@@ -11,7 +11,7 @@
  * NOTES: 	For now ported from PCem with some modifications
  *		but at least it's a start.
  *
- * Version:	@(#)scsi_bus.c	1.0.2	2018/05/06
+ * Version:	@(#)scsi_bus.c	1.0.3	2018/09/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,7 +85,7 @@ scsi_bus_log(const char *fmt, ...)
 /* get the length of a SCSI command based on its command byte type */
 static int get_cmd_len(int cbyte)
 {
-    int len;
+    int len = -1;
     int group;
 
     group = (cbyte>>5) & 7;
