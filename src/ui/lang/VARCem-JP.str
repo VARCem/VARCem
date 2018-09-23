@@ -8,7 +8,7 @@
  *
  *		String definitions for "Japanese (Japan)" language.
  *
- * Version:	@(#)VARCem-JP.str	1.0.9	2018/09/09
+ * Version:	@(#)VARCem-JP.str	1.0.10	2018/09/23
  *
  * Authors:	Basic2004, <basic2004@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -67,6 +67,7 @@
 #define STR_2204	"不正なPCapデバイスです"
 #define STR_2205	"OpenALが初期化できません、\nプログラムのフォルダーから下記のライブラリーファイルをご確認ください:\n\nlibopenal-1.dll"
 #define STR_2206	"FluidSynthが初期化できません、\nプログラムのフォルダーから下記のライブラリーファイルをご確認ください:\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */
@@ -78,7 +79,7 @@
 #define STR_2305	"設定したレンダラー「%S」は使用できません。既定値に戻しますか？"
 #define STR_2306	"ST506またはESDI方式のCD-ROMドライブは存在しません"
 #define STR_2307	"USBはまだサポートしません"
-#define STR_2308        "まずは新規設定を保存してください！"
+#define STR_2308	"まずは新規設定を保存してください！"
 
 
 /* Application messages (2400.) */

@@ -819,6 +819,7 @@ pc_init(void)
     wchar_t temp[1024];
     wchar_t name[128];
     const wchar_t *str;
+    const char *stransi;
 
     /* If no machine selected, force user into Setup Wizard. */
     if (machine < 0) {
@@ -851,7 +852,12 @@ pc_init(void)
 	!video_card_available(video_old_to_new(video_card))) {
 	/* Whoops, selected video not available. */
 	str = get_string(IDS_ERR_NOVIDEO);
-	mbstowcs(name, machine_getname(), sizeof_w(name));
+	stransi = video_card_getname(video_card);
+	if (stransi == NULL) {
+		/* This happens if configured card is not even in table.. */
+		swprintf(name, sizeof_w(name), L"%i", video_card);
+	} else
+		mbstowcs(name, stransi, sizeof_w(name));
 	swprintf(temp, sizeof_w(temp), str, name);
 
 	/* Show the messagebox, and abort if 'No' was selected. */

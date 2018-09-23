@@ -8,7 +8,7 @@
  *
  *		Common resources for the application.
  *
- * Version:	@(#)VARCem-common.rc	1.0.9	2018/09/03
+ * Version:	@(#)VARCem-common.rc	1.0.10	2018/09/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -655,6 +655,7 @@ BEGIN
     IDS_ERR_PCAP_DEV	STR_2204
     IDS_ERR_OPENAL	STR_2205
     IDS_ERR_FSYNTH	STR_2206
+    IDS_ERR_NOMEM	STR_2207
 END
 
 /* Application error messages (2300.) */

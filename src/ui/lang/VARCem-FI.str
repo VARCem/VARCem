@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem-FI.str	1.0.7	2018/09/03
+ * Version:	@(#)VARCem-FI.str	1.0.8	2018/09/23
  *
  * Authors:	Daniel Gurney, <dgurney@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -53,7 +53,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,7
+#define TAG_VERSION	1,0,8
 #define TAG_AUTHOR	"Daniel Gurney"
 #define TAG_EMAIL	"dgurney@varcem.com"
 
@@ -72,6 +72,7 @@
 #define STR_2204	"Vääränlainen PCap-laite"
 #define STR_2205	"OpenALia ei voitu alustaa, varmista että seuraava kirjasto\non ohjelman kansiossa:\n\nlibopenal-1.dll"
 #define STR_2206	"FluidSynthiä ei voitu alustaa, varmista että seuraava tiedosto\non ohjelman kansiossa:\n\nlibfluidsynth.dll"
+#define STR_2207	"Järjestelmän muisti on täynnä!"
 
 
 /* Application error messages (2300.) */

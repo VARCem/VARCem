@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.19	2018/09/03
+ * Version:	@(#)win.c	1.0.20	2018/09/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #include <fcntl.h>
 #include <wchar.h>
 #include "../emu.h"
+#undef malloc
 #include "../version.h"
 #include "../config.h"
 #include "../device.h"

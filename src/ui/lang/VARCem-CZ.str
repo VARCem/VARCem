@@ -8,7 +8,7 @@
  *
  *		String definitions for "Czech (Czech Republic)" language.
  *
- * Version:	@(#)VARCem-CZ.str	1.0.3	2018/09/03
+ * Version:	@(#)VARCem-CZ.str	1.0.4	2018/09/23
  *
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -67,6 +67,7 @@
 #define STR_2204	"Neplatné PCap zařížení"
 #define STR_2205	"Nebylo možné načíst OpenAL. Ověřte, zda je následující soubor\nve složce s programem:\n\nlibopenal-1.dll"
 #define STR_2206	"Nebylo možné načíst FluidSynth. Ověřte, zda je následující soubor\nve složce s programem:\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */
@@ -78,7 +79,7 @@
 #define STR_2305	"Zvolený renderer '%S' není dostupný. Chcete použít výchozí renderer?"
 #define STR_2306	"CD-ROM jednotky pro ST506 a ESDI nikdy neexistovaly."
 #define STR_2307	"USB není zatím podporováno."
-#define STR_2308        "You must save your new settings first!"
+#define STR_2308	"You must save your settings first!"
 
 
 /* Application messages (2400.) */

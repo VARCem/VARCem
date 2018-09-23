@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.31	2018/09/01
+ * Version:	@(#)emu.h	1.0.32	2018/09/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -198,6 +198,8 @@ extern void		set_screen_size_natural(void);
 
 extern const wchar_t	*get_string(int id);
 extern uint32_t		get_val(const char *str);
+extern void		*mem_alloc(size_t sz);
+#define malloc		mem_alloc
 
 #ifdef __cplusplus
 }

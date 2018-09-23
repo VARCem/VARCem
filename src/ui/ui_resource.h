@@ -12,7 +12,7 @@
  *		they are not referenced outside of the platform UI. This
  *		may change at some point.
  *
- * Version:	@(#)ui_resource.h	1.0.16	2018/09/21
+ * Version:	@(#)ui_resource.h	1.0.17	2018/09/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -213,6 +213,7 @@
 #define IDS_ERR_PCAP_DEV 2204		// "Invalid PCap device"
 #define IDS_ERR_OPENAL	2205		// "Unable to initialize OpenAL.."
 #define IDS_ERR_FSYNTH	2206		// "Unable to initialize Flui.."
+#define IDS_ERR_NOMEM	2207		// "System out of memory"
 
 /* Application error messages (2300.) */
 #define IDS_ERR_SCRSHOT	2300		// "Unable to create bitmap file: %s"

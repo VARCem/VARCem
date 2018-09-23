@@ -8,7 +8,7 @@
  *
  *		String definitions for "Slovenian (Slovenia)" language.
  *
- * Version:	@(#)VARCem-SL.str	1.0.6	2018/09/03
+ * Version:	@(#)VARCem-SL.str	1.0.7	2018/09/23
  *
  * Authors:	David Simunic, <simunic.david@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -67,6 +67,7 @@
 #define STR_2204	"Neveljavna PCap naprava"
 #define STR_2205	"Ne morem inicializirati OpenAL, prepričajte se, da imate naslednjo knjižico\nv svoji mapi programa:\n\nlibopenal-1.dll"
 #define STR_2206	"Ne morem inicializirati FluidSynth, prepričajte se, da imate naslednjo knjižico\nv svoji mapi programa:\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */
@@ -78,7 +79,7 @@
 #define STR_2305	"Izbran upodabljalnik '%S' ni na voljo. Ponastavim na privzetega?"
 #define STR_2306	"ST506 ali ESDI CD-ROM pogoni niso obstajali"
 #define STR_2307	"USB še ni podprt"
-#define STR_2308        "You must save your new settings first!"
+#define STR_2308	"You must save your settings first!"
 
 
 /* Application messages (2400.) */

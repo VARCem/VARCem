@@ -8,7 +8,7 @@
  *
  *		String definitions for "Norwegian (Norway)" language.
  *
- * Version:	@(#)VARCem-NO.str	1.0.3	2018/09/03
+ * Version:	@(#)VARCem-NO.str	1.0.4	2018/09/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Tore Sinding Bekkedal, <toresbe@gmail.com<
@@ -66,6 +66,7 @@
 #define STR_2204	"Ugyldig PCap-enhet"
 #define STR_2205	"Kunne ikke ta i bruk OpenAL, bekreft at du har følgende bibliotek\ni din programkatalog:\n\nlibopenal-1.dll"
 #define STR_2206	"Kunne ikke ta i bruk FluidSynth, bekreft at du har følgende bibliotek\ni din programkatalog:\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */
@@ -77,7 +78,7 @@
 #define STR_2305	"Valgte rendermotor '%S' ikke tilgjengelig. Tilbakestille til forvalgt?"
 #define STR_2306	"Hverken ST506 eller ESDI CD-ROM-enheter har noensinne eksistert"
 #define STR_2307	"USB er ikke støttet enda."
-#define STR_2308        "You must save your new settings first!"
+#define STR_2308        "You must save your settings first!"
 
 
 /* Application messages (2400.) */

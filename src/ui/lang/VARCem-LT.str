@@ -8,7 +8,7 @@
  *
  *		String definitions for "Lithuanian (Lithuania)" language.
  *
- * Version:	@(#)VARCem-LT.str	1.0.4	2018/09/03
+ * Version:	@(#)VARCem-LT.str	1.0.5	2018/09/23
  *
  * Author:	Vegas (emu-land.net)
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -66,6 +66,7 @@
 #define STR_2204	"Netinkamas PCap įrenginys"
 #define STR_2205	"Nepavyko inicijuoti OpenAL, įsitikinkite, kad jūsų programoje yra ši biblioteka aplankale:\n\nlibopenal-1.dll"
 #define STR_2206	"Nepavyko inicijuoti FluidSynth, įsitikinkite, kad jūsų programoje yra ši biblioteka aplankale:\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */
@@ -77,7 +78,7 @@
 #define STR_2305	"Pasirinktas renderis '%S' nepasiekiamas. Atstatyti pagal nutylėjimą?"
 #define STR_2306	"ST506 arba ESDI CD-ROM diskai niekada nebuvo"
 #define STR_2307	"USB dar nepalaikomas"
-#define STR_2308        "You must save your new settings first!"
+#define STR_2308        "You must save your settings first!"
 
 
 /* Application messages (2400.) */

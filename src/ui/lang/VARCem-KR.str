@@ -8,7 +8,7 @@
  *
  *		String definitions for "Korean (South Korea)" language.
  *
- * Version:	@(#)VARCem-KR.str	1.0.11	2018/09/04
+ * Version:	@(#)VARCem-KR.str	1.0.12	2018/09/23
  *
  * Authors:	Yeong Uk Jo, <greatpsycho@yahoo.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -67,6 +67,7 @@
 #define STR_2204	"PCap 장치가 올바르지 않습니다"
 #define STR_2205	"OpenAL을 초기화할 수 없습니다, 프로그램 폴더에 아래의 라이브러리 파일이 있는지 확인하세요:\n\nlibopenal-1.dll"
 #define STR_2206	"FluidSynth를 초기화할 수 없습니다, 프로그램 폴더에 아래의 라이브러리 파일이 있는지 확인하세요:\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */

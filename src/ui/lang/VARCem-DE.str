@@ -8,7 +8,7 @@
  *
  *		String definitions for "German (Germany)" language.
  *
- * Version:	@(#)VARCem-DE.str	1.0.10	2018/09/04
+ * Version:	@(#)VARCem-DE.str	1.0.11	2018/09/23
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Do not translate! */
-#define TAG_VERSION	1,0,10
+#define TAG_VERSION	1,0,11
 #define TAG_AUTHOR	"Michael Drüing"
 #define TAG_EMAIL	"michael@drueing.de"
 
@@ -67,6 +67,7 @@
 #define STR_2204	"Ungültiges PCap-Gerät"
 #define STR_2205	"OpenAL konnte nicht initialisiert werden, bitte stellen Sie sicher, dass sich die\nfolgende Laufzeitbibliothek in Ihrem Programmordner befindet:\n\nlibopenal-1.dll"
 #define STR_2206	"FluidSynth konnte nicht initialisiert werden, bitte stellen Sie sicher, dass sich die\nfolgende Laufzeitbibliothek in Ihrem Programmordner befindet:\n\nlibfluidsynth.dll"
+#define STR_2207	"Nicht genügend Hauptspeicher!"
 
 
 /* Application error messages (2300.) */
@@ -78,7 +79,7 @@
 #define STR_2305	"Gewählter Anzeigetreiber '%S' nicht verfügbar. Auf Standard zurücksetzen?"
 #define STR_2306	"Es gab nie ST506 oder ESDI CD-ROM Laufwerke"
 #define STR_2307	"USB wird noch nicht unterstützt"
-#define STR_2308	"Die neuen Einstellungen müssen erst gespeichert werden!"
+#define STR_2308	"Die Einstellungen müssen erst gespeichert werden!"
 
 
 /* Application messages (2400.) */

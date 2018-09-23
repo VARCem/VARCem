@@ -8,7 +8,7 @@
  *
  *		String definitions for "Kazakh (Kazakhstan)" language.
  *
- * Version:	@(#)VARCem-KZ.str	1.0.3	2018/09/03
+ * Version:	@(#)VARCem-KZ.str	1.0.4	2018/09/23
  *
  * Authors:	Arbars Zagadkin, <arbars.zagadkin@mail.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -66,6 +66,7 @@
 #define STR_2204	"PCap құрылғысы дұрыс емес"
 #define STR_2205	"OpenAL бастапқы жуктемеу мүмкін емес, сіздің бағдарламен бумасына \nкелесі кітапханасың қол жетімді тексерініз\n :\n\nlibopenal-1.dll"
 #define STR_2206	"FluidSynth бастапқы жуктемеу мүмкін емес, сіздің бағдарламен бумасына \nкелесі кітапханасың қол жетімді тексерініз\n :\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */
@@ -77,7 +78,7 @@
 #define STR_2305	"'%S' рендерері қол жетімсіз. Использовать основной? Негізгі пайдалау ма?"
 #define STR_2306	"ST506 және ESDI CD-ROM табақжаджүргізіктер ешқашан болмайды"
 #define STR_2307	"USB алайда қол жетімсіз"
-#define STR_2308        "You must save your new settings first!"
+#define STR_2308        "You must save your settings first!"
 
 
 /* Application messages (2400.) */

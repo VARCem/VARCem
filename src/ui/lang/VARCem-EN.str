@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem-EN.str	1.0.9	2018/09/03
+ * Version:	@(#)VARCem-EN.str	1.0.10	2018/09/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -70,6 +70,7 @@
 #define STR_2204	"Invalid PCap device"
 #define STR_2205	"Unable to initialize OpenAL, make sure you have the following library\nin your program folder:\n\nlibopenal-1.dll"
 #define STR_2206	"Unable to initialize FluidSynth, make sure you have the following library\nin your program folder:\n\nlibfluidsynth.dll"
+#define STR_2207	"System out of memory!"
 
 
 /* Application error messages (2300.) */
