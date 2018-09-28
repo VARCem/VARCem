@@ -11,7 +11,7 @@
  * NOTES:	OpenAT wip for 286-class machine with open BIOS.
  *		PS2_M80-486 wip, pending receipt of TRM's for machine.
  *
- * Version:	@(#)machine_table.c	1.0.25	2018/08/28
+ * Version:	@(#)machine_table.c	1.0.26	2018/09/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -106,7 +106,7 @@ const machine_t machines[] = {
 
     { "[386SX ISA] AMI 386SX clone",		ROM_AMI386SX,		"ami_386",		L"generic/ami/386",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								512,16384, 128, 128,	     machine_at_headland_init, NULL,			NULL			},
     { "[386SX ISA] Amstrad MegaPC",		ROM_MEGAPC,		"amstrad_megapc",	L"amstrad/megapc",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC,				  1,   16,   1, 128,	      machine_at_wd76c10_init, NULL,			NULL			},
-    { "[386SX ISA] Award 386SX clone",		ROM_AWARD386SX_OPTI495,	"award_386sx",		L"generic/award/opti495",	{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								  1,   64,   1, 128,	      machine_at_opti495_init, NULL,   			NULL			},
+    { "[386SX ISA] Award 386SX clone",		ROM_AWARD386SX_OPTI495,	"award_386sx",		L"generic/award/opti495",	{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								  1,   16,   1, 128,	      machine_at_opti495_init, NULL,   			NULL			},
     { "[386SX ISA] DTK 386SX clone",		ROM_DTK386,		"dtk_386",		L"dtk/386",			{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,								512, 8192, 128, 128,		 machine_at_neat_init, NULL,			NULL			},
     { "[386SX ISA] IBM PS/1 model 2121",	ROM_IBMPS1_2121,	"ibm_ps1_2121",		L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, &m_ps1_device,		NULL			},
     { "[386SX ISA] IBM PS/1 m.2121+ISA",	ROM_IBMPS1_2121_ISA,	"ibm_ps1_2121_isa",	L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, &m_ps1_device,		NULL			},

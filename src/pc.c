@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.54	2018/09/22
+ * Version:	@(#)pc.c	1.0.55	2018/09/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -490,7 +490,7 @@ pc_setup(int argc, wchar_t *argv[])
     int c, ret = 0;
 
     /* Grab the executable's full path. */
-    plat_get_exe_name(emu_path, sizeof(emu_path)-1);
+    plat_get_exe_name(emu_path, sizeof_w(emu_path));
     if ((p = plat_get_basename(emu_path)) != NULL)
 	*p = L'\0';
     wcscpy(exe_path, emu_path);
@@ -528,7 +528,7 @@ pc_setup(int argc, wchar_t *argv[])
      * a shortcut (desktop icon), however, the CWD
      * could have been set to something else.
      */
-    plat_getcwd(usr_path, sizeof_w(usr_path)-1);
+    plat_getcwd(usr_path, sizeof_w(usr_path));
     memset(path, 0x00, sizeof(path));
 
     for (c = 1; c < argc; c++) {
