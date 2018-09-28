@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.8	2018/05/24
+ * Version:	@(#)win_settings_machine.h	1.0.9	2018/09/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,9 +58,10 @@ machine_recalc_cpu(HWND hdlg)
     int rs = 0;
 
     rs = machine_getromset_ex(temp_machine);
+    cpu_flags = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[temp_cpu].cpu_flags;
+    cpu_type = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[temp_cpu].cpu_type;
 
     h = GetDlgItem(hdlg, IDC_COMBO_WS);
-    cpu_type = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[temp_cpu].cpu_type;
     if ((cpu_type >= CPU_286) && (cpu_type <= CPU_386DX))
 	EnableWindow(h, TRUE);
     else
@@ -68,19 +69,33 @@ machine_recalc_cpu(HWND hdlg)
 
 #ifdef USE_DYNAREC
     h = GetDlgItem(hdlg, IDC_CHECK_DYNAREC);
-    cpu_flags = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[temp_cpu].cpu_flags;
-    if (!(cpu_flags & CPU_SUPPORTS_DYNAREC) && (cpu_flags & CPU_REQUIRES_DYNAREC)) {
-	fatal("Attempting to select a CPU that requires the recompiler and does not support it at the same time\n");
-    }
-    if (!(cpu_flags & CPU_SUPPORTS_DYNAREC) || (cpu_flags & CPU_REQUIRES_DYNAREC)) {
-	if (!(cpu_flags & CPU_SUPPORTS_DYNAREC))
-		temp_dynarec = 0;
-	if (cpu_flags & CPU_REQUIRES_DYNAREC)
-		temp_dynarec = 1;
+    if (cpu_flags & CPU_SUPPORTS_DYNAREC) {
 	SendMessage(h, BM_SETCHECK, temp_dynarec, 0);
-	EnableWindow(h, FALSE);
+
+	/*
+	 * If Dynarec is not enabled, see if the CPU requires
+	 * it. If it does, the user must have forced it off
+	 * manually, and we respect that. We will just issue
+	 * a warning so they know.
+	 */
+	if (cpu_flags & CPU_REQUIRES_DYNAREC) {
+#ifdef RELEASE_BUILD
+		if (! temp_dynarec) {
+			//FIXME: make this a messagebox with a user warning instead!  --FvK
+			fatal("Attempting to select a CPU that requires the recompiler and does not support it at the same time\n");
+		}
+#endif
+	} else {
+		/* Supported but not required, unlock the checkbox. */
+		EnableWindow(h, TRUE);
+	}
     } else {
-	EnableWindow(h, TRUE);
+	/* CPU does not support Dynarec, un-check it. */
+	temp_dynarec = 0;
+	SendMessage(h, BM_SETCHECK, temp_dynarec, 0);
+
+	/* Since it is not supported, lock the checkbox. */
+	EnableWindow(h, FALSE);
     }
 #endif
 
