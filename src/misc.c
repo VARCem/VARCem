@@ -8,7 +8,7 @@
  *
  *		Misc functions that do not fit anywhere else.
  *
- * Version:	@(#)misc.c	1.0.2	2018/09/22
+ * Version:	@(#)misc.c	1.0.3	2018/10/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -88,6 +88,7 @@ get_val(const char *str)
     return(l);
 }
 
+#ifndef USE_STANDARD_MALLOC
 
 /* Safe version of malloc(3) that catches NULL returns. */
 void *
@@ -110,3 +111,5 @@ mem_alloc(size_t sz)
 
     return(ptr);
 }
+
+#endif
