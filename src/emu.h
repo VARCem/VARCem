@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.33	2018/10/03
+ * Version:	@(#)emu.h	1.0.33	2018/10/04
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -200,10 +200,8 @@ extern const wchar_t	*get_string(int id);
 extern uint32_t		get_val(const char *str);
 
 #ifndef USE_STANDARD_MALLOC
-
 extern void		*mem_alloc(size_t sz);
 #define malloc		mem_alloc
-
 #endif
 
 #ifdef __cplusplus
