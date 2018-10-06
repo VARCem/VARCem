@@ -114,7 +114,7 @@ ifndef DEV_BRANCH
  DEV_BRANCH	:= n
 endif
 ifndef AMD_K
- AMD_K		:= n
+ AMD_K		:= y
 endif
 ifndef LASERXT
  LASERXT	:= n
