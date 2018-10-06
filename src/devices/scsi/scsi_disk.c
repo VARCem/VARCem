@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.10	2018/05/06
+ * Version:	@(#)scsi_disk.c	1.0.11	2018/10/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,6 @@
 #include "../../nvr.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
-//#include "../system/intel_piix.h"
 #include "../cdrom/cdrom.h"
 #include "../disk/hdd.h"
 #include "../disk/hdc.h"
@@ -79,8 +78,7 @@
 
 scsi_disk_t	shdc[HDD_NUM];
 FILE		*shdf[HDD_NUM];
-
-uint8_t scsi_disks[16][8] = {
+uint8_t		scsi_disks[16][8] = {
     { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
     { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
     { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
@@ -101,7 +99,7 @@ uint8_t scsi_disks[16][8] = {
 
 
 /* Table of all SCSI commands and their flags, needed for the new disc change / not ready handler. */
-const uint8_t scsi_hd_command_flags[0x100] = {
+static const uint8_t scsi_hd_command_flags[0x100] = {
     IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x00 */
     IMPLEMENTED | ALLOW_UA | NONDATA | SCSI_ONLY,		/* 0x01 */
     0,
@@ -163,7 +161,7 @@ const uint8_t scsi_hd_command_flags[0x100] = {
 };
 
 
-uint64_t scsi_hd_mode_sense_page_flags = (1LL << 0x03) | (1LL << 0x04) | (1LL << 0x30) | (1LL << 0x3F);
+static const uint64_t scsi_hd_mode_sense_page_flags = (1LL << 0x03) | (1LL << 0x04) | (1LL << 0x30) | (1LL << 0x3F);
 
 /* This should be done in a better way but for time being, it's been done this way so it's not as huge and more readable. */
 static const mode_sense_pages_t scsi_hd_mode_sense_pages_default = {
