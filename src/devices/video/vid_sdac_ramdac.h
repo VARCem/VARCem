@@ -8,7 +8,7 @@
  *
  *		Definitions for the SDAC driver.
  *
- * Version:	@(#)vid_sdac_ramdac.h	1.0.2	2018/03/21
+ * Version:	@(#)vid_sdac_ramdac.h	1.0.3	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,22 +40,24 @@
 # define VIDEO_SDAC_RAMDAC_H
 
 
-typedef struct sdac_ramdac_t
-{
-        int magic_count;
-        uint8_t command;
-        int windex, rindex;
-        uint16_t regs[256];
-        int reg_ff;
-        int rs2;
+typedef struct {
+    uint16_t regs[256];
+    int magic_count,
+	windex, rindex,
+	reg_ff, rs2;
+    uint8_t command;
 } sdac_ramdac_t;
 
-void sdac_ramdac_out(uint16_t addr, uint8_t val, sdac_ramdac_t *ramdac, svga_t *svga);
-uint8_t sdac_ramdac_in(uint16_t addr, sdac_ramdac_t *ramdac, svga_t *svga);
 
-float sdac_getclock(int clock, void *p);
+extern const device_t sdac_ramdac_device;
 
-void sdac_init(sdac_ramdac_t *ramdac);
+
+extern void	sdac_ramdac_out(uint16_t addr, int rs2, uint8_t val,
+				sdac_ramdac_t *dev, svga_t *svga);
+extern uint8_t	sdac_ramdac_in(uint16_t addr, int rs2,
+			       sdac_ramdac_t *dev, svga_t *svga);
+
+extern float	sdac_getclock(int clock, void *p);
 
 
 #endif	/*VIDEO_SDAC_RAMDAC_H*/

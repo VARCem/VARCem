@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.8	2018/05/11
+ * Version:	@(#)hdc_ide_xta.c	1.0.9	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -92,6 +92,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog hdc_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -247,6 +248,7 @@ typedef struct {
     int8_t	irq;			/* controller IRQ channel */
     int8_t	dma;			/* controller DMA channel */
     int8_t	type;			/* controller type ID */
+    int8_t	spt;			/* sectors per track */
 
     uint32_t	rom_addr;		/* address where ROM is */
     rom_t	bios_rom;		/* descriptor for the BIOS */
@@ -296,20 +298,20 @@ static int
 get_sector(hdc_t *dev, drive_t *drive, off64_t *addr)
 {
     if (drive->cur_cyl != dev->track) {
-	hdc_log("%s: get_sector: wrong cylinder %d/%d\n",
-		dev->name, drive->cur_cyl, dev->track);
+	DEBUG("%s: get_sector: wrong cylinder %d/%d\n",
+	      dev->name, drive->cur_cyl, dev->track);
 	dev->sense = ERR_ILLADDR;
 	return(1);
     }
 
     if (dev->head >= drive->hpc) {
-	hdc_log("%s: get_sector: past end of heads\n", dev->name);
+	DEBUG("%s: get_sector: past end of heads\n", dev->name);
 	dev->sense = ERR_ILLADDR;
 	return(1);
     }
 
     if (dev->sector >= drive->spt) {
-	hdc_log("%s: get_sector: past end of sectors\n", dev->name);
+	DEBUG("%s: get_sector: past end of sectors\n", dev->name);
 	dev->sense = ERR_ILLADDR;
 	return(1);
     }
@@ -382,13 +384,12 @@ do_format(hdc_t *dev, drive_t *drive, dcb_t *dcb)
 		dev->head = dcb->head;
 		dev->sector = 0;
 
-#ifdef ENABLE_HDC_LOG
-		hdc_log("%s: format_%s(%d) %d,%d\n", dev->name,
-			(dcb->cmd==CMD_FORMAT_DRIVE)?"drive":"track",
-			drive->id, dev->track, dev->head);
-#endif
+		DEBUG("%s: format_%s(%d) %d,%d\n", dev->name,
+		      (dcb->cmd==CMD_FORMAT_DRIVE)?"drive":"track",
+		      drive->id, dev->track, dev->head);
+
 		/* Activate the status icon. */
-		ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
+		hdd_active(drive->hdd_num, 1);
 
 do_fmt:
 		/*
@@ -423,7 +424,7 @@ do_fmt:
     }
 
     /* De-activate the status icon. */
-    ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+    hdd_active(drive->hdd_num, 0);
 }
 
 
@@ -449,10 +450,9 @@ hdc_callback(void *priv)
 
     switch (dcb->cmd) {
 	case CMD_TEST_READY:
-#ifdef ENABLE_HDC_LOG
-		hdc_log("%s: test_ready(%d) ready=%d\n",
-			dev->name, dcb->drvsel, drive->present);
-#endif
+		DEBUG("%s: test_ready(%d) ready=%d\n",
+		      dev->name, dcb->drvsel, drive->present);
+
 		if (! drive->present) {
 			dev->comp |= COMP_ERR;
 			dev->sense = ERR_NOTRDY;
@@ -461,10 +461,9 @@ hdc_callback(void *priv)
 		break;
 
 	case CMD_RECALIBRATE:
-#ifdef ENABLE_HDC_LOG
-		hdc_log("%s: recalibrate(%d) ready=%d\n",
-			dev->name, dcb->drvsel, drive->present);
-#endif
+		DEBUG("%s: recalibrate(%d) ready=%d\n",
+		      dev->name, dcb->drvsel, drive->present);
+
 		if (! drive->present) {
 			dev->comp |= COMP_ERR;
 			dev->sense = ERR_NOTRDY;
@@ -477,10 +476,9 @@ hdc_callback(void *priv)
 	case CMD_READ_SENSE:
 		switch(dev->state) {
 			case STATE_IDLE:
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: sense(%d)\n",
-					dev->name, dcb->drvsel);
-#endif
+				DEBUG("%s: sense(%d)\n",
+				      dev->name, dcb->drvsel);
+
 				dev->buf_idx = 0;
 				dev->buf_len = 4;
 				dev->buf_ptr = dev->data;
@@ -530,18 +528,17 @@ hdc_callback(void *priv)
 
 			case STATE_SEND:
 				/* Activate the status icon. */
-				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: read_%s(%d: %d,%d,%d) cnt=%d\n",
-				    dev->name, (no_data)?"verify":"sector",
-				    drive->id, dev->track, dev->head,
-				    dev->sector, dev->count);
-#endif
+				hdd_active(drive->hdd_num, 1);
+
+				DEBUG("%s: read_%s(%d: %d,%d,%d) cnt=%d\n",
+				      dev->name, (no_data)?"verify":"sector",
+				      drive->id, dev->track, dev->head,
+				      dev->sector, dev->count);
 do_send:
 				/* Get address of sector to load. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 					dev->comp |= COMP_ERR;
 					set_intr(dev);
 					return;
@@ -581,7 +578,8 @@ do_send:
 						val = dma_channel_write(dev->dma,
 							*dev->buf_ptr);
 						if (val == DMA_NODATA) {
-							hdc_log("%s: CMD_READ_SECTORS out of data (idx=%d, len=%d)!\n", dev->name, dev->buf_idx, dev->buf_len);
+							ERRLOG("%s: CMD_READ_SECTORS out of data (idx=%d, len=%d)!\n",
+								dev->name, dev->buf_idx, dev->buf_len);
 
 							dev->status |= (STAT_CD | STAT_IO| STAT_REQ);
 							dev->callback = HDC_TIME;
@@ -598,14 +596,13 @@ do_send:
 			case STATE_SDONE:
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
-#ifdef ENABLE_HDC_LOG
-					hdc_log("%s: read_%s(%d) DONE\n",
-					    dev->name,
-					    (no_data)?"verify":"sector",
-					    drive->id);
-#endif
+					DEBUG("%s: read_%s(%d) DONE\n",
+					      dev->name,
+					      (no_data)?"verify":"sector",
+					      drive->id);
+
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 
 					set_intr(dev);
 					return;
@@ -653,13 +650,12 @@ do_send:
 
 			case STATE_RECV:
 				/* Activate the status icon. */
-				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: write_%s(%d: %d,%d,%d) cnt=%d\n",
-				    dev->name, (no_data)?"verify":"sector",
-				    dcb->drvsel, dev->track,
-				    dev->head, dev->sector, dev->count);
-#endif
+				hdd_active(drive->hdd_num, 1);
+
+				DEBUG("%s: write_%s(%d: %d,%d,%d) cnt=%d\n",
+				      dev->name, (no_data)?"verify":"sector",
+				      dcb->drvsel, dev->track,
+				      dev->head, dev->sector, dev->count);
 do_recv:
 				/* Ready to transfer the data in. */
 				dev->state = STATE_RDATA;
@@ -687,9 +683,11 @@ do_recv:
 					while (dev->buf_idx < dev->buf_len) {
 						val = dma_channel_read(dev->dma);
 						if (val == DMA_NODATA) {
-							hdc_log("%s: CMD_WRITE_SECTORS out of data (idx=%d, len=%d)!\n", dev->name, dev->buf_idx, dev->buf_len);
+							ERRLOG("%s: CMD_WRITE_SECTORS out of data (idx=%d, len=%d)!\n",
+								dev->name, dev->buf_idx, dev->buf_len);
 
-							hdc_log("%s: CMD_WRITE_SECTORS out of data!\n", dev->name);
+							ERRLOG("%s: CMD_WRITE_SECTORS out of data!\n",
+								dev->name);
 							dev->status |= (STAT_CD | STAT_IO | STAT_REQ);
 							dev->callback = HDC_TIME;
 							return;
@@ -712,7 +710,7 @@ do_recv:
 				/* Get address of sector to write. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 
 					dev->comp |= COMP_ERR;
 					set_intr(dev);
@@ -725,13 +723,13 @@ do_recv:
 
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
-#ifdef ENABLE_HDC_LOG
-					hdc_log("HDC: write_%s(%d) DONE\n",
-					    (no_data)?"verify":"sector",
-					    drive->id);
-#endif
+					DEBUG("%s: write_%s(%d) DONE\n",
+					      dev->name,
+					      (no_data)?"verify":"sector",
+					      drive->id);
+
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 
 					set_intr(dev);
 					return;
@@ -760,10 +758,10 @@ do_recv:
 	case CMD_SEEK:
 		/* Seek to cylinder. */
 		val = (dcb->cyl_low | (dcb->cyl_high << 8));
-#ifdef ENABLE_HDC_LOG
-		hdc_log("%s: seek(%d) %d/%d ready=%d\n", dev->name,
-			dcb->drvsel, val, drive->cur_cyl, drive->present);
-#endif
+
+		DEBUG("%s: seek(%d) %d/%d ready=%d\n", dev->name,
+		      dcb->drvsel, val, drive->cur_cyl, drive->present);
+
 		if (drive->present) {
 			do_seek(dev, drive, val);
 			if (val != drive->cur_cyl) {
@@ -792,12 +790,12 @@ do_recv:
 				drive->tracks =
 				    (params->cyl_high << 8) | params->cyl_low;
 				drive->hpc = params->heads;
-				drive->spt = 17	/*hardcoded*/;
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: set_params(%d) cyl=%d,hd=%d,spt=%d\n",
-					dev->name, dcb->drvsel, drive->tracks,
-					drive->hpc, drive->spt);
-#endif
+				drive->spt = dev->spt;	/*hardcoded*/
+
+				INFO("%s: set_params(%d) cyl=%d,hd=%d,spt=%d\n",
+				      dev->name, dcb->drvsel, drive->tracks,
+				      drive->hpc, drive->spt);
+
 				dev->status &= ~STAT_REQ;
 				set_intr(dev);
 				break;
@@ -807,10 +805,7 @@ do_recv:
 	case CMD_WRITE_SECTOR_BUFFER:
 		switch (dev->state) {
 			case STATE_IDLE:
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: write_sector_buffer()\n",
-							dev->name);
-#endif
+				DEBUG("%s: write_sector_buffer()\n", dev->name);
 				dev->buf_idx = 0;
 				dev->buf_len = 512;
 				dev->state = STATE_RDATA;
@@ -829,7 +824,8 @@ do_recv:
 					while (dev->buf_idx < dev->buf_len) {
 						val = dma_channel_read(dev->dma);
 						if (val == DMA_NODATA) {
-							hdc_log("%s: CMD_WRITE_BUFFER out of data!\n", dev->name);
+							ERRLOG("%s: CMD_WRITE_BUFFER out of data!\n",
+								dev->name);
 							dev->status |= (STAT_CD | STAT_IO | STAT_REQ);
 							dev->callback = HDC_TIME;
 							return;
@@ -855,9 +851,7 @@ do_recv:
 	case CMD_RAM_DIAGS:
 		switch(dev->state) {
 			case STATE_IDLE:
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: ram_diags\n", dev->name);
-#endif
+				DEBUG("%s: ram_diags\n", dev->name);
 				dev->state = STATE_RDONE;
 				dev->callback = 5*HDC_TIME;
 				break;
@@ -871,10 +865,9 @@ do_recv:
 	case CMD_DRIVE_DIAGS:
 		switch(dev->state) {
 			case STATE_IDLE:
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: drive_diags(%d) ready=%d\n",
-					dev->name, dcb->drvsel, drive->present);
-#endif
+				DEBUG("%s: drive_diags(%d) ready=%d\n",
+				      dev->name, dcb->drvsel, drive->present);
+
 				if (drive->present) {
 					dev->state = STATE_RDONE;
 					dev->callback = 5*HDC_TIME;
@@ -894,9 +887,7 @@ do_recv:
 	case CMD_CTRL_DIAGS:
 		switch(dev->state) {
 			case STATE_IDLE:
-#ifdef ENABLE_HDC_LOG
-				hdc_log("%s: ctrl_diags\n", dev->name);
-#endif
+				DEBUG("%s: ctrl_diags\n", dev->name);
 				dev->state = STATE_RDONE;
 				dev->callback = 10*HDC_TIME;
 				break;
@@ -908,7 +899,7 @@ do_recv:
 		break;
 
 	default:
-		hdc_log("%s: unknown command - %02x\n", dev->name, dcb->cmd);
+		DEBUG("%s: unknown command - %02x\n", dev->name, dcb->cmd);
 		dev->comp |= COMP_ERR;
 		dev->sense = ERR_ILLCMD;
 		set_intr(dev);
@@ -929,8 +920,8 @@ hdc_read(uint16_t port, void *priv)
 
 		if (dev->state == STATE_SDATA) {
 			if (dev->buf_idx > dev->buf_len) {
-				hdc_log("%s: read with empty buffer!\n",
-								dev->name);
+				DEBUG("%s: read with empty buffer!\n",
+							dev->name);
 				dev->comp |= COMP_ERR;
 				dev->sense = ERR_ILLCMD;
 				break;
@@ -973,14 +964,16 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 	case 0:		/* DATA register */
 		if (dev->state == STATE_RDATA) {
 			if (! (dev->status & STAT_REQ)) {
-				hdc_log("%s: not ready for command/data!\n", dev->name);
+				DEBUG("%s: not ready for command/data!\n",
+								dev->name);
 				dev->comp |= COMP_ERR;
 				dev->sense = ERR_ILLCMD;
 				break;
 			}
 
 			if (dev->buf_idx >= dev->buf_len) {
-				hdc_log("%s: write with full buffer!\n", dev->name);
+				DEBUG("%s: write with full buffer!\n",
+							dev->name);
 				dev->comp |= COMP_ERR;
 				dev->sense = ERR_ILLCMD;
 				break;
@@ -1029,11 +1022,13 @@ xta_init(const device_t *info)
     wchar_t *fn = NULL;
     hdc_t *dev;
     int c, i;
+    int bus;
 
     /* Allocate and initialize device block. */
-    dev = malloc(sizeof(hdc_t));
+    dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
-    dev->type = info->local;
+    dev->type = info->local & 255;
+    bus = (info->local >> 8) & 255;
 
     /* Do per-controller-type setup. */
     switch(dev->type) {
@@ -1043,6 +1038,7 @@ xta_init(const device_t *info)
 		dev->irq = device_get_config_int("irq");
 		dev->rom_addr = device_get_config_hex20("bios_addr");
 		dev->dma = 3;
+		dev->spt = 17;	/* MFM */
 		fn = WD_BIOS_FILE;
 		break;
 
@@ -1051,19 +1047,30 @@ xta_init(const device_t *info)
 		dev->base = 0x0320;
 		dev->irq = 5;
 		dev->dma = 3;
+		dev->spt = 17;	/* MFM */
+		break;
+
+	case 2:		/* Toshiba T1200 */
+		dev->name = "T1200-HD";
+		dev->base = 0x0320;
+		dev->irq = 5;
+		dev->dma = 3;
+		dev->rom_addr = 0xc8000;
+		dev->spt = 17;
+		fn = WD_BIOS_FILE;
 		break;
     }
 
-    pclog("%s: initializing (I/O=%04X, IRQ=%d, DMA=%d",
+    INFO("%s: initializing (I/O=%04X, IRQ=%d, DMA=%d",
 		dev->name, dev->base, dev->irq, dev->dma);
     if (dev->rom_addr != 0x000000)
-	pclog(", BIOS=%06X", dev->rom_addr);
-    pclog(")\n");
+	INFO(", BIOS=%06X", dev->rom_addr);
+    INFO(")\n");
 
     /* Load any disks for this device class. */
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_IDE) && (hdd[i].id.ide_channel < XTA_NUM)) {
+	if ((hdd[i].bus == bus) && (hdd[i].id.ide_channel < XTA_NUM)) {
 		drive = &dev->drives[hdd[i].id.ide_channel];
 
 		if (! hdd_image_load(i)) {
@@ -1084,9 +1091,9 @@ xta_init(const device_t *info)
 		drive->hpc = drive->cfg_hpc;
 		drive->tracks = drive->cfg_tracks;
 
-		pclog("%s: drive%d (cyl=%d,hd=%d,spt=%d), disk %d\n",
-			dev->name, hdd[i].id.ide_channel, drive->tracks,
-			drive->hpc, drive->spt, i);
+		INFO("%s: drive%d (cyl=%d,hd=%d,spt=%d), disk %d\n",
+		     dev->name, hdd[i].id.ide_channel, drive->tracks,
+		     drive->hpc, drive->spt, i);
 
 		if (++c > XTA_NUM) break;
 	}
@@ -1132,68 +1139,77 @@ xta_close(void *priv)
 
 
 static const device_config_t wdxt150_config[] = {
+    {
+        "base", "Address", CONFIG_HEX16, "", 0x0320,		/*W2*/
         {
-		"base", "Address", CONFIG_HEX16, "", 0x0320,		/*W2*/
                 {
-                        {
-                                "320H", 0x0320
-                        },
-                        {
-                                "324H", 0x0324
-                        },
-                        {
-                                ""
-                        }
+                        "320H", 0x0320
                 },
-        },
+                {
+                        "324H", 0x0324
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "irq", "IRQ", CONFIG_SELECTION, "", 5,			/*W3*/
         {
-		"irq", "IRQ", CONFIG_SELECTION, "", 5,			/*W3*/
                 {
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 4", 4
-                        },
-                        {
-                                ""
-                        }
+                        "IRQ 5", 5
                 },
-        },
+                {
+                        "IRQ 4", 4
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "bios_addr", "BIOS Address", CONFIG_HEX20, "", 0xc8000, /*W1*/
         {
-                "bios_addr", "BIOS Address", CONFIG_HEX20, "", 0xc8000, /*W1*/
                 {
-                        {
-                                "C800H", 0xc8000
-                        },
-                        {
-                                "CA00H", 0xca000
-                        },
-                        {
-                                ""
-                        }
+                        "C800H", 0xc8000
                 },
-        },
-	{
-		"", "", -1
-	}
+                {
+                        "CA00H", 0xca000
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "", "", -1
+    }
 };
 
 
 const device_t xta_wdxt150_device = {
-    "WDXT-150 Fixed Disk Controller",
+    "WDXT-150 XTA Fixed Disk Controller",
     DEVICE_ISA,
-    0,
+    (HDD_BUS_IDE << 8) | 0,
     xta_init, xta_close, NULL,
     NULL, NULL, NULL, NULL,
     wdxt150_config
 };
 
-
 const device_t xta_hd20_device = {
     "EuroPC HD20 Fixed Disk Controller",
     DEVICE_ISA,
-    1,
+    (HDD_BUS_IDE << 8) | 1,
+    xta_init, xta_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+
+const device_t xta_t1200_device = {
+    "Toshiba T1200 Fixed Disk Controller",
+    DEVICE_ISA,
+    (HDD_BUS_IDE << 8) | 2,
     xta_init, xta_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

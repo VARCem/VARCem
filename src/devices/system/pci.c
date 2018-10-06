@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.5	2018/05/06
+ * Version:	@(#)pci.c	1.0.7	2018/09/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,12 +49,9 @@
 #include "../../mem.h"
 #include "../../device.h"
 #include "../input/keyboard.h"
-#include "../disk/hdc.h"
-#include "../disk/hdc_ide.h"
-#include "../disk/zip.h"
-#include "../cdrom/cdrom.h"
 #include "pic.h"
 #include "pci.h"
+#include "intel_piix.h"
 
 
 typedef struct
@@ -90,7 +87,6 @@ int pci_burst_time, pci_nonburst_time;
 
 static int trc_reg = 0;
 
-PCI_RESET pci_reset_handler;
 
 #ifdef ENABLE_BUS_LOG
 int pci_do_log = ENABLE_BUS_LOG;
@@ -674,48 +670,10 @@ static uint8_t trc_read(uint16_t port, void *priv)
 
 static void trc_reset(uint8_t val)
 {
-	int i = 0;
-
-	if (val & 2)
-	{
-		if (pci_reset_handler.pci_master_reset)
-		{
-			pci_reset_handler.pci_master_reset();
-		}
-
-		if (pci_reset_handler.pci_set_reset)
-		{
-			pci_reset_handler.pci_set_reset();
-		}
-
-		if (pci_reset_handler.super_io_reset)
-		{
-			pci_reset_handler.super_io_reset();
-		}
-
-#if 0
-		ide_reset();
-#else
-		ide_set_all_signatures();
-#endif
-
-		for (i = 0; i < CDROM_NUM; i++)
-		{
-			if ((cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY) || (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA))
-			{
-				cdrom_reset(i);
-			}
-		}
-		for (i = 0; i < ZIP_NUM; i++)
-		{
-			if ((zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_ONLY) || (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA))
-			{
-				zip_reset(i);
-			}
-		}
+	if (val & 2) {
+		device_reset_all(DEVICE_PCI);
 
 		port_92_reset();
-		keyboard_at_reset();
 
 		pci_reset();
 	}
@@ -774,10 +732,6 @@ void pci_init(int type)
 		pci_mirqs[c].enabled = 0;
 		pci_mirqs[c].irq_line = PCI_IRQ_DISABLED;
 	}
-
-	pci_reset_handler.pci_master_reset = NULL;
-	pci_reset_handler.pci_set_reset = NULL;
-	pci_reset_handler.super_io_reset = NULL;
 }
 
 void pci_register_slot(int card, int type, int inta, int intb, int intc, int intd)

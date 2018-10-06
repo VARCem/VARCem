@@ -42,7 +42,7 @@
  *		which are the same as the XGA. It supports up to 1MB of VRAM,
  *		but we lock it down to 512K. The PS/1 2122 had 256K.
  *
- * Version:	@(#)vid_ti_cf62011.c	1.0.4	2018/05/06
+ * Version:	@(#)vid_ti_cf62011.c	1.0.6	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,7 +76,6 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../config.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -111,7 +110,6 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
     if (((addr & 0xfff0) == 0x03d0 || (addr & 0xfff0) == 0x03b0) &&
 	!(svga->miscout & 1)) addr ^= 0x60;
 #endif
-    // pclog("TISVGA_out(%04x, %02x)\n", addr, val);
 
     switch (addr) {
 	case 0x0102:
@@ -119,10 +117,12 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 		return;
 
 	case 0x03d4:
-		svga->crtcreg = val & 0x1f;
+		svga->crtcreg = val & 0x3f;
 		return;
 
 	case 0x03d5:
+		if (svga->crtcreg & 0x20)
+			return;
 		if ((svga->crtcreg < 7) && (svga->crtc[0x11] & 0x80))
 			return;
 		if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
@@ -190,7 +190,10 @@ vid_in(uint16_t addr, void *priv)
 		break;
 
 	case 0x03d5:
-		ret = svga->crtc[svga->crtcreg];
+		if (svga->crtcreg & 0x20)
+			ret = 0xff;
+		else
+			ret = svga->crtc[svga->crtcreg];
 		break;
 
 	case 0x2100:
@@ -209,8 +212,6 @@ vid_in(uint16_t addr, void *priv)
 		ret = svga_in(addr, svga);
 		break;
     }
-
-    // pclog("TISVGA_in(%04x) = %02x\n", addr, ret);
 
     return(ret);
 }
@@ -235,15 +236,6 @@ vid_force_redraw(void *priv)
 
 
 static void
-vid_add_status_info(char *s, int max_len, void *priv)
-{
-    tivga_t *ti = (tivga_t *)priv;
-
-    svga_add_status_info(s, max_len, &ti->svga);
-}
-
-
-static void
 vid_close(void *priv)
 {
     tivga_t *ti = (tivga_t *)priv;
@@ -260,7 +252,7 @@ vid_init(const device_t *info)
     tivga_t *ti;
 
     /* Allocate control block and initialize. */
-    ti = (tivga_t *)malloc(sizeof(tivga_t));
+    ti = (tivga_t *)mem_alloc(sizeof(tivga_t));
     memset(ti, 0x00, sizeof(tivga_t));
 
     /* Set amount of VRAM in KB. */
@@ -269,7 +261,7 @@ vid_init(const device_t *info)
       else
 	ti->vram_size = info->local;
 
-    pclog("VIDEO: initializing %s, %dK VRAM\n", info->name, ti->vram_size);
+    DEBUG("VIDEO: initializing %s, %dK VRAM\n", info->name, ti->vram_size);
 
     svga_init(&ti->svga, ti,
 	      ti->vram_size<<10,
@@ -314,13 +306,13 @@ static const device_config_t vid_config[] =
 
 const device_t ti_cf62011_device = {
     "TI CF62011 SVGA",
-    0,
+    DEVICE_ISA,
     0,
     vid_init, vid_close, NULL,
     NULL,
     vid_speed_changed,
     vid_force_redraw,
-    vid_add_status_info,
+    NULL,
     vid_config
 };
 #endif
@@ -328,12 +320,12 @@ const device_t ti_cf62011_device = {
 
 const device_t ibm_ps1_2121_device = {
     "IBM PS/1 Model 2121 SVGA",
-    0,
+    DEVICE_ISA,
     512,
     vid_init, vid_close, NULL,
     NULL,
     vid_speed_changed,
     vid_force_redraw,
-    vid_add_status_info,
+    NULL,
     NULL
 };

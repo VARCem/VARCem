@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.9	2018/05/06
+ * Version:	@(#)scsi_ncr53c810.c	1.0.10	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog scsi_dev_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -62,7 +63,8 @@
 #include "scsi_ncr53c810.h"
 
 
-#define ncr53c810_log	scsi_dev_log
+#define NCR53C810_ROM	L"scsi/ncr/ncr53c810/ncr307.bin"
+#define USE_PCI_BAR	0
 
 #define NCR_SCNTL0_TRG    0x01
 #define NCR_SCNTL0_AAP    0x02
@@ -188,6 +190,7 @@
 
 #define NCR_BUF_SIZE	  4096
 
+
 typedef struct ncr53c810_request {
     uint32_t tag;
     uint32_t dma_len;
@@ -196,23 +199,28 @@ typedef struct ncr53c810_request {
     int out;
 } ncr53c810_request;
 
-typedef enum
-{
-        SCSI_STATE_SEND_COMMAND,
-        SCSI_STATE_READ_DATA,
-        SCSI_STATE_WRITE_DATA,
-        SCSI_STATE_READ_STATUS,
-        SCSI_STATE_READ_MESSAGE,
-	SCSI_STATE_WRITE_MESSAGE
+typedef enum {
+    SCSI_STATE_SEND_COMMAND,
+    SCSI_STATE_READ_DATA,
+    SCSI_STATE_WRITE_DATA,
+    SCSI_STATE_READ_STATUS,
+    SCSI_STATE_READ_MESSAGE,
+    SCSI_STATE_WRITE_MESSAGE
 } scsi_state_t;
 
 typedef struct {
     uint8_t	pci_slot;
+    int		has_bios;
+    rom_t	bios;
+#if USE_PCI_BAR
+    uint32_t	bios_addr,
+		bios_mask;
+#endif
     int		PCIBase;
     int		MMIOBase;
-    mem_mapping_t mmio_mapping;
+    mem_map_t	mmio_mapping;
     int		RAMBase;
-    mem_mapping_t ram_mapping;
+    mem_map_t	ram_mapping;
 
     int carry; /* ??? Should this be an a visible register somewhere?  */
     int status;
@@ -332,7 +340,9 @@ ncr53c810_irq_on_rsl(ncr53c810_t *dev)
 static void
 ncr53c810_soft_reset(ncr53c810_t *dev)
 {
-    ncr53c810_log("LSI Reset\n");
+    int i, j;
+
+    DEBUG("LSI Reset\n");
     dev->timer_period = dev->timer_enabled = 0;
 
     dev->carry = 0;
@@ -386,42 +396,49 @@ ncr53c810_soft_reset(ncr53c810_t *dev)
     dev->last_level = 0;
     dev->gpreg0 = 0;
     dev->sstop = 1;
+
+    for (i = 0; i < 16; i++) {
+	for (j = 0; j < 8; j++)
+		scsi_device_reset(i, j);
+    }
 }
 
 
 static void
 ncr53c810_read(ncr53c810_t *dev, uint32_t addr, uint8_t *buf, uint32_t len)
 {
-	uint32_t i = 0;
+    uint32_t i = 0;
 
-	ncr53c810_log("ncr53c810_read(): %08X-%08X, length %i\n", addr, (addr + len - 1), len);
+    DEBUG("ncr53c810_read(): %08X-%08X, length %i\n",
+	  addr, (addr + len - 1), len);
 
-	if (dev->dmode & NCR_DMODE_SIOM) {
-		ncr53c810_log("NCR 810: Reading from I/O address %04X\n", (uint16_t) addr);
-		for (i = 0; i < len; i++)
-			buf[i] = inb((uint16_t) (addr + i));
-	} else {
-		ncr53c810_log("NCR 810: Reading from memory address %08X\n", addr);
-        	DMAPageRead(addr, buf, len);
-	}
+    if (dev->dmode & NCR_DMODE_SIOM) {
+	DEBUG("NCR 810: Reading from I/O address %04X\n", (uint16_t) addr);
+	for (i = 0; i < len; i++)
+		buf[i] = inb((uint16_t) (addr + i));
+    } else {
+	DEBUG("NCR 810: Reading from memory address %08X\n", addr);
+       	DMAPageRead(addr, buf, len);
+    }
 }
 
 
 static void
 ncr53c810_write(ncr53c810_t *dev, uint32_t addr, uint8_t *buf, uint32_t len)
 {
-	uint32_t i = 0;
+    uint32_t i = 0;
 
-	ncr53c810_log("ncr53c810_write(): %08X-%08X, length %i\n", addr, (addr + len - 1), len);
+    DEBUG("ncr53c810_write(): %08X-%08X, length %i\n",
+	  addr, (addr + len - 1), len);
 
-	if (dev->dmode & NCR_DMODE_DIOM) {
-		ncr53c810_log("NCR 810: Writing to I/O address %04X\n", (uint16_t) addr);
-		for (i = 0; i < len; i++)
-			outb((uint16_t) (addr + i), buf[i]);
-	} else {
-		ncr53c810_log("NCR 810: Writing to memory address %08X\n", addr);
-        	DMAPageWrite(addr, buf, len);
-	}
+    if (dev->dmode & NCR_DMODE_DIOM) {
+	DEBUG("NCR 810: Writing to I/O address %04X\n", (uint16_t) addr);
+	for (i = 0; i < len; i++)
+		outb((uint16_t) (addr + i), buf[i]);
+    } else {
+	DEBUG("NCR 810: Writing to memory address %08X\n", addr);
+       	DMAPageWrite(addr, buf, len);
+    }
 }
 
 
@@ -429,8 +446,11 @@ static __inline uint32_t
 read_dword(ncr53c810_t *dev, uint32_t addr)
 {
     uint32_t buf;
-    ncr53c810_log("Reading the next DWORD from memory (%08X)...\n", addr);
+
+    DEBUG("Reading the next DWORD from memory (%08X)...\n", addr);
+
     DMAPageRead(addr, (uint8_t *)&buf, 4);
+
     return buf;
 }
 
@@ -440,10 +460,10 @@ void do_irq(ncr53c810_t *dev, int level)
 {
     if (level) {
     	pci_set_irq(dev->pci_slot, PCI_INTA);
-	ncr53c810_log("Raising IRQ...\n");
+	DEBUG("Raising IRQ...\n");
     } else {
     	pci_clear_irq(dev->pci_slot, PCI_INTA);
-	ncr53c810_log("Lowering IRQ...\n");
+	DEBUG("Lowering IRQ...\n");
     }
 }
 
@@ -477,8 +497,8 @@ ncr53c810_update_irq(ncr53c810_t *dev)
     }
 
     if (level != dev->last_level) {
-        ncr53c810_log("Update IRQ level %d dstat %02x sist %02x%02x\n",
-                level, dev->dstat, dev->sist1, dev->sist0);
+        DEBUG("Update IRQ level %d dstat %02x sist %02x%02x\n",
+	      level, dev->dstat, dev->sist1, dev->sist0);
         dev->last_level = level;
 	do_irq(dev, level);	/* Only do something with the IRQ if the new level differs from the previous one. */
     }
@@ -492,8 +512,9 @@ ncr53c810_script_scsi_interrupt(ncr53c810_t *dev, int stat0, int stat1)
     uint32_t mask0;
     uint32_t mask1;
 
-    ncr53c810_log("SCSI Interrupt 0x%02x%02x prev 0x%02x%02x\n",
-            stat1, stat0, dev->sist1, dev->sist0);
+    DEBUG("SCSI Interrupt 0x%02x%02x prev 0x%02x%02x\n",
+	  stat1, stat0, dev->sist1, dev->sist0);
+
     dev->sist0 |= stat0;
     dev->sist1 |= stat1;
     /* Stop processor on fatal or unmasked interrupt.  As a special hack
@@ -503,7 +524,7 @@ ncr53c810_script_scsi_interrupt(ncr53c810_t *dev, int stat0, int stat1)
     mask1 = dev->sien1 | ~(NCR_SIST1_GEN | NCR_SIST1_HTH);
     mask1 &= ~NCR_SIST1_STO;
     if ((dev->sist0 & mask0) || (dev->sist1 & mask1)) {
-	ncr53c810_log("NCR 810: IRQ-mandated stop\n");
+	DEBUG("NCR 810: IRQ-mandated stop\n");
 	dev->sstop = 1;
 	dev->timer_period = dev->timer_enabled = 0;
     }
@@ -515,7 +536,7 @@ ncr53c810_script_scsi_interrupt(ncr53c810_t *dev, int stat0, int stat1)
 static void
 ncr53c810_script_dma_interrupt(ncr53c810_t *dev, int stat)
 {
-    ncr53c810_log("DMA Interrupt 0x%x prev 0x%x\n", stat, dev->dstat);
+    DEBUG("DMA Interrupt 0x%x prev 0x%x\n", stat, dev->dstat);
     dev->dstat |= stat;
     ncr53c810_update_irq(dev);
     dev->sstop = 1;
@@ -534,7 +555,7 @@ static void
 ncr53c810_bad_phase(ncr53c810_t *dev, int out, int new_phase)
 {
     /* Trigger a phase mismatch.  */
-    ncr53c810_log("Phase mismatch interrupt\n");
+    DEBUG("Phase mismatch interrupt\n");
     ncr53c810_script_scsi_interrupt(dev, NCR_SIST0_MA, 0);
     dev->sstop = 1;
     dev->timer_period = dev->timer_enabled = 0;
@@ -555,7 +576,7 @@ ncr53c810_disconnect(ncr53c810_t *dev)
 static void
 ncr53c810_bad_selection(ncr53c810_t *dev, uint32_t id)
 {
-    ncr53c810_log("Selected absent target %d\n", id);
+    DEBUG("Selected absent target %d\n", id);
     ncr53c810_script_scsi_interrupt(dev, 0, NCR_SIST1_STO);
     ncr53c810_disconnect(dev);
 }
@@ -567,9 +588,10 @@ ncr53c810_command_complete(void *priv, uint32_t status)
 {
     ncr53c810_t *dev = (ncr53c810_t *)priv;
     int out;
-	
+
+    DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Command complete status=%d\n", dev->current->tag, dev->current_lun, dev->last_command, (int)status);
+
     out = (dev->sstat1 & PHASE_MASK) == PHASE_DO;
-    ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Command complete status=%d\n", dev->current->tag, dev->current_lun, dev->last_command, (int)status);
     dev->status = status;
     dev->command_complete = 2;	
     if (dev->waiting && dev->dbc != 0) {
@@ -592,14 +614,14 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 
     sd = &SCSIDevices[id][dev->current_lun];
 
-    if (((id == 0xff) && !scsi_device_present(id, dev->current_lun))) {
-	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Device not present when attempting to do DMA\n", id, dev->current_lun, dev->last_command);
+    if ((!scsi_device_present(id, dev->current_lun))) {
+	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Device not present when attempting to do DMA\n", id, dev->current_lun, dev->last_command);
 	return;
     }
 	
     if (!dev->current->dma_len) {
 	/* Wait until data is available.  */
-	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: DMA no data available\n", id, dev->current_lun, dev->last_command);
+	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: DMA no data available\n", id, dev->current_lun, dev->last_command);
 	return;
     }
 
@@ -610,7 +632,7 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 
     addr = dev->dnad;
 
-    ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: DMA addr=0x%08x len=%d cur_len=%d dev->dbc=%d\n", id, dev->current_lun, dev->last_command, dev->dnad, dev->temp_buf_len, count, tdbc);
+    DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: DMA addr=0x%08x len=%d cur_len=%d dev->dbc=%d\n", id, dev->current_lun, dev->last_command, dev->dnad, dev->temp_buf_len, count, tdbc);
     dev->dnad += count;
     dev->dbc -= count;
 
@@ -618,7 +640,7 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 	ncr53c810_read(dev, addr, sd->CmdBuffer+dev->buffer_pos, count);
     else {
 	if (!dev->buffer_pos) {
-		ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: SCSI Command Phase 1 on PHASE_DI\n", id, dev->current_lun, dev->last_command);
+		DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: SCSI Command Phase 1 on PHASE_DI\n", id, dev->current_lun, dev->last_command);
 		scsi_device_command_phase1(dev->current->tag, dev->current_lun);
 	}
 	ncr53c810_write(dev, addr, sd->CmdBuffer+dev->buffer_pos, count);
@@ -629,7 +651,7 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 
     if (dev->temp_buf_len <= 0) {
 	if (out) {
-		ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: SCSI Command Phase 1 on PHASE_DO\n", id, dev->current_lun, dev->last_command);
+		DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: SCSI Command Phase 1 on PHASE_DO\n", id, dev->current_lun, dev->last_command);
 		scsi_device_command_phase1(id, dev->current_lun);
 	}
 	if (sd->CmdBuffer != NULL) {
@@ -638,7 +660,7 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 	}
 	ncr53c810_command_complete(dev, sd->Status);
     } else {
-	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Resume SCRIPTS\n", id, dev->current_lun, dev->last_command);
+	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Resume SCRIPTS\n", id, dev->current_lun, dev->last_command);
 	dev->sstop = 0;
     }
 }
@@ -649,9 +671,9 @@ static void
 ncr53c810_add_msg_byte(ncr53c810_t *dev, uint8_t data)
 {
     if (dev->msg_len >= NCR_MAX_MSGIN_LEN)
-	ncr53c810_log("MSG IN data too long\n");
+	DEBUG("MSG IN data too long\n");
     else {
-	ncr53c810_log("MSG IN 0x%02x\n", data);
+	DEBUG("MSG IN 0x%02x\n", data);
 	dev->msg[dev->msg_len++] = data;
     }
 }
@@ -668,28 +690,28 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
     memset(buf, 0, 12);
     DMAPageRead(dev->dnad, buf, MIN(12, dev->dbc));
     if (dev->dbc > 12) {
-	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: CDB length %i too big\n", id, dev->current_lun, buf[0], dev->dbc);
+	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: CDB length %i too big\n", id, dev->current_lun, buf[0], dev->dbc);
 	dev->dbc = 12;
     }
     dev->sfbr = buf[0];
     dev->command_complete = 0;
 
     sd = &SCSIDevices[id][dev->current_lun];
-    if (((id == 0xff) || !scsi_device_present(id, dev->current_lun))) {
-	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Bad Selection\n", id, dev->current_lun, buf[0]);
+    if (!scsi_device_present(id, dev->current_lun)) {
+	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Bad Selection\n", id, dev->current_lun, buf[0]);
 	ncr53c810_bad_selection(dev, id);
 	return(0);
     }
 
-    dev->current = (ncr53c810_request*)malloc(sizeof(ncr53c810_request));
+    dev->current = (ncr53c810_request*)mem_alloc(sizeof(ncr53c810_request));
     dev->current->tag = id;
 
     sd->BufferLength = -1;
 
-    ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: DBC=%i\n", id, dev->current_lun, buf[0], dev->dbc);
+    DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: DBC=%i\n", id, dev->current_lun, buf[0], dev->dbc);
     dev->last_command = buf[0];
 
-    scsi_device_command_phase0(dev->current->tag, dev->current_lun, dev->dbc, buf);
+    scsi_device_command_phase0(dev->current->tag, dev->current_lun, buf);
     dev->hba_private = (void *)dev->current;
 
     dev->waiting = 0;
@@ -698,12 +720,12 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
     dev->temp_buf_len = sd->BufferLength;
 
     if (sd->BufferLength > 0) {
-	sd->CmdBuffer = (uint8_t *)malloc(sd->BufferLength);
+	sd->CmdBuffer = (uint8_t *)mem_alloc(sd->BufferLength);
 	dev->current->dma_len = sd->BufferLength;
     }
 
     if ((sd->Phase == SCSI_PHASE_DATA_IN) && (sd->BufferLength > 0)) {
-	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DI\n", id, dev->current_lun, buf[0]);
+	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DI\n", id, dev->current_lun, buf[0]);
 	ncr53c810_set_phase(dev, PHASE_DI);
 	p = scsi_device_get_callback(dev->current->tag, dev->current_lun);
 	if (p <= 0LL) {
@@ -713,7 +735,7 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
 		dev->timer_period += p;
 	return(1);
     } else if ((sd->Phase == SCSI_PHASE_DATA_OUT) && (sd->BufferLength > 0)) {
-	ncr53c810_log("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DO\n", id, dev->current_lun, buf[0]);
+	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DO\n", id, dev->current_lun, buf[0]);
 	ncr53c810_set_phase(dev, PHASE_DO);
 	p = scsi_device_get_callback(dev->current->tag, dev->current_lun);
 	if (p <= 0LL) {
@@ -733,9 +755,10 @@ static void
 ncr53c810_do_status(ncr53c810_t *dev)
 {
     uint8_t status;
-    ncr53c810_log("Get status len=%d status=%d\n", dev->dbc, dev->status);
-    if (dev->dbc != 1)
-	ncr53c810_log("Bad Status move\n");
+    DEBUG("Get status len=%d status=%d\n", dev->dbc, dev->status);
+    if (dev->dbc != 1) {
+	DEBUG("Bad Status move\n");
+    }
     dev->dbc = 1;
     status = dev->status;
     dev->sfbr = status;
@@ -750,7 +773,9 @@ static void
 ncr53c810_do_msgin(ncr53c810_t *dev)
 {
     uint32_t len;
-    ncr53c810_log("Message in len=%d/%d\n", dev->dbc, dev->msg_len);
+
+    DEBUG("Message in len=%d/%d\n", dev->dbc, dev->msg_len);
+
     dev->sfbr = dev->msg[0];
     len = dev->msg_len;
     if (len > dev->dbc)
@@ -808,7 +833,8 @@ ncr53c810_skip_msgbytes(ncr53c810_t *dev, unsigned int n)
 static void
 ncr53c810_bad_message(ncr53c810_t *dev, uint8_t msg)
 {
-    ncr53c810_log("Unimplemented message 0x%02x\n", msg);
+    DEBUG("Unimplemented message 0x%02x\n", msg);
+
     ncr53c810_set_phase(dev, PHASE_MI);
     ncr53c810_add_msg_byte(dev, 7); /* MESSAGE REJECT */
     dev->msg_action = 0;
@@ -820,39 +846,44 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 {
     uint8_t msg;
     int len;
+#ifdef _LOGGING
     uint32_t current_tag;
+#endif
     scsi_device_t *sd;
+
+    DEBUG("MSG out len=%d\n", dev->dbc);
 
     sd = &SCSIDevices[id][dev->current_lun];
 
+#ifdef _LOGGING
     current_tag = id;
+#endif
 
-    ncr53c810_log("MSG out len=%d\n", dev->dbc);
     while (dev->dbc) {
 	msg = ncr53c810_get_msgbyte(dev);
 	dev->sfbr = msg;
 
 	switch (msg) {
 		case 0x04:
-			ncr53c810_log("MSG: Disconnect\n");
+			DEBUG("MSG: Disconnect\n");
 			ncr53c810_disconnect(dev);
 			break;
 		case 0x08:
-			ncr53c810_log("MSG: No Operation\n");
+			DEBUG("MSG: No Operation\n");
 			ncr53c810_set_phase(dev, PHASE_CMD);
 			break;
 		case 0x01:
 			len = ncr53c810_get_msgbyte(dev);
 			msg = ncr53c810_get_msgbyte(dev);
 			(void) len; /* avoid a warning about unused variable*/
-			ncr53c810_log("Extended message 0x%x (len %d)\n", msg, len);
+			DEBUG("Extended message 0x%x (len %d)\n", msg, len);
 			switch (msg) {
 				case 1:
-					ncr53c810_log("SDTR (ignored)\n");
+					DEBUG("SDTR (ignored)\n");
 					ncr53c810_skip_msgbytes(dev, 2);
 					break;
 				case 3:
-					ncr53c810_log("WDTR (ignored)\n");
+					DEBUG("WDTR (ignored)\n");
 					ncr53c810_skip_msgbytes(dev, 1);
 					break;
 				default:
@@ -862,19 +893,19 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 			break;
 		case 0x20: /* SIMPLE queue */
 			id |= ncr53c810_get_msgbyte(dev) | NCR_TAG_VALID;
-			ncr53c810_log("SIMPLE queue tag=0x%x\n", id & 0xff);
+			DEBUG("SIMPLE queue tag=0x%x\n", id & 0xff);
 			break;
 		case 0x21: /* HEAD of queue */
-			ncr53c810_log("HEAD queue not implemented\n");
+			DEBUG("HEAD queue not implemented\n");
 			id |= ncr53c810_get_msgbyte(dev) | NCR_TAG_VALID;
 			break;
 		case 0x22: /* ORDERED queue */
-			ncr53c810_log("ORDERED queue not implemented\n");
+			DEBUG("ORDERED queue not implemented\n");
 			id |= ncr53c810_get_msgbyte(dev) | NCR_TAG_VALID;
 			break;
 		case 0x0d:
 			/* The ABORT TAG message clears the current I/O process only. */
-			ncr53c810_log("MSG: ABORT TAG tag=0x%x\n", current_tag);
+			DEBUG("MSG: ABORT TAG tag=0x%x\n", current_tag);
 			if (sd->CmdBuffer) {
 				free(sd->CmdBuffer);
 				sd->CmdBuffer = NULL;
@@ -887,15 +918,15 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 			/* The ABORT message clears all I/O processes for the selecting
 			   initiator on the specified logical unit of the target. */
 			if (msg == 0x06)
-				ncr53c810_log("MSG: ABORT tag=0x%x\n", current_tag);
+				DEBUG("MSG: ABORT tag=0x%x\n", current_tag);
 			/* The CLEAR QUEUE message clears all I/O processes for all
 			   initiators on the specified logical unit of the target. */
 			if (msg == 0x0e)
-				ncr53c810_log("MSG: CLEAR QUEUE tag=0x%x\n", current_tag);
+				DEBUG("MSG: CLEAR QUEUE tag=0x%x\n", current_tag);
 			/* The BUS DEVICE RESET message clears all I/O processes for all
 			   initiators on all logical units of the target. */
 			if (msg == 0x0c)
-				ncr53c810_log("MSG: BUS DEVICE RESET tag=0x%x\n", current_tag);
+				DEBUG("MSG: BUS DEVICE RESET tag=0x%x\n", current_tag);
 
 			/* clear the current I/O process */
 			if (sd->CmdBuffer) {
@@ -910,7 +941,7 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 				return;
 			} else {
 				dev->current_lun = msg & 7;
-				ncr53c810_log("Select LUN %d\n", dev->current_lun);
+				DEBUG("Select LUN %d\n", dev->current_lun);
 				ncr53c810_set_phase(dev, PHASE_CMD);
 			}
 			break;
@@ -925,7 +956,7 @@ ncr53c810_memcpy(ncr53c810_t *dev, uint32_t dest, uint32_t src, int count)
     int n;
     uint8_t buf[NCR_BUF_SIZE];
 
-    ncr53c810_log("memcpy dest 0x%08x src 0x%08x count %d\n", dest, src, count);
+    DEBUG("memcpy dest 0x%08x src 0x%08x count %d\n", dest, src, count);
     while (count) {
 	n = (count > NCR_BUF_SIZE) ? NCR_BUF_SIZE : count;
 	ncr53c810_read(dev, src, buf, n);
@@ -941,9 +972,12 @@ static void
 ncr53c810_process_script(ncr53c810_t *dev)
 {
     uint32_t insn, addr, id, buf[2], dest;
-    int opcode, insn_processed = 0, reg, operator, cond, jmp, n, i, c;
+    int opcode, insn_processed = 0, reg, oper, cond, jmp, n, i, c;
     int32_t offset;
-    uint8_t op0, op1, data8, mask, data[7], *pp;
+    uint8_t op0, op1, data8, mask, data[7];
+#ifdef _LOGGING
+    uint8_t *pp;
+#endif
 
     dev->sstop = 0;
 again:
@@ -960,28 +994,28 @@ again:
 		return;
     }
     addr = read_dword(dev, dev->dsp + 4);
-    ncr53c810_log("SCRIPTS dsp=%08x opcode %08x arg %08x\n", dev->dsp, insn, addr);
+    DEBUG("SCRIPTS dsp=%08x opcode %08x arg %08x\n", dev->dsp, insn, addr);
     dev->dsps = addr;
     dev->dcmd = insn >> 24;
     dev->dsp += 8;
 			
     switch (insn >> 30) {
 	case 0: /* Block move.  */
-		ncr53c810_log("00: Block move\n");
+		DEBUG("00: Block move\n");
 		if (dev->sist1 & NCR_SIST1_STO) {
-			ncr53c810_log("Delayed select timeout\n");
+			DEBUG("Delayed select timeout\n");
 			dev->sstop = 1;
 			break;
 		}
-		ncr53c810_log("Block Move DBC=%d\n", dev->dbc);
+		DEBUG("Block Move DBC=%d\n", dev->dbc);
 		dev->dbc = insn & 0xffffff;
-		ncr53c810_log("Block Move DBC=%d now\n", dev->dbc);
+		DEBUG("Block Move DBC=%d now\n", dev->dbc);
 		/* ??? Set ESA.  */
 		if (insn & (1 << 29)) {
 			/* Indirect addressing.  */
 			/* Should this respect SIOM? */
 			addr = read_dword(dev, addr);
-			ncr53c810_log("Indirect Block Move address: %08X\n", addr);
+			DEBUG("Indirect Block Move address: %08X\n", addr);
 		} else if (insn & (1 << 28)) {
 			/* Table indirect addressing.  */
 
@@ -996,7 +1030,7 @@ again:
 			 * table, bits [31:24] */
 		}
 		if ((dev->sstat1 & PHASE_MASK) != ((insn >> 24) & 7)) {
-			ncr53c810_log("Wrong phase got %d expected %d\n",
+			DEBUG("Wrong phase got %d expected %d\n",
 			dev->sstat1 & PHASE_MASK, (insn >> 24) & 7);
 			ncr53c810_script_scsi_interrupt(dev, NCR_SIST0_MA, 0);
 			break;
@@ -1004,17 +1038,17 @@ again:
 		dev->dnad = addr;
 		switch (dev->sstat1 & 0x7) {
 			case PHASE_DO:
-				ncr53c810_log("Data Out Phase\n");
+				DEBUG("Data Out Phase\n");
 				dev->waiting = 0;
 				ncr53c810_do_dma(dev, 1, dev->sdid);
 				break;
 			case PHASE_DI:
-				ncr53c810_log("Data In Phase\n");
+				DEBUG("Data In Phase\n");
 				dev->waiting = 0;
 				ncr53c810_do_dma(dev, 0, dev->sdid);
 				break;
 			case PHASE_CMD:
-				ncr53c810_log("Command Phase\n");
+				DEBUG("Command Phase\n");
 				c = ncr53c810_do_command(dev, dev->sdid);
 
 				if (!c || dev->sstop || dev->waiting || ((dev->sstat1 & 0x7) == PHASE_ST))
@@ -1029,26 +1063,26 @@ again:
 					ncr53c810_script_dma_interrupt(dev, NCR_DSTAT_SSI);
 				return;
 			case PHASE_ST:
-				ncr53c810_log("Status Phase\n");
+				DEBUG("Status Phase\n");
 				ncr53c810_do_status(dev);
 				break;
 			case PHASE_MO:
-				ncr53c810_log("MSG Out Phase\n");
+				DEBUG("MSG Out Phase\n");
 				ncr53c810_do_msgout(dev, dev->sdid);
 				break;
 			case PHASE_MI:
-				ncr53c810_log("MSG In Phase\n");
+				DEBUG("MSG In Phase\n");
 				ncr53c810_do_msgin(dev);
 				break;
 			default:
-				ncr53c810_log("Unimplemented phase %d\n", dev->sstat1 & PHASE_MASK);
+				DEBUG("Unimplemented phase %d\n", dev->sstat1 & PHASE_MASK);
 		}
 		dev->dfifo = dev->dbc & 0xff;
 		dev->ctest5 = (dev->ctest5 & 0xfc) | ((dev->dbc >> 8) & 3);
 		break;
 
 	case 1: /* IO or Read/Write instruction.  */
-		ncr53c810_log("01: I/O or Read/Write instruction\n");
+		DEBUG("01: I/O or Read/Write instruction\n");
 		opcode = (insn >> 27) & 7;
 		if (opcode < 5) {
 			if (insn & (1 << 25))
@@ -1063,18 +1097,18 @@ again:
 				case 0: /* Select */
 					dev->sdid = id;
 					if (dev->scntl1 & NCR_SCNTL1_CON) {
-						ncr53c810_log("Already reselected, jumping to alternative address\n");
+						DEBUG("Already reselected, jumping to alternative address\n");
 						dev->dsp = dev->dnad;
 						break;
 					}
 					dev->sstat0 |= NCR_SSTAT0_WOA;
 					dev->scntl1 &= ~NCR_SCNTL1_IARB;
-					if (((id == -1) || !scsi_device_present(id, 0))) {
+					if (!scsi_device_present(id, 0)) {
 						ncr53c810_bad_selection(dev, id);
 						break;
 					}
-					ncr53c810_log("Selected target %d%s\n",
-						      id, insn & (1 << 24) ? " ATN" : "");
+					DEBUG("Selected target %d%s\n",
+					      id, insn & (1 << 24) ? " ATN" : "");
 					dev->select_id = id << 8;
 					dev->scntl1 |= NCR_SCNTL1_CON;
 					if (insn & (1 << 24))
@@ -1083,33 +1117,37 @@ again:
 					dev->waiting = 0;
 					break;
 				case 1: /* Disconnect */
-					ncr53c810_log("Wait Disconnect\n");
+					DEBUG("Wait Disconnect\n");
 					dev->scntl1 &= ~NCR_SCNTL1_CON;
 					break;
 				case 2: /* Wait Reselect */
-					ncr53c810_log("Wait Reselect\n");
-					if (!ncr53c810_irq_on_rsl(dev))
-						dev->waiting = 1;
+					DEBUG("Wait Reselect\n");
+					if (dev->istat & NCR_ISTAT_SIGP)
+						dev->dsp = dev->dnad;		/* If SIGP is set, this command causes an immediate jump to DNAD. */
+					else {
+						if (!ncr53c810_irq_on_rsl(dev))
+							dev->waiting = 1;
+					}
 					break;
 				case 3: /* Set */
-					ncr53c810_log("Set%s%s%s%s\n", insn & (1 << 3) ? " ATN" : "",
-								       insn & (1 << 6) ? " ACK" : "",
-								       insn & (1 << 9) ? " TM" : "",
-								       insn & (1 << 10) ? " CC" : "");
+					DEBUG("Set%s%s%s%s\n", insn & (1 << 3) ? " ATN" : "",
+					       insn & (1 << 6) ? " ACK" : "",
+					       insn & (1 << 9) ? " TM" : "",
+					       insn & (1 << 10) ? " CC" : "");
 					if (insn & (1 << 3)) {
 						dev->socl |= NCR_SOCL_ATN;
 						ncr53c810_set_phase(dev, PHASE_MO);
 					}
 					if (insn & (1 << 9))
-						ncr53c810_log("Target mode not implemented\n");
+						DEBUG("Target mode not implemented\n");
 					if (insn & (1 << 10))
 						dev->carry = 1;
 					break;
 				case 4: /* Clear */
-					ncr53c810_log("Clear%s%s%s%s\n", insn & (1 << 3) ? " ATN" : "",
-									 insn & (1 << 6) ? " ACK" : "",
-									 insn & (1 << 9) ? " TM" : "",
-									 insn & (1 << 10) ? " CC" : "");
+					DEBUG("Clear%s%s%s%s\n", insn & (1 << 3) ? " ATN" : "",
+						 insn & (1 << 6) ? " ACK" : "",
+						 insn & (1 << 9) ? " TM" : "",
+						 insn & (1 << 10) ? " CC" : "");
 					if (insn & (1 << 3))
 						dev->socl &= ~NCR_SOCL_ATN;
 					if (insn & (1 << 10))
@@ -1120,7 +1158,7 @@ again:
 			reg = ((insn >> 16) & 0x7f) | (insn & 0x80);
 			data8 = (insn >> 8) & 0xff;
 			opcode = (insn >> 27) & 7;
-			operator = (insn >> 24) & 7;
+			oper = (insn >> 24) & 7;
 			op0 = op1 = 0;
 			switch (opcode) {
 				case 5: /* From SFBR */
@@ -1128,12 +1166,12 @@ again:
 					op1 = data8;
 					break;
 				case 6: /* To SFBR */
-					if (operator)
+					if (oper)
 						op0 = ncr53c810_reg_readb(dev, reg);
 					op1 = data8;
 					break;
 				case 7: /* Read-modify-write */
-					if (operator)
+					if (oper)
 						op0 = ncr53c810_reg_readb(dev, reg);
 					if (insn & (1 << 23))
 						op1 = dev->sfbr;
@@ -1142,7 +1180,7 @@ again:
 					break;
 			}
 
-			switch (operator) {
+			switch (oper) {
 				case 0: /* move */
 					op0 = op1;
 					break;
@@ -1191,29 +1229,30 @@ again:
 		break;
 
 	case 2: /* Transfer Control.  */
-		ncr53c810_log("02: Transfer Control\n");
+		DEBUG("02: Transfer Control\n");
 		if ((insn & 0x002e0000) == 0) {
-			ncr53c810_log("NOP\n");
+			DEBUG("NOP\n");
 			break;
 		}
 		if (dev->sist1 & NCR_SIST1_STO) {
-			ncr53c810_log("Delayed select timeout\n");
+			DEBUG("Delayed select timeout\n");
 			dev->sstop = 1;
 			break;
 		}
 		cond = jmp = (insn & (1 << 19)) != 0;
 		if (cond == jmp && (insn & (1 << 21))) {
-			ncr53c810_log("Compare carry %d\n", dev->carry == jmp);
+			DEBUG("Compare carry %d\n", dev->carry == jmp);
 			cond = dev->carry != 0;
 		}
 		if (cond == jmp && (insn & (1 << 17))) {
-			ncr53c810_log("Compare phase %d %c= %d\n", (dev->sstat1 & PHASE_MASK),
-								   jmp ? '=' : '!', ((insn >> 24) & 7));
+			DEBUG("Compare phase %d %c= %d\n",
+			      (dev->sstat1 & PHASE_MASK),
+			      jmp ? '=' : '!', ((insn >> 24) & 7));
 			cond = (dev->sstat1 & PHASE_MASK) == ((insn >> 24) & 7);
 		}
 		if (cond == jmp && (insn & (1 << 18))) {
 			mask = (~insn >> 8) & 0xff;
-			ncr53c810_log("Compare data 0x%x & 0x%x %c= 0x%x\n", dev->sfbr, mask,
+			DEBUG("Compare data 0x%x & 0x%x %c= 0x%x\n", dev->sfbr, mask,
 				      jmp ? '=' : '!', insn & mask);
 			cond = (dev->sfbr & mask) == (insn & mask);
 		}
@@ -1224,21 +1263,21 @@ again:
 			}
 			switch ((insn >> 27) & 7) {
 				case 0: /* Jump */
-					ncr53c810_log("Jump to 0x%08x\n", addr);
+					DEBUG("Jump to 0x%08x\n", addr);
 					dev->adder = addr;
 					dev->dsp = addr;
 					break;
 				case 1: /* Call */
-					ncr53c810_log("Call 0x%08x\n", addr);
+					DEBUG("Call 0x%08x\n", addr);
 					dev->temp = dev->dsp;
 					dev->dsp = addr;
 					break;
 				case 2: /* Return */
-					ncr53c810_log("Return to 0x%08x\n", dev->temp);
+					DEBUG("Return to 0x%08x\n", dev->temp);
 					dev->dsp = dev->temp;
 					break;
 				case 3: /* Interrupt */
-					ncr53c810_log("Interrupt 0x%08x\n", dev->dsps);
+					DEBUG("Interrupt 0x%08x\n", dev->dsps);
 					if ((insn & (1 << 20)) != 0) {
 						dev->istat |= NCR_ISTAT_INTF;
 						ncr53c810_update_irq(dev);
@@ -1246,16 +1285,16 @@ again:
 						ncr53c810_script_dma_interrupt(dev, NCR_DSTAT_SIR);
 					break;
 				default:
-					ncr53c810_log("Illegal transfer control\n");
+					DEBUG("Illegal transfer control\n");
 					ncr53c810_script_dma_interrupt(dev, NCR_DSTAT_IID);
 					break;
 			}
 		} else
-			ncr53c810_log("Control condition failed\n");
+			DEBUG("Control condition failed\n");
 		break;
 
 	case 3:
-		ncr53c810_log("00: Memory move\n");
+		DEBUG("00: Memory move\n");
 		if ((insn & (1 << 29)) == 0) {
 			/* Memory move.  */
 			/* ??? The docs imply the destination address is loaded into
@@ -1265,7 +1304,9 @@ again:
 			dev->dsp += 4;
 			ncr53c810_memcpy(dev, dest, addr, insn & 0xffffff);
 		} else {
+#ifdef _LOGGING
 			pp = data;
+#endif
 
 			if (insn & (1 << 28))
 				addr = dev->dsa + sextract32(addr, 0, 24);
@@ -1273,12 +1314,12 @@ again:
 			reg = (insn >> 16) & 0xff;
 			if (insn & (1 << 24)) {
 				DMAPageRead(addr, data, n);
-				ncr53c810_log("Load reg 0x%x size %d addr 0x%08x = %08x\n", reg, n, addr,
+				DEBUG("Load reg 0x%x size %d addr 0x%08x = %08x\n", reg, n, addr,
 											    *(unsigned *)pp);
 				for (i = 0; i < n; i++)
 					ncr53c810_reg_writeb(dev, reg + i, data[i]);
 			} else {
-				ncr53c810_log("Store reg 0x%x size %d addr 0x%08x\n", reg, n, addr);
+				DEBUG("Store reg 0x%x size %d addr 0x%08x\n", reg, n, addr);
 				for (i = 0; i < n; i++)
 					data[i] = ncr53c810_reg_readb(dev, reg + i);
 				DMAPageWrite(addr, data, n);
@@ -1287,40 +1328,40 @@ again:
 		break;
 
 	default:
-		ncr53c810_log("%02X: Unknown command\n", (uint8_t) (insn >> 30));
+		DEBUG("%02X: Unknown command\n", (uint8_t) (insn >> 30));
     }
 
     dev->timer_period += (40LL * TIMER_USEC);
 
-    ncr53c810_log("instructions processed %i\n", insn_processed);
+    DEBUG("instructions processed %i\n", insn_processed);
     if (insn_processed > 10000 && !dev->waiting) {
 	/* Some windows drivers make the device spin waiting for a memory
 	   location to change.  If we have been executed a lot of code then
 	   assume this is the case and force an unexpected device disconnect.
 	   This is apparently sufficient to beat the drivers into submission.
 	 */
-	ncr53c810_log("Some windows drivers make the device spin...\n");
+	DEBUG("Some windows drivers make the device spin...\n");
 	if (!(dev->sien0 & NCR_SIST0_UDC))
-		ncr53c810_log("inf. loop with UDC masked\n");
+		DEBUG("inf. loop with UDC masked\n");
 	ncr53c810_script_scsi_interrupt(dev, NCR_SIST0_UDC, 0);
 	ncr53c810_disconnect(dev);
     } else if (!dev->sstop && !dev->waiting) {
 	if (dev->dcntl & NCR_DCNTL_SSM) {
-		ncr53c810_log("NCR 810: SCRIPTS: Single-step mode\n");
+		DEBUG("NCR 810: SCRIPTS: Single-step mode\n");
 		ncr53c810_script_dma_interrupt(dev, NCR_DSTAT_SSI);
 	} else {
-		ncr53c810_log("NCR 810: SCRIPTS: Normal mode\n");
+		DEBUG("NCR 810: SCRIPTS: Normal mode\n");
 		if (insn_processed < 100)
 			goto again;
 	}
     } else {
 	if (dev->sstop)
-		ncr53c810_log("NCR 810: SCRIPTS: Stopped\n");
+		DEBUG("NCR 810: SCRIPTS: Stopped\n");
 	if (dev->waiting)
-		ncr53c810_log("NCR 810: SCRIPTS: Waiting\n");
+		DEBUG("NCR 810: SCRIPTS: Waiting\n");
     }
 
-    ncr53c810_log("SCRIPTS execution stopped\n");
+    DEBUG("SCRIPTS execution stopped\n");
 }
 
 
@@ -1370,9 +1411,7 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
     case addr + 2: dev->name &= 0xff00ffff; dev->name |= val << 16; break; \
     case addr + 3: dev->name &= 0x00ffffff; dev->name |= val << 24; break;
 
-#ifdef DEBUG_NCR_REG
-    ncr53c810_log("Write reg %02x = %02x\n", offset, val);
-#endif
+    DBGLOG(1, "Write reg %02x = %02x\n", offset, val);
 
     dev->regop = 1;
 
@@ -1382,7 +1421,7 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		if (val & NCR_SCNTL0_START) {
 			/* Looks like this (turn on bit 4 of SSTAT0 to mark arbitration in progress)
 			   is enough to make BIOS v4.x happy. */
-			ncr53c810_log("NCR 810: Selecting SCSI ID %i\n", dev->sdid);
+			DEBUG("NCR 810: Selecting SCSI ID %i\n", dev->sdid);
 			dev->select_id = dev->sdid;
 			dev->sstat0 |= 0x10;
 		}
@@ -1391,7 +1430,7 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		dev->scntl1 = val & ~NCR_SCNTL1_SST;
 		if (val & NCR_SCNTL1_IARB) {
 			dev->select_id = dev->sdid;
-			ncr53c810_log("Arbitration lost\n");
+			DEBUG("Arbitration lost\n");
 			dev->sstat0 |= 0x08;
 			dev->waiting = 0;
 		}
@@ -1418,11 +1457,11 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		break;
 	case 0x06: /* SDID */
 		if ((dev->ssid & 0x80) && (val & 0xf) != (dev->ssid & 0xf))
-			ncr53c810_log("Destination ID does not match SSID\n");
+			DEBUG("Destination ID does not match SSID\n");
 		dev->sdid = val & 0xf;
 		break;
 	case 0x07: /* GPREG0 */
-		ncr53c810_log("NCR 810: GPREG0 write %02X\n", val);
+		DEBUG("NCR 810: GPREG0 write %02X\n", val);
 		dev->gpreg0 = val & 0x03;
 		break;
 	case 0x08: /* SFBR */
@@ -1431,7 +1470,7 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		dev->sfbr = val;
 		break;
 	case 0x09: /* SOCL */
-		ncr53c810_log("NCR 810: SOCL write %02X\n", val);
+		DEBUG("NCR 810: SOCL write %02X\n", val);
 		dev->socl = val;
 		break;
 	case 0x0a: case 0x0b:
@@ -1442,7 +1481,7 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		return;
 	CASE_SET_REG32(dsa, 0x10)
 	case 0x14: /* ISTAT */
-		ncr53c810_log("ISTAT write: %02X\n", val);
+		DEBUG("ISTAT write: %02X\n", val);
 		tmp = dev->istat;
 		dev->istat = (dev->istat & 0x0f) | (val & 0xf0);
 		if ((val & NCR_ISTAT_ABRT) && !(val & NCR_ISTAT_SRST))
@@ -1452,8 +1491,8 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 			ncr53c810_update_irq(dev);
 		}
 
-		if (dev->waiting == 1 && val & NCR_ISTAT_SIGP) {
-			ncr53c810_log("Woken by SIGP\n");
+		if ((dev->waiting == 1) && (val & NCR_ISTAT_SIGP)) {
+			DEBUG("Woken by SIGP\n");
 			dev->waiting = 0;
 			dev->dsp = dev->dnad;
 #if 0
@@ -1487,12 +1526,12 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 	CASE_SET_REG32(temp, 0x1c)
 	case 0x21: /* CTEST4 */
 		if (val & 7)
-			ncr53c810_log("Unimplemented CTEST4-FBL 0x%x\n", val);
+			DEBUG("Unimplemented CTEST4-FBL 0x%x\n", val);
 		dev->ctest4 = val;
 		break;
 	case 0x22: /* CTEST5 */
 		if (val & (NCR_CTEST5_ADCK | NCR_CTEST5_BBCK))
-			ncr53c810_log("CTEST5 DMA increment not implemented\n");
+			DEBUG("CTEST5 DMA increment not implemented\n");
 		dev->ctest5 = val;
 		break;
 	CASE_SET_REG24(dbc, 0x24)
@@ -1521,7 +1560,7 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		dev->dmode = val;
 		break;
 	case 0x39: /* DIEN */
-		ncr53c810_log("DIEN write: %02X\n", val);
+		DEBUG("DIEN write: %02X\n", val);
 		dev->dien = val;
 		ncr53c810_update_irq(dev);
 		break;
@@ -1548,7 +1587,7 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		break;
 	case 0x49: /* STIME1 */
 		if (val & 0xf) {
-			ncr53c810_log("General purpose timer not implemented\n");
+			DEBUG("General purpose timer not implemented\n");
 			/* ??? Raising the interrupt immediately seems to be sufficient
 			   to keep the FreeBSD driver happy.  */
 			ncr53c810_script_scsi_interrupt(dev, 0, NCR_SIST1_GEN);
@@ -1562,19 +1601,19 @@ ncr53c810_reg_writeb(ncr53c810_t *dev, uint32_t offset, uint8_t val)
 		break;
 	case 0x4e: /* STEST2 */
 		if (val & 1)
-			ncr53c810_log("Low level mode not implemented\n");
+			DEBUG("Low level mode not implemented\n");
 		dev->stest2 = val;
 		break;
 	case 0x4f: /* STEST3 */
 		if (val & 0x41)
-			ncr53c810_log("SCSI FIFO test mode not implemented\n");
+			DEBUG("SCSI FIFO test mode not implemented\n");
 		dev->stest3 = val;
 		break;
 	case 0x54:
 		break;
 	CASE_SET_REG32(scratchb, 0x5c)
 	default:
-		ncr53c810_log("Unhandled writeb 0x%x = 0x%x\n", offset, val);
+		DEBUG("Unhandled writeb 0x%x = 0x%x\n", offset, val);
     }
 #undef CASE_SET_REG24
 #undef CASE_SET_REG32
@@ -1600,34 +1639,34 @@ ncr53c810_reg_readb(ncr53c810_t *dev, uint32_t offset)
 
     switch (offset) {
 	case 0x00: /* SCNTL0 */
-		ncr53c810_log("NCR 810: Read SCNTL0 %02X\n", dev->scntl0);
+		DEBUG("NCR 810: Read SCNTL0 %02X\n", dev->scntl0);
 		return dev->scntl0;
 	case 0x01: /* SCNTL1 */
-		ncr53c810_log("NCR 810: Read SCNTL1 %02X\n", dev->scntl1);
+		DEBUG("NCR 810: Read SCNTL1 %02X\n", dev->scntl1);
 		return dev->scntl1;
 	case 0x02: /* SCNTL2 */
-		ncr53c810_log("NCR 810: Read SCNTL2 %02X\n", dev->scntl2);
+		DEBUG("NCR 810: Read SCNTL2 %02X\n", dev->scntl2);
 		return dev->scntl2;
 	case 0x03: /* SCNTL3 */
-		ncr53c810_log("NCR 810: Read SCNTL3 %02X\n", dev->scntl3);
+		DEBUG("NCR 810: Read SCNTL3 %02X\n", dev->scntl3);
 		return dev->scntl3;
 	case 0x04: /* SCID */
-		ncr53c810_log("NCR 810: Read SCID %02X\n", dev->scid);
+		DEBUG("NCR 810: Read SCID %02X\n", dev->scid);
 		return dev->scid;
 	case 0x05: /* SXFER */
-		ncr53c810_log("NCR 810: Read SXFER %02X\n", dev->sxfer);
+		DEBUG("NCR 810: Read SXFER %02X\n", dev->sxfer);
 		return dev->sxfer;
 	case 0x06: /* SDID */
-		ncr53c810_log("NCR 810: Read SDID %02X\n", dev->sdid);
+		DEBUG("NCR 810: Read SDID %02X\n", dev->sdid);
 		return dev->sdid;
 	case 0x07: /* GPREG0 */
-		ncr53c810_log("NCR 810: Read GPREG0 %02X\n", dev->gpreg0 & 3);
+		DEBUG("NCR 810: Read GPREG0 %02X\n", dev->gpreg0 & 3);
 		return dev->gpreg0 & 3;
 	case 0x08: /* Revision ID */
-		ncr53c810_log("NCR 810: Read REVID 00\n");
+		DEBUG("NCR 810: Read REVID 00\n");
 		return 0x00;
 	case 0xa: /* SSID */
-		ncr53c810_log("NCR 810: Read SSID %02X\n", dev->ssid);
+		DEBUG("NCR 810: Read SSID %02X\n", dev->ssid);
 		return dev->ssid;
 	case 0xb: /* SBCL */
 		/* Bit 7 = REQ (SREQ/ status)
@@ -1639,39 +1678,39 @@ ncr53c810_reg_readb(ncr53c810_t *dev, uint32_t offset)
 		   Bit 1 = C/D (SC_D/ status)
 		   Bit 0 = I/O (SI_O/ status) */
 		tmp = (dev->sstat1 & 7);
-		ncr53c810_log("NCR 810: Read SBCL %02X\n", tmp);
+		DEBUG("NCR 810: Read SBCL %02X\n", tmp);
 		return tmp;	/* For now, return the MSG, C/D, and I/O bits from SSTAT1. */
 	case 0xc: /* DSTAT */
 		tmp = dev->dstat | NCR_DSTAT_DFE;
 		if ((dev->istat & NCR_ISTAT_INTF) == 0)
 			dev->dstat = 0;
 		ncr53c810_update_irq(dev);
-		ncr53c810_log("NCR 810: Read DSTAT %02X\n", tmp);
+		DEBUG("NCR 810: Read DSTAT %02X\n", tmp);
 		return tmp;
 	case 0x0d: /* SSTAT0 */
-		ncr53c810_log("NCR 810: Read SSTAT0 %02X\n", dev->sstat0);
+		DEBUG("NCR 810: Read SSTAT0 %02X\n", dev->sstat0);
 		return dev->sstat0;
 	case 0x0e: /* SSTAT1 */
-		ncr53c810_log("NCR 810: Read SSTAT1 %02X\n", dev->sstat1);
+		DEBUG("NCR 810: Read SSTAT1 %02X\n", dev->sstat1);
 		return dev->sstat1;
 	case 0x0f: /* SSTAT2 */
-		ncr53c810_log("NCR 810: Read SSTAT2 %02X\n", dev->scntl1 & NCR_SCNTL1_CON ? 0 : 2);
+		DEBUG("NCR 810: Read SSTAT2 %02X\n", dev->scntl1 & NCR_SCNTL1_CON ? 0 : 2);
 		return dev->scntl1 & NCR_SCNTL1_CON ? 0 : 2;
 	CASE_GET_REG32(dsa, 0x10)
 	case 0x14: /* ISTAT */
-		ncr53c810_log("NCR 810: Read ISTAT %02X\n", dev->istat);
+		DEBUG("NCR 810: Read ISTAT %02X\n", dev->istat);
 		return dev->istat;
 	case 0x16: /* MBOX0 */
-		ncr53c810_log("NCR 810: Read MBOX0 %02X\n", dev->mbox0);
+		DEBUG("NCR 810: Read MBOX0 %02X\n", dev->mbox0);
 		return dev->mbox0;
 	case 0x17: /* MBOX1 */
-		ncr53c810_log("NCR 810: Read MBOX1 %02X\n", dev->mbox1);
+		DEBUG("NCR 810: Read MBOX1 %02X\n", dev->mbox1);
 		return dev->mbox1;
 	case 0x18: /* CTEST0 */
-		ncr53c810_log("NCR 810: Read CTEST0 FF\n");
+		DEBUG("NCR 810: Read CTEST0 FF\n");
 		return 0xff;
 	case 0x19: /* CTEST1 */
-		ncr53c810_log("NCR 810: Read CTEST1 F0\n");
+		DEBUG("NCR 810: Read CTEST1 F0\n");
 		return 0xf0;	/* dma fifo empty */
 	case 0x1a: /* CTEST2 */
 		tmp = dev->ctest2 | NCR_CTEST2_DACK | NCR_CTEST2_CM;
@@ -1679,110 +1718,110 @@ ncr53c810_reg_readb(ncr53c810_t *dev, uint32_t offset)
 			dev->istat &= ~NCR_ISTAT_SIGP;
 			tmp |= NCR_CTEST2_SIGP;
 		}
-		ncr53c810_log("NCR 810: Read CTEST2 %02X\n", tmp);
+		DEBUG("NCR 810: Read CTEST2 %02X\n", tmp);
 		return tmp;
 	case 0x1b: /* CTEST3 */
-		ncr53c810_log("NCR 810: Read CTEST3 %02X\n",
+		DEBUG("NCR 810: Read CTEST3 %02X\n",
 			      (dev->ctest3 & (0x08 | 0x02 | 0x01)) | dev->chip_rev);
 		return (dev->ctest3 & (0x08 | 0x02 | 0x01)) | dev->chip_rev;
 	CASE_GET_REG32(temp, 0x1c)
 	case 0x20: /* DFIFO */
-		ncr53c810_log("NCR 810: Read DFIFO 00\n");
+		DEBUG("NCR 810: Read DFIFO 00\n");
 		return 0;
 	case 0x21: /* CTEST4 */
-		ncr53c810_log("NCR 810: Read CTEST4 %02X\n", dev->ctest4);
+		DEBUG("NCR 810: Read CTEST4 %02X\n", dev->ctest4);
 		return dev->ctest4;
 	case 0x22: /* CTEST5 */
-		ncr53c810_log("NCR 810: Read CTEST5 %02X\n", dev->ctest5);
+		DEBUG("NCR 810: Read CTEST5 %02X\n", dev->ctest5);
 		return dev->ctest5;
 	case 0x23: /* CTEST6 */
-		ncr53c810_log("NCR 810: Read CTEST6 00\n");
+		DEBUG("NCR 810: Read CTEST6 00\n");
 		return 0;
 	CASE_GET_REG24(dbc, 0x24)
 	case 0x27: /* DCMD */
-		ncr53c810_log("NCR 810: Read DCMD %02X\n", dev->dcmd);
+		DEBUG("NCR 810: Read DCMD %02X\n", dev->dcmd);
 		return dev->dcmd;
 	CASE_GET_REG32(dnad, 0x28)
 	CASE_GET_REG32(dsp, 0x2c)
 	CASE_GET_REG32(dsps, 0x30)
 	CASE_GET_REG32(scratcha, 0x34)
 	case 0x38: /* DMODE */
-		ncr53c810_log("NCR 810: Read DMODE %02X\n", dev->dmode);
+		DEBUG("NCR 810: Read DMODE %02X\n", dev->dmode);
 		return dev->dmode;
 	case 0x39: /* DIEN */
-		ncr53c810_log("NCR 810: Read DIEN %02X\n", dev->dien);
+		DEBUG("NCR 810: Read DIEN %02X\n", dev->dien);
 		return dev->dien;
 	case 0x3a: /* SBR */
-		ncr53c810_log("NCR 810: Read SBR %02X\n", dev->sbr);
+		DEBUG("NCR 810: Read SBR %02X\n", dev->sbr);
 		return dev->sbr;
 	case 0x3b: /* DCNTL */
-		ncr53c810_log("NCR 810: Read DCNTL %02X\n", dev->dcntl);
+		DEBUG("NCR 810: Read DCNTL %02X\n", dev->dcntl);
 		return dev->dcntl;
 	CASE_GET_REG32(adder, 0x3c)	/* ADDER Output (Debug of relative jump address) */
 	case 0x40: /* SIEN0 */
-		ncr53c810_log("NCR 810: Read SIEN0 %02X\n", dev->sien0);
+		DEBUG("NCR 810: Read SIEN0 %02X\n", dev->sien0);
 		return dev->sien0;
 	case 0x41: /* SIEN1 */
-		ncr53c810_log("NCR 810: Read SIEN1 %02X\n", dev->sien1);
+		DEBUG("NCR 810: Read SIEN1 %02X\n", dev->sien1);
 		return dev->sien1;
 	case 0x42: /* SIST0 */
 		tmp = dev->sist0;
 		dev->sist0 = 0;
 		ncr53c810_update_irq(dev);
-		ncr53c810_log("NCR 810: Read SIST0 %02X\n", tmp);
+		DEBUG("NCR 810: Read SIST0 %02X\n", tmp);
 		return tmp;
 	case 0x43: /* SIST1 */
 		tmp = dev->sist1;
 		dev->sist1 = 0;
 		ncr53c810_update_irq(dev);
-		ncr53c810_log("NCR 810: Read SIST1 %02X\n", tmp);
+		DEBUG("NCR 810: Read SIST1 %02X\n", tmp);
 		return tmp;
 	case 0x46: /* MACNTL */
-		ncr53c810_log("NCR 810: Read MACNTL 4F\n");
+		DEBUG("NCR 810: Read MACNTL 4F\n");
 		return 0x4f;
 	case 0x47: /* GPCNTL0 */
-		ncr53c810_log("NCR 810: Read GPCNTL0 0F\n");
+		DEBUG("NCR 810: Read GPCNTL0 0F\n");
 		return 0x0f;
 	case 0x48: /* STIME0 */
-		ncr53c810_log("NCR 810: Read STIME0 %02X\n", dev->stime0);
+		DEBUG("NCR 810: Read STIME0 %02X\n", dev->stime0);
 		return dev->stime0;
 	case 0x4a: /* RESPID */
-		ncr53c810_log("NCR 810: Read RESPID %02X\n", dev->respid);
+		DEBUG("NCR 810: Read RESPID %02X\n", dev->respid);
 		return dev->respid;
 	case 0x4c: /* STEST0 */
-		ncr53c810_log("NCR 810: Read STEST0 %02X\n", dev->stest1);
+		DEBUG("NCR 810: Read STEST0 %02X\n", dev->stest1);
 		return 0x00;
 	case 0x4d: /* STEST1 */
-		ncr53c810_log("NCR 810: Read STEST1 %02X\n", dev->stest1);
+		DEBUG("NCR 810: Read STEST1 %02X\n", dev->stest1);
 		return dev->stest1;
 	case 0x4e: /* STEST2 */
-		ncr53c810_log("NCR 810: Read STEST2 %02X\n", dev->stest2);
+		DEBUG("NCR 810: Read STEST2 %02X\n", dev->stest2);
 		return dev->stest2;
 	case 0x4f: /* STEST3 */
-		ncr53c810_log("NCR 810: Read STEST3 %02X\n", dev->stest3);
+		DEBUG("NCR 810: Read STEST3 %02X\n", dev->stest3);
 		return dev->stest3;
 	case 0x50: /* SIDL */
 		/* This is needed by the linux drivers.  We currently only update it
 		   during the MSG IN phase.  */
-		ncr53c810_log("NCR 810: Read SIDL %02X\n", dev->sidl);
+		DEBUG("NCR 810: Read SIDL %02X\n", dev->sidl);
 		return dev->sidl;
 	case 0x52: /* STEST4 */
-		ncr53c810_log("NCR 810: Read STEST4 E0\n");
+		DEBUG("NCR 810: Read STEST4 E0\n");
 		return 0xe0;
 	case 0x58: /* SBDL */
 		/* Some drivers peek at the data bus during the MSG IN phase.  */
 		if ((dev->sstat1 & PHASE_MASK) == PHASE_MI) {
-			ncr53c810_log("NCR 810: Read SBDL %02X\n", dev->msg[0]);
+			DEBUG("NCR 810: Read SBDL %02X\n", dev->msg[0]);
 			return dev->msg[0];
 		}
-		ncr53c810_log("NCR 810: Read SBDL 00\n");
+		DEBUG("NCR 810: Read SBDL 00\n");
 		return 0;
 	case 0x59: /* SBDL high */
-		ncr53c810_log("NCR 810: Read SBDLH 00\n");
+		DEBUG("NCR 810: Read SBDLH 00\n");
 		return 0;
 	CASE_GET_REG32(scratchb, 0x5c)
     }
-    ncr53c810_log("readb 0x%x\n", offset);
+    DEBUG("readb 0x%x\n", offset);
     return 0;
 
 #undef CASE_GET_REG24
@@ -1830,7 +1869,8 @@ static void
 ncr53c810_io_writeb(uint16_t addr, uint8_t val, void *p)
 {
     ncr53c810_t *dev = (ncr53c810_t *)p;
-	ncr53c810_reg_writeb(dev, addr & 0xff, val);
+
+    ncr53c810_reg_writeb(dev, addr & 0xff, val);
 }
 
 
@@ -1838,9 +1878,10 @@ static void
 ncr53c810_io_writew(uint16_t addr, uint16_t val, void *p)
 {
     ncr53c810_t *dev = (ncr53c810_t *)p;	
-	addr &= 0xff;
-	ncr53c810_reg_writeb(dev, addr, val & 0xff);
-	ncr53c810_reg_writeb(dev, addr + 1, (val >> 8) & 0xff);
+
+    addr &= 0xff;
+    ncr53c810_reg_writeb(dev, addr, val & 0xff);
+    ncr53c810_reg_writeb(dev, addr + 1, (val >> 8) & 0xff);
 }
 
 
@@ -1848,6 +1889,7 @@ static void
 ncr53c810_io_writel(uint16_t addr, uint32_t val, void *p)
 {
     ncr53c810_t *dev = (ncr53c810_t *)p;
+
     addr &= 0xff;
     ncr53c810_reg_writeb(dev, addr, val & 0xff);
     ncr53c810_reg_writeb(dev, addr + 1, (val >> 8) & 0xff);
@@ -1868,110 +1910,139 @@ ncr53c810_mmio_writeb(uint32_t addr, uint8_t val, void *p)
 static void
 ncr53c810_mmio_writew(uint32_t addr, uint16_t val, void *p)
 {
-	ncr53c810_t *dev = (ncr53c810_t *)p;
-	
-	addr &= 0xff;
-	ncr53c810_reg_writeb(dev, addr, val & 0xff);
-	ncr53c810_reg_writeb(dev, addr + 1, (val >> 8) & 0xff);
+    ncr53c810_t *dev = (ncr53c810_t *)p;
+
+    addr &= 0xff;
+    ncr53c810_reg_writeb(dev, addr, val & 0xff);
+    ncr53c810_reg_writeb(dev, addr + 1, (val >> 8) & 0xff);
 }
 
 
 static void
 ncr53c810_mmio_writel(uint32_t addr, uint32_t val, void *p)
 {
-	ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)p;
 
-	addr &= 0xff;
-	ncr53c810_reg_writeb(dev, addr, val & 0xff);
-	ncr53c810_reg_writeb(dev, addr + 1, (val >> 8) & 0xff);
-	ncr53c810_reg_writeb(dev, addr + 2, (val >> 16) & 0xff);
-	ncr53c810_reg_writeb(dev, addr + 3, (val >> 24) & 0xff);
+    addr &= 0xff;
+    ncr53c810_reg_writeb(dev, addr, val & 0xff);
+    ncr53c810_reg_writeb(dev, addr + 1, (val >> 8) & 0xff);
+    ncr53c810_reg_writeb(dev, addr + 2, (val >> 16) & 0xff);
+    ncr53c810_reg_writeb(dev, addr + 3, (val >> 24) & 0xff);
 }
 
 
 static uint8_t
 ncr53c810_mmio_readb(uint32_t addr, void *p)
 {
-	ncr53c810_t *dev = (ncr53c810_t *)p;
-	
-	return ncr53c810_reg_readb(dev, addr & 0xff);
+    ncr53c810_t *dev = (ncr53c810_t *)p;
+
+    return ncr53c810_reg_readb(dev, addr & 0xff);
 }
 
 
 static uint16_t
 ncr53c810_mmio_readw(uint32_t addr, void *p)
 {
-	ncr53c810_t *dev = (ncr53c810_t *)p;
-	uint16_t val;
-	
-	addr &= 0xff;
-	val = ncr53c810_reg_readb(dev, addr);
-	val |= ncr53c810_reg_readb(dev, addr + 1) << 8;
-	return val;
+    ncr53c810_t *dev = (ncr53c810_t *)p;
+    uint16_t val;
+
+    addr &= 0xff;
+    val = ncr53c810_reg_readb(dev, addr);
+    val |= ncr53c810_reg_readb(dev, addr + 1) << 8;
+
+    return val;
 }
  
 
 static uint32_t
 ncr53c810_mmio_readl(uint32_t addr, void *p)
 {
-	ncr53c810_t *dev = (ncr53c810_t *)p;
-	uint32_t val;
-	
-	addr &= 0xff;
-	val = ncr53c810_reg_readb(dev, addr);
-	val |= ncr53c810_reg_readb(dev, addr + 1) << 8;
-	val |= ncr53c810_reg_readb(dev, addr + 2) << 16;
-	val |= ncr53c810_reg_readb(dev, addr + 3) << 24;	
-	return val;
+    ncr53c810_t *dev = (ncr53c810_t *)p;
+    uint32_t val;
+
+    addr &= 0xff;
+    val = ncr53c810_reg_readb(dev, addr);
+    val |= ncr53c810_reg_readb(dev, addr + 1) << 8;
+    val |= ncr53c810_reg_readb(dev, addr + 2) << 16;
+    val |= ncr53c810_reg_readb(dev, addr + 3) << 24;	
+
+    return val;
 }
 
 
 static void
 ncr53c810_io_set(ncr53c810_t *dev, uint32_t base, uint16_t len)
 {
-	ncr53c810_log("NCR53c810: [PCI] Setting I/O handler at %04X\n", base);
-	io_sethandler(base, len,
-		      ncr53c810_io_readb, ncr53c810_io_readw, ncr53c810_io_readl,
-                      ncr53c810_io_writeb, ncr53c810_io_writew, ncr53c810_io_writel, dev);
+    DEBUG("NCR53c810: [PCI] Setting I/O handler at %04X\n", base);
+
+    io_sethandler(base, len,
+	      ncr53c810_io_readb,ncr53c810_io_readw,ncr53c810_io_readl,
+              ncr53c810_io_writeb,ncr53c810_io_writew,ncr53c810_io_writel, dev);
 }
 
 
 static void
 ncr53c810_io_remove(ncr53c810_t *dev, uint32_t base, uint16_t len)
 {
-    ncr53c810_log("NCR53c810: Removing I/O handler at %04X\n", base);
-	io_removehandler(base, len,
-		      ncr53c810_io_readb, ncr53c810_io_readw, ncr53c810_io_readl,
-                      ncr53c810_io_writeb, ncr53c810_io_writew, ncr53c810_io_writel, dev);
+    DEBUG("NCR53c810: Removing I/O handler at %04X\n", base);
+
+    io_removehandler(base, len,
+	      ncr53c810_io_readb,ncr53c810_io_readw,ncr53c810_io_readl,
+              ncr53c810_io_writeb,ncr53c810_io_writew,ncr53c810_io_writel, dev);
 }
 
 
 static void
 ncr53c810_mem_init(ncr53c810_t *dev, uint32_t addr)
 {
-	mem_mapping_add(&dev->mmio_mapping, addr, 0x100,
-		        ncr53c810_mmio_readb, ncr53c810_mmio_readw, ncr53c810_mmio_readl,
-			ncr53c810_mmio_writeb, ncr53c810_mmio_writew, ncr53c810_mmio_writel,
-			NULL, MEM_MAPPING_EXTERNAL, dev);
+    mem_map_add(&dev->mmio_mapping, addr, 0x100,
+        ncr53c810_mmio_readb, ncr53c810_mmio_readw, ncr53c810_mmio_readl,
+	ncr53c810_mmio_writeb, ncr53c810_mmio_writew, ncr53c810_mmio_writel,
+	NULL, MEM_MAPPING_EXTERNAL, dev);
 }
 
 
 static void
 ncr53c810_mem_set_addr(ncr53c810_t *dev, uint32_t base)
 {
-    mem_mapping_set_addr(&dev->mmio_mapping, base, 0x100);
+    mem_map_set_addr(&dev->mmio_mapping, base, 0x100);
 }
 
 
 static void
 ncr53c810_mem_disable(ncr53c810_t *dev)
 {
-    mem_mapping_disable(&dev->mmio_mapping);
+    mem_map_disable(&dev->mmio_mapping);
 }
 
 
 uint8_t	ncr53c810_pci_regs[256];
+#if USE_PCI_BAR
+bar_t	ncr53c810_pci_bar[3];
+
+
+static void
+ncr53c810_bios_update(ncr53c810_t *dev)
+{
+    int bios_enabled = ncr53c810_pci_bar[2].addr_regs[0] & 0x01;
+
+    if (!dev->has_bios)
+	return;
+
+    /* PCI BIOS stuff, just enable_disable. */
+    if ((dev->bios_addr > 0) && bios_enabled) {
+	mem_map_enable(&dev->bios.mapping);
+	mem_map_set_addr(&dev->bios.mapping,
+			 dev->bios_addr, 0x4000);
+	DEBUG("NCR53c810: BIOS now at: %06X\n", dev->bios_addr);
+    } else {
+	DEBUG("NCR53c810: BIOS disabled\n");
+	mem_map_disable(&dev->bios.mapping);
+    }
+}
+#else
 bar_t	ncr53c810_pci_bar[2];
+#endif
 
 
 static uint8_t
@@ -1979,11 +2050,15 @@ ncr53c810_pci_read(int func, int addr, void *p)
 {
     ncr53c810_t *dev = (ncr53c810_t *)p;
 
-    ncr53c810_log("NCR53c810: Reading register %02X\n", addr & 0xff);
+    DEBUG("NCR53c810: Reading register %02X\n", addr & 0xff);
 
-    if ((addr >= 0x80) && (addr <= 0xDF)) {
+#if USE_PCI_BAR
+    if ((addr >= 0x30) && (addr <= 0x33) && !dev->has_bios)
+	return 0x00;
+#endif
+
+    if ((addr >= 0x80) && (addr <= 0xDF))
 	return ncr53c810_reg_readb(dev, addr & 0x7F);
-    }
 
     switch (addr) {
 	case 0x00:
@@ -2037,6 +2112,19 @@ ncr53c810_pci_read(int func, int addr, void *p)
 		return 0x01;
 	case 0x2F:
 		return 0x00;
+#if USE_PCI_BAR
+	case 0x30:			/* PCI_ROMBAR */
+		return ncr53c810_pci_bar[2].addr_regs[0] & 0x01;
+	case 0x31:			/* PCI_ROMBAR 15:11 */
+		return ncr53c810_pci_bar[2].addr_regs[1];
+		break;
+	case 0x32:			/* PCI_ROMBAR 23:16 */
+		return ncr53c810_pci_bar[2].addr_regs[2];
+		break;
+	case 0x33:			/* PCI_ROMBAR 31:24 */
+		return ncr53c810_pci_bar[2].addr_regs[3];
+		break;
+#endif
 	case 0x3C:
 		return dev->irq;
 	case 0x3D:
@@ -2057,7 +2145,12 @@ ncr53c810_pci_write(int func, int addr, uint8_t val, void *p)
     ncr53c810_t *dev = (ncr53c810_t *)p;
     uint8_t valxor;
 
-    ncr53c810_log("NCR53c810: Write value %02X to register %02X\n", val, addr & 0xff);
+    DEBUG("NCR53c810: Write value %02X to register %02X\n", val, addr & 0xff);
+
+#if USE_PCI_BAR
+    if ((addr >= 0x30) && (addr <= 0x33) && !dev->has_bios)
+	return;
+#endif
 
     if ((addr >= 0x80) && (addr <= 0xDF)) {
 	ncr53c810_reg_writeb(dev, addr & 0x7F, val);
@@ -2101,13 +2194,14 @@ ncr53c810_pci_write(int func, int addr, uint8_t val, void *p)
 		/* Then let's calculate the new I/O base. */
 		ncr53c810_pci_bar[0].addr &= 0xff00;
 		dev->PCIBase = ncr53c810_pci_bar[0].addr;
+
 		/* Log the new base. */
-		ncr53c810_log("NCR53c810: New I/O base is %04X\n" , dev->PCIBase);
+		DEBUG("NCR53c810: New I/O base is %04X\n" , dev->PCIBase);
+
 		/* We're done, so get out of the here. */
 		if (ncr53c810_pci_regs[4] & PCI_COMMAND_IO) {
-			if (dev->PCIBase != 0) {
+			if (dev->PCIBase != 0)
 				ncr53c810_io_set(dev, dev->PCIBase, 0x0100);
-			}
 		}
 		return;
 
@@ -2119,15 +2213,32 @@ ncr53c810_pci_write(int func, int addr, uint8_t val, void *p)
 		ncr53c810_pci_bar[1].addr_regs[addr & 3] = val;
 		/* Then let's calculate the new I/O base. */
 		dev->MMIOBase = ncr53c810_pci_bar[1].addr & 0xffffff00;
+
 		/* Log the new base. */
-		ncr53c810_log("NCR53c810: New MMIO base is %08X\n" , dev->MMIOBase);
+		DEBUG("NCR53c810: New MMIO base is %08X\n" , dev->MMIOBase);
+
 		/* We're done, so get out of the here. */
 		if (ncr53c810_pci_regs[4] & PCI_COMMAND_MEM) {
-			if (dev->MMIOBase != 0) {
+			if (dev->MMIOBase != 0)
 				ncr53c810_mem_set_addr(dev, dev->MMIOBase);
-			}
 		}
 		return;	
+
+#if USE_PCI_BAR
+	case 0x30:			/* PCI_ROMBAR */
+	case 0x31:			/* PCI_ROMBAR */
+	case 0x32:			/* PCI_ROMBAR */
+	case 0x33:			/* PCI_ROMBAR */
+		ncr53c810_pci_bar[2].addr_regs[addr & 3] = val;
+		ncr53c810_pci_bar[2].addr &= 0xffffc001;
+		dev->bios_addr = ncr53c810_pci_bar[2].addr & 0xffffc000;
+
+		DEBUG("NCR53c810: BIOS BAR %02X = NOW %02X (%02X)\n",
+			addr&3, ncr53c810_pci_bar[2].addr_regs[addr & 3], val);
+
+		ncr53c810_bios_update(dev);
+		return;
+#endif
 
 	case 0x3C:
 		ncr53c810_pci_regs[addr] = val;
@@ -2142,7 +2253,7 @@ ncr53c810_init(const device_t *info)
 {
     ncr53c810_t *dev;
 
-    dev = malloc(sizeof(ncr53c810_t));
+    dev = (ncr53c810_t *)mem_alloc(sizeof(ncr53c810_t));
     memset(dev, 0x00, sizeof(ncr53c810_t));
 
     dev->chip_rev = 0;
@@ -2160,6 +2271,23 @@ ncr53c810_init(const device_t *info)
     timer_add(ncr53c810_callback,
 	      &dev->timer_period, &dev->timer_enabled, dev);
 
+    dev->has_bios = device_get_config_int("bios");
+
+    /* Enable our BIOS space in PCI, if needed. */
+#if USE_PCI_BAR
+    if (dev->has_bios) {
+	dev->bios_mask = 0xffffc000;
+	rom_init(&dev->bios, NCR53C810_ROM, 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
+	ncr53c810_pci_bar[2].addr = 0xFFFFC000;
+	mem_map_disable(&dev->bios.mapping);
+    } else
+	ncr53c810_pci_bar[2].addr = 0;
+#else
+    if (dev->has_bios)
+	rom_init(&dev->bios, NCR53C810_ROM,
+		 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
+#endif
+
     return(dev);
 }
 
@@ -2176,13 +2304,20 @@ ncr53c810_close(void *priv)
 }
 
 
-const device_t ncr53c810_pci_device =
-{
+static const device_config_t ncr53c810_pci_config[] = {
+    {
+        "bios", "Enable BIOS", CONFIG_BINARY, "", 0
+    },
+    {
+        "", "", -1
+    }
+};
+
+const device_t ncr53c810_pci_device = {
     "NCR 53c810 (SCSI)",
     DEVICE_PCI,
     0,
     ncr53c810_init, ncr53c810_close, NULL,
-    NULL,
-    NULL, NULL, NULL,
-    NULL
+    NULL, NULL, NULL, NULL,
+    ncr53c810_pci_config
 };

@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.11	2018/06/10
+ * Version:	@(#)network.c	1.0.12	2018/09/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,29 +58,39 @@
 # include <ctype.h>
 #endif
 #define HAVE_STDARG_H
+#define dbglog network_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "network.h"
 #include "net_ne2000.h"
+#include "net_wd80x3.h"
+#include "net_3com.h"
 
 
 static netcard_t net_cards[] = {
-    {"Disabled",		"none",		NULL,			NULL},
-    {"[ISA] Novell NE1000",	"ne1k",		&ne1000_device,		NULL},
-    {"[ISA] Novell NE2000",	"ne2k",		&ne2000_device,		NULL},
-    {"[ISA] Realtek RTL8019AS",	"ne2kpnp",	&rtl8019as_device,	NULL},
-    {"[PCI] Realtek RTL8029AS",	"ne2kpci",	&rtl8029as_device,	NULL},
-    {NULL,			NULL,		NULL,			NULL}
+  { "none",		NULL,			NULL	},
+
+  { "ne1k",		&ne1000_device,		NULL	},
+  { "ne2k",		&ne2000_device,		NULL	},
+  { "3c503",		&tc503_device,		NULL	},
+  { "ne2kpnp",		&rtl8019as_device,	NULL	},
+  { "wd8003e",		&wd8003e_device,	NULL	},
+  { "wd8013ebt",	&wd8013ebt_device,	NULL	},
+
+  { "ne2",		&ne2_mca_device,	NULL	},
+  { "ne2_enext",	&ne2_enext_mca_device,	NULL	},
+  { "wd8013epa",	&wd8013epa_device,	NULL	},
+
+  { "ne2kpci",		&rtl8029as_device,	NULL	},
+
+  { NULL,		NULL,			NULL	}
 };
 
 
 /* Global variables. */
-int		network_type;
 int		network_ndev;
-int		network_card;
-char		network_pcap[512];
 netdev_t	network_devs[32];
 #ifdef ENABLE_NETWORK_LOG
 int		network_do_log = ENABLE_NETWORK_LOG;
@@ -146,13 +156,28 @@ hexdump_p(char *ptr, uint8_t *bufp, int len)
 #endif
 
 
-static void
-net_log(int lvl, const char *fmt, ...)
+void
+network_log(int level, const char *fmt, ...)
 {
 #ifdef ENABLE_NETWORK_LOG
     va_list ap;
 
-    if (network_do_log >= lvl) {
+    if (network_do_log >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
+
+
+void
+network_dev_log(int level, const char *fmt, ...)
+{
+#ifdef ENABLE_NETWORK_DEV_LOG
+    va_list ap;
+
+    if (network_dev_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
@@ -288,7 +313,7 @@ network_close(void)
     network_mutex = NULL;
     network_mac = NULL;
 
-    net_log(1, "NETWORK: closed.\n");
+    INFO("NETWORK: closed.\n");
 }
 
 
@@ -306,11 +331,11 @@ network_reset(void)
     int i = -1;
 
 #ifdef ENABLE_NETWORK_LOG
-    pclog("NETWORK: reset (type=%d, card=%d) debug=%d\n",
-			network_type, network_card, network_do_log);
+    INFO("NETWORK: reset (type=%d, card=%d) debug=%d\n",
+		network_type, network_card, network_do_log);
 #else
-    pclog("NETWORK: reset (type=%d, card=%d)\n",
-				network_type, network_card);
+    INFO("NETWORK: reset (type=%d, card=%d)\n",
+			network_type, network_card);
 #endif
     ui_sb_icon_update(SB_NETWORK, 0);
 
@@ -347,14 +372,14 @@ network_reset(void)
 	return;
     }
 
-    net_log(0, "NETWORK: set up for %s, card='%s'\n",
-	(network_type==NET_TYPE_SLIRP)?"SLiRP":"Pcap",
-			net_cards[network_card].name);
+    INFO("NETWORK: set up for %s, card='%s'\n",
+	 (network_type==NET_TYPE_SLIRP)?"SLiRP":"Pcap",
+	 network_card_getname(network_card));
 
     /* Add the (new?) card to the I/O system. */
     if (net_cards[network_card].device) {
-	net_log(1, "NETWORK: adding device '%s'\n",
-		net_cards[network_card].name);
+	INFO("NETWORK: adding device '%s'\n",
+	     network_card_getname(network_card));
 	device_add(net_cards[network_card].device);
     }
 }
@@ -370,7 +395,7 @@ network_tx(uint8_t *bufp, int len)
 {
     char temp[8192];
     hexdump_p(temp, bufp, len);
-    pclog("NETWORK: >> len=%d\n%s\n", len, temp);
+    DBGLOG(2, "NETWORK: >> len=%d\n%s\n", len, temp);
 }
 #endif
 
@@ -418,7 +443,7 @@ network_available(void)
 int
 network_card_available(int card)
 {
-    if (net_cards[card].device)
+    if (net_cards[card].device != NULL)
 	return(device_available(net_cards[card].device));
 
     return(1);
@@ -429,7 +454,10 @@ network_card_available(int card)
 const char *
 network_card_getname(int card)
 {
-    return(net_cards[card].name);
+    if (net_cards[card].device != NULL)
+	return(net_cards[card].device->name);
+
+    return(NULL);
 }
 
 
@@ -445,9 +473,10 @@ network_card_getdevice(int card)
 int
 network_card_has_config(int card)
 {
-    if (! net_cards[card].device) return(0);
+    if (net_cards[card].device != NULL)
+	return(net_cards[card].device->config ? 1 : 0);
 
-    return(net_cards[card].device->config ? 1 : 0);
+    return(0);
 }
 
 

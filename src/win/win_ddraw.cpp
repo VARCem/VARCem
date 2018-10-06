@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.17	2018/09/02
+ * Version:	@(#)win_ddraw.cpp	1.0.18	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -279,8 +279,15 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
 	return;
     }
 
-    for (yy = y1; yy < y2; yy++)
-	if (buffer32)  memcpy((void *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+    for (yy = y1; yy < y2; yy++) {
+	if (buffer32) {
+		if (vid_grayscale || invert_display)
+			video_transform_copy((uint32_t *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
+		else
+			memcpy((void *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+	}
+    }
+
     video_blit_complete();
     lpdds_back->Unlock(NULL);
 
@@ -352,10 +359,16 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
     }
 
     for (yy = y1; yy < y2; yy++) {
-	if (buffer32)
-		if ((y + yy) >= 0 && (y + yy) < buffer32->h)
-			memcpy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+	if (buffer32) {
+		if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+			if (vid_grayscale || invert_display)
+				video_transform_copy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
+			else
+				memcpy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+		}
+	}
     }
+
     video_blit_complete();
     lpdds_back->Unlock(NULL);
 
@@ -389,7 +402,7 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
 static void
 ddraw_close(void)
 {
-    pclog("DDRAW: close\n");
+    DEBUG("DDRAW: close\n");
 
     video_setblit(NULL);
 
@@ -425,18 +438,18 @@ ddraw_init(int fs)
     DWORD dw;
     HWND h;
 
-    pclog("DDraw: initializing (fs=%d)\n", fs);
+    INFO("DDraw: initializing (fs=%d)\n", fs);
 
     cgapal_rebuild();
 
     hr = DirectDrawCreate(NULL, &lpdd, NULL);
     if (FAILED(hr)) {
-	pclog("DDRAW: cannot create an instance (%s)\n", GetError(hr));
+	ERRLOG("DDRAW: cannot create an instance (%s)\n", GetError(hr));
 	return(0);
     }
     hr = lpdd->QueryInterface(IID_IDirectDraw4, (LPVOID *)&lpdd4);
     if (FAILED(hr)) {
-	pclog("DDRAW: no interfaces found (%s)\n", GetError(hr));
+	ERRLOG("DDRAW: no interfaces found (%s)\n", GetError(hr));
 	return(0);
     }
     lpdd->Release();
@@ -453,7 +466,7 @@ ddraw_init(int fs)
     }
     hr = lpdd4->SetCooperativeLevel(h, dw);
     if (FAILED(hr)) {
-	pclog("DDRAW: SetCooperativeLevel failed (%s)\n", GetError(hr));
+	ERRLOG("DDRAW: SetCooperativeLevel failed (%s)\n", GetError(hr));
 	return(0);
     }
 
@@ -462,7 +475,7 @@ ddraw_init(int fs)
 	ddraw_h = GetSystemMetrics(SM_CYSCREEN);
 	hr = lpdd4->SetDisplayMode(ddraw_w, ddraw_h, 32, 0, 0);
 	if (FAILED(hr)) {
-		pclog("DDRAW: SetDisplayMode failed (%s)\n", GetError(hr));
+		ERRLOG("DDRAW: SetDisplayMode failed (%s)\n", GetError(hr));
 		return(0);
 	}
     }
@@ -478,7 +491,7 @@ ddraw_init(int fs)
     }
     hr = lpdd4->CreateSurface(&ddsd, &lpdds_pri, NULL);
     if (FAILED(hr)) {
-	pclog("DDRAW: CreateSurface failed (%s)\n", GetError(hr));
+	ERRLOG("DDRAW: CreateSurface failed (%s)\n", GetError(hr));
 	return(0);
     }
 
@@ -489,7 +502,7 @@ ddraw_init(int fs)
 	ddsd.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER;
 	hr = lpdds_pri->GetAttachedSurface(&ddsd.ddsCaps, &lpdds_back2);
 	if (FAILED(hr)) {
-		pclog("DDRAW: GetAttachedSurface failed (%s)\n", GetError(hr));
+		ERRLOG("DDRAW: GetAttachedSurface failed (%s)\n", GetError(hr));
 		return(0);
 	}
     }
@@ -508,7 +521,7 @@ ddraw_init(int fs)
 	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
 	hr = lpdd4->CreateSurface(&ddsd, &lpdds_back, NULL);
 	if (FAILED(hr)) {
-		pclog("DDRAW: CreateSurface(back) failed (%s)\n", GetError(hr));
+		ERRLOG("DDRAW: CreateSurface(back) failed (%s)\n", GetError(hr));
 		return(0);
 	}
     }
@@ -528,26 +541,26 @@ ddraw_init(int fs)
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
 		hr = lpdd4->CreateSurface(&ddsd, &lpdds_back2, NULL);
 		if (FAILED(hr)) {
-			pclog("DDRAW: CreateSurface(back2) failed (%s)\n", GetError(hr));
+			ERRLOG("DDRAW: CreateSurface(back2) failed (%s)\n", GetError(hr));
 			return(0);
 		}
 	}
 
 	hr = lpdd4->CreateClipper(0, &lpdd_clipper, NULL);
 	if (FAILED(hr)) {
-		pclog("DDRAW: CreateClipper failed (%s)\n", GetError(hr));
+		ERRLOG("DDRAW: CreateClipper failed (%s)\n", GetError(hr));
 		return(0);
 	}
 
 	hr = lpdd_clipper->SetHWnd(0, h);
 	if (FAILED(hr)) {
-		pclog("DDRAW: SetHWnd failed (%s)\n", GetError(hr));
+		ERRLOG("DDRAW: SetHWnd failed (%s)\n", GetError(hr));
 		return(0);
 	}
 
 	hr = lpdds_pri->SetClipper(lpdd_clipper);
 	if (FAILED(hr)) {
-		pclog("DDRAW: SetClipper failed (%s)\n", GetError(hr));
+		ERRLOG("DDRAW: SetClipper failed (%s)\n", GetError(hr));
 		return(0);
 	}
     }
@@ -570,7 +583,7 @@ SaveBMP(const wchar_t *fn, BITMAPINFO *bmi, uint8_t *pixels)
     FILE *fp;
 
     if ((fp = plat_fopen(fn, L"wb")) == NULL) {
-	pclog("[SaveBMP] File %ls could not be opened for writing!\n", fn);
+	ERRLOG("[SaveBMP] File %ls could not be opened for writing!\n", fn);
 	return(0);
     } 
 
@@ -645,8 +658,7 @@ ddraw_screenshot(const wchar_t *fn)
     }
 #endif
 
-    xs = get_actual_size_x();
-    ys = ys2 = get_actual_size_y();
+    get_screen_size_natural(&xs, &ys);
 
     if (ysize <= 250) {
 	ys >>= 1;
@@ -668,9 +680,10 @@ ddraw_screenshot(const wchar_t *fn)
     }
 
     /* Allocate a buffer for the pixel data. */
-    if ((pixels = (uint8_t *)malloc(bmi.bmiHeader.biSizeImage)) == NULL) {
-	pclog("DDraw: unable to allocate bitmap memory!\n");
-	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), fn);
+    if ((pixels = (uint8_t *)mem_alloc(bmi.bmiHeader.biSizeImage)) == NULL) {
+	ERRLOG("DDraw: unable to allocate bitmap memory!\n");
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_SCRSHOT), fn);
 	ui_msgbox(MBX_ERROR, temp);
 	ReleaseDC(NULL, hDC); 
 	return;
@@ -698,7 +711,7 @@ ddraw_screenshot(const wchar_t *fn)
 	bmi.bmiHeader.biSizeImage <<= 1;
 
 	/* Allocate new buffer, doubled-up. */
-	pixels = (uint8_t *)malloc(bmi.bmiHeader.biSizeImage);
+	pixels = (uint8_t *)mem_alloc(bmi.bmiHeader.biSizeImage);
 
 	/* Copy scanlines. */
 	for (i = 0; i < ys; i++) {
@@ -739,7 +752,8 @@ ddraw_screenshot(const wchar_t *fn)
 
     /* Show error message if needed. */
     if (i == 0) {
-	_swprintf(temp, get_string(IDS_ERR_SCRSHOT), path);
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_SCRSHOT), path);
 	ui_msgbox(MBX_ERROR, temp);
     }
 }

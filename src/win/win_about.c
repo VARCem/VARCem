@@ -12,7 +12,7 @@
  *		24bit image would be preferred, but we cant use LoadImage
  *		for those (and keep transparency...)
  *
- * Version:	@(#)win_about.c	1.0.9	2018/06/02
+ * Version:	@(#)win_about.c	1.0.10	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,12 +53,14 @@
 #include "../ui/ui.h"
 #include "../plat.h"
 #include "win.h"
+#include "resource.h"
 
 
 static void
 donate_handle(HWND hdlg)
 {
-    pclog("UI: DONATE button clicked, opening browser to PayPal\n");
+    pclog(LOG_ALWAYS,
+	  "UI: DONATE button clicked, opening browser to PayPal\n");
 
     ShellExecute(NULL, L"open", URL_PAYPAL, NULL, NULL , SW_SHOW);
 }
@@ -112,7 +114,7 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-localize_dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+localize_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HBITMAP hBmp;
     lang_t *lang;
@@ -125,13 +127,14 @@ localize_dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		dialog_center(hdlg);
 
 		/* Load the main icon. */
-		hBmp = LoadImage(hInstance,(PCTSTR)100, IMAGE_ICON, 64, 64, 0);
+		hBmp = (HBITMAP) LoadImage(hInstance,MAKEINTRESOURCE(ICON_MAIN),
+				 IMAGE_ICON, 64, 64, 0);
 		h = GetDlgItem(hdlg, IDC_ABOUT_ICON);
 		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hBmp);
 
 		/* Add the languages. */
 		h = GetDlgItem(hdlg, IDC_LOCALIZE);
-		for (lang = languages->next; lang != NULL; lang = lang->next) {
+		for (lang = ui_lang_get()->next; lang != NULL; lang = lang->next) {
 			c = SendMessage(h, LB_ADDSTRING, 0, (LPARAM)lang->name);
 			SendMessage(h, LB_SETITEMDATA, c, (LPARAM)lang);
 		}
@@ -171,9 +174,9 @@ static LRESULT CALLBACK
 #else
 static BOOL CALLBACK
 #endif
-dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+about_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-static HBRUSH brush = NULL;
+    static HBRUSH brush = NULL;
     wchar_t temp[128];
     HBITMAP hBmp;
     HWND h;
@@ -183,8 +186,8 @@ static HBRUSH brush = NULL;
 		/* Center in the main window. */
 		dialog_center(hdlg);
 
-		hBmp = LoadImage(hInstance,
-				 MAKEINTRESOURCE(100), IMAGE_ICON, 64, 64, 0);
+		hBmp = (HBITMAP)LoadImage(hInstance, MAKEINTRESOURCE(ICON_MAIN),
+				 IMAGE_ICON, 64, 64, 0);
 		h = GetDlgItem(hdlg, IDC_ABOUT_ICON);
 		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hBmp);
 		mbstowcs(temp, emu_title, sizeof_w(temp));
@@ -199,13 +202,13 @@ static HBRUSH brush = NULL;
 		/* Load the Paypal Donate icon. */
 		h = GetDlgItem(hdlg, IDC_DONATE);
 #if 1
-		hBmp = LoadImage(hInstance, MAKEINTRESOURCE(101),
+		hBmp = (HBITMAP)LoadImage(hInstance, MAKEINTRESOURCE(ICON_DONATE),
 				 IMAGE_BITMAP, 105, 50,
 				 LR_LOADTRANSPARENT|LR_LOADMAP3DCOLORS);
 		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
 #else
-		hBmp = LoadImage(hInstance,
-				 MAKEINTRESOURCE(101), IMAGE_ICON, 128, 128, 0);
+		hBmp = LoadImage(hInstance, MAKEINTRESOURCE(ICON_DONATE),
+				 IMAGE_ICON, 128, 128, 0);
 		SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hBmp);
 #endif
 		break;
@@ -217,9 +220,7 @@ static HBRUSH brush = NULL;
 				return TRUE;
 
 			case IDC_LOCALIZE:
-				DialogBox(plat_lang_dll(),
-					  (LPCTSTR)DLG_LOCALIZE,
-					  hdlg, localize_dlg_proc);
+				dlg_localize();
 				break;
 
 			default:
@@ -263,9 +264,12 @@ static HBRUSH brush = NULL;
 void
 dlg_about(void)
 {
-    plat_pause(1);
+    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_ABOUT, hwndMain, about_proc);
+}
 
-    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_ABOUT, hwndMain, dlg_proc);
 
-    plat_pause(0);
+void
+dlg_localize(void)
+{
+    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_LOCALIZE, hwndMain, localize_proc);
 }

@@ -10,7 +10,7 @@
  *		This chip was used as part of many 386 chipsets.
  *		It controls memory addressing and shadowing.
  *
- * Version:	@(#)mcr.c	1.0.2	2018/05/06
+ * Version:	@(#)mcr.c	1.0.3	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,6 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../cpu/cpu.h"
 #include "../../mem.h"
 
 
@@ -65,8 +64,6 @@ resetmcr(void)
 void
 writemcr(uint16_t addr, uint8_t val)
 {
-    pclog("MCR: write %04X %02X %04X:%04X\n",addr,val,CS,cpu_state.pc);
-
     switch (addr) {
 	case 0x22:
 		if (val == 6 && mcr22 == 6)

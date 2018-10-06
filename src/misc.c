@@ -8,7 +8,7 @@
  *
  *		Misc functions that do not fit anywhere else.
  *
- * Version:	@(#)misc.c	1.0.3	2018/10/04
+ * Version:	@(#)misc.c	1.0.3	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -55,26 +55,6 @@
 #include "ui/ui.h"
 
 
-const wchar_t *
-get_string(int id)
-{
-    const wchar_t *str = NULL;
-    const string_t *tbl;
-
-    tbl = plat_strings;
-    while(tbl->str != NULL) {
-	if (tbl->id == id) {
-		str = tbl->str;
-		break;
-	}
-
-	tbl++;
-    }
-
-    return(str);
-}
-
-
 /* Grab the value from a string. */
 uint32_t
 get_val(const char *str)
@@ -100,9 +80,8 @@ mem_alloc(size_t sz)
 	ui_msgbox(MBX_ERROR|MBX_FATAL, (wchar_t *)IDS_ERR_NOMEM);
 
 	/* Try to write to the logfile. This may not work anymore. */
-	pclog("FATAL: system out of memory!\n");
-	fflush(stdlog);
-	fclose(stdlog);
+	ERRLOG("FATAL: system out of memory!\n");
+	pclog(-1, NULL);
 
 	/* Now exit - this will (hopefully..) not return. */
 	exit(-1);

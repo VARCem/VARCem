@@ -8,7 +8,7 @@
  *
  *		Definitions for the Intel System I/O PCI chip handler.
  *
- * Version:	@(#)sio.h	1.0.1	2018/02/14
+ * Version:	@(#)sio.h	1.0.2	2018/09/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define EMU_INTELSIO_H
 
 
-extern void	sio_init(int card);
+extern const device_t sio_device;
 
 
 #endif	/*EMU_INTELSIO_H*/

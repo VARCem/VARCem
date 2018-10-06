@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mov_ctrl.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_mov_ctrl.h	1.0.2	2018/10/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,7 @@ static int opMOV_r_CRx_a16(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load from CRx\n");
+                ERRLOG("CPU: can't load from CRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -64,7 +64,7 @@ static int opMOV_r_CRx_a16(uint32_t fetchdat)
                         break;
                 }
                 default:
-                pclog("Bad read of CR%i %i\n",rmdat&7,cpu_reg);
+                ERRLOG("CPU: bad read of CR%i %i\n",rmdat&7,cpu_reg);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;
@@ -77,7 +77,7 @@ static int opMOV_r_CRx_a32(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load from CRx\n");
+                ERRLOG("CPU: can't load from CRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -102,7 +102,7 @@ static int opMOV_r_CRx_a32(uint32_t fetchdat)
                         break;
                 }
                 default:
-                pclog("Bad read of CR%i %i\n",rmdat&7,cpu_reg);
+                ERRLOG("CPU: bad read of CR%i %i\n",rmdat&7,cpu_reg);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;
@@ -116,7 +116,7 @@ static int opMOV_r_DRx_a16(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load from DRx\n");
+                ERRLOG("CPU: can't load from DRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -130,7 +130,7 @@ static int opMOV_r_DRx_a32(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load from DRx\n");
+                ERRLOG("CPU: can't load from DRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -147,7 +147,7 @@ static int opMOV_CRx_r_a16(uint32_t fetchdat)
         
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load CRx\n");
+                ERRLOG("CPU: can't load CRx\n");
                 x86gpf(NULL,0);
                 return 1;
         }
@@ -188,7 +188,7 @@ static int opMOV_CRx_r_a16(uint32_t fetchdat)
                 }
 
                 default:
-                pclog("Bad load CR%i\n", cpu_reg);
+                ERRLOG("CPU: bad load CR%i\n", cpu_reg);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;
@@ -203,7 +203,7 @@ static int opMOV_CRx_r_a32(uint32_t fetchdat)
         
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load CRx\n");
+                ERRLOG("CPU: can't load CRx\n");
                 x86gpf(NULL,0);
                 return 1;
         }
@@ -244,7 +244,7 @@ static int opMOV_CRx_r_a32(uint32_t fetchdat)
                 }
 
                 default:
-                pclog("Bad load CR%i\n", cpu_reg);
+                ERRLOG("CPU: bad load CR%i\n", cpu_reg);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;
@@ -258,7 +258,7 @@ static int opMOV_DRx_r_a16(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load DRx\n");
+                ERRLOG("CPU: can't load DRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -272,7 +272,7 @@ static int opMOV_DRx_r_a32(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load DRx\n");
+                ERRLOG("CPU: can't load DRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -287,7 +287,7 @@ static int opMOV_r_TRx_a16(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load from TRx\n");
+                ERRLOG("CPU: can't load from TRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -301,7 +301,7 @@ static int opMOV_r_TRx_a32(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load from TRx\n");
+                ERRLOG("CPU: can't load from TRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -316,7 +316,7 @@ static int opMOV_TRx_r_a16(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load TRx\n");
+                ERRLOG("CPU: can't load TRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }
@@ -329,7 +329,7 @@ static int opMOV_TRx_r_a32(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't load TRx\n");
+                ERRLOG("CPU: can't load TRx\n");
                 x86gpf(NULL, 0);
                 return 1;
         }

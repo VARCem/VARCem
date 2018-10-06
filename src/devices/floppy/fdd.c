@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.13	2018/05/14
+ * Version:	@(#)fdd.c	1.0.14	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,11 +42,8 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
+#define dbglog fdd_log
 #include "../../emu.h"
-#include "../../machines/machine.h"
-#include "../../mem.h"
-#include "../../rom.h"
-#include "../../config.h"
 #include "../../timer.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -108,6 +105,7 @@ static const struct {
     { L"BIN",	img_load,	img_close,	-1 },
     { L"CQ", 	img_load,	img_close,	-1 },
     { L"CQM",	img_load,	img_close,	-1 },
+    { L"DDI",	img_load,       img_close,	-1 },
     { L"DSK",	img_load,	img_close,	-1 },
     { L"FDI",	fdi_load,	fdi_close,	-1 },
     { L"FDF",	img_load,	img_close,	-1 },
@@ -222,13 +220,12 @@ static const struct
 
 
 void
-fdd_log(const char *fmt, ...)
+fdd_log(int level, const char *fmt, ...)
 {
 #ifdef ENABLE_FDC_LOG
 	va_list ap;
 
-	if (fdd_do_log)
-	{
+	if (fdd_do_log >= level) {
 		va_start(ap, fmt);
 		pclog_ex(fmt, ap);
 		va_end(ap);
@@ -474,9 +471,7 @@ int fdd_load(int drive, const wchar_t *fn)
         wchar_t *p;
         FILE *f;
 
-#ifdef ENABLE_FDD_LOG
-	fdd_log("FDD: loading drive %d with '%ls'\n", drive, fn);
-#endif
+	DEBUG("FDD: loading drive %d with '%ls'\n", drive, fn);
 
         if (!fn) return(0);
         p = plat_get_extension(fn);
@@ -505,9 +500,7 @@ int fdd_load(int drive, const wchar_t *fn)
                 c++;
         }
 no_load:
-#ifdef ENABLE_FDD_LOG
-        fdd_log("FDD: could not load '%ls' %s\n",fn,p);
-#endif
+        DEBUG("FDD: could not load '%ls' %s\n",fn,p);
         drive_empty[drive] = 1;
 	fdd_set_head(drive, 0);
 	memset(floppyfns[drive], 0, sizeof(floppyfns[drive]));
@@ -518,13 +511,17 @@ no_load:
 
 void fdd_close(int drive)
 {
-#ifdef ENABLE_FDD_LOG
-	fdd_log("FDD: closing drive %d\n", drive);
-#endif
+	DEBUG("FDD: closing drive %d\n", drive);
+pclog(0,"FDD: close(%d)\n",drive);
 
+	/* Make sure the 86F poll is back to idle state. */
+	d86f_stop(drive);
+
+pclog(0,"FDD: close(%d) 1\n",drive);
         if (loaders[driveloaders[drive]].close)
 		loaders[driveloaders[drive]].close(drive);
 
+pclog(0,"FDD: close(%d) 2\n",drive);
         drive_empty[drive] = 1;
 
 	fdd_set_head(drive, 0);
@@ -542,9 +539,12 @@ void fdd_close(int drive)
         drives[drive].byteperiod = NULL;
 	drives[drive].stop = NULL;
 
+pclog(0,"FDD: close(%d) 3\n",drive);
 	d86f_destroy(drive);
 
+pclog(0,"FDD: close(%d) 4\n",drive);
 	ui_sb_icon_state(drive, 1);
+pclog(0,"FDD: close(%d) 5\n",drive);
 }
 
 int fdd_notfound = 0;

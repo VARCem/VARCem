@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.14	2018/04/02
+ * Version:	@(#)device.c	1.0.15	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,6 @@
 #include <wchar.h>
 #include "emu.h"
 #include "config.h"
-#include "cpu/cpu.h"
 #include "device.h"
 #include "machines/machine.h"
 #include "devices/sound/sound.h"
@@ -101,7 +100,7 @@ device_clone(const device_t *master)
 
     /* If not found, add this master to the list. */
     if (ptr == NULL) {
-	ptr = (clonedev_t *)malloc(sizeof(clonedev_t));
+	ptr = (clonedev_t *)mem_alloc(sizeof(clonedev_t));
 	memset(ptr, 0x00, sizeof(clonedev_t));
 	if (clones != NULL) {
 		for (cl = clones; cl->next != NULL; cl = cl->next)
@@ -113,7 +112,7 @@ device_clone(const device_t *master)
     }
 
     /* Create a new device. */
-    dev = (device_t *)malloc(sizeof(device_t));
+    dev = (device_t *)mem_alloc(sizeof(device_t));
 
     /* Copy the master info. */
     memcpy(dev, ptr->master, sizeof(device_t));
@@ -123,7 +122,7 @@ device_clone(const device_t *master)
 	sprintf(temp, "%s #%i", ptr->master->name, ptr->count);
       else
 	strcpy(temp, ptr->master->name);
-    sp = (char *)malloc(strlen(temp) + 1);
+    sp = (char *)mem_alloc(strlen(temp) + 1);
     strcpy(sp, temp);
     dev->name = (const char *)sp;
 
@@ -135,13 +134,12 @@ void *
 device_add(const device_t *d)
 {
     wchar_t temp[1024];
-    wchar_t devname[64];
     void *priv = NULL;
     int c;
 
-    for (c = 0; c < 256; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] == (device_t *)d) {
-		pclog("DEVICE: device already exists!\n");
+		ERRLOG("DEVICE: device already exists!\n");
 		return(NULL);
 	}
 	if (devices[c] == NULL) break;
@@ -156,30 +154,34 @@ device_add(const device_t *d)
      * reports... we warn them...
      */
     if (d->flags & DEVICE_UNSTABLE) {
-	mbstowcs(devname, d->name, sizeof_w(devname));
-        swprintf(temp, sizeof_w(temp), get_string(IDS_MSG_UNSTABL), devname);
+        swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_MSG_UNSTABL), d->name);
 
         /* Show the messagebox, and abort if 'No' was selected. */
         if (ui_msgbox(MBX_WARNING, temp) == 1) return(0);
 
         /* OK, they are fine with it. Log this! */
-	pclog("UNSTABLE: device '%s' is unstable, user agreed!\n", d->name);
+	INFO("DEVICE: device '%s' is unstable, user agreed!\n", d->name);
     }
 
     device_current = (device_t *)d;
+
+    devices[c] = (device_t *)d;
 
     if (d->init != NULL) {
 	priv = d->init(d);
 	if (priv == NULL) {
 		if (d->name)
-			pclog("DEVICE: device '%s' init failed\n", d->name);
+			ERRLOG("DEVICE: device '%s' init failed\n", d->name);
 		  else
-			pclog("DEVICE: device init failed\n");
+			ERRLOG("DEVICE: device init failed\n");
+
+		devices[c] = NULL;
+
 		return(NULL);
 	}
     }
 
-    devices[c] = (device_t *)d;
     device_priv[c] = priv;
 
     return(priv);
@@ -192,15 +194,15 @@ device_add_ex(const device_t *d, void *priv)
 {
     int c;
 
-    for (c = 0; c < 256; c++) {
+    for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] == (device_t *)d) {
-		fatal("device_add: device already exists!\n");
+		fatal("DEVICE: device already exists!\n");
 		break;
 	}
 	if (devices[c] == NULL) break;
     }
     if (c >= DEVICE_MAX)
-	fatal("device_add: too many devices\n");
+	fatal("DEVICE: too many devices\n");
 
     device_current = (device_t *)d;
 
@@ -218,20 +220,26 @@ device_close_all(void)
 	if (devices[c] != NULL) {
 		if (devices[c]->close != NULL)
 			devices[c]->close(device_priv[c]);
-		devices[c] = device_priv[c] = NULL;
+		devices[c] = NULL;
+		device_priv[c] = NULL;
 	}
     }
 }
 
 
 void
-device_reset_all(void)
+device_reset_all(int flags)
 {
     int c;
 
     for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] != NULL) {
-		if (devices[c]->reset != NULL)
+		if (devices[c]->reset == NULL) continue;
+
+		if (flags != DEVICE_ALL) {
+			if (devices[c]->flags & flags)
+				devices[c]->reset(device_priv[c]);
+		} else
 			devices[c]->reset(device_priv[c]);
 	}
     }
@@ -254,14 +262,63 @@ device_get_priv(const device_t *d)
 }
 
 
+/* Return name of the bus required by this device. */
+const char *
+device_get_bus_name(const device_t *d)
+{
+    const char *s = "unknown";
+
+    if (d != NULL) switch(d->flags & DEVICE_BUS_MASK) {
+	case DEVICE_ISA:
+		s = "ISA";
+		break;
+
+	case DEVICE_CBUS:
+		s = "CBUS";
+		break;
+
+	case DEVICE_MCA:
+		s = "MCA";
+		break;
+
+	case DEVICE_EISA:
+		s = "EISA";
+		break;
+
+	case DEVICE_VLB:
+		s = "VLB";
+		break;
+
+	case DEVICE_PCI:
+		s = "PCI";
+		break;
+
+	case DEVICE_AGP:
+		s = "AGP";
+		break;
+
+	default:
+		break;
+    }
+
+    return(s);
+}
+
+
 int
 device_available(const device_t *d)
 {
+    int (*func)(void);
+
+    if (d == NULL) return(1);
+
 #ifdef RELEASE_BUILD
     if (d->flags & DEVICE_NOT_WORKING) return(0);
 #endif
-    if (d->available != NULL)
-	return(d->available());
+    if (d->dev_available != NULL) {
+	func = d->dev_available;
+	return(func());
+    }
 
     return(1);
 }
@@ -292,20 +349,6 @@ device_force_redraw(void)
 	if (devices[c] != NULL) {
 		if (devices[c]->force_redraw != NULL)
                                 devices[c]->force_redraw(device_priv[c]);
-	}
-    }
-}
-
-
-void
-device_add_status_info(char *s, int max_len)
-{
-    int c;
-
-    for (c = 0; c < DEVICE_MAX; c++) {
-	if (devices[c] != NULL) {
-		if (devices[c]->add_status_info != NULL)
-			devices[c]->add_status_info(s, max_len, device_priv[c]);
 	}
     }
 }

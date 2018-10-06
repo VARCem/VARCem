@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_input.h	1.0.7	2018/05/02
+ * Version:	@(#)win_settings_input.h	1.0.8	2018/09/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -108,13 +108,13 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(h, CB_SETCURSEL, temp_joystick, 0);
 		EnableWindow(h, (temp_game)?TRUE:FALSE);
 
-		h = GetDlgItem(hdlg, IDC_JOY1);
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY1);
 		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 1)) ? TRUE : FALSE);
-		h = GetDlgItem(hdlg, IDC_JOY2);
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY2);
 		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 2)) ? TRUE : FALSE);
-		h = GetDlgItem(hdlg, IDC_JOY3);
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY3);
 		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 3)) ? TRUE : FALSE);
-		h = GetDlgItem(hdlg, IDC_JOY4);
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY4);
 		EnableWindow(h, (temp_game && (gamedev_get_max_joysticks(temp_joystick) >= 4)) ? TRUE : FALSE);
 
 		return TRUE;
@@ -135,42 +135,42 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_CONFIGURE_MOUSE:
 				h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
 				temp_mouse = list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)mouse_get_device(temp_mouse));
+				temp_deviceconfig |= dlg_devconf(hdlg, mouse_get_device(temp_mouse));
 				break;
 
 			case IDC_COMBO_JOYSTICK:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
 
-				h = GetDlgItem(hdlg, IDC_JOY1);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY1);
 				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 1) ? TRUE : FALSE);
-				h = GetDlgItem(hdlg, IDC_JOY2);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY2);
 				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 2) ? TRUE : FALSE);
-				h = GetDlgItem(hdlg, IDC_JOY3);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY3);
 				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 3) ? TRUE : FALSE);
-				h = GetDlgItem(hdlg, IDC_JOY4);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_JOY4);
 				EnableWindow(h, (gamedev_get_max_joysticks(temp_joystick) >= 4) ? TRUE : FALSE);
 				break;
 
-			case IDC_JOY1:
+			case IDC_CONFIGURE_JOY1:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_deviceconfig |= dlg_jsconf(hdlg, 0, temp_joystick);
 				break;
 
-			case IDC_JOY2:
+			case IDC_CONFIGURE_JOY2:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_deviceconfig |= dlg_jsconf(hdlg, 1, temp_joystick);
 				break;
 
-			case IDC_JOY3:
+			case IDC_CONFIGURE_JOY3:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_deviceconfig |= dlg_jsconf(hdlg, 2, temp_joystick);
 				break;
 
-			case IDC_JOY4:
+			case IDC_CONFIGURE_JOY4:
 				h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 				temp_joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_deviceconfig |= dlg_jsconf(hdlg, 3, temp_joystick);
@@ -178,7 +178,7 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		return FALSE;
 
-	case WM_SAVESETTINGS:
+	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
 		temp_mouse = list_to_mouse[SendMessage(h, CB_GETCURSEL, 0, 0)];
 

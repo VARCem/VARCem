@@ -10,7 +10,7 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.8	2018/05/06
+ * Version:	@(#)snd_adlibgold.c	1.0.9	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,17 +43,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../../io.h"
-#include "../../mem.h"
-#include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
-#include "../system/pit.h"
 #include "sound.h"
 #include "filters.h"
 #include "snd_opl.h"
@@ -690,10 +688,14 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
         /* TODO: Fix this to use a static buffer */
         if (len > 512 * 1024)
         {
-            pclog("adgold_get_buffer: possible stack overflow detected. Buffer size was %d bytes", 2 * len);
+            DEBUG("adgold_get_buffer: possible stack overflow detected. Buffer size was %d bytes", 2 * len);
             return;
         }
+# ifdef __cplusplus
+        int16_t *adgold_buffer = (int16_t *)mem_alloc(sizeof(int16_t) * len * 2);
+# else
         int16_t *adgold_buffer = (int16_t *)_alloca(sizeof(int16_t) * len * 2);
+# endif
 #else
         int16_t adgold_buffer[len*2];
 #endif
@@ -802,6 +804,11 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
 
         adgold->opl.pos = 0;
         adgold->pos = 0;
+#ifdef _MSC_VER
+# ifdef __cplusplus
+	free(adgold_buffer);
+# endif
+#endif
 }
 
 
@@ -810,7 +817,7 @@ void *adgold_init(const device_t *info)
         FILE *f;
         int c;
         double out;
-        adgold_t *adgold = malloc(sizeof(adgold_t));
+        adgold_t *adgold = (adgold_t *)mem_alloc(sizeof(adgold_t));
         memset(adgold, 0, sizeof(adgold_t));
 
         adgold->surround_enabled = device_get_config_int("surround");
@@ -878,26 +885,21 @@ void adgold_close(void *p)
         free(adgold);
 }
 
-static const device_config_t adgold_config[] =
-{
-        {
-                "surround", "Surround module", CONFIG_BINARY, "", 1
-        },
-        {
-                "", "", -1
-        }
+
+static const device_config_t adgold_config[] = {
+    {
+        "surround", "Surround module", CONFIG_BINARY, "", 1
+    },
+    {
+        "", "", -1
+    }
 };
 
-const device_t adgold_device =
-{
-        "AdLib Gold",
-        DEVICE_ISA, 0,
-        adgold_init,
-        adgold_close,
-	NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        adgold_config
+const device_t adgold_device = {
+    "AdLib Gold",
+    DEVICE_ISA,
+    0,
+    adgold_init, adgold_close, NULL,
+    NULL, NULL, NULL, NULL,
+    adgold_config
 };

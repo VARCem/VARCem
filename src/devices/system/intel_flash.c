@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 2 Mbit 8-bit flash devices.
  *
- * Version:	@(#)intel_flash.c	1.0.6	2018/05/06
+ * Version:	@(#)intel_flash.c	1.0.7	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,6 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
 #include "../../device.h"
 #include "../../mem.h"
@@ -76,7 +75,7 @@ typedef struct flash_t
         uint8_t command, status;
 	uint8_t flash_id;
 	int invert_high_pin;
-	mem_mapping_t mapping[8], mapping_h[8];
+	mem_map_t mapping[8], mapping_h[8];
 	uint32_t block_start[4], block_end[4], block_len[4];
 	uint8_t array[131072];
 } flash_t;
@@ -169,8 +168,8 @@ static void intel_flash_add_mappings(flash_t *flash)
 	int i = 0;
 
 	for (i = 0; i <= 7; i++) {
-		mem_mapping_add(&(flash->mapping[i]), 0xe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + ((i << 14) & 0x1ffff),                       MEM_MAPPING_EXTERNAL, (void *)flash);
-		mem_mapping_add(&(flash->mapping_h[i]), 0xfffe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + ((i << 14) & 0x1ffff),                       0, (void *)flash);
+		mem_map_add(&(flash->mapping[i]), 0xe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + ((i << 14) & 0x1ffff),                       MEM_MAPPING_EXTERNAL, (void *)flash);
+		mem_map_add(&(flash->mapping_h[i]), 0xfffe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + ((i << 14) & 0x1ffff),                       0, (void *)flash);
 	}
 }
 
@@ -180,8 +179,8 @@ static void intel_flash_add_mappings_inverted(flash_t *flash)
 	int i = 0;
 
 	for (i = 0; i <= 7; i++) {
-		mem_mapping_add(&(flash->mapping[i]), 0xe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + (((i << 14) ^ 0x10000) & 0x1ffff),                       MEM_MAPPING_EXTERNAL, (void *)flash);
-		mem_mapping_add(&(flash->mapping_h[i]), 0xfffe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + (((i << 14) ^ 0x10000) & 0x1ffff),                       0, (void *)flash);
+		mem_map_add(&(flash->mapping[i]), 0xe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + (((i << 14) ^ 0x10000) & 0x1ffff),                       MEM_MAPPING_EXTERNAL, (void *)flash);
+		mem_map_add(&(flash->mapping_h[i]), 0xfffe0000 + (i << 14), 0x04000, flash_read,   flash_readw,   flash_readl,   flash_write, mem_write_nullw, mem_write_nulll, flash->array + (((i << 14) ^ 0x10000) & 0x1ffff),                       0, (void *)flash);
 	}
 }
 
@@ -193,19 +192,17 @@ void *intel_flash_init(uint8_t type)
 	wchar_t *machine_name;
 	wchar_t *flash_name;
 
-	flash = malloc(sizeof(flash_t));
+	flash = (flash_t *)mem_alloc(sizeof(flash_t));
         memset(flash, 0, sizeof(flash_t));
 
 	l = strlen(machine_get_internal_name_ex(machine))+1;
-	machine_name = (wchar_t *) malloc(l * sizeof(wchar_t));
+	machine_name = (wchar_t *)mem_alloc(l * sizeof(wchar_t));
 	mbstowcs(machine_name, machine_get_internal_name_ex(machine), l);
 	l = wcslen(machine_name)+5;
-	flash_name = (wchar_t *)malloc(l*sizeof(wchar_t));
+	flash_name = (wchar_t *)mem_alloc(l*sizeof(wchar_t));
 	swprintf(flash_name, l, L"%ls.bin", machine_name);
 
 	wcscpy(flash_path, flash_name);
-
-	/* pclog("Flash path: %ls\n", flash_name); */
 
 	flash->flash_id = (type & FLASH_IS_BXB) ? 0x95 : 0x94;
 	flash->invert_high_pin = (type & FLASH_INVERT);
@@ -237,8 +234,8 @@ void *intel_flash_init(uint8_t type)
 	}
 
 	for (i = 0; i < 8; i++) {
-		mem_mapping_disable(&bios_mapping[i]);
-		mem_mapping_disable(&bios_high_mapping[i]);
+		mem_map_disable(&bios_mapping[i]);
+		mem_map_disable(&bios_high_mapping[i]);
 	}
 
 	if (flash->invert_high_pin) {

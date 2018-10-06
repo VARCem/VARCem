@@ -151,7 +151,7 @@ extern uint64_t opcode_deps_8x_mod3[8];
 
 
 
-static inline uint32_t get_addr_regmask(uint64_t data, uint32_t fetchdat, int op_32)
+static INLINE uint32_t get_addr_regmask(uint64_t data, uint32_t fetchdat, int op_32)
 {
         uint32_t addr_regmask = 0;
 
@@ -205,7 +205,7 @@ static inline uint32_t get_addr_regmask(uint64_t data, uint32_t fetchdat, int op
         return addr_regmask;
 }
 
-static inline uint32_t get_srcdep_mask(uint64_t data, uint32_t fetchdat, int bit8, int op_32)
+static INLINE uint32_t get_srcdep_mask(uint64_t data, uint32_t fetchdat, int bit8, int op_32)
 {
         uint32_t mask = 0;
         if (data & SRCDEP_REG)
@@ -233,7 +233,7 @@ static inline uint32_t get_srcdep_mask(uint64_t data, uint32_t fetchdat, int bit
         return mask;
 }
 
-static inline uint32_t get_dstdep_mask(uint64_t data, uint32_t fetchdat, int bit8)
+static INLINE uint32_t get_dstdep_mask(uint64_t data, uint32_t fetchdat, int bit8)
 {
         uint32_t mask = 0;
         if (data & DSTDEP_REG)

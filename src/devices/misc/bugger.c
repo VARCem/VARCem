@@ -44,7 +44,7 @@
  *		configuration register (CTRL_SPCFG bit set) but have to
  *		remember that stuff first...
  *
- * Version:	@(#)bugger.c	1.0.7	2018/05/07
+ * Version:	@(#)bugger.c	1.0.8	2018/09/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -105,187 +105,189 @@
 # define CTRL_RESET	0xff		/* this resets the board */
 #define BUG_DATA	1
 
-
-static uint8_t	bug_ctrl,		/* control register */
-		bug_data,		/* data register */
-		bug_ledr, bug_ledg,	/* RED and GREEN LEDs */
-		bug_seg1, bug_seg2,	/* LEFT and RIGHT 7SEG displays */
-		bug_spcfg;		/* serial port configuration */
-# define FIFO_LEN	256
-static uint8_t	bug_buff[FIFO_LEN],	/* serial port data buffer */
-		*bug_bptr;
-# define UISTR_LEN	24
+#define FIFO_LEN	256
+#define UISTR_LEN	24
 
 
-extern void	ui_sb_bugui(char *__str);
+typedef struct {
+    const char	*name;
+    uint16_t	base;
+
+    uint8_t	ctrl,			/* control register */
+		data,			/* data register */
+		ledr,			/* RED and GREEN LEDs */
+		ledg,
+		seg1,			/* LEFT and RIGHT 7SEG displays */
+		seg2,
+		spcfg;			/* serial port configuration */
+     uint8_t	buff[FIFO_LEN],		/* serial port data buffer */
+		*bptr;
+} bugger_t;
 
 
 /* Update the system's UI with the actual Bugger status. */
 static void
-bug_setui(void)
+bug_update(bugger_t *dev)
 {
-    wchar_t temp[128];
-    char bug_str[UISTR_LEN];
+    char temp[UISTR_LEN];
 
     /* Format all current info in a string. */
-    sprintf(bug_str, "%02X:%02X %c%c%c%c%c%c%c%c-%c%c%c%c%c%c%c%c",
-		bug_seg2, bug_seg1,
-		(bug_ledg&0x80)?'G':'g', (bug_ledg&0x40)?'G':'g',
-		(bug_ledg&0x20)?'G':'g', (bug_ledg&0x10)?'G':'g',
-		(bug_ledg&0x08)?'G':'g', (bug_ledg&0x04)?'G':'g',
-		(bug_ledg&0x02)?'G':'g', (bug_ledg&0x01)?'G':'g',
-		(bug_ledr&0x80)?'R':'r', (bug_ledr&0x40)?'R':'r',
-		(bug_ledr&0x20)?'R':'r', (bug_ledr&0x10)?'R':'r',
-		(bug_ledr&0x08)?'R':'r', (bug_ledr&0x04)?'R':'r',
-		(bug_ledr&0x02)?'R':'r', (bug_ledr&0x01)?'R':'r');
-
-    /* Convert to Unicode. */
-    mbstowcs(temp, bug_str, sizeof_w(temp));
+    sprintf(temp, "%02X:%02X %c%c%c%c%c%c%c%c-%c%c%c%c%c%c%c%c",
+		dev->seg2, dev->seg1,
+		(dev->ledg&0x80)?'G':'g', (dev->ledg&0x40)?'G':'g',
+		(dev->ledg&0x20)?'G':'g', (dev->ledg&0x10)?'G':'g',
+		(dev->ledg&0x08)?'G':'g', (dev->ledg&0x04)?'G':'g',
+		(dev->ledg&0x02)?'G':'g', (dev->ledg&0x01)?'G':'g',
+		(dev->ledr&0x80)?'R':'r', (dev->ledr&0x40)?'R':'r',
+		(dev->ledr&0x20)?'R':'r', (dev->ledr&0x10)?'R':'r',
+		(dev->ledr&0x08)?'R':'r', (dev->ledr&0x04)?'R':'r',
+		(dev->ledr&0x02)?'R':'r', (dev->ledr&0x01)?'R':'r');
 
     /* Send formatted string to the UI. */
-    ui_sb_text_set_w(temp);
+    ui_sb_text_set(SB_TEXT|1, temp);
 }
 
 
 /* Flush the serial port. */
 static void
-bug_spflsh(void)
+bug_spflsh(bugger_t *dev)
 {
-    *bug_bptr = '\0';
-    pclog("BUGGER- serial port [%s]\n", bug_buff);
-    bug_bptr = bug_buff;
+    *dev->bptr = '\0';
+    INFO("BUGGER: serial port [%s]\n", dev->buff);
+    dev->bptr = dev->buff;
 }
 
 
 /* Handle a write to the Serial Port Data register. */
 static void
-bug_wsport(uint8_t val)
+bug_wsport(bugger_t *dev, uint8_t val)
 {
-    uint8_t old = bug_ctrl;
+    uint8_t old = dev->ctrl;
+
+    DEBUG("BUGGER: sport %02x\n", val);
 
     /* Clear the SPORT bit to indicate we are busy. */
-    bug_ctrl &= ~CTRL_SPORT;
+    dev->ctrl &= ~CTRL_SPORT;
 
     /* Delay while processing byte.. */
-    if (bug_bptr == &bug_buff[FIFO_LEN-1]) {
+    if (dev->bptr == &dev->buff[FIFO_LEN-1]) {
 	/* Buffer full, gotta flush. */
-	bug_spflsh();
+	bug_spflsh(dev);
     }
 
     /* Write (store) the byte. */
-    *bug_bptr++ = val;
+    *dev->bptr++ = val;
 
     /* Restore the SPORT bit. */
-    bug_ctrl |= (old & CTRL_SPORT);
-
-    pclog("BUGGER- sport %02x\n", val);
+    dev->ctrl |= (old & CTRL_SPORT);
 }
 
 
 /* Handle a write to the Serial Port Configuration register. */
 static void
-bug_wspcfg(uint8_t val)
+bug_wspcfg(bugger_t *dev, uint8_t val)
 {
-    bug_spcfg = val;
+    dev->spcfg = val;
 
-    pclog("BUGGER- spcfg %02x\n", bug_spcfg);
+    DEBUG("BUGGER: spcfg %02x\n", dev->spcfg);
 }
 
 
 /* Handle a write to the control register. */
 static void
-bug_wctrl(uint8_t val)
+bug_wctrl(bugger_t *dev, uint8_t val)
 {
     if (val == CTRL_RESET) {
 	/* User wants us to reset. */
-	bug_ctrl = CTRL_INIT;
-	bug_spcfg = 0x00;
-	bug_bptr = NULL;
+	dev->ctrl = CTRL_INIT;
+	dev->spcfg = 0x00;
+	dev->bptr = NULL;
     } else {
 	/* If turning off the serial port, flush it. */
-	if ((bug_ctrl & CTRL_SPORT) && !(val & CTRL_SPORT))
-		bug_spflsh();
+	if ((dev->ctrl & CTRL_SPORT) && !(val & CTRL_SPORT))
+		bug_spflsh(dev);
 
 	/* FIXME: did they do this using an XOR of operation bits?  --FvK */
 
 	if (val & CTRL_SPCFG) {
 		/* User wants to configure the serial port. */
-		bug_ctrl &= ~(CTRL_SPORT|CTRL_SEG2|CTRL_SEG1|CTRL_GLED);
-		bug_ctrl |= CTRL_SPCFG;
+		dev->ctrl &= ~(CTRL_SPORT|CTRL_SEG2|CTRL_SEG1|CTRL_GLED);
+		dev->ctrl |= CTRL_SPCFG;
 	} else if (val & CTRL_SPORT) {
 		/* User wants to talk to the serial port. */
-		bug_ctrl &= ~(CTRL_SPCFG|CTRL_SEG2|CTRL_SEG1|CTRL_GLED);
-		bug_ctrl |= CTRL_SPORT;
-		if (bug_bptr == NULL)
-			bug_bptr = bug_buff;
+		dev->ctrl &= ~(CTRL_SPCFG|CTRL_SEG2|CTRL_SEG1|CTRL_GLED);
+		dev->ctrl |= CTRL_SPORT;
+		if (dev->bptr == NULL)
+			dev->bptr = dev->buff;
 	} else if (val & CTRL_SEG2) {
 		/* User selected SEG2 (LEFT, Plus only) for output. */
-		bug_ctrl &= ~(CTRL_SPCFG|CTRL_SPORT|CTRL_SEG1|CTRL_GLED);
-		bug_ctrl |= CTRL_SEG2;
+		dev->ctrl &= ~(CTRL_SPCFG|CTRL_SPORT|CTRL_SEG1|CTRL_GLED);
+		dev->ctrl |= CTRL_SEG2;
 	} else if (val & CTRL_SEG1) {
 		/* User selected SEG1 (RIGHT) for output. */
-		bug_ctrl &= ~(CTRL_SPCFG|CTRL_SPORT|CTRL_SEG2|CTRL_GLED);
-		bug_ctrl |= CTRL_SEG1;
+		dev->ctrl &= ~(CTRL_SPCFG|CTRL_SPORT|CTRL_SEG2|CTRL_GLED);
+		dev->ctrl |= CTRL_SEG1;
 	} else if (val & CTRL_GLED) {
 		/* User selected the GREEN LEDs for output. */
-		bug_ctrl &= ~(CTRL_SPCFG|CTRL_SPORT|CTRL_SEG2|CTRL_SEG1);
-		bug_ctrl |= CTRL_GLED;
+		dev->ctrl &= ~(CTRL_SPCFG|CTRL_SPORT|CTRL_SEG2|CTRL_SEG1);
+		dev->ctrl |= CTRL_GLED;
 	} else {
 		/* User selected the RED LEDs for output. */
-		bug_ctrl &=
+		dev->ctrl &=
 		    ~(CTRL_SPCFG|CTRL_SPORT|CTRL_SEG2|CTRL_SEG1|CTRL_GLED);
 	}
     }
 
     /* Update the UI with active settings. */
-    pclog("BUGGER- ctrl %02x\n", bug_ctrl);
-    bug_setui();
+    DBGLOG(1, "BUGGER: ctrl %02x\n", dev->ctrl);
+
+    bug_update(dev);
 }
 
 
 /* Handle a write to the data register. */
 static void
-bug_wdata(uint8_t val)
+bug_wdata(bugger_t *dev, uint8_t val)
 {
-    bug_data = val;
+    dev->data = val;
 
-    if (bug_ctrl & CTRL_SPCFG)
-	bug_wspcfg(val);
-      else if (bug_ctrl & CTRL_SPORT)
-	bug_wsport(val);
+    if (dev->ctrl & CTRL_SPCFG)
+	bug_wspcfg(dev, val);
+      else if (dev->ctrl & CTRL_SPORT)
+	bug_wsport(dev, val);
       else {
-	if (bug_ctrl & CTRL_SEG2)
-		bug_seg2 = val;
-	  else if (bug_ctrl & CTRL_SEG1)
-		bug_seg1 = val;
-	  else if (bug_ctrl & CTRL_GLED)
-		bug_ledg = val;
+	if (dev->ctrl & CTRL_SEG2)
+		dev->seg2 = val;
+	  else if (dev->ctrl & CTRL_SEG1)
+		dev->seg1 = val;
+	  else if (dev->ctrl & CTRL_GLED)
+		dev->ledg = val;
 	  else
-		bug_ledr = val;
+		dev->ledr = val;
 
-	pclog("BUGGER- data %02x\n", bug_data);
+	DBGLOG(1, "BUGGER: data %02x\n", dev->data);
     }
 
     /* Update the UI with active settings. */
-    bug_setui();
+    bug_update(dev);
 }
 
 
 /* Reset the ISA BusBugger controller. */
 static void
-bug_reset(void)
+bug_reset(bugger_t *dev)
 {
     /* Clear the data register. */
-    bug_data = 0x00;
+    dev->data = 0x00;
 
     /* Clear the RED and GREEN LEDs. */
-    bug_ledr = 0x00; bug_ledg = 0x00;
+    dev->ledr = 0x00; dev->ledg = 0x00;
 
     /* Clear both 7SEG displays. */
-    bug_seg1 = 0x00; bug_seg2 = 0x00;
+    dev->seg1 = 0x00; dev->seg2 = 0x00;
  
     /* Reset the control register (updates UI.) */
-    bug_wctrl(CTRL_RESET);
+    bug_wctrl(dev, CTRL_RESET);
 }
 
 
@@ -293,20 +295,22 @@ bug_reset(void)
 static void
 bug_write(uint16_t port, uint8_t val, UNUSED(void *priv))
 {
-    switch (port-BUGGER_ADDR) {
+    bugger_t *dev = (bugger_t *)priv;
+
+    switch (port - dev->base) {
 	case BUG_CTRL:		/* control register */
 		if (val == CTRL_RESET) {
 			/* Perform a full reset. */
-			bug_reset();
-		} else if (bug_ctrl & CTRL_INIT) {
+			bug_reset(dev);
+		} else if (dev->ctrl & CTRL_INIT) {
 			/* Only allow writes if initialized. */
-			bug_wctrl(val);
+			bug_wctrl(dev, val);
 		}
 		break;
 
 	case BUG_DATA:		/* data register */
-		if (bug_ctrl & CTRL_INIT) {
-			bug_wdata(val);
+		if (dev->ctrl & CTRL_INIT) {
+			bug_wdata(dev, val);
 		}
 		break;
 
@@ -318,21 +322,22 @@ bug_write(uint16_t port, uint8_t val, UNUSED(void *priv))
 static uint8_t
 bug_read(uint16_t port, UNUSED(void *priv))
 {
+    bugger_t *dev = (bugger_t *)priv;
     uint8_t ret = 0xff;
 
-    if (bug_ctrl & CTRL_INIT) switch (port-BUGGER_ADDR) {
+    if (dev->ctrl & CTRL_INIT) switch (port - dev->base) {
 	case BUG_CTRL:		/* control register */
-		ret = bug_ctrl;
+		ret = dev->ctrl;
 		break;
 
 	case BUG_DATA:		/* data register */
-		if (bug_ctrl & CTRL_SPCFG) {
-			ret = bug_spcfg;
-		} else if (bug_ctrl & CTRL_SPORT) {
+		if (dev->ctrl & CTRL_SPCFG) {
+			ret = dev->spcfg;
+		} else if (dev->ctrl & CTRL_SPORT) {
 			ret = 0x00;		/* input not supported */
 		} else {
 			/* Just read the DIP switch. */
-			ret = bug_data;
+			ret = dev->data;
 		}
 		break;
 
@@ -348,31 +353,41 @@ bug_read(uint16_t port, UNUSED(void *priv))
 static void *
 bug_init(const device_t *info)
 {
-    pclog("%s, I/O=%04x\n", info->name, BUGGER_ADDR);
+    bugger_t *dev;
+
+    dev = (bugger_t *)mem_alloc(sizeof(bugger_t));
+    memset(dev, 0x00, sizeof(bugger_t));
+    dev->name = info->name;
+    dev->base = BUGGER_ADDR;
+
+    INFO("BUGGER: %s (I/O=%04x)\n", dev->name, dev->base);
 
     /* Initialize local registers. */
-    bug_reset();
+    bug_reset(dev);
 
-    io_sethandler(BUGGER_ADDR, BUGGER_ADDRLEN,
-		  bug_read, NULL, NULL, bug_write, NULL, NULL,  NULL);
+    io_sethandler(dev->base, 2,
+		  bug_read,NULL,NULL, bug_write,NULL,NULL, dev);
 
-    /* Just so its not NULL. */
-    return((void *)info);
+    return(dev);
 }
 
 
 /* Remove the ISA BusBugger emulator from the system. */
 static void
-bug_close(UNUSED(void *priv))
+bug_close(void *priv)
 {
-    io_removehandler(BUGGER_ADDR, BUGGER_ADDRLEN,
-		     bug_read, NULL, NULL, bug_write, NULL, NULL,  NULL);
+    bugger_t *dev = (bugger_t *)priv;
+
+    io_removehandler(dev->base, 2,
+		     bug_read,NULL,NULL, bug_write,NULL,NULL, dev);
+
+    free(dev);
 }
 
 
 const device_t bugger_device = {
     "ISA/PCI Bus Bugger",
-    DEVICE_ISA | DEVICE_AT,
+    DEVICE_ISA,
     0,
     bug_init, bug_close, NULL,
     NULL, NULL, NULL, NULL,

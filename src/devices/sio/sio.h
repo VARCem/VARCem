@@ -49,14 +49,22 @@
 
 
 extern void	superio_detect_init(void);
+
 extern void	fdc37c663_init(void);
+
 extern void	fdc37c665_init(void);
+
 extern void	fdc37c669_init(void);
+
 extern void	fdc37c932fr_init(void);
+
 extern void	fdc37c935_init(void);
+
 extern void	pc87306_init(void);
+
 extern void	um8669f_init(void);
-extern void	w83877f_init(void);
+
+extern void	w83877f_init(int flag);
 
 
 #endif	/*EMU_SIO_H*/

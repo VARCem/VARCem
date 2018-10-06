@@ -8,7 +8,7 @@
  *
  *		Handling of ROM image files.
  *
- * Version:	@(#)rom.c	1.0.14	2018/05/04
+ * Version:	@(#)rom.c	1.0.15	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,8 +42,6 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "emu.h"
-#include "config.h"
-#include "cpu/cpu.h"
 #include "mem.h"
 #include "rom.h"
 #include "plat.h"
@@ -80,7 +78,7 @@ rom_present(const wchar_t *fn)
 	return(1);
     }
 
-    pclog("ROM: image for '%ls' not found!\n", fn);
+    ERRLOG("ROM: image for '%ls' not found!\n", fn);
 
     return(0);
 }
@@ -94,7 +92,7 @@ rom_read(uint32_t addr, void *priv)
 
 #ifdef ROM_TRACE
     if (ptr->mapping.base==ROM_TRACE)
-	pclog("ROM: read byte from BIOS at %06lX\n", addr);
+	DEBUG("ROM: read byte from BIOS at %06lX\n", addr);
 #endif
 
     return(ptr->rom[addr & ptr->mask]);
@@ -109,7 +107,7 @@ rom_readw(uint32_t addr, void *priv)
 
 #ifdef ROM_TRACE
     if (ptr->mapping.base==ROM_TRACE)
-	pclog("ROM: read word from BIOS at %06lX\n", addr);
+	DEBUG("ROM: read word from BIOS at %06lX\n", addr);
 #endif
 
     return(*(uint16_t *)&ptr->rom[addr & ptr->mask]);
@@ -124,14 +122,14 @@ rom_readl(uint32_t addr, void *priv)
 
 #ifdef ROM_TRACE
     if (ptr->mapping.base==ROM_TRACE)
-	pclog("ROM: read long from BIOS at %06lX\n", addr);
+	DEBUG("ROM: read long from BIOS at %06lX\n", addr);
 #endif
 
     return(*(uint32_t *)&ptr->rom[addr & ptr->mask]);
 }
 
 
-/* Load a ROM BIOS from its chips, interleaved mode. */
+/* Load a ROM BIOS from its chips, linear mode. */
 int
 rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
@@ -139,7 +137,7 @@ rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
  
     f = plat_fopen(rom_path(fn), L"rb");
     if (f == NULL) {
-	pclog("ROM: image '%ls' not found\n", fn);
+	ERRLOG("ROM: image '%ls' not found\n", fn);
 	return(0);
     }
 
@@ -166,9 +164,9 @@ rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int 
     int c;
 
     if (fl == NULL || fh == NULL) {
-	if (fl == NULL) pclog("ROM: image '%ls' not found\n", fnl);
+	if (fl == NULL) ERRLOG("ROM: image '%ls' not found\n", fnl);
 	  else (void)fclose(fl);
-	if (fh == NULL) pclog("ROM: image '%ls' not found\n", fnh);
+	if (fh == NULL) ERRLOG("ROM: image '%ls' not found\n", fnh);
 	  else (void)fclose(fh);
 
 	return(0);
@@ -198,7 +196,7 @@ int
 rom_init(rom_t *ptr, const wchar_t *fn, uint32_t addr, int sz, int mask, int off, uint32_t fl)
 {
     /* Allocate a buffer for the image. */
-    ptr->rom = malloc(sz);
+    ptr->rom = (uint8_t *)mem_alloc(sz);
     memset(ptr->rom, 0xff, sz);
 
     /* Load the image file into the buffer. */
@@ -211,10 +209,10 @@ rom_init(rom_t *ptr, const wchar_t *fn, uint32_t addr, int sz, int mask, int off
 
     ptr->mask = mask;
 
-    mem_mapping_add(&ptr->mapping, addr, sz,
-		    rom_read, rom_readw, rom_readl,
-		    mem_write_null, mem_write_nullw, mem_write_nulll,
-		    ptr->rom, fl | MEM_MAPPING_ROM, ptr);
+    mem_map_add(&ptr->mapping, addr, sz,
+		rom_read, rom_readw, rom_readl,
+		mem_write_null, mem_write_nullw, mem_write_nulll,
+		ptr->rom, fl | MEM_MAPPING_ROM, ptr);
 
     return(1);
 }
@@ -224,7 +222,7 @@ int
 rom_init_interleaved(rom_t *ptr, const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int sz, int mask, int off, uint32_t fl)
 {
     /* Allocate a buffer for the image. */
-    ptr->rom = malloc(sz);
+    ptr->rom = (uint8_t *)mem_alloc(sz);
     memset(ptr->rom, 0xff, sz);
 
     /* Load the image file into the buffer. */
@@ -237,10 +235,10 @@ rom_init_interleaved(rom_t *ptr, const wchar_t *fnl, const wchar_t *fnh, uint32_
 
     ptr->mask = mask;
 
-    mem_mapping_add(&ptr->mapping, addr, sz,
-		    rom_read, rom_readw, rom_readl,
-		    mem_write_null, mem_write_nullw, mem_write_nulll,
-		    ptr->rom, fl | MEM_MAPPING_ROM, ptr);
+    mem_map_add(&ptr->mapping, addr, sz,
+		rom_read, rom_readw, rom_readl,
+		mem_write_null, mem_write_nullw, mem_write_nulll,
+		ptr->rom, fl | MEM_MAPPING_ROM, ptr);
 
     return(1);
 }

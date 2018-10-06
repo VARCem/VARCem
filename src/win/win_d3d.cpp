@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.11	2018/05/07
+ * Version:	@(#)win_d3d.cpp	1.0.12	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -208,8 +208,14 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
 
 	hr = d3dTexture->LockRect(0, &dr, &lock_rect, 0);
 	if (hr == D3D_OK) {
-		for (yy = y1; yy < y2; yy++)
-			if (buffer32)  memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w * 4);
+		for (yy = y1; yy < y2; yy++) {
+			if (buffer32) {
+				if (vid_grayscale || invert_display)
+					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w);
+				else
+					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w * 4);
+			}
+		}
 
 		video_blit_complete();
 		d3dTexture->UnlockRect(0);
@@ -286,7 +292,7 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
 	hr = d3ddev->Present(NULL, NULL, d3d_device_window, NULL);
 
     if (hr == D3DERR_DEVICELOST || hr == D3DERR_INVALIDCALL)
-	PostMessage(hwndMain, WM_RESETD3D, 0, 0);
+	PostMessage(hwndMain, WM_RESET_D3D, 0, 0);
 }
 
 
@@ -313,9 +319,14 @@ d3d_blit(int x, int y, int y1, int y2, int w, int h)
     hr = d3dTexture->LockRect(0, &dr, &r, 0);
     if (hr == D3D_OK) {	
 	for (yy = y1; yy < y2; yy++) {
-		if (buffer32)
-			if ((y + yy) >= 0 && (y + yy) < buffer32->h)
-				memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w * 4);
+		if (buffer32) {
+			if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+				if (vid_grayscale || invert_display)
+					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w);
+				else
+					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w * 4);
+			}
+		}
 	}
 
 	video_blit_complete();
@@ -378,7 +389,7 @@ d3d_blit(int x, int y, int y1, int y2, int w, int h)
 	hr = d3ddev->Present(NULL, NULL, d3d_hwnd, NULL);
 
     if (hr == D3DERR_DEVICELOST || hr == D3DERR_INVALIDCALL)
-		PostMessage(d3d_hwnd, WM_RESETD3D, 0, 0);
+		PostMessage(d3d_hwnd, WM_RESET_D3D, 0, 0);
 }
 
 
@@ -417,7 +428,7 @@ d3d_reset(int fs)
 
     hr = d3ddev->Reset(&d3dpp);
     if (hr == D3DERR_DEVICELOST) {
-	pclog("D3D: Unable to reset device!\n");
+	ERRLOG("D3D: Unable to reset device!\n");
 	return;
     }
 
@@ -471,7 +482,7 @@ d3d_init(int fs)
     RECT r;
     int y;
 
-    pclog("D3D: init (fs=%d)\n", fs);
+    INFO("D3D: init (fs=%d)\n", fs);
 
     d3d_hwnd = hwndRender;
 
@@ -481,7 +492,7 @@ d3d_init(int fs)
 	d3d_w = GetSystemMetrics(SM_CXSCREEN);
 	d3d_h = GetSystemMetrics(SM_CYSCREEN);
 
-	_swprintf(title, L"%s v%s", TEXT(EMU_NAME), TEXT(EMU_VERSION));
+	swprintf(title, sizeof_w(title), L"%s v%s", EMU_NAME, emu_version);
 	d3d_device_window = CreateWindow(
 					FS_CLASS_NAME,
 					title,
@@ -527,7 +538,7 @@ d3d_init(int fs)
 			   D3DCREATE_SOFTWARE_VERTEXPROCESSING,
 			   &d3dpp, &d3ddev);
     if (FAILED(hr)) {
-        pclog("D3D: CreateDevice failed, result = 0x%08x\n", hr);
+        ERRLOG("D3D: CreateDevice failed, result = 0x%08x\n", hr);
 	return(0);
     }
 
@@ -538,7 +549,7 @@ d3d_init(int fs)
 				    &v_buffer,
 				    NULL);
     if (FAILED(hr)) {
-	pclog("D3D: CreateVertexBuffer failed, result = %08lx\n", hr);
+	ERRLOG("D3D: CreateVertexBuffer failed, result = %08lx\n", hr);
 	return(0);
     }
 
@@ -549,7 +560,7 @@ d3d_init(int fs)
 			       D3DPOOL_MANAGED,
 			       &d3dTexture, NULL);
     if (FAILED(hr)) {
-	pclog("D3D: CreateTexture failed, result = %08lx\n", hr);
+	ERRLOG("D3D: CreateTexture failed, result = %08lx\n", hr);
 	return(0);
     }
 
@@ -557,7 +568,7 @@ d3d_init(int fs)
     r.bottom = r.right = 2047;
     hr = d3dTexture->LockRect(0, &dr, &r, 0);
     if (FAILED(hr)) {
-	pclog("D3D: LockRect failed, result = %08lx\n", hr);
+	ERRLOG("D3D: LockRect failed, result = %08lx\n", hr);
 	return(0);
     }
 

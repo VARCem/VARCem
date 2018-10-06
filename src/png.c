@@ -8,7 +8,7 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.2	2018/09/02
+ * Version:	@(#)png.c	1.0.3	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -44,20 +44,26 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <windows.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <errno.h>
 #define PNG_DEBUG 0
 #include <png.h>
 #include "./png.h"
 #include "emu.h"
-#include "plat.h" 
+#include "plat.h"
+#include "ui/ui.h"
+#include "devices/video/video.h"
 
 
-#define PATH_PNG_DLL		"libpng16.dll"
+#ifdef _WIN32
+# define PATH_PNG_DLL		"libpng16.dll"
+#else
+# define PATH_PNG_DLL		"libpng16.so"
+#endif
 #define USE_CUSTOM_IO		1
 
 
@@ -130,14 +136,14 @@ static const dllimp_t png_imports[] = {
 static void
 error_handler(png_structp arg, const char *str)
 {
-    pclog("PNG: stream 0x%08lx error '%s'\n", arg, str);
+    ERRLOG("PNG: stream 0x%08lx error '%s'\n", arg, str);
 }
 
 
 static void
 warning_handler(png_structp arg, const char *str)
 {
-    pclog("PNG: stream 0x%08lx warning '%s'\n", arg, str);
+    ERRLOG("PNG: stream 0x%08lx warning '%s'\n", arg, str);
 }
 
 
@@ -149,7 +155,7 @@ write_handler(png_struct *png_ptr, png_byte *bufp, png_size_t len)
     FILE *fp = (FILE *)PNGFUNC(get_io_ptr)(png_ptr);
 
     if (fwrite(bufp, 1, len, fp) != len)
-	pclog("PNG: error writing file!\n");
+	ERRLOG("PNG: error writing file!\n");
 }
 
 
@@ -168,14 +174,22 @@ flush_handler(png_struct *png_ptr)
 int
 png_load(void)
 {
+#if USE_LIBPNG == 2
+    wchar_t temp[512];
+    const char *fn = PATH_PNG_DLL;
+#endif
+
     /* If already loaded, good! */
     if (png_handle != NULL) return(1);
 
 #if USE_LIBPNG == 2
     /* Try loading the DLL. */
-    png_handle = dynld_module(PATH_PNG_DLL, png_imports);
+    png_handle = dynld_module(fn, png_imports);
     if (png_handle == NULL) {
-	pclog("PNG: unable to load '%s'; format disabled!\n", PATH_PNG_DLL);
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_NOLIB), "PNG", fn);
+	ui_msgbox(MBX_ERROR, temp);
+	ERRLOG("PNG: unable to load '%s'; format disabled!\n", fn);
 	return(0);
     }
 #else
@@ -217,10 +231,10 @@ png_write_gray(const wchar_t *fn, int inv, uint8_t *pix, int16_t w, int16_t h)
     if (fp == NULL) {
 	/* Yes, this looks weird. */
 	if (fp == NULL)
-		pclog("PNG: file %ls could not be opened for writing!\n", fn);
+		ERRLOG("PNG: file %ls could not be opened for writing!\n", fn);
 	  else
 error:
-	pclog("PNG: fatal error, bailing out, error = %i\n", errno);
+	ERRLOG("PNG: fatal error, bailing out, error = %i\n", errno);
 	if (png != NULL)
 		PNGFUNC(destroy_write_struct)(&png, &info);
 	if (fp != NULL)
@@ -232,13 +246,13 @@ error:
     png = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
 				       error_handler, warning_handler);
     if (png == NULL) {
-	pclog("PNG: create_write_struct failed!\n");
+	ERRLOG("PNG: create_write_struct failed!\n");
 	goto error;
     }
 
     info = PNGFUNC(create_info_struct)(png);
     if (info == NULL) {
-	pclog("PNG: create_info_struct failed!\n");
+	ERRLOG("PNG: create_info_struct failed!\n");
 	goto error;
     }
 
@@ -271,7 +285,7 @@ error:
     PNGFUNC(write_info)(png, info);
 
     /* Create a buffer for one scanline of pixels. */
-    row = (png_bytep)malloc(PNGFUNC(get_rowbytes)(png, info));
+    row = (png_bytep)mem_alloc(PNGFUNC(get_rowbytes)(png, info));
 
     /* Process all scanlines in the image. */
     for (y = 0; y < h; y++) {
@@ -309,6 +323,7 @@ png_write_rgb(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h)
     png_infop info = NULL;
     png_bytepp rows;
     uint8_t *r, *b;
+    uint32_t *rgb;
     FILE *fp;
     int y, x;
 
@@ -318,7 +333,7 @@ png_write_rgb(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h)
     /* Create the image file. */
     fp = plat_fopen(fn, L"wb");
     if (fp == NULL) {
-	pclog("PNG: File %ls could not be opened for writing!\n", fn);
+	ERRLOG("PNG: File %ls could not be opened for writing!\n", fn);
 error:
 	if (png != NULL)
 		PNGFUNC(destroy_write_struct)(&png, &info);
@@ -331,13 +346,13 @@ error:
     png = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
 				       error_handler, warning_handler);
     if (png == NULL) {
-	pclog("PNG: create_write_struct failed!\n");
+	ERRLOG("PNG: create_write_struct failed!\n");
 	goto error;
     }
 
     info = PNGFUNC(create_info_struct)(png);
     if (info == NULL) {
-	pclog("PNG: create_info_struct failed!\n");
+	ERRLOG("PNG: create_info_struct failed!\n");
 	goto error;
     }
 
@@ -362,10 +377,10 @@ error:
     PNGFUNC(write_info)(png, info);
 
     /* Create a buffer for scanlines of pixels. */
-    rows = (png_bytepp)malloc(sizeof(png_bytep) * h);
+    rows = (png_bytepp)mem_alloc(sizeof(png_bytep) * h);
     for (y = 0; y < h; y++) {
 	/* Create a buffer for this scanline. */
-	rows[y] = (png_bytep)malloc(PNGFUNC(get_rowbytes)(png, info));
+	rows[y] = (png_bytep)mem_alloc(PNGFUNC(get_rowbytes)(png, info));
     }
 
     /*
@@ -379,6 +394,12 @@ error:
 	for (x = 0; x < w; x++) {
 		/* Get pointer to pixel in bitmap data. */
                 b = &pix[((y * w) + x) * 4];
+
+		/* Transform if needed. */
+		if (vid_grayscale || invert_display) {
+			rgb = (uint32_t *)b;
+			*rgb = video_color_transform(*rgb);
+		}
 
 		/* Get pointer to png row data. */
 		r = &rows[(h - 1) - y][x * 3];

@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.33	2018/06/16
+ * Version:	@(#)VARCem.rc	1.0.33	2018/09/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -44,86 +44,85 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <inttypes.h>
 #include <windows.h>
 #include "../emu.h"
 #include "../version.h"
 #include "../ui/ui.h"
-#include "../plat.h"
 #include "resource.h"
 
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
-#include "../ui/lang/VARCem-EN.str"
+#include "../ui/lang/VARCem.str"
 
 #include "VARCem-common.rc"
 
 
 MainAccel ACCELERATORS
 BEGIN
-#ifdef ENABLE_BUS_LOG
+#ifdef _LOGGING
+# ifdef ENABLE_BUS_LOG
     VK_F1,   IDM_LOG_BUS,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_KEYBOARD_LOG
-    VK_F2,   IDM_LOG_KEYBOARD,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_MOUSE_LOG
-    VK_F3,   IDM_LOG_MOUSE,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_GAME_LOG
-    VK_F4,   IDM_LOG_GAME,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_PARALLEL_LOG
-    VK_F5,   IDM_LOG_PARALLEL,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_SERIAL_LOG
-    VK_F6,   IDM_LOG_SERIAL,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_FDC_LOG
-    VK_F7,   IDM_LOG_FDC,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_FDD_LOG
-    VK_F8,   IDM_LOG_FDD,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_D86F_LOG
-    VK_F9,   IDM_LOG_D86F,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_HDC_LOG
-    VK_F10,  IDM_LOG_HDC,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_HDD_LOG
-    VK_F11,  IDM_LOG_HDD,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_ZIP_LOG
-    VK_F12,  IDM_LOG_ZIP,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_CDROM_LOG
-    VK_F1,   IDM_LOG_CDROM,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_CDROM_IMAGE_LOG
-    VK_F2,   IDM_LOG_CDROM_IMAGE,	VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_CDROM_IOCTL_LOG
-    VK_F3,   IDM_LOG_CDROM_IOCTL,	VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_NETWORK_LOG
-    VK_F4,   IDM_LOG_NETWORK,		VIRTKEY, CONTROL
-#endif
-#ifdef ENABLE_NETWORK_DEV_LOG
-    VK_F5,   IDM_LOG_NETWORK_DEV,	VIRTKEY, CONTROL
-#endif
-# ifdef ENABLE_EMU8K_LOG
-    VK_F6,   IDM_LOG_SOUND_EMU8K,	VIRTKEY, CONTROL, ALT
 # endif
-# ifdef ENABLE_MPU401_LOG
-    VK_F7,   IDM_LOG_SOUND_MPU401,	VIRTKEY, CONTROL, ALT
+# ifdef ENABLE_KEYBOARD_LOG
+    VK_F2,   IDM_LOG_KEYBOARD,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_MOUSE_LOG
+    VK_F3,   IDM_LOG_MOUSE,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_GAME_LOG
+    VK_F4,   IDM_LOG_GAME,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_PARALLEL_LOG
+    VK_F5,   IDM_LOG_PARALLEL,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_SERIAL_LOG
+    VK_F6,   IDM_LOG_SERIAL,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_FDC_LOG
+    VK_F7,   IDM_LOG_FDC,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_FDD_LOG
+    VK_F8,   IDM_LOG_FDD,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_D86F_LOG
+    VK_F9,   IDM_LOG_D86F,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_HDC_LOG
+    VK_F10,  IDM_LOG_HDC,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_HDD_LOG
+    VK_F11,  IDM_LOG_HDD,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_ZIP_LOG
+    VK_F12,  IDM_LOG_ZIP,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_CDROM_LOG
+    VK_F1,   IDM_LOG_CDROM,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_CDROM_IMAGE_LOG
+    VK_F2,   IDM_LOG_CDROM_IMAGE,	VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_CDROM_IOCTL_LOG
+    VK_F3,   IDM_LOG_CDROM_IOCTL,	VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_NETWORK_LOG
+    VK_F4,   IDM_LOG_NETWORK,		VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_NETWORK_DEV_LOG
+    VK_F5,   IDM_LOG_NETWORK_DEV,	VIRTKEY, CONTROL
+# endif
+# ifdef ENABLE_SOUND_LOG
+    VK_F6,   IDM_LOG_SOUND,		VIRTKEY, CONTROL, ALT
+# endif
+# ifdef ENABLE_SOUND_MIDI_LOG
+    VK_F7,   IDM_LOG_SOUND_MIDI,	VIRTKEY, CONTROL, ALT
 # endif
 # ifdef ENABLE_SOUND_DEV_LOG
     VK_F8,   IDM_LOG_SOUND_DEV,		VIRTKEY, CONTROL, ALT
 # endif
-# ifdef ENABLE_SCSI_BUS_LOG
-    VK_F9,   IDM_LOG_SCSI_BUS,		VIRTKEY, CONTROL, ALT
+# ifdef ENABLE_SCSI_LOG
+    VK_F9,   IDM_LOG_SCSI,		VIRTKEY, CONTROL, ALT
 # endif
 # ifdef ENABLE_SCSI_DISK_LOG
     VK_F10,  IDM_LOG_SCSI_DISK,		VIRTKEY, CONTROL, ALT
@@ -131,12 +130,13 @@ BEGIN
 # ifdef ENABLE_SCSI_DEV_LOG
     VK_F11,  IDM_LOG_SCSI_DEV,		VIRTKEY, CONTROL, ALT
 # endif
-# ifdef ENABLE_VOODOO_LOG
-    VK_F12,  IDM_LOG_VOODOO,		VIRTKEY, CONTROL, ALT
+# ifdef ENABLE_VIDEO_LOG
+    VK_F12,  IDM_LOG_VIDEO,		VIRTKEY, CONTROL, ALT
 # endif
 
-#ifdef ENABLE_LOG_BREAKPOINT
+# ifdef ENABLE_LOG_BREAKPOINT
     VK_INSERT, IDM_LOG_BREAKPOINT,	VIRTKEY, CONTROL
+# endif
 #endif
     VK_PRIOR,IDM_FULLSCREEN,		VIRTKEY, CONTROL, ALT
     VK_HOME, IDM_SCREENSHOT,		VIRTKEY, CONTROL
@@ -144,60 +144,52 @@ BEGIN
 END
 
 
-100	ICON		"icons/varcem.ico"
+ICON_MAIN		ICON		"icons/varcem.ico"
 #if 1
-101	BITMAP		"icons/donate-button-blue-128x55.bmp"
+ICON_DONATE		BITMAP		"icons/donate-button-blue-128x55.bmp"
 #else
-101	ICON		"icons/paypal.ico"
+ICON_DONATE		ICON		"icons/paypal.ico"
 #endif
 
-128	ICON		"icons/floppy_525.ico"
-384	ICON		"icons/floppy_525_empty.ico"
-129	ICON		"icons/floppy_525_active.ico"
-385	ICON		"icons/floppy_525_empty_active.ico"
-144	ICON		"icons/floppy_35.ico"
-145	ICON		"icons/floppy_35_active.ico"
-400	ICON		"icons/floppy_35_empty.ico"
-401	ICON		"icons/floppy_35_empty_active.ico"
+ICON_FLOPPY_525		ICON		"icons/floppy_525.ico"
+ICON_FLOPPY_525_E	ICON		"icons/floppy_525_empty.ico"
+ICON_FLOPPY_525_A	ICON		"icons/floppy_525_active.ico"
+ICON_FLOPPY_525_I	ICON		"icons/floppy_525_empty_active.ico"
+ICON_FLOPPY_35		ICON		"icons/floppy_35.ico"
+ICON_FLOPPY_35_E	ICON		"icons/floppy_35_empty.ico"
+ICON_FLOPPY_35_A	ICON		"icons/floppy_35_active.ico"
+ICON_FLOPPY_35_I	ICON		"icons/floppy_35_empty_active.ico"
 
-160	ICON		"icons/cdrom.ico"
-161	ICON		"icons/cdrom_active.ico"
-416	ICON		"icons/cdrom_empty.ico"
-417	ICON		"icons/cdrom_empty_active.ico"
+ICON_CDROM		ICON		"icons/cdrom.ico"
+ICON_CDROM_E		ICON		"icons/cdrom_empty.ico"
+ICON_CDROM_A		ICON		"icons/cdrom_active.ico"
+ICON_CDROM_I		ICON		"icons/cdrom_empty_active.ico"
 
-176	ICON		"icons/zip.ico"
-177	ICON		"icons/zip_active.ico"
-432	ICON		"icons/zip_empty.ico"
-433	ICON		"icons/zip_empty_active.ico"
+ICON_ZIP		ICON		"icons/zip.ico"
+ICON_ZIP_E		ICON		"icons/zip_empty.ico"
+ICON_ZIP_A		ICON		"icons/zip_active.ico"
+ICON_ZIP_I		ICON		"icons/zip_empty_active.ico"
 
-192	ICON		"icons/removable_disk.ico"
-193	ICON		"icons/removable_disk_active.ico"
-448	ICON		"icons/removable_disk_empty.ico"
-449	ICON		"icons/removable_disk_empty_active.ico"
+ICON_DISK		ICON		"icons/hard_disk.ico"
+ICON_DISK_A		ICON		"icons/hard_disk_active.ico"
 
-208	ICON		"icons/hard_disk.ico"
-209	ICON		"icons/hard_disk_active.ico"
+ICON_NETWORK		ICON		"icons/network.ico"
+ICON_NETWORK_A		ICON		"icons/network_active.ico"
 
-224	ICON		"icons/network.ico"
-225	ICON		"icons/network_active.ico"
+ICON_MACHINE		ICON		"icons/machine.ico"
+ICON_DISPLAY		ICON		"icons/display.ico"
+ICON_INPDEV		ICON		"icons/input_devices.ico"
+ICON_SOUND		ICON		"icons/sound.ico"
+ICON_PORTS		ICON		"icons/ports.ico"
+ICON_PERIPH		ICON		"icons/other_peripherals.ico"
+ICON_FLOPPY		ICON		"icons/floppy_drives.ico"
+ICON_REMOV		ICON		"icons/other_removable_devices.ico"
 
-256	ICON		"icons/machine.ico"
-257	ICON		"icons/display.ico"
-258	ICON		"icons/input_devices.ico"
-259	ICON		"icons/sound.ico"
-260	ICON		"icons/network.ico"
-261	ICON		"icons/ports.ico"
-262	ICON		"icons/other_peripherals.ico"
-263	ICON		"icons/hard_disk.ico"
-264	ICON		"icons/floppy_drives.ico"
-265	ICON		"icons/other_removable_devices.ico"
+ICON_FLOPPY_D		ICON		"icons/floppy_disabled.ico"
+ICON_CDROM_D		ICON		"icons/cdrom_disabled.ico"
+ICON_ZIP_D		ICON		"icons/zip_disabled.ico"
 
-512	ICON		"icons/floppy_disabled.ico"
-514	ICON		"icons/cdrom_disabled.ico"
-515	ICON		"icons/zip_disabled.ico"
-
-
-1	RT_MANIFEST	"VARCem.manifest"
+1			RT_MANIFEST	"VARCem.manifest"
 
 
 VS_VERSION_INFO VERSIONINFO
@@ -239,12 +231,12 @@ VS_VERSION_INFO VERSIONINFO
             VALUE "ProductName", "VARCem Emulator"
             VALUE "ProductVersion", EMU_VERSION
 #ifndef RELEASE_BUILD
-            VALUE "SpecialBuild", "Internal Development Build"
+            VALUE "SpecialBuild", "Development Build"
 #endif
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 65001
+        VALUE "Translation", 0x0409, 65001
     END
 END

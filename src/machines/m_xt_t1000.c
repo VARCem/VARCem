@@ -36,13 +36,59 @@
  *
  *		The T1200 is a slightly upgraded version with a turbo mode
  *		(double CPU clock, 9.54MHz) and an optional hard drive.
- *		The interface for this is proprietary both at the physical
- *		and programming level.
+ *
+ *		The hard drive is a JVC JD-3824R00-1 (20MB, 615/2/34) RLL
+ *		3.5" drive with custom 26-pin interface. This is what is
+ *		known about the drive:
+ *
+ *		  JD-3824G is a 20MB hard disk drive that JVC made as one
+ *		  of OEM products. This HDD was shipped to Laptop PC
+ *		  manufactures.
+ *
+ *		  This HDD was discontinued about 10 years ago and JVC
+ *		  America does not have detail information because of the
+ *		  OEM product.
+ *
+ *		  This is the information that I have.
+ *		  [JD-3824G]
+ *		  1. 3.5" 20MB Hard Disk Drive
+ *		  2. JVC original interface (26 pin)
+ *		     This is not the IDE interface. This drive was made long
+ *		     before IDE standard. It required special controller board.
+ *		     This interface is not compatible with any other disk
+ *		     interface.
+ *
+ *		  Pin 1 GND			Pin 2 -Read Data
+ *		  Pin 3 GND			Pin 4 -Write data
+ *		  Pin 5 GND			Pin 6 Reserved
+ *		  Pin 7 -Drive Select/+Power Save  Pin 8 -Ship Ready
+ *		  Pin 9 GND			Pin 10 +Read/-Write control
+ *		  Pin 11 -Motor On	Pin 12 Head Select(+Head 0/ - Head1)
+ *		  Pin 13 -Direction In		Pin 14 -Step
+ *		  Pin 15 -Write Fault		Pin 16 -Seek Complete
+ *		  Pin 17 -Servo Gate		Pin 18 -Index
+ *		  Pin 19 -Track 000		Pin 20 -Drive Ready
+ *		  Pin 21 GND			Pin 22 +5V
+ *		  Pin 23 GND			Pin 24 +5V
+ *		  Pin 25 GND			Pin 26 +12V
+ *
+ *		  3. Parameters( 2 heads, 34 sectors, 615 cylinders)
+ *		  4. 2-7 RLL coding
+ *		  5. Spindle Rotation: 2597 rpm
+ *		  6. Data Transfer: 7.5M bps
+ *		  7. Average Access: 78ms
+ *		  8. Power Voltage: 5V and 12V
+ *
+ *		(from Jeff Kishida, JVC Americas, Corp.
+ *		 Tel: 714-827-6267 Fax: 714-827-8740
+ *		 Email: Jeff.Kishida@worldnet.att.net)
+ *
+ *		The controller is on a separate PCB, and contains a T7518,
+ *		DC2090P166A and a 27256 EPROM (label "036A") with BIOS. The
+ *		interface for this is proprietary at the rogramming level.
  *
  *		01F2h: If hard drive is present, low 4 bits are 0Ch [20Mb]
  *			or 0Dh [10Mb]. 
- *
- *		The hard drive is a 20MB (615/2/26) RLL 3.5" drive.
  *
  *		The TC8521 is a 4-bit RTC, so each memory location can only
  *		hold a single BCD digit. Hence everything has 'ones' and
@@ -50,7 +96,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_xt_t1000.c	1.0.14	2018/09/21
+ * Version:	@(#)m_xt_t1000.c	1.0.14	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,14 +135,15 @@
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../nvr.h"
 #include "../device.h"
+#include "../nvr.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pit.h"
 #include "../devices/ports/parallel.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../devices/disk/hdc.h"
 #include "../devices/video/video.h"
 #include "../plat.h"
 #include "machine.h"
@@ -134,11 +181,13 @@ enum TC8521_ADDR {
 
 typedef struct {
     /* ROM drive */
-    int		rom_dos;
-    uint8_t	*romdrive;
+    int8_t	rom_dos,
+		is_t1200;
+
     uint8_t	rom_ctl;
     uint32_t	rom_offset;
-    mem_mapping_t rom_mapping;
+    uint8_t	*romdrive;
+    mem_map_t	rom_mapping;
 
     /* CONFIG.SYS drive. */
     wchar_t	cfgsys_fn[128];
@@ -155,11 +204,11 @@ typedef struct {
     uint8_t	nvr_tick;
     int		nvr_addr;
     uint8_t	nvr_active;
-    mem_mapping_t nvr_mapping;		/* T1200 NVRAM mapping */
+    mem_map_t	nvr_mapping;		/* T1200 NVRAM mapping */
 
     /* EMS data */
     uint8_t	ems_reg[4];
-    mem_mapping_t mapping[4];
+    mem_map_t	mapping[4];
     uint32_t	page_exec[4];
     uint8_t	ems_port_index;
     uint16_t	ems_port;
@@ -167,7 +216,7 @@ typedef struct {
     uint32_t	ems_base;
     int32_t	ems_pages;
 
-    fdc_t	 *fdc;
+    fdc_t	*fdc;
 
     nvr_t	nvr;
 } t1000_t;
@@ -225,7 +274,7 @@ tc8521_time_get(uint8_t *regs, struct tm *tm)
 static void
 tc8521_tick(nvr_t *nvr)
 {
-    pclog("TC8521: ping\n");
+    DEBUG("TC8521: ping\n");
 }
 
 
@@ -235,7 +284,7 @@ tc8521_start(nvr_t *nvr)
     struct tm tm;
 
     /* Initialize the internal and chip times. */
-    if (enable_sync) {
+    if (time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
 	tc8521_time_set(nvr->regs, &tm);
@@ -335,9 +384,7 @@ ems_execaddr(t1000_t *sys, int pg, uint16_t val)
 					 * HardRAM or conventional RAM */
     val &= 0x7f;
 
-#if 0
-    pclog("Select EMS page: %d of %d\n", val, sys->ems_pages);
-#endif
+    DBGLOG(1, "Select EMS page: %d of %d\n", val, sys->ems_pages);
     if (val < sys->ems_pages) {
 	/* EMS is any memory above 512k,
 	   with ems_base giving the start address */
@@ -352,11 +399,12 @@ static uint8_t
 ems_in(uint16_t addr, void *priv)
 {
     t1000_t *sys = (t1000_t *)priv;
+    uint8_t ret;
 
-#if 0
-    pclog("ems_in(%04x)=%02x\n", addr, sys->ems_reg[(addr >> 14) & 3]);
-#endif
-    return(sys->ems_reg[(addr >> 14) & 3]);
+    ret = sys->ems_reg[(addr >> 14) & 3];
+    DBGLOG(1, "ems_in(%04x)=%02x\n", addr, ret);
+
+    return(ret);
 }
 
 
@@ -366,17 +414,16 @@ ems_out(uint16_t addr, uint8_t val, void *priv)
     t1000_t *sys = (t1000_t *)priv;
     int pg = (addr >> 14) & 3;
 
-#if 0
-    pclog("ems_out(%04x, %02x) pg=%d\n", addr, val, pg);
-#endif
+    DBGLOG(1, "ems_out(%04x, %02x) pg=%d\n", addr, val, pg);
+
     sys->ems_reg[pg] = val;
     sys->page_exec[pg] = ems_execaddr(sys, pg, val);
     if (sys->page_exec[pg]) {
 	/* Page present */
-	mem_mapping_enable(&sys->mapping[pg]);
-	mem_mapping_set_exec(&sys->mapping[pg], ram + sys->page_exec[pg]);
+	mem_map_enable(&sys->mapping[pg]);
+	mem_map_set_exec(&sys->mapping[pg], ram + sys->page_exec[pg]);
     } else {
-	mem_mapping_disable(&sys->mapping[pg]);
+	mem_map_disable(&sys->mapping[pg]);
     }
 }
 
@@ -393,10 +440,8 @@ ems_set_hardram(t1000_t *sys, uint8_t val)
       else
 	sys->ems_base = 0;
 
-#if 0
-    pclog("EMS base set to %02x\n", val);
-#endif
-    sys->ems_pages = 48 - 4 * sys->ems_base;
+    DEBUG("EMS base set to %02x\n", val);
+    sys->ems_pages = ((mem_size - 512) / 16) - 4 * sys->ems_base;
     if (sys->ems_pages < 0) sys->ems_pages = 0;
 
     /* Recalculate EMS mappings */
@@ -409,10 +454,10 @@ static void
 ems_set_640k(t1000_t *sys, uint8_t val)
 {
     if (val && mem_size >= 640) {
-	mem_mapping_set_addr(&ram_low_mapping, 0, 640 * 1024);
+	mem_map_set_addr(&ram_low_mapping, 0, 640 * 1024);
 	sys->is_640k = 1;
     } else {
-	mem_mapping_set_addr(&ram_low_mapping, 0, 512 * 1024);
+	mem_map_set_addr(&ram_low_mapping, 0, 512 * 1024);
 	sys->is_640k = 0;
     }
 }
@@ -423,9 +468,7 @@ ems_set_port(t1000_t *sys, uint8_t val)
 {
     int n;
 
-#if 0
-    pclog("ems_set_port(%d)", val & 0x0f);
-#endif
+    DBGLOG(1, "ems_set_port(%d)", val & 0x0f);
     if (sys->ems_port) {
 	for (n = 0; n <= 0xc000; n += 0x4000) {
 		io_removehandler(sys->ems_port+n, 1, 
@@ -448,9 +491,7 @@ ems_set_port(t1000_t *sys, uint8_t val)
 	sys->ems_port = 0;
     }
 
-#if 0
-    pclog(" -> %04x\n", sys->ems_port);
-#endif
+    DBGLOG(1, " -> %04x\n", sys->ems_port);
 }
 
 
@@ -483,14 +524,9 @@ ems_read_ramw(uint32_t addr, void *priv)
 
     if (pg < 0) return(0xff);
 
-#if 0
-    pclog("ems_read_ramw addr=%05x ", addr);
-#endif
+    DBGLOG(1, "ems_read_ramw addr=%05x ", addr);
     addr = sys->page_exec[pg] + (addr & 0x3FFF);
-
-#if 0
-    pclog("-> %06x val=%04x\n", addr, *(uint16_t *)&ram[addr]);
-#endif
+    DBGLOG(1, "-> %06x val=%04x\n", addr, *(uint16_t *)&ram[addr]);
 
     return(*(uint16_t *)&ram[addr]);
 }
@@ -533,14 +569,9 @@ ems_write_ramw(uint32_t addr, uint16_t val, void *priv)
 
     if (pg < 0) return;
 
-#if 0
-    pclog("ems_write_ramw addr=%05x ", addr);
-#endif
+    DBGLOG(1, "ems_write_ramw addr=%05x ", addr);
     addr = sys->page_exec[pg] + (addr & 0x3fff);
-
-#if 0
-    pclog("-> %06x val=%04x\n", addr, val);
-#endif
+    DBGLOG(1, "-> %06x val=%04x\n", addr, val);
 
     if (*(uint16_t *)&ram[addr] != val) nvr_dosave = 1;	
 
@@ -616,11 +647,11 @@ cfgsys_load(t1000_t *dev)
     memset(dev->cfgsys, 0x1a, dev->cfgsys_len);
     f = plat_fopen(nvr_path(dev->cfgsys_fn), L"rb");
     if (f != NULL) {
-	pclog("NVR: loaded CONFIG.SYS from '%ls'\n", dev->cfgsys_fn);
+	INFO("NVR: loaded CONFIG.SYS from '%ls'\n", dev->cfgsys_fn);
 	(void)fread(dev->cfgsys, dev->cfgsys_len, 1, f);
 	fclose(f);
-    }
-	else pclog("NVR: initialized CONFIG.SYS for '%ls'\n", dev->cfgsys_fn);
+    } else
+	INFO("NVR: initialized CONFIG.SYS for '%ls'\n", dev->cfgsys_fn);
 }
 
 
@@ -635,7 +666,7 @@ cfgsys_save(t1000_t *dev)
 
     f = plat_fopen(nvr_path(dev->cfgsys_fn), L"wb");
     if (f != NULL) {
-	pclog("NVR: saved CONFIG.SYS to '%ls'\n", dev->cfgsys_fn);
+	INFO("NVR: saved CONFIG.SYS to '%ls'\n", dev->cfgsys_fn);
 	(void)fwrite(dev->cfgsys, dev->cfgsys_len, 1, f);
 	fclose(f);
     }
@@ -699,10 +730,20 @@ write_ctl(uint16_t addr, uint8_t val, void *priv)
 		if (sys->sys_ctl[3] == 0x5A) {
 			t1000_video_options_set((val & 0x20) ? 1 : 0);
 			t1000_display_set((val & 0x40) ? 0 : 1);
-			if (romset == ROM_T1200)
+			if (sys->is_t1200)
 				t1200_turbo_set((val & 0x80) ? 1 : 0);
 		}
 		break;
+
+	/*
+	 * It looks as if the T1200, like the T3100, can disable
+	 * its builtin video chipset if it detects the presence of
+	 * another video card.
+	 */
+	case 6:
+		if (sys->is_t1200)
+			t1000_video_enable(val & 0x01 ? 0 : 1);
+		break;		
 
 	case 0x0f:	/* EMS control */
 		switch (sys->sys_ctl[0x0e]) {
@@ -793,7 +834,8 @@ t1000_write_nvram(uint16_t addr, uint8_t val, void *priv)
 		 * at -1.
 		 */
 		sys->nvr_active = val;
-		if (val == 0x80) sys->nvr_addr = -1;
+		if (val == 0x80)
+			sys->nvr_addr = -1;
 		break;
     }
 }
@@ -818,11 +860,11 @@ t1000_write_rom_ctl(uint16_t addr, uint8_t val, void *priv)
     if (sys->romdrive && (val & 0x80)) {
 	/* Enable */
 	sys->rom_offset = ((val & 0x7f) * 0x10000) % T1000_ROMDOS_SIZE;
-	mem_mapping_set_addr(&sys->rom_mapping, 0xa0000, 0x10000);
-	mem_mapping_set_exec(&sys->rom_mapping, sys->romdrive + sys->rom_offset);
-	mem_mapping_enable(&sys->rom_mapping);	
+	mem_map_set_addr(&sys->rom_mapping, 0xa0000, 0x10000);
+	mem_map_set_exec(&sys->rom_mapping, sys->romdrive + sys->rom_offset);
+	mem_map_enable(&sys->rom_mapping);	
     } else {
-	mem_mapping_disable(&sys->rom_mapping);	
+	mem_map_disable(&sys->rom_mapping);	
     }
 }
 
@@ -903,9 +945,6 @@ machine_xt_t1000_init(const machine_t *model, void *arg)
     t1000.turbo = 0xff;
     t1000.ems_port_index = 7;	/* EMS disabled */
 
-    /* Load the T1000 CGA Font ROM. */
-    loadfont(L"machines/toshiba/t1000/t1000font.rom", 2);
-
     /*
      * The ROM drive is optional.
      *
@@ -916,33 +955,33 @@ machine_xt_t1000_init(const machine_t *model, void *arg)
     if (t1000.rom_dos) {
 	f = plat_fopen(rom_path(T1000_ROMDOS_PATH), L"rb");
 	if (f != NULL) {
-		t1000.romdrive = malloc(T1000_ROMDOS_SIZE);
+		t1000.romdrive = (uint8_t *)mem_alloc(T1000_ROMDOS_SIZE);
 		if (t1000.romdrive) {
 			memset(t1000.romdrive, 0xff, T1000_ROMDOS_SIZE);
 			fread(t1000.romdrive, T1000_ROMDOS_SIZE, 1, f);
 		}
 		fclose(f);
 	}
-	mem_mapping_add(&t1000.rom_mapping, 0xa0000, 0x10000,
-			t1000_read_rom,t1000_read_romw,t1000_read_roml,
-			NULL,NULL,NULL, NULL, MEM_MAPPING_INTERNAL, &t1000);
-			mem_mapping_disable(&t1000.rom_mapping);
+	mem_map_add(&t1000.rom_mapping, 0xa0000, 0x10000,
+		    t1000_read_rom,t1000_read_romw,t1000_read_roml,
+		    NULL,NULL,NULL, NULL, MEM_MAPPING_INTERNAL, &t1000);
+	mem_map_disable(&t1000.rom_mapping);
     }
 
     /* Map the EMS page frame */
     for (pg = 0; pg < 4; pg++) {
-	mem_mapping_add(&t1000.mapping[pg], 0xd0000 + (0x4000 * pg), 16384,
-			ems_read_ram,ems_read_ramw,ems_read_raml,
-			ems_write_ram,ems_write_ramw,ems_write_raml,
-			NULL, MEM_MAPPING_EXTERNAL, &t1000);
+	mem_map_add(&t1000.mapping[pg], 0xd0000 + (0x4000 * pg), 16384,
+		    ems_read_ram,ems_read_ramw,ems_read_raml,
+		    ems_write_ram,ems_write_ramw,ems_write_raml,
+		    NULL, MEM_MAPPING_EXTERNAL, &t1000);
 
 	/* Start them all off disabled */
-	mem_mapping_disable(&t1000.mapping[pg]);
+	mem_map_disable(&t1000.mapping[pg]);
     }
 
     /* Non-volatile RAM for CONFIG.SYS */
     t1000.cfgsys_len = 160;
-    t1000.cfgsys = (uint8_t *)malloc(t1000.cfgsys_len);
+    t1000.cfgsys = (uint8_t *)mem_alloc(t1000.cfgsys_len);
     io_sethandler(0xc0, 4,
 		  t1000_read_nvram,NULL,NULL,
 		  t1000_write_nvram,NULL,NULL, &t1000);
@@ -961,17 +1000,22 @@ machine_xt_t1000_init(const machine_t *model, void *arg)
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
     device_add(&keyboard_xt_device);
-    t1000.fdc = device_add(&fdc_xt_device);
+    t1000.fdc = (fdc_t *)device_add(&fdc_xt_device);
     nmi_init();
 
     tc8521_init(&t1000.nvr, model->nvrsz);
 
-    device_add(&t1000_video_device);
+    if (video_card == VID_INTERNAL) {
+	/* Load the T1000 CGA Font ROM. */
+	video_load_font(L"machines/toshiba/t1000/t1000font.rom", 2);
+
+	device_add(&t1000_video_device);
+    }
 }
 
 
-static
-uint8_t t1200_nvram_read(uint32_t addr, void *priv)
+static uint8_t
+t1200_nvram_read(uint32_t addr, void *priv)
 {
     t1000_t *sys = (t1000_t *)priv;
 
@@ -980,14 +1024,14 @@ uint8_t t1200_nvram_read(uint32_t addr, void *priv)
 
 
 static void
-t1200_nvram_write(uint32_t addr, uint8_t value, void *priv)
+t1200_nvram_write(uint32_t addr, uint8_t val, void *priv)
 {
     t1000_t *sys = (t1000_t *)priv;
 
-    if (sys->cfgsys[addr & 0x7ff] != value) 
+    if (sys->cfgsys[addr & 0x7ff] != val) 
 	nvr_dosave = 1;
 
-    sys->cfgsys[addr & 0x7ff] = value;
+    sys->cfgsys[addr & 0x7ff] = val;
 }
 
 
@@ -998,20 +1042,18 @@ machine_xt_t1200_init(const machine_t *model, void *arg)
 
     memset(&t1000, 0x00, sizeof(t1000));
     t1000.ems_port_index = 7;	/* EMS disabled */
-
-    /* Load the T1200 CGA Font ROM. */
-    loadfont(L"machines/toshiba/t1200/t1000font.bin", 2);
+    t1000.is_t1200 = 1;
 
     /* Map the EMS page frame */
     for (pg = 0; pg < 4; pg++) {
-	mem_mapping_add(&t1000.mapping[pg], 
-			0xd0000 + (0x4000 * pg), 16384, 
-			ems_read_ram,ems_read_ramw,ems_read_raml,
-			ems_write_ram,ems_write_ramw,ems_write_raml,
-			NULL, MEM_MAPPING_EXTERNAL, &t1000);
+	mem_map_add(&t1000.mapping[pg], 
+		    0xd0000 + (0x4000 * pg), 16384, 
+		    ems_read_ram,ems_read_ramw,ems_read_raml,
+		    ems_write_ram,ems_write_ramw,ems_write_raml,
+		    NULL, MEM_MAPPING_EXTERNAL, &t1000);
 
 	/* Start them all off disabled */
-	mem_mapping_disable(&t1000.mapping[pg]);
+	mem_map_disable(&t1000.mapping[pg]);
     }
 
     /* System control functions, and add-on memory board */
@@ -1022,22 +1064,30 @@ machine_xt_t1200_init(const machine_t *model, void *arg)
 
     /* Non-volatile RAM for CONFIG.SYS */
     t1000.cfgsys_len = 2048;
-    t1000.cfgsys = (uint8_t *)malloc(t1000.cfgsys_len);
-    mem_mapping_add(&t1000.nvr_mapping,
-		    0x000f0000, t1000.cfgsys_len,
-		    t1200_nvram_read,NULL,NULL,
-		    t1200_nvram_write,NULL,NULL, 
-		    NULL, 0, &t1000);
+    t1000.cfgsys = (uint8_t *)mem_alloc(t1000.cfgsys_len);
+    mem_map_add(&t1000.nvr_mapping,
+		0x000f0000, t1000.cfgsys_len,
+		t1200_nvram_read,NULL,NULL,
+		t1200_nvram_write,NULL,NULL, 
+		NULL, 0, &t1000);
     cfgsys_load(&t1000);
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
     device_add(&keyboard_xt_device);
-    t1000.fdc = device_add(&fdc_xt_toshiba_device);
+    t1000.fdc = (fdc_t *)device_add(&fdc_toshiba_device);
     nmi_init();
 
     tc8521_init(&t1000.nvr, model->nvrsz);
 
-    device_add(&t1200_video_device);
+    if (video_card == VID_INTERNAL) {
+	/* Load the T1200 CGA Font ROM. */
+	video_load_font(L"machines/toshiba/t1200/t1000font.bin", 2);
+
+	device_add(&t1200_video_device);
+    }
+
+    if (hdc_type == HDC_INTERNAL)
+	(void)device_add(&xta_t1200_device);
 }
 
 

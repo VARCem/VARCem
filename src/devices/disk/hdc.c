@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.13	2018/05/06
+ * Version:	@(#)hdc.c	1.0.14	2018/09/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,10 +40,12 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
+#define dbglog hdc_log
 #include "../../emu.h"
 #include "../../machines/machine.h"
 #include "../../device.h"
 #include "hdc.h"
+#include "hdd.h"
 #include "hdc_ide.h"
 
 
@@ -52,119 +54,49 @@ int	hdc_do_log = ENABLE_HDC_LOG;
 #endif
 
 
-static void *
-null_init(const device_t *info)
-{
-    return(NULL);
-}
-
-
-static void
-null_close(void *priv)
-{
-}
-
-
-static const device_t null_device = {
-    "Null HDC", 0, 0,
-    null_init, null_close, NULL,
-    NULL, NULL, NULL, NULL,
-    NULL
-};
-
-
-static void *
-inthdc_init(const device_t *info)
-{
-    return(NULL);
-}
-
-
-static void
-inthdc_close(void *priv)
-{
-}
-
-
-static const device_t inthdc_device = {
-    "Internal Controller", 0, 0,
-    inthdc_init, inthdc_close, NULL,
-    NULL, NULL, NULL, NULL,
-    NULL
-};
-
-
 static const struct {
-    const char		*name;
     const char		*internal_name;
     const device_t	*device;
-    int			is_st506;
 } controllers[] = {
-    { "Disabled",					"none",		
-      &null_device,					0		},
+    { "none",			NULL				},
+    { "internal",		NULL				},
 
-    { "Internal Controller",				"internal",
-      &inthdc_device,					0		},
+    { "st506_xt",		&st506_xt_xebec_device		},
+    { "st506_dtc5150x",		&st506_xt_dtc5150x_device	},
 
-    { "[ISA] [ST506] IBM PC Fixed Disk Adapter",	"st506_xt",
-      &st506_xt_xebec_device,				1		},
+    { "xta_wdxt150",		&xta_wdxt150_device		},
 
-    { "[ISA] [ST506] DTC-5150X Fixed Disk Adapter",	"st506_dtc5150x",
-      &st506_xt_dtc5150x_device,			1		},
+    { "xtide",			&xtide_device			},
+    { "xtide_acculogic",	&xtide_acculogic_device		},
 
-    { "[ISA] [IDE] WDXT-150 IDE (XTA) Adapter",		"xta_wdxt150",
-      &xta_wdxt150_device,				0,		},
+    { "st506_at",		&st506_at_wd1003_device		},
+    { "esdi_at",		&esdi_at_wd1007vse1_device	},
 
-    { "[ISA] [IDE] PC/XT XTIDE (ATA)",			"xtide",
-      &xtide_device,					0		},
+    { "ide_isa",		&ide_isa_device			},
+    { "ide_isa_2ch",		&ide_isa_2ch_device		},
 
-    { "[ISA] [IDE] PC/XT Acculogic XT IDE",		"xtide_acculogic",
-      &xtide_acculogic_device,				0		},
+    { "xtide_at",		&xtide_at_device		},
+    { "xtide_at_ps2",		&xtide_at_ps2_device		},
 
-    { "[ISA] [ST506] IBM PC/AT Fixed Disk Adapter",	"st506_at",
-      &st506_at_wd1003_device,				1		},
+    { "esdi_mca",		&esdi_ps2_device		},
 
-    { "[ISA] [ESDI] PC/AT ESDI Fixed Disk Adapter",	"esdi_at",
-      &esdi_at_wd1007vse1_device,			0		},
+    { "ide_pci",		&ide_pci_device			},
+    { "ide_pci_2ch",		&ide_pci_2ch_device		},
 
-    { "[ISA] [IDE] PC/AT IDE (ATA) Adapter",		"ide_isa",
-      &ide_isa_device,					0		},
+    { "vlb_isa",		&ide_vlb_device			},
+    { "vlb_isa_2ch",		&ide_vlb_2ch_device		},
 
-    { "[ISA] [IDE] PC/AT IDE Adapter (Dual-Channel)",	"ide_isa_2ch",
-      &ide_isa_2ch_device,				0		},
-
-    { "[ISA] [IDE] PC/AT XTIDE",			"xtide_at",
-      &xtide_at_device,					0		},
-
-    { "[ISA] [IDE] PS/2 AT XTIDE (1.1.5)",		"xtide_at_ps2",
-      &xtide_at_ps2_device,				0		},
-
-    { "[MCA] [ESDI] IBM PS/2 ESDI Fixed Disk Adapter","esdi_mca",
-      &esdi_ps2_device,					1		},
-
-    { "[PCI] [IDE] PCI IDE Adapter",			"ide_pci",
-      &ide_pci_device,					0		},
-
-    { "[PCI] [IDE] PCI IDE Adapter (Dual-Channel)",	"ide_pci_2ch",
-      &ide_pci_2ch_device,				0		},
-
-    { "[VLB] [IDE] PC/AT IDE Adapter",			"vlb_isa",
-      &ide_vlb_device,					0		},
-
-    { "[VLB] [IDE] PC/AT IDE Adapter (Dual-Channel)",	"vlb_isa_2ch",
-      &ide_vlb_2ch_device,				0		},
-
-    { NULL,						NULL, NULL, 0	}
+    { NULL,			NULL				}
 };
 
 
 void
-hdc_log(const char *fmt, ...)
+hdc_log(int level, const char *fmt, ...)
 {
 #ifdef ENABLE_HDC_LOG
    va_list ap;
 
-   if (hdc_do_log) {
+   if (hdc_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
@@ -173,34 +105,41 @@ hdc_log(const char *fmt, ...)
 }
 
 
+/* Initialize the HDC module. */
+void
+hdc_init(void)
+{
+    /* Zero all the hard disk image arrays. */
+    hdd_image_init();
+}
+
+
 /* Reset the HDC, whichever one that is. */
 void
 hdc_reset(void)
 {
-#ifdef ENABLE_HDC_LOG
-    hdc_log("HDC: reset(current=%d, internal=%d)\n",
-	hdc_type, (machines[machine].flags & MACHINE_HDC)?1:0);
-#endif
+    INFO("HDC: reset(current=%d, internal=%d)\n",
+	 hdc_type, !!(machines[machine].flags & MACHINE_HDC));
 
     /* If we have a valid controller, add its device. */
-    if (hdc_type > 1)
+    if (controllers[hdc_type].device != NULL)
 	device_add(controllers[hdc_type].device);
 
-    /* Reconfire and reset the IDE layer. */
-    ide_ter_disable();
-    ide_qua_disable();
-    if (ide_enable[2])
-	ide_ter_init();
-    if (ide_enable[3])
-	ide_qua_init();
-    ide_reset_hard();
+    /* Now, add the tertiary and/or quaternary IDE controllers. */
+    if (ide_ter_enabled)
+	device_add(&ide_ter_device);
+    if (ide_qua_enabled)
+	device_add(&ide_qua_device);
 }
 
 
 const char *
 hdc_get_name(int hdc)
 {
-    return(controllers[hdc].name);
+    if (controllers[hdc].device != NULL)
+	return(controllers[hdc].device->name);
+
+    return(NULL);
 }
 
 
@@ -210,6 +149,21 @@ hdc_get_internal_name(int hdc)
     return(controllers[hdc].internal_name);
 }
 
+
+int
+hdc_get_from_internal_name(const char *s)
+{
+    int c = 0;
+
+    while (controllers[c].internal_name != NULL) {
+	if (! strcmp(controllers[c].internal_name, s))
+		return(c);
+	c++;
+    }
+
+    /* Not found. */
+    return(0);
+}
 
 
 const device_t *
@@ -235,7 +189,10 @@ hdc_has_config(int hdc)
 int
 hdc_get_flags(int hdc)
 {
-    return(controllers[hdc].device->flags);
+    if (controllers[hdc].device != NULL)
+	return(controllers[hdc].device->flags);
+
+    return(0);
 }
 
 
@@ -243,20 +200,4 @@ int
 hdc_available(int hdc)
 {
     return(device_available(controllers[hdc].device));
-}
-
-
-int
-hdc_get_from_internal_name(const char *s)
-{
-    int c = 0;
-
-    while (controllers[c].internal_name != NULL) {
-	if (! strcmp(controllers[c].internal_name, s))
-		return(c);
-	c++;
-    }
-
-    /* Not found. */
-    return(0);
 }

@@ -41,6 +41,7 @@
 #include "../emu.h"
 #include "../mem.h"
 #include "cpu.h"
+#include "x86.h"
 #include "x86_ops.h"
 #include "codegen.h"
 

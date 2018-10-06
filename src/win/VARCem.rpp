@@ -10,7 +10,7 @@
  *		which require some weird processing. This file allows us
  *		to use a single master for all those languages.
  *
- * Version:	@(#)VARCem.rpp	1.0.1	2018/06/19
+ * Version:	@(#)VARCem.rpp	1.0.2	2018/09/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -80,8 +80,8 @@ PREAMBLE #include "VARCem-common.rc"
 
 PREAMBLE #pragma code_page(DEFAULT)
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION	TAG_VERSION,0
- PRODUCTVERSION	TAG_VERSION,0
+ FILEVERSION	STR_VERSION,0
+ PRODUCTVERSION	STR_VERSION,0
  FILEFLAGSMASK	0x3fL
  FILEFLAGS	0x0L
  FILEOS		VOS_NT_WINDOWS32
@@ -94,13 +94,13 @@ VS_VERSION_INFO VERSIONINFO
         BEGIN
             VALUE "CompanyName", "IRC #VARCem on FreeNode"
             VALUE "FileDescription", "VARCem Language Module"
-            VALUE "FileVersion", STR(TAG_VERSION)
+            VALUE "FileVersion", STR(STR_VERSION)
             VALUE "InternalName", EMU_NAME
             VALUE "LegalCopyright", "Copyright 2018 The VARCem Team"
             VALUE "OriginalFilename", DLLNAME(LANG)
             VALUE "ProductName", "VARCem Emulator"
             VALUE "ProductVersion", EMU_VERSION
-            VALUE "Comments", STR_RC(TAG_AUTHOR,TAG_EMAIL)
+            VALUE "Comments", STR_RC(STR_AUTHOR,STR_EMAIL)
         END
     END
     BLOCK "VarFileInfo"

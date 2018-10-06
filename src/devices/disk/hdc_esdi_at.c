@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.11	2018/06/08
+ * Version:	@(#)hdc_esdi_at.c	1.0.12	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog hdc_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
@@ -127,32 +128,23 @@ typedef struct {
 static __inline void
 irq_raise(hdc_t *dev)
 {
-    /* If not already pending.. */
-    if (! dev->irqstat) {
-	/* If enabled in the control register.. */
-	if (! (dev->fdisk & 0x02)) {
-		/* .. raise IRQ14. */
-		picint(1<<14);
-	}
-
-	/* Remember this. */
-	dev->irqstat = 1;
+    /* If enabled in the control register.. */
+    if (! (dev->fdisk & 0x02)) {
+	/* .. raise IRQ14. */
+	picint(1 << 14);
     }
+
+    dev->irqstat = 1;
 }
 
 
 static __inline void
 irq_lower(hdc_t *dev)
 {
-    /* If raised.. */
     if (dev->irqstat) {
-	/* If enabled in the control register.. */
-	if (! (dev->fdisk & 0x02)) {
-		/* .. drop IRQ14. */
-		picintc(1<<14);
-	}
+	if (! (dev->fdisk & 0x02))
+		picintc(1 << 14);
 
-	/* Remember this. */
 	dev->irqstat = 0;
     }
 }
@@ -168,16 +160,12 @@ get_sector(hdc_t *dev, off64_t *addr)
     int c, h, s;
 
     if (dev->head > heads) {
-#ifdef ENABLE_HDC_LOG
-	hdc_log("dev_get_sector: past end of configured heads\n");
-#endif
+	DEBUG("dev_get_sector: past end of configured heads\n");
 	return(1);
     }
 
     if (dev->sector >= sectors+1) {
-#ifdef ENABLE_HDC_LOG
-	hdc_log("dev_get_sector: past end of configured sectors\n");
-#endif
+	DEBUG("dev_get_sector: past end of configured sectors\n");
 	return(1);
     }
 
@@ -249,9 +237,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
-#ifdef ENABLE_HDC_LOG
-    hdc_log("WD1007 write(%04x, %02x)\n", port, val);
-#endif
+    DBGLOG(2, "WD1007 write(%04x, %02x)\n", port, val);
 
     switch (port) {
 	case 0x1f0:	/* data */
@@ -293,9 +279,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 		dev->command = val;
 		dev->error = 0;
 
-#ifdef ENABLE_HDC_LOG
-		hdc_log("WD1007: command %02x\n", val & 0xf0);
-#endif
+		DEBUG("WD1007: command %02x\n", val & 0xf0);
 		switch (val & 0xf0) {
 			case CMD_RESTORE:
 				dev->command &= ~0x0f; /*mask off step rate*/
@@ -385,9 +369,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 						break;
 
 					default:
-#ifdef ENABLE_HDC_LOG
-						hdc_log("WD1007: bad command %02X\n", val);
-#endif
+						DEBUG("WD1007: bad command %02X\n", val);
 					case 0xe8: /*???*/
 						dev->status = STAT_BUSY;
 						timer_clock();
@@ -417,7 +399,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 		dev->fdisk = val;
 
 		/* Lower IRQ on IRQ disable. */
-		if ((val & 2) && !(dev->fdisk & 0x02))
+		if ((val & 0x02) && !(dev->fdisk & 0x02))
 			picintc(1 << 14);
 		break;
 	}
@@ -447,8 +429,6 @@ hdc_readw(uint16_t port, void *priv)
 			dev->callback = (3125LL * TIMER_USEC) / 8LL;
 
 			timer_update_outstanding();
-		} else {
-			ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 0);
 		}
 	}
     }
@@ -498,9 +478,7 @@ hdc_read(uint16_t port, void *priv)
 		break;
     }
 
-#ifdef ENABLE_HDC_LOG
-    hdc_log("WD1007 read(%04x) = %02x\n", port, temp);
-#endif
+    DBGLOG(2, "WD1007 read(%04x) = %02x\n", port, temp);
 
     return(temp);
 }
@@ -523,14 +501,12 @@ hdc_callback(void *priv)
 	dev->cylinder = 0;
 	dev->reset = 0;
 
-	ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 0);
+	hdd_active(drive->hdd_num, 0);
 
 	return;
     }
 
-#ifdef ENABLE_HDC_LOG
-    hdc_log("WD1007: command %02x\n", dev->command);
-#endif
+    DEBUG("WD1007: command %02x\n", dev->command);
 
     switch (dev->command) {
 	case CMD_RESTORE:
@@ -569,13 +545,14 @@ hdc_callback(void *priv)
 			break;
 		}
 
+		hdd_active(drive->hdd_num, 1);
+
 		hdd_image_read(drive->hdd_num, addr, 1,
 			      (uint8_t *)dev->buffer);
 
 		dev->pos = 0;
 		dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
 		irq_raise(dev);
-		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		break;
 
 	case CMD_WRITE:
@@ -593,6 +570,8 @@ hdc_callback(void *priv)
 			break;
 		}
 
+		hdd_active(drive->hdd_num, 1);
+
 		hdd_image_write(drive->hdd_num, addr, 1,
 				(uint8_t *)dev->buffer);
 
@@ -605,7 +584,6 @@ hdc_callback(void *priv)
 		} else {
 			dev->status = STAT_READY|STAT_DSC;
 		}
-		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		break;
 
 	case CMD_VERIFY:
@@ -623,10 +601,11 @@ hdc_callback(void *priv)
 			break;
 		}
 
+		hdd_active(drive->hdd_num, 1);
+
 		hdd_image_read(drive->hdd_num, addr, 1,
 			      (uint8_t *)dev->buffer);
 
-		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		next_sector(dev);
 		dev->secount = (dev->secount - 1) & 0xff;
 		if (dev->secount)
@@ -653,11 +632,12 @@ hdc_callback(void *priv)
 			break;
 		}
 
+		hdd_active(drive->hdd_num, 1);
+
 		hdd_image_zero(drive->hdd_num, addr, dev->secount);
 
 		dev->status = STAT_READY|STAT_DSC;
 		irq_raise(dev);
-		ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 1);
 		break;
 
 	case CMD_DIAGNOSE:
@@ -676,9 +656,7 @@ hdc_callback(void *priv)
 
 		drive->cfg_spt = dev->secount;
 		drive->cfg_hpc = dev->head+1;
-#ifdef ENABLE_HDC_LOG
-		hdc_log("WD1007: parameters: spt=%i hpc=%i\n", drive->cfg_spt,drive->cfg_hpc);
-#endif
+		DEBUG("WD1007: parameters: spt=%i hpc=%i\n", drive->cfg_spt,drive->cfg_hpc);
 		if (! dev->secount)
 			fatal("WD1007: secount=0\n");
 		dev->status = STAT_READY|STAT_DSC;
@@ -717,10 +695,8 @@ hdc_callback(void *priv)
 				break;
 
 			default:
-#ifdef ENABLE_HDC_LOG
-				hdc_log("WD1007: bad read config %02x\n",
+				DEBUG("WD1007: bad read config %02x\n",
 						dev->cylinder >> 8);
-#endif
 				break;
 		}
 		dev->status = STAT_READY|STAT_DSC;
@@ -777,9 +753,7 @@ hdc_callback(void *priv)
 		break;
 
 	default:
-#ifdef ENABLE_HDC_LOG
-		hdc_log("WD1007: callback on unknown command %02x\n", dev->command);
-#endif
+		DEBUG("WD1007: callback on unknown command %02x\n", dev->command);
 		/*FALLTHROUGH*/
 
 	case 0xe8:
@@ -789,7 +763,7 @@ hdc_callback(void *priv)
 		break;
     }
 
-    ui_sb_icon_update(SB_HDD|HDD_BUS_ESDI, 0);
+    hdd_active(drive->hdd_num, 0);
 }
 
 
@@ -799,9 +773,7 @@ loadhd(hdc_t *dev, int hdd_num, int d, const wchar_t *fn)
     drive_t *drive = &dev->drives[hdd_num];
 
     if (! hdd_image_load(d)) {
-#ifdef ENABLE_HDC_LOG
-	hdc_log("WD1007: drive %d not present!\n", d);
-#endif
+	DEBUG("WD1007: drive %d not present!\n", d);
 	drive->present = 0;
 	return;
     }
@@ -817,15 +789,18 @@ loadhd(hdc_t *dev, int hdd_num, int d, const wchar_t *fn)
 static void *
 wd1007vse1_init(const device_t *info)
 {
+    hdc_t *dev;
     int c, d;
 
-    hdc_t *dev = malloc(sizeof(hdc_t));
+    dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
 
     c = 0;
-    for (d=0; d<HDD_NUM; d++) {
+    for (d = 0; d < HDD_NUM; d++) {
 	if ((hdd[d].bus==HDD_BUS_ESDI) && (hdd[d].id.esdi_channel<ESDI_NUM)) {
 		loadhd(dev, hdd[d].id.esdi_channel, d, hdd[d].fn);
+
+		hdd_active(d, 0);
 
 		if (++c >= ESDI_NUM) break;
 	}
@@ -848,8 +823,6 @@ wd1007vse1_init(const device_t *info)
 
     timer_add(hdc_callback, &dev->callback, &dev->callback, dev);
 
-    ui_sb_icon_update(SB_HDD | HDD_BUS_ESDI, 0);
-
     return(dev);
 }
 
@@ -869,7 +842,7 @@ wd1007vse1_close(void *priv)
 
     free(dev);
 
-    ui_sb_icon_update(SB_HDD | HDD_BUS_ESDI, 0);
+    ui_sb_icon_update(SB_DISK | HDD_BUS_ESDI, 0);
 }
 
 
@@ -881,9 +854,9 @@ wd1007vse1_available(void)
 
 
 const device_t esdi_at_wd1007vse1_device = {
-    "Western Digital WD1007V-SE1 (ESDI)",
+    "PC/AT ESDI Fixed Disk Adapter",
     DEVICE_ISA | DEVICE_AT,
-    0,
+    (HDD_BUS_ESDI << 8) | 0,
     wd1007vse1_init, wd1007vse1_close, NULL,
     wd1007vse1_available,
     NULL, NULL, NULL,

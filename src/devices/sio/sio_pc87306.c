@@ -8,7 +8,7 @@
  *
  *		Emulation of the NatSemi PC87306 Super I/O chip.
  *
- * Version:	@(#)sio_pc87306.c	1.0.7	2018/05/06
+ * Version:	@(#)sio_pc87306.c	1.0.8	2018/10/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -173,11 +173,7 @@ void serial2_handler()
 
 void pc87306_write(uint16_t port, uint8_t val, void *priv)
 {
-	uint8_t index;
-	uint8_t valxor;
-#if 0
-	uint16_t or_value;
-#endif
+	uint8_t index, valxor;
 
 	index = (port & 1) ? 0 : 1;
 
@@ -264,27 +260,6 @@ process_value:
 					fdc_set_base(pc87306_fdc, (val & 0x20) ? 0x370 : 0x3f0);
 				}
 			}
-			if (valxor & 0xc0)
-			{
-#if 0
-				ide_pri_disable();
-				if (val & 0x80)
-				{
-					or_value = 0;
-				}
-				else
-				{
-					or_value = 0x80;
-				}
-				ide_set_base(0, 0x170 | or_value);
-				ide_set_side(0, 0x376 | or_value);
-				if (val & 0x40)
-				{
-					ide_pri_enable_ex();
-				}
-#endif
-			}
-			
 			break;
 		case 1:
 			if (valxor & 3)
@@ -471,7 +446,6 @@ void pc87306_reset(void)
 {
 	memset(pc87306_regs, 0, 29);
 
-	/* pc87306_regs[0] = 0x4B; */
 	pc87306_regs[0] = 0x0B;
 	pc87306_regs[1] = 0x01;
 	pc87306_regs[3] = 0x01;
@@ -501,13 +475,11 @@ void pc87306_reset(void)
 
 void pc87306_init()
 {
-	pc87306_fdc = device_add(&fdc_at_nsc_device);
+	pc87306_fdc = (fdc_t *)device_add(&fdc_at_nsc_device);
 
 //FIXME:	parallel_remove(2);
 
 	pc87306_reset();
 
         io_sethandler(0x02e, 0x0002, pc87306_read, NULL, NULL, pc87306_write, NULL, NULL,  NULL);
-
-	pci_reset_handler.super_io_reset = pc87306_reset;
 }

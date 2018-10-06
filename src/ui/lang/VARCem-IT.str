@@ -8,7 +8,7 @@
  *
  *		String definitions for "Italian (Italy)" language.
  *
- * Version:	@(#)VARCem-IT.str	1.0.8	2018/09/23
+ * Version:	@(#)VARCem-IT.str	1.0.8	2018/10/01
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,10 +47,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,7
-#define TAG_AUTHOR	"Miran Grca"
-#define TAG_EMAIL	"mgrca8@gmail.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,8
+#define STR_AUTHOR	"Miran Grca"
+#define STR_EMAIL	"mgrca8@gmail.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Errore"
@@ -65,27 +68,24 @@
 #define STR_2202	"Non è stato possible impostare PCap perché potrebbe non essere inizializzato"
 #define STR_2203	"Non è stato trovato nessun dispositivo PCap"
 #define STR_2204	"Dispositivo PCap non valido"
-#define STR_2205	"Non è possibile inizializzare OpenAL, assicurarsi che le seguenti biblioteche\nsiano nella cartella del programma:\n\nlibopenal-1.dll"
-#define STR_2206	"Non è possibile inizializzare FluidSynth, assicurarsi che le seguenti biblioteche\nsiano nella cartella del programma:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"Non è possibile inizializzare %s, assicurarsi che le seguenti biblioteche\nsiano nella cartella del programma:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Impossibile creare il file bitmap: %s"
+#define STR_2300	"System out of memory!"
 #define STR_2301	"Non è stata trovata nessuna immagine ROM utilizzabile!"
 #define STR_2302	"Non è stata trovata nessuna configurazione valida.\n\nSi desidera entrare nella finestra Impostazioni per crearne una?"
-#define STR_2303	"Il computer configurato:\n\n  %ls\n\nnon è disponibile.\n\nSi desidera entrare nella finestra Impostazioni?"
-#define STR_2304	"La scheda video configurata:\n\n  %ls\n\nnon è disponibile.\n\nSi desidera entrare nella finestra Impostazioni?"
-#define STR_2305	"Il renderer selezionato '%S' non è disponibile. Riporlo all'opzione predefinita?"
-#define STR_2306	"Unità CD-ROM ST506 o ESDI CD-ROM non sono mai esistite"
+#define STR_2303	"Il %ls configurato:\n\n  %s\n\nnon è disponibile.\n\nSi desidera entrare nella finestra Impostazioni?"
+#define STR_2304	"Il renderer selezionato:\n\n  %s\n\nnon è disponibile. Riporlo all'opzione predefinita?"
+#define STR_2305	"You must save your settings first!"
+#define STR_2306	"Impossibile creare il file bitmap: %ls"
 #define STR_2307	"USB non è ancora supportato"
-#define STR_2308	"You must save your settings first!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Si desidera salvare queste impostazioni?\n\n(Potrebbe essere necessario un riavvio...)"
 #define STR_2401	"Cambiamenti salvati, si prega di riavviare l'emulatore!"
-#define STR_2402	"Il dispositive richiesto '%ls' è almomento considerato «Sotto sviluppo» e potrebbe causare problemi.\n\nSi desidera comunque attivarlo?"
+#define STR_2402	"Il dispositive richiesto:\n\n  %s\n\nè almomento considerato «Sotto sviluppo» e potrebbe causare problemi.\n\nSi desidera comunque attivarlo?"
 #define STR_2403	"Fare clic per catturare il mouse"
 #define STR_2404	"Premere F8+F12 per rilasciare il mouse"
 #define STR_2405	"Premere F8+F12 o pulsante centrale per rilassare il mouse"
@@ -99,11 +99,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Annulla"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"Configura"
 #define STR_BROWSE	"Sfoglia"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Nessuno"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"Disattivato"
 #define STR_ENABLED	"Attivato"
 #define STR_OFF		"Spento"
@@ -123,19 +127,18 @@
 #define STR_DEVCONF_2	"Dispositivo:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Informazioni su VARCem..."
 #define  STR_3201	"Autori:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker e altri.\nBasato su opere anteriori come 86Box, PCem, MAME, DOSbox e Qemu."
 #define  STR_3203	"Rilasciato sotto le licenze BSD 3-Clause License e GNU General Public License (versione 2 o superiore) por codice existene, importato da altri progetti."
 #define  STR_3204	"Per ulteriori informazioni vedere il file LICENSE.txt."
-
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Localization"
 #define  STR_3211	"Translations from English to these other languages contributed by:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Stato"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Guadagno sonoro"
@@ -184,23 +187,16 @@
 #define  STR_3328	"Wait state:"
 #define  STR_3329	"Memoria:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Attiva sincronizzazione ora"
+#define  STR_3331	"Attiva sincronizzazione ora:"
 #define  STR_3332	"Attiva coprocessore"
 #define  STR_3333	"Ricompilatore dinamico"
 #define  STR_3334	"KB"
 #define  STR_3335	"Predefinito"
+#define  STR_3336	"Attivato (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Video:"
-#define  STR_3351	"Velocità video:"
-#define  STR_3352	"Grafica Voodoo"
-#define  STR_3353	"Predefinito"
-#define  STR_3354	"A 8 bit"
-#define  STR_3355	"Lenta  a 16 bit"
-#define  STR_3356	"Veloce a 16 bit"
-#define  STR_3357	"Lenta  VLB/PCI"
-#define  STR_3358	"Media  VLB/PCI"
-#define  STR_3359	"Veloce VLB/PCI"
+#define  STR_3351	"Grafica Voodoo"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Mouse:"
@@ -233,8 +229,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"Controller SCSI:"
 #define  STR_3476	"Conctroller HD:"
-#define  STR_3477	"IDE terziario:"
-#define  STR_3478	"IDE quaternario:"
+#define  STR_3477	"IDE terziario"
+#define  STR_3478	"IDE quaternario"
 #define  STR_3479	"Dispositivo ISABugger"
 #define  STR_3480	"ISA Memory Expansion"
 #define  STR_3481	"ISA Clock/RTC Card"
@@ -255,10 +251,9 @@
 #define  STR_3512	"Personalizzato (grande)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (solo PIO)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (rimuovibile)"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Aggiungi hard disk"
@@ -274,7 +269,6 @@
 #define  STR_3535	"Immagini HDI o HDX con dimensione di settore diversa da 512 non sono supportate"
 #define  STR_3536	"Immagini hard disk\0*.hd?;*.im?;*.vhd\0Tutti i file\0*.*\0"
 #define  STR_3537	"Ricordarsi di partizionare e formattare il disco nuovo"
-
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Unità floppy:"
 #define  STR_3551	"Tipo:"
@@ -289,14 +283,12 @@
 #define  STR_3577	"Unità ZIP:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Velocità"
-#define  STR_3580	"<Riservato>"
-#define  STR_3581	"<Riservato>"
-#define  STR_3582	"ATAPI (solo PIO)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
-#define  STR_3585	"USB"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(vuoto)"
 #define STR_3901	"(unità host %c:)"
 #define STR_3902	" [Protetto contro la scrittura]"
@@ -304,6 +296,7 @@
 #define STR_3904	"&Carica immagine..."
 #define STR_3905	"&Ricarica immagine precedente"
 #define STR_3906	"&Espelli"
+#define STR_3907	"&Notifica cambio di disco"
 
 #define STR_3910	"Floppy %i (%s): %ls"
 #define STR_3911	"Tutte le immagini\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Immagini di settori avvanzate\0*.imd;*.json;*.td0\0Immagini di settori basiche\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Immagini di flusso magnetico\0*.fdi\0Immagini bitstream\0*.86f\0Tutti i file\0*.*\0"
@@ -311,24 +304,21 @@
 #define STR_3913	"Immagini bistream\0*.86f\0"
 #define STR_3914	"E&sportare in 86F..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Unità CD/DVD host (%c:)"
 #define STR_3922	"Immagini CD-ROM\0*.iso;*.cue\0Tutti i file (*.*)\0*.*\0"
 #define STR_3923	"&Muto"
 
-#define STR_3930	"Hard disk (%s)"
+#define STR_3930	"Hard disk %i (%ls): %ls"
 
-#define STR_3940	"Disco rimuovibile %i: %ls"
-#define STR_3941	"&Notifica cambio di disco"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"Immagini ZIP\0*.im?;*.zdi\0All files\0*.*\0"
 #define STR_3952	"Immagini ZIP\0*.im?;*.zdi\0"
-#define STR_3960	"Rete"
-#define STR_3970	"Suono"
+#define STR_3960	"Rete (%s)"
+#define STR_3970	"Suono (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"&Azione"
 #define  STR_4001	"&Riavvio completo"
 #define  STR_4002	"&Ctrl+Alt+Canc"
@@ -337,25 +327,25 @@
 #define  STR_4005	"&Pausa"
 #define  STR_4006	"U&scita"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"&Visualizza"
 #define  STR_4011	"&Finestra ridimensionabile"
 #define  STR_4012	"R&icorda dimensioni e posizione"
 #define  STR_4013	"&Schermo intero\tCtrl+Alt+PageUP"
 #define  STR_4014	"CTRL &destro è ALT sinistro"
-#define  STR_4015	"&Aggiora icone della barra di stato"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"Re&nderer"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"&Fattore di scala in finistra"
 #define   STR_4031	"&0.5x"
 #define   STR_4032	"&1x"
 #define   STR_4033	"1.&5x"
 #define   STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"Modalità &allungamento a schermo intero"
 #define   STR_4041	"&Allunga a tutto lo schermo"
 #define   STR_4042	"&4:3"
@@ -363,14 +353,15 @@
 #define   STR_4044	"&Scala a numeri interi"
 #define   STR_4045	"&Mantieni proporzioni"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"&Monitor"
 #define  STR_4051	"Monitor &invertito"
 #define  STR_4052	"Abilita &overscan"
 #define  STR_4053	"F&orza proporzioni 4:3"
 #define  STR_4054	"Cambia &contrasto per monitor monocromatico"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"&Tipo monitor"
 #define   STR_4061	"Monitor RGB a &colori"
 #define   STR_4062	"Monitor a scala di &grigi"
@@ -378,23 +369,26 @@
 #define   STR_4064	"Monitor &verde"
 #define   STR_4065	"Monitor &bianco"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"Tipo conversione a scala di &grigi"
 #define   STR_4071	"BT&601 (NTSC/PAL)"
 #define   STR_4072	"BT&709 (HDTV)"
 #define   STR_4073	"&Media"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"&Strumenti"
 #define  STR_4081	"&Impostazioni"
 #define  STR_4082	"&Lingua"
 #define	 STR_4083	"R&egistrazione"
-#define  STR_4084	"Carica &configurazione"
-#define  STR_4085	"S&alva configurazione"
-#define  STR_4086	"Stat&o"
-#define  STR_4087	"&Fare uno screenshot\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"Carica &configurazione"
+#define  STR_4087	"S&alva configurazione"
+#define  STR_4088	"&Fare uno screenshot"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"&Guida"
 #define  STR_4091	"&Informazioni VARCem"
 

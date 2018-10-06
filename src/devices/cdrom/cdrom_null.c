@@ -9,7 +9,7 @@
  *		Implementation of the CD-ROM null interface for unmounted
  *		guest CD-ROM drives.
  *
- * Version:	@(#)cdrom_null.c	1.0.3	2018/05/06
+ * Version:	@(#)cdrom_null.c	1.0.4	2018/10/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -40,10 +40,9 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../scsi/scsi_device.h"
 #include "cdrom.h"
-
-
-static CDROM null_cdrom;
+#include "cdrom_null.h"
 
 
 static int
@@ -67,17 +66,6 @@ null_getcurrentsubchannel(uint8_t id, uint8_t *b, int msf)
     return(0x13);
 }
 
-
-static void
-null_eject(uint8_t id)
-{
-}
-
-
-static void
-null_load(uint8_t id)
-{
-}
 
 static int
 null_readsector_raw(uint8_t id, uint8_t *buffer, int sector, int ismsf, int cdrom_sector_type, int cdrom_sector_flags, int *len)
@@ -132,7 +120,7 @@ cdrom_null_reset(uint8_t id)
 void cdrom_set_null_handler(uint8_t id);
 
 int
-cdrom_null_open(uint8_t id, char d)
+cdrom_null_open(uint8_t id)
 {
     cdrom_set_null_handler(id);
 
@@ -153,32 +141,9 @@ void null_exit(uint8_t id)
 
 
 static int
-null_is_track_audio(uint8_t id, uint32_t pos, int ismsf)
-{
-    return(0);
-}
-
-
-static int
-null_pass_through(uint8_t id, uint8_t *in_cdb, uint8_t *b, uint32_t *len)
-{
-    return(0);
-}
-
-
-static int
 null_media_type_id(uint8_t id)
 {
     return(0x70);
-}
-
-
-void
-cdrom_set_null_handler(uint8_t id)
-{
-    cdrom_drives[id].handler = &null_cdrom;
-    cdrom_drives[id].host_drive = 0;
-    memset(cdrom_image[id].image_path, 0, sizeof(cdrom_image[id].image_path));
 }
 
 
@@ -192,16 +157,21 @@ static CDROM null_cdrom = {
     null_readtoc_session,
     null_readtoc_raw,
     null_getcurrentsubchannel,
-    null_pass_through,
     null_readsector_raw,
     NULL,
-    null_load,
-    null_eject,
     NULL,
     NULL,
     null_size,
     null_status,
-    null_is_track_audio,
     NULL,
     null_exit
 };
+
+
+void
+cdrom_set_null_handler(uint8_t id)
+{
+    cdrom[id]->handler = &null_cdrom;
+    cdrom_drives[id].host_drive = 0;
+    memset(cdrom_image[id].image_path, 0, sizeof(cdrom_image[id].image_path));
+}

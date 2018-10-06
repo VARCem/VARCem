@@ -9,15 +9,15 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_xt_t1000_vid.c	1.0.6	2018/05/06
+ * Version:	@(#)m_xt_t1000_vid.c	1.0.7	2018/09/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
+ *              John Elliott, <jce@seasip.info>
  *
  *		Copyright 2018 Fred N. van Kempen.
- *		Copyright 2018 Miran Grca.
- *		Copyright 2018 Sarah Walker.
+ *		Copyright 2017,2018 Miran Grca.
+ *              Copyright 2017,2018 John Elliott.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ static uint32_t blue, grey;
 static uint8_t  boldcols[256];		/* Which attributes use the bold font */
 static uint32_t blinkcols[256][2];
 static uint32_t normcols[256][2];
-static uint8_t  language;
+static uint8_t  langid;
 
 
 /* Video options set by the motherboard; they will be picked up by the card
@@ -72,6 +72,7 @@ static uint8_t  language;
  * Bit  0:   Thin font
  */
 static uint8_t st_video_options;
+static uint8_t st_enabled = 1;
 static int8_t st_display_internal = -1;
 
 
@@ -79,7 +80,13 @@ void
 t1000_video_options_set(uint8_t options)
 {
     st_video_options = options & 1;
-    st_video_options |= language;
+    st_video_options |= langid;
+}
+
+
+void t1000_video_enable(uint8_t enabled)
+{
+    st_enabled = enabled;
 }
 
 
@@ -98,7 +105,7 @@ t1000_display_get(void)
 
 
 typedef struct t1000_t {
-    mem_mapping_t mapping;
+    mem_map_t mapping;
 
     cga_t cga;			/* The CGA is used for the external 
 				 * display; most of its registers are
@@ -190,9 +197,7 @@ static void
 t1000_write(uint32_t addr, uint8_t val, void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
-        egawrites++;
 
-//        pclog("CGA_WRITE %04X %02X\n", addr, val);
         t1000->vram[addr & 0x3fff] = val;
         cycles -= 4;
 }
@@ -202,10 +207,9 @@ static uint8_t
 t1000_read(uint32_t addr, void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
-        egareads++;
+
 	cycles -= 4;
 
-//        pclog("CGA_READ %04X\n", addr);
         return t1000->vram[addr & 0x3fff];
 }
 
@@ -478,12 +482,20 @@ t1000_poll(void *p)
 {
         t1000_t *t1000 = (t1000_t *)p;
 
-	if (t1000->video_options != st_video_options)
+	if (t1000->video_options != st_video_options ||
+	    t1000->enabled != st_enabled)
 	{
 		t1000->video_options = st_video_options;
+		t1000->enabled = st_enabled;
 
 		/* Set the font used for the external display */
 		t1000->cga.fontbase = ((t1000->video_options & 3) * 256);
+
+		/* Enable or disable internal chipset. */
+		if (t1000->enabled)
+			mem_map_enable(&t1000->mapping);
+		else    
+			mem_map_disable(&t1000->mapping);
 	}
 	/* Switch between internal plasma and external CRT display. */
 	if (st_display_internal != -1 && st_display_internal != t1000->internal)
@@ -682,19 +694,19 @@ t1000_recalcattrs(t1000_t *t1000)
 static void *
 t1000_init(const device_t *info)
 {
-        t1000_t *t1000 = malloc(sizeof(t1000_t));
+        t1000_t *t1000 = (t1000_t *)mem_alloc(sizeof(t1000_t));
         memset(t1000, 0, sizeof(t1000_t));
 	cga_init(&t1000->cga);
 
 	t1000->internal = 1;
 
 	/* 16k video RAM */
-        t1000->vram = malloc(0x4000);
+        t1000->vram = (uint8_t *)mem_alloc(0x4000);
 
         timer_add(t1000_poll, &t1000->cga.vidtime, TIMER_ALWAYS_ENABLED, t1000);
 
 	/* Occupy memory between 0xB8000 and 0xBFFFF */
-        mem_mapping_add(&t1000->mapping, 0xb8000, 0x8000, t1000_read, NULL, NULL, t1000_write, NULL, NULL,  NULL, 0, t1000);
+        mem_map_add(&t1000->mapping, 0xb8000, 0x8000, t1000_read, NULL, NULL, t1000_write, NULL, NULL,  NULL, 0, t1000);
 	/* Respond to CGA I/O ports */
         io_sethandler(0x03d0, 0x000c, t1000_in, NULL, NULL, t1000_out, NULL, NULL, t1000);
 
@@ -707,7 +719,11 @@ t1000_init(const device_t *info)
 	t1000->cga.vram = t1000->vram;
 	t1000->enabled    = 1;
 	t1000->video_options = 0x01;
-	language = device_get_config_int("display_language") ? 2 : 0;
+	langid = device_get_config_int("display_language") ? 2 : 0;
+
+	video_inform(VID_TYPE_CGA,
+		     (const video_timings_t *)info->vid_timing);
+
         return t1000;
 }
 
@@ -731,30 +747,27 @@ t1000_speed_changed(void *p)
 }
 
 
-static const device_config_t t1000_config[] = 
-{
+static const device_config_t t1000_config[] = {
+    {
+	"display_language","Language",CONFIG_SELECTION,"",0,
 	{
-		.name = "display_language",
-		.description = "Language",
-		.type = CONFIG_SELECTION,
-		.selection = 
-		{
-			{ 
-				.description = "USA",
-				.value = 0
-			},
-			{
-				.description = "Danish",
-				.value = 1
-			}
+		{ 
+			"USA",0
 		},
-		.default_int = 0
-	},
-	{
-		.type = -1
+		{
+			"Danish",1
+		},
+    		{
+			""
+		}
 	}
+    },
+    {
+	"", "", -1
+    }
 };
 
+static video_timings_t timing_t1000 = {VID_ISA, 8,16,32, 8,16,32};
 
 const device_t t1000_video_device = {
     "Toshiba T1000 Video",
@@ -763,7 +776,7 @@ const device_t t1000_video_device = {
     NULL,
     t1000_speed_changed,
     NULL,
-    NULL,
+    &timing_t1000,
     t1000_config
 };
 
@@ -774,6 +787,6 @@ const device_t t1200_video_device = {
     NULL,
     t1000_speed_changed,
     NULL,
-    NULL,
+    &timing_t1000,
     t1000_config
 };

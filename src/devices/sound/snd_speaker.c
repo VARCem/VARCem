@@ -8,7 +8,7 @@
  *
  *		Implementation of the PC-Speaker device.
  *
- * Version:	@(#)snd_speaker.c	1.0.2	2018/05/06
+ * Version:	@(#)snd_speaker.c	1.0.3	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,67 +40,75 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../system/pit.h"
 #include "sound.h"
 #include "snd_speaker.h"
 
 
-int speaker_mute = 0;
-int speaker_gated = 0;
-int speaker_enable = 0, was_speaker_enable = 0;
+int		speaker_mute,
+		speaker_gated,
+		speaker_enable,
+		was_speaker_enable;
+
+int		gated,
+		speakval,
+		speakon;
 
 
-int gated,speakval,speakon;
+static int16_t	speaker_buffer[SOUNDBUFLEN];
+static int	speaker_pos;
 
 
-static int16_t speaker_buffer[SOUNDBUFLEN];
-static int speaker_pos = 0;
-
-
-void speaker_update(void)
+void
+speaker_update(void)
 {
-        int16_t val;
-        
-        for (; speaker_pos < sound_pos_global; speaker_pos++)
-        {
-                if (speaker_gated && was_speaker_enable)
-                {
-                        if (!pit.m[2] || pit.m[2]==4)
-                                val = speakval;
-                        else if (pit.l[2] < 0x40)
-                                val = 0xa00;
-                        else 
-                                val = speakon ? 0x1400 : 0;
-                }
-                else
-                        val = was_speaker_enable ? 0x1400 : 0;
+    int16_t val;
 
-                if (!speaker_enable)
-                        was_speaker_enable = 0;
+    for (; speaker_pos < sound_pos_global; speaker_pos++) {
+	if (speaker_gated && was_speaker_enable) {
+		if (!pit.m[2] || pit.m[2]==4)
+			val = speakval;
+		else if (pit.l[2] < 0x40)
+			val = 0x0a00;
+		else 
+			val = speakon ? 0x1400 : 0;
+	} else
+		val = was_speaker_enable ? 0x1400 : 0;
 
-                speaker_buffer[speaker_pos] = val;
-        }
-}
+	if (! speaker_enable)
+		was_speaker_enable = 0;
 
-static void speaker_get_buffer(int32_t *buffer, int len, void *p)
-{
-        int c;
-
-        speaker_update();
-        
-        if (!speaker_mute)
-        {
-                for (c = 0; c < len * 2; c++)
-                        buffer[c] += speaker_buffer[c >> 1];
-        }
-
-        speaker_pos = 0;
+	speaker_buffer[speaker_pos] = val;
+    }
 }
 
 
-void speaker_init(void)
+static void
+get_buffer(int32_t *buffer, int len, void *p)
 {
-        sound_add_handler(speaker_get_buffer, NULL);
-        speaker_mute = 0;
+    int c;
+
+    speaker_update();
+        
+    if (! speaker_mute) {
+	for (c = 0; c < len * 2; c++)
+		buffer[c] += speaker_buffer[c >> 1];
+    }
+
+    speaker_pos = 0;
+}
+
+
+void
+speaker_reset(void)
+{
+    INFO("SPEAKER: reset\n");
+
+    sound_add_handler(get_buffer, NULL);
+
+    speaker_mute = speaker_gated = 0;
+    speaker_enable = was_speaker_enable = 0;
+    speaker_pos = 0;
 }

@@ -8,7 +8,7 @@
  *
  *		String definitions for "Slovenian (Slovenia)" language.
  *
- * Version:	@(#)VARCem-SL.str	1.0.7	2018/09/23
+ * Version:	@(#)VARCem-SL.str	1.0.7	2018/10/01
  *
  * Authors:	David Simunic, <simunic.david@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,10 +47,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,6
-#define TAG_AUTHOR	"David Simunic"
-#define TAG_EMAIL	"simunic.david@outlook.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,7
+#define STR_AUTHOR	"David Simunic"
+#define STR_EMAIL	"simunic.david@outlook.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Napaka"
@@ -65,27 +68,24 @@
 #define STR_2202	"PCap se ni uspel nastaviti, ker morda ni inicializiran"
 #define STR_2203	"Najdena ni bila nobena PCap naprava"
 #define STR_2204	"Neveljavna PCap naprava"
-#define STR_2205	"Ne morem inicializirati OpenAL, prepričajte se, da imate naslednjo knjižico\nv svoji mapi programa:\n\nlibopenal-1.dll"
-#define STR_2206	"Ne morem inicializirati FluidSynth, prepričajte se, da imate naslednjo knjižico\nv svoji mapi programa:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"Ne morem inicializirati %s, prepričajte se, da imate naslednjo knjižico\nv svoji mapi programa:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Ne morem ustvariti bitne slike: %s"
+#define STR_2300	"System out of memory!"
 #define STR_2301	"Najdena ni bila nobena uporabna ROM slika!"
 #define STR_2302	"Najdena ni bila nobena veljavna konfiguracija.\n\nŽelite odpreti Nastavitve, da jo ustvarite?"
-#define STR_2303	"Nastavljen računalnik:\n\n  %ls\n\nni na voljo.\n\nŽelite odpreti Nastavitve?"
-#define STR_2304	"Nastavljevna grafična kartica:\n\n  %ls\n\nni na voljo.\n\nŽelite odpreti Nastavitve?"
-#define STR_2305	"Izbran upodabljalnik '%S' ni na voljo. Ponastavim na privzetega?"
-#define STR_2306	"ST506 ali ESDI CD-ROM pogoni niso obstajali"
+#define STR_2303	"Nastavljen %ls:\n\n  %s\n\nni na voljo.\n\nŽelite odpreti Nastavitve?"
+#define STR_2304	"Izbran upodabljalnik:\n\n  %s\n\nni na voljo. Ponastavim na privzetega?"
+#define STR_2305	"You must save your settings first!"
+#define STR_2306	"Ne morem ustvariti bitne slike: %ls"
 #define STR_2307	"USB še ni podprt"
-#define STR_2308	"You must save your settings first!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Ste prepričani, da želite shraniti te nastavitve?\n\n(Morda bo potrebno ponovno zagnati program...)"
 #define STR_2401	"Spremembe shranjene, prosim ponovno zaženite emulator!"
-#define STR_2402	"Zahtevana naprava '%ls' je trenutno še `v razvoju` in lahko povzroča težave.\n\nSte prepričani, da jo želite omogočiti?"
+#define STR_2402	"Zahtevana naprava:\n\n  %s\n\nje trenutno še `v razvoju` in lahko povzroča težave.\n\nSte prepričani, da jo želite omogočiti?"
 #define STR_2403	"Kliknite za zajem miške"
 #define STR_2404	"Pritisnite F8+F12 za sprostitev miške"
 #define STR_2405	"Pritisnite F8+F12 ali srednji miškin gumb za sprostitev miške"
@@ -99,11 +99,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"V redu"
 #define STR_CANCEL	"Prekliči"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"Nastavi"
 #define STR_BROWSE	"Brskaj"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Brez"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"Onemogočeno"
 #define STR_ENABLED	"Omogočeno"
 #define STR_OFF		"Izključeno"
@@ -123,19 +127,19 @@
 #define STR_DEVCONF_2	"Naprava:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Vizitka za VARCem.."
 #define  STR_3201	"Avtorji:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker in drugi.\nTemelji na predhodnih delih, kot so 86Box, PCem, MAME, DOSbox in Qemu."
 #define  STR_3203	"Izdano pod licenco BSD 3-Clause License, in licenco GNU General Public License (različica 2 ali novejše) za obstoječo kodo, preneseno iz drugih projektov."
 #define  STR_3204	"Glej LICENSE.txt za več informacij."
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Lokalizacija"
 #define  STR_3211	"Prevodi iz angleščine v te druge jezike, ki jih prispevajo:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Stanje"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Pridobitev zvoka"
@@ -184,23 +188,16 @@
 #define  STR_3328	"Čakalna stanja:"
 #define  STR_3329	"Pomnilnik:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Omogoči sinhronizacijo časa"
+#define  STR_3331	"Omogoči sinhronizacijo časa:"
 #define  STR_3332	"Omogoči FPU"
 #define  STR_3333	"Dinamični recompiler"
 #define  STR_3334	"KB"
 #define  STR_3335	"Privzeto"
+#define  STR_3336	"Omogočeno (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Video:"
-#define  STR_3351	"Hitrost videa:"
-#define  STR_3352	"Voodoo grafika"
-#define  STR_3353	"Privzeto"
-#define  STR_3354	"8-bitna"
-#define  STR_3355	"Počasna 16-bitna"
-#define  STR_3356	"Hitra 16-bitna"
-#define  STR_3357	"Počasna VLB/PCI"
-#define  STR_3358	"Srednja  VLB/PCI"
-#define  STR_3359	"Hitra VLB/PCI"
+#define  STR_3351	"Voodoo grafika"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Miška:"
@@ -233,8 +230,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSI krmilnik:"
 #define  STR_3476	"Krmilnik trdih diskov:"
-#define  STR_3477	"Terciarni IDE:"
-#define  STR_3478	"Kvartarni IDE:"
+#define  STR_3477	"Terciarni IDE"
+#define  STR_3478	"Kvartarni IDE"
 #define  STR_3479	"ISABugger naprava"
 #define  STR_3480	"ISA Memory Expansion"
 #define  STR_3481	"ISA Clock/RTC Card"
@@ -255,11 +252,9 @@
 #define  STR_3512	"Po meri (velik)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (samo PIO)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (odstranljiv)"
-#define  STR_3521	"USB"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Dodaj trdi disk"
@@ -290,14 +285,12 @@
 #define  STR_3577	"ZIP pogoni:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Histrost"
-#define  STR_3580	"<Rezervirano>"
-#define  STR_3581	"<Rezervirano>"
-#define  STR_3582	"ATAPI (samo PIO)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
-#define  STR_3585	"USB"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(prazno)"
 #define STR_3901	"(gostiteljev pogon %c:)"
 #define STR_3902	" [Zaščiteno pred pisanjem]"
@@ -305,6 +298,7 @@
 #define STR_3904	"&Obstoječa slika..."
 #define STR_3905	"&Ponovno naloži prejšnjo sliko"
 #define STR_3906	"I&zvrzi"
+#define STR_3907	"&Obvesti o spremembi diska"
 
 #define STR_3910	"Disketa %i (%s): %ls"
 #define STR_3911	"Vse slike disket\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Napredne sektorske slike\0*.imd;*.json;*.td0\0Osnovne sektorske slike\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Tokovne slike\0*.fdi\0Površinske slike\0*.86f\0Vse datoteke\0*.*\0"
@@ -312,24 +306,21 @@
 #define STR_3913	"Površinske slike\0*.86f\0"
 #define STR_3914	"&Izvozi v 86F..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Gostiteljev CD/DVD pogon (%c:)"
 #define STR_3922	"CD-ROM slike\0*.iso;*.cue\0Vse datoteke (*.*)\0*.*\0"
 #define STR_3923	"&Utišaj"
 
-#define STR_3930	"Trdi disk (%s)"
+#define STR_3930	"Trdi disk %i (%ls): %ls"
 
-#define STR_3940	"Odstranljiv disk %i: %ls"
-#define STR_3941	"&Obvesti o spremembi diska"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP slike\0*.im?;*.zdi\0Vse datoteke\0*.*\0"
 #define STR_3952	"ZIP slike\0*.im?;*.zdi\0"
-#define STR_3960	"Omrežje"
-#define STR_3970	"Zvok"
+#define STR_3960	"Omrežje (%s)"
+#define STR_3970	"Zvok (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"&Dejanje"
 #define  STR_4001	"P&onovni zagon"
 #define  STR_4002	"&Ctrl+Alt+Del"
@@ -338,25 +329,25 @@
 #define  STR_4005	"&Premor"
 #define  STR_4006	"&Izhod"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"P&ogled"
 #define  STR_4011	"&Spremenljiva velikost okna"
 #define  STR_4012	"&Zapomni si velikost in pozicijo"
 #define  STR_4013	"&Celoten zaslon\tCtrl+Alt+PageUP"
 #define  STR_4014	"&Desni CTRL je levi ALT"
-#define  STR_4015	"&Posodabljaj ikone vrstice stanja"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"&Upodabljalnik"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"&Faktor velikosti okna"
 #define   STR_4031	"&0.5x"
 #define   STR_4032	"&1x"
 #define   STR_4033	"1.&5x"
 #define   STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define STR_4040	"&Način celozaslonskega raztezanja"
 #define  STR_4041	"&Raztegni na celoten zaslon"
 #define  STR_4042	"&4:3"
@@ -364,14 +355,15 @@
 #define  STR_4044	"&Celoštevilska skala"
 #define  STR_4045	"&Ohrani velikost"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"&Zaslon"
 #define  STR_4051	"&Obrni barve zaslona"
 #define  STR_4052	"O&mogoči &preskeniranje"
 #define  STR_4053	"&Izsili razmerje stranic 4:3"
 #define  STR_4054	"Spremeni &kontrast za enobarvni zaslon"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define STR_DISPTYPE	"&Tip zaslona"
 #define  STR_4061	"&RGB barvni zaslon"
 #define  STR_4062	"&Sivinski zaslon"
@@ -379,23 +371,26 @@
 #define  STR_4064	"&Zeleni zaslon"
 #define  STR_4065	"&Beli zaslon"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define STR_GRAYSCALE	"&Tip pretvorbe sivin"
 #define  STR_4071	"BT&601 (NTSC/PAL)"
 #define  STR_4072	"BT&709 (HDTV)"
 #define  STR_4073	"&Povprečje"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"&Orodja"
 #define  STR_4081	"&Nastavitve"
 #define  STR_4082	"&Jezik"
 #define	 STR_4083	"&Beleženje"
-#define  STR_4084	"N&aloži konfiguracijo"
-#define  STR_4085	"&Shrani konfiguracijo"
-#define  STR_4086	"S&tanje"
-#define  STR_4087	"&Zajemi posnetek zaslona\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"N&aloži konfiguracijo"
+#define  STR_4087	"&Shrani konfiguracijo"
+#define  STR_4088	"&Zajemi posnetek zaslona"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"&Pomoč"
 #define  STR_4091	"&Vizitka za VARCem"
 

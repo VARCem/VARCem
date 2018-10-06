@@ -21,8 +21,7 @@ struct	SLIRPmbuf *next_m;			/* Pointer to next SLIRPmbuf to output */
 #define ifs_init(ifm) ((ifm)->ifs_next = (ifm)->ifs_prev = (ifm))
 
 void
-ifs_insque(ifm, ifmhead)
-	struct SLIRPmbuf *ifm, *ifmhead;
+ifs_insque(struct SLIRPmbuf *ifm, struct SLIRPmbuf *ifmhead)
 {
 	ifm->ifs_next = ifmhead->ifs_next;
 	ifmhead->ifs_next = ifm;
@@ -31,15 +30,14 @@ ifs_insque(ifm, ifmhead)
 }
 
 void
-ifs_remque(ifm)
-	struct SLIRPmbuf *ifm;
+ifs_remque(struct SLIRPmbuf *ifm)
 {
 	ifm->ifs_prev->ifs_next = ifm->ifs_next;
 	ifm->ifs_next->ifs_prev = ifm->ifs_prev;
 }
 
 void
-if_init()
+if_init(void)
 {
 #if 0
 	/*
@@ -70,10 +68,7 @@ if_init()
  * we don't expect any signals, but what the hell..
  */
 inline int
-writen(fd, bptr, n)
-	int fd;
-	char *bptr;
-	int n;
+writen(int fd, char *bptr, int n)
 {
 	int ret;
 	int total;
@@ -102,8 +97,7 @@ writen(fd, bptr, n)
  */
 #define INBUFF_SIZE 2048 /* XXX */
 void
-if_input(ttyp)
-	struct ttys *ttyp;
+if_input(struct ttys *tty);
 {
 	u_char if_inbuff[INBUFF_SIZE];
 	int if_n;
@@ -157,9 +151,7 @@ if_input(ttyp)
  * it'll temporarily get downgraded to the batchq)
  */
 void
-if_output(so, ifm)
-	struct SLIRPsocket *so;
-	struct SLIRPmbuf *ifm;
+if_output(struct SLIRPsocket *so, struct SLIRPmbuf *ifm)
 {
 	struct SLIRPmbuf *ifq;
 	int on_fastq = 1;

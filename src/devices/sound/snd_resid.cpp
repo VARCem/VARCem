@@ -8,7 +8,7 @@
  *
  *		Interface to the ReSid library.
  *
- * Version:	@(#)snd_resid.cpp	1.0.4	2018/05/06
+ * Version:	@(#)snd_resid.cpp	1.0.5	2018/09/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "resid-fp/sid.h"
+#define dbglog sound_log
+#include "../../emu.h"
 #include "../../plat.h"
 #include "sound.h"
 #include "snd_resid.h"
@@ -93,7 +95,7 @@ sid_init(void)
 					    method,
 					    (float)48000,
 					    0.9*48000.0/2.0)) {
-	snddev_log("ReSID set_sampling_parameters() failed!\n");
+	DEBUG("ReSID set_sampling_parameters() failed!\n");
     }
 
     dev->sid->set_chip_model(MOS6581FP);

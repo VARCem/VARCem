@@ -8,7 +8,7 @@
  *
  *		Definitions for the PCI handler module.
  *
- * Version:	@(#)pci.h	1.0.1	2018/02/14
+ * Version:	@(#)pci.h	1.0.2	2018/09/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,14 +73,7 @@ typedef union {
     uint8_t addr_regs[4];
 } bar_t;
 
-typedef struct PCI_RESET {
-    void (*pci_master_reset)(void);
-    void (*pci_set_reset)(void);
-    void (*super_io_reset)(void);
-} PCI_RESET;
 
-
-extern PCI_RESET pci_reset_handler;
 extern int	pci_burst_time,
 		pci_nonburst_time;
 
@@ -103,6 +96,7 @@ extern void	pci_reset(void);
 extern void	pci_init(int type);
 extern void	pci_register_slot(int card, int type,
 				  int inta, int intb, int intc, int intd);
+extern void	pci_close(void);
 extern uint8_t	pci_add_card(uint8_t add_type, uint8_t (*read)(int func, int addr, void *priv), void (*write)(int func, int addr, uint8_t val, void *priv), void *priv);
 
 extern void     trc_init(void);

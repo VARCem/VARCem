@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct2D.
  *
- * Version:	@(#)win_d2d.cpp	1.0.1	2018/07/28
+ * Version:	@(#)win_d2d.cpp	1.0.2	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		David Hrdlicka, <hrdlickadavid@outlook.com>
@@ -42,12 +42,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#define PNG_DEBUG 0
-#include <png.h>
 #include "../emu.h"
 #include "../version.h"
 #include "../device.h"
 #include "../plat.h"
+#ifdef USE_LIBPNG
+# include "../png.h"
+#endif
 #ifdef _MSC_VER
 # pragma warning(disable: 4200)
 #endif
@@ -195,9 +196,7 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
     float fs_w = (float)w;
     float fs_h = (float)h;
 
-#if 0
-    pclog("D2D: blit(x=%d, y=%d, y1=%d, y2=%d, w=%d, h=%d)\n", x,y, y1,y2, w,h);
-#endif
+    DEBUG("D2D: blit(x=%d, y=%d, y1=%d, y2=%d, w=%d, h=%d)\n", x,y, y1,y2, w,h);
 
     // TODO: Detect double scanned mode and resize render target
     // appropriately for more clear picture
@@ -229,7 +228,7 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
     }
 
     // TODO: Copy data directly from buffer32 to d2d_bitmap
-    srcdata = malloc(h * w * 4);
+    srcdata = mem_alloc(h * w * 4);
     for (yy = y1; yy < y2; yy++) {
 	if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
 #if 0
@@ -283,7 +282,7 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
     }
 
     if (FAILED(hr))
-	pclog("D2D: blit: error 0x%08lx\n", hr);
+	ERRLOG("D2D: blit: error 0x%08lx\n", hr);
 
     /* Clean up. */
     free(srcdata);
@@ -293,7 +292,7 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
 static void
 d2d_close(void)
 {
-    pclog("D2D: close()\n");
+    DEBUG("D2D: close()\n");
 
     video_setblit(NULL);
 
@@ -339,7 +338,7 @@ d2d_init(int fs)
     D2D1_HWND_RENDER_TARGET_PROPERTIES props;
     HRESULT hr = S_OK;
 
-    pclog("D2D: init(fs=%d)\n", fs);
+    INFO("D2D: init(fs=%d)\n", fs);
 
     cgapal_rebuild();
 
@@ -347,7 +346,7 @@ d2d_init(int fs)
     /* Try loading the DLL. */
     d2d_handle = dynld_module(PATH_D2D_DLL, d2d_imports);
     if (d2d_handle == NULL) {
-	pclog("D2D: unable to load '%s', D2D not available.\n", PATH_D2D_DLL);
+	ERRLOG("D2D: unable to load '%s', D2D not available.\n", PATH_D2D_DLL);
 	return(0);
     }
 #endif
@@ -408,7 +407,7 @@ d2d_init(int fs)
     }	
 
     if (FAILED(hr)) {
-	pclog("D2D: init: error 0x%08lx\n", hr);
+	ERRLOG("D2D: init: error 0x%08lx\n", hr);
 	d2d_close();
 	return(0);
     }
@@ -433,7 +432,7 @@ d2d_screenshot(const wchar_t *fn)
     // Saving a screenshot of a Direct2D render target is harder than
     // one would think. Keeping this stubbed for the moment
     //	-ryu
-    pclog("D2D: screenshot(%ls)\n", fn);
+    INFO("D2D: screenshot(%ls)\n", fn);
 }
 
 

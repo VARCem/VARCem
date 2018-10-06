@@ -8,7 +8,7 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.8	2018/05/06
+ * Version:	@(#)vid_ati18800.c	1.0.9	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,6 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -53,13 +52,19 @@
 #include "vid_ati_eeprom.h"
 
 
-#define BIOS_ROM_PATH_WONDER	L"video/ati/ati18800/vga_wonder_v3-1.02.bin"
+# define BIOS_ROM_PATH_WONDER	L"video/ati/ati18800/vga_wonder_v3-1.02.bin"
+#if defined(DEV_BRANCH) && defined(USE_WONDER)
+#endif
 #define BIOS_ROM_PATH_VGA88	L"video/ati/ati18800/vga88.bin"
 #define BIOS_ROM_PATH_EDGE16	L"video/ati/ati18800/vgaedge16.vbi"
 
 enum {
+#if defined(DEV_BRANCH) && defined(USE_WONDER)
 	ATI18800_WONDER = 0,
 	ATI18800_VGA88,
+#else
+	ATI18800_VGA88 = 0,
+#endif
 	ATI18800_EDGE16
 };
 
@@ -92,9 +97,6 @@ static void ati18800_out(uint16_t addr, uint8_t val, void *p)
                 break;
                 case 0x1cf:
                 ati18800->regs[ati18800->index] = val;
-#if 0
-                pclog("ATI 18800 ATI register write %02x %02x\n", ati18800->index, val);
-#endif
                 switch (ati18800->index)
                 {
                         case 0xb0:
@@ -175,9 +177,6 @@ static uint8_t ati18800_in(uint16_t addr, void *p)
                 temp = svga_in(addr, svga);
                 break;
         }
-#if 0
-        if (addr != 0x3da) pclog("%02X  %04X:%04X\n", temp, CS,cpu_state.pc);
-#endif
         return temp;
 }
 
@@ -203,137 +202,143 @@ static void ati18800_recalctimings(svga_t *svga)
         }
 }
 
-static void *ati18800_init(const device_t *info)
-{
-        ati18800_t *ati18800 = malloc(sizeof(ati18800_t));
-        memset(ati18800, 0, sizeof(ati18800_t));
 
-	switch (info->local) {
+static void *
+ati18800_init(const device_t *info)
+{
+    ati18800_t *dev;
+    const wchar_t *fn = NULL;
+
+    dev = (ati18800_t *)mem_alloc(sizeof(ati18800_t));
+    memset(dev, 0x00, sizeof(ati18800_t));
+
+    switch (info->local) {
 #if defined(DEV_BRANCH) && defined(USE_WONDER)
-		case ATI18800_WONDER:
-		        rom_init(&ati18800->bios_rom, BIOS_ROM_PATH_WONDER, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
-			break;
+	case ATI18800_WONDER:
+	        fn = BIOS_ROM_PATH_WONDER;
+		break;
 #endif
 
-		case ATI18800_VGA88:
-		        rom_init(&ati18800->bios_rom, BIOS_ROM_PATH_VGA88, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
-			break;
+	case ATI18800_VGA88:
+	        fn = BIOS_ROM_PATH_VGA88;
+		break;
 
-		case ATI18800_EDGE16:
-		        rom_init(&ati18800->bios_rom, BIOS_ROM_PATH_EDGE16, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
-			break;
+	case ATI18800_EDGE16:
+		fn = BIOS_ROM_PATH_EDGE16;
+		break;
 
-		default:
-			break;
-	};
+	default:
+		break;
+    };
         
-        svga_init(&ati18800->svga, ati18800, 1 << 19, /*512kb*/
-                   ati18800_recalctimings,
-                   ati18800_in, ati18800_out,
-                   NULL,
-                   NULL);
+    if (fn != NULL) {
+	rom_init(&dev->bios_rom, fn, 0xc0000, 0x8000, 0x7fff,
+		 0, MEM_MAPPING_EXTERNAL);
+    }
 
-        io_sethandler(0x01ce, 0x0002, ati18800_in, NULL, NULL, ati18800_out, NULL, NULL, ati18800);
-        io_sethandler(0x03c0, 0x0020, ati18800_in, NULL, NULL, ati18800_out, NULL, NULL, ati18800);
+    svga_init(&dev->svga, dev, 1 << 19, /*512kb*/
+              ati18800_recalctimings, ati18800_in, ati18800_out, NULL, NULL);
 
-        ati18800->svga.miscout = 1;
+    io_sethandler(0x01ce, 0x0002,
+		  ati18800_in,NULL,NULL, ati18800_out,NULL,NULL, dev);
+    io_sethandler(0x03c0, 0x0020,
+		  ati18800_in,NULL,NULL, ati18800_out,NULL,NULL, dev);
 
-        ati_eeprom_load(&ati18800->eeprom, L"ati18800.nvr", 0);
+    dev->svga.miscout = 1;
 
-        return ati18800;
+    ati_eeprom_load(&dev->eeprom, L"ati18800.nvr", 0);
+
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
+
+    return dev;
 }
 
-#if defined(DEV_BRANCH) && defined(USE_WONDER)
-static int ati18800_wonder_available(void)
+
+static void
+ati18800_close(void *priv)
 {
-        return rom_present(BIOS_ROM_PATH_WONDER);
+    ati18800_t *dev = (ati18800_t *)priv;
+
+    free(dev);
+}
+
+
+static void
+speed_changed(void *priv)
+{
+    ati18800_t *dev = (ati18800_t *)priv;
+        
+    svga_recalctimings(&dev->svga);
+}
+
+
+static void
+force_redraw(void *priv)
+{
+    ati18800_t *dev = (ati18800_t *)priv;
+
+    dev->svga.fullchange = changeframecount;
+}
+
+
+#if defined(DEV_BRANCH) && defined(USE_WONDER)
+static int
+ati18800_wonder_available(void)
+{
+    return rom_present(BIOS_ROM_PATH_WONDER);
 }
 #endif
 
-static int ati18800_vga88_available(void)
+static int
+ati18800_vga88_available(void)
 {
-        return rom_present(BIOS_ROM_PATH_VGA88);
+    return rom_present(BIOS_ROM_PATH_VGA88);
 }
 
-static int ati18800_available(void)
+static int
+ati18800_available(void)
 {
-        return rom_present(BIOS_ROM_PATH_EDGE16);
+    return rom_present(BIOS_ROM_PATH_EDGE16);
 }
 
-static void ati18800_close(void *p)
-{
-        ati18800_t *ati18800 = (ati18800_t *)p;
 
-        svga_close(&ati18800->svga);
-        
-        free(ati18800);
-}
-
-static void ati18800_speed_changed(void *p)
-{
-        ati18800_t *ati18800 = (ati18800_t *)p;
-        
-        svga_recalctimings(&ati18800->svga);
-}
-
-static void ati18800_force_redraw(void *p)
-{
-        ati18800_t *ati18800 = (ati18800_t *)p;
-
-        ati18800->svga.fullchange = changeframecount;
-}
-
-static void ati18800_add_status_info(char *s, int max_len, void *p)
-{
-        ati18800_t *ati18800 = (ati18800_t *)p;
-        
-        svga_add_status_info(s, max_len, &ati18800->svga);
-}
-
+static const video_timings_t ati18800_timing = {VID_ISA,8,16,32,8,16,32};
 
 #if defined(DEV_BRANCH) && defined(USE_WONDER)
-const device_t ati18800_wonder_device =
-{
-        "ATI-18800",
-        DEVICE_ISA | DEVICE_UNSTABLE,
-	ATI18800_WONDER,
-        ati18800_init,
-        ati18800_close,
-	NULL,
-        ati18800_wonder_available,
-        ati18800_speed_changed,
-        ati18800_force_redraw,
-        ati18800_add_status_info,
-	NULL
+const device_t ati18800_wonder_device = {
+    "ATI-18800",
+    DEVICE_ISA | DEVICE_UNSTABLE,
+    ATI18800_WONDER,
+    ati18800_init, ati18800_close, NULL,
+    ati18800_wonder_available,
+    speed_changed,
+    force_redraw,
+    &ati18800_timing,
+    NULL
 };
 #endif
 
-const device_t ati18800_vga88_device =
-{
-        "ATI-18800-1",
-        DEVICE_ISA,
-	ATI18800_VGA88,
-        ati18800_init,
-        ati18800_close,
-	NULL,
-        ati18800_vga88_available,
-        ati18800_speed_changed,
-        ati18800_force_redraw,
-        ati18800_add_status_info,
-	NULL
+const device_t ati18800_vga88_device = {
+    "ATI-18800-1",
+    DEVICE_ISA,
+    ATI18800_VGA88,
+    ati18800_init, ati18800_close, NULL,
+    ati18800_vga88_available,
+    speed_changed,
+    force_redraw,
+    &ati18800_timing,
+    NULL
 };
 
-const device_t ati18800_device =
-{
-        "ATI-18800-5",
-        DEVICE_ISA,
-	ATI18800_EDGE16,
-        ati18800_init,
-        ati18800_close,
-	NULL,
-        ati18800_available,
-        ati18800_speed_changed,
-        ati18800_force_redraw,
-        ati18800_add_status_info,
-	NULL
+const device_t ati18800_device = {
+    "ATI-18800-5",
+    DEVICE_ISA,
+    ATI18800_EDGE16,
+    ati18800_init, ati18800_close, NULL,
+    ati18800_available,
+    speed_changed,
+    force_redraw,
+    &ati18800_timing,
+    NULL
 };

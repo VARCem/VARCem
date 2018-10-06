@@ -10,7 +10,7 @@
  *
  *		Based on the "libpcap" examples.
  *
- * Version:	@(#)pcap_if.c	1.0.4	2018/05/06
+ * Version:	@(#)pcap_if.c	1.0.5	2018/09/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -57,6 +57,9 @@
 #endif
 #include <pcap/pcap.h>
 #include <time.h>
+#ifdef ERROR
+# undef ERROR
+#endif
 #include "../../emu.h"
 #include "../../plat.h"
 
@@ -252,9 +255,11 @@ show_devs(capdev_t *list, int num)
 
 
 void
-pclog(const char *fmt, ...)
+pclog(int level, const char *fmt, ...)
 {
     va_list ap;
+
+    (void)level;
 
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);

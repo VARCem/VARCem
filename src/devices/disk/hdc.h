@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.13	2018/04/25
+ * Version:	@(#)hdc.h	1.0.14	2018/09/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,8 @@
 
 #define ST506_NUM	2	/* 2 drives per controller supported */
 #define ESDI_NUM	2	/* 2 drives per controller supported */
-#define IDE_NUM		8
+#define IDE_NUM		8	/* 4 controllers, 2 drives per controller */
+#define XTIDE_NUM	2	/* 2 drives, part of IDE structures */
 #define SCSI_NUM	16	/* theoretically the controller can have at
 				 * least 7 devices, with each device being
 				 * able to support 8 units, but hey... */
@@ -64,6 +65,7 @@ extern const device_t	esdi_ps2_device;		/* esdi_mca */
 
 extern const device_t	xta_wdxt150_device;		/* xta_wdxt150 */
 extern const device_t	xta_hd20_device;		/* EuroPC internal */
+extern const device_t	xta_t1200_device;		/* T1200 internal */
 
 extern const device_t	xtide_device;			/* xtide_xt */
 extern const device_t	xtide_acculogic_device;		/* xtide_ps2 */
@@ -76,13 +78,16 @@ extern const device_t	ide_vlb_2ch_device;		/* vlb_ide_2ch */
 extern const device_t	ide_pci_device;			/* pci_ide */
 extern const device_t	ide_pci_2ch_device;		/* pci_ide_2ch */
 
+extern const device_t	ide_ter_device;
+extern const device_t	ide_qua_device;
+
 extern const device_t	xtide_at_device;		/* xtide_at */
 extern const device_t	xtide_at_ps2_device;		/* xtide_at_ps2 */
 #endif
 
 
-extern void	hdc_log(const char *fmt, ...);
-extern void	hdc_init(char *name);
+extern void	hdc_log(int level, const char *fmt, ...);
+extern void	hdc_init(void);
 extern void	hdc_reset(void);
 
 extern const char *hdc_get_name(int hdc);

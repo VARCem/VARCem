@@ -72,7 +72,7 @@ enum
         FLAGS_DEC32
 };
 
-static __inline int ZF_SET()
+static INLINE int ZF_SET()
 {
         switch (cpu_state.flags_op)
         {
@@ -110,7 +110,7 @@ static __inline int ZF_SET()
         }
 }
 
-static __inline int NF_SET()
+static INLINE int NF_SET()
 {
         switch (cpu_state.flags_op)
         {
@@ -152,7 +152,7 @@ static __inline int NF_SET()
         }
 }
 
-static __inline int PF_SET()
+static INLINE int PF_SET()
 {
         switch (cpu_state.flags_op)
         {
@@ -190,7 +190,7 @@ static __inline int PF_SET()
         }
 }
 
-static __inline int VF_SET()
+static INLINE int VF_SET()
 {
         switch (cpu_state.flags_op)
         {
@@ -244,7 +244,7 @@ static __inline int VF_SET()
         }
 }
 
-static __inline int AF_SET()
+static INLINE int AF_SET()
 {
         switch (cpu_state.flags_op)
         {
@@ -286,7 +286,7 @@ static __inline int AF_SET()
         }
 }
 
-static __inline int CF_SET()
+static INLINE int CF_SET()
 {
         switch (cpu_state.flags_op)
         {
@@ -340,7 +340,7 @@ static __inline int CF_SET()
         }
 }
 
-static __inline void flags_rebuild()
+static INLINE void flags_rebuild()
 {
         if (cpu_state.flags_op != FLAGS_UNKNOWN)
         {
@@ -356,12 +356,12 @@ static __inline void flags_rebuild()
         }
 }
 
-static __inline void flags_extract()
+static INLINE void flags_extract()
 {
         cpu_state.flags_op = FLAGS_UNKNOWN;
 }
 
-static __inline void flags_rebuild_c()
+static INLINE void flags_rebuild_c()
 {
         if (cpu_state.flags_op != FLAGS_UNKNOWN)
         {
@@ -372,17 +372,17 @@ static __inline void flags_rebuild_c()
         }                
 }
 
-static __inline void setznp8(uint8_t val)
+static INLINE void setznp8(uint8_t val)
 {
         cpu_state.flags_op = FLAGS_ZN8;
         cpu_state.flags_res = val;
 }
-static __inline void setznp16(uint16_t val)
+static INLINE void setznp16(uint16_t val)
 {
         cpu_state.flags_op = FLAGS_ZN16;
         cpu_state.flags_res = val;
 }
-static __inline void setznp32(uint32_t val)
+static INLINE void setznp32(uint32_t val)
 {
         cpu_state.flags_op = FLAGS_ZN32;
         cpu_state.flags_res = val;
@@ -394,28 +394,28 @@ static __inline void setznp32(uint32_t val)
         cpu_state.flags_op1 = orig;               \
         cpu_state.flags_op2 = shift;
 
-static __inline void setadd8(uint8_t a, uint8_t b)
+static INLINE void setadd8(uint8_t a, uint8_t b)
 {
         cpu_state.flags_op1 = a;
         cpu_state.flags_op2 = b;
         cpu_state.flags_res = (a + b) & 0xff;
         cpu_state.flags_op = FLAGS_ADD8;
 }
-static __inline void setadd16(uint16_t a, uint16_t b)
+static INLINE void setadd16(uint16_t a, uint16_t b)
 {
         cpu_state.flags_op1 = a;
         cpu_state.flags_op2 = b;
         cpu_state.flags_res = (a + b) & 0xffff;
         cpu_state.flags_op = FLAGS_ADD16;
 }
-static __inline void setadd32(uint32_t a, uint32_t b)
+static INLINE void setadd32(uint32_t a, uint32_t b)
 {
         cpu_state.flags_op1 = a;
         cpu_state.flags_op2 = b;
         cpu_state.flags_res = a + b;
         cpu_state.flags_op = FLAGS_ADD32;
 }
-static __inline void setadd8nc(uint8_t a, uint8_t b)
+static INLINE void setadd8nc(uint8_t a, uint8_t b)
 {
         flags_rebuild_c();
         cpu_state.flags_op1 = a;
@@ -423,7 +423,7 @@ static __inline void setadd8nc(uint8_t a, uint8_t b)
         cpu_state.flags_res = (a + b) & 0xff;
         cpu_state.flags_op = FLAGS_INC8;
 }
-static __inline void setadd16nc(uint16_t a, uint16_t b)
+static INLINE void setadd16nc(uint16_t a, uint16_t b)
 {
         flags_rebuild_c();
         cpu_state.flags_op1 = a;
@@ -431,7 +431,7 @@ static __inline void setadd16nc(uint16_t a, uint16_t b)
         cpu_state.flags_res = (a + b) & 0xffff;
         cpu_state.flags_op = FLAGS_INC16;
 }
-static __inline void setadd32nc(uint32_t a, uint32_t b)
+static INLINE void setadd32nc(uint32_t a, uint32_t b)
 {
         flags_rebuild_c();
         cpu_state.flags_op1 = a;
@@ -440,21 +440,21 @@ static __inline void setadd32nc(uint32_t a, uint32_t b)
         cpu_state.flags_op = FLAGS_INC32;
 }
 
-static __inline void setsub8(uint8_t a, uint8_t b)
+static INLINE void setsub8(uint8_t a, uint8_t b)
 {
         cpu_state.flags_op1 = a;
         cpu_state.flags_op2 = b;
         cpu_state.flags_res = (a - b) & 0xff;
         cpu_state.flags_op = FLAGS_SUB8;
 }
-static __inline void setsub16(uint16_t a, uint16_t b)
+static INLINE void setsub16(uint16_t a, uint16_t b)
 {
         cpu_state.flags_op1 = a;
         cpu_state.flags_op2 = b;
         cpu_state.flags_res = (a - b) & 0xffff;
         cpu_state.flags_op = FLAGS_SUB16;
 }
-static __inline void setsub32(uint32_t a, uint32_t b)
+static INLINE void setsub32(uint32_t a, uint32_t b)
 {
         cpu_state.flags_op1 = a;
         cpu_state.flags_op2 = b;
@@ -462,7 +462,7 @@ static __inline void setsub32(uint32_t a, uint32_t b)
         cpu_state.flags_op = FLAGS_SUB32;
 }
 
-static __inline void setsub8nc(uint8_t a, uint8_t b)
+static INLINE void setsub8nc(uint8_t a, uint8_t b)
 {
         flags_rebuild_c();
         cpu_state.flags_op1 = a;
@@ -470,7 +470,7 @@ static __inline void setsub8nc(uint8_t a, uint8_t b)
         cpu_state.flags_res = (a - b) & 0xff;
         cpu_state.flags_op = FLAGS_DEC8;
 }
-static __inline void setsub16nc(uint16_t a, uint16_t b)
+static INLINE void setsub16nc(uint16_t a, uint16_t b)
 {
         flags_rebuild_c();
         cpu_state.flags_op1 = a;
@@ -478,7 +478,7 @@ static __inline void setsub16nc(uint16_t a, uint16_t b)
         cpu_state.flags_res = (a - b) & 0xffff;
         cpu_state.flags_op = FLAGS_DEC16;
 }
-static __inline void setsub32nc(uint32_t a, uint32_t b)
+static INLINE void setsub32nc(uint32_t a, uint32_t b)
 {
         flags_rebuild_c();
         cpu_state.flags_op1 = a;
@@ -487,7 +487,7 @@ static __inline void setsub32nc(uint32_t a, uint32_t b)
         cpu_state.flags_op = FLAGS_DEC32;
 }
 
-static __inline void setadc8(uint8_t a, uint8_t b)
+static INLINE void setadc8(uint8_t a, uint8_t b)
 {
         uint16_t c=(uint16_t)a+(uint16_t)b+tempc;
         cpu_state.flags_op = FLAGS_UNKNOWN;
@@ -497,7 +497,7 @@ static __inline void setadc8(uint8_t a, uint8_t b)
         if (!((a^b)&0x80)&&((a^c)&0x80)) flags|=V_FLAG;
         if (((a&0xF)+(b&0xF))&0x10)      flags|=A_FLAG;
 }
-static __inline void setadc16(uint16_t a, uint16_t b)
+static INLINE void setadc16(uint16_t a, uint16_t b)
 {
         uint32_t c=(uint32_t)a+(uint32_t)b+tempc;
         cpu_state.flags_op = FLAGS_UNKNOWN;
@@ -508,7 +508,7 @@ static __inline void setadc16(uint16_t a, uint16_t b)
         if (((a&0xF)+(b&0xF))&0x10)      flags|=A_FLAG;
 }
 
-static __inline void setsbc8(uint8_t a, uint8_t b)
+static INLINE void setsbc8(uint8_t a, uint8_t b)
 {
         uint16_t c=(uint16_t)a-(((uint16_t)b)+tempc);
         cpu_state.flags_op = FLAGS_UNKNOWN;
@@ -518,7 +518,7 @@ static __inline void setsbc8(uint8_t a, uint8_t b)
         if ((a^b)&(a^c)&0x80) flags|=V_FLAG;
         if (((a&0xF)-(b&0xF))&0x10)      flags|=A_FLAG;
 }
-static __inline void setsbc16(uint16_t a, uint16_t b)
+static INLINE void setsbc16(uint16_t a, uint16_t b)
 {
         uint32_t c=(uint32_t)a-(((uint32_t)b)+tempc);
         cpu_state.flags_op = FLAGS_UNKNOWN;
@@ -530,7 +530,7 @@ static __inline void setsbc16(uint16_t a, uint16_t b)
         if (((a&0xF)-(b&0xF))&0x10)      flags|=A_FLAG;
 }
 
-static __inline void setadc32(uint32_t a, uint32_t b)
+static INLINE void setadc32(uint32_t a, uint32_t b)
 {
         uint32_t c=(uint32_t)a+(uint32_t)b+tempc;
         cpu_state.flags_op = FLAGS_UNKNOWN;
@@ -541,7 +541,7 @@ static __inline void setadc32(uint32_t a, uint32_t b)
         if (!((a^b)&0x80000000)&&((a^c)&0x80000000)) flags|=V_FLAG;
         if (((a&0xF)+(b&0xF)+tempc)&0x10)      flags|=A_FLAG;
 }
-static __inline void setsbc32(uint32_t a, uint32_t b)
+static INLINE void setsbc32(uint32_t a, uint32_t b)
 {
         uint32_t c=(uint32_t)a-(((uint32_t)b)+tempc);
         cpu_state.flags_op = FLAGS_UNKNOWN;

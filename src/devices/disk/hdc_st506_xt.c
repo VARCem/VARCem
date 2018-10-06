@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.12	2018/08/27
+ * Version:	@(#)hdc_st506_xt.c	1.0.13	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -75,6 +75,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog hdc_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -89,10 +90,43 @@
 #include "hdd.h"
 
 
-#define ST506_TIME	(2000LL*TIMER_USEC)
-
 #define XEBEC_BIOS_FILE	L"disk/st506/ibm_xebec_62x0822_1985.bin"
 #define DTC_BIOS_FILE	L"disk/st506/dtc_cxd21a.bin"
+
+
+#define ST506_TIME    (50LL*TIMER_USEC)
+
+#define STAT_IRQ                   0x20
+#define STAT_DRQ                   0x10
+#define STAT_BSY                   0x08
+#define STAT_CD                    0x04
+#define STAT_IO                    0x02
+#define STAT_REQ                   0x01
+
+#define IRQ_ENA                    0x02
+#define DMA_ENA                    0x01
+
+#define CMD_TEST_DRIVE_READY       0x00
+#define CMD_RECALIBRATE            0x01
+#define CMD_READ_STATUS            0x03
+#define CMD_VERIFY_SECTORS         0x05
+#define CMD_FORMAT_TRACK           0x06
+#define CMD_READ_SECTORS           0x08
+#define CMD_WRITE_SECTORS          0x0a
+#define CMD_SEEK                   0x0b
+#define CMD_INIT_DRIVE_PARAMS      0x0c
+#define CMD_WRITE_SECTOR_BUFFER    0x0f
+#define CMD_BUFFER_DIAGNOSTIC      0xe0
+#define CMD_CONTROLLER_DIAGNOSTIC  0xe4
+
+#define CMD_DTC_GET_DRIVE_PARAMS   0xfb
+#define CMD_DTC_SET_STEP_RATE      0xfc
+#define CMD_DTC_SET_GEOMETRY       0xfe
+#define CMD_DTC_GET_GEOMETRY       0xff
+
+#define ERR_NOT_READY              0x04
+#define ERR_SEEK_ERROR             0x15
+#define ERR_ILLEGAL_SECTOR_ADDRESS 0x21
 
 
 enum {
@@ -135,7 +169,7 @@ typedef struct {
     uint8_t	completion_byte;
     uint8_t	error;
     int		drive_sel;
-    drive_t	drives[2];
+    drive_t	drives[ST506_NUM];
     int		sector,
 		head,
 		cylinder;
@@ -143,37 +177,17 @@ typedef struct {
     uint8_t	switches;
 } hdc_t;
 
-#define STAT_IRQ 0x20
-#define STAT_DRQ 0x10
-#define STAT_BSY 0x08
-#define STAT_CD  0x04
-#define STAT_IO  0x02
-#define STAT_REQ 0x01
 
-#define IRQ_ENA 0x02
-#define DMA_ENA 0x01
-
-#define CMD_TEST_DRIVE_READY      0x00
-#define CMD_RECALIBRATE           0x01
-#define CMD_READ_STATUS           0x03
-#define CMD_VERIFY_SECTORS        0x05
-#define CMD_FORMAT_TRACK          0x06
-#define CMD_READ_SECTORS          0x08
-#define CMD_WRITE_SECTORS         0x0a
-#define CMD_SEEK                  0x0b
-#define CMD_INIT_DRIVE_PARAMS     0x0c
-#define CMD_WRITE_SECTOR_BUFFER   0x0f
-#define CMD_BUFFER_DIAGNOSTIC     0xe0
-#define CMD_CONTROLLER_DIAGNOSTIC 0xe4
-
-#define CMD_DTC_GET_DRIVE_PARAMS  0xfb
-#define CMD_DTC_SET_STEP_RATE     0xfc
-#define CMD_DTC_SET_GEOMETRY      0xfe
-#define CMD_DTC_GET_GEOMETRY      0xff
-
-#define ERR_NOT_READY              0x04
-#define ERR_SEEK_ERROR             0x15
-#define ERR_ILLEGAL_SECTOR_ADDRESS 0x21
+static const struct {
+    uint16_t	tracks;
+    uint8_t	hpc;
+    uint8_t	spt;
+} hd_types[4] = {
+    { 306, 4, 17 }, /* Type 0 */
+    { 612, 4, 17 }, /* Type 16 */
+    { 615, 4, 17 }, /* Type 2 */
+    { 306, 8, 17 }  /* Type 13 */
+};
 
 
 static uint8_t
@@ -263,7 +277,7 @@ st506_write(uint16_t port, uint8_t val, void *priv)
 				break;
 
 			default:
-				hdc_log("Write data unknown state - %i %02x\n", dev->state, dev->status);
+				DEBUG("Write data unknown state - %i %02x\n", dev->state, dev->status);
 		}
 		break;
 
@@ -303,9 +317,7 @@ st506_error(hdc_t *dev, uint8_t error)
     dev->completion_byte |= 0x02;
     dev->error = error;
 
-#ifdef ENABLE_HDC_LOG
-    hdc_log("st506_error - %02x\n", dev->error);
-#endif
+    DEBUG("st506_error - %02x\n", dev->error);
 }
 
 
@@ -316,30 +328,22 @@ get_sector(hdc_t *dev, off64_t *addr)
     int heads = drive->cfg_hpc;
 
     if (drive->current_cylinder != dev->cylinder) {
-#ifdef ENABLE_HDC_LOG
-	hdc_log("st506_get_sector: wrong cylinder\n");
-#endif
+	DEBUG("st506_get_sector: wrong cylinder\n");
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->head > heads) {
-#ifdef ENABLE_HDC_LOG
-	hdc_log("st506_get_sector: past end of configured heads\n");
-#endif
+	DEBUG("st506_get_sector: past end of configured heads\n");
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->head > drive->hpc) {
-#ifdef ENABLE_HDC_LOG
-	hdc_log("st506_get_sector: past end of heads\n");
-#endif
+	DEBUG("st506_get_sector: past end of heads\n");
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
     if (dev->sector >= 17) {
-#ifdef ENABLE_HDC_LOG
-	hdc_log("st506_get_sector: past end of sectors\n");
-#endif
+	DEBUG("st506_get_sector: past end of sectors\n");
 	dev->error = ERR_ILLEGAL_SECTOR_ADDRESS;
 	return(1);
     }
@@ -430,9 +434,7 @@ st506_callback(void *priv)
 				dev->sector_count = dev->command[4];
 				do {
 					if (get_sector(dev, &addr)) {
-#ifdef ENABLE_HDC_LOG
-						hdc_log("get_sector failed\n");
-#endif
+						DEBUG("get_sector failed\n");
 						st506_error(dev, dev->error);
 						st506_complete(dev);
 						return;
@@ -445,7 +447,7 @@ st506_callback(void *priv)
 
 				st506_complete(dev);
 
-				ui_sb_icon_update(SB_HDD | HDD_BUS_ST506, 1);
+				hdd_active(drive->hdd_num, 1);
 				break;
 
 			default:
@@ -459,9 +461,7 @@ st506_callback(void *priv)
 		dev->head = dev->command[1] & 0x1f;
 
 		if (get_sector(dev, &addr)) {
-#ifdef ENABLE_HDC_LOG
-			hdc_log("get_sector failed\n");
-#endif
+			DEBUG("get_sector failed\n");
 			st506_error(dev, dev->error);
 			st506_complete(dev);
 			return;
@@ -490,9 +490,10 @@ st506_callback(void *priv)
 					return;
 				}
 
+				hdd_active(drive->hdd_num, 1);
+
 				hdd_image_read(drive->hdd_num, addr, 1,
 					       (uint8_t *) dev->sector_buf);
-				ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 
 				if (dev->irq_dma_mask & DMA_ENA)
 					dev->callback = ST506_TIME;
@@ -509,9 +510,7 @@ st506_callback(void *priv)
 						int val = dma_channel_write(3, dev->sector_buf[dev->data_pos]);
 
 						if (val == DMA_NODATA) {
-#ifdef ENABLE_HDC_LOG
-							hdc_log("CMD_READ_SECTORS out of data!\n");
-#endif
+							ERRLOG("HDC: CMD_READ_SECTORS out of data!\n");
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
 							dev->callback = ST506_TIME;
 							return;
@@ -519,8 +518,7 @@ st506_callback(void *priv)
 					}
 					dev->state = STATE_SENT_DATA;
 					dev->callback = ST506_TIME;
-				} else
-					fatal("Read sectors no DMA! - shouldn't get here\n");
+				}
 				break;
 
 			case STATE_SENT_DATA:
@@ -537,9 +535,10 @@ st506_callback(void *priv)
 						return;
 					}
 
+					hdd_active(drive->hdd_num, 1);
+
 					hdd_image_read(drive->hdd_num, addr, 1,
 						(uint8_t *) dev->sector_buf);
-					ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 
 					dev->state = STATE_SEND_DATA;
 
@@ -551,7 +550,7 @@ st506_callback(void *priv)
 					}
 				} else {
 					st506_complete(dev);
-					ui_sb_icon_update(SB_HDD | HDD_BUS_ST506, 0);
+					hdd_active(drive->hdd_num, 0);
 				}
 				break;
 
@@ -584,9 +583,7 @@ st506_callback(void *priv)
 						int val = dma_channel_read(3);
 
 						if (val == DMA_NODATA) {
-#ifdef ENABLE_HDC_LOG
-							hdc_log("CMD_WRITE_SECTORS out of data!\n");
-#endif
+							ERRLOG("CMD_WRITE_SECTORS out of data!\n");
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
 							dev->callback = ST506_TIME;
 							return;
@@ -597,8 +594,7 @@ st506_callback(void *priv)
 
 					dev->state = STATE_RECEIVED_DATA;
 					dev->callback = ST506_TIME;
-				} else
-					fatal("Write sectors no DMA! - should never get here\n");
+				}
 				break;
 
 			case STATE_RECEIVED_DATA:
@@ -611,9 +607,10 @@ st506_callback(void *priv)
 					return;
 				}
 
+				hdd_active(drive->hdd_num, 1);
+
 				hdd_image_write(drive->hdd_num, addr, 1,
 						(uint8_t *) dev->sector_buf);
-				ui_sb_icon_update(SB_HDD|HDD_BUS_ST506, 1);
 
 				next_sector(dev);
 				dev->data_pos = 0;
@@ -660,9 +657,7 @@ st506_callback(void *priv)
 			case STATE_RECEIVED_DATA:
 				drive->cfg_cyl = dev->data[1] | (dev->data[0] << 8);
 				drive->cfg_hpc = dev->data[2];
-#ifdef ENABLE_HDC_LOG
-				hdc_log("Drive %i: cylinders=%i, heads=%i\n", dev->drive_sel, drive->cfg_cyl, drive->cfg_hpc);
-#endif
+				DEBUG("Drive %i: cylinders=%i, heads=%i\n", dev->drive_sel, drive->cfg_cyl, drive->cfg_hpc);
 				st506_complete(dev);
 				break;
 
@@ -691,7 +686,7 @@ st506_callback(void *priv)
 						int val = dma_channel_read(3);
 
 						if (val == DMA_NODATA) {
-							hdc_log("CMD_WRITE_SECTOR_BUFFER out of data!\n");
+							ERRLOG("CMD_WRITE_SECTOR_BUFFER out of data!\n");
 							dev->status = STAT_BSY | STAT_CD | STAT_IO | STAT_REQ;
 							dev->callback = ST506_TIME;
 							return;
@@ -702,8 +697,7 @@ st506_callback(void *priv)
 
 					dev->state = STATE_RECEIVED_DATA;
 					dev->callback = ST506_TIME;
-				} else
-					fatal("CMD_WRITE_SECTOR_BUFFER - should never get here!\n");
+				}
 				break;
 
 			case STATE_RECEIVED_DATA:
@@ -740,9 +734,7 @@ st506_callback(void *priv)
 				dev->data[0] = drive->tracks & 0xff;
 				dev->data[1] = 17 | ((drive->tracks >> 2) & 0xc0);
 				dev->data[2] = drive->hpc-1;
-#ifdef ENABLE_HDC_LOG
-				hdc_log("Get drive params %02x %02x %02x %i\n", dev->data[0], dev->data[1], dev->data[2], drive->tracks);
-#endif
+				DEBUG("Get drive params %02x %02x %02x %i\n", dev->data[0], dev->data[1], dev->data[2], drive->tracks);
 				break;
 
 			case STATE_SENT_DATA:
@@ -816,20 +808,8 @@ loadhd(hdc_t *dev, int c, int d, const wchar_t *fn)
 }
 
 
-static const struct {
-    uint16_t	tracks;
-    uint8_t	hpc;
-    uint8_t	spt;
-} hd_types[4] = {
-    { 306, 4, 17 }, /* Type 0 */
-    { 612, 4, 17 }, /* Type 16 */
-    { 615, 4, 17 }, /* Type 2 */
-    { 306, 8, 17 }  /* Type 13 */
-};
-
-
 static void
-st506_set_switches(hdc_t *dev)
+set_switches(hdc_t *dev)
 {
     drive_t *drive;
     int c, d;
@@ -850,12 +830,12 @@ st506_set_switches(hdc_t *dev)
 		}
 	}
 
-	pclog("ST506: ");
+	INFO("ST506: ");
 	if (c == 4)
-		pclog("*WARNING* drive%d unsupported", d);
+		INFO("*WARNING* drive%d unsupported", d);
 	  else
-		pclog("drive%d is type %d", d, c);
-	pclog(" (%d/%d/%d)\n", drive->tracks, drive->hpc, drive->spt);
+		INFO("drive%d is type %d", d, c);
+	INFO(" (%d/%d/%d)\n", drive->tracks, drive->hpc, drive->spt);
     }
 }
 
@@ -867,31 +847,26 @@ st506_init(const device_t *info)
     hdc_t *dev;
     int i, c;
 
-    dev = malloc(sizeof(hdc_t));
+    dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
 
-#ifdef ENABLE_HDC_LOG
-    hdc_log("ST506: looking for disks..\n");
-#endif
+    DEBUG("ST506: looking for disks..\n");
+
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
 	if ((hdd[i].bus == HDD_BUS_ST506) && (hdd[i].id.st506_channel < ST506_NUM)) {
-#ifdef ENABLE_HDC_LOG
-		hdc_log("Found ST506 hard disk on channel %i\n", hdd[i].id.st506_channel);
-#endif
+		DEBUG("Found ST506 hard disk on channel %i\n", hdd[i].id.st506_channel);
 		loadhd(dev, hdd[i].id.st506_channel, i, hdd[i].fn);
 
 		if (++c > ST506_NUM) break;
 	}
     }
-#ifdef ENABLE_HDC_LOG
-    hdc_log("ST506: %d disks loaded.\n", c);
-#endif
+    DEBUG("ST506: %d disks loaded.\n", c);
 
-    switch(info->local) {
+    switch(info->local & 255) {
 	case 0:		/* Xebec */
 		fn = XEBEC_BIOS_FILE;
-		st506_set_switches(dev);
+		set_switches(dev);
 		break;
 
 	case 1:		/* DTC5150 */
@@ -922,7 +897,7 @@ st506_close(void *priv)
     hdc_t *dev = (hdc_t *)priv;
     int d;
 
-    for (d = 0; d < 2; d++) {
+    for (d = 0; d < ST506_NUM; d++) {
 	drive_t *drive = &dev->drives[d];
 
 	hdd_image_close(drive->hdd_num);
@@ -949,17 +924,19 @@ dtc5150x_available(void)
 const device_t st506_xt_xebec_device = {
     "IBM PC Fixed Disk Adapter",
     DEVICE_ISA,
-    0,
+    (HDD_BUS_ST506 << 8) | 0,
     st506_init, st506_close, NULL,
-    xebec_available, NULL, NULL, NULL,
+    xebec_available,
+    NULL, NULL, NULL,
     NULL
 };
 
 const device_t st506_xt_dtc5150x_device = {
-    "DTC 5150X",
+    "DTC 5150X Fixed Disk Adapter",
     DEVICE_ISA,
-    1,
+    (HDD_BUS_ST506 << 8) | 1,
     st506_init, st506_close, NULL,
-    dtc5150x_available, NULL, NULL, NULL,
+    dtc5150x_available,
+    NULL, NULL, NULL,
     NULL
 };

@@ -8,7 +8,7 @@
  *
  *		Implement threads and mutexes for the Win32 platform.
  *
- * Version:	@(#)win_thread.c	1.0.5	2018/05/06
+ * Version:	@(#)win_thread.c	1.0.6	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -55,7 +55,11 @@ typedef struct {
 thread_t *
 thread_create(void (*func)(void *param), void *param)
 {
-    return((thread_t *)_beginthread(func, 0, param));
+    uintptr_t tid;
+
+    tid = _beginthread(func, 0, param);
+
+    return((thread_t *)tid);
 }
 
 
@@ -85,7 +89,7 @@ thread_wait(thread_t *arg, int timeout)
 event_t *
 thread_create_event(void)
 {
-    win_event_t *ev = malloc(sizeof(win_event_t));
+    win_event_t *ev = (win_event_t *)mem_alloc(sizeof(win_event_t));
 
     ev->handle = CreateEvent(NULL, FALSE, FALSE, NULL);
 

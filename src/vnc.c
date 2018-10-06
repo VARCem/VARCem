@@ -8,9 +8,9 @@
  *
  *		Implement the VNC remote renderer with LibVNCServer.
  *
- * TODO:	Implement screenshots, and maybe Audio?
+ * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)vnc.c	1.0.5	2018/08/27
+ * Version:	@(#)vnc.c	1.0.7	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -50,6 +50,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <wchar.h>
 #include <rfb/rfb.h>
@@ -119,11 +120,36 @@ static dllimp_t vnc_imports[] = {
 };
 
 
+/* Local handlers for VNCserver event logging. */
 static void
-vnc_kbdevent(rfbBool down, rfbKeySym k, rfbClientPtr cl)
+vnc_dbglog(const char *fmt, ...)
 {
-    (void)cl;
+    char temp[1024];
+    va_list ap;
 
+    va_start(ap, fmt);
+    vsprintf(temp, fmt, ap);
+    va_end(ap);
+    pclog(LOG_INFO, "VNC: %s", temp);
+}
+
+
+static void
+vnc_errlog(const char *fmt, ...)
+{
+    char temp[1024];
+    va_list ap;
+
+    va_start(ap, fmt);
+    vsprintf(temp, fmt, ap);
+    va_end(ap);
+    pclog(LOG_ERR, "VNC: %s", temp);
+}
+
+
+static void
+vnc_kbdevent(rfbBool down, rfbKeySym k, UNUSED(rfbClientPtr cl))
+{
     /* Handle it through the lookup tables. */
     vnc_kbinput(down?1:0, (int)k);
 }
@@ -132,7 +158,7 @@ vnc_kbdevent(rfbBool down, rfbKeySym k, rfbClientPtr cl)
 static void
 vnc_ptrevent(int but, int x, int y, rfbClientPtr cl)
 {
-   if (x>=0 && x<allowedX && y>=0 && y<allowedY) {
+   if (x >= 0 && x < allowedX && y >= 0 && y < allowedY) {
 	/* VNC uses absolute positions within the window, no deltas. */
 	if (x != ptr_x || y != ptr_y) {
 		mouse_x += (x - ptr_x);
@@ -159,18 +185,18 @@ vnc_ptrevent(int but, int x, int y, rfbClientPtr cl)
 static void
 vnc_clientgone(rfbClientPtr cl)
 {
-    pclog("VNC: client disconnected: %s\n", cl->host);
+    vnc_dbglog("client disconnected: %s\n", cl->host);
 
     if (clients > 0)
 	clients--;
     if (clients == 0) {
 	/* No more clients, pause the emulator. */
-	pclog("VNC: no clients, pausing..\n");
+	vnc_dbglog("no more clients, pausing..\n");
 
 	/* Disable the mouse. */
 	plat_mouse_capture(0);
 
-	plat_pause(1);
+	pc_pause(1);
     }
 }
 
@@ -181,7 +207,7 @@ vnc_newclient(rfbClientPtr cl)
     /* Hook the ClientGone function so we know when they're gone. */
     cl->clientGoneHook = vnc_clientgone;
 
-    pclog("VNC: new client: %s\n", cl->host);
+    vnc_dbglog("new client: %s\n", cl->host);
     if (++clients == 1) {
 	/* Reset the mouse. */
 	ptr_x = allowedX/2;
@@ -190,12 +216,12 @@ vnc_newclient(rfbClientPtr cl)
 	mouse_buttons = 0x00;
 
 	/* We now have clients, un-pause the emulator if needed. */
-	pclog("VNC: unpausing..\n");
+	vnc_dbglog("unpausing..\n");
 
 	/* Enable the mouse. */
 	plat_mouse_capture(1);
 
-	plat_pause(0);
+	pc_pause(0);
     }
 
     /* For now, we always accept clients. */
@@ -224,11 +250,15 @@ vnc_blit(int x, int y, int y1, int y2, int w, int h)
     uint32_t *p;
     int yy;
 
-    for (yy=y1; yy<y2; yy++) {
+    for (yy = y1; yy < y2; yy++) {
 	p = (uint32_t *)&(((uint32_t *)rfb->frameBuffer)[yy*VNC_MAX_X]);
 
-	if ((y+yy) >= 0 && (y+yy) < VNC_MAX_Y)
-		memcpy(p, &(((uint32_t *)buffer32->line[y+yy])[x]), w*4);
+	if ((y+yy) >= 0 && (y+yy) < VNC_MAX_Y) {
+		if (vid_grayscale || invert_display)
+			video_transform_copy(p, &(((uint32_t *)buffer32->line[y+yy])[x]), w);
+		  else
+			memcpy(p, &(((uint32_t *)buffer32->line[y+yy])[x]), w*4);
+	}
     }
  
     video_blit_complete();
@@ -255,19 +285,32 @@ vnc_init(int fs)
 	 */
 	32, 32, 0, 1, 255,255,255, 16, 8, 0, 0, 0
     };
+    wchar_t temp[512];
+    const char *fn = PATH_VNC_DLL;
 
     /* We do not support fullscreen, folks. */
     if (fs) {
-	pclog("VNC: fullscreen mode is not supported!\n");
+	vnc_errlog("fullscreen mode is not supported!\n");
 	return(0);
     }
 
     /* Try loading the DLL. */
-    vnc_handle = dynld_module(PATH_VNC_DLL, vnc_imports);
+    vnc_handle = dynld_module(fn, vnc_imports);
     if (vnc_handle == NULL) {
-	pclog("VNC: unable to load '%s', VNC not available.\n", PATH_VNC_DLL);
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_NOLIB), "VNCserver", fn);
+        ui_msgbox(MBX_ERROR, temp);
+	vnc_errlog("unable to load '%s', VNC not available.\n", fn);
 	return(0);
     }
+
+#ifdef _WIN32
+    //FIXME: these are defined in Linux version, but not present.. --FvK
+    /* Set up and enable VNC server logging. */
+    rfbLog = vnc_dbglog;
+    rfbErr = vnc_errlog;
+    rfbLogEnable(1);
+#endif
 
     cgapal_rebuild();
 
@@ -279,7 +322,7 @@ vnc_init(int fs)
  
 	rfb = f_rfbGetScreen(0, NULL, VNC_MAX_X, VNC_MAX_Y, 8, 3, 4);
 	rfb->desktopName = title;
-	rfb->frameBuffer = (char *)malloc(VNC_MAX_X*VNC_MAX_Y*4);
+	rfb->frameBuffer = (char *)mem_alloc(VNC_MAX_X*VNC_MAX_Y*4);
 
 	rfb->serverFormat = rpf;
 	rfb->alwaysShared = TRUE;
@@ -302,7 +345,7 @@ vnc_init(int fs)
 
     clients = 0;
 
-    pclog("VNC: init complete.\n");
+    vnc_dbglog("init complete.\n");
 
     return(1);
 }
@@ -339,12 +382,12 @@ vnc_resize(int x, int y)
 
     /* TightVNC doesn't like certain sizes.. */
     if (x < VNC_MIN_X || x > VNC_MAX_X || y < VNC_MIN_Y || y > VNC_MAX_Y) {
-	pclog("VNC: invalid resoltion %dx%d requested!\n", x, y);
+	vnc_errlog("invalid resoltion %ix%i requested!\n", x, y);
 	return;
     }
 
     if ((x != rfb->width || y != rfb->height) && x > 160 && y > 0) {
-	pclog("VNC: updating resolution: %dx%d\n", x, y);
+	vnc_dbglog("updating resolution: %dx%d\n", x, y);
  
 	allowedX = (rfb->width < x) ? rfb->width : x;
 	allowedY = (rfb->width < y) ? rfb->width : y;
@@ -373,7 +416,7 @@ vnc_pause(void)
 static void
 vnc_screenshot(const wchar_t *fn)
 {
-    pclog("VNC: take_screenshot\n");
+    vnc_dbglog("take_screenshot\n");
 }
 
 

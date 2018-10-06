@@ -56,7 +56,7 @@ int	tcp_sndspace;	/* Keep small if you have an error prone link */
  * Tcp initialization
  */
 void
-tcp_init()
+tcp_init(void)
 {
 	tcp_iss = 1;		/* wrong */
 	tcb.so_next = tcb.so_prev = &tcb;
@@ -78,8 +78,7 @@ tcp_init()
  */
 /* struct tcpiphdr * */
 void
-tcp_template(tp)
-	struct tcpcb *tp;
+tcp_template(struct tcpcb *tp)
 {
 	struct SLIRPsocket *so = tp->t_socket;
 	struct tcpiphdr *n = &tp->t_template;
@@ -117,12 +116,7 @@ tcp_template(tp)
  * segment are as specified by the parameters.
  */
 void
-tcp_respond(tp, ti, m, ack, seq, flags)
-	struct tcpcb *tp;
-	struct tcpiphdr *ti;
-	struct SLIRPmbuf *m;
-	tcp_seq ack, seq;
-	int flags;
+tcp_respond(struct tcpcb *tp, struct tcpiphdr *ti, struct SLIRPmbuf *m, tcp_seq ack, tcp_seq seq, int flags)
 {
 	register int tlen;
 	int win = 0;
@@ -197,8 +191,7 @@ tcp_respond(tp, ti, m, ack, seq, flags)
  * protocol control block.
  */
 struct tcpcb *
-tcp_newtcpcb(so)
-	struct SLIRPsocket *so;
+tcp_newtcpcb(struct SLIRPsocket *so)
 {
 	struct tcpcb *tp;
 	
@@ -272,8 +265,7 @@ struct tcpcb *tcp_drop(struct tcpcb *tp, int err)
  *	wake up any sleepers
  */
 struct tcpcb *
-tcp_close(tp)
-	struct tcpcb *tp;
+tcp_close(struct tcpcb *tp)
 {
 	struct tcpiphdr *t;
 	struct SLIRPsocket *so = tp->t_socket;
@@ -310,7 +302,7 @@ tcp_close(tp)
 }
 
 void
-tcp_drain()
+tcp_drain(void)
 {
 	/* XXX */
 }
@@ -323,9 +315,7 @@ tcp_drain()
 #ifdef notdef
 
 void
-tcp_quench(i, errno)
-
-	int errno;
+tcp_quench(int i, int errno)
 {
 	struct tcpcb *tp = intotcpcb(inp);
 
@@ -350,8 +340,7 @@ tcp_quench(i, errno)
  * We can let the user exit from the close as soon as the FIN is acked.
  */
 void
-tcp_sockclosed(tp)
-	struct tcpcb *tp;
+tcp_sockclosed(struct tcpcb *tp)
 {
 
 	DEBUG_CALL("tcp_sockclosed");
@@ -392,8 +381,7 @@ tcp_sockclosed(tp)
  * nonblocking.  Connect returns after the SYN is sent, and does 
  * not wait for ACK+SYN.
  */
-int tcp_fconnect(so)
-     struct SLIRPsocket *so;
+int tcp_fconnect(struct SLIRPsocket *so)
 {
   int ret=0;
   
@@ -456,8 +444,7 @@ int tcp_fconnect(so)
  * here and SYN the local-host.
  */ 
 void
-tcp_connect(inso)
-	struct SLIRPsocket *inso;
+tcp_connect(struct SLIRPsocket *inso)
 {
 	struct SLIRPsocket *so;
 	struct sockaddr_in addr;
@@ -543,8 +530,7 @@ tcp_connect(inso)
  * Attach a TCPCB to a socket.
  */
 int
-tcp_attach(so)
-	struct SLIRPsocket *so;
+tcp_attach(struct SLIRPsocket *so)
 {
 	if ((so->so_tcpcb = tcp_newtcpcb(so)) == NULL)
 	   return -1;
@@ -579,8 +565,7 @@ struct emu_t *tcpemu = 0;
  * Return TOS according to the above table
  */
 u_int8_t
-tcp_tos(so)
-	struct SLIRPsocket *so;
+tcp_tos(struct SLIRPsocket *so)
 {
 	int i = 0;
 	struct emu_t *emup;
@@ -633,9 +618,7 @@ int do_echo = -1;
  * NOTE: if you return 0 you MUST m_free() the SLIRPmbuf!
  */
 int
-tcp_emu(so, m)
-	struct SLIRPsocket *so;
-	struct SLIRPmbuf *m;
+tcp_emu(struct SLIRPsocket *so, struct SLIRPmbuf *m)
 {
 	u_int n1, n2, n3, n4, n5, n6;
 	char buff[256];
@@ -1249,8 +1232,7 @@ do_prompt:
  * return 2 if this is a command-line connection
  */
 int
-tcp_ctl(so)
-	struct SLIRPsocket *so;
+tcp_ctl(struct SLIRPsocket *so)
 {
 	struct sbuf *sb = &so->so_snd;
 	int command;

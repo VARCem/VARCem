@@ -8,7 +8,7 @@
  *
  *		Implementation of the "Removable Devices" dialog.
  *
- * Version:	@(#)win_settings_remov.h	1.0.7	2018/05/26
+ * Version:	@(#)win_settings_remov.h	1.0.8	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,9 +54,7 @@ cdrom_track_init(void)
     int i;
 
     for (i = 0; i < CDROM_NUM; i++) {
-	if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_ONLY)
-		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
-	else if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA)
+	if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI)
 		ide_tracking |= (2 << (cdrom_drives[i].ide_channel << 3));
 	else if (cdrom_drives[i].bus_type == CDROM_BUS_SCSI)
 		scsi_tracking[cdrom_drives[i].scsi_device_id] |= (2 << (cdrom_drives[i].scsi_device_lun << 3));
@@ -97,11 +95,11 @@ cdrom_image_list_init(HWND hwndList)
 			      GetSystemMetrics(SM_CYSMICON),
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
-    hiconItem = LoadIcon(hInstance, (LPCWSTR)514);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)ICON_CDROM_D);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
-    hiconItem = LoadIcon(hInstance, (LPCWSTR)160);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)ICON_CDROM);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
@@ -119,7 +117,7 @@ cdrom_recalc_list(HWND hwndList)
     lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
-    for (i = 0; i < 4; i++) {
+    for (i = CDROM_BUS_DISABLED; i < CDROM_BUS_MAX; i++) {
 	fsid = temp_cdrom_drives[i].bus_type;
 
 	lvI.iSubItem = 0;
@@ -130,8 +128,7 @@ cdrom_recalc_list(HWND hwndList)
 			lvI.iImage = 0;
 			break;
 
-		case CDROM_BUS_ATAPI_PIO_ONLY:
-		case CDROM_BUS_ATAPI_PIO_AND_DMA:
+		case CDROM_BUS_ATAPI:
 			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
 				 get_string(combo_to_string(fsid)),
 			         temp_cdrom_drives[i].ide_channel >> 1,
@@ -155,10 +152,10 @@ cdrom_recalc_list(HWND hwndList)
 
 	lvI.iSubItem = 1;
 	if (fsid == CDROM_BUS_DISABLED) {
-		lvI.pszText = (LPTSTR)get_string(IDS_NONE);   // "None"
+		lvI.pszText = (LPTSTR)get_string(IDS_NONE);
 	} else {
 		wsprintf(temp, L"%ix",
-		  cdrom_speeds[temp_cdrom_drives[i].speed_idx].speed);
+			 cdrom_speeds[temp_cdrom_drives[i].speed_idx].speed);
 		lvI.pszText = temp;
 	}
 	lvI.iItem = i;
@@ -179,14 +176,14 @@ cdrom_init_columns(HWND hwndList)
     lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
     lvc.iSubItem = 0;
-    lvc.pszText = (LPTSTR)get_string(IDS_BUS);		// "Bus"
+    lvc.pszText = (LPTSTR)get_string(IDS_BUS);
     lvc.cx = 342;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 0, &lvc) == -1)
 	return FALSE;
 
     lvc.iSubItem = 1;
-    lvc.pszText = (LPTSTR)get_string(IDS_3579);		// "Speed"
+    lvc.pszText = (LPTSTR)get_string(IDS_3579);
     lvc.cx = 80;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 1, &lvc) == -1)
@@ -236,8 +233,7 @@ cdrom_update_item(HWND hwndList, int i)
 		lvI.iImage = 0;
 		break;
 
-	case CDROM_BUS_ATAPI_PIO_ONLY:
-	case CDROM_BUS_ATAPI_PIO_AND_DMA:
+	case CDROM_BUS_ATAPI:
 		swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
 			 get_string(combo_to_string(fsid)),
 			 temp_cdrom_drives[i].ide_channel >> 1,
@@ -263,7 +259,7 @@ cdrom_update_item(HWND hwndList, int i)
 	lvI.pszText = (LPTSTR)get_string(IDS_NONE);
     } else {
 	wsprintf(temp, L"%ix",
-		cdrom_speeds[temp_cdrom_drives[i].speed_idx].speed);
+		 cdrom_speeds[temp_cdrom_drives[i].speed_idx].speed);
 	lvI.pszText = temp;
     }
     lvI.iItem = i;
@@ -281,12 +277,8 @@ cdrom_add_locations(HWND hdlg)
     int i = 0;
 
     h = GetDlgItem(hdlg, IDC_COMBO_CD_BUS);
-    for (i = CDROM_BUS_DISABLED; i <= CDROM_BUS_SCSI; i++) {
-	if ((i == CDROM_BUS_DISABLED) || (i >= CDROM_BUS_ATAPI_PIO_ONLY)) {
-		SendMessage(h, CB_ADDSTRING, 0,
-			    (LPARAM)get_string(combo_to_string(i)));
-	}
-    }
+    for (i = CDROM_BUS_DISABLED; i < CDROM_BUS_MAX; i++)
+	SendMessage(h, CB_ADDSTRING, 0, win_string(combo_to_string(i)));
 
     /* Create a list of usable CD-ROM speeds. */
     h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
@@ -346,8 +338,7 @@ cdrom_recalc_location_controls(HWND hdlg, int assign_id)
     }
 
     switch(bus) {
-	case CDROM_BUS_ATAPI_PIO_ONLY:		/* ATAPI (PIO-only) */
-	case CDROM_BUS_ATAPI_PIO_AND_DMA:	/* ATAPI (PIO and DMA) */
+	case CDROM_BUS_ATAPI:
 		h = GetDlgItem(hdlg, IDT_1743);
 		ShowWindow(h, SW_SHOW);
 		EnableWindow(h, TRUE);
@@ -361,7 +352,7 @@ cdrom_recalc_location_controls(HWND hdlg, int assign_id)
 			    temp_cdrom_drives[cdlv_current_sel].ide_channel, 0);
 		break;
 
-	case CDROM_BUS_SCSI:			/* SCSI */
+	case CDROM_BUS_SCSI:
 		h = GetDlgItem(hdlg, IDT_1741);
 		ShowWindow(h, SW_SHOW);
 		EnableWindow(h, TRUE);
@@ -390,7 +381,7 @@ cdrom_recalc_location_controls(HWND hdlg, int assign_id)
 static void
 cdrom_track(uint8_t id)
 {
-    if ((temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY) || (temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY))
+    if (temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI)
 	ide_tracking |= (2 << (temp_cdrom_drives[id].ide_channel << 3));
     else if (temp_cdrom_drives[id].bus_type == CDROM_BUS_SCSI)
 	scsi_tracking[temp_cdrom_drives[id].scsi_device_id] |= (1ULL << temp_cdrom_drives[id].scsi_device_lun);
@@ -400,7 +391,7 @@ cdrom_track(uint8_t id)
 static void
 cdrom_untrack(uint8_t id)
 {
-    if ((temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY) || (temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI_PIO_ONLY))
+    if (temp_cdrom_drives[id].bus_type == CDROM_BUS_ATAPI)
 	ide_tracking &= ~(2 << (temp_cdrom_drives[id].ide_channel << 3));
     else if (temp_cdrom_drives[id].bus_type == CDROM_BUS_SCSI)
 	scsi_tracking[temp_cdrom_drives[id].scsi_device_id] &= ~(1ULL << temp_cdrom_drives[id].scsi_device_lun);
@@ -425,9 +416,7 @@ zip_track_init(void)
     int i;
 
     for (i = 0; i < ZIP_NUM; i++) {
-	if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_ONLY)
-		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
-	else if (zip_drives[i].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA)
+	if (zip_drives[i].bus_type == ZIP_BUS_ATAPI)
 		ide_tracking |= (4 << (zip_drives[i].ide_channel << 3));
 	else if (zip_drives[i].bus_type == ZIP_BUS_SCSI)
 		scsi_tracking[zip_drives[i].scsi_device_id] |= (4 << (zip_drives[i].scsi_device_lun << 3));
@@ -445,11 +434,11 @@ zip_image_list_init(HWND hwndList)
 			      GetSystemMetrics(SM_CYSMICON),
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
-    hiconItem = LoadIcon(hInstance, (LPCWSTR)515);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)ICON_ZIP_D);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
-    hiconItem = LoadIcon(hInstance, (LPCWSTR)176);
+    hiconItem = LoadIcon(hInstance, (LPCWSTR)ICON_ZIP);
     ImageList_AddIcon(hSmall, hiconItem);
     DestroyIcon(hiconItem);
 
@@ -467,7 +456,7 @@ zip_recalc_list(HWND hwndList)
     lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
-    for (i = 0; i < 4; i++) {
+    for (i = ZIP_BUS_DISABLED; i < ZIP_BUS_MAX; i++) {
 	fsid = temp_zip_drives[i].bus_type;
 
 	lvI.iSubItem = 0;
@@ -478,8 +467,7 @@ zip_recalc_list(HWND hwndList)
 			lvI.iImage = 0;
 			break;
 
-		case ZIP_BUS_ATAPI_PIO_ONLY:
-		case ZIP_BUS_ATAPI_PIO_AND_DMA:
+		case ZIP_BUS_ATAPI:
 			swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
 				get_string(combo_to_string(fsid)),
 				temp_zip_drives[i].ide_channel >> 1,
@@ -521,14 +509,14 @@ zip_init_columns(HWND hwndList)
     lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
     lvc.iSubItem = 0;
-    lvc.pszText = (LPTSTR)get_string(IDS_BUS);		// "Bus"
+    lvc.pszText = (LPTSTR)get_string(IDS_BUS);
     lvc.cx = 342;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 0, &lvc) == -1)
 	return FALSE;
 
     lvc.iSubItem = 1;
-    lvc.pszText = (LPTSTR)get_string(IDS_TYPE);		// "Type"
+    lvc.pszText = (LPTSTR)get_string(IDS_TYPE);
     lvc.cx = 50;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 1, &lvc) == -1)
@@ -545,7 +533,7 @@ zip_get_selected(HWND hdlg)
     int i, j = 0;
     HWND h;
 
-    for (i = 0; i < 6; i++) {
+    for (i = 0; i < 6; i++) {	// FIXME: ZIP_NUM ?
 	h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 	j = ListView_GetItemState(h, i, LVIS_SELECTED);
 	if (j)
@@ -578,8 +566,7 @@ zip_update_item(HWND hwndList, int i)
 		lvI.iImage = 0;
 		break;
 
-	case ZIP_BUS_ATAPI_PIO_ONLY:
-	case ZIP_BUS_ATAPI_PIO_AND_DMA:
+	case ZIP_BUS_ATAPI:
 		swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
 			 get_string(combo_to_string(fsid)),
 			 temp_zip_drives[i].ide_channel >> 1,
@@ -617,12 +604,8 @@ zip_add_locations(HWND hdlg)
     int i;
 
     h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
-    for (i = ZIP_BUS_DISABLED; i <= ZIP_BUS_SCSI; i++) {
-	if ((i == ZIP_BUS_DISABLED) || (i >= ZIP_BUS_ATAPI_PIO_ONLY)) {
-		SendMessage(h, CB_ADDSTRING, 0,
-			    (LPARAM)get_string(combo_to_string(i)));
-	}
-    }
+    for (i = ZIP_BUS_DISABLED; i < ZIP_BUS_MAX; i++)
+	SendMessage(h, CB_ADDSTRING, 0, win_string(combo_to_string(i)));
 
     h = GetDlgItem(hdlg, IDC_COMBO_ZIP_ID);
     id_to_combo(h, 16);
@@ -664,8 +647,7 @@ zip_recalc_location_controls(HWND hdlg, int assign_id)
     ShowWindow(h, SW_HIDE);
 
     switch(bus) {
-	case ZIP_BUS_ATAPI_PIO_ONLY:		/* ATAPI (PIO-only) */
-	case ZIP_BUS_ATAPI_PIO_AND_DMA:		/* ATAPI (PIO and DMA) */
+	case ZIP_BUS_ATAPI:
 		h = GetDlgItem(hdlg, IDT_1756);
 		ShowWindow(h, SW_SHOW);
 		EnableWindow(h, TRUE);
@@ -680,7 +662,7 @@ zip_recalc_location_controls(HWND hdlg, int assign_id)
 			    temp_zip_drives[zdlv_current_sel].ide_channel, 0);
 		break;
 
-	case ZIP_BUS_SCSI:			/* SCSI */
+	case ZIP_BUS_SCSI:
 		h = GetDlgItem(hdlg, IDT_1754);
 		ShowWindow(h, SW_SHOW);
 		EnableWindow(h, TRUE);
@@ -709,7 +691,7 @@ zip_recalc_location_controls(HWND hdlg, int assign_id)
 static void
 zip_track(uint8_t id)
 {
-    if ((temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY) || (temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY))
+    if (temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI)
 	ide_tracking |= (1ULL << temp_zip_drives[id].ide_channel);
     else if (temp_zip_drives[id].bus_type == ZIP_BUS_SCSI)
 	scsi_tracking[temp_zip_drives[id].scsi_device_id] |= (1ULL << temp_zip_drives[id].scsi_device_lun);
@@ -719,7 +701,7 @@ zip_track(uint8_t id)
 static void
 zip_untrack(uint8_t id)
 {
-    if ((temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY) || (temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI_PIO_ONLY))
+    if (temp_zip_drives[id].bus_type == ZIP_BUS_ATAPI)
 	ide_tracking &= ~(1ULL << temp_zip_drives[id].ide_channel);
     else if (temp_zip_drives[id].bus_type == ZIP_BUS_SCSI)
 	scsi_tracking[temp_zip_drives[id].scsi_device_id] &= ~(1ULL << temp_zip_drives[id].scsi_device_lun);
@@ -745,11 +727,10 @@ static BOOL CALLBACK
 #endif
 rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND h = INVALID_HANDLE_VALUE;
+    HWND h;
     int old_sel = 0;
-    int b = 0;
-    int b2 = 0;
     int assign = 0;
+    int b;
 
     switch (message) {
 	case WM_INITDIALOG:
@@ -763,24 +744,7 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		ListView_SetItemState(h, 0, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);
 		cdrom_add_locations(hdlg);
 		h = GetDlgItem(hdlg, IDC_COMBO_CD_BUS);
-		switch (temp_cdrom_drives[cdlv_current_sel].bus_type) {
-			case CDROM_BUS_DISABLED:
-			default:
-				b = 0;
-				break;
-
-			case CDROM_BUS_ATAPI_PIO_ONLY:
-				b = 1;
-				break;
-
-			case CDROM_BUS_ATAPI_PIO_AND_DMA:
-				b = 2;
-				break;
-
-			case CDROM_BUS_SCSI:
-				b = 3;
-				break;
-		}
+		b = temp_cdrom_drives[cdlv_current_sel].bus_type;
 		SendMessage(h, CB_SETCURSEL, b, 0);
 		cdrom_recalc_location_controls(hdlg, 0);
 
@@ -791,24 +755,7 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		zip_recalc_list(h);
 		zip_add_locations(hdlg);
 		h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
-		switch (temp_zip_drives[zdlv_current_sel].bus_type) {
-			case ZIP_BUS_DISABLED:
-			default:
-				b = 0;
-				break;
-
-			case ZIP_BUS_ATAPI_PIO_ONLY:
-				b = 1;
-				break;
-
-			case ZIP_BUS_ATAPI_PIO_AND_DMA:
-				b = 2;
-				break;
-
-			case ZIP_BUS_SCSI:
-				b = 3;
-				break;
-		}
+		b = temp_zip_drives[zdlv_current_sel].bus_type;
 		SendMessage(h, CB_SETCURSEL, b, 0);
 		zip_recalc_location_controls(hdlg, 0);
 		h = GetDlgItem(hdlg, IDC_CHECK250);
@@ -823,6 +770,7 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_LIST_CDROM_DRIVES)) {
 			old_sel = cdlv_current_sel;
+			h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 			cdlv_current_sel = cdrom_get_selected(hdlg);
 			if (cdlv_current_sel == old_sel)
 				return FALSE;
@@ -836,25 +784,12 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			rd_ignore_change = 1;
 
 			h = GetDlgItem(hdlg, IDC_COMBO_CD_BUS);
-			switch (temp_cdrom_drives[cdlv_current_sel].bus_type) {
-				case CDROM_BUS_DISABLED:
-				default:
-					b = 0;
-					break;
-				case CDROM_BUS_ATAPI_PIO_ONLY:
-					b = 1;
-					break;
-				case CDROM_BUS_ATAPI_PIO_AND_DMA:
-					b = 2;
-					break;
-				case CDROM_BUS_SCSI:
-					b = 3;
-					break;
-			}
+			b = temp_cdrom_drives[cdlv_current_sel].bus_type;
 			SendMessage(h, CB_SETCURSEL, b, 0);
 			cdrom_recalc_location_controls(hdlg, 0);
 		} else if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_LIST_ZIP_DRIVES)) {
 			old_sel = zdlv_current_sel;
+			h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 			zdlv_current_sel = zip_get_selected(hdlg);
 			if (zdlv_current_sel == old_sel)
 				return FALSE;
@@ -869,24 +804,7 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			rd_ignore_change = 1;
 
 			h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
-			switch (temp_zip_drives[zdlv_current_sel].bus_type) {
-				case ZIP_BUS_DISABLED:
-				default:
-					b = 0;
-					break;
-
-				case ZIP_BUS_ATAPI_PIO_ONLY:
-					b = 1;
-					break;
-
-				case ZIP_BUS_ATAPI_PIO_AND_DMA:
-					b = 2;
-					break;
-
-				case ZIP_BUS_SCSI:
-					b = 3;
-					break;
-			}
+			b = temp_zip_drives[zdlv_current_sel].bus_type;
 			SendMessage(h, CB_SETCURSEL, b, 0);
 			zip_recalc_location_controls(hdlg, 0);
 			h = GetDlgItem(hdlg, IDC_CHECK250);
@@ -905,41 +823,20 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_BUS);
 				b = SendMessage(h, CB_GETCURSEL, 0, 0);
-				switch (b) {
-					case 0:
-						b2 = CDROM_BUS_DISABLED;
-						break;
-
-					case 1:
-						b2 = CDROM_BUS_ATAPI_PIO_ONLY;
-						break;
-
-					case 2:
-						b2 = CDROM_BUS_ATAPI_PIO_AND_DMA;
-						break;
-
-					case 3:
-						b2 = CDROM_BUS_SCSI;
-						break;
-				}
-				if (b2 == temp_cdrom_drives[cdlv_current_sel].bus_type)
+				if (b == temp_cdrom_drives[cdlv_current_sel].bus_type)
 					goto cdrom_bus_skip;
 				cdrom_untrack(cdlv_current_sel);
-				assign = (temp_cdrom_drives[cdlv_current_sel].bus_type == b2) ? 0 : 1;
+				assign = (temp_cdrom_drives[cdlv_current_sel].bus_type == b) ? 0 : 1;
 				if (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_DISABLED)
 					temp_cdrom_drives[cdlv_current_sel].speed_idx = cdrom_speed_idx(cdrom_speed_idx(CDROM_SPEED_DEFAULT));
-				if ((b2 == CDROM_BUS_ATAPI_PIO_ONLY) && (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA))
-					assign = 0;
-				else if ((b2 == CDROM_BUS_ATAPI_PIO_AND_DMA) && (temp_cdrom_drives[cdlv_current_sel].bus_type == CDROM_BUS_ATAPI_PIO_ONLY))
-					assign = 0;
-				temp_cdrom_drives[cdlv_current_sel].bus_type = b2;
+				temp_cdrom_drives[cdlv_current_sel].bus_type = b;
 				cdrom_recalc_location_controls(hdlg, assign);
 				cdrom_track(cdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 				cdrom_update_item(h, cdlv_current_sel);
 cdrom_bus_skip:
-					rd_ignore_change = 0;
-					return FALSE;
+				rd_ignore_change = 0;
+				return FALSE;
 
 			case IDC_COMBO_CD_ID:
 				if (rd_ignore_change)
@@ -948,7 +845,8 @@ cdrom_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_ID);
 				cdrom_untrack(cdlv_current_sel);
-				temp_cdrom_drives[cdlv_current_sel].scsi_device_id = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_cdrom_drives[cdlv_current_sel].scsi_device_id = (uint8_t)b;
 				cdrom_track(cdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 				cdrom_update_item(h, cdlv_current_sel);
@@ -962,7 +860,8 @@ cdrom_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_LUN);
 				cdrom_untrack(cdlv_current_sel);
-				temp_cdrom_drives[cdlv_current_sel].scsi_device_lun = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_cdrom_drives[cdlv_current_sel].scsi_device_lun = (uint8_t)b;
 				cdrom_track(cdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 				cdrom_update_item(h, cdlv_current_sel);
@@ -976,7 +875,8 @@ cdrom_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_CHANNEL_IDE);
 				cdrom_untrack(cdlv_current_sel);
-				temp_cdrom_drives[cdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_cdrom_drives[cdlv_current_sel].ide_channel = (uint8_t)b;
 				cdrom_track(cdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 				cdrom_update_item(h, cdlv_current_sel);
@@ -989,7 +889,8 @@ cdrom_bus_skip:
 
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
-				temp_cdrom_drives[cdlv_current_sel].speed_idx = (uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_cdrom_drives[cdlv_current_sel].speed_idx = (uint8_t)b;
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 				cdrom_update_item(h, cdlv_current_sel);
 				rd_ignore_change = 0;
@@ -1002,29 +903,11 @@ cdrom_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
 				b = SendMessage(h, CB_GETCURSEL, 0, 0);
-				switch (b) {
-					case 0:
-						b2 = ZIP_BUS_DISABLED;
-						break;
-					case 1:
-						b2 = ZIP_BUS_ATAPI_PIO_ONLY;
-						break;
-					case 2:
-						b2 = ZIP_BUS_ATAPI_PIO_AND_DMA;
-						break;
-					case 3:
-						b2 = ZIP_BUS_SCSI;
-						break;
-				}
-				if (b2 == temp_zip_drives[zdlv_current_sel].bus_type)
+				if (temp_zip_drives[zdlv_current_sel].bus_type == b)
 					goto zip_bus_skip;
 				zip_untrack(zdlv_current_sel);
-				assign = (temp_zip_drives[zdlv_current_sel].bus_type == b2) ? 0 : 1;
-				if ((b2 == ZIP_BUS_ATAPI_PIO_ONLY) && (temp_zip_drives[zdlv_current_sel].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA))
-					assign = 0;
-				else if ((b2 == ZIP_BUS_ATAPI_PIO_AND_DMA) && (temp_zip_drives[cdlv_current_sel].bus_type == ZIP_BUS_ATAPI_PIO_ONLY))
-					assign = 0;
-				temp_zip_drives[zdlv_current_sel].bus_type = b2;
+				assign = (temp_zip_drives[zdlv_current_sel].bus_type == b) ? 0 : 1;
+				temp_zip_drives[zdlv_current_sel].bus_type = b;
 				zip_recalc_location_controls(hdlg, assign);
 				zip_track(zdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
@@ -1040,7 +923,8 @@ zip_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_ID);
 				zip_untrack(zdlv_current_sel);
-				temp_zip_drives[zdlv_current_sel].scsi_device_id = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_zip_drives[zdlv_current_sel].scsi_device_id = (uint8_t)b;
 				zip_track(zdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 				zip_update_item(h, zdlv_current_sel);
@@ -1054,7 +938,8 @@ zip_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_LUN);
 				zip_untrack(zdlv_current_sel);
-				temp_zip_drives[zdlv_current_sel].scsi_device_lun = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_zip_drives[zdlv_current_sel].scsi_device_lun = (uint8_t)b;
 				zip_track(zdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 				zip_update_item(h, zdlv_current_sel);
@@ -1068,7 +953,8 @@ zip_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_CHANNEL_IDE);
 				zip_untrack(zdlv_current_sel);
-				temp_zip_drives[zdlv_current_sel].ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_zip_drives[zdlv_current_sel].ide_channel = (uint8_t)b;
 				zip_track(zdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 				zip_update_item(h, zdlv_current_sel);
@@ -1081,7 +967,8 @@ zip_bus_skip:
 
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_CHECK250);
-				temp_zip_drives[zdlv_current_sel].is_250 = SendMessage(h, BM_GETCHECK, 0, 0);
+				b = SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_zip_drives[zdlv_current_sel].is_250 = (int8_t)b;
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 				zip_update_item(h, zdlv_current_sel);
 				rd_ignore_change = 0;

@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.14	2018/05/06
+ * Version:	@(#)game.c	1.0.15	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -41,6 +41,7 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
+#define dbglog game_log
 #include "../../emu.h"
 #include "../../machines/machine.h"
 #include "../../cpu/cpu.h"
@@ -67,21 +68,21 @@ typedef struct _game_ {
 } game_t;
 
 
+static game_t	*game_global = NULL;
+
+
 #ifdef ENABLE_GAME_LOG
 int		game_do_log = ENABLE_GAME_LOG;
 #endif
 
 
-static game_t	*game_global = NULL;
-
-
-static void
-gamelog(const char *fmt, ...)
+void
+game_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_GAME_LOG
     va_list ap;
 
-    if (game_do_log) {
+#ifdef ENABLE_GAME_LOG
+    if (game_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
@@ -109,9 +110,7 @@ game_write(uint16_t addr, uint8_t val, void *priv)
     game_t *dev = (game_t *)priv;
     int i;
 
-#ifdef ENABLE_GAME_LOG
-    gamelog("GAME: write(%04x, %02x)\n", addr, val);
-#endif
+    DBGLOG(2, "GAME: write(%04x, %02x)\n", addr, val);
 
     timer_clock();
 
@@ -145,9 +144,7 @@ game_read(uint16_t addr, void *priv)
 
     cycles -= ISA_CYCLES(8);
 
-#ifdef ENABLE_GAME_LOG
-    gamelog("GAME: read(%04x) = %02x\n", addr, ret);
-#endif
+    DBGLOG(2, "GAME: read(%04x) = %02x\n", addr, ret);
 
     return(ret);
 }
@@ -174,9 +171,9 @@ game_init(const device_t *info)
     game_t *dev;
     int i;
 
-    pclog("GAME: initializing, type=%d\n", joystick_type);
+    INFO("GAME: initializing, type=%d\n", joystick_type);
 
-    dev = (game_t *)malloc(sizeof(game_t));
+    dev = (game_t *)mem_alloc(sizeof(game_t));
     memset(dev, 0x00, sizeof(game_t));
     game_global = dev;
 

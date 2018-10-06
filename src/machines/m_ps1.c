@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.20	2018/08/20
+ * Version:	@(#)m_ps1.c	1.0.21	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,6 +99,8 @@ typedef struct {
     int		model;
 
     rom_t	high_rom;
+    mem_map_t	romext_mapping;
+    uint8_t	romext[32768];
 
     uint8_t	ps1_91,
 		ps1_92,
@@ -253,7 +255,7 @@ snd_init(const device_t *info)
 {
     ps1snd_t *snd;
 
-    snd = malloc(sizeof(ps1snd_t));
+    snd = (ps1snd_t *)mem_alloc(sizeof(ps1snd_t));
     memset(snd, 0x00, sizeof(ps1snd_t));
 
     sn76489_init(&snd->sn76489, 0x0205, 0x0001, SN76496, 4000000);
@@ -289,18 +291,47 @@ static const device_t snd_device = {
 };
 
 
+static uint8_t
+ps1_read_romext(uint32_t addr, void *priv)
+{
+    ps1_t *dev = (ps1_t *)priv;
+
+    return dev->romext[addr & 0x7fff];
+}
+
+
+static uint16_t
+ps1_read_romextw(uint32_t addr, void *priv)
+{
+    ps1_t *dev = (ps1_t *)priv;
+    uint16_t *p = (uint16_t *)&dev->romext[addr & 0x7fff];
+
+    return *p;
+}
+
+
+static uint32_t
+ps1_read_romextl(uint32_t addr, void *priv)
+{
+    ps1_t *dev = (ps1_t *)priv;
+    uint32_t *p = (uint32_t *)&dev->romext[addr & 0x7fff];
+
+    return *p;
+}
+
+
 static void
-recalc_memory(ps1_t *ps)
+recalc_memory(ps1_t *dev)
 {
     /* Enable first 512K */
     mem_set_mem_state(0x00000, 0x80000,
-		      (ps->ps1_e0_regs[0] & 0x01) ?
+		      (dev->ps1_e0_regs[0] & 0x01) ?
 			(MEM_READ_INTERNAL | MEM_WRITE_INTERNAL) :
 			(MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL));
 
     /* Enable 512-640K */
     mem_set_mem_state(0x80000, 0x20000,
-		      (ps->ps1_e0_regs[1] & 0x01) ?
+		      (dev->ps1_e0_regs[1] & 0x01) ?
 			(MEM_READ_INTERNAL | MEM_WRITE_INTERNAL) :
 			(MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL));
 }
@@ -309,73 +340,78 @@ recalc_memory(ps1_t *ps)
 static void
 ps1_write(uint16_t port, uint8_t val, void *priv)
 {
-    ps1_t *ps = (ps1_t *)priv;
+    ps1_t *dev = (ps1_t *)priv;
 
     switch (port) {
 	case 0x0092:
-		if (ps->model != 2011) {
+		if (dev->model != 2011) {
 			if (val & 1) {
 				softresetx86();
 				cpu_set_edx();
 			}
-			ps->ps1_92 = val & ~1;
+			dev->ps1_92 = val & ~1;
 		} else {
-			ps->ps1_92 = val;    
+			dev->ps1_92 = val;    
 		}
 		mem_a20_alt = val & 2;
 		mem_a20_recalc();
 		break;
 
 	case 0x0094:
-		ps->ps1_94 = val;
+		dev->ps1_94 = val;
 		break;
 
 	case 0x00e0:
-		if (ps->model != 2011) {
-			ps->ps1_e0_addr = val;
-		}
+		if (dev->model != 2011)
+			dev->ps1_e0_addr = val;
 		break;
 
 	case 0x00e1:
-		if (ps->model != 2011) {
-			ps->ps1_e0_regs[ps->ps1_e0_addr] = val;
-			recalc_memory(ps);
+		if (dev->model != 2011) {
+			dev->ps1_e0_regs[dev->ps1_e0_addr] = val;
+			recalc_memory(dev);
 		}
 		break;
 
 	case 0x0102:
 		if (val & 0x04)
 			serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
+#if 0
+		  else
+			serial_remove(1);
+#endif
 		if (val & 0x10) {
 			switch ((val >> 5) & 3) {
 				case 0:
 					parallel_setup(1, 0x03bc);
 					break;
+
 				case 1:
 					parallel_setup(1, 0x0378);
 					break;
+
 				case 2:
 					parallel_setup(1, 0x0278);
 					break;
 			}
 		}
-		ps->ps1_102 = val;
+		dev->ps1_102 = val;
 		break;
 
 	case 0x0103:
-		ps->ps1_103 = val;
+		dev->ps1_103 = val;
 		break;
 
 	case 0x0104:
-		ps->ps1_104 = val;
+		dev->ps1_104 = val;
 		break;
 
 	case 0x0105:
-		ps->ps1_105 = val;
+		dev->ps1_105 = val;
 		break;
 
 	case 0x0190:
-		ps->ps1_190 = val;
+		dev->ps1_190 = val;
 		break;
     }
 }
@@ -384,53 +420,52 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 static uint8_t
 ps1_read(uint16_t port, void *priv)
 {
-    ps1_t *ps = (ps1_t *)priv;
+    ps1_t *dev = (ps1_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port) {
 	case 0x0091:		/* Card Select Feedback register */
-		ret = ps->ps1_91;
-		ps->ps1_91 = 0;
+		ret = dev->ps1_91;
+		dev->ps1_91 = 0;
 		break;
 
 	case 0x0092:
-		ret = ps->ps1_92;
+		ret = dev->ps1_92;
 		break;
 
 	case 0x0094:
-		ret = ps->ps1_94;
+		ret = dev->ps1_94;
 		break;
 
 	case 0x00e1:
-		if (ps->model != 2011) {
-			ret = ps->ps1_e0_regs[ps->ps1_e0_addr];
-		}
+		if (dev->model != 2011)
+			ret = dev->ps1_e0_regs[dev->ps1_e0_addr];
 		break;
 
 	case 0x0102:
-		if (ps->model == 2011)
-			ret = ps->ps1_102 | 0x08;
+		if (dev->model == 2011)
+			ret = dev->ps1_102 | 0x08;
 		  else
-			ret = ps->ps1_102;
+			ret = dev->ps1_102;
 		break;
 
 	case 0x0103:
-		ret = ps->ps1_103;
+		ret = dev->ps1_103;
 		break;
 
 	case 0x0104:
-		ret = ps->ps1_104;
+		ret = dev->ps1_104;
 		break;
 
 	case 0x0105:
-		if (ps->model == 2011)
-			ret = ps->ps1_105;
+		if (dev->model == 2011)
+			ret = dev->ps1_105;
 		  else
-			ret = ps->ps1_105 | 0x80;
+			ret = dev->ps1_105 | 0x80;
 		break;
 
 	case 0x0190:
-		ret = ps->ps1_190;
+		ret = dev->ps1_190;
 		break;
 
 	default:
@@ -444,23 +479,23 @@ ps1_read(uint16_t port, void *priv)
 static void
 ps1_setup(int model, romdef_t *bios)
 {
-    ps1_t *ps;
     void *priv;
+    ps1_t *dev;
 
-    ps = (ps1_t *)malloc(sizeof(ps1_t));
-    memset(ps, 0x00, sizeof(ps1_t));
-    ps->model = model;
+    dev = (ps1_t *)mem_alloc(sizeof(ps1_t));
+    memset(dev, 0x00, sizeof(ps1_t));
+    dev->model = model;
 
     io_sethandler(0x0091, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
+		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
     io_sethandler(0x0092, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
+		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
     io_sethandler(0x0094, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
+		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
     io_sethandler(0x0102, 4,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
+		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
     io_sethandler(0x0190, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
+		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
 
     /* Set up the parallel port. */
     parallel_setup(1, 0x03bc);
@@ -470,11 +505,15 @@ ps1_setup(int model, romdef_t *bios)
 	video_card = VID_INTERNAL;
 	mouse_type = MOUSE_PS2;
 
+	mem_map_add(&dev->romext_mapping, 0xc8000, 0x08000,
+		    ps1_read_romext,ps1_read_romextw,ps1_read_romextl,
+		    NULL,NULL, NULL, dev->romext, 0, dev);
+
 	if (machine_get_config_int("rom_shell")) {
-		if (! rom_init(&ps->high_rom,
+		if (! rom_init(&dev->high_rom,
 			       L"machines/ibm/ps1_2011/fc0000_105775_us.bin",
 			       0xfc0000, 0x20000, 0x01ffff, 0, MEM_MAPPING_EXTERNAL)) {
-			pclog("PS1: unable to load ROM Shell !\n");
+			ERRLOG("PS1: unable to load ROM Shell !\n");
 		}
 	}
 
@@ -496,7 +535,7 @@ ps1_setup(int model, romdef_t *bios)
 		 * This is nasty, we will have to generalize this
 		 * at some point for all PS/1 and/or PS/2 machines.
 		 */
-		ps1_hdc_inform(priv, ps);
+		ps1_hdc_inform(priv, dev);
 	}
     }
 
@@ -506,14 +545,14 @@ ps1_setup(int model, romdef_t *bios)
 	mouse_type = MOUSE_PS2;
 
 	io_sethandler(0x00e0, 2,
-		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, ps);
+		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
 
 	if (machine_get_config_int("rom_shell")) {
-		pclog("PS1: loading ROM Shell..\n");
-		if (! rom_init(&ps->high_rom,
+		DEBUG("PS1: loading ROM Shell..\n");
+		if (! rom_init(&dev->high_rom,
 			       L"machines/ibm/ps1_2121/fc0000_92f9674.bin",
 			       0xfc0000, 0x20000, 0x1ffff, 0, MEM_MAPPING_EXTERNAL)) {
-			pclog("PS1: unable to load ROM Shell !\n");
+			ERRLOG("PS1: unable to load ROM Shell !\n");
 		}
 	}
 
@@ -609,9 +648,9 @@ const device_t m_ps1_device = {
 void
 ps1_set_feedback(void *priv)
 {
-    ps1_t *ps = (ps1_t *)priv;
+    ps1_t *dev = (ps1_t *)priv;
 
-    ps->ps1_91 |= 0x01;
+    dev->ps1_91 |= 0x01;
 }
 
 

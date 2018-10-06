@@ -260,7 +260,7 @@ Note:	the block address is forced to be a multiple of the block size by
 	  ignoring the appropriate number of the least-significant bits
 SeeAlso: #P0178,#P0187
  *
- * Version:	@(#)m_at_opti495.c	1.0.6	2018/06/25
+ * Version:	@(#)m_at_opti495.c	1.0.7	2018/09/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -316,9 +316,6 @@ opti495_write(uint16_t addr, uint8_t val, void *p)
 		break;
 
 	case 0x24:
-#if 0
-		pclog("OPTI: writing reg %02X %02X\n", optireg, val);
-#endif
 		if (optireg >= 0x20 && optireg <= 0x2C) {
 			optiregs[optireg - 0x20] = val;
 			if (optireg == 0x21) {

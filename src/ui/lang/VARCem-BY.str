@@ -8,7 +8,7 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * Version:	@(#)VARCem-BY.str	1.0.5	2018/09/23
+ * Version:	@(#)VARCem-BY.str	1.0.5	2018/10/01
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -46,10 +46,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,4
-#define TAG_AUTHOR	"paul_met"
-#define TAG_EMAIL	"paul_met@yandex.ru"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,5
+#define STR_AUTHOR	"paul_met"
+#define STR_EMAIL	"paul_met@yandex.ru"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Памылка"
@@ -64,27 +67,24 @@
 #define STR_2202	"Немагчыма выкарыстоўваць PCap, верагодна ён не ініцыялізаваны"
 #define STR_2203	"Прылады PCap не знойдзены"
 #define STR_2204	"Няправільная прылада PCap"
-#define STR_2205	"Немагчыма ініцыялізаваць OpenAL, пераканайцеся ў наяўнасці наступнай бібліятэкі\nу вашым каталогу з прыкладаннем:\n\nlibopenal-1.dll"
-#define STR_2206	"Немагчыма ініцыялізаваць FluidSynth, пераканайцеся ў наяўнасці наступнай бібліятэкі\nу вашым каталогу з прыкладаннем:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"Немагчыма ініцыялізаваць %s, пераканайцеся ў наяўнасці наступнай бібліятэкі\nу вашым каталогу з прыкладаннем:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Немагчыма стварыць bitmap-файл: %s"
+#define STR_2300	"System is out of memory!"
 #define STR_2301	"Не знойдзены падтрымоўваныя вобразы ROM!"
 #define STR_2302	"Не знойдзена дапушчальная канфігурацыя.\n\nВы хацелі б адкрыць дыялог Налады і стварыць яе??"
-#define STR_2303	"Сканфігураваны камп'ютар:\n\n  %ls\n\nis недаступны.\n\nАдкрыць дыялог Налады?"
-#define STR_2304	"Сканфігураваная відэакарта:\n\n  %ls\n\nis недаступная.\n\nАдкрыць дыялог Налады?"
-#define STR_2305	"Выбранны рэндэрэр '%S' недаступны. Выкарыстоўваць асноўны?"
-#define STR_2306	"ST506 і ESDI дыскаводы CD-ROM ніколі не існавалі"
+#define STR_2303	"Сканфігураваны %ls:\n\n  %s\n\nнедаступны.\n\nАдкрыць дыялог Налады?"
+#define STR_2304	"Выбранны рэндэрэр:\n\n  %s\n\nнедаступны. Выкарыстоўваць асноўны?"
+#define STR_2305        "You must save your settings first!"
+#define STR_2306	"Немагчыма стварыць bitmap-файл: %ls"
 #define STR_2307	"USB пакуль не падтрымліваецца"
-#define STR_2308        "You must save your settings first!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Вы ўпэўненыя, што жадаеце захаваць гэтыя настаўленні?\n\n(Магчыма, спатрэбіцца перазапуск...)"
 #define STR_2401	"Змены захаваны, калі ласка, перазапусціце эмулятар!"
-#define STR_2402	"Выбраная прылада '% ls' яшчэ знаходзіцца ў працэсе распрацоўкі і можа выклікаць праблемы.\n\nВы ўпэўненыя, што жадаеце яе выкарыстоўваць?"
+#define STR_2402	"Выбраная прылада:\n\n  %s\n\nяшчэ знаходзіцца ў працэсе распрацоўкі і можа выклікаць праблемы.\n\nВы ўпэўненыя, што жадаеце яе выкарыстоўваць?"
 #define STR_2403	"Пстрыкніце мышшу для захопу курсора"
 #define STR_2404	"Націсніце F8+F12 каб вызваліць курсор"
 #define STR_2405	"Націсніце F8+F12 або сярэднюю кнопку мышы каб вызваліць курсор"
@@ -98,11 +98,14 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"Добра"
 #define STR_CANCEL	"Адмяніць"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"Наладзіць"
 #define STR_BROWSE	"Агляд.."
 
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Адсутнічае"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"Недаступна"
 #define STR_ENABLED	"Даступна"
 #define STR_OFF		"Выкл"
@@ -122,7 +125,7 @@
 #define STR_DEVCONF_2	"Прылада:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Аб прыкладанне VARCem.."
 #define  STR_3201	"Аўтары:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker і іншыя.\nПрыкладанне заснавана на кодзе эмулятараў 86Box, PCem, MAME, DOSbox и Qemu"
@@ -133,7 +136,7 @@
 #define  STR_3211        "Аўтары перакладаў з англійскай на іншыя мовы:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Статус"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Узмацненне гуку"
@@ -182,23 +185,16 @@
 #define  STR_3328	"Цыклы чакання:"
 #define  STR_3329	"Памяць:"
 #define  STR_3330	"МБ"
-#define  STR_3331	"Сінхранізацыя часу"
+#define  STR_3331	"Сінхранізацыя часу:"
 #define  STR_3332	"Уключыць FPU"
 #define  STR_3333	"Дынамічны рэкампілятар"
 #define  STR_3334	"КБ"
 #define  STR_3335	"па змаўчанні"
+#define  STR_3336	"Даступна (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Відэа:"
-#define  STR_3351	"Хуткасць відэа:"
-#define  STR_3352	"Voodoo Graphics"
-#define  STR_3353	"па змаўчанні"
-#define  STR_3354	"8-біт"
-#define  STR_3355	"медленная 16-біт"
-#define  STR_3356	"высокая 16-біт"
-#define  STR_3357	"павольная VLB/PCI"
-#define  STR_3358	"сярэдняя VLB/PCI"
-#define  STR_3359	"высокая VLB/PCI"
+#define  STR_3351	"Voodoo Graphics"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Мыш:"
@@ -231,8 +227,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"Кантролер SCSI:"
 #define  STR_3476	"Кантролер HD:"
-#define  STR_3477	"Трацічны IDE:"
-#define  STR_3478	"Чацвярцічны IDE:"
+#define  STR_3477	"Трацічны IDE"
+#define  STR_3478	"Чацвярцічны IDE"
 #define  STR_3479	"Прылада ISABugger"
 #define  STR_3480	"Карта расширения памяти (ISA)"
 #define  STR_3481	"ISA Clock/RTC карта"
@@ -253,10 +249,9 @@
 #define  STR_3512	"Параметры (вялікі)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (PIO-only)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (здымны)"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Дадаць жорсткі дыск"
@@ -287,13 +282,12 @@
 #define  STR_3577	"Дысководы ZIP:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Хуткасць"
-#define  STR_3580	"<Зарэзервавана>"
-#define  STR_3581	"<Зарэзервавана>"
-#define  STR_3582	"ATAPI (PIO-only)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(пуста)"
 #define STR_3901	"(хост-дыск %c:)"
 #define STR_3902	" [Абаронены ад запісу]"
@@ -301,6 +295,7 @@
 #define STR_3904	"Открыть образ.."
 #define STR_3905	"Загрузіць папярэдні лад"
 #define STR_3906	"Выняць"
+#define STR_3907	"Паведаміць аб змене дыска"
 
 #define STR_3910	"Flopp %i (%s): %ls"
 #define STR_3911	"Усе вобразы\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Прасунутыя сектарная вобразы\0*.imd;*.json;*.td0\0Простые секторные вобразы\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Вобразы з магнітным патокам\0*.fdi\0Вобразы з бітавым патокам\0*.86f\0Усе файлы\0*.*\0"
@@ -308,24 +303,21 @@
 #define STR_3913	"Вобразы з бітавым патокам\0*.86f\0"
 #define STR_3914	"Экспартаваць у 86F.."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Хост-дыск с CD/DVD (%c:)"
 #define STR_3922	"Вобразы CD-ROM\0*.iso;*.cue\0Усе файлы (*.*)\0*.*\0"
 #define STR_3923	"Без гуку"
 
-#define STR_3930	"Жорсткі дыск (%s)"
+#define STR_3930	"Жорсткі дыск %i (%ls): %ls"
 
-#define STR_3940	"Здымны дыск %i: %ls"
-#define STR_3941	"Паведаміць аб змене дыска"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"Вобразы для дыскаводаў ZIP\0*.im?;*.zdi\0Усе файлы\0*.*\0"
 #define STR_3952	"Вобразы для дыскаводаў ZIP\0*.im?;*.zdi\0"
-#define STR_3960	"Сетка"
-#define STR_3970	"Гук"
+#define STR_3960	"Сетка (%s)"
+#define STR_3970	"Гук (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"Дзеянне"
 #define  STR_4001	"Жорсткая перазагрузка"
 #define  STR_4002	"Ctrl+Alt+Del"
@@ -334,25 +326,25 @@
 #define  STR_4005	"Пауза"
 #define  STR_4006	"Выхад"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"Від"
 #define  STR_4011	"Змяняны памер акна"
 #define  STR_4012	"Запомніць памер і пазіцыю"
 #define  STR_4013	"Поўнаэкранны рэжым\tCtrl+Alt+PageUP"
 #define  STR_4014	"Выкарыстоўваць правы CTRL як левы ALT"
-#define  STR_4015	"Абнаўляць абразкі ў панэлі статусу"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"Рэндэрэр"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"Маштаб акна"
 #define   STR_4031	"0.5x"
 #define   STR_4032	"1x"
 #define   STR_4033	"1.5x"
 #define   STR_4034	"2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"Расцягнуты поўнаэкранны рэжым"
 #define   STR_4041	"Расцягнуць на ўвесь экран"
 #define   STR_4042	"4:3"
@@ -360,14 +352,15 @@
 #define   STR_4044	"Цэлалікавае маштабаванне"
 #define   STR_4045	"Захоўваць бягучы памер"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"Дысплей"
 #define  STR_4051	"Інверсны дысплей"
 #define  STR_4052	"Дазволіць Overscan"
 #define  STR_4053	"Ўсталяваць суадносіны бакоў 4:3"
 #define  STR_4054	"Змяніць кантраснасць манахромнага дысплея"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"Тып дысплея"
 #define   STR_4061	"RGB каляровы"
 #define   STR_4062	"Манахромны"
@@ -375,23 +368,26 @@
 #define   STR_4064	"Зялёнае свячэнне"
 #define   STR_4065	"Белае свячэнне"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"Тып манахромнай канверсіі"
 #define   STR_4071	"BT601 (NTSC/PAL)"
 #define   STR_4072	"BT709 (HDTV)"
 #define   STR_4073	"Асераднёны"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"Інструменты"
 #define  STR_4081	"Налады"
 #define  STR_4082	"Мова"
 #define	 STR_4083	"Уваход"
-#define  STR_4084	"Загрузіць канфігурацыю"
-#define  STR_4085	"Захаваць канфігурацыю"
-#define  STR_4086	"Статус"
-#define  STR_4087	"Зрабіць здымак\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"Загрузіць канфігурацыю"
+#define  STR_4087	"Захаваць канфігурацыю"
+#define  STR_4088	"Зрабіць здымак"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"Дапамога"
 #define  STR_4091	"Аб прыкладанні VARCem"
 

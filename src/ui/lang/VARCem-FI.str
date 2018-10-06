@@ -8,12 +8,7 @@
  *
  *		String definitions for "Finnish (Finland)" language.
  *
- * TRANSLATION:	The application uses English as its primary language, and
- *		this file is the "Master" for all translations. Please use
- *		it as the line-by-line base for the translated version, and
- *		update fields as needed.
- *
- * Version:	@(#)VARCem-FI.str	1.0.8	2018/09/23
+ * Version:	@(#)VARCem-FI.str	1.0.9	2018/10/01
  *
  * Authors:	Daniel Gurney, <dgurney@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -52,10 +47,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,8
-#define TAG_AUTHOR	"Daniel Gurney"
-#define TAG_EMAIL	"dgurney@varcem.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,9
+#define STR_AUTHOR	"Daniel Gurney"
+#define STR_EMAIL	"dgurney@varcem.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Virhe"
@@ -70,27 +68,24 @@
 #define STR_2202	"PCap epäonnistui, koska sitä ei välttämättä ole alustettu"
 #define STR_2203	"PCap-laitteita ei löytynyt"
 #define STR_2204	"Vääränlainen PCap-laite"
-#define STR_2205	"OpenALia ei voitu alustaa, varmista että seuraava kirjasto\non ohjelman kansiossa:\n\nlibopenal-1.dll"
-#define STR_2206	"FluidSynthiä ei voitu alustaa, varmista että seuraava tiedosto\non ohjelman kansiossa:\n\nlibfluidsynth.dll"
-#define STR_2207	"Järjestelmän muisti on täynnä!"
+#define STR_2205	"%s ei voitu alustaa, varmista että seuraava kirjasto\non ohjelman kansiossa:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Bittikarttatiedostoa ei voitu luoda: %s"
+#define STR_2300	"Järjestelmän muisti on täynnä!"
 #define STR_2301	"Käyttökelpoisia ROM-tiedostoja ei löytynyt!"
 #define STR_2302	"Kelvollista konfiguraatiota ei löytynyt.\n\nHaluatko siirtyä asetuksiin luodaksesi sellaisen?"
-#define STR_2303	"Määritetty kone:\n\n  %ls\n\nei ole saatavilla.\n\nHaluatko avata asetusdialogin?"
-#define STR_2304	"Määritetty näytönohjain:\n\n  %ls\n\nei ole saatavilla.\n\nHaluatko avata asetusdialogin?"
-#define STR_2305	"Valittu renderer '%S' ei ole saatavilla. Palauta oletusasetus?"
-#define STR_2306	"ST506 tai ESDI CD-ROM-asemia ei ollut koskaan olemassa"
+#define STR_2303	"Määritetty %ls:\n\n  %s\n\nei ole saatavilla.\n\nHaluatko avata asetusdialogin?"
+#define STR_2304	"Valittu renderer:\n\n  %s\n\nei ole saatavilla. Palauta oletusasetus?"
+#define STR_2305	"Sinun pitää ensin tallentaa uudet asetuksesi!"
+#define STR_2306	"Bittikarttatiedostoa ei voitu luoda: %ls"
 #define STR_2307	"USB:ta ei vielä tueta"
-#define STR_2308	"Sinun pitää ensin tallentaa uudet asetuksesi!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Haluatko varmasti tallentaa nämä asetukset?\n\n(Uudelleenkäynnistys voi olla tarpeellinen...)"
 #define STR_2401	"Muutokset tallennettu, käynnistä emulaattori uudelleen!"
-#define STR_2402	"Valittu laite '%ls' on tällä hetkellä `kehitteillä`, ja voi aiheuttaa ongelmia.\n\nHaluatko varmasti käyttää sitä?"
+#define STR_2402	"Valittu laite:\n\n  %s\n\non tällä hetkellä `kehitteillä`, ja voi aiheuttaa ongelmia.\n\nHaluatko varmasti käyttää sitä?"
 #define STR_2403	"Klikkaa kaapataksesi hiiri"
 #define STR_2404	"Paina F8+F12 vapauttaaksesi hiiri"
 #define STR_2405	"Paina F8+F12 tai keskinäppäintä vapauttaaksesi hiiri"
@@ -104,11 +99,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Peruuta"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"Määritä"
 #define STR_BROWSE	"Selaa"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"-"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"Pois käytöstä"
 #define STR_ENABLED	"Käytössä"
 #define STR_OFF		"Pois"
@@ -128,19 +127,19 @@
 #define STR_DEVCONF_2	"Laitteet:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Tietoja VARCemista.."
 #define  STR_3201	"Tekijät:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker ja muut.\nPerustuu aikaisempiin projekteihin, kuten 86Boxiin, PCemiin, MAMEen, DOSboxiin and Qemu:hun."
 #define  STR_3203	"Julkaistu BSD 3-Clause-lisenssin alaisena, ja muista projekteista lainattu koodi on GNU General Public License (versio 2 tai uudempi) alaisena."
 #define  STR_3204	"LICENSE.txt-tiedostossa on tarkempia tietoja."
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Lokalisaatio"
 #define  STR_3211	"Englannista muille kielille kääntäneet:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Tila"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Äänen Gain"
@@ -189,23 +188,16 @@
 #define  STR_3328	"Wait states:"
 #define  STR_3329	"Muisti:"
 #define  STR_3330	"MT"
-#define  STR_3331	"Käytä aikasynkronointia"
+#define  STR_3331	"Käytä aikasynkronointia:"
 #define  STR_3332	"Käytä matematiikkasuoritinta"
 #define  STR_3333	"Dynaaminen uudelleenkääntäjä"
 #define  STR_3334	"KT"
 #define  STR_3335	"Oletus"
+#define  STR_3336	"Käytössä (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Video:"
-#define  STR_3351	"Videonopeus:"
-#define  STR_3352	"Voodoo-grafiikat"
-#define  STR_3353	"Oletus"
-#define  STR_3354	"8-bittinen"
-#define  STR_3355	"Hidas 16-bittinen"
-#define  STR_3356	"Nopea 16-bittinen"
-#define  STR_3357	"Hidas VLB/PCI"
-#define  STR_3358	"Keskinopea VLB/PCI"
-#define  STR_3359	"Nopea VLB/PCI"
+#define  STR_3351	"Voodoo-grafiikat"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Hiiri:"
@@ -238,8 +230,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSI-ohjain:"
 #define  STR_3476	"Kiintolevyohjain:"
-#define  STR_3477	"Tertiäärinen IDE:"
-#define  STR_3478	"Kvarternäärinen IDE:"
+#define  STR_3477	"Tertiäärinen IDE"
+#define  STR_3478	"Kvarternäärinen IDE"
 #define  STR_3479	"ISABugger-laite"
 #define  STR_3480	"ISA-muistilaajennus"
 #define  STR_3481	"ISA-kello/RTC-kortti"
@@ -260,10 +252,9 @@
 #define  STR_3512	"Oma (suuri)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (vain PIO)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (irroitettava)"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Lisää kiintolevy"
@@ -294,13 +285,12 @@
 #define  STR_3577	"ZIP-asemat:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Nopeus"
-#define  STR_3580	"<Varattu>"
-#define  STR_3581	"<Varattu>"
-#define  STR_3582	"ATAPI (vain PIO)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(tyhjä)"
 #define STR_3901	"(isäntäasema %c:)"
 #define STR_3902	" [Kirjoitussuojattu]"
@@ -308,6 +298,7 @@
 #define STR_3904	"&Lataa levykuva.."
 #define STR_3905	"L&ataa edellinen levykuva uudelleen"
 #define STR_3906	"&Poista"
+#define STR_3907	"&Huomauta levyn vaihdosta"
 
 #define STR_3910	"Levyke %i (%s): %ls"
 #define STR_3911	"Kaikki levykuvat\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Edistyneet sektorilevykuvat\0*.imd;*.json;*.td0\0Perussektorilevykuvat\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Virtauslevykuvat\0*.fdi\0Pintalevykuvat\0*.86f\0Kaikki tiedostot\0*.*\0"
@@ -315,24 +306,21 @@
 #define STR_3913	"Pintalevykuvat\0*.86f\0"
 #define STR_3914	"&Vie 86F-formaattiin..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Isäntä CD/DVD-asema (%c:)"
 #define STR_3922	"Levykuvat\0*.iso;*.cue\0Kaikki tiedostot (*.*)\0*.*\0"
 #define STR_3923	"&Mykistä"
 
-#define STR_3930	"Kiintolevy (%s)"
+#define STR_3930	"Kiintolevy %i (%ls): %ls"
 
-#define STR_3940	"Irroitettava levy %i: %ls"
-#define STR_3941	"&Huomauta levyn vaihdosta"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP-levykuvat\0*.im?;*.zdi\0Kaikki tiedostot\0*.*\0"
 #define STR_3952	"ZIP-levykuvat\0*.im?;*.zdi\0"
-#define STR_3960	"Verkko"
-#define STR_3970	"Ääni"
+#define STR_3960	"Verkko (%s)"
+#define STR_3970	"Ääni (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"&Toiminto"
 #define  STR_4001	"&Pakkouudelleenkäynnistys"
 #define  STR_4002	"&Ctrl+Alt+Del"
@@ -341,25 +329,25 @@
 #define  STR_4005	"&Pysäytä"
 #define  STR_4006	"P&oistu"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"&Näkymä"
 #define  STR_4011	"Koonmuutokset &salliva ikkuna"
 #define  STR_4012	"&Muista koko ja sijainti"
 #define  STR_4013	"&Koko näyttö\tCtrl+Alt+PageUP"
 #define  STR_4014	"&Oikea CTRL on vasen ALT"
-#define  STR_4015	"&Päivitä tilapalkin kuvakkeet"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"Re&nderer"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"Ikkunan skaalaustekijä"
 #define   STR_4031	"&0.5x"
 #define   STR_4032	"&1x"
 #define   STR_4033	"1.&5x"
 #define   STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"Koko näytön &venytystila"
 #define   STR_4041	"&Koko näytön venytys"
 #define   STR_4042	"&4:3"
@@ -367,14 +355,15 @@
 #define   STR_4044	"K&okonaislukuasteikko"
 #define   STR_4045	"&Pidä koko"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"&Näyttö"
 #define  STR_4051	"Kään&teinen näyttö"
 #define  STR_4052	"Käytä &yliskannausta"
 #define  STR_4053	"&Pakota 4:3-kuvasuhde"
 #define  STR_4054	"Muuta yksivärinäytön &kontrastia"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"Nä&yttötyyppi"
 #define   STR_4061	"RGB-&värinäyttö"
 #define   STR_4062	"&Harmaasävynäyttö"
@@ -382,24 +371,28 @@
 #define   STR_4064	"&Vihreä näyttö"
 #define   STR_4065	"V&alkoinen näyttö"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"&Harmaasävykäännöksen tyyppi"
 #define   STR_4071	"BT&601 (NTSC/PAL)"
 #define   STR_4072	"BT&709 (HDTV)"
 #define   STR_4073	"&Keskiarvo"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"&Työkalut"
 #define  STR_4081	"&Asetukset"
 #define  STR_4082	"&Kieli"
 #define	 STR_4083	"L&oggaus"
-#define  STR_4084	"&Lataa konfiguraatio"
-#define  STR_4085	"&Tallenna konfiguraatio"
-#define  STR_4086	"T&ila"
-#define  STR_4087	"Ota k&uvankaappaus\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"&Lataa konfiguraatio"
+#define  STR_4087	"&Tallenna konfiguraatio"
+#define  STR_4088	"Ota k&uvankaappaus"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"&Apua"
 #define  STR_4091	"&Tietoja VARCemista"
+
 
 /* End of file. */

@@ -8,7 +8,7 @@
  *
  *		String definitions for "Kazakh (Kazakhstan)" language.
  *
- * Version:	@(#)VARCem-KZ.str	1.0.4	2018/09/23
+ * Version:	@(#)VARCem-KZ.str	1.0.4	2018/10/01
  *
  * Authors:	Arbars Zagadkin, <arbars.zagadkin@mail.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -46,10 +46,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,3
-#define TAG_AUTHOR	"Arbars Zagadkin"
-#define TAG_EMAIL	"arbars.zagadkin@mail.ru"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,4
+#define STR_AUTHOR	"Arbars Zagadkin"
+#define STR_EMAIL	"arbars.zagadkin@mail.ru"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Қате"
@@ -64,27 +67,24 @@
 #define STR_2202	"PCap пайдалу мүмкін емес, мүмкін ол бастапқы жуктемейді"
 #define STR_2203	"PCap құрылғысы табылған емес"
 #define STR_2204	"PCap құрылғысы дұрыс емес"
-#define STR_2205	"OpenAL бастапқы жуктемеу мүмкін емес, сіздің бағдарламен бумасына \nкелесі кітапханасың қол жетімді тексерініз\n :\n\nlibopenal-1.dll"
-#define STR_2206	"FluidSynth бастапқы жуктемеу мүмкін емес, сіздің бағдарламен бумасына \nкелесі кітапханасың қол жетімді тексерініз\n :\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"%s бастапқы жуктемеу мүмкін емес, сіздің бағдарламен бумасына \nкелесі кітапханасың қол жетімді тексерініз\n :\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"%s bitmap-файлы құру мүмкін емес"
+#define STR_2300	"System out of memory!"
 #define STR_2301	"Қолдауылық ROM бейнелер табылған емес!" 
-#define STR_2302	"Ықтималық құрылымдық кескін табылған емес. \n\nСіз Күйге келтіру диалоғы ашу және құру оны қалайсыз ба?"
-#define STR_2303	"Бұны компьютердің құрылымдық кескіні: \n\n  %ls\n\nis қол жетімсіз. Күйге келтіру диалогы ашу ма?" 
-#define STR_2304	"Бұны бейнетақтаңың құрылымдық кескіні:\n\n  %ls\n\nis қол жетімсіз.\n\nКүйге келтіру диалогы ашу ма?"
-#define STR_2305	"'%S' рендерері қол жетімсіз. Использовать основной? Негізгі пайдалау ма?"
-#define STR_2306	"ST506 және ESDI CD-ROM табақжаджүргізіктер ешқашан болмайды"
+#define STR_2302	"Ықтималық құрылымдық кескін табылған емес.\n\nСіз Күйге келтіру диалоғы ашу және құру оны қалайсыз ба?"
+#define STR_2303	"Бұны %ls құрылымдық кескіні:\n\n  %s\n\nқол жетімсіз. Күйге келтіру диалогы ашу ма?" 
+#define STR_2304	"'%s' рендерері қол жетімсіз. Использовать основной? Негізгі пайдалау ма?"
+#define STR_2305        "You must save your settings first!"
+#define STR_2306	"%ls bitmap-файлы құру мүмкін емес"
 #define STR_2307	"USB алайда қол жетімсіз"
-#define STR_2308        "You must save your settings first!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Параметрлер сақтау керегінде сенімсіз ба? (Қайта жіберісі кажеті бар...)"
 #define STR_2401	"Өзгерiстер сақталды. Үлгелігіш қайта жіберініз" 
-#define STR_2402	"Бұның құралысы '%ls' алайда жасау барысында және мәселер тудыру мүмкін. Пайдалауда оны сенімсіз ба?"
+#define STR_2402	"Бұның құралысы\n\n  %s\n\nалайда жасау барысында және мәселер тудыру мүмкін. Пайдалауда оны сенімсіз ба?"
 #define STR_2403	"Тышқанның курсор ұстау үшің тышканда басыныз"
 #define STR_2404	"Тышқанның курсор босатылу F8+F12 басыныз"
 #define STR_2405	"Тышқанның курсор босатылу F8+F12 немеса тышқанның ортанғы түймесі басыныз"
@@ -98,11 +98,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Болдырмау"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"Күйге келтіру"
 #define STR_BROWSE	"Шолы..."
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Жоқ"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"Қол жетімсіз"
 #define STR_ENABLED	"Қол жетімді"
 #define STR_OFF		"Өшіру"
@@ -122,7 +126,7 @@
 #define STR_DEVCONF_2	"Құрылығы:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"VARCem туралы..."
 #define  STR_3201	"Авторлар:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker және тағы басқа.\nБағдарлама 86Box, PCem, MAME, DOSbox және Qemu алғашқы жазбахабардан негізделген" 
@@ -133,7 +137,7 @@
 #define  STR_3211        "Анғылыштан басқа тілдерге аудармалар авторлар:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Статус"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Дыбыстың күшейтуi"
@@ -182,23 +186,16 @@
 #define  STR_3328	"Күту қайтамалалар:"
 #define  STR_3329	"Жедел жады:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Уақыттың синхрондау"
+#define  STR_3331	"Уақыттың синхрондау:"
 #define  STR_3332	"FPU қосу"
 #define  STR_3333	"Динамикалық рекомпиляторы" 
 #define  STR_3334	"KB"
 #define  STR_3335	"әдепкі бойынша"
+#define  STR_3336	"Қол жетімді (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Бейне:"
-#define  STR_3351	"Бейнесің жылдамдығы:"
-#define  STR_3352	"Voodoo Graphics"
-#define  STR_3353	"әдепкі бойынша"
-#define  STR_3354	"8-bit"
-#define  STR_3355	"баяу 16-bit"
-#define  STR_3356	"жоғары 16-bit"
-#define  STR_3357	"баяу VLB/PCI"
-#define  STR_3358	"орташа VLB/PCI"
-#define  STR_3359	"жоғары VLB/PCI"
+#define  STR_3351	"Voodoo Graphics"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Тышқан:"
@@ -231,8 +228,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSI бақылаушысы:"
 #define  STR_3476	"HD бақылаушысы:"
-#define  STR_3477	"Үштік IDE:"
-#define  STR_3478	"Төрттік IDE:"
+#define  STR_3477	"Үштік IDE"
+#define  STR_3478	"Төрттік IDE"
 #define  STR_3479	"ISABugger қурылғы"
 #define  STR_3480       "ISA Memory Expansion"
 #define  STR_3481	"ISA Clock/RTC Card"
@@ -253,10 +250,9 @@
 #define  STR_3512	"Параметрлер (үлкен)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (тек қана PIO)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (алмалы-салмалы)"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Қатты табақжады қосылу"
@@ -287,13 +283,12 @@
 #define  STR_3577	"ZIP жабакжадты жүргізгілер:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Жылдамдығы"
-#define  STR_3580	"<Бос емес>"
-#define  STR_3581	"<Бос емес>"
-#define  STR_3582	"ATAPI (PIO-only)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(бос)"
 #define STR_3901	"(хост-табақжады %c:)"
 #define STR_3902	" [Жазбадан қорғалған]"
@@ -301,6 +296,7 @@
 #define STR_3904	"Бейне ашу.."
 #define STR_3905	"Алдыңғы бейнесі жүкту"
 #define STR_3906	"Ашып шығу"
+#define STR_3907	"Табақжадының ауысымы хабарлау"  
 
 #define STR_3910	"Иікпелі табакжад %i (%s): %ls"
 #define STR_3911	"Бәрі бейнелер\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0 Кенейтілген секторлық бейнелер\0*.imd;*.json;*.td0\0Тұр секторлық бейнелер\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Магниттік ағыспен бейнелер\0*.fdi\0Биттік ағыспен бейнелер\0*.86f\0Бәрі файлдар\0*.*\0"
@@ -308,24 +304,21 @@
 #define STR_3913	"Биттік ағыспен бейнелер\0*.86f\0"
 #define STR_3914	"86F экспорт алу"
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"CD/DVD-мен хост-табақжады (%c:)"
 #define STR_3922	"CD-ROM бейнелер\0*.iso;*.cue\0Бәрі файлдар (*.*)\0*.*\0"
 #define STR_3923	"Дыбыссыз"
 
-#define STR_3930	"Қатты табақжады (%s)"
+#define STR_3930	"Қатты табақжады %i (%ls): %ls"
 
-#define STR_3940	"Съёмный табақжад %i: %ls"
-#define STR_3941	"Табақжадының ауысымы хабарлау"  
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP\0*.im?;*.zdi табақжаджургізгілер үшін бейнелер\0Бәрі файлдар\0*.*\0"
 #define STR_3952	"ZIP\0*.im?;*.zdi табақжаджургізгілер үшін бейнелер\0"
-#define STR_3960	"Торап"
-#define STR_3970	"Дыбыс"
+#define STR_3960	"Торап (%s)"
+#define STR_3970	"Дыбыс (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"Іс"
 #define  STR_4001	"Алып тастап қайта орнату" 
 #define  STR_4002	"Ctrl+Alt+Del"
@@ -334,25 +327,25 @@
 #define  STR_4005	"Пауза"
 #define  STR_4006	"Шығу"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"Сыртқы түрi"
 #define  STR_4011	"Өзгертiлетiндік терезенiң өлшемi"
 #define  STR_4012	"Өлшем және позиция жадта қалу"
 #define  STR_4013	"Тарт ақпаралық режімі\tCtrl+Alt+PageUP"
 #define  STR_4014	"Оң CTRL бұл солы ALT пайдалану"  
-#define  STR_4015	"Статустың панелде иконкалар жанарту" 
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"Рендерер"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"Терезенің ауқығы"
 #define   STR_4031	"0.5x"
 #define   STR_4032	"1x"
 #define   STR_4033	"1.5x"
 #define   STR_4034	"2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"Көрелік тарт ақпаралық режімі" 
 #define   STR_4041	"Тарт ақпаралға көрелу" 
 #define   STR_4042	"4:3"
@@ -360,14 +353,15 @@
 #define   STR_4044	"бүтiн санды ауқымауы"
 #define   STR_4045	"Ағатын өлшемі сақтау"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"Дисплей"
 #define  STR_4051	"Терістік дисплей"
 #define  STR_4052	"Жазбаның ұшуы рұқсат беру"
 #define  STR_4053	"4:3 жақтардың арақатысы көрсету"
 #define  STR_4054	"Ақ-қара дисплейдің қарама-қайшылығы өзгерту"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"Дисплейдің түрі"
 #define   STR_4061	"Түрлi-түстi RGB"
 #define   STR_4062	"Ақ-қара"
@@ -375,23 +369,26 @@
 #define   STR_4064	"Жасыл жарығы"
 #define   STR_4065	"Ақ жарығы"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"Ақ-қара конверсиясының түрі"
 #define   STR_4071	"BT601 (NTSC/PAL)"
 #define   STR_4072	"BT709 (HDTV)"
 #define   STR_4073	"Орташа"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"Құралдар"
 #define  STR_4081	"Күйге келтіру"
 #define  STR_4082	"Тілі"
 #define	 STR_4083	"Логгер"
-#define  STR_4084	"Конфигурация жұктелу"
-#define  STR_4085	"Конфигурация сақталу"
-#define  STR_4086	"Статус"
-#define  STR_4087	"Скриншотты жасау \tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"Конфигурация жұктелу"
+#define  STR_4087	"Конфигурация сақталу"
+#define  STR_4088	"Скриншотты жасау"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"Көмек"
 #define  STR_4091	"VARCem туралы"
 

@@ -8,7 +8,7 @@
  *
  *		Trident TVGA (8900D) emulation.
  *
- * Version:	@(#)vid_tvga.c	1.0.7	2018/05/06
+ * Version:	@(#)vid_tvga.c	1.0.8	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,23 +52,24 @@
 #include "vid_tkd8001_ramdac.h"
 
 
-typedef struct tvga_t
-{
-        mem_mapping_t linear_mapping;
-        mem_mapping_t accel_mapping;
+#define ROM_TVGA_BIOS	L"video/trident/tvga/trident.bin"
 
-        svga_t svga;
-        tkd8001_ramdac_t ramdac;
-        
-        rom_t bios_rom;
 
-        uint8_t tvga_3d8, tvga_3d9;
-        int oldmode;
-        uint8_t oldctrl1;
-        uint8_t oldctrl2, newctrl2;
+typedef struct {
+    mem_map_t linear_mapping;
+    mem_map_t accel_mapping;
+
+    svga_t svga;
         
-        int vram_size;
-        uint32_t vram_mask;
+    rom_t bios_rom;
+
+    uint8_t tvga_3d8, tvga_3d9;
+    int oldmode;
+    uint8_t oldctrl1;
+    uint8_t oldctrl2, newctrl2;
+
+    int vram_size;
+    uint32_t vram_mask;
 } tvga_t;
 
 
@@ -87,9 +88,10 @@ static const uint8_t crtc_mask[0x40] = {
 static void tvga_recalcbanking(tvga_t *tvga);
 
 
-void tvga_out(uint16_t addr, uint8_t val, void *p)
+static void
+tvga_out(uint16_t addr, uint8_t val, void *priv)
 {
-        tvga_t *tvga = (tvga_t *)p;
+        tvga_t *tvga = (tvga_t *)priv;
         svga_t *svga = &tvga->svga;
 
         uint8_t old;
@@ -131,7 +133,7 @@ void tvga_out(uint16_t addr, uint8_t val, void *p)
                 break;
 
                 case 0x3C6: case 0x3C7: case 0x3C8: case 0x3C9:
-                tkd8001_ramdac_out(addr, val, &tvga->ramdac, svga);
+                tkd8001_ramdac_out(addr, val, svga->ramdac, svga);
                 return;
 
                 case 0x3CF:
@@ -192,9 +194,9 @@ void tvga_out(uint16_t addr, uint8_t val, void *p)
         svga_out(addr, val, svga);
 }
 
-uint8_t tvga_in(uint16_t addr, void *p)
+static uint8_t tvga_in(uint16_t addr, void *priv)
 {
-        tvga_t *tvga = (tvga_t *)p;
+        tvga_t *tvga = (tvga_t *)priv;
         svga_t *svga = &tvga->svga;
 
         if (((addr&0xFFF0) == 0x3D0 || (addr&0xFFF0) == 0x3B0) && !(svga->miscout & 1)) addr ^= 0x60;
@@ -219,7 +221,7 @@ uint8_t tvga_in(uint16_t addr, void *p)
                 }
                 break;
                 case 0x3C6: case 0x3C7: case 0x3C8: case 0x3C9:
-                return tkd8001_ramdac_in(addr, &tvga->ramdac, svga);
+                return tkd8001_ramdac_in(addr, svga->ramdac, svga);
                 case 0x3D4:
                 return svga->crtcreg;
                 case 0x3D5:
@@ -234,7 +236,9 @@ uint8_t tvga_in(uint16_t addr, void *p)
         return svga_in(addr, svga);
 }
 
-static void tvga_recalcbanking(tvga_t *tvga)
+
+static void
+tvga_recalcbanking(tvga_t *tvga)
 {
         svga_t *svga = &tvga->svga;
         
@@ -246,7 +250,9 @@ static void tvga_recalcbanking(tvga_t *tvga)
                 svga->read_bank = svga->write_bank;
 }
 
-void tvga_recalctimings(svga_t *svga)
+
+static void
+tvga_recalctimings(svga_t *svga)
 {
         tvga_t *tvga = (tvga_t *)svga->p;
         if (!svga->rowoffset) svga->rowoffset = 0x100; /*This is the only sensible way I can see this being handled,
@@ -314,61 +320,67 @@ void tvga_recalctimings(svga_t *svga)
 }
 
 
-static void *tvga8900d_init(const device_t *info)
+static void *
+tvga_init(const device_t *info)
 {
-        tvga_t *tvga = malloc(sizeof(tvga_t));
-        memset(tvga, 0, sizeof(tvga_t));
+        tvga_t *tvga = (tvga_t *)mem_alloc(sizeof(tvga_t));
+        memset(tvga, 0x00, sizeof(tvga_t));
         
         tvga->vram_size = device_get_config_int("memory") << 10;
         tvga->vram_mask = tvga->vram_size - 1;
         
-        rom_init(&tvga->bios_rom, L"video/trident/tvga/trident.bin", 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+        rom_init(&tvga->bios_rom, ROM_TVGA_BIOS,
+		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         svga_init(&tvga->svga, tvga, tvga->vram_size,
                    tvga_recalctimings,
                    tvga_in, tvga_out,
                    NULL,
                    NULL);
-       
+
+	tvga->svga.ramdac = device_add(&tkd8001_ramdac_device);
+
         io_sethandler(0x03c0, 0x0020, tvga_in, NULL, NULL, tvga_out, NULL, NULL, tvga);
 
         return tvga;
 }
 
-static int tvga8900d_available(void)
-{
-        return rom_present(L"video/trident/tvga/trident.bin");
-}
 
-void tvga_close(void *p)
+static void
+tvga_close(void *priv)
 {
-        tvga_t *tvga = (tvga_t *)p;
-        
+        tvga_t *tvga = (tvga_t *)priv;
+
         svga_close(&tvga->svga);
-        
+
         free(tvga);
 }
 
-void tvga_speed_changed(void *p)
+
+static void
+tvga_speed_changed(void *p)
 {
         tvga_t *tvga = (tvga_t *)p;
         
         svga_recalctimings(&tvga->svga);
 }
 
-void tvga_force_redraw(void *p)
+
+static void
+tvga_force_redraw(void *p)
 {
         tvga_t *tvga = (tvga_t *)p;
 
         tvga->svga.fullchange = changeframecount;
 }
 
-void tvga_add_status_info(char *s, int max_len, void *p)
+
+static int
+tvga8900d_available(void)
 {
-        tvga_t *tvga = (tvga_t *)p;
-        
-        svga_add_status_info(s, max_len, &tvga->svga);
+        return rom_present(ROM_TVGA_BIOS);
 }
+
 
 static const device_config_t tvga_config[] =
 {
@@ -376,15 +388,15 @@ static const device_config_t tvga_config[] =
                 "memory", "Memory size", CONFIG_SELECTION, "", 1024,
                 {
                         {
-                                "256 kB", 256
+                                "256 KB", 256
                         },
                         {
-                                "512 kB", 512
+                                "512 KB", 512
                         },
                         {
                                 "1 MB", 1024
                         },
-                         /*Chip supports 2mb, but drivers are buggy*/
+                         /*Chip supports 2MB, but drivers are buggy*/
                         {
                                 ""
                         }
@@ -395,17 +407,15 @@ static const device_config_t tvga_config[] =
         }
 };
 
-const device_t tvga8900d_device =
-{
-        "Trident TVGA 8900D",
-        DEVICE_ISA,
-	0,
-        tvga8900d_init,
-        tvga_close,
-	NULL,
-        tvga8900d_available,
-        tvga_speed_changed,
-        tvga_force_redraw,
-        tvga_add_status_info,
-        tvga_config
+
+const device_t tvga8900d_device = {
+    "Trident TVGA 8900D",
+    DEVICE_ISA,
+    0,
+    tvga_init, tvga_close, NULL,
+    tvga8900d_available,
+    tvga_speed_changed,
+    tvga_force_redraw,
+    NULL,
+    tvga_config
 };

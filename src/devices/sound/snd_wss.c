@@ -8,13 +8,15 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.4	2018/05/06
+ * Version:	@(#)snd_wss.c	1.0.5	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		TheCollector1995, <mariogplayer@gmail.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2018 TheCollector1995.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -42,9 +44,11 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <math.h>  
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../system/mca.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "sound.h"
@@ -52,106 +56,190 @@
 #include "snd_opl.h"
 
 
-/*530, 11, 3 - 530=23*/
-/*530, 11, 1 - 530=22*/
-/*530, 11, 0 - 530=21*/
-/*530, 10, 1 - 530=1a*/
-/*530, 9,  1 - 530=12*/
-/*530, 7,  1 - 530=0a*/
-/*604, 11, 1 - 530=22*/
-/*e80, 11, 1 - 530=22*/
-/*f40, 11, 1 - 530=22*/
+/*Win95 only uses IRQ7-9, others may be wrong*/
+static const int	wss_dmas[4] = { 0, 0, 1, 3 };
+static const int	wss_irqs[8] = { 5, 7, 9, 10, 11, 12, 14, 15 };
 
 
-static int wss_dma[4] = {0, 0, 1, 3};
-static int wss_irq[8] = {5, 7, 9, 10, 11, 12, 14, 15}; /*W95 only uses 7-9, others may be wrong*/
+typedef struct {
+    const char	*name;
+    int		board;
 
+    uint8_t	config;
 
-typedef struct wss_t
-{
-        uint8_t config;
+    ad1848_t	ad1848;        
 
-        ad1848_t ad1848;        
-        opl_t    opl;
+    opl_t	opl;
+    int		opl_enabled;
+
+    uint8_t	pos_regs[8];
 } wss_t;
 
-uint8_t wss_read(uint16_t addr, void *p)
+
+static void
+get_buffer(int32_t *buffer, int len, void *priv)
 {
-        wss_t *wss = (wss_t *)p;
-        uint8_t temp;
-        temp = 4 | (wss->config & 0x40);
-        return temp;
+    wss_t *dev = (wss_t *)priv;
+    int c;
+
+    opl3_update2(&dev->opl);
+
+    ad1848_update(&dev->ad1848);
+
+    for (c = 0; c < len * 2; c++) {
+	buffer[c] += dev->opl.buffer[c];
+	buffer[c] += (dev->ad1848.buffer[c] / 2);
+    }
+
+    dev->opl.pos = 0;
+    dev->ad1848.pos = 0;
 }
 
-void wss_write(uint16_t addr, uint8_t val, void *p)
-{
-        wss_t *wss = (wss_t *)p;
 
-        wss->config = val;
-        ad1848_setdma(&wss->ad1848, wss_dma[val & 3]);
-        ad1848_setirq(&wss->ad1848, wss_irq[(val >> 3) & 7]);
+static uint8_t
+wss_read(uint16_t addr, void *priv)
+{
+    wss_t *dev = (wss_t *)priv;
+    uint8_t ret;
+
+    ret = 4 | (dev->config & 0x40);
+
+    return(ret);
 }
 
-static void wss_get_buffer(int32_t *buffer, int len, void *p)
+
+static void
+wss_write(uint16_t addr, uint8_t val, void *priv)
 {
-        wss_t *wss = (wss_t *)p;
-        
-        int c;
+    wss_t *dev = (wss_t *)priv;
 
-        opl3_update2(&wss->opl);
-        ad1848_update(&wss->ad1848);
-        for (c = 0; c < len * 2; c++)
-        {
-                buffer[c] += wss->opl.buffer[c];
-                buffer[c] += (wss->ad1848.buffer[c] / 2);
-        }
+    dev->config = val;
 
-        wss->opl.pos = 0;
-        wss->ad1848.pos = 0;
+    ad1848_setdma(&dev->ad1848, wss_dmas[val & 3]);
+    ad1848_setirq(&dev->ad1848, wss_irqs[(val >> 3) & 7]);
 }
 
-void *wss_init(const device_t *info)
+
+static uint8_t
+ncr_audio_mca_read(int port, void *priv)
 {
-        wss_t *wss = malloc(sizeof(wss_t));
+    wss_t *dev = (wss_t *)priv;
 
-        memset(wss, 0, sizeof(wss_t));
-
-        opl3_init(&wss->opl);
-        ad1848_init(&wss->ad1848);
-        
-        ad1848_setirq(&wss->ad1848, 7);
-        ad1848_setdma(&wss->ad1848, 3);
-
-        io_sethandler(0x0388, 0x0004, opl3_read,   NULL, NULL, opl3_write,   NULL, NULL,  &wss->opl);
-        io_sethandler(0x0530, 0x0004, wss_read,    NULL, NULL, wss_write,    NULL, NULL,  wss);
-        io_sethandler(0x0534, 0x0004, ad1848_read, NULL, NULL, ad1848_write, NULL, NULL,  &wss->ad1848);
-                
-        sound_add_handler(wss_get_buffer, wss);
-        
-        return wss;
+    return(dev->pos_regs[port & 0x07]);
 }
 
-void wss_close(void *p)
+
+static void
+ncr_audio_mca_write(int port, uint8_t val, void *priv)
 {
-        wss_t *wss = (wss_t *)p;
-        
-        free(wss);
+    wss_t *dev = (wss_t *)priv;
+    uint16_t ports[] = { 0x0530, 0x0E80, 0x0F40, 0x0604 };
+    uint16_t addr;
+
+    if (port < 0x102) return;	
+
+    dev->opl_enabled = (dev->pos_regs[2] & 0x20) ? 1 : 0;
+    addr = ports[(dev->pos_regs[2] & 0x18) >> 3];
+
+    io_removehandler(0x0388, 4,
+		     opl3_read,NULL,NULL, opl3_write,NULL,NULL, &dev->opl);
+    io_removehandler(addr, 4,
+		     wss_read,NULL,NULL, wss_write,NULL,NULL, dev);
+    io_removehandler(addr+4, 4,
+		     ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
+    INFO("%s: OPL=%d, I/O=%04XH\n", dev->name, dev->opl_enabled, addr);
+
+    dev->pos_regs[port & 7] = val;
+    if (dev->pos_regs[2] & 1) {
+	addr = ports[(dev->pos_regs[2] & 0x18) >> 3];
+
+	if (dev->opl_enabled)
+		io_sethandler(0x0388, 4,
+			      opl3_read,NULL,NULL, opl3_write,NULL,NULL, &dev->opl);	
+	io_sethandler(addr, 4,
+		      wss_read,NULL,NULL, wss_write,NULL,NULL, dev);
+	io_sethandler(addr+4, 4,
+		      ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
+    }
 }
 
-void wss_speed_changed(void *p)
+
+static void *
+wss_init(const device_t *info)
 {
-        wss_t *wss = (wss_t *)p;
-        
-        ad1848_speed_changed(&wss->ad1848);
+    wss_t *dev;
+
+    dev = (wss_t *)mem_alloc(sizeof(wss_t));
+    memset(dev, 0x00, sizeof(wss_t));
+    dev->name = info->name;
+    dev->board = info->local;
+
+    switch(info->local) {
+	case 0:		/* standard ISA controller */
+		break;
+
+	case 1:		/* NCR Business Audio MCA */
+		dev->pos_regs[0] = 0x16;
+		dev->pos_regs[1] = 0x51;		
+		mca_add(ncr_audio_mca_read, ncr_audio_mca_write, dev);
+		break;
+    }
+
+    opl3_init(&dev->opl);
+
+    ad1848_init(&dev->ad1848);
+    ad1848_setirq(&dev->ad1848, 7);
+    ad1848_setdma(&dev->ad1848, 3);
+
+    io_sethandler(0x0388, 4,
+		  opl3_read,NULL,NULL, opl3_write,NULL,NULL, &dev->opl);
+    io_sethandler(0x0530, 4,
+		  wss_read,NULL,NULL, wss_write,NULL,NULL, dev);
+    io_sethandler(0x0534, 4,
+		  ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
+
+    sound_add_handler(get_buffer, dev);
+
+    return(dev);
 }
 
-const device_t wss_device =
+
+static void
+wss_close(void *priv)
 {
-        "Windows Sound System",
-        DEVICE_ISA, 0,
-        wss_init, wss_close, NULL,
-        NULL,
-        wss_speed_changed,
-        NULL, NULL,
-        NULL
+    wss_t *dev = (wss_t *)priv;
+
+    free(dev);
+}
+
+
+static void
+wss_speed_changed(void *priv)
+{
+    wss_t *dev = (wss_t *)priv;
+
+    ad1848_speed_changed(&dev->ad1848);
+}
+
+
+const device_t wss_device = {
+    "Windows Sound System",
+    DEVICE_ISA,
+    0,
+    wss_init, wss_close, NULL,
+    NULL,
+    wss_speed_changed,
+    NULL, NULL,
+    NULL
+};
+
+const device_t ncr_business_audio_device = {
+    "NCR Business Audio",
+    DEVICE_MCA,
+    1,
+    wss_init, wss_close, NULL,
+    NULL,
+    wss_speed_changed,
+    NULL, NULL,
+    NULL
 };

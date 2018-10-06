@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.17	2018/08/31
+ * Version:	@(#)plat.h	1.0.18	2018/09/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -47,13 +47,13 @@
 #ifndef EMU_PLAT_H
 # define EMU_PLAT_H
 
-#ifndef GLOBAL
-# define GLOBAL extern
-#endif
-
 
 /* The Win32 API uses _wcsicmp and _stricmp. */
 #ifdef _WIN32
+# ifndef _MSC_VER
+#  undef swprintf
+#  define swprintf __swprintf
+# endif
 # define wcsncasecmp	_wcsnicmp
 # define wcscasecmp	_wcsicmp
 # define strncasecmp	_strnicmp
@@ -85,15 +85,34 @@
 #define sizeof_w(x)	(sizeof((x)) / sizeof(wchar_t))
 
 
+#if defined(_WIN32) && !defined(_MSC_VER)
+/*
+ * MinGW uses the very old Visual Studio 6.0 C runtime (and even ises
+ * it..) for licensing reasons. All this means, that it has the old
+ * Microsoft-style string specifiers for wide strings, which predate
+ * (and are incompatible with) the ISO ones. The (inlined) function
+ * below, and the #undef above, are to redirect "swprintf" used in 
+ * the code the inlined one, which basically redirects to the ISO
+ * variant MinGW also provides.  Yum!  --FvK
+ */
+static __inline int
+__swprintf(wchar_t *__dst, UNUSED(size_t __cnt), const wchar_t *__fmt, ...) \
+{									    \
+  register int __retval;						    \
+  __builtin_va_list __local_argv;					    \
+									    \
+  __builtin_va_start( __local_argv, __fmt );				    \
+  __retval = __mingw_vswprintf( __dst, __fmt, __local_argv );		    \
+  __builtin_va_end( __local_argv );					    \
+									    \
+  return __retval;							    \
+}
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Define an entry in the strings table. */
-typedef struct {
-    int                 id;
-    const wchar_t       *str;
-} string_t;
 
 /* Define a "vidapi", or, rather, a Renderer API. */
 typedef struct {
@@ -105,26 +124,19 @@ typedef struct {
     void	(*resize)(int x, int y);
     int		(*pause)(void);
     void	(*screenshot)(const wchar_t *fn);
-    int		(*available)(void);
+    int		(*is_available)(void);
 } vidapi_t;
 
 
 /* Global variables residing in the platform module. */
-GLOBAL int	dopause,			/* system is paused */
-		doresize,			/* screen resize requested */
-		quited,				/* system exit requested */
-		mouse_capture;			/* mouse is captured in app */
-GLOBAL uint64_t	timer_freq;
-GLOBAL int	infocus;
-GLOBAL const vidapi_t	*plat_vidapis[];
-extern const string_t	*plat_strings;
+extern int	quited;				/* system exit requested */
+extern const vidapi_t *plat_vidapis[];
 
 
 /* System-related functions. */
 #ifdef _WIN32
 extern void	plat_console(int on);
 #endif
-extern int	plat_set_language(int id);
 extern wchar_t	*fix_emu_path(const wchar_t *str);
 extern FILE	*plat_fopen(const wchar_t *path, const wchar_t *mode);
 extern void	plat_remove(const wchar_t *path);
@@ -143,10 +155,14 @@ extern int	plat_dir_create(const wchar_t *path);
 extern uint64_t	plat_timer_read(void);
 extern uint32_t	plat_get_ticks(void);
 extern void	plat_delay_ms(uint32_t count);
-extern void	plat_pause(int p);
 extern void	plat_mouse_capture(int on);
-extern void	plat_setfullscreen(int on);
-extern int	plat_fdd_icon(int);
+extern int	plat_kbd_state(void);
+extern void	plat_fullscreen(int on);
+#ifdef EMU_UI_H
+extern const string_t *plat_lang_load(lang_t *ptr);
+#endif
+extern void	plat_lang_scan(void);
+extern void	plat_lang_set(int id);
 
 
 /* Dynamic Module Loader interface. */
@@ -169,23 +185,19 @@ extern void	plat_stop(void);
 extern uint8_t	host_cdrom_drive_available[26];
 extern uint8_t	host_cdrom_drive_available_num;
 
+#ifdef USE_IOCTL
 extern void	cdrom_init_host_drives(void);
-extern void	cdrom_eject(uint8_t id);
-extern void	cdrom_reload(uint8_t id);
-extern void	zip_eject(uint8_t id);
-extern void	zip_reload(uint8_t id);
-extern void	removable_disk_unload(uint8_t id);
-extern void	removable_disk_eject(uint8_t id);
-extern void	removable_disk_reload(uint8_t id);
 extern int      ioctl_open(uint8_t id, char d);
 extern void     ioctl_reset(uint8_t id);
 extern void     ioctl_close(uint8_t id);
+#endif
 
 extern void	plat_midi_init(void);
 extern void	plat_midi_close(void);
-extern void	plat_midi_play_msg(uint8_t *val);
-extern void	plat_midi_play_sysex(uint8_t *data, unsigned int len);
+extern void	plat_midi_play_msg(uint8_t *msg);
+extern void	plat_midi_play_sysex(uint8_t *sysex, unsigned int len);
 extern int	plat_midi_write(uint8_t val);
+
 extern int	plat_midi_get_num_devs();
 extern void	plat_midi_get_dev_name(int num, char *s);
 

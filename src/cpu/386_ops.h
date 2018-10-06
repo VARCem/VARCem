@@ -8,7 +8,7 @@
  *
  *		286/386+ instruction handlers list.
  *
- * Version:	@(#)386_ops.h	1.0.2	2018/05/05
+ * Version:	@(#)386_ops.h	1.0.3	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -52,7 +52,7 @@
                 }                       \
         } while (0)
 
-static __inline void PUSH_W(uint16_t val)
+static INLINE void PUSH_W(uint16_t val)
 {
         if (stack32)
         {
@@ -68,7 +68,7 @@ static __inline void PUSH_W(uint16_t val)
         }
 }
 
-static __inline void PUSH_L(uint32_t val)
+static INLINE void PUSH_L(uint32_t val)
 {
         if (stack32)
         {
@@ -84,7 +84,7 @@ static __inline void PUSH_L(uint32_t val)
         }
 }
 
-static __inline uint16_t POP_W()
+static INLINE uint16_t POP_W()
 {
         uint16_t ret;
         if (stack32)
@@ -102,7 +102,7 @@ static __inline uint16_t POP_W()
         return ret;
 }
 
-static __inline uint32_t POP_L()
+static INLINE uint32_t POP_L()
 {
         uint32_t ret;
         if (stack32)
@@ -120,7 +120,7 @@ static __inline uint32_t POP_L()
         return ret;
 }
 
-static __inline uint16_t POP_W_seg(uint32_t seg)
+static INLINE uint16_t POP_W_seg(uint32_t seg)
 {
         uint16_t ret;
         if (stack32)
@@ -138,7 +138,7 @@ static __inline uint16_t POP_W_seg(uint32_t seg)
         return ret;
 }
 
-static __inline uint32_t POP_L_seg(uint32_t seg)
+static INLINE uint32_t POP_L_seg(uint32_t seg)
 {
         uint32_t ret;
         if (stack32)
@@ -162,7 +162,7 @@ static int ILLEGAL(uint32_t fetchdat)
 {
         cpu_state.pc = cpu_state.oldpc;
 
-        pclog("Illegal instruction %08X (%02X)\n", fetchdat, fopcode);
+        ERRLOG("CPU: illegal instruction %08X (%02X)\n", fetchdat, fopcode);
         x86illegal();
         return 0;
 }

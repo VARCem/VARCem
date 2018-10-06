@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.7	2018/05/06
+ * Version:	@(#)vid_colorplus.c	1.0.8	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,438 +64,416 @@
 /* Bits in the CGA graphics mode register */
 #define CGA_GRAPHICS_MODE       0x02	/* CGA graphics mode selected? */
 
-#define CGA_RGB 0
-#define CGA_COMPOSITE 1
+#define CGA_RGB		0
+#define CGA_COMPOSITE	1
 
-#define COMPOSITE_OLD 0
-#define COMPOSITE_NEW 1
+#define COMPOSITE_OLD	0
+#define COMPOSITE_NEW	1
 
 
-typedef struct
-{
-	cga_t cga;
-        uint8_t control;
+typedef struct {
+    cga_t	cga;
+    uint8_t	control;
 } colorplus_t;
 
 
-static void
-colorplus_out(uint16_t addr, uint8_t val, void *p)
-{
-        colorplus_t *colorplus = (colorplus_t *)p;
+static const int cols16[16] = {
+    0x10,0x12,0x14,0x16, 0x18,0x1A,0x1C,0x1E,
+    0x11,0x13,0x15,0x17, 0x19,0x1B,0x1D,0x1F
+};
 
-        if (addr == 0x3DD)
-        {
-                colorplus->control = val & 0x70;
-	}
-        else
-        {
-                cga_out(addr, val, &colorplus->cga);
-	}
+
+static void
+colorplus_out(uint16_t port, uint8_t val, void *priv)
+{
+    colorplus_t *dev = (colorplus_t *)priv;
+
+    if (port == 0x3dd)
+	dev->control = val & 0x70;
+    else
+	cga_out(port, val, &dev->cga);
 }
 
 
 static uint8_t
-colorplus_in(uint16_t addr, void *p)
+colorplus_in(uint16_t port, void *priv)
 {
-        colorplus_t *colorplus = (colorplus_t *)p;
+    colorplus_t *dev = (colorplus_t *)priv;
 
-        return cga_in(addr, &colorplus->cga);
+    return cga_in(port, &dev->cga);
 }
 
 
 static void
-colorplus_write(uint32_t addr, uint8_t val, void *p)
+colorplus_write(uint32_t addr, uint8_t val, void *priv)
 {
-        colorplus_t *colorplus = (colorplus_t *)p;
+    colorplus_t *dev = (colorplus_t *)priv;
 
-	if ((colorplus->control & COLORPLUS_PLANE_SWAP) &&
-	    (colorplus->control & COLORPLUS_EITHER_MODE) &&
-	    (colorplus->cga.cgamode & CGA_GRAPHICS_MODE))
-	{
-		addr ^= 0x4000;
-	}
-	else if (!(colorplus->control & COLORPLUS_EITHER_MODE))
-	{
-		addr &= 0x3FFF;
-	}
-        colorplus->cga.vram[addr & 0x7fff] = val;
-        if (colorplus->cga.snow_enabled)
-        {
-                colorplus->cga.charbuffer[ ((int)(((colorplus->cga.dispontime - colorplus->cga.vidtime) * 2) / CGACONST)) & 0xfc] = val;
-                colorplus->cga.charbuffer[(((int)(((colorplus->cga.dispontime - colorplus->cga.vidtime) * 2) / CGACONST)) & 0xfc) | 1] = val;
-        }
-        egawrites++;
-        cycles -= 4;
+    if ((dev->control & COLORPLUS_PLANE_SWAP) &&
+        (dev->control & COLORPLUS_EITHER_MODE) &&
+	(dev->cga.cgamode & CGA_GRAPHICS_MODE)) {
+	addr ^= 0x4000;
+    } else if (!(dev->control & COLORPLUS_EITHER_MODE)) {
+	addr &= 0x3fff;
+    }
+    dev->cga.vram[addr & 0x7fff] = val;
+
+    if (dev->cga.snow_enabled) {
+	dev->cga.charbuffer[((int)(((dev->cga.dispontime - dev->cga.vidtime) * 2) / CGACONST)) & 0xfc] = val;
+	dev->cga.charbuffer[(((int)(((dev->cga.dispontime - dev->cga.vidtime) * 2) / CGACONST)) & 0xfc) | 1] = val;
+    }
+
+    cycles -= 4;
 }
 
 
 static uint8_t
-colorplus_read(uint32_t addr, void *p)
+colorplus_read(uint32_t addr, void *priv)
 {
-        colorplus_t *colorplus = (colorplus_t *)p;
+    colorplus_t *dev = (colorplus_t *)priv;
 
-	if ((colorplus->control & COLORPLUS_PLANE_SWAP) &&
-	    (colorplus->control & COLORPLUS_EITHER_MODE) &&
-	    (colorplus->cga.cgamode & CGA_GRAPHICS_MODE))
-	{
-		addr ^= 0x4000;
-	}	
-	else if (!(colorplus->control & COLORPLUS_EITHER_MODE))
-	{
-		addr &= 0x3FFF;
-	}
-        cycles -= 4;        
-        if (colorplus->cga.snow_enabled)
-        {
-                colorplus->cga.charbuffer[ ((int)(((colorplus->cga.dispontime - colorplus->cga.vidtime) * 2) / CGACONST)) & 0xfc] = colorplus->cga.vram[addr & 0x7fff];
-                colorplus->cga.charbuffer[(((int)(((colorplus->cga.dispontime - colorplus->cga.vidtime) * 2) / CGACONST)) & 0xfc) | 1] = colorplus->cga.vram[addr & 0x7fff];
-        }
-        egareads++;
-        return colorplus->cga.vram[addr & 0x7fff];
+    if ((dev->control & COLORPLUS_PLANE_SWAP) &&
+	(dev->control & COLORPLUS_EITHER_MODE) &&
+	(dev->cga.cgamode & CGA_GRAPHICS_MODE)) {
+	addr ^= 0x4000;
+    }	else if (!(dev->control & COLORPLUS_EITHER_MODE)) {
+	addr &= 0x3fff;
+    }
+
+    cycles -= 4;	
+
+    if (dev->cga.snow_enabled) {
+	dev->cga.charbuffer[ ((int)(((dev->cga.dispontime - dev->cga.vidtime) * 2) / CGACONST)) & 0xfc] = dev->cga.vram[addr & 0x7fff];
+	dev->cga.charbuffer[(((int)(((dev->cga.dispontime - dev->cga.vidtime) * 2) / CGACONST)) & 0xfc) | 1] = dev->cga.vram[addr & 0x7fff];
+    }
+
+    return dev->cga.vram[addr & 0x7fff];
 }
 
 
 static void
-colorplus_poll(void *p)
+colorplus_poll(void *priv)
 {
-        colorplus_t *colorplus = (colorplus_t *)p;
-        int x, c;
-        int oldvc;
-        uint16_t dat0, dat1;
-        int cols[4];
-        int col;
-        int oldsc;
-	static const int cols16[16] = { 0x10,0x12,0x14,0x16,
-					0x18,0x1A,0x1C,0x1E,
-					0x11,0x13,0x15,0x17,
-					0x19,0x1B,0x1D,0x1F };
-	uint8_t *plane0 = colorplus->cga.vram;
-	uint8_t *plane1 = colorplus->cga.vram + 0x4000;
+    colorplus_t *dev = (colorplus_t *)priv;
+    uint8_t *plane0 = dev->cga.vram;
+    uint8_t *plane1 = dev->cga.vram + 0x4000;
+    int x, c;
+    int oldvc;
+    uint16_t dat0, dat1;
+    int cols[4];
+    int col;
+    int oldsc;
 
-	/* If one of the extra modes is not selected, drop down to the CGA
-	 * drawing code. */
-	if (!((colorplus->control & COLORPLUS_EITHER_MODE) &&
-	      (colorplus->cga.cgamode & CGA_GRAPHICS_MODE)))
-	{
-		cga_poll(&colorplus->cga);
-		return;
-	}
+    /* If one of the extra modes is not selected,
+     * fall back to the CGA drawing code.
+     */
+    if (!((dev->control & COLORPLUS_EITHER_MODE) &&
+	      (dev->cga.cgamode & CGA_GRAPHICS_MODE))) {
+	cga_poll(&dev->cga);
+	return;
+    }
 
-        if (!colorplus->cga.linepos)
-        {
-                colorplus->cga.vidtime += colorplus->cga.dispofftime;
-                colorplus->cga.cgastat |= 1;
-                colorplus->cga.linepos = 1;
-                oldsc = colorplus->cga.sc;
-                if ((colorplus->cga.crtc[8] & 3) == 3) 
-                   colorplus->cga.sc = ((colorplus->cga.sc << 1) + colorplus->cga.oddeven) & 7;
-                if (colorplus->cga.cgadispon)
-                {
-                        if (colorplus->cga.displine < colorplus->cga.firstline)
-                        {
-                                colorplus->cga.firstline = colorplus->cga.displine;
-                                video_wait_for_buffer();
-                        }
-                        colorplus->cga.lastline = colorplus->cga.displine;
-			/* Left / right border */
-                        for (c = 0; c < 8; c++)
-                        {
-                                buffer->line[colorplus->cga.displine][c] = 
-                                buffer->line[colorplus->cga.displine][c + (colorplus->cga.crtc[1] << 4) + 8] = (colorplus->cga.cgacol & 15) + 16;
-                        }
-			if (colorplus->control & COLORPLUS_320x200_MODE)
-			{
-                                for (x = 0; x < colorplus->cga.crtc[1]; x++)
-                                {
-                                        dat0 = (plane0[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000)] << 8) |
-                                                plane0[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000) + 1];
-                                        dat1 = (plane1[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000)] << 8) |
-                                                plane1[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000) + 1];
-                                        colorplus->cga.ma++;
-                                        for (c = 0; c < 8; c++)
-                                        {
-                                                buffer->line[colorplus->cga.displine][(x << 4) + (c << 1) + 8] =
-                                                buffer->line[colorplus->cga.displine][(x << 4) + (c << 1) + 1 + 8] = 
-                                                  cols16[(dat0 >> 14) | ((dat1 >> 14) << 2)];
-                                                dat0 <<= 2;
-                                                dat1 <<= 2;
-                                        }
-                                }
+    if (! dev->cga.linepos) {
+	dev->cga.vidtime += dev->cga.dispofftime;
+	dev->cga.cgastat |= 1;
+	dev->cga.linepos = 1;
+	oldsc = dev->cga.sc;
+
+	if ((dev->cga.crtc[8] & 3) == 3) 
+	   dev->cga.sc = ((dev->cga.sc << 1) + dev->cga.oddeven) & 7;
+
+	if (dev->cga.cgadispon) {
+		if (dev->cga.displine < dev->cga.firstline) {
+			dev->cga.firstline = dev->cga.displine;
+			video_wait_for_buffer();
+		}
+		dev->cga.lastline = dev->cga.displine;
+
+		/* Left / right border */
+		for (c = 0; c < 8; c++) {
+			buffer->line[dev->cga.displine][c] = 
+			buffer->line[dev->cga.displine][c + (dev->cga.crtc[1] << 4) + 8] = (dev->cga.cgacol & 15) + 16;
+		}
+
+		if (dev->control & COLORPLUS_320x200_MODE) {
+			for (x = 0; x < dev->cga.crtc[1]; x++) {
+				dat0 = (plane0[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000)] << 8) |
+					plane0[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000) + 1];
+				dat1 = (plane1[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000)] << 8) |
+					plane1[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000) + 1];
+				dev->cga.ma++;
+
+				for (c = 0; c < 8; c++) {
+					buffer->line[dev->cga.displine][(x << 4) + (c << 1) + 8] = buffer->line[dev->cga.displine][(x << 4) + (c << 1) + 1 + 8] = cols16[(dat0 >> 14) | ((dat1 >> 14) << 2)];
+					dat0 <<= 2;
+					dat1 <<= 2;
+				}
 			}
-			else if (colorplus->control & COLORPLUS_640x200_MODE)
-                        {
-                                cols[0] = (colorplus->cga.cgacol & 15) | 16;
-                                col = (colorplus->cga.cgacol & 16) ? 24 : 16;
-                                if (colorplus->cga.cgamode & 4)
-                                {
-                                        cols[1] = col | 3;
-                                        cols[2] = col | 4;
-                                        cols[3] = col | 7;
-                                }
-                                else if (colorplus->cga.cgacol & 32)
-                                {
-                                        cols[1] = col | 3;
-                                        cols[2] = col | 5;
-                                        cols[3] = col | 7;
-                                }
-                                else
-                                {
-                                        cols[1] = col | 2;
-                                        cols[2] = col | 4;
-                                        cols[3] = col | 6;
-                                }
-                                for (x = 0; x < colorplus->cga.crtc[1]; x++)
-                                {
-                                        dat0 = (plane0[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000)] << 8) |
-                                                plane0[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000) + 1];
-                                        dat1 = (plane1[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000)] << 8) |
-                                                plane1[((colorplus->cga.ma << 1) & 0x1fff) + ((colorplus->cga.sc & 1) * 0x2000) + 1];
-                                        colorplus->cga.ma++;
-                                        for (c = 0; c < 16; c++)
-                                        {
-                                                buffer->line[colorplus->cga.displine][(x << 4) + c + 8] =
-                                                  cols[(dat0 >> 15) | ((dat1 >> 15) << 1)];
-                                                dat0 <<= 1;
-                                                dat1 <<= 1;
-                                        }
-                                }
-                        }
-                }
-                else	/* Top / bottom border */
-                {
-                        cols[0] = (colorplus->cga.cgacol & 15) + 16;
-                        hline(buffer, 0, colorplus->cga.displine, (colorplus->cga.crtc[1] << 4) + 16, cols[0]);
-                }
+		} else if (dev->control & COLORPLUS_640x200_MODE) {
+			cols[0] = (dev->cga.cgacol & 15) | 16;
+			col = (dev->cga.cgacol & 16) ? 24 : 16;
+			if (dev->cga.cgamode & 4) {
+				cols[1] = col | 3;
+				cols[2] = col | 4;
+				cols[3] = col | 7;
+			} else if (dev->cga.cgacol & 32) {
+				cols[1] = col | 3;
+				cols[2] = col | 5;
+				cols[3] = col | 7;
+			} else {
+				cols[1] = col | 2;
+				cols[2] = col | 4;
+				cols[3] = col | 6;
+			}
 
-                x = (colorplus->cga.crtc[1] << 4) + 16;
+			for (x = 0; x < dev->cga.crtc[1]; x++) {
+				dat0 = (plane0[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000)] << 8) |
+					plane0[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000) + 1];
+				dat1 = (plane1[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000)] << 8) |
+					plane1[((dev->cga.ma << 1) & 0x1fff) + ((dev->cga.sc & 1) * 0x2000) + 1];
+				dev->cga.ma++;
 
-                if (colorplus->cga.composite)
-                {
-			for (c = 0; c < x; c++)
-				buffer32->line[colorplus->cga.displine][c] = buffer->line[colorplus->cga.displine][c] & 0xf;
+				for (c = 0; c < 16; c++) {
+					buffer->line[dev->cga.displine][(x << 4) + c + 8] = cols[(dat0 >> 15) | ((dat1 >> 15) << 1)];
+					dat0 <<= 1;
+					dat1 <<= 1;
+				}
+			}
+		}
+	} else {	/* Top / bottom border */
+		cols[0] = (dev->cga.cgacol & 15) + 16;
+		cga_hline(buffer, 0, dev->cga.displine, (dev->cga.crtc[1] << 4) + 16, cols[0]);
+	}
 
-			Composite_Process(colorplus->cga.cgamode, 0, x >> 2, buffer32->line[colorplus->cga.displine]);
-                }
+	x = (dev->cga.crtc[1] << 4) + 16;
 
-                colorplus->cga.sc = oldsc;
-                if (colorplus->cga.vc == colorplus->cga.crtc[7] && !colorplus->cga.sc)
-                   colorplus->cga.cgastat |= 8;
-                colorplus->cga.displine++;
-                if (colorplus->cga.displine >= 360) 
-                        colorplus->cga.displine = 0;
-        }
-        else
-        {
-                colorplus->cga.vidtime += colorplus->cga.dispontime;
-                colorplus->cga.linepos = 0;
-                if (colorplus->cga.vsynctime)
-                {
-                        colorplus->cga.vsynctime--;
-                        if (!colorplus->cga.vsynctime)
-                           colorplus->cga.cgastat &= ~8;
-                }
-                if (colorplus->cga.sc == (colorplus->cga.crtc[11] & 31) || ((colorplus->cga.crtc[8] & 3) == 3 && colorplus->cga.sc == ((colorplus->cga.crtc[11] & 31) >> 1))) 
-                { 
-                        colorplus->cga.con = 0; 
-                        colorplus->cga.coff = 1; 
-                }
-                if ((colorplus->cga.crtc[8] & 3) == 3 && colorplus->cga.sc == (colorplus->cga.crtc[9] >> 1))
-                   colorplus->cga.maback = colorplus->cga.ma;
-                if (colorplus->cga.vadj)
-                {
-                        colorplus->cga.sc++;
-                        colorplus->cga.sc &= 31;
-                        colorplus->cga.ma = colorplus->cga.maback;
-                        colorplus->cga.vadj--;
-                        if (!colorplus->cga.vadj)
-                        {
-                                colorplus->cga.cgadispon = 1;
-                                colorplus->cga.ma = colorplus->cga.maback = (colorplus->cga.crtc[13] | (colorplus->cga.crtc[12] << 8)) & 0x3fff;
-                                colorplus->cga.sc = 0;
-                        }
-                }
-                else if (colorplus->cga.sc == colorplus->cga.crtc[9])
-                {
-                        colorplus->cga.maback = colorplus->cga.ma;
-                        colorplus->cga.sc = 0;
-                        oldvc = colorplus->cga.vc;
-                        colorplus->cga.vc++;
-                        colorplus->cga.vc &= 127;
+	if (dev->cga.composite) {
+		for (c = 0; c < x; c++)
+			buffer32->line[dev->cga.displine][c] = buffer->line[dev->cga.displine][c] & 0xf;
 
-                        if (colorplus->cga.vc == colorplus->cga.crtc[6]) 
-                                colorplus->cga.cgadispon = 0;
+		Composite_Process(dev->cga.cgamode, 0, x >> 2, buffer32->line[dev->cga.displine]);
+	}
 
-                        if (oldvc == colorplus->cga.crtc[4])
-                        {
-                                colorplus->cga.vc = 0;
-                                colorplus->cga.vadj = colorplus->cga.crtc[5];
-                                if (!colorplus->cga.vadj) colorplus->cga.cgadispon = 1;
-                                if (!colorplus->cga.vadj) colorplus->cga.ma = colorplus->cga.maback = (colorplus->cga.crtc[13] | (colorplus->cga.crtc[12] << 8)) & 0x3fff;
-                                if ((colorplus->cga.crtc[10] & 0x60) == 0x20) colorplus->cga.cursoron = 0;
-                                else                                colorplus->cga.cursoron = colorplus->cga.cgablink & 8;
-                        }
+	dev->cga.sc = oldsc;
+	if (dev->cga.vc == dev->cga.crtc[7] && !dev->cga.sc)
+		dev->cga.cgastat |= 8;
 
-                        if (colorplus->cga.vc == colorplus->cga.crtc[7])
-                        {
-                                colorplus->cga.cgadispon = 0;
-                                colorplus->cga.displine = 0;
-                                colorplus->cga.vsynctime = 16;
-                                if (colorplus->cga.crtc[7])
-                                {
-                                        if (colorplus->cga.cgamode & 1) x = (colorplus->cga.crtc[1] << 3) + 16;
-                                        else                  x = (colorplus->cga.crtc[1] << 4) + 16;
-                                        colorplus->cga.lastline++;
-                                        if (x != xsize || (colorplus->cga.lastline - colorplus->cga.firstline) != ysize)
-                                        {
-                                                xsize = x;
-                                                ysize = colorplus->cga.lastline - colorplus->cga.firstline;
-                                                if (xsize < 64) xsize = 656;
-                                                if (ysize < 32) ysize = 200;
-                                                set_screen_size(xsize, (ysize << 1) + 16);
-                                        }
-                                        
-                                        if (colorplus->cga.composite) 
-                                           video_blit_memtoscreen(0, colorplus->cga.firstline - 4, 0, (colorplus->cga.lastline - colorplus->cga.firstline) + 8, xsize, (colorplus->cga.lastline - colorplus->cga.firstline) + 8);
-                                        else          
-                                           video_blit_memtoscreen_8(0, colorplus->cga.firstline - 4, 0, (colorplus->cga.lastline - colorplus->cga.firstline) + 8, xsize, (colorplus->cga.lastline - colorplus->cga.firstline) + 8);
-                                        frames++;
+	dev->cga.displine++;
+	if (dev->cga.displine >= 360) 
+		dev->cga.displine = 0;
+    } else {
+	dev->cga.vidtime += dev->cga.dispontime;
+	dev->cga.linepos = 0;
+	if (dev->cga.vsynctime) {
+		dev->cga.vsynctime--;
+		if (! dev->cga.vsynctime)
+			dev->cga.cgastat &= ~8;
+	}
 
-                                        video_res_x = xsize - 16;
-                                        video_res_y = ysize;
-                                        if (colorplus->cga.cgamode & 1)
-                                        {
-                                                video_res_x /= 8;
-                                                video_res_y /= colorplus->cga.crtc[9] + 1;
-                                                video_bpp = 0;
-                                        }
-                                        else if (!(colorplus->cga.cgamode & 2))
-                                        {
-                                                video_res_x /= 16;
-                                                video_res_y /= colorplus->cga.crtc[9] + 1;
-                                                video_bpp = 0;
-                                        }
-                                        else if (!(colorplus->cga.cgamode & 16))
-                                        {
-                                                video_res_x /= 2;
-                                                video_bpp = 2;
-                                        }
-                                        else
-                                        {
-                                                video_bpp = 1;
-                                        }
-                                }
-                                colorplus->cga.firstline = 1000;
-                                colorplus->cga.lastline = 0;
-                                colorplus->cga.cgablink++;
-                                colorplus->cga.oddeven ^= 1;
-                        }
-                }
-                else
-                {
-                        colorplus->cga.sc++;
-                        colorplus->cga.sc &= 31;
-                        colorplus->cga.ma = colorplus->cga.maback;
-                }
-                if (colorplus->cga.cgadispon)
-                        colorplus->cga.cgastat &= ~1;
-                if ((colorplus->cga.sc == (colorplus->cga.crtc[10] & 31) || ((colorplus->cga.crtc[8] & 3) == 3 && colorplus->cga.sc == ((colorplus->cga.crtc[10] & 31) >> 1)))) 
-                        colorplus->cga.con = 1;
-                if (colorplus->cga.cgadispon && (colorplus->cga.cgamode & 1))
-                {
-                        for (x = 0; x < (colorplus->cga.crtc[1] << 1); x++)
-                            colorplus->cga.charbuffer[x] = colorplus->cga.vram[(((colorplus->cga.ma << 1) + x) & 0x3fff)];
-                }
-        }
+	if (dev->cga.sc == (dev->cga.crtc[11] & 31) || ((dev->cga.crtc[8] & 3) == 3 && dev->cga.sc == ((dev->cga.crtc[11] & 31) >> 1))) { 
+		dev->cga.con = 0; 
+		dev->cga.coff = 1; 
+	}
+
+	if ((dev->cga.crtc[8] & 3) == 3 && dev->cga.sc == (dev->cga.crtc[9] >> 1))
+		dev->cga.maback = dev->cga.ma;
+
+	if (dev->cga.vadj) {
+		dev->cga.sc++;
+		dev->cga.sc &= 31;
+		dev->cga.ma = dev->cga.maback;
+		dev->cga.vadj--;
+		if (! dev->cga.vadj) {
+			dev->cga.cgadispon = 1;
+			dev->cga.ma = dev->cga.maback = (dev->cga.crtc[13] | (dev->cga.crtc[12] << 8)) & 0x3fff;
+			dev->cga.sc = 0;
+		}
+	} else if (dev->cga.sc == dev->cga.crtc[9]) {
+		dev->cga.maback = dev->cga.ma;
+		dev->cga.sc = 0;
+		oldvc = dev->cga.vc;
+		dev->cga.vc++;
+		dev->cga.vc &= 127;
+
+		if (dev->cga.vc == dev->cga.crtc[6]) 
+			dev->cga.cgadispon = 0;
+
+		if (oldvc == dev->cga.crtc[4]) {
+			dev->cga.vc = 0;
+			dev->cga.vadj = dev->cga.crtc[5];
+			if (! dev->cga.vadj)
+				dev->cga.cgadispon = 1;
+			if (! dev->cga.vadj)
+				dev->cga.ma = dev->cga.maback = (dev->cga.crtc[13] | (dev->cga.crtc[12] << 8)) & 0x3fff;
+			if ((dev->cga.crtc[10] & 0x60) == 0x20)
+				dev->cga.cursoron = 0;
+			else
+				dev->cga.cursoron = dev->cga.cgablink & 8;
+		}
+
+		if (dev->cga.vc == dev->cga.crtc[7]) {
+			dev->cga.cgadispon = 0;
+			dev->cga.displine = 0;
+			dev->cga.vsynctime = 16;
+			if (dev->cga.crtc[7]) {
+				if (dev->cga.cgamode & 1)
+					x = (dev->cga.crtc[1] << 3) + 16;
+				else
+					x = (dev->cga.crtc[1] << 4) + 16;
+				dev->cga.lastline++;
+
+				if (x != xsize || (dev->cga.lastline - dev->cga.firstline) != ysize) {
+					xsize = x;
+					ysize = dev->cga.lastline - dev->cga.firstline;
+					if (xsize < 64) xsize = 656;
+					if (ysize < 32) ysize = 200;
+					set_screen_size(xsize, (ysize << 1) + 16);
+				}
+					
+				if (dev->cga.composite) 
+					video_blit_memtoscreen(0, dev->cga.firstline - 4, 0, (dev->cga.lastline - dev->cga.firstline) + 8, xsize, (dev->cga.lastline - dev->cga.firstline) + 8);
+				else	  
+					video_blit_memtoscreen_8(0, dev->cga.firstline - 4, 0, (dev->cga.lastline - dev->cga.firstline) + 8, xsize, (dev->cga.lastline - dev->cga.firstline) + 8);
+				frames++;
+
+				video_res_x = xsize - 16;
+				video_res_y = ysize;
+				if (dev->cga.cgamode & 1) {
+					video_res_x /= 8;
+					video_res_y /= dev->cga.crtc[9] + 1;
+					video_bpp = 0;
+				} else if (!(dev->cga.cgamode & 2)) {
+					video_res_x /= 16;
+					video_res_y /= dev->cga.crtc[9] + 1;
+					video_bpp = 0;
+				} else if (!(dev->cga.cgamode & 16)) {
+					video_res_x /= 2;
+					video_bpp = 2;
+				} else {
+					video_bpp = 1;
+				}
+			}
+			dev->cga.firstline = 1000;
+			dev->cga.lastline = 0;
+			dev->cga.cgablink++;
+			dev->cga.oddeven ^= 1;
+		}
+	} else {
+		dev->cga.sc++;
+		dev->cga.sc &= 31;
+		dev->cga.ma = dev->cga.maback;
+	}
+
+	if (dev->cga.cgadispon)
+		dev->cga.cgastat &= ~1;
+	if ((dev->cga.sc == (dev->cga.crtc[10] & 31) || ((dev->cga.crtc[8] & 3) == 3 && dev->cga.sc == ((dev->cga.crtc[10] & 31) >> 1)))) 
+		dev->cga.con = 1;
+
+	if (dev->cga.cgadispon && (dev->cga.cgamode & 1)) {
+		for (x = 0; x < (dev->cga.crtc[1] << 1); x++)
+			dev->cga.charbuffer[x] = dev->cga.vram[(((dev->cga.ma << 1) + x) & 0x3fff)];
+	}
+    }
 }
 
 
 static void *
 colorplus_init(const device_t *info)
 {
-        int display_type;
-        colorplus_t *colorplus = malloc(sizeof(colorplus_t));
+    colorplus_t *dev;
+    int display_type;
 
-        memset(colorplus, 0, sizeof(colorplus_t));
+    dev = (colorplus_t *)mem_alloc(sizeof(colorplus_t));
+    memset(dev, 0x00, sizeof(colorplus_t));
 
-	/* Copied from the CGA init. Ideally this would be done by 
-	 * calling a helper function rather than duplicating code */
-        display_type = device_get_config_int("display_type");
-        colorplus->cga.composite = (display_type != CGA_RGB);
-        colorplus->cga.revision = device_get_config_int("composite_type");
-        colorplus->cga.snow_enabled = device_get_config_int("snow_enabled");
+    /* Copied from the CGA init. Ideally this would be done by 
+     * calling a helper function rather than duplicating code.
+     */
+    display_type = device_get_config_int("display_type");
+    dev->cga.composite = (display_type != CGA_RGB);
+    dev->cga.revision = device_get_config_int("composite_type");
+    dev->cga.snow_enabled = device_get_config_int("snow_enabled");
 
-        colorplus->cga.vram = malloc(0x8000);
-                
-	cga_comp_init(1);
-        timer_add(colorplus_poll, &colorplus->cga.vidtime, TIMER_ALWAYS_ENABLED, colorplus);
-        mem_mapping_add(&colorplus->cga.mapping, 0xb8000, 0x08000, colorplus_read, NULL, NULL, colorplus_write, NULL, NULL,  NULL, MEM_MAPPING_EXTERNAL, colorplus);
-        io_sethandler(0x03d0, 0x0010, colorplus_in, NULL, NULL, colorplus_out, NULL, NULL, colorplus);
+    dev->cga.vram = (uint8_t *)mem_alloc(0x8000);
+		
+    cga_comp_init(1);
 
-        /* Force the LPT3 port to be enabled. */
-        parallel_enabled[2] = 1;
-	parallel_setup(3, 0x3BC);
+    timer_add(colorplus_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
 
-        return colorplus;
+    mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
+	 	colorplus_read,NULL,NULL, colorplus_write,NULL,NULL,
+		NULL, MEM_MAPPING_EXTERNAL, dev);
+
+    io_sethandler(0x03d0, 16,
+		  colorplus_in,NULL,NULL, colorplus_out,NULL,NULL, dev);
+
+    video_inform(VID_TYPE_CGA, info->vid_timing);
+
+    /* Force the LPT3 port to be enabled. */
+    parallel_enabled[2] = 1;
+    parallel_setup(3, 0x3BC);
+
+    return dev;
 }
 
 
 static void
-colorplus_close(void *p)
+colorplus_close(void *priv)
 {
-        colorplus_t *colorplus = (colorplus_t *)p;
+    colorplus_t *dev = (colorplus_t *)priv;
 
-        free(colorplus->cga.vram);
-        free(colorplus);
+    free(dev->cga.vram);
+    free(dev);
 }
 
 
 static void
-colorplus_speed_changed(void *p)
+speed_changed(void *priv)
 {
-        colorplus_t *colorplus = (colorplus_t *)p;
-        
-        cga_recalctimings(&colorplus->cga);
+    colorplus_t *dev = (colorplus_t *)priv;
+	
+    cga_recalctimings(&dev->cga);
 }
 
 
-static const device_config_t colorplus_config[] =
-{
-        {
-                "display_type", "Display type", CONFIG_SELECTION, "", CGA_RGB,
-                {
-                        {
-                                "RGB", CGA_RGB
-                        },
-                        {
-                                "Composite", CGA_COMPOSITE
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "composite_type", "Composite type", CONFIG_SELECTION, "", COMPOSITE_OLD,
-                {
-                        {
-                                "Old", COMPOSITE_OLD
-                        },
-                        {
-                                "New", COMPOSITE_NEW
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "snow_enabled", "Snow emulation", CONFIG_BINARY, "", 1
-        },
-        {
-                "", "", -1
-        }
+static const device_config_t colorplus_config[] = {
+    {
+	"display_type", "Display type", CONFIG_SELECTION, "", CGA_RGB,
+	{
+		{
+			"RGB", CGA_RGB
+		},
+		{
+			"Composite", CGA_COMPOSITE
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"composite_type", "Composite type", CONFIG_SELECTION, "", COMPOSITE_OLD,
+	{
+		{
+			"Old", COMPOSITE_OLD
+		},
+		{
+			"New", COMPOSITE_NEW
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"snow_enabled", "Snow emulation", CONFIG_BINARY, "", 1
+    },
+    {
+	"", "", -1
+    }
 };
 
+static const video_timings_t colorplus_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t colorplus_device = {
     "Plantronics ColorPlus",
@@ -503,7 +481,8 @@ const device_t colorplus_device = {
     0,
     colorplus_init, colorplus_close, NULL,
     NULL,
-    colorplus_speed_changed,
-    NULL, NULL,
+    speed_changed,
+    NULL,
+    &colorplus_timings,
     colorplus_config
 };

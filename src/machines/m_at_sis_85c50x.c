@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85C50x PCI chips.
  *
- * Version:	@(#)m_at_sis_85c50x.c	1.0.3	2018/05/06
+ * Version:	@(#)m_at_sis_85c50x.c	1.0.4	2018/09/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -109,7 +109,6 @@ static void sis_85c501_recalcmapping(void)
 
 static void sis_85c501_write(int func, int addr, uint8_t val, void *p)
 {
-        /* pclog("sis_85c501_write : addr=%02x val=%02x\n", addr, val); */
         if (func)
            return;
 
@@ -153,8 +152,6 @@ static void sis_85c501_write(int func, int addr, uint8_t val, void *p)
 
 static void sis_85c503_write(int func, int addr, uint8_t val, void *p)
 {
-        /* pclog("sis_85c503_write : addr=%02x val=%02x\n", addr, val); */
-
         if (func > 0)
                 return;
 
@@ -184,28 +181,28 @@ static void sis_85c503_write(int func, int addr, uint8_t val, void *p)
                 break;
 
        	        case 0x41:
-		pclog("Set IRQ routing: INT A -> %02X\n", val);
+		DEBUG("Set IRQ routing: INT A -> %02X\n", val);
        	        if (val & 0x80)
                         pci_set_irq_routing(PCI_INTA, PCI_IRQ_DISABLED);
                	else
        	                pci_set_irq_routing(PCI_INTA, val & 0xf);
                 break;
                	case 0x42:
-		pclog("Set IRQ routing: INT B -> %02X\n", val);
+		DEBUG("Set IRQ routing: INT B -> %02X\n", val);
                 if (val & 0x80)
        	                pci_set_irq_routing(PCI_INTC, PCI_IRQ_DISABLED);
                 else
                	        pci_set_irq_routing(PCI_INTC, val & 0xf);
        	        break;
                 case 0x43:
-		pclog("Set IRQ routing: INT C -> %02X\n", val);
+		DEBUG("Set IRQ routing: INT C -> %02X\n", val);
        	        if (val & 0x80)
                         pci_set_irq_routing(PCI_INTB, PCI_IRQ_DISABLED);
                	else
        	                pci_set_irq_routing(PCI_INTB, val & 0xf);
                 break;
        	        case 0x44:
-		pclog("Set IRQ routing: INT D -> %02X\n", val);
+		DEBUG("Set IRQ routing: INT D -> %02X\n", val);
        	        if (val & 0x80)
                         pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
                	else

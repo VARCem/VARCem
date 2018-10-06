@@ -8,7 +8,7 @@
  *
  *		String definitions for "Dutch (Netherlands)" language.
  *
- * Version:	@(#)VARCem-DU.str	1.0.11	2018/09/23
+ * Version:	@(#)VARCem-DU.str	1.0.12	2018/10/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -45,10 +45,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,11
-#define TAG_AUTHOR	"Fred N. van Kempen"
-#define TAG_EMAIL	"waltje@varcem.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,12
+#define STR_AUTHOR	"Fred N. van Kempen"
+#define STR_EMAIL	"waltje@varcem.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Fout"
@@ -63,27 +66,24 @@
 #define STR_2202	"PCap kon niet worden opgestart"
 #define STR_2203	"Geen beschikbare PCap apparaten gevonden"
 #define STR_2204	"Ongeldig PCap apparaat"
-#define STR_2205	"Kon OpenAL niet initialiseren, controleer of u het volgende bestand\nin de programmamap heeft:\n\nlibopenal-1.dll"
-#define STR_2206	"Kon FluidSynth niet initialiseren, controleer of u het volgende bestand\nin de programmamap heeft:\n\nlibfluidsynth.dll"
-#define STR_2207	"Het systeem heeft geen geheugen meer vrij!"
+#define STR_2205	"Kon %s niet initialiseren, controleer of u het '%s' bibliotheekbestand op uw systeem of in de programmap hebt!"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Schermafdruk-bestand %s kon niet worden gemaakt"
+#define STR_2300	"Het systeem heeft geen geheugen meer vrij!"
 #define STR_2301	"Geen bruikbare ROMs gevonden!"
 #define STR_2302	"Geen bruikbaar configuratiebestand gevonden.\n\nWilt u een nieuwe configuratie maken?"
-#define STR_2303	"De machine:\n\n  %ls\n\nis momenteel niet beschikbaar.\n\nWilt u dit wijzigen in de Instellingen?"
-#define STR_2304	"De video-kaart:\n\n  %ls\n\nis momenteel niet beschikbaar.\n\nWilt u dit wijzigen in Instellingen?"
-#define STR_2305	"Ingestelde renderer '%S' niet beschikbaar - wilt u deze naar standaardwaarde terugzetten?"
-#define STR_2306	"ST506/ESDI CD-ROM stations hebben nooit bestaan"
+#define STR_2303	"De %ls:\n\n  %s\n\nis momenteel niet beschikbaar.\n\nWilt u dit wijzigen in de Instellingen?"
+#define STR_2304	"Ingestelde renderer:\n\n  %s\n\nniet beschikbaar - wilt u deze naar standaardwaarde terugzetten?"
+#define STR_2305        "De instellingen dienen eerst te worden opgeslagen!"
+#define STR_2306	"Schermafdruk-bestand %ls kon niet worden gemaakt"
 #define STR_2307	"USB wordt nog niet ondersteund"
-#define STR_2308        "De instellingen dienen eerst te worden opgeslagen!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Weet u zeker dat u deze instellingen wilt bewaren?\n\n(Een herstart kan nodig zijn...)"
 #define STR_2401	"Instellingen opgeslagen, vergeet niet het programma te herstarten!"
-#define STR_2402	"Het gekozen apparaat '%ls' wordt momenteel als 'in ontwikkeling' beschouwd en kan problemen opleveren.\n\nWeet u zeker dat u dit apparaat wilt gebruiken?"
+#define STR_2402	"Het gekozen apparaat:\n\n  %s\n\nwordt momenteel als 'in ontwikkeling' beschouwd en kan problemen opleveren.\n\nWeet u zeker dat u dit apparaat wilt gebruiken?"
 #define STR_2403	"Klik om de muis te koppelen"
 #define STR_2404	"Gebruik F8+F12 om de muis te ontkoppelen"
 #define STR_2405	"Gebruik F8+F12 (of middelste knop) om te muis te ontkoppelen"
@@ -96,12 +96,16 @@
 
 /* UI: common elements (3000.) */
 #define STR_OK		"Akkoord"
+#define STR_YES		"Ja"
+#define STR_NO		"Nee"
 #define STR_CANCEL	"Annuleren"
 #define STR_CONFIGURE	"Configureer"
 #define STR_BROWSE	"Bladeren"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Geen"
+#define STR_INTERNAL	"Geintegreerd"
 #define STR_DISABLED	"Uitgeschakeld"
 #define STR_ENABLED	"Ingeschakeld"
 #define STR_OFF		"Uit"
@@ -121,19 +125,19 @@
 #define STR_DEVCONF_2	"Apparaat:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Over VARCem.."
 #define  STR_3201	"Auteurs:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker en anderen.\nGebaseerd op andere projecten zoals 86Box, PCem, MAME, DOSbox en Qemu."
 #define  STR_3203	"Gepubliceerd onder de BSD 3-Clause License ('BSD3'), en de GNU General Public License (versie 2 of hoger) voor bestaande, geïmporteerde code van andere projecten."
 #define  STR_3204	"Zie het bestand LICENSE.txt voor meer informatie."
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Vertalingen"
 #define  STR_3211	"Vertalingen vanuit het Engels naar onderstaande talen zijn gedaan door:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Status"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Geluidsvolume"
@@ -182,24 +186,16 @@
 #define  STR_3328	"Wachtcycli:"
 #define  STR_3329	"Geheugen:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Gebruik Tijdsynchronisatie"
+#define  STR_3331	"Gebruik Tijdsynchronisatie:"
 #define  STR_3332	"Gebruik FPU (reken-processor)"
 #define  STR_3333	"Dynamic Re-compiler"
 #define  STR_3334	"KB"
 #define  STR_3335	"Standaard"
-
+#define  STR_3336	"Ingesteld (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Beeldschermadapter:"
-#define  STR_3351	"Toegangssnelheid:"
-#define  STR_3352	"3Dfx Voodoo"
-#define  STR_3353	"Standaard"
-#define  STR_3354	"8-bit"
-#define  STR_3355	"Langzaam 16-bit"
-#define  STR_3356	"Snel 16-bit"
-#define  STR_3357	"Langzaam VLB/PCI"
-#define  STR_3358	"Middel VLB/PCI"
-#define  STR_3359	"Snel VLB/PCI"
+#define  STR_3351	"3Dfx Voodoo"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Muis:"
@@ -232,8 +228,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSI adapter:"
 #define  STR_3476	"HD controller:"
-#define  STR_3477	"Derde IDE:"
-#define  STR_3478	"Vierde IDE:"
+#define  STR_3477	"Derde IDE"
+#define  STR_3478	"Vierde IDE"
 #define  STR_3479	"ISABugger apparaat"
 #define  STR_3480	"ISA geheugenuitbreiding"
 #define  STR_3481	"ISA Clock/RTC uitbreiding"
@@ -254,10 +250,9 @@
 #define  STR_3512	"Aangepast (groot).."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (alléén PIO)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (verwisselbaar)"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Voeg schijf toe"
@@ -288,13 +283,12 @@
 #define  STR_3577	"ZIP stations:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Snelheid"
-#define  STR_3580	"<Gereserved>"
-#define  STR_3581	"<Gereserved>"
-#define  STR_3582	"ATAPI (alléén PIO)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(leeg)"
 #define STR_3901	"(PC station %c:)"
 #define STR_3902	" [Schrijfbeveiligd"
@@ -302,6 +296,7 @@
 #define STR_3904	"&Bestaand bestand..."
 #define STR_3905	"&Her-laad vorige bestand"
 #define STR_3906	"&Uitwerpen"
+#define STR_3907	"&Terugmelding disk-wissel"
 
 #define STR_3910	"Diskette %i (%s): %ls"
 #define STR_3911	"Alle diskettebestanden\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced Sector bestanden\0*.imd;*.json;*.td0\0Basic Sector bestanden\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux bestanden\0*.fdi\0Surface bestanden\0*.86f\0Alle bestanden\0*.*\0"
@@ -309,24 +304,21 @@
 #define STR_3913	"Surface bestanden\0*.86f\0"
 #define STR_3914	"E&xporteer als 86F..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"PC CD/DVD station (%c:)"
 #define STR_3922	"CD-ROM bestanden\0*.iso;*.cue\0Alle bestanden (*.*)\0*.*\0"
 #define STR_3923	"&Stil"
 
-#define STR_3930	"Vaste schijf (%s)"
+#define STR_3930	"Vaste schijf %i (%ls): %ls"
 
-#define STR_3940	"Verwisselbare schijf %i: %ls"
-#define STR_3941	"&Terugmelding disk-wissel"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP bestanden\0*.im?;*.zdi\0Alle bestanden\0*.*\0"
 #define STR_3952	"ZIP bestanden\0*.im?;*.zdi\0"
-#define STR_3960	"Netwerk"
-#define STR_3970	"Geluid"
+#define STR_3960	"Netwerk (%s)"
+#define STR_3970	"Geluid (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"&Aktie"
 #define  STR_4001	"&Harde Reset"
 #define  STR_4002	"&Ctrl+Alt+Del"
@@ -335,25 +327,25 @@
 #define  STR_4005	"&Pauzeer"
 #define  STR_4006	"&Einde"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"&Beeld"
 #define  STR_4011	"&Instelbaar venster"
 #define  STR_4012	"&Onthoud plaats en grootte van venster"
 #define  STR_4013	"&Volledig Scherm\tCtrl+Alt+PageUP"
 #define  STR_4014	"&Rechter CTRL is linker ALT"
-#define  STR_4015	"&Activeer pictogrammen in de statusregel"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"Re&nderer"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"&Venster schaalfaktor"
 #define   STR_4031	"&0.5x"
 #define   STR_4032	"&1x"
 #define   STR_4033	"1.&5x"
 #define   STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"&Rekmode volledig scherm"
 #define   STR_4041	"&Rek volledig uit"
 #define   STR_4042	"&4:3"
@@ -361,14 +353,15 @@
 #define   STR_4044	"&Geheelgetal-schaling"
 #define   STR_4045	"&Hou vast aan huidige grootte"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"&Beeldscherm"
 #define  STR_4051	"&Geïnverteed scherm"
 #define  STR_4052	"Gebruik &overscan"
 #define  STR_4053	"F&orceer 4:3 schermverhouding"
 #define  STR_4054	"Wijzig &contrast voor monochroom scherm"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"&Soort beeldscherm"
 #define   STR_4061	"RGB &kleurenscherm"
 #define   STR_4062	"&Grijstinten scherm"
@@ -376,23 +369,26 @@
 #define   STR_4064	"&Groen beeldscherm"
 #define   STR_4065	"&Wit beeldscherm"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"&Grijstinten conversietype"
 #define   STR_4071	"BT&601 (NTSC/PAL)"
 #define   STR_4072	"BT&709 (HDTV)"
 #define   STR_4073	"&Gemiddeld"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"&Opties"
 #define  STR_4081	"&Instellingen"
 #define  STR_4082	"&Talen"
-#define	 STR_4083	"L&ogging"
-#define  STR_4084	"&Laad configuratie"
-#define  STR_4085	"&Sla configuratie op"
-#define  STR_4086	"S&tatus"
-#define  STR_4087	"&Maak schermafdruk\tCtrl+Home"
+#define	 STR_4083	"L&ogbestanden"
+#define  STR_4084	"Log Markeerpunt"
+#define  STR_4085	"Zet %s logging aan"
+#define  STR_4086	"&Laad configuratie"
+#define  STR_4087	"&Sla configuratie op"
+#define  STR_4088	"&Maak schermafdruk"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"&Hulp"
 #define  STR_4091	"&Over VARCem"
 

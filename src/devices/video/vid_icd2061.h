@@ -6,17 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the ICD2061 driver.
+ *		Definitions for the ICD 2061/9161 driver.
  *
- * Version:	@(#)vid_icd2061.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_icd2061.h	1.0.2	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017,2018 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,20 +38,28 @@
 # define VIDEO_ICD2061_H
 
 
-typedef struct icd2061_t
-{
-        int state;
-        int status;
-        int pos;
-        int unlock;
-        uint32_t data;
+typedef struct {
+    float	freq[3];
 
-        double freq[4];
-        uint32_t ctrl;
+    int		count,
+		bit_count;
+    int		unlocked,
+		state;
+    uint32_t	data,
+		ctrl;
 } icd2061_t;
 
-void icd2061_write(icd2061_t *icd2061, int val);
-double icd2061_getfreq(icd2061_t *icd2061, int i);
+
+extern const device_t icd2061_device;
+extern const device_t ics9161_device;
+
+
+extern void	icd2061_write(icd2061_t *icd2061, int val);
+extern float	icd2061_getclock(int clock, void *priv);
+
+
+#define ics9161_write	icd2061_write
+#define ics9161_getclock icd2061_getclock
 
 
 #endif	/*VIDEO_ICD2061_H*/

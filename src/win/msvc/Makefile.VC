@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.46	2018/09/19
+# Version:	@(#)Makefile.VC	1.0.46	2018/10/05
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -68,6 +68,9 @@ ifndef CROSS
 endif
 ifndef DEBUG
  DEBUG		:= n
+endif
+ifndef LOGGING
+ LOGGING	:= n
 endif
 ifndef PROFILER 
  PROFILER	:= n
@@ -135,9 +138,6 @@ endif
 ifndef PAS16
  PAS16		:= n
 endif
-ifndef STEALTH32
- STEALTH32	:= n
-endif
 ifndef XL24
  XL24		:= n
 endif
@@ -159,8 +159,13 @@ ifndef PROG
  endif
 endif
 ifeq ($(DEBUG), y)
-  PROG		:= $(PROG)-d
-  NETIF		:= $(NETIF)-d
+ PROG		:= $(PROG)-d
+ NETIF		:= $(NETIF)-d
+ LOGGING	:= y
+else
+ ifeq ($(LOGGING), y)
+  PROG		:= $(PROG)-l
+ endif
 endif
 
 
@@ -173,7 +178,6 @@ ifeq ($(DEV_BUILD), y)
  PORTABLE3	:= y
  I686		:= y
  PAS16		:= y
- STEALTH32	:= y
  XL24		:= y
  WONDER		:= y
 endif
@@ -241,7 +245,7 @@ ifeq ($(X64), y)
  ARCH		:= x64
 else
  CPP		:= cl -nologo
- CC		:= cl -nologo
+ CC		:= cl -nologo #-TP
  ARCH		:= x86
 endif
 PREPROC		:= cl -nologo -EP
@@ -253,7 +257,7 @@ SYSINC		:= -Iwin/msvc/Include -Iwin/mingw/include
 SYSLIB		:=
 
 DEPS		= -MMD -MF $*.d
-DEPFILE		:= win\.depends-msvc
+DEPFILE		:= win\msvc\.depends
 
 # Set up the correct toolchain flags.
 OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
@@ -261,6 +265,7 @@ OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
 		   -D_CRT_NONSTDC_NO_DEPRECATE \
 		   -D_WINSOCK_DEPRECATED_NO_WARNINGS \
 		   -D_CRT_SECURE_NO_WARNINGS \
+		   -D_CRT_STDIO_ISO_WIDE_SPECIFIERS \
 		   $(WPCAPINC) $(SYSINC)
 AFLAGS		:= /arch:SSE2
 RFLAGS		:= /n
@@ -287,7 +292,7 @@ ifdef EXINC
 endif
 OPTS		+= $(SYSINC)
 ifeq ($(OPTIM), y)
- DOPTS		:= -march=native
+ AFLAGS		:= /arch:AVX2
 endif
 ifeq ($(DEBUG), y)
  OPTS		+= -D_DEBUG
@@ -303,6 +308,10 @@ else
  ifndef COPTIM
   COPTIM	:= -O2
  endif
+endif
+ifeq ($(LOGGING), y)
+ OPTS		+= -D_LOGGING
+ RFLAGS		+= -D_LOGGING
 endif
 ifeq ($(CRASHDUMP), y)
  OPTS		+= -DUSE_CRASHDUMP
@@ -475,9 +484,8 @@ ifneq ($(WX), n)
 else
  UIOBJ		:= win_ui.obj \
 		   win_ddraw.obj win_d3d.obj $(SDLOBJ) $(D2DOBJ) \
-		   win_dialog.obj win_about.obj win_status.obj \
-		   win_settings.obj win_devconf.obj win_snd_gain.obj \
-		   win_new_image.obj
+		   win_dialog.obj win_about.obj win_settings.obj \
+		   win_devconf.obj win_snd_gain.obj win_new_image.obj
 endif
 
 
@@ -501,17 +509,11 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(I686), y)
   OPTS		+= -DUSE_I686
-  DEVBROBJ	+= m_at_440fx.obj
  endif
 
  ifeq ($(PAS16), y)
   OPTS		+= -DUSE_PAS16
   DEVBROBJ	+= snd_pas16.obj
- endif
-
- ifeq ($(STEALTH32), y)
-  OPTS		+= -DUSE_STEALTH32
-  DEVBROBJ	+= vid_icd2061.obj
  endif
 
  ifeq ($(XL24), y)
@@ -544,7 +546,8 @@ RESDLL		:= VARCem-$(LANG)
 MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
 		   mem.obj rom.obj rom_load.obj device.obj nvr.obj
 
-UIOBJ		+= ui_main.obj ui_new_image.obj ui_stbar.obj ui_vidapi.obj
+UIOBJ		+= ui_main.obj ui_lang.obj ui_stbar.obj ui_vidapi.obj \
+		   ui_cdrom.obj ui_new_image.obj ui_misc.obj
 
 SYSOBJ		:= dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj mca.obj \
 		   mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj
@@ -569,13 +572,12 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_at_opti495.obj m_at_scat.obj \
 		    m_at_compaq.obj m_at_wd76c10.obj \
 		    m_at_sis_85c471.obj m_at_sis_85c496.obj \
-		    m_at_430lx_nx.obj m_at_430fx.obj \
-		    m_at_430hx.obj m_at_430vx.obj
+		    m_at_4x0.obj
 
 INTELOBJ	:= intel.obj \
 		    intel_flash.obj \
 		    intel_sio.obj \
-		    intel_piix.obj intel_piix4.obj
+		    intel_piix.obj
 
 DEVOBJ		:= bugger.obj \
 		   isamem.obj isartc.obj \
@@ -607,7 +609,8 @@ HDDOBJ		:= hdd.obj \
 		    hdc_ide_ata.obj hdc_ide_xta.obj hdc_xtide.obj
 
 CDROMOBJ	:= cdrom.obj \
-		    cdrom_dosbox.obj cdrom_image.obj cdrom_null.obj
+		    cdrom_null.obj cdrom_speed.obj \
+		    cdrom_dosbox.obj cdrom_image.obj
 
 ZIPOBJ		:= zip.obj
 
@@ -616,7 +619,7 @@ USBOBJ		:= usb.obj
 endif
 
 SCSIOBJ		:= scsi.obj \
-		    scsi_bus.obj scsi_device.obj \
+		    scsi_device.obj \
 		    scsi_disk.obj \
 		    scsi_x54x.obj \
 		    scsi_aha154x.obj scsi_buslogic.obj \
@@ -630,7 +633,8 @@ NETOBJ		:= network.obj \
 		     tcp_input.obj debug.obj ip_output.obj sbuf.obj \
 		     tcp_output.obj udp.obj if.obj mbuf.obj slirp.obj \
 		     tcp_subr.obj \
-		    net_ne2000.obj
+		    net_dp8390.obj \
+		    net_ne2000.obj net_wd80x3.obj net_3c503.obj
 
 SNDOBJ		:= sound.obj \
 		    sound_dev.obj \
@@ -658,7 +662,7 @@ SNDOBJ		:= sound.obj \
 VIDOBJ		:= video.obj \
 		    video_dev.obj \
 		    vid_cga.obj vid_cga_comp.obj \
-		    vid_compaq_cga.obj \
+		    vid_cga_compaq.obj \
 		    vid_mda.obj \
 		    vid_hercules.obj vid_herculesplus.obj vid_incolor.obj \
 		    vid_colorplus.obj \
@@ -670,7 +674,7 @@ VIDOBJ		:= video.obj \
 		    vid_ati_eeprom.obj \
 		    vid_ati18800.obj vid_ati28800.obj \
 		    vid_ati_mach64.obj vid_ati68860_ramdac.obj \
-		    vid_ics2595.obj \
+		    vid_bt48x_ramdac.obj vid_icd2061.obj vid_ics2595.obj \
 		    vid_cl54xx.obj \
 		    vid_et4000.obj vid_sc1502x_ramdac.obj \
 		    vid_et4000w32.obj vid_stg_ramdac.obj \
@@ -685,8 +689,8 @@ VIDOBJ		:= video.obj \
 
 PLATOBJ		:= win.obj \
 		    win_lang.obj win_opendir.obj win_dynld.obj win_thread.obj \
-		    win_cdrom.obj win_cdrom_ioctl.obj win_keyboard.obj \
-		    win_mouse.obj win_joystick.obj win_midi.obj
+		    win_cdrom.obj win_keyboard.obj win_mouse.obj \
+		    win_joystick.obj win_midi.obj
 ifeq ($(CRASHDUMP), y)
 PLATOBJ		+= win_crashdump.obj
 endif

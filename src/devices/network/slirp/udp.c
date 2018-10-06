@@ -62,7 +62,7 @@ int	udpcksum = 0;		/* XXX */
 struct	SLIRPsocket *udp_last_so = &udb;
 
 void
-udp_init()
+udp_init(void)
 {
 	udb.so_next = udb.so_prev = &udb;
 }
@@ -71,9 +71,7 @@ udp_init()
  * ip->ip_len length data (IPDU)
  */
 void
-udp_input(m, iphlen)
-	struct SLIRPmbuf *m;
-	int iphlen;
+udp_input(struct SLIRPmbuf *m, int iphlen)
 {
 	struct ip *ip;
 	struct udphdr *uh;
@@ -327,8 +325,7 @@ int udp_output(struct SLIRPsocket *so, struct SLIRPmbuf *m,
 }
 
 int
-udp_attach(so)
-     struct SLIRPsocket *so;
+udp_attach(struct SLIRPsocket *so)
 {
   struct sockaddr_in addr;
 	
@@ -361,8 +358,7 @@ udp_attach(so)
 }
 
 void
-udp_detach(so)
-	struct SLIRPsocket *so;
+udp_detach(struct SLIRPsocket *so)
 {
 	closesocket(so->s);
 	/* if (so->so_m) m_free(so->so_m);    done by sofree */
@@ -379,8 +375,7 @@ struct tos_t udptos[] = {
 };
 
 u_int8_t
-udp_tos(so)
-	struct SLIRPsocket *so;
+udp_tos(struct SLIRPsocket *so)
 {
 	int i = 0;
 	
@@ -404,9 +399,7 @@ udp_tos(so)
  * Here, talk/ytalk/ntalk requests must be emulated
  */
 void
-udp_emu(so, m)
-	struct SLIRPsocket *so;
-	struct SLIRPmbuf *m;
+udp_emu(struct SLIRPsocket *so, struct SLIRPmbuf *m)
 {
 	struct sockaddr_in addr;
         socklen_t addrlen = sizeof(addr);
@@ -632,11 +625,7 @@ struct cu_header {
 }
 
 struct SLIRPsocket *
-udp_listen(port, laddr, lport, flags)
-	u_int port;
-	u_int32_t laddr;
-	u_int lport;
-	int flags;
+udp_listen(u_int port, u_int32_t laddr, u_int lport, int flags)
 {
 	struct sockaddr_in addr;
 	struct SLIRPsocket *so;

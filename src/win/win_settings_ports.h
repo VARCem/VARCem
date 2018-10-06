@@ -108,7 +108,7 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		return FALSE;
 
-	case WM_SAVESETTINGS:
+	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_CHECK_GAME);
 		temp_game = SendMessage(h, BM_GETCHECK, 0, 0);
 

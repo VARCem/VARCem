@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.13	2018/05/23
+ * Version:	@(#)ui.h	1.0.15	2018/09/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -69,35 +69,22 @@
 /* Status Bar definitions. */
 #define SB_ICON_WIDTH	24
 #define SB_FLOPPY       0x00
-#define SB_CDROM        0x10
-#define SB_ZIP          0x20
-#define SB_RDISK        0x30
-#define SB_HDD          0x50
-#define SB_NETWORK      0x60
-#define SB_SOUND        0x70
-#define SB_TEXT         0x80
+#define SB_DISK         0x10
+#define SB_CDROM        0x20
+#define SB_ZIP          0x30
+#define SB_NETWORK      0x50
+#define SB_SOUND        0x60
+#define SB_TEXT         0x70
+
+/* MenuItem types. */
+#define ITEM_SEPARATOR	0
+#define ITEM_NORMAL	1
+#define ITEM_CHECK	2
+#define ITEM_RADIO	3
+
 
 #ifdef USE_WX
 # define RENDER_FPS	30			/* default render speed */
-#endif
-
-/* Define whether or not we need the Logging submenu. */
-#if defined(ENABLE_BUS_LOG) || \
-    defined(ENABLE_KEYBOARD_LOG) || defined(ENABLE_MOUSE_LOG) || \
-    defined(ENABLE_GAME_LOG) || \
-    defined(ENABLE_SERIAL_LOG) || defined(ENABLE_PARALLELL_LOG) || \
-    defined(ENABLE_FDC_LOG) || defined(ENABLE_FDD_LOG) || \
-    defined(ENABLE_D86F_LOG) || \
-    defined(ENABLE_HDC_LOG) || defined(ENABLE_HDD_LOG) || \
-    defined(ENABLE_ZIP_LOG) || defined(ENABLE_CDROM_LOG) || \
-    defined(ENABLE_CDROM_IMAGE_LOG) || defined(ENABLE_CDROM_IOCTL_LOG) || \
-    defined(ENABLE_SOUND_EMU8K_LOG) || defined(ENABLE_SOUND_MPU401_LOG) || \
-    defined(ENABLE_SOUND_DEV_LOG) || \
-    defined(ENABLE_NETWORK_LOG) || defined(ENABLE_NETWORK_DEV_LOG) || \
-    defined(ENABLE_SCSI_BUS_LOG) || defined(ENABLE_SCSI_DISK_LOG) || \
-    defined(ENABLE_SCSI_DEV_LOG) || \
-    defined(ENABLE_VOODOO_LOG)
-# define ENABLE_LOGGING
 #endif
 
 
@@ -105,84 +92,100 @@
 extern "C" {
 #endif
 
-#ifdef ENABLE_LOGGING
-extern int	pci_do_log;
-extern int	keyboard_do_log;
-extern int	mouse_do_log;
-extern int	game_do_log;
-extern int	parallel_do_log;
-extern int	serial_do_log;
-extern int	fdc_do_log;
-extern int	fdd_do_log;
-extern int	d86f_do_log;
-extern int	hdc_do_log;
-extern int	hdd_do_log;
-extern int	zip_do_log;
-extern int	cdrom_do_log;
-extern int	cdrom_image_do_log;
-extern int	cdrom_ioctl_do_log;
-extern int	sound_emu8k_do_log;
-extern int	sound_mpu401_do_log;
-extern int	sound_dev_do_log;
-extern int	network_do_log;
-extern int	network_dev_do_log;
-extern int	scsi_bus_do_log;
-extern int	scsi_hd_do_log;
-extern int	scsi_dev_do_log;
-extern int	voodoo_do_log;
-#endif
+/* Define an in-memory language entry. */
+typedef struct _lang_ {
+    const wchar_t	*name;
+    const wchar_t	*dll;
+
+    const wchar_t	*author;
+    const wchar_t	*email;
+    const wchar_t	*version;
+
+    int			id;
+    struct _lang_	*next;
+} lang_t;
+
+/* Define an entry in the strings table. */
+typedef struct {
+    int                 id;
+    const wchar_t       *str;
+} string_t;
+
+typedef struct {
+    uint16_t	width;
+    uint8_t	flags;
+    uint8_t	tag;
+    uint8_t	icon;
+    wchar_t	*tip;
+    wchar_t	*text;
+} sbpart_t;
+
 
 /* Main GUI functions. */
+extern void	ui_reset(void);
+extern int	ui_menu_command(int idm);
+extern int	ui_msgbox(int type, const void *arg);
+extern void	ui_fullscreen(int on);
+extern void	ui_mouse_capture(int on);
+
+extern int	ui_lang_set(int id);
+extern lang_t	*ui_lang_get(void);
+extern void	ui_lang_add(lang_t *ptr, int sort);
+extern void	ui_lang_menu(void);
+
+extern void	ui_floppy_mount(uint8_t drive, int part, int8_t wp,
+				const wchar_t *fn);
+extern void	ui_cdrom_eject(uint8_t id);
+extern void	ui_cdrom_reload(uint8_t id);
+extern void	ui_zip_mount(uint8_t drive, int part, int8_t wp,
+			     const wchar_t *fn);
+extern void	ui_zip_eject(uint8_t id);
+extern void	ui_zip_reload(uint8_t id);
+extern void	ui_disk_mount(uint8_t drive, int part, int8_t wp,
+			      const wchar_t *fn);
+extern void	ui_disk_unload(uint8_t id);
+extern void	ui_disk_eject(uint8_t id);
+extern void	ui_disk_reload(uint8_t id);
+
+/* Main GUI (platform) helper functions. */
+extern void	ui_plat_reset(void);
+extern void	ui_resize(int x, int y);
 extern void	ui_show_cursor(int on);
 extern void	ui_show_render(int on);
-extern void	ui_resize(int x, int y);
-extern int	ui_msgbox(int type, const void *arg);
-extern void	ui_update(void);
-extern void	ui_menu_reset_all(void);
-extern int	ui_menu_command(int idm);
-extern void	ui_menu_set_logging_item(int idm, int val);
-extern void	ui_menu_toggle_video_item(int idm, int *val);
-
-/* Main GUI helper functions. */
-extern void	menu_add_item(int idm, int id, const wchar_t *str);
+extern wchar_t  *ui_window_title(const wchar_t *s);
+extern int	ui_fdd_icon(int type);
+extern void	menu_add_item(int idm, int type, int id, const wchar_t *str);
 extern void	menu_enable_item(int idm, int val);
 extern void	menu_set_item(int idm, int val);
 extern void	menu_set_radio_item(int idm, int num, int val);
-extern wchar_t  *ui_window_title(const wchar_t *s);
 
 /* Status Bar functions. */
-extern void	ui_sb_update(void);
+extern void	ui_sb_reset(void);
 extern void	ui_sb_click(int part);
-extern void	ui_sb_menu_command(int idm, int tag);
-extern void	ui_sb_menu_enable_item(int tag, int id, int val);
-extern void	ui_sb_menu_set_item(int tag, int id, int val);
-extern void	ui_sb_text_set_w(const wchar_t *str);
-extern void	ui_sb_text_set(const char *str);
-extern void	ui_sb_icon_update(int tag, int val);
-extern void	ui_sb_icon_state(int tag, int active);
-extern void	ui_sb_tip_update(int tag);
-extern void	ui_sb_mount_floppy(uint8_t drive, int part, int8_t wp,
-				   const wchar_t *fn);
-extern void	ui_sb_mount_zip(uint8_t drive, int part, int8_t wp,
-				const wchar_t *fn);
+extern void	ui_sb_kbstate(int flags);
+extern void	ui_sb_icon_update(uint8_t tag, int val);
+extern void	ui_sb_icon_state(uint8_t tag, int active);
+extern void	ui_sb_tip_update(uint8_t tag);
+extern void	ui_sb_text_set_w(uint8_t tag, const wchar_t *str);
+extern void	ui_sb_text_set(uint8_t tag, const char *str);
+extern void	ui_sb_menu_command(int idm, uint8_t tag);
+extern void	ui_sb_menu_enable_item(uint8_t tag, int id, int val);
+extern void	ui_sb_menu_set_item(uint8_t tag, int id, int val);
 
-/* Status Bar helper functions. */
-extern int	sb_fdd_icon(int type);
-extern void	sb_setup(int parts, const int *widths);
-extern void	sb_menu_destroy(void);
+/* Status Bar (platform) helper functions. */
+extern void	sb_setup(int parts, const sbpart_t *data);
+extern void	sb_set_icon(int part, int icon);
+extern void	sb_set_text(int part, const wchar_t *str);
+extern void	sb_set_tooltip(int part, const wchar_t *str);
 extern void	sb_menu_create(int part);
 extern void	sb_menu_add_item(int part, int idm, const wchar_t *str);
 extern void	sb_menu_enable_item(int part, int idm, int val);;
 extern void	sb_menu_set_item(int part, int idm, int val);
-extern void	sb_set_icon(int part, int icon);
-extern void	sb_set_text(int part, const wchar_t *str);
-extern void	sb_set_tooltip(int part, const wchar_t *str);
 
 /* Dialogs. */
 extern void	dlg_about(void);
+extern void	dlg_localize(void);
 extern int	dlg_settings(int ask);
-extern void	dlg_status(void);
-extern void	dlg_status_update(void);
 extern void     dlg_new_image(int drive, int part, int is_zip);
 extern void	dlg_sound_gain(void);
 extern int      dlg_file(const wchar_t *filt, const wchar_t *ifn,

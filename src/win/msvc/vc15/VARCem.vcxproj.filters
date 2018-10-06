@@ -752,6 +752,9 @@
     <ClCompile Include="..\..\..\machines\m_at.c">
       <Filter>machines</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_at_4gpv31.c">
+      <Filter>machines</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\machines\m_at_430fx.c">
       <Filter>machines</Filter>
     </ClCompile>
@@ -879,22 +882,6 @@
     <ClCompile Include="..\..\win_lang.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\printer\prt_cpmap.c">
-      <Filter>devices\printer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\printer\prt_escp.c">
-      <Filter>devices\printer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\printer\prt_text.c">
-      <Filter>devices\printer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\misc\isamem.c">
-      <Filter>devices\misc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\misc\isartc.c">
-      <Filter>devices\misc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\png.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\config.h" />
@@ -1649,16 +1636,6 @@
     <ClInclude Include="..\..\win_settings_video.h">
       <Filter>win</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\devices\printer\printer.h">
-      <Filter>devices\printer</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\misc\isamem.h">
-      <Filter>devices\misc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\misc\isartc.h">
-      <Filter>devices\misc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\png.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cpu">
@@ -1732,9 +1709,6 @@
     </Filter>
     <Filter Include="devices\misc">
       <UniqueIdentifier>{51f1c4aa-4a2a-4639-bcbc-2075ffaf3e27}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="devices\printer">
-      <UniqueIdentifier>{ab4ace08-f0ba-404e-b2ed-dbcacbb291c7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -66,9 +66,7 @@ static int icmp_flush[19] = {
  * Process a received ICMP message.
  */
 void
-icmp_input(m, hlen)
-     struct SLIRPmbuf *m;
-     int hlen;
+icmp_input(struct SLIRPmbuf *m, int hlen)
 {
   register struct icmp *icp;
   register struct ip *ip=mtod(m, struct ip *);
@@ -316,8 +314,7 @@ end_error:
  * Reflect the ip packet back to the source
  */
 void
-icmp_reflect(m)
-     struct SLIRPmbuf *m;
+icmp_reflect(struct SLIRPmbuf *m)
 {
   register struct ip *ip = mtod(m, struct ip *);
   int hlen = ip->ip_hl << 2;

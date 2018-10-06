@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.18	2018/08/27
+ * Version:	@(#)resource.h	1.0.19	2018/09/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,21 +43,21 @@
 /* Dialog IDs. */
 #define DLG_ABOUT		1000	/* top-level dialog */
 # define DLG_LOCALIZE		1001
-#define DLG_STATUS		1010	/* top-level dialog */
-#define DLG_SND_GAIN		1020	/* top-level dialog */
-#define DLG_NEW_FLOPPY		1030	/* top-level dialog */
-#define DLG_CONFIG		1040	/* top-level dialog */
-#define  DLG_CFG_MACHINE	1041	/* sub-dialog of config */
-#define  DLG_CFG_VIDEO		1042	/* sub-dialog of config */
-#define  DLG_CFG_INPUT		1043	/* sub-dialog of config */
-#define  DLG_CFG_SOUND		1044	/* sub-dialog of config */
-#define  DLG_CFG_NETWORK	1045	/* sub-dialog of config */
-#define  DLG_CFG_PORTS		1046	/* sub-dialog of config */
-#define  DLG_CFG_PERIPHERALS	1047	/* sub-dialog of config */
-#define  DLG_CFG_DISK		1048	/* sub-dialog of config */
-#define  DLG_CFG_DISK_ADD	1049	/* sub-dialog of config */
-#define  DLG_CFG_FLOPPY		1050	/* sub-dialog of config */
-#define  DLG_CFG_RMV_DEVICES	1051	/* sub-dialog of config */
+#define DLG_SND_GAIN		1010	/* top-level dialog */
+#define DLG_NEW_FLOPPY		1020	/* top-level dialog */
+#define DLG_CONFIG		1030	/* top-level dialog */
+#define  DLG_CFG_MACHINE	1031	/* sub-dialog of config */
+#define  DLG_CFG_VIDEO		1032	/* sub-dialog of config */
+#define  DLG_CFG_INPUT		1033	/* sub-dialog of config */
+#define  DLG_CFG_SOUND		1034	/* sub-dialog of config */
+#define  DLG_CFG_NETWORK	1035	/* sub-dialog of config */
+#define  DLG_CFG_PORTS		1036	/* sub-dialog of config */
+#define  DLG_CFG_PERIPHERALS	1037	/* sub-dialog of config */
+#define  DLG_CFG_DISK		1038	/* sub-dialog of config */
+#define  DLG_CFG_DISK_ADD	1039	/* sub-dialog of config */
+#define  DLG_CFG_FLOPPY		1040	/* sub-dialog of config */
+#define  DLG_CFG_RMV_DEVICES	1041	/* sub-dialog of config */
+
 
 /* Static text label IDs. */
 #define IDT_1700		1700	/* Language: */
@@ -68,7 +68,7 @@
 #define IDT_1705		1705	/* MB	== IDC_TEXT_MB */
 #define IDT_1706		1706	/* Memory: */
 #define IDT_1707		1707	/* Video: */
-#define IDT_1708		1708	/* Video speed: */
+#define IDT_1708		1708	/* Time sync: */
 #define IDT_1709		1709	/* Mouse: */
 #define IDT_1710		1710	/* Joystick: */
 #define IDT_1711		1711	/* Sound card: */
@@ -78,8 +78,8 @@
 #define IDT_1715		1715	/* Network adapter: */
 #define IDT_1716		1716	/* SCSI Controller: */
 #define IDT_1717		1717	/* HD Controller: */
-#define IDT_1718		1718	/* Tertiary IDE: */
-#define IDT_1719		1719	/* Quaternary IDE: */
+/* 1718 unused */
+/* 1719 unused */
 #define IDT_1720		1720	/* Hard disks: */
 #define IDT_1721		1721	/* Bus: */
 #define IDT_1722		1722	/* Channel: */
@@ -98,8 +98,7 @@
 #define IDT_1741		1741	/* ID: */
 #define IDT_1742		1742	/* LUN: */
 #define IDT_1743		1743	/* Channel: */
-#define IDT_STEXT		1744	/* text in status window */
-#define IDT_SDEVICE		1745	/* text in status window */
+/* 1744/1745 unused */
 #define IDT_1746		1746	/* Gain */
 #define IDT_1749		1749	/* File name: */
 #define IDT_1750		1750	/* Disk size: */
@@ -131,7 +130,7 @@
  */
 #define IDC_SETTINGSCATLIST	1001	/* generic config */
 #define IDC_CFILE		1002	/* Select File dialog */
-#define IDC_CHECK_SYNC		1008
+#define IDC_COMBO_SYNC		1008
 
 #define IDC_COMBO_MACHINE	1010	/* machine/cpu config */
 #define IDC_CONFIGURE_MACHINE	1011
@@ -148,27 +147,36 @@
 
 #define IDC_VIDEO		1030	/* video config */
 #define IDC_COMBO_VIDEO		1031
-#define IDC_COMBO_VIDEO_SPEED	1032
+#define IDC_CONFIGURE_VIDEO	1032
 #define IDC_CHECK_VOODOO	1033
-#define IDC_BUTTON_VOODOO	1034
+#define IDC_CONFIGURE_VOODOO	1034
 
 #define IDC_INPUT		1050	/* input config */
 #define IDC_COMBO_MOUSE		1051
-#define IDC_COMBO_JOYSTICK	1052
-#define IDC_COMBO_JOY		1053
-#define IDC_CONFIGURE_MOUSE	1054
+#define IDC_CONFIGURE_MOUSE	1052
+#define IDC_COMBO_JOYSTICK	1053
+#define IDC_COMBO_JOY		1054
+#define IDC_CONFIGURE_JOY1	1235
+#define IDC_CONFIGURE_JOY2	1236
+#define IDC_CONFIGURE_JOY3	1237
+#define IDC_CONFIGURE_JOY4	1238
 
 #define IDC_SOUND		1070	/* sound config */
 #define IDC_COMBO_SOUND		1071
-#define IDC_COMBO_MIDI		1072
-#define IDC_CHECK_NUKEDOPL	1073
-#define IDC_CHECK_FLOAT		1074
-#define IDC_CHECK_MPU401	1075
-#define IDC_CONFIGURE_MPU401	1076
+#define IDC_CONFIGURE_SOUND	1072
+#define IDC_COMBO_MIDI		1073
+#define IDC_CONFIGURE_MIDI	1074
+#define IDC_CHECK_NUKEDOPL	1075
+#define IDC_CHECK_FLOAT		1076
+#define IDC_CHECK_MPU401	1077
+#define IDC_CONFIGURE_MPU401	1078
 
 #define IDC_COMBO_NET_TYPE	1090	/* network config */
-#define IDC_COMBO_PCAP		1091
-#define IDC_COMBO_NET		1092
+#define IDC_CONFIGURE_NET_TYPE	1091
+#define IDC_COMBO_PCAP		1092
+#define IDC_CONFIGURE_PCAP	1093
+#define IDC_COMBO_NET_CARD	1094
+#define IDC_CONFIGURE_NET_CARD	1095
 
 #define IDC_CHECK_GAME		1110	/* ports config */
 #define IDC_CHECK_PARALLEL1	1111
@@ -185,12 +193,14 @@
 #define IDC_CONFIGURE_SCSI	1122
 #define IDC_COMBO_HDC		1123
 #define IDC_CONFIGURE_HDC	1124
-#define IDC_COMBO_IDE_TER	1125
-#define IDC_COMBO_IDE_QUA	1126
-#define IDC_CHECK_BUGGER	1127
-#define IDC_CONFIGURE_BUGGER	1128
-#define IDC_COMBO_ISARTC	1129
-#define IDC_CONFIGURE_ISARTC	1130
+#define IDC_CHECK_IDE_TER	1125
+#define IDC_CONFIGURE_IDE_TER	1126
+#define IDC_CHECK_IDE_QUA	1127
+#define IDC_CONFIGURE_IDE_QUA	1128
+#define IDC_CHECK_BUGGER	1129
+#define IDC_CONFIGURE_BUGGER	1130
+#define IDC_COMBO_ISARTC	1131
+#define IDC_CONFIGURE_ISARTC	1132
 
 #define IDC_GROUP_ISAMEM	1140
 #define IDC_COMBO_ISAMEM_1	1141
@@ -245,35 +255,16 @@
 #define IDC_COMBO_DISK_SIZE	1196
 #define IDC_COMBO_RPM_MODE	1197
 
-
-/* For the DeviceConfig code, re-do later. */
-#define IDC_CONFIG_BASE		1200
-#define  IDC_CONFIGURE_VID	1200
-#define  IDC_CONFIGURE_SND	1201
-#define  IDC_CONFIGURE_VOODOO	1202
-#define  IDC_CONFIGURE_MOD	1203
-#define  IDC_CONFIGURE_NET_TYPE	1204
-#define  IDC_CONFIGURE_BUSLOGIC	1205
-#define  IDC_CONFIGURE_PCAP	1206
-#define  IDC_CONFIGURE_NET	1207
-#define  IDC_CONFIGURE_MIDI	1208
-#define  IDC_JOY1		1210
-#define  IDC_JOY2		1211
-#define  IDC_JOY3		1212
-#define  IDC_JOY4		1213
-
-#define IDC_HDTYPE		1280
-
-#define IDC_RENDER		1281
-
-#define IDC_STATBAR		1282
+/* Misc items. */
+#define IDC_CONFIGURE_DEV	1200	/* dynamic DeviceConfig code */
+#define IDC_STATBAR		1201	/* status bar events */
 
 
 /* HELP menu. */
 #define IDC_LOCALIZE		1290
 #define IDC_DONATE		1291
 #define IDC_SUPPORT		1292
-#define   IDC_ABOUT_ICON	65535
+#define  IDC_ABOUT_ICON		65535
 
 
 #endif	/*WIN_RESOURCE_H*/

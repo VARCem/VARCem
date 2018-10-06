@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.33	2018/08/27
+ * Version:	@(#)win_settings.c	1.0.34	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,15 +66,17 @@
 #include "../devices/disk/hdd.h"
 #include "../devices/disk/hdc.h"
 #include "../devices/disk/hdc_ide.h"
-#include "../devices/disk/zip.h"
-#include "../devices/cdrom/cdrom.h"
 #include "../devices/scsi/scsi.h"
+#include "../devices/scsi/scsi_device.h"
+#include "../devices/cdrom/cdrom.h"
+#include "../devices/disk/zip.h"
 #include "../devices/network/network.h"
 #include "../devices/sound/sound.h"
 #include "../devices/sound/midi.h"
 #include "../devices/sound/snd_mpu401.h"
 #include "../devices/video/video.h"
 #include "win.h"
+#include "resource.h"
 
 
 /* Defined in the Video module. */
@@ -90,14 +92,14 @@ static int	temp_dynarec;
 #endif
 
 /* Video category. */
-static int	temp_video_card, temp_video_speed, temp_voodoo;
+static int	temp_video_card, temp_voodoo;
 
 /* Input devices category. */
 static int	temp_mouse, temp_joystick;
 
 /* Sound category. */
 static int	temp_sound_card, temp_midi_device, temp_mpu401,
-		temp_opl3_type, temp_float;
+		temp_opl_type, temp_float;
 
 /* Network category. */
 static int	temp_net_type, temp_net_card;
@@ -112,9 +114,9 @@ static int	temp_game,
 /* Other peripherals category. */
 static int	temp_hdc_type,
 		temp_scsi_card,
-		temp_ide_ter, temp_ide_ter_irq,
-		temp_ide_qua, temp_ide_qua_irq;
-static int	temp_bugger,
+		temp_ide_ter,
+		temp_ide_qua,
+		temp_bugger,
 		temp_isartc,
 		temp_isamem[ISAMEM_MAX];
 
@@ -185,11 +187,10 @@ settings_init(void)
     temp_dynarec = cpu_use_dynarec;
 #endif
     temp_fpu = enable_external_fpu;
-    temp_sync = enable_sync;
+    temp_sync = time_sync;
 
     /* Video category */
     temp_video_card = video_card;
-    temp_video_speed = video_speed;
     temp_voodoo = voodoo_enabled;
 
     /* Input devices category */
@@ -200,7 +201,7 @@ settings_init(void)
     temp_sound_card = sound_card;
     temp_midi_device = midi_device;
     temp_mpu401 = mpu401_standalone_enable;
-    temp_opl3_type = opl3_type;
+    temp_opl_type = opl_type;
     temp_float = sound_is_float;
 
     /* Network category */
@@ -221,10 +222,8 @@ settings_init(void)
     /* Other peripherals category */
     temp_scsi_card = scsi_card;
     temp_hdc_type = hdc_type;
-    temp_ide_ter = ide_enable[2];
-    temp_ide_ter_irq = ide_irq[2];
-    temp_ide_qua = ide_enable[3];
-    temp_ide_qua_irq = ide_irq[3];
+    temp_ide_ter = ide_ter_enabled;
+    temp_ide_qua = ide_qua_enabled;
     temp_bugger = bugger_enabled;
     temp_isartc = isartc_type;
 
@@ -266,11 +265,10 @@ settings_changed(void)
     i = i || (temp_dynarec != cpu_use_dynarec);
 #endif
     i = i || (temp_fpu != enable_external_fpu);
-    i = i || (temp_sync != enable_sync);
+    i = i || (temp_sync != time_sync);
 
     /* Video category */
     i = i || (video_card != temp_video_card);
-    i = i || (video_speed != temp_video_speed);
     i = i || (voodoo_enabled != temp_voodoo);
 
     /* Input devices category */
@@ -281,7 +279,7 @@ settings_changed(void)
     i = i || (sound_card != temp_sound_card);
     i = i || (midi_device != temp_midi_device);
     i = i || (mpu401_standalone_enable != temp_mpu401);
-    i = i || (opl3_type != temp_opl3_type);
+    i = i || (opl_type != temp_opl_type);
     i = i || (sound_is_float != temp_float);
 
     /* Network category */
@@ -301,10 +299,8 @@ settings_changed(void)
     /* Peripherals category */
     i = i || (temp_scsi_card != scsi_card);
     i = i || (temp_hdc_type != hdc_type);
-    i = i || (temp_ide_ter != ide_enable[2]);
-    i = i || (temp_ide_ter_irq != ide_irq[2]);
-    i = i || (temp_ide_qua != ide_enable[3]);
-    i = i || (temp_ide_qua_irq != ide_irq[3]);
+    i = i || (temp_ide_ter != ide_ter_enabled);
+    i = i || (temp_ide_qua != ide_qua_enabled);
     i = i || (temp_bugger != bugger_enabled);
     i = i || (temp_isartc != isartc_type);
 
@@ -364,7 +360,6 @@ settings_save(void)
 
     /* Machine category */
     machine = temp_machine;
-    romset = machine_getromset();
     cpu_manufacturer = temp_cpu_m;
     cpu_waitstates = temp_wait_states;
     cpu = temp_cpu;
@@ -373,11 +368,10 @@ settings_save(void)
     cpu_use_dynarec = temp_dynarec;
 #endif
     enable_external_fpu = temp_fpu;
-    enable_sync = temp_sync;
+    time_sync = temp_sync;
 
     /* Video category */
     video_card = temp_video_card;
-    video_speed = temp_video_speed;
     voodoo_enabled = temp_voodoo;
 
     /* Input devices category */
@@ -388,7 +382,7 @@ settings_save(void)
     sound_card = temp_sound_card;
     midi_device = temp_midi_device;
     mpu401_standalone_enable = temp_mpu401;
-    opl3_type = temp_opl3_type;
+    opl_type = temp_opl_type;
     sound_is_float = temp_float;
 
     /* Network category */
@@ -409,10 +403,8 @@ settings_save(void)
     /* Peripherals category */
     scsi_card = temp_scsi_card;
     hdc_type = temp_hdc_type;
-    ide_enable[2] = temp_ide_ter;
-    ide_irq[2] = temp_ide_ter_irq;
-    ide_enable[3] = temp_ide_qua;
-    ide_irq[3] = temp_ide_qua_irq;
+    ide_ter_enabled = temp_ide_ter;
+    ide_qua_enabled = temp_ide_qua;
     bugger_enabled = temp_bugger;
     isartc_type = temp_isartc;
 
@@ -457,6 +449,9 @@ settings_save(void)
 #define PAGE_OTHER_REMOVABLE_DEVICES	9
 #define PAGE_MAX			10
 
+/* Icon, Bus, File, C, H, S, Size. */
+#define C_COLUMNS_HARD_DISKS		6
+
 
 static void
 show_child(HWND hwndParent, DWORD child_id)
@@ -465,7 +460,7 @@ show_child(HWND hwndParent, DWORD child_id)
 
     displayed_category = child_id;
 
-    SendMessage(hwndChildDialog, WM_SAVESETTINGS, 0, 0);
+    SendMessage(hwndChildDialog, WM_SAVE_CFG, 0, 0);
 
     DestroyWindow(hwndChildDialog);
 
@@ -542,6 +537,18 @@ show_child(HWND hwndParent, DWORD child_id)
 static BOOL
 image_list_init(HWND hwndList)
 {
+    int icons[PAGE_MAX] = {
+	ICON_MACHINE,
+	ICON_DISPLAY,
+	ICON_INPDEV,
+	ICON_SOUND,
+	ICON_NETWORK,
+	ICON_PORTS,
+	ICON_PERIPH,
+	ICON_DISK,
+	ICON_FLOPPY,
+	ICON_REMOV
+    };
     HICON hiconItem;
     HIMAGELIST hSmall;
     int i;
@@ -550,8 +557,9 @@ image_list_init(HWND hwndList)
 			      GetSystemMetrics(SM_CYSMICON),
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
+
     for (i = 0; i < PAGE_MAX; i++) {
-	hiconItem = LoadIcon(hInstance, (LPCWSTR)(256 + i));
+	hiconItem = LoadIcon(hInstance, (LPCWSTR)icons[i]);
 	ImageList_AddIcon(hSmall, hiconItem);
 	DestroyIcon(hiconItem);
     }
@@ -629,7 +637,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 			case IDOK:
-				SendMessage(hwndChildDialog, WM_SAVESETTINGS, 0, 0);
+				SendMessage(hwndChildDialog, WM_SAVE_CFG, 0, 0);
 				if (ask_sure) {
 					i = msgbox_reset();
 					if (i == 0) {
@@ -665,22 +673,71 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
+/*
+ * Find all available machine ROMs.
+ *
+ * While we scan for the roms, we also build
+ * the arrays needed by the Machines dialog,
+ * saving us from having to do it twice..
+ */
+static int
+find_roms(void)
+{
+    const char *str;
+    int c, d, i;
+
+    c = d = 0;
+    while(1) {
+	/* Get ANSI name of machine. */
+	str = machine_getname_ex(c);
+	if (str == NULL)
+		break;
+
+	/* If entry already used, clear it. */
+	if (mach_names[d] != NULL)
+		free(mach_names[d]);
+
+	/* Is this machine available? */
+	if (machine_available(c)) {
+		/* Allocate space and copy name to Unicode. */
+		i = strlen(str) + 1;
+		mach_names[d] = (wchar_t *)mem_alloc(i * sizeof(wchar_t));
+		mbstowcs(mach_names[d], str, i);
+
+		/* Add entry to the conversion lists. */
+		list_to_mach[d] = c;
+		mach_to_list[c] = d++;
+	}
+
+	/* Next machine from table. */
+	c++;
+    }
+
+    return(d);
+}
+
+
 int
 dlg_settings(int ask)
 {
-    int i, m, v;
+    int i;
 
-    /* Enumerate the available machines. */
-    m = machine_detect();
+    /*
+     * This looks weird here, but we have to do it
+     * before we open up the Settings dialog, else
+     * we cannot close it after the msgbox exits..
+     */
+    INFO("Scanning for ROM images:\n");
+    if ((i = find_roms()) <= 0) {
+	/* No usable ROMs found, aborting. */
+	ERRLOG("No usable machine has been found!\n");
 
-    /* Enumerate the available video cards. */
-    v = video_detect();
-
-    if (m == 0 || v == 0) {
+	/* Tell the user about it. */
 	ui_msgbox(MBX_ERROR|MBX_FATAL, (wchar_t *)IDS_ERR_NOROMS);
 
 	return(0);
     }
+    INFO("A total of %i machines are available.\n", i);
 
     ask_sure = ask;
     i = DialogBox(plat_lang_dll(), (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);

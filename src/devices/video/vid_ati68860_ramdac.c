@@ -28,7 +28,7 @@
  *		    7  If set can remove "snow" in some cases
  *			(A860_Delay_L ?) ??
  *
- * Version:	@(#)vid_ati68860.c	1.0.3	2018/05/06
+ * Version:	@(#)vid_ati68860.c	1.0.4	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,9 +59,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../mem.h"
+#include "../../device.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -69,7 +71,7 @@
 
 
 void
-ati68860_ramdac_out(uint16_t addr, uint8_t val, ati68860_ramdac_t *ramdac, svga_t *svga)
+ati68860_ramdac_out(uint16_t addr, uint8_t val, ati68860_ramdac_t *dev, svga_t *svga)
 {
     switch (addr) {
 	case 0: 
@@ -89,153 +91,187 @@ ati68860_ramdac_out(uint16_t addr, uint8_t val, ati68860_ramdac_t *ramdac, svga_
 		break;
 
 	default:
-		ramdac->regs[addr & 0xf] = val;
+		dev->regs[addr & 0xf] = val;
 		switch (addr & 0xf) {
 			case 0x4:
-				ramdac->dac_write = val;
-				ramdac->dac_pos = 0;
+				dev->dac_addr = val;
+				dev->dac_pos = 0;
 				break;
 
 			case 0x5:
-				switch (ramdac->dac_pos) {
-					case 0: 
-						ramdac->dac_r = val;
-						ramdac->dac_pos++; 
+				switch (dev->dac_pos) {
+					case 0:
+						dev->dac_r = val;
+						dev->dac_pos++; 
 						break;
 
-					case 1: 
-						ramdac->dac_g = val;
-						ramdac->dac_pos++; 
+					case 1:
+						dev->dac_g = val;
+						dev->dac_pos++; 
 						break;
 
-					case 2: 
-						if (ramdac->dac_write > 1)
+					case 2:
+						if (dev->dac_addr > 1)
 							break;
-						ramdac->pal[ramdac->dac_write].r = ramdac->dac_r; 
-						ramdac->pal[ramdac->dac_write].g = ramdac->dac_g;
-						ramdac->pal[ramdac->dac_write].b = val; 
-						if (ramdac->ramdac_type == RAMDAC_8BIT)
-							ramdac->pallook[ramdac->dac_write] = makecol32(ramdac->pal[ramdac->dac_write].r, ramdac->pal[ramdac->dac_write].g, ramdac->pal[ramdac->dac_write].b);
+						dev->pal[dev->dac_addr].r = dev->dac_r; 
+						dev->pal[dev->dac_addr].g = dev->dac_g;
+						dev->pal[dev->dac_addr].b = val; 
+						if (dev->ramdac_type == RAMDAC_8BIT)
+							dev->pallook[dev->dac_addr] = makecol32(dev->pal[dev->dac_addr].r,
+												      dev->pal[dev->dac_addr].g,
+												      dev->pal[dev->dac_addr].b);
 						else
-							ramdac->pallook[ramdac->dac_write] = makecol32((ramdac->pal[ramdac->dac_write].r & 0x3f) * 4, (ramdac->pal[ramdac->dac_write].g & 0x3f) * 4, (ramdac->pal[ramdac->dac_write].b & 0x3f) * 4); 
-						ramdac->dac_pos = 0; 
-						ramdac->dac_write = (ramdac->dac_write + 1) & 255; 
+							dev->pallook[dev->dac_addr] = makecol32(video_6to8[dev->pal[dev->dac_addr].r & 0x3f],
+												      video_6to8[dev->pal[dev->dac_addr].g & 0x3f],
+												      video_6to8[dev->pal[dev->dac_addr].b & 0x3f]);
+						dev->dac_pos = 0;
+						dev->dac_addr = (dev->dac_addr + 1) & 255; 
 						break;
 				}
 				break;
-			
+
 			case 0xb:
 				switch (val) {
-				case 0x82:
-					ramdac->render = svga_render_4bpp_highres;
-					break;
+					case 0x82:
+						dev->render = svga_render_4bpp_highres;
+						break;
 
-				case 0x83:
-					ramdac->render = svga_render_8bpp_highres;
-					break;
+					case 0x83:
+						dev->render = svga_render_8bpp_highres;
+						break;
 
-				case 0xa0: case 0xb0:
-					ramdac->render = svga_render_15bpp_highres;
-					break;
+					case 0xa0: case 0xb0:
+						dev->render = svga_render_15bpp_highres;
+						break;
 
-				case 0xa1: case 0xb1:
-					ramdac->render = svga_render_16bpp_highres;
-					break;
+					case 0xa1: case 0xb1:
+						dev->render = svga_render_16bpp_highres;
+						break;
 
-				case 0xc0: case 0xd0:
-					ramdac->render = svga_render_24bpp_highres;
-					break;
+					case 0xc0: case 0xd0:
+						dev->render = svga_render_24bpp_highres;
+						break;
 
-				case 0xe2: case 0xf7:
-					ramdac->render = svga_render_32bpp_highres;
-					break;
+					case 0xe2: case 0xf7:
+						dev->render = svga_render_32bpp_highres;
+						break;
 
-				case 0xe3:
-					ramdac->render = svga_render_ABGR8888_highres;
-					break;
+					case 0xe3:
+						dev->render = svga_render_ABGR8888_highres;
+						break;
 
-				case 0xf2:
-					ramdac->render = svga_render_RGBA8888_highres;
-					break;
+					case 0xf2:
+						dev->render = svga_render_RGBA8888_highres;
+						break;
 
-				default:
-					ramdac->render = svga_render_8bpp_highres;
-					break;
-			}
-			break;
+					default:
+						dev->render = svga_render_8bpp_highres;
+						break;
+                        	}
+				break;
 
-		case 0xc:
-			svga_set_ramdac_type(svga, (val & 1) ? RAMDAC_6BIT : RAMDAC_8BIT);
-			break;
-	}
-	break;
+			case 0xc:
+				svga_set_ramdac_type(svga, (val & 1) ? RAMDAC_6BIT : RAMDAC_8BIT);
+				break;
+		}
+		break;
     }
 }
 
 
 uint8_t
-ati68860_ramdac_in(uint16_t addr, ati68860_ramdac_t *ramdac, svga_t *svga)
+ati68860_ramdac_in(uint16_t addr, ati68860_ramdac_t *dev, svga_t *svga)
 {
-    uint8_t ret = 0;
+    uint8_t temp = 0;
 
     switch (addr) {
 	case 0:
-		ret = svga_in(0x3c8, svga);
+		temp = svga_in(0x3c8, svga);
 		break;
 
 	case 1:
-		ret = svga_in(0x3c9, svga);
+		temp = svga_in(0x3c9, svga);
 		break;
 
 	case 2:
-		ret = svga_in(0x3c6, svga);
+		temp = svga_in(0x3c6, svga);
 		break;
 
 	case 3:
-		ret = svga_in(0x3c7, svga);
+		temp = svga_in(0x3c7, svga);
 		break;
 
 	case 4: case 8:
-		ret = 2; 
+		temp = 2; 
 		break;
 
 	case 6: case 0xa:
-		ret = 0x1d;
+		temp = 0x1d;
 		break;
 
 	case 0xf:
-		ret = 0xd0;
+		temp = 0xd0;
 		break;
 
 	default:
-		ret = ramdac->regs[addr & 0xf];
+		temp = dev->regs[addr & 0xf];
 		break;
     }
 
-    return ret;
+    return temp;
 }
 
 
 void
-ati68860_ramdac_init(ati68860_ramdac_t *ramdac)
-{
-    ramdac->render = svga_render_8bpp_highres;
-}
-
-
-void
-ati68860_set_ramdac_type(ati68860_ramdac_t *ramdac, int type)
+ati68860_set_ramdac_type(ati68860_ramdac_t *dev, int type)
 {
     int c;
 
-    if (ramdac->ramdac_type != type) {
-	ramdac->ramdac_type = type;
-
+    if (dev->ramdac_type != type) {
+	dev->ramdac_type = type;
 	for (c = 0; c < 2; c++) {
-		if (ramdac->ramdac_type == RAMDAC_8BIT)
-			ramdac->pallook[c] = makecol32(ramdac->pal[c].r, ramdac->pal[c].g, ramdac->pal[c].b);
+		if (dev->ramdac_type == RAMDAC_8BIT)
+			dev->pallook[c] = makecol32(dev->pal[c].r,
+						    dev->pal[c].g,
+						    dev->pal[c].b);
 		else
-			ramdac->pallook[c] = makecol32((ramdac->pal[c].r & 0x3f) * 4, (ramdac->pal[c].g & 0x3f) * 4, (ramdac->pal[c].b & 0x3f) * 4); 
+			dev->pallook[c] = makecol32(video_6to8[dev->pal[c].r & 0x3f],
+						    video_6to8[dev->pal[c].g & 0x3f],
+						    video_6to8[dev->pal[c].b & 0x3f]); 
 	}
     }
 }
+
+
+static void *
+ati68860_init(const device_t *info)
+{
+    ati68860_ramdac_t *dev;
+
+    dev = (ati68860_ramdac_t *)mem_alloc(sizeof(ati68860_ramdac_t));
+    memset(dev, 0x00, sizeof(ati68860_ramdac_t));
+
+    dev->render = svga_render_8bpp_highres;
+
+    return dev;
+}
+
+
+static void
+ati68860_close(void *priv)
+{
+    ati68860_ramdac_t *dev = (ati68860_ramdac_t *)priv;
+
+    if (dev != NULL)
+	free(dev);
+}
+
+
+const device_t ati68860_ramdac_device = {
+    "ATi-68860 RAMDAC",
+    0,
+    0,
+    ati68860_init, ati68860_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

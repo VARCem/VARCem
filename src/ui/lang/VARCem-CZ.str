@@ -8,7 +8,7 @@
  *
  *		String definitions for "Czech (Czech Republic)" language.
  *
- * Version:	@(#)VARCem-CZ.str	1.0.4	2018/09/23
+ * Version:	@(#)VARCem-CZ.str	1.0.5	2018/10/01
  *
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,10 +47,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,3
-#define TAG_AUTHOR	"David Hrdlička"
-#define TAG_EMAIL	"hrdlickadavid@outlook.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,4
+#define STR_AUTHOR	"David Hrdlička"
+#define STR_EMAIL	"hrdlickadavid@outlook.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Chyba"
@@ -65,27 +68,24 @@
 #define STR_2202	"PCap failed to set up because it may not be initialized"
 #define STR_2203	"Nebyla nalezena žádná PCap zařízení."
 #define STR_2204	"Neplatné PCap zařížení"
-#define STR_2205	"Nebylo možné načíst OpenAL. Ověřte, zda je následující soubor\nve složce s programem:\n\nlibopenal-1.dll"
-#define STR_2206	"Nebylo možné načíst FluidSynth. Ověřte, zda je následující soubor\nve složce s programem:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"Nebylo možné načíst %s. Ověřte, zda je následující soubor\nve složce s programem:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Chyba při vytváření rastrového obrázku: %s"
+#define STR_2300	"System is out of memory!"
 #define STR_2301	"Nebyly nalezeny žádné použitelné ROM obrazy."
 #define STR_2302	"Nebyla nalezena žádná platná konfigurace.\n\nWould you like to enter the Settings dialog to create one?"
-#define STR_2303	"Použitá základní deska:\n\n  %ls\n\nnení dostupná.\n\nChcete otevřít Nastavení?"
-#define STR_2304	"Použitá grafická karta:\n\n  %ls\n\nnení dostupná.\n\nChcete otevřít Nastavení?"
-#define STR_2305	"Zvolený renderer '%S' není dostupný. Chcete použít výchozí renderer?"
-#define STR_2306	"CD-ROM jednotky pro ST506 a ESDI nikdy neexistovaly."
+#define STR_2303	"Použitá %ls:\n\n  %s\n\nnení dostupná.\n\nChcete otevřít Nastavení?"
+#define STR_2304	"Zvolený renderer:\n\n  %s\n\nnení dostupný. Chcete použít výchozí renderer?"
+#define STR_2305	"You must save your settings first!"
+#define STR_2306	"Chyba při vytváření rastrového obrázku: %ls"
 #define STR_2307	"USB není zatím podporováno."
-#define STR_2308	"You must save your settings first!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Opravdu chcete uložit toto nastavení?\n\n(Může vyžadovat restart.)"
 #define STR_2401	"Změny byly uloženy, nyní prosím restartujte emulátor."
-#define STR_2402	"Podpora zvoleného zařízení '%ls' ve VARCem je nedokončená a toto zařízení tak může způsobovat potíže.\n\nOpravdu jej chcete povolit?"
+#define STR_2402	"Podpora zvoleného zařízení:\n\n  %s\n\nve VARCem je nedokončená a toto zařízení tak může způsobovat potíže.\n\nOpravdu jej chcete povolit?"
 #define STR_2403	"Klikněte pro zachycení kurzoru"
 #define STR_2404	"Stiskněte F8+F12 pro uvolnění kurzoru"
 #define STR_2405	"Stiskněte F8+F12 nebo prostřední tlačítko myši pro uvolnění kurzoru"
@@ -99,11 +99,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Storno"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"Nastavit"
 #define STR_BROWSE	"Procházet..."
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Žádný"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"Povoleno"
 #define STR_ENABLED	"Nepovoleno"
 #define STR_OFF		"Zapnuto"
@@ -123,19 +127,19 @@
 #define STR_DEVCONF_2	"Zařízení:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"O VARCem.."
 #define  STR_3201	"Autoři:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker a další.\nZaloženo na předešlých pracích, jako je 86Box, PCem, MAME, DOSbox nebo Qemu."
 #define  STR_3203	"Vydáno pod tříbodovou licencí BSD a Obecnou veřejnou licencí GNU (verze 2 nebo vyšší) pro již existující kód vložený z jiných projektů."
 #define  STR_3204	"Pro další informace viz LICENSE.txt."
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Lokalizace"
 #define  STR_3211	"Překlady z angličtiny do těchto dalších jazyků byly poskytnuty:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Status"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Sound Gain"
@@ -184,23 +188,16 @@
 #define  STR_3328	"Čekací stavy:"
 #define  STR_3329	"Pamět:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Povolit synchronizaci času mezi hostem a hostitelem"
+#define  STR_3331	"Povolit synchronizaci času mezi hostem a hostitelem:"
 #define  STR_3332	"Povolit matematický koprocesor (FPU)"
 #define  STR_3333	"Povolit dynamickou rekompilaci"
 #define  STR_3334	"KB"
 #define  STR_3335	"Výchozí"
+#define  STR_3336	"Nepovoleno (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Grafická karta:"
-#define  STR_3351	"Rychlost:"
-#define  STR_3352	"Voodoo Graphics"
-#define  STR_3353	"Výchozí"
-#define  STR_3354	"8-bit"
-#define  STR_3355	"Slow 16-bit"
-#define  STR_3356	"Fast 16-bit"
-#define  STR_3357	"Slow VLB/PCI"
-#define  STR_3358	"Mid  VLB/PCI"
-#define  STR_3359	"Fast VLB/PCI"
+#define  STR_3351	"Voodoo Graphics"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Myš:"
@@ -233,8 +230,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"Řadič SCSI:"
 #define  STR_3476	"Řadič pevného disku:"
-#define  STR_3477	"Terciární IDE:"
-#define  STR_3478	"Kvartérní IDE:"
+#define  STR_3477	"Terciární IDE"
+#define  STR_3478	"Kvartérní IDE"
 #define  STR_3479	"Zařízení ISABugger"
 #define  STR_3480	"ISA Memory Expansion"
 #define  STR_3481	"ISA Clock/RTC Card"
@@ -255,11 +252,9 @@
 #define  STR_3512	"Vlastní (velký)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (pouze PIO)"
-#define  STR_3518	"IDE (PIO a DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (vyměnitelný)"
-#define  STR_3521	"USB"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Přidat pevný disk"
@@ -290,14 +285,12 @@
 #define  STR_3577	"Jednotky ZIP:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Rychlost"
-#define  STR_3580	"<rezervováno>"
-#define  STR_3581	"<rezervováno>"
-#define  STR_3582	"ATAPI (pouze PIO)"
-#define  STR_3583	"ATAPI (PIO a DMA)"
-#define  STR_3584	"SCSI"
-#define  STR_3585	"USB"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(prázdné)"
 #define STR_3901	"(hostitelská jednotka %c:)"
 #define STR_3902	" [Chráněno proti zápisu]"
@@ -305,6 +298,7 @@
 #define STR_3904	"N&ačíst obraz..."
 #define STR_3905	"&Znovu načíst předchozí obraz"
 #define STR_3906	"&Vyjmout"
+#define STR_3907	"&Notify disk change"
 
 #define STR_3910	"Disketa %i (%s): %ls"
 #define STR_3911	"Všechny obrazy\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Pokročilé sektorové obrazy\0*.imd;*.json;*.td0\0Základní sektorové obrazy\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Obrazy magnetického toku\0*.fdi\0Obrazy povrchu\0*.86f\0Všechny soubory\0*.*\0"
@@ -312,24 +306,21 @@
 #define STR_3913	"Obrazy povrchu\0*.86f\0"
 #define STR_3914	"E&xportovat do 86F..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Hostitelská jednotka CD/DVD (%c:)"
 #define STR_3922	"Obrazy CD-ROM\0*.iso;*.cue\0Všechny soubory (*.*)\0*.*\0"
 #define STR_3923	"&Mute"
 
-#define STR_3930	"Pevný disk (%s)"
+#define STR_3930	"Pevný disk %i (%ls): %ls"
 
-#define STR_3940	"Vyměnitelný disk %i: %ls"
-#define STR_3941	"&Notify disk change"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"Obrazy ZIP\0*.im?;*.zdi\0All files\0*.*\0"
 #define STR_3952	"Obrazy ZIP\0*.im?;*.zdi\0"
-#define STR_3960	"Síť"
-#define STR_3970	"Zvuk"
+#define STR_3960	"Síť (%s)"
+#define STR_3970	"Zvuk (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"&Akce"
 #define  STR_4001	"&Tvrdý reset"
 #define  STR_4002	"&Ctrl+Alt+Del"
@@ -338,25 +329,25 @@
 #define  STR_4005	"&Pozastavit"
 #define  STR_4006	"&Ukončit"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"&Zobrazit"
 #define  STR_4011	"&Změnitelná velikost okna"
 #define  STR_4012	"P&amatovat si velikost a pozici okna"
 #define  STR_4013	"&Celá obrazovka\tCtrl+Alt+Page Up"
 #define  STR_4014	"&Pravý Ctrl je levý Alt"
-#define  STR_4015	"A&ktualizovat ikony v stavovém řádku"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"Re&nderer"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"&Násobek zvětšení okna"
 #define   STR_4031	"&0.5x"
 #define   STR_4032	"&1x"
 #define   STR_4033	"1.&5x"
 #define   STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"Fullscreen &stretch mode"
 #define   STR_4041	"&Full screen stretch"
 #define   STR_4042	"&4:3"
@@ -364,14 +355,15 @@
 #define   STR_4044	"&Integer scale"
 #define   STR_4045	"&Keep size"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"&Displej"
 #define  STR_4051	"&Invertovaný displej"
 #define  STR_4052	"P&ovolit přesahy"
 #define  STR_4053	"&Vnutit poměr stran 4:3"
 #define  STR_4054	"Změnit &kontrast jednobarevného displeje"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"&Typ displeje"
 #define   STR_4061	"&Barevný RGB monitor"
 #define   STR_4062	"Č&ernobílý monitor"
@@ -379,23 +371,26 @@
 #define   STR_4064	"&Zelený monitor"
 #define   STR_4065	"&Bílý monitor"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"Typ konverze &do odstínů šedi"
 #define   STR_4071	"BT&601 (NTSC/PAL)"
 #define   STR_4072	"BT&709 (HDTV)"
 #define   STR_4073	"&Average"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"&Nástroje"
 #define  STR_4081	"&Nastavení"
 #define  STR_4082	"&Jazyk"
 #define	 STR_4083	"Pr&otokolování"
-#define  STR_4084	"Načíst &konfiguraci"
-#define  STR_4085	"&Uložit konfiguraci"
-#define  STR_4086	"Stat&us"
-#define  STR_4087	"&Pořídit screenshott\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"Načíst &konfiguraci"
+#define  STR_4087	"&Uložit konfiguraci"
+#define  STR_4088	"&Pořídit screenshott"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"Ná&pověda"
 #define  STR_4091	"&O VARCem"
 

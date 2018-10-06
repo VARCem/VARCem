@@ -8,15 +8,11 @@
  *
  *		Definitions for the Toshiba T1000/T1200 machines.
  *
- * Version:	@(#)m_xt_t1000.h	1.0.4	2018/04/03
+ * Version:	@(#)m_xt_t1000.h	1.0.5	2018/09/09
  *
- * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
- *		Miran Grca, <mgrca8@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
+ * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +43,7 @@ extern const device_t t1200_video_device;
 
 
 extern void	t1000_video_options_set(uint8_t options);
+extern void	t1000_video_enable(uint8_t enabled);
 extern void	t1000_display_set(uint8_t internal);
 
 extern void	t1000_syskey(uint8_t amask, uint8_t omask, uint8_t xmask);

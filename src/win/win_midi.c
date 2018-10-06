@@ -8,7 +8,7 @@
  *
  *		Implementation of the System MIDI interface.
  *
- * Version:	@(#)win_midi.c	1.0.4	2018/05/06
+ * Version:	@(#)win_midi.c	1.0.5	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
@@ -50,74 +51,61 @@
 #include "win.h"
 
 
-int	midi_id = 0;
-HANDLE	m_event;
-MIDIHDR m_hdr;
+typedef struct {
+    int		id;
+    HANDLE	event;
+    HMIDIOUT	out_device;
+    MIDIHDR	hdr;
+} midi_t;
 
 
-static HMIDIOUT midi_out_device = NULL;
-static uint8_t midi_rt_buf[1024];
-static uint8_t midi_cmd_buf[1024];
-static int midi_cmd_pos = 0;
-static int midi_cmd_len = 0;
-static uint8_t midi_status = 0;
-static unsigned int midi_sysex_start = 0;
-static unsigned int midi_sysex_delay = 0;
+static midi_t	*pm = NULL;
 
 
 void
 plat_midi_init(void)
 {
-    MMRESULT hr = MMSYSERR_NOERROR;
+    MMRESULT hr;
 
-    /* This is for compatibility with old configuration files. */
-    midi_id = config_get_int("Sound", "midi_host_device", -1);
-    if (midi_id == -1) {
-	midi_id = config_get_int(SYSTEM_MIDI_NAME, "midi", 0);
-    } else {
-	config_delete_var("Sound", "midi_host_device");
-	config_set_int(SYSTEM_MIDI_NAME, "midi", midi_id);
-    }
+    pm = (midi_t *)mem_alloc(sizeof(midi_t));
+    memset(pm, 0x00, sizeof(midi_t));
 
-    memset(midi_rt_buf, 0, sizeof(midi_rt_buf));
-    memset(midi_cmd_buf, 0, sizeof(midi_cmd_buf));
+    pm->id = config_get_int(SYSTEM_MIDI_NAME, "midi", 0);
 
-    midi_cmd_pos = midi_cmd_len = 0;
-    midi_status = 0;
+    pm->event = CreateEvent(NULL, TRUE, TRUE, NULL);
 
-    midi_sysex_start = midi_sysex_delay = 0;
-
-    m_event = CreateEvent(NULL, TRUE, TRUE, NULL);
-
-    hr = midiOutOpen(&midi_out_device, midi_id, (uintptr_t) m_event,
-		     0, CALLBACK_EVENT);
+    hr = midiOutOpen(&pm->out_device, pm->id,
+		     (uintptr_t)pm->event, 0, CALLBACK_EVENT);
     if (hr != MMSYSERR_NOERROR) {
-	pclog("midiOutOpen error - %08X\n",hr);
-	midi_id = 0;
-	hr = midiOutOpen(&midi_out_device, midi_id, (uintptr_t) m_event,
-			 0, CALLBACK_EVENT);
+	pm->id = 0;
+	hr = midiOutOpen(&pm->out_device, pm->id,
+			 (uintptr_t)pm->event, 0, CALLBACK_EVENT);
 	if (hr != MMSYSERR_NOERROR) {
-		pclog("midiOutOpen error - %08X\n",hr);
+		ERRLOG("WIN MIDI: midiOutOpen error - %08X\n", hr);
+		free(pm);
 		return;
 	}
     }
 
-    midiOutReset(midi_out_device);
+    midiOutReset(pm->out_device);
 }
 
 
 void
 plat_midi_close(void)
 {
-    if (midi_out_device != NULL) {
-	midiOutReset(midi_out_device);
-	midiOutClose(midi_out_device);
-#if 0
-	midi_out_device = NULL;
-#endif
+    if (pm == NULL) return;
 
-	CloseHandle(m_event);
+    if (pm->out_device != NULL) {
+	midiOutReset(pm->out_device);
+	midiOutClose(pm->out_device);
+
+	CloseHandle(pm->event);
     }
+
+    free(pm);
+
+    pm = NULL;
 }
 
 
@@ -141,7 +129,9 @@ plat_midi_get_dev_name(int num, char *s)
 void
 plat_midi_play_msg(uint8_t *msg)
 {
-    midiOutShortMsg(midi_out_device, *(uint32_t *) msg);
+    if (pm == NULL) return;
+
+    midiOutShortMsg(pm->out_device, *(uint32_t *)msg);
 }
 
 
@@ -150,26 +140,28 @@ plat_midi_play_sysex(uint8_t *sysex, unsigned int len)
 {
     MMRESULT result;
 
-    if (WaitForSingleObject(m_event, 2000) == WAIT_TIMEOUT) {
-	pclog("Can't send MIDI message\n");
+    if (pm == NULL) return;
+
+    if (WaitForSingleObject(pm->event, 2000) == WAIT_TIMEOUT) {
+	ERRLOG("WIN MIDI: can't send MIDI message\n");
 	return;
     }
 
-    midiOutUnprepareHeader(midi_out_device, &m_hdr, sizeof(m_hdr));
+    midiOutUnprepareHeader(pm->out_device, &pm->hdr, sizeof(pm->hdr));
 
-    m_hdr.lpData = (char *) sysex;
-    m_hdr.dwBufferLength = len;
-    m_hdr.dwBytesRecorded = len;
-    m_hdr.dwUser = 0;
+    pm->hdr.lpData = (char *)sysex;
+    pm->hdr.dwBufferLength = len;
+    pm->hdr.dwBytesRecorded = len;
+    pm->hdr.dwUser = 0;
 
-    result = midiOutPrepareHeader(midi_out_device, &m_hdr, sizeof(m_hdr));
+    result = midiOutPrepareHeader(pm->out_device, &pm->hdr, sizeof(pm->hdr));
     if (result != MMSYSERR_NOERROR) return;
 
-    ResetEvent(m_event);
+    ResetEvent(pm->event);
 
-    result = midiOutLongMsg(midi_out_device, &m_hdr, sizeof(m_hdr));
+    result = midiOutLongMsg(pm->out_device, &pm->hdr, sizeof(pm->hdr));
     if (result != MMSYSERR_NOERROR)
-	SetEvent(m_event);
+	SetEvent(pm->event);
 }
 
 

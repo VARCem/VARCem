@@ -14,7 +14,7 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.6	2018/05/06
+ * Version:	@(#)snd_sb_dsp.c	1.0.7	2018/09/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../timer.h"
@@ -61,24 +62,16 @@
 #include "snd_sb.h"
 #include "snd_sb_dsp.h"
 
+
 /*The recording safety margin is intended for uneven "len" calls to the get_buffer mixer calls on sound_sb*/
 #define SB_DSP_REC_SAFEFTY_MARGIN 4096
 
-void pollsb(void *p);
-void sb_poll_i(void *p);
 
-//#define SB_DSP_RECORD_DEBUG
-//#define SB_TEST_RECORDING_SAW
+extern void pollsb(void *p);
+extern void sb_poll_i(void *p);
 
-#ifdef SB_DSP_RECORD_DEBUG
-FILE* soundf = 0/*NULL*/;
-#endif
 
-#ifdef SB_TEST_RECORDING_SAW
-int counttest;
-#endif
-
-static int sbe2dat[4][9] = {
+static const int sbe2dat[4][9] = {
   {  0x01, -0x02, -0x04,  0x08, -0x10,  0x20,  0x40, -0x80, -106 },
   { -0x01,  0x02, -0x04,  0x08,  0x10, -0x20,  0x40, -0x80,  165 },
   { -0x01,  0x02,  0x04, -0x08,  0x10, -0x20, -0x40,  0x80, -151 },
@@ -107,17 +100,17 @@ static int sb_commands[256]=
         -1,-1, 0,-1,-1,-1,-1,-1,-1, 1, 2,-1,-1,-1,-1, 0
 };
 
-char sb16_copyright[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
-uint16_t sb_dsp_versions[] = {0, 0, 0x105, 0x200, 0x201, 0x300, 0x302, 0x405, 0x40d};
+const char sb16_copyright[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
+const uint16_t sb_dsp_versions[] = {0, 0, 0x105, 0x200, 0x201, 0x300, 0x302, 0x405, 0x40d};
 
 /*These tables were 'borrowed' from DOSBox*/
-	int8_t scaleMap4[64] = {
+	const int8_t scaleMap4[64] = {
 		0,  1,  2,  3,  4,  5,  6,  7,  0,  -1,  -2,  -3,  -4,  -5,  -6,  -7,
 		1,  3,  5,  7,  9, 11, 13, 15, -1,  -3,  -5,  -7,  -9, -11, -13, -15,
 		2,  6, 10, 14, 18, 22, 26, 30, -2,  -6, -10, -14, -18, -22, -26, -30,
 		4, 12, 20, 28, 36, 44, 52, 60, -4, -12, -20, -28, -36, -44, -52, -60
 	};
-	uint8_t adjustMap4[64] = {
+	const uint8_t adjustMap4[64] = {
 		  0, 0, 0, 0, 0, 16, 16, 16,
 		  0, 0, 0, 0, 0, 16, 16, 16,
 		240, 0, 0, 0, 0, 16, 16, 16,
@@ -128,14 +121,14 @@ uint16_t sb_dsp_versions[] = {0, 0, 0x105, 0x200, 0x201, 0x300, 0x302, 0x405, 0x
 		240, 0, 0, 0, 0,  0,  0,  0
 	};
 
-	int8_t scaleMap26[40] = {
+	const int8_t scaleMap26[40] = {
 		0,  1,  2,  3,  0,  -1,  -2,  -3,
 		1,  3,  5,  7, -1,  -3,  -5,  -7,
 		2,  6, 10, 14, -2,  -6, -10, -14,
 		4, 12, 20, 28, -4, -12, -20, -28,
 		5, 15, 25, 35, -5, -15, -25, -35
 	};
-	uint8_t adjustMap26[40] = {
+	const uint8_t adjustMap26[40] = {
 		  0, 0, 0, 8,   0, 0, 0, 8,
 		248, 0, 0, 8, 248, 0, 0, 8,
 		248, 0, 0, 8, 248, 0, 0, 8,
@@ -143,12 +136,12 @@ uint16_t sb_dsp_versions[] = {0, 0, 0x105, 0x200, 0x201, 0x300, 0x302, 0x405, 0x
 		248, 0, 0, 0, 248, 0, 0, 0
 	};
 
-	int8_t scaleMap2[24] = {
+	const int8_t scaleMap2[24] = {
 		0,  1,  0,  -1, 1,  3,  -1,  -3,
 		2,  6, -2,  -6, 4, 12,  -4, -12,
 		8, 24, -8, -24, 6, 48, -16, -48
 	};
-	uint8_t adjustMap2[24] = {
+	const uint8_t adjustMap2[24] = {
 		  0, 4,   0, 4,
 		252, 4, 252, 4, 252, 4, 252, 4,
 		252, 4, 252, 4, 252, 4, 252, 4,
@@ -156,6 +149,7 @@ uint16_t sb_dsp_versions[] = {0, 0, 0x105, 0x200, 0x201, 0x300, 0x302, 0x405, 0x
 	};
 
 float low_fir_sb16_coef[SB16_NCoef];
+
 
 static inline double sinc(double x)
 {
@@ -165,7 +159,7 @@ static inline double sinc(double x)
 static void recalc_sb16_filter(int playback_freq)
 {
         /*Cutoff frequency = playback / 2*/
-        float fC = (float) (((float)playback_freq / 2.0) / 48000.0);
+        float fC = (float)((float)playback_freq / (float)2.0) / (float)48000.0;
         float gain;
         int n;
         
@@ -191,9 +185,10 @@ static void recalc_sb16_filter(int playback_freq)
                 low_fir_sb16_coef[n] /= gain;
 }
 
+
 void sb_irq(sb_dsp_t *dsp, int irq8)
 {
-//        pclog("IRQ %i %02X\n",irq8,pic.mask);
+        DBGLOG(1, "IRQ %i %02X\n",irq8,pic.mask);
         if (irq8) dsp->sb_irq8  = 1;
         else      dsp->sb_irq16 = 1;
         picint(1 << dsp->sb_irqnum);
@@ -232,14 +227,6 @@ void sb_dsp_reset(sb_dsp_t *dsp)
         picintc(1 << dsp->sb_irqnum);
         
         dsp->asp_data_len = 0;
-        
-        #ifdef SB_DSP_RECORD_DEBUG
-            if (soundf != 0)
-            {
-                fclose(soundf);
-                soundf=0;
-            }
-        #endif
 }
 
 void sb_doreset(sb_dsp_t *dsp)
@@ -297,7 +284,6 @@ void sb_start_dma(sb_dsp_t *dsp, int dma8, int autoinit, uint8_t format, int len
                 timer_update_outstanding();
                 dsp->sbleftright = 0;
                 dsp->sbdacpos = 0;
-//                pclog("Start 8-bit DMA addr %06X len %04X\n",dma.ac[1]+(dma.page[1]<<16),len);
         }
         else
         {
@@ -311,7 +297,6 @@ void sb_start_dma(sb_dsp_t *dsp, int dma8, int autoinit, uint8_t format, int len
                 timer_process();
                 dsp->sbenable = dsp->sb_16_enable;
                 timer_update_outstanding();
-//                pclog("Start 16-bit DMA addr %06X len %04X\n",dma16.ac[1]+(dma16.page[1]<<16),len);
         }
 }
 
@@ -319,13 +304,6 @@ void sb_start_dma_i(sb_dsp_t *dsp, int dma8, int autoinit, uint8_t format, int l
 {
         if (dma8)
         {
-#ifdef SB_TEST_RECORDING_SAW                    
-            switch (dsp->sb_8_format)
-            {
-                case 00:case 20:counttest=0x80;break;
-                case 10:case 30:counttest=0;break;
-            }
-#endif
                 dsp->sb_8_length = len;
                 dsp->sb_8_format = format;
                 dsp->sb_8_autoinit = autoinit;
@@ -336,17 +314,9 @@ void sb_start_dma_i(sb_dsp_t *dsp, int dma8, int autoinit, uint8_t format, int l
                 timer_process();
                 dsp->sb_enable_i = dsp->sb_8_enable;
                 timer_update_outstanding();
-//                pclog("Start 8-bit input DMA addr %06X len %04X\n",dma.ac[1]+(dma.page[1]<<16),len);
         }
         else
         {
-#ifdef SB_TEST_RECORDING_SAW                    
-            switch (dsp->sb_16_format)
-            {
-                case 00:case 20:counttest=0x8000;break;
-                case 10:case 30:counttest=0;break;
-            }
-#endif
                 dsp->sb_16_length = len;
                 dsp->sb_16_format = format;
                 dsp->sb_16_autoinit = autoinit;
@@ -357,18 +327,8 @@ void sb_start_dma_i(sb_dsp_t *dsp, int dma8, int autoinit, uint8_t format, int l
                 timer_process();
                 dsp->sb_enable_i = dsp->sb_16_enable;
                 timer_update_outstanding();
-//                pclog("Start 16-bit input DMA addr %06X len %04X\n",dma.ac[1]+(dma.page[1]<<16),len);
         }
         memset(dsp->record_buffer,0,sizeof(dsp->record_buffer));
-
-        #ifdef SB_DSP_RECORD_DEBUG
-            if (soundf != 0)
-            {
-                fclose(soundf);
-                soundf=0;
-            }
-        #endif
-
 }
 
 int sb_8_read_dma(sb_dsp_t *dsp)
@@ -378,43 +338,35 @@ int sb_8_read_dma(sb_dsp_t *dsp)
 void sb_8_write_dma(sb_dsp_t *dsp, uint8_t val)
 {
         dma_channel_write(dsp->sb_8_dmanum, val);
-#ifdef SB_DSP_RECORD_DEBUG
-        if (!soundf) soundf=fopen("sound_dsp.pcm","wb");
-        fwrite(&val,1,1,soundf);
-#endif
 }
-uint16_t sb_16_read_dma(sb_dsp_t *dsp)
+int sb_16_read_dma(sb_dsp_t *dsp)
 {
         return dma_channel_read(dsp->sb_16_dmanum);
 }
 int sb_16_write_dma(sb_dsp_t *dsp, uint16_t val)
 {
         int ret = dma_channel_write(dsp->sb_16_dmanum, val);
-#ifdef SB_DSP_RECORD_DEBUG        
-        if (!soundf) soundf=fopen("sound_dsp.pcm","wb");
-        fwrite(&val,2,1,soundf);
-#endif
         return (ret == DMA_NODATA);
 }
 
-void sb_dsp_setirq(sb_dsp_t *dsp, int irq_ch)
+void sb_dsp_setirq(sb_dsp_t *dsp, int irq)
 {
-        dsp->sb_irqnum = irq_ch;
+        dsp->sb_irqnum = irq;
 }
 
-void sb_dsp_setdma8(sb_dsp_t *dsp, int dma_ch)
+void sb_dsp_setdma8(sb_dsp_t *dsp, int dma)
 {
-        dsp->sb_8_dmanum = dma_ch;
+        dsp->sb_8_dmanum = dma;
 }
 
-void sb_dsp_setdma16(sb_dsp_t *dsp, int dma_ch)
+void sb_dsp_setdma16(sb_dsp_t *dsp, int dma)
 {
-        dsp->sb_16_dmanum = dma_ch;
+        dsp->sb_16_dmanum = dma;
 }
 void sb_exec_command(sb_dsp_t *dsp)
 {
         int temp,c;
-//        pclog("sb_exec_command : SB command %02X\n", dsp->sb_command);
+        DBGLOG(1, "sb_exec_command : SB command %02X\n", dsp->sb_command);
         switch (dsp->sb_command)
         {
                 case 0x01: /*???*/
@@ -434,7 +386,6 @@ void sb_exec_command(sb_dsp_t *dsp)
                 case 0x17: /*2-bit ADPCM output with reference*/
                 dsp->sbref = sb_8_read_dma(dsp);
                 dsp->sbstep = 0;
-//                pclog("Ref byte 2 %02X\n",sbref);
                 case 0x16: /*2-bit ADPCM output*/
                 sb_start_dma(dsp, 1, 0, ADPCM_2, dsp->sb_data[0] + (dsp->sb_data[1] << 8));
                 dsp->sbdat2 = sb_8_read_dma(dsp);
@@ -496,7 +447,7 @@ void sb_exec_command(sb_dsp_t *dsp)
                 dsp->sblatcho = dsp->sblatchi = TIMER_USEC * (256 - dsp->sb_data[0]);
                 temp = 256 - dsp->sb_data[0];
                 temp = 1000000 / temp;
-//                pclog("Sample rate - %ihz (%i)\n",temp, dsp->sblatcho);
+                DBGLOG(1, "Sample rate - %ihz (%i)\n",temp, dsp->sblatcho);
                 if (dsp->sb_freq != temp && dsp->sb_type >= SB16)
                         recalc_sb16_filter(temp);
                 dsp->sb_freq = temp;
@@ -505,7 +456,7 @@ void sb_exec_command(sb_dsp_t *dsp)
                 case 0x42: /*Set input sampling rate*/
                 if (dsp->sb_type < SB16) break;
                 dsp->sblatcho = (int)(TIMER_USEC * (1000000.0f / (float)(dsp->sb_data[1] + (dsp->sb_data[0] << 8))));
-//                pclog("Sample rate - %ihz (%i)\n",dsp->sb_data[1]+(dsp->sb_data[0]<<8), dsp->sblatcho);
+                DBGLOG(1, "Sample rate - %ihz (%i)\n",dsp->sb_data[1]+(dsp->sb_data[0]<<8), dsp->sblatcho);
                 temp = dsp->sb_freq;
                 dsp->sb_freq = dsp->sb_data[1] + (dsp->sb_data[0] << 8);
                 dsp->sb_timeo = 256LL + dsp->sb_freq;
@@ -520,7 +471,6 @@ void sb_exec_command(sb_dsp_t *dsp)
                 case 0x75: /*4-bit ADPCM output with reference*/
                 dsp->sbref = sb_8_read_dma(dsp);
                 dsp->sbstep = 0;
-//                pclog("Ref byte 4 %02X\n",sbref);
                 case 0x74: /*4-bit ADPCM output*/
                 sb_start_dma(dsp, 1, 0, ADPCM_4, dsp->sb_data[0] + (dsp->sb_data[1] << 8));
                 dsp->sbdat2 = sb_8_read_dma(dsp);
@@ -531,7 +481,6 @@ void sb_exec_command(sb_dsp_t *dsp)
                 case 0x77: /*2.6-bit ADPCM output with reference*/
                 dsp->sbref = sb_8_read_dma(dsp);
                 dsp->sbstep = 0;
-//                pclog("Ref byte 26 %02X\n",sbref);
                 case 0x76: /*2.6-bit ADPCM output*/
                 sb_start_dma(dsp, 1, 0, ADPCM_26, dsp->sb_data[0] + (dsp->sb_data[1] << 8));
                 dsp->sbdat2 = sb_8_read_dma(dsp);
@@ -553,31 +502,30 @@ void sb_exec_command(sb_dsp_t *dsp)
                 break;
                 case 0x80: /*Pause DAC*/
                 dsp->sb_pausetime = dsp->sb_data[0] + (dsp->sb_data[1] << 8);
-//                pclog("SB pause %04X\n",sb_pausetime);
                 timer_process();
                 dsp->sbenable = 1;
                 timer_update_outstanding();
                 break;
                 case 0x90: /*High speed 8-bit autoinit DMA output*/
-                if (dsp->sb_type < SB2 || dsp->sb_type > SBPRO2) break;
+                if (dsp->sb_type < SB2) break;
                 sb_start_dma(dsp, 1, 1, 0, dsp->sb_8_autolen);
                 break;
                 case 0x91: /*High speed 8-bit single cycle DMA output*/
-                if (dsp->sb_type < SB2 || dsp->sb_type > SBPRO2) break;
+                if (dsp->sb_type < SB2) break;
                 sb_start_dma(dsp, 1, 0, 0, dsp->sb_8_autolen);
                 break;
                 case 0x98: /*High speed 8-bit autoinit DMA input*/
-                if (dsp->sb_type < SB2 || dsp->sb_type > SBPRO2) break;
+                if (dsp->sb_type < SB2) break;
                 sb_start_dma_i(dsp, 1, 1, 0, dsp->sb_8_autolen);
                 break;
                 case 0x99: /*High speed 8-bit single cycle DMA input*/
-                if (dsp->sb_type < SB2 || dsp->sb_type > SBPRO2) break;
+                if (dsp->sb_type < SB2) break;
                 sb_start_dma_i(dsp, 1, 0, 0, dsp->sb_8_autolen);
                 break;
                 case 0xA0: /*Set input mode to mono*/
                 case 0xA8: /*Set input mode to stereo*/
                 if (dsp->sb_type < SB2 || dsp->sb_type > SBPRO2) break;
-                    //TODO: Implement. 3.xx-only command.
+		/* TODO: Implement. 3.xx-only command. */
                 break;
                 case 0xB0: case 0xB1: case 0xB2: case 0xB3:
                 case 0xB4: case 0xB5: case 0xB6: case 0xB7: /*16-bit DMA output*/
@@ -669,11 +617,11 @@ void sb_exec_command(sb_dsp_t *dsp)
                 sb_add_data(dsp, dsp->sb_test);
                 break;
                 case 0xF2: /*Trigger 8-bit IRQ*/
-//                pclog("Trigger IRQ\n");
+                DBGLOG(1, "Trigger IRQ\n");
                 sb_irq(dsp, 1);
                 break;
                 case 0xF3: /*Trigger 16-bit IRQ*/
-//                pclog("Trigger IRQ\n");
+                DBGLOG(1, "Trigger IRQ\n");
                 sb_irq(dsp, 0);
                 break;
                 case 0xE7: /*???*/
@@ -689,13 +637,10 @@ void sb_exec_command(sb_dsp_t *dsp)
                 case 0x0E: /*ASP set register*/
                 if (dsp->sb_type < SB16) break;
                 dsp->sb_asp_regs[dsp->sb_data[0]] = dsp->sb_data[1];
-//                pclog("ASP write reg %02X %02X\n", sb_data[0], sb_data[1]);
                 break;
                 case 0x0F: /*ASP get register*/
                 if (dsp->sb_type < SB16) break;
-//                sb_add_data(0);
                 sb_add_data(dsp, dsp->sb_asp_regs[dsp->sb_data[0]]);
-//                pclog("ASP read reg %02X %02X\n", sb_data[0], sb_asp_regs[sb_data[0]]);
                 break;
                 case 0xF8:
                 if (dsp->sb_type >= SB16) break;
@@ -710,10 +655,7 @@ void sb_exec_command(sb_dsp_t *dsp)
                 case 0x04:
                 case 0x05:
                 break;
-//                default:
-//                fatal("Exec bad SB command %02X\n",sb_command);
-                
-                
+
                 /*TODO: Some more data about the DSP registeres
                  * http://the.earth.li/~tfm/oldpage/sb_dsp.html
                  * http://www.synchrondata.com/pheaven/www/area19.htm
@@ -734,7 +676,6 @@ void sb_exec_command(sb_dsp_t *dsp)
 void sb_write(uint16_t a, uint8_t v, void *priv)
 {
         sb_dsp_t *dsp = (sb_dsp_t *)priv;
-//        pclog("sb_write : Write soundblaster %04X %02X %04X:%04X %02X\n",a,v,CS,pc,dsp->sb_command);
         switch (a&0xF)
         {
                 case 6: /*Reset*/
@@ -758,7 +699,7 @@ void sb_write(uint16_t a, uint8_t v, void *priv)
                 timer_update_outstanding();
                 if (dsp->asp_data_len)
                 {
-//                        pclog("ASP data %i\n", dsp->asp_data_len);
+                        DBGLOG(1, "ASP data %i\n", dsp->asp_data_len);
                         dsp->asp_data_len--;
                         if (!dsp->asp_data_len)
                                 sb_add_data(dsp, 0);
@@ -769,8 +710,6 @@ void sb_write(uint16_t a, uint8_t v, void *priv)
                         dsp->sb_command = v;
                         if (v == 0x01)
                                 sb_add_data(dsp, 0);
-//                        if (sb_commands[v]==-1)
-//                           fatal("Bad SB command %02X\n",v);
                         dsp->sb_data_stat++;
                 }
                 else
@@ -787,11 +726,10 @@ void sb_write(uint16_t a, uint8_t v, void *priv)
 uint8_t sb_read(uint16_t a, void *priv)
 {
         sb_dsp_t *dsp = (sb_dsp_t *)priv;
-//        pclog("sb_read : Read soundblaster %04X %04X:%04X\n",a,CS,pc);
         switch (a & 0xf)
         {
                 case 0xA: /*Read data*/
-		if (dsp->uart_midi)
+		if (mpu && dsp->uart_midi)
 		{
 			return MPU401_ReadData(mpu);
 		}
@@ -801,14 +739,13 @@ uint8_t sb_read(uint16_t a, void *priv)
                         dsp->sb_read_rp++;
                         dsp->sb_read_rp &= 0xFF;
                 }
-//                pclog("SB read %02X\n",sbreaddat);
                 return dsp->sbreaddat;
                 case 0xC: /*Write data ready*/
-                if (dsp->sb_8_enable || dsp->sb_type >= SB16 )
-                        dsp->busy_count = (dsp->busy_count + 1) & 15;
+                if (dsp->sb_8_enable || dsp->sb_type >= SB16)
+                        dsp->busy_count = (dsp->busy_count + 1) & 3;
                 else
                         dsp->busy_count = 0;
-                if (dsp->wb_full || (dsp->busy_count & 8))
+                if (dsp->wb_full || (dsp->busy_count & 2))
                 {
                         dsp->wb_full = dsp->wb_time;
                         return 0xff;
@@ -846,6 +783,7 @@ void sb_dsp_init(sb_dsp_t *dsp, int type)
         dsp->sb_irqnum = 7;
         dsp->sb_8_dmanum = 1;
         dsp->sb_16_dmanum = 5;
+	mpu = NULL;
         
         sb_doreset(dsp);
 
@@ -860,7 +798,7 @@ void sb_dsp_init(sb_dsp_t *dsp, int type)
 
 void sb_dsp_setaddr(sb_dsp_t *dsp, uint16_t addr)
 {
-//        pclog("sb_dsp_setaddr : %04X\n", addr);
+        DBGLOG(1, "sb_dsp_setaddr : %04X\n", addr);
         if (dsp->sb_addr != 0) {
 	        io_removehandler(dsp->sb_addr + 6,   0x0002, sb_read, NULL, NULL, sb_write, NULL, NULL, dsp);
         	io_removehandler(dsp->sb_addr + 0xa, 0x0006, sb_read, NULL, NULL, sb_write, NULL, NULL, dsp);        
@@ -883,13 +821,11 @@ void pollsb(void *p)
         int tempi,ref;
         
         dsp->sbcount += dsp->sblatcho;
-//        pclog("PollSB %i %i %i %i\n",sb_8_enable,sb_8_pause,sb_pausetime,sb_8_output);
         if (dsp->sb_8_enable && !dsp->sb_8_pause && dsp->sb_pausetime < 0 && dsp->sb_8_output)
         {
                 int data[2];
                 
                 sb_dsp_update(dsp);
-//                pclog("Dopoll %i %02X %i\n", sb_8_length, sb_8_format, sblatcho);
                 switch (dsp->sb_8_format)
                 {
                         case 0x00: /*Mono unsigned*/
@@ -1047,41 +983,55 @@ void pollsb(void *p)
                 if (dsp->sb_8_length < 0)
                 {
                         if (dsp->sb_8_autoinit) dsp->sb_8_length = dsp->sb_8_autolen;
-                        else                    dsp->sbenable = dsp->sb_8_enable=0;
+                        else                    dsp->sbenable = dsp->sb_8_enable = 0;
                         sb_irq(dsp, 1);
                 }
         }
         if (dsp->sb_16_enable && !dsp->sb_16_pause && dsp->sb_pausetime < 0LL && dsp->sb_16_output)
         {
+		int data[2];
+
                 sb_dsp_update(dsp);
                 
                 switch (dsp->sb_16_format)
                 {
                         case 0x00: /*Mono unsigned*/
-                        dsp->sbdatl = dsp->sbdatr = sb_16_read_dma(dsp) ^ 0x8000;
+                        data[0] = sb_16_read_dma(dsp);
+                        if (data[0] == DMA_NODATA)
+                                break;
+                        dsp->sbdatl = dsp->sbdatr = data[0] ^ 0x8000;
                         dsp->sb_16_length--;
                         break;
                         case 0x10: /*Mono signed*/
-                        dsp->sbdatl = dsp->sbdatr = sb_16_read_dma(dsp);
+                        data[0] = sb_16_read_dma(dsp);
+                        if (data[0] == DMA_NODATA)
+                                break;
+                        dsp->sbdatl = dsp->sbdatr = data[0];
                         dsp->sb_16_length--;
                         break;
                         case 0x20: /*Stereo unsigned*/
-                        dsp->sbdatl = sb_16_read_dma(dsp) ^ 0x8000;
-                        dsp->sbdatr = sb_16_read_dma(dsp) ^ 0x8000;
+                        data[0] = sb_16_read_dma(dsp);
+                        data[1] = sb_16_read_dma(dsp);
+                        if (data[0] == DMA_NODATA || data[1] == DMA_NODATA)
+                                break;
+                        dsp->sbdatl = data[0] ^ 0x8000;
+                        dsp->sbdatr = data[1] ^ 0x8000;
                         dsp->sb_16_length -= 2;
                         break;
                         case 0x30: /*Stereo signed*/
-                        dsp->sbdatl = sb_16_read_dma(dsp);
-                        dsp->sbdatr = sb_16_read_dma(dsp);
+                        data[0] = sb_16_read_dma(dsp);
+                        data[1] = sb_16_read_dma(dsp);
+                        if (data[0] == DMA_NODATA || data[1] == DMA_NODATA)
+                                break;
+                        dsp->sbdatl = data[0];
+                        dsp->sbdatr = data[1];
                         dsp->sb_16_length -= 2;
                         break;
-//                        default:
-//                                fatal("Unrecognised SB 16-bit format %02X\n",sb_16_format);
                 }
 
                 if (dsp->sb_16_length < 0)
                 {
-//                        pclog("16DMA over %i\n",dsp->sb_16_autoinit);
+                        DBGLOG(1, "16DMA over %i\n",dsp->sb_16_autoinit);
                         if (dsp->sb_16_autoinit) dsp->sb_16_length = dsp->sb_16_autolen;
                         else                     dsp->sbenable = dsp->sb_16_enable = 0;
                         sb_irq(dsp, 0);
@@ -1094,7 +1044,7 @@ void pollsb(void *p)
                 {
                         sb_irq(dsp, 1);
                         dsp->sbenable = dsp->sb_8_enable;
-//                        pclog("SB pause over\n");
+                        DBGLOG(1, "SB pause over\n");
                 }
         }
 }
@@ -1104,28 +1054,10 @@ void sb_poll_i(void *p)
         sb_dsp_t *dsp = (sb_dsp_t *)p;
         int processed=0;
         dsp->sb_count_i += dsp->sblatchi;
-//        pclog("PollSBi %i %i %i %i\n",sb_8_enable,sb_8_pause,sb_pausetime,sb_8_output);        
         if (dsp->sb_8_enable && !dsp->sb_8_pause && dsp->sb_pausetime < 0 && !dsp->sb_8_output)
         {
                 switch (dsp->sb_8_format)
                 {
-#ifdef SB_TEST_RECORDING_SAW                    
-                        case 0x00: /*Unsigned mono. As the manual says, only the left channel is recorded*/
-                        case 0x10: /*Signed mono. As the manual says, only the left channel is recorded*/
-                        sb_8_write_dma(dsp, counttest);
-                        counttest+=0x10;
-                        counttest&=0xFF;
-                        dsp->sb_8_length--;
-                        break;
-                        case 0x20: /*Unsigned stereo*/
-                        case 0x30: /*Signed stereo*/
-                        sb_8_write_dma(dsp, counttest);
-                        sb_8_write_dma(dsp, counttest);
-                        counttest+=0x10;
-                        counttest&=0xFF;
-                        dsp->sb_8_length -= 2;
-                        break;
-#else                    
                         case 0x00: /*Mono unsigned As the manual says, only the left channel is recorded*/
                         sb_8_write_dma(dsp, (dsp->record_buffer[dsp->record_pos_read]>>8) ^0x80);
                         dsp->sb_8_length--;
@@ -1152,16 +1084,12 @@ void sb_poll_i(void *p)
                         dsp->record_pos_read+=2;
                         dsp->record_pos_read&=0xFFFF;
                         break;
-#endif
-//                        default:
-//                                fatal("Unrecognised SB 8-bit input format %02X\n",sb_8_format);
                 }
                 
                 if (dsp->sb_8_length < 0)
                 {
-//                        pclog("Input DMA over %i\n",sb_8_autoinit);
                         if (dsp->sb_8_autoinit) dsp->sb_8_length = dsp->sb_8_autolen;
-                        else                    dsp->sb_enable_i = dsp->sb_8_enable = 0;
+                        else                    dsp->sbenable = dsp->sb_8_enable = 0;
                         sb_irq(dsp, 1);
                 }
                 processed=1;
@@ -1170,25 +1098,6 @@ void sb_poll_i(void *p)
         {
                 switch (dsp->sb_16_format)
                 {
-#ifdef SB_TEST_RECORDING_SAW
-                        case 0x00: /*Unsigned mono. As the manual says, only the left channel is recorded*/
-                        case 0x10: /*Signed mono. As the manual says, only the left channel is recorded*/
-                        if (sb_16_write_dma(dsp, counttest))
-                                return;
-                        counttest+=0x1000;
-                        counttest&=0xFFFF;
-                        dsp->sb_16_length--;
-                        break;
-                        case 0x20: /*Unsigned stereo*/
-                        case 0x30: /*Signed stereo*/
-                        if (sb_16_write_dma(dsp, counttest))
-                                return;
-                        sb_16_write_dma(dsp, counttest);
-                        counttest+=0x1000;
-                        counttest&=0xFFFF;
-                        dsp->sb_16_length -= 2;
-                        break;
-#else
                         case 0x00: /*Unsigned mono. As the manual says, only the left channel is recorded*/
                         if (sb_16_write_dma(dsp, dsp->record_buffer[dsp->record_pos_read]^0x8000))
                                 return;
@@ -1219,21 +1128,17 @@ void sb_poll_i(void *p)
                         dsp->record_pos_read+=2;
                         dsp->record_pos_read&=0xFFFF;
                         break;
-#endif
-//                        default:
-//                                fatal("Unrecognised SB 16-bit input format %02X\n",sb_16_format);
                 }
                 
                 if (dsp->sb_16_length < 0)
                 {
-//                        pclog("16iDMA over %i\n",sb_16_autoinit);
                         if (dsp->sb_16_autoinit) dsp->sb_16_length = dsp->sb_16_autolen;
-                        else                     dsp->sb_enable_i = dsp->sb_16_enable = 0;
+                        else                     dsp->sbenable = dsp->sb_16_enable = 0;
                         sb_irq(dsp, 0);
                 }
                 processed=1;
         }
-        //Assume this is direct mode
+        /* Assume this is direct mode */
         if (!processed)
         {
                 dsp->record_pos_read+=2;
@@ -1254,77 +1159,7 @@ void sb_dsp_update(sb_dsp_t *dsp)
                 dsp->buffer[dsp->pos*2 + 1] = dsp->sbdatr;
         }
 }
+
 void sb_dsp_close(sb_dsp_t *dsp)
 {
-        #ifdef SB_DSP_RECORD_DEBUG
-            if (soundf != 0)
-            {
-                fclose(soundf);
-                soundf=0;
-            }
-        #endif
-}
-
-void sb_dsp_add_status_info(char *s, int max_len, sb_dsp_t *dsp)
-{
-        char temps[128];
-        int freq;
-
-        if (dsp->sb_timeo < 256LL)
-                freq = (int) (1000000 / (256LL - dsp->sb_timeo));
-        else
-                freq = (int) (dsp->sb_timeo - 256LL);
-
-        if (dsp->sb_8_enable && dsp->sb_8_output)
-        {
-                switch (dsp->sb_8_format)
-                {
-                        case 0x00: /*Mono unsigned*/
-                        case 0x10: /*Mono signed*/
-                        if (dsp->sb_type >= SBPRO && dsp->sb_type < SB16 && dsp->stereo)
-                        {
-                                strcpy(temps, "SB playback format : 8-bit stereo\n");
-                                freq /= 2;
-                        }
-                        else
-                                strcpy(temps, "SB playback format : 8-bit mono\n");
-                        break;
-                        case 0x20: /*Stereo unsigned*/
-                        case 0x30: /*Stereo signed*/
-                        strcpy(temps, "SB playback format : 8-bit stereo\n");
-                        break;
-                        case ADPCM_4:
-                        strcpy(temps, "SB playback format : 4-bit ADPCM\n");
-                        break;
-                        case ADPCM_26:
-                        strcpy(temps, "SB playback format : 2.6-bit ADPCM\n");
-                        break;
-                        case ADPCM_2:
-                        strcpy(temps, "SB playback format : 2-bit ADPCM\n");
-                        break;
-                }
-        }
-        else if (dsp->sb_16_enable && dsp->sb_16_output)
-        {
-                switch (dsp->sb_16_format)
-                {
-                        case 0x00: /*Mono unsigned*/
-                        case 0x10: /*Mono signed*/
-                        strcpy(temps, "SB playback format : 16-bit mono\n");
-                        break;
-                        case 0x20: /*Stereo unsigned*/
-                        case 0x30: /*Stereo signed*/
-                        strcpy(temps, "SB playback format : 16-bit stereo\n");
-                        break;
-                }
-        }
-        else
-                strcpy(temps, "SB playback stopped\n");
-        strncat(s, temps, max_len);
-
-        if ((dsp->sb_8_enable && dsp->sb_8_output) || (dsp->sb_16_enable && dsp->sb_16_output))
-        {
-                sprintf(temps, "SB playback frequency : %iHz\n", freq);
-                strncat(s, temps, max_len);
-        }
 }

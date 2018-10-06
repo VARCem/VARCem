@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic NVRAM/CMOS driver.
  *
- * Version:	@(#)nvr.h	1.0.7	2018/08/27
+ * Version:	@(#)nvr.h	1.0.8	2018/09/09
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -56,6 +56,14 @@
 #define RTC_BCDINC(x,y)	RTC_BCD(RTC_DCB(x) + y)
 
 
+/* Time sync options. */
+enum {
+    TIME_SYNC_DISABLED = 0,
+    TIME_SYNC_ENABLED,
+    TIME_SYNC_ENABLED_UTC
+};
+
+
 /* Define a generic RTC/NVRAM device. */
 typedef struct _nvr_ {
     const wchar_t	*fn;			/* pathname of image file */
@@ -71,6 +79,7 @@ typedef struct _nvr_ {
     void		(*reset)(struct _nvr_ *);
     void		(*start)(struct _nvr_ *);
     void		(*tick)(struct _nvr_ *);
+    void		(*recalc)(struct _nvr_ *);
 
     uint8_t		regs[NVR_MAXSIZE];	/* these are the registers */
 } nvr_t;
@@ -78,6 +87,8 @@ typedef struct _nvr_ {
 
 extern int		nvr_dosave;
 #ifdef EMU_DEVICE_H
+
+extern const device_t	at_nvr_old_device;
 extern const device_t	at_nvr_device;
 extern const device_t	ps_nvr_device;
 extern const device_t	amstrad_nvr_device;
@@ -88,6 +99,7 @@ extern void		nvr_init(nvr_t *);
 extern wchar_t		*nvr_path(const wchar_t *fn);
 extern int		nvr_load(void);
 extern int		nvr_save(void);
+extern void		nvr_period_recalc(void);
 
 extern int		nvr_is_leap(int year);
 extern int		nvr_get_days(int month, int year);

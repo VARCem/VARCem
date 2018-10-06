@@ -8,7 +8,7 @@
  *
  *		Implementation of the Creative CMS/GameBlaster sound device.
  *
- * Version:	@(#)snd_cms.c	1.0.5	2018/05/06
+ * Version:	@(#)snd_cms.c	1.0.6	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
@@ -243,7 +244,7 @@ cms_init(const device_t *info)
 {
     cms_t *dev;
 
-    dev = (cms_t *)malloc(sizeof(cms_t));
+    dev = (cms_t *)mem_alloc(sizeof(cms_t));
     memset(dev, 0x00, sizeof(cms_t));
 
     io_sethandler(0x0220, 16,
@@ -265,7 +266,7 @@ cms_close(void *priv)
 
 
 const device_t cms_device = {
-    "Creative Music System / Game Blaster",
+    "Creative Music System (Game Blaster)",
     DEVICE_ISA,
     0,
     cms_init, cms_close, NULL,

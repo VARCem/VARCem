@@ -8,7 +8,7 @@
  *
  *		Definitions for the SC1502X driver.
  *
- * Version:	@(#)vid_sc1502x_ramdac_h	1.0.1	2018/02/14
+ * Version:	@(#)vid_sc1502x_ramdac_h	1.0.2	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,14 +40,17 @@
 # define VIDEO_SC1502X_RAMDAC_H
 
 
-typedef struct unk_ramdac_t
-{
-        int state;
-        uint8_t ctrl;
+typedef struct {
+    int state;
+    uint8_t ctrl;
 } sc1502x_ramdac_t;
 
-void sc1502x_ramdac_out(uint16_t addr, uint8_t val, sc1502x_ramdac_t *ramdac, svga_t *svga);
-uint8_t sc1502x_ramdac_in(uint16_t addr, sc1502x_ramdac_t *ramdac, svga_t *svga);
+
+extern const device_t sc1502x_ramdac_device;
+
+
+extern void	sc1502x_ramdac_out(uint16_t addr, uint8_t val, sc1502x_ramdac_t *dev, svga_t *svga);
+extern uint8_t	sc1502x_ramdac_in(uint16_t addr, sc1502x_ramdac_t *dev, svga_t *svga);
 
 
 #endif	/*VIDEO_SC1502X_RAMDAC_H*/

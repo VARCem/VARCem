@@ -8,7 +8,7 @@
  *
  *		Trident TKD8001 RAMDAC emulation.
  *
- * Version:	@(#)vid_tkd8001_ramdac.c	1.0.2	2018/05/06
+ * Version:	@(#)vid_tkd8001_ramdac.c	1.0.3	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,62 +39,105 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../mem.h"
+#include "../../device.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_tkd8001_ramdac.h"
 
 
-void tkd8001_ramdac_out(uint16_t addr, uint8_t val, tkd8001_ramdac_t *ramdac, svga_t *svga)
+void
+tkd8001_ramdac_out(uint16_t addr, uint8_t val, tkd8001_ramdac_t *dev, svga_t *svga)
 {
-        switch (addr)
-        {
-                case 0x3C6:
-                if (ramdac->state == 4)
-                {
-                        ramdac->state = 0;
-                        ramdac->ctrl = val;
-                        switch (val >> 5)
-                        {
-                                case 0: case 1: case 2: case 3:
-                                svga->bpp = 8;
-                                break;
-                                case 5:
-                                svga->bpp = 15;
-                                break;
-                                case 6:
-                                svga->bpp = 24;
-                                break;
-                                case 7:
-                                svga->bpp = 16;
-                                break;
-                        }
-                        return;
-                }
-                break;
-                case 0x3C7: case 0x3C8: case 0x3C9:
-                ramdac->state = 0;
-                break;
-        }
-        svga_out(addr, val, svga);
+    switch (addr) {
+	case 0x3C6:
+		if (dev->state == 4) {
+			dev->state = 0;
+			dev->ctrl = val;
+			switch (val >> 5) {
+				case 0:
+				case 1:
+				case 2:
+				case 3:
+					svga->bpp = 8;
+					break;
+
+				case 5:
+					svga->bpp = 15;
+					break;
+
+				case 6:
+					svga->bpp = 24;
+					break;
+
+				case 7:
+					svga->bpp = 16;
+					break;
+			}
+			return;
+		}
+		break;
+
+	case 0x3C7:
+	case 0x3C8:
+	case 0x3C9:
+		dev->state = 0;
+		break;
+    }
+
+    svga_out(addr, val, svga);
 }
 
-uint8_t tkd8001_ramdac_in(uint16_t addr, tkd8001_ramdac_t *ramdac, svga_t *svga)
+
+uint8_t
+tkd8001_ramdac_in(uint16_t addr, tkd8001_ramdac_t *dev, svga_t *svga)
 {
-        switch (addr)
-        {
-                case 0x3C6:
-                if (ramdac->state == 4)
-                {
-                        return ramdac->ctrl;
-                }
-                ramdac->state++;
-                break;
-                case 0x3C7: case 0x3C8: case 0x3C9:
-                ramdac->state = 0;
-                break;
-        }
-        return svga_in(addr, svga);
+    switch (addr) {
+	case 0x3C6:
+		if (dev->state == 4)
+			return dev->ctrl;
+		dev->state++;
+		break;
+
+	case 0x3C7:
+	case 0x3C8:
+	case 0x3C9:
+		dev->state = 0;
+		break;
+    }
+
+    return svga_in(addr, svga);
 }
+
+
+static void *
+tkd8001_init(const device_t *info)
+{
+    tkd8001_ramdac_t *dev = (tkd8001_ramdac_t *)mem_alloc(sizeof(tkd8001_ramdac_t));
+    memset(dev, 0x00, sizeof(tkd8001_ramdac_t));
+
+    return dev;
+}
+
+
+static void
+tkd8001_close(void *priv)
+{
+    tkd8001_ramdac_t *dev = (tkd8001_ramdac_t *)priv;
+
+    if (dev != NULL)
+	free(dev);
+}
+
+
+const device_t tkd8001_ramdac_device = {
+    "Trident TKD8001 RAMDAC",
+    0,
+    0,
+    tkd8001_init, tkd8001_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

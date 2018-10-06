@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.25	2018/05/27
+ * Version:	@(#)win_ui.c	1.0.26	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,6 +56,7 @@
 #include "../devices/input/mouse.h"
 #include "../devices/video/video.h"
 #include "win.h"
+#include "resource.h"
 
 
 #ifndef GWL_WNDPROC
@@ -64,14 +65,14 @@
 
 
 #define TIMER_1SEC	1		/* ID of the one-second timer */
+#define ICONS_MAX	256		/* number of icons we can cache */
 
 
 /* Platform Public data, specific. */
 HWND		hwndMain = NULL,	/* application main window */
 		hwndRender = NULL;	/* machine render window */
-HICON		hIcon[512];		/* icon data loaded from resources */
+HICON		hIcon[ICONS_MAX];	/* icon data loaded from resources */
 RECT		oldclip;		/* mouse rect */
-int		infocus = 1;
 
 
 /* Local data. */
@@ -84,7 +85,9 @@ static HWND	input_orig_hwnd = NULL,
 static HMENU	menuMain = NULL,	/* application menu bar */
 		menuSBAR = NULL,	/* status bar menu bar */
 		*sb_menu = NULL;
-static int	sb_nparts;
+static int	sb_nparts = 0;
+static const sbpart_t *sb_parts = NULL;
+static int	infocus = 1;
 static int	hook_enabled = 0;
 static int	save_window_pos = 0;
 static int	cruft_x = 0,
@@ -155,7 +158,7 @@ sb_dlg_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 /* Create and set up the Status Bar window. */
-void
+static void
 StatusBarCreate(uintptr_t id)
 {
     int borders[3];
@@ -164,44 +167,17 @@ StatusBarCreate(uintptr_t id)
     RECT r;
 
     /* Load our icons into the cache for faster access. */
-    for (i = 128; i < 130; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 144; i < 146; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 160; i < 162; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 176; i < 178; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 192; i < 194; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 208; i < 210; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 224; i < 226; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 259; i < 260; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 384; i < 386; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 400; i < 402; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 416; i < 418; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 432; i < 434; i++)
-	hIcon[i] = LoadIconEx((PCTSTR)i);
-    for (i = 448; i < 450; i++)
+    for (i = 0; i < ICONS_MAX; i++)
 	hIcon[i] = LoadIconEx((PCTSTR)i);
 
     GetWindowRect(hwndMain, &r);
     dw = r.right - r.left;
     dh = r.bottom - r.top;
 
-    /* Load the Common Controls DLL if needed. */
-    InitCommonControls();
-
-    /* Create the window, and make sure it's using the STATUS class. */
-    hwndSBAR = CreateWindow(STATUSCLASSNAME, 
+    /* Create the window. */
+    hwndSBAR = CreateWindow(STATUSCLASSNAME,
 			    NULL,
-			    SBARS_SIZEGRIP|WS_CHILD|WS_VISIBLE|SBT_TOOLTIPS,
+			    WS_CHILD|WS_VISIBLE|SBT_TOOLTIPS|SBARS_SIZEGRIP,
 			    0, dh,
 			    dw, SB_HEIGHT,
 			    hwndMain,
@@ -223,11 +199,78 @@ StatusBarCreate(uintptr_t id)
     SendMessage(hwndSBAR, SB_SETMINHEIGHT, (WPARAM)SB_HEIGHT, (LPARAM)0);
 
     /* Load the dummy menu for this window. */
-    menuSBAR = LoadMenu(hInstance, SB_MENU_NAME);
+    menuSBAR = LoadMenu(hInstance, MENU_SB_NAME);
 
     /* Clear the menus, just in case.. */
     sb_nparts = 0;
     sb_menu = NULL;
+}
+
+
+/*
+ * Calculate the edges of all status bar parts.
+ *
+ * We do it here, and in the platform module, because not all
+ * systems implement them the same way Microsoft did. For that
+ * reason, the UI code actually specifies widths for all the
+ * parts, which we "convert" here.
+ */
+static void
+StatusBarResize(int w)
+{
+    int i, *edges;
+    int j, k, x;
+    int grippy;
+
+    /* If no parts yet, bail out. */
+    if (sb_nparts == 0) return;
+
+    /* Create local 'edges' array and populate it. */
+    edges = (int *)mem_alloc(sb_nparts * sizeof(int));
+    memset(edges, 0x00, sb_nparts * sizeof(int));
+
+    /* If we have a grippy on the status bar... */
+    //FIXME: how to determine this programmatically?  --FvK
+    grippy = 8;
+
+    /*
+     * We start at the leftmost edge of the window, and
+     * then move towards the right. The parameter given
+     * to Windows is the *right* side edge!
+     *
+     * No variable-part offset yet.
+     */
+    k = x = 0;
+    for (i = 0; i < sb_nparts; i++) {
+	if (sb_parts[i].width == 0) {
+		/*
+		 * This is the variable-length part, which
+		 * extends to the right edge of the window.
+		 * So, we must get the window length, and
+		 * then calculate length for this part, and
+		 * then the position for all parts following.
+		 *
+		 * First, see how much space we need for the
+		 * parts following this one.
+		 */
+		k = w - x - grippy;
+		for (j = i + 1; j < sb_nparts; j++)
+			k -= sb_parts[j].width;
+
+		/* OK, now we know how wide this part can be. */
+		edges[i] = x + k;
+	} else {
+		x += sb_parts[i].width;
+		if (i == (sb_nparts - 1))
+			x += grippy;
+		edges[i] = k + x;
+	}
+    }
+
+    /* Send the list to the status bar window. */
+    SendMessage(hwndSBAR, SB_SETPARTS, (WPARAM)sb_nparts, (LPARAM)edges);
+
+    free(edges);
 }
 
 
@@ -237,7 +280,7 @@ LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     BOOL bControlKeyDown;
     KBDLLHOOKSTRUCT *p;
 
-    if (nCode < 0 || nCode != HC_ACTION)
+    if (nCode < 0 || nCode != HC_ACTION || (!mouse_capture && !vid_fullscreen))
 	return(CallNextHookEx(hKeyboardHook, nCode, wParam, lParam));
 	
     p = (KBDLLHOOKSTRUCT*)lParam;
@@ -301,28 +344,11 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				/* Main Window. */
 				GetWindowRect(hwnd, &rect);
+				get_screen_size_natural(&x, &y);
                         	MoveWindow(hwnd, rect.left, rect.top,
-					unscaled_size_x + cruft_x,
-					unscaled_size_y + cruft_y + cruft_sb,
-					TRUE);
-
-#if 0
-				/* Render window. */
-				MoveWindow(hwndRender, 0, 0,
-					   unscaled_size_x,
-					   unscaled_size_y,
+					   x + cruft_x, y + cruft_y + cruft_sb,
 					   TRUE);
 
-				/* Status bar. */
-				GetWindowRect(hwndRender, &rect);
-				MoveWindow(hwndSBAR,
-
-				if (mouse_capture) {
-					GetWindowRect(hwndRender, &rect);
-
-					ClipCursor(&rect);
-				}
-#endif
 				break;
 
 			case IDM_REMEMBER:
@@ -369,6 +395,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		/* Update the Status bar. */
 		MoveWindow(hwndSBAR, 0, scrnsz_y, scrnsz_x, cruft_sb, TRUE);
+		StatusBarResize(scrnsz_x);
 
 		/* Update the renderer if needed. */
 		vidapi_resize(scrnsz_x, scrnsz_y);
@@ -417,14 +444,14 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pc_onesec();
 		break;
 
-	case WM_RESETD3D:
+	case WM_RESET_D3D:
 		plat_startblit();
 		vidapi_reset();
 		plat_endblit();
 		break;
 
-	case WM_LEAVEFULLSCREEN:
-		plat_setfullscreen(0);
+	case WM_LEAVE_FS:
+		ui_fullscreen(0);
 		config_save();
 		break;
 
@@ -440,15 +467,15 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(0);
 		break;
 
-	case WM_SHOWSETTINGS:
-		plat_pause(1);
+	case WM_SHOW_CFG:
+		pc_pause(1);
 		if (dlg_settings(1) == 2)
 			pc_reset_hard_init();
-		plat_pause(0);
+		pc_pause(0);
 		break;
 
 	case WM_PAUSE:
-		plat_pause(dopause ^ 1);
+		pc_pause(dopause ^ 1);
 		menu_set_item(IDM_PAUSE, dopause);
 		break;
 
@@ -478,22 +505,107 @@ SubWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-/* Initialize the Win32 User Interface module. */
+/* Catch WM_INPUT messages for 'current focus' window. */
+#ifdef __amd64__
+static LRESULT CALLBACK
+#else
+static BOOL CALLBACK
+#endif
+input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) {
+	case WM_INPUT:
+		keyboard_handle(lParam, infocus);
+		break;
+
+	case WM_SETFOCUS:
+		infocus = 1;
+		if (! hook_enabled) {
+			hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL,
+							 LowLevelKeyboardProc,
+							 GetModuleHandle(NULL),
+							 0);
+			hook_enabled = 1;
+		}
+		break;
+
+	case WM_KILLFOCUS:
+		infocus = 0;
+		ui_mouse_capture(0);
+		if (hook_enabled) {
+			UnhookWindowsHookEx(hKeyboardHook);
+			hook_enabled = 0;
+		}
+		break;
+
+	case WM_LBUTTONUP:
+		if (! vid_fullscreen)
+			ui_mouse_capture(1);
+		break;
+
+	case WM_MBUTTONUP:
+		if (mouse_get_buttons() < 3)
+			ui_mouse_capture(0);
+		break;
+
+	default:
+		return(CallWindowProc((WNDPROC)input_orig_proc,
+				      hwnd, message, wParam, lParam));
+    }
+
+    return(0);
+}
+
+
+/* Set up a handler for the 'currently active' window. */
+void
+plat_set_input(HWND h)
+{
+    /* If needed, rest the old one first. */
+    if (input_orig_hwnd != NULL) {
+	SetWindowLongPtr(input_orig_hwnd, GWL_WNDPROC,
+			 (LONG_PTR)input_orig_proc);
+    }
+
+    /* Redirect the window procedure so we can catch WM_INPUT. */
+    input_orig_proc = GetWindowLongPtr(h, GWLP_WNDPROC);
+    input_orig_hwnd = h;
+    SetWindowLongPtr(h, GWL_WNDPROC, (LONG_PTR)input_proc);
+}
+
+
+/* UI: reset the lowlevel (platform) UI. */
+void
+ui_plat_reset(void)
+{
+    /* Load the main menu from the appropriate DLL. */
+    menuMain = LoadMenu(plat_lang_dll(), MENU_MAIN_NAME);
+
+    SetMenu(hwndMain, menuMain);
+
+    /* Load the statusbar menu. */
+    menuSBAR = LoadMenu(hInstance, MENU_SB_NAME);
+}
+
+
+/* UI: initialize the Win32 User Interface module. */
 int
 ui_init(int nCmdShow)
 {
     WCHAR title[200];
     WNDCLASSEX wincl;			/* buffer for main window's class */
+    INITCOMMONCONTROLSEX icex;		/* common controls, new style */
     RAWINPUTDEVICE ridev;		/* RawInput device */
     MSG messages;			/* received-messages buffer */
     HACCEL haccel;			/* handle to accelerator table */
     DWORD flags;
     int ret;
 
-#if 0
-    /* We should have an application-wide at_exit catcher. */
-    atexit(plat_mouse_capture);
-#endif
+    /* Register the new version of the Common Controls. */
+    memset(&icex, 0x00, sizeof(INITCOMMONCONTROLSEX));
+    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icex.dwICC  = ICC_LISTVIEW_CLASSES;
+    InitCommonControlsEx(&icex);
 
     if (settings_only) {
 	if (! pc_init()) {
@@ -513,8 +625,8 @@ ui_init(int nCmdShow)
     wincl.lpfnWndProc = MainWindowProcedure;
     wincl.style = CS_DBLCLKS;		/* Catch double-clicks */
     wincl.cbSize = sizeof(WNDCLASSEX);
-    wincl.hIcon = LoadIcon(hInstance, (LPCTSTR)100);
-    wincl.hIconSm = LoadIcon(hInstance, (LPCTSTR)100);
+    wincl.hIcon = LoadIcon(hInstance, (LPCTSTR)ICON_MAIN);
+    wincl.hIconSm = LoadIcon(hInstance, (LPCTSTR)ICON_MAIN);
     wincl.hCursor = NULL;
     wincl.lpszMenuName = NULL;
     wincl.cbClsExtra = 0;
@@ -529,12 +641,6 @@ ui_init(int nCmdShow)
     if (! RegisterClassEx(&wincl))
 			return(2);
 
-    /* Load the Window Menu(s) from the resources. */
-    menuMain = LoadMenu(plat_lang_dll(), MENU_NAME);
-
-    /* Load the Languages into the current menu. */
-    plat_lang_menu();
-
     /* Set up main window for resizing if configured. */
     flags = WS_OVERLAPPEDWINDOW;
     if (! vid_resize)
@@ -547,16 +653,16 @@ ui_init(int nCmdShow)
      * size (default 640x480), and we have no idea what
      * our window decorations are, size-wise.
      *
-     * Rather than depending on the GetSYstemMetrics API
-     * calls (which return incorrect data of Vista+), the
-     * simplest trick is to just set the desired window
+     * Rather than depending on the GetSystemMetrics API
+     * calls (which return incorrect data as of Vista+),
+     * the simplest trick is to just set the desired window
      * size, and create the window.  The first WM_SIZE
      * message will indicate the client size left after
      * creating all the decorations, and the difference
      * is the decoration overhead ('cruft') we need to
      * always keep in mind when changing the window size.
      */
-    wsprintf(title, L"%S", emu_version, sizeof_w(title));
+    swprintf(title, sizeof_w(title), L"%s %s", EMU_NAME, emu_version);
     hwndMain = CreateWindow(
 		CLASS_NAME,			/* class name */
 		title,				/* Title Text */
@@ -564,18 +670,21 @@ ui_init(int nCmdShow)
 		CW_USEDEFAULT, CW_USEDEFAULT,	/* no preset position */
 		scrnsz_x, scrnsz_y,		/* window size in pixels */
 		HWND_DESKTOP,			/* child of desktop */
-		menuMain,			/* menu */
+		NULL,				/* menu */
 		hInstance,			/* Program Instance handler */
 		NULL);				/* no Window Creation data */
 
+    /* Create the status bar window. */
+    StatusBarCreate(IDC_STATBAR);
+
     ui_window_title(title);
+
+    /* Reset all menus to their defaults. */
+    ui_reset();
 
     /* Move to the last-saved position if needed. */
     if (window_remember)
 	MoveWindow(hwndMain, window_x, window_y, window_w, window_h, FALSE);
-
-    /* Reset all menus to their defaults. */
-    ui_menu_reset_all();
 
     /* Load the accelerator table */
     haccel = LoadAccelerators(hInstance, ACCEL_NAME);
@@ -639,9 +748,6 @@ ui_init(int nCmdShow)
     if (hwndRender != NULL)
 	MoveWindow(hwndRender, 0, 0, scrnsz_x, scrnsz_y, TRUE);
 
-    /* Create the status bar window. */
-    StatusBarCreate(IDC_STATBAR);
-
     /* Initialize the configured Video API. */
 again:
     if (! vidapi_set(vid_api)) {
@@ -655,8 +761,8 @@ again:
 	 * Inform the user, and ask if they want to reset
 	 * to the system default one instead.
 	 */
-	_swprintf(title, get_string(IDS_ERR_NORENDR),
-		  vidapi_internal_name(vid_api));
+	swprintf(title, sizeof_w(title),
+		 get_string(IDS_ERR_NORENDR), vidapi_internal_name(vid_api));
 	if (ui_msgbox(MBX_CONFIG, title) != 0) {
 		/* Nope, they don't, so just exit. */
 		return(5);
@@ -669,7 +775,7 @@ again:
 
     /* Initialize the rendering window, or fullscreen. */
     if (start_in_fullscreen)
-	plat_setfullscreen(1);
+	ui_fullscreen(1);
 
     /* Initialize the mouse module. */
     win_mouse_init();
@@ -678,7 +784,7 @@ again:
     pc_reset_hard();
 
     /* Set the PAUSE mode depending on the renderer. */
-    plat_pause(0);
+    pc_pause(0);
 
     /*
      * Everything has been configured, and all seems to work,
@@ -709,20 +815,20 @@ again:
 
 	if (mouse_capture && keyboard_ismsexit()) {
 		/* Release the in-app mouse. */
-		plat_mouse_capture(0);
+		ui_mouse_capture(0);
         }
 
 	if (vid_fullscreen && keyboard_isfsexit()) {
 		/* Signal "exit fullscreen mode". */
-		/* pclog("leave full screen though key combination\n"); */
-		plat_setfullscreen(0);
+		/* INFO("leave full screen though key combination\n"); */
+		ui_fullscreen(0);
 	}
     }
 
     timeEndPeriod(1);
 
     if (mouse_capture)
-	plat_mouse_capture(0);
+	ui_mouse_capture(0);
 
     /* Close down the emulator. */
     plat_stop();
@@ -736,91 +842,7 @@ again:
 }
 
 
-/* Catch WM_INPUT messages for 'current focus' window. */
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
-input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message) {
-	case WM_INPUT:
-#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
-pclog("UI: hwnd=%08lx WM_INPUT (infocus=%d) !\n", hwnd, infocus);
-#endif
-		keyboard_handle(lParam, infocus);
-		break;
-
-	case WM_SETFOCUS:
-#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
-pclog("UI: hwnd=%08lx WM_SETFOCUS (infocus=%d) !\n", hwnd, infocus);
-#endif
-		infocus = 1;
-		if (! hook_enabled) {
-			hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL,
-							 LowLevelKeyboardProc,
-							 GetModuleHandle(NULL),
-							 0);
-			hook_enabled = 1;
-		}
-		break;
-
-	case WM_KILLFOCUS:
-#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
-pclog("UI: hwnd=%08lx WM_KILLFOCUS (infocus=%d) !\n", hwnd, infocus);
-#endif
-		infocus = 0;
-		plat_mouse_capture(0);
-		if (hook_enabled) {
-			UnhookWindowsHookEx(hKeyboardHook);
-			hook_enabled = 0;
-		}
-		break;
-
-	case WM_LBUTTONUP:
-#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
-pclog("UI: hwnd=%08lx WM_LBUTTONUP (infocus=%d) !\n", hwnd, infocus);
-#endif
-		if (! vid_fullscreen)
-			plat_mouse_capture(1);
-		break;
-
-	case WM_MBUTTONUP:
-#if defined(WALTJE) && defined(_DEBUG) && defined(USE_SDL)
-pclog("UI: hwnd=%08lx WM_MBUTTONUP (infocus=%d) !\n", hwnd, infocus);
-#endif
-		if (mouse_get_buttons() < 3)
-			plat_mouse_capture(0);
-		break;
-
-	default:
-		return(CallWindowProc((WNDPROC)input_orig_proc,
-				      hwnd, message, wParam, lParam));
-    }
-
-    return(0);
-}
-
-
-/* Set up a handler for the 'currently active' window. */
-void
-plat_set_input(HWND h)
-{
-    /* If needed, rest the old one first. */
-    if (input_orig_hwnd != NULL) {
-	SetWindowLongPtr(input_orig_hwnd, GWL_WNDPROC,
-			 (LONG_PTR)input_orig_proc);
-    }
-
-    /* Redirect the window procedure so we can catch WM_INPUT. */
-    input_orig_proc = GetWindowLongPtr(h, GWLP_WNDPROC);
-    input_orig_hwnd = h;
-    SetWindowLongPtr(h, GWL_WNDPROC, (LONG_PTR)input_proc);
-}
-
-
-/* Tell the UI about a new screen resolution. */
+/* UI support: tell the UI about a new screen resolution. */
 void
 ui_resize(int x, int y)
 {
@@ -838,40 +860,7 @@ ui_resize(int x, int y)
 }
 
 
-/*
- * Re-load and reset the entire UI.
- *
- * This is needed after we change the language.
- */
-void
-ui_update(void)
-{
-    int i;
-
-    /* Load the main menu from the appropriate DLL. */
-    menuMain = LoadMenu(plat_lang_dll(), MENU_NAME);
-    SetMenu(hwndMain, menuMain);
-
-    /* Load the statusbar menu. */
-    menuSBAR = LoadMenu(hInstance, SB_MENU_NAME);
-
-    /* Reset all main menu items. */
-    ui_menu_reset_all();
-
-    /* Load the Languages into the current menu. */
-    plat_lang_menu();
-
-    /* Update the statusbar menus. */
-    ui_sb_update();
-
-    /* Reset the mouse-capture message. */
-    i = mouse_capture;
-    mouse_capture = !mouse_capture;
-    plat_mouse_capture(i);
-}
-
-
-/* Update the application's title bar. */
+/* UI support: update the application's title bar. */
 wchar_t *
 ui_window_title(const wchar_t *s)
 {
@@ -891,7 +880,7 @@ ui_window_title(const wchar_t *s)
 }
 
 
-/* Set cursor visible or not. */
+/* UI support: set cursor visible or not. */
 void
 ui_show_cursor(int val)
 {
@@ -912,7 +901,7 @@ ui_show_cursor(int val)
 }
 
 
-/* Show or hide the render window. */
+/* UI support: show or hide the render window. */
 void
 ui_show_render(int on)
 {
@@ -927,124 +916,63 @@ ui_show_render(int on)
 
 /* Set the desired fullscreen/windowed mode. */
 void
-plat_setfullscreen(int on)
+plat_fullscreen(int on)
 {
-    /* Want off and already off? */
-    if (!on && !vid_fullscreen) return;
-
-    /* Want on and already on? */
-    if (on && vid_fullscreen) return;
-
-    if (on && vid_fullscreen_first) {
-	vid_fullscreen_first = 0;
-	ui_msgbox(MBX_INFO, (wchar_t *)IDS_MSG_WINDOW);
-    }
-
-    /* OK, claim the video. */
-    plat_startblit();
-    video_wait_for_blit();
-
     win_mouse_close();
-
-    /* Close the current mode, and open the new one. */
-    plat_vidapis[vid_api]->close();
-    vid_fullscreen = on;
-    plat_vidapis[vid_api]->init(vid_fullscreen);
 
 #ifdef USE_WX
     wx_set_fullscreen(on);
 #endif
 
     win_mouse_init();
-
-    /* Release video and make it redraw the screen. */
-    plat_endblit();
-    device_force_redraw();
-
-    /* Finally, handle the host's mouse cursor. */
-    ui_show_cursor(vid_fullscreen ? 0 : -1);
 }
 
 
-/* Pause or unpause the emulator. */
-void
-plat_pause(int p)
+/* Grab the current keyboard state. */
+int
+plat_kbd_state(void)
 {
-    static wchar_t oldtitle[512];
-    wchar_t title[512];
+    BYTE kbdata[256];
+    int ret = 0x00;
 
-    /* If un-pausing, as the renderer if that's OK. */
-    if (p == 0)
-	p = vidapi_pause();
+    /* Grab the system keyboard state. */
+    memset(kbdata, 0x00, sizeof(kbdata));
+    GetKeyboardState(kbdata);
 
-    /* If already so, done. */
-    if (dopause == p) return;
+    /* Pick out the keys we are interested in. */
+    if (kbdata[VK_NUMLOCK]) ret |= KBD_FLAG_NUM;
+    if (kbdata[VK_CAPITAL]) ret |= KBD_FLAG_CAPS;
+    if (kbdata[VK_SCROLL]) ret |= KBD_FLAG_SCROLL;
+    if (kbdata[VK_PAUSE]) ret |= KBD_FLAG_PAUSE;
 
-    if (p) {
-	wcscpy(oldtitle, ui_window_title(NULL));
-	wcscpy(title, oldtitle);
-	wcscat(title, L" - PAUSED -");
-	ui_window_title(title);
-    } else {
-	ui_window_title(oldtitle);
-    }
-
-    dopause = p;
-
-    /* Update the actual menu item. */
-    menu_set_item(IDM_PAUSE, dopause);
+    return(ret);
 }
 
 
-/* Enable or disable mouse clipping. */
+/* UI support: enable or disable mouse clipping. */
 void
 plat_mouse_capture(int on)
 {
-    const wchar_t *str = NULL;
     RECT rect;
 
-    /* Do not try to capture the mouse if no mouse configured. */
-    if (mouse_type == MOUSE_NONE) return;
-
-    if ((on == -1) || (!on && mouse_capture)) {
+    if ((on == -1) || !on) {
 	/* Disable the in-app mouse. */
 	if (on == -1)
 		GetClipCursor(&oldclip);
 	  else
 		ClipCursor(&oldclip);
-
-	ui_show_cursor(-1);
-
-	str = get_string(IDS_MSG_CAPTURE);
-
-	/* We no longer have the mouse. */
-	mouse_capture = 0;
     } else if (on && !mouse_capture) {
 	/* Enable the in-app mouse. */
 	GetClipCursor(&oldclip);
 	GetWindowRect(hwndRender, &rect);
 	ClipCursor(&rect);
-
-	ui_show_cursor(0);
-
-	if (mouse_get_buttons() > 2)
-		str = get_string(IDS_MSG_MRLS_1);
-	  else
-		str = get_string(IDS_MSG_MRLS_2);
-
-	/* We got the mouse. */
-	mouse_capture = 1;
     }
-
-    /* Set the correct message on the status bar. */
-    if (str != NULL)
-	ui_sb_text_set_w(str);
 }
 
 
-/* Add an item to a menu. */
+/* UI support: add an item to a menu. */
 void
-menu_add_item(int idm, int new_id, const wchar_t *str)
+menu_add_item(int idm, int type, int new_id, const wchar_t *str)
 {
     MENUITEMINFO info;
     HMENU menu;
@@ -1054,22 +982,26 @@ menu_add_item(int idm, int new_id, const wchar_t *str)
     info.cbSize = sizeof(info);
     info.fMask = MIIM_SUBMENU;
     if (! GetMenuItemInfo(menuMain, idm, FALSE, &info)) {
-	pclog("UI: cannot find submenu %d\n", idm);
+	ERRLOG("UI: cannot find submenu %d\n", idm);
 	return;
     }
     menu = info.hSubMenu;
 
-    if (new_id >= 0)
-	AppendMenu(menu, MF_STRING, new_id, str);
-      else
-	AppendMenu(menu, MF_SEPARATOR, 0, NULL);
+    switch(type) {
+	case ITEM_SEPARATOR:
+		AppendMenu(menu, MF_SEPARATOR, 0, NULL);
+		break;
+
+	default:
+		AppendMenu(menu, MF_STRING, new_id, str);
+    }
 
     /* We changed the menu bar, so redraw it. */
     DrawMenuBar(hwndMain);
 }
 
 
-/* Enable or disable a menu item. */
+/* UI support: enable or disable a menu item. */
 void
 menu_enable_item(int idm, int val)
 {
@@ -1077,7 +1009,7 @@ menu_enable_item(int idm, int val)
 }
 
 
-/* Set (check) or clear (uncheck) a menu item. */
+/* UI support: set/check a menu item. */
 void
 menu_set_item(int idm, int val)
 {
@@ -1085,7 +1017,7 @@ menu_set_item(int idm, int val)
 }
 
 
-/* Set a radio group menu item. */
+/* UI support: set a radio group menu item. */
 void
 menu_set_radio_item(int idm, int num, int val)
 {
@@ -1100,25 +1032,9 @@ menu_set_radio_item(int idm, int num, int val)
 }
 
 
-/* Initialize the status bar. */
-void
-sb_setup(int parts, const int *widths)
-{
-    SendMessage(hwndSBAR, SB_SETPARTS, (WPARAM)parts, (LPARAM)widths);
-
-    if (sb_menu != NULL)
-	sb_menu_destroy();
-
-    sb_menu = (HMENU *)malloc(parts * sizeof(HMENU));
-    memset(sb_menu, 0x00, parts * sizeof(HMENU));
-
-    sb_nparts = parts;
-}
-
-
-/* Delete all menus from the status bar. */
-void
-sb_menu_destroy(void)
+/* UI support: delete all menus from the status bar. */
+static void
+menu_destroy(void)
 {
     int i;
 
@@ -1135,7 +1051,68 @@ sb_menu_destroy(void)
 }
 
 
-/* Create a menu for a status bar part. */
+/* UI support: reset the status bar. */
+void
+sb_setup(int nparts, const sbpart_t *data)
+{
+    RECT r;
+
+    /* Set the info. */
+    sb_nparts = nparts;
+    sb_parts = data;
+
+    if (sb_menu != NULL) {
+	menu_destroy();
+    }
+
+    /* First, get width of the status bar window. */
+    if (nparts > 0) {
+	/* Calculate and set up the parts. */
+	GetWindowRect(hwndSBAR, &r);
+	StatusBarResize(r.right - r.left);
+
+	/* Allocate and clear a new menu. */
+	sb_menu = (HMENU *)mem_alloc(nparts * sizeof(HMENU));
+	memset(sb_menu, 0x00, nparts * sizeof(HMENU));
+    }
+}
+
+
+/* UI support: set the icon ID for a status bar field. */
+void
+sb_set_icon(int part, int icon)
+{
+    HANDLE ptr;
+
+    if (icon == 255) ptr = NULL;
+      else ptr = hIcon[(intptr_t)icon];
+
+    SendMessage(hwndSBAR, SB_SETICON, part, (LPARAM)ptr);
+}
+
+
+/* UI support: set a text label for a status bar field. */
+void
+sb_set_text(int part, const wchar_t *str)
+{
+    int flags;
+
+//    flags = (part  < (sb_nparts - 2)) ? SBT_NOBORDERS : SBT_POPOUT;
+    flags = (part  < (sb_nparts - 2)) ? SBT_NOBORDERS : 0;
+
+    SendMessage(hwndSBAR, SB_SETTEXT, part | flags, (LPARAM)str);
+}
+
+
+/* UI support: set a tooltip for a status bar field. */
+void
+sb_set_tooltip(int part, const wchar_t *str)
+{
+    SendMessage(hwndSBAR, SB_SETTIPTEXT, part, (LPARAM)str);
+}
+
+
+/* UI support: create a menu for a status bar part. */
 void
 sb_menu_create(int part)
 {
@@ -1147,7 +1124,7 @@ sb_menu_create(int part)
 }
 
 
-/* Add an item to a (status bar) menu. */
+/* UI support: add an item to a (status bar) menu. */
 void
 sb_menu_add_item(int part, int idm, const wchar_t *str)
 {
@@ -1158,7 +1135,7 @@ sb_menu_add_item(int part, int idm, const wchar_t *str)
 }
 
 
-/* Enable or disable a status bar menu item. */
+/* UI support: enable or disable a status bar menu item. */
 void
 sb_menu_enable_item(int part, int idm, int val)
 {
@@ -1167,38 +1144,9 @@ sb_menu_enable_item(int part, int idm, int val)
 }
 
 
-/* Set or reset a status bar menu item. */
+/* UI support: set or reset a status bar menu item. */
 void
 sb_menu_set_item(int part, int idm, int val)
 {
     CheckMenuItem(sb_menu[part], idm, val ? MF_CHECKED : MF_UNCHECKED);
-}
-
-
-/* Set the icon ID for a status bar field. */
-void
-sb_set_icon(int part, int icon)
-{
-    HANDLE ptr;
-
-    if (icon == -1) ptr = NULL;
-      else ptr = hIcon[(intptr_t)icon];
-
-    SendMessage(hwndSBAR, SB_SETICON, part, (LPARAM)ptr);
-}
-
-
-/* Set a text label for a status bar field. */
-void
-sb_set_text(int part, const wchar_t *str)
-{
-    SendMessage(hwndSBAR, SB_SETTEXT, part | SBT_NOBORDERS, (LPARAM)str);
-}
-
-
-/* Set a tooltip for a status bar field. */
-void
-sb_set_tooltip(int part, const wchar_t *str)
-{
-    SendMessage(hwndSBAR, SB_SETTIPTEXT, part, (LPARAM)str);
 }

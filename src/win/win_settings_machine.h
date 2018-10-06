@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.9	2018/09/28
+ * Version:	@(#)win_settings_machine.h	1.0.9	2018/09/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,9 +42,9 @@
  *									*
  ************************************************************************/
 
-static int      romstolist[ROM_MAX],
-                romstomachine[ROM_MAX],
-                machinetolist[ROM_MAX], listtomachine[ROM_MAX];
+static wchar_t	*mach_names[256];
+static int	mach_to_list[256],
+		list_to_mach[256];
 
 
 static void
@@ -55,16 +55,14 @@ machine_recalc_cpu(HWND hdlg)
     int cpu_flags;
 #endif
     int cpu_type;
-    int rs = 0;
 
-    rs = machine_getromset_ex(temp_machine);
-    cpu_flags = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[temp_cpu].cpu_flags;
-    cpu_type = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[temp_cpu].cpu_type;
+    cpu_type = machines[temp_machine].cpu[temp_cpu_m].cpus[temp_cpu].cpu_type;
+    cpu_flags = machines[temp_machine].cpu[temp_cpu_m].cpus[temp_cpu].cpu_flags;
 
     h = GetDlgItem(hdlg, IDC_COMBO_WS);
     if ((cpu_type >= CPU_286) && (cpu_type <= CPU_386DX))
 	EnableWindow(h, TRUE);
-    else
+      else
 	EnableWindow(h, FALSE);
 
 #ifdef USE_DYNAREC
@@ -79,11 +77,16 @@ machine_recalc_cpu(HWND hdlg)
 	 * a warning so they know.
 	 */
 	if (cpu_flags & CPU_REQUIRES_DYNAREC) {
-#ifdef RELEASE_BUILD
+#if 0
 		if (! temp_dynarec) {
 			//FIXME: make this a messagebox with a user warning instead!  --FvK
 			fatal("Attempting to select a CPU that requires the recompiler and does not support it at the same time\n");
 		}
+#endif
+
+#ifdef RELEASE_BUILD
+		/* Since it is required, lock the checkbox. */
+		EnableWindow(h, FALSE);
 #endif
 	} else {
 		/* Supported but not required, unlock the checkbox. */
@@ -100,7 +103,6 @@ machine_recalc_cpu(HWND hdlg)
 #endif
 
     h = GetDlgItem(hdlg, IDC_CHECK_FPU);
-    cpu_type = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[temp_cpu].cpu_type;
     if ((cpu_type < CPU_i486DX) && (cpu_type >= CPU_286)) {
 	EnableWindow(h, TRUE);
     } else if (cpu_type < CPU_286) {
@@ -122,15 +124,12 @@ machine_recalc_cpu_m(HWND hdlg)
     const char *stransi;
     HWND h;
     int c = 0;
-    int rs = 0;
-
-    rs = machine_getromset_ex(temp_machine);
 
     h = GetDlgItem(hdlg, IDC_COMBO_CPU);
     SendMessage(h, CB_RESETCONTENT, 0, 0);
     c = 0;
-    while (machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[c].cpu_type != -1) {
-	stransi = machines[romstomachine[rs]].cpu[temp_cpu_m].cpus[c].name;
+    while (machines[temp_machine].cpu[temp_cpu_m].cpus[c].cpu_type != -1) {
+	stransi = machines[temp_machine].cpu[temp_cpu_m].cpus[c].name;
 	mbstowcs(temp, stransi, sizeof_w(temp));
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	c++;
@@ -151,25 +150,22 @@ machine_recalc_machine(HWND hdlg)
     WCHAR temp[128];
     const char *stransi;
     const device_t *dev;
-    HWND h;
-    int c = 0;
-    int rs = 0;
     UDACCEL accel;
-
-    rs = machine_getromset_ex(temp_machine);
+    HWND h;
+    int c;
 
     h = GetDlgItem(hdlg, IDC_CONFIGURE_MACHINE);
     dev = machine_getdevice(temp_machine);
     if (dev != NULL && dev->config != NULL)
 	EnableWindow(h, TRUE);
-    else
+      else
 	EnableWindow(h, FALSE);
 
     h = GetDlgItem(hdlg, IDC_COMBO_CPU_TYPE);
     SendMessage(h, CB_RESETCONTENT, 0, 0);
     c = 0;
-    while (machines[romstomachine[rs]].cpu[c].cpus != NULL && c < 4) {
-	stransi = machines[romstomachine[rs]].cpu[c].name;
+    while (machines[temp_machine].cpu[c].cpus != NULL && c < 4) {
+	stransi = machines[temp_machine].cpu[c].name;
 	mbstowcs(temp, stransi, sizeof_w(temp));
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	c++;
@@ -181,25 +177,25 @@ machine_recalc_machine(HWND hdlg)
     SendMessage(h, CB_SETCURSEL, temp_cpu_m, 0);
     if (c == 1)
 	EnableWindow(h, FALSE);
-    else
+      else
 	EnableWindow(h, TRUE);
 
     machine_recalc_cpu_m(hdlg);
 
     h = GetDlgItem(hdlg, IDC_MEMSPIN);
-    SendMessage(h, UDM_SETRANGE, 0, (machines[romstomachine[rs]].min_ram << 16) | machines[romstomachine[rs]].max_ram);
+    SendMessage(h, UDM_SETRANGE, 0, (machines[temp_machine].min_ram << 16) | machines[temp_machine].max_ram);
     accel.nSec = 0;
-    accel.nInc = machines[romstomachine[rs]].ram_granularity;
+    accel.nInc = machines[temp_machine].ram_granularity;
     SendMessage(h, UDM_SETACCEL, 1, (LPARAM)&accel);
 
-    if (!(machines[romstomachine[rs]].flags & MACHINE_AT) || (machines[romstomachine[rs]].ram_granularity >= 128)) {
+    if (!(machines[temp_machine].flags & MACHINE_AT) || (machines[temp_machine].ram_granularity >= 128)) {
 	SendMessage(h, UDM_SETPOS, 0, temp_mem_size);
 	h = GetDlgItem(hdlg, IDC_TEXT_MB);
-	SendMessage(h, WM_SETTEXT, 0, (LPARAM)get_string(IDS_3334));
+	SendMessage(h, WM_SETTEXT, 0, win_string(IDS_3334));
     } else {
 	SendMessage(h, UDM_SETPOS, 0, temp_mem_size / 1024);
 	h = GetDlgItem(hdlg, IDC_TEXT_MB);
-	SendMessage(h, WM_SETTEXT, 0, (LPARAM)get_string(IDS_3330));
+	SendMessage(h, WM_SETTEXT, 0, win_string(IDS_3330));
     }
 }
 
@@ -213,40 +209,38 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
     char tempA[128];
-    const char *stransi;
+    wchar_t *str;
     HWND h;
-    int c;
-    int d = 0;
+    int c, d;
 
     switch (message) {
 	case WM_INITDIALOG:
 		h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
-		for (c = 0; c < ROM_MAX; c++)
-			romstolist[c] = 0;
-		c = d = 0;
-		while (machines[c].id != -1) {
-			if (romspresent[machines[c].id]) {
-				stransi = machines[c].name;
-				mbstowcs(temp, stransi, sizeof_w(temp));
-				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-				machinetolist[c] = d;
-				listtomachine[d] = c;
-				romstolist[machines[c].id] = d;
-				romstomachine[machines[c].id] = c;
-				d++;
-			}
-			c++;
+
+		/*
+		 * Populate the Machines combo.
+		 *
+		 * The necessary data was already built
+		 * by the calling code, so we only have
+		 * to add it to the combo here.
+		 */
+		c = 0;
+		while(1) {
+			str = mach_names[c++];
+			if (str == NULL)
+				break;
+
+			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)str);
 		}
-		SendMessage(h, CB_SETCURSEL, machinetolist[temp_machine], 0);
+
+		SendMessage(h, CB_SETCURSEL, mach_to_list[temp_machine], 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_WS);
-                SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_3335));
-
+                SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3335));
 		for (c = 0; c < 8; c++) {
 			swprintf(temp, sizeof_w(temp), L"%i", c);
         	        SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 		}
-
 		SendMessage(h, CB_SETCURSEL, temp_wait_states, 0);
 
 #ifdef USE_DYNAREC
@@ -257,8 +251,14 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_MEMSPIN);
 		SendMessage(h, UDM_SETBUDDY, (WPARAM)GetDlgItem(hdlg, IDC_MEMTEXT), 0);
 
-       	        h = GetDlgItem(hdlg, IDC_CHECK_SYNC);
-                SendMessage(h, BM_SETCHECK, temp_sync, 0);
+		h = GetDlgItem(hdlg, IDC_COMBO_SYNC);
+               	SendMessage(h, CB_ADDSTRING,
+			    TIME_SYNC_DISABLED, win_string(IDS_DISABLED));
+               	SendMessage(h, CB_ADDSTRING,
+			    TIME_SYNC_ENABLED, win_string(IDS_ENABLED));
+               	SendMessage(h, CB_ADDSTRING,
+			    TIME_SYNC_ENABLED_UTC, win_string(IDS_3336));
+		SendMessage(h, CB_SETCURSEL, temp_sync, 0);
 
 		machine_recalc_machine(hdlg);
 
@@ -269,8 +269,8 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_MACHINE:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
-					temp_machine = listtomachine[SendMessage(h, CB_GETCURSEL, 0, 0)];
-
+					d = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_machine = list_to_mach[d];
 					machine_recalc_machine(hdlg);
 				}
 				break;
@@ -296,22 +296,26 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_MACHINE:
 				h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
-				temp_machine = listtomachine[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				d = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_machine = list_to_mach[d];
+				temp_deviceconfig |= dlg_devconf(hdlg, machine_getdevice(temp_machine));
+				break;
 
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)machine_getdevice(temp_machine));
+			case IDC_COMBO_SYNC:
+				if (HIWORD(wParam) == CBN_SELCHANGE) {
+					h = GetDlgItem(hdlg, IDC_COMBO_SYNC);
+					temp_sync = SendMessage(h, CB_GETCURSEL, 0, 0);
+				}
 				break;
 		}
 
 		return FALSE;
 
-	case WM_SAVESETTINGS:
+	case WM_SAVE_CFG:
 #ifdef USE_DYNAREC
 		h = GetDlgItem(hdlg, IDC_CHECK_DYNAREC);
 		temp_dynarec = SendMessage(h, BM_GETCHECK, 0, 0);
 #endif
-
-		h = GetDlgItem(hdlg, IDC_CHECK_SYNC);
-		temp_sync = SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_FPU);
 		temp_fpu = SendMessage(h, BM_GETCHECK, 0, 0);
@@ -324,9 +328,9 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		wcstombs(tempA, temp, sizeof(tempA));
 		sscanf(tempA, "%i", &temp_mem_size);
 		temp_mem_size &= ~(machines[temp_machine].ram_granularity - 1);
-		if (temp_mem_size < machines[temp_machine].min_ram)
+		if (temp_mem_size < (int)machines[temp_machine].min_ram)
 			temp_mem_size = machines[temp_machine].min_ram;
-		else if (temp_mem_size > machines[temp_machine].max_ram)
+		else if (temp_mem_size > (int)machines[temp_machine].max_ram)
 			temp_mem_size = machines[temp_machine].max_ram;
 		if ((machines[temp_machine].flags & MACHINE_AT) && (machines[temp_machine].ram_granularity < 128))
 			temp_mem_size *= 1024;

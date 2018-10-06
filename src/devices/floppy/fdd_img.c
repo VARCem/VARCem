@@ -13,7 +13,7 @@
  *		re-merged with the other files. Much of it is generic to
  *		all formats.
  *
- * Version:	@(#)fdd_img.c	1.0.12	2018/05/14
+ * Version:	@(#)fdd_img.c	1.0.13	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -604,7 +604,7 @@ img_load(int drive, const wchar_t *fn)
     uint8_t bpb_mid;	/* Media type ID. */
     uint8_t bpb_sectors;
     uint8_t bpb_sides;
-    uint8_t cqm, fdf, fdi;
+    uint8_t cqm, ddi, fdf, fdi;
     uint16_t comment_len = 0;
     int16_t block_len = 0;
     uint32_t cur_pos = 0;
@@ -625,7 +625,7 @@ img_load(int drive, const wchar_t *fn)
     d86f_unregister(drive);
 
     /* Allocate a drive block. */
-    dev = (img_t *)malloc(sizeof(img_t));
+    dev = (img_t *)mem_alloc(sizeof(img_t));
     memset(dev, 0x00, sizeof(img_t));
 
     dev->f = plat_fopen(fn, L"rb+");
@@ -644,13 +644,19 @@ img_load(int drive, const wchar_t *fn)
     fwriteprot[drive] = writeprot[drive];
 
     /* Clear ALL subtypes. */
-    cqm = fdf = fdi = 0;
+    cqm = ddi = fdf = fdi = 0;
 
     dev->interleave = dev->skew = 0;
 
+    if (! wcscasecmp(ext, L"DDI")) {
+	ddi = 1;
+	dev->base = 0x2400;
+    } else
+	dev->base = 0;
+
     if (! wcscasecmp(ext, L"FDI")) {
 	/* This is a Japanese FDI image, so let's read the header */
-	fdd_log("FDD: image file type is Japanese FDI\n");
+	DEBUG("FDD: image file type is Japanese FDI\n");
 	fseek(dev->f, 0x10, SEEK_SET);
 	(void)fread(&bpb_bps, 1, 2, dev->f);
 	fseek(dev->f, 0x0C, SEEK_SET);
@@ -685,7 +691,7 @@ img_load(int drive, const wchar_t *fn)
 	if ((first_byte == 0x1A) && (second_byte == 'F') &&
 	    (third_byte == 'D') && (fourth_byte == 'F')) {
 		/* This is a FDF image. */
-		fdd_log("FDD: image file type is FDF\n");
+		DEBUG("FDD: image file type is FDF\n");
 		fwriteprot[drive] = writeprot[drive] = 1;
 		fclose(dev->f);
 		dev->f = plat_fopen(fn, L"rb");
@@ -706,10 +712,10 @@ img_load(int drive, const wchar_t *fn)
 				/* Skip first 3 bytes - their meaning is unknown to us but could be a checksum. */
 				first_byte = fgetc(dev->f);
 				fread(&track_bytes, 1, 2, dev->f);
-				fdd_log("FDD: block header: %02X %04X ", first_byte, track_bytes);
+				DEBUG("FDD: block header: %02X %04X ", first_byte, track_bytes);
 				/* Read the length of encoded data block. */
 				fread(&track_bytes, 1, 2, dev->f);
-				fdd_log("%04X\n", track_bytes);
+				DEBUG("%04X\n", track_bytes);
 			}
 
 			if (feof(dev->f)) break;
@@ -729,7 +735,7 @@ img_load(int drive, const wchar_t *fn)
 				} else {
 					/* Literal. */
 					track_bytes -= (run & 0x7f);
-					literal = (uint8_t *)malloc(run & 0x7f);
+					literal = (uint8_t *)mem_alloc(run & 0x7f);
 					fread(literal, 1, (run & 0x7f), dev->f);
 					free(literal);
 				}
@@ -739,7 +745,7 @@ img_load(int drive, const wchar_t *fn)
 			} else {
 				/* Literal block. */
 				size += (track_bytes - fdf_suppress_final_byte);
-				literal = (uint8_t *)malloc(track_bytes);
+				literal = (uint8_t *)mem_alloc(track_bytes);
 				fread(literal, 1, track_bytes, dev->f);
 				free(literal);
 				track_bytes = 0;
@@ -749,7 +755,7 @@ img_load(int drive, const wchar_t *fn)
 		}
 
 		/* Allocate the buffer. */
-		dev->disk_data = (uint8_t *)malloc(size);
+		dev->disk_data = (uint8_t *)mem_alloc(size);
 
 		/* Decode the entire file - pass 2, write to buffer. */
 		fseek(dev->f, 0x80, SEEK_SET);
@@ -760,10 +766,10 @@ img_load(int drive, const wchar_t *fn)
 				/* Skip first 3 bytes - their meaning is unknown to us but could be a checksum. */
 				first_byte = fgetc(dev->f);
 				fread(&track_bytes, 1, 2, dev->f);
-				fdd_log("FDD: block header: %02X %04X ", first_byte, track_bytes);
+				DEBUG("FDD: block header: %02X %04X ", first_byte, track_bytes);
 				/* Read the length of encoded data block. */
 				fread(&track_bytes, 1, 2, dev->f);
-				fdd_log("%04X\n", track_bytes);
+				DEBUG("%04X\n", track_bytes);
 			}
 
 			if (feof(dev->f)) break;
@@ -788,7 +794,7 @@ img_load(int drive, const wchar_t *fn)
 				} else {
 					/* Literal. */
 					track_bytes -= real_run;
-					literal = (uint8_t *) malloc(real_run);
+					literal = (uint8_t *) mem_alloc(real_run);
 					fread(literal, 1, real_run, dev->f);
 					if (! track_bytes)
 						real_run -= fdf_suppress_final_byte;
@@ -799,7 +805,7 @@ img_load(int drive, const wchar_t *fn)
 				bpos += real_run;
 			} else {
 				/* Literal block. */
-				literal = (uint8_t *) malloc(track_bytes);
+				literal = (uint8_t *) mem_alloc(track_bytes);
 				fread(literal, 1, track_bytes, dev->f);
 				memcpy(bpos, literal, track_bytes - fdf_suppress_final_byte);
 				free(literal);
@@ -824,7 +830,7 @@ img_load(int drive, const wchar_t *fn)
 
 	if (((first_byte == 'C') && (second_byte == 'Q')) ||
 	    ((first_byte == 'c') && (second_byte == 'q'))) {
-		fdd_log("FDD: image file type is CopyQM\n");
+		DEBUG("FDD: image file type is CopyQM\n");
 		fwriteprot[drive] = writeprot[drive] = 1;
 		fclose(dev->f);
 		dev->f = plat_fopen(fn, L"rb");
@@ -849,7 +855,7 @@ img_load(int drive, const wchar_t *fn)
 		fseek(dev->f, 0x76, SEEK_SET);
 		dev->skew = fgetc(dev->f);
 
-		dev->disk_data = (uint8_t *) malloc(((uint32_t) bpb_total) * ((uint32_t) bpb_bps));
+		dev->disk_data = (uint8_t *) mem_alloc(((uint32_t) bpb_total) * ((uint32_t) bpb_bps));
 		memset(dev->disk_data, 0xf6, ((uint32_t) bpb_total) * ((uint32_t) bpb_bps));
 
 		fseek(dev->f, 0x6F, SEEK_SET);
@@ -894,33 +900,41 @@ img_load(int drive, const wchar_t *fn)
 		dev->disk_at_once = 1;
 		first_byte = *dev->disk_data;
 	} else {
-		fdd_log("FDD: image file type is RAW\n");
+		if (ddi) {
+			DEBUG("FDD: image file is DDI\n");
+			fwriteprot[drive] = writeprot[drive] = 1;
+		} else
+			DEBUG("FDD: image file type is RAW\n");
+
 		dev->disk_at_once = 0;
 
 		/* Read the BPB */
-		fseek(dev->f, 0x0B, SEEK_SET);
+		fseek(dev->f, dev->base + 0x0B, SEEK_SET);
 		fread(&bpb_bps, 1, 2, dev->f);
-		fseek(dev->f, 0x13, SEEK_SET);
+		fseek(dev->f, dev->base + 0x13, SEEK_SET);
 		fread(&bpb_total, 1, 2, dev->f);
-		fseek(dev->f, 0x15, SEEK_SET);
+		fseek(dev->f, dev->base + 0x15, SEEK_SET);
 		bpb_mid = fgetc(dev->f);
-		fseek(dev->f, 0x18, SEEK_SET);
+		fseek(dev->f, dev->base + 0x18, SEEK_SET);
 		bpb_sectors = fgetc(dev->f);
-		fseek(dev->f, 0x1A, SEEK_SET);
+		fseek(dev->f, dev->base + 0x1A, SEEK_SET);
 		bpb_sides = fgetc(dev->f);
 	}
 
 	fseek(dev->f, -1, SEEK_END);
 	size = ftell(dev->f) + 1;
+	if (ddi)
+		size -= 0x2400;
 
 jump_if_fdf:
-	dev->base = 0;
+	if (! ddi)
+		dev->base = 0;
     }
 
     dev->sides = 2;
     dev->sector_size = 2;
 
-    fdd_log("FDD: BPB reports %i sides, %i bytes per sector (%i sectors total)\n",
+    DEBUG("FDD: BPB reports %i sides, %i bytes per sector (%i sectors total)\n",
 	bpb_sides, bpb_bps, bpb_total);
 
     guess = (bpb_sides < 1);
@@ -1046,7 +1060,7 @@ jump_if_fdf:
 		dev->sectors = 42;
 		dev->tracks = 86;
 	} else {
-		fdd_log("FDD: image file size too large; ejecting\n");
+		ERRLOG("FDD: image file size too large; ejecting\n");
 		fclose(dev->f);
 		free(dev);
 		return(0);
@@ -1095,13 +1109,13 @@ jump_if_fdf:
 			dev->dmf = 0;
 		}
 
-		fdd_log("FDD: image parameters: bit rate 300: %f, temporary rate: %i, hole: %i, DMF: %i, XDF type: %i\n", bit_rate_300, temp_rate, dev->disk_flags >> 1, dev->dmf, dev->xdf_type);
+		DEBUG("FDD: image parameters: bit rate 300: %f, temporary rate: %i, hole: %i, DMF: %i, XDF type: %i\n", bit_rate_300, temp_rate, dev->disk_flags >> 1, dev->dmf, dev->xdf_type);
 		break;
 	}
     }
 
     if (temp_rate == 0xFF) {
-	fdd_log("FDD: invalid media configuration; ejecting\n");
+	ERRLOG("FDD: invalid media configuration; ejecting\n");
 	fclose(dev->f);
 	free(dev);
 	return(0);
@@ -1113,7 +1127,7 @@ jump_if_fdf:
       else
 	dev->gap3_size = gap3_sizes[temp_rate][dev->sector_size][dev->sectors];
     if (! dev->gap3_size) {
-	fdd_log("FDD: unknown media format in drive %c:\n", drive + 0x41);
+	ERRLOG("FDD: unknown media format in drive %c:\n", drive + 0x41);
 	fclose(dev->f);
 	free(dev);
 	return(0);
@@ -1136,8 +1150,8 @@ jump_if_fdf:
 
     dev->is_cqm = cqm;
 
-    fdd_log("FDD: disk flags: %02x, track flags: %02x\n",
-		dev->disk_flags, dev->track_flags);
+    DEBUG("FDD: disk flags: %02x, track flags: %02x\n",
+	  dev->disk_flags, dev->track_flags);
 
     /* Set up the drive unit. */
     img[drive] = dev;

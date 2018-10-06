@@ -8,7 +8,7 @@
  *
  *		String definitions for "Korean (South Korea)" language.
  *
- * Version:	@(#)VARCem-KR.str	1.0.12	2018/09/23
+ * Version:	@(#)VARCem-KR.str	1.0.12	2018/10/01
  *
  * Authors:	Yeong Uk Jo, <greatpsycho@yahoo.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,10 +47,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,11
-#define TAG_AUTHOR	"Yeong Uk Jo"
-#define TAG_EMAIL	"greatpsycho@yahoo.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,12
+#define STR_AUTHOR	"Yeong Uk Jo"
+#define STR_EMAIL	"greatpsycho@yahoo.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"오류"
@@ -65,27 +68,24 @@
 #define STR_2202	"PCap 장치가 초기화되지 않아서 설정에 실패했습니다"
 #define STR_2203	"PCap 장치가 없습니다"
 #define STR_2204	"PCap 장치가 올바르지 않습니다"
-#define STR_2205	"OpenAL을 초기화할 수 없습니다, 프로그램 폴더에 아래의 라이브러리 파일이 있는지 확인하세요:\n\nlibopenal-1.dll"
-#define STR_2206	"FluidSynth를 초기화할 수 없습니다, 프로그램 폴더에 아래의 라이브러리 파일이 있는지 확인하세요:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"%s을 초기화할 수 없습니다, 프로그램 폴더에 아래의 라이브러리 파일이 있는지 확인하세요:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"비트맵 파일을 만들 수 없습니다: %s"
+#define STR_2300	"System out of memory!"
 #define STR_2301	"사용 가능한 롬을 찾을 수 없습니다!"
 #define STR_2302	"유효한 설정을 찾을 수 없습니다.\n\n새로운 설정을 만들기 위해 설정창으로 들어가시겠습니까?"
-#define STR_2303	"설정된 기종:\n\n  %ls\n\n은 사용할 수 없습니다.\n\n설정창으로 들어가시겠습니까?"
-#define STR_2304	"설정된 그래픽 카드:\n\n  %ls\n\n는 사용할 수 없습니다.\n\n설정창으로 들어가시겠습니까?"
-#define STR_2305	"설정된 렌더러 '%S' 는 사용할 수 없습니다. 기본값으로 초기화하시겠습니까?"
-#define STR_2306	"ST506 혹은 ESDI 방식의 CD-ROM 드라이브는 없습니다"
+#define STR_2303	"설정된 %ls:\n\n  %s\n\n은 사용할 수 없습니다.\n\n설정창으로 들어가시겠습니까?"
+#define STR_2304	"설정된 렌더러:\n\n  %s\n\n는 사용할 수 없습니다. 기본값으로 초기화하시겠습니까?"
+#define STR_2305	"새 설정을 저장해야 합니다"
+#define STR_2306	"비트맵 파일을 만들 수 없습니다: %s"
 #define STR_2307	"USB는 아직 지원하지 않습니다."
-#define STR_2308	"새 설정을 저장해야 합니다"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"이 설정을 저장하시겠습니까?\n\n(재시작이 필요할 수도 있습니다...)"
 #define STR_2401	"설정이 저장되었습니다. 다시 시작하세요!"
-#define STR_2402	"요청된 장치 '%ls' 는 현재 구현 중으로 사용시 문제가 있을 수 있습니다.\n\n그래도 사용하시겠습니까?"
+#define STR_2402	"요청된 장치:\n\n  %s\n\n는 현재 구현 중으로 사용시 문제가 있을 수 있습니다.\n\n그래도 사용하시겠습니까?"
 #define STR_2403	"이 창을 클릭하면 마우스를 사용합니다"
 #define STR_2404	"F12+F8키를 누르면 마우스를 해제합니다"
 #define STR_2405	"F12+F8키 또는 가운데 버튼을 클릭하면 마우스를 해제합니다"
@@ -99,11 +99,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"확인"
 #define STR_CANCEL	"취소"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"설정"
 #define STR_BROWSE	"탐색"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"없음"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"사용안함"
 #define STR_ENABLED	"사용"
 #define STR_OFF		"꺼짐"
@@ -123,19 +127,19 @@
 #define STR_DEVCONF_2	"장치:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"VARCem에 대해.."
 #define  STR_3201	"저자:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker 와 기타 지원자들에 의해\n초기 버전의 86Box, PCem, MAME, DOSbox 와 Qemu를 기반으로 개발되었습니다."
 #define  STR_3203	"BSD 3-Clause 라이선스에 따라 출시되었고, 다른 프로젝트에서 이식된 부분은 GNU General Public 라이선스 (버전 2 이상)을 따릅니다."
 #define  STR_3204	"추가적인 정보는 LICENSE.txt 를 확인하세요."
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"다국어"
 #define  STR_3211	"영어 메세지를 다른 언어로 번역해 주신 분들:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"상태"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"소리 증폭"
@@ -184,23 +188,16 @@
 #define  STR_3328	"지연 시간:"
 #define  STR_3329	"메모리:"
 #define  STR_3330	"MB"
-#define  STR_3331	"시간 동기화"
+#define  STR_3331	"시간 동기화:"
 #define  STR_3332	"FPU 활성화"
 #define  STR_3333	"동적 재컴파일러"
 #define  STR_3334	"KB"
 #define  STR_3335	"기본값"
+#define  STR_3336	"Enabled (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"그래픽 카드:"
-#define  STR_3351	"그래픽 카드 속도:"
-#define  STR_3352	"부두 그래픽"
-#define  STR_3353	"기본"
-#define  STR_3354	"8-bit"
-#define  STR_3355	"저속 16-bit"
-#define  STR_3356	"고속 16-bit"
-#define  STR_3357	"저속 VLB/PCI"
-#define  STR_3358	"중속 VLB/PCI"
-#define  STR_3359	"고속 VLB/PCI"
+#define  STR_3351	"부두 그래픽"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"마우스:"
@@ -233,8 +230,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSI 컨트롤러:"
 #define  STR_3476	"HD 컨트롤러:"
-#define  STR_3477	"3 번째 IDE:"
-#define  STR_3478	"4 번째 IDE:"
+#define  STR_3477	"3 번째 IDE"
+#define  STR_3478	"4 번째 IDE"
 #define  STR_3479	"ISABugger 장치"
 #define  STR_3480	"ISA 메모리 확장 카드"
 #define  STR_3481	"ISA 내장 시계 카드"
@@ -255,10 +252,9 @@
 #define  STR_3512	"사용자 설정 (대용량)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (PIO 전용)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (이동식)"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"하드 디스크 추가"
@@ -289,13 +285,12 @@
 #define  STR_3577	"ZIP 드라이브:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"속도"
-#define  STR_3580	"<예약됨>"
-#define  STR_3581	"<예약됨>"
-#define  STR_3582	"ATAPI (PIO 전용)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(비었음)"
 #define STR_3901	"(호스트 드라이브 %c:)"
 #define STR_3902	" [쓰기 방지됨]"
@@ -303,6 +298,7 @@
 #define STR_3904	"이미지 불러오기(&L).."
 #define STR_3905	"이전 이미지 다시 불러오기(&R)"
 #define STR_3906	"이미지 제거(&U)"
+#define STR_3907	"디스크 교체 알림(&N)"
 
 #define STR_3910	"플로피 %i (%s): %ls"
 #define STR_3911	"모든 이미지\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f\0모든 파일\0*.*\0"
@@ -310,24 +306,21 @@
 #define STR_3913	"Surface images\0*.86f\0"
 #define STR_3914	"86F 형식으로(&X)..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"호스트 CD/DVD 드라이브 (%c:)"
 #define STR_3922	"CD-ROM 이미지\0*.iso;*.cue\0모든 파일 (*.*)\0*.*\0"
 #define STR_3923	"음소거(&M)"
 
-#define STR_3930	"하드 디스크 (%s)"
+#define STR_3930	"하드 디스크 %i (%ls): %ls"
 
-#define STR_3940	"이동식 디스크 %i: %ls"
-#define STR_3941	"디스크 교체 알림(&N)"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP 이미지\0*.im?;*.zdi\0모든 파일\0*.*\0"
 #define STR_3952	"ZIP 이미지\0*.im?;*.zdi\0"
-#define STR_3960	"네트워크"
-#define STR_3970	"소리"
+#define STR_3960	"네트워크 (%s)"
+#define STR_3970	"소리 (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"동작(&A)"
 #define  STR_4001	"재시작(&H)"
 #define  STR_4002	"&Ctrl+Alt+Del 전송"
@@ -336,25 +329,25 @@
 #define  STR_4005	"일시정지(&P)"
 #define  STR_4006	"종료(&X)"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"보기(&V)"
 #define  STR_4011	"창 크기 설정 가능(&R)"
 #define  STR_4012	"창 크기와 위치를 기억(&E)"
 #define  STR_4013	"전체화면(&F)\tCtrl+Alt+PageUP"
 #define  STR_4014	"오른쪽 CTRL키를 왼쪽 ALT키로(&I)"
-#define  STR_4015	"상태 바 아이콘 갱신(&U)"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"렌더러(&N)"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"창 표시 배율(&W)"
 #define   STR_4031	"0.5배(&0)"
 #define   STR_4032	"1배(&1)"
 #define   STR_4033	"1.5배(&5)"
 #define   STR_4034	"2배(&2)"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"전체 화면 비율 설정(&S)"
 #define   STR_4041	"전체 화면으로 확대(&F)"
 #define   STR_4042	"4:3(&4)"
@@ -362,14 +355,15 @@
 #define   STR_4044	"정수배 확대(&I)"
 #define   STR_4045	"크기 유지(&K)"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"화면 표시(&D)"
 #define  STR_4051	"반전 표시(&I)"
 #define  STR_4052	"오버스캔 활성화(&O)"
 #define  STR_4053	"4:3으로 맞춤(&F)"
 #define  STR_4054	"흑백 표시를 위한 밝기 조정(&C)"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"디스플레이 유형(&T)"
 #define   STR_4061	"RGB 천연색 모니터(&C)"
 #define   STR_4062	"RGB 회색조 모니터(&G)"
@@ -377,23 +371,26 @@
 #define   STR_4064	"녹색 모니터(&G)"
 #define   STR_4065	"흰색 모니터(&W)"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"회색조 표현방식(&G)"
 #define   STR_4071	"BT&601 (NTSC/PAL)"
 #define   STR_4072	"BT&709 (HDTV)"
 #define   STR_4073	"평균값(&A)"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"도구(&T)"
 #define  STR_4081	"설정(&S)"
 #define  STR_4082	"언어(&L)"
 #define	 STR_4083	"로그(&O)"
-#define  STR_4084	"설정 불러오기(&C)"
-#define  STR_4085	"설정 저장하기(&A)"
-#define  STR_4086	"현재 상태(&U)"
-#define  STR_4087	"스크린샷 찍기(&T)\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"설정 불러오기(&C)"
+#define  STR_4087	"설정 저장하기(&A)"
+#define  STR_4088	"스크린샷 찍기(&T)"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"도움말(&H)"
 #define  STR_4091	"VARCem에 대해(&A)"
 

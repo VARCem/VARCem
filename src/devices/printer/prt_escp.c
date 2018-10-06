@@ -8,7 +8,7 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.1	2018/09/02
+ * Version:	@(#)prt_escp.c	1.0.2	2018/10/05
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <windows.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -64,6 +63,7 @@
 #include "../../mem.h"
 #include "../../rom.h" 
 #include "../../plat.h" 
+#include "../ui/ui.h"
 #include "../../png.h"
 #include "../ports/parallel_dev.h"
 #include "printer.h"
@@ -81,7 +81,11 @@
 #define PAGE_LPI	6.0			/* standard 6 lpi */
 
 
-#define PATH_FREETYPE_DLL	"freetype.dll"
+#ifdef _WIN32
+# define PATH_FREETYPE_DLL	"freetype.dll"
+#else
+# define PATH_FREETYPE_DLL	"libfreetype.so.6"
+#endif
 
 
 /* FreeType library handles - global so they can be shared. */
@@ -414,8 +418,8 @@ update_font(escp_t *dev)
 
     /* Load the new font. */
     if (ft_New_Face(ft_lib, temp, 0, &dev->fontface)) {
-	pclog("ESC/P: unable to load font '%s'\n", temp);
-	pclog("ESC/P: text printing disabled\n");
+	ERRLOG("ESC/P: unable to load font '%s'\n", temp);
+	ERRLOG("ESC/P: text printing disabled\n");
 	dev->fontface = 0;
     }
 
@@ -494,7 +498,7 @@ dump_pgm(const wchar_t *fn, int inv, uint8_t *pix, int16_t w, int16_t h)
     /* Create the image file. */
     fp = plat_fopen(fn, L"wb");
     if (fp == NULL) {
-	pclog("ESC/P: unable to create print page '%ls'\n", fn);
+	ERRLOG("ESC/P: unable to create print page '%ls'\n", fn);
 	return(0);
     }
 
@@ -620,9 +624,9 @@ reset_printer(escp_t *dev)
 
     update_font(dev);
 
-    pclog("ESC/P: width=%.1fin,height=%.1fin dpi=%i cpi=%i lpi=%i\n",
-	dev->page_width, dev->page_height,
-	(int)dev->dpi, (int)dev->cpi, (int)dev->lpi);
+    INFO("ESC/P: width=%.1fin,height=%.1fin dpi=%i cpi=%i lpi=%i\n",
+	 dev->page_width, dev->page_height,
+	 (int)dev->dpi, (int)dev->cpi, (int)dev->lpi);
 }
 
 
@@ -729,7 +733,7 @@ setup_bit_image(escp_t *dev, uint8_t density, uint16_t num_columns)
 		break;
 
 	default:
-		pclog("ESC/P: Unsupported bit image density %d.\n", density);
+		ERRLOG("ESC/P: Unsupported bit image density %d.\n", density);
     }
 
     dev->bg_remaining_bytes = num_columns * dev->bg_bytes_per_column;
@@ -836,7 +840,7 @@ process_char(escp_t *dev, uint8_t ch)
 		case 0x25: // Select user-defined set (ESC %)
 		case 0x26: // Define user-defined characters (ESC &)
 		case 0x3a: // Copy ROM to RAM (ESC :)
-			pclog("ESC/P: User-defined characters not supported.\n");
+			ERRLOG("ESC/P: User-defined characters not supported.\n");
 			return 1;
 
 		case 0x28: // Two bytes sequence
@@ -844,12 +848,12 @@ process_char(escp_t *dev, uint8_t ch)
 			return 1;
 
 		default:
-			pclog("ESC/P: Unknown command ESC %c (0x%02x). Unable to skip parameters.\n", 
-				dev->esc_pending >= 0x20 ? dev->esc_pending : '?',
+			ERRLOG("ESC/P: Unknown command ESC %c (0x%02x). Unable to skip parameters.\n", 
+			      dev->esc_pending >= 0x20 ? dev->esc_pending : '?',
 				dev->esc_pending);
-			dev->esc_parms_req = 0;
-			dev->esc_pending = 0;
-			return 1;
+			      dev->esc_parms_req = 0;
+			      dev->esc_pending = 0;
+			      return 1;
 	}
 
 	if (dev->esc_parms_req > 0) {
@@ -889,9 +893,9 @@ process_char(escp_t *dev, uint8_t ch)
 
 		default:
 			// ESC ( commands are always followed by a "number of parameters" word parameter
-			pclog("ESC/P: Skipping unsupported extended command ESC ( %c (0x%02x).\n", 
-				dev->esc_pending >= 0x20 ? dev->esc_pending : '?',
-				dev->esc_pending);
+			ERRLOG("ESC/P: Skipping unsupported extended command ESC ( %c (0x%02x).\n", 
+			      dev->esc_pending >= 0x20 ? dev->esc_pending : '?',
+			      dev->esc_pending);
 			dev->esc_parms_req = 2;
 			dev->esc_pending = 0x101; /* dummy value to be checked later */
 			return 1;
@@ -1008,7 +1012,7 @@ process_char(escp_t *dev, uint8_t ch)
 			break;
 
 		case 0x23:	/* cancel MSB control (ESC #) */
-			dev->msb = 255;
+			dev->msb = -1;
 			break;
 
 		case 0x24:	/* set abs horizontal print position (ESC $) */
@@ -1312,7 +1316,7 @@ process_char(escp_t *dev, uint8_t ch)
 
 		case 0x72:	/* select printing color (ESC r) */
 			if (dev->esc_parms[0])
-				pclog("ESC/P: Color printing not yet supported.\n");
+				ERRLOG("ESC/P: Color printing not yet supported.\n");
 			break;
 
 		case 0x73:	/* select low-speed mode (ESC s) */
@@ -1384,7 +1388,7 @@ process_char(escp_t *dev, uint8_t ch)
 			break;
 
 		case 0x0242:	/* bar code setup and print (ESC (B) */
-			pclog("ESC/P: Bardcode printing not supported.\n");
+			ERRLOG("ESC/P: Barcode printing not supported.\n");
 
 			/* Find out how many bytes to skip. */
 			dev->esc_parms_req = PARAM16(0);
@@ -1441,7 +1445,7 @@ process_char(escp_t *dev, uint8_t ch)
 			break;
 
 		default:
-			pclog("ESC/P: Unhandled ESC command.\n");
+			ERRLOG("ESC/P: Unhandled ESC command.\n");
 			break;
 	}
 
@@ -1795,6 +1799,10 @@ write_data(uint8_t val, void *priv)
 {
     escp_t *dev = (escp_t *)priv;
 
+    DBGLOG(1, "ESC/P: data(%02x)\n", val);
+
+    if (dev == NULL) return;
+
     dev->data = val;
 }
 
@@ -1803,6 +1811,10 @@ static void
 write_ctrl(uint8_t val, void *priv)
 {
     escp_t *dev = (escp_t *)priv;
+
+    DEBUG("ESC/P: ctrl(%02x)\n", val);
+
+    if (dev == NULL) return;
 
     /* set autofeed value */
     dev->autofeed = val & 0x02 ? 1 : 0;
@@ -1833,32 +1845,42 @@ static uint8_t
 read_status(void *priv)
 {
     escp_t *dev = (escp_t *)priv;
+    uint8_t ret = 0xff;
 
-    uint8_t status = (dev->ack ? 0x00 : 0x40) |
-		     (dev->select ? 0x10 : 0x00) |
-		     (dev->busy ? 0x00 : 0x80) |
-		     (dev->int_pending ? 0x00 : 0x04) |
-		     (dev->error ? 0x00 : 0x08);
+    if (dev == NULL) return(ret);
+
+    ret = (dev->ack ? 0x00 : 0x40) |
+	  (dev->select ? 0x10 : 0x00) |
+	  (dev->busy ? 0x00 : 0x80) |
+	  (dev->int_pending ? 0x00 : 0x04) |
+	  (dev->error ? 0x00 : 0x08);
 
     /* Clear ACK after reading status. */
     dev->ack = 0;
 
-    return(status);
+    DEBUG("ESC/P: status(%02x)\n", ret);
+
+    return(ret);
 }
 
 
 static void *
 escp_init(const lpt_device_t *info)
 {
+    wchar_t temp[512];
+    const char *fn = PATH_FREETYPE_DLL;
     escp_t *dev;
 
-    pclog("ESC/P: LPT printer '%s' initializing\n", info->name);
+    INFO("ESC/P: LPT printer '%s' initializing\n", info->name);
 
     /* Dynamically load FreeType. */
     if (ft_handle == NULL) {
-	ft_handle = dynld_module(PATH_FREETYPE_DLL, ft_imports);
+	ft_handle = dynld_module(fn, ft_imports);
 	if (ft_handle == NULL) {
-		pclog("ESC/P: unable to load FreeType DLL !\n");
+		swprintf(temp, sizeof_w(temp),
+			 get_string(IDS_ERR_NOLIB), "FreeType", fn);
+		ui_msgbox(MBX_ERROR, temp);
+		ERRLOG("ESC/P: unable to load FreeType DLL !\n");
 		return(NULL);
 	}
     }
@@ -1866,14 +1888,18 @@ escp_init(const lpt_device_t *info)
     /* Initialize FreeType. */
     if (ft_lib == NULL) {
 	if (ft_Init_FreeType(&ft_lib)) {
-		pclog("ESC/P: error initializing FreeType !\n");
+		swprintf(temp, sizeof_w(temp),
+			 get_string(IDS_ERR_NOLIB), "FreeType", fn);
+		ui_msgbox(MBX_ERROR, temp);
+		ERRLOG("ESC/P: error initializing FreeType !\n");
+		dynld_close(ft_lib);
 		ft_lib = NULL;
 		return(NULL);
 	}
     }
 
     /* Initialize a device instance. */
-    dev = malloc(sizeof(escp_t));
+    dev = (escp_t *)mem_alloc(sizeof(escp_t));
     memset(dev, 0x00, sizeof(escp_t));
     dev->name = info->name;
 
@@ -1893,18 +1919,15 @@ escp_init(const lpt_device_t *info)
     reset_printer(dev);
 
     /* Create 8-bit grayscale buffer for the page. */
-    dev->page = (psurface_t *)malloc(sizeof(psurface_t));
+    dev->page = (psurface_t *)mem_alloc(sizeof(psurface_t));
     dev->page->w = (int)(dev->dpi * dev->page_width);
     dev->page->h = (int)(dev->dpi * dev->page_height);
     dev->page->pitch = dev->page->w;
-    dev->page->pixels = (uint8_t *)malloc(dev->page->pitch * dev->page->h);
+    dev->page->pixels = (uint8_t *)mem_alloc(dev->page->pitch * dev->page->h);
     memset(dev->page->pixels, 0x00, dev->page->pitch * dev->page->h);
 
-#if 0
-    pclog("ESC/P: created a virtual page of dimensions %d x %d pixels.\n",
+    DEBUG("ESC/P: created a virtual page of dimensions %d x %d pixels.\n",
 						dev->page->w, dev->page->h);
-#endif
-
     return(dev);
 }
 

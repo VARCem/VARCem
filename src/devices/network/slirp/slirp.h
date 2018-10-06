@@ -132,8 +132,8 @@
 #undef HAVE_SYS_TYPES32_H	/* Define if you have <sys/type32.h> */
 
 #ifdef _WIN32
+# include <inttypes.h>	
 # ifdef __GNUC__		/* MINGW? */
-#  include <inttypes.h>	
 typedef uint8_t		u_int8_t;
 typedef uint16_t	u_int16_t;
 typedef uint32_t	u_int32_t;
@@ -143,14 +143,14 @@ typedef int		socklen_t;
 typedef unsigned long	ioctlsockopt_t;
 # else
 typedef unsigned char	u_int8_t;
-typedef char		int8_t;
-typedef unsigned char	uint8_t;
+//typedef char		int8_t;
+//typedef unsigned char	uint8_t;
 typedef unsigned short 	u_int16_t;
-typedef unsigned short 	uint16_t;
-typedef short		int16_t;
+//typedef unsigned short 	uint16_t;
+//typedef short		int16_t;
 typedef unsigned int 	u_int32_t;
-typedef unsigned int	uint32_t;
-typedef	int		int32_t;
+//typedef unsigned int	uint32_t;
+//typedef	int		int32_t;
 
 typedef unsigned __int64 u_int64_t;
 typedef char 		*SLIRPcaddr_t;

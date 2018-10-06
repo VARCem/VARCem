@@ -8,7 +8,12 @@
  *
  *		Implement the PIT (Programmable Interval Timer.)
  *
- * Version:	@(#)pit.c	1.0.6	2018/05/06
+ *		B0 to 40, two writes to 43, then two reads
+ *			- value does not change!
+ *		B4 to 40, two writes to 43, then two reads
+ *			- value _does_ change!
+ *
+ * Version:	@(#)pit.c	1.0.7	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,6 +41,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -56,8 +62,6 @@
 #include "ppi.h"
 
 
-/*B0 to 40, two writes to 43, then two reads - value does not change!*/
-/*B4 to 40, two writes to 43, then two reads - value _does_ change!*/
 int	displine;
 int	firsttime = 1;
 PIT	pit,
@@ -333,8 +337,6 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
     PIT *dev = (PIT *)priv;
     int t;
 
-    cycles -= (int)PITCONST;
-
     switch (addr & 3) {
 	case 3: /*CTRL*/
 		if ((val & 0xc0) == 0xc0) {
@@ -438,8 +440,6 @@ pit_read(uint16_t addr, void *priv)
     PIT *dev = (PIT *)priv;
     uint8_t temp = 0xff;
     int t;
-
-    cycles -= (int)PITCONST;
 
     switch (addr&3) {
 	case 0: /*Timers*/
@@ -634,14 +634,20 @@ pit_reset(PIT *dev)
 
 
 void
+setrtcconst(float clock)
+{
+    RTCCONST = clock / (float)32768.0;
+
+    TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1LL << TIMER_SHIFT));
+}
+
+
+void
 setpitclock(float clock)
 {
     cpuclock = clock;
 
-    TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
-
     PITCONST = clock/(1193181.0f + (2.0f / 3.0f));
-    RTCCONST = clock/32768.0f;
     CGACONST = (clock/(19687503.0f/11.0f));
     MDACONST = (clock/2032125.0f);
     VGACONST1 = (clock/25175000.0f);
@@ -652,7 +658,8 @@ setpitclock(float clock)
 
     video_update_timing();
 
-    xt_cpu_multi = (int)((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
+    xt_cpu_multi = (int)((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machine_speed());
+//    TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
 
     device_speed_changed();
 }

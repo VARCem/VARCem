@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.10	2018/05/06
+ * Version:	@(#)m_xt.c	1.0.11	2018/09/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,7 @@
 static int	rom_basic = 0;			/* is ROM BASIC enabled? */
 
 
-static const device_config_t xt_config[] = {
+static const device_config_t pcxt_config[] = {
     {
 	"rom_basic", "ROM BASIC", CONFIG_SELECTION, "", 0,
 	{
@@ -76,16 +76,39 @@ static const device_config_t xt_config[] = {
 
 
 void
+machine_pc_init(const machine_t *model, void *arg)
+{
+    machine_common_init(model, arg);
+
+    /* Check if we support a BASIC ROM. */
+    if (model->device != NULL) {
+	DEBUG("This (%s) machine supports a BASIC ROM.\n", model->name);
+
+	rom_basic = machine_get_config_int("rom_basic");
+	DEBUG("ROM BASIC is currently %sabled.\n", (rom_basic)?"en":"dis");
+    }
+
+    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+
+    device_add(&keyboard_pc_device);
+
+    device_add(&fdc_xt_device);
+
+    nmi_init();
+}
+
+
+void
 machine_xt_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
 
     /* Check if we support a BASIC ROM. */
     if (model->device != NULL) {
-	pclog("This (%s) machine supports a BASIC ROM.\n", model->name);
+	DEBUG("This (%s) machine supports a BASIC ROM.\n", model->name);
 
 	rom_basic = machine_get_config_int("rom_basic");
-	pclog("ROM BASIC is currently %sabled.\n", (rom_basic)?"en":"dis");
+	DEBUG("ROM BASIC is currently %sabled.\n", (rom_basic)?"en":"dis");
     }
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
@@ -98,10 +121,18 @@ machine_xt_init(const machine_t *model, void *arg)
 }
 
 
+const device_t m_pc_device = {
+    "IBM PC",
+    0, 0,
+    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    pcxt_config
+};
+
 const device_t m_xt_device = {
     "PC/XT",
     0, 0,
     NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
-    xt_config
+    pcxt_config
 };

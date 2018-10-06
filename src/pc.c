@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.55	2018/09/28
+ * Version:	@(#)pc.c	1.0.54	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,7 +36,6 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -50,13 +49,11 @@
 #include "config.h"
 #include "cpu/cpu.h"
 #ifdef USE_DYNAREC
+# include "cpu/x86.h"
 # include "cpu/codegen.h"
 #endif
-#include "cpu/x86_ops.h"
 #include "machines/machine.h"
 #include "io.h"
-#include "mem.h"
-#include "rom.h"
 #include "devices/system/dma.h"
 #include "devices/system/pic.h"
 #include "devices/system/pit.h"
@@ -74,15 +71,13 @@
 #include "devices/floppy/fdd_common.h"
 #include "devices/disk/hdd.h"
 #include "devices/disk/hdc.h"
-#include "devices/disk/hdc_ide.h"
+#include "devices/scsi/scsi.h"
+#include "devices/scsi/scsi_device.h"
+#include "devices/scsi/scsi_disk.h"
 #include "devices/disk/zip.h"
 #include "devices/cdrom/cdrom.h"
-#include "devices/cdrom/cdrom_image.h"
-#include "devices/cdrom/cdrom_null.h"
-#include "devices/scsi/scsi.h"
 #include "devices/network/network.h"
 #include "devices/sound/sound.h"
-#include "devices/sound/snd_speaker.h"
 #include "devices/video/video.h"
 #include "devices/misc/bugger.h"
 #include "devices/misc/isamem.h"
@@ -106,10 +101,11 @@ int	video_fps = RENDER_FPS;			/* (O) render speed in fps */
 #endif
 int	settings_only = 0;			/* (O) only the settings dlg */
 int	config_ro = 0;				/* (O) dont modify cfg file */
+int	log_level = LOG_INFO;			/* (O) global logging level */
 wchar_t log_path[1024] = { L'\0'};		/* (O) full path of logfile */
 
 /* Configuration values. */
-int	lang_id = 0x0409;			/* (C) language ID */
+int	language = 0x0000;			/* (C) language ID */
 int	window_w, window_h,			/* (C) window size and */
 	window_x, window_y,			/*     position info */
 	window_remember;
@@ -126,13 +122,11 @@ int	vid_api = 0,				/* (C) video renderer */
 	scale = 0,				/* (C) screen scale factor */
 	enable_overscan = 0,			/* (C) video */
 	force_43 = 0,				/* (C) video */
-	rctrl_is_lalt,				/* (C) set R-CTRL as L-ALT */
-	update_icons = 1;			/* (C) update statbar icons */
+	rctrl_is_lalt;				/* (C) set R-CTRL as L-ALT */
 int	video_card = 0,				/* (C) graphics/video card */
-	video_speed = 0,			/* (C) video */
 	voodoo_enabled = 0;			/* (C) video option */
 int	mouse_type = 0;				/* (C) selected mouse type */
-int	enable_sync = 0;			/* (C) enable time sync */
+int	time_sync = 0;				/* (C) enable time sync */
 int	game_enabled = 0,			/* (C) enable game port */
 	serial_enabled[] = {0,0},		/* (C) enable serial ports */
 	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
@@ -149,10 +143,11 @@ int	sound_card = 0,				/* (C) selected sound card */
 	sound_is_float = 1,			/* (C) sound uses FP values */
 	sound_gain = 0,				/* (C) sound volume gain */
 	mpu401_standalone_enable = 0,		/* (C) sound option */
-	opl3_type = 0,				/* (C) sound option */
+	opl_type = 0,				/* (C) sound option */
 	midi_device;				/* (C) selected midi device */
 int	joystick_type = 0;			/* (C) joystick type */
 int	mem_size = 0;				/* (C) memory size */
+int	machine = -1;				/* (C) current machine ID */
 int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
 	cpu_use_dynarec = 0,			/* (C) cpu uses/needs Dyna */
 	cpu = 3,				/* (C) cpu type */
@@ -161,29 +156,7 @@ int	network_type;				/* (C) net provider type */
 int	network_card;				/* (C) net interface num */
 char	network_host[512];			/* (C) host network intf */
 
-
-/* Statistics. */
-extern int
-	mmuflush,
-	readlnum,
-	writelnum;
-
-int	sndcount = 0;
-int	sreadlnum,
-	swritelnum,
-	segareads,
-	segawrites,
-	scycles_lost;
-float	mips, flops;
-int	cycles_lost = 0;			/* video */
-int	insc = 0;				/* cpu */
-int	emu_fps = 0, fps;			/* video */
-int	framecount;
-
-int	atfullspeed;
-int	cpuspeed2;
-int	clockrate;
-
+/* Global variables. */
 char	emu_title[64];				/* full name of application */
 char	emu_version[32];			/* short version ID string */
 char	emu_fullversion[128];			/* full version ID string */
@@ -191,16 +164,24 @@ wchar_t	exe_path[1024];				/* emu executable path */
 wchar_t	emu_path[1024];				/* emu installation path */
 wchar_t	usr_path[1024];				/* path (dir) of user data */
 wchar_t	cfg_path[1024];				/* full path of config file */
-FILE	*stdlog = NULL;				/* file to log output to */
+int	emu_lang_id;				/* current language ID */
 int	scrnsz_x = SCREEN_RES_X,		/* current screen size, X */
 	scrnsz_y = SCREEN_RES_Y;		/* current screen size, Y */
-int	unscaled_size_x = SCREEN_RES_X,		/* current unscaled size X */
-	unscaled_size_y = SCREEN_RES_Y,		/* current unscaled size Y */
-	efscrnsz_y = SCREEN_RES_Y;
-int	config_changed;				/* config has changed */
-int	romset;					/* current machine ID */
-int	title_update;
-int64_t	main_time;
+int	config_changed,				/* config has changed */
+	dopause = 0,				/* system is paused */
+	doresize = 0,				/* screen resize requested */
+	mouse_capture = 0;			/* mouse is captured in app */
+
+/* Local variables. */
+static int	fps,				/* statistics */
+		framecount,
+		title_update,			/* we want title updated */
+		atfullspeed,
+		cpuspeed2;
+static int	unscaled_size_x = SCREEN_RES_X,	/* current unscaled size X */
+		unscaled_size_y = SCREEN_RES_Y,	/* current unscaled size Y */
+		efscrnsz_y = SCREEN_RES_Y;
+static FILE	*stdlog = NULL;			/* file to log output to */
 
 
 /*
@@ -217,7 +198,6 @@ int64_t	main_time;
 void
 pclog_ex(const char *fmt, va_list ap)
 {
-#ifndef RELEASE_BUILD
     static char buff[PCLOG_BUFF_SIZE];
     static int seen = 0;
     static int detect = 1;
@@ -261,21 +241,26 @@ pclog_ex(const char *fmt, va_list ap)
     }
 
     fflush(stdlog);
-#endif
 }
 
 
 /* Log something. We only do this in non-release builds. */
 void
-pclog(const char *fmt, ...)
+pclog(int level, const char *fmt, ...)
 {
-#ifndef RELEASE_BUILD
     va_list ap;
 
-    va_start(ap, fmt);
-    pclog_ex(fmt, ap);
-    va_end(ap);
-#endif
+    if (fmt == NULL) {
+	fflush(stdlog);
+	fclose(stdlog);
+	return;
+    }
+
+    if (log_level >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
 }
 
 
@@ -318,14 +303,12 @@ pclog_dump(int num)
 	sp += strlen(sp);
 
 	if ((i % 16) == 0) {
-		strcat(sp, "\n");
-		pclog(buff);
+		DBGLOG(2, "%s\n", buff);
 		sp = NULL;
 	}
     }
     if (sp != NULL) {
-	strcat(sp, "\n");
-	pclog(buff);
+	DBGLOG(2, "%s\n", buff);
     }
 
     /* Re-enable the repeat-detection. */
@@ -475,61 +458,66 @@ pc_path(wchar_t *dst, int sz, const wchar_t *src)
 /*
  * Perform initial setup of the PC.
  *
- * This is the platform-indepenent part of the startup,
- * where we check commandline arguments and load a
- * configuration file.
+ * This is the platform-indepenent part of the startup, where we
+ * check commandline arguments and load a configuration file.
  */
 int
 pc_setup(int argc, wchar_t *argv[])
 {
-    wchar_t path[1024];
+    wchar_t temp[1024];
+    char tempA[128];
     wchar_t *cfg = NULL, *p;
-    char temp[128];
     struct tm *info;
     time_t now;
     int c, ret = 0;
 
-    /* Grab the executable's full path. */
-    plat_get_exe_name(emu_path, sizeof_w(emu_path));
-    if ((p = plat_get_basename(emu_path)) != NULL)
-	*p = L'\0';
-    wcscpy(exe_path, emu_path);
-    plat_append_slash(exe_path);
-
-    /*
-     * See if we are perhaps in a "bin/" subfolder of
-     * the installation path, in which case the real
-     * root of the installation is one level up. We
-     * can test this by looking for the 'roms' folder.
-     */
-    wcscpy(path, emu_path);
-    plat_append_slash(path);
-    wcscat(path, ROMS_PATH);
-    if (! plat_dir_check(path)) {
-	/* No 'roms' folder found, so go up one level. */
-	wcscpy(path, emu_path);
-	if ((p = plat_get_basename(path)) != NULL)
+    /* Are we doing first initialization? */
+    if (argc == 0) {
+	/* Grab the executable's full path. */
+	plat_get_exe_name(emu_path, sizeof_w(emu_path));
+	if ((p = plat_get_basename(emu_path)) != NULL)
 		*p = L'\0';
-	plat_append_slash(path);
-	wcscat(path, ROMS_PATH);
-	if (plat_dir_check(path)) {
-		if (p != NULL)
-			*p = L'\0';
-		wcscpy(emu_path, path);
-	}
-    }
-    plat_append_slash(emu_path);
+    	wcscpy(exe_path, emu_path);
+    	plat_append_slash(exe_path);
 
-    /*
-     * Get the current working directory.
-     *
-     * This is normally the directory from where the
-     * program was run. If we have been started via
-     * a shortcut (desktop icon), however, the CWD
-     * could have been set to something else.
-     */
-    plat_getcwd(usr_path, sizeof_w(usr_path));
-    memset(path, 0x00, sizeof(path));
+	/*
+	 * See if we are perhaps in a "bin/" subfolder of the
+	 * installation path, in which case the real root of
+	 * the installation is one level up. We can test this
+	 * by looking for the 'roms' folder.
+	 */
+	wcscpy(temp, emu_path);
+	plat_append_slash(temp);
+	wcscat(temp, ROMS_PATH);
+	if (! plat_dir_check(temp)) {
+		/* No 'roms' folder found, so go up one level. */
+		wcscpy(temp, emu_path);
+		if ((p = plat_get_basename(temp)) != NULL)
+			*p = L'\0';
+		plat_append_slash(temp);
+		wcscat(temp, ROMS_PATH);
+		if (plat_dir_check(temp)) {
+			if (p != NULL)
+				*p = L'\0';
+			wcscpy(emu_path, temp);
+		}
+	}
+	plat_append_slash(emu_path);
+
+	/*
+	 * Get the current working directory.
+	 *
+	 * This is normally the directory from where the
+	 * program was run. If we have been started via
+	 * a shortcut (desktop icon), however, the CWD
+	 * could have been set to something else.
+	 */
+	plat_getcwd(usr_path, sizeof_w(usr_path));
+
+	return(0);
+    }
+
+    memset(temp, 0x00, sizeof(temp));
 
     for (c = 1; c < argc; c++) {
 	if (argv[c][0] != L'-') break;
@@ -544,12 +532,11 @@ usage:
 		printf("Valid options are:\n\n");
 		printf("  -? or --help         - show this information\n");
 		printf("  -C or --dumpcfg      - dump config file after loading\n");
-#ifdef _WIN32
-		printf("  -D or --debug        - force debug output logging\n");
-#endif
+		printf("  -D or --debug        - force debug logging\n");
 		printf("  -F or --fullscreen   - start in fullscreen mode\n");
 		printf("  -L or --logfile path - set 'path' to be the logfile\n");
 		printf("  -P or --vmpath path  - set 'path' to be root for vm\n");
+		printf("  -q or --quiet        - set logging level to QUIET\n");
 #ifdef USE_WX
 		printf("  -R or --fps num      - set render speed to 'num' fps\n");
 #endif
@@ -560,11 +547,12 @@ usage:
 	} else if (!wcscasecmp(argv[c], L"--dumpcfg") ||
 		   !wcscasecmp(argv[c], L"-C")) {
 		do_dump_config = 1;
-#ifdef _WIN32
 	} else if (!wcscasecmp(argv[c], L"--debug") ||
 		   !wcscasecmp(argv[c], L"-D")) {
+#ifdef _WIN32
 		force_debug = 1;
 #endif
+		log_level++;
 	} else if (!wcscasecmp(argv[c], L"--fullscreen") ||
 		   !wcscasecmp(argv[c], L"-F")) {
 		start_in_fullscreen = 1;
@@ -581,7 +569,10 @@ usage:
 			ret = -1;
 			goto usage;
 		}
-		wcscpy(path, argv[++c]);
+		wcsncpy(temp, argv[++c], sizeof_w(temp));
+	} else if (!wcscasecmp(argv[c], L"--quiet") ||
+		   !wcscasecmp(argv[c], L"-q")) {
+		log_level = LOG_DEBUG;
 #ifdef USE_WX
 	} else if (!wcscasecmp(argv[c], L"--fps") ||
 		   !wcscasecmp(argv[c], L"-R")) {
@@ -622,8 +613,8 @@ usage:
      * make sure that if that was a relative path, we
      * make it absolute.
      */
-    if (path[0] != L'\0') {
-	if (! plat_path_abs(path)) {
+    if (temp[0] != L'\0') {
+	if (! plat_path_abs(temp)) {
 		/*
 		 * This looks like a relative path.
 		 *
@@ -631,13 +622,13 @@ usage:
 		 * to convert it (back) to an absolute path.
 		 */
 		plat_append_slash(usr_path);
-		wcscat(usr_path, path);
+		wcscat(usr_path, temp);
 	} else {
 		/*
 		 * The user-provided path seems like an
 		 * absolute path, so just use that.
 		 */
-		wcscpy(usr_path, path);
+		wcscpy(usr_path, temp);
 	}
     }
 
@@ -704,12 +695,12 @@ usage:
 #endif
     (void)time(&now);
     info = localtime(&now);
-    strftime(temp, sizeof(temp), "%Y/%m/%d %H:%M:%S", info);
-    pclog("#\n# %s %s\n#\n# Logfile created %s\n#\n",
-		emu_title, emu_fullversion, temp);
-    pclog("# Emulator path: %ls\n", emu_path);
-    pclog("# Userfiles path: %ls\n", usr_path);
-    pclog("# Configuration file: %ls\n#\n\n", cfg_path);
+    strftime(tempA, sizeof(temp), "%Y/%m/%d %H:%M:%S", info);
+    INFO("#\n# %s %s\n#\n# Logfile created %s\n#\n",
+		emu_title, emu_fullversion, tempA);
+    INFO("# Emulator path: %ls\n", emu_path);
+    INFO("# Userfiles path: %ls\n", usr_path);
+    INFO("# Configuration file: %ls\n#\n\n", cfg_path);
 
     /*
      * We are about to read the configuration file, which MAY
@@ -721,6 +712,8 @@ usage:
     hdd_init();
     cdrom_global_init();
     zip_global_init();
+    scsi_disk_global_init();
+
     network_init();
 
     /* Load the configuration file. */
@@ -732,28 +725,36 @@ usage:
 
 
 void
+pc_set_speed(void)
+{
+    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286)
+	setpitclock((float)machine_speed());
+      else
+	setpitclock(14318184.0);
+}
+
+
+void
 pc_full_speed(void)
 {
     cpuspeed2 = cpuspeed;
 
     if (! atfullspeed) {
-	pclog("Set fullspeed - %i %i %i\n", is386, AT, cpuspeed2);
-	if (AT)
-		setpitclock((float)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
-	  else
-		setpitclock(14318184.0);
+	DEBUG("Set fullspeed - %i\n", cpuspeed2);
+	pc_set_speed();
+	atfullspeed = 1;
     }
-    atfullspeed = 1;
+
+    nvr_period_recalc();
 }
 
 
 void
 pc_speed_changed(void)
 {
-    if (AT)
-	setpitclock((float)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
-      else
-	setpitclock(14318184.0);
+    pc_set_speed();
+
+    nvr_period_recalc();
 }
 
 
@@ -762,16 +763,11 @@ pc_speed_changed(void)
 void
 pc_reload(const wchar_t *fn)
 {
-    int i;
-
     config_write(cfg_path);
 
     floppy_close();
 
-    for (i=0; i<CDROM_NUM; i++) {
-	cdrom_drives[i].handler->exit(i);
-	cdrom_close(i);
-    }
+    cdrom_close();
 
     pc_reset_hard_close();
 
@@ -779,27 +775,11 @@ pc_reload(const wchar_t *fn)
 
     config_load();
 
-    for (i=0; i<CDROM_NUM; i++) {
-	if (cdrom_drives[i].bus_type)
-		SCSIReset(cdrom_drives[i].scsi_device_id, cdrom_drives[i].scsi_device_lun);
+    cdrom_hard_reset();
 
-	if (cdrom_drives[i].host_drive == 200)
-		image_open(i, cdrom_image[i].image_path);
-	  else
-#ifdef USE_CDROM_IOCTL
-		if ((cdrom_drives[i].host_drive >= 'A') && (cdrom_drives[i].host_drive <= 'Z'))
-		ioctl_open(i, cdrom_drives[i].host_drive);
-	  else	
-#endif
-	        cdrom_null_open(i, cdrom_drives[i].host_drive);
-    }
+    zip_hard_reset();
 
-    for (i=0; i<ZIP_NUM; i++) {
-	if (zip_drives[i].bus_type)
-		SCSIReset(zip_drives[i].scsi_device_id, zip_drives[i].scsi_device_lun);
-
-	zip_load(i, zip_drives[i].image_path);
-    }
+    scsi_disk_hard_reset();
 
     fdd_load(0, floppyfns[0]);
     fdd_load(1, floppyfns[1]);
@@ -816,8 +796,8 @@ pc_reload(const wchar_t *fn)
 int
 pc_init(void)
 {
-    wchar_t temp[1024];
-    wchar_t name[128];
+    wchar_t temp[128];
+    char tempA[128];
     const wchar_t *str;
     const char *stransi;
 
@@ -837,30 +817,34 @@ pc_init(void)
     /* Load the ROMs for the selected machine. */
     if (! machine_available(machine)) {
 	/* Whoops, selected machine not available. */
-	str = get_string(IDS_ERR_NOMACH);
-	mbstowcs(name, machine_getname(), sizeof_w(name));
-	swprintf(temp, sizeof_w(temp), str, name);
+	stransi = machine_getname();
+	if (stransi == NULL) {
+		/* This happens if configured machine is not even in table.. */
+		sprintf(tempA, "machine_%i", machine);
+		stransi = (const char *)tempA;
+	}
 
 	/* Show the messagebox, and abort if 'No' was selected. */
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_NOAVAIL), get_string(IDS_3310), stransi);
 	if (ui_msgbox(MBX_CONFIG, temp) == 1) return(0);
 
 	/* OK, user wants to (re-)configure.. */
 	return(2);
     }
 
-    if ((video_card < 0) ||
-	!video_card_available(video_old_to_new(video_card))) {
+    if ((video_card < 0) || !video_card_available(video_card)) {
 	/* Whoops, selected video not available. */
-	str = get_string(IDS_ERR_NOVIDEO);
 	stransi = video_card_getname(video_card);
 	if (stransi == NULL) {
 		/* This happens if configured card is not even in table.. */
-		swprintf(name, sizeof_w(name), L"%i", video_card);
-	} else
-		mbstowcs(name, stransi, sizeof_w(name));
-	swprintf(temp, sizeof_w(temp), str, name);
+		sprintf(tempA, "vid_%i", video_card);
+		stransi = (const char *)tempA;
+	}
 
 	/* Show the messagebox, and abort if 'No' was selected. */
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_NOAVAIL), get_string(IDS_3311), stransi);
 	if (ui_msgbox(MBX_CONFIG, temp) == 1) return(0);
 
 	/* OK, user wants to (re-)configure.. */
@@ -872,7 +856,7 @@ pc_init(void)
      * video card are available, so we can proceed with the
      * initialization of things.
      */
-    cpuspeed2 = (AT) ? 2 : 1;
+    cpuspeed2 = (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) ? 2 : 1;
     atfullspeed = 0;
 
     random_init();
@@ -890,22 +874,24 @@ pc_init(void)
     joystick_init();
     video_init();
 
-    ide_init_first();
-
     device_init();
 
     timer_reset();
 
     sound_init();
 
-    floppy_init();
+#if 0
+    fdd_init();
+#else
+    floppy_init();		//FIXME: fdd_init() now?
+#endif
 
     /* FIXME: should be disk_init() */
     cdrom_hard_reset();
     zip_hard_reset();
-    ide_reset_hard();
 
     /* FIXME: should be scsi_init() */
+    scsi_disk_hard_reset();
     scsi_card_init();
 
     pc_full_speed();
@@ -919,8 +905,6 @@ pc_init(void)
 void
 pc_close(thread_t *ptr)
 {
-    int i;
-
     /* Wait a while so things can shut down. */
     plat_delay_ms(200);
 
@@ -941,15 +925,13 @@ pc_close(thread_t *ptr)
 
     config_save();
 
-    plat_mouse_capture(-1);
+    ui_mouse_capture(0);
 
-    for (i = 0; i < ZIP_NUM; i++)
-	zip_close(i);
+    zip_close();
 
-    for (i = 0; i < CDROM_NUM; i++)
-	cdrom_drives[i].handler->exit(i);
+    scsi_disk_close();
 
-    floppy_close();
+//    floppy_close();
 
     if (dump_on_exit)
 	dumppic();
@@ -963,9 +945,7 @@ pc_close(thread_t *ptr)
 
     sound_close();
 
-    ide_destroy_buffers();
-
-    cdrom_destroy_drives();
+    cdrom_close();
 }
 
 
@@ -979,6 +959,12 @@ pc_reset_hard_close(void)
     machine_close();
 
     mouse_close();
+
+    cdrom_close();
+
+#if 0
+    sound_close();
+#endif
 
     device_close_all();
 }
@@ -1002,22 +988,18 @@ pc_reset_hard_init(void)
     parallel_reset();
     serial_reset();
 
-    sound_reset();
-    speaker_init();
+    /* FIXME: these, should be in disk_reset(). */
+    cdrom_hard_reset();
+    zip_hard_reset();
 
-    /* Initialize the actual machine and its basic modules. */
-    machine_init();
-
-    /* FIXME: move elsewhere? */
-    shadowbios = 0;
-
-    /* Reset any ISA memory cards. */
-    isamem_reset();
-
-    /* Reset any ISA RTC cards. */
-    isartc_reset();
-
-    fdd_reset();
+    /*
+     * Reset the actual machine and its basic modules.
+     *
+     * Note that on PCI-based machines, this will also reset
+     * the PCI bus state, so, we MUST reset PCI devices after
+     * the machine!
+     */
+    machine_reset();
 
     /*
      * Once the machine has been initialized, all that remains
@@ -1027,16 +1009,26 @@ pc_reset_hard_init(void)
      * For now, we will call their reset functions here, but
      * that will be a call to device_reset_all() later !
      */
+#if 0
+    /* FIXME: move elsewhere? */
+    shadowbios = 0;
+#endif
+
+    /* Reset any ISA memory cards. */
+    isamem_reset();
+
+    /* Reset any ISA RTC cards. */
+    isartc_reset();
 
     /* Reset some basic devices. */
     mouse_reset();
-    video_reset();
+    keyboard_reset();
 
-    /* FIXME: these, and hdc_reset, should be in disk_reset(). */
-    cdrom_hard_reset();
-    zip_hard_reset();
+    /* Reset sound system. This MAY add a game port, so before joystick! */
+    sound_reset();
 
-    /* Reset the Hard Disk Controller module. */
+    /* Reset the Floppy and Hard Disk modules. */
+    fdd_reset();
     hdc_reset();
 
     /* Reset and reconfigure the SCSI layer. */
@@ -1050,7 +1042,7 @@ pc_reset_hard_init(void)
 	game_update_joystick_type();
 
     if (config_changed) {
-	ui_sb_update();
+	ui_sb_reset();
 
         config_save();
 
@@ -1062,19 +1054,13 @@ pc_reset_hard_init(void)
 	device_add(&bugger_device);
 
     /* Needs the status bar initialized. */
-    plat_mouse_capture(-1);
+    ui_mouse_capture(-1);
 
     /* Reset the CPU module. */
-    cpu_set();
     resetx86();
     dma_reset();
     pic_reset();
-    cpu_cache_int_enabled = cpu_cache_ext_enabled = 0;
-
-    if (AT)
-	setpitclock((float)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
-    else
-	setpitclock(14318184.0);
+    pc_set_speed();
 }
 
 
@@ -1090,7 +1076,7 @@ pc_reset_hard(void)
 void
 pc_reset(int hard)
 {
-    plat_pause(1);
+    pc_pause(1);
 
     plat_delay_ms(100);
 
@@ -1103,9 +1089,9 @@ pc_reset(int hard)
     if (hard)
         pc_reset_hard();
       else
-        keyboard_send_cad();
+        keyboard_cad();
 
-    plat_pause(0);
+    pc_pause(0);
 }
 
 
@@ -1121,26 +1107,19 @@ pc_thread(void *param)
 {
     wchar_t temp[200];
     uint64_t start_time, end_time;
+    int64_t main_time;
     uint32_t old_time, new_time;
-    int status_update_needed;
+    uint32_t clockrate;
     int done, drawits, frm;
     int *quitp = (int *)param;
-    int framecountx;
 
-    pclog("PC: starting main thread...\n");
+    INFO("PC: starting main thread...\n");
 
     main_time = 0;
-    framecountx = 0;
-    status_update_needed = title_update = 1;
+    title_update = 1;
     old_time = plat_get_ticks();
     done = drawits = frm = 0;
     while (! *quitp) {
-	/* Update the Stat(u)s window with the current info. */
-	if (status_update_needed) {
-		dlg_status_update();
-		status_update_needed = 0;
-	}
-
 	/* See if it is time to run a frame of code. */
 	new_time = plat_get_ticks();
 	drawits += (new_time - old_time);
@@ -1154,9 +1133,8 @@ pc_thread(void *param)
 
 		/* Run a block of code. */
 		plat_startblit();
-		clockrate = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed;
+		clockrate = machine_speed();
 
-pclog("PC: clockrate=%lu cpuspeed=%lu\n", clockrate, cpuspeed);
 		if (is386) {
 #ifdef USE_DYNAREC
 			if (cpu_use_dynarec)
@@ -1164,7 +1142,7 @@ pclog("PC: clockrate=%lu cpuspeed=%lu\n", clockrate, cpuspeed);
 			  else
 #endif
 				exec386(clockrate/100);
-		} else if (AT) {
+		} else if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) {
 			exec386(clockrate/100);
 		} else {
 			execx86(clockrate/100);
@@ -1176,64 +1154,9 @@ pclog("PC: clockrate=%lu cpuspeed=%lu\n", clockrate, cpuspeed);
 
 		plat_endblit();
 
-		/* Done with this frame, update statistics. */
-		framecount++;
-		if (++framecountx >= 100) {
-			framecountx = 0;
-
-			/* FIXME: all this should go into a "stats" struct! */
-			mips = (float)insc/1000000.0f;
-			insc = 0;
-			flops = (float)fpucount/1000000.0f;
-			fpucount = 0;
-			sreadlnum = readlnum;
-			swritelnum = writelnum;
-			segareads = egareads;
-			segawrites = egawrites;
-			scycles_lost = cycles_lost;
-
-#ifdef USE_DYNAREC
-			cpu_recomp_blocks_latched = cpu_recomp_blocks;
-			cpu_recomp_ins_latched = cpu_state.cpu_recomp_ins;
-			cpu_recomp_full_ins_latched = cpu_recomp_full_ins;
-			cpu_new_blocks_latched = cpu_new_blocks;
-			cpu_recomp_flushes_latched = cpu_recomp_flushes;
-			cpu_recomp_evicted_latched = cpu_recomp_evicted;
-			cpu_recomp_reuse_latched = cpu_recomp_reuse;
-			cpu_recomp_removed_latched = cpu_recomp_removed;
-			cpu_reps_latched = cpu_reps;
-			cpu_notreps_latched = cpu_notreps;
-
-			cpu_recomp_blocks = 0;
-			cpu_state.cpu_recomp_ins = 0;
-			cpu_recomp_full_ins = 0;
-			cpu_new_blocks = 0;
-			cpu_recomp_flushes = 0;
-			cpu_recomp_evicted = 0;
-			cpu_recomp_reuse = 0;
-			cpu_recomp_removed = 0;
-			cpu_reps = 0;
-			cpu_notreps = 0;
-#endif
-
-			readlnum = writelnum = 0;
-			egareads = egawrites = 0;
-			cycles_lost = 0;
-			mmuflush = 0;
-			emu_fps = frm;
-			frm = 0;
-
-			/* We need a Status window update now. */
-			status_update_needed = 1;
-		}
-
 		if (title_update) {
 			swprintf(temp, sizeof_w(temp),
-#ifdef _WIN32
-				 L"%S %S - %i%% - %S - %S",
-#else
 				 L"%s %s - %i%% - %s - %s",
-#endif
 				 EMU_NAME,emu_version,fps,machine_getname(),
 				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name);
 			ui_window_title(temp);
@@ -1242,6 +1165,7 @@ pclog("PC: clockrate=%lu cpuspeed=%lu\n", clockrate, cpuspeed);
 		}
 
 		/* One more frame done! */
+		framecount++;
 		done++;
 
 		/* Every 200 frames we save the machine status. */
@@ -1266,7 +1190,7 @@ pclog("PC: clockrate=%lu cpuspeed=%lu\n", clockrate, cpuspeed);
 	}
     }
 
-    pclog("PC: main thread done.\n");
+    INFO("PC: main thread done.\n");
 }
 
 
@@ -1281,6 +1205,36 @@ pc_onesec(void)
 }
 
 
+/* Pause or unpause the emulator. */
+void
+pc_pause(int p)
+{
+    static wchar_t oldtitle[512];
+    wchar_t title[512];
+
+    /* If un-pausing, ask the renderer if that's OK. */
+    if (p == 0)
+	p = vidapi_pause();
+
+    /* If already so, done. */
+    if (dopause == p) return;
+
+    if (p) {
+	wcscpy(oldtitle, ui_window_title(NULL));
+	wcscpy(title, oldtitle);
+	wcscat(title, L" - PAUSED -");
+	ui_window_title(title);
+    } else {
+	ui_window_title(oldtitle);
+    }
+
+    dopause = p;
+
+    /* Update the actual menu item. */
+    menu_set_item(IDM_PAUSE, dopause);
+}
+
+
 void
 set_screen_size(int x, int y)
 {
@@ -1289,11 +1243,11 @@ set_screen_size(int x, int y)
     int temp_overscan_x = overscan_x;
     int temp_overscan_y = overscan_y;
     double dx, dy, dtx, dty;
+    int vid;
+
+    DEBUG("SetScreenSize(%d, %d) resize=%d\n", x, y, vid_resize);
 
     /* Make sure we keep usable values. */
-#if 0
-    pclog("SetScreenSize(%d, %d) resize=%d\n", x, y, vid_resize);
-#endif
     if (x < 320) x = 320;
     if (y < 200) y = 200;
     if (x > 2048) x = 2048;
@@ -1314,10 +1268,11 @@ set_screen_size(int x, int y)
 	dty = (double)temp_overscan_y;
 
 	/* Account for possible overscan. */
-	if (!(video_is_ega_vga()) && (temp_overscan_y == 16)) {
+	vid = video_type();
+	if ((vid == VID_TYPE_CGA) && (temp_overscan_y == 16)) {
 		/* CGA */
 		dy = (((dx - dtx) / 4.0) * 3.0) + dty;
-	} else if (!(video_is_ega_vga()) && (temp_overscan_y < 16)) {
+	} else if ((vid == VID_MDA) && (temp_overscan_y < 16)) {
 		/* MDA/Hercules */
 		dy = (x / 4.0) * 3.0;
 	} else {
@@ -1371,15 +1326,11 @@ set_screen_size_natural(void)
 }
 
 
-int
-get_actual_size_x(void)
+void
+get_screen_size_natural(int *x, int *y)
 {
-    return(unscaled_size_x);
-}
-
-
-int
-get_actual_size_y(void)
-{
-    return(efscrnsz_y);
+    if (x != NULL)
+	*x = unscaled_size_x;
+    if (y != NULL)
+	*y = efscrnsz_y;
 }

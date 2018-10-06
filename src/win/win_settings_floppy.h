@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_floppy.h	1.0.6	2018/05/24
+ * Version:	@(#)win_settings_floppy.h	1.0.7	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,7 @@ static int fdlv_current_sel;
 static void
 floppy_image_list_init(HWND hwndList)
 {
-    HICON hiconItem;
+    HICON hIconItem;
     HIMAGELIST hSmall;
     int i;
 
@@ -59,9 +59,9 @@ floppy_image_list_init(HWND hwndList)
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
     for (i = 0; i < 14; i++) {
-	hiconItem = LoadIcon(hInstance, (LPCWSTR)plat_fdd_icon(i));
-	ImageList_AddIcon(hSmall, hiconItem);
-	DestroyIcon(hiconItem);
+	hIconItem = LoadIcon(hInstance, (LPCWSTR)ui_fdd_icon(i));
+	ImageList_AddIcon(hSmall, hIconItem);
+	DestroyIcon(hIconItem);
     }
 
     ListView_SetImageList(hwndList, hSmall, LVSIL_SMALL);
@@ -210,8 +210,8 @@ static BOOL CALLBACK
 floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
-    HWND h = INVALID_HANDLE_VALUE;
-    int i = 0;
+    HWND h;
+    int i;
     int old_sel = 0;
 
     switch (message) {
@@ -251,6 +251,7 @@ floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_LIST_FLOPPY_DRIVES)) {
 			old_sel = fdlv_current_sel;
+			h = GetDlgItem(hdlg, IDC_LIST_FLOPPY_DRIVES);
 			fdlv_current_sel = floppy_get_selected(hdlg);
 			if (fdlv_current_sel == old_sel) {
 				return FALSE;

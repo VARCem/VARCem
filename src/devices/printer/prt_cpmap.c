@@ -8,7 +8,7 @@
  *
  *		Various ASCII to Unicode maps, for the various codepages.
  *
- * Version:	@(#)prt_cpmap.c	1.0.1	2018/08/31
+ * Version:	@(#)prt_cpmap.c	1.0.2	2018/10/05
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -583,7 +583,7 @@ select_codepage(uint16_t code)
     if (code == 0)
 	return(maps[0].map);
 
-    pclog("ESC/P: unsupported code page %i, using CP437...\n", code);
+    ERRLOG("CPMAP: unsupported code page %i, using CP437...\n", code);
 
     return(maps[0].map);
 }

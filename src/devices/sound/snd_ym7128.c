@@ -8,7 +8,7 @@
  *
  *		Implementation of the Yamaha YM7128 sound device.
  *
- * Version:	@(#)snd_ym7128.c	1.0.2	2018/05/06
+ * Version:	@(#)snd_ym7128.c	1.0.3	2018/09/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "snd_ym7128.h"
 
@@ -48,7 +49,8 @@ static int attenuation[32];
 static int tap_position[32];
 
 
-void ym7128_init(ym7128_t *ym7128)
+void
+ym7128_init(ym7128_t *ym7128)
 {
         int c;
         double out = 65536.0;

@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.h	1.0.4	2018/09/03
+ * Version:	@(#)snd_mpu401.h	1.0.5	2018/09/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,7 @@ typedef enum {
     M_UART,
     M_INTELLIGENT
 } MpuMode;
+#define M_MCA	0x10
 
 typedef enum {
     T_OVERFLOW,
@@ -64,68 +65,61 @@ typedef enum {
 
 
 /* Messages sent to MPU-401 from host */
-#define MSG_EOX	                        0xf7
-#define MSG_OVERFLOW                    0xf8
-#define MSG_MARK                        0xfc
+#define MSG_EOX			0xf7
+#define MSG_OVERFLOW		0xf8
+#define MSG_MARK		0xfc
 
 /* Messages sent to host from MPU-401 */
-#define MSG_MPU_OVERFLOW                0xf8
-#define MSG_MPU_COMMAND_REQ             0xf9
-#define MSG_MPU_END                     0xfc
-#define MSG_MPU_CLOCK                   0xfd
-#define MSG_MPU_ACK                     0xfe
+#define MSG_MPU_OVERFLOW	0xf8
+#define MSG_MPU_COMMAND_REQ	0xf9
+#define MSG_MPU_END		0xfc
+#define MSG_MPU_CLOCK		0xfd
+#define MSG_MPU_ACK		0xfe
 
 
 typedef struct {
-    int		uart_mode;
-    uint8_t	rx_data;
-    int		intelligent;
-    MpuMode	mode;
-    int		irq;
-    uint8_t	status;
-    uint8_t	queue[MPU401_QUEUE];
-    int		queue_pos,
-		queue_used;
+    int		uart_mode, intelligent,
+		irq,
+		queue_pos, queue_used;
+
+    uint8_t	rx_data, is_mca,
+	    	status,
+	    	queue[MPU401_QUEUE], pos_regs[8];
+    		MpuMode mode;
 
     struct track {
-	int		counter;
-	uint8_t		value[8],
-			sys_val;
-	uint8_t		vlength,
-			length;
-	MpuDataType	type;
-    }		playbuf[8],
-		condbuf;
+	int counter;
+	uint8_t value[8], sys_val,
+		vlength,length;
+	MpuDataType type;
+    }		playbuf[8], condbuf;
 
     struct {
-	int conductor,cond_req,cond_set, block_ack;
-	int playing,reset;
-	int wsd,wsm,wsd_start;
-	int run_irq,irq_pending;
-	int send_now;
-	int eoi_scheduled;
-	int data_onoff;
-	uint32_t command_byte,cmd_pending;
-	uint8_t tmask,cmask,amask;
-	uint16_t midi_mask;
-	uint16_t req_mask;
-	uint8_t channel,old_chan;
+	int	conductor, cond_req,
+	    	cond_set, block_ack,
+	    	playing, reset,
+	    	wsd, wsm, wsd_start,
+	    	run_irq, irq_pending,
+	    	send_now, eoi_scheduled,
+	    	data_onoff;
+		uint8_t tmask, cmask,
+		amask,
+		channel, old_chan;
+		uint16_t midi_mask, req_mask;
+		uint32_t command_byte, cmd_pending;
     }		state;
 
     struct {
-	uint8_t timebase,old_timebase;
-	uint8_t tempo,old_tempo;
-	uint8_t tempo_rel,old_tempo_rel;
-	uint8_t tempo_grad;
-	uint8_t cth_rate,cth_counter;
-	int clock_to_host,cth_active;
+	uint8_t timebase, old_timebase,
+		tempo, old_tempo,
+		tempo_rel, old_tempo_rel,
+		tempo_grad,
+		cth_rate, cth_counter;
+		int clock_to_host,cth_active;
     }		clock;
-
-    uint8_t	pos_regs[8];
 } mpu_t;
 
 
-extern int		mca_version;
 extern const device_t	mpu401_device;
 extern const device_t	mpu401_mca_device;
 

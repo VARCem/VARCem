@@ -1,38 +1,38 @@
 ﻿/*
- * VARCem       Virtual ARchaeological Computer EMulator.
- *              An emulator of (mostly) x86-based PC systems and devices,
- *              using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
- *              spanning the era between 1981 and 1995.
+ * VARCem	Virtual ARchaeological Computer EMulator.
+ *		An emulator of (mostly) x86-based PC systems and devices,
+ *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+ *		spanning the era between 1981 and 1995.
  *
- *              This file is part of the VARCem Project.
+ *		This file is part of the VARCem Project.
  *
- *              String definitions for "Ukrainian (Ukraine)" language.
+ *		String definitions for "Ukrainian (Ukraine)" language.
  *
- * Version:     @(#)VARCem-UA.str	1.0.6	2018/09/23
+ * Version:	@(#)VARCem-UA.str	1.0.6	2018/10/01
  *
- * Authors:     .SVD., <old-dos.ru>
- *              Fred N. van Kempen, <decwiz@yahoo.com>
+ * Authors:	.SVD., <old-dos.ru>
+ *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *
- *              Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2018 Fred N. van Kempen.
  *
- *              Redistribution and  use  in source  and binary forms, with
- *              or  without modification, are permitted  provided that the
- *              following conditions are met:
+ *		Redistribution and  use  in source  and binary forms, with
+ *		or  without modification, are permitted  provided that the
+ *		following conditions are met:
  *
- *              1. Redistributions of  source  code must retain the entire
- *                 above notice, this list of conditions and the following
- *                 disclaimer.
+ *		1. Redistributions of  source  code must retain the entire
+ *		   above notice, this list of conditions and the following
+ *		   disclaimer.
  *
- *              2. Redistributions in binary form must reproduce the above
- *                 copyright  notice,  this list  of  conditions  and  the
- *                 following disclaimer in  the documentation and/or other
- *                 materials provided with the distribution.
+ *		2. Redistributions in binary form must reproduce the above
+ *		   copyright  notice,  this list  of  conditions  and  the
+ *		   following disclaimer in  the documentation and/or other
+ *		   materials provided with the distribution.
  *
- *              3. Neither the  name of the copyright holder nor the names
- *                 of  its  contributors may be used to endorse or promote
- *                 products  derived from  this  software without specific
- *                 prior written permission.
+ *		3. Neither the  name of the copyright holder nor the names
+ *		   of  its  contributors may be used to endorse or promote
+ *		   products  derived from  this  software without specific
+ *		   prior written permission.
  *
  * THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
  * "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
@@ -47,354 +47,352 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION     1,0,5
-#define TAG_AUTHOR      ".SVD."
-#define TAG_EMAIL       "old-dos.ru"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,6
+#define STR_AUTHOR	".SVD."
+#define STR_EMAIL	"old-dos.ru"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
-#define STR_2100        "Помилка"
-#define STR_2101        "Фатальна помилка"
-#define STR_2102        "Помилка конфiгурацiї"
-#define STR_2103        "Попередження"
+#define STR_2100	"Помилка"
+#define STR_2101	"Фатальна помилка"
+#define STR_2102	"Помилка конфiгурацiї"
+#define STR_2103	"Попередження"
 
 
 /* System errors (2200.) */
-#define STR_2200        "Неможливо завантажити клавiатурнi акселератори!"
-#define STR_2201        "Неможливо зареєструвати прямий ввод!"
-#define STR_2202        "Неможливо використання PCap, може вiн неiнiцiалiзований"
-#define STR_2203        "Пристрої PCap не знайденi" 
-#define STR_2204        "Невiрний пристрiй PCap"
-#define STR_2205        "Неможливо iнiцiювати OpenAL, переконайтесь в iснуваннi такої бiблiотеки\nу каталозi програми:\n\nlibopenal-1.dll"
-#define STR_2206        "Неможливо iнiцiювати FluidSynth, переконайтесь в iснуваннi такої бiблiотеки\nу каталозi програми:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2200	"Неможливо завантажити клавiатурнi акселератори!"
+#define STR_2201	"Неможливо зареєструвати прямий ввод!"
+#define STR_2202	"Неможливо використання PCap, може вiн неiнiцiалiзований"
+#define STR_2203	"Пристрої PCap не знайденi" 
+#define STR_2204	"Невiрний пристрiй PCap"
+#define STR_2205	"Неможливо iнiцiювати %s, переконайтесь в iснуваннi такої бiблiотеки\nу каталозi програми:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300        "Неможливо створити bitmap-файл: %s"
-#define STR_2301        "Не знайденi пiдтримуванi iмiджi ROM!"
-#define STR_2302        "Не знайдено вiрної конфiгурацiї.\n\nБажаєте вiдкрити дiалог налаштувань та створити її?"
-#define STR_2303        "Сконфiгурований комп'ютер:\n\n  %ls\n\n недосяжний.\n\nВiдкрити дiалог налаштувань?"
-#define STR_2304        "Сконфiгурована вiдеокарта:\n\n  %ls\n\n недосяжна.\n\nВiдкрити дiалог налаштувань?"
-#define STR_2305        "Обраний рендер '%S' недосяжний. Використати головний?"
-#define STR_2306        "ST506 та ESDI дисководы CD-ROM нiколи не iснували"
-#define STR_2307        "USB поки що не пiдтримується"
-#define STR_2308	"You must save your settings first!"
+#define STR_2300	"System is out of memory!"
+#define STR_2301	"Не знайденi пiдтримуванi iмiджi ROM!"
+#define STR_2302	"Не знайдено вiрної конфiгурацiї.\n\nБажаєте вiдкрити дiалог налаштувань та створити її?"
+#define STR_2303	"Сконфiгурований %ls:\n\n  %s\n\nнедосяжний.\n\nВiдкрити дiалог налаштувань?"
+#define STR_2304	"Обраний рендер:\n\n  %s\n\nнедосяжний. Використати головний?"
+#define STR_2305	"You must save your settings first!"
+#define STR_2306	"Неможливо створити bitmap-файл: %ls"
+#define STR_2307	"USB поки що не пiдтримується"
 
 
 /* Application messages (2400.) */
-#define STR_2400        "Упевненi, що бажаєте зберегти цi налаштування?\n\n(Можливо, знадобиться рестарт...)"
-#define STR_2401        "Змiни збережено. Будьласка, перезапустiть емулятор."
-#define STR_2402        "Обраний пристрiй '%ls' iще 'у процесi розробки' та може викликати проблеми.\n\nУпевненi, що бажаєте його використовувати?"
-#define STR_2403        "Клацнiть мишшю щоб захопити курсор"
-#define STR_2404        "Натиснiть F8+F12 щоб звiльнити курсор"
-#define STR_2405        "Натиснiть F8+F12 або середню кнопку мишi щоб звiльнити курсор"
-#define STR_2406        "Використовувати CTRL+ALT+PAGE_DOWN для повернення у вiконний режим"
+#define STR_2400	"Упевненi, що бажаєте зберегти цi налаштування?\n\n(Можливо, знадобиться рестарт...)"
+#define STR_2401	"Змiни збережено. Будьласка, перезапустiть емулятор."
+#define STR_2402	"Обраний пристрiй:\n\n  %s\n\niще 'у процесi розробки' та може викликати проблеми.\n\nУпевненi, що бажаєте його використовувати?"
+#define STR_2403	"Клацнiть мишшю щоб захопити курсор"
+#define STR_2404	"Натиснiть F8+F12 щоб звiльнити курсор"
+#define STR_2405	"Натиснiть F8+F12 або середню кнопку мишi щоб звiльнити курсор"
+#define STR_2406	"Використовувати CTRL+ALT+PAGE_DOWN для повернення у вiконний режим"
 
 
 /* Misc application strings (2500.) */
-#define STR_2500        "Файлы конфигурации\0*.varc\0Все файлы\0*.*\0"
+#define STR_2500	"Файлы конфигурации\0*.varc\0Все файлы\0*.*\0"
 
 
 /* UI: common elements (3000.) */
-#define STR_OK          "OK"
-#define STR_CANCEL      "Вiдмiнити"
-#define STR_CONFIGURE   "Налаштувати"
-#define STR_BROWSE      "Огляд.."
+#define STR_OK		"OK"
+#define STR_CANCEL	"Вiдмiнити"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
+#define STR_CONFIGURE	"Налаштувати"
+#define STR_BROWSE	"Огляд.."
+
 
 /* UI: dialog shared strings (3100.) */
-#define STR_NONE        "Вiдсутнiй"
-#define STR_DISABLED    "Недосяжно"
-#define STR_ENABLED     "Досяжно"
-#define STR_OFF         "Вимк."
-#define STR_ON          "Ввiмк."
-#define STR_TYPE        "Тип"
-#define STR_FILENAME    "Iм'я файла:"
-#define STR_PROGRESS    "Прогрес:"
-#define STR_BUS         "Шина:"
-#define STR_CHANNEL     "Канал:"
-#define STR_ID          "ID:"
-#define STR_LUN         "LUN:"
-#define STR_INV_NAME    "Будьласка, введiть вiрне iм'я файла"
-#define STR_IMG_EXIST   "Iмiдж вже iснує та буде перезаписаний.\nУпевненi, що бажаєте його використовувати?"
-#define STR_OPEN_READ   "Неможливо вiдкрити файл для зчитування"
-#define STR_OPEN_WRITE  "Неможливо вiдкрити файл для запису"
-#define STR_DEVCONF_1   "Конфiгурацiя"
-#define STR_DEVCONF_2   "Пристрiй:"
+#define STR_NONE	"Вiдсутнiй"
+#define STR_INTERNAL	"Internal"
+#define STR_DISABLED	"Недосяжно"
+#define STR_ENABLED	"Досяжно"
+#define STR_OFF		"Вимк."
+#define STR_ON		"Ввiмк."
+#define STR_TYPE	"Тип"
+#define STR_FILENAME	"Iм'я файла:"
+#define STR_PROGRESS	"Прогрес:"
+#define STR_BUS		"Шина:"
+#define STR_CHANNEL	"Канал:"
+#define STR_ID		"ID:"
+#define STR_LUN		"LUN:"
+#define STR_INV_NAME	"Будьласка, введiть вiрне iм'я файла"
+#define STR_IMG_EXIST	"Iмiдж вже iснує та буде перезаписаний.\nУпевненi, що бажаєте його використовувати?"
+#define STR_OPEN_READ	"Неможливо вiдкрити файл для зчитування"
+#define STR_OPEN_WRITE	"Неможливо вiдкрити файл для запису"
+#define STR_DEVCONF_1	"Конфiгурацiя"
+#define STR_DEVCONF_2	"Пристрiй:"
 
 
-/* UI: dialog: About (3200.) */
-#define STR_ABOUT       "Про програму VARCem.."
-#define  STR_3201       "Автори:"
-#define  STR_3202       "Fred N. van Kempen, Miran Grca, Sarah Walker та iншi.\nПрограма базована на кодi емуляторiв 86Box, PCem, MAME, DOSbox та Qemu"
-#define  STR_3203       "Публiкується за лiцензiєю BSD 3 та GNU General Public License (версiї 2 та вище) для власного та iмпортованого коду."
-#define  STR_3204       "детальнiше у файлi LICENSE.txt"
+/* UI dialog: About (3200.) */
+#define STR_ABOUT	"Про програму VARCem.."
+#define  STR_3201	"Автори:"
+#define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker та iншi.\nПрограма базована на кодi емуляторiв 86Box, PCem, MAME, DOSbox та Qemu"
+#define  STR_3203	"Публiкується за лiцензiєю BSD 3 та GNU General Public License (версiї 2 та вище) для власного та iмпортованого коду."
+#define  STR_3204	"детальнiше у файлi LICENSE.txt"
 
-#define STR_LOCALIZE    "Локалiзацiя"
-#define  STR_3211        "Автори переводiв з английскої на iншi мови:"
+/* UI dialog: Localization (3210.) */
+#define STR_LOCALIZE	"Локалiзацiя"
+#define  STR_3211	"Автори переводiв з английскої на iншi мови:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS      "Статус"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
-#define STR_SNDGAIN     "Пiдсилення гучностi"
-#define  STR_3251       "Пiдсилення"
+#define STR_SNDGAIN	"Пiдсилення гучностi"
+#define  STR_3251	"Пiдсилення"
 
 /* UI dialog: New Image (3275.) */
-#define STR_NEWIMG      "Новий iмiдж флоппi"
-#define  STR_3276       "Розмiр диску:"
-#define  STR_3277       "RPM режим:"
-#define  STR_3278       "Точний RPM"
-#define  STR_3279       "На 1% повiльнiше вiд точного RPM"
-#define  STR_3280       "На 1.5% повiльнiше вiд точного RPM"
-#define  STR_3281       "На 2% повiльнiше вiд точного RPM"
-#define  STR_3282       "160 KB"
-#define  STR_3283       "180 KB"
-#define  STR_3284       "320 KB"
-#define  STR_3285       "360 KB"
-#define  STR_3286       "640 KB"
-#define  STR_3287       "720 KB"
-#define  STR_3288       "1.2 MB"
-#define  STR_3289       "1.25 MB"
-#define  STR_3290       "1.44 MB"
-#define  STR_3291       "DMF (кластер 1024)"
-#define  STR_3292       "DMF (кластер 2048)"
-#define  STR_3293       "2.88 MB"
-#define  STR_3294       "ZIP 100"
-#define  STR_3295       "ZIP 250"
+#define STR_NEWIMG	"Новий iмiдж флоппi"
+#define  STR_3276	"Розмiр диску:"
+#define  STR_3277	"RPM режим:"
+#define  STR_3278	"Точний RPM"
+#define  STR_3279	"На 1% повiльнiше вiд точного RPM"
+#define  STR_3280	"На 1.5% повiльнiше вiд точного RPM"
+#define  STR_3281	"На 2% повiльнiше вiд точного RPM"
+#define  STR_3282	"160 KB"
+#define  STR_3283	"180 KB"
+#define  STR_3284	"320 KB"
+#define  STR_3285	"360 KB"
+#define  STR_3286	"640 KB"
+#define  STR_3287	"720 KB"
+#define  STR_3288	"1.2 MB"
+#define  STR_3289	"1.25 MB"
+#define  STR_3290	"1.44 MB"
+#define  STR_3291	"DMF (кластер 1024)"
+#define  STR_3292	"DMF (кластер 2048)"
+#define  STR_3293	"2.88 MB"
+#define  STR_3294	"ZIP 100"
+#define  STR_3295	"ZIP 250"
 
 /* UI dialog: Settings (3300.) */
-#define STR_SETTINGS    "Налаштування"
-#define STR_3310        "Комп'ютер"
-#define STR_3311        "Дiсплей"
-#define STR_3312        "Пристрiй вводу"
-#define STR_3313        "Звук"
-#define STR_3314        "Сiть"
-#define STR_3315        "Порти (COM & LPT)"
-#define STR_3316        "Контролери"
-#define STR_3317        "Жорсткi диски"
-#define STR_3318        "Дисководи флоппi"
-#define STR_3319        "З'ємнi пристрої"
+#define STR_SETTINGS	"Налаштування"
+#define STR_3310	"Комп'ютер"
+#define STR_3311	"Дiсплей"
+#define STR_3312	"Пристрiй вводу"
+#define STR_3313	"Звук"
+#define STR_3314	"Сiть"
+#define STR_3315	"Порти (COM & LPT)"
+#define STR_3316	"Контролери"
+#define STR_3317	"Жорсткi диски"
+#define STR_3318	"Дисководи флоппi"
+#define STR_3319	"З'ємнi пристрої"
 
 /* UI dialog: Settings (Machine, 3325.) */
-#define  STR_3325       "Комп'ютер:"
-#define  STR_3326       "Тип CPU:"
-#define  STR_3327       "CPU:"
-#define  STR_3328       "Цикли очiкування:"
-#define  STR_3329       "Пам'ять:"
-#define  STR_3330       "MB"
-#define  STR_3331       "Синхронiзацiя часу"
-#define  STR_3332       "Ввiмкнути FPU"
-#define  STR_3333       "Динамiчний рекомпiлятор"
-#define  STR_3334       "KB"
-#define  STR_3335       "за замовчуванням"
+#define  STR_3325	"Комп'ютер:"
+#define  STR_3326	"Тип CPU:"
+#define  STR_3327	"CPU:"
+#define  STR_3328	"Цикли очiкування:"
+#define  STR_3329	"Пам'ять:"
+#define  STR_3330	"MB"
+#define  STR_3331	"Синхронiзацiя часу:"
+#define  STR_3332	"Ввiмкнути FPU"
+#define  STR_3333	"Динамiчний рекомпiлятор"
+#define  STR_3334	"KB"
+#define  STR_3335	"за замовчуванням"
+#define  STR_3336	"Досяжно (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
-#define  STR_3350       "Вiдео:"
-#define  STR_3351       "Швидкiсть вiдео:"
-#define  STR_3352       "Voodoo Graphics"
-#define  STR_3353       "за замовчуванням"
-#define  STR_3354       "8-bit"
-#define  STR_3355       "повiльна 16-bit"
-#define  STR_3356       "швидка 16-bit"
-#define  STR_3357       "повiльна VLB/PCI"
-#define  STR_3358       "середня VLB/PCI"
-#define  STR_3359       "швидка VLB/PCI"
+#define  STR_3350	"Вiдео:"
+#define  STR_3351	"Voodoo Graphics"
 
 /* UI dialog: Settings (Input, 3375.) */
-#define  STR_3375       "Миша:"
-#define  STR_3376       "Джойстiк:"
-#define  STR_3377       "Джойстiк 1"
-#define  STR_3378       "Джойстiк 2"
-#define  STR_3379       "Джойстiк 3"
-#define  STR_3380       "Джойстiк 4"
+#define  STR_3375	"Миша:"
+#define  STR_3376	"Джойстiк:"
+#define  STR_3377	"Джойстiк 1"
+#define  STR_3378	"Джойстiк 2"
+#define  STR_3379	"Джойстiк 3"
+#define  STR_3380	"Джойстiк 4"
 
 /* UI dialog: Settings (Sound, 3400.) */
-#define  STR_3400       "Звукова карта:"
-#define  STR_3401       "MIDI-пристрiй:"
-#define  STR_3402       "Окремий MPU-401"
-#define  STR_3403       "Використовувати Nuked OPL"
-#define  STR_3404       "Використовувати FLOAT32 звук"
+#define  STR_3400	"Звукова карта:"
+#define  STR_3401	"MIDI-пристрiй:"
+#define  STR_3402	"Окремий MPU-401"
+#define  STR_3403	"Використовувати Nuked OPL"
+#define  STR_3404	"Використовувати FLOAT32 звук"
 
 /* UI dialog: Settings (Network, 3425.) */
-#define  STR_3425       "Тип сiтки:"
-#define  STR_3426       "Пристрiй PCap:"
-#define  STR_3427       "Сiтьовий адаптер:"
+#define  STR_3425	"Тип сiтки:"
+#define  STR_3426	"Пристрiй PCap:"
+#define  STR_3427	"Сiтьовий адаптер:"
 
 /* UI dialog: Settings (Ports, 3450.) */
-#define  STR_3450       "Iгровий порт"
-#define  STR_3451       "Паралельний порт 1"
-#define  STR_3452       "Паралельний порт 2"
-#define  STR_3453       "Паралельний порт 3"
-#define  STR_3454       "Послiдовний порт 1"
-#define  STR_3455       "Послiдовний порт 2"
+#define  STR_3450	"Iгровий порт"
+#define  STR_3451	"Паралельний порт 1"
+#define  STR_3452	"Паралельний порт 2"
+#define  STR_3453	"Паралельний порт 3"
+#define  STR_3454	"Послiдовний порт 1"
+#define  STR_3455	"Послiдовний порт 2"
 
 /* UI dialog: Settings (Other Devices, 3475.) */
-#define  STR_3475       "Контролер SCSI:"
-#define  STR_3476       "Контролер HD:"
-#define  STR_3477       "Третичний IDE:"
-#define  STR_3478       "Четвертичний IDE:"
-#define  STR_3479       "Пристрiй ISABugger"
+#define  STR_3475	"Контролер SCSI:"
+#define  STR_3476	"Контролер HD:"
+#define  STR_3477	"Третичний IDE"
+#define  STR_3478	"Четвертичний IDE"
+#define  STR_3479	"Пристрiй ISABugger"
 #define  STR_3480	"Карта расширения памяти (ISA)"
 #define  STR_3481	"ISA Clock/RTC карта"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
-#define  STR_3500       "Жорсткi диски:"
-#define  STR_3501       "Новий.."
-#define  STR_3502       "Iснуючий.."
-#define  STR_3503       "Прибрати"
-#define  STR_3504       "Шина"
-#define  STR_3505       "Файл"
-#define  STR_3506       "C"
-#define  STR_3507       "H"
-#define  STR_3508       "S"
-#define  STR_3509       "MB"
-#define  STR_3510       "MB (CHS: %u, %u, %u)"
-#define  STR_3511       "Параметри..."
-#define  STR_3512       "Параметри (бiльше)..."
-#define  STR_3515       "ST506"
-#define  STR_3516       "ESDI"
-#define  STR_3517       "IDE (PIO-only)"
-#define  STR_3518       "IDE (PIO+DMA)"
-#define  STR_3519       "SCSI"
-#define  STR_3520       "SCSI (з'ємний)"
+#define  STR_3500	"Жорсткi диски:"
+#define  STR_3501	"Новий.."
+#define  STR_3502	"Iснуючий.."
+#define  STR_3503	"Прибрати"
+#define  STR_3504	"Шина"
+#define  STR_3505	"Файл"
+#define  STR_3506	"C"
+#define  STR_3507	"H"
+#define  STR_3508	"S"
+#define  STR_3509	"MB"
+#define  STR_3510	"MB (CHS: %u, %u, %u)"
+#define  STR_3511	"Параметри..."
+#define  STR_3512	"Параметри (бiльше)..."
+#define  STR_3515	"ST506"
+#define  STR_3516	"ESDI"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
-#define  STR_3525       "Добавити жорсткий диск"
-#define  STR_3526       "Добавити новий жорсткий диск"
-#define  STR_3527       "Добавити iснуючий жорсткий диск"
-#define  STR_3528       "Цилiндри:"
-#define  STR_3529       "Голiвки:"
-#define  STR_3530       "Сектори:"
-#define  STR_3531       "Розмiр (MB):"
-#define  STR_3532       "Тип:"
-#define  STR_3533       "Спроба створити iмiдж HDI об'єму бiльшого, нiж 4 GB"
-#define  STR_3534       "Спроба створити неймовiрно великий iмiдж жорсткого диску"
-#define  STR_3535       "Iмiджi HDI або HDX з розмiром сектора, вiдмiнним вiд 512 байтiв, не подтримуються"
-#define  STR_3536       "Iмiджi жорстких дискiв\0*.hd?;*.im?;*.vhd\0Усi файли\0*.*\0"
-#define  STR_3537       "Не забудьте створити роздiл(и) на новому диску та вiдформатувати його"
+#define  STR_3525	"Добавити жорсткий диск"
+#define  STR_3526	"Добавити новий жорсткий диск"
+#define  STR_3527	"Добавити iснуючий жорсткий диск"
+#define  STR_3528	"Цилiндри:"
+#define  STR_3529	"Голiвки:"
+#define  STR_3530	"Сектори:"
+#define  STR_3531	"Розмiр (MB):"
+#define  STR_3532	"Тип:"
+#define  STR_3533	"Спроба створити iмiдж HDI об'єму бiльшого, нiж 4 GB"
+#define  STR_3534	"Спроба створити неймовiрно великий iмiдж жорсткого диску"
+#define  STR_3535	"Iмiджi HDI або HDX з розмiром сектора, вiдмiнним вiд 512 байтiв, не подтримуються"
+#define  STR_3536	"Iмiджi жорстких дискiв\0*.hd?;*.im?;*.vhd\0Усi файли\0*.*\0"
+#define  STR_3537	"Не забудьте створити роздiл(и) на новому диску та вiдформатувати його"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
-#define  STR_3550       "Дисководи флоппi:"
-#define  STR_3551       "Тип:"
-#define  STR_3552       "Турбо таймiнги"
-#define  STR_3553       "Перевiряти BPB"
-#define  STR_3554       "Турбо"
-#define  STR_3555       "Перевiряти BPB"
+#define  STR_3550	"Дисководи флоппi:"
+#define  STR_3551	"Тип:"
+#define  STR_3552	"Турбо таймiнги"
+#define  STR_3553	"Перевiряти BPB"
+#define  STR_3554	"Турбо"
+#define  STR_3555	"Перевiряти BPB"
 
 /* UI dialog: Settings (Removable Devices, 3575.) */
-#define  STR_3575       "Оптичнi дисководи:"
-#define  STR_3576       "Швидкiсть:"
-#define  STR_3577       "Дисководи ZIP:"
-#define  STR_3578       "ZIP 250"
-#define  STR_3579       "Швидкiсть"
-#define  STR_3580       "<Зарезервовано>"
-#define  STR_3581       "<Зарезервовано>"
-#define  STR_3582       "ATAPI (PIO-only)"
-#define  STR_3583       "ATAPI (PIO+DMA)"
-#define  STR_3584       "SCSI"
-
-/* UI dialog: status bar (3900.) */
-#define STR_3900        "(пусто)"
-#define STR_3901        "(хост-диск %c:)"
-#define STR_3902        " [Захищений вiд запису]"
-#define STR_3903        "Новый iмiдж.."
-#define STR_3904        "Вiдкрити iмiдж.."
-#define STR_3905        "Завантажити попереднiй iмiдж"
-#define STR_3906        "Вийняти"
-
-#define STR_3910        "Флоппi %i (%s): %ls"
-#define STR_3911        "Усi iмiджi\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Просунутi секторнi iмiджi\0*.imd;*.json;*.td0\0Простi секторнi iмiджi\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Iмiджi з магнiтним стрiмом\0*.fdi\0Iмiджi з бiтовим стрiмом\0*.86f\0Усi файли\0*.*\0"
-#define STR_3912        "Усi iмiджi\0*.86f;*.dsk;*.flp;*.im?;*.*fd?\0Простi секторнi iмiджi\0*.dsk;*.flp;*.im?;*.img;*.*fd?\0Iмiджi з бiтовым стрiмом\0*.86f\0"
-#define STR_3913        "Iмiджi з бiтовим стрiмом\0*.86f\0"
-#define STR_3914        "Экспортувати у 86F.."
-
-#define STR_3920        "CD-ROM %i (%s): %s"
-#define STR_3921        "Хост-диск с CD/DVD (%c:)"
-#define STR_3922        "Iмiджi CD-ROM\0*.iso;*.cue\0Усi файли (*.*)\0*.*\0"
-#define STR_3923        "Без звуку"
-
-#define STR_3930        "Жорсткий диск (%s)"
-
-#define STR_3940        "З'ємний диск %i: %ls"
-#define STR_3941        "Повiдомити про змiну диска"
-
-#define STR_3950        "ZIP %i (%03i): %ls"
-#define STR_3951        "Iмiджi для дисководiв ZIP\0*.im?;*.zdi\0Усi файлы\0*.*\0"
-#define STR_3952        "Iмiджi для дисководiв ZIP\0*.im?;*.zdi\0"
-#define STR_3960        "Сiтка"
-#define STR_3970        "Звук"
+#define  STR_3575	"Оптичнi дисководи:"
+#define  STR_3576	"Швидкiсть:"
+#define  STR_3577	"Дисководи ZIP:"
+#define  STR_3578	"ZIP 250"
+#define  STR_3579	"Швидкiсть"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
 
-/* Menu: Action (4000.) */
-#define STR_ACTION      "Дiя"
-#define  STR_4001       "Жорстке перезавантаження"
-#define  STR_4002       "Ctrl+Alt+Del"
-#define  STR_4003       "Виконати Ctrl+Alt+Esc"
-#define  STR_4004       "Виконати Ctrl+Alt+Break"
-#define  STR_4005       "Пауза"
-#define  STR_4006       "Вихiд"
+/* UI: Status Bar (3900.) */
+#define STR_3900	"(пусто)"
+#define STR_3901	"(хост-диск %c:)"
+#define STR_3902	" [Захищений вiд запису]"
+#define STR_3903	"Новый iмiдж.."
+#define STR_3904	"Вiдкрити iмiдж.."
+#define STR_3905	"Завантажити попереднiй iмiдж"
+#define STR_3906	"Вийняти"
+#define STR_3907	"Повiдомити про змiну диска"
 
-/* Menu: View (4010.) */
-#define STR_VIEW        "Вигляд"
-#define  STR_4011       "Розмiр вiкна, що змiнюється"
-#define  STR_4012       "Запам'ятати розмiр та позицiю"
-#define  STR_4013       "Повноекранний режим\tCtrl+Alt+PageUP"
-#define  STR_4014       "Використовувати правий CTRL як лiвий ALT"
-#define  STR_4015       "Оновлювати iконки у панелi статуса"
+#define STR_3910	"Флоппi %i (%s): %ls"
+#define STR_3911	"Усi iмiджi\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Просунутi секторнi iмiджi\0*.imd;*.json;*.td0\0Простi секторнi iмiджi\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Iмiджi з магнiтним стрiмом\0*.fdi\0Iмiджi з бiтовим стрiмом\0*.86f\0Усi файли\0*.*\0"
+#define STR_3912	"Усi iмiджi\0*.86f;*.dsk;*.flp;*.im?;*.*fd?\0Простi секторнi iмiджi\0*.dsk;*.flp;*.im?;*.img;*.*fd?\0Iмiджi з бiтовым стрiмом\0*.86f\0"
+#define STR_3913	"Iмiджi з бiтовим стрiмом\0*.86f\0"
+#define STR_3914	"Экспортувати у 86F.."
 
-/* Menu: View > Renderer */
-#define  STR_4020       "Рендер"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
+#define STR_3921	"Хост-диск с CD/DVD (%c:)"
+#define STR_3922	"Iмiджi CD-ROM\0*.iso;*.cue\0Усi файли (*.*)\0*.*\0"
+#define STR_3923	"Без звуку"
 
-/* Menu: View > Window Scale Factor */
-#define  STR_4030       "Масштаб вiкна"
-#define   STR_4031      "0.5x"
-#define   STR_4032      "1x"
-#define   STR_4033      "1.5x"
-#define   STR_4034      "2x"
+#define STR_3930	"Жорсткий диск %i (%ls): %ls"
 
-/* Menu: View > Fullscreen Stretch Mode */
-#define  STR_4040       "Розтягнутий повноекранний режим"
-#define   STR_4041      "Розтянути на весь екран"
-#define   STR_4042      "4:3"
-#define   STR_4043      "Квадратнi пiкселi"
-#define   STR_4044      "Цiлочисельне масштабування"
-#define   STR_4045      "Зберiгати поточний розмiр"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
+#define STR_3951	"Iмiджi для дисководiв ZIP\0*.im?;*.zdi\0Усi файлы\0*.*\0"
+#define STR_3952	"Iмiджi для дисководiв ZIP\0*.im?;*.zdi\0"
+#define STR_3960	"Сiтка (%s)"
+#define STR_3970	"Звук (%s)"
 
-/* Menu: Display (4050.) */
-#define STR_DISPLAY     "Дiсплей"
-#define  STR_4051       "Iнверсний дiсплей"
-#define  STR_4052       "Дозволити оверскан"
-#define  STR_4053       "Встановити вiдношення сторiн 4:3"
-#define  STR_4054       "Змiнити контрастнiсть монохромного дiсплея"
 
-/* Menu: Display > Display Type */
-#define  STR_DISPTYPE   "Тип дiсплея"
-#define   STR_4061      "RGB кольоровий"
-#define   STR_4062      "Монохромний"
-#define   STR_4063      "Янтарне сяйво"
-#define   STR_4064      "Зелене сяйво"
-#define   STR_4065      "Бiле сяйво"
+/* UI menu: Action (4000.) */
+#define STR_ACTION	"Дiя"
+#define  STR_4001	"Жорстке перезавантаження"
+#define  STR_4002	"Ctrl+Alt+Del"
+#define  STR_4003	"Виконати Ctrl+Alt+Esc"
+#define  STR_4004	"Виконати Ctrl+Alt+Break"
+#define  STR_4005	"Пауза"
+#define  STR_4006	"Вихiд"
 
-/* Menu: Display > Grayscale Conversion Type */
-#define  STR_GRAYSCALE  "Тип монохромної конверсiї"
-#define   STR_4071      "BT601 (NTSC/PAL)"
-#define   STR_4072      "BT709 (HDTV)"
-#define   STR_4073      "Усереднений"
 
-/* Menu: Tools (4080.) */
-#define STR_TOOLS       "Iнструменти"
-#define  STR_4081       "Налаштування"
-#define  STR_4082       "Мова"
-#define  STR_4083       "Логер"
-#define  STR_4084       "Завантажити конфигурацiю"
-#define  STR_4085       "Зберегти конфигурацiю"
-#define  STR_4086       "Статус"
-#define  STR_4087       "Зробити скрiншот\tCtrl+Home"
+/* UI menu: View (4010.) */
+#define STR_VIEW	"Вигляд"
+#define  STR_4011	"Розмiр вiкна, що змiнюється"
+#define  STR_4012	"Запам'ятати розмiр та позицiю"
+#define  STR_4013	"Повноекранний режим\tCtrl+Alt+PageUP"
+#define  STR_4014	"Використовувати правий CTRL як лiвий ALT"
 
-/* Menu: Help (4090.) */
-#define STR_HELP        "Допомога"
-#define  STR_4091       "Про програму VARCem"
+/* UI menu: View > Renderer (4020.) */
+#define  STR_4020	"Рендер"
+
+/* UI menu: View > Window Scale Factor (4030.) */
+#define  STR_4030	"Масштаб вiкна"
+#define   STR_4031	"0.5x"
+#define   STR_4032	"1x"
+#define   STR_4033	"1.5x"
+#define   STR_4034	"2x"
+
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
+#define  STR_4040	"Розтягнутий повноекранний режим"
+#define   STR_4041	"Розтянути на весь екран"
+#define   STR_4042	"4:3"
+#define   STR_4043	"Квадратнi пiкселi"
+#define   STR_4044	"Цiлочисельне масштабування"
+#define   STR_4045	"Зберiгати поточний розмiр"
+
+
+/* UI menu: Display (4050.) */
+#define STR_DISPLAY	"Дiсплей"
+#define  STR_4051	"Iнверсний дiсплей"
+#define  STR_4052	"Дозволити оверскан"
+#define  STR_4053	"Встановити вiдношення сторiн 4:3"
+#define  STR_4054	"Змiнити контрастнiсть монохромного дiсплея"
+
+/* UI menu: Display > Display Type (4060.) */
+#define  STR_DISPTYPE	"Тип дiсплея"
+#define   STR_4061	"RGB кольоровий"
+#define   STR_4062	"Монохромний"
+#define   STR_4063	"Янтарне сяйво"
+#define   STR_4064	"Зелене сяйво"
+#define   STR_4065	"Бiле сяйво"
+
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
+#define  STR_GRAYSCALE	"Тип монохромної конверсiї"
+#define   STR_4071	"BT601 (NTSC/PAL)"
+#define   STR_4072	"BT709 (HDTV)"
+#define   STR_4073	"Усереднений"
+
+
+/* UI menu: Tools (4080.) */
+#define STR_TOOLS	"Iнструменти"
+#define  STR_4081	"Налаштування"
+#define  STR_4082	"Мова"
+#define  STR_4083	"Логер"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"Завантажити конфигурацiю"
+#define  STR_4087	"Зберегти конфигурацiю"
+#define  STR_4088	"Зробити скрiншот"
+
+
+/* UI menu: Help (4090.) */
+#define STR_HELP	"Допомога"
+#define  STR_4091	"Про програму VARCem"
 
 
 /* End of file. */

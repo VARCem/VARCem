@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.33	2018/10/04
+ * Version:	@(#)emu.h	1.0.32	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,8 +49,13 @@
 
 
 /* Configuration values. */
+#ifdef _WIN32
 #define SCREEN_RES_X	640
 #define SCREEN_RES_Y	480
+#else
+#define SCREEN_RES_X	800
+#define SCREEN_RES_Y	600
+#endif
 
 /* Pre-defined directory names. */
 #define LANGUAGE_PATH	L"lang"
@@ -69,6 +74,7 @@
 #define BIOS_FILE	L"bios.txt"
 #define CONFIG_FILE	L"config.varc"
 #define CONFIG_FILE_EXT	L".varc"
+#define NVR_FILE_EXT	L".nvr"
 #define DUMP_FILE_EXT	L".dmp"
 
 /* Pre-defined URLs to websites. */
@@ -76,8 +82,74 @@
 #define URL_PAYPAL	L"https://www.paypal.me/VARCem"
 
 
-#define MIN(a, b)	((a) < (b) ? (a) : (b))
-#define ABS(x)		((x) > 0 ? (x) : -(x))
+/*
+ * Definitions for the logging system.
+ *
+ * First, let us start by defining the varrious logging
+ * levels in use. Some things must always logged (for
+ * example, serious errors), while other info is nice
+ * to have, but not always.
+ *
+ * By default, the system starts up in the INFO level,
+ * so, messages up to and including LOG_INFO will be
+ * written to the logfile. The --quiet commandline
+ * option will lower this to LOG_ERROR level, meaning,
+ * only real errors will be shown.
+ */
+#define LOG_ALWAYS	0			/* this level always shows */
+#define LOG_ERR		LOG_ALWAYS		/* errors always logged */
+#define LOG_INFO	1			/* informational logging */
+#define LOG_DEBUG	2			/* debug-level info */
+#define LOG_DETAIL	3			/* more detailed info */
+#define LOG_LOWLEVEL	4			/* pretty verbose stuff */
+
+/*
+ * Now define macros that can be used in the code,
+ * and which always react the same way. These are
+ * just shorthands to keep the code clean-ish.
+ */
+#define ERRLOG(...)	pclog(LOG_ERR, __VA_ARGS__)	/* always logged */
+#define INFO(...)	pclog(LOG_INFO, __VA_ARGS__)	/* informational */
+
+/*
+ * Most modules in the program will use the main
+ * logging facility provided by the pc.c file, but
+ * a module CAN use its own logging function for
+ * debugging, for example while it is being worked
+ * on. Those modules should define the 'dbglog'
+ * macro to their own function before including the
+ * main include file, emu.h, to make the logging
+ * macros use that local function.
+ *
+ * By default, if none was defined, we define it
+ * to be the main logging function.
+ */
+#ifndef dbglog
+# define dbglog pclog
+#endif
+
+/*
+ * The debug logging macros are also shorthands to
+ * keep the code reasonably clean from #ifdef and
+ * other clutter.
+ *
+ * Macros for several levels are provided.
+ */
+#ifdef _LOGGING
+# define DBGLOG(x, ...)	dbglog(LOG_DEBUG+(x), __VA_ARGS__)
+#else
+# define DBGLOG(x, ...)	do {/*nothing*/} while(0)
+#endif
+#define DEBUG(...)	DBGLOG(0, __VA_ARGS__)	/* default-level */
+
+
+/* For systems that do not provide these. */
+#ifndef MIN
+# define MIN(a, b)	((a) < (b) ? (a) : (b))
+#endif
+#ifndef ABS
+# define ABS(x)		((x) > 0 ? (x) : -(x))
+#endif
 
 
 #ifdef __cplusplus
@@ -96,11 +168,11 @@ extern int	video_fps;			/* (O) render speed in fps */
 #endif
 extern int	config_ro;			/* (O) dont modify cfg file */
 extern int	settings_only;			/* (O) only the settings dlg */
+extern int	log_level;			/* (O) global logging level */
 extern wchar_t	log_path[1024];			/* (O) full path of logfile */
 
-
 /* Configuration variables. */
-extern int	lang_id;			/* (C) language ID */
+extern int	language;			/* (C) language ID */
 extern int	window_w, window_h,		/* (C) window size and */
 		window_x, window_y,		/*     position info */
 		window_remember;
@@ -117,13 +189,11 @@ extern int	vid_api,			/* (C) video renderer */
 		scale,				/* (C) screen scale factor */
 		enable_overscan,		/* (C) video */
 		force_43,			/* (C) video */
-		rctrl_is_lalt,			/* (C) set R-CTRL as L-ALT */
-		update_icons;			/* (C) update statbar icons */
+		rctrl_is_lalt;			/* (C) set R-CTRL as L-ALT */
 extern int	video_card,			/* (C) graphics/video card */
-		video_speed,			/* (C) video option */
 		voodoo_enabled;			/* (C) video option */
 extern int	mouse_type;			/* (C) selected mouse type */
-extern int	enable_sync;			/* (C) enable time sync */
+extern int	time_sync;			/* (C) enable time sync */
 extern int	game_enabled,			/* (C) enable game port */
 		serial_enabled[],		/* (C) enable serial ports */
 		parallel_enabled[],		/* (C) enable LPT ports */
@@ -140,10 +210,11 @@ extern int	sound_card,			/* (C) selected sound card */
 		sound_is_float,			/* (C) sound uses FP values */
 		sound_gain,			/* (C) sound volume gain */
 		mpu401_standalone_enable,	/* (C) sound option */
-		opl3_type,			/* (C) sound option */
+		opl_type,			/* (C) sound option */
 		midi_device;			/* (C) selected midi device */
 extern int	joystick_type;			/* (C) joystick type */
 extern int	mem_size;			/* (C) memory size */
+extern int	machine;			/* (C) current machine ID */
 extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
 		cpu,				/* (C) cpu type */
 		cpu_use_dynarec,		/* (C) cpu uses/needs Dyna */
@@ -151,7 +222,6 @@ extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
 extern int	network_type;			/* (C) net provider type */
 extern int	network_card;			/* (C) net interface num */
 extern char	network_host[512];		/* (C) host network intf */
-
 
 /* Global variables. */
 extern char	emu_title[64];			/* full name of application */
@@ -161,20 +231,47 @@ extern wchar_t	exe_path[1024];			/* emu executable path */
 extern wchar_t	emu_path[1024];			/* emu installation path */
 extern wchar_t	usr_path[1024];			/* path (dir) of user data */
 extern wchar_t  cfg_path[1024];			/* full path of config file */
-extern FILE	*stdlog;			/* file to log output to */
+extern int	emu_lang_id;			/* current language ID */
 extern int	scrnsz_x,			/* current screen size, X */
 		scrnsz_y;			/* current screen size, Y */
-extern int	unscaled_size_x,		/* current unscaled size X */
-		unscaled_size_y,		/* current unscaled size Y */
-		efscrnsz_y;
-extern int	config_changed;			/* config has changed */
+extern int	config_changed,			/* config has changed */
+		dopause,			/* system is paused */
+		doresize,			/* screen resize requested */
+		mouse_capture;			/* mouse is captured in app */
+
+#ifdef _LOGGING
+extern int	pci_do_log;
+extern int	keyboard_do_log;
+extern int	mouse_do_log;
+extern int	game_do_log;
+extern int	parallel_do_log;
+extern int	serial_do_log;
+extern int	fdc_do_log;
+extern int	fdd_do_log;
+extern int	d86f_do_log;
+extern int	hdc_do_log;
+extern int	hdd_do_log;
+extern int	zip_do_log;
+extern int	cdrom_do_log;
+extern int	cdrom_image_do_log;
+extern int	cdrom_ioctl_do_log;
+extern int	sound_do_log;
+extern int	sound_midi_do_log;
+extern int	sound_dev_do_log;
+extern int	network_do_log;
+extern int	network_dev_do_log;
+extern int	scsi_do_log;
+extern int	scsi_disk_do_log;
+extern int	scsi_dev_do_log;
+extern int	video_do_log;
+#endif
 
 
 /* Function prototypes. */
 #ifdef HAVE_STDARG_H
 extern void		pclog_ex(const char *fmt, va_list);
 #endif
-extern void		pclog(const char *fmt, ...);
+extern void		pclog(int level, const char *fmt, ...);
 extern void		pclog_repeat(int enabled);
 extern void		pclog_dump(int num);
 extern void		fatal(const char *fmt, ...);
@@ -188,20 +285,21 @@ extern void		pc_reset_hard_init(void);
 extern void		pc_reset_hard(void);
 extern void		pc_reset(int hard);
 extern void		pc_reload(const wchar_t *fn);
+extern void		pc_set_speed(void);
 extern void		pc_full_speed(void);
 extern void		pc_speed_changed(void);
 extern void		pc_thread(void *param);
-extern void		pc_start(void);
+extern void		pc_pause(int p);
 extern void		pc_onesec(void);
 extern void		set_screen_size(int x, int y);
 extern void		set_screen_size_natural(void);
+extern void		get_screen_size_natural(int *x, int *y);
 
 extern const wchar_t	*get_string(int id);
 extern uint32_t		get_val(const char *str);
 
 #ifndef USE_STANDARD_MALLOC
 extern void		*mem_alloc(size_t sz);
-#define malloc		mem_alloc
 #endif
 
 #ifdef __cplusplus

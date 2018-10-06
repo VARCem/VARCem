@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.4	2018/06/10
+ * Version:	@(#)win_sdl.c  	1.0.5	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -224,24 +224,24 @@ sdl_init(int fs)
     wchar_t temp[128];
     SDL_version ver;
 
-    pclog("SDL: init (fs=%d)\n", fs);
+    INFO("SDL: init (fs=%d)\n", fs);
 
     cgapal_rebuild();
 
     /* Try loading the DLL. */
     sdl_handle = dynld_module(PATH_SDL_DLL, sdl_imports);
     if (sdl_handle == NULL) {
-	pclog("SDL: unable to load '%s', SDL not available.\n", PATH_SDL_DLL);
+	ERRLOG("SDL: unable to load '%s', SDL not available.\n", PATH_SDL_DLL);
 	return(0);
     }
 
     /* Get and log the version of the DLL we are using. */
     sdl_GetVersion(&ver);
-    pclog("SDL: version %d.%d.%d\n", ver.major, ver.minor, ver.patch);
+    INFO("SDL: version %d.%d.%d\n", ver.major, ver.minor, ver.patch);
 
     /* Initialize the SDL system. */
     if (sdl_Init(SDL_INIT_VIDEO) < 0) {
-	pclog("SDL: initialization failed (%s)\n", sdl_GetError());
+	ERRLOG("SDL: initialization failed (%s)\n", sdl_GetError());
 	return(0);
     }
 
@@ -251,8 +251,8 @@ sdl_init(int fs)
 	sdl_h = GetSystemMetrics(SM_CYSCREEN);
 
 	/* Create the desktop-covering window. */
-        _swprintf(temp, L"%s v%s Full-Screen",
-		  TEXT(EMU_NAME), TEXT(EMU_VERSION));
+        swprintf(temp, sizeof_w(temp),
+		 L"%s v%s Full-Screen", EMU_NAME, emu_version);
         sdl_hwnd = CreateWindow(FS_CLASS_NAME,
 				temp,
 				WS_POPUP,
@@ -261,7 +261,7 @@ sdl_init(int fs)
 				NULL,
 				hInstance,
 				NULL);
-pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
+	DEBUG("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
 
 	/* Redirect RawInput to this new window. */
 	plat_set_input(sdl_hwnd);
@@ -277,7 +277,7 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
 	sdl_win = sdl_CreateWindowFrom((void *)hwndRender);
     }
     if (sdl_win == NULL) {
-	pclog("SDL: unable to CreateWindowFrom (%s)\n", sdl_GetError());
+	ERRLOG("SDL: unable to CreateWindowFrom (%s)\n", sdl_GetError());
 	sdl_close();
 	return(0);
     }
@@ -291,7 +291,7 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
      */
     sdl_render = sdl_CreateRenderer(sdl_win, -1, SDL_RENDERER_SOFTWARE);
     if (sdl_render == NULL) {
-	pclog("SDL: unable to create renderer (%s)\n", sdl_GetError());
+	ERRLOG("SDL: unable to create renderer (%s)\n", sdl_GetError());
 	sdl_close();
         return(0);
     }
@@ -305,7 +305,7 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
     sdl_tex = sdl_CreateTexture(sdl_render, SDL_PIXELFORMAT_ARGB8888,
 				SDL_TEXTUREACCESS_STREAMING, 2048, 2048);
     if (sdl_tex == NULL) {
-	pclog("SDL: unable to create texture (%s)\n", sdl_GetError());
+	ERRLOG("SDL: unable to create texture (%s)\n", sdl_GetError());
 	sdl_close();
         return(0);
     }
@@ -323,7 +323,7 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
 static void
 sdl_resize(int x, int y)
 {
-    pclog("SDL: resizing to %dx%d\n", x, y);
+    DEBUG("SDL: resizing to %dx%d\n", x, y);
 }
 
 
@@ -340,21 +340,21 @@ sdl_screenshot(const wchar_t *fn)
 
     /* Create file. */
     if ((fp = plat_fopen(fn, L"wb")) == NULL) {
-	pclog("SDL: screenshot: file %ls could not be opened for writing\n", fn);
+	ERRLOG("SDL: screenshot: file %ls could not be opened for writing\n", fn);
 	return;
     }
 
     /* initialize stuff */
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (png_ptr == NULL) {
-	pclog("SDL: screenshot: create_write_struct failed\n");
+	ERRLOG("SDL: screenshot: create_write_struct failed\n");
 	fclose(fp);
 	return;
     }
 
     info_ptr = png_create_info_struct(png_ptr);
     if (info_ptr == NULL) {
-	pclog("SDL: screenshot: create_info_struct failed");
+	ERRLOG("SDL: screenshot: create_info_struct failed");
 	fclose(fp);
 	return;
     }
@@ -365,9 +365,9 @@ sdl_screenshot(const wchar_t *fn)
 	8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
 	PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
-    pixels = (uint8_t *)malloc(width * height * 4);
+    pixels = (uint8_t *)mem_alloc(width * height * 4);
     if (pixels == NULL) {
-	pclog("SDL: screenshot: unable to allocate RGBA Bitmap memory\n");
+	ERRLOG("SDL: screenshot: unable to allocate RGBA Bitmap memory\n");
 	fclose(fp);
 	return;
     }
@@ -375,21 +375,21 @@ sdl_screenshot(const wchar_t *fn)
     res = sdl_RenderReadPixels(sdl_render, NULL,
 			       SDL_PIXELFORMAT_ABGR8888, pixels, width * 4);
     if (res != 0) {
-	pclog("SDL: screenshot: error reading render pixels\n");
+	ERRLOG("SDL: screenshot: error reading render pixels\n");
 	free(pixels);
 	fclose(fp);
 	return;
     }
 
-    if ((b_rgb = (png_bytep *) malloc(sizeof(png_bytep) * height)) == NULL) {
-	sdl_log("[sdl_take_screenshot] Unable to Allocate RGB Bitmap Memory");
+    if ((b_rgb = (png_bytep *)mem_alloc(sizeof(png_bytep) * height)) == NULL) {
+	ERRLOG("[sdl_take_screenshot] Unable to Allocate RGB Bitmap Memory");
 	free(rgba);
 	fclose(fp);
 	return;
     }
 
     for (y = 0; y < height; ++y) {
-	b_rgb[y] = (png_byte *) malloc(png_get_rowbytes(png_ptr, info_ptr));
+	b_rgb[y] = (png_byte *)mem_alloc(png_get_rowbytes(png_ptr, info_ptr));
     	for (x = 0; x < width; ++x) {
 		b_rgb[y][(x) * 3 + 0] = rgba[(y * width + x) * 4 + 0];
 		b_rgb[y][(x) * 3 + 1] = rgba[(y * width + x) * 4 + 1];

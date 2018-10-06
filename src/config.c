@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.33	2018/09/03
+ * Version:	@(#)config.c	1.0.34	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,6 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -66,9 +65,10 @@
 #include "devices/disk/hdd.h"
 #include "devices/disk/hdc.h"
 #include "devices/disk/hdc_ide.h"
-#include "devices/disk/zip.h"
-#include "devices/cdrom/cdrom.h"
 #include "devices/scsi/scsi.h"
+#include "devices/scsi/scsi_device.h"
+#include "devices/cdrom/cdrom.h"
+#include "devices/disk/zip.h"
 #include "devices/network/network.h"
 #include "devices/sound/sound.h"
 #include "devices/sound/midi.h"
@@ -200,7 +200,7 @@ delete_section_if_empty(const char *cat)
 static section_t *
 create_section(const char *name)
 {
-    section_t *ns = malloc(sizeof(section_t));
+    section_t *ns = (section_t *)mem_alloc(sizeof(section_t));
 
     memset(ns, 0x00, sizeof(section_t));
     strncpy(ns->name, name, sizeof(ns->name));
@@ -213,7 +213,7 @@ create_section(const char *name)
 static entry_t *
 create_entry(section_t *section, const char *name)
 {
-    entry_t *ne = malloc(sizeof(entry_t));
+    entry_t *ne = (entry_t *)mem_alloc(sizeof(entry_t));
 
     memset(ne, 0x00, sizeof(entry_t));
     strncpy(ne->name, name, sizeof(ne->name));
@@ -277,8 +277,6 @@ load_general(const char *cat)
 
     rctrl_is_lalt = config_get_int(cat, "rctrl_is_lalt", 0);
 
-    update_icons = config_get_int(cat, "update_icons", 1);
-
     window_remember = config_get_int(cat, "window_remember", 0);
     if (window_remember) {
 	p = config_get_string(cat, "window_coordinates", "0, 0, 0, 0");
@@ -292,7 +290,7 @@ load_general(const char *cat)
 
     sound_gain = config_get_int(cat, "sound_gain", 0);
 
-    lang_id = config_get_hex16(cat, "language", lang_id);
+    language = config_get_hex16(cat, "language", emu_lang_id);
 }
 
 
@@ -364,11 +362,6 @@ save_general(const char *cat)
       else
 	config_set_int(cat, "rctrl_is_lalt", rctrl_is_lalt);
 
-    if (update_icons == 1)
-	config_delete_var(cat, "update_icons");
-      else
-	config_set_int(cat, "update_icons", update_icons);
-
     if (window_remember) {
 	config_set_int(cat, "window_remember", window_remember);
 
@@ -384,10 +377,10 @@ save_general(const char *cat)
       else
 	config_delete_var(cat, "sound_gain");
 
-    if (lang_id == 0x0409)
+    if (emu_lang_id == 0x0409)
 	config_delete_var(cat, "language");
       else
-	config_set_hex16(cat, "language", lang_id);
+	config_set_hex16(cat, "language", emu_lang_id);
 
     delete_section_if_empty(cat);
 }
@@ -401,17 +394,16 @@ load_machine(const char *cat)
 
     p = config_get_string(cat, "machine", NULL);
     if (p != NULL)
-	machine = machine_get_machine_from_internal_name(p);
+	machine = machine_get_from_internal_name(p);
       else 
 	machine = -1;
 
-    romset = machine_getromset();
     cpu_manufacturer = config_get_int(cat, "cpu_manufacturer", 0);
     cpu = config_get_int(cat, "cpu", 0);
     cpu_waitstates = config_get_int(cat, "cpu_waitstates", 0);
 
     mem_size = config_get_int(cat, "mem_size", 4096);
-    if (mem_size < (((machines[machine].flags & MACHINE_AT) &&
+    if ((uint32_t)mem_size < (((machines[machine].flags & MACHINE_AT) &&
         (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram))
 	mem_size = (((machines[machine].flags & MACHINE_AT) && (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram);
     if (mem_size > 1048576)
@@ -421,7 +413,12 @@ load_machine(const char *cat)
 
     enable_external_fpu = !!config_get_int(cat, "cpu_enable_fpu", 0);
 
-    enable_sync = !!config_get_int(cat, "enable_sync", 1);
+    time_sync = !!config_get_int(cat, "enable_sync", -1);
+    if (time_sync != -1) {
+	/* FIXME: remove this after 12/01/2018 --FvK */
+	config_delete_var(cat, "enable_sync");
+    } else
+	time_sync = !!config_get_int(cat, "time_sync", TIME_SYNC_DISABLED);
 }
 
 
@@ -458,10 +455,10 @@ save_machine(const char *cat)
       else
 	config_set_int(cat, "cpu_enable_fpu", enable_external_fpu);
 
-    if (enable_sync == 1)
-	config_delete_var(cat, "enable_sync");
+    if (time_sync == TIME_SYNC_DISABLED)
+	config_delete_var(cat, "time_sync");
       else
-	config_set_int(cat, "enable_sync", enable_sync);
+	config_set_int(cat, "time_sync", time_sync);
 
     delete_section_if_empty(cat);
 }
@@ -475,7 +472,6 @@ load_video(const char *cat)
 
     if (machines[machine].fixed_vidcard) {
 	config_delete_var(cat, "video_card");
-	config_delete_var(cat, "voodoo");
 	video_card = VID_INTERNAL;
     } else {
 	p = config_get_string(cat, "video_card", NULL);
@@ -486,11 +482,12 @@ load_video(const char *cat)
 			p = "none";
 	}
 	video_card = video_get_video_from_internal_name(p);
-
-	video_speed = config_get_int(cat, "video_speed", -1);
-
-	voodoo_enabled = !!config_get_int(cat, "voodoo", 0);
     }
+
+    /*FXME: remove by 12/01/2018 --FvK */
+    config_delete_var(cat, "video_speed");
+
+    voodoo_enabled = !!config_get_int(cat, "voodoo", 0);
 }
 
 
@@ -498,13 +495,7 @@ load_video(const char *cat)
 static void
 save_video(const char *cat)
 {
-    config_set_string(cat, "video_card",
-		      video_get_internal_name(video_old_to_new(video_card)));
-
-    if (video_speed == 3)
-	config_delete_var(cat, "video_speed");
-      else
-	config_set_int(cat, "video_speed", video_speed);
+    config_set_string(cat, "video_card", video_get_internal_name(video_card));
 
     if (voodoo_enabled == 0)
 	config_delete_var(cat, "voodoo");
@@ -625,11 +616,11 @@ load_sound(const char *cat)
 
     mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
 
-    p = config_get_string(cat, "opl3_type", "dbopl");
+    p = config_get_string(cat, "opl_type", "dbopl");
     if (!strcmp(p, "nukedopl") || !strcmp(p, "1"))
-	opl3_type = 1;
+	opl_type = 1;
       else
-	opl3_type = 0;
+	opl_type = 0;
 
     p = config_get_string(cat, "sound_type", "float");
     if (!strcmp(p, "float") || !strcmp(p, "1"))
@@ -660,10 +651,10 @@ save_sound(const char *cat)
       else
 	config_set_int(cat, "mpu401_standalone", mpu401_standalone_enable);
 
-    if (opl3_type == 0)
-	config_delete_var(cat, "opl3_type");
+    if (opl_type == 0)
+	config_delete_var(cat, "opl_type");
       else
-	config_set_string(cat, "opl3_type", (opl3_type == 1) ? "nukedopl" : "dbopl");
+	config_set_string(cat, "opl_type", (opl_type == 1) ? "nukedopl" : "dbopl");
 
     if (sound_is_float == 1)
 	config_delete_var(cat, "sound_type");
@@ -819,7 +810,7 @@ save_ports(const char *cat)
 static void
 load_other(const char *cat)
 {
-    char temp[512], *p;
+    char temp[128], *p;
     int c;
 
     p = config_get_string(cat, "scsi_card", "none");
@@ -834,11 +825,8 @@ load_other(const char *cat)
     }
     hdc_type = hdc_get_from_internal_name(p);
 
-    for (c = 2; c < 4; c++) {
-	sprintf(temp, "ide_%02i", c + 1);
-	p = config_get_string(cat, temp, "0, 00");
-	sscanf(p, "%i, %02i", &ide_enable[c], &ide_irq[c]);
-    }
+    ide_ter_enabled = !!config_get_int(cat, "ide_ter", 0);
+    ide_qua_enabled = !!config_get_int(cat, "ide_qua", 0);
 
     bugger_enabled = !!config_get_int(cat, "bugger_enabled", 0);
 
@@ -862,7 +850,7 @@ load_other(const char *cat)
 static void
 save_other(const char *cat)
 {
-    char temp[512], tmp2[512];
+    char temp[512];
     int c;
 
     if (scsi_card == 0)
@@ -873,14 +861,15 @@ save_other(const char *cat)
 
     config_set_string(cat, "hdc", hdc_get_internal_name(hdc_type));
 
-    for (c = 2; c < 4; c++) {
-	sprintf(temp, "ide_%02i", c+1);
-	sprintf(tmp2, "%i, %02i", !!ide_enable[c], ide_irq[c]);
-	if (ide_enable[c] == 0)
-		config_delete_var(cat, temp);
-	  else
-		config_set_string(cat, temp, tmp2);
-    }
+    if (ide_ter_enabled == 0)
+	config_delete_var(cat, "ide_ter");
+      else
+	config_set_int(cat, "ide_ter", ide_ter_enabled);
+
+    if (ide_qua_enabled == 0)
+	config_delete_var(cat, "ide_qua");
+      else
+	config_set_int(cat, "ide_qua", ide_qua_enabled);
 
     if (bugger_enabled == 0)
 	config_delete_var(cat, "bugger_enabled");
@@ -906,51 +895,26 @@ save_other(const char *cat)
 }
 
 
-static int
-tally_char(const char *str, char c)
-{
-    int tally;
-
-    tally = 0;
-    if (str != NULL) {
-	while (*str)
-		if (*str++ == c) tally++;
-    }
-
-    return(tally);
-}
-
-
 /* Load "Hard Disks" section. */
 static void
 load_disks(const char *cat)
 {
-    char temp[512], tmp2[512];
-    char s[512];
-    int c;
-    char *p;
+    char temp[512], tmp2[512], s[512];
+    uint32_t max_spt, max_hpc, max_tracks;
+    uint32_t board = 0, dev = 0;
     wchar_t *wp;
-    int max_spt, max_hpc, max_tracks;
-    int board = 0, dev = 0;
+    char *p;
+    int c;
 
     for (c = 0; c < HDD_NUM; c++) {
 	sprintf(temp, "hdd_%02i_parameters", c+1);
 	p = config_get_string(cat, temp, "0, 0, 0, 0, none");
-	if (tally_char(p, ',') == 3) {
-		sscanf(p, "%u, %u, %u, %s",
-			(int *)&hdd[c].spt,
-			(int *)&hdd[c].hpc,
-			(int *)&hdd[c].tracks, s);
-		hdd[c].wp = 0;
-	} else {
-		sscanf(p, "%u, %u, %u, %d, %s",
-			(int *)&hdd[c].spt,
-			(int *)&hdd[c].hpc,
-			(int *)&hdd[c].tracks,
-			(int *)&hdd[c].wp, s);
-	}
 
-	hdd[c].bus = hdd_string_to_bus(s, 0);
+	sscanf(p, "%u, %u, %u, %i, %s",
+	       (unsigned *)&hdd[c].spt, (unsigned *)&hdd[c].hpc,
+		(unsigned *)&hdd[c].tracks, (int *)&hdd[c].wp, s);
+
+	hdd[c].bus = hdd_string_to_bus(s);
 	switch(hdd[c].bus) {
 		case HDD_BUS_DISABLED:
 		default:
@@ -969,15 +933,13 @@ load_disks(const char *cat)
 			max_tracks = 1023;
 			break;
 
-		case HDD_BUS_IDE_PIO_ONLY:
-		case HDD_BUS_IDE_PIO_AND_DMA:
+		case HDD_BUS_IDE:
 			max_spt = 63;
 			max_hpc = 16;
 			max_tracks = 266305;
 			break;
 
 		case HDD_BUS_SCSI:
-		case HDD_BUS_SCSI_REMOVABLE:
 			max_spt = 99;
 			max_hpc = 255;
 			max_tracks = 266305;
@@ -1009,8 +971,7 @@ load_disks(const char *cat)
 
 	/* IDE */
 	sprintf(temp, "hdd_%02i_ide_channel", c+1);
-	if ((hdd[c].bus == HDD_BUS_IDE_PIO_ONLY) ||
-	    (hdd[c].bus == HDD_BUS_IDE_PIO_AND_DMA)) {
+	if (hdd[c].bus == HDD_BUS_IDE) {
 		sprintf(tmp2, "%01u:%01u", c>>1, c&1);
 		p = config_get_string(cat, temp, tmp2);
 		sscanf(p, "%01u:%01u", &board, &dev);
@@ -1026,8 +987,7 @@ load_disks(const char *cat)
 
 	/* SCSI */
 	sprintf(temp, "hdd_%02i_scsi_location", c+1);
-	if ((hdd[c].bus == HDD_BUS_SCSI) ||
-	    (hdd[c].bus == HDD_BUS_SCSI_REMOVABLE)) {
+	if (hdd[c].bus == HDD_BUS_SCSI) {
 		sprintf(tmp2, "%02u:%02u", c, 0);
 		p = config_get_string(cat, temp, tmp2);
 
@@ -1079,8 +1039,8 @@ save_disks(const char *cat)
     for (c = 0; c < HDD_NUM; c++) {
 	sprintf(temp, "hdd_%02i_parameters", c+1);
 	if (hdd_is_valid(c)) {
-		str = hdd_bus_to_string(hdd[c].bus, 0);
-		sprintf(tmp2, "%u, %u, %u, %d, %s",
+		str = hdd_bus_to_string(hdd[c].bus);
+		sprintf(tmp2, "%u, %u, %u, %i, %s",
 			hdd[c].spt, hdd[c].hpc, hdd[c].tracks, hdd[c].wp, str);
 		config_set_string(cat, temp, tmp2);
 	} else {
@@ -1100,18 +1060,21 @@ save_disks(const char *cat)
 		config_delete_var(cat, temp);
 
 	sprintf(temp, "hdd_%02i_ide_channel", c+1);
-	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_IDE_PIO_ONLY) && (hdd[c].bus != HDD_BUS_IDE_PIO_AND_DMA))) {
+	if (!hdd_is_valid(c) || (hdd[c].bus != HDD_BUS_IDE)) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%01u:%01u", hdd[c].id.ide_channel >> 1, hdd[c].id.ide_channel & 1);
+		sprintf(tmp2, "%01u:%01u",
+			hdd[c].id.ide_channel >> 1,
+			hdd[c].id.ide_channel & 1);
 		config_set_string(cat, temp, tmp2);
 	}
 
 	sprintf(temp, "hdd_%02i_scsi_location", c+1);
-	if (! hdd_is_valid(c) || ((hdd[c].bus != HDD_BUS_SCSI) && (hdd[c].bus != HDD_BUS_SCSI_REMOVABLE))) {
+	if (!hdd_is_valid(c) || (hdd[c].bus != HDD_BUS_SCSI)) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%02u:%02u", hdd[c].id.scsi.id, hdd[c].id.scsi.lun);
+		sprintf(tmp2, "%02i:%02i",
+			hdd[c].id.scsi.id, hdd[c].id.scsi.lun);
 		config_set_string(cat, temp, tmp2);
 	}
 
@@ -1246,8 +1209,8 @@ load_removable(const char *cat)
 
 	sprintf(temp, "cdrom_%02i_parameters", c+1);
 	p = config_get_string(cat, temp, "0, none");
-	sscanf(p, "%01u, %s", &cdrom_drives[c].sound_on, s);
-	cdrom_drives[c].bus_type = hdd_string_to_bus(s, 1);
+	sscanf(p, "%01u, %s", (int *)&cdrom_drives[c].sound_on, s);
+	cdrom_drives[c].bus_type = cdrom_string_to_bus(s);
 
 	sprintf(temp, "cdrom_%02i_speed", c+1);
 	cdrom_drives[c].speed_idx = config_get_int(cat, temp, cdrom_speed_idx(CDROM_SPEED_DEFAULT));
@@ -1256,20 +1219,13 @@ load_removable(const char *cat)
 	cdrom_drives[c].ide_channel = cdrom_drives[c].scsi_device_id = c + 2;
 
 	sprintf(temp, "cdrom_%02i_ide_channel", c+1);
-	if ((cdrom_drives[c].bus_type == CDROM_BUS_ATAPI_PIO_ONLY) ||
-	    (cdrom_drives[c].bus_type == CDROM_BUS_ATAPI_PIO_AND_DMA)) {
+	if (cdrom_drives[c].bus_type == CDROM_BUS_ATAPI) {
 		sprintf(tmp2, "%01u:%01u", (c+2)>>1, (c+2)&1);
 		p = config_get_string(cat, temp, tmp2);
-		if (! strstr(p, ":")) {
-			sscanf(p, "%i", (int *)&cdrom_drives[c].ide_channel);
-			cdrom_drives[c].ide_channel &= 7;
-		} else {
-			sscanf(p, "%01u:%01u", &board, &dev);
-
-			board &= 3;
-			dev &= 1;
-			cdrom_drives[c].ide_channel = (board<<1)+dev;
-		}
+		sscanf(p, "%01u:%01u", &board, &dev);
+		board &= 3;
+		dev &= 1;
+		cdrom_drives[c].ide_channel = (board<<1)+dev;
 
 		if (cdrom_drives[c].ide_channel > 7)
 			cdrom_drives[c].ide_channel = 7;
@@ -1279,8 +1235,8 @@ load_removable(const char *cat)
 			sprintf(tmp2, "%02u:%02u", c+2, 0);
 			p = config_get_string(cat, temp, tmp2);
 			sscanf(p, "%02u:%02u",
-				&cdrom_drives[c].scsi_device_id,
-				&cdrom_drives[c].scsi_device_lun);
+				(int *)&cdrom_drives[c].scsi_device_id,
+				(int *)&cdrom_drives[c].scsi_device_lun);
 	
 			if (cdrom_drives[c].scsi_device_id > 15)
 				cdrom_drives[c].scsi_device_id = 15;
@@ -1329,15 +1285,14 @@ load_removable(const char *cat)
     for (c = 0; c < ZIP_NUM; c++) {
 	sprintf(temp, "zip_%02i_parameters", c+1);
 	p = config_get_string(cat, temp, "0, none");
-	sscanf(p, "%01u, %s", &zip_drives[c].is_250, s);
-	zip_drives[c].bus_type = hdd_string_to_bus(s, 1);
+	sscanf(p, "%01u, %s", (unsigned *)&zip_drives[c].is_250, s);
+	zip_drives[c].bus_type = zip_string_to_bus(s);
 
 	/* Default values, needed for proper operation of the Settings dialog. */
 	zip_drives[c].ide_channel = zip_drives[c].scsi_device_id = c + 2;
 
 	sprintf(temp, "zip_%02i_ide_channel", c+1);
-	if ((zip_drives[c].bus_type == ZIP_BUS_ATAPI_PIO_ONLY) ||
-	    (zip_drives[c].bus_type == ZIP_BUS_ATAPI_PIO_AND_DMA)) {
+	if (zip_drives[c].bus_type == ZIP_BUS_ATAPI) {
 		sprintf(tmp2, "%01u:%01u", (c+2)>>1, (c+2)&1);
 		p = config_get_string(cat, temp, tmp2);
 		sscanf(p, "%01u:%01u", &board, &dev);
@@ -1354,8 +1309,8 @@ load_removable(const char *cat)
 			sprintf(tmp2, "%02u:%02u", c+2, 0);
 			p = config_get_string(cat, temp, tmp2);
 			sscanf(p, "%02u:%02u",
-				&zip_drives[c].scsi_device_id,
-				&zip_drives[c].scsi_device_lun);
+				(unsigned *)&zip_drives[c].scsi_device_id,
+				(unsigned *)&zip_drives[c].scsi_device_lun);
 	
 			if (zip_drives[c].scsi_device_id > 15)
 				zip_drives[c].scsi_device_id = 15;
@@ -1425,13 +1380,12 @@ save_removable(const char *cat)
 		config_delete_var(cat, temp);
 	} else {
 		sprintf(tmp2, "%u, %s", cdrom_drives[c].sound_on,
-			hdd_bus_to_string(cdrom_drives[c].bus_type, 1));
+			cdrom_bus_to_string(cdrom_drives[c].bus_type));
 		config_set_string(cat, temp, tmp2);
 	}
 
 	sprintf(temp, "cdrom_%02i_ide_channel", c+1);
-	if ((cdrom_drives[c].bus_type != CDROM_BUS_ATAPI_PIO_ONLY) &&
-	    (cdrom_drives[c].bus_type != CDROM_BUS_ATAPI_PIO_AND_DMA)) {
+	if (cdrom_drives[c].bus_type != CDROM_BUS_ATAPI) {
 		config_delete_var(cat, temp);
 	} else {
 		sprintf(tmp2, "%01u:%01u", cdrom_drives[c].ide_channel>>1,
@@ -1463,13 +1417,12 @@ save_removable(const char *cat)
 		config_delete_var(cat, temp);
 	} else {
 		sprintf(tmp2, "%u, %s", zip_drives[c].is_250,
-			hdd_bus_to_string(zip_drives[c].bus_type, 1));
+			zip_bus_to_string(zip_drives[c].bus_type));
 		config_set_string(cat, temp, tmp2);
 	}
 		
 	sprintf(temp, "zip_%02i_ide_channel", c+1);
-	if ((zip_drives[c].bus_type != ZIP_BUS_ATAPI_PIO_ONLY) &&
-	    (zip_drives[c].bus_type != ZIP_BUS_ATAPI_PIO_AND_DMA)) {
+	if (zip_drives[c].bus_type != ZIP_BUS_ATAPI) {
 		config_delete_var(cat, temp);
 	} else {
 		sprintf(tmp2, "%01u:%01u", zip_drives[c].ide_channel>>1,
@@ -1529,7 +1482,7 @@ config_default(void)
     scale = 1;
     video_card = VID_CGA;
     vid_api = vidapi_from_internal_name("default");;
-    enable_sync = 1;
+    time_sync = TIME_SYNC_ENABLED;
     joystick_type = 0;
     hdc_type = 0;
 
@@ -1566,7 +1519,7 @@ config_read(const wchar_t *fn)
 #endif
     if (f == NULL) return(0);
 	
-    sec = malloc(sizeof(section_t));
+    sec = (section_t *)mem_alloc(sizeof(section_t));
     memset(sec, 0x00, sizeof(section_t));
     memset(&config_head, 0x00, sizeof(list_t));
     list_add(&sec->list, &config_head);
@@ -1602,7 +1555,7 @@ config_read(const wchar_t *fn)
 		if (buff[c] != L']') continue;
 
 		/* Create a new section and insert it. */
-		ns = malloc(sizeof(section_t));
+		ns = (section_t *)mem_alloc(sizeof(section_t));
 		memset(ns, 0x00, sizeof(section_t));
 		strncpy(ns->name, sname, sizeof(ns->name));
 		list_add(&ns->list, &config_head);
@@ -1632,7 +1585,7 @@ config_read(const wchar_t *fn)
 	d = c;
 
 	/* Allocate a new variable entry.. */
-	ne = malloc(sizeof(entry_t));
+	ne = (entry_t *)mem_alloc(sizeof(entry_t));
 	memset(ne, 0x00, sizeof(entry_t));
 	strncpy(ne->name, ename, sizeof(ne->name));
 	wcsncpy(ne->wdata, &buff[d], sizeof_w(ne->wdata));
@@ -1724,7 +1677,7 @@ config_load(void)
 	/* Mark the configuration as changed. */
 	config_changed = 1;
     } else {
-	pclog("CONFIG: file not present or invalid, using defaults!\n");
+	ERRLOG("CONFIG: file not present or invalid, using defaults!\n");
 
 	config_default();
 
@@ -1761,11 +1714,11 @@ config_dump(void)
 	entry_t *ent;
 
 	if (sec->name && sec->name[0])
-		pclog("[%s]\n", sec->name);
+		INFO("[%s]\n", sec->name);
 	
 	ent = (entry_t *)sec->entry_head.next;
 	while (ent != NULL) {
-		pclog("%s = %ls\n", ent->name, ent->wdata);
+		INFO("%s = %ls\n", ent->name, ent->wdata);
 
 		ent = (entry_t *)ent->list.next;
 	}
@@ -1818,7 +1771,7 @@ config_get_hex16(const char *cat, const char *name, int def)
 {
     section_t *section;
     entry_t *entry;
-    int value;
+    unsigned int value;
 
     section = find_section(cat);
     if (section == NULL)
@@ -1830,7 +1783,7 @@ config_get_hex16(const char *cat, const char *name, int def)
 
     sscanf(entry->data, "%04X", &value);
 
-    return(value);
+    return((int)value);
 }
 
 
@@ -1839,7 +1792,7 @@ config_get_hex20(const char *cat, const char *name, int def)
 {
     section_t *section;
     entry_t *entry;
-    int value;
+    unsigned int value;
 
     section = find_section(cat);
     if (section == NULL)
@@ -1851,7 +1804,7 @@ config_get_hex20(const char *cat, const char *name, int def)
 
     sscanf(entry->data, "%05X", &value);
 
-    return(value);
+    return((int)value);
 }
 
 
@@ -1860,7 +1813,7 @@ config_get_mac(const char *cat, const char *name, int def)
 {
     section_t *section;
     entry_t *entry;
-    int val0 = 0, val1 = 0, val2 = 0;
+    unsigned int val0 = 0, val1 = 0, val2 = 0;
 
     section = find_section(cat);
     if (section == NULL)
@@ -1872,7 +1825,7 @@ config_get_mac(const char *cat, const char *name, int def)
 
     sscanf(entry->data, "%02x:%02x:%02x", &val0, &val1, &val2);
 
-    return((val0 << 16) + (val1 << 8) + val2);
+    return((int)((val0 << 16) + (val1 << 8) + val2));
 }
 
 

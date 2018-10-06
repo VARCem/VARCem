@@ -10,7 +10,7 @@
 #		settings, so we can avoid changing the main one for all of
 #		our local setups.
 #
-# Version:	@(#)Makefile.local	1.0.8	2018/04/23
+# Version:	@(#)Makefile.local	1.0.9	2018/09/15
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -65,10 +65,14 @@ STUFF	:=
 
 # Add feature selections here.
 # -DANSI_CFG			forces the config file to ANSI encoding
-# -DENABLE_PCI_LOG=n		enables logging for that module, sets level n
+# -DENABLE_BUS_LOG=n		enables logging for that module, sets level n
 # -DENABLE_KEYBOARD_LOG=n	enables logging for that module, sets level n
+# -DENABLE_MOUSE_LOG=n		enables logging for that module, sets level n
+# -DENABLE_GAME_LOG=n		enables logging for that module, sets level n
+# -DENABLE_PARALLEL_LOG=n	enables logging for that module, sets level n
 # -DENABLE_SERIAL_LOG=n		enables logging for that module, sets level n
 # -DENABLE_FDC_LOG=n		enables logging for that module, sets level n
+# -DENABLE_FDD_LOG=n		enables logging for that module, sets level n
 # -DENABLE_D86F_LOG=n		enables logging for that module, sets level n
 # -DENABLE_HDC_LOG=n		enables logging for that module, sets level n
 # -DENABLE_HDD_LOG=n		enables logging for that module, sets level n
@@ -76,15 +80,15 @@ STUFF	:=
 # -DENABLE_CDROM_LOG=n		enables logging for that module, sets level n
 # -DENABLE_CDROM_IMAGE_LOG=n	enables logging for that module, sets level n
 # -DENABLE_CDROM_IOCTL_LOG=n	enables logging for that module, sets level n
-# -DENABLE_SOUND_EMU8K_LOG=n	enables logging for that module, sets level n
-# -DENABLE_SOUND_MPU401_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SOUND_LOG=n		enables logging for that module, sets level n
+# -DENABLE_SOUND_MIDI_LOG=n	enables logging for that module, sets level n
 # -DENABLE_SOUND_DEV_LOG=n	enables logging for that module, sets level n
-# -DENABLE_NIC_LOG=n		enables logging for that module, sets level n
-# -DENABLE_SCSI_BUS_LOG=n	enables logging for that module, sets level n
+# -DENABLE_NETWORK_LOG=n	enables logging for that module, sets level n
+# -DENABLE_NETWORK_DEV_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SCSI_LOG=n		enables logging for that module, sets level n
 # -DENABLE_SCSI_DISK_LOG=n	enables logging for that module, sets level n
 # -DENABLE_SCSI_DEV_LOG=n	enables logging for that module, sets level n
-# -DENABLE_SCSI_X54X_LOG=n	enables logging for that module, sets level n
-# -DENABLE_VOODOO_LOG=n		enables logging for that module, sets level n
+# -DENABLE_VIDEO_LOG=n		enables logging for that module, sets level n
 
 
 EXTRAS		:=

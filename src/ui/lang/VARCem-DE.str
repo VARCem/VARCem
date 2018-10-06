@@ -8,7 +8,7 @@
  *
  *		String definitions for "German (Germany)" language.
  *
- * Version:	@(#)VARCem-DE.str	1.0.11	2018/09/23
+ * Version:	@(#)VARCem-DE.str	1.0.13	2018/10/01
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,10 +47,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,11
-#define TAG_AUTHOR	"Michael Drüing"
-#define TAG_EMAIL	"michael@drueing.de"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,12
+#define STR_AUTHOR	"Michael Drüing"
+#define STR_EMAIL	"michael@drueing.de"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Fehler"
@@ -65,27 +68,24 @@
 #define STR_2202	"PCap konnte nicht gestartet werden, da es eventuell nicht initialisiert ist."
 #define STR_2203	"Keine PCap-fähigen Geräte gefunden"
 #define STR_2204	"Ungültiges PCap-Gerät"
-#define STR_2205	"OpenAL konnte nicht initialisiert werden, bitte stellen Sie sicher, dass sich die\nfolgende Laufzeitbibliothek in Ihrem Programmordner befindet:\n\nlibopenal-1.dll"
-#define STR_2206	"FluidSynth konnte nicht initialisiert werden, bitte stellen Sie sicher, dass sich die\nfolgende Laufzeitbibliothek in Ihrem Programmordner befindet:\n\nlibfluidsynth.dll"
-#define STR_2207	"Nicht genügend Hauptspeicher!"
+#define STR_2205	"%s konnte nicht initialisiert werden, bitte stellen Sie sicher, dass sich die\nfolgende Laufzeitbibliothek in Ihrem Programmordner befindet:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Konnte Bitmap nicht erstellen: %s"
+#define STR_2300	"Nicht genügend Hauptspeicher!"
 #define STR_2301	"Keine verwendbaren ROM Abbilder gefunden!"
 #define STR_2302	"Keine gültige Konfiguration gefunden.\n\nMöchten Sie den Einstellungsdialog öffnen, um eine zu erstellen?"
-#define STR_2303	"Die konfigurierte Maschine:\n\n  %ls\n\nist nicht verfügbar.\n\nMöchten Sie den Einstellungsdialog öffnen?"
-#define STR_2304	"Die konfigurierte Grafikkarte:\n\n  %ls\n\nist nicht verfügbar.\n\nMöchten Sie den Einstellungsdialog öffnen?"
-#define STR_2305	"Gewählter Anzeigetreiber '%S' nicht verfügbar. Auf Standard zurücksetzen?"
-#define STR_2306	"Es gab nie ST506 oder ESDI CD-ROM Laufwerke"
+#define STR_2303	"Die konfigurierte %ls:\n\n  %s\n\nist nicht verfügbar.\n\nMöchten Sie den Einstellungsdialog öffnen?"
+#define STR_2304	"Gewählter Anzeigetreiber:\n\n  %s\n\nnicht verfügbar. Auf Standard zurücksetzen?"
+#define STR_2305	"Die Einstellungen müssen erst gespeichert werden!"
+#define STR_2306	"Konnte Bitmap nicht erstellen: %ls"
 #define STR_2307	"USB wird noch nicht unterstützt"
-#define STR_2308	"Die Einstellungen müssen erst gespeichert werden!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Sind Sie sicher dass Sie die Einstellungen speichern möchten?\n\n(Benötigt eventuell einen Neustart...)"
 #define STR_2401	"Änderungen gespeichert, bitte starten Sie den Emulator neu!"
-#define STR_2402	"Das angeforderte Gerät '%ls' wird momentan als `In Entwicklung` geführt und kann Probleme verursachen.\n\nSind Sie sicher, dass Sie es aktivieren möchten?"
+#define STR_2402	"Das angeforderte Gerät:\n\n  %s\n\nwird momentan als `In Entwicklung` geführt und kann Probleme verursachen.\n\nSind Sie sicher, dass Sie es aktivieren möchten?"
 #define STR_2403	"Klicken, um den Mauszeiger zu erfassen"
 #define STR_2404	"F8+F12 drücken, um die Maus freizugeben"
 #define STR_2405	"F8+F12 oder mittleren Mausknopf drücken, um die Maus freizugeben"
@@ -98,6 +98,8 @@
 
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
+#define STR_YES		"Ja"
+#define STR_NO		"Nein"
 #define STR_CANCEL	"Abbruch"
 #define STR_CONFIGURE	"Konfigurieren"
 #define STR_BROWSE	"Auswählen"
@@ -105,14 +107,15 @@
 
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Kein"
+#define STR_INTERNAL	"Intern"
 #define STR_DISABLED	"Deaktiviert"
 #define STR_ENABLED	"Aktiviert"
-#define STR_OFF	"Aus"
-#define STR_ON	"An"
+#define STR_OFF		"Aus"
+#define STR_ON		"An"
 #define STR_TYPE	"Typ"
 #define STR_FILENAME	"Dateiname:"
 #define STR_PROGRESS	"Fortschritt:"
-#define STR_BUS	"Bus:"
+#define STR_BUS		"Bus:"
 #define STR_CHANNEL	"Kanal:"
 #define STR_ID		"ID:"
 #define STR_LUN		"LUN:"
@@ -124,7 +127,7 @@
 #define STR_DEVCONF_2	"Gerät:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Über VARCem.."
 #define STR_3201	"Autoren:"
 #define STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker und andere.\nBasiert auf früheren Projekten wie 86Box, PCem, MAME, DOSbox und Qemu."
@@ -132,188 +135,178 @@
 #define STR_3204	"Lesen Sie die Datei LICENSE.txt für weitere Informationen."
 
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Lokalisierung"
 #define  STR_3211	"Übersetzung aus dem Englischen in die folgenden Sprachen beigesteuert von:"
 
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Status"
+/* (Unused now) */
 
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Sound-Verstärkung"
-#define STR_3251	"Verstärkung"
+#define  STR_3251	"Verstärkung"
 
 
 /* UI dialog: New Image (3275.) */
 #define STR_NEWIMG	"Neues Diskettenabbild"
-#define STR_3276	"Diskettengröße:"
-#define STR_3277	"Modus für Umdrehungsgeschwindigkeit:"
-#define STR_3278	"Exakte U/min"
-#define STR_3279	"1% langsamere U/min"
-#define STR_3280	"1,5% langsamere U/min"
-#define STR_3281	"2% langsamere U/min"
-#define STR_3282	"160 KB"
-#define STR_3283	"180 KB"
-#define STR_3284	"320 KB"
-#define STR_3285	"360 KB"
-#define STR_3286	"640 KB"
-#define STR_3287	"720 KB"
-#define STR_3288	"1.2 MB"
-#define STR_3289	"1.25 MB"
-#define STR_3290	"1.44 MB"
-#define STR_3291	"DMF (1KB Cluster)"
-#define STR_3292	"DMF (2KB Cluster)"
-#define STR_3293	"2.88 MB"
-#define STR_3294	"ZIP 100"
-#define STR_3295	"ZIP 250"
+#define  STR_3276	"Diskettengröße:"
+#define  STR_3277	"Modus für Umdrehungsgeschwindigkeit:"
+#define  STR_3278	"Exakte U/min"
+#define  STR_3279	"1% langsamere U/min"
+#define  STR_3280	"1,5% langsamere U/min"
+#define  STR_3281	"2% langsamere U/min"
+#define  STR_3282	"160 KB"
+#define  STR_3283	"180 KB"
+#define  STR_3284	"320 KB"
+#define  STR_3285	"360 KB"
+#define  STR_3286	"640 KB"
+#define  STR_3287	"720 KB"
+#define  STR_3288	"1.2 MB"
+#define  STR_3289	"1.25 MB"
+#define  STR_3290	"1.44 MB"
+#define  STR_3291	"DMF (1KB Cluster)"
+#define  STR_3292	"DMF (2KB Cluster)"
+#define  STR_3293	"2.88 MB"
+#define  STR_3294	"ZIP 100"
+#define  STR_3295	"ZIP 250"
 
 
 /* UI dialog: Settings (3300.) */
 #define STR_SETTINGS	"Einstellungen"
-#define STR_3310	"Maschine"
-#define STR_3311	"Anzeige"
-#define STR_3312	"Eingabegeräte"
-#define STR_3313	"Sound"
-#define STR_3314	"Netzwerk"
-#define STR_3315	"Ports (COM & LPT)"
-#define STR_3316	"Andere Peripherie"
-#define STR_3317	"Festplatten"
-#define STR_3318	"Diskettenlaufwerke"
-#define STR_3319	"Andere Wechselmedien"
+#define  STR_3310	"Maschine"
+#define  STR_3311	"Anzeige"
+#define  STR_3312	"Eingabegeräte"
+#define  STR_3313	"Sound"
+#define  STR_3314	"Netzwerk"
+#define  STR_3315	"Ports (COM & LPT)"
+#define  STR_3316	"Andere Peripherie"
+#define  STR_3317	"Festplatten"
+#define  STR_3318	"Diskettenlaufwerke"
+#define  STR_3319	"Andere Wechselmedien"
 
 
 /* UI dialog: Settings (Machine, 3325.) */
-#define STR_3325	"Maschine:"
-#define STR_3326	"CPU Typ:"
-#define STR_3327	"CPU:"
-#define STR_3328	"Waitstates:"
-#define STR_3329	"Speicher:"
-#define STR_3330	"MB"
-#define STR_3331	"Zeitsynchronisation"
-#define STR_3332	"Mathematischer Koprozessor"
-#define STR_3333	"Dynamischer Recompiler"
-#define STR_3334	"KB"
-#define STR_3335	"Standard"
+#define  STR_3325	"Maschine:"
+#define  STR_3326	"CPU Typ:"
+#define  STR_3327	"CPU:"
+#define  STR_3328	"Waitstates:"
+#define  STR_3329	"Speicher:"
+#define  STR_3330	"MB"
+#define  STR_3331	"Zeitsynchronisation:"
+#define  STR_3332	"Mathematischer Koprozessor"
+#define  STR_3333	"Dynamischer Recompiler"
+#define  STR_3334	"KB"
+#define  STR_3335	"Standard"
+#define  STR_3336	"Aktiviert (UTC)"
 
 
 /* UI dialog: Settings (Video, 3350.) */
-#define STR_3350	"Grafikkarte:"
-#define STR_3351	"Grafikgeschwindigkeit:"
-#define STR_3352	"Voodoo Grafikkarte"
-#define STR_3353	"Standard"
-#define STR_3354	"8-bit"
-#define STR_3355	"16-bit, langsam"
-#define STR_3356	"16-bit, schnell"
-#define STR_3357	"VLB/PCI, langsam"
-#define STR_3358	"VLB/PCI, mittel"
-#define STR_3359	"VLB/PCI, schnell"
+#define  STR_3350	"Grafikkarte:"
+#define  STR_3351	"Voodoo Grafikkarte"
 
 
 /* UI dialog: Settings (Input, 3375.) */
-#define STR_3375	"Maus:"
-#define STR_3376	"Joystick:"
-#define STR_3377	"Joystick 1"
-#define STR_3378	"Joystick 2"
-#define STR_3379	"Joystick 3"
-#define STR_3380	"Joystick 4"
+#define  STR_3375	"Maus:"
+#define  STR_3376	"Joystick:"
+#define  STR_3377	"Joystick 1"
+#define  STR_3378	"Joystick 2"
+#define  STR_3379	"Joystick 3"
+#define  STR_3380	"Joystick 4"
 
 
 /* UI dialog: Settings (Sound, 3400.) */
-#define STR_3400	"Soundkarte:"
-#define STR_3401	"MIDI Ausgabegerät:"
-#define STR_3402	"Eigenständiges MPU-401"
-#define STR_3403	"Nuked OPL benutzen"
-#define STR_3404	"FLOAT32 Soundausgabe benutzen"
+#define  STR_3400	"Soundkarte:"
+#define  STR_3401	"MIDI Ausgabegerät:"
+#define  STR_3402	"Eigenständiges MPU-401"
+#define  STR_3403	"Nuked OPL benutzen"
+#define  STR_3404	"FLOAT32 Soundausgabe benutzen"
 
 
 /* UI dialog: Settings (Network, 3425.) */
-#define STR_3425	"Netzwerktyp:"
+#define  STR_3425	"Netzwerktyp:"
 #define STR_3426	"PCap Gerät:"
-#define STR_3427	"Netzwerkadapter:"
+#define  STR_3427	"Netzwerkadapter:"
 
 
 /* UI dialog: Settings (Ports, 3450.) */
-#define STR_3450	"Gameport"
-#define STR_3451	"Parallelport 1"
-#define STR_3452	"Parallelport 2"
-#define STR_3453	"Parallelport 3"
-#define STR_3454	"Serieller Port 1"
-#define STR_3455	"Serieller Port 2"
+#define  STR_3450	"Gameport"
+#define  STR_3451	"Parallelport 1"
+#define  STR_3452	"Parallelport 2"
+#define  STR_3453	"Parallelport 3"
+#define  STR_3454	"Serieller Port 1"
+#define  STR_3455	"Serieller Port 2"
 
 
 /* UI dialog: Settings (Other Devices, 3475.) */
-#define STR_3475	"SCSI Controller:"
-#define STR_3476	"HD Controller:"
-#define STR_3477	"Dritter IDE Bus:"
-#define STR_3478	"Vierter IDE Bus:"
-#define STR_3479	"ISABugger Gerät"
-#define STR_3480	"ISA Speichererweiterung"
-#define STR_3481	"ISA Echtzeituhr-Karte (RTC)"
+#define  STR_3475	"SCSI Controller:"
+#define  STR_3476	"HD Controller:"
+#define  STR_3477	"Dritter IDE Bus"
+#define  STR_3478	"Vierter IDE Bus"
+#define  STR_3479	"ISABugger Gerät"
+#define  STR_3480	"ISA Speichererweiterung"
+#define  STR_3481	"ISA Echtzeituhr-Karte (RTC)"
 
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
-#define STR_3500	"Festplatten:"
-#define STR_3501	"&Neu.."
-#define STR_3502	"&Vorhandene.."
-#define STR_3503	"&Entfernen"
-#define STR_3504	"Bus"
-#define STR_3505	"Datei"
-#define STR_3506	"C"
-#define STR_3507	"H"
-#define STR_3508	"S"
-#define STR_3509	"MB"
-#define STR_3510	"MB (CHS: %u, %u, %u)"
-#define STR_3511	"Benutzerdefiniert..."
-#define STR_3512	"Benutzerdefiniert (groß)..."
-#define STR_3515	"ST506"
-#define STR_3516	"ESDI"
-#define STR_3517	"IDE (nur PIO)"
-#define STR_3518	"IDE (PIO und DMA)"
-#define STR_3519	"SCSI"
-#define STR_3520	"SCSI (Wechselmedium)"
+#define  STR_3500	"Festplatten:"
+#define  STR_3501	"&Neu.."
+#define  STR_3502	"&Vorhandene.."
+#define  STR_3503	"&Entfernen"
+#define  STR_3504	"Bus"
+#define  STR_3505	"Datei"
+#define  STR_3506	"C"
+#define  STR_3507	"H"
+#define  STR_3508	"S"
+#define  STR_3509	"MB"
+#define  STR_3510	"MB (CHS: %u, %u, %u)"
+#define  STR_3511	"Benutzerdefiniert..."
+#define  STR_3512	"Benutzerdefiniert (groß)..."
+#define  STR_3515	"ST506"
+#define  STR_3516	"ESDI"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
-#define STR_3525	"Festplatte hinzufügen"
-#define STR_3526	"Neue Festplatte hinzufügen"
-#define STR_3527	"Vorhandene Festplatte hinzufügen"
-#define STR_3528	"Zylinder:"
-#define STR_3529	"Köpfe:"
-#define STR_3530	"Sektoren:"
-#define STR_3531	"Größe (MB):"
-#define STR_3532	"Typ:"
-#define STR_3533	"HDI Abbilder können nicht größer als 4 GB sein"
-#define STR_3534	"Sie haben versucht, eine unverhältnismäßig große Festplatte anzulegen"
-#define STR_3535	"HDI oder HDX Abbilder mit einer Sektorgröße ungleich 512 Bytes wird nicht unterstützt"
-#define STR_3536	"Festplattenabbilder\0*.hd?;*.im?;*.vhd\0Alle Dateien\0*.*\0"
-#define STR_3537	"Denken Sie daran, die neue Festplatte zu partitionieren und zu formatieren"
+#define  STR_3525	"Festplatte hinzufügen"
+#define  STR_3526	"Neue Festplatte hinzufügen"
+#define  STR_3527	"Vorhandene Festplatte hinzufügen"
+#define  STR_3528	"Zylinder:"
+#define  STR_3529	"Köpfe:"
+#define  STR_3530	"Sektoren:"
+#define  STR_3531	"Größe (MB):"
+#define  STR_3532	"Typ:"
+#define  STR_3533	"HDI Abbilder können nicht größer als 4 GB sein"
+#define  STR_3534	"Sie haben versucht, eine unverhältnismäßig große Festplatte anzulegen"
+#define  STR_3535	"HDI oder HDX Abbilder mit einer Sektorgröße ungleich 512 Bytes wird nicht unterstützt"
+#define  STR_3536	"Festplattenabbilder\0*.hd?;*.im?;*.vhd\0Alle Dateien\0*.*\0"
+#define  STR_3537	"Denken Sie daran, die neue Festplatte zu partitionieren und zu formatieren"
 
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
-#define STR_3550	"Diskettenlaufwerke:"
-#define STR_3551	"Typ:"
-#define STR_3552	"Turbo Timing"
-#define STR_3553	"BPB überprüfen"
-#define STR_3554	"Turbo"
-#define STR_3555	"BPB Überprüfen"
+#define  STR_3550	"Diskettenlaufwerke:"
+#define  STR_3551	"Typ:"
+#define  STR_3552	"Turbo Timing"
+#define  STR_3553	"BPB überprüfen"
+#define  STR_3554	"Turbo"
+#define  STR_3555	"BPB Überprüfen"
 
 
 /* UI dialog: Settings (Removable Devices, 3575.) */
-#define STR_3575	"CD-ROM Laufwerke:"
-#define STR_3576	"Geschwindigkeit:"
-#define STR_3577	"ZIP Laufwerke:"
-#define STR_3578	"ZIP 250"
-#define STR_3579	"Geschwindigkeit"
-#define STR_3580	"<Reserviert>"
-#define STR_3581	"<Reserviert>"
-#define STR_3582	"ATAPI (nur PIO)"
-#define STR_3583	"ATAPI (PIO und DMA)"
-#define STR_3584	"SCSI"
+#define  STR_3575	"CD-ROM Laufwerke:"
+#define  STR_3576	"Geschwindigkeit:"
+#define  STR_3577	"ZIP Laufwerke:"
+#define  STR_3578	"ZIP 250"
+#define  STR_3579	"Geschwindigkeit"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
 
-/* UI dialog: status bar (3900.) */
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(leer)"
 #define STR_3901	"(Hostlaufwerk %c:)"
 #define STR_3902	" [Schreibgeschützt]"
@@ -321,6 +314,7 @@
 #define STR_3904	"Abbild &laden..."
 #define STR_3905	"Vor&heriges Abbild erneut laden"
 #define STR_3906	"Aus&werfen"
+#define STR_3907	"Ä&nderungsbenachrichtigung bei Wechsel"
 
 #define STR_3910	"Diskettenlaufwerk %i (%s): %ls"
 #define STR_3911	"Alle Abbilder\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Komplexe Sektorabbilder\0*.imd;*.json;*.td0\0Einfache Sektorabbilder\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Magnetfluss-Abbilder\0*.fdi\0Bitstrom-Abbilder\0*.86f\0Alle Dateien\0*.*\0"
@@ -328,93 +322,93 @@
 #define STR_3913	"Bitstrom-Abbilder\0*.86f\0"
 #define STR_3914	"Als 86F e&xportieren..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Host CD/DVD-Laufwerk (%c:)"
 #define STR_3922	"CD-ROM Abbilder\0*.iso;*.cue\0Alle Dateien (*.*)\0*.*\0"
 #define STR_3923	"&Stumm"
 
-#define STR_3930	"Festplatte (%s)"
+#define STR_3930	"Festplatte %i (%ls): %ls"
 
-#define STR_3940	"Wechsellaufwerk %i (SCSI): %ls"
-#define STR_3941	"Ä&nderungsbenachrichtigung bei Wechsel"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP Abbilder\0*.im?;*.zdi\0Alle Dateien\0*.*\0"
 #define STR_3952	"ZIP Abbilder\0*.im?;*.zdi\0"
-#define STR_3960	"Netzwerk"
-#define STR_3970	"Sound"
+#define STR_3960	"Netzwerk (%s)"
+#define STR_3970	"Sound (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"&Aktionen"
-#define STR_4001	"&Harter Reset"
-#define STR_4002	"&Strg+Alt+Entf"
-#define STR_4003	"Strg+Alt+&Esc senden"
-#define STR_4004	"Strg+Alt+&Unterbr senden"
-#define STR_4005	"&Pause"
-#define STR_4006	"&Beenden"
+#define  STR_4001	"&Harter Reset"
+#define  STR_4002	"&Strg+Alt+Entf"
+#define  STR_4003	"Strg+Alt+&Esc senden"
+#define  STR_4004	"Strg+Alt+&Unterbr senden"
+#define  STR_4005	"&Pause"
+#define  STR_4006	"&Beenden"
 
 
-/* Menu: View (4010.) */
+/* UI menu: View (4010.) */
 #define STR_VIEW	"&Ansicht"
-#define STR_4011	"&Veränderbare Fenstergröße"
-#define STR_4012	"&Größe und Position speichern"
-#define STR_4013	"&Vollbildmodus\tStrg+Alt+Bild Auf"
-#define STR_4014	"&Rechtes STRG ist linkes ALT"
-#define STR_4015	"&Statusleisten-Icons aktualisieren"
+#define  STR_4011	"&Veränderbare Fenstergröße"
+#define  STR_4012	"&Größe und Position speichern"
+#define  STR_4013	"&Vollbildmodus\tStrg+Alt+Bild Auf"
+#define  STR_4014	"&Rechtes STRG ist linkes ALT"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define STR_4020	"An&zeigetreiber"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define STR_4030	"&Fenster-Skalierungsfaktor"
-#define STR_4031	"&0,5x"
-#define STR_4032	"&1x"
-#define STR_4033	"1,&5x"
-#define STR_4034	"&2x"
+#define  STR_4031	"&0,5x"
+#define  STR_4032	"&1x"
+#define  STR_4033	"1,&5x"
+#define  STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define STR_4040	"&Vollbild Skalierungsmodus"
-#define STR_4041	"&Auf ganzen Bildschirm ausdehnen"
-#define STR_4042	"&4:3"
-#define STR_4043	"&Quadratische Pixel"
-#define STR_4044	"&Ganzzahlig skalieren"
-#define STR_4045	"Größe &beibehalten"
+#define  STR_4041	"&Auf ganzen Bildschirm ausdehnen"
+#define  STR_4042	"&4:3"
+#define  STR_4043	"&Quadratische Pixel"
+#define  STR_4044	"&Ganzzahlig skalieren"
+#define  STR_4045	"Größe &beibehalten"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"An&zeige"
-#define STR_4051	"Anzeige &invertieren"
-#define STR_4052	"&Overscan aktiviert"
-#define STR_4053	"&4:3 Seitenverhältnis erzwingen"
-#define STR_4054	"Kontrast für Monochromanzeige ändern"
+#define  STR_4051	"Anzeige &invertieren"
+#define  STR_4052	"&Overscan aktiviert"
+#define  STR_4053	"&4:3 Seitenverhältnis erzwingen"
+#define  STR_4054	"Kontrast für Monochromanzeige ändern"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define STR_DISPTYPE	"Display &type"
-#define STR_4061	"RGB &Farbmonitor"
-#define STR_4062	"&Graustufenmonitor"
-#define STR_4063	"&Bernsteinmonitor"
-#define STR_4064	"&Grünmonitor"
-#define STR_4065	"&Weißer Monitor"
+#define  STR_4061	"RGB &Farbmonitor"
+#define  STR_4062	"&Graustufenmonitor"
+#define  STR_4063	"&Bernsteinmonitor"
+#define  STR_4064	"&Grünmonitor"
+#define  STR_4065	"&Weißer Monitor"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define STR_GRAYSCALE	"&Graustufenumwandlung"
-#define STR_4071	"BT&601 (NTSC/PAL)"
-#define STR_4072	"BT&709 (HDTV)"
-#define STR_4073	"&gemittelt"
+#define  STR_4071	"BT&601 (NTSC/PAL)"
+#define  STR_4072	"BT&709 (HDTV)"
+#define  STR_4073	"&gemittelt"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"&Tools"
-#define STR_4081	"&Einstellungen"
-#define STR_4082	"S&prache"
-#define	STR_4083	"P&rotokollierung"
-#define STR_4084	"Konfigurationsdatei &laden"
-#define STR_4085	"Konfigurationsdatei &speichern"
-#define STR_4086	"S&tatus"
-#define STR_4087	"&Bildschirmfoto speichern\tStrg+Pos1"
+#define  STR_4081	"&Einstellungen"
+#define  STR_4082	"S&prache"
+#define	 STR_4083	"P&rotokollierung"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"Konfigurationsdatei &laden"
+#define  STR_4087	"Konfigurationsdatei &speichern"
+#define  STR_4088	"&Bildschirmfoto speichern"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"&Hilfe"
-#define STR_4091	"&Über VARCem"
+#define  STR_4091	"&Über VARCem"
 
 
 /* End of file. */

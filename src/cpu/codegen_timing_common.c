@@ -40,6 +40,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "cpu.h"
+#include "x86.h"
 #include "codegen_timing_common.h"
 
 

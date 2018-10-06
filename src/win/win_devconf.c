@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.20	2018/05/26
+ * Version:	@(#)win_devconf.c	1.0.21	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,7 @@
 #include "../ui/ui.h"
 #include "../plat.h"
 #include "win.h"
+#include "resource.h"
 
 
 #define STR_FONTNAME	"Segoe UI"
@@ -75,7 +76,7 @@ dlg_init(HWND hdlg)
     wchar_t* str;
     HWND h;
 
-    id = IDC_CONFIG_BASE;
+    id = IDC_CONFIGURE_DEV;
     cfg = dev->config;
 
     while (cfg->type != -1) {
@@ -122,7 +123,7 @@ dlg_init(HWND hdlg)
 		case CONFIG_SPINNER:
 			val = config_get_int(dev->name,
 					     cfg->name, cfg->default_int);
-			_swprintf(temp, L"%i", val);
+			swprintf(temp, sizeof_w(temp), L"%i", val);
 			SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp);
 			id += 2;
 			break;
@@ -193,7 +194,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		cid = LOWORD(wParam);
 		if (cid == IDOK) {
-			id = IDC_CONFIG_BASE;
+			id = IDC_CONFIGURE_DEV;
 			changed = 0;
 
 			while (cfg->type != -1) {
@@ -293,7 +294,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			devconf_changed = 1;
 
-			id = IDC_CONFIG_BASE;
+			id = IDC_CONFIGURE_DEV;
 			cfg = dev->config;
 				
 			while (cfg->type != -1) {
@@ -372,7 +373,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			EndDialog(hdlg, 0);
 			return TRUE;
 		} else {
-			id = IDC_CONFIG_BASE;
+			id = IDC_CONFIGURE_DEV;
 			cfg = dev->config;
 
 			while (cfg->type != -1) {
@@ -468,7 +469,7 @@ AddWideString(uint16_t *data, int ids)
  */
 #define DLG_MAX_SIZE	16384
 uint8_t
-dlg_devconf(HWND hwnd, device_t *device)
+dlg_devconf(HWND hwnd, const device_t *device)
 {
     char temp[128];
     const device_config_t *cfg = device->config;
@@ -480,7 +481,7 @@ dlg_devconf(HWND hwnd, device_t *device)
     devconf_changed = 0;
 
     /* Allocate the dialog data block. */
-    blk = malloc(DLG_MAX_SIZE);
+    blk = (uint16_t *)mem_alloc(DLG_MAX_SIZE);
     memset(blk, 0x00, DLG_MAX_SIZE);
     dlg = (DLGTEMPLATE *)blk;
 
@@ -498,19 +499,19 @@ dlg_devconf(HWND hwnd, device_t *device)
     *data++ = 0; /* no menu bar */
     *data++ = 0; /* predefined dialog box class */
     sprintf(temp, "%s ", device->name);
-    data += MultiByteToWideChar(CP_ACP, 0, temp, -1, data, 120);
+    data += MultiByteToWideChar(CP_ACP, 0, temp, -1, (LPWSTR)data, 120);
     data--;	/* back over the NUL */
     data = AddWideString(data, IDS_DEVCONF_1);
 
     /* Font style and size to use. */
     *data++ = 9; /* point size */
-    data += MultiByteToWideChar(CP_ACP, 0, STR_FONTNAME, -1, data, 120);
+    data += MultiByteToWideChar(CP_ACP, 0, STR_FONTNAME, -1, (LPWSTR)data, 120);
 
     if (((uintptr_t)data) & 2)
 	data++;
 
     /* Now add the items from the configuration. */
-    id = IDC_CONFIG_BASE;
+    id = IDC_CONFIGURE_DEV;
     while (cfg->type != -1) {
 	/* Align 'data' to DWORD */
 	itm = (DLGITEMTEMPLATE *)data;
@@ -528,7 +529,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 			*data++ = 0xffff;
 			*data++ = 0x0080;    /* button class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					cfg->description, -1, data, 256);
+					cfg->description, -1, (LPWSTR)data, 256);
 			*data++ = 0;	      /* no creation data */
 
 			/* Move to next available line. */
@@ -552,7 +553,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 			*data++ = 0xffff;
 			*data++ = 0x0085;	/* combo box class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					cfg->description, -1, data, 256);
+					cfg->description, -1, (LPWSTR)data, 256);
 			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
@@ -570,7 +571,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 			*data++ = 0xffff;
 			*data++ = 0x0082;	/* static class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					cfg->description, -1, data, 256);
+					cfg->description, -1, (LPWSTR)data, 256);
 			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
@@ -594,7 +595,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 			*data++ = 0xffff;
 			*data++ = 0x0081;	/* edit text class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-						    "", -1, data, 256);
+						    "", -1, (LPWSTR)data, 256);
 			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
@@ -613,7 +614,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 			*data++ = 0xffff;
 			*data++ = 0x0082;	/* static class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					cfg->description, -1, data, 256);
+					cfg->description, -1, (LPWSTR)data, 256);
 			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
@@ -636,7 +637,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 			*data++ = 0xffff;
 			*data++ = 0x0081;	/* edit text class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-						"", -1, data, 256);
+						"", -1, (LPWSTR)data, 256);
 			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
@@ -671,7 +672,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 			*data++ = 0xffff;
 			*data++ = 0x0082;	/* static class */
 			data += MultiByteToWideChar(CP_ACP, 0,
-					cfg->description, -1, data, 256);
+					cfg->description, -1, (LPWSTR)data, 256);
 			*data++ = 0;		/* no creation data */
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
@@ -689,7 +690,7 @@ dlg_devconf(HWND hwnd, device_t *device)
 	cfg++;
     }
 
-    dlg->cdit = (id - IDC_CONFIG_BASE) + 2;
+    dlg->cdit = (id - IDC_CONFIGURE_DEV) + 2;
 
     itm = (DLGITEMTEMPLATE *)data;
     itm->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;

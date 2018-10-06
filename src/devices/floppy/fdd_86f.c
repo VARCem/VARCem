@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.12	2018/09/03
+ * Version:	@(#)fdd_86f.c	1.0.13	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,9 +41,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
+#define dbglog d86f_log
 #include "../../emu.h"
 #include "../../nvr.h"
 #include "../../random.h"
@@ -53,7 +53,9 @@
 #include "fdd.h"
 #include "fdc.h"
 #include "fdd_86f.h"
-#include "lzf/lzf.h"
+#ifdef D86F_COMPRESS
+# include "lzf/lzf.h"
+#endif
 
 
 /*
@@ -169,9 +171,9 @@ typedef union {
     split_byte_t nibbles;
 } decoded_t;
 
-typedef struct {
+typedef struct _sector_ {
     uint8_t	c, h, r, n;
-    void	*prev;
+    struct _sector_ *prev;
 } sector_t;
 
 /* Disk flags:
@@ -224,7 +226,9 @@ typedef struct {
     uint16_t	current_bit[2];
     int		cur_track;
     uint32_t	error_condition;
+#ifdef D86F_COMPRESS
     int		is_compressed;
+#endif
     int		id_found;
     wchar_t	original_file_name[2048];
     uint8_t	*filebuf;
@@ -268,23 +272,23 @@ uint64_t	poly = 0x42F0E1EBA9EA3693ll;		/* ECMA normal */
 uint64_t	table[256];
 
 
-uint16_t d86f_side_flags(int drive);
-int d86f_is_mfm(int drive);
-void d86f_writeback(int drive);
-uint8_t d86f_poll_read_data(int drive, int side, uint16_t pos);
-void d86f_poll_write_data(int drive, int side, uint16_t pos, uint8_t data);
-int d86f_format_conditions(int drive);
+uint16_t	d86f_side_flags(int drive);
+int		d86f_is_mfm(int drive);
+void		d86f_writeback(int drive);
+uint8_t		d86f_poll_read_data(int drive, int side, uint16_t pos);
+void		d86f_poll_write_data(int drive, int side, uint16_t pos, uint8_t data);
+int		d86f_format_conditions(int drive);
 
 
-static void
-d86f_log(const char *format, ...)
+void
+d86f_log(int level, const char *fmt, ...)
 {
 #ifdef ENABLE_D86F_LOG
     va_list ap;
 
-    if (d86f_do_log) {
-	va_start(ap, format);
-	pclog_ex(format, ap);
+    if (d86f_do_log >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
 	va_end(ap);
     }
 #endif
@@ -638,6 +642,7 @@ d86f_get_array_size(int drive, int side)
     int hole, rm;
 
     rm = d86f_get_rpm_mode(drive);
+
     hole = (d86f_handler[drive].disk_flags(drive) & 6) >> 1;
     switch (hole) {
 	case 0:
@@ -738,9 +743,12 @@ d86f_valid_bit_rate(int drive)
 	case 3:	/* ED with 2000 kbps support */
 		if (rate < 3)  return 0;
 		return 1;
+
+	default:
+		break;
     }
 
-    return 1;	//FIXME: should be 0 for error?
+    return 0;
 }
 
 
@@ -1077,7 +1085,7 @@ d86f_get_bit(int drive, int side)
     }
 
     /*
-     * In some cases, misindentification occurs so we need
+     * In some cases, misidentification occurs so we need
      * to make sure the surface data array is not not NULL.
     */
     if (d86f_has_surface_desc(drive) &&
@@ -1429,7 +1437,7 @@ d86f_read_sector_id(int drive, int side, int match)
 			/* We've got the ID. */
 			if (dev->calc_crc.word != dev->track_crc.word) {
 				dev->id_find.sync_marks = dev->id_find.bits_obtained = dev->id_find.bytes_obtained = 0;
-				d86f_log("86F: ID CRC error: %04X != %04X (%08X)\n", dev->track_crc.word, dev->calc_crc.word, dev->last_sector.dword);
+				DEBUG("86F: ID CRC error: %04X != %04X (%08X)\n", dev->track_crc.word, dev->calc_crc.word, dev->last_sector.dword);
 				if ((dev->state != STATE_02_READ_ID) && (dev->state != STATE_0A_READ_ID)) {
 					dev->error_condition = 0;
 					dev->state = STATE_IDLE;
@@ -1549,6 +1557,7 @@ d86f_read_sector_data(int drive, int side)
     if (dev->data_find.bits_obtained) {
 	if (!(dev->data_find.bits_obtained & 15)) {
 		/* We've got a byte. */
+		DEBUG("86F: We've got a byte.\n");
 		if (dev->data_find.bytes_obtained < sector_len) {
 			data = decodefm(drive, dev->last_word[side]);
 			if (dev->state == STATE_11_SCAN_DATA) {
@@ -1559,9 +1568,8 @@ d86f_read_sector_data(int drive, int side)
 				if (dev->data_find.bytes_obtained < d86f_get_data_len(drive)) {
 					if (dev->state != STATE_16_VERIFY_DATA) {
 						read_status = fdc_data(d86f_fdc, data);
-						if (read_status == -1) {
+						if (read_status == -1)
 							dev->dma_over++;
-						}
 					}
 				}
 			}
@@ -1572,29 +1580,9 @@ d86f_read_sector_data(int drive, int side)
 		dev->data_find.bytes_obtained++;
 
 		if (dev->data_find.bytes_obtained == (crc_pos + fdc_get_gap(d86f_fdc))) {
-#if 0
-			/*
-			 * This code causes errors on Wyse UNIX
-			 * System V/386 V3.2.1A and was disabled
-			 * at Miran Grca's request.  --FvK
-			 */
 			/* We've got the data. */
-			if (dev->dma_over > 1) {
-				dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
-				dev->error_condition = 0;
-				dev->state = STATE_IDLE;
-				fdc_finishread(d86f_fdc);
-				fdc_overrun(d86f_fdc);
-
-				d86f_get_bit(drive, side);
-
-				dev->data_find.bits_obtained++;
-				return;
-			}
-#endif
-
 			if ((dev->calc_crc.word != dev->track_crc.word) && (dev->state != STATE_02_READ_DATA)) {
-				d86f_log("86F: Data CRC error: %04X != %04X (%08X)\n", dev->track_crc.word, dev->calc_crc.word, dev->last_sector.dword);
+				DEBUG("86F: Data CRC error: %04X != %04X (%08X)\n", dev->track_crc.word, dev->calc_crc.word, dev->last_sector.dword);
 				dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
 				dev->error_condition = 0;
 				dev->state = STATE_IDLE;
@@ -1607,15 +1595,14 @@ d86f_read_sector_data(int drive, int side)
 				fdc_track_finishread(d86f_fdc, dev->error_condition);
 			} else {
 				/* CRC is valid. */
+				DEBUG("86F: Data CRC OK: %04X != %04X (%08X)\n", dev->track_crc.word, dev->calc_crc.word, dev->last_sector.dword);
 				dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
 				dev->error_condition = 0;
-				if (dev->state == STATE_11_SCAN_DATA) {
-					dev->state = STATE_IDLE;
+				dev->state = STATE_IDLE;
+				if (dev->state == STATE_11_SCAN_DATA)
 					fdc_sector_finishcompare(d86f_fdc, (dev->satisfying_bytes == ((128 << ((uint32_t) dev->last_sector.id.n)) - 1)) ? 1 : 0);
-				} else {
-					dev->state = STATE_IDLE;
+				  else
 					fdc_sector_finishread(d86f_fdc);
-				}
 			}
 		}
 	}
@@ -1713,24 +1700,6 @@ d86f_write_sector_data(int drive, int side, int mfm, uint16_t am)
 		dev->data_find.bytes_obtained++;
 
 		if (dev->data_find.bytes_obtained == (crc_pos + fdc_get_gap(d86f_fdc))) {
-#if 0
-			/*
-			 * This code causes errors on Wyse UNIX
-			 * System V/386 V3.2.1A and was disabled
-			 * at Miran Grca's request.  --FvK
-			 */
-			if (dev->dma_over > 1) {
-				dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
-				dev->error_condition = 0;
-				dev->state = STATE_IDLE;
-				fdc_finishread(d86f_fdc);
-				fdc_overrun(d86f_fdc);
-
-				dev->data_find.bits_obtained++;
-				return;
-			}
-#endif
-
 			/* We've written the data. */
 			dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
 			dev->error_condition = 0;
@@ -1746,7 +1715,8 @@ d86f_write_sector_data(int drive, int side, int mfm, uint16_t am)
 }
 
 
-void d86f_advance_bit(int drive, int side)
+void
+d86f_advance_bit(int drive, int side)
 {
     d86f_t *dev = d86f[drive];
 
@@ -2158,22 +2128,6 @@ d86f_turbo_read(int drive, int side)
 		}
 	}
     }
-
-#if 0
-    /*
-     * This code causes errors on Wyse UNIX
-     * System V/386 V3.2.1A and was disabled
-     * at Miran Grca's request.  --FvK
-     */
-    if (dev->dma_over > 1) {
-	dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
-	dev->error_condition = 0;
-	dev->state = STATE_IDLE;
-	fdc_finishread(d86f_fdc);
-	fdc_overrun(d86f_fdc);
-	return;
-    }
-#endif
 
     if (dev->turbo_pos >= (128 << dev->last_sector.id.n)) {
 	/* CRC is valid. */
@@ -2597,7 +2551,8 @@ d86f_poll(int drive)
 						fdc_wrongcylinder(d86f_fdc);
 					else
 						fdc_nosector(d86f_fdc);
-				}
+				} else
+					fdc_nosector(d86f_fdc);
 			} else {
 				fdc_noidam(d86f_fdc);
 			}
@@ -2697,7 +2652,7 @@ d86f_prepare_sector(int drive, int side, int prev_pos, uint8_t *id_buf, uint8_t 
     uint16_t datadam_mfm = 0x4A55;
 
     if (fdd_get_turbo(drive) && (dev->version == 0x0063)) {
-	s = (sector_t *) malloc(sizeof(sector_t));
+	s = (sector_t *) mem_alloc(sizeof(sector_t));
 	memset(s, 0, sizeof(sector_t));
 	s->c = id_buf[0];
 	s->h = id_buf[1];
@@ -3113,9 +3068,11 @@ d86f_writeback(int drive)
     d86f_t *dev = d86f[drive];
     uint8_t header[32];
     int header_size;
+#ifdef D86F_COMPRESS
     uint32_t len;
     int ret = 0;
     FILE *cf;
+#endif
     header_size = d86f_header_size(drive);
 
     if (! dev->f) return;
@@ -3129,6 +3086,7 @@ d86f_writeback(int drive)
 
     d86f_write_tracks(drive, &dev->f, NULL);
 
+#ifdef D86F_COMPRESS
     if (dev->is_compressed) {
 	/* The image is compressed. */
 
@@ -3145,18 +3103,20 @@ d86f_writeback(int drive)
 	fseek(dev->f, header_size, SEEK_SET);
 
 	/* Compress data from the temporary uncompressed file to the original, compressed file. */
-	dev->filebuf = (uint8_t *) malloc(len);
-	dev->outbuf = (uint8_t *) malloc(len - 1);
+	dev->filebuf = (uint8_t *) mem_alloc(len);
+	dev->outbuf = (uint8_t *) mem_alloc(len - 1);
 	fread(dev->filebuf, 1, len, dev->f);
 	ret = lzf_compress(dev->filebuf, len, dev->outbuf, len - 1);
 
-	if (! ret)
-		d86f_log("86F: Error compressing file\n");
+	if (! ret) {
+		DEBUG("86F: Error compressing file\n");
+	}
 
 	fwrite(dev->outbuf, 1, ret, cf);
 	free(dev->outbuf);
 	free(dev->filebuf);
     }
+#endif
 }
 
 
@@ -3165,7 +3125,8 @@ d86f_stop(int drive)
 {
     d86f_t *dev = d86f[drive];
 
-    dev->state = STATE_IDLE;
+    if (dev != NULL)
+	dev->state = STATE_IDLE;
 }
 
 
@@ -3174,7 +3135,7 @@ d86f_common_command(int drive, int sector, int track, int side, int rate, int se
 {
     d86f_t *dev = d86f[drive];
 
-    d86f_log("d86f_common_command (drive %i): fdc_period=%i img_period=%i rate=%i sector=%i track=%i side=%i\n", drive, fdc_get_bitcell_period(d86f_fdc), d86f_get_bitcell_period(drive), rate, sector, track, side);
+    DEBUG("d86f_common_command (drive %i): fdc_period=%i img_period=%i rate=%i sector=%i track=%i side=%i\n", drive, fdc_get_bitcell_period(d86f_fdc), d86f_get_bitcell_period(drive), rate, sector, track, side);
 
     dev->req_sector.id.c = track;
     dev->req_sector.id.h = side;
@@ -3211,7 +3172,8 @@ d86f_readsector(int drive, int sector, int track, int side, int rate, int sector
     int ret = 0;
 
     ret = d86f_common_command(drive, sector, track, side, rate, sector_size);
-    if (! ret) return;
+    if (! ret)
+	return;
 
     if (sector == SECTOR_FIRST)
 	dev->state = STATE_02_SPIN_TO_INDEX;
@@ -3434,7 +3396,7 @@ d86f_export(int drive, const wchar_t *fn)
 	return 0;
 
     /* Allocate a temporary drive for conversion. */
-    temp86 = (d86f_t *)malloc(sizeof(d86f_t));
+    temp86 = (d86f_t *)mem_alloc(sizeof(d86f_t));
     memcpy(temp86, dev, sizeof(d86f_t));
 
     fwrite(&magic, 4, 1, f);
@@ -3479,13 +3441,15 @@ d86f_export(int drive, const wchar_t *fn)
 int
 d86f_load(int drive, const wchar_t *fn)
 {
-    wchar_t temp_file_name[2048];
     d86f_t *dev = d86f[drive];
     uint32_t magic = 0;
     uint32_t len = 0;
+#ifdef D86F_COMPRESS
+    wchar_t temp_file_name[2048];
     uint16_t temp = 0;
-    int i = 0;
     FILE *tf;
+    int i;
+#endif
 
     d86f_unregister(drive);
 
@@ -3522,7 +3486,7 @@ d86f_load(int drive, const wchar_t *fn)
 
     if ((magic != 0x46423638) && (magic != 0x66623638)) {
 	/* File is not of the valid format, abort. */
-	d86f_log("86F: Unrecognized magic bytes: %08X\n", magic);
+	ERRLOG("86F: Unrecognized magic bytes: %08X\n", magic);
 	fclose(dev->f);
 	free(dev);
 	return(0);
@@ -3532,23 +3496,27 @@ d86f_load(int drive, const wchar_t *fn)
     if (dev->version != D86FVER) {
 	/* File is not of a recognized format version, abort. */
 	if (dev->version == 0x0063) {
-		d86f_log("86F: File has emulator-internal version 0.99, this version is not valid in a file\n");
+		ERRLOG("86F: File has emulator-internal version 0.99, this version is not valid in a file\n");
 	} else if ((dev->version >= 0x0100) && (dev->version < D86FVER)) {
-		d86f_log("86F: No longer supported development file version: %i.%02i\n", dev->version >> 8, dev->version & 0xff);
+		ERRLOG("86F: No longer supported development file version: %i.%02i\n", dev->version >> 8, dev->version & 0xff);
 	} else {
-		d86f_log("86F: Unrecognized file version: %i.%02i\n", dev->version >> 8, dev->version & 0xff);
+		ERRLOG("86F: Unrecognized file version: %i.%02i\n", dev->version >> 8, dev->version & 0xff);
 	}
 	fclose(dev->f);
 	dev->f = NULL;
 	free(dev);
 	return(0);
     } else {
-	d86f_log("86F: Recognized file version: %i.%02i\n", dev->version >> 8, dev->version & 0xff);
+	DEBUG("86F: Recognized file version: %i.%02i\n", dev->version >> 8, dev->version & 0xff);
     }
 
     fread(&(dev->disk_flags), 2, 1, dev->f);
+#ifdef D86F_COMPRESS
     dev->is_compressed = (magic == 0x66623638) ? 1 : 0;
     if ((len < 51052) && !dev->is_compressed) {
+#else
+    if (len < 51052) {
+#endif
 	/* File too small, abort. */
 	fclose(dev->f);
 	dev->f = NULL;
@@ -3564,14 +3532,14 @@ d86f_load(int drive, const wchar_t *fn)
 
     crc64 = 0xffffffffffffffff;
 
-    dev->filebuf = malloc(len);
+    dev->filebuf = mem_alloc(len);
     fread(dev->filebuf, 1, len, dev->f);
     *(uint64_t *) &(dev->filebuf[8]) = 0xffffffffffffffff;
     crc64 = (uint64_t) crc64speed(0, dev->filebuf, len);
     free(dev->filebuf);
 
     if (crc64 != read_crc64) {
-	d86f_log("86F: CRC64 error\n");
+	ERRLOG("86F: CRC64 error\n");
 	fclose(dev->f);
 	dev->f = NULL;
 	free(dev);
@@ -3579,6 +3547,7 @@ d86f_load(int drive, const wchar_t *fn)
     }
 #endif
 
+#ifdef D86F_COMPRESS
     if (dev->is_compressed) {
 	memcpy(temp_file_name, drive ? nvr_path(L"TEMP$$$1.$$$") : nvr_path(L"TEMP$$$0.$$$"), 256);
 	memcpy(dev->original_file_name, fn, (wcslen(fn) << 1) + 2);
@@ -3588,7 +3557,7 @@ d86f_load(int drive, const wchar_t *fn)
 
 	dev->f = plat_fopen(temp_file_name, L"wb");
 	if (! dev->f) {
-		d86f_log("86F: Unable to create temporary decompressed file\n");
+		ERRLOG("86F: Unable to create temporary decompressed file\n");
 		free(dev);
 		return(0);
 	}
@@ -3600,8 +3569,8 @@ d86f_load(int drive, const wchar_t *fn)
 		fwrite(&temp, 1, 2, dev->f);
 	}
 
-	dev->filebuf = (uint8_t *) malloc(len);
-	dev->outbuf = (uint8_t *) malloc(67108864);
+	dev->filebuf = (uint8_t *) mem_alloc(len);
+	dev->outbuf = (uint8_t *) mem_alloc(67108864);
 	fread(dev->filebuf, 1, len, tf);
 	temp = lzf_decompress(dev->filebuf, len, dev->outbuf, 67108864);
 	if (temp) {
@@ -3615,7 +3584,7 @@ d86f_load(int drive, const wchar_t *fn)
 	dev->f = NULL;
 
 	if (! temp) {
-		d86f_log("86F: Error decompressing file\n");
+		ERRLOG("86F: Error decompressing file\n");
 		plat_remove(temp_file_name);
 		free(dev);
 		return(0);
@@ -3623,26 +3592,30 @@ d86f_load(int drive, const wchar_t *fn)
 
 	dev->f = plat_fopen(temp_file_name, L"rb+");
     }
+#endif
 
     if (dev->disk_flags & 0x100) {
 	/* Zoned disk. */
-	d86f_log("86F: Disk is zoned (Apple or Sony)\n");
+	ERRLOG("86F: Disk is zoned (Apple or Sony)\n");
 	fclose(dev->f);
 	dev->f = NULL;
-	if (dev->is_compressed) {
+#ifdef D86F_COMPRESS
+	if (dev->is_compressed)
 		plat_remove(temp_file_name);
-	}
+#endif
 	free(dev);
 	return(0);
     }
 
     if (dev->disk_flags & 0x600) {
 	/* Zone type is not 0 but the disk is fixed-RPM. */
-	d86f_log("86F: Disk is fixed-RPM but zone type is not 0\n");
+	ERRLOG("86F: Disk is fixed-RPM but zone type is not 0\n");
 	fclose(dev->f);
 	dev->f = NULL;
+#ifdef D86F_COMPRESS
 	if (dev->is_compressed)
 		plat_remove(temp_file_name);
+#endif
 	free(dev);
 	return(0);
     }
@@ -3656,9 +3629,11 @@ d86f_load(int drive, const wchar_t *fn)
 	fclose(dev->f);
 	dev->f = NULL;
 
+#ifdef D86F_COMPRESS
 	if (dev->is_compressed)
 		dev->f = plat_fopen(temp_file_name, L"rb");
 	  else
+#endif
 		dev->f = plat_fopen(fn, L"rb");
     }
 
@@ -3671,7 +3646,7 @@ d86f_load(int drive, const wchar_t *fn)
 
     if (! (dev->track_offset[0])) {
 	/* File has no track 0 side 0, abort. */
-	d86f_log("86F: No Track 0 side 0\n");
+	ERRLOG("86F: No Track 0 side 0\n");
 	fclose(dev->f);
 	dev->f = NULL;
 	free(dev);
@@ -3681,7 +3656,7 @@ d86f_load(int drive, const wchar_t *fn)
 
     if ((d86f_get_sides(drive) == 2) && !(dev->track_offset[1])) {
 	/* File is 2-sided but has no track 0 side 1, abort. */
-	d86f_log("86F: No Track 0 side 1\n");
+	ERRLOG("86F: No Track 0 side 1\n");
 	fclose(dev->f);
 	dev->f = NULL;
 	free(dev);
@@ -3741,9 +3716,13 @@ d86f_load(int drive, const wchar_t *fn)
     d86f_common_handlers(drive);
     drives[drive].format = d86f_format;
 
-    d86f_log("86F: Disk is %scompressed and does%s have surface description data\n",
+#ifdef D86F_COMPRESS
+    DEBUG("86F: Disk is %scompressed and does%s have surface description data\n",
 	dev->is_compressed ? "" : "not ",
+#else
+    DEBUG("86F: Disk does%s have surface description data\n",
 	d86f_has_surface_desc(drive) ? "" : " not");
+#endif
 
     /* All good. */
     return(1);
@@ -3772,20 +3751,26 @@ d86f_set_fdc(void *fdc)
 void
 d86f_close(int drive)
 {
-    wchar_t temp_file_name[2048];
+#ifdef D86F_COMPRESS
+    wchar_t temp[2048];
+#endif
     d86f_t *dev = d86f[drive];
 
     /* Make sure the drive is alive. */
     if (dev == NULL) return;
 
-    memcpy(temp_file_name, drive ? nvr_path(L"TEMP$$$1.$$$") : nvr_path(L"TEMP$$$0.$$$"), 26);
-
     if (dev->f) {
 	fclose(dev->f);
 	dev->f = NULL;
     }
-    if (dev->is_compressed)
-	plat_remove(temp_file_name);
+
+#ifdef D86F_COMPRESS
+    if (dev->is_compressed) {
+	memcpy(temp, drive ? nvr_path(L"TEMP$$$1.$$$")
+			   : nvr_path(L"TEMP$$$0.$$$"), 26);
+	plat_remove(temp);
+    }
+#endif
 }
 
 
@@ -3796,7 +3781,7 @@ d86f_setup(int drive)
     d86f_t *dev;
 
     /* Allocate a drive structure. */
-    dev = (d86f_t *)malloc(sizeof(d86f_t));
+    dev = (d86f_t *)mem_alloc(sizeof(d86f_t));
     memset(dev, 0x00, sizeof(d86f_t));
     dev->state = STATE_IDLE;
 

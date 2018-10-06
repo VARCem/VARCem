@@ -8,7 +8,7 @@
  *
  *		Definitions for the Emu8K emulator.
  *
- * Version:	@(#)snd_emu8k.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_emu8k.h	1.0.2	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -423,7 +423,7 @@ typedef struct emu8k_t
 
 
 
-void emu8k_init(emu8k_t *emu8k, uint16_t emu_addr, int onboard_ram);
+void emu8k_init(emu8k_t *emu8k, const wchar_t *romfile, uint16_t emu_addr, int onboard_ram);
 void emu8k_close(emu8k_t *emu8k);
 
 void emu8k_update(emu8k_t *emu8k);

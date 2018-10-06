@@ -14,7 +14,7 @@
  *
  *		This might be of use for an attempt at an ET4000/W32i.
  *
- * Version:	@(#)vid_et4000w32i.c	1.0.2	2018/05/06
+ * Version:	@(#)vid_et4000w32i.c	1.0.3	2018/09/15
  *
  * Author:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
@@ -96,7 +96,7 @@ int et4000w32_vbus[4]={1,2,4,4};
 void et4000w32_mmu_write(uint32_t addr, uint8_t val)
 {
         int bank;
-        pclog("ET4K write %08X %02X %i %02X %02X %04X(%08X):%08X  %04X %04X %02X %08X\n",addr,val,acl.cpu_input_num,acl.status,acl.internal.ctrl_routing,CS,cs,pc,CS,DI,mmu.ctrl,mmu.base[2]);
+        DEBUG("ET4K write %08X %02X %i %02X %02X %04X(%08X):%08X  %04X %04X %02X %08X\n",addr,val,acl.cpu_input_num,acl.status,acl.internal.ctrl_routing,CS,cs,pc,CS,DI,mmu.ctrl,mmu.base[2]);
         switch (addr&0x6000)
         {
                 case 0x0000: /*MMU 0*/
@@ -107,14 +107,14 @@ void et4000w32_mmu_write(uint32_t addr, uint8_t val)
                 {
                         if (!(acl.status&ACL_XYST))
                         {
-//                                pclog("!ACL_XYST\n");
+//                                DEBUG("!ACL_XYST\n");
                                 /*if ((acl.internal.ctrl_routing&0x30)==0x10) */acl.queued.dest_addr=(addr&0x1FFF)+mmu.base[bank];
                                 acl.internal=acl.queued;
                                 et4000w32_blit_start();
                                 if (!(acl.internal.ctrl_routing&0x37)) et4000w32_blit(0xFFFFFF, ~0, 0, 0);
                                 acl.cpu_input_num=0;
                         }
-//                        else if (!(acl.internal.ctrl_routing&7)) pclog("ACL_XYST\n");
+//                        else if (!(acl.internal.ctrl_routing&7)) DEBUG("ACL_XYST\n");
                         if (acl.internal.ctrl_routing&7)
                         {
                                 acl.cpu_input=(acl.cpu_input&~(0xFF<<(acl.cpu_input_num*8)))|(val<<(acl.cpu_input_num*8));
@@ -126,12 +126,12 @@ void et4000w32_mmu_write(uint32_t addr, uint8_t val)
                                         else if ((acl.internal.ctrl_routing&7)==1)
                                            et4000w32_blit(acl.cpu_input_num, ~0, acl.cpu_input, 2);
                                         else
-                                           pclog("Bad ET4K routing %i\n",acl.internal.ctrl_routing&7);
+                                           DEBUG("Bad ET4K routing %i\n",acl.internal.ctrl_routing&7);
                                         acl.cpu_input_num=0;
                                 }
                         }
 //                        else
-//                           pclog("Not ctrl_routing\n");
+//                           DEBUG("Not ctrl_routing\n");
                 }
                 else
                 {
@@ -202,7 +202,7 @@ void et4000w32_mmu_write(uint32_t addr, uint8_t val)
 uint8_t et4000w32_mmu_read(uint32_t addr)
 {
         int bank;
-        pclog("ET4K read %08X %04X(%08X):%08X\n",addr,CS,cs,pc);
+        DEBUG("ET4K read %08X %04X(%08X):%08X\n",addr,CS,cs,pc);
         switch (addr&0x6000)
         {
                 case 0x0000: /*MMU 0*/
@@ -275,7 +275,7 @@ int et4000w32_wrap_y[8]={1,2,4,8,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
 
 void et4000w32_blit_start()
 {
-        pclog("Blit - %08X %08X %08X (%i,%i) %i  %i %i  %02X %02X  %02X\n",acl.internal.pattern_addr,acl.internal.source_addr,acl.internal.dest_addr,acl.internal.dest_addr%640,acl.internal.dest_addr/640,acl.internal.xy_dir,acl.internal.count_x,acl.internal.count_y,acl.internal.rop_fg,acl.internal.rop_bg, acl.internal.ctrl_routing);
+        DEBUG("Blit - %08X %08X %08X (%i,%i) %i  %i %i  %02X %02X  %02X\n",acl.internal.pattern_addr,acl.internal.source_addr,acl.internal.dest_addr,acl.internal.dest_addr%640,acl.internal.dest_addr/640,acl.internal.xy_dir,acl.internal.count_x,acl.internal.count_y,acl.internal.rop_fg,acl.internal.rop_bg, acl.internal.ctrl_routing);
         acl.pattern_addr=acl.internal.pattern_addr;
         acl.source_addr =acl.internal.source_addr;
         acl.dest_addr   =acl.internal.dest_addr;
@@ -304,22 +304,22 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input)
         uint8_t pattern,source,dest,out;
         uint8_t rop;
 
-//        if (count>400) pclog("New blit - %i,%i %06X (%i,%i) %06X %06X\n",acl.internal.count_x,acl.internal.count_y,acl.dest_addr,acl.dest_addr%640,acl.dest_addr/640,acl.source_addr,acl.pattern_addr);
-//        pclog("Blit exec - %i %i %i\n",count,acl.internal.pos_x,acl.internal.pos_y);
+//        if (count>400) DEBUG("New blit - %i,%i %06X (%i,%i) %06X %06X\n",acl.internal.count_x,acl.internal.count_y,acl.dest_addr,acl.dest_addr%640,acl.dest_addr/640,acl.source_addr,acl.pattern_addr);
+//        DEBUG("Blit exec - %i %i %i\n",count,acl.internal.pos_x,acl.internal.pos_y);
         while (count--)
         {
-                pclog("%i,%i : ",acl.internal.pos_x,acl.internal.pos_y);
+                DEBUG("%i,%i : ",acl.internal.pos_x,acl.internal.pos_y);
                 if (acl.internal.xy_dir&1)
                 {
                         pattern=vram[(acl.pattern_addr-acl.pattern_x)&0x1FFFFF];
                         source =vram[(acl.source_addr -acl.source_x) &0x1FFFFF];
-                        pclog("%06X %06X ",(acl.pattern_addr-acl.pattern_x)&0x1FFFFF,(acl.source_addr -acl.source_x) &0x1FFFFF);
+                        DEBUG("%06X %06X ",(acl.pattern_addr-acl.pattern_x)&0x1FFFFF,(acl.source_addr -acl.source_x) &0x1FFFFF);
                 }
                 else
                 {
                         pattern=vram[(acl.pattern_addr+acl.pattern_x)&0x1FFFFF];
                         source =vram[(acl.source_addr +acl.source_x) &0x1FFFFF];
-                        pclog("%06X %06X ",(acl.pattern_addr+acl.pattern_x)&0x1FFFFF,(acl.source_addr +acl.source_x) &0x1FFFFF);
+                        DEBUG("%06X %06X ",(acl.pattern_addr+acl.pattern_x)&0x1FFFFF,(acl.source_addr +acl.source_x) &0x1FFFFF);
                 }
                 if (cpu_input==2)
                 {
@@ -328,7 +328,7 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input)
                 }
                 dest=vram[acl.dest_addr   &0x1FFFFF];
                 out=0;
-                pclog("%06X %i %08X   ",acl.dest_addr,mix&1,mix);
+                DEBUG("%06X %i %08X   ",acl.dest_addr,mix&1,mix);
                 rop = (mix & 1) ? acl.internal.rop_fg:acl.internal.rop_bg;
                 mix>>=1; mix|=0x80000000;
                 for (c=0;c<8;c++)
@@ -338,7 +338,7 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input)
                         if (pattern & (1<<c)) d|=4;
                         if (rop & (1<<d)) out|=(1<<c);
                 }
-                pclog("%06X = %02X\n",acl.dest_addr&0x1FFFFF,out);
+                DEBUG("%06X = %02X\n",acl.dest_addr&0x1FFFFF,out);
                 vram[acl.dest_addr&0x1FFFFF]=out;
                 changedvram[(acl.dest_addr&0x1FFFFF)>>12]=changeframecount;
 

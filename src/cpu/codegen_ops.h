@@ -8,7 +8,7 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen_ops.h	1.0.1	2018/02/14
+ * Version:	@(#)codegen_ops.h	1.0.2	2018/09/19
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,8 +51,8 @@ extern RecompOpFn recomp_opcodes_dc[512];
 extern RecompOpFn recomp_opcodes_dd[512];
 extern RecompOpFn recomp_opcodes_de[512];
 extern RecompOpFn recomp_opcodes_df[512];
-RecompOpFn recomp_opcodes_REPE[512];
-RecompOpFn recomp_opcodes_REPNE[512];
+extern RecompOpFn recomp_opcodes_REPE[512];
+extern RecompOpFn recomp_opcodes_REPNE[512];
 
 #define REG_EAX 0
 #define REG_ECX 1

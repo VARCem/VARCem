@@ -30,9 +30,7 @@ extern int slirp_tty_restore;
 
 
 void
-debug_init(file, dbg)
-	char *file;
-	int dbg;
+debug_init(char *file, int dbg)
 {
 	/* Close the old debugging file */
 	if (dfd)
@@ -57,9 +55,7 @@ debug_init(file, dbg)
  */
 #ifdef SLIRP_DEBUG
 void
-dump_packet(dat, n)
-	void *dat;
-	int n;
+dump_packet(void *dat, int n)
 {
 	u_char *pptr = (u_char *)dat;
 	int j,k;
@@ -86,8 +82,7 @@ dump_packet(dat, n)
  */
 
 void
-ttystats(ttyp)
-	struct ttys *ttyp;
+ttystats(struct ttys *ttyp)
 {
 	struct slirp_ifstats *is = &ttyp->ifstats;
 	char buff[512];
@@ -125,7 +120,7 @@ ttystats(ttyp)
 }
 
 void
-allttystats()
+allttystats(void)
 {
 	struct ttys *ttyp;
 	
@@ -135,7 +130,7 @@ allttystats()
 #endif
 
 void
-ipstats()
+ipstats(void)
 {
 	lprint(" \r\n");	
 
@@ -160,7 +155,7 @@ ipstats()
 
 #if 0
 void
-vjstats()
+vjstats(void)
 {
 	lprint(" \r\n");
 	
@@ -178,7 +173,7 @@ vjstats()
 #endif
 
 void
-tcpstats()
+tcpstats(void)
 {
 	lprint(" \r\n");
 
@@ -246,7 +241,7 @@ tcpstats()
 }
 
 void
-udpstats()
+udpstats(void)
 {
         lprint(" \r\n");
 
@@ -260,7 +255,7 @@ udpstats()
 }
 
 void
-icmpstats()
+icmpstats(void)
 {
 	lprint(" \r\n");
 	lprint("ICMP stats:\r\n");
@@ -273,7 +268,7 @@ icmpstats()
 }
 
 void
-mbufstats()
+mbufstats(void)
 {
 	struct SLIRPmbuf *m;
 	int i;
@@ -396,8 +391,7 @@ void purgesocks(void)
 
 #if 1
 void
-slirp_exit(exit_status)
-	int exit_status;
+slirp_exit(int exit_status)
 {
 //	struct ttys *ttyp;
 	

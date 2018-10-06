@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy/ZIP Image dialog.
  *
- * Version:	@(#)win_new_image.c	1.0.19	2018/06/05
+ * Version:	@(#)win_new_image.c	1.0.20	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,8 +46,10 @@
 #include "../emu.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#include "../devices/scsi/scsi_device.h"
 #include "../devices/disk/zip.h"
 #include "win.h"
+#include "resource.h"
 
 
 static wchar_t	fd_file_name[512];
@@ -84,19 +86,17 @@ dlg_init(HWND hdlg)
     if (is_zip) {
 	zip_types = zip_drives[drive_id].is_250 ? 2 : 1;
 	for (i = 0; i < zip_types; i++)
-                SendMessage(h, CB_ADDSTRING, 0,
-		    (LPARAM)get_string(IDS_3282 + 12 + i));
+                SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + 12 + i));
     } else {
 	for (i = 0; i < 12; i++)
-                SendMessage(h, CB_ADDSTRING, 0,
-		    (LPARAM)get_string(IDS_3282 + i));
+                SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + i));
     }
     SendMessage(h, CB_SETCURSEL, 0, 0);
     EnableWindow(h, FALSE);
 
     h = GetDlgItem(hdlg, IDC_COMBO_RPM_MODE);
     for (i = 0; i < 4; i++)
-	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_3278 + i));
+	SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3278 + i));
     SendMessage(h, CB_SETCURSEL, 0, 0);
     EnableWindow(h, FALSE);
     ShowWindow(h, SW_HIDE);
@@ -136,7 +136,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_INITDIALOG:
-		plat_pause(1);
+		pc_pause(1);
 
 		dialog_center(hdlg);
 
@@ -166,18 +166,18 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				if (ret) {
 					if (is_zip)
-						ui_sb_mount_zip(drive_id, sb_part, 0, fd_file_name);
+						ui_zip_mount(drive_id, sb_part, 0, fd_file_name);
 					else
-						ui_sb_mount_floppy(drive_id, sb_part, 0, fd_file_name);
+						ui_floppy_mount(drive_id, sb_part, 0, fd_file_name);
 				} else {
 					msg_box(hdlg, MBX_ERROR, (wchar_t *)IDS_OPEN_WRITE);
-					plat_pause(0);
+					pc_pause(0);
 					return TRUE;
 				}
 
 			case IDCANCEL:
 				EndDialog(hdlg, 0);
-				plat_pause(0);
+				pc_pause(0);
 				return TRUE;
 
 			case IDC_CFILE:
@@ -207,11 +207,9 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					if (f != NULL) {
 						fclose(f);
 						if (msg_box(hdlg, MBX_QUESTION, (wchar_t *)IDS_IMG_EXIST) != 0)	/* yes */ {
-pclog("SELECT: != 0 (NO)\n");
 							return FALSE;
 						}
 					}
-pclog("SELECT: YES\n");
 					SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path);
 					memset(fd_file_name, 0x00, sizeof(fd_file_name));
 					wcscpy(fd_file_name, temp_path);

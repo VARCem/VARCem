@@ -8,7 +8,7 @@
  *
  *		Emulation of various Compaq PC's.
  *
- * Version:	@(#)m_at_compaq.c	1.0.7	2018/08/20
+ * Version:	@(#)m_at_compaq.c	1.0.8	2018/09/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,7 @@
 
 
 /* Compaq Deskpro 386 remaps RAM from 0xA0000-0xFFFFF to 0xFA0000-0xFFFFFF */
-static mem_mapping_t	ram_mapping;
+static mem_map_t	ram_mapping;
 
 
 static uint8_t
@@ -117,8 +117,8 @@ write_raml(uint32_t addr, uint32_t val, void *priv)
 }
 
 
-void
-machine_at_compaq_init(const machine_t *model, void *arg)
+static void
+compaq_common_init(const machine_t *model, void *arg, int type)
 {
     machine_at_init(model, arg);
 
@@ -126,34 +126,63 @@ machine_at_compaq_init(const machine_t *model, void *arg)
 
     device_add(&fdc_at_device);
 
-    mem_mapping_add(&ram_mapping, 0xfa0000, 0x60000,
-                    read_ram, read_ramw, read_raml,
-                    write_ram, write_ramw, write_raml,
-                    0xa0000+ram, MEM_MAPPING_INTERNAL, NULL);
+    mem_map_add(&ram_mapping, 0xfa0000, 0x60000,
+                read_ram, read_ramw, read_raml,
+                write_ram, write_ramw, write_raml,
+                0xa0000+ram, MEM_MAPPING_INTERNAL, NULL);
 
-    switch(model->id) {
-	case ROM_PORTABLE:
+    switch(type) {
+	case 0:			/* Portable 286 */
 		break;
 
-	case ROM_PORTABLEII:
+	case 2:			/* Portable II */
 		break;
 
 #if defined(DEV_BRANCH) && defined(USE_PORTABLE3)
-	case ROM_PORTABLEIII:
+	case 3:			/* Portable III */
 		machine_olim24_video_init();
 		break;
 
-	case ROM_PORTABLEIII386:
+	case 3+386:		/* Portable III/386 */
 		machine_olim24_video_init();
 		if (hdc_type == 1)
 			device_add(&ide_isa_device);
 		break;
 #endif
+
 #if defined(DEV_BRANCH) && defined(USE_DESKPRO386)
-	case ROM_DESKPRO_386:
+	case 4+386:		/* Deskpro 386 */
 		if (hdc_type == 1)
 			device_add(&ide_isa_device);
 		break;
 #endif
     }
+}
+
+
+void
+machine_at_compaq_p1_init(const machine_t *model, void *arg)
+{
+    compaq_common_init(model, arg, 0);
+}
+
+
+void
+machine_at_compaq_p2_init(const machine_t *model, void *arg)
+{
+    compaq_common_init(model, arg, 2);
+}
+
+
+void
+machine_at_compaq_p3_init(const machine_t *model, void *arg)
+{
+    compaq_common_init(model, arg, 3);
+}
+
+
+void
+machine_at_compaq_p3_386_init(const machine_t *model, void *arg)
+{
+    compaq_common_init(model, arg, 3+386);
 }

@@ -20,7 +20,7 @@
  *		  - PMMX decode queue
  *		  - MMX latencies
  *
- * Version:	@(#)codegen_timing_pentium.c	1.0.2	2018/03/09
+ * Version:	@(#)codegen_timing_pentium.c	1.0.3	2018/09/04
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -132,7 +132,7 @@ static int pair_timings[4][4] =
 
 static int u_pipe_full;
 static uint32_t u_pipe_opcode;
-static uint64_t *u_pipe_timings;
+static const uint64_t *u_pipe_timings;
 static uint32_t u_pipe_op_32;
 static uint32_t u_pipe_regmask;
 static uint32_t u_pipe_fetchdat;
@@ -146,7 +146,7 @@ static uint32_t addr_regmask;
 static int fpu_latency;
 static int fpu_st_latency[8];
 
-static uint64_t opcode_timings[256] =
+static const uint64_t opcode_timings[256] =
 {
 /*      ADD                    ADD                    ADD                   ADD*/
 /*00*/  PAIR_UV | CYCLES_RMW,  PAIR_UV | CYCLES_RMW,  PAIR_UV | CYCLES_RM,  PAIR_UV | CYCLES_RM,
@@ -282,7 +282,7 @@ static uint64_t opcode_timings[256] =
         PAIR_NP | CYCLES(2),                            PAIR_NP | CYCLES(2),                            PAIR_UV | CYCLES_RMW,                           INVALID
 };
 
-static uint64_t opcode_timings_mod3[256] =
+static const uint64_t opcode_timings_mod3[256] =
 {
 /*      ADD                       ADD                       ADD                       ADD*/
 /*00*/  PAIR_UV | CYCLES_REG,     PAIR_UV | CYCLES_REG,     PAIR_UV | CYCLES_REG,     PAIR_UV | CYCLES_REG,
@@ -419,7 +419,7 @@ static uint64_t opcode_timings_mod3[256] =
         PAIR_NP | CYCLES(2),                            PAIR_NP | CYCLES(2),                            PAIR_UV | CYCLES_REG,                           INVALID
 };
 
-static uint64_t opcode_timings_0f[256] =
+static const uint64_t opcode_timings_0f[256] =
 {
 /*00*/  PAIR_NP | CYCLES(20),    PAIR_NP | CYCLES(11),           PAIR_NP | CYCLES(11),           PAIR_NP | CYCLES(10),
         INVALID,                 PAIR_NP | CYCLES(195),          PAIR_NP | CYCLES(7),            INVALID,
@@ -501,7 +501,7 @@ static uint64_t opcode_timings_0f[256] =
         PAIR_U | CYCLES_RM,     PAIR_U | CYCLES_RM,     PAIR_U | CYCLES_RM,     INVALID,
         PAIR_U | CYCLES_RM,     PAIR_U | CYCLES_RM,     PAIR_U | CYCLES_RM,     INVALID,
 };
-static uint64_t opcode_timings_0f_mod3[256] =
+static const uint64_t opcode_timings_0f_mod3[256] =
 {
 /*00*/  PAIR_NP | CYCLES(20),   PAIR_NP | CYCLES(11),           PAIR_NP | CYCLES(11),           PAIR_NP | CYCLES(10),
         INVALID,                PAIR_NP | CYCLES(195),          PAIR_NP | CYCLES(7),            INVALID,
@@ -584,53 +584,53 @@ static uint64_t opcode_timings_0f_mod3[256] =
         PAIR_UV | CYCLES_REG,   PAIR_UV | CYCLES_REG,   PAIR_UV | CYCLES_REG,   INVALID,
 };
 
-static uint64_t opcode_timings_shift[8] =
+static const uint64_t opcode_timings_shift[8] =
 {
         PAIR_U | CYCLES_RMW,    PAIR_U | CYCLES_RMW,    PAIR_U | CYCLES_RMW,    PAIR_U | CYCLES_RMW,
         PAIR_U | CYCLES_RMW,    PAIR_U | CYCLES_RMW,    PAIR_U | CYCLES_RMW,    PAIR_U | CYCLES_RMW,
 };
-static uint64_t opcode_timings_shift_mod3[8] =
+static const uint64_t opcode_timings_shift_mod3[8] =
 {
         PAIR_U | CYCLES_REG,    PAIR_U | CYCLES_REG,    PAIR_U | CYCLES_REG,    PAIR_U | CYCLES_REG,
         PAIR_U | CYCLES_REG,    PAIR_U | CYCLES_REG,    PAIR_U | CYCLES_REG,    PAIR_U | CYCLES_REG,
 };
 
-static uint64_t opcode_timings_f6[8] =
+static const uint64_t opcode_timings_f6[8] =
 {
 /*      TST                                             NOT                     NEG*/
         PAIR_UV | CYCLES_RM,    INVALID,                PAIR_NP | CYCLES(3),    PAIR_NP | CYCLES(3),
 /*      MUL                     IMUL                    DIV                     IDIV*/
         PAIR_NP | CYCLES(11),   PAIR_NP | CYCLES(11),   PAIR_NP | CYCLES(17),   PAIR_NP | CYCLES(22)
 };
-static uint64_t opcode_timings_f6_mod3[8] =
+static const uint64_t opcode_timings_f6_mod3[8] =
 {
 /*      TST                                             NOT                     NEG*/
         PAIR_UV | CYCLES_REG,   INVALID,                PAIR_NP | CYCLES(3),    PAIR_NP | CYCLES(3),
 /*      MUL                     IMUL                    DIV                     IDIV*/
         PAIR_NP | CYCLES(11),   PAIR_NP | CYCLES(11),   PAIR_NP | CYCLES(17),   PAIR_NP | CYCLES(22)
 };
-static uint64_t opcode_timings_f7[8] =
+static const uint64_t opcode_timings_f7[8] =
 {
 /*      TST                                                             NOT                             NEG*/
         PAIR_UV | CYCLES_RM,            INVALID,                        PAIR_NP | CYCLES(3),            PAIR_NP | CYCLES(3),
 /*      MUL                             IMUL                            DIV                             IDIV*/
         PAIR_NP | CYCLES_MULTI(11,10),  PAIR_NP | CYCLES_MULTI(11,10),  PAIR_NP | CYCLES_MULTI(25,41),  PAIR_NP | CYCLES_MULTI(30,46)
 };
-static uint64_t opcode_timings_f7_mod3[8] =
+static const uint64_t opcode_timings_f7_mod3[8] =
 {
 /*      TST                                                             NOT                             NEG*/
         PAIR_UV | CYCLES_REG,           INVALID,                        PAIR_NP | CYCLES(3),            PAIR_NP | CYCLES(3),
 /*      MUL                             IMUL                            DIV                             IDIV*/
         PAIR_NP | CYCLES_MULTI(11,10),  PAIR_NP | CYCLES_MULTI(11,10),  PAIR_NP | CYCLES_MULTI(25,41),  PAIR_NP | CYCLES_MULTI(30,46)
 };
-static uint64_t opcode_timings_ff[8] =
+static const uint64_t opcode_timings_ff[8] =
 {
 /*      INC                     DEC                     CALL                 CALL far*/
         PAIR_UV | CYCLES_RMW,   PAIR_UV | CYCLES_RMW,   PAIR_NP | CYCLES(4),  PAIR_NP | CYCLES(0),
 /*      JMP                     JMP far                 PUSH*/
         PAIR_NP | CYCLES(2),    PAIR_NP | CYCLES(0),    PAIR_NP | CYCLES(2),  INVALID
 };
-static uint64_t opcode_timings_ff_mod3[8] =
+static const uint64_t opcode_timings_ff_mod3[8] =
 {
 /*      INC                     DEC                     CALL                    CALL far*/
         PAIR_UV | CYCLES_REG,   PAIR_UV | CYCLES_REG,   PAIR_NP | CYCLES(4),    PAIR_NP | CYCLES(0),
@@ -638,14 +638,14 @@ static uint64_t opcode_timings_ff_mod3[8] =
         PAIR_NP | CYCLES(2),    PAIR_NP | CYCLES(0),    PAIR_NP | CYCLES(2),    INVALID
 };
 
-static uint64_t opcode_timings_d8[8] =
+static const uint64_t opcode_timings_d8[8] =
 {
 /*      FADDs                         FMULs                         FCOMs                           FCOMPs*/
         PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(1,0,0),    PAIR_FX | FPU_CYCLES(1,0,0),
 /*      FSUBs                         FSUBRs                        FDIVs                           FDIVRs*/
         PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(39,38,2),  PAIR_FX | FPU_CYCLES(39,38,2)
 };
-static uint64_t opcode_timings_d8_mod3[8] =
+static const uint64_t opcode_timings_d8_mod3[8] =
 {
 /*      FADD                            FMUL                            FCOM                            FCOMP*/
         PAIR_FX | FPU_CYCLES(3,2,2),    PAIR_FX | FPU_CYCLES(3,2,2),    PAIR_FX | FPU_CYCLES(1,0,0),    PAIR_FX | FPU_CYCLES(1,0,0),
@@ -653,14 +653,14 @@ static uint64_t opcode_timings_d8_mod3[8] =
         PAIR_FX | FPU_CYCLES(3,2,2),    PAIR_FX | FPU_CYCLES(3,2,2),    PAIR_FX | FPU_CYCLES(39,38,2),  PAIR_FX | FPU_CYCLES(39,38,2)
 };
 
-static uint64_t opcode_timings_d9[8] =
+static const uint64_t opcode_timings_d9[8] =
 {
 /*      FLDs                                                         FSTs                           FSTPs*/
         PAIR_FX | FPU_CYCLES(1,0,0),   INVALID,                      PAIR_NP | FPU_CYCLES(2,0,0),   PAIR_NP | FPU_CYCLES(2,0,0),
 /*      FLDENV                         FLDCW                         FSTENV                         FSTCW*/
         PAIR_NP | FPU_CYCLES(32,0,0),  PAIR_NP | FPU_CYCLES(8,0,0),  PAIR_NP | FPU_CYCLES(48,0,0),  PAIR_NP | FPU_CYCLES(2,0,0)
 };
-static uint64_t opcode_timings_d9_mod3[64] =
+static const uint64_t opcode_timings_d9_mod3[64] =
 {
         /*FLD*/
         PAIR_FX | FPU_CYCLES(1,0,0),  PAIR_FX | FPU_CYCLES(1,0,0),  PAIR_FX | FPU_CYCLES(1,0,0),  PAIR_FX | FPU_CYCLES(1,0,0),
@@ -692,14 +692,14 @@ static uint64_t opcode_timings_d9_mod3[64] =
         PAIR_NP | FPU_CYCLES(9,0,0),                      PAIR_NP | FPU_CYCLES(20,5,0),                     PAIR_NP | FPU_CYCLES(65,2,2),                     PAIR_NP | FPU_CYCLES(65,2,2)
 };
 
-static uint64_t opcode_timings_da[8] =
+static const uint64_t opcode_timings_da[8] =
 {
 /*      FIADDl                        FIMULl                        FICOMl                          FICOMPl*/
         PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(4,0,0),    PAIR_NP | FPU_CYCLES(4,0,0),
 /*      FISUBl                        FISUBRl                       FIDIVl                          FIDIVRl*/
         PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(42,38,2),  PAIR_NP | FPU_CYCLES(42,38,2)
 };
-static uint64_t opcode_timings_da_mod3[8] =
+static const uint64_t opcode_timings_da_mod3[8] =
 {
         INVALID,                INVALID,                        INVALID,                INVALID,
 /*                              FCOMPP*/
@@ -707,14 +707,14 @@ static uint64_t opcode_timings_da_mod3[8] =
 };
 
 
-static uint64_t opcode_timings_db[8] =
+static const uint64_t opcode_timings_db[8] =
 {
 /*      FLDil                                                       FSTil                         FSTPil*/
         PAIR_NP | FPU_CYCLES(3,2,2),  INVALID,                      PAIR_NP | FPU_CYCLES(6,0,0),  PAIR_NP | FPU_CYCLES(6,0,0),
 /*                                    FLDe                                                        FSTPe*/
         INVALID,                      PAIR_NP | FPU_CYCLES(3,0,0),  INVALID,                      PAIR_NP | FPU_CYCLES(3,0,0)
 };
-static uint64_t opcode_timings_db_mod3[64] =
+static const uint64_t opcode_timings_db_mod3[64] =
 {
         INVALID,                INVALID,                INVALID,                INVALID,
         INVALID,                INVALID,                INVALID,                INVALID,
@@ -743,14 +743,14 @@ static uint64_t opcode_timings_db_mod3[64] =
         INVALID,                INVALID,                INVALID,                INVALID,
 };
 
-static uint64_t opcode_timings_dc[8] =
+static const uint64_t opcode_timings_dc[8] =
 {
 /*      FADDd                         FMULd                         FCOMd                           FCOMPd*/
         PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(1,0,0),    PAIR_FX | FPU_CYCLES(1,0,0),
 /*      FSUBd                         FSUBRd                        FDIVd                           FDIVRd*/
         PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(39,38,2),  PAIR_FX | FPU_CYCLES(39,38,2)
 };
-static uint64_t opcode_timings_dc_mod3[8] =
+static const uint64_t opcode_timings_dc_mod3[8] =
 {
 /*      opFADDr                         opFMULr*/
         PAIR_FX | FPU_CYCLES(3,2,2),    PAIR_FX | FPU_CYCLES(3,2,2),    INVALID,                         INVALID,
@@ -758,14 +758,14 @@ static uint64_t opcode_timings_dc_mod3[8] =
         PAIR_FX | FPU_CYCLES(3,2,2),    PAIR_FX | FPU_CYCLES(3,2,2),    PAIR_FX | FPU_CYCLES(39,38,2),   PAIR_FX | FPU_CYCLES(39,38,2)
 };
 
-static uint64_t opcode_timings_dd[8] =
+static const uint64_t opcode_timings_dd[8] =
 {
 /*      FLDd                                                FSTd                            FSTPd*/
         PAIR_FX | FPU_CYCLES(1,0,0),  INVALID,              PAIR_NP | FPU_CYCLES(2,0,0),    PAIR_NP | FPU_CYCLES(2,0,0),
 /*      FRSTOR                                              FSAVE                           FSTSW*/
         PAIR_NP | FPU_CYCLES(70,0,0), INVALID,              PAIR_NP | FPU_CYCLES(127,0,0),  PAIR_NP | FPU_CYCLES(6,0,0)
 };
-static uint64_t opcode_timings_dd_mod3[8] =
+static const uint64_t opcode_timings_dd_mod3[8] =
 {
 /*      FFFREE                                                        FST                             FSTP*/
         PAIR_NP | FPU_CYCLES(2,0,0),    INVALID,                      PAIR_NP | FPU_CYCLES(1,0,0),    PAIR_NP | FPU_CYCLES(1,0,0),
@@ -773,14 +773,14 @@ static uint64_t opcode_timings_dd_mod3[8] =
         PAIR_NP | FPU_CYCLES(1,0,0),    PAIR_NP | FPU_CYCLES(1,0,0),  INVALID,                        INVALID
 };
 
-static uint64_t opcode_timings_de[8] =
+static const uint64_t opcode_timings_de[8] =
 {
 /*      FIADDw                        FIMULw                        FICOMw                          FICOMPw*/
         PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(4,0,0),    PAIR_NP | FPU_CYCLES(4,0,0),
 /*      FISUBw                        FISUBRw                       FIDIVw                          FIDIVRw*/
         PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(6,2,2),  PAIR_NP | FPU_CYCLES(42,38,2),  PAIR_NP | FPU_CYCLES(42,38,2)
 };
-static uint64_t opcode_timings_de_mod3[8] =
+static const uint64_t opcode_timings_de_mod3[8] =
 {
 /*      FADDP                         FMULP                                                          FCOMPP*/
         PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(3,2,2),   INVALID,                        PAIR_FX | FPU_CYCLES(1,0,0),
@@ -788,46 +788,48 @@ static uint64_t opcode_timings_de_mod3[8] =
         PAIR_FX | FPU_CYCLES(3,2,2),  PAIR_FX | FPU_CYCLES(3,2,2),   PAIR_FX | FPU_CYCLES(39,38,2),  PAIR_FX | FPU_CYCLES(39,38,2)
 };
 
-static uint64_t opcode_timings_df[8] =
+static const uint64_t opcode_timings_df[8] =
 {
 /*      FILDiw                                                      FISTiw                          FISTPiw*/
         PAIR_NP | FPU_CYCLES(3,2,2),  INVALID,                      PAIR_NP | FPU_CYCLES(6,0,0),    PAIR_NP | FPU_CYCLES(6,0,0),
 /*                                    FILDiq                        FBSTP                           FISTPiq*/
         INVALID,                      PAIR_NP | FPU_CYCLES(3,2,2),  PAIR_NP | FPU_CYCLES(148,0,0),  PAIR_NP | FPU_CYCLES(6,0,0)
 };
-static uint64_t opcode_timings_df_mod3[8] =
+static const uint64_t opcode_timings_df_mod3[8] =
 {
         INVALID,                        INVALID,                INVALID,                INVALID,
 /*      FSTSW AX*/
         PAIR_NP | FPU_CYCLES(6,0,0),    INVALID,                INVALID,                INVALID
 };
 
-static uint64_t opcode_timings_81[8] =
+static const uint64_t opcode_timings_81[8] =
 {
         PAIR_UV | CYCLES_RMW | CYCLES_IMM1632,  PAIR_UV | CYCLES_RMW | CYCLES_IMM1632,  PAIR_UV | CYCLES_RMW | CYCLES_IMM1632,  PAIR_UV | CYCLES_RMW | CYCLES_IMM1632,
         PAIR_UV | CYCLES_RMW | CYCLES_IMM1632,  PAIR_UV | CYCLES_RMW | CYCLES_IMM1632,  PAIR_UV | CYCLES_RMW | CYCLES_IMM1632,  PAIR_UV | CYCLES_RM | CYCLES_IMM1632
 };
-static uint64_t opcode_timings_81_mod3[8] =
+static const uint64_t opcode_timings_81_mod3[8] =
 {
         PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,
         PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG
 };
-static uint64_t opcode_timings_8x[8] =
+static const uint64_t opcode_timings_8x[8] =
 {
         PAIR_UV | CYCLES_RMW | CYCLES_IMM8,  PAIR_UV | CYCLES_RMW | CYCLES_IMM8,  PAIR_UV | CYCLES_RMW | CYCLES_IMM8,  PAIR_UV | CYCLES_RMW | CYCLES_IMM8,
         PAIR_UV | CYCLES_RMW | CYCLES_IMM8,  PAIR_UV | CYCLES_RMW | CYCLES_IMM8,  PAIR_UV | CYCLES_RMW | CYCLES_IMM8,  PAIR_UV | CYCLES_RM | CYCLES_IMM8
 };
-static uint64_t opcode_timings_8x_mod3[8] =
+static const uint64_t opcode_timings_8x_mod3[8] =
 {
         PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,
         PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG,  PAIR_UV | CYCLES_REG
 };
+
 
 static int decode_delay, decode_delay_offset;
 static uint8_t last_prefix;
 static int prefixes;
 
-static inline int COUNT(uint64_t timings, uint64_t deps, int op_32)
+
+static INLINE int COUNT(uint64_t timings, uint64_t deps, int op_32)
 {
         if ((timings & PAIR_FPU) && !(deps & FPU_FXCH))
                 return FPU_I_LATENCY(timings);
@@ -862,6 +864,7 @@ static inline int COUNT(uint64_t timings, uint64_t deps, int op_32)
         return timings & 0xffffffff;
 }
 
+
 static int codegen_fpu_latencies(uint64_t deps, int reg)
 {
         int latency = fpu_latency;
@@ -875,6 +878,7 @@ static int codegen_fpu_latencies(uint64_t deps, int reg)
         
         return latency;
 }
+
 
 #define SUB_AND_CLAMP(latency, count)  \
         latency -= count;              \
@@ -894,7 +898,8 @@ static void codegen_fpu_latency_clock(int count)
         SUB_AND_CLAMP(fpu_st_latency[7], count);
 }
 
-static inline int codegen_timing_has_displacement(uint32_t fetchdat, int op_32)
+
+static INLINE int codegen_timing_has_displacement(uint32_t fetchdat, int op_32)
 {
         if (op_32 & 0x200)
         {
@@ -918,9 +923,10 @@ static inline int codegen_timing_has_displacement(uint32_t fetchdat, int op_32)
         return 0;
 }                
 
+
 /*The instruction is only of interest here if it's longer than 7 bytes, as that's the
   limit on Pentium MMX parallel decoding*/
-static inline int codegen_timing_instr_length(uint64_t timing, uint32_t fetchdat, int op_32)
+static INLINE int codegen_timing_instr_length(uint64_t timing, uint32_t fetchdat, int op_32)
 {
         int len = prefixes;
         if ((timing & CYCLES_MASK) == CYCLES_RM || (timing & CYCLES_MASK) == CYCLES_RMW)
@@ -968,16 +974,19 @@ static inline int codegen_timing_instr_length(uint64_t timing, uint32_t fetchdat
         return len;
 }
 
-void codegen_timing_pentium_block_start()
+
+void codegen_timing_pentium_block_start(void)
 {
         u_pipe_full = decode_delay = decode_delay_offset = 0;
 }
 
-void codegen_timing_pentium_start()
+
+void codegen_timing_pentium_start(void)
 {
         last_prefix = 0;
         prefixes = 0;
 }
+
 
 void codegen_timing_pentium_prefix(uint8_t prefix, uint32_t fetchdat)
 {
@@ -1000,7 +1009,7 @@ void codegen_timing_pentium_prefix(uint8_t prefix, uint32_t fetchdat)
                 last_prefix = prefix;
                 return;
         }
-        if (prefix == 0x0f && (opcode & 0xf0) == 0x80)
+        if (prefix == 0x0f && (fetchdat & 0xf0) == 0x80)
         {
                 /*On Pentium 0fh prefix is 'free' when used on conditional jumps*/
                 last_prefix = prefix;
@@ -1024,7 +1033,7 @@ static int check_agi(uint64_t *deps, uint8_t opcode, uint32_t fetchdat, int op_3
         return (regmask_modified & addr_regmask) & ~REGMASK_IMPL_ESP;
 }
 
-static void codegen_instruction(uint64_t *timings, uint64_t *deps, uint8_t opcode, uint32_t fetchdat, int decode_delay_offset, int op_32, int exec_delay)
+static void codegen_instruction(const uint64_t *timings, uint64_t *deps, uint8_t opcode, uint32_t fetchdat, int decode_delay_offset, int op_32, int exec_delay)
 {
         int instr_cycles, latency = 0;
 
@@ -1115,7 +1124,7 @@ static void codegen_instruction(uint64_t *timings, uint64_t *deps, uint8_t opcod
 
 void codegen_timing_pentium_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
 {
-        uint64_t *timings;
+        const uint64_t *timings;
         uint64_t *deps;
         int mod3 = ((fetchdat & 0xc0) == 0xc0);
         int bit8 = !(opcode & 1);

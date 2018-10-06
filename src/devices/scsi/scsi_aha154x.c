@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.9	2018/05/06
+ * Version:	@(#)scsi_aha154x.c	1.0.10	2018/10/05
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -44,6 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog	scsi_dev_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -55,12 +56,10 @@
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "../system/mca.h"
-#include "scsi.h"
+#include "scsi_device.h"
 #include "scsi_aha154x.h"
 #include "scsi_x54x.h"
 
-
-#define aha_log	scsi_dev_log
 
 #define AHA1540B_330_BIOS_PATH	L"scsi/adaptec/aha1540b320_330.bin"
 #define AHA1540B_334_BIOS_PATH	L"scsi/adaptec/aha1540b320_334.bin"
@@ -163,13 +162,12 @@ shram_cmd(x54x_t *dev, uint8_t cmd)
 static void
 eeprom_save(x54x_t *dev)
 {
-    FILE *f;
+    FILE *fp;
 
-    f = plat_fopen(nvr_path(dev->nvr_path), L"wb");
-    if (f != NULL) {
-	fwrite(dev->nvr, 1, NVR_SIZE, f);
-	fclose(f);
-	f = NULL;
+    fp = plat_fopen(nvr_path(dev->nvr_path), L"wb");
+    if (fp != NULL) {
+	fwrite(dev->nvr, 1, NVR_SIZE, fp);
+	fclose(fp);
     }
 }
 
@@ -180,7 +178,7 @@ eeprom_cmd(x54x_t *dev, uint8_t cmd,uint8_t arg,uint8_t len,uint8_t off,uint8_t 
     uint8_t r = 0xff;
     int c;
 
-    aha_log("%s: EEPROM cmd=%02x, arg=%02x len=%d, off=%02x\n",
+    DEBUG("%s: EEPROM cmd=%02x, arg=%02x len=%d, off=%02x\n",
 				dev->name, cmd, arg, len, off);
 
     /* Only if we can handle it.. */
@@ -210,7 +208,7 @@ eeprom_cmd(x54x_t *dev, uint8_t cmd,uint8_t arg,uint8_t len,uint8_t off,uint8_t 
 static uint8_t
 mmap_cmd(x54x_t *dev, uint8_t cmd)
 {
-    aha_log("%s: MEMORY cmd=%02x\n", dev->name, cmd);
+    DEBUG("%s: MEMORY cmd=%02x\n", dev->name, cmd);
 
     switch(cmd) {
 	case 0x26:
@@ -229,36 +227,36 @@ mmap_cmd(x54x_t *dev, uint8_t cmd)
 
 
 static uint8_t
-get_host_id(void *p)
+get_host_id(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
 
     return(dev->nvr[0] & 0x07);
 }
 
 
 static uint8_t
-get_irq(void *p)
+get_irq(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
 
     return((dev->nvr[1] & 0x07) + 9);
 }
 
 
 static uint8_t
-get_dma(void *p)
+get_dma(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
 
     return((dev->nvr[1] >> 4) & 0x07);
 }
 
 
 static uint8_t
-cmd_is_fast(void *p)
+cmd_is_fast(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
 
     if (dev->Command == CMD_BIOS_SCSI)
 	return(1);
@@ -268,9 +266,9 @@ cmd_is_fast(void *p)
 
 
 static uint8_t
-fast_cmds(void *p, uint8_t cmd)
+fast_cmds(void *priv, uint8_t cmd)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
 
     if (cmd == CMD_BIOS_SCSI) {
 	dev->BIOSMailboxReq++;
@@ -282,9 +280,9 @@ fast_cmds(void *p, uint8_t cmd)
 
 
 static uint8_t
-param_len(void *p)
+param_len(void *priv)
 {
-    x54x_t *dev = (x54x_t *)p;
+    x54x_t *dev = (x54x_t *)priv;
 
     switch (dev->Command) {
 	case CMD_BIOS_MBINIT:
@@ -322,7 +320,7 @@ aha_cmds(void *priv)
 
     if (dev->CmdParamLeft) return(0);
 
-    aha_log("Running Operation Code 0x%02X\n", dev->Command);
+    DEBUG("Running Operation Code 0x%02X\n", dev->Command);
     switch (dev->Command) {
 	case CMD_WR_EEPROM:	/* write EEPROM */
 		/* Sent by CF BIOS. */
@@ -373,10 +371,8 @@ aha_cmds(void *priv)
 		dev->BIOSMailboxCount = mbi->Count;
 		dev->BIOSMailboxOutAddr = ADDR_TO_U32(mbi->Address);
 
-		aha_log("Initialize BIOS Mailbox: MBO=0x%08lx, %d entries at 0x%08lx\n",
-			dev->BIOSMailboxOutAddr,
-			mbi->Count,
-			ADDR_TO_U32(mbi->Address));
+		DEBUG("Initialize BIOS Mailbox: MBO=0x%08lx, %d entries at 0x%08lx\n",
+		      dev->BIOSMailboxOutAddr, mbi->Count, ADDR_TO_U32(mbi->Address));
 
 		dev->Status &= ~STAT_INIT;
 		dev->DataReplyLeft = 0;
@@ -452,7 +448,7 @@ do_bios_mail(x54x_t *dev)
     dev->MailboxIsBIOS = 1;
 
     if (! dev->BIOSMailboxCount) {
-	aha_log("aha_do_bios_mail(): No BIOS Mailboxes\n");
+	DEBUG("aha_do_bios_mail(): No BIOS Mailboxes\n");
 	return;
     }
 
@@ -559,7 +555,7 @@ aha_mca_write(int port, uint8_t val, void *priv)
      *
      * So, remove current address, if any.
      */
-    mem_mapping_disable(&dev->bios.mapping);
+    mem_map_disable(&dev->bios.mapping);
 
     /* Initialize the device if fully configured. */
     if (dev->pos_regs[2] & 0x01) {
@@ -571,13 +567,14 @@ aha_mca_write(int port, uint8_t val, void *priv)
 
 	/* Enable or disable the BIOS ROM. */
 	if (dev->rom_addr != 0x000000) {
-		mem_mapping_enable(&dev->bios.mapping);
-		mem_mapping_set_addr(&dev->bios.mapping, dev->rom_addr, ROM_SIZE);
+		mem_map_enable(&dev->bios.mapping);
+		mem_map_set_addr(&dev->bios.mapping, dev->rom_addr, ROM_SIZE);
 	}
 
 	/* Say hello. */
-	pclog("AHA-1640: I/O=%04x, IRQ=%d, DMA=%d, BIOS @%05X, HOST ID %i\n",
-		dev->Base, dev->Irq, dev->DmaChannel, dev->rom_addr, dev->HostID);
+	INFO("%s: I/O=%04x, IRQ=%d, DMA=%d, BIOS @%05X, HOST ID %i\n",
+	     dev->name, dev->Base, dev->Irq, dev->DmaChannel,
+	     dev->rom_addr, dev->HostID);
     }
 }
 
@@ -589,16 +586,16 @@ set_bios(x54x_t *dev)
     uint32_t size;
     uint32_t mask;
     uint32_t temp;
-    FILE *f;
+    FILE *fp;
     int i;
 
     /* Only if this device has a BIOS ROM. */
     if (dev->bios_path == NULL) return;
 
     /* Open the BIOS image file and make sure it exists. */
-    aha_log("%s: loading BIOS from '%ls'\n", dev->name, dev->bios_path);
-    if ((f = plat_fopen(rom_path(dev->bios_path), L"rb")) == NULL) {
-	aha_log("%s: BIOS ROM not found!\n", dev->name);
+    DEBUG("%s: loading BIOS from '%ls'\n", dev->name, dev->bios_path);
+    if ((fp = plat_fopen(rom_path(dev->bios_path), L"rb")) == NULL) {
+	ERRLOG("%s: BIOS ROM not found!\n", dev->name);
 	return;
     }
 
@@ -609,33 +606,33 @@ set_bios(x54x_t *dev)
      * this special case, we can't: we may need WRITE access to the
      * memory later on.
      */
-    (void)fseek(f, 0L, SEEK_END);
-    temp = ftell(f);
-    (void)fseek(f, 0L, SEEK_SET);
+    (void)fseek(fp, 0L, SEEK_END);
+    temp = ftell(fp);
+    (void)fseek(fp, 0L, SEEK_SET);
 
     /* Load first chunk of BIOS (which is the main BIOS, aka ROM1.) */
-    dev->rom1 = malloc(ROM_SIZE);
-    (void)fread(dev->rom1, ROM_SIZE, 1, f);
+    dev->rom1 = (uint8_t *)mem_alloc(ROM_SIZE);
+    (void)fread(dev->rom1, ROM_SIZE, 1, fp);
     temp -= ROM_SIZE;
     if (temp > 0) {
-	dev->rom2 = malloc(ROM_SIZE);
-	(void)fread(dev->rom2, ROM_SIZE, 1, f);
+	dev->rom2 = (uint8_t *)mem_alloc(ROM_SIZE);
+	(void)fread(dev->rom2, ROM_SIZE, 1, fp);
 	temp -= ROM_SIZE;
     } else {
 	dev->rom2 = NULL;
     }
     if (temp != 0) {
-	aha_log("%s: BIOS ROM size invalid!\n", dev->name);
+	ERRLOG("%s: BIOS ROM size invalid!\n", dev->name);
 	free(dev->rom1);
 	if (dev->rom2 != NULL)
 		free(dev->rom2);
-	(void)fclose(f);
+	(void)fclose(fp);
 	return;
     }
-    temp = ftell(f);
+    temp = ftell(fp);
     if (temp > ROM_SIZE)
 	temp = ROM_SIZE;
-    (void)fclose(f);
+    (void)fclose(fp);
 
     /* Adjust BIOS size in chunks of 2K, as per BIOS spec. */
     size = 0x10000;
@@ -646,8 +643,8 @@ set_bios(x54x_t *dev)
     if (temp <= 0x2000)
 	size = 0x2000;
     mask = (size - 1);
-    aha_log("%s: BIOS at 0x%06lX, size %lu, mask %08lx\n",
-			dev->name, dev->rom_addr, size, mask);
+    INFO("%s: BIOS at 0x%06lX, size %lu, mask %08lx\n",
+         dev->name, dev->rom_addr, size, mask);
 
     /* Initialize the ROM entry for this BIOS. */
     memset(&dev->bios, 0x00, sizeof(rom_t));
@@ -659,11 +656,11 @@ set_bios(x54x_t *dev)
     dev->bios.mask = mask;
 
     /* Map this system into the memory map. */
-    mem_mapping_add(&dev->bios.mapping, dev->rom_addr, size,
-		    mem_read, NULL, NULL, /* aha_mem_readw, aha_mem_readl, */
-		    mem_write, NULL, NULL,
-		    dev->bios.rom, MEM_MAPPING_EXTERNAL, dev);
-    mem_mapping_disable(&dev->bios.mapping);
+    mem_map_add(&dev->bios.mapping, dev->rom_addr, size,
+		mem_read, NULL, NULL, /* aha_mem_readw, aha_mem_readl, */
+		mem_write, NULL, NULL,
+		dev->bios.rom, MEM_MAPPING_EXTERNAL, dev);
+    mem_map_disable(&dev->bios.mapping);
 
     /*
      * Patch the ROM BIOS image for stuff Adaptec deliberately
@@ -676,10 +673,10 @@ set_bios(x54x_t *dev)
      */
     if (dev->rom_ioaddr != 0x0000) {
 	/* Look up the I/O address in the table. */
-	for (i=0; i<8; i++)
+	for (i = 0; i < 8; i++)
 		if (aha_ports[i] == dev->Base) break;
 	if (i == 8) {
-		aha_log("%s: invalid I/O address %04x selected!\n",
+		ERRLOG("%s: invalid I/O address %04x selected!\n",
 					dev->name, dev->Base);
 		return;
 	}
@@ -712,20 +709,19 @@ init_nvr(x54x_t *dev)
 static void
 set_nvr(x54x_t *dev)
 {
-    FILE *f;
+    FILE *fp;
 
     /* Only if this device has an EEPROM. */
     if (dev->nvr_path == NULL) return;
 
     /* Allocate and initialize the EEPROM. */
-    dev->nvr = (uint8_t *)malloc(NVR_SIZE);
+    dev->nvr = (uint8_t *)mem_alloc(NVR_SIZE);
     memset(dev->nvr, 0x00, NVR_SIZE);
 
-    f = plat_fopen(nvr_path(dev->nvr_path), L"rb");
-    if (f != NULL) {
-	(void)fread(dev->nvr, 1, NVR_SIZE, f);
-	fclose(f);
-	f = NULL;
+    fp = plat_fopen(nvr_path(dev->nvr_path), L"rb");
+    if (fp != NULL) {
+	(void)fread(dev->nvr, 1, NVR_SIZE, fp);
+	fclose(fp);
     } else {
 	init_nvr(dev);
     }
@@ -739,7 +735,7 @@ aha_init(const device_t *info)
     x54x_t *dev;
 
     /* Call common initializer. */
-    dev = x54x_init(info);
+    dev = (x54x_t *)x54x_init(info);
 
     /*
      * Set up the (initial) I/O address, IRQ and DMA info.
@@ -866,8 +862,8 @@ aha_init(const device_t *info)
 
 		/* Enable the memory. */
 		if (dev->rom_addr != 0x000000) {
-			mem_mapping_enable(&dev->bios.mapping);
-			mem_mapping_set_addr(&dev->bios.mapping, dev->rom_addr, ROM_SIZE);
+			mem_map_enable(&dev->bios.mapping);
+			mem_map_set_addr(&dev->bios.mapping, dev->rom_addr, ROM_SIZE);
 		}
 	}
     }
@@ -877,232 +873,232 @@ aha_init(const device_t *info)
 
 
 static const device_config_t aha_154xb_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x334,
         {
-		"base", "Address", CONFIG_HEX16, "", 0x334,
                 {
-                        {
-                                "None",      0
-                        },
-                        {
-                                "0x330", 0x330
-                        },
-                        {
-                                "0x334", 0x334
-                        },
-                        {
-                                "0x230", 0x230
-                        },
-                        {
-                                "0x234", 0x234
-                        },
-                        {
-                                "0x130", 0x130
-                        },
-                        {
-                                "0x134", 0x134
-                        },
-                        {
-                                ""
-                        }
+                        "None",      0
                 },
-        },
+                {
+                        "0x330", 0x330
+                },
+                {
+                        "0x334", 0x334
+                },
+                {
+                        "0x230", 0x230
+                },
+                {
+                        "0x234", 0x234
+                },
+                {
+                        "0x130", 0x130
+                },
+                {
+                        "0x134", 0x134
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "irq", "IRQ", CONFIG_SELECTION, "", 9,
         {
-		"irq", "IRQ", CONFIG_SELECTION, "", 9,
                 {
-                        {
-                                "IRQ 9", 9
-                        },
-                        {
-                                "IRQ 10", 10
-                        },
-                        {
-                                "IRQ 11", 11
-                        },
-                        {
-                                "IRQ 12", 12
-                        },
-                        {
-                                "IRQ 14", 14
-                        },
-                        {
-                                "IRQ 15", 15
-                        },
-                        {
-                                ""
-                        }
+                        "IRQ 9", 9
                 },
-        },
+                {
+                        "IRQ 10", 10
+                },
+                {
+                        "IRQ 11", 11
+                },
+                {
+                        "IRQ 12", 12
+                },
+                {
+                        "IRQ 14", 14
+                },
+                {
+                        "IRQ 15", 15
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "dma", "DMA channel", CONFIG_SELECTION, "", 6,
         {
-		"dma", "DMA channel", CONFIG_SELECTION, "", 6,
                 {
-                        {
-                                "DMA 5", 5
-                        },
-                        {
-                                "DMA 6", 6
-                        },
-                        {
-                                "DMA 7", 7
-                        },
-                        {
-                                ""
-                        }
+                        "DMA 5", 5
                 },
-        },
+                {
+                        "DMA 6", 6
+                },
+                {
+                        "DMA 7", 7
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "hostid", "Host ID", CONFIG_SELECTION, "", 7,
         {
-		"hostid", "Host ID", CONFIG_SELECTION, "", 7,
                 {
-                        {
-                                "0", 0
-                        },
-                        {
-                                "1", 1
-                        },
-                        {
-                                "2", 2
-                        },
-                        {
-                                "3", 3
-                        },
-                        {
-                                "4", 4
-                        },
-                        {
-                                "5", 5
-                        },
-                        {
-                                "6", 6
-                        },
-                        {
-                                "7", 7
-                        },
-                        {
-                                ""
-                        }
+                        "0", 0
                 },
-        },
+                {
+                        "1", 1
+                },
+                {
+                        "2", 2
+                },
+                {
+                        "3", 3
+                },
+                {
+                        "4", 4
+                },
+                {
+                        "5", 5
+                },
+                {
+                        "6", 6
+                },
+                {
+                        "7", 7
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "bios_addr", "BIOS Address", CONFIG_HEX20, "", 0,
         {
-                "bios_addr", "BIOS Address", CONFIG_HEX20, "", 0,
                 {
-                        {
-                                "Disabled", 0
-                        },
-                        {
-                                "C800H", 0xc8000
-                        },
-                        {
-                                "D000H", 0xd0000
-                        },
-                        {
-                                "D800H", 0xd8000
-                        },
-                        {
-                                ""
-                        }
+                        "Disabled", 0
                 },
-        },
-	{
-		"", "", -1
-	}
+                {
+                        "C800H", 0xc8000
+                },
+                {
+                        "D000H", 0xd0000
+                },
+                {
+                        "D800H", 0xd8000
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "", "", -1
+    }
 };
 
 
 static const device_config_t aha_154x_config[] = {
+    {
+        "base", "Address", CONFIG_HEX16, "", 0x334,
         {
-		"base", "Address", CONFIG_HEX16, "", 0x334,
                 {
-                        {
-                                "None",      0
-                        },
-                        {
-                                "0x330", 0x330
-                        },
-                        {
-                                "0x334", 0x334
-                        },
-                        {
-                                "0x230", 0x230
-                        },
-                        {
-                                "0x234", 0x234
-                        },
-                        {
-                                "0x130", 0x130
-                        },
-                        {
-                                "0x134", 0x134
-                        },
-                        {
-                                ""
-                        }
+                        "None",      0
                 },
-        },
+                {
+                        "0x330", 0x330
+                },
+                {
+                        "0x334", 0x334
+                },
+                {
+                        "0x230", 0x230
+                },
+                {
+                        "0x234", 0x234
+                },
+                {
+                        "0x130", 0x130
+                },
+                {
+                        "0x134", 0x134
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "irq", "IRQ", CONFIG_SELECTION, "", 9,
         {
-		"irq", "IRQ", CONFIG_SELECTION, "", 9,
                 {
-                        {
-                                "IRQ 9", 9
-                        },
-                        {
-                                "IRQ 10", 10
-                        },
-                        {
-                                "IRQ 11", 11
-                        },
-                        {
-                                "IRQ 12", 12
-                        },
-                        {
-                                "IRQ 14", 14
-                        },
-                        {
-                                "IRQ 15", 15
-                        },
-                        {
-                                ""
-                        }
+                        "IRQ 9", 9
                 },
-        },
+                {
+                        "IRQ 10", 10
+                },
+                {
+                        "IRQ 11", 11
+                },
+                {
+                        "IRQ 12", 12
+                },
+                {
+                        "IRQ 14", 14
+                },
+                {
+                        "IRQ 15", 15
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "dma", "DMA channel", CONFIG_SELECTION, "", 6,
         {
-		"dma", "DMA channel", CONFIG_SELECTION, "", 6,
                 {
-                        {
-                                "DMA 5", 5
-                        },
-                        {
-                                "DMA 6", 6
-                        },
-                        {
-                                "DMA 7", 7
-                        },
-                        {
-                                ""
-                        }
+                        "DMA 5", 5
                 },
-        },
+                {
+                        "DMA 6", 6
+                },
+                {
+                        "DMA 7", 7
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "bios_addr", "BIOS Address", CONFIG_HEX20, "", 0,
         {
-                "bios_addr", "BIOS Address", CONFIG_HEX20, "", 0,
                 {
-                        {
-                                "Disabled", 0
-                        },
-                        {
-                                "C800H", 0xc8000
-                        },
-                        {
-                                "D000H", 0xd0000
-                        },
-                        {
-                                "D800H", 0xd8000
-                        },
-                        {
-                                ""
-                        }
+                        "Disabled", 0
                 },
-        },
-	{
-		"", "", -1
-	}
+                {
+                        "C800H", 0xc8000
+                },
+                {
+                        "D000H", 0xd0000
+                },
+                {
+                        "D800H", 0xd8000
+                },
+                {
+                        ""
+                }
+        }
+    },
+    {
+        "", "", -1
+    }
 };
 
 

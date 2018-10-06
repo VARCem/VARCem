@@ -8,7 +8,7 @@
  *
  *		Definitions for the NULL CD-ROM handler.
  *
- * Version:	@(#)cdrom_null.h	1.0.1	2018/02/14
+ * Version:	@(#)cdrom_null.h	1.0.2	2018/09/04
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -37,16 +37,18 @@
 #ifndef EMU_CDROM_NULL_H
 # define EMU_CDROM_NULL_H
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int	cdrom_null_open(uint8_t id, char d);
+extern int	cdrom_null_open(uint8_t id);
 extern void	cdrom_null_reset(uint8_t id);
 extern void	null_close(uint8_t id);
 
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif	/*EMU_CDROM_NULL_H*/

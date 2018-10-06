@@ -8,7 +8,7 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)sound_sb.c	1.0.6	2018/05/06
+ * Version:	@(#)snd_sb.c	1.0.7	2018/09/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -57,13 +58,16 @@
 #include "snd_sb.h"
 #include "snd_sb_dsp.h"
 
+
+#define ROM_PATH_AWE32		L"sound/creative/awe32.raw"
+
+
 //#define SB_DSP_RECORD_DEBUG
 
 #ifdef SB_DSP_RECORD_DEBUG
 FILE* soundfsb = 0/*NULL*/;
 FILE* soundfsbin = 0/*NULL*/;
 #endif
-
 
 
 /* SB 2.0 CD version */
@@ -152,8 +156,11 @@ typedef struct sb_t
                 sb_ct1345_mixer_t mixer_sbpro;
                 sb_ct1745_mixer_t mixer_sb16;
         };
-        mpu_t		mpu;
+        mpu_t		*mpu;
         emu8k_t         emu8k;
+#if 0
+	sb_ct1745_mixer_t temp_mixer_sb16;
+#endif
 
         int pos;
         
@@ -164,8 +171,8 @@ typedef struct sb_t
 /* 0 to 7 -> -14dB to 0dB i 2dB steps. 8 to 15 -> 0 to +14dB in 2dB steps.
   Note that for positive dB values, this is not amplitude, it is amplitude-1. */
 const float sb_bass_treble_4bits[]= {
-   0.199526231f, 0.25f, 0.316227766f, 0.398107170f, 0.5f, 0.63095734f, 0.794328234f, 1.0f,
-    0, 0.25892541f, 0.584893192f, 1.0f, 1.511886431f, 2.16227766f, 3.0f, 4.011872336f
+   (float)0.199526231, (float)0.25, (float)0.316227766, (float)0.398107170, (float)0.5, (float)0.63095734, (float)0.794328234, (float)1, 
+    (float)0, (float)0.25892541, (float)0.584893192, (float)1, (float)1.511886431, (float)2.16227766, (float)3, (float)4.011872336
 };
 
 /* Attenuation tables for the mixer. Max volume = 32767 in order to give 6dB of 
@@ -184,6 +191,7 @@ const int32_t sb_att_7dbstep_2bits[]=
 {
         164,6537,14637,32767
 };
+
 
 /* sb 1, 1.5, 2, 2 mvc do not have a mixer, so signal is hardwired */
 static void sb_get_buffer_sb2(int32_t *buffer, int len, void *p)
@@ -292,19 +300,21 @@ static void sb_get_buffer_sbpro(int32_t *buffer, int len, void *p)
         sb->dsp.pos = 0;
 }
 
+// FIXME: See why this causes weird audio glitches in some situations.
+#if 0
 static void sb_process_buffer_sb16(int32_t *buffer, int len, void *p)
 {
         sb_t *sb = (sb_t *)p;
-        sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
-                 
+        sb_ct1745_mixer_t *mixer = &sb->temp_mixer_sb16;
+                
         int c;
 
         for (c = 0; c < len * 2; c += 2)
         {
                 int32_t out_l = 0, out_r = 0;
- 
-                out_l = ((int32_t)(buffer[c]     * mixer->cd_l) / 3) >> 15;
-                out_r = ((int32_t)(buffer[c + 1] * mixer->cd_r) / 3) >> 15;
+
+                out_l = ((int32_t)(low_fir_sb16(0, (float)buffer[c])     * mixer->cd_l) / 3) >> 15;
+                out_r = ((int32_t)(low_fir_sb16(1, (float)buffer[c + 1]) * mixer->cd_r) / 3) >> 15;
 
                 out_l = (out_l * mixer->master_l) >> 15;
                 out_r = (out_r * mixer->master_r) >> 15;
@@ -326,6 +336,7 @@ static void sb_process_buffer_sb16(int32_t *buffer, int len, void *p)
                 buffer[c + 1] = (out_r << mixer->output_gain_R);
 	}
 }
+#endif
 
 static void sb_get_buffer_sb16(int32_t *buffer, int len, void *p)
 {
@@ -347,9 +358,10 @@ static void sb_get_buffer_sb16(int32_t *buffer, int len, void *p)
                 	out_r = ((((sb->opl.buffer[c + 1] * mixer->fm_r) >> 16) * (sb->opl_emu ? 47000 : 51000)) >> 15);
 		}
 
+                /*TODO: multi-recording mic with agc/+20db, cd and line in with channel inversion */
                 in_l = (mixer->input_selector_left&INPUT_MIDI_L) ? out_l : 0 + (mixer->input_selector_left&INPUT_MIDI_R) ? out_r : 0;
                 in_r = (mixer->input_selector_right&INPUT_MIDI_L) ? out_l : 0 + (mixer->input_selector_right&INPUT_MIDI_R) ? out_r : 0;
-
+        
                 out_l += ((int32_t)(low_fir_sb16(0, (float)sb->dsp.buffer[c])     * mixer->voice_l) / 3) >> 15;
                 out_r += ((int32_t)(low_fir_sb16(1, (float)sb->dsp.buffer[c + 1]) * mixer->voice_r) / 3) >> 15;
 
@@ -397,6 +409,9 @@ static void sb_get_buffer_sb16(int32_t *buffer, int len, void *p)
         sb->pos = 0;
         sb->opl.pos = 0;
         sb->dsp.pos = 0;
+#if 0
+	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
+#endif
 }
 #ifdef SB_DSP_RECORD_DEBUG
 int old_dsp_rec_pos=0;
@@ -431,7 +446,7 @@ static void sb_get_buffer_emu8k(int32_t *buffer, int len, void *p)
                 /*TODO: multi-recording mic with agc/+20db, cd and line in with channel inversion  */
                 in_l = (mixer->input_selector_left&INPUT_MIDI_L) ? out_l : 0 + (mixer->input_selector_left&INPUT_MIDI_R) ? out_r : 0;
                 in_r = (mixer->input_selector_right&INPUT_MIDI_L) ? out_l : 0 + (mixer->input_selector_right&INPUT_MIDI_R) ? out_r : 0;
-
+                
                 out_l += ((int32_t)(low_fir_sb16(0, (float)sb->dsp.buffer[c])     * mixer->voice_l) / 3) >> 15;
                 out_r += ((int32_t)(low_fir_sb16(1, (float)sb->dsp.buffer[c + 1]) * mixer->voice_r) / 3) >> 15;
 
@@ -507,6 +522,9 @@ static void sb_get_buffer_emu8k(int32_t *buffer, int len, void *p)
         sb->opl.pos = 0;
         sb->dsp.pos = 0;
         sb->emu8k.pos = 0;
+#if 0
+	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
+#endif
 }
 
 
@@ -540,7 +558,7 @@ void sb_ct1335_mixer_write(uint16_t addr, uint8_t val, void *p)
                                 break;
 
                                 default:
-                                /* pclog("sb_ct1335: Unknown register WRITE: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]); */
+                                DEBUG("sb_ct1335: Unknown register WRITE: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
                                 break;
                         }
                 }
@@ -567,7 +585,7 @@ uint8_t sb_ct1335_mixer_read(uint16_t addr, void *p)
                 case 0x00: case 0x02: case 0x06: case 0x08: case 0x0A:
                 return mixer->regs[mixer->index];
                 default:
-                /* pclog("sb_ct1335: Unknown register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]); */
+                DEBUG("sb_ct1335: Unknown register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
                 break;
         }
 
@@ -631,7 +649,7 @@ void sb_ct1345_mixer_write(uint16_t addr, uint8_t val, void *p)
                                 
                                 
                                 default:
-                                /* pclog("sb_ct1345: Unknown register WRITE: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]); */
+                                DEBUG("sb_ct1345: Unknown register WRITE: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
                                 break;
                         }
                 }
@@ -691,7 +709,7 @@ uint8_t sb_ct1345_mixer_read(uint16_t addr, void *p)
                 return mixer->regs[mixer->index];
                 
                 default:
-                /* pclog("sb_ct1345: Unknown register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]); */
+                DEBUG("sb_ct1345: Unknown register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
                 break;
         }
         
@@ -838,7 +856,7 @@ void sb_ct1745_mixer_write(uint16_t addr, uint8_t val, void *p)
                 /*TODO: pcspeaker volume, with "output_selector" check? or better not? */
                 sound_cd_set_volume(((uint32_t)mixer->master_l * (uint32_t)mixer->cd_l) / 65535,
                                     ((uint32_t)mixer->master_r * (uint32_t)mixer->cd_r) / 65535);
-//                pclog("sb_ct1745: Received register WRITE: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
+                DEBUG("sb_ct1745: Received register WRITE: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
         }
 }
 
@@ -846,11 +864,12 @@ uint8_t sb_ct1745_mixer_read(uint16_t addr, void *p)
 {
         sb_t *sb = (sb_t *)p;
         sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
+	uint8_t temp;
 
         if (!(addr & 1))
                 return mixer->index;
 
-//        pclog("sb_ct1745: received register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
+        DEBUG("sb_ct1745: received register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
 
         if (mixer->index>=0x30 && mixer->index<=0x47)
         {
@@ -926,13 +945,16 @@ uint8_t sb_ct1745_mixer_read(uint16_t addr, void *p)
                 case 0x82:
                 /* 0 = none, 1 =  digital 8bit or SBMIDI, 2 = digital 16bit, 4 = MPU-401 */
                 /* 0x02000 DSP v4.04, 0x4000 DSP v4.05 0x8000 DSP v4.12. I haven't seen this making any difference, but I'm keeping it for now. */
-                return ((sb->dsp.sb_irq8) ? 1 : 0) | ((sb->dsp.sb_irq16) ? 2 : 0) | 0x4000;
+		temp = ((sb->dsp.sb_irq8) ? 1 : 0) | ((sb->dsp.sb_irq16) ? 2 : 0) | 0x4000;
+		if (sb->mpu)
+			temp |= ((sb->mpu->state.irq_pending) ? 4 : 0);
+                return temp;
 
                 /* TODO: creative drivers read and write on 0xFE and 0xFF. not sure what they are supposed to be. */
                 
                 
                 default:
-                /* pclog("sb_ct1745: Unknown register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]); */
+                DEBUG("sb_ct1745: Unknown register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
                 break;
         }
 
@@ -952,8 +974,8 @@ uint8_t sb_mcv_read(int port, void *p)
 {
         sb_t *sb = (sb_t *)p;
 
-        /* pclog("sb_mcv_read: port=%04x\n", port); */
-        
+        DEBUG("sb_mcv_read: port=%04x\n", port);
+
         return sb->pos_regs[port & 7];
 }
 
@@ -965,7 +987,7 @@ void sb_mcv_write(int port, uint8_t val, void *p)
         if (port < 0x102)
                 return;
         
-        /* pclog("sb_mcv_write: port=%04x val=%02x\n", port, val); */
+        DEBUG("sb_mcv_write: port=%04x val=%02x\n", port, val);
 
         addr = sb_mcv_addr[sb->pos_regs[4] & 7];
 	if (sb->opl_enabled) {
@@ -996,8 +1018,8 @@ uint8_t sb_pro_mcv_read(int port, void *p)
 {
         sb_t *sb = (sb_t *)p;
 
-        /* pclog("sb_pro_mcv_read: port=%04x\n", port); */
-        
+        DEBUG("sb_pro_mcv_read: port=%04x\n", port);
+
         return sb->pos_regs[port & 7];
 }
 
@@ -1009,7 +1031,7 @@ void sb_pro_mcv_write(int port, uint8_t val, void *p)
         if (port < 0x102)
                 return;
 
-        /* pclog("sb_pro_mcv_write: port=%04x val=%02x\n", port, val); */
+        DEBUG("sb_pro_mcv_write: port=%04x val=%02x\n", port, val);
 
         addr = (sb->pos_regs[2] & 0x20) ? 0x220 : 0x240;
         io_removehandler(addr+0, 0x0004, opl3_read,   NULL, NULL, opl3_write,   NULL, NULL, &sb->opl);
@@ -1042,7 +1064,7 @@ void *sb_1_init(const device_t *info)
           2x0 to 2x3 -> CMS chip
           2x6, 2xA, 2xC, 2xE -> DSP chip
           2x8, 2x9, 388 and 389 FM chip*/
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");        
         memset(sb, 0, sizeof(sb_t));
         
@@ -1053,7 +1075,6 @@ void *sb_1_init(const device_t *info)
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
-	sb_dsp_set_mpu(&sb->mpu);
         /* CMS I/O handler is activated on the dedicated sound_cms module
            DSP I/O handler is activated in sb_dsp_setaddr */
 	if (sb->opl_enabled) {
@@ -1069,7 +1090,7 @@ void *sb_15_init(const device_t *info)
           2x0 to 2x3 -> CMS chip
           2x6, 2xA, 2xC, 2xE -> DSP chip
           2x8, 2x9, 388 and 389 FM chip*/
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
         memset(sb, 0, sizeof(sb_t));
 
@@ -1095,7 +1116,7 @@ void *sb_mcv_init(const device_t *info)
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x6, 2xA, 2xC, 2xE -> DSP chip
           2x8, 2x9, 388 and 389 FM chip*/
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         memset(sb, 0, sizeof(sb_t));
 
 	sb->opl_enabled = device_get_config_int("opl");
@@ -1105,7 +1126,6 @@ void *sb_mcv_init(const device_t *info)
         sb_dsp_setaddr(&sb->dsp, 0);//addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
-	sb_dsp_set_mpu(&sb->mpu);
         sound_add_handler(sb_get_buffer_sb2, sb);
         /* I/O handlers activated in sb_mcv_write */
         mca_add(sb_mcv_read, sb_mcv_write, sb);
@@ -1122,7 +1142,13 @@ void *sb_2_init(const device_t *info)
         "CD version" also uses 250h or 260h for
           2x0 to 2x3 -> CDROM interface
           2x4 to 2x5 -> Mixer interface*/
-        sb_t *sb = malloc(sizeof(sb_t));
+        /*My SB 2.0 mirrors the OPL2 at ports 2x0/2x1. Presumably this mirror is
+          disabled when the CMS chips are present.
+          This mirror may also exist on SB 1.5 & MCV, however I am unable to
+          test this. It shouldn't exist on SB 1.0 as the CMS chips are always
+          present there.
+          Syndicate requires this mirror for music to play.*/
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
         memset(sb, 0, sizeof(sb_t));
 
@@ -1133,11 +1159,14 @@ void *sb_2_init(const device_t *info)
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
-	sb_dsp_set_mpu(&sb->mpu);
         sb_ct1335_mixer_reset(sb);
         /* CMS I/O handler is activated on the dedicated sound_cms module
            DSP I/O handler is activated in sb_dsp_setaddr */
 	if (sb->opl_enabled) {
+#if 0
+		if (!GAMEBLASTER)
+#endif
+			io_sethandler(addr, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &sb->opl);
         	io_sethandler(addr+8, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &sb->opl);
         	io_sethandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &sb->opl);
 	}
@@ -1162,7 +1191,7 @@ void *sb_pro_v1_init(const device_t *info)
           2x6, 2xA, 2xC, 2xE -> DSP chip
           2x8, 2x9, 388 and 389 FM chip (9 voices)
           2x0+10 to 2x0+13 CDROM interface.*/
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
         memset(sb, 0, sizeof(sb_t));
 
@@ -1173,7 +1202,6 @@ void *sb_pro_v1_init(const device_t *info)
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
-	sb_dsp_set_mpu(&sb->mpu);
         sb_ct1345_mixer_reset(sb);
         /* DSP I/O handler is activated in sb_dsp_setaddr */
 	if (sb->opl_enabled) {
@@ -1196,7 +1224,7 @@ void *sb_pro_v2_init(const device_t *info)
           2x6, 2xA, 2xC, 2xE -> DSP chip
           2x8, 2x9, 388 and 389 FM chip (9 voices)
           2x0+10 to 2x0+13 CDROM interface.*/
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
         memset(sb, 0, sizeof(sb_t));
 
@@ -1207,7 +1235,6 @@ void *sb_pro_v2_init(const device_t *info)
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
-	sb_dsp_set_mpu(&sb->mpu);
         sb_ct1345_mixer_reset(sb);
         /* DSP I/O handler is activated in sb_dsp_setaddr */
 	if (sb->opl_enabled) {
@@ -1228,7 +1255,7 @@ void *sb_pro_mcv_init(const device_t *info)
           2x4 to 2x5 -> Mixer interface
           2x6, 2xA, 2xC, 2xE -> DSP chip
           2x8, 2x9, 388 and 389 FM chip (9 voices)*/
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         memset(sb, 0, sizeof(sb_t));
 
 	sb->opl_enabled = 1;
@@ -1248,8 +1275,9 @@ void *sb_pro_mcv_init(const device_t *info)
 
 void *sb_16_init(const device_t *info)
 {
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
+        uint16_t mpu_addr = device_get_config_hex16("base401");
         memset(sb, 0, sizeof(sb_t));
 
 	sb->opl_enabled = device_get_config_int("opl");
@@ -1268,22 +1296,33 @@ void *sb_16_init(const device_t *info)
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1745_mixer_read, NULL, NULL, sb_ct1745_mixer_write, NULL, NULL, sb);
         sound_add_handler(sb_get_buffer_sb16, sb);
+#if 0
         sound_add_process_handler(sb_process_buffer_sb16, sb);
-        mpu401_init(&sb->mpu, device_get_config_hex16("base401"), device_get_config_int("irq401"), device_get_config_int("mode401"));
-	sb_dsp_set_mpu(&sb->mpu);
+#endif
+	if (mpu_addr) {
+		sb->mpu = (mpu_t *)mem_alloc(sizeof(mpu_t));
+		memset(sb->mpu, 0, sizeof(mpu_t));
+        	mpu401_init(sb->mpu, device_get_config_hex16("base401"), device_get_config_int("irq"), M_UART);
+		sb_dsp_set_mpu(sb->mpu);
+	} else
+		sb->mpu = NULL;
+#if 0
+	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
+#endif
 
         return sb;
 }
 
 int sb_awe32_available()
 {
-        return rom_present(L"sound/awe32.raw");
+        return rom_present(ROM_PATH_AWE32);
 }
 
 void *sb_awe32_init(const device_t *info)
 {
-        sb_t *sb = malloc(sizeof(sb_t));
+        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
+        uint16_t mpu_addr = device_get_config_hex16("base401");
         uint16_t emu_addr = device_get_config_hex16("emu_base");
         int onboard_ram = device_get_config_int("onboard_ram");
         memset(sb, 0, sizeof(sb_t));
@@ -1298,7 +1337,6 @@ void *sb_awe32_init(const device_t *info)
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
         sb_dsp_setdma16(&sb->dsp, device_get_config_int("dma16"));
-	sb_dsp_set_mpu(&sb->mpu);
         sb_ct1745_mixer_reset(sb);
 	if (sb->opl_enabled) {
         	io_sethandler(addr, 0x0004, opl3_read,   NULL, NULL, opl3_write,   NULL, NULL, &sb->opl);
@@ -1307,10 +1345,20 @@ void *sb_awe32_init(const device_t *info)
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1745_mixer_read, NULL, NULL, sb_ct1745_mixer_write, NULL, NULL, sb);
         sound_add_handler(sb_get_buffer_emu8k, sb);
+#if 0
         sound_add_process_handler(sb_process_buffer_sb16, sb);
-        mpu401_init(&sb->mpu, device_get_config_hex16("base401"), device_get_config_int("irq401"), device_get_config_int("mode401"));
-	sb_dsp_set_mpu(&sb->mpu);
-        emu8k_init(&sb->emu8k, emu_addr, onboard_ram);
+#endif
+	if (mpu_addr) {
+		sb->mpu = (mpu_t *)mem_alloc(sizeof(mpu_t));
+		memset(sb->mpu, 0, sizeof(mpu_t));
+	        mpu401_init(sb->mpu, device_get_config_hex16("base401"), device_get_config_int("irq"), M_UART);
+		sb_dsp_set_mpu(sb->mpu);
+	} else
+		sb->mpu = NULL;
+        emu8k_init(&sb->emu8k, ROM_PATH_AWE32, emu_addr, onboard_ram);
+#if 0
+	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
+#endif
 
         return sb;
 }
@@ -1349,13 +1397,6 @@ void sb_speed_changed(void *p)
         sb_t *sb = (sb_t *)p;
         
         sb_dsp_speed_changed(&sb->dsp);
-}
-
-void sb_add_status_info(char *s, int max_len, void *p)
-{
-        sb_t *sb = (sb_t *)p;
-        
-        sb_dsp_add_status_info(s, max_len, &sb->dsp);
 }
 
 static const device_config_t sb_config[] =
@@ -1541,6 +1582,9 @@ static const device_config_t sb_16_config[] =
                 "base401", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
                 {
                         {
+                                "Disabled", 0
+                        },
+                        {
                                 "0x300", 0x300
                         },
                         {
@@ -1556,32 +1600,6 @@ static const device_config_t sb_16_config[] =
                 {
                         {
                                 "IRQ 2", 2
-                        },
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 7", 7
-                        },
-                        {
-                                "IRQ 10", 10
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "irq401", "MPU-401 IRQ", CONFIG_SELECTION, "", 9,
-                {
-                        {
-                                "IRQ 9", 9
-                        },
-                        {
-                                "IRQ 3", 3
-                        },
-                        {
-                                "IRQ 4", 4
                         },
                         {
                                 "IRQ 5", 5
@@ -1625,20 +1643,6 @@ static const device_config_t sb_16_config[] =
                         },
                         {
                                 "DMA 7", 7
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "mode401", "MPU-401 mode", CONFIG_SELECTION, "", 1,
-                {
-                        {
-                                "UART", M_UART
-                        },
-                        {
-                                "Intelligent", M_INTELLIGENT
                         },
                         {
                                 ""
@@ -1699,6 +1703,9 @@ static const device_config_t sb_awe32_config[] =
                 "base401", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
                 {
                         {
+                                "Disabled", 0
+                        },
+                        {
                                 "0x300", 0x300
                         },
                         {
@@ -1714,32 +1721,6 @@ static const device_config_t sb_awe32_config[] =
                 {
                         {
                                 "IRQ 2", 2
-                        },
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 7", 7
-                        },
-                        {
-                                "IRQ 10", 10
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "irq401", "MPU-401 IRQ", CONFIG_SELECTION, "", 9,
-                {
-                        {
-                                "IRQ 9", 9
-                        },
-                        {
-                                "IRQ 3", 3
-                        },
-                        {
-                                "IRQ 4", 4
                         },
                         {
                                 "IRQ 5", 5
@@ -1790,20 +1771,6 @@ static const device_config_t sb_awe32_config[] =
                 }
         },
         {
-                "mode401", "MPU-401 mode", CONFIG_SELECTION, "", 1,
-                {
-                        {
-                                "UART", M_UART
-                        },
-                        {
-                                "Intelligent", M_INTELLIGENT
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
                 "onboard_ram", "Onboard RAM", CONFIG_SELECTION, "", 512,
                 {
                         {
@@ -1839,10 +1806,11 @@ const device_t sb_1_device =
         "Sound Blaster v1.0",
         DEVICE_ISA,
 	0,
-        sb_1_init, sb_close, NULL, NULL,
+        sb_1_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+	NULL,
         sb_config
 };
 const device_t sb_15_device =
@@ -1850,10 +1818,11 @@ const device_t sb_15_device =
         "Sound Blaster v1.5",
         DEVICE_ISA,
 	0,
-        sb_15_init, sb_close, NULL, NULL,
+        sb_15_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+	NULL,
         sb_config
 };
 const device_t sb_mcv_device =
@@ -1861,10 +1830,11 @@ const device_t sb_mcv_device =
         "Sound Blaster MCV",
         DEVICE_MCA,
 	0,
-        sb_mcv_init, sb_close, NULL, NULL,
+        sb_mcv_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+	NULL,
         sb_mcv_config
 };
 const device_t sb_2_device =
@@ -1872,21 +1842,23 @@ const device_t sb_2_device =
         "Sound Blaster v2.0",
         DEVICE_ISA,
 	0,
-        sb_2_init, sb_close, NULL, NULL,
+        sb_2_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
+	NULL,
         NULL,
-        sb_add_status_info,
         sb_config
 };
 const device_t sb_pro_v1_device =
 {
-        "Sound Blaster Pro v1",
+        "Sound Blaster Pro",
         DEVICE_ISA,
 	0,
-        sb_pro_v1_init, sb_close, NULL, NULL,
+        sb_pro_v1_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+        NULL,
         sb_pro_config
 };
 const device_t sb_pro_v2_device =
@@ -1894,10 +1866,11 @@ const device_t sb_pro_v2_device =
         "Sound Blaster Pro v2",
         DEVICE_ISA,
 	0,
-        sb_pro_v2_init, sb_close, NULL, NULL,
+        sb_pro_v2_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+        NULL,
         sb_pro_config
 };
 const device_t sb_pro_mcv_device =
@@ -1905,10 +1878,11 @@ const device_t sb_pro_mcv_device =
         "Sound Blaster Pro MCV",
         DEVICE_MCA,
 	0,
-        sb_pro_mcv_init, sb_close, NULL, NULL,
+        sb_pro_mcv_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+        NULL,
         NULL
 };
 const device_t sb_16_device =
@@ -1916,10 +1890,11 @@ const device_t sb_16_device =
         "Sound Blaster 16",
         DEVICE_ISA,
 	0,
-        sb_16_init, sb_close, NULL, NULL,
+        sb_16_init, sb_close, NULL,
+	NULL,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+        NULL,
         sb_16_config
 };
 const device_t sb_awe32_device =
@@ -1931,6 +1906,6 @@ const device_t sb_awe32_device =
         sb_awe32_available,
         sb_speed_changed,
         NULL,
-        sb_add_status_info,
+        NULL,
         sb_awe32_config
 };

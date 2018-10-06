@@ -8,7 +8,7 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.4	2018/04/29
+ * Version:	@(#)network.h	1.0.5	2018/09/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -50,17 +50,10 @@
 
 
 /* Network provider types. */
-#define NET_TYPE_NONE	0		/* networking disabled */
-#define NET_TYPE_PCAP	1		/* use the (Win)Pcap API */
-#define NET_TYPE_SLIRP	2		/* use the SLiRP port forwarder */
-
-/* Supported network cards. */
 enum {
-    NONE = 0,
-    NE1000,
-    NE2000,
-    RTL8019AS,
-    RTL8029AS
+    NET_TYPE_NONE = 0,			/* networking disabled */
+    NET_TYPE_PCAP,			/* use the (Win)Pcap API */
+    NET_TYPE_SLIRP			/* use the SLiRP port forwarder */
 };
 
 
@@ -68,7 +61,6 @@ typedef void (*NETRXCB)(void *, uint8_t *, int);
 
 
 typedef struct {
-    const char		*name;
     const char		*internal_name;
     const device_t	*device;
     void		*priv;
@@ -88,7 +80,7 @@ extern "C" {
 
 /* Global variables. */
 extern int	network_do_log,				/* config */
-		network_dev_log;
+		network_dev_do_log;
 extern int      network_ndev;
 extern netdev_t network_devs[32];
 
@@ -117,6 +109,8 @@ extern int	net_slirp_reset(const netcard_t *, uint8_t *);
 extern void	net_slirp_close(void);
 extern void	net_slirp_in(uint8_t *, int);
 
+extern void	network_log(int lvl, const char *fmt, ...);
+extern void	network_dev_log(int lvl, const char *fmt, ...);
 extern int	network_dev_to_id(const char *);
 extern int	network_card_available(int);
 extern const char *network_card_getname(int);

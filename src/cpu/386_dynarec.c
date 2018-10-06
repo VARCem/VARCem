@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.4	2018/05/09
+ * Version:	@(#)386_dynarec.c	1.0.5	2018/10/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,8 +53,6 @@
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
 #include "../timer.h"
-//#include "../devices/floppy/fdd.h"
-//#include "../devices/floppy/fdc.h"
 #ifdef USE_DYNAREC
 #include "codegen.h"
 #endif
@@ -63,49 +61,45 @@
 
 #define CPU_BLOCK_END() cpu_block_end = 1
 
-uint32_t cpu_cur_status = 0;
-
-int cpu_reps, cpu_reps_latched;
-int cpu_notreps, cpu_notreps_latched;
-
-int inrecomp = 0;
-int cpu_recomp_blocks, cpu_recomp_full_ins, cpu_new_blocks;
-int cpu_recomp_blocks_latched, cpu_recomp_ins_latched, cpu_recomp_full_ins_latched, cpu_new_blocks_latched;
-
-int cpu_block_end = 0;
-
-int nmi_enable = 1;
-
-int inscounts[256];
-uint32_t oldpc2;
-
-int trap;
+/* Also in 386.c: */
+cpu_state_t	cpu_state;
+int		inscounts[256];
+uint32_t	oldpc2;
+uint32_t	oldcs2;
+uint32_t	oxpc;
+int		trap;
+int		inttype;
+int		optype;
+int		cgate32;
+uint16_t	rds;
+uint16_t	ea_rseg;
+uint32_t	*eal_r, *eal_w;
+uint16_t	*mod1add[2][8];
+uint32_t	*mod1seg[8];
 
 
+uint32_t	cpu_cur_status = 0;
+int		cpu_reps, cpu_reps_latched;
+int		cpu_notreps, cpu_notreps_latched;
+int		cpu_recomp_blocks, cpu_recomp_full_ins, cpu_new_blocks;
+int		cpu_recomp_blocks_latched, cpu_recomp_ins_latched,
+		cpu_recomp_full_ins_latched, cpu_new_blocks_latched;
+
+int		inrecomp = 0;
+int		cpu_block_end = 0;
+int		nmi_enable = 1;
 
 int cpl_override=0;
-
 int fpucount=0;
-uint16_t rds;
-uint16_t ea_rseg;
+int oddeven=0;
 
-int cgate32;
 
 uint32_t rmdat32;
-uint32_t backupregs[16];
-int oddeven=0;
-int inttype;
+//static uint32_t backupregs[16];
+//static uint32_t oldecx;
 
 
-uint32_t oldcs2;
-uint32_t oldecx;
-
-uint32_t *eal_r, *eal_w;
-
-uint16_t *mod1add[2][8];
-uint32_t *mod1seg[8];
-
-static __inline void fetch_ea_32_long(uint32_t rmdat)
+static INLINE void fetch_ea_32_long(uint32_t rmdat)
 {
         eal_r = eal_w = NULL;
         easeg = cpu_state.ea_seg->base;
@@ -178,7 +172,7 @@ static __inline void fetch_ea_32_long(uint32_t rmdat)
 	cpu_state.last_ea = cpu_state.eaaddr;
 }
 
-static __inline void fetch_ea_16_long(uint32_t rmdat)
+static INLINE void fetch_ea_16_long(uint32_t rmdat)
 {
         eal_r = eal_w = NULL;
         easeg = cpu_state.ea_seg->base;
@@ -246,7 +240,7 @@ void x86_int(uint32_t num)
                                 cpu_state.abrt = 0;
                                 softresetx86();
                                 cpu_set_edx();
-                                pclog("Triple fault in real mode - reset\n");
+                                INFO("CPU: triple fault in real mode - reset\n");
                         }
                         else
                                 x86_int(8);
@@ -339,9 +333,9 @@ int x86_int_sw_rm(int num)
 
         if (cpu_state.abrt) return 1;
 
-        writememw(ss,((SP-2)&0xFFFF),flags); if (cpu_state.abrt) {pclog("abrt5\n"); return 1; }
+        writememw(ss,((SP-2)&0xFFFF),flags); if (cpu_state.abrt) {ERRLOG("abrt5\n"); return 1; }
         writememw(ss,((SP-4)&0xFFFF),CS);
-        writememw(ss,((SP-6)&0xFFFF),cpu_state.pc); if (cpu_state.abrt) {pclog("abrt6\n"); return 1; }
+        writememw(ss,((SP-6)&0xFFFF),cpu_state.pc); if (cpu_state.abrt) {ERRLOG("abrt6\n"); return 1; }
         SP-=6;
 
         eflags &= ~VIF_FLAG;
@@ -463,13 +457,6 @@ int checkio(uint32_t port)
 
 int xout=0;
 
-
-#if 0
-#define divexcp() { \
-                pclog("Divide exception at %04X(%06X):%04X\n",CS,cs,cpu_state.pc); \
-                x86_int(0); \
-}
-#endif
 
 #define divexcp() { \
                 x86_int(0); \
@@ -628,7 +615,6 @@ void exec386_dynarec(int cycs)
                                         CPU_BLOCK_END();
 
                                 ins++;
-                                insc++;
                                 
 /*                                if ((cs + pc) == 4)
                                         fatal("4\n");*/
@@ -713,7 +699,7 @@ void exec386_dynarec(int cycs)
 
                 if (valid_block && block->was_recompiled)
                 {
-                        void (*code)() = (void *)&block->data[BLOCK_START];
+                        void (*code)() = (void (*)())&block->data[BLOCK_START];
 
                         codeblock_hash[hash] = block;
 
@@ -722,9 +708,6 @@ inrecomp=1;
 inrecomp=0;
                         if (!use32) cpu_state.pc &= 0xffff;
                         cpu_recomp_blocks++;
-/*                        ins += codeblock_ins[index];
-                        insc += codeblock_ins[index];*/
-/*                        pclog("Exit block now %04X:%04X\n", CS, pc);*/
                 }
                 else if (valid_block && !cpu_state.abrt)
                 {
@@ -788,7 +771,6 @@ inrecomp=0;
                                 }
 
                                 ins++;
-                                insc++;
                         }
                         
                         if (!cpu_state.abrt && !x86_was_reset)
@@ -859,7 +841,6 @@ inrecomp=0;
                                 }
 
                                 ins++;
-                                insc++;
                         }
                         
                         if (!cpu_state.abrt && !x86_was_reset)
@@ -884,14 +865,14 @@ inrecomp=0;
                                 cpu_state.abrt = 0;
                                 CS = oldcs;
                                 cpu_state.pc = cpu_state.oldpc;
-                                pclog("Double fault %i\n", ins);
+                                ERRLOG("CPU: double fault %i\n", ins);
                                 pmodeint(8, 0);
                                 if (cpu_state.abrt)
                                 {
                                         cpu_state.abrt = 0;
                                         softresetx86();
 					cpu_set_edx();
-                                        pclog("Triple fault - reset\n");
+                                        ERRLOG("CPU: triple fault - reset\n");
                                 }
                         }
                 }
@@ -921,7 +902,6 @@ inrecomp=0;
                 {
                         cpu_state.oldpc = cpu_state.pc;
                         oldcs = CS;
-                        pclog("NMI\n");
                         x86_int(2);
                         nmi_enable = 0;
                         if (nmi_auto_clear)
@@ -939,18 +919,10 @@ inrecomp=0;
                                 flags_rebuild();
                                 if (msw&1)
                                 {
-					/* if (temp == 0x0E)
-					{
-						pclog("Servicing FDC interupt (p)!\n");
-					} */
                                         pmodeint(temp,0);
                                 }
                                 else
                                 {
-					/* if (temp == 0x0E)
-					{
-						pclog("Servicing FDC interupt (r)!\n");
-					} */
                                         writememw(ss,(SP-2)&0xFFFF,flags);
                                         writememw(ss,(SP-4)&0xFFFF,CS);
                                         writememw(ss,(SP-6)&0xFFFF,cpu_state.pc);
@@ -963,10 +935,6 @@ inrecomp=0;
                                         loadcs(readmemw(0,addr+2));
                                 }
                         }
-			/* else
-			{
-				pclog("Servicing pending interrupt 0xFF (!)!\n");
-			} */
                 }
         }
                 timer_end_period(cycles << TIMER_SHIFT);

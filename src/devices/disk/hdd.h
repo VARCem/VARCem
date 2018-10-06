@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.9	2018/06/06
+ * Version:	@(#)hdd.h	1.0.10	2018/09/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,15 +50,36 @@ enum {
     HDD_BUS_DISABLED = 0,
     HDD_BUS_ST506,
     HDD_BUS_ESDI,
-    HDD_BUS_IDE_PIO_ONLY,
-    HDD_BUS_IDE_PIO_AND_DMA,
+    HDD_BUS_IDE,
     HDD_BUS_SCSI,
-    HDD_BUS_SCSI_REMOVABLE,
     HDD_BUS_USB
 };
-#define HDD_BUS_IDE	HDD_BUS_IDE_PIO_ONLY
-#define HDD_BUS_EIDE	HDD_BUS_IDE_PIO_AND_DMA
+#define HDD_BUS_MAX	(HDD_BUS_USB)	/* USB exclusive */
 
+
+typedef struct vhd_footer_t
+{
+    uint8_t	cookie[8];
+    uint32_t	features;
+    uint32_t	version;
+    uint64_t	offset;
+    uint32_t	timestamp;
+    uint8_t	creator[4];
+    uint32_t	creator_vers;
+    uint8_t	creator_host_os[4];
+    uint64_t	orig_size;
+    uint64_t	curr_size;
+    struct {
+	uint16_t	cyl;
+	uint8_t		heads;
+	uint8_t		spt;
+    } geom;
+    uint32_t	type;
+    uint32_t	checksum;
+    uint8_t	uuid[16];
+    uint8_t	saved_state;
+    uint8_t	reserved[427];
+} vhd_footer_t;
 
 /* Define a hard disk table entry. */
 typedef struct {
@@ -71,28 +92,27 @@ typedef struct {
 typedef struct {
     int8_t	is_hdi;			/* image type (should rename) */
     int8_t	wp;			/* disk has been mounted READ-ONLY */
-
+    int8_t	removable;		/* disk is removable type */
     uint8_t	bus;
+    int		num;			/* global disk number */
 
     union {
 	uint8_t	st506_channel;		/* bus channel ID's */
 	uint8_t	esdi_channel;
-	uint8_t	xtide_channel;
 	uint8_t	ide_channel;
-	uint8_t	scsi_id;
 	union {
-		uint8_t	id;
-		uint8_t	lun;
+		int8_t	id;
+		int8_t	lun;
 	}	scsi;
     }		id;
 
     uint32_t	base;
 
-    uint8_t	spt,			/* physical geometry parameters */
+    uint32_t	spt,			/* physical geometry parameters */
 		hpc;
-    uint16_t	tracks;
+    uint32_t	tracks;
 
-    uint8_t	at_spt,			/* [Translation] parameters */
+    uint32_t	at_spt,			/* [Translation] parameters */
 		at_hpc;
 
     FILE	*f;			/* current file handle to image */
@@ -107,13 +127,17 @@ extern hard_disk_t      hdd[HDD_NUM];
 extern int		hdd_do_log;
 
 
-extern void	hdd_log(const char *fmt, ...);
+extern void	hdd_log(int level, const char *fmt, ...);
 extern int	hdd_init(void);
 extern int	hdd_count(int bus);
-extern int	hdd_string_to_bus(const char *str, int cdrom);
-extern const char *hdd_bus_to_string(int bus, int cdrom);
+extern int	hdd_string_to_bus(const char *str);
+extern const char *hdd_bus_to_string(int bus);
+extern const wchar_t *hdd_bus_to_ids(int bus);
 extern int	hdd_is_valid(int c);
+extern void	hdd_active(int c, int active);
 
+extern void	hdd_image_log(int level, const char *fmt, ...);
+extern void	hdd_image_init(void);
 extern int	hdd_image_load(int id);
 extern void	hdd_image_seek(uint8_t id, uint32_t sector);
 extern void	hdd_image_read(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer);
@@ -123,13 +147,20 @@ extern int	hdd_image_write_ex(uint8_t id, uint32_t sector, uint32_t count, uint8
 extern void	hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count);
 extern int	hdd_image_zero_ex(uint8_t id, uint32_t sector, uint32_t count);
 extern uint32_t	hdd_image_get_last_sector(uint8_t id);
+extern uint32_t	hdd_image_get_pos(uint8_t id);
 extern uint8_t	hdd_image_get_type(uint8_t id);
 extern void	hdd_image_specify(uint8_t id, int hpc, int spt);
 extern void	hdd_image_unload(uint8_t id, int fn_preserve);
 extern void	hdd_image_close(uint8_t id);
+extern void	hdd_image_calc_chs(uint32_t *c, uint32_t *h, uint32_t *s, uint32_t size);
+extern void	vhd_footer_from_bytes(vhd_footer_t *vhd, uint8_t *bytes);
+extern void	vhd_footer_to_bytes(uint8_t *bytes, vhd_footer_t *vhd);
+extern void	new_vhd_footer(vhd_footer_t **vhd);
+extern void	generate_vhd_checksum(vhd_footer_t *vhd);
 
 extern int	image_is_hdi(const wchar_t *s);
 extern int	image_is_hdx(const wchar_t *s, int check_signature);
+extern int	image_is_vhd(const wchar_t *s, int check_signature);
 
 #ifdef __cplusplus
 }

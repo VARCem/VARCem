@@ -8,7 +8,7 @@
  *
  *		String definitions for "Lithuanian (Lithuania)" language.
  *
- * Version:	@(#)VARCem-LT.str	1.0.5	2018/09/23
+ * Version:	@(#)VARCem-LT.str	1.0.5	2018/10/01
  *
  * Author:	Vegas (emu-land.net)
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -46,10 +46,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,4
-#define TAG_AUTHOR	"Vegas"
-#define TAG_EMAIL	"emu-land.net"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,5
+#define STR_AUTHOR	"Vegas"
+#define STR_EMAIL	"emu-land.net"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Klaida"
@@ -64,27 +67,24 @@
 #define STR_2202	"PCap nepavyko nustatyti, nes jis gali būti ne initializuotas"
 #define STR_2203	"Nerasta jokių Pcap įrenginių"
 #define STR_2204	"Netinkamas PCap įrenginys"
-#define STR_2205	"Nepavyko inicijuoti OpenAL, įsitikinkite, kad jūsų programoje yra ši biblioteka aplankale:\n\nlibopenal-1.dll"
-#define STR_2206	"Nepavyko inicijuoti FluidSynth, įsitikinkite, kad jūsų programoje yra ši biblioteka aplankale:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"Nepavyko inicijuoti %s, įsitikinkite, kad jūsų programoje yra ši biblioteka aplankale:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Nepavyko sukurti bitmap failo: %s"
+#define STR_2300	"System out of memory!"
 #define STR_2301	"Nerasta naudojamų ROM atvaizdų!"
 #define STR_2302	"Nerasta galiojančios konfigūracijos.\n\nAr norėtumėte įeiti į 'Nustatymai', kad sukurtumėte?"
-#define STR_2303	"Sukonfigūruota mašina:\n\n  %ls\n\nis nepasiekiama.\n\nAr norėtumėte įeiti į 'Nustatymai', kad sukurtumėte?"
-#define STR_2304	"Sukonfigūruota vaizdo plokštė:\n\n  %ls\n\nis nnepasiekiama.\n\n Ar norėtumėte įeiti į 'Nustatymai', kad sukurtumėte?"
-#define STR_2305	"Pasirinktas renderis '%S' nepasiekiamas. Atstatyti pagal nutylėjimą?"
-#define STR_2306	"ST506 arba ESDI CD-ROM diskai niekada nebuvo"
+#define STR_2303	"Sukonfigūruota %ls:\n\n  %s\n\nnepasiekiama.\n\nAr norėtumėte įeiti į 'Nustatymai', kad sukurtumėte?"
+#define STR_2304	"Pasirinktas renderis:\n\n  %s\n\nnepasiekiamas. Atstatyti pagal nutylėjimą?"
+#define STR_2305        "You must save your settings first!"
+#define STR_2306	"Nepavyko sukurti bitmap failo: %ls"
 #define STR_2307	"USB dar nepalaikomas"
-#define STR_2308        "You must save your settings first!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Ar tikrai norite išsaugoti šiuos nustatymus?\n\n(gali tekti paleisti iš naujo...)"
 #define STR_2401	"Pakeitimai išsaugoti, iš naujo paleiskite emuliatorių!"
-#define STR_2402	"Pasirinktas įrenginys '%ls' šiuo metu laikomas 'plėtros procese' ir gali sukelti problemų.\n\nAr tikrai norite jį įjungti?"
+#define STR_2402	"Pasirinktas įrenginys:\n\n  %s\n\nšiuo metu laikomas 'plėtros procese' ir gali sukelti problemų.\n\nAr tikrai norite jį įjungti?"
 #define STR_2403	"Spustelėkite norėdami užfiksuoti pelę"
 #define STR_2404	"Paspauskite F8 + F12, kad paleisti pelę"
 #define STR_2405	"Paspauskite F8 + F12 arba vidurinį mygtuką norėdami paleisti pelę"
@@ -98,11 +98,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Atšaukti"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"Konfigūruoti"
 #define STR_BROWSE	"Naršyti"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Nėra"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"Nepasiekiama"
 #define STR_ENABLED	"Pasiekiama"
 #define STR_OFF		"Išjungtas"
@@ -122,19 +126,19 @@
 #define STR_DEVCONF_2	"Įrenginys:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Apie VARCem.."
 #define  STR_3201	"Authoriai:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker and others.\nRemiantis ankstesniais darbais, tokiais kaip 86Box, PCem, MAME, DOSbox and Qemu."
 #define  STR_3203	"Išleistas pagal BSD 3-Clause License, and the GNU General Public License (version 2 or up) esamų, importuotų kodų iš kitų projektų."
 #define  STR_3204	"Daugiau informacijos rasite 'LICENSE.txt'."
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Lokalizacija"
 #define  STR_3211	"Vertimus iš anglų kalbos i kitus kalbus pateikė:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Statusas"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Garso stiprumas"
@@ -183,23 +187,16 @@
 #define  STR_3328	"Laukti būsenos:"
 #define  STR_3329	"Atmintis:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Įjungti laiko sinchronizavimą"
+#define  STR_3331	"Įjungti laiko sinchronizavimą:"
 #define  STR_3332	"Įjungti FPU"
 #define  STR_3333	"Dinamiškas Rekompiliatorius"
 #define  STR_3334	"KB"
 #define  STR_3335	"Numatytas"
+#define  STR_3336	"Pasiekiama (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Vaizdas:"
-#define  STR_3351	"Vaizdo greitis:"
-#define  STR_3352	"Voodoo Grafika"
-#define  STR_3353	"Numatytas"
-#define  STR_3354	"8-bit"
-#define  STR_3355	"Lėtas 16-bit"
-#define  STR_3356	"Greitas 16-bit"
-#define  STR_3357	"Lėtas VLB/PCI"
-#define  STR_3358	"Vidutinis  VLB/PCI"
-#define  STR_3359	"Greitas VLB/PCI"
+#define  STR_3351	"Voodoo Grafika"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Pelė:"
@@ -232,8 +229,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSI kontroleris:"
 #define  STR_3476	"HD kontroleris:"
-#define  STR_3477	"Tretinis IDE:"
-#define  STR_3478	"Ketvirtinis IDE:"
+#define  STR_3477	"Tretinis IDE"
+#define  STR_3478	"Ketvirtinis IDE"
 #define  STR_3479	"ISABugger įrenginys"
 #define  STR_3480       "ISA Memory Expansion"
 #define  STR_3481	"ISA Clock/RTC Card"
@@ -254,11 +251,9 @@
 #define  STR_3512	"įprastas (didelis)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (PIO-only)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (nuimamas)"
-#define  STR_3521	"USB"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Pridėti kietąjį diską"
@@ -289,14 +284,12 @@
 #define  STR_3577	"ZIP diskai:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Greitis"
-#define  STR_3580	"<Rezervuota>"
-#define  STR_3581	"<Rezervuota>"
-#define  STR_3582	"ATAPI (PIO-only)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
-#define  STR_3585	"USB"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(tuščia)"
 #define STR_3901	"(host diskas %c:)"
 #define STR_3902	" [Apsaugota irašymui]"
@@ -304,6 +297,7 @@
 #define STR_3904	"&įkelti atvaizdas.."
 #define STR_3905	"&Perkrauti ankstesnį atvaizda"
 #define STR_3906	"&Iškrauti"
+#define STR_3907	"&Pranešti apie disko keitimą"
 
 #define STR_3910	"Floppy %i (%s): %ls"
 #define STR_3911	"Visi atvaizdai\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Išplėstinių sektorių atvaizdai\0*.imd;*.json;*.td0\0Pagrindinių sektorių atvaizdai\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Srauto atvaizdai\0*.fdi\0Paviršiaus atvaizdai\0*.86f\0Visi failai\0*.*\0"
@@ -311,24 +305,21 @@
 #define STR_3913	"Paviršiaus atvaizdai\0*.86f\0"
 #define STR_3914	"Eksportas į 86F..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Host CD/DVD Drive (%c:)"
 #define STR_3922	"CD-ROM atvaizdai\0*.iso;*.cue\0Visi failai (*.*)\0*.*\0"
 #define STR_3923	"&Nutildyti"
 
-#define STR_3930	"Kietasis diskas (%s)"
+#define STR_3930	"Kietasis diskas %i (%ls): %ls"
 
-#define STR_3940	"Keičiamasis diskas %i: %ls"
-#define STR_3941	"&Pranešti apie disko keitimą"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP atvaizdai\0*.im?;*.zdi\0Visi failai\0*.*\0"
 #define STR_3952	"ZIP atvaizdai\0*.im?;*.zdi\0"
-#define STR_3960	"Tinklas"
-#define STR_3970	"Garsas"
+#define STR_3960	"Tinklas (%s)"
+#define STR_3970	"Garsas (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"&Veiksmas"
 #define  STR_4001	"&Kietasis atstatymas"
 #define  STR_4002	"&Ctrl+Alt+Del"
@@ -337,25 +328,25 @@
 #define  STR_4005	"&Pauze"
 #define  STR_4006	"&Išeiti"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"&Vaizdas"
 #define  STR_4011	"&Keičiamas langas"
 #define  STR_4012	"&Prisiminti dydį ir padėtį"
 #define  STR_4013	"&Visas ekranas\tCtrl+Alt+PageUP"
 #define  STR_4014	"&Dešiniuoju klavišu CTRL paliekamas ALT"
-#define  STR_4015	"&Atnaujinti būsenos piktogramams"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"&Renderis"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"&Langų masto koeficientas"
 #define   STR_4031	"&0.5x"
 #define   STR_4032	"&1x"
 #define   STR_4033	"&1.5x"
 #define   STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"&Istemptas viso ekrano režimas"
 #define   STR_4041	"&Visas ekranas"
 #define   STR_4042	"&4:3"
@@ -363,14 +354,15 @@
 #define   STR_4044	"&Integer skalė"
 #define   STR_4045	"&Laikyti dydį"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"&Ekranas"
 #define  STR_4051	"&Apverstas ekranas"
 #define  STR_4052	"&Įgalinti perversmą"
 #define  STR_4053	"&Priverstinis 4:3 rodymo santykis"
 #define  STR_4054	"&Keisti kontrastą monochrominiam ekranui"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"&Ekrano tipas"
 #define   STR_4061	"&RGB ir spalvotas monitorius"
 #define   STR_4062	"&Pilkos spalvos monitorius"
@@ -378,23 +370,26 @@
 #define   STR_4064	"&Žalios spalvos monitorius"
 #define   STR_4065	"&Baltos spalvos monitorius"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"&Pelėskolio konversijos tipas"
 #define   STR_4071	"BT&601 (NTSC/PAL)"
 #define   STR_4072	"BT&709 (HDTV)"
 #define   STR_4073	"&Vidurkis"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"&Įrankiai"
 #define  STR_4081	"&Nustatymai"
 #define  STR_4082	"&Kalba"
 #define	 STR_4083	"&Logging"
-#define  STR_4084	"&Įkelti konfigūraciją"
-#define  STR_4085	"&Išsaugoti konfigūraciją"
-#define  STR_4086	"&Statusas"
-#define  STR_4087	"&Padaryti ekrano nuotrauką\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"&Įkelti konfigūraciją"
+#define  STR_4087	"&Išsaugoti konfigūraciją"
+#define  STR_4088	"&Padaryti ekrano nuotrauką"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"&Pagalba"
 #define  STR_4091	"&Apie VARCem"
 

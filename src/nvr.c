@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.11	2018/08/27
+ * Version:	@(#)nvr.c	1.0.12	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,8 +52,6 @@
 #include <wchar.h>
 #include "emu.h"
 #include "machines/machine.h"
-#include "devices/system/pic.h"
-#include "devices/system/pit.h"
 #include "timer.h"
 #include "plat.h"
 #include "nvr.h"
@@ -108,7 +106,7 @@ rtc_tick(void)
     				if (++intclk.tm_mon == 13) {
 					intclk.tm_mon = 1;
 					intclk.tm_year++;
-				 }
+				}
 			}
 		}
 	}
@@ -152,18 +150,22 @@ nvr_init(nvr_t *nvr)
 	strcpy(temp, (const char *)nvr->fn);
       else
 	strcpy(temp, machine_get_internal_name());
-    strcat(temp, ".nvr");
     c = strlen(temp) + 1;
-    sp = (wchar_t *)malloc(c*sizeof(wchar_t));
+    sp = (wchar_t *)mem_alloc((c+10) * sizeof(wchar_t));
     mbstowcs(sp, temp, c);
+    wcscat(sp, NVR_FILE_EXT);
     nvr->fn = (const wchar_t *)sp;
 
     /* Initialize the internal clock as needed. */
     memset(&intclk, 0x00, sizeof(intclk));
-    if (enable_sync) {
+    if (time_sync != TIME_SYNC_DISABLED) {
 	/* Get the current time of day, and convert to local time. */
 	(void)time(&now);
-	tm = localtime(&now);
+
+	if (time_sync == TIME_SYNC_ENABLED_UTC)
+		tm = gmtime(&now);
+	  else
+		tm = localtime(&now);
 
 	/* Set the internal clock. */
 	nvr_time_set(tm);
@@ -242,7 +244,7 @@ nvr_load(void)
     /* Load the (relevant) part of the NVR contents. */
     if (saved_nvr->size != 0) {
 	path = nvr_path(saved_nvr->fn);
-	pclog("NVR: loading from '%ls'\n", path);
+	INFO("NVR: loading from '%ls'\n", path);
 	fp = plat_fopen(path, L"rb");
 	if (fp != NULL) {
 		/* Read NVR contents from file. */
@@ -271,7 +273,7 @@ nvr_save(void)
 
     if (saved_nvr->size != 0) {
 	path = nvr_path(saved_nvr->fn);
-	pclog("NVR: saving to '%ls'\n", path);
+	INFO("NVR: saving to '%ls'\n", path);
 	fp = plat_fopen(path, L"wb");
 	if (fp != NULL) {
 		/* Save NVR contents to file. */
@@ -284,6 +286,17 @@ nvr_save(void)
     nvr_dosave = 0;
 
     return(1);
+}
+
+
+void
+nvr_period_recalc(void)
+{
+    /* Make sure we have been initialized. */
+    if (saved_nvr == NULL) return;
+
+    if (saved_nvr->size != 0)
+	saved_nvr->recalc(saved_nvr);
 }
 
 

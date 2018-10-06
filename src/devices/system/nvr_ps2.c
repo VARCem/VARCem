@@ -8,7 +8,7 @@
  *
  *		Handling of the PS/2 series CMOS devices.
  *
- * Version:	@(#)nvr_ps2.c	1.0.7	2018/05/06
+ * Version:	@(#)nvr_ps2.c	1.0.8	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -40,7 +40,6 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
 #include "../../device.h"
 #include "../../io.h"
@@ -49,10 +48,13 @@
 #include "nvr_ps2.h"
 
 
+#define NVR_RAM_SIZE	8192
+
+
 typedef struct {
     int		addr;
-
-    uint8_t	ram[8192];
+    wchar_t	*fn;
+    uint8_t	ram[NVR_RAM_SIZE];
 } ps2_nvr_t;
 
 
@@ -104,34 +106,29 @@ ps2_nvr_write(uint16_t port, uint8_t val, void *priv)
 static void *
 ps2_nvr_init(const device_t *info)
 {
+    char temp[128];
     ps2_nvr_t *nvr;
-    FILE *f = NULL;
+    FILE *fp;
+    int i;
 
-    nvr = (ps2_nvr_t *)malloc(sizeof(ps2_nvr_t));
+    nvr = (ps2_nvr_t *)mem_alloc(sizeof(ps2_nvr_t));
     memset(nvr, 0x00, sizeof(ps2_nvr_t));
+
+    /* Set up the NVR file's name. */
+    sprintf(temp, "%s_sec.nvr", machine_get_internal_name());
+    i = strlen(temp) + 1;
+    nvr->fn = (wchar_t *)mem_alloc(i * sizeof(wchar_t));
+    mbstowcs(nvr->fn, temp, i);
 	
+    memset(nvr->ram, 0xff, sizeof(nvr->ram));
+    fp = plat_fopen(nvr_path(nvr->fn), L"rb");
+    if (fp != NULL) {
+	(void)fread(nvr->ram, sizeof(nvr->ram), 1, fp);
+	fclose(fp);
+    }
+
     io_sethandler(0x0074, 3,
 		  ps2_nvr_read,NULL,NULL, ps2_nvr_write,NULL,NULL, nvr);
-
-    switch (romset) {
-	case ROM_IBMPS2_M70_TYPE3:
-		f = plat_fopen(nvr_path(L"ibmps2_m70_type3_sec.nvr"), L"rb");
-		break;
-
-	case ROM_IBMPS2_M70_TYPE4:
-		f = plat_fopen(nvr_path(L"ibmps2_m70_type4_sec.nvr"), L"rb");
-		break;
-
-	case ROM_IBMPS2_M80:
-		f = plat_fopen(nvr_path(L"ibmps2_m80_sec.nvr"), L"rb");
-		break;
-    }
-
-    memset(nvr->ram, 0xff, 8192);
-    if (f != NULL) {
-	(void)fread(nvr->ram, 8192, 1, f);
-	fclose(f);
-    }
 
     return(nvr);
 }
@@ -141,29 +138,16 @@ static void
 ps2_nvr_close(void *priv)
 {
     ps2_nvr_t *nvr = (ps2_nvr_t *)priv;
-    FILE *f = NULL;
+    FILE *fp;
 
-    switch (romset) {
-	case ROM_IBMPS2_M70_TYPE3:
-		f = plat_fopen(nvr_path(L"ibmps2_m70_type3_sec.nvr"), L"wb");
-		break;
-
-	case ROM_IBMPS2_M70_TYPE4:
-		f = plat_fopen(nvr_path(L"ibmps2_m70_type4_sec.nvr"), L"wb");
-		break;
-
-	case ROM_IBMPS2_M80:
-		f = plat_fopen(nvr_path(L"ibmps2_m80_sec.nvr"), L"wb");
-		break;
+    fp = plat_fopen(nvr_path(nvr->fn), L"wb");
+    if (fp != NULL) {
+	(void)fwrite(nvr->ram, sizeof(nvr->ram), 1, fp);
+	fclose(fp);
     }
 
-    if (f != NULL) {
-	(void)fwrite(nvr->ram, 8192, 1, f);
-	fclose(f);
-    }
-
+    free(nvr->fn);
     free(nvr->ram);
-
     free(nvr);
 }
 

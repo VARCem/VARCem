@@ -8,7 +8,7 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.7	2018/08/31
+ * Version:	@(#)win_crashdump.c	1.0.8	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Riley (Rai-chan),
@@ -249,7 +249,7 @@ InitCrashDump(void)
      * so allocate 10kb for it to use if it gets called,
      * an amount which should be more than enough.
      */
-    ExceptionHandlerBuffer = malloc(ExceptionHandlerBufferSize);
+    ExceptionHandlerBuffer = (char *)mem_alloc(ExceptionHandlerBufferSize);
     CurrentBufferPointer = ExceptionHandlerBuffer;
 
     /*

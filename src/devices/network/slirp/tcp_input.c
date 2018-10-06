@@ -110,10 +110,7 @@ tcp_seq tcp_iss;                /* tcp initial send seq # */
 #endif
 
 int
-tcp_reass(tp, ti, m)
-	struct tcpcb *tp;
-	struct tcpiphdr *ti;
-	struct SLIRPmbuf *m;
+tcp_reass(struct tcpcb *tp, struct tcpiphdr *ti, struct SLIRPmbuf *m)
 {
 	struct tcpiphdr *q;
 	struct SLIRPsocket *so = tp->t_socket;
@@ -229,10 +226,7 @@ present:
  * protocol specification dated September, 1981 very closely.
  */
 void
-tcp_input(m, iphlen, inso)
-	struct SLIRPmbuf *m;
-	int iphlen;
-	struct SLIRPsocket *inso;
+tcp_input(struct SLIRPmbuf *m, int iphlen, struct SLIRPsocket *inso)
 {
   	struct ip save_ip, *ip;
 	struct tcpiphdr *ti;
@@ -1487,11 +1481,7 @@ drop:
  *	u_int32_t *ts_val, *ts_ecr;
  */
 void
-tcp_dooptions(tp, cp, cnt, ti)
-	struct tcpcb *tp;
-	u_char *cp;
-	int cnt;
-	struct tcpiphdr *ti;
+tcp_dooptions(struct tcpcb *tp, u_char *cp, int cnt, struct tcpiphdr *ti)
 {
 	u_int16_t mss;
 	int opt, optlen;
@@ -1568,10 +1558,7 @@ tcp_dooptions(tp, cp, cnt, ti)
 #ifdef notdef
 
 void
-tcp_pulloutofband(so, ti, m)
-	struct SLIRPsocket *so;
-	struct tcpiphdr *ti;
-	struct SLIRPmbuf *m;
+tcp_pulloutofband(struct SLIRPsocket *so, struct tcpiphdr *ti, struct SLIRPmbuf *m)
 {
 	int cnt = ti->ti_urp - 1;
 	
@@ -1602,9 +1589,7 @@ tcp_pulloutofband(so, ti, m)
  */
 
 void
-tcp_xmit_timer(tp, rtt)
-	struct tcpcb *tp;
-	int rtt;
+tcp_xmit_timer(struct tcpcb *tp, int rtt)
 {
 	short delta;
 
@@ -1692,9 +1677,7 @@ tcp_xmit_timer(tp, rtt)
  */
 
 int
-tcp_mss(tp, offer)
-        struct tcpcb *tp;
-        u_int offer;
+tcp_mss(struct tcpcb *tp, u_int offer)
 {
 	struct SLIRPsocket *so = tp->t_socket;
 	int mss;

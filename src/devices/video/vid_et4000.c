@@ -8,10 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * NOTE:	The Korean variants cannot yet be used, we first have to
- *		sync up the SVGA backend with upstream.
- *
- * Version:	@(#)vid_et4000.c	1.0.10	2018/08/26
+ * Version:	@(#)vid_et4000.c	1.0.12	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +50,7 @@
 #include "../system/mca.h"
 #include "video.h"
 #include "vid_svga.h"
+#include "vid_svga_render.h"
 #include "vid_sc1502x_ramdac.h"
 
 
@@ -62,25 +60,25 @@
 
 
 typedef struct {
-    const char		*name;
-    int			type;
+    const char	*name;
+    int		type;
 
-    svga_t		svga;
-    sc1502x_ramdac_t	ramdac;
+    svga_t	svga;
 
-    uint8_t		pos_regs[8];
+    int		is_mca;
+    uint8_t	pos_regs[8];
 
-    rom_t		bios_rom;
+    rom_t	bios_rom;
 
-    uint8_t		banking;
-    uint32_t		vram_size,
-			vram_mask;
+    uint8_t	banking;
+    uint32_t	vram_size,
+		vram_mask;
 
-    uint8_t		port_22cb_val;
-    uint8_t		port_32cb_val;
-    int			get_korean_font_enabled;
-    int			get_korean_font_index;
-    uint16_t		get_korean_font_base;
+    uint8_t	port_22cb_val;
+    uint8_t	port_32cb_val;
+    int		get_korean_font_enabled;
+    int		get_korean_font_index;
+    uint16_t	get_korean_font_base;
 } et4000_t;
 
 
@@ -107,7 +105,7 @@ et4000_in(uint16_t addr, void *priv)
 
     switch (addr) {
 	case 0x3c2:
-		if (dev->type == 1) {
+		if (dev->is_mca) {
 			if ((svga->vgapal[0].r + svga->vgapal[0].g + svga->vgapal[0].b) >= 0x4e)
 				return 0;
 			else
@@ -124,7 +122,7 @@ et4000_in(uint16_t addr, void *priv)
 	case 0x3c7:
 	case 0x3c8:
 	case 0x3c9:
-                return sc1502x_ramdac_in(addr, &dev->ramdac, svga);
+                return sc1502x_ramdac_in(addr, svga->ramdac, svga);
 
 	case 0x3cd: /*Banking*/
                 return dev->banking;
@@ -146,7 +144,7 @@ et4000k_in(uint16_t addr, void *priv)
     et4000_t *dev = (et4000_t *)priv;
     uint8_t val = 0xff;
         
-//  if (addr != 0x3da) pclog("IN ET4000 %04X\n", addr);
+//  if (addr != 0x3da) DEBUG("IN ET4000 %04X\n", addr);
         
     switch (addr) {
 	case 0x22cb:
@@ -221,7 +219,7 @@ et4000_out(uint16_t addr, uint8_t val, void *priv)
 	case 0x3c7:
 	case 0x3c8:
 	case 0x3c9:
-		sc1502x_ramdac_out(addr, val, &dev->ramdac, svga);
+		sc1502x_ramdac_out(addr, val, svga->ramdac, svga);
 		return;
 
 	case 0x3cd: /*Banking*/
@@ -281,43 +279,43 @@ et4000_out(uint16_t addr, uint8_t val, void *priv)
 				case 0x00:
 				case 0x01:
 					if (svga->vram_max == 64 * 1024)
-						mem_mapping_enable(&svga->mapping);
+						mem_map_enable(&svga->mapping);
 					else
-						mem_mapping_disable(&svga->mapping);
+						mem_map_disable(&svga->mapping);
 					break;
 
 				case 0x02:
 					if (svga->vram_max == 128 * 1024)
-						mem_mapping_enable(&svga->mapping);
+						mem_map_enable(&svga->mapping);
 					else
-						mem_mapping_disable(&svga->mapping);
+						mem_map_disable(&svga->mapping);
 					break;
 
 				case 0x03:
 				case 0x08:
 				case 0x09:
 					if (svga->vram_max == 256 * 1024)
-						mem_mapping_enable(&svga->mapping);
+						mem_map_enable(&svga->mapping);
 					else
-						mem_mapping_disable(&svga->mapping);
+						mem_map_disable(&svga->mapping);
 					break;
 
 				case 0x0a:
 					if (svga->vram_max == 512 * 1024)
-						mem_mapping_enable(&svga->mapping);
+						mem_map_enable(&svga->mapping);
 					else
-						mem_mapping_disable(&svga->mapping);
+						mem_map_disable(&svga->mapping);
 					break;
 
 				case 0x0b:
 					if (svga->vram_max == 1024 * 1024)
-						mem_mapping_enable(&svga->mapping);
+						mem_map_enable(&svga->mapping);
 					else
-						mem_mapping_disable(&svga->mapping);
+						mem_map_disable(&svga->mapping);
 					break;
 
 				default:
-					mem_mapping_enable(&svga->mapping);
+					mem_map_enable(&svga->mapping);
 					break;
 			}
 		}
@@ -333,7 +331,7 @@ et4000k_out(uint16_t addr, uint8_t val, void *priv)
 {
     et4000_t *dev = (et4000_t *)priv;
 
-//  pclog("ET4000k out %04X %02X\n", addr, val);
+//  DEBUG("ET4000k out %04X %02X\n", addr, val);
 
     switch (addr) {
 	case 0x22cb:
@@ -443,13 +441,11 @@ et4000_recalctimings(svga_t *svga)
     }
 
     if (dev->type == 2 || dev->type == 3) {
-#if NOT_YET
 	if ((svga->render == svga_render_text_80) && ((svga->crtc[0x37] & 0x0A) == 0x0A)) {
 		if ((dev->port_32cb_val & 0xB4) == ((svga->crtc[0x37] & 3) == 2 ? 0xB4 : 0xB0)) {
 			svga->render = svga_render_text_80_ksc5601;
 		}
 	}
-#endif
     }
 }
 
@@ -482,7 +478,7 @@ et4000_init(const device_t *info)
     const wchar_t *fn;
     et4000_t *dev;
 
-    dev = (et4000_t *)malloc(sizeof(et4000_t));
+    dev = (et4000_t *)mem_alloc(sizeof(et4000_t));
     memset(dev, 0x00, sizeof(et4000_t));
     dev->name = info->name;
     dev->type = info->local;
@@ -499,6 +495,7 @@ et4000_init(const device_t *info)
 		break;
 
 	case 1:		/* MCA ET4000AX */
+		dev->is_mca = 1;
 		dev->vram_size = 1024 << 10;
 		svga_init(&dev->svga, dev, dev->vram_size,
 			  et4000_recalctimings, et4000_in, et4000_out,
@@ -515,9 +512,7 @@ et4000_init(const device_t *info)
 		dev->vram_size = device_get_config_int("memory") << 10;
 		dev->port_22cb_val = 0x60;
 		dev->port_32cb_val = 0;
-#if NOT_YET
 		dev->svga.ksc5601_sbyte_mask = 0x80;
-#endif
 		svga_init(&dev->svga, dev, dev->vram_size,
 			  et4000_recalctimings, et4000k_in, et4000k_out,
 			  NULL, NULL);
@@ -529,17 +524,19 @@ et4000_init(const device_t *info)
 			      et4000k_in,NULL,NULL, et4000k_out,NULL,NULL, dev);
 		io_sethandler(0x32cb, 1,
 			      et4000k_in,NULL,NULL, et4000k_out,NULL,NULL, dev);
-		loadfont(KOREAN_FONT_ROM_PATH, 6);
+		video_load_font(KOREAN_FONT_ROM_PATH, 6);
         	fn = KOREAN_BIOS_ROM_PATH;
 		break;
     }
+
+    dev->svga.ramdac = device_add(&sc1502x_ramdac_device);
 
     dev->vram_mask = dev->vram_size - 1;
 
     rom_init(&dev->bios_rom, fn,
 	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
-    pclog("VIDEO: %s (vram=%dKB)\n", dev->name, dev->vram_size>>10);
+    DEBUG("VIDEO: %s (vram=%dKB)\n", dev->name, dev->vram_size>>10);
 
     return(dev);
 }
@@ -571,15 +568,6 @@ et4000_force_redraw(void *priv)
     et4000_t *dev = (et4000_t *)priv;
 
     dev->svga.fullchange = changeframecount;
-}
-
-
-static void
-et4000_add_status_info(char *s, int max_len, void *priv)
-{
-    et4000_t *dev = (et4000_t *)priv;
-
-    svga_add_status_info(s, max_len, &dev->svga);
 }
 
 
@@ -630,7 +618,7 @@ const device_t et4000_isa_device = {
     et4000_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    et4000_add_status_info,
+    NULL,
     et4000_config
 };
 
@@ -642,7 +630,7 @@ const device_t et4000_mca_device = {
     et4000_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    et4000_add_status_info,
+    NULL,
     et4000_config
 };
 
@@ -654,7 +642,7 @@ const device_t et4000k_isa_device = {
     et4000k_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    et4000_add_status_info,
+    NULL,
     et4000_config
 };
 
@@ -666,6 +654,6 @@ const device_t et4000k_tg286_isa_device = {
     et4000k_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    et4000_add_status_info,
+    NULL,
     et4000_config
 };

@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_bit.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_bit.h	1.0.2	2018/10/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -208,7 +208,7 @@ static int opBA_w_a16(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad 0F BA opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad 0F BA opcode %02X\n", rmdat & 0x38);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;
@@ -250,7 +250,7 @@ static int opBA_w_a32(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad 0F BA opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad 0F BA opcode %02X\n", rmdat & 0x38);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;
@@ -293,7 +293,7 @@ static int opBA_l_a16(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad 0F BA opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad 0F BA opcode %02X\n", rmdat & 0x38);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;
@@ -335,7 +335,7 @@ static int opBA_l_a32(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad 0F BA opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad 0F BA opcode %02X\n", rmdat & 0x38);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 break;

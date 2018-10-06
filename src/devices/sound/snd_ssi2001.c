@@ -8,7 +8,7 @@
  *
  *		Implementation of the SSI2001 sound device.
  *
- * Version:	@(#)snd_ssi2001.c	1.0.5	2018/05/06
+ * Version:	@(#)snd_ssi2001.c	1.0.6	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
@@ -112,7 +113,7 @@ ssi_init(const device_t *info)
 {
     ssi2001_t *dev;
 
-    dev = malloc(sizeof(ssi2001_t));
+    dev = (ssi2001_t *)mem_alloc(sizeof(ssi2001_t));
     memset(dev, 0x00, sizeof(ssi2001_t));
 
     /* Get the device configuration. We ignore the game port for now. */
@@ -149,47 +150,45 @@ ssi_close(void *priv)
 }
 
 
-static const device_config_t ssi2001_config[] =
-{
+static const device_config_t ssi2001_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x280,
 	{
-		"base", "Address", CONFIG_HEX16, "", 0x280,
 		{
-			{
-				"0x280", 0x280
-			},
-			{
-				"0x2A0", 0x2a0
-			},
-			{
-				"0x2C0", 0x2c0
-			},
-			{
-				"0x2E0", 0x2e0
-			},
-			{
-				""
-			}
+			"0x280", 0x280
 		},
-	},
-	{
-		"game_port", "Game Port", CONFIG_SELECTION, "", 0,
 		{
-			{
-				"Disabled", 0
-			},
-			{
-				"Enabled", 1
-			},
-			{
-				""
-			}
+			"0x2A0", 0x2a0
 		},
-	},
-	{
-		"", "", -1
+		{
+			"0x2C0", 0x2c0
+		},
+		{
+			"0x2E0", 0x2e0
+		},
+		{
+			""
+		}
 	}
+    },
+    {
+	"game_port", "Game Port", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
 };
-
 
 const device_t ssi2001_device = {
     "Innovation SSI-2001",

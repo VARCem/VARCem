@@ -8,7 +8,7 @@
  *
  *		Example implementation of a PCI device.
  *
- * Version:	@(#)pci_dummy.c	1.0.4	2018/07/26
+ * Version:	@(#)pci_dummy.c	1.0.5	2018/09/04
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *

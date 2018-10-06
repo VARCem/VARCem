@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.10	2018/05/06
+ * Version:	@(#)vid_oak_oti.c	1.0.11	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,54 +50,52 @@
 #include "vid_svga.h"
 
 
-#define BIOS_37C_PATH	L"video/oti/oti037c/bios.bin"
-//#define BIOS_67_PATH	L"video/oti/oti067.bin"
-#define BIOS_77_PATH	L"video/oti/oti077.vbi"
+#define BIOS_37C_PATH		L"video/oti/oti037c/bios.bin"
+//#define BIOS_67_PATH		L"video/oti/oti067.bin"
+#define BIOS_77_PATH		L"video/oti/oti077.vbi"
 
 
 typedef struct {
-    svga_t svga;
+    uint8_t	chip_id;
+    uint8_t	enable_register;
+    uint8_t	pos;
+    uint8_t	indx;
 
-    rom_t bios_rom;
+    uint32_t	vram_size;
+    uint32_t	vram_mask;
 
-    int index;
-    uint8_t regs[32];
+    rom_t	bios_rom;
 
-    uint8_t pos;
+    uint8_t	regs[32];
 
-    uint8_t enable_register;
-
-    uint32_t vram_size;
-    uint32_t vram_mask;
-
-    uint8_t chip_id;
+    svga_t	svga;
 } oti_t;
 
 
 static void
-oti_out(uint16_t addr, uint8_t val, void *p)
+oti_out(uint16_t addr, uint8_t val, void *priv)
 {
-    oti_t *oti = (oti_t *)p;
-    svga_t *svga = &oti->svga;
-    uint8_t old;
-	uint8_t idx;
+    oti_t *dev = (oti_t *)priv;
+    svga_t *svga = &dev->svga;
+    uint8_t old, idx;
 
-	if (!(oti->enable_register & 1) && addr != 0x3C3)
-			return;	
+    if (!(dev->enable_register & 1) && addr != 0x03c3) return;	
 
-    if ((((addr&0xFFF0) == 0x3D0 || (addr&0xFFF0) == 0x3B0) && addr < 0x3de) &&
+    if ((((addr&0xfff0) == 0x03d0 || (addr&0xfff0) == 0x03b0) && addr < 0x3de) &&
 	!(svga->miscout & 1)) addr ^= 0x60;
 
     switch (addr) {
-	case 0x3C3:
-		oti->enable_register = val & 1;
+	case 0x03c3:
+		dev->enable_register = val & 1;
 		return;
 
-	case 0x3D4:
+	case 0x03d4:
 		svga->crtcreg = val;
 		return;
 
-	case 0x3D5:
+	case 0x03d5:
+		if (svga->crtcreg & 0x20)
+			return;
 		if (((svga->crtcreg & 31) < 7) && (svga->crtc[0x11] & 0x80))
 			return;
 		if (((svga->crtcreg & 31) == 7) && (svga->crtc[0x11] & 0x80))
@@ -105,38 +103,35 @@ oti_out(uint16_t addr, uint8_t val, void *p)
 		old = svga->crtc[svga->crtcreg & 31];
 		svga->crtc[svga->crtcreg & 31] = val;
 		if (old != val) {
-			if ((svga->crtcreg & 31) < 0xE || (svga->crtcreg & 31) > 0x10) {
+			if ((svga->crtcreg & 31) < 0x0e || (svga->crtcreg & 31) > 0x10) {
 				svga->fullchange = changeframecount;
 				svga_recalctimings(svga);
 			}
 		}
 		break;
 
-	case 0x3DE:
-		oti->index = val;
+	case 0x03de:
+		dev->indx = val;
 		return;
 
-	case 0x3DF:
-		idx = oti->index & 0x1f;
-		oti->regs[idx] = val;
+	case 0x03df:
+		idx = dev->indx & 0x1f;
+		dev->regs[idx] = val;
 		switch (idx) {
-			case 0xD:
-				if (oti->chip_id)
-				{
-					svga->vram_display_mask = (val & 0xc) ? oti->vram_mask : 0x3ffff;
-					if ((val & 0x80) && oti->vram_size == 256)
-						mem_mapping_disable(&svga->mapping);
+			case 0x0d:
+				if (dev->chip_id) {
+					svga->vram_display_mask = (val & 0xc) ? dev->vram_mask : 0x3ffff;
+					if ((val & 0x80) && dev->vram_size == 256)
+						mem_map_disable(&svga->mapping);
 					else
-						mem_mapping_enable(&svga->mapping);
+						mem_map_enable(&svga->mapping);
 					if (!(val & 0x80))
 						svga->vram_display_mask = 0x3ffff;
-				}
-				else
-				{
+				} else {
 					if (val & 0x80)
-							mem_mapping_disable(&svga->mapping);
+						mem_map_disable(&svga->mapping);
 					else
-							mem_mapping_enable(&svga->mapping);
+						mem_map_enable(&svga->mapping);
 				}
 				break;
 
@@ -153,208 +148,217 @@ oti_out(uint16_t addr, uint8_t val, void *p)
 
 
 static uint8_t
-oti_in(uint16_t addr, void *p)
+oti_in(uint16_t addr, void *priv)
 {
-    oti_t *oti = (oti_t *)p;
-    svga_t *svga = &oti->svga;
-    uint8_t temp;
+    oti_t *dev = (oti_t *)priv;
+    svga_t *svga = &dev->svga;
+    uint8_t ret = 0xff;
 
-	if (!(oti->enable_register & 1) && addr != 0x3C3)
-			return 0xff;
+    if (!(dev->enable_register & 1) && addr != 0x03c3) return ret;
 
-    if ((((addr&0xFFF0) == 0x3D0 || (addr&0xFFF0) == 0x3B0) && addr < 0x3de) &&
+    if ((((addr&0xfff0) == 0x03d0 || (addr&0xfff0) == 0x03b0) && addr < 0x3de) &&
 	!(svga->miscout & 1)) addr ^= 0x60;
 
     switch (addr) {
-	case 0x3C3:
-		temp = oti->enable_register;
+	case 0x03c3:
+		ret = dev->enable_register;
 		break;
 
-	case 0x3D4:
-		temp = svga->crtcreg;
+	case 0x03d4:
+		ret = svga->crtcreg;
 		break;
 
-	case 0x3D5:
-		temp = svga->crtc[svga->crtcreg & 31];
+	case 0x03d5:
+		if (svga->crtcreg & 0x20)
+			ret = 0xff;
+		else
+			ret = svga->crtc[svga->crtcreg & 31];
 		break;
 
-	case 0x3DA:
+	case 0x03da:
                 svga->attrff = 0;
                 svga->attrff = 0;
                 svga->cgastat &= ~0x30;
+
                 /* copy color diagnostic info from the overscan color register */
-                switch (svga->attrregs[0x12] & 0x30)
-                {
+                switch (svga->attrregs[0x12] & 0x30) {
                         case 0x00: /* P0 and P2 */
-                        if (svga->attrregs[0x11] & 0x01)
-                                svga->cgastat |= 0x10;
-                        if (svga->attrregs[0x11] & 0x04)
-                                svga->cgastat |= 0x20;
-                        break;
+                        	if (svga->attrregs[0x11] & 0x01)
+                                	svga->cgastat |= 0x10;
+                        	if (svga->attrregs[0x11] & 0x04)
+                                	svga->cgastat |= 0x20;
+                        	break;
+
                         case 0x10: /* P4 and P5 */
-                        if (svga->attrregs[0x11] & 0x10)
-                                svga->cgastat |= 0x10;
-                        if (svga->attrregs[0x11] & 0x20)
-                                svga->cgastat |= 0x20;
-                        break;
+                        	if (svga->attrregs[0x11] & 0x10)
+                                	svga->cgastat |= 0x10;
+                        	if (svga->attrregs[0x11] & 0x20)
+                                	svga->cgastat |= 0x20;
+                        	break;
+
                         case 0x20: /* P1 and P3 */
-                        if (svga->attrregs[0x11] & 0x02)
-                                svga->cgastat |= 0x10;
-                        if (svga->attrregs[0x11] & 0x08)
-                                svga->cgastat |= 0x20;
-                        break;
+                        	if (svga->attrregs[0x11] & 0x02)
+                                	svga->cgastat |= 0x10;
+                        	if (svga->attrregs[0x11] & 0x08)
+                                	svga->cgastat |= 0x20;
+                        	break;
+
                         case 0x30: /* P6 and P7 */
-                        if (svga->attrregs[0x11] & 0x40)
-                                svga->cgastat |= 0x10;
-                        if (svga->attrregs[0x11] & 0x80)
-                                svga->cgastat |= 0x20;
-                        break;
+                        	if (svga->attrregs[0x11] & 0x40)
+                                	svga->cgastat |= 0x10;
+                        	if (svga->attrregs[0x11] & 0x80)
+                                	svga->cgastat |= 0x20;
+                        	break;
                 }
                 return svga->cgastat;
 
-	case 0x3DE:
-		temp = oti->index | (oti->chip_id << 5);
+	case 0x03de:
+		ret = dev->indx | (dev->chip_id << 5);
 		break;
 
-	case 0x3DF:
-		if ((oti->index & 0x1f)==0x10)
-			temp = 0x18;
+	case 0x03df:
+		if ((dev->indx & 0x1f)==0x10)
+			ret = 0x18;
 		  else
-			temp = oti->regs[oti->index & 0x1f];
+			ret = dev->regs[dev->indx & 0x1f];
 		break;
 
 	default:
-		temp = svga_in(addr, svga);
+		ret = svga_in(addr, svga);
 		break;
     }
 
-    return(temp);
+    return(ret);
 }
 
 
 static void
-oti_pos_out(uint16_t addr, uint8_t val, void *p)
+oti_pos_out(uint16_t addr, uint8_t val, void *priv)
 {
-    oti_t *oti = (oti_t *)p;
+    oti_t *dev = (oti_t *)priv;
 
-    if ((val & 8) != (oti->pos & 8)) {
+    if ((val & 8) != (dev->pos & 8)) {
 	if (val & 8)
-		io_sethandler(0x03c0, 32, oti_in, NULL, NULL,
-			      oti_out, NULL, NULL, oti);
+		io_sethandler(0x03c0, 32,
+			      oti_in,NULL,NULL, oti_out,NULL,NULL, dev);
 	else
-		io_removehandler(0x03c0, 32, oti_in, NULL, NULL,
-				 oti_out, NULL, NULL, oti);
+		io_removehandler(0x03c0, 32,
+				 oti_in,NULL,NULL, oti_out,NULL,NULL, dev);
     }
 
-    oti->pos = val;
+    dev->pos = val;
 }
 
 
 static uint8_t
-oti_pos_in(uint16_t addr, void *p)
+oti_pos_in(uint16_t addr, void *priv)
 {
-    oti_t *oti = (oti_t *)p;
+    oti_t *dev = (oti_t *)priv;
 
-    return(oti->pos);
+    return(dev->pos);
 }
 
 
 static void
-oti_recalctimings(svga_t *svga)
+recalc_timings(svga_t *svga)
 {
-    oti_t *oti = (oti_t *)svga->p;
+    oti_t *dev = (oti_t *)svga->p;
 
-    if (oti->regs[0x14] & 0x08) svga->ma_latch |= 0x10000;
+    if (dev->regs[0x14] & 0x08) svga->ma_latch |= 0x10000;
 
-    if (oti->regs[0x0d] & 0x0c) svga->rowoffset <<= 1;
+    if (dev->regs[0x0d] & 0x0c) svga->rowoffset <<= 1;
 
-    svga->interlace = oti->regs[0x14] & 0x80;
+    svga->interlace = dev->regs[0x14] & 0x80;
+}
+
+
+static void
+speed_changed(void *priv)
+{
+    oti_t *dev = (oti_t *)priv;
+
+    svga_recalctimings(&dev->svga);
+}
+
+
+static void
+force_redraw(void *priv)
+{
+    oti_t *dev = (oti_t *)priv;
+
+    dev->svga.fullchange = changeframecount;
 }
 
 
 static void *
 oti_init(const device_t *info)
 {
-    oti_t *oti = malloc(sizeof(oti_t));
-    wchar_t *romfn = NULL;
+    oti_t *dev;
+    wchar_t *fn;
 
-    memset(oti, 0x00, sizeof(oti_t));
-    oti->chip_id = info->local;
+    dev = (oti_t *)mem_alloc(sizeof(oti_t));
+    memset(dev, 0x00, sizeof(oti_t));
+    dev->chip_id = info->local;
 
-    switch(oti->chip_id) {
+    fn = NULL;
+    switch(dev->chip_id) {
 	case 0:
-		romfn = BIOS_37C_PATH;
+		fn = BIOS_37C_PATH;
 		break;
 
 	case 2:
 #ifdef BIOS_67_PATH
-		romfn = BIOS_67_PATH;
-		break;
+		fn = BIOS_67_PATH;
+#else
+		fn = BIOS_77_PATH;
 #endif
+		break;
+
+	case 2+128:
+		/* Onboard OTI067; ROM set up by machine. */
+		dev->chip_id = 2;
+		break;
+
 	case 5:
-		romfn = BIOS_77_PATH;
+		fn = BIOS_77_PATH;
 		break;
     }
 
-    rom_init(&oti->bios_rom, romfn,
-	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+    if (fn != NULL)
+	rom_init(&dev->bios_rom, fn,
+		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
-    oti->vram_size = device_get_config_int("memory");
-    oti->vram_mask = (oti->vram_size << 10) - 1;
+    dev->vram_size = device_get_config_int("memory");
+    dev->vram_mask = (dev->vram_size << 10) - 1;
 
-    svga_init(&oti->svga, oti, oti->vram_size << 10,
-	      oti_recalctimings, oti_in, oti_out, NULL, NULL);
+    svga_init(&dev->svga, dev, dev->vram_size << 10,
+	      recalc_timings, oti_in, oti_out, NULL, NULL);
 
     io_sethandler(0x03c0, 32,
-		  oti_in,NULL,NULL, oti_out,NULL,NULL, oti);
+		  oti_in,NULL,NULL, oti_out,NULL,NULL, dev);
 
     io_sethandler(0x46e8, 1,
-		  oti_pos_in,NULL,NULL, oti_pos_out,NULL,NULL, oti);
+		  oti_pos_in,NULL,NULL, oti_pos_out,NULL,NULL, dev);
 
-    oti->svga.miscout = 1;
+    dev->svga.miscout = 1;
 
-    oti->regs[0] = 0x08; /* fixme: bios wants to read this at index 0? this index is undocumented */
+    /* FIXME: BIOS wants to read this there (undocumented.)*/
+    dev->regs[0] = 0x08;
 
-    return(oti);
+    return(dev);
 }
 
 
 static void
-oti_close(void *p)
+oti_close(void *priv)
 {
-    oti_t *oti = (oti_t *)p;
+    oti_t *dev = (oti_t *)priv;
 
-    svga_close(&oti->svga);
+    svga_close(&dev->svga);
 
-    free(oti);
+    free(dev);
 }
 
-
-static void
-oti_speed_changed(void *p)
-{
-    oti_t *oti = (oti_t *)p;
-
-    svga_recalctimings(&oti->svga);
-}
-
-
-static void
-oti_force_redraw(void *p)
-{
-    oti_t *oti = (oti_t *)p;
-
-    oti->svga.fullchange = changeframecount;
-}
-
-
-static void
-oti_add_status_info(char *s, int max_len, void *p)
-{
-    oti_t *oti = (oti_t *)p;
-
-    svga_add_status_info(s, max_len, &oti->svga);
-}
 
 static int
 oti037c_available(void)
@@ -373,8 +377,7 @@ oti067_available(void)
 }
 
 
-static const device_config_t oti067_config[] =
-{
+static const device_config_t oti067_config[] = {
 	{
 		"memory", "Memory size", CONFIG_SELECTION, "", 512,
 		{
@@ -402,8 +405,7 @@ oti077_available(void)
 }
 
 
-static const device_config_t oti077_config[] =
-{
+static const device_config_t oti077_config[] = {
 	{
 		"memory", "Memory size", CONFIG_SELECTION, "", 1024,
 		{
@@ -426,41 +428,50 @@ static const device_config_t oti077_config[] =
 	}
 };
 
-const device_t oti037c_device =
-{
-	"Oak OTI-037C",
-	DEVICE_ISA,
-	0,
-	oti_init, oti_close, NULL,
-	oti037c_available,
-	oti_speed_changed,
-	oti_force_redraw,
-	oti_add_status_info,
-	oti067_config
+const device_t oti037c_device = {
+    "Oak OTI-037C",
+    DEVICE_ISA,
+    0,
+    oti_init, oti_close, NULL,
+    oti037c_available,
+    speed_changed,
+    force_redraw,
+    NULL,
+    oti067_config
 };
 
-const device_t oti067_device =
-{
-	"Oak OTI-067",
-	DEVICE_ISA,
-	2,
-	oti_init, oti_close, NULL,
-	oti067_available,
-	oti_speed_changed,
-	oti_force_redraw,
-	oti_add_status_info,
-	oti067_config
+const device_t oti067_device = {
+    "Oak OTI-067",
+    DEVICE_ISA,
+    2,
+    oti_init, oti_close, NULL,
+    oti067_available,
+    speed_changed,
+    force_redraw,
+    NULL,
+    oti067_config
 };
 
-const device_t oti077_device =
-{
-	"Oak OTI-077",
-	DEVICE_ISA,
-	5,
-	oti_init, oti_close, NULL,
-	oti077_available,
-	oti_speed_changed,
-	oti_force_redraw,
-	oti_add_status_info,
-	oti077_config
+const device_t oti067_onboard_device = {
+    "Oak OTI-067 (onboard)",
+    DEVICE_ISA,
+    2+128,
+    oti_init, oti_close, NULL,
+    NULL,
+    speed_changed,
+    force_redraw,
+    NULL,
+    oti067_config
+};
+
+const device_t oti077_device = {
+    "Oak OTI-077",
+    DEVICE_ISA,
+    5,
+    oti_init, oti_close, NULL,
+    oti077_available,
+    speed_changed,
+    force_redraw,
+    NULL,
+    oti077_config
 };

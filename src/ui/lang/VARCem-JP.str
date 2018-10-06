@@ -8,7 +8,7 @@
  *
  *		String definitions for "Japanese (Japan)" language.
  *
- * Version:	@(#)VARCem-JP.str	1.0.10	2018/09/23
+ * Version:	@(#)VARCem-JP.str	1.0.10	2018/10/01
  *
  * Authors:	Basic2004, <basic2004@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,10 +47,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,9
-#define TAG_AUTHOR	"Basic2004"
-#define TAG_EMAIL	"basic2004@gmail.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,10
+#define STR_AUTHOR	"Basic2004"
+#define STR_EMAIL	"basic2004@gmail.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"エラー"
@@ -65,27 +68,24 @@
 #define STR_2202	"PCapデバイスが初期化されていないので設定に失敗しました"
 #define STR_2203	"PCapデバイスがありません"
 #define STR_2204	"不正なPCapデバイスです"
-#define STR_2205	"OpenALが初期化できません、\nプログラムのフォルダーから下記のライブラリーファイルをご確認ください:\n\nlibopenal-1.dll"
-#define STR_2206	"FluidSynthが初期化できません、\nプログラムのフォルダーから下記のライブラリーファイルをご確認ください:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"%s が初期化できません、\nプログラムのフォルダーから下記のライブラリーファイルをご確認ください:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"ビットマップファイルが生成できません:%s"
+#define STR_2300	"System out of memory!"
 #define STR_2301	"使用可能なROMが見つかりません！"
 #define STR_2302	"有効な設定が見つかりません。\n\n新たな設定を作るために設定ウィンドウを開きますか？"
-#define STR_2303	"設定したマシン:\n\n　%ls\n\nは使用できません。\n\n設定ウィンドウを開きますか？"
-#define STR_2304	"設定したビデオカード:\n\n　%ls\n\nは使用できません。\n\n設定ウィンドウを開きますか？"
-#define STR_2305	"設定したレンダラー「%S」は使用できません。既定値に戻しますか？"
-#define STR_2306	"ST506またはESDI方式のCD-ROMドライブは存在しません"
+#define STR_2303	"設定した%ls:\n\n　%s\n\nは使用できません。\n\n設定ウィンドウを開きますか？"
+#define STR_2304	"設定したビデオカード:\n\n　%s\n\nは使用できません。\n\n設定ウィンドウを開きますか？"
+#define STR_2305	"まずは新規設定を保存してください！"
+#define STR_2306	"ビットマップファイルが生成できません:%s"
 #define STR_2307	"USBはまだサポートしません"
-#define STR_2308	"まずは新規設定を保存してください！"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"現在の設定を保存しますか？\n\n (再起動の必要があるかもしれません...)"
 #define STR_2401	"設定を保存しました。再起動して下さい！"
-#define STR_2402	"要請したデバイス「%ls」は現在開発中なので問題が発生する可能性があります。\n\n使用してもよろしいですか？"
+#define STR_2402	"要請したデバイス「\n\n  %s\n\n」は現在開発中なので問題が発生する可能性があります。\n\n使用してもよろしいですか？"
 #define STR_2403	"クリックするとマウスを直接入力します"
 #define STR_2404	"F12+F8キーでマウスの直接入力を解除します"
 #define STR_2405	"F12+F8キーまたは中クリックでマウスの直接入力を解除します"
@@ -99,11 +99,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"キャンセル"
+#define STR_YES		"Yes"
+#define STR_NO		"No"
 #define STR_CONFIGURE	"設定"
 #define STR_BROWSE	"参照"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"なし"
+#define STR_INTERNAL	"Internal"
 #define STR_DISABLED	"使用しない"
 #define STR_ENABLED	"使用する"
 #define STR_OFF		"オフ"
@@ -123,19 +127,19 @@
 #define STR_DEVCONF_2	"デバイス:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"VARCemについて.."
 #define  STR_3201	"著者:"
 #define  STR_3202	"Fred N. van Kempen、Miran Grca、Sarah Walker 外\nこのプログラムは既存の作品（86Box、PCem、MAME、DOSbox、Qemu）を元にして製作されました。"
 #define  STR_3203	"このプログラムは3条項BSDライセンス、既存または他のプロジェクトからインポートしたコードについてはGNU GPL v2以降のライセンスに基いて配布されています。"
 #define  STR_3204	"詳しい情報は LICENSE.txt をお読みください。"
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"多言語化"
 #define  STR_3211	"VARCemを翻訳してくれた貢献者たちを紹介致します:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"ステータス"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"音量増加"
@@ -184,23 +188,16 @@
 #define  STR_3328	"待機状態:"
 #define  STR_3329	"メモリ:"
 #define  STR_3330	"MB"
-#define  STR_3331	"時刻同期化"
+#define  STR_3331	"時刻同期化:"
 #define  STR_3332	"FPUを使用"
 #define  STR_3333	"動的再コンパイル"
 #define  STR_3334	"KB"
 #define  STR_3335	"既定値"
+#define  STR_3336	"Enabled (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"ビデオカード:"
-#define  STR_3351	"ビデオの速度:"
-#define  STR_3352	"Voodoo Graphics"
-#define  STR_3353	"既定値"
-#define  STR_3354	"8-bit"
-#define  STR_3355	"低速16-bit"
-#define  STR_3356	"高速16-bit"
-#define  STR_3357	"低速VLB/PCI"
-#define  STR_3358	"中速VLB/PCI"
-#define  STR_3359	"高速VLB/PCI"
+#define  STR_3351	"Voodoo Graphics"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"マウス:"
@@ -233,8 +230,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSIｺﾝﾄﾛｰﾗｰ:"
 #define  STR_3476	"HDｺﾝﾄﾛｰﾗｰ:"
-#define  STR_3477	"3番目のIDE:"
-#define  STR_3478	"4番目のIDE:"
+#define  STR_3477	"3番目のIDE"
+#define  STR_3478	"4番目のIDE"
 #define  STR_3479	"ISABuggerデバイス"
 #define  STR_3480	"ISAメモリー拡張ボード"
 #define  STR_3481	"ISAクロック/RTCカード"
@@ -255,10 +252,9 @@
 #define  STR_3512	"カスタム (大容量)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (PIO専用)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (リムーバブル)"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"ハードディスクの追加"
@@ -289,13 +285,12 @@
 #define  STR_3577	"ZIPドライブ:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"速度"
-#define  STR_3580	"<予約済>"
-#define  STR_3581	"<予約済>"
-#define  STR_3582	"ATAPI (PIO専用)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(空)"
 #define STR_3901	"(ホストドライブ %c:)"
 #define STR_3902	"[書き込み禁止]"
@@ -303,6 +298,7 @@
 #define STR_3904	"イメージをロード(&L).."
 #define STR_3905	"前のイメージをリロード(&R)"
 #define STR_3906	"取り出し(&U)"
+#define STR_3907	"ディスク交換を通知(&N)"
 
 #define STR_3910	"フロッピー %i (%s): %ls"
 #define STR_3911	"すべてのイメージ\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f\0すべてのファイル\0*.*\0"
@@ -310,24 +306,21 @@
 #define STR_3913	"Surface images\0*.86f\0"
 #define STR_3914	"86F形式に変換(&X)..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"ホストCD/DVDドライブ (%c:)"
 #define STR_3922	"CD-ROMイメージ\0*.iso;*.cue\0すべてのファイル (*.*)\0*.*\0"
 #define STR_3923	"ミュート(&M)"
 
-#define STR_3930	"ハードディスク(%s)"
+#define STR_3930	"ハードディスク %i (%ls): %ls"
 
-#define STR_3940	"リムーバブルディスク %i: %ls"
-#define STR_3941	"ディスク交換を通知(&N)"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP イメージ\0*.im?;*.zdi\0すべてのファイル\0*.*\0"
 #define STR_3952	"ZIP イメージ\0*.im?;*.zdi\0"
-#define STR_3960	"ネットワーク"
-#define STR_3970	"サウンド"
+#define STR_3960	"ネットワーク (%s)"
+#define STR_3970	"サウンド (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"動作(&A)"
 #define  STR_4001	"再起動(&H)"
 #define  STR_4002	"Ctrl+Alt+Delの送信(&C)"
@@ -336,25 +329,25 @@
 #define  STR_4005	"一時停止(&P)"
 #define  STR_4006	"終了(&X)"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"表示(&V)"
 #define  STR_4011	"ウィンドウのサイズを変更できるようにする(&R)"
 #define  STR_4012	"ウィンドウのサイズと位置を記憶(&E)"
 #define  STR_4013	"フルスクリーン(&F)\tCtrl+Alt+PageUP"
 #define  STR_4014	"右CTRLを左ALTへ(&I)"
-#define  STR_4015	"ステータスバーアイコンを更新(&U)"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"レンダラー(&N)"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"ウィンドウの倍率(&W)"
 #define   STR_4031	"0.5x(&0)"
 #define   STR_4032	"1x(&1)"
 #define   STR_4033	"1.5x(&5)"
 #define   STR_4034	"2x(&2)"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"フルスクリーンの比率(&S)"
 #define   STR_4041	"フルスクリーンに拡大(&F)"
 #define   STR_4042	"4:3(&4)"
@@ -362,14 +355,15 @@
 #define   STR_4044	"定数倍(&I)"
 #define   STR_4045	"サイズを維持(&K)"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"画面表示(&D)"
 #define  STR_4051	"反転(&I)"
 #define  STR_4052	"オーバースキャン(&O)"
 #define  STR_4053	"4:3に合わせる(&F)"
 #define  STR_4054	"単色モニター用対比転換(&C)"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"画面タイプ(&T)"
 #define   STR_4061	"RGBカラーモニター(&C)"
 #define   STR_4062	"RGBグレースケール(&G)"
@@ -377,23 +371,26 @@
 #define   STR_4064	"緑色モニター(&G)"
 #define   STR_4065	"白色モニター(&W)"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"グレースケール表示方式(&G)"
 #define   STR_4071	"BT601 (NTSC/PAL)(&6)"
 #define   STR_4072	"BT709 (HDTV)(&7)"
 #define   STR_4073	"平均値(&A)"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"ツール(&T)"
 #define  STR_4081	"設定(&S)"
 #define  STR_4082	"言語(&L)"
 #define	 STR_4083	"ログ(&O)"
-#define  STR_4084	"設定をロード(&C)"
-#define  STR_4085	"設定を保存(&A)"
-#define  STR_4086	"ステータス(&U)"
-#define  STR_4087	"スクリーンショットを撮る(&T)\tCtrl+Home"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"設定をロード(&C)"
+#define  STR_4087	"設定を保存(&A)"
+#define  STR_4088	"スクリーンショットを撮る(&T)"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"ヘルプ(&H)"
 #define  STR_4091	"VARCemについて(&A)"
 

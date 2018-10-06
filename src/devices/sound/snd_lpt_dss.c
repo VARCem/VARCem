@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT-based DSS sound device.
  *
- * Version:	@(#)snd_lpt_dss.c	1.0.7	2018/05/06
+ * Version:	@(#)snd_lpt_dss.c	1.0.8	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_dev_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
@@ -145,9 +146,11 @@ dss_callback(void *priv)
 static void *
 dss_init(const lpt_device_t *info)
 {
-    dss_t *dev = malloc(sizeof(dss_t));
+    dss_t *dev;
 
-pclog("SOUND: LPT device '%s' initializing!\n", info->name);
+    INFO("SOUND: LPT device '%s' initializing!\n", info->name);
+
+    dev = (dss_t *)mem_alloc(sizeof(dss_t));
     memset(dev, 0x00, sizeof(dss_t));
     dev->name = info->name;
 
@@ -164,7 +167,7 @@ dss_close(void *priv)
 {
     dss_t *dev = (dss_t *)priv;
 
-    pclog("SOUND: LPT device '%s' closed!\n", dev->name);
+    INFO("SOUND: LPT device '%s' closed!\n", dev->name);
 
     free(dev);
 }

@@ -8,7 +8,7 @@
  *
  *		Implementation of the IMD floppy image format.
  *
- * Version:	@(#)fdd_imd.c	1.0.9	2018/05/14
+ * Version:	@(#)fdd_imd.c	1.0.10	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog fdd_log
 #include "../../emu.h"
 #include "../../plat.h"
 #include "fdd.h"
@@ -595,7 +596,7 @@ imd_load(int drive, const wchar_t *fn)
     d86f_unregister(drive);
 
     /* Allocate a drive block. */
-    dev = (imd_t *)malloc(sizeof(imd_t));
+    dev = (imd_t *)mem_alloc(sizeof(imd_t));
     memset(dev, 0x00, sizeof(imd_t));
 
     dev->f = plat_fopen(fn, L"rb+");
@@ -615,34 +616,34 @@ imd_load(int drive, const wchar_t *fn)
     fseek(dev->f, 0, SEEK_SET);
     fread(&magic, 1, 4, dev->f);
     if (magic != 0x20444D49) {
-	fdd_log("IMD: not a valid ImageDisk image\n");
+	ERRLOG("IMD: not a valid ImageDisk image\n");
 	fclose(dev->f);
 	free(dev);;
 	return(0);
     } else {
-	fdd_log("IMD: valid ImageDisk image\n");
+	DEBUG("IMD: valid ImageDisk image\n");
     }
 
     fseek(dev->f, 0, SEEK_END);
     fsize = ftell(dev->f);
     fseek(dev->f, 0, SEEK_SET);
-    dev->buffer = malloc(fsize);
+    dev->buffer = (char *)mem_alloc(fsize);
     fread(dev->buffer, 1, fsize, dev->f);
     buffer = dev->buffer;
 
     buffer2 = strchr(buffer, 0x1A);
     if (buffer2 == NULL) {
-	fdd_log("IMD: no ASCII EOF found!\n");
+	ERRLOG("IMD: no ASCII EOF found!\n");
 	fclose(dev->f);
 	free(dev);
 	return(0);
     } else {
-	fdd_log("IMD: ASCII EOF found at offset %08X\n", buffer2 - buffer);
+	DEBUG("IMD: ASCII EOF found at offset %08X\n", buffer2 - buffer);
     }
 
     buffer2++;
     if ((buffer2 - buffer) == fsize) {
-	fdd_log("IMD: file ends after ASCII EOF\n");
+	ERRLOG("IMD: file ends after ASCII EOF\n");
 	fclose(dev->f);
 	free(dev);
 	return(0);
@@ -757,7 +758,7 @@ imd_load(int drive, const wchar_t *fn)
 			dev->disk_flags |= (3 << 5);
 			if ((raw_tsize - track_total + (mfm ? 146 : 73)) < (minimum_gap3 + minimum_gap4)) {
 				/* If we can't fit the sectors with a reasonable minimum gap even at 2% slower RPM, abort. */
-				fdd_log("IMD: unable to fit the %i sectors in a track\n", track_spt);
+				ERRLOG("IMD: unable to fit the %i sectors in a track\n", track_spt);
 				fclose(dev->f);
 				free(dev);
 				imd[drive] = NULL;

@@ -8,7 +8,7 @@
  *
  *		Definitions for the IBM EGA driver.
  *
- * Version:	@(#)vid_ega.h	1.0.3	2018/04/09
+ * Version:	@(#)vid_ega.h	1.0.4	2018/09/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,7 @@
 
 #if defined(EMU_MEM_H) && defined(EMU_ROM_H)
 typedef struct {
-    mem_mapping_t mapping;
+    mem_map_t	mapping;
 
     rom_t	bios_rom;
 

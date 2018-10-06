@@ -8,7 +8,7 @@
  *
  *		Interface to system MIDI driver.
  *
- * Version:	@(#)midi_system.c	1.0.4	2018/05/06
+ * Version:	@(#)midi_system.c	1.0.5	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../plat.h"
@@ -48,57 +49,58 @@
 #include "midi_system.h"
 
 
-void* system_midi_init(const device_t *info)
+void *
+system_midi_init(const device_t *info)
 {
-        midi_device_t* dev = malloc(sizeof(midi_device_t));
-        memset(dev, 0, sizeof(midi_device_t));
+    midi_device_t *dev;
 
-        dev->play_msg = plat_midi_play_msg;
-        dev->play_sysex = plat_midi_play_sysex;
-        dev->write = plat_midi_write;
+    dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
+    memset(dev, 0, sizeof(midi_device_t));
 
-        plat_midi_init();
+    dev->play_msg = plat_midi_play_msg;
+    dev->play_sysex = plat_midi_play_sysex;
+    dev->write = plat_midi_write;
 
-        midi_init(dev);
+    plat_midi_init();
 
-        return dev;
+    midi_init(dev);
+
+    return dev;
 }
 
-void system_midi_close(void* p)
-{
-        plat_midi_close();
 
-        midi_close();
+void
+system_midi_close(void *priv)
+{
+    plat_midi_close();
+
+    midi_close();
+
+    free(priv);
 }
 
-int system_midi_available(void)
+
+int
+system_midi_available(void)
 {
-        return plat_midi_get_num_devs();
+    return plat_midi_get_num_devs();
 }
 
-static const device_config_t system_midi_config[] =
-{
-        {
-                .name = "midi",
-                .description = "MIDI out device",
-                .type = CONFIG_MIDI,
-                .default_int = 0
-        },
-        {
-                .type = -1
-        }
+
+static const device_config_t system_midi_config[] = {
+    {
+        "midi","MIDI out device",CONFIG_MIDI,"",0
+    },
+    {
+        "","",-1
+    }
 };
 
-const device_t system_midi_device =
-{
-        SYSTEM_MIDI_NAME,
-        0, 0,
-        system_midi_init,
-        system_midi_close,
-	NULL,
-        system_midi_available,
-        NULL,
-        NULL,
-        NULL,
-        system_midi_config
+const device_t system_midi_device = {
+    SYSTEM_MIDI_NAME,
+    0, 0,
+    system_midi_init, system_midi_close, NULL,
+    system_midi_available,
+    NULL, NULL, NULL,
+    system_midi_config
 };

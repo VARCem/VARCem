@@ -8,11 +8,7 @@
  *
  *		Memory handling and MMU.
  *
- * NOTE:	Experimenting with dynamically allocated lookup tables;
- *		the DYNAMIC_TABLES=1 enables this. Will eventually go
- *		away, either way...
- *
- * Version:	@(#)mem.c	1.0.21	2018/09/19
+ * Version:	@(#)mem.c	1.0.21	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,63 +61,54 @@
 #endif
 
 
-#define DYNAMIC_TABLES		0		/* experimental */
+mem_map_t	base_mapping,
+		ram_low_mapping,		/* 0..640K mapping */
+		ram_mid_mapping,
+		ram_remapped_mapping,		/* 640..1024K mapping */
+		ram_high_mapping,		/* 1024K+ mapping */
+		bios_mapping[8],
+		bios_high_mapping[8];
 
+page_t		*pages,				/* RAM page table */
+		**page_lookup;			/* pagetable lookup */
+uint32_t	pages_sz = 0;			/* #pages in table */
 
-mem_mapping_t		base_mapping,
-			ram_low_mapping,	/* 0..640K mapping */
-#if 1
-			ram_mid_mapping,
-#endif
-			ram_remapped_mapping,	/* 640..1024K mapping */
-			ram_high_mapping,	/* 1024K+ mapping */
-			bios_mapping[8],
-			bios_high_mapping[8],
-			romext_mapping;
+uint8_t		*ram;				/* the virtual RAM */
+uint32_t	rammask;
 
-page_t			*pages,			/* RAM page table */
-			**page_lookup;		/* pagetable lookup */
-uint32_t		pages_sz = 0;		/* #pages in table */
+uint8_t		*rom;				/* the virtual ROM */
+uint32_t	biosmask;
 
-uint8_t			*ram;			/* the virtual RAM */
-uint32_t		rammask;
+uint32_t	pccache;
+uint8_t		*pccache2;
 
-uint8_t			*rom;			/* the virtual ROM */
-uint8_t			romext[32768];
-uint32_t		biosmask;
+int		readlnext;
+int		readlookup[256],
+		readlookupp[256];
+uintptr_t	*readlookup2;
+int		writelnext;
+int		writelookup[256],
+		writelookupp[256];
+uintptr_t	*writelookup2;
 
-uint32_t		pccache;
-uint8_t			*pccache2;
+uint32_t	mem_logical_addr;
 
-int			readlnext;
-int			readlookup[256],
-			readlookupp[256];
-uintptr_t		*readlookup2;
-int			writelnext;
-int			writelookup[256],
-			writelookupp[256];
-uintptr_t		*writelookup2;
+int		shadowbios = 0,
+		shadowbios_write;
+int		pctrans = 0;
+int		cachesize = 256;
 
-uint32_t		mem_logical_addr;
+uint32_t	ram_mapped_addr[64];
 
-int			shadowbios = 0,
-			shadowbios_write;
-int			readlnum = 0,
-			writelnum = 0;
-int			pctrans = 0;
-int			cachesize = 256;
+uint32_t	get_phys_virt,
+		get_phys_phys;
 
-uint32_t		ram_mapped_addr[64];
+int		mem_a20_key = 0,
+		mem_a20_alt = 0,
+		mem_a20_state = 0;
 
-uint32_t		get_phys_virt,
-			get_phys_phys;
-
-int			mem_a20_key = 0,
-			mem_a20_alt = 0,
-			mem_a20_state = 0;
-
-int			mmuflush = 0;
-int			mmu_perm = 4;
+int		mmuflush = 0;
+int		mmu_perm = 4;
 
 
 /* FIXME: re-do this with a 'mem_ops' struct. */
@@ -134,8 +121,8 @@ static void		(*_mem_write_l[0x40000])(uint32_t addr, uint32_t val, void *priv);
 static uint8_t		*_mem_exec[0x40000];
 static void		*_mem_priv_r[0x40000];
 static void		*_mem_priv_w[0x40000];
-static mem_mapping_t	*_mem_mapping_r[0x40000];
-static mem_mapping_t	*_mem_mapping_w[0x40000];
+static mem_map_t	*_mem_map_r[0x40000];
+static mem_map_t	*_mem_map_w[0x40000];
 static int		_mem_state[0x40000];
 
 static uint8_t		ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
@@ -148,17 +135,8 @@ resetreadlookup(void)
 {
     int c;
 
-    /* This is NULL after app startup, when mem_init() has not yet run. */
-#if DYNAMIC_TABLES
-pclog("MEM: reset_lookup: pages=%08lx, lookup=%08lx, pages_sz=%i\n", pages, page_lookup, pages_sz);
-#endif
-
     /* Initialize the page lookup table. */
-#if DYNAMIC_TABLES
-    memset(page_lookup, 0x00, pages_sz*sizeof(page_t *));
-#else
     memset(page_lookup, 0x00, (1<<20)*sizeof(page_t *));
-#endif
 
     /* Initialize the tables for lower (<= 1024K) RAM. */
     for (c = 0; c < 256; c++) {
@@ -167,13 +145,8 @@ pclog("MEM: reset_lookup: pages=%08lx, lookup=%08lx, pages_sz=%i\n", pages, page
     }
 
     /* Initialize the tables for high (> 1024K) RAM. */
-#if DYNAMIC_TABLES
-    memset(readlookup2, 0xff, pages_sz*sizeof(uintptr_t));
-    memset(writelookup2, 0xff, pages_sz*sizeof(uintptr_t));
-#else
     memset(readlookup2, 0xff, (1<<20)*sizeof(uintptr_t));
     memset(writelookup2, 0xff, (1<<20)*sizeof(uintptr_t));
-#endif
 
     readlnext = 0;
     writelnext = 0;
@@ -187,11 +160,11 @@ flushmmucache(void)
     int c;
 
     for (c = 0; c < 256; c++) {
-	if (readlookup[c] != 0xffffffff) {
+	if (readlookup[c] != (int)0xffffffff) {
 		readlookup2[readlookup[c]] = -1;
 		readlookup[c] = 0xffffffff;
 	}
-	if (writelookup[c] != 0xffffffff) {
+	if (writelookup[c] != (int)0xffffffff) {
 		page_lookup[writelookup[c]] = NULL;
 		writelookup2[writelookup[c]] = -1;
 		writelookup[c] = 0xffffffff;
@@ -214,11 +187,11 @@ flushmmucache_nopc(void)
     int c;
 
     for (c = 0; c < 256; c++) {
-	if (readlookup[c] != 0xffffffff) {
+	if (readlookup[c] != (int)0xffffffff) {
 		readlookup2[readlookup[c]] = -1;
 		readlookup[c] = 0xffffffff;
 	}
-	if (writelookup[c] != 0xffffffff) {
+	if (writelookup[c] != (int)0xffffffff) {
 		page_lookup[writelookup[c]] = NULL;
 		writelookup2[writelookup[c]] = -1;
 		writelookup[c] = 0xffffffff;
@@ -233,11 +206,11 @@ flushmmucache_cr3(void)
     int c;
 
     for (c = 0; c < 256; c++) {
-	if (readlookup[c] != 0xffffffff) {
+	if (readlookup[c] != (int)0xffffffff) {
 		readlookup2[readlookup[c]] = -1;
 		readlookup[c] = 0xffffffff;
 	}
-	if (writelookup[c] != 0xffffffff) {
+	if (writelookup[c] != (int)0xffffffff) {
 		page_lookup[writelookup[c]] = NULL;
 		writelookup2[writelookup[c]] = -1;
 		writelookup[c] = 0xffffffff;
@@ -253,7 +226,7 @@ mem_flush_write_page(uint32_t addr, uint32_t virt)
     int c;
 
     for (c = 0; c < 256; c++) {
-	if (writelookup[c] != 0xffffffff) {
+	if (writelookup[c] != (int)0xffffffff) {
 		uintptr_t target = (uintptr_t)&ram[(uintptr_t)(addr & ~0xfff) - (virt & ~0xfff)];
 
 		if (writelookup2[writelookup[c]] == target || page_lookup[writelookup[c]] == page_target) {
@@ -397,9 +370,9 @@ addreadlookup(uint32_t virt, uint32_t phys)
 {
     if (virt == 0xffffffff) return;
 
-    if (readlookup2[virt>>12] != -1) return;
+    if (readlookup2[virt>>12] != (uintptr_t)-1) return;
 
-    if (readlookup[readlnext] != 0xffffffff)
+    if (readlookup[readlnext] != (int)0xffffffff)
 	readlookup2[readlookup[readlnext]] = -1;
 
     readlookup2[virt>>12] = (uintptr_t)&ram[(uintptr_t)(phys & ~0xFFF) - (uintptr_t)(virt & ~0xfff)];
@@ -465,7 +438,7 @@ getpccache(uint32_t a)
     a &= rammask;
 
     if (_mem_exec[a >> 14]) {
-	if (_mem_mapping_r[a >> 14]->flags & MEM_MAPPING_ROM)
+	if (_mem_map_r[a >> 14]->flags & MEM_MAPPING_ROM)
 		cpu_prefetch_cycles = cpu_rom_prefetch_cycles;
 	else
 		cpu_prefetch_cycles = cpu_mem_prefetch_cycles;
@@ -473,7 +446,7 @@ getpccache(uint32_t a)
 	return &_mem_exec[a >> 14][(uintptr_t)(a & 0x3000) - (uintptr_t)(a2 & ~0xfff)];
     }
 
-    pclog("Bad getpccache %08X\n", a);
+    ERRLOG("Bad getpccache %08X\n", a);
 
     return (uint8_t *)&ff_pccache;
 }
@@ -535,10 +508,10 @@ writemembl(uint32_t addr, uint8_t val)
 uint8_t
 readmemb386l(uint32_t seg, uint32_t addr)
 {
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 
-	return -1;
+	return 0xff;
     }
 
     mem_logical_addr = addr = addr + seg;
@@ -567,7 +540,7 @@ readmemb386l(uint32_t seg, uint32_t addr)
 void
 writememb386l(uint32_t seg, uint32_t addr, uint8_t val)
 {
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 	return;
     }
@@ -603,9 +576,9 @@ readmemwl(uint32_t seg, uint32_t addr)
 {
     uint32_t addr2 = mem_logical_addr = seg + addr;
 
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
-	return -1;
+	return 0xffff;
     }
 
     if (addr2 & 1) {
@@ -616,10 +589,10 @@ readmemwl(uint32_t seg, uint32_t addr)
 			if (mmutranslate_read(addr2)   == 0xffffffff) return 0xffff;
 			if (mmutranslate_read(addr2+1) == 0xffffffff) return 0xffff;
 		}
-		if (is386) return readmemb386l(seg,addr)|(readmemb386l(seg,addr+1)<<8);
-		else       return readmembl(seg+addr)|(readmembl(seg+addr+1)<<8);
+		if (is386) return readmemb386l(seg,addr)|((uint16_t)(readmemb386l(seg,addr+1))<<8);
+		else       return readmembl(seg+addr)|((uint16_t)(readmembl(seg+addr+1))<<8);
 	}
-	else if (readlookup2[addr2 >> 12] != -1)
+	else if (readlookup2[addr2 >> 12] != (uintptr_t)-1)
 		return *(uint16_t *)(readlookup2[addr2 >> 12] + addr2);
     }
 
@@ -643,9 +616,11 @@ readmemwl(uint32_t seg, uint32_t addr)
 
 	if (_mem_read_b[addr2 >> 14]) {
 		if (AT)
-			return _mem_read_b[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) | (_mem_read_b[(addr2 + 1) >> 14](addr2 + 1, _mem_priv_r[addr2 >> 14]) << 8);
+			return _mem_read_b[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) |
+				((uint16_t)(_mem_read_b[(addr2 + 1) >> 14](addr2 + 1, _mem_priv_r[addr2 >> 14])) << 8);
 		else
-			return _mem_read_b[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) | (_mem_read_b[(seg + ((addr + 1) & 0xffff)) >> 14](seg + ((addr + 1) & 0xffff), _mem_priv_r[addr2 >> 14]) << 8);
+			return _mem_read_b[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) |
+				((uint16_t)(_mem_read_b[(seg + ((addr + 1) & 0xffff)) >> 14](seg + ((addr + 1) & 0xffff), _mem_priv_r[addr2 >> 14])) << 8);
     }
 
     return 0xffff;
@@ -657,7 +632,7 @@ writememwl(uint32_t seg, uint32_t addr, uint16_t val)
 {
     uint32_t addr2 = mem_logical_addr = seg + addr;
 
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 	return;
     }
@@ -685,7 +660,7 @@ writememwl(uint32_t seg, uint32_t addr, uint16_t val)
 			writemembl(seg+addr+1,(uint8_t)(val>>8));
 		}
 		return;
-	} else if (writelookup2[addr2 >> 12] != -1) {
+	} else if (writelookup2[addr2 >> 12] != (uintptr_t)-1) {
 		*(uint16_t *)(writelookup2[addr2 >> 12] + addr2) = val;
 		return;
 	}
@@ -702,11 +677,6 @@ writememwl(uint32_t seg, uint32_t addr, uint16_t val)
     }
 
     addr2 &= rammask;
-
-#if 0
-    if (addr2 >= 0xa0000 && addr2 < 0xc0000)
-	   pclog("writememwl %08X %02X\n", addr2, val);
-#endif
 
     if (_mem_write_w[addr2 >> 14]) {
 	_mem_write_w[addr2 >> 14](addr2, val, _mem_priv_w[addr2 >> 14]);
@@ -726,7 +696,7 @@ readmemll(uint32_t seg, uint32_t addr)
 {
     uint32_t addr2 = mem_logical_addr = seg + addr;
 
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 	return -1;
     }
@@ -747,7 +717,7 @@ readmemll(uint32_t seg, uint32_t addr)
 			if (mmutranslate_read(addr2+3) == 0xffffffff) return 0xffffffff;
 		}
 		return readmemwl(seg,addr)|(readmemwl(seg,addr+2)<<16);
-	} else if (readlookup2[addr2 >> 12] != -1)
+	} else if (readlookup2[addr2 >> 12] != (uintptr_t)-1)
 		return *(uint32_t *)(readlookup2[addr2 >> 12] + addr2);
     }
 
@@ -763,10 +733,14 @@ readmemll(uint32_t seg, uint32_t addr)
 	return _mem_read_l[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]);
 
     if (_mem_read_w[addr2 >> 14])
-	return _mem_read_w[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) | (_mem_read_w[addr2 >> 14](addr2 + 2, _mem_priv_r[addr2 >> 14]) << 16);
+	return _mem_read_w[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) |
+		((uint32_t)(_mem_read_w[addr2 >> 14](addr2 + 2, _mem_priv_r[addr2 >> 14])) << 16);
 
     if (_mem_read_b[addr2 >> 14])
-	return _mem_read_b[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) | (_mem_read_b[addr2 >> 14](addr2 + 1, _mem_priv_r[addr2 >> 14]) << 8) | (_mem_read_b[addr2 >> 14](addr2 + 2, _mem_priv_r[addr2 >> 14]) << 16) | (_mem_read_b[addr2 >> 14](addr2 + 3, _mem_priv_r[addr2 >> 14]) << 24);
+	return _mem_read_b[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) |
+		((uint32_t)(_mem_read_b[addr2 >> 14](addr2 + 1, _mem_priv_r[addr2 >> 14])) << 8) |
+		((uint32_t)(_mem_read_b[addr2 >> 14](addr2 + 2, _mem_priv_r[addr2 >> 14]) << 16)) |
+		((uint32_t)(_mem_read_b[addr2 >> 14](addr2 + 3, _mem_priv_r[addr2 >> 14])) << 24);
 
     return 0xffffffff;
 }
@@ -777,7 +751,7 @@ writememll(uint32_t seg, uint32_t addr, uint32_t val)
 {
     uint32_t addr2 = mem_logical_addr = seg + addr;
 
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 	return;
     }
@@ -800,7 +774,7 @@ writememll(uint32_t seg, uint32_t addr, uint32_t val)
 		writememwl(seg,addr,val);
 		writememwl(seg,addr+2,val>>16);
 		return;
-	} else if (writelookup2[addr2 >> 12] != -1) {
+	} else if (writelookup2[addr2 >> 12] != (uintptr_t)-1) {
 		*(uint32_t *)(writelookup2[addr2 >> 12] + addr2) = val;
 		return;
 	}
@@ -819,19 +793,19 @@ writememll(uint32_t seg, uint32_t addr, uint32_t val)
     addr2 &= rammask;
 
     if (_mem_write_l[addr2 >> 14]) {
-	_mem_write_l[addr2 >> 14](addr2, val,	   _mem_priv_w[addr2 >> 14]);
+	_mem_write_l[addr2 >> 14](addr2, val, _mem_priv_w[addr2 >> 14]);
 	return;
     }
     if (_mem_write_w[addr2 >> 14]) {
-	_mem_write_w[addr2 >> 14](addr2,     val,       _mem_priv_w[addr2 >> 14]);
-	_mem_write_w[addr2 >> 14](addr2 + 2, val >> 16, _mem_priv_w[addr2 >> 14]);
+	_mem_write_w[addr2 >> 14](addr2, val, _mem_priv_w[addr2 >> 14]);
+	_mem_write_w[addr2 >> 14](addr2+2, val >> 16, _mem_priv_w[addr2 >> 14]);
 	return;
     }
     if (_mem_write_b[addr2 >> 14]) {
-	_mem_write_b[addr2 >> 14](addr2,     val,       _mem_priv_w[addr2 >> 14]);
-	_mem_write_b[addr2 >> 14](addr2 + 1, val >> 8,  _mem_priv_w[addr2 >> 14]);
-	_mem_write_b[addr2 >> 14](addr2 + 2, val >> 16, _mem_priv_w[addr2 >> 14]);
-	_mem_write_b[addr2 >> 14](addr2 + 3, val >> 24, _mem_priv_w[addr2 >> 14]);
+	_mem_write_b[addr2 >> 14](addr2, val, _mem_priv_w[addr2 >> 14]);
+	_mem_write_b[addr2 >> 14](addr2+1, val >> 8, _mem_priv_w[addr2 >> 14]);
+	_mem_write_b[addr2 >> 14](addr2+2, val >> 16, _mem_priv_w[addr2 >> 14]);
+	_mem_write_b[addr2 >> 14](addr2+3, val >> 24, _mem_priv_w[addr2 >> 14]);
 	return;
     }
 }
@@ -842,7 +816,7 @@ readmemql(uint32_t seg, uint32_t addr)
 {
     uint32_t addr2 = mem_logical_addr = seg + addr;
 
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 	return -1;
     }
@@ -862,7 +836,7 @@ readmemql(uint32_t seg, uint32_t addr)
 			if (mmutranslate_read(addr2+7) == 0xffffffff) return 0xffffffff;
 		}
 		return readmemll(seg,addr)|((uint64_t)readmemll(seg,addr+4)<<32);
-	} else if (readlookup2[addr2 >> 12] != -1)
+	} else if (readlookup2[addr2 >> 12] != (uintptr_t)-1)
 		return *(uint64_t *)(readlookup2[addr2 >> 12] + addr2);
     }
 
@@ -876,7 +850,7 @@ readmemql(uint32_t seg, uint32_t addr)
 
     if (_mem_read_l[addr2 >> 14])
 	return _mem_read_l[addr2 >> 14](addr2, _mem_priv_r[addr2 >> 14]) |
-			 ((uint64_t)_mem_read_l[addr2 >> 14](addr2 + 4, _mem_priv_r[addr2 >> 14]) << 32);
+		 ((uint64_t)_mem_read_l[addr2 >> 14](addr2 + 4, _mem_priv_r[addr2 >> 14]) << 32);
 
     return readmemll(seg,addr) | ((uint64_t)readmemll(seg,addr+4)<<32);
 }
@@ -887,7 +861,7 @@ writememql(uint32_t seg, uint32_t addr, uint64_t val)
 {
     uint32_t addr2 = mem_logical_addr = seg + addr;
 
-    if (seg == -1) {
+    if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 	return;
     }
@@ -909,7 +883,7 @@ writememql(uint32_t seg, uint32_t addr, uint64_t val)
 		writememll(seg, addr, (uint32_t)(val&0xffffffff));
 		writememll(seg, addr+4, (uint32_t)(val>>32));
 		return;
-	} else if (writelookup2[addr2 >> 12] != -1) {
+	} else if (writelookup2[addr2 >> 12] != (uintptr_t)-1) {
 		*(uint64_t *)(writelookup2[addr2 >> 12] + addr2) = val;
 		return;
 	}
@@ -973,10 +947,6 @@ mem_readb_phys(uint32_t addr)
 uint8_t
 mem_readb_phys_dma(uint32_t addr)
 {
-#if 0
-    mem_logical_addr = 0xffffffff;
-#endif
-
     if (_mem_exec[addr >> 14])
 	return _mem_exec[addr >> 14][addr & 0x3fff];
     else if (_mem_read_b[addr >> 14])
@@ -1015,10 +985,6 @@ mem_writeb_phys(uint32_t addr, uint8_t val)
 void
 mem_writeb_phys_dma(uint32_t addr, uint8_t val)
 {
-#if 0
-    mem_logical_addr = 0xffffffff;
-#endif
-
     if (_mem_exec[addr >> 14])
 	_mem_exec[addr >> 14][addr & 0x3fff] = val;
     else if (_mem_write_b[addr >> 14])
@@ -1226,31 +1192,6 @@ mem_read_biosl(uint32_t addr, void *priv)
 }
 
 
-uint8_t
-mem_read_romext(uint32_t addr, void *priv)
-{
-    return romext[addr & 0x7fff];
-}
-
-
-uint16_t
-mem_read_romextw(uint32_t addr, void *priv)
-{
-    uint16_t *p = (uint16_t *)&romext[addr & 0x7fff];
-
-    return *p;
-}
-
-
-uint32_t
-mem_read_romextl(uint32_t addr, void *priv)
-{
-    uint32_t *p = (uint32_t *)&romext[addr & 0x7fff];
-
-    return *p;
-}
-
-
 void
 mem_write_null(uint32_t addr, uint8_t val, void *p)
 {
@@ -1284,7 +1225,7 @@ mem_invalidate_range(uint32_t start_addr, uint32_t end_addr)
 
 
 static __inline int
-mem_mapping_read_allowed(uint32_t fl, int state)
+mem_map_read_allowed(uint32_t fl, int state)
 {
     switch (state & MEM_READ_MASK) {
 	case MEM_READ_ANY:
@@ -1305,7 +1246,7 @@ mem_mapping_read_allowed(uint32_t fl, int state)
 
 
 static __inline int
-mem_mapping_write_allowed(uint32_t fl, int state)
+mem_map_write_allowed(uint32_t fl, int state)
 {
     switch (state & MEM_WRITE_MASK) {
 	case MEM_WRITE_DISABLED:
@@ -1325,9 +1266,9 @@ mem_mapping_write_allowed(uint32_t fl, int state)
 
 
 static void
-mem_mapping_recalc(uint64_t base, uint64_t size)
+mem_map_recalc(uint64_t base, uint64_t size)
 {
-    mem_mapping_t *map = base_mapping.next;
+    mem_map_t *map = base_mapping.next;
     uint64_t c;
 
     if (! size) return;
@@ -1339,12 +1280,12 @@ mem_mapping_recalc(uint64_t base, uint64_t size)
 	_mem_read_l[c >> 14] = NULL;
 	_mem_exec[c >> 14] = NULL;
 	_mem_priv_r[c >> 14] = NULL;
-	_mem_mapping_r[c >> 14] = NULL;
+	_mem_map_r[c >> 14] = NULL;
 	_mem_write_b[c >> 14] = NULL;
 	_mem_write_w[c >> 14] = NULL;
 	_mem_write_l[c >> 14] = NULL;
 	_mem_priv_w[c >> 14] = NULL;
-	_mem_mapping_w[c >> 14] = NULL;
+	_mem_map_w[c >> 14] = NULL;
     }
 
     /* Walk mapping list. */
@@ -1358,7 +1299,7 @@ mem_mapping_recalc(uint64_t base, uint64_t size)
 
 		for (c = start; c < end; c += 0x4000) {
 			if ((map->read_b || map->read_w || map->read_l) &&
-			     mem_mapping_read_allowed(map->flags, _mem_state[c >> 14])) {
+			     mem_map_read_allowed(map->flags, _mem_state[c >> 14])) {
 				_mem_read_b[c >> 14] = map->read_b;
 				_mem_read_w[c >> 14] = map->read_w;
 				_mem_read_l[c >> 14] = map->read_l;
@@ -1367,15 +1308,15 @@ mem_mapping_recalc(uint64_t base, uint64_t size)
 				else
 					_mem_exec[c >> 14] = NULL;
 				_mem_priv_r[c >> 14] = map->p;
-				_mem_mapping_r[c >> 14] = map;
+				_mem_map_r[c >> 14] = map;
 			}
 			if ((map->write_b || map->write_w || map->write_l) &&
-			     mem_mapping_write_allowed(map->flags, _mem_state[c >> 14])) {
+			     mem_map_write_allowed(map->flags, _mem_state[c >> 14])) {
 				_mem_write_b[c >> 14] = map->write_b;
 				_mem_write_w[c >> 14] = map->write_w;
 				_mem_write_l[c >> 14] = map->write_l;
 				_mem_priv_w[c >> 14] = map->p;
-				_mem_mapping_w[c >> 14] = map;
+				_mem_map_w[c >> 14] = map;
 			}
 		}
 	}
@@ -1387,12 +1328,12 @@ mem_mapping_recalc(uint64_t base, uint64_t size)
 
 
 void
-mem_mapping_del(mem_mapping_t *map)
+mem_map_del(mem_map_t *map)
 {
-    mem_mapping_t *ptr;
+    mem_map_t *ptr;
 
     /* Disable the entry. */
-    mem_mapping_disable(map);
+    mem_map_disable(map);
 
     /* Zap it from the list. */
     for (ptr = &base_mapping; ptr->next != NULL; ptr = ptr->next) {
@@ -1405,20 +1346,16 @@ mem_mapping_del(mem_mapping_t *map)
 
 
 void
-mem_mapping_add(mem_mapping_t *map,
-		uint32_t base, 
-		uint32_t size, 
-		uint8_t  (*read_b)(uint32_t addr, void *p),
-		uint16_t (*read_w)(uint32_t addr, void *p),
-		uint32_t (*read_l)(uint32_t addr, void *p),
-		void (*write_b)(uint32_t addr, uint8_t  val, void *p),
-		void (*write_w)(uint32_t addr, uint16_t val, void *p),
-		void (*write_l)(uint32_t addr, uint32_t val, void *p),
-		uint8_t *exec,
-		uint32_t fl,
-		void *p)
+mem_map_add(mem_map_t *map, uint32_t base, uint32_t size, 
+	    uint8_t  (*read_b)(uint32_t addr, void *p),
+	    uint16_t (*read_w)(uint32_t addr, void *p),
+	    uint32_t (*read_l)(uint32_t addr, void *p),
+	    void (*write_b)(uint32_t addr, uint8_t  val, void *p),
+	    void (*write_w)(uint32_t addr, uint16_t val, void *p),
+	    void (*write_l)(uint32_t addr, uint32_t val, void *p),
+	    uint8_t *exec, uint32_t fl, void *p)
 {
-    mem_mapping_t *dest = &base_mapping;
+    mem_map_t *dest = &base_mapping;
 
     /* Add mapping to the end of the list.*/
     while (dest->next)
@@ -1444,18 +1381,18 @@ mem_mapping_add(mem_mapping_t *map,
     map->dev     = NULL;
     map->next    = NULL;
 
-    mem_mapping_recalc(map->base, map->size);
+    mem_map_recalc(map->base, map->size);
 }
 
 
 void
-mem_mapping_set_handler(mem_mapping_t *map,
-			uint8_t  (*read_b)(uint32_t addr, void *p),
-			uint16_t (*read_w)(uint32_t addr, void *p),
-			uint32_t (*read_l)(uint32_t addr, void *p),
-			void (*write_b)(uint32_t addr, uint8_t  val, void *p),
-			void (*write_w)(uint32_t addr, uint16_t val, void *p),
-			void (*write_l)(uint32_t addr, uint32_t val, void *p))
+mem_map_set_handler(mem_map_t *map,
+		    uint8_t  (*read_b)(uint32_t addr, void *p),
+		    uint16_t (*read_w)(uint32_t addr, void *p),
+		    uint32_t (*read_l)(uint32_t addr, void *p),
+		    void (*write_b)(uint32_t addr, uint8_t  val, void *p),
+		    void (*write_w)(uint32_t addr, uint16_t val, void *p),
+		    void (*write_l)(uint32_t addr, uint32_t val, void *p))
 {
     map->read_b  = read_b;
     map->read_w  = read_w;
@@ -1464,64 +1401,64 @@ mem_mapping_set_handler(mem_mapping_t *map,
     map->write_w = write_w;
     map->write_l = write_l;
 
-    mem_mapping_recalc(map->base, map->size);
+    mem_map_recalc(map->base, map->size);
 }
 
 
 void
-mem_mapping_set_addr(mem_mapping_t *map, uint32_t base, uint32_t size)
+mem_map_set_addr(mem_map_t *map, uint32_t base, uint32_t size)
 {
     /* Remove old mapping. */
     map->enable = 0;
-    mem_mapping_recalc(map->base, map->size);
+    mem_map_recalc(map->base, map->size);
 
     /* Set new mapping. */
     map->enable = 1;
     map->base = base;
     map->size = size;
 
-    mem_mapping_recalc(map->base, map->size);
+    mem_map_recalc(map->base, map->size);
 }
 
 
 void
-mem_mapping_set_exec(mem_mapping_t *map, uint8_t *exec)
+mem_map_set_exec(mem_map_t *map, uint8_t *exec)
 {
     map->exec = exec;
 
-    mem_mapping_recalc(map->base, map->size);
+    mem_map_recalc(map->base, map->size);
 }
 
 
 void
-mem_mapping_set_p(mem_mapping_t *map, void *p)
+mem_map_set_p(mem_map_t *map, void *p)
 {
     map->p = p;
 }
 
 
 void
-mem_mapping_set_dev(mem_mapping_t *map, void *p)
+mem_map_set_dev(mem_map_t *map, void *p)
 {
     map->dev = p;
 }
 
 
 void
-mem_mapping_disable(mem_mapping_t *map)
+mem_map_disable(mem_map_t *map)
 {
     map->enable = 0;
 
-    mem_mapping_recalc(map->base, map->size);
+    mem_map_recalc(map->base, map->size);
 }
 
 
 void
-mem_mapping_enable(mem_mapping_t *map)
+mem_map_enable(mem_map_t *map)
 {
     map->enable = 1;
 
-    mem_mapping_recalc(map->base, map->size);
+    mem_map_recalc(map->base, map->size);
 }
 
 
@@ -1533,96 +1470,115 @@ mem_set_mem_state(uint32_t base, uint32_t size, int state)
     for (c = 0; c < size; c += 0x4000)
 	_mem_state[(c + base) >> 14] = state;
 
-    mem_mapping_recalc(base, size);
+    mem_map_recalc(base, size);
+}
+
+
+void
+mem_add_upper_bios(void)
+{
+    mem_map_add(&bios_mapping[0], 0xe0000, 0x04000,
+		mem_read_bios,mem_read_biosw,mem_read_biosl,
+		mem_write_null,mem_write_nullw,mem_write_nulll,
+		rom,MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_mapping[1], 0xe4000, 0x04000,
+		mem_read_bios,mem_read_biosw,mem_read_biosl,
+		mem_write_null,mem_write_nullw,mem_write_nulll,
+		rom + (0x4000  & biosmask),
+		MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_mapping[2], 0xe8000, 0x04000,
+		mem_read_bios,mem_read_biosw,mem_read_biosl,
+		mem_write_null,mem_write_nullw,mem_write_nulll,
+		rom + (0x8000  & biosmask),
+		MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_mapping[3], 0xec000, 0x04000,
+		mem_read_bios,mem_read_biosw,mem_read_biosl,
+		mem_write_null,mem_write_nullw,mem_write_nulll,
+		rom + (0xc000  & biosmask),
+		MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
 }
 
 
 void
 mem_add_bios(void)
 {
-    if (AT || (romset == ROM_XI8088 && xi8088_bios_128kb())) {
-	mem_mapping_add(&bios_mapping[0], 0xe0000, 0x04000,
-			mem_read_bios,mem_read_biosw,mem_read_biosl,
-			mem_write_null,mem_write_nullw,mem_write_nulll,
-			rom,MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-	mem_mapping_add(&bios_mapping[1], 0xe4000, 0x04000,
-			mem_read_bios,mem_read_biosw,mem_read_biosl,
-			mem_write_null,mem_write_nullw,mem_write_nulll,
-			rom + (0x4000  & biosmask),
-			MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-	mem_mapping_add(&bios_mapping[2], 0xe8000, 0x04000,
-			mem_read_bios,mem_read_biosw,mem_read_biosl,
-			mem_write_null,mem_write_nullw,mem_write_nulll,
-			rom + (0x8000  & biosmask),
-			MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-	mem_mapping_add(&bios_mapping[3], 0xec000, 0x04000,
-			mem_read_bios,mem_read_biosw,mem_read_biosl,
-			mem_write_null,mem_write_nullw,mem_write_nulll,
-			rom + (0xc000  & biosmask),
-			MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-    }
+    if (AT)
+	mem_add_upper_bios();
 
-    mem_mapping_add(&bios_mapping[4], 0xf0000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x10000 & biosmask),
-		    MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_mapping[5], 0xf4000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x14000 & biosmask),
-		    MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_mapping[6], 0xf8000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x18000 & biosmask),
-		    MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_mapping[7], 0xfc000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x1c000 & biosmask),
-		    MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+    mem_map_add(&bios_mapping[4], 0xf0000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x10000 & biosmask),
+	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
 
-    mem_mapping_add(&bios_high_mapping[0],
-		    (AT && cpu_16bitbus) ? 0xfe0000 : 0xfffe0000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom, MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_high_mapping[1],
-		    (AT && cpu_16bitbus) ? 0xfe4000 : 0xfffe4000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x4000  & biosmask), MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_high_mapping[2],
-		    (AT && cpu_16bitbus) ? 0xfe8000 : 0xfffe8000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x8000  & biosmask), MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_high_mapping[3],
-		    (AT && cpu_16bitbus) ? 0xfec000 : 0xfffec000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0xc000  & biosmask), MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_high_mapping[4],
-		    (AT && cpu_16bitbus) ? 0xff0000 : 0xffff0000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x10000 & biosmask), MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_high_mapping[5],
-		    (AT && cpu_16bitbus) ? 0xff4000 : 0xffff4000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x14000 & biosmask), MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_high_mapping[6],
-		    (AT && cpu_16bitbus) ? 0xff8000 : 0xffff8000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x18000 & biosmask), MEM_MAPPING_ROM, 0);
-    mem_mapping_add(&bios_high_mapping[7],
-		    (AT && cpu_16bitbus) ? 0xffc000 : 0xffffc000, 0x04000,
-		    mem_read_bios,mem_read_biosw,mem_read_biosl,
-		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    rom + (0x1c000 & biosmask), MEM_MAPPING_ROM, 0);
+    mem_map_add(&bios_mapping[5], 0xf4000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x14000 & biosmask),
+	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_mapping[6], 0xf8000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x18000 & biosmask),
+	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_mapping[7], 0xfc000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x1c000 & biosmask),
+	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[0],
+	        (AT && cpu_16bitbus) ? 0xfe0000 : 0xfffe0000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom, MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[1],
+	        (AT && cpu_16bitbus) ? 0xfe4000 : 0xfffe4000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x4000  & biosmask), MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[2],
+	        (AT && cpu_16bitbus) ? 0xfe8000 : 0xfffe8000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x8000  & biosmask), MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[3],
+	        (AT && cpu_16bitbus) ? 0xfec000 : 0xfffec000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0xc000  & biosmask), MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[4],
+	        (AT && cpu_16bitbus) ? 0xff0000 : 0xffff0000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x10000 & biosmask), MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[5],
+	        (AT && cpu_16bitbus) ? 0xff4000 : 0xffff4000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x14000 & biosmask), MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[6],
+	        (AT && cpu_16bitbus) ? 0xff8000 : 0xffff8000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x18000 & biosmask), MEM_MAPPING_ROM, 0);
+
+    mem_map_add(&bios_high_mapping[7],
+	        (AT && cpu_16bitbus) ? 0xffc000 : 0xffffc000, 0x04000,
+	        mem_read_bios,mem_read_biosw,mem_read_biosl,
+	        mem_write_null,mem_write_nullw,mem_write_nulll,
+	        rom + (0x1c000 & biosmask), MEM_MAPPING_ROM, 0);
 }
 
 
@@ -1664,21 +1620,14 @@ mem_reset(void)
     if (AT)
 	c <<= 10;	/* make KB */
     if (m > c) {
-	pclog("MEM: %luKB exceeds machine limit (%luKB), adjusted!\n", m, c);
+	INFO("MEM: %luKB exceeds machine limit (%luKB), adjusted!\n", m, c);
 	mem_size = c;
     }
 
-    /*
-     * Always allocate the full 16 MB memory space if memory size
-     * is smaller, we'll need this for stupid things like the PS/2
-     * split mapping.
-     */
-    if (mem_size < 16384)
-	m = 1024UL * 16384;
-      else
-	m = 1024UL * mem_size;
-    if (ram != NULL) free(ram);
-    ram = (uint8_t *)malloc(m);		/* allocate and clear the RAM block */
+    m = 1024UL * mem_size;
+    if (ram != NULL)
+	free(ram);
+    ram = (uint8_t *)mem_alloc(m);	/* allocate and clear the RAM block */
     memset(ram, 0x00, m);
 
     /*
@@ -1707,27 +1656,11 @@ mem_reset(void)
      * Allocate and initialize the (new) page table.
      * We only do this if the size of the page table has changed.
      */
-#if DYNAMIC_TABLES
-pclog("MEM: reset: previous pages=%08lx, pages_sz=%i\n", pages, pages_sz);
-#endif
     if (pages_sz != m || pages_sz == 0) {
 	pages_sz = m;
 	free(pages);
-	pages = (page_t *)malloc(m*sizeof(page_t));
+	pages = (page_t *)mem_alloc(m*sizeof(page_t));
 	memset(pages, 0x00, m*sizeof(page_t));
-#if DYNAMIC_TABLES
-pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
-
-	/* Allocate the (new) lookup tables. */
-	if (page_lookup != NULL) free(page_lookup);
-	page_lookup = (page_t **)malloc(pages_sz*sizeof(page_t *));
-
-	if (readlookup2 != NULL) free(readlookup2);
-	readlookup2  = malloc(pages_sz*sizeof(uintptr_t));
-
-	if (writelookup2 != NULL) free(writelookup2);
-	writelookup2 = malloc(pages_sz*sizeof(uintptr_t));
-#endif
     }
 
     /* Initialize the page table. */
@@ -1736,15 +1669,6 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
 	pages[c].write_b = mem_write_ramb_page;
 	pages[c].write_w = mem_write_ramw_page;
 	pages[c].write_l = mem_write_raml_page;
-    }
-
-    if (pages_sz > 256) {
-	for (c = ((1024UL * mem_size) >> 12); c < ((1024UL * (mem_size + 256)) >> 12); c++) {
-		pages[c].mem = &ram[0xA0000 + ((c - ((mem_size * 1024) >> 12)) << 12)];
-		pages[c].write_b = mem_write_ramb_page;
-		pages[c].write_w = mem_write_ramw_page;
-		pages[c].write_l = mem_write_raml_page;
-	}
     }
 
     /* Initialize the tables. */
@@ -1767,48 +1691,43 @@ pclog("MEM: reset: new pages=%08lx, pages_sz=%i\n", pages, pages_sz);
     mem_set_mem_state(0x0c0000, 0x40000,
 		      MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
 
-    mem_mapping_add(&ram_low_mapping, 0x00000,
-		    (mem_size > 640) ? 0xa0000 : mem_size * 1024,
-		    mem_read_ram,mem_read_ramw,mem_read_raml,
-		    mem_write_ram,mem_write_ramw,mem_write_raml,
-		    ram, MEM_MAPPING_INTERNAL, NULL);
+    mem_map_add(&ram_low_mapping, 0x00000,
+		(mem_size > 640) ? 0xa0000 : mem_size * 1024,
+		mem_read_ram,mem_read_ramw,mem_read_raml,
+		mem_write_ram,mem_write_ramw,mem_write_raml,
+		ram, MEM_MAPPING_INTERNAL, NULL);
 
     if (mem_size > 1024) {
 	if (cpu_16bitbus && mem_size > 16256) {
 		mem_set_mem_state(0x100000, (16256 - 1024) * 1024,
 				  MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-		mem_mapping_add(&ram_high_mapping, 0x100000,
-				((16256 - 1024) * 1024),
-				mem_read_ram,mem_read_ramw,mem_read_raml,
-				mem_write_ram,mem_write_ramw,mem_write_raml,
-				ram + 0x100000, MEM_MAPPING_INTERNAL, NULL);
+		mem_map_add(&ram_high_mapping, 0x100000,
+			    ((16256 - 1024) * 1024),
+			    mem_read_ram,mem_read_ramw,mem_read_raml,
+			    mem_write_ram,mem_write_ramw,mem_write_raml,
+			    ram + 0x100000, MEM_MAPPING_INTERNAL, NULL);
 	} else {
 		mem_set_mem_state(0x100000, (mem_size - 1024) * 1024,
 				  MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-		mem_mapping_add(&ram_high_mapping, 0x100000,
-				((mem_size - 1024) * 1024),
-				mem_read_ram,mem_read_ramw,mem_read_raml,
-				mem_write_ram,mem_write_ramw,mem_write_raml,
-				ram + 0x100000, MEM_MAPPING_INTERNAL, NULL);
+		mem_map_add(&ram_high_mapping, 0x100000,
+			    ((mem_size - 1024) * 1024),
+			    mem_read_ram,mem_read_ramw,mem_read_raml,
+			    mem_write_ram,mem_write_ramw,mem_write_raml,
+			    ram + 0x100000, MEM_MAPPING_INTERNAL, NULL);
 	}
     }
 
     if (mem_size > 768)
-	mem_mapping_add(&ram_mid_mapping, 0xc0000, 0x40000,
-			mem_read_ram,mem_read_ramw,mem_read_raml,
-			mem_write_ram,mem_write_ramw,mem_write_raml,
-			ram + 0xc0000, MEM_MAPPING_INTERNAL, NULL);
+	mem_map_add(&ram_mid_mapping, 0xc0000, 0x40000,
+		    mem_read_ram,mem_read_ramw,mem_read_raml,
+		    mem_write_ram,mem_write_ramw,mem_write_raml,
+		    ram + 0xc0000, MEM_MAPPING_INTERNAL, NULL);
 
-    if (romset == ROM_IBMPS1_2011)
-	mem_mapping_add(&romext_mapping, 0xc8000, 0x08000,
-			mem_read_romext,mem_read_romextw,mem_read_romextl,
-			NULL,NULL, NULL, romext, 0, NULL);
-
-    mem_mapping_add(&ram_remapped_mapping, mem_size * 1024, 256 * 1024,
-		    mem_read_remapped,mem_read_remappedw,mem_read_remappedl,
-		    mem_write_remapped,mem_write_remappedw,mem_write_remappedl,
-		    ram + 0xa0000, MEM_MAPPING_INTERNAL, NULL);
-    mem_mapping_disable(&ram_remapped_mapping);
+    mem_map_add(&ram_remapped_mapping, mem_size * 1024, 256 * 1024,
+	        mem_read_remapped,mem_read_remappedw,mem_read_remappedl,
+	        mem_write_remapped,mem_write_remappedw,mem_write_remappedl,
+	        ram + 0xa0000, MEM_MAPPING_INTERNAL, NULL);
+    mem_map_disable(&ram_remapped_mapping);
 
     mem_a20_init();
 }
@@ -1822,19 +1741,13 @@ mem_init(void)
     ram = rom = NULL;
     pages = NULL;
     pages_sz = 0;
-#if DYNAMIC_TABLES
-    page_lookup = NULL;
-    readlookup2 = NULL;
-    writelookup2 = NULL;
 
-#else
     /* Allocate the lookup tables. */
-    page_lookup = (page_t **)malloc((1<<20)*sizeof(page_t *));
+    page_lookup = (page_t **)mem_alloc((1<<20)*sizeof(page_t *));
 
-    readlookup2  = malloc((1<<20)*sizeof(uintptr_t));
+    readlookup2  = (uintptr_t *)mem_alloc((1<<20)*sizeof(uintptr_t));
 
-    writelookup2 = malloc((1<<20)*sizeof(uintptr_t));
-#endif
+    writelookup2 = (uintptr_t *)mem_alloc((1<<20)*sizeof(uintptr_t));
 
     memset(ram_mapped_addr, 0x00, 64 * sizeof(uint32_t));
 }
@@ -1845,14 +1758,15 @@ mem_remap_top(int kb)
 {
     uint32_t start = (mem_size >= 1024) ? mem_size : 1024;
     int size = mem_size - 640;
+    uint32_t i;
 
-    pclog("MEM: remapping top %iKB (mem=%i)\n", kb, mem_size);
+    INFO("MEM: remapping top %iKB (mem=%i)\n", kb, mem_size);
 
     if (mem_size <= 640) return;
 
     if (kb == 0) {
 	/* Called to disable the mapping. */
-	mem_mapping_disable(&ram_remapped_mapping);
+	mem_map_disable(&ram_remapped_mapping);
 
 	return;
     }
@@ -1860,10 +1774,17 @@ mem_remap_top(int kb)
     if (size > kb)
 	size = kb;
 
+    for (i = ((start * 1024) >> 12); i < (((start + size) * 1024) >> 12); i++) {
+	pages[i].mem = &ram[0xA0000 + ((i - ((start * 1024) >> 12)) << 12)];
+	pages[i].write_b = mem_write_ramb_page;
+	pages[i].write_w = mem_write_ramw_page;
+	pages[i].write_l = mem_write_raml_page;
+    }
+
     mem_set_mem_state(start * 1024, size * 1024,
 		      MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-    mem_mapping_set_addr(&ram_remapped_mapping, start * 1024, size * 1024);
-    mem_mapping_set_exec(&ram_remapped_mapping, ram + (start * 1024));
+    mem_map_set_addr(&ram_remapped_mapping, start * 1024, size * 1024);
+    mem_map_set_exec(&ram_remapped_mapping, ram + (start * 1024));
 
     flushmmucache();
 }

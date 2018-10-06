@@ -26,10 +26,8 @@ struct ex_list *exec_list;
 fd_set *global_readfds, *global_writefds, *global_xfds;
 
 
-extern void	pclog(const char *, ...);
+extern void	pclog(int level, const char *, ...);
 extern int	config_get_int(char *, char *, int);
-
-#define printf pclog
 
 
 #ifdef _WIN32
@@ -49,11 +47,11 @@ static int get_dns_addr(struct in_addr *pdns_addr)
             GlobalFree(FixedInfo);
             FixedInfo = NULL;
         }
-        FixedInfo = GlobalAlloc(GPTR, BufLen);
+        FixedInfo = (FIXED_INFO *)GlobalAlloc(GPTR, BufLen);
     }
 	
     if ((ret = GetNetworkParams(FixedInfo, &BufLen)) != ERROR_SUCCESS) {
-        printf("GetNetworkParams failed. ret = %08x\n", (u_int)ret );
+        pclog(0, "GetNetworkParams failed. ret = %08x\n", (u_int)ret );
         if (FixedInfo) {
             GlobalFree(FixedInfo);
             FixedInfo = NULL;
@@ -64,9 +62,9 @@ static int get_dns_addr(struct in_addr *pdns_addr)
     pIPAddr = &(FixedInfo->DnsServerList);
     inet_aton(pIPAddr->IpAddress.String, &tmp_addr);
     *pdns_addr = tmp_addr;
-    printf( " DNS Servers:\n" );
+    pclog(1, " DNS Servers:\n" );
     while ( pIPAddr ) {
-            printf( "  Address: %s\n", pIPAddr ->IpAddress.String );
+            pclog(1, "  Address: %s\n", pIPAddr ->IpAddress.String );
             pIPAddr = pIPAddr ->Next;
     }
     if (FixedInfo) {
@@ -134,7 +132,7 @@ slirp_init(void)
     int i = 0, udp, from, to;
     int rc;
 
-    pclog("%s initializing..\n", category);
+    pclog(1, "%s initializing..\n", category);
 
 #ifdef SLIRP_DEBUG
     //  debug_init("/tmp/slirp.log", DEBUG_DEFAULT);
@@ -182,9 +180,9 @@ debug_init("slirplog.txt",DEBUG_DEFAULT);
 
 	rc = slirp_redir(udp, from, myaddr, to);
 	if (rc == 0)
-		pclog("slirp redir %d -> %d successful\n", from, to);
+		pclog(1, "slirp redir %d -> %d successful\n", from, to);
 	else
-		pclog("slirp redir %d -> %d failed (%d)\n", from, to, rc);
+		pclog(1, "slirp redir %d -> %d failed (%d)\n", from, to, rc);
 
 	i++;
     }

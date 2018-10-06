@@ -8,7 +8,7 @@
  *
  *		String definitions for "Norwegian (Norway)" language.
  *
- * Version:	@(#)VARCem-NO.str	1.0.4	2018/09/23
+ * Version:	@(#)VARCem-NO.str	1.0.5	2018/10/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Tore Sinding Bekkedal, <toresbe@gmail.com<
@@ -46,10 +46,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Do not translate! */
-#define TAG_VERSION	1,0,3
-#define TAG_AUTHOR	"Tore Sinding Bekkedal"
-#define TAG_EMAIL	"toresbe@gmail.com"
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,5
+#define STR_AUTHOR	"Tore Sinding Bekkedal"
+#define STR_EMAIL	"toresbe@gmail.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
 
 /* Messagebox classes (2100.) */
 #define STR_2100	"Feil"
@@ -64,27 +67,24 @@
 #define STR_2202	"PCap kunne ikke tas i bruk, kanskje det ikke kjører?"
 #define STR_2203	"Ingen PCap-enheter funnet"
 #define STR_2204	"Ugyldig PCap-enhet"
-#define STR_2205	"Kunne ikke ta i bruk OpenAL, bekreft at du har følgende bibliotek\ni din programkatalog:\n\nlibopenal-1.dll"
-#define STR_2206	"Kunne ikke ta i bruk FluidSynth, bekreft at du har følgende bibliotek\ni din programkatalog:\n\nlibfluidsynth.dll"
-#define STR_2207	"System out of memory!"
+#define STR_2205	"Kunne ikke ta i bruk %s, bekreft at du har følgende bibliotek\ni din programkatalog:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"Kunne ikke generere diskavtrykkfil: %s"
+#define STR_2300	"System out of memory!"
 #define STR_2301	"Ingen brukbare ROM-avtrykk funnet!"
 #define STR_2302	"Ingen gyldig konfigurasjon funnet.\n\nVil du opprette en ved å se dialogvinduet for innstillinger?"
-#define STR_2303	"Den konfigurerte maskinen:\n\n  %ls\n\ner ikke tilgjengelig.\n\nVil du se dialogvinduet for innstillinger?"
-#define STR_2304	"Det konfigurerte skjermkortet:\n\n  %ls\n\ner ikke tilgjengelig.\n\nVil du se dialogvinduet for innstillinger?"
-#define STR_2305	"Valgte rendermotor '%S' ikke tilgjengelig. Tilbakestille til forvalgt?"
-#define STR_2306	"Hverken ST506 eller ESDI CD-ROM-enheter har noensinne eksistert"
+#define STR_2303	"Den konfigurerte %ls:\n\n  %s\n\ner ikke tilgjengelig.\n\nVil du se dialogvinduet for innstillinger?"
+#define STR_2304	"Valgte rendermotor:\n\n  %s\n\nikke tilgjengelig. Tilbakestille til forvalgt?"
+#define STR_2305        "You must save your settings first!"
+#define STR_2306	"Kunne ikke generere diskavtrykkfil: %ls"
 #define STR_2307	"USB er ikke støttet enda."
-#define STR_2308        "You must save your settings first!"
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Er du sikker på at du vil lagre disse innstillingene?\n\n(En omstart kan kreves for at de skal tre i kraft...)"
 #define STR_2401	"Endringer lagret; omstart emulatoren."
-#define STR_2402	"Den forespurte enheten '%ls' er for tiden merket `under utvikling` og kan lage trøbbel.\n\nEr du sikker på at du vil skru den på?"
+#define STR_2402	"Den forespurte enheten:\n\n  %s\n\ner for tiden merket `under utvikling` og kan lage trøbbel.\n\nEr du sikker på at du vil skru den på?"
 #define STR_2403	"Trykk for å fange musen"
 #define STR_2404	"Trykk F8+F12 for å frigjøre musen"
 #define STR_2405	"Trykk F8+F12 eller midtre museknapp for å frigjøre musen"
@@ -98,11 +98,15 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Avbryt"
+#define STR_YES		"Ja"
+#define STR_NO		"Nei"
 #define STR_CONFIGURE	"Konfigurer"
 #define STR_BROWSE	"Bla igjennom"
 
+
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Ingen"
+#define STR_INTERNAL	"Integrert"
 #define STR_DISABLED	"Deaktivert"
 #define STR_ENABLED	"Aktivert"
 #define STR_OFF		"Av"
@@ -122,19 +126,19 @@
 #define STR_DEVCONF_2	"Enhet:"
 
 
-/* UI: dialog: About (3200.) */
+/* UI dialog: About (3200.) */
 #define STR_ABOUT	"Om VARCem..."
 #define  STR_3201	"Forfattere:"
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker m. fl.\nBasert på tidligere arbeider som 86Box, PCem, MAME, DOSbox og Qemu."
 #define  STR_3203	"Offentliggjort under BSDs treklausulers lisens, og GNUs General Public License (versjon 2 eller høyere) for eksisterende kode importert fra andre prosjekter."
 #define  STR_3204	"Se LICENSE.txt for mer informasjon."
 
-/* UI: dialog: Localization (3210.) */
+/* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Lokalisering"
 #define  STR_3211	"Oversettelser fra engelsk til mindreverdige språk bidratt av disse ekte heltefigurene:"
 
 /* UI dialog: Status (3225.) */
-#define STR_STATUS	"Status"
+/* (Unused now) */
 
 /* UI dialog: Sound Gain (3250.) */
 #define STR_SNDGAIN	"Lydgain"
@@ -183,23 +187,16 @@
 #define  STR_3328	"Wait states:"
 #define  STR_3329	"Minne:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Hent klokkeslett og dato fra vertssystem"
+#define  STR_3331	"Hent klokkeslett og dato fra vertssystem:"
 #define  STR_3332	"Aktiver flytpunktenhet (FPU)"
 #define  STR_3333	"Dynamisk rekompilering"
 #define  STR_3334	"KB"
 #define  STR_3335	"Forvalgt"
+#define  STR_3336	"Aktivert (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Video:"
-#define  STR_3351	"Video speed:"
-#define  STR_3352	"Voodoo-grafikk"
-#define  STR_3353	"Forvalgt"
-#define  STR_3354	"8-biters"
-#define  STR_3355	"Treg 16-biters"
-#define  STR_3356	"Rask 16-biters"
-#define  STR_3357	"Treg VLB/PCI"
-#define  STR_3358	"Mid. VLB/PCI"
-#define  STR_3359	"Rask VLB/PCI"
+#define  STR_3351	"Voodoo-grafikk"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Mus:"
@@ -232,8 +229,8 @@
 /* UI dialog: Settings (Other Devices, 3475.) */
 #define  STR_3475	"SCSI-kontroller:"
 #define  STR_3476	"HD-kontroller:"
-#define  STR_3477	"Tredje IDE:"
-#define  STR_3478	"Fjerde IDE:"
+#define  STR_3477	"Tredje IDE"
+#define  STR_3478	"Fjerde IDE"
 #define  STR_3479	"ISABugger-enhet"
 #define  STR_3480	"ISA Memory Expansion"
 #define  STR_3481	"ISA Clock/RTC Card"
@@ -254,11 +251,9 @@
 #define  STR_3512	"Selvvalgt (stor)..."
 #define  STR_3515	"ST506"
 #define  STR_3516	"ESDI"
-#define  STR_3517	"IDE (kun PIO)"
-#define  STR_3518	"IDE (PIO+DMA)"
-#define  STR_3519	"SCSI"
-#define  STR_3520	"SCSI (flyttbar)"
-#define  STR_3521	"USB"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Legg til platelager"
@@ -289,14 +284,12 @@
 #define  STR_3577	"ZIP-diskstasjoner:"
 #define  STR_3578	"ZIP 250"
 #define  STR_3579	"Hastighet"
-#define  STR_3580	"<Reserved>"
-#define  STR_3581	"<Reserved>"
-#define  STR_3582	"ATAPI (kun PIO)"
-#define  STR_3583	"ATAPI (PIO+DMA)"
-#define  STR_3584	"SCSI"
-#define  STR_3585	"USB"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
 
-/* UI dialog: status bar (3900.) */
+
+/* UI: Status Bar (3900.) */
 #define STR_3900	"(tom)"
 #define STR_3901	"(vertsdisk %c:)"
 #define STR_3902	" [Skrivebeskyttet]"
@@ -304,6 +297,7 @@
 #define STR_3904	"&Last inn avtrykk.."
 #define STR_3905	"Oppdate&re avtrykk"
 #define STR_3906	"Løs &ut"
+#define STR_3907	"(&N) Varsle diskbytte"
 
 #define STR_3910	"Diskett %i (%s): %ls"
 #define STR_3911	"Alle avtrykk\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Avanserte sektoravtrykk\0*.imd;*.json;*.td0\0Enkle sektoravtrykk\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux-avtrykk\0*.fdi\0Overflateavtrykk\0*.86f\0Alle filer\0*.*\0"
@@ -311,24 +305,21 @@
 #define STR_3913	"Overflateavtrykk\0*.86f\0"
 #define STR_3914	"(&x) Eksporter til 86F..."
 
-#define STR_3920	"CD-ROM %i (%s): %s"
+#define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Vertens CD/DVD-enhet (%c:)"
 #define STR_3922	"CD-ROM-avtrykk\0*.iso;*.cue\0Alle filer (*.*)\0*.*\0"
 #define STR_3923	"&Mute"
 
-#define STR_3930	"Platelager (%s)"
+#define STR_3930	"Platelager %i (%ls): %ls"
 
-#define STR_3940	"Flyttbar disk %i: %ls"
-#define STR_3941	"(&N) Varsle diskbytte"
-
-#define STR_3950	"ZIP %i (%03i): %ls"
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
 #define STR_3951	"ZIP-avtrykk\0*.im?;*.zdi\0Alle filer\0*.*\0"
 #define STR_3952	"ZIP-avtrykk\0*.im?;*.zdi\0"
-#define STR_3960	"Nettverk"
-#define STR_3970	"Lyd"
+#define STR_3960	"Nettverk (%s)"
+#define STR_3970	"Lyd (%s)"
 
 
-/* Menu: Action (4000.) */
+/* UI menu: Action (4000.) */
 #define STR_ACTION	"H&andlinger"
 #define  STR_4001	"&Hard omstart"
 #define  STR_4002	"&Kontroll+Alt+Del"
@@ -337,25 +328,25 @@
 #define  STR_4005	"&Pause"
 #define  STR_4006	"(&x) Avslutt"
 
-/* Menu: View (4010.) */
+
+/* UI menu: View (4010.) */
 #define STR_VIEW	"&Vis"
 #define  STR_4011	"Skale&rbart vindu"
 #define  STR_4012	"Lagr&e størrelse && posisjon"
 #define  STR_4013	"&Fullskjerm\tKontroll+Alt+PageUP"
 #define  STR_4014	"Høyre Kontroll g&ir venstre Alt"
-#define  STR_4015	"Oppdater stat&uslinjeikoner"
 
-/* Menu: View > Renderer */
+/* UI menu: View > Renderer (4020.) */
 #define  STR_4020	"Re&nderer"
 
-/* Menu: View > Window Scale Factor */
+/* UI menu: View > Window Scale Factor (4030.) */
 #define  STR_4030	"(&w) Vinduskala"
 #define   STR_4031	"&0.5x"
 #define   STR_4032	"&1x"
 #define   STR_4033	"1.&5x"
 #define   STR_4034	"&2x"
 
-/* Menu: View > Fullscreen Stretch Mode */
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
 #define  STR_4040	"Fullskjerm &strukket modus"
 #define   STR_4041	"&Fullskjerm strukket"
 #define   STR_4042	"&4:3"
@@ -363,14 +354,15 @@
 #define   STR_4044	"Heltallskaler&ing"
 #define   STR_4045	"Faktis&k størrelse"
 
-/* Menu: Display (4050.) */
+
+/* UI menu: Display (4050.) */
 #define STR_DISPLAY	"(&d) Skjerm"
 #define  STR_4051	"&Omvendt video"
 #define  STR_4052	"Bruk &overskanning"
 #define  STR_4053	"Tving 4:3 bildeforh&old"
 #define  STR_4054	"(&c) Endre kontrast for monokrom skjerm"
 
-/* Menu: Display > Display Type */
+/* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"Skjerm&type"
 #define   STR_4061	"(&c) RGB fargeskjerm"
 #define   STR_4062	"&Gråskalaskjerm"
@@ -378,23 +370,26 @@
 #define   STR_4064	"&Grønn skjerm"
 #define   STR_4065	"(&w) Hvit skjerm"
 
-/* Menu: Display > Grayscale Conversion Type */
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
 #define  STR_GRAYSCALE	"&Gråskala konverteringsmetode"
 #define   STR_4071	"BT&601 (NTSC/PAL)"
 #define   STR_4072	"BT&709 (HDTV)"
 #define   STR_4073	"f&argesnitt"
 
-/* Menu: Tools (4080.) */
+
+/* UI menu: Tools (4080.) */
 #define STR_TOOLS	"Verk&tøy"
 #define  STR_4081	"Inn&stillinger"
 #define  STR_4082	"Språkva&lg"
 #define	 STR_4083	"L&ogging"
-#define  STR_4084	"(&c) Last inn konfigurasjon"
-#define  STR_4085	"L&agre konfigurasjon"
-#define  STR_4086	"Stat&us"
-#define  STR_4087	"&Ta skjermbilde\tKontroll+Hjem"
+#define  STR_4084	"Log Breakpoint"
+#define  STR_4085	"Toggle %s logging"
+#define  STR_4086	"(&c) Last inn konfigurasjon"
+#define  STR_4087	"L&agre konfigurasjon"
+#define  STR_4088	"&Ta skjermbilde"
 
-/* Menu: Help (4090.) */
+
+/* UI menu: Help (4090.) */
 #define STR_HELP	"&Hjelp"
 #define  STR_4091	"Om V&ARCem"
 

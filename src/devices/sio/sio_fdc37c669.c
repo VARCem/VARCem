@@ -8,7 +8,7 @@
  *
  *		Implementation of the SMC FDC37C669 Super I/O Chip.
  *
- * Version:	@(#)sio_fdc37c669.c	1.0.7	2018/05/06
+ * Version:	@(#)sio_fdc37c669.c	1.0.8	2018/09/19
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -56,6 +56,7 @@ static uint8_t fdc37c669_regs[42];
 static uint8_t tries;
 static fdc_t *fdc37c669_fdc;
 
+
 static uint16_t make_port(uint8_t reg)
 {
 	uint16_t p = 0;
@@ -92,7 +93,6 @@ void fdc37c669_write(uint16_t port, uint8_t val, void *priv)
 	uint8_t index = (port & 1) ? 0 : 1;
 	uint8_t valxor = 0;
 	uint8_t max = 42;
-        /* pclog("fdc37c669_write : port=%04x reg %02X = %02X locked=%i\n", port, fdc37c669_curreg, val, fdc37c669_locked); */
 
 	if (index)
 	{
@@ -144,7 +144,7 @@ process_value:
 			if (valxor & 3)
 			{
 				ide_pri_disable();
-				if ((fdc37c669_regs[0] & 3) == 2)  ide_pri_enable_ex();
+				if ((fdc37c669_regs[0] & 3) == 2)  ide_pri_enable();
 				break;
 			}
 #endif
@@ -172,24 +172,20 @@ process_value:
 			if (valxor & 8)
 			{
 #if 0
-				/* pclog("Removing UART1\n"); */
 				serial_remove(1);
 #endif
 				if ((fdc37c669_regs[2] & 8) && (fdc37c669_regs[0x24] >= 0x40))
 				{
-					/* pclog("UART1 init (%02X, %i)\n", make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4); */
 					serial_setup(1, make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4);
 				}
 			}
 			if (valxor & 0x80)
 			{
 #if 0
-				/* pclog("Removing UART2\n"); */
 				serial_remove(2);
 #endif
 				if ((fdc37c669_regs[2] & 0x80) && (fdc37c669_regs[0x25] >= 0x40))
 				{
-					/* pclog("UART2 init (%02X, %i)\n", make_port(0x25), fdc37c669_regs[0x28] & 0x0F); */
 					serial_setup(2, make_port(0x25), fdc37c669_regs[0x28] & 0x0F);
 				}
 			}
@@ -227,7 +223,7 @@ process_value:
 						ide_set_side(0, make_port(0x22));
 						break;
 				}
-				if ((fdc37c669_regs[0] & 3) == 2)  ide_pri_enable_ex();
+				if ((fdc37c669_regs[0] & 3) == 2)  ide_pri_enable();
 			}
 #endif
 			break;
@@ -245,12 +241,10 @@ process_value:
 			if (valxor & 0xfe)
 			{
 #if 0
-				/* pclog("Removing UART1\n"); */
 				serial_remove(1);
 #endif
 				if ((fdc37c669_regs[2] & 8) && (fdc37c669_regs[0x24] >= 0x40))
 				{
-					/* pclog("UART1 init (%02X, %i)\n", make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4); */
 					serial_setup(1, make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4);
 				}
 			}
@@ -259,12 +253,10 @@ process_value:
 			if (valxor & 0xfe)
 			{
 #if 0
-				/* pclog("Removing UART2\n"); */
 				serial_remove(2);
 #endif
 				if ((fdc37c669_regs[2] & 0x80) && (fdc37c669_regs[0x25] >= 0x40))
 				{
-					/* pclog("UART2 init (%02X, %i)\n", make_port(0x25), fdc37c669_regs[0x28] & 0x0F); */
 					serial_setup(2, make_port(0x25), fdc37c669_regs[0x28] & 0x0F);
 				}
 			}
@@ -273,24 +265,20 @@ process_value:
 			if (valxor & 0xf)
 			{
 #if 0
-				/* pclog("Removing UART2\n"); */
 				serial_remove(2);
 #endif
 				if ((fdc37c669_regs[2] & 0x80) && (fdc37c669_regs[0x25] >= 0x40))
 				{
-					/* pclog("UART2 init (%02X, %i)\n", make_port(0x25), fdc37c669_regs[0x28] & 0x0F); */
 					serial_setup(2, make_port(0x25), fdc37c669_regs[0x28] & 0x0F);
 				}
 			}
 			if (valxor & 0xf0)
 			{
 #if 0
-				/* pclog("Removing UART1\n"); */
 				serial_remove(1);
 #endif
 				if ((fdc37c669_regs[2] & 8) && (fdc37c669_regs[0x24] >= 0x40))
 				{
-					/* pclog("UART1 init (%02X, %i)\n", make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4); */
 					serial_setup(1, make_port(0x24), (fdc37c669_regs[0x28] & 0xF0) >> 4);
 				}
 			}
@@ -302,8 +290,6 @@ uint8_t fdc37c669_read(uint16_t port, void *priv)
 {
 	uint8_t index = (port & 1) ? 0 : 1;
 
-        /* pclog("fdc37c669_read : port=%04x reg %02X locked=%i\n", port, fdc37c669_curreg, fdc37c669_locked); */
-
 	if (!fdc37c669_locked)
 	{
 		return 0xFF;
@@ -313,7 +299,6 @@ uint8_t fdc37c669_read(uint16_t port, void *priv)
 		return fdc37c669_curreg;
 	else
 	{
-		/* pclog("0x03F1: %02X\n", fdc37c669_regs[fdc37c669_curreg]); */
 		if ((fdc37c669_curreg < 0x18) && (fdc37c669_rw_locked))  return 0xff;
 		return fdc37c669_regs[fdc37c669_curreg];
 	}
@@ -370,11 +355,9 @@ void fdc37c669_reset(void)
 
 void fdc37c669_init()
 {
-        fdc37c669_fdc = device_add(&fdc_at_smc_device);
+        fdc37c669_fdc = (fdc_t *)device_add(&fdc_at_smc_device);
 
         io_sethandler(0x3f0, 0x0002, fdc37c669_read, NULL, NULL, fdc37c669_write, NULL, NULL,  NULL);
 
 	fdc37c669_reset();
-
-	pci_reset_handler.super_io_reset = fdc37c669_reset;
 }

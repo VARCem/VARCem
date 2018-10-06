@@ -29,7 +29,7 @@
  *			70 - IRQ
  *			74 - DMA
  *
- * Version:	@(#)sio_um8669f.c	1.0.7	2018/05/06
+ * Version:	@(#)sio_um8669f.c	1.0.8	2018/09/19
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -122,7 +122,6 @@ void um8669f_pnp_write(uint16_t port, uint8_t val, void *p)
                         um8669f->cur_device = val & 7;
                 else
                 {
-/*                        pclog("Write UM8669F %02x [%02x] %02x\n", um8669f->cur_reg, um8669f->cur_device, val); */
                         switch (um8669f->cur_reg)
                         {
                                 case REG_ENABLE:
@@ -150,8 +149,6 @@ void um8669f_pnp_write(uint16_t port, uint8_t val, void *p)
 				break;
                         }
 
-			/* pclog("UM8669F: Write %02X to [%02X][%02X]...\n", val, um8669f->cur_device, um8669f->cur_reg); */
-                        
                         switch (um8669f->cur_device)
                         {
                                 case DEV_FDC:
@@ -200,8 +197,6 @@ uint8_t um8669f_pnp_read(uint16_t port, void *p)
 {
         um8669f_t *um8669f = (um8669f_t *)p;
         
-/*        pclog("Read UM8669F %02x\n", um8669f->cur_reg); */
-
         switch (um8669f->cur_reg)
         {
                 case REG_DEVICE:
@@ -243,7 +238,6 @@ void um8669f_write(uint16_t port, uint8_t val, void *p)
                 }
                 else
                 {
-/*                        pclog("Write UM8669f register %02x %02x %04x:%04x %i\n", um8669f_curreg, val, CS,cpu_state.pc, ins); */
                         um8669f->regs_108[um8669f->cur_reg_108] = val;
 
 			if (um8669f->cur_reg_108 == 0xc1) {
@@ -270,7 +264,6 @@ uint8_t um8669f_read(uint16_t port, void *p)
 {
         um8669f_t *um8669f = (um8669f_t *)p;
         
-/*        pclog("um8669f_read : port=%04x reg %02X locked=%i  %02x\n", port, um8669f_curreg, um8669f_locked,  um8669f_regs[um8669f_curreg]); */
         if (um8669f->locked)
                 return 0xff;
         
@@ -335,11 +328,9 @@ void um8669f_reset(void)
 
 void um8669f_init(void)
 {
-	um8669f_global.fdc = device_add(&fdc_at_device);
+	um8669f_global.fdc = (fdc_t *)device_add(&fdc_at_device);
 
         io_sethandler(0x0108, 0x0002, um8669f_read, NULL, NULL, um8669f_write, NULL, NULL,  &um8669f_global);
 
 	um8669f_reset();
-
-	pci_reset_handler.super_io_reset = um8669f_reset;
 }

@@ -32,7 +32,7 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.4	2018/09/02
+ * Version:	@(#)isamem.c	1.0.5	2018/09/22
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -84,8 +84,6 @@
 #include "isamem.h"
 
 
-#define ISAMEM_DEBUG	0
-
 #define RAM_TOPMEM	(640 << 10)		/* end of low memory */
 #define RAM_UMAMEM	(384 << 10)		/* upper memory block */
 #define RAM_EXTMEM	(1024 << 10)		/* start of high memory */
@@ -101,7 +99,7 @@ typedef struct {
     uint8_t	frame;				/* (varies with board) */
     char	pad;
     uint8_t	*addr;				/* start addr in EMS RAM */
-    mem_mapping_t mapping;			/* mapping entry for page */
+    mem_map_t	mapping;			/* mapping entry for page */
 } emsreg_t;
 
 typedef struct {
@@ -126,8 +124,8 @@ typedef struct {
 
     uint8_t	*ram;				/* allocated RAM buffer */
 
-    mem_mapping_t low_mapping;			/* mapping for low mem */
-    mem_mapping_t high_mapping;			/* mapping for high mem */
+    mem_map_t	low_mapping;			/* mapping for low mem */
+    mem_map_t	high_mapping;			/* mapping for high mem */
 
     emsreg_t	ems[EMS_MAXPAGE];		/* EMS controller registers */
 } memdev_t;
@@ -146,7 +144,7 @@ static const device_t *instance[ISAMEM_MAX] = {
 static uint8_t
 ram_readb(uint32_t addr, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
     uint8_t ret = 0xff;
 
@@ -161,7 +159,7 @@ ram_readb(uint32_t addr, void *priv)
 static uint16_t
 ram_readw(uint32_t addr, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
     uint16_t ret = 0xffff;
 
@@ -176,7 +174,7 @@ ram_readw(uint32_t addr, void *priv)
 static void
 ram_writeb(uint32_t addr, uint8_t val, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
 
     /* Write the data. */
@@ -188,7 +186,7 @@ ram_writeb(uint32_t addr, uint8_t val, void *priv)
 static void
 ram_writew(uint32_t addr, uint16_t val, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
 
     /* Write the data. */
@@ -200,7 +198,7 @@ ram_writew(uint32_t addr, uint16_t val, void *priv)
 static uint8_t
 ems_readb(uint32_t addr, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
     uint8_t ret = 0xff;
     int vpage;
@@ -210,9 +208,6 @@ ems_readb(uint32_t addr, void *priv)
 
     /* Grab the data. */
     ret = *(uint8_t *)(dev->ems[vpage].addr + (addr - map->base));
-#if ISAMEM_DEBUG
-    if ((addr % 4096)==0) pclog("EMS readb(%06x) = %02x\n",addr-map->base,ret);
-#endif
 
     return(ret);
 }
@@ -222,7 +217,7 @@ ems_readb(uint32_t addr, void *priv)
 static uint16_t
 ems_readw(uint32_t addr, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
     uint16_t ret = 0xffff;
     int vpage;
@@ -232,9 +227,6 @@ ems_readw(uint32_t addr, void *priv)
 
     /* Grab the data. */
     ret = *(uint16_t *)(dev->ems[vpage].addr + (addr - map->base));
-#if ISAMEM_DEBUG
-    if ((addr % 4096)==0) pclog("EMS readw(%06x) = %04x\n",addr-map->base,ret);
-#endif
 
     return(ret);
 }
@@ -244,7 +236,7 @@ ems_readw(uint32_t addr, void *priv)
 static void
 ems_writeb(uint32_t addr, uint8_t val, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
     int vpage;
 
@@ -252,9 +244,6 @@ ems_writeb(uint32_t addr, uint8_t val, void *priv)
     vpage = ((addr & 0xffff) / EMS_PGSIZE);
 
     /* Write the data. */
-#if ISAMEM_DEBUG
-    if ((addr % 4096)==0) pclog("EMS writeb(%06x, %02x)\n",addr-map->base,val);
-#endif
     *(uint8_t *)(dev->ems[vpage].addr + (addr - map->base)) = val;
 }
 
@@ -263,7 +252,7 @@ ems_writeb(uint32_t addr, uint8_t val, void *priv)
 static void
 ems_writew(uint32_t addr, uint16_t val, void *priv)
 {
-    mem_mapping_t *map = (mem_mapping_t *)priv;
+    mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
     int vpage;
 
@@ -271,9 +260,6 @@ ems_writew(uint32_t addr, uint16_t val, void *priv)
     vpage = ((addr & 0xffff) / EMS_PGSIZE);
 
     /* Write the data. */
-#if ISAMEM_DEBUG
-    if ((addr % 4096)==0) pclog("EMS writew(%06x, %04x)\n",addr-map->base,val);
-#endif
     *(uint16_t *)(dev->ems[vpage].addr + (addr - map->base)) = val;
 }
 
@@ -301,9 +287,7 @@ ems_read(uint16_t port, void *priv)
 		break;
     }
 
-#if ISAMEM_DEBUG
-    pclog("ISAMEM: read(%04x) = %02x)\n", port, ret);
-#endif
+    DBGLOG(2, "ISAMEM: read(%04x) = %02x)\n", port, ret);
 
     return(ret);
 }
@@ -320,9 +304,7 @@ ems_write(uint16_t port, uint8_t val, void *priv)
     vpage = (port / EMS_PGSIZE);
     port &= (EMS_PGSIZE - 1);
 
-#if ISAMEM_DEBUG
-    pclog("ISAMEM: write(%04x, %02x) page=%d\n", port, val, vpage);
-#endif
+    DBGLOG(2, "ISAMEM: write(%04x, %02x) page=%d\n", port, val, vpage);
 
     switch(port - dev->base_addr) {
 	case 0x0000:		/* page mapping registers */
@@ -342,14 +324,14 @@ ems_write(uint16_t port, uint8_t val, void *priv)
 
 			if (dev->ems[vpage].enabled) {
 				/* Update the EMS RAM address for this page. */
-				mem_mapping_set_exec(&dev->ems[vpage].mapping,
-						     dev->ems[vpage].addr);
+				mem_map_set_exec(&dev->ems[vpage].mapping,
+						 dev->ems[vpage].addr);
 
 				/* Enable this page. */
-				mem_mapping_enable(&dev->ems[vpage].mapping);
+				mem_map_enable(&dev->ems[vpage].mapping);
 			} else {
 				/* Disable this page. */
-				mem_mapping_disable(&dev->ems[vpage].mapping);
+				mem_map_disable(&dev->ems[vpage].mapping);
 			}
 		}
 		break;
@@ -373,7 +355,7 @@ ems_write(uint16_t port, uint8_t val, void *priv)
 		 * 80 c0 e0  DC000
 		 * 80 c0 e0  E0000
                  */
-pclog("EMS: write(%02x) to register 1 !\n");
+DEBUG("EMS: write(%02x) to register 1 !\n");
 		dev->ems[vpage].frame = val;
 		if (val)
 			dev->flags |= FLAG_CONFIG;
@@ -396,7 +378,7 @@ isamem_init(const device_t *info)
     /* Find our device and create an instance. */
     for (i = 0; i < ISAMEM_MAX; i++)
 	if (instance[i] == info) break;
-    dev = (memdev_t *)malloc(sizeof(memdev_t));
+    dev = (memdev_t *)mem_alloc(sizeof(memdev_t));
     memset(dev, 0x00, sizeof(memdev_t));
     dev->name = info->name;
     dev->board = info->local;
@@ -456,31 +438,31 @@ dev->frame_addr = 0xE0000;
     dev->start_addr <<= 10;
 
     /* Say hello! */
-    pclog("ISAMEM: %s (%iKB", info->name, dev->total_size);
+    INFO("ISAMEM: %s (%iKB", info->name, dev->total_size);
     if (tot && (dev->total_size != tot))
-	pclog(", %iKB for RAM", tot);
-    if (dev->flags & FLAG_FAST) pclog(", FAST");
-    if (dev->flags & FLAG_WIDE) pclog(", 16BIT");
-    pclog(")\n");
+	INFO(", %iKB for RAM", tot);
+    if (dev->flags & FLAG_FAST) INFO(", FAST");
+    if (dev->flags & FLAG_WIDE) INFO(", 16BIT");
+    INFO(")\n");
 
     /* Force (back to) 8-bit bus if needed. */
     if (dev->flags & FLAG_WIDE) {
 	if (AT) {
 		if (! cpu_16bitbus)
-			pclog("ISAMEM: *WARNING* this board will slow down your PC!\n");
+			INFO("ISAMEM: *WARNING* this board will slow down your PC!\n");
 	} else {
-		pclog("ISAMEM: not AT+ system, forcing 8-bit mode!\n");
+		INFO("ISAMEM: not AT+ system, forcing 8-bit mode!\n");
 		dev->flags &= ~FLAG_WIDE;
 	}
     } else {
 	if (AT) {
-		pclog("ISAMEM: *WARNING* this board will slow down your PC!\n");
+		INFO("ISAMEM: *WARNING* this board will slow down your PC!\n");
 	}
     }
 
     /* Allocate and initialize our RAM. */
     k = dev->total_size << 10;
-    dev->ram = (uint8_t *)malloc(k);
+    dev->ram = (uint8_t *)mem_alloc(k);
     memset(dev->ram, 0x00, k);
     ptr = dev->ram;
 
@@ -510,18 +492,18 @@ dev->frame_addr = 0xE0000;
 		 */
 		if (t > tot)
 			t = tot;
-		pclog("ISAMEM: RAM at %05iKB (%iKB)\n", addr>>10, t>>10);
+		INFO("ISAMEM: RAM at %05iKB (%iKB)\n", addr>>10, t>>10);
 
 		/* Create, initialize and enable the low-memory mapping. */
-		mem_mapping_add(&dev->low_mapping, addr, t,
-				ram_readb,
-				(dev->flags&FLAG_WIDE) ? ram_readw : NULL,
-				NULL,
-				ram_writeb, 
-				(dev->flags&FLAG_WIDE) ? ram_writew : NULL,
-				NULL,
-				ptr, MEM_MAPPING_EXTERNAL, &dev->low_mapping);
-		mem_mapping_set_dev(&dev->low_mapping, dev);
+		mem_map_add(&dev->low_mapping, addr, t,
+			    ram_readb,
+			    (dev->flags&FLAG_WIDE) ? ram_readw : NULL,
+			    NULL,
+			    ram_writeb, 
+			    (dev->flags&FLAG_WIDE) ? ram_writew : NULL,
+			    NULL,
+			    ptr, MEM_MAPPING_EXTERNAL, &dev->low_mapping);
+		mem_map_set_dev(&dev->low_mapping, dev);
 
 		/* Tell the memory system this is external RAM. */
 		mem_set_mem_state(addr, t,
@@ -543,19 +525,17 @@ dev->frame_addr = 0xE0000;
 		 */
 		t = RAM_UMAMEM;		/* 384KB */
 
-		pclog("ISAMEM: RAM at %05iKB (%iKB)\n", addr>>10, t>>10);
+		INFO("ISAMEM: RAM at %05iKB (%iKB)\n", addr>>10, t>>10);
 
 		/* Update and enable the remap. */
-		mem_mapping_del(&ram_remapped_mapping);
-		mem_mapping_add(&ram_remapped_mapping,
-				addr + tot, t,
-				ram_readb, ram_readw, NULL,
-				ram_writeb, ram_writew, NULL,
-				ptr, MEM_MAPPING_EXTERNAL,
-				&ram_remapped_mapping);
-       		mem_mapping_set_exec(&ram_remapped_mapping, ptr);
-		mem_mapping_set_dev(&ram_remapped_mapping, dev);
-		mem_mapping_disable(&ram_remapped_mapping);
+		mem_map_del(&ram_remapped_mapping);
+		mem_map_add(&ram_remapped_mapping, addr + tot, t,
+			    ram_readb, ram_readw, NULL,
+			    ram_writeb, ram_writew, NULL,
+			    ptr, MEM_MAPPING_EXTERNAL, &ram_remapped_mapping);
+       		mem_map_set_exec(&ram_remapped_mapping, ptr);
+		mem_map_set_dev(&ram_remapped_mapping, dev);
+		mem_map_disable(&ram_remapped_mapping);
 
 		/* Tell the memory system this is external RAM. */
 		mem_set_mem_state(addr + tot, t,
@@ -577,14 +557,13 @@ dev->frame_addr = 0xE0000;
      */
     if (AT && addr > 0 && tot > 0) {
 	t = tot;
-	pclog("ISAMEM: RAM at %05iKB (%iKB)\n", addr>>10, t>>10);
+	INFO("ISAMEM: RAM at %05iKB (%iKB)\n", addr>>10, t>>10);
 
 	/* Create, initialize and enable the high-memory mapping. */
-	mem_mapping_add(&dev->high_mapping, addr, t,
-			ram_readb, ram_readw, NULL,
-			ram_writeb, ram_writew, NULL,
-			ptr, MEM_MAPPING_EXTERNAL, &dev->high_mapping);
-	mem_mapping_set_dev(&dev->high_mapping, dev);
+	mem_map_add(&dev->high_mapping, addr, t,
+		    ram_readb, ram_readw, NULL, ram_writeb, ram_writew, NULL,
+		    ptr, MEM_MAPPING_EXTERNAL, &dev->high_mapping);
+	mem_map_set_dev(&dev->high_mapping, dev);
 
 	/* Tell the memory system this is external RAM. */
 	mem_set_mem_state(addr, t, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
@@ -606,11 +585,11 @@ dev->frame_addr = 0xE0000;
 	dev->ems_start = ptr - dev->ram;
 	dev->ems_size = t >> 10;
 	dev->ems_pages = t / EMS_PGSIZE;
-	pclog("ISAMEM: EMS enabled, I/O=%04XH, %iKB (%i pages)",
+	INFO("ISAMEM: EMS enabled, I/O=%04XH, %iKB (%i pages)",
 		dev->base_addr, dev->ems_size, dev->ems_pages);
 	if (dev->frame_addr > 0)
-		pclog(", Frame=%05XH", dev->frame_addr);
-	pclog("\n");
+		INFO(", Frame=%05XH", dev->frame_addr);
+	INFO("\n");
 
 	/*
 	 * For each supported page (we can have a maximum of 4),
@@ -619,20 +598,20 @@ dev->frame_addr = 0xE0000;
 	 */
 	for (i = 0; i < EMS_MAXPAGE; i++) {
 		/* Create and initialize a page mapping. */
-		mem_mapping_add(&dev->ems[i].mapping,
-				dev->frame_addr + (EMS_PGSIZE*i), EMS_PGSIZE,
-				ems_readb,
-				(dev->flags&FLAG_WIDE) ? ems_readw : NULL,
-				NULL,
-				ems_writeb, 
-				(dev->flags&FLAG_WIDE) ? ems_writew : NULL,
-				NULL,
-				ptr, MEM_MAPPING_EXTERNAL,
-				&dev->ems[i].mapping);
-		mem_mapping_set_dev(&dev->ems[i].mapping, dev);
+		mem_map_add(&dev->ems[i].mapping,
+			    dev->frame_addr + (EMS_PGSIZE*i), EMS_PGSIZE,
+			    ems_readb,
+			    (dev->flags&FLAG_WIDE) ? ems_readw : NULL,
+			    NULL,
+			    ems_writeb, 
+			    (dev->flags&FLAG_WIDE) ? ems_writew : NULL,
+			    NULL,
+			    ptr, MEM_MAPPING_EXTERNAL,
+			    &dev->ems[i].mapping);
+		mem_map_set_dev(&dev->ems[i].mapping, dev);
 
 		/* For now, disable it. */
-		mem_mapping_disable(&dev->ems[i].mapping);
+		mem_map_disable(&dev->ems[i].mapping);
 
 		/* Set up an I/O port handler. */
 		io_sethandler(dev->base_addr + (EMS_PGSIZE*i), 2,

@@ -15,7 +15,7 @@
  *		printer mechanics. This would lead to a page being 66 lines
  *		of 80 characters each.
  *
- * Version:	@(#)prt_text.c	1.0.2	2018/09/02
+ * Version:	@(#)prt_text.c	1.0.3	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -149,7 +149,7 @@ dump_page(prnt_t *dev)
     /* Create the file. */
     fp = plat_fopen(path, L"a");
     if (fp == NULL) {
-	pclog("PRNT: unable to create print page '%ls'\n", path);
+	ERRLOG("PRNT: unable to create print page '%ls'\n", path);
 	return;
     }
     fseek(fp, 0, SEEK_END);
@@ -207,9 +207,9 @@ reset_printer(prnt_t *dev)
     dev->max_chars = (int) ((dev->page_width - dev->left_margin - dev->right_margin) * dev->cpi);
     dev->max_lines = (int) ((dev->page_height -dev->top_margin - dev->bot_margin) * dev->lpi);
 
-    pclog("PRNT: width=%.1fin,height=%.1fin cpi=%i lpi=%i cols=%i lines=%i\n",
-	dev->page_width, dev->page_height, (int)dev->cpi,
-	(int)dev->lpi, dev->max_chars, dev->max_lines);
+    INFO("PRNT: width=%.1fin,height=%.1fin cpi=%i lpi=%i cols=%i lines=%i\n",
+	 dev->page_width, dev->page_height, (int)dev->cpi,
+	 (int)dev->lpi, dev->max_chars, dev->max_lines);
 
     dev->curr_x = dev->curr_y = 0;
 
@@ -338,6 +338,8 @@ write_data(uint8_t val, void *priv)
 {
     prnt_t *dev = (prnt_t *)priv;
 
+    if (dev == NULL) return;
+
     dev->data = val;
 }
 
@@ -346,6 +348,8 @@ static void
 write_ctrl(uint8_t val, void *priv)
 {
     prnt_t *dev = (prnt_t *)priv;
+
+    if (dev == NULL) return;
 
     /* set autofeed value */
     dev->autofeed = val & 0x02 ? 1 : 0;
@@ -376,17 +380,20 @@ static uint8_t
 read_status(void *priv)
 {
     prnt_t *dev = (prnt_t *)priv;
+    uint8_t ret = 0xff;
 
-    uint8_t status = (dev->ack ? 0x00 : 0x40) |
-		     (dev->select ? 0x10 : 0x00) |
-		     (dev->busy ? 0x00 : 0x80) |
-		     (dev->int_pending ? 0x00 : 0x04) |
-		     (dev->error ? 0x00 : 0x08);
+    if (dev == NULL) return(ret);
+
+    ret = (dev->ack ? 0x00 : 0x40) |
+	  (dev->select ? 0x10 : 0x00) |
+	  (dev->busy ? 0x00 : 0x80) |
+	  (dev->int_pending ? 0x00 : 0x04) |
+	  (dev->error ? 0x00 : 0x08);
 
     /* Clear ACK after reading status. */
     dev->ack = 0;
 
-    return(status);
+    return(ret);
 }
 
 
@@ -396,26 +403,23 @@ prnt_init(const lpt_device_t *info)
     prnt_t *dev;
 
     /* Initialize a device instance. */
-    dev = malloc(sizeof(prnt_t));
+    dev = (prnt_t *)mem_alloc(sizeof(prnt_t));
     memset(dev, 0x00, sizeof(prnt_t));
     dev->name = info->name;
 
-    pclog("PRNT: LPT printer '%s' initializing\n", dev->name);
+    INFO("PRNT: LPT printer '%s' initializing\n", dev->name);
 
     /* Initialize parameters. */
     reset_printer(dev);
 
     /* Create a page buffer. */
-    dev->page = (psurface_t *)malloc(sizeof(psurface_t));
+    dev->page = (psurface_t *)mem_alloc(sizeof(psurface_t));
     dev->page->w = dev->max_chars;
     dev->page->h = dev->max_lines;
-    dev->page->chars = (char *)malloc(dev->page->w * dev->page->h);
+    dev->page->chars = (char *)mem_alloc(dev->page->w * dev->page->h);
     memset(dev->page->chars, 0x00, dev->page->w * dev->page->h);
 
-#if 0
-    pclog("PRNT: created a virtual %ix%i page.\n",
-			dev->page->w, dev->page->h);
-#endif
+    DEBUG("PRNT: created a virtual %ix%i page.\n", dev->page->w, dev->page->h);
 
     return(dev);
 }

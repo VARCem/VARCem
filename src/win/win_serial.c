@@ -417,7 +417,7 @@ bhtty_open(char *port, int tmo)
     DWORD d;
 
     /* First things first... create a control block. */
-    if ((pp = (BHTTY *)malloc(sizeof(BHTTY))) == NULL) {
+    if ((pp = (BHTTY *)mem_alloc(sizeof(BHTTY))) == NULL) {
 	pclog("%s: out of memory!\n", port);
 	return(NULL);
     }

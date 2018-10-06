@@ -8,7 +8,7 @@
  *
  *		Implementation of the WD76C10 system controller.
  *
- * Version:	@(#)m_at_wd76c10.c	1.0.8	2018/05/06
+ * Version:	@(#)m_at_wd76c10.c	1.0.9	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,8 +88,6 @@ wd76c10_read(uint16_t port, void *priv)
 static void
 wd76c10_write(uint16_t port, uint16_t val, void *priv)
 {
-    pclog("WD76C10 write %04X %04X\n", port, val);
-
     switch (port) {
 	case 0x0092:
 		wd76c10_0092 = val;
@@ -196,7 +194,7 @@ machine_at_wd76c10_init(const machine_t *model, void *arg)
     machine_at_common_ide_init(model, arg);
 
     device_add(&keyboard_ps2_quadtel_device);
-    wd76c10_fdc = device_add(&fdc_at_device);
+    wd76c10_fdc = (fdc_t *)device_add(&fdc_at_device);
 
     wd76c10_init();
 

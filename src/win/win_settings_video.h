@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_video.h	1.0.6	2018/05/24
+ * Version:	@(#)win_settings_video.h	1.0.7	2018/09/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,54 +42,8 @@
  *									*
  ************************************************************************/
 
-static void
-recalc_vid_list(HWND hdlg)
-{
-    WCHAR temp[128];
-    const char *stransi;
-    HWND h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
-    int c = 0, d = 0;
-    int found_card = 0;
-
-    SendMessage(h, CB_RESETCONTENT, 0, 0);
-    SendMessage(h, CB_SETCURSEL, 0, 0);
-	
-    while (1) {
-	/* Skip "internal" if machine doesn't have it. */
-	if (c == 1 && !(machines[temp_machine].flags&MACHINE_VIDEO)) {
-		c++;
-		continue;
-	}
-
-	stransi = video_card_getname(c);
-	if (! *stransi)
-		break;
-
-	if (video_card_available(c) && vid_present[video_new_to_old(c)] &&
-	    device_is_valid(video_card_getdevice(c), machines[temp_machine].flags)) {
-		mbstowcs(temp, stransi, sizeof_w(temp));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-		if (video_new_to_old(c) == temp_video_card) {
-			SendMessage(h, CB_SETCURSEL, d, 0);
-			found_card = 1;
-		}
-
-		d++;
-	}
-
-	c++;
-    }
-    if (! found_card)
-	SendMessage(h, CB_SETCURSEL, 0, 0);
-
-    EnableWindow(h, machines[temp_machine].fixed_vidcard ? FALSE : TRUE);
-
-    h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
-    EnableWindow(h, (machines[temp_machine].flags & MACHINE_PCI) ? TRUE:FALSE);
-
-    h = GetDlgItem(hdlg, IDC_BUTTON_VOODOO);
-    EnableWindow(h, ((machines[temp_machine].flags & MACHINE_PCI) && temp_voodoo) ? TRUE : FALSE);
-}
+static int	list_to_vid[100],
+		vid_to_list[100];
 
 
 #ifdef __amd64__
@@ -99,35 +53,81 @@ static BOOL CALLBACK
 #endif
 video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    WCHAR temp[128];
     char tempA[128];
-    int vid, i;
+    WCHAR temp[128];
+    const char *stransi;
+    const device_t *dev;
+    int c, d;
+    int vid;
     HWND h;
 
     switch (message) {
 	case WM_INITDIALOG:
-		recalc_vid_list(hdlg);
-
-		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO_SPEED);
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_3353));
-		for (i = 0; i < 6; i++)
-			SendMessage(h, CB_ADDSTRING, 0,
-				    (LPARAM)get_string(IDS_3354 + i));
-		SendMessage(h, CB_SETCURSEL, temp_video_speed+1, 0);
-
-		h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
-		SendMessage(h, BM_SETCHECK, temp_voodoo, 0);
-
+		/* Clear the video cards combo. */
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_VIDEO);
+		EnableWindow(h, FALSE);
 		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
-		SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM)temp);
-		wcstombs(tempA, temp, sizeof(tempA));
-		vid = video_card_getid(tempA);
+		SendMessage(h, CB_RESETCONTENT, 0, 0);
+		SendMessage(h, CB_SETCURSEL, 0, 0);
 
-		h = GetDlgItem(hdlg, IDC_CONFIGURE_VID);
-		if (video_card_has_config(vid))
-			EnableWindow(h, TRUE);
-		else
-			EnableWindow(h, FALSE);
+		/* Populate the video cards combo. */
+		c = d = 0;
+		while (1) {
+			stransi = video_get_internal_name(c);
+			if (stransi == NULL) break;
+
+			/* Skip "internal" if machine doesn't have it. */
+			if (c == VID_INTERNAL &&
+			    !(machines[temp_machine].flags&MACHINE_VIDEO)) {
+				c++;
+				continue;
+			}
+
+			dev = video_card_getdevice(c);
+
+			if (c == 0) {
+				/* Translate "None". */
+				wcscpy(temp, get_string(IDS_NONE));
+			} else if (c == 1) {
+				/* Translate "Internal". */
+				wcscpy(temp, get_string(IDS_INTERNAL));
+			} else if (video_card_available(c) &&
+				   device_is_valid(dev, machines[temp_machine].flags)) {
+				sprintf(tempA, "[%s] %s",
+					device_get_bus_name(dev),
+					video_card_getname(c));
+				mbstowcs(temp, tempA, sizeof_w(temp));
+			} else {
+				c++;
+				continue;
+			}
+
+			/* Add entry to combo. */
+			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+
+			vid_to_list[c] = d;
+			list_to_vid[d++] = c++;
+		}
+		INFO("A total of %i video cards are available.\n", d);
+
+		/* Select the current card. */
+		vid = vid_to_list[temp_video_card];
+		if (vid < d) {
+			SendMessage(h, CB_SETCURSEL, vid, 0);
+			if (video_card_has_config(vid)) {
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_VIDEO);
+				EnableWindow(h, TRUE);
+			}
+		}
+
+		/* Machine with fixed video card have this disabled. */
+		EnableWindow(h, machines[temp_machine].fixed_vidcard ? FALSE : TRUE);
+
+		/* Disable Voodoo on PCI machine? */
+		h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
+		EnableWindow(h, (machines[temp_machine].flags & MACHINE_PCI) ? TRUE:FALSE);
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_VOODOO);
+		EnableWindow(h, ((machines[temp_machine].flags & MACHINE_PCI) && temp_voodoo) ? TRUE : FALSE);
 
 		return TRUE;
 
@@ -135,13 +135,11 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 			case IDC_COMBO_VIDEO:
 				h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
-				SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM)temp);
-				wcstombs(tempA, temp, sizeof(tempA));
-				vid = video_card_getid(tempA);
-				temp_video_card = video_new_to_old(vid);
+				c = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_video_card = list_to_vid[c];
 
-				h = GetDlgItem(hdlg, IDC_CONFIGURE_VID);
-				if (video_card_has_config(vid))
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_VIDEO);
+				if (video_card_has_config(temp_video_card))
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);
@@ -151,32 +149,27 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
 				temp_voodoo = SendMessage(h, BM_GETCHECK, 0, 0);
 
-				h = GetDlgItem(hdlg, IDC_BUTTON_VOODOO);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_VOODOO);
 				EnableWindow(h, temp_voodoo ? TRUE : FALSE);
 				break;
 
-			case IDC_BUTTON_VOODOO:
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)&voodoo_device);
+			case IDC_CONFIGURE_VOODOO:
+				temp_deviceconfig |= dlg_devconf(hdlg, &voodoo_device);
 				break;
 
-			case IDC_CONFIGURE_VID:
+			case IDC_CONFIGURE_VIDEO:
 				h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
-				SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM)temp);
-				wcstombs(tempA, temp, sizeof(temp));
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)video_card_getdevice(video_card_getid(tempA)));
+				c = list_to_vid[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_deviceconfig |= dlg_devconf(hdlg, video_card_getdevice(c));
 
 				break;
 		}
 		return FALSE;
 
-	case WM_SAVESETTINGS:
+	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
-		SendMessage(h, CB_GETLBTEXT, SendMessage(h, CB_GETCURSEL, 0, 0), (LPARAM)temp);
-		wcstombs(tempA, temp, sizeof(tempA));
-		temp_video_card = video_new_to_old(video_card_getid(tempA));
-
-		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO_SPEED);
-		temp_video_speed = SendMessage(h, CB_GETCURSEL, 0, 0) - 1;
+		c = SendMessage(h, CB_GETCURSEL, 0, 0);
+		temp_video_card = list_to_vid[c];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
 		temp_voodoo = SendMessage(h, BM_GETCHECK, 0, 0);

@@ -8,7 +8,7 @@
  *
  *		Implementation of MCA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.17	2018/08/20
+ * Version:	@(#)m_ps2_mca.c	1.0.18	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,6 +60,7 @@
 #include "../devices/input/mouse.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../devices/video/video.h"
 #include "machine.h"
 
 
@@ -80,10 +81,10 @@ static struct
 
         uint8_t io_id;
 
-        mem_mapping_t shadow_mapping;
-        mem_mapping_t split_mapping;
-        mem_mapping_t expansion_mapping;
-	mem_mapping_t cache_mapping;
+        mem_map_t shadow_mapping;
+        mem_map_t split_mapping;
+        mem_map_t expansion_mapping;
+	mem_map_t cache_mapping;
 
         uint8_t (*planar_read)(uint16_t port);
         void (*planar_write)(uint16_t port, uint8_t val);
@@ -138,7 +139,7 @@ static int ps2_cache_valid[65536/8];
 
 static uint8_t ps2_read_cache_ram(uint32_t addr, void *priv)
 {
-//        pclog("ps2_read_cache_ram: addr=%08x %i %04x:%04x\n", addr, ps2_cache_valid[addr >> 3], CS,cpu_state.pc);
+        DBGLOG(1, "ps2_read_cache_ram: addr=%08x %i %04x:%04x\n", addr, ps2_cache_valid[addr >> 3], CS,cpu_state.pc);
         if (!ps2_cache_valid[addr >> 3])
         {
                 ps2_cache_valid[addr >> 3] = 1;
@@ -151,7 +152,7 @@ static uint8_t ps2_read_cache_ram(uint32_t addr, void *priv)
 }
 static uint16_t ps2_read_cache_ramw(uint32_t addr, void *priv)
 {
-//        pclog("ps2_read_cache_ramw: addr=%08x %i %04x:%04x\n", addr, ps2_cache_valid[addr >> 3], CS,cpu_state.pc);
+        DBGLOG(1, "ps2_read_cache_ramw: addr=%08x %i %04x:%04x\n", addr, ps2_cache_valid[addr >> 3], CS,cpu_state.pc);
         if (!ps2_cache_valid[addr >> 3])
         {
                 ps2_cache_valid[addr >> 3] = 1;
@@ -160,11 +161,11 @@ static uint16_t ps2_read_cache_ramw(uint32_t addr, void *priv)
         else
                 ps2.pending_cache_miss = 0;
 
-        return *(uint16_t *)&ps2_cache[addr];
+        return *((uint16_t *)(ps2_cache+addr));
 }
 static uint32_t ps2_read_cache_raml(uint32_t addr, void *priv)
 {
-//        pclog("ps2_read_cache_raml: addr=%08x %i %04x:%04x\n", addr, ps2_cache_valid[addr >> 3], CS,cpu_state.pc);
+        DBGLOG(1, "ps2_read_cache_raml: addr=%08x %i %04x:%04x\n", addr, ps2_cache_valid[addr >> 3], CS,cpu_state.pc);
         if (!ps2_cache_valid[addr >> 3])
         {
                 ps2_cache_valid[addr >> 3] = 1;
@@ -173,11 +174,11 @@ static uint32_t ps2_read_cache_raml(uint32_t addr, void *priv)
         else
                 ps2.pending_cache_miss = 0;
 
-        return *(uint32_t *)&ps2_cache[addr];
+        return *((uint32_t *)ps2_cache+addr);
 }
 static void ps2_write_cache_ram(uint32_t addr, uint8_t val, void *priv)
 {
-//        pclog("ps2_write_cache_ram: addr=%08x val=%02x %04x:%04x %i\n", addr, val, CS,cpu_state.pc, ins);
+        DBGLOG(1, "ps2_write_cache_ram: addr=%08x val=%02x %04x:%04x %i\n", addr, val, CS,cpu_state.pc, ins);
         ps2_cache[addr] = val;
 }
 
@@ -456,10 +457,11 @@ static void model_55sx_write(uint16_t port, uint8_t val)
                 case 0x104:
                 ps2.memory_bank[ps2.option[3] & 7] &= ~0xf;
                 ps2.memory_bank[ps2.option[3] & 7] |= (val & 0xf);
-                /* pclog("Write memory bank %i %02x\n", ps2.option[3] & 7, val); */
+
+                DBGLOG(1, "Write memory bank %i %02x\n", ps2.option[3] & 7, val);
                 break;
                 case 0x105:
-                /* pclog("Write POS3 %02x\n", val); */
+                DBGLOG(1, "Write POS3 %02x\n", val);
                 ps2.option[3] = val;
                 shadowbios = !(val & 0x10);
                 shadowbios_write = val & 0x10;
@@ -467,12 +469,12 @@ static void model_55sx_write(uint16_t port, uint8_t val)
                 if (shadowbios)
                 {
                         mem_set_mem_state(0xe0000, 0x20000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
-                        mem_mapping_disable(&ps2.shadow_mapping);
+                        mem_map_disable(&ps2.shadow_mapping);
                 }
                 else
                 {
                         mem_set_mem_state(0xe0000, 0x20000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
-                        mem_mapping_enable(&ps2.shadow_mapping);
+                        mem_map_enable(&ps2.shadow_mapping);
                 }
 
                 if ((ps2.option[1] & 1) && !(ps2.option[3] & 0x20))
@@ -690,14 +692,14 @@ uint8_t ps2_mca_read(uint16_t port, void *p)
                 break;
         }
 
-        /* pclog("ps2_read: port=%04x temp=%02x\n", port, temp); */
+        DBGLOG(2, "ps2_read: port=%04x temp=%02x\n", port, temp);
         
         return temp;
 }
 
 static void ps2_mca_write(uint16_t port, uint8_t val, void *p)
 {
-        /* pclog("ps2_write: port=%04x val=%02x %04x:%04x\n", port, val, CS,cpu_state.pc); */
+        DBGLOG(2, "ps2_write: port=%04x val=%02x %04x:%04x\n", port, val, CS,cpu_state.pc);
 
         switch (port)
         {
@@ -790,9 +792,9 @@ static void ps2_mem_expansion_write(int port, uint8_t val, void *p)
         ps2.mem_pos_regs[port & 7] = val;
 
         if (ps2.mem_pos_regs[2] & 1)
-                mem_mapping_enable(&ps2.expansion_mapping);
+                mem_map_enable(&ps2.expansion_mapping);
         else
-                mem_mapping_disable(&ps2.expansion_mapping);
+                mem_map_disable(&ps2.expansion_mapping);
 }
 
 
@@ -808,7 +810,7 @@ static void ps2_mca_mem_fffc_init(int start_mb)
 		expansion_start = start_mb << 20;
 	}
 
-	mem_mapping_set_addr(&ram_high_mapping, 0x100000, planar_size);
+	mem_map_set_addr(&ram_high_mapping, 0x100000, planar_size);
 
 	ps2.mem_pos_regs[0] = 0xff;
 	ps2.mem_pos_regs[1] = 0xfc;
@@ -842,7 +844,7 @@ static void ps2_mca_mem_fffc_init(int start_mb)
 	}
 
 	mca_add(ps2_mem_expansion_read, ps2_mem_expansion_write, NULL);
-	mem_mapping_add(&ps2.expansion_mapping,
+	mem_map_add(&ps2.expansion_mapping,
 			expansion_start,
 			(mem_size - (start_mb << 10)) << 10,
 			mem_read_ram,
@@ -854,7 +856,7 @@ static void ps2_mca_mem_fffc_init(int start_mb)
 			&ram[expansion_start],
 			MEM_MAPPING_INTERNAL,
 			NULL);
-	mem_mapping_disable(&ps2.expansion_mapping);
+	mem_map_disable(&ps2.expansion_mapping);
 }
 
 static void ps2_mca_board_model_50_init()
@@ -874,14 +876,15 @@ static void ps2_mca_board_model_50_init()
 		ps2_mca_mem_fffc_init(2);
         }
 
-	device_add(&ps1vga_device);
+	if (video_card == VID_INTERNAL)	
+		device_add(&ps1vga_device);
 }
 
 static void ps2_mca_board_model_55sx_init()
 {
         ps2_mca_board_common_init();
 
-        mem_mapping_add(&ps2.shadow_mapping,
+        mem_map_add(&ps2.shadow_mapping,
                     (mem_size+256) * 1024, 
                     128*1024,
                     ps2_read_shadow_ram,
@@ -937,29 +940,30 @@ static void ps2_mca_board_model_55sx_init()
         ps2.planar_read = model_55sx_read;
         ps2.planar_write = model_55sx_write;
 
-	device_add(&ps1vga_device);
+	if (video_card == VID_INTERNAL)	
+		device_add(&ps1vga_device);
 }
 
 static void mem_encoding_update()
 {
-	mem_mapping_disable(&ps2.split_mapping);
+	mem_map_disable(&ps2.split_mapping);
 
         ps2.split_addr = ((uint32_t) (ps2.mem_regs[0] & 0xf)) << 20;
 
         if (ps2.mem_regs[1] & 2) {
                 mem_set_mem_state(0xe0000, 0x20000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
-		/* pclog("PS/2 Model 80-111: ROM space enabled\n"); */
+		DEBUG("PS/2 Model 80-111: ROM space enabled\n");
         } else {
                 mem_set_mem_state(0xe0000, 0x20000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
-		/* pclog("PS/2 Model 80-111: ROM space disabled\n"); */
+		DEBUG("PS/2 Model 80-111: ROM space disabled\n");
 	}
 
 	if (ps2.mem_regs[1] & 4) {
-		mem_mapping_set_addr(&ram_low_mapping, 0x00000, 0x80000);
-		/* pclog("PS/2 Model 80-111: 00080000- 0009FFFF disabled\n"); */
+		mem_map_set_addr(&ram_low_mapping, 0x00000, 0x80000);
+		DEBUG("PS/2 Model 80-111: 00080000- 0009FFFF disabled\n");
 	} else {
-		mem_mapping_set_addr(&ram_low_mapping, 0x00000, 0xa0000);
-		/* pclog("PS/2 Model 80-111: 00080000- 0009FFFF enabled\n"); */
+		mem_map_set_addr(&ram_low_mapping, 0x00000, 0xa0000);
+		DEBUG("PS/2 Model 80-111: 00080000- 0009FFFF enabled\n");
 	}
 
         if (!(ps2.mem_regs[1] & 8))
@@ -972,13 +976,13 @@ static void mem_encoding_update()
 			ps2.split_phys = 0xa0000;
 		}
 
-		mem_mapping_set_exec(&ps2.split_mapping, &ram[ps2.split_phys]);
-		mem_mapping_set_addr(&ps2.split_mapping, ps2.split_addr, ps2.split_size << 10);
+		mem_map_set_exec(&ps2.split_mapping, &ram[ps2.split_phys]);
+		mem_map_set_addr(&ps2.split_mapping, ps2.split_addr, ps2.split_size << 10);
 
-		/* pclog("PS/2 Model 80-111: Split memory block enabled at %08X\n", ps2.split_addr); */
-        } /* else {
-		pclog("PS/2 Model 80-111: Split memory block disabled\n");
-	} */
+		DEBUG("PS/2 Model 80-111: Split memory block enabled at %08X\n", ps2.split_addr);
+        } else {
+		DEBUG("PS/2 Model 80-111: Split memory block disabled\n");
+	}
 }
 
 static uint8_t mem_encoding_read(uint16_t addr, void *p)
@@ -1037,7 +1041,7 @@ static void mem_encoding_write_cached(uint16_t addr, uint8_t val, void *p)
                 ps2.mem_regs[2] = (ps2.mem_regs[2] & 0x80) | (val & ~0x88);
                 if (val & 2)
                 {
-//                        pclog("Clear latch - %i\n", ps2.pending_cache_miss);
+                        DBGLOG(1, "Clear latch - %i\n", ps2.pending_cache_miss);
                         if (ps2.pending_cache_miss)
                                 ps2.mem_regs[2] |=  0x80;
                         else
@@ -1058,18 +1062,18 @@ static void mem_encoding_write_cached(uint16_t addr, uint8_t val, void *p)
 #endif
                 break;
         }
-//        pclog("mem_encoding_write: addr=%02x val=%02x %04x:%04x  %02x %02x\n", addr, val, CS,cpu_state.pc, ps2.mem_regs[1],ps2.mem_regs[2]);
+        DBGLOG(1, "mem_encoding_write: addr=%02x val=%02x %04x:%04x  %02x %02x\n", addr, val, CS,cpu_state.pc, ps2.mem_regs[1],ps2.mem_regs[2]);
         mem_encoding_update();
         if ((ps2.mem_regs[1] & 0x10) && (ps2.mem_regs[2] & 0x21) == 0x20)
         {
-                mem_mapping_disable(&ram_low_mapping);
-                mem_mapping_enable(&ps2.cache_mapping);
+                mem_map_disable(&ram_low_mapping);
+                mem_map_enable(&ps2.cache_mapping);
                 flushmmucache();
         }
         else
         {
-                mem_mapping_disable(&ps2.cache_mapping);
-                mem_mapping_enable(&ram_low_mapping);
+                mem_map_disable(&ps2.cache_mapping);
+                mem_map_enable(&ram_low_mapping);
                 flushmmucache();
         }
 }
@@ -1114,7 +1118,7 @@ static void ps2_mca_board_model_70_type34_init(int is_type4)
         if (is_type4)
                 ps2.option[2] |= 0x04; /*486 CPU*/
 
-        mem_mapping_add(&ps2.split_mapping,
+        mem_map_add(&ps2.split_mapping,
                     (mem_size+256) * 1024, 
                     256*1024,
                     ps2_read_split_ram,
@@ -1126,9 +1130,9 @@ static void ps2_mca_board_model_70_type34_init(int is_type4)
                     &ram[0xa0000],
                     MEM_MAPPING_INTERNAL,
                     NULL);
-        mem_mapping_disable(&ps2.split_mapping);
+        mem_map_disable(&ps2.split_mapping);
 
-        mem_mapping_add(&ps2.cache_mapping,
+        mem_map_add(&ps2.cache_mapping,
                     0,
                     is_type4 ? (8 * 1024) : (64 * 1024),
                     ps2_read_cache_ram,
@@ -1140,7 +1144,7 @@ static void ps2_mca_board_model_70_type34_init(int is_type4)
                     ps2_cache,
                     MEM_MAPPING_INTERNAL,
                     NULL);
-        mem_mapping_disable(&ps2.cache_mapping);
+        mem_map_disable(&ps2.cache_mapping);
 
         if (mem_size > 8192)
         {
@@ -1148,7 +1152,8 @@ static void ps2_mca_board_model_70_type34_init(int is_type4)
 		ps2_mca_mem_fffc_init(8);
         }
 
-	device_add(&ps1vga_device);
+	if (video_card == VID_INTERNAL)	
+		device_add(&ps1vga_device);
 }
 
 static void ps2_mca_board_model_80_type2_init(int is_486)
@@ -1197,7 +1202,7 @@ static void ps2_mca_board_model_80_type2_init(int is_486)
 
 	ps2.mem_regs[0] |= ((mem_size/1024) & 0x0f);
 
-        mem_mapping_add(&ps2.split_mapping,
+        mem_map_add(&ps2.split_mapping,
                     (mem_size+256) * 1024, 
                     256*1024,
                     ps2_read_split_ram,
@@ -1209,7 +1214,7 @@ static void ps2_mca_board_model_80_type2_init(int is_486)
                     &ram[0xa0000],
                     MEM_MAPPING_INTERNAL,
                     NULL);
-        mem_mapping_disable(&ps2.split_mapping);
+        mem_map_disable(&ps2.split_mapping);
 
         if ((mem_size > 4096) && !is_486)
         {
@@ -1217,7 +1222,8 @@ static void ps2_mca_board_model_80_type2_init(int is_486)
 		ps2_mca_mem_fffc_init(4);
         }
 
-	device_add(&ps1vga_device);
+	if (video_card == VID_INTERNAL)	
+		device_add(&ps1vga_device);
 }
 
 

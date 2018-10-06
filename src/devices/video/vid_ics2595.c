@@ -8,7 +8,7 @@
  *
  *		ICS2595 clock chip emulation.  Used by ATI Mach64.
  *
- * Version:	@(#)vid_ics2595.c	1.0.2	2018/05/06
+ * Version:	@(#)vid_ics2595.c	1.0.3	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,55 +39,86 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../device.h"
 #include "vid_ics2595.h"
 
 
-enum
-{
-        ICS2595_IDLE = 0,
-        ICS2595_WRITE,
-        ICS2595_READ
+enum {
+    ICS2595_IDLE = 0,
+    ICS2595_WRITE,
+    ICS2595_READ
 };
 
 
 static int ics2595_div[4] = {8, 4, 2, 1};
 
 
-void ics2595_write(ics2595_t *ics2595, int strobe, int dat)
+void
+ics2595_write(ics2595_t *dev, int strobe, int dat)
 {
-        if (strobe)
-        {
-                if ((dat & 8) && !ics2595->oldfs3) /*Data clock*/
-                {
-                        switch (ics2595->state)
-                        {
-                                case ICS2595_IDLE:
-                                ics2595->state = (dat & 4) ? ICS2595_WRITE : ICS2595_IDLE;
-                                ics2595->pos = 0;
-                                break;
-                                case ICS2595_WRITE:
-                                ics2595->dat = (ics2595->dat >> 1);
-                                if (dat & 4)
-                                        ics2595->dat |= (1 << 19);
-                                ics2595->pos++;
-                                if (ics2595->pos == 20)
-                                {
-                                        int d, n, l;
-                                        l = (ics2595->dat >> 2) & 0xf;
-                                        n = ((ics2595->dat >> 7) & 255) + 257;
-                                        d = ics2595_div[(ics2595->dat >> 16) & 3];
+    int d, n, l;
 
-                                        ics2595->clocks[l] = (14318181.8 * ((double)n / 46.0)) / (double)d;
-                                        ics2595->state = ICS2595_IDLE;
-                                }
-                                break;                                                
-                        }
-                }
-                        
-                ics2595->oldfs2 = dat & 4;
-                ics2595->oldfs3 = dat & 8;
-        }
-        ics2595->output_clock = ics2595->clocks[dat];
+    if (strobe) {
+	if ((dat & 8) && !dev->oldfs3) {	/*Data clock*/
+		switch (dev->state) {
+			case ICS2595_IDLE:
+				dev->state = (dat & 4) ? ICS2595_WRITE : ICS2595_IDLE;
+				dev->pos = 0;
+				break;
+
+			case ICS2595_WRITE:
+				dev->dat = (dev->dat >> 1);
+				if (dat & 4)
+					dev->dat |= (1 << 19);
+				dev->pos++;
+				if (dev->pos == 20) {
+					l = (dev->dat >> 2) & 0xf;
+					n = ((dev->dat >> 7) & 255) + 257;
+					d = ics2595_div[(dev->dat >> 16) & 3];
+
+					dev->clocks[l] = (14318181.8 * ((double)n / 46.0)) / (double)d;
+					dev->state = ICS2595_IDLE;
+				}
+				break;                                                
+		}
+	}
+
+	dev->oldfs2 = dat & 4;
+	dev->oldfs3 = dat & 8;
+    }
+
+    dev->output_clock = dev->clocks[dat];
 }
+
+
+static void *
+ics2595_init(const device_t *info)
+{
+    ics2595_t *dev = (ics2595_t *)mem_alloc(sizeof(ics2595_t));
+    memset(dev, 0x00, sizeof(ics2595_t));
+
+    return dev;
+}
+
+
+static void
+ics2595_close(void *priv)
+{
+    ics2595_t *dev = (ics2595_t *)priv;
+
+    if (dev != NULL)
+	free(dev);
+}
+
+
+const device_t ics2595_device = {
+    "ICS2595 clock chip",
+    0,
+    0,
+    ics2595_init, ics2595_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
