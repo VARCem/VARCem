@@ -8,7 +8,7 @@
  *
  *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)parallel_dev.c	1.0.8	2018/09/03
+ * Version:	@(#)parallel_dev.c	1.0.9	2018/10/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -69,7 +69,7 @@ static const struct {
     { "lpt_dac",	NULL,		&lpt_dac_device			},
     { "lpt_dac_stereo",	NULL,		&lpt_dac_stereo_device		},
 
-#if USE_PRINTER
+#ifdef USE_PRINTER
     /* Experimental, WIP --FvK */
     { "lpt_printer",	NULL,		&lpt_printer_device		},
 #endif

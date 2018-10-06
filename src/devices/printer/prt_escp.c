@@ -8,7 +8,7 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.2	2018/10/05
+ * Version:	@(#)prt_escp.c	1.0.3	2018/10/06
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -63,7 +63,7 @@
 #include "../../mem.h"
 #include "../../rom.h" 
 #include "../../plat.h" 
-#include "../ui/ui.h"
+#include "../../ui/ui.h"
 #include "../../png.h"
 #include "../ports/parallel_dev.h"
 #include "printer.h"
