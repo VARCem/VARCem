@@ -371,7 +371,7 @@ tc8521_init(nvr_t *nvr, int size)
     nvr_init(nvr);
 
     io_sethandler(0x02c0, 16,
-		  tc8521_read,NULL,NULL, tc8521_write,NULL,NULL, nvr);
+		  tc8521_read,NULL,NULL, tc8521_write,NULL,NULL, nvr);
 }
 
 
