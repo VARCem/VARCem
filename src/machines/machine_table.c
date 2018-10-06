@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.26	2018/09/28
+ * Version:	@(#)machine_table.c	1.0.27	2018/10/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -171,7 +171,7 @@ const machine_t machines[] = {
     { "[Socket 7 FX] Intel Advanced/ATX",	"intel_thor",		L"intel/thor",			{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,		 machine_at_thor_init, NULL,			NULL			},
     { "[Socket 7 FX] MR Intel Advanced/ATX",	"intel_mrthor",		L"intel/mrthor",		{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,		 machine_at_thor_init, NULL,			NULL			},
     { "[Socket 7 FX] Intel Advanced/EV",	"intel_endeavor",	L"intel/endeavor",		{{"Intel", cpus_PentiumS5},	{"IDT", cpus_WinChip},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,	     machine_at_endeavor_init, &s3_phoenix_trio64_onboard_pci_device, NULL	},
-    { "[Socket 7 FX] Packard Bell PB640",	"pbell_pb640",		L"pbell/pb640",			{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"AMD", cpus_K56},	{"Cyrix", cpus_6x86},	{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,		machine_at_pb640_init, &gd5440_onboard_pci_device, NULL			},
+    { "[Socket 7 FX] Packard Bell PB640",	"pbell_pb640",		L"pbell/pb640",			{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,	  8,  128,   8, 128,		machine_at_pb640_init, &gd5440_onboard_pci_device, NULL			},
 
     { "[Socket 7 HX] Acer M3a",			"acer_m3a",		L"acer/m3a",			{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  192,   8, 128,	      machine_at_acerm3a_init, NULL,			NULL			},
     { "[Socket 7 HX] Acer V35n",		"acer_v35n",		L"acer/v35n",			{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  192,   8, 128,	     machine_at_acerv35n_init, NULL,			NULL			},

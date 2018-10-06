@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.60	2018/10/05
+# Version:	@(#)Makefile.mingw	1.0.60	2018/10/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -114,7 +114,7 @@ ifndef DEV_BRANCH
  DEV_BRANCH	:= n
 endif
 ifndef AMD_K
- AMD_K		:= y
+ AMD_K		:= n
 endif
 ifndef LASERXT
  LASERXT	:= n
