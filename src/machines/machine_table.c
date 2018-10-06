@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.27	2018/10/06
+ * Version:	@(#)machine_table.c	1.0.28	2018/10/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -182,7 +182,7 @@ const machine_t machines[] = {
     { "[Socket 7 VX] ASUS P/I-P55TVP4",		"asus_p55tvp4",		L"asus/p55tvp4",		{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,	      machine_at_p55tvp4_init, NULL,			NULL			},
     { "[Socket 7 VX] Award 430VX PCI",		"award_430vx",		L"generic/award/430vx",		{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,	       machine_at_i430vx_init, NULL,			NULL			},
     { "[Socket 7 VX] Epox P55-VA",		"epox_p55va",		L"epox/p55va",			{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,		machine_at_p55va_init, NULL,			NULL			},
-    { "[Socket 7 VX] Jetway J656VXD",		"jetway_j656vxd",	L"jetway/j656vxd",		{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"AMD", cpus_K56},	{"Cyrix", cpus_6x86},	{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,	      machine_at_j656vxd_init, NULL,			NULL			},
+    { "[Socket 7 VX] Jetway J656VXD",		"jetway_j656vxd",	L"jetway/j656vxd",		{{"Intel", cpus_Pentium},	{"IDT", cpus_WinChip},	{"Cyrix", cpus_6x86},	{"", NULL},		{"", NULL}},	0, MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,			  8,  128,   8, 128,	      machine_at_j656vxd_init, NULL,			NULL			},
 #endif
 
 #if defined(DEV_BRANCH) && defined(USE_I686)
