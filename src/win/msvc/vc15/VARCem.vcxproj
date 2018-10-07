@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\devices\cdrom\cdrom_speed.c" />
     <ClCompile Include="..\..\..\devices\misc\bugger.c" />
     <ClCompile Include="..\..\..\devices\cdrom\cdrom.c" />
     <ClCompile Include="..\..\..\devices\cdrom\cdrom_dosbox.cpp" />
@@ -55,6 +56,11 @@
     <ClCompile Include="..\..\..\devices\disk\hdd_image.c" />
     <ClCompile Include="..\..\..\devices\disk\hdd_table.c" />
     <ClCompile Include="..\..\..\devices\disk\zip.c" />
+    <ClCompile Include="..\..\..\devices\misc\isamem.c" />
+    <ClCompile Include="..\..\..\devices\misc\isartc.c" />
+    <ClCompile Include="..\..\..\devices\network\net_3c503.c" />
+    <ClCompile Include="..\..\..\devices\network\net_dp8390.c" />
+    <ClCompile Include="..\..\..\devices\network\net_wd80x3.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\bootp.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\cksum.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\debug.c" />
@@ -73,9 +79,11 @@
     <ClCompile Include="..\..\..\devices\network\slirp\tcp_subr.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\tcp_timer.c" />
     <ClCompile Include="..\..\..\devices\network\slirp\udp.c" />
+    <ClCompile Include="..\..\..\devices\printer\prt_cpmap.c" />
+    <ClCompile Include="..\..\..\devices\printer\prt_escp.c" />
+    <ClCompile Include="..\..\..\devices\printer\prt_text.c" />
     <ClCompile Include="..\..\..\devices\scsi\scsi.c" />
     <ClCompile Include="..\..\..\devices\scsi\scsi_aha154x.c" />
-    <ClCompile Include="..\..\..\devices\scsi\scsi_bus.c" />
     <ClCompile Include="..\..\..\devices\scsi\scsi_buslogic.c" />
     <ClCompile Include="..\..\..\devices\scsi\scsi_device.c" />
     <ClCompile Include="..\..\..\devices\scsi\scsi_disk.c" />
@@ -160,7 +168,6 @@
     <ClCompile Include="..\..\..\devices\system\intel.c" />
     <ClCompile Include="..\..\..\devices\system\intel_flash.c" />
     <ClCompile Include="..\..\..\devices\system\intel_piix.c" />
-    <ClCompile Include="..\..\..\devices\system\intel_piix4.c" />
     <ClCompile Include="..\..\..\devices\system\intel_sio.c" />
     <ClCompile Include="..\..\..\devices\system\mca.c" />
     <ClCompile Include="..\..\..\devices\system\mcr.c" />
@@ -197,17 +204,14 @@
     <ClCompile Include="..\..\..\devices\input\mouse_ps2.c" />
     <ClCompile Include="..\..\..\devices\input\mouse_serial.c" />
     <ClCompile Include="..\..\..\devices\video\video_dev.c" />
+    <ClCompile Include="..\..\..\devices\video\vid_bt48x_ramdac.c" />
+    <ClCompile Include="..\..\..\devices\video\vid_cga_compaq.c" />
     <ClCompile Include="..\..\..\io.c" />
     <ClCompile Include="..\..\..\machines\machine.c" />
     <ClCompile Include="..\..\..\machines\machine_table.c" />
     <ClCompile Include="..\..\..\machines\m_amstrad.c" />
     <ClCompile Include="..\..\..\machines\m_at.c" />
-    <ClCompile Include="..\..\..\machines\m_at_430fx.c" />
-    <ClCompile Include="..\..\..\machines\m_at_430hx.c" />
-    <ClCompile Include="..\..\..\machines\m_at_430lx_nx.c" />
-    <ClCompile Include="..\..\..\machines\m_at_430vx.c" />
-    <ClCompile Include="..\..\..\machines\m_at_440fx.c" />
-    <ClCompile Include="..\..\..\machines\m_at_4gpv31.c" />
+    <ClCompile Include="..\..\..\machines\m_at_4x0.c" />
     <ClCompile Include="..\..\..\machines\m_at_ali1429.c" />
     <ClCompile Include="..\..\..\machines\m_at_commodore.c" />
     <ClCompile Include="..\..\..\machines\m_at_compaq.c" />
@@ -217,7 +221,6 @@
     <ClCompile Include="..\..\..\machines\m_at_scat.c" />
     <ClCompile Include="..\..\..\machines\m_at_sis_85c471.c" />
     <ClCompile Include="..\..\..\machines\m_at_sis_85c496.c" />
-    <ClCompile Include="..\..\..\machines\m_at_sis_85c50x.c" />
     <ClCompile Include="..\..\..\machines\m_at_t3100e.c" />
     <ClCompile Include="..\..\..\machines\m_at_t3100e_vid.c" />
     <ClCompile Include="..\..\..\machines\m_at_wd76c10.c" />
@@ -248,13 +251,17 @@
     <ClCompile Include="..\..\..\devices\ports\parallel.c" />
     <ClCompile Include="..\..\..\devices\ports\parallel_dev.c" />
     <ClCompile Include="..\..\..\devices\ports\serial.c" />
+    <ClCompile Include="..\..\..\png.c" />
     <ClCompile Include="..\..\..\random.c" />
     <ClCompile Include="..\..\..\rom.c" />
     <ClCompile Include="..\..\..\rom_load.c" />
     <ClCompile Include="..\..\..\devices\sound\munt\c_interface\c_interface.cpp" />
     <ClCompile Include="..\..\..\devices\sound\munt\sha1\sha1.cpp" />
     <ClCompile Include="..\..\..\timer.c" />
+    <ClCompile Include="..\..\..\ui\ui_cdrom.c" />
+    <ClCompile Include="..\..\..\ui\ui_lang.c" />
     <ClCompile Include="..\..\..\ui\ui_main.c" />
+    <ClCompile Include="..\..\..\ui\ui_misc.c" />
     <ClCompile Include="..\..\..\ui\ui_new_image.c" />
     <ClCompile Include="..\..\..\ui\ui_stbar.c" />
     <ClCompile Include="..\..\..\devices\video\video.c" />
@@ -263,12 +270,10 @@
     <ClCompile Include="..\..\..\devices\video\vid_ati68860_ramdac.c" />
     <ClCompile Include="..\..\..\devices\video\vid_ati_eeprom.c" />
     <ClCompile Include="..\..\..\devices\video\vid_ati_mach64.c" />
-    <ClCompile Include="..\..\..\devices\video\vid_bt485_ramdac.c" />
     <ClCompile Include="..\..\..\devices\video\vid_cga.c" />
     <ClCompile Include="..\..\..\devices\video\vid_cga_comp.c" />
     <ClCompile Include="..\..\..\devices\video\vid_cl54xx.c" />
     <ClCompile Include="..\..\..\devices\video\vid_colorplus.c" />
-    <ClCompile Include="..\..\..\devices\video\vid_compaq_cga.c" />
     <ClCompile Include="..\..\..\devices\video\vid_ega.c" />
     <ClCompile Include="..\..\..\devices\video\vid_ega_render.c" />
     <ClCompile Include="..\..\..\devices\video\vid_et4000.c" />
@@ -300,7 +305,6 @@
     <ClCompile Include="..\..\..\win\win.c" />
     <ClCompile Include="..\..\..\win\win_about.c" />
     <ClCompile Include="..\..\..\win\win_cdrom.c" />
-    <ClCompile Include="..\..\..\win\win_cdrom_ioctl.c" />
     <ClCompile Include="..\..\..\win\win_crashdump.c" />
     <ClCompile Include="..\..\..\win\win_d3d.cpp" />
     <ClCompile Include="..\..\..\win\win_ddraw.cpp" />
@@ -314,7 +318,6 @@
     <ClCompile Include="..\..\..\win\win_opendir.c" />
     <ClCompile Include="..\..\..\win\win_settings.c" />
     <ClCompile Include="..\..\..\win\win_snd_gain.c" />
-    <ClCompile Include="..\..\..\win\win_status.c" />
     <ClCompile Include="..\..\..\win\win_thread.c" />
     <ClCompile Include="..\..\..\win\win_ui.c" />
     <ClCompile Include="..\..\win_lang.c" />
@@ -400,6 +403,11 @@
     <ClInclude Include="..\..\..\devices\disk\hdc_ide.h" />
     <ClInclude Include="..\..\..\devices\disk\hdd.h" />
     <ClInclude Include="..\..\..\devices\disk\zip.h" />
+    <ClInclude Include="..\..\..\devices\misc\isamem.h" />
+    <ClInclude Include="..\..\..\devices\misc\isartc.h" />
+    <ClInclude Include="..\..\..\devices\network\net_3com.h" />
+    <ClInclude Include="..\..\..\devices\network\net_dp8390.h" />
+    <ClInclude Include="..\..\..\devices\network\net_wd80x3.h" />
     <ClInclude Include="..\..\..\devices\network\slirp\bootp.h" />
     <ClInclude Include="..\..\..\devices\network\slirp\ctl.h" />
     <ClInclude Include="..\..\..\devices\network\slirp\debug.h" />
@@ -421,6 +429,7 @@
     <ClInclude Include="..\..\..\devices\network\slirp\tcp_timer.h" />
     <ClInclude Include="..\..\..\devices\network\slirp\tcp_var.h" />
     <ClInclude Include="..\..\..\devices\network\slirp\udp.h" />
+    <ClInclude Include="..\..\..\devices\printer\printer.h" />
     <ClInclude Include="..\..\..\devices\scsi\queue.h" />
     <ClInclude Include="..\..\..\devices\scsi\scsi.h" />
     <ClInclude Include="..\..\..\devices\scsi\scsi_aha154x.h" />
@@ -502,6 +511,7 @@
     <ClInclude Include="..\..\..\devices\system\pic.h" />
     <ClInclude Include="..\..\..\devices\system\pit.h" />
     <ClInclude Include="..\..\..\devices\system\ppi.h" />
+    <ClInclude Include="..\..\..\devices\video\vid_bt48x_ramdac.h" />
     <ClInclude Include="..\..\..\emu.h" />
     <ClInclude Include="..\..\..\devices\floppy\fdc.h" />
     <ClInclude Include="..\..\..\devices\floppy\fdd.h" />
@@ -536,6 +546,7 @@
     <ClInclude Include="..\..\..\devices\ports\parallel.h" />
     <ClInclude Include="..\..\..\devices\ports\parallel_dev.h" />
     <ClInclude Include="..\..\..\devices\ports\serial.h" />
+    <ClInclude Include="..\..\..\png.h" />
     <ClInclude Include="..\..\..\random.h" />
     <ClInclude Include="..\..\..\rom.h" />
     <ClInclude Include="..\..\..\devices\sound\munt\c_interface\cpp_interface.h" />
@@ -549,7 +560,6 @@
     <ClInclude Include="..\..\..\devices\video\video.h" />
     <ClInclude Include="..\..\..\devices\video\vid_ati68860_ramdac.h" />
     <ClInclude Include="..\..\..\devices\video\vid_ati_eeprom.h" />
-    <ClInclude Include="..\..\..\devices\video\vid_bt485_ramdac.h" />
     <ClInclude Include="..\..\..\devices\video\vid_cga.h" />
     <ClInclude Include="..\..\..\devices\video\vid_cga_comp.h" />
     <ClInclude Include="..\..\..\devices\video\vid_ega.h" />
@@ -565,7 +575,6 @@
     <ClInclude Include="..\..\..\devices\video\vid_voodoo_codegen_x86-64.h" />
     <ClInclude Include="..\..\..\devices\video\vid_voodoo_codegen_x86.h" />
     <ClInclude Include="..\..\..\devices\video\vid_voodoo_dither.h" />
-    <ClInclude Include="..\..\..\win\plat_dir.h" />
     <ClInclude Include="..\..\..\win\resource.h" />
     <ClInclude Include="..\..\..\win\win.h" />
     <ClInclude Include="..\..\win_opendir.h" />
