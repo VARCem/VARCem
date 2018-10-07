@@ -789,7 +789,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     wchar_t temp_path[512];
     char buf[512], *big_buf;
-    HWND h;
+    HWND h = INVALID_HANDLE_VALUE;
     uint64_t i = 0;
     uint64_t temp;
     FILE *f;
