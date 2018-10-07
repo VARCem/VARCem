@@ -54,8 +54,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define PLAT_SERIAL_C
-#include "../../emu.h"
-#include "../../plat.h"
+#include "../emu.h"
+#include "../plat.h"
 #include "../devices/ports/serial.h"
 
 
