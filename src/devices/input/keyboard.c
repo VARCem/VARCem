@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.8	2018/09/30
+ * Version:	@(#)keyboard.c	1.0.9	2018/10/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,8 +45,8 @@
 #define dbglog kbd_log
 #include "../../emu.h"
 #include "../../machines/machine.h"
-#include "../plat.h"
-#include "../ui/ui.h"
+#include "../../plat.h"
+#include "../../ui/ui.h"
 #include "keyboard.h"
 
 
