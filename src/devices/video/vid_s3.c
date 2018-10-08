@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.12	2018/10/05
+ * Version:	@(#)vid_s3.c	1.0.13	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3247,7 +3247,7 @@ const device_t s3_9fx_vlb_device = {
 };
 
 const device_t s3_9fx_pci_device = {
-    "Number 9 9FX (S3 Trio64) PCI",
+    "Number 9 9FX (S3 Trio64)",
     DEVICE_PCI,
     S3_NUMBER9_9FX,
     s3_init, s3_close, NULL,
@@ -3295,7 +3295,7 @@ const device_t s3_phoenix_trio64_vlb_device = {
 };
 
 const device_t s3_phoenix_trio64_pci_device = {
-    "Phoenix S3 Trio64 PCI",
+    "Phoenix S3 Trio64",
     DEVICE_PCI,
     S3_PHOENIX_TRIO64,
     s3_init, s3_close, NULL,
@@ -3307,7 +3307,7 @@ const device_t s3_phoenix_trio64_pci_device = {
 };
 
 const device_t s3_phoenix_trio64_onboard_pci_device = {
-    "Phoenix S3 Trio64 On-Board",
+    "Onboard Phoenix S3 Trio64",
     DEVICE_PCI,
     S3_PHOENIX_TRIO64_ONBOARD,
     s3_init, s3_close, NULL,
@@ -3354,7 +3354,7 @@ const device_t s3_diamond_stealth64_vlb_device = {
 };
 
 const device_t s3_diamond_stealth64_pci_device = {
-    "S3 Trio64 (Diamond Stealth64 DRAM) PCI",
+    "S3 Trio64 (Diamond Stealth64 DRAM)",
     DEVICE_PCI,
     S3_DIAMOND_STEALTH64_764,
     s3_init, s3_close, NULL,

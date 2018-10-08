@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.13	2018/10/05
+ * Version:	@(#)vid_ati_mach64.c	1.0.14	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3496,7 +3496,7 @@ static const device_config_t mach64vt2_config[] =
 
 static const video_timings_t mach64gx_isa_timing = {VID_ISA,3,3,6,5,5,10};
 const device_t mach64gx_isa_device = {
-    "ATI Mach64GX ISA",
+    "ATI Mach64GX",
     DEVICE_AT | DEVICE_ISA,
     0,
     mach64gx_init, mach64_close, NULL,
@@ -3509,7 +3509,7 @@ const device_t mach64gx_isa_device = {
 
 static const video_timings_t mach64gx_vlb_timing = {VID_BUS,2,2,1,20,20,21};
 const device_t mach64gx_vlb_device = {
-    "ATI Mach64GX VLB",
+    "ATI Mach64GX",
     DEVICE_VLB,
     0,
     mach64gx_init, mach64_close, NULL,
@@ -3522,7 +3522,7 @@ const device_t mach64gx_vlb_device = {
 
 static const video_timings_t mach64gx_pci_timing = {VID_BUS,2,2,1,20,20,21};
 const device_t mach64gx_pci_device = {
-    "ATI Mach64GX PCI",
+    "ATI Mach64GX",
     DEVICE_PCI,
     0,
     mach64gx_init, mach64_close, NULL,

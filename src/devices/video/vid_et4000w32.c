@@ -12,7 +12,7 @@
  *
  * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
  *
- * Version:	@(#)vid_et4000w32.c	1.0.14	2018/10/05
+ * Version:	@(#)vid_et4000w32.c	1.0.15	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1224,115 +1224,133 @@ static void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
         }
 }
 
-static void *et4000w32p_init(const device_t *info)
+
+static void *
+et4000w32p_init(const device_t *info)
 {
-        int vram_size;
-        et4000w32p_t *et4000 = (et4000w32p_t *)mem_alloc(sizeof(et4000w32p_t));
-        memset(et4000, 0, sizeof(et4000w32p_t));
+    int vram_size;
+    et4000w32p_t *et4000 = (et4000w32p_t *)mem_alloc(sizeof(et4000w32p_t));
+    memset(et4000, 0, sizeof(et4000w32p_t));
+    et4000->type = info->local;
+    et4000->pci = !!(info->flags & DEVICE_PCI);
 
-        vram_size = device_get_config_int("memory");
+    vram_size = device_get_config_int("memory");
         
-        et4000->interleaved = (vram_size == 2) ? 1 : 0;
+    et4000->interleaved = (vram_size == 2) ? 1 : 0;
         
-        svga_init(&et4000->svga, et4000, vram_size << 20,
-                   et4000w32p_recalctimings,
-                   et4000w32p_in, et4000w32p_out,
-                   et4000w32p_hwcursor_draw,
-                   NULL); 
+    svga_init(&et4000->svga, et4000, vram_size << 20,
+              et4000w32p_recalctimings,
+              et4000w32p_in, et4000w32p_out,
+              et4000w32p_hwcursor_draw,
+              NULL); 
 
-	et4000->svga.ramdac = device_add(&stg_ramdac_device);
+    et4000->svga.ramdac = device_add(&stg_ramdac_device);
 
-	et4000->vram_mask = (vram_size << 20) - 1;
+    et4000->vram_mask = (vram_size << 20) - 1;
 
-	et4000->type = info->local;
+    switch(et4000->type) {
+	case ET4000W32_CARDEX:
+	        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_CARDEX,
+			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+		et4000->svga.clock_gen = et4000->svga.ramdac;
+		et4000->svga.getclock = stg_getclock;
+		break;
 
-	switch(et4000->type) {
-		case ET4000W32_CARDEX:
-		        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_CARDEX, 0xc0000, 0x8000, 0x7fff, 0,
-						    MEM_MAPPING_EXTERNAL);
+	case ET4000W32_DIAMOND:
+	        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_DIAMOND,
+			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+		et4000->svga.clock_gen = device_add(&icd2061_device);
+		et4000->svga.getclock = icd2061_getclock;
+		break;
+    }
 
-			et4000->svga.clock_gen = et4000->svga.ramdac;
-			et4000->svga.getclock = stg_getclock;
-			break;
+    if (info->flags & DEVICE_PCI)
+	mem_map_disable(&et4000->bios_rom.mapping);
 
-		case ET4000W32_DIAMOND:
-		        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_DIAMOND, 0xc0000, 0x8000, 0x7fff, 0,
-						    MEM_MAPPING_EXTERNAL);
+    mem_map_add(&et4000->linear_mapping, 0, 0,
+		svga_read_linear, svga_readw_linear, svga_readl_linear,
+		svga_write_linear, svga_writew_linear, svga_writel_linear,
+		NULL, 0, &et4000->svga);
 
+    mem_map_add(&et4000->mmu_mapping, 0, 0,
+		et4000w32p_mmu_read, NULL, NULL,
+		et4000w32p_mmu_write, NULL, NULL, NULL, 0, et4000);
 
-			et4000->svga.clock_gen = device_add(&icd2061_device);
-			et4000->svga.getclock = icd2061_getclock;
-			break;
-	}
-	et4000->pci = !!(info->flags & DEVICE_PCI);
-        if (info->flags & DEVICE_PCI)
-                mem_map_disable(&et4000->bios_rom.mapping);
-
-        mem_map_add(&et4000->linear_mapping, 0, 0, svga_read_linear, svga_readw_linear, svga_readl_linear, svga_write_linear, svga_writew_linear, svga_writel_linear, NULL, 0, &et4000->svga);
-        mem_map_add(&et4000->mmu_mapping,    0, 0, et4000w32p_mmu_read, NULL, NULL, et4000w32p_mmu_write, NULL, NULL, NULL, 0, et4000);
-
-        et4000w32p_io_set(et4000);
+    et4000w32p_io_set(et4000);
         
-        if (info->flags & DEVICE_PCI)
-	        pci_add_card(PCI_ADD_VIDEO, et4000w32p_pci_read, et4000w32p_pci_write, et4000);
+    if (info->flags & DEVICE_PCI)
+        pci_add_card(PCI_ADD_VIDEO,
+		     et4000w32p_pci_read, et4000w32p_pci_write, et4000);
 
-	/* Hardwired bits: 00000000 1xx0x0xx */
-	/* R/W bits:                 xx xxxx */
-	/* PCem bits:                    111 */
-        et4000->pci_regs[0x04] = 0x83;
+    /* Hardwired bits: 00000000 1xx0x0xx */
+    /* R/W bits:                 xx xxxx */
+    /* PCem bits:                    111 */
+    et4000->pci_regs[0x04] = 0x83;
         
-        et4000->pci_regs[0x10] = 0x00;
-        et4000->pci_regs[0x11] = 0x00;
-        et4000->pci_regs[0x12] = 0xff;
-        et4000->pci_regs[0x13] = 0xff;
+    et4000->pci_regs[0x10] = 0x00;
+    et4000->pci_regs[0x11] = 0x00;
+    et4000->pci_regs[0x12] = 0xff;
+    et4000->pci_regs[0x13] = 0xff;
         
-        et4000->pci_regs[0x30] = 0x00;
-        et4000->pci_regs[0x31] = 0x00;
-        et4000->pci_regs[0x32] = 0x00;
-        et4000->pci_regs[0x33] = 0xf0;
+    et4000->pci_regs[0x30] = 0x00;
+    et4000->pci_regs[0x31] = 0x00;
+    et4000->pci_regs[0x32] = 0x00;
+    et4000->pci_regs[0x33] = 0xf0;
         
-        et4000->wake_fifo_thread = thread_create_event();
-        et4000->fifo_not_full_event = thread_create_event();
-        et4000->fifo_thread = thread_create(fifo_thread, et4000);
+    et4000->wake_fifo_thread = thread_create_event();
+    et4000->fifo_not_full_event = thread_create_event();
+    et4000->fifo_thread = thread_create(fifo_thread, et4000);
 
-        return et4000;
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
+
+    return et4000;
 }
 
-static int et4000w32p_available(void)
-{
-        return rom_present(BIOS_ROM_PATH_DIAMOND);
-}
 
-static int et4000w32p_cardex_available(void)
+static void
+et4000w32p_close(void *p)
 {
-        return rom_present(BIOS_ROM_PATH_CARDEX);
-}
+    et4000w32p_t *et4000 = (et4000w32p_t *)p;
 
-static void et4000w32p_close(void *p)
-{
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
-
-        svga_close(&et4000->svga);
+    svga_close(&et4000->svga);
         
-        thread_kill(et4000->fifo_thread);
-        thread_destroy_event(et4000->wake_fifo_thread);
-        thread_destroy_event(et4000->fifo_not_full_event);
+    thread_kill(et4000->fifo_thread);
+    thread_destroy_event(et4000->wake_fifo_thread);
+    thread_destroy_event(et4000->fifo_not_full_event);
 
-        free(et4000);
+    free(et4000);
 }
 
-static void et4000w32p_speed_changed(void *p)
+
+static void
+et4000w32p_speed_changed(void *p)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+    et4000w32p_t *et4000 = (et4000w32p_t *)p;
         
-        svga_recalctimings(&et4000->svga);
+    svga_recalctimings(&et4000->svga);
 }
 
-static void et4000w32p_force_redraw(void *p)
-{
-        et4000w32p_t *et4000w32p = (et4000w32p_t *)p;
 
-        et4000w32p->svga.fullchange = changeframecount;
+static void
+et4000w32p_force_redraw(void *p)
+{
+    et4000w32p_t *et4000w32p = (et4000w32p_t *)p;
+
+    et4000w32p->svga.fullchange = changeframecount;
+}
+
+
+static int
+et4000w32p_available(void)
+{
+    return rom_present(BIOS_ROM_PATH_DIAMOND);
+}
+
+static int
+et4000w32p_cardex_available(void)
+{
+    return rom_present(BIOS_ROM_PATH_CARDEX);
 }
 
 
@@ -1357,6 +1375,10 @@ static const device_config_t et4000w32p_config[] =
         }
 };
 
+static const video_timings_t et4000w32p_pci_timing = {VID_BUS,4,4,4,10,10,10};
+static const video_timings_t et4000w32p_vlb_timing = {VID_BUS,4,4,4,10,10,10};
+
+
 const device_t et4000w32p_cardex_vlb_device = {
     "Tseng Labs ET4000/w32p (Cardex)",
     DEVICE_VLB,
@@ -1365,7 +1387,7 @@ const device_t et4000w32p_cardex_vlb_device = {
     et4000w32p_cardex_available,
     et4000w32p_speed_changed,
     et4000w32p_force_redraw,
-    NULL,
+    &et4000w32p_vlb_timing,
     et4000w32p_config
 };
 
@@ -1377,7 +1399,7 @@ const device_t et4000w32p_cardex_pci_device = {
     et4000w32p_cardex_available,
     et4000w32p_speed_changed,
     et4000w32p_force_redraw,
-    NULL,
+    &et4000w32p_pci_timing,
     et4000w32p_config
 };
 
@@ -1389,7 +1411,7 @@ const device_t et4000w32p_vlb_device = {
     et4000w32p_available,
     et4000w32p_speed_changed,
     et4000w32p_force_redraw,
-    NULL,
+    &et4000w32p_vlb_timing,
     et4000w32p_config
 };
 
@@ -1401,6 +1423,6 @@ const device_t et4000w32p_pci_device = {
     et4000w32p_available,
     et4000w32p_speed_changed,
     et4000w32p_force_redraw,
-    NULL,
+    &et4000w32p_pci_timing,
     et4000w32p_config
 };

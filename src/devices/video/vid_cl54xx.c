@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.19	2018/10/05
+ * Version:	@(#)vid_cl54xx.c	1.0.20	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2298,7 +2298,10 @@ gd54xx_init(const device_t *info)
     gd54xx->pci_regs[0x33] = 0x00;
 	
     svga->crtc[0x27] = id;
-	
+
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
+
     return gd54xx;
 }
 
@@ -2466,9 +2469,13 @@ static const device_config_t gd5434_config[] =
         }
 };
 
-const device_t gd5426_vlb_device =
-{
-    "Cirrus Logic CL-GD 5426 (VLB)",
+static const video_timings_t cl_gd_isa_timing = {VID_ISA,3,3,6,8,8,12};
+static const video_timings_t cl_gd_vlb_timing = {VID_BUS,4,4,8,10,10,20};
+static const video_timings_t cl_gd_pci_timing = {VID_BUS,4,4,8,10,10,20};
+
+
+const device_t gd5426_vlb_device = {
+    "Cirrus Logic GD-5426",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5426,
     gd54xx_init, 
@@ -2477,13 +2484,12 @@ const device_t gd5426_vlb_device =
     gd5426_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_vlb_timing,
     gd5428_config
 };
 
-const device_t gd5428_isa_device =
-{
-    "Cirrus Logic CL-GD 5428 (ISA)",
+const device_t gd5428_isa_device = {
+    "Cirrus Logic GD-5428",
     DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5428,
     gd54xx_init, 
@@ -2492,13 +2498,12 @@ const device_t gd5428_isa_device =
     gd5428_isa_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_isa_timing,
     gd5428_config
 };
 
-const device_t gd5428_vlb_device =
-{
-    "Cirrus Logic CL-GD 5428 (VLB)",
+const device_t gd5428_vlb_device = {
+    "Cirrus Logic GD-5428",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5428,
     gd54xx_init, 
@@ -2507,13 +2512,12 @@ const device_t gd5428_vlb_device =
     gd5428_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_vlb_timing,
     gd5428_config
 };
 
-const device_t gd5429_isa_device =
-{
-    "Cirrus Logic CL-GD 5429 (ISA)",
+const device_t gd5429_isa_device = {
+    "Cirrus Logic GD-5429",
     DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5429,
     gd54xx_init, 
@@ -2522,13 +2526,12 @@ const device_t gd5429_isa_device =
     gd5429_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_isa_timing,
     gd5428_config
 };
 
-const device_t gd5429_vlb_device =
-{
-    "Cirrus Logic CL-GD 5429 (VLB)",
+const device_t gd5429_vlb_device = {
+    "Cirrus Logic GD-5429",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5429,
     gd54xx_init, 
@@ -2537,13 +2540,12 @@ const device_t gd5429_vlb_device =
     gd5429_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_vlb_timing,
     gd5428_config
 };
 
-const device_t gd5430_vlb_device =
-{
-    "Cirrus Logic CL-GD 5430 (VLB)",
+const device_t gd5430_vlb_device = {
+    "Cirrus Logic GD-5430",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5430,
     gd54xx_init, 
@@ -2552,13 +2554,12 @@ const device_t gd5430_vlb_device =
     gd5430_vlb_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_vlb_timing,
     gd5428_config
 };
 
-const device_t gd5430_pci_device =
-{
-    "Cirrus Logic CL-GD 5430 (PCI)",
+const device_t gd5430_pci_device = {
+    "Cirrus Logic GD-5430",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5430,
     gd54xx_init, 
@@ -2567,13 +2568,12 @@ const device_t gd5430_pci_device =
     gd5430_pci_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5428_config
 };
 
-const device_t gd5434_isa_device =
-{
-    "Cirrus Logic CL-GD 5434 (ISA)",
+const device_t gd5434_isa_device = {
+    "Cirrus Logic GD-5434",
     DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5434,
     gd54xx_init, 
@@ -2582,13 +2582,12 @@ const device_t gd5434_isa_device =
     gd5434_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_isa_timing,
     gd5434_config
 };
 
-const device_t gd5434_vlb_device =
-{
-    "Cirrus Logic CL-GD 5434 (VLB)",
+const device_t gd5434_vlb_device = {
+    "Cirrus Logic GD-5434",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5434,
     gd54xx_init, 
@@ -2597,13 +2596,12 @@ const device_t gd5434_vlb_device =
     gd5434_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_vlb_timing,
     gd5434_config
 };
 
-const device_t gd5434_pci_device =
-{
-    "Cirrus Logic CL-GD 5434 (PCI)",
+const device_t gd5434_pci_device = {
+    "Cirrus Logic GD-5434",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5434,
     gd54xx_init, 
@@ -2612,13 +2610,12 @@ const device_t gd5434_pci_device =
     gd5434_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5434_config
 };
 
-const device_t gd5436_pci_device =
-{
-    "Cirrus Logic CL-GD 5436 (PCI)",
+const device_t gd5436_pci_device = {
+    "Cirrus Logic GD-5436",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5436,
     gd54xx_init, 
@@ -2627,13 +2624,12 @@ const device_t gd5436_pci_device =
     gd5436_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5434_config
 };
 
-const device_t gd5440_onboard_pci_device =
-{
-    "Cirrus Logic CL-GD 5440 (On-Board PCI)",
+const device_t gd5440_onboard_pci_device = {
+    "Onboard Cirrus Logic GD-5440",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5440 | 0x600,
     gd54xx_init,
@@ -2642,13 +2638,12 @@ const device_t gd5440_onboard_pci_device =
     NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5440_onboard_config
 };
 
-const device_t gd5440_pci_device =
-{
-    "Cirrus Logic CL-GD 5440 (PCI)",
+const device_t gd5440_pci_device = {
+    "Cirrus Logic GD-5440",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5440 | 0x400,
     gd54xx_init,
@@ -2657,13 +2652,12 @@ const device_t gd5440_pci_device =
     gd5440_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5428_config
 };
 
-const device_t gd5446_pci_device =
-{
-    "Cirrus Logic CL-GD 5446 (PCI)",
+const device_t gd5446_pci_device = {
+    "Cirrus Logic GD-5446",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5446,
     gd54xx_init,
@@ -2672,13 +2666,12 @@ const device_t gd5446_pci_device =
     gd5446_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5434_config
 };
 
-const device_t gd5446_stb_pci_device =
-{
-    "STB Nitro 64V (PCI)",
+const device_t gd5446_stb_pci_device = {
+    "STB Nitro 64V",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5446 | 0x100,
     gd54xx_init,
@@ -2687,13 +2680,12 @@ const device_t gd5446_stb_pci_device =
     gd5446_stb_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5434_config
 };
 
-const device_t gd5480_pci_device =
-{
-    "Cirrus Logic CL-GD 5480 (PCI)",
+const device_t gd5480_pci_device = {
+    "Cirrus Logic GD-5480",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5480,
     gd54xx_init, 
@@ -2702,6 +2694,6 @@ const device_t gd5480_pci_device =
     gd5480_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    NULL,
+    &cl_gd_pci_timing,
     gd5434_config
 };

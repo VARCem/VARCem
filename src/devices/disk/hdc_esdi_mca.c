@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.12	2018/09/22
+ * Version:	@(#)hdc_esdi_mca.c	1.0.13	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -121,6 +121,8 @@ typedef struct {
 } drive_t;
 
 typedef struct {
+    uint16_t	base;
+    int8_t	irq;
     int8_t	dma;
 
     uint32_t	bios;
@@ -216,14 +218,14 @@ static __inline void
 set_irq(hdc_t *dev)
 {
     if (dev->basic_ctrl & CTRL_IRQ_ENA)
-	picint(1 << ESDI_IRQCHAN);
+	picint(1 << dev->irq);
 }
 
 
 static __inline void
 clear_irq(hdc_t *dev)
 {
-    picintc(1 << ESDI_IRQCHAN);
+    picintc(1 << dev->irq);
 }
 
 
@@ -301,36 +303,34 @@ complete_command_status(hdc_t *dev)
 	dev->status_data[0] = CMD_READ | STATUS_LEN(7) | STATUS_DEVICE(0);
     else
 	dev->status_data[0] = CMD_READ | STATUS_LEN(7) | STATUS_DEVICE(1);
-    dev->status_data[1] = 0x0000; /*Error bits*/
-    dev->status_data[2] = 0x1900; /*Device status*/
-    dev->status_data[3] = 0; /*Number of blocks left to do*/
-    dev->status_data[4] = (dev->rba-1) & 0xffff; /*Last RBA processed*/
+    dev->status_data[1] = 0x0000;		/* error bits */
+    dev->status_data[2] = 0x1900;		/* device status */
+    dev->status_data[3] = 0;			/* #blocks left to do */
+    dev->status_data[4] = (dev->rba-1) & 0xffff; /* last RBA processed */
     dev->status_data[5] = (dev->rba-1) >> 8;
-    dev->status_data[6] = 0; /*Number of blocks requiring error recovery*/
+    dev->status_data[6] = 0;		/* #blocks requiring error recovery */
 }
 
 
 #define ESDI_ADAPTER_ONLY() do \
-        {                                                 \
-                if (dev->cmd_dev != ATTN_HOST_ADAPTER)    \
-                {                                         \
-                        cmd_unsupported(dev);             \
-                        return;                           \
-                }                                         \
-        } while (0)
+{							\
+    if (dev->cmd_dev != ATTN_HOST_ADAPTER) {		\
+	cmd_unsupported(dev);				\
+	return;						\
+    }							\
+} while (0)
 
 #define ESDI_DRIVE_ONLY() do \
-        {                                                 \
-                if (dev->cmd_dev != ATTN_DEVICE_0 && dev->cmd_dev != ATTN_DEVICE_1)   \
-                {                                         \
-                        cmd_unsupported(dev);             \
-                        return;                           \
-                }                                         \
-                if (dev->cmd_dev == ATTN_DEVICE_0)        \
-                        drive = &dev->drives[0];          \
-                else                                      \
-                        drive = &dev->drives[1];          \
-        } while (0)
+{							\
+    if (dev->cmd_dev != ATTN_DEVICE_0 && dev->cmd_dev != ATTN_DEVICE_1) {  \
+	cmd_unsupported(dev);				\
+	return;						\
+    }							\
+    if (dev->cmd_dev == ATTN_DEVICE_0)			\
+	drive = &dev->drives[0];			\
+    else						\
+	drive = &dev->drives[1];			\
+} while (0)
                 
 
 static void
@@ -391,7 +391,7 @@ hdc_callback(void *priv)
                         	while (dev->sector_pos < dev->sector_count) {
                                 	if (! dev->data_pos) {
                                         	if (dev->rba >= drive->sectors)
-                                                	fatal("Read past end of drive\n");
+                                                	fatal("ESDI: read past end of drive\n");
 						hdd_active(drive->hdd_num, 1);
 
 						hdd_image_read(drive->hdd_num, dev->rba, 1, (uint8_t *)dev->data);
@@ -477,7 +477,7 @@ hdc_callback(void *priv)
                                 	}
 
                                 	if (dev->rba >= drive->sectors)
-                                        	fatal("Write past end of drive\n");
+                                        	fatal("ESDI: write past end of drive\n");
 
 					hdd_active(drive->hdd_num,
 						   dev->cmd_dev == ATTN_DEVICE_0 ? 0 : 1);
@@ -549,14 +549,15 @@ hdc_callback(void *priv)
                 }
 
                 if ((dev->status & STATUS_IRQ) || dev->irq_in_progress)
-                        fatal("IRQ in progress %02x %i\n", dev->status, dev->irq_in_progress);
+                        fatal("ESDI: IRQ in progress %02x %i\n",
+				dev->status, dev->irq_in_progress);
 
                 dev->status_len = 9;
                 dev->status_data[0] = CMD_GET_DEV_STATUS | STATUS_LEN(9) | STATUS_DEVICE_HOST_ADAPTER;
-                dev->status_data[1] = 0x0000; /*Error bits*/
-                dev->status_data[2] = 0x1900; /*Device status*/
-                dev->status_data[3] = 0; /*ESDI Standard Status*/
-                dev->status_data[4] = 0; /*ESDI Vendor Unique Status*/
+                dev->status_data[1] = 0x0000;	/* Error bits */
+                dev->status_data[2] = 0x1900;	/* Device status */
+                dev->status_data[3] = 0;	/* ESDI Standard Status */
+                dev->status_data[4] = 0;	/* ESDI Vendor Unique Status */
                 dev->status_data[5] = 0;
                 dev->status_data[6] = 0;
                 dev->status_data[7] = 0;
@@ -577,7 +578,8 @@ hdc_callback(void *priv)
                 }
 
                 if ((dev->status & STATUS_IRQ) || dev->irq_in_progress)
-                        fatal("IRQ in progress %02x %i\n", dev->status, dev->irq_in_progress);
+                        fatal("ESDI: IRQ in progress %02x %i\n",
+				dev->status, dev->irq_in_progress);
 
                 dev->status_len = 6;
                 dev->status_data[0] = CMD_GET_DEV_CONFIG | STATUS_LEN(6) | STATUS_DEVICE_HOST_ADAPTER;
@@ -602,7 +604,8 @@ hdc_callback(void *priv)
                 ESDI_ADAPTER_ONLY();
 
                 if ((dev->status & STATUS_IRQ) || dev->irq_in_progress)
-                        fatal("IRQ in progress %02x %i\n", dev->status, dev->irq_in_progress);
+                        fatal("ESDI: IRQ in progress %02x %i\n",
+				dev->status, dev->irq_in_progress);
 
                 dev->status_len = 5;
                 dev->status_data[0] = CMD_GET_POS_INFO | STATUS_LEN(5) | STATUS_DEVICE_HOST_ADAPTER;
@@ -625,7 +628,7 @@ hdc_callback(void *priv)
                         	dev->sector_pos = 0;
                         	dev->sector_count = dev->cmd_data[1];
                         	if (dev->sector_count > 256)
-                                	fatal("Write sector buffer count %04x\n", dev->cmd_data[1]);
+                                	fatal("ESDI: write sector buffer count %04x\n", dev->cmd_data[1]);
 
                         	dev->status = STATUS_IRQ | STATUS_CMD_IN_PROGRESS | STATUS_TRANSFER_REQ;
                         	dev->irq_status = IRQ_HOST_ADAPTER | IRQ_DATA_TRANSFER_READY;
@@ -679,7 +682,7 @@ hdc_callback(void *priv)
                         	dev->sector_pos = 0;
                         	dev->sector_count = dev->cmd_data[1];
                         	if (dev->sector_count > 256)
-                                	fatal("Read sector buffer count %04x\n", dev->cmd_data[1]);
+                                	fatal("ESDI: read sector buffer count %04x\n", dev->cmd_data[1]);
 
 				dev->status = STATUS_IRQ | STATUS_CMD_IN_PROGRESS | STATUS_TRANSFER_REQ;
 				dev->irq_status = IRQ_HOST_ADAPTER | IRQ_DATA_TRANSFER_READY;
@@ -731,7 +734,8 @@ hdc_callback(void *priv)
 	case 0x12:
 		ESDI_ADAPTER_ONLY();
 		if ((dev->status & STATUS_IRQ) || dev->irq_in_progress)
-			fatal("IRQ in progress %02x %i\n", dev->status, dev->irq_in_progress);
+			fatal("ESDI: IRQ in progress %02x %i\n",
+				dev->status, dev->irq_in_progress);
 
 		dev->status_len = 2;
 		dev->status_data[0] = 0x12 | STATUS_LEN(5) | STATUS_DEVICE_HOST_ADAPTER;
@@ -744,7 +748,8 @@ hdc_callback(void *priv)
 		break;
 
 	default:
-		DEBUG("BAD COMMAND %02x %i\n", dev->command, dev->cmd_dev);
+		DEBUG("ESDI: BAD COMMAND %02x %i\n",
+			dev->command, dev->cmd_dev);
     }
 }
 
@@ -755,7 +760,7 @@ hdc_read(uint16_t port, void *priv)
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
 
-    switch (port & 7) {
+    switch (port - dev->base) {
 	case 2:					/*Basic status register*/
 		ret = dev->status;
 		break;
@@ -766,7 +771,7 @@ hdc_read(uint16_t port, void *priv)
 		break;
 
 	default:
-		DEBUG("esdi_read port=%04x\n", port);
+		DEBUG("ESDI: read invalid port %04x\n", port);
     }
 
     DBGLOG(2, "ESDI: rd(%04x) = %02x\n", port & 7, ret);
@@ -782,8 +787,8 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
     DBGLOG(2, "ESDI: wr(%04x, %02x)\n", port & 7, val);
 
-    switch (port & 7) {
-	case 2:			/*Basic control register*/
+    switch (port - dev->base) {
+	case 2:		/*Basic control register*/
 		if ((dev->basic_ctrl & CTRL_RESET) && !(val & CTRL_RESET)) {
 			dev->in_reset = 1;
 			dev->callback = ESDI_TIME * 50LL;
@@ -792,16 +797,16 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 		dev->basic_ctrl = val;
 
 		if (! (dev->basic_ctrl & CTRL_IRQ_ENA))
-			picintc(1 << 14);
+			picintc(1 << dev->irq);
 		break;
 
-	case 3:			/*Attention register*/
+	case 3:		/*Attention register*/
 		switch (val & ATTN_DEVICE_SEL) {
 			case ATTN_HOST_ADAPTER:
 				switch (val & ATTN_REQ_MASK) {
 					case ATTN_CMD_REQ:
 						if (dev->cmd_req_in_progress)
-							fatal("Try to start command on in_progress adapter\n");
+							fatal("ESDI: try to start command on in_progress adapter\n");
 						dev->cmd_req_in_progress = 1;
                                 		dev->cmd_dev = ATTN_HOST_ADAPTER;
 						dev->status |= STATUS_BUSY;
@@ -822,7 +827,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
                                			break;
                                
                                		default:
-                               			DEBUG("Bad attention request %02x\n", val);
+                               			DEBUG("ESDI: bad attention request %02x\n", val);
                        		}
                        		break;
 
@@ -830,7 +835,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
                        		switch (val & ATTN_REQ_MASK) {
                                		case ATTN_CMD_REQ:
                                			if (dev->cmd_req_in_progress)
-                                       			fatal("Try to start command on in_progress device0\n");
+                                       			fatal("ESDI: try to start command on in_progress device0\n");
                                			dev->cmd_req_in_progress = 1;
                                			dev->cmd_dev = ATTN_DEVICE_0;
                                			dev->status |= STATUS_BUSY;
@@ -845,7 +850,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
                                			break;
     
                                		default:
-                               			DEBUG("Bad attention request %02x\n", val);
+                               			DEBUG("ESDI: bad attention request %02x\n", val);
                        		}
                        		break;
 
@@ -853,7 +858,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
                        		switch (val & ATTN_REQ_MASK) {
                                		case ATTN_CMD_REQ:
                                			if (dev->cmd_req_in_progress)
-                                       			fatal("Try to start command on in_progress device0\n");
+                                       			fatal("ESDI: try to start command on in_progress device0\n");
                                			dev->cmd_req_in_progress = 1;
                                			dev->cmd_dev = ATTN_DEVICE_1;
                                			dev->status |= STATUS_BUSY;
@@ -867,17 +872,17 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
                                			break;
      
                                		default:
-                               			DEBUG("Bad attention request %02x\n", val);
+                               			DEBUG("ESDI: bad attention request %02x\n", val);
                        		}
                        		break;
 
                        	default:
-                       		DEBUG("Attention to unknown device %02x\n", val);
+                       		DEBUG("ESDI: attention to unknown device %02x\n", val);
                	}
                	break;
 
 	default:
-		DEBUG("esdi_write port=%04x val=%02x\n", port, val);
+		DEBUG("ESDI: write to invalid port %04x (val=%02x)\n", port, val);
     }
 }
 
@@ -888,7 +893,7 @@ hdc_readw(uint16_t port, void *priv)
     hdc_t *dev = (hdc_t *)priv;
     uint16_t ret = 0xffff;
 
-    switch (port & 7) {
+    switch (port - dev->base) {
 	case 0:			/*Status Interface Register*/
 		if (dev->status_pos >= dev->status_len)
 			return(0);
@@ -900,7 +905,7 @@ hdc_readw(uint16_t port, void *priv)
                	break;
 
 	default:
-		DEBUG("esdi_readw port=%04x\n", port);
+		DEBUG("ESDI: readw from invalid port %04x\n", port);
     }
         
     return(ret);
@@ -914,7 +919,7 @@ hdc_writew(uint16_t port, uint16_t val, void *priv)
 
     DBGLOG(2, "ESDI: wrw(%04x, %04x)\n", port & 7, val);
 
-    switch (port & 7) {
+    switch (port - dev->base) {
 	case 0:			/*Command Interface Register*/
                	if (dev->cmd_pos >= 4)
                        	fatal("CIR pos 4\n");
@@ -935,7 +940,7 @@ hdc_writew(uint16_t port, uint16_t val, void *priv)
                	break;
 
 	default:
-		DEBUG("esdi_writew port=%04x val=%04x\n", port, val);
+		DEBUG("ESDI: writew to invalid port %04x (val=%04x)\n", port, val);
     }
 }
 
@@ -946,7 +951,7 @@ hdc_mca_read(int port, void *priv)
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = dev->pos_regs[port & 7];
 
-    DBGLOG(1, "ESDI: mcard(%04x) = %02x\n", port, ret);
+    DBGLOG(1, "ESDI: mca_read(%04x) = %02x\n", port, ret);
 
     return(ret);
 }
@@ -957,7 +962,7 @@ hdc_mca_write(int port, uint8_t val, void *priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
-    DBGLOG(1, "ESDI: mcawr(%04x, %02x)  pos[2]=%02x pos[3]=%02x\n",
+    DBGLOG(1, "ESDI: mca_write(%04x, %02x)  pos[2]=%02x pos[3]=%02x\n",
 		port, val, dev->pos_regs[2], dev->pos_regs[3]);
 
     if (port < 0x102) return;
@@ -965,9 +970,21 @@ hdc_mca_write(int port, uint8_t val, void *priv)
     /* Save the new value. */
     dev->pos_regs[port & 7] = val;
 
-    io_removehandler(ESDI_IOADDR_PRI, 8,
+    io_removehandler(dev->base, 8,
 		     hdc_read,hdc_readw,NULL, hdc_write,hdc_writew,NULL, dev);
+
     mem_map_disable(&dev->bios_rom.mapping);
+
+    /* Extract the new I/O base. */
+    switch(dev->pos_regs[2] & 0x02) {
+	case 0x00:	/* PRIMARY   [0]=XXxx xx0X  0x3510 */
+		dev->base = ESDI_IOADDR_PRI;
+		break;
+
+	case 0x02:	/* SECONDARY [0]=XXxx xx1X  0x3518 */
+		dev->base = ESDI_IOADDR_SEC;
+		break;
+    }
 
     switch(dev->pos_regs[2] & 0x3c) {
 	case 0x14:	/* DMA 5 [0]=XX01 01XX */
@@ -999,22 +1016,59 @@ hdc_mca_write(int port, uint8_t val, void *priv)
 		break;
     }
 
+    /* Extract the new BIOS address. */
+    if (! (dev->pos_regs[3] & 0x08)) switch(dev->pos_regs[3] & 0x0f) {
+	case 0:		/* ROM C000 [1]=XXXX 0000 */
+		dev->bios = 0xC0000;
+		break;
+
+	case 1:		/* ROM C400 [1]=XXXX 0001 */
+		dev->bios = 0xC4000;
+		break;
+
+	case 2:		/* ROM C800 [1]=XXXX 0010 */
+		dev->bios = 0xC8000;
+		break;
+
+	case 3:		/* ROM CC00 [1]=XXXX 0011 */
+		dev->bios = 0xCC000;
+		break;
+
+	case 4:		/* ROM D000 [1]=XXXX 0100 */
+		dev->bios = 0xD0000;
+		break;
+
+	case 5:		/* ROM D400 [1]=XXXX 0101 */
+		dev->bios = 0xD4000;
+		break;
+
+	case 6:		/* ROM D800 [1]=XXXX 0110 */
+		dev->bios = 0xD8000;
+		break;
+
+	case 7:		/* ROM DC00 [1]=XXXX 0111 */
+		dev->bios = 0xDC000;
+		break;
+    } else {
+	/* BIOS ROM disabled. */
+	dev->bios = 0x000000;
+    }
+
     if (dev->pos_regs[2] & 0x01) {
 	/* Card enabled; register (new) I/O handler. */
-	io_sethandler(ESDI_IOADDR_PRI, 8,
+	io_sethandler(dev->base, 8,
 		      hdc_read, hdc_readw, NULL,
 		      hdc_write, hdc_writew, NULL, dev);
 
 	/* Enable or disable the BIOS ROM. */
-	if (!(dev->pos_regs[3] & 0x08)) {
-		dev->bios = ((dev->pos_regs[3] & 7) * 0x4000) + 0xc0000;
+	if (!(dev->pos_regs[3] & 0x08) && dev->bios != 0x000000) {
 		mem_map_enable(&dev->bios_rom.mapping);
 		mem_map_set_addr(&dev->bios_rom.mapping, dev->bios, 0x4000);
 	}
 
 	/* Say hello. */
-	INFO("ESDI: I/O=%04x, IRQ=%d, DMA=%d, BIOS @%05X\n",
-	     ESDI_IOADDR_PRI, 14, dev->dma, dev->bios);
+	INFO("ESDI: I/O=%04x, IRQ=%i, DMA=%i, BIOS @%05X\n",
+	     dev->base, dev->irq, dev->dma, dev->bios);
     }
 }
 
@@ -1029,6 +1083,9 @@ esdi_init(const device_t *info)
     dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
 
+    /* This is hardwired. */
+    dev->irq = ESDI_IRQCHAN;
+
     /* Mark as unconfigured. */
     dev->irq_status = 0xff;
 
@@ -1041,7 +1098,8 @@ esdi_init(const device_t *info)
 
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_ESDI) && (hdd[i].id.esdi_channel < ESDI_NUM)) {
+	if ((hdd[i].bus == HDD_BUS_ESDI) &&
+	    (hdd[i].id.esdi_channel < ESDI_NUM)) {
 		/* This is an ESDI drive. */
 		drive = &dev->drives[hdd[i].id.esdi_channel];
 
@@ -1068,11 +1126,9 @@ esdi_init(const device_t *info)
 	if (++c >= ESDI_NUM) break;
     }
 
-    /* Set the MCA ID for this controller, 0xFFDD. */
+    /* Set the MCA ID for this controller and enable MCA. */
     dev->pos_regs[0] = 0xff;
     dev->pos_regs[1] = 0xdd;
-
-    /* Enable the device. */
     mca_add(hdc_mca_read, hdc_mca_write, dev);
 
     /* Mark for a reset. */

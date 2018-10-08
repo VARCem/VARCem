@@ -42,7 +42,7 @@
  *		which are the same as the XGA. It supports up to 1MB of VRAM,
  *		but we lock it down to 512K. The PS/1 2122 had 256K.
  *
- * Version:	@(#)vid_ti_cf62011.c	1.0.6	2018/10/05
+ * Version:	@(#)vid_ti_cf62011.c	1.0.7	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -97,6 +97,9 @@ typedef struct {
     uint8_t	reg_2100;
     uint8_t	reg_210a;
 } tivga_t;
+
+
+static const video_timings_t ti_cf62011_timing = {VID_ISA,8,16,32,8,16,32};
 
 
 static void
@@ -274,6 +277,9 @@ vid_init(const device_t *info)
     ti->svga.bpp = 8;
     ti->svga.miscout = 1;
 
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
+
     return(ti);
 }
 
@@ -312,7 +318,7 @@ const device_t ti_cf62011_device = {
     NULL,
     vid_speed_changed,
     vid_force_redraw,
-    NULL,
+    &ti_cf62011_timing,
     vid_config
 };
 #endif
@@ -326,6 +332,6 @@ const device_t ibm_ps1_2121_device = {
     NULL,
     vid_speed_changed,
     vid_force_redraw,
-    NULL,
+    &ti_cf62011_timing,
     NULL
 };

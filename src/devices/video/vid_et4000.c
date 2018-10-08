@@ -8,7 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.12	2018/10/05
+ * Version:	@(#)vid_et4000.c	1.0.13	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -538,6 +538,9 @@ et4000_init(const device_t *info)
 
     DEBUG("VIDEO: %s (vram=%dKB)\n", dev->name, dev->vram_size>>10);
 
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
+
     return(dev);
 }
 
@@ -610,39 +613,43 @@ static const device_config_t et4000_config[] =
 	}
 };
 
+static const video_timings_t et4000ax_isa_timing = {VID_ISA,3,3,6,5,5,10};
+static const video_timings_t et4000ax_mca_timing = {VID_MCA,4,5,10,5,5,10};
+
+
 const device_t et4000_isa_device = {
-    "Tseng Labs ET4000AX (ISA)",
+    "Tseng Labs ET4000AX",
     DEVICE_ISA,
     0,
     et4000_init, et4000_close, NULL,
     et4000_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    NULL,
+    &et4000ax_isa_timing,
     et4000_config
 };
 
 const device_t et4000_mca_device = {
-    "Tseng Labs ET4000AX (MCA)",
+    "Tseng Labs ET4000AX",
     DEVICE_MCA,
     1,
     et4000_init, et4000_close, NULL,
     et4000_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    NULL,
+    &et4000ax_mca_timing,
     et4000_config
 };
 
 const device_t et4000k_isa_device = {
-    "Trigem Korean VGA (Tseng Labs ET4000AX Korean)",
+    "Tseng Labs ET4000AX (Korean)",
     DEVICE_ISA,
     2,
     et4000_init, et4000_close, NULL,
     et4000k_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    NULL,
+    &et4000ax_isa_timing,
     et4000_config
 };
 
@@ -654,6 +661,6 @@ const device_t et4000k_tg286_isa_device = {
     et4000k_available,
     et4000_speed_changed,
     et4000_force_redraw,
-    NULL,
+    &et4000ax_isa_timing,
     et4000_config
 };

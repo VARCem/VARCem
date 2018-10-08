@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.9	2018/10/05
+ * Version:	@(#)vid_tgui9440.c	1.0.10	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1807,7 +1807,7 @@ const device_t tgui9400cxi_device = {
 };
 
 const device_t tgui9440_vlb_device = {
-        "Trident TGUI 9440 VLB",
+        "Trident TGUI 9440",
         DEVICE_VLB,
 	TGUI_9440,
         tgui_init, tgui_close, NULL,
@@ -1819,7 +1819,7 @@ const device_t tgui9440_vlb_device = {
 };
 
 const device_t tgui9440_pci_device = {
-        "Trident TGUI 9440 PCI",
+        "Trident TGUI 9440",
         DEVICE_PCI,
 	TGUI_9440,
         tgui_init, tgui_close, NULL,

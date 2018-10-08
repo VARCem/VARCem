@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.12	2018/09/22
+ * Version:	@(#)vid_s3_virge.c	1.0.13	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3997,6 +3997,9 @@ s3_virge_init(const device_t *info)
     virge->fifo_not_full_event = thread_create_event();
     virge->fifo_thread = thread_create(fifo_thread, virge);
  
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
+
     return virge;
 }
 
@@ -4021,39 +4024,46 @@ s3_virge_close(void *p)
 }
 
 
-static int s3_virge_available(void)
-{
-    return rom_present(ROM_DIAMOND_STEALTH3D_2000);
-}
-
-static int s3_virge_988_available(void)
-{
-    return rom_present(ROM_DIAMOND_STEALTH3D_3000);
-}
-
-static int s3_virge_375_1_available(void)
-{
-    return rom_present(ROM_VIRGE_DX);
-}
-
-static int s3_virge_375_4_available(void)
-{
-    return rom_present(ROM_VIRGE_DX_VBE20);
-}
-
-
-static void s3_virge_speed_changed(void *p)
+static void
+s3_virge_speed_changed(void *p)
 {
     virge_t *virge = (virge_t *)p;
         
     svga_recalctimings(&virge->svga);
 }
 
-static void s3_virge_force_redraw(void *p)
+
+static void
+s3_virge_force_redraw(void *p)
 {
     virge_t *virge = (virge_t *)p;
 
     virge->svga.fullchange = changeframecount;
+}
+
+
+static int
+s3_virge_available(void)
+{
+    return rom_present(ROM_DIAMOND_STEALTH3D_2000);
+}
+
+static int
+s3_virge_988_available(void)
+{
+    return rom_present(ROM_DIAMOND_STEALTH3D_3000);
+}
+
+static int
+s3_virge_375_1_available(void)
+{
+    return rom_present(ROM_VIRGE_DX);
+}
+
+static int
+s3_virge_375_4_available(void)
+{
+    return rom_present(ROM_VIRGE_DX_VBE20);
 }
 
 
@@ -4084,6 +4094,9 @@ static const device_config_t s3_virge_config[] =
         }
 };
 
+static const video_timings_t virge375_vlb_timing = {VID_BUS,2,2,3,28,28,45};
+static const video_timings_t virge375_pci_timing = {VID_BUS,2,2,3,28,28,45};
+
 
 const device_t s3_virge_vlb_device = {
     "Diamond Stealth 3D 2000 (S3 ViRGE)",
@@ -4093,7 +4106,7 @@ const device_t s3_virge_vlb_device = {
     s3_virge_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_vlb_timing,
     s3_virge_config
 };
 
@@ -4105,7 +4118,7 @@ const device_t s3_virge_pci_device = {
     s3_virge_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_pci_timing,
     s3_virge_config
 };
 
@@ -4117,7 +4130,7 @@ const device_t s3_virge_988_vlb_device = {
     s3_virge_988_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_vlb_timing,
     s3_virge_config
 };
 
@@ -4129,7 +4142,7 @@ const device_t s3_virge_988_pci_device = {
     s3_virge_988_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_pci_timing,
     s3_virge_config
 };
 
@@ -4141,7 +4154,7 @@ const device_t s3_virge_375_vlb_device = {
     s3_virge_375_1_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_vlb_timing,
     s3_virge_config
 };
 
@@ -4153,7 +4166,7 @@ const device_t s3_virge_375_pci_device = {
     s3_virge_375_1_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_pci_timing,
     s3_virge_config
 };
 
@@ -4165,7 +4178,7 @@ const device_t s3_virge_375_4_vlb_device = {
     s3_virge_375_4_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_vlb_timing,
     s3_virge_config
 };
 
@@ -4177,6 +4190,6 @@ const device_t s3_virge_375_4_pci_device = {
     s3_virge_375_4_available,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
-    NULL,
+    &virge375_pci_timing,
     s3_virge_config
 };

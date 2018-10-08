@@ -13,7 +13,7 @@
  * NOTE:	The MegaPC video device should be moved to the MegaPC
  *		machine file.
  *
- * Version:	@(#)vid_paradise.c	1.0.7	2018/09/22
+ * Version:	@(#)vid_paradise.c	1.0.8	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,23 +56,21 @@
 #include "vid_svga_render.h"
 
 
-enum type
-{
-        PVGA1A = 0,
-        WD90C11,
-	WD90C30
+enum type {
+    PVGA1A = 0,
+    WD90C11,
+    WD90C30
 };
 
 
-typedef struct paradise_t
-{
-        svga_t svga;
-        
-        rom_t bios_rom;
+typedef struct {
+    enum type type;
 
-	enum type type;
+    svga_t svga;
 
-        uint32_t read_bank[4], write_bank[4];
+    rom_t bios_rom;
+
+    uint32_t read_bank[4], write_bank[4];
 } paradise_t;
 
 
@@ -334,6 +332,9 @@ static void *paradise_pvga1a_init(const device_t *info, uint32_t memsize)
 
         paradise->type = PVGA1A;               
         
+	video_inform(VID_TYPE_SPEC,
+		     (const video_timings_t *)info->vid_timing);
+
         return paradise;
 }
 
@@ -367,6 +368,9 @@ static void *paradise_wd90c11_init(const device_t *info)
         
         paradise->type = WD90C11;               
         
+	video_inform(VID_TYPE_SPEC,
+		     (const video_timings_t *)info->vid_timing);
+
         return paradise;
 }
 
@@ -400,6 +404,9 @@ static void *paradise_wd90c30_init(const device_t *info, uint32_t memsize)
         
         paradise->type = WD90C11;               
         
+	video_inform(VID_TYPE_SPEC,
+		     (const video_timings_t *)info->vid_timing);
+
         return paradise;
 }
 
@@ -516,31 +523,6 @@ static void paradise_force_redraw(void *p)
 }
 
 
-const device_t paradise_pvga1a_pc2086_device =
-{
-        "Paradise PVGA1A (Amstrad PC2086)",
-        0,
-	0,
-        paradise_pvga1a_pc2086_init, paradise_close, NULL,
-	NULL,
-        paradise_speed_changed,
-        paradise_force_redraw,
-        NULL,
-	NULL
-};
-const device_t paradise_pvga1a_pc3086_device =
-{
-        "Paradise PVGA1A (Amstrad PC3086)",
-        0,
-	0,
-        paradise_pvga1a_pc3086_init, paradise_close, NULL,
-        NULL,
-        paradise_speed_changed,
-        paradise_force_redraw,
-        NULL,
-	NULL
-};
-
 static const device_config_t paradise_pvga1a_config[] =
 {
         {
@@ -565,42 +547,73 @@ static const device_config_t paradise_pvga1a_config[] =
         }
 };
 
-const device_t paradise_pvga1a_device =
-{
-        "Paradise PVGA1A",
-        DEVICE_ISA,
-	0,
-        paradise_pvga1a_standalone_init, paradise_close, NULL,
-        paradise_pvga1a_standalone_available,
-        paradise_speed_changed,
-        paradise_force_redraw,
-        NULL,
-	paradise_pvga1a_config
+static const video_timings_t pvga1a_timing = {VID_ISA,8,16,32,8,16,32};
+
+
+const device_t paradise_pvga1a_device = {
+    "Paradise PVGA1A",
+    DEVICE_ISA,
+    0,
+    paradise_pvga1a_standalone_init, paradise_close, NULL,
+    paradise_pvga1a_standalone_available,
+    paradise_speed_changed,
+    paradise_force_redraw,
+    &pvga1a_timing,
+    paradise_pvga1a_config
 };
-const device_t paradise_wd90c11_megapc_device =
-{
-        "Paradise WD90C11 (Amstrad MegaPC)",
-        0,
-	0,
-        paradise_wd90c11_megapc_init, paradise_close, NULL,
-        NULL,
-        paradise_speed_changed,
-        paradise_force_redraw,
-        NULL,
-	NULL
+
+const device_t paradise_pvga1a_pc2086_device = {
+    "Paradise PVGA1A (Amstrad PC2086)",
+    0,
+    0,
+    paradise_pvga1a_pc2086_init, paradise_close, NULL,
+    NULL,
+    paradise_speed_changed,
+    paradise_force_redraw,
+    &pvga1a_timing,
+    NULL
 };
-const device_t paradise_wd90c11_device =
-{
-        "Paradise WD90C11-LR",
-        DEVICE_ISA,
-	0,
-        paradise_wd90c11_standalone_init, paradise_close, NULL,
-        paradise_wd90c11_standalone_available,
-        paradise_speed_changed,
-        paradise_force_redraw,
-        NULL,
-	NULL
+
+const device_t paradise_pvga1a_pc3086_device = {
+    "Paradise PVGA1A (Amstrad PC3086)",
+    0,
+    0,
+    paradise_pvga1a_pc3086_init, paradise_close, NULL,
+    NULL,
+    paradise_speed_changed,
+    paradise_force_redraw,
+    &pvga1a_timing,
+    NULL
 };
+
+
+static const video_timings_t wd90c11_timing = {VID_ISA,8,16,32,8,16,32};
+
+
+const device_t paradise_wd90c11_device = {
+    "Paradise WD90C11-LR",
+    DEVICE_ISA,
+    0,
+    paradise_wd90c11_standalone_init, paradise_close, NULL,
+    paradise_wd90c11_standalone_available,
+    paradise_speed_changed,
+    paradise_force_redraw,
+    &wd90c11_timing,
+    NULL
+};
+
+const device_t paradise_wd90c11_megapc_device = {
+    "Paradise WD90C11 (Amstrad MegaPC)",
+    0,
+    0,
+    paradise_wd90c11_megapc_init, paradise_close, NULL,
+    NULL,
+    paradise_speed_changed,
+    paradise_force_redraw,
+    &wd90c11_timing,
+    NULL
+};
+
 
 static const device_config_t paradise_wd90c30_config[] =
 {
@@ -623,15 +636,17 @@ static const device_config_t paradise_wd90c30_config[] =
         }
 };
 
-const device_t paradise_wd90c30_device =
-{
-        "Paradise WD90C30-LR",
-        DEVICE_ISA,
-	0,
-        paradise_wd90c30_standalone_init, paradise_close, NULL,
-        paradise_wd90c30_standalone_available,
-        paradise_speed_changed,
-        paradise_force_redraw,
-        NULL,
-	paradise_wd90c30_config
+static const video_timings_t wd90c30_timing = {VID_ISA,6,8,16,6,8,16};
+
+
+const device_t paradise_wd90c30_device = {
+    "Paradise WD90C30-LR",
+    DEVICE_ISA,
+    0,
+    paradise_wd90c30_standalone_init, paradise_close, NULL,
+    paradise_wd90c30_standalone_available,
+    paradise_speed_changed,
+    paradise_force_redraw,
+    &wd90c30_timing,
+    paradise_wd90c30_config
 };
