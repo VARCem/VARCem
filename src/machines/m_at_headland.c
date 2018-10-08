@@ -57,9 +57,6 @@
 #include "machine.h"
 
 
-#define BIOS_AMA932J_VIDEO_PATH	L"machines/unknown/ama932j/oti067.bin"
-
-
 typedef struct {
     uint8_t	port_92;
 
@@ -659,6 +656,7 @@ headland_common_init(int ht386)
 void
 machine_at_ama932j_init(const machine_t *model, void *arg)
 {
+    romdef_t *roms = (romdef_t *)arg;
     headland_t *dev;
 
     machine_at_common_ide_init(model, arg);
@@ -666,9 +664,11 @@ machine_at_ama932j_init(const machine_t *model, void *arg)
     dev = headland_common_init(1);
 
     if (video_card == VID_INTERNAL) {
-	rom_init(&dev->vid_bios, BIOS_AMA932J_VIDEO_PATH,
-		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_INTERNAL);
+	/* Load the BIOS. */
+	rom_init(&dev->vid_bios, roms->vidfn,
+		 0xc0000, roms->vidsz, roms->vidsz - 1, 0, 0);
 
+	/* Initialize the on-board controller. */
 	device_add(&oti067_onboard_device);
     }
 }
@@ -681,8 +681,6 @@ machine_at_tg286m_init(const machine_t *model, void *arg)
 
     headland_common_init(0);
 
-    if (video_card == VID_INTERNAL) {
+    if (video_card == VID_INTERNAL)
 	device_add(&et4000k_tg286_isa_device);
-	video_inform(VID_TYPE_SPEC, &oti067_timing);
-    }
 }

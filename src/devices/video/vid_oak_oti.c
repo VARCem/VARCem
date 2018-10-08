@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.12	2018/10/07
+ * Version:	@(#)vid_oak_oti.c	1.0.13	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,9 +81,6 @@ typedef struct {
 } oti_t;
 
 
-static const video_timings_t oti_timing = {VID_ISA,6,8,16,6,8,16};
-
-
 static void
 oti_out(uint16_t addr, uint8_t val, void *priv)
 {
@@ -91,7 +88,6 @@ oti_out(uint16_t addr, uint8_t val, void *priv)
     svga_t *svga = &dev->svga;
     uint8_t old, idx, enable;
 
-INFO("OAK: out(%04x, %02x)\n", addr, val);
     if (!dev->chip_id && !(dev->enable_register & 1) && (addr != 0x3C3))
 	return;
 
@@ -209,7 +205,6 @@ oti_in(uint16_t addr, void *priv)
     svga_t *svga = &dev->svga;
     uint8_t idx, ret = 0xff;
 
-INFO("OAK: in(%04x)", addr);
     if (!dev->chip_id && !(dev->enable_register & 1) &&
 	(addr != 0x3c3)) return 0xff;
 
@@ -316,7 +311,6 @@ INFO("OAK: in(%04x)", addr);
 		ret = svga_in(addr, svga);
 		break;
     }
-INFO(" = %02x\n", ret);
 
     return(ret);
 }
@@ -327,7 +321,6 @@ oti_pos_out(uint16_t addr, uint8_t val, void *priv)
 {
     oti_t *dev = (oti_t *)priv;
 
-INFO("OAK: pos_out(%04x, %02x)\n", addr, val);
     if ((val ^ dev->pos) & 8) {
 	if (val & 8)
 		io_sethandler(0x03c0, 32,
@@ -346,7 +339,6 @@ oti_pos_in(uint16_t addr, void *priv)
 {
     oti_t *dev = (oti_t *)priv;
 
-INFO("OAK: pos_in(%04x) = %02x\n", addr, dev->pos);
     return(dev->pos);
 }
 
@@ -399,7 +391,12 @@ oti_init(const device_t *info)
 	case OTI_037C:
 		fn = BIOS_037C_PATH;
 		dev->vram_size = 256;
-		dev->regs[0] = 0x08; /* FIXME: The BIOS wants to read this at index 0? This index is undocumented. */
+
+		/*
+		 * FIXME: The BIOS wants to read this at index 0?
+		 * This index is undocumented.
+		 */
+		dev->regs[0] = 0x08;
 		break;
 
 	case OTI_067:
@@ -461,8 +458,6 @@ oti_init(const device_t *info)
     INFO("VIDEO: %s (chip=%02x(%i), mem=%i)\n",
 	info->name, dev->chip_id, info->local, dev->vram_size);
 
-    video_inform(VID_TYPE_SPEC, &oti_timing);
-
     svga_init(&dev->svga, dev, dev->vram_size << 10,
 	      recalc_timings, oti_in, oti_out, NULL, NULL);
 
@@ -470,6 +465,9 @@ oti_init(const device_t *info)
 		  oti_in,NULL,NULL, oti_out,NULL,NULL, dev);
 
     dev->svga.miscout = 1;
+
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
 
     return(dev);
 }
@@ -552,6 +550,9 @@ static const device_config_t oti077_config[] = {
 	}
 };
 
+static const video_timings_t oti_timing = {VID_ISA,6,8,16,6,8,16};
+
+
 const device_t oti037c_device = {
     "Oak OTI-037C",
     DEVICE_ISA,
@@ -560,7 +561,7 @@ const device_t oti037c_device = {
     oti037c_available,
     speed_changed,
     force_redraw,
-    NULL,
+    &oti_timing,
     NULL
 };
 
@@ -572,7 +573,7 @@ const device_t oti067_device = {
     oti067_available,
     speed_changed,
     force_redraw,
-    NULL,
+    &oti_timing,
     oti067_config
 };
 
@@ -584,7 +585,7 @@ const device_t oti067_onboard_device = {
     NULL,
     speed_changed,
     force_redraw,
-    NULL,
+    &oti_timing,
     NULL
 };
 
@@ -596,6 +597,6 @@ const device_t oti077_device = {
     oti077_available,
     speed_changed,
     force_redraw,
-    NULL,
+    &oti_timing,
     oti077_config
 };
