@@ -12,7 +12,7 @@
  *		Windows and UNIX systems, with support for FTDI and Prolific
  *		USB ports. Support for these has been removed.
  *
- * Version:	@(#)win_serial.c	1.0.3	2018/05/06
+ * Version:	@(#)win_serial.c	1.0.4	2018/10/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *

@@ -8,7 +8,7 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.3	2018/10/05
+ * Version:	@(#)png.c	1.0.4	2018/10/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -191,7 +191,8 @@ png_load(void)
 	ui_msgbox(MBX_ERROR, temp);
 	ERRLOG("PNG: unable to load '%s'; format disabled!\n", fn);
 	return(0);
-    }
+    } else
+	INFO("PNG: module '%s' loaded.\n", fn);
 #else
     png_handle = (void *)1;	/* just to indicate always therse */
 #endif

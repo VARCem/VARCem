@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.20	2018/10/05
+ * Version:	@(#)win.c	1.0.21	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -206,7 +206,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     pc_version("Windows");
 
     /* Set up the basic pathname info for the application. */
-    (void)pc_setup(0, NULL);
+    (void)pc_setup(0, (wchar_t **)stdout);
 
     /* Set this to the default value (windowed mode). */
     vid_fullscreen = 0;

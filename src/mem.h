@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.10	2018/09/18
+ * Version:	@(#)mem.h	1.0.11	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -78,7 +78,7 @@ typedef struct _memmap_ {
     uint32_t	flags;
 
     void	*p;		/* backpointer to mapping or device */
-
+    void	*p2;		/* FIXME: temporary hack for Headland --FvK */
     void	*dev;		/* backpointer to memory device */
 } mem_map_t;
 

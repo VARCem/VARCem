@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.54	2018/10/05
+ * Version:	@(#)pc.c	1.0.55	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -202,6 +202,7 @@ pclog_ex(const char *fmt, va_list ap)
     static int seen = 0;
     static int detect = 1;
     char temp[PCLOG_BUFF_SIZE];
+    FILE *fp;
 
     if (fmt == NULL) {
 	/* Initialize. */
@@ -210,22 +211,11 @@ pclog_ex(const char *fmt, va_list ap)
 	return;
     }
 
-    if (stdlog == NULL) {
-	if (log_path[0] != L'\0') {
-		stdlog = plat_fopen(log_path, L"w");
-		if (stdlog == NULL)
-#ifdef _WIN32
-			stdlog = stdout;
-#else
-			stdlog = stderr;
-#endif
-	} else {
-#ifdef _WIN32
-		stdlog = stdout;
-#else
-			stdlog = stderr;
-#endif
-	}
+    /* If a logpath was set, override the default. */
+    if (log_path[0] != L'\0') {
+	fp = plat_fopen(log_path, L"w");
+	if (fp != NULL)
+		stdlog = fp;
     }
 
     vsprintf(temp, fmt, ap);
@@ -233,7 +223,7 @@ pclog_ex(const char *fmt, va_list ap)
 	seen++;
     } else {
 	if (seen) {
-		fprintf(stdlog, "*** %d repeats ***\n", seen);
+		fprintf(stdlog, "*** %i repeats ***\n", seen);
 	}
 	seen = 0;
 	strcpy(buff, temp);
@@ -383,18 +373,18 @@ pc_version(const char *platform)
     strcpy(emu_fullversion, emu_version);
 
 #if defined(_MSC_VER)
-    sprintf(temp, " [VC %d]", _MSC_VER);
+    sprintf(temp, " [VC %i]", _MSC_VER);
 #elif defined(__clang_major__)
-    sprintf(temp, " [Clang %d.%d.%d]",
+    sprintf(temp, " [Clang %i.%i.%i]",
 	__clang_major__, __clang_minor__, __clang_patchlevel__);
 #elif defined(__GNUC__)
-    sprintf(temp, " [GCC %d.%d.%d]",
+    sprintf(temp, " [GCC %i.%i.%i]",
 	__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #endif
     strcat(emu_fullversion, temp);
 
 #ifdef BUILD
-    sprintf(temp, " (Build %d", BUILD);
+    sprintf(temp, " (Build %i", BUILD);
     strcat(emu_fullversion, temp);
 #endif
 #ifdef COMMIT
@@ -514,6 +504,16 @@ pc_setup(int argc, wchar_t *argv[])
 	 */
 	plat_getcwd(usr_path, sizeof_w(usr_path));
 
+	/*
+	 * Initialize the 'stdlog' variable, this is
+	 * somewhat platform-specific. On Windows, it
+	 * will always be 'stdout', but on UNIX-based
+	 * systems, it can be 'stderr' for the console
+	 * mode (since 'stdout' is used by the UI),
+	 * and 'stdout' for the GUI versins, etc...
+	 */
+	stdlog = (FILE *)argv;
+
 	return(0);
     }
 
@@ -528,7 +528,9 @@ usage:
 		plat_console(1);
 #endif
 		printf("\n%s %s\n", emu_title, emu_fullversion);
-		printf("\nUsage: varcem [options] [cfg-file]\n\n");
+		p = plat_get_basename(argv[0]);
+		if (*p == L'/' || *p == L'\\') p++;
+		printf("\nUsage: %ls [options] [cfg-file]\n\n", p);
 		printf("Valid options are:\n\n");
 		printf("  -? or --help         - show this information\n");
 		printf("  -C or --dumpcfg      - dump config file after loading\n");
@@ -1245,7 +1247,7 @@ set_screen_size(int x, int y)
     double dx, dy, dtx, dty;
     int vid;
 
-    DEBUG("SetScreenSize(%d, %d) resize=%d\n", x, y, vid_resize);
+    DEBUG("SetScreenSize(%i, %i) resize=%i\n", x, y, vid_resize);
 
     /* Make sure we keep usable values. */
     if (x < 320) x = 320;

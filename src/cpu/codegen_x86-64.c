@@ -8,7 +8,7 @@
  *
  *		Dynamic Recompiler for Intel x64 systems.
  *
- * Version:	@(#)codegen_x86-64.c	1.0.2	2018/09/22
+ * Version:	@(#)codegen_x86-64.c	1.0.3	2018/10/07
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -940,7 +940,7 @@ void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t 
         codeblock_t *block = &codeblock[block_current];
         uint32_t op_32 = use32;
         uint32_t op_pc = new_pc;
-        OpFn *op_table = x86_dynarec_opcodes;
+        const OpFn *op_table = x86_dynarec_opcodes;
         RecompOpFn *recomp_op_table = recomp_opcodes;
         int opcode_shift = 0;
         int opcode_mask = 0x3ff;
@@ -1003,7 +1003,7 @@ void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t 
                         break;
                         
                         case 0xd8:
-                        op_table = (op_32 & 0x200) ? x86_dynarec_opcodes_d8_a32 : x86_dynarec_opcodes_d8_a16;
+                        op_table = (op_32 & 0x200) ? (OpFn *)x86_dynarec_opcodes_d8_a32 : (OpFn *)x86_dynarec_opcodes_d8_a16;
                         recomp_op_table = recomp_opcodes_d8;
                         opcode_shift = 3;
                         opcode_mask = 0x1f;

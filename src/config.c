@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.34	2018/10/05
+ * Version:	@(#)config.c	1.0.35	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -831,7 +831,7 @@ load_other(const char *cat)
     bugger_enabled = !!config_get_int(cat, "bugger_enabled", 0);
 
     for (c = 0; c < ISAMEM_MAX; c++) {
-	sprintf(temp, "isamem%d_type", c);
+	sprintf(temp, "isamem%i_type", c);
 
 	p = config_get_string(cat, temp, "none");
 	isamem_type[c] = isamem_get_from_internal_name(p);
@@ -877,7 +877,7 @@ save_other(const char *cat)
 	config_set_int(cat, "bugger_enabled", bugger_enabled);
 
     for (c = 0; c < ISAMEM_MAX; c++) {
-	sprintf(temp, "isamem%d_type", c);
+	sprintf(temp, "isamem%i_type", c);
 	if (isamem_type[c] == 0)
 		config_delete_var(cat, temp);
 	  else
@@ -1032,7 +1032,7 @@ load_disks(const char *cat)
 static void
 save_disks(const char *cat)
 {
-    char temp[24], tmp2[64];
+    char temp[128], tmp2[128];
     const char *str;
     int c;
 

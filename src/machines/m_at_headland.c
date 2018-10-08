@@ -10,7 +10,7 @@
  *
  * FIXME:	fix the mem_map_t stuff in mem_read_b() et al!
  *
- * Version:	@(#)m_at_headland.c	1.0.6	2018/09/22
+ * Version:	@(#)m_at_headland.c	1.0.7	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -57,7 +57,7 @@
 #include "machine.h"
 
 
-#define BIOS_67_AMA932J_PATH    L"machines/unknown/ama932j/oti067.bin"
+#define BIOS_AMA932J_VIDEO_PATH	L"machines/unknown/ama932j/oti067.bin"
 
 
 typedef struct {
@@ -469,8 +469,9 @@ hl_readw(uint16_t addr, void *priv)
 static uint8_t 
 mem_read_b(uint32_t addr, void *priv)
 {
-    uint16_t *mr = (uint16_t *)priv;
-    headland_t *dev = NULL;	//FIXME:
+    mem_map_t *map = (mem_map_t *)priv;
+    headland_t *dev = (headland_t *)map->dev;
+    uint16_t *mr = (uint16_t *)map->p2;
     uint8_t ret = 0xff;
 
     addr = get_addr(dev, addr, mr);
@@ -484,8 +485,9 @@ mem_read_b(uint32_t addr, void *priv)
 static uint16_t 
 mem_read_w(uint32_t addr, void *priv)
 {
-    uint16_t *mr = (uint16_t *)priv;
-    headland_t *dev = NULL;	//FIXME:
+    mem_map_t *map = (mem_map_t *)priv;
+    headland_t *dev = (headland_t *)map->dev;
+    uint16_t *mr = (uint16_t *)map->p2;
     uint16_t ret = 0xffff;
 
     addr = get_addr(dev, addr, mr);
@@ -499,8 +501,9 @@ mem_read_w(uint32_t addr, void *priv)
 static uint32_t 
 mem_read_l(uint32_t addr, void *priv)
 {
-    uint16_t *mr = (uint16_t *)priv;
-    headland_t *dev = NULL;	//FIXME:
+    mem_map_t *map = (mem_map_t *)priv;
+    headland_t *dev = (headland_t *)map->dev;
+    uint16_t *mr = (uint16_t *)map->p2;
     uint32_t ret = 0xffffffff;
 
     addr = get_addr(dev, addr, mr);
@@ -514,8 +517,9 @@ mem_read_l(uint32_t addr, void *priv)
 static void
 mem_write_b(uint32_t addr, uint8_t val, void *priv)
 {
-    uint16_t *mr = (uint16_t *)priv;
-    headland_t *dev = NULL;	//FIXME:
+    mem_map_t *map = (mem_map_t *)priv;
+    headland_t *dev = (headland_t *)map->dev;
+    uint16_t *mr = (uint16_t *)map->p2;
 
     addr = get_addr(dev, addr, mr);
     if (addr < ((uint32_t)mem_size << 10))
@@ -526,8 +530,9 @@ mem_write_b(uint32_t addr, uint8_t val, void *priv)
 static void 
 mem_write_w(uint32_t addr, uint16_t val, void *priv)
 {
-    uint16_t *mr = (uint16_t *)priv;
-    headland_t *dev = NULL;	//FIXME:
+    mem_map_t *map = (mem_map_t *)priv;
+    headland_t *dev = (headland_t *)map->dev;
+    uint16_t *mr = (uint16_t *)map->p2;
 
     addr = get_addr(dev, addr, mr);
     if (addr < ((uint32_t)mem_size << 10))
@@ -538,8 +543,9 @@ mem_write_w(uint32_t addr, uint16_t val, void *priv)
 static void 
 mem_write_l(uint32_t addr, uint32_t val, void *priv)
 {
-    uint16_t *mr = (uint16_t *)priv;
-    headland_t *dev = NULL;	//FIXME:
+    mem_map_t *map = (mem_map_t *)priv;
+    headland_t *dev = (headland_t *)map->dev;
+    uint16_t *mr = (uint16_t *)map->p2;
 
     addr = get_addr(dev, addr, mr);
     if (addr < ((uint32_t)mem_size << 10))
@@ -581,22 +587,25 @@ headland_init(headland_t *dev, int ht386)
     mem_map_add(&dev->low_mapping, 0, 0x40000,
 		mem_read_b,mem_read_w,mem_read_l,
 		mem_write_b,mem_write_w,mem_write_l,
-		ram, MEM_MAPPING_INTERNAL, dev);
+		ram, MEM_MAPPING_INTERNAL, &dev->low_mapping);
+    mem_map_set_dev(&dev->low_mapping, dev);
 
     if (mem_size > 640) {
 	mem_map_add(&dev->mid_mapping, 0xA0000, 0x60000,
 		    mem_read_b,mem_read_w,mem_read_l,
 		    mem_write_b,mem_write_w,mem_write_l,
-		    ram + 0xA0000, MEM_MAPPING_INTERNAL, dev);
+		    ram + 0xA0000, MEM_MAPPING_INTERNAL, &dev->mid_mapping);
 	mem_map_enable(&dev->mid_mapping);
+	mem_map_set_dev(&dev->mid_mapping, dev);
     }
 
     if (mem_size > 1024) {
 	mem_map_add(&dev->high_mapping, 0x100000, ((mem_size-1024)*1024),
 		    mem_read_b,mem_read_w,mem_read_l,
 		    mem_write_b,mem_write_w,mem_write_l,
-		    ram + 0x100000, MEM_MAPPING_INTERNAL, dev);
+		    ram + 0x100000, MEM_MAPPING_INTERNAL, &dev->high_mapping);
 	mem_map_enable(&dev->high_mapping);
+	mem_map_set_dev(&dev->high_mapping, dev);
     }
 
     for (i = 0; i < 24; i++) {
@@ -605,8 +614,9 @@ headland_init(headland_t *dev, int ht386)
 		    mem_read_b,mem_read_w,mem_read_l,
 		    mem_write_b,mem_write_w,mem_write_l,
 		    mem_size > 256 + (i << 4) ? ram + 0x40000 + (i << 14) : NULL,
-		    MEM_MAPPING_INTERNAL, dev);
+		    MEM_MAPPING_INTERNAL, &dev->upper_mapping[i]);
 	mem_map_enable(&dev->upper_mapping[i]);
+	mem_map_set_dev(&dev->upper_mapping[i], dev);
     }
 
     for (i = 0; i < 64; i++) {
@@ -616,8 +626,12 @@ headland_init(headland_t *dev, int ht386)
 		    mem_read_b,mem_read_w,mem_read_l,
 		    mem_write_b,mem_write_w,mem_write_l,
 		    ram + (((i & 31) + ((i & 31) >= 24 ? 24 : 16)) << 14),
-		    0, &dev->ems_mr[i]);
+		    0, &dev->ems_mapping[i]);
 	mem_map_disable(&dev->ems_mapping[i]);
+	mem_map_set_dev(&dev->ems_mapping[i], dev);
+
+	/* HACK - we need 'mr' in the r/w routines!! */
+	dev->ems_mapping[i].p2 = &dev->ems_mr[i];
     }
 
     memmap_state_update(dev);
@@ -652,9 +666,8 @@ machine_at_ama932j_init(const machine_t *model, void *arg)
     dev = headland_common_init(1);
 
     if (video_card == VID_INTERNAL) {
-	rom_init(&dev->vid_bios, BIOS_67_AMA932J_PATH,
-		 0xc0000, 0x8000, 0x7fff,
-		 0, MEM_MAPPING_INTERNAL);
+	rom_init(&dev->vid_bios, BIOS_AMA932J_VIDEO_PATH,
+		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_INTERNAL);
 
 	device_add(&oti067_onboard_device);
     }

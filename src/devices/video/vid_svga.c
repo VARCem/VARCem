@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.12	2018/10/05
+ * Version:	@(#)vid_svga.c	1.0.13	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -396,7 +396,6 @@ svga_in(uint16_t addr, void *priv)
 		}
 		break;
 	case 0x3da:
-		svga->attrff = 0;
 		svga->attrff = 0;
 
 		if (svga->cgastat & 0x01)
@@ -803,7 +802,7 @@ svga_poll(void *p)
 
 
 int
-svga_init(svga_t *svga, void *p, int memsize, 
+svga_init(svga_t *svga, void *p, int vramsize, 
 	  void (*recalctimings_ex)(struct svga_t *svga),
 	  uint8_t (*video_in) (uint16_t addr, void *p),
 	  void    (*video_out)(uint16_t addr, uint8_t val, void *p),
@@ -833,11 +832,11 @@ svga_init(svga_t *svga, void *p, int memsize,
     svga->crtc[6] = 255;
     svga->dispontime = svga->dispofftime = 1000 * (1 << TIMER_SHIFT);
     svga->bpp = 8;
-    svga->vram = (uint8_t *)mem_alloc(memsize);
-    svga->vram_max = memsize;
-    svga->vram_display_mask = svga->vram_mask = memsize - 1;
+    svga->vram = (uint8_t *)mem_alloc(vramsize);
+    svga->vram_max = vramsize;
+    svga->vram_display_mask = svga->vram_mask = vramsize - 1;
     svga->decode_mask = 0x7fffff;
-    svga->changedvram = (uint8_t *)mem_alloc(memsize >> 12);
+    svga->changedvram = (uint8_t *)mem_alloc(0x800000 >> 12);
     svga->recalctimings_ex = recalctimings_ex;
     svga->video_in  = video_in;
     svga->video_out = video_out;

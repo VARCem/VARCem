@@ -8,7 +8,7 @@
  *
  *		Intel 82335 SX emulation, used by the Phoenix 386 clone.
  *
- * Version:	@(#)i82335.c	1.0.4	2018/09/13
+ * Version:	@(#)i82335.c	1.0.5	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

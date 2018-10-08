@@ -8,7 +8,7 @@
  *
  *		Handle language support for the platform.
  *
- * Version:	@(#)win_lang.c	1.0.6	2018/10/05
+ * Version:	@(#)win_lang.c	1.0.7	2018/10/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -119,7 +119,7 @@ plat_lang_scan(void)
     lflen = wcslen(LANG_FILE);
 
     /* Open the "language modules" directory. */
-    swprintf(path, sizeof_w(temp), L"%ls%ls", exe_path, LANGUAGE_PATH);
+    swprintf(path, sizeof_w(path), L"%ls%ls", exe_path, LANGUAGE_PATH);
     dir = opendir(path);
     if (dir != NULL) {
 	/* Scan all files, and see if we find a usable one. */

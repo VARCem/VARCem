@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.26	2018/10/05
+ * Version:	@(#)win_ui.c	1.0.27	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,11 +57,6 @@
 #include "../devices/video/video.h"
 #include "win.h"
 #include "resource.h"
-
-
-#ifndef GWL_WNDPROC
-# define GWL_WNDPROC	GWLP_WNDPROC
-#endif
 
 
 #define TIMER_1SEC	1		/* ID of the one-second timer */
@@ -194,7 +189,7 @@ StatusBarCreate(uintptr_t id)
 
     /* Replace the original procedure with ours. */
     stbar_orig_proc = GetWindowLongPtr(hwndSBAR, GWLP_WNDPROC);
-    SetWindowLongPtr(hwndSBAR, GWL_WNDPROC, (LONG_PTR)sb_dlg_proc);
+    SetWindowLongPtr(hwndSBAR, GWLP_WNDPROC, (LONG_PTR)sb_dlg_proc);
 
     SendMessage(hwndSBAR, SB_SETMINHEIGHT, (WPARAM)SB_HEIGHT, (LPARAM)0);
 
@@ -563,14 +558,14 @@ plat_set_input(HWND h)
 {
     /* If needed, rest the old one first. */
     if (input_orig_hwnd != NULL) {
-	SetWindowLongPtr(input_orig_hwnd, GWL_WNDPROC,
+	SetWindowLongPtr(input_orig_hwnd, GWLP_WNDPROC,
 			 (LONG_PTR)input_orig_proc);
     }
 
     /* Redirect the window procedure so we can catch WM_INPUT. */
     input_orig_proc = GetWindowLongPtr(h, GWLP_WNDPROC);
     input_orig_hwnd = h;
-    SetWindowLongPtr(h, GWL_WNDPROC, (LONG_PTR)input_proc);
+    SetWindowLongPtr(h, GWLP_WNDPROC, (LONG_PTR)input_proc);
 }
 
 
