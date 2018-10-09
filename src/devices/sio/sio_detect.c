@@ -49,7 +49,7 @@ static uint8_t detect_regs[2];
 
 static void superio_detect_write(uint16_t port, uint8_t val, void *priv)
 {
-        pclog("superio_detect_write : port=%04x = %02X\n", port, val);
+        pclog(LOG_INFO, "superio_detect_write : port=%04x = %02X\n", port, val);
 
 	detect_regs[port & 1] = val;
 
@@ -59,7 +59,7 @@ static void superio_detect_write(uint16_t port, uint8_t val, void *priv)
 
 static uint8_t superio_detect_read(uint16_t port, void *priv)
 {
-        pclog("superio_detect_read : port=%04x = %02X\n", port, detect_regs[port & 1]);
+        pclog(LOG_INFO, "superio_detect_read : port=%04x = %02X\n", port, detect_regs[port & 1]);
 
 	return detect_regs[port & 1];
 }
