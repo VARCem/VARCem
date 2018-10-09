@@ -79,9 +79,9 @@ int		game_do_log = ENABLE_GAME_LOG;
 void
 game_log(int level, const char *fmt, ...)
 {
-    va_list ap;
-
 #ifdef ENABLE_GAME_LOG
+	va_list ap;
+
     if (game_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
