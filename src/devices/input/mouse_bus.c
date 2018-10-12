@@ -51,7 +51,7 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.0	2018/10/05
+ * Version:	@(#)mouse_bus.c	1.1.1	2018/10/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -256,6 +256,7 @@ static void
 lt_write(uint16_t port, uint8_t val, void *priv)
 {
     mouse_t *dev = (mouse_t *)priv;
+    uint8_t bit;
 
     DBGLOG(2, "MOUSE: write(%04x, %02x)\n", port, val);
 
@@ -295,6 +296,8 @@ lt_write(uint16_t port, uint8_t val, void *priv)
 		 * explains the value:
 		 *
 		 * D7    =  Mode set flag (1 = active)
+		 *	    This indicates the mode of operation of D7:
+		 *	    1 = Mode set, 0 = Bit set/reset
 		 * D6,D5 =  Mode selection (port A)
 		 *		00 = Mode 0 = Basic I/O
 		 *		01 = Mode 1 = Strobed I/O
@@ -311,17 +314,25 @@ lt_write(uint16_t port, uint8_t val, void *priv)
 		 * port, B is an output port, C is split with upper 4 bits
 		 * being an output port and lower 4 bits an input port, and
 		 * enable the sucker.  Courtesy Intel 8255 databook. Lars
+		 *
+		 * 1001 1011	9B	1111	Default state
+		 * 1001 0001	91	1001	Driver-initialized state
+		 * The only difference is - port C upper and port B go from
+		 * input to output.
 		 */
 		dev->conf = val;
 		if (val & DEVICE_ACTIVE) {
+			/* Mode set/reset - enable this */
+			dev->conf = val;
 			dev->flags |= (FLAG_ENABLED | FLAG_TIMER_INT);
 			dev->ctrl = 0x0F & ~IRQ_MASK;
-			dev->timer = ((int64_t) dev->period) * TIMER_USEC;
-			dev->timer_enabled = 1LL;
 		} else {
-			dev->flags &= ~(FLAG_ENABLED | FLAG_TIMER_INT);
-			dev->timer = 0LL;
-			dev->timer_enabled = 0LL;
+			/* Single-bit set/reset */
+			bit = 1 << ((val >> 1) & 0x07);		/* Bits 3-1 specify the target bit */
+			if (val & 1)
+				dev->ctrl |= bit;	/* Set */
+			else
+				dev->ctrl &= ~bit;	/* Reset */
 		}
 		break;
     }
@@ -671,31 +682,39 @@ bm_init(const device_t *info)
     dev->bn = device_get_config_int("buttons");
     mouse_set_buttons(dev->bn);
 
-    dev->timer_enabled	= 0;
-    dev->timer		= 0LL;
+    dev->timer_enabled = 0;
+    dev->timer = 0LL;
 
-    dev->delayed_dx	= 0;
-    dev->delayed_dy	= 0;
-    dev->buttons	= 0;
-    dev->buttons_last	= 0;
-    dev->curr_x		= 0;
-    dev->curr_y		= 0;
-    dev->curr_b		= 0;
+    dev->delayed_dx = 0;
+    dev->delayed_dy = 0;
+    dev->buttons = 0;
+    dev->buttons_last = 0;
+    dev->curr_x = 0;
+    dev->curr_y = 0;
+    dev->curr_b = 0;
 
-    dev->sig		= 0;	/* the signature port value */
-    dev->cmd		= 0;	/* command byte */
-    dev->toggle		= 0;	/* signature byte / IRQ bit toggle */
+    dev->sig = 0;	/* the signature port value */
+    dev->cmd = 0;	/* command byte */
+    dev->toggle = 0;	/* signature byte / IRQ bit toggle */
     if (dev->flags & FLAG_INPORT) {
-	dev->ctrl	= 0;	/* the control port value */
-	dev->flags	|= FLAG_ENABLED;
-	dev->period	= 0.0;
+	dev->ctrl = 0;	/* the control port value */
+	dev->flags |= FLAG_ENABLED;
+	dev->period = 0.0;
+
+	dev->timer = 0LL;
+	dev->timer_enabled = 0LL;
 
 	io_sethandler(dev->base, 4,
 		      ms_read,NULL,NULL, ms_write,NULL,NULL, dev);
     } else {
-	dev->ctrl	= 0x0f;	/* the control port value */
-	dev->conf	= 0x0e;	/* the config port value */
-	dev->period	= 1000000.0 / ((double) device_get_config_int("hz"));
+	dev->ctrl = 0x0f;	/* the control port value */
+	dev->conf = 0x9b;	/* the config port value - 0x9b is the
+				   default state of the 8255: all ports
+				   are set to input */
+	dev->period = 1000000.0 / ((double) device_get_config_int("hz"));
+
+	dev->timer = ((int64_t) dev->period) * TIMER_USEC;
+	dev->timer_enabled = 1LL;
 
 	io_sethandler(dev->base, 4,
 		      lt_read,NULL,NULL, lt_write,NULL,NULL, dev);

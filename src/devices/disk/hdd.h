@@ -57,8 +57,7 @@ enum {
 #define HDD_BUS_MAX	(HDD_BUS_USB)	/* USB exclusive */
 
 
-typedef struct vhd_footer_t
-{
+typedef struct {
     uint8_t	cookie[8];
     uint32_t	features;
     uint32_t	version;

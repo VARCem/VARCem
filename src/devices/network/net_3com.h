@@ -8,7 +8,7 @@
  *
  *		Definitions for the 3Com series of ethernet controllers.
  *
- * Version:	@(#)net_3com.h	1.0.1	2018/09/07
+ * Version:	@(#)net_3com.h	1.0.2	2018/10/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *

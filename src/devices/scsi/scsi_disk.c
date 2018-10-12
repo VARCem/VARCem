@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.12	2018/10/05
+ * Version:	@(#)scsi_disk.c	1.0.13	2018/10/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -738,6 +738,14 @@ scsi_disk_command(scsi_disk_t *dev, uint8_t *cdb)
 		/* If there's a unit attention condition and there's a buffered not ready, a standalone REQUEST SENSE
 		   should forget about the not ready, and report unit attention straight away. */
 		len = cdb[4];
+
+		if (!len) {
+			scsi_disk_set_phase(dev, SCSI_PHASE_STATUS);
+			dev->packet_status = CDROM_PHASE_COMPLETE;
+			dev->callback = 20 * SCSI_TIME;
+			break;
+		}
+
 		scsi_disk_set_buf_len(dev, BufLen, &len);
 
 		if (*BufLen < cdb[4])

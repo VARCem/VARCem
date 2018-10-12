@@ -10,7 +10,7 @@
  *
  * FIXME:	fix the mem_map_t stuff in mem_read_b() et al!
  *
- * Version:	@(#)m_at_headland.c	1.0.7	2018/10/07
+ * Version:	@(#)m_at_headland.c	1.0.8	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -53,6 +53,7 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../devices/disk/hdc.h"
 #include "../devices/video/video.h"
 #include "machine.h"
 
@@ -653,13 +654,16 @@ headland_common_init(int ht386)
 }
 
 
+/* Arche Technologies AMA-932J-25 (Headland HT18 386SX-25.) */
 void
 machine_at_ama932j_init(const machine_t *model, void *arg)
 {
     romdef_t *roms = (romdef_t *)arg;
     headland_t *dev;
 
-    machine_at_common_ide_init(model, arg);
+    machine_at_common_init(model, arg);
+
+    device_add(&ide_isa_device);
 
     dev = headland_common_init(1);
 
@@ -679,8 +683,7 @@ machine_at_tg286m_init(const machine_t *model, void *arg)
 {
     machine_at_common_init(model, arg);
 
-    headland_common_init(0);
+    device_add(&ide_isa_device);
 
-    if (video_card == VID_INTERNAL)
-	device_add(&et4000k_tg286_isa_device);
+    headland_common_init(0);
 }

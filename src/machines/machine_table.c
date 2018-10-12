@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.28	2018/10/06
+ * Version:	@(#)machine_table.c	1.0.29	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,7 +99,7 @@ const machine_t machines[] = {
     { "[286 ISA] Samsung SPC-4200P",		"samsung_spc4200p",	L"samsung/spc4200p",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2,								512, 2048, 128, 128,		 machine_at_scat_init, NULL,			NULL			},
     { "[286 ISA] Samsung SPC-4216P",		"samsung_spc4216p",	L"samsung/spc4216p",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2,								  1,    5,   1, 128,	machine_at_scat_spc4216p_init, NULL,			NULL			},
     { "[286 ISA] Toshiba T3100e",		"toshiba_t3100e",	L"toshiba/t3100e",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_AT | MACHINE_HDC,							       1024, 5120, 256,  64,	       machine_at_t3100e_init, NULL,			NULL			},
-    { "[286 ISA] Trigem 286M",			"tg286m",		L"trigem/tg286m",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_VIDEO,							  	512, 8192, 128, 128,	       machine_at_tg286m_init, &et4000k_tg286_isa_device,NULL			},
+    { "[286 ISA] Trigem 286M",			"tg286m",		L"trigem/tg286m",		{{"", cpus_286},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,							  			512, 8192, 128, 128,	       machine_at_tg286m_init, NULL,			NULL			},
 	
     { "[286 MCA] IBM PS/2 model 50",		"ibm_ps2_m50",		L"ibm/ps2_m50",			{{"", cpus_ps2_m30_286},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,				  1,   10,   1,  64,	    machine_ps2_model_50_init, NULL,			NULL			},
 
@@ -111,7 +111,7 @@ const machine_t machines[] = {
     { "[386SX ISA] IBM PS/1 m.2121+ISA",	"ibm_ps1_2121_isa",	L"ibm/ps1_2121",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,				  1,    6,   1,  64,	       machine_ps1_m2121_init, &m_ps1_device,		NULL			},
 
     { "[386SX ISA] KMX-C-02",			"kmxc02",		L"unknown/kmxc02",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										512,16384, 512, 128,	       machine_at_scatsx_init, NULL,			NULL			},
-    { "[386SX ISA] AMA-932J",			"ama932j",		L"unknown/ama932j",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC | MACHINE_VIDEO,						512, 8192, 128, 128,	      machine_at_ama932j_init, &oti067_onboard_device,	NULL			},
+    { "[386SX ISA] Arche AMA-932J",		"arche_ama932j",	L"arche/ama932j",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT | MACHINE_HDC | MACHINE_VIDEO,						512, 8192, 128, 128,	      machine_at_ama932j_init, &oti067_onboard_device,	NULL			},
 
     { "[386SX MCA] IBM PS/2 model 55SX",	"ibm_ps2_m55sx",	L"ibm/ps2_m55sx",		{{"Intel", cpus_i386SX},	{"AMD", cpus_Am386SX},	{"Cyrix", cpus_486SLC},	{"", NULL},		{"", NULL}},	0, MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,				  1,    8,   1,  64,	  machine_ps2_model_55sx_init, NULL,			NULL			},
 

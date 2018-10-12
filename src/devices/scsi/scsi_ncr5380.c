@@ -11,7 +11,7 @@
  *
  * NOTE:	This code now only supports targets at LUN=0 !!
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.9	2018/10/07
+ * Version:	@(#)scsi_ncr5380.c	1.0.10	2018/10/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -143,39 +143,34 @@ typedef struct {
 
 typedef struct {
     const char	*name;
+
     uint32_t	rom_addr;
     uint16_t	base;
     int8_t	irq;
     int8_t	type;
 
-    rom_t	bios_rom;
-    mem_map_t	mapping;
-
     uint8_t	block_count;
-    int		block_count_loaded;
-
     uint8_t	status_ctrl;
 
-    uint8_t	buffer[128];
+    int8_t	dma_enabled;
+    int8_t	ncr_busy;
+
+    int		block_count_loaded;
     int		buffer_pos;
     int		buffer_host_pos;
 
-    uint8_t	int_ram[0x40];        
-    uint8_t	ext_ram[0x600];
-
-    ncr_t	ncr;
-    int		ncr_busy;
-
-    int		is_non_data_mode;
-
-    int		dma_enabled;
-
     int64_t	timer_period;
     int64_t	timer_enabled;
-
-    int64_t	media_period,
-		temp_period;
     double	period;
+
+    ncr_t	ncr;
+
+    rom_t	bios_rom;
+    mem_map_t	mapping;
+
+    uint8_t	buffer[128],
+		int_ram[0x40],  
+		ext_ram[0x600];
 } ncr5380_t;
 
 
@@ -195,8 +190,7 @@ typedef struct {
 		ncr->cur_bus = (ncr->cur_bus & ~(SCSI_PHASE_MESSAGE_IN)) | \
 			        (state & (SCSI_PHASE_MESSAGE_IN))
 
-
-static void	ncr_callback(void *priv);
+static const int cmd_len[8] = {6, 10, 10, 6, 16, 12, 6, 6};
 
 
 static int
@@ -209,24 +203,6 @@ get_dev_id(uint8_t data)
     }
 
     return(-1);
-}
-
-
-/* get the length of a SCSI command based on its command byte type */
-static int 
-get_cmd_len(int cbyte)
-{
-    int len = 12;
-    int group;
-
-    group = (cbyte >> 5) & 7;
-
-    if (group == 0)
-	len = 6;
-    if (group == 1 || group == 2)
-	len = 10;
-
-    return(len);
 }
 
 
@@ -271,16 +247,14 @@ get_bus_host(ncr_t *ncr)
 	DEBUG("Busy phase\n");
 	bus_host |= BUS_BSY;
     }
-    if (ncr->icr & ICR_ATN) {
+    if (ncr->icr & ICR_ATN)
 	bus_host |= BUS_ATN;
-    }
     if (ncr->icr & ICR_ACK) {
 	DEBUG("ACK phase\n");
 	bus_host |= BUS_ACK;
     }
-    if (ncr->mode & MODE_ARBITRATE) {
+    if (ncr->mode & MODE_ARBITRATE)
 	bus_host |= BUS_ARB;
-    }
 
     return(bus_host | BUS_SETDATA(ncr->output_data));
 }
@@ -292,11 +266,11 @@ ncr_wait_process(ncr5380_t *ncr_dev)
     ncr_t *ncr = &ncr_dev->ncr;
     scsi_device_t *dev;
 	
-    /*Wait processes to handle bus requests*/
+    /* Wait processes to handle bus requests. */
     DEBUG("Clear REQ=%d\n", ncr->clear_req);
     if (ncr->clear_req) {
 	ncr->clear_req--;
-	if (!ncr->clear_req) {
+	if (! ncr->clear_req) {
 		DEBUG("Prelude to command data\n");
 		SET_BUS_STATE(ncr, ncr->new_phase);
 		ncr->cur_bus |= BUS_REQ;
@@ -305,8 +279,7 @@ ncr_wait_process(ncr5380_t *ncr_dev)
 	
     if (ncr->wait_data) {
 	ncr->wait_data--;
-
-	if (!ncr->wait_data) {
+	if (! ncr->wait_data) {
 		dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
 		SET_BUS_STATE(ncr, ncr->new_phase);	
 
@@ -329,8 +302,6 @@ ncr_wait_process(ncr5380_t *ncr_dev)
 				DEBUG("Bus Idle phase\n");
 				ncr->state = STATE_IDLE;
 				ncr->cur_bus &= ~BUS_BSY;
-				ncr_dev->media_period = 0LL;
-				ncr_dev->temp_period = 0LL;
 			} else {
 				ncr->state = STATE_DATAOUT;
 				DEBUG("Data Out bus phase\n");
@@ -341,12 +312,445 @@ ncr_wait_process(ncr5380_t *ncr_dev)
 	
     if (ncr->wait_complete) {
 	ncr->wait_complete--;
-	if (!ncr->wait_complete) {
+	if (! ncr->wait_complete)
 		ncr->cur_bus |= BUS_REQ;
-	}
     }
 	
     ncr->bus_host = ncr->cur_bus;		
+}
+
+
+static void
+ncr_callback(void *priv)
+{
+    ncr5380_t *ncr_dev = (ncr5380_t *)priv;
+    ncr_t *ncr = &ncr_dev->ncr;
+    scsi_device_t *dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
+    int c = 0;
+    int64_t p;
+    uint8_t temp, data;
+
+    DEBUG("NCR: DMA mode=%d\n", ncr->dma_mode);
+
+    ncr_dev->timer_enabled = 0;
+
+    if (((ncr->state == STATE_DATAIN) || (ncr->state == STATE_DATAOUT)) && (ncr->dma_mode != DMA_IDLE))
+	ncr_dev->timer_period = (int64_t) ncr_dev->period;
+    else
+	ncr_dev->timer_period += 10LL * TIMER_USEC;
+
+    if (ncr->dma_mode == DMA_IDLE) {	
+	ncr->bus_host = get_bus_host(ncr);	
+
+	/*Start the SCSI command layer, which will also make the timings*/
+	if (ncr->bus_host & BUS_ARB) {
+		DEBUG("NCR: arbitration\n");
+		ncr->state = STATE_IDLE;
+	}
+
+	if (ncr->state == STATE_IDLE) {
+		ncr->clear_req = ncr->wait_data = ncr->wait_complete = 0;
+		if ((ncr->bus_host & BUS_SEL) && !(ncr->bus_host & BUS_BSY)) {
+			DEBUG("NCR: selection phase\n");
+			uint8_t sel_data = BUS_GETDATA(ncr->bus_host);
+
+			ncr->target_id = get_dev_id(sel_data);
+
+			DEBUG("NCR: select - target ID = %i\n", ncr->target_id);
+
+			/*Once the device has been found and selected, mark it as busy*/
+			if ((ncr->target_id != -1) &&
+			    scsi_device_present(ncr->target_id, ncr->target_lun)) {
+				ncr->cur_bus |= BUS_BSY;
+				DEBUG("DEBUG: device found at ID %i\n", ncr->target_id);
+				DEBUG("NCR: current Bus BSY=%02x\n", ncr->cur_bus);
+				ncr->state = STATE_COMMAND;
+				ncr->cur_bus = BUS_BSY | BUS_REQ;
+				DEBUG("NCR: CurBus BSY|REQ=%02x\n", ncr->cur_bus);
+				ncr->command_pos = 0;
+				SET_BUS_STATE(ncr, SCSI_PHASE_COMMAND);
+				picint(1 << ncr_dev->irq);
+			} else {
+				ncr->state = STATE_IDLE;
+				ncr->cur_bus = 0;
+			}
+		}
+	} else if (ncr->state == STATE_COMMAND) {
+		/*Command phase, make sure the ICR ACK bit is set to keep on, 
+		because the device must be acknowledged by ICR*/
+		DEBUG("NCR: ICR for Command=%02x\n", ncr->bus_host & BUS_ACK);
+		if ((ncr->bus_host & BUS_ACK) && (ncr->command_pos < cmd_len[(ncr->command[0] >> 5) & 7])) {
+			/*Write command byte to the output data register*/
+			ncr->command[ncr->command_pos++] = BUS_GETDATA(ncr->bus_host);
+
+			ncr->new_phase = ncr->cur_bus & SCSI_PHASE_MESSAGE_IN;
+			ncr->clear_req = 3;
+			DEBUG("NCR: current bus for command request=%02x\n", ncr->cur_bus & BUS_REQ);				
+			ncr->cur_bus &= ~BUS_REQ;
+
+			DEBUG("NCR: command pos=%i, output data=%02x\n", ncr->command_pos, BUS_GETDATA(ncr->bus_host));
+
+			if (ncr->command_pos == cmd_len[(ncr->command[0] >> 5) & 7]) {
+				/*Reset data position to default*/
+				ncr->data_pos = 0;
+
+				dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
+
+				DEBUG("NCR: SCSI command 0x%02X for ID %d, status code=%02x\n", ncr->command[0], ncr->target_id, dev->Status);
+
+				dev->BufferLength = -1;
+
+				/*Now, execute the given SCSI command*/
+				scsi_device_command_phase0(ncr->target_id, ncr->target_lun, ncr->command);
+
+				DEBUG("NCR: SCSI ID %i: Command %02X: Buffer Length %i, SCSI Phase %02X\n", ncr->target_id, ncr->command[0], dev->BufferLength, dev->Phase);
+
+				if (dev->Status != SCSI_STATUS_OK) {
+					ncr->new_phase = SCSI_PHASE_STATUS;
+					ncr->wait_data = 4;
+					return;
+				}
+
+				/*If the SCSI phase is Data In or Data Out, allocate the SCSI buffer based on the transfer length of the command*/
+				if (dev->BufferLength && (dev->Phase == SCSI_PHASE_DATA_IN || dev->Phase == SCSI_PHASE_DATA_OUT)) {
+					dev->CmdBuffer = (uint8_t *) malloc(dev->BufferLength);
+
+					p = scsi_device_get_callback(ncr->target_id, ncr->target_lun);
+					if (p <= 0LL)
+						ncr_dev->period = 0.2 * ((double) TIMER_USEC) * ((double) MIN(64, dev->BufferLength));
+					else
+						ncr_dev->period = (p / ((double) dev->BufferLength)) * ((double) MIN(64, dev->BufferLength));
+				}
+
+				if (dev->Phase == SCSI_PHASE_DATA_OUT) {
+					/* Write direction commands have delayed execution - only execute them after the bus has gotten all the data from the host. */
+					DEBUG("NCR: next state is data out\n");
+					ncr->new_phase = SCSI_PHASE_DATA_OUT;
+					ncr->wait_data = 4;
+					ncr->clear_req = 4;
+				} else {
+					/* Other command - execute immediately. */
+					ncr->new_phase = dev->Phase;
+
+					if (ncr->new_phase == SCSI_PHASE_DATA_IN) 
+						scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
+
+					ncr->wait_data = 4;
+				}
+			}
+		}
+	} else if (ncr->state == STATE_DATAIN) {
+		dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
+		DEBUG("NCR: Data In ACK=%02x\n", ncr->bus_host & BUS_ACK);
+		if (ncr->bus_host & BUS_ACK) {
+			if (ncr->data_pos >= dev->BufferLength) {
+				if (dev->CmdBuffer != NULL) {
+					free(dev->CmdBuffer);
+					dev->CmdBuffer = NULL;	
+				}
+
+				ncr->cur_bus &= ~BUS_REQ;
+				ncr->new_phase = SCSI_PHASE_STATUS;
+				ncr->wait_data = 4;
+				ncr->wait_complete = 8;
+			} else {
+				ncr->tx_data = dev->CmdBuffer[ncr->data_pos++];
+				ncr->cur_bus = (ncr->cur_bus & ~BUS_DATAMASK) | BUS_SETDATA(ncr->tx_data) | BUS_DBP | BUS_REQ;
+				ncr->clear_req = 3;
+				ncr->cur_bus &= ~BUS_REQ;
+				ncr->new_phase = SCSI_PHASE_DATA_IN;
+			}
+		}
+	} else if (ncr->state == STATE_DATAOUT) {
+		dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
+
+		DEBUG("NCR: Data Out ACK=%02x\n", ncr->bus_host & BUS_ACK);
+		if (ncr->bus_host & BUS_ACK) {
+			dev->CmdBuffer[ncr->data_pos++] = BUS_GETDATA(ncr->bus_host);
+
+			if (ncr->data_pos >= dev->BufferLength) {
+				scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
+
+				if (dev->CmdBuffer != NULL) {
+					free(dev->CmdBuffer);
+					dev->CmdBuffer = NULL;	
+				}
+
+				ncr->cur_bus &= ~BUS_REQ;
+				DEBUG("NCR: CurBus ~REQ_DataOutDone=%02x\n", ncr->cur_bus);
+				ncr->new_phase = SCSI_PHASE_STATUS;
+				ncr->wait_data = 4;
+				ncr->wait_complete = 8;
+			} else {
+				/*More data is to be transferred, place a request*/
+				ncr->cur_bus |= BUS_REQ;
+				DEBUG("NCR: CurBus ~REQ_DataOut=%02x\n", ncr->cur_bus);
+			}
+		}
+	} else if (ncr->state == STATE_STATUS) {
+		if (ncr->bus_host & BUS_ACK) {
+			/*All transfers done, wait until next transfer*/
+			ncr->cur_bus &= ~BUS_REQ;
+			ncr->new_phase = SCSI_PHASE_MESSAGE_IN;
+			ncr->wait_data = 4;
+			ncr->wait_complete = 8;	
+		}
+	} else if (ncr->state == STATE_MESSAGEIN) {
+		if (ncr->bus_host & BUS_ACK) {
+			ncr->cur_bus &= ~BUS_REQ;
+			ncr->new_phase = BUS_IDLE;
+			ncr->wait_data = 4;
+		}
+	}
+	ncr->bus_in = ncr->bus_host;
+    }
+
+    if (ncr_dev->type < 3) {
+	if (ncr->dma_mode == DMA_INITIATOR_RECEIVE) {
+		if (!(ncr_dev->status_ctrl & CTRL_DATA_DIR)) {
+			DEBUG("NCR: DMA_INITIATOR_RECEIVE with DMA direction set wrong\n");
+			return;
+		}
+
+		DEBUG("NCR: status for reading=%02x\n", ncr_dev->status_ctrl);
+
+		if (!(ncr_dev->status_ctrl & STATUS_BUFFER_NOT_READY)) return;
+
+		if (!ncr_dev->block_count_loaded) return;
+
+		while (c < 64) {
+			/* Data ready. */
+			ncr_wait_process(ncr_dev);
+			temp = BUS_GETDATA(ncr->bus_host);
+			ncr->bus_host = get_bus_host(ncr);
+
+			if (ncr->data_pos >= dev->BufferLength) {
+				if (dev->CmdBuffer != NULL) {
+					free(dev->CmdBuffer);
+					dev->CmdBuffer = NULL;	
+				}
+
+				ncr->cur_bus &= ~BUS_REQ;
+				ncr->new_phase = SCSI_PHASE_STATUS;
+				ncr->wait_data = 4;
+				ncr->wait_complete = 8;
+			} else {
+				ncr->tx_data = dev->CmdBuffer[ncr->data_pos++];
+				ncr->cur_bus = (ncr->cur_bus & ~BUS_DATAMASK) | BUS_SETDATA(ncr->tx_data) | BUS_DBP | BUS_REQ;
+				ncr->clear_req = 3;
+				ncr->cur_bus &= ~BUS_REQ;
+				ncr->new_phase = SCSI_PHASE_DATA_IN;
+			}
+
+			ncr_dev->buffer[ncr_dev->buffer_pos++] = temp;
+			DEBUG("NCR: buffer pos for reading=%d\n", ncr_dev->buffer_pos);
+
+			c++;
+
+			if (ncr_dev->buffer_pos == 128) {					
+				ncr_dev->buffer_pos = 0;
+				ncr_dev->buffer_host_pos = 0;
+				ncr_dev->status_ctrl &= ~STATUS_BUFFER_NOT_READY;
+				ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
+
+				DEBUG("NCR: remaining blocks to be read=%d\n", ncr_dev->block_count);
+
+				if (!ncr_dev->block_count) {
+					ncr_dev->block_count_loaded = 0;
+					DEBUG("DEBUG: IO End of read transfer\n");
+
+					ncr->isr |= STATUS_END_OF_DMA;
+					if (ncr->mode & MODE_ENA_EOP_INT) {
+						DEBUG("NCR: NCR read irq\n");
+						ncr->isr |= STATUS_INT;
+						picint(1 << ncr_dev->irq);
+					}
+				}
+				break;
+			}
+		}		
+	} else if (ncr->dma_mode == DMA_SEND) {
+			if (ncr_dev->status_ctrl & CTRL_DATA_DIR) {
+				DEBUG("NCR: DMA_SEND with DMA direction set wrong\n");
+				return;
+			}
+
+			DEBUG("NCR: status for writing=%02x\n", ncr_dev->status_ctrl);
+
+			if (!(ncr_dev->status_ctrl & STATUS_BUFFER_NOT_READY)) {
+				DEBUG("NCR: buffer ready\n");
+				return;
+			}
+
+			if (!ncr_dev->block_count_loaded) return;			
+
+			while (c < 64) {
+				/* Data ready. */
+				data = ncr_dev->buffer[ncr_dev->buffer_pos];
+				ncr->bus_host = get_bus_host(ncr) & ~BUS_DATAMASK;
+				ncr->bus_host |= BUS_SETDATA(data);
+
+				dev->CmdBuffer[ncr->data_pos++] = BUS_GETDATA(ncr->bus_host);
+
+				if (ncr->data_pos >= dev->BufferLength) {
+					scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
+
+					if (dev->CmdBuffer != NULL) {
+						free(dev->CmdBuffer);
+						dev->CmdBuffer = NULL;	
+					}
+
+					ncr->cur_bus &= ~BUS_REQ;
+					DEBUG("NCR: CurBus ~REQ_DataOutDone=%02x\n", ncr->cur_bus);
+					ncr->new_phase = SCSI_PHASE_STATUS;
+					ncr->wait_data = 4;
+					ncr->wait_complete = 8;
+				} else {
+					/*More data is to be transferred, place a request*/
+					ncr->cur_bus |= BUS_REQ;
+					DEBUG("NCR: CurBus ~REQ_DataOut=%02x\n", ncr->cur_bus);
+				}
+
+				c++;
+
+				if (++ncr_dev->buffer_pos == 128) {
+					ncr_dev->buffer_pos = 0;
+					ncr_dev->buffer_host_pos = 0;
+					ncr_dev->status_ctrl &= ~STATUS_BUFFER_NOT_READY;
+					ncr_dev->ncr_busy = 0;
+					ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
+					DEBUG("NCR: remaining blocks to be written=%d\n", ncr_dev->block_count);
+					if (!ncr_dev->block_count) {
+						ncr_dev->block_count_loaded = 0;
+						DEBUG("NCR: IO End of write transfer\n");
+
+						ncr->tcr |= TCR_LAST_BYTE_SENT;
+						ncr->isr |= STATUS_END_OF_DMA;
+						if (ncr->mode & MODE_ENA_EOP_INT) {
+							DEBUG("NCR: write irq\n");
+							ncr->isr |= STATUS_INT;
+							picint(1 << ncr_dev->irq);
+						}
+					}
+					break;
+				}
+			}		
+	}
+    } else {
+	if (ncr->dma_mode == DMA_INITIATOR_RECEIVE) {
+		if (!(ncr_dev->block_count_loaded))
+			return;
+
+		while (c < 64) {
+			/* Data ready. */
+			ncr_wait_process(ncr_dev);
+			temp = BUS_GETDATA(ncr->bus_host);
+			ncr->bus_host = get_bus_host(ncr);
+
+			if (ncr->data_pos >= dev->BufferLength) {
+				if (dev->CmdBuffer != NULL) {
+					free(dev->CmdBuffer);
+					dev->CmdBuffer = NULL;	
+				}
+
+				ncr->cur_bus &= ~BUS_REQ;
+				ncr->new_phase = SCSI_PHASE_STATUS;
+				ncr->wait_data = 4;
+				ncr->wait_complete = 8;
+			} else {
+				ncr->tx_data = dev->CmdBuffer[ncr->data_pos++];
+				ncr->cur_bus = (ncr->cur_bus & ~BUS_DATAMASK) | BUS_SETDATA(ncr->tx_data) | BUS_DBP | BUS_REQ;
+				ncr->clear_req = 3;
+				ncr->cur_bus &= ~BUS_REQ;
+				ncr->new_phase = SCSI_PHASE_DATA_IN;
+			}
+
+			ncr_dev->buffer[ncr_dev->buffer_pos++] = temp;
+			DEBUG("NCR: buffer pos for reading=%d\n", ncr_dev->buffer_pos);
+
+			c++;
+
+			if (ncr_dev->buffer_pos == 128) {					
+				ncr_dev->buffer_pos = 0;
+				ncr_dev->buffer_host_pos = 0;
+				ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
+				DEBUG("NCR: remaining blocks to be read=%d\n", ncr_dev->block_count);
+				if (!ncr_dev->block_count) {
+					ncr_dev->block_count_loaded = 0;
+					DEBUG("NCR: IO End of read transfer\n");
+
+					ncr->isr |= STATUS_END_OF_DMA;
+					if (ncr->mode & MODE_ENA_EOP_INT) {
+						DEBUG("NCR: read irq\n");
+						ncr->isr |= STATUS_INT;
+						picint(1 << ncr_dev->irq);
+					}
+				}
+				break;
+			}
+		}		
+	} else if (ncr->dma_mode == DMA_SEND) {
+		if (!ncr_dev->block_count_loaded)
+			return;
+
+		while (c < 64) {
+			/* Data ready. */
+			data = ncr_dev->buffer[ncr_dev->buffer_pos];
+			ncr->bus_host = get_bus_host(ncr) & ~BUS_DATAMASK;
+			ncr->bus_host |= BUS_SETDATA(data);
+
+			dev->CmdBuffer[ncr->data_pos++] = BUS_GETDATA(ncr->bus_host);
+
+			if (ncr->data_pos >= dev->BufferLength) {
+				scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
+
+				if (dev->CmdBuffer != NULL) {
+					free(dev->CmdBuffer);
+					dev->CmdBuffer = NULL;	
+				}
+
+				ncr->cur_bus &= ~BUS_REQ;
+				DEBUG("NCR: CurBus ~REQ_DataOutDone=%02x\n", ncr->cur_bus);
+				ncr->new_phase = SCSI_PHASE_STATUS;
+				ncr->wait_data = 4;
+				ncr->wait_complete = 8;
+			} else {
+				/*More data is to be transferred, place a request*/
+				ncr->cur_bus |= BUS_REQ;
+				DEBUG("DEBUG: CurBus ~REQ_DataOut=%02x\n", ncr->cur_bus);
+			}
+
+			c++;
+
+			if (++ncr_dev->buffer_pos == 128) {
+				ncr_dev->buffer_pos = 0;
+				ncr_dev->buffer_host_pos = 0;
+				ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
+				DEBUG("NCR: remaining blocks to be written=%d\n", ncr_dev->block_count);
+				if (!ncr_dev->block_count) {
+					ncr_dev->block_count_loaded = 0;
+					DEBUG("NCR: IO End of write transfer\n");
+
+					ncr->tcr |= TCR_LAST_BYTE_SENT;
+					ncr->isr |= STATUS_END_OF_DMA;
+					if (ncr->mode & MODE_ENA_EOP_INT) {
+						DEBUG("NCR: write irq\n");
+						ncr->isr |= STATUS_INT;
+						picint(1 << ncr_dev->irq);
+					}
+				}
+				break;
+			}
+		}			
+	}
+    }
+
+    ncr_wait_process(ncr_dev);
+    if (!(ncr->bus_host & BUS_BSY) && (ncr->mode & MODE_MONITOR_BUSY)) {
+	DEBUG("NCR: updating DMA\n");
+	ncr->mode &= ~MODE_DMA;
+	ncr->dma_mode = DMA_IDLE;
+    }
 }
 
 
@@ -873,445 +1277,6 @@ scsiat_out(uint16_t port, uint8_t val, void *priv)
 	case 0x07:
 		ncr_write(port, val, ncr_dev);
 		break;
-    }
-}
-
-
-static void
-ncr_callback(void *priv)
-{
-    ncr5380_t *ncr_dev = (ncr5380_t *)priv;
-    ncr_t *ncr = &ncr_dev->ncr;
-    scsi_device_t *dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
-    int64_t p;
-    int c = 0;
-
-    DEBUG("DMA mode=%d\n", ncr->dma_mode);
-
-    ncr_dev->timer_enabled = 0;
-    if (((ncr->state == STATE_DATAIN) || (ncr->state == STATE_DATAOUT)) && (ncr->dma_mode != DMA_IDLE))
-	ncr_dev->timer_period = (int64_t)ncr_dev->period;
-      else
-	ncr_dev->timer_period += 10LL * TIMER_USEC;
-
-    if (ncr->dma_mode == DMA_IDLE) {	
-	ncr->bus_host = get_bus_host(ncr);	
-
-	/*Start the SCSI command layer, which will also make the timings*/
-	if (ncr->bus_host & BUS_ARB) {
-		DEBUG("Arbitration\n");
-		ncr->state = STATE_IDLE;
-	}
-
-	if (ncr->state == STATE_IDLE) {
-		ncr->clear_req = ncr->wait_data = ncr->wait_complete = 0;
-		if ((ncr->bus_host & BUS_SEL) && !(ncr->bus_host & BUS_BSY)) {
-			DEBUG("Selection phase\n");
-			uint8_t sel_data = BUS_GETDATA(ncr->bus_host);
-
-			ncr->target_id = get_dev_id(sel_data);
-			
-			DEBUG("Select - target ID = %i\n", ncr->target_id);
-
-			/*Once the device has been found and selected, mark it as busy*/
-			if ((ncr->target_id != -1) &&
-			    scsi_device_present(ncr->target_id, ncr->target_lun)) {
-				ncr->cur_bus |= BUS_BSY;
-				DEBUG("Device found at ID %i\n", ncr->target_id);
-				DEBUG("Current Bus BSY=%02x\n", ncr->cur_bus);
-				ncr->state = STATE_COMMAND;
-				ncr->cur_bus = BUS_BSY | BUS_REQ;
-				DEBUG("CurBus BSY|REQ=%02x\n", ncr->cur_bus);
-				ncr->command_pos = 0;
-				SET_BUS_STATE(ncr, SCSI_PHASE_COMMAND);
-				picint(1 << ncr_dev->irq);
-			} else {
-				ncr->state = STATE_IDLE;
-				ncr->cur_bus = 0;
-			}
-		}
-	} else if (ncr->state == STATE_COMMAND) {
-		/*Command phase, make sure the ICR ACK bit is set to keep on, 
-		because the device must be acknowledged by ICR*/
-		DEBUG("NCR ICR for Command=%02x\n", ncr->bus_host & BUS_ACK);
-		if (ncr->bus_host & BUS_ACK) {
-			if (ncr->command_pos < get_cmd_len(ncr->command[0])) {
-				/*Write command byte to the output data register*/
-				ncr->command[ncr->command_pos++] = BUS_GETDATA(ncr->bus_host);
-
-				ncr->new_phase = ncr->cur_bus & SCSI_PHASE_MESSAGE_IN;
-				ncr->clear_req = 3;
-				DEBUG("NCR: current bus for command request=%02x\n", ncr->cur_bus & BUS_REQ);				
-				ncr->cur_bus &= ~BUS_REQ;
-
-				DEBUG("NCR: Command pos=%i, output data=%02x\n", ncr->command_pos, BUS_GETDATA(ncr->bus_host));
-				if (get_cmd_len(ncr->command[0]) == ncr->command_pos) {
-					/*Reset data position to default*/
-					ncr->data_pos = 0;
-
-					dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
-
-					DEBUG("NCR: SCSI Command 0x%02X for ID %d, status code=%02x\n", ncr->command[0], ncr->target_id, dev->Status);
-
-					dev->BufferLength = -1;
-
-					/*Now, execute the given SCSI command*/
-					scsi_device_command_phase0(ncr->target_id, ncr->target_lun, ncr->command);
-					DEBUG("NCR: SCSI ID %i: Command %02X: Buffer Length %i, SCSI Phase %02X\n", ncr->target_id, ncr->command[0], dev->BufferLength, dev->Phase);
-
-					if (dev->Status != SCSI_STATUS_OK)
-						ncr_dev->is_non_data_mode = 1;
-					if (ncr_dev->is_non_data_mode) {
-						ncr_dev->is_non_data_mode = 0;
-						ncr->new_phase = SCSI_PHASE_STATUS;
-						ncr->wait_data = 4;
-						return;
-					}
-					/*If the SCSI phase is Data In or Data Out, allocate the SCSI buffer based on the transfer length of the command*/
-					if (dev->BufferLength && (dev->Phase == SCSI_PHASE_DATA_IN || dev->Phase == SCSI_PHASE_DATA_OUT)) {
-						dev->CmdBuffer = (uint8_t *) malloc(dev->BufferLength);
-						p = scsi_device_get_callback(ncr->target_id, ncr->target_lun);
-						if (p <= 0LL) {
-							ncr_dev->temp_period = (int64_t)(dev->BufferLength);
-							ncr_dev->media_period = 0;
-							ncr_dev->period = 0.2 * ((double) TIMER_USEC) * ((double) MIN(64, ncr_dev->temp_period));
-						} else {
-							ncr_dev->media_period += p;
-							ncr_dev->temp_period = dev->BufferLength;
-							ncr_dev->period = (p / ((double) ncr_dev->temp_period)) * ((double) MIN(64, ncr_dev->temp_period));
-						}
-					}
-					if (dev->Phase == SCSI_PHASE_DATA_OUT) {
-						/* Write direction commands have delayed execution - only execute them after the bus has gotten all the data from the host. */
-						DEBUG("NCR: Next state is data out\n");
-						ncr->new_phase = SCSI_PHASE_DATA_OUT;
-						ncr->wait_data = 4;
-						ncr->clear_req = 4;
-					} else {
-						/* Other command - execute immediately. */
-						ncr->new_phase = dev->Phase;
-						if (ncr->new_phase == SCSI_PHASE_DATA_IN) 
-							scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
-						ncr->wait_data = 4;
-					}
-				}
-			}
-		}
-	} else if (ncr->state == STATE_DATAIN) {
-		dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
-		DEBUG("Data In ACK=%02x\n", ncr->bus_host & BUS_ACK);
-		if (ncr->bus_host & BUS_ACK) {
-			if (ncr->data_pos >= dev->BufferLength) {
-				if (dev->CmdBuffer != NULL) {
-					free(dev->CmdBuffer);
-					dev->CmdBuffer = NULL;	
-				}
-
-				ncr->cur_bus &= ~BUS_REQ;
-				ncr->new_phase = SCSI_PHASE_STATUS;
-				ncr->wait_data = 4;
-				ncr->wait_complete = 8;
-			} else {
-				ncr->tx_data = dev->CmdBuffer[ncr->data_pos++];
-				ncr->cur_bus = (ncr->cur_bus & ~BUS_DATAMASK) | BUS_SETDATA(ncr->tx_data) | BUS_DBP | BUS_REQ;
-				ncr->clear_req = 3;
-				ncr->cur_bus &= ~BUS_REQ;
-				ncr->new_phase = SCSI_PHASE_DATA_IN;
-			}
-		}
-	} else if (ncr->state == STATE_DATAOUT) {
-		dev = &SCSIDevices[ncr->target_id][ncr->target_lun];
-
-		DEBUG("Data Out ACK=%02x\n", ncr->bus_host & BUS_ACK);
-		if (ncr->bus_host & BUS_ACK) {
-			dev->CmdBuffer[ncr->data_pos++] = BUS_GETDATA(ncr->bus_host);
-
-			if (ncr->data_pos >= dev->BufferLength) {
-				scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
-
-				if (dev->CmdBuffer != NULL) {
-					free(dev->CmdBuffer);
-					dev->CmdBuffer = NULL;	
-				}
-
-				ncr->cur_bus &= ~BUS_REQ;
-				DEBUG("CurBus ~REQ_DataOutDone=%02x\n", ncr->cur_bus);
-				ncr->new_phase = SCSI_PHASE_STATUS;
-				ncr->wait_data = 4;
-				ncr->wait_complete = 8;
-			} else {
-				/*More data is to be transferred, place a request*/
-				ncr->cur_bus |= BUS_REQ;
-				DEBUG("CurBus ~REQ_DataOut=%02x\n", ncr->cur_bus);
-			}
-		}
-	} else if (ncr->state == STATE_STATUS) {
-		if (ncr->bus_host & BUS_ACK) {	
-			/*All transfers done, wait until next transfer*/
-			ncr->cur_bus &= ~BUS_REQ;
-			ncr->new_phase = SCSI_PHASE_MESSAGE_IN;
-			ncr->wait_data = 4;
-			ncr->wait_complete = 8;	
-		}
-	} else if (ncr->state == STATE_MESSAGEIN) {
-		if (ncr->bus_host & BUS_ACK) {
-			ncr->cur_bus &= ~BUS_REQ;
-			ncr->new_phase = BUS_IDLE;
-			ncr->wait_data = 4;
-		}
-	}		
-    }
-		
-    if (ncr_dev->type < 3) {
-	if (ncr->dma_mode == DMA_INITIATOR_RECEIVE) {
-		if (!(ncr_dev->status_ctrl & CTRL_DATA_DIR)) {
-			DEBUG("DMA_INITIATOR_RECEIVE with DMA direction set wrong\n");
-			return;
-		}
-
-		DEBUG("Status for reading=%02x\n", ncr_dev->status_ctrl);
-
-		if (!(ncr_dev->status_ctrl & STATUS_BUFFER_NOT_READY)) return;
-
-		if (!ncr_dev->block_count_loaded) return;
-
-		while (c < 64) {
-			/* Data ready. */
-			uint8_t temp;
-
-			ncr_wait_process(ncr_dev);
-			temp = BUS_GETDATA(ncr->bus_host);
-			ncr->bus_host = get_bus_host(ncr);
-
-			if (ncr->data_pos >= dev->BufferLength) {
-				if (dev->CmdBuffer != NULL) {
-					free(dev->CmdBuffer);
-					dev->CmdBuffer = NULL;	
-				}
-
-				ncr->cur_bus &= ~BUS_REQ;
-				ncr->new_phase = SCSI_PHASE_STATUS;
-				ncr->wait_data = 4;
-				ncr->wait_complete = 8;
-			} else {
-				ncr->tx_data = dev->CmdBuffer[ncr->data_pos++];
-				ncr->cur_bus = (ncr->cur_bus & ~BUS_DATAMASK) | BUS_SETDATA(ncr->tx_data) | BUS_DBP | BUS_REQ;
-				ncr->clear_req = 3;
-				ncr->cur_bus &= ~BUS_REQ;
-				ncr->new_phase = SCSI_PHASE_DATA_IN;
-			}
-
-			ncr_dev->buffer[ncr_dev->buffer_pos++] = temp;
-			DEBUG("Buffer pos for reading=%d\n", ncr_dev->buffer_pos);
-
-			c++;
-
-			if (ncr_dev->buffer_pos == 128) {
-				ncr_dev->buffer_pos = 0;
-				ncr_dev->buffer_host_pos = 0;
-				ncr_dev->status_ctrl &= ~STATUS_BUFFER_NOT_READY;
-				ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
-				DEBUG("Remaining blocks to be read=%d\n", ncr_dev->block_count);
-				if (!ncr_dev->block_count) {
-					ncr_dev->block_count_loaded = 0;
-					DEBUG("IO End of read transfer\n");
-
-					ncr->isr |= STATUS_END_OF_DMA;
-					if (ncr->mode & MODE_ENA_EOP_INT) {
-						DEBUG("NCR read irq\n");
-						ncr->isr |= STATUS_INT;
-						picint(1 << ncr_dev->irq);
-					}
-				}
-				break;
-			}
-		}		
-	} else if (ncr->dma_mode == DMA_SEND) {
-		if (ncr_dev->status_ctrl & CTRL_DATA_DIR) {
-			DEBUG("DMA_SEND with DMA direction set wrong\n");
-			return;
-		}
-
-		DEBUG("Status for writing=%02x\n", ncr_dev->status_ctrl);
-
-		if (!(ncr_dev->status_ctrl & STATUS_BUFFER_NOT_READY)) {
-			DEBUG("Buffer ready\n");
-			return;
-		}
-
-		if (!ncr_dev->block_count_loaded) return;			
-
-		while (c < 64) {
-			/* Data ready. */
-			uint8_t data;
-
-			data = ncr_dev->buffer[ncr_dev->buffer_pos];
-			ncr->bus_host = get_bus_host(ncr) & ~BUS_DATAMASK;
-			ncr->bus_host |= BUS_SETDATA(data);
-
-			dev->CmdBuffer[ncr->data_pos++] = BUS_GETDATA(ncr->bus_host);
-
-			if (ncr->data_pos >= dev->BufferLength) {
-				scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
-
-				if (dev->CmdBuffer != NULL) {
-					free(dev->CmdBuffer);
-					dev->CmdBuffer = NULL;	
-				}
-
-				ncr->cur_bus &= ~BUS_REQ;
-				DEBUG("CurBus ~REQ_DataOutDone=%02x\n", ncr->cur_bus);
-				ncr->new_phase = SCSI_PHASE_STATUS;
-				ncr->wait_data = 4;
-				ncr->wait_complete = 8;
-			} else {
-				/*More data is to be transferred, place a request*/
-				ncr->cur_bus |= BUS_REQ;
-				DEBUG("CurBus ~REQ_DataOut=%02x\n", ncr->cur_bus);
-			}
-
-			c++;
-
-			if (++ncr_dev->buffer_pos == 128) {
-				ncr_dev->buffer_pos = 0;
-				ncr_dev->buffer_host_pos = 0;
-				ncr_dev->status_ctrl &= ~STATUS_BUFFER_NOT_READY;
-				ncr_dev->ncr_busy = 0;
-				ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
-				DEBUG("Remaining blocks to be written=%d\n", ncr_dev->block_count);
-				if (!ncr_dev->block_count) {
-					ncr_dev->block_count_loaded = 0;
-					DEBUG("IO End of write transfer\n");
-
-					ncr->tcr |= TCR_LAST_BYTE_SENT;
-					ncr->isr |= STATUS_END_OF_DMA;
-					if (ncr->mode & MODE_ENA_EOP_INT) {
-						DEBUG("NCR write irq\n");
-						ncr->isr |= STATUS_INT;
-						picint(1 << ncr_dev->irq);
-					}
-				}
-				break;
-			}
-		}		
-	}
-    } else {
-	if (ncr->dma_mode == DMA_INITIATOR_RECEIVE) {
-		if (!(ncr_dev->block_count_loaded))
-			return;
-
-		while (c < 64) {
-			/* Data ready. */
-			uint8_t temp;
-
-			ncr_wait_process(ncr_dev);
-			temp = BUS_GETDATA(ncr->bus_host);
-			ncr->bus_host = get_bus_host(ncr);
-
-			if (ncr->data_pos >= dev->BufferLength) {
-				if (dev->CmdBuffer != NULL) {
-					free(dev->CmdBuffer);
-					dev->CmdBuffer = NULL;	
-				}
-				
-				ncr->cur_bus &= ~BUS_REQ;
-				ncr->new_phase = SCSI_PHASE_STATUS;
-				ncr->wait_data = 4;
-				ncr->wait_complete = 8;
-			} else {
-				ncr->tx_data = dev->CmdBuffer[ncr->data_pos++];
-				ncr->cur_bus = (ncr->cur_bus & ~BUS_DATAMASK) | BUS_SETDATA(ncr->tx_data) | BUS_DBP | BUS_REQ;
-				ncr->clear_req = 3;
-				ncr->cur_bus &= ~BUS_REQ;
-				ncr->new_phase = SCSI_PHASE_DATA_IN;
-			}
-
-			ncr_dev->buffer[ncr_dev->buffer_pos++] = temp;
-			DEBUG("Buffer pos for reading=%d\n", ncr_dev->buffer_pos);
-				
-			c++;
-				
-			if (ncr_dev->buffer_pos == 128) {
-				ncr_dev->buffer_pos = 0;
-				ncr_dev->buffer_host_pos = 0;
-				ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
-				DEBUG("Remaining blocks to be read=%d\n", ncr_dev->block_count);
-				if (!ncr_dev->block_count) {
-					ncr_dev->block_count_loaded = 0;
-					DEBUG("IO End of read transfer\n");
-
-					ncr->isr |= STATUS_END_OF_DMA;
-					if (ncr->mode & MODE_ENA_EOP_INT) {
-						DEBUG("NCR read irq\n");
-						ncr->isr |= STATUS_INT;
-						picint(1 << ncr_dev->irq);
-					}
-				}
-				break;
-			}
-		}		
-	} else if (ncr->dma_mode == DMA_SEND) {
-		if (!ncr_dev->block_count_loaded) return;			
-		while (c < 64) {
-			/* Data ready. */
-			uint8_t data;
-			
-			data = ncr_dev->buffer[ncr_dev->buffer_pos];
-			ncr->bus_host = get_bus_host(ncr) & ~BUS_DATAMASK;
-			ncr->bus_host |= BUS_SETDATA(data);
-			
-			dev->CmdBuffer[ncr->data_pos++] = BUS_GETDATA(ncr->bus_host);
-			
-			if (ncr->data_pos >= dev->BufferLength) {
-				scsi_device_command_phase1(ncr->target_id, ncr->target_lun);
-
-				if (dev->CmdBuffer != NULL) {
-					free(dev->CmdBuffer);
-					dev->CmdBuffer = NULL;	
-				}
-
-				ncr->cur_bus &= ~BUS_REQ;
-				DEBUG("CurBus ~REQ_DataOutDone=%02x\n", ncr->cur_bus);
-				ncr->new_phase = SCSI_PHASE_STATUS;
-				ncr->wait_data = 4;
-				ncr->wait_complete = 8;
-			} else {
-				/*More data is to be transferred, place a request*/
-				ncr->cur_bus |= BUS_REQ;
-				DEBUG("CurBus ~REQ_DataOut=%02x\n", ncr->cur_bus);
-			}
-			
-			c++;
-
-			if (++ncr_dev->buffer_pos == 128) {
-				ncr_dev->buffer_pos = 0;
-				ncr_dev->buffer_host_pos = 0;
-				ncr_dev->block_count = (ncr_dev->block_count - 1) & 255;
-				DEBUG("Remaining blocks to be written=%d\n", ncr_dev->block_count);
-				if (!ncr_dev->block_count) {
-					ncr_dev->block_count_loaded = 0;
-					DEBUG("IO End of write transfer\n");
-					
-					ncr->tcr |= TCR_LAST_BYTE_SENT;
-					ncr->isr |= STATUS_END_OF_DMA;
-					if (ncr->mode & MODE_ENA_EOP_INT) {
-						DEBUG("NCR write irq\n");
-						ncr->isr |= STATUS_INT;
-						picint(1 << ncr_dev->irq);
-					}
-				}
-				break;
-			}
-		}			
-	}
-    }
-	
-    ncr_wait_process(ncr_dev);
-
-    if (!(ncr->bus_host & BUS_BSY) && (ncr->mode & MODE_MONITOR_BUSY)) {
-	DEBUG("Updating DMA\n");
-	ncr->mode &= ~MODE_DMA;
-	ncr->dma_mode = DMA_IDLE;
     }
 }
 

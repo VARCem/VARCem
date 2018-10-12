@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.13	2018/10/08
+ * Version:	@(#)vid_oak_oti.c	1.0.14	2018/10/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -421,7 +421,7 @@ oti_init(const device_t *info)
 	case OTI_067_AMA932J:
 		/* Onboard OTI067; ROM set up by machine. */
 		dev->chip_id = OTI_067;
-		dev->vram_size = 512;
+		dev->vram_size = device_get_config_int("memory");;
 		dev->dipswitch_val |= 0x20;
 
 		/*
@@ -527,6 +527,26 @@ static const device_config_t oti067_config[] = {
 	}
 };
 
+static const device_config_t oti067_onboard_config[] = {
+	{
+		"memory", "Memory size", CONFIG_SELECTION, "", 256,
+		{
+			{
+				"256 KB", 256
+			},
+			{
+				"512 KB", 512
+			},
+			{
+				""
+			}
+		}
+	},
+	{
+		"", "", -1
+	}
+};
+
 static const device_config_t oti077_config[] = {
 	{
 		"memory", "Memory size", CONFIG_SELECTION, "", 1024,
@@ -586,7 +606,7 @@ const device_t oti067_onboard_device = {
     speed_changed,
     force_redraw,
     &oti_timing,
-    NULL
+    oti067_onboard_config
 };
 
 const device_t oti077_device = {
