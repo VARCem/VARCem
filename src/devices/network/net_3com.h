@@ -32,7 +32,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef NET_3COME_H
+#ifndef NET_3COM_H
 # define NET_3COM_H
 
 
