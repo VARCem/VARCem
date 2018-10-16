@@ -10,7 +10,7 @@
  *		only things used globally within the Windows platform; the
  *		generic platform defintions are in the plat.h file.
  *
- * Version:	@(#)win.h	1.0.19	2018/10/01
+ * Version:	@(#)win.h	1.0.21	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,6 +66,9 @@
 #define WM_RESET_D3D	WM_USER+2
 #define WM_SAVE_CFG	WM_USER+3
 #define WM_SHOW_CFG	WM_USER+4
+#define WM_HARD_RESET	WM_USER+5
+#define WM_SHUTDOWN	WM_USER+6
+#define WM_CTRLALTDEL	WM_USER+7
 
 
 /* Status bar definitions. */

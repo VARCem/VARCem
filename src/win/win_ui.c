@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.27	2018/10/07
+ * Version:	@(#)win_ui.c	1.0.29	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -472,6 +472,18 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAUSE:
 		pc_pause(dopause ^ 1);
 		menu_set_item(IDM_PAUSE, dopause);
+		break;
+
+	case WM_HARD_RESET:
+		pc_reset(1);
+		break;
+
+	case WM_CTRLALTDEL:
+		pc_reset(0);
+		break;
+
+	case WM_SHUTDOWN:
+		PostQuitMessage(0);
 		break;
 
 	case WM_SYSCOMMAND:

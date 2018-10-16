@@ -98,10 +98,9 @@ static const int mem_conf_cr1[41] = {
     0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00,
     0x40
 };
-static const video_timings_t oti067_timing = {VID_ISA,6,8,16,6,8,16};
 
 
-static uint32_t 
+static uint32_t
 get_addr(headland_t *dev, uint32_t addr, uint16_t *mr)
 {
     if (mr && (dev->cr[0] & 2) && (*mr & 0x200)) {
@@ -121,7 +120,7 @@ get_addr(headland_t *dev, uint32_t addr, uint16_t *mr)
 		} else if (dev->cr[0] & 0x80)
 			addr |= (*mr & 0x100) ? ((*mr & 0x80) + 0x400) << 12 : (*mr & 0xE0) << 14;
 		else
-			addr |= (*mr & 0x100) ? ((*mr & 0xE0) + 0x40) << 14 : (*mr & 0x80) << 12; 
+			addr |= (*mr & 0x100) ? ((*mr & 0xE0) + 0x40) << 14 : (*mr & 0x80) << 12;
 	} else {
 		if ((dev->cr[4] & 0x80) && (dev->cr[6] & 1)) {
 			if (dev->cr[0] & 0x80) {
@@ -142,7 +141,7 @@ get_addr(headland_t *dev, uint32_t addr, uint16_t *mr)
 }
 
 
-static void 
+static void
 set_global_EMS_state(headland_t *dev, int state)
 {
     uint32_t base_addr, virt_addr;
@@ -175,7 +174,7 @@ set_global_EMS_state(headland_t *dev, int state)
 }
 
 
-static void 
+static void
 memmap_state_update(headland_t *dev)
 {
     uint32_t addr;
@@ -208,7 +207,7 @@ memmap_state_update(headland_t *dev)
 }
 
 
-static void 
+static void
 hl_write(uint16_t addr, uint8_t val, void *priv)
 {
     headland_t *dev = (headland_t *)priv;
@@ -334,7 +333,7 @@ hl_write(uint16_t addr, uint8_t val, void *priv)
 }
 
 
-static void 
+static void
 hl_writew(uint16_t addr, uint16_t val, void *priv)
 {
     headland_t *dev = (headland_t *)priv;
@@ -443,7 +442,7 @@ hl_read(uint16_t addr, void *priv)
 }
 
 
-static uint16_t 
+static uint16_t
 hl_readw(uint16_t addr, void *priv)
 {
     headland_t *dev = (headland_t *)priv;
@@ -464,7 +463,7 @@ hl_readw(uint16_t addr, void *priv)
 }
 
 
-static uint8_t 
+static uint8_t
 mem_read_b(uint32_t addr, void *priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
@@ -480,7 +479,7 @@ mem_read_b(uint32_t addr, void *priv)
 }
 
 
-static uint16_t 
+static uint16_t
 mem_read_w(uint32_t addr, void *priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
@@ -496,7 +495,7 @@ mem_read_w(uint32_t addr, void *priv)
 }
 
 
-static uint32_t 
+static uint32_t
 mem_read_l(uint32_t addr, void *priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
@@ -525,7 +524,7 @@ mem_write_b(uint32_t addr, uint8_t val, void *priv)
 }
 
 
-static void 
+static void
 mem_write_w(uint32_t addr, uint16_t val, void *priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
@@ -538,7 +537,7 @@ mem_write_w(uint32_t addr, uint16_t val, void *priv)
 }
 
 
-static void 
+static void
 mem_write_l(uint32_t addr, uint32_t val, void *priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
@@ -551,7 +550,7 @@ mem_write_l(uint32_t addr, uint32_t val, void *priv)
 }
 
 
-static void 
+static void
 headland_init(headland_t *dev, int ht386)
 {
     int i;

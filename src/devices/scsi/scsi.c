@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.11	2018/10/05
+ * Version:	@(#)scsi.c	1.0.12	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "../disk/hdd.h"
 #include "scsi.h"
 #include "scsi_device.h"
-#include "scsi_disk.h"
 #include "../cdrom/cdrom.h"
 #include "../disk/zip.h"
 #include "scsi_aha154x.h"
@@ -68,9 +67,6 @@ int		scsi_do_log = ENABLE_SCSI_LOG;
 #ifdef ENABLE_SCSI_DEV_LOG
 int		scsi_dev_do_log = ENABLE_SCSI_DEV_LOG;
 #endif
-scsi_device_t	SCSIDevices[SCSI_ID_MAX][SCSI_LUN_MAX];
-
-uint32_t	SCSI_BufferLength;
 
 
 static struct {
@@ -199,31 +195,21 @@ scsi_card_init(void)
 {
     int i, j;
 
-    if (! scsi_cards[scsi_card].device) return;
-
-    DEBUG("SCSI: building hard disk map...\n");
-    build_scsi_disk_map();
-
-    DEBUG("SCSI: building CD-ROM map...\n");
-    build_scsi_cdrom_map();
-
-    DEBUG("SCSI: building ZIP map...\n");
-    zip_build_scsi_map();
-	
+    /* Reset the devices table, in case we have one. */
     for (i = 0; i < SCSI_ID_MAX; i++) {
 	for (j = 0; j < SCSI_LUN_MAX; j++) {
-		if (scsi_disks[i][j] != 0xff)
-			SCSIDevices[i][j].LunType = SCSI_DISK;
-		  else if (scsi_cdrom_drives[i][j] != 0xff)
-			SCSIDevices[i][j].LunType = SCSI_CDROM;
-		  else if (scsi_zip_drives[i][j] != 0xff)
-			SCSIDevices[i][j].LunType = SCSI_ZIP;
-		  else
-			SCSIDevices[i][j].LunType = SCSI_NONE;
+		if (scsi_devices[i][j].cmd_buffer) {
+			free(scsi_devices[i][j].cmd_buffer);
+			scsi_devices[i][j].cmd_buffer = NULL;
+		}
 
-		SCSIDevices[i][j].CmdBuffer = NULL;
+		memset(&scsi_devices[i][j], 0x00, sizeof(scsi_device_t));
+
+		scsi_devices[i][j].type = SCSI_NONE;
 	}
     }
 
-    device_add(scsi_cards[scsi_card].device);
+    /* If we have one, initialize the configured SCSI controller. */
+    if (scsi_cards[scsi_card].device != NULL)
+	device_add(scsi_cards[scsi_card].device);
 }

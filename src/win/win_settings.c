@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.34	2018/10/05
+ * Version:	@(#)win_settings.c	1.0.35	2018/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -129,7 +129,7 @@ static int	temp_fdd_types[FDD_NUM],
 static hard_disk_t temp_hdd[HDD_NUM];
 
 /* Other removable devices category. */
-static cdrom_drive_t temp_cdrom_drives[CDROM_NUM];
+static cdrom_t temp_cdrom_drives[CDROM_NUM];
 static zip_drive_t temp_zip_drives[ZIP_NUM];
 
 
@@ -242,7 +242,7 @@ settings_init(void)
     memcpy(temp_hdd, hdd, HDD_NUM * sizeof(hard_disk_t));
 
     /* Other removable devices category */
-    memcpy(temp_cdrom_drives, cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
+    memcpy(temp_cdrom_drives, cdrom, CDROM_NUM * sizeof(cdrom_t));
     memcpy(temp_zip_drives, zip_drives, ZIP_NUM * sizeof(zip_drive_t));
 
     temp_deviceconfig = 0;
@@ -319,7 +319,7 @@ settings_changed(void)
     }
 
     /* Other removable devices category */
-    i = i || memcmp(cdrom_drives, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
+    i = i || memcmp(cdrom, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_t));
     i = i || memcmp(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
 
     i = i || !!temp_deviceconfig;
@@ -423,7 +423,7 @@ settings_save(void)
     }
 
     /* Removable devices category */
-    memcpy(cdrom_drives, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_drive_t));
+    memcpy(cdrom, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_t));
     memcpy(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
 
     /* Mark configuration as changed. */

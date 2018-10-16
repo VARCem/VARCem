@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.60	2018/10/06
+# Version:	@(#)Makefile.mingw	1.0.61	2018/10/14
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -652,10 +652,8 @@ USBOBJ		:= usb.o
 endif
 
 SCSIOBJ		:= scsi.o \
-		    scsi_device.o \
-		    scsi_disk.o \
-		    scsi_x54x.o \
-		    scsi_aha154x.o scsi_buslogic.o \
+		    scsi_device.o scsi_disk.o scsi_cdrom.o \
+		    scsi_x54x.o scsi_aha154x.o scsi_buslogic.o \
 		    scsi_ncr5380.o scsi_ncr53c810.o
 
 NETOBJ		:= network.o \

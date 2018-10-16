@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.11	2018/09/22
+ * Version:	@(#)hdc_st506_at.c	1.0.12	2018/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -710,8 +710,8 @@ st506_init(const device_t *info)
 
     c = 0;
     for (d = 0; d < HDD_NUM; d++) {
-	if ((hdd[d].bus == HDD_BUS_ST506) && (hdd[d].id.st506_channel < ST506_NUM)) {
-		loadhd(dev, hdd[d].id.st506_channel, d, hdd[d].fn);
+	if ((hdd[d].bus == HDD_BUS_ST506) && (hdd[d].bus_id.st506_channel < ST506_NUM)) {
+		loadhd(dev, hdd[d].bus_id.st506_channel, d, hdd[d].fn);
 
 		hdd_active(d, 0);
 

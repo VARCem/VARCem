@@ -12,7 +12,7 @@
  *		    word 0 - base address
  *		    word 1 - bits 1-15 = byte count, bit 31 = end of transfer
  *
- * Version:	@(#)intel_piix.c	1.0.7	2018/10/05
+ * Version:	@(#)intel_piix.c	1.0.8	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,8 +52,9 @@
 #include "../input/keyboard.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
-#include "../scsi/scsi_device.h"
 #include "../cdrom/cdrom.h"
+#include "../scsi/scsi_device.h"
+#include "../scsi/scsi_cdrom.h"
 #include "../disk/zip.h"
 #include "pci.h"
 #include "dma.h"
@@ -824,11 +825,13 @@ piix_reset(void *p)
 {
     int i;
 
+    //FIXME: cdrom_reset_bus(CDROM_BUS_ATAPI);  --FvK
     for (i = 0; i < CDROM_NUM; i++) {
-	if (cdrom_drives[i].bus_type == CDROM_BUS_ATAPI)
-		cdrom_reset(cdrom[i]);
+	if (cdrom[i].bus_type == CDROM_BUS_ATAPI)
+		scsi_cdrom_reset(scsi_cdrom[i]);
     }
 
+    //FIXME: zip_reset_bus(ZIP_BUS_ATAPI);  --FvK
     for (i = 0; i < ZIP_NUM; i++) {
 	if (zip_drives[i].bus_type == ZIP_BUS_ATAPI)
 		zip_reset(zip[i]);

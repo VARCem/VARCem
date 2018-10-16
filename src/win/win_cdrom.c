@@ -1340,10 +1340,8 @@ ioctl_hopen(uint8_t id)
 
 
 int
-ioctl_open(uint8_t id, char d)
+ioctl_open(cdrom_t *dev, char d)
 {
-    cdrom_t *dev = cdrom[id];
-
     sprintf(cdrom_ioctl[id].ioctl_path,"\\\\.\\%c:",d);
     pclog("IOCTL path: %s\n", cdrom_ioctl[id].ioctl_path);
     dev->disc_changed = 1;
@@ -1365,7 +1363,7 @@ ioctl_open(uint8_t id, char d)
 
 
 void
-ioctl_close(uint8_t id)
+ioctl_close(cdrom_t *dev)
 {
     if (cdrom_ioctl_windows[id].is_playing)  return;
 
@@ -1377,10 +1375,8 @@ ioctl_close(uint8_t id)
 
 
 static void
-ioctl_exit(uint8_t id)
+ioctl_exit(cdrom_t *dev)
 {
-    cdrom_t *dev = cdrom[id];
-
     cdrom_ioctl_windows[id].is_playing = 0;
 
     ioctl_stop(id);
@@ -1389,7 +1385,7 @@ ioctl_exit(uint8_t id)
 }
 
 
-static CDROM ioctl_cdrom = {
+static cdrom_ops_t cdrom_ioctl_ops = {
     ioctl_ready,
     ioctl_medium_changed,
     ioctl_media_type_id,

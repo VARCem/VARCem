@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.12	2018/10/05
+ * Version:	@(#)sound.c	1.0.13	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,6 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
-#include "../scsi/scsi_device.h"
 #include "../cdrom/cdrom.h"
 #include "sound.h"
 #include "midi.h"
@@ -105,7 +104,7 @@ cd_thread(void *param)
     float cd_buffer_temp2[2] = {0.0, 0.0};
     int32_t audio_vol_l;
     int32_t audio_vol_r;
-    int channel_select[2];
+    int ch_sel[2];
     int c, i, r, has_audio;
 
     thread_set_event(cd_start_event);
@@ -129,22 +128,32 @@ cd_thread(void *param)
 	for (i = 0; i < CDROM_NUM; i++) {
 		has_audio = 0;
 
-		if ((cdrom_drives[i].bus_type == CDROM_BUS_DISABLED) ||
-		    !cdrom[i] || !cdrom[i]->handler) continue;
+		if ((cdrom[i].bus_type == CDROM_BUS_DISABLED) || !cdrom[i].ops) continue;
 
-		if (cdrom[i]->handler->audio_callback) {
-			r = cdrom[i]->handler->audio_callback(i, cd_buffer[i], CD_BUFLEN*2);
-			has_audio = (cdrom_drives[i].bus_type && cdrom_drives[i].sound_on/* && r*/);
+		if (cdrom[i].ops->audio_callback) {
+			r = cdrom[i].ops->audio_callback(&cdrom[i], cd_buffer[i], CD_BUFLEN*2);
+			has_audio = (cdrom[i].bus_type && cdrom[i].sound_on/* && r*/);
 		} else
 			continue;
 
 		if (soundon && has_audio) {
-			audio_vol_l = cdrom_mode_sense_get_volume(cdrom[i], 0);
-			audio_vol_r = cdrom_mode_sense_get_volume(cdrom[i], 1);
+			if (cdrom[i].get_volume) {
+				audio_vol_l = cdrom[i].get_volume(cdrom[i].p, 0);
+				audio_vol_r = cdrom[i].get_volume(cdrom[i].p, 1);
+			} else {
+				audio_vol_l = 255;
+				audio_vol_r = 255;
+			}
 
-			channel_select[0] = cdrom_mode_sense_get_channel(cdrom[i], 0);
-			channel_select[1] = cdrom_mode_sense_get_channel(cdrom[i], 1);
-			if (!r) {
+			if (cdrom[i].get_channel) {
+				ch_sel[0] = cdrom[i].get_channel(cdrom[i].p, 0);
+				ch_sel[1] = cdrom[i].get_channel(cdrom[i].p, 1);
+			} else {
+				ch_sel[0] = 1;
+				ch_sel[1] = 2;
+			}
+
+			if (! r) {
 				for (c = 0; c < CD_BUFLEN*2; c += 2) {
 					if (sound_is_float) {
 						cd_out_buffer[c] += 0.0;
@@ -170,13 +179,13 @@ cd_thread(void *param)
 
 				/*Apply ATAPI channel select*/
 				cd_buffer_temp2[0] = cd_buffer_temp2[1] = 0.0;
-				if (channel_select[0] & 1)
+				if (ch_sel[0] & 1)
 					cd_buffer_temp2[0] += cd_buffer_temp[0];
-				if (channel_select[0] & 2)
+				if (ch_sel[0] & 2)
 					cd_buffer_temp2[1] += cd_buffer_temp[0];
-				if (channel_select[1] & 1)
+				if (ch_sel[1] & 1)
 					cd_buffer_temp2[0] += cd_buffer_temp[1];
-				if (channel_select[1] & 2)
+				if (ch_sel[1] & 2)
 					cd_buffer_temp2[1] += cd_buffer_temp[1];
 
 				/*Apply sound card CD volume*/
@@ -340,8 +349,8 @@ sound_reset(void)
     sound_cd_set_volume(65535, 65535);
 
     for (i = 0; i < CDROM_NUM; i++) {
-	if (cdrom[i] && cdrom[i]->handler && cdrom[i]->handler->audio_stop)
-	       	cdrom[i]->handler->audio_stop(i);
+	if (cdrom[i].ops && cdrom[i].ops->audio_stop)
+	       	cdrom[i].ops->audio_stop(&cdrom[i]);
     }
 
     /* Initialize the PC Speaker device. */
@@ -380,7 +389,7 @@ sound_init(void)
     /* Set up the CD-AUDIO thread. */
     drives = 0;
     for (i = 0; i < CDROM_NUM; i++) {
-	if (cdrom[i] && (cdrom_drives[i].bus_type != CDROM_BUS_DISABLED))
+	if (cdrom[i].bus_type != CDROM_BUS_DISABLED)
 		drives++;
     }	
 
@@ -427,9 +436,9 @@ sound_cd_stop(void)
     int i;
 
     for (i = 0; i < CDROM_NUM; i++) {
-	if (cdrom[i] && cdrom[i]->handler && cdrom[i]->handler->audio_stop)
-	       	cdrom[i]->handler->audio_stop(i);
-	if ((cdrom_drives[i].bus_type != CDROM_BUS_DISABLED) && cdrom[i])
+	if (cdrom[i].ops && cdrom[i].ops->audio_stop)
+	       	cdrom[i].ops->audio_stop(&cdrom[i]);
+	if (cdrom[i].bus_type != CDROM_BUS_DISABLED)
 			drives++;
     }
     if (drives && !cd_thread_enable) {

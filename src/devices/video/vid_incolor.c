@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.9	2018/09/22
+ * Version:	@(#)vid_incolor.c	1.0.10	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1079,7 +1079,12 @@ incolor_close(void *priv)
 {
     incolor_t *dev = (incolor_t *)priv;
 
-    free(dev->vram);
+    if (! dev)
+	return;
+
+    if (dev->vram)
+	free(dev->vram);
+
     free(dev);
 }
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.10	2018/09/28
+ * Version:	@(#)hdc_ide.h	1.0.11	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,27 +40,80 @@
 # define EMU_IDE_H
 
 
+enum {
+    IDE_NONE = 0,
+    IDE_HDD,
+    IDE_ATAPI
+};
+
+/* Type:
+ *  0 = PIO,
+ *  1 = SDMA,
+ *  2 = MDMA,
+ *  3 = UDMA
+ * Return:
+ *  -1 = Not supported,
+ *  Anything else = maximum mode
+ *
+ * This will eventually be hookable.
+*/
+enum {
+    TYPE_PIO = 0,
+    TYPE_SDMA,
+    TYPE_MDMA,
+    TYPE_UDMA
+};
+
+/* Return:
+ *  0 = Not supported,
+ *  Anything else = timings
+ *
+ * This will eventually be hookable.
+ */
+enum {
+    TIMINGS_DMA = 0,
+    TIMINGS_PIO,
+    TIMINGS_PIO_FC
+};
+
+
 typedef struct {
-    uint8_t	atastat, error,
-		command, fdisk;
+    uint8_t atastat, error,
+	    command, fdisk;
 
-    int		type, board,
-		irqstat, service,
-		blocksize, blockcount,
-		hdd_num, channel,
-		pos, sector_pos,
-		skip512, reset,
-		mdma_mode, do_initial_read;
+    int type, board,
+	irqstat, service,
+	blocksize, blockcount,
+	hdd_num, channel,
+	pos, sector_pos,
+	lba, skip512,
+	reset, mdma_mode,
+	do_initial_read;
 
-    uint32_t	secount, sector,
-		cylinder, head,
-		drive, cylprecomp,
-		tracks, spt, hpc,
-		cfg_spt, cfg_hpc,
-		lba, lba_addr;
+    uint32_t secount, sector,
+	     cylinder, head,
+	     drive, cylprecomp,
+	     cfg_spt, cfg_hpc,
+	     lba_addr, tracks,
+	     spt, hpc;
 
-    uint16_t	*buffer;
-    uint8_t	*sector_buffer;
+    uint16_t *buffer;
+
+    uint8_t *sector_buffer;
+
+    /* Stuff mostly used by ATAPI */
+    void	*p;
+    int		interrupt_drq;
+
+    int		(*get_max)(int ide_has_dma, int type);
+    int		(*get_timings)(int ide_has_dma, int type);
+    void	(*identify)(void *p, int ide_has_dma);
+    void	(*set_signature)(void *p);
+    void	(*packet_write)(void *p, uint32_t val, int length);
+    uint32_t	(*packet_read)(void *p, int length);
+    void	(*stop)(void *p);
+    void	(*packet_callback)(void *p);
+    void	(*device_reset)(void *p);
 } ide_t;
 
 
@@ -102,6 +155,8 @@ extern void	ide_sec_disable(void);
 extern void	ide_set_callback(uint8_t channel, int64_t callback);
 extern void	secondary_ide_check(void);
 
+
+extern void	ide_padstr(char *str, const char *src, int len);
 extern void	ide_padstr8(uint8_t *buf, int buf_size, const char *src);
 
 extern int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length, void *priv);
@@ -110,6 +165,8 @@ extern void	(*ide_bus_master_set_irq)(int channel, void *priv);
 extern void	*ide_bus_master_priv[2];
 
 extern void	ide_enable_pio_override(void);
+extern void	ide_allocate_buffer(ide_t *dev);
+extern void	ide_atapi_attach(ide_t *dev);
 
 
 #endif	/*EMU_IDE_H*/

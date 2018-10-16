@@ -8,7 +8,7 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.5	2018/10/05
+ * Version:	@(#)midi_mt32.c	1.0.6	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,6 +102,8 @@ static const mt32emu_report_handler_i_v0 handler_v0 = {
 
 static thread_t *thread_h = NULL;
 static event_t *event = NULL;
+static event_t *start_event = NULL;
+static volatile int mt32_on = 0;
 static uint32_t samplerate = 44100;
 static int buf_size = 0;
 static float* buffer = NULL;
@@ -178,12 +180,16 @@ mt32_thread(void *param)
 {
     int buf_pos = 0;
     int bsize = buf_size / BUFFER_SEGMENTS;
+    float *buf;
+    int16_t *buf16;
 
-    while (1) {
+    thread_set_event(start_event);
+    while (mt32_on) {
 	thread_wait_event(event, -1);
+	thread_reset_event(event);
 
 	if (sound_is_float) {
-		float *buf = (float *) ((uint8_t*)buffer + buf_pos);
+		buf = (float *) ((uint8_t*)buffer + buf_pos);
 
 		memset(buf, 0, bsize);
 		mt32_stream(buf, bsize / (2 * sizeof(float)));
@@ -194,10 +200,10 @@ mt32_thread(void *param)
 			buf_pos = 0;
 		}
 	} else {
-		int16_t *buf = (int16_t *) ((uint8_t*)buffer_int16 + buf_pos);
+		buf16 = (int16_t *) ((uint8_t*)buffer_int16 + buf_pos);
 
-		memset(buf, 0, bsize);
-		mt32_stream_int16(buf, bsize / (2 * sizeof(int16_t)));
+		memset(buf16, 0, bsize);
+		mt32_stream_int16(buf16, bsize / (2 * sizeof(int16_t)));
 		buf_pos += bsize;
 		if (buf_pos >= buf_size) {
 			if (soundon)
@@ -242,8 +248,6 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 
     if (!mt32_check("mt32emu_open_synth", mt32emu_open_synth(context), MT32EMU_RC_OK)) return 0;
 
-    event = thread_create_event();
-    thread_h = thread_create(mt32_thread, 0);
     samplerate = mt32emu_get_actual_stereo_output_samplerate(context);
 
     /* buf_size = samplerate/RENDER_RATE*2; */
@@ -281,6 +285,15 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 
     midi_init(dev);
 
+    mt32_on = 1;
+
+    start_event = thread_create_event();
+    event = thread_create_event();
+    thread_h = thread_create(mt32_thread, 0);
+
+    thread_wait_event(start_event, -1);
+    thread_reset_event(start_event);
+
     return dev;
 }
 
@@ -304,11 +317,12 @@ mt32_close(void *priv)
 {
     if (priv == NULL) return;
 
-    if (thread_h)
-	thread_kill(thread_h);
-    if (event)
-	thread_destroy_event(event);
+    mt32_on = 0;
+    thread_set_event(event);
+    thread_wait(thread_h, -1);
+
     event = NULL;
+    start_event = NULL;
     thread_h = NULL;
 
     if (context) {
@@ -324,10 +338,6 @@ mt32_close(void *priv)
     if (buffer_int16)
 	free(buffer_int16);
     buffer_int16 = NULL;
-
-    midi_close();
-
-    free((midi_device_t*)priv);
 }
 
 

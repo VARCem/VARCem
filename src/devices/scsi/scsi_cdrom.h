@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Emulation of SCSI fixed and removable disks.
+ *		Definitions for the SCSI CD-ROM module.
  *
- * Version:	@(#)scsi_disk.h	1.0.4	2018/10/14
+ * Version:	@(#)scsi_cdrom.h	1.0.1	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,27 +34,30 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef EMU_SCSI_DISK_H
-# define EMU_SCSI_DISK_H
+#ifndef EMU_SCSI_CDROM_H
+#define EMU_SCSI_CDROM_H
 
 
+#define CDROM_TIME (5LL * 100LL * (1LL << TIMER_SHIFT))
+
+
+#ifdef EMU_SCSI_DEVICE_H
 typedef struct {
     mode_sense_pages_t ms_pages_saved;
 
-    hard_disk_t *drv;
+    cdrom_t *drv;
 
-    uint8_t *temp_buffer,
-	    pad[16],	/* This is atapi_cdb in ATAPI-supporting devices,
-			   and pad in SCSI-only devices. */
+    uint8_t *buffer,
+	    atapi_cdb[16],
 	    current_cdb[16],
 	    sense[256];
 
     uint8_t status, phase,
 	    error, id,
-	    pad0, pad1,
-	    pad2, pad3;
+	    features, pad0,
+	    pad1, pad2;
 
-    uint16_t request_length, pad4;
+    uint16_t request_length, max_transfer_len;
 
     int requested_blocks, packet_status,
 	total_length, do_page_save,
@@ -64,22 +67,29 @@ typedef struct {
 	     packet_len, pos;
 
     int64_t callback;
-} scsi_disk_t;
+
+    int media_status, data_pos,
+	request_pos, total_read,
+	old_len;
+
+    uint8_t previous_command,
+	    pad3, pad4, pad5;
+} scsi_cdrom_t;
 
 
-extern scsi_disk_t	*scsi_disk[HDD_NUM];
-
-
-#ifdef USE_REMOVABLE_DISK
-extern void	scsi_disk_insert(int id);
-extern void	scsi_reloadhd(int id);
-extern void	scsi_unloadhd(int scsi_id, int scsi_lun, int id);
+extern scsi_cdrom_t	*scsi_cdrom[CDROM_NUM];
 #endif
 
-extern void	scsi_disk_log(int level, const char *fmt, ...);
-extern void	scsi_disk_global_init(void);
-extern void	scsi_disk_hard_reset(void);
-extern void	scsi_disk_close(void);
+#define scsi_cdrom_sense_error	dev->sense[0]
+#define scsi_cdrom_sense_key	dev->sense[2]
+#define scsi_cdrom_asc		dev->sense[12]
+#define scsi_cdrom_ascq		dev->sense[13]
+#define scsi_cdrom_drive	cdrom[id].host_drive
 
 
-#endif	/*EMU_SCSI_DISK_H*/
+extern void	scsi_cdrom_log(int level, const char *fmt, ...);
+
+extern void	scsi_cdrom_reset(void *p);
+
+
+#endif	/*EMU_SCSI_CDROM_H*/

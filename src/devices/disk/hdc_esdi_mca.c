@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.13	2018/10/08
+ * Version:	@(#)hdc_esdi_mca.c	1.0.14	2018/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1099,9 +1099,9 @@ esdi_init(const device_t *info)
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
 	if ((hdd[i].bus == HDD_BUS_ESDI) &&
-	    (hdd[i].id.esdi_channel < ESDI_NUM)) {
+	    (hdd[i].bus_id.esdi_channel < ESDI_NUM)) {
 		/* This is an ESDI drive. */
-		drive = &dev->drives[hdd[i].id.esdi_channel];
+		drive = &dev->drives[hdd[i].bus_id.esdi_channel];
 
 		hdd_active(drive->hdd_num, 0);
 

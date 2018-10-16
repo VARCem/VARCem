@@ -8,7 +8,7 @@
  *
  *		Handle the UI part of CD-ROM/ZIP/DISK media changes.
  *
- * Version:	@(#)ui_cdrom.c	1.0.3	2018/10/05
+ * Version:	@(#)ui_cdrom.c	1.0.4	2018/10/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,8 +58,6 @@
 #include "../devices/scsi/scsi_disk.h"
 #include "../devices/disk/zip.h"
 #include "../devices/cdrom/cdrom.h"
-#include "../devices/cdrom/cdrom_image.h"
-#include "../devices/cdrom/cdrom_null.h"
 #include "ui.h"
 
 
@@ -88,43 +86,14 @@ ui_floppy_mount(uint8_t drive, int part, int8_t wp, const wchar_t *fn)
 void
 ui_cdrom_eject(uint8_t id)
 {
-    if (cdrom_drives[id].host_drive == 0) {
-	/* Switch from empty to empty. Do nothing. */
-	return;
-    }
+    /* Actually eject the media, if any. */
+    cdrom_eject(id);
 
-    if ((cdrom_drives[id].host_drive >= 'A') &&
-	(cdrom_drives[id].host_drive <= 'Z')) {
-	ui_sb_menu_set_item(SB_CDROM | id,
-		IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), 0);
-    }
-
-    if (cdrom_image[id].prev_image_path) {
-	free(cdrom_image[id].prev_image_path);
-	cdrom_image[id].prev_image_path = NULL;
-    }
-
-    if (cdrom_drives[id].host_drive == 200) {
-	cdrom_image[id].prev_image_path = (wchar_t *)mem_alloc(1024);
-	wcscpy(cdrom_image[id].prev_image_path, cdrom_image[id].image_path);
-    }
-
-    cdrom_drives[id].prev_host_drive = cdrom_drives[id].host_drive;
-    cdrom[id]->handler->exit(id);
-    cdrom_close_handler(id);
-    memset(cdrom_image[id].image_path, 0, sizeof(cdrom_image[id].image_path));
-    cdrom_null_open(id);
-
-    if (cdrom_drives[id].bus_type) {
-	/* Signal disc change to the emulated machine. */
-	cdrom_insert(cdrom[id]);
-    }
-
+    /* Now update the UI. */
     ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, 0);
-    cdrom_drives[id].host_drive = 0;
     ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 1);
-    ui_sb_icon_state(SB_CDROM|id, 1);
     ui_sb_menu_enable_item(SB_CDROM|id, IDM_CDROM_RELOAD | id, 1);
+    ui_sb_icon_state(SB_CDROM|id, 1);
     ui_sb_tip_update(SB_CDROM|id);
 
     config_save();
@@ -134,60 +103,31 @@ ui_cdrom_eject(uint8_t id)
 void
 ui_cdrom_reload(uint8_t id)
 {
-#ifdef USE_CDROM_IOCTL
-    int new_cdrom_drive;
-#endif
+    cdrom_t *dev = &cdrom[id];
 
-    if ((cdrom_drives[id].host_drive == cdrom_drives[id].prev_host_drive) ||
-	(cdrom_drives[id].prev_host_drive == 0) ||
-	(cdrom_drives[id].host_drive != 0)) {
-	/* Switch from empty to empty. Do nothing. */
-	return;
-    }
+    /* Actually reload the media, if any. */
+    cdrom_reload(id);
 
-    cdrom_close_handler(id);
-    memset(cdrom_image[id].image_path, 0, sizeof(cdrom_image[id].image_path));
-
-    if (cdrom_drives[id].prev_host_drive == 200) {
-	/* Reload a previous image. */
-	wcscpy(cdrom_image[id].image_path, cdrom_image[id].prev_image_path);
-	free(cdrom_image[id].prev_image_path);
-	cdrom_image[id].prev_image_path = NULL;
-	image_open(id, cdrom_image[id].image_path);
-
-	if (cdrom_drives[id].bus_type) {
-		/* Signal disc change to the emulated machine. */
-		cdrom_insert(cdrom[id]);
-	}
-
-	if (wcslen(cdrom_image[id].image_path) == 0) {
+    /* Now update the UI. */
+    switch (dev->host_drive) {
+	case 0:		/* no media */
 		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 1);
-		cdrom_drives[id].host_drive = 0;
 		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, 0);
-		ui_sb_icon_state(SB_CDROM|id, 1);
-	} else {
+		break;
+
+	case 200:	/* image mounted */
 		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 0);
-		cdrom_drives[id].host_drive = 200;
 		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_IMAGE | id, 1);
-		ui_sb_icon_state(SB_CDROM|id, 0);
-	}
-#ifdef USE_CDROM_IOCTL
-    } else {
-	/* Reload the previous host drive. */
-	new_cdrom_drive = cdrom_drives[id].prev_host_drive;
-	ioctl_open(id, new_cdrom_drive);
-	if (cdrom_drives[id].bus_type) {
-		/* Signal disc change to the emulated machine. */
-		cdrom_insert(id);
-	}
-	ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 0);
-	cdrom_drives[id].host_drive = new_cdrom_drive;
-	ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_HOST_DRIVE | id | ((cdrom_drives[id].host_drive - 'A') << 3), 1);
-	ui_sb_icon_state(SB_CDROM|id, 0);
-#endif
+		break;
+
+	default:	/* host drive mounted */
+		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_EMPTY | id, 0);
+		ui_sb_menu_set_item(SB_CDROM|id, IDM_CDROM_HOST_DRIVE | id | ((dev->host_drive - 'A') << 3), 1);
+		break;
     }
 
     ui_sb_menu_enable_item(SB_CDROM|id, IDM_CDROM_RELOAD | id, 0);
+    ui_sb_icon_state(SB_CDROM|id, 0);
     ui_sb_tip_update(SB_CDROM|id);
 
     config_save();

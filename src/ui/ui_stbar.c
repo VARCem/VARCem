@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.10	2018/10/05
+ * Version:	@(#)ui_stbar.c	1.0.11	2018/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -234,20 +234,20 @@ ui_sb_tip_update(uint8_t tag)
 
 	case SB_CDROM:
 		drive = ptr->tag & 0x0f;
-		bus = cdrom_drives[drive].bus_type;
+		bus = cdrom[drive].bus_type;
 		id = IDS_3580 + (bus - 1);
 		wcscpy(temp, get_string(id));
-		str = cdrom_image[drive].image_path;
+		str = cdrom[drive].image_path;
 		if (*str == L'\0')
 			str = get_string(IDS_3900);		/*"(empty)"*/
-		if (cdrom_drives[drive].host_drive == 200) {
+		if (cdrom[drive].host_drive == 200) {
 			swprintf(tip, sizeof_w(tip),
 				 get_string(IDS_3920), drive+1, temp, str);
-		} else if ((cdrom_drives[drive].host_drive >= 'A') &&
-			   (cdrom_drives[drive].host_drive <= 'Z')) {
+		} else if ((cdrom[drive].host_drive >= 'A') &&
+			   (cdrom[drive].host_drive <= 'Z')) {
 			swprintf(temp, sizeof_w(temp),
 				 get_string(IDS_3901),
-				 cdrom_drives[drive].host_drive & ~0x20);
+				 cdrom[drive].host_drive & ~0x20);
 			swprintf(tip, sizeof_w(tip),
 				 get_string(IDS_3920),
 				 drive+1, get_string(id), temp);
@@ -259,7 +259,7 @@ ui_sb_tip_update(uint8_t tag)
 
 	case SB_ZIP:
 		drive = ptr->tag & 0x0f;
-		bus = cdrom_drives[drive].bus_type;
+		bus = zip_drives[drive].bus_type;
 		id = IDS_3580 + (bus - 1);
 		wcscpy(temp, get_string(id));
 		type = zip_drives[drive].is_250 ? 250 : 100;
@@ -361,17 +361,17 @@ menu_cdrom(int part, int drive)
     sb_menu_add_item(part, IDM_CDROM_EMPTY | drive, get_string(IDS_3906));
 
     if (host_cdrom_drive_available_num == 0) {
-	if ((cdrom_drives[drive].host_drive >= 'A') &&
-	    (cdrom_drives[drive].host_drive <= 'Z')) {
-		cdrom_drives[drive].host_drive = 0;
+	if ((cdrom[drive].host_drive >= 'A') &&
+	    (cdrom[drive].host_drive <= 'Z')) {
+		cdrom[drive].host_drive = 0;
 	}
 
 	goto check_items;
     } else {
-	if ((cdrom_drives[drive].host_drive >= 'A') &&
-	    (cdrom_drives[drive].host_drive <= 'Z')) {
-		if (! host_cdrom_drive_available[cdrom_drives[drive].host_drive - 'A']) {
-			cdrom_drives[drive].host_drive = 0;
+	if ((cdrom[drive].host_drive >= 'A') &&
+	    (cdrom[drive].host_drive <= 'Z')) {
+		if (! host_cdrom_drive_available[cdrom[drive].host_drive - 'A']) {
+			cdrom[drive].host_drive = 0;
 		}
 	}
     }
@@ -385,18 +385,18 @@ menu_cdrom(int part, int drive)
     }
 
 check_items:
-    if (! cdrom_drives[drive].sound_on)
+    if (! cdrom[drive].sound_on)
 	sb_menu_set_item(part, IDM_CDROM_MUTE | drive, 1);
 
-    if (cdrom_drives[drive].host_drive == 200)
+    if (cdrom[drive].host_drive == 200)
 	sb_menu_set_item(part, IDM_CDROM_IMAGE | drive, 1);
       else
-    if ((cdrom_drives[drive].host_drive >= 'A') &&
-	(cdrom_drives[drive].host_drive <= 'Z')) {
+    if ((cdrom[drive].host_drive >= 'A') &&
+	(cdrom[drive].host_drive <= 'Z')) {
 	sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive |
-		((cdrom_drives[drive].host_drive - 'A') << 3), 1);
+		((cdrom[drive].host_drive - 'A') << 3), 1);
     } else {
-	cdrom_drives[drive].host_drive = 0;
+	cdrom[drive].host_drive = 0;
 	sb_menu_set_item(part, IDM_CDROM_EMPTY | drive, 1);
     }
 }
@@ -479,16 +479,16 @@ ui_sb_reset(void)
 
     for (drive = 0; drive < CDROM_NUM; drive++) {
 	/* Could be Internal or External IDE.. */
-	if ((cdrom_drives[drive].bus_type == CDROM_BUS_ATAPI) &&
+	if ((cdrom[drive].bus_type == CDROM_BUS_ATAPI) &&
 	    !(hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
 		continue;
 	}
 
-	if ((cdrom_drives[drive].bus_type == CDROM_BUS_SCSI) && (scsi_card == 0)) {
+	if ((cdrom[drive].bus_type == CDROM_BUS_SCSI) && (scsi_card == 0)) {
 		continue;
 	}
 
-	if (cdrom_drives[drive].bus_type != CDROM_BUS_DISABLED)
+	if (cdrom[drive].bus_type != CDROM_BUS_DISABLED)
 		sb_nparts++;
     }
 
@@ -563,15 +563,15 @@ ui_sb_reset(void)
 
     for (drive = 0; drive < CDROM_NUM; drive++) {
 	/* Could be Internal or External IDE.. */
-	if ((cdrom_drives[drive].bus_type == CDROM_BUS_ATAPI) &&
+	if ((cdrom[drive].bus_type == CDROM_BUS_ATAPI) &&
 	    !(hdint || !strncmp(hdc, "ide", 3))) {
 		continue;
 	}
 
-	if ((cdrom_drives[drive].bus_type == CDROM_BUS_SCSI) && (scsi_card == 0))
+	if ((cdrom[drive].bus_type == CDROM_BUS_SCSI) && (scsi_card == 0))
 		continue;
 
-	if (cdrom_drives[drive].bus_type != CDROM_BUS_DISABLED) {
+	if (cdrom[drive].bus_type != CDROM_BUS_DISABLED) {
 		ptr = &sb_parts[sb_nparts++];
 		ptr->width = SB_ICON_WIDTH;
 		ptr->tag = SB_CDROM | drive;
@@ -660,9 +660,9 @@ ui_sb_reset(void)
 
 		case SB_CDROM:		/* CD-ROM */
 			drive = ptr->tag & 0x0f;
-			if (cdrom_drives[drive].host_drive == 200) {
-				ptr->flags = (wcslen(cdrom_image[drive].image_path) == 0) ? ICON_EMPTY : 0;
-			} else if ((cdrom_drives[drive].host_drive >= 'A') && (cdrom_drives[drive].host_drive <= 'Z')) {
+			if (cdrom[drive].host_drive == 200) {
+				ptr->flags = (wcslen(cdrom[drive].image_path) == 0) ? ICON_EMPTY : 0;
+			} else if ((cdrom[drive].host_drive >= 'A') && (cdrom[drive].host_drive <= 'Z')) {
 				ptr->flags = 0;
 			} else {
 				ptr->flags = ICON_EMPTY;
@@ -797,9 +797,9 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		part = find_tag(SB_CDROM | drive);
 		if (part == -1) break;
 
-		cdrom_drives[drive].sound_on ^= 1;
+		cdrom[drive].sound_on ^= 1;
 		sb_menu_set_item(part, IDM_CDROM_MUTE | drive,
-				 cdrom_drives[drive].sound_on);
+				 cdrom[drive].sound_on);
 		config_save();
 		sound_cd_stop();
 		break;
@@ -820,37 +820,37 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		if (part == -1) break;
 
 		/* Browse for a new image to use. */
-		str = cdrom_image[drive].image_path;
+		str = cdrom[drive].image_path;
 		if (! dlg_file(get_string(IDS_3922), str, temp,
 			       DLG_FILE_LOAD|DLG_FILE_RO)) break;
 
 		/* Save current drive/pathname for later re-use. */
-		cdrom_drives[drive].prev_host_drive = cdrom_drives[drive].host_drive;
-		if (! cdrom_image[drive].prev_image_path)
-			cdrom_image[drive].prev_image_path = (wchar_t *)mem_alloc(1024);
-		wcscpy(cdrom_image[drive].prev_image_path, str);
+		cdrom[drive].prev_host_drive = cdrom[drive].host_drive;
+		if (! cdrom[drive].prev_image_path)
+			cdrom[drive].prev_image_path = (wchar_t *)mem_alloc(1024);
+		wcscpy(cdrom[drive].prev_image_path, str);
 
 		/* Close the current drive/pathname. */
-		cdrom[drive]->handler->exit(drive);
+		cdrom[drive].ops->exit(&cdrom[drive]);
 		cdrom_close_handler(drive);
-		memset(cdrom_image[drive].image_path, 0, sizeof(cdrom_image[drive].image_path));
+		memset(cdrom[drive].image_path, 0, sizeof(cdrom[drive].image_path));
 
 		/* Now open new image. */
-		image_open(drive, temp);
+		cdrom_image_open(&cdrom[drive], temp);
 
 		/* Signal media change to the emulated machine. */
-		cdrom_insert(cdrom[drive]);
+		cdrom_insert(drive);
 
 		/* Update stuff. */
 		sb_menu_set_item(part, IDM_CDROM_EMPTY | drive, 0);
-		if ((cdrom_drives[drive].host_drive >= 'A') &&
-		    (cdrom_drives[drive].host_drive <= 'Z')) {
+		if ((cdrom[drive].host_drive >= 'A') &&
+		    (cdrom[drive].host_drive <= 'Z')) {
 			sb_menu_set_item(part,
-					 IDM_CDROM_HOST_DRIVE | drive | ((cdrom_drives[drive].host_drive - 'A') << 3),
+					 IDM_CDROM_HOST_DRIVE | drive | ((cdrom[drive].host_drive - 'A') << 3),
 					 0);
 		}
-		cdrom_drives[drive].host_drive = (wcslen(cdrom_image[drive].image_path) == 0) ? 0 : 200;
-		if (cdrom_drives[drive].host_drive == 200) {
+		cdrom[drive].host_drive = (wcslen(cdrom[drive].image_path) == 0) ? 0 : 200;
+		if (cdrom[drive].host_drive == 200) {
 			sb_menu_set_item(part, IDM_CDROM_IMAGE | drive, 1);
 			ui_sb_icon_state(SB_CDROM | drive, 0);
 		} else {
@@ -870,33 +870,33 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		if (part == -1) break;
 
 		new_cdrom_drive = i;
-		if (cdrom_drives[drive].host_drive == new_cdrom_drive) {
+		if (cdrom[drive].host_drive == new_cdrom_drive) {
 			/* Switching to the same drive. Do nothing. */
 			break;
 		}
-		cdrom_drives[drive].prev_host_drive = cdrom_drives[drive].host_drive;
+		cdrom[drive].prev_host_drive = cdrom[drive].host_drive;
 
 		/* Close the current drive/pathname. */
-		cdrom[drive]->handler->exit(drive);
+		cdrom[drive].ops->exit(&cdrom[drive]);
 		cdrom_close_handler(drive);
-		memset(cdrom_image[drive].image_path, 0, sizeof(cdrom_image[drive].image_path));
+		memset(cdrom[drive].image_path, 0, sizeof(cdrom[drive].image_path));
 
 #ifdef USE_CDROM_IOCTL
 		ioctl_open(drive, new_cdrom_drive);
 #endif
 
 		/* Signal media change to the emulated machine. */
-		cdrom_insert(cdrom[drive]);
+		cdrom_insert(drive);
 
 		/* Update stuff. */
 		sb_menu_set_item(part, IDM_CDROM_EMPTY | drive, 0);
-		if ((cdrom_drives[drive].host_drive >= 'A') &&
-		    (cdrom_drives[drive].host_drive <= 'Z')) {
-			sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive | ((cdrom_drives[drive].host_drive - 'A') << 3), 0);
+		if ((cdrom[drive].host_drive >= 'A') &&
+		    (cdrom[drive].host_drive <= 'Z')) {
+			sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive | ((cdrom[drive].host_drive - 'A') << 3), 0);
 		}
+		cdrom[drive].host_drive = new_cdrom_drive;
 		sb_menu_set_item(part, IDM_CDROM_IMAGE | drive, 0);
-		cdrom_drives[drive].host_drive = new_cdrom_drive;
-		sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive | ((cdrom_drives[drive].host_drive - 'A') << 3), 1);
+		sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive | ((cdrom[drive].host_drive - 'A') << 3), 1);
 		sb_menu_enable_item(part, IDM_CDROM_RELOAD | drive, 0);
 		ui_sb_icon_state(SB_CDROM | drive, 0);
 		ui_sb_tip_update(SB_CDROM | drive);

@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.13	2018/10/05
+ * Version:	@(#)hdc_st506_xt.c	1.0.14	2018/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -854,9 +854,9 @@ st506_init(const device_t *info)
 
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_ST506) && (hdd[i].id.st506_channel < ST506_NUM)) {
-		DEBUG("Found ST506 hard disk on channel %i\n", hdd[i].id.st506_channel);
-		loadhd(dev, hdd[i].id.st506_channel, i, hdd[i].fn);
+	if ((hdd[i].bus == HDD_BUS_ST506) && (hdd[i].bus_id.st506_channel < ST506_NUM)) {
+		DEBUG("Found ST506 hard disk on channel %i\n", hdd[i].bus_id.st506_channel);
+		loadhd(dev, hdd[i].bus_id.st506_channel, i, hdd[i].fn);
 
 		if (++c > ST506_NUM) break;
 	}

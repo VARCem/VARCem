@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.55	2018/10/07
+ * Version:	@(#)pc.c	1.0.57	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -888,14 +888,6 @@ pc_init(void)
     floppy_init();		//FIXME: fdd_init() now?
 #endif
 
-    /* FIXME: should be disk_init() */
-    cdrom_hard_reset();
-    zip_hard_reset();
-
-    /* FIXME: should be scsi_init() */
-    scsi_disk_hard_reset();
-    scsi_card_init();
-
     pc_full_speed();
     shadowbios = 0;
 
@@ -964,6 +956,10 @@ pc_reset_hard_close(void)
 
     cdrom_close();
 
+    zip_close();
+
+    scsi_disk_close();
+
 #if 0
     sound_close();
 #endif
@@ -989,10 +985,6 @@ pc_reset_hard_init(void)
     /* Reset the ports [before machine!] so they can be configured. */
     parallel_reset();
     serial_reset();
-
-    /* FIXME: these, should be in disk_reset(). */
-    cdrom_hard_reset();
-    zip_hard_reset();
 
     /*
      * Reset the actual machine and its basic modules.
@@ -1035,6 +1027,10 @@ pc_reset_hard_init(void)
 
     /* Reset and reconfigure the SCSI layer. */
     scsi_card_init();
+
+    cdrom_hard_reset();
+    zip_hard_reset();
+    scsi_disk_hard_reset();
 
     /* Reset and reconfigure the Network Card layer. */
     network_reset();

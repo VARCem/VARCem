@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.10	2018/09/22
+ * Version:	@(#)scsi_ncr53c810.c	1.0.11	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -191,14 +191,6 @@
 #define NCR_BUF_SIZE	  4096
 
 
-typedef struct ncr53c810_request {
-    uint32_t tag;
-    uint32_t dma_len;
-    uint8_t *dma_buf;
-    uint32_t pending;
-    int out;
-} ncr53c810_request;
-
 typedef enum {
     SCSI_STATE_SEND_COMMAND,
     SCSI_STATE_READ_DATA,
@@ -207,6 +199,15 @@ typedef enum {
     SCSI_STATE_READ_MESSAGE,
     SCSI_STATE_WRITE_MESSAGE
 } scsi_state_t;
+
+
+typedef struct {
+    uint32_t tag;
+    uint32_t dma_len;
+    uint8_t *dma_buf;
+    uint32_t pending;
+    int out;
+} ncr53c810_request_t;
 
 typedef struct {
     uint8_t	pci_slot;
@@ -238,7 +239,7 @@ typedef struct {
     uint8_t current_lun;
     uint8_t select_id;
     int command_complete;
-    ncr53c810_request *current;
+    ncr53c810_request_t *current;
 
     int irq;
 	
@@ -397,9 +398,10 @@ ncr53c810_soft_reset(ncr53c810_t *dev)
     dev->gpreg0 = 0;
     dev->sstop = 1;
 
-    for (i = 0; i < 16; i++) {
+    /* Narrow-SCSI, so 8 targets with 8 lun's each. */
+    for (i = 0; i < 8; i++) {
 	for (j = 0; j < 8; j++)
-		scsi_device_reset(i, j);
+		scsi_device_reset(&scsi_devices[i][j]);
     }
 }
 
@@ -455,8 +457,8 @@ read_dword(ncr53c810_t *dev, uint32_t addr)
 }
 
 
-static
-void do_irq(ncr53c810_t *dev, int level)
+static void
+do_irq(ncr53c810_t *dev, int level)
 {
     if (level) {
     	pci_set_irq(dev->pci_slot, PCI_INTA);
@@ -609,12 +611,11 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 {
     uint32_t addr, tdbc;
     int32_t count;
-
     scsi_device_t *sd;
 
-    sd = &SCSIDevices[id][dev->current_lun];
+    sd = &scsi_devices[id][dev->current_lun];
 
-    if ((!scsi_device_present(id, dev->current_lun))) {
+    if (! scsi_device_present(sd)) {
 	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Device not present when attempting to do DMA\n", id, dev->current_lun, dev->last_command);
 	return;
     }
@@ -625,7 +626,7 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
 	return;
     }
 
-    /* Make sure count is never bigger than BufferLength. */
+    /* Make sure count is never bigger than buffer_length. */
     count = tdbc = dev->dbc;
     if (count > dev->temp_buf_len)
 	count = dev->temp_buf_len;
@@ -637,13 +638,13 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
     dev->dbc -= count;
 
     if (out)
-	ncr53c810_read(dev, addr, sd->CmdBuffer+dev->buffer_pos, count);
+	ncr53c810_read(dev, addr, sd->cmd_buffer + dev->buffer_pos, count);
     else {
 	if (!dev->buffer_pos) {
 		DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: SCSI Command Phase 1 on PHASE_DI\n", id, dev->current_lun, dev->last_command);
-		scsi_device_command_phase1(dev->current->tag, dev->current_lun);
+		scsi_device_command_phase1(sd);
 	}
-	ncr53c810_write(dev, addr, sd->CmdBuffer+dev->buffer_pos, count);
+	ncr53c810_write(dev, addr, sd->cmd_buffer + dev->buffer_pos, count);
     }
 
     dev->temp_buf_len -= count;
@@ -652,13 +653,13 @@ ncr53c810_do_dma(ncr53c810_t *dev, int out, uint8_t id)
     if (dev->temp_buf_len <= 0) {
 	if (out) {
 		DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: SCSI Command Phase 1 on PHASE_DO\n", id, dev->current_lun, dev->last_command);
-		scsi_device_command_phase1(id, dev->current_lun);
+		scsi_device_command_phase1(sd);
 	}
-	if (sd->CmdBuffer != NULL) {
-		free(sd->CmdBuffer);
-		sd->CmdBuffer = NULL;
+	if (sd->cmd_buffer != NULL) {
+		free(sd->cmd_buffer);
+		sd->cmd_buffer = NULL;
 	}
-	ncr53c810_command_complete(dev, sd->Status);
+	ncr53c810_command_complete(dev, sd->status);
     } else {
 	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Resume SCRIPTS\n", id, dev->current_lun, dev->last_command);
 	dev->sstop = 0;
@@ -696,56 +697,56 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
     dev->sfbr = buf[0];
     dev->command_complete = 0;
 
-    sd = &SCSIDevices[id][dev->current_lun];
-    if (!scsi_device_present(id, dev->current_lun)) {
+    sd = &scsi_devices[id][dev->current_lun];
+    if (! scsi_device_present(sd)) {
 	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: Bad Selection\n", id, dev->current_lun, buf[0]);
 	ncr53c810_bad_selection(dev, id);
 	return(0);
     }
 
-    dev->current = (ncr53c810_request*)mem_alloc(sizeof(ncr53c810_request));
+    dev->current = (ncr53c810_request_t *)mem_alloc(sizeof(ncr53c810_request_t));
     dev->current->tag = id;
 
-    sd->BufferLength = -1;
+    sd->buffer_length = -1;
 
     DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: DBC=%i\n", id, dev->current_lun, buf[0], dev->dbc);
     dev->last_command = buf[0];
 
-    scsi_device_command_phase0(dev->current->tag, dev->current_lun, buf);
+    scsi_device_command_phase0(sd, buf);
     dev->hba_private = (void *)dev->current;
 
     dev->waiting = 0;
     dev->buffer_pos = 0;
 
-    dev->temp_buf_len = sd->BufferLength;
+    dev->temp_buf_len = sd->buffer_length;
 
-    if (sd->BufferLength > 0) {
-	sd->CmdBuffer = (uint8_t *)mem_alloc(sd->BufferLength);
-	dev->current->dma_len = sd->BufferLength;
+    if (sd->buffer_length > 0) {
+	sd->cmd_buffer = (uint8_t *)mem_alloc(sd->buffer_length);
+	dev->current->dma_len = sd->buffer_length;
     }
 
-    if ((sd->Phase == SCSI_PHASE_DATA_IN) && (sd->BufferLength > 0)) {
+    if ((sd->phase == SCSI_PHASE_DATA_IN) && (sd->buffer_length > 0)) {
 	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DI\n", id, dev->current_lun, buf[0]);
 	ncr53c810_set_phase(dev, PHASE_DI);
-	p = scsi_device_get_callback(dev->current->tag, dev->current_lun);
+	p = scsi_device_get_callback(sd);
 	if (p <= 0LL) {
-	        period = ((double) sd->BufferLength) * 0.1 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
+	        period = ((double) sd->buffer_length) * 0.1 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
 		dev->timer_period += (int64_t) period;
 	} else
 		dev->timer_period += p;
 	return(1);
-    } else if ((sd->Phase == SCSI_PHASE_DATA_OUT) && (sd->BufferLength > 0)) {
+    } else if ((sd->phase == SCSI_PHASE_DATA_OUT) && (sd->buffer_length > 0)) {
 	DEBUG("(ID=%02i LUN=%02i) SCSI Command 0x%02x: PHASE_DO\n", id, dev->current_lun, buf[0]);
 	ncr53c810_set_phase(dev, PHASE_DO);
-	p = scsi_device_get_callback(dev->current->tag, dev->current_lun);
+	p = scsi_device_get_callback(sd);
 	if (p <= 0LL) {
-	        period = ((double) sd->BufferLength) * 0.1 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
+	        period = ((double) sd->buffer_length) * 0.1 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
 		dev->timer_period += (int64_t) period;
 	} else
 		dev->timer_period += p;
 	return(1);
     } else {
- 	ncr53c810_command_complete(dev, sd->Status);
+ 	ncr53c810_command_complete(dev, sd->status);
 	return(0);
     }
 }
@@ -755,6 +756,7 @@ static void
 ncr53c810_do_status(ncr53c810_t *dev)
 {
     uint8_t status;
+
     DEBUG("Get status len=%d status=%d\n", dev->dbc, dev->status);
     if (dev->dbc != 1) {
 	DEBUG("Bad Status move\n");
@@ -853,7 +855,7 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 
     DEBUG("MSG out len=%d\n", dev->dbc);
 
-    sd = &SCSIDevices[id][dev->current_lun];
+    sd = &scsi_devices[id][dev->current_lun];
 
 #ifdef _LOGGING
     current_tag = id;
@@ -906,9 +908,9 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 		case 0x0d:
 			/* The ABORT TAG message clears the current I/O process only. */
 			DEBUG("MSG: ABORT TAG tag=0x%x\n", current_tag);
-			if (sd->CmdBuffer) {
-				free(sd->CmdBuffer);
-				sd->CmdBuffer = NULL;
+			if (sd->cmd_buffer) {
+				free(sd->cmd_buffer);
+				sd->cmd_buffer = NULL;
 			}
 			ncr53c810_disconnect(dev);
 			break;
@@ -929,9 +931,9 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 				DEBUG("MSG: BUS DEVICE RESET tag=0x%x\n", current_tag);
 
 			/* clear the current I/O process */
-			if (sd->CmdBuffer) {
-				free(sd->CmdBuffer);
-				sd->CmdBuffer = NULL;
+			if (sd->cmd_buffer) {
+				free(sd->cmd_buffer);
+				sd->cmd_buffer = NULL;
 			}
 			ncr53c810_disconnect(dev);
 			break;
@@ -953,8 +955,8 @@ ncr53c810_do_msgout(ncr53c810_t *dev, uint8_t id)
 static void
 ncr53c810_memcpy(ncr53c810_t *dev, uint32_t dest, uint32_t src, int count)
 {
-    int n;
     uint8_t buf[NCR_BUF_SIZE];
+    int n;
 
     DEBUG("memcpy dest 0x%08x src 0x%08x count %d\n", dest, src, count);
     while (count) {
@@ -1103,7 +1105,7 @@ again:
 					}
 					dev->sstat0 |= NCR_SSTAT0_WOA;
 					dev->scntl1 &= ~NCR_SCNTL1_IARB;
-					if (!scsi_device_present(id, 0)) {
+					if (! scsi_device_present(&scsi_devices[id][0])) {
 						ncr53c810_bad_selection(dev, id);
 						break;
 					}

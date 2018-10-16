@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.12	2018/09/22
+ * Version:	@(#)hdc_esdi_at.c	1.0.13	2018/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -797,8 +797,8 @@ wd1007vse1_init(const device_t *info)
 
     c = 0;
     for (d = 0; d < HDD_NUM; d++) {
-	if ((hdd[d].bus==HDD_BUS_ESDI) && (hdd[d].id.esdi_channel<ESDI_NUM)) {
-		loadhd(dev, hdd[d].id.esdi_channel, d, hdd[d].fn);
+	if ((hdd[d].bus==HDD_BUS_ESDI) && (hdd[d].bus_id.esdi_channel<ESDI_NUM)) {
+		loadhd(dev, hdd[d].bus_id.esdi_channel, d, hdd[d].fn);
 
 		hdd_active(d, 0);
 

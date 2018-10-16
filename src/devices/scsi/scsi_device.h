@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.h	1.0.3	2018/10/05
+ * Version:	@(#)scsi_device.h	1.0.5	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,8 +34,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef SCSI_DEVICE_H
-# define SCSI_DEVICE_H
+#ifndef EMU_SCSI_DEVICE_H
+# define EMU_SCSI_DEVICE_H
 
 
 /* Configuration. */
@@ -109,24 +109,32 @@
 
 /* Mode page codes for mode sense/set */
 #define GPMODE_R_W_ERROR_PAGE		0x01
+#define GPMODE_DISCONNECT_PAGE		0x02	/* Disconnect/reconnect page */
+#define GPMODE_FORMAT_DEVICE_PAGE	0x03
+#define GPMODE_RIGID_DISK_PAGE		0x04	/* Rigid disk geometry page */
+#define GPMODE_FLEXIBLE_DISK_PAGE	0x05
+#define GPMODE_CACHING_PAGE		0x08
 #define GPMODE_CDROM_PAGE		0x0d
 #define GPMODE_CDROM_AUDIO_PAGE		0x0e
 #define GPMODE_CAPABILITIES_PAGE	0x2a
+#define GPMODE_IOMEGA_PAGE		0x2f
+#define GPMODE_UNK_VENDOR_PAGE		0x30
 #define GPMODE_ALL_PAGES		0x3f
 
 /* Mode page codes for presence */
 #define GPMODEP_R_W_ERROR_PAGE		0x0000000000000002LL
-#define GPMODEP_UNK_PAGE_02		0x0000000000000004LL
-#define GPMODEP_UNK_PAGE_03		0x0000000000000008LL
-#define GPMODEP_UNK_PAGE_04		0x0000000000000010LL
-#define GPMODEP_UNK_PAGE_05		0x0000000000000020LL
-#define GPMODEP_UNK_PAGE_08		0x0000000000000100LL
+#define GPMODEP_DISCONNECT_PAGE		0x0000000000000004LL
+#define GPMODEP_FORMAT_DEVICE_PAGE	0x0000000000000008LL
+#define GPMODEP_RIGID_DISK_PAGE		0x0000000000000010LL
+#define GPMODEP_FLEXIBLE_DISK_PAGE	0x0000000000000020LL
+#define GPMODEP_CACHING_PAGE		0x0000000000000100LL
 #define GPMODEP_CDROM_PAGE		0x0000000000002000LL
 #define GPMODEP_CDROM_AUDIO_PAGE	0x0000000000004000LL
 #define GPMODEP_CAPABILITIES_PAGE	0x0000040000000000LL
-#define GPMODEP_UNK_PAGE_2F		0x0000800000000000LL
-#define GPMODEP_UNK_PAGE_30		0x0001000000000000LL
+#define GPMODEP_IOMEGA_PAGE		0x0000800000000000LL
+#define GPMODEP_UNK_VENDOR_PAGE		0x0001000000000000LL
 #define GPMODEP_ALL_PAGES		0x8000000000000000LL
+
 
 /* SCSI Status Codes */
 #define SCSI_STATUS_OK			0
@@ -139,6 +147,7 @@
 #define SENSE_UNIT_ATTENTION		6
 
 /* SCSI Additional Sense Codes */
+#define ASC_NONE			0x00
 #define ASC_AUDIO_PLAY_OPERATION	0x00
 #define ASC_NOT_READY			0x04
 #define ASC_ILLEGAL_OPCODE		0x20
@@ -153,6 +162,8 @@
 #define ASC_MEDIUM_NOT_PRESENT		0x3a
 #define ASC_DATA_PHASE_ERROR		0x4b
 #define ASC_ILLEGAL_MODE_FOR_THIS_TRACK	0x64
+
+#define ASCQ_NONE				0x00
 #define ASCQ_UNIT_IN_PROCESS_OF_BECOMING_READY	0x01
 #define ASCQ_INITIALIZING_COMMAND_REQUIRED	0x02
 #define ASCQ_CAPACITY_DATA_CHANGED		0x09
@@ -252,12 +263,21 @@
 
 #define BUS_IDLE (1 << 31)
 
-#define SCSI_PHASE_DATA_OUT    0
-#define SCSI_PHASE_DATA_IN     BUS_IO
-#define SCSI_PHASE_COMMAND     BUS_CD
-#define SCSI_PHASE_STATUS      (BUS_CD | BUS_IO)
-#define SCSI_PHASE_MESSAGE_OUT (BUS_MSG | BUS_CD)
-#define SCSI_PHASE_MESSAGE_IN  (BUS_MSG | BUS_CD | BUS_IO)
+#define PHASE_IDLE		0x00
+#define PHASE_COMMAND		0x01
+#define PHASE_COMPLETE		0x02
+#define PHASE_DATA_IN		0x03
+#define PHASE_DATA_IN_DMA	0x04
+#define PHASE_DATA_OUT		0x05
+#define PHASE_DATA_OUT_DMA	0x06
+#define PHASE_ERROR		0x80
+
+#define SCSI_PHASE_DATA_OUT	0
+#define SCSI_PHASE_DATA_IN	BUS_IO
+#define SCSI_PHASE_COMMAND	BUS_CD
+#define SCSI_PHASE_STATUS	(BUS_CD | BUS_IO)
+#define SCSI_PHASE_MESSAGE_OUT	(BUS_MSG | BUS_CD)
+#define SCSI_PHASE_MESSAGE_IN	(BUS_MSG | BUS_CD | BUS_IO)
 
 #define MODE_SELECT_PHASE_IDLE		0
 #define MODE_SELECT_PHASE_HEADER	1
@@ -265,28 +285,41 @@
 #define MODE_SELECT_PHASE_PAGE_HEADER	3
 #define MODE_SELECT_PHASE_PAGE		4
 
+/* These are based on the INQUIRY values. */
+#define SCSI_NONE		0x0060
+#define SCSI_FIXED_DISK		0x0000
+#define SCSI_REMOVABLE_DISK	0x8000
+#define SCSI_REMOVABLE_CDROM	0x8005
 
+
+#if 0
 typedef struct {
-    int		state;
-    int		new_state;
-    int		clear_req;
-    uint32_t	bus_in, bus_out;
-    int		dev_id;
-
-    int		command_pos;
-    uint8_t	command[20];
-    int		data_pos;
-
-    int		change_state_delay;
-    int		new_req_delay;	
+   uint8_t command[20];
+    int state, new_state,
+	clear_req, dev_id,
+	command_pos, data_pos,
+	change_state_delay,
+	new_req_delay;
+    uint32_t bus_in, bus_out;
 } scsi_bus_t;
+#endif
 
 typedef struct {	
-    uint8_t	*CmdBuffer;
-    int		LunType;
-    int32_t	BufferLength;
-    uint8_t	Status;
-    uint8_t	Phase;
+    uint8_t	id, lun;
+    uint16_t	type;
+
+    uint8_t	status, phase;
+
+    int32_t	buffer_length;
+    uint8_t	*cmd_buffer;
+
+    void	*p;
+    void	(*command)(void *p, uint8_t *cdb);
+    void	(*callback)(void *p);
+    int		(*err_stat_to_scsi)(void *p);
+    void	(*request_sense)(void *p, uint8_t *buffer, uint8_t alloc_length);
+    void	(*reset)(void *p);
+    int		(*read_capacity)(void *p, uint8_t *cdb, uint8_t *buffer, uint32_t *len);
 } scsi_device_t;
 
 #pragma pack(push,1)
@@ -295,15 +328,38 @@ typedef struct {
 } mode_sense_pages_t;
 #pragma pack(pop)
 
-enum {
-    SCSI_NONE = 0,
-    SCSI_DISK,
-    SCSI_CDROM,
-    SCSI_ZIP
-};
+/* This is so we can access the common elements to all SCSI device structs
+   without knowing the device type. */
+typedef struct {
+    mode_sense_pages_t ms_pages_saved;
+
+    void *p;
+
+    uint8_t *temp_buffer,
+	    pad[16],	/* This is atapi_cdb in ATAPI-supporting devices,
+			   and pad in SCSI-only devices. */
+	    current_cdb[16],
+	    sense[256];
+
+    uint8_t status, phase,
+	    error, id,
+	    features, pad0,
+	    pad1, pad2;
+
+    uint16_t request_length, max_transfer_len;
+
+    int requested_blocks, packet_status,
+	total_length, do_page_save,
+	unit_attention;
+
+    uint32_t sector_pos, sector_len,
+	     packet_len, pos;
+
+    int64_t callback;
+} scsi_device_data_t;
 
 
-extern scsi_device_t	SCSIDevices[SCSI_ID_MAX][SCSI_LUN_MAX];
+extern scsi_device_t	scsi_devices[SCSI_ID_MAX][SCSI_LUN_MAX];
 
 
 extern void	scsi_dev_log(int level, const char *fmt, ...);
@@ -314,26 +370,18 @@ extern int	mode_select_init(uint8_t command, uint16_t pl_length, uint8_t do_save
 extern int	mode_select_terminate(int force);
 extern int	mode_select_write(uint8_t val);
 
-extern uint8_t	*scsi_device_sense(uint8_t id, uint8_t lun);
-extern void	scsi_device_type_data(uint8_t id, uint8_t lun,
-				      uint8_t *type, uint8_t *rmb);
-extern int64_t	scsi_device_get_callback(uint8_t scsi_id, uint8_t scsi_lun);
-extern void	scsi_device_request_sense(uint8_t scsi_id, uint8_t scsi_lun,
-					  uint8_t *buffer,
+extern uint8_t	*scsi_device_sense(scsi_device_t *dev);
+extern int64_t	scsi_device_get_callback(scsi_device_t *dev);
+extern void	scsi_device_request_sense(scsi_device_t *dev, uint8_t *buffer,
 					  uint8_t alloc_length);
-extern void	scsi_device_reset(uint8_t scsi_id, uint8_t scsi_lun);
-extern int	scsi_device_read_capacity(uint8_t id, uint8_t lun,
-					  uint8_t *cdb, uint8_t *buffer,
-					  uint32_t *len);
-extern int	scsi_device_present(uint8_t id, uint8_t lun);
-extern int	scsi_device_valid(uint8_t id, uint8_t lun);
-extern int	scsi_device_cdb_length(uint8_t id, uint8_t lun);
-extern void	scsi_device_command(uint8_t id, uint8_t lun, int cdb_len,
-				    uint8_t *cdb);
-extern void	scsi_device_command_phase0(uint8_t scsi_id, uint8_t scsi_lun,
-					   uint8_t *cdb);
-extern void	scsi_device_command_phase1(uint8_t scsi_id, uint8_t scsi_lun);
-extern int32_t	*scsi_device_get_buf_len(uint8_t scsi_id, uint8_t scsi_lun);
+
+extern void	scsi_device_reset(scsi_device_t *dev);
+extern int	scsi_device_present(scsi_device_t *dev);
+extern int	scsi_device_valid(scsi_device_t *dev);
+extern int	scsi_device_cdb_length(scsi_device_t *dev);
+extern void	scsi_device_command_phase0(scsi_device_t *dev, uint8_t *cdb);
+extern void	scsi_device_command_phase1(scsi_device_t *dev);
+extern int32_t	*scsi_device_get_buf_len(scsi_device_t *dev);
 
 
-#endif	/*SCSI_DEVICE_H*/
+#endif	/*EMU_SCSI_DEVICE_H*/

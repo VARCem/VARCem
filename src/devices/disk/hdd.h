@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.10	2018/09/16
+ * Version:	@(#)hdd.h	1.0.11	2018/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,11 +99,11 @@ typedef struct {
 	uint8_t	st506_channel;		/* bus channel ID's */
 	uint8_t	esdi_channel;
 	uint8_t	ide_channel;
-	union {
+	struct {
 		int8_t	id;
 		int8_t	lun;
 	}	scsi;
-    }		id;
+    }		bus_id;
 
     uint32_t	base;
 

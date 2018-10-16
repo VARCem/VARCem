@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.35	2018/10/07
+ * Version:	@(#)config.c	1.0.36	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -958,14 +958,14 @@ load_disks(const char *cat)
 	if (hdd[c].bus == HDD_BUS_ST506) {
 		/* Try new syntax. */
 		dev = config_get_int(cat, temp, -1);
-		hdd[c].id.st506_channel = dev;
+		hdd[c].bus_id.st506_channel = dev;
 	} else
 		config_delete_var(cat, temp);
 
 	/* ESDI */
 	sprintf(temp, "hdd_%02i_esdi_channel", c+1);
 	if (hdd[c].bus == HDD_BUS_ESDI)
-		hdd[c].id.esdi_channel = !!config_get_int(cat, temp, c & 1);
+		hdd[c].bus_id.esdi_channel = !!config_get_int(cat, temp, c & 1);
 	  else
 		config_delete_var(cat, temp);
 
@@ -977,10 +977,10 @@ load_disks(const char *cat)
 		sscanf(p, "%01u:%01u", &board, &dev);
 		board &= 3;
 		dev &= 1;
-		hdd[c].id.ide_channel = (board<<1) + dev;
+		hdd[c].bus_id.ide_channel = (board<<1) + dev;
 
-		if (hdd[c].id.ide_channel > 7)
-			hdd[c].id.ide_channel = 7;
+		if (hdd[c].bus_id.ide_channel > 7)
+			hdd[c].bus_id.ide_channel = 7;
 	} else {
 		config_delete_var(cat, temp);
 	}
@@ -992,12 +992,12 @@ load_disks(const char *cat)
 		p = config_get_string(cat, temp, tmp2);
 
 		sscanf(p, "%02u:%02u",
-			(int *)&hdd[c].id.scsi.id, (int *)&hdd[c].id.scsi.lun);
+			(int *)&hdd[c].bus_id.scsi.id, (int *)&hdd[c].bus_id.scsi.lun);
 
-		if (hdd[c].id.scsi.id > 15)
-			hdd[c].id.scsi.id = 15;
-		if (hdd[c].id.scsi.lun > 7)
-			hdd[c].id.scsi.lun = 7;
+		if (hdd[c].bus_id.scsi.id > 15)
+			hdd[c].bus_id.scsi.id = 15;
+		if (hdd[c].bus_id.scsi.lun > 7)
+			hdd[c].bus_id.scsi.lun = 7;
 	} else {
 		config_delete_var(cat, temp);
 	}
@@ -1049,13 +1049,13 @@ save_disks(const char *cat)
 
 	sprintf(temp, "hdd_%02i_st506_channel", c+1);
 	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_ST506))
-		config_set_int(cat, temp, hdd[c].id.st506_channel);
+		config_set_int(cat, temp, hdd[c].bus_id.st506_channel);
 	  else
 		config_delete_var(cat, temp);
 
 	sprintf(temp, "hdd_%02i_esdi_channel", c+1);
 	if (hdd_is_valid(c) && (hdd[c].bus == HDD_BUS_ESDI))
-		config_set_int(cat, temp, hdd[c].id.esdi_channel);
+		config_set_int(cat, temp, hdd[c].bus_id.esdi_channel);
 	  else
 		config_delete_var(cat, temp);
 
@@ -1064,8 +1064,8 @@ save_disks(const char *cat)
 		config_delete_var(cat, temp);
 	} else {
 		sprintf(tmp2, "%01u:%01u",
-			hdd[c].id.ide_channel >> 1,
-			hdd[c].id.ide_channel & 1);
+			hdd[c].bus_id.ide_channel >> 1,
+			hdd[c].bus_id.ide_channel & 1);
 		config_set_string(cat, temp, tmp2);
 	}
 
@@ -1074,7 +1074,7 @@ save_disks(const char *cat)
 		config_delete_var(cat, temp);
 	} else {
 		sprintf(tmp2, "%02i:%02i",
-			hdd[c].id.scsi.id, hdd[c].id.scsi.lun);
+			hdd[c].bus_id.scsi.id, hdd[c].bus_id.scsi.lun);
 		config_set_string(cat, temp, tmp2);
 	}
 
@@ -1204,44 +1204,44 @@ load_removable(const char *cat)
 
     for (c = 0; c < CDROM_NUM; c++) {
 	sprintf(temp, "cdrom_%02i_host_drive", c+1);
-	cdrom_drives[c].host_drive = config_get_int(cat, temp, 0);
-	cdrom_drives[c].prev_host_drive = cdrom_drives[c].host_drive;
+	cdrom[c].host_drive = config_get_int(cat, temp, 0);
+	cdrom[c].prev_host_drive = cdrom[c].host_drive;
 
 	sprintf(temp, "cdrom_%02i_parameters", c+1);
 	p = config_get_string(cat, temp, "0, none");
-	sscanf(p, "%01u, %s", (int *)&cdrom_drives[c].sound_on, s);
-	cdrom_drives[c].bus_type = cdrom_string_to_bus(s);
+	sscanf(p, "%01u, %s", (int *)&cdrom[c].sound_on, s);
+	cdrom[c].bus_type = cdrom_string_to_bus(s);
 
 	sprintf(temp, "cdrom_%02i_speed", c+1);
-	cdrom_drives[c].speed_idx = config_get_int(cat, temp, cdrom_speed_idx(CDROM_SPEED_DEFAULT));
+	cdrom[c].speed_idx = config_get_int(cat, temp, cdrom_speed_idx(CDROM_SPEED_DEFAULT));
 
 	/* Default values, needed for proper operation of the Settings dialog. */
-	cdrom_drives[c].ide_channel = cdrom_drives[c].scsi_device_id = c + 2;
+	cdrom[c].bus_id.ide_channel = cdrom[c].bus_id.scsi.id = c + 2;
 
 	sprintf(temp, "cdrom_%02i_ide_channel", c+1);
-	if (cdrom_drives[c].bus_type == CDROM_BUS_ATAPI) {
+	if (cdrom[c].bus_type == CDROM_BUS_ATAPI) {
 		sprintf(tmp2, "%01u:%01u", (c+2)>>1, (c+2)&1);
 		p = config_get_string(cat, temp, tmp2);
 		sscanf(p, "%01u:%01u", &board, &dev);
 		board &= 3;
 		dev &= 1;
-		cdrom_drives[c].ide_channel = (board<<1)+dev;
+		cdrom[c].bus_id.ide_channel = (board<<1)+dev;
 
-		if (cdrom_drives[c].ide_channel > 7)
-			cdrom_drives[c].ide_channel = 7;
+		if (cdrom[c].bus_id.ide_channel > 7)
+			cdrom[c].bus_id.ide_channel = 7;
 	} else {
 		sprintf(temp, "cdrom_%02i_scsi_location", c+1);
-		if (cdrom_drives[c].bus_type == CDROM_BUS_SCSI) {
+		if (cdrom[c].bus_type == CDROM_BUS_SCSI) {
 			sprintf(tmp2, "%02u:%02u", c+2, 0);
 			p = config_get_string(cat, temp, tmp2);
 			sscanf(p, "%02u:%02u",
-				(int *)&cdrom_drives[c].scsi_device_id,
-				(int *)&cdrom_drives[c].scsi_device_lun);
+				(int *)&cdrom[c].bus_id.scsi.id,
+				(int *)&cdrom[c].bus_id.scsi.lun);
 	
-			if (cdrom_drives[c].scsi_device_id > 15)
-				cdrom_drives[c].scsi_device_id = 15;
-			if (cdrom_drives[c].scsi_device_lun > 7)
-				cdrom_drives[c].scsi_device_lun = 7;
+			if (cdrom[c].bus_id.scsi.id > 15)
+				cdrom[c].bus_id.scsi.id = 15;
+			if (cdrom[c].bus_id.scsi.lun > 7)
+				cdrom[c].bus_id.scsi.lun = 7;
 		} else {
 			config_delete_var(cat, temp);
 		}
@@ -1251,17 +1251,17 @@ load_removable(const char *cat)
 	wp = config_get_wstring(cat, temp, L"");
 
 	/* Try to make relative, and copy to destination. */
-	pc_path(cdrom_image[c].image_path, sizeof_w(cdrom_image[c].image_path), wp);
+	pc_path(cdrom[c].image_path, sizeof_w(cdrom[c].image_path), wp);
 
-	if (cdrom_drives[c].host_drive < 'A')
-		cdrom_drives[c].host_drive = 0;
+	if (cdrom[c].host_drive < 'A')
+		cdrom[c].host_drive = 0;
 
-	if ((cdrom_drives[c].host_drive == 0x200) &&
-	    (wcslen(cdrom_image[c].image_path) == 0))
-		cdrom_drives[c].host_drive = 0;
+	if ((cdrom[c].host_drive == 0x200) &&
+	    (wcslen(cdrom[c].image_path) == 0))
+		cdrom[c].host_drive = 0;
 
 	/* If the CD-ROM is disabled, delete all its variables. */
-	if (cdrom_drives[c].bus_type == CDROM_BUS_DISABLED) {
+	if (cdrom[c].bus_type == CDROM_BUS_DISABLED) {
 		sprintf(temp, "cdrom_%02i_host_drive", c+1);
 		config_delete_var(cat, temp);
 
@@ -1289,7 +1289,7 @@ load_removable(const char *cat)
 	zip_drives[c].bus_type = zip_string_to_bus(s);
 
 	/* Default values, needed for proper operation of the Settings dialog. */
-	zip_drives[c].ide_channel = zip_drives[c].scsi_device_id = c + 2;
+	zip_drives[c].bus_id.ide_channel = zip_drives[c].bus_id.scsi.id = c + 2;
 
 	sprintf(temp, "zip_%02i_ide_channel", c+1);
 	if (zip_drives[c].bus_type == ZIP_BUS_ATAPI) {
@@ -1299,23 +1299,23 @@ load_removable(const char *cat)
 
 		board &= 3;
 		dev &= 1;
-		zip_drives[c].ide_channel = (board<<1)+dev;
+		zip_drives[c].bus_id.ide_channel = (board<<1)+dev;
 
-		if (zip_drives[c].ide_channel > 7)
-			zip_drives[c].ide_channel = 7;
+		if (zip_drives[c].bus_id.ide_channel > 7)
+			zip_drives[c].bus_id.ide_channel = 7;
 	} else {
 		sprintf(temp, "zip_%02i_scsi_location", c+1);
 		if (zip_drives[c].bus_type == CDROM_BUS_SCSI) {
 			sprintf(tmp2, "%02u:%02u", c+2, 0);
 			p = config_get_string(cat, temp, tmp2);
 			sscanf(p, "%02u:%02u",
-				(unsigned *)&zip_drives[c].scsi_device_id,
-				(unsigned *)&zip_drives[c].scsi_device_lun);
+				(unsigned *)&zip_drives[c].bus_id.scsi.id,
+				(unsigned *)&zip_drives[c].bus_id.scsi.lun);
 	
-			if (zip_drives[c].scsi_device_id > 15)
-				zip_drives[c].scsi_device_id = 15;
-			if (zip_drives[c].scsi_device_lun > 7)
-				zip_drives[c].scsi_device_lun = 7;
+			if (zip_drives[c].bus_id.scsi.id > 15)
+				zip_drives[c].bus_id.scsi.id = 15;
+			if (zip_drives[c].bus_id.scsi.lun > 7)
+				zip_drives[c].bus_id.scsi.lun = 7;
 		} else {
 			config_delete_var(cat, temp);
 		}
@@ -1360,54 +1360,54 @@ save_removable(const char *cat)
 
     for (c = 0; c < CDROM_NUM; c++) {
 	sprintf(temp, "cdrom_%02i_host_drive", c+1);
-	if ((cdrom_drives[c].bus_type == 0) ||
-	    (cdrom_drives[c].host_drive < 'A') || ((cdrom_drives[c].host_drive > 'Z') && (cdrom_drives[c].host_drive != 200))) {
+	if ((cdrom[c].bus_type == 0) ||
+	    (cdrom[c].host_drive < 'A') || ((cdrom[c].host_drive > 'Z') && (cdrom[c].host_drive != 200))) {
 		config_delete_var(cat, temp);
 	} else {
-		config_set_int(cat, temp, cdrom_drives[c].host_drive);
+		config_set_int(cat, temp, cdrom[c].host_drive);
 	}
 
 	sprintf(temp, "cdrom_%02i_speed", c+1);
-	if ((cdrom_drives[c].bus_type == 0) ||
-		(cdrom_speeds[cdrom_drives[c].speed_idx].speed == cdrom_speed_idx(CDROM_SPEED_DEFAULT))) {
+	if ((cdrom[c].bus_type == 0) ||
+		(cdrom_speeds[cdrom[c].speed_idx].speed == cdrom_speed_idx(CDROM_SPEED_DEFAULT))) {
 		config_delete_var(cat, temp);
 	} else {
-		config_set_int(cat, temp, cdrom_drives[c].speed_idx);
+		config_set_int(cat, temp, cdrom[c].speed_idx);
 	}
 
 	sprintf(temp, "cdrom_%02i_parameters", c+1);
-	if (cdrom_drives[c].bus_type == 0) {
+	if (cdrom[c].bus_type == 0) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%u, %s", cdrom_drives[c].sound_on,
-			cdrom_bus_to_string(cdrom_drives[c].bus_type));
+		sprintf(tmp2, "%u, %s", cdrom[c].sound_on,
+			cdrom_bus_to_string(cdrom[c].bus_type));
 		config_set_string(cat, temp, tmp2);
 	}
 
 	sprintf(temp, "cdrom_%02i_ide_channel", c+1);
-	if (cdrom_drives[c].bus_type != CDROM_BUS_ATAPI) {
+	if (cdrom[c].bus_type != CDROM_BUS_ATAPI) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%01u:%01u", cdrom_drives[c].ide_channel>>1,
-					cdrom_drives[c].ide_channel & 1);
+		sprintf(tmp2, "%01u:%01u", cdrom[c].bus_id.ide_channel>>1,
+					cdrom[c].bus_id.ide_channel & 1);
 		config_set_string(cat, temp, tmp2);
 	}
 
 	sprintf(temp, "cdrom_%02i_scsi_location", c + 1);
-	if (cdrom_drives[c].bus_type != CDROM_BUS_SCSI) {
+	if (cdrom[c].bus_type != CDROM_BUS_SCSI) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%02u:%02u", cdrom_drives[c].scsi_device_id,
-					cdrom_drives[c].scsi_device_lun);
+		sprintf(tmp2, "%02u:%02u",
+			cdrom[c].bus_id.scsi.id, cdrom[c].bus_id.scsi.lun);
 		config_set_string(cat, temp, tmp2);
 	}
 
 	sprintf(temp, "cdrom_%02i_image_path", c + 1);
-	if ((cdrom_drives[c].bus_type == 0) ||
-	    (wcslen(cdrom_image[c].image_path) == 0)) {
+	if ((cdrom[c].bus_type == 0) ||
+	    (wcslen(cdrom[c].image_path) == 0)) {
 		config_delete_var(cat, temp);
 	} else {
-		config_set_wstring(cat, temp, cdrom_image[c].image_path);
+		config_set_wstring(cat, temp, cdrom[c].image_path);
 	}
     }
 
@@ -1425,8 +1425,8 @@ save_removable(const char *cat)
 	if (zip_drives[c].bus_type != ZIP_BUS_ATAPI) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%01u:%01u", zip_drives[c].ide_channel>>1,
-					zip_drives[c].ide_channel & 1);
+		sprintf(tmp2, "%01u:%01u", zip_drives[c].bus_id.ide_channel>>1,
+					zip_drives[c].bus_id.ide_channel & 1);
 		config_set_string(cat, temp, tmp2);
 	}
 
@@ -1434,8 +1434,8 @@ save_removable(const char *cat)
 	if (zip_drives[c].bus_type != ZIP_BUS_SCSI) {
 		config_delete_var(cat, temp);
 	} else {
-		sprintf(tmp2, "%02u:%02u", zip_drives[c].scsi_device_id,
-					zip_drives[c].scsi_device_lun);
+		sprintf(tmp2, "%02u:%02u", zip_drives[c].bus_id.scsi.id,
+					zip_drives[c].bus_id.scsi.lun);
 		config_set_string(cat, temp, tmp2);
 	}
 

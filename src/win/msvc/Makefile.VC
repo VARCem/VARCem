@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.46	2018/10/05
+# Version:	@(#)Makefile.VC	1.0.47	2018/10/14
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -619,10 +619,8 @@ USBOBJ		:= usb.obj
 endif
 
 SCSIOBJ		:= scsi.obj \
-		    scsi_device.obj \
-		    scsi_disk.obj \
-		    scsi_x54x.obj \
-		    scsi_aha154x.obj scsi_buslogic.obj \
+		    scsi_device.obj scsi_disk.obj scsi_cdrom.obj \
+		    scsi_x54x.obj scsi_aha154x.obj scsi_buslogic.obj \
 		    scsi_ncr5380.obj scsi_ncr53c810.obj
 
 NETOBJ		:= network.obj \

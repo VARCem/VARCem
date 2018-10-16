@@ -9,7 +9,9 @@
  *		Implementation of the CD-ROM null interface for unmounted
  *		guest CD-ROM drives.
  *
- * Version:	@(#)cdrom_null.c	1.0.4	2018/10/05
+ * FIXME:	TO BE REMOVED
+ *
+ * Version:	@(#)cdrom_null.c	1.0.5	2018/10/14
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -40,13 +42,12 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../scsi/scsi_device.h"
 #include "cdrom.h"
 #include "cdrom_null.h"
 
 
 static int
-null_ready(uint8_t id)
+null_ready(cdrom_t *dev)
 {
     return(0);
 }
@@ -54,21 +55,21 @@ null_ready(uint8_t id)
 
 /* Always return 0, the contents of a null CD-ROM drive never change. */
 static int
-null_medium_changed(uint8_t id)
+null_medium_changed(cdrom_t *dev)
 {
     return(0);
 }
 
 
 static uint8_t
-null_getcurrentsubchannel(uint8_t id, uint8_t *b, int msf)
+null_getcurrentsubchannel(cdrom_t *dev, uint8_t *b, int msf)
 {
     return(0x13);
 }
 
 
 static int
-null_readsector_raw(uint8_t id, uint8_t *buffer, int sector, int ismsf, int cdrom_sector_type, int cdrom_sector_flags, int *len)
+null_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int ismsf, int cdrom_sector_type, int cdrom_sector_flags, int *len)
 {
     *len = 0;
 
@@ -77,77 +78,75 @@ null_readsector_raw(uint8_t id, uint8_t *buffer, int sector, int ismsf, int cdro
 
 
 static int
-null_readtoc(uint8_t id, uint8_t *b, uint8_t starttrack, int msf, int maxlen, int single)
+null_readtoc(cdrom_t *dev, uint8_t *b, uint8_t starttrack, int msf, int maxlen, int single)
 {
     return(0);
 }
 
 
 static int
-null_readtoc_session(uint8_t id, uint8_t *b, int msf, int maxlen)
+null_readtoc_session(cdrom_t *dev, uint8_t *b, int msf, int maxlen)
 {
     return(0);
 }
 
 
 static int
-null_readtoc_raw(uint8_t id, uint8_t *b, int maxlen)
+null_readtoc_raw(cdrom_t *dev, uint8_t *b, int maxlen)
 {
     return(0);
 }
 
 
 static uint32_t
-null_size(uint8_t id)
+null_size(cdrom_t *dev)
 {
     return(0);
 }
 
 
 static int
-null_status(uint8_t id)
+null_status(cdrom_t *dev)
 {
     return(CD_STATUS_EMPTY);
 }
 
 
 void
-cdrom_null_reset(uint8_t id)
+cdrom_null_reset(cdrom_t *dev)
 {
 }
 
 
-void cdrom_set_null_handler(uint8_t id);
-
 int
-cdrom_null_open(uint8_t id)
+cdrom_null_open(cdrom_t *dev)
 {
-    cdrom_set_null_handler(id);
+    cdrom_set_null_handler(dev);
 
     return(0);
 }
 
 
 void
-null_close(uint8_t id)
+null_close(cdrom_t *dev)
 {
 }
 
 
 static
-void null_exit(uint8_t id)
+void null_exit(cdrom_t *dev)
 {
 }
 
 
 static int
-null_media_type_id(uint8_t id)
+null_media_type_id(cdrom_t *dev)
 {
     return(0x70);
 }
 
 
-static CDROM null_cdrom = {
+static cdrom_ops_t cdrom_null_ops = {
     null_ready,
     null_medium_changed,
     null_media_type_id,
@@ -169,9 +168,10 @@ static CDROM null_cdrom = {
 
 
 void
-cdrom_set_null_handler(uint8_t id)
+cdrom_set_null_handler(cdrom_t *dev)
 {
-    cdrom[id]->handler = &null_cdrom;
-    cdrom_drives[id].host_drive = 0;
-    memset(cdrom_image[id].image_path, 0, sizeof(cdrom_image[id].image_path));
+    dev->ops = &cdrom_null_ops;
+
+    dev->host_drive = 0;
+    memset(dev->image_path, 0, sizeof(dev->image_path));
 }

@@ -8,7 +8,7 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.7	2018/09/22
+ * Version:	@(#)midi.c	1.0.8	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -222,7 +222,14 @@ void
 midi_close(void)
 {
     if (midi != NULL) {
+#if 0
+	/* is a const device .. */
+	if (midi->device)
+		free(midi->device);
+#endif
+
 	free(midi);
+
 	midi = NULL;
     }
 }

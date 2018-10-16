@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.14	2018/10/05
+ * Version:	@(#)fdd.c	1.0.15	2018/10/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -222,7 +222,7 @@ static const struct
 void
 fdd_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_FDC_LOG
+#ifdef ENABLE_FDD_LOG
 	va_list ap;
 
 	if (fdd_do_log >= level) {
@@ -247,7 +247,7 @@ const char *fdd_get_internal_name(int type)
 int fdd_get_from_internal_name(const char *s)
 {
 	int c = 0;
-	
+
 	while (drive_types[c].internal_name != NULL)
 	{
 		if (! strcmp(drive_types[c].internal_name, s))
@@ -271,7 +271,7 @@ void fdd_do_seek(int drive, int track)
 void fdd_forced_seek(int drive, int track_diff)
 {
         fdd[drive].track += track_diff;
-        
+
         if (fdd[drive].track < 0)
                 fdd[drive].track = 0;
 
@@ -480,7 +480,7 @@ int fdd_load(int drive, const wchar_t *fn)
         if (!f) return(0);
         fseek(f, -1, SEEK_END);
         size = ftell(f) + 1;
-        fclose(f);        
+        fclose(f);
         while (loaders[c].ext)
         {
                 if (!wcscasecmp(p, loaders[c].ext) && (size == loaders[c].size || loaders[c].size == -1))
@@ -635,7 +635,7 @@ void fdd_poll_3(void *priv)
 int fdd_get_bitcell_period(int rate)
 {
         int bit_rate = 250;
-        
+
         switch (rate)
         {
                 case 0: /*High density*/
@@ -651,7 +651,7 @@ int fdd_get_bitcell_period(int rate)
                 bit_rate = 1000;
                 break;
         }
-        
+
         return 1000000 / bit_rate*2; /*Bitcell period in ns*/
 }
 

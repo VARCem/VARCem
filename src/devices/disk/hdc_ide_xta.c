@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.9	2018/10/05
+ * Version:	@(#)hdc_ide_xta.c	1.0.10	2018/10/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -1070,8 +1070,8 @@ xta_init(const device_t *info)
     /* Load any disks for this device class. */
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
-	if ((hdd[i].bus == bus) && (hdd[i].id.ide_channel < XTA_NUM)) {
-		drive = &dev->drives[hdd[i].id.ide_channel];
+	if ((hdd[i].bus == bus) && (hdd[i].bus_id.ide_channel < XTA_NUM)) {
+		drive = &dev->drives[hdd[i].bus_id.ide_channel];
 
 		if (! hdd_image_load(i)) {
 			drive->present = 0;
@@ -1092,7 +1092,7 @@ xta_init(const device_t *info)
 		drive->tracks = drive->cfg_tracks;
 
 		INFO("%s: drive%d (cyl=%d,hd=%d,spt=%d), disk %d\n",
-		     dev->name, hdd[i].id.ide_channel, drive->tracks,
+		     dev->name, hdd[i].bus_id.ide_channel, drive->tracks,
 		     drive->hpc, drive->spt, i);
 
 		if (++c > XTA_NUM) break;

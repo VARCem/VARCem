@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.7	2018/09/22
+ * Version:	@(#)vid_hercules.c	1.0.8	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -448,7 +448,12 @@ hercules_close(void *priv)
 {
     hercules_t *dev = (hercules_t *)priv;
 
-    free(dev->vram);
+    if (! dev)
+	return;
+
+    if (dev->vram)
+	free(dev->vram);
+
     free(dev);
 }
 
