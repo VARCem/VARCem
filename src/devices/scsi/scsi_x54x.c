@@ -537,7 +537,7 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 	case 0x11:	/* Recalibrate */
 		target_check(cmd->id, cmd->lun);
 
-		cdb[0] = cdb[0] = bios_cmd_to_scsi[cmd->command];
+		cdb[0] = bios_cmd_to_scsi[cmd->command];
 		cdb[1] = (cmd->lun & 7) << 5;
 
 		ret = x54x_bios_scsi_command(dev, cdb, NULL, sector_len, dma_address);

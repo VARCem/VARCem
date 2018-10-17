@@ -8,7 +8,7 @@
  *
  *		Definitions for the CD-ROM image file handlers.
  *
- * Version:	@(#)cdrom_image.h	1.0.6	2018/10/14
+ * Version:	@(#)cdrom_image.h	1.0.7	2018/10/16
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		RichardG, <richardg867@gmail.com>
@@ -43,7 +43,6 @@ extern "C" {
 #endif
 
 extern int	cdrom_image_do_log;
-extern const cdrom_ops_t cdrom_image_ops;
 
 
 extern void	cdrom_image_log(int level, const char *fmt, ...);

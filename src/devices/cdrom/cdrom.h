@@ -67,6 +67,10 @@ enum {
 #define CDROM_BUS_MAX	(CDROM_BUS_USB)	/* USB exclusive */
 
 
+/* To shut up the GCC compilers. */
+struct cdrom;
+
+
 /* Define the various CD-ROM drive operations (ops). */
 typedef struct {
     int		(*ready)(struct cdrom *dev);
