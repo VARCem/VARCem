@@ -8,7 +8,7 @@
  *
  *		Memory handling and MMU.
  *
- * Version:	@(#)mem.c	1.0.22	2018/10/16
+ * Version:	@(#)mem.c	1.0.23	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1657,17 +1657,7 @@ mem_reset(void)
 	}
     } else {
 	/* 8088/86; maximum address space is 1MB. */
-#if 1
-	/*
-	 * According to the 86Box folks, the Toshiba T1200 can
-	 * take up to 2 MB of RAM. Weird, since it uses a 8086,
-	 * which cannot address that much other than using it
-	 * as "hard ram", aka battery-backed EMS memory. --FvK
-	 */
-	m = 512;
-#else
 	m = 256;
-#endif
     }
 
     /*
