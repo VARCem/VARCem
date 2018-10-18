@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.12	2018/10/05
+ * Version:	@(#)net_ne2000.c	1.0.13	2018/10/16
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -53,7 +53,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <time.h>
-#define dbglog network_dev_log
+#define dbglog network_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"

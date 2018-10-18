@@ -8,7 +8,7 @@
  *
  *		The generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.c	1.0.9	2018/10/16
+ * Version:	@(#)scsi_device.c	1.0.11	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,6 +38,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#include <stdarg.h>
+#define HAVE_STDARG_H
 #define dbglog scsi_log
 #include "../../emu.h"
 #include "../../device.h"
@@ -46,8 +48,13 @@
 #include "scsi_device.h"
 
 
+#ifdef ENABLE_SCSI_LOG
+int		scsi_do_log = ENABLE_SCSI_LOG;
+#endif
 scsi_device_t	scsi_devices[SCSI_ID_MAX][SCSI_LUN_MAX];
-const uint8_t	scsi_null_device_sense[18] = {
+
+
+static const uint8_t	scsi_null_device_sense[18] = {
     0x70,0,SENSE_ILLEGAL_REQUEST,0,0,0,0,0,0,0,0,0,ASC_INV_LUN,0,0,0,0,0
 };
 
@@ -192,4 +199,19 @@ int32_t *
 scsi_device_get_buf_len(scsi_device_t *dev)
 {
     return &dev->buffer_length;
+}
+
+
+void
+scsi_log(int level, const char *fmt, ...)
+{
+#ifdef ENABLE_SCSI_LOG
+    va_list ap;
+
+    if (scsi_do_log >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
 }

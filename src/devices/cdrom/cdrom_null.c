@@ -11,7 +11,7 @@
  *
  * FIXME:	TO BE REMOVED
  *
- * Version:	@(#)cdrom_null.c	1.0.5	2018/10/14
+ * Version:	@(#)cdrom_null.c	1.0.6	2018/10/17
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -61,19 +61,31 @@ null_medium_changed(cdrom_t *dev)
 }
 
 
-static uint8_t
-null_getcurrentsubchannel(cdrom_t *dev, uint8_t *b, int msf)
+static int
+null_media_type_id(cdrom_t *dev)
 {
-    return(0x13);
+    return(0x70);
+}
+
+
+static uint32_t
+null_size(cdrom_t *dev)
+{
+    return(0);
 }
 
 
 static int
-null_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int ismsf, int cdrom_sector_type, int cdrom_sector_flags, int *len)
+null_status(cdrom_t *dev)
 {
-    *len = 0;
+    return(CD_STATUS_EMPTY);
+}
 
-    return(0);
+
+static void
+null_close(cdrom_t *dev)
+{
+    dev->ops = NULL;
 }
 
 
@@ -98,24 +110,48 @@ null_readtoc_raw(cdrom_t *dev, uint8_t *b, int maxlen)
 }
 
 
-static uint32_t
-null_size(cdrom_t *dev)
+static uint8_t
+null_getcurrentsubchannel(cdrom_t *dev, uint8_t *b, int msf)
 {
-    return(0);
+    return(0x13);
 }
 
 
 static int
-null_status(cdrom_t *dev)
+null_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int ismsf, int cdrom_sector_type, int cdrom_sector_flags, int *len)
 {
-    return(CD_STATUS_EMPTY);
+    *len = 0;
+
+    return(0);
 }
 
 
-void
-cdrom_null_reset(cdrom_t *dev)
-{
-}
+static cdrom_ops_t cdrom_null_ops = {
+    null_ready,
+    null_medium_changed,
+    null_media_type_id,
+
+    null_size,
+    null_status,
+    NULL,
+    null_close,
+
+    NULL,
+    NULL,
+
+    null_readtoc,
+    null_readtoc_session,
+    null_readtoc_raw,
+
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+
+    null_getcurrentsubchannel,
+    null_readsector_raw
+};
 
 
 int
@@ -128,43 +164,9 @@ cdrom_null_open(cdrom_t *dev)
 
 
 void
-null_close(cdrom_t *dev)
+cdrom_null_reset(cdrom_t *dev)
 {
 }
-
-
-static
-void null_exit(cdrom_t *dev)
-{
-}
-
-
-static int
-null_media_type_id(cdrom_t *dev)
-{
-    return(0x70);
-}
-
-
-static cdrom_ops_t cdrom_null_ops = {
-    null_ready,
-    null_medium_changed,
-    null_media_type_id,
-    NULL,
-    NULL,
-    null_readtoc,
-    null_readtoc_session,
-    null_readtoc_raw,
-    null_getcurrentsubchannel,
-    null_readsector_raw,
-    NULL,
-    NULL,
-    NULL,
-    null_size,
-    null_status,
-    NULL,
-    null_exit
-};
 
 
 void

@@ -8,7 +8,7 @@
  *
  *		Implementation of the TI SN74689 PSG sound devices.
  *
- * Version:	@(#)snd_sn76489.c	1.0.5	2018/09/22
+ * Version:	@(#)snd_sn76489.c	1.0.6	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <time.h>
-#define dbglog sound_dev_log
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"

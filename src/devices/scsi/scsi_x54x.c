@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.14	2018/10/16
+ * Version:	@(#)scsi_x54x.c	1.0.15	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#define dbglog scsi_dev_log
+#define dbglog scsi_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"

@@ -8,7 +8,7 @@
  *
  *		SCSI module definitions.
  *
- * Version:	@(#)scsi.h	1.0.8	2018/10/05
+ * Version:	@(#)scsi.h	1.0.9	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,7 @@
 #define EMU_SCSI_H
 
 
-extern void	scsi_log(int level, const char *fmt, ...);
+extern void	scsi_card_log(int level, const char *fmt, ...);
 
 extern int	scsi_card_available(int card);
 extern const char *scsi_card_getname(int card);

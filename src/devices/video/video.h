@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.18	2018/09/30
+ * Version:	@(#)video.h	1.0.19	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -296,6 +296,7 @@ extern const device_t	wy700_device;
 
 
 /* Table functions. */
+extern void		video_card_log(int level, const char *fmt, ...);
 extern int		video_card_available(int card);
 extern const char	*video_card_getname(int card);
 extern const char	*video_get_internal_name(int card);

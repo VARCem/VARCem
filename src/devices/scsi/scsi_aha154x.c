@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.10	2018/10/05
+ * Version:	@(#)scsi_aha154x.c	1.0.11	2018/10/16
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -44,7 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#define dbglog	scsi_dev_log
+#define dbglog	scsi_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -56,8 +56,9 @@
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "../system/mca.h"
-#include "scsi_device.h"
+#include "scsi.h"
 #include "scsi_aha154x.h"
+#include "scsi_device.h"
 #include "scsi_x54x.h"
 
 

@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.18	2018/09/29
+ * Version:	@(#)plat.h	1.0.19	2018/10/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -179,18 +179,6 @@ extern void	dynld_close(void *);
 /* Emulator start/stop support functions. */
 extern void	plat_start(void);
 extern void	plat_stop(void);
-
-
-/* Platform-specific device support. */
-extern uint8_t	host_cdrom_drive_available[26];
-extern uint8_t	host_cdrom_drive_available_num;
-
-#ifdef USE_IOCTL
-extern void	cdrom_init_host_drives(void);
-extern int      ioctl_open(uint8_t id, char d);
-extern void     ioctl_reset(uint8_t id);
-extern void     ioctl_close(uint8_t id);
-#endif
 
 extern void	plat_midi_init(void);
 extern void	plat_midi_close(void);

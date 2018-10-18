@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.9	2018/09/22
+ * Version:	@(#)sound.h	1.0.10	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,19 +53,16 @@
 extern "C" {
 #endif
 
-extern int	sound_do_log,
-		sound_dev_do_log;
-
 extern int	sound_pos_global;
 extern volatile int soundon;
 
 
 extern void	sound_log(int level, const char *fmt, ...);
-extern void	sound_dev_log(int level, const char *fmt, ...);
 
 extern void	sound_add_handler(void (*get_buffer)(int32_t *buffer, \
 				  int len, void *p), void *p);
 
+extern void	sound_card_log(int level, const char *fmt, ...);
 extern int	sound_card_available(int card);
 extern const char	*sound_card_getname(int card);
 #ifdef EMU_DEVICE_H

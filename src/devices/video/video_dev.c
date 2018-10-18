@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.22	2018/10/05
+ * Version:	@(#)video_dev.c	1.0.23	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include "../../emu.h"
 #include "../../machines/machine.h"
 #include "../../mem.h"
@@ -51,7 +53,12 @@
 #include "video.h"
 
 
-static struct {
+#ifdef ENABLE_VIDEO_DEV_LOG
+int	video_card_do_log = ENABLE_VIDEO_DEV_LOG;
+#endif
+
+
+static const struct {
     const char		*internal_name;
     const device_t	*device;
 } video_cards[] = {
@@ -151,6 +158,21 @@ static struct {
 
     { NULL,			NULL				}
 };
+
+
+void
+video_card_log(int level, const char *fmt, ...)
+{
+#ifdef ENABLE_VIDEO_DEV_LOG
+    va_list ap;
+
+    if (video_card_do_log >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+#endif
+}
 
 
 void

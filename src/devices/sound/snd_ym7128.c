@@ -8,7 +8,7 @@
  *
  *		Implementation of the Yamaha YM7128 sound device.
  *
- * Version:	@(#)snd_ym7128.c	1.0.3	2018/09/15
+ * Version:	@(#)snd_ym7128.c	1.0.4	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#define dbglog sound_dev_log
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "snd_ym7128.h"
 

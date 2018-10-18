@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.h	1.0.5	2018/10/16
+ * Version:	@(#)scsi_device.h	1.0.6	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -292,18 +292,6 @@
 #define SCSI_REMOVABLE_CDROM	0x8005
 
 
-#if 0
-typedef struct {
-   uint8_t command[20];
-    int state, new_state,
-	clear_req, dev_id,
-	command_pos, data_pos,
-	change_state_delay,
-	new_req_delay;
-    uint32_t bus_in, bus_out;
-} scsi_bus_t;
-#endif
-
 typedef struct {	
     uint8_t	id, lun;
     uint16_t	type;
@@ -362,7 +350,7 @@ typedef struct {
 extern scsi_device_t	scsi_devices[SCSI_ID_MAX][SCSI_LUN_MAX];
 
 
-extern void	scsi_dev_log(int level, const char *fmt, ...);
+extern void	scsi_log(int level, const char *fmt, ...);
 
 extern int	cdrom_add_error_and_subchannel(uint8_t *b, int real_sector_type);
 extern int	cdrom_LBAtoMSF_accurate(void);

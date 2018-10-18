@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.12	2018/10/14
+ * Version:	@(#)scsi.c	1.0.13	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,7 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
-#define dbglog scsi_log
+#define dbglog scsi_card_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../plat.h"
@@ -61,11 +61,8 @@
 #endif
 
 
-#ifdef ENABLE_SCSI_LOG
-int		scsi_do_log = ENABLE_SCSI_LOG;
-#endif
 #ifdef ENABLE_SCSI_DEV_LOG
-int		scsi_dev_do_log = ENABLE_SCSI_DEV_LOG;
+int	scsi_card_do_log = ENABLE_SCSI_DEV_LOG;
 #endif
 
 
@@ -151,27 +148,12 @@ scsi_card_has_config(int card)
 
 
 void
-scsi_log(int level, const char *fmt, ...)
-{
-#ifdef ENABLE_SCSI_LOG
-    va_list ap;
-
-    if (scsi_do_log >= level) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-    }
-#endif
-}
-
-
-void
-scsi_dev_log(int level, const char *fmt, ...)
+scsi_card_log(int level, const char *fmt, ...)
 {
 #ifdef ENABLE_SCSI_DEV_LOG
     va_list ap;
 
-    if (scsi_dev_do_log >= level) {
+    if (scsi_card_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);

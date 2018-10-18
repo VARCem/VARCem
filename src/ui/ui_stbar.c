@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.11	2018/10/15
+ * Version:	@(#)ui_stbar.c	1.0.13	2018/10/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -350,8 +350,10 @@ menu_floppy(int part, int drive)
 static void
 menu_cdrom(int part, int drive)
 {
+#ifdef USE_HOST_CDROM
     wchar_t temp[64];
     int i;
+#endif
 
     sb_menu_add_item(part, IDM_CDROM_MUTE | drive, get_string(IDS_3923));
     sb_menu_add_item(part, -1, NULL);
@@ -360,17 +362,19 @@ menu_cdrom(int part, int drive)
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_CDROM_EMPTY | drive, get_string(IDS_3906));
 
-    if (host_cdrom_drive_available_num == 0) {
+#ifdef USE_HOST_CDROM
+    if (cdrom_host_drive_available_num == 0) {
+#endif
 	if ((cdrom[drive].host_drive >= 'A') &&
-	    (cdrom[drive].host_drive <= 'Z')) {
+	    (cdrom[drive].host_drive <= 'Z'))
 		cdrom[drive].host_drive = 0;
-	}
 
+#ifdef USE_HOST_CDROM
 	goto check_items;
     } else {
 	if ((cdrom[drive].host_drive >= 'A') &&
 	    (cdrom[drive].host_drive <= 'Z')) {
-		if (! host_cdrom_drive_available[cdrom[drive].host_drive - 'A']) {
+		if (! cdrom_host_drive_available[cdrom[drive].host_drive - 'A']) {
 			cdrom[drive].host_drive = 0;
 		}
 	}
@@ -380,11 +384,12 @@ menu_cdrom(int part, int drive)
 
     for (i = 3; i < 26; i++) {
 	swprintf(temp, sizeof_w(temp), get_string(IDS_3921), i+'A');
-	if (host_cdrom_drive_available[i])
+	if (cdrom_host_drive_available[i])
 		sb_menu_add_item(part, IDM_CDROM_HOST_DRIVE | (i << 3)|drive, temp);
     }
 
 check_items:
+#endif
     if (! cdrom[drive].sound_on)
 	sb_menu_set_item(part, IDM_CDROM_MUTE | drive, 1);
 
@@ -831,8 +836,7 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		wcscpy(cdrom[drive].prev_image_path, str);
 
 		/* Close the current drive/pathname. */
-		cdrom[drive].ops->exit(&cdrom[drive]);
-		cdrom_close_handler(drive);
+		cdrom[drive].ops->close(&cdrom[drive]);
 		memset(cdrom[drive].image_path, 0, sizeof(cdrom[drive].image_path));
 
 		/* Now open new image. */
@@ -877,12 +881,11 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		cdrom[drive].prev_host_drive = cdrom[drive].host_drive;
 
 		/* Close the current drive/pathname. */
-		cdrom[drive].ops->exit(&cdrom[drive]);
-		cdrom_close_handler(drive);
+		cdrom[drive].ops->close(&cdrom[drive]);
 		memset(cdrom[drive].image_path, 0, sizeof(cdrom[drive].image_path));
 
-#ifdef USE_CDROM_IOCTL
-		ioctl_open(drive, new_cdrom_drive);
+#ifdef USE_HOST_CDROM
+		cdrom_host_open(&cdrom[drive], new_cdrom_drive);
 #endif
 
 		/* Signal media change to the emulated machine. */

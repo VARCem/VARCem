@@ -8,7 +8,7 @@
  *
  *		Implementation of the ADLIB sound device.
  *
- * Version:	@(#)snd_adlib.c	1.0.5	2018/09/22
+ * Version:	@(#)snd_adlib.c	1.0.7	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#define dbglog sound_dev_log
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"

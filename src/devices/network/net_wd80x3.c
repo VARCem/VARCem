@@ -11,7 +11,7 @@
  *			- SMC/WD 8013EBT (ISA 16-bit);
  *			- SMC/WD 8013EP/A (MCA).
  *
- * Version:	@(#)net_wd80x3.c	1.0.2	2018/10/05
+ * Version:	@(#)net_wd80x3.c	1.0.3	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <time.h>
-#define dbglog network_dev_log
+#define dbglog network_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"

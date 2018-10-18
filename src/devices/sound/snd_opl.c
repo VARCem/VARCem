@@ -8,7 +8,7 @@
  *
  *		Interface to the actual OPL emulator.
  *
- * Version:	@(#)snd_opl.c	1.0.3	2018/09/15
+ * Version:	@(#)snd_opl.c	1.0.4	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,7 +42,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#define dbglog sound_dev_log
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"

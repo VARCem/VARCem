@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.13	2018/09/22
+ * Version:	@(#)snd_audiopci.c	1.0.14	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#define dbglog sound_dev_log
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"		/* for the debugging stuff */
 #include "../../io.h"

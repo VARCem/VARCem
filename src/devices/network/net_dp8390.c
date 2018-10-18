@@ -8,7 +8,7 @@
  *
  *		Handling of the NatSemi DP8390 ethernet controller chip.
  *
- * Version:	@(#)net_dp8390.c	1.0.1	2018/09/14
+ * Version:	@(#)net_dp8390.c	1.0.2	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Peter Grehan, <grehan@iprg.nokia.com>
@@ -39,7 +39,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#define dbglog network_dev_log
+#define dbglog network_card_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../ui/ui.h"

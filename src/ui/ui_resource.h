@@ -12,7 +12,7 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.16	2018/10/01
+ * Version:	@(#)ui_resource.h	1.0.17	2018/10/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -135,17 +135,19 @@
 # define  IDM_LOG_ZIP		(IDM_LOG_BEGIN+11)
 # define  IDM_LOG_CDROM		(IDM_LOG_BEGIN+12)
 # define  IDM_LOG_CDROM_IMAGE	(IDM_LOG_BEGIN+13)
-# define  IDM_LOG_CDROM_IOCTL	(IDM_LOG_BEGIN+14)
+# define  IDM_LOG_CDROM_HOST	(IDM_LOG_BEGIN+14)
 # define  IDM_LOG_NETWORK	(IDM_LOG_BEGIN+15)
 # define  IDM_LOG_NETWORK_DEV	(IDM_LOG_BEGIN+16)
 # define  IDM_LOG_SOUND		(IDM_LOG_BEGIN+17)
 # define  IDM_LOG_SOUND_MIDI	(IDM_LOG_BEGIN+18)
 # define  IDM_LOG_SOUND_DEV	(IDM_LOG_BEGIN+19)
 # define  IDM_LOG_SCSI		(IDM_LOG_BEGIN+20)
-# define  IDM_LOG_SCSI_DISK	(IDM_LOG_BEGIN+21)
-# define  IDM_LOG_SCSI_DEV	(IDM_LOG_BEGIN+22)
-# define  IDM_LOG_VIDEO		(IDM_LOG_BEGIN+23)
-# define IDM_LOG_END		(IDM_LOG_BEGIN+24)
+# define  IDM_LOG_SCSI_DEV	(IDM_LOG_BEGIN+21)
+# define  IDM_LOG_SCSI_CDROM	(IDM_LOG_BEGIN+22)
+# define  IDM_LOG_SCSI_DISK	(IDM_LOG_BEGIN+23)
+# define  IDM_LOG_VIDEO		(IDM_LOG_BEGIN+28)
+# define  IDM_LOG_VIDEO_DEV	(IDM_LOG_BEGIN+29)
+# define IDM_LOG_END		(IDM_LOG_BEGIN+30)
 #define IDM_LOAD		(IDM_TOOLS+90)
 #define IDM_SAVE		(IDM_TOOLS+91)
 #define IDM_SCREENSHOT		(IDM_TOOLS+92)

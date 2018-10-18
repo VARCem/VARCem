@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.36	2018/10/14
+ * Version:	@(#)config.c	1.0.37	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -691,10 +691,10 @@ load_network(const char *cat)
 		config_delete_var(cat, "net_pcap_device");
     }
     if (p != NULL) {
-	if ((network_dev_to_id(p) == -1) || (network_ndev == 1)) {
+	if ((network_card_to_id(p) == -1) || (network_ndev == 1)) {
 		if ((network_ndev == 1) && strcmp(network_host, "none")) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_NO);
-		} else if (network_dev_to_id(p) == -1) {
+		} else if (network_card_to_id(p) == -1) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_DEV);
 		}
 

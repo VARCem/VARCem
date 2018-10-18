@@ -8,7 +8,7 @@
  *
  *		Generic interface for CD-ROM/DVD/BD implementations.
  *
- * Version:	@(#)cdrom.c	1.0.19	2018/10/16
+ * Version:	@(#)cdrom.c	1.0.21	2018/10/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,7 @@
 
 
 #ifdef ENABLE_CDROM_LOG
-int		cdrom_do_log = ENABLE_CDROM_LOG;
+int	cdrom_do_log = ENABLE_CDROM_LOG;
 #endif
 
 
@@ -138,9 +138,13 @@ cdrom_playing_completed(cdrom_t *dev)
 {
     dev->prev_status = dev->cd_status;
 
-    dev->cd_status = dev->ops->status(dev);
-    if (((dev->prev_status == CD_STATUS_PLAYING) || (dev->prev_status == CD_STATUS_PAUSED)) &&
-	((dev->cd_status != CD_STATUS_PLAYING) && (dev->cd_status != CD_STATUS_PAUSED)))
+    if (dev->ops && dev->ops->status)
+	dev->cd_status = dev->ops->status(dev);
+
+    if (((dev->prev_status == CD_STATUS_PLAYING) ||
+	 (dev->prev_status == CD_STATUS_PAUSED)) &&
+	((dev->cd_status != CD_STATUS_PLAYING) &&
+	 (dev->cd_status != CD_STATUS_PAUSED)))
 	return 1;
 
     return 0;
@@ -196,35 +200,15 @@ cdrom_hard_reset(void)
 
 		if (dev->host_drive == 200) {
 			cdrom_image_open(dev, dev->image_path);
-			cdrom_image_reset(dev);
+
+			if (dev->reset)
+				dev->reset(dev);
 		} else
 			cdrom_null_open(dev);
 	}
     }
 
     sound_cd_stop();
-}
-
-
-void
-cdrom_close_handler(uint8_t id)
-{
-    cdrom_t *dev = &cdrom[id];
-
-    if (! dev)
-	return;
-
-    switch (dev->host_drive) {
-	case 200:
-		cdrom_image_close(dev);
-		break;
-
-	default:
-		null_close(dev);
-		break;
-    }
-
-    dev->ops = NULL;
 }
 
 
@@ -237,8 +221,8 @@ cdrom_close(void)
     for (i = 0; i < CDROM_NUM; i++) {
 	dev = &cdrom[i];
 
-	if (dev->ops)
-		cdrom_close_handler(i);
+	if (dev->ops && dev->ops->close)
+		dev->ops->close(dev);
 
 	if (dev->close)
 		dev->close(dev->p);
@@ -291,9 +275,14 @@ cdrom_eject(uint8_t id)
     dev->prev_host_drive = dev->host_drive;
     dev->host_drive = 0;
 
-    dev->ops->exit(dev);
-    cdrom_close_handler(id);
+    if (dev->ops && dev->ops->eject)
+	dev->ops->eject(dev);
+
+    if (dev->ops && dev->ops->close)
+	dev->ops->close(dev);
+
     memset(dev->image_path, 0, sizeof(dev->image_path));
+
     cdrom_null_open(dev);
 
     cdrom_insert(id);
@@ -305,7 +294,7 @@ void
 cdrom_reload(uint8_t id)
 {
     cdrom_t *dev = &cdrom[id];
-#ifdef USE_CDROM_IOCTL
+#ifdef USE_HOST_CDROM
     int new_cdrom_drive;
 #endif
 
@@ -315,7 +304,9 @@ cdrom_reload(uint8_t id)
 	return;
     }
 
-    cdrom_close_handler(id);
+    if (dev->ops && dev->ops->close)
+	dev->ops->close(dev);
+
     memset(dev->image_path, 0, sizeof(dev->image_path));
 
     if (dev->prev_host_drive == 200) {
@@ -331,18 +322,31 @@ cdrom_reload(uint8_t id)
 		dev->host_drive = 0;
 	  else
 		dev->host_drive = 200;
-#ifdef USE_CDROM_IOCTL
+#ifdef USE_HOST_CDROM
     } else {
 	/* Reload the previous host drive. */
 	new_cdrom_drive = dev->prev_host_drive;
-	ioctl_open(id, new_cdrom_drive);
+	cdrom_host_open(dev, new_cdrom_drive);
 	if (dev->bus_type) {
 		/* Signal disc change to the emulated machine. */
-		cdrom_insert(dev);
+		cdrom_insert(id);
 	}
-
-	dev->new_cdrom_drive;
 #endif
+    }
+}
+
+
+void
+cdrom_reset_bus(int bus)
+{
+    cdrom_t *dev;
+    int i;
+
+    for (i = 0; i < CDROM_NUM; i++) {
+	dev = &cdrom[i];
+
+        if (dev->bus_type == bus)
+		dev->reset(dev);
     }
 }
 

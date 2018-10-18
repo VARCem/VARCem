@@ -8,7 +8,7 @@
  *
  *		Implementation of the PC-Speaker device.
  *
- * Version:	@(#)snd_speaker.c	1.0.3	2018/09/22
+ * Version:	@(#)snd_speaker.c	1.0.4	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#define dbglog sound_dev_log
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../system/pit.h"
 #include "sound.h"

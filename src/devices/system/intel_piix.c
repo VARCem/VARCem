@@ -823,19 +823,9 @@ piix_reset_hard(void *priv)
 static void
 piix_reset(void *p)
 {
-    int i;
-
-    //FIXME: cdrom_reset_bus(CDROM_BUS_ATAPI);  --FvK
-    for (i = 0; i < CDROM_NUM; i++) {
-	if (cdrom[i].bus_type == CDROM_BUS_ATAPI)
-		scsi_cdrom_reset(scsi_cdrom[i]);
-    }
-
-    //FIXME: zip_reset_bus(ZIP_BUS_ATAPI);  --FvK
-    for (i = 0; i < ZIP_NUM; i++) {
-	if (zip_drives[i].bus_type == ZIP_BUS_ATAPI)
-		zip_reset(zip[i]);
-    }
+    //FIXME: this should be ide_reset() ...
+    cdrom_reset_bus(CDROM_BUS_ATAPI);
+    zip_reset_bus(CDROM_BUS_ATAPI);
 }
 
 

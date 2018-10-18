@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.21	2018/10/07
+ * Version:	@(#)win.c	1.0.23	2018/10/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,6 +66,7 @@
 #ifdef USE_RDP
 # include <rdp.h>
 #endif
+#include "../devices/cdrom/cdrom.h"
 #include "../devices/input/mouse.h"
 #include "../devices/video/video.h"
 #ifdef USE_WX
@@ -254,6 +255,10 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 	lang = emu_lang_id;
 	(void)ui_lang_set(lang);
     }
+
+#ifdef USE_HOST_CDROM
+    cdrom_host_init();
+#endif
 
     /* Create a mutex for the video handler. */
     hBlitMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);

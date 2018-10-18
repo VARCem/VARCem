@@ -11,10 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * FIXME:	Still have to figure out how cleanly set initial logging
- *		levels for modules, and how to toggle/update those...
- *
- * Version:	@(#)ui_main.c	1.0.18	2018/10/01
+ * Version:	@(#)ui_main.c	1.0.19	2018/10/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -153,19 +150,15 @@ set_logging_item(int idm, int val)
 		ptr = (val != -3) ? &cdrom_do_log : (void *)"CD-ROM";
 		break;
 # endif
-
 # ifdef ENABLE_CDROM_IMAGE_LOG
 	case IDM_LOG_CDROM_IMAGE:
 		ptr = (val != -3) ? &cdrom_image_do_log : (void *)"CD-ROM (image)";
 		break;
 # endif
-
-# ifdef USE_CDROM_IOCTL
-#  ifdef ENABLE_CDROM_IOCTL_LOG
-	case IDM_LOG_CDROM_IOCTL:
-		ptr = (val != -3) ? &cdrom_ioctl_do_log : (void *)"CD-ROM (ioctl)";
+# ifdef ENABLE_CDROM_HOST_LOG
+	case IDM_LOG_CDROM_HOST:
+		ptr = (val != -3) ? &cdrom_host_do_log : (void *)"CD-ROM (host)";
 		break;
-#  endif
 # endif
 
 # ifdef ENABLE_NETWORK_LOG
@@ -173,10 +166,9 @@ set_logging_item(int idm, int val)
 		ptr = (val != -3) ? &network_do_log : (void *)"Network";
 		break;
 # endif
-
 # ifdef ENABLE_NETWORK_DEV_LOG
 	case IDM_LOG_NETWORK_DEV:
-		ptr = (val != -3) ? &network_dev_do_log : (void *)"Network Device";
+		ptr = (val != -3) ? &network_card_do_log : (void *)"Network Device";
 		break;
 # endif
 
@@ -185,16 +177,14 @@ set_logging_item(int idm, int val)
 		ptr = (val != -3) ? &sound_do_log : (void *)"Sound";
 		break;
 # endif
-
+# ifdef ENABLE_SOUND_DEV_LOG
+	case IDM_LOG_SOUND_DEV:
+		ptr = (val != -3) ? &sound_card_do_log : (void *)"Sound Device";
+		break;
+# endif
 # ifdef ENABLE_SOUND_MIDI_LOG
 	case IDM_LOG_SOUND_MIDI:
 		ptr = (val != -3) ? &sound_midi_do_log : (void *)"Sound (MIDI)";
-		break;
-# endif
-
-# ifdef ENABLE_SOUND_DEV_LOG
-	case IDM_LOG_SOUND_DEV:
-		ptr = (val != -3) ? &sound_dev_do_log : (void *)"Sound Device";
 		break;
 # endif
 
@@ -203,22 +193,30 @@ set_logging_item(int idm, int val)
 		ptr = (val != -3) ? &scsi_do_log : (void *)"SCSI";
 		break;
 # endif
-
+# ifdef ENABLE_SCSI_DEV_LOG
+	case IDM_LOG_SCSI_DEV:
+		ptr = (val != -3) ? &scsi_card_do_log : (void *)"SCSI Device";
+		break;
+# endif
+# ifdef ENABLE_SCSI_CDROM_LOG
+	case IDM_LOG_SCSI_CDROM:
+		ptr = (val != -3) ? &scsi_cdrom_do_log : (void *)"SCSI (CD-ROM)";
+		break;
+# endif
 # ifdef ENABLE_SCSI_DISK_LOG
 	case IDM_LOG_SCSI_DISK:
 		ptr = (val != -3) ? &scsi_disk_do_log : (void *)"SCSI (Disk)";
 		break;
 # endif
 
-# ifdef ENABLE_SCSI_DEV_LOG
-	case IDM_LOG_SCSI_DEV:
-		ptr = (val != -3) ? &scsi_dev_do_log : (void *)"SCSI Device";
-		break;
-# endif
-
 # ifdef ENABLE_VIDEO_LOG
 	case IDM_LOG_VIDEO:
 		ptr = (val != -3) ? &video_do_log : (void *)"Video";
+		break;
+# endif
+# ifdef ENABLE_VIDEO_DEV_LOG
+	case IDM_LOG_VIDEO_DEV:
+		ptr = (val != -3) ? &video_card_do_log : (void *)"Video Device";
 		break;
 # endif
     }

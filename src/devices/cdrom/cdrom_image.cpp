@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.12	2018/10/16
+ * Version:	@(#)cdrom_image.cpp	1.0.13	2018/10/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,12 +81,6 @@ cdrom_image_log(UNUSED(int level), UNUSED(const char *fmt), ...)
 #define CD_STATUS_STOPPED	4
 
 
-/* The addresses sent from the guest are absolute, ie. a LBA of 0 corresponds to a MSF of 00:00:00. Otherwise, the counter displayed by the guest is wrong:
-   there is a seeming 2 seconds in which audio plays but counter does not move, while a data track before audio jumps to 2 seconds before the actual start
-   of the audio while audio still plays. With an absolute conversion, the counter is fine. */
-#define MSFtoLBA(m,s,f)		((((m*60)+s)*75)+f)
-
-
 #pragma pack(push,1)
 typedef struct {
     uint8_t user_data[2048],
@@ -145,7 +139,7 @@ static uint8_t		extra_buffer[296];
 static int
 audio_callback(cdrom_t *dev, int16_t *output, int len)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int ret = 1;
 
     if (!dev->sound_on || (dev->cd_state != CD_PLAYING) || dev->img_is_iso) {
@@ -197,7 +191,7 @@ audio_stop(cdrom_t *dev)		/* audio_stop */
 static uint8_t
 audio_play(cdrom_t *dev, uint32_t pos, uint32_t len, int ismsf)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int number;
     uint8_t attr;
     TMSF tmsf;
@@ -256,7 +250,7 @@ audio_play(cdrom_t *dev, uint32_t pos, uint32_t len, int ismsf)
 static void
 audio_pause(cdrom_t *dev)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if (!img || dev->img_is_iso) return;
 
@@ -268,7 +262,7 @@ audio_pause(cdrom_t *dev)
 static void
 audio_resume(cdrom_t *dev)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if (!img || dev->img_is_iso) return;
 
@@ -280,7 +274,7 @@ audio_resume(cdrom_t *dev)
 static int
 image_ready(cdrom_t *dev)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if (!img || (wcslen(dev->image_path) == 0))
 	return 0;
@@ -292,7 +286,7 @@ image_ready(cdrom_t *dev)
 static int
 image_get_last_block(cdrom_t *dev)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int first_track, last_track;
     int number, c;
     unsigned char attr;
@@ -326,7 +320,7 @@ image_medium_changed(UNUSED(cdrom_t *dev))
 static uint8_t
 image_getcurrentsubchannel(cdrom_t *dev, uint8_t *b, int msf)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     uint8_t attr, track, index, ret;
     TMSF relPos, absPos;
     uint32_t cdpos;
@@ -384,7 +378,7 @@ image_getcurrentsubchannel(cdrom_t *dev, uint8_t *b, int msf)
 static int
 image_is_track_audio(cdrom_t *dev, uint32_t pos, int ismsf)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     uint8_t attr;
     TMSF tmsf;
     int m, s, f;
@@ -459,7 +453,7 @@ is_legal(UNUSED(int id), int type, int flags, int audio, int mode2)
 static void
 read_sector_to_buffer(cdrom_t *dev, uint8_t *rbuf, uint32_t msf, uint32_t lba, int mode2, int len)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     uint8_t *bb = rbuf;
 
     img->ReadSector(rbuf + 16, false, lba);
@@ -488,7 +482,7 @@ read_sector_to_buffer(cdrom_t *dev, uint8_t *rbuf, uint32_t msf, uint32_t lba, i
 static void
 read_audio(cdrom_t *dev, uint32_t lba, uint8_t *b)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if (img->GetSectorSize(lba) == 2352)
 	img->ReadSector(raw_buffer, true, lba);
@@ -504,7 +498,7 @@ read_audio(cdrom_t *dev, uint32_t lba, uint8_t *b)
 static void
 read_mode1(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t msf, int mode2, uint8_t *b)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2048))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
@@ -557,7 +551,7 @@ read_mode1(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t msf, int
 static void
 read_mode2_non_xa(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t msf, int mode2, uint8_t *b)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2336))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2336);
@@ -602,7 +596,7 @@ read_mode2_non_xa(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t m
 static void
 read_mode2_xa_form1(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t msf, int mode2, uint8_t *b)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2048))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
@@ -653,7 +647,7 @@ read_mode2_xa_form1(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t
 static void
 read_mode2_xa_form2(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t msf, int mode2, uint8_t *b)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2324))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2324);
@@ -695,10 +689,10 @@ read_mode2_xa_form2(cdrom_t *dev, int cdrom_sector_flags, uint32_t lba, uint32_t
 
 
 static int
-image_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int ismsf, int cdrom_sector_type,
-		     int cdrom_sector_flags, int *len)
+image_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int ismsf,
+		     int cdrom_sector_type, int cdrom_sector_flags, int *len)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     uint8_t *b, *temp_b;
     uint32_t msf, lba;
     int audio, mode2;
@@ -857,7 +851,7 @@ image_size(cdrom_t *dev)
 static int
 image_readtoc(cdrom_t *dev, unsigned char *b, unsigned char starttrack, int msf, UNUSED(int maxlen), int single)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int number, len = 4;
     int c, d, first_track, last_track;
     uint32_t temp;
@@ -920,7 +914,7 @@ image_readtoc(cdrom_t *dev, unsigned char *b, unsigned char starttrack, int msf,
 static int
 image_readtoc_session(cdrom_t *dev, unsigned char *b, int msf, int maxlen)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int number, len = 4;
     uint8_t attr;
     uint32_t temp;
@@ -961,7 +955,7 @@ image_readtoc_session(cdrom_t *dev, unsigned char *b, int msf, int maxlen)
 static int
 image_readtoc_raw(cdrom_t *dev, unsigned char *b, UNUSED(int maxlen))
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int first_track, last_track;
     int number, track, len = 4;
     uint8_t attr;
@@ -997,7 +991,7 @@ image_readtoc_raw(cdrom_t *dev, unsigned char *b, UNUSED(int maxlen))
 static int
 image_status(cdrom_t *dev)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if (!img) return CD_STATUS_EMPTY;
 
@@ -1025,7 +1019,7 @@ image_status(cdrom_t *dev)
 static void
 image_stop(cdrom_t *dev)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
     if (!img || dev->img_is_iso) return;
 
@@ -1034,16 +1028,16 @@ image_stop(cdrom_t *dev)
 
 
 static void
-image_exit(cdrom_t *dev)
+image_close(cdrom_t *dev)
 {
-    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->image;
+    CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-INFO("CDROM: image_exit(%ls)\n", dev->image_path);
+INFO("CDROM: image_close(%ls)\n", dev->image_path);
     dev->cd_state = CD_STOPPED;
 
     if (img) {
 	delete img;
-	dev->image = NULL;
+	dev->local = NULL;
     }
 
     dev->ops = NULL;
@@ -1068,20 +1062,27 @@ static const cdrom_ops_t cdrom_image_ops = {
     image_ready,
     image_medium_changed,
     image_media_type_id,
-    audio_callback,
-    audio_stop,
-    image_readtoc,
-    image_readtoc_session,
-    image_readtoc_raw,
-    image_getcurrentsubchannel,
-    image_readsector_raw,
-    audio_play,
-    audio_pause,
-    audio_resume,
+
     image_size,
     image_status,
     image_stop,
-    image_exit
+    image_close,
+
+    NULL,
+    NULL,
+
+    image_readtoc,
+    image_readtoc_session,
+    image_readtoc_raw,
+
+    audio_play,
+    audio_stop,
+    audio_pause,
+    audio_resume,
+    audio_callback,
+
+    image_getcurrentsubchannel,
+    image_readsector_raw
 };
 
 
@@ -1100,14 +1101,16 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
 
     /* Create new instance of the CDROM_Image class. */
     img = new CDROM_Interface_Image();
-    dev->image = img;
+    dev->local = img;
 
     /* Convert filename and open the image. */
     memset(temp, '\0', sizeof(temp));
     wcstombs(temp, fn, sizeof(temp));
-    if (!img->SetDevice(temp, false)) {
-	cdrom_image_close(dev);
+    if (! img->SetDevice(temp, false)) {
+	dev->ops->close(dev);
+
 	cdrom_set_null_handler(dev);
+
 	DEBUG("[f] image_open(): cdrom[%i]->ops = %08X\n", dev->id, dev->ops);
 	return 1;
     }
@@ -1119,24 +1122,8 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
     dev->cdrom_capacity = image_get_last_block(dev) + 1;
 
     /* Attach this handler to the drive. */
+    dev->reset = NULL;
     dev->ops = &cdrom_image_ops;
 
     return 0;
-}
-
-
-void
-cdrom_image_close(cdrom_t *dev)
-{
-INFO("CDROM: image_close(%ls)\n", dev->image_path);
-    if (dev->ops->exit)
-	dev->ops->exit(dev);
-}
-
-
-void
-cdrom_image_reset(UNUSED(cdrom_t *dev))
-{
-INFO("CDROM: image_reset(%ls)\n", dev->image_path);
-    /* Nothing to do. */
 }

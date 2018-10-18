@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.6	2018/09/29
+ * Version:	@(#)win_settings_network.h	1.0.7	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,7 +64,7 @@ network_recalc_combos(HWND hdlg)
     h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
     if (temp_net_type == NET_TYPE_SLIRP)
 	EnableWindow(h, TRUE);
-      else if ((temp_net_type == NET_TYPE_PCAP) && (network_dev_to_id(temp_host_dev) > 0))
+      else if ((temp_net_type == NET_TYPE_PCAP) && (network_card_to_id(temp_host_dev) > 0))
 	EnableWindow(h, TRUE);
       else
 	EnableWindow(h, FALSE);
@@ -74,7 +74,7 @@ network_recalc_combos(HWND hdlg)
 	EnableWindow(h, TRUE);
     } else if (network_card_has_config(temp_net_card) &&
 		 (temp_net_type == NET_TYPE_PCAP) &&
-		  (network_dev_to_id(temp_host_dev) > 0)) {
+		  (network_card_to_id(temp_host_dev) > 0)) {
 	EnableWindow(h, TRUE);
     } else {
 	EnableWindow(h, FALSE);
@@ -118,7 +118,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			mbstowcs(temp, network_devs[c].description, sizeof_w(temp));
 			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 		}
-		SendMessage(h, CB_SETCURSEL, network_dev_to_id(temp_host_dev), 0);
+		SendMessage(h, CB_SETCURSEL, network_card_to_id(temp_host_dev), 0);
 
 		/*NIC config*/
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);

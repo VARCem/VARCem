@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.32	2018/10/05
+ * Version:	@(#)emu.h	1.0.33	2018/10/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -254,16 +254,18 @@ extern int	hdd_do_log;
 extern int	zip_do_log;
 extern int	cdrom_do_log;
 extern int	cdrom_image_do_log;
-extern int	cdrom_ioctl_do_log;
+extern int	cdrom_host_do_log;
 extern int	sound_do_log;
 extern int	sound_midi_do_log;
-extern int	sound_dev_do_log;
+extern int	sound_card_do_log;
 extern int	network_do_log;
-extern int	network_dev_do_log;
+extern int	network_card_do_log;
 extern int	scsi_do_log;
+extern int	scsi_card_do_log;
+extern int	scsi_cdrom_do_log;
 extern int	scsi_disk_do_log;
-extern int	scsi_dev_do_log;
 extern int	video_do_log;
+extern int	video_card_do_log;
 #endif
 
 

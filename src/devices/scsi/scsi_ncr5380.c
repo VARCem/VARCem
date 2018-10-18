@@ -11,7 +11,7 @@
  *
  * NOTE:	This code now only supports targets at LUN=0 !!
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.11	2018/10/14
+ * Version:	@(#)scsi_ncr5380.c	1.0.12	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,7 +46,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#define dbglog scsi_dev_log
+#define dbglog scsi_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"

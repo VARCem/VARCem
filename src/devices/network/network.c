@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.12	2018/09/14
+ * Version:	@(#)network.c	1.0.13	2018/10/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -96,7 +96,7 @@ netdev_t	network_devs[32];
 int		network_do_log = ENABLE_NETWORK_LOG;
 #endif
 #ifdef ENABLE_NETWORK_DEV_LOG
-int		network_dev_do_log = ENABLE_NETWORK_DEV_LOG;
+int		network_card_do_log = ENABLE_NETWORK_DEV_LOG;
 #endif
 static mutex_t	*network_mutex;
 static uint8_t	*network_mac;
@@ -172,12 +172,12 @@ network_log(int level, const char *fmt, ...)
 
 
 void
-network_dev_log(int level, const char *fmt, ...)
+network_card_log(int level, const char *fmt, ...)
 {
 #ifdef ENABLE_NETWORK_DEV_LOG
     va_list ap;
 
-    if (network_dev_do_log >= level) {
+    if (network_card_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
@@ -414,7 +414,7 @@ network_tx(uint8_t *bufp, int len)
 
 
 int
-network_dev_to_id(const char *devname)
+network_card_to_id(const char *devname)
 {
     int i = 0;
 

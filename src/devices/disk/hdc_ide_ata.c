@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.24	2018/10/14
+ * Version:	@(#)hdc_ide_ata.c	1.0.25	2018/10/17
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -2438,7 +2438,7 @@ ide_init(const device_t *info)
 {
     DEBUG("Initializing IDE...\n");
 
-    switch(info->local) {
+    switch(info->local & 255) {
 	case 0:		/* ISA, single-channel */
 	case 2:		/* ISA, dual-channel */
 	case 3:		/* ISA, dual-channel, optional 2nd channel */

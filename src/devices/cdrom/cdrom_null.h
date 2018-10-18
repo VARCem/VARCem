@@ -10,7 +10,7 @@
  *
  * FIXME:	TO BE REMOVED
  *
- * Version:	@(#)cdrom_null.h	1.0.3	2018/10/14
+ * Version:	@(#)cdrom_null.h	1.0.3	2018/10/17
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -45,8 +45,8 @@ extern "C" {
 #endif
 
 extern int	cdrom_null_open(cdrom_t *dev);
+//extern void	null_close(cdrom_t *dev);
 extern void	cdrom_null_reset(cdrom_t *dev);
-extern void	null_close(cdrom_t *dev);
 
 extern void     cdrom_set_null_handler(cdrom_t *dev);
 

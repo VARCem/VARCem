@@ -10,7 +10,7 @@
 #		settings, so we can avoid changing the main one for all of
 #		our local setups.
 #
-# Version:	@(#)Makefile.local	1.0.9	2018/09/15
+# Version:	@(#)Makefile.local	1.0.10	2018/10/16
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -79,16 +79,18 @@ STUFF	:=
 # -DENABLE_ZIP_LOG=n		enables logging for that module, sets level n
 # -DENABLE_CDROM_LOG=n		enables logging for that module, sets level n
 # -DENABLE_CDROM_IMAGE_LOG=n	enables logging for that module, sets level n
-# -DENABLE_CDROM_IOCTL_LOG=n	enables logging for that module, sets level n
+# -DENABLE_CDROM_HOST_LOG=n	enables logging for that module, sets level n
 # -DENABLE_SOUND_LOG=n		enables logging for that module, sets level n
 # -DENABLE_SOUND_MIDI_LOG=n	enables logging for that module, sets level n
 # -DENABLE_SOUND_DEV_LOG=n	enables logging for that module, sets level n
 # -DENABLE_NETWORK_LOG=n	enables logging for that module, sets level n
 # -DENABLE_NETWORK_DEV_LOG=n	enables logging for that module, sets level n
 # -DENABLE_SCSI_LOG=n		enables logging for that module, sets level n
-# -DENABLE_SCSI_DISK_LOG=n	enables logging for that module, sets level n
 # -DENABLE_SCSI_DEV_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SCSI_CDROM_LOG=n	enables logging for that module, sets level n
+# -DENABLE_SCSI_DISK_LOG=n	enables logging for that module, sets level n
 # -DENABLE_VIDEO_LOG=n		enables logging for that module, sets level n
+# -DENABLE_VIDEO_DEV_LOG=n	enables logging for that module, sets level n
 
 
 EXTRAS		:=
