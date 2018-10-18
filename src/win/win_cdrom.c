@@ -1536,7 +1536,9 @@ ioctl_reset(cdrom_t *dev)
 			  NULL, 0, &toc, sizeof(toc), &size, NULL);
     hdev->toc = toc;
 
+#ifdef _DEBUG
     toc_dump(&hdev->toc, 0);
+#endif
 
     hdev->disc_changed = 0;
 }
