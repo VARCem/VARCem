@@ -100,7 +100,8 @@ int	cdrom_host_do_log = ENABLE_CDROM_HOST_LOG;
 #endif
 
 
-void
+#ifdef USE_HOST_CDROM
+static void
 cdrom_host_log(int level, const char *fmt, ...)
 {
 #ifdef ENABLE_CDROM_HOST_LOG
@@ -115,7 +116,6 @@ cdrom_host_log(int level, const char *fmt, ...)
 }
 
 
-#ifdef USE_HOST_CDROM
 uint8_t	cdrom_host_drive_available_num = 0;
 uint8_t	cdrom_host_drive_available[26];
 
@@ -1580,7 +1580,6 @@ cdrom_host_open(cdrom_t *dev, char d)
 
     return 0;
 }
-#endif
 
 
 void
@@ -1601,3 +1600,4 @@ cdrom_host_init(void)
 		cdrom_host_drive_available[i - 'A'] = 0;
     }
 }
+#endif	/*USE_HOST_CDROM*/
