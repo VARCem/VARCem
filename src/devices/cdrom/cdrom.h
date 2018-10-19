@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.14	2018/10/17
+ * Version:	@(#)cdrom.h	1.0.15	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,7 +88,8 @@ struct cdrom;
 /* Define the various CD-ROM drive operations (ops). */
 typedef struct {
     int		(*ready)(struct cdrom *dev);
-    int		(*medium_changed)(struct cdrom *dev);
+    void	(*notify_change)(struct cdrom *dev, int media_present);
+    void	(*medium_lock)(struct cdrom *dev, int locked);
     int		(*media_type_id)(struct cdrom *dev);
 
     uint32_t	(*size)(struct cdrom *dev);
@@ -123,7 +124,9 @@ typedef struct cdrom {
     int8_t	bus_type,		/* 0 = ATAPI, 1 = SCSI */
 		bus_mode,		/* Bit 0 = PIO suported;
 					 * Bit 1 = DMA supportd. */
-		sound_on;
+		sound_on,
+		can_lock,		/* device can be locked */
+		is_locked;		/* device is currently locked */
 
     union {
 	uint8_t ide_channel;		/* IDE drive: channel (0/1) */
@@ -197,6 +200,8 @@ extern int		cdrom_playing_completed(cdrom_t *dev);
 extern void		cdrom_insert(uint8_t id);
 extern void		cdrom_eject(uint8_t id);
 extern void		cdrom_reload(uint8_t id);
+
+extern void		cdrom_notify(const char *drive, int present);
 
 extern int		cdrom_image_open(cdrom_t *dev, const wchar_t *fn);
 

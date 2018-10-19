@@ -8,7 +8,7 @@
  *
  *		String definitions for "Russian (Russia)" language.
  *
- * Version:	@(#)VARCem-RU.str	1.0.16	2018/10/01
+ * Version:	@(#)VARCem-RU.str	1.0.17	2018/10/18
  *
  * Authors:	Tarlabnor, <tarlabnor@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,7 +47,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,16
+#define STR_VERSION	1,0,17
 #define STR_AUTHOR	"Tarlabnor"
 #define STR_EMAIL	"tarlabnor@varcem.com"
 #define STR_NAME	"VARCem"
@@ -111,6 +111,8 @@
 #define STR_ENABLED	"Доступно"
 #define STR_OFF		"Выкл"
 #define STR_ON		"Вкл"
+#define STR_UNLOCK	"Разблокировать"
+#define STR_LOCK	"Заблокировать"
 #define STR_TYPE	"Тип"
 #define STR_FILENAME	"Имя файла:"
 #define STR_PROGRESS	"Прогресс:"
@@ -293,11 +295,12 @@
 #define STR_3900	"(пусто)"
 #define STR_3901	"(хост-диск %c:)"
 #define STR_3902	" [Защищён от записи]"
-#define STR_3903	"Новый образ.."
-#define STR_3904	"Открыть образ.."
-#define STR_3905	"Загрузить предыдущий образ"
-#define STR_3906	"Извлечь"
-#define STR_3907	"Уведомить о смене диска"
+#define STR_3903	" [Заблокирован]"
+#define STR_3904	"Новый образ.."
+#define STR_3905	"Открыть образ.."
+#define STR_3906	"Загрузить предыдущий образ"
+#define STR_3907	"Извлечь"
+#define STR_3908	"Уведомить о смене диска"
 
 #define STR_3910	"Флоппи %i (%s): %ls"
 #define STR_3911	"Все образы\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Продвинутые секторные образы\0*.imd;*.json;*.td0\0Простые секторные образы\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Образы с магнитным потоком\0*.fdi\0Образы с битовым потоком\0*.86f\0Все файлы\0*.*\0"

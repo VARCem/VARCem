@@ -8,7 +8,7 @@
  *
  *		String definitions for "Italian (Italy)" language.
  *
- * Version:	@(#)VARCem-IT.str	1.0.8	2018/10/01
+ * Version:	@(#)VARCem-IT.str	1.0.8	2018/10/18
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"Attivato"
 #define STR_OFF		"Spento"
 #define STR_ON		"Acceso"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"Tipo"
 #define STR_FILENAME	"Nome di file:"
 #define STR_PROGRESS	"Progresso:"
@@ -292,11 +294,12 @@
 #define STR_3900	"(vuoto)"
 #define STR_3901	"(unità host %c:)"
 #define STR_3902	" [Protetto contro la scrittura]"
-#define STR_3903	"&Nuova immagine..."
-#define STR_3904	"&Carica immagine..."
-#define STR_3905	"&Ricarica immagine precedente"
-#define STR_3906	"&Espelli"
-#define STR_3907	"&Notifica cambio di disco"
+#define STR_3903	" [Locked]"
+#define STR_3904	"&Nuova immagine..."
+#define STR_3905	"&Carica immagine..."
+#define STR_3906	"&Ricarica immagine precedente"
+#define STR_3907	"&Espelli"
+#define STR_3908	"&Notifica cambio di disco"
 
 #define STR_3910	"Floppy %i (%s): %ls"
 #define STR_3911	"Tutte le immagini\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Immagini di settori avvanzate\0*.imd;*.json;*.td0\0Immagini di settori basiche\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Immagini di flusso magnetico\0*.fdi\0Immagini bitstream\0*.86f\0Tutti i file\0*.*\0"

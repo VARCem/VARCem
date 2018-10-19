@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.29	2018/10/16
+ * Version:	@(#)win_ui.c	1.0.30	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,9 @@
 #include <windowsx.h>
 #include <commctrl.h>
 #include <commdlg.h>
+#ifdef USE_HOST_CDROM
+# include <dbt.h>
+#endif
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -55,6 +58,7 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/input/mouse.h"
 #include "../devices/video/video.h"
+#include "../devices/cdrom/cdrom.h"
 #include "win.h"
 #include "resource.h"
 
@@ -302,6 +306,51 @@ LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 }
 
 
+#ifdef USE_HOST_CDROM
+static void
+HandleMediaEvent(WPARAM wParam, LPARAM lParam)
+{
+    PDEV_BROADCAST_HDR lpdb = (PDEV_BROADCAST_HDR)lParam;
+    PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
+    int f = -1, i;
+    char d;
+
+    switch (wParam) {
+	case DBT_DEVICEARRIVAL:
+		if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME) {
+			if (lpdbv->dbcv_flags & DBTF_MEDIA)
+				f = 1;
+		}
+		break;
+
+	case DBT_DEVICEREMOVECOMPLETE:
+		if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME) {
+			if (lpdbv->dbcv_flags & DBTF_MEDIA)
+				f = 0;
+		}
+		break;
+
+	default:
+		/* We don't care.. */
+		break;
+    }
+
+    /* Now report all 'changed' drives to the CD-ROM handler. */
+    if (f != -1) {
+	for (i = 0; i < 26; i++) {
+		if (lpdbv->dbcv_unitmask & 1) {
+			/* Get the drive letter. */
+			d = 'A' + i;
+
+			cdrom_notify(&d, f);
+		}
+		lpdbv->dbcv_unitmask >>= 1;
+	}
+    }
+}
+#endif
+
+
 static LRESULT CALLBACK
 MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -485,6 +534,12 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SHUTDOWN:
 		PostQuitMessage(0);
 		break;
+
+#ifdef USE_HOST_CDROM
+	case WM_DEVICECHANGE:
+		HandleMediaEvent(wParam, lParam);
+		break;
+#endif
 
 	case WM_SYSCOMMAND:
 		/*

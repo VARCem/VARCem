@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.2	2018/10/17
+ * Version:	@(#)scsi_cdrom.c	1.0.2	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1350,9 +1350,6 @@ pre_execution_check(scsi_cdrom_t *dev, uint8_t *cdb)
 	goto skip_ready_check;
     }
 
-    if (dev->drv->ops->medium_changed(dev->drv))
-	scsi_cdrom_insert((void *) dev);
-
     ready = dev->drv->ops->ready(dev->drv);
 
 skip_ready_check:
@@ -1482,9 +1479,6 @@ request_sense_for_scsi(void *p, uint8_t *buffer, uint8_t alloc_length)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *) p;
     int ready = 0;
-
-    if (dev->drv->ops->medium_changed(dev->drv))
-	scsi_cdrom_insert((void *) dev);
 
     ready = dev->drv->ops->ready(dev->drv);
 
@@ -2274,7 +2268,8 @@ scsi_cdrom_command(void *p, uint8_t *cdb)
 					dev->drv->ops->stop(dev->drv);
 				break;
 			case 1:		/* Start the disc and read the TOC. */
-				dev->drv->ops->medium_changed(dev->drv);	/* This causes a TOC reload. */
+					/* This causes a TOC reload. */
+				(void)dev->drv->ops->ready(dev->drv);
 				break;
 			case 2:		/* Eject the disc if possible. */
 				if (dev->drv->ops->stop)

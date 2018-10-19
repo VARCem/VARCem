@@ -8,7 +8,7 @@
  *
  *		String definitions for "Japanese (Japan)" language.
  *
- * Version:	@(#)VARCem-JP.str	1.0.10	2018/10/01
+ * Version:	@(#)VARCem-JP.str	1.0.10	2018/10/18
  *
  * Authors:	Basic2004, <basic2004@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"使用する"
 #define STR_OFF		"オフ"
 #define STR_ON		"オン"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"形式"
 #define STR_FILENAME	"ファイル名:"
 #define STR_PROGRESS	"進行状況:"
@@ -293,12 +295,13 @@
 /* UI: Status Bar (3900.) */
 #define STR_3900	"(空)"
 #define STR_3901	"(ホストドライブ %c:)"
-#define STR_3902	"[書き込み禁止]"
-#define STR_3903	"新規のイメージ(&N).."
-#define STR_3904	"イメージをロード(&L).."
-#define STR_3905	"前のイメージをリロード(&R)"
-#define STR_3906	"取り出し(&U)"
-#define STR_3907	"ディスク交換を通知(&N)"
+#define STR_3902	" [書き込み禁止]"
+#define STR_3903	" [Locked]"
+#define STR_3904	"新規のイメージ(&N).."
+#define STR_3905	"イメージをロード(&L).."
+#define STR_3906	"前のイメージをリロード(&R)"
+#define STR_3907	"取り出し(&U)"
+#define STR_3908	"ディスク交換を通知(&N)"
 
 #define STR_3910	"フロッピー %i (%s): %ls"
 #define STR_3911	"すべてのイメージ\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f\0すべてのファイル\0*.*\0"

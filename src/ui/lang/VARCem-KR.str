@@ -8,7 +8,7 @@
  *
  *		String definitions for "Korean (South Korea)" language.
  *
- * Version:	@(#)VARCem-KR.str	1.0.12	2018/10/01
+ * Version:	@(#)VARCem-KR.str	1.0.12	2018/10/18
  *
  * Authors:	Yeong Uk Jo, <greatpsycho@yahoo.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"사용"
 #define STR_OFF		"꺼짐"
 #define STR_ON		"켜짐"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"형식"
 #define STR_FILENAME	"파일 이름:"
 #define STR_PROGRESS	"진행 상황:"
@@ -294,11 +296,12 @@
 #define STR_3900	"(비었음)"
 #define STR_3901	"(호스트 드라이브 %c:)"
 #define STR_3902	" [쓰기 방지됨]"
-#define STR_3903	"새 이미지(&N).."
-#define STR_3904	"이미지 불러오기(&L).."
-#define STR_3905	"이전 이미지 다시 불러오기(&R)"
-#define STR_3906	"이미지 제거(&U)"
-#define STR_3907	"디스크 교체 알림(&N)"
+#define STR_3903	" [Locked]"
+#define STR_3904	"새 이미지(&N).."
+#define STR_3905	"이미지 불러오기(&L).."
+#define STR_3906	"이전 이미지 다시 불러오기(&R)"
+#define STR_3907	"이미지 제거(&U)"
+#define STR_3908	"디스크 교체 알림(&N)"
 
 #define STR_3910	"플로피 %i (%s): %ls"
 #define STR_3911	"모든 이미지\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f\0모든 파일\0*.*\0"

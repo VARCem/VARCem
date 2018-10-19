@@ -8,7 +8,7 @@
  *
  *		String definitions for "Czech (Czech Republic)" language.
  *
- * Version:	@(#)VARCem-CZ.str	1.0.5	2018/10/01
+ * Version:	@(#)VARCem-CZ.str	1.0.5	2018/10/18
  *
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"Nepovoleno"
 #define STR_OFF		"Zapnuto"
 #define STR_ON		"Vypnuto"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"Typ"
 #define STR_FILENAME	"Jméno souboru:"
 #define STR_PROGRESS	"Průběh:"
@@ -294,11 +296,12 @@
 #define STR_3900	"(prázdné)"
 #define STR_3901	"(hostitelská jednotka %c:)"
 #define STR_3902	" [Chráněno proti zápisu]"
-#define STR_3903	"&Nový obraz..."
-#define STR_3904	"N&ačíst obraz..."
-#define STR_3905	"&Znovu načíst předchozí obraz"
-#define STR_3906	"&Vyjmout"
-#define STR_3907	"&Notify disk change"
+#define STR_3903	" [Locked]"
+#define STR_3904	"&Nový obraz..."
+#define STR_3905	"N&ačíst obraz..."
+#define STR_3906	"&Znovu načíst předchozí obraz"
+#define STR_3907	"&Vyjmout"
+#define STR_3908	"&Notify disk change"
 
 #define STR_3910	"Disketa %i (%s): %ls"
 #define STR_3911	"Všechny obrazy\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Pokročilé sektorové obrazy\0*.imd;*.json;*.td0\0Základní sektorové obrazy\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Obrazy magnetického toku\0*.fdi\0Obrazy povrchu\0*.86f\0Všechny soubory\0*.*\0"

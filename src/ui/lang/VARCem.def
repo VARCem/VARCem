@@ -8,7 +8,7 @@
  *
  *		String table for the application, shared by all platforms.
  *
- * Version:	@(#)VARCem.def	1.0.2	2018/10/01
+ * Version:	@(#)VARCem.def	1.0.3	2018/10/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -101,6 +101,8 @@ STRTBL( IDS_DISABLED, STR_DISABLED )
 STRTBL( IDS_ENABLED, STR_ENABLED )
 STRTBL( IDS_OFF, STR_OFF )
 STRTBL( IDS_ON, STR_ON )
+STRTBL( IDS_UNLOCK, STR_UNLOCK )
+STRTBL( IDS_LOCK, STR_LOCK )
 STRTBL( IDS_TYPE, STR_TYPE )
 STRTBL( IDS_FILENAME, STR_FILENAME )
 STRTBL( IDS_PROGRESS, STR_PROGRESS )
@@ -288,7 +290,7 @@ STRTBL( IDS_3904, STR_3904 )
 STRTBL( IDS_3905, STR_3905 )
 STRTBL( IDS_3906, STR_3906 )
 STRTBL( IDS_3907, STR_3907 )
-/* 3908 available */
+STRTBL( IDS_3908, STR_3908 )
 /* 3909 available */
 STRTBL( IDS_3910, STR_3910 )
 STRTBL( IDS_3911, STR_3911 )

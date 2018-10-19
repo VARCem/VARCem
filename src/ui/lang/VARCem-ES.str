@@ -8,7 +8,7 @@
  *
  *		String definitions for "Spanish (Spain, Normal Sort)" language.
  *
- * Version:	@(#)VARCem-ES.str	1.0.12	2018/10/01
+ * Version:	@(#)VARCem-ES.str	1.0.13	2018/10/18
  *
  * Authors:	Natalia Portillo, <claunia@claunia.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,11
+#define STR_VERSION	1,0,13
 #define STR_AUTHOR	"Natalia Portillo"
 #define STR_EMAIL	"claunia@claunia.com"
 #define STR_NAME	"VARCem"
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"Activado"
 #define STR_OFF		"Apagado"
 #define STR_ON		"Encendido"
+#define STR_UNLOCK	"Desbloquear"
+#define STR_LOCK	"Bloqueada"
 #define STR_TYPE	"Tipo"
 #define STR_FILENAME	"Archivo:"
 #define STR_PROGRESS	"Progreso:"
@@ -294,11 +296,12 @@
 #define STR_3900	"(vacío)"
 #define STR_3901	"(unidad nativa %c:)"
 #define STR_3902	" [Protegida contra escritura]"
-#define STR_3903	"&Nueva imagen.."
-#define STR_3904	"&Cargar imagen.."
-#define STR_3905	"&Recargar imagen anterior"
-#define STR_3906	"&Expulsar"
-#define STR_3907	"&Notificar cambio de disco"
+#define STR_3903	" [Desbloqueada]"
+#define STR_3904	"&Nueva imagen.."
+#define STR_3905	"&Cargar imagen.."
+#define STR_3906	"&Recargar imagen anterior"
+#define STR_3907	"&Expulsar"
+#define STR_3908	"&Notificar cambio de disco"
 
 #define STR_3910	"Disquetera %i (%s): %ls"
 #define STR_3911	"Todas las imágenes\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Imágenes por sectores avanzadas\0*.imd;*.json;*.td0\0Imágenes por sectores básicas\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Imágenes de flujo\0*.fdi\0Imágenes de superficie\0*.86f\0Todos los archivos\0*.*\0"

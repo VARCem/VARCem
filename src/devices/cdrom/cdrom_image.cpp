@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.13	2018/10/17
+ * Version:	@(#)cdrom_image.cpp	1.0.14	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -306,14 +306,6 @@ image_get_last_block(cdrom_t *dev)
     }
 
     return lb;
-}
-
-
-static int
-image_medium_changed(UNUSED(cdrom_t *dev))
-{
-    /* There is no way to change the medium within an already mounted image. */
-    return 0;
 }
 
 
@@ -1060,7 +1052,8 @@ image_media_type_id(cdrom_t *dev)
 
 static const cdrom_ops_t cdrom_image_ops = {
     image_ready,
-    image_medium_changed,
+    NULL,
+    NULL,
     image_media_type_id,
 
     image_size,

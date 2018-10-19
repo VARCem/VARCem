@@ -8,7 +8,7 @@
  *
  *		String definitions for "German (Germany)" language.
  *
- * Version:	@(#)VARCem-DE.str	1.0.13	2018/10/01
+ * Version:	@(#)VARCem-DE.str	1.0.13	2018/10/18
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"Aktiviert"
 #define STR_OFF		"Aus"
 #define STR_ON		"An"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"Typ"
 #define STR_FILENAME	"Dateiname:"
 #define STR_PROGRESS	"Fortschritt:"
@@ -310,11 +312,12 @@
 #define STR_3900	"(leer)"
 #define STR_3901	"(Hostlaufwerk %c:)"
 #define STR_3902	" [Schreibgeschützt]"
-#define STR_3903	"&Neues Abbild..."
-#define STR_3904	"Abbild &laden..."
-#define STR_3905	"Vor&heriges Abbild erneut laden"
-#define STR_3906	"Aus&werfen"
-#define STR_3907	"Ä&nderungsbenachrichtigung bei Wechsel"
+#define STR_3903	" [Locked]"
+#define STR_3904	"&Neues Abbild..."
+#define STR_3905	"Abbild &laden..."
+#define STR_3906	"Vor&heriges Abbild erneut laden"
+#define STR_3907	"Aus&werfen"
+#define STR_3908	"Ä&nderungsbenachrichtigung bei Wechsel"
 
 #define STR_3910	"Diskettenlaufwerk %i (%s): %ls"
 #define STR_3911	"Alle Abbilder\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Komplexe Sektorabbilder\0*.imd;*.json;*.td0\0Einfache Sektorabbilder\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Magnetfluss-Abbilder\0*.fdi\0Bitstrom-Abbilder\0*.86f\0Alle Dateien\0*.*\0"

@@ -11,7 +11,7 @@
  *
  * FIXME:	TO BE REMOVED
  *
- * Version:	@(#)cdrom_null.c	1.0.6	2018/10/17
+ * Version:	@(#)cdrom_null.c	1.0.7	2018/10/18
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -48,14 +48,6 @@
 
 static int
 null_ready(cdrom_t *dev)
-{
-    return(0);
-}
-
-
-/* Always return 0, the contents of a null CD-ROM drive never change. */
-static int
-null_medium_changed(cdrom_t *dev)
 {
     return(0);
 }
@@ -128,7 +120,8 @@ null_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int ismsf, int cd
 
 static cdrom_ops_t cdrom_null_ops = {
     null_ready,
-    null_medium_changed,
+    NULL,
+    NULL,
     null_media_type_id,
 
     null_size,

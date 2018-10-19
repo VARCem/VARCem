@@ -8,7 +8,7 @@
  *
  *		String definitions for "Dutch (Netherlands)" language.
  *
- * Version:	@(#)VARCem-DU.str	1.0.12	2018/10/01
+ * Version:	@(#)VARCem-DU.str	1.0.13	2018/10/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -46,7 +46,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,12
+#define STR_VERSION	1,0,13
 #define STR_AUTHOR	"Fred N. van Kempen"
 #define STR_EMAIL	"waltje@varcem.com"
 #define STR_NAME	"VARCem"
@@ -110,6 +110,8 @@
 #define STR_ENABLED	"Ingeschakeld"
 #define STR_OFF		"Uit"
 #define STR_ON		"Aan"
+#define STR_UNLOCK	"Niet Verwisselbaar"
+#define STR_LOCK	"Verwisselbaar"
 #define STR_TYPE	"Type"
 #define STR_FILENAME	"Bestandsnaam:"
 #define STR_PROGRESS	"Voortgang:"
@@ -291,12 +293,13 @@
 /* UI: Status Bar (3900.) */
 #define STR_3900	"(leeg)"
 #define STR_3901	"(PC station %c:)"
-#define STR_3902	" [Schrijfbeveiligd"
-#define STR_3903	"&Nieuw bestand..."
-#define STR_3904	"&Bestaand bestand..."
-#define STR_3905	"&Her-laad vorige bestand"
-#define STR_3906	"&Uitwerpen"
-#define STR_3907	"&Terugmelding disk-wissel"
+#define STR_3902	" [Schrijfbeveiligd]"
+#define STR_3903	" [Niet verwijderbaar]"
+#define STR_3904	"&Nieuw bestand..."
+#define STR_3905	"&Bestaand bestand..."
+#define STR_3906	"&Her-laad vorige bestand"
+#define STR_3907	"&Uitwerpen"
+#define STR_3908	"&Terugmelding disk-wissel"
 
 #define STR_3910	"Diskette %i (%s): %ls"
 #define STR_3911	"Alle diskettebestanden\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced Sector bestanden\0*.imd;*.json;*.td0\0Basic Sector bestanden\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux bestanden\0*.fdi\0Surface bestanden\0*.86f\0Alle bestanden\0*.*\0"

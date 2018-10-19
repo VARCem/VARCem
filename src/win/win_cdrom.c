@@ -10,7 +10,9 @@
  *		Implementation of the CD-ROM host drive IOCTL interface for
  *		Windows using SCSI Passthrough Direct.
  *
- * Version:	@(#)win_cdrom.c	1.0.11 	2018/10/17
+ * FIXME:	Not yet fully working!  Getting there, though ;-)
+ *
+ * Version:	@(#)win_cdrom.c	1.0.12 	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -70,9 +72,11 @@ enum {
 typedef struct {
     HANDLE	hIOCTL;
 
-    int		is_playing;
-    int		disc_changed;
-    int		capacity_read;
+    int8_t	is_playing;
+    int8_t	is_ready;
+    int8_t	disc_changed;
+    int8_t	capacity_read;
+
     int		requested_blocks,
 		actual_requested_blocks;
     int		last_subchannel_pos;
@@ -154,13 +158,16 @@ get_toc(cdrom_t *dev, CDROM_TOC *toc)
     DWORD size;
     int ret;
 
-    DEBUG("IOCTL get_toc(%c)\n", dev->host_drive);
+    DEBUG("IOCTL get_toc(%c): ", dev->host_drive);
 
     ret = DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC,
 			  NULL, 0, toc, sizeof(CDROM_TOC), &size, NULL);
-    if (! ret) return(0);
+    if (! ret) {
+	DEBUG(" ERR %lu\n", GetLastError());
+	return(0);
+    }
+    DEBUG("OK\n");
 
-    DEBUG(">> current toc:\n");
 #ifdef _DEBUG
     toc_dump(toc, 0);
 #endif
@@ -169,18 +176,510 @@ get_toc(cdrom_t *dev, CDROM_TOC *toc)
 }
 
 
-/* Compare two copies of the TOC. */
+/*
+ * Check if there is media in the drive.
+ *
+ * We use the VERIFY2 variant of the ioctl code, as
+ * that is faster. Since we get called often, speed
+ * is important here!
+ */
 static int
-cmp_toc(CDROM_TOC *a, CDROM_TOC *b)
+check_media(cdrom_t *dev)
 {
-    if ((a->TrackData[a->LastTrack].Address[1] ==
-	 b->TrackData[b->LastTrack].Address[1]) &&
-	(a->TrackData[a->LastTrack].Address[2] ==
-	 b->TrackData[b->LastTrack].Address[2]) &&
-	(a->TrackData[a->LastTrack].Address[3] ==
-	 b->TrackData[b->LastTrack].Address[3])) return(1);
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    DWORD size;
 
-    return(0);
+    if (! DeviceIoControl(hdev->hIOCTL, IOCTL_STORAGE_CHECK_VERIFY2,
+			  NULL, 0, NULL, 0, &size, NULL)) {
+	if (GetLastError() == ERROR_NOT_READY) return 0;
+
+	return -1;
+    }
+
+    return 1;
+}
+
+
+static int
+get_last_block(cdrom_t *dev, int msf, int maxlen, int single)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    uint32_t address, lb;
+    int c;
+
+    DEBUG("IOCTL get_last_block(%c)\n", dev->host_drive);
+
+    /* This should never happen. */
+    if (! dev->host_drive) return 0;
+
+    dev->cd_state = CD_STOPPED;
+
+    /* Grab the current TOC. */
+    if (hdev->disc_changed) {
+	if (! get_toc(dev, &hdev->toc)) return 0;
+
+	hdev->disc_changed = 0;
+    }
+
+    lb = 0;
+    for (c = 0; c <= hdev->toc.LastTrack; c++) {
+	address = MSFtoLBA(hdev->toc.TrackData[c].Address[1],
+			   hdev->toc.TrackData[c].Address[2],
+			   hdev->toc.TrackData[c].Address[3]);
+	if (address > lb)
+		lb = address;
+    }
+
+    return lb;
+}
+
+
+static void read_capacity(cdrom_t *dev, uint8_t *b);
+
+
+/* API: check if device is ready for use. */
+static int
+ioctl_ready(cdrom_t *dev)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+
+    DEBUG("IOCTL ready(%c)\n", dev->host_drive);
+
+    /* This should never happen. */
+    if (! dev->host_drive) return 0;
+
+    /*
+     * On OPEN, we issue the GetStatus call, and
+     * then keep it 'up to date' using system event
+     * notifications, so there is no real need to
+     * call the function all the time.
+     */
+    if (! hdev->is_ready) return 0;
+
+    if (hdev->disc_changed) {
+	/* The disc has changed, so re-read the TOC. */
+	if (! get_toc(dev, &hdev->toc)) return 0;
+
+	/* Mark as stopped and ready. */
+	dev->cd_state = CD_STOPPED;
+
+	/* We now have a valid TOC loaded. */
+	hdev->disc_changed = 0;
+
+	/*
+	 * With this, we read the READ CAPACITY command output
+	 * from the host drive into our cache buffer.
+	 */
+	hdev->capacity_read = 0;
+	read_capacity(dev, NULL);
+
+	dev->cdrom_capacity = get_last_block(dev, 0, 4096, 0);
+	DEBUG("IOCTL ready: capacity = %lu\n", dev->cdrom_capacity);
+
+	if (dev->host_drive != dev->prev_host_drive)
+		dev->prev_host_drive = dev->host_drive;
+
+	/* Notify the drive. */
+	if (dev->insert)
+		dev->insert(dev->p);
+    }
+
+    /* OK, we handled it. */
+    return 1;
+}
+
+
+/* API: we got a Medium Changed notification. */
+static void
+notify_change(cdrom_t *dev, int media_present)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+
+    INFO("IOCTL media update: %i\n", media_present);
+
+    hdev->is_ready = media_present;
+    hdev->disc_changed = 1;
+}
+
+
+/*
+ * API: enable or disable the removal of media in the drive.
+ *
+ * Not all drives support this, so it is optional.
+ */
+static void
+media_lock(cdrom_t *dev, int lock)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    PREVENT_MEDIA_REMOVAL pmr;
+    DWORD size;
+
+    /* See if we can prevent media removal on this device. */
+    pmr.PreventMediaRemoval = (lock) ? TRUE : FALSE;
+    if (! DeviceIoControl(hdev->hIOCTL, IOCTL_STORAGE_MEDIA_REMOVAL,
+			  &pmr, sizeof(pmr), NULL, 0, &size, NULL)) {
+	ERRLOG("HostCDROM: unable to %sable Media Removal on volume %c:\n",
+				dev->host_drive, (lock) ? "dis" : "en");
+	dev->can_lock = 0;
+	dev->is_locked = 0;
+    } else {
+	ERRLOG("HostCDROM: Media Removal on volume %c: %sabled\n",
+				dev->host_drive, (lock) ? "dis" : "en");
+	dev->can_lock = 1;
+	dev->is_locked = lock;
+    }
+}
+
+
+static uint32_t
+ioctl_size(cdrom_t *dev)
+{
+    uint8_t buffer[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    uint32_t capacity = 0;
+
+    read_capacity(dev, buffer);
+
+    capacity = ((uint32_t)buffer[0]) << 24;
+    capacity |= ((uint32_t)buffer[1]) << 16;
+    capacity |= ((uint32_t)buffer[2]) << 8;
+    capacity |= (uint32_t)buffer[3];
+
+    return capacity + 1;
+}
+
+
+static int
+ioctl_status(cdrom_t *dev)
+{
+    int ret = CD_STATUS_EMPTY;
+
+    /* This should never happen. */
+    if (! dev->host_drive) return ret;
+
+    if (! ioctl_ready(dev)) return ret;
+
+    switch(dev->cd_state) {
+	case CD_PLAYING:
+		ret = CD_STATUS_PLAYING;
+		break;
+
+	case CD_PAUSED:
+		ret = CD_STATUS_PAUSED;
+		break;
+
+	case CD_STOPPED:
+		ret = CD_STATUS_STOPPED;
+		break;
+
+	default:
+		break;
+    }
+
+    return ret;
+}
+
+
+/* API: stop the CD-ROM device. */
+static void
+ioctl_stop(cdrom_t *dev)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+
+    /* This should never happen. */
+    if (! dev->host_drive) return;
+
+    if (hdev->is_playing)
+	hdev->is_playing = 0;
+
+    dev->cd_state = CD_STOPPED;
+}
+
+
+static void
+ioctl_close(cdrom_t *dev)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    DWORD size;
+
+    DEBUG("IOCTL close(%i) handle=%08lx\n", hdev->is_playing, hdev->hIOCTL);
+
+    hdev->is_playing = 0;
+
+    ioctl_stop(dev);
+
+    hdev->disc_changed = 1;
+
+    /* Unlock the media in the drive if we locked it. */
+    if (dev->can_lock && dev->is_locked)
+	media_lock(dev, 0);
+
+    /* See if we can now unlock this volume. */
+    if (! DeviceIoControl(hdev->hIOCTL, FSCTL_UNLOCK_VOLUME,
+			  NULL, 0, NULL, 0, &size, NULL)) {
+	ERRLOG("HostCDROM: unable to unlock volume %c: (ignored)\n",
+						dev->host_drive);
+    }
+
+    /* All done, close the device. */
+    CloseHandle(hdev->hIOCTL);
+
+    free(hdev);
+
+    dev->local = NULL;
+    dev->reset = NULL;
+}
+
+
+static void
+ioctl_eject(cdrom_t *dev)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    DWORD size;
+
+    /* This should never happen. */
+    if (! dev->host_drive) return;
+
+    if (hdev->is_playing) {
+	hdev->is_playing = 0;
+	ioctl_stop(dev);
+    }
+
+    dev->cd_state = CD_STOPPED;
+
+    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_STORAGE_EJECT_MEDIA,
+			  NULL, 0, NULL, 0, &size, NULL);
+}
+
+
+static void
+ioctl_load(cdrom_t *dev)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    DWORD size;
+
+    /* This should never happen. */
+    if (! dev->host_drive) return;
+
+    if (hdev->is_playing) {
+	hdev->is_playing = 0;
+
+	ioctl_stop(dev);
+    }
+
+    dev->cd_state = CD_STOPPED;
+
+    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_STORAGE_LOAD_MEDIA,
+			  NULL, 0, NULL, 0, &size, NULL);
+
+    /*
+     * With this, we read the READ CAPACITY command output
+     * from the host drive into our cache buffer.
+     */
+    hdev->capacity_read = 0;
+    read_capacity(dev, NULL);
+
+    dev->cdrom_capacity = get_last_block(dev, 0, 4096, 0);
+}
+
+
+static int
+read_toc(cdrom_t *dev, uint8_t *b, uint8_t starttrack, int msf, int maxlen, int single)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    uint32_t last_block;
+    uint32_t address;
+    uint32_t temp;
+    DWORD size;
+    int c, d, len = 4;
+
+    DEBUG("IOCTL read_toc(%i) msf=%i maxlen=%i single=%i\n",
+	  starttrack, msf, maxlen, single);
+
+    /* This should never happen. */
+    if (! dev->host_drive) return 0;
+
+    dev->cd_state = CD_STOPPED;
+
+    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC,
+			  NULL, 0, &hdev->toc, sizeof(hdev->toc), &size, NULL);
+
+    hdev->disc_changed = 0;
+
+    b[2] = hdev->toc.FirstTrack;
+    b[3] = hdev->toc.LastTrack;
+
+    d = 0;
+    for (c = 0; c <= hdev->toc.LastTrack; c++) {
+	if (hdev->toc.TrackData[c].TrackNumber >= starttrack) {
+		d = c;
+		break;
+	}
+    }
+
+    last_block = 0;
+
+    for (c = d; c<= hdev->toc.LastTrack; c++) {
+	if ((len + 8) > maxlen) break;
+
+	b[len++] = 0; /*Reserved*/
+	b[len++] = (hdev->toc.TrackData[c].Adr<<4)|hdev->toc.TrackData[c].Control;
+	b[len++] = hdev->toc.TrackData[c].TrackNumber;
+	b[len++] = 0; /*Reserved*/
+
+	address = MSFtoLBA(hdev->toc.TrackData[c].Address[1],
+			   hdev->toc.TrackData[c].Address[2],
+				   hdev->toc.TrackData[c].Address[3]);
+
+	if (address > last_block)
+		last_block = address;
+
+	if (msf) {
+		b[len++] = hdev->toc.TrackData[c].Address[0];
+		b[len++] = hdev->toc.TrackData[c].Address[1];
+		b[len++] = hdev->toc.TrackData[c].Address[2];
+		b[len++] = hdev->toc.TrackData[c].Address[3];
+	} else {
+		temp = MSFtoLBA(hdev->toc.TrackData[c].Address[1],
+				hdev->toc.TrackData[c].Address[2],
+				hdev->toc.TrackData[c].Address[3]) - 150;
+		b[len++] = temp >> 24;
+		b[len++] = temp >> 16;
+		b[len++] = temp >> 8;
+		b[len++] = temp;
+	}
+
+	if (single) break;
+    }
+
+    b[0] = (uint8_t) (((len-2) >> 8) & 0xff);
+    b[1] = (uint8_t) ((len-2) & 0xff);
+
+    return len;
+}
+
+
+static int
+read_toc_session(cdrom_t *dev, uint8_t *b, int msf, int maxlen)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    CDROM_TOC_SESSION_DATA toc;
+    CDROM_READ_TOC_EX toc_ex;
+    uint32_t temp;
+    DWORD size;
+    int len = 4;
+
+    /* This should never happen. */
+    if (! dev->host_drive) return 0;
+
+    dev->cd_state = CD_STOPPED;
+    memset(&toc, 0, sizeof(toc));
+
+    memset(&toc_ex, 0, sizeof(toc_ex));
+    toc_ex.Format = CDROM_READ_TOC_EX_FORMAT_SESSION;
+    toc_ex.Msf = msf;
+    toc_ex.SessionTrack = 0;
+
+    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC_EX,
+			  &toc_ex, sizeof(toc_ex),
+			  &toc, sizeof(toc), &size, NULL);
+
+    b[2] = toc.FirstCompleteSession;
+    b[3] = toc.LastCompleteSession;
+    b[len++] = 0; /*Reserved*/
+    b[len++] = (toc.TrackData[0].Adr << 4) | toc.TrackData[0].Control;
+    b[len++] = toc.TrackData[0].TrackNumber;
+    b[len++] = 0; /*Reserved*/
+    if (msf) {
+	b[len++] = toc.TrackData[0].Address[0];
+	b[len++] = toc.TrackData[0].Address[1];
+	b[len++] = toc.TrackData[0].Address[2];
+	b[len++] = toc.TrackData[0].Address[3];
+    } else {
+	temp = MSFtoLBA(toc.TrackData[0].Address[1],
+			toc.TrackData[0].Address[2],
+			toc.TrackData[0].Address[3]) - 150;
+	b[len++] = temp >> 24;
+	b[len++] = temp >> 16;
+	b[len++] = temp >> 8;
+	b[len++] = temp;
+    }
+
+    return len;
+}
+
+
+static int
+read_toc_raw(cdrom_t *dev, uint8_t *b, int maxlen)
+{
+    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
+    CDROM_TOC_FULL_TOC_DATA toc;
+    CDROM_READ_TOC_EX toc_ex;
+    DWORD size;
+    int i, len = 4;
+
+    /* This should never happen. */
+    if (! dev->host_drive) return 0;
+
+    dev->cd_state = CD_STOPPED;
+    memset(&toc, 0, sizeof(toc));
+
+    memset(&toc_ex, 0, sizeof(toc_ex));
+    toc_ex.Format = CDROM_READ_TOC_EX_FORMAT_FULL_TOC;
+    toc_ex.Msf = 1;
+    toc_ex.SessionTrack = 0;
+
+    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC_EX,
+			  &toc_ex, sizeof(toc_ex),
+			  &toc, sizeof(toc), &size, NULL);
+
+    if (maxlen >= 3)
+	b[2] = toc.FirstCompleteSession;
+    if (maxlen >= 4)
+	b[3] = toc.LastCompleteSession;
+
+    if (len >= maxlen)
+	return len;
+
+    size -= sizeof(CDROM_TOC_FULL_TOC_DATA);
+    size /= sizeof(toc.Descriptors[0]);
+
+    for (i = 0; i <= (int)size; i++) {
+	b[len++] = toc.Descriptors[i].SessionNumber;
+	if (len == maxlen)
+		return len;
+	b[len++] = (toc.Descriptors[i].Adr<<4)|toc.Descriptors[i].Control;
+	if (len == maxlen)
+		return len;
+	b[len++] = 0;
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].Reserved1; /*Reserved*/
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].MsfExtra[0];
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].MsfExtra[1];
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].MsfExtra[2];
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].Zero;
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].Msf[0];
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].Msf[1];
+	if (len == maxlen)
+		return len;
+	b[len++] = toc.Descriptors[i].Msf[2];
+	if (len == maxlen)
+		return len;
+    }
+
+    return len;
 }
 
 
@@ -261,8 +760,8 @@ audio_play(cdrom_t *dev, uint32_t pos, uint32_t len, int is_msf)
     uint32_t start_msf = 0, end_msf = 0;
     int m = 0, s = 0, f = 0;
 
-    if (! dev->host_drive)
-	return 0;
+    /* This should never happen. */
+    if (! dev->host_drive) return 0;
 
     DEBUG("IOCTL audio_play(%08lx) len=%08lx msf=%i\n", pos, len, is_msf);
 
@@ -337,8 +836,8 @@ audio_pause(cdrom_t *dev)
 {
     cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
 
-    if (! dev->host_drive)
-	return;
+    /* This should never happen. */
+    if (! dev->host_drive) return;
 
     DEBUG("IOCTL: audio_pause(%i) state=%d\n",
 		hdev->is_playing, dev->cd_state);
@@ -354,8 +853,8 @@ audio_resume(cdrom_t *dev)
 {
     cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
 
-    if (! dev->host_drive)
-	return;
+    /* This should never happen. */
+    if (! dev->host_drive) return;
 
     DEBUG("IOCTL: audio_resume(%i) state=%d\n",
 		hdev->is_playing, dev->cd_state);
@@ -444,147 +943,6 @@ audio_callback(cdrom_t *dev, int16_t *bufp, int len)
 }
 
 
-/* API: stop the CD-ROM device. */
-static void
-ioctl_stop(cdrom_t *dev)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-
-    if (! dev->host_drive)
-	return;
-
-    if (hdev->is_playing)
-	hdev->is_playing = 0;
-
-    dev->cd_state = CD_STOPPED;
-}
-
-
-/* API: check if device is ready for use. */
-static int
-ioctl_ready(cdrom_t *dev)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    CDROM_TOC toc;
-
-    DEBUG("IOCTL ready(%c)\n", dev->host_drive);
-
-    if (! dev->host_drive)
-	return 0;
-
-    /* Grab the current TOC. */
-    if (! get_toc(dev, &toc)) return 0;
-
-    /* Same as the one we had? */
-    if (!cmp_toc(&toc, &hdev->toc) || hdev->disc_changed ||
-	(dev->host_drive != dev->prev_host_drive)) {
-
-	/* Nope, mark as stopped and ready. */
-	dev->cd_state = CD_STOPPED;
-	if (dev->host_drive != dev->prev_host_drive)
-		dev->prev_host_drive = dev->host_drive;
-
-	return 1;
-    }
-
-    return 1;
-}
-
-
-static int
-get_last_block(cdrom_t *dev, uint8_t starttrack, int msf, int maxlen, int single)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    uint32_t address, lb;
-    CDROM_TOC toc;
-    int c;
-
-    DEBUG("IOCTL get_last_block(%c)\n", dev->host_drive);
-
-    if (! dev->host_drive)
-	return 0;
-
-    dev->cd_state = CD_STOPPED;
-
-    /* Grab the current TOC. */
-    if (! get_toc(dev, &toc)) return 0;
-
-    hdev->disc_changed = 0;
-
-    lb = 0;
-    for (c = starttrack; c <= toc.LastTrack; c++) {
-	address = MSFtoLBA(toc.TrackData[c].Address[1],
-			   toc.TrackData[c].Address[2],
-			   toc.TrackData[c].Address[3]);
-	if (address > lb)
-		lb = address;
-    }
-
-    return lb;
-}
-
-
-static void read_capacity(cdrom_t *dev, uint8_t *b);
-
-
-/* API: check if medium has changed. */
-static int
-medium_changed(cdrom_t *dev)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    CDROM_TOC toc;
-
-    DEBUG("IOCTL medium_changed(%c)\n", dev->host_drive);
-
-    if (! dev->host_drive)
-	return 0;
-
-    /* Grab the current TOC. */
-    if (! get_toc(dev, &toc)) return 0;
-
-    if (hdev->disc_changed || (dev->host_drive != dev->prev_host_drive)) {
-	dev->cd_state = CD_STOPPED;
-	hdev->toc = toc;
-	hdev->disc_changed = 0;
-
-	if (dev->host_drive != dev->prev_host_drive)
-		dev->prev_host_drive = dev->host_drive;
-
-	/*
-	 * With this, we read the READ CAPACITY command output
-	 * from the host drive into our cache buffer.
-	 */
-	hdev->capacity_read = 0;
-	read_capacity(dev, NULL);
-
-	dev->cdrom_capacity = get_last_block(dev, 0, 0, 4096, 0);
-	DEBUG("IOCTL medium_changed: capacity = %lu\n", dev->cdrom_capacity);
-
-	return 1;
-    }
-
-    if (! cmp_toc(&toc, &hdev->toc)) {
-	dev->cd_state = CD_STOPPED;
-	DEBUG("IOCTL: setting TOC...\n");
-	hdev->toc = toc;
-
-	/*
-	 * With this, we read the READ CAPACITY command output
-	 * from the host drive into our cache buffer.
-	 */
-	hdev->capacity_read = 0;
-	read_capacity(dev, NULL);
-
-	dev->cdrom_capacity = get_last_block(dev, 0, 0, 4096, 0);
-DEBUG("IOCTL medium_changed: capacity = %lu\n", dev->cdrom_capacity);
-
-	return 1;
-    }
-
-    return 0;
-}
-
-
 static uint8_t
 get_current_subchannel(cdrom_t *dev, uint8_t *b, int msf)
 {
@@ -596,6 +954,7 @@ get_current_subchannel(cdrom_t *dev, uint8_t *b, int msf)
     DWORD size;
     int c, pos = 0, track;
 
+    /* This should never happen. */
     if (! dev->host_drive) return 0;
 
     cdpos = dev->seek_pos;
@@ -697,58 +1056,6 @@ get_current_subchannel(cdrom_t *dev, uint8_t *b, int msf)
     }
 
     return 0x13;
-}
-
-
-static void
-ioctl_eject(cdrom_t *dev)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    DWORD size;
-
-    if (! dev->host_drive)
-	return;
-
-    if (hdev->is_playing) {
-	hdev->is_playing = 0;
-	ioctl_stop(dev);
-    }
-
-    dev->cd_state = CD_STOPPED;
-
-    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_STORAGE_EJECT_MEDIA,
-			  NULL, 0, NULL, 0, &size, NULL);
-}
-
-
-static void
-ioctl_load(cdrom_t *dev)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    DWORD size;
-
-    if (! dev->host_drive)
-	return;
-
-    if (hdev->is_playing) {
-	hdev->is_playing = 0;
-
-	ioctl_stop(dev);
-    }
-
-    dev->cd_state = CD_STOPPED;
-
-    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_STORAGE_LOAD_MEDIA,
-			  NULL, 0, NULL, 0, &size, NULL);
-
-    /*
-     * With this, we read the READ CAPACITY command output
-     * from the host drive into our cache buffer.
-     */
-    hdev->capacity_read = 0;
-    read_capacity(dev, NULL);
-
-    dev->cdrom_capacity = get_last_block(dev, 0, 0, 4096, 0);
 }
 
 
@@ -1137,14 +1444,14 @@ get_sector_data_type(cdrom_t *dev, uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b
 }
 
 
+#if 0
 static void
 validate_toc(cdrom_t *dev)
 {
     cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
     DWORD size;
 
-    if (! dev->host_drive)
-	return;
+    if (! dev->host_drive) return;
 
     dev->cd_state = CD_STOPPED;
 
@@ -1155,18 +1462,27 @@ validate_toc(cdrom_t *dev)
 			  &hdev->toc, sizeof(hdev->toc), &size, NULL);
     hdev->disc_changed = 0;
 }
+#endif
 
 
+/* API: pass through a SCSI command to the host device. */
 static int
-pass_through(cdrom_t *dev, uint8_t *in_cdb, uint8_t *b, uint32_t *len)
+pass_through(cdrom_t *dev, uint8_t *buffer, int sector, int is_msf,
+	     int cdrom_sector_type, int cdrom_sector_flags, int *len)
 {
+#if 0
     cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
     const UCHAR cdb[12];
     uint32_t temp_len = 0;
     int temp_block_length = 0;
-    int ret = 0, buffer_pos = 0;
-    int i;
-	
+    int i = 0, buffer_pos = 0;
+#endif
+    int ret = 0;
+
+    DEBUG("IOCTL pass_through(%i) msf=%i type=%i flags=%04x\n",
+	  sector, is_msf, cdrom_sector_type, cdrom_sector_flags);
+
+#if 0
     if (in_cdb[0] == 0x43) {
 	/*
 	 * This is a read TOC, so we have to validate
@@ -1206,292 +1522,16 @@ pass_through(cdrom_t *dev, uint8_t *in_cdb, uint8_t *b, uint32_t *len)
 		b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
 	
     DEBUG("IOCTL Returned value: %i\n", ret);
+#endif
 	
     return ret;
 }
 
 
-static int
-readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int ismsf,
-	       int cdrom_sector_type, int cdrom_sector_flags, int *len)
-{
-//    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-
-    DEBUG("IOCTL read_raw(%i) msf=%i type=%i flags=%04x\n",
-	  sector, ismsf, cdrom_sector_type, cdrom_sector_flags);
-
-    return 0;
-}
-
-
-static int
-read_toc(cdrom_t *dev, uint8_t *b, uint8_t starttrack, int msf, int maxlen, int single)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    uint32_t last_block;
-    uint32_t address;
-    uint32_t temp;
-    DWORD size;
-    int c, d, len = 4;
-
-    DEBUG("IOCTL read_toc(%i) msf=%i maxlen=%i single=%i\n",
-	  starttrack, msf, maxlen, single);
-
-    if (! dev->host_drive)
-	return 0;
-
-    dev->cd_state = CD_STOPPED;
-
-    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC,
-			  NULL, 0, &hdev->toc, sizeof(hdev->toc), &size, NULL);
-
-    hdev->disc_changed = 0;
-
-    b[2] = hdev->toc.FirstTrack;
-    b[3] = hdev->toc.LastTrack;
-
-    d = 0;
-    for (c = 0; c <= hdev->toc.LastTrack; c++) {
-	if (hdev->toc.TrackData[c].TrackNumber >= starttrack) {
-		d = c;
-		break;
-	}
-    }
-
-    last_block = 0;
-
-    for (c = d; c<= hdev->toc.LastTrack; c++) {
-	if ((len + 8) > maxlen) break;
-
-	b[len++] = 0; /*Reserved*/
-	b[len++] = (hdev->toc.TrackData[c].Adr<<4)|hdev->toc.TrackData[c].Control;
-	b[len++] = hdev->toc.TrackData[c].TrackNumber;
-	b[len++] = 0; /*Reserved*/
-
-	address = MSFtoLBA(hdev->toc.TrackData[c].Address[1],
-			   hdev->toc.TrackData[c].Address[2],
-				   hdev->toc.TrackData[c].Address[3]);
-
-	if (address > last_block)
-		last_block = address;
-
-	if (msf) {
-		b[len++] = hdev->toc.TrackData[c].Address[0];
-		b[len++] = hdev->toc.TrackData[c].Address[1];
-		b[len++] = hdev->toc.TrackData[c].Address[2];
-		b[len++] = hdev->toc.TrackData[c].Address[3];
-	} else {
-		temp = MSFtoLBA(hdev->toc.TrackData[c].Address[1],
-				hdev->toc.TrackData[c].Address[2],
-				hdev->toc.TrackData[c].Address[3]) - 150;
-		b[len++] = temp >> 24;
-		b[len++] = temp >> 16;
-		b[len++] = temp >> 8;
-		b[len++] = temp;
-	}
-
-	if (single) break;
-    }
-
-    b[0] = (uint8_t) (((len-2) >> 8) & 0xff);
-    b[1] = (uint8_t) ((len-2) & 0xff);
-
-    return len;
-}
-
-
-static int
-read_toc_session(cdrom_t *dev, uint8_t *b, int msf, int maxlen)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    CDROM_TOC_SESSION_DATA toc;
-    CDROM_READ_TOC_EX toc_ex;
-    uint32_t temp;
-    DWORD size;
-    int len = 4;
-
-    if (! dev->host_drive)
-	return 0;
-
-    dev->cd_state = CD_STOPPED;
-    memset(&toc, 0, sizeof(toc));
-
-    memset(&toc_ex, 0, sizeof(toc_ex));
-    toc_ex.Format = CDROM_READ_TOC_EX_FORMAT_SESSION;
-    toc_ex.Msf = msf;
-    toc_ex.SessionTrack = 0;
-
-    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC_EX,
-			  &toc_ex, sizeof(toc_ex),
-			  &toc, sizeof(toc), &size, NULL);
-
-    b[2] = toc.FirstCompleteSession;
-    b[3] = toc.LastCompleteSession;
-    b[len++] = 0; /*Reserved*/
-    b[len++] = (toc.TrackData[0].Adr << 4) | toc.TrackData[0].Control;
-    b[len++] = toc.TrackData[0].TrackNumber;
-    b[len++] = 0; /*Reserved*/
-    if (msf) {
-	b[len++] = toc.TrackData[0].Address[0];
-	b[len++] = toc.TrackData[0].Address[1];
-	b[len++] = toc.TrackData[0].Address[2];
-	b[len++] = toc.TrackData[0].Address[3];
-    } else {
-	temp = MSFtoLBA(toc.TrackData[0].Address[1],
-			toc.TrackData[0].Address[2],
-			toc.TrackData[0].Address[3]) - 150;
-	b[len++] = temp >> 24;
-	b[len++] = temp >> 16;
-	b[len++] = temp >> 8;
-	b[len++] = temp;
-    }
-
-    return len;
-}
-
-
-static int
-read_toc_raw(cdrom_t *dev, uint8_t *b, int maxlen)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    CDROM_TOC_FULL_TOC_DATA toc;
-    CDROM_READ_TOC_EX toc_ex;
-    DWORD size;
-    int i, len = 4;
-
-    if (! dev->host_drive)
-	return 0;
-
-    dev->cd_state = CD_STOPPED;
-    memset(&toc, 0, sizeof(toc));
-
-    memset(&toc_ex, 0, sizeof(toc_ex));
-    toc_ex.Format = CDROM_READ_TOC_EX_FORMAT_FULL_TOC;
-    toc_ex.Msf = 1;
-    toc_ex.SessionTrack = 0;
-
-    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC_EX,
-			  &toc_ex, sizeof(toc_ex),
-			  &toc, sizeof(toc), &size, NULL);
-
-    if (maxlen >= 3)
-	b[2] = toc.FirstCompleteSession;
-    if (maxlen >= 4)
-	b[3] = toc.LastCompleteSession;
-
-    if (len >= maxlen)
-	return len;
-
-    size -= sizeof(CDROM_TOC_FULL_TOC_DATA);
-    size /= sizeof(toc.Descriptors[0]);
-
-    for (i = 0; i <= (int)size; i++) {
-	b[len++] = toc.Descriptors[i].SessionNumber;
-	if (len == maxlen)
-		return len;
-	b[len++] = (toc.Descriptors[i].Adr<<4)|toc.Descriptors[i].Control;
-	if (len == maxlen)
-		return len;
-	b[len++] = 0;
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].Reserved1; /*Reserved*/
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].MsfExtra[0];
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].MsfExtra[1];
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].MsfExtra[2];
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].Zero;
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].Msf[0];
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].Msf[1];
-	if (len == maxlen)
-		return len;
-	b[len++] = toc.Descriptors[i].Msf[2];
-	if (len == maxlen)
-		return len;
-    }
-
-    return len;
-}
-
-
-static uint32_t
-ioctl_size(cdrom_t *dev)
-{
-    uint8_t buffer[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    uint32_t capacity = 0;
-
-    read_capacity(dev, buffer);
-
-    capacity = ((uint32_t)buffer[0]) << 24;
-    capacity |= ((uint32_t)buffer[1]) << 16;
-    capacity |= ((uint32_t)buffer[2]) << 8;
-    capacity |= (uint32_t)buffer[3];
-
-    return capacity + 1;
-}
-
-
-static int
-ioctl_status(cdrom_t *dev)
-{
-    if (!(ioctl_ready(dev)) && (dev->host_drive <= 0))
-	return CD_STATUS_EMPTY;
-
-    switch(dev->cd_state) {
-	case CD_PLAYING:
-		return CD_STATUS_PLAYING;
-
-	case CD_PAUSED:
-		return CD_STATUS_PAUSED;
-
-	case CD_STOPPED:
-		return CD_STATUS_STOPPED;
-
-	default:
-		break;
-    }
-
-    return CD_STATUS_EMPTY;
-}
-
-
-static void
-ioctl_close(cdrom_t *dev)
-{
-    cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-
-    DEBUG("IOCTL close(%i) handle=%08lx\n", hdev->is_playing, hdev->hIOCTL);
-
-    hdev->is_playing = 0;
-
-    ioctl_stop(dev);
-
-    hdev->disc_changed = 1;
-
-    if (hdev->hIOCTL != NULL)
-	CloseHandle(hdev->hIOCTL);
-
-    free(hdev);
-
-    dev->local = NULL;
-    dev->reset = NULL;
-}
-
-
 static const cdrom_ops_t cdrom_host_ops = {
     ioctl_ready,
-    medium_changed,
+    notify_change,
+    media_lock,
     media_type_id,
 
     ioctl_size,
@@ -1513,7 +1553,7 @@ static const cdrom_ops_t cdrom_host_ops = {
     audio_callback,
 
     get_current_subchannel,
-    readsector_raw
+    pass_through
 };
 
 
@@ -1521,8 +1561,6 @@ static void
 ioctl_reset(cdrom_t *dev)
 {
     cdrom_host_t *hdev = (cdrom_host_t *)dev->local;
-    CDROM_TOC toc;
-    DWORD size;
 
     DEBUG("IOCTL reset(%c) handle=%08lx\n", dev->host_drive, hdev->hIOCTL);
 
@@ -1530,54 +1568,60 @@ ioctl_reset(cdrom_t *dev)
 	hdev->disc_changed = 1;
 	return;
     }
-        
-    memset(&toc, 0x00, sizeof(toc));
-    (void)DeviceIoControl(hdev->hIOCTL, IOCTL_CDROM_READ_TOC,
-			  NULL, 0, &toc, sizeof(toc), &size, NULL);
-    hdev->toc = toc;
 
-#ifdef _DEBUG
-    toc_dump(&hdev->toc, 0);
-#endif
+    /* Grab the current TOC. */
+    if (! get_toc(dev, &hdev->toc)) return;
 
     hdev->disc_changed = 0;
 }
 
 
+/* API: open a host device and attach it. */
 int
 cdrom_host_open(cdrom_t *dev, char d)
 {
     cdrom_host_t *hdev;
+    DWORD size;
 
     /* Allocate our control block. */
     hdev = (cdrom_host_t *)mem_alloc(sizeof(cdrom_host_t));
     swprintf(hdev->path, sizeof_w(hdev->path), L"\\\\.\\%c:", d);
-    hdev->disc_changed = 1;
     dev->local = hdev;
 
+    /* Create a handle to the device. */
     hdev->hIOCTL = CreateFile(hdev->path,
-			      GENERIC_READ | GENERIC_WRITE,
-			      FILE_SHARE_READ | FILE_SHARE_WRITE,
+			      FILE_READ_ATTRIBUTES|GENERIC_READ|GENERIC_WRITE,
+			      FILE_SHARE_READ|FILE_SHARE_WRITE,
 			      NULL, OPEN_EXISTING, 0, NULL);
-
     DEBUG("IOCTL open(%ls) = %08lx\n", hdev->path, hdev->hIOCTL);
 
+    /* See if we can lock this drive for exclusive access. */
+    if (! DeviceIoControl(hdev->hIOCTL, FSCTL_LOCK_VOLUME,
+			  NULL, 0, NULL, 0, &size, NULL)) {
+	ERRLOG("HostCDROM: unable to lock volume %c: (ignored)\n", d);
+    } else
+	ERRLOG("HostCDROM: volume %c: locked\n", d);
+
+    /* See if we have media in the drive. */
+    hdev->is_ready = check_media(dev);
+    hdev->disc_changed = 1;
+
+    /*
+     * See if we can unlock the media in the drive. If that
+     * fails with an error, the drive does not support it.
+     * Otherwise, it will be unlocked.
+     */
+    (void)media_lock(dev, 0);
+
+    /* Looks good - attach to this cdrom instance. */
     dev->ops = &cdrom_host_ops;
     dev->reset = ioctl_reset;
 
-    /*
-     * With these, we read the READ CAPACITY command
-     * output from the host drive into our cache buffer.
-     */
-    hdev->capacity_read = 0;
-    read_capacity(dev, NULL);
+    /* If we have media, read TOC and capacity. */
+    if (hdev->is_ready)
+	(void)dev->ops->ready(dev);
 
-    DEBUG("Read capacity: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-	hdev->rcbuf[0], hdev->rcbuf[1], hdev->rcbuf[2], hdev->rcbuf[3],
-	hdev->rcbuf[4], hdev->rcbuf[5], hdev->rcbuf[6], hdev->rcbuf[7],
-	hdev->rcbuf[8], hdev->rcbuf[9], hdev->rcbuf[10], hdev->rcbuf[11],
-	hdev->rcbuf[12], hdev->rcbuf[13], hdev->rcbuf[14], hdev->rcbuf[15]);
-
+    /* All good! */
     return 0;
 }
 

@@ -8,7 +8,7 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * Version:	@(#)VARCem-BY.str	1.0.5	2018/10/01
+ * Version:	@(#)VARCem-BY.str	1.0.5	2018/10/18
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -110,6 +110,8 @@
 #define STR_ENABLED	"Даступна"
 #define STR_OFF		"Выкл"
 #define STR_ON		"Укл"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"Тып"
 #define STR_FILENAME	"Імя файла:"
 #define STR_PROGRESS	"Прагрэс:"
@@ -291,11 +293,12 @@
 #define STR_3900	"(пуста)"
 #define STR_3901	"(хост-дыск %c:)"
 #define STR_3902	" [Абаронены ад запісу]"
-#define STR_3903	"Новы вобраз.."
-#define STR_3904	"Открыть образ.."
-#define STR_3905	"Загрузіць папярэдні лад"
-#define STR_3906	"Выняць"
-#define STR_3907	"Паведаміць аб змене дыска"
+#define STR_3903	" [Locked]"
+#define STR_3904	"Новы вобраз.."
+#define STR_3905	"Открыть образ.."
+#define STR_3906	"Загрузіць папярэдні лад"
+#define STR_3907	"Выняць"
+#define STR_3908	"Паведаміць аб змене дыска"
 
 #define STR_3910	"Flopp %i (%s): %ls"
 #define STR_3911	"Усе вобразы\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Прасунутыя сектарная вобразы\0*.imd;*.json;*.td0\0Простые секторные вобразы\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Вобразы з магнітным патокам\0*.fdi\0Вобразы з бітавым патокам\0*.86f\0Усе файлы\0*.*\0"

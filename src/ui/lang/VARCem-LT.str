@@ -8,7 +8,7 @@
  *
  *		String definitions for "Lithuanian (Lithuania)" language.
  *
- * Version:	@(#)VARCem-LT.str	1.0.5	2018/10/01
+ * Version:	@(#)VARCem-LT.str	1.0.5	2018/10/18
  *
  * Author:	Vegas (emu-land.net)
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -111,6 +111,8 @@
 #define STR_ENABLED	"Pasiekiama"
 #define STR_OFF		"Išjungtas"
 #define STR_ON		"Ijungtas"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"Tipas"
 #define STR_FILENAME	"Failo pavadinimas:"
 #define STR_PROGRESS	"Progresas:"
@@ -293,11 +295,12 @@
 #define STR_3900	"(tuščia)"
 #define STR_3901	"(host diskas %c:)"
 #define STR_3902	" [Apsaugota irašymui]"
-#define STR_3903	"&Naujas atvaizdas.."
-#define STR_3904	"&įkelti atvaizdas.."
-#define STR_3905	"&Perkrauti ankstesnį atvaizda"
-#define STR_3906	"&Iškrauti"
-#define STR_3907	"&Pranešti apie disko keitimą"
+#define STR_3903	" [Locked]"
+#define STR_3904	"&Naujas atvaizdas.."
+#define STR_3905	"&įkelti atvaizdas.."
+#define STR_3906	"&Perkrauti ankstesnį atvaizda"
+#define STR_3907	"&Iškrauti"
+#define STR_3908	"&Pranešti apie disko keitimą"
 
 #define STR_3910	"Floppy %i (%s): %ls"
 #define STR_3911	"Visi atvaizdai\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Išplėstinių sektorių atvaizdai\0*.imd;*.json;*.td0\0Pagrindinių sektorių atvaizdai\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Srauto atvaizdai\0*.fdi\0Paviršiaus atvaizdai\0*.86f\0Visi failai\0*.*\0"

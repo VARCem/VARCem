@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.13	2018/10/17
+ * Version:	@(#)ui_stbar.c	1.0.13	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -207,6 +207,8 @@ ui_sb_tip_update(uint8_t tag)
 {
     wchar_t tip[512];
     wchar_t temp[512];
+    cdrom_t *cdev;
+    zip_drive_t *zdev;
     const wchar_t *str;
     const char *stransi;
     sbpart_t *ptr;
@@ -234,41 +236,43 @@ ui_sb_tip_update(uint8_t tag)
 
 	case SB_CDROM:
 		drive = ptr->tag & 0x0f;
-		bus = cdrom[drive].bus_type;
+		cdev = &cdrom[drive];
+		bus = cdev->bus_type;
 		id = IDS_3580 + (bus - 1);
 		wcscpy(temp, get_string(id));
-		str = cdrom[drive].image_path;
+		str = cdev->image_path;
 		if (*str == L'\0')
 			str = get_string(IDS_3900);		/*"(empty)"*/
-		if (cdrom[drive].host_drive == 200) {
-			swprintf(tip, sizeof_w(tip),
-				 get_string(IDS_3920), drive+1, temp, str);
-		} else if ((cdrom[drive].host_drive >= 'A') &&
-			   (cdrom[drive].host_drive <= 'Z')) {
-			swprintf(temp, sizeof_w(temp),
-				 get_string(IDS_3901),
-				 cdrom[drive].host_drive & ~0x20);
-			swprintf(tip, sizeof_w(tip),
-				 get_string(IDS_3920),
+		if (cdev->host_drive == 200) {
+			swprintf(tip, sizeof_w(tip), get_string(IDS_3920),
+				 drive+1, temp, str);
+		} else if ((cdev->host_drive >= 'A') &&
+			   (cdev->host_drive <= 'Z')) {
+			swprintf(temp, sizeof_w(temp), get_string(IDS_3901),
+				 cdev->host_drive & ~0x20);
+			swprintf(tip, sizeof_w(tip), get_string(IDS_3920),
 				 drive+1, get_string(id), temp);
 		} else {
-			swprintf(tip, sizeof_w(tip),
-				 get_string(IDS_3920), drive+1, temp, str);
+			swprintf(tip, sizeof_w(tip), get_string(IDS_3920),
+				 drive+1, temp, str);
 		}
+		if (cdev->is_locked)
+			wcscat(tip, get_string(IDS_3903));	/*"[LOCKED]"*/
 		break;
 
 	case SB_ZIP:
 		drive = ptr->tag & 0x0f;
-		bus = zip_drives[drive].bus_type;
+		zdev = &zip_drives[drive];
+		bus = zdev->bus_type;
 		id = IDS_3580 + (bus - 1);
 		wcscpy(temp, get_string(id));
-		type = zip_drives[drive].is_250 ? 250 : 100;
-		str = zip_drives[drive].image_path;
+		type = zdev->is_250 ? 250 : 100;
+		str = zdev->image_path;
 		if (*str == L'\0')
 			str = get_string(IDS_3900);		/*"(empty)"*/
-		swprintf(tip, sizeof_w(tip),
-			 get_string(IDS_3950), type, drive+1, temp, str);
-		if (zip_drives[drive].ui_writeprot)
+		swprintf(tip, sizeof_w(tip), get_string(IDS_3950),
+			 type, drive+1, temp, str);
+		if (zdev->ui_writeprot)
 			wcscat(tip, get_string(IDS_3902));	/*"[WP]"*/
 		break;
 
@@ -289,14 +293,12 @@ ui_sb_tip_update(uint8_t tag)
 
 	case SB_NETWORK:
 		stransi = network_card_getname(network_card);
-		swprintf(tip, sizeof_w(tip),
-			 get_string(IDS_3960), stransi);
+		swprintf(tip, sizeof_w(tip), get_string(IDS_3960), stransi);
 		break;
 
 	case SB_SOUND:
 		stransi = sound_card_getname(sound_card);
-		swprintf(tip, sizeof_w(tip),
-			 get_string(IDS_3970), stransi);
+		swprintf(tip, sizeof_w(tip), get_string(IDS_3970), stransi);
 		break;
 
 	default:
@@ -316,13 +318,13 @@ ui_sb_tip_update(uint8_t tag)
 static void
 menu_disk(int part, int drive)
 {
-    sb_menu_add_item(part, IDM_DISK_NOTIFY|drive, get_string(IDS_3907));
+    sb_menu_add_item(part, IDM_DISK_NOTIFY|drive, get_string(IDS_3908));
     sb_menu_add_item(part, -1, NULL);
-    sb_menu_add_item(part, IDM_DISK_IMAGE_NEW|drive, get_string(IDS_3903));
-    sb_menu_add_item(part, IDM_DISK_IMAGE_EXISTING|drive, get_string(IDS_3904));
-    sb_menu_add_item(part, IDM_DISK_RELOAD|drive, get_string(IDS_3905));
+    sb_menu_add_item(part, IDM_DISK_IMAGE_NEW|drive, get_string(IDS_3904));
+    sb_menu_add_item(part, IDM_DISK_IMAGE_EXIST|drive, get_string(IDS_3905));
+    sb_menu_add_item(part, IDM_DISK_RELOAD|drive, get_string(IDS_3906));
     sb_menu_add_item(part, -1, NULL);
-    sb_menu_add_item(part, IDM_DISK_EJECT|drive, get_string(IDS_3906));
+    sb_menu_add_item(part, IDM_DISK_EJECT|drive, get_string(IDS_3907));
 }
 
 
@@ -330,11 +332,11 @@ menu_disk(int part, int drive)
 static void
 menu_floppy(int part, int drive)
 {
-    sb_menu_add_item(part, IDM_FLOPPY_IMAGE_NEW|drive, get_string(IDS_3903));
-    sb_menu_add_item(part, IDM_FLOPPY_IMAGE_EXISTING|drive,
-		     get_string(IDS_3904));
+    sb_menu_add_item(part, IDM_FLOPPY_IMAGE_NEW|drive, get_string(IDS_3904));
+    sb_menu_add_item(part, IDM_FLOPPY_IMAGE_EXIST|drive,
+		     get_string(IDS_3905));
     sb_menu_add_item(part, -1, NULL);
-    sb_menu_add_item(part, IDM_FLOPPY_EJECT|drive, get_string(IDS_3906));
+    sb_menu_add_item(part, IDM_FLOPPY_EJECT|drive, get_string(IDS_3907));
     sb_menu_add_item(part, -1, NULL);
     sb_menu_add_item(part, IDM_FLOPPY_EXPORT|drive,
 		     get_string(IDS_3914));
@@ -346,10 +348,38 @@ menu_floppy(int part, int drive)
 }
 
 
-/* Create the "CD-ROM drive" menu. */
+/* Update the "CD-ROM drive" menu. */
+static void
+menu_cdrom_update(int part, int drive)
+{
+    cdrom_t *dev = &cdrom[drive];
+
+    if (dev->can_lock) {
+	if (dev->is_locked) {
+		sb_menu_set_item(part, IDM_CDROM_LOCK | drive, 1);
+		sb_menu_enable_item(part, IDM_CDROM_LOCK | drive, 0);
+		sb_menu_set_item(part, IDM_CDROM_UNLOCK | drive, 0);
+		sb_menu_enable_item(part, IDM_CDROM_UNLOCK | drive, 1);
+	} else {
+		sb_menu_set_item(part, IDM_CDROM_UNLOCK | drive, 1);
+		sb_menu_enable_item(part, IDM_CDROM_UNLOCK | drive, 0);
+		sb_menu_set_item(part, IDM_CDROM_LOCK | drive, 0);
+		sb_menu_enable_item(part, IDM_CDROM_LOCK | drive, 1);
+	}
+    } else {
+	sb_menu_set_item(part, IDM_CDROM_LOCK | drive, 0);
+	sb_menu_enable_item(part, IDM_CDROM_LOCK | drive, 0);
+	sb_menu_set_item(part, IDM_CDROM_UNLOCK | drive, 0);
+	sb_menu_enable_item(part, IDM_CDROM_UNLOCK | drive, 0);
+    }
+}
+
+
+/* Create the "Optical Drive" menu. */
 static void
 menu_cdrom(int part, int drive)
 {
+    cdrom_t *dev = &cdrom[drive];
 #ifdef USE_HOST_CDROM
     wchar_t temp[64];
     int i;
@@ -357,53 +387,60 @@ menu_cdrom(int part, int drive)
 
     sb_menu_add_item(part, IDM_CDROM_MUTE | drive, get_string(IDS_3923));
     sb_menu_add_item(part, -1, NULL);
-    sb_menu_add_item(part, IDM_CDROM_IMAGE | drive, get_string(IDS_3904));
-    sb_menu_add_item(part, IDM_CDROM_RELOAD | drive, get_string(IDS_3905));
+    sb_menu_add_item(part, IDM_CDROM_IMAGE | drive, get_string(IDS_3905));
+    sb_menu_add_item(part, IDM_CDROM_RELOAD | drive, get_string(IDS_3906));
     sb_menu_add_item(part, -1, NULL);
-    sb_menu_add_item(part, IDM_CDROM_EMPTY | drive, get_string(IDS_3906));
+    sb_menu_add_item(part, IDM_CDROM_EMPTY | drive, get_string(IDS_3907));
 
 #ifdef USE_HOST_CDROM
     if (cdrom_host_drive_available_num == 0) {
 #endif
-	if ((cdrom[drive].host_drive >= 'A') &&
-	    (cdrom[drive].host_drive <= 'Z'))
-		cdrom[drive].host_drive = 0;
+	if ((dev->host_drive >= 'A') && (dev->host_drive <= 'Z'))
+		dev->host_drive = 0;
 
 #ifdef USE_HOST_CDROM
 	goto check_items;
     } else {
-	if ((cdrom[drive].host_drive >= 'A') &&
-	    (cdrom[drive].host_drive <= 'Z')) {
-		if (! cdrom_host_drive_available[cdrom[drive].host_drive - 'A']) {
-			cdrom[drive].host_drive = 0;
+	if ((dev->host_drive >= 'A') &&
+	    (dev->host_drive <= 'Z')) {
+		if (! cdrom_host_drive_available[dev->host_drive - 'A']) {
+			dev->host_drive = 0;
 		}
 	}
     }
 
     sb_menu_add_item(part, -1, NULL);
 
+    /* Add entries for all available host drives. */
     for (i = 3; i < 26; i++) {
 	swprintf(temp, sizeof_w(temp), get_string(IDS_3921), i+'A');
 	if (cdrom_host_drive_available[i])
 		sb_menu_add_item(part, IDM_CDROM_HOST_DRIVE | (i << 3)|drive, temp);
     }
+    sb_menu_add_item(part, -1, NULL);
+    sb_menu_add_item(part, IDM_CDROM_LOCK | drive, get_string(IDS_LOCK));
+    sb_menu_enable_item(part, IDM_CDROM_LOCK | drive, 0);
+    sb_menu_add_item(part, IDM_CDROM_UNLOCK | drive, get_string(IDS_UNLOCK));
+    sb_menu_enable_item(part, IDM_CDROM_UNLOCK | drive, 0);
 
 check_items:
 #endif
-    if (! cdrom[drive].sound_on)
+    if (! dev->sound_on)
 	sb_menu_set_item(part, IDM_CDROM_MUTE | drive, 1);
 
-    if (cdrom[drive].host_drive == 200)
+    if (dev->host_drive == 200)
 	sb_menu_set_item(part, IDM_CDROM_IMAGE | drive, 1);
       else
-    if ((cdrom[drive].host_drive >= 'A') &&
-	(cdrom[drive].host_drive <= 'Z')) {
+    if ((dev->host_drive >= 'A') &&
+	(dev->host_drive <= 'Z')) {
 	sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive |
-		((cdrom[drive].host_drive - 'A') << 3), 1);
+		((dev->host_drive - 'A') << 3), 1);
     } else {
-	cdrom[drive].host_drive = 0;
+	dev->host_drive = 0;
 	sb_menu_set_item(part, IDM_CDROM_EMPTY | drive, 1);
     }
+
+    menu_cdrom_update(part, drive);
 }
 
 
@@ -411,11 +448,11 @@ check_items:
 static void
 menu_zip(int part, int drive)
 {
-    sb_menu_add_item(part, IDM_ZIP_IMAGE_NEW|drive, get_string(IDS_3903));
-    sb_menu_add_item(part, IDM_ZIP_IMAGE_EXISTING|drive, get_string(IDS_3904));
-    sb_menu_add_item(part, IDM_ZIP_RELOAD|drive, get_string(IDS_3905));
+    sb_menu_add_item(part, IDM_ZIP_IMAGE_NEW|drive, get_string(IDS_3904));
+    sb_menu_add_item(part, IDM_ZIP_IMAGE_EXIST|drive, get_string(IDS_3905));
+    sb_menu_add_item(part, IDM_ZIP_RELOAD|drive, get_string(IDS_3906));
     sb_menu_add_item(part, -1, NULL);
-    sb_menu_add_item(part, IDM_ZIP_EJECT|drive, get_string(IDS_3906));
+    sb_menu_add_item(part, IDM_ZIP_EJECT|drive, get_string(IDS_3907));
 
     if (zip_drives[drive].image_path[0] == L'\0') {
 	sb_menu_enable_item(part, IDM_ZIP_EJECT | drive, 0);
@@ -742,7 +779,7 @@ void
 ui_sb_menu_command(int idm, uint8_t tag)
 {
     wchar_t temp[512];
-    int new_cdrom_drive;
+    cdrom_t *cdev;
     wchar_t *str;
     int drive;
     int part;
@@ -757,7 +794,7 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		dlg_new_image(drive, part, 0);
 		break;
 
-	case IDM_FLOPPY_IMAGE_EXISTING:
+	case IDM_FLOPPY_IMAGE_EXIST:
 		drive = tag & 0x03;
 		part = find_tag(SB_FLOPPY | drive);
 		if (part == -1) break;
@@ -800,61 +837,69 @@ ui_sb_menu_command(int idm, uint8_t tag)
 	case IDM_CDROM_MUTE:
 		drive = tag & 0x07;
 		part = find_tag(SB_CDROM | drive);
+		cdev = &cdrom[drive];
 		if (part == -1) break;
 
-		cdrom[drive].sound_on ^= 1;
-		sb_menu_set_item(part, IDM_CDROM_MUTE | drive,
-				 cdrom[drive].sound_on);
+		cdev->sound_on ^= 1;
+		sb_menu_set_item(part, IDM_CDROM_MUTE | drive, cdev->sound_on);
 		config_save();
 		sound_cd_stop();
 		break;
 
 	case IDM_CDROM_EMPTY:
 		drive = tag & 0x07;
+		part = find_tag(SB_CDROM | drive);
+		if (part == -1) break;
+
 		ui_cdrom_eject(drive);
+		menu_cdrom_update(part, drive);
 		break;
 
 	case IDM_CDROM_RELOAD:
 		drive = tag & 0x07;
+		part = find_tag(SB_CDROM | drive);
+		if (part == -1) break;
+
 		ui_cdrom_reload(drive);
+		menu_cdrom_update(part, drive);
 		break;
 
 	case IDM_CDROM_IMAGE:
 		drive = tag & 0x07;
 		part = find_tag(SB_CDROM | drive);
+		cdev = &cdrom[drive];
 		if (part == -1) break;
 
 		/* Browse for a new image to use. */
-		str = cdrom[drive].image_path;
+		str = cdev->image_path;
 		if (! dlg_file(get_string(IDS_3922), str, temp,
 			       DLG_FILE_LOAD|DLG_FILE_RO)) break;
 
 		/* Save current drive/pathname for later re-use. */
-		cdrom[drive].prev_host_drive = cdrom[drive].host_drive;
-		if (! cdrom[drive].prev_image_path)
-			cdrom[drive].prev_image_path = (wchar_t *)mem_alloc(1024);
-		wcscpy(cdrom[drive].prev_image_path, str);
+		cdev->prev_host_drive = cdev->host_drive;
+		if (! cdev->prev_image_path)
+			cdev->prev_image_path = (wchar_t *)mem_alloc(1024);
+		wcscpy(cdev->prev_image_path, str);
 
 		/* Close the current drive/pathname. */
-		cdrom[drive].ops->close(&cdrom[drive]);
-		memset(cdrom[drive].image_path, 0, sizeof(cdrom[drive].image_path));
+		cdev->ops->close(cdev);
+		memset(cdev->image_path, 0, sizeof(cdev->image_path));
 
 		/* Now open new image. */
-		cdrom_image_open(&cdrom[drive], temp);
+		cdrom_image_open(cdev, temp);
 
 		/* Signal media change to the emulated machine. */
 		cdrom_insert(drive);
 
 		/* Update stuff. */
 		sb_menu_set_item(part, IDM_CDROM_EMPTY | drive, 0);
-		if ((cdrom[drive].host_drive >= 'A') &&
-		    (cdrom[drive].host_drive <= 'Z')) {
+		if ((cdev->host_drive >= 'A') && (cdev->host_drive <= 'Z')) {
 			sb_menu_set_item(part,
-					 IDM_CDROM_HOST_DRIVE | drive | ((cdrom[drive].host_drive - 'A') << 3),
+					 IDM_CDROM_HOST_DRIVE | drive | ((cdev->host_drive - 'A') << 3),
 					 0);
 		}
-		cdrom[drive].host_drive = (wcslen(cdrom[drive].image_path) == 0) ? 0 : 200;
-		if (cdrom[drive].host_drive == 200) {
+		cdev->host_drive = (wcslen(cdev->image_path) == 0) ? 0 : 200;
+		if (cdev->host_drive == 200) {
 			sb_menu_set_item(part, IDM_CDROM_IMAGE | drive, 1);
 			ui_sb_icon_state(SB_CDROM | drive, 0);
 		} else {
@@ -863,29 +908,50 @@ ui_sb_menu_command(int idm, uint8_t tag)
 			ui_sb_icon_state(SB_CDROM | drive, 1);
 		}
 		sb_menu_enable_item(part, IDM_CDROM_RELOAD | drive, 0);
+		menu_cdrom_update(part, drive);
+		ui_sb_icon_state(SB_CDROM | drive, 0);
+		ui_sb_tip_update(SB_CDROM | drive);
 		ui_sb_tip_update(SB_CDROM | drive);
 		config_save();
 		break;
 
-	case IDM_CDROM_HOST_DRIVE:
+	case IDM_CDROM_LOCK:
+	case IDM_CDROM_UNLOCK:
 		drive = tag & 0x07;
-		i = ((tag >> 3) & 0x001f) + 'A';
 		part = find_tag(SB_CDROM | drive);
+		cdev = &cdrom[drive];
 		if (part == -1) break;
 
-		new_cdrom_drive = i;
-		if (cdrom[drive].host_drive == new_cdrom_drive) {
+		if (cdev->ops->medium_lock)
+			cdev->ops->medium_lock(cdev,
+				(idm == IDM_CDROM_LOCK) ? 1 : 0);
+		menu_cdrom_update(part, drive);
+		ui_sb_tip_update(SB_CDROM | drive);
+		break;
+
+	case IDM_CDROM_HOST_DRIVE:
+		drive = tag & 0x07;
+		part = find_tag(SB_CDROM | drive);
+		i = ((tag >> 3) & 0x001f) + 'A';
+		cdev = &cdrom[drive];
+		if (part == -1) break;
+
+		if (cdev->host_drive == i) {
 			/* Switching to the same drive. Do nothing. */
 			break;
 		}
-		cdrom[drive].prev_host_drive = cdrom[drive].host_drive;
+		cdev->prev_host_drive = cdev->host_drive;
 
 		/* Close the current drive/pathname. */
-		cdrom[drive].ops->close(&cdrom[drive]);
-		memset(cdrom[drive].image_path, 0, sizeof(cdrom[drive].image_path));
+		cdev->ops->close(cdev);
+		memset(cdev->image_path, 0, sizeof(cdev->image_path));
+		if ((cdev->host_drive >= 'A') && (cdev->host_drive <= 'Z'))
+			sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive |
+					((cdev->host_drive - 'A') << 3), 0);
 
+		cdev->host_drive = i;
 #ifdef USE_HOST_CDROM
-		cdrom_host_open(&cdrom[drive], new_cdrom_drive);
+		cdrom_host_open(cdev, i);
 #endif
 
 		/* Signal media change to the emulated machine. */
@@ -893,14 +959,12 @@ ui_sb_menu_command(int idm, uint8_t tag)
 
 		/* Update stuff. */
 		sb_menu_set_item(part, IDM_CDROM_EMPTY | drive, 0);
-		if ((cdrom[drive].host_drive >= 'A') &&
-		    (cdrom[drive].host_drive <= 'Z')) {
-			sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive | ((cdrom[drive].host_drive - 'A') << 3), 0);
-		}
-		cdrom[drive].host_drive = new_cdrom_drive;
 		sb_menu_set_item(part, IDM_CDROM_IMAGE | drive, 0);
-		sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive | ((cdrom[drive].host_drive - 'A') << 3), 1);
 		sb_menu_enable_item(part, IDM_CDROM_RELOAD | drive, 0);
+		if ((cdev->host_drive >= 'A') && (cdev->host_drive <= 'Z'))
+			sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive |
+					((cdev->host_drive - 'A') << 3), 0);
+		menu_cdrom_update(part, drive);
 		ui_sb_icon_state(SB_CDROM | drive, 0);
 		ui_sb_tip_update(SB_CDROM | drive);
 		config_save();
@@ -914,7 +978,7 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		dlg_new_image(drive, part, 1);
 		break;
 
-	case IDM_ZIP_IMAGE_EXISTING:
+	case IDM_ZIP_IMAGE_EXIST:
 		drive = tag & 0x03;
 		part = find_tag(SB_ZIP | drive);
 		if (part == -1) break;
@@ -952,7 +1016,7 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		dlg_new_image(drive, part, 1);
 		break;
 
-	case IDM_DISK_IMAGE_EXISTING:
+	case IDM_DISK_IMAGE_EXIST:
 		drive = tag & 0x0f;
 		part = find_tag(SB_DISK | drive);
 		if (part == -1) break;

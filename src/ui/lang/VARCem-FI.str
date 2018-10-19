@@ -8,7 +8,7 @@
  *
  *		String definitions for "Finnish (Finland)" language.
  *
- * Version:	@(#)VARCem-FI.str	1.0.9	2018/10/01
+ * Version:	@(#)VARCem-FI.str	1.0.9	2018/10/18
  *
  * Authors:	Daniel Gurney, <dgurney@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"Käytössä"
 #define STR_OFF		"Pois"
 #define STR_ON		"Päällä"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"Tyyppi"
 #define STR_FILENAME	"Tiedostonimi:"
 #define STR_PROGRESS	"Edistyminen:"
@@ -294,11 +296,12 @@
 #define STR_3900	"(tyhjä)"
 #define STR_3901	"(isäntäasema %c:)"
 #define STR_3902	" [Kirjoitussuojattu]"
-#define STR_3903	"&Uusi levykuva.."
-#define STR_3904	"&Lataa levykuva.."
-#define STR_3905	"L&ataa edellinen levykuva uudelleen"
-#define STR_3906	"&Poista"
-#define STR_3907	"&Huomauta levyn vaihdosta"
+#define STR_3903	" [Locked]"
+#define STR_3904	"&Uusi levykuva.."
+#define STR_3905	"&Lataa levykuva.."
+#define STR_3906	"L&ataa edellinen levykuva uudelleen"
+#define STR_3907	"&Poista"
+#define STR_3908	"&Huomauta levyn vaihdosta"
 
 #define STR_3910	"Levyke %i (%s): %ls"
 #define STR_3911	"Kaikki levykuvat\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Edistyneet sektorilevykuvat\0*.imd;*.json;*.td0\0Perussektorilevykuvat\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Virtauslevykuvat\0*.fdi\0Pintalevykuvat\0*.86f\0Kaikki tiedostot\0*.*\0"

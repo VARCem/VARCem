@@ -8,7 +8,7 @@
  *
  *		String definitions for "Ukrainian (Ukraine)" language.
  *
- * Version:	@(#)VARCem-UA.str	1.0.6	2018/10/01
+ * Version:	@(#)VARCem-UA.str	1.0.6	2018/10/18
  *
  * Authors:	.SVD., <old-dos.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -112,6 +112,8 @@
 #define STR_ENABLED	"Досяжно"
 #define STR_OFF		"Вимк."
 #define STR_ON		"Ввiмк."
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Lock"
 #define STR_TYPE	"Тип"
 #define STR_FILENAME	"Iм'я файла:"
 #define STR_PROGRESS	"Прогрес:"
@@ -294,11 +296,12 @@
 #define STR_3900	"(пусто)"
 #define STR_3901	"(хост-диск %c:)"
 #define STR_3902	" [Захищений вiд запису]"
-#define STR_3903	"Новый iмiдж.."
-#define STR_3904	"Вiдкрити iмiдж.."
-#define STR_3905	"Завантажити попереднiй iмiдж"
-#define STR_3906	"Вийняти"
-#define STR_3907	"Повiдомити про змiну диска"
+#define STR_3903	" [Locked]"
+#define STR_3904	"Новый iмiдж.."
+#define STR_3905	"Вiдкрити iмiдж.."
+#define STR_3906	"Завантажити попереднiй iмiдж"
+#define STR_3907	"Вийняти"
+#define STR_3908	"Повiдомити про змiну диска"
 
 #define STR_3910	"Флоппi %i (%s): %ls"
 #define STR_3911	"Усi iмiджi\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Просунутi секторнi iмiджi\0*.imd;*.json;*.td0\0Простi секторнi iмiджi\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Iмiджi з магнiтним стрiмом\0*.fdi\0Iмiджi з бiтовим стрiмом\0*.86f\0Усi файли\0*.*\0"

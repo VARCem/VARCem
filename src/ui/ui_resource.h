@@ -12,7 +12,7 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.17	2018/10/16
+ * Version:	@(#)ui_resource.h	1.0.18	2018/10/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -170,7 +170,7 @@
 #define IDM_SBAR		(IDM_BASE+1024)
 
 #define IDM_FLOPPY_IMAGE_NEW	(IDM_SBAR + 0x0000)
-#define IDM_FLOPPY_IMAGE_EXISTING (IDM_SBAR + 0x0100)
+#define IDM_FLOPPY_IMAGE_EXIST	(IDM_SBAR + 0x0100)
 #define IDM_FLOPPY_EXPORT	(IDM_SBAR + 0x0200)
 #define IDM_FLOPPY_EJECT	(IDM_SBAR + 0x0300)
 
@@ -178,15 +178,17 @@
 #define IDM_CDROM_EMPTY		(IDM_SBAR + 0x0900)
 #define IDM_CDROM_RELOAD	(IDM_SBAR + 0x0a00)
 #define IDM_CDROM_IMAGE		(IDM_SBAR + 0x0b00)
-#define IDM_CDROM_HOST_DRIVE	(IDM_SBAR + 0x0c00)
+#define IDM_CDROM_LOCK		(IDM_SBAR + 0x0c00)
+#define IDM_CDROM_UNLOCK	(IDM_SBAR + 0x0d00)
+#define IDM_CDROM_HOST_DRIVE	(IDM_SBAR + 0x0f00)
 
 #define IDM_ZIP_IMAGE_NEW	(IDM_SBAR + 0x1000)
-#define IDM_ZIP_IMAGE_EXISTING	(IDM_SBAR + 0x1100)
+#define IDM_ZIP_IMAGE_EXIST	(IDM_SBAR + 0x1100)
 #define IDM_ZIP_EJECT		(IDM_SBAR + 0x1200)
 #define IDM_ZIP_RELOAD		(IDM_SBAR + 0x1300)
 
 #define IDM_DISK_IMAGE_NEW	(IDM_SBAR + 0x1800)
-#define IDM_DISK_IMAGE_EXISTING	(IDM_SBAR + 0x1900)
+#define IDM_DISK_IMAGE_EXIST	(IDM_SBAR + 0x1900)
 #define IDM_DISK_EJECT		(IDM_SBAR + 0x1a00)
 #define IDM_DISK_RELOAD		(IDM_SBAR + 0x1b00)
 #define IDM_DISK_NOTIFY		(IDM_SBAR + 0x1c00)
@@ -304,19 +306,21 @@
 #define IDS_ENABLED	3103		/* "Enabled" */
 #define IDS_OFF		3104		/* "Off" */
 #define IDS_ON		3105		/* "On" */
-#define IDS_TYPE	3106		/* "Type" */
-#define IDS_FILENAME	3107		/* "File name:" */
-#define IDS_PROGRESS	3108		/* "Progress:" */
-#define IDS_BUS		3109		/* "Bus:" */
-#define IDS_CHANNEL	3110		/* "Channel:" */
-#define IDS_ID		3111		/* "ID:" */
-#define IDS_LUN		3112		/* "LUN:" */
-#define IDS_INV_NAME	3113		/* "Please enter a valid file name" */
-#define IDS_IMG_EXIST	3114		/* "This image exists and will be.." */
-#define IDS_OPEN_READ	3115		/* "Unable to open for read" */
-#define IDS_OPEN_WRITE	3116		/* "Unable to open for write" */
-#define IDS_DEVCONF_1	3117		/* "Configuration" */
-#define IDS_DEVCONF_2	3118		/* "Device:" */
+#define IDS_UNLOCK	3106		/* "Unlock" */
+#define IDS_LOCK	3107		/* "Lock" */
+#define IDS_TYPE	3108		/* "Type" */
+#define IDS_FILENAME	3109		/* "File name:" */
+#define IDS_PROGRESS	3110		/* "Progress:" */
+#define IDS_BUS		3111		/* "Bus:" */
+#define IDS_CHANNEL	3112		/* "Channel:" */
+#define IDS_ID		3113		/* "ID:" */
+#define IDS_LUN		3114		/* "LUN:" */
+#define IDS_INV_NAME	3115		/* "Please enter a valid file name" */
+#define IDS_IMG_EXIST	3116		/* "This image exists and will be.." */
+#define IDS_OPEN_READ	3117		/* "Unable to open for read" */
+#define IDS_OPEN_WRITE	3118		/* "Unable to open for write" */
+#define IDS_DEVCONF_1	3119		/* "Configuration" */
+#define IDS_DEVCONF_2	3120		/* "Device:" */
 
 
 /* UI: dialog: About (3200.) */
@@ -484,11 +488,12 @@
 #define IDS_3900	3900		/* "(empty)" */
 #define IDS_3901	3901		/* "(host drive %c:)" */
 #define IDS_3902	3902		/* "[WP]" */
-#define IDS_3903	3903		/* "&New image..." */
-#define IDS_3904	3904		/* "&Load image..." */
-#define IDS_3905	3905		/* "&Reload previous image" */
-#define IDS_3906	3906		/* "&Unload" */
-#define IDS_3907	3907		/* "Notify disk &change" */
+#define IDS_3903	3903		/* "[Locked]" */
+#define IDS_3904	3904		/* "&New image..." */
+#define IDS_3905	3905		/* "&Load image..." */
+#define IDS_3906	3906		/* "&Reload previous image" */
+#define IDS_3907	3907		/* "&Unload" */
+#define IDS_3908	3908		/* "Notify disk &change" */
 #define IDS_3910	3910		/* "Floppy %i (%s): %ls" */
 #define  IDS_3911	3911		/* "All floppy images (*.0??;*.." */
 #define  IDS_3912	3912		/* "All floppy images (*.dsk..." */

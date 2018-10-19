@@ -8,7 +8,7 @@
  *
  *		Generic interface for CD-ROM/DVD/BD implementations.
  *
- * Version:	@(#)cdrom.c	1.0.21	2018/10/17
+ * Version:	@(#)cdrom.c	1.0.21	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -347,6 +347,24 @@ cdrom_reset_bus(int bus)
 
         if (dev->bus_type == bus)
 		dev->reset(dev);
+    }
+}
+
+
+/* API: notify the CDROM layer about a media change. */
+void
+cdrom_notify(const char *drive, int present)
+{
+    cdrom_t *dev;
+    int i;
+
+    for (i = 0; i < CDROM_NUM; i++) {
+	dev = &cdrom[i];
+
+	if (dev->host_drive == *drive) {
+		if (dev->ops->notify_change)
+			dev->ops->notify_change(dev, present);
+	}
     }
 }
 
