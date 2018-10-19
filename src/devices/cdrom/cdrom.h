@@ -51,6 +51,7 @@
 
 #define BUF_SIZE		32768
 
+#define CDROM_EMPTY		(dev->host_drive == 0)
 #define CDROM_IMAGE		200
 
 

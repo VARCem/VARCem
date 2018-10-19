@@ -8,7 +8,7 @@
  *
  *		Generic interface for CD-ROM/DVD/BD implementations.
  *
- * Version:	@(#)cdrom.c	1.0.21	2018/10/18
+ * Version:	@(#)cdrom.c	1.0.22	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,6 @@
 #include "../sound/sound.h"
 #include "cdrom.h"
 #include "cdrom_image.h"
-#include "cdrom_null.h"
 
 
 #define MIN_SEEK		2000
@@ -140,6 +139,11 @@ cdrom_playing_completed(cdrom_t *dev)
 
     if (dev->ops && dev->ops->status)
 	dev->cd_status = dev->ops->status(dev);
+    else {
+	dev->cd_status = CD_STATUS_EMPTY;
+
+	return 0;
+    }
 
     if (((dev->prev_status == CD_STATUS_PLAYING) ||
 	 (dev->prev_status == CD_STATUS_PAUSED)) &&
@@ -197,14 +201,12 @@ cdrom_hard_reset(void)
 				break;
 		}
 
-
 		if (dev->host_drive == 200) {
 			cdrom_image_open(dev, dev->image_path);
 
 			if (dev->reset)
 				dev->reset(dev);
-		} else
-			cdrom_null_open(dev);
+		}
 	}
     }
 
@@ -223,6 +225,7 @@ cdrom_close(void)
 
 	if (dev->ops && dev->ops->close)
 		dev->ops->close(dev);
+	dev->ops = NULL;
 
 	if (dev->close)
 		dev->close(dev->p);
@@ -283,8 +286,6 @@ cdrom_eject(uint8_t id)
 
     memset(dev->image_path, 0, sizeof(dev->image_path));
 
-    cdrom_null_open(dev);
-
     cdrom_insert(id);
 }
 
@@ -314,6 +315,7 @@ cdrom_reload(uint8_t id)
 	wcscpy(dev->image_path, dev->prev_image_path);
 	free(dev->prev_image_path);
 	dev->prev_image_path = NULL;
+
 	cdrom_image_open(dev, dev->image_path);
 
 	cdrom_insert(id);
@@ -362,7 +364,7 @@ cdrom_notify(const char *drive, int present)
 	dev = &cdrom[i];
 
 	if (dev->host_drive == *drive) {
-		if (dev->ops->notify_change)
+		if (dev->ops && dev->ops->notify_change)
 			dev->ops->notify_change(dev, present);
 	}
     }
@@ -376,12 +378,8 @@ cdrom_string_to_bus(const char *str)
 
     if (! strcmp(str, "none")) return(ret);
 
-    if (! strcmp(str, "ide") || !strcmp(str, "atapi")
-#if 1
-	|| !strcmp(str, "ide_pio_only") || !strcmp(str, "ide_pio_and_dma")
-	|| !strcmp(str, "atapi_pio_only") || !strcmp(str, "atapi_pio_and_dma")
-#endif
-	) return(CDROM_BUS_ATAPI);
+    if (! strcmp(str, "ide") || !strcmp(str, "atapi"))
+	return(CDROM_BUS_ATAPI);
 
     if (! strcmp(str, "scsi"))
 	return(CDROM_BUS_SCSI);

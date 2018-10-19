@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.13	2018/10/18
+ * Version:	@(#)ui_stbar.c	1.0.14	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,6 @@
 #include "../devices/disk/zip.h"
 #include "../devices/cdrom/cdrom.h"
 #include "../devices/cdrom/cdrom_image.h"
-#include "../devices/cdrom/cdrom_null.h"
 #include "../devices/network/network.h"
 #include "../devices/sound/sound.h"
 #include "../devices/video/video.h"

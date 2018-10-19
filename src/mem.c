@@ -8,7 +8,7 @@
  *
  *		Memory handling and MMU.
  *
- * Version:	@(#)mem.c	1.0.23	2018/10/16
+ * Version:	@(#)mem.c	1.0.24	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1805,7 +1805,7 @@ mem_reset_page_blocks(void)
 
     if (pages == NULL) return;
 
-    for (c = 0; c < ((mem_size * 1024) >> 12); c++) {
+    for (c = 0; c < pages_sz; c++) {
 	pages[c].write_b = mem_write_ramb_page;
 	pages[c].write_w = mem_write_ramw_page;
 	pages[c].write_l = mem_write_raml_page;
