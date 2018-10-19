@@ -8,7 +8,7 @@
  *
  *		String definitions for "Korean (South Korea)" language.
  *
- * Version:	@(#)VARCem-KR.str	1.0.12	2018/10/18
+ * Version:	@(#)VARCem-KR.str	1.0.13	2018/10/18
  *
  * Authors:	Yeong Uk Jo, <greatpsycho@yahoo.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,12
+#define STR_VERSION	1,0,13
 #define STR_AUTHOR	"Yeong Uk Jo"
 #define STR_EMAIL	"greatpsycho@yahoo.com"
 #define STR_NAME	"VARCem"
@@ -72,7 +72,7 @@
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"System out of memory!"
+#define STR_2300	"메모리가 부족합니다!"
 #define STR_2301	"사용 가능한 롬을 찾을 수 없습니다!"
 #define STR_2302	"유효한 설정을 찾을 수 없습니다.\n\n새로운 설정을 만들기 위해 설정창으로 들어가시겠습니까?"
 #define STR_2303	"설정된 %ls:\n\n  %s\n\n은 사용할 수 없습니다.\n\n설정창으로 들어가시겠습니까?"
@@ -99,8 +99,8 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"확인"
 #define STR_CANCEL	"취소"
-#define STR_YES		"Yes"
-#define STR_NO		"No"
+#define STR_YES		"예"
+#define STR_NO		"아니오"
 #define STR_CONFIGURE	"설정"
 #define STR_BROWSE	"탐색"
 
@@ -112,8 +112,8 @@
 #define STR_ENABLED	"사용"
 #define STR_OFF		"꺼짐"
 #define STR_ON		"켜짐"
-#define STR_UNLOCK	"Unlock"
-#define STR_LOCK	"Lock"
+#define STR_UNLOCK	"풀림"
+#define STR_LOCK	"잠김"
 #define STR_TYPE	"형식"
 #define STR_FILENAME	"파일 이름:"
 #define STR_PROGRESS	"진행 상황:"
@@ -296,7 +296,7 @@
 #define STR_3900	"(비었음)"
 #define STR_3901	"(호스트 드라이브 %c:)"
 #define STR_3902	" [쓰기 방지됨]"
-#define STR_3903	" [Locked]"
+#define STR_3903	" [잠김]"
 #define STR_3904	"새 이미지(&N).."
 #define STR_3905	"이미지 불러오기(&L).."
 #define STR_3906	"이전 이미지 다시 불러오기(&R)"
@@ -385,9 +385,9 @@
 #define STR_TOOLS	"도구(&T)"
 #define  STR_4081	"설정(&S)"
 #define  STR_4082	"언어(&L)"
-#define	 STR_4083	"로그(&O)"
-#define  STR_4084	"Log Breakpoint"
-#define  STR_4085	"Toggle %s logging"
+#define	 STR_4083	"활동 기록(&O)"
+#define  STR_4084	"중단점 기록"
+#define  STR_4085	"%s 활동 기록"
 #define  STR_4086	"설정 불러오기(&C)"
 #define  STR_4087	"설정 저장하기(&A)"
 #define  STR_4088	"스크린샷 찍기(&T)"

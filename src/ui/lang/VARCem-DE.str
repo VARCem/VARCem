@@ -8,7 +8,7 @@
  *
  *		String definitions for "German (Germany)" language.
  *
- * Version:	@(#)VARCem-DE.str	1.0.13	2018/10/18
+ * Version:	@(#)VARCem-DE.str	1.0.14	2018/10/18
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,12
+#define STR_VERSION	1,0,14
 #define STR_AUTHOR	"Michael Drüing"
 #define STR_EMAIL	"michael@drueing.de"
 #define STR_NAME	"VARCem"
@@ -112,8 +112,8 @@
 #define STR_ENABLED	"Aktiviert"
 #define STR_OFF		"Aus"
 #define STR_ON		"An"
-#define STR_UNLOCK	"Unlock"
-#define STR_LOCK	"Lock"
+#define STR_UNLOCK	"Medienwechsel erlaubt"
+#define STR_LOCK	"Medienwechsel gesperrt"
 #define STR_TYPE	"Typ"
 #define STR_FILENAME	"Dateiname:"
 #define STR_PROGRESS	"Fortschritt:"
@@ -312,7 +312,7 @@
 #define STR_3900	"(leer)"
 #define STR_3901	"(Hostlaufwerk %c:)"
 #define STR_3902	" [Schreibgeschützt]"
-#define STR_3903	" [Locked]"
+#define STR_3903	" [Medienwechsel gesperrt]"
 #define STR_3904	"&Neues Abbild..."
 #define STR_3905	"Abbild &laden..."
 #define STR_3906	"Vor&heriges Abbild erneut laden"

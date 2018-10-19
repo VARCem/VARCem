@@ -8,7 +8,7 @@
  *
  *		String definitions for "Japanese (Japan)" language.
  *
- * Version:	@(#)VARCem-JP.str	1.0.10	2018/10/18
+ * Version:	@(#)VARCem-JP.str	1.0.11	2018/10/18
  *
  * Authors:	Basic2004, <basic2004@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,10
+#define STR_VERSION	1,0,11
 #define STR_AUTHOR	"Basic2004"
 #define STR_EMAIL	"basic2004@gmail.com"
 #define STR_NAME	"VARCem"
@@ -72,7 +72,7 @@
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"System out of memory!"
+#define STR_2300	"システムメモリーが足りません！"
 #define STR_2301	"使用可能なROMが見つかりません！"
 #define STR_2302	"有効な設定が見つかりません。\n\n新たな設定を作るために設定ウィンドウを開きますか？"
 #define STR_2303	"設定した%ls:\n\n　%s\n\nは使用できません。\n\n設定ウィンドウを開きますか？"
@@ -99,21 +99,21 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"キャンセル"
-#define STR_YES		"Yes"
-#define STR_NO		"No"
+#define STR_YES		"はい"
+#define STR_NO		"いいえ"
 #define STR_CONFIGURE	"設定"
-#define STR_BROWSE	"参照"
+#define STR_BROWSE	 "参照"
 
 
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"なし"
-#define STR_INTERNAL	"Internal"
+#define STR_INTERNAL	"内装"
 #define STR_DISABLED	"使用しない"
 #define STR_ENABLED	"使用する"
 #define STR_OFF		"オフ"
 #define STR_ON		"オン"
-#define STR_UNLOCK	"Unlock"
-#define STR_LOCK	"Lock"
+#define STR_UNLOCK	"アンロック"
+#define STR_LOCK	"ロック"
 #define STR_TYPE	"形式"
 #define STR_FILENAME	"ファイル名:"
 #define STR_PROGRESS	"進行状況:"
@@ -195,7 +195,7 @@
 #define  STR_3333	"動的再コンパイル"
 #define  STR_3334	"KB"
 #define  STR_3335	"既定値"
-#define  STR_3336	"Enabled (UTC)"
+#define  STR_3336	"使用 (UTC)"
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"ビデオカード:"
@@ -296,7 +296,7 @@
 #define STR_3900	"(空)"
 #define STR_3901	"(ホストドライブ %c:)"
 #define STR_3902	" [書き込み禁止]"
-#define STR_3903	" [Locked]"
+#define STR_3903	" [ロック]"
 #define STR_3904	"新規のイメージ(&N).."
 #define STR_3905	"イメージをロード(&L).."
 #define STR_3906	"前のイメージをリロード(&R)"
@@ -386,8 +386,8 @@
 #define  STR_4081	"設定(&S)"
 #define  STR_4082	"言語(&L)"
 #define	 STR_4083	"ログ(&O)"
-#define  STR_4084	"Log Breakpoint"
-#define  STR_4085	"Toggle %s logging"
+#define  STR_4084	"中断点をログする"
+#define  STR_4085	"%sをログする"
 #define  STR_4086	"設定をロード(&C)"
 #define  STR_4087	"設定を保存(&A)"
 #define  STR_4088	"スクリーンショットを撮る(&T)"

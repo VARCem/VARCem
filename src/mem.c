@@ -8,7 +8,7 @@
  *
  *		Memory handling and MMU.
  *
- * Version:	@(#)mem.c	1.0.24	2018/10/18
+ * Version:	@(#)mem.c	1.0.25	2018/10/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1801,7 +1801,7 @@ mem_remap_top(int kb)
 void
 mem_reset_page_blocks(void)
 {
-    int c;
+    uint32_t c;
 
     if (pages == NULL) return;
 
