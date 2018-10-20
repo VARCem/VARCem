@@ -8,7 +8,7 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.9	2018/10/19
+ * Version:	@(#)midi.c	1.0.10	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -184,10 +184,11 @@ midi_device_get_from_internal_name(const char *s)
 }
 
 
-#if defined(_LOGGING) && defined(ENABLE_SOUND_MIDI_LOG)
+#ifdef _LOGGING
 void
 sound_midi_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_SOUND_MIDI_LOG
     va_list ap;
 
     if (sound_midi_do_log >= level) {
@@ -195,6 +196,7 @@ sound_midi_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.14	2018/10/19
+ * Version:	@(#)fdd_86f.c	1.0.15	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -280,10 +280,11 @@ void		d86f_poll_write_data(int drive, int side, uint16_t pos, uint8_t data);
 int		d86f_format_conditions(int drive);
 
 
-#if defined(_LOGGING) && defined(ENABLE_D86F_LOG)
+#ifdef _LOGGING
 static void
 d86f_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_D86F_LOG
     va_list ap;
 
     if (d86f_do_log >= level) {
@@ -291,6 +292,7 @@ d86f_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.14	2018/10/19
+ * Version:	@(#)sound.c	1.0.15	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -299,10 +299,11 @@ sound_poll(void *priv)
 }
 
 
-#if defined(_LOGGING) && defined(ENABLE_SOUND_LOG)
+#ifdef _LOGGING
 void
 sound_log(int level, const char *fmt, ...)
 {
+#ifdef ENABLE_SOUND_LOG
     va_list ap;
 
     if (sound_do_log >= level) {
@@ -310,6 +311,7 @@ sound_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.12 	2018/10/19
+ * Version:	@(#)parallel.c	1.0.13 	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,10 +77,11 @@ static const uint16_t addr_list[] = {		/* valid port addresses */
 static parallel_t	ports[PARALLEL_MAX];	/* the ports */
 
 
-#if defined(_LOGGING) && defined(ENABLE_PARALLEL_LOG)
+#ifdef _LOGGING
 void
 parallel_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_PARALLEL_LOG
     va_list ap;
 
     if (parallel_do_log >= level) {
@@ -88,6 +89,7 @@ parallel_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

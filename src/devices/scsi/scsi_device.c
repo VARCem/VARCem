@@ -8,7 +8,7 @@
  *
  *		The generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.c	1.0.12	2018/10/19
+ * Version:	@(#)scsi_device.c	1.0.13	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -208,10 +208,11 @@ scsi_device_get_buf_len(scsi_device_t *dev)
 }
 
 
-#if defined(_LOGGING) && defined(ENABLE_SCSI_LOG)
+#ifdef _LOGGING
 void
 scsi_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_SCSI_LOG
     va_list ap;
 
     if (scsi_do_log >= level) {
@@ -219,5 +220,6 @@ scsi_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif

@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.17	2018/10/19
+ * Version:	@(#)scsi_disk.c	1.0.18	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -171,10 +171,11 @@ int scsi_disk_do_log = ENABLE_SCSI_DISK_LOG;
 #endif
 
 
-#if defined(_LOGGING) && defined(ENABLE_SCSI_DISK_LOG)
+#ifdef _LOGGING
 static void
 scsi_disk_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_SCSI_DISK_LOG
     va_list ap;
 
     if (scsi_disk_do_log >= level) {
@@ -182,6 +183,7 @@ scsi_disk_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

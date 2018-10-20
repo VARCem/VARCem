@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.19	2018/10/19
+ * Version:	@(#)zip.c	1.0.20	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -479,10 +479,11 @@ static void	zip_init(zip_t *dev);
 static void	zip_callback(void *p);
 
 
-#if defined(_LOGGING) && defined(ENABLE_ZIP_LOG)
+#ifdef _LOGGING
 static void
 zip_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_ZIP_LOG
     va_list ap;
 
     if (zip_do_log >= level) {
@@ -490,6 +491,7 @@ zip_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

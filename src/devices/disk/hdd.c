@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.10	2018/10/19
+ * Version:	@(#)hdd.c	1.0.11	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,10 +53,11 @@ int		hdd_do_log = ENABLE_HDD_LOG;
 #endif
 
 
-#if defined(_LOGGING) && defined(ENABLE_HDD_LOG)
+#ifdef _LOGGING
 void
 hdd_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_HDD_LOG
     va_list ap;
 
     if (hdd_do_log >= level) {
@@ -64,6 +65,7 @@ hdd_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

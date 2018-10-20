@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.8	2018/10/19
+ * Version:	@(#)pci.c	1.0.9	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,10 +93,11 @@ static int		pci_index,
 static int		trc_reg = 0;
 
 
-#if defined(_LOGGING) && defined(ENABLE_BUS_LOG)
+#ifdef _LOGGING
 static void
 pcilog(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_BUS_LOG
     va_list ap;
 
     if (pci_do_log >= level) {
@@ -104,6 +105,7 @@ pcilog(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

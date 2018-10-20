@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.24	2018/10/19
+ * Version:	@(#)video_dev.c	1.0.25	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -160,10 +160,11 @@ static const struct {
 };
 
 
-#if defined(_LOGGING) && defined(ENABLE_VIDEO_DEV_LOG)
+#ifdef _LOGGING
 void
 video_card_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_VIDEO_DEV_LOG
     va_list ap;
 
     if (video_card_do_log >= level) {
@@ -171,6 +172,7 @@ video_card_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

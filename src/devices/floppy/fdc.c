@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.16	2018/10/19
+ * Version:	@(#)fdc.c	1.0.17	2018/10/20
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -114,10 +114,11 @@ int	floppyrate[FDD_NUM];
 static void fdc_callback(void *priv);
 
 
-#if defined(_LOGGING) && defined(ENABLE_FDC_LOG)
+#ifdef _LOGGING
 static void
 fdc_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_FDC_LOG
    va_list ap;
 
    if (fdc_do_log >= level) {
@@ -125,6 +126,7 @@ fdc_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
    }
+# endif
 }
 #endif
 

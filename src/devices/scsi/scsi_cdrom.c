@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.5	2018/10/19
+ * Version:	@(#)scsi_cdrom.c	1.0.6	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -350,10 +350,11 @@ static void	mode_sense_load(scsi_cdrom_t *dev);
 static void	scsi_cdrom_callback(void *p);
 
 
-#if defined(_LOGGING) && defined(ENABLE_SCSI_CDROM_LOG)
+#ifdef _LOGGING
 static void
 scsi_cdrom_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_SCSI_CDROM_LOG
     va_list ap;
 
     if (scsi_cdrom_do_log >= level) {
@@ -361,6 +362,7 @@ scsi_cdrom_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

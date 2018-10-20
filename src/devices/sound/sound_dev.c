@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.9	2018/10/19
+ * Version:	@(#)sound_dev.c	1.0.10	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,10 +115,11 @@ static const struct {
 };
 
 
-#if defined(_LOGGING) && defined(ENABLE_SOUND_DEV_LOG)
+#ifdef _LOGGING
 void
 sound_card_log(int level, const char *fmt, ...)
 {
+# ifdef ENABLE_SOUND_DEV_LOG
     va_list ap;
 
     if (sound_card_do_log >= level) {
@@ -126,6 +127,7 @@ sound_card_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
+# endif
 }
 #endif
 

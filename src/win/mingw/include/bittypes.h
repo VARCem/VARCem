@@ -66,6 +66,10 @@ typedef signed char int16_t;
 
 #ifndef HAVE_U_INT32_T
 
+#ifndef SIZEOF_LONG
+# define SIZEOF_LONG 0
+#endif
+
 #if SIZEOF_INT == 4
 typedef unsigned int u_int32_t;
 typedef signed int int32_t;

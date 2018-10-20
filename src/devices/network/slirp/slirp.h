@@ -374,13 +374,13 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 
 #include "debug.h"
 
-#if defined __GNUC__
+#if defined(__GNUC__)
 #define PACKED__ __attribute__ ((packed))
-#elif defined __sgi
+#elif defined(__sgi)
 #define PRAGMA_PACK_SUPPORTED 1
 #define PACK_END 0
 #define PACKED__
-#elif _MSC_VER
+#elif defined(_MSC_VER)
 #define PACKED__
 #else
 #error "Packed attribute or pragma shall be supported"
