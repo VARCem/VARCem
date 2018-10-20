@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.15	2018/10/18
+ * Version:	@(#)cdrom_image.cpp	1.0.16	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,10 +58,10 @@ int cdrom_image_do_log = ENABLE_CDROM_IMAGE_LOG;
 #endif
 
 
+#if defined(_LOGGING) && defined(ENABLE_CDROM_IMAGE_LOG)
 void
-cdrom_image_log(UNUSED(int level), UNUSED(const char *fmt), ...)
+cdrom_image_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_CDROM_IMAGE_LOG
     va_list ap;
 
     if (cdrom_image_do_log >= level) {
@@ -69,8 +69,8 @@ cdrom_image_log(UNUSED(int level), UNUSED(const char *fmt), ...)
         pclog_ex(fmt, ap);
         va_end(ap);
     }
-#endif
 }
+#endif
 
 
 #define CD_STATUS_EMPTY		0

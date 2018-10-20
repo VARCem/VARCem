@@ -8,7 +8,7 @@
  *
  *		Implementation of 8250-style serial port.
  *
- * Version:	@(#)serial.c	1.0.8	2018/09/19
+ * Version:	@(#)serial.c	1.0.9	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -78,10 +78,10 @@ static const struct {
 static SERIAL	ports[SERIAL_MAX];	/* the ports */
 
 
+#if defined(_LOGGING) && defined(ENABLE_SERIAL_LOG)
 void
 serial_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SERIAL_LOG
     va_list ap;
 
     if (serial_do_log >= level) {
@@ -89,8 +89,8 @@ serial_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 static void

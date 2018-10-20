@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.11 	2018/09/19
+ * Version:	@(#)parallel.c	1.0.12 	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,13 +50,6 @@
 #include "parallel_dev.h"
 
 
-static const uint16_t addr_list[] = {		/* valid port addresses */
-    PARALLEL1_ADDR,
-    PARALLEL2_ADDR,
-    PARALLEL3_ADDR
-};
-
-
 typedef struct {
     /* Standard port stuff. */
     uint16_t		base;			/* port base address */
@@ -76,13 +69,18 @@ int			parallel_do_log = ENABLE_PARALLEL_LOG;
 #endif
 
 
+static const uint16_t addr_list[] = {		/* valid port addresses */
+    PARALLEL1_ADDR,
+    PARALLEL2_ADDR,
+    PARALLEL3_ADDR
+};
 static parallel_t	ports[PARALLEL_MAX];	/* the ports */
 
 
+#if defined(_LOGGING) && defined(ENABLE_PARALLEL_LOG)
 void
 parallel_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_PARALLEL_LOG
     va_list ap;
 
     if (parallel_do_log >= level) {
@@ -90,8 +88,8 @@ parallel_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 /* Write a value to a port (and/or its attached device.) */

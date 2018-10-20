@@ -8,7 +8,7 @@
  *
  *		SVGA renderers.
  *
- * Version:	@(#)vid_svga_render.c	1.0.11	2018/09/19
+ * Version:	@(#)vid_svga_render.c	1.0.12	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -441,9 +441,10 @@ void svga_render_4bpp_lowres(svga_t *svga)
                 for (x = 0; x <= svga->hdisp; x += 16)
                 {
                         uint8_t edat[4];
+			uint32_t *eptr = (uint32_t *)edat;
                         uint8_t dat;
 
-                        *(uint32_t *)(&edat[0]) = *(uint32_t *)(&svga->vram[svga->ma]);                        
+                        *eptr = *(uint32_t *)(&svga->vram[svga->ma]);                        
 
                         svga->ma += 4; 
                         svga->ma &= svga->vram_display_mask;
@@ -488,9 +489,10 @@ void svga_render_4bpp_highres(svga_t *svga)
                 for (x = 0; x <= svga->hdisp; x += 8)
                 {
                         uint8_t edat[4];
+			uint32_t *eptr = (uint32_t *)edat;
                         uint8_t dat;
 
-			*(uint32_t *)(&edat[0]) = *(uint32_t *)(&svga->vram[svga->ma | ((svga->sc & ~svga->crtc[0x17] & 3)) * 0x8000]);
+			*eptr = *(uint32_t *)(&svga->vram[svga->ma | ((svga->sc & ~svga->crtc[0x17] & 3)) * 0x8000]);
                         svga->ma += 4;
                         svga->ma &= svga->vram_display_mask;
 

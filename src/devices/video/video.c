@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.18	2018/10/05
+ * Version:	@(#)video.c	1.0.19	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -645,10 +645,10 @@ create_bitmap(int x, int y)
 }
 
 
+#if defined(_LOGGING) && defined(ENABLE_VIDEO_LOG)
 void
 video_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_VIDEO_LOG
     va_list ap;
 
     if (video_do_log >= level) {
@@ -656,8 +656,8 @@ video_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 void

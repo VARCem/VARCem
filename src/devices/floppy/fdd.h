@@ -8,7 +8,7 @@
  *
  *		Definitions for the floppy drive emulation.
  *
- * Version:	@(#)fdd.h	1.0.8	2018/09/19
+ * Version:	@(#)fdd.h	1.0.9	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,8 +77,6 @@ extern int64_t	floppytime;
 
 extern int	fdd_swap;
 
-
-extern void	d86f_log(int level, const char *fmt, ...);
 
 extern void	fdd_log(int level, const char *fmt, ...);
 

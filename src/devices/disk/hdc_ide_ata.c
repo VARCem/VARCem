@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.25	2018/10/17
+ * Version:	@(#)hdc_ide_ata.c	1.0.26	2018/10/19
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1460,7 +1460,7 @@ static uint32_t
 ide_read_data(ide_t *ide, int length)
 {
     scsi_device_data_t *atapi = (scsi_device_data_t *) ide->p;
-    uint32_t temp;
+    uint32_t temp = 0;
 
     if (!ide->buffer) {
 	switch (length) {
@@ -1481,12 +1481,12 @@ ide_read_data(ide_t *ide, int length)
 
     if (ide->command == WIN_PACKETCMD) {
 	ide->pos = 0;
-	if (!ide_drive_is_atapi(ide)) {
+	if (ide_drive_is_atapi(ide)) {
+		temp = ide->packet_read(ide->p, length);
+	} else {
 		DEBUG("Drive not ATAPI (position: %i)\n", ide->pos);
 		return 0;
 	}
-	if (ide_drive_is_atapi(ide))
-		temp = ide->packet_read(ide->p, length);
     } else {
 	switch (length) {
 		case 1:

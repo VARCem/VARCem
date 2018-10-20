@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.12	2018/10/05
+ * Version:	@(#)mouse.c	1.0.13	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -113,10 +113,10 @@ static int	mouse_nbut;
 static device_t	mouse_dev;
 
 
+#if defined(_LOGGING) && defined(ENABLE_MOUSE_LOG)
 void
 mouse_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_MOUSE_LOG
     va_list ap;
 
     if (mouse_do_log >= level) {
@@ -124,8 +124,8 @@ mouse_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 /* Initialize the mouse module. */

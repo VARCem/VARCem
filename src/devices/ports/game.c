@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.16	2018/10/12
+ * Version:	@(#)game.c	1.0.17	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -76,10 +76,10 @@ int		game_do_log = ENABLE_GAME_LOG;
 #endif
 
 
+#if defined(_LOGGING) && defined(ENABLE_GAME_LOG)
 void
 game_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_GAME_LOG
     va_list ap;
 
     if (game_do_log >= level) {
@@ -87,8 +87,8 @@ game_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 static int

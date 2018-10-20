@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.18	2018/10/17
+ * Version:	@(#)zip.c	1.0.19	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,6 +71,9 @@
 #define zipbufferb		dev->buffer
 
 
+#ifdef ENABLE_ZIP_LOG
+int		zip_do_log = ENABLE_ZIP_LOG;
+#endif
 zip_t		*zip[ZIP_NUM] = { NULL, NULL, NULL, NULL };
 zip_drive_t	zip_drives[ZIP_NUM];
 
@@ -476,15 +479,10 @@ static void	zip_init(zip_t *dev);
 static void	zip_callback(void *p);
 
 
-#ifdef ENABLE_ZIP_LOG
-int zip_do_log = ENABLE_ZIP_LOG;
-#endif
-
-
+#if defined(_LOGGING) && defined(ENABLE_ZIP_LOG)
 static void
 zip_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_ZIP_LOG
     va_list ap;
 
     if (zip_do_log >= level) {
@@ -492,8 +490,8 @@ zip_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 int
@@ -2367,7 +2365,9 @@ static int
 zip_read_from_dma(zip_t *dev)
 {
     scsi_device_t *sd = &scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun];
+#ifdef _LOGGING
     int32_t *BufLen = &sd->buffer_length;
+#endif
     int ret = 0;
 
     if (dev->drv->bus_type == ZIP_BUS_SCSI)
@@ -2438,7 +2438,9 @@ static int
 zip_write_to_dma(zip_t *dev)
 {
     scsi_device_t *sd = &scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun];
+#ifdef _LOGGING
     int32_t BufLen = sd->buffer_length;
+#endif
     int ret = 0;
 
     if (dev->drv->bus_type == ZIP_BUS_SCSI) {

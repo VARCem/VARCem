@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.14	2018/10/18
+ * Version:	@(#)ui_stbar.c	1.0.15	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -881,7 +881,8 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		wcscpy(cdev->prev_image_path, str);
 
 		/* Close the current drive/pathname. */
-		cdev->ops->close(cdev);
+		if (cdev->ops && cdev->ops->close)
+			cdev->ops->close(cdev);
 		memset(cdev->image_path, 0, sizeof(cdev->image_path));
 
 		/* Now open new image. */
@@ -921,9 +922,8 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		cdev = &cdrom[drive];
 		if (part == -1) break;
 
-		if (cdev->ops->medium_lock)
-			cdev->ops->medium_lock(cdev,
-				(idm == IDM_CDROM_LOCK) ? 1 : 0);
+		if (cdev->ops && cdev->ops->medium_lock)
+			cdev->ops->medium_lock(cdev, (idm == IDM_CDROM_LOCK) ? 1 : 0);
 		menu_cdrom_update(part, drive);
 		ui_sb_tip_update(SB_CDROM | drive);
 		break;
@@ -942,7 +942,8 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		cdev->prev_host_drive = cdev->host_drive;
 
 		/* Close the current drive/pathname. */
-		cdev->ops->close(cdev);
+		if (cdev->ops && cdev->ops->close)
+			cdev->ops->close(cdev);
 		memset(cdev->image_path, 0, sizeof(cdev->image_path));
 		if ((cdev->host_drive >= 'A') && (cdev->host_drive <= 'Z'))
 			sb_menu_set_item(part, IDM_CDROM_HOST_DRIVE | drive |

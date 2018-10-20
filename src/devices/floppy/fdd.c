@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.15	2018/10/12
+ * Version:	@(#)fdd.c	1.0.16	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,7 @@
 #include "fdc.h"
 
 
-/* FIXME: these should be compined. */
+/* FIXME: these should be combined. */
 DRIVE		drives[FDD_NUM];
 wchar_t		floppyfns[4][512];
 int		fdd_cur_track[FDD_NUM];
@@ -219,10 +219,10 @@ static const struct
 };
 
 
+#if defined(_LOGGING) && defined(ENABLE_FDD_LOG)
 void
 fdd_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_FDD_LOG
 	va_list ap;
 
 	if (fdd_do_log >= level) {
@@ -230,8 +230,8 @@ fdd_log(int level, const char *fmt, ...)
 		pclog_ex(fmt, ap);
 		va_end(ap);
 	}
-#endif
 }
+#endif
 
 
 const char *fdd_getname(int type)

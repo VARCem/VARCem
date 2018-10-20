@@ -8,7 +8,7 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.8	2018/10/14
+ * Version:	@(#)midi.c	1.0.9	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,8 +84,6 @@ int		sound_midi_do_log = ENABLE_SOUND_MIDI_LOG;
 #endif
 
 
-static midi_t		*midi = NULL;
-
 static const uint8_t	MIDI_evt_len[256] = {
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  // 0x00
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  // 0x10
@@ -108,7 +106,7 @@ static const uint8_t	MIDI_evt_len[256] = {
 
     0,2,3,2, 0,0,1,0, 1,0,1,1, 1,0,1,0   // 0xf0
 };
-static struct {
+static const struct {
     const char		*internal_name;
     const device_t	*device;
 } devices[] = {
@@ -123,6 +121,7 @@ static struct {
     {SYSTEM_MIDI_INT,	&system_midi_device	},
     {NULL,		NULL			}
 };
+static midi_t		*midi = NULL;
 
 
 int
@@ -185,10 +184,10 @@ midi_device_get_from_internal_name(const char *s)
 }
 
 
+#if defined(_LOGGING) && defined(ENABLE_SOUND_MIDI_LOG)
 void
 sound_midi_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SOUND_MIDI_LOG
     va_list ap;
 
     if (sound_midi_do_log >= level) {
@@ -196,8 +195,8 @@ sound_midi_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 void

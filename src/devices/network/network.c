@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.13	2018/10/16
+ * Version:	@(#)network.c	1.0.14	2018/10/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -156,10 +156,10 @@ hexdump_p(char *ptr, uint8_t *bufp, int len)
 #endif
 
 
+#if defined(_LOGGING) && defined(ENABLE_NETWORK_LOG)
 void
 network_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_NETWORK_LOG
     va_list ap;
 
     if (network_do_log >= level) {
@@ -167,14 +167,14 @@ network_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
+#if defined(_LOGGING) && defined(ENABLE_NETWORK_DEV_LOG)
 void
 network_card_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_NETWORK_DEV_LOG
     va_list ap;
 
     if (network_card_do_log >= level) {
@@ -182,8 +182,8 @@ network_card_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 void

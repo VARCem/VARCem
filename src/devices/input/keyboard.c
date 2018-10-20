@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.9	2018/10/06
+ * Version:	@(#)keyboard.c	1.0.10	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,10 +68,10 @@ static uint8_t	scroll_lock = 0;
 static uint8_t  shift = 0;
 
 
+#if defined(_LOGGING) && defined(ENABLE_KEYBOARD_LOG)
 void
 kbd_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_KEYBOARD_LOG
     va_list ap;
 
     if (keyboard_do_log >= level) {
@@ -79,8 +79,8 @@ kbd_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 /* Reset the keyboard driver. */

@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.8	2018/10/16
+ * Version:	@(#)sound_dev.c	1.0.9	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -80,7 +80,7 @@ extern const device_t wss_device;
 extern const device_t ncr_business_audio_device;
 
 
-static struct {
+static const struct {
     const char		*internal_name;
     const device_t	*device;
 } sound_cards[] = {
@@ -115,10 +115,10 @@ static struct {
 };
 
 
+#if defined(_LOGGING) && defined(ENABLE_SOUND_DEV_LOG)
 void
 sound_card_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SOUND_DEV_LOG
     va_list ap;
 
     if (sound_card_do_log >= level) {
@@ -126,14 +126,13 @@ sound_card_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 void
 sound_card_reset(void)
 {
-pclog(0, "SOUND: dev_reset(%d)\n", sound_card);
     if (sound_cards[sound_card].device != NULL)
 	device_add(sound_cards[sound_card].device);
 }

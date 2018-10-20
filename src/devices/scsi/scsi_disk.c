@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.15	2018/10/16
+ * Version:	@(#)scsi_disk.c	1.0.17	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -171,10 +171,10 @@ int scsi_disk_do_log = ENABLE_SCSI_DISK_LOG;
 #endif
 
 
-void
+#if defined(_LOGGING) && defined(ENABLE_SCSI_DISK_LOG)
+static void
 scsi_disk_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SCSI_DISK_LOG
     va_list ap;
 
     if (scsi_disk_do_log >= level) {
@@ -182,8 +182,8 @@ scsi_disk_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 /* Translates ATAPI status (ERR_STAT flag) to SCSI status. */
@@ -593,7 +593,9 @@ static void
 scsi_disk_command(void *p, uint8_t *cdb)
 {
     scsi_disk_t *dev = (scsi_disk_t *)p;
+#ifdef _LOGGING
     uint8_t *hdbufferb;
+#endif
     int32_t *BufLen;
     int32_t len, max_len, alloc_length;
     int pos = 0;
@@ -604,7 +606,9 @@ scsi_disk_command(void *p, uint8_t *cdb)
     char device_identify_ex[15] = { 'E', 'M', 'U', '_', 'H', 'D', '0', '0', ' ', 'v', '0'+EMU_VER_MAJOR, '.', '0'+EMU_VER_MINOR, '0'+EMU_VER_REV, 0 };
     int block_desc = 0;
 
+#ifdef _LOGGING
     hdbufferb = scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun].cmd_buffer;
+#endif
     BufLen = &scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun].buffer_length;
 
     last_sector = hdd_image_get_last_sector(dev->id);

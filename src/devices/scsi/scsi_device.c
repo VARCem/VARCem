@@ -8,7 +8,7 @@
  *
  *		The generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.c	1.0.11	2018/10/16
+ * Version:	@(#)scsi_device.c	1.0.12	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,7 @@ static const uint8_t	scsi_null_device_sense[18] = {
 
 
 static uint8_t
-scsi_device_target_command(scsi_device_t *dev, uint8_t *cdb)
+target_command(scsi_device_t *dev, uint8_t *cdb)
 {
     if (dev->command && dev->err_stat_to_scsi) {
 	dev->command(dev->p, cdb);
@@ -72,7 +72,7 @@ scsi_device_target_command(scsi_device_t *dev, uint8_t *cdb)
 
 
 static void
-scsi_device_target_callback(scsi_device_t *dev)
+target_callback(scsi_device_t *dev)
 {
     if (dev->callback)
 	dev->callback(dev->p);
@@ -80,7 +80,7 @@ scsi_device_target_callback(scsi_device_t *dev)
 
 
 static int
-scsi_device_target_err_stat_to_scsi(scsi_device_t *dev)
+target_err_stat_to_scsi(scsi_device_t *dev)
 {
     if (dev->err_stat_to_scsi)
 	return dev->err_stat_to_scsi(dev->p);
@@ -168,13 +168,16 @@ scsi_device_command_phase0(scsi_device_t *dev, uint8_t *cdb)
 	return;
     }
 
-    /* Finally, execute the SCSI command immediately and get the transfer length. */
+    /* Execute the SCSI command immediately and get the transfer length. */
     dev->phase = SCSI_PHASE_COMMAND;
-    dev->status = scsi_device_target_command(dev, cdb);
+    dev->status = target_command(dev, cdb);
 
     if (dev->phase == SCSI_PHASE_STATUS) {
-	/* Command completed (either OK or error) - call the phase callback to complete the command. */
-	scsi_device_target_callback(dev);
+	/*
+	 * Command completed (either OK or error) -
+	 * Call the phase callback to complete the command.
+	 */
+	target_callback(dev);
     }
     /* If the phase is DATA IN or DATA OUT, finish this here. */
 }
@@ -187,11 +190,14 @@ scsi_device_command_phase1(scsi_device_t *dev)
 	return;
 
     /* Call the second phase. */
-    scsi_device_target_callback(dev);
-    dev->status = scsi_device_target_err_stat_to_scsi(dev);
+    target_callback(dev);
+    dev->status = target_err_stat_to_scsi(dev);
 
-    /* Command second phase complete - call the callback to complete the command. */
-    scsi_device_target_callback(dev);
+    /*
+     * Command second phase complete -
+     * Call the callback to complete the command.
+     */
+    target_callback(dev);
 }
 
 
@@ -202,10 +208,10 @@ scsi_device_get_buf_len(scsi_device_t *dev)
 }
 
 
+#if defined(_LOGGING) && defined(ENABLE_SCSI_LOG)
 void
 scsi_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SCSI_LOG
     va_list ap;
 
     if (scsi_do_log >= level) {
@@ -213,5 +219,5 @@ scsi_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif

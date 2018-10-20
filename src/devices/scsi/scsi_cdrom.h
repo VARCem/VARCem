@@ -8,7 +8,7 @@
  *
  *		Definitions for the SCSI CD-ROM module.
  *
- * Version:	@(#)scsi_cdrom.h	1.0.2	2018/10/17
+ * Version:	@(#)scsi_cdrom.h	1.0.3	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,8 +82,6 @@ typedef struct {
 #define scsi_cdrom_asc		dev->sense[12]
 #define scsi_cdrom_ascq		dev->sense[13]
 
-
-extern void	scsi_cdrom_log(int level, const char *fmt, ...);
 
 //extern void	scsi_cdrom_reset(void *p);
 

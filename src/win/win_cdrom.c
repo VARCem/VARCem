@@ -12,7 +12,7 @@
  *
  * FIXME:	Not yet fully working!  Getting there, though ;-)
  *
- * Version:	@(#)win_cdrom.c	1.0.12 	2018/10/18
+ * Version:	@(#)win_cdrom.c	1.0.13 	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -105,10 +105,12 @@ int	cdrom_host_do_log = ENABLE_CDROM_HOST_LOG;
 
 
 #ifdef USE_HOST_CDROM
+
+
+#if defined(_LOGGING) && defined(ENABLE_CDROM_HOST_LOG)
 static void
 cdrom_host_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_CDROM_HOST_LOG
     va_list ap;
 
     if (cdrom_host_do_log >= level) {
@@ -116,8 +118,8 @@ cdrom_host_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 uint8_t	cdrom_host_drive_available_num = 0;

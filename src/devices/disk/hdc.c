@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.14	2018/09/16
+ * Version:	@(#)hdc.c	1.0.15	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -90,10 +90,10 @@ static const struct {
 };
 
 
+#if defined(_LOGGING) && defined(ENABLE_HDC_LOG)
 void
 hdc_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_HDC_LOG
    va_list ap;
 
    if (hdc_do_log >= level) {
@@ -101,8 +101,8 @@ hdc_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
    }
-#endif
 }
+#endif
 
 
 /* Initialize the HDC module. */

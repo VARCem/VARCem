@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.3	2018/10/18
+ * Version:	@(#)scsi_cdrom.c	1.0.5	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,9 +86,7 @@ typedef struct {
     uint16_t	len;
     uint8_t	control;
 } gesn_cdb_t;
-#pragma pack(pop)
 
-#pragma pack(push,1)
 typedef struct {
     uint16_t	len;
     uint8_t	notification_class;
@@ -352,10 +350,10 @@ static void	mode_sense_load(scsi_cdrom_t *dev);
 static void	scsi_cdrom_callback(void *p);
 
 
-void
+#if defined(_LOGGING) && defined(ENABLE_SCSI_CDROM_LOG)
+static void
 scsi_cdrom_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SCSI_CDROM_LOG
     va_list ap;
 
     if (scsi_cdrom_do_log >= level) {
@@ -363,8 +361,8 @@ scsi_cdrom_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 static void
@@ -2730,7 +2728,9 @@ irq_raise(scsi_cdrom_t *dev)
 static int
 read_from_dma(scsi_cdrom_t *dev)
 {
+#ifdef _LOGGING
     int32_t *BufLen = &scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun].buffer_length;
+#endif
     int ret = 0;
 
     if (dev->drv->bus_type == CDROM_BUS_SCSI)
@@ -2801,8 +2801,10 @@ write_to_scsi_dma(uint8_t scsi_id, uint8_t scsi_lun)
 static int
 write_to_dma(scsi_cdrom_t *dev)
 {
+#ifdef _LOGGING
     scsi_device_t *sd = &scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun];
     int32_t *BufLen = &sd->buffer_length;
+#endif
     int ret = 0;
 
     if (dev->drv->bus_type == CDROM_BUS_SCSI) {
@@ -3044,7 +3046,7 @@ scsi_cdrom_stop(void *priv)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *)priv;
 
-    if (dev->drv->ops && dev->drv->ops->stop)
+    if (dev->drv && dev->drv->ops && dev->drv->ops->stop)
 	dev->drv->ops->stop(dev->drv);
 }
 
@@ -3114,12 +3116,14 @@ static void
 scsi_cdrom_identify(void *priv, int ide_has_dma)
 {
     ide_t *ide = (ide_t *)priv;
+#ifdef _LOGGING
     scsi_cdrom_t *dev;
     char device_identify[9] = { 'E', 'M', 'U', '_', 'C', 'D', '0', '0', 0 };
 
     dev = (scsi_cdrom_t *) ide->p;
 
     device_identify[7] = dev->id + 0x30;
+#endif
     DEBUG("ATAPI Identify: %s\n", device_identify);
 
     ide->buffer[0] = 0x8000 | (5<<8) | 0x80 | (2<<5); /* ATAPI device, CD-ROM drive, removable media, accelerated DRQ */

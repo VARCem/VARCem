@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.h	1.0.4	2018/09/21
+ * Version:	@(#)fdc.h	1.0.5	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,7 +117,6 @@ extern const device_t	fdc_at_nsc_device;
 #endif
 
 
-extern void	fdc_log(int level, const char *fmt, ...);
 extern void	fdc_remove(fdc_t *fdc);
 extern void	fdc_poll(fdc_t *fdc);
 extern void	fdc_abort(fdc_t *fdc);

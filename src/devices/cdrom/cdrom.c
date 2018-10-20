@@ -8,7 +8,7 @@
  *
  *		Generic interface for CD-ROM/DVD/BD implementations.
  *
- * Version:	@(#)cdrom.c	1.0.22	2018/10/18
+ * Version:	@(#)cdrom.c	1.0.23	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,15 +60,13 @@
 #ifdef ENABLE_CDROM_LOG
 int	cdrom_do_log = ENABLE_CDROM_LOG;
 #endif
-
-
 cdrom_t	cdrom[CDROM_NUM];
 
 
+#if defined(_LOGGING) && defined(ENABLE_CDROM_LOG)
 void
 cdrom_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_CDROM_LOG
     va_list ap;
 
     if (cdrom_do_log >= level) {
@@ -76,8 +74,8 @@ cdrom_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 int
@@ -347,7 +345,7 @@ cdrom_reset_bus(int bus)
     for (i = 0; i < CDROM_NUM; i++) {
 	dev = &cdrom[i];
 
-        if (dev->bus_type == bus)
+        if ((dev->bus_type == bus) && dev->reset)
 		dev->reset(dev);
     }
 }

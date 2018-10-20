@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.13	2018/10/16
+ * Version:	@(#)scsi.c	1.0.14	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,7 +66,7 @@ int	scsi_card_do_log = ENABLE_SCSI_DEV_LOG;
 #endif
 
 
-static struct {
+static const struct {
     const char		*internal_name;
     const device_t	*device;
 } scsi_cards[] = {
@@ -147,10 +147,10 @@ scsi_card_has_config(int card)
 }
 
 
+#if defined(_LOGGING) && defined(ENABLE_SCSI_DEV_LOG)
 void
 scsi_card_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SCSI_DEV_LOG
     va_list ap;
 
     if (scsi_card_do_log >= level) {
@@ -158,8 +158,8 @@ scsi_card_log(int level, const char *fmt, ...)
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
 }
+#endif
 
 
 int
