@@ -11,7 +11,7 @@
  *
  * NOTE:	This code now only supports targets at LUN=0 !!
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.12	2018/10/16
+ * Version:	@(#)scsi_ncr5380.c	1.0.13	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -359,7 +359,7 @@ ncr_callback(void *priv)
 			DEBUG("NCR: select - target ID = %i\n", ncr->target_id);
 
 			/*Once the device has been found and selected, mark it as busy*/
-			if ((ncr->target_id != -1) &&
+			if ((ncr->target_id != 0xff) &&
 			    scsi_device_present(&scsi_devices[ncr->target_id][ncr->target_lun])) {
 				ncr->cur_bus |= BUS_BSY;
 				DEBUG("DEBUG: device found at ID %i\n", ncr->target_id);

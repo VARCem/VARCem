@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.13	2018/09/29
+ * Version:	@(#)win_settings_periph.h	1.0.14	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,8 @@
 
 static int	scsi_to_list[20],
 		list_to_scsi[20];
-static const char	*hdc_names[16];
+static int	hdc_to_list[20],
+		list_to_hdc[20];
 
 
 /* Populate the HDC combo. */
@@ -62,10 +63,9 @@ recalc_scsi_list(HWND hdlg)
     SendMessage(h, CB_RESETCONTENT, 0, 0);
 
     c = d = 0;
-    while (1) {
+    for (;;) {
 	stransi = scsi_card_get_internal_name(c);
-	if (stransi == NULL)
-		break;
+	if (stransi == NULL) break;
 
 	dev = scsi_card_getdevice(c);
 
@@ -109,11 +109,11 @@ recalc_hdc_list(HWND hdlg)
     h = GetDlgItem(hdlg, IDC_COMBO_HDC);
     SendMessage(h, CB_RESETCONTENT, 0, 0);
 
+INFO("LIST: active=%d (%s)\n", temp_hdc_type, hdc_get_name(temp_hdc_type));
     c = d = 0;
-    while (1) {
+    for (;;) {
 	stransi = hdc_get_internal_name(c);
-	if (stransi == NULL)
-		break;
+	if (stransi == NULL) break;
 
 	dev = hdc_get_device(c);
 
@@ -122,8 +122,6 @@ recalc_hdc_list(HWND hdlg)
 		c++;
 		continue;
 	}
-
-	hdc_names[d] = stransi;
 
 	if (c == 0) {
 		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
@@ -145,15 +143,13 @@ recalc_hdc_list(HWND hdlg)
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	}
 
-	c++;
-	d++;
+	hdc_to_list[c] = d;			
+	list_to_hdc[d] = c;
+INFO("[%d]=%d\n", c, hdc_to_list[c], d, list_to_hdc[d]);
+	c++; d++;
     }
 
-    if (temp_hdc_type != -1 && temp_hdc_type < d)
-	SendMessage(h, CB_SETCURSEL, temp_hdc_type, 0);
-      else
-	SendMessage(h, CB_SETCURSEL, 0, 0);
-
+    SendMessage(h, CB_SETCURSEL, hdc_to_list[temp_hdc_type], 0);
     EnableWindow(h, d ? TRUE : FALSE);
 }
 
@@ -290,7 +286,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_COMBO_HDC:
 				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-				temp_hdc_type = hdc_get_from_internal_name(hdc_names[SendMessage(h, CB_GETCURSEL, 0, 0)]);
+				temp_hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
 				if (hdc_has_config(temp_hdc_type))
@@ -301,7 +297,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_HDC:
 				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-				temp_hdc_type = hdc_get_from_internal_name(hdc_names[SendMessage(h, CB_GETCURSEL, 0, 0)]);
+				temp_hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				temp_deviceconfig |= dlg_devconf(hdlg, hdc_get_device(temp_hdc_type));
 				break;
@@ -376,13 +372,11 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_HDC);
 		c = SendMessage(h, CB_GETCURSEL, 0, 0);
-		if (hdc_names[c])
-			temp_hdc_type = hdc_get_from_internal_name(hdc_names[c]);
-		  else
-			temp_hdc_type = 0;
+		temp_hdc_type = list_to_hdc[c];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-		temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		c = SendMessage(h, CB_GETCURSEL, 0, 0);
+		temp_scsi_card = list_to_scsi[c];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_BUGGER);
 		temp_bugger = SendMessage(h, BM_GETCHECK, 0, 0);

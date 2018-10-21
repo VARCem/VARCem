@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.7	2018/10/16
+ * Version:	@(#)win_settings_network.h	1.0.8	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,7 +102,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_INITDIALOG:
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
 //FIXME: take strings from network.c table.. --FvK
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"None");
+		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_DISABLED));
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"PCap");
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"SLiRP");
 		SendMessage(h, CB_SETCURSEL, temp_net_type, 0);
@@ -115,9 +115,16 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
 		for (c = 0; c < network_ndev; c++) {
-			mbstowcs(temp, network_devs[c].description, sizeof_w(temp));
-			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			if (c == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_NONE));
+			} else {
+				mbstowcs(temp, network_devs[c].description, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
 		}
+
 		SendMessage(h, CB_SETCURSEL, network_card_to_id(temp_host_dev), 0);
 
 		/*NIC config*/
@@ -125,29 +132,31 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		c = d = 0;
 		while (1) {
 			stransi = network_card_get_internal_name(c);
-			if (stransi == NULL)
-				break;
+			if (stransi == NULL) break;
 
 			dev = network_card_getdevice(c);
-			if (dev == NULL) {
-				/* Translate "None". */
-				wcscpy(temp, get_string(IDS_NONE));
-			} else if (network_card_available(c) &&
-			    device_is_valid(dev, machines[temp_machine].flags)) {
-				sprintf(tempA, "[%s] %s",
-					device_get_bus_name(dev),
-					network_card_getname(c));
-				mbstowcs(temp, tempA, sizeof_w(temp));
-			} else {
+			if (!network_card_available(c) ||
+			    !device_is_valid(dev, machines[temp_machine].flags)) {
 				c++;
 				continue;
 			}
 
-			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			if (c == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_NONE));
+			} else {
+				sprintf(tempA, "[%s] %s",
+					device_get_bus_name(dev),
+					network_card_getname(c));
+				mbstowcs(temp, tempA, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
 
 			nic_to_list[c] = d;
 			list_to_nic[d++] = c++;
 		}
+
 		SendMessage(h, CB_SETCURSEL, nic_to_list[temp_net_card], 0);
 
 		EnableWindow(h, d ? TRUE : FALSE);

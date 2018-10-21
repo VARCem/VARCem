@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_input.h	1.0.8	2018/09/29
+ * Version:	@(#)win_settings_input.h	1.0.9	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,18 +76,36 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INITDIALOG:
 		h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
-		d = 0;
-		for (c = 0; c < mouse_get_ndev(); c++) {
-			mouse_to_list[c] = d;
 
-			if (mouse_valid(c, temp_machine)) {
+		c = d = 0;
+		for (;;) {
+			stransi = mouse_get_internal_name(c);
+			if (stransi == NULL) break;
+
+			/* Skip devices that are unavailable. */
+			if (! mouse_valid(c, temp_machine)) {
+				c++;
+				continue;
+			}
+
+			if (c == 0) {
+				SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
+			} else if (c == 1) {
+				if (! (machines[temp_machine].flags&MACHINE_MOUSE)) {
+					/* Skip "Internal" if machine doesn't have one. */
+					c++;
+					continue;
+				}
+				SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_INTERNAL));
+			} else {
 				stransi = mouse_get_name(c);
 				mbstowcs(temp, stransi, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-
-				list_to_mouse[d] = c;
-				d++;
 			}
+
+			mouse_to_list[c] = d;
+			list_to_mouse[d] = c;
+			c++; d++;
 		}
 
 		SendMessage(h, CB_SETCURSEL, mouse_to_list[temp_mouse], 0);
@@ -100,9 +118,16 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_COMBO_JOYSTICK);
 		c = 0;
-		while ((stransi = gamedev_get_name(c)) != NULL) {
-			mbstowcs(temp, stransi, sizeof_w(temp));
-			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+		for (;;) {
+			stransi = gamedev_get_name(c);
+			if (stransi == NULL) break;
+
+			if (c == 0) {
+				SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
+			} else {
+				mbstowcs(temp, stransi, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
 			c++;
 		}
 		SendMessage(h, CB_SETCURSEL, temp_joystick, 0);

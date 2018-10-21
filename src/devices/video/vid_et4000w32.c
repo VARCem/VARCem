@@ -12,7 +12,7 @@
  *
  * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
  *
- * Version:	@(#)vid_et4000w32.c	1.0.15	2018/10/08
+ * Version:	@(#)vid_et4000w32.c	1.0.16	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -812,10 +812,14 @@ void et4000w32_decx(int c, et4000w32p_t *et4000)
         et4000->acl.pattern_x -= c;
         et4000->acl.source_x  -= c;
         et4000->acl.mix_addr  -= c;
+#if 0	/* pattern_x is unsigned */
         if (et4000->acl.pattern_x < 0)
            et4000->acl.pattern_x  += et4000w32_max_x[et4000->acl.internal.pattern_wrap & 7];
+#endif
+#if 0	/* source_x is unsigned */
         if (et4000->acl.source_x  < 0)
            et4000->acl.source_x   += et4000w32_max_x[et4000->acl.internal.source_wrap  & 7];
+#endif
 }
 void et4000w32_incy(et4000w32p_t *et4000)
 {
@@ -843,17 +847,21 @@ void et4000w32_decy(et4000w32p_t *et4000)
         et4000->acl.mix_addr     -= et4000->acl.internal.mix_off     + 1;
         et4000->acl.dest_addr    -= et4000->acl.internal.dest_off    + 1;
         et4000->acl.pattern_y--;
+#if 0	/* pattern_y is unsigned */
         if (et4000->acl.pattern_y < 0 && !(et4000->acl.internal.pattern_wrap & 0x40))
         {
                 et4000->acl.pattern_y = et4000w32_wrap_y[(et4000->acl.internal.pattern_wrap >> 4) & 7] - 1;
                 et4000->acl.pattern_addr = et4000->acl.pattern_back + (et4000w32_wrap_x[et4000->acl.internal.pattern_wrap & 7] * (et4000w32_wrap_y[(et4000->acl.internal.pattern_wrap >> 4) & 7] - 1));
         }
+#endif
         et4000->acl.source_y--;
+#if 0	/* source_y is unsigned */
         if (et4000->acl.source_y < 0 && !(et4000->acl.internal.source_wrap & 0x40))
         {
                 et4000->acl.source_y = et4000w32_wrap_y[(et4000->acl.internal.source_wrap >> 4) & 7] - 1;
                 et4000->acl.source_addr = et4000->acl.source_back + (et4000w32_wrap_x[et4000->acl.internal.source_wrap & 7] *(et4000w32_wrap_y[(et4000->acl.internal.source_wrap >> 4) & 7] - 1));;
         }
+#endif
 }
 
 static void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et4000w32p_t *et4000)

@@ -8,7 +8,7 @@
  *
  *		Various ASCII to Unicode maps, for the various codepages.
  *
- * Version:	@(#)prt_cpmap.c	1.0.2	2018/10/05
+ * Version:	@(#)prt_cpmap.c	1.0.3	2018/10/20
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -567,7 +567,7 @@ static const struct {
     { 864,	cp864Map	},
     { 865,	cp865Map	},
     { 866,	cp866Map	},
-    { -1,	NULL		}
+    { 0,	NULL		}
 };
 
 
@@ -577,7 +577,7 @@ select_codepage(uint16_t code)
 {
     int i;
 
-    for (i = 0; maps[i].code != -1; i++)
+    for (i = 0; maps[i].code != 0; i++)
 	if (maps[i].code == code) return(maps[i].map);
 
     if (code == 0)
