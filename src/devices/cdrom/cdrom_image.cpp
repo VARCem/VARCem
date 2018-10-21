@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.17	2018/10/20
+ * Version:	@(#)cdrom_image.cpp	1.0.19	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -133,7 +133,7 @@ enum {
 
 
 static int		cdrom_sector_size;
-static uint8_t		raw_buffer[2448];
+static uint8_t		raw_buffer[2856];    /* same size as sector_buffer_t */
 static uint8_t		extra_buffer[296];
 
 
@@ -467,9 +467,9 @@ read_sector_to_buffer(cdrom_t *dev, uint8_t *rbuf, uint32_t msf, uint32_t lba, i
     bb += mode2 ? 12 : 4;
     bb += len;
     if (mode2 && ((mode2 & 0x03) == 1))
-	memset(bb, 0, 280);
+	memset(bb, 0, 88);	/* 280 */
     else if (!mode2)
-	memset(bb, 0, 288);
+	memset(bb, 0, 96);	/* 288 */
 }
 
 
@@ -730,13 +730,8 @@ image_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int is_msf,
     if (!is_legal(dev->id, type, flags, audio, mode2))
 	return 0;
 
-    if ((type == 3) || ((type > 4) && (type != 8))) {
-	if (type == 3) {
-		DEBUG("CD-ROM %i: Attempting to read a Yellowbook Mode 2 data sector from an image\n", dev->id);
-	}
-	if (type > 4) {
-		DEBUG("CD-ROM %i: Attempting to read a XA Mode 2 Form 2 data sector from an image\n", dev->id);
-	}
+    if ((type > 5) && (type != 8)) {
+	DEBUG("CD-ROM %i: Attempting to read an unrecognized sector type from an image\n", dev->id);
 	return 0;
     } else if (type == 1) {
 	if (!audio || dev->img_is_iso) {
@@ -1107,6 +1102,7 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
     if (! img->SetDevice(temp, false)) {
 	image_close(dev);
 	dev->ops = NULL;
+	dev->host_drive = 0;
 	return 1;
     }
 

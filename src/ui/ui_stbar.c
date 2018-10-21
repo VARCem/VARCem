@@ -877,7 +877,7 @@ ui_sb_menu_command(int idm, uint8_t tag)
 		/* Save current drive/pathname for later re-use. */
 		cdev->prev_host_drive = cdev->host_drive;
 		if (! cdev->prev_image_path)
-			cdev->prev_image_path = (wchar_t *)mem_alloc(1024);
+			cdev->prev_image_path = (wchar_t *)mem_alloc(1024 * sizeof(wchar_t));
 		wcscpy(cdev->prev_image_path, str);
 
 		/* Close the current drive/pathname. */

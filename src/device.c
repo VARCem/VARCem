@@ -135,6 +135,7 @@ device_add(const device_t *d)
 {
     wchar_t temp[1024];
     void *priv = NULL;
+    device_t *old;
     int c;
 
     for (c = 0; c < DEVICE_MAX; c++) {
@@ -164,6 +165,7 @@ device_add(const device_t *d)
 	INFO("DEVICE: device '%s' is unstable, user agreed!\n", d->name);
     }
 
+    old = device_current;
     device_current = (device_t *)d;
 
     devices[c] = (device_t *)d;
@@ -183,6 +185,7 @@ device_add(const device_t *d)
     }
 
     device_priv[c] = priv;
+    device_current = old;
 
     return(priv);
 }
@@ -203,8 +206,6 @@ device_add_ex(const device_t *d, void *priv)
     }
     if (c >= DEVICE_MAX)
 	fatal("DEVICE: too many devices\n");
-
-    device_current = (device_t *)d;
 
     devices[c] = (device_t *)d;
     device_priv[c] = priv;

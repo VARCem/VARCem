@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.21	2018/10/20
+ * Version:	@(#)vid_cl54xx.c	1.0.22	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1016,8 +1016,13 @@ gd54xx_write(uint32_t addr, uint8_t val, void *p)
 {
     gd54xx_t *gd54xx = (gd54xx_t *)p;
     svga_t *svga = &gd54xx->svga;	
-	
-	if (gd54xx->blt.sys_tx) {
+
+    if ((svga->seqregs[0x07] & 0x01) == 0) {
+	svga_write(addr, val, svga);
+	return;
+    }
+
+    if (gd54xx->blt.sys_tx) {
 	if (gd54xx->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
 		gd54xx->blt.sys_buf &= ~(0xff << (gd54xx->blt.sys_cnt * 8));
 		gd54xx->blt.sys_buf |= (val << (gd54xx->blt.sys_cnt * 8));
@@ -1028,7 +1033,7 @@ gd54xx_write(uint32_t addr, uint8_t val, void *p)
 		}
 	}
 	return;
-	}
+    }
 
     addr &= svga->banked_mask;
     addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
@@ -1043,13 +1048,17 @@ gd54xx_writew(uint32_t addr, uint16_t val, void *p)
     gd54xx_t *gd54xx = (gd54xx_t *)p;
     svga_t *svga = &gd54xx->svga;
 	
-	if (gd54xx->blt.sys_tx)
-	{
-		gd54xx_write(addr, val & 0xff, gd54xx);
-		gd54xx_write(addr+1, val >> 8, gd54xx);
-		return;
-	}
-	
+    if ((svga->seqregs[0x07] & 0x01) == 0) {
+	svga_writew(addr, val, svga);
+	return;
+    }
+
+    if (gd54xx->blt.sys_tx) {
+	gd54xx_write(addr, val, gd54xx);
+	gd54xx_write(addr+1, val >> 8, gd54xx);
+	return;
+    }
+
     addr &= svga->banked_mask;
     addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
 
@@ -1068,14 +1077,18 @@ gd54xx_writel(uint32_t addr, uint32_t val, void *p)
     gd54xx_t *gd54xx = (gd54xx_t *)p;
     svga_t *svga = &gd54xx->svga;
 
-	if (gd54xx->blt.sys_tx)
-	{
-		gd54xx_write(addr, val & 0xff, gd54xx);
-		gd54xx_write(addr+1, val >> 8, gd54xx);
-		gd54xx_write(addr+2, val >> 16, gd54xx);
-		gd54xx_write(addr+3, val >> 24, gd54xx);
-		return;
-	}
+    if ((svga->seqregs[0x07] & 0x01) == 0) {
+	svga_writel(addr, val, svga);
+	return;
+    }
+
+    if (gd54xx->blt.sys_tx) {
+	gd54xx_write(addr, val, gd54xx);
+	gd54xx_write(addr+1, val >> 8, gd54xx);
+	gd54xx_write(addr+2, val >> 16, gd54xx);
+	gd54xx_write(addr+3, val >> 24, gd54xx);
+	return;
+    }
 
     addr &= svga->banked_mask;
     addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
@@ -1532,8 +1545,13 @@ gd54xx_read(uint32_t addr, void *p)
 {
     gd54xx_t *gd54xx = (gd54xx_t *)p;
     svga_t *svga = &gd54xx->svga;
+
+    if ((svga->seqregs[0x07] & 0x01) == 0)
+	return svga_read(addr, svga);
+
     addr &= svga->banked_mask;
     addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+
     return svga_read_linear(addr, svga);
 }
 
@@ -1544,8 +1562,12 @@ gd54xx_readw(uint32_t addr, void *p)
     gd54xx_t *gd54xx = (gd54xx_t *)p;
     svga_t *svga = &gd54xx->svga;
 
+    if ((svga->seqregs[0x07] & 0x01) == 0)
+	return svga_readw(addr, svga);
+
     addr &= svga->banked_mask;
     addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+
     return svga_readw_linear(addr, svga);
 }
 
@@ -1556,8 +1578,12 @@ gd54xx_readl(uint32_t addr, void *p)
     gd54xx_t *gd54xx = (gd54xx_t *)p;
     svga_t *svga = &gd54xx->svga;
 
+    if ((svga->seqregs[0x07] & 0x01) == 0)
+	return svga_readl(addr, svga);
+
     addr &= svga->banked_mask;
     addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+
     return svga_readl_linear(addr, svga);
 }
 
@@ -1567,8 +1593,8 @@ gd543x_do_mmio(svga_t *svga, uint32_t addr)
 {
     if (svga->seqregs[0x17] & CIRRUS_MMIO_USE_PCIADDR)
 	return 1;
-    else
-	return ((addr & ~0xff) == 0xb8000);
+
+    return ((addr & ~0xff) == 0xb8000);
 }
 
 
@@ -1795,6 +1821,7 @@ gd543x_mmio_read(uint32_t addr, void *p)
     }
     else if (gd54xx->mmio_vram_overlap)
 	return gd54xx_read(addr, gd54xx);
+
     return 0xff;
 }
 
@@ -1809,6 +1836,7 @@ gd543x_mmio_readw(uint32_t addr, void *p)
 	return gd543x_mmio_read(addr, gd54xx) | (gd543x_mmio_read(addr+1, gd54xx) << 8);
     else if (gd54xx->mmio_vram_overlap)
 	return gd54xx_read(addr, gd54xx) | (gd54xx_read(addr+1, gd54xx) << 8);
+
     return 0xffff;
 }
 
@@ -1823,6 +1851,7 @@ gd543x_mmio_readl(uint32_t addr, void *p)
 	return gd543x_mmio_read(addr, gd54xx) | (gd543x_mmio_read(addr+1, gd54xx) << 8) | (gd543x_mmio_read(addr+2, gd54xx) << 16) | (gd543x_mmio_read(addr+3, gd54xx) << 24);
     else if (gd54xx->mmio_vram_overlap)
 	return gd54xx_read(addr, gd54xx) | (gd54xx_read(addr+1, gd54xx) << 8) | (gd54xx_read(addr+2, gd54xx) << 16) | (gd54xx_read(addr+3, gd54xx) << 24);
+
     return 0xffffffff;
 }
 

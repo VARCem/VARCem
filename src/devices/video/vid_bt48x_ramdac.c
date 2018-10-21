@@ -8,7 +8,7 @@
  *
  *		Brooktree Bt48x series true color RAMDAC emulation.
  *
- * Version:	@(#)vid_bt48x_ramdac.c	1.0.8	2018/10/06
+ * Version:	@(#)vid_bt48x_ramdac.c	1.0.9	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -209,8 +209,10 @@ bt48x_ramdac_out(uint16_t addr, int rs2, int rs3, uint8_t val, bt48x_ramdac_t *d
 		indx = svga->dac_addr & 0x03ff;
 		if ((dev->type >= BT485) && (svga->hwcursor.xsize == 64))
 			cd = (uint8_t *) dev->cursor64_data;
-		else
+		else {
+			indx &= 0xff;
 			cd = (uint8_t *) dev->cursor32_data;
+		}
 		cd[indx] = val;
 		svga->dac_addr++;
 		svga->dac_addr = (svga->dac_addr + 1) & da_mask;
@@ -351,8 +353,10 @@ bt48x_ramdac_in(uint16_t addr, int rs2, int rs3, bt48x_ramdac_t *dev, svga_t *sv
 		indx = (svga->dac_addr - 1) & da_mask;
 		if ((dev->type >= BT485) && (svga->hwcursor.xsize == 64))
 			cd = (uint8_t *) dev->cursor64_data;
-		else
+		else {
+			indx &= 0xff;
 			cd = (uint8_t *) dev->cursor32_data;
+		}
 
 		temp = cd[indx];
 		svga->dac_addr = (svga->dac_addr + 1) & da_mask;

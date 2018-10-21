@@ -40,6 +40,8 @@
  *		  Logitech Mouse.exe 6.50
  *		  Microsoft Mouse.com 2.00
  *		  Microsoft Mouse.sys 3.00
+ *		  Microsoft Mouse.com 7.04
+ *		  Microsoft Mouse.com 8.21J
  *		  Microsoft Windows 1.00 DR5
  *		  Microsoft Windows 3.10.026
  *		  Microsoft Windows NT 3.1
@@ -51,7 +53,7 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.1	2018/10/11
+ * Version:	@(#)mouse_bus.c	1.1.2	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

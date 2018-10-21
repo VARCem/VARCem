@@ -8,7 +8,7 @@
  *
  *		Generic interface for CD-ROM/DVD/BD implementations.
  *
- * Version:	@(#)cdrom.c	1.0.24	2018/10/20
+ * Version:	@(#)cdrom.c	1.0.25	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -271,7 +271,7 @@ cdrom_eject(uint8_t id)
     }
 
     if (dev->host_drive == 200) {
-	dev->prev_image_path = (wchar_t *)mem_alloc(1024);
+	dev->prev_image_path = (wchar_t *)mem_alloc(1024 * sizeof(wchar_t));
 	wcscpy(dev->prev_image_path, dev->image_path);
     }
 

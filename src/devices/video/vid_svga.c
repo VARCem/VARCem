@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.13	2018/10/07
+ * Version:	@(#)vid_svga.c	1.0.14	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -875,15 +875,39 @@ void
 svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *p)
 {
     svga_t *svga = (svga_t *)p;
-
-    int func_select, writemask2 = svga->writemask;
     uint32_t write_mask, bit_mask, set_mask, val32 = (uint32_t) val;
+    int func_select, writemask2 = svga->writemask;
+    int memory_map_mode;
 
     cycles -= video_timing_write_b;
 
-    if (!linear) {
-	addr &= svga->banked_mask;
-	addr += svga->write_bank;
+    if (! linear) {
+	memory_map_mode = (svga->gdcreg[6] >> 2) & 3;
+	addr &= 0x1ffff;
+
+	switch (memory_map_mode) {
+		case 0:
+			break;
+
+		case 1:
+			if (addr >= 0x10000)
+				return;
+			addr += svga->write_bank;
+			break;
+
+		case 2:
+			addr -= 0x10000;
+			if (addr >= 0x8000)
+				return;
+			break;
+
+		default:
+		case 3:
+			addr -= 0x18000;
+			if (addr >= 0x8000)
+				return;
+			break;
+	}
     }
 
     if (!(svga->gdcreg[6] & 1))
@@ -1008,14 +1032,38 @@ svga_read_common(uint32_t addr, uint8_t linear, void *p)
 {
     svga_t *svga = (svga_t *)p;
     uint32_t latch_addr = 0, ret;
-    int readplane = svga->readplane;
-    uint8_t ret8;
+    int memory_map_mode, readplane = svga->readplane;
 
     cycles -= video_timing_read_b;
 
-    if (!linear) {
-	addr &= svga->banked_mask;
-	addr += svga->read_bank;
+    if (! linear) {
+	memory_map_mode = (svga->gdcreg[6] >> 2) & 3;
+
+	addr &= 0x1ffff;
+
+	switch(memory_map_mode) {
+		case 0:
+			break;
+
+		case 1:
+			if (addr >= 0x10000)
+				return 0xff;
+			addr += svga->read_bank;
+			break;
+
+		case 2:
+			addr -= 0x10000;
+			if (addr >= 0x8000)
+				return 0xff;
+			break;
+
+		default:
+		case 3:
+			addr -= 0x18000;
+			if (addr >= 0x8000)
+				return 0xff;
+			break;
+	}
 
 	latch_addr = (addr << 2) & svga->decode_mask;
     }
@@ -1029,6 +1077,12 @@ svga_read_common(uint32_t addr, uint8_t linear, void *p)
 	readplane = (readplane & 2) | (addr & 1);
 	addr &= ~1;
 	addr <<= 2;
+	addr |= readplane;
+	addr &= svga->decode_mask;
+	if (addr >= svga->vram_max)
+		return 0xff;
+	addr &= svga->vram_mask;
+	return svga->vram[addr];
     } else
 	addr <<= 2;
 
@@ -1058,16 +1112,15 @@ svga_read_common(uint32_t addr, uint8_t linear, void *p)
 
     if (!(svga->gdcreg[5] & 8)) {
 	/* read mode 0 */
-	return svga->vram[addr | readplane];
-    } else {
-	/* read mode 1 */
-	ret = (svga->latch ^ mask16[svga->colourcompare & 0x0f]) & mask16[svga->colournocare & 0x0f];
-        ret8 = (ret & 0xff);
-	ret8 |= ((ret >> 24) & 0xff);
-	ret8 |= ((ret >> 16) & 0xff);
-	ret8 |= ((ret >> 8) & 0xff);
-	return(~ret8);
+	return (svga->latch >> (readplane * 8)) & 0xff;
     }
+
+    /* read mode 1 */
+    ret = (svga->latch ^ mask16[svga->colourcompare & 0x0f]) & mask16[svga->colournocare & 0x0f];
+    ret |= ret >> 16;
+    ret |= ret >> 8;
+    ret = (~ret) & 0xff;
+    return(ret);
 }
 
 

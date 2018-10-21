@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.5	2018/10/05
+ * Version:	@(#)win_sdl.c  	1.0.6	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -83,7 +83,10 @@ static SDL_Window	*sdl_win = NULL;
 static SDL_Renderer	*sdl_render = NULL;
 static SDL_Texture	*sdl_tex = NULL;
 static HWND		sdl_hwnd = NULL;
+static HWND		sdl_parent_hwnd = NULL;
 static int		sdl_w, sdl_h;
+static int		cur_w, cur_h;
+static int		sdl_fs;
 
 
 /* Pointers to the real functions. */
@@ -131,14 +134,130 @@ static const dllimp_t sdl_imports[] = {
 
 
 static void
+sdl_stretch(int *w, int *h, int *x, int *y)
+{
+    double dw, dh, dx, dy, temp, temp2, ratio_w, ratio_h, gsr, hsr;
+
+    switch (vid_fullscreen_scale) {
+	case FULLSCR_SCALE_FULL:
+		*w = sdl_w;
+		*h = sdl_h;
+		*x = 0;
+		*y = 0;
+		break;
+
+	case FULLSCR_SCALE_43:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		temp = (dh / 3.0) * 4.0;
+		dx = (dw - temp) / 2.0;
+		dw = temp;
+		*w = (int) dw;
+		*h = (int) dh;
+		*x = (int) dx;
+		*y = 0;
+		break;
+
+	case FULLSCR_SCALE_SQ:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		temp = ((double) *w);
+		temp2 = ((double) *h);
+		dx = (dw / 2.0) - ((dh * temp) / (temp2 * 2.0));
+		dy = 0.0;
+		if (dx < 0.0) {
+			dx = 0.0;
+			dy = (dw / 2.0) - ((dh * temp2) / (temp * 2.0));
+		}
+		dw -= (dx * 2.0);
+		dh -= (dy * 2.0);
+		*w = (int) dw;
+		*h = (int) dh;
+		*x = (int) dx;
+		*y = (int) dy;
+		break;
+
+	case FULLSCR_SCALE_INT:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		temp = ((double) *w);
+		temp2 = ((double) *h);
+		ratio_w = dw / ((double) *w);
+		ratio_h = dh / ((double) *h);
+		if (ratio_h < ratio_w)
+			ratio_w = ratio_h;
+		dx = (dw / 2.0) - ((temp * ratio_w) / 2.0);
+		dy = (dh / 2.0) - ((temp2 * ratio_h) / 2.0);
+		dw -= (dx * 2.0);
+		dh -= (dy * 2.0);
+		*w = (int) dw;
+		*h = (int) dh;
+		*x = (int) dx;
+		*y = (int) dy;
+		break;
+
+	case FULLSCR_SCALE_KEEPRATIO:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		hsr = dw / dh;
+		gsr = ((double) *w) / ((double) *h);
+		if (gsr <= hsr) {
+			temp = dh * gsr;
+			dx = (dw - temp) / 2.0;
+			dw = temp;
+			*w = (int) dw;
+			*h = (int) dh;
+			*x = (int) dx;
+			*y = 0;
+		} else {
+			temp = dw / gsr;
+			dy = (dh - temp) / 2.0;
+			dh = temp;
+			*w = (int) dw;
+			*h = (int) dh;
+			*x = 0;
+			*y = (int) dy;
+		}
+		break;
+    }
+}
+
+
+static void
+sdl_resize(int x, int y)
+{
+    int ww = 0, wh = 0, wx = 0, wy = 0;
+
+    DEBUG("SDL: resizing to %dx%d\n", x, y);
+
+    if ((x == cur_w) && (y == cur_h)) return;
+
+    DEBUG("sdl_resize(%i, %i)\n", x, y);
+    ww = x;
+    wh = y;
+    sdl_stretch(&ww, &wh, &wx, &wy);
+
+    MoveWindow(sdl_hwnd, wx, wy, ww, wh, TRUE);
+
+    cur_w = x;
+    cur_h = y;
+}
+
+
+static void
 sdl_blit(int x, int y, int y1, int y2, int w, int h)
 {
     SDL_Rect r_src;
     void *pixeldata;
+    int xx, yy, ret;
     int pitch;
-    int yy;
 
-    if ((y1 == y2) || (buffer32 == NULL)) {
+    if (y1 == y2) {
+	video_blit_complete();
+	return;
+    }
+
+    if (buffer32 == NULL) {
 	video_blit_complete();
 	return;
     }
@@ -151,25 +270,34 @@ sdl_blit(int x, int y, int y1, int y2, int w, int h)
     sdl_LockTexture(sdl_tex, 0, &pixeldata, &pitch);
 
     for (yy = y1; yy < y2; yy++) {
-        if ((y + yy) >= 0 && (y + yy) < buffer32->h)
-#if 0
-		if (video_grayscale || invert_display)
+       	if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+		if (vid_grayscale || invert_display)
 			video_transform_copy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
-		  else
-#endif
+		else
 			memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+	}
     }
 
     video_blit_complete();
 
     sdl_UnlockTexture(sdl_tex);
 
+    if (sdl_fs) {
+	get_screen_size_natural(&xx, &yy);
+	DEBUG("sdl_blit(%i, %i, %i, %i, %i, %i) (%i, %i)\n", x, y, y1, y2, w, h, xx, yy);
+	if (w == xx)
+		sdl_resize(w, h);
+	DEBUG("(%08X, %08X, %08X)\n", sdl_win, sdl_render, sdl_tex);
+    }
+
     r_src.x = 0;
     r_src.y = 0;
     r_src.w = w;
     r_src.h = h;
 
-    sdl_RenderCopy(sdl_render, sdl_tex, &r_src, 0);
+    ret = sdl_RenderCopy(sdl_render, sdl_tex, &r_src, 0);
+    if (ret)
+	DEBUG("SDL: unable to copy texture to renderer (%s)\n", sdl_GetError());
 
     sdl_RenderPresent(sdl_render);
 }
@@ -199,13 +327,16 @@ sdl_close(void)
     if (sdl_hwnd != NULL) {
 	plat_set_input(hwndMain);
 
-#if 1
 	ShowWindow(hwndRender, TRUE);
 	SetFocus(hwndMain);
-#endif
 
 	DestroyWindow(sdl_hwnd);
 	sdl_hwnd = NULL;
+    }
+
+    if (sdl_parent_hwnd != NULL) {
+	DestroyWindow(sdl_parent_hwnd);
+	sdl_parent_hwnd = NULL;
     }
 
     /* Quit and unload the DLL if possible. */
@@ -223,6 +354,7 @@ sdl_init(int fs)
 {
     wchar_t temp[128];
     SDL_version ver;
+    int x, y;
 
     INFO("SDL: init (fs=%d)\n", fs);
 
@@ -253,11 +385,25 @@ sdl_init(int fs)
 	/* Create the desktop-covering window. */
         swprintf(temp, sizeof_w(temp),
 		 L"%s v%s Full-Screen", EMU_NAME, emu_version);
-        sdl_hwnd = CreateWindow(FS_CLASS_NAME,
+        sdl_parent_hwnd = CreateWindow(FS_CLASS_NAME,
 				temp,
 				WS_POPUP,
 				0, 0, sdl_w, sdl_h,
 				HWND_DESKTOP,
+				NULL,
+				hInstance,
+				NULL);
+
+	SetWindowPos(sdl_parent_hwnd, HWND_TOPMOST,
+		     0, 0, sdl_w, sdl_h, SWP_SHOWWINDOW);
+
+	/* Create the actual rendering window. */
+	swprintf(temp, sizeof_w(temp), L"%s v%s", EMU_NAME, emu_version);
+        sdl_hwnd = CreateWindow(FS_CLASS_NAME,
+				temp,
+				WS_POPUP,
+				0, 0, sdl_w, sdl_h,
+				sdl_parent_hwnd,
 				NULL,
 				hInstance,
 				NULL);
@@ -267,6 +413,8 @@ sdl_init(int fs)
 	plat_set_input(sdl_hwnd);
 
 	/* Show the window, make it topmost, and give it focus. */
+	get_screen_size_natural(&x, &y);
+	sdl_stretch(&sdl_w, &sdl_h, &x, &y);
 	SetWindowPos(sdl_hwnd, HWND_TOPMOST,
 		     0, 0, sdl_w, sdl_h, SWP_SHOWWINDOW);
 
@@ -276,11 +424,13 @@ sdl_init(int fs)
 	/* Create the SDL window from the render window. */
 	sdl_win = sdl_CreateWindowFrom((void *)hwndRender);
     }
+
     if (sdl_win == NULL) {
 	ERRLOG("SDL: unable to CreateWindowFrom (%s)\n", sdl_GetError());
 	sdl_close();
 	return(0);
     }
+    sdl_fs = fs;
 
     /*
      * TODO:
@@ -321,54 +471,17 @@ sdl_init(int fs)
 
 
 static void
-sdl_resize(int x, int y)
-{
-    DEBUG("SDL: resizing to %dx%d\n", x, y);
-}
-
-
-static void
 sdl_screenshot(const wchar_t *fn)
 {
 #if 0
-    int i, res, x, y, width = 0, height = 0;
-    unsigned char* rgba = NULL;
-    png_bytep *b_rgb = NULL;
-    FILE *fp = NULL;
+    uint8_t *pixels = NULL;
+    int res;
 
     sdl_GetWindowSize(sdl_win, &width, &height);
-
-    /* Create file. */
-    if ((fp = plat_fopen(fn, L"wb")) == NULL) {
-	ERRLOG("SDL: screenshot: file %ls could not be opened for writing\n", fn);
-	return;
-    }
-
-    /* initialize stuff */
-    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if (png_ptr == NULL) {
-	ERRLOG("SDL: screenshot: create_write_struct failed\n");
-	fclose(fp);
-	return;
-    }
-
-    info_ptr = png_create_info_struct(png_ptr);
-    if (info_ptr == NULL) {
-	ERRLOG("SDL: screenshot: create_info_struct failed");
-	fclose(fp);
-	return;
-    }
-
-    png_init_io(png_ptr, fp);
-
-    png_set_IHDR(png_ptr, info_ptr, width, height,
-	8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
-	PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
     pixels = (uint8_t *)mem_alloc(width * height * 4);
     if (pixels == NULL) {
 	ERRLOG("SDL: screenshot: unable to allocate RGBA Bitmap memory\n");
-	fclose(fp);
 	return;
     }
 
@@ -377,41 +490,10 @@ sdl_screenshot(const wchar_t *fn)
     if (res != 0) {
 	ERRLOG("SDL: screenshot: error reading render pixels\n");
 	free(pixels);
-	fclose(fp);
 	return;
     }
 
-    if ((b_rgb = (png_bytep *)mem_alloc(sizeof(png_bytep) * height)) == NULL) {
-	ERRLOG("[sdl_take_screenshot] Unable to Allocate RGB Bitmap Memory");
-	free(rgba);
-	fclose(fp);
-	return;
-    }
-
-    for (y = 0; y < height; ++y) {
-	b_rgb[y] = (png_byte *)mem_alloc(png_get_rowbytes(png_ptr, info_ptr));
-    	for (x = 0; x < width; ++x) {
-		b_rgb[y][(x) * 3 + 0] = rgba[(y * width + x) * 4 + 0];
-		b_rgb[y][(x) * 3 + 1] = rgba[(y * width + x) * 4 + 1];
-		b_rgb[y][(x) * 3 + 2] = rgba[(y * width + x) * 4 + 2];
-	}
-    }
-
-    png_write_info(png_ptr, info_ptr);
-
-    png_write_image(png_ptr, b_rgb);
-
-    png_write_end(png_ptr, NULL);
-
-    /* cleanup heap allocation */
-    for (i = 0; i < height; i++)
-	if (b_rgb[i])  free(b_rgb[i]);
-
-    if (b_rgb) free(b_rgb);
-
-    if (rgba) free(rgba);
-
-    if (fp) fclose(fp);
+    if (pixels) free(pixels);
 #endif
 }
 
