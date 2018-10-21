@@ -8,7 +8,7 @@
  *
  *		Common resources for the application.
  *
- * Version:	@(#)VARCem-common.rc	1.0.10	2018/10/01
+ * Version:	@(#)VARCem-common.rc	1.0.11	2018/10/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -50,6 +50,9 @@
 #else
 # define MENUSEPARATOR	MENUITEM SEPARATOR
 #endif
+
+//#define _MKSTR(...)	#__VA_ARGS__
+//#define _CATSTR(a,b,...)	_MKSTR(a ## b)
 
 #define FONT_NAME	"Segoe UI"
 
@@ -134,7 +137,11 @@ BEGIN
 #ifdef _LOGGING
 	POPUP STR_4083,IDM_LOGGING
 	BEGIN
-	    MENUITEM "&Log breakpoint\tCtrl+Insert", IDM_LOG_BREAKPOINT
+# if 0
+	    MENUITEM CATSTR(STR_4084,"\tCtrl+Insert"), IDM_LOG_BREAKPOINT
+# else
+	    MENUITEM STR_4084, IDM_LOG_BREAKPOINT
+# endif
 	    MENUSEPARATOR
 	END
 #endif
