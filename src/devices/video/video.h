@@ -170,6 +170,10 @@ extern const device_t	mach64vt2_device;
 extern const device_t	cga_device;
 
 /* Cirrus Logic GD-series cards. */
+#if defined(DEV_BRANCH)
+extern const device_t	gd5422_isa_device;
+extern const device_t	gd5424_vlb_device;
+#endif
 extern const device_t	gd5426_vlb_device;
 extern const device_t	gd5428_isa_device;
 extern const device_t	gd5428_vlb_device;

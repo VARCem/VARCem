@@ -652,6 +652,69 @@ void svga_render_15bpp_highres(svga_t *svga)
         }
 }
 
+void svga_render_mixed_highres(svga_t *svga)
+{
+	int y_add = enable_overscan ? (overscan_y >> 1) : 0;
+	int x_add = enable_overscan ? 8 : 0;
+
+        if (svga->changedvram[svga->ma >> 12] || svga->changedvram[(svga->ma >> 12) + 1] || svga->fullchange)
+        {
+                int x;
+                int offset = (8 - ((svga->scrollcache & 6) >> 1)) + 24;
+                uint32_t *p = &((uint32_t *)buffer32->line[svga->displine + y_add])[offset + x_add];
+
+                if (svga->firstline_draw == 2000) 
+                        svga->firstline_draw = svga->displine;
+                svga->lastline_draw = svga->displine;
+
+                for (x = 0; x <= svga->hdisp; x += 8)
+                {
+                        uint32_t dat = *(uint32_t *)(&svga->vram[(svga->ma + (x << 1)) & svga->vram_display_mask]);
+						if (dat & 0x8000)
+							p[x] = svga->pallook[dat & 0xff];
+						else
+							p[x]     = video_15to32[dat & 0x7fff];
+                        if ((dat >> 16) & 0x8000)						
+							p[x + 1] = svga->pallook[(dat >> 16) & 0xff];
+						else
+							p[x + 1] = video_15to32[(dat >> 16) & 0x7fff];
+                        
+                        dat = *(uint32_t *)(&svga->vram[(svga->ma + (x << 1) + 4) & svga->vram_display_mask]);
+						
+                    	if (dat & 0x8000)
+							p[x + 2] = svga->pallook[dat & 0xff];
+						else
+							p[x + 2]     = video_15to32[dat & 0x7fff];
+                        if ((dat >> 16) & 0x8000)						
+							p[x + 3] = svga->pallook[(dat >> 16) & 0xff];
+						else
+							p[x + 3] = video_15to32[(dat >> 16) & 0x7fff];
+
+                        dat = *(uint32_t *)(&svga->vram[(svga->ma + (x << 1) + 8) & svga->vram_display_mask]);
+						if (dat & 0x8000)
+							p[x + 4] = svga->pallook[dat & 0xff];
+						else
+							p[x + 4]     = video_15to32[dat & 0x7fff];
+                        if ((dat >> 16) & 0x8000)						
+							p[x + 5] = svga->pallook[(dat >> 16) & 0xff];
+						else
+							p[x + 5] = video_15to32[(dat >> 16) & 0x7fff];
+
+                        dat = *(uint32_t *)(&svga->vram[(svga->ma + (x << 1) + 12) & svga->vram_display_mask]);
+						if (dat & 0x8000)
+							p[x + 6] = svga->pallook[dat & 0xff];
+						else
+							p[x + 6]     = video_15to32[dat & 0x7fff];
+                        if ((dat >> 16) & 0x8000)						
+							p[x + 7] = svga->pallook[(dat >> 16) & 0xff];
+						else
+							p[x + 7] = video_15to32[(dat >> 16) & 0x7fff];
+                }
+                svga->ma += x << 1; 
+                svga->ma &= svga->vram_display_mask;
+        }
+}
+
 void svga_render_16bpp_lowres(svga_t *svga)
 {
 	int y_add = enable_overscan ? (overscan_y >> 1) : 0;
