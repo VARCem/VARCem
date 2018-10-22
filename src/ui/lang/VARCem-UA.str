@@ -8,7 +8,7 @@
  *
  *		String definitions for "Ukrainian (Ukraine)" language.
  *
- * Version:	@(#)VARCem-UA.str	1.0.6	2018/10/18
+ * Version:	@(#)VARCem-UA.str	1.0.7	2018/10/18
  *
  * Authors:	.SVD., <old-dos.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,6
+#define STR_VERSION	1,0,7
 #define STR_AUTHOR	".SVD."
 #define STR_EMAIL	"old-dos.ru"
 #define STR_NAME	"VARCem"
@@ -72,12 +72,12 @@
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"System is out of memory!"
+#define STR_2300	"Не вистачає пам'яті!"
 #define STR_2301	"Не знайденi пiдтримуванi iмiджi ROM!"
 #define STR_2302	"Не знайдено вiрної конфiгурацiї.\n\nБажаєте вiдкрити дiалог налаштувань та створити її?"
 #define STR_2303	"Сконфiгурований %ls:\n\n  %s\n\nнедосяжний.\n\nВiдкрити дiалог налаштувань?"
 #define STR_2304	"Обраний рендер:\n\n  %s\n\nнедосяжний. Використати головний?"
-#define STR_2305	"You must save your settings first!"
+#define STR_2305	"Спочатку ви мусите зберегти нові налаштування!"
 #define STR_2306	"Неможливо створити bitmap-файл: %ls"
 #define STR_2307	"USB поки що не пiдтримується"
 
@@ -99,21 +99,21 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Вiдмiнити"
-#define STR_YES		"Yes"
-#define STR_NO		"No"
+#define STR_YES		"Так"
+#define STR_NO		"Ні"
 #define STR_CONFIGURE	"Налаштувати"
 #define STR_BROWSE	"Огляд.."
 
 
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Вiдсутнiй"
-#define STR_INTERNAL	"Internal"
+#define STR_INTERNAL	"Вбудований"
 #define STR_DISABLED	"Недосяжно"
 #define STR_ENABLED	"Досяжно"
 #define STR_OFF		"Вимк."
 #define STR_ON		"Ввiмк."
-#define STR_UNLOCK	"Unlock"
-#define STR_LOCK	"Lock"
+#define STR_UNLOCK	"Розблокувати"
+#define STR_LOCK	"Заблокувати"
 #define STR_TYPE	"Тип"
 #define STR_FILENAME	"Iм'я файла:"
 #define STR_PROGRESS	"Прогрес:"
@@ -235,8 +235,8 @@
 #define  STR_3477	"Третичний IDE"
 #define  STR_3478	"Четвертичний IDE"
 #define  STR_3479	"Пристрiй ISABugger"
-#define  STR_3480	"Карта расширения памяти (ISA)"
-#define  STR_3481	"ISA Clock/RTC карта"
+#define  STR_3480	"Карта разширення пам'яті (ISA)"
+#define  STR_3481	"карта ISA Clock/RTC"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Жорсткi диски:"
@@ -296,7 +296,7 @@
 #define STR_3900	"(пусто)"
 #define STR_3901	"(хост-диск %c:)"
 #define STR_3902	" [Захищений вiд запису]"
-#define STR_3903	" [Locked]"
+#define STR_3903	" [Заблокований]"
 #define STR_3904	"Новый iмiдж.."
 #define STR_3905	"Вiдкрити iмiдж.."
 #define STR_3906	"Завантажити попереднiй iмiдж"
@@ -386,8 +386,8 @@
 #define  STR_4081	"Налаштування"
 #define  STR_4082	"Мова"
 #define  STR_4083	"Логер"
-#define  STR_4084	"Log Breakpoint"
-#define  STR_4085	"Toggle %s logging"
+#define  STR_4084	"Раздільник лога"
+#define  STR_4085	"Переключити %s логер"
 #define  STR_4086	"Завантажити конфигурацiю"
 #define  STR_4087	"Зберегти конфигурацiю"
 #define  STR_4088	"Зробити скрiншот"

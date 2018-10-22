@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.37	2018/10/16
+ * Version:	@(#)config.c	1.0.38	2018/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -413,12 +413,12 @@ load_machine(const char *cat)
 
     enable_external_fpu = !!config_get_int(cat, "cpu_enable_fpu", 0);
 
-    time_sync = !!config_get_int(cat, "enable_sync", -1);
+    time_sync = config_get_int(cat, "enable_sync", -1);
     if (time_sync != -1) {
 	/* FIXME: remove this after 12/01/2018 --FvK */
 	config_delete_var(cat, "enable_sync");
     } else
-	time_sync = !!config_get_int(cat, "time_sync", TIME_SYNC_DISABLED);
+	time_sync = config_get_int(cat, "time_sync", TIME_SYNC_DISABLED);
 }
 
 
@@ -1482,7 +1482,7 @@ config_default(void)
     scale = 1;
     video_card = VID_CGA;
     vid_api = vidapi_from_internal_name("default");;
-    time_sync = TIME_SYNC_ENABLED;
+    time_sync = TIME_SYNC_DISABLED;
     joystick_type = 0;
     hdc_type = 0;
 
