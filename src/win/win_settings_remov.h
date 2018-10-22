@@ -8,7 +8,7 @@
  *
  *		Implementation of the "Removable Devices" dialog.
  *
- * Version:	@(#)win_settings_remov.h	1.0.9	2018/10/15
+ * Version:	@(#)win_settings_remov.h	1.0.10	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,7 +117,7 @@ cdrom_recalc_list(HWND hwndList)
     lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
-    for (i = CDROM_BUS_DISABLED; i < CDROM_BUS_MAX; i++) {
+    for (i = 0; i < CDROM_NUM; i++) {
 	fsid = temp_cdrom_drives[i].bus_type;
 
 	lvI.iSubItem = 0;
@@ -456,7 +456,7 @@ zip_recalc_list(HWND hwndList)
     lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
-    for (i = ZIP_BUS_DISABLED; i < ZIP_BUS_MAX; i++) {
+    for (i = 0; i < ZIP_NUM; i++) {
 	fsid = temp_zip_drives[i].bus_type;
 
 	lvI.iSubItem = 0;
