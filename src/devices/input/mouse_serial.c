@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.9	2018/05/06
+ * Version:	@(#)mouse_serial.c	1.0.10	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,8 +51,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog mouse_log
 #include "../../emu.h"
-#include "../../config.h"
 #include "../../device.h"
 #include "../../timer.h"
 #include "../ports/serial.h"
@@ -128,7 +128,7 @@ ser_timer(void *priv)
 		break;
 
 	default:
-		pclog("%s: unsupported mouse type %d?\n", dev->type);
+		ERRLOG("MOUSE: unsupported mouse type %d?\n", dev->type);
     }
 }
 
@@ -142,9 +142,7 @@ ser_poll(int x, int y, int z, int b, void *priv)
 
     if (!x && !y && b == dev->oldb) return(1);
 
-#if 0
-    pclog("%s: poll(%d,%d,%d,%02x)\n", dev->name, x, y, z, b);
-#endif
+    DBGLOG(1, "MOUSE: poll(%d,%d,%d,%02x)\n", x, y, z, b);
 
     dev->oldb = b;
 
@@ -221,7 +219,7 @@ ser_init(const device_t *info)
     mouse_t *dev;
     int i;
 
-    dev = (mouse_t *)malloc(sizeof(mouse_t));
+    dev = (mouse_t *)mem_alloc(sizeof(mouse_t));
     memset(dev, 0x00, sizeof(mouse_t));
     dev->name = info->name;
     dev->type = info->local;
@@ -235,13 +233,13 @@ ser_init(const device_t *info)
     /* Attach a serial port to the mouse. */
     dev->serial = serial_attach(dev->port + 1, ser_callback, dev);
     if (dev->serial == NULL) {
-	pclog("MOUSE: %s (port=COM%d, butons=%d) port disabled!\n",
+	ERRLOG("MOUSE: %s (port=COM%d, butons=%d) port disabled!\n",
 					dev->name, dev->port+1, i);
 	free(dev);
 	return(NULL);
     }
 
-    pclog("MOUSE: %s (port=COM%d, butons=%d)\n", dev->name, dev->port+1, i);
+    INFO("MOUSE: %s (port=COM%d, butons=%d)\n", dev->name, dev->port+1, i);
 
     timer_add(ser_timer, &dev->delay, &dev->delay, dev);
 

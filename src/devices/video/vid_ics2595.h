@@ -8,7 +8,7 @@
  *
  *		Definitions for the ICS2595 driver.
  *
- * Version:	@(#)vid_ics2595.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_ics2595.h	1.0.2	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,18 +40,19 @@
 # define VIDEO_ICS2595_H
 
 
-typedef struct ics2595_t
-{
-        int oldfs3, oldfs2;
-        int dat;
-        int pos;
-        int state;
-
-        double clocks[16];
-        double output_clock;
+typedef struct {
+    int oldfs3, oldfs2;
+    int dat;
+    int pos, state;
+    double clocks[16];
+    double output_clock;
 } ics2595_t;
 
-void ics2595_write(ics2595_t *ics2595, int strobe, int dat);
+
+extern const device_t ics2595_device;
+
+
+extern void ics2595_write(ics2595_t *dev, int strobe, int dat);
 
 
 #endif	/*VIDEO_ICS2595_H*/

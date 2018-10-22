@@ -8,7 +8,7 @@
  *
  *		Emulation of the Intel PIIX and PIIX3 Xcelerators.
  *
- * Version:	@(#)intel_piix.h	1.0.1	2018/02/14
+ * Version:	@(#)intel_piix.h	1.0.2	2018/09/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,21 +40,17 @@
 # define EMU_INTELPIIX_H
 
 
-extern void	piix_init(int card);
+#ifdef EMU_DEVICE_H
+extern const device_t piix_device;
+extern const device_t piix3_device;
+extern const device_t piix_pb640_device;
+#endif
 
-extern void	piix3_init(int card);
 
-extern void	piix4_init(int card);
+extern int	piix_bus_master_dma_read(int channel, uint8_t *data, int transfer_length, void *priv);
+extern int	piix_bus_master_dma_write(int channel, uint8_t *data, int transfer_length, void *priv);
 
-extern uint8_t	piix_bus_master_read(uint16_t port, void *priv);
-extern void	piix_bus_master_write(uint16_t port, uint8_t val, void *priv);
-
-extern int	piix_bus_master_get_count(int channel);
-
-extern int	piix_bus_master_dma_read(int channel, uint8_t *data, int transfer_length);
-extern int	piix_bus_master_dma_write(int channel, uint8_t *data, int transfer_length);
-
-extern void	piix_bus_master_set_irq(int channel);
+extern void	piix_bus_master_set_irq(int channel, void *priv);
 
 
 #endif	/*EMU_INTELPIIX_H*/

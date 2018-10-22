@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.8	2018/06/06
+ * Version:	@(#)hdd.c	1.0.11	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
+#define dbglog hdd_log
 #include "../../emu.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -52,19 +53,21 @@ int		hdd_do_log = ENABLE_HDD_LOG;
 #endif
 
 
+#ifdef _LOGGING
 void
-hdd_log(const char *fmt, ...)
+hdd_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_HDD_LOG
+# ifdef ENABLE_HDD_LOG
     va_list ap;
 
-    if (hdd_do_log) {
+    if (hdd_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
+# endif
 }
+#endif
 
 
 int
@@ -93,77 +96,39 @@ hdd_count(int bus)
 
 
 int
-hdd_string_to_bus(const char *str, int cdrom)
+hdd_string_to_bus(const char *str)
 {
-    if (! strcmp(str, "none"))
-	return(HDD_BUS_DISABLED);
+    int ret = HDD_BUS_DISABLED;
 
-    if (!strcmp(str, "st506") || !strcmp(str, "mfm")) {
-	if (cdrom) {
-no_cdrom:
-		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_NOCDROM);
-		return(0);
-	}
+    if (! strcmp(str, "none")) return(ret);
 
+    if (!strcmp(str, "st506") || !strcmp(str, "mfm") || !strcmp(str, "rll"))
 	return(HDD_BUS_ST506);
-    }
 
-    if (! strcmp(str, "esdi")) {
-	if (cdrom) goto no_cdrom;
-
+    if (! strcmp(str, "esdi"))
 	return(HDD_BUS_ESDI);
-    }
 
-    if (! strcmp(str, "ide"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
-    if (! strcmp(str, "ide_pio_only"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
-    if (! strcmp(str, "ide_pio_and_dma"))
-	return(HDD_BUS_IDE_PIO_AND_DMA);
-
-    if (! strcmp(str, "atapi"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
-    if (! strcmp(str, "atapi_pio_only"))
-	return(HDD_BUS_IDE_PIO_ONLY);
-
-    if (! strcmp(str, "atapi_pio_and_dma"))
-	return(HDD_BUS_IDE_PIO_AND_DMA);
+    if (! strcmp(str, "ide") || !strcmp(str, "atapi")
+#if 1
+	|| !strcmp(str, "ide_pio_only") || !strcmp(str, "ide_pio_and_dma")
+	|| !strcmp(str, "atapi_pio_only") || !strcmp(str, "atapi_pio_and_dma")
+#endif
+	) return(HDD_BUS_IDE);
 
     if (! strcmp(str, "scsi"))
 	return(HDD_BUS_SCSI);
 
-    if (! strcmp(str, "removable")) {
-	if (cdrom) goto no_cdrom;
-
-	return(HDD_BUS_SCSI_REMOVABLE);
-    }
-
-    if (! strcmp(str, "scsi_removable")) {
-	if (cdrom) goto no_cdrom;
-
-	return(HDD_BUS_SCSI_REMOVABLE);
-    }
-
-    if (! strcmp(str, "removable_scsi")) {
-	if (cdrom) goto no_cdrom;
-
-	return(HDD_BUS_SCSI_REMOVABLE);
-    }
-
     if (! strcmp(str, "usb"))
 	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_NO_USB);
 
-    return(0);
+    return(ret);
 }
 
 
 const char *
-hdd_bus_to_string(int bus, int cdrom)
+hdd_bus_to_string(int bus)
 {
-    const char *s = "none";
+    const char *ret = "none";
 
     switch (bus) {
 	case HDD_BUS_DISABLED:
@@ -171,31 +136,23 @@ hdd_bus_to_string(int bus, int cdrom)
 		break;
 
 	case HDD_BUS_ST506:
-		s = "st506";
+		ret = "st506";
 		break;
 
 	case HDD_BUS_ESDI:
-		s = "esdi";
+		ret = "esdi";
 		break;
 
-	case HDD_BUS_IDE_PIO_ONLY:
-		s = cdrom ? "atapi_pio_only" : "ide_pio_only";
-		break;
-
-	case HDD_BUS_IDE_PIO_AND_DMA:
-		s = cdrom ? "atapi_pio_and_dma" : "ide_pio_and_dma";
+	case HDD_BUS_IDE:
+		ret = "ide";
 		break;
 
 	case HDD_BUS_SCSI:
-		s = "scsi";
-		break;
-
-	case HDD_BUS_SCSI_REMOVABLE:
-		s = "scsi_removable";
+		ret = "scsi";
 		break;
     }
 
-    return(s);
+    return(ret);
 }
 
 
@@ -204,10 +161,28 @@ hdd_is_valid(int c)
 {
     if (hdd[c].bus == HDD_BUS_DISABLED) return(0);
 
-    if ((wcslen(hdd[c].fn) == 0) &&
-	(hdd[c].bus != HDD_BUS_SCSI_REMOVABLE)) return(0);
+    if (wcslen(hdd[c].fn) == 0) return(0);
 
     if ((hdd[c].tracks==0) || (hdd[c].hpc==0) || (hdd[c].spt==0)) return(0);
 
     return(1);
+}
+
+
+const wchar_t *
+hdd_bus_to_ids(int bus)
+{
+    if (bus == 0)
+        bus = IDS_DISABLED;
+      else
+	bus = IDS_3515 + bus - 1;
+
+    return(get_string(bus));
+}
+
+
+void
+hdd_active(int drive, int active)
+{
+    ui_sb_icon_update(SB_DISK | drive, active);
 }

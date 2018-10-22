@@ -8,7 +8,7 @@
  *
  *		Intel 82335 SX emulation, used by the Phoenix 386 clone.
  *
- * Version:	@(#)i82335.c	1.0.3	2018/05/06
+ * Version:	@(#)i82335.c	1.0.5	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../plat.h"
@@ -57,14 +58,12 @@ static i82335_t i82335;
 static uint8_t
 i82335_read(uint16_t addr, UNUSED(void *priv))
 {
-    // pclog("i82335_read(%04X)\n", addr);
-    if (addr == 0x22) {
+    DBGLOG(1, "i82335_read(%04X)\n", addr);
+    if (addr == 0x22)
 	return(i82335.reg_22);
-    }
 
-    if (addr == 0x23) {
+    if (addr == 0x23)
 	return(i82335.reg_23);
-    }
 
     return(0);
 }
@@ -76,21 +75,19 @@ i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
     int mem_write = 0;
     int i = 0;
 
-    // pclog("i82335_write(%04X, %02X)\n", addr, val);
+    DBGLOG(1, "i82335_write(%04X, %02X)\n", addr, val);
 
     switch (addr) {
 	case 0x22:
 		if ((val ^ i82335.reg_22) & 1) {
 			if (val & 1) {
-				for (i=0; i<8; i++) {
+				for (i = 0; i < 8; i++)
 					mem_set_mem_state(0xe0000, 0x20000, MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-					shadowbios = 1;
-				}
+				shadowbios = 1;
 			} else {
-				for (i=0; i<8; i++) {
+				for (i = 0; i < 8; i++)
 					mem_set_mem_state(0xe0000, 0x20000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
-					shadowbios = 0;
-				}
+				shadowbios = 0;
 			}
 
 			flushmmucache();
@@ -104,15 +101,13 @@ i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 
 		if ((val ^ i82335.reg_22) & 2) {
 			if (val & 2) {
-				for (i=0; i<8; i++) {
+				for (i = 0; i < 8; i++)
 					mem_set_mem_state(0xc0000, 0x20000, MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
-					shadowbios = 1;
-				}
+				shadowbios = 1;
 			} else {
-				for (i=0; i<8; i++) {
+				for (i = 0; i < 8; i++)
 					mem_set_mem_state(0xc0000, 0x20000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
-					shadowbios = 0;
-				}
+				shadowbios = 0;
 			}
 		}
 
@@ -121,20 +116,19 @@ i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 				for (i = 0; i < 8; i++) {
 					mem_write = (val & 8) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
 					mem_set_mem_state(0xa0000, 0x20000, MEM_READ_INTERNAL | mem_write);
-					shadowbios = 1;
 				}
+				shadowbios = 1;
 			} else {
 				for (i = 0; i < 8; i++) {
 					mem_write = (val & 8) ? MEM_WRITE_DISABLED : MEM_WRITE_EXTERNAL;
 					mem_set_mem_state(0xa0000, 0x20000, MEM_READ_EXTERNAL | mem_write);
-					shadowbios = 0;
 				}
+				shadowbios = 0;
 			}
 		}
 
-		if ((val ^ i82335.reg_22) & 0xe) {
+		if ((val ^ i82335.reg_22) & 0xe)
 			flushmmucache();
-		}
 
 		if (val & 0x80) {
 			io_removehandler(0x0022, 1,

@@ -3,11 +3,11 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-   <IncludePath>$(ProjectDir)\..\Include;$(ProjectDir)\..\..\mingw\include;$(ProjectDir)\..\..\mingw\include\pcap;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\Include;$(ProjectDir)\..\..\mingw\include;$(ProjectDir)\..\..\mingw\include\pcap;P:\SDL\include\msvc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>_USE_MATH_DEFINES;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;USE_DYNAREC;USE_OPENAL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USE_MATH_DEFINES;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;USE_DYNAREC;USE_OPENAL;USE_SDL</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Voodoo Recompiler (64bit.)
  *
- * Version:	@(#)vid_voodoo_codegen_x86-64.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_voodoo_codegen_x86-64.h	1.0.1	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3345,7 +3345,7 @@ static void voodoo_codegen_init(voodoo_t *voodoo)
 #if WIN64
         voodoo->codegen_data = VirtualAlloc(NULL, sizeof(voodoo_x86_data_t) * BLOCK_NUM * 2, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 #else
-        voodoo->codegen_data = malloc(sizeof(voodoo_x86_data_t) * BLOCK_NUM * 2);
+        voodoo->codegen_data = mem_alloc(sizeof(voodoo_x86_data_t) * BLOCK_NUM * 2);
 #endif
 
 #ifdef __linux__

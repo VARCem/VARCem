@@ -12,7 +12,7 @@
  *		format handlers, and re-integrated with that code. This is
  *		just the wrong place for it..
  *
- * Version:	@(#)ui_new_image.c	1.0.3	2018/05/13
+ * Version:	@(#)ui_new_image.c	1.0.4	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,6 +47,7 @@
 #include "../random.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#include "../devices/scsi/scsi_device.h"
 #include "../devices/disk/zip.h"
 
 
@@ -162,7 +163,7 @@ floppy_create_86f(const wchar_t *fn, int8_t ds, int8_t rpm_mode)
     if (f == NULL)
 	return 0;
 
-    empty = (uint8_t *)malloc(array_size);
+    empty = (uint8_t *)mem_alloc(array_size);
     memset(tarray, 0x00, 2048);
     memset(empty, 0x00, array_size);
 
@@ -231,7 +232,7 @@ floppy_create_image(const wchar_t *fn, int8_t ds, int8_t is_fdi)
     zero_bytes = fat2_offs + fat_size + root_dir_bytes;
 
     if (is_fdi) {
-	empty = (uint8_t *)malloc(base);
+	empty = (uint8_t *)mem_alloc(base);
 	memset(empty, 0x00, base);
 
 	*(uint32_t *) &(empty[0x08]) = (uint32_t)base;
@@ -246,7 +247,7 @@ floppy_create_image(const wchar_t *fn, int8_t ds, int8_t is_fdi)
 	free(empty);
     }
 
-    empty = (uint8_t *)malloc(total_size);
+    empty = (uint8_t *)mem_alloc(total_size);
     memset(empty, 0x00, zero_bytes);
 
     memset(empty + zero_bytes, 0xF6, total_size - zero_bytes);
@@ -372,7 +373,7 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
     pbar_max++;
 
     if (is_zdi) {
-	empty = (uint8_t *)malloc(base);
+	empty = (uint8_t *)mem_alloc(base);
 	memset(empty, 0x00, base);
 
 	*(uint32_t *) &(empty[0x08]) = (uint32_t) base;
@@ -397,7 +398,7 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
 	pbar_max -= 2;
     }
 
-    empty = (uint8_t *)malloc(total_size);
+    empty = (uint8_t *)mem_alloc(total_size);
     memset(empty, 0x00, zero_bytes);
 
     if (total_sectors == ZIP_SECTORS) {

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.34	2018/06/02
+# Version:	@(#)Makefile.VC	1.0.49	2018/10/18
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -69,6 +69,9 @@ endif
 ifndef DEBUG
  DEBUG		:= n
 endif
+ifndef LOGGING
+ LOGGING	:= n
+endif
 ifndef PROFILER 
  PROFILER	:= n
 endif
@@ -92,6 +95,9 @@ ifndef USB
 endif
 ifndef SDL
  SDL		:= n
+endif
+ifndef D2D
+ D2D		:= n
 endif
 ifndef VNC
  VNC		:= n
@@ -117,9 +123,6 @@ endif
 ifndef PORTABLE3
  PORTABLE3	:= n
 endif
-ifndef GREENB
- GREENB		:= n
-endif
 ifndef I686
  I686		:= n
 endif
@@ -135,23 +138,36 @@ endif
 ifndef PAS16
  PAS16		:= n
 endif
-ifndef STEALTH32
- STEALTH32	:= n
-endif
 ifndef XL24
  XL24		:= n
 endif
 ifndef WONDER
  WONDER		:= n
 endif
+ifndef HOSTCD
+ HOSTCD		:= n
+endif
+ifndef PRINTER
+ PRINTER	:= n
+endif
 
 
 # Name of the executable.
+NETIF		:= pcap_if
 ifndef PROG
  ifneq ($(WX), n)
   PROG		:= WxVARCem
  else
   PROG		:= VARCem
+ endif
+endif
+ifeq ($(DEBUG), y)
+ PROG		:= $(PROG)-d
+ NETIF		:= $(NETIF)-d
+ LOGGING	:= y
+else
+ ifeq ($(LOGGING), y)
+  PROG		:= $(PROG)-l
  endif
 endif
 
@@ -163,12 +179,12 @@ ifeq ($(DEV_BUILD), y)
  AMD_K		:= y
  LASERXT	:= y
  PORTABLE3	:= y
- GREENB		:= y
  I686		:= y
  PAS16		:= y
- STEALTH32	:= y
  XL24		:= y
  WONDER		:= y
+ HOSTCD		:= y
+ PRINTER	:= y
 endif
 
 
@@ -214,7 +230,8 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/cdrom devices/disk devices/floppy \
 		    devices/floppy/lzf devices/input devices/input/game \
 		    devices/network devices/network/slirp devices/ports \
-		    devices/sio devices/system devices/scsi devices/misc \
+		    devices/printer devices/sio devices/system devices/scsi \
+		    devices/misc \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
@@ -233,7 +250,7 @@ ifeq ($(X64), y)
  ARCH		:= x64
 else
  CPP		:= cl -nologo
- CC		:= cl -nologo
+ CC		:= cl -nologo #-TP
  ARCH		:= x86
 endif
 PREPROC		:= cl -nologo -EP
@@ -245,7 +262,7 @@ SYSINC		:= -Iwin/msvc/Include -Iwin/mingw/include
 SYSLIB		:=
 
 DEPS		= -MMD -MF $*.d
-DEPFILE		:= win\.depends-msvc
+DEPFILE		:= win\msvc\.depends
 
 # Set up the correct toolchain flags.
 OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
@@ -253,13 +270,14 @@ OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
 		   -D_CRT_NONSTDC_NO_DEPRECATE \
 		   -D_WINSOCK_DEPRECATED_NO_WARNINGS \
 		   -D_CRT_SECURE_NO_WARNINGS \
+		   -D_CRT_STDIO_ISO_WIDE_SPECIFIERS \
 		   $(WPCAPINC) $(SYSINC)
 AFLAGS		:= /arch:SSE2
 RFLAGS		:= /n
 COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 
-LOPTS		:= -LIBPATH:win\msvc\Lib\$(ARCH)
+LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
 LOPTS_C		:= -SUBSYSTEM:CONSOLE,5.01
 LOPTS_W		:= -SUBSYSTEM:WINDOWS,5.01
 ifdef BUILD
@@ -279,22 +297,26 @@ ifdef EXINC
 endif
 OPTS		+= $(SYSINC)
 ifeq ($(OPTIM), y)
- DOPTS		:= -march=native
+ AFLAGS		:= /arch:AVX2
 endif
 ifeq ($(DEBUG), y)
  OPTS		+= -D_DEBUG
  DOPTS		+= -MTd -Gs -Zi
- ROPTS		+= -D_DEBUG
+ RFLAGS		+= -D_DEBUG
  LOPTS		+= -debug
- AOPTIM		:=
  ifndef COPTIM
   COPTIM	:= -Od
  endif
 else
- DOPTS		:= -MT -Gs
+ LOPTS		+= -LTCG
+ DOPTS		:= -MT -GL
  ifndef COPTIM
   COPTIM	:= -O2
  endif
+endif
+ifeq ($(LOGGING), y)
+ OPTS		+= -D_LOGGING
+ RFLAGS		+= -D_LOGGING
 endif
 ifeq ($(CRASHDUMP), y)
  OPTS		+= -DUSE_CRASHDUMP
@@ -322,13 +344,14 @@ endif
 LIBS		:= ddraw.lib dinput8.lib dxguid.lib d3d9.lib d3dx9.lib \
 		   version.lib comctl32.lib winmm.lib comdlg32.lib \
 		   advapi32.lib gdi32.lib shell32.lib user32.lib \
-		   kernel32.lib wsock32.lib iphlpapi.lib psapi.lib
+		   wsock32.lib iphlpapi.lib psapi.lib
 ifeq ($(DEBUG), y)
 LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
 endif
 
 
 # Optional modules.
+MISCOBJ		:=
 ifeq ($(DYNAREC), y)
  OPTS		+= -DUSE_DYNAREC
  RFLAGS		+= -DUSE_DYNAREC
@@ -346,12 +369,12 @@ endif
 
 ifeq ($(FLUIDSYNTH), y)
  OPTS		+= -DUSE_FLUIDSYNTH
- FSYNTHOBJ	:= midi_fluidsynth.obj
+ MISCOBJ	+= midi_fluidsynth.obj
 endif
 
 ifeq ($(MUNT), y)
  OPTS		+= -DUSE_MUNT
- MUNTOBJ	:= midi_mt32.obj \
+ MISCOBJ	+= midi_mt32.obj \
 		    Analog.obj BReverbModel.obj File.obj FileStream.obj \
 		    LA32Ramp.obj LA32FloatWaveGenerator.obj \
 		    LA32WaveGenerator.obj MidiStreamParser.obj Part.obj \
@@ -379,6 +402,28 @@ ifneq ($(SDL), n)
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(D2D), n)
+ ifeq ($(D2D), d)
+  OPTS		+= -DUSE_D2D=2
+ else
+  OPTS		+= -DUSE_D2D=1
+ endif
+ RFLAGS		+= -DUSE_D2D
+ ifneq ($(D2D_PATH), )
+  OPTS		+= -I$(D2D_PATH)/include/msvc -I$(D2D_PATH)/include
+  ifeq ($(X64), y)
+   LOPTS	+= -LIBPATH:$(D2D_PATH)\lib\msvc\x64
+  else
+   LOPTS	+= -LIBPATH:$(D2D_PATH)\lib\msvc\x86
+  endif
+ endif
+ ifeq ($(D2D), y)
+  LIBS		+= d2d1.lib
+ endif
+ D2DOBJ		:= win_d2d.obj
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(VNC), n)
  OPTS		+= -DUSE_VNC
  RFLAGS		+= -DUSE_VNC
@@ -393,7 +438,7 @@ ifneq ($(VNC), n)
  ifeq ($(VNC), y)
   LIBS		+= libvncserver.lib
  endif
- VNCOBJ		:= vnc.obj vnc_keymap.obj
+ MISCOBJ	+= vnc.obj vnc_keymap.obj
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -411,7 +456,7 @@ ifneq ($(RDP), n)
  ifeq ($(RDP), y)
   LIBS		+= rdpsrvr.lib
  endif
- RDPOBJ		:= rdp.obj
+ MISCOBJ	+= rdp.obj
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -433,6 +478,7 @@ ifneq ($(PNG), n)
  ifeq ($(PNG), y)
   LIBS		+= libpng16_dll.lib #zlib.lib
  endif
+ MISCOBJ	+= png.obj
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -442,10 +488,9 @@ ifneq ($(WX), n)
  UIOBJ		:= wx_main.obj wx_ui.obj wx_stbar.obj wx_render.obj
 else
  UIOBJ		:= win_ui.obj \
-		   win_ddraw.obj win_d3d.obj $(SDLOBJ) \
-		   win_dialog.obj win_about.obj win_status.obj \
-		   win_settings.obj win_devconf.obj win_snd_gain.obj \
-		   win_new_image.obj
+		   win_ddraw.obj win_d3d.obj $(SDLOBJ) $(D2DOBJ) \
+		   win_dialog.obj win_about.obj win_settings.obj \
+		   win_devconf.obj win_snd_gain.obj win_new_image.obj
 endif
 
 
@@ -467,19 +512,13 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_PORTABLE3
  endif
 
- ifeq ($(GREENB), y)
-  OPTS		+= -DUSE_GREENB
-  DEVBROBJ	+= m_at_4gpv31.obj
- endif
-
  ifeq ($(I686), y)
   OPTS		+= -DUSE_I686
-  DEVBROBJ	+= m_at_440fx.obj
  endif
 
- ifeq ($(STEALTH32), y)
-  OPTS		+= -DUSE_STEALTH32
-  DEVBROBJ	+= vid_icd2061.obj
+ ifeq ($(PAS16), y)
+  OPTS		+= -DUSE_PAS16
+  DEVBROBJ	+= snd_pas16.obj
  endif
 
  ifeq ($(XL24), y)
@@ -490,29 +529,34 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_WONDER
  endif
 
- ifeq ($(PAS16), y)
-  OPTS		+= -DUSE_PAS16
-  DEVBROBJ	+= snd_pas16.obj
+ ifeq ($(HOSTCD), y)
+  OPTS		+= -DUSE_HOST_CDROM
  endif
 
+ ifeq ($(PRINTER), y)
+  OPTS		+= -DUSE_PRINTER
+  DEVBROBJ	+= prt_parallel.obj
+ endif
 endif
 
 
 # Final versions of the toolchain flags.
 LDFLAGS		:= $(LOPTS)
-CFLAGS		:= $(WX_FLAGS) $(OPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
-CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) $(AOPTIM) $(AFLAGS)
+CFLAGS		:= $(WX_FLAGS) $(OPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
+CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
 
 
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
 
-MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
-		   mem.obj rom.obj rom_load.obj device.obj nvr.obj \
-		   $(VNCOBJ) $(RDPOBJ)
+RESDLL		:= VARCem-$(LANG)
 
-UIOBJ		+= ui_main.obj ui_new_image.obj ui_stbar.obj ui_vidapi.obj
+MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
+		   mem.obj rom.obj rom_load.obj device.obj nvr.obj
+
+UIOBJ		+= ui_main.obj ui_lang.obj ui_stbar.obj ui_vidapi.obj \
+		   ui_cdrom.obj ui_new_image.obj ui_misc.obj
 
 SYSOBJ		:= dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj mca.obj \
 		   mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj
@@ -537,17 +581,19 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_at_opti495.obj m_at_scat.obj \
 		    m_at_compaq.obj m_at_wd76c10.obj \
 		    m_at_sis_85c471.obj m_at_sis_85c496.obj \
-		    m_at_430lx_nx.obj m_at_430fx.obj \
-		    m_at_430hx.obj m_at_430vx.obj
+		    m_at_4x0.obj
 
 INTELOBJ	:= intel.obj \
 		    intel_flash.obj \
 		    intel_sio.obj \
-		    intel_piix.obj intel_piix4.obj
+		    intel_piix.obj
 
 DEVOBJ		:= bugger.obj \
+		   isamem.obj isartc.obj \
 		   game.obj game_dev.obj \
-		   parallel.obj parallel_dev.obj serial.obj \
+		   parallel.obj parallel_dev.obj \
+		    prt_text.obj prt_cpmap.obj prt_escp.obj \
+		   serial.obj \
 		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
 		   sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
 		   keyboard.obj \
@@ -572,7 +618,8 @@ HDDOBJ		:= hdd.obj \
 		    hdc_ide_ata.obj hdc_ide_xta.obj hdc_xtide.obj
 
 CDROMOBJ	:= cdrom.obj \
-		    cdrom_dosbox.obj cdrom_image.obj cdrom_null.obj
+		    cdrom_speed.obj \
+		    cdrom_dosbox.obj cdrom_image.obj
 
 ZIPOBJ		:= zip.obj
 
@@ -581,10 +628,8 @@ USBOBJ		:= usb.obj
 endif
 
 SCSIOBJ		:= scsi.obj \
-		    scsi_bus.obj scsi_device.obj \
-		    scsi_disk.obj \
-		    scsi_x54x.obj \
-		    scsi_aha154x.obj scsi_buslogic.obj \
+		    scsi_device.obj scsi_disk.obj scsi_cdrom.obj \
+		    scsi_x54x.obj scsi_aha154x.obj scsi_buslogic.obj \
 		    scsi_ncr5380.obj scsi_ncr53c810.obj
 
 NETOBJ		:= network.obj \
@@ -595,7 +640,8 @@ NETOBJ		:= network.obj \
 		     tcp_input.obj debug.obj ip_output.obj sbuf.obj \
 		     tcp_output.obj udp.obj if.obj mbuf.obj slirp.obj \
 		     tcp_subr.obj \
-		    net_ne2000.obj
+		    net_dp8390.obj \
+		    net_ne2000.obj net_wd80x3.obj net_3c503.obj
 
 SNDOBJ		:= sound.obj \
 		    sound_dev.obj \
@@ -623,7 +669,7 @@ SNDOBJ		:= sound.obj \
 VIDOBJ		:= video.obj \
 		    video_dev.obj \
 		    vid_cga.obj vid_cga_comp.obj \
-		    vid_compaq_cga.obj \
+		    vid_cga_compaq.obj \
 		    vid_mda.obj \
 		    vid_hercules.obj vid_herculesplus.obj vid_incolor.obj \
 		    vid_colorplus.obj \
@@ -635,7 +681,7 @@ VIDOBJ		:= video.obj \
 		    vid_ati_eeprom.obj \
 		    vid_ati18800.obj vid_ati28800.obj \
 		    vid_ati_mach64.obj vid_ati68860_ramdac.obj \
-		    vid_ics2595.obj \
+		    vid_bt48x_ramdac.obj vid_icd2061.obj vid_ics2595.obj \
 		    vid_cl54xx.obj \
 		    vid_et4000.obj vid_sc1502x_ramdac.obj \
 		    vid_et4000w32.obj vid_stg_ramdac.obj \
@@ -650,8 +696,8 @@ VIDOBJ		:= video.obj \
 
 PLATOBJ		:= win.obj \
 		    win_lang.obj win_opendir.obj win_dynld.obj win_thread.obj \
-		    win_cdrom.obj win_cdrom_ioctl.obj win_keyboard.obj \
-		    win_mouse.obj win_joystick.obj win_midi.obj
+		    win_cdrom.obj win_keyboard.obj win_mouse.obj \
+		    win_joystick.obj win_midi.obj
 ifeq ($(CRASHDUMP), y)
 PLATOBJ		+= win_crashdump.obj
 endif
@@ -660,7 +706,7 @@ endif
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
 		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
-		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
+		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
 ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif
@@ -690,20 +736,45 @@ else
 endif
 
 
-all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
+all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
+
+#
+# This rule creates a script (command file) that figures out which
+# language we want to make (its argument is the 2-letter language
+# name, or none) by looking it up in the database of supported ones,
+# and then it calls the (this) Makefile back with the proper args
+# for that target.
+#
+# We do it this way so it can also be used by the VC project files.
+#
+win/Mklang.cmd:	win/msvc/Makefile.VC
+		@echo @SET PATH=$(PATH) >>win\Mklang.cmd
+		@echo @SETLOCAL >>win\Mklang.cmd
+		@echo @SET LANG=none >>win\Mklang.cmd
+		@echo @FOR /F "eol=# tokens=1,2,3,4* delims=, " %%%%i in (ui\lang\VARCem.lang) do @if "%%1"=="%%%%i" set LANG=%%%%i LANGID=%%%%j PRILANG=%%%%k SUBLANG=%%%%l >>win\Mklang.cmd
+		@echo @IF NOT "%%LANG%%"=="none" @$(MAKE) -fwin/msvc/Makefile.VC "RFLAGS=$(RFLAGS) $(EXTRAS)" LANG=%%LANG%% VARCem-%%1.dll >>win\Mklang.cmd
 
 
-Mklang.cmd:
-		@echo @SET PATH=$(PATH) >Mklang.cmd
-		@echo @cd win\lang >>Mklang.cmd
-		@echo @$(MAKE) -fMakefile.VC "RFLAGS=$(RFLAGS) $(EXTRAS)" %%1% >>Mklang.cmd
-		@echo @cd ..\.. >>Mklang.cmd
-
-
-lang:		Mklang.cmd win/VARCem-common.rc
+langs:		win/Mklang.cmd
+ifdef LANG
+		@echo Generating localization $(LANG) ..
+else
 		@echo Generating localizations..
-		@Mklang.cmd all
-		@-del Mklang.cmd
+		@FOR /F "eol=# tokens=1 delims=, " %%i in (ui\lang\VARCem.lang) do @win\Mklang %%i
+endif
+		@-del win\Mklang.cmd
+
+win/$(RESDLL).rc:	VARCem.rpp VARCem-common.rc
+		@$(PREPROC) -DPREAMBLE= -DLANG=$(LANG) -DLANGID=$(LANGID) -DPRILANG=$(PRILANG) -DSUBLANG=$(SUBLANG) $< >win\$(RESDLL).rc 2>NUL
+
+$(RESDLL).res:	win/$(RESDLL).rc VARCem-common.rc
+		@echo Processing $(RESDLL).rc ..
+		@$(WINDRES) $(RFLAGS) -fo$@ $<
+
+$(RESDLL).dll:	$(RESDLL).res
+		@echo Linking $(RESDLL).dll ..
+		@$(LINK) /DLL /NOENTRY $(LDFLAGS) -OUT:$@ $(RESDLL).res
+		@-del win\$(RESDLL).rc
 
 VARCem.res:	win/VARCem.rc win/VARCem.mpp
 		@echo Generating Manifest file..
@@ -721,35 +792,30 @@ pcap_if.res:	pcap_if.rc
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) -fo$@ $<
 
-pcap_if.exe:	pcap_if.obj win_dynld.obj pcap_if.res
-		@echo Linking pcap_if.exe ..
-		@$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:pcap_if.exe \
+$(NETIF).exe:	pcap_if.obj win_dynld.obj pcap_if.res
+		@echo Linking $(NETIF).exe ..
+		@$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:$@ \
 			pcap_if.obj win_dynld.obj pcap_if.res
-
-hello.exe:	hello.obj
-		$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:hello.exe \
-			hello.obj $(WXLIBS) $(LIBS)
-
 
 clean:
 		@echo Cleaning objects..
-		@del *.obj 2>NUL
-		@del *.res 2>NUL
+		@-del *.obj 2>NUL
+		@-del *.res 2>NUL
 
 clobber:	Mklang.cmd clean
 		@echo Cleaning executables..
-		@del *.d 2>NUL
-		@del *.exe 2>NUL
+		@-del *.d 2>NUL
+		@-del *.exe 2>NUL
 ifeq ($(DEBUG), y)
-		@del *.ilk 2>NUL
-		@del *.pdb 2>NUL
+		@-del *.ilk 2>NUL
+		@-del *.pdb 2>NUL
 endif
 ifeq ($(PROFILER), y)
-		@del *.map 2>NUL
+		@-del *.map 2>NUL
 endif
-		@del win\*.manifest 2>NUL
-		@Mklang.cmd clobber
-		@-del Mklang.cmd
+		@-del win\*.manifest 2>NUL
+		@-del *.dll 2>NUL
+		@-del win\Mklang.cmd
 #		@del $(DEPFILE) 2>NUL
 
 ifneq ($(AUTODEP), y)
@@ -776,4 +842,4 @@ include $(wildcard $(DEPFILE))
 endif
 
 
-# End of Makefile.VS.
+# End of Makefile.VC.

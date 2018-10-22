@@ -8,7 +8,7 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.6	2018/03/20
+ * Version:	@(#)win_crashdump.c	1.0.8	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Riley (Rai-chan),
@@ -53,6 +53,7 @@
 static PVOID	hExceptionHandler;
 static char	*ExceptionHandlerBuffer,
 		*CurrentBufferPointer;
+static char	ExceptionHandlerFileName[1024];
 
 
 static LONG CALLBACK
@@ -62,6 +63,9 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
     HANDLE hDumpFile;
     char *BufPtr;
     DWORD i;
+
+    /* Get current system date and time. */
+    GetSystemTime(&SystemTime);
 
     /*
      * Win32-specific functions will be used wherever possible,
@@ -113,20 +117,14 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
      * It should contain the current date and time so as
      * to be (hopefully!) unique.
      */
-    GetSystemTime(&SystemTime);
-    sprintf(CurrentBufferPointer,
-	"%s-%d%02d%02d-%02d-%02d-%02d-%03d.dmp", EMU_NAME,
-	SystemTime.wYear,
-	SystemTime.wMonth,
-	SystemTime.wDay,
-	SystemTime.wHour,
-	SystemTime.wMinute,
-	SystemTime.wSecond,
-	SystemTime.wMilliseconds);
+    plat_tempfile((wchar_t *)ExceptionHandlerBuffer, NULL, DUMP_FILE_EXT);
+    wcstombs(ExceptionHandlerFileName, (wchar_t *)ExceptionHandlerBuffer,
+					sizeof(ExceptionHandlerFileName));
+
 
     /* Now the filename is in the buffer, the file can be created. */
     hDumpFile = CreateFile(
-	ExceptionHandlerBuffer,		// The filename of the file to open.
+	ExceptionHandlerFileName,	// The filename of the file to open.
 	GENERIC_WRITE,			// The permissions to request.
 	0,				// Make sure other processes can't
 					// touch the crash dump at all
@@ -251,7 +249,7 @@ InitCrashDump(void)
      * so allocate 10kb for it to use if it gets called,
      * an amount which should be more than enough.
      */
-    ExceptionHandlerBuffer = malloc(ExceptionHandlerBufferSize);
+    ExceptionHandlerBuffer = (char *)mem_alloc(ExceptionHandlerBufferSize);
     CurrentBufferPointer = ExceptionHandlerBuffer;
 
     /*

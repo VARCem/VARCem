@@ -8,7 +8,7 @@
  *
  *		Definitions for the X86 architecture.
  *
- * Version:	@(#)x86.h	1.0.1	2018/02/14
+ * Version:	@(#)x86.h	1.0.1	2018/02/19
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,25 +34,37 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-uint16_t oldcs;
+
+
+#ifdef _MSC_VER
+# pragma check_stack(off)
+# pragma inline_recursion(on)
+//# define INLINE __forceinline
+# define INLINE __inline
+#else
+# define INLINE __inline
+#endif
+
+
+extern uint16_t oldcs;
 extern uint32_t rmdat32;
-int oldcpl;
+extern int oldcpl;
 
 extern int nmi_enable;
 
-int tempc;
-int output;
-int firstrepcycle;
+extern int tempc;
+extern int output;
+extern int firstrepcycle;
 
-uint32_t easeg,ealimit,ealimitw;
+extern uint32_t easeg,ealimit,ealimitw;
 
-int skipnextprint;
-int inhlt;
+extern int skipnextprint;
+extern int inhlt;
 
-uint8_t opcode;
-int noint;
+extern uint8_t opcode;
+extern int noint;
 
-uint16_t lastcs,lastpc;
+extern uint16_t lastcs,lastpc;
 extern int timetolive,keyboardtimer;
 
 #define setznp168 setznp16
@@ -66,11 +78,11 @@ extern int timetolive,keyboardtimer;
 #define setr16(r,v) cpu_state.regs[r].w=v
 #define setr32(r,v) cpu_state.regs[r].l=v
 
-uint8_t znptable8[256];
-uint16_t znptable16[65536];
+extern uint8_t znptable8[256];
+extern uint16_t znptable16[65536];
 
-int use32;
-int stack32;
+extern int use32;
+extern int stack32;
 
 #define fetchea()   { rmdat=readmemb(cs+pc); pc++;  \
                     reg=(rmdat>>3)&7;               \
@@ -79,13 +91,13 @@ int stack32;
                     if (mod!=3) fetcheal(); }
 
 
-int optype;
+extern int optype;
 #define JMP 1
 #define CALL 2
 #define IRET 3
 #define OPTYPE_INT 4
 
-uint32_t oxpc;
+extern uint32_t oxpc;
 
 extern uint16_t *mod1add[2][8];
 extern uint32_t *mod1seg[8];
@@ -121,7 +133,7 @@ enum
 
 extern uint32_t abrt_error;
 
-void x86_doabrt(int x86_abrt);
+extern void x86_doabrt(int x86_abrt);
 
 extern uint8_t opcode2;
 
@@ -130,10 +142,10 @@ extern uint32_t rmdat32;
 
 extern int inscounts[256];
 
-void x86illegal();
+extern void x86illegal();
 
-void x86seg_reset();
-void x86gpf(char *s, uint16_t error);
+extern void x86seg_reset();
+extern void x86gpf(char *s, uint16_t error);
 
 extern uint16_t zero;
 

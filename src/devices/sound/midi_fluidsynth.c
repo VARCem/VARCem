@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.11	2018/05/24
+ * Version:	@(#)midi_fluidsynth.c	1.0.13	2018/10/14
  *
  *		Code borrowed from scummvm.
  *
@@ -53,6 +53,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <fluidsynth.h>
+#define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../config.h"
 #include "../../device.h"
@@ -73,11 +74,6 @@
 #endif
 
 
-extern void givealbuffer_midi(void *buf, uint32_t size);
-extern void al_set_midi(int freq, int buf_size);
-extern int soundon;
-
-
 static void	*fluidsynth_handle = NULL;	/* handle to FluidSynth DLL */
 
 /* Pointers to the real functions. */
@@ -94,7 +90,6 @@ static int (*f_fluid_synth_sysex)(fluid_synth_t *synth, const char *data, int le
 static int (*f_fluid_synth_pitch_bend)(fluid_synth_t *synth, int chan, int val);
 static int (*f_fluid_synth_program_change)(fluid_synth_t *synth, int chan, int program);
 static int (*f_fluid_synth_sfload)(fluid_synth_t *synth, const char *filename, int reset_presets);
-static int (*f_fluid_synth_sfunload)(fluid_synth_t *synth, unsigned int id, int reset_presets);
 static int (*f_fluid_synth_set_interp_method)(fluid_synth_t *synth, int chan, int interp_method);
 static void (*f_fluid_synth_set_reverb)(fluid_synth_t *synth, double roomsize, double damping, double width, double level);
 static void (*f_fluid_synth_set_reverb_on)(fluid_synth_t *synth, int on);
@@ -118,7 +113,6 @@ static dllimp_t fluidsynth_imports[] = {
   { "fluid_synth_pitch_bend",		&f_fluid_synth_pitch_bend	},
   { "fluid_synth_program_change",	&f_fluid_synth_program_change	},
   { "fluid_synth_sfload",		&f_fluid_synth_sfload		},
-  { "fluid_synth_sfunload",		&f_fluid_synth_sfunload		},
   { "fluid_synth_set_interp_method",	&f_fluid_synth_set_interp_method},
   { "fluid_synth_set_reverb",		&f_fluid_synth_set_reverb	},
   { "fluid_synth_set_reverb_on",	&f_fluid_synth_set_reverb_on	},
@@ -132,17 +126,19 @@ static dllimp_t fluidsynth_imports[] = {
 
 
 typedef struct fluidsynth {
-    fluid_settings_t* settings;
-    fluid_synth_t* synth;
-    int samplerate;
-    int sound_font;
+    fluid_settings_t	*settings;
+    fluid_synth_t	*synth;
+    int			samplerate;
+    int			sound_font;
 
-    thread_t* thread_h;
-    event_t* event;
-    int buf_size;
-    float* buffer;
-    int16_t* buffer_int16;
-    int midi_pos;
+    thread_t		*thread_h;
+    event_t		*event, *start_event;
+
+    int			buf_size;
+    float		*buffer;
+    int16_t		*buffer_int16;
+    int			midi_pos;
+    volatile int	on;
 } fluidsynth_t;
 
 
@@ -176,8 +172,12 @@ fluidsynth_thread(void *param)
     int buf_pos = 0;
     int buf_size = data->buf_size / BUFFER_SEGMENTS;
 
-    while (1) {
+    thread_set_event(data->start_event);
+
+    while (data->on) {
 	thread_wait_event(data->event, -1);
+	thread_reset_event(data->event);
+
 	if (sound_is_float) {
 		float *buf = (float*)((uint8_t*)data->buffer + buf_pos);
 		memset(buf, 0, buf_size);
@@ -186,7 +186,7 @@ fluidsynth_thread(void *param)
 		buf_pos += buf_size;
 		if (buf_pos >= data->buf_size) {
 			if (soundon)
-				givealbuffer_midi(data->buffer, data->buf_size / sizeof(float));
+				openal_buffer_midi(data->buffer, data->buf_size / sizeof(float));
 			buf_pos = 0;
 		}
 	} else {
@@ -197,7 +197,7 @@ fluidsynth_thread(void *param)
 		buf_pos += buf_size;
 		if (buf_pos >= data->buf_size) {
 			if (soundon)
-				givealbuffer_midi(data->buffer_int16, data->buf_size / sizeof(int16_t));
+				openal_buffer_midi(data->buffer_int16, data->buf_size / sizeof(int16_t));
 			buf_pos = 0;
 		}
 	}
@@ -208,13 +208,13 @@ fluidsynth_thread(void *param)
 		if (data->synth)
 			f_fluid_synth_write_float(data->synth, data->buf_size/2, data->buffer, 0, 2, data->buffer, 1, 2);
 		if (soundon)
-			givealbuffer_midi(data->buffer, data->buf_size);
+			openal_buffer_midi(data->buffer, data->buf_size);
 	} else {
 		memset(data->buffer, 0, data->buf_size * sizeof(int16_t));
 		if (data->synth)
 			f_fluid_synth_write_s16(data->synth, data->buf_size/2, data->buffer_int16, 0, 2, data->buffer_int16, 1, 2);
 		if (soundon)
-			givealbuffer_midi(data->buffer_int16, data->buf_size);
+			openal_buffer_midi(data->buffer_int16, data->buf_size);
 	}
 #endif
     }
@@ -262,9 +262,7 @@ fluidsynth_msg(uint8_t *msg)
 		break;
 
 	default:
-#if 0
-		pclog("fluidsynth: unknown send() command 0x%02X", cmd);
-#endif
+		DEBUG("fluidsynth: unknown send() command 0x%02X", cmd);
 		break;
 	}
 }
@@ -282,7 +280,8 @@ fluidsynth_sysex(uint8_t *data, unsigned int len)
 static void *
 fluidsynth_init(const device_t *info)
 {
-    fluidsynth_t* data = &fsdev;
+    fluidsynth_t *data = &fsdev;
+    midi_device_t* dev;
 
     memset(data, 0x00, sizeof(fluidsynth_t));
 
@@ -345,23 +344,20 @@ fluidsynth_init(const device_t *info)
     data->samplerate = (int)samplerate;
     if (sound_is_float) {
 	data->buf_size = (data->samplerate/RENDER_RATE)*2*sizeof(float)*BUFFER_SEGMENTS;
-	data->buffer = malloc(data->buf_size);
+	data->buffer = (float *)mem_alloc(data->buf_size);
 	data->buffer_int16 = NULL;
     } else {
 	data->buf_size = (data->samplerate/RENDER_RATE)*2*sizeof(int16_t)*BUFFER_SEGMENTS;
 	data->buffer = NULL;
-	data->buffer_int16 = malloc(data->buf_size);
+	data->buffer_int16 = (int16_t *)mem_alloc(data->buf_size);
     }
-    data->event = thread_create_event();
-    data->thread_h = thread_create(fluidsynth_thread, data);
 
-    al_set_midi(data->samplerate, data->buf_size);
+    openal_set_midi(data->samplerate, data->buf_size);
 
-#if 1
-    pclog("fluidsynth (%s) initialized, samplerate %d, buf_size %d\n", f_fluid_version_str(), data->samplerate, data->buf_size);
-#endif
+    DEBUG("fluidsynth (%s) initialized, samplerate %d, buf_size %d\n",
+	  f_fluid_version_str(), data->samplerate, data->buf_size);
 
-    midi_device_t* dev = malloc(sizeof(midi_device_t));
+    dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
     memset(dev, 0, sizeof(midi_device_t));
 
     dev->play_msg = fluidsynth_msg;
@@ -369,6 +365,16 @@ fluidsynth_init(const device_t *info)
     dev->poll = fluidsynth_poll;
 
     midi_init(dev);
+
+    data->on = 1;
+
+    data->start_event = thread_create_event();
+    data->event = thread_create_event();
+
+    data->thread_h = thread_create(fluidsynth_thread, data);
+
+    thread_wait_event(data->start_event, -1);
+    thread_reset_event(data->start_event);
 
     return(dev);
 }
@@ -378,18 +384,13 @@ static void
 fluidsynth_close(void* priv)
 {
     if (priv == NULL) return;
-
-    if (fluidsynth_handle == NULL) {
-	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_FSYNTH);
-	return;
-    }
+    if (fluidsynth_handle == NULL) return;
 
     fluidsynth_t* data = &fsdev;
 
-    if (data->sound_font != -1) {
-	f_fluid_synth_sfunload(data->synth, data->sound_font, 1);
-	data->sound_font = -1;
-    }
+    data->on = 0;
+    thread_set_event(data->event);
+    thread_wait(data->thread_h, -1);
 
     if (data->synth) {
 	f_delete_fluid_synth(data->synth);
@@ -400,8 +401,6 @@ fluidsynth_close(void* priv)
 	f_delete_fluid_settings(data->settings);
 	data->settings = NULL;
     }
-
-    midi_close();
 
     if (data->buffer) {
 	free(data->buffer);
@@ -424,188 +423,150 @@ fluidsynth_close(void* priv)
 void
 fluidsynth_global_init(void)
 {
+    wchar_t temp[512];
+    const char *fn = PATH_FS_DLL;
+
     /* Try loading the DLL. */
-    fluidsynth_handle = dynld_module(PATH_FS_DLL, fluidsynth_imports);
+    fluidsynth_handle = dynld_module(fn, fluidsynth_imports);
     if (fluidsynth_handle == NULL) {
-	pclog("SOUND: unable to load '%s', FluidSynth not available!\n",
-							PATH_FS_DLL);
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_NOLIB), "FluidSynth", fn);
+	ui_msgbox(MBX_ERROR, temp);
+	ERRLOG("SOUND: unable to load '%s', FluidSynth not available!\n", fn);
+    } else {
+	INFO("SOUND: module '%s' loaded.\n", fn);
     }
 }
 
 
 static const device_config_t fluidsynth_config[] = {
+#if 0
+    {
+	"sound_font","Sound Font",CONFIG_FNAME,"",0,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	{
-		.name = "sound_font",
-		.description = "Sound Font",
-		.type = CONFIG_FNAME,
-		.default_string = "",
-		.file_filter =
 		{
-			{
-				.description = "SF2 Sound Fonts",
-				.extensions =
-				{
-					"sf2"
-				}
-			}
+			"SF2 Sound Fonts","sf2"
 		}
-	},
-	{
-		.name = "output_gain",
-		.description = "Output Gain",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 100
-		},
-		.default_int = 100
-	},
-	{
-		.name = "chorus",
-		.description = "Chorus",
-		.type = CONFIG_BINARY,
-		.default_int = 0
-	},
-	{
-		.name = "chorus_voices",
-		.description = "Chorus Voices",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 99
-		},
-		.default_int = 3
-	},
-	{
-		.name = "chorus_level",
-		.description = "Chorus Level",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 100
-		},
-		.default_int = 100
-	},
-	{
-		.name = "chorus_speed",
-		.description = "Chorus Speed",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 30,
-			.max = 500
-		},
-		.default_int = 30
-	},
-	{
-		.name = "chorus_depth",
-		.description = "Chorus Depth",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 210
-		},
-		.default_int = 80
-	},
-	{
-		.name = "chorus_waveform",
-		.description = "Chorus Waveform",
-		.type = CONFIG_SELECTION,
-		.selection =
-		{
-			{
-			       .description = "Sine",
-				.value = 0
-			},
-			{
-				.description = "Triangle",
-				.value = 1
-			}
-		},
-		.default_int = 0
-	},
-	{
-		.name = "reverb",
-		.description = "Reverb",
-		.type = CONFIG_BINARY,
-		.default_int = 0
-	},
-	{
-		.name = "reverb_room_size",
-		.description = "Reverb Room Size",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 120
-		},
-		.default_int = 20
-	},
-	{
-		.name = "reverb_damping",
-		.description = "Reverb Damping",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 100
-		},
-		.default_int = 0
-	},
-	{
-		.name = "reverb_width",
-		.description = "Reverb Width",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 100
-		},
-		.default_int = 1
-	},
-	{
-		.name = "reverb_level",
-		.description = "Reverb Level",
-		.type = CONFIG_SPINNER,
-		.spinner =
-		{
-			.min = 0,
-			.max = 100
-		},
-		.default_int = 90
-	},
-	{
-		.name = "interpolation",
-		.description = "Interpolation Method",
-		.type = CONFIG_SELECTION,
-		.selection =
-		{
-			{
-				.description = "None",
-				.value = 0
-			},
-			{
-				.description = "Linear",
-				.value = 1
-			},
-			{
-				.description = "4th Order",
-				.value = 2
-			},
-			{
-				.description = "7th Order",
-				.value = 3
-			}
-		},
-		.default_int = 2
-	},
-	{
-		.type = -1
 	}
+    },
+    {
+	"output_gain","Output Gain",CONFIG_SPINNER,"",100,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 100, 1
+	}
+    },
+#endif
+    {
+	"chorus","Chorus",CONFIG_BINARY,"",0
+    },
+#if 0
+    {
+	"chorus_voices","Chorus Voices",CONFIG_SPINNER,"",3,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 99, 1
+	}
+    },
+    {
+	"chorus_level","Chorus Level",CONFIG_SPINNER,"",100,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 100, 1
+	}
+    },
+    {
+	"chorus_speed","Chorus Speed",CONFIG_SPINNER,"",30,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		30, 500, 10
+	}
+    },
+    {
+	"chorus_depth","Chorus Depth",CONFIG_SPINNER,"",80,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 210, 10
+	}
+    },
+#endif
+    {
+	"chorus_waveform","Chorus Waveform",CONFIG_SELECTION,"",0,
+	{
+		{
+		       "Sine",0
+		},
+		{
+			"Triangle",1
+		}
+	}
+    },
+    {
+	"reverb","Reverb",CONFIG_BINARY,"",0
+    },
+#if 0
+    {
+	"reverb_room_size","Reverb Room Size",CONFIG_SPINNER,"",20,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 120, 1
+	}
+    },
+    {
+	"reverb_damping","Reverb Damping",CONFIG_SPINNER,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 100, 1
+	}
+    },
+    {
+	"reverb_width","Reverb Width",CONFIG_SPINNER,"",1,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 100, 1
+	}
+    },
+    {
+	"reverb_level","Reverb Level",CONFIG_SPINNER,"",90,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{
+		0, 100, 1
+	}
+    },
+#endif
+    {
+	"interpolation","Interpolation Method",CONFIG_SELECTION,"",2,
+	{
+		{
+			"None",0
+		},
+		{
+			"Linear",1
+		},
+		{
+			"4th Order",2
+		},
+		{
+			"7th Order",3
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"","",-1
+    }
 };
 
 

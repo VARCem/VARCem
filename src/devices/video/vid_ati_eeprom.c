@@ -8,7 +8,7 @@
  *
  *		Emulation of the EEPROM on select ATI cards.
  *
- * Version:	@(#)vid_ati_eeprom.c	1.0.3	2018/05/06
+ * Version:	@(#)vid_ati_eeprom.c	1.0.4	2018/09/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

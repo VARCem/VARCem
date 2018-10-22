@@ -8,7 +8,7 @@
  *
  *		Example implementation of a PCI device.
  *
- * Version:	@(#)pci_dummy.c	1.0.3	2018/05/06
+ * Version:	@(#)pci_dummy.c	1.0.5	2018/09/04
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
-#include "../../emu.h
+#include "../../emu.h"
 #include "../../io.h"
 #include "pci.h"
 #include "pci_dummy.h"

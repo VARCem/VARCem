@@ -8,7 +8,7 @@
  *
  *		Definitions for the TKD8001 driver.
  *
- * Version:	@(#)vid_tkd8001_ramdac.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_tkd8001_ramdac.h	1.0.2	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,14 +40,17 @@
 # define VIDEO_TKD8001_RAMDAC_H
 
 
-typedef struct tkd8001_ramdac_t
-{
-        int state;
-        uint8_t ctrl;
+typedef struct {
+    int state;
+    uint8_t ctrl;
 } tkd8001_ramdac_t;
 
-void tkd8001_ramdac_out(uint16_t addr, uint8_t val, tkd8001_ramdac_t *ramdac, svga_t *svga);
-uint8_t tkd8001_ramdac_in(uint16_t addr, tkd8001_ramdac_t *ramdac, svga_t *svga);
+
+extern const device_t tkd8001_ramdac_device;
+
+
+extern void	tkd8001_ramdac_out(uint16_t addr, uint8_t val, tkd8001_ramdac_t *dev, svga_t *svga);
+extern uint8_t	tkd8001_ramdac_in(uint16_t addr, tkd8001_ramdac_t *dev, svga_t *svga);
 
 
 #endif	/*VIDEO_TKD8001_RAMDAC_H*/

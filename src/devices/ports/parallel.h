@@ -8,7 +8,7 @@
  *
  *		Definitions for the "LPT" parallel port handlerss.
  *
- * Version:	@(#)parallel.h	1.0.4	2018/04/07
+ * Version:	@(#)parallel.h	1.0.5	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,7 @@ extern const device_t parallel_3_device;
 #endif
 
 
+extern void	parallel_log(int level, const char *fmt, ...);
 extern void	parallel_reset(void);
 extern void	parallel_setup(int id, uint16_t port);
 

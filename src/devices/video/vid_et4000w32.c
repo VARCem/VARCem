@@ -10,7 +10,9 @@
  *
  * Known bugs:	Accelerator doesn't work in planar modes
  *
- * Version:	@(#)vid_et4000w32.c	1.0.10	2018/05/06
+ * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
+ *
+ * Version:	@(#)vid_et4000w32.c	1.0.16	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,15 +55,11 @@
 #include "../system/pci.h"
 #include "video.h"
 #include "vid_svga.h"
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
 #include "vid_icd2061.h"
-#endif
 #include "vid_stg_ramdac.h"
 
 
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-# define BIOS_ROM_PATH_DIAMOND	L"video/tseng/et4000w32/et4000w32.bin"
-#endif
+#define BIOS_ROM_PATH_DIAMOND	L"video/tseng/et4000w32/et4000w32.bin"
 #define BIOS_ROM_PATH_CARDEX	L"video/tseng/et4000w32/cardex.vbi"
 
 
@@ -79,9 +77,7 @@
 enum
 {
 	ET4000W32_CARDEX = 0,
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
 	ET4000W32_DIAMOND
-#endif
 };
 
 enum
@@ -97,23 +93,20 @@ typedef struct
         uint32_t val;
 } fifo_entry_t;
 
-typedef struct et4000w32p_t
+typedef struct
 {
-        mem_mapping_t linear_mapping;
-        mem_mapping_t    mmu_mapping;
+        mem_map_t linear_mapping;
+        mem_map_t mmu_mapping;
         
         rom_t bios_rom;
         
         svga_t svga;
-        stg_ramdac_t ramdac;
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-        icd2061_t icd2061;
-#endif
 
         int index;
 	int pci;
         uint8_t regs[256];
         uint32_t linearbase, linearbase_old;
+	uint32_t vram_mask;
 
         uint8_t banking, banking2;
 
@@ -139,9 +132,9 @@ typedef struct et4000w32p_t
                 } queued,internal;
                 uint32_t pattern_addr,source_addr,dest_addr,mix_addr;
                 uint32_t pattern_back,source_back,dest_back,mix_back;
-                int pattern_x,source_x;
-                int pattern_x_back,source_x_back;
-                int pattern_y,source_y;
+                unsigned int pattern_x,source_x;
+                unsigned int pattern_x_back,source_x_back;
+                unsigned int pattern_y,source_y;
                 uint8_t status;
                 uint64_t cpu_dat;
                 int cpu_dat_pos;
@@ -167,15 +160,170 @@ typedef struct et4000w32p_t
 	int type;
 } et4000w32p_t;
 
-void et4000w32p_recalcmapping(et4000w32p_t *et4000);
 
-uint8_t et4000w32p_mmu_read(uint32_t addr, void *p);
-void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p);
+static uint8_t et4000w32p_mmu_read(uint32_t addr, void *p);
+static void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p);
+static void et4000w32_blit_start(et4000w32p_t *et4000);
+static void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et4000w32p_t *et4000);
 
-void et4000w32_blit_start(et4000w32p_t *et4000);
-void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et4000w32p_t *et4000);
 
-void et4000w32p_out(uint16_t addr, uint8_t val, void *p)
+static void
+et4000w32p_recalcmapping(et4000w32p_t *et4000)
+{
+        svga_t *svga = &et4000->svga;
+        
+        if (!(et4000->pci_regs[PCI_REG_COMMAND] & PCI_COMMAND_MEM))
+        {
+                mem_map_disable(&svga->mapping);
+                mem_map_disable(&et4000->linear_mapping);
+                mem_map_disable(&et4000->mmu_mapping);
+                return;
+        }
+
+        if (svga->crtc[0x36] & 0x10) /*Linear frame buffer*/
+        {
+                mem_map_set_addr(&et4000->linear_mapping, et4000->linearbase, 0x200000);
+                mem_map_disable(&svga->mapping);
+                mem_map_disable(&et4000->mmu_mapping);
+        }
+        else
+        {
+                int map = (svga->gdcreg[6] & 0xc) >> 2;
+                if (svga->crtc[0x36] & 0x20) map |= 4;
+                if (svga->crtc[0x36] & 0x08) map |= 8;
+                switch (map)
+                {
+                        case 0x0: case 0x4: case 0x8: case 0xC: /*128k at A0000*/
+                        mem_map_set_addr(&svga->mapping, 0xa0000, 0x20000);
+                        mem_map_disable(&et4000->mmu_mapping);
+                        svga->banked_mask = 0xffff;
+                        break;
+                        case 0x1: /*64k at A0000*/
+                        mem_map_set_addr(&svga->mapping, 0xa0000, 0x10000);
+                        mem_map_disable(&et4000->mmu_mapping);
+                        svga->banked_mask = 0xffff;
+                        break;
+                        case 0x2: /*32k at B0000*/
+                        mem_map_set_addr(&svga->mapping, 0xb0000, 0x08000);
+                        mem_map_disable(&et4000->mmu_mapping);
+                        svga->banked_mask = 0x7fff;
+                        break;
+                        case 0x3: /*32k at B8000*/
+                        mem_map_set_addr(&svga->mapping, 0xb8000, 0x08000);
+                        mem_map_disable(&et4000->mmu_mapping);
+                        svga->banked_mask = 0x7fff;
+                        break;
+                        case 0x5: case 0x9: case 0xD: /*64k at A0000, MMU at B8000*/
+                        mem_map_set_addr(&svga->mapping, 0xa0000, 0x10000);
+                        mem_map_set_addr(&et4000->mmu_mapping, 0xb8000, 0x08000);
+                        svga->banked_mask = 0xffff;
+                        break;
+                        case 0x6: case 0xA: case 0xE: /*32k at B0000, MMU at A8000*/
+                        mem_map_set_addr(&svga->mapping, 0xb0000, 0x08000);
+                        mem_map_set_addr(&et4000->mmu_mapping, 0xa8000, 0x08000);
+                        svga->banked_mask = 0x7fff;
+                        break;
+                        case 0x7: case 0xB: case 0xF: /*32k at B8000, MMU at A8000*/
+                        mem_map_set_addr(&svga->mapping, 0xb8000, 0x08000);
+                        mem_map_set_addr(&et4000->mmu_mapping, 0xa8000, 0x08000);
+                        svga->banked_mask = 0x7fff;
+                        break;
+                }
+                
+                mem_map_disable(&et4000->linear_mapping);
+        }
+        et4000->linearbase_old = et4000->linearbase;
+        
+        if (!et4000->interleaved && (et4000->svga.crtc[0x32] & 0x80))
+                mem_map_disable(&svga->mapping);
+}
+
+
+static void
+et4000w32p_recalctimings(svga_t *svga)
+{
+        svga->ma_latch |= (svga->crtc[0x33] & 0x7) << 16;
+
+        if (svga->crtc[0x35] & 0x01)     svga->vblankstart += 0x400;
+        if (svga->crtc[0x35] & 0x02)     svga->vtotal      += 0x400;
+        if (svga->crtc[0x35] & 0x04)     svga->dispend     += 0x400;
+        if (svga->crtc[0x35] & 0x08)     svga->vsyncstart  += 0x400;
+        if (svga->crtc[0x35] & 0x10)     svga->split       += 0x400;
+        if (svga->crtc[0x3F] & 0x80)     svga->rowoffset   += 0x100;
+        if (svga->crtc[0x3F] & 0x01)     svga->htotal      += 256;
+        if (svga->attrregs[0x16] & 0x20) svga->hdisp <<= 1;
+        
+	svga->clock = cpuclock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
+  
+        switch (svga->bpp)
+        {
+                case 15: case 16:
+                svga->hdisp >>= 1;
+                break;
+                case 24:
+                svga->hdisp /= 3;
+                break;
+        }
+}
+
+
+static uint8_t
+et4000w32p_in(uint16_t addr, void *p)
+{
+        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+        svga_t *svga = &et4000->svga;
+
+        if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) 
+                addr ^= 0x60;
+        
+        switch (addr)
+        {
+                case 0x3c5:
+                if ((svga->seqaddr & 0xf) == 7) 
+                        return svga->seqregs[svga->seqaddr & 0xf] | 4;
+                break;
+
+                case 0x3C6: case 0x3C7: case 0x3C8: case 0x3C9:
+                return stg_ramdac_in(addr, svga->ramdac, svga);
+
+                case 0x3CB:
+                return et4000->banking2;
+                case 0x3CD:
+                return et4000->banking;
+                case 0x3D4:
+                return svga->crtcreg;
+                case 0x3D5:
+                return svga->crtc[svga->crtcreg];
+
+                case 0x210A: case 0x211A: case 0x212A: case 0x213A:
+                case 0x214A: case 0x215A: case 0x216A: case 0x217A:
+                return et4000->index;
+                case 0x210B: case 0x211B: case 0x212B: case 0x213B:
+                case 0x214B: case 0x215B: case 0x216B: case 0x217B:
+                if (et4000->index==0xec) 
+                        return (et4000->regs[0xec] & 0xf) | 0x60; /*ET4000/W32p rev D*/
+		if (et4000->index == 0xee) /*Preliminary implementation*/
+		{
+			if (svga->bpp == 8)
+				return 3;
+			else if (svga->bpp == 16)
+				return 4;
+			else
+				break;
+		}
+                if (et4000->index == 0xef) 
+                {
+                        if (et4000->pci) return et4000->regs[0xef] | 0xe0;       /*PCI*/
+                        else             return et4000->regs[0xef] | 0x60;       /*VESA local bus*/
+                }
+                return et4000->regs[et4000->index];
+        }
+        return svga_in(addr, svga);
+}
+
+
+static void
+et4000w32p_out(uint16_t addr, uint8_t val, void *p)
 {
         et4000w32p_t *et4000 = (et4000w32p_t *)p;
         svga_t *svga = &et4000->svga;
@@ -186,31 +334,39 @@ void et4000w32p_out(uint16_t addr, uint8_t val, void *p)
         
         switch (addr)
         {
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
                 case 0x3c2:
 		if (et4000->type == ET4000W32_DIAMOND)
-	                icd2061_write(&et4000->icd2061, (val >> 2) & 3);
+	                icd2061_write(svga->clock_gen, (val >> 2) & 3);
                 break;
-#endif
                 
                 case 0x3C6: case 0x3C7: case 0x3C8: case 0x3C9:
-                stg_ramdac_out(addr, val, &et4000->ramdac, svga);
+                stg_ramdac_out(addr, val, svga->ramdac, svga);
                 return;
                 
                 case 0x3CB: /*Banking extension*/
-                svga->write_bank = (svga->write_bank & 0xfffff) | ((val & 1) << 20);
-                svga->read_bank  = (svga->read_bank  & 0xfffff) | ((val & 0x10) << 16);
+		if (!(svga->crtc[0x36] & 0x10) && !(svga->gdcreg[6] & 0x08)) {
+	                svga->write_bank = (svga->write_bank & 0xfffff) | ((val & 1) << 20);
+	                svga->read_bank  = (svga->read_bank  & 0xfffff) | ((val & 0x10) << 16);
+		}
                 et4000->banking2 = val;
                 return;
                 case 0x3CD: /*Banking*/
-                svga->write_bank = (svga->write_bank & 0x100000) | ((val & 0xf) * 65536);
-                svga->read_bank  = (svga->read_bank  & 0x100000) | (((val >> 4) & 0xf) * 65536);
+		if (!(svga->crtc[0x36] & 0x10) && !(svga->gdcreg[6] & 0x08)) {
+	                svga->write_bank = (svga->write_bank & 0x100000) | ((val & 0xf) * 65536);
+        	        svga->read_bank  = (svga->read_bank  & 0x100000) | (((val >> 4) & 0xf) * 65536);
+		}
                 et4000->banking = val;
                 return;
                 case 0x3CF:
                 switch (svga->gdcaddr & 15)
                 {
                         case 6:
+			if (!(svga->crtc[0x36] & 0x10) && !(val & 0x08)) {
+		                svga->write_bank = ((et4000->banking2 & 1) << 20) | ((et4000->banking & 0xf) * 65536);
+		                svga->read_bank  = ((et4000->banking2 & 0x10) << 16) | (((et4000->banking >> 4) & 0xf) * 65536);
+			} else
+				svga->write_bank = svga->read_bank = 0;
+
                         svga->gdcreg[svga->gdcaddr & 15] = val;
                         et4000w32p_recalcmapping(et4000);
                         return;
@@ -222,10 +378,19 @@ void et4000w32p_out(uint16_t addr, uint8_t val, void *p)
                 case 0x3D5:
                 if ((svga->crtcreg < 7) && (svga->crtc[0x11] & 0x80))
                         return;
+                if ((svga->crtcreg == 0x35) && (svga->crtc[0x11] & 0x80))
+                        return;
                 if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
                         val = (svga->crtc[7] & ~0x10) | (val & 0x10);
                 old = svga->crtc[svga->crtcreg];
                 svga->crtc[svga->crtcreg] = val;
+		if (svga->crtcreg == 0x36) {
+			if (!(val & 0x10) && !(svga->gdcreg[6] & 0x08)) {
+	                	svga->write_bank = ((et4000->banking2 & 1) << 20) | ((et4000->banking & 0xf) * 65536);
+		                svga->read_bank  = ((et4000->banking2 & 0x10) << 16) | (((et4000->banking >> 4) & 0xf) * 65536);
+			} else
+				svga->write_bank = svga->read_bank = 0;
+		}
                 if (old != val)
                 {
                         if (svga->crtcreg < 0xe || svga->crtcreg > 0x10)
@@ -271,170 +436,6 @@ void et4000w32p_out(uint16_t addr, uint8_t val, void *p)
         svga_out(addr, val, svga);
 }
 
-uint8_t et4000w32p_in(uint16_t addr, void *p)
-{
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
-        svga_t *svga = &et4000->svga;
-
-        if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) 
-                addr ^= 0x60;
-        
-        switch (addr)
-        {
-                case 0x3c5:
-                if ((svga->seqaddr & 0xf) == 7) 
-                        return svga->seqregs[svga->seqaddr & 0xf] | 4;
-                break;
-
-                case 0x3C6: case 0x3C7: case 0x3C8: case 0x3C9:
-                return stg_ramdac_in(addr, &et4000->ramdac, svga);
-
-                case 0x3CB:
-                return et4000->banking2;
-                case 0x3CD:
-                return et4000->banking;
-                case 0x3D4:
-                return svga->crtcreg;
-                case 0x3D5:
-                return svga->crtc[svga->crtcreg];
-
-                case 0x210A: case 0x211A: case 0x212A: case 0x213A:
-                case 0x214A: case 0x215A: case 0x216A: case 0x217A:
-                return et4000->index;
-                case 0x210B: case 0x211B: case 0x212B: case 0x213B:
-                case 0x214B: case 0x215B: case 0x216B: case 0x217B:
-                if (et4000->index==0xec) 
-                        return (et4000->regs[0xec] & 0xf) | 0x60; /*ET4000/W32p rev D*/
-		if (et4000->index == 0xee) /*Preliminary implementation*/
-		{
-			if (svga->bpp == 8)
-				return 3;
-			else if (svga->bpp == 16)
-				return 4;
-			else
-				break;
-		}
-                if (et4000->index == 0xef) 
-                {
-                        if (et4000->pci) return et4000->regs[0xef] | 0xe0;       /*PCI*/
-                        else             return et4000->regs[0xef] | 0x60;       /*VESA local bus*/
-                }
-                return et4000->regs[et4000->index];
-        }
-        return svga_in(addr, svga);
-}
-
-void et4000w32p_recalctimings(svga_t *svga)
-{
-        et4000w32p_t *et4000 = (et4000w32p_t *)svga->p;
-        svga->ma_latch |= (svga->crtc[0x33] & 0x7) << 16;
-        if (svga->crtc[0x35] & 0x01)     svga->vblankstart += 0x400;
-        if (svga->crtc[0x35] & 0x02)     svga->vtotal      += 0x400;
-        if (svga->crtc[0x35] & 0x04)     svga->dispend     += 0x400;
-        if (svga->crtc[0x35] & 0x08)     svga->vsyncstart  += 0x400;
-        if (svga->crtc[0x35] & 0x10)     svga->split       += 0x400;
-        if (svga->crtc[0x3F] & 0x80)     svga->rowoffset   += 0x100;
-        if (svga->crtc[0x3F] & 0x01)     svga->htotal      += 256;
-        if (svga->attrregs[0x16] & 0x20) svga->hdisp <<= 1;
-        
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-	if (et4000->type == ET4000W32_DIAMOND)
-	{        
-	        switch ((svga->miscout >> 2) & 3)
-        	{
-                	case 0: case 1: break;
-	                case 2: case 3: svga->clock = cpuclock / icd2061_getfreq(&et4000->icd2061, 2); break;
-        	}
-	}
-	else
-	{
-#endif
-		svga->clock = cpuclock / stg_getclock((svga->miscout >> 2) & 3, &et4000->ramdac);
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-	}
-#endif
-  
-        switch (svga->bpp)
-        {
-                case 15: case 16:
-                svga->hdisp >>= 1;
-                break;
-                case 24:
-                svga->hdisp /= 3;
-                break;
-        }
-}
-
-void et4000w32p_recalcmapping(et4000w32p_t *et4000)
-{
-        svga_t *svga = &et4000->svga;
-        
-        if (!(et4000->pci_regs[PCI_REG_COMMAND] & PCI_COMMAND_MEM))
-        {
-                mem_mapping_disable(&svga->mapping);
-                mem_mapping_disable(&et4000->linear_mapping);
-                mem_mapping_disable(&et4000->mmu_mapping);
-                return;
-        }
-
-        if (svga->crtc[0x36] & 0x10) /*Linear frame buffer*/
-        {
-                mem_mapping_set_addr(&et4000->linear_mapping, et4000->linearbase, 0x200000);
-		svga->linear_base = et4000->linearbase;
-                mem_mapping_disable(&svga->mapping);
-                mem_mapping_disable(&et4000->mmu_mapping);
-        }
-        else
-        {
-                int map = (svga->gdcreg[6] & 0xc) >> 2;
-                if (svga->crtc[0x36] & 0x20) map |= 4;
-                if (svga->crtc[0x36] & 0x08) map |= 8;
-                switch (map)
-                {
-                        case 0x0: case 0x4: case 0x8: case 0xC: /*128k at A0000*/
-                        mem_mapping_set_addr(&svga->mapping, 0xa0000, 0x20000);
-                        mem_mapping_disable(&et4000->mmu_mapping);
-                        svga->banked_mask = 0xffff;
-                        break;
-                        case 0x1: /*64k at A0000*/
-                        mem_mapping_set_addr(&svga->mapping, 0xa0000, 0x10000);
-                        mem_mapping_disable(&et4000->mmu_mapping);
-                        svga->banked_mask = 0xffff;
-                        break;
-                        case 0x2: /*32k at B0000*/
-                        mem_mapping_set_addr(&svga->mapping, 0xb0000, 0x08000);
-                        mem_mapping_disable(&et4000->mmu_mapping);
-                        svga->banked_mask = 0x7fff;
-                        break;
-                        case 0x3: /*32k at B8000*/
-                        mem_mapping_set_addr(&svga->mapping, 0xb8000, 0x08000);
-                        mem_mapping_disable(&et4000->mmu_mapping);
-                        svga->banked_mask = 0x7fff;
-                        break;
-                        case 0x5: case 0x9: case 0xD: /*64k at A0000, MMU at B8000*/
-                        mem_mapping_set_addr(&svga->mapping, 0xa0000, 0x10000);
-                        mem_mapping_set_addr(&et4000->mmu_mapping, 0xb8000, 0x08000);
-                        svga->banked_mask = 0xffff;
-                        break;
-                        case 0x6: case 0xA: case 0xE: /*32k at B0000, MMU at A8000*/
-                        mem_mapping_set_addr(&svga->mapping, 0xb0000, 0x08000);
-                        mem_mapping_set_addr(&et4000->mmu_mapping, 0xa8000, 0x08000);
-                        svga->banked_mask = 0x7fff;
-                        break;
-                        case 0x7: case 0xB: case 0xF: /*32k at B8000, MMU at A8000*/
-                        mem_mapping_set_addr(&svga->mapping, 0xb8000, 0x08000);
-                        mem_mapping_set_addr(&et4000->mmu_mapping, 0xa8000, 0x08000);
-                        svga->banked_mask = 0x7fff;
-                        break;
-                }
-                
-                mem_mapping_disable(&et4000->linear_mapping);
-        }
-        et4000->linearbase_old = et4000->linearbase;
-        
-        if (!et4000->interleaved && (et4000->svga.crtc[0x32] & 0x80))
-                mem_mapping_disable(&svga->mapping);
-}
 
 #define ACL_WRST 1
 #define ACL_RDST 2
@@ -595,7 +596,7 @@ static void et4000w32p_queue(et4000w32p_t *et4000, uint32_t addr, uint32_t val, 
                 wake_fifo_thread(et4000);
 }
 
-void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p)
+static void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p)
 {
         et4000w32p_t *et4000 = (et4000w32p_t *)p;
         svga_t *svga = &et4000->svga;
@@ -644,7 +645,7 @@ void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p)
         }
 }
 
-uint8_t et4000w32p_mmu_read(uint32_t addr, void *p)
+static uint8_t et4000w32p_mmu_read(uint32_t addr, void *p)
 {
         et4000w32p_t *et4000 = (et4000w32p_t *)p;
         svga_t *svga = &et4000->svga;
@@ -738,12 +739,12 @@ uint8_t et4000w32p_mmu_read(uint32_t addr, void *p)
         return 0xff;
 }
 
-static int et4000w32_max_x[8]={0,0,4,8,16,32,64,0x70000000};
-static int et4000w32_wrap_x[8]={0,0,3,7,15,31,63,0xFFFFFFFF};
-static int et4000w32_wrap_y[8]={1,2,4,8,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
+static unsigned int et4000w32_max_x[8]={0,0,4,8,16,32,64,0x70000000};
+static unsigned int et4000w32_wrap_x[8]={0,0,3,7,15,31,63,0xFFFFFFFF};
+static unsigned int et4000w32_wrap_y[8]={1,2,4,8,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
 
 /* int bltout=0; */
-void et4000w32_blit_start(et4000w32p_t *et4000)
+static void et4000w32_blit_start(et4000w32p_t *et4000)
 {
         if (!(et4000->acl.queued.xy_dir & 0x20))
            et4000->acl.internal.error = et4000->acl.internal.dmaj / 2;
@@ -794,7 +795,7 @@ void et4000w32_blit_start(et4000w32p_t *et4000)
         et4000->acl.pix_pos = 0;
 }
 
-void et4000w32_incx(int c, et4000w32p_t *et4000)
+static void et4000w32_incx(int c, et4000w32p_t *et4000)
 {
         et4000->acl.dest_addr += c;
         et4000->acl.pattern_x += c;
@@ -811,10 +812,14 @@ void et4000w32_decx(int c, et4000w32p_t *et4000)
         et4000->acl.pattern_x -= c;
         et4000->acl.source_x  -= c;
         et4000->acl.mix_addr  -= c;
+#if 0	/* pattern_x is unsigned */
         if (et4000->acl.pattern_x < 0)
            et4000->acl.pattern_x  += et4000w32_max_x[et4000->acl.internal.pattern_wrap & 7];
+#endif
+#if 0	/* source_x is unsigned */
         if (et4000->acl.source_x  < 0)
            et4000->acl.source_x   += et4000w32_max_x[et4000->acl.internal.source_wrap  & 7];
+#endif
 }
 void et4000w32_incy(et4000w32p_t *et4000)
 {
@@ -842,20 +847,24 @@ void et4000w32_decy(et4000w32p_t *et4000)
         et4000->acl.mix_addr     -= et4000->acl.internal.mix_off     + 1;
         et4000->acl.dest_addr    -= et4000->acl.internal.dest_off    + 1;
         et4000->acl.pattern_y--;
+#if 0	/* pattern_y is unsigned */
         if (et4000->acl.pattern_y < 0 && !(et4000->acl.internal.pattern_wrap & 0x40))
         {
                 et4000->acl.pattern_y = et4000w32_wrap_y[(et4000->acl.internal.pattern_wrap >> 4) & 7] - 1;
                 et4000->acl.pattern_addr = et4000->acl.pattern_back + (et4000w32_wrap_x[et4000->acl.internal.pattern_wrap & 7] * (et4000w32_wrap_y[(et4000->acl.internal.pattern_wrap >> 4) & 7] - 1));
         }
+#endif
         et4000->acl.source_y--;
+#if 0	/* source_y is unsigned */
         if (et4000->acl.source_y < 0 && !(et4000->acl.internal.source_wrap & 0x40))
         {
                 et4000->acl.source_y = et4000w32_wrap_y[(et4000->acl.internal.source_wrap >> 4) & 7] - 1;
                 et4000->acl.source_addr = et4000->acl.source_back + (et4000w32_wrap_x[et4000->acl.internal.source_wrap & 7] *(et4000w32_wrap_y[(et4000->acl.internal.source_wrap >> 4) & 7] - 1));;
         }
+#endif
 }
 
-void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et4000w32p_t *et4000)
+static void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et4000w32p_t *et4000)
 {
         svga_t *svga = &et4000->svga;
         int c,d;
@@ -868,10 +877,10 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et400
         {
                 while (count--)
                 {
-                        /* if (bltout) pclog("%i,%i : ", et4000->acl.internal.pos_x, et4000->acl.internal.pos_y); */
+                        /* if (bltout) DEBUG("%i,%i : ", et4000->acl.internal.pos_x, et4000->acl.internal.pos_y); */
                         pattern = svga->vram[(et4000->acl.pattern_addr + et4000->acl.pattern_x) & 0x1fffff];
                         source  = svga->vram[(et4000->acl.source_addr  + et4000->acl.source_x)  & 0x1fffff];
-                        /* if (bltout) pclog("%06X %06X ", (et4000->acl.pattern_addr + et4000->acl.pattern_x) & 0x1fffff, (et4000->acl.source_addr + et4000->acl.source_x) & 0x1fffff); */
+                        /* if (bltout) DEBUG("%06X %06X ", (et4000->acl.pattern_addr + et4000->acl.pattern_x) & 0x1fffff, (et4000->acl.source_addr + et4000->acl.source_x) & 0x1fffff); */
                         if (cpu_input == 2)
                         {
                                 source = sdat & 0xff;
@@ -879,11 +888,11 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et400
                         }
                         dest = svga->vram[et4000->acl.dest_addr & 0x1fffff];
                         out = 0;
-                        /* if (bltout) pclog("%06X   ", et4000->acl.dest_addr); */
+                        /* if (bltout) DEBUG("%06X   ", et4000->acl.dest_addr); */
                         if ((et4000->acl.internal.ctrl_routing & 0xa) == 8)
                         {
                                 mixdat = svga->vram[(et4000->acl.mix_addr >> 3) & 0x1fffff] & (1 << (et4000->acl.mix_addr & 7));
-                                /* if (bltout) pclog("%06X %02X  ", et4000->acl.mix_addr, svga->vram[(et4000->acl.mix_addr >> 3) & 0x1fffff]); */
+                                /* if (bltout) DEBUG("%06X %02X  ", et4000->acl.mix_addr, svga->vram[(et4000->acl.mix_addr >> 3) & 0x1fffff]); */
                         }
                         else
                         {
@@ -900,7 +909,7 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et400
                                 if (pattern & (1 << c)) d |= 4;
                                 if (rop & (1 << d)) out |= (1 << c);
                         }
-                        /* if (bltout) pclog("%06X = %02X\n", et4000->acl.dest_addr & 0x1fffff, out); */
+                        /* if (bltout) DEBUG("%06X = %02X\n", et4000->acl.dest_addr & 0x1fffff, out); */
                         if (!(et4000->acl.internal.ctrl_routing & 0x40))
                         {
                                 svga->vram[et4000->acl.dest_addr & 0x1fffff] = out;
@@ -983,11 +992,11 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et400
         {
                 while (count--)
                 {
-                        /* if (bltout) pclog("%i,%i : ", et4000->acl.internal.pos_x, et4000->acl.internal.pos_y); */
+                        /* if (bltout) DEBUG("%i,%i : ", et4000->acl.internal.pos_x, et4000->acl.internal.pos_y); */
                         
                         pattern = svga->vram[(et4000->acl.pattern_addr + et4000->acl.pattern_x) & 0x1fffff];
                         source  = svga->vram[(et4000->acl.source_addr  + et4000->acl.source_x)  & 0x1fffff];
-                        /* if (bltout) pclog("%i %06X %06X %02X %02X  ", et4000->acl.pattern_y, (et4000->acl.pattern_addr + et4000->acl.pattern_x) & 0x1fffff, (et4000->acl.source_addr + et4000->acl.source_x) & 0x1fffff, pattern, source); */
+                        /* if (bltout) DEBUG("%i %06X %06X %02X %02X  ", et4000->acl.pattern_y, (et4000->acl.pattern_addr + et4000->acl.pattern_x) & 0x1fffff, (et4000->acl.source_addr + et4000->acl.source_x) & 0x1fffff, pattern, source); */
 
                         if (cpu_input == 2)
                         {
@@ -996,11 +1005,11 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et400
                         }
                         dest = svga->vram[et4000->acl.dest_addr & 0x1fffff];
                         out = 0;
-                        /* if (bltout) pclog("%06X %02X  %i %08X %08X  ", dest, et4000->acl.dest_addr, mix & 1, mix, et4000->acl.mix_addr); */
+                        /* if (bltout) DEBUG("%06X %02X  %i %08X %08X  ", dest, et4000->acl.dest_addr, mix & 1, mix, et4000->acl.mix_addr); */
                         if ((et4000->acl.internal.ctrl_routing & 0xa) == 8)
                         {
                                 mixdat = svga->vram[(et4000->acl.mix_addr >> 3) & 0x1fffff] & (1 << (et4000->acl.mix_addr & 7));
-                                /* if (bltout) pclog("%06X %02X  ", et4000->acl.mix_addr, svga->vram[(et4000->acl.mix_addr >> 3) & 0x1fffff]); */
+                                /* if (bltout) DEBUG("%06X %02X  ", et4000->acl.mix_addr, svga->vram[(et4000->acl.mix_addr >> 3) & 0x1fffff]); */
                         }
                         else
                         {
@@ -1017,7 +1026,7 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et400
                                 if (pattern & (1 << c)) d |= 4;
                                 if (rop & (1 << d)) out |= (1 << c);
                         }
-                        /* if (bltout) pclog("%06X = %02X\n", et4000->acl.dest_addr & 0x1fffff, out); */
+                        /* if (bltout) DEBUG("%06X = %02X\n", et4000->acl.dest_addr & 0x1fffff, out); */
                         if (!(et4000->acl.internal.ctrl_routing & 0x40))
                         {
                                 svga->vram[et4000->acl.dest_addr & 0x1fffff] = out;
@@ -1071,13 +1080,16 @@ void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et400
 }
 
 
-void et4000w32p_hwcursor_draw(svga_t *svga, int displine)
+static void et4000w32p_hwcursor_draw(svga_t *svga, int displine)
 {
         int x, offset;
         uint8_t dat;
-	int y_add = (enable_overscan && !suppress_overscan) ? 16 : 0;
-	int x_add = (enable_overscan && !suppress_overscan) ? 8 : 0;
+	int y_add, x_add;
+
         offset = svga->hwcursor_latch.xoff;
+
+	y_add = (enable_overscan && !suppress_overscan) ? (overscan_y >> 1) : 0;
+	x_add = (enable_overscan && !suppress_overscan) ? 8 : 0;
 
         for (x = 0; x < 64 - svga->hwcursor_latch.xoff; x += 4)
         {
@@ -1101,6 +1113,7 @@ void et4000w32p_hwcursor_draw(svga_t *svga, int displine)
 
 static void et4000w32p_io_remove(et4000w32p_t *et4000)
 {
+
         io_removehandler(0x03c0, 0x0020, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
 
         io_removehandler(0x210A, 0x0002, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
@@ -1129,7 +1142,7 @@ static void et4000w32p_io_set(et4000w32p_t *et4000)
         io_sethandler(0x217A, 0x0002, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
 }
 
-uint8_t et4000w32p_pci_read(int func, int addr, void *p)
+static uint8_t et4000w32p_pci_read(int func, int addr, void *p)
 {
         et4000w32p_t *et4000 = (et4000w32p_t *)p;
 
@@ -1168,7 +1181,7 @@ uint8_t et4000w32p_pci_read(int func, int addr, void *p)
         return 0;
 }
 
-void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
+static void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
 {
         et4000w32p_t *et4000 = (et4000w32p_t *)p;
         svga_t *svga = &et4000->svga;
@@ -1207,136 +1220,147 @@ void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
 			{
 				a = 0xC0000;
 			}
-                        /* pclog("ET4000 bios_rom enabled at %08x\n", a); */
-                        mem_mapping_set_addr(&et4000->bios_rom.mapping, a, 0x8000);
+                        /* DEBUG("ET4000 bios_rom enabled at %08x\n", a); */
+                        mem_map_set_addr(&et4000->bios_rom.mapping, a, 0x8000);
                 }
                 else
                 {
-                        /* pclog("ET4000 bios_rom disabled\n"); */
-                        mem_mapping_disable(&et4000->bios_rom.mapping);
+                        /* DEBUG("ET4000 bios_rom disabled\n"); */
+                        mem_map_disable(&et4000->bios_rom.mapping);
                 }
                 return;
         }
 }
 
-void *et4000w32p_init(const device_t *info)
+
+static void *
+et4000w32p_init(const device_t *info)
 {
-        int vram_size;
-        et4000w32p_t *et4000 = malloc(sizeof(et4000w32p_t));
-        memset(et4000, 0, sizeof(et4000w32p_t));
+    int vram_size;
+    et4000w32p_t *et4000 = (et4000w32p_t *)mem_alloc(sizeof(et4000w32p_t));
+    memset(et4000, 0, sizeof(et4000w32p_t));
+    et4000->type = info->local;
+    et4000->pci = !!(info->flags & DEVICE_PCI);
 
-        vram_size = device_get_config_int("memory");
+    vram_size = device_get_config_int("memory");
         
-        et4000->interleaved = (vram_size == 2) ? 1 : 0;
+    et4000->interleaved = (vram_size == 2) ? 1 : 0;
         
-        svga_init(&et4000->svga, et4000, vram_size << 20,
-                   et4000w32p_recalctimings,
-                   et4000w32p_in, et4000w32p_out,
-                   et4000w32p_hwcursor_draw,
-                   NULL); 
+    svga_init(&et4000->svga, et4000, vram_size << 20,
+              et4000w32p_recalctimings,
+              et4000w32p_in, et4000w32p_out,
+              et4000w32p_hwcursor_draw,
+              NULL); 
 
-	et4000->type = info->local;
+    et4000->svga.ramdac = device_add(&stg_ramdac_device);
 
-	switch(et4000->type) {
-		case ET4000W32_CARDEX:
-		        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_CARDEX, 0xc0000, 0x8000, 0x7fff, 0,
-						    MEM_MAPPING_EXTERNAL);
-			break;
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-		case ET4000W32_DIAMOND:
-		        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_DIAMOND, 0xc0000, 0x8000, 0x7fff, 0,
-						    MEM_MAPPING_EXTERNAL);
-			break;
-#endif
-	}
-	et4000->pci = !!(info->flags & DEVICE_PCI);
-        if (info->flags & DEVICE_PCI)
-                mem_mapping_disable(&et4000->bios_rom.mapping);
+    et4000->vram_mask = (vram_size << 20) - 1;
 
-        mem_mapping_add(&et4000->linear_mapping, 0, 0, svga_read_linear, svga_readw_linear, svga_readl_linear, svga_write_linear, svga_writew_linear, svga_writel_linear, NULL, 0, &et4000->svga);
-        mem_mapping_add(&et4000->mmu_mapping,    0, 0, et4000w32p_mmu_read, NULL, NULL, et4000w32p_mmu_write, NULL, NULL, NULL, 0, et4000);
+    switch(et4000->type) {
+	case ET4000W32_CARDEX:
+	        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_CARDEX,
+			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+		et4000->svga.clock_gen = et4000->svga.ramdac;
+		et4000->svga.getclock = stg_getclock;
+		break;
 
-        et4000w32p_io_set(et4000);
+	case ET4000W32_DIAMOND:
+	        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_DIAMOND,
+			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+		et4000->svga.clock_gen = device_add(&icd2061_device);
+		et4000->svga.getclock = icd2061_getclock;
+		break;
+    }
+
+    if (info->flags & DEVICE_PCI)
+	mem_map_disable(&et4000->bios_rom.mapping);
+
+    mem_map_add(&et4000->linear_mapping, 0, 0,
+		svga_read_linear, svga_readw_linear, svga_readl_linear,
+		svga_write_linear, svga_writew_linear, svga_writel_linear,
+		NULL, 0, &et4000->svga);
+
+    mem_map_add(&et4000->mmu_mapping, 0, 0,
+		et4000w32p_mmu_read, NULL, NULL,
+		et4000w32p_mmu_write, NULL, NULL, NULL, 0, et4000);
+
+    et4000w32p_io_set(et4000);
         
-        if (info->flags & DEVICE_PCI)
-	        pci_add_card(PCI_ADD_VIDEO, et4000w32p_pci_read, et4000w32p_pci_write, et4000);
+    if (info->flags & DEVICE_PCI)
+        pci_add_card(PCI_ADD_VIDEO,
+		     et4000w32p_pci_read, et4000w32p_pci_write, et4000);
 
-	/* Hardwired bits: 00000000 1xx0x0xx */
-	/* R/W bits:                 xx xxxx */
-	/* PCem bits:                    111 */
-        et4000->pci_regs[0x04] = 0x83;
+    /* Hardwired bits: 00000000 1xx0x0xx */
+    /* R/W bits:                 xx xxxx */
+    /* PCem bits:                    111 */
+    et4000->pci_regs[0x04] = 0x83;
         
-        et4000->pci_regs[0x10] = 0x00;
-        et4000->pci_regs[0x11] = 0x00;
-        et4000->pci_regs[0x12] = 0xff;
-        et4000->pci_regs[0x13] = 0xff;
+    et4000->pci_regs[0x10] = 0x00;
+    et4000->pci_regs[0x11] = 0x00;
+    et4000->pci_regs[0x12] = 0xff;
+    et4000->pci_regs[0x13] = 0xff;
         
-        et4000->pci_regs[0x30] = 0x00;
-        et4000->pci_regs[0x31] = 0x00;
-        et4000->pci_regs[0x32] = 0x00;
-        et4000->pci_regs[0x33] = 0xf0;
+    et4000->pci_regs[0x30] = 0x00;
+    et4000->pci_regs[0x31] = 0x00;
+    et4000->pci_regs[0x32] = 0x00;
+    et4000->pci_regs[0x33] = 0xf0;
         
-        et4000->wake_fifo_thread = thread_create_event();
-        et4000->fifo_not_full_event = thread_create_event();
-        et4000->fifo_thread = thread_create(fifo_thread, et4000);
+    et4000->wake_fifo_thread = thread_create_event();
+    et4000->fifo_not_full_event = thread_create_event();
+    et4000->fifo_thread = thread_create(fifo_thread, et4000);
 
-        return et4000;
+    video_inform(VID_TYPE_SPEC,
+		 (const video_timings_t *)info->vid_timing);
+
+    return et4000;
 }
 
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-int et4000w32p_available(void)
-{
-        return rom_present(BIOS_ROM_PATH_DIAMOND);
-}
-#endif
 
-int et4000w32p_cardex_available(void)
+static void
+et4000w32p_close(void *p)
 {
-        return rom_present(BIOS_ROM_PATH_CARDEX);
-}
+    et4000w32p_t *et4000 = (et4000w32p_t *)p;
 
-void et4000w32p_close(void *p)
-{
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
-
-        svga_close(&et4000->svga);
+    svga_close(&et4000->svga);
         
-        thread_kill(et4000->fifo_thread);
-        thread_destroy_event(et4000->wake_fifo_thread);
-        thread_destroy_event(et4000->fifo_not_full_event);
+    thread_kill(et4000->fifo_thread);
+    thread_destroy_event(et4000->wake_fifo_thread);
+    thread_destroy_event(et4000->fifo_not_full_event);
 
-        free(et4000);
+    free(et4000);
 }
 
-void et4000w32p_speed_changed(void *p)
+
+static void
+et4000w32p_speed_changed(void *p)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+    et4000w32p_t *et4000 = (et4000w32p_t *)p;
         
-        svga_recalctimings(&et4000->svga);
+    svga_recalctimings(&et4000->svga);
 }
 
-void et4000w32p_force_redraw(void *p)
+
+static void
+et4000w32p_force_redraw(void *p)
 {
-        et4000w32p_t *et4000w32p = (et4000w32p_t *)p;
+    et4000w32p_t *et4000w32p = (et4000w32p_t *)p;
 
-        et4000w32p->svga.fullchange = changeframecount;
+    et4000w32p->svga.fullchange = changeframecount;
 }
 
-void et4000w32p_add_status_info(char *s, int max_len, void *p)
+
+static int
+et4000w32p_available(void)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
-        char temps[256];
-        uint64_t new_time = plat_timer_read();
-        uint64_t status_diff = new_time - et4000->status_time;
-        et4000->status_time = new_time;
-        
-        svga_add_status_info(s, max_len, &et4000->svga);
-
-        sprintf(temps, "%f%% CPU\n%f%% CPU (real)\n\n", ((double)et4000->blitter_time * 100.0) / timer_freq, ((double)et4000->blitter_time * 100.0) / status_diff);
-        strncat(s, temps, max_len);
-
-        et4000->blitter_time = 0;
+    return rom_present(BIOS_ROM_PATH_DIAMOND);
 }
+
+static int
+et4000w32p_cardex_available(void)
+{
+    return rom_present(BIOS_ROM_PATH_CARDEX);
+}
+
 
 static const device_config_t et4000w32p_config[] =
 {
@@ -1359,54 +1383,54 @@ static const device_config_t et4000w32p_config[] =
         }
 };
 
-const device_t et4000w32p_cardex_vlb_device =
-{
-        "Tseng Labs ET4000/w32p VLB (Cardex)",
-        DEVICE_VLB, ET4000W32_CARDEX,
-        et4000w32p_init, et4000w32p_close, NULL,
-        et4000w32p_cardex_available,
-        et4000w32p_speed_changed,
-        et4000w32p_force_redraw,
-        et4000w32p_add_status_info,
-        et4000w32p_config
+static const video_timings_t et4000w32p_pci_timing = {VID_BUS,4,4,4,10,10,10};
+static const video_timings_t et4000w32p_vlb_timing = {VID_BUS,4,4,4,10,10,10};
+
+
+const device_t et4000w32p_cardex_vlb_device = {
+    "Tseng Labs ET4000/w32p (Cardex)",
+    DEVICE_VLB,
+    ET4000W32_CARDEX,
+    et4000w32p_init, et4000w32p_close, NULL,
+    et4000w32p_cardex_available,
+    et4000w32p_speed_changed,
+    et4000w32p_force_redraw,
+    &et4000w32p_vlb_timing,
+    et4000w32p_config
 };
 
-const device_t et4000w32p_cardex_pci_device =
-{
-        "Tseng Labs ET4000/w32p PCI (Cardex)",
-        DEVICE_PCI, ET4000W32_CARDEX,
-        et4000w32p_init, et4000w32p_close, NULL,
-        et4000w32p_cardex_available,
-        et4000w32p_speed_changed,
-        et4000w32p_force_redraw,
-        et4000w32p_add_status_info,
-        et4000w32p_config
+const device_t et4000w32p_cardex_pci_device = {
+    "Tseng Labs ET4000/w32p (Cardex)",
+    DEVICE_PCI,
+    ET4000W32_CARDEX,
+    et4000w32p_init, et4000w32p_close, NULL,
+    et4000w32p_cardex_available,
+    et4000w32p_speed_changed,
+    et4000w32p_force_redraw,
+    &et4000w32p_pci_timing,
+    et4000w32p_config
 };
 
-#if defined(DEV_BRANCH) && defined(USE_STEALTH32)
-const device_t et4000w32p_vlb_device =
-{
-        "Tseng Labs ET4000/w32p VLB (Diamond)",
-        DEVICE_VLB | DEVICE_UNSTABLE,
-	ET4000W32_DIAMOND,
-        et4000w32p_init, et4000w32p_close, NULL,
-        et4000w32p_available,
-        et4000w32p_speed_changed,
-        et4000w32p_force_redraw,
-        et4000w32p_add_status_info,
-        et4000w32p_config
+const device_t et4000w32p_vlb_device = {
+    "Tseng Labs ET4000/w32p (Diamond)",
+    DEVICE_VLB,
+    ET4000W32_DIAMOND,
+    et4000w32p_init, et4000w32p_close, NULL,
+    et4000w32p_available,
+    et4000w32p_speed_changed,
+    et4000w32p_force_redraw,
+    &et4000w32p_vlb_timing,
+    et4000w32p_config
 };
 
-const device_t et4000w32p_pci_device =
-{
-        "Tseng Labs ET4000/w32p PCI (Diamond)",
-        DEVICE_PCI | DEVICE_UNSTABLE,
-	ET4000W32_DIAMOND,
-        et4000w32p_init, et4000w32p_close, NULL,
-        et4000w32p_available,
-        et4000w32p_speed_changed,
-        et4000w32p_force_redraw,
-        et4000w32p_add_status_info,
-        et4000w32p_config
+const device_t et4000w32p_pci_device = {
+    "Tseng Labs ET4000/w32p (Diamond)",
+    DEVICE_PCI,
+    ET4000W32_DIAMOND,
+    et4000w32p_init, et4000w32p_close, NULL,
+    et4000w32p_available,
+    et4000w32p_speed_changed,
+    et4000w32p_force_redraw,
+    &et4000w32p_pci_timing,
+    et4000w32p_config
 };
-#endif

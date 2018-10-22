@@ -66,7 +66,10 @@
  *				bit 1: b8000 memory available
  *		  0000:046a:	00 jim 250 01 jim 350
  *
- * Version:	@(#)m_europc.c	1.0.15	2018/06/06
+ * FIXME:	Find a new way to handle the switching of color/mono on
+ *		external cards. New video_get_type(int card) function?
+ *
+ * Version:	@(#)m_europc.c	1.0.17	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -109,16 +112,16 @@
  */
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 #include <time.h>
 #include "../emu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../nvr.h"
 #include "../device.h"
+#include "../nvr.h"
 #include "../devices/system/nmi.h"
 #include "../devices/ports/parallel.h"
 #include "../devices/input/keyboard.h"
@@ -128,9 +131,6 @@
 #include "../devices/disk/hdc.h"
 #include "../devices/video/video.h"
 #include "machine.h"
-
-
-#define EUROPC_DEBUG	0			/* current debugging level */
 
 
 /* M3002 RTC chip registers. */
@@ -150,6 +150,7 @@
 #define MRTC_CHECK_LO	0x0d			/* Checksum, low byte */
 #define MRTC_CHECK_HI	0x0e			/* Checksum, high byte */
 #define MRTC_CTRLSTAT	0x0f			/* RTC control/status, binary */
+
 
 typedef struct {
     uint16_t	jim;				/* JIM base address */
@@ -178,7 +179,7 @@ static europc_t europc;
  * FIXME: should we mark NVR as dirty?
  */
 static void
-rtc_tick(nvr_t *nvr)
+rtc_ticker(nvr_t *nvr)
 {
     uint8_t *regs;
     int mon, yr;
@@ -225,7 +226,7 @@ rtc_time_get(uint8_t *regs, struct tm *tm)
     tm->tm_mday = RTC_DCB(regs[MRTC_DAYS]);
     tm->tm_mon = (RTC_DCB(regs[MRTC_MONTHS]) - 1);
     tm->tm_year = RTC_DCB(regs[MRTC_YEARS]);
-#if 0	/*USE_Y2K*/
+#ifdef MRTC_CENTURY
     tm->tm_year += (RTC_DCB(regs[MRTC_CENTURY]) * 100) - 1900;
 #endif
 }
@@ -243,7 +244,7 @@ rtc_time_set(uint8_t *regs, struct tm *tm)
     regs[MRTC_DAYS] = RTC_BCD(tm->tm_mday);
     regs[MRTC_MONTHS] = RTC_BCD(tm->tm_mon + 1);
     regs[MRTC_YEARS] = RTC_BCD(tm->tm_year % 100);
-#if 0	/*USE_Y2K*/
+#ifdef MRTC_CENTURY
     regs[MRTC_CENTURY] = RTC_BCD((tm->tm_year+1900) / 100);
 #endif
 }
@@ -255,7 +256,7 @@ rtc_start(nvr_t *nvr)
     struct tm tm;
 
     /* Initialize the internal and chip times. */
-    if (enable_sync) {
+    if (time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
 	rtc_time_set(nvr->regs, &tm);
@@ -367,8 +368,8 @@ jim_set(europc_t *sys, uint8_t reg, uint8_t val)
 {
     switch(reg) {
 	case 0:		/* MISC control (WO) */
-		// bit0: enable MOUSE
-		// bit1: enable joystick
+		/* bit0: enable MOUSE */
+		/* bit1: enable joystick */
 		break;
 
 	case 2:		/* AGA control */
@@ -380,27 +381,27 @@ jim_set(europc_t *sys, uint8_t reg, uint8_t val)
 		switch (val) {
 			case 0x1f:	/* 0001 1111 */
 			case 0x0b:	/* 0000 1011 */
-				//europc_jim.mode=AGA_MONO;
-				pclog("EuroPC: AGA Monochrome mode!\n");
+				/*europc_jim.mode=AGA_MONO; */
+				DEBUG("EuroPC: AGA Monochrome mode!\n");
 				break;
 
 			case 0x18:	/* 0001 1000 */
 			case 0x1a:	/* 0001 1010 */
-				//europc_jim.mode=AGA_COLOR;
+				/*europc_jim.mode=AGA_COLOR; */
 				break;
 
 			case 0x0e:	/* 0000 1100 */
 				/*80 columns? */
-				pclog("EuroPC: AGA 80-column mode!\n");
+				DEBUG("EuroPC: AGA 80-column mode!\n");
 				break;
 
 			case 0x0d:	/* 0000 1011 */
 				/*40 columns? */
-				pclog("EuroPC: AGA 40-column mode!\n");
+				DEBUG("EuroPC: AGA 40-column mode!\n");
 				break;
 
 			default:
-				//europc_jim.mode=AGA_OFF;
+				/*europc_jim.mode=AGA_OFF; */
 				break;
 		}
 		break;
@@ -408,15 +409,15 @@ jim_set(europc_t *sys, uint8_t reg, uint8_t val)
 	case 4:		/* CPU Speed control */
 		switch(val & 0xc0) {
 			case 0x00:	/* 4.77 MHz */
-//				cpu_set_clockscale(0, 1.0/2);
+/*FIXME:			cpu_set_clockscale(0, 1.0/2); */
 				break;
 
 			case 0x40:	/* 7.16 MHz */
-//				cpu_set_clockscale(0, 3.0/4);
+/*FIXME:			cpu_set_clockscale(0, 3.0/4); */
 				break;
 
 			default:	/* 9.54 MHz */
-//				cpu_set_clockscale(0, 1);break;
+/*FIXME:			cpu_set_clockscale(0, 1);break; */
 				break;
 		}
 		break;
@@ -436,9 +437,7 @@ jim_write(uint16_t addr, uint8_t val, void *priv)
     europc_t *sys = (europc_t *)priv;
     uint8_t b;
 
-#if EUROPC_DEBUG > 1
-    pclog("EuroPC: jim_wr(%04x, %02x)\n", addr, val);
-#endif
+    DBGLOG(2, "EuroPC: jim_wr(%04x, %02x)\n", addr, val);
 
     switch (addr & 0x000f) {
 	case 0x00:		/* JIM internal registers (WRONLY) */
@@ -478,7 +477,7 @@ jim_write(uint16_t addr, uint8_t val, void *priv)
 		break;
 
 	default:
-		pclog("EuroPC: invalid JIM write %02x, val %02x\n", addr, val);
+		ERRLOG("EuroPC: invalid JIM write %02x, val %02x\n", addr, val);
 		break;
     }
 }
@@ -525,13 +524,11 @@ jim_read(uint16_t addr, void *priv)
 		break;
 
 	default:
-		pclog("EuroPC: invalid JIM read %02x\n", addr);
+		ERRLOG("EuroPC: invalid JIM read %02x\n", addr);
 		break;
     }
 
-#if EUROPC_DEBUG > 1
-    pclog("EuroPC: jim_rd(%04x): %02x\n", addr, r);
-#endif
+    DBGLOG(2, "EuroPC: jim_rd(%04x): %02x\n", addr, r);
 
     return(r);
 }
@@ -543,16 +540,28 @@ europc_boot(const device_t *info)
 {
     europc_t *sys = &europc;
     uint8_t b;
+    int vid;
 
-#if EUROPC_DEBUG
-    pclog("EuroPC: booting mainboard..\n");
-#endif
+    DEBUG("EuroPC: booting mainboard..\n");
 
-    pclog("EuroPC: NVR=[ %02x %02x %02x %02x %02x ] %sVALID\n",
-	sys->nvr.regs[MRTC_CONF_A], sys->nvr.regs[MRTC_CONF_B],
-	sys->nvr.regs[MRTC_CONF_C], sys->nvr.regs[MRTC_CONF_D],
-	sys->nvr.regs[MRTC_CONF_E],
-	(sys->nvr.regs[MRTC_CHECK_LO]!=rtc_checksum(sys->nvr.regs))?"IN":"");
+    /*
+     * This is not quite correct, but it works.
+     *
+     * The EuroPC has an onboard CGA-class video controller
+     * (AGA) which is normally used. We currently do not yet
+     * support it. To keep the NVRAM valid, however, we act
+     * like we have it configured.
+     */
+    if (video_card == VID_INTERNAL) {
+	INFO("EuroPC: enabling CGA in place of AGA!\n");
+	device_add(&cga_device);
+    }
+
+    DEBUG("EuroPC: NVR=[ %02x %02x %02x %02x %02x ] %sVALID\n",
+	  sys->nvr.regs[MRTC_CONF_A], sys->nvr.regs[MRTC_CONF_B],
+	  sys->nvr.regs[MRTC_CONF_C], sys->nvr.regs[MRTC_CONF_D],
+	  sys->nvr.regs[MRTC_CONF_E],
+	  (sys->nvr.regs[MRTC_CHECK_LO]!=rtc_checksum(sys->nvr.regs))?"IN":"");
 
     /*
      * Now that we have initialized the NVR (either from file,
@@ -560,21 +569,48 @@ europc_boot(const device_t *info)
      * with values set by the user.
      */
     b = (sys->nvr.regs[MRTC_CONF_D] & ~0x17);
-    switch(video_card) {
-	case VID_CGA:		/* Color, CGA */
-	case VID_COLORPLUS:	/* Color, Hercules ColorPlus */
-		b |= 0x12;	/* external video, CGA80 */
-		break;
+    if (video_card != VID_INTERNAL) {
+	/*
+	 * OK, this is not exactly correct, either.
+	 *
+	 * If we use an external video card, that will not be
+	 * installed until after we boot the mainboard, so we
+	 * do not know about it yet. Therefore, we just peek
+	 * at the configured video card type, and perform an
+	 * "educated guess" as to its type..
+	 */
+	switch(video_card) {
+		case VID_MDA:		/* MDA */
+		case VID_HERCULES:	/* Hercules */
+			b |= 0x03;	/* external video, mono */
+			break;
 
-	case VID_MDA:		/* Monochrome, MDA */
-	case VID_HERCULES:	/* Monochrome, Hercules */
-	case VID_INCOLOR:	/* Color, ? */
-		b |= 0x03;	/* external video, mono */
-		break;
+		case VID_CGA:		/* Color, CGA */
+			b |= 0x12;	/* external video, CGA80 */
+			break;
 
-	default:		/* EGA, VGA etc */
-		b |= 0x10;	/* external video, special */
+		default:		/* all others */
+			b |= 0x10;	/* external video, special */
+	}
+    } else {
+    	vid = video_type();
+    	switch(vid) {
+		case VID_TYPE_MDA:	/* Monochrome, MDA, Hercules */
+			b |= 0x03;	/* external video, mono */
+			break;
 
+		case VID_TYPE_CGA:	/* Color, CGA */
+			b |= 0x12;	/* external video, CGA80 */
+			break;
+
+		case VID_TYPE_SPEC:	/* EGA, VGA etc */
+			b |= 0x10;	/* external video, special */
+			break;
+
+		default:
+			ERRLOG("EuroPC: unknown video type %d !\n", vid);
+			break;
+	}
     }
     sys->nvr.regs[MRTC_CONF_D] = b;
 
@@ -639,7 +675,7 @@ europc_boot(const device_t *info)
 		  else
 			b |= 0x02;	/* 3.5" DD */
 	} else
-		pclog("EuroPC: unsupported HD type for floppy drive 0\n");
+		ERRLOG("EuroPC: unsupported HD type for floppy drive 0\n");
     }
     if (fdd_get_type(1) != 0) {
 	/* We have floppy B: */
@@ -650,7 +686,7 @@ europc_boot(const device_t *info)
 		  else
 			b |= 0x10;	/* 3.5" DD */
 	} else
-		pclog("EuroPC: unsupported HD type for floppy drive 1\n");
+		ERRLOG("EuroPC: unsupported HD type for floppy drive 1\n");
     }
     sys->nvr.regs[MRTC_CONF_B] = b;
 
@@ -680,7 +716,7 @@ europc_boot(const device_t *info)
      *
      * We only do this if we have not configured another one.
      */
-    if (hdc_type == 1)
+    if (hdc_type == HDC_INTERNAL)
 	(void)device_add(&xta_hd20_device);
 
     return(sys);
@@ -692,8 +728,10 @@ europc_close(void *priv)
 {
     nvr_t *nvr = &europc.nvr;
 
-    if (nvr->fn != NULL)
-	free(nvr->fn);
+    if (nvr->fn != NULL) {
+	free((wchar_t *)nvr->fn);
+	nvr->fn = NULL;
+    }
 }
 
 
@@ -720,7 +758,8 @@ static const device_config_t europc_config[] = {
 
 const device_t europc_device = {
     "EuroPC System Board",
-    0, 0,
+    0,
+    0,
     europc_boot, europc_close, NULL,
     NULL, NULL, NULL, NULL,
     europc_config
@@ -753,7 +792,7 @@ machine_europc_init(const machine_t *model, void *arg)
     /* Set up any local handlers here. */
     europc.nvr.reset = rtc_reset;
     europc.nvr.start = rtc_start;
-    europc.nvr.tick = rtc_tick;
+    europc.nvr.tick = rtc_ticker;
 
     /* Initialize the actual NVR. */
     nvr_init(&europc.nvr);

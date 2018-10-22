@@ -28,7 +28,7 @@
  *		 multipliers sounds better or not
  *		DUNNO Keyon in 4op, switch to 2op without keyoff.
  *
- * Version:	@(#)dbopl.cpp	1.0.1	2018/02/14
+ * Version:	@(#)dbopl.cpp	1.0.2	2018/09/15
  *
  *		Based on (dbopl.cpp,v 1.10 2009-06-10 19:54:51 harekiet)
  *

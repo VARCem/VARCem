@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_xt_laserxt.c	1.0.6	2018/05/06
+ * Version:	@(#)m_xt_laserxt.c	1.0.7	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,12 @@
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
+#include "../device.h"
+#include "../devices/system/nmi.h"
+#include "../devices/system/pit.h"
+#include "../devices/input/keyboard.h"
+#include "../devices/floppy/fdd.h"
+#include "../devices/floppy/fdc.h"
 #include "machine.h"
 
 
@@ -53,15 +59,16 @@
 
 static int	ems_page[4];
 static int	ems_control[4];
-static mem_mapping_t ems_mapping[4];
+static mem_map_t ems_mapping[4];
 static int	ems_baseaddr_index = 0;
+static int	is_lxt3 = 0;
 
 
 static uint32_t
 get_ems_addr(uint32_t addr)
 {
     if (ems_page[(addr >> 14) & 3] & 0x80) {
-	addr = (romset == ROM_LTXT ? 0x70000 + (((mem_size + 64) & 255) << 10) : 0x30000 + (((mem_size + 320) & 511) << 10)) + ((ems_page[(addr >> 14) & 3] & 0x0F) << 14) + ((ems_page[(addr >> 14) & 3] & 0x40) << 12) + (addr & 0x3FFF);
+	addr = (!is_lxt3 ? 0x70000 + (((mem_size + 64) & 255) << 10) : 0x30000 + (((mem_size + 320) & 511) << 10)) + ((ems_page[(addr >> 14) & 3] & 0x0F) << 14) + ((ems_page[(addr >> 14) & 3] & 0x40) << 12) + (addr & 0x3FFF);
     }
 
     return addr;
@@ -82,11 +89,11 @@ do_write(uint16_t port, uint8_t val, void *priv)
 		ems_page[port >> 14] = val;
 		paddr = 0xC0000 + (port & 0xC000) + (((ems_baseaddr_index + (4 - (port >> 14))) & 0x0C) << 14);
 		if (val & 0x80) {
-			mem_mapping_enable(&ems_mapping[port >> 14]);
+			mem_map_enable(&ems_mapping[port >> 14]);
 			vaddr = get_ems_addr(paddr);
-			mem_mapping_set_exec(&ems_mapping[port >> 14], ram + vaddr);
+			mem_map_set_exec(&ems_mapping[port >> 14], ram + vaddr);
 		} else {
-			mem_mapping_disable(&ems_mapping[port >> 14]);
+			mem_map_disable(&ems_mapping[port >> 14]);
 		}
 		flushmmucache();
 		break;
@@ -100,15 +107,11 @@ do_write(uint16_t port, uint8_t val, void *priv)
 		for (i = 0; i < 4; i++) {
 			ems_baseaddr_index |= (ems_control[i] & 0x80) >> (7 - i);
 		}
-		if (ems_baseaddr_index < 3)
-			mem_mapping_disable(&romext_mapping);
-		  else
-			mem_mapping_enable(&romext_mapping);
 
-		mem_mapping_set_addr(&ems_mapping[0], 0xC0000 + (((ems_baseaddr_index + 4) & 0x0C) << 14), 0x4000);
-		mem_mapping_set_addr(&ems_mapping[1], 0xC4000 + (((ems_baseaddr_index + 3) & 0x0C) << 14), 0x4000);
-		mem_mapping_set_addr(&ems_mapping[2], 0xC8000 + (((ems_baseaddr_index + 2) & 0x0C) << 14), 0x4000);
-		mem_mapping_set_addr(&ems_mapping[3], 0xCC000 + (((ems_baseaddr_index + 1) & 0x0C) << 14), 0x4000);
+		mem_map_set_addr(&ems_mapping[0], 0xC0000 + (((ems_baseaddr_index + 4) & 0x0C) << 14), 0x4000);
+		mem_map_set_addr(&ems_mapping[1], 0xC4000 + (((ems_baseaddr_index + 3) & 0x0C) << 14), 0x4000);
+		mem_map_set_addr(&ems_mapping[2], 0xC8000 + (((ems_baseaddr_index + 2) & 0x0C) << 14), 0x4000);
+		mem_map_set_addr(&ems_mapping[3], 0xCC000 + (((ems_baseaddr_index + 1) & 0x0C) << 14), 0x4000);
 		flushmmucache();
 		break;
     }
@@ -161,11 +164,13 @@ mem_read_ems(uint32_t addr, void *priv)
 
 
 static void
-laserxt_init(void)
+laserxt_init(int lxt3)
 {
     int i;
 
-    if(mem_size > 640) {
+    is_lxt3 = lxt3;
+
+    if (mem_size > 640) {
 	io_sethandler(0x0208, 2,
 		      do_read,NULL,NULL, do_write,NULL,NULL, NULL);
 	io_sethandler(0x4208, 2,
@@ -175,18 +180,18 @@ laserxt_init(void)
 	io_sethandler(0xc208, 2,
 		      do_read,NULL,NULL, do_write,NULL,NULL, NULL);
 
-	mem_mapping_set_addr(&ram_low_mapping, 0, romset == ROM_LTXT ? 0x70000 + (((mem_size + 64) & 255) << 10) : 0x30000 + (((mem_size + 320) & 511) << 10));
+	mem_map_set_addr(&ram_low_mapping, 0, !is_lxt3 ? 0x70000 + (((mem_size + 64) & 255) << 10) : 0x30000 + (((mem_size + 320) & 511) << 10));
     }
 
     for (i = 0; i < 4; i++) {
 	ems_page[i] = 0x7F;
 	ems_control[i] = (i == 3) ? 0x00 : 0x80;
 
-	mem_mapping_add(&ems_mapping[i], 0xE0000 + (i << 14), 0x4000,
+	mem_map_add(&ems_mapping[i], 0xE0000 + (i << 14), 0x4000,
 			mem_read_ems,NULL,NULL,
 			mem_write_ems,NULL,NULL,
 			ram + 0xA0000 + (i << 14), 0, NULL);
-	mem_mapping_disable(&ems_mapping[i]);
+	mem_map_disable(&ems_mapping[i]);
     }
 
     mem_set_mem_state(0x0c0000, 0x40000,
@@ -197,11 +202,27 @@ laserxt_init(void)
 void
 machine_xt_laserxt_init(const machine_t *model, void *arg)
 {
-	machine_xt_init(model, arg);
+    machine_xt_init(model, arg);
 
-	laserxt_init();
+    laserxt_init(0);
 }
 
+
+void
+machine_xt_lxt3_init(const machine_t *model, void *arg)
+{
+    machine_common_init(model, arg);
+
+    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+
+    device_add(&keyboard_xt_lxt3_device);
+
+    device_add(&fdc_xt_device);
+
+    nmi_init();
+
+    laserxt_init(1);
+}
 
 
 #endif	/*defined(DEV_BRANCH) && defined(USE_LASERXT)*/

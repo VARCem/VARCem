@@ -8,7 +8,7 @@
  *
  *		Definitions for the MIDI module.
  *
- * Version:	@(#)midi.h	1.0.5	2018/04/14
+ * Version:	@(#)midi.h	1.0.6	2018/09/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,10 +50,10 @@
 
 
 typedef struct {
-    void (*play_sysex)(uint8_t *sysex, unsigned int len);
-    void (*play_msg)(uint8_t *msg);
-    void (*poll)(void);
-    int (*write)(uint8_t val);
+    void	(*play_sysex)(uint8_t *sysex, unsigned int len);
+    void	(*play_msg)(uint8_t *msg);
+    void	(*poll)(void);
+    int		(*write)(uint8_t val);
 } midi_device_t;
 
 
@@ -67,6 +67,7 @@ extern const char *midi_device_get_internal_name(int card);
 extern int	midi_device_get_from_internal_name(const char *s);
 extern void	midi_device_init(void);
 
+extern void	sound_midi_log(int level, const char *fmt, ...);
 extern void	midi_init(const midi_device_t *device);
 extern void	midi_close(void);
 extern void	midi_write(uint8_t val);

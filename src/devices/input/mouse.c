@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.11	2018/05/06
+ * Version:	@(#)mouse.c	1.0.14	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
+#define dbglog mouse_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "mouse.h"
@@ -110,6 +113,23 @@ static int	mouse_nbut;
 static device_t	mouse_dev;
 
 
+#ifdef _LOGGING
+void
+mouse_log(int level, const char *fmt, ...)
+{
+# ifdef ENABLE_MOUSE_LOG
+    va_list ap;
+
+    if (mouse_do_log >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+# endif
+}
+#endif
+
+
 /* Initialize the mouse module. */
 void
 mouse_init(void)
@@ -138,8 +158,8 @@ mouse_reset(void)
     /* Nothing to do if no mouse, or a machine-internal one. */
     if (mouse_type <= MOUSE_INTERNAL) return;
 
-    pclog("MOUSE: reset(type=%d, '%s')\n",
-	mouse_type, mouse_devices[mouse_type].device->name);
+    INFO("MOUSE: reset(type=%d, '%s')\n",
+	 mouse_type, mouse_devices[mouse_type].device->name);
 
     /* Clear local data. */
     mouse_x = mouse_y = mouse_z = 0;
@@ -166,6 +186,7 @@ void
 mouse_process(void)
 {
     static int poll_delay = 2;
+    int (*func)(int, int, int, int, void *);
 
     if ((mouse_priv == NULL) ||		/* no or no active device */
 	(mouse_type == MOUSE_NONE)) return;
@@ -174,12 +195,13 @@ mouse_process(void)
 
     mouse_poll();
 
-    if (mouse_dev.available != NULL) {
-    	if (! mouse_dev.available(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv)) {
+    func = mouse_dev.ms_poll;
+    if (func != NULL) {
+    	if (! func(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv)) {
 		/* Poll failed, maybe port closed? */
 		mouse_close();
 
-		pclog("MOUSE: device closed, mouse disabled!\n");
+		ERRLOG("MOUSE: device closed, mouse disabled!\n");
 
 		return;
 	}
@@ -197,7 +219,7 @@ mouse_set_poll(int (*func)(int,int,int,int,void *), void *arg)
 {
     if (mouse_type != MOUSE_INTERNAL) return;
 
-    mouse_dev.available = func;
+    mouse_dev.ms_poll = func;
     mouse_priv = arg;
 }
 
@@ -205,7 +227,10 @@ mouse_set_poll(int (*func)(int,int,int,int,void *), void *arg)
 const char *
 mouse_get_name(int mouse)
 {
-    return(mouse_devices[mouse].device->name);
+    if (mouse_devices[mouse].device != NULL)
+	return(mouse_devices[mouse].device->name);
+
+    return(NULL);
 }
 
 
@@ -235,9 +260,10 @@ mouse_get_from_internal_name(const char *s)
 int
 mouse_has_config(int mouse)
 {
-    if (mouse_devices[mouse].device == NULL) return(0);
+    if (mouse_devices[mouse].device != NULL)
+	return(mouse_devices[mouse].device->config ? 1 : 0);
 
-    return(mouse_devices[mouse].device->config ? 1 : 0);
+    return(0);
 }
 
 

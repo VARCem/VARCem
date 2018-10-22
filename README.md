@@ -53,4 +53,4 @@ BUILD STATUS
 ------------
 The auto-builds handled by Travis-CI are [![Build Status](https://travis-ci.org/VARCem/VARCem.svg?branch=master)](https://travis-ci.org/VARCem/VARCem)
 
-Last Updated: 5/07/2018
+Last Updated: 10/06/2018

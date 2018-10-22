@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.16	2018/05/28
+ * Version:	@(#)resource.h	1.0.19	2018/09/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,21 +43,21 @@
 /* Dialog IDs. */
 #define DLG_ABOUT		1000	/* top-level dialog */
 # define DLG_LOCALIZE		1001
-#define DLG_STATUS		1010	/* top-level dialog */
-#define DLG_SND_GAIN		1020	/* top-level dialog */
-#define DLG_NEW_FLOPPY		1030	/* top-level dialog */
-#define DLG_CONFIG		1040	/* top-level dialog */
-#define  DLG_CFG_MACHINE	1041	/* sub-dialog of config */
-#define  DLG_CFG_VIDEO		1042	/* sub-dialog of config */
-#define  DLG_CFG_INPUT		1043	/* sub-dialog of config */
-#define  DLG_CFG_SOUND		1044	/* sub-dialog of config */
-#define  DLG_CFG_NETWORK	1045	/* sub-dialog of config */
-#define  DLG_CFG_PORTS		1046	/* sub-dialog of config */
-#define  DLG_CFG_PERIPHERALS	1047	/* sub-dialog of config */
-#define  DLG_CFG_DISK		1048	/* sub-dialog of config */
-#define  DLG_CFG_DISK_ADD	1049	/* sub-dialog of config */
-#define  DLG_CFG_FLOPPY		1050	/* sub-dialog of config */
-#define  DLG_CFG_RMV_DEVICES	1051	/* sub-dialog of config */
+#define DLG_SND_GAIN		1010	/* top-level dialog */
+#define DLG_NEW_FLOPPY		1020	/* top-level dialog */
+#define DLG_CONFIG		1030	/* top-level dialog */
+#define  DLG_CFG_MACHINE	1031	/* sub-dialog of config */
+#define  DLG_CFG_VIDEO		1032	/* sub-dialog of config */
+#define  DLG_CFG_INPUT		1033	/* sub-dialog of config */
+#define  DLG_CFG_SOUND		1034	/* sub-dialog of config */
+#define  DLG_CFG_NETWORK	1035	/* sub-dialog of config */
+#define  DLG_CFG_PORTS		1036	/* sub-dialog of config */
+#define  DLG_CFG_PERIPHERALS	1037	/* sub-dialog of config */
+#define  DLG_CFG_DISK		1038	/* sub-dialog of config */
+#define  DLG_CFG_DISK_ADD	1039	/* sub-dialog of config */
+#define  DLG_CFG_FLOPPY		1040	/* sub-dialog of config */
+#define  DLG_CFG_RMV_DEVICES	1041	/* sub-dialog of config */
+
 
 /* Static text label IDs. */
 #define IDT_1700		1700	/* Language: */
@@ -68,7 +68,7 @@
 #define IDT_1705		1705	/* MB	== IDC_TEXT_MB */
 #define IDT_1706		1706	/* Memory: */
 #define IDT_1707		1707	/* Video: */
-#define IDT_1708		1708	/* Video speed: */
+#define IDT_1708		1708	/* Time sync: */
 #define IDT_1709		1709	/* Mouse: */
 #define IDT_1710		1710	/* Joystick: */
 #define IDT_1711		1711	/* Sound card: */
@@ -78,8 +78,8 @@
 #define IDT_1715		1715	/* Network adapter: */
 #define IDT_1716		1716	/* SCSI Controller: */
 #define IDT_1717		1717	/* HD Controller: */
-#define IDT_1718		1718	/* Tertiary IDE: */
-#define IDT_1719		1719	/* Quaternary IDE: */
+/* 1718 unused */
+/* 1719 unused */
 #define IDT_1720		1720	/* Hard disks: */
 #define IDT_1721		1721	/* Bus: */
 #define IDT_1722		1722	/* Channel: */
@@ -98,8 +98,7 @@
 #define IDT_1741		1741	/* ID: */
 #define IDT_1742		1742	/* LUN: */
 #define IDT_1743		1743	/* Channel: */
-#define IDT_STEXT		1744	/* text in status window */
-#define IDT_SDEVICE		1745	/* text in status window */
+/* 1744/1745 unused */
 #define IDT_1746		1746	/* Gain */
 #define IDT_1749		1749	/* File name: */
 #define IDT_1750		1750	/* Disk size: */
@@ -113,6 +112,11 @@
 #define IDT_1758		1758	/* ZIP drives: */
 #define IDT_1761		1761	/* Speed: */
 #define IDT_1762		1762	/* ZIP drives: */
+#define IDT_1763		1763	/* ISAMEM #1: */
+#define IDT_1764		1764	/* ISAMEM #2: */
+#define IDT_1765		1765	/* ISAMEM #3: */
+#define IDT_1766		1766	/* ISAMEM #4: */
+#define IDT_1767		1767	/* ISARTC: */
 
 #define IDT_TITLE		1790	/* "VARCem for Plaform" */
 #define IDT_VERSION		1791	/* "version.." */
@@ -126,7 +130,7 @@
  */
 #define IDC_SETTINGSCATLIST	1001	/* generic config */
 #define IDC_CFILE		1002	/* Select File dialog */
-#define IDC_CHECK_SYNC		1008
+#define IDC_COMBO_SYNC		1008
 
 #define IDC_COMBO_MACHINE	1010	/* machine/cpu config */
 #define IDC_CONFIGURE_MACHINE	1011
@@ -143,27 +147,36 @@
 
 #define IDC_VIDEO		1030	/* video config */
 #define IDC_COMBO_VIDEO		1031
-#define IDC_COMBO_VIDEO_SPEED	1032
+#define IDC_CONFIGURE_VIDEO	1032
 #define IDC_CHECK_VOODOO	1033
-#define IDC_BUTTON_VOODOO	1034
+#define IDC_CONFIGURE_VOODOO	1034
 
 #define IDC_INPUT		1050	/* input config */
 #define IDC_COMBO_MOUSE		1051
-#define IDC_COMBO_JOYSTICK	1052
-#define IDC_COMBO_JOY		1053
-#define IDC_CONFIGURE_MOUSE	1054
+#define IDC_CONFIGURE_MOUSE	1052
+#define IDC_COMBO_JOYSTICK	1053
+#define IDC_COMBO_JOY		1054
+#define IDC_CONFIGURE_JOY1	1235
+#define IDC_CONFIGURE_JOY2	1236
+#define IDC_CONFIGURE_JOY3	1237
+#define IDC_CONFIGURE_JOY4	1238
 
 #define IDC_SOUND		1070	/* sound config */
 #define IDC_COMBO_SOUND		1071
-#define IDC_COMBO_MIDI		1072
-#define IDC_CHECK_NUKEDOPL	1073
-#define IDC_CHECK_FLOAT		1074
-#define IDC_CHECK_MPU401	1075
-#define IDC_CONFIGURE_MPU401	1076
+#define IDC_CONFIGURE_SOUND	1072
+#define IDC_COMBO_MIDI		1073
+#define IDC_CONFIGURE_MIDI	1074
+#define IDC_CHECK_NUKEDOPL	1075
+#define IDC_CHECK_FLOAT		1076
+#define IDC_CHECK_MPU401	1077
+#define IDC_CONFIGURE_MPU401	1078
 
 #define IDC_COMBO_NET_TYPE	1090	/* network config */
-#define IDC_COMBO_PCAP		1091
-#define IDC_COMBO_NET		1092
+#define IDC_CONFIGURE_NET_TYPE	1091
+#define IDC_COMBO_PCAP		1092
+#define IDC_CONFIGURE_PCAP	1093
+#define IDC_COMBO_NET_CARD	1094
+#define IDC_CONFIGURE_NET_CARD	1095
 
 #define IDC_CHECK_GAME		1110	/* ports config */
 #define IDC_CHECK_PARALLEL1	1111
@@ -180,82 +193,78 @@
 #define IDC_CONFIGURE_SCSI	1122
 #define IDC_COMBO_HDC		1123
 #define IDC_CONFIGURE_HDC	1124
-#define IDC_COMBO_IDE_TER	1125
-#define IDC_COMBO_IDE_QUA	1126
-#define IDC_CHECK_BUGGER	1127
+#define IDC_CHECK_IDE_TER	1125
+#define IDC_CONFIGURE_IDE_TER	1126
+#define IDC_CHECK_IDE_QUA	1127
+#define IDC_CONFIGURE_IDE_QUA	1128
+#define IDC_CHECK_BUGGER	1129
+#define IDC_CONFIGURE_BUGGER	1130
+#define IDC_COMBO_ISARTC	1131
+#define IDC_CONFIGURE_ISARTC	1132
 
-#define IDC_HARD_DISKS		1130	/* hard disk config */
-#define IDC_LIST_HARD_DISKS	1131
-#define IDC_BUTTON_HDD_ADD_NEW	1132
-#define IDC_BUTTON_HDD_ADD	1133
-#define IDC_BUTTON_HDD_REMOVE	1134
-#define IDC_COMBO_HD_BUS	1135
-#define IDC_COMBO_HD_CHANNEL	1136
-#define IDC_COMBO_HD_ID		1137
-#define IDC_COMBO_HD_LUN	1138
-#define IDC_COMBO_HD_CHANNEL_IDE 1139
+#define IDC_GROUP_ISAMEM	1140
+#define IDC_COMBO_ISAMEM_1	1141
+#define IDC_COMBO_ISAMEM_2	1142
+#define IDC_COMBO_ISAMEM_3	1143
+#define IDC_COMBO_ISAMEM_4	1144
+#define IDC_CONFIGURE_ISAMEM_1	1145
+#define IDC_CONFIGURE_ISAMEM_2	1146
+#define IDC_CONFIGURE_ISAMEM_3	1147
+#define IDC_CONFIGURE_ISAMEM_4	1148
 
-#define IDC_EDIT_HD_FILE_NAME	1140	/* add hard disk dialog */
-#define IDC_EDIT_HD_SPT		1141
-#define IDC_EDIT_HD_HPC		1142
-#define IDC_EDIT_HD_CYL		1143
-#define IDC_EDIT_HD_SIZE	1144
-#define IDC_COMBO_HD_TYPE	1145
-#define IDC_PBAR_IMG_CREATE	1146
+#define IDC_HARD_DISKS		1150	/* hard disk config */
+#define IDC_LIST_HARD_DISKS	1151
+#define IDC_BUTTON_HDD_ADD_NEW	1152
+#define IDC_BUTTON_HDD_ADD	1153
+#define IDC_BUTTON_HDD_REMOVE	1154
+#define IDC_COMBO_HD_BUS	1155
+#define IDC_COMBO_HD_CHANNEL	1156
+#define IDC_COMBO_HD_ID		1157
+#define IDC_COMBO_HD_LUN	1158
+#define IDC_COMBO_HD_CHANNEL_IDE 1159
 
-#define IDC_REMOV_DEVICES	1150	/* removable dev config */
-#define IDC_LIST_FLOPPY_DRIVES	1151
-#define IDC_COMBO_FD_TYPE	1152
-#define IDC_CHECKTURBO		1153
-#define IDC_CHECKBPB		1154
-#define IDC_LIST_CDROM_DRIVES	1155
-#define IDC_COMBO_CD_BUS	1156
-#define IDC_COMBO_CD_ID		1157
-#define IDC_COMBO_CD_LUN	1158
-#define IDC_COMBO_CD_CHANNEL_IDE 1159
-#define IDC_LIST_ZIP_DRIVES	1160
-#define IDC_COMBO_ZIP_BUS	1161
-#define IDC_COMBO_ZIP_ID	1162
-#define IDC_COMBO_ZIP_LUN	1163
-#define IDC_COMBO_ZIP_CHANNEL_IDE 1164
-#define IDC_CHECK250		1165
-#define IDC_COMBO_CD_SPEED	1166
+#define IDC_EDIT_HD_FILE_NAME	1160	/* add hard disk dialog */
+#define IDC_EDIT_HD_SPT		1161
+#define IDC_EDIT_HD_HPC		1162
+#define IDC_EDIT_HD_CYL		1163
+#define IDC_EDIT_HD_SIZE	1164
+#define IDC_COMBO_HD_TYPE	1165
+#define IDC_PBAR_IMG_CREATE	1166
 
-#define IDC_SLIDER_GAIN		1180	/* sound gain dialog */
+#define IDC_REMOV_DEVICES	1170	/* removable dev config */
+#define IDC_LIST_FLOPPY_DRIVES	1171
+#define IDC_COMBO_FD_TYPE	1172
+#define IDC_CHECKTURBO		1173
+#define IDC_CHECKBPB		1174
+#define IDC_LIST_CDROM_DRIVES	1175
+#define IDC_COMBO_CD_BUS	1176
+#define IDC_COMBO_CD_ID		1177
+#define IDC_COMBO_CD_LUN	1178
+#define IDC_COMBO_CD_CHANNEL_IDE 1179
+#define IDC_LIST_ZIP_DRIVES	1180
+#define IDC_COMBO_ZIP_BUS	1181
+#define IDC_COMBO_ZIP_ID	1182
+#define IDC_COMBO_ZIP_LUN	1183
+#define IDC_COMBO_ZIP_CHANNEL_IDE 1184
+#define IDC_CHECK250		1185
+#define IDC_COMBO_CD_SPEED	1186
 
-#define IDC_EDIT_FILE_NAME	1190	/* new floppy image dialog */
-#define IDC_COMBO_DISK_SIZE	1191
-#define IDC_COMBO_RPM_MODE	1192
+#define IDC_SLIDER_GAIN		1190	/* sound gain dialog */
 
+#define IDC_EDIT_FILE_NAME	1195	/* new floppy image dialog */
+#define IDC_COMBO_DISK_SIZE	1196
+#define IDC_COMBO_RPM_MODE	1197
 
-/* For the DeviceConfig code, re-do later. */
-#define IDC_CONFIG_BASE		1200
-#define  IDC_CONFIGURE_VID	1200
-#define  IDC_CONFIGURE_SND	1201
-#define  IDC_CONFIGURE_VOODOO	1202
-#define  IDC_CONFIGURE_MOD	1203
-#define  IDC_CONFIGURE_NET_TYPE	1204
-#define  IDC_CONFIGURE_BUSLOGIC	1205
-#define  IDC_CONFIGURE_PCAP	1206
-#define  IDC_CONFIGURE_NET	1207
-#define  IDC_CONFIGURE_MIDI	1208
-#define  IDC_JOY1		1210
-#define  IDC_JOY2		1211
-#define  IDC_JOY3		1212
-#define  IDC_JOY4		1213
-
-#define IDC_HDTYPE		1280
-
-#define IDC_RENDER		1281
-
-#define IDC_STATBAR		1282
+/* Misc items. */
+#define IDC_CONFIGURE_DEV	1200	/* dynamic DeviceConfig code */
+#define IDC_STATBAR		1201	/* status bar events */
 
 
 /* HELP menu. */
 #define IDC_LOCALIZE		1290
 #define IDC_DONATE		1291
 #define IDC_SUPPORT		1292
-#define   IDC_ABOUT_ICON	65535
+#define  IDC_ABOUT_ICON		65535
 
 
 #endif	/*WIN_RESOURCE_H*/

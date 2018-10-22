@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic game port handlers.
  *
- * Version:	@(#)game.h	1.0.6	2018/04/26
+ * Version:	@(#)game.h	1.0.7	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -47,6 +47,7 @@ extern const device_t	game_device;
 extern const device_t	game_201_device;
 #endif
 
+extern void		game_log(int level, const char *fmt, ...);
 extern void		game_update_joystick_type(void);
 
 #ifdef __cplusplus

@@ -8,7 +8,7 @@
  *
  *		Definitions for the SoundBlaster DSP driver.
  *
- * Version:	@(#)snd_sb_dsp.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_sb_dsp.h	1.0.2	2018/09/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -128,8 +128,6 @@ void sb_dsp_speed_changed(sb_dsp_t *dsp);
 void sb_dsp_poll(sb_dsp_t *dsp, int16_t *l, int16_t *r);
 
 void sb_dsp_set_stereo(sb_dsp_t *dsp, int stereo);
-
-void sb_dsp_add_status_info(char *s, int max_len, sb_dsp_t *dsp);
 
 void sb_dsp_update(sb_dsp_t *dsp);
 

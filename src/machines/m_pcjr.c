@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.8	2018/05/06
+ * Version:	@(#)m_pcjr.c	1.0.9	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,6 +50,7 @@
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
+#include "../devices/system/ppi.h"
 #include "../devices/ports/serial.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
@@ -58,6 +59,7 @@
 #include "../devices/sound/snd_speaker.h"
 #include "../devices/sound/snd_sn76489.h"
 #include "../devices/video/video.h"
+#include "../devices/video/vid_cga.h"
 #include "../devices/video/vid_cga_comp.h"
 #include "../plat.h"
 #include "machine.h"
@@ -78,7 +80,7 @@
 
 typedef struct {
     /* Video Controller stuff. */
-    mem_mapping_t mapping;
+    mem_map_t	mapping;
     uint8_t	crtc[32];
     int		crtcreg;
     int		array_index;
@@ -110,7 +112,7 @@ typedef struct {
 } pcjr_t;
 
 
-static uint8_t crtcmask[32] = {
+static const uint8_t crtcmask[32] = {
     0xff, 0xff, 0xff, 0xff, 0x7f, 0x1f, 0x7f, 0x7f,
     0xf3, 0x1f, 0x7f, 0x1f, 0x3f, 0xff, 0x3f, 0xff,
     0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -232,7 +234,6 @@ vid_write(uint32_t addr, uint8_t val, void *p)
 
     if (pcjr->memctrl == -1) return;
 
-    egawrites++;
     pcjr->b8000[addr & 0x3fff] = val;
 }
 
@@ -244,7 +245,6 @@ vid_read(uint32_t addr, void *p)
 
     if (pcjr->memctrl == -1) return(0xff);
 		
-    egareads++;
     return(pcjr->b8000[addr & 0x3fff]);
 }
 
@@ -441,12 +441,16 @@ vid_poll(void *p)
 		}
 	} else {
 		if (pcjr->array[3] & 4) {
-			if (pcjr->array[0] & 1) hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, (pcjr->array[2] & 0xf) + 16);
-			else		 hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, (pcjr->array[2] & 0xf) + 16);
+			if (pcjr->array[0] & 1)
+				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, (pcjr->array[2] & 0xf) + 16);
+			else
+				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, (pcjr->array[2] & 0xf) + 16);
 		} else {
 			cols[0] = pcjr->array[0 + 16] + 16;
-			if (pcjr->array[0] & 1) hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, cols[0]);
-			else		 hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, cols[0]);
+			if (pcjr->array[0] & 1)
+				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, cols[0]);
+			else
+				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, cols[0]);
 		}
 	}
 	if (pcjr->array[0] & 1) x = (pcjr->crtc[1] << 3) + 16;
@@ -624,7 +628,7 @@ kbd_read(uint16_t port, void *priv)
 		break;
 		
 	default:
-		pclog("\nBad PCjr keyboard read %04X\n", port);
+		ERRLOG("PCjr: bad keyboard read %04X\n", port);
     }
 
     return(ret);
@@ -731,6 +735,8 @@ static const device_config_t pcjr_config[] = {
 };
 
 
+static const video_timings_t pcjr_timings = { VID_BUS,0,0,0,0,0,0 };
+
 const device_t m_pcjr_device = {
     "IBM PCjr",
     0, 0,
@@ -738,7 +744,7 @@ const device_t m_pcjr_device = {
     NULL,
     speed_changed,
     NULL,
-    NULL,
+    &pcjr_timings,
     pcjr_config
 };
 
@@ -749,7 +755,7 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
     int display_type;
     pcjr_t *pcjr;
 
-    pcjr = malloc(sizeof(pcjr_t));
+    pcjr = (pcjr_t *)mem_alloc(sizeof(pcjr_t));
     memset(pcjr, 0x00, sizeof(pcjr_t));
     pcjr->memctrl = -1;
     display_type = machine_get_config_int("display_type");
@@ -759,17 +765,21 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
     pit_init();
     pit_set_out_func(&pit, 0, pit_irq0_timer_pcjr);
 
-    if (serial_enabled[0])
+    if (serial_enabled[0]) {
 	serial_setup(1, 0x2f8, 3);
+	device_add(&serial_1_pcjr_device);
+    }
 
     /* Initialize the video controller. */
-    mem_mapping_add(&pcjr->mapping, 0xb8000, 0x08000,
-		    vid_read, NULL, NULL,
-		    vid_write, NULL, NULL,  NULL, 0, pcjr);
+    mem_map_add(&pcjr->mapping, 0xb8000, 0x08000,
+		vid_read, NULL, NULL,
+		vid_write, NULL, NULL,  NULL, 0, pcjr);
     io_sethandler(0x03d0, 16,
 		  vid_in, NULL, NULL, vid_out, NULL, NULL, pcjr);
     timer_add(vid_poll, &pcjr->vidtime, TIMER_ALWAYS_ENABLED, pcjr);
     device_add_ex(&m_pcjr_device, pcjr);
+    video_inform(VID_TYPE_CGA,
+		 (const video_timings_t *)&m_pcjr_device.vid_timing);
 
     /* Initialize the keyboard. */
     key_queue_start = key_queue_end = 0;

@@ -8,7 +8,7 @@
  *
  *		Define application version and build info.
  *
- * Version:	@(#)version.h	1.0.15	2018/05/29
+ * Version:	@(#)version.h	1.0.20	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,10 +52,10 @@
 #define EMU_NAME	"VARCem"
 
 /* Version info. */
-#define EMU_VER_MAJOR	0
-#define EMU_VER_MINOR	1
-#define EMU_VER_REV	6
-//#define EMU_VER_PATCH	1
+#define EMU_VER_MAJOR	1
+#define EMU_VER_MINOR	7
+#define EMU_VER_REV	0
+//#define EMU_VER_PATCH	0
 
 
 /* Standard C preprocessor macros. */
@@ -66,7 +66,7 @@
 
 /* These are used in the application. */
 #define EMU_VER_NUM	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV
-#ifdef EMU_VER_PATCH
+#if defined(EMU_VER_PATCH) && EMU_VER_PATCH > 0
 # define EMU_VER_NUM_4	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV.EMU_VER_PATCH
 #else
 # define EMU_VER_NUM_4	EMU_VER_MAJOR.EMU_VER_MINOR.EMU_VER_REV.0

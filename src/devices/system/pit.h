@@ -8,7 +8,7 @@
  *
  *		Definitions for Intel 8253 timer module.
  *
- * Version:	@(#)pit.h	1.0.3	2018/03/27
+ * Version:	@(#)pit.h	1.0.4	2018/09/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,17 +94,14 @@ extern void	pit_reset(PIT *pit);
 extern void	pit_set_gate(PIT *pit, int channel, int gate);
 extern void	pit_set_using_timer(PIT *pit, int t, int using_timer);
 extern void	pit_set_out_func(PIT *pit, int t, void (*func)(int new_out, int old_out));
-//extern void	pit_clock(PIT *pit, int t);
 
-extern void     setpitclock(float clock);
 extern float    pit_timer0_freq(void);
-
-//extern void	pit_null_timer(int new_out, int old_out);
-//extern void	pit_irq0_timer(int new_out, int old_out);
-//extern void	pit_speaker_timer(int new_out, int old_out);
 extern void	pit_irq0_timer_pcjr(int new_out, int old_out);
 extern void	pit_refresh_timer_xt(int new_out, int old_out);
 extern void	pit_refresh_timer_at(int new_out, int old_out);
+
+extern void     setrtcconst(float clock);
+extern void     setpitclock(float clock);
 
 
 #endif	/*EMU_PIT_H*/

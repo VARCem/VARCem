@@ -8,7 +8,7 @@
  *
  *		Definitions for the BUGGER card.
  *
- * Version:	@(#)bugger.h	1.0.2	2018/03/15
+ * Version:	@(#)bugger.h	1.0.3	2018/09/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -50,7 +50,6 @@
 
 /* I/O port range used. */
 #define BUGGER_ADDR	0x007a
-#define BUGGER_ADDRLEN	4
 
 
 #ifdef __cplusplus

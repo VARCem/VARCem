@@ -21,7 +21,10 @@
  *		already on their way out, the newer IDE standard based on the
  *		PC/AT controller and 16b design became the IDE we now know.
  *
- * Version:	@(#)hdc_xtide.c	1.0.8	2018/05/06
+ * FIXME:	Make sure this works with the new IDE stuff, the AT and PS/2
+ *		controllers do not have dev->ide set to anything...
+ *
+ * Version:	@(#)hdc_xtide.c	1.0.9	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,6 +55,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog hdc_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -59,6 +63,7 @@
 #include "../../device.h"
 #include "hdc.h"
 #include "hdc_ide.h"
+#include "hdd.h"
 
 
 #define ROM_PATH_XT	L"disk/xtide/ide_xt.bin"
@@ -68,6 +73,8 @@
 
 
 typedef struct {
+    void	*ide_board;
+
     uint8_t	data_high;
     rom_t	bios_rom;
 } hdc_t;
@@ -80,7 +87,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
     switch (port & 0x0f) {
 	case 0:
-		writeidew(4, val | (dev->data_high << 8));
+		ide_writew(0, val | (dev->data_high << 8), dev->ide_board);
 		return;
 
 	case 1:
@@ -90,7 +97,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 	case 5:
 	case 6:
 	case 7:
-		writeide(4, 0x01f0 | (port  & 0x0f), val);
+		ide_writeb((port  & 0x0f), val, dev->ide_board);
 		return;
 
 	case 8:
@@ -98,7 +105,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 		return;
 
 	case 14:
-		writeide(4, 0x03f6, val);
+		ide_write_devctl(0, val, dev->ide_board);
 		return;
     }
 }
@@ -112,7 +119,7 @@ hdc_read(uint16_t port, void *priv)
 
     switch (port & 0x0f) {
 	case 0:
-		tempw = readidew(4);
+		tempw = ide_readw(0, dev->ide_board);
 		dev->data_high = tempw >> 8;
 		break;
 
@@ -123,7 +130,7 @@ hdc_read(uint16_t port, void *priv)
 	case 5:
 	case 6:
 	case 7:
-		tempw = readide(4, 0x01f0 | (port & 0x0f));
+		tempw = ide_readb((port  & 0x0f), dev->ide_board);
 		break;
 
 	case 8:
@@ -131,7 +138,7 @@ hdc_read(uint16_t port, void *priv)
 		break;
 
 	case 14:
-		tempw = readide(4, 0x03f6);
+		tempw = ide_read_alt_status(0, dev->ide_board);
 		break;
 
 	default:
@@ -150,7 +157,7 @@ xtide_init(const device_t *info)
     int io = 0;
     hdc_t *dev;
 
-    dev = malloc(sizeof(hdc_t));
+    dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
 
     switch(info->local) {
@@ -158,15 +165,13 @@ xtide_init(const device_t *info)
 		fn = ROM_PATH_XT;
 		rom_sz = 0x4000;
 		io = 0x300;
-
-		ide_xtide_init();
+		dev->ide_board = ide_xtide_init();
 		break;
 
 	case 1:
 		fn = ROM_PATH_AT;
 		rom_sz = 0x4000;
 		io = 0x300;
-
 		device_add(&ide_isa_2ch_device);
 		break;
 
@@ -174,14 +179,12 @@ xtide_init(const device_t *info)
 		fn = ROM_PATH_PS2;
 		rom_sz = 0x8000;		//FIXME: file is 8KB ?
 		io = 0x360;
-
-		ide_xtide_init();
+		dev->ide_board = ide_xtide_init();
 		break;
 
 	case 3:
 		fn = ROM_PATH_PS2_AT;
 		rom_sz = 0x4000;		//FIXME: no I/O address?
-
 		device_add(&ide_isa_2ch_device);
 		break;
     }
@@ -203,6 +206,8 @@ xtide_close(void *priv)
     hdc_t *dev = (hdc_t *)priv;
 
     free(dev);
+
+    ide_xtide_close();
 }
 
 
@@ -232,37 +237,41 @@ xtide_at_ps2_available(void)
 
 
 const device_t xtide_device = {
-    "XTIDE",
+    "PC/XT XTIDE",
     DEVICE_ISA,
-    0,
+    (HDD_BUS_IDE << 8) | 0,
     xtide_init, xtide_close, NULL,
-    xtide_available, NULL, NULL, NULL,
+    xtide_available,
+    NULL, NULL, NULL,
     NULL
 };
 
 const device_t xtide_at_device = {
-    "XTIDE (AT)",
+    "PC/AT XTIDE",
     DEVICE_ISA | DEVICE_AT,
-    1,
+    (HDD_BUS_IDE << 8) | 1,
     xtide_init, xtide_close, NULL,
-    xtide_at_available, NULL, NULL, NULL,
+    xtide_at_available,
+    NULL, NULL, NULL,
     NULL
 };
 
 const device_t xtide_acculogic_device = {
-    "XTIDE (Acculogic)",
+    "PC/XT XTIDE (Acculogic)",
     DEVICE_ISA,
-    2,
+    (HDD_BUS_IDE << 8) | 2,
     xtide_init, xtide_close, NULL,
-    xtide_acculogic_available, NULL, NULL, NULL,
+    xtide_acculogic_available,
+    NULL, NULL, NULL,
     NULL
 };
 
 const device_t xtide_at_ps2_device = {
-    "XTIDE (AT) (1.1.5)",
+    "PS/2 AT XTIDE (1.1.5)",
     DEVICE_ISA | DEVICE_PS2,
-    3,
+    (HDD_BUS_IDE << 8) | 3,
     xtide_init, xtide_close, NULL,
-    xtide_at_ps2_available, NULL, NULL, NULL,
+    xtide_at_ps2_available,
+    NULL, NULL, NULL,
     NULL
 };

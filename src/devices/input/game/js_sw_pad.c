@@ -29,7 +29,7 @@
  *		- Some DOS stuff will write to 0x201 while a packet is
  *		  being transferred. This seems to be ignored.
  *
- * Version:	@(#)js_sw_pad.c	1.0.8	2018/05/06
+ * Version:	@(#)js_sw_pad.c	1.0.9	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -67,14 +67,14 @@
 
 
 typedef struct {
-    int64_t poll_time;
-    int64_t poll_left;
-    int64_t poll_clock;
-    uint64_t poll_data;
-    int64_t poll_mode;
+    int64_t	poll_time;
+    int64_t	poll_left;
+    int64_t	poll_clock;
+    uint64_t	poll_data;
+    int64_t	poll_mode;
 
-    int64_t trigger_time;
-    int64_t data_mode;
+    int64_t	trigger_time;
+    int64_t	data_mode;
 } sw_data;
 
 
@@ -130,15 +130,17 @@ sw_parity(uint16_t data)
 static void *
 sw_init(void)
 {
-    sw_data *sw = (sw_data *)malloc(sizeof(sw_data));
+    sw_data *sw;
 
-pclog("SideWinder: initializing..\n");
+    INFO("SideWinder: initializing..\n");
+
+    sw = (sw_data *)mem_alloc(sizeof(sw_data));
     memset(sw, 0x00, sizeof(sw_data));
 
     timer_add(timer_over, &sw->poll_time, &sw->poll_time, sw);
     timer_add(trigger_timer_over, &sw->trigger_time, &sw->trigger_time, sw);
 
-    return sw;
+    return(sw);
 }
 
 
@@ -147,7 +149,8 @@ sw_close(void *priv)
 {
     sw_data *sw = (sw_data *)priv;
 
-pclog("SideWinder: closing.\n");
+    INFO("SideWinder: closing.\n");
+
     free(sw);
 }
 
@@ -158,7 +161,8 @@ sw_read(void *priv)
     sw_data *sw = (sw_data *)priv;
     uint8_t temp = 0;
 
-pclog("SideWinder: read(): %d\n", !!JOYSTICK_PRESENT(0));
+    DEBUG("SideWinder: read(): %d\n", !!JOYSTICK_PRESENT(0));
+
     if (! JOYSTICK_PRESENT(0)) return(0xff);
 
     if (sw->poll_time) {	
@@ -184,8 +188,11 @@ sw_write(void *priv)
 {
     sw_data *sw = (sw_data *)priv;
     int64_t time_since_last = sw->trigger_time / TIMER_USEC;
+    uint16_t data;
+    int b, c;
 
-pclog("SideWinder: write(): %d\n", !!JOYSTICK_PRESENT(0));
+    DEBUG("SideWinder: write(): %d\n", !!JOYSTICK_PRESENT(0));
+
     if (! JOYSTICK_PRESENT(0)) return;
 
     timer_process();
@@ -197,10 +204,8 @@ pclog("SideWinder: write(): %d\n", !!JOYSTICK_PRESENT(0));
 	if (time_since_last > 9900 && time_since_last < 9940) {
 		sw->poll_mode = 0;
 		sw->poll_left = 49;
-		sw->poll_data = 0x2400ull | (0x1830ull << 15) | (0x19b0ull << 30);		
+		sw->poll_data = 0x2400ULL | (0x1830ULL << 15) | (0x19b0ULL << 30);		
 	} else {
-		int c;
-
 		sw->poll_mode = sw->data_mode;
 		sw->data_mode = !sw->data_mode;
 
@@ -213,8 +218,7 @@ pclog("SideWinder: write(): %d\n", !!JOYSTICK_PRESENT(0));
 		}
 
 		for (c = 0; c < 4; c++) {
-			uint16_t data = 0x3fff;
-			int b;
+			data = 0x3fff;
 
 			if (! JOYSTICK_PRESENT(c)) break;
 
@@ -256,9 +260,10 @@ static int
 sw_axis(void *priv, int axis)
 {
     if (! JOYSTICK_PRESENT(0))
-	return AXIS_NOT_PRESENT;
+	return(AXIS_NOT_PRESENT);
 
-    return 0LL; /*No analogue support on Sidewinder game pad*/
+    /* No analog support on Sidewinder game pad. */
+    return(0);
 }
 
 

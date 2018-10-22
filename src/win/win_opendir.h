@@ -8,7 +8,7 @@
  *
  *		Definitions for the platform OpenDir module.
  *
- * Version:	@(#)win_opendir.h	1.0.3	2018/05/18
+ * Version:	@(#)win_opendir.h	1.0.4	2018/09/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,16 +51,16 @@
 #ifdef _MAX_FNAME
 # define MAXNAMLEN	_MAX_FNAME
 #else
-# define MAXNAMLEN	15
+# define MAXNAMLEN	255
 #endif
-# define MAXDIRLEN	127
+#define MAXDIRLEN	255
 
 
 struct direct {
     long		d_ino;
     unsigned short 	d_reclen;
     unsigned short	d_off;
-    wchar_t		d_name[MAXNAMLEN + 1];
+    wchar_t		d_name[MAXNAMLEN+1];
 };
 #define	d_namlen	d_reclen
 

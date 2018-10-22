@@ -62,7 +62,7 @@
 extern uint16_t *mod1add[2][8];
 extern uint32_t *mod1seg[8];
 
-static __inline void fetch_ea_32_long(uint32_t rmdat)
+static INLINE void fetch_ea_32_long(uint32_t rmdat)
 {
         eal_r = eal_w = NULL;
         easeg = cpu_state.ea_seg->base;
@@ -78,7 +78,7 @@ static __inline void fetch_ea_32_long(uint32_t rmdat)
 	cpu_state.last_ea = cpu_state.eaaddr;
 }
 
-static __inline void fetch_ea_16_long(uint32_t rmdat)
+static INLINE void fetch_ea_16_long(uint32_t rmdat)
 {
         eal_r = eal_w = NULL;
         easeg = cpu_state.ea_seg->base;

@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.15	2018/05/06
+ * Version:	@(#)machine.c	1.0.16	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
@@ -50,29 +51,26 @@
 #include "../devices/ports/game.h"
 #include "../devices/ports/serial.h"
 #include "../devices/ports/parallel.h"
-#include "../devices/disk/hdc.h"
-#include "../devices/disk/hdc_ide.h"
+#include "../devices/video/video.h"
 #include "../plat.h"
 #include "machine.h"
 
 
-int	romset;
-int	machine;
-int	AT, PCI;
-int     romspresent[ROM_MAX];
+int	AT, MCA, PCI;
 
 
 void
-machine_init(void)
+machine_reset(void)
 {
     wchar_t temp[1024];
     romdef_t r;
 
-    pclog("Initializing as \"%s\"\n", machine_getname());
+    INFO("Initializing as \"%s\"\n", machine_getname());
 
     /* Set up the architecture flags. */
     AT = IS_ARCH(machine, MACHINE_AT);
     PCI = IS_ARCH(machine, MACHINE_PCI);
+    MCA = IS_ARCH(machine, MACHINE_MCA);
 
     /* Reset memory and the MMU. */
     mem_reset();
@@ -86,11 +84,24 @@ machine_init(void)
     /* Activate the ROM BIOS. */
     mem_add_bios();
 
-    /* Reset the IDE bus master pointers. */
-    ide_set_bus_master(NULL, NULL, NULL);
+    /*
+     * If this is not a PCI or MCA machine, reset the video
+     * card before initializing the machine, to please the
+     * EuroPC and other systems that need this.
+     */
+    if (!PCI && !MCA)
+	video_reset();
 
     /* All good, boot the machine! */
     machines[machine].init(&machines[machine], &r);
+
+    /*
+     * If this is a PCI or MCA machine, reset the video
+     * card after initializing the machine, so the bus
+     * slots work correctly.
+     */
+    if (PCI || MCA)
+	video_reset();
 }
 
 
@@ -100,6 +111,18 @@ machine_close(void)
 {
     if (machines[machine].close != NULL)
 	machines[machine].close();
+}
+
+
+/* Return the (maximum) speed at which this machine will run. */
+uint32_t
+machine_speed(void)
+{
+    uint32_t k;
+
+    k = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed;
+
+    return(k);
 }
 
 
@@ -120,32 +143,6 @@ machine_available(int id)
 }
 
 
-/* Check for the availability of all the defined machines. */
-int
-machine_detect(void)
-{
-    int c, i;
-
-    pclog("Scanning for ROM images:\n");
-
-    c = 0;
-    for (i=0; i<ROM_MAX; i++) {
-	romspresent[i] = machine_available(i);
-	c += romspresent[i];
-    }
-
-    if (c == 0) {
-	/* No usable ROMs found, aborting. */
-	pclog("No usable machine has been found!\n");
-	return(0);
-    }
-
-    pclog("A total of %d machines are available.\n", c);
-
-    return(c);
-}
-
-
 void
 machine_common_init(const machine_t *model, UNUSED(void *arg))
 {
@@ -153,6 +150,13 @@ machine_common_init(const machine_t *model, UNUSED(void *arg))
     pic_init();
     dma_init();
     pit_init();
+
+    cpu_set();
+
+    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286)
+	setrtcconst((float)machine_speed());
+      else
+	setrtcconst(14318184.0);
 
     if (game_enabled)
 	device_add(&game_device);

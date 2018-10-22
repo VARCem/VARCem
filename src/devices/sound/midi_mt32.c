@@ -8,7 +8,7 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.4	2018/05/08
+ * Version:	@(#)midi_mt32.c	1.0.6	2018/10/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "munt/c_interface/c_interface.h"
+#define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -56,13 +57,6 @@
 #define MT32_PCM_ROM_PATH	L"sound/mt32/mt32_pcm.rom"
 #define CM32_CTRL_ROM_PATH	L"sound/cm32l/cm32l_control.rom"
 #define CM32_PCM_ROM_PATH	L"sound/cm32l/cm32l_pcm.rom"
-
-
-extern void givealbuffer_midi(void *buf, uint32_t size);
-extern void pclog(const char *format, ...);
-extern void al_set_midi(int freq, int buf_size);
-
-extern int soundon;
 
 
 static const mt32emu_report_handler_i_v0 handler_v0 = {
@@ -108,6 +102,8 @@ static const mt32emu_report_handler_i_v0 handler_v0 = {
 
 static thread_t *thread_h = NULL;
 static event_t *event = NULL;
+static event_t *start_event = NULL;
+static volatile int mt32_on = 0;
 static uint32_t samplerate = 44100;
 static int buf_size = 0;
 static float* buffer = NULL;
@@ -118,14 +114,16 @@ static mt32emu_context context = NULL;
 static int mtroms_present[2] = {-1, -1};
 
 
+#if 1
+int
+#else
 mt32emu_return_code
+#endif
 mt32_check(const char *func, mt32emu_return_code ret, mt32emu_return_code expected)
 {
     if (ret != expected) {
-#if 0
-	pclog("%s() failed, expected %d but returned %d\n", func, expected, ret);
-#endif
-                return 0;
+	ERRLOG("%s() failed, expected %d but returned %d\n", func, expected, ret);
+        return 0;
     }
 
     return 1;
@@ -182,30 +180,34 @@ mt32_thread(void *param)
 {
     int buf_pos = 0;
     int bsize = buf_size / BUFFER_SEGMENTS;
+    float *buf;
+    int16_t *buf16;
 
-    while (1) {
+    thread_set_event(start_event);
+    while (mt32_on) {
 	thread_wait_event(event, -1);
+	thread_reset_event(event);
 
 	if (sound_is_float) {
-		float *buf = (float *) ((uint8_t*)buffer + buf_pos);
+		buf = (float *) ((uint8_t*)buffer + buf_pos);
 
 		memset(buf, 0, bsize);
 		mt32_stream(buf, bsize / (2 * sizeof(float)));
 		buf_pos += bsize;
 		if (buf_pos >= buf_size) {
 			if (soundon)
-				givealbuffer_midi(buffer, buf_size / sizeof(float));
+				openal_buffer_midi(buffer, buf_size / sizeof(float));
 			buf_pos = 0;
 		}
 	} else {
-		int16_t *buf = (int16_t *) ((uint8_t*)buffer_int16 + buf_pos);
+		buf16 = (int16_t *) ((uint8_t*)buffer_int16 + buf_pos);
 
-		memset(buf, 0, bsize);
-		mt32_stream_int16(buf, bsize / (2 * sizeof(int16_t)));
+		memset(buf16, 0, bsize);
+		mt32_stream_int16(buf16, bsize / (2 * sizeof(int16_t)));
 		buf_pos += bsize;
 		if (buf_pos >= buf_size) {
 			if (soundon)
-				givealbuffer_midi(buffer_int16, buf_size / sizeof(int16_t));
+				openal_buffer_midi(buffer_int16, buf_size / sizeof(int16_t));
 			buf_pos = 0;
 		}
 	}
@@ -231,6 +233,7 @@ static void *
 mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 {
     wchar_t path[1024];
+    midi_device_t *dev;
     char fn[1024];
 
     context = mt32emu_create_context(handler, NULL);
@@ -245,37 +248,35 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 
     if (!mt32_check("mt32emu_open_synth", mt32emu_open_synth(context), MT32EMU_RC_OK)) return 0;
 
-    event = thread_create_event();
-    thread_h = thread_create(mt32_thread, 0);
     samplerate = mt32emu_get_actual_stereo_output_samplerate(context);
 
     /* buf_size = samplerate/RENDER_RATE*2; */
     if (sound_is_float) {
 	buf_size = (samplerate/RENDER_RATE)*2*BUFFER_SEGMENTS*sizeof(float);
-	buffer = malloc(buf_size);
+	buffer = (float *)mem_alloc(buf_size);
 	buffer_int16 = NULL;
     } else {
 	buf_size = (samplerate/RENDER_RATE)*2*BUFFER_SEGMENTS*sizeof(int16_t);
 	buffer = NULL;
-	buffer_int16 = malloc(buf_size);
+	buffer_int16 = (int16_t *)mem_alloc(buf_size);
     }
 
     mt32emu_set_output_gain(context, device_get_config_int("output_gain")/100.0f);
-    mt32emu_set_reverb_enabled(context, device_get_config_int("reverb"));
+    mt32emu_set_reverb_enabled(context, (mt32emu_boolean) !!device_get_config_int("reverb"));
     mt32emu_set_reverb_output_gain(context, device_get_config_int("reverb_output_gain")/100.0f);
-    mt32emu_set_reversed_stereo_enabled(context, device_get_config_int("reversed_stereo"));
-    mt32emu_set_nice_amp_ramp_enabled(context, device_get_config_int("nice_ramp"));
+    mt32emu_set_reversed_stereo_enabled(context, (mt32emu_boolean) !!device_get_config_int("reversed_stereo"));
+    mt32emu_set_nice_amp_ramp_enabled(context, (mt32emu_boolean) !!device_get_config_int("nice_ramp"));
 
-    /* pclog("mt32 output gain: %f\n", mt32emu_get_output_gain(context));
-    pclog("mt32 reverb output gain: %f\n", mt32emu_get_reverb_output_gain(context));
-    pclog("mt32 reverb: %d\n", mt32emu_is_reverb_enabled(context));
-    pclog("mt32 reversed stereo: %d\n", mt32emu_is_reversed_stereo_enabled(context)); */
+    /* DEBUG("mt32 output gain: %f\n", mt32emu_get_output_gain(context));
+    DEBUG("mt32 reverb output gain: %f\n", mt32emu_get_reverb_output_gain(context));
+    DEBUG("mt32 reverb: %d\n", mt32emu_is_reverb_enabled(context));
+    DEBUG("mt32 reversed stereo: %d\n", mt32emu_is_reversed_stereo_enabled(context)); */
 
-    al_set_midi(samplerate, buf_size);
+    openal_set_midi(samplerate, buf_size);
 
-    /* pclog("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n", mt32emu_get_library_version_string(), samplerate, buf_size); */
+    /* DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n", mt32emu_get_library_version_string(), samplerate, buf_size); */
 
-    midi_device_t* dev = malloc(sizeof(midi_device_t));
+    dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
     memset(dev, 0, sizeof(midi_device_t));
 
     dev->play_msg = mt32_msg;
@@ -283,6 +284,15 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
     dev->poll = mt32_poll;
 
     midi_init(dev);
+
+    mt32_on = 1;
+
+    start_event = thread_create_event();
+    event = thread_create_event();
+    thread_h = thread_create(mt32_thread, 0);
+
+    thread_wait_event(start_event, -1);
+    thread_reset_event(start_event);
 
     return dev;
 }
@@ -307,11 +317,12 @@ mt32_close(void *priv)
 {
     if (priv == NULL) return;
 
-    if (thread_h)
-	thread_kill(thread_h);
-    if (event)
-	thread_destroy_event(event);
+    mt32_on = 0;
+    thread_set_event(event);
+    thread_wait(thread_h, -1);
+
     event = NULL;
+    start_event = NULL;
     thread_h = NULL;
 
     if (context) {
@@ -327,57 +338,40 @@ mt32_close(void *priv)
     if (buffer_int16)
 	free(buffer_int16);
     buffer_int16 = NULL;
-
-    midi_close();
-
-    free((midi_device_t*)priv);
 }
 
 
 static const device_config_t mt32_config[] =
 {
+#if 0
 	{
-		.name = "output_gain",
-		.description = "Output Gain",
-		.type = CONFIG_SPINNER,
+		"output_gain","Output Gain",CONFIG_SPINNER,"",100,
 		.spinner =
 		{
-			.min = 0,
-			.max = 100
-		},
-		.default_int = 100
+			0, 100
+		}
 	},
+#endif
 	{
-		.name = "reverb",
-		.description = "Reverb",
-		.type = CONFIG_BINARY,
-		.default_int = 1
+		"reverb","Reverb",CONFIG_BINARY,"",1
 	},
+#if 0
 	{
-		.name = "reverb_output_gain",
-		.description = "Reverb Output Gain",
-		.type = CONFIG_SPINNER,
+		"reverb_output_gain","Reverb Output Gain",CONFIG_SPINNER,"",100,
 		.spinner =
 		{
-			.min = 0,
-			.max = 100
-		},
-		.default_int = 100
+			0, 100
+		}
+	},
+#endif
+	{
+		"reversed_stereo","Reversed stereo",CONFIG_BINARY,"",0
 	},
 	{
-		.name = "reversed_stereo",
-		.description = "Reversed stereo",
-		.type = CONFIG_BINARY,
-		.default_int = 0
+		"nice_ramp","Nice ramp",CONFIG_BINARY,"",1
 	},
 	{
-		.name = "nice_ramp",
-		.description = "Nice ramp",
-		.type = CONFIG_BINARY,
-		.default_int = 1
-	},
-	{
-		.type = -1
+		"","",-1
 	}
 };
 

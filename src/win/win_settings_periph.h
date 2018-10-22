@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.9	2018/05/29
+ * Version:	@(#)win_settings_periph.h	1.0.14	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,79 +44,112 @@
 
 static int	scsi_to_list[20],
 		list_to_scsi[20];
-static const char	*hdc_names[16];
-static const int valid_ide_irqs[11] = { 2, 3, 4, 5, 7, 9, 10, 11, 12, 14, 15 };
+static int	hdc_to_list[20],
+		list_to_hdc[20];
 
 
-static int
-find_irq_in_array(int irq, int def)
+/* Populate the HDC combo. */
+static void
+recalc_scsi_list(HWND hdlg)
 {
-    int i;
+    WCHAR temp[128];
+    char tempA[128];
+    const char *stransi;
+    const device_t *dev;
+    HWND h;
+    int c, d;
 
-    for (i = 0; i < 11; i++) {
-	if (valid_ide_irqs[i] == irq)
-			return(i + 1);
+    h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
+    SendMessage(h, CB_RESETCONTENT, 0, 0);
+
+    c = d = 0;
+    for (;;) {
+	stransi = scsi_card_get_internal_name(c);
+	if (stransi == NULL) break;
+
+	dev = scsi_card_getdevice(c);
+
+	if (!scsi_card_available(c) ||
+	    !device_is_valid(dev, machines[temp_machine].flags)) {
+		c++;
+		continue;
+	}
+
+	if (c == 0) {
+		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
+	} else {
+		stransi = scsi_card_getname(c);
+		sprintf(tempA, "[%s] %s",
+			device_get_bus_name(dev), stransi);
+		mbstowcs(temp, tempA, sizeof_w(temp));
+		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+	}
+
+	scsi_to_list[c] = d;			
+	list_to_scsi[d++] = c++;
     }
 
-    return(7 + def);
+    SendMessage(h, CB_SETCURSEL, scsi_to_list[temp_scsi_card], 0);
+    EnableWindow(h, d ? TRUE : FALSE);
 }
 
 
+/* Populate the HDC combo. */
 static void
-recalc_hdc_list(HWND hdlg, int m, int use_selected_hdc)
+recalc_hdc_list(HWND hdlg)
 {
     WCHAR temp[128];
-    char old_name[32];
+    char tempA[128];
+    char tempB[128];
     const char *stransi;
+    const device_t *dev;
     HWND h;
-    int valid;
     int c, d;
 
     h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-    valid = 0;
-
-    if (use_selected_hdc) {
-	c = SendMessage(h, CB_GETCURSEL, 0, 0);
-
-	if (c != -1 && hdc_names[c])
-		strcpy(old_name, hdc_names[c]);
-	else
-		strcpy(old_name, "none");
-    } else {
-	strcpy(old_name, hdc_get_internal_name(temp_hdc_type));
-    }
-
     SendMessage(h, CB_RESETCONTENT, 0, 0);
+
+INFO("LIST: active=%d (%s)\n", temp_hdc_type, hdc_get_name(temp_hdc_type));
     c = d = 0;
-    while (1) {
-	stransi = hdc_get_name(c);
-	if (stransi == NULL)
-		break;
+    for (;;) {
+	stransi = hdc_get_internal_name(c);
+	if (stransi == NULL) break;
 
-	if (c==1 && !(machines[m].flags&MACHINE_HDC)) {
-		/* Skip "Internal" if machine doesn't have one. */
+	dev = hdc_get_device(c);
+
+	if (!hdc_available(c) ||
+	    !device_is_valid(dev, machines[temp_machine].flags)) {
 		c++;
 		continue;
 	}
-	if (!hdc_available(c) || !device_is_valid(hdc_get_device(c), machines[m].flags)) {
-		c++;
-		continue;
-	}
-	mbstowcs(temp, stransi, sizeof_w(temp));
-	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 
-	hdc_names[d] = hdc_get_internal_name(c);
-	if (! strcmp(old_name, hdc_names[d])) {
-		SendMessage(h, CB_SETCURSEL, d, 0);
-		valid = 1;
+	if (c == 0) {
+		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
+	} else if (c == 1) {
+		if (! (machines[temp_machine].flags&MACHINE_HDC)) {
+			/* Skip "Internal" if machine doesn't have one. */
+			c++;
+			continue;
+		}
+		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_INTERNAL));
+	} else {
+		wcstombs(tempB,
+			 hdd_bus_to_ids((dev->local >> 8) & 255),
+			 sizeof(tempB));
+		stransi = hdc_get_name(c);
+		sprintf(tempA, "[%s] %s (%s)",
+			device_get_bus_name(dev), stransi, tempB);
+		mbstowcs(temp, tempA, sizeof_w(temp));
+		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	}
-	c++;
-	d++;
+
+	hdc_to_list[c] = d;			
+	list_to_hdc[d] = c;
+INFO("[%d]=%d\n", c, hdc_to_list[c], d, list_to_hdc[d]);
+	c++; d++;
     }
 
-    if (! valid)
-	SendMessage(h, CB_SETCURSEL, 0, 0);
-
+    SendMessage(h, CB_SETCURSEL, hdc_to_list[temp_hdc_type], 0);
     EnableWindow(h, d ? TRUE : FALSE);
 }
 
@@ -136,34 +169,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_INITDIALOG:
-		/*SCSI config*/
-		h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-		c = d = 0;
-		while (1) {
-			stransi = scsi_card_getname(c);
-			if (stransi == NULL)
-				break;
-
-			scsi_to_list[c] = d;			
-			if (scsi_card_available(c)) {
-				dev = scsi_card_getdevice(c);
-
-				if (device_is_valid(dev, machines[temp_machine].flags)) {
-					if (c == 0) {
-						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)get_string(IDS_NONE));
-					} else {
-						mbstowcs(temp, stransi, sizeof_w(temp));
-						SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-					}
-					list_to_scsi[d] = c;
-					d++;
-				}
-			}
-
-			c++;
-		}
-		SendMessage(h, CB_SETCURSEL, scsi_to_list[temp_scsi_card], 0);
-		EnableWindow(h, d ? TRUE : FALSE);
+		recalc_scsi_list(hdlg);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
 		if (scsi_card_has_config(temp_scsi_card))
@@ -171,63 +177,95 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		else
 			EnableWindow(h, FALSE);
 
+		recalc_hdc_list(hdlg);
+
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
 		if (hdc_has_config(temp_hdc_type))
 			EnableWindow(h, TRUE);
 		else
 			EnableWindow(h, FALSE);
 
-		recalc_hdc_list(hdlg, temp_machine, 0);
+		if (machines[temp_machine].flags & MACHINE_AT) {
+			h = GetDlgItem(hdlg, IDC_CHECK_IDE_TER);
+			EnableWindow(h, TRUE);
+			SendMessage(h, BM_SETCHECK, temp_ide_ter, 0);
+			h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_TER);
+			EnableWindow(h, TRUE);
 
-		h = GetDlgItem(hdlg, IDC_COMBO_IDE_TER);
-		SendMessage(h, CB_ADDSTRING, 0,
-			    (LPARAM)get_string(IDS_DISABLED));
-		for (c = 0; c < 11; c++) {
-			swprintf(temp, sizeof_w(temp),
-				 L"IRQ %i", valid_ide_irqs[c]);
-			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-		}
-		if (temp_ide_ter)
-			SendMessage(h, CB_SETCURSEL,
-				    find_irq_in_array(temp_ide_ter_irq, 0), 0);
-		else
-			SendMessage(h, CB_SETCURSEL, 0, 0);
+			h = GetDlgItem(hdlg, IDC_CHECK_IDE_QUA);
+			EnableWindow(h, TRUE);
+			SendMessage(h, BM_SETCHECK, temp_ide_qua, 0);
+			h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_QUA);
+			EnableWindow(h, TRUE);
+		} else {
+			h = GetDlgItem(hdlg, IDC_CHECK_IDE_TER);
+			EnableWindow(h, FALSE);
+			h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_TER);
+			EnableWindow(h, FALSE);
 
-		h = GetDlgItem(hdlg, IDC_COMBO_IDE_QUA);
-		SendMessage(h, CB_ADDSTRING, 0,
-			    (LPARAM)get_string(IDS_DISABLED));
-		for (c = 0; c < 11; c++) {
-			swprintf(temp, sizeof_w(temp),
-				 L"IRQ %i", valid_ide_irqs[c]);
-			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			h = GetDlgItem(hdlg, IDC_CHECK_IDE_QUA);
+			EnableWindow(h, FALSE);
+			h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_QUA);
+			EnableWindow(h, FALSE);
 		}
-		if (temp_ide_qua)
-			SendMessage(h, CB_SETCURSEL,
-				    find_irq_in_array(temp_ide_qua_irq, 1), 0);
-		else
-			SendMessage(h, CB_SETCURSEL, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_BUGGER);
 		SendMessage(h, BM_SETCHECK, temp_bugger, 0);
+
+		/* Populate the ISA RTC card dropdown. */
+		h = GetDlgItem(hdlg, IDC_COMBO_ISARTC);
+		for (d = 0; ; d++) {
+			stransi = isartc_get_internal_name(d);
+			if (stransi == NULL)
+				break;
+
+			if (d == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_NONE));
+			} else {
+				stransi = isartc_get_name(d);
+				mbstowcs(temp, stransi, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
+		}
+		SendMessage(h, CB_SETCURSEL, temp_isartc, 0);
+		h = GetDlgItem(hdlg, IDC_CONFIGURE_ISARTC);
+		if (temp_isartc != 0)
+			EnableWindow(h, TRUE);
+		  else
+			EnableWindow(h, FALSE);
+
+		/* Populate the ISA memory card dropdowns. */
+		for (c = 0; c < ISAMEM_MAX; c++) {
+			h = GetDlgItem(hdlg, IDC_COMBO_ISAMEM_1 + c);
+			for (d = 0; ; d++) {
+				stransi = isamem_get_internal_name(d);
+				if (stransi == NULL)
+					break;
+
+				if (d == 0) {
+					/* Translate "None". */
+					SendMessage(h, CB_ADDSTRING, 0,
+						    win_string(IDS_NONE));
+				} else {
+					stransi = isamem_get_name(d);
+					mbstowcs(temp, stransi, sizeof_w(temp));
+					SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+				}
+			}
+			SendMessage(h, CB_SETCURSEL, temp_isamem[c], 0);
+			h = GetDlgItem(hdlg, IDC_CONFIGURE_ISAMEM_1 + c);
+			if (temp_isamem[c] != 0)
+				EnableWindow(h, TRUE);
+			  else
+				EnableWindow(h, FALSE);
+		}
 
 		return TRUE;
 
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
-			case IDC_CONFIGURE_SCSI:
-				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
-
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)scsi_card_getdevice(temp_scsi_card));
-				break;
-
-			case IDC_CONFIGURE_HDC:
-				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-				temp_hdc_type = hdc_get_from_internal_name(hdc_names[SendMessage(h, CB_GETCURSEL, 0, 0)]);
-
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)hdc_get_device(temp_hdc_type));
-				break;
-
 			case IDC_COMBO_SCSI:
 				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
 				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
@@ -239,9 +277,16 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					EnableWindow(h, FALSE);
 				break;
 
+			case IDC_CONFIGURE_SCSI:
+				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
+				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+
+				temp_deviceconfig |= dlg_devconf(hdlg, scsi_card_getdevice(temp_scsi_card));
+				break;
+
 			case IDC_COMBO_HDC:
 				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-				temp_hdc_type = hdc_get_from_internal_name(hdc_names[SendMessage(h, CB_GETCURSEL, 0, 0)]);
+				temp_hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
 				if (hdc_has_config(temp_hdc_type))
@@ -249,36 +294,93 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				else
 					EnableWindow(h, FALSE);
 				break;
+
+			case IDC_CONFIGURE_HDC:
+				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
+				temp_hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
+
+				temp_deviceconfig |= dlg_devconf(hdlg, hdc_get_device(temp_hdc_type));
+				break;
+
+			case IDC_CHECK_IDE_TER:
+        		        h = GetDlgItem(hdlg, IDC_CHECK_IDE_TER);
+				temp_ide_ter = SendMessage(h, BM_GETCHECK, 0, 0);
+        		        h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_TER);
+				EnableWindow(h, temp_ide_ter ? TRUE : FALSE);
+				break;
+
+			case IDC_CONFIGURE_IDE_TER:
+				temp_deviceconfig |= dlg_devconf(hdlg, &ide_ter_device);
+				break;
+
+			case IDC_CHECK_IDE_QUA:
+	       		        h = GetDlgItem(hdlg, IDC_CHECK_IDE_QUA);
+				temp_ide_qua = SendMessage(h, BM_GETCHECK, 0, 0);
+	       		        h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_QUA);
+				EnableWindow(h, temp_ide_qua ? TRUE : FALSE);
+				break;
+
+			case IDC_CONFIGURE_IDE_QUA:
+				temp_deviceconfig |= dlg_devconf(hdlg, &ide_qua_device);
+				break;
+
+			case IDC_COMBO_ISARTC:
+				h = GetDlgItem(hdlg, IDC_COMBO_ISARTC);
+				temp_isartc = SendMessage(h, CB_GETCURSEL, 0, 0);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_ISARTC);
+				if (temp_isartc != 0)
+					EnableWindow(h, TRUE);
+				else
+					EnableWindow(h, FALSE);
+				break;
+
+			case IDC_COMBO_ISAMEM_1:
+			case IDC_COMBO_ISAMEM_2:
+			case IDC_COMBO_ISAMEM_3:
+			case IDC_COMBO_ISAMEM_4:
+				c = LOWORD(wParam) - IDC_COMBO_ISAMEM_1;
+				h = GetDlgItem(hdlg, LOWORD(wParam));
+				temp_isamem[c] = SendMessage(h, CB_GETCURSEL, 0, 0);
+
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_ISAMEM_1 + c);
+				if (temp_isamem[c] != 0)
+					EnableWindow(h, TRUE);
+				else
+					EnableWindow(h, FALSE);
+				break;
+
+			case IDC_CONFIGURE_ISARTC:
+				dev = isartc_get_device(temp_isartc);
+				if (dev != NULL)
+					temp_deviceconfig |= dlg_devconf(hdlg, dev);
+				break;
+
+			case IDC_CONFIGURE_ISAMEM_1:
+			case IDC_CONFIGURE_ISAMEM_2:
+			case IDC_CONFIGURE_ISAMEM_3:
+			case IDC_CONFIGURE_ISAMEM_4:
+				c = LOWORD(wParam) - IDC_CONFIGURE_ISAMEM_1;
+				dev = isamem_get_device(c);
+				if (dev != NULL)
+					temp_deviceconfig |= dlg_devconf(hdlg, dev);
+				  else
+					ui_msgbox(MBX_INFO, (wchar_t *)IDS_ERR_SAVEIT);
+				break;
 		}
 		return FALSE;
 
-	case WM_SAVESETTINGS:
+	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_HDC);
 		c = SendMessage(h, CB_GETCURSEL, 0, 0);
-		if (hdc_names[c])
-			temp_hdc_type = hdc_get_from_internal_name(hdc_names[c]);
-		  else
-			temp_hdc_type = 0;
+		temp_hdc_type = list_to_hdc[c];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-		temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
-
-		h = GetDlgItem(hdlg, IDC_COMBO_IDE_TER);
-		temp_ide_ter = SendMessage(h, CB_GETCURSEL, 0, 0);
-		if (temp_ide_ter > 1) {
-			temp_ide_ter_irq = valid_ide_irqs[temp_ide_ter - 1];
-			temp_ide_ter = 1;
-		}
-
-		h = GetDlgItem(hdlg, IDC_COMBO_IDE_QUA);
-		temp_ide_qua = SendMessage(h, CB_GETCURSEL, 0, 0);
-		if (temp_ide_qua > 1) {
-			temp_ide_qua_irq = valid_ide_irqs[temp_ide_qua - 1];
-			temp_ide_qua = 1;
-		}
+		c = SendMessage(h, CB_GETCURSEL, 0, 0);
+		temp_scsi_card = list_to_scsi[c];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_BUGGER);
 		temp_bugger = SendMessage(h, BM_GETCHECK, 0, 0);
+
 		return FALSE;
 
 	default:

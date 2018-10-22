@@ -9,7 +9,7 @@
  *		Implementation of the FDI floppy stream image format
  *		interface to the FDI2RAW module.
  *
- * Version:	@(#)fdd_fdi.c	1.0.5	2018/05/14
+ * Version:	@(#)fdd_fdi.c	1.0.6	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog fdd_log
 #include "../../emu.h"
 #include "../../plat.h"
 #include "fdd.h"
@@ -320,7 +321,7 @@ fdi_load(int drive, const wchar_t *fn)
     fdi_t *dev;
 
     /* Allocate a drive block. */
-    dev = (fdi_t *)malloc(sizeof(fdi_t));
+    dev = (fdi_t *)mem_alloc(sizeof(fdi_t));
     memset(dev, 0x00, sizeof(fdi_t));
 
     dev->f = plat_fopen(fn, L"rb");
@@ -338,7 +339,7 @@ fdi_load(int drive, const wchar_t *fn)
     header[25] = 0;
     if (strcmp(header, "Formatted Disk Image file") != 0) {
 	/* This is a Japanese FDI file. */
-	fdd_log("FDI: Japanese FDI file detected, redirecting to IMG loader\n");
+	DEBUG("FDI: Japanese FDI file detected, redirecting to IMG loader\n");
 	fclose(dev->f);
 	free(dev);
 	return(img_load(drive, fn));

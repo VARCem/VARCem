@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.h	1.0.3	2018/03/17
+ * Version:	@(#)fdc.h	1.0.5	2018/10/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #define FDC_FLAG_START_RWC_1	0x20	/* W83877F, W83977F */
 #define FDC_FLAG_MORE_TRACKS	0x40	/* W83877F, W83977F, PC87306, PC87309 */
 #define FDC_FLAG_NSC		0x80	/* PC87306, PC87309 */
+#define FDC_FLAG_TOSHIBA	0x100	/* Toshiba TC8565 (T1200) */
 
 
 typedef struct {
@@ -70,6 +71,8 @@ typedef struct {
     int		abort;
     int		format_state, format_n;
     int		tc, written;
+    int		step, seek_dir;
+    int		noprec;
 
     int		data_ready, inread;
     int		bitcell_period, enh_mode;
@@ -99,6 +102,19 @@ typedef struct {
     int64_t	time;
     int64_t	watchdog_timer, watchdog_count;
 } fdc_t;
+
+
+#ifdef EMU_DEVICE_H
+extern const device_t	fdc_xt_device;
+extern const device_t	fdc_toshiba_device;
+extern const device_t	fdc_pcjr_device;
+extern const device_t	fdc_at_device;
+extern const device_t	fdc_at_actlow_device;
+extern const device_t	fdc_at_ps1_device;
+extern const device_t	fdc_at_smc_device;
+extern const device_t	fdc_at_winbond_device;
+extern const device_t	fdc_at_nsc_device;
+#endif
 
 
 extern void	fdc_remove(fdc_t *fdc);
@@ -178,17 +194,6 @@ extern uint8_t	fdc_read(uint16_t addr, void *priv);
 extern void	fdc_reset(void *priv);
 
 extern uint8_t	fdc_ps1_525(void);
-
-#ifdef EMU_DEVICE_H
-extern const device_t	fdc_xt_device;
-extern const device_t	fdc_pcjr_device;
-extern const device_t	fdc_at_device;
-extern const device_t	fdc_at_actlow_device;
-extern const device_t	fdc_at_ps1_device;
-extern const device_t	fdc_at_smc_device;
-extern const device_t	fdc_at_winbond_device;
-extern const device_t	fdc_at_nsc_device;
-#endif
 
 
 #endif	/*EMU_FDC_H*/

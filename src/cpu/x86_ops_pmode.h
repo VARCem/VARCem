@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_pmode.h	1.0.2	2018/05/09
+ * Version:	@(#)x86_ops_pmode.h	1.0.3	2018/10/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,7 @@ static int opARPL_a16(uint32_t fetchdat)
         
         NOTRM
         fetch_ea_16(fetchdat);
-        /* pclog("ARPL_a16\n"); */
+        /* DEBUG("ARPL_a16\n"); */
         temp_seg = geteaw();            if (cpu_state.abrt) return 1;
         
         flags_rebuild();
@@ -64,7 +64,7 @@ static int opARPL_a32(uint32_t fetchdat)
         
         NOTRM
         fetch_ea_32(fetchdat);
-        /* pclog("ARPL_a32\n"); */
+        /* DEBUG("ARPL_a32\n"); */
         temp_seg = geteaw();            if (cpu_state.abrt) return 1;
         
         flags_rebuild();
@@ -196,7 +196,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
         uint16_t desc, sel;
         uint8_t access;
 
-        /* pclog("op0F00 %02X %04X:%04X\n", rmdat & 0x38, CS, pc); */
+        /* DEBUG("op0F00 %02X %04X:%04X\n", rmdat & 0x38, CS, pc); */
         switch (rmdat & 0x38)
         {
                 case 0x00: /*SLDT*/
@@ -212,7 +212,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 case 0x10: /*LLDT*/
                 if ((CPL || eflags&VM_FLAG) && (cr0&1))
                 {
-                        pclog("Invalid LLDT!\n");
+                        ERRLOG("CPU: invalid LLDT!\n");
                         x86gpf(NULL,0);
                         return 1;
                 }
@@ -238,7 +238,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 case 0x18: /*LTR*/
                 if ((CPL || eflags&VM_FLAG) && (cr0&1))
                 {
-                        pclog("Invalid LTR!\n");
+                        ERRLOG("CPU: invalid LTR!\n");
                         x86gpf(NULL,0);
                         break;
                 }
@@ -304,7 +304,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 break;
 
                 default:
-                pclog("Bad 0F 00 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad 0F 00 opcode %02X\n", rmdat & 0x38);
                 cpu_state.pc -= 3;
                 x86illegal();
                 break;
@@ -333,7 +333,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
 {
         uint32_t base;
         uint16_t limit, tempw;
-        /* pclog("op0F01 %02X %04X:%04X\n", rmdat & 0x38, CS, pc); */
+        /* DEBUG("op0F01 %02X %04X:%04X\n", rmdat & 0x38, CS, pc); */
         switch (rmdat & 0x38)
         {
                 case 0x00: /*SGDT*/
@@ -357,14 +357,14 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                 case 0x10: /*LGDT*/
                 if ((CPL || eflags&VM_FLAG) && (cr0&1))
                 {
-                        pclog("Invalid LGDT!\n");
+                        ERRLOG("CPU: invalid LGDT!\n");
                         x86gpf(NULL,0);
                         break;
                 }
-                /* pclog("LGDT %08X:%08X\n", easeg, eaaddr); */
+                /* DEBUG("LGDT %08X:%08X\n", easeg, eaaddr); */
                 limit = geteaw();
                 base = readmeml(0, easeg + cpu_state.eaaddr + 2);         if (cpu_state.abrt) return 1;
-                /* pclog("     %08X %04X\n", base, limit); */
+                /* DEBUG("     %08X %04X\n", base, limit); */
                 gdt.limit = limit;
                 gdt.base = base;
                 if (!is32) gdt.base &= 0xffffff;
@@ -374,14 +374,14 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                 case 0x18: /*LIDT*/
                 if ((CPL || eflags&VM_FLAG) && (cr0&1))
                 {
-                        pclog("Invalid LIDT!\n");
+                        ERRLOG("CPU: invalid LIDT!\n");
                         x86gpf(NULL,0);
                         break;
                 }
-                /* pclog("LIDT %08X:%08X\n", easeg, eaaddr); */
+                /* DEBUG("LIDT %08X:%08X\n", easeg, eaaddr); */
                 limit = geteaw();
                 base = readmeml(0, easeg + cpu_state.eaaddr + 2);         if (cpu_state.abrt) return 1;
-                /* pclog("     %08X %04X\n", base, limit); */
+                /* DEBUG("     %08X %04X\n", base, limit); */
                 idt.limit = limit;
                 idt.base = base;
                 if (!is32) idt.base &= 0xffffff;
@@ -399,7 +399,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                 case 0x30: /*LMSW*/
                 if ((CPL || eflags&VM_FLAG) && (msw&1))
                 {
-                        pclog("LMSW - ring not zero!\n");
+                        ERRLOG("CPU: LMSW - ring not zero!\n");
                         x86gpf(NULL, 0);
                         break;
                 }
@@ -424,7 +424,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                 {
                         if ((CPL || eflags&VM_FLAG) && (cr0&1))
                         {
-                                pclog("Invalid INVLPG!\n");
+                                ERRLOG("CPU: invalid INVLPG!\n");
                                 x86gpf(NULL, 0);
                                 break;
                         }
@@ -435,7 +435,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                 }
 
                 default:
-                pclog("Bad 0F 01 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad 0F 01 opcode %02X\n", rmdat & 0x38);
                 cpu_state.pc -= 3;
                 x86illegal();
                 break;

@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.17	2018/05/24
+ * Version:	@(#)ui_main.c	1.0.19	2018/10/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -57,181 +57,183 @@
 #include "../device.h"
 #include "../plat.h"
 #include "../devices/input/keyboard.h"
+#include "../devices/input/mouse.h"
 #include "../devices/video/video.h"
 #include "ui.h"
 
 
-#ifdef ENABLE_LOGGING
+#ifdef _LOGGING
 /* Simplest way to handle all these, for now.. */
-void
-ui_menu_set_logging_item(int idm, int val)
+static void
+set_logging_item(int idm, int val)
 {
-    char temp[128];
-    wchar_t tmpw[128];
+    wchar_t temp[128];
+    wchar_t tmp2[128];
     void *ptr = NULL;
     int *iptr, i;
 
     switch(idm) {
-#ifdef ENABLE_BUS_LOG
+# ifdef ENABLE_BUS_LOG
 	case IDM_LOG_BUS:
 		ptr = (val != -3) ? &pci_do_log : (void *)"Bus";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_KEYBOARD_LOG
+# ifdef ENABLE_KEYBOARD_LOG
 	case IDM_LOG_KEYBOARD:
 		ptr = (val != -3) ? &keyboard_do_log : (void *)"Keyboard";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_MOUSE_LOG
+# ifdef ENABLE_MOUSE_LOG
 	case IDM_LOG_MOUSE:
 		ptr = (val != -3) ? &mouse_do_log : (void *)"Mouse";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_GAME_LOG
+# ifdef ENABLE_GAME_LOG
 	case IDM_LOG_GAME:
 		ptr = (val != -3) ? &game_do_log : (void *)"Game Port";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_PARALLEL_LOG
+# ifdef ENABLE_PARALLEL_LOG
 	case IDM_LOG_PARALLEL:
 		ptr = (val != -3) ? &parallel_do_log : (void *)"Parallel Port";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_SERIAL_LOG
+# ifdef ENABLE_SERIAL_LOG
 	case IDM_LOG_SERIAL:
 		ptr = (val != -3) ? &serial_do_log : (void *)"Serial Port";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_FDC_LOG
+# ifdef ENABLE_FDC_LOG
 	case IDM_LOG_FDC:
 		ptr = (val != -3) ? &fdc_do_log : (void *)"FDC";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_FDD_LOG
+# ifdef ENABLE_FDD_LOG
 	case IDM_LOG_FDD:
 		ptr = (val != -3) ? &fdd_do_log : (void *)"FDD (image)";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_D86F_LOG
+# ifdef ENABLE_D86F_LOG
 	case IDM_LOG_D86F:
 		ptr = (val != -3) ? &d86f_do_log : (void *)"D86F";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_HDC_LOG
+# ifdef ENABLE_HDC_LOG
 	case IDM_LOG_HDC:
 		ptr = (val != -3) ? &hdc_do_log : (void *)"HDC";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_HDD_LOG
+# ifdef ENABLE_HDD_LOG
 	case IDM_LOG_HDD:
 		ptr = (val != -3) ? &hdd_do_log : (void *)"HDD (image)";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_ZIP_LOG
+# ifdef ENABLE_ZIP_LOG
 	case IDM_LOG_ZIP:
 		ptr = (val != -3) ? &zip_do_log : (void *)"ZIP";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_CDROM_LOG
+# ifdef ENABLE_CDROM_LOG
 	case IDM_LOG_CDROM:
 		ptr = (val != -3) ? &cdrom_do_log : (void *)"CD-ROM";
 		break;
-#endif
-
-#ifdef ENABLE_CDROM_IMAGE_LOG
+# endif
+# ifdef ENABLE_CDROM_IMAGE_LOG
 	case IDM_LOG_CDROM_IMAGE:
 		ptr = (val != -3) ? &cdrom_image_do_log : (void *)"CD-ROM (image)";
 		break;
-#endif
-
-#ifdef USE_CDROM_IOCTL
-# ifdef ENABLE_CDROM_IOCTL_LOG
-	case IDM_LOG_CDROM_IOCTL:
-		ptr = (val != -3) ? &cdrom_ioctl_do_log : (void *)"CD-ROM (ioctl)";
+# endif
+# ifdef ENABLE_CDROM_HOST_LOG
+	case IDM_LOG_CDROM_HOST:
+		ptr = (val != -3) ? &cdrom_host_do_log : (void *)"CD-ROM (host)";
 		break;
 # endif
-#endif
 
-#ifdef ENABLE_NETWORK_LOG
+# ifdef ENABLE_NETWORK_LOG
 	case IDM_LOG_NETWORK:
 		ptr = (val != -3) ? &network_do_log : (void *)"Network";
 		break;
-#endif
-
-#ifdef ENABLE_NETWORK_DEV_LOG
+# endif
+# ifdef ENABLE_NETWORK_DEV_LOG
 	case IDM_LOG_NETWORK_DEV:
-		ptr = (val != -3) ? &network_dev_do_log : (void *)"Network Device";
+		ptr = (val != -3) ? &network_card_do_log : (void *)"Network Device";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_SOUND_EMU8K_LOG
-	case IDM_LOG_SOUND_EMU8K:
-		ptr = (val != -3) ? &sound_emu8k_do_log : (void *)"Sound (EMU8K)";
+# ifdef ENABLE_SOUND_LOG
+	case IDM_LOG_SOUND:
+		ptr = (val != -3) ? &sound_do_log : (void *)"Sound";
 		break;
-#endif
-
-#ifdef ENABLE_SOUND_MPU401_LOG
-	case IDM_LOG_SOUND_MPU401:
-		ptr = (val != -3) ? &sound_mpu401_do_log : (void *)"Sound (MPU401)";
-		break;
-#endif
-
-#ifdef ENABLE_SOUND_DEV_LOG
+# endif
+# ifdef ENABLE_SOUND_DEV_LOG
 	case IDM_LOG_SOUND_DEV:
-		ptr = (val != -3) ? &sound_dev_do_log : (void *)"Sound Device";
+		ptr = (val != -3) ? &sound_card_do_log : (void *)"Sound Device";
 		break;
-#endif
-
-#ifdef ENABLE_SCSI_BUS_LOG
-	case IDM_LOG_SCSI_BUS:
-		ptr = (val != -3) ? &scsi_bus_do_log : (void *)"SCSI (Bus)";
+# endif
+# ifdef ENABLE_SOUND_MIDI_LOG
+	case IDM_LOG_SOUND_MIDI:
+		ptr = (val != -3) ? &sound_midi_do_log : (void *)"Sound (MIDI)";
 		break;
-#endif
+# endif
 
-#ifdef ENABLE_SCSI_DISK_LOG
-	case IDM_LOG_SCSI_DISK:
-		ptr = (val != -3) ? &scsi_hd_do_log : (void *)"SCSI (Disk)";
+# ifdef ENABLE_SCSI_LOG
+	case IDM_LOG_SCSI:
+		ptr = (val != -3) ? &scsi_do_log : (void *)"SCSI";
 		break;
-#endif
-
-#ifdef ENABLE_SCSI_DEV_LOG
+# endif
+# ifdef ENABLE_SCSI_DEV_LOG
 	case IDM_LOG_SCSI_DEV:
-		ptr = (val != -3) ? &scsi_dev_do_log : (void *)"SCSI Device";
+		ptr = (val != -3) ? &scsi_card_do_log : (void *)"SCSI Device";
 		break;
-#endif
+# endif
+# ifdef ENABLE_SCSI_CDROM_LOG
+	case IDM_LOG_SCSI_CDROM:
+		ptr = (val != -3) ? &scsi_cdrom_do_log : (void *)"SCSI (CD-ROM)";
+		break;
+# endif
+# ifdef ENABLE_SCSI_DISK_LOG
+	case IDM_LOG_SCSI_DISK:
+		ptr = (val != -3) ? &scsi_disk_do_log : (void *)"SCSI (Disk)";
+		break;
+# endif
 
-#ifdef ENABLE_VOODOO_LOG
-	case IDM_LOG_VOODOO:
-		ptr = (val != -3) ? &voodoo_do_log : (void *)"Video (Voodoo)";
+# ifdef ENABLE_VIDEO_LOG
+	case IDM_LOG_VIDEO:
+		ptr = (val != -3) ? &video_do_log : (void *)"Video";
 		break;
-#endif
+# endif
+# ifdef ENABLE_VIDEO_DEV_LOG
+	case IDM_LOG_VIDEO_DEV:
+		ptr = (val != -3) ? &video_card_do_log : (void *)"Video Device";
+		break;
+# endif
     }
 
     if (ptr == NULL) return;
 
-    iptr = ptr;
+    iptr = (int *)ptr;
     switch(val) {
 	case -3:		/* create menu item */
 		/* Add a menu item. */
 		i = (idm - IDM_LOG_BEGIN);
-		sprintf(temp, "Toggle %s logging\tCtrl%s+F%d",
-			(const char *)ptr,
-			(i >= 12) ? "+Alt" : "",
-			((i >= 12) ? i - 12 : i) + 1);
-		mbstowcs(tmpw, temp, sizeof_w(tmpw));
-		menu_add_item(IDM_LOGGING, IDM_LOG_BEGIN + i, tmpw);
+		swprintf(temp, sizeof_w(temp),
+			 get_string(IDS_4085), (const char *)ptr);
+		swprintf(tmp2, sizeof_w(tmp2), L"\tCtrl%s+F%i",
+			(i >= 12) ? "+Alt" : "", ((i >= 12) ? i - 12 : i) + 1);
+		wcscat(temp, tmp2);
+		menu_add_item(IDM_LOGGING, ITEM_CHECK, IDM_LOG_BEGIN+i, temp);
 		break;
 
 	case -2:		/* set current value */
@@ -239,13 +241,26 @@ ui_menu_set_logging_item(int idm, int val)
 		break;
 
 	case -1:		/* toggle */
+#if 1
+		if (*iptr <= LOG_INFO)
+			*iptr = LOG_DEBUG;
+		  else
+			*iptr = LOG_INFO;
+		menu_set_item(idm, (*iptr >= LOG_DEBUG) ? 1 : 0);
+#else
 		*iptr ^= 1;
 		menu_set_item(idm, *iptr);
+#endif
 		break;
 
 	default:		/* 0 ... n */
+#if 1
+		*iptr = LOG_INFO + val;
+		menu_set_item(idm, (*iptr > LOG_INFO) ? 1 : 0);
+#else
 		*iptr = val;
 		menu_set_item(idm, *iptr);
+#endif
 		break;
     }
 }
@@ -253,8 +268,8 @@ ui_menu_set_logging_item(int idm, int val)
 
 
 /* Toggle one of the Video options, with a lock on the blitter. */
-void
-ui_menu_toggle_video_item(int idm, int *val)
+static void
+toggle_video_item(int idm, int *val)
 {
     plat_startblit();
     video_wait_for_blit();
@@ -270,8 +285,8 @@ ui_menu_toggle_video_item(int idm, int *val)
 
 
 /* Reset all (main) menu items to their default state. */
-void
-ui_menu_reset_all(void)
+static void
+main_reset_all(void)
 {
     wchar_t temp[128];
     int i;
@@ -284,7 +299,7 @@ ui_menu_reset_all(void)
 	if (vidapi_available(i)) {
 		/* Get name of the renderer and add a menu item. */
 		mbstowcs(temp, vidapi_internal_name(i), sizeof_w(temp));
-		menu_add_item(IDM_RENDER, IDM_RENDER_1 + i, temp);
+		menu_add_item(IDM_RENDER, ITEM_RADIO, IDM_RENDER_1 + i, temp);
 	}
     }
     menu_set_radio_item(IDM_RENDER_1, vidapi_count(), vid_api);
@@ -297,8 +312,6 @@ ui_menu_reset_all(void)
 
     menu_set_item(IDM_RCTRL_IS_LALT, rctrl_is_lalt);
 
-    menu_set_item(IDM_UPDATE_ICONS, update_icons);
-
     menu_set_item(IDM_INVERT, invert_display);
     menu_set_item(IDM_OVERSCAN, enable_overscan);
 
@@ -310,11 +323,11 @@ ui_menu_reset_all(void)
 
     menu_set_item(IDM_CGA_CONTR, vid_cga_contrast);
 
-#ifdef ENABLE_LOGGING
+#ifdef _LOGGING
     for (i = IDM_LOG_BEGIN; i < IDM_LOG_END; i++) {
-	ui_menu_set_logging_item(i, -3);
+	set_logging_item(i, -3);
 
-	ui_menu_set_logging_item(i, -2);
+	set_logging_item(i, -2);
     }
 #endif
 
@@ -323,6 +336,31 @@ ui_menu_reset_all(void)
     menu_enable_item(IDM_LOAD, 0);
     menu_enable_item(IDM_SAVE, 0);
 #endif
+
+    /* Load the Languages into the current menu. */
+    ui_lang_menu();
+}
+
+
+/* Re-load and reset the entire UI. */
+void
+ui_reset(void)
+{
+    int i;
+
+    /* Maybe the underlying (platform) UI has to rebuild. */
+    ui_plat_reset();
+
+    /* Reset all main menu items. */
+    main_reset_all();
+
+    /* Update the statusbar menus. */
+    ui_sb_reset();
+
+    /* Reset the mouse-capture message. */
+    i = mouse_capture;
+    mouse_capture = !mouse_capture;
+    ui_mouse_capture(i);
 }
 
 
@@ -343,21 +381,20 @@ ui_menu_command(int idm)
 		break;
 
 	case IDM_CAE:				/* ACTION menu */
-		keyboard_send_cae();
+		keyboard_cae();
 		break;
 
 	case IDM_CAB:				/* ACTION menu */
-		keyboard_send_cab();
+		keyboard_cab();
 		break;
 
 	case IDM_PAUSE:				/* ACTION menu */
-		plat_pause(dopause ^ 1);
-		menu_set_item(idm, dopause);
+		pc_pause(dopause ^ 1);
 		break;
 
 #ifdef IDM_Test
 	case IDM_Test:				/* ACTION menu */
-		pclog("TEST\n");
+		pclog(LOG_ALWAYS, "TEST\n");
 		break;
 #endif
 
@@ -377,7 +414,9 @@ ui_menu_command(int idm)
 		/* Disable scaling settings. */
 		for (i = 0; i < 4; i++)
 			menu_enable_item(IDM_SCALE_1+i, !vid_resize);
-		doresize = 1;
+
+		device_force_redraw();
+		video_force_resize_set(1);
 		config_save();
 		return(0);
 
@@ -399,7 +438,7 @@ ui_menu_command(int idm)
 		break;
 
 	case IDM_FULLSCREEN:			/* VIEW menu */
-		plat_setfullscreen(1);
+		ui_fullscreen(1);
 		config_save();
 		break;
 
@@ -426,7 +465,7 @@ ui_menu_command(int idm)
 		break;
 
 	case IDM_FORCE_43:			/* VIEW menu */
-		ui_menu_toggle_video_item(idm, &force_43);
+		toggle_video_item(idm, &force_43);
 		video_force_resize_set(1);
 		config_save();
 		break;
@@ -437,19 +476,13 @@ ui_menu_command(int idm)
 		config_save();
 		break;
 
-	case IDM_UPDATE_ICONS:			/* VIEW menu */
-		update_icons ^= 1;
-		menu_set_item(idm, update_icons);
-		config_save();
-		break;
-
 	case IDM_INVERT:			/* DISPLAY menu */
-		ui_menu_toggle_video_item(idm, &invert_display);
+		toggle_video_item(idm, &invert_display);
 		config_save();
 		break;
 
 	case IDM_OVERSCAN:			/* DISPLAY menu */
-		ui_menu_toggle_video_item(idm, &enable_overscan);
+		toggle_video_item(idm, &enable_overscan);
 		video_force_resize_set(1);
 		config_save();
 		break;
@@ -482,10 +515,10 @@ ui_menu_command(int idm)
 		break;
 
 	case IDM_SETTINGS:			/* TOOLS menu */
-		plat_pause(1);
+		pc_pause(1);
 		if (dlg_settings(1) == 2)
 			pc_reset_hard_init();
-		plat_pause(0);
+		pc_pause(0);
 		break;
 
 	case IDM_LANGUAGE+1:			/* select language */
@@ -508,75 +541,172 @@ ui_menu_command(int idm)
 	case IDM_LANGUAGE+18:
 	case IDM_LANGUAGE+19:
 	case IDM_LANGUAGE+20:
-		plat_set_language(idm - IDM_LANGUAGE - 1);
-		ui_update();
+		ui_lang_set(idm - (IDM_LANGUAGE + 1));
+		ui_reset();
+		config_save();
 		break;
 
-#ifdef ENABLE_LOGGING
+#ifdef _LOGGING
 	case IDM_LOG_BREAKPOINT:		/* TOOLS menu */
-		pclog("---- LOG BREAKPOINT ----\n");
+		pclog(LOG_ALWAYS, "---- LOG BREAKPOINT ----\n");
 		break;
 
-	case IDM_LOG_BUS:			/* TOOLS menu */
-	case IDM_LOG_KEYBOARD:
-	case IDM_LOG_MOUSE:
-	case IDM_LOG_GAME:
-	case IDM_LOG_PARALLEL:
-	case IDM_LOG_SERIAL:
-	case IDM_LOG_FDC:
-	case IDM_LOG_FDD:
-	case IDM_LOG_D86F:
-	case IDM_LOG_HDC:
-	case IDM_LOG_HDD:
-	case IDM_LOG_ZIP:
-	case IDM_LOG_CDROM:
-	case IDM_LOG_CDROM_IMAGE:
-	case IDM_LOG_CDROM_IOCTL:
-	case IDM_LOG_NETWORK:
-	case IDM_LOG_NETWORK_DEV:
-	case IDM_LOG_SOUND_EMU8K:
-	case IDM_LOG_SOUND_MPU401:
-	case IDM_LOG_SOUND_DEV:
-	case IDM_LOG_SCSI_BUS:
-	case IDM_LOG_SCSI_DISK:
-	case IDM_LOG_SCSI_DEV:
-	case IDM_LOG_VOODOO:
-		ui_menu_set_logging_item(idm, -1);
+	case IDM_LOG_BEGIN:			/* TOOLS menu */
+	case IDM_LOG_BEGIN+1:
+	case IDM_LOG_BEGIN+2:
+	case IDM_LOG_BEGIN+3:
+	case IDM_LOG_BEGIN+4:
+	case IDM_LOG_BEGIN+5:
+	case IDM_LOG_BEGIN+6:
+	case IDM_LOG_BEGIN+7:
+	case IDM_LOG_BEGIN+8:
+	case IDM_LOG_BEGIN+9:
+	case IDM_LOG_BEGIN+10:
+	case IDM_LOG_BEGIN+11:
+	case IDM_LOG_BEGIN+12:
+	case IDM_LOG_BEGIN+13:
+	case IDM_LOG_BEGIN+14:
+	case IDM_LOG_BEGIN+15:
+	case IDM_LOG_BEGIN+16:
+	case IDM_LOG_BEGIN+17:
+	case IDM_LOG_BEGIN+18:
+	case IDM_LOG_BEGIN+19:
+	case IDM_LOG_BEGIN+20:
+	case IDM_LOG_BEGIN+21:
+	case IDM_LOG_BEGIN+22:
+	case IDM_LOG_BEGIN+23:
+	case IDM_LOG_BEGIN+24:
+	case IDM_LOG_BEGIN+25:
+	case IDM_LOG_BEGIN+26:
+	case IDM_LOG_BEGIN+27:
+	case IDM_LOG_BEGIN+28:
+	case IDM_LOG_BEGIN+29:
+		set_logging_item(idm, -1);
 		break;
 #endif
 
 	/* FIXME: need to fix these.. */
 	case IDM_LOAD:				/* TOOLS menu */
-		plat_pause(1);
+		pc_pause(1);
 		i = dlg_file(get_string(IDS_2500), NULL, temp, DLG_FILE_LOAD);
 		if (i && (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_WARNING) == 0)) {
 			pc_reload(temp);
-			ui_menu_reset_all();
+			ui_reset();
 			config_ro = !!(i & DLG_FILE_RO);
 		}
-		plat_pause(0);
+		pc_pause(0);
 		break;                        
 
 	case IDM_SAVE:				/* TOOLS menu */
-		plat_pause(1);
+		pc_pause(1);
 		if (dlg_file(get_string(IDS_2500), NULL, temp, DLG_FILE_SAVE)) {
 			config_write(temp);
 		}
-		plat_pause(0);
+		pc_pause(0);
 		break;                                                
-
-	case IDM_STATUS:			/* TOOLS menu */
-		dlg_status();
-		break;
 
 	case IDM_SCREENSHOT:			/* TOOLS menu */
 		vidapi_screenshot();
 		break;
 
 	case IDM_ABOUT:				/* HELP menu */
+		pc_pause(1);
 		dlg_about();
+		pc_pause(0);
+		break;
+
+	case IDM_LOCALIZE:			/* HELP MENU */	
+		pc_pause(1);
+		dlg_localize();
+		pc_pause(0);
 		break;
     }
 
     return(1);
+}
+
+
+/* Set the desired fullscreen/windowed mode. */
+void
+ui_fullscreen(int on)
+{
+    /* Want off and already off? */
+    if (!on && !vid_fullscreen) return;
+
+    /* Want on and already on? */
+    if (on && vid_fullscreen) return;
+
+    if (on && vid_fullscreen_first) {
+	vid_fullscreen_first = 0;
+	ui_msgbox(MBX_INFO, (wchar_t *)IDS_MSG_WINDOW);
+    }
+
+    /* OK, claim the video. */
+    plat_startblit();
+    video_wait_for_blit();
+
+//  plat_mouse_close();
+
+    /* Close the current mode, and open the new one. */
+    plat_vidapis[vid_api]->close();
+    vid_fullscreen = on;
+    plat_vidapis[vid_api]->init(vid_fullscreen);
+
+    plat_fullscreen(on);
+
+//  plat_mouse_init();
+
+    /* Release video and make it redraw the screen. */
+    plat_endblit();
+    device_force_redraw();
+
+    /* Finally, handle the host's mouse cursor. */
+    ui_show_cursor(vid_fullscreen ? 0 : -1);
+
+    /* Update the menu item. */
+    menu_set_item(IDM_FULLSCREEN, on);
+}
+
+
+/* Enable or disable mouse clipping. */
+void
+ui_mouse_capture(int on)
+{
+    const wchar_t *str = NULL;
+
+    /* Do not try to capture the mouse if no mouse configured. */
+    if (mouse_type == MOUSE_NONE) return;
+
+    if ((on == 1) && !mouse_capture) {
+	/* Disable the local cursor. */
+	ui_show_cursor(0);
+
+	if (mouse_get_buttons() > 2)
+		str = get_string(IDS_MSG_MRLS_1);
+	  else
+		str = get_string(IDS_MSG_MRLS_2);
+
+	/* Enable and clip the in-app mouse. */
+	plat_mouse_capture(1);
+
+	/* We got the mouse. */
+	mouse_capture = 1;
+    } else if ((on == -1) || (!on && mouse_capture)) {
+	/* Unclip the in-app mouse. */
+	if (! on) {
+		plat_mouse_capture(0);
+
+		/* Restore the local cursor. */
+		ui_show_cursor(1);
+	}
+
+	str = get_string(IDS_MSG_CAPTURE);
+
+	/* We (no longer) have the mouse. */
+	mouse_capture = 0;
+    }
+
+    /* Set the correct message on the status bar. */
+    if (str != NULL)
+	ui_sb_text_set_w(SB_TEXT, str);
 }

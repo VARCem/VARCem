@@ -9,7 +9,7 @@
  *		Emulation of the memory I/O scratch registers on ports 0xE1
  *		and 0xE2, used by just about any emulated machine.
  *
- * Version:	@(#)memregs.c	1.0.2	2018/05/06
+ * Version:	@(#)memregs.c	1.0.3	2018/09/06
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -72,10 +72,6 @@ memregs_read(uint16_t port, void *priv)
 void
 memregs_init(void)
 {
-#if 0
-    pclog("Memory Registers Init\n");
-#endif
-
     io_sethandler(0x00e1, 2,
 		  memregs_read,NULL,NULL, memregs_write,NULL,NULL, NULL);
 }
@@ -84,10 +80,6 @@ memregs_init(void)
 void
 powermate_memregs_init(void)
 {
-#if 0
-    pclog("Memory Registers Init\n");
-#endif
-
     io_sethandler(0x00ed, 2,
 		  memregs_read,NULL,NULL, memregs_write,NULL,NULL, NULL);
 

@@ -9,7 +9,7 @@
  *		A better random number generation, used for floppy weak bits
  *		and network MAC address generation.
  *
- * Version:	@(#)random.c	1.0.1	2018/02/14
+ * Version:	@(#)random.c	1.0.2	2018/10/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -36,84 +36,96 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-#include <limits.h>
+#include "plat.h"
 #include "random.h"
 
 
-uint32_t preconst = 0x6ED9EBA1;
+static uint32_t preconst = 0x6ed9eba1;
 
 
-static __inline uint32_t rotl32c (uint32_t x, uint32_t n)
+static __inline uint32_t
+rotl32c (uint32_t x, uint32_t n)
 {
-#if 0
-  assert (n<32);
-#endif
 #ifdef _MSC_VER
-  return _rotl(x, n);
+    return _rotl(x, n);
 #else
-  return (x<<n) | (x>>(-n&31));
+    return (x << n) | (x >> (-n & 31));
 #endif
 }
 
-static __inline uint32_t rotr32c (uint32_t x, uint32_t n)
+
+static __inline uint32_t
+rotr32c (uint32_t x, uint32_t n)
 {
-#if 0
-  assert (n<32);
-#endif
 #ifdef _MSC_VER
-  return _rotr(x, n);
+    return _rotr(x, n);
 #else
-  return (x>>n) | (x<<(-n&31));
+    return (x >> n) | (x << (-n & 31));
 #endif
 }
+
 
 #define ROTATE_LEFT rotl32c
-
 #define ROTATE_RIGHT rotr32c
 
-static __inline unsigned long long rdtsc(void)
+
+#if 0	/* deprecated */
+static __inline unsigned long long
+rdtsc(void)
 {
     unsigned hi, lo;
+
 #ifdef _MSC_VER
     __asm {
-		rdtsc
-		mov hi, edx	; EDX:EAX is already standard return!!
-		mov lo, eax
+	rdtsc
+	mov hi, edx	; EDX:EAX is already standard return!!
+	mov lo, eax
     }
 #else
-      __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
 #endif
+
     return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
 }
 
-static uint32_t RDTSC(void)
+
+static uint32_t
+RDTSC(void)
 {
-	return (uint32_t) (rdtsc());
+    return (uint32_t) (rdtsc());
+}
+#endif	/* deprecated */
+
+
+static void
+random_twist(uint32_t *val)
+{
+    *val = ROTATE_LEFT(*val, rand() % 32);
+    *val ^= 0x5a827999;
+    *val = ROTATE_RIGHT(*val, rand() % 32);
+    *val ^= 0x4ed32706;
 }
 
 
-static void random_twist(uint32_t *val)
+uint8_t
+random_generate(void)
 {
-	*val = ROTATE_LEFT(*val, rand() % 32);
-	*val ^= 0x5A827999;
-	*val = ROTATE_RIGHT(*val, rand() % 32);
-	*val ^= 0x4ED32706;
+    uint16_t r = 0;
+    r = (rand() ^ ROTATE_LEFT(preconst, rand() % 32)) % 256;
+    random_twist(&preconst);
+
+    return (r & 0xff);
 }
 
 
-uint8_t random_generate(void)
+void
+random_init(void)
 {
-	uint16_t r = 0;
-	r = (rand() ^ ROTATE_LEFT(preconst, rand() % 32)) % 256;
-	random_twist(&preconst);
-	return (r & 0xff);
-}
+#if 0	/* deprecated */
+    uint32_t seed = RDTSC();
+#else
+    uint32_t seed = (uint32_t)plat_timer_read();
+#endif
 
-
-void random_init(void)
-{
-	uint32_t seed = RDTSC();
-	srand(seed);
-	return;
+    srand(seed);
 }

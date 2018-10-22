@@ -8,7 +8,7 @@
  *
  *		Dynamic Recompiler for Intel 32-bit systems.
  *
- * Version:	@(#)codegen_x86.c	1.0.3	2018/05/05
+ * Version:	@(#)codegen_x86.c	1.0.4	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -62,6 +62,7 @@
 #include <unistd.h>
 #endif
 #if defined _WIN32
+#undef ERROR
 #include <windows.h>
 #endif
 
@@ -994,11 +995,6 @@ static uint32_t gen_MEM_CHECK_WRITE()
         return addr;
 }
 
-/*static void checkdebug(uint32_t a)
-{
-        pclog("checkdebug %08x\n", a);
-}*/
-
 static uint32_t gen_MEM_CHECK_WRITE_W()
 {
         uint32_t addr = (uint32_t)&codeblock[block_current].data[block_pos];
@@ -1173,11 +1169,11 @@ void codegen_init()
 #endif
         
 #ifdef _WIN32
-        codeblock = VirtualAlloc(NULL, (BLOCK_SIZE+1) * sizeof(codeblock_t), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+        codeblock = (codeblock_t *)VirtualAlloc(NULL, (BLOCK_SIZE+1) * sizeof(codeblock_t), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 #else
-        codeblock = malloc((BLOCK_SIZE+1) * sizeof(codeblock_t));
+        codeblock = (codeblock_t *)mem_alloc((BLOCK_SIZE+1) * sizeof(codeblock_t));
 #endif
-        codeblock_hash = malloc(HASH_SIZE * sizeof(codeblock_t *));
+        codeblock_hash = (codeblock_t **)mem_alloc(HASH_SIZE * sizeof(codeblock_t *));
 
         memset(codeblock, 0, (BLOCK_SIZE+1) * sizeof(codeblock_t));
         memset(codeblock_hash, 0, HASH_SIZE * sizeof(codeblock_t *));
@@ -1260,20 +1256,6 @@ void codegen_reset()
 
 void dump_block()
 {
-/*        codeblock_t *block = pages[0x119000 >> 12].block;
-
-        pclog("dump_block:\n");
-        while (block)
-        {
-                uint32_t start_pc = (block->pc & 0xffc) | (block->phys & ~0xfff);
-                uint32_t end_pc = (block->endpc & 0xffc) | (block->phys & ~0xfff);
-                pclog(" %p : %08x-%08x  %08x-%08x %p %p\n", (void *)block, start_pc, end_pc,  block->pc, block->endpc, (void *)block->prev, (void *)block->next);
-                if (!block->pc)
-                        fatal("Dead PC=0\n");
-                
-                block = block->next;
-        }
-        pclog("dump_block done\n");*/
 }
 
 static void add_to_block_list(codeblock_t *block)
@@ -1619,15 +1601,6 @@ void codegen_block_end_recompile(codeblock_t *block)
                 addbyte((uint8_t)cpu_state_offset(cpu_recomp_ins));
                 addlong(codegen_block_ins);
         }
-#if 0
-        if (codegen_block_full_ins)
-        {
-                addbyte(0x81); /*ADD $codegen_block_ins,ins*/
-                addbyte(0x05);
-                addlong((uint32_t)&cpu_recomp_full_ins);
-                addlong(codegen_block_full_ins);
-        }
-#endif
         addbyte(0x83); /*ADDL $16,%esp*/
         addbyte(0xC4);
         addbyte(0x10);
@@ -1702,10 +1675,6 @@ int opcode_0f_modrm[256] =
         
 void codegen_debug()
 {
-        if (output)
-        {
-                pclog("At %04x(%08x):%04x  %04x(%08x):%04x  es=%08x EAX=%08x BX=%04x ECX=%08x BP=%04x EDX=%08x EDI=%08x\n", CS, cs, cpu_state.pc, SS, ss, ESP,  es,EAX, BX,ECX,BP,  EDX,EDI);
-        }
 }
 
 static x86seg *codegen_generate_ea_16_long(x86seg *op_ea_seg, uint32_t fetchdat, int op_ssegs, uint32_t *op_pc)

@@ -8,7 +8,7 @@
  *
  *		Definitions for the X87 FPU.
  *
- * Version:	@(#)x87.h	1.0.1	2018/02/14
+ * Version:	@(#)x87.h	1.0.2	2018/09/19
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -35,11 +35,11 @@
  *   USA.
  */
 
-uint32_t x87_pc_off,x87_op_off;
-uint16_t x87_pc_seg,x87_op_seg;
+extern uint32_t x87_pc_off,x87_op_off;
+extern uint16_t x87_pc_seg,x87_op_seg;
 
-uint16_t x87_gettag();
-void x87_settag(uint16_t new_tag);
+extern uint16_t x87_gettag();
+extern void x87_settag(uint16_t new_tag);
 
 /*Hack for FPU copy. If set then MM[].q contains the 64-bit integer loaded by FILD*/
 #define TAG_UINT64 (1 << 2)

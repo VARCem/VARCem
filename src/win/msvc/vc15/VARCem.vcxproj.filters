@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\bugger.c" />
     <ClCompile Include="..\..\..\config.c" />
     <ClCompile Include="..\..\..\device.c" />
     <ClCompile Include="..\..\..\io.c" />
@@ -71,9 +70,6 @@
     <ClCompile Include="..\..\..\win\win_cdrom.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_cdrom_ioctl.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_crashdump.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -104,9 +100,6 @@
     <ClCompile Include="..\..\..\win\win_mouse.cpp">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_new_floppy.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_opendir.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -114,9 +107,6 @@
       <Filter>win</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\win\win_snd_gain.c">
-      <Filter>win</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\win\win_status.c">
       <Filter>win</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\win\win_thread.c">
@@ -127,9 +117,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\rom_load.c" />
     <ClCompile Include="..\..\..\ui\ui_main.c">
-      <Filter>ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ui\ui_new_floppy.c">
       <Filter>ui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\ui\ui_stbar.c">
@@ -279,9 +266,6 @@
     <ClCompile Include="..\..\..\devices\network\slirp\mbuf.c">
       <Filter>devices\network\slirp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\misc.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\devices\network\slirp\queue.c">
       <Filter>devices\network\slirp</Filter>
     </ClCompile>
@@ -340,9 +324,6 @@
       <Filter>devices\scsi</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\scsi\scsi_aha154x.c">
-      <Filter>devices\scsi</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\scsi\scsi_bus.c">
       <Filter>devices\scsi</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\scsi\scsi_buslogic.c">
@@ -603,9 +584,6 @@
     <ClCompile Include="..\..\..\devices\system\intel_piix.c">
       <Filter>devices\system</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\system\intel_piix4.c">
-      <Filter>devices\system</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\devices\system\intel_sio.c">
       <Filter>devices\system</Filter>
     </ClCompile>
@@ -654,9 +632,6 @@
     <ClCompile Include="..\..\..\devices\video\vid_ati68860_ramdac.c">
       <Filter>devices\video</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\video\vid_bt485_ramdac.c">
-      <Filter>devices\video</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\devices\video\vid_cga.c">
       <Filter>devices\video</Filter>
     </ClCompile>
@@ -667,9 +642,6 @@
       <Filter>devices\video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\video\vid_colorplus.c">
-      <Filter>devices\video</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\video\vid_compaq_cga.c">
       <Filter>devices\video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\video\vid_ega.c">
@@ -762,24 +734,6 @@
     <ClCompile Include="..\..\..\machines\m_at.c">
       <Filter>machines</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_4gpv31.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_430fx.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_430hx.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_430lx_nx.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_430vx.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_440fx.c">
-      <Filter>machines</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\machines\m_at_ali1429.c">
       <Filter>machines</Filter>
     </ClCompile>
@@ -799,9 +753,6 @@
       <Filter>machines</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machines\m_at_scat.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_sis_85c50x.c">
       <Filter>machines</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machines\m_at_sis_85c471.c">
@@ -870,9 +821,76 @@
     <ClCompile Include="..\..\..\devices\video\video_dev.c">
       <Filter>devices\video</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\devices\misc\bugger.c">
+      <Filter>devices\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_vidapi.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\misc.c" />
+    <ClCompile Include="..\..\..\devices\network\slirp\slirp_misc.c">
+      <Filter>devices\network\slirp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\win_new_image.c">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\win_sdl.c">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_new_image.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\win_lang.c">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\cdrom\cdrom_speed.c">
+      <Filter>devices\cdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\misc\isamem.c">
+      <Filter>devices\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\misc\isartc.c">
+      <Filter>devices\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\network\net_3c503.c">
+      <Filter>devices\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\network\net_dp8390.c">
+      <Filter>devices\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\network\net_wd80x3.c">
+      <Filter>devices\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\printer\prt_cpmap.c">
+      <Filter>devices\printer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\printer\prt_escp.c">
+      <Filter>devices\printer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\printer\prt_text.c">
+      <Filter>devices\printer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_bt48x_ramdac.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_cga_compaq.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_at_4x0.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_cdrom.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ui\ui_lang.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\png.c" />
+    <ClCompile Include="..\..\..\ui\ui_misc.c">
+      <Filter>ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\bugger.h" />
     <ClInclude Include="..\..\..\config.h" />
     <ClInclude Include="..\..\..\device.h" />
     <ClInclude Include="..\..\..\emu.h" />
@@ -1084,19 +1102,10 @@
     <ClInclude Include="..\..\..\cpu\x87_ops_misc.h">
       <Filter>cpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\win\plat_dir.h">
-      <Filter>win</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\win\resource.h">
       <Filter>win</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\win\win.h">
-      <Filter>win</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\win\win_d3d.h">
-      <Filter>win</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\win\win_ddraw.h">
       <Filter>win</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\version.h" />
@@ -1529,9 +1538,6 @@
     <ClInclude Include="..\..\..\devices\video\vid_ati68860_ramdac.h">
       <Filter>devices\video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\devices\video\vid_bt485_ramdac.h">
-      <Filter>devices\video</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\devices\video\vid_cga.h">
       <Filter>devices\video</Filter>
     </ClInclude>
@@ -1592,6 +1598,67 @@
     <ClInclude Include="..\..\..\machines\machine.h">
       <Filter>machines</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\devices\misc\bugger.h">
+      <Filter>devices\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_sdl.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_opendir.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_disk.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_floppy.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_input.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_machine.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_network.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_periph.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_ports.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_remov.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_sound.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_video.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\misc\isamem.h">
+      <Filter>devices\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\misc\isartc.h">
+      <Filter>devices\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\network\net_3com.h">
+      <Filter>devices\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\network\net_dp8390.h">
+      <Filter>devices\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\network\net_wd80x3.h">
+      <Filter>devices\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\printer\printer.h">
+      <Filter>devices\printer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\video\vid_bt48x_ramdac.h">
+      <Filter>devices\video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\png.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cpu">
@@ -1663,10 +1730,21 @@
     <Filter Include="machines">
       <UniqueIdentifier>{c21f8b49-308c-4e25-b69d-b03c1e24617a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="devices\misc">
+      <UniqueIdentifier>{51f1c4aa-4a2a-4639-bcbc-2075ffaf3e27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="devices\printer">
+      <UniqueIdentifier>{4797388a-1c9d-4a4c-a7f9-aa1925cad334}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\VARCem.rc">
       <Filter>win</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\VARCem.mpp">
+      <Filter>win</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

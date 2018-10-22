@@ -8,7 +8,7 @@
  *
  *		Definitions for the Intel DMA controller.
  *
- * Version:	@(#)dma.h	1.0.2	2018/03/12
+ * Version:	@(#)dma.h	1.0.3	2018/06/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,24 +71,26 @@ extern void	ps2_dma_init(void);
 extern void	dma_reset(void);
 extern int	dma_mode(int channel);
 
+extern int	dma_channel_read(int channel);
+extern int	dma_channel_write(int channel, uint16_t val);
+
+extern void	DMAPageRead(uint32_t PhysAddress, uint8_t *DataRead,
+			    uint32_t TotalSize);
+extern void	DMAPageWrite(uint32_t PhysAddress, const uint8_t *DataWrite,
+			     uint32_t TotalSize);
+
+#if 0
 extern void	readdma0(void);
 extern int	readdma1(void);
 extern uint8_t	readdma2(void);
 extern int	readdma3(void);
 
 extern void	writedma2(uint8_t temp);
-
-extern int	dma_channel_read(int channel);
-extern int	dma_channel_write(int channel, uint16_t val);
+#endif
 
 extern void	dma_alias_set(void);
 extern void	dma_alias_remove(void);
 extern void	dma_alias_remove_piix(void);
-
-extern void	DMAPageRead(uint32_t PhysAddress, uint8_t *DataRead,
-			    uint32_t TotalSize);
-extern void	DMAPageWrite(uint32_t PhysAddress, const uint8_t *DataWrite,
-			     uint32_t TotalSize);
 
 
 #endif	/*EMU_DMA_H*/

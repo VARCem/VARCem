@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.5	2018/04/25
+ * Version:	@(#)device.h	1.0.8	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,17 +53,20 @@
 
 
 enum {
-    DEVICE_UNSTABLE = 1,	/* unstable device, be cautious */
-    DEVICE_AT = 2,		/* requires an AT-compatible system */
-    DEVICE_PS2 = 4,		/* requires a PS/1 or PS/2 system */
-    DEVICE_ISA = 8,		/* requires the ISA bus */
-    DEVICE_CBUS = 0x10,		/* requires the C-BUS bus */
-    DEVICE_MCA = 0x20,		/* requires the MCA bus */
-    DEVICE_EISA = 0x40,		/* requires the EISA bus */
-    DEVICE_VLB = 0x80,		/* requires the PCI bus */
-    DEVICE_PCI = 0x100,		/* requires the VLB bus */
-    DEVICE_AGP = 0x200		/* requires the AGP bus */
+    DEVICE_ALL = 0x0000,	/* any/all device */
+    DEVICE_UNSTABLE = 0x0001,	/* unstable device, be cautious */
+    DEVICE_AT = 0x0002,		/* requires an AT-compatible system */
+    DEVICE_PS2 = 0x0004,	/* requires a PS/1 or PS/2 system */
+    DEVICE_ISA = 0x0100,	/* requires the ISA bus */
+    DEVICE_CBUS = 0x0200,	/* requires the C-BUS bus */
+    DEVICE_MCA = 0x0400,	/* requires the MCA bus */
+    DEVICE_EISA = 0x0800,	/* requires the EISA bus */
+    DEVICE_VLB = 0x1000,	/* requires the PCI bus */
+    DEVICE_PCI = 0x2000,	/* requires the VLB bus */
+    DEVICE_AGP = 0x4000		/* requires the AGP bus */
 };
+#define DEVICE_SYS_MASK	0x0006
+#define DEVICE_BUS_MASK	0xff00
 
 
 typedef struct {
@@ -101,11 +104,14 @@ typedef struct _device_ {
     void	*(*init)(const struct _device_ *);
     void	(*close)(void *priv);
     void	(*reset)(void *priv);
-    int		(*available)(/*void*/);
+    void	*u1_reuse;
+#define ms_poll		u1_reuse
+#define dev_available	u1_reuse
     void	(*speed_changed)(void *priv);
     void	(*force_redraw)(void *priv);
-    void	(*add_status_info)(char *s, int max_len, void *priv);
-
+    const void	*u2_reuse;
+#define vid_timing	u2_reuse
+#define mca_reslist	u2_reuse
     const device_config_t *config;
 } device_t;
 
@@ -114,28 +120,29 @@ typedef struct _device_ {
 extern "C" {
 #endif
 
-extern void	device_init(void);
-extern void	*device_add(const device_t *);
-extern void	device_add_ex(const device_t *d, void *priv);
-extern void	device_close_all(void);
-extern void	device_reset_all(void);
-extern void	*device_get_priv(const device_t *);
-extern int	device_available(const device_t *);
-extern void	device_speed_changed(void);
-extern void	device_force_redraw(void);
-extern void	device_add_status_info(char *s, int max_len);
+extern void		device_init(void);
+extern const device_t	*device_clone(const device_t *master);
+extern void		*device_add(const device_t *);
+extern void		device_add_ex(const device_t *d, void *priv);
+extern void		device_close_all(void);
+extern void		device_reset_all(int flags);
+extern void		*device_get_priv(const device_t *);
+extern const char	*device_get_bus_name(const device_t *);
+extern int		device_available(const device_t *);
+extern void		device_speed_changed(void);
+extern void		device_force_redraw(void);
 
-extern int	device_is_valid(const device_t *, int machine_flags);
+extern int		device_is_valid(const device_t *, int machine_flags);
 
-extern int	device_get_config_int(const char *name);
-extern int	device_get_config_int_ex(const char *s, int default_int);
-extern int	device_get_config_hex16(const char *name);
-extern int	device_get_config_hex20(const char *name);
-extern int	device_get_config_mac(const char *name, int default_int);
-extern void	device_set_config_int(const char *s, int val);
-extern void	device_set_config_hex16(const char *s, int val);
-extern void	device_set_config_hex20(const char *s, int val);
-extern void	device_set_config_mac(const char *s, int val);
+extern int		device_get_config_int(const char *name);
+extern int		device_get_config_int_ex(const char *s, int dflt_int);
+extern int		device_get_config_hex16(const char *name);
+extern int		device_get_config_hex20(const char *name);
+extern int		device_get_config_mac(const char *name, int dflt_int);
+extern void		device_set_config_int(const char *s, int val);
+extern void		device_set_config_hex16(const char *s, int val);
+extern void		device_set_config_hex20(const char *s, int val);
+extern void		device_set_config_mac(const char *s, int val);
 extern const char	*device_get_config_string(const char *name);
 
 #ifdef __cplusplus

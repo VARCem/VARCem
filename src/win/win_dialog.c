@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.12	2018/05/24
+ * Version:	@(#)win_dialog.c	1.0.13	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -130,7 +130,7 @@ ui_msgbox(int flags, const void *arg)
 	case MBX_ERROR:		/* error message */
 		if (flags & MBX_FATAL) {
 			fl = (MB_OK | MB_ICONERROR);
-			cap = get_string(IDS_FATAL_ERROR);
+			cap = get_string(IDS_ERROR_FATAL);
 		} else {
 			fl = (MB_OK | MB_ICONWARNING);
 			cap = get_string(IDS_ERROR);
@@ -144,7 +144,7 @@ ui_msgbox(int flags, const void *arg)
 
 	case MBX_CONFIG:	/* configuration */
 		fl = (MB_YESNO | MB_ICONERROR);
-		cap = get_string(IDS_CONFIG_ERROR);
+		cap = get_string(IDS_ERROR_CONF);
 		break;
     }
 
@@ -313,7 +313,7 @@ dlg_file_ex(HWND h, const wchar_t *f, const wchar_t *ifn, wchar_t *fn, int fl)
 		sprintf((char *)temp,
 			"%sFile('%ls', %02x):\n\n    error 0x%08lx",
 			(fl & DLG_FILE_SAVE)?"Save":"Open", temp, fl, err);
-		pclog("%s\n", (char *)temp);
+		ERRLOG("%s\n", (char *)temp);
 		(void)ui_msgbox(MBX_ERROR|MBX_ANSI, (char *)temp);
 	}
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.7	2018/05/06
+ * Version:	@(#)keyboard_xt.c	1.0.8	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#define dbglog kbd_log
 #include "../../emu.h"
 #include "../../machines/machine.h"
 #include "../../io.h"
@@ -66,12 +67,11 @@
 
 
 typedef struct {
-    int blocked;
+    int8_t	blocked;
+    uint8_t	type;
 
-    uint8_t pa;
-    uint8_t pb;
-
-    int tandy;
+    uint8_t	pa;
+    uint8_t	pb;
 } xtkbd_t;
 
 
@@ -351,10 +351,8 @@ kbd_poll(void *priv)
     if (key_queue_start != key_queue_end && !kbd->blocked) {
 	kbd->pa = key_queue[key_queue_start];
 	picint(2);
-#ifdef ENABLE_KEYBOARD_LOG
-	kbd_log("XTkbd: reading %02X from the key queue at %i\n",
-				kbd->pa, key_queue_start);
-#endif
+	DBGLOG(1, "XTkbd: reading %02X from the key queue at %i\n",
+					kbd->pa, key_queue_start);
 	key_queue_start = (key_queue_start + 1) & 0x0f;
 	kbd->blocked = 1;
     }
@@ -365,10 +363,9 @@ static void
 kbd_adddata(uint16_t val)
 {
     key_queue[key_queue_end] = val & 0xff;
-#ifdef ENABLE_KEYBOARD_LOG
-    kbd_log("XTkbd: %02X added to key queue at %i\n",
+
+    DBGLOG(1, "XTkbd: %02X added to key queue at %i\n",
 				val, key_queue_end);
-#endif
     key_queue_end = (key_queue_end + 1) & 0x0f;
 }
 
@@ -378,10 +375,9 @@ kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val))
 {
     uint8_t num_lock = 0, shift_states = 0;
 
-    if (!adddata)
-	return;
+    if (adddata == NULL) return;
 
-    keyboard_get_states(NULL, &num_lock, NULL);
+    num_lock = !!(keyboard_get_state() & KBD_FLAG_NUM);
     shift_states = keyboard_get_shift() & STATE_SHIFT_MASK;
 
     switch(val) {
@@ -443,9 +439,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
     if (port != 0x61) return;
 
     if (!(kbd->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
-#ifdef ENABLE_KEYBOARD_LOG
-	kbd_log("XTkbd: reset keyboard\n");
-#endif
+	DEBUG("XTkbd: reset keyboard\n");
 	key_queue_end = key_queue_start;
 	kbd_adddata(0xaa);
     }
@@ -475,16 +469,18 @@ kbd_read(uint16_t port, void *priv)
 {
     xtkbd_t *kbd = (xtkbd_t *)priv;
     uint8_t ret = 0xff;
+    int vid;
 
     switch (port) {
 	case 0x60:
-		if ((romset == ROM_IBMPC) && (kbd->pb & 0x80)) {
-			if (video_is_ega_vga())
-				ret = 0x4d;
-			  else if (video_is_mda())
-				ret = 0x7d;
+		if ((kbd->type == 0) && (kbd->pb & 0x80)) {
+			vid = video_type();
+			if (vid == VID_TYPE_SPEC)
+				ret = 0x4d;		/* EGA/VGA */
+			  else if (vid == VID_TYPE_MDA)
+				ret = 0x7d;		/* MDA/Hercules */
 			  else
-				ret = 0x6d;
+				ret = 0x6d;		/* CGA */
 		} else
 			ret = kbd->pa;
 		break;
@@ -494,41 +490,39 @@ kbd_read(uint16_t port, void *priv)
 		break;
 
 	case 0x62:
-		if (romset == ROM_IBMPC) {
+		if (kbd->type == 0) {
 			if (kbd->pb & 0x04)
 				ret = ((mem_size-64) / 32) & 0x0f;
 			else
 				ret = ((mem_size-64) / 32) >> 4;
+		} else if (kbd->pb & 0x08) {
+			vid = video_type();
+			if (vid == VID_TYPE_SPEC)
+				ret = 0x4;		/* EGA/VGA */
+			  else if (vid == VID_TYPE_MDA)
+				ret = 0x7;		/* MDA/Hercules */
+			  else
+				ret = 0x6;		/* CGA */
 		} else {
-			if (kbd->pb & 0x08) {
-				if (video_is_ega_vga())
-					ret = 0x4;
-				  else if (video_is_mda())
-					ret = 0x7;
-				  else
-					ret = 0x6;
-			} else {
-				/* LaserXT = Always 512k RAM;
-				   LaserXT/3 = Bit 0: set = 512k, clear = 256k. */
+			/* LaserXT = Always 512k RAM;
+			   LaserXT/3 = Bit 0: set = 512k, clear = 256k. */
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
-				if (romset == ROM_LXT3)
-					ret = (mem_size == 512) ? 0x0d : 0x0c;
-				else
+			if (kbd->type == 3)
+				ret = (mem_size == 512) ? 0x0d : 0x0c;
+			else
 #endif
-					ret = 0x0d;
-			}
+				ret = 0x0d;
 		}
+
 		ret |= (ppispeakon ? 0x20 : 0);
 
-		if (kbd->tandy)
+		if (kbd->type == 2)
 			ret |= (tandy1k_eeprom_read() ? 0x10 : 0);
 		break;
 
 	default:
-#ifdef ENABLE_KEYBOARD_LOG
-		kbd_log("XTkbd: bad read %04X\n", port);
-#endif
-		ret = 0xff;
+		ERRLOG("XTkbd: bad read %04X\n", port);
+		break;
     }
 
     return(ret);
@@ -554,20 +548,19 @@ kbd_init(const device_t *info)
 {
     xtkbd_t *kbd;
 
-    kbd = (xtkbd_t *)malloc(sizeof(xtkbd_t));
+    kbd = (xtkbd_t *)mem_alloc(sizeof(xtkbd_t));
     memset(kbd, 0x00, sizeof(xtkbd_t));
+    kbd->type = info->local;
 
     keyboard_set_table(scancode_xt);
-
-    if (info->local == 1) {
-	kbd->tandy = 1;
-    }
 
     keyboard_scan = 1;
 
     io_sethandler(0x0060, 4,
 		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, kbd);
+
     keyboard_send = kbd_adddata_ex;
+
     timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
 
     return(kbd);
@@ -594,22 +587,38 @@ kbd_close(void *priv)
 }
 
 
+const device_t keyboard_pc_device = {
+    "IBM PC Keyboard",
+    0,
+    0,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
 const device_t keyboard_xt_device = {
-    "PC/XT Keyboard",
+    "IBM PC/XT Keyboard",
     0,
-    0,
-    kbd_init,
-    kbd_close,
-    kbd_reset,
-    NULL, NULL, NULL, NULL
+    1,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
 const device_t keyboard_tandy_device = {
     "Tandy 1000 Keyboard",
     0,
-    1,
-    kbd_init,
-    kbd_close,
-    kbd_reset,
-    NULL, NULL, NULL, NULL
+    2,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t keyboard_xt_lxt3_device = {
+    "VTech Laser XT3 Keyboard",
+    0,
+    3,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
 };

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Voodoo Recompiler (32bit.)
  *
- * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.4	2018/05/16
+ * Version:	@(#)vid_voodoo_codegen_x86.h	1.0.5	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3278,7 +3278,7 @@ static inline void *voodoo_get_block(voodoo_t *voodoo, voodoo_params_t *params, 
         int c;
         int b = last_block[odd_even];
         voodoo_x86_data_t *data;
-        voodoo_x86_data_t *codegen_data = voodoo->codegen_data;
+        voodoo_x86_data_t *codegen_data = (voodoo_x86_data_t *)voodoo->codegen_data;
         
         for (c = 0; c < 8; c++)
         {
@@ -3336,7 +3336,7 @@ static void voodoo_codegen_init(voodoo_t *voodoo)
 #if defined WIN32 || defined _WIN32 || defined _WIN32
         voodoo->codegen_data = VirtualAlloc(NULL, sizeof(voodoo_x86_data_t) * BLOCK_NUM*2, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 #else
-        voodoo->codegen_data = malloc(sizeof(voodoo_x86_data_t) * BLOCK_NUM*2);
+        voodoo->codegen_data = mem_alloc(sizeof(voodoo_x86_data_t) * BLOCK_NUM*2);
 #endif
 
 #ifdef __linux__

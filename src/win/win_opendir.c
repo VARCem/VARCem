@@ -10,7 +10,7 @@
  *
  *		Based on old original code @(#)dir_win32.c 1.2.0 2007/04/19
  *
- * Version:	@(#)win_opendir.c	1.0.7	2018/05/18
+ * Version:	@(#)win_opendir.c	1.0.8	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -73,16 +73,16 @@ opendir(const wchar_t *name)
     DIR *p;
 
     /* Create a new control structure. */
-    p = (DIR *) malloc(sizeof(DIR));
+    p = (DIR *)mem_alloc(sizeof(DIR));
     if (p == NULL)
 	return(NULL);
     memset(p, 0x00, sizeof(DIR));
-    p->flags = (DIR_F_LOWER | DIR_F_SANE);
+    p->flags = DIR_F_LOWER | DIR_F_SANE;
     p->offset = 0;
     p->sts = 0;
 
     /* Create a work area. */
-    p->dta = (char *)malloc(sizeof(FINDATA));
+    p->dta = (char *)mem_alloc(sizeof(FINDATA));
     if (p->dta == NULL) {
 	free(p);
 	return(NULL);
@@ -117,7 +117,8 @@ closedir(DIR *p)
     if (p == NULL)
 	return(0);
 
-    _findclose(p->handle);
+    if (p->handle)
+	_findclose(p->handle);
 
     if (p->dta != NULL)
 	free(p->dta);
@@ -129,6 +130,7 @@ closedir(DIR *p)
 
 /*
  * Read the next entry from a directory.
+ *
  * Note that the DOS (FAT), Windows (FAT, FAT32) and Windows NTFS
  * file systems do not have a root directory containing the UNIX-
  * standard "." and ".." entries.  Many applications do assume
@@ -159,7 +161,7 @@ readdir(DIR *p)
 
 	default:	/* regular entry. */
 		wcsncpy(p->dent.d_name, ffp->name, MAXNAMLEN+1);
-		p->dent.d_reclen = (char) wcslen(p->dent.d_name);
+		p->dent.d_reclen = (unsigned short)wcslen(p->dent.d_name);
     }
 
     /* Read next entry. */
@@ -203,7 +205,7 @@ seekdir(DIR *p, long newpos)
     if (newpos == 0L) return;
 
     /* Nope.. read entries until we hit the right spot. */
-    pos = (short) newpos;
+    pos = (short)newpos;
     while (p->offset != pos) {
 	p->offset++;
 	if (FINDNEXT(p->handle, (FINDATA *)p->dta) < 0) {

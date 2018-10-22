@@ -8,7 +8,7 @@
  *
  *		Emulation of the AD1848 (Windows Sound System) CODEC.
  *
- * Version:	@(#)snd_ad1848.c	1.0.4	2018/05/06
+ * Version:	@(#)snd_ad1848.c	1.0.6	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <math.h>
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../timer.h"
 #include "../system/dma.h"

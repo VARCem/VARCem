@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.7	2018/05/06
+ * Version:	@(#)cpu.c	1.0.9	2018/09/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -47,6 +47,7 @@
 #include "../device.h"
 #include "../machines/machine.h"
 #include "../io.h"
+#include "x86.h"
 #include "x86_ops.h"
 #include "../mem.h"
 #include "../devices/system/pci.h"
@@ -132,9 +133,11 @@ int		cpu_waitstates;
 int		cpu_cache_int_enabled, cpu_cache_ext_enabled;
 int		cpu_pci_speed;
 
-int		is286,
+int		is186,
+		is286,
 		is386,
 		is486,
+		is_nec,
 		cpu_iscyrix,
 		israpidcad,
 		is_pentium;
@@ -243,13 +246,22 @@ cpu_set(void)
         CPUID    = cpu_s->cpuid_model;
         cpuspeed = cpu_s->speed;
         is8086   = (cpu_s->cpu_type > CPU_8088);
-        is286   = (cpu_s->cpu_type >= CPU_286);
+	is_nec	 = (cpu_s->cpu_type == CPU_NEC);
+	is186	 = (cpu_s->cpu_type == CPU_186);
+        is286    = (cpu_s->cpu_type >= CPU_286);
         is386    = (cpu_s->cpu_type >= CPU_386SX);
 	israpidcad = (cpu_s->cpu_type == CPU_RAPIDCAD);
         is486    = (cpu_s->cpu_type >= CPU_i486SX) || (cpu_s->cpu_type == CPU_486SLC || cpu_s->cpu_type == CPU_486DLC || cpu_s->cpu_type == CPU_RAPIDCAD);
         is_pentium= (cpu_s->cpu_type >= CPU_WINCHIP);
         hasfpu   = (cpu_s->cpu_type >= CPU_i486DX) || (cpu_s->cpu_type == CPU_RAPIDCAD);
         cpu_iscyrix = (cpu_s->cpu_type == CPU_486SLC || cpu_s->cpu_type == CPU_486DLC || cpu_s->cpu_type == CPU_Cx486S || cpu_s->cpu_type == CPU_Cx486DX || cpu_s->cpu_type == CPU_Cx5x86 || cpu_s->cpu_type == CPU_Cx6x86 || cpu_s->cpu_type == CPU_Cx6x86MX || cpu_s->cpu_type == CPU_Cx6x86L || cpu_s->cpu_type == CPU_CxGX1);
+DEBUG("CPU: manuf=%d model=%d, cpuid=%08lx speed=%lu\n",
+		cpu_manufacturer, cpu_effective, CPUID, cpuspeed);
+DEBUG("     8086=%d nec=%d 186=%d 286=%d 386=%d cad=%d 486=%d pent=%d\n",
+	is8086, is_nec, is186, is286, is386, israpidcad, is486, is_pentium);
+DEBUG("     hasfpu=%d cyrix=%d\n",
+	hasfpu, cpu_iscyrix);
+
         cpu_16bitbus = (cpu_s->cpu_type == CPU_286 || cpu_s->cpu_type == CPU_386SX || cpu_s->cpu_type == CPU_486SLC);
         if (cpu_s->multi) 
            cpu_busspeed = cpu_s->rspeed / cpu_s->multi;
@@ -287,16 +299,12 @@ cpu_set(void)
                 pci_nonburst_time = 4;
                 pci_burst_time = 1;
         }
-        pclog("PCI burst=%i nonburst=%i\n", pci_burst_time, pci_nonburst_time);
 
         if (cpu_iscyrix)
            io_sethandler(0x0022, 0x0002, cyrix_read, NULL, NULL, cyrix_write, NULL, NULL, NULL);
         else
            io_removehandler(0x0022, 0x0002, cyrix_read, NULL, NULL, cyrix_write, NULL, NULL, NULL);
         
-        pclog("hasfpu - %i\n",hasfpu);
-        pclog("is486 - %i  %i\n",is486,cpu_s->cpu_type);
-
 #ifdef USE_DYNAREC
         x86_setopcodes(ops_386, ops_386_0f, dynarec_ops_386, dynarec_ops_386_0f);
 #else
@@ -399,6 +407,8 @@ cpu_set(void)
         {
                 case CPU_8088:
                 case CPU_8086:
+		case CPU_NEC:
+		case CPU_186:
                 break;
                 
                 case CPU_286:
@@ -1336,7 +1346,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU; /*FPU*/
                 }
                 else
-                   EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
                 case CPU_iDX4:
@@ -1354,7 +1364,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU | CPUID_VME;
                 }
                 else
-                   EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
                 case CPU_Am486SX:
@@ -1371,7 +1381,7 @@ cpu_CPUID(void)
                         EBX = ECX = EDX = 0; /*No FPU*/
                 }
                 else
-                   EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
                 case CPU_Am486DX:
@@ -1389,7 +1399,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU; /*FPU*/
                 }
                 else
-                   EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
                 
                 case CPU_WINCHIP:
@@ -1420,7 +1430,7 @@ cpu_CPUID(void)
                                 EDX |= CPUID_MMX;
                 }
                 else
-                   EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
                 case CPU_PENTIUM:
@@ -1438,7 +1448,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B;
                 }
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
@@ -1457,7 +1467,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B;
                 }
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
                 case CPU_5K86:
@@ -1509,7 +1519,7 @@ cpu_CPUID(void)
 			EDX = 0x10040120;
 		}
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
                 case CPU_K6:
@@ -1571,7 +1581,7 @@ cpu_CPUID(void)
 			EDX = 0x444D416E;
 		}
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 #endif
 
@@ -1590,7 +1600,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B | CPUID_MMX;
                 }
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
 
@@ -1609,7 +1619,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU;
                 }
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
 
@@ -1628,7 +1638,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU | CPUID_CMPXCHG8B;
                 }
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
 
@@ -1647,9 +1657,8 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B;
                 }
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
-
 
 
                 case CPU_Cx6x86MX:
@@ -1667,7 +1676,7 @@ cpu_CPUID(void)
                         EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B | CPUID_CMOV | CPUID_MMX;
                 }
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
 #ifdef DEV_BRANCH
@@ -1690,7 +1699,7 @@ cpu_CPUID(void)
 		{
 		}
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 
                 /* case CPU_PENTIUM2:
@@ -1714,7 +1723,7 @@ cpu_CPUID(void)
 			EDX = 0x0C040843;
 		}
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break; */
 
                 case CPU_PENTIUM2D:
@@ -1738,7 +1747,7 @@ cpu_CPUID(void)
 			EDX = 0x0C040844;
 		}
                 else
-                        EAX = 0;
+			EAX = EBX = ECX = EDX = 0;
                 break;
 #endif
 #endif
@@ -1746,7 +1755,7 @@ cpu_CPUID(void)
         }
 }
 
-void cpu_RDMSR()
+void cpu_RDMSR(void)
 {
         switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type)
         {
@@ -1807,9 +1816,6 @@ void cpu_RDMSR()
                         EDX = sfmask >> 32;
                         break;
 			default:
-#ifndef RELEASE_BUILD
-			pclog("Invalid MSR: %08X\n", ECX);
-#endif
 			x86gpf(NULL, 0);
 			break;
                 }
@@ -1960,9 +1966,6 @@ void cpu_RDMSR()
 			break;
 			default:
 i686_invalid_rdmsr:
-#ifndef RELEASE_BUILD
-			pclog("Invalid MSR: %08X\n", ECX);
-#endif
 			x86gpf(NULL, 0);
 			break;
                 }
@@ -1972,7 +1975,7 @@ i686_invalid_rdmsr:
         }
 }
 
-void cpu_WRMSR()
+void cpu_WRMSR(void)
 {
         switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type)
         {
@@ -2142,9 +2145,6 @@ void cpu_WRMSR()
 			break;			
 			default:
 i686_invalid_wrmsr:
-#ifndef RELEASE_BUILD
-			pclog("Invalid MSR: %08X\n", ECX);
-#endif
 			x86gpf(NULL, 0);
 			break;
                 }
@@ -2283,7 +2283,7 @@ cpu_update_waitstates(void)
                 cpu_cycles_write_l = (cpu_16bitbus ? 2 : 1) * cpu_s->mem_write_cycles;
         }
         if (is486)
-                cpu_prefetch_cycles *= 4;
+		cpu_prefetch_cycles = (cpu_prefetch_cycles * 11) / 16;
         cpu_mem_prefetch_cycles = cpu_prefetch_cycles;
         if (cpu_s->rspeed <= 8000000)
                 cpu_rom_prefetch_cycles = cpu_mem_prefetch_cycles;

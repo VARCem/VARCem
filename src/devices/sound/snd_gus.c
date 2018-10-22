@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.5	2018/05/06
+ * Version:	@(#)snd_gus.c	1.0.7	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../timer.h"
@@ -1101,11 +1102,11 @@ gus_init(const device_t *info)
 {
     int c;
     double out = 1.0;
-    gus_t *dev = malloc(sizeof(gus_t));
+    gus_t *dev = (gus_t *)mem_alloc(sizeof(gus_t));
 
     memset(dev, 0x00, sizeof(gus_t));
 
-    dev->ram = malloc(1 << 20);
+    dev->ram = (uint8_t *)mem_alloc(1 << 20);
     memset(dev->ram, 0x00, 1 << 20);
 
     for (c = 0; c < 32; c++) {
@@ -1119,7 +1120,7 @@ gus_init(const device_t *info)
 	out /= 1.002709201;		/* 0.0235 dB Steps */
     }
 
-//   pclog("GUS: top volume %f %f %f %f\n",vol16bit[4095],vol16bit[3800],vol16bit[3000],vol16bit[2048]);
+//   DEBUG("GUS: top volume %f %f %f %f\n",vol16bit[4095],vol16bit[3800],vol16bit[3000],vol16bit[2048]);
     dev->voices=14;
 
     dev->samp_timer = dev->samp_latch = (int64_t)(TIMER_USEC * (1000000.0 / 44100.0));

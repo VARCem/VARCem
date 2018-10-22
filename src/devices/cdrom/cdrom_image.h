@@ -8,10 +8,7 @@
  *
  *		Definitions for the CD-ROM image file handlers.
  *
- *		This header file lists the functions provided by
- *		various platform specific cdrom-ioctl files.
- *
- * Version:	@(#)cdrom_image.h	1.0.3	2018/04/10
+ * Version:	@(#)cdrom_image.h	1.0.7	2018/10/17
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		RichardG, <richardg867@gmail.com>
@@ -48,12 +45,10 @@ extern "C" {
 extern int	cdrom_image_do_log;
 
 
-extern int	image_open(uint8_t id, wchar_t *fn);
-extern void	image_reset(uint8_t id);
+extern void	cdrom_image_log(int level, const char *fmt, ...);
 
-extern void	image_close(uint8_t id);
-
-extern void	cdrom_set_null_handler(uint8_t id);
+extern int	image_open(cdrom_t *dev, wchar_t *fn);
+extern void	image_reset(cdrom_t *dev);
 
 #ifdef __cplusplus
 }

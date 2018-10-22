@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.5	2018/04/01
+ * Version:	@(#)keyboard.h	1.0.7	2018/09/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,11 +40,11 @@
 # define EMU_KEYBOARD_H
 
 
-typedef struct {
-    int	mk[9];
-    int	brk[9];
-} scancode;
-
+/* Keyboard State bits. */
+#define KBD_FLAG_CAPS	0x01			/* CAPS LOCK currently on */
+#define KBD_FLAG_NUM	0x02			/* NUM LOCK currently on */
+#define KBD_FLAG_SCROLL	0x04			/* SCROLL LOCK currently on */
+#define KBD_FLAG_PAUSE	0x10			/* PAUSE currently on */
 
 #define STATE_SHIFT_MASK	0x22
 #define STATE_RSHIFT		0x20
@@ -62,55 +62,66 @@ typedef struct {
 extern "C" {
 #endif
 
-extern uint8_t	keyboard_mode;
-extern int	keyboard_scan;
-extern int64_t	keyboard_delay;
+typedef struct {
+    int	mk[9];
+    int	brk[9];
+} scancode;
 
-extern void	(*keyboard_send)(uint16_t val);
-extern void	kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val));
 
-extern const scancode scancode_xt[512];
+extern uint8_t		keyboard_mode;
+extern int		keyboard_scan;
+extern int64_t		keyboard_delay;
 
-extern uint8_t	keyboard_set3_flags[512];
-extern uint8_t	keyboard_set3_all_repeat;
-extern uint8_t	keyboard_set3_all_break;
-extern int	mouse_queue_start, mouse_queue_end;
-extern int	mouse_scan;
+extern uint8_t		keyboard_set3_flags[512];
+extern uint8_t		keyboard_set3_all_repeat;
+extern uint8_t		keyboard_set3_all_break;
+extern int		mouse_queue_start, mouse_queue_end;
+extern int		mouse_scan;
+
+extern const scancode	scancode_xt[512];
 
 #ifdef EMU_DEVICE_H
+extern const device_t	keyboard_pc_device;
 extern const device_t	keyboard_xt_device;
+extern const device_t	keyboard_xt_lxt3_device;
 extern const device_t	keyboard_tandy_device;
 extern const device_t	keyboard_at_device;
 extern const device_t	keyboard_at_ami_device;
 extern const device_t	keyboard_at_toshiba_device;
 extern const device_t	keyboard_ps2_device;
+extern const device_t	keyboard_ps2_xi8088_device;
 extern const device_t	keyboard_ps2_ami_device;
 extern const device_t	keyboard_ps2_mca_device;
 extern const device_t	keyboard_ps2_mca_2_device;
 extern const device_t	keyboard_ps2_quadtel_device;
+extern const device_t	keyboard_ps2_pci_device;
+extern const device_t	keyboard_ps2_ami_pci_device;
 #endif
 
-extern void	kbd_log(const char *fmt, ...);
+extern void	(*keyboard_send)(uint16_t val);
+
+
+extern void	kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val));
+
+extern void	kbd_log(int level, const char *fmt, ...);
 extern void	keyboard_init(void);
+extern void	keyboard_reset(void);
 extern void	keyboard_close(void);
 extern void	keyboard_set_table(const scancode *ptr);
 extern void	keyboard_poll_host(void);
 extern void	keyboard_process(void);
 extern uint16_t	keyboard_convert(int ch);
 extern void	keyboard_input(int down, uint16_t scan);
-extern void	keyboard_update_states(uint8_t cl, uint8_t nl, uint8_t sl);
 extern uint8_t	keyboard_get_shift(void);
-extern void	keyboard_get_states(uint8_t *cl, uint8_t *nl, uint8_t *sl);
-extern void	keyboard_set_states(uint8_t cl, uint8_t nl, uint8_t sl);
+extern uint8_t	keyboard_get_state(void);
+extern void	keyboard_set_state(uint8_t);
 extern int	keyboard_recv(uint16_t key);
-extern void	keyboard_send_scan(uint8_t val);
-extern void	keyboard_send_cad(void);
-extern void	keyboard_send_cae(void);
-extern void	keyboard_send_cab(void);
+extern void	keyboard_cad(void);
+extern void	keyboard_cae(void);
+extern void	keyboard_cab(void);
 extern int	keyboard_isfsexit(void);
 extern int	keyboard_ismsexit(void);
 
-extern void	keyboard_at_reset(void);
 extern void	keyboard_at_adddata_keyboard_raw(uint8_t val);
 extern void	keyboard_at_adddata_mouse(uint8_t val);
 extern void	keyboard_at_set_mouse(void (*mouse_write)(uint8_t val,void *), void *);

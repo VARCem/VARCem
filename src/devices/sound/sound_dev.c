@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.6	2018/05/06
+ * Version:	@(#)sound_dev.c	1.0.10	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,21 +43,15 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "sound.h"
 
 
-typedef struct {
-    const char		*name;
-    const char		*internal_name;
-    const device_t	*device;
-} sound_t;
-
-
 #ifdef ENABLE_SOUND_DEV_LOG
-int		sound_dev_do_log = ENABLE_SOUND_DEV_LOG;
+int	sound_card_do_log = ENABLE_SOUND_DEV_LOG;
 #endif
 
 
@@ -66,6 +60,7 @@ extern const device_t adlib_device;
 extern const device_t adlib_mca_device;
 extern const device_t adgold_device;
 extern const device_t es1371_device;
+extern const device_t sbpci128_device;
 extern const device_t cms_device;
 extern const device_t gus_device;
 #if defined(DEV_BRANCH) && defined(USE_PAS16)
@@ -82,53 +77,63 @@ extern const device_t sb_16_device;
 extern const device_t sb_awe32_device;
 extern const device_t ssi2001_device;
 extern const device_t wss_device;
+extern const device_t ncr_business_audio_device;
 
 
-static const sound_t	sound_cards[] = {
-    {"Disabled",			"none",		NULL		},
-    {"Internal",			"internal",	NULL		},
-    {"[ISA] Adlib",			"adlib",	&adlib_device	},
-    {"[ISA] Adlib Gold",		"adlibgold",	&adgold_device	},
-    {"[ISA] Creative Music System",	"cms",		&cms_device	},
-    {"[ISA] Gravis Ultra Sound",	"gus",		&gus_device	},
-    {"[ISA] Innovation SSI-2001",	"ssi2001",	&ssi2001_device	},
-    {"[ISA] Sound Blaster 1.0",		"sb",		&sb_1_device	},
-    {"[ISA] Sound Blaster 1.5",		"sb1.5",	&sb_15_device	},
-    {"[ISA] Sound Blaster 2.0",		"sb2.0",	&sb_2_device	},
-    {"[ISA] Sound Blaster Pro v1",	"sbprov1",	&sb_pro_v1_device},
-    {"[ISA] Sound Blaster Pro v2",	"sbprov2",	&sb_pro_v2_device},
-    {"[ISA] Sound Blaster 16",		"sb16",		&sb_16_device	},
-    {"[ISA] Sound Blaster AWE32",	"sbawe32",	&sb_awe32_device},
+static const struct {
+    const char		*internal_name;
+    const device_t	*device;
+} sound_cards[] = {
+    { "none",		NULL				},
+    { "internal",	NULL				},
+
+    { "adlib",		&adlib_device			},
+    { "adlibgold",	&adgold_device			},
+    { "cms",		&cms_device			},
+    { "gus",		&gus_device			},
+    { "ssi2001",	&ssi2001_device			},
+    { "sb",		&sb_1_device			},
+    { "sb1.5",		&sb_15_device			},
+    { "sb2.0",		&sb_2_device			},
+    { "sbprov1",	&sb_pro_v1_device		},
+    { "sbprov2",	&sb_pro_v2_device		},
+    { "sb16",		&sb_16_device			},
+    { "sbawe32",	&sb_awe32_device		},
 #if defined(DEV_BRANCH) && defined(USE_PAS16)
-    {"[ISA] Pro Audio Spectrum 16",	"pas16",	&pas16_device	},
+    { "pas16",		&pas16_device			},
 #endif
-    {"[ISA] Windows Sound System",	"wss",		&wss_device	},
-    {"[MCA] Adlib",			"adlib_mca",	&adlib_mca_device},
-    {"[MCA] Sound Blaster MCV",		"sbmcv",	&sb_mcv_device	},
-    {"[MCA] Sound Blaster Pro MCV",	"sbpromcv",	&sb_pro_mcv_device},
-    {"[PCI] Ensoniq AudioPCI (ES1371)",	"es1371",	&es1371_device	},
-    {"[PCI] Sound Blaster PCI 128",	"sbpci128",	&es1371_device	},
-    {NULL,				NULL,		NULL		}
+    { "wss",		&wss_device			},
+
+    { "adlib_mca",	&adlib_mca_device		},
+    { "ncraudio",	&ncr_business_audio_device	},
+    { "sbmcv",		&sb_mcv_device			},
+    { "sbpromcv",	&sb_pro_mcv_device		},
+
+    { "es1371",		&es1371_device			},
+    { "sbpci128",	&sbpci128_device		},
+    { NULL,		NULL				}
 };
 
 
+#ifdef _LOGGING
 void
-snddev_log(const char *fmt, ...)
+sound_card_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SOUND_DEV_LOG
+# ifdef ENABLE_SOUND_DEV_LOG
     va_list ap;
 
-    if (sound_dev_do_log) {
+    if (sound_card_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
+# endif
 }
+#endif
 
 
 void
-snddev_reset(void)
+sound_card_reset(void)
 {
     if (sound_cards[sound_card].device != NULL)
 	device_add(sound_cards[sound_card].device);
@@ -148,7 +153,10 @@ sound_card_available(int card)
 const char *
 sound_card_getname(int card)
 {
-    return(sound_cards[card].name);
+    if (sound_cards[card].device != NULL)
+	return(sound_cards[card].device->name);
+
+    return(NULL);
 }
 
 

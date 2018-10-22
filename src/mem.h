@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.5	2018/05/09
+ * Version:	@(#)mem.h	1.0.11	2018/10/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -58,8 +58,8 @@
 #define MEM_WRITE_MASK		0x0f
 
 
-typedef struct _mem_mapping_ {
-    struct _mem_mapping_ *prev, *next;
+typedef struct _memmap_ {
+    struct _memmap_ *prev, *next;
 
     int		enable;
 
@@ -77,8 +77,10 @@ typedef struct _mem_mapping_ {
 
     uint32_t	flags;
 
-    void	*p;
-} mem_mapping_t;
+    void	*p;		/* backpointer to mapping or device */
+    void	*p2;		/* FIXME: temporary hack for Headland --FvK */
+    void	*dev;		/* backpointer to memory device */
+} mem_map_t;
 
 typedef struct _page_ {
     void	(*write_b)(uint32_t addr, uint8_t val, struct _page_ *p);
@@ -101,7 +103,6 @@ extern uint8_t		*ram;
 extern uint32_t		rammask;
 
 extern uint8_t		*rom;
-extern uint8_t		romext[32768];
 extern uint32_t		biosmask;
 
 extern int		readlookup[256],
@@ -114,12 +115,14 @@ extern uintptr_t	*writelookup2;
 extern int		writelnext;
 extern uint32_t		ram_mapped_addr[64];
 
-extern mem_mapping_t	bios_mapping[8],
-			bios_high_mapping[8],
-			romext_mapping,
+extern mem_map_t	base_mapping,
 			ram_low_mapping,
 			ram_mid_mapping,
-			ram_high_mapping;
+			ram_remapped_mapping,
+			ram_high_mapping,
+			bios_mapping[8],
+			bios_high_mapping[8],
+			romext_mapping;
 
 extern uint32_t		mem_logical_addr;
 
@@ -130,12 +133,9 @@ extern uint32_t		get_phys_virt,get_phys_phys;
 
 extern int		shadowbios,
 			shadowbios_write;
-extern int		readlnum,
-			writelnum;
 
 extern int		nopageerrors;
 extern int		memspeed[11];
-extern uint8_t		isram[0x10000];
 
 extern int		mmu_perm;
 
@@ -174,7 +174,10 @@ extern uint32_t	mmutranslatereal(uint32_t addr, int rw);
 extern void	addreadlookup(uint32_t virt, uint32_t phys);
 extern void	addwritelookup(uint32_t virt, uint32_t phys);
 
-extern void mem_mapping_add(mem_mapping_t *mapping,
+
+extern void	mem_map_del(mem_map_t *);
+
+extern void	mem_map_add(mem_map_t *,
                     uint32_t base, 
                     uint32_t size, 
                     uint8_t  (*read_b)(uint32_t addr, void *p),
@@ -187,7 +190,7 @@ extern void mem_mapping_add(mem_mapping_t *mapping,
                     uint32_t flags,
                     void *p);
 
-extern void mem_mapping_set_handler(mem_mapping_t *mapping,
+extern void	mem_map_set_handler(mem_map_t *,
                     uint8_t  (*read_b)(uint32_t addr, void *p),
                     uint16_t (*read_w)(uint32_t addr, void *p),
                     uint32_t (*read_l)(uint32_t addr, void *p),
@@ -195,13 +198,14 @@ extern void mem_mapping_set_handler(mem_mapping_t *mapping,
                     void (*write_w)(uint32_t addr, uint16_t val, void *p),
                     void (*write_l)(uint32_t addr, uint32_t val, void *p));
 
-extern void	mem_mapping_set_p(mem_mapping_t *mapping, void *p);
+extern void	mem_map_set_p(mem_map_t *, void *p);
 
-extern void	mem_mapping_set_addr(mem_mapping_t *mapping,
-				     uint32_t base, uint32_t size);
-extern void	mem_mapping_set_exec(mem_mapping_t *mapping, uint8_t *exec);
-extern void	mem_mapping_disable(mem_mapping_t *mapping);
-extern void	mem_mapping_enable(mem_mapping_t *mapping);
+extern void	mem_map_set_dev(mem_map_t *, void *dev);
+
+extern void	mem_map_set_addr(mem_map_t *, uint32_t base, uint32_t size);
+extern void	mem_map_set_exec(mem_map_t *, uint8_t *exec);
+extern void	mem_map_disable(mem_map_t *);
+extern void	mem_map_enable(mem_map_t *);
 
 extern void	mem_set_mem_state(uint32_t base, uint32_t size, int state);
 
@@ -246,11 +250,11 @@ extern void     mmu_invalidate(uint32_t addr);
 extern void	mem_a20_recalc(void);
 
 extern void	mem_add_bios(void);
+extern void	mem_add_upper_bios(void);
 
 extern void	mem_init(void);
 extern void	mem_reset(void);
-extern void	mem_remap_top_256k(void);
-extern void	mem_remap_top_384k(void);
+extern void	mem_remap_top(int kb);
 
 extern uint8_t	port_92_read(uint16_t port, void *priv);
 extern void	port_92_write(uint16_t port, uint8_t val, void *priv);

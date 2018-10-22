@@ -8,7 +8,7 @@
  *
  *		Misc functions that do not fit anywhere else.
  *
- * Version:	@(#)misc.c	1.0.1	2018/05/09
+ * Version:	@(#)misc.c	1.0.3	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -50,27 +50,9 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "emu.h"
+#undef malloc
 #include "plat.h"
-
-
-const wchar_t *
-get_string(int id)
-{
-    const wchar_t *str = NULL;
-    const string_t *tbl;
-
-    tbl = plat_strings;
-    while(tbl->str != NULL) {
-	if (tbl->id == id) {
-		str = tbl->str;
-		break;
-	}
-
-	tbl++;
-    }
-
-    return(str);
-}
+#include "ui/ui.h"
 
 
 /* Grab the value from a string. */
@@ -85,3 +67,27 @@ get_val(const char *str)
 
     return(l);
 }
+
+
+#ifndef USE_STANDARD_MALLOC
+/* Safe version of malloc(3) that catches NULL returns. */
+void *
+mem_alloc(size_t sz)
+{
+    void *ptr = malloc(sz);
+
+    if (ptr == NULL) {
+	ui_msgbox(MBX_ERROR|MBX_FATAL, (wchar_t *)IDS_ERR_NOMEM);
+
+	/* Try to write to the logfile. This may not work anymore. */
+	ERRLOG("FATAL: system out of memory!\n");
+	pclog(-1, NULL);
+
+	/* Now exit - this will (hopefully..) not return. */
+	exit(-1);
+	/*NOTREACHED*/
+    }
+
+    return(ptr);
+}
+#endif

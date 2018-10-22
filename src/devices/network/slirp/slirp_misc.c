@@ -73,9 +73,7 @@ redir_x(inaddr, start_port, display, screen)
 
 #ifndef HAVE_INET_ATON
 int
-inet_aton(cp, ia)
-	const char *cp;
-	struct in_addr *ia;
+inet_aton(const char *cp, struct in_addr *ia)
 {
 	u_int32_t addr = inet_addr(cp);
 	if (addr == 0xffffffff)
@@ -86,14 +84,12 @@ inet_aton(cp, ia)
 #endif
 
 
-extern void	pclog(char *fmt, ...);
-
-
+extern void pclog(int, const char *, ...);
 /*
  * Get our IP address and put it in our_addr
  */
 void
-getouraddr()
+getouraddr(void)
 {
 	char buff[512];
 	struct hostent *he = NULL;
@@ -122,7 +118,7 @@ getouraddr()
         our_addr.s_addr = loopback_addr.s_addr;
 #endif
 #undef ANCIENT
-    pclog(" Our IP address: %s (%s)\n", inet_ntoa(our_addr), buff);
+    pclog(1, " Our IP address: %s (%s)\n", inet_ntoa(our_addr), buff);
 }
 
 //#if SIZEOF_CHAR_P == 8
@@ -134,9 +130,7 @@ struct quehead_32 {
 };
 
 inline void
-insque_32(a, b)
-	void *a;
-	void *b;
+insque_32(void *a, void *b)
 {
 	register struct quehead_32 *element = (struct quehead_32 *) a;
 	register struct quehead_32 *head = (struct quehead_32 *) b;
@@ -148,8 +142,7 @@ insque_32(a, b)
 }
 
 inline void
-remque_32(a)
-	void *a;
+remque_32(void *a)
 {
 	register struct quehead_32 *element = (struct quehead_32 *) a;
 	((struct quehead_32 *)(element->qh_link))->qh_rlink = element->qh_rlink;
@@ -166,8 +159,7 @@ struct quehead {
 };
 
 void
-insque(a, b)
-	void *a, *b;
+insque(void *a, void *b)
 {
 	register struct quehead *element = (struct quehead *) a;
 	register struct quehead *head = (struct quehead *) b;
@@ -179,8 +171,7 @@ insque(a, b)
 }
 
 void
-remque(a)
-     void *a;
+remque(void *a)
 {
   register struct quehead *element = (struct quehead *) a;
   ((struct quehead *)(element->qh_link))->qh_rlink = element->qh_rlink;
@@ -193,12 +184,7 @@ remque(a)
 
 
 int
-add_exec(ex_ptr, do_pty, exec, addr, port)
-	struct ex_list **ex_ptr;
-	int do_pty;
-	char *exec;
-	int addr;
-	int port;
+add_exec(struct ex_list **ex_ptr, int do_pty, char *exec, int addr, int port)
 {
 	struct ex_list *tmp_ptr;
 	
@@ -224,8 +210,7 @@ add_exec(ex_ptr, do_pty, exec, addr, port)
  * For systems with no strerror
  */
 char *
-SLIRPstrerror(error)
-	int error;
+SLIRPstrerror(int error)
 {
 	if (error < sys_nerr)
 	   return sys_errlist[error];
@@ -239,10 +224,7 @@ SLIRPstrerror(error)
 #ifdef _WIN32
 
 int
-fork_exec(so, ex, do_pty)
-	struct SLIRPsocket *so;
-	char *ex;
-	int do_pty;
+fork_exec(struct SLIRPsocket *so, char *ex, int do_pty)
 {
     /* not implemented */
     return 0;
@@ -251,8 +233,7 @@ fork_exec(so, ex, do_pty)
 #else
 
 int
-slirp_openpty(amaster, aslave)
-     int *amaster, *aslave;
+slirp_openpty(int *amaster, int *aslave)
 {
 	register int master, slave;
 
@@ -327,10 +308,7 @@ slirp_openpty(amaster, aslave)
  * do_ptr = 2   Fork/exec using pty
  */
 int
-fork_exec(so, ex, do_pty)
-	struct SLIRPsocket *so;
-	char *ex;
-	int do_pty;
+fork_exec(struct SLIRPsocket *so, char *ex, int do_pty)
 {
 	int s;
 	struct sockaddr_in addr;
@@ -499,8 +477,7 @@ char * strdup(char *str)
 
 #if 0
 void
-snooze_hup(num)
-	int num;
+snooze_hup(int num)
 {
 	int s, ret;
 #ifndef NO_UNIX_SOCKETS
@@ -541,7 +518,7 @@ snooze_hup(num)
 	
 	
 void
-snooze()
+snooze(void)
 {
 	sigset_t s;
 	int i;
@@ -566,8 +543,7 @@ snooze()
 }
 
 void
-relay(s)
-	int s;
+relay(int s)
 {
 	char buf[8192];
 	int n;
@@ -699,8 +675,7 @@ lprint(va_alist) va_dcl
 }
 
 void
-add_emu(buff)
-	char *buff;
+add_emu(char *buff)
 {
 	u_int lport, fport;
 	u_int8_t tos = 0, emu = 0;
@@ -793,10 +768,7 @@ add_emu(buff)
  */
 
 int
-vsprintf_len(string, format, args)
-	char *string;
-	const char *format;
-	va_list args;
+vsprintf_len(char *string, const char *format, va_list args)
 {
 	vsprintf(string, format, args);
 	return strlen(string);
@@ -826,8 +798,7 @@ sprintf_len(va_alist) va_dcl
 #endif
 
 void
-u_sleep(usec)
-	int usec;
+u_sleep(int usec)
 {
 	struct timeval t;
 	fd_set fdset;
@@ -845,8 +816,7 @@ u_sleep(usec)
  */
 
 void
-fd_nonblock(fd)
-	int fd;
+fd_nonblock(int fd)
 {
 #if defined USE_FIONBIO && defined FIONBIO
 	ioctlsockopt_t opt = 1;
@@ -862,8 +832,7 @@ fd_nonblock(fd)
 }
 
 void
-fd_block(fd)
-	int fd;
+fd_block(int fd)
 {
 #if defined USE_FIONBIO && defined FIONBIO
 	ioctlsockopt_t opt = 0;

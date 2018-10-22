@@ -12,7 +12,7 @@
  *		Windows and UNIX systems, with support for FTDI and Prolific
  *		USB ports. Support for these has been removed.
  *
- * Version:	@(#)win_serial.c	1.0.3	2018/05/06
+ * Version:	@(#)win_serial.c	1.0.4	2018/10/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,8 +54,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define PLAT_SERIAL_C
-#include "../../emu.h"
-#include "../../plat.h"
+#include "../emu.h"
+#include "../plat.h"
 #include "../devices/ports/serial.h"
 
 
@@ -417,7 +417,7 @@ bhtty_open(char *port, int tmo)
     DWORD d;
 
     /* First things first... create a control block. */
-    if ((pp = (BHTTY *)malloc(sizeof(BHTTY))) == NULL) {
+    if ((pp = (BHTTY *)mem_alloc(sizeof(BHTTY))) == NULL) {
 	pclog("%s: out of memory!\n", port);
 	return(NULL);
     }

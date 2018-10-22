@@ -8,7 +8,7 @@
  *
  *		Implement I/O ports and their operations.
  *
- * Version:	@(#)io.c	1.0.2	2018/05/04
+ * Version:	@(#)io.c	1.0.3	2018/09/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -70,12 +70,12 @@ static io_t	*io[NPORTS],
   
 
 #ifdef IO_CATCH
-static uint8_t null_inb(uint16_t addr, void *priv) { pclog("IO: read(%04x)\n"); return(0xff); }
-static uint16_t null_inw(uint16_t addr, void *priv) { pclog("IO: readw(%04x)\n"); return(0xffff); }
-static uint32_t null_inl(uint16_t addr, void *priv) { pclog("IO: readl(%04x)\n"); return(0xffffffff); }
-static void null_outb(uint16_t addr, uint8_t val, void *priv) { pclog("IO: write(%04x, %02x)\n", val); }
-static void null_outw(uint16_t addr, uint16_t val, void *priv) { pclog("IO: writew(%04x, %04x)\n", val); }
-static void null_outl(uint16_t addr, uint32_t val, void *priv) { pclog("IO: writel(%04x, %08lx)\n", val); }
+static uint8_t null_inb(uint16_t addr, void *priv) { DEBUG("IO: read(%04x)\n"); return(0xff); }
+static uint16_t null_inw(uint16_t addr, void *priv) { DEBUG("IO: readw(%04x)\n"); return(0xffff); }
+static uint32_t null_inl(uint16_t addr, void *priv) { DEBUG("IO: readl(%04x)\n"); return(0xffffffff); }
+static void null_outb(uint16_t addr, uint8_t val, void *priv) { DEBUG("IO: write(%04x, %02x)\n", val); }
+static void null_outw(uint16_t addr, uint16_t val, void *priv) { DEBUG("IO: writew(%04x, %04x)\n", val); }
+static void null_outl(uint16_t addr, uint32_t val, void *priv) { DEBUG("IO: writel(%04x, %08lx)\n", val); }
 #endif
 
 
@@ -85,14 +85,14 @@ io_init(void)
     io_t *p, *q;
     int c;
 
-    pclog("IO: initializing\n");
+    INFO("IO: initializing\n");
     if (! initialized) {
-	for (c=0; c<NPORTS; c++)
+	for (c = 0; c < NPORTS; c++)
 		io[c] = io_last[c] = NULL;
 	initialized = 1;
     }
 
-    for (c=0; c<NPORTS; c++) {
+    for (c = 0; c < NPORTS; c++) {
         if (io_last[c] != NULL) {
 		/* Port has at least one handler. */
 		p = io_last[c];
@@ -106,7 +106,7 @@ io_init(void)
 
 #ifdef IO_CATCH
 	/* Set up a default (catch) handler. */
-	p = (io_t *)malloc(sizeof(io_t));
+	p = (io_t *)mem_alloc(sizeof(io_t));
 	memset(p, 0x00, sizeof(io_t));
 	io[c] = io_last[c] = p;
 	p->next = NULL;
@@ -138,9 +138,9 @@ io_sethandler(uint16_t base, int size,
     io_t *p, *q = NULL;
     int c;
 
-    for (c=0; c<size; c++) {
+    for (c = 0; c < size; c++) {
 	p = io_last[base + c];
-	q = (io_t *)malloc(sizeof(io_t));
+	q = (io_t *)mem_alloc(sizeof(io_t));
 	memset(q, 0x00, sizeof(io_t));
 	if (p != NULL) {
 		p->next = q;
@@ -175,7 +175,7 @@ io_removehandler(uint16_t base, int size,
     io_t *p;
     int c;
 
-    for (c=0; c<size; c++) {
+    for (c = 0; c < size; c++) {
 	p = io[base + c];
 	if (p == NULL)
 		continue;
@@ -217,9 +217,9 @@ io_sethandler_interleaved(uint16_t base, int size,
     int c;
 
     size <<= 2;
-    for (c=0; c<size; c+=2) {
+    for (c = 0; c < size; c += 2) {
 	p = last_handler(base + c);
-	q = (io_t *)malloc(sizeof(io_t));
+	q = (io_t *)mem_alloc(sizeof(io_t));
 	memset(q, 0x00, sizeof(io_t));
 	if (p != NULL) {
 		p->next = q;
@@ -290,7 +290,7 @@ inb(uint16_t port)
 
 #ifdef IO_TRACE
     if (CS == IO_TRACE)
-	pclog("IOTRACE(%04X): inb(%04x)=%02x\n", IO_TRACE, port, r);
+	DEBUG("IOTRACE(%04X): inb(%04x)=%02x\n", IO_TRACE, port, r);
 #endif
 
     return(r);
@@ -313,7 +313,7 @@ outb(uint16_t port, uint8_t val)
 
 #ifdef IO_TRACE
     if (CS == IO_TRACE)
-	pclog("IOTRACE(%04X): outb(%04x,%02x)\n", IO_TRACE, port, val);
+	DEBUG("IOTRACE(%04X): outb(%04x,%02x)\n", IO_TRACE, port, val);
 #endif
 }
 

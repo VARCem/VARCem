@@ -8,7 +8,7 @@
  *
  *		Miscellaneous instructions.
  *
- * Version:	@(#)codegen_ops_fpu.h	1.0.1	2018/02/14
+ * Version:	@(#)codegen_ops_fpu.h	1.0.3	2018/10/19
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -655,15 +655,16 @@ static uint32_t ropFCHS(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint3
         return op_pc;
 }
 
-#define opFLDimm(name, v)                                                                                                       \
-        static uint32_t ropFLD ## name(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)   \
-        {                                                                                                                       \
-                static double fp_imm = v;                                                                                       \
-                                                                                                                                \
-                FP_ENTER();                                                                                                     \
-                FP_LOAD_IMM_Q(*(uint64_t *)&fp_imm);                                                                            \
-                                                                                                                                \
-                return op_pc;                                                                                                   \
+#define opFLDimm(name, v)                               	\
+        static uint32_t ropFLD ## name(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)                   \
+        {                                                       \
+                static double fp_imm = v;                       \
+                uint64_t *ptr = (uint64_t *)&fp_imm;            \
+                                                                \
+                FP_ENTER();                                     \
+                FP_LOAD_IMM_Q(*ptr);                            \
+                                                                \
+                return op_pc;                                   \
         }
 
 opFLDimm(1, (1.0))
@@ -671,5 +672,13 @@ opFLDimm(L2T, 3.3219280948873623)
 opFLDimm(L2E, 1.4426950408889634);
 opFLDimm(PI, 3.141592653589793);
 opFLDimm(EG2, 0.3010299956639812);
-opFLDimm(LN2, 0.693147180559945);
 opFLDimm(Z, 0.0)
+
+
+static uint32_t ropFLDLN2(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
+{
+        FP_ENTER();
+        FP_LOAD_IMM_Q(0x3fe62e42fefa39f0ULL);
+
+        return op_pc;
+}

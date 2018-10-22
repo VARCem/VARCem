@@ -8,7 +8,7 @@
  *
  *		Mouse interface to host device.
  *
- * Version:	@(#)win_mouse.cpp	1.0.6	2018/05/06
+ * Version:	@(#)win_mouse.cpp	1.0.7	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,12 +47,9 @@
 #include "win.h"
 
 
-int mouse_capture;
-
-
-static LPDIRECTINPUT8 lpdi;
-static LPDIRECTINPUTDEVICE8 lpdi_mouse = NULL;
-static DIMOUSESTATE mousestate;
+static LPDIRECTINPUT8		lpdi;
+static LPDIRECTINPUTDEVICE8	lpdi_mouse = NULL;
+static DIMOUSESTATE		mousestate;
 
 
 void

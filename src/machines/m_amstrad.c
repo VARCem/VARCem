@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.18	2018/05/08
+ * Version:	@(#)m_amstrad.c	1.0.19	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,6 +65,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog kbd_log
 #include "../emu.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
@@ -135,6 +136,7 @@ typedef struct {
 
 typedef struct {
     /* Machine stuff. */
+    int8_t	type;
     uint8_t	dead;
     uint8_t	stat1,
 		stat2;
@@ -155,21 +157,20 @@ typedef struct {
 } amstrad_t;
 
 
-/* Defined in the video module. */
-extern const device_t paradise_pvga1a_pc2086_device;
-extern const device_t paradise_pvga1a_pc3086_device;
-extern const device_t paradise_wd90c11_megapc_device;
-
-
 static uint8_t	key_queue[16];
 static int	key_queue_start = 0,
 		key_queue_end = 0;
-static uint8_t	crtc_mask[32] = {
+static const uint8_t	crtc_mask[32] = {
     0xff, 0xff, 0xff, 0xff, 0x7f, 0x1f, 0x7f, 0x7f,
     0xf3, 0x1f, 0x7f, 0x1f, 0x3f, 0xff, 0x3f, 0xff,
     0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
+static const video_timings_t pc1512_timing = {VID_BUS,0,0,0,0,0,0};
+static const video_timings_t pc1640_timing = {VID_ISA,8,16,32,8,16,32};
+static const video_timings_t pc200_timing = {VID_ISA,8,16,32,8,16,32};
+static const video_timings_t pvga1a_timing = {VID_ISA,6,8,16,6,8,16};
+static const video_timings_t wd90c11_timing = {VID_ISA,3,3,6,5,5,10};
 
 
 static void
@@ -262,7 +263,6 @@ vid_write_1512(uint32_t addr, uint8_t val, void *priv)
 {
     amsvid_t *vid = (amsvid_t *)priv;
 
-    egawrites++;
     cycles -= 12;
     addr &= 0x3fff;
 
@@ -281,7 +281,6 @@ vid_read_1512(uint32_t addr, void *priv)
 {
     amsvid_t *vid = (amsvid_t *)priv;
 
-    egareads++;
     cycles -= 12;
     addr &= 0x3fff;
 
@@ -425,9 +424,9 @@ vid_poll_1512(void *priv)
 	} else {
 		cols[0] = ((vid->cgamode & 0x12) == 0x12) ? 0 : (vid->cgacol & 15) + 16;
 		if (vid->cgamode & 1)
-			hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
+			cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
 		else
-			hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
+			cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
 	}
 
 	vid->sc = oldsc;
@@ -539,21 +538,23 @@ vid_init_1512(amstrad_t *ams)
     amsvid_t *vid;
 
     /* Allocate a video controller block. */
-    vid = (amsvid_t *)malloc(sizeof(amsvid_t));
+    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
 
-    vid->vram = malloc(0x10000);
+    vid->vram = (uint8_t *)mem_alloc(0x10000);
     vid->cgacol = 7;
     vid->cgamode = 0x12;
 
     timer_add(vid_poll_1512, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
-    mem_mapping_add(&vid->cga.mapping, 0xb8000, 0x08000,
-		    vid_read_1512, NULL, NULL, vid_write_1512, NULL, NULL,
-		    NULL, 0, vid);
+    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
+		vid_read_1512, NULL, NULL, vid_write_1512, NULL, NULL,
+		NULL, 0, vid);
     io_sethandler(0x03d0, 16,
 		  vid_in_1512, NULL, NULL, vid_out_1512, NULL, NULL, vid);
 
     overscan_x = overscan_y = 16;
+
+    video_inform(VID_TYPE_CGA, &pc1512_timing);
 
     ams->vid = vid;
 }
@@ -565,7 +566,6 @@ vid_close_1512(void *priv)
     amsvid_t *vid = (amsvid_t *)priv;
 
     free(vid->vram);
-
     free(vid);
 }
 
@@ -581,11 +581,13 @@ vid_speed_change_1512(void *priv)
 
 static const device_t vid_1512_device = {
     "Amstrad PC1512 (video)",
-    0, 0,
+    0,
+    0,
     NULL, vid_close_1512, NULL,
     NULL,
     vid_speed_change_1512,
     NULL,
+    &pc1512_timing,
     NULL
 };
 
@@ -619,31 +621,33 @@ vid_out_1640(uint16_t addr, uint8_t val, void *priv)
 	case 0x03db:
 		vid->cga_enabled = val & 0x40;
 		if (vid->cga_enabled) {
-			mem_mapping_enable(&vid->cga.mapping);
-			mem_mapping_disable(&vid->ega.mapping);
+			mem_map_enable(&vid->cga.mapping);
+			mem_map_disable(&vid->ega.mapping);
+			video_inform(VID_TYPE_CGA, &pc1640_timing);
 		} else {
-			mem_mapping_disable(&vid->cga.mapping);
+			mem_map_disable(&vid->cga.mapping);
 			switch (vid->ega.gdcreg[6] & 0xc) {
 				case 0x0: /*128k at A0000*/
-					mem_mapping_set_addr(&vid->ega.mapping,
-							0xa0000, 0x20000);
+					mem_map_set_addr(&vid->ega.mapping,
+							 0xa0000, 0x20000);
 					break;
 
 				case 0x4: /*64k at A0000*/
-					mem_mapping_set_addr(&vid->ega.mapping,
-							0xa0000, 0x10000);
+					mem_map_set_addr(&vid->ega.mapping,
+							 0xa0000, 0x10000);
 					break;
 
 				case 0x8: /*32k at B0000*/
-					mem_mapping_set_addr(&vid->ega.mapping,
-							0xb0000, 0x08000);
+					mem_map_set_addr(&vid->ega.mapping,
+							 0xb0000, 0x08000);
 					break;
 
 				case 0xC: /*32k at B8000*/
-					mem_mapping_set_addr(&vid->ega.mapping,
-							0xb8000, 0x08000);
+					mem_map_set_addr(&vid->ega.mapping,
+							 0xb8000, 0x08000);
 					break;
 			}
+			video_inform(VID_TYPE_SPEC, &pc1640_timing);
 		}
 		return;
     }
@@ -660,8 +664,10 @@ vid_in_1640(uint16_t addr, void *priv)
 {
     amsvid_t *vid = (amsvid_t *)priv;
 
+#if 0
     switch (addr) {
     }
+#endif
 
     if (vid->cga_enabled)
 	return(cga_in(addr, &vid->cga));
@@ -697,7 +703,7 @@ vid_init_1640(amstrad_t *ams, wchar_t *fn, int sz)
     amsvid_t *vid;
 
     /* Allocate a video controller block. */
-    vid = (amsvid_t *)malloc(sizeof(amsvid_t));
+    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
 
     /* Load the BIOS. */
@@ -708,16 +714,18 @@ vid_init_1640(amstrad_t *ams, wchar_t *fn, int sz)
     vid->cga_enabled = 1;
     cga_init(&vid->cga);
 
-    mem_mapping_add(&vid->cga.mapping, 0xb8000, 0x08000,
-	cga_read, NULL, NULL, cga_write, NULL, NULL, NULL, 0, &vid->cga);
-    mem_mapping_add(&vid->ega.mapping, 0,       0,
-	ega_read, NULL, NULL, ega_write, NULL, NULL, NULL, 0, &vid->ega);
+    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
+		cga_read,NULL,NULL, cga_write,NULL,NULL, NULL, 0, &vid->cga);
+    mem_map_add(&vid->ega.mapping, 0,       0,
+		ega_read,NULL,NULL, ega_write,NULL,NULL, NULL, 0, &vid->ega);
     io_sethandler(0x03a0, 64,
 		  vid_in_1640, NULL, NULL, vid_out_1640, NULL, NULL, vid);
 
     timer_add(vid_poll_1640, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
 
     overscan_x = overscan_y = 16;
+
+    video_inform(VID_TYPE_CGA, &pc1640_timing);
 
     ams->vid = vid;
 }
@@ -729,7 +737,6 @@ vid_close_1640(void *priv)
     amsvid_t *vid = (amsvid_t *)priv;
 
     free(vid->ega.vram);
-
     free(vid);
 }
 
@@ -745,11 +752,13 @@ vid_speed_changed_1640(void *priv)
 
 static const device_t vid_1640_device = {
     "Amstrad PC1640 (video)",
-    0, 0,
+    0,
+    0,
     NULL, vid_close_1640, NULL,
     NULL,
     vid_speed_changed_1640,
     NULL,
+    &pc1640_timing,
     NULL
 };
 
@@ -838,21 +847,23 @@ vid_init_200(amstrad_t *ams)
     cga_t *cga;
 
     /* Allocate a video controller block. */
-    vid = (amsvid_t *)malloc(sizeof(amsvid_t));
+    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
 
     cga = &vid->cga;
-    cga->vram = malloc(0x4000);
+    cga->vram = (uint8_t *)mem_alloc(0x4000);
     cga_init(cga);
 
-    mem_mapping_add(&vid->cga.mapping, 0xb8000, 0x08000,
-	cga_read, NULL, NULL, cga_write, NULL, NULL, NULL, 0, cga);
+    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
+		cga_read,NULL,NULL, cga_write,NULL,NULL, NULL, 0, cga);
     io_sethandler(0x03d0, 16,
 		  vid_in_200, NULL, NULL, vid_out_200, NULL, NULL, vid);
 
     timer_add(cga_poll, &cga->vidtime, TIMER_ALWAYS_ENABLED, cga);
 
     overscan_x = overscan_y = 16;
+
+    video_inform(VID_TYPE_CGA, &pc200_timing);
 
     ams->vid = vid;
 }
@@ -880,17 +891,19 @@ vid_speed_changed_200(void *priv)
 
 static const device_t vid_200_device = {
     "Amstrad PC200 (video)",
-    0, 0,
+    0,
+    0,
     NULL, vid_close_200, NULL,
     NULL,
     vid_speed_changed_200,
     NULL,
+    &pc200_timing,
     NULL
 };
 
 
 static void
-ms_write(uint16_t addr, uint8_t val, void *priv)
+mse_write(uint16_t addr, uint8_t val, void *priv)
 {
     amstrad_t *ams = (amstrad_t *)priv;
 
@@ -902,7 +915,7 @@ ms_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-ms_read(uint16_t addr, void *priv)
+mse_read(uint16_t addr, void *priv)
 {
     amstrad_t *ams = (amstrad_t *)priv;
 
@@ -914,7 +927,7 @@ ms_read(uint16_t addr, void *priv)
 
 
 static int
-ms_poll(int x, int y, int z, int b, void *priv)
+mse_poll(int x, int y, int z, int b, void *priv)
 {
     amstrad_t *ams = (amstrad_t *)priv;
 
@@ -940,10 +953,7 @@ static void
 kbd_adddata(uint16_t val)
 {
     key_queue[key_queue_end] = (uint8_t)(val&0xff);
-#ifdef ENABLE_KEYBOARD_LOG
-    pclog("keyboard_amstrad : %02X added to key queue at %i\n",
-					val, key_queue_end);
-#endif
+    DBGLOG(1, "AMSkb: %02X added to key queue at %i\n", val, key_queue_end);
     key_queue_end = (key_queue_end + 1) & 0xf;
 }
 
@@ -959,13 +969,8 @@ static void
 kbd_write(uint16_t port, uint8_t val, void *priv)
 {
     amstrad_t *ams = (amstrad_t *)priv;
-#ifdef WALTJE
-    int i = 0;
-#endif
 
-#ifdef ENABLE_KEYBOARD_LOG
-    pclog("keyboard_amstrad : write %04X %02X %02X\n", port, val, ams->pb);
-#endif
+    DBGLOG(2, "AMSkb: write %04X %02X %02X\n", port, val, ams->pb);
 
     switch (port) {
 	case 0x61:
@@ -983,13 +988,9 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		 *
 		 * This register is controlled by BIOS and/or ROS.
 		 */
-#ifdef ENABLE_KEYBOARD_LOG
-		pclog("AMSkb: write PB %02x (%02x)\n", val, ams->pb);
-#endif
+		DBGLOG(1, "AMSkb: write PB %02x (%02x)\n", val, ams->pb);
 		if (!(ams->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
-#ifdef ENABLE_KEYBOARD_LOG
-			pclog("AMSkb: reset keyboard\n");
-#endif
+			DEBUG("AMSkb: reset keyboard\n");
 			kbd_adddata(0xaa);
 		}
 		ams->pb = val;
@@ -1015,30 +1016,19 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 0x64:
-#ifdef WALTJE
-		pclog("AMSkb: STAT1 = %02x (%02x)\n", val, ams->stat1);
-#endif
 		ams->stat1 = val;
 		break;
 
 	case 0x65:
-#ifdef WALTJE
-		pclog("AMSkb: STAT2 = %02x (%02x)\n", val, ams->stat2);
-		i = 512 + (((val & 0x1f) - 0x0e) * 32);
-		pclog("AMSkb: %d KB RAM installed.\n", i);
-#endif
 		ams->stat2 = val;
 		break;
 
 	case 0x66:
-#ifdef WALTJE
-		pclog("AMSkb: RESET REQUESTED !\n");
-#endif
 		pc_reset(1);
 		break;
 
 	default:
-		pclog("AMSkb: bad keyboard write %04X %02X\n", port, val);
+		ERRLOG("AMSkb: bad keyboard write %04X %02X\n", port, val);
     }
 }
 
@@ -1127,7 +1117,7 @@ kbd_read(uint16_t port, void *priv)
 		break;
 
 	default:
-		pclog("AMDkb: bad keyboard read %04X\n", port);
+		ERRLOG("AMDkb: bad keyboard read %04X\n", port);
     }
 
     return(ret);
@@ -1145,17 +1135,13 @@ kbd_poll(void *priv)
 	ams->wantirq = 0;
 	ams->pa = ams->key_waiting;
 	picint(2);
-#ifdef ENABLE_KEYBOARD_LOG
-	pclog("keyboard_amstrad : take IRQ\n");
-#endif
+	DBGLOG(1, "AMSkb: take IRQ\n");
     }
 
     if (key_queue_start != key_queue_end && !ams->pa) {
 	ams->key_waiting = key_queue[key_queue_start];
-#ifdef ENABLE_KEYBOARD_LOG
-	pclog("Reading %02X from the key queue at %i\n",
-			ams->key_waiting, key_queue_start);
-#endif
+	DBGLOG(1, "AMSkb: reading %02X from the key queue at %i\n",
+				ams->key_waiting, key_queue_start);
 	key_queue_start = (key_queue_start + 1) & 0xf;
 	ams->wantirq = 1;
     }
@@ -1196,12 +1182,12 @@ ams_read(uint16_t port, void *priv)
 		break;
 
 	case 0x037a:	/* printer status */
-		switch(romset) {
-			case ROM_PC1512:
+		switch(ams->type) {
+			case 0:
 				ret = 0x20;
 				break;
 
-			case ROM_PC200:
+			case 2:
 				ret = 0x80;
 				break;
 
@@ -1219,14 +1205,15 @@ ams_read(uint16_t port, void *priv)
 }
 
 
-void
-machine_amstrad_init(const machine_t *model, void *arg)
+static void
+amstrad_common_init(const machine_t *model, void *arg, int type)
 {
     romdef_t *roms = (romdef_t *)arg;
     amstrad_t *ams;
 
-    ams = (amstrad_t *)malloc(sizeof(amstrad_t));
+    ams = (amstrad_t *)mem_alloc(sizeof(amstrad_t));
     memset(ams, 0x00, sizeof(amstrad_t));
+    ams->type = type;
 
     machine_common_init(model, arg);
 
@@ -1237,10 +1224,10 @@ machine_amstrad_init(const machine_t *model, void *arg)
 //FIXME:    parallel_remove_amstrad();
 
     io_sethandler(0x0078, 1,
-		  ms_read, NULL, NULL, ms_write, NULL, NULL, ams);
+		  mse_read, NULL, NULL, mse_write, NULL, NULL, ams);
 
     io_sethandler(0x007a, 1,
-		  ms_read, NULL, NULL, ms_write, NULL, NULL, ams);
+		  mse_read, NULL, NULL, mse_write, NULL, NULL, ams);
 
     io_sethandler(0x0379, 2,
 		  ams_read, NULL, NULL, NULL, NULL, NULL, ams);
@@ -1248,12 +1235,12 @@ machine_amstrad_init(const machine_t *model, void *arg)
     io_sethandler(0xdead, 1,
 		  ams_read, NULL, NULL, ams_write, NULL, NULL, ams);
 
-    switch(model->id) {
-	case ROM_PC1512:
+    switch(ams->type) {
+	case 0:
 		device_add(&fdc_xt_device);
 		if (video_card == VID_INTERNAL) {
 			/* Load the PC1512 CGA Character Set ROM. */
-			loadfont(roms->fontfn, roms->fontnum);
+			video_load_font(roms->fontfn, roms->fontnum);
 
 			/* Initialize the internal CGA controller. */
 			vid_init_1512(ams);
@@ -1261,7 +1248,7 @@ machine_amstrad_init(const machine_t *model, void *arg)
 		}
 		break;
 
-	case ROM_PC1640:
+	case 1:
 		device_add(&fdc_xt_device);
 		if (video_card == VID_INTERNAL) {
 			/* Load the BIOS for the internal CGA/EGA. */
@@ -1270,35 +1257,38 @@ machine_amstrad_init(const machine_t *model, void *arg)
 		}
 		break;
 
-	case ROM_PC200:
+	case 2:
 		device_add(&fdc_xt_device);
 		if (video_card == VID_INTERNAL) {
 			/* Load the PC200 CGA Character Set ROM. */
-			loadfont(roms->fontfn, roms->fontnum);
+			video_load_font(roms->fontfn, roms->fontnum);
 
 			vid_init_200(ams);
 			device_add_ex(&vid_200_device, ams->vid);
 		}
 		break;
 
-	case ROM_PC2086:
+	case 3:
 		device_add(&fdc_at_actlow_device);
 		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc2086_device);
+			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
 		}
 		break;
 
-	case ROM_PC3086:
+	case 4:
 		device_add(&fdc_at_actlow_device);
 		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc3086_device);
+			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
 		}
 		break;
 
-	case ROM_MEGAPC:
+	case 5:
 		device_add(&fdc_at_actlow_device);
 		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_wd90c11_megapc_device);
+			video_inform(VID_TYPE_SPEC, &wd90c11_timing);
 		}
 		break;
     }
@@ -1315,6 +1305,48 @@ machine_amstrad_init(const machine_t *model, void *arg)
     /* Tell mouse driver about our internal mouse. */
     if (mouse_type == MOUSE_INTERNAL) {
 	mouse_reset();
-	mouse_set_poll(ms_poll, ams);
+	mouse_set_poll(mse_poll, ams);
     }
+}
+
+
+void
+machine_amstrad_1512_init(const machine_t *model, void *arg)
+{
+    amstrad_common_init(model, arg, 0);
+}
+
+
+void
+machine_amstrad_1640_init(const machine_t *model, void *arg)
+{
+    amstrad_common_init(model, arg, 1);
+}
+
+
+void
+machine_amstrad_200_init(const machine_t *model, void *arg)
+{
+    amstrad_common_init(model, arg, 2);
+}
+
+
+void
+machine_amstrad_2086_init(const machine_t *model, void *arg)
+{
+    amstrad_common_init(model, arg, 3);
+}
+
+
+void
+machine_amstrad_3086_init(const machine_t *model, void *arg)
+{
+    amstrad_common_init(model, arg, 4);
+}
+
+
+void
+machine_amstrad_mega_init(const machine_t *model, void *arg)
+{
+    amstrad_common_init(model, arg, 5);
 }

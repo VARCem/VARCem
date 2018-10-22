@@ -6,9 +6,11 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Platform support defintions for Win32.
+ *		Platform support defintions for Win32. This file describes
+ *		only things used globally within the Windows platform; the
+ *		generic platform defintions are in the plat.h file.
  *
- * Version:	@(#)win.h	1.0.17	2018/05/28
+ * Version:	@(#)win.h	1.0.21	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,62 +52,42 @@
 # define PLAT_WIN_H
 
 
-#include "resource.h"		/* platform resources */
-#include "../ui/ui_resource.h"	/* common resources */
-
-
 /* Class names and such. */
-#define MUTEX_NAME		L"VARCem.BlitMutex"
-#define CLASS_NAME		L"VARCem.MainWindow"
-#define FS_CLASS_NAME		L"VARCem.FullScreen"
-#define MENU_NAME		L"MainMenu"
-#define SB_MENU_NAME		L"StatusBarMenu"
-#define ACCEL_NAME		L"MainAccel"
+#define MUTEX_NAME	L"VARCem.BlitMutex"
+#define CLASS_NAME	L"VARCem.MainWindow"
+#define FS_CLASS_NAME	L"VARCem.FullScreen"
+#define MENU_MAIN_NAME	L"MainMenu"
+#define MENU_SB_NAME	L"StatusBarMenu"
+#define ACCEL_NAME	L"MainAccel"
 
 /* Application-specific window messages. */
-#define WM_PAUSE		WM_USER
-#define WM_LEAVEFULLSCREEN	WM_USER+1
-#define WM_RESETD3D		WM_USER+2
-#define WM_SAVESETTINGS		WM_USER+3
-#define WM_SHOWSETTINGS		WM_USER+4
+#define WM_PAUSE	WM_USER
+#define WM_LEAVE_FS	WM_USER+1
+#define WM_RESET_D3D	WM_USER+2
+#define WM_SAVE_CFG	WM_USER+3
+#define WM_SHOW_CFG	WM_USER+4
+#define WM_HARD_RESET	WM_USER+5
+#define WM_SHUTDOWN	WM_USER+6
+#define WM_CTRLALTDEL	WM_USER+7
 
 
 /* Status bar definitions. */
-#define SB_HEIGHT		16		/* for 16x16 icons */
-#define SB_PADDING		1		/* 1px of padding */
+#define SB_HEIGHT	16			/* for 16x16 icons */
+#define SB_PADDING	1			/* 1px of padding */
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Define an in-memory language entry. */
-typedef struct _lang_ {
-    const wchar_t	*name;
-    const wchar_t	*dll;
-
-    const wchar_t	*author;
-    const wchar_t	*email;
-    const wchar_t	*version;
-
-    int			id;
-    struct _lang_	*next;
-} lang_t;
-
-
 extern HINSTANCE	hInstance;
-extern HICON		hIcon[512];
 extern HWND		hwndMain,
 			hwndRender;
 extern DWORD		filterindex;
-extern int		status_is_open;
 
 /* VidApi initializers. */
 extern const vidapi_t	ddraw_vidapi;
 extern const vidapi_t	d3d_vidapi;
-
-/* Languages. */
-extern lang_t		*languages;
 
 
 /* Internal platform support functions. */
@@ -114,7 +96,7 @@ extern void	InitCrashDump(void);
 #endif
 extern HICON	LoadIconEx(PCTSTR name);
 extern void	keyboard_getkeymap(void);
-extern void	keyboard_handle(LPARAM lParam, int infocus);
+extern void	keyboard_handle(LPARAM lParam, int focus);
 extern void     win_mouse_init(void);
 extern void     win_mouse_close(void);
 
@@ -123,15 +105,15 @@ extern void	dialog_center(HWND hdlg);
 extern int	dlg_file_ex(HWND hwnd, const wchar_t *filt,
 			    const wchar_t *ifn, wchar_t *fn, int save);
 #ifdef EMU_DEVICE_H
-extern uint8_t	dlg_devconf(HWND hwnd, device_t *device);
+extern uint8_t	dlg_devconf(HWND hwnd, const device_t *device);
 #endif
 extern uint8_t	dlg_jsconf(HWND hwnd, int joy_nr, int type);
 
 /* Platform UI support functions. */
 extern int	ui_init(int nCmdShow);
+extern LPARAM	win_string(int id);
 extern void	plat_set_input(HWND h);
 extern HMODULE	plat_lang_dll(void);
-extern void	plat_lang_menu(void);
 
 #ifdef __cplusplus
 }

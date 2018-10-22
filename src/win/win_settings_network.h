@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.5	2018/05/02
+ * Version:	@(#)win_settings_network.h	1.0.8	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,20 +61,20 @@ network_recalc_combos(HWND hdlg)
       else
 	EnableWindow(h, FALSE);
 
-    h = GetDlgItem(hdlg, IDC_COMBO_NET);
+    h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
     if (temp_net_type == NET_TYPE_SLIRP)
 	EnableWindow(h, TRUE);
-      else if ((temp_net_type == NET_TYPE_PCAP) && (network_dev_to_id(temp_host_dev) > 0))
+      else if ((temp_net_type == NET_TYPE_PCAP) && (network_card_to_id(temp_host_dev) > 0))
 	EnableWindow(h, TRUE);
       else
 	EnableWindow(h, FALSE);
 
-    h = GetDlgItem(hdlg, IDC_CONFIGURE_NET);
+    h = GetDlgItem(hdlg, IDC_CONFIGURE_NET_CARD);
     if (network_card_has_config(temp_net_card) && (temp_net_type == NET_TYPE_SLIRP)) {
 	EnableWindow(h, TRUE);
     } else if (network_card_has_config(temp_net_card) &&
 		 (temp_net_type == NET_TYPE_PCAP) &&
-		  (network_dev_to_id(temp_host_dev) > 0)) {
+		  (network_card_to_id(temp_host_dev) > 0)) {
 	EnableWindow(h, TRUE);
     } else {
 	EnableWindow(h, FALSE);
@@ -91,8 +91,10 @@ static BOOL CALLBACK
 #endif
 network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    char tempA[128];
     WCHAR temp[128];
     const char *stransi;
+    const device_t *dev;
     HWND h;
     int c, d;
 
@@ -100,7 +102,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_INITDIALOG:
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
 //FIXME: take strings from network.c table.. --FvK
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"None");
+		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_DISABLED));
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"PCap");
 		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"SLiRP");
 		SendMessage(h, CB_SETCURSEL, temp_net_type, 0);
@@ -113,31 +115,48 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
 		for (c = 0; c < network_ndev; c++) {
-			mbstowcs(temp, network_devs[c].description, sizeof_w(temp));
-			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			if (c == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_NONE));
+			} else {
+				mbstowcs(temp, network_devs[c].description, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
 		}
-		SendMessage(h, CB_SETCURSEL, network_dev_to_id(temp_host_dev), 0);
+
+		SendMessage(h, CB_SETCURSEL, network_card_to_id(temp_host_dev), 0);
 
 		/*NIC config*/
-		h = GetDlgItem(hdlg, IDC_COMBO_NET);
+		h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
 		c = d = 0;
 		while (1) {
-			stransi = network_card_getname(c);
-			if (stransi == NULL)
-				break;
+			stransi = network_card_get_internal_name(c);
+			if (stransi == NULL) break;
 
-			nic_to_list[c] = d;
-
-			if (network_card_available(c) && device_is_valid(network_card_getdevice(c), machines[temp_machine].flags)) {
-				mbstowcs(temp, stransi, sizeof_w(temp));
-				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-
-				list_to_nic[d] = c;
-				d++;
+			dev = network_card_getdevice(c);
+			if (!network_card_available(c) ||
+			    !device_is_valid(dev, machines[temp_machine].flags)) {
+				c++;
+				continue;
 			}
 
-			c++;
+			if (c == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_NONE));
+			} else {
+				sprintf(tempA, "[%s] %s",
+					device_get_bus_name(dev),
+					network_card_getname(c));
+				mbstowcs(temp, tempA, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
+
+			nic_to_list[c] = d;
+			list_to_nic[d++] = c++;
 		}
+
 		SendMessage(h, CB_SETCURSEL, nic_to_list[temp_net_card], 0);
 
 		EnableWindow(h, d ? TRUE : FALSE);
@@ -167,29 +186,29 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				network_recalc_combos(hdlg);
 				break;
 
-			case IDC_COMBO_NET:
+			case IDC_COMBO_NET_CARD:
 				if (net_ignore_message)
 					return FALSE;
 
-				h = GetDlgItem(hdlg, IDC_COMBO_NET);
+				h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
 				temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				network_recalc_combos(hdlg);
 				break;
 
-			case IDC_CONFIGURE_NET:
+			case IDC_CONFIGURE_NET_CARD:
 				if (net_ignore_message)
 					return FALSE;
 
-				h = GetDlgItem(hdlg, IDC_COMBO_NET);
+				h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
 				temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= dlg_devconf(hdlg, (void *)network_card_getdevice(temp_net_card));
+				temp_deviceconfig |= dlg_devconf(hdlg, network_card_getdevice(temp_net_card));
 				break;
 		}
 		return FALSE;
 
-	case WM_SAVESETTINGS:
+	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
 		temp_net_type = SendMessage(h, CB_GETCURSEL, 0, 0);
 
@@ -197,7 +216,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		memset(temp_host_dev, '\0', sizeof(temp_host_dev));
 		strcpy(temp_host_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
 
-		h = GetDlgItem(hdlg, IDC_COMBO_NET);
+		h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
 		temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
 		return FALSE;
 

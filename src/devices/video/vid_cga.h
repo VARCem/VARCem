@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.4	2018/04/09
+ * Version:	@(#)vid_cga.h	1.0.5	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,7 @@
 
 
 typedef struct {
-    mem_mapping_t mapping;
+    mem_map_t	mapping;
 
     int		crtcreg;
     uint8_t	crtc[32];
@@ -94,6 +94,7 @@ extern void    cga_write(uint32_t addr, uint8_t val, void *p);
 extern uint8_t cga_read(uint32_t addr, void *p);
 extern void    cga_recalctimings(cga_t *cga);
 extern void    cga_poll(void *p);
+extern void    cga_hline(bitmap_t *b, int x1, int y, int x2, uint32_t col);
 
 
 #endif	/*VIDEO_CGA_H*/

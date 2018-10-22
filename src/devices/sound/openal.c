@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.14	2018/05/24
+ * Version:	@(#)openal.c	1.0.17	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@
 # include <AL/alc.h>
 # include <AL/alext.h>
 #endif
+#define dbglog sound_log
 #include "../../emu.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -62,19 +63,24 @@
 #define BUFLEN	SOUNDBUFLEN
 
 #ifdef _WIN32
-# define PATH_AL_DLL	"libopenal-1.dll"
+# ifdef _DEBUG
+#  define PATH_AL_DLL	"libopenal-1-debug.dll"
+# else
+#  define PATH_AL_DLL	"libopenal-1.dll"
+# endif
 #else
 # define PATH_AL_DLL	"libopenal.so.1"
 #endif
 
 
 #ifdef USE_OPENAL
-ALuint		buffers[4];		/* front and back buffers */
-ALuint		buffers_cd[4];		/* front and back buffers */
-ALuint		buffers_midi[4];	/* front and back buffers */
-
-static ALuint	source[3];		/* audio source */
-static void	*openal_handle = NULL;	/* handle to (open) DLL */
+static ALuint		buffers[4],		/* front and back buffers */
+			buffers_cd[4],		/* front and back buffers */
+			buffers_midi[4],	/* front and back buffers */
+			source[3];		/* audio source */
+static int		nbuffers,
+			nsources;
+static void		*openal_handle = NULL;	/* handle to (open) DLL */
 
 /* Pointers to the real functions. */
 static ALC_API ALCdevice* (ALC_APIENTRY *f_alcOpenDevice)(const ALCchar *devicename);
@@ -95,6 +101,8 @@ static AL_API void (AL_APIENTRY *f_alGetSourcei)(ALuint source,  ALenum param, A
 static AL_API void (AL_APIENTRY *f_alListenerf)(ALenum param, ALfloat value);
 static AL_API void (AL_APIENTRY *f_alGenBuffers)(ALsizei n, ALuint *buffers);
 static AL_API void (AL_APIENTRY *f_alGenSources)(ALsizei n, ALuint *sources);
+static AL_API void (AL_APIENTRY *f_alDeleteSources)(ALsizei n, const ALuint *sources);
+static AL_API void (AL_APIENTRY *f_alDeleteBuffers)(ALsizei n, const ALuint *buffers);
 
 static dllimp_t openal_imports[] = {
   { "alcOpenDevice",		&f_alcOpenDevice		},
@@ -115,6 +123,8 @@ static dllimp_t openal_imports[] = {
   { "alListenerf",		&f_alListenerf			},
   { "alGenBuffers",		&f_alGenBuffers			},
   { "alGenSources",		&f_alGenSources			},
+  { "alDeleteBuffers",		&f_alDeleteBuffers		},
+  { "alDeleteSources",		&f_alDeleteSources		},
   { NULL,			NULL				}
 };
 #endif
@@ -122,14 +132,6 @@ static dllimp_t openal_imports[] = {
 
 static int midi_freq = 44100;
 static int midi_buf_size = 4410;
-
-
-void
-al_set_midi(int freq, int buf_size)
-{
-    midi_freq = freq;
-    midi_buf_size = buf_size;
-}
 
 
 #ifdef USE_OPENAL
@@ -143,7 +145,7 @@ alutInit(ALint *argc, ALbyte **argv)
     if (openal_handle == NULL) return;
 
     /* Open device */
-    Device = f_alcOpenDevice((ALCchar *)"");
+    Device = f_alcOpenDevice(NULL);
     if (Device != NULL) {
 	/* Create context(s) */
 	Context = f_alcCreateContext(Device, NULL);
@@ -169,16 +171,22 @@ alutExit(ALvoid)
     if (Context != NULL) {
 	/* Get device for active context */
 	Device = f_alcGetContextsDevice(Context);
-	if (Device != NULL) {
-		/* Disable context */
-		f_alcMakeContextCurrent(NULL);
 
-		/* Close device */
-		f_alcCloseDevice(Device);
-	}
+	/* Disable context */
+	f_alcMakeContextCurrent(NULL);
+
+	f_alDeleteSources(nsources, source);
+
+	f_alDeleteBuffers(4, buffers);
+	f_alDeleteBuffers(4, buffers_cd);
+	if (nbuffers > 0)
+		f_alDeleteBuffers(nbuffers, buffers_midi);
 
 	/* Release context(s) */
 	f_alcDestroyContext(Context);
+
+	/* Close device */
+	f_alcCloseDevice(Device);
     }
 
 #if 0
@@ -193,7 +201,7 @@ alutExit(ALvoid)
 
 
 void
-closeal(void)
+openal_close(void)
 {
 #ifdef USE_OPENAL
     alutExit();
@@ -202,32 +210,39 @@ closeal(void)
 
 
 void
-initalmain(int argc, char *argv[])
+openal_init(void)
 {
 #ifdef USE_OPENAL
+    wchar_t temp[512];
+    const char *fn = PATH_AL_DLL;
+
     /* Try loading the DLL if needed. */
     if (openal_handle == NULL) {
-	openal_handle = dynld_module(PATH_AL_DLL, openal_imports);
+	openal_handle = dynld_module(fn, openal_imports);
 	if (openal_handle == NULL) {
-		pclog("SOUND: unable to load '%s' - sound disabled!\n",
-							PATH_AL_DLL);
-		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_OPENAL);
+		ERRLOG("SOUND: unable to load '%s' - sound disabled!\n", fn);
+		swprintf(temp, sizeof_w(temp),
+			 get_string(IDS_ERR_NOLIB), "OpenAL", fn);
+		ui_msgbox(MBX_ERROR, temp);
 		return;
 	} else {
-#ifdef _DEBUG
-		pclog("SOUND: module '%s' loaded.\n", PATH_AL_DLL);
-#endif
+		INFO("SOUND: module '%s' loaded.\n", fn);
 	}
     }
 
+    /* Perform a module initialization. */
     alutInit(NULL, NULL);
-    atexit(closeal);
+
+    /* Close up shop on application exit. */
+    atexit(openal_close);
 #endif
 }
 
 
+/* Reset the OpenAL interface and its buffers. */
+//FIXME: isnt this a major memory leak, we never free buffers!  --FvK
 void
-inital(void)
+openal_reset(void)
 {
 #ifdef USE_OPENAL
     float *buf = NULL, *cd_buf = NULL, *midi_buf = NULL;
@@ -247,15 +262,15 @@ inital(void)
 
 #ifdef USE_OPENAL
     if (sound_is_float) {
-	buf = (float *) malloc((BUFLEN << 1) * sizeof(float));
-	cd_buf = (float *) malloc((CD_BUFLEN << 1) * sizeof(float));
+	buf = (float *)mem_alloc((BUFLEN << 1) * sizeof(float));
+	cd_buf = (float *)mem_alloc((CD_BUFLEN << 1) * sizeof(float));
 	if (init_midi)
-		midi_buf = (float *) malloc(midi_buf_size * sizeof(float));
+		midi_buf = (float *)mem_alloc(midi_buf_size * sizeof(float));
     } else {
-	buf_int16 = (int16_t *) malloc((BUFLEN << 1) * sizeof(int16_t));
-	cd_buf_int16 = (int16_t *) malloc((CD_BUFLEN << 1) * sizeof(int16_t));
+	buf_int16 = (int16_t *)mem_alloc((BUFLEN << 1) * sizeof(int16_t));
+	cd_buf_int16 = (int16_t *)mem_alloc((CD_BUFLEN << 1) * sizeof(int16_t));
 	if (init_midi)
-		midi_buf_int16 = (int16_t *) malloc(midi_buf_size * sizeof(int16_t));
+		midi_buf_int16 = (int16_t *)mem_alloc(midi_buf_size * sizeof(int16_t));
     }
 
     f_alGenBuffers(4, buffers);
@@ -263,8 +278,13 @@ inital(void)
     if (init_midi) {
 	f_alGenBuffers(4, buffers_midi);
 	f_alGenSources(3, source);
-    } else
+	nbuffers = 4;
+	nsources = 3;
+    } else {
 	f_alGenSources(2, source);
+	nbuffers = 0;
+	nsources = 2;
+    }
 
     f_alSource3f(source[0], AL_POSITION,        0.0, 0.0, 0.0);
     f_alSource3f(source[0], AL_VELOCITY,        0.0, 0.0, 0.0);
@@ -334,8 +354,8 @@ inital(void)
 }
 
 
-void
-givealbuffer_common(void *buf, uint8_t src, int size, int freq)
+static void
+openal_buffer_common(void *buf, uint8_t src, int size, int freq)
 {
 #ifdef USE_OPENAL
     int processed;
@@ -371,21 +391,29 @@ givealbuffer_common(void *buf, uint8_t src, int size, int freq)
 
 
 void
-givealbuffer(void *buf)
+openal_buffer(void *buf)
 {
-    givealbuffer_common(buf, 0, BUFLEN << 1, FREQ);
+    openal_buffer_common(buf, 0, BUFLEN << 1, FREQ);
 }
 
 
 void
-givealbuffer_cd(void *buf)
+openal_buffer_cd(void *buf)
 {
-    givealbuffer_common(buf, 1, CD_BUFLEN << 1, CD_FREQ);
+    openal_buffer_common(buf, 1, CD_BUFLEN << 1, CD_FREQ);
 }
 
 
 void
-givealbuffer_midi(void *buf, uint32_t size)
+openal_buffer_midi(void *buf, uint32_t size)
 {
-    givealbuffer_common(buf, 2, size, midi_freq);
+    openal_buffer_common(buf, 2, size, midi_freq);
+}
+
+
+void
+openal_set_midi(int freq, int buf_size)
+{
+    midi_freq = freq;
+    midi_buf_size = buf_size;
 }

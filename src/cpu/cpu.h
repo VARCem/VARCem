@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.h	1.0.6	2018/03/27
+ * Version:	@(#)cpu.h	1.0.7	2018/09/19
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -42,39 +42,41 @@
 
 #define CPU_8088	0		/* 808x class CPUs */
 #define CPU_8086	1
-#define CPU_286		2		/* 286 class CPUs */
-#define CPU_386SX	3		/* 386 class CPUs */
-#define CPU_386DX	4
-#define CPU_RAPIDCAD	5
-#define CPU_486SLC	6
-#define CPU_486DLC	7
-#define CPU_i486SX	8		/* 486 class CPUs */
-#define CPU_Am486SX	9
-#define CPU_Cx486S	10
-#define CPU_i486DX	11
-#define CPU_Am486DX	12
-#define CPU_Cx486DX	13
-#define CPU_iDX4	14
-#define CPU_Cx5x86	15
-#define CPU_WINCHIP	16		/* 586 class CPUs */
-#define CPU_PENTIUM	17
-#define CPU_PENTIUMMMX	18
-#define CPU_Cx6x86 	19
-#define CPU_Cx6x86MX 	20
-#define CPU_Cx6x86L 	21
-#define CPU_CxGX1 	22
+#define CPU_NEC		2		/* NEC V20 or V30 */
+#define CPU_186		3		/* 186 class CPUs */
+#define CPU_286		4		/* 286 class CPUs */
+#define CPU_386SX	5		/* 386 class CPUs */
+#define CPU_386DX	6
+#define CPU_RAPIDCAD	7
+#define CPU_486SLC	8
+#define CPU_486DLC	9
+#define CPU_i486SX	10		/* 486 class CPUs */
+#define CPU_Am486SX	11
+#define CPU_Cx486S	12
+#define CPU_i486DX	13
+#define CPU_Am486DX	14
+#define CPU_Cx486DX	15
+#define CPU_iDX4	16
+#define CPU_Cx5x86	17
+#define CPU_WINCHIP	18		/* 586 class CPUs */
+#define CPU_PENTIUM	19
+#define CPU_PENTIUMMMX	20
+#define CPU_Cx6x86 	21
+#define CPU_Cx6x86MX 	22
+#define CPU_Cx6x86L 	23
+#define CPU_CxGX1 	24
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
-#define CPU_K5		23
-#define CPU_5K86	24
-#define CPU_K6		25
+#define CPU_K5		25
+#define CPU_5K86	26
+#define CPU_K6		27
 #endif
 #if defined(DEV_BRANCH) && defined(USE_I686)
-#define CPU_PENTIUMPRO	26		/* 686 class CPUs */
+#define CPU_PENTIUMPRO	28		/* 686 class CPUs */
 #if 0
-# define CPU_PENTIUM2	27
-# define CPU_PENTIUM2D	28
+# define CPU_PENTIUM2	29
+# define CPU_PENTIUM2D	30
 #else
-# define CPU_PENTIUM2D	27
+# define CPU_PENTIUM2D	29
 #endif
 #endif
 
@@ -82,6 +84,7 @@
 #define MANU_AMD	1
 #define MANU_CYRIX	2
 #define MANU_IDT	3
+#define MANU_NEC	4
 
 #define CPU_SUPPORTS_DYNAREC 1
 #define CPU_REQUIRES_DYNAREC 2
@@ -105,6 +108,8 @@ typedef struct {
 
 extern CPU	cpus_8088[];
 extern CPU	cpus_8086[];
+extern CPU	cpus_nec[];
+extern CPU	cpus_186[];
 extern CPU	cpus_286[];
 extern CPU	cpus_i386SX[];
 extern CPU	cpus_i386DX[];
@@ -202,7 +207,7 @@ typedef union {
 } cr0_t;
 
 
-struct _cpustate_ {
+typedef struct {
     x86reg	regs[8];
 
     uint8_t	tag[8];
@@ -249,7 +254,9 @@ struct _cpustate_ {
     uint16_t	old_npxc,
 		new_npxc;
     uint32_t	last_ea;
-} cpu_state;
+} cpu_state_t;
+
+extern cpu_state_t cpu_state;
 
 /*The flags below must match in both cpu_cur_status and block->status for a block
   to be valid*/
@@ -315,15 +322,15 @@ COMPILE_TIME_ASSERT(sizeof(cpu_state) <= 128)
 
 
 /* Global variables. */
-extern int	cpu_iscyrix;
-extern int	cpu_16bitbus;
-extern int	cpu_busspeed;
-extern int	cpu_multi;
-extern int	cpu_cyrix_alignment;	/*Cyrix 5x86/6x86 only has data misalignment
+extern int		cpu_iscyrix;
+extern int		cpu_16bitbus;
+extern int		cpu_busspeed;
+extern int		cpu_multi;
+extern int		cpu_cyrix_alignment;	/*Cyrix 5x86/6x86 only has data misalignment
 					  penalties when crossing 8-byte boundaries*/
 
-extern int		is8086,	is286, is386, is486;
-extern int		is_rapidcad, is_pentium;
+extern int		is8086,	is186, is286, is386, is486;
+extern int		is_nec, is_rapidcad, is_pentium;
 extern int		hasfpu;
 extern int		cpu_hasrdtsc;
 extern int		cpu_hasMSR;
@@ -338,7 +345,6 @@ extern msr_t		msr;
 extern int		cpuspeed;
 extern int		cycles_lost;
 extern uint8_t		opcode;
-extern int		insc;
 extern int		fpucount;
 extern float		mips,flops;
 extern int		clockrate;

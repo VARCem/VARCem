@@ -8,7 +8,7 @@
  *
  *		Windows raw keyboard input handler.
  *
- * Version:	@(#)win_keyboard.c	1.0.7	2018/05/10
+ * Version:	@(#)win_keyboard.c	1.0.8	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,7 +115,7 @@ keyboard_getkeymap(void)
 
 				scancode_unmapped = convert_scan_code(scancode_unmapped);
 				scancode_mapped = convert_scan_code(scancode_mapped);
-				/* pclog("Scan code map found: %04X -> %04X\n", scancode_unmapped, scancode_mapped); */
+				/* DEBUG("Scan code map found: %04X -> %04X\n", scancode_unmapped, scancode_mapped); */
 
 				/* Ignore source scan codes with prefixes other than E1
 				   that are not E1 1D. */
@@ -144,9 +144,9 @@ keyboard_handle(LPARAM lParam, int focus)
     /* See how much data the RI has for us, and allocate a buffer. */
     GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL,
 		    &size, sizeof(RAWINPUTHEADER));
-    raw = (RAWINPUT *)malloc(size);
+    raw = (RAWINPUT *)mem_alloc(size);
     if (raw == NULL) {
-	pclog("KBD: out of memory for Raw Input buffer!\n");
+	ERRLOG("KBD: out of memory for Raw Input buffer!\n");
 	return;
     }
 
@@ -154,7 +154,7 @@ keyboard_handle(LPARAM lParam, int focus)
     ri_size = GetRawInputData((HRAWINPUT)(lParam), RID_INPUT,
 			      raw, &size, sizeof(RAWINPUTHEADER));
     if (ri_size != size) {
-	pclog("KBD: bad event buffer %d/%d\n", size, ri_size);
+	ERRLOG("KBD: bad event buffer %d/%d\n", size, ri_size);
 	return;
     }
 
@@ -176,9 +176,7 @@ keyboard_handle(LPARAM lParam, int focus)
 	code = convert_scan_code(code);
 
 	/* Remap it according to the list from the Registry */
-#if 0
-	pclog("Scan code: %04X (map: %04X)\n", code, scancode_map[code]);
-#endif
+	DBGLOG(1, "Scan code: %04X (map: %04X)\n", code, scancode_map[code]);
 	code = scancode_map[code];
 
 	/*

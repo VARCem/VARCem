@@ -8,7 +8,10 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy.c	1.0.12	2018/05/06
+ * NOTE:	It might be better (after all..) to split off the video
+ *		driver from the main code, to keep it a little cleaner.
+ *
+ * Version:	@(#)m_tandy.c	1.0.13	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,6 +62,7 @@
 #include "../devices/sound/sound.h"
 #include "../devices/sound/snd_sn76489.h"
 #include "../devices/video/video.h"
+#include "../devices/video/vid_cga.h"
 #include "../devices/video/vid_cga_comp.h"
 #include "../plat.h"
 #include "machine.h"
@@ -77,41 +81,41 @@ enum {
 
 
 typedef struct {
-    mem_mapping_t	mapping;
-    mem_mapping_t	vram_mapping;
+    mem_map_t	mapping;
+    mem_map_t	vram_mapping;
 
-    uint8_t		crtc[32];
-    int			crtcreg;
+    uint8_t	crtc[32];
+    int		crtcreg;
 
-    int			array_index;
-    uint8_t		array[32];
-    int			memctrl;
-    uint8_t		mode, col;
-    uint8_t		stat;
+    int		array_index;
+    uint8_t	array[32];
+    int		memctrl;
+    uint8_t	mode, col;
+    uint8_t	stat;
 
-    uint8_t		*vram, *b8000;
-    uint32_t		b8000_mask;
-    uint32_t		b8000_limit;
-    uint8_t		planar_ctrl;
+    uint8_t	*vram, *b8000;
+    uint32_t	b8000_mask;
+    uint32_t	b8000_limit;
+    uint8_t	planar_ctrl;
 
-    int			linepos,
-			displine;
-    int			sc, vc;
-    int			dispon;
-    int			con, coff,
-			cursoron,
-			blink;
-    int64_t		vsynctime;
-    int			vadj;
-    uint16_t		ma, maback;
+    int		linepos,
+		displine;
+    int		sc, vc;
+    int		dispon;
+    int		con, coff,
+		cursoron,
+		blink;
+    int64_t	vsynctime;
+    int		vadj;
+    uint16_t	ma, maback;
 
-    int64_t		dispontime,
-			dispofftime,
-			vidtime;
-    int			firstline,
-			lastline;
+    int64_t	dispontime,
+		dispofftime,
+		vidtime;
+    int		firstline,
+		lastline;
 
-    int			composite;
+    int		composite;
 } t1kvid_t;
 
 typedef struct {
@@ -135,32 +139,31 @@ typedef struct {
 } t1ksnd_t;
 
 typedef struct {
-    int			romset;
-    wchar_t		*path;
+    wchar_t	*fn;
 
-    int			state;
-    int			count;
-    int			addr;
-    int			clk;
-    uint16_t		data;
-    uint16_t		store[64];
+    int		state;
+    int		count;
+    int		addr;
+    int		clk;
+    uint16_t	data;
+    uint16_t	store[64];
 } t1keep_t;
 
 typedef struct {
-    mem_mapping_t	ram_mapping;
-    mem_mapping_t	rom_mapping;		/* SL2 */
+    mem_map_t	ram_mapping;
+    mem_map_t	rom_mapping;		/* SL2 */
 
-    uint8_t		*rom;			/* SL2 */
-    uint8_t		ram_bank;
-    uint8_t		rom_bank;		/* SL2 */
-    int			rom_offset;		/* SL2 */
+    uint8_t	*rom;			/* SL2 */
+    uint8_t	ram_bank;
+    uint8_t	rom_bank;		/* SL2 */
+    int		rom_offset;		/* SL2 */
 
-    uint32_t		base;
-    int			is_sl2;
+    uint32_t	base;
+    int		type;
 
-    t1ksnd_t		*snd;
+    t1ksnd_t	*snd;
 
-    t1kvid_t		*vid;
+    t1kvid_t	*vid;
 } tandy_t;
 
 
@@ -445,16 +448,16 @@ recalc_mapping(tandy_t *dev)
 {
     t1kvid_t *vid = dev->vid;
 
-    mem_mapping_disable(&vid->mapping);
+    mem_map_disable(&vid->mapping);
     io_removehandler(0x03d0, 16,
 		     vid_in, NULL, NULL, vid_out, NULL, NULL, dev);
 
     if (vid->planar_ctrl & 4) {
-	mem_mapping_enable(&vid->mapping);
+	mem_map_enable(&vid->mapping);
 	if (vid->array[5] & 1)
-		mem_mapping_set_addr(&vid->mapping, 0xa0000, 0x10000);
+		mem_map_set_addr(&vid->mapping, 0xa0000, 0x10000);
 	  else
-		mem_mapping_set_addr(&vid->mapping, 0xb8000, 0x8000);
+		mem_map_set_addr(&vid->mapping, 0xb8000, 0x8000);
 	io_sethandler(0x03d0, 16, vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
     }
 }
@@ -536,7 +539,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 	case 0x03d5:
 		old = vid->crtc[vid->crtcreg];
-		if (dev->is_sl2)
+		if (dev->type == 2)
 			vid->crtc[vid->crtcreg] = val & crtcmask_sl[vid->crtcreg];
 		  else
 			vid->crtc[vid->crtcreg] = val & crtcmask[vid->crtcreg];
@@ -550,7 +553,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 	case 0x03d8:
 		vid->mode = val;
-		if (! dev->is_sl2)
+		if (dev->type != 2)
 			update_cga16_color(vid->mode);
 		break;
 
@@ -566,7 +569,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 		if (vid->array_index & 16) 
 			val &= 0xf;
 		vid->array[vid->array_index & 0x1f] = val;
-		if (dev->is_sl2) {
+		if (dev->type == 2) {
 			if ((vid->array_index & 0x1f) == 5) {
 				recalc_mapping(dev);
 				recalc_address_sl(dev);
@@ -576,7 +579,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 	case 0x03df:
 		vid->memctrl = val;
-		if (dev->is_sl2)
+		if (dev->type == 2)
 			recalc_address_sl(dev);
 		  else
 			recalc_address(dev);
@@ -624,8 +627,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 
     if (vid->memctrl == -1) return;
 
-    egawrites++;
-    if (dev->is_sl2) {
+    if (dev->type == 2) {
 	if (vid->array[5] & 1)
 		vid->b8000[addr & 0xffff] = val;
 	  else {
@@ -643,20 +645,19 @@ vid_read(uint32_t addr, void *priv)
 {
     tandy_t *dev = (tandy_t *)priv;
     t1kvid_t *vid = dev->vid;
+    uint8_t ret = 0xff;
 
-    if (vid->memctrl == -1) return(0xff);
+    if (vid->memctrl == -1) return(ret);
 
-    egareads++;
-    if (dev->is_sl2) {
+    if (dev->type == 2) {
 	if (vid->array[5] & 1)
-		return(vid->b8000[addr & 0xffff]);
+		ret = vid->b8000[addr & 0xffff];
 	if ((addr & 0x7fff) < vid->b8000_limit)
-		return(vid->b8000[addr & 0x7fff]);
-	  else
-		return(0xff);
-    } else {
-	return(vid->b8000[addr & vid->b8000_mask]);
-    }
+		ret = vid->b8000[addr & 0x7fff];
+    } else
+	ret = vid->b8000[addr & vid->b8000_mask];
+ 
+    return(ret);
 }
 
 
@@ -858,15 +859,15 @@ vid_poll(void *priv)
 	} else {
 		if (vid->array[3] & 4) {
 			if (vid->mode & 1)
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, (vid->array[2] & 0xf) + 16);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, (vid->array[2] & 0xf) + 16);
 			  else
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, (vid->array[2] & 0xf) + 16);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, (vid->array[2] & 0xf) + 16);
 		} else {
 			cols[0] = ((vid->mode & 0x12) == 0x12) ? 0 : (vid->col & 0xf) + 16;
 			if (vid->mode & 1)
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
 			  else
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
 		}
 	}
 
@@ -1203,15 +1204,15 @@ vid_poll_sl(void *priv)
 	} else {
 		if (vid->array[3] & 4) {
 			if (vid->mode & 1)
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, (vid->array[2] & 0xf) + 16);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, (vid->array[2] & 0xf) + 16);
 			  else
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, (vid->array[2] & 0xf) + 16);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, (vid->array[2] & 0xf) + 16);
 		} else {
 			cols[0] = ((vid->mode & 0x12) == 0x12) ? 0 : (vid->col & 0xf) + 16;
 			if (vid->mode & 1)
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
 			  else
-				hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
+				cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
 		}
 	}
 
@@ -1366,7 +1367,7 @@ vid_init(tandy_t *dev)
     int display_type;
     t1kvid_t *vid;
 
-    vid = malloc(sizeof(t1kvid_t));
+    vid = (t1kvid_t *)mem_alloc(sizeof(t1kvid_t));
     memset(vid, 0x00, sizeof(t1kvid_t));
     vid->memctrl = -1;
     dev->vid = vid;
@@ -1376,7 +1377,7 @@ vid_init(tandy_t *dev)
 
     cga_comp_init(1);
 
-    if (dev->is_sl2) {
+    if (dev->type == 2) {
 	vid->b8000_limit = 0x8000;
 	vid->planar_ctrl = 4;
 	overscan_x = overscan_y = 16;
@@ -1389,8 +1390,10 @@ vid_init(tandy_t *dev)
 
 	timer_add(vid_poll, &vid->vidtime, TIMER_ALWAYS_ENABLED, dev);
     }
-    mem_mapping_add(&vid->mapping, 0xb8000, 0x08000,
-		    vid_read,NULL,NULL, vid_write,NULL,NULL, NULL, 0, dev);
+
+    mem_map_add(&vid->mapping, 0xb8000, 0x08000,
+		vid_read,NULL,NULL, vid_write,NULL,NULL, NULL, 0, dev);
+
     io_sethandler(0x03d0, 16,
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
 }
@@ -1574,7 +1577,7 @@ snd_init(const device_t *info)
 {
     t1ksnd_t *dev;
 
-    dev = (t1ksnd_t *)malloc(sizeof(t1ksnd_t));
+    dev = (t1ksnd_t *)mem_alloc(sizeof(t1ksnd_t));
     memset(dev, 0x00, sizeof(t1ksnd_t));
 
     sn76489_init(&dev->sn76489, 0x00c0, 0x0004, PSSJ, 3579545);
@@ -1689,27 +1692,24 @@ eep_write(uint16_t addr, uint8_t val, void *priv)
 static void *
 eep_init(const device_t *info)
 {
+    char temp[128];
     t1keep_t *eep;
-    FILE *f = NULL;
+    FILE *fp = NULL;
+    int i;
 
-    eep = (t1keep_t *)malloc(sizeof(t1keep_t));
+    eep = (t1keep_t *)mem_alloc(sizeof(t1keep_t));
     memset(eep, 0x00, sizeof(t1keep_t));
-    eep->romset = romset;
-    switch (romset) {
-	case ROM_TANDY1000HX:
-		eep->path = L"tandy1000hx.bin";
-		break;
 
-	case ROM_TANDY1000SL2:
-		eep->path = L"tandy1000sl2.bin";
-		break;
-
-    }
-
-    f = plat_fopen(nvr_path(eep->path), L"rb");
-    if (f != NULL) {
-	fread(eep->store, 128, 1, f);
-	(void)fclose(f);
+    /* Set up the EEPROM's file name. */
+    sprintf(temp, "%s.bin", machine_get_internal_name());
+    i = strlen(temp) + 1;
+    eep->fn = (wchar_t *)mem_alloc(i * sizeof(wchar_t));
+    mbstowcs(eep->fn, temp, i);
+	
+    fp = plat_fopen(nvr_path(eep->fn), L"rb");
+    if (fp != NULL) {
+	fread(eep->store, 128, 1, fp);
+	(void)fclose(fp);
     }
 
     io_sethandler(0x037c, 1, NULL,NULL,NULL, eep_write,NULL,NULL, eep);
@@ -1722,14 +1722,15 @@ static void
 eep_close(void *priv)
 {
     t1keep_t *eep = (t1keep_t *)priv;
-    FILE *f = NULL;
+    FILE *fp;
 
-    f = plat_fopen(nvr_path(eep->path), L"rb");
-    if (f != NULL) {
-	(void)fwrite(eep->store, 128, 1, f);
-	(void)fclose(f);
+    fp = plat_fopen(nvr_path(eep->fn), L"rb");
+    if (fp != NULL) {
+	(void)fwrite(eep->store, 128, 1, fp);
+	(void)fclose(fp);
     }
 
+    free(eep->fn);
     free(eep);
 }
 
@@ -1750,18 +1751,17 @@ tandy_write(uint16_t addr, uint8_t val, void *priv)
 
     switch (addr) {
 	case 0x00a0:
-		mem_mapping_set_addr(&dev->ram_mapping,
-				     ((val >> 1) & 7) * 128 * 1024, 0x20000);
+		mem_map_set_addr(&dev->ram_mapping,
+				 ((val >> 1) & 7) * 128 * 1024, 0x20000);
 		dev->ram_bank = val;
 		break;
 
 	case 0xffe8:
 		if ((val & 0xe) == 0xe)
-			mem_mapping_disable(&dev->ram_mapping);
+			mem_map_disable(&dev->ram_mapping);
 		  else
-			mem_mapping_set_addr(&dev->ram_mapping,
-					     ((val >> 1) & 7) * 128 * 1024,
-					     0x20000);
+			mem_map_set_addr(&dev->ram_mapping,
+					 ((val >> 1) & 7) * 128 * 1024, 0x20000);
 		recalc_address_sl(dev);
 		dev->ram_bank = val;
 		break;
@@ -1769,8 +1769,8 @@ tandy_write(uint16_t addr, uint8_t val, void *priv)
 	case 0xffea:
 		dev->rom_bank = val;
 		dev->rom_offset = ((val ^ 4) & 7) * 0x10000;
-		mem_mapping_set_exec(&dev->rom_mapping,
-				     &dev->rom[dev->rom_offset]);
+		mem_map_set_exec(&dev->rom_mapping,
+				 &dev->rom[dev->rom_offset]);
     }
 }
 
@@ -1849,20 +1849,20 @@ read_roml(uint32_t addr, void *priv)
 static void
 init_rom(tandy_t *dev)
 {
-    dev->rom = (uint8_t *)malloc(0x80000);
+    dev->rom = (uint8_t *)mem_alloc(0x80000);
 
     if (! rom_load_interleaved(L"machines/tandy1000sl2/8079047.hu1",
 			       L"machines/tandy1000sl2/8079048.hu2",
 			       0x000000, 0x80000, 0, dev->rom)) {
-	pclog("TANDY: unable to load BIOS for 1000/SL2 !\n");
+	ERRLOG("TANDY: unable to load BIOS for 1000/SL2 !\n");
 	free(dev->rom);
 	dev->rom = NULL;
 	return;
     }
 
-    mem_mapping_add(&dev->rom_mapping, 0xe0000, 0x10000,
-		    read_rom, read_romw, read_roml, NULL, NULL, NULL,
-		    dev->rom, MEM_MAPPING_EXTERNAL, dev);
+    mem_map_add(&dev->rom_mapping, 0xe0000, 0x10000,
+		read_rom, read_romw, read_roml, NULL, NULL, NULL,
+		dev->rom, MEM_MAPPING_EXTERNAL, dev);
 }
 
 
@@ -1886,6 +1886,7 @@ static const device_config_t vid_config[] = {
     }
 };
 
+static const video_timings_t tandy_timing = { VID_BUS,1,2,4,1,2,4 };
 
 const device_t m_tandy1k_device = {
     "Tandy 1000",
@@ -1921,13 +1922,14 @@ const device_t m_tandy1k_sl2_device = {
 };
 
 
-void
-machine_tandy1k_init(const machine_t *model, void *arg)
+static void
+tandy1k_common_init(const machine_t *model, void *arg, int type)
 {
     tandy_t *dev;
 
-    dev = malloc(sizeof(tandy_t));
+    dev = (tandy_t *)mem_alloc(sizeof(tandy_t));
     memset(dev, 0x00, sizeof(tandy_t));
+    dev->type = type;
 
     machine_common_init(model, arg);
 
@@ -1938,45 +1940,74 @@ machine_tandy1k_init(const machine_t *model, void *arg)
      * 0xFFE8 (SL2), so we remove it from the main mapping.
      */
     dev->base = (mem_size - 128) * 1024;
-    mem_mapping_add(&dev->ram_mapping, 0x80000, 0x20000,
-		    read_ram,NULL,NULL, write_ram,NULL,NULL, NULL, 0, dev);
-    mem_mapping_set_addr(&ram_low_mapping, 0, dev->base);
+    mem_map_add(&dev->ram_mapping, 0x80000, 0x20000,
+		read_ram,NULL,NULL, write_ram,NULL,NULL, NULL, 0, dev);
+    mem_map_set_addr(&ram_low_mapping, 0, dev->base);
 
     device_add(&keyboard_tandy_device);
     keyboard_set_table(scancode_tandy);
 
     device_add(&fdc_xt_device);
 
-    switch(romset) {
-	case ROM_TANDY:
+    switch(dev->type) {
+	case 0:
 		io_sethandler(0x00a0, 1,
 			      tandy_read,NULL,NULL,tandy_write,NULL,NULL,dev);
 		vid_init(dev);
 		device_add_ex(&m_tandy1k_device, dev);
+
+		video_inform(VID_TYPE_CGA, &tandy_timing);
+
 		device_add(&sn76489_device);
 		break;
 
-	case ROM_TANDY1000HX:
+	case 1:
 		io_sethandler(0x00a0, 1,
 			      tandy_read,NULL,NULL,tandy_write,NULL,NULL,dev);
 		vid_init(dev);
 		device_add_ex(&m_tandy1k_hx_device, dev);
+
+		video_inform(VID_TYPE_CGA, &tandy_timing);
+
 		device_add(&ncr8496_device);
 		device_add(&eep_device);
 		break;
 
-	case ROM_TANDY1000SL2:
-		dev->is_sl2 = 1;
+	case 2:
 		init_rom(dev);
 		io_sethandler(0xffe8, 8,
 			      tandy_read,NULL,NULL,tandy_write,NULL,NULL,dev);
 		vid_init(dev);
 		device_add_ex(&m_tandy1k_sl2_device, dev);
+
+		video_inform(VID_TYPE_CGA, &tandy_timing);
+
 		device_add(&snd_device);
 		device_add(&eep_device);
     }
 
     eep_data_out = 0x0000;
+}
+
+
+void
+machine_tandy1k_init(const machine_t *model, void *arg)
+{
+    tandy1k_common_init(model, arg, 0);
+}
+
+
+void
+machine_tandy1k_hx_init(const machine_t *model, void *arg)
+{
+    tandy1k_common_init(model, arg, 1);
+}
+
+
+void
+machine_tandy1k_sl2_init(const machine_t *model, void *arg)
+{
+    tandy1k_common_init(model, arg, 2);
 }
 
 

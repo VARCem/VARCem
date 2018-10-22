@@ -8,7 +8,7 @@
  *
  *		Shared code for all the floppy modules.
  *
- * Version:	@(#)fdd_common.c	1.0.4	2018/05/06
+ * Version:	@(#)fdd_common.c	1.0.5	2018/09/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -37,6 +37,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog fdd_log
 #include "../../emu.h"
 #include "fdd.h"
 #include "fdd_common.h"

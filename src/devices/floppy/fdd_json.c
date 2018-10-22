@@ -8,7 +8,7 @@
  *
  *		Implementation of the PCjs JSON floppy image format.
  *
- * Version:	@(#)fdd_json.c	1.0.7	2018/05/14
+ * Version:	@(#)fdd_json.c	1.0.8	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,6 +49,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog fdd_log
 #include "../../emu.h"
 #include "../../plat.h"
 #include "fdd.h"
@@ -120,7 +121,7 @@ handle(json_t *dev, char *name, char *str)
     if (name == NULL) {
 	/* If no buffer, assume one with 00's. */
 	if (sec->data == NULL) {
-		sec->data = (uint8_t *)malloc(sec->size);
+		sec->data = (uint8_t *)mem_alloc(sec->size);
 		memset(sec->data, 0x00, sec->size);
 	}
 
@@ -143,7 +144,7 @@ handle(json_t *dev, char *name, char *str)
 	pat = atol(str);
 
 	if (sec->data == NULL)
-		sec->data = (uint8_t *)malloc(sec->size);
+		sec->data = (uint8_t *)mem_alloc(sec->size);
 	p = sec->data;
 	s = (sec->size / sizeof(uint32_t));
 	for (i=0; i<s; i++) {
@@ -158,7 +159,7 @@ handle(json_t *dev, char *name, char *str)
 	}
     } else if (! strcmp(name, "data")) {
 	if (sec->data == NULL)
-		sec->data = (uint8_t *)malloc(sec->size);
+		sec->data = (uint8_t *)mem_alloc(sec->size);
 	p = sec->data;
 	while (str && *str) {
 		sp = strchr(str, ',');
@@ -182,7 +183,7 @@ handle(json_t *dev, char *name, char *str)
 static int
 unexpect(int c, int state, int level)
 {
-    fdd_log("JSON: unexpected '%c' in state %d/%d.\n", c, state, level);
+    ERRLOG("JSON: unexpected '%c' in state %d/%d.\n", c, state, level);
 
     return(-1);
 }
@@ -196,7 +197,7 @@ load_image(json_t *dev)
     char *ptr;
 
     if (dev->f == NULL) {
-	fdd_log("JSON: no file loaded!\n");
+	ERRLOG("JSON: no file loaded!\n");
 	return(0);
     }
 
@@ -373,7 +374,7 @@ json_seek(int drive, int track)
     int interleave_type;
 
     if (dev->f == NULL) {
-	fdd_log("JSON: seek: no file loaded!\n");
+	ERRLOG("JSON: seek: no file loaded!\n");
 	return;
     }
 
@@ -397,15 +398,15 @@ json_seek(int drive, int track)
 	return;
     }
 
-    for (side=0; side<dev->sides; side++) {
+    for (side = 0; side < dev->sides; side++) {
 	/* Get transfer rate for this side. */
 	rate = dev->track_flags & 0x07;
 	if (!rate && (dev->track_flags & 0x20)) rate = 4;
 
 	/* Get correct GAP3 value for this side. */
 	gap3 = fdd_get_gap3_size(rate,
-				    dev->sects[track][side][0].size,
-				    dev->spt[track][side]);
+				 dev->sects[track][side][0].size,
+				 dev->spt[track][side]);
 
 	/* Get correct GAP2 value for this side. */
 	gap2 = ((dev->track_flags & 0x07) >= 3) ? 41 : 22;
@@ -424,7 +425,7 @@ json_seek(int drive, int track)
 		id[1] = side;
 		id[2] = rsec;
 		if (dev->sects[track][side][asec].size > 255)
-			perror("fdd_json.c: json_seek: sector size too big.");
+			ERRLOG("JSON: seek: sector size too big.");
 		id[3] = dev->sects[track][side][asec].size & 0xff;
 		ssize = fdd_sector_code_size(dev->sects[track][side][asec].size & 0xff);
 
@@ -517,7 +518,7 @@ json_load(int drive, const wchar_t *fn)
     d86f_unregister(drive);
 
     /* Allocate a drive block. */
-    dev = (json_t *)malloc(sizeof(json_t));
+    dev = (json_t *)mem_alloc(sizeof(json_t));
     memset(dev, 0x00, sizeof(json_t));
 
     /* Open the image file. */
@@ -535,15 +536,15 @@ json_load(int drive, const wchar_t *fn)
 
     /* Load all sectors from the image file. */
     if (! load_image(dev)) {
-	fdd_log("JSON: failed to initialize\n");
+	ERRLOG("JSON: failed to initialize\n");
 	(void)fclose(dev->f);
 	free(dev);
 	images[drive] = NULL;
 	return(0);
     }
 
-    fdd_log("JSON(%d): %ls (%i tracks, %i sides, %i sectors)\n",
-		drive, fn, dev->tracks, dev->sides, dev->spt[0][0]);
+    DEBUG("JSON(%d): %ls (%i tracks, %i sides, %i sectors)\n",
+	  drive, fn, dev->tracks, dev->sides, dev->spt[0][0]);
 
     /*
      * If the image has more than 43 tracks, then
@@ -599,7 +600,7 @@ json_load(int drive, const wchar_t *fn)
     }
 
     if (temp_rate == 0xff) {
-	fdd_log("JSON: invalid image (temp_rate=0xff)\n");
+	ERRLOG("JSON: invalid image (temp_rate=0xff)\n");
 	(void)fclose(dev->f);
 	dev->f = NULL;
 	free(dev);
@@ -619,8 +620,8 @@ json_load(int drive, const wchar_t *fn)
 	dev->gap3_len = fdd_get_gap3_size(temp_rate,sec->size,dev->spt[0][0]);
 
     if (! dev->gap3_len) {
-	fdd_log("JSON: image of unknown format was inserted into drive %c:!\n",
-								'C'+drive);
+	ERRLOG("JSON: image of unknown format was inserted into drive %c:!\n",
+								'A'+drive);
 	(void)fclose(dev->f);
 	dev->f = NULL;
 	free(dev);
@@ -632,10 +633,10 @@ json_load(int drive, const wchar_t *fn)
     if (temp_rate & 0x04)
 	dev->track_flags |= 0x20;		/* RPM */
 
-    fdd_log("      disk_flags: 0x%02x, track_flags: 0x%02x, GAP3 length: %i\n",
-	dev->disk_flags, dev->track_flags, dev->gap3_len);
-    fdd_log("      bit rate 300: %.2f, temporary rate: %i, hole: %i, DMF: %i\n",
-		bit_rate, temp_rate, (dev->disk_flags >> 1), dev->dmf);
+    DEBUG("      disk_flags: 0x%02x, track_flags: 0x%02x, GAP3 length: %i\n",
+	  dev->disk_flags, dev->track_flags, dev->gap3_len);
+    DEBUG("      bit rate 300: %.2f, temporary rate: %i, hole: %i, DMF: %i\n",
+	  bit_rate, temp_rate, (dev->disk_flags >> 1), dev->dmf);
 
     /* Set up handlers for 86F layer. */
     d86f_handler[drive].disk_flags = disk_flags;

@@ -10,7 +10,7 @@
  *
  * NOTE:	Will be moved to the tools/ folder soon.
  *
- * Version:	@(#)pcap_if.rc	1.0.4	2018/05/28
+ * Version:	@(#)pcap_if.rc	1.0.5	2018/09/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -53,8 +53,8 @@
 
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,0
- PRODUCTVERSION 1,0,3,0
+ FILEVERSION 1,0,5,0
+ PRODUCTVERSION 1,0,5,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -67,20 +67,20 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904b0"
+        BLOCK "0409fde9"
         BEGIN
             VALUE "CompanyName", "IRC #VARCem on FreeNode"
             VALUE "FileDescription", "PCap_IF - test tool for WinPcap"
-            VALUE "FileVersion", "1.0.3"
+            VALUE "FileVersion", "1.0.5"
             VALUE "InternalName", "pcap_if"
             VALUE "LegalCopyright", "Copyright 2017,2018 Fred N. van Kempen"
             VALUE "OriginalFilename", "pcap_if.exe"
             VALUE "ProductName", "WinPcap Test Tool"
-            VALUE "ProductVersion", "1.0.3"
+            VALUE "ProductVersion", "1.0.5"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x0409, 1200
+        VALUE "Translation", 0x0409, 65001
     END
 END

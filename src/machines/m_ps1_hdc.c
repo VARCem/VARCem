@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.7	2018/05/06
+ * Version:	@(#)m_ps1_hdc.c	1.0.9	2018/10/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -90,6 +90,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog hdc_log
 #include "../emu.h"
 #include "../io.h"
 #include "../timer.h"
@@ -507,20 +508,20 @@ static int
 get_sector(hdc_t *dev, drive_t *drive, off64_t *addr)
 {
     if (drive->cur_cyl != dev->track) {
-	hdc_log("HDC: get_sector: wrong cylinder %d/%d\n",
-				drive->cur_cyl, dev->track);
+	DEBUG("HDC: get_sector: wrong cylinder %d/%d\n",
+			drive->cur_cyl, dev->track);
 	dev->ssb.wrong_cyl = 1;
 	return(1);
     }
 
     if (dev->head >= drive->hpc) {
-	hdc_log("HDC: get_sector: past end of heads\n");
+	DEBUG("HDC: get_sector: past end of heads\n");
 	dev->ssb.cylinder_err = 1;
 	return(1);
     }
 
     if (dev->sector > drive->spt) {
-	hdc_log("HDC: get_sector: past end of sectors\n");
+	DEBUG("HDC: get_sector: past end of sectors\n");
 	dev->ssb.mark_not_found = 1;
 	return(1);
     }
@@ -595,7 +596,7 @@ dump_ssb(ssb_t *ssb)
     sprintf(sp, "  Misc    : Syndrome=%02X DRIVE_TYPE=%d\n", 
 	ssb->cmd_syndrome, ssb->drive_type);
 
-    hdc_log("HDC: %s\n", temp);
+    DBGLOG(1, "HDC: %s\n", temp);
 }
 
 
@@ -613,7 +614,7 @@ dump_ccb(hdc_t *dev, ccb_t *ccb)
     sprintf(sp, "  CYL=%d  HEAD=%d  SECTOR=%d  COUNT=%d\n",
 	((ccb->cyl_high<<8)|ccb->cyl_low), ccb->head, ccb->sector, ccb->count);
 
-    hdc_log("HDC: %s\n", temp);
+    DBGLOG(1, "HDC: %s\n", temp);
 };
 
 
@@ -635,7 +636,7 @@ dump_fcb(fcb_t *fcb, int count)
 	fcb++;
     }
 
-    hdc_log("HDC: %s\n", temp);
+    DBGLOG(1, "HDC: %s\n", temp);
 }
 #endif
 
@@ -714,7 +715,7 @@ do_format(hdc_t *dev, drive_t *drive, ccb_t *ccb)
 		while (dev->buf_idx < dev->buf_len) {
 			val = dma_channel_read(dev->dma);
 			if (val == DMA_NODATA) {
-				hdc_log("HDC: CMD_FORMAT out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
+				ERRLOG("HDC: CMD_FORMAT out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
 				dev->intstat |= ISR_EQUIP_CHECK;
 				dev->ssb.need_reset = 1;
 				intr = 1;
@@ -742,13 +743,13 @@ do_format(hdc_t *dev, drive_t *drive, ccb_t *ccb)
 	case STATE_FINIT:
 do_fmt:
 #ifdef ENABLE_HDC_LOG
-		hdc_log("HDC: format_%s(%d) %d,%d\n",
-			(ccb->cmd==CMD_FORMAT_DRIVE)?"drive":"track",
-			drive->id, dev->track, dev->head);
+		DEBUG("HDC: format_%s(%d) %d,%d\n",
+		      (ccb->cmd==CMD_FORMAT_DRIVE)?"drive":"track",
+		      drive->id, dev->track, dev->head);
 #endif
 
 		/* Activate the status icon. */
-		ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
+		hdd_active(drive->hdd_num, 1);
 
 		/* Seek to cylinder. */
 		if (do_seek(dev, drive, start_cyl)) {
@@ -787,7 +788,7 @@ do_fmt:
 		}
 
 		/* De-activate the status icon. */
-		ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+		hdd_active(SB_DISK|drive->hdd_num, 0);
 
 		/* This saves us a LOT of code. */
 		dev->state = STATE_FINIT;
@@ -797,7 +798,7 @@ do_fmt:
     /* If we errored out, go back idle. */
     if (intr) {
 	/* De-activate the status icon. */
-	ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+	hdd_active(drive->hdd_num, 0);
 
 	do_finish(dev);
     }
@@ -872,11 +873,11 @@ hdc_callback(void *priv)
 
 			case STATE_SEND:
 				/* Activate the status icon. */
-				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
+				hdd_active(drive->hdd_num, 1);
 
 do_send:
 #ifdef ENABLE_HDC_LOG
-				hdc_log("HDC: read_%s(%d: %d,%d,%d) cnt=%d\n",
+				DEBUG("HDC: read_%s(%d: %d,%d,%d) cnt=%d\n",
 				    (no_data)?"verify":"sector", drive->id,
 				    dev->track, dev->head, dev->sector,
 				    dev->count);
@@ -885,7 +886,7 @@ do_send:
 				/* Get address of sector to load. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 					do_finish(dev);
 					return;
 				}
@@ -925,10 +926,10 @@ do_send:
 						val = dma_channel_write(dev->dma,
 							*dev->buf_ptr++);
 						if (val == DMA_NODATA) {
-							hdc_log("HDC: CMD_READ_SECTORS out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
+							ERRLOG("HDC: CMD_READ_SECTORS out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
 
 							/* De-activate the status icon. */
-							ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+							hdd_active(drive->hdd_num, 0);
 
 							dev->intstat |= ISR_EQUIP_CHECK;
 							dev->ssb.need_reset = 1;
@@ -946,12 +947,12 @@ do_send:
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
 #ifdef ENABLE_HDC_LOG
-					hdc_log("HDC: read_%s(%d) DONE\n",
+					DEBUG("HDC: read_%s(%d) DONE\n",
 					    (no_data)?"verify":"sector",
 					    drive->id);
 #endif
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 
 					if (! (dev->ctrl & ACR_DMA_EN))
 						dev->status &= ~(ASR_DATA_REQ|ASR_DIR);
@@ -989,7 +990,7 @@ do_send:
 		dump_ccb(dev, ccb);
 #endif
 #ifdef ENABLE_HDC_LOG
-		hdc_log("HDC: recalibrate(%d) ready=%d\n",
+		DEBUG("HDC: recalibrate(%d) ready=%d\n",
 				drive->id, drive->present);
 #endif
 		if (drive->present) {
@@ -1038,10 +1039,10 @@ do_send:
 
 			case STATE_RECV:
 				/* Activate the status icon. */
-				ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 1);
+				hdd_active(drive->hdd_num, 1);
 do_recv:
 #ifdef ENABLE_HDC_LOG
-				hdc_log("HDC write_%s(%d: %d,%d,%d) cnt=%d\n",
+				DEBUG("HDC write_%s(%d: %d,%d,%d) cnt=%d\n",
 				    (no_data)?"verify":"sector", drive->id,
 				    dev->track, dev->head, dev->sector,
 				    dev->count);
@@ -1071,10 +1072,10 @@ do_recv:
 					while (dev->buf_idx < dev->buf_len) {
 						val = dma_channel_read(dev->dma);
 						if (val == DMA_NODATA) {
-							hdc_log("HDC: CMD_WRITE_SECTORS out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
+							ERRLOG("HDC: CMD_WRITE_SECTORS out of data (idx=%d, len=%d)!\n", dev->buf_idx, dev->buf_len);
 
 							/* De-activate the status icon. */
-							ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+							hdd_active(drive->hdd_num, 0);
 
 							dev->intstat |= ISR_EQUIP_CHECK;
 							dev->ssb.need_reset = 1;
@@ -1099,7 +1100,7 @@ do_recv:
 				/* Get address of sector to write. */
 				if (get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 
 					do_finish(dev);
 					return;
@@ -1112,12 +1113,12 @@ do_recv:
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
 #ifdef ENABLE_HDC_LOG
-					hdc_log("HDC: write_%s(%d) DONE\n",
+					DEBUG("HDC: write_%s(%d) DONE\n",
 					    (no_data)?"verify":"sector",
 					    drive->id);
 #endif
 					/* De-activate the status icon. */
-					ui_sb_icon_update(SB_HDD|HDD_BUS_IDE, 0);
+					hdd_active(drive->hdd_num, 0);
 
 					if (! (dev->ctrl & ACR_DMA_EN))
 						dev->status &= ~ASR_DATA_REQ;
@@ -1162,9 +1163,9 @@ do_recv:
 				      (ccb->cyl_low|(ccb->cyl_high<<8)));
 		}
 #ifdef ENABLE_HDC_LOG
-		hdc_log("HDC: %s(%d) cyl=%d, err=%d\n",
-			(ccb->ec_p)?"park":"seek",
-			drive->id, drive->cur_cyl, val);
+		DEBUG("HDC: %s(%d) cyl=%d, err=%d\n",
+		      (ccb->ec_p)?"park":"seek",
+		      drive->id, drive->cur_cyl, val);
 #endif
 		if (! val)
 			dev->ssb.seek_end = 1;
@@ -1172,11 +1173,9 @@ do_recv:
 		break;
 
 	default:
-#ifdef ENABLE_HDC_LOG
-		hdc_log("HDC: unknown command - %02x\n", ccb->cmd);
-# ifdef _DEBUG
+		ERRLOG("HDC: unknown command - %02x\n", ccb->cmd);
+#if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
 		dump_ccb(dev, ccb);
-# endif
 #endif
 		dev->intstat |= ISR_INVALID_CMD;
 		do_finish(dev);
@@ -1243,7 +1242,7 @@ hdc_read(uint16_t port, void *priv)
 	case 0:		/* DATA register */
 		if (dev->state == STATE_SDATA) {
 			if (dev->buf_idx > dev->buf_len) {
-				hdc_log("HDC: read with empty buffer!\n");
+				ERRLOG("HDC: read with empty buffer!\n");
 				dev->state = STATE_IDLE;
 				dev->intstat |= ISR_INVALID_CMD;
 				dev->status &= (ASR_TX_EN|ASR_DATA_REQ|ASR_DIR);
@@ -1287,7 +1286,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 	case 0:		/* DATA register */
 		if (dev->state == STATE_RDATA) {
 			if (dev->buf_idx >= dev->buf_len) {
-				hdc_log("HDC: write with full buffer!\n");
+				ERRLOG("HDC: write with full buffer!\n");
 				dev->intstat |= ISR_INVALID_CMD;
 				dev->status &= ~ASR_DATA_REQ;
 				set_intr(dev, 1);
@@ -1388,7 +1387,7 @@ ps1_hdc_init(const device_t *info)
     int c, i;
 
     /* Allocate and initialize device block. */
-    dev = malloc(sizeof(hdc_t));
+    dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
 
     /* Set up controller parameters for PS/1 2011. */
@@ -1396,14 +1395,14 @@ ps1_hdc_init(const device_t *info)
     dev->irq = 14;
     dev->dma = 3;
 
-    pclog("HDC: initializing (I/O=%04X, IRQ=%d, DMA=%d)\n",
+    DEBUG("HDC: initializing (I/O=%04X, IRQ=%d, DMA=%d)\n",
 				dev->base, dev->irq, dev->dma);
 
     /* Load any disks for this device class. */
     c = 0;
     for (i = 0; i < HDD_NUM; i++) {
-	if ((hdd[i].bus == HDD_BUS_IDE) && (hdd[i].id.ide_channel < PS1_HDD_NUM)) {
-		drive = &dev->drives[hdd[i].id.ide_channel];
+	if ((hdd[i].bus == HDD_BUS_IDE) && (hdd[i].bus_id.ide_channel < PS1_HDD_NUM)) {
+		drive = &dev->drives[hdd[i].bus_id.ide_channel];
 
 		if (! hdd_image_load(i)) {
 			drive->present = 0;
@@ -1425,9 +1424,9 @@ ps1_hdc_init(const device_t *info)
 		drive->hdd_num = i;
 		drive->present = 1;
 
-		pclog("HDC: drive%d (type %d: cyl=%d,hd=%d,spt=%d), disk %d\n",
-			hdd[i].id.ide_channel, drive->type,
-			drive->tracks, drive->hpc, drive->spt, i);
+		INFO("HDC: drive%d (type %d: cyl=%d,hd=%d,spt=%d), disk %d\n",
+		     hdd[i].bus_id.ide_channel, drive->type,
+		     drive->tracks, drive->hpc, drive->spt, i);
 
 		if (++c > PS1_HDD_NUM) break;
 	}

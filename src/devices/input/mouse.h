@@ -8,7 +8,7 @@
  *
  *		Definitions for the mouse driver.
  *
- * Version:	@(#)mouse.h	1.0.6	2018/06/06
+ * Version:	@(#)mouse.h	1.0.8	2018/09/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,6 +92,7 @@ extern const device_t	mouse_mswhserial_device;
 extern const device_t	mouse_ps2_device;
 #endif
 
+extern void	mouse_log(int level, const char *fmt, ...);
 extern void	mouse_init(void);
 extern void	mouse_close(void);
 extern void	mouse_reset(void);

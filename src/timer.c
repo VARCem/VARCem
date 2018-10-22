@@ -8,7 +8,7 @@
  *
  *		System timer module.
  *
- * Version:	@(#)timer.c	1.0.1	2018/02/14
+ * Version:	@(#)timer.c	1.0.2	2018/09/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -134,7 +134,6 @@ void timer_update_outstanding(void)
 
 void timer_reset(void)
 {
-	/* pclog("timer_reset\n"); */
 	timers_present = 0;
 	timer_latch = timer_count = 0;
 }

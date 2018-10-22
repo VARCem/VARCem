@@ -8,7 +8,7 @@
  *
  *		Implemantation of LPT-based sound devices.
  *
- * Version:	@(#)snd_lpt_dac.c	1.0.7	2018/05/06
+ * Version:	@(#)snd_lpt_dac.c	1.0.9	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
@@ -132,11 +133,12 @@ dac_get_buffer(int32_t *buffer, int len, void *priv)
 static void *
 dac_init(const lpt_device_t *info)
 {
-    lpt_dac_t *dev = malloc(sizeof(lpt_dac_t));
+    lpt_dac_t *dev;
 
-    pclog("SOUND: LPT device '%s' [%d] initializing!\n",
+    INFO("SOUND: LPT device '%s' [%d] initializing!\n",
 				info->name, info->type);
 
+    dev = (lpt_dac_t *)mem_alloc(sizeof(lpt_dac_t));
     memset(dev, 0x00, sizeof(lpt_dac_t));
     dev->name = info->name;
 
@@ -157,7 +159,7 @@ dac_close(void *priv)
 {
     lpt_dac_t *dev = (lpt_dac_t *)priv;
 
-    pclog("SOUND: LPT device '%s' closed!\n", dev->name);
+    INFO("SOUND: LPT device '%s' closed!\n", dev->name);
 
     free(dev);
 }

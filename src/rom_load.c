@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.11	2018/05/27
+ * Version:	@(#)rom_load.c	1.0.13	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -88,7 +88,7 @@ again:
 	  else if (! strcmp(argv[1], "interleaved"))
 		r->mode = 1;
 	  else {
-		pclog("ROM: invalid mode '%s' on line %d.\n", argv[1], ln);
+		ERRLOG("ROM: invalid mode '%s' on line %d.\n", argv[1], ln);
 		return(0);
 	}
     } else if (! strcmp(argv[0], "optional")) {
@@ -136,7 +136,7 @@ again:
 	mbstowcs(r->vidfn, argv[1], sizeof_w(r->vidfn));
 	sscanf(argv[2], "%i", &r->vidsz);
     } else {
-	pclog("ROM: invalid command '%s' on line %d.\n", argv[0], ln);
+	ERRLOG("ROM: invalid command '%s' on line %d.\n", argv[0], ln);
 	return(0);
     }
 
@@ -161,7 +161,7 @@ parser(FILE *fp, romdef_t *r)
 	/* Clear the per-line stuff. */
 	skipnl = dolit = doquot = 0;
 	doskip = 1;
-	for (a=0; a<MAX_ARGS; a++)
+	for (a = 0; a < MAX_ARGS; a++)
 		args[a] = NULL;
 	a = 0;
 	sp = line;
@@ -219,7 +219,7 @@ parser(FILE *fp, romdef_t *r)
 					break;
 
 				default:
-					pclog("ROM: syntax error: escape '\\%c'", c);
+					ERRLOG("ROM: syntax error: escape '\\%c'", c);
 					*sp++ = '\\';
 					*sp++ = (char)c;
 			}
@@ -267,7 +267,8 @@ parser(FILE *fp, romdef_t *r)
 		/* Quoting means raw insertion. */
 		if (doquot) {
 			/* We are quoting, so insert as is. */
-			if (c == '\n') pclog("ROM: syntax error: unexpected newline, expected (\")\n");
+			if (c == '\n')
+				ERRLOG("ROM: syntax error: unexpected newline, expected (\")\n");
 			*sp++ = (char)c;
 			continue;
 		}
@@ -322,7 +323,7 @@ parser(FILE *fp, romdef_t *r)
 	*sp = '\0';
 	if (feof(fp)) break;
 	if (ferror(fp)) {
-		pclog("ROM: Read Error on line '%s'\n", l);
+		ERRLOG("ROM: Read Error on line '%s'\n", l);
 		return(0);
 	}
 	l++;
@@ -358,24 +359,20 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
     pc_path(script, sizeof_w(script), NULL);
 
     if (! test_only) {
-	pclog("ROM: loading script '%ls'\n", rom_path(script));
+	INFO("ROM: loading script '%ls'\n", rom_path(script));
 
 	/* If not done yet, allocate a 128KB buffer for the BIOS ROM. */
 	if (rom == NULL)
-		rom = (uint8_t *)malloc(131072);
+		rom = (uint8_t *)mem_alloc(131072);
 	memset(rom, 0xff, 131072);
 
 	/* Default to a 64K ROM BIOS image. */
 	biosmask = 0xffff;
-
-	/* Zap the BIOS ROM EXTENSION area. */
-	memset(romext, 0xff, 0x8000);
-	mem_mapping_disable(&romext_mapping);
     }
 
     /* Open the script file. */
     if ((fp = plat_fopen(rom_path(script), L"rb")) == NULL) {
-	pclog("ROM: unable to open '%ls'\n", rom_path(script));
+	ERRLOG("ROM: unable to open '%ls'\n", rom_path(script));
 	return(0);
     }
 
@@ -390,26 +387,26 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 
     /* Show the resulting data. */
     if (! test_only) {
-	pclog("Size     : %lu\n", r->total);
-	pclog("Offset   : 0x%06lx (%lu)\n", r->offset, r->offset);
-	pclog("Mode     : %s\n", (r->mode == 1)?"interleaved":"linear");
-	pclog("Files    : %d\n", r->nfiles);
-	for (c=0; c<r->nfiles; c++) {
-		pclog("%c[%d]     : '%ls', %i, 0x%06lx, %i\n",
+	INFO("Size     : %lu\n", r->total);
+	INFO("Offset   : 0x%06lx (%lu)\n", r->offset, r->offset);
+	INFO("Mode     : %s\n", (r->mode == 1)?"interleaved":"linear");
+	INFO("Files    : %d\n", r->nfiles);
+	for (c = 0; c < r->nfiles; c++) {
+		INFO("%c[%d]     : '%ls', %i, 0x%06lx, %i\n",
 			(r->files[c].offset==0xffffffff)?'*':' ', c+1,
 			r->files[c].path, r->files[c].skip,
 			r->files[c].offset, r->files[c].size);
 	}
 	if (r->fontnum != -1)
-		pclog("Font     : %i, '%ls'\n", r->fontnum, r->fontfn);
+		INFO("Font     : %i, '%ls'\n", r->fontnum, r->fontfn);
 	if (r->vidsz != 0)
-		pclog("VideoBIOS: '%ls', %i\n", r->vidfn, r->vidsz);
+		INFO("VideoBIOS: '%ls', %i\n", r->vidfn, r->vidsz);
 
 	/* Actually perform the work. */
 	switch(r->mode) {
 		case 0:			/* linear file(s) */
 			/* We loop on all files. */
-			for (c=0; c<r->nfiles; c++) {
+			for (c = 0; c < r->nfiles; c++) {
 				/* If this is a no-load file, skip. */
 				if (r->files[c].offset == 0xffffffff)
 					continue;
@@ -430,7 +427,7 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 
 		case 1:			/* interleaved file(s) */
 			/* We loop on all files. */
-			for (c=0; c<r->nfiles/2; c+=2) {
+			for (c = 0; c < r->nfiles / 2; c += 2) {
 				/* If this is a no-load file, skip. */
 				if (r->files[c].offset == 0xffffffff)
 					continue;
@@ -467,9 +464,12 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 		pc_path(r->vidfn, sizeof_w(r->vidfn), temp);
 	}
 
-	pclog("ROM: status %d, tot %u, mask 0x%06lx\n",
+	INFO("ROM: status %d, tot %u, mask 0x%06lx\n",
 				i, r->total, biosmask);
     }
+
+    if (! i)
+	ERRLOG("ROM: error in script '%ls'\n", script);
 
     return(i);
 }

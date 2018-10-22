@@ -1,0 +1,62 @@
+#
+# VARCem	Virtual ARchaeological Computer EMulator.
+#		An emulator of (mostly) x86-based PC systems and devices,
+#		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+#		spanning the era between 1981 and 1995.
+#
+#		This file is part of the VARCem Project.
+#
+#		Supported Languages database.
+#
+# Version:	@(#)VARCem.lang	1.0.4	2018/09/26
+#
+# Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+#
+#		Copyright 2018 Fred N. van Kempen.
+#
+#		Redistribution and  use  in source  and binary forms, with
+#		or  without modification, are permitted  provided that the
+#		following conditions are met:
+#
+#		1. Redistributions of  source  code must retain the entire
+#		   above notice, this list of conditions and the following
+#		   disclaimer.
+#
+#		2. Redistributions in binary form must reproduce the above
+#		   copyright  notice,  this list  of  conditions  and  the
+#		   following disclaimer in  the documentation and/or other
+#		   materials provided with the distribution.
+#
+#		3. Neither the  name of the copyright holder nor the names
+#		   of  its  contributors may be used to endorse or promote
+#		   products  derived from  this  software without specific
+#		   prior written permission.
+#
+# THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+# "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+# HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+# THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+BY,0423,LANG_BELARUSIAN,SUBLANG_BELARUSIAN_BELARUS,Belarusian
+CZ,0405,LANG_CZECH,SUBLANG_CZECH_CZECH_REPUBLIC,Czech
+DE,0407,LANG_GERMAN,SUBLANG_GERMAN,German
+DU,0413,LANG_DUTCH,SUBLANG_DUTCH,Dutch
+ES,040a,LANG_SPANISH,SUBLANG_SPANISH,Spanish
+FI,040b,LANG_FINNISH,SUBLANG_FINNISH_FINLAND,Finnish
+FR,040c,LANG_FRENCH,SUBLANG_FRENCH,French
+IT,0410,LANG_ITALIAN,SUBLANG_ITALIAN,Italian
+JP,0411,LANG_JAPANESE,SUBLANG_JAPANESE_JAPAN,Japanese
+KR,0412,LANG_KOREAN,SUBLANG_KOREAN,Korean
+KZ,043f,LANG_KAZAK,SUBLANG_KAZAK_KAZAKHSTAN,Kazakh
+LT,0427,LANG_LITHUANIAN,SUBLANG_LITHUANIAN_LITHUANIA,Lithuanian
+NO,0414,LANG_NORWEGIAN,SUBLANG_NORWEGIAN_BOKMAL,Norwegian
+RU,0419,LANG_RUSSIAN,SUBLANG_RUSSIAN_RUSSIA,Russian
+SL,0424,LANG_SLOVENIAN,SUBLANG_SLOVENIAN_SLOVENIA,Slovenian
+UA,0422,LANG_UKRAINIAN,SUBLANG_UKRAINIAN_UKRAINE,Ukrainian

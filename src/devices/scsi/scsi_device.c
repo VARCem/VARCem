@@ -8,7 +8,7 @@
  *
  *		The generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.c	1.0.6	2018/05/06
+ * Version:	@(#)scsi_device.c	1.0.13	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,34 +38,33 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#include <stdarg.h>
+#define HAVE_STDARG_H
+#define dbglog scsi_log
 #include "../../emu.h"
 #include "../../device.h"
-#include "../cdrom/cdrom.h"
 #include "../disk/hdd.h"
-#include "../disk/zip.h"
 #include "scsi.h"
-#include "scsi_disk.h"
+#include "scsi_device.h"
 
 
-static uint8_t scsi_null_device_sense[14] = {
-    0x70,0,SENSE_ILLEGAL_REQUEST,0,0,0,0,0,0,0,0,0,ASC_INV_LUN,0
+#ifdef ENABLE_SCSI_LOG
+int		scsi_do_log = ENABLE_SCSI_LOG;
+#endif
+scsi_device_t	scsi_devices[SCSI_ID_MAX][SCSI_LUN_MAX];
+
+
+static const uint8_t	scsi_null_device_sense[18] = {
+    0x70,0,SENSE_ILLEGAL_REQUEST,0,0,0,0,0,0,0,0,0,ASC_INV_LUN,0,0,0,0,0
 };
 
 
 static uint8_t
-scsi_device_target_command(int lun_type, uint8_t id, uint8_t *cdb)
+target_command(scsi_device_t *dev, uint8_t *cdb)
 {
-    if (lun_type == SCSI_DISK) {
-	scsi_hd_command(id, cdb);
-	return scsi_hd_err_stat_to_scsi(id);
-    }
-    else if (lun_type == SCSI_CDROM) {
-	cdrom_command(id, cdb);
-	return cdrom_CDROM_PHASE_to_scsi(id);
-    }
-    else if (lun_type == SCSI_ZIP) {
-	zip_command(id, cdb);
-	return zip_ZIP_PHASE_to_scsi(id);
+    if (dev->command && dev->err_stat_to_scsi) {
+	dev->command(dev->p, cdb);
+	return dev->err_stat_to_scsi(dev->p);
     }
 
     return SCSI_STATUS_CHECK_CONDITION;
@@ -73,320 +72,154 @@ scsi_device_target_command(int lun_type, uint8_t id, uint8_t *cdb)
 
 
 static void
-scsi_device_target_phase_callback(int lun_type, uint8_t id)
+target_callback(scsi_device_t *dev)
 {
-    if (lun_type == SCSI_DISK) {
-	scsi_hd_callback(id);
-    }
-    else if (lun_type == SCSI_CDROM) {
-	cdrom_phase_callback(id);
-    }
-    else if (lun_type == SCSI_ZIP) {
-	zip_phase_callback(id);
-    }
+    if (dev->callback)
+	dev->callback(dev->p);
 }
 
 
 static int
-scsi_device_target_err_stat_to_scsi(int lun_type, uint8_t id)
+target_err_stat_to_scsi(scsi_device_t *dev)
 {
-    if (lun_type == SCSI_DISK) {
-	return scsi_hd_err_stat_to_scsi(id);
-    }
-    else if (lun_type == SCSI_CDROM) {
-	return cdrom_CDROM_PHASE_to_scsi(id);
-    }
-    else if (lun_type == SCSI_ZIP) {
-	return zip_ZIP_PHASE_to_scsi(id);
-    }
+    if (dev->err_stat_to_scsi)
+	return dev->err_stat_to_scsi(dev->p);
 
     return SCSI_STATUS_CHECK_CONDITION;
 }
 
 
-static void
-scsi_device_target_save_cdb_byte(int lun_type, uint8_t id, uint8_t cdb_byte)
-{
-    if (lun_type == SCSI_DISK) {
-	shdc[id].request_length = cdb_byte;
-    }
-    else if (lun_type == SCSI_CDROM) {
-	cdrom[id]->request_length = cdb_byte;
-    }
-    else if (lun_type == SCSI_ZIP) {
-	zip[id].request_length = cdb_byte;
-    }
-}
-
-
 int64_t
-scsi_device_get_callback(uint8_t scsi_id, uint8_t scsi_lun)
+scsi_device_get_callback(scsi_device_t *dev)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
+    scsi_device_data_t *sdd = (scsi_device_data_t *)dev->p;
 
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		return shdc[id].callback;
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		return cdrom[id]->callback;
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		return zip[id].callback;
-	default:
-		break;
-    }
+    if (sdd)
+	return sdd->callback;
 
     return -1LL;
 }
 
 
 uint8_t *
-scsi_device_sense(uint8_t scsi_id, uint8_t scsi_lun)
+scsi_device_sense(scsi_device_t *dev)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
+    scsi_device_data_t *sdd = (scsi_device_data_t *)dev->p;
 
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		return shdc[id].sense;
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		return cdrom[id]->sense;
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		return zip[id].sense;
-	default:
-		break;
-    }
+    if (sdd)
+	return sdd->sense;
 
-    return scsi_null_device_sense;
+    return (uint8_t *)scsi_null_device_sense;
 }
 
 
 void
-scsi_device_request_sense(uint8_t scsi_id, uint8_t scsi_lun, uint8_t *buffer, uint8_t alloc_length)
+scsi_device_request_sense(scsi_device_t *dev, uint8_t *buffer, uint8_t alloc_length)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
-
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		scsi_hd_request_sense_for_scsi(id, buffer, alloc_length);
-		break;
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		cdrom_request_sense_for_scsi(id, buffer, alloc_length);
-		break;
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		zip_request_sense_for_scsi(id, buffer, alloc_length);
-		break;
-	default:
-		memcpy(buffer, scsi_null_device_sense, alloc_length);
-		break;
-    }
+    if (dev->request_sense)
+	dev->request_sense(dev->p, buffer, alloc_length);
+    else
+	memcpy(buffer, scsi_null_device_sense, alloc_length);
 }
 
 
 void
-scsi_device_type_data(uint8_t scsi_id, uint8_t scsi_lun, uint8_t *type, uint8_t *rmb)
+scsi_device_reset(scsi_device_t *dev)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
-
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		*type = 0x00;
-		*rmb = (hdd[id].bus == HDD_BUS_SCSI_REMOVABLE) ? 0x80 : 0x00;
-		break;
-	case SCSI_CDROM:
-		*type = 0x05;
-		*rmb = 0x80;
-		break;
-	case SCSI_ZIP:
-		*type = 0x00;
-		*rmb = 0x80;
-		break;
-	default:
-		*type = *rmb = 0xFF;
-		break;
-    }
+    if (dev->reset)
+	dev->reset(dev->p);
 }
 
 
 int
-scsi_device_read_capacity(uint8_t scsi_id, uint8_t scsi_lun, uint8_t *cdb, uint8_t *buffer, uint32_t *len)
+scsi_device_present(scsi_device_t *dev)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
-
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		return scsi_hd_read_capacity(id, cdb, buffer, len);
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		return cdrom_read_capacity(id, cdb, buffer, len);
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		return zip_read_capacity(id, cdb, buffer, len);
-	default:
-		break;
-    }
-
-    return 0;
-}
-
-
-int
-scsi_device_present(uint8_t scsi_id, uint8_t scsi_lun)
-{
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-
-    switch (lun_type) {
-	case SCSI_NONE:
-		return 0;
-	default:
-		break;
-    }
+    if (dev->type == SCSI_NONE)
+	return 0;
 
     return 1;
 }
 
 
 int
-scsi_device_valid(uint8_t scsi_id, uint8_t scsi_lun)
+scsi_device_valid(scsi_device_t *dev)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
+    if (dev->p)
+	return 1;
 
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		break;
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		break;
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		break;
-	default:
-		id = 0;
-		break;
-    }
-
-    return (id == 0xFF) ? 0 : 1;
+    return 0;
 }
 
 
 int
-scsi_device_cdb_length(uint8_t scsi_id, uint8_t scsi_lun)
+scsi_device_cdb_length(scsi_device_t *dev)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
-
-    switch (lun_type) {
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		return cdrom[id]->cdb_len;
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		return zip[id].cdb_len;
-	default:
-		break;
-    }
-
+    /* Right now, it's 12 for all devices. */
     return 12;
 }
 
 
 void
-scsi_device_command_phase0(uint8_t scsi_id, uint8_t scsi_lun, int cdb_len, uint8_t *cdb)
+scsi_device_command_phase0(scsi_device_t *dev, uint8_t *cdb)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
-
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		break;
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		break;
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		break;
-	default:
-		id = 0;
-		SCSIDevices[scsi_id][scsi_lun].Phase = SCSI_PHASE_STATUS;
-		SCSIDevices[scsi_id][scsi_lun].Status = SCSI_STATUS_CHECK_CONDITION;
-		return;
+    if (! dev->p) {
+	dev->phase = SCSI_PHASE_STATUS;
+	dev->status = SCSI_STATUS_CHECK_CONDITION;
+	return;
     }
 
-    /*
-     * Since that field in the target struct is never used when
-     * the bus type is SCSI, let's use it for this scope.
-     */
-    scsi_device_target_save_cdb_byte(lun_type, id, cdb[1]);
+    /* Execute the SCSI command immediately and get the transfer length. */
+    dev->phase = SCSI_PHASE_COMMAND;
+    dev->status = target_command(dev, cdb);
 
-    if (cdb_len != 12) {
+    if (dev->phase == SCSI_PHASE_STATUS) {
 	/*
-	 * Make sure the LUN field of the temporary CDB is always 0,
-	 * otherwise Daemon Tools drives will misbehave when a command
-	 * is passed through to them.
+	 * Command completed (either OK or error) -
+	 * Call the phase callback to complete the command.
 	 */
-	cdb[1] &= 0x1f;
-    }
-
-    /* Finally, execute the SCSI command immediately and get the transfer length. */
-    SCSIDevices[scsi_id][scsi_lun].Phase = SCSI_PHASE_COMMAND;
-    SCSIDevices[scsi_id][scsi_lun].Status = scsi_device_target_command(lun_type, id, cdb);
-
-    if (SCSIDevices[scsi_id][scsi_lun].Phase == SCSI_PHASE_STATUS) {
-	/* Command completed (either OK or error) - call the phase callback to complete the command. */
-	scsi_device_target_phase_callback(lun_type, id);
+	target_callback(dev);
     }
     /* If the phase is DATA IN or DATA OUT, finish this here. */
 }
 
 
-void scsi_device_command_phase1(uint8_t scsi_id, uint8_t scsi_lun)
+void
+scsi_device_command_phase1(scsi_device_t *dev)
 {
-    uint8_t lun_type = SCSIDevices[scsi_id][scsi_lun].LunType;
-    uint8_t id = 0;
-
-    switch (lun_type) {
-	case SCSI_DISK:
-		id = scsi_disks[scsi_id][scsi_lun];
-		break;
-	case SCSI_CDROM:
-		id = scsi_cdrom_drives[scsi_id][scsi_lun];
-		break;
-	case SCSI_ZIP:
-		id = scsi_zip_drives[scsi_id][scsi_lun];
-		break;
-	default:
-		id = 0;
-		return;
-    }
+    if (! dev->p)
+	return;
 
     /* Call the second phase. */
-    scsi_device_target_phase_callback(lun_type, id);
-    SCSIDevices[scsi_id][scsi_lun].Status = scsi_device_target_err_stat_to_scsi(lun_type, id);
+    target_callback(dev);
+    dev->status = target_err_stat_to_scsi(dev);
 
-    /* Command second phase complete - call the callback to complete the command. */
-    scsi_device_target_phase_callback(lun_type, id);
+    /*
+     * Command second phase complete -
+     * Call the callback to complete the command.
+     */
+    target_callback(dev);
 }
 
 
 int32_t *
-scsi_device_get_buf_len(uint8_t scsi_id, uint8_t scsi_lun)
+scsi_device_get_buf_len(scsi_device_t *dev)
 {
-    return &SCSIDevices[scsi_id][scsi_lun].BufferLength;
+    return &dev->buffer_length;
 }
+
+
+#ifdef _LOGGING
+void
+scsi_log(int level, const char *fmt, ...)
+{
+# ifdef ENABLE_SCSI_LOG
+    va_list ap;
+
+    if (scsi_do_log >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+# endif
+}
+#endif

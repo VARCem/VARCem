@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mmx_shift.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_mmx_shift.h	1.0.2	2018/10/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,7 +89,7 @@ static int opPSxxW_imm(uint32_t fetchdat)
                 }
                 break;
                 default:
-                pclog("Bad PSxxW (0F 71) instruction %02X\n", op);
+                ERRLOG("CPU: bad PSxxW (0F 71) instruction %02X\n", op);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 return 0;
@@ -260,7 +260,7 @@ static int opPSxxD_imm(uint32_t fetchdat)
                 }
                 break;
                 default:
-                pclog("Bad PSxxD (0F 72) instruction %02X\n", op);
+                ERRLOG("CPU: bad PSxxD (0F 72) instruction %02X\n", op);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 return 0;
@@ -412,7 +412,7 @@ static int opPSxxQ_imm(uint32_t fetchdat)
                         cpu_state.MM[reg].q <<= shift;
                 break;
                 default:
-                pclog("Bad PSxxQ (0F 73) instruction %02X\n", op);
+                ERRLOG("CPU: bad PSxxQ (0F 73) instruction %02X\n", op);
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();
                 return 0;

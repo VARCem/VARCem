@@ -8,7 +8,7 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xt_xi8088.c	1.0.10	2018/05/06
+ * Version:	@(#)m_xt_xi8088.c	1.0.11	2018/09/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -79,17 +79,19 @@ xi8088_turbo_get(void)
 void
 xi8088_turbo_set(uint8_t value)
 {
+    int c;
+
     if (! xi8088.turbo_setting) return;
 
     xi8088.turbo = value;
     if (! value) {
-	pclog("Xi8088 turbo off\n");
-	int c = cpu;
+	DEBUG("Xi8088 turbo off\n");
+	c = cpu;
 	cpu = 0;	/* 8088/4.77 */
 	cpu_set();
 	cpu = c;
     } else {
-	pclog("Xi8088 turbo on\n");
+	DEBUG("Xi8088 turbo on\n");
 	cpu_set();
     }
 }
@@ -109,28 +111,24 @@ xi8088_bios_128kb(void)
 }
 
 
-static const device_config_t xi8088_config[] =
-{
+static const device_config_t xi8088_config[] = {
+    {
+	"turbo_setting","Turbo",CONFIG_SELECTION,"",0,
 	{
-		.name = "turbo_setting",
-		.description = "Turbo",
-		.type = CONFIG_SELECTION,
-		.selection =
 		{
-			{
-				.description = "Always at selected speed",
-				.value = 0
-			},
-			{
-				.description = "Hotkeys (starts off)",
-				.value = 1
-			}
+			"Always at selected speed",0
 		},
-		.default_int = 0
-	},
-	{
-		.type = -1
+		{
+			"Hotkeys (starts off)",1
+		},
+		{
+			""
+		}
 	}
+    },
+    {
+	"","",-1
+    }
 };
 
 
@@ -138,10 +136,7 @@ const device_t m_xi8088_device = {
     "Xi8088",
     0, 0,
     NULL, NULL, NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL, NULL, NULL, NULL,
     xi8088_config
 };
 
@@ -156,6 +151,9 @@ machine_xt_xi8088_init(const machine_t *model, void *arg)
 	xi8088_bios_128kb_set(0);
      else
 	xi8088_bios_128kb_set(1);
+
+    if (xi8088_bios_128kb())
+	mem_add_upper_bios();
 
     /*
      * Get the selected Turbo Speed setting.
@@ -177,7 +175,7 @@ machine_xt_xi8088_init(const machine_t *model, void *arg)
 
     device_add(&at_nvr_device);
 
-    device_add(&keyboard_ps2_device);
+    device_add(&keyboard_ps2_xi8088_device);
 
     device_add(&fdc_xt_device);
 }

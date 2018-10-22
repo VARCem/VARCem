@@ -306,7 +306,7 @@ static int timing_count;
 static uint8_t last_prefix;
 static uint32_t regmask_modified;
 
-static inline int COUNT(int *c, int op_32)
+static INLINE int COUNT(int *c, int op_32)
 {
         if ((uintptr_t)c <= 10000)
                 return (int)(uintptr_t)c;

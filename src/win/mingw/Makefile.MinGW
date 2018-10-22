@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.48	2018/05/26
+# Version:	@(#)Makefile.mingw	1.0.63	2018/10/18
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -68,6 +68,9 @@ endif
 ifndef DEBUG
  DEBUG		:= n
 endif
+ifndef LOGGING
+ LOGGING	:= n
+endif
 ifndef PROFILER 
  PROFILER	:= n
 endif
@@ -91,6 +94,9 @@ ifndef USB
 endif
 ifndef SDL
  SDL		:= n
+endif
+ifndef D2D
+ D2D		:= n
 endif
 ifndef VNC
  VNC		:= n
@@ -116,9 +122,6 @@ endif
 ifndef PORTABLE3
  PORTABLE3	:= n
 endif
-ifndef GREENB
- GREENB		:= n
-endif
 ifndef I686
  I686		:= n
 endif
@@ -134,23 +137,36 @@ endif
 ifndef PAS16
  PAS16		:= n
 endif
-ifndef STEALTH32
- STEALTH32	:= n
-endif
 ifndef XL24
  XL24		:= n
 endif
 ifndef WONDER
  WONDER		:= n
 endif
+ifndef PRINTER
+ PRINTER	:= n
+endif
+ifndef HOSTCD
+ HOSTCD		:= n
+endif
 
 
 # Name of the executable.
+NETIF		:= pcap_if
 ifndef PROG
  ifneq ($(WX), n)
   PROG		:= WxVARCem
  else
   PROG		:= VARCem
+ endif
+endif
+ifeq ($(DEBUG), y)
+ PROG		:= $(PROG)-d
+ NETIF		:= $(NETIF)-d
+ LOGGING	:= y
+else
+ ifeq ($(LOGGING), y)
+  PROG		:= $(PROG)-l
  endif
 endif
 
@@ -162,12 +178,11 @@ ifeq ($(DEV_BUILD), y)
  AMD_K		:= y
  LASERXT	:= y
  PORTABLE3	:= y
- GREENB		:= y
  I686		:= y
  PAS16		:= y
- STEALTH32	:= y
  XL24		:= y
  WONDER		:= y
+ HOSTCD		:= y
 endif
 
 
@@ -212,7 +227,8 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/cdrom devices/disk devices/floppy \
 		    devices/floppy/lzf devices/input devices/input/game \
 		    devices/network devices/network/slirp devices/ports \
-		    devices/sio devices/system devices/scsi devices/misc \
+		    devices/printer devices/sio devices/system devices/scsi \
+		    devices/misc \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
@@ -240,7 +256,7 @@ ifneq ($(CROSS), n)
   CC		:= /usr/bin/$(MINGW)-gcc -m32
  endif
  PREPROC	:= /usr/bin/$(MINGW)-cpp
- WINDRES	:= /usr/bin/$(MINGW)-windres -c 1200
+ WINDRES	:= /usr/bin/$(MINGW)-windres
 
  SYSINC		:= -I/usr/$(MINGW)/include -Iwin/mingw/include
  SYSLIB		:= -L/usr/$(MINGW)/lib
@@ -264,10 +280,12 @@ else
 endif
 
 DEPS		= -MMD -MF $*.d -c $<
-DEPFILE		:= win/.depends-mingw
+DEPFILE		:= win/mingw/.depends
 
 # Set up the correct toolchain flags.
-OPTS		:= $(EXTRAS) $(STUFF)
+OPTS		:= $(EXTRAS) $(STUFF) \
+		   -D_CRT_NON_CONFORMING_SWPRINTFS \
+		   -D__USE_MINGW_ANSI_STDIO_X
 AFLAGS		:= -msse2 -mfpmath=sse
 RFLAGS		:= --input-format=rc -O coff
 LDFLAGS		:=
@@ -325,6 +343,10 @@ endif
 ifeq ($(PROFILER), y)
  LDFLAGS	+= -Xlinker -Map=$(PROG).map
 endif
+ifeq ($(LOGGING), y)
+ OPTS		+= -D_LOGGING
+ RFLAGS		+= -D_LOGGING
+endif
 ifeq ($(CRASHDUMP), y)
  OPTS		+= -DUSE_CRASHDUMP
 endif
@@ -348,14 +370,15 @@ endif
 LIBS		:= -mwindows \
 		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
 		   -lversion -lcomctl32 -lwinmm
-LIBS		+= -lkernel32 -lwsock32 -liphlpapi -lpsapi
-LIBS		+= -lpthread -static -lstdc++ -lgcc
+LIBS		+= -lwsock32 -liphlpapi -lpsapi
+LIBS		+= -static -lstdc++ -lgcc
 ifneq ($(X64), y)
  LIBS		+= -Wl,--large-address-aware
 endif
 
 
 # Optional modules.
+MISCOBJ		:=
 ifeq ($(DYNAREC), y)
  OPTS		+= -DUSE_DYNAREC
  RFLAGS		+= -DUSE_DYNAREC
@@ -373,12 +396,12 @@ endif
 
 ifeq ($(FLUIDSYNTH), y)
  OPTS		+= -DUSE_FLUIDSYNTH
- FSYNTHOBJ	:= midi_fluidsynth.o
+ MISCOBJ	+= midi_fluidsynth.o
 endif
 
 ifeq ($(MUNT), y)
  OPTS		+= -DUSE_MUNT
- MUNTOBJ	:= midi_mt32.o \
+ MISCOBJ	+= midi_mt32.o \
 		    Analog.o BReverbModel.o File.o FileStream.o LA32Ramp.o \
 		    LA32FloatWaveGenerator.o LA32WaveGenerator.o \
 		    MidiStreamParser.o Part.o Partial.o PartialManager.o \
@@ -405,6 +428,28 @@ ifneq ($(SDL), n)
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(D2D), n)
+ ifeq ($(D2D), d)
+  OPTS		+= -DUSE_D2D=2
+ else
+  OPTS		+= -DUSE_D2D=1
+ endif
+ RFLAGS		+= -DUSE_D2D
+ ifneq ($(D2D_PATH), )
+  OPTS		+= -I$(D2D_PATH)/include/mingw -I$(D2D_PATH)/include
+  ifeq ($(X64), y)
+   LOPTS	+= -L$(D2D_PATH)/lib/mingw/x64
+  else
+   LOPTS	+= -L$(D2D_PATH)/lib/mingw/x86
+  endif
+ endif
+ ifeq ($(D2D), y)
+  LIBS		+= -ld2d1
+ endif
+ D2DOBJ		:= win_d2d.o
+endif
+
+# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(VNC), n)
  OPTS		+= -DUSE_VNC
  RFLAGS		+= -DUSE_VNC
@@ -417,9 +462,9 @@ ifneq ($(VNC), n)
   endif
  endif
  ifeq ($(VNC), y)
-  LIBS		+= -lvncserver
+  LIBS		+= -lvncserver_shared #-static -lpthreads
  endif
- VNCOBJ		:= vnc.o vnc_keymap.o
+ MISCOBJ	+= vnc.o vnc_keymap.o
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -437,7 +482,7 @@ ifneq ($(RDP), n)
  ifeq ($(RDP), y)
   LIBS		+= -lrdp
  endif
- RDPOBJ		:= rdp.o
+ MISCOBJ	+= rdp.o
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -459,6 +504,7 @@ ifneq ($(PNG), n)
  ifeq ($(PNG), y)
   LIBS		+= -lpng -lz
  endif
+ MISCOBJ	+= png.o
 endif
 
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -468,10 +514,9 @@ ifneq ($(WX), n)
  UIOBJ		:= wx_main.o wx_ui.o wx_stbar.o wx_render.o
 else
  UIOBJ		:= win_ui.o \
-		   win_ddraw.o win_d3d.o $(SDLOBJ) \
-		   win_dialog.o win_about.o win_status.o \
-		   win_settings.o win_devconf.o win_snd_gain.o \
-		   win_new_image.o
+		   win_ddraw.o win_d3d.o $(SDLOBJ) $(D2DOBJ) \
+		   win_dialog.o win_about.o win_settings.o \
+		   win_devconf.o win_snd_gain.o win_new_image.o
 endif
 
 
@@ -493,19 +538,13 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_PORTABLE3
  endif
 
- ifeq ($(GREENB), y)
-  OPTS		+= -DUSE_GREENB
-  DEVBROBJ	+= m_at_4gpv31.o
- endif
-
  ifeq ($(I686), y)
   OPTS		+= -DUSE_I686
-  DEVBROBJ	+= m_at_440fx.o
  endif
 
- ifeq ($(STEALTH32), y)
-  OPTS		+= -DUSE_STEALTH32
-  DEVBROBJ	+= vid_icd2061.o
+ ifeq ($(PAS16), y)
+  OPTS		+= -DUSE_PAS16
+  DEVBROBJ	+= snd_pas16.o
  endif
 
  ifeq ($(WONDER), y)
@@ -516,9 +555,13 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_XL24
  endif
 
- ifeq ($(PAS16), y)
-  OPTS		+= -DUSE_PAS16
-  DEVBROBJ	+= snd_pas16.o
+ ifeq ($(PRINTER), y)
+  OPTS		+= -DUSE_PRINTER
+  DEVBROBJ	+= prt_parallel.o
+ endif
+
+ ifeq ($(HOSTCD), y)
+  OPTS		+= -DUSE_HOST_CDROM
  endif
 
 endif
@@ -542,9 +585,10 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #########################################################################
 
 MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
-		   rom.o rom_load.o device.o nvr.o $(VNCOBJ) $(RDPOBJ)
+		   rom.o rom_load.o device.o nvr.o
 
-UIOBJ		+= ui_main.o ui_new_image.o ui_stbar.o ui_vidapi.o
+UIOBJ		+= ui_main.o ui_lang.o ui_stbar.o ui_vidapi.o \
+		   ui_cdrom.o ui_new_image.o ui_misc.o
 
 SYSOBJ		:= dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o mcr.o \
 		   memregs.o nvr_at.o nvr_ps2.o
@@ -569,17 +613,19 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_at_opti495.o m_at_scat.o \
 		    m_at_compaq.o m_at_wd76c10.o \
 		    m_at_sis_85c471.o m_at_sis_85c496.o \
-		    m_at_430lx_nx.o m_at_430fx.o \
-		    m_at_430hx.o m_at_430vx.o
+		    m_at_4x0.o
 
 INTELOBJ	:= intel.o \
 		    intel_flash.o \
 		    intel_sio.o \
-		    intel_piix.o intel_piix4.o
+		    intel_piix.o
 
 DEVOBJ		:= bugger.o \
+		   isamem.o isartc.o \
 		   game.o game_dev.o \
-		   parallel.o parallel_dev.o serial.o \
+		   parallel.o parallel_dev.o \
+		    prt_text.o prt_cpmap.o prt_escp.o \
+		   serial.o \
 		   sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \
 		   sio_pc87306.o sio_w83877f.o sio_um8669f.o \
 		   keyboard.o \
@@ -604,7 +650,8 @@ HDDOBJ		:= hdd.o \
 		    hdc_ide_ata.o hdc_ide_xta.o hdc_xtide.o
 
 CDROMOBJ	:= cdrom.o \
-		    cdrom_dosbox.o cdrom_image.o cdrom_null.o
+		    cdrom_speed.o \
+		    cdrom_dosbox.o cdrom_image.o
 
 ZIPOBJ		:= zip.o
 
@@ -613,10 +660,8 @@ USBOBJ		:= usb.o
 endif
 
 SCSIOBJ		:= scsi.o \
-		    scsi_bus.o scsi_device.o \
-		    scsi_disk.o \
-		    scsi_x54x.o \
-		    scsi_aha154x.o scsi_buslogic.o \
+		    scsi_device.o scsi_disk.o scsi_cdrom.o \
+		    scsi_x54x.o scsi_aha154x.o scsi_buslogic.o \
 		    scsi_ncr5380.o scsi_ncr53c810.o
 
 NETOBJ		:= network.o \
@@ -626,7 +671,8 @@ NETOBJ		:= network.o \
 		     cksum.o ip_input.o queue.o tcp_input.o debug.o \
 		     ip_output.o sbuf.o tcp_output.o udp.o if.o mbuf.o \
 		     slirp.o tcp_subr.o \
-		    net_ne2000.o
+		    net_dp8390.o \
+		    net_ne2000.o net_wd80x3.o net_3c503.o
 
 SNDOBJ		:= sound.o \
 		    sound_dev.o \
@@ -654,7 +700,7 @@ SNDOBJ		:= sound.o \
 VIDOBJ		:= video.o \
 		    video_dev.o \
 		    vid_cga.o vid_cga_comp.o \
-		    vid_compaq_cga.o \
+		    vid_cga_compaq.o \
 		    vid_mda.o \
 		    vid_hercules.o vid_herculesplus.o vid_incolor.o \
 		    vid_colorplus.o \
@@ -666,7 +712,7 @@ VIDOBJ		:= video.o \
 		    vid_ati_eeprom.o \
 		    vid_ati18800.o vid_ati28800.o \
 		    vid_ati_mach64.o vid_ati68860_ramdac.o \
-		    vid_ics2595.o \
+		    vid_bt48x_ramdac.o vid_icd2061.o vid_ics2595.o \
 		    vid_cl54xx.o \
 		    vid_et4000.o vid_sc1502x_ramdac.o \
 		    vid_et4000w32.o vid_stg_ramdac.o \
@@ -681,8 +727,8 @@ VIDOBJ		:= video.o \
 
 PLATOBJ		:= win.o \
 		    win_lang.o win_dynld.o win_opendir.o win_thread.o \
-		    win_cdrom.o win_cdrom_ioctl.o win_keyboard.o \
-		    win_mouse.o win_joystick.o win_midi.o
+		    win_cdrom.o win_keyboard.o win_mouse.o win_joystick.o \
+		    win_midi.o
 ifeq ($(CRASHDUMP), y)
 PLATOBJ		+= win_crashdump.o
 endif
@@ -691,7 +737,7 @@ endif
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
 		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
-		   $(UIOBJ) $(PLATOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ)
+		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
 ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif
@@ -725,7 +771,7 @@ else
 endif
 
 
-all:		$(PREBUILD) $(PROG).exe pcap_if.exe $(POSTBUILD)
+all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
 
 
 VARCem.res:	VARCem.rc VARCem.mpp
@@ -737,7 +783,7 @@ VARCem.res:	VARCem.rc VARCem.mpp
 
 $(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		@$(CC) $(LDFLAGS) -o $(PROG).exe \
+		@$(CC) $(LDFLAGS) -o $@ \
 			$(OBJ) VARCem.res $(LIBS)
 ifneq ($(DEBUG), y)
 		@strip $(PROG).exe
@@ -747,18 +793,12 @@ pcap_if.res:	pcap_if.rc
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) -i $< -o pcap_if.res
 
-pcap_if.exe:	pcap_if.o win_dynld.o pcap_if.res
-		@echo Linking pcap_if.exe ..
-		@$(CC) $(LDFLAGS) -o pcap_if.exe \
+$(NETIF).exe:	pcap_if.o win_dynld.o pcap_if.res
+		@echo Linking $(NETIF).exe ..
+		@$(CC) $(LDFLAGS) -o $@ \
 			pcap_if.o win_dynld.o pcap_if.res
 ifneq ($(DEBUG), y)
-		@strip pcap_if.exe
-endif
-
-hello.exe:	hello.o
-		$(CXX) $(LDFLAGS) -o hello.exe hello.o $(WXLIBS) $(LIBS)
-ifneq ($(DEBUG), y)
-		@strip hello.exe
+		@strip $(NETIF).exe
 endif
 
 

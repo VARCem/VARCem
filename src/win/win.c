@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.16	2018/05/20
+ * Version:	@(#)win.c	1.0.23	2018/10/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,10 +53,12 @@
 #include "../config.h"
 #include "../device.h"
 #include "../ui/ui.h"
-#define GLOBAL
 #include "../plat.h"
 #ifdef USE_SDL
 # include "win_sdl.h"
+#endif
+#ifdef USE_D2D
+# include "win_d2d.h"
 #endif
 #ifdef USE_VNC
 # include "../vnc.h"
@@ -64,6 +66,7 @@
 #ifdef USE_RDP
 # include <rdp.h>
 #endif
+#include "../devices/cdrom/cdrom.h"
 #include "../devices/input/mouse.h"
 #include "../devices/video/video.h"
 #ifdef USE_WX
@@ -73,12 +76,13 @@
 
 
 /* Platform Public data, specific. */
-HINSTANCE	hInstance;		/* application instance */
+HINSTANCE	hInstance;			/* application instance */
+int		quited;				/* system exit requested */
 
 
 /* Local data. */
-static HANDLE	hBlitMutex,		/* video mutex */
-		thMain;			/* main thread */
+static HANDLE	hBlitMutex,			/* video mutex */
+		thMain;				/* main thread */
 
 
 /* The list with supported VidAPI modules. */
@@ -88,6 +92,9 @@ const vidapi_t *plat_vidapis[] = {
 #else
     &ddraw_vidapi,
     &d3d_vidapi,
+#endif
+#ifdef USE_D2D
+    &d2d_vidapi,
 #endif
 
 #ifdef USE_SDL
@@ -145,7 +152,7 @@ ProcessCommandLine(wchar_t ***argw)
 
 		if (argc >= argc_max) {
 			argc_max += 64;
-			args = realloc(args, sizeof(wchar_t *)*argc_max);
+			args = (wchar_t **)realloc(args, sizeof(wchar_t *)*argc_max);
 			if (args == NULL) {
 				free(argbuf);
 				return(0);
@@ -182,19 +189,45 @@ int WINAPI
 WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 {
     wchar_t **argw = NULL;
-    int	argc, i;
-
-    /* Set this to the default value (windowed mode). */
-    vid_fullscreen = 0;
+    int	argc, i, lang;
 
     /* We need this later. */
     hInstance = hInst;
 
-    /* First, set our (default) language. */
-    lang_id = (int)GetUserDefaultUILanguage();
+    /*
+     * Grab the commandline arguments, and do the pre-init.
+     *
+     * We do this BEFORE initializing other things, because
+     * this also sets up a proper (and corrected) argv[0]
+     * value, in turn needed by pc_setup() ..
+     */
+    argc = ProcessCommandLine(&argw);
 
     /* Initialize the version data. CrashDump needs it early. */
     pc_version("Windows");
+
+    /* Set up the basic pathname info for the application. */
+    (void)pc_setup(0, (wchar_t **)stdout);
+
+    /* Set this to the default value (windowed mode). */
+    vid_fullscreen = 0;
+
+    /* First, set our (default) language. */
+    lang = (int)GetUserDefaultUILanguage();
+
+    /*
+     * Set the initial active language for this application.
+     *
+     * We must do this early, because if we are on a localized
+     * system, we must have the language set up so that the
+     * "pc_setup" phase (config file etc) can display error
+     * messages...
+     */
+    if (! ui_lang_set(lang)) {
+	/* That did not work. Revert back to default and try again. */
+	lang = 0x0409;
+	(void)ui_lang_set(lang);
+    }
 
 #ifdef USE_CRASHDUMP
     /* Enable crash dump services. */
@@ -205,10 +238,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     if (force_debug)
 	plat_console(1);
 
-    /* Process the command line for options. */
-    argc = ProcessCommandLine(&argw);
-
-    /* Pre-initialize the system, this loads the config file. */
+    /* Set up standard emulator stuff, read config file. */
     if (pc_setup(argc, argw) <= 0) {
 	/* Error, detach from console and abort. */
 	plat_console(0);
@@ -220,7 +250,15 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 	plat_console(0);
 
     /* Set the active language for this application. */
-    plat_set_language(lang_id);
+    if (! ui_lang_set(language)) {
+	/* That did not work. Revert back to default and try again. */
+	lang = emu_lang_id;
+	(void)ui_lang_set(lang);
+    }
+
+#ifdef USE_HOST_CDROM
+    cdrom_host_init();
+#endif
 
     /* Create a mutex for the video handler. */
     hBlitMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);
@@ -241,6 +279,7 @@ void
 plat_start(void)
 {
     LARGE_INTEGER qpc;
+    uint64_t freq;
 
     /* We have not stopped yet. */
     quited = 0;
@@ -248,8 +287,8 @@ plat_start(void)
     /* Initialize the high-precision timer. */
     timeBeginPeriod(1);
     QueryPerformanceFrequency(&qpc);
-    timer_freq = qpc.QuadPart;
-    pclog("Main timer precision: %llu\n", timer_freq);
+    freq = qpc.QuadPart;
+    INFO("Main timer precision: %llu\n", freq);
 
     /* Start the emulator, really. */
     thMain = thread_create(pc_thread, &quited);
@@ -317,47 +356,31 @@ plat_console(int init)
 #endif	/*USE_WX*/
 
 
-/* Return icon number based on drive type. */
-int
-plat_fdd_icon(int type)
-{
-    int ret = 512;
-
-    switch(type) {
-	case 0:
-		break;
-
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-	case 6:
-		ret = 128;
-		break;
-
-	case 7:
-	case 8:
-	case 9:
-	case 10:
-	case 11:
-	case 12:
-	case 13:
-		ret = 144;
-		break;
-
-	default:
-		break;
-    }
-
-    return(ret);
-}
-
-
 void
 plat_get_exe_name(wchar_t *bufp, int size)
 {
     GetModuleFileName(hInstance, bufp, size);
+}
+
+
+void
+plat_tempfile(wchar_t *bufp, const wchar_t *prefix, const wchar_t *suffix)
+{
+    SYSTEMTIME SystemTime;
+    char temp[1024];
+
+    if (prefix != NULL)
+	sprintf(temp, "%ls-", prefix);
+      else
+	strcpy(temp, "");
+
+    GetSystemTime(&SystemTime);
+    sprintf(&temp[strlen(temp)], "%d%02d%02d-%02d%02d%02d-%03d%ls",
+        SystemTime.wYear, SystemTime.wMonth, SystemTime.wDay,
+	SystemTime.wHour, SystemTime.wMinute, SystemTime.wSecond,
+	SystemTime.wMilliseconds,
+	suffix);
+    mbstowcs(bufp, temp, strlen(temp)+1);
 }
 
 
@@ -523,6 +546,14 @@ int
 vidapi_count(void)
 {
     return((sizeof(plat_vidapis)/sizeof(vidapi_t *)) - 1);
+}
+
+
+/* Interface to get_string() for Windows-internal functions using LPARAM. */
+LPARAM
+win_string(int id)
+{
+    return((LPARAM)get_string(id));
 }
 
 

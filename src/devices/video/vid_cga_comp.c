@@ -9,13 +9,14 @@
  *		IBM CGA composite filter, borrowed from reenigne's DOSBox
  *		patch and ported to C.
  *
- * Version:	@(#)vid_cga_comp.c	1.0.4	2018/05/06
+ * Version:	@(#)vid_cga_comp.c	1.0.5	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		reengine,
  *
  *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2015-2018 reenigne.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,7 +45,7 @@
 #include <math.h>
 #include "../../emu.h"
 #include "../../mem.h"
-#include "../../device.h"
+#include "video.h"
 #include "vid_cga.h"
 #include "vid_cga_comp.h"
 

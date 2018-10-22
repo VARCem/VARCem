@@ -8,7 +8,7 @@
  *
  *		Implementation of the ADLIB sound device.
  *
- * Version:	@(#)snd_adlib.c	1.0.4	2018/05/06
+ * Version:	@(#)snd_adlib.c	1.0.7	2018/10/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
@@ -74,7 +75,7 @@ uint8_t adlib_mca_read(int port, void *p)
 {
         adlib_t *adlib = (adlib_t *)p;
         
-        pclog("adlib_mca_read: port=%04x\n", port);
+        DBGLOG(1, "adlib_mca_read: port=%04x\n", port);
         
         return adlib->pos_regs[port & 7];
 }
@@ -86,7 +87,7 @@ void adlib_mca_write(int port, uint8_t val, void *p)
         if (port < 0x102)
                 return;
         
-        pclog("adlib_mca_write: port=%04x val=%02x\n", port, val);
+        DBGLOG(1, "adlib_mca_write: port=%04x val=%02x\n", port, val);
         
         switch (port)
         {
@@ -100,21 +101,25 @@ void adlib_mca_write(int port, uint8_t val, void *p)
         adlib->pos_regs[port & 7] = val;
 }
 
-void *adlib_init(const device_t *info)
+
+void *
+adlib_init(const device_t *info)
 {
-        adlib_t *adlib = malloc(sizeof(adlib_t));
+        adlib_t *adlib = (adlib_t *)mem_alloc(sizeof(adlib_t));
         memset(adlib, 0, sizeof(adlib_t));
         
-        pclog("adlib_init\n");
+        DEBUG("adlib_init\n");
         opl2_init(&adlib->opl);
         io_sethandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &adlib->opl);
         sound_add_handler(adlib_get_buffer, adlib);
         return adlib;
 }
 
-void *adlib_mca_init(const device_t *info)
+
+void *
+adlib_mca_init(const device_t *info)
 {
-        adlib_t *adlib = adlib_init(info);
+        adlib_t *adlib = (adlib_t *)adlib_init(info);
         
         io_removehandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &adlib->opl);
         mca_add(adlib_mca_read, adlib_mca_write, adlib);
@@ -131,22 +136,20 @@ void adlib_close(void *p)
         free(adlib);
 }
 
-const device_t adlib_device =
-{
-        "AdLib",
-        DEVICE_ISA,
-	0,
-        adlib_init, adlib_close, NULL,
-        NULL, NULL, NULL, NULL,
-        NULL
+const device_t adlib_device = {
+    "AdLib",
+    DEVICE_ISA,
+    0,
+    adlib_init, adlib_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
-const device_t adlib_mca_device =
-{
-        "AdLib (MCA)",
-        DEVICE_MCA,
-	0,
-        adlib_init, adlib_close, NULL,
-        NULL, NULL, NULL, NULL,
-        NULL
+const device_t adlib_mca_device = {
+    "AdLib",
+    DEVICE_MCA,
+    0,
+    adlib_init, adlib_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };

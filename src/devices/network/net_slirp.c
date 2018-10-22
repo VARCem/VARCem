@@ -8,7 +8,7 @@
  *
  *		Handle SLiRP library processing.
  *
- * Version:	@(#)net_slirp.c	1.0.3	2018/05/06
+ * Version:	@(#)net_slirp.c	1.0.4	2018/10/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,8 +51,11 @@
 #include <wchar.h>
 #include "slirp/slirp.h"
 #include "slirp/queue.h"
+#define netdbg network_log
+#ifdef ERROR
+# undef ERROR
+#endif
 #include "../../emu.h"
-#include "../../config.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "network.h"
@@ -100,7 +103,7 @@ poll_thread(UNUSED(void *arg))
     struct queuepacket *qp;
     event_t *evt;
 
-    pclog("SLiRP: polling started.\n");
+    INFO("SLiRP: thread started.\n");
     thread_set_event(poll_state);
 
     /* Create a waitable event. */
@@ -123,10 +126,8 @@ poll_thread(UNUSED(void *arg))
 	if (QueuePeek(slirpq) != 0) {
 		/* Grab a packet from the queue. */
 		qp = QueueDelete(slirpq);
-#if 0
-		pclog("SLiRP: inQ:%d  got a %dbyte packet @%08lx\n",
+		DBGLOG(1, "SLiRP: inQ:%d  got a %dbyte packet @%08lx\n",
 				QueuePeek(slirpq), qp->len, qp);
-#endif
 
 		poll_card->rx(poll_card->priv, (uint8_t *)qp->data, qp->len); 
 
@@ -144,9 +145,9 @@ poll_thread(UNUSED(void *arg))
     /* No longer needed. */
     if (evt != NULL)
 	thread_destroy_event(evt);
-
-    pclog("SLiRP: polling stopped.\n");
     thread_set_event(poll_state);
+
+    INFO("SLiRP: thread stopped.\n");
 }
 
 
@@ -154,10 +155,10 @@ poll_thread(UNUSED(void *arg))
 int
 net_slirp_init(void)
 {
-    pclog("SLiRP: initializing..\n");
+    INFO("SLiRP: initializing..\n");
 
     if (slirp_init() != 0) {
-	pclog("SLiRP could not be initialized!\n");
+	ERRLOG("SLiRP could not be initialized!\n");
 	return(-1);
     }
 
@@ -178,7 +179,6 @@ net_slirp_reset(const netcard_t *card, uint8_t *mac)
     /* Save the callback info. */
     poll_card = card;
 
-    pclog("SLiRP: creating thread..\n");
     poll_state = thread_create_event();
     poll_tid = thread_create(poll_thread, mac);
     thread_wait_event(poll_state, -1);
@@ -194,7 +194,7 @@ net_slirp_close(void)
 
     if (slirpq == NULL) return;
 
-    pclog("SLiRP: closing.\n");
+    INFO("SLiRP: closing.\n");
 
     /* Tell the polling thread to shut down. */
     sl = slirpq; slirpq = NULL;
@@ -204,9 +204,9 @@ net_slirp_close(void)
 	network_busy(0);
 
 	/* Wait for the thread to finish. */
-	pclog("SLiRP: waiting for thread to end...\n");
+	INFO("SLiRP: waiting for thread to end...\n");
 	thread_wait_event(poll_state, -1);
-	pclog("SLiRP: thread ended\n");
+	INFO("SLiRP: thread ended\n");
 	thread_destroy_event(poll_state);
 
 	poll_tid = NULL;
@@ -217,6 +217,8 @@ net_slirp_close(void)
     /* OK, now shut down SLiRP itself. */
     QueueDestroy(sl);
     slirp_exit(0);
+
+    INFO("SLiRP: closed.\n");
 }
 
 
@@ -241,7 +243,7 @@ slirp_output(const uint8_t *pkt, int pkt_len)
     struct queuepacket *qp;
 
     if (slirpq != NULL) {
-	qp = (struct queuepacket *)malloc(sizeof(struct queuepacket));
+	qp = (struct queuepacket *)mem_alloc(sizeof(struct queuepacket));
 	qp->len = pkt_len;
 	memcpy(qp->data, pkt, pkt_len);
 	QueueEnter(slirpq, qp);

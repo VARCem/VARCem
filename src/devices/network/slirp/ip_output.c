@@ -49,9 +49,7 @@ u_int16_t ip_id;
  * The SLIRPmbuf opt, if present, will not be freed.
  */
 int
-ip_output(so, m0)
-	struct SLIRPsocket *so;
-	struct SLIRPmbuf *m0;
+ip_output(struct SLIRPsocket *so, struct SLIRPmbuf *m0)
 {
 	struct ip *ip;
 	struct SLIRPmbuf *m = m0;

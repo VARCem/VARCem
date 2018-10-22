@@ -8,7 +8,7 @@
  *
  *		x87 FPU instructions core.
  *
- * Version:	@(#)x87_ops.h	1.0.5	2018/05/05
+ * Version:	@(#)x87_ops.h	1.0.6	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -66,7 +66,7 @@ static int rounding_modes[4] = {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZ
                                 dst = src1 / (double)src2;      \
                         else                                    \
                         {                                       \
-                                pclog("FPU : divide by zero\n"); \
+                                ERRLOG("FPU : divide by zero\n"); \
                                 picint(1 << 13);                \
                         }                                       \
                         return 1;                               \
@@ -74,8 +74,9 @@ static int rounding_modes[4] = {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZ
                 else                                            \
                         dst = src1 / (double)src2;              \
         } while (0)
-        
-static __inline void x87_set_mmx()
+     
+
+static INLINE void x87_set_mmx(void)
 {
 	uint64_t *p;
         cpu_state.TOP = 0;
@@ -84,7 +85,8 @@ static __inline void x87_set_mmx()
         cpu_state.ismmx = 1;
 }
 
-static __inline void x87_emms()
+
+static INLINE void x87_emms(void)
 {
 	uint64_t *p;
 	p = (uint64_t *)cpu_state.tag;
@@ -92,18 +94,37 @@ static __inline void x87_emms()
         cpu_state.ismmx = 0;
 }
 
-static __inline void x87_checkexceptions()
+
+static INLINE void x87_checkexceptions(void)
 {
 }
 
-static __inline void x87_push(double i)
+
+static INLINE void x87_push(double i)
 {
         cpu_state.TOP=(cpu_state.TOP-1)&7;
         cpu_state.ST[cpu_state.TOP] = i;
         cpu_state.tag[cpu_state.TOP&7] = (i == 0.0) ? 1 : 0;
 }
 
-static __inline double x87_pop()
+
+static INLINE void x87_push_u64(uint64_t i)
+{
+        union
+        {
+                double d;
+                uint64_t ll;
+        } td;
+                
+        td.ll = i;
+
+        cpu_state.TOP=(cpu_state.TOP-1)&7;
+        cpu_state.ST[cpu_state.TOP] = td.d;
+        cpu_state.tag[cpu_state.TOP&7] = (td.d == 0.0) ? 1 : 0;
+}
+
+
+static INLINE double x87_pop(void)
 {
         double t = cpu_state.ST[cpu_state.TOP];
         cpu_state.tag[cpu_state.TOP&7] = 3;
@@ -111,7 +132,8 @@ static __inline double x87_pop()
         return t;
 }
 
-static __inline int64_t x87_fround(double b)
+
+static INLINE int64_t x87_fround(double b)
 {
         int64_t a, c;
         
@@ -136,10 +158,13 @@ static __inline int64_t x87_fround(double b)
 		return (int64_t)0;
         }
 }
+
+
 #define BIAS80 16383
 #define BIAS64 1023
 
-static __inline double x87_ld80()
+
+static INLINE double x87_ld80(void)
 {
        	int64_t exp64;
        	int64_t blah;
@@ -177,7 +202,8 @@ static __inline double x87_ld80()
 	return test.eind.d;
 }
 
-static __inline void x87_st80(double d)
+
+static INLINE void x87_st80(double d)
 {
        	int64_t sign80;
        	int64_t exp80;
@@ -221,7 +247,8 @@ static __inline void x87_st80(double d)
 	writememw(easeg,cpu_state.eaaddr+8,test.begin);
 }
 
-static __inline void x87_st_fsave(int reg)
+
+static INLINE void x87_st_fsave(int reg)
 {
         reg = (cpu_state.TOP + reg) & 7;
         
@@ -235,7 +262,8 @@ static __inline void x87_st_fsave(int reg)
                 x87_st80(cpu_state.ST[reg]);
 }
 
-static __inline void x87_ld_frstor(int reg)
+
+static INLINE void x87_ld_frstor(int reg)
 {
         reg = (cpu_state.TOP + reg) & 7;
         
@@ -251,21 +279,22 @@ static __inline void x87_ld_frstor(int reg)
                 cpu_state.ST[reg] = x87_ld80();
 }
 
-static __inline void x87_ldmmx(MMX_REG *r, uint16_t *w4)
+
+static INLINE void x87_ldmmx(MMX_REG *r, uint16_t *w4)
 {
         r->l[0] = readmeml(easeg, cpu_state.eaaddr);
         r->l[1] = readmeml(easeg, cpu_state.eaaddr + 4);
         *w4 = readmemw(easeg, cpu_state.eaaddr + 8);
 }
 
-static __inline void x87_stmmx(MMX_REG r)
+static INLINE void x87_stmmx(MMX_REG r)
 {
         writememl(easeg, cpu_state.eaaddr,     r.l[0]);
         writememl(easeg, cpu_state.eaaddr + 4, r.l[1]);
         writememw(easeg, cpu_state.eaaddr + 8, 0xffff);
 }
 
-static __inline uint16_t x87_compare(double a, double b)
+static INLINE uint16_t x87_compare(double a, double b)
 {
 #if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
         uint32_t result;
@@ -274,7 +303,7 @@ static __inline uint16_t x87_compare(double a, double b)
 	{
 		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))
 		{
-			/* pclog("Comparing infinity\n"); */
+			/* DEBUG("Comparing infinity\n"); */
 #ifndef _MSC_VER
 		        __asm volatile ("" : : : "memory");
         
@@ -360,7 +389,7 @@ static __inline uint16_t x87_compare(double a, double b)
 #endif
 }
 
-static __inline uint16_t x87_ucompare(double a, double b)
+static INLINE uint16_t x87_ucompare(double a, double b)
 {
 #if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
         uint32_t result;

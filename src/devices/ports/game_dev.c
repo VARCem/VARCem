@@ -8,7 +8,7 @@
  *
  *		Handle all the various gameport devices.
  *
- * Version:	@(#)game_dev.c	1.0.2	2018/05/06
+ * Version:	@(#)game_dev.c	1.0.3	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -57,7 +57,7 @@ extern const gamedev_t js_tm_fcs;
 
 
 static const gamedev_t gamedev_none = {
-    "Disabled",
+    "None",
     NULL, NULL,
     NULL, NULL,
     NULL, NULL,

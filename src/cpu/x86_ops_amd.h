@@ -8,7 +8,7 @@
  *
  *		AMD SYSCALL and SYSRET CPU Instructions.
  *
- * Version:	@(#)x86_ops_amd.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_amd.h	1.0.2	2018/10/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -32,12 +32,17 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+
+
+#ifndef HAVE_INTERNAL_ILLEGAL
+# define HAVE_INTERNAL_ILLEGAL
 static int internal_illegal(char *s)
 {
 	cpu_state.pc = cpu_state.oldpc;
 	x86gpf(s, 0);
 	return cpu_state.abrt;
 }
+#endif
 
 /*	0 = Limit 0-15
 	1 = Base 0-15
@@ -80,7 +85,7 @@ static int opSYSCALL(uint32_t fetchdat)
 	{
 		if (_cs.seg >= ldt.limit)
 		{
-			pclog("Bigger than LDT limit %04X %04X CS\n",AMD_SYSCALL_SB,ldt.limit);
+			ERRLOG("CPU: bigger than LDT limit %04X %04X CS\n",AMD_SYSCALL_SB,ldt.limit);
 			x86gpf(NULL, AMD_SYSCALL_SB & ~3);
 			return 1;
 		}
@@ -90,7 +95,7 @@ static int opSYSCALL(uint32_t fetchdat)
 	{
 		if (_cs.seg >= gdt.limit)
 		{
-			pclog("Bigger than GDT limit %04X %04X CS\n",AMD_SYSCALL_SB,gdt.limit);
+			ERRLOG("CPU: bigger than GDT limit %04X %04X CS\n",AMD_SYSCALL_SB,gdt.limit);
 			x86gpf(NULL, AMD_SYSCALL_SB & ~3);
 			return 1;
 		}
@@ -158,7 +163,7 @@ static int opSYSRET(uint32_t fetchdat)
 	{
 		if (_cs.seg >= ldt.limit)
 		{
-			pclog("Bigger than LDT limit %04X %04X CS\n",AMD_SYSRET_SB,ldt.limit);
+			ERRLOG("CPU: bigger than LDT limit %04X %04X CS\n",AMD_SYSRET_SB,ldt.limit);
 			x86gpf(NULL, AMD_SYSRET_SB & ~3);
 			return 1;
 		}
@@ -168,7 +173,7 @@ static int opSYSRET(uint32_t fetchdat)
 	{
 		if (_cs.seg >= gdt.limit)
 		{
-			pclog("Bigger than GDT limit %04X %04X CS\n",AMD_SYSRET_SB,gdt.limit);
+			ERRLOG("CPU: bigger than GDT limit %04X %04X CS\n",AMD_SYSRET_SB,gdt.limit);
 			x86gpf(NULL, AMD_SYSRET_SB & ~3);
 			return 1;
 		}

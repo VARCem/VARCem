@@ -6,13 +6,12 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Emulation of various Compaq XT-class PC's.
+ *		Emulation of the Compaq XT-class PC's.
  *
- * Version:	@(#)m_xt_compaq.c	1.0.11	2018/05/06
+ * Version:	@(#)m_xt_compaq.c	1.0.12	2018/09/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017,2018 Fred N. van Kempen.
@@ -56,7 +55,7 @@
 
 
 void
-machine_xt_compaq_init(const machine_t *model, void *arg)
+machine_xt_compaq_p1_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
 
@@ -68,9 +67,5 @@ machine_xt_compaq_init(const machine_t *model, void *arg)
 
     nmi_init();
 
-    switch(model->id) {
-	case ROM_PORTABLE:
-		parallel_setup(1, 0x03bc);
-		break;
-    }
+    parallel_setup(1, 0x03bc);
 }

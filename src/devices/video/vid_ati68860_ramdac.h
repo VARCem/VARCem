@@ -8,7 +8,7 @@
  *
  *		Definitions for the ATI 68860 driver.
  *
- * Version:	@(#)vid_ati68860.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_ati68860.h	1.0.2	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,23 +40,29 @@
 # define VIDEO_ATI68860_H
 
 
-typedef struct ati68860_ramdac_t
-{
-        uint8_t regs[16];
-        void (*render)(struct svga_t *svga);
-        
-        int dac_write, dac_pos;
-        int dac_r, dac_g;
-        PALETTE pal;
-        uint32_t pallook[2];
-        
-        int ramdac_type;
+typedef struct {
+    int		ramdac_type;
+    uint8_t	regs[16];
+    int		dac_addr,
+		dac_pos;
+    int		dac_r,
+		dac_g;
+    PALETTE	pal;
+    uint32_t	pallook[2];
+    void	(*render)(struct svga_t *svga);
 } ati68860_ramdac_t;
 
-void ati68860_ramdac_out(uint16_t addr, uint8_t val, ati68860_ramdac_t *ramdac, svga_t *svga);
-uint8_t ati68860_ramdac_in(uint16_t addr, ati68860_ramdac_t *ramdac, svga_t *svga);
-void ati68860_ramdac_init(ati68860_ramdac_t *ramdac);
-void ati68860_set_ramdac_type(ati68860_ramdac_t *ramdac, int type);
+
+extern const device_t ati68860_ramdac_device;
+
+
+extern void	ati68860_set_ramdac_type(ati68860_ramdac_t *dev, int type);
+
+extern void	ati68860_ramdac_out(uint16_t addr, uint8_t val,
+				    ati68860_ramdac_t *dev, svga_t *svga);
+
+extern uint8_t	ati68860_ramdac_in(uint16_t addr, ati68860_ramdac_t *dev,
+				   svga_t *svga);
 
 
 #endif	/*VIDEO_ATI68860_H*/

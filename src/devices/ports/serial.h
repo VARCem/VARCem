@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.4	2018/04/20
+ * Version:	@(#)serial.h	1.0.5	2018/09/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -70,6 +70,7 @@ typedef struct SERIAL {
     int8_t	irq;			/* IRQ channel used */
     uint16_t	base;			/* I/O address used */
 
+    int8_t	pcjr;			/* PCjr UART (fixed OUT2) */
     int8_t	type;			/* UART type */
     uint8_t	int_status;
 
@@ -104,11 +105,13 @@ typedef struct SERIAL {
 /* Global variables. */
 #ifdef EMU_DEVICE_H
 extern const device_t serial_1_device;
+extern const device_t serial_1_pcjr_device;
 extern const device_t serial_2_device;
 #endif
 
 
 /* Functions. */
+extern void	serial_log(int level, const char *fmt, ...);
 extern void	serial_reset(void);
 extern void	serial_setup(int port, uint16_t addr, int8_t irq);
 extern SERIAL	*serial_attach(int port, void *func, void *priv);

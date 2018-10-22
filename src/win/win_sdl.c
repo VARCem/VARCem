@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.3	2018/05/26
+ * Version:	@(#)win_sdl.c  	1.0.6	2018/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -83,7 +83,10 @@ static SDL_Window	*sdl_win = NULL;
 static SDL_Renderer	*sdl_render = NULL;
 static SDL_Texture	*sdl_tex = NULL;
 static HWND		sdl_hwnd = NULL;
+static HWND		sdl_parent_hwnd = NULL;
 static int		sdl_w, sdl_h;
+static int		cur_w, cur_h;
+static int		sdl_fs;
 
 
 /* Pointers to the real functions. */
@@ -131,12 +134,128 @@ static const dllimp_t sdl_imports[] = {
 
 
 static void
+sdl_stretch(int *w, int *h, int *x, int *y)
+{
+    double dw, dh, dx, dy, temp, temp2, ratio_w, ratio_h, gsr, hsr;
+
+    switch (vid_fullscreen_scale) {
+	case FULLSCR_SCALE_FULL:
+		*w = sdl_w;
+		*h = sdl_h;
+		*x = 0;
+		*y = 0;
+		break;
+
+	case FULLSCR_SCALE_43:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		temp = (dh / 3.0) * 4.0;
+		dx = (dw - temp) / 2.0;
+		dw = temp;
+		*w = (int) dw;
+		*h = (int) dh;
+		*x = (int) dx;
+		*y = 0;
+		break;
+
+	case FULLSCR_SCALE_SQ:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		temp = ((double) *w);
+		temp2 = ((double) *h);
+		dx = (dw / 2.0) - ((dh * temp) / (temp2 * 2.0));
+		dy = 0.0;
+		if (dx < 0.0) {
+			dx = 0.0;
+			dy = (dw / 2.0) - ((dh * temp2) / (temp * 2.0));
+		}
+		dw -= (dx * 2.0);
+		dh -= (dy * 2.0);
+		*w = (int) dw;
+		*h = (int) dh;
+		*x = (int) dx;
+		*y = (int) dy;
+		break;
+
+	case FULLSCR_SCALE_INT:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		temp = ((double) *w);
+		temp2 = ((double) *h);
+		ratio_w = dw / ((double) *w);
+		ratio_h = dh / ((double) *h);
+		if (ratio_h < ratio_w)
+			ratio_w = ratio_h;
+		dx = (dw / 2.0) - ((temp * ratio_w) / 2.0);
+		dy = (dh / 2.0) - ((temp2 * ratio_h) / 2.0);
+		dw -= (dx * 2.0);
+		dh -= (dy * 2.0);
+		*w = (int) dw;
+		*h = (int) dh;
+		*x = (int) dx;
+		*y = (int) dy;
+		break;
+
+	case FULLSCR_SCALE_KEEPRATIO:
+		dw = (double) sdl_w;
+		dh = (double) sdl_h;
+		hsr = dw / dh;
+		gsr = ((double) *w) / ((double) *h);
+		if (gsr <= hsr) {
+			temp = dh * gsr;
+			dx = (dw - temp) / 2.0;
+			dw = temp;
+			*w = (int) dw;
+			*h = (int) dh;
+			*x = (int) dx;
+			*y = 0;
+		} else {
+			temp = dw / gsr;
+			dy = (dh - temp) / 2.0;
+			dh = temp;
+			*w = (int) dw;
+			*h = (int) dh;
+			*x = 0;
+			*y = (int) dy;
+		}
+		break;
+    }
+}
+
+
+static void
+sdl_resize(int x, int y)
+{
+    int ww = 0, wh = 0, wx = 0, wy = 0;
+
+    DEBUG("SDL: resizing to %dx%d\n", x, y);
+
+    if ((x == cur_w) && (y == cur_h)) return;
+
+    DEBUG("sdl_resize(%i, %i)\n", x, y);
+    ww = x;
+    wh = y;
+    sdl_stretch(&ww, &wh, &wx, &wy);
+
+    MoveWindow(sdl_hwnd, wx, wy, ww, wh, TRUE);
+
+    cur_w = x;
+    cur_h = y;
+}
+
+
+static void
 sdl_blit(int x, int y, int y1, int y2, int w, int h)
 {
     SDL_Rect r_src;
     void *pixeldata;
+    int xx, yy, ret;
     int pitch;
-    int yy;
+
+    if (y1 == y2) {
+	video_blit_complete();
+	return;
+    }
 
     if (buffer32 == NULL) {
 	video_blit_complete();
@@ -151,20 +270,34 @@ sdl_blit(int x, int y, int y1, int y2, int w, int h)
     sdl_LockTexture(sdl_tex, 0, &pixeldata, &pitch);
 
     for (yy = y1; yy < y2; yy++) {
-        if ((y + yy) >= 0 && (y + yy) < buffer32->h)
-            memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+       	if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+		if (vid_grayscale || invert_display)
+			video_transform_copy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
+		else
+			memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+	}
     }
 
     video_blit_complete();
 
     sdl_UnlockTexture(sdl_tex);
 
+    if (sdl_fs) {
+	get_screen_size_natural(&xx, &yy);
+	DEBUG("sdl_blit(%i, %i, %i, %i, %i, %i) (%i, %i)\n", x, y, y1, y2, w, h, xx, yy);
+	if (w == xx)
+		sdl_resize(w, h);
+	DEBUG("(%08X, %08X, %08X)\n", sdl_win, sdl_render, sdl_tex);
+    }
+
     r_src.x = 0;
     r_src.y = 0;
     r_src.w = w;
     r_src.h = h;
 
-    sdl_RenderCopy(sdl_render, sdl_tex, &r_src, 0);
+    ret = sdl_RenderCopy(sdl_render, sdl_tex, &r_src, 0);
+    if (ret)
+	DEBUG("SDL: unable to copy texture to renderer (%s)\n", sdl_GetError());
 
     sdl_RenderPresent(sdl_render);
 }
@@ -194,10 +327,16 @@ sdl_close(void)
     if (sdl_hwnd != NULL) {
 	plat_set_input(hwndMain);
 
+	ShowWindow(hwndRender, TRUE);
+	SetFocus(hwndMain);
+
 	DestroyWindow(sdl_hwnd);
 	sdl_hwnd = NULL;
+    }
 
-	SetFocus(hwndMain);
+    if (sdl_parent_hwnd != NULL) {
+	DestroyWindow(sdl_parent_hwnd);
+	sdl_parent_hwnd = NULL;
     }
 
     /* Quit and unload the DLL if possible. */
@@ -215,25 +354,26 @@ sdl_init(int fs)
 {
     wchar_t temp[128];
     SDL_version ver;
+    int x, y;
 
-    pclog("SDL: init (fs=%d)\n", fs);
+    INFO("SDL: init (fs=%d)\n", fs);
 
     cgapal_rebuild();
 
     /* Try loading the DLL. */
     sdl_handle = dynld_module(PATH_SDL_DLL, sdl_imports);
     if (sdl_handle == NULL) {
-	pclog("SDL: unable to load '%s', SDL not available.\n", PATH_SDL_DLL);
+	ERRLOG("SDL: unable to load '%s', SDL not available.\n", PATH_SDL_DLL);
 	return(0);
     }
 
     /* Get and log the version of the DLL we are using. */
     sdl_GetVersion(&ver);
-    pclog("SDL: version %d.%d.%d\n", ver.major, ver.minor, ver.patch);
+    INFO("SDL: version %d.%d.%d\n", ver.major, ver.minor, ver.patch);
 
     /* Initialize the SDL system. */
     if (sdl_Init(SDL_INIT_VIDEO) < 0) {
-	pclog("SDL: initialization failed (%s)\n", sdl_GetError());
+	ERRLOG("SDL: initialization failed (%s)\n", sdl_GetError());
 	return(0);
     }
 
@@ -243,9 +383,9 @@ sdl_init(int fs)
 	sdl_h = GetSystemMetrics(SM_CYSCREEN);
 
 	/* Create the desktop-covering window. */
-        _swprintf(temp, L"%s v%s Full-Screen",
-		  TEXT(EMU_NAME), TEXT(EMU_VERSION));
-        sdl_hwnd = CreateWindow(FS_CLASS_NAME,
+        swprintf(temp, sizeof_w(temp),
+		 L"%s v%s Full-Screen", EMU_NAME, emu_version);
+        sdl_parent_hwnd = CreateWindow(FS_CLASS_NAME,
 				temp,
 				WS_POPUP,
 				0, 0, sdl_w, sdl_h,
@@ -253,33 +393,44 @@ sdl_init(int fs)
 				NULL,
 				hInstance,
 				NULL);
-pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
+
+	SetWindowPos(sdl_parent_hwnd, HWND_TOPMOST,
+		     0, 0, sdl_w, sdl_h, SWP_SHOWWINDOW);
+
+	/* Create the actual rendering window. */
+	swprintf(temp, sizeof_w(temp), L"%s v%s", EMU_NAME, emu_version);
+        sdl_hwnd = CreateWindow(FS_CLASS_NAME,
+				temp,
+				WS_POPUP,
+				0, 0, sdl_w, sdl_h,
+				sdl_parent_hwnd,
+				NULL,
+				hInstance,
+				NULL);
+	DEBUG("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
 
 	/* Redirect RawInput to this new window. */
 	plat_set_input(sdl_hwnd);
 
 	/* Show the window, make it topmost, and give it focus. */
+	get_screen_size_natural(&x, &y);
+	sdl_stretch(&sdl_w, &sdl_h, &x, &y);
 	SetWindowPos(sdl_hwnd, HWND_TOPMOST,
 		     0, 0, sdl_w, sdl_h, SWP_SHOWWINDOW);
 
 	/* Now create the SDL window from that. */
 	sdl_win = sdl_CreateWindowFrom((void *)sdl_hwnd);
     } else {
-	/* Redirect RawInput to this new window. */
-	plat_set_input(hwndMain);
-
-	ShowWindow(hwndRender, TRUE);
-
-	SetFocus(hwndMain);
-
 	/* Create the SDL window from the render window. */
 	sdl_win = sdl_CreateWindowFrom((void *)hwndRender);
     }
+
     if (sdl_win == NULL) {
-	pclog("SDL: unable to CreateWindowFrom (%s)\n", sdl_GetError());
+	ERRLOG("SDL: unable to CreateWindowFrom (%s)\n", sdl_GetError());
 	sdl_close();
 	return(0);
     }
+    sdl_fs = fs;
 
     /*
      * TODO:
@@ -290,7 +441,7 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
      */
     sdl_render = sdl_CreateRenderer(sdl_win, -1, SDL_RENDERER_SOFTWARE);
     if (sdl_render == NULL) {
-	pclog("SDL: unable to create renderer (%s)\n", sdl_GetError());
+	ERRLOG("SDL: unable to create renderer (%s)\n", sdl_GetError());
 	sdl_close();
         return(0);
     }
@@ -304,7 +455,7 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
     sdl_tex = sdl_CreateTexture(sdl_render, SDL_PIXELFORMAT_ARGB8888,
 				SDL_TEXTUREACCESS_STREAMING, 2048, 2048);
     if (sdl_tex == NULL) {
-	pclog("SDL: unable to create texture (%s)\n", sdl_GetError());
+	ERRLOG("SDL: unable to create texture (%s)\n", sdl_GetError());
 	sdl_close();
         return(0);
     }
@@ -320,16 +471,30 @@ pclog("SDL: FS %dx%d window at %08lx\n", sdl_w, sdl_h, sdl_hwnd);
 
 
 static void
-sdl_resize(int x, int y)
-{
-    pclog("SDL: resizing to %dx%d\n", x, y);
-}
-
-
-static void
 sdl_screenshot(const wchar_t *fn)
 {
-    /* TODO: implement */
+#if 0
+    uint8_t *pixels = NULL;
+    int res;
+
+    sdl_GetWindowSize(sdl_win, &width, &height);
+
+    pixels = (uint8_t *)mem_alloc(width * height * 4);
+    if (pixels == NULL) {
+	ERRLOG("SDL: screenshot: unable to allocate RGBA Bitmap memory\n");
+	return;
+    }
+
+    res = sdl_RenderReadPixels(sdl_render, NULL,
+			       SDL_PIXELFORMAT_ABGR8888, pixels, width * 4);
+    if (res != 0) {
+	ERRLOG("SDL: screenshot: error reading render pixels\n");
+	free(pixels);
+	return;
+    }
+
+    if (pixels) free(pixels);
+#endif
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the STG RAMDAC driver.
  *
- * Version:	@(#)vid_stg_ramdac.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_stg_ramdac.h	1.0.2	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,17 +40,19 @@
 # define VIDEO_STG_RAMDAC_H
 
 
-typedef struct stg_ramdac_t
-{
-        int magic_count;
-        uint8_t command;
-        int index;
-        uint8_t regs[256];
+typedef struct {
+    int magic_count, index;
+    uint8_t regs[256];
+    uint8_t command;
 } stg_ramdac_t;
 
-void stg_ramdac_out(uint16_t addr, uint8_t val, stg_ramdac_t *ramdac, svga_t *svga);
-uint8_t stg_ramdac_in(uint16_t addr, stg_ramdac_t *ramdac, svga_t *svga);
-float stg_getclock(int clock, void *p);
+
+extern const device_t stg_ramdac_device;
+
+
+extern void	stg_ramdac_out(uint16_t addr, uint8_t val, stg_ramdac_t *dev, svga_t *svga);
+extern uint8_t	stg_ramdac_in(uint16_t addr, stg_ramdac_t *dev, svga_t *svga);
+extern float	stg_getclock(int clock, void *priv);
 
 
 #endif	/*VIDEO_STG_RAMDAC_H*/

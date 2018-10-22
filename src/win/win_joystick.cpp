@@ -13,7 +13,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.17	2018/05/24
+ * Version:	@(#)win_joystick.cpp	1.0.18	2018/10/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,9 +61,11 @@
 #include "../config.h"
 #include "../device.h"
 #include "../plat.h"
+#include "../ui/ui.h"
 #include "../devices/ports/game_dev.h"
 #include "../devices/input/game/joystick.h"
 #include "win.h"
+#include "resource.h"
 
 
 #define MAX_PLAT_JOYSTICKS	8
@@ -104,8 +106,8 @@ static LPDIRECTINPUT8 lpdi;
 static BOOL CALLBACK
 enum_callback(LPCDIDEVICEINSTANCE lpddi, UNUSED(LPVOID data))
 {
-    pclog("JOYSTICK: found game device%i: %s\n",
-	joysticks_present, lpddi->tszProductName);
+    INFO("JOYSTICK: found game device%i: %s\n",
+	 joysticks_present, lpddi->tszProductName);
 
     /* If we got too many, ignore it. */
     if (joysticks_present >= MAX_JOYSTICKS) return(DIENUM_STOP);
@@ -131,7 +133,7 @@ obj_callback(LPCDIDEVICEOBJECTINSTANCE lpddoi, LPVOID pvRef)
 	strncpy(state->axis[state->nr_axes].name,
 		lpddoi->tszName, sizeof(state->axis[state->nr_axes].name));
 
-	pclog("Axis%i: %s  %x %x\n",
+	DEBUG("Axis%i: %s  %x %x\n",
 		state->nr_axes, state->axis[state->nr_axes].name,
 		lpddoi->dwOfs, lpddoi->dwType);
 
@@ -152,7 +154,7 @@ obj_callback(LPCDIDEVICEOBJECTINSTANCE lpddoi, LPVOID pvRef)
     } else if (lpddoi->guidType == GUID_Button) {
 	strncpy(state->button[state->nr_buttons].name,
 		lpddoi->tszName, sizeof(state->button[state->nr_buttons].name));
-	pclog("Button%i: %s  %x %x\n",
+	DEBUG("Button%i: %s  %x %x\n",
 		state->nr_buttons, state->button[state->nr_buttons].name,
 		lpddoi->dwOfs, lpddoi->dwType);
 
@@ -160,7 +162,7 @@ obj_callback(LPCDIDEVICEOBJECTINSTANCE lpddoi, LPVOID pvRef)
     } else if (lpddoi->guidType == GUID_POV) {
 	strncpy(state->pov[state->nr_povs].name, lpddoi->tszName,
 		sizeof(state->pov[state->nr_povs].name));
-	pclog("POV%i: %s  %x %x\n",
+	DEBUG("POV%i: %s  %x %x\n",
 		state->nr_povs, state->pov[state->nr_povs].name,
 		lpddoi->dwOfs, lpddoi->dwType);
 
@@ -179,7 +181,7 @@ joystick_init(void)
     /* Only initialize if the game port is enabled. */
     if (! game_enabled) return;
 
-    pclog("JOYSTICK: initializing (type=%d)\n", joystick_type);
+    INFO("JOYSTICK: initializing (type=%d)\n", joystick_type);
 
     atexit(joystick_close);
 	
@@ -194,7 +196,7 @@ joystick_init(void)
 	       enum_callback, NULL, DIEDFL_ATTACHEDONLY)))
 	fatal("joystick_init : EnumDevices failed\n");
 
-    pclog("JOYSTICK: %i game device(s) found.\n", joysticks_present);
+    INFO("JOYSTICK: %i game device(s) found.\n", joysticks_present);
 
     for (c = 0; c < joysticks_present; c++) {		
 	LPDIRECTINPUTDEVICE8 lpdi_joystick_temp = NULL;
@@ -215,9 +217,9 @@ joystick_init(void)
 	if (FAILED(lpdi_joystick[c]->GetDeviceInfo(&device_instance)))
 		fatal("joystick_init : GetDeviceInfo failed\n");
 
-	pclog("Joystick%i:\n", c);
-	pclog(" Name        = %s\n", device_instance.tszInstanceName);
-	pclog(" ProductName = %s\n", device_instance.tszProductName);
+	DEBUG("Joystick%i:\n", c);
+	DEBUG(" Name        = %s\n", device_instance.tszInstanceName);
+	DEBUG(" ProductName = %s\n", device_instance.tszProductName);
 	strncpy(plat_joystick_state[c].name,
 		device_instance.tszInstanceName, 64);
 
@@ -225,9 +227,9 @@ joystick_init(void)
 	devcaps.dwSize = sizeof(devcaps);
 	if (FAILED(lpdi_joystick[c]->GetCapabilities(&devcaps)))
 		fatal("joystick_init : GetCapabilities failed\n");
-	pclog(" Axes        = %i\n", devcaps.dwAxes);
-	pclog(" Buttons     = %i\n", devcaps.dwButtons);
-	pclog(" POVs        = %i\n", devcaps.dwPOVs);
+	DEBUG(" Axes        = %i\n", devcaps.dwAxes);
+	DEBUG(" Buttons     = %i\n", devcaps.dwButtons);
+	DEBUG(" POVs        = %i\n", devcaps.dwPOVs);
 
 	lpdi_joystick[c]->EnumObjects(obj_callback,
 				      &plat_joystick_state[c], DIDFT_ALL); 
@@ -380,11 +382,11 @@ static uint8_t joystickconfig_changed = 0;
 static void
 rebuild_selections(HWND hdlg)
 {
-    int id = IDC_CONFIG_BASE + 2;
+    int id = IDC_CONFIGURE_DEV + 2;
     int c, d, joystick;
     HWND h;
 
-    h = GetDlgItem(hdlg, IDC_CONFIG_BASE);
+    h = GetDlgItem(hdlg, IDC_CONFIGURE_DEV);
     joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
 
     for (c = 0; c < gamedev_get_axis_count(joystick_config_type); c++) {
@@ -507,8 +509,8 @@ dlg_init(HWND hdlg)
     int nr_axes;
     int nr_povs;
 
-    h = GetDlgItem(hdlg, IDC_CONFIG_BASE);
-    id = IDC_CONFIG_BASE + 2;
+    h = GetDlgItem(hdlg, IDC_CONFIGURE_DEV);
+    id = IDC_CONFIGURE_DEV + 2;
     joystick = joystick_state[joystick_nr].plat_joystick_nr;
 
     SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)"None");
@@ -585,15 +587,15 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
-			case IDC_CONFIG_BASE:
+			case IDC_CONFIGURE_DEV:
 				if (HIWORD(wParam) == CBN_SELCHANGE)
 					rebuild_selections(hdlg);
 				break;
 			
 			case IDOK:
-				id = IDC_CONFIG_BASE + 2;
+				id = IDC_CONFIGURE_DEV + 2;
 								
-				h = GetDlgItem(hdlg, IDC_CONFIG_BASE);
+				h = GetDlgItem(hdlg, IDC_CONFIGURE_DEV);
 				joystick_state[joystick_nr].plat_joystick_nr = SendMessage(h, CB_GETCURSEL, 0, 0);
 				
 				if (joystick_state[joystick_nr].plat_joystick_nr) {
@@ -653,12 +655,12 @@ AddWideString(uint16_t *data, int ids)
 uint8_t
 dlg_jsconf(HWND hwnd, int joy_nr, int type)
 {
-    uint16_t *data_block = (uint16_t *)malloc(16384);
+    uint16_t *data_block = (uint16_t *)mem_alloc(16384);
     uint16_t *data;
     DLGTEMPLATE *dlg = (DLGTEMPLATE *)data_block;
     DLGITEMTEMPLATE *item;
     int c, y = 10;
-    int id = IDC_CONFIG_BASE;
+    int id = IDC_CONFIGURE_DEV;
 
     joystickconfig_changed = 0;
     joystick_nr = joy_nr;
@@ -836,7 +838,7 @@ dlg_jsconf(HWND hwnd, int joy_nr, int type)
 	y += 20;
     }
 
-    dlg->cdit = (id - IDC_CONFIG_BASE) + 2;
+    dlg->cdit = (id - IDC_CONFIGURE_DEV) + 2;
 
     item = (DLGITEMTEMPLATE *)data;
     item->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;

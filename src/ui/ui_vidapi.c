@@ -8,7 +8,7 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.2	2018/05/13
+ * Version:	@(#)ui_vidapi.c	1.0.3	2018/09/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -63,8 +63,8 @@ vidapi_available(int api)
 {
     int ret = 1;
 
-    if (plat_vidapis[api]->available != NULL)
-	ret = plat_vidapis[api]->available();
+    if (plat_vidapis[api]->is_available != NULL)
+	ret = plat_vidapis[api]->is_available();
 
     return(ret);
 }
@@ -109,7 +109,7 @@ vidapi_set(int api)
 {
     int i;
 
-    pclog("Initializing VIDAPI: api=%d\n", api);
+    INFO("Initializing VIDAPI: api=%d\n", api);
 
     /* Lock the blitter. */
     plat_startblit();
@@ -189,7 +189,8 @@ vidapi_screenshot(void)
     struct tm *info;
     time_t now;
 
-    pclog("Screenshot: video API is: %i\n", vid_api);
+    DEBUG("Screenshot: video API is: %i\n", vid_api);
+
     if (vid_api < 0) return;
 
     (void)time(&now);
@@ -201,7 +202,7 @@ vidapi_screenshot(void)
     if (! plat_dir_check(path))
 	plat_dir_create(path);
 
-    wcscat(path, L"\\");
+    plat_append_slash(path);
 
     wcsftime(fn, sizeof_w(fn), L"%Y%m%d_%H%M%S.png", info);
     wcscat(path, fn);

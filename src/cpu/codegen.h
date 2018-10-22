@@ -112,7 +112,7 @@ typedef struct codeblock_t
 /*Code block is always entered with the same FPU top-of-stack*/
 #define CODEBLOCK_STATIC_TOP 2
 
-static inline codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t __cs)
+static INLINE codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t __cs)
 {
         codeblock_t *block = pages[phys >> 12].head;
         uint64_t a = __cs | ((uint64_t)phys << 32);
@@ -134,7 +134,7 @@ static inline codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t __cs)
         return block;
 }
 
-static inline void codeblock_tree_add(codeblock_t *new_block)
+static INLINE void codeblock_tree_add(codeblock_t *new_block)
 {
         codeblock_t *block = pages[new_block->phys >> 12].head;
         uint64_t a = new_block->_cs | ((uint64_t)new_block->phys << 32);
@@ -168,7 +168,7 @@ static inline void codeblock_tree_add(codeblock_t *new_block)
         }
 }
 
-static inline void codeblock_tree_delete(codeblock_t *block)
+static INLINE void codeblock_tree_delete(codeblock_t *block)
 {
         codeblock_t *parent = block->parent;
 
@@ -347,7 +347,7 @@ extern int block_pos;
 
 #define CPU_BLOCK_END() cpu_block_end = 1
 
-static inline void addbyte(uint8_t val)
+static INLINE void addbyte(uint8_t val)
 {
         codeblock[block_current].data[block_pos++] = val;
         if (block_pos >= BLOCK_MAX)
@@ -356,7 +356,7 @@ static inline void addbyte(uint8_t val)
         }
 }
 
-static inline void addword(uint16_t val)
+static INLINE void addword(uint16_t val)
 {
 	uint16_t *p = (uint16_t *) &codeblock[block_current].data[block_pos];
         *p = val;
@@ -367,7 +367,7 @@ static inline void addword(uint16_t val)
         }
 }
 
-static inline void addlong(uint32_t val)
+static INLINE void addlong(uint32_t val)
 {
 	uint32_t *p = (uint32_t *) &codeblock[block_current].data[block_pos];
         *p = val;
@@ -378,7 +378,7 @@ static inline void addlong(uint32_t val)
         }
 }
 
-static inline void addquad(uint64_t val)
+static INLINE void addquad(uint64_t val)
 {
 	uint64_t *p = (uint64_t *) &codeblock[block_current].data[block_pos];
         *p = val;

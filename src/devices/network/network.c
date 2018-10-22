@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network.c	1.0.10	2018/05/24
+ * Version:	@(#)network.c	1.0.15	2018/10/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,39 +54,49 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wchar.h>
-#ifdef WALTJE
+#ifdef ENABLE_NETWORK_DUMP
 # include <ctype.h>
 #endif
 #define HAVE_STDARG_H
+#define dbglog network_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "network.h"
 #include "net_ne2000.h"
+#include "net_wd80x3.h"
+#include "net_3com.h"
 
 
 static netcard_t net_cards[] = {
-    {"Disabled",		"none",		NULL,			NULL},
-    {"[ISA] Novell NE1000",	"ne1k",		&ne1000_device,		NULL},
-    {"[ISA] Novell NE2000",	"ne2k",		&ne2000_device,		NULL},
-    {"[ISA] Realtek RTL8019AS",	"ne2kpnp",	&rtl8019as_device,	NULL},
-    {"[PCI] Realtek RTL8029AS",	"ne2kpci",	&rtl8029as_device,	NULL},
-    {NULL,			NULL,		NULL,			NULL}
+  { "none",		NULL,			NULL	},
+
+  { "ne1k",		&ne1000_device,		NULL	},
+  { "ne2k",		&ne2000_device,		NULL	},
+  { "3c503",		&tc503_device,		NULL	},
+  { "ne2kpnp",		&rtl8019as_device,	NULL	},
+  { "wd8003e",		&wd8003e_device,	NULL	},
+  { "wd8013ebt",	&wd8013ebt_device,	NULL	},
+
+  { "ne2",		&ne2_mca_device,	NULL	},
+  { "ne2_enext",	&ne2_enext_mca_device,	NULL	},
+  { "wd8013epa",	&wd8013epa_device,	NULL	},
+
+  { "ne2kpci",		&rtl8029as_device,	NULL	},
+
+  { NULL,		NULL,			NULL	}
 };
 
 
 /* Global variables. */
-int		network_type;
 int		network_ndev;
-int		network_card;
-char		network_pcap[512];
 netdev_t	network_devs[32];
 #ifdef ENABLE_NETWORK_LOG
 int		network_do_log = ENABLE_NETWORK_LOG;
 #endif
 #ifdef ENABLE_NETWORK_DEV_LOG
-int		network_dev_do_log = ENABLE_NETWORK_DEV_LOG;
+int		network_card_do_log = ENABLE_NETWORK_DEV_LOG;
 #endif
 static mutex_t	*network_mutex;
 static uint8_t	*network_mac;
@@ -102,45 +112,8 @@ static struct {
 } poll_data;
 
 
-#ifdef WALTJE
+#ifdef ENABLE_NETWORK_DUMP
 # define is_print(c)	(isalnum((int)(c)) || ((c) == ' '))
-
-
-#if 0
-/* Dump a buffer in hex, standard output. */
-static void
-hexdump(uint8_t *bufp, int len)
-{
-    char asci[20];
-    uint8_t c;
-    int addr;
-
-    addr = 0;
-    while (len-- > 0) {
-	c = bufp[addr];
-	if ((addr % 16) == 0) {
-		printf("%06X  %02X", addr, c);
-	} else {
-		printf(" %02X", c);
-	}
-	asci[(addr & 15)] = (char)((is_print(c) ? c : '.') & 0xff);
-	if ((++addr % 16) == 0) {
-		asci[16] = '\0';
-		printf("  | %s |\n", asci);
-	}
-    }
-
-    if (addr % 16) {
-	while (addr % 16) {
-		printf("   ");
-		asci[(addr & 15)] = ' ';
-		addr++;
-	}
-	asci[16] = '\0';
-	printf("  | %s |\n", asci);
-    }
-}
-#endif
 
 
 /* Dump a buffer in hex to output buffer. */
@@ -183,19 +156,38 @@ hexdump_p(char *ptr, uint8_t *bufp, int len)
 #endif
 
 
-static void
-net_log(int lvl, const char *fmt, ...)
+#ifdef _LOGGING
+void
+network_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_NETWORK_LOG
+# ifdef ENABLE_NETWORK_LOG
     va_list ap;
 
-    if (network_do_log >= lvl) {
+    if (network_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
+# endif
 }
+#endif
+
+
+#ifdef _LOGGING
+void
+network_card_log(int level, const char *fmt, ...)
+{
+# ifdef ENABLE_NETWORK_DEV_LOG
+    va_list ap;
+
+    if (network_card_do_log >= level) {
+	va_start(ap, fmt);
+	pclog_ex(fmt, ap);
+	va_end(ap);
+    }
+# endif
+}
+#endif
 
 
 void
@@ -325,7 +317,7 @@ network_close(void)
     network_mutex = NULL;
     network_mac = NULL;
 
-    net_log(1, "NETWORK: closed.\n");
+    INFO("NETWORK: closed.\n");
 }
 
 
@@ -343,11 +335,11 @@ network_reset(void)
     int i = -1;
 
 #ifdef ENABLE_NETWORK_LOG
-    pclog("NETWORK: reset (type=%d, card=%d) debug=%d\n",
-			network_type, network_card, network_do_log);
+    INFO("NETWORK: reset (type=%d, card=%d) debug=%d\n",
+		network_type, network_card, network_do_log);
 #else
-    pclog("NETWORK: reset (type=%d, card=%d)\n",
-				network_type, network_card);
+    INFO("NETWORK: reset (type=%d, card=%d)\n",
+			network_type, network_card);
 #endif
     ui_sb_icon_update(SB_NETWORK, 0);
 
@@ -384,14 +376,14 @@ network_reset(void)
 	return;
     }
 
-    net_log(0, "NETWORK: set up for %s, card='%s'\n",
-	(network_type==NET_TYPE_SLIRP)?"SLiRP":"Pcap",
-			net_cards[network_card].name);
+    INFO("NETWORK: set up for %s, card='%s'\n",
+	 (network_type==NET_TYPE_SLIRP)?"SLiRP":"Pcap",
+	 network_card_getname(network_card));
 
     /* Add the (new?) card to the I/O system. */
     if (net_cards[network_card].device) {
-	net_log(1, "NETWORK: adding device '%s'\n",
-		net_cards[network_card].name);
+	INFO("NETWORK: adding device '%s'\n",
+	     network_card_getname(network_card));
 	device_add(net_cards[network_card].device);
     }
 }
@@ -403,11 +395,11 @@ network_tx(uint8_t *bufp, int len)
 {
     ui_sb_icon_update(SB_NETWORK, 1);
 
-#ifdef WALTJE
+#ifdef ENABLE_NETWORK_DUMP
 {
-    char temp[4096];
+    char temp[8192];
     hexdump_p(temp, bufp, len);
-    pclog("NETWORK: >> len=%d\n%s\n", len, temp);
+    DBGLOG(2, "NETWORK: >> len=%d\n%s\n", len, temp);
 }
 #endif
 
@@ -426,7 +418,7 @@ network_tx(uint8_t *bufp, int len)
 
 
 int
-network_dev_to_id(const char *devname)
+network_card_to_id(const char *devname)
 {
     int i = 0;
 
@@ -455,7 +447,7 @@ network_available(void)
 int
 network_card_available(int card)
 {
-    if (net_cards[card].device)
+    if (net_cards[card].device != NULL)
 	return(device_available(net_cards[card].device));
 
     return(1);
@@ -466,7 +458,10 @@ network_card_available(int card)
 const char *
 network_card_getname(int card)
 {
-    return(net_cards[card].name);
+    if (net_cards[card].device != NULL)
+	return(net_cards[card].device->name);
+
+    return(NULL);
 }
 
 
@@ -482,9 +477,10 @@ network_card_getdevice(int card)
 int
 network_card_has_config(int card)
 {
-    if (! net_cards[card].device) return(0);
+    if (net_cards[card].device != NULL)
+	return(net_cards[card].device->config ? 1 : 0);
 
-    return(net_cards[card].device->config ? 1 : 0);
+    return(0);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_misc.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_misc.h	1.0.2	2018/10/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -35,6 +35,7 @@
  *   USA.
  */
 
+
 static int opCBW(uint32_t fetchdat)
 {
         AH = (AL & 0x80) ? 0xff : 0;
@@ -42,6 +43,8 @@ static int opCBW(uint32_t fetchdat)
         PREFETCH_RUN(3, 1, -1, 0,0,0,0, 0);
         return 0;
 }
+
+
 static int opCWDE(uint32_t fetchdat)
 {
         EAX = (AX & 0x8000) ? (0xffff0000 | AX) : AX;
@@ -49,6 +52,8 @@ static int opCWDE(uint32_t fetchdat)
         PREFETCH_RUN(3, 1, -1, 0,0,0,0, 0);
         return 0;
 }
+
+
 static int opCWD(uint32_t fetchdat)
 {
         DX = (AX & 0x8000) ? 0xFFFF : 0;
@@ -56,6 +61,8 @@ static int opCWD(uint32_t fetchdat)
         PREFETCH_RUN(2, 1, -1, 0,0,0,0, 0);
         return 0;
 }
+
+
 static int opCDQ(uint32_t fetchdat)
 {
         EDX = (EAX & 0x80000000) ? 0xffffffff : 0;
@@ -64,12 +71,14 @@ static int opCDQ(uint32_t fetchdat)
         return 0;
 }
 
+
 static int opNOP(uint32_t fetchdat)
 {
         CLOCK_CYCLES((is486) ? 1 : 3);
         PREFETCH_RUN(3, 1, -1, 0,0,0,0, 0);
         return 0;
 }
+
 
 static int opSETALC(uint32_t fetchdat)
 {
@@ -80,7 +89,6 @@ static int opSETALC(uint32_t fetchdat)
 }
 
 
-
 static int opF6_a16(uint32_t fetchdat)
 {
         int tempws, tempws2 = 0;
@@ -89,6 +97,10 @@ static int opF6_a16(uint32_t fetchdat)
         int8_t temps;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+        {
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         dst = geteab();                 if (cpu_state.abrt) return 1;
         switch (rmdat & 0x38)
         {
@@ -139,6 +151,8 @@ static int opF6_a16(uint32_t fetchdat)
                         {
                                 flags_rebuild();
                                 flags |= 0x8D5; /*Not a Cyrix*/
+				flags &= ~1;
+
                         }
                 }
                 else
@@ -146,8 +160,8 @@ static int opF6_a16(uint32_t fetchdat)
                         x86_int(0);
                         return 1;
                 }
-                CLOCK_CYCLES(is486 ? 16 : 14);
-                PREFETCH_RUN(is486 ? 16 : 14, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 0);
+                CLOCK_CYCLES((is486 && !cpu_iscyrix) ? 24 : 22);
+                PREFETCH_RUN((is486 && !cpu_iscyrix) ? 24 : 22, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 0);
                 break;
                 case 0x38: /*IDIV AL,b*/
                 tempws = (int)(int16_t)AX;
@@ -161,6 +175,7 @@ static int opF6_a16(uint32_t fetchdat)
                         {
                                 flags_rebuild();
                                 flags|=0x8D5; /*Not a Cyrix*/
+				flags &= ~1;
                         }
                 }
                 else
@@ -173,11 +188,13 @@ static int opF6_a16(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad F6 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad F6 opcode %02X\n", rmdat & 0x38);
                 x86illegal();
         }
         return 0;
 }
+
+
 static int opF6_a32(uint32_t fetchdat)
 {
         int tempws, tempws2 = 0;
@@ -236,6 +253,7 @@ static int opF6_a32(uint32_t fetchdat)
                         {
                                 flags_rebuild();
                                 flags |= 0x8D5; /*Not a Cyrix*/
+				flags &= ~1;
                         }
                 }
                 else
@@ -243,8 +261,8 @@ static int opF6_a32(uint32_t fetchdat)
                         x86_int(0);
                         return 1;
                 }
-                CLOCK_CYCLES(is486 ? 16 : 14);
-                PREFETCH_RUN(is486 ? 16 : 14, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 1);
+                CLOCK_CYCLES((is486 && !cpu_iscyrix) ? 16 : 14);
+                PREFETCH_RUN((is486 && !cpu_iscyrix) ? 16 : 14, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 1);
                 break;
                 case 0x38: /*IDIV AL,b*/
                 tempws = (int)(int16_t)AX;
@@ -258,6 +276,7 @@ static int opF6_a32(uint32_t fetchdat)
                         {
                                 flags_rebuild();
                                 flags|=0x8D5; /*Not a Cyrix*/
+				flags &= ~1;
                         }
                 }
                 else
@@ -270,12 +289,11 @@ static int opF6_a32(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad F6 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad F6 opcode %02X\n", rmdat & 0x38);
                 x86illegal();
         }
         return 0;
 }
-
 
 
 static int opF7_w_a16(uint32_t fetchdat)
@@ -365,7 +383,7 @@ static int opF7_w_a16(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad F7 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad F7 opcode %02X\n", rmdat & 0x38);
                 x86illegal();
         }
         return 0;
@@ -457,7 +475,7 @@ static int opF7_w_a32(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad F7 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad F7 opcode %02X\n", rmdat & 0x38);
                 x86illegal();
         }
         return 0;
@@ -528,7 +546,7 @@ static int opF7_l_a16(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad F7 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad F7 opcode %02X\n", rmdat & 0x38);
                 x86illegal();
         }
         return 0;
@@ -598,7 +616,7 @@ static int opF7_l_a32(uint32_t fetchdat)
                 break;
 
                 default:
-                pclog("Bad F7 opcode %02X\n", rmdat & 0x38);
+                ERRLOG("CPU: bad F7 opcode %02X\n", rmdat & 0x38);
                 x86illegal();
         }
         return 0;
@@ -725,7 +743,7 @@ static int opCLTS(uint32_t fetchdat)
 {
         if ((CPL || (eflags&VM_FLAG)) && (cr0&1))
         {
-                pclog("Can't CLTS\n");
+                ERRLOG("CPU: can't CLTS\n");
                 x86gpf(NULL,0);
                 return 1;
         }
@@ -949,4 +967,3 @@ static int opWRMSR(uint32_t fetchdat)
         x86illegal();
         return 1;
 }
-

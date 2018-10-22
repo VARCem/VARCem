@@ -8,7 +8,7 @@
  *
  *		Implementation of 8250-style serial port.
  *
- * Version:	@(#)serial.c	1.0.7	2018/05/06
+ * Version:	@(#)serial.c	1.0.10	2018/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,8 +43,8 @@
 #include <stdarg.h>
 #include <wchar.h>
 #define HAVE_STDARG_H
+#define dbglog serial_log
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -78,19 +78,21 @@ static const struct {
 static SERIAL	ports[SERIAL_MAX];	/* the ports */
 
 
-static void
-serlog(const char *fmt, ...)
+#ifdef _LOGGING
+void
+serial_log(int level, const char *fmt, ...)
 {
-#ifdef ENABLE_SERIAL_LOG
+# ifdef ENABLE_SERIAL_LOG
     va_list ap;
 
-    if (serial_do_log) {
+    if (serial_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
     }
-#endif
+# endif
 }
+#endif
 
 
 static void
@@ -105,7 +107,7 @@ update_ints(SERIAL *dev)
 	stat = 1;
 	dev->iir = 6;
     } else if ((dev->ier & 1) && (dev->int_status & SERIAL_INT_RECEIVE)) {
-	/*Recieved data available*/
+	/*Received data available*/
 	stat = 1;
 	dev->iir = 4;
     } else if ((dev->ier & 2) && (dev->int_status & SERIAL_INT_TRANSMIT)) {
@@ -118,7 +120,7 @@ update_ints(SERIAL *dev)
 	dev->iir = 0;
     }
 
-    if (stat && ((dev->mcr & 8) || PCJR))
+    if (stat && ((dev->mcr & 8) || dev->pcjr))
 	picintlevel(1 << dev->irq);
       else
 	picintc(1 << dev->irq);
@@ -356,6 +358,10 @@ serial_init(const device_t *info)
     /* Get the correct device. */
     dev = &ports[info->local - 1];
 
+    /* Set up local/weird stuff. */
+    if (info->local & 128)
+	dev->pcjr = 1;
+
     /* Set up callback functions. */
     dev->clear_fifo = clear_fifo;
     dev->write_fifo = write_fifo;
@@ -369,8 +375,8 @@ serial_init(const device_t *info)
 
     timer_add(receive_callback, &dev->delay, &dev->delay, dev);
 
-    pclog("SERIAL: COM%d (I/O=%04X, IRQ=%d)\n",
-		info->local, dev->base, dev->irq);
+    INFO("SERIAL: COM%d (I/O=%04X, IRQ=%d)\n",
+	 info->local & 127, dev->base, dev->irq);
 
     return(dev);
 }
@@ -400,6 +406,16 @@ const device_t serial_1_device = {
 };
 
 
+const device_t serial_1_pcjr_device = {
+    "COM1:",
+    0,
+    128+1,
+    serial_init, serial_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+
 const device_t serial_2_device = {
     "COM2:",
     0,
@@ -417,9 +433,7 @@ serial_reset(void)
     SERIAL *dev;
     int i;
 
-#ifdef ENABLE_SERIAL_LOG
-    serlog("SERIAL: reset ([%d] [%d])\n", serial_enabled[0], serial_enabled[1]);
-#endif
+    DEBUG("SERIAL: reset ([%d] [%d])\n", serial_enabled[0], serial_enabled[1]);
 
     for (i = 0; i < SERIAL_MAX; i++) {
 	dev = &ports[i];
@@ -441,10 +455,9 @@ serial_setup(int id, uint16_t port, int8_t irq)
 {
     SERIAL *dev = &ports[id-1];
 
-#if defined(ENABLE_SERIAL_LOG) && defined(_DEBUG)
-    serlog("SERIAL: setting up COM%d as %04X [enabled=%d]\n",
+    INFO("SERIAL: setting up COM%d as %04X [enabled=%d]\n",
 			id, port, serial_enabled[id-1]);
-#endif
+
     if (! serial_enabled[id-1]) return;
 
     dev->base = port;
@@ -465,7 +478,7 @@ serial_attach(int port, void *func, void *arg)
     dev = &ports[port-1];
 
     /* Set up callback info. */
-    dev->rts_callback = func;
+    dev->rts_callback = (void (*)(struct SERIAL *, void *))func;
     dev->rts_callback_p = arg;
 
     return(dev);
