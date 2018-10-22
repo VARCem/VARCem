@@ -84,6 +84,9 @@ static const struct {
     { "ati28800w",		&ati28800_wonderxl24_device	},
 #endif
     { "superega",		&sega_device			},
+#if defined(DEV_BRANCH)
+    { "cl_gd5422_isa",     	&gd5422_isa_device		},
+#endif
     { "cl_gd5428_isa",		&gd5428_isa_device		},
     { "cl_gd5429_isa",		&gd5429_isa_device		},
     { "cl_gd5434_isa",		&gd5434_isa_device		},
@@ -137,6 +140,9 @@ static const struct {
 
     { "mach64gx_vlb",		&mach64gx_vlb_device		},
     { "et4000w32p_vlb",		&et4000w32p_cardex_vlb_device	},
+#if defined(DEV_BRANCH)
+    { "cl_gd5424_vlb",     	&gd5424_vlb_device		},
+#endif
     { "cl_gd5429_vlb",		&gd5429_vlb_device		},
     { "cl_gd5434_vlb",		&gd5434_vlb_device		},
     { "stealth32_vlb",		&et4000w32p_vlb_device		},
