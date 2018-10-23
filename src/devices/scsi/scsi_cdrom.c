@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.6	2018/10/20
+ * Version:	@(#)scsi_cdrom.c	1.0.7	2018/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -596,14 +596,14 @@ mode_sense(scsi_cdrom_t *dev, uint8_t *buf, uint32_t pos, uint8_t page, uint8_t 
 			for (j = 0; j < msplen; j++) {
 				if ((i == GPMODE_CAPABILITIES_PAGE) && (j >= 6) && (j <= 7)) {
 					if (j & 1)
-						buf[pos++] = ((dev->drv->speed_idx * 176) & 0xff);
+						buf[pos++] = ((cdrom_speeds[dev->drv->speed_idx].speed * 176) & 0xff);
 					else
-						buf[pos++] = ((dev->drv->speed_idx * 176) >> 8);
+						buf[pos++] = ((cdrom_speeds[dev->drv->speed_idx].speed * 176) >> 8);
 				} else if ((i == GPMODE_CAPABILITIES_PAGE) && (j >= 12) && (j <= 13)) {
 					if (j & 1)
-						buf[pos++] = ((dev->drv->cur_speed * 176) & 0xff);
+						buf[pos++] = ((cdrom_speeds[dev->drv->cur_speed].speed * 176) & 0xff);
 					else
-						buf[pos++] = ((dev->drv->cur_speed * 176) >> 8);
+						buf[pos++] = ((cdrom_speeds[dev->drv->cur_speed].speed * 176) >> 8);
 				} else
 					buf[pos++] = mode_sense_read(dev, page_control, i, 2 + j);
 			}
@@ -707,7 +707,8 @@ command_common(scsi_cdrom_t *dev)
     dev->pos = 0;
     dev->callback = 0LL;
 
-    DEBUG("CD-ROM %i: Current speed: %ix\n", dev->id, dev->drv->cur_speed);
+    DEBUG("CD-ROM %i: Current speed: %ix\n",
+	  dev->id, cdrom_speeds[dev->drv->cur_speed].speed);
 
     if (dev->packet_status == PHASE_COMPLETE) {
 	scsi_cdrom_callback(dev);
@@ -748,7 +749,7 @@ command_common(scsi_cdrom_t *dev)
 				dev->callback += 200LL * CDROM_TIME;
 			/* Account for seek time. */
 			bytes_per_second = 176.0 * 1024.0;
-			bytes_per_second *= (double) dev->drv->cur_speed;
+			bytes_per_second *= (double) cdrom_speeds[dev->drv->cur_speed].speed;
 			break;
 		default:
 			bytes_per_second = bus_speed(dev);
@@ -1653,10 +1654,9 @@ scsi_cdrom_command(void *p, uint8_t *cdb)
 
 	case GPCMD_SET_SPEED:
 	case GPCMD_SET_SPEED_ALT:
-		dev->drv->cur_speed = (cdb[3] | (cdb[2] << 8)) / 176;
-		if (dev->drv->cur_speed < 1)
-			dev->drv->cur_speed = 1;
-		else if (dev->drv->cur_speed > dev->drv->speed_idx)
+		len = (cdb[3] | (cdb[2] << 8)) / 176;
+		dev->drv->cur_speed = cdrom_speed_idx(len);
+		if (dev->drv->cur_speed > dev->drv->speed_idx)
 			dev->drv->cur_speed = dev->drv->speed_idx;
 		set_phase(dev, SCSI_PHASE_STATUS);
 		command_complete(dev);
