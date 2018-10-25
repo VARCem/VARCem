@@ -28,7 +28,7 @@
  *		 multipliers sounds better or not
  *		DUNNO Keyon in 4op, switch to 2op without keyoff.
  *
- * Version:	@(#)dbopl.cpp	1.0.2	2018/09/15
+ * Version:	@(#)dbopl.cpp	1.0.3	2018/10/24
  *
  *		Based on (dbopl.cpp,v 1.10 2009-06-10 19:54:51 harekiet)
  *
@@ -1473,7 +1473,7 @@ void InitTables( void ) {
 		if ( i >= 16 )
 			index += 9;
 		intptr_t blah = reinterpret_cast<intptr_t>( &(chip->chan[ index ]) );
-		ChanOffsetTable[i] = blah;
+		ChanOffsetTable[i] = (Bit16u)blah;
 	}
 	//Same for operators
 	for ( Bitu i = 0; i < 64; i++ ) {
@@ -1488,7 +1488,7 @@ void InitTables( void ) {
 		Bitu opNum = ( i % 8 ) / 3;
 		DBOPL::Channel* chan = 0;
 		intptr_t blah = reinterpret_cast<intptr_t>( &(chan->op[opNum]) );
-		OpOffsetTable[i] = ChanOffsetTable[ chNum ] + blah;
+		OpOffsetTable[i] = (Bit16u) (ChanOffsetTable[ chNum ] + blah);
 	}
 #if 0
 	//Stupid checks if table's are correct

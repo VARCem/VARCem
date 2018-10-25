@@ -150,7 +150,7 @@ nvr_init(nvr_t *nvr)
 	strcpy(temp, (const char *)nvr->fn);
       else
 	strcpy(temp, machine_get_internal_name());
-    c = strlen(temp) + 1;
+    c = (int)strlen(temp) + 1;
     sp = (wchar_t *)mem_alloc((c+10) * sizeof(wchar_t));
     mbstowcs(sp, temp, c);
     wcscat(sp, NVR_FILE_EXT);

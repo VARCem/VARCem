@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_floppy.h	1.0.7	2018/09/19
+ * Version:	@(#)win_settings_floppy.h	1.0.9	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -202,11 +202,7 @@ floppy_update_item(HWND hwndList, int i)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
@@ -281,7 +277,7 @@ floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				fd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_FD_TYPE);
-				temp_fdd_types[fdlv_current_sel] = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_fdd_types[fdlv_current_sel] = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				h = GetDlgItem(hdlg, IDC_LIST_FLOPPY_DRIVES);
 				floppy_update_item(h, fdlv_current_sel);
 				fd_ignore_change = 0;
@@ -293,7 +289,7 @@ floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				fd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_CHECKTURBO);
-				temp_fdd_turbo[fdlv_current_sel] = SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_fdd_turbo[fdlv_current_sel] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 				h = GetDlgItem(hdlg, IDC_LIST_FLOPPY_DRIVES);
 				floppy_update_item(h, fdlv_current_sel);
 				fd_ignore_change = 0;
@@ -305,7 +301,7 @@ floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				fd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_CHECKBPB);
-				temp_fdd_check_bpb[fdlv_current_sel] = SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_fdd_check_bpb[fdlv_current_sel] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 				h = GetDlgItem(hdlg, IDC_LIST_FLOPPY_DRIVES);
 				floppy_update_item(h, fdlv_current_sel);
 				fd_ignore_change = 0;

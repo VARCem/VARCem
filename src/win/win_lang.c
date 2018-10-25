@@ -8,7 +8,7 @@
  *
  *		Handle language support for the platform.
  *
- * Version:	@(#)win_lang.c	1.0.7	2018/10/07
+ * Version:	@(#)win_lang.c	1.0.8	2018/10/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -116,7 +116,7 @@ plat_lang_scan(void)
     DIR *dir;
     int l, lflen;
 
-    lflen = wcslen(LANG_FILE);
+    lflen = (int)wcslen(LANG_FILE);
 
     /* Open the "language modules" directory. */
     swprintf(path, sizeof_w(path), L"%ls%ls", exe_path, LANGUAGE_PATH);
@@ -137,7 +137,7 @@ plat_lang_scan(void)
 		/* Looks like we have one here.. */
 		memset(temp, 0x00, sizeof(temp));
 		swprintf(temp, sizeof_w(temp), L"%ls\\%ls", path, de->d_name);
-		l = wcslen(temp) + 1;
+		l = (int)wcslen(temp) + 1;
 
 		/* Create a buffer for the DLL file name. */
 		memset(&lang, 0x00, sizeof(lang));
@@ -191,7 +191,7 @@ plat_lang_scan(void)
 		while (*str != L'\0')
 			*ptr++ = *str++;
 		*ptr++ = *str++;
-		l -= (ptr - temp);
+		l -= (int)(ptr - temp);
 		ptr = (wchar_t *)mem_alloc(sizeof(wchar_t) * (ptr-temp));
 		wcscpy(ptr, temp);
 		lang.author = (const wchar_t *)ptr;

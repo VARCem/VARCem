@@ -32,7 +32,7 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.5	2018/09/22
+ * Version:	@(#)isamem.c	1.0.6	2018/10/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -582,7 +582,7 @@ dev->frame_addr = 0xE0000;
 		t = EMS_MAXSIZE;
 
 	/* Set up where EMS begins in local RAM, and how much we have. */
-	dev->ems_start = ptr - dev->ram;
+	dev->ems_start = (uint32_t) (ptr - dev->ram);
 	dev->ems_size = t >> 10;
 	dev->ems_pages = t / EMS_PGSIZE;
 	INFO("ISAMEM: EMS enabled, I/O=%04XH, %iKB (%i pages)",

@@ -150,7 +150,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 
       hval = NEXT (hval, ip);
       hslot = htab + IDX (hval);
-      ref = *hslot + LZF_HSLOT_BIAS;
+      ref = (u8 *) ( *hslot + LZF_HSLOT_BIAS );
       *hslot = *(LZF_HSLOT *)(ip - LZF_HSLOT_BIAS);
 
       if (1
@@ -169,7 +169,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
         {
           /* match found at *ref++ */
           unsigned int len = 2;
-          unsigned int maxlen = in_end - ip - len;
+          unsigned int maxlen = (unsigned int) (in_end - ip - len);
           maxlen = maxlen > MAX_REF ? MAX_REF : maxlen;
 
           if (expect_false (op + 3 + 1 >= out_end)) /* first a faster conservative test */
@@ -294,6 +294,6 @@ lzf_compress (const void *const in_data, unsigned int in_len,
   op [- lit - 1] = lit - 1; /* end run */
   op -= !lit; /* undo run if length is zero */
 
-  return op - (u8 *)out_data;
+  return (unsigned int) (op - (u8 *)out_data);
 }
 

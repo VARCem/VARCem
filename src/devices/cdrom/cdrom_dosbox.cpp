@@ -8,7 +8,7 @@
  *
  *		CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.9	2018/09/25
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.10	2018/10/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -105,7 +105,7 @@ CDROM_Interface_Image::BinaryFile::read(Bit8u *buffer, uint64_t seek, size_t cou
     if (file == NULL) return 0;
 
     fseeko64(file, seek, SEEK_SET);
-    fread(buffer, 1, count, file);
+    if (fread(buffer, count, 1, file) != 1) return 0;
 
     return 1;
 }

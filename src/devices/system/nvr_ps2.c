@@ -8,7 +8,7 @@
  *
  *		Handling of the PS/2 series CMOS devices.
  *
- * Version:	@(#)nvr_ps2.c	1.0.8	2018/10/05
+ * Version:	@(#)nvr_ps2.c	1.0.9	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -116,7 +116,7 @@ ps2_nvr_init(const device_t *info)
 
     /* Set up the NVR file's name. */
     sprintf(temp, "%s_sec.nvr", machine_get_internal_name());
-    i = strlen(temp) + 1;
+    i = (int)strlen(temp) + 1;
     nvr->fn = (wchar_t *)mem_alloc(i * sizeof(wchar_t));
     mbstowcs(nvr->fn, temp, i);
 	

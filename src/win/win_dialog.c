@@ -8,7 +8,7 @@
  *
  *		Implementation of server several dialogs.
  *
- * Version:	@(#)win_dialog.c	1.0.13	2018/10/05
+ * Version:	@(#)win_dialog.c	1.0.14	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -168,8 +168,14 @@ ui_msgbox(int flags, const void *arg)
 	 * higher than the numeric ID's.  So, we guesswork
 	 * that if the value of 'arg' is low, its an ID..
 	 */
-	if (((uintptr_t)arg) < ((uintptr_t)65636))
+#if (defined(_MSC_VER) && defined(_M_X64)) || \
+    (defined(__GNUC__) && defined(__amd64__))
+	if (((uintptr_t)arg) < ((uintptr_t)65636ULL))
+		str = get_string(((intptr_t)arg) & 0xffff);
+#else
+	if (((uint32_t)arg) < ((uint32_t)65636))
 		str = get_string((intptr_t)arg);
+#endif
     }
 
     /* Create a hook for the MessageBox dialog. */

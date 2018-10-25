@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.16	2018/10/15
+ * Version:	@(#)win_settings_disk.h	1.0.18	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -290,7 +290,7 @@ disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
 
     if ((hd_listview_items > 0) || is_add_dlg) {
 	h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-	bus = SendMessage(h, CB_GETCURSEL, 0, 0);
+	bus = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 	switch(bus) {
 		case HDD_BUS_ST506:		/* ST506 MFM/RLL */
@@ -705,7 +705,7 @@ get_combo_box_selection(HWND hdlg, int id, uint64_t *val)
     HWND h;
 
     h = GetDlgItem(hdlg, id);
-    *val = SendMessage(h, CB_GETCURSEL, 0, 0);
+    *val = (uint64_t)SendMessage(h, CB_GETCURSEL, 0, 0);
 }
 
 
@@ -780,11 +780,7 @@ disk_recalc_selection(HWND hdlg)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     wchar_t temp_path[512];
@@ -936,7 +932,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDOK:
 				if (!(existing & 2)) {
 					h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-					hdd_ptr->bus = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+					hdd_ptr->bus = (int)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				}
 
 				/* Do we have a file name? */
@@ -979,24 +975,24 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					switch(hdd_ptr->bus) {
 						case HDD_BUS_ST506:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-							hdd_ptr->bus_id.st506_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->bus_id.st506_channel = (int)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 
 						case HDD_BUS_ESDI:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
-							hdd_ptr->bus_id.esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->bus_id.esdi_channel = (int)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 
 						case HDD_BUS_IDE:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
-							hdd_ptr->bus_id.ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->bus_id.ide_channel = (int)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 
 						case HDD_BUS_SCSI:
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
-							hdd_ptr->bus_id.scsi.id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->bus_id.scsi.id = (uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
-							hdd_ptr->bus_id.scsi.lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+							hdd_ptr->bus_id.scsi.lun = (uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 							break;
 
 						case HDD_BUS_USB:
@@ -1380,7 +1376,7 @@ hdd_add_file_open_error:
 				no_update = 1;
 				disk_recalc_location_controls(hdlg, 1, 0);
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-				b = SendMessage(h,CB_GETCURSEL,0,0) + 1;
+				b = (int)SendMessage(h,CB_GETCURSEL,0,0) + 1;
 				if (b == hdd_ptr->bus)
 					goto hd_add_bus_skip;
 
@@ -1575,11 +1571,7 @@ disk_track_all(void)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 disk_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h;
@@ -1655,7 +1647,7 @@ disk_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_BUS);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				if (b == temp_hdd[hdlv_current_sel].bus)
 					goto hd_bus_skip;
 				disk_untrack(hdlv_current_sel);
@@ -1679,9 +1671,9 @@ hd_bus_skip:
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL);
 				disk_untrack(hdlv_current_sel);
 				if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_ST506)
-					temp_hdd[hdlv_current_sel].bus_id.st506_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+					temp_hdd[hdlv_current_sel].bus_id.st506_channel = (int)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				else if (temp_hdd[hdlv_current_sel].bus == HDD_BUS_ESDI)
-					temp_hdd[hdlv_current_sel].bus_id.esdi_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+					temp_hdd[hdlv_current_sel].bus_id.esdi_channel = (int)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);
@@ -1695,7 +1687,7 @@ hd_bus_skip:
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_CHANNEL_IDE);
 				disk_untrack(hdlv_current_sel);
-				temp_hdd[hdlv_current_sel].bus_id.ide_channel = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				temp_hdd[hdlv_current_sel].bus_id.ide_channel = (int)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);
@@ -1709,7 +1701,7 @@ hd_bus_skip:
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_ID);
 				disk_untrack(hdlv_current_sel);
-				temp_hdd[hdlv_current_sel].bus_id.scsi.id = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				temp_hdd[hdlv_current_sel].bus_id.scsi.id = (uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);
@@ -1723,7 +1715,7 @@ hd_bus_skip:
 				ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_HD_LUN);
 				disk_untrack(hdlv_current_sel);
-				temp_hdd[hdlv_current_sel].bus_id.scsi.lun = SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
+				temp_hdd[hdlv_current_sel].bus_id.scsi.lun = (uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff;
 				disk_track(hdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_HARD_DISKS);
 				disk_update_item(h, hdlv_current_sel, 0);

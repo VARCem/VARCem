@@ -8,7 +8,7 @@
  *
  *		Implementation of the "Removable Devices" dialog.
  *
- * Version:	@(#)win_settings_remov.h	1.0.10	2018/10/21
+ * Version:	@(#)win_settings_remov.h	1.0.12	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -720,11 +720,7 @@ zip_track_all(void)
 #endif
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h;
@@ -822,7 +818,7 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_BUS);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				if (b == temp_cdrom_drives[cdlv_current_sel].bus_type)
 					goto cdrom_bus_skip;
 				cdrom_untrack(cdlv_current_sel);
@@ -845,7 +841,7 @@ cdrom_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_ID);
 				cdrom_untrack(cdlv_current_sel);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_cdrom_drives[cdlv_current_sel].bus_id.scsi.id = (uint8_t)b;
 				cdrom_track(cdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
@@ -860,7 +856,7 @@ cdrom_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_LUN);
 				cdrom_untrack(cdlv_current_sel);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_cdrom_drives[cdlv_current_sel].bus_id.scsi.lun = (uint8_t)b;
 				cdrom_track(cdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
@@ -875,7 +871,7 @@ cdrom_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_CHANNEL_IDE);
 				cdrom_untrack(cdlv_current_sel);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_cdrom_drives[cdlv_current_sel].bus_id.ide_channel = (uint8_t)b;
 				cdrom_track(cdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
@@ -889,7 +885,7 @@ cdrom_bus_skip:
 
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_CD_SPEED);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_cdrom_drives[cdlv_current_sel].speed_idx = (uint8_t)b;
 				h = GetDlgItem(hdlg, IDC_LIST_CDROM_DRIVES);
 				cdrom_update_item(h, cdlv_current_sel);
@@ -902,7 +898,7 @@ cdrom_bus_skip:
 
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				if (temp_zip_drives[zdlv_current_sel].bus_type == b)
 					goto zip_bus_skip;
 				zip_untrack(zdlv_current_sel);
@@ -923,7 +919,7 @@ zip_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_ID);
 				zip_untrack(zdlv_current_sel);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_zip_drives[zdlv_current_sel].bus_id.scsi.id = (uint8_t)b;
 				zip_track(zdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
@@ -938,7 +934,7 @@ zip_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_LUN);
 				zip_untrack(zdlv_current_sel);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_zip_drives[zdlv_current_sel].bus_id.scsi.lun = (uint8_t)b;
 				zip_track(zdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
@@ -953,7 +949,7 @@ zip_bus_skip:
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_CHANNEL_IDE);
 				zip_untrack(zdlv_current_sel);
-				b = SendMessage(h, CB_GETCURSEL, 0, 0);
+				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_zip_drives[zdlv_current_sel].bus_id.ide_channel = (uint8_t)b;
 				zip_track(zdlv_current_sel);
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
@@ -967,7 +963,7 @@ zip_bus_skip:
 
 				rd_ignore_change = 1;
 				h = GetDlgItem(hdlg, IDC_CHECK250);
-				b = SendMessage(h, BM_GETCHECK, 0, 0);
+				b = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 				temp_zip_drives[zdlv_current_sel].is_250 = (int8_t)b;
 				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
 				zip_update_item(h, zdlv_current_sel);

@@ -13,7 +13,7 @@
  *		re-merged with the other files. Much of it is generic to
  *		all formats.
  *
- * Version:	@(#)fdd_img.c	1.0.13	2018/10/05
+ * Version:	@(#)fdd_img.c	1.0.14	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -486,7 +486,7 @@ img_seek(int drive, int track)
 		cur_pos = (track * dev->sectors * ssize * dev->sides) + (side * dev->sectors * ssize);
 		memcpy(dev->track_data[side], dev->disk_data + cur_pos, dev->sectors * ssize);
 	} else {
-		read_bytes = fread(dev->track_data[side], 1, dev->sectors * ssize, dev->f);
+		read_bytes = (int)fread(dev->track_data[side], 1, dev->sectors * ssize, dev->f);
 		if (read_bytes < (dev->sectors * ssize))
 			memset(dev->track_data[side] + read_bytes, 0xf6, (dev->sectors * ssize) - read_bytes);
 	}

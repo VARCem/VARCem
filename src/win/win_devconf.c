@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.21	2018/10/05
+ * Version:	@(#)win_devconf.c	1.0.22	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -170,11 +170,7 @@ dlg_init(HWND hdlg)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     wchar_t ws[512], temp[512];
@@ -205,7 +201,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_BINARY:
 						val = config_get_int(dev->name, cfg->name, cfg->default_int);
 
-						if (val != SendMessage(h, BM_GETCHECK, 0, 0))
+						if (val != (int)SendMessage(h, BM_GETCHECK, 0, 0))
 							changed = 1;
 						id++;
 						break;
@@ -213,7 +209,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_SELECTION:
 						val = config_get_int(dev->name, cfg->name, cfg->default_int);
 
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 						for (; c > 0; c--)
 							sel++;
@@ -226,7 +222,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_MIDI:
 						val = config_get_int(dev->name, cfg->name, cfg->default_int);
 
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 						if (val != c)
 							changed = 1;
@@ -260,7 +256,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_HEX16:
 						val = config_get_hex16(dev->name, cfg->name, cfg->default_int);
 
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 						for (; c > 0; c--)
 							sel++;
@@ -273,7 +269,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					case CONFIG_HEX20:
 						val = config_get_hex20(dev->name, cfg->name, cfg->default_int);
 
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 						for (; c > 0; c--)
 							sel++;
@@ -303,13 +299,13 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				switch (cfg->type) {
 					case CONFIG_BINARY:
-						config_set_int(dev->name, cfg->name, SendMessage(h, BM_GETCHECK, 0, 0));
+						config_set_int(dev->name, cfg->name, (int)SendMessage(h, BM_GETCHECK, 0, 0));
 						
 						id++;
 						break;
 
 					case CONFIG_SELECTION:
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 						for (; c > 0; c--)
 							sel++;
 						config_set_int(dev->name, cfg->name, sel->value);
@@ -318,7 +314,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						break;
 
 					case CONFIG_MIDI:
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 						config_set_int(dev->name, cfg->name, c);
 
 						id += 2;
@@ -346,7 +342,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						break;
 
 					case CONFIG_HEX16:
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 						for (; c > 0; c--)
 							sel++;
 						config_set_hex16(dev->name, cfg->name, sel->value);
@@ -355,7 +351,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						break;
 
 					case CONFIG_HEX20:
-						c = SendMessage(h, CB_GETCURSEL, 0, 0);
+						c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 						for (; c > 0; c--)
 							sel++;
 						config_set_hex20(dev->name, cfg->name, sel->value);
@@ -423,7 +419,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 //FIXME: localize
 							strcat(file_filter, "|All files (*.*)|*.*|");
 							mbstowcs(ws, file_filter, strlen(file_filter) + 1);
-							d = strlen(file_filter);
+							d = (int)strlen(file_filter);
 
 							/* replace | with \0 */
 							for (c = 0; c < d; ++c)

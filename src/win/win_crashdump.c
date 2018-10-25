@@ -8,7 +8,7 @@
  *
  *		Handle generation of crash-dump reports.
  *
- * Version:	@(#)win_crashdump.c	1.0.8	2018/10/05
+ * Version:	@(#)win_crashdump.c	1.0.9	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Riley (Rai-chan),
@@ -192,7 +192,7 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
     if (ipModule != 0) {
 	sprintf(BufPtr," [");
 	GetModuleFileName(ipModule, &BufPtr[2],
-			  ExceptionHandlerBufferSize - strlen(ExceptionHandlerBuffer));
+			  ExceptionHandlerBufferSize - (int)strlen(ExceptionHandlerBuffer));
 	if (GetLastError() == ERROR_SUCCESS) {
 		BufPtr = &ExceptionHandlerBuffer[strlen(ExceptionHandlerBuffer)];
 		sprintf(BufPtr,"]");
@@ -231,7 +231,7 @@ MakeCrashDump(PEXCEPTION_POINTERS ExceptionInfo)
 	
     /* Write the string to disk. */
     WriteFile(hDumpFile, ExceptionHandlerBuffer,
-	      strlen(ExceptionHandlerBuffer), NULL, NULL);
+	      (int)strlen(ExceptionHandlerBuffer), NULL, NULL);
 
     /* Close the file. */
     CloseHandle(hDumpFile);

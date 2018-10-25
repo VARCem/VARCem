@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.9	2018/09/29
+ * Version:	@(#)win_settings_machine.h	1.0.11	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -200,11 +200,7 @@ machine_recalc_machine(HWND hdlg)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
@@ -269,7 +265,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_MACHINE:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
-					d = SendMessage(h, CB_GETCURSEL, 0, 0);
+					d = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 					temp_machine = list_to_mach[d];
 					machine_recalc_machine(hdlg);
 				}
@@ -278,7 +274,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_CPU_TYPE:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_CPU_TYPE);
-					temp_cpu_m = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_cpu_m = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 					temp_cpu = 0;
 					machine_recalc_cpu_m(hdlg);
@@ -288,7 +284,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_CPU:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_CPU);
-					temp_cpu = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_cpu = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 					machine_recalc_cpu(hdlg);
 				}
@@ -296,7 +292,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_MACHINE:
 				h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
-				d = SendMessage(h, CB_GETCURSEL, 0, 0);
+				d = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_machine = list_to_mach[d];
 				temp_deviceconfig |= dlg_devconf(hdlg, machine_getdevice(temp_machine));
 				break;
@@ -304,7 +300,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_SYNC:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_SYNC);
-					temp_sync = SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_sync = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				}
 				break;
 		}
@@ -314,14 +310,14 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SAVE_CFG:
 #ifdef USE_DYNAREC
 		h = GetDlgItem(hdlg, IDC_CHECK_DYNAREC);
-		temp_dynarec = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_dynarec = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 #endif
 
 		h = GetDlgItem(hdlg, IDC_CHECK_FPU);
-		temp_fpu = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_fpu = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_WS);
-		temp_wait_states = SendMessage(h, CB_GETCURSEL, 0, 0);
+		temp_wait_states = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_MEMTEXT);
 		SendMessage(h, WM_GETTEXT, sizeof_w(temp), (LPARAM)temp);

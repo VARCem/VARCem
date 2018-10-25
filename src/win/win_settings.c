@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.35	2018/10/15
+ * Version:	@(#)win_settings.c	1.0.37	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -592,11 +592,7 @@ insert_categories(HWND hwndList)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h;
@@ -700,7 +696,7 @@ find_roms(void)
 	/* Is this machine available? */
 	if (machine_available(c)) {
 		/* Allocate space and copy name to Unicode. */
-		i = strlen(str) + 1;
+		i = (int)strlen(str) + 1;
 		mach_names[d] = (wchar_t *)mem_alloc(i * sizeof(wchar_t));
 		mbstowcs(mach_names[d], str, i);
 

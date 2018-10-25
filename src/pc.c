@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.57	2018/10/16
+ * Version:	@(#)pc.c	1.0.59	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -181,7 +181,11 @@ static int	fps,				/* statistics */
 static int	unscaled_size_x = SCREEN_RES_X,	/* current unscaled size X */
 		unscaled_size_y = SCREEN_RES_Y,	/* current unscaled size Y */
 		efscrnsz_y = SCREEN_RES_Y;
-static FILE	*stdlog = NULL;			/* file to log output to */
+
+static FILE	*logfp = NULL;			/* logging variables */
+static char	logbuff[PCLOG_BUFF_SIZE];
+static int	logseen = 0;
+static int	logdetect = 1;
 
 
 /*
@@ -198,16 +202,12 @@ static FILE	*stdlog = NULL;			/* file to log output to */
 void
 pclog_ex(const char *fmt, va_list ap)
 {
-    static char buff[PCLOG_BUFF_SIZE];
-    static int seen = 0;
-    static int detect = 1;
     char temp[PCLOG_BUFF_SIZE];
     FILE *fp;
 
     if (fmt == NULL) {
 	/* Initialize. */
-	detect = (ap != NULL) ? 1 : 0;
-	seen = 0;
+	logseen = 0;
 	return;
     }
 
@@ -215,22 +215,22 @@ pclog_ex(const char *fmt, va_list ap)
     if (log_path[0] != L'\0') {
 	fp = plat_fopen(log_path, L"w");
 	if (fp != NULL)
-		stdlog = fp;
+		logfp = fp;
     }
 
     vsprintf(temp, fmt, ap);
-    if (detect && !strcmp(buff, temp)) {
-	seen++;
+    if (logdetect && !strcmp(logbuff, temp)) {
+	logseen++;
     } else {
-	if (seen) {
-		fprintf(stdlog, "*** %i repeats ***\n", seen);
-	}
-	seen = 0;
-	strcpy(buff, temp);
-	fprintf(stdlog, temp, ap);
+	if (logseen)
+		fprintf(logfp, "*** %i repeats ***\n", logseen);
+	logseen = 0;
+	if (logdetect)
+		strcpy(logbuff, temp);
+	fprintf(logfp, temp, ap);
     }
 
-    fflush(stdlog);
+    fflush(logfp);
 }
 
 
@@ -241,8 +241,9 @@ pclog(int level, const char *fmt, ...)
     va_list ap;
 
     if (fmt == NULL) {
-	fflush(stdlog);
-	fclose(stdlog);
+	fflush(logfp);
+	fclose(logfp);
+	logfp = NULL;
 	return;
     }
 
@@ -258,7 +259,7 @@ pclog(int level, const char *fmt, ...)
 void
 pclog_repeat(int enabled)
 {
-    pclog_ex(NULL, (va_list)enabled);
+    logdetect = !!enabled;
 }
 
 
@@ -297,9 +298,8 @@ pclog_dump(int num)
 		sp = NULL;
 	}
     }
-    if (sp != NULL) {
+    if (sp != NULL)
 	DBGLOG(2, "%s\n", buff);
-    }
 
     /* Re-enable the repeat-detection. */
     pclog_repeat(1);
@@ -317,19 +317,18 @@ fatal(const char *fmt, ...)
 
     va_start(ap, fmt);
 
-    if (stdlog == NULL) {
+    if (logfp == NULL) {
 	if (log_path[0] != L'\0') {
-		stdlog = plat_fopen(log_path, L"w");
-		if (stdlog == NULL)
-			stdlog = stdout;
-	} else {
-		stdlog = stdout;
-	}
+		logfp = plat_fopen(log_path, L"w");
+		if (logfp == NULL)
+			logfp = stdout;
+	} else
+		logfp = stdout;
     }
 
     vsprintf(temp, fmt, ap);
-    fprintf(stdlog, "%s", temp);
-    fflush(stdlog);
+    fprintf(logfp, "%s", temp);
+    fflush(logfp);
     va_end(ap);
 
     nvr_save();
@@ -351,7 +350,7 @@ fatal(const char *fmt, ...)
 
     ui_msgbox(MBX_ERROR|MBX_FATAL|MBX_ANSI, temp);
 
-    fflush(stdlog);
+    fflush(logfp);
 
     exit(-1);
 }
@@ -371,6 +370,11 @@ pc_version(const char *platform)
     sprintf(emu_version, "v%s", EMU_VERSION);
 #endif
     strcpy(emu_fullversion, emu_version);
+
+#if (defined(_MSC_VER) && defined(_M_X64)) || \
+    (defined(__GNUC__) && defined(__amd64__))
+    strcat(emu_fullversion, " [64bit]");
+#endif
 
 #if defined(_MSC_VER)
     sprintf(temp, " [VC %i]", _MSC_VER);
@@ -407,7 +411,7 @@ pc_version(const char *platform)
  *
  * Although we now use relative pathnames in the code,
  * we may still bump into old configuration files that
- * still have old, absolute pathnames.
+ * have old, absolute pathnames.
  *
  * We try to "fix" those by stripping the "usr_path"
  * component from them, if they have that.  If another
@@ -418,7 +422,7 @@ pc_path(wchar_t *dst, int sz, const wchar_t *src)
 {
     const wchar_t *str = src;
     wchar_t *ptr = dst;
-    int i = wcslen(usr_path);
+    int i = (int)wcslen(usr_path);
 
     /*
      * Fix all the slashes.
@@ -505,14 +509,14 @@ pc_setup(int argc, wchar_t *argv[])
 	plat_getcwd(usr_path, sizeof_w(usr_path));
 
 	/*
-	 * Initialize the 'stdlog' variable, this is
+	 * Initialize the 'logfp' variable, this is
 	 * somewhat platform-specific. On Windows, it
 	 * will always be 'stdout', but on UNIX-based
 	 * systems, it can be 'stderr' for the console
-	 * mode (since 'stdout' is used by the UI),
-	 * and 'stdout' for the GUI versins, etc...
+	 * mode (since 'stdout' is used by the UI) and,
+	 * 'stdout' for the GUI versins, etc...
 	 */
-	stdlog = (FILE *)argv;
+	logfp = (FILE *)argv;
 
 	return(0);
     }

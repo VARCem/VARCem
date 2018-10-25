@@ -8,7 +8,7 @@
  *
  *		Dynamic Recompiler for Intel x64 systems.
  *
- * Version:	@(#)codegen_x86-64.c	1.0.3	2018/10/07
+ * Version:	@(#)codegen_x86-64.c	1.0.4	2018/10/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,10 +34,11 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifdef __amd64__
+#if (defined(_MSC_VER) && defined(_M_X64)) || (defined(__GNUC__) && defined(__amd64__))
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include "../emu.h"
 #include "cpu.h"
@@ -1230,4 +1231,4 @@ generate_call:
         codegen_endpc = (cs + cpu_state.pc) + 8;
 }
 
-#endif
+#endif	/*64bit mode*/

@@ -11,7 +11,7 @@
  * NOTE:	It might be better (after all..) to split off the video
  *		driver from the main code, to keep it a little cleaner.
  *
- * Version:	@(#)m_tandy.c	1.0.13	2018/10/05
+ * Version:	@(#)m_tandy.c	1.0.14	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1702,7 +1702,7 @@ eep_init(const device_t *info)
 
     /* Set up the EEPROM's file name. */
     sprintf(temp, "%s.bin", machine_get_internal_name());
-    i = strlen(temp) + 1;
+    i = (int)strlen(temp) + 1;
     eep->fn = (wchar_t *)mem_alloc(i * sizeof(wchar_t));
     mbstowcs(eep->fn, temp, i);
 	

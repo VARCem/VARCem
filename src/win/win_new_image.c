@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy/ZIP Image dialog.
  *
- * Version:	@(#)win_new_image.c	1.0.20	2018/10/05
+ * Version:	@(#)win_new_image.c	1.0.21	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -118,11 +118,7 @@ dlg_init(HWND hdlg)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     wchar_t temp_path[512];
@@ -150,13 +146,13 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
                 switch (LOWORD(wParam)) {
 			case IDOK:
 				h = GetDlgItem(hdlg, IDC_COMBO_DISK_SIZE);
-				disk_size = SendMessage(h, CB_GETCURSEL, 0, 0);
+				disk_size = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				if (is_zip)
 					disk_size += 12;
 
 				if (file_type == 2) {
 					h = GetDlgItem(hdlg, IDC_COMBO_RPM_MODE);
-					rpm_mode = SendMessage(h, CB_GETCURSEL, 0, 0);
+					rpm_mode = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 					ret = floppy_create_86f(fd_file_name, disk_size, rpm_mode);
 				} else {
 					if (is_zip)
@@ -216,7 +212,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					h = GetDlgItem(hdlg, IDC_COMBO_DISK_SIZE);
 					if (!is_zip || zip_drives[drive_id].is_250)
 						EnableWindow(h, TRUE);
-					wcs_len = wcslen(temp_path);
+					wcs_len = (int)wcslen(temp_path);
 					ext_offs = wcs_len - 4;
 					ext = &(temp_path[ext_offs]);
 					if (is_zip) {

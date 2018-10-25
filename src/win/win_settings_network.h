@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.8	2018/10/20
+ * Version:	@(#)win_settings_network.h	1.0.10	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,11 +84,7 @@ network_recalc_combos(HWND hdlg)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     char tempA[128];
@@ -170,7 +166,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					return FALSE;
 
 				h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
-				temp_net_type = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_net_type = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 				network_recalc_combos(hdlg);
 				break;
@@ -210,7 +206,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
-		temp_net_type = SendMessage(h, CB_GETCURSEL, 0, 0);
+		temp_net_type = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
 		memset(temp_host_dev, '\0', sizeof(temp_host_dev));

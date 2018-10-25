@@ -8,7 +8,7 @@
  *
  *		Handle the UI part of CD-ROM/ZIP/DISK media changes.
  *
- * Version:	@(#)ui_cdrom.c	1.0.4	2018/10/15
+ * Version:	@(#)ui_cdrom.c	1.0.5	2018/10/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -71,7 +71,7 @@ ui_floppy_mount(uint8_t drive, int part, int8_t wp, const wchar_t *fn)
     ui_writeprot[drive] = wp;
     fdd_load(drive, fn);
 
-    len = wcslen(floppyfns[drive]);
+    len = (int)wcslen(floppyfns[drive]);
     ui_sb_icon_state(SB_FLOPPY | drive, len ? 0 : 1);
 
     sb_menu_enable_item(part, IDM_FLOPPY_EJECT | drive, len ? 1 : 0);
@@ -145,7 +145,7 @@ ui_zip_mount(uint8_t drive, int part, int8_t wp, const wchar_t *fn)
     zip_load(zip[drive], fn);
     zip_insert(zip[drive]);
 
-    len = wcslen(zip_drives[drive].image_path);
+    len = (int)wcslen(zip_drives[drive].image_path);
     ui_sb_icon_state(SB_ZIP | drive, len ? 0 : 1);
 
     sb_menu_enable_item(part, IDM_ZIP_EJECT | drive, len ? 1 : 0);

@@ -10,7 +10,7 @@
  *		only things used globally within the Windows platform; the
  *		generic platform defintions are in the plat.h file.
  *
- * Version:	@(#)win.h	1.0.21	2018/10/16
+ * Version:	@(#)win.h	1.0.22	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -79,6 +79,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Cleans up the WinAPI sources a bit. */
+#if (defined(_MSC_VER) && defined(_M_X64)) || \
+    (defined(__GNUC__) && defined(__amd64__))
+# define WIN_RESULT	LRESULT
+#else
+# define WIN_RESULT	BOOL
+#endif
+
 
 extern HINSTANCE	hInstance;
 extern HWND		hwndMain,

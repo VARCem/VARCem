@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_video.h	1.0.7	2018/09/29
+ * Version:	@(#)win_settings_video.h	1.0.9	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,11 +46,7 @@ static int	list_to_vid[100],
 		vid_to_list[100];
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     char tempA[128];
@@ -135,7 +131,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 			case IDC_COMBO_VIDEO:
 				h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
-				c = SendMessage(h, CB_GETCURSEL, 0, 0);
+				c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_video_card = list_to_vid[c];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_VIDEO);
@@ -147,7 +143,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CHECK_VOODOO:
 				h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
-				temp_voodoo = SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_voodoo = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_VOODOO);
 				EnableWindow(h, temp_voodoo ? TRUE : FALSE);
@@ -168,11 +164,11 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_VIDEO);
-		c = SendMessage(h, CB_GETCURSEL, 0, 0);
+		c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 		temp_video_card = list_to_vid[c];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
-		temp_voodoo = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_voodoo = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 		return FALSE;
 
 	default:

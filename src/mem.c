@@ -173,7 +173,11 @@ flushmmucache(void)
     mmuflush++;
 
     pccache = (uint32_t)0xffffffff;
+#ifdef _MSC_VER
+    pccache2 = (uint8_t *)0xffffffffffffffff;
+#else
     pccache2 = (uint8_t *)0xffffffff;
+#endif
 
 #ifdef USE_DYNAREC
     codegen_flush();

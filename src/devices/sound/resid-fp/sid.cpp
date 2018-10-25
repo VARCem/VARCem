@@ -21,15 +21,23 @@
 #include <stdio.h>
 #include <math.h>
 
+
 extern float convolve(const float *a, const float *b, int n);
 extern float convolve_sse(const float *a, const float *b, int n);
+
 
 enum host_cpu_feature {
     HOST_CPU_MMX=1, HOST_CPU_SSE=2, HOST_CPU_SSE2=4, HOST_CPU_SSE3=8
 };
 
-/* This code is appropriate for 32-bit and 64-bit x86 CPUs. */
-#if defined(__x86_64__) || defined(__i386__) || defined(_MSC_VER)
+
+/*
+ * This code is appropriate for 32-bit and 64-bit x86 CPUs.
+ *
+ * Note that this inline does work for MSVC 32bit, but not for 64bit.
+    (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)))
+ */
+#if (defined(_MSC_VER) && !defined(_M_X64))
 
 struct cpu_x86_regs_s {
   unsigned int eax;
@@ -43,7 +51,7 @@ static cpu_x86_regs_t get_cpuid_regs(unsigned int index)
 {
   cpu_x86_regs_t retval;
 
-#if defined(_MSC_VER) /* MSVC assembly */
+#ifdef _MSC_VER
   __asm {
     mov eax, [index]
     cpuid
@@ -52,7 +60,9 @@ static cpu_x86_regs_t get_cpuid_regs(unsigned int index)
     mov [retval.ecx], ecx
     mov [retval.edx], edx
   }
-#else /* GNU assembly */
+#endif
+
+#ifdef __GNUC__
   asm("movl %1, %%eax; cpuid; movl %%eax, %0;"
       : "=m" (retval.eax)
       : "r"  (index)
@@ -149,9 +159,15 @@ static int host_cpu_features(void)
 #else /* !__x86_64__ && !__i386__ && !_MSC_VER */
 static int host_cpu_features(void)
 {
+#if defined(_MSC_VER) && defined(_M_X64)
+  /* 64bit Windows compiler, we can assume at least SSE2. */
+  return HOST_CPU_SSE2;
+#endif
+
   return 0;
 }
 #endif
+
 
 float SIDFP::kinked_dac(const int x, const float nonlinearity, const int max)
 {

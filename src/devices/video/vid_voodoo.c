@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.11	2018/09/23
+ * Version:	@(#)vid_voodoo.c	1.0.12	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2677,19 +2677,17 @@ static inline void voodoo_tmu_fetch_and_blend(voodoo_t *voodoo, voodoo_params_t 
                 state->tex_a[0] ^= 0xff;
 }
 
-#ifdef _WIN32
-# if ((defined(i386) || defined(__i386) || defined(__i386__) || defined(_X86_) || defined(_WIN32)) && !(defined(__amd64__)) && (defined(USE_DYNAREC)))
-#  include "vid_voodoo_codegen_x86.h"
-# elif ((defined(__amd64__)) && (defined(USE_DYNAREC)))
+#ifdef USE_DYNAREC
+# if (defined(_MSC_VER) && defined(_M_X64)) || (defined(__GNUC__) && defined(__amd64__))
 #  include "vid_voodoo_codegen_x86-64.h"
 # else
-#  define NO_CODEGEN
-static int voodoo_recomp = 0;
+#  include "vid_voodoo_codegen_x86.h"
 # endif
 #else
 # define NO_CODEGEN
-//static int voodoo_recomp = 0;
+static int voodoo_recomp = 0;
 #endif
+
 
 static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, voodoo_state_t *state, int ystart, int yend, int odd_even)
 {

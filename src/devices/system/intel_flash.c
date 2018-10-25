@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 2 Mbit 8-bit flash devices.
  *
- * Version:	@(#)intel_flash.c	1.0.7	2018/10/05
+ * Version:	@(#)intel_flash.c	1.0.8	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -195,10 +195,10 @@ void *intel_flash_init(uint8_t type)
 	flash = (flash_t *)mem_alloc(sizeof(flash_t));
         memset(flash, 0, sizeof(flash_t));
 
-	l = strlen(machine_get_internal_name_ex(machine))+1;
+	l = (int)strlen(machine_get_internal_name_ex(machine))+1;
 	machine_name = (wchar_t *)mem_alloc(l * sizeof(wchar_t));
 	mbstowcs(machine_name, machine_get_internal_name_ex(machine), l);
-	l = wcslen(machine_name)+5;
+	l = (int)wcslen(machine_name)+5;
 	flash_name = (wchar_t *)mem_alloc(l*sizeof(wchar_t));
 	swprintf(flash_name, l, L"%ls.bin", machine_name);
 

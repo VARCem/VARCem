@@ -8,7 +8,7 @@
  *
  *		Instruction parsing and generation.
  *
- * Version:	@(#)codegen_ops.c	1.0.1	2018/02/14
+ * Version:	@(#)codegen_ops.c	1.0.2	2018/10/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,10 +50,20 @@
 #include "codegen.h"
 #include "codegen_ops.h"
 
-#ifdef __amd64__
-#include "codegen_ops_x86-64.h"
-#elif defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
-#include "codegen_ops_x86.h"
+#ifdef _MSC_VER
+# ifdef _M_X64
+#  include "codegen_ops_x86-64.h"		/* 64-bit */
+# else
+#  include "codegen_ops_x86.h"			/* 32-bit */
+# endif
+#endif
+
+#ifdef __GNUC__
+# ifdef __amd64__
+#  include "codegen_ops_x86-64.h"		/* 64-bit */
+# elif defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
+#  include "codegen_ops_x86.h"			/* 32-bit */
+# endif
 #endif
 
 #include "codegen_ops_arith.h"

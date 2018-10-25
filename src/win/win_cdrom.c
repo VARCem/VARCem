@@ -12,7 +12,7 @@
  *
  * FIXME:	Not yet fully working!  Getting there, though ;-)
  *
- * Version:	@(#)win_cdrom.c	1.0.14 	2018/10/20
+ * Version:	@(#)win_cdrom.c	1.0.15 	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1271,9 +1271,9 @@ SCSICommand(cdrom_t *dev, const UCHAR *cdb, UCHAR *buf, uint32_t *len, int no_le
     sptd.s.DataIn = SCSI_IOCTL_DATA_IN;
     sptd.s.TimeOutValue = 80 * 60;
     sptd.s.DataTransferLength = get_block_length(dev, cdb, hdev->actual_requested_blocks, no_length_check);
-    sptd.s.SenseInfoOffset = (uintptr_t)&sptd.sense - (uintptr_t)&sptd;
+    sptd.s.SenseInfoOffset = (ULONG) ((uintptr_t)&sptd.sense - (uintptr_t)&sptd);
     sptd.s.SenseInfoLength = 32;
-    sptd.s.DataBufferOffset = (uintptr_t)&sptd.data - (uintptr_t)&sptd;
+    sptd.s.DataBufferOffset = (ULONG) ((uintptr_t)&sptd.data - (uintptr_t)&sptd);
 
     memcpy(sptd.s.Cdb, cdb, 12);
     ret = DeviceIoControl(hdev->hIOCTL, IOCTL_SCSI_PASS_THROUGH,

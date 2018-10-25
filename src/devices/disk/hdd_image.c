@@ -14,7 +14,7 @@
  *		merged with hdd.c, since that is the scope of hdd.c. The
  *		actual format handlers can then be in hdd_format.c etc.
  *
- * Version:	@(#)hdd_image.c	1.0.8	2018/10/09
+ * Version:	@(#)hdd_image.c	1.0.9	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -116,7 +116,7 @@ image_is_hdi(const wchar_t *s)
     int len;
     wchar_t ext[5] = { 0, 0, 0, 0, 0 };
     char *ws = (char *) s;
-    len = wcslen(s);
+    len = (int)wcslen(s);
     if ((len < 4) || (s[0] == L'.'))
 	return 0;
     memcpy(ext, ws + ((len - 4) << 1), 8);
@@ -136,7 +136,7 @@ image_is_hdx(const wchar_t *s, int check_signature)
     uint64_t signature;
     char *ws = (char *) s;
     wchar_t ext[5] = { 0, 0, 0, 0, 0 };
-    len = wcslen(s);
+    len = (int)wcslen(s);
     if ((len < 4) || (s[0] == L'.'))
 	return 0;
     memcpy(ext, ws + ((len - 4) << 1), 8);
@@ -173,7 +173,7 @@ image_is_vhd(const wchar_t *s, int check_signature)
     char *ws = (char *) s;
     wchar_t ext[5] = { 0, 0, 0, 0, 0 };
 
-    len = wcslen(s);
+    len = (int)wcslen(s);
     if ((len < 4) || (s[0] == L'.'))
 	return 0;
 

@@ -11,7 +11,7 @@
  *			- SMC/WD 8013EBT (ISA 16-bit);
  *			- SMC/WD 8013EP/A (MCA).
  *
- * Version:	@(#)net_wd80x3.c	1.0.3	2018/10/16
+ * Version:	@(#)net_wd80x3.c	1.0.4	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -1263,8 +1263,8 @@ wd_rx(void *priv, uint8_t *buf, int io_len)
     /* Set up packet header. */
     pkthdr[0] = 0x01;			/* RXOK - packet is OK */
     pkthdr[1] = nextpage;		/* ptr to next packet */
-    pkthdr[2] = (io_len + sizeof(pkthdr))&0xff;	/* length-low */
-    pkthdr[3] = (io_len + sizeof(pkthdr))>>8;	/* length-hi */
+    pkthdr[2] = (uint8_t) ((io_len + sizeof(pkthdr)) & 0xff);	/* length-low */
+    pkthdr[3] = (uint8_t) ((io_len + sizeof(pkthdr)) >> 8);	/* length-hi */
     DBGLOG(1, "%s: RX pkthdr [%02x %02x %02x %02x]\n",
 	dev->name, pkthdr[0], pkthdr[1], pkthdr[2], pkthdr[3]);
 

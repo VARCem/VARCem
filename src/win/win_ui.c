@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.30	2018/10/18
+ * Version:	@(#)win_ui.c	1.0.31	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -111,11 +111,7 @@ PopupMenu(HWND hwnd, POINT pt, int part)
 
 
 /* Handle messages for the Status Bar window. */
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 sb_dlg_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     RECT r;
@@ -413,8 +409,8 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SIZE:
 		/* Note: this is the *client area* size!! */
-		x = (lParam & 0xffff);
-		y = (lParam >> 16);
+		x = (int)(lParam & 0xffff);
+		y = (int)(lParam >> 16);
 		if (cruft_x == 0) {
 			/* Determine the window cruft. */
 			cruft_x = (scrnsz_x - x);
@@ -568,11 +564,7 @@ SubWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 /* Catch WM_INPUT messages for 'current focus' window. */
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message) {
@@ -900,7 +892,7 @@ again:
 
     win_mouse_close();
 
-    return(messages.wParam);
+    return((int)messages.wParam);
 }
 
 

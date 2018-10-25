@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.13	2018/10/16
+ * Version:	@(#)net_ne2000.c	1.0.14	2018/10/24
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -397,8 +397,8 @@ nic_rx(void *priv, uint8_t *buf, int io_len)
     if (buf[0] & 0x01)
 	pkthdr[0] |= 0x20;		/* MULTICAST packet */
     pkthdr[1] = nextpage;		/* ptr to next packet */
-    pkthdr[2] = (io_len + sizeof(pkthdr))&0xff;	/* length-low */
-    pkthdr[3] = (io_len + sizeof(pkthdr))>>8;	/* length-hi */
+    pkthdr[2] = (uint8_t) ((io_len + sizeof(pkthdr)) & 0xff);	/* length-low */
+    pkthdr[3] = (uint8_t) ((io_len + sizeof(pkthdr)) >> 8);	/* length-hi */
     DBGLOG(1, "%s: RX pkthdr [%02x %02x %02x %02x]\n",
 	   dev->name, pkthdr[0], pkthdr[1], pkthdr[2], pkthdr[3]);
 

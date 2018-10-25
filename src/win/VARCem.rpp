@@ -64,6 +64,8 @@ PREAMBLE #include "resource.h"
 #define DLLNAME(l)	__DLLNM(VARCem, l, dll)
 #define BLOCKNAME(l)	__BLKNM(l)
 
+PREAMBLE #define TEXT_(x)	#x
+PREAMBLE #define CATSTR(a,b)	TEXT_(a ## b)
 
 PREAMBLE #ifndef SUBLANG
 PREAMBLE # define SUBLANG	0x01		/* Lithuanian, for example */

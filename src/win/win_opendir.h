@@ -8,7 +8,7 @@
  *
  *		Definitions for the platform OpenDir module.
  *
- * Version:	@(#)win_opendir.h	1.0.4	2018/09/25
+ * Version:	@(#)win_opendir.h	1.0.5	2018/10/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -68,7 +68,7 @@ struct direct {
 typedef struct {
     short	flags;			/* internal flags		*/
     short	offset;			/* offset of entry into dir	*/
-    long	handle;			/* open handle to Win32 system	*/
+    intptr_t	handle;			/* open handle to Win32 system	*/
     short	sts;			/* last known status code	*/
     char	*dta;			/* internal work data		*/
     wchar_t	dir[MAXDIRLEN+1];	/* open dir			*/

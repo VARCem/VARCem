@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.14	2018/10/20
+ * Version:	@(#)win_settings_periph.h	1.0.16	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -154,11 +154,7 @@ INFO("[%d]=%d\n", c, hdc_to_list[c], d, list_to_hdc[d]);
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
@@ -304,7 +300,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CHECK_IDE_TER:
         		        h = GetDlgItem(hdlg, IDC_CHECK_IDE_TER);
-				temp_ide_ter = SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_ide_ter = (int)SendMessage(h, BM_GETCHECK, 0, 0);
         		        h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_TER);
 				EnableWindow(h, temp_ide_ter ? TRUE : FALSE);
 				break;
@@ -315,7 +311,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CHECK_IDE_QUA:
 	       		        h = GetDlgItem(hdlg, IDC_CHECK_IDE_QUA);
-				temp_ide_qua = SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_ide_qua = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 	       		        h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_QUA);
 				EnableWindow(h, temp_ide_qua ? TRUE : FALSE);
 				break;
@@ -326,7 +322,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_COMBO_ISARTC:
 				h = GetDlgItem(hdlg, IDC_COMBO_ISARTC);
-				temp_isartc = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_isartc = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_ISARTC);
 				if (temp_isartc != 0)
 					EnableWindow(h, TRUE);
@@ -340,7 +336,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_ISAMEM_4:
 				c = LOWORD(wParam) - IDC_COMBO_ISAMEM_1;
 				h = GetDlgItem(hdlg, LOWORD(wParam));
-				temp_isamem[c] = SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_isamem[c] = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_ISAMEM_1 + c);
 				if (temp_isamem[c] != 0)
@@ -371,15 +367,15 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-		c = SendMessage(h, CB_GETCURSEL, 0, 0);
+		c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 		temp_hdc_type = list_to_hdc[c];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-		c = SendMessage(h, CB_GETCURSEL, 0, 0);
+		c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 		temp_scsi_card = list_to_scsi[c];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_BUGGER);
-		temp_bugger = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_bugger = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		return FALSE;
 

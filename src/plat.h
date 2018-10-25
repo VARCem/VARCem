@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.19	2018/10/16
+ * Version:	@(#)plat.h	1.0.20	2018/10/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -72,7 +72,6 @@
 # define ftello64       _ftelli64
 # define off64_t        off_t
 #endif
-
 
 #ifdef _MSC_VER
 # define UNUSED(arg) arg

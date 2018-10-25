@@ -96,9 +96,6 @@ uint32_t	*mod1seg[8];
 uint32_t	rmdat32;
 #define	rmdat	rmdat32
 #define fetchdat rmdat32
-//static int	oldi;
-//static uint32_t	backupregs[16];
-//static uint32_t	oldecx;
 
 
 #define fetch_ea_16(dat) \
@@ -190,6 +187,7 @@ exec386(int cycs)
 #endif
 
 			cpu_state.pc++;
+
 			x86_opcodes[(opcode | cpu_state.op32) & 0x3ff](fetchdat);
 			if (x86_was_reset)
 				break;

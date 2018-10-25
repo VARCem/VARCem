@@ -8,7 +8,7 @@
  *
  *		Implementation of the IMD floppy image format.
  *
- * Version:	@(#)fdd_imd.c	1.0.10	2018/10/05
+ * Version:	@(#)fdd_imd.c	1.0.11	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -649,7 +649,7 @@ imd_load(int drive, const wchar_t *fn)
 	return(0);
     }
 
-    dev->start_offs = (buffer2 - buffer);
+    dev->start_offs = (uint32_t) (buffer2 - buffer);
     dev->disk_flags = 0x00;
     dev->track_count = 0;
     dev->sides = 1;
@@ -686,7 +686,7 @@ imd_load(int drive, const wchar_t *fn)
 	if ((dev->tracks[track][side].side_flags & 7) == 1)
 		dev->tracks[track][side].side_flags |= 0x20;
 	dev->tracks[track][side].is_present = 1;
-	dev->tracks[track][side].file_offs = (buffer2 - buffer);
+	dev->tracks[track][side].file_offs = (uint32_t) (buffer2 - buffer);
 	memcpy(dev->tracks[track][side].params, buffer2, 5);
 	dev->tracks[track][side].r_map_offs = dev->tracks[track][side].file_offs + 5;
 	last_offset = dev->tracks[track][side].r_map_offs + track_spt;

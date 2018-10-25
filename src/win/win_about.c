@@ -12,7 +12,7 @@
  *		24bit image would be preferred, but we cant use LoadImage
  *		for those (and keep transparency...)
  *
- * Version:	@(#)win_about.c	1.0.10	2018/10/05
+ * Version:	@(#)win_about.c	1.0.11	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -109,11 +109,7 @@ localize_disp(HWND hdlg, int idx)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 localize_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HBITMAP hBmp;
@@ -135,7 +131,7 @@ localize_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		/* Add the languages. */
 		h = GetDlgItem(hdlg, IDC_LOCALIZE);
 		for (lang = ui_lang_get()->next; lang != NULL; lang = lang->next) {
-			c = SendMessage(h, LB_ADDSTRING, 0, (LPARAM)lang->name);
+			c = (int)SendMessage(h, LB_ADDSTRING, 0, (LPARAM)lang->name);
 			SendMessage(h, LB_SETITEMDATA, c, (LPARAM)lang);
 		}
 		SendMessage(h, LB_SETCURSEL, (WPARAM)0, (LPARAM)0);
@@ -169,11 +165,7 @@ localize_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 about_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     static HBRUSH brush = NULL;

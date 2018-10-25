@@ -8,7 +8,7 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * Version:	@(#)VARCem-BY.str	1.0.5	2018/10/18
+ * Version:	@(#)VARCem-BY.str	1.0.6	2018/10/23
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -47,7 +47,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,5
+#define STR_VERSION	1,0,6
 #define STR_AUTHOR	"paul_met"
 #define STR_EMAIL	"paul_met@yandex.ru"
 #define STR_NAME	"VARCem"
@@ -71,12 +71,12 @@
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"System is out of memory!"
+#define STR_2300	"Недастаткова памяці!"
 #define STR_2301	"Не знойдзены падтрымоўваныя вобразы ROM!"
 #define STR_2302	"Не знойдзена дапушчальная канфігурацыя.\n\nВы хацелі б адкрыць дыялог Налады і стварыць яе??"
 #define STR_2303	"Сканфігураваны %ls:\n\n  %s\n\nнедаступны.\n\nАдкрыць дыялог Налады?"
 #define STR_2304	"Выбранны рэндэрэр:\n\n  %s\n\nнедаступны. Выкарыстоўваць асноўны?"
-#define STR_2305        "You must save your settings first!"
+#define STR_2305        "Спачатку вы павінны захаваць новыя налады!"
 #define STR_2306	"Немагчыма стварыць bitmap-файл: %ls"
 #define STR_2307	"USB пакуль не падтрымліваецца"
 
@@ -98,20 +98,20 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"Добра"
 #define STR_CANCEL	"Адмяніць"
-#define STR_YES		"Yes"
-#define STR_NO		"No"
+#define STR_YES		"Да"
+#define STR_NO		"Не"
 #define STR_CONFIGURE	"Наладзіць"
 #define STR_BROWSE	"Агляд.."
 
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Адсутнічае"
-#define STR_INTERNAL	"Internal"
+#define STR_INTERNAL	"Ўнутраны"
 #define STR_DISABLED	"Недаступна"
 #define STR_ENABLED	"Даступна"
 #define STR_OFF		"Выкл"
 #define STR_ON		"Укл"
-#define STR_UNLOCK	"Unlock"
-#define STR_LOCK	"Lock"
+#define STR_UNLOCK	"Разблакаваць"
+#define STR_LOCK	"Заблакаваць"
 #define STR_TYPE	"Тып"
 #define STR_FILENAME	"Імя файла:"
 #define STR_PROGRESS	"Прагрэс:"
@@ -232,7 +232,7 @@
 #define  STR_3477	"Трацічны IDE"
 #define  STR_3478	"Чацвярцічны IDE"
 #define  STR_3479	"Прылада ISABugger"
-#define  STR_3480	"Карта расширения памяти (ISA)"
+#define  STR_3480	"Карта пашырэння памяці (ISA)"
 #define  STR_3481	"ISA Clock/RTC карта"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
@@ -293,7 +293,7 @@
 #define STR_3900	"(пуста)"
 #define STR_3901	"(хост-дыск %c:)"
 #define STR_3902	" [Абаронены ад запісу]"
-#define STR_3903	" [Locked]"
+#define STR_3903	" [Заблакаваны]"
 #define STR_3904	"Новы вобраз.."
 #define STR_3905	"Открыть образ.."
 #define STR_3906	"Загрузіць папярэдні лад"
@@ -383,8 +383,8 @@
 #define  STR_4081	"Налады"
 #define  STR_4082	"Мова"
 #define	 STR_4083	"Уваход"
-#define  STR_4084	"Log Breakpoint"
-#define  STR_4085	"Toggle %s logging"
+#define  STR_4084	"Падзельнік лога"
+#define  STR_4085	"Пераключыць %s логгер"
 #define  STR_4086	"Загрузіць канфігурацыю"
 #define  STR_4087	"Захаваць канфігурацыю"
 #define  STR_4088	"Зрабіць здымак"

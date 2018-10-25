@@ -2090,7 +2090,7 @@ scsi_cdrom_command(void *p, uint8_t *cdb)
 			gesn_event_header->notification_class = 0x80; /* No event available */
 			used_len = sizeof(*gesn_event_header);
 		}
-		gesn_event_header->len = used_len - sizeof(*gesn_event_header);
+		gesn_event_header->len = (uint16_t) (used_len - sizeof(*gesn_event_header));
 
 		memcpy(cdbufferb, gesn_event_header, 4);
 

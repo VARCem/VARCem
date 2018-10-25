@@ -8,7 +8,7 @@
  *
  *		x87 FPU instructions core.
  *
- * Version:	@(#)x87_ops.h	1.0.6	2018/10/05
+ * Version:	@(#)x87_ops.h	1.0.7	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -44,7 +44,8 @@
 # include <intrin.h>
 #endif
 
-#define fplog 0
+#define fplog	0
+
 
 static int rounding_modes[4] = {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO};
 
@@ -296,15 +297,47 @@ static INLINE void x87_stmmx(MMX_REG r)
 
 static INLINE uint16_t x87_compare(double a, double b)
 {
-#if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
-        uint32_t result;
+        uint32_t result = 0;
 
+#if defined(_MSC_VER) && !defined(_M_X64)
 	if (!is386)
 	{
 		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))
 		{
 			/* DEBUG("Comparing infinity\n"); */
-#ifndef _MSC_VER
+                	_ReadWriteBarrier();
+                	__asm
+                	{
+                        	fld a
+                        	fld a
+                        	fclex
+                        	fcompp
+                        	fnstsw result
+                	}
+
+		        return result & (C0|C2|C3);
+		}
+	}
+        
+        _ReadWriteBarrier();
+        _asm
+        {
+                fld b
+                fld a
+                fclex
+                fcompp
+                fnstsw result
+        }
+
+        return result & (C0|C2|C3);
+#endif
+
+#if defined(__GNUC__)
+	if (!is386)
+	{
+		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))
+		{
+			/* DEBUG("Comparing infinity\n"); */
 		        __asm volatile ("" : : : "memory");
         
 		        __asm(
@@ -316,23 +349,9 @@ static INLINE uint16_t x87_compare(double a, double b)
 		                : "=m" (result)
 		                : "m" (a), "m" (a)
 		        );
-#else
-                _ReadWriteBarrier();
-                __asm
-                {
-                        fld a
-                        fld a
-                        fclex
-                        fcompp
-                        fnstsw result
-                }
-#endif
-
-		        return result & (C0|C2|C3);
 		}
 	}
-        
-#ifndef _MSC_VER
+
         /* Memory barrier, to force GCC to write to the input parameters
          * before the compare rather than after */
         __asm volatile ("" : : : "memory");
@@ -346,28 +365,17 @@ static INLINE uint16_t x87_compare(double a, double b)
                 : "=m" (result)
                 : "m" (a), "m" (b)
         );
-#else
-        _ReadWriteBarrier();
-        _asm
-        {
-                fld b
-                fld a
-                fclex
-                fcompp
-                fnstsw result
-        }
-#endif
 
         return result & (C0|C2|C3);
-#else
+#endif
+
         /* Generic C version is known to give incorrect results in some
          * situations, eg comparison of infinity (Unreal) */
-        uint32_t out = 0;
-
-	if (is386)
+	if (!is386)
 	{
 		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))
 		{
+			/* DEBUG("Comparing infinity\n"); */
 			result |= C3;
 			return result;
 		}
@@ -386,15 +394,27 @@ static INLINE uint16_t x87_compare(double a, double b)
 	}
                 
         return result;
-#endif
 }
 
 static INLINE uint16_t x87_ucompare(double a, double b)
 {
-#if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
-        uint32_t result;
-        
-#ifndef _MSC_VER
+        uint32_t result = 0;
+
+#if defined(_MSC_VER) && !defined(_M_X64)
+        _ReadWriteBarrier();
+        _asm
+        {
+                fld b
+                fld a
+                fclex
+                fcompp
+                fnstsw result
+        }
+
+        return result & (C0|C2|C3);
+#endif
+
+#ifdef __GNUC__
         /* Memory barrier, to force GCC to write to the input parameters
          * before the compare rather than after */
         __asm volatile ("" : : : "memory");
@@ -408,32 +428,20 @@ static INLINE uint16_t x87_ucompare(double a, double b)
                 : "=m" (result)
                 : "m" (a), "m" (b)
         );
-#else
-        _ReadWriteBarrier();
-        _asm
-        {
-                fld b
-                fld a
-                fclex
-                fcompp
-                fnstsw result
-        }
-#endif
 
         return result & (C0|C2|C3);
-#else
+#endif
+
         /* Generic C version is known to give incorrect results in some
          * situations, eg comparison of infinity (Unreal) */
-        uint32_t result = 0;
-        
         if (a == b)
                 result |= C3;
         else if (a < b)
                 result |= C0;
                 
         return result;
-#endif
 }
+
 
 typedef union
 {

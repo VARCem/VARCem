@@ -8,7 +8,7 @@
  *
  *		Code generator definitions (64-bit)
  *
- * Version:	@(#)x86_ops_x86-64.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_x86-64.h	1.0.2	2018/10/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,7 +65,7 @@ static INLINE void call(codeblock_t *block, uintptr_t func)
         codegen_reg_loaded[0] = codegen_reg_loaded[1] = codegen_reg_loaded[2] = codegen_reg_loaded[3] = 0;
         codegen_reg_loaded[4] = codegen_reg_loaded[5] = codegen_reg_loaded[6] = codegen_reg_loaded[7] = 0;
 
-	if (diff >= -0x80000000 && diff < 0x7fffffff)
+	if (diff >= (uintptr_t) ((intptr_t)-0x80000000) && diff < (uintptr_t)0x7fffffff)
 	{
 	        addbyte(0xE8); /*CALL*/
 	        addlong((uint32_t)diff);
@@ -542,7 +542,7 @@ static INLINE void STORE_IMM_ADDR_L(uintptr_t addr, uint32_t val)
         {
                 addbyte(0xC7); /*MOVL [addr],val*/
                 addbyte(0x45);
-                addbyte(addr - (uintptr_t)&cpu_state - 128);
+                addbyte((uint8_t) (addr - (uintptr_t)&cpu_state - 128));
                 addlong(val);
         }
         else if (addr < 0x100000000)
@@ -550,7 +550,7 @@ static INLINE void STORE_IMM_ADDR_L(uintptr_t addr, uint32_t val)
                 addbyte(0xC7); /*MOVL [addr],val*/
                 addbyte(0x04);
                 addbyte(0x25);
-                addlong(addr);
+                addlong((uint32_t)addr);
                 addlong(val);
         }
         else
@@ -981,7 +981,7 @@ static INLINE void CHECK_SEG_LIMITS(x86seg *seg, int end_offset)
         }
         addbyte(0x3b); /*CMP EAX, seg->limit_low*/
         addbyte(0x46);
-        addbyte((uintptr_t)&seg->limit_low - (uintptr_t)seg);
+        addbyte((uint8_t) ((uintptr_t)&seg->limit_low - (uintptr_t)seg));
         addbyte(0x0f); /*JB BLOCK_GPF_OFFSET*/
         addbyte(0x82);
         addlong(BLOCK_GPF_OFFSET - (block_pos + 4));
@@ -992,7 +992,7 @@ static INLINE void CHECK_SEG_LIMITS(x86seg *seg, int end_offset)
                 addbyte(end_offset);
                 addbyte(0x3b); /*CMP EAX, seg->limit_high*/
                 addbyte(0x46);
-                addbyte((uintptr_t)&seg->limit_high - (uintptr_t)seg);
+                addbyte((uint8_t) ((uintptr_t)&seg->limit_high - (uintptr_t)seg));
                 addbyte(0x0f); /*JNBE BLOCK_GPF_OFFSET*/
                 addbyte(0x87);
                 addlong(BLOCK_GPF_OFFSET - (block_pos + 4));
@@ -1771,7 +1771,7 @@ static INLINE void STORE_HOST_REG_ADDR_BL(uintptr_t addr, int host_reg)
                 addbyte(0x89); /*MOV addr, temp_reg*/
                 addbyte(0x04 | (temp_reg << 3));
                 addbyte(0x25);
-                addlong(addr);
+                addlong((uint32_t)addr);
         }
         else
         {
@@ -1805,7 +1805,7 @@ static INLINE void STORE_HOST_REG_ADDR_WL(uintptr_t addr, int host_reg)
                 addbyte(0x89); /*MOV addr, temp_reg*/
                 addbyte(0x04 | (temp_reg << 3));
                 addbyte(0x25);
-                addlong(addr);
+                addlong((uint32_t)addr);
         }
         else
         {
@@ -1835,7 +1835,7 @@ static INLINE void STORE_HOST_REG_ADDR_W(uintptr_t addr, int host_reg)
                 addbyte(0x89); /*MOVW addr,host_reg*/
                 addbyte(0x04 | ((host_reg & 7) << 3));
                 addbyte(0x25);
-                addlong(addr);
+                addlong((uint32_t)addr);
         }
         else
         {
@@ -1867,7 +1867,7 @@ static INLINE void STORE_HOST_REG_ADDR(uintptr_t addr, int host_reg)
                 addbyte(0x89); /*MOVL addr,host_reg*/
                 addbyte(0x04 | ((host_reg & 7) << 3));
                 addbyte(0x25);
-                addlong(addr);
+                addlong((uint32_t)addr);
         }
         else
         {
@@ -3274,7 +3274,7 @@ static INLINE void BRANCH_COND_BE(int pc_offset, uint32_t op_pc, uint32_t offset
         addbyte(7+5+(timing_bt ? 4 : 0));        
 
         if (!not)
-                *jump1 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1;
+                *jump1 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1);
         addbyte(0xC7); /*MOVL [pc], new_pc*/
         addbyte(0x45);
         addbyte((uint8_t)cpu_state_offset(pc));
@@ -3289,7 +3289,7 @@ static INLINE void BRANCH_COND_BE(int pc_offset, uint32_t op_pc, uint32_t offset
         addbyte(0xe9); /*JMP end*/
         addlong(BLOCK_EXIT_OFFSET - (block_pos + 4));
         if (not)
-                *jump1 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1;
+                *jump1 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1);
 }
 
 static INLINE void BRANCH_COND_L(int pc_offset, uint32_t op_pc, uint32_t offset, int not)
@@ -3368,7 +3368,7 @@ static INLINE void BRANCH_COND_LE(int pc_offset, uint32_t op_pc, uint32_t offset
                 addbyte(0x74); /*JZ +*/
         addbyte(7+5+(timing_bt ? 4 : 0));        
         if (!not)
-                *jump1 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1;
+                *jump1 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1);
         addbyte(0xC7); /*MOVL [pc], new_pc*/
         addbyte(0x45);
         addbyte((uint8_t)cpu_state_offset(pc));
@@ -3383,7 +3383,7 @@ static INLINE void BRANCH_COND_LE(int pc_offset, uint32_t op_pc, uint32_t offset
         addbyte(0xe9); /*JMP end*/
         addlong(BLOCK_EXIT_OFFSET - (block_pos + 4));
         if (not)
-                *jump1 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1;
+                *jump1 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1);
 }
 
 static INLINE int LOAD_VAR_W(uintptr_t addr)
@@ -3395,7 +3395,7 @@ static INLINE int LOAD_VAR_W(uintptr_t addr)
                 addbyte(0x0f); /*MOVZX host_reg, offset[cpu_state]*/
                 addbyte(0xb7);
                 addbyte(0x45 | (host_reg << 3));
-                addbyte(addr - (uintptr_t)&cpu_state - 128);
+                addbyte((uint8_t) (addr - (uintptr_t)&cpu_state - 128));
         }
         else if (IS_32_ADDR(addr))
         {
@@ -3429,7 +3429,7 @@ static INLINE int LOAD_VAR_L(uintptr_t addr)
         {
                 addbyte(0x8b); /*MOVL host_reg, offset[cpu_state]*/
                 addbyte(0x45 | (host_reg << 3));
-                addbyte(addr - (uintptr_t)&cpu_state - 128);
+                addbyte((uint8_t) (addr - (uintptr_t)&cpu_state - 128));
         }
         else if (IS_32_ADDR(addr))
         {
@@ -3750,7 +3750,7 @@ static INLINE void FP_ENTER()
                 addbyte(0xf6); /*TEST cr0, 0xc*/
                 addbyte(0x04);
                 addbyte(0x25);
-                addlong((uintptr_t)&cr0);
+                addlong((uint32_t)(((uintptr_t)&cr0) & 0xffff));
                 addbyte(0x0c);
         }
         else
@@ -4857,7 +4857,7 @@ static INLINE void SET_BITS(uintptr_t addr, uint32_t val)
                         addbyte(0x81); /*OR [addr], val*/
                         addbyte(0x0c);
                         addbyte(0x25);
-                        addlong(addr);
+                        addlong((uint32_t)addr);
                         addlong(val);
                 }
                 else
@@ -4865,7 +4865,7 @@ static INLINE void SET_BITS(uintptr_t addr, uint32_t val)
                         addbyte(0x80); /*OR [addr], val*/
                         addbyte(0x0c);
                         addbyte(0x25);
-                        addlong(addr);
+                        addlong((uint32_t)addr);
                         addbyte(val);
                 }
         }
@@ -4898,7 +4898,7 @@ static INLINE void CLEAR_BITS(uintptr_t addr, uint32_t val)
                         addbyte(0x81); /*AND [addr], val*/
                         addbyte(0x24);
                         addbyte(0x25);
-                        addlong(addr);
+                        addlong((uint32_t)addr);
                         addlong(~val);
                 }
                 else
@@ -4906,7 +4906,7 @@ static INLINE void CLEAR_BITS(uintptr_t addr, uint32_t val)
                         addbyte(0x80); /*AND [addr], val*/
                         addbyte(0x24);
                         addbyte(0x25);
-                        addlong(addr);
+                        addlong((uint32_t)addr);
                         addbyte(~val);
                 }
         }
@@ -4943,7 +4943,7 @@ static INLINE void MMX_ENTER()
                 addbyte(0xf6); /*TEST cr0, 0xc*/
                 addbyte(0x04);
                 addbyte(0x25);
-                addlong((uintptr_t)&cr0);
+                addlong((uint32_t)(((uintptr_t)&cr0) & 0xffff));
                 addbyte(0x0c);
         }
         else
@@ -5390,7 +5390,7 @@ static INLINE void MEM_CHECK_WRITE(x86seg *seg)
         addbyte(0);
 
         if (!(seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) && !(seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
-                *jump3 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump3 - 1;        
+                *jump3 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump3 - 1);
         /*slowpath:*/
         addbyte(0x67); /*LEA EDI, [EAX+ESI]*/
         addbyte(0x8d);
@@ -5408,9 +5408,9 @@ static INLINE void MEM_CHECK_WRITE(x86seg *seg)
         addbyte(0);
         addbyte(0x0f); /*JNE mem_abrt_rout*/
         addbyte(0x85);
-        addlong((uintptr_t)&codeblock[block_current].data[BLOCK_EXIT_OFFSET] - ((uintptr_t)(&codeblock[block_current].data[block_pos]) + 4));
-        *jump1 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1;
-        *jump2 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump2 - 1;
+        addlong((uint32_t)((uintptr_t)&codeblock[block_current].data[BLOCK_EXIT_OFFSET] - ((uintptr_t)(&codeblock[block_current].data[block_pos]) + 4)));
+        *jump1 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1);
+        *jump2 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump2 - 1);
 
         LOAD_EA();
 }
@@ -5534,9 +5534,9 @@ static INLINE void MEM_CHECK_WRITE_W(x86seg *seg)
         addbyte(0);
         
         /*slowpath:*/
-        *jump2 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump2 - 1;
+        *jump2 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump2 - 1);
         if (!(seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) && !(seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
-                *jump4 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump4 - 1;
+                *jump4 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump4 - 1);
         jump_pos = block_pos;
         load_param_1_reg_32(REG_EBX);
         load_param_2_32(&codeblock[block_current], 1);
@@ -5550,7 +5550,7 @@ static INLINE void MEM_CHECK_WRITE_W(x86seg *seg)
         addbyte(0);
         addbyte(0x0f); /*JNE mem_abrt_rout*/
         addbyte(0x85);
-        addlong((uintptr_t)&codeblock[block_current].data[BLOCK_EXIT_OFFSET] - ((uintptr_t)(&codeblock[block_current].data[block_pos]) + 4));
+        addlong((uint32_t) ((uintptr_t)&codeblock[block_current].data[BLOCK_EXIT_OFFSET] - ((uintptr_t)(&codeblock[block_current].data[block_pos]) + 4)));
         /*If bits 0-11 of the address are now 0 then this crosses a page, so loop back*/
         addbyte(0xf7); /*TEST $fff, EBX*/
         addbyte(0xc3);
@@ -5558,8 +5558,8 @@ static INLINE void MEM_CHECK_WRITE_W(x86seg *seg)
         addbyte(0x74); /*JNE slowpath*/
         addbyte(jump_pos - block_pos - 1);
 
-        *jump1 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1;
-        *jump3 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump3 - 1;
+        *jump1 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1);
+        *jump3 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump3 - 1);
 
         LOAD_EA();
 }
@@ -5683,9 +5683,9 @@ static INLINE void MEM_CHECK_WRITE_L(x86seg *seg)
         addbyte(0);
         
         /*slowpath:*/
-        *jump2 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump2 - 1;
+        *jump2 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump2 - 1);
         if (!(seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) && !(seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
-                *jump4 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump4 - 1;
+                *jump4 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump4 - 1);
         jump_pos = block_pos;
         load_param_1_reg_32(REG_EBX);
         load_param_2_32(&codeblock[block_current], 1);
@@ -5699,7 +5699,7 @@ static INLINE void MEM_CHECK_WRITE_L(x86seg *seg)
         addbyte(0);
         addbyte(0x0f); /*JNE mem_abrt_rout*/
         addbyte(0x85);
-        addlong((uintptr_t)&codeblock[block_current].data[BLOCK_EXIT_OFFSET] - ((uintptr_t)(&codeblock[block_current].data[block_pos]) + 4));
+        addlong((uint32_t) ((uintptr_t)&codeblock[block_current].data[BLOCK_EXIT_OFFSET] - ((uintptr_t)(&codeblock[block_current].data[block_pos]) + 4)));
         /*If bits 0-11 of the address are now 0 then this crosses a page, so loop back*/
         addbyte(0xf7); /*TEST $ffc, EBX*/
         addbyte(0xc3);
@@ -5707,8 +5707,8 @@ static INLINE void MEM_CHECK_WRITE_L(x86seg *seg)
         addbyte(0x74); /*JE slowpath*/
         addbyte(jump_pos - block_pos - 1);
 
-        *jump1 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1;
-        *jump3 = (uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump3 - 1;
+        *jump1 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump1 - 1);
+        *jump3 = (uint8_t) ((uintptr_t)&codeblock[block_current].data[block_pos] - (uintptr_t)jump3 - 1);
 
         LOAD_EA();
 }

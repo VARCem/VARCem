@@ -8,7 +8,7 @@
  *
  *		Code generator definitions (32-bit)
  *
- * Version:	@(#)x86_ops_x86.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_x86.h	1.0.2	2018/10/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,7 +102,7 @@ static INLINE void STORE_IMM_ADDR_L(uintptr_t addr, uint32_t val)
         {
                 addbyte(0xC7); /*MOVL [addr],val*/
                 addbyte(0x05);
-                addlong(addr);
+                addlong((uint32_t) (addr & 0xffffffff));
                 addlong(val);
         }
 }

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Sound Gain dialog.
  *
- * Version:	@(#)win_snd_gain.c	1.0.8	2018/10/05
+ * Version:	@(#)win_snd_gain.c	1.0.9	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,11 +55,7 @@
 static uint8_t	old_gain;
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h;
@@ -78,14 +74,14 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_VSCROLL:
 		h = GetDlgItem(hdlg, IDC_SLIDER_GAIN);
-		sound_gain = (9 - SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
+		sound_gain = (9 - (int)SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
 		break;
 
 	case WM_COMMAND:
                 switch (LOWORD(wParam)) {
 			case IDOK:
 				h = GetDlgItem(hdlg, IDC_SLIDER_GAIN);
-				sound_gain = (9 - SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
+				sound_gain = (9 - (int)SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
 				config_save();
 				EndDialog(hdlg, 0);
 				return TRUE;

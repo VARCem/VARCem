@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.49	2018/10/18
+# Version:	@(#)Makefile.VC	1.0.50	2018/10/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -245,13 +245,13 @@ VPATH		:= $(EXPATH) . cpu \
 #
 VCOPTS		:= -D_CRT_SECURE_NO_WARNINGS -D__MSC__
 ifeq ($(X64), y)
- CPP		:= cl -nologo -arch:amd64
- CC		:= cl -nologo -arch:amd64
  ARCH		:= x64
+ CPP		:= cl -nologo
+ CC		:= cl -nologo
 else
+ ARCH		:= x86
  CPP		:= cl -nologo
  CC		:= cl -nologo #-TP
- ARCH		:= x86
 endif
 PREPROC		:= cl -nologo -EP
 MCPP		:= mcpp.exe
@@ -272,14 +272,20 @@ OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
 		   -D_CRT_SECURE_NO_WARNINGS \
 		   -D_CRT_STDIO_ISO_WIDE_SPECIFIERS \
 		   $(WPCAPINC) $(SYSINC)
-AFLAGS		:= /arch:SSE2
+AFLAGS		:= #/arch:SSE2
 RFLAGS		:= /n
 COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 
+ifeq ($(X64), y)
+LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
+#LOPTS_C		:= -SUBSYSTEM:CONSOLE
+#LOPTS_W		:= -SUBSYSTEM:WINDOWS
+else
 LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
 LOPTS_C		:= -SUBSYSTEM:CONSOLE,5.01
 LOPTS_W		:= -SUBSYSTEM:WINDOWS,5.01
+endif
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
 endif

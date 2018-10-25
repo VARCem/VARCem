@@ -13,7 +13,7 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.18	2018/10/05
+ * Version:	@(#)win_joystick.cpp	1.0.20	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -387,7 +387,7 @@ rebuild_selections(HWND hdlg)
     HWND h;
 
     h = GetDlgItem(hdlg, IDC_CONFIGURE_DEV);
-    joystick = SendMessage(h, CB_GETCURSEL, 0, 0);
+    joystick = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
     for (c = 0; c < gamedev_get_axis_count(joystick_config_type); c++) {
 	int sel = c;
@@ -467,7 +467,7 @@ static int
 get_axis(HWND hdlg, int id)
 {
     HWND h = GetDlgItem(hdlg, id);
-    int axis_sel = SendMessage(h, CB_GETCURSEL, 0, 0);
+    int axis_sel = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
     int nr_axes = plat_joystick_state[joystick_state[joystick_nr].plat_joystick_nr-1].nr_axes;
 
     if (axis_sel < nr_axes)
@@ -485,7 +485,7 @@ static int
 get_pov(HWND hdlg, int id)
 {
     HWND h = GetDlgItem(hdlg, id);
-    int axis_sel = SendMessage(h, CB_GETCURSEL, 0, 0);
+    int axis_sel = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
     int nr_povs = plat_joystick_state[joystick_state[joystick_nr].plat_joystick_nr-1].nr_povs*2;
 
     if (axis_sel < nr_povs) {
@@ -569,11 +569,7 @@ dlg_init(HWND hdlg)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 {
     HWND h;
@@ -596,7 +592,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 				id = IDC_CONFIGURE_DEV + 2;
 								
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_DEV);
-				joystick_state[joystick_nr].plat_joystick_nr = SendMessage(h, CB_GETCURSEL, 0, 0);
+				joystick_state[joystick_nr].plat_joystick_nr = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				
 				if (joystick_state[joystick_nr].plat_joystick_nr) {
 					for (c = 0; c < gamedev_get_axis_count(joystick_config_type); c++) {
@@ -605,7 +601,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 					}			       
 					for (c = 0; c < gamedev_get_button_count(joystick_config_type); c++) {
 						h = GetDlgItem(hdlg, id);
-						joystick_state[joystick_nr].button_mapping[c] = SendMessage(h, CB_GETCURSEL, 0, 0);
+						joystick_state[joystick_nr].button_mapping[c] = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 						id += 2;
 					}
 					for (c = 0; c < gamedev_get_button_count(joystick_config_type); c++) {

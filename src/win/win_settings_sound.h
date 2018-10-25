@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.11	2018/09/29
+ * Version:	@(#)win_settings_sound.h	1.0.13	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,11 +72,7 @@ mpu401_standalone_allow(void)
 }
 
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
@@ -241,7 +237,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CHECK_MPU401:
 				h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
-				temp_mpu401 = SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_mpu401 = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_MPU401);
 				EnableWindow(h, mpu401_present() ? TRUE : FALSE);
@@ -262,13 +258,13 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
-		temp_mpu401 = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_mpu401 = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
-		temp_opl_type = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_opl_type = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_FLOAT);
-		temp_float = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_float = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 		return FALSE;
 
 	default:

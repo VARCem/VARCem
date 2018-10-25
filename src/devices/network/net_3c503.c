@@ -8,7 +8,7 @@
  *		Implementation of the following network controllers:
  *			- 3Com Etherlink II 3c503 (ISA 8-bit).
  *
- * Version:	@(#)net_3c503.c	1.0.3	2018/10/16
+ * Version:	@(#)net_3c503.c	1.0.4	2018/10/24
  *
  * Based on	@(#)3c503.cpp Carl (MAME)
  *
@@ -1416,8 +1416,8 @@ tc503_rx(void *priv, uint8_t *buf, int io_len)
     if (buf[0] & 0x01)
 	pkthdr[0] |= 0x20;		/* MULTICAST packet */
     pkthdr[1] = nextpage;		/* ptr to next packet */
-    pkthdr[2] = (io_len + sizeof(pkthdr))&0xff;	/* length-low */
-    pkthdr[3] = (io_len + sizeof(pkthdr))>>8;	/* length-hi */
+    pkthdr[2] = (uint8_t) ((io_len + sizeof(pkthdr)) & 0xff);	/* length-low */
+    pkthdr[3] = (uint8_t) ((io_len + sizeof(pkthdr)) >> 8);	/* length-hi */
     DBGLOG(1, "3C503: RX pkthdr [%02x %02x %02x %02x]\n",
 	   pkthdr[0], pkthdr[1], pkthdr[2], pkthdr[3]);
 

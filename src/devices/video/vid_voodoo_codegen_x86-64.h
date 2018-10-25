@@ -8,7 +8,7 @@
  *
  *		Implementation of the Voodoo Recompiler (64bit.)
  *
- * Version:	@(#)vid_voodoo_codegen_x86-64.h	1.0.1	2018/09/22
+ * Version:	@(#)vid_voodoo_codegen_x86-64.h	1.0.2	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,12 +47,14 @@
   fbzColorPath
 */
 
-#ifdef __linux__
-# include <sys/mman.h>
-# include <unistd.h>
-#endif
-#if WIN64
+#ifdef _WIN32
 # include <windows.h>
+# include <emmintrin.h>
+#else
+# ifdef __linux__
+#  include <sys/mman.h>
+#  include <unistd.h>
+# endif
 #endif
 
 #include <xmmintrin.h>

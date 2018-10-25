@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.23	2018/10/17
+ * Version:	@(#)win.c	1.0.24	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -122,7 +122,7 @@ ProcessCommandLine(wchar_t ***argw)
     int i, q, argc;
 
     cmdline = GetCommandLine();
-    i = wcslen(cmdline) + 1;
+    i = (int)wcslen(cmdline) + 1;
     argbuf = (wchar_t *)malloc(sizeof(wchar_t)*i);
     wcscpy(argbuf, cmdline);
 
@@ -440,7 +440,7 @@ plat_path_abs(const wchar_t *path)
 wchar_t *
 plat_get_basename(const wchar_t *path)
 {
-    int c = wcslen(path);
+    int c = (int)wcslen(path);
 
     while (c > 0) {
 	if (path[c] == L'/' || path[c] == L'\\')
@@ -455,7 +455,7 @@ plat_get_basename(const wchar_t *path)
 wchar_t *
 plat_get_filename(const wchar_t *path)
 {
-    int c = wcslen(path) - 1;
+    int c = (int)wcslen(path) - 1;
 
     while (c > 0) {
 	if (path[c] == L'/' || path[c] == L'\\')
@@ -470,7 +470,7 @@ plat_get_filename(const wchar_t *path)
 wchar_t *
 plat_get_extension(const wchar_t *path)
 {
-    int c = wcslen(path) - 1;
+    int c = (int)wcslen(path) - 1;
 
     if (c <= 0)
 	return((wchar_t *)path);

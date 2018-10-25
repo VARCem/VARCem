@@ -372,9 +372,9 @@ LIBS		:= -mwindows \
 		   -lversion -lcomctl32 -lwinmm
 LIBS		+= -lwsock32 -liphlpapi -lpsapi
 LIBS		+= -static -lstdc++ -lgcc
-ifneq ($(X64), y)
- LIBS		+= -Wl,--large-address-aware
-endif
+#ifneq ($(X64), y)
+# LIBS		+= -Wl,--large-address-aware
+#endif
 
 
 # Optional modules.

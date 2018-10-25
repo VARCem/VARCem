@@ -8,7 +8,7 @@
  *
  *		Miscellaneous Instructions.
  *
- * Version:	@(#)codegen_ops_mmx.h	1.0.1	2018/02/14
+ * Version:	@(#)codegen_ops_mmx.h	1.0.2	2018/10/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,7 +36,7 @@
  */
 static uint32_t ropMOVQ_q_mm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
-        int host_reg1, host_reg2;
+        int host_reg1 = 0, host_reg2 = 0;
 
         MMX_ENTER();
         
@@ -67,7 +67,7 @@ static uint32_t ropMOVQ_mm_q(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, 
         
         if ((fetchdat & 0xc0) == 0xc0)
         {
-                int host_reg1, host_reg2;
+                int host_reg1 = 0, host_reg2 = 0;
         
                 LOAD_MMX_Q(fetchdat & 7, &host_reg1, &host_reg2);
                 STORE_MMX_Q((fetchdat >> 3) & 7, host_reg1, host_reg2);

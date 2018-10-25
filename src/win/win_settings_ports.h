@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_ports.h	1.0.5	2018/10/20
+ * Version:	@(#)win_settings_ports.h	1.0.7	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,11 +42,7 @@
  *									*
  ************************************************************************/
 
-#ifdef __amd64__
-static LRESULT CALLBACK
-#else
-static BOOL CALLBACK
-#endif
+static WIN_RESULT CALLBACK
 ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
@@ -106,7 +102,7 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_CHECK_PARALLEL2:
 			case IDC_CHECK_PARALLEL3:
 				h = GetDlgItem(hdlg, LOWORD(wParam));
-				d = SendMessage(h, BM_GETCHECK, 0, 0);
+				d = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 				c = (LOWORD(wParam) - IDC_CHECK_PARALLEL1);
 				h = GetDlgItem(hdlg, IDC_COMBO_PARALLEL1+c);
 				EnableWindow(h, d ? TRUE : FALSE);
@@ -116,20 +112,20 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_CHECK_GAME);
-		temp_game = SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_game = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		for (i = 0; i < PARALLEL_MAX; i++) {
 			h = GetDlgItem(hdlg, IDC_CHECK_PARALLEL1+i);
-			temp_parallel[i] = SendMessage(h, BM_GETCHECK, 0, 0);
+			temp_parallel[i] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 			h = GetDlgItem(hdlg, IDC_COMBO_PARALLEL1+i);
-			c = SendMessage(h, CB_GETCURSEL, 0, 0);
+			c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 			temp_parallel_device[i] = c;
 		}
 
 		for (i = 0; i < SERIAL_MAX; i++) {
 			h = GetDlgItem(hdlg, IDC_CHECK_SERIAL1+i);
-			temp_serial[i] = SendMessage(h, BM_GETCHECK, 0, 0);
+			temp_serial[i] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 		}
 		return FALSE;
 
