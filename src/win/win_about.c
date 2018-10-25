@@ -12,7 +12,7 @@
  *		24bit image would be preferred, but we cant use LoadImage
  *		for those (and keep transparency...)
  *
- * Version:	@(#)win_about.c	1.0.11	2018/10/24
+ * Version:	@(#)win_about.c	1.0.12	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -256,12 +256,12 @@ about_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 void
 dlg_about(void)
 {
-    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_ABOUT, hwndMain, about_proc);
+    DialogBox(plat_lang_dll(), (LPCWSTR)DLG_ABOUT, hwndMain, about_proc);
 }
 
 
 void
 dlg_localize(void)
 {
-    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_LOCALIZE, hwndMain, localize_proc);
+    DialogBox(plat_lang_dll(), (LPCWSTR)DLG_LOCALIZE, hwndMain, localize_proc);
 }

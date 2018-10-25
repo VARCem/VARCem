@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.7	2018/10/22
+ * Version:	@(#)scsi_cdrom.c	1.0.8	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1444,6 +1444,8 @@ scsi_cdrom_reset(void *p)
     dev->callback = 0LL;
 
     set_callback(dev);
+
+    set_signature(dev);
 
     dev->packet_status = 0xff;
     dev->unit_attention = 0xff;

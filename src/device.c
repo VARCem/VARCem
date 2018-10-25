@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.16	2018/10/14
+ * Version:	@(#)device.c	1.0.17	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -168,6 +168,10 @@ device_add(const device_t *d)
     old = device_current;
     device_current = (device_t *)d;
 
+    /*
+     * Do this so that a chained device_add will not identify the
+     * same ID its master device is already trying to assign.
+     */
     devices[c] = (device_t *)d;
 
     if (d->init != NULL) {

@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.21	2018/10/21
+ * Version:	@(#)zip.c	1.0.22	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1364,6 +1364,7 @@ zip_reset(void *p)
     dev->status = 0;
     dev->callback = 0LL;
     zip_set_callback(dev);
+    zip_set_signature(dev);
     dev->packet_status = 0xff;
     dev->unit_attention = 0;
 }
@@ -1968,13 +1969,8 @@ zip_command(void *p, uint8_t *cdb)
 			else
 				zipbufferb[0] = 0x00; /*Hard disk*/
 			zipbufferb[1] = 0x80; /*Removable*/
-			if (dev->drv->is_250) {
-				zipbufferb[2] = (dev->drv->bus_type == ZIP_BUS_SCSI) ? 0x02 : 0x00; /*SCSI-2 compliant*/
-				zipbufferb[3] = (dev->drv->bus_type == ZIP_BUS_SCSI) ? 0x02 : 0x21;
-			} else {
-				zipbufferb[2] = (dev->drv->bus_type == ZIP_BUS_SCSI) ? 0x02 : 0x00; /*SCSI-2 compliant*/
-				zipbufferb[3] = (dev->drv->bus_type == ZIP_BUS_SCSI) ? 0x02 : 0x21;
-			}
+			zipbufferb[2] = (dev->drv->bus_type == ZIP_BUS_SCSI) ? 0x02 : 0x00; /*SCSI-2 compliant*/
+			zipbufferb[3] = (dev->drv->bus_type == ZIP_BUS_SCSI) ? 0x02 : 0x21;
 			zipbufferb[4] = 31;
 			if (dev->drv->bus_type == ZIP_BUS_SCSI) {
 				zipbufferb[6] = 1;	/* 16-bit transfers supported */

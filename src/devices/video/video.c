@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.20	2018/10/20
+ * Version:	@(#)video.c	1.0.21	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -893,18 +893,18 @@ video_load_font(const wchar_t *s, int format)
 	case 5: /* Toshiba 3100e */
 		for (d = 0; d < 2048; d += 512) {    /* Four languages... */
 	                for (c = d; c < d+256; c++)
-                       		fread(&fontdatm[c][8], 1, 8, fp);
+                       		(void)fread(&fontdatm[c][8], 1, 8, fp);
                 	for (c = d+256; c < d+512; c++)
-                        	fread(&fontdatm[c][8], 1, 8, fp);
+                        	(void)fread(&fontdatm[c][8], 1, 8, fp);
 	                for (c = d; c < d+256; c++)
-                        	fread(&fontdatm[c][0], 1, 8, fp);
+                        	(void)fread(&fontdatm[c][0], 1, 8, fp);
                 	for (c = d+256; c < d+512; c++)
-                        	fread(&fontdatm[c][0], 1, 8, fp);
-			fseek(fp, 4096, SEEK_CUR);	/* Skip blank section */
+                        	(void)fread(&fontdatm[c][0], 1, 8, fp);
+			(void)fseek(fp, 4096, SEEK_CUR);	/* Skip blank section */
 	                for (c = d; c < d+256; c++)
-                       		fread(&fontdat[c][0], 1, 8, fp);
+                       		(void)fread(&fontdat[c][0], 1, 8, fp);
                 	for (c = d+256; c < d+512; c++)
-                        	fread(&fontdat[c][0], 1, 8, fp);
+                        	(void)fread(&fontdat[c][0], 1, 8, fp);
 		}
                 break;
 
@@ -919,6 +919,18 @@ video_load_font(const wchar_t *s, int format)
 			for (d = 0; d < 32; d++)
 				fontdatksc5601[c].chr[d] = fgetc(fp);
 		}
+		break;
+
+	case 7: /* Sigma Color 400 */
+		/* The first 4K of the character ROM holds an 8x8 font. */
+		for (c = 0; c < 256; c++) {
+			(void)fread(&fontdat[c][0], 1, 8, fp);
+			(void)fseek(fp, 8, SEEK_CUR);
+		}
+
+		/* The second 4K holds an 8x16 font. */
+		for (c = 0; c < 256; c++)
+			(void)fread(&fontdatm[c][0], 1, 16, fp);
 		break;
     }
 

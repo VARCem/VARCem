@@ -8,7 +8,7 @@
  *
  *		Implementation of the Sound Gain dialog.
  *
- * Version:	@(#)win_snd_gain.c	1.0.9	2018/10/24
+ * Version:	@(#)win_snd_gain.c	1.0.10	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -105,5 +105,5 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 void
 dlg_sound_gain(void)
 {
-    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_SND_GAIN, hwndMain, dlg_proc);
+    DialogBox(plat_lang_dll(), (LPCWSTR)DLG_SND_GAIN, hwndMain, dlg_proc);
 }

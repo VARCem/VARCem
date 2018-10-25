@@ -8,7 +8,7 @@
  *
  *		Implementation of the Teledisk floppy image format.
  *
- * Version:	@(#)fdd_td0.c	1.0.9	2018/10/05
+ * Version:	@(#)fdd_td0.c	1.0.10	2018/10/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -365,9 +365,14 @@ state_reconst(td0dsk_t *state)
 	k++;
 	l = (j - k) * 2;
 
-	memcpy(&state->freq[k + 1], &state->freq[k], l);
+	/*
+	 * NOTE: these *HAVE* to be memmove's as destination and
+	 *	 source can overlap, which memcpy can't handle.
+	 */
+	memmove(&state->freq[k + 1], &state->freq[k], l);
+
 	state->freq[k] = f;
-	memcpy(&state->son[k + 1], &state->son[k], l);
+	memmove(&state->son[k + 1], &state->son[k], l);
 	state->son[k] = i;
     }
 
@@ -736,7 +741,7 @@ td0_initialize(int drive)
 			offset += 3;
 			switch (hs[8]) {
 				default:
-					ERRLOG("TD0: image uses an unsupported sector data encoding\n");
+					ERRLOG("TD0: image uses an unsupported sector data encoding: %i\n", (int)hs[8]);
 					return(0);
 
 				case 0:
@@ -1114,6 +1119,24 @@ td0_init(void)
 }
 
 
+static void
+td0_abort(int drive)
+{
+    td0_t *dev = td0[drive];
+
+    if (dev->imagebuf)
+	free(dev->imagebuf);
+    if (dev->processed_buf)
+	free(dev->processed_buf);
+    if (dev->f)
+	fclose(dev->f);
+
+    free(dev);
+
+    td0[drive] = NULL;
+}
+
+
 int
 td0_load(int drive, const wchar_t *fn)
 {
@@ -1137,8 +1160,7 @@ td0_load(int drive, const wchar_t *fn)
 
     if (! dsk_identify(drive)) {
 	ERRLOG("TD0: not a valid Teledisk image\n");
-	fclose(dev->f);
-	dev->f = NULL;
+	td0_abort(drive);
 	return(0);
     } else {
 	DEBUG("TD0: valid Teledisk image\n");
@@ -1153,9 +1175,7 @@ td0_load(int drive, const wchar_t *fn)
 
     if (! td0_initialize(drive)) {
 	ERRLOG("TD0: failed to initialize\n");
-	fclose(dev->f);
-	free(dev->imagebuf);
-	free(dev->processed_buf);
+	td0_abort(drive);
 	return(0);
     }
 
@@ -1193,8 +1213,10 @@ td0_close(int drive)
 
     d86f_unregister(drive);
 
-    free(dev->imagebuf);
-    free(dev->processed_buf);
+    if (dev->imagebuf)
+	free(dev->imagebuf);
+    if (dev->processed_buf)
+	free(dev->processed_buf);
 
     for (i = 0; i < 256; i++) {
 	for (j = 0; j < 2; j++) {

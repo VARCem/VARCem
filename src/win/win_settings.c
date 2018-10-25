@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.37	2018/10/24
+ * Version:	@(#)win_settings.c	1.0.37	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -559,7 +559,12 @@ image_list_init(HWND hwndList)
 
 
     for (i = 0; i < PAGE_MAX; i++) {
-	hiconItem = LoadIcon(hInstance, (LPCWSTR)icons[i]);
+#if (defined(_MSC_VER) && defined(_M_X64)) || \
+    (defined(__GNUC__) && defined(__amd64__))
+	hiconItem = LoadIcon(hInstance, (LPCWSTR)((uint64_t)icons[i]));
+#else
+	hiconItem = LoadIcon(hInstance, (LPCWSTR)((uint32_t)icons[i]));
+#endif
 	ImageList_AddIcon(hSmall, hiconItem);
 	DestroyIcon(hiconItem);
     }
@@ -589,6 +594,49 @@ insert_categories(HWND hwndList)
     }
 
     return(TRUE);
+}
+
+
+#ifdef USE_MANAGER
+static void
+communicate_closure(void)
+{
+    if (source_hwnd)
+	PostMessage((HWND)(uintptr_t)source_hwnd,
+		    WM_SEND_SSTATUS, (WPARAM)0, (LPARAM)hwndMain);
+}
+#endif
+
+
+static WIN_RESULT CALLBACK
+settings_confirm(HWND hdlg, int button)
+{
+    int i;
+
+    SendMessage(hwndChildDialog, WM_SAVE_CFG, 0, 0);
+
+    if (ask_sure) {
+	i = msgbox_reset();
+	if (i == 0) {
+		/* CANCEL, just kidding! */
+		return(FALSE);
+	}
+    } else
+	i = 2;
+
+    if (i == 2) {
+	/* YES, reset system. */
+	settings_save();
+    }
+
+    DestroyWindow(hwndChildDialog);
+    EndDialog(hdlg, i);
+
+#ifdef USE_MANAGER
+    communicate_closure();
+#endif
+
+    return button ? FALSE : TRUE;
 }
 
 
@@ -630,33 +678,21 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
+	case WM_CLOSE:
+		return settings_confirm(hdlg, 0);
+
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 			case IDOK:
-				SendMessage(hwndChildDialog, WM_SAVE_CFG, 0, 0);
-				if (ask_sure) {
-					i = msgbox_reset();
-					if (i == 0) {
-						/* CANCEL, just kidding! */
-						return(FALSE);
-					}
-				} else {
-					i = 2;
-				}
-
-				if (i == 2) {
-					/* YES, reset system. */
-					settings_save();
-				}
-
-				DestroyWindow(hwndChildDialog);
-				EndDialog(hdlg, i);
-				return(TRUE);
+				return settings_confirm(hdlg, 1);
 
 			case IDCANCEL:
 				/* CANCEL, just kidding! */
 				DestroyWindow(hwndChildDialog);
 				EndDialog(hdlg, 0);
+#ifdef USE_MANAGER
+				communicate_closure();
+#endif
 				return(TRUE);
 		}
 		break;
@@ -718,6 +754,12 @@ dlg_settings(int ask)
 {
     int i;
 
+#ifdef USE_MANAGER
+    if (source_hwnd)
+	PostMessage((HWND) (uintptr_t) source_hwnd,
+		    WM_SEND_SSTATUS, (WPARAM)1, (LPARAM)hwndMain;
+#endif
+
     /*
      * This looks weird here, but we have to do it
      * before we open up the Settings dialog, else
@@ -736,7 +778,8 @@ dlg_settings(int ask)
     INFO("A total of %i machines are available.\n", i);
 
     ask_sure = ask;
-    i = DialogBox(plat_lang_dll(), (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);
+    i = (int)DialogBox(plat_lang_dll(),
+		       (LPCWSTR)DLG_CONFIG, hwndMain, dlg_proc);
 
     return(i);
 }

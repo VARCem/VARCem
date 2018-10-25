@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.50	2018/10/24
+# Version:	@(#)Makefile.VC	1.0.51	2018/10/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -279,8 +279,8 @@ CXXOPTS		:= -EHsc
 DOPTS		:= 
 ifeq ($(X64), y)
 LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
-#LOPTS_C		:= -SUBSYSTEM:CONSOLE
-#LOPTS_W		:= -SUBSYSTEM:WINDOWS
+LOPTS_C		:= -SUBSYSTEM:CONSOLE
+LOPTS_W		:= -SUBSYSTEM:WINDOWS
 else
 LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
 LOPTS_C		:= -SUBSYSTEM:CONSOLE,5.01
@@ -680,6 +680,7 @@ VIDOBJ		:= video.obj \
 		    vid_hercules.obj vid_herculesplus.obj vid_incolor.obj \
 		    vid_colorplus.obj \
 		    vid_genius.obj \
+		    vid_sigma.obj \
 		    vid_wy700.obj \
 		    vid_ega.obj vid_ega_render.obj \
 		    vid_svga.obj vid_svga_render.obj \

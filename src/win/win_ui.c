@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.31	2018/10/24
+ * Version:	@(#)win_ui.c	1.0.32	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -840,6 +840,18 @@ again:
     /* Set the PAUSE mode depending on the renderer. */
     pc_pause(0);
 
+#ifdef USE_MANAGER
+    /*
+     * If so requested via the command line, inform the
+     * application that started us of our HWND, using the
+     * the hWnd and unique ID the application has given
+     * us.
+     */
+    if (source_hwnd)
+	PostMessage((HWND) (uintptr_t) source_hwnd,
+		    WM_SEND_HWND, (WPARAM)unique_id, (LPARAM)hwndMain);
+#endif
+
     /*
      * Everything has been configured, and all seems to work,
      * so now it is time to start the main thread to do some
@@ -979,6 +991,19 @@ plat_fullscreen(int on)
 #endif
 
     win_mouse_init();
+}
+
+
+/* Platform support for the PAUSE action. */
+void
+plat_pause(int paused)
+{
+#ifdef USE_MANAGER
+    /* Send the WM to a manager if needed. */
+    if (source_hwnd)
+	PostMessage((HWND) (uintptr_t) source_hwnd,
+		    WM_SENDSTATUS, (WPARAM)paused, (LPARAM)hwndMain);
+#endif
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_floppy.h	1.0.9	2018/10/24
+ * Version:	@(#)win_settings_floppy.h	1.0.10	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,12 @@ floppy_image_list_init(HWND hwndList)
 			      ILC_MASK | ILC_COLOR32, 1, 1);
 
     for (i = 0; i < 14; i++) {
-	hIconItem = LoadIcon(hInstance, (LPCWSTR)ui_fdd_icon(i));
+#if (defined(_MSC_VER) && defined(_M_X64)) || \
+    (defined(__GNUC__) && defined(__amd64__))
+	hIconItem = LoadIcon(hInstance, (LPCWSTR)((uint64_t)ui_fdd_icon(i)));
+#else
+	hIconItem = LoadIcon(hInstance, (LPCWSTR)((uint32_t)ui_fdd_icon(i)));
+#endif
 	ImageList_AddIcon(hSmall, hIconItem);
 	DestroyIcon(hIconItem);
     }

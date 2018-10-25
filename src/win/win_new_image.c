@@ -8,7 +8,7 @@
  *
  *		Implementation of the New Floppy/ZIP Image dialog.
  *
- * Version:	@(#)win_new_image.c	1.0.21	2018/10/24
+ * Version:	@(#)win_new_image.c	1.0.22	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -268,5 +268,5 @@ dlg_new_image(int drive, int part, int zip)
     drive_id = drive;
     sb_part = part;
 
-    DialogBox(plat_lang_dll(), (LPCTSTR)DLG_NEW_FLOPPY, hwndMain, dlg_proc);
+    DialogBox(plat_lang_dll(), (LPCWSTR)DLG_NEW_FLOPPY, hwndMain, dlg_proc);
 }

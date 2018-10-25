@@ -10,7 +10,7 @@
  *		only things used globally within the Windows platform; the
  *		generic platform defintions are in the plat.h file.
  *
- * Version:	@(#)win.h	1.0.22	2018/10/24
+ * Version:	@(#)win.h	1.0.23	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,6 +69,9 @@
 #define WM_HARD_RESET	WM_USER+5
 #define WM_SHUTDOWN	WM_USER+6
 #define WM_CTRLALTDEL	WM_USER+7
+#define WM_SEND_HWND	WM_USER+8	/* send main window handle */
+#define WM_SEND_STATUS	WM_USER+9	/* pause/resume status in WPARAM */
+#define WM_SEND_SSTATUS	WM_USER+10	/* settings status: WPARAM 1=open */
 
 
 /* Status bar definitions. */
