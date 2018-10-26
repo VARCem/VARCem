@@ -12,7 +12,7 @@
  *		format handlers, and re-integrated with that code. This is
  *		just the wrong place for it..
  *
- * Version:	@(#)ui_new_image.c	1.0.4	2018/10/05
+ * Version:	@(#)ui_new_image.c	1.0.5	2018/10/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -223,7 +223,7 @@ floppy_create_image(const wchar_t *fn, int8_t ds, int8_t is_fdi)
     sector_bytes = (128 << dp->sector_len);
     total_sectors = dp->sides * dp->tracks * dp->sectors;
     if (total_sectors > ZIP_SECTORS)
-	total_sectors = ZIP_250_SECTORS;
+	total_sectors = ZIP_SECTORS_250;
     total_size = total_sectors * sector_bytes;
     root_dir_bytes = (dp->root_dir_entries << 5);
     fat_size = (dp->spfat * sector_bytes);
@@ -337,7 +337,7 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
     sector_bytes = (128 << dp->sector_len);
     total_sectors = dp->sides * dp->tracks * dp->sectors;
     if (total_sectors > ZIP_SECTORS)
-	total_sectors = ZIP_250_SECTORS;
+	total_sectors = ZIP_SECTORS_250;
     total_size = total_sectors * sector_bytes;
     root_dir_bytes = (dp->root_dir_entries << 5);
     fat_size = (dp->spfat * sector_bytes);

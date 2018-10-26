@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.h	1.0.10	2018/10/25
+ * Version:	@(#)zip.h	1.0.11	2018/10/26
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -44,7 +44,7 @@
 #define ZIP_TIME		(5LL * 100LL * (1LL << TIMER_SHIFT))
 
 #define ZIP_SECTORS		(96*2048)
-#define ZIP_250_SECTORS		(489532)
+#define ZIP_SECTORS_250		(489532)
 
 
 enum {
@@ -117,14 +117,6 @@ typedef struct {
 
 
 extern zip_drive_t	zip_drives[ZIP_NUM];
-extern uint8_t		atapi_zip_drives[8];
-extern uint8_t		scsi_zip_drives[16][8];
-
-/*FIXME: These should be removed, it makes the code unclear. --FvK */
-#define zip_sense_error	dev->sense[0]
-#define zip_sense_key	dev->sense[2]
-#define zip_asc		dev->sense[12]
-#define zip_ascq	dev->sense[13]
 
 
 #ifdef __cplusplus
