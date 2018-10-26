@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed and removable disks.
  *
- * Version:	@(#)scsi_disk.h	1.0.5	2018/10/19
+ * Version:	@(#)scsi_disk.h	1.0.6	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,16 +67,12 @@ typedef struct {
 } scsi_disk_t;
 
 
-extern scsi_disk_t	*scsi_disk[HDD_NUM];
-
-
 #ifdef USE_REMOVABLE_DISK
 extern void	scsi_disk_insert(int id);
 extern void	scsi_reloadhd(int id);
 extern void	scsi_unloadhd(int scsi_id, int scsi_lun, int id);
 #endif
 
-extern void	scsi_disk_global_init(void);
 extern void	scsi_disk_hard_reset(void);
 extern void	scsi_disk_close(void);
 

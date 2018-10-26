@@ -8,7 +8,7 @@
  *
  *		Generic interface for CD-ROM/DVD/BD implementations.
  *
- * Version:	@(#)cdrom.c	1.0.25	2018/10/21
+ * Version:	@(#)cdrom.c	1.0.26	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -168,7 +168,7 @@ cdrom_global_init(void)
 static void
 cdrom_drive_reset(cdrom_t *dev)
 {
-    dev->p = NULL;
+    dev->priv = NULL;
     dev->insert = NULL;
     dev->close = NULL;
     dev->get_volume = NULL;
@@ -228,7 +228,8 @@ cdrom_close(void)
 	dev->ops = NULL;
 
 	if (dev->close)
-		dev->close(dev->p);
+		dev->close(dev->priv);
+	dev->priv = NULL;
 
 	cdrom_drive_reset(dev);
     }
@@ -243,7 +244,7 @@ cdrom_insert(uint8_t id)
 
     if (dev->bus_type) {
 	if (dev->insert)
-		dev->insert(dev->p);
+		dev->insert(dev->priv);
     }
 }
 

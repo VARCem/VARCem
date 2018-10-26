@@ -8,7 +8,7 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.6	2018/10/14
+ * Version:	@(#)midi_mt32.c	1.0.7	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,25 +100,21 @@ static const mt32emu_report_handler_i_v0 handler_v0 = {
 #define BUFFER_SEGMENTS 10
 
 
-static thread_t *thread_h = NULL;
-static event_t *event = NULL;
-static event_t *start_event = NULL;
-static volatile int mt32_on = 0;
-static uint32_t samplerate = 44100;
-static int buf_size = 0;
-static float* buffer = NULL;
-static int16_t* buffer_int16 = NULL;
-static int midi_pos = 0;
+static thread_t		*thread_h = NULL;
+static event_t		*event = NULL;
+static event_t		*start_event = NULL;
+static volatile int	mt32_on = 0;
+static uint32_t		samplerate = 44100;
+static int		buf_size = 0;
+static float		*buffer = NULL;
+static int16_t		*buffer_int16 = NULL;
+static int		midi_pos = 0;
 static const mt32emu_report_handler_i handler = { &handler_v0 };
-static mt32emu_context context = NULL;
-static int mtroms_present[2] = {-1, -1};
+static mt32emu_context	context = NULL;
+static int		mtroms_present[2] = {-1, -1};
 
 
-#if 1
-int
-#else
-mt32emu_return_code
-#endif
+int	/*mt32emu_return_code*/
 mt32_check(const char *func, mt32emu_return_code ret, mt32emu_return_code expected)
 {
     if (ret != expected) {
@@ -195,8 +191,7 @@ mt32_thread(void *param)
 		mt32_stream(buf, bsize / (2 * sizeof(float)));
 		buf_pos += bsize;
 		if (buf_pos >= buf_size) {
-			if (soundon)
-				openal_buffer_midi(buffer, buf_size / sizeof(float));
+			openal_buffer_midi(buffer, buf_size / sizeof(float));
 			buf_pos = 0;
 		}
 	} else {
@@ -206,8 +201,7 @@ mt32_thread(void *param)
 		mt32_stream_int16(buf16, bsize / (2 * sizeof(int16_t)));
 		buf_pos += bsize;
 		if (buf_pos >= buf_size) {
-			if (soundon)
-				openal_buffer_midi(buffer_int16, buf_size / sizeof(int16_t));
+			openal_buffer_midi(buffer_int16, buf_size / sizeof(int16_t));
 			buf_pos = 0;
 		}
 	}

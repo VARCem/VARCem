@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.11	2018/10/15
+ * Version:	@(#)hdd.h	1.0.13	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -113,6 +113,8 @@ typedef struct {
 
     uint32_t	at_spt,			/* [Translation] parameters */
 		at_hpc;
+
+    void	*priv;
 
     FILE	*f;			/* current file handle to image */
 

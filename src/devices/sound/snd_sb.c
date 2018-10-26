@@ -8,7 +8,7 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)snd_sb.c	1.0.8	2018/10/16
+ * Version:	@(#)snd_sb.c	1.0.9	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,7 +71,7 @@ FILE* soundfsbin = 0/*NULL*/;
 
 
 /* SB 2.0 CD version */
-typedef struct sb_ct1335_mixer_t
+typedef struct
 {
         int32_t master;
         int32_t voice;
@@ -81,8 +81,9 @@ typedef struct sb_ct1335_mixer_t
         uint8_t index;
         uint8_t regs[256];
 } sb_ct1335_mixer_t;
+
 /* SB PRO */
-typedef struct sb_ct1345_mixer_t
+typedef struct
 {
         int32_t master_l, master_r;
         int32_t voice_l,  voice_r;
@@ -104,8 +105,9 @@ typedef struct sb_ct1345_mixer_t
         uint8_t regs[256];
     
 } sb_ct1345_mixer_t;
+
 /* SB16 and AWE32 */
-typedef struct sb_ct1745_mixer_t
+typedef struct
 {
         int32_t master_l, master_r;
         int32_t voice_l,  voice_r;
@@ -146,7 +148,7 @@ typedef struct sb_ct1745_mixer_t
         uint8_t regs[256];
 } sb_ct1745_mixer_t;
 
-typedef struct sb_t
+typedef struct
 {
 	uint8_t		opl_enabled;
         opl_t           opl;
@@ -158,9 +160,6 @@ typedef struct sb_t
         };
         mpu_t		*mpu;
         emu8k_t         emu8k;
-#if 0
-	sb_ct1745_mixer_t temp_mixer_sb16;
-#endif
 
         int pos;
         
@@ -168,6 +167,8 @@ typedef struct sb_t
         
         int opl_emu;
 } sb_t;
+
+
 /* 0 to 7 -> -14dB to 0dB i 2dB steps. 8 to 15 -> 0 to +14dB in 2dB steps.
   Note that for positive dB values, this is not amplitude, it is amplitude-1. */
 const float sb_bass_treble_4bits[]= {
@@ -300,44 +301,6 @@ static void sb_get_buffer_sbpro(int32_t *buffer, int len, void *p)
         sb->dsp.pos = 0;
 }
 
-// FIXME: See why this causes weird audio glitches in some situations.
-#if 0
-static void sb_process_buffer_sb16(int32_t *buffer, int len, void *p)
-{
-        sb_t *sb = (sb_t *)p;
-        sb_ct1745_mixer_t *mixer = &sb->temp_mixer_sb16;
-                
-        int c;
-
-        for (c = 0; c < len * 2; c += 2)
-        {
-                int32_t out_l = 0, out_r = 0;
-
-                out_l = ((int32_t)(low_fir_sb16(0, (float)buffer[c])     * mixer->cd_l) / 3) >> 15;
-                out_r = ((int32_t)(low_fir_sb16(1, (float)buffer[c + 1]) * mixer->cd_r) / 3) >> 15;
-
-                out_l = (out_l * mixer->master_l) >> 15;
-                out_r = (out_r * mixer->master_r) >> 15;
-
-                if (mixer->bass_l != 8 || mixer->bass_r != 8 || mixer->treble_l != 8 || mixer->treble_r != 8)
-                {
-                        /* This is not exactly how one does bass/treble controls, but the end result is like it. A better implementation would reduce the cpu usage */
-                        if (mixer->bass_l>8) out_l += (int32_t)(low_iir(0, (float)out_l)*sb_bass_treble_4bits[mixer->bass_l]);
-                        if (mixer->bass_r>8)  out_r += (int32_t)(low_iir(1, (float)out_r)*sb_bass_treble_4bits[mixer->bass_r]);
-                        if (mixer->treble_l>8) out_l += (int32_t)(high_iir(0, (float)out_l)*sb_bass_treble_4bits[mixer->treble_l]);
-                        if (mixer->treble_r>8) out_r += (int32_t)(high_iir(1, (float)out_r)*sb_bass_treble_4bits[mixer->treble_r]);
-                        if (mixer->bass_l<8)   out_l = (int32_t)((out_l )*sb_bass_treble_4bits[mixer->bass_l] + low_cut_iir(0, (float)out_l)*(1.f-sb_bass_treble_4bits[mixer->bass_l]));
-                        if (mixer->bass_r<8)   out_r = (int32_t)((out_r )*sb_bass_treble_4bits[mixer->bass_r] + low_cut_iir(1, (float)out_r)*(1.f-sb_bass_treble_4bits[mixer->bass_r])); 
-                        if (mixer->treble_l<8) out_l = (int32_t)((out_l )*sb_bass_treble_4bits[mixer->treble_l] + high_cut_iir(0, (float)out_l)*(1.f-sb_bass_treble_4bits[mixer->treble_l]));
-                        if (mixer->treble_r<8) out_r = (int32_t)((out_r )*sb_bass_treble_4bits[mixer->treble_r] + high_cut_iir(1, (float)out_r)*(1.f-sb_bass_treble_4bits[mixer->treble_r]));
-                }
-
-                buffer[c]     = (out_l << mixer->output_gain_L);
-                buffer[c + 1] = (out_r << mixer->output_gain_R);
-	}
-}
-#endif
-
 static void sb_get_buffer_sb16(int32_t *buffer, int len, void *p)
 {
         sb_t *sb = (sb_t *)p;
@@ -409,15 +372,16 @@ static void sb_get_buffer_sb16(int32_t *buffer, int len, void *p)
         sb->pos = 0;
         sb->opl.pos = 0;
         sb->dsp.pos = 0;
-#if 0
-	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
-#endif
 }
+
+
 #ifdef SB_DSP_RECORD_DEBUG
 int old_dsp_rec_pos=0;
 int buf_written=0;
 int last_crecord=0;
 #endif
+
+
 static void sb_get_buffer_emu8k(int32_t *buffer, int len, void *p)
 {
         sb_t *sb = (sb_t *)p;
@@ -522,9 +486,6 @@ static void sb_get_buffer_emu8k(int32_t *buffer, int len, void *p)
         sb->opl.pos = 0;
         sb->dsp.pos = 0;
         sb->emu8k.pos = 0;
-#if 0
-	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
-#endif
 }
 
 
@@ -1296,9 +1257,6 @@ void *sb_16_init(const device_t *info)
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1745_mixer_read, NULL, NULL, sb_ct1745_mixer_write, NULL, NULL, sb);
         sound_add_handler(sb_get_buffer_sb16, sb);
-#if 0
-        sound_add_process_handler(sb_process_buffer_sb16, sb);
-#endif
 	if (mpu_addr) {
 		sb->mpu = (mpu_t *)mem_alloc(sizeof(mpu_t));
 		memset(sb->mpu, 0, sizeof(mpu_t));
@@ -1306,14 +1264,11 @@ void *sb_16_init(const device_t *info)
 		sb_dsp_set_mpu(sb->mpu);
 	} else
 		sb->mpu = NULL;
-#if 0
-	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
-#endif
 
         return sb;
 }
 
-int sb_awe32_available()
+int sb_awe32_available(void)
 {
         return rom_present(ROM_PATH_AWE32);
 }
@@ -1345,9 +1300,6 @@ void *sb_awe32_init(const device_t *info)
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1745_mixer_read, NULL, NULL, sb_ct1745_mixer_write, NULL, NULL, sb);
         sound_add_handler(sb_get_buffer_emu8k, sb);
-#if 0
-        sound_add_process_handler(sb_process_buffer_sb16, sb);
-#endif
 	if (mpu_addr) {
 		sb->mpu = (mpu_t *)mem_alloc(sizeof(mpu_t));
 		memset(sb->mpu, 0, sizeof(mpu_t));
@@ -1356,9 +1308,6 @@ void *sb_awe32_init(const device_t *info)
 	} else
 		sb->mpu = NULL;
         emu8k_init(&sb->emu8k, ROM_PATH_AWE32, emu_addr, onboard_ram);
-#if 0
-	memcpy(&sb->temp_mixer_sb16, &sb->mixer_sb16, sizeof(sb_ct1745_mixer_t));
-#endif
 
         return sb;
 }

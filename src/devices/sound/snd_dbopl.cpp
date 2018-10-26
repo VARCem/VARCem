@@ -10,7 +10,7 @@
  *
  * NOTE:	See MSC_ macros for allocation on stack. --FvK
  *
- * Version:	@(#)snd_dbopl.cpp	1.0.7	2018/09/22
+ * Version:	@(#)snd_dbopl.cpp	1.0.8	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -210,7 +210,7 @@ void opl2_update(int nr, int16_t *buffer, int samples)
 		buffer_32 = (Bit32s *)mem_alloc(buffer_sz);
 	}
 #else
-        Bit32s buffer_32[SOUNDBUFLEN];
+        Bit32s buffer_32[SOUNDBUFLEN * 2];
 #endif
         int c;
 
@@ -244,7 +244,7 @@ void opl3_update(int nr, int16_t *buffer, int samples)
 		buffer_32 = (Bit32s *)mem_alloc(buffer_sz);
 	}
 #else
-        Bit32s buffer_32[SOUNDBUFLEN];
+        Bit32s buffer_32[SOUNDBUFLEN * 2];
 #endif
         int c;
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.10	2018/10/16
+ * Version:	@(#)sound.h	1.0.11	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,6 @@ extern "C" {
 #endif
 
 extern int	sound_pos_global;
-extern volatile int soundon;
 
 
 extern void	sound_log(int level, const char *fmt, ...);

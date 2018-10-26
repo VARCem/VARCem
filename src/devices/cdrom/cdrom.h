@@ -8,7 +8,7 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.15	2018/10/18
+ * Version:	@(#)cdrom.h	1.0.16	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -154,11 +154,11 @@ typedef struct cdrom {
 
     void	(*reset)(struct cdrom *);
 
-    void	*p;
-    void	(*insert)(void *p);
-    void	(*close)(void *p);
-    uint32_t	(*get_volume)(void *p, int channel);
-    uint32_t	(*get_channel)(void *p, int channel);
+    void	*priv;
+    void	(*insert)(void *priv);
+    void	(*close)(void *priv);
+    uint32_t	(*get_volume)(void *priv, int channel);
+    uint32_t	(*get_channel)(void *priv, int channel);
 
     wchar_t	image_path[1024],
 		*prev_image_path;

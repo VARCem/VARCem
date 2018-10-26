@@ -8,7 +8,7 @@
  *
  *		Handle the UI part of CD-ROM/ZIP/DISK media changes.
  *
- * Version:	@(#)ui_cdrom.c	1.0.5	2018/10/24
+ * Version:	@(#)ui_cdrom.c	1.0.6	2018/10/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -135,23 +135,24 @@ ui_cdrom_reload(uint8_t id)
 
 
 void
-ui_zip_mount(uint8_t drive, int part, int8_t wp, const wchar_t *fn)
+ui_zip_mount(uint8_t id, int part, int8_t wp, const wchar_t *fn)
 {
+    zip_t *dev = (zip_t *)zip_drives[id].priv;
     int len;
 
-    zip_disk_close(zip[drive]);
+    zip_disk_close(dev);
 
-    zip_drives[drive].ui_writeprot = wp;
-    zip_load(zip[drive], fn);
-    zip_insert(zip[drive]);
+    zip_drives[id].ui_writeprot = wp;
+    zip_load(dev, fn);
+    zip_insert(dev);
 
-    len = (int)wcslen(zip_drives[drive].image_path);
-    ui_sb_icon_state(SB_ZIP | drive, len ? 0 : 1);
+    len = (int)wcslen(zip_drives[id].image_path);
+    ui_sb_icon_state(SB_ZIP | id, len ? 0 : 1);
 
-    sb_menu_enable_item(part, IDM_ZIP_EJECT | drive, len ? 1 : 0);
-    sb_menu_enable_item(part, IDM_ZIP_RELOAD | drive, len ? 0 : 1);
+    sb_menu_enable_item(part, IDM_ZIP_EJECT | id, len ? 1 : 0);
+    sb_menu_enable_item(part, IDM_ZIP_RELOAD | id, len ? 0 : 1);
 
-    ui_sb_tip_update(SB_ZIP | drive);
+    ui_sb_tip_update(SB_ZIP | id);
 
     config_save();
 }
@@ -160,11 +161,13 @@ ui_zip_mount(uint8_t drive, int part, int8_t wp, const wchar_t *fn)
 void
 ui_zip_eject(uint8_t id)
 {
-    zip_disk_close(zip[id]);
+    zip_t *dev = (zip_t *)zip_drives[id].priv;
+
+    zip_disk_close(dev);
 
     if (zip_drives[id].bus_type) {
 	/* Signal disk change to the emulated machine. */
-	zip_insert(zip[id]);
+	zip_insert(dev);
     }
 
     ui_sb_icon_state(SB_ZIP | id, 1);
@@ -179,7 +182,9 @@ ui_zip_eject(uint8_t id)
 void
 ui_zip_reload(uint8_t id)
 {
-    zip_disk_reload(zip[id]);
+    zip_t *dev = (zip_t *)zip_drives[id].priv;
+
+    zip_disk_reload(dev);
 
     if (wcslen(zip_drives[id].image_path) == 0) {
 	ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_EJECT | id, 0);

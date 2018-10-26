@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.59	2018/10/24
+ * Version:	@(#)pc.c	1.0.60	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -718,7 +718,6 @@ usage:
     hdd_init();
     cdrom_global_init();
     zip_global_init();
-    scsi_disk_global_init();
 
     network_init();
 

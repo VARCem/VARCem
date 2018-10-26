@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.18	2018/10/20
+ * Version:	@(#)scsi_disk.c	1.0.19	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,10 +74,6 @@
 #define scsi_disk_sense_key dev->sense[2]
 #define scsi_disk_asc dev->sense[12]
 #define scsi_disk_ascq dev->sense[13]
-
-
-scsi_disk_t *scsi_disk[HDD_NUM] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-				    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 
 /* Table of all SCSI commands and their flags, needed for the new disc change / not ready handler. */
@@ -1278,63 +1274,56 @@ scsi_disk_callback(void *p)
 }
 
 
-/* Peform a master init on the entire module. */
-void
-scsi_disk_global_init(void)
-{
-    /* Clear the global data. */
-    memset(scsi_disk, 0x00, sizeof(scsi_disk));
-}
-
-
 void
 scsi_disk_hard_reset(void)
 {
-    int c;
     scsi_device_t *sd;
+    scsi_disk_t *dev;
+    int c;
 
     for (c = 0; c < HDD_NUM; c++) {
-	if (hdd[c].bus == HDD_BUS_SCSI) {
-		DEBUG("SCSI disk hard_reset drive=%d\n", c);
+	if (hdd[c].bus != HDD_BUS_SCSI) continue;
 
-		/* Make sure to ignore any SCSI disk that has an out of range ID. */
-		if (hdd[c].bus_id.scsi.id > SCSI_ID_MAX)
-			continue;
-		if (hdd[c].bus_id.scsi.lun > SCSI_LUN_MAX)
-			continue;
+	DEBUG("SCSI disk hard_reset drive=%d\n", c);
 
-		/* Make sure to ignore any SCSI disk whose image file name is empty. */
-		if (wcslen(hdd[c].fn) == 0)
-			continue;
+	/* Make sure to ignore any SCSI disk that has an out of range ID. */
+	if (hdd[c].bus_id.scsi.id > SCSI_ID_MAX)
+		continue;
+	if (hdd[c].bus_id.scsi.lun > SCSI_LUN_MAX)
+		continue;
 
-		/* Make sure to ignore any SCSI disk whose image fails to load. */
-		if (! hdd_image_load(c))
-			continue;
+	/* Make sure to ignore any SCSI disk whose image file name is empty. */
+	if (wcslen(hdd[c].fn) == 0)
+		continue;
 
-		if (! scsi_disk[c]) {
-			scsi_disk[c] = (scsi_disk_t *)mem_alloc(sizeof(scsi_disk_t));
-			memset(scsi_disk[c], 0, sizeof(scsi_disk_t));
-		}
+	/* Make sure to ignore any SCSI disk whose image fails to load. */
+	if (! hdd_image_load(c))
+		continue;
 
-		/* SCSI disk, attach to the SCSI bus. */
-		sd = &scsi_devices[hdd[c].bus_id.scsi.id][hdd[c].bus_id.scsi.lun];
-
-		sd->p = scsi_disk[c];
-		sd->command = scsi_disk_command;
-		sd->callback = scsi_disk_callback;
-		sd->err_stat_to_scsi = scsi_disk_err_stat_to_scsi;
-		sd->request_sense = scsi_disk_request_sense_for_scsi;
-		sd->reset = scsi_disk_reset;
-		sd->read_capacity = scsi_disk_read_capacity;
-		sd->type = SCSI_FIXED_DISK;
-
-		scsi_disk[c]->id = c;
-		scsi_disk[c]->drv = &hdd[c];
-
-		scsi_disk_mode_sense_load(scsi_disk[c]);
-
-		DEBUG("SCSI disk %i attached to ID %i LUN %i\n", c, hdd[c].bus_id.scsi.id, hdd[c].bus_id.scsi.lun);
+	dev = (scsi_disk_t *)hdd[c].priv;
+	if (dev == NULL) {
+		dev = (scsi_disk_t *)mem_alloc(sizeof(scsi_disk_t));
+		memset(dev, 0x00, sizeof(scsi_disk_t));
 	}
+	dev->id = c;
+	dev->drv = &hdd[c];
+
+	/* SCSI disk, attach to the SCSI bus. */
+	sd = &scsi_devices[hdd[c].bus_id.scsi.id][hdd[c].bus_id.scsi.lun];
+
+	sd->p = dev;
+	sd->command = scsi_disk_command;
+	sd->callback = scsi_disk_callback;
+	sd->err_stat_to_scsi = scsi_disk_err_stat_to_scsi;
+	sd->request_sense = scsi_disk_request_sense_for_scsi;
+	sd->reset = scsi_disk_reset;
+	sd->read_capacity = scsi_disk_read_capacity;
+	sd->type = SCSI_FIXED_DISK;
+
+	scsi_disk_mode_sense_load(dev);
+
+	DEBUG("SCSI disk %i attached to ID %i LUN %i\n",
+	      c, hdd[c].bus_id.scsi.id, hdd[c].bus_id.scsi.lun);
     }
 }
 
@@ -1346,13 +1335,14 @@ scsi_disk_close(void)
     int c;
 
     for (c = 0; c < HDD_NUM; c++) {
-	dev = scsi_disk[c];
+	dev = (scsi_disk_t *)hdd[c].priv;
 
-	if (dev) {
+	if (dev != NULL) {
 		hdd_image_close(c);
 
-		free(scsi_disk[c]);
-		scsi_disk[c] = NULL;
+		free(dev);
+
+		hdd[c].priv = NULL;
 	}
     }
 }

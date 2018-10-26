@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.13	2018/10/24
+ * Version:	@(#)win_settings_sound.h	1.0.14	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,8 +46,10 @@
 #define NUM_MIDI	16
 
 
-static int		sound_to_list[NUM_SOUND], list_to_sound[NUM_SOUND];
-static int		midi_to_list[NUM_MIDI], list_to_midi[NUM_MIDI];
+static int		sound_to_list[NUM_SOUND],
+			list_to_sound[NUM_SOUND];
+static int		midi_to_list[NUM_MIDI],
+			list_to_midi[NUM_MIDI];
 
 
 static int
@@ -86,44 +88,44 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_INITDIALOG:
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
 		c = d = 0;
-		while (1) {
+		for (;;) {
 			stransi = sound_card_get_internal_name(c);
-			if (stransi == NULL)		
-				break;
-
-			sound_to_list[c] = d;
+			if (stransi == NULL) break;
 
 			dev = sound_card_getdevice(c);
 
-			if (sound_card_available(c) &&
-			    device_is_valid(dev, machines[temp_machine].flags)) {
-				if (c == 0) {
-					/* Translate "None". */
-					SendMessage(h, CB_ADDSTRING, 0,
-						win_string(IDS_NONE));
-				} else if (c == 1) {
-					if (! (machines[temp_machine].flags&MACHINE_SOUND)) {
-						c++;
-						continue;
-					}
-
-					/* Translate "Internal". */
-					SendMessage(h, CB_ADDSTRING, 0,
-						win_string(IDS_INTERNAL));
-                       		} else {
-					sprintf(tempA, "[%s] %s",
-						device_get_bus_name(dev),
-						sound_card_getname(c));
-					mbstowcs(temp, tempA, sizeof_w(temp));
-					SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
-				}
-
-				list_to_sound[d] = c;
-				d++;
+			if (!sound_card_available(c) ||
+			    !device_is_valid(dev, machines[temp_machine].flags)) {
+				c++;
+				continue;
 			}
 
-			c++;
+			if (c == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_NONE));
+			} else if (c == 1) {
+				if (! (machines[temp_machine].flags&MACHINE_SOUND)) {
+					c++;
+					continue;
+				}
+
+				/* Translate "Internal". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_INTERNAL));
+                       	} else {
+				sprintf(tempA, "[%s] %s",
+					device_get_bus_name(dev),
+					sound_card_getname(c));
+				mbstowcs(temp, tempA, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
+
+			sound_to_list[c] = d;
+			list_to_sound[d] = c;
+			d++; c++;
 		}
+
 		SendMessage(h, CB_SETCURSEL, sound_to_list[temp_sound_card], 0);
 
 		EnableWindow(h, d ? TRUE : FALSE);

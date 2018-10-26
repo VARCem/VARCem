@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.15	2018/10/20
+ * Version:	@(#)sound.c	1.0.16	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,7 +73,6 @@ typedef struct {
 int		sound_do_log = ENABLE_SOUND_LOG;
 #endif
 int		sound_pos_global = 0;
-volatile int	soundon = 1;
 
 
 static sndhnd_t	handlers[8];
@@ -113,7 +112,7 @@ cd_thread(void *param)
 	thread_wait_event(cd_event, -1);
 	thread_reset_event(cd_event);
 
-	if (!soundon || !cd_audioon) return;
+	if (! cd_audioon) return;
 
 	for (c = 0; c < CD_BUFLEN*2; c += 2) {
 		if (sound_is_float) {
@@ -136,18 +135,18 @@ cd_thread(void *param)
 		} else
 			continue;
 
-		if (soundon && has_audio) {
+		if (has_audio) {
 			if (cdrom[i].get_volume) {
-				audio_vol_l = cdrom[i].get_volume(cdrom[i].p, 0);
-				audio_vol_r = cdrom[i].get_volume(cdrom[i].p, 1);
+				audio_vol_l = cdrom[i].get_volume(cdrom[i].priv, 0);
+				audio_vol_r = cdrom[i].get_volume(cdrom[i].priv, 1);
 			} else {
 				audio_vol_l = 255;
 				audio_vol_r = 255;
 			}
 
 			if (cdrom[i].get_channel) {
-				ch_sel[0] = cdrom[i].get_channel(cdrom[i].p, 0);
-				ch_sel[1] = cdrom[i].get_channel(cdrom[i].p, 1);
+				ch_sel[0] = cdrom[i].get_channel(cdrom[i].priv, 0);
+				ch_sel[1] = cdrom[i].get_channel(cdrom[i].priv, 1);
 			} else {
 				ch_sel[0] = 1;
 				ch_sel[1] = 2;
@@ -253,14 +252,14 @@ cd_thread_end(void)
 static void
 sound_poll(void *priv)
 {
+    int c;
+
     poll_time += poll_latch;
 
     midi_poll();
 
     sound_pos_global++;
     if (sound_pos_global == SOUNDBUFLEN) {
-	int c;
-
 	memset(outbuffer, 0, SOUNDBUFLEN * 2 * sizeof(int32_t));
 
 	for (c = 0; c < handlers_num; c++)
@@ -279,12 +278,10 @@ sound_poll(void *priv)
 		}
 	}
 
-	if (soundon) {
-		if (sound_is_float)
-			openal_buffer(outbuffer_ex);
-		else
-			openal_buffer(outbuffer_ex_int16);
-	}
+	if (sound_is_float)
+		openal_buffer(outbuffer_ex);
+	else
+		openal_buffer(outbuffer_ex_int16);
 	
 	if (cd_thread_enable) {
 		cd_buf_update--;

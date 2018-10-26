@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.15	2018/10/19
+ * Version:	@(#)ui_stbar.c	1.0.16	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

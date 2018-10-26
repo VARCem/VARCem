@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.26	2018/10/19
+ * Version:	@(#)hdc_ide_ata.c	1.0.27	2018/10/25
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -133,7 +133,7 @@
 #define FEATURE_DISABLE_IRQ_OVERLAPPED	0xdd
 #define FEATURE_DISABLE_IRQ_SERVICE	0xde
 
-#define IDE_PCI (PCI && pio_override)
+#define IDE_PCI (PCI && pio_override && (ide->board < 2))
 
 
 typedef struct {
@@ -383,34 +383,35 @@ static int
 ide_get_max(ide_t *ide, int type)
 {
     if (ide_drive_is_atapi(ide))
-	return ide->get_max(!IDE_PCI || (ide->board >= 2), type);
+	return ide->get_max(!IDE_PCI, type);
 
     switch(type) {
 	case TYPE_PIO:	/* PIO */
-		if (!IDE_PCI || (ide->board >= 2))
+		if (! IDE_PCI)
 			return 0;	/* Maximum PIO 0 for legacy PIO-only drive. */
-		else
-			return 4;
-		break;
+		return 4;
+
 	case TYPE_SDMA:	/* SDMA */
-		if (!IDE_PCI || (ide->board >= 2))
+		if (! IDE_PCI)
 			return -1;
-		else
-			return 2;
+		return 2;
+
 	case TYPE_MDMA:	/* MDMA */
-		if (!IDE_PCI || (ide->board >= 2))
+		if (! IDE_PCI)
 			return -1;
-		else
-			return 2;
+		return 2;
+
 	case TYPE_UDMA:	/* UDMA */
-		if (!IDE_PCI || (ide->board >= 2))
+		if (! IDE_PCI)
 			return -1;
-		else
-			return 2;
+		return 2;
+
 	default:
 		fatal("Unknown transfer type: %i\n", type);
-		return -1;
+		/*NOTREACHED*/
     }
+
+    return -1;
 }
 
 
@@ -422,24 +423,24 @@ ide_get_timings(ide_t *ide, int type)
 
     switch(type) {
 	case TIMINGS_DMA:
-		if (!IDE_PCI || (ide->board >= 2))
+		if (! IDE_PCI)
 			return 0;
-		else
-			return 120;
-		break;
+		return 120;
+
 	case TIMINGS_PIO:
-		if (!IDE_PCI || (ide->board >= 2))
+		if (! IDE_PCI)
 			return 0;
-		else
-			return 120;
-		break;
+		return 120;
+
 	case TIMINGS_PIO_FC:
 		return 0;
-		break;
+
 	default:
 		fatal("Unknown transfer type: %i\n", type);
-		return 0;
+		/*NOTREACHED*/
     }
+
+    return 0;
 }
 
 
@@ -527,7 +528,7 @@ ide_hd_identify(ide_t *ide)
 	DEBUG("Current CHS translation: %i, %i, %i\n", ide->buffer[54], ide->buffer[55], ide->buffer[56]);
     }
 
-    if (IDE_PCI && (ide->board < 2)) {
+    if (IDE_PCI) {
 	ide->buffer[47] = 32 | 0x8000;  /*Max sectors on multiple transfer command*/
 	ide->buffer[80] = 0x1e; /*ATA-1 to ATA-4 supported*/
 	ide->buffer[81] = 0x18; /*ATA-4 revision 18 supported*/
@@ -548,7 +549,7 @@ ide_identify(ide_t *ide)
     memset(ide->buffer, 0, 512);
 
     if (ide_drive_is_atapi(ide))
-	ide->identify(ide, IDE_PCI && (ide->board < 2));
+	ide->identify(ide, IDE_PCI);
     else if (ide->type != IDE_NONE)
 	ide_hd_identify(ide);
     else {
@@ -564,7 +565,7 @@ ide_identify(ide_t *ide)
     if (ide_boards[ide->board]->bit32)
 	ide->buffer[48] |= 1;   /*Dword transfers supported*/
     ide->buffer[51] = ide_get_timings(ide, TIMINGS_PIO);
-    ide->buffer[53] &= 0x0006;
+    ide->buffer[53] &= 0xfff9;
     ide->buffer[52] = ide->buffer[62] = ide->buffer[63] = ide->buffer[64] = 0x0000;
     ide->buffer[65] = ide->buffer[66] = ide->buffer[67] = ide->buffer[68] = 0x0000;
     ide->buffer[88] = 0x0000;
@@ -864,17 +865,17 @@ ide_allocate_buffer(ide_t *dev)
 
 
 void
-ide_atapi_attach(ide_t *dev)
+ide_atapi_attach(ide_t *ide)
 {
-    if (dev->type != IDE_NONE)
+    if (ide->type != IDE_NONE)
 	return;
 
-    dev->type = IDE_ATAPI;
-    ide_allocate_buffer(dev);
-    ide_set_signature(dev);
-    dev->mdma_mode = (1 << dev->get_max(!IDE_PCI || (dev->board >= 2), TYPE_PIO));
-    dev->error = 1;
-    dev->cfg_spt = dev->cfg_hpc = 0;
+    ide->type = IDE_ATAPI;
+    ide_allocate_buffer(ide);
+    ide_set_signature(ide);
+    ide->mdma_mode = (1 << ide->get_max(!IDE_PCI, TYPE_PIO));
+    ide->error = 1;
+    ide->cfg_spt = ide->cfg_hpc = 0;
 }
 
 
@@ -1863,7 +1864,7 @@ ide_callback(void *priv)
 
 	case WIN_READ_DMA:
 	case WIN_READ_DMA_ALT:
-		if (ide_drive_is_atapi(ide) || !IDE_PCI || (ide->board >= 2)) {
+		if (ide_drive_is_atapi(ide) || !IDE_PCI) {
 			DEBUG("IDE %i: DMA read aborted (bad device or board)\n", ide->channel);
 			goto abort_cmd;
 		}
@@ -1966,7 +1967,7 @@ ide_callback(void *priv)
 
 	case WIN_WRITE_DMA:
 	case WIN_WRITE_DMA_ALT:
-		if (ide_drive_is_atapi(ide) || !IDE_PCI || (ide->board >= 2)) {
+		if (ide_drive_is_atapi(ide) || !IDE_PCI) {
 			DEBUG("IDE %i: DMA write aborted (bad device type or board)\n", ide->channel);
 			goto abort_cmd;
 		}

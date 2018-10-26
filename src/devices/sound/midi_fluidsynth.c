@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.13	2018/10/14
+ * Version:	@(#)midi_fluidsynth.c	1.0.14	2018/10/25
  *
  *		Code borrowed from scummvm.
  *
@@ -185,8 +185,7 @@ fluidsynth_thread(void *param)
 			f_fluid_synth_write_float(data->synth, buf_size/(2 * sizeof(float)), buf, 0, 2, buf, 1, 2);
 		buf_pos += buf_size;
 		if (buf_pos >= data->buf_size) {
-			if (soundon)
-				openal_buffer_midi(data->buffer, data->buf_size / sizeof(float));
+			openal_buffer_midi(data->buffer, data->buf_size / sizeof(float));
 			buf_pos = 0;
 		}
 	} else {
@@ -196,27 +195,10 @@ fluidsynth_thread(void *param)
 			f_fluid_synth_write_s16(data->synth, buf_size/(2 * sizeof(int16_t)), buf, 0, 2, buf, 1, 2);
 		buf_pos += buf_size;
 		if (buf_pos >= data->buf_size) {
-			if (soundon)
-				openal_buffer_midi(data->buffer_int16, data->buf_size / sizeof(int16_t));
+			openal_buffer_midi(data->buffer_int16, data->buf_size / sizeof(int16_t));
 			buf_pos = 0;
 		}
 	}
-
-#if 0
-	if (sound_is_float) {
-		memset(data->buffer, 0, data->buf_size * sizeof(float));
-		if (data->synth)
-			f_fluid_synth_write_float(data->synth, data->buf_size/2, data->buffer, 0, 2, data->buffer, 1, 2);
-		if (soundon)
-			openal_buffer_midi(data->buffer, data->buf_size);
-	} else {
-		memset(data->buffer, 0, data->buf_size * sizeof(int16_t));
-		if (data->synth)
-			f_fluid_synth_write_s16(data->synth, data->buf_size/2, data->buffer_int16, 0, 2, data->buffer_int16, 1, 2);
-		if (soundon)
-			openal_buffer_midi(data->buffer_int16, data->buf_size);
-	}
-#endif
     }
 }
 

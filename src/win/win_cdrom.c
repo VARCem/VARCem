@@ -12,7 +12,7 @@
  *
  * FIXME:	Not yet fully working!  Getting there, though ;-)
  *
- * Version:	@(#)win_cdrom.c	1.0.15 	2018/10/24
+ * Version:	@(#)win_cdrom.c	1.0.16 	2018/10/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -285,7 +285,7 @@ ioctl_ready(cdrom_t *dev)
 
 	/* Notify the drive. */
 	if (dev->insert)
-		dev->insert(dev->p);
+		dev->insert(dev->priv);
     }
 
     /* OK, we handled it. */
