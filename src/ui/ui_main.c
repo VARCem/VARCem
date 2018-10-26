@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.19	2018/10/16
+ * Version:	@(#)ui_main.c	1.0.20	2018/10/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -346,8 +346,6 @@ main_reset_all(void)
 void
 ui_reset(void)
 {
-    int i;
-
     /* Maybe the underlying (platform) UI has to rebuild. */
     ui_plat_reset();
 
@@ -358,9 +356,7 @@ ui_reset(void)
     ui_sb_reset();
 
     /* Reset the mouse-capture message. */
-    i = mouse_capture;
-    mouse_capture = !mouse_capture;
-    ui_mouse_capture(i);
+    ui_mouse_capture(-1);
 }
 
 
@@ -673,40 +669,33 @@ void
 ui_mouse_capture(int on)
 {
     const wchar_t *str = NULL;
+    int state = mouse_capture;
 
     /* Do not try to capture the mouse if no mouse configured. */
     if (mouse_type == MOUSE_NONE) return;
 
     if ((on == 1) && !mouse_capture) {
-	/* Disable the local cursor. */
-	ui_show_cursor(0);
+	state = 1;
+    } else if (!on && mouse_capture) {
+	state = 0;
+    }
 
+    if (state != mouse_capture) {
+	/* State changed. */
+	plat_mouse_capture(state);
+	ui_show_cursor(!state);
+	mouse_capture = state;
+    }
+
+    if (state) {
 	if (mouse_get_buttons() > 2)
 		str = get_string(IDS_MSG_MRLS_1);
 	  else
 		str = get_string(IDS_MSG_MRLS_2);
-
-	/* Enable and clip the in-app mouse. */
-	plat_mouse_capture(1);
-
-	/* We got the mouse. */
-	mouse_capture = 1;
-    } else if ((on == -1) || (!on && mouse_capture)) {
-	/* Unclip the in-app mouse. */
-	if (! on) {
-		plat_mouse_capture(0);
-
-		/* Restore the local cursor. */
-		ui_show_cursor(1);
-	}
-
+    } else {
 	str = get_string(IDS_MSG_CAPTURE);
-
-	/* We (no longer) have the mouse. */
-	mouse_capture = 0;
     }
 
     /* Set the correct message on the status bar. */
-    if (str != NULL)
-	ui_sb_text_set_w(SB_TEXT, str);
+    ui_sb_text_set_w(SB_TEXT, str);
 }

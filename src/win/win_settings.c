@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.37	2018/10/25
+ * Version:	@(#)win_settings.c	1.0.38	2018/10/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -755,9 +755,12 @@ dlg_settings(int ask)
     int i;
 
 #ifdef USE_MANAGER
-    if (source_hwnd)
+    if (source_hwnd) {
+	pc_pause(1);
+
 	PostMessage((HWND) (uintptr_t) source_hwnd,
 		    WM_SEND_SSTATUS, (WPARAM)1, (LPARAM)hwndMain;
+    }
 #endif
 
     /*
