@@ -1,0 +1,401 @@
+﻿/*
+ * VARCem	Virtual ARchaeological Computer EMulator.
+ *		An emulator of (mostly) x86-based PC systems and devices,
+ *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+ *		spanning the era between 1981 and 1995.
+ *
+ *		This file is part of the VARCem Project.
+ *
+ *		String definitions for "Polish (Poland)" language.
+ *
+ * Version:	@(#)VARCem-PL.str	1.0.1	2018/10/27
+ *
+ * Authors:	Ola Hughson, <ohughson@varcem.com>
+ *		Fred N. van Kempen, <decwiz@yahoo.com>
+ *
+ *		Copyright 2018, Ola Hughson.
+ *		Copyright 2017,2018 Fred N. van Kempen.
+ *
+ *		Redistribution and  use  in source  and binary forms, with
+ *		or  without modification, are permitted  provided that the
+ *		following conditions are met:
+ *
+ *		1. Redistributions of  source  code must retain the entire
+ *		   above notice, this list of conditions and the following
+ *		   disclaimer.
+ *
+ *		2. Redistributions in binary form must reproduce the above
+ *		   copyright  notice,  this list  of  conditions  and  the
+ *		   following disclaimer in  the documentation and/or other
+ *		   materials provided with the distribution.
+ *
+ *		3. Neither the  name of the copyright holder nor the names
+ *		   of  its  contributors may be used to endorse or promote
+ *		   products  derived from  this  software without specific
+ *		   prior written permission.
+ *
+ * THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+ * HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+ * THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/* Main application strings (2000) - DO NOT TRANSLATE! */
+#define STR_VERSION	1,0,1
+#define STR_AUTHOR	"Ola Hughson"
+#define STR_EMAIL	"ohughson@varcem@gmail.com"
+#define STR_NAME	"VARCem"
+#define STR_TITLE	"Virtual ARchaeological Computer EMulator"
+
+
+/* Messagebox classes (2100.) */
+#define STR_2100	"Błąd"
+#define STR_2101	"Błąd krytyczny"
+#define STR_2102	"Błąd konfiguracji"
+#define STR_2103	"Ostrzeżenie"
+
+
+/* System errors (2200.) */
+#define STR_2200	"Nie mogę wczytać Akceleratorów Klawiatury!"
+#define STR_2201	"Nie mogę odczytać surowych danych wejścia!"
+#define STR_2202	"PCap jest nieustawiony, gdyż nie można go zinicjalizować"
+#define STR_2203	"Nie znaleziono urządzeń typu PCap"
+#define STR_2204	"Invalid PCap device"
+#define STR_2205	"Nie mogę zinicjalizować %s, sprawdź, czy posiadasz bibliotekę '%s' w systemie lub katalogu programu!"
+
+
+/* Application error messages (2300.) */
+#define STR_2300	"Brak pamięci!"
+#define STR_2301	"Nie znaleziono poprawnych obrazów pamięci ROM!"
+#define STR_2302	"Nie znaleziono poprawnej konfiguracji.\n\nCzy chcesz otworzyć okno Ustawienia, aby ją utworzyć?"
+#define STR_2303	"Ustawione %ls:\n\n  %s\n\nnie jest dostępne.\n\nCzy chcesz otworzyć okno Ustawienia?"
+#define STR_2304	"Wybrane urządzenie renderowania:\n\n  %s\n\nnie jest dostępne. Użyć domyślnego?"
+#define STR_2305	"Najpierw musisz zapisać ustawienia!"
+#define STR_2306	"Nie mogę utworzyć pliku mapy bitowej: %ls"
+#define STR_2307	"USB nie jest jeszcze wspierane"
+
+
+/* Application messages (2400.) */
+#define STR_2400	"Czy na pewno chcesz zapisać te ustawienia?\n\n(Może nastąpić restart...)"
+#define STR_2401	"Zapisano zmiany, proszę zrestartować emulator!"
+#define STR_2402	"Żądane urządzenie:\n\n  %s\n\njest obecnie w trakcie opracowywania i może spowodować problemy.\n\nCzy na pewno chcesz je uruchomić?"
+#define STR_2403	"Kliknij aby przechwytywać mysz"
+#define STR_2404	"Wciśnij F8+F12 aby uwolnić mysz"
+#define STR_2405	"Wciśnij F8+F12 lub środkowy przycisk myszki aby ją uwolnić"
+#define STR_2406	"Wciśnij CTRL+ALT+PAGE DOWN aby powrócić do trybu okna"
+
+
+/* Misc application strings (2500.) */
+#define STR_2500	"Pliki konfiguracyjne\0*.varc\0Wszystkie pliki\0*.*\0"
+
+
+/* UI: common elements (3000.) */
+#define STR_OK		"OK"
+#define STR_CANCEL	"Poniechaj"
+#define STR_YES		"Tak"
+#define STR_NO		"Nie"
+#define STR_CONFIGURE	"Skonfiguruj"
+#define STR_BROWSE	"Przeglądaj"
+
+
+/* UI: dialog shared strings (3100.) */
+#define STR_NONE	"Żadne"
+#define STR_INTERNAL	"Wewnętrzny"
+#define STR_DISABLED	"Niesprawny"
+#define STR_ENABLED	"Sprawna"
+#define STR_OFF		"Wyłącz"
+#define STR_ON		"Włącz"
+#define STR_UNLOCK	"Unlock"
+#define STR_LOCK	"Zabezpiecz"
+#define STR_TYPE	"Typ"
+#define STR_FILENAME	"Nazwa pliku:"
+#define STR_PROGRESS	"Postęp:"
+#define STR_BUS		"Magistrala:"
+#define STR_CHANNEL	"Kanał:"
+#define STR_ID		"ID:"
+#define STR_LUN		"LUN:"
+#define STR_INV_NAME	"Proszę wpisać poprawną nazwę pliku"
+#define STR_IMG_EXIST	"Ten obraz istnieje i będzie nadpisany.\nCzy na pewno tego chcesz?"
+#define STR_OPEN_READ	"Nie mogę otworzyć pliku do odczytu"
+#define STR_OPEN_WRITE	"Nie mogę otworzyć pliku do zapisu"
+#define STR_DEVCONF_1	"Konfiguracja"
+#define STR_DEVCONF_2	"Urządzenie:"
+
+
+/* UI dialog: About (3200.) */
+#define STR_ABOUT	"O VARCem.."
+#define  STR_3201	"Autorzy:"
+#define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker i inni.\nOparte na wcześniejszych pracacch, takich, jak 86Box, PCem, MAME, DOSbox i Qemu."
+#define  STR_3203	"Wypuszczono pod 3-klauzulową licencją BSD, oraz Ogólną Publiczną Licencją GNU (w wersji 2-giej lub wyższej) dla istniejącego, zaimportowanego kodu pochodzącego z innych projektów."
+#define  STR_3204	"Zobacz LICENSE.txt po więcej informacji."
+
+/* UI dialog: Localization (3210.) */
+#define STR_LOCALIZE	"Tłumaczenie"
+#define  STR_3211	"Tłumaczenia z angielskiego do tych oto języków przekazane przez:"
+
+/* UI dialog: Status (3225.) */
+/* (Unused now) */
+
+/* UI dialog: Sound Gain (3250.) */
+#define STR_SNDGAIN	"Wzmocnienie dźwięku"
+#define  STR_3251	"Wzmocnienie"
+
+/* UI dialog: New Image (3275.) */
+#define STR_NEWIMG	"Nowy obraz dyskietki"
+#define  STR_3276	"Rozmiar dysku:"
+#define  STR_3277	"Tryb RPM:"
+#define  STR_3278	"Perfekcyjne RPM"
+#define  STR_3279	"1% poniżej perfekcyjnego RPM"
+#define  STR_3280	"1.5% poniżej perfekcyjnego RPM"
+#define  STR_3281	"2% poniżej perfekcyjnego RPM"
+#define  STR_3282	"160 KB"
+#define  STR_3283	"180 KB"
+#define  STR_3284	"320 KB"
+#define  STR_3285	"360 KB"
+#define  STR_3286	"640 KB"
+#define  STR_3287	"720 KB"
+#define  STR_3288	"1.2 MB"
+#define  STR_3289	"1.25 MB"
+#define  STR_3290	"1.44 MB"
+#define  STR_3291	"DMF (klaster o rozmiarze 1024)"
+#define  STR_3292	"DMF (klaster o rozmiarze 2048)"
+#define  STR_3293	"2.88 MB"
+#define  STR_3294	"ZIP 100MB"
+#define  STR_3295	"ZIP 250MB"
+
+/* UI dialog: Settings (3300.) */
+#define STR_SETTINGS	"Ustawienia"
+#define STR_3310	"Typ komputera"
+#define STR_3311	"Ekran"
+#define STR_3312	"Urządzenia wejścia"
+#define STR_3313	"Dźwięk"
+#define STR_3314	"Sieć"
+#define STR_3315	"Porty (COM & LPT)"
+#define STR_3316	"Inne urządzenia peryferyjne"
+#define STR_3317	"Dyski twarde"
+#define STR_3318	"Dyski elastyczne"
+#define STR_3319	"Inne urządzenia wymienne"
+
+/* UI dialog: Settings (Machine, 3325.) */
+#define  STR_3325	"Typ komputera:"
+#define  STR_3326	"Rodzaj mikroprocesora:"
+#define  STR_3327	"Mikroprocesor:"
+#define  STR_3328	"Czasy oczekiwania:"
+#define  STR_3329	"Pamięć:"
+#define  STR_3330	"MB"
+#define  STR_3331	"Synchronizacja czasu:"
+#define  STR_3332	"Włącz jednostkę zmiennoprzecinkową"
+#define  STR_3333	"Dynamiczny rekompilator"
+#define  STR_3334	"KB"
+#define  STR_3335	"Domyślne"
+#define  STR_3336	"Wybrano (UTC)"
+
+/* UI dialog: Settings (Video, 3350.) */
+#define  STR_3350	"Wideo:"
+#define  STR_3351	"Akcelerator serii Voodoo"
+
+/* UI dialog: Settings (Input, 3375.) */
+#define  STR_3375	"Mysz:"
+#define  STR_3376	"Joystick:"
+#define  STR_3377	"1-wszy Joystick"
+#define  STR_3378	"2-gi Joystick"
+#define  STR_3379	"3-ci Joystick"
+#define  STR_3380	"4-ty Joystick"
+
+/* UI dialog: Settings (Sound, 3400.) */
+#define  STR_3400	"Karta dźwiękowa:"
+#define  STR_3401	"Urządzenie wyjścia MIDI:"
+#define  STR_3402	"Samodzielne MPU-401"
+#define  STR_3403	"Użyj Nuked OPL"
+#define  STR_3404	"Użyj dźwięku FLOAT32"
+
+/* UI dialog: Settings (Network, 3425.) */
+#define  STR_3425	"Typ sieci:"
+#define  STR_3426	"Urządzenie PCap:"
+#define  STR_3427	"Kontroler sieci:"
+
+/* UI dialog: Settings (Ports, 3450.) */
+#define  STR_3450	"Game port"
+#define  STR_3451	"1-wszy port równoległy"
+#define  STR_3452	"2-gi port równoległy"
+#define  STR_3453	"3-ci port równoległy"
+#define  STR_3454	"1-wszy port szeregowy"
+#define  STR_3455	"2-gi port szeregowy"
+
+/* UI dialog: Settings (Other Devices, 3475.) */
+#define  STR_3475	"Kontroler SCSI:"
+#define  STR_3476	"Kontroler dysku twardego:"
+#define  STR_3477	"Trzecie IDE"
+#define  STR_3478	"Czwarte IDE"
+#define  STR_3479	"karta ISABugger"
+#define  STR_3480	"Karta rozszerzenia pamięci na złącze ISA"
+#define  STR_3481	"Karta zegara czasu rzeczywistego na złącze ISA"
+
+/* UI dialog: Settings (Hard Disks, 3500.) */
+#define  STR_3500	"Dyski twarde:"
+#define  STR_3501	"&Nowy.."
+#define  STR_3502	"&Istniejący.."
+#define  STR_3503	"&Usuń"
+#define  STR_3504	"Magistrala"
+#define  STR_3505	"Pliki"
+#define  STR_3506	"C"
+#define  STR_3507	"H"
+#define  STR_3508	"S"
+#define  STR_3509	"MB"
+#define  STR_3510	"MB (CHS: %u, %u, %u)"
+#define  STR_3511	"Własne..."
+#define  STR_3512	"Własne (duże)..."
+#define  STR_3515	"ST506"
+#define  STR_3516	"ESDI"
+#define  STR_3517	"IDE"
+#define  STR_3518	"SCSI"
+#define  STR_3519	"USB"
+
+/* UI dialog: Settings (Add Hard Disk, 3525.) */
+#define  STR_3525	"Dodaj dysk twardy"
+#define  STR_3526	"Dodaj nowy dysk twardy"
+#define  STR_3527	"Dodaj istniejący dysk twardy"
+#define  STR_3528	"Cylindry:"
+#define  STR_3529	"Głowice:"
+#define  STR_3530	"Sektory:"
+#define  STR_3531	"Rozmiar (MB):"
+#define  STR_3532	"Typ:"
+#define  STR_3533	"Próbujesz stworzyć obraz dysku w formacie HDi większy, niż 4 GB"
+#define  STR_3534	"Próbuję stworzyć przeogromny obraz dysku twardego"
+#define  STR_3535	"Obrazy typów HDI lub HDX z rozmiarem sektora innym, niż 512 bajtów nie są wspierane"
+#define  STR_3536	"Obrazy dysków twardych\0*.hd?;*.im?;*.vhd\0Wszystkie pliki\0*.*\0"
+#define  STR_3537	"pamiętaj o sformatowaniu i spartycjonowaniu nowego dysku"
+
+/* UI dialog: Settings (Floppy Drives, 3550.) */
+#define  STR_3550	"Napędy dysków elastycznych:"
+#define  STR_3551	"Typ:"
+#define  STR_3552	"Synchronizacja trybu Turbo"
+#define  STR_3553	"Sprawdź BPB"
+#define  STR_3554	"Turbo"
+#define  STR_3555	"Sprawdź BPB"
+
+/* UI dialog: Settings (Removable Devices, 3575.) */
+#define  STR_3575	"Napędy CD-ROM:"
+#define  STR_3576	"Prędkość:"
+#define  STR_3577	"Napędy ZIP 150MB:"
+#define  STR_3578	"Napędy ZIP 250MB"
+#define  STR_3579	"Prędkość"
+#define  STR_3580	"ATAPI"
+#define  STR_3581	"SCSI"
+#define  STR_3582	"USB"
+
+
+/* UI: Status Bar (3900.) */
+#define STR_3900	"(pusty)"
+#define STR_3901	"(napęd hosta %c:)"
+#define STR_3902	" [Zabezpieczony przed zapisem]"
+#define STR_3903	" [Tylko do odczytu]"
+#define STR_3904	"&Nowy obraz.."
+#define STR_3905	"Wczytaj &obraz.."
+#define STR_3906	"&Wczytaj &ponownie poprzedni obraz"
+#define STR_3907	"&Wysuń"
+#define STR_3908	"Powiadom o &zmianie dysku"
+
+#define STR_3910	"Dyskietka %i (%s): %ls"
+#define STR_3911	"Wszystkie obrazy\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Zaawansowane obrazy sektorów\0*.imd;*.json;*.td0\0Podstawowe obrazy sektorów\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Obrazy powierzchni\0*.86f\0Wszystkie pliki\0*.*\0"
+#define STR_3912	"Wszystkie pliki\0*.86f;*.ddi;*.dsk;*.flp;*.im?;*.*fd?\0Podstawowe obrazy sektorów\0*.ddi;*.dsk;*.flp;*.im?;*.img;*.*fd?\0Obrazy powierzchni\0*.86f\0"
+#define STR_3913	"Obrazy powierzchni\0*.86f\0"
+#define STR_3914	"Wyeksportuj do &86F..."
+
+#define STR_3920	"CD-ROM %i (%ls): %ls"
+#define STR_3921	"Napęd CD/DVD hosta (%c:)"
+#define STR_3922	"Obrazy CD-ROM\0*.iso;*.cue\0Wszystkie pliki (*.*)\0*.*\0"
+#define STR_3923	"Wy&cisz"
+
+#define STR_3930	"Dysk %i (%ls): %ls"
+
+#define STR_3950	"ZIP%03i %i (%ls): %ls"
+#define STR_3951	"Obrazy dyskietek ZIP\0*.im?;*.zdi\0Wszystkie pliki\0*.*\0"
+#define STR_3952	"Obrazy dyskietek ZIP\0*.im?;*.zdi\0"
+#define STR_3960	"Sieć (%s)"
+#define STR_3970	"Dźwięk (%s)"
+
+
+/* UI menu: Action (4000.) */
+#define STR_ACTION	"&Akcja"
+#define  STR_4001	"&Twardy reset"
+#define  STR_4002	"&Ctrl+Alt+Del"
+#define  STR_4003	"Wyślij Ctrl+Alt+&Esc"
+#define  STR_4004	"Wyślij Ctrl+Alt+&Break"
+#define  STR_4005	"&Pauza"
+#define  STR_4006	"&Wyjdź"
+
+
+/* UI menu: View (4010.) */
+#define STR_VIEW	"&Podejrzyj"
+#define  STR_4011	"&Skalowalne okno"
+#define  STR_4012	"P&amiętaj rozmiar i pozycję"
+#define  STR_4013	"&Pełny ekran\tCtrl+Alt+PageUP"
+#define  STR_4014	"P&rawy CTRL jest lewym ALT-em"
+
+/* UI menu: View > Renderer (4020.) */
+#define  STR_4020	"Urzą&dzenie renderowania"
+
+/* UI menu: View > Window Scale Factor (4030.) */
+#define  STR_4030	"&Poziom wyskalowania ekranu"
+#define   STR_4031	"&0.5x"
+#define   STR_4032	"&1x"
+#define   STR_4033	"1.&5x"
+#define   STR_4034	"&2x"
+
+/* UI menu: View > Fullscreen Stretch Mode (4040.) */
+#define  STR_4040	"Tryb r&ozciągnięcia na pełnym ekranie"
+#define   STR_4041	"Rozci&ągnięcie na pełen ekran"
+#define   STR_4042	"&4:3"
+#define   STR_4043	"&Kwadratowe piksele"
+#define   STR_4044	"&Skala w liczbach całkowitych"
+#define   STR_4045	"&Utrzymuj rozmiar"
+
+
+/* UI menu: Display (4050.) */
+#define STR_DISPLAY	"&Ekran"
+#define  STR_4051	"&Obrócony ekran"
+#define  STR_4052	"Włącz &overscan"
+#define  STR_4053	"W&ymuś proporcje obrazu 4:3"
+#define  STR_4054	"Zmień &kontrast monitora monochromatycznego"
+
+/* UI menu: Display > Display Type (4060.) */
+#define  STR_DISPTYPE	"&Typ ekranu"
+#define   STR_4061	"Monitor &kolorowy RGB"
+#define   STR_4062	"Monitor w &odcieniach szarości"
+#define   STR_4063	"Monitor &bursztynowy"
+#define   STR_4064	"Monitor &zielony"
+#define   STR_4065	"Monitor &biały"
+
+/* UI menu: Display > Grayscale Conversion Type (4070.) */
+#define  STR_GRAYSCALE	"Typ konwersji w odcienie sz&arości"
+#define   STR_4071	"BT&601 (NTSC/PAL)"
+#define   STR_4072	"BT&709 (HDTV)"
+#define   STR_4073	"&Przeciętny"
+
+
+/* UI menu: Tools (4080.) */
+#define STR_TOOLS	"&Narzędzia"
+#define  STR_4081	"&Ustawienia"
+#define  STR_4082	"&Język"
+#define	 STR_4083	"&Logowanie"
+#define  STR_4084	"Punkt przerwania logowania"
+#define  STR_4085	"Przełącz logowanie %s"
+#define  STR_4086	"Wczytaj &konfigurację"
+#define  STR_4087	"&Zapisz konfigurację"
+#define  STR_4088	"Zrzut &ekranu"
+
+
+/* UI menu: Help (4090.) */
+#define STR_HELP	"&Pomoc"
+#define  STR_4091	"&O VARCem"
+
+
+/* End of file. */

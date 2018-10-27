@@ -1,0 +1,85 @@
+**** Additional strings for the Installer itself ****
+**** (keep the > lines, add translation after :  ****
+
+
+> Wybierz język instalatora:
+:
+
+> Pulpit (w sensie: "Ikony Pulpitu")
+:
+
+
+> Wykonuję operacje usuwania plików
+:
+
+> Przygotowuję pliki do usunięcia
+:
+
+> Odtwarzam usunięte pliki
+:
+
+> Wypakowywanie plików z archiwum
+:
+
+> Wykonuję usunięcie pliku
+:
+
+> Przygotowywuję plik
+:
+
+> Odtwarzam plik
+:
+
+> Ten pakiet może być uruchomiony tylko z poziomu bootstrappera.
+:
+
+
+> Kilka narzędzi linii komend
+:
+
+> Zestaw przykładowych konfiguracji na początek.
+:
+
+> Zwyczajny klon Turbo-XT.
+:
+
+> Oryginalny IBM-PC.
+:
+
+> Nowy model IBM-PC
+:
+
+> Fonty Segoe UI dla Windows XP
+:
+
+
+> Dodatkowe pliki tłumaczeń.
+:
+
+> Twoje maszyny wirtualne.
+:
+
+> Pliki runtime dla syntezatora MIDI FluidSynth
+:
+
+> Różne pliki runtime wymagane przez aplikację.
+:
+
+> Obrazy ROM BIOS-ów emulowanych maszyn i urządzeń.
+:
+
+> Pliki runtime wymagane przez renderer SDL2.
+:
+
+> Aplikacja VARCem we własnej osobie
+:
+
+> Umowa Licencyjna
+:
+
+> Instalator [ProductName].
+:
+
+> Zespół VARCem
+:
+

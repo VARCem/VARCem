@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.9	2018/10/25
+ * Version:	@(#)scsi_cdrom.c	1.0.10	2018/10/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -334,12 +334,8 @@ static const mode_sense_pages_t mode_sense_pages_changeable = {
     { GPMODE_CAPABILITIES_PAGE, 0x12, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 }   };
 
-uint8_t scsi_cdrom_read_capacity_cdb[12] = {0x25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-
-static void	command_complete(scsi_cdrom_t *dev);
-static void	mode_sense_load(scsi_cdrom_t *dev);
-static void	scsi_cdrom_callback(void *p);
+static void	do_callback(void *p);
 
 
 #ifdef _LOGGING
@@ -464,33 +460,25 @@ static void
 mode_sense_load(scsi_cdrom_t *dev)
 {
     wchar_t temp[512];
+    const mode_sense_pages_t *ptr;
     FILE *fp;
-    int i;
 
-    memset(&dev->ms_pages_saved, 0, sizeof(mode_sense_pages_t));
-    for (i = 0; i < 0x3f; i++) {
-	if (mode_sense_pages_default.pages[i][1] != 0) {
-		if (dev->drv->bus_type == CDROM_BUS_SCSI)
-			memcpy(dev->ms_pages_saved.pages[i],
-			       mode_sense_pages_default_scsi.pages[i],
-			       mode_sense_pages_default_scsi.pages[i][1] + 2);
-		else
-			memcpy(dev->ms_pages_saved.pages[i],
-			       mode_sense_pages_default.pages[i],
-			       mode_sense_pages_default.pages[i][1] + 2);
-	}
-    }
     memset(temp, 0, sizeof(temp));
-    if (dev->drv->bus_type == CDROM_BUS_SCSI)
+    if (dev->drv->bus_type == CDROM_BUS_SCSI) {
 	swprintf(temp, sizeof_w(temp),
 		 L"scsi_cdrom_%02i_mode_sense_bin", dev->id);
-    else
+	ptr = &mode_sense_pages_default_scsi;
+    } else {
 	swprintf(temp, sizeof_w(temp),
 		 L"cdrom_%02i_mode_sense_bin", dev->id);
+	ptr = &mode_sense_pages_default;
+    }
+
+    memcpy(&dev->ms_pages_saved, ptr, sizeof(mode_sense_pages_t));
 
     fp = plat_fopen(nvr_path(temp), L"rb");
     if (fp != NULL) {
-	(void)fread(dev->ms_pages_saved.pages[GPMODE_CDROM_AUDIO_PAGE],
+	(void)fread(&dev->ms_pages_saved.pages[GPMODE_CDROM_AUDIO_PAGE],
 		    1, 0x10, fp);
 	(void)fclose(fp);
     }
@@ -513,7 +501,7 @@ mode_sense_save(scsi_cdrom_t *dev)
 
     fp = plat_fopen(nvr_path(temp), L"wb");
     if (fp != NULL) {
-	(void)fwrite(dev->ms_pages_saved.pages[GPMODE_CDROM_AUDIO_PAGE],
+	(void)fwrite(&dev->ms_pages_saved.pages[GPMODE_CDROM_AUDIO_PAGE],
 		     1, 0x10, fp);
 	(void)fclose(fp);
     }
@@ -536,6 +524,7 @@ read_capacity(void *priv, uint8_t *cdb, uint8_t *buffer, uint32_t *len)
     buffer[2] = (size >> 8) & 0xff;
     buffer[3] = size & 0xff;
     buffer[6] = 8;		/* 2048 = 0x0800 */
+
     *len = 8;
 
     return 1;
@@ -716,7 +705,7 @@ command_common(scsi_cdrom_t *dev)
 	  dev->id, cdrom_speeds[dev->drv->cur_speed].speed);
 
     if (dev->packet_status == PHASE_COMPLETE) {
-	scsi_cdrom_callback(dev);
+	do_callback(dev);
 	dev->callback = 0LL;
     } else {
 	switch(dev->current_cdb[0]) {
@@ -1331,7 +1320,7 @@ read_dvd_structure(scsi_cdrom_t *dev, int format, const uint8_t *packet, uint8_t
 
 
 static void
-scsi_cdrom_insert(void *p)
+do_insert(void *p)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *)p;
 
@@ -1440,7 +1429,7 @@ skip_ready_check:
 
 
 static void
-scsi_cdrom_rezero(scsi_cdrom_t *dev)
+do_rezero(scsi_cdrom_t *dev)
 {
     dev->sector_pos = dev->sector_len = 0;
 
@@ -1449,14 +1438,14 @@ scsi_cdrom_rezero(scsi_cdrom_t *dev)
 
 
 static void
-scsi_cdrom_reset(void *p)
+do_reset(void *p)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *) p;
 
     if (dev == NULL)
 	return;
 
-    scsi_cdrom_rezero(dev);
+    do_rezero(dev);
 
     dev->status = 0;
     dev->callback = 0LL;
@@ -1516,7 +1505,7 @@ request_sense(scsi_cdrom_t *dev, uint8_t *buffer, uint8_t alloc_length)
 
 
 static void
-request_sense_for_scsi(void *p, uint8_t *buffer, uint8_t alloc_length)
+request_sense_scsi(void *p, uint8_t *buffer, uint8_t alloc_length)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *)p;
     int ready = 0;
@@ -1571,8 +1560,8 @@ buf_free(scsi_cdrom_t *dev)
 }
 
 
-void
-scsi_cdrom_command(void *p, uint8_t *cdb)
+static void
+do_command(void *p, uint8_t *cdb)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *) p;
     int len, max_len, used_len, alloc_length, msf;
@@ -2571,7 +2560,8 @@ atapi_out:
 		break;
     }
 
-    DBGLOG(1, "CD-ROM %i: Phase: %02X, request length: %i\n", dev->phase, dev->request_length);
+    DBGLOG(1, "CD-ROM %i: Phase: %02X, request length: %i\n",
+	   dev->phase, dev->request_length);
 
     if (atapi_phase_to_scsi(dev) == SCSI_PHASE_STATUS)
 	buf_free(dev);
@@ -2702,7 +2692,7 @@ pio_request(scsi_cdrom_t *dev, uint8_t out)
 
 	dev->status = BUSY_STAT;
 	dev->phase = 1;
-	scsi_cdrom_callback(dev);
+	do_callback(dev);
 	dev->callback = 0LL;
 	set_callback(dev);
 
@@ -2745,7 +2735,8 @@ read_from_scsi_dma(uint8_t scsi_id, uint8_t scsi_lun)
     if (dev == NULL)
 	return 0;
 
-    DEBUG("Reading from SCSI DMA: SCSI ID %02X, init length %i\n", scsi_id, *BufLen);
+    DEBUG("Reading from SCSI DMA: SCSI ID %02X, init length %i\n",
+	  scsi_id, *BufLen);
     memcpy(dev->buffer, scsi_devices[scsi_id][scsi_lun].cmd_buffer, *BufLen);
 
     return 1;
@@ -2858,7 +2849,7 @@ write_to_dma(scsi_cdrom_t *dev)
 
 
 static void
-scsi_cdrom_callback(void *priv)
+do_callback(void *priv)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *)priv;
     int ret;
@@ -2875,7 +2866,7 @@ scsi_cdrom_callback(void *priv)
 		DEBUG("CD-ROM %i: PHASE_COMMAND\n", dev->id);
 		dev->status = BUSY_STAT | (dev->status & ERR_STAT);
 		memcpy(dev->atapi_cdb, dev->buffer, 12);
-		scsi_cdrom_command(dev, dev->atapi_cdb);
+		do_command(dev, dev->atapi_cdb);
 		return;
 
 	case PHASE_COMPLETE:
@@ -3059,7 +3050,7 @@ packet_write(void *priv, uint32_t val, int length)
 		dev->status = BUSY_STAT;
 		dev->packet_status = PHASE_COMMAND;
 		timer_process();
-		scsi_cdrom_callback(dev);
+		do_callback(dev);
 		timer_update_outstanding();
 	}
     }
@@ -3067,7 +3058,7 @@ packet_write(void *priv, uint32_t val, int length)
 
 
 static void
-scsi_cdrom_close(void *priv)
+do_close(void *priv)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *)priv;
 
@@ -3077,7 +3068,7 @@ scsi_cdrom_close(void *priv)
 
 
 static void
-scsi_cdrom_stop(void *priv)
+do_stop(void *priv)
 {
     scsi_cdrom_t *dev = (scsi_cdrom_t *)priv;
 
@@ -3150,7 +3141,7 @@ get_timings(int ide_has_dma, int type)
  *        maybe use a new function cdrom_set_ident() for that? --FvK
  */
 static void
-scsi_cdrom_identify(void *priv, int ide_has_dma)
+do_identify(void *priv, int ide_has_dma)
 {
     ide_t *ide = (ide_t *)priv;
 #ifdef _LOGGING
@@ -3184,10 +3175,10 @@ scsi_cdrom_identify(void *priv, int ide_has_dma)
 
 
 static void
-scsi_cdrom_init(scsi_cdrom_t *dev)
+do_init(scsi_cdrom_t *dev)
 {
     /* Do a reset (which will also rezero it). */
-    scsi_cdrom_reset(dev);
+    do_reset(dev);
 
     /* Configure the drive. */
     dev->requested_blocks = 1;
@@ -3241,23 +3232,23 @@ scsi_cdrom_drive_reset(int c)
     dev->drv = drv;
 
     /* Link in our local methods. */
-    drv->insert = scsi_cdrom_insert;
+    drv->insert = do_insert;
     drv->get_volume = get_volume;
     drv->get_channel = get_channel;
-    drv->close = scsi_cdrom_close;
+    drv->close = do_close;
 
-    scsi_cdrom_init(dev);
+    do_init(dev);
 
     if (drv->bus_type == CDROM_BUS_SCSI) {
 	/* SCSI CD-ROM, attach to the SCSI bus. */
 	sd = &scsi_devices[drv->bus_id.scsi.id][drv->bus_id.scsi.lun];
 
 	sd->p = dev;
-	sd->command = scsi_cdrom_command;
-	sd->callback = scsi_cdrom_callback;
+	sd->command = do_command;
+	sd->callback = do_callback;
 	sd->err_stat_to_scsi = err_stat_to_scsi;
-	sd->request_sense = request_sense_for_scsi;
-	sd->reset = scsi_cdrom_reset;
+	sd->request_sense = request_sense_scsi;
+	sd->reset = do_reset;
 	sd->read_capacity = read_capacity;
 	sd->type = SCSI_REMOVABLE_CDROM;
 
@@ -3273,13 +3264,13 @@ scsi_cdrom_drive_reset(int c)
 		id->p = dev;
 		id->get_max = get_max;
 		id->get_timings = get_timings;
-		id->identify = scsi_cdrom_identify;
+		id->identify = do_identify;
 		id->set_signature = set_signature;
 		id->packet_write = packet_write;
 		id->packet_read = packet_read;
-		id->stop = scsi_cdrom_stop;
-		id->packet_callback = scsi_cdrom_callback;
-		id->device_reset = scsi_cdrom_reset;
+		id->stop = do_stop;
+		id->packet_callback = do_callback;
+		id->device_reset = do_reset;
 		id->interrupt_drq = 0;
 
 		ide_atapi_attach(id);

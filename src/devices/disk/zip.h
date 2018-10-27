@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.h	1.0.11	2018/10/26
+ * Version:	@(#)zip.h	1.0.12	2018/10/26
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -134,7 +134,6 @@ extern void	zip_reset_bus(int bus);
 extern int	zip_string_to_bus(const char *str);
 extern const char *zip_bus_to_string(int bus);
 
-extern void	zip_reset(void *p);
 extern int	zip_load(zip_t *dev, const wchar_t *fn);
 extern void	zip_close(void);
 
