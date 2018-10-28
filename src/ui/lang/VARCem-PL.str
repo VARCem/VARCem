@@ -8,12 +8,12 @@
  *
  *		String definitions for "Polish (Poland)" language.
  *
- * Version:	@(#)VARCem-PL.str	1.0.1	2018/10/27
+ * Version:	@(#)VARCem-PL.str	1.0.2	2018/10/27
  *
- * Authors:	Ola Hughson, <ohughson@varcem.com>
+ * Authors:	Ola Trzeciak, <otrzeciak@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018, Ola Hughson.
+ *		Copyright 2018, Ola Trzeciak.
  *		Copyright 2017,2018 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -48,9 +48,9 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,1
-#define STR_AUTHOR	"Ola Hughson"
-#define STR_EMAIL	"ohughson@varcem@gmail.com"
+#define STR_VERSION	1,0,2
+#define STR_AUTHOR	"Ola Trzeciak"
+#define STR_EMAIL	"otrzeciak@varcem@gmail.com"
 #define STR_NAME	"VARCem"
 #define STR_TITLE	"Virtual ARchaeological Computer EMulator"
 
@@ -67,7 +67,7 @@
 #define STR_2201	"Nie mogę odczytać surowych danych wejścia!"
 #define STR_2202	"PCap jest nieustawiony, gdyż nie można go zinicjalizować"
 #define STR_2203	"Nie znaleziono urządzeń typu PCap"
-#define STR_2204	"Invalid PCap device"
+#define STR_2204	"Niepoprawne urządzenie PCap"
 #define STR_2205	"Nie mogę zinicjalizować %s, sprawdź, czy posiadasz bibliotekę '%s' w systemie lub katalogu programu!"
 
 
@@ -132,7 +132,7 @@
 /* UI dialog: About (3200.) */
 #define STR_ABOUT	"O VARCem.."
 #define  STR_3201	"Autorzy:"
-#define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker i inni.\nOparte na wcześniejszych pracacch, takich, jak 86Box, PCem, MAME, DOSbox i Qemu."
+#define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker i inni.\nOparte na wcześniejszych pracach, takich, jak 86Box, PCem, MAME, DOSbox i Qemu."
 #define  STR_3203	"Wypuszczono pod 3-klauzulową licencją BSD, oraz Ogólną Publiczną Licencją GNU (w wersji 2-giej lub wyższej) dla istniejącego, zaimportowanego kodu pochodzącego z innych projektów."
 #define  STR_3204	"Zobacz LICENSE.txt po więcej informacji."
 
