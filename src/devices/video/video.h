@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.21	2018/10/24
+ * Version:	@(#)video.h	1.0.22	2018/10/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -314,6 +314,7 @@ extern const device_t	*video_card_getdevice(int card);
 #endif
 
 extern void		video_setblit(void(*blit)(int,int,int,int,int,int));
+extern void		video_blend(int x, int y);
 extern void		video_blit_memtoscreen(int x, int y, int y1, int y2, int w, int h);
 extern void		video_blit_memtoscreen_8(int x, int y, int y1, int y2, int w, int h);
 extern void		video_blit_complete(void);

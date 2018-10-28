@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.8	2018/10/16
+ * Version:	@(#)vid_hercules.c	1.0.9	2018/10/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -79,8 +79,9 @@ typedef struct {
 		cursoron;
     int		dispon,
 		blink;
-    int64_t	vsynctime;
     int		vadj;
+    int		blend;
+    int64_t	vsynctime;
 
     int		cols[256][2][2];
 
@@ -240,8 +241,15 @@ hercules_poll(void *priv)
 			for (x = 0; x < dev->crtc[1]; x++) {
 				dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ca] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + ca + 1];
 				dev->ma++;
-				for (c = 0; c < 16; c++)
+				for (c = 0; c < 16; c++) {
 				    buffer->line[dev->displine][(x << 4) + c] = (dat & (32768 >> c)) ? 7 : 0;
+
+				}
+
+				if (dev->blend) {
+					for (c = 0; c < 16; c += 8)
+						video_blend((x << 4) + c, dev->displine);
+				}
 			}
 		} else {
 			for (x = 0; x < dev->crtc[1]; x++) {
@@ -390,6 +398,8 @@ hercules_init(const device_t *info)
     dev = (hercules_t *)mem_alloc(sizeof(hercules_t));
     memset(dev, 0x00, sizeof(hercules_t));
 
+    dev->blend = device_get_config_int("blend");
+
     dev->vram = (uint8_t *)mem_alloc(0x10000);
 
     timer_add(hercules_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
@@ -487,6 +497,9 @@ static const device_config_t hercules_config[] = {
 			""
 		}
 	}
+    },
+    {
+	"blend", "Blend", CONFIG_BINARY, "", 1
     },
     {
 	"", "", -1

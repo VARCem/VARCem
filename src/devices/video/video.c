@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.21	2018/10/24
+ * Version:	@(#)video.c	1.0.22	2018/10/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -402,6 +402,7 @@ static const uint32_t	shade[5][256] = {
 	0xfcf9e9, 0xfdfaea, 0xfefbeb, 0xfffcec
     }
 };
+static uint32_t	cga_2_table[16];
 
 
 static struct {
@@ -488,6 +489,69 @@ video_blit_memtoscreen(int x, int y, int y1, int y2, int w, int h)
     blit_data.h = h;
 
     thread_set_event(blit_data.wake_blit_thread);
+}
+
+
+static uint8_t
+pixels8(uint8_t *pixels)
+{
+    uint8_t temp = 0;
+    int i;
+
+    for (i = 0; i < 8; i++)
+	temp |= (!!*(pixels + i) << (i ^ 7));
+
+    return temp;
+}
+
+
+static uint32_t
+pixel_to_color(uint8_t *pixels32, uint8_t pos)
+{
+    uint32_t temp;
+
+    temp = *(pixels32 + pos) & 0x03;
+
+    switch (temp) {
+	case 0:
+		return 0;
+
+	case 1:
+		return 0x07;
+
+	case 2:
+		return 0x0f;
+
+	default:
+		break;
+    }
+
+    return 0;
+}
+
+
+void
+video_blend(int x, int y)
+{
+    static unsigned int carry = 0;
+    uint32_t pixels32_1, pixels32_2;
+    unsigned int val1, val2;
+    int xx;
+
+    if (x == 0)
+	carry = 0;
+
+    val1 = pixels8(&(buffer->line[y][x]));
+    val2 = (val1 >> 1) + carry;
+    carry = (val1 & 1) << 7;
+
+    pixels32_1 = cga_2_table[val1 >> 4] + cga_2_table[val2 >> 4];
+    pixels32_2 = cga_2_table[val1 & 0xf] + cga_2_table[val2 & 0xf];
+
+    for (xx = 0; xx < 4; xx++) {
+	buffer->line[y][x + xx] = pixel_to_color((uint8_t *)&pixels32_1, xx);
+	buffer->line[y][x + (xx | 4)] = pixel_to_color((uint8_t *)&pixels32_2, xx);
+    }
 }
 
 
@@ -665,7 +729,15 @@ video_log(int level, const char *fmt, ...)
 void
 video_init(void)
 {
+    uint8_t total[2] = { 0, 1 };
     int c, d, e;
+
+    for (c = 0; c < 16; c++) {
+	cga_2_table[c] = (total[(c >> 3) & 1] << 0 ) |
+			 (total[(c >> 2) & 1] << 8 ) |
+			 (total[(c >> 1) & 1] << 16) |
+			 (total[(c >> 0) & 1] << 24);
+    }
 
     /* Initialize video type and timing. */
     video_inform(VID_TYPE_DFLT, NULL);

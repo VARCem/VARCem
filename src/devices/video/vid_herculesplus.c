@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.10	2018/10/16
+ * Version:	@(#)vid_hercules_plus.c	1.0.11	2018/10/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,8 +100,9 @@ typedef struct {
     uint16_t	ma, maback;
     int		con, coff, cursoron;
     int		dispon, blink;
-    int64_t	vsynctime;
     int		vadj;
+    int		blend;
+    int64_t	vsynctime;
 
     int		cols[256][2][2];
 
@@ -457,7 +458,7 @@ text_line(herculesplus_t *dev, uint16_t ca)
 
 		col = dev->cols[attr][0][1];
 		for (c = 0; c < cw; c++)
-			((uint32_t *)buffer32->line[dev->displine])[x * cw + c] = col;
+			buffer->line[dev->displine][x * cw + c] = col;
 	}
     }
 }
@@ -483,7 +484,12 @@ graphics_line(herculesplus_t *dev)
 	for (c = 0; c < 16; c++) {
 		val >>= 1;
 
-		((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c] = (val & 1) ? 7 : 0;
+		buffer->line[dev->displine][(x << 4) + c] = (val & 1) ? 7 : 0;
+	}
+
+	if (dev->blend) {
+		for (c = 0; c < 16; c += 8)
+			video_blend((x << 4) + c, dev->displine);
 	}
     }
 }
@@ -556,8 +562,10 @@ herculesplus_poll(void *priv)
 		if (oldvc == dev->crtc[4]) {
 			dev->vc = 0;
 			dev->vadj = dev->crtc[5];
-			if (!dev->vadj) dev->dispon=1;
-			if (!dev->vadj) dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
+			if (! dev->vadj)
+				dev->dispon = 1;
+			if (! dev->vadj)
+				dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
 			if ((dev->crtc[10] & 0x60) == 0x20)
 				dev->cursoron = 0;
 			else
@@ -583,7 +591,7 @@ herculesplus_poll(void *priv)
 					if (video_force_resize_get())
 						video_force_resize_set(0);
 				}
-				video_blit_memtoscreen(0, dev->firstline, 0, dev->lastline - dev->firstline, xsize, dev->lastline - dev->firstline);
+				video_blit_memtoscreen_8(0, dev->firstline, 0, dev->lastline - dev->firstline, xsize, dev->lastline - dev->firstline);
 				frames++;
 				if ((dev->ctrl & HERCULESPLUS_CTRL_GRAPH) && (dev->ctrl2 & HERCULESPLUS_CTRL2_GRAPH)) {
 					video_res_x = dev->crtc[1] * 16;
@@ -619,6 +627,13 @@ herculesplus_init(const device_t *info)
 
     dev = (herculesplus_t *)mem_alloc(sizeof(herculesplus_t));
     memset(dev, 0, sizeof(herculesplus_t));
+
+    dev->blend = device_get_config_int("blend");
+
+    cga_palette = device_get_config_int("rgb_type") << 1;
+    if (cga_palette > 6)
+	cga_palette = 0;
+    cgapal_rebuild();
 
     dev->vram = (uint8_t *)mem_alloc(0x10000);	/* 64k VRAM */
 
@@ -690,6 +705,37 @@ speed_changed(void *priv)
 }
 
 
+
+static const device_config_t herculesplus_config[] = {
+    {
+	"rgb_type", "Display type", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"Default", 0
+		},
+		{
+			"Green", 1
+		},
+		{
+			"Amber", 2
+		},
+		{
+			"Gray", 3
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"blend", "Blend", CONFIG_BINARY, "", 1
+    },
+    {
+	"", "", -1
+    }
+};
+
+
 static const video_timings_t herculesplus_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t herculesplus_device = {
@@ -701,5 +747,5 @@ const device_t herculesplus_device = {
     speed_changed,
     NULL,
     &herculesplus_timings,
-    NULL
+    herculesplus_config
 };
