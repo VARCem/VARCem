@@ -8,7 +8,7 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.7	2018/10/05
+ * Version:	@(#)net_pcap.c	1.0.8	2018/10/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -53,14 +53,18 @@
 # define WIN32
 #endif
 #include <pcap/pcap.h>
-#ifdef ERROR
-# undef ERROR
-#endif
 #define dbglog network_log
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "network.h"
+
+
+#ifdef _WIN32
+# define PCAP_DLL_PATH	"wpcap.dll"
+#else
+# define PCAP_DLL_PATH	"libpcap.so"
+#endif
 
 
 static volatile void		*pcap_handle;	/* handle to WinPcap DLL */
@@ -71,26 +75,26 @@ static event_t			*poll_state;
 
 
 /* Pointers to the real functions. */
-static char	*const (*f_pcap_lib_version)(void);
-static int	(*f_pcap_findalldevs)(pcap_if_t **,char *);
-static void	(*f_pcap_freealldevs)(pcap_if_t *);
-static pcap_t	*(*f_pcap_open_live)(const char *,int,int,int,char *);
-static int	(*f_pcap_compile)(pcap_t *,struct bpf_program *,
+static char	*const (*PCAP_lib_version)(void);
+static int	(*PCAP_findalldevs)(pcap_if_t **,char *);
+static void	(*PCAP_freealldevs)(pcap_if_t *);
+static pcap_t	*(*PCAP_open_live)(const char *,int,int,int,char *);
+static int	(*PCAP_compile)(pcap_t *,struct bpf_program *,
 				  const char *,int,bpf_u_int32);
-static int	(*f_pcap_setfilter)(pcap_t *,struct bpf_program *);
-static u_char	*const (*f_pcap_next)(pcap_t *,struct pcap_pkthdr *);
-static int	(*f_pcap_sendpacket)(pcap_t *,const u_char *,int);
-static void	(*f_pcap_close)(pcap_t *);
+static int	(*PCAP_setfilter)(pcap_t *,struct bpf_program *);
+static u_char	*const (*PCAP_next)(pcap_t *,struct pcap_pkthdr *);
+static int	(*PCAP_sendpacket)(pcap_t *,const u_char *,int);
+static void	(*PCAP_close)(pcap_t *);
 static const dllimp_t pcap_imports[] = {
-  { "pcap_lib_version",	&f_pcap_lib_version	},
-  { "pcap_findalldevs",	&f_pcap_findalldevs	},
-  { "pcap_freealldevs",	&f_pcap_freealldevs	},
-  { "pcap_open_live",	&f_pcap_open_live	},
-  { "pcap_compile",	&f_pcap_compile		},
-  { "pcap_setfilter",	&f_pcap_setfilter	},
-  { "pcap_next",	&f_pcap_next		},
-  { "pcap_sendpacket",	&f_pcap_sendpacket	},
-  { "pcap_close",	&f_pcap_close		},
+  { "pcap_lib_version",	&PCAP_lib_version	},
+  { "pcap_findalldevs",	&PCAP_findalldevs	},
+  { "pcap_freealldevs",	&PCAP_freealldevs	},
+  { "pcap_open_live",	&PCAP_open_live		},
+  { "pcap_compile",	&PCAP_compile		},
+  { "pcap_setfilter",	&PCAP_setfilter		},
+  { "pcap_next",	&PCAP_next		},
+  { "pcap_sendpacket",	&PCAP_sendpacket	},
+  { "pcap_close",	&PCAP_close		},
   { NULL,		NULL			},
 };
 
@@ -123,7 +127,7 @@ poll_thread(void *arg)
 	if (pcap == NULL) break;
 
 	/* Wait for the next packet to arrive. */
-	data = (uint8_t *)f_pcap_next((pcap_t *)pcap, &h);
+	data = (uint8_t *)PCAP_next((pcap_t *)pcap, &h);
 	if (data != NULL) {
 		/* Received MAC. */
 		mac_cmp32[0] = *(uint32_t *)(data+6);
@@ -177,15 +181,11 @@ net_pcap_prepare(netdev_t *list)
     pcap = NULL;
 
     /* Try loading the DLL. */
-#ifdef _WIN32
-    pcap_handle = dynld_module("wpcap.dll", pcap_imports);
-#else
-    pcap_handle = dynld_module("libpcap.so", pcap_imports);
-#endif
+    pcap_handle = dynld_module(PCAP_DLL_PATH, pcap_imports);
     if (pcap_handle == NULL) return(-1);
 
     /* Retrieve the device list from the local machine */
-    if (f_pcap_findalldevs(&devlist, errbuf) == -1) {
+    if (PCAP_findalldevs(&devlist, errbuf) == -1) {
 	ERRLOG("PCAP: error in pcap_findalldevs: %s\n", errbuf);
 	return(-1);
     }
@@ -200,7 +200,7 @@ net_pcap_prepare(netdev_t *list)
     }
 
     /* Release the memory. */
-    f_pcap_freealldevs(devlist);
+    PCAP_freealldevs(devlist);
 
     return(i);
 }
@@ -223,7 +223,7 @@ net_pcap_init(void)
     if (pcap_handle == NULL) return(-1);
 
     /* Get the PCAP library name and version. */
-    strcpy(errbuf, f_pcap_lib_version());
+    strcpy(errbuf, PCAP_lib_version());
     str = strchr(errbuf, '(');
     if (str != NULL) *(str-1) = '\0';
     INFO("PCAP: initializing, %s\n", errbuf);
@@ -271,7 +271,7 @@ net_pcap_close(void)
     }
 
     /* OK, now shut down Pcap itself. */
-    f_pcap_close(pc);
+    PCAP_close(pc);
     pcap = NULL;
 
     INFO("PCAP: closed.\n");
@@ -297,11 +297,11 @@ net_pcap_reset(const netcard_t *card, uint8_t *mac)
     struct bpf_program fp;
 
     /* Open a PCAP live channel. */
-    if ((pcap = f_pcap_open_live(network_host,		/* interface name */
-				 1518,			/* max packet size */
-				 1,			/* promiscuous mode? */
-				 10,			/* timeout in msec */
-			         errbuf)) == NULL) {	/* error buffer */
+    if ((pcap = PCAP_open_live(network_host,		/* interface name */
+			       1518,			/* max packet size */
+			       1,			/* promiscuous mode? */
+			       10,			/* timeout in msec */
+			       errbuf)) == NULL) {	/* error buffer */
 	ERRLOG(" Unable to open device: %s!\n", network_host);
 	return(-1);
     }
@@ -314,15 +314,15 @@ net_pcap_reset(const netcard_t *card, uint8_t *mac)
 	"( ((ether dst ff:ff:ff:ff:ff:ff) or (ether dst %02x:%02x:%02x:%02x:%02x:%02x)) and not (ether src %02x:%02x:%02x:%02x:%02x:%02x) )",
 		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
 		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    if (f_pcap_compile((pcap_t *)pcap, &fp, filter_exp, 0, 0xffffffff) != -1) {
-	if (f_pcap_setfilter((pcap_t *)pcap, &fp) != 0) {
+    if (PCAP_compile((pcap_t *)pcap, &fp, filter_exp, 0, 0xffffffff) != -1) {
+	if (PCAP_setfilter((pcap_t *)pcap, &fp) != 0) {
 		ERRLOG("PCAP: error installing filter (%s) !\n", filter_exp);
-		f_pcap_close((pcap_t *)pcap);
+		PCAP_close((pcap_t *)pcap);
 		return(-1);
 	}
     } else {
 	ERRLOG("PCAP: could not compile filter (%s) !\n", filter_exp);
-	f_pcap_close((pcap_t *)pcap);
+	PCAP_close((pcap_t *)pcap);
 	return(-1);
     }
 
@@ -345,7 +345,7 @@ net_pcap_in(uint8_t *bufp, int len)
 
     network_busy(1);
 
-    f_pcap_sendpacket((pcap_t *)pcap, bufp, len);
+    PCAP_sendpacket((pcap_t *)pcap, bufp, len);
 
     network_busy(0);
 }

@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.10	2018/10/27
+ * Version:	@(#)scsi_cdrom.c	1.0.11	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -393,6 +393,7 @@ current_mode(scsi_cdrom_t *dev)
 }
 
 
+#if 1	/* will be moved to IDE layer */
 /* Translates ATAPI status (ERR_STAT flag) to SCSI status. */
 static int
 err_stat_to_scsi(void *priv)
@@ -404,6 +405,7 @@ err_stat_to_scsi(void *priv)
 
     return SCSI_STATUS_OK;
 }
+#endif
 
 
 /* Translates ATAPI phase (DRQ, I/O, C/D) to SCSI phase (MSG, C/D, I/O). */
@@ -2601,13 +2603,18 @@ phase_data_out(scsi_cdrom_t *dev)
 		pos = hdr_len + block_desc_len;
 
 		while(1) {
+			if (pos >= dev->current_cdb[4]) {
+				DEBUG("CD-ROM %i: Buffer has only block descriptor\n", dev->id);
+				break;
+			}
+
 			page = dev->buffer[pos] & 0x3F;
 			page_len = dev->buffer[pos + 1];
 
 			pos += 2;
 
 			if (!(mode_sense_page_flags & (1LL << ((uint64_t) page)))) {
-				DEBUG("Unimplemented page %02X\n", page);
+				DEBUG("CD-ROM %i: Unimplemented page %02X\n", dev->id, page);
 				error |= 1;
 			} else {
 				for (i = 0; i < page_len; i++) {
@@ -2618,7 +2625,7 @@ phase_data_out(scsi_cdrom_t *dev)
 						if (ch)
 							dev->ms_pages_saved.pages[page][i + 2] = val;
 						else {
-							DEBUG("Unchangeable value on position %02X on page %02X\n", i + 2, page);
+							DEBUG("CD-ROM %i: Unchangeable value on position %02X on page %02X\n", dev->id, i + 2, page);
 							error |= 1;
 						}
 					}
@@ -3246,7 +3253,9 @@ scsi_cdrom_drive_reset(int c)
 	sd->p = dev;
 	sd->command = do_command;
 	sd->callback = do_callback;
+#if 1	/* Will be moved to IDE layer */
 	sd->err_stat_to_scsi = err_stat_to_scsi;
+#endif
 	sd->request_sense = request_sense_scsi;
 	sd->reset = do_reset;
 	sd->read_capacity = read_capacity;

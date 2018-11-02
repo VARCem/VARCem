@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.64	2018/10/24
+# Version:	@(#)Makefile.mingw	1.0.66	2018/10/30
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -370,7 +370,7 @@ endif
 LIBS		:= -mwindows \
 		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
 		   -lversion -lcomctl32 -lwinmm
-LIBS		+= -lwsock32 -liphlpapi -lpsapi
+LIBS		+= -lws2_32 -lwsock32 -liphlpapi -lpsapi
 LIBS		+= -static -lstdc++ -lgcc
 #ifneq ($(X64), y)
 # LIBS		+= -Wl,--large-address-aware
@@ -667,10 +667,12 @@ SCSIOBJ		:= scsi.o \
 NETOBJ		:= network.o \
 		    net_pcap.o \
 		    net_slirp.o \
-		     bootp.o ip_icmp.o slirp_misc.o socket.o tcp_timer.o \
-		     cksum.o ip_input.o queue.o tcp_input.o debug.o \
-		     ip_output.o sbuf.o tcp_output.o udp.o if.o mbuf.o \
-		     slirp.o tcp_subr.o \
+		     slirp.o slirp_misc.o \
+		     cksum.o debug.o if.o mbuf.o queue.o sbuf.o socket.o \
+		     arp.o bootp.o  \
+		     ip_icmp.o ip_input.o ip_output.o \
+		     tcp_input.o tcp_output.o tcp_subr.o tcp_timer.o \
+		     udp.o \
 		    net_dp8390.o \
 		    net_ne2000.o net_wd80x3.o net_3c503.o
 

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.51	2018/10/24
+# Version:	@(#)Makefile.VC	1.0.52	2018/10/30
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -350,7 +350,7 @@ endif
 LIBS		:= ddraw.lib dinput8.lib dxguid.lib d3d9.lib d3dx9.lib \
 		   version.lib comctl32.lib winmm.lib comdlg32.lib \
 		   advapi32.lib gdi32.lib shell32.lib user32.lib \
-		   wsock32.lib iphlpapi.lib psapi.lib
+		   ws2_32.lib wsock32.lib iphlpapi.lib psapi.lib
 ifeq ($(DEBUG), y)
 LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
 endif
@@ -641,11 +641,13 @@ SCSIOBJ		:= scsi.obj \
 NETOBJ		:= network.obj \
 		    net_pcap.obj \
 		    net_slirp.obj \
-		     bootp.obj ip_icmp.obj slirp_misc.obj socket.obj \
-		     tcp_timer.obj cksum.obj ip_input.obj queue.obj \
-		     tcp_input.obj debug.obj ip_output.obj sbuf.obj \
-		     tcp_output.obj udp.obj if.obj mbuf.obj slirp.obj \
-		     tcp_subr.obj \
+                     slirp.obj slirp_misc.obj \
+                     cksum.obj debug.obj if.obj mbuf.obj queue.obj sbuf.obj \
+		     socket.obj \
+                     arp.obj bootp.obj  \
+                     ip_icmp.obj ip_input.obj ip_output.obj \
+                     tcp_input.obj tcp_output.obj tcp_subr.obj tcp_timer.obj \
+                     udp.obj \
 		    net_dp8390.obj \
 		    net_ne2000.obj net_wd80x3.obj net_3c503.obj
 

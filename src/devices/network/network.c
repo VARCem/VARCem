@@ -54,7 +54,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wchar.h>
-#ifdef ENABLE_NETWORK_DUMP
+#ifdef _DEBUG
 # include <ctype.h>
 #endif
 #define HAVE_STDARG_H
@@ -112,12 +112,12 @@ static struct {
 } poll_data;
 
 
-#ifdef ENABLE_NETWORK_DUMP
+#ifdef _DEBUG
 # define is_print(c)	(isalnum((int)(c)) || ((c) == ' '))
 
 
 /* Dump a buffer in hex to output buffer. */
-static void
+void
 hexdump_p(char *ptr, uint8_t *bufp, int len)
 {
     char asci[20];

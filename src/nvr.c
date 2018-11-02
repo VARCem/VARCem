@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.12	2018/10/05
+ * Version:	@(#)nvr.c	1.0.13	2018/11/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -102,7 +102,6 @@ rtc_tick(void)
     			if (++intclk.tm_mday == (nvr_get_days(intclk.tm_mon,
 							intclk.tm_year) + 1)) {
 				intclk.tm_mday = 1;
-				intclk.tm_mon++;
     				if (++intclk.tm_mon == 13) {
 					intclk.tm_mon = 1;
 					intclk.tm_year++;
@@ -295,7 +294,7 @@ nvr_period_recalc(void)
     /* Make sure we have been initialized. */
     if (saved_nvr == NULL) return;
 
-    if (saved_nvr->size != 0)
+    if (saved_nvr->recalc && (saved_nvr->size != 0))
 	saved_nvr->recalc(saved_nvr);
 }
 

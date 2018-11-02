@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_video.h	1.0.9	2018/10/24
+ * Version:	@(#)win_settings_video.h	1.0.10	2018/10/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,7 +68,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		/* Populate the video cards combo. */
 		c = d = 0;
-		while (1) {
+		for (;;) {
 			stransi = video_get_internal_name(c);
 			if (stransi == NULL) break;
 
@@ -110,7 +110,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		vid = vid_to_list[temp_video_card];
 		if (vid < d) {
 			SendMessage(h, CB_SETCURSEL, vid, 0);
-			if (video_card_has_config(vid)) {
+			if (video_card_has_config(temp_video_card)) {
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_VIDEO);
 				EnableWindow(h, TRUE);
 			}

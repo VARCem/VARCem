@@ -8,7 +8,7 @@
  *
  *		String definitions for "Norwegian (Norway)" language.
  *
- * Version:	@(#)VARCem-NO.str	1.0.6	2018/10/25
+ * Version:	@(#)VARCem-NO.str	1.0.6	2018/11/01
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Tore Sinding Bekkedal, <toresbe@gmail.com<
@@ -71,12 +71,12 @@
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"System out of memory!"
+#define STR_2300	"Systemminne oppbrukt!"
 #define STR_2301	"Ingen brukbare ROM-avtrykk funnet!"
 #define STR_2302	"Ingen gyldig konfigurasjon funnet.\n\nVil du opprette en ved å se dialogvinduet for innstillinger?"
 #define STR_2303	"Den konfigurerte %ls:\n\n  %s\n\ner ikke tilgjengelig.\n\nVil du se dialogvinduet for innstillinger?"
 #define STR_2304	"Valgte rendermotor:\n\n  %s\n\nikke tilgjengelig. Tilbakestille til forvalgt?"
-#define STR_2305        "You must save your settings first!"
+#define STR_2305	"Lagre innstillingene først!"
 #define STR_2306	"Kunne ikke generere diskavtrykkfil: %ls"
 #define STR_2307	"USB er ikke støttet enda."
 
@@ -111,8 +111,8 @@
 #define STR_ENABLED	"Aktivert"
 #define STR_OFF		"Av"
 #define STR_ON		"På"
-#define STR_UNLOCK	"Unlock"
-#define STR_LOCK	"Lock"
+#define STR_UNLOCK	"Lås opp"
+#define STR_LOCK	"Lås"
 #define STR_TYPE	"Type"
 #define STR_FILENAME	"Filnavn:"
 #define STR_PROGRESS	"Framdrift:"
@@ -189,7 +189,8 @@
 #define  STR_3328	"Wait states:"
 #define  STR_3329	"Minne:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Hent klokkeslett og dato fra vertssystem:"
+#define  STR_3331	"Hent klokke fra vertssystem:"
+/*#define STR_3331	"Klokke fra vertssystem:"*/
 #define  STR_3332	"Aktiver flytpunktenhet (FPU)"
 #define  STR_3333	"Dynamisk rekompilering"
 #define  STR_3334	"KB"
@@ -295,7 +296,7 @@
 #define STR_3900	"(tom)"
 #define STR_3901	"(vertsdisk %c:)"
 #define STR_3902	" [Skrivebeskyttet]"
-#define STR_3903	" [Locked]"
+#define STR_3903	" [Låst"
 #define STR_3904	"&Nytt avtrykk.."
 #define STR_3905	"&Last inn avtrykk.."
 #define STR_3906	"Oppdate&re avtrykk"
@@ -385,8 +386,8 @@
 #define  STR_4081	"Inn&stillinger"
 #define  STR_4082	"Språkva&lg"
 #define	 STR_4083	"L&ogging"
-#define  STR_4084	"Log Breakpoint"
-#define  STR_4085	"Toggle %s logging"
+#define  STR_4084	"Loggfør en markør"
+#define  STR_4085	"Veksle logging av %s"
 #define  STR_4086	"(&c) Last inn konfigurasjon"
 #define  STR_4087	"L&agre konfigurasjon"
 #define  STR_4088	"&Ta skjermbilde"

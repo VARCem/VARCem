@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI fixed disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.21	2018/10/27
+ * Version:	@(#)scsi_disk.c	1.0.22	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1217,6 +1217,11 @@ phase_data_out(scsi_disk_t *dev)
 		pos = hdr_len + block_desc_len;
 
 		while(1) {
+			if (pos >= dev->current_cdb[4]) {
+				DEBUG("SCSI DISK %i: Buffer has only block descriptor\n", dev->id);
+				break;
+			}
+
 			page = hdbufferb[pos] & 0x3F;
 			page_len = hdbufferb[pos + 1];
 

@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.9	2018/10/05
+ * Version:	@(#)m_pcjr.c	1.0.10	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
 #include <math.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../timer.h"
@@ -765,6 +766,14 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
     pit_init();
     pit_set_out_func(&pit, 0, pit_irq0_timer_pcjr);
 
+    cpu_set();
+
+    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >=
+CPU_286)
+	setrtcconst((float)machine_speed());
+    else
+	setrtcconst(14318184.0);
+
     if (serial_enabled[0]) {
 	serial_setup(1, 0x2f8, 3);
 	device_add(&serial_1_pcjr_device);
@@ -782,6 +791,7 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
 		 (const video_timings_t *)&m_pcjr_device.vid_timing);
 
     /* Initialize the keyboard. */
+    keyboard_scan = 1;
     key_queue_start = key_queue_end = 0;
     io_sethandler(0x0060, 4,
 		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, pcjr);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.8	2018/10/05
+ * Version:	@(#)keyboard_xt.c	1.0.9	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -424,7 +424,7 @@ kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val))
 }
 
 
-void
+static void
 kbd_adddata_ex(uint16_t val)
 {
     kbd_adddata_process(val, kbd_adddata);
