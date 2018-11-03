@@ -260,7 +260,7 @@ Note:	the block address is forced to be a multiple of the block size by
 	  ignoring the appropriate number of the least-significant bits
 SeeAlso: #P0178,#P0187
  *
- * Version:	@(#)m_at_opti495.c	1.0.7	2018/09/06
+ * Version:	@(#)m_at_opti495.c	1.0.8	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -363,7 +363,19 @@ opti495_init(void)
 
 
 void
-machine_at_opti495_init(const machine_t *model, void *arg)
+machine_at_opti495_ami_init(const machine_t *model, void *arg)
+{
+    machine_at_common_ide_init(model, arg);
+
+    device_add(&keyboard_at_ami_device);
+    device_add(&fdc_at_device);
+
+    opti495_init();
+}
+
+
+void
+machine_at_opti495_award_init(const machine_t *model, void *arg)
 {
     machine_at_common_ide_init(model, arg);
 
@@ -375,7 +387,7 @@ machine_at_opti495_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_opti495_ami_init(const machine_t *model, void *arg)
+machine_at_opti495_mr_init(const machine_t *model, void *arg)
 {
     machine_at_common_ide_init(model, arg);
 

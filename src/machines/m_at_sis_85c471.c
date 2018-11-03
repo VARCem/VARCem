@@ -12,7 +12,7 @@
  *
  *		Used by DTK PKM-0038S E-2
  *
- * Version:	@(#)m_at_sis85c471.c	1.0.9	2018/05/06
+ * Version:	@(#)m_at_sis85c471.c	1.0.10	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -264,6 +264,21 @@ sis_init(void)
 
     io_sethandler(0x0022, 2,
 		  sis_read,NULL,NULL, sis_write,NULL,NULL, NULL);
+}
+
+
+void
+machine_at_sis471_ami_init(const machine_t *model, void *arg)
+{
+        machine_at_ide_init(model, arg);
+
+	device_add(&fdc_at_device);
+
+	memregs_init();
+
+	sis_init();
+
+	secondary_ide_check();
 }
 
 

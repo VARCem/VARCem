@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496 chipset.
  *
- * Version:	@(#)m_at_sis_85c496.c	1.0.6	2018/10/05
+ * Version:	@(#)m_at_sis_85c496.c	1.0.7	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,8 @@
 #include "../devices/system/pci.h"
 #include "../devices/system/memregs.h"
 #include "../devices/sio/sio.h"
+#include "../devices/floppy/fdd.h"
+#include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
 #include "../devices/input/keyboard.h"
 #include "machine.h"
@@ -235,6 +237,37 @@ machine_at_sis_85c496_common_init(const machine_t *model, void *arg)
     pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 
     device_add(&sis_85c496_device);
+}
+
+
+void
+machine_at_sis496_ami_init(const machine_t *model, void *arg)
+{
+    machine_at_common_ide_init(model, arg);
+
+    device_add(&keyboard_at_ami_device);
+
+    device_add(&fdc_at_device);
+
+//////////
+
+    memregs_init();
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x05, PCI_CARD_SPECIAL, 0, 0, 0, 0);
+    pci_register_slot(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4);
+    pci_register_slot(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1);
+    pci_register_slot(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2);
+    pci_register_slot(0x07, PCI_CARD_NORMAL, 4, 1, 2, 3);
+
+    pci_set_irq_routing(PCI_INTA, PCI_IRQ_DISABLED);
+    pci_set_irq_routing(PCI_INTB, PCI_IRQ_DISABLED);
+    pci_set_irq_routing(PCI_INTC, PCI_IRQ_DISABLED);
+    pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
+
+    device_add(&sis_85c496_device);
+
+
+/////////
 }
 
 

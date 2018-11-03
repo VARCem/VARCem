@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.24	2018/09/21
+ * Version:	@(#)machine.h	1.0.25	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -154,12 +154,20 @@ extern void		machine_at_ali1429_init(const machine_t *, void *);
 extern void		machine_at_cmdpc_init(const machine_t *, void *);
 
 extern void		machine_at_tg286m_init(const machine_t *, void *);
+extern void		machine_at_headland_init(const machine_t *, void *);
 extern void		machine_at_ama932j_init(const machine_t *, void *);
 extern void		machine_at_neat_init(const machine_t *, void *);
 extern void		machine_at_neat_ami_init(const machine_t *, void *);
 
-extern void		machine_at_opti495_init(const machine_t *, void *);
 extern void		machine_at_opti495_ami_init(const machine_t *, void *);
+extern void		machine_at_opti495_award_init(const machine_t *, void *);
+extern void		machine_at_opti495_mr_init(const machine_t *, void *);
+
+extern void		machine_at_sis471_ami_init(const machine_t *, void *);
+extern void		machine_at_dtk486_init(const machine_t *, void *);
+
+extern void		machine_at_sis496_ami_init(const machine_t *, void *);
+extern void		machine_at_r418_init(const machine_t *, void *);
 
 extern void		machine_at_scat_init(const machine_t*, void*);
 extern void		machine_at_scat_gw286ct_init(const machine_t*, void*);
@@ -171,10 +179,6 @@ extern void		machine_at_compaq_p1_init(const machine_t*, void*);
 extern void		machine_at_compaq_p2_init(const machine_t*, void*);
 extern void		machine_at_compaq_p3_init(const machine_t*, void*);
 extern void		machine_at_compaq_p3_386_init(const machine_t*, void*);
-
-extern void		machine_at_dtk486_init(const machine_t *, void *);
-
-extern void		machine_at_r418_init(const machine_t *, void *);
 
 extern void		machine_at_wd76c10_init(const machine_t *, void *);
 

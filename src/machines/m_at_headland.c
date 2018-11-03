@@ -10,7 +10,7 @@
  *
  * FIXME:	fix the mem_map_t stuff in mem_read_b() et al!
  *
- * Version:	@(#)m_at_headland.c	1.0.8	2018/10/08
+ * Version:	@(#)m_at_headland.c	1.0.9	2018/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -653,6 +653,29 @@ headland_common_init(int ht386)
 }
 
 
+void
+machine_at_tg286m_init(const machine_t *model, void *arg)
+{
+    machine_at_common_init(model, arg);
+
+    device_add(&ide_isa_device);
+
+    headland_common_init(0);
+}
+
+
+/* Generic Headland 386SX machine. */
+void
+machine_at_headland_init(const machine_t *model, void *arg)
+{
+    machine_at_common_init(model, arg);
+
+    device_add(&ide_isa_device);
+
+    headland_common_init(1);
+}
+
+
 /* Arche Technologies AMA-932J-25 (Headland HT18 386SX-25.) */
 void
 machine_at_ama932j_init(const machine_t *model, void *arg)
@@ -674,15 +697,4 @@ machine_at_ama932j_init(const machine_t *model, void *arg)
 	/* Initialize the on-board controller. */
 	device_add(&oti067_onboard_device);
     }
-}
-
-
-void
-machine_at_tg286m_init(const machine_t *model, void *arg)
-{
-    machine_at_common_init(model, arg);
-
-    device_add(&ide_isa_device);
-
-    headland_common_init(0);
 }
