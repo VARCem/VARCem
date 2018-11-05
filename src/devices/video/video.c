@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.22	2018/10/28
+ * Version:	@(#)video.c	1.0.23	2018/11/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -864,10 +864,10 @@ video_inform(int type, const video_timings_t *ptr)
     video_update_timing();
 
     if (type != VID_TYPE_DFLT)
-        INFO("VIDEO: card type %i, timings {%i: %i,%i,%i %i,%i,%i}\n",
-	    video_card_type, video_timing->type,
-	    video_timing->write_b, video_timing->write_w, video_timing->write_l,
-	    video_timing->read_b, video_timing->read_w, video_timing->read_l);
+        DEBUG("VIDEO: card type %i, timings {%i: %i,%i,%i %i,%i,%i}\n",
+	      video_card_type, video_timing->type,
+	      video_timing->write_b,video_timing->write_w,video_timing->write_l,
+	      video_timing->read_b,video_timing->read_w,video_timing->read_l);
 }
 
 

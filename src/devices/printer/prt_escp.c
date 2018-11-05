@@ -8,7 +8,7 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.3	2018/10/06
+ * Version:	@(#)prt_escp.c	1.0.4	2018/11/04
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -69,9 +69,12 @@
 #include "printer.h"
 
 
+/* Color values. */
+#define COLOR_BLACK	(7 << 5)
+
 /* Default page values (for now.) */
 #define PAGE_WIDTH	8.5			/* standard U.S. Letter */
-#define PAGE_HEIGHT	11
+#define PAGE_HEIGHT	11.0
 #define PAGE_LMARGIN	0.0
 #define PAGE_RMARGIN	PAGE_WIDTH
 #define PAGE_TMARGIN	0.0
@@ -202,9 +205,12 @@ typedef struct {
 		top_margin, 
 		right_margin,
 		bottom_margin;
-    uint16_t	dpi;
     double	cpi;		/* defined chars per inch */
     double	lpi;		/* defined lines per inch */
+    uint16_t	dpi;
+
+    uint8_t	color;
+    char	pad;
 
     /* font data */
     double	actual_cpi;	/* actual cpi as with current font */
@@ -213,8 +219,8 @@ typedef struct {
 
     /* tabstops */
     double	horizontal_tabs[32];
-    int16_t	num_horizontal_tabs;
     double	vertical_tabs[16];
+    int16_t	num_horizontal_tabs;
     int16_t	num_vertical_tabs;
 
     /* bit graphics data */
@@ -237,6 +243,7 @@ typedef struct {
 
     /* ESC command data */
     int8_t	esc_seen;		/* set to 1 if an ESC char was seen */
+    int8_t	fss_seen;		/* set to 1 if an FS char was seen */
     uint16_t	esc_pending;		/* in which ESC command are we */
     uint8_t	esc_parms_req;
     uint8_t	esc_parms_curr;
@@ -546,11 +553,13 @@ dump_page(escp_t *dev)
 
 
 static void
-new_page(escp_t *dev)
+new_page(escp_t *dev, int8_t save, int8_t reset_x)
 {
     /* Dump the current page if needed. */
-    if (dev->page->dirty)
+    if (dev->page->dirty && save)
 	dump_page(dev);
+    if (reset_x)
+	dev->curr_x = dev->left_margin;
 
     /* Clear page. */
     dev->curr_y = dev->top_margin;
@@ -565,6 +574,7 @@ reset_printer(escp_t *dev)
     int16_t i;
 
     /* TODO: these should be configurable. */
+    dev->color = COLOR_BLACK;
     dev->page_width = PAGE_WIDTH;
     dev->page_height = PAGE_HEIGHT;
     dev->left_margin = PAGE_LMARGIN;
@@ -752,142 +762,166 @@ process_char(escp_t *dev, uint8_t ch)
     int16_t i;
 
     /* Determine number of additional command params that are expected. */
-    if (dev->esc_seen) {
-	dev->esc_seen = 0;
+    if (dev->esc_seen | dev->fss_seen) {
 	dev->esc_pending = ch;
+	if (dev->fss_seen)
+		dev->esc_pending |= 0x0800;
+	dev->esc_seen = dev->fss_seen = 0;
 	dev->esc_parms_curr = 0;
 
 	switch (dev->esc_pending) {
-		case 0x02: // Undocumented
-		case 0x0e: // Select double-width printing (one line) (ESC SO)		
-		case 0x0f: // Select condensed printing (ESC SI)
-		case 0x23: // Cancel MSB control (ESC #)
-		case 0x30: // Select 1/8-inch line spacing (ESC 0)
-		case 0x32: // Select 1/6-inch line spacing (ESC 2)
-		case 0x34: // Select italic font (ESC 4)
-		case 0x35: // Cancel italic font (ESC 5)
-		case 0x36: // Enable printing of upper control codes (ESC 6)
-		case 0x37: // Enable upper control codes (ESC 7)
-		case 0x3c: // Unidirectional mode (one line) (ESC <)
-		case 0x3d: // Set MSB to 0 (ESC =)
-		case 0x3e: // Set MSB to 1 (ESC >)
-		case 0x40: // Initialize printer (ESC @)
-		case 0x45: // Select bold font (ESC E)
-		case 0x46: // Cancel bold font (ESC F)
-		case 0x47: // Select double-strike printing (ESC G)
-		case 0x48: // Cancel double-strike printing (ESC H)
-		case 0x4d: // Select 10.5-point, 12-cpi (ESC M)
-		case 0x4f: // Cancel bottom margin			
-		case 0x50: // Select 10.5-point, 10-cpi (ESC P)
-		case 0x54: // Cancel superscript/subscript printing (ESC T)
-		case 0x67: // Select 10.5-point, 15-cpi (ESC g)
-		case 0x73: // Select low-speed mode (ESC s)
+		case 0x02:	// Undocumented
+		case 0x0a:	// Reverse line feed
+		case 0x0c:	// Return to top of current page
+		case 0x0e:	// Select dbl-width printing (1 line) (ESC SO)
+		case 0x0f:	// Select condensed printing (ESC SI)
+		case 0x23:	// Cancel MSB control (ESC #)
+		case 0x30:	// Select 1/8-inch line spacing (ESC 0)
+		case 0x32:	// Select 1/6-inch line spacing (ESC 2)
+		case 0x34:	// Select italic font (ESC 4)
+		case 0x35:	// Cancel italic font (ESC 5)
+		case 0x36:	// Enable printing of upper ctrl codes (ESC 6)
+		case 0x37:	// Enable upper control codes (ESC 7)
+		case 0x3c:	// Unidirectional mode (one line) (ESC <)
+		case 0x3d:	// Set MSB to 0 (ESC =)
+		case 0x3e:	// Set MSB to 1 (ESC >)
+		case 0x40:	// Initialize printer (ESC @)
+		case 0x45:	// Select bold font (ESC E)
+		case 0x46:	// Cancel bold font (ESC F)
+		case 0x47:	// Select double-strike printing (ESC G)
+		case 0x48:	// Cancel double-strike printing (ESC H)
+		case 0x4d:	// Select 10.5-point, 12-cpi (ESC M)
+		case 0x4f:	// Cancel bottom margin			
+		case 0x50:	// Select 10.5-point, 10-cpi (ESC P)
+		case 0x54:	// Cancel superscript/subscript printing (ESC T)
+		case 0x5e:	// Enable printing of all character codes on next character
+		case 0x67:	// Select 10.5-point, 15-cpi (ESC g)
+		case 0x73:	// Select low-speed mode (ESC s)
+		case 0x834:	// Select italic font (FS 4) (= ESC 4)
+		case 0x835:	// Cancel italic font (FS 5) (= ESC 5)
+		case 0x846:	// Select forward feed mode (FS F)
+		case 0x852:	// Select reverse feed mode (FS R)
 			dev->esc_parms_req = 0;
 			break;
 
-		case 0x19: // Control paper loading/ejecting (ESC EM)
-		case 0x20: // Set intercharacter space (ESC SP)
-		case 0x21: // Master select (ESC !)
-		case 0x2b: // Set n/360-inch line spacing (ESC +)
-		case 0x2d: // Turn underline on/off (ESC -)
-		case 0x2f: // Select vertical tab channel (ESC /)
-		case 0x33: // Set n/180-inch line spacing (ESC 3)
-		case 0x41: // Set n/60-inch line spacing
-		case 0x43: // Set page length in lines (ESC C)
-		case 0x4a: // Advance print position vertically (ESC J n)
-		case 0x4e: // Set bottom margin (ESC N)
-		case 0x51: // Set right margin (ESC Q)
-		case 0x52: // Select an international character set (ESC R)
-		case 0x53: // Select superscript/subscript printing (ESC S)
-		case 0x55: // Turn unidirectional mode on/off (ESC U)
-		case 0x57: // Turn double-width printing on/off (ESC W)
-		case 0x61: // Select justification (ESC a)
-		case 0x6b: // Select typeface (ESC k)
-		case 0x6c: // Set left margin (ESC 1)
-		case 0x70: // Turn proportional mode on/off (ESC p)
-		case 0x72: // Select printing color (ESC r)
-		case 0x74: // Select character table (ESC t)
-		case 0x77: // Turn double-height printing on/off (ESC w)
-		case 0x78: // Select LQ or draft (ESC x)
+		case 0x19:	// Control paper loading/ejecting (ESC EM)
+		case 0x20:	// Set intercharacter space (ESC SP)
+		case 0x21:	// Master select (ESC !)
+		case 0x2b:	// Set n/360-inch line spacing (ESC +)
+		case 0x2d:	// Turn underline on/off (ESC -)
+		case 0x2f:	// Select vertical tab channel (ESC /)
+		case 0x33:	// Set n/180-inch line spacing (ESC 3)
+		case 0x41:	// Set n/60-inch line spacing
+		case 0x43:	// Set page length in lines (ESC C)
+		case 0x4a:	// Advance print position vertically (ESC J n)
+		case 0x4e:	// Set bottom margin (ESC N)
+		case 0x51:	// Set right margin (ESC Q)
+		case 0x52:	// Select an intl character set (ESC R)
+		case 0x53:	// Select super/subscript printing (ESC S)
+		case 0x55:	// Turn unidirectional mode on/off (ESC U)
+		case 0x57:	// Turn double-width printing on/off (ESC W)
+		case 0x61:	// Select justification (ESC a)
+		case 0x6b:	// Select typeface (ESC k)
+		case 0x6c:	// Set left margin (ESC 1)
+		case 0x70:	// Turn proportional mode on/off (ESC p)
+		case 0x72:	// Select printing color (ESC r)
+		case 0x74:	// Select character table (ESC t)
+		case 0x77:	// Turn double-height printing on/off (ESC w)
+		case 0x78:	// Select LQ or draft (ESC x)
+		case 0x7e:	// Select/Deselect slash zero (ESC ~)
+		case 0x832:	// Select 1/6-inch line spacing (FS 2) (= ESC 2)
+		case 0x833:	// Set n/360-inch line spacing (FS 3) (= ESC +)
+		case 0x841:	// Set n/60-inch line spacing (FS A) (= ESC A)
+		case 0x843:	// Select LQ type style (FS C) (= ESC k)
+		case 0x845:	// Select character width (FS E)
+		case 0x849:	// Select character table (FS I) (= ESC t)
+		case 0x853:	// Select High Speed/Density Elite pitch (FS S)
+		case 0x856:	// Turn dbl-height printing on/off (FS V)(= ESC w)
 			dev->esc_parms_req = 1;
 			break;
 
-		case 0x24: // Set absolute horizontal print position (ESC $)
-		case 0x3f: // Reassign bit-image mode (ESC ?)
-		case 0x4b: // Select 60-dpi graphics (ESC K)
-		case 0x4c: // Select 120-dpi graphics (ESC L)
-		case 0x59: // Select 120-dpi, double-speed graphics (ESC Y)
-		case 0x5a: // Select 240-dpi graphics (ESC Z)
-		case 0x5c: // Set relative horizontal print position (ESC \)
-		case 0x63: // Set horizontal motion index (HMI) (ESC c)
+		case 0x24:	// Set abs horizontal print position (ESC $)
+		case 0x3f:	// Reassign bit-image mode (ESC ?)
+		case 0x4b:	// Select 60-dpi graphics (ESC K)
+		case 0x4c:	// Select 120-dpi graphics (ESC L)
+		case 0x59:	// Select 120-dpi, dbl-speed graphics (ESC Y)
+		case 0x5a:	// Select 240-dpi graphics (ESC Z)
+		case 0x5c:	// Set rel horizontal print position (ESC \)
+		case 0x63:	// Set horizontal motion index (HMI) (ESC c)
+		case 0x65:	// Set vertical tab stops every n lines (ESC e)
+		case 0x85a:	// Print 24-bit hex-density graphics (FS Z)
 			dev->esc_parms_req = 2;
 			break;
 
-		case 0x2a: // Select bit image (ESC *)
-		case 0x58: // Select font by pitch and point (ESC X)
+		case 0x2a:	// Select bit image (ESC *)
+		case 0x58:	// Select font by pitch and point (ESC X)
 			dev->esc_parms_req = 3;
 			break;
 
-		case 0x62: // Set vertical tabs in VFU channels (ESC b)
-		case 0x42: // Set vertical tabs (ESC B)
+		case 0x5b:	// Select character height, width, line spacing
+			dev->esc_parms_req = 7;
+			break;
+
+		case 0x42:	// Set vertical tabs (ESC B)
+		case 0x62:	// Set vertical tabs in VFU channels (ESC b)
 			dev->num_vertical_tabs = 0;
 			return 1;
 
-		case 0x44: // Set horizontal tabs (ESC D)
+		case 0x44:	// Set horizontal tabs (ESC D)
 			dev->num_horizontal_tabs = 0;
 			return 1;
 
-		case 0x25: // Select user-defined set (ESC %)
-		case 0x26: // Define user-defined characters (ESC &)
-		case 0x3a: // Copy ROM to RAM (ESC :)
+		case 0x25:	// Select user-defined set (ESC %)
+		case 0x26:	// Define user-defined characters (ESC &)
+		case 0x3a:	// Copy ROM to RAM (ESC :)
 			ERRLOG("ESC/P: User-defined characters not supported.\n");
 			return 1;
 
-		case 0x28: // Two bytes sequence
+		case 0x28:	// Two bytes sequence
 			/* return and wait for second ESC byte */
 			return 1;
 
 		default:
 			ERRLOG("ESC/P: Unknown command ESC %c (0x%02x). Unable to skip parameters.\n", 
-			      dev->esc_pending >= 0x20 ? dev->esc_pending : '?',
-				dev->esc_pending);
+			      dev->esc_pending >= 0x20 ? dev->esc_pending
+						       : '?', dev->esc_pending);
 			      dev->esc_parms_req = 0;
 			      dev->esc_pending = 0;
 			      return 1;
 	}
 
 	if (dev->esc_parms_req > 0) {
-		/* return and wait for parameters to appear */
+		/* Return and wait for parameters to appear. */
 		return 1;
 	}
     }
 
-    /* parameter checking for the 2-byte ESC/P2 commands */
+    /* Parameter checking for the 2-byte ESC/P2 commands. */
     if (dev->esc_pending == 0x28) {
 	dev->esc_pending = 0x0200 + ch;
 
 	switch (dev->esc_pending) {
-		case 0x0242: // Bar code setup and print (ESC (B)
-		case 0x025e: // Print data as characters (ESC (^)
+		case 0x0242:	// Bar code setup and print (ESC (B)
+		case 0x025e:	// Print data as characters (ESC (^)
 			dev->esc_parms_req = 2;
 			break;
 
-		case 0x0255: // Set unit (ESC (U)
+		case 0x0255:	// Set unit (ESC (U)
 			dev->esc_parms_req = 3;
 			break;
 
-		case 0x0243: // Set page length in defined unit (ESC (C)
-		case 0x0256: // Set absolute vertical print position (ESC (V)
-		case 0x0276: // Set relative vertical print position (ESC (v)
+		case 0x0243:	// Set page length in defined unit (ESC (C)
+		case 0x0256:	// Set abs vertical print position (ESC (V)
+		case 0x0276:	// Set rel vertical print position (ESC (v)
 			dev->esc_parms_req = 4;
 			break;
 
-		case 0x0228: // Assign character table (ESC (t)
-		case 0x022d: // Select line/score (ESC (-)
+		case 0x0228:	// Assign character table (ESC (t)
+		case 0x022d:	// Select line/score (ESC (-)
 			dev->esc_parms_req = 5;
 			break;
 
-		case 0x0263: // Set page format (ESC (c)
+		case 0x0263:	// Set page format (ESC (c)
 			dev->esc_parms_req = 6;
 			break;
 
@@ -897,12 +931,17 @@ process_char(escp_t *dev, uint8_t ch)
 			      dev->esc_pending >= 0x20 ? dev->esc_pending : '?',
 			      dev->esc_pending);
 			dev->esc_parms_req = 2;
-			dev->esc_pending = 0x101; /* dummy value to be checked later */
+
+			/* Dummy value, to be checked later. */
+			dev->esc_pending = 0x0101;
 			return 1;
 	}
 
 	/* If we need parameters, return and wait for them to appear. */
-	if (dev->esc_parms_req > 0) return 1;
+	if (dev->esc_parms_req > 0) {
+		/* Return and wait for parameters to appear. */
+		return 1;
+	}
     }
 
     /* Ignore VFU channel setting. */
@@ -913,7 +952,7 @@ process_char(escp_t *dev, uint8_t ch)
 
     /* Collect vertical tabs. */
     if (dev->esc_pending == 0x42) {
-	/* check if we're done */
+	/* Check if we are done. */
 	if ((ch == 0) || 
 	    (dev->num_vertical_tabs > 0 && dev->vertical_tabs[dev->num_vertical_tabs - 1] > (double)ch * dev->linespacing)) {
 		dev->esc_pending = 0;
@@ -926,7 +965,7 @@ process_char(escp_t *dev, uint8_t ch)
 
     /* Collect horizontal tabs. */
     if (dev->esc_pending == 0x44) {
-	/* check if we're done... */
+	/* Check if we are done. */
 	if ((ch == 0) || 
 	    (dev->num_horizontal_tabs > 0 && dev->horizontal_tabs[dev->num_horizontal_tabs - 1] > (double)ch * (1.0 / dev->cpi))) {
 		dev->esc_pending = 0;
@@ -937,12 +976,12 @@ process_char(escp_t *dev, uint8_t ch)
 	}
     }
 
-    /* Check if we're still collecting parameters for the current command. */
+    /* Are we still collecting parameters for the current command? */
     if (dev->esc_parms_curr < dev->esc_parms_req) {
-	/* store current parameter */
+	/* Store current parameter. */
 	dev->esc_parms[dev->esc_parms_curr++] = ch;
 
-	/* do we still need to continue collecting parameters? */
+	/* Do we need more? */
 	if (dev->esc_parms_curr < dev->esc_parms_req)
 		return 1;
     }
@@ -950,10 +989,10 @@ process_char(escp_t *dev, uint8_t ch)
     /* Handle the pending ESC command. */
     if (dev->esc_pending != 0) {
 	switch (dev->esc_pending) {
-		case 0x02:	/* undocumented; ignore */
+		case 0x0002:	/* undocumented; ignore */
 			break;
 
-		case 0x0e:	/* select double-width (one line) (ESC SO) */
+		case 0x000e:	/* select double-width (one line) (ESC SO) */
 			if (! dev->multipoint_mode) {
 				dev->hmi = -1;
 				dev->font_style |= STYLE_DOUBLEWIDTHONELINE;
@@ -961,7 +1000,7 @@ process_char(escp_t *dev, uint8_t ch)
 			}
 			break;
 
-		case 0x0f:	/* select condensed printing (ESC SI) */
+		case 0x000f:	/* select condensed printing (ESC SI) */
 			if (! dev->multipoint_mode) {
 				dev->hmi = -1;
 				dev->font_style |= STYLE_CONDENSED;
@@ -969,14 +1008,15 @@ process_char(escp_t *dev, uint8_t ch)
 			}
 			break;
 
-		case 0x19:	/* control paper loading/ejecting (ESC EM) */
+		case 0x0019:	/* control paper loading/ejecting (ESC EM) */
 				/* We are not really loading paper, so most
 				 * commands can be ignored */
 			if (dev->esc_parms[0] == 'R')
-				new_page(dev);
+				new_page(dev, 1, 0);
 
 			break;
-		case 0x20:	/* set intercharacter space (ESC SP) */
+
+		case 0x0020:	/* set intercharacter space (ESC SP) */
 			if (! dev->multipoint_mode) {
 				dev->extra_intra_space = (double)dev->esc_parms[0] / (dev->print_quality == QUALITY_DRAFT ? 120.0 : 180.0);
 				dev->hmi = -1;
@@ -984,7 +1024,7 @@ process_char(escp_t *dev, uint8_t ch)
 			}
 			break;
 
-		case 0x21:	/* master select (ESC !) */
+		case 0x0021:	/* master select (ESC !) */
 			dev->cpi = dev->esc_parms[0] & 0x01 ? 12.0 : 10.0;
 
 			/* Reset first seven bits. */
@@ -1011,11 +1051,11 @@ process_char(escp_t *dev, uint8_t ch)
 			update_font(dev);
 			break;
 
-		case 0x23:	/* cancel MSB control (ESC #) */
+		case 0x0023:	/* cancel MSB control (ESC #) */
 			dev->msb = -1;
 			break;
 
-		case 0x24:	/* set abs horizontal print position (ESC $) */
+		case 0x0024:	/* set abs horizontal print position (ESC $) */
 			unit_size = dev->defined_unit;
 			if (unit_size < 0)
 				unit_size = 60.0;
@@ -1025,15 +1065,20 @@ process_char(escp_t *dev, uint8_t ch)
 				dev->curr_x = new_x;
 			break;
 
-		case 0x2a:	/* select bit image (ESC *) */
+		case 0x085a:	/* print 24-bit hex-density graphics (FS Z) */
+			setup_bit_image(dev, 40, PARAM16(0));
+			break;			
+
+		case 0x002a:	/* select bit image (ESC *) */
 			setup_bit_image(dev, dev->esc_parms[0], PARAM16(1));
 			break;
 
-		case 0x2b:	/* set n/360-inch line spacing (ESC +) */
+		case 0x002b:	/* set n/360-inch line spacing (ESC +) */
+		case 0x0833:	/* set n/360-inch line spacing (FS 3) */
 			dev->linespacing = (double)dev->esc_parms[0] / 360.0;
 			break;
 
-		case 0x2d:	/* turn underline on/off (ESC -) */
+		case 0x002d:	/* turn underline on/off (ESC -) */
 			if (dev->esc_parms[0] == 0 || dev->esc_parms[0] == '0')
 				dev->font_style &= ~STYLE_UNDERLINE;
 			if (dev->esc_parms[0] == 1 || dev->esc_parms[0] == '1') {
@@ -1043,54 +1088,53 @@ process_char(escp_t *dev, uint8_t ch)
 			update_font(dev);
 			break;
 
-		case 0x2f:	/* select vertical tab channel (ESC /) */
+		case 0x002f:	/* select vertical tab channel (ESC /) */
 			/* Ignore */
 			break;
 
-		case 0x30:	/* select 1/8-inch line spacing (ESC 0) */
+		case 0x0030:	/* select 1/8-inch line spacing (ESC 0) */
 			dev->linespacing = 1.0 / 8.0;
 			break;
 
-		case 0x32:	/* select 1/6-inch line spacing (ESC 2) */
+		case 0x0032:	/* select 1/6-inch line spacing (ESC 2) */
 			dev->linespacing = 1.0 / 6.0;
 			break;
 
-		case 0x33:	/* set n/180-inch line spacing (ESC 3) */
+		case 0x0033:	/* set n/180-inch line spacing (ESC 3) */
 			dev->linespacing = (double)dev->esc_parms[0] / 180.0;
 			break;
 
-		case 0x34:	/* select italic font (ESC 4) */
+		case 0x0034:	/* select italic font (ESC 4) */
 			dev->font_style |= STYLE_ITALICS;
 			update_font(dev);
 			break;
 
-		case 0x35:	/* cancel italic font (ESC 5) */
+		case 0x0035:	/* cancel italic font (ESC 5) */
 			dev->font_style &= ~STYLE_ITALICS;
 			update_font(dev);
 			break;
 
-		case 0x36:	/* enable printing of upper control codes (ESC 6) */
+		case 0x0036:	/* enable printing of upper ctrl codes (ESC 6) */
 			dev->print_upper_control = 1;
 			break;
 
-		case 0x37:	/* enable upper control codes (ESC 7) */
+		case 0x0037:	/* enable upper ctrl codes (ESC 7) */
 			dev->print_upper_control = 0;
 			break;
 
-		case 0x3c:	/* unidirectional mode (one line) (ESC <) */
-				/* We don't have a print head, so just
-				 * ignore this. */
+		case 0x003c:	/* unidirectional mode (one line) (ESC <) */
+			/* We don't have a print head, so just ignore this. */
 			break;
 
-		case 0x3d:	/* set MSB to 0 (ESC =) */
+		case 0x003d:	/* set MSB to 0 (ESC =) */
 			dev->msb = 0;
 			break;
 
-		case 0x3e:	/* set MSB to 1 (ESC >) */
+		case 0x003e:	/* set MSB to 1 (ESC >) */
 			dev->msb = 1;
 			break;
 
-		case 0x3f:	/* reassign bit-image mode (ESC ?) */
+		case 0x003f:	/* reassign bit-image mode (ESC ?) */
 			if (dev->esc_parms[0] == 'K')
 				dev->density_k = dev->esc_parms[1];
 			if (dev->esc_parms[0] == 'L')
@@ -1101,89 +1145,91 @@ process_char(escp_t *dev, uint8_t ch)
 				dev->density_z = dev->esc_parms[1];
 			break;
 
-		case 0x40:	/* initialize printer (ESC @) */
+		case 0x0040:	/* initialize printer (ESC @) */
 			reset_printer(dev);
 			break;
 
-		case 0x41:	/* set n/60-inch line spacing */
+		case 0x0041:	/* set n/60-inch line spacing */
 			dev->linespacing = (double)dev->esc_parms[0] / 60.0;
 			break;
 
-		case 0x43:	/* set page length in lines (ESC C) */
+		case 0x0043:	/* set page length in lines (ESC C) */
 			if (dev->esc_parms[0]) {
 				dev->page_height = dev->bottom_margin = (double)dev->esc_parms[0] * dev->linespacing;
 			} else {	/* == 0 => Set page length in inches */
 				dev->esc_parms_req = 1;
 				dev->esc_parms_curr = 0;
-				dev->esc_pending = 0x100; /* dummy value for later */
+
+				/* Dummy value, for later checking. */
+				dev->esc_pending = 0x0100;
 				return 1;
 			}
 			break;
 
-		case 0x45:	/* select bold font (ESC E) */
+		case 0x0045:	/* select bold font (ESC E) */
 			dev->font_style |= STYLE_BOLD;
 			update_font(dev);
 			break;
 
-		case 0x46:	/* cancel bold font (ESC F) */
+		case 0x0046:	/* cancel bold font (ESC F) */
 			dev->font_style &= ~STYLE_BOLD;
 			update_font(dev);
 			break;
 
-		case 0x47:	/* select dobule-strike printing (ESC G) */
+		case 0x0047:	/* select dobule-strike printing (ESC G) */
 			dev->font_style |= STYLE_DOUBLESTRIKE;
 			break;
 
-		case 0x48:	/* cancel double-strike printing (ESC H) */
+		case 0x0048:	/* cancel double-strike printing (ESC H) */
 			dev->font_style &= ~STYLE_DOUBLESTRIKE;
 			break;
 
-		case 0x4a:	/* advance print pos vertically (ESC J n) */
+		case 0x004a:	/* advance print pos vertically (ESC J n) */
 			dev->curr_y += (double)dev->esc_parms[0] / 180.0;
 			if (dev->curr_y > dev->bottom_margin) {
-				new_page(dev);
+				new_page(dev, 1, 0);
 			}
 			break;
 
-		case 0x4b:	/* select 60-dpi graphics (ESC K) */
+		case 0x004b:	/* select 60-dpi graphics (ESC K) */
 			/* TODO: graphics stuff */
 			setup_bit_image(dev, dev->density_k, PARAM16(0));
 			break;
 
-		case 0x4c:	/* select 120-dpi graphics (ESC L) */
+		case 0x004c:	/* select 120-dpi graphics (ESC L) */
 			/* TODO: graphics stuff */
 			setup_bit_image(dev, dev->density_l, PARAM16(0));
 			break;
 
-		case 0x4d:	/* select 10.5-point, 12-cpi (ESC M) */
+		case 0x004d:	/* select 10.5-point, 12-cpi (ESC M) */
 			dev->cpi = 12.0;
 			dev->hmi = -1;
 			dev->multipoint_mode = 0;
 			update_font(dev);
 			break;
 
-		case 0x4e:	/* set bottom margin (ESC N) */
+		case 0x004e:	/* set bottom margin (ESC N) */
 			dev->top_margin = 0.0;
 			dev->bottom_margin = (double)dev->esc_parms[0] * dev->linespacing;
 			break;
 
-		case 0x4f:	/* cancel bottom (and top) margin */
+		case 0x004f:	/* cancel bottom (and top) margin */
 			dev->top_margin = 0.0;
 			dev->bottom_margin = dev->page_height;
 			break;
 
-		case 0x50:	/* select 10.5-point, 10-cpi (ESC P) */
+		case 0x0050:	/* select 10.5-point, 10-cpi (ESC P) */
 			dev->cpi = 10.0;
 			dev->hmi = -1;
 			dev->multipoint_mode = 0;
 			update_font(dev);
 			break;
 
-		case 0x51:	/* set right margin */
+		case 0x0051:	/* set right margin */
 			dev->right_margin = ((double)dev->esc_parms[0] - 1.0) / dev->cpi;
 			break;
 
-		case 0x52:	/* select an intl character set (ESC R) */
+		case 0x0052:	/* select an intl character set (ESC R) */
 			if (dev->esc_parms[0] <= 13 || dev->esc_parms[0] == '@') {
 				if (dev->esc_parms[0] == '@')
 					dev->esc_parms[0] = 14;
@@ -1203,7 +1249,7 @@ process_char(escp_t *dev, uint8_t ch)
 			}
 			break;
 
-		case 0x53:	/* select superscript/subscript printing (ESC S) */
+		case 0x0053:	/* select super/subscript printing (ESC S) */
 			if (dev->esc_parms[0] == 0 || dev->esc_parms[0] == '0')
 				dev->font_style |= STYLE_SUBSCRIPT;
 			if (dev->esc_parms[0] == 1 || dev->esc_parms[1] == '1')
@@ -1211,17 +1257,17 @@ process_char(escp_t *dev, uint8_t ch)
 			update_font(dev);
 			break;
 
-		case 0x54:	/* cancel superscript/subscript printing (ESC T) */
+		case 0x0054:	/* cancel super/subscript printing (ESC T) */
 			dev->font_style &= ~(STYLE_SUPERSCRIPT | STYLE_SUBSCRIPT);
 			update_font(dev);
 			break;
 
-		case 0x55:	/* turn unidirectional mode on/off (ESC U) */
+		case 0x0055:	/* turn unidirectional mode on/off (ESC U) */
 			/* We don't have a print head, so just ignore this. */
 			break;
 
-		case 0x57:	/* turn double-width printing on/off (ESC W) */
-			if (!dev->multipoint_mode) {
+		case 0x0057:	/* turn dbl-width printing on/off (ESC W) */
+			if (! dev->multipoint_mode) {
 				dev->hmi = -1;
 				if (dev->esc_parms[0] == 0 || dev->esc_parms[0] == '0')
 					dev->font_style &= ~STYLE_DOUBLEWIDTH;
@@ -1231,12 +1277,13 @@ process_char(escp_t *dev, uint8_t ch)
 			}
 			break;
 
-		case 0x58:	/* select font by pitch and point (ESC X) */
+		case 0x0058:	/* select font by pitch and point (ESC X) */
 			dev->multipoint_mode = 1;
+
 			/* Copy currently non-multipoint CPI if no value was set so far. */
-			if (dev->multipoint_cpi == 0.0) {
+			if (dev->multipoint_cpi == 0.0)
 				dev->multipoint_cpi= dev->cpi;
-			}
+
 			if (dev->esc_parms[0] > 0) {	/* set CPI */
 				if (dev->esc_parms[0] == 1) {
 					/* Proportional spacing. */
@@ -1245,27 +1292,29 @@ process_char(escp_t *dev, uint8_t ch)
 					dev->multipoint_cpi = 360.0 / (double)dev->esc_parms[0];
 				}
 			}
-			if (dev->multipoint_size == 0.0) {
+
+			if (dev->multipoint_size == 0.0)
 				dev->multipoint_size = 10.5;
-			}
+
 			if (PARAM16(1) > 0) {
-				/* set points */
+				/* Set point size. */
 				dev->multipoint_size = ((double)PARAM16(1)) / 2.0;
 			}
+
 			update_font(dev);
 			break;
 
-		case 0x59:	/* select 120-dpi, double-speed graphics (ESC Y) */
+		case 0x0059:	/* select 120-dpi, dbl-speed graphics (ESC Y) */
 			/* TODO: graphics stuff */
 			setup_bit_image(dev, dev->density_y, PARAM16(0));
 			break;
 
-		case 0x5a:	/* select 240-dpi graphics (ESC Z) */
+		case 0x005a:	/* select 240-dpi graphics (ESC Z) */
 			/* TODO: graphics stuff */
 			setup_bit_image(dev, dev->density_z, PARAM16(0));
 			break;
 
-		case 0x5c:	/* set relative horizontal print pos (ESC \) */
+		case 0x005c:	/* set rel horizontal print pos (ESC \) */
 			rel_move = PARAM16(0);
 			unit_size = dev->defined_unit;
 			if (unit_size < 0)
@@ -1273,36 +1322,36 @@ process_char(escp_t *dev, uint8_t ch)
 			dev->curr_x += ((double)rel_move / unit_size);
 			break;
 
-		case 0x61:	/* select justification (ESC a) */
+		case 0x0061:	/* select justification (ESC a) */
 			/* Ignore. */
 			break;
 
-		case 0x63:	/* set horizontal motion index (HMI) (ESC c) */
+		case 0x0063:	/* set horizontal motion index (HMI) (ESC c) */
 			dev->hmi = (double)PARAM16(0) / 360.0;
 			dev->extra_intra_space = 0.0;
 			break;
 
-		case 0x67:	/* select 10.5-point, 15-cpi (ESC g) */
+		case 0x0067:	/* select 10.5-point, 15-cpi (ESC g) */
 			dev->cpi = 15;
 			dev->hmi = -1;
 			dev->multipoint_mode = 0;
 			update_font(dev);
 			break;
 
-		case 0x6b:	/* select typeface (ESC k) */
+		case 0x006b:	/* select typeface (ESC k) */
 			if (dev->esc_parms[0] <= 11 || dev->esc_parms[0] == 30 || dev->esc_parms[0] == 31) {
 				dev->lq_typeface = dev->esc_parms[0];
 			}
 			update_font(dev);
 			break;
 
-		case 0x6c:	/* set left margin (ESC 1) */
+		case 0x006c:	/* set left margin (ESC 1) */
 			dev->left_margin = ((double)dev->esc_parms[0] - 1.0) / dev->cpi;
 			if (dev->curr_x < dev->left_margin)
 				dev->curr_x = dev->left_margin;
 			break;
 
-		case 0x70:	/* Turn proportional mode on/off (ESC p) */
+		case 0x0070:	/* Turn proportional mode on/off (ESC p) */
 			if (dev->esc_parms[0] == 0 || dev->esc_parms[0] == '0')
 				dev->font_style &= ~STYLE_PROP;
 			if (dev->esc_parms[0] == 1 || dev->esc_parms[0] == '1') {
@@ -1314,16 +1363,19 @@ process_char(escp_t *dev, uint8_t ch)
 			update_font(dev);
 			break;
 
-		case 0x72:	/* select printing color (ESC r) */
-			if (dev->esc_parms[0])
-				ERRLOG("ESC/P: Color printing not yet supported.\n");
+		case 0x0072:	/* select printing color (ESC r) */
+			if (dev->esc_parms[0] == 0 || dev->esc_parms[0] > 6)
+				dev->color = COLOR_BLACK;
+			else
+				dev->color = dev->esc_parms[0] << 5;
 			break;
 
-		case 0x73:	/* select low-speed mode (ESC s) */
+		case 0x0073:	/* select low-speed mode (ESC s) */
 			/* Ignore. */
 			break;
 
-		case 0x74:	/* select character table (ESC t) */
+		case 0x0074:	/* select character table (ESC t) */
+		case 0x0849:	/* select character table (FS I) */
 			if (dev->esc_parms[0] < 4) {
 				dev->curr_char_table = dev->esc_parms[0];
 			} else if ((dev->esc_parms[0] >= '0') && (dev->esc_parms[0] <= '3')) {
@@ -1333,7 +1385,7 @@ process_char(escp_t *dev, uint8_t ch)
 			update_font(dev);
 			break;
 
-		case 0x77:	/* turn double-height printing on/off (ESC w) */
+		case 0x0077:	/* turn dbl-height printing on/off (ESC w) */
 			if (! dev->multipoint_mode) {
 				if (dev->esc_parms[0] == 0 || dev->esc_parms[0] == '0')
 					dev->font_style &= ~STYLE_DOUBLEHEIGHT;
@@ -1343,7 +1395,7 @@ process_char(escp_t *dev, uint8_t ch)
 			}
 			break;
 
-		case 0x78:	/* select LQ or draft (ESC x) */
+		case 0x0078:	/* select LQ or draft (ESC x) */
 			if (dev->esc_parms[0] == 0 || dev->esc_parms[0] == '0')
 				dev->print_quality = QUALITY_DRAFT;
 			if (dev->esc_parms[0] == 1 || dev->esc_parms[0] == '1')
@@ -1365,6 +1417,7 @@ process_char(escp_t *dev, uint8_t ch)
 
 		/* Extended ESC ( <x> commands */
 		case 0x0228:	/* assign character table (ESC (t) */
+		case 0x0274:
 			if (dev->esc_parms[2] < 4 && dev->esc_parms[3] < 16) {
 				dev->char_tables[dev->esc_parms[2]] = codepages[dev->esc_parms[3]];
 				if (dev->esc_parms[2] == dev->curr_char_table) {
@@ -1396,7 +1449,7 @@ process_char(escp_t *dev, uint8_t ch)
 			break;
 
 		case 0x0243:	/* set page length in defined unit (ESC (C) */
-			if (dev->esc_parms[0] && (dev->defined_unit> 0)) {
+			if (dev->esc_parms[0] && (dev->defined_unit > 0)) {
 				dev->page_height = dev->bottom_margin = (double)PARAM16(2) * dev->defined_unit;
 				dev->top_margin = 0.0;
 			}
@@ -1406,13 +1459,13 @@ process_char(escp_t *dev, uint8_t ch)
 			dev->defined_unit = 3600.0 / (double)dev->esc_parms[2];
 			break;
 
-		case 0x0256:	/* set abse vertical print pos (ESC (V) */
+		case 0x0256:	/* set abs vertical print pos (ESC (V) */
 			unit_size = dev->defined_unit;
 			if (unit_size < 0)
 				unit_size = 360.0;
 			new_y = dev->top_margin + (double)PARAM16(2) * unit_size;
 			if (new_y > dev->bottom_margin)
-				new_page(dev);
+				new_page(dev, 1, 0);
 			else
 				dev->curr_y = new_y;
 			break;
@@ -1429,17 +1482,15 @@ process_char(escp_t *dev, uint8_t ch)
 			break;
 
 		case 0x0276:	/* set relative vertical print pos (ESC (v) */
-			{
-				unit_size = dev->defined_unit;
-				if (unit_size < 0.0)
-					unit_size = 360.0;
-				new_y = dev->curr_y + (double)((int16_t)PARAM16(2)) * unit_size;
-				if (new_y > dev->top_margin) {
-					if (new_y > dev->bottom_margin) {
-						new_page(dev);
-					} else {
-						dev->curr_y = new_y;
-					}
+			unit_size = dev->defined_unit;
+			if (unit_size < 0.0)
+				unit_size = 360.0;
+			new_y = dev->curr_y + (double)((int16_t)PARAM16(2)) * unit_size;
+			if (new_y > dev->top_margin) {
+				if (new_y > dev->bottom_margin) {
+					new_page(dev, 1, 0);
+				} else {
+					dev->curr_y = new_y;
 				}
 			}
 			break;
@@ -1455,7 +1506,11 @@ process_char(escp_t *dev, uint8_t ch)
 
     /* Now handle the "regular" control characters. */
     switch (ch) {
-	case 0x07:  /* Beeper (BEL) */
+	case 0x00:	/* NUL */
+		/* Just ignore. */
+		return 1;
+
+	case 0x07:	/* Beeper (BEL) */
 		/* TODO: beep? */
 		return 1;
 
@@ -1491,7 +1546,7 @@ process_char(escp_t *dev, uint8_t ch)
 			dev->curr_x = dev->left_margin;
 			dev->curr_y += dev->linespacing;
 			if (dev->curr_y > dev->bottom_margin)
-				new_page(dev);
+				new_page(dev, 1, 0);
 		} else {
 			/* Find tab below current pos. */
 			move_to = -1;
@@ -1504,7 +1559,7 @@ process_char(escp_t *dev, uint8_t ch)
 
 			/* Nothing found => Act like FF. */
 			if (move_to > dev->bottom_margin || move_to < 0)
-				new_page(dev);
+				new_page(dev, 1, 0);
 			else
 				dev->curr_y = move_to;
 		}
@@ -1520,15 +1575,13 @@ process_char(escp_t *dev, uint8_t ch)
 			dev->font_style &= ~STYLE_DOUBLEWIDTHONELINE;
 			update_font(dev);
 		}
-		new_page(dev);
+		new_page(dev, 1, 1);
 		return 1;
 
 	case 0x0d:	/* Carriage Return (CR) */
 		dev->curr_x = dev->left_margin;
-		if (!dev->autofeed)
-		{
+		if (! dev->autofeed)
 			return 1;
-		}
 		/*FALLTHROUGH*/
 
 	case 0x0a:	/* Line feed */
@@ -1536,10 +1589,11 @@ process_char(escp_t *dev, uint8_t ch)
 			dev->font_style &= ~STYLE_DOUBLEWIDTHONELINE;
 			update_font(dev);
 		}
+		//FIXME: not sure an LF also resets printhead- check! --FvK
 		dev->curr_x = dev->left_margin;
 		dev->curr_y += dev->linespacing;
 		if (dev->curr_y > dev->bottom_margin) {
-			new_page(dev);
+			new_page(dev, 1, 0);
 		}
 		return 1;
 
@@ -1586,6 +1640,10 @@ process_char(escp_t *dev, uint8_t ch)
 		dev->esc_seen = 1;
 		return 1;
 
+	case 0x1c:	/* FS (IBM commands) */
+		dev->fss_seen = 1;
+		return 1;
+
 	default:
 		break;
     }
@@ -1595,32 +1653,41 @@ process_char(escp_t *dev, uint8_t ch)
 }
 
 
-/* TODO: This can be optimized quite a bit... I'm just too lazy right now ;-) */
+/*
+ * TODO: This can be optimized quite a bit... I'm just too lazy right now ;-)
+ *
+ * Even more so- this code should be moved into a shared 'render' module,
+ * so it can be shared between ESC/P, HPGL and PS interpreters. Not too
+ * hard to do.
+ */
 static void
 blit_glyph(escp_t *dev, uint16_t destx, uint16_t desty, int8_t add)
 {
     FT_Bitmap *bitmap = &dev->fontface->glyph->bitmap;
+    uint8_t src, *dst;
     uint16_t x, y;
-    uint8_t *src, *dst;
 
-    /* check if freetype is available */
+    /* Make sure we have FreeType loaded. */
     if (ft_lib == NULL) return;
 
     for (y = 0; y < bitmap->rows; y++) {
 	for (x = 0; x < bitmap->width; x++) {
-		src = bitmap->buffer + y * bitmap->pitch + x;
-		/* ignore background, and respect page size */
-		if (*src && (destx + x < dev->page->w) && (desty + y < dev->page->h)) {
+		src = *(bitmap->buffer + y * bitmap->pitch + x);
+
+		/* Ignore background, and respect page size. */
+		if (src && (destx + x < dev->page->w) && (desty + y < dev->page->h)) {
 			dst = (uint8_t *)dev->page->pixels + x + destx + (y + desty) * dev->page->pitch;
+			src >>= 3;
+
 			if (add) {
-				if ((uint16_t)(*dst) + (uint16_t)(*src) > 255) {
-					*dst = 255;
-				} else {
-					*dst += *src;
+				if (((*dst) & 0x1f) + src > 31)
+					*dst |= (dev->color | 0x1f);
+				else {
+					*dst += src;
+					*dst |= dev->color;						
 				}
-			} else {
-				*dst = *src;
-			}
+			} else 
+				*dst = src|dev->color;
 		}
 	}
     }
@@ -1654,7 +1721,7 @@ print_bit_graph(escp_t *dev, uint8_t ch)
 {
     uint8_t pixel_w; /* width of the "pixel" */
     uint8_t pixel_h; /* height of the "pixel" */
-    uint8_t i, j, xx, yy, pixel;
+    uint8_t i, j, xx, yy;
     double old_y;
 
     dev->bg_column[dev->bg_bytes_read++] = ch;
@@ -1666,20 +1733,24 @@ print_bit_graph(escp_t *dev, uint8_t ch)
 
     old_y = dev->curr_y;
 
-    /* if page DPI is bigger than bitgraphics DPI, drawn pixels get "bigger" */
-    pixel_w = dev->dpi / dev->bg_h_density > 0 ? dev->dpi / dev->bg_h_density : 1;
-    pixel_h = dev->dpi / dev->bg_v_density > 0 ? dev->dpi / dev->bg_v_density : 1;
+    if (dev->bg_adjacent) {
+	pixel_w = dev->dpi / dev->bg_h_density > 0 ? dev->dpi / dev->bg_h_density : 1;
+	pixel_h = dev->dpi / dev->bg_v_density > 0 ? dev->dpi / dev->bg_v_density : 1;
+    } else {
+	pixel_w = 1;
+	pixel_h = 1;
+    }
 
     for (i = 0; i < dev->bg_bytes_per_column; i++) {
-	for (j = 7; j >= 0; j--) {
-		pixel = (dev->bg_column[i] >> j) & 0x01;
-
-		if (pixel) {
+	/* for each byte */
+	for (j = 128; j != 0; j >>= 1) {
+		/* for each bit */
+		if (dev->bg_column[i] & j) {
 			/* draw a "pixel" */
-			for (yy = 0; yy < pixel_h; yy++) {
-				for (xx = 0; xx < pixel_w; xx++) {
+			for (xx = 0; xx < pixel_w; xx++) {
+				for (yy = 0; yy < pixel_h; yy++) {
 					if (((PIXX + xx) < dev->page->w) && ((PIXY + yy) < dev->page->h)) {
-						((uint8_t *)(dev->page->pixels))[((int)PIXY + yy) * dev->page->pitch + (int)PIXX + xx] = 255;
+						((uint8_t *)(dev->page->pixels))[(int)((PIXY + yy) * dev->page->pitch + (PIXX + xx))] |= (dev->color | 0x1f);
 					}
 				}
 			}
@@ -1707,21 +1778,25 @@ handle_char(escp_t *dev)
     uint16_t pen_x, pen_y;
     uint8_t ch = dev->data;
     uint16_t line_start, line_y;
+    double x_advance;
 
     if (dev->page == NULL) return;
 
     /* MSB mode */
-    if (dev->msb == 0)
-	ch &= 0x7f;
-      else if (dev->msb == 1)
-	ch |= 0x80;
+    if (dev->msb != 255) {
+	if (dev->msb == 0)
+		ch &= 0x7f;
+	else if (dev->msb == 1)
+		ch |= 0x80;
+    }
 
+    /* Are we still printing bitmap graphics? */
     if (dev->bg_remaining_bytes > 0) {
 	print_bit_graph(dev, ch);
 	return;
     }
 
-    /* "print everything" mode? aka. ESC ( ^ */
+    /* Are we still in "print everything" (aka. ESC ( ^) mode? */
     if (dev->print_everything_count > 0) {
 	/* do not process command char, just continue */
 	--dev->print_everything_count;
@@ -1733,8 +1808,8 @@ handle_char(escp_t *dev)
     /* We cannot print if we have no font loaded. */
     if (dev->fontface == 0) return;
 
-    /* ok, so we need to print the character now */
-    if (ft_lib) {
+    /* OK, so we need to print the character now. */
+    if (ft_lib != NULL) {
 	char_index = ft_Get_Char_Index(dev->fontface, dev->curr_cpmap[ch]);
 	ft_Load_Glyph(dev->fontface, char_index, FT_LOAD_DEFAULT);
 	ft_Render_Glyph(dev->fontface->glyph, FT_RENDER_MODE_NORMAL);
@@ -1746,11 +1821,11 @@ handle_char(escp_t *dev)
     if (dev->font_style & STYLE_SUBSCRIPT)
 	pen_y += dev->fontface->glyph->bitmap.rows / 2;
 
-    /* mark the page as dirty if anything is drawn */
+    /* Mark the page as dirty if anything is drawn. */
     if ((ch != 0x20) || (dev->font_score != SCORE_NONE))
 	dev->page->dirty = 1;
 
-    /* draw the glyph */
+    /* Draw the rendered glyph. */
     blit_glyph(dev, pen_x, pen_y, 0);
 
     /* doublestrike -> draw glyph a second time, 1px below */
@@ -1764,15 +1839,16 @@ handle_char(escp_t *dev)
     line_start = (uint16_t)PIXX;
 
     if (dev->font_style & STYLE_PROP) {
-	dev->curr_x += dev->fontface->glyph->advance.x / (dev->dpi * 64.0);
+	x_advance = dev->fontface->glyph->advance.x / (dev->dpi * 64.0);
     } else {
 	if (dev->hmi < 0)
-		dev->curr_x += 1.0 / dev->actual_cpi;
+		x_advance = 1.0 / dev->actual_cpi;
 	  else
-		dev->curr_x += dev->hmi;
+		x_advance = dev->hmi;
     }
 
-    dev->curr_x += dev->extra_intra_space;
+    x_advance += dev->extra_intra_space;
+    dev->curr_x += x_advance;
 
     /* Line printing (underline etc.) */
     if (dev->font_score != SCORE_NONE && (dev->font_style & (STYLE_UNDERLINE | STYLE_STRIKETHROUGH | STYLE_OVERSCORE))) {
@@ -1786,10 +1862,19 @@ handle_char(escp_t *dev)
 	if (dev->font_style & STYLE_OVERSCORE)
 		line_y = (uint16_t)PIXY - ((dev->font_score == SCORE_DOUBLE || dev->font_score == SCORE_DOUBLEBROKEN) ? 5 : 0);
 
-	draw_hline(dev, pen_x, (uint16_t)PIXX, line_y, dev->font_score == SCORE_SINGLEBROKEN || dev->font_score == SCORE_DOUBLEBROKEN);
+	draw_hline(dev, pen_x, (uint16_t)PIXX, line_y,
+		   dev->font_score == SCORE_SINGLEBROKEN || dev->font_score == SCORE_DOUBLEBROKEN);
 
 	if (dev->font_score == SCORE_DOUBLE || dev->font_score == SCORE_DOUBLEBROKEN)
-		draw_hline(dev, line_start, (uint16_t)PIXX, line_y + 5, dev->font_score == SCORE_SINGLEBROKEN || dev->font_score == SCORE_DOUBLEBROKEN);
+		draw_hline(dev, line_start, (uint16_t)PIXX, line_y + 5,
+			   dev->font_score == SCORE_SINGLEBROKEN || dev->font_score == SCORE_DOUBLEBROKEN);
+    }
+
+    if ((dev->curr_x + x_advance) > dev->right_margin) {
+	dev->curr_x = dev->left_margin;
+	dev->curr_y += dev->linespacing;
+	if (dev->curr_y > dev->bottom_margin)
+		new_page(dev, 1, 0);
     }
 }
 
@@ -1845,15 +1930,24 @@ static uint8_t
 read_status(void *priv)
 {
     escp_t *dev = (escp_t *)priv;
-    uint8_t ret = 0xff;
+    uint8_t ret = 0xdf;
 
     if (dev == NULL) return(ret);
 
+#if 0
+    ret = 0x1f;
+    if (! dev->busy)
+	ret |= 0x80;
+
+    if (! dev->ack)
+	ret |= 0x40;
+#else
     ret = (dev->ack ? 0x00 : 0x40) |
 	  (dev->select ? 0x10 : 0x00) |
 	  (dev->busy ? 0x00 : 0x80) |
 	  (dev->int_pending ? 0x00 : 0x04) |
 	  (dev->error ? 0x00 : 0x08);
+#endif
 
     /* Clear ACK after reading status. */
     dev->ack = 0;

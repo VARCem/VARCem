@@ -41,7 +41,7 @@
  *		even-numbered columns, so the top bit of the control register
  *		at 0x2D9 is used to adjust the position.
  *
- * Version:	@(#)vid_sigma.c	1.0.1	2018/10/24
+ * Version:	@(#)vid_sigma.c	1.0.2	2018/11/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -462,7 +462,7 @@ sigma_text80(sigma_t *dev)
 
     ca = ca << 1;
     if (dev->sigma_ctl & CTL_CURSOR)
-	++ca;
+	ca++;
     ca &= 0x3fff;
 
     /* The Sigma 400 seems to use screen widths stated in words
@@ -482,7 +482,7 @@ sigma_text80(sigma_t *dev)
 		cols[0] = (attr >> 4) | 16;
 	}
 
-	if (drawcursor && !(x & 1)) {
+	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
 			if (dev->sigmamode & MODE_FONT16)
 				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdatm[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
