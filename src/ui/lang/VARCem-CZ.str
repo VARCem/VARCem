@@ -8,7 +8,7 @@
  *
  *		String definitions for "Czech (Czech Republic)" language.
  *
- * Version:	@(#)VARCem-CZ.str	1.0.5	2018/10/18
+ * Version:	@(#)VARCem-CZ.str	1.0.6	2018/11/05
  *
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,4
+#define STR_VERSION	1,0,6
 #define STR_AUTHOR	"David Hrdlička"
 #define STR_EMAIL	"hrdlickadavid@outlook.com"
 #define STR_NAME	"VARCem"
@@ -65,19 +65,19 @@
 /* System errors (2200.) */
 #define STR_2200	"Nebylo možné načíst klávesové zkratky."
 #define STR_2201	"Nebylo možné zaregistrovat nezpracovaný vstup."
-#define STR_2202	"PCap failed to set up because it may not be initialized"
+#define STR_2202	"Selhalo nastavení PCap, jelikož jej nebylo možno inicializovat"
 #define STR_2203	"Nebyla nalezena žádná PCap zařízení."
 #define STR_2204	"Neplatné PCap zařížení"
 #define STR_2205	"Nebylo možné načíst %s. Ověřte, zda je následující soubor\nve složce s programem:\n\n%s"
 
 
 /* Application error messages (2300.) */
-#define STR_2300	"System is out of memory!"
+#define STR_2300	"Systém nemá žádnou dostupnou paměť!"
 #define STR_2301	"Nebyly nalezeny žádné použitelné ROM obrazy."
 #define STR_2302	"Nebyla nalezena žádná platná konfigurace.\n\nWould you like to enter the Settings dialog to create one?"
 #define STR_2303	"Použitá %ls:\n\n  %s\n\nnení dostupná.\n\nChcete otevřít Nastavení?"
 #define STR_2304	"Zvolený renderer:\n\n  %s\n\nnení dostupný. Chcete použít výchozí renderer?"
-#define STR_2305	"You must save your settings first!"
+#define STR_2305	"Nejdřív je nutno uložit nastavení!"
 #define STR_2306	"Chyba při vytváření rastrového obrázku: %ls"
 #define STR_2307	"USB není zatím podporováno."
 
@@ -99,21 +99,21 @@
 /* UI: common elements (3000.) */
 #define STR_OK		"OK"
 #define STR_CANCEL	"Storno"
-#define STR_YES		"Yes"
-#define STR_NO		"No"
+#define STR_YES		"Ano"
+#define STR_NO		"Ne"
 #define STR_CONFIGURE	"Nastavit"
 #define STR_BROWSE	"Procházet..."
 
 
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Žádný"
-#define STR_INTERNAL	"Internal"
+#define STR_INTERNAL	"Interní"
 #define STR_DISABLED	"Povoleno"
 #define STR_ENABLED	"Nepovoleno"
 #define STR_OFF		"Zapnuto"
 #define STR_ON		"Vypnuto"
-#define STR_UNLOCK	"Unlock"
-#define STR_LOCK	"Lock"
+#define STR_UNLOCK	"Zamknout"
+#define STR_LOCK	"Odemknout"
 #define STR_TYPE	"Typ"
 #define STR_FILENAME	"Jméno souboru:"
 #define STR_PROGRESS	"Průběh:"
@@ -296,7 +296,7 @@
 #define STR_3900	"(prázdné)"
 #define STR_3901	"(hostitelská jednotka %c:)"
 #define STR_3902	" [Chráněno proti zápisu]"
-#define STR_3903	" [Locked]"
+#define STR_3903	" [Uzamčeno]"
 #define STR_3904	"&Nový obraz..."
 #define STR_3905	"N&ačíst obraz..."
 #define STR_3906	"&Znovu načíst předchozí obraz"
@@ -358,13 +358,12 @@
 #define   STR_4044	"&Integer scale"
 #define   STR_4045	"&Keep size"
 
-
 /* UI menu: Display (4050.) */
-#define STR_DISPLAY	"&Displej"
-#define  STR_4051	"&Invertovaný displej"
-#define  STR_4052	"P&ovolit přesahy"
-#define  STR_4053	"&Vnutit poměr stran 4:3"
-#define  STR_4054	"Změnit &kontrast jednobarevného displeje"
+#define  STR_DISPLAY	"&Displej"
+#define   STR_4051	"&Invertovaný displej"
+#define   STR_4052	"P&ovolit přesahy"
+#define   STR_4053	"&Vnutit poměr stran 4:3"
+#define   STR_4054	"Změnit &kontrast jednobarevného displeje"
 
 /* UI menu: Display > Display Type (4060.) */
 #define  STR_DISPTYPE	"&Typ displeje"
@@ -386,11 +385,11 @@
 #define  STR_4081	"&Nastavení"
 #define  STR_4082	"&Jazyk"
 #define	 STR_4083	"Pr&otokolování"
-#define  STR_4084	"Log Breakpoint"
-#define  STR_4085	"Toggle %s logging"
+#define  STR_4084	"Zaznamenávat breakpointy"
+#define  STR_4085	"Přepnout zaznamenavání %s"
 #define  STR_4086	"Načíst &konfiguraci"
 #define  STR_4087	"&Uložit konfiguraci"
-#define  STR_4088	"&Pořídit screenshott"
+#define  STR_4088	"&Pořídit screenshot"
 
 
 /* UI menu: Help (4090.) */
