@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.21	2018/10/05
+ * Version:	@(#)m_ps1.c	1.0.22	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -283,7 +283,7 @@ snd_close(void *priv)
 
 
 static const device_t snd_device = {
-    "PS/1 Audio Card",
+    "PS/1 Audio",
     0, 0,
     snd_init, snd_close, NULL,
     NULL, NULL, NULL, NULL,
@@ -375,23 +375,23 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 
 	case 0x0102:
 		if (val & 0x04)
-			serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
+			serial_setup(0, SERIAL1_ADDR, SERIAL1_IRQ);
 #if 0
 		  else
-			serial_remove(1);
+			serial_remove(0);
 #endif
 		if (val & 0x10) {
 			switch ((val >> 5) & 3) {
 				case 0:
-					parallel_setup(1, 0x03bc);
+					parallel_setup(0, 0x03bc);
 					break;
 
 				case 1:
-					parallel_setup(1, 0x0378);
+					parallel_setup(0, 0x0378);
 					break;
 
 				case 2:
-					parallel_setup(1, 0x0278);
+					parallel_setup(0, 0x0278);
 					break;
 			}
 		}
@@ -498,7 +498,7 @@ ps1_setup(int model, romdef_t *bios)
 		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
 
     /* Set up the parallel port. */
-    parallel_setup(1, 0x03bc);
+    parallel_setup(0, 0x03bc);
 
     if (model == 2011) {
 	/* Force some configuration settings. */

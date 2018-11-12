@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.16	2018/10/25
+ * Version:	@(#)sound.c	1.0.17	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,8 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../disk/hdc.h" 
+#include "../disk/hdc_ide.h" 
 #include "../cdrom/cdrom.h"
 #include "sound.h"
 #include "midi.h"
@@ -455,6 +457,8 @@ sound_cd_stop(void)
     }
 
     cd_thread_enable = drives ? 1 : 0;
+
+    secondary_ide_check();
 }
 
 

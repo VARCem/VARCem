@@ -8,7 +8,7 @@
  *
  *		Implementation of 8250-style serial port.
  *
- * Version:	@(#)serial.c	1.0.10	2018/10/20
+ * Version:	@(#)serial.c	1.0.11	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -120,7 +120,7 @@ update_ints(SERIAL *dev)
 	dev->iir = 0;
     }
 
-    if (stat && ((dev->mcr & 8) || dev->pcjr))
+    if (stat && ((dev->mcr & 8) || dev->is_pcjr))
 	picintlevel(1 << dev->irq);
       else
 	picintc(1 << dev->irq);
@@ -360,7 +360,7 @@ serial_init(const device_t *info)
 
     /* Set up local/weird stuff. */
     if (info->local & 128)
-	dev->pcjr = 1;
+	dev->is_pcjr = 1;
 
     /* Set up callback functions. */
     dev->clear_fifo = clear_fifo;
@@ -375,7 +375,7 @@ serial_init(const device_t *info)
 
     timer_add(receive_callback, &dev->delay, &dev->delay, dev);
 
-    INFO("SERIAL: COM%d (I/O=%04X, IRQ=%d)\n",
+    INFO("SERIAL: COM%i (I/O=%04X, IRQ=%i)\n",
 	 info->local & 127, dev->base, dev->irq);
 
     return(dev);
@@ -405,17 +405,6 @@ const device_t serial_1_device = {
     NULL
 };
 
-
-const device_t serial_1_pcjr_device = {
-    "COM1:",
-    0,
-    128+1,
-    serial_init, serial_close, NULL,
-    NULL, NULL, NULL, NULL,
-    NULL
-};
-
-
 const device_t serial_2_device = {
     "COM2:",
     0,
@@ -423,6 +412,15 @@ const device_t serial_2_device = {
     serial_init, serial_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL,
+};
+
+const device_t serial_1_pcjr_device = {
+    "COM1:",
+    0,
+    1+128,
+    serial_init, serial_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
 
@@ -433,7 +431,8 @@ serial_reset(void)
     SERIAL *dev;
     int i;
 
-    DEBUG("SERIAL: reset ([%d] [%d])\n", serial_enabled[0], serial_enabled[1]);
+    DEBUG("SERIAL: reset ([%i] [%i])\n",
+	serial_enabled[0], serial_enabled[1]);
 
     for (i = 0; i < SERIAL_MAX; i++) {
 	dev = &ports[i];
@@ -453,12 +452,12 @@ serial_reset(void)
 void
 serial_setup(int id, uint16_t port, int8_t irq)
 {
-    SERIAL *dev = &ports[id-1];
+    SERIAL *dev = &ports[id];
 
-    INFO("SERIAL: setting up COM%d as %04X [enabled=%d]\n",
-			id, port, serial_enabled[id-1]);
+    INFO("SERIAL: setting up COM%i as %04X [enabled=%i]\n",
+			id+1, port, serial_enabled[id]);
 
-    if (! serial_enabled[id-1]) return;
+    if (! serial_enabled[id]) return;
 
     dev->base = port;
     dev->irq = irq;
@@ -472,10 +471,10 @@ serial_attach(int port, void *func, void *arg)
     SERIAL *dev;
 
     /* No can do if port not enabled. */
-    if (! serial_enabled[port-1]) return(NULL);
+    if (! serial_enabled[port]) return(NULL);
 
     /* Grab the desired port block. */
-    dev = &ports[port-1];
+    dev = &ports[port];
 
     /* Set up callback info. */
     dev->rts_callback = (void (*)(struct SERIAL *, void *))func;

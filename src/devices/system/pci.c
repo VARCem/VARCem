@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.9	2018/10/20
+ * Version:	@(#)pci.c	1.0.10	2018/11/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -143,7 +143,7 @@ pci_write(uint16_t port, uint8_t val, UNUSED(void *priv))
 			slot = pci_card_to_slot_mapping[pci_card];
 			if (slot != 0xff) {
 				if (pci_cards[slot].write) {
-					DBGLOG(1, "Reading PCI card on slot %02X (pci_cards[%i])...\n", pci_card, slot);
+					DBGLOG(1, "PCI: writing card on slot %02X (pci_cards[%i])...\n", pci_card, slot);
 					pci_cards[slot].write(pci_func, pci_index | (port & 3), val, pci_cards[slot].priv);
 				}
 			}
@@ -168,6 +168,7 @@ pci_read(uint16_t port, UNUSED(void *priv))
 			slot = pci_card_to_slot_mapping[pci_card];
 			if (slot != 0xff) {
 				if (pci_cards[slot].read) {
+					DBGLOG(1, "PCI: reading from card on slot %02X (pci_cards[%i]) (%02X:%02X)...\n", pci_card, slot, pci_func, pci_index);
 					return pci_cards[slot].read(pci_func, pci_index | (port & 3), pci_cards[slot].priv);
 				}
 			}

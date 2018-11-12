@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.16	2018/10/25
+ * Version:	@(#)ui_stbar.c	1.0.17	2018/11/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -489,7 +489,7 @@ ui_sb_reset(void)
     }
 
     hdint = (machines[machine].flags & MACHINE_HDC) ? 1 : 0;
-    do_net = network_available();
+    do_net = !!((network_type != 0) && (network_card != 0));
     do_sound = !!(sound_card != 0);
 
     /* Get name of current HDC. */

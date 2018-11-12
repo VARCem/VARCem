@@ -8,7 +8,7 @@
  *
  *		Definitions for the Super I/O chips.
  *
- * Version:	@(#)sio.h	1.0.1	2018/02/14
+ * Version:	@(#)sio.h	1.0.2	2018/11/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -48,23 +48,18 @@
 # define EMU_SIO_H
 
 
-extern void	superio_detect_init(void);
+extern const device_t	sio_detect_device;
 
-extern void	fdc37c663_init(void);
-
-extern void	fdc37c665_init(void);
-
-extern void	fdc37c669_init(void);
-
-extern void	fdc37c932fr_init(void);
-
-extern void	fdc37c935_init(void);
-
-extern void	pc87306_init(void);
-
-extern void	um8669f_init(void);
-
-extern void	w83877f_init(int flag);
+extern const device_t	fdc37c663_device;
+extern const device_t	fdc37c665_device;
+extern const device_t	fdc37c666_device;
+extern const device_t	fdc37c669_device;
+extern const device_t	fdc37c932fr_device;
+extern const device_t	fdc37c935_device;
+extern const device_t	pc87306_device;
+extern const device_t	um8669f_device;
+extern const device_t	w83877f_device;
+extern const device_t	w83877f_president_device;
 
 
 #endif	/*EMU_SIO_H*/

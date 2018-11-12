@@ -8,7 +8,7 @@
  *
  *		Emulation of the Compaq XT-class PC's.
  *
- * Version:	@(#)m_xt_compaq.c	1.0.12	2018/09/15
+ * Version:	@(#)m_xt_compaq.c	1.0.13	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,5 +67,5 @@ machine_xt_compaq_p1_init(const machine_t *model, void *arg)
 
     nmi_init();
 
-    parallel_setup(1, 0x03bc);
+    parallel_setup(0, 0x03bc);
 }

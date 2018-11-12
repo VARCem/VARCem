@@ -8,7 +8,7 @@
  *
  *		Implementation of the WD76C10 system controller.
  *
- * Version:	@(#)m_at_wd76c10.c	1.0.9	2018/09/19
+ * Version:	@(#)m_at_wd76c10.c	1.0.10	2018/11/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,101 +48,126 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../devices/video/video.h"
 #include "machine.h"
 
 
-/* Defined in the Video module. */
-extern const device_t paradise_wd90c11_megapc_device;
+typedef struct {
+    uint16_t	reg_0092;
+    uint16_t	reg_2072;
+    uint16_t	reg_2872;
+    uint16_t	reg_5872;
 
-
-static uint16_t wd76c10_0092;
-static uint16_t wd76c10_2072;
-static uint16_t wd76c10_2872;
-static uint16_t wd76c10_5872;
-
-
-static fdc_t *wd76c10_fdc;
+    fdc_t	*fdc;
+} wd76c10_t;
 
 
 static uint16_t
 wd76c10_read(uint16_t port, void *priv)
 {
+    wd76c10_t *dev = (wd76c10_t *)priv;
+    int16_t ret = 0xffff;
+
     switch (port) {
 	case 0x0092:
-		return wd76c10_0092;
+		ret = dev->reg_0092;
+		break;
 
 	case 0x2072:
-		return wd76c10_2072;
+		ret = dev->reg_2072;
+		break;
 
 	case 0x2872:
-		return wd76c10_2872;
+		ret = dev->reg_2872;
+		break;
 
 	case 0x5872:
-		return wd76c10_5872;
+		ret = dev->reg_5872;
+		break;
     }
 
-    return(0);
+    return(ret);
 }
 
 
 static void
 wd76c10_write(uint16_t port, uint16_t val, void *priv)
 {
+    wd76c10_t *dev = (wd76c10_t *)priv;
+
     switch (port) {
 	case 0x0092:
-		wd76c10_0092 = val;
+		dev->reg_0092 = val;
 
 		mem_a20_alt = val & 2;
 		mem_a20_recalc();
 		break;
 
 	case 0x2072:
-		wd76c10_2072 = val;
+		dev->reg_2072 = val;
 
 #if 0
-		serial_remove(1);
+		serial_remove(0);
 #endif
 		if (! (val & 0x10)) {
 			switch ((val >> 5) & 7) {
-				case 1: serial_setup(1, 0x3f8, 4); break;
-				case 2: serial_setup(1, 0x2f8, 4); break;
-				case 3: serial_setup(1, 0x3e8, 4); break;
-				case 4: serial_setup(1, 0x2e8, 4); break;
+				case 1:
+					serial_setup(0, 0x3f8, 4);
+					break;
+
+				case 2:
+					serial_setup(0, 0x2f8, 4);
+					break;
+
+				case 3:
+					serial_setup(0, 0x3e8, 4);
+					break;
+
+				case 4:
+					serial_setup(0, 0x2e8, 4);
+					break;
+
 				default:
-#if 0
-					serial_remove(1);
-#endif
 					break;
 			}
 		}
 #if 0
-		serial_remove(2);
+		serial_remove(1);
 #endif
 		if (! (val & 0x01)) {
 			switch ((val >> 1) & 7) {
-				case 1: serial_setup(2, 0x3f8, 3); break;
-				case 2: serial_setup(2, 0x2f8, 3); break;
-				case 3: serial_setup(2, 0x3e8, 3); break;
-				case 4: serial_setup(2, 0x2e8, 3); break;
+				case 1:
+					serial_setup(1, 0x3f8, 3);
+					break;
+
+				case 2:
+					serial_setup(1, 0x2f8, 3);
+					break;
+
+				case 3:
+					serial_setup(1, 0x3e8, 3);
+					break;
+
+				case 4:
+					serial_setup(1, 0x2e8, 3);
+					break;
+
 				default:
-#if 0
-					serial_remove(1);
-#endif
 					break;
 			}
 		}
 		break;
 
 	case 0x2872:
-		wd76c10_2872 = val;
+		dev->reg_2872 = val;
 
-		fdc_remove(wd76c10_fdc);
+		fdc_remove(dev->fdc);
 		if (! (val & 1))
-			fdc_set_base(wd76c10_fdc, 0x03f0);
+			fdc_set_base(dev->fdc, 0x03f0);
 		break;
 
 	case 0x5872:
-		wd76c10_5872 = val;
+		dev->reg_5872 = val;
 		break;
     }
 }
@@ -165,38 +190,44 @@ wd76c10_writeb(uint16_t port, uint8_t val, void *priv)
 
     if (port & 1)
 	wd76c10_write(port & ~1, (temp & 0x00ff) | (val << 8), priv);
-      else
+    else
 	wd76c10_write(port     , (temp & 0xff00) | val, priv);
 }
 
 
-static void
+static wd76c10_t *
 wd76c10_init(void)
 {
+    wd76c10_t *dev = (wd76c10_t *)mem_alloc(sizeof(wd76c10_t));
+    memset(dev, 0x00, sizeof(wd76c10_t));
+
     io_sethandler(0x0092, 2,
-		  wd76c10_readb, wd76c10_read, NULL,
-		  wd76c10_writeb, wd76c10_write, NULL, NULL);
+		  wd76c10_readb,wd76c10_read,NULL,
+		  wd76c10_writeb,wd76c10_write,NULL, dev);
     io_sethandler(0x2072, 2,
-		  wd76c10_readb, wd76c10_read, NULL,
-		  wd76c10_writeb, wd76c10_write, NULL, NULL);
+		  wd76c10_readb,wd76c10_read,NULL,
+		  wd76c10_writeb,wd76c10_write,NULL, dev);
     io_sethandler(0x2872, 2,
-		  wd76c10_readb, wd76c10_read, NULL,
-		  wd76c10_writeb, wd76c10_write, NULL, NULL);
+		  wd76c10_readb,wd76c10_read,NULL,
+		  wd76c10_writeb,wd76c10_write,NULL, dev);
     io_sethandler(0x5872, 2,
-		  wd76c10_readb, wd76c10_read, NULL,
-		  wd76c10_writeb, wd76c10_write, NULL, NULL);
+		  wd76c10_readb,wd76c10_read,NULL,
+		  wd76c10_writeb,wd76c10_write,NULL, dev);
+    return dev;
 }
 
 
 void
 machine_at_wd76c10_init(const machine_t *model, void *arg)
 {
+    wd76c10_t *dev;
+
     machine_at_common_ide_init(model, arg);
 
     device_add(&keyboard_ps2_quadtel_device);
-    wd76c10_fdc = (fdc_t *)device_add(&fdc_at_device);
 
-    wd76c10_init();
+    dev = wd76c10_init();
+    dev->fdc = (fdc_t *)device_add(&fdc_at_device);
 
     device_add(&paradise_wd90c11_megapc_device);
 }

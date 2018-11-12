@@ -29,7 +29,7 @@
  *			70 - IRQ
  *			74 - DMA
  *
- * Version:	@(#)sio_um8669f.c	1.0.8	2018/09/19
+ * Version:	@(#)sio_um8669f.c	1.0.9	2018/11/11
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -58,6 +58,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../io.h"
@@ -70,267 +71,300 @@
 #include "sio.h"
 
 
-typedef struct um8669f_t
-{
-        int locked;
-        int cur_reg_108;
-        uint8_t regs_108[256];
-        
-        int cur_reg;
-        int cur_device;
-        struct
-        {
-                int enable;
-                uint16_t addr;
-                int irq;
-                int dma;
-        } dev[8];
+#define DEV_FDC		0
+#define DEV_COM1	1
+#define DEV_COM2	2
+#define DEV_LPT1	3
+#define DEV_GAME	5
 
-	fdc_t *fdc;
-	int pnp_active;
+#define REG_DEVICE	0x07
+#define REG_ENABLE	0x30
+#define REG_ADDRHI	0x60
+#define REG_ADDRLO	0x61
+#define REG_IRQ		0x70
+#define REG_DMA		0x74
+
+
+typedef struct {
+    int8_t	locked,
+		pnp_active;
+
+    uint8_t	cur_reg_108,
+		cur_reg,
+		cur_device;
+
+    struct {
+	int8_t	enable;
+	uint16_t addr;
+	int8_t	irq;
+	int8_t	dma;
+    }		dev[8];
+
+    fdc_t	*fdc;
+
+    uint8_t	regs_108[256];
 } um8669f_t;
 
 
-static um8669f_t um8669f_global;
-
-
-#define DEV_FDC  0
-#define DEV_COM1 1
-#define DEV_COM2 2
-#define DEV_LPT1 3
-#define DEV_GAME 5
-
-#define REG_DEVICE 0x07
-#define REG_ENABLE 0x30
-#define REG_ADDRHI 0x60
-#define REG_ADDRLO 0x61
-#define REG_IRQ    0x70
-#define REG_DMA    0x74
-
-
-void um8669f_pnp_write(uint16_t port, uint8_t val, void *p)
+static void
+pnp_write(uint16_t port, uint8_t val, void *priv)
 {
-        um8669f_t *um8669f = (um8669f_t *)p;
+    um8669f_t *dev = (um8669f_t *)priv;
+    uint8_t valxor = 0;
 
-	uint8_t valxor = 0;
-        
-        if (port == 0x279)
-                um8669f->cur_reg = val;
-        else
-        {
-                if (um8669f->cur_reg == REG_DEVICE)
-                        um8669f->cur_device = val & 7;
-                else
-                {
-                        switch (um8669f->cur_reg)
-                        {
-                                case REG_ENABLE:
-				valxor = um8669f->dev[um8669f->cur_device].enable ^ val;
-                                um8669f->dev[um8669f->cur_device].enable = val;
-                                break;
-                                case REG_ADDRLO:
-				valxor = (um8669f->dev[um8669f->cur_device].addr & 0xff) ^ val;
-                                um8669f->dev[um8669f->cur_device].addr = (um8669f->dev[um8669f->cur_device].addr & 0xff00) | val;
-                                break;
-                                case REG_ADDRHI:
-				valxor = ((um8669f->dev[um8669f->cur_device].addr >> 8) & 0xff) ^ val;
-                                um8669f->dev[um8669f->cur_device].addr = (um8669f->dev[um8669f->cur_device].addr & 0x00ff) | (val << 8);
-                                break;
-                                case REG_IRQ:
-				valxor = um8669f->dev[um8669f->cur_device].irq ^ val;
-                                um8669f->dev[um8669f->cur_device].irq = val;
-                                break;
-                                case REG_DMA:
-				valxor = um8669f->dev[um8669f->cur_device].dma ^ val;
-                                um8669f->dev[um8669f->cur_device].dma = val;
-                                break;
-				default:
+    if (port == 0x0279)
+	dev->cur_reg = val;
+    else {
+	if (dev->cur_reg == REG_DEVICE)
+		dev->cur_device = val & 7;
+	else {
+		switch (dev->cur_reg) {
+			case REG_ENABLE:
+				valxor = dev->dev[dev->cur_device].enable ^ val;
+				dev->dev[dev->cur_device].enable = val;
+				break;
+
+			case REG_ADDRLO:
+				valxor = (dev->dev[dev->cur_device].addr & 0xff) ^ val;
+				dev->dev[dev->cur_device].addr = (dev->dev[dev->cur_device].addr & 0xff00) | val;
+				break;
+
+			case REG_ADDRHI:
+				valxor = ((dev->dev[dev->cur_device].addr >> 8) & 0xff) ^ val;
+				dev->dev[dev->cur_device].addr = (dev->dev[dev->cur_device].addr & 0x00ff) | (val << 8);
+				break;
+
+			case REG_IRQ:
+				valxor = dev->dev[dev->cur_device].irq ^ val;
+				dev->dev[dev->cur_device].irq = val;
+				break;
+
+			case REG_DMA:
+				valxor = dev->dev[dev->cur_device].dma ^ val;
+				dev->dev[dev->cur_device].dma = val;
+				break;
+
+			default:
 				valxor = 0;
 				break;
-                        }
+		}
 
-                        switch (um8669f->cur_device)
-                        {
-                                case DEV_FDC:
-				if ((um8669f->cur_reg == REG_ENABLE) && valxor)
-				{
-	                                fdc_remove(um8669f_global.fdc);
-        	                        if (um8669f->dev[DEV_FDC].enable & 1)
-                	                        fdc_set_base(um8669f_global.fdc, 0x03f0);
+		switch (dev->cur_device) {
+			case DEV_FDC:
+				if ((dev->cur_reg == REG_ENABLE) && valxor) {
+					fdc_remove(dev->fdc);
+					if (dev->dev[DEV_FDC].enable & 1)
+						fdc_set_base(dev->fdc, 0x03f0);
 				}
-                                break;
-                                case DEV_COM1:
-				if ((um8669f->cur_reg == REG_ENABLE) && valxor)
-				{
-#if 0
-	                                serial_remove(1);
-#endif
-        	                        if (um8669f->dev[DEV_COM1].enable & 1)
-                	                        serial_setup(1, um8669f->dev[DEV_COM1].addr, um8669f->dev[DEV_COM1].irq);
+				break;
+
+			case DEV_COM1:
+				if ((dev->cur_reg == REG_ENABLE) && valxor) {
+//	                                serial_remove(0);
+					if (dev->dev[DEV_COM1].enable & 1)
+						serial_setup(0, dev->dev[DEV_COM1].addr, dev->dev[DEV_COM1].irq);
 				}
-                                break;
-                                case DEV_COM2:
-				if ((um8669f->cur_reg == REG_ENABLE) && valxor)
-				{
-#if 0
-	                                serial_remove(2);
-#endif
-        	                        if (um8669f->dev[DEV_COM2].enable & 1)
-                	                        serial_setup(2, um8669f->dev[DEV_COM2].addr, um8669f->dev[DEV_COM2].irq);
+				break;
+
+			case DEV_COM2:
+				if ((dev->cur_reg == REG_ENABLE) && valxor) {
+//					serial_remove(1);
+					if (dev->dev[DEV_COM2].enable & 1)
+						serial_setup(1, dev->dev[DEV_COM2].addr, dev->dev[DEV_COM2].irq);
 				}
-                                break;
-                                case DEV_LPT1:
-				if ((um8669f->cur_reg == REG_ENABLE) && valxor)
-				{
-//FIXME:        	                        parallel_remove(1);
-                	                if (um8669f->dev[DEV_LPT1].enable & 1)
-                        	                parallel_setup(1, um8669f->dev[DEV_LPT1].addr);
+				break;
+
+			case DEV_LPT1:
+				if ((dev->cur_reg == REG_ENABLE) && valxor) {
+//					parallel_remove(0);
+					if (dev->dev[DEV_LPT1].enable & 1)
+						parallel_setup(0, dev->dev[DEV_LPT1].addr);
 				}
-                                break;
-                        }
-                }
-        }
-}
-
-
-uint8_t um8669f_pnp_read(uint16_t port, void *p)
-{
-        um8669f_t *um8669f = (um8669f_t *)p;
-        
-        switch (um8669f->cur_reg)
-        {
-                case REG_DEVICE:
-                return um8669f->cur_device;
-                case REG_ENABLE:
-                return um8669f->dev[um8669f->cur_device].enable;
-                case REG_ADDRLO:
-                return um8669f->dev[um8669f->cur_device].addr & 0xff;
-                case REG_ADDRHI:
-                return um8669f->dev[um8669f->cur_device].addr >> 8;
-                case REG_IRQ:
-                return um8669f->dev[um8669f->cur_device].irq;
-                case REG_DMA:
-                return um8669f->dev[um8669f->cur_device].dma;
-        }
-        
-        return 0xff;
-}
-
-
-void um8669f_write(uint16_t port, uint8_t val, void *p)
-{
-        um8669f_t *um8669f = (um8669f_t *)p;
-	int new_pnp_active;
-
-        if (um8669f->locked)
-        {
-                if (port == 0x108 && val == 0xaa)
-                        um8669f->locked = 0;
-        }
-        else
-        {
-                if (port == 0x108)
-                {
-                        if (val == 0x55)
-                                um8669f->locked = 1;
-                        else
-                                um8669f->cur_reg_108 = val;
-                }
-                else
-                {
-                        um8669f->regs_108[um8669f->cur_reg_108] = val;
-
-			if (um8669f->cur_reg_108 == 0xc1) {
-				new_pnp_active = !!(um8669f->regs_108[0xc1] & 0x80);
-				if (new_pnp_active != um8669f->pnp_active) {
-        	                	if (new_pnp_active) {
-	        	                        io_sethandler(0x0279, 0x0001, NULL, NULL, NULL, um8669f_pnp_write, NULL, NULL, um8669f);
-        	        	                io_sethandler(0x0a79, 0x0001, NULL, NULL, NULL, um8669f_pnp_write, NULL, NULL, um8669f);
-                	        	        io_sethandler(0x03e3, 0x0001, um8669f_pnp_read, NULL, NULL, NULL, NULL, NULL, um8669f);
-	                	        } else {
-        			                io_removehandler(0x0279, 0x0001, NULL, NULL, NULL, um8669f_pnp_write, NULL, NULL, um8669f);
-        	        		        io_removehandler(0x0a79, 0x0001, NULL, NULL, NULL, um8669f_pnp_write, NULL, NULL, um8669f);
-		                	        io_removehandler(0x03e3, 0x0001, um8669f_pnp_read, NULL, NULL, NULL, NULL, NULL, um8669f);
-					}
-					um8669f->pnp_active = new_pnp_active;
-				}
-			}
-                }
-        }
-}
-
-
-uint8_t um8669f_read(uint16_t port, void *p)
-{
-        um8669f_t *um8669f = (um8669f_t *)p;
-        
-        if (um8669f->locked)
-                return 0xff;
-        
-        if (port == 0x108)
-                return um8669f->cur_reg_108; /*???*/
-        else
-                return um8669f->regs_108[um8669f->cur_reg_108];
-}
-
-
-void um8669f_reset(void)
-{
-	fdc_t *temp_fdc = um8669f_global.fdc;
-
-	fdc_reset(um8669f_global.fdc);
-
-#if 0
-	serial_remove(1);
-#endif
-	serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
-
-#if 0
-	serial_remove(2);
-#endif
-	serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
-
-//FIXME:	parallel_remove(1);
-//FIXME:	parallel_remove(2);
-	parallel_setup(1, 0x378);
-        
-	if (um8669f_global.pnp_active) {
-		io_removehandler(0x0279, 0x0001, NULL, NULL, NULL, um8669f_pnp_write, NULL, NULL, &um8669f_global);
-		io_removehandler(0x0a79, 0x0001, NULL, NULL, NULL, um8669f_pnp_write, NULL, NULL, &um8669f_global);
-		io_removehandler(0x03e3, 0x0001, um8669f_pnp_read, NULL, NULL, NULL, NULL, NULL, &um8669f_global);
-		um8669f_global.pnp_active = 0;
+				break;
+		}
 	}
-
-        memset(&um8669f_global, 0, sizeof(um8669f_t));
-
-	um8669f_global.fdc = temp_fdc;
-
-        um8669f_global.locked = 1;
-
-	um8669f_global.dev[DEV_FDC].enable = 1;
-	um8669f_global.dev[DEV_FDC].addr = 0x03f0;
-	um8669f_global.dev[DEV_FDC].irq = 6;
-	um8669f_global.dev[DEV_FDC].dma = 2;
-
-	um8669f_global.dev[DEV_COM1].enable = 1;
-	um8669f_global.dev[DEV_COM1].addr = 0x03f8;
-	um8669f_global.dev[DEV_COM1].irq = 4;
-
-	um8669f_global.dev[DEV_COM2].enable = 1;
-	um8669f_global.dev[DEV_COM2].addr = 0x02f8;
-	um8669f_global.dev[DEV_COM2].irq = 3;
-
-	um8669f_global.dev[DEV_LPT1].enable = 1;
-	um8669f_global.dev[DEV_LPT1].addr = 0x0378;
-	um8669f_global.dev[DEV_LPT1].irq = 7;
+    }
 }
 
 
-void um8669f_init(void)
+static uint8_t
+pnp_read(uint16_t port, void *priv)
 {
-	um8669f_global.fdc = (fdc_t *)device_add(&fdc_at_device);
+    um8669f_t *dev = (um8669f_t *)priv;
+    uint8_t ret = 0xff;
 
-        io_sethandler(0x0108, 0x0002, um8669f_read, NULL, NULL, um8669f_write, NULL, NULL,  &um8669f_global);
+    switch (dev->cur_reg) {
+	case REG_DEVICE:
+		ret = dev->cur_device;
+		break;
 
-	um8669f_reset();
+	case REG_ENABLE:
+		ret = dev->dev[dev->cur_device].enable;
+		break;
+
+	case REG_ADDRLO:
+		ret = dev->dev[dev->cur_device].addr & 0xff;
+		break;
+
+	case REG_ADDRHI:
+		ret = dev->dev[dev->cur_device].addr >> 8;
+		break;
+
+	case REG_IRQ:
+		ret = dev->dev[dev->cur_device].irq;
+		break;
+
+	case REG_DMA:
+		ret = dev->dev[dev->cur_device].dma;
+		break;
+    }
+
+    return ret;
 }
+
+
+static void
+um8669f_write(uint16_t port, uint8_t val, void *priv)
+{
+    um8669f_t *dev = (um8669f_t *)priv;
+    int new_pnp_active;
+
+    if (dev->locked) {
+	if ((port == 0x0108) && (val == 0xaa))
+		dev->locked = 0;
+    } else {
+	if (port == 0x0108) {
+		if (val == 0x55)
+			dev->locked = 1;
+		else
+			dev->cur_reg_108 = val;
+	} else {
+		dev->regs_108[dev->cur_reg_108] = val;
+
+		if (dev->cur_reg_108 == 0xc1) {
+			new_pnp_active = !!(dev->regs_108[0xc1] & 0x80);
+			if (new_pnp_active != dev->pnp_active) {
+				if (new_pnp_active) {
+					io_sethandler(0x0279, 1,
+						      NULL,NULL,NULL, pnp_write,NULL,NULL, dev);
+					io_sethandler(0x0a79, 1,
+						      NULL,NULL,NULL, pnp_write,NULL,NULL, dev);
+					io_sethandler(0x03e3, 1,
+						      pnp_read,NULL,NULL, NULL,NULL,NULL, dev);
+				} else {
+					io_removehandler(0x0279, 1,
+							 NULL,NULL,NULL, pnp_write,NULL,NULL, dev);
+					io_removehandler(0x0a79, 1,
+							 NULL,NULL,NULL, pnp_write,NULL,NULL, dev);
+					io_removehandler(0x03e3, 1,
+							 pnp_read,NULL,NULL, NULL,NULL,NULL, dev);
+				}
+				dev->pnp_active = new_pnp_active;
+			}
+		}
+	}
+    }
+}
+
+
+static uint8_t
+um8669f_read(uint16_t port, void *priv)
+{
+    um8669f_t *dev = (um8669f_t *)priv;
+    uint8_t ret = 0xff;
+
+    if (! dev->locked) {
+	if (port == 0x0108)
+		ret = dev->cur_reg_108;	/* ??? */
+	else
+		ret = dev->regs_108[dev->cur_reg_108];
+    }
+
+    return ret;
+}
+
+
+static void
+um8669f_reset(um8669f_t *dev)
+{
+    fdc_reset(dev->fdc);
+
+#if 0
+    serial_remove(0);
+#endif
+    serial_setup(0, SERIAL1_ADDR, SERIAL1_IRQ);
+
+#if 0
+    serial_remove(1);
+#endif
+    serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
+
+#if 0
+    parallel_remove(1);
+
+    parallel_remove(0);
+#endif
+    parallel_setup(0, 0x0378);
+
+    if (dev->pnp_active) {
+	io_removehandler(0x0279, 1, NULL,NULL,NULL, pnp_write,NULL,NULL, dev);
+	io_removehandler(0x0a79, 1, NULL,NULL,NULL, pnp_write,NULL,NULL, dev);
+	io_removehandler(0x03e3, 1, pnp_read,NULL,NULL, NULL,NULL,NULL, dev);
+	dev->pnp_active = 0;
+    }
+
+    dev->locked = 1;
+
+    dev->dev[DEV_FDC].enable = 1;
+    dev->dev[DEV_FDC].addr = 0x03f0;
+    dev->dev[DEV_FDC].irq = 6;
+    dev->dev[DEV_FDC].dma = 2;
+
+    dev->dev[DEV_COM1].enable = 1;
+    dev->dev[DEV_COM1].addr = 0x03f8;
+    dev->dev[DEV_COM1].irq = 4;
+
+    dev->dev[DEV_COM2].enable = 1;
+    dev->dev[DEV_COM2].addr = 0x02f8;
+    dev->dev[DEV_COM2].irq = 3;
+
+    dev->dev[DEV_LPT1].enable = 1;
+    dev->dev[DEV_LPT1].addr = 0x0378;
+    dev->dev[DEV_LPT1].irq = 7;
+}
+
+
+static void
+um8669f_close(void *priv)
+{
+    um8669f_t *dev = (um8669f_t *)priv;
+
+    free(dev);
+}
+
+
+static void *
+um8669f_init(const device_t *info)
+{
+    um8669f_t *dev = (um8669f_t *)mem_alloc(sizeof(um8669f_t));
+    memset(dev, 0x00, sizeof(um8669f_t));
+
+    dev->fdc = device_add(&fdc_at_device);
+
+    io_sethandler(0x0108, 2,
+		  um8669f_read,NULL,NULL, um8669f_write,NULL,NULL, dev);
+
+    um8669f_reset(dev);
+
+    return dev;
+}
+
+
+const device_t um8669f_device = {
+    "UMC UM8669F Super I/O",
+    0,
+    0,
+    um8669f_init, um8669f_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.13 	2018/10/20
+ * Version:	@(#)parallel.c	1.0.14 	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -157,7 +157,7 @@ parallel_init(const device_t *info)
 
     /* Clear port. */
     dev->dat = 0x00;
-    dev->ctrl = 0x00;
+    dev->ctrl = 0x04;
 
     /* Enable the I/O handler for this port. */
     io_sethandler(dev->base, 3,
@@ -171,7 +171,7 @@ parallel_init(const device_t *info)
 		dev->dev_ps = dev->dev_ts->init(dev->dev_ts);
     }
 
-    INFO("PARALLEL: LPT%d (I/O=%04X, device=%d)\n",
+    INFO("PARALLEL: LPT%i (I/O=%04X, device=%i)\n",
 	info->local+1, dev->base, parallel_device[info->local]);
 
     return(dev);
@@ -197,7 +197,7 @@ parallel_close(void *priv)
 
     /* Clear port. */
     dev->dat = 0x00;
-    dev->ctrl = 0x00;
+    dev->ctrl = 0x04;
 }
 
 
@@ -238,7 +238,7 @@ parallel_reset(void)
     parallel_t *dev;
     int i;
 
-    DEBUG("PARALLEL: reset ([%d] [%d] [%d])\n",
+    DEBUG("PARALLEL: reset ([%i] [%i] [%i])\n",
 	  parallel_enabled[0], parallel_enabled[1], parallel_enabled[2]);
 
     for (i = 0; i < PARALLEL_MAX; i++) {
@@ -255,11 +255,11 @@ parallel_reset(void)
 void
 parallel_setup(int id, uint16_t port)
 {
-    parallel_t *dev = &ports[id-1];
+    parallel_t *dev = &ports[id];
 
-    DEBUG("PARALLEL: setting up LPT%d as %04X [enabled=%d]\n",
-			id, port, parallel_enabled[id-1]);
-    if (! parallel_enabled[id-1]) return;
+    DEBUG("PARALLEL: setting up LPT%i as %04X [enabled=%i]\n",
+			id+1, port, parallel_enabled[id]);
+    if (! parallel_enabled[id]) return;
 
     dev->base = port;
 }

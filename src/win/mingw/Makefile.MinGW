@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.66	2018/10/30
+# Version:	@(#)Makefile.mingw	1.0.69	2018/11/11
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -91,6 +91,9 @@ ifndef WX
 endif
 ifndef USB
  USB		:= n
+endif
+ifndef VNS
+ VNS		:= n
 endif
 ifndef SDL
  SDL		:= n
@@ -226,9 +229,8 @@ VPATH		:= $(EXPATH) . cpu \
 		   devices \
 		    devices/cdrom devices/disk devices/floppy \
 		    devices/floppy/lzf devices/input devices/input/game \
-		    devices/network devices/network/slirp devices/ports \
-		    devices/printer devices/sio devices/system devices/scsi \
-		    devices/misc \
+		    devices/network devices/ports devices/printer \
+		    devices/sio devices/system devices/scsi devices/misc \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
@@ -388,6 +390,11 @@ ifeq ($(DYNAREC), y)
 		    codegen_timing_common.o codegen_timing_486.o \
 		    codegen_timing_686.o codegen_timing_pentium.o \
 		    codegen_timing_winchip.o $(PLATCG)
+endif
+
+ifeq ($(VNS), y)
+ OPTS		+= -DUSE_VNS
+ MISCOBJ	+= net_vns.o
 endif
 
 ifeq ($(OPENAL), y)
@@ -612,7 +619,7 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_ps2_isa.o m_ps2_mca.o \
 		    m_at_opti495.o m_at_scat.o \
 		    m_at_compaq.o m_at_wd76c10.o \
-		    m_at_sis_85c471.o m_at_sis_85c496.o \
+		    m_at_sis471.o m_at_sis496.o \
 		    m_at_4x0.o
 
 INTELOBJ	:= intel.o \
@@ -665,14 +672,8 @@ SCSIOBJ		:= scsi.o \
 		    scsi_ncr5380.o scsi_ncr53c810.o
 
 NETOBJ		:= network.o \
-		    net_pcap.o \
-		    net_slirp.o \
-		     slirp.o slirp_misc.o \
-		     cksum.o debug.o if.o mbuf.o queue.o sbuf.o socket.o \
-		     arp.o bootp.o  \
-		     ip_icmp.o ip_input.o ip_output.o \
-		     tcp_input.o tcp_output.o tcp_subr.o tcp_timer.o \
-		     udp.o \
+		    network_dev.o \
+		    net_pcap.o net_slirp.o \
 		    net_dp8390.o \
 		    net_ne2000.o net_wd80x3.o net_3c503.o
 
@@ -779,8 +780,8 @@ all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
 
 VARCem.res:	VARCem.rc VARCem.mpp
 		@echo Generating Manifest file..
-		@-rm -f win/VARCem.manifest 2>NUL
-		@$(PREPROC) -P win/VARCem.mpp >win/VARCem.manifest
+		@-rm -f VARCem.manifest 2>NUL
+		@$(PREPROC) -P win/VARCem.mpp >VARCem.manifest
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o VARCem.res
 
@@ -817,7 +818,7 @@ clobber:	clean
 ifeq ($(PROFILER), y)
 		@-rm -f *.map
 endif
-		@-rm -f win/*.manifest
+		@-rm -f *.manifest
 #		@-rm -f $(DEPFILE)
 
 ifneq ($(AUTODEP), y)

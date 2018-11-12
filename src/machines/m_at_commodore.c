@@ -8,7 +8,7 @@
  *
  *		Implementation of the Commodore PC3 system.
  *
- * Version:	@(#)m_at_commodore.c	1.0.8	2018/08/20
+ * Version:	@(#)m_at_commodore.c	1.0.10	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,27 +54,27 @@
 static void
 pc3_write(uint16_t port, uint8_t val, void *priv)
 {
-    switch (val & 3) {
+    switch (val & 0x03) {
 	case 1:
-		parallel_setup(1, 0x03bc);
+		parallel_setup(0, 0x03bc);
 		break;
 
 	case 2:
-       		parallel_setup(1, 0x0378);
+       		parallel_setup(0, 0x0378);
 		break;
 
 	case 3:
-		parallel_setup(1, 0x0278);
+		parallel_setup(0, 0x0278);
 		break;
     }
 
-    switch (val & 0xc) {
-	case 0x4:
-		serial_setup(1, 0x02f8, 3);
+    switch (val & 0x0c) {
+	case 0x04:
+		serial_setup(0, 0x02f8, 3);
 		break;
 
-	case 0x8:
-		serial_setup(1, 0x03f8, 4);
+	case 0x08:
+		serial_setup(0, 0x03f8, 4);
 		break;
     }
 }

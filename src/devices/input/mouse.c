@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.14	2018/10/20
+ * Version:	@(#)mouse.c	1.0.15	2018/11/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,12 +60,6 @@
 #include "mouse.h"
 
 
-typedef struct {
-    const char		*internal_name;
-    const device_t	*device;
-} mouse_t;
-
-
 #ifdef ENABLE_MOUSE_LOG
 int	mouse_do_log = ENABLE_MOUSE_LOG;
 #endif
@@ -91,7 +85,10 @@ static const device_t mouse_internal_device = {
 };
 
 
-static const mouse_t mouse_devices[] = {
+static const struct {
+    const char		*internal_name;
+    const device_t	*device;
+} mouse_devices[] = {
     { "none",		&mouse_none_device		},
     { "internal",	&mouse_internal_device		},
     { "logibus",	&mouse_logibus_device		},
@@ -101,7 +98,7 @@ static const mouse_t mouse_devices[] = {
 #endif
     { "mssystems",	&mouse_mssystems_device		},
     { "msserial",	&mouse_msserial_device		},
-    { "logiserial",	&mouse_logiserial_device	},
+    { "ltserial",	&mouse_ltserial_device		},
     { "mswhserial",	&mouse_mswhserial_device	},
     { "ps2",		&mouse_ps2_device		},
     { NULL,		NULL				}
@@ -278,12 +275,4 @@ int
 mouse_get_buttons(void)
 {
     return(mouse_nbut);
-}
-
-
-/* Return number of MOUSE types we know about. */
-int
-mouse_get_ndev(void)
-{
-    return((sizeof(mouse_devices)/sizeof(mouse_t)) - 1);
 }

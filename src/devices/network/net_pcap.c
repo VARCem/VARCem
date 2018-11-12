@@ -8,7 +8,7 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.8	2018/10/28
+ * Version:	@(#)net_pcap.c	1.0.9	2018/11/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -57,6 +57,7 @@
 #include "../../emu.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../../ui/ui.h"
 #include "network.h"
 
 
@@ -70,7 +71,6 @@
 static volatile void		*pcap_handle;	/* handle to WinPcap DLL */
 static volatile pcap_t		*pcap;		/* handle to WinPcap library */
 static volatile thread_t	*poll_tid;
-static const netcard_t		*poll_card;	/* netcard linked to us */
 static event_t			*poll_state;
 
 
@@ -139,7 +139,7 @@ poll_thread(void *arg)
 		if ((mac_cmp32[0] != mac_cmp32[1]) ||
 		    (mac_cmp16[0] != mac_cmp16[1])) {
 
-			poll_card->rx(poll_card->priv, data, h.caplen); 
+			network_rx(data, h.caplen);
 		} else {
 			/* Mark as invalid packet. */
 			data = NULL;
@@ -170,19 +170,36 @@ poll_thread(void *arg)
  * to check for availability of PCAP, and to retrieve
  * a list of (usable) intefaces for it.
  */
-int
-net_pcap_prepare(netdev_t *list)
+static int
+net_pcap_init(netdev_t *list)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
+    wchar_t temp[512];
     pcap_if_t *devlist, *dev;
+    char *str = PCAP_DLL_PATH;
     int i = 0;
 
     /* Local variables. */
     pcap = NULL;
 
     /* Try loading the DLL. */
-    pcap_handle = dynld_module(PCAP_DLL_PATH, pcap_imports);
-    if (pcap_handle == NULL) return(-1);
+    pcap_handle = dynld_module(str, pcap_imports);
+    if (pcap_handle == NULL) {
+        swprintf(temp, sizeof_w(temp),
+                 get_string(IDS_ERR_NOLIB), "PCap", str);
+        ui_msgbox(MBX_ERROR, temp);
+        ERRLOG("PCAP: unable to load '%s', PCAP not available!\n", str);
+        return(-1);
+    } else {
+        INFO("PCAP: module '%s' loaded.\n", str);
+    }
+
+    /* Get the PCAP library name and version. */
+    strcpy(errbuf, PCAP_lib_version());
+    str = strchr(errbuf, '(');
+    if (str != NULL)
+	*(str-1) = '\0';
+    INFO("PCAP: initializing, %s\n", errbuf);
 
     /* Retrieve the device list from the local machine */
     if (PCAP_findalldevs(&devlist, errbuf) == -1) {
@@ -190,6 +207,7 @@ net_pcap_prepare(netdev_t *list)
 	return(-1);
     }
 
+    /* Process the list and build our table. */
     for (dev = devlist; dev != NULL; dev=dev->next) {
 	strcpy(list->device, dev->name);
 	if (dev->description)
@@ -206,44 +224,8 @@ net_pcap_prepare(netdev_t *list)
 }
 
 
-/*
- * Initialize (Win)Pcap for use.
- *
- * This is called on every 'cycle' of the emulator,
- * if and as long the NetworkType is set to PCAP,
- * and also as long as we have a NetCard defined.
- */
-int
-net_pcap_init(void)
-{
-    char errbuf[PCAP_ERRBUF_SIZE];
-    char *str;
-
-    /* Did we already load the library? */
-    if (pcap_handle == NULL) return(-1);
-
-    /* Get the PCAP library name and version. */
-    strcpy(errbuf, PCAP_lib_version());
-    str = strchr(errbuf, '(');
-    if (str != NULL) *(str-1) = '\0';
-    INFO("PCAP: initializing, %s\n", errbuf);
-
-    /* Get the value of our capture interface. */
-    if ((network_host[0] == '\0') || !strcmp(network_host, "none")) {
-	ERRLOG("PCAP: no interface configured!\n");
-	return(-1);
-    }
-
-    poll_tid = NULL;
-    poll_state = NULL;
-    poll_card = NULL;
-
-    return(0);
-}
-
-
 /* Close up shop. */
-void
+static void
 net_pcap_close(void)
 {
     pcap_t *pc;
@@ -267,7 +249,6 @@ net_pcap_close(void)
 
 	poll_tid = NULL;
 	poll_state = NULL;
-	poll_card = NULL;
     }
 
     /* OK, now shut down Pcap itself. */
@@ -289,12 +270,22 @@ net_pcap_close(void)
  * is called when the network activates itself and
  * tries to attach to the network module.
  */
-int
-net_pcap_reset(const netcard_t *card, uint8_t *mac)
+static int
+net_pcap_reset(uint8_t *mac)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     char filter_exp[255];
     struct bpf_program fp;
+
+    /* Make sure local variables are cleared. */
+    poll_tid = NULL;
+    poll_state = NULL;
+
+    /* Get the value of our capture interface. */
+    if ((network_host[0] == '\0') || !strcmp(network_host, "none")) {
+	ERRLOG("PCAP: no interface configured!\n");
+	return(-1);
+    }
 
     /* Open a PCAP live channel. */
     if ((pcap = PCAP_open_live(network_host,		/* interface name */
@@ -326,9 +317,6 @@ net_pcap_reset(const netcard_t *card, uint8_t *mac)
 	return(-1);
     }
 
-    /* Save the callback info. */
-    poll_card = card;
-
     poll_state = thread_create_event();
     poll_tid = thread_create(poll_thread, mac);
     thread_wait_event(poll_state, -1);
@@ -338,8 +326,8 @@ net_pcap_reset(const netcard_t *card, uint8_t *mac)
 
 
 /* Send a packet to the Pcap interface. */
-void
-net_pcap_in(uint8_t *bufp, int len)
+static void
+net_pcap_send(uint8_t *bufp, int len)
 {
     if (pcap == NULL) return;
 
@@ -349,3 +337,16 @@ net_pcap_in(uint8_t *bufp, int len)
 
     network_busy(0);
 }
+
+
+const network_t network_pcap = {
+#ifdef _WIN32
+    "WinPCap",
+#else
+    "PCap",
+#endif
+    net_pcap_init,
+    net_pcap_close,
+    net_pcap_reset,
+    net_pcap_send
+};

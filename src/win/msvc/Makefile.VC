@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.52	2018/10/30
+# Version:	@(#)Makefile.VC	1.0.55	2018/11/11
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -92,6 +92,9 @@ ifndef WX
 endif
 ifndef USB
  USB		:= n
+endif
+ifndef VNS
+ VNS		:= n
 endif
 ifndef SDL
  SDL		:= n
@@ -369,6 +372,11 @@ ifeq ($(DYNAREC), y)
 		    codegen_timing_winchip.obj $(PLATCG)
 endif
 
+ifeq ($(VNS), y)
+ OPTS		+= -DUSE_VNS
+ MISCOBJ	+= net_vns.obj
+endif
+
 ifeq ($(OPENAL), y)
  OPTS		+= -DUSE_OPENAL
 endif
@@ -586,7 +594,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_ps2_isa.obj m_ps2_mca.obj \
 		    m_at_opti495.obj m_at_scat.obj \
 		    m_at_compaq.obj m_at_wd76c10.obj \
-		    m_at_sis_85c471.obj m_at_sis_85c496.obj \
+		    m_at_sis471.obj m_at_sis496.obj \
 		    m_at_4x0.obj
 
 INTELOBJ	:= intel.obj \
@@ -639,15 +647,9 @@ SCSIOBJ		:= scsi.obj \
 		    scsi_ncr5380.obj scsi_ncr53c810.obj
 
 NETOBJ		:= network.obj \
+		    network_dev.obj \
 		    net_pcap.obj \
 		    net_slirp.obj \
-                     slirp.obj slirp_misc.obj \
-                     cksum.obj debug.obj if.obj mbuf.obj queue.obj sbuf.obj \
-		     socket.obj \
-                     arp.obj bootp.obj  \
-                     ip_icmp.obj ip_input.obj ip_output.obj \
-                     tcp_input.obj tcp_output.obj tcp_subr.obj tcp_timer.obj \
-                     udp.obj \
 		    net_dp8390.obj \
 		    net_ne2000.obj net_wd80x3.obj net_3c503.obj
 
@@ -773,22 +775,20 @@ else
 endif
 		@-del win\Mklang.cmd
 
-win/$(RESDLL).rc:	VARCem.rpp VARCem-common.rc
-		@$(PREPROC) -DPREAMBLE= -DLANG=$(LANG) -DLANGID=$(LANGID) -DPRILANG=$(PRILANG) -DSUBLANG=$(SUBLANG) $< >win\$(RESDLL).rc 2>NUL
+$(RESDLL).rc:	VARCem.rpp
+		@win\msvc\preproc $< $@ "-DPREAMBLE=" "-DLANG=$(LANG)" "-DLANGID=$(LANGID)" "-DPRILANG=$(PRILANG)" "-DSUBLANG=$(SUBLANG)"
 
-$(RESDLL).res:	win/$(RESDLL).rc VARCem-common.rc
+$(RESDLL).res:	$(RESDLL).rc VARCem-common.rc
 		@echo Processing $(RESDLL).rc ..
 		@$(WINDRES) $(RFLAGS) -fo$@ $<
 
 $(RESDLL).dll:	$(RESDLL).res
 		@echo Linking $(RESDLL).dll ..
 		@$(LINK) /DLL /NOENTRY $(LDFLAGS) -OUT:$@ $(RESDLL).res
-		@-del win\$(RESDLL).rc
+		@-del $(RESDLL).rc
 
-VARCem.res:	win/VARCem.rc win/VARCem.mpp
-		@echo Generating Manifest file..
-		@del win\VARCem.manifest 2>NUL
-		@$(PREPROC) win\VARCem.mpp >win\VARCem.manifest 2>NUL
+VARCem.res:	VARCem.rc win/VARCem.mpp
+		@win\msvc\preproc win/VARCem.mpp VARCem.manifest
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) $(EXTRAS) -fo$@ $<
 
@@ -822,7 +822,7 @@ endif
 ifeq ($(PROFILER), y)
 		@-del *.map 2>NUL
 endif
-		@-del win\*.manifest 2>NUL
+		@-del *.manifest 2>NUL
 		@-del *.dll 2>NUL
 		@-del win\Mklang.cmd
 #		@del $(DEPFILE) 2>NUL

@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the SiS 85C496 chipset.
+ *		Implementation of the SiS 85C496/497 chipset.
  *
- * Version:	@(#)m_at_sis_85c496.c	1.0.7	2018/11/02
+ * Version:	@(#)m_at_sis49x.c	1.0.8	2018/11/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,13 +55,192 @@
 #include "machine.h"
 
 
-typedef struct sis_85c496_t {
-    uint8_t pci_conf[256];
-} sis_85c496_t;
+typedef struct {
+    uint8_t	cur_reg,
+		regs[39],
+		pci_conf[256];
+} sis49x_t;
 
 
 static void
-sis_85c496_recalcmapping(sis_85c496_t *dev)
+sis497_write(uint16_t port, uint8_t val, void *priv)
+{
+    sis49x_t *dev = (sis49x_t *)priv;
+    uint8_t indx = (port & 1) ? 0 : 1;
+
+    if (indx) {
+	if ((val >= 0x50) && (val <= 0x76))
+		dev->cur_reg = val;
+	return;
+    }
+
+    if ((dev->cur_reg < 0x50) || (dev->cur_reg > 0x76))
+	return;
+    /* Writes to 0x52 are blocked as otherwise, large hard disks don't read correctly. */
+    if (dev->cur_reg != 0x52)
+	dev->regs[dev->cur_reg - 0x50] = val;
+
+    dev->cur_reg = 0;
+}
+
+
+static uint8_t
+sis497_read(uint16_t port, void *priv)
+{
+    sis49x_t *dev = (sis49x_t *)priv;
+    uint8_t indx = (port & 1) ? 0 : 1;
+    uint8_t ret = 0xff;
+
+    if (indx)
+	ret = dev->cur_reg;
+    else {
+	if ((dev->cur_reg >= 0x50) && (dev->cur_reg <= 0x76)) {
+		ret = dev->regs[dev->cur_reg - 0x50];
+		dev->cur_reg = 0;
+	}
+    }
+    return ret;
+}
+
+
+static void
+sis497_reset(sis49x_t *dev)
+{
+    int i;
+
+    memset(dev->regs, 0x00, sizeof(dev->regs));
+    dev->cur_reg = 0;
+
+    for (i = 0; i < 0x27; i++)
+	dev->regs[i] = 0x00;
+    dev->regs[9] = 0x40;
+
+    i = mem_size >> 10;
+    switch (i) {
+	case 0:
+	case 1:
+		dev->regs[9] |= 0x00;
+		break;
+
+	case 2:
+	case 3:
+		dev->regs[9] |= 0x01;
+		break;
+
+	case 4:
+		dev->regs[9] |= 0x02;
+		break;
+
+	case 5:
+		dev->regs[9] |= 0x20;
+		break;
+
+	case 6:
+	case 7:
+		dev->regs[9] |= 0x09;
+		break;
+
+	case 8:
+	case 9:
+		dev->regs[9] |= 0x04;
+		break;
+
+	case 10:
+	case 11:
+		dev->regs[9] |= 0x05;
+		break;
+
+	case 12:
+	case 13:
+	case 14:
+	case 15:
+		dev->regs[9] |= 0x0b;
+		break;
+
+	case 16:
+		dev->regs[9] |= 0x13;
+		break;
+
+	case 17:
+		dev->regs[9] |= 0x21;
+		break;
+
+	case 18:
+	case 19:
+		dev->regs[9] |= 0x06;
+		break;
+
+	case 20:
+	case 21:
+	case 22:
+	case 23:
+		dev->regs[9] |= 0x0d;
+		break;
+
+	case 24:
+	case 25:
+	case 26:
+	case 27:
+	case 28:
+	case 29:
+	case 30:
+	case 31:
+		dev->regs[9] |= 0x0e;
+		break;
+
+	case 32:
+	case 33:
+	case 34:
+	case 35:
+		dev->regs[9] |= 0x1b;
+		break;
+
+	case 36:
+	case 37:
+	case 38:
+	case 39:
+		dev->regs[9] |= 0x0f;
+		break;
+
+	case 40:
+	case 41:
+	case 42:
+	case 43:
+	case 44:
+	case 45:
+	case 46:
+	case 47:
+		dev->regs[9] |= 0x17;
+		break;
+
+	case 48:
+		dev->regs[9] |= 0x1e;
+		break;
+
+	default:
+		if (i < 64)
+			dev->regs[9] |= 0x1e;
+		else if ((i >= 65) && (i < 68))
+			dev->regs[9] |= 0x22;
+		else
+			dev->regs[9] |= 0x24;
+		break;
+    }
+
+    dev->regs[0x11] = 0x09;
+    dev->regs[0x12] = 0xff;
+    dev->regs[0x23] = 0xf0;
+    dev->regs[0x26] = 0x01;
+
+    io_removehandler(0x0022, 2,
+		     sis497_read,NULL,NULL, sis497_write,NULL,NULL, dev);
+    io_sethandler(0x0022, 2,
+		  sis497_read,NULL,NULL, sis497_write,NULL,NULL, dev);
+}
+
+
+static void
+recalc_mapping(sis49x_t *dev)
 {
     uint32_t base;
     int c;
@@ -73,12 +252,15 @@ sis_85c496_recalcmapping(sis_85c496_t *dev)
 			case 0:
 				mem_set_mem_state(base, 0x8000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
 				break;
+
 			case 1:
 				mem_set_mem_state(base, 0x8000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
 				break;
+
 			case 2:
 				mem_set_mem_state(base, 0x8000, MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
 				break;
+
 			case 3:
 				mem_set_mem_state(base, 0x8000, MEM_READ_INTERNAL | MEM_WRITE_EXTERNAL);
 				break;
@@ -93,23 +275,28 @@ sis_85c496_recalcmapping(sis_85c496_t *dev)
 
 
 static void
-sis_85c496_write(int func, int addr, uint8_t val, void *priv)
+sis496_write(int func, int addr, uint8_t val, void *priv)
 {
-    sis_85c496_t *dev = (sis_85c496_t *)priv;
+    sis49x_t *dev = (sis49x_t *)priv;
 
     switch (addr) {
 	case 0x44: /*Shadow configure*/
 		if ((dev->pci_conf[0x44] & val) ^ 0xf0) {
 			dev->pci_conf[0x44] = val;
-			sis_85c496_recalcmapping(dev);
+			recalc_mapping(dev);
 		}
 		break;
 
 	case 0x45: /*Shadow configure*/
 		if ((dev->pci_conf[0x45] & val) ^ 0x01) {
 			dev->pci_conf[0x45] = val;
-			sis_85c496_recalcmapping(dev);
+			recalc_mapping(dev);
 		}
+		break;
+
+
+	case 0x82:
+		sis497_write(0x22, val, priv);
 		break;
 
 	case 0xc0:
@@ -147,44 +334,48 @@ sis_85c496_write(int func, int addr, uint8_t val, void *priv)
 
 
 static uint8_t
-sis_85c496_read(int func, int addr, void *priv)
+sis496_read(int func, int addr, void *priv)
 {
-    sis_85c496_t *dev = (sis_85c496_t *)priv;
+    sis49x_t *dev = (sis49x_t *)priv;
 
     return dev->pci_conf[addr];
 }
  
 
 static void
-sis_85c496_reset(void *priv)
+sis496_reset(void *priv)
 {
-    uint8_t val = 0;
+    uint8_t val;
 
-    val = sis_85c496_read(0, 0x44, priv);	/* Read current value of 0x44. */
-    sis_85c496_write(0, 0x44, val & 0xf, priv);	/* Turn off shadow BIOS but keep the lower 4 bits. */
+    /* Read current value of 0x44. */
+    val = sis496_read(0, 0x44, priv);
+
+    /* Turn off shadow BIOS but keep the lower 4 bits. */
+    sis496_write(0, 0x44, val & 0x0f, priv);
+
+    sis497_reset((sis49x_t *)priv);
 }
 
 
 static void
-sis_85c496_close(void *priv)
+sis_close(void *priv)
 {
-    sis_85c496_t *dev = (sis_85c496_t *)priv;
+    sis49x_t *dev = (sis49x_t *)priv;
 
     free(dev);
 }
 
 
 static void *
-sis_85c496_init(const device_t *info)
+sis_init(const device_t *info)
 {
-    sis_85c496_t *dev = (sis_85c496_t *)mem_alloc(sizeof(sis_85c496_t));
-    memset(dev, 0, sizeof(sis_85c496_t));
+    sis49x_t *dev = (sis49x_t *)mem_alloc(sizeof(sis49x_t));
+    memset(dev, 0x00, sizeof(sis49x_t));
 
     dev->pci_conf[0x00] = 0x39; /*SiS*/
     dev->pci_conf[0x01] = 0x10; 
     dev->pci_conf[0x02] = 0x96; /*496/497*/
     dev->pci_conf[0x03] = 0x04; 
-
     dev->pci_conf[0x04] = 7;
     dev->pci_conf[0x05] = 0;
 
@@ -199,7 +390,9 @@ sis_85c496_init(const device_t *info)
 
     dev->pci_conf[0x0e] = 0x00; /*Single function device*/
 
-    pci_add_card(5, sis_85c496_read, sis_85c496_write, dev);
+    pci_add_card(5, sis496_read, sis496_write, dev);
+
+    sis497_reset(dev);
 
     return dev;
 }
@@ -209,7 +402,7 @@ const device_t sis_85c496_device = {
     "SiS 85c496/85c497",
     DEVICE_PCI,
     0,
-    sis_85c496_init, sis_85c496_close, sis_85c496_reset,
+    sis_init, sis_close, sis496_reset,
     NULL, NULL, NULL, NULL,
     NULL
 };
@@ -219,11 +412,12 @@ static void
 machine_at_sis_85c496_common_init(const machine_t *model, void *arg)
 {
     machine_at_common_init(model, arg);
-    device_add(&keyboard_ps2_pci_device);
 
+    device_add(&keyboard_ps2_pci_device);
     device_add(&ide_pci_device);
 
     memregs_init();
+
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x05, PCI_CARD_SPECIAL, 0, 0, 0, 0);
     pci_register_slot(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4);
@@ -246,12 +440,11 @@ machine_at_sis496_ami_init(const machine_t *model, void *arg)
     machine_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
-
     device_add(&fdc_at_device);
 
 //////////
-
     memregs_init();
+
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x05, PCI_CARD_SPECIAL, 0, 0, 0, 0);
     pci_register_slot(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4);
@@ -265,8 +458,6 @@ machine_at_sis496_ami_init(const machine_t *model, void *arg)
     pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 
     device_add(&sis_85c496_device);
-
-
 /////////
 }
 
@@ -276,5 +467,5 @@ machine_at_r418_init(const machine_t *model, void *arg)
 {
     machine_at_sis_85c496_common_init(model, arg);
 
-    fdc37c665_init();
+    device_add(&fdc37c665_device);
 }

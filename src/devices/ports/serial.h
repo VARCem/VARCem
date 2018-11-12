@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.5	2018/09/19
+ * Version:	@(#)serial.h	1.0.6	2018/11/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -70,7 +70,7 @@ typedef struct SERIAL {
     int8_t	irq;			/* IRQ channel used */
     uint16_t	base;			/* I/O address used */
 
-    int8_t	pcjr;			/* PCjr UART (fixed OUT2) */
+    int8_t	is_pcjr;		/* PCjr UART (fixed OUT2) */
     int8_t	type;			/* UART type */
     uint8_t	int_status;
 

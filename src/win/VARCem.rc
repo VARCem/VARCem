@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.34	2018/10/16
+ * Version:	@(#)VARCem.rc	1.0.35	2018/11/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -189,7 +189,7 @@ ICON_FLOPPY_D		ICON		"icons/floppy_disabled.ico"
 ICON_CDROM_D		ICON		"icons/cdrom_disabled.ico"
 ICON_ZIP_D		ICON		"icons/zip_disabled.ico"
 
-1			RT_MANIFEST	"VARCem.manifest"
+1			RT_MANIFEST	"../VARCem.manifest"
 
 
 VS_VERSION_INFO VERSIONINFO

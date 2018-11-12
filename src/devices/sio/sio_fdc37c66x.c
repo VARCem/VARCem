@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C663 and FDC37C665 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c66x.c	1.0.8	2018/09/19
+ * Version:	@(#)sio_fdc37c66x.c	1.0.9	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../io.h"
@@ -54,144 +55,101 @@
 #include "sio.h"
 
 
-static uint8_t fdc37c66x_lock[2];
-static int fdc37c66x_curreg;
-static uint8_t fdc37c66x_regs[16];
-static int com3_addr, com4_addr;
-static fdc_t *fdc37c66x_fdc;
+typedef struct {
+    uint8_t	chip_id,
+		cur_reg,
+		lock[2];
+
+    uint16_t	com3_addr,
+		com4_addr;
+
+    fdc_t	*fdc;
+
+    uint8_t	regs[16];
+} fdc37c66x_t;
 
 
 static void
-write_lock(uint8_t val)
+write_lock(fdc37c66x_t *dev, uint8_t val)
 {
-    if (val == 0x55 && fdc37c66x_lock[1] == 0x55)
-	fdc_3f1_enable(fdc37c66x_fdc, 0);
-    if (fdc37c66x_lock[0] == 0x55 && fdc37c66x_lock[1] == 0x55 && val != 0x55)
-	fdc_3f1_enable(fdc37c66x_fdc, 1);
+    if (val == 0x55 && dev->lock[1] == 0x55)
+	fdc_3f1_enable(dev->fdc, 0);
+    if ((dev->lock[0] == 0x55) && (dev->lock[1] == 0x55) && (val != 0x55))
+	fdc_3f1_enable(dev->fdc, 1);
 
-    fdc37c66x_lock[0] = fdc37c66x_lock[1];
-    fdc37c66x_lock[1] = val;
+    dev->lock[0] = dev->lock[1];
+    dev->lock[1] = val;
 }
 
 
 static void
-ide_handler(void)
+set_com34_addr(fdc37c66x_t *dev)
 {
-#if 0
-    uint16_t or_value = 0;
-
-    if ((romset == ROM_440FX) ||
-	(romset == ROM_R418) ||
-	(romset == ROM_MB500N)) return;
-
-    ide_pri_disable();
-
-    if (fdc37c66x_regs[0] & 1) {
-	if (fdc37c66x_regs[5] & 2)
-		or_value = 0;
-	  else
-		or_value = 0x800;
-	ide_set_base(0, 0x170 | or_value);
-	ide_set_side(0, 0x376 | or_value);
-	ide_pri_enable();
-    }
-#endif
-}
-
-
-static void
-set_com34_addr(void)
-{
-    switch (fdc37c66x_regs[1] & 0x60) {
+    switch (dev->regs[1] & 0x60) {
 	case 0x00:
-		com3_addr = 0x338;
-		com4_addr = 0x238;
+		dev->com3_addr = 0x0338;
+		dev->com4_addr = 0x0238;
 		break;
 
 	case 0x20:
-		com3_addr = 0x3e8;
-		com4_addr = 0x2e8;
+		dev->com3_addr = 0x03e8;
+		dev->com4_addr = 0x02e8;
 		break;
 
 	case 0x40:
-		com3_addr = 0x3e8;
-		com4_addr = 0x2e0;
+		dev->com3_addr = 0x03e8;
+		dev->com4_addr = 0x02e0;
 		break;
 
 	case 0x60:
-		com3_addr = 0x220;
-		com4_addr = 0x228;
+		dev->com3_addr = 0x0220;
+		dev->com4_addr = 0x0228;
 		break;
     }
 }
 
 
 static void
-set_serial1_addr(void)
+set_serial_addr(fdc37c66x_t *dev, int port)
 {
-    if (fdc37c66x_regs[2] & 4) {
-	switch (fdc37c66x_regs[2] & 3) {
-		case 0:
-			serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
-			break;
+    uint8_t shift = (port << 4);
 
-		case 1:
-			serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
-			break;
+    if (dev->regs[2] & (4 << shift)) switch (dev->regs[2] & (3 << shift)) {
+	case 0:
+		serial_setup(port, SERIAL1_ADDR, SERIAL1_IRQ);
+		break;
 
-		case 2:
-			serial_setup(1, com3_addr, 4);
-			break;
-
-		case 3:
-			serial_setup(1, com4_addr, 3);
-			break;
-	}
-    }
-}
-
-
-static void
-set_serial2_addr(void)
-{
-    if (fdc37c66x_regs[2] & 0x40) {
-	switch (fdc37c66x_regs[2] & 0x30) {
-		case 0:
-			serial_setup(2, SERIAL1_ADDR, SERIAL1_IRQ);
-			break;
-
-		case 1:
-			serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
-			break;
-
-		case 2:
-			serial_setup(2, com3_addr, 4);
-			break;
-
-		case 3:
-			serial_setup(2, com4_addr, 3);
-			break;
-	}
-    }
-}
-
-
-static void
-lpt1_handler(void)
-{
-//FIXME:	parallel_remove(1);
-
-    switch (fdc37c66x_regs[1] & 3) {
 	case 1:
-		parallel_setup(1, 0x3bc);
+		serial_setup(port, SERIAL2_ADDR, SERIAL2_IRQ);
 		break;
 
 	case 2:
-		parallel_setup(1, 0x378);
+		serial_setup(port, dev->com3_addr, 4);
 		break;
 
 	case 3:
-		parallel_setup(1, 0x278);
+		serial_setup(port, dev->com4_addr, 3);
+		break;
+    }
+}
+
+
+static void
+lpt1_handler(fdc37c66x_t *dev)
+{
+//    parallel_remove(0);
+
+    switch (dev->regs[1] & 3) {
+	case 1:
+		parallel_setup(0, 0x03bc);
+		break;
+
+	case 2:
+		parallel_setup(0, 0x0378);
+		break;
+
+	case 3:
+		parallel_setup(0, 0x0278);
 		break;
     }
 }
@@ -200,84 +158,63 @@ lpt1_handler(void)
 static void
 fdc37c66x_write(uint16_t port, uint8_t val, void *priv)
 {
+    fdc37c66x_t *dev = (fdc37c66x_t *)priv;
     uint8_t valxor = 0;
 
-    if (fdc37c66x_lock[0] == 0x55 && fdc37c66x_lock[1] == 0x55) {
-	if (port == 0x3f0) {
+    if ((dev->lock[0] == 0x55) && (dev->lock[1] == 0x55)) {
+	if (port == 0x03f0) {
 		if (val == 0xaa)
-			write_lock(val);
+			write_lock(dev, val);
 		else
-			fdc37c66x_curreg = val;
-#if 0
-		if (fdc37c66x_curreg != 0)
-			fdc37c66x_curreg = val & 0xf;
-		else {
-			/* Hardcode the IDE to AT type. */
-			fdc37c66x_curreg = (val & 0xf) | 2;
-		}
-#endif
+			dev->cur_reg = val;
 	} else {
-		if (fdc37c66x_curreg > 15)
+		if (dev->cur_reg > 15)
 			return;
 
-		valxor = val ^ fdc37c66x_regs[fdc37c66x_curreg];
-		fdc37c66x_regs[fdc37c66x_curreg] = val;
+		valxor = val ^ dev->regs[dev->cur_reg];
+		dev->regs[dev->cur_reg] = val;
 
-		switch(fdc37c66x_curreg) {
-			case 0:
-				if (valxor & 1)
-					ide_handler();
-				break;
-
+		switch (dev->cur_reg) {
 			case 1:
 				if (valxor & 3)
-					lpt1_handler();
-
+					lpt1_handler(dev);
 				if (valxor & 0x60) {
-#if 0
-	                                serial_remove(1);
-#endif
-					set_com34_addr();
-					set_serial1_addr();
-					set_serial2_addr();
+//					serial_remove(0);
+//					serial_remove(1);
+					set_com34_addr(dev);
+					set_serial_addr(dev, 0);
+					set_serial_addr(dev, 1);
 				}
 				break;
 
 			case 2:
-				if (valxor & 7) {
-#if 0
-	                                serial_remove(1);
-#endif
-					set_serial1_addr();
+				if (valxor & 0x07) {
+//					serial_remove(0);
+					set_serial_addr(dev, 0);
 				}
+
 				if (valxor & 0x70) {
-#if 0
-					serial_remove(2);
-#endif
-					set_serial2_addr();
+//					serial_remove(1);
+					set_serial_addr(dev, 1);
 				}
 				break;
 
 			case 3:
-				if (valxor & 2)
-					fdc_update_enh_mode(fdc37c66x_fdc, (fdc37c66x_regs[3] & 2) ? 1 : 0);
+				if (valxor & 0x02)
+					fdc_update_enh_mode(dev->fdc, (dev->regs[3] & 2) ? 1 : 0);
 				break;
 
 			case 5:
-				if (valxor & 2)
-					ide_handler();
-
 				if (valxor & 0x18)
-					fdc_update_densel_force(fdc37c66x_fdc, (fdc37c66x_regs[5] & 0x18) >> 3);
-
+					fdc_update_densel_force(dev->fdc, (dev->regs[5] & 0x18) >> 3);
 				if (valxor & 0x20)
-					fdc_set_swap(fdc37c66x_fdc, (fdc37c66x_regs[5] & 0x20) >> 5);
+					fdc_set_swap(dev->fdc, (dev->regs[5] & 0x20) >> 5);
 				break;
 		}
 	}
     } else {
-	if (port == 0x3f0)
-		write_lock(val);
+	if (port == 0x03f0)
+		write_lock(dev, val);
     }
 }
 
@@ -285,85 +222,101 @@ fdc37c66x_write(uint16_t port, uint8_t val, void *priv)
 static uint8_t
 fdc37c66x_read(uint16_t port, void *priv)
 {
-    if (fdc37c66x_lock[0] == 0x55 && fdc37c66x_lock[1] == 0x55) {
-	if (port == 0x3f1)
-		return fdc37c66x_regs[fdc37c66x_curreg];
+    fdc37c66x_t *dev = (fdc37c66x_t *)priv;
+    uint8_t ret = 0xff;
+
+    if ((dev->lock[0] == 0x55) && (dev->lock[1] == 0x55)) {
+	if (port == 0x03f1)
+		ret = dev->regs[dev->cur_reg];
     }
 
-    return 0xff;
+    return ret;
 }
 
 
 static void
-fdc37c66x_reset(void)
+fdc37c66x_reset(fdc37c66x_t *dev)
 {
-    com3_addr = 0x338;
-    com4_addr = 0x238;
+    dev->com3_addr = 0x338;
+    dev->com4_addr = 0x238;
 
-#if 0
-    serial_remove(1);
-#endif
-    serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
+//    serial_remove(0);
+    serial_setup(0, SERIAL1_ADDR, SERIAL1_IRQ);
 
-#if 0
-    serial_remove(2);
-#endif
-    serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
+//    serial_remove(1);
+    serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
 
-//FIXME:	parallel_remove(1);
-//FIXME:	parallel_remove(2);
-    parallel_setup(1, 0x378);
+//    parallel_remove(1);
 
-    fdc_reset(fdc37c66x_fdc);
-        
-    memset(fdc37c66x_lock, 0, 2);
-    memset(fdc37c66x_regs, 0, 16);
-    fdc37c66x_regs[0x0] = 0x3a;
-    fdc37c66x_regs[0x1] = 0x9f;
-    fdc37c66x_regs[0x2] = 0xdc;
-    fdc37c66x_regs[0x3] = 0x78;
-    fdc37c66x_regs[0x6] = 0xff;
-    fdc37c66x_regs[0xe] = 0x01;
+//    parallel_remove(0);
+    parallel_setup(0, 0x0378);
+
+    fdc_reset(dev->fdc);
+
+    memset(dev->lock, 0x00, sizeof(dev->lock));
+    memset(dev->regs, 0x00, sizeof(dev->regs));
+
+    dev->regs[0x0] = 0x3a;
+    dev->regs[0x1] = 0x9f;
+    dev->regs[0x2] = 0xdc;
+    dev->regs[0x3] = 0x78;
+    dev->regs[0x6] = 0xff;
+    dev->regs[0xd] = dev->chip_id;
+    dev->regs[0xe] = 0x01;
 }
 
 
 static void
-fdc37c663_reset(void)
+fdc37c66x_close(void *priv)
 {
-    fdc37c66x_reset();
+    fdc37c66x_t *dev = (fdc37c66x_t *)priv;
 
-    fdc37c66x_regs[0xd] = 0x63;
+    free(dev);
 }
 
 
-static void
-fdc37c665_reset(void)
+static void *
+fdc37c66x_init(const device_t *info)
 {
-    fdc37c66x_reset();
+    fdc37c66x_t *dev = (fdc37c66x_t *)mem_alloc(sizeof(fdc37c66x_t));
+    memset(dev, 0x00, sizeof(fdc37c66x_t));
+    dev->chip_id = info->local;
 
-    fdc37c66x_regs[0xd] = 0x65;
-}
-
-
-void
-fdc37c663_init(void)
-{
-    fdc37c66x_fdc = (fdc_t *)device_add(&fdc_at_smc_device);
+    dev->fdc = device_add(&fdc_at_smc_device);
 
     io_sethandler(0x03f0, 2,
-		  fdc37c66x_read,NULL,NULL, fdc37c66x_write,NULL,NULL, NULL);
+		  fdc37c66x_read,NULL,NULL, fdc37c66x_write,NULL,NULL, dev);
 
-    fdc37c663_reset();
+    fdc37c66x_reset(dev);
+
+    return dev;
 }
 
 
-void
-fdc37c665_init(void)
-{
-    fdc37c66x_fdc = (fdc_t *)device_add(&fdc_at_smc_device);
+/* These seem to differ only in the chip ID, according to their datasheets. */
+const device_t fdc37c663_device = {
+    "SMC FDC37C663 Super I/O",
+    0,
+    0x63,
+    fdc37c66x_init, fdc37c66x_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
 
-    io_sethandler(0x03f0, 2,
-		  fdc37c66x_read,NULL,NULL, fdc37c66x_write,NULL,NULL, NULL);
+const device_t fdc37c665_device = {
+    "SMC FDC37C665 Super I/O",
+    0,
+    0x65,
+    fdc37c66x_init, fdc37c66x_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
 
-    fdc37c665_reset();
-}
+const device_t fdc37c666_device = {
+    "SMC FDC37C666 Super I/O",
+    0,
+    0x66,
+    fdc37c66x_init, fdc37c66x_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

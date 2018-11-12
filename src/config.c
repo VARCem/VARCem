@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.38	2018/10/22
+ * Version:	@(#)config.c	1.0.39	2018/11/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -671,17 +671,8 @@ load_network(const char *cat)
 {
     char *p;
 
-    p = config_get_string(cat, "net_type", NULL);
-    if (p != NULL) {
-	if (!strcmp(p, "pcap") || !strcmp(p, "1"))
-		network_type = NET_TYPE_PCAP;
-	else
-	if (!strcmp(p, "slirp") || !strcmp(p, "2"))
-		network_type = NET_TYPE_SLIRP;
-	else
-		network_type = NET_TYPE_NONE;
-    } else
-	network_type = NET_TYPE_NONE;
+    p = config_get_string(cat, "net_type", "none");
+    network_type = network_get_from_internal_name(p);
 
     memset(network_host, '\0', sizeof(network_host));
     p = config_get_string(cat, "net_host_device", NULL);
@@ -691,8 +682,8 @@ load_network(const char *cat)
 		config_delete_var(cat, "net_pcap_device");
     }
     if (p != NULL) {
-	if ((network_card_to_id(p) == -1) || (network_ndev == 1)) {
-		if ((network_ndev == 1) && strcmp(network_host, "none")) {
+	if ((network_card_to_id(p) == -1) || (network_host_ndev == 1)) {
+		if ((network_host_ndev == 1) && strcmp(network_host, "none")) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_NO);
 		} else if (network_card_to_id(p) == -1) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_DEV);
@@ -714,11 +705,11 @@ load_network(const char *cat)
 static void
 save_network(const char *cat)
 {
-    if (network_type == NET_TYPE_NONE)
+    if (network_type == 0)
 	config_delete_var(cat, "net_type");
       else
 	config_set_string(cat, "net_type",
-		(network_type == NET_TYPE_SLIRP) ? "slirp" : "pcap");
+			  network_get_internal_name(network_type));
 
     if (network_host[0] != '\0') {
 	if (! strcmp(network_host, "none"))

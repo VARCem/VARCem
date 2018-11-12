@@ -6,13 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Emulation of the SiS 85c471 chip.
+ *		Emulation of the SiS 85c471 Super I/O chip.
  *
- *		SiS sis85c471 Super I/O Chip
- *
- *		Used by DTK PKM-0038S E-2
- *
- * Version:	@(#)m_at_sis85c471.c	1.0.10	2018/11/02
+ * Version:	@(#)m_at_sis471.c	1.0.12	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +36,7 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
@@ -55,155 +52,165 @@
 #include "machine.h"
 
 
-static int	sis_curreg;
-static uint8_t	sis_regs[39];
+typedef struct {
+    uint8_t	cur_reg,
+		regs[39];
+} sis471_t;
 
 
 static void
 sis_write(uint16_t port, uint8_t val, void *priv)
 {
-    uint8_t index = (port & 1) ? 0 : 1;
-    uint8_t x;
+    sis471_t *dev = (sis471_t *)priv;
+    uint8_t indx = (port & 1) ? 0 : 1;
+    uint8_t valxor;
 
-    if (index) {
+    if (indx) {
 	if ((val >= 0x50) && (val <= 0x76))
-		sis_curreg = val;
+		dev->cur_reg = val;
 	return;
     }
 
-    if ((sis_curreg < 0x50) || (sis_curreg > 0x76)) return;
+    if ((dev->cur_reg < 0x50) || (dev->cur_reg > 0x76))
+	return;
+    valxor = val ^ dev->regs[dev->cur_reg - 0x50];
+	/* Writes to 0x52 are blocked as otherwise, large hard disks don't read correctly. */
+    if (dev->cur_reg != 0x52)
+	dev->regs[dev->cur_reg - 0x50] = val;
 
-    x = val ^ sis_regs[sis_curreg - 0x50];
-    /* Writes to 0x52 are blocked as otherwise, large hard disks don't read correctly. */
-    if (sis_curreg != 0x52)
-	sis_regs[sis_curreg - 0x50] = val;
-
-    switch(sis_curreg) {
+    switch (dev->cur_reg) {
 	case 0x73:
-#if 0
-		if (x & 0x40) {
+		if (valxor & 0x40) {
+			ide_pri_disable();
 			if (val & 0x40)
 				ide_pri_enable();
-			else
-				ide_pri_disable();
 		}
-#endif
-		if (x & 0x20) {
+		if (valxor & 0x20) {
 			if (val & 0x20) {
-				serial_setup(1, SERIAL1_ADDR, SERIAL1_IRQ);
-				serial_setup(2, SERIAL2_ADDR, SERIAL2_IRQ);
+				serial_setup(0, SERIAL1_ADDR, SERIAL1_IRQ);
+				serial_setup(1, SERIAL2_ADDR, SERIAL2_IRQ);
 			} else {
 #if 0
+				serial_remove(0);
 				serial_remove(1);
-				serial_remove(2);
 #endif
 			}
 		}
-
-		if (x & 0x10) {
+		if (valxor & 0x10) {
+//			parallel_remove(0);
 			if (val & 0x10)
-				parallel_setup(1, 0x378);
-//FIXME:			else
-//FIXME:				parallel_remove(1);
+				parallel_setup(0, 0x0378);
 		}
-
 		break;
     }
 
-    sis_curreg = 0;
+    dev->cur_reg = 0;
 }
 
 
 static uint8_t
 sis_read(uint16_t port, void *priv)
 {
-    uint8_t index = (port & 1) ? 0 : 1;
-    uint8_t temp;
+    sis471_t *dev = (sis471_t *)priv;
+    uint8_t indx = (port & 1) ? 0 : 1;
+    uint8_t ret = 0xff;;
 
-    if (index)
-	return sis_curreg;
-
-    if ((sis_curreg >= 0x50) && (sis_curreg <= 0x76)) {
-	temp = sis_regs[sis_curreg - 0x50];
-	sis_curreg = 0;
-	return temp;
+    if (indx)
+	ret = dev->cur_reg;
+    else {
+	if ((dev->cur_reg >= 0x50) && (dev->cur_reg <= 0x76)) {
+		ret = dev->regs[dev->cur_reg - 0x50];
+		dev->cur_reg = 0;
+	}
     }
 
-    return 0xFF;
+    return ret;
 }
 
 
 static void
-sis_init(void)
+sis_close(void *priv)
 {
-    int i = 0;
+    sis471_t *dev = (sis471_t *)priv;
 
-//FIXME:    parallel_remove(2);
+    free(dev);
+}
 
-    sis_curreg = 0;
+
+static void *
+sis_init(const device_t *info)
+{
+    int mem_size_mb, i;
+
+    sis471_t *dev = (sis471_t *)mem_alloc(sizeof(sis471_t));
+    memset(dev, 0x00, sizeof(sis471_t));
+
+//    lpt2_remove();
+
+    dev->cur_reg = 0;
     for (i = 0; i < 0x27; i++)
-	sis_regs[i] = 0;
-    sis_regs[9] = 0x40;
+	dev->regs[i] = 0x00;
 
-    switch (mem_size) {
+    dev->regs[9] = 0x40;
+
+    mem_size_mb = mem_size >> 10;
+    switch (mem_size_mb) {
 	case 0:
 	case 1:
-		sis_regs[9] |= 0;
+		dev->regs[9] |= 0x00;
 		break;
 
 	case 2:
 	case 3:
-		sis_regs[9] |= 1;
+		dev->regs[9] |= 0x01;
 		break;
 
 	case 4:
-		sis_regs[9] |= 2;
+		dev->regs[9] |= 0x02;
 		break;
 
 	case 5:
-		sis_regs[9] |= 0x20;
+		dev->regs[9] |= 0x20;
 		break;
 
-	case 6:
-	case 7:
-		sis_regs[9] |= 9;
+	case 6: case 7:
+		dev->regs[9] |= 0x09;
 		break;
 
-	case 8:
-	case 9:
-		sis_regs[9] |= 4;
+	case 8: case 9:
+		dev->regs[9] |= 0x04;
 		break;
 
 	case 10:
 	case 11:
-		sis_regs[9] |= 5;
+		dev->regs[9] |= 0x05;
 		break;
 
 	case 12:
 	case 13:
 	case 14:
 	case 15:
-		sis_regs[9] |= 0xB;
+		dev->regs[9] |= 0x0b;
 		break;
 
 	case 16:
-		sis_regs[9] |= 0x13;
+		dev->regs[9] |= 0x13;
 		break;
 
 	case 17:
-		sis_regs[9] |= 0x21;
+		dev->regs[9] |= 0x21;
 		break;
 
 	case 18:
 	case 19:
-		sis_regs[9] |= 6;
+		dev->regs[9] |= 0x06;
 		break;
 
 	case 20:
 	case 21:
 	case 22:
 	case 23:
-		sis_regs[9] |= 0xD;
+		dev->regs[9] |= 0x0d;
 		break;
 
 	case 24:
@@ -214,21 +221,21 @@ sis_init(void)
 	case 29:
 	case 30:
 	case 31:
-		sis_regs[9] |= 0xE;
+		dev->regs[9] |= 0x0e;
 		break;
 
 	case 32:
 	case 33:
 	case 34:
 	case 35:
-		sis_regs[9] |= 0x1B;
+		dev->regs[9] |= 0x1b;
 		break;
 
 	case 36:
 	case 37:
 	case 38:
 	case 39:
-		sis_regs[9] |= 0xF;
+		dev->regs[9] |= 0x0f;
 		break;
 
 	case 40:
@@ -239,59 +246,53 @@ sis_init(void)
 	case 45:
 	case 46:
 	case 47:
-		sis_regs[9] |= 0x17;
+		dev->regs[9] |= 0x17;
 		break;
 
 	case 48:
-		sis_regs[9] |= 0x1E;
+		dev->regs[9] |= 0x1e;
 		break;
 
 	default:
-		if (mem_size < 64) {
-			sis_regs[9] |= 0x1E;
-		} else if ((mem_size >= 65) && (mem_size < 68)) {
-			sis_regs[9] |= 0x22;
-		} else {
-			sis_regs[9] |= 0x24;
-		}
+		if (mem_size_mb < 64)
+			dev->regs[9] |= 0x1e;
+		else if ((mem_size_mb >= 65) && (mem_size_mb < 68))
+			dev->regs[9] |= 0x22;
+		else
+			dev->regs[9] |= 0x24;
 		break;
     }
 
-    sis_regs[0x11] = 9;
-    sis_regs[0x12] = 0xFF;
-    sis_regs[0x23] = 0xF0;
-    sis_regs[0x26] = 1;
+    dev->regs[0x11] = 0x09;
+    dev->regs[0x12] = 0xff;
+    dev->regs[0x23] = 0xf0;
+    dev->regs[0x26] = 1;
 
     io_sethandler(0x0022, 2,
-		  sis_read,NULL,NULL, sis_write,NULL,NULL, NULL);
+		  sis_read,NULL,NULL, sis_write,NULL,NULL, dev);
+
+    return dev;
 }
 
 
-void
-machine_at_sis471_ami_init(const machine_t *model, void *arg)
-{
-        machine_at_ide_init(model, arg);
-
-	device_add(&fdc_at_device);
-
-	memregs_init();
-
-	sis_init();
-
-	secondary_ide_check();
-}
+const device_t sis_85c471_device = {
+    "SiS 85c471",
+    0,
+    0,
+    sis_init, sis_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
 
 
 void
 machine_at_dtk486_init(const machine_t *model, void *arg)
 {
-        machine_at_ide_init(model, arg);
+    machine_at_ide_init(model, arg);
 
-	device_add(&fdc_at_device);
+    device_add(&fdc_at_device);
 
-	memregs_init();
+    memregs_init();
 
-	sis_init();
-
-	secondary_ide_check();
+    device_add(&sis_85c471_device);
 }

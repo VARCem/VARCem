@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.10	2018/10/24
+ * Version:	@(#)win_settings_network.h	1.0.11	2018/11/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -97,10 +97,29 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INITDIALOG:
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
-//FIXME: take strings from network.c table.. --FvK
-		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_DISABLED));
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"PCap");
-		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)L"SLiRP");
+		c = d = 0;
+		for (;;) {
+			stransi = network_get_internal_name(c);
+			if (stransi == NULL) break;
+
+			if (! network_available(c)) {
+				c++;
+				continue;
+			}
+
+			if (c == 0) {
+				/* Translate "None". */
+				SendMessage(h, CB_ADDSTRING, 0,
+					    win_string(IDS_NONE));
+			} else {	
+				stransi = network_getname(c);
+				mbstowcs(temp, stransi, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+			}
+
+			c++;
+			d++;
+		}
 		SendMessage(h, CB_SETCURSEL, temp_net_type, 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
@@ -110,17 +129,16 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			EnableWindow(h, FALSE);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
-		for (c = 0; c < network_ndev; c++) {
+		for (c = 0; c < network_host_ndev; c++) {
 			if (c == 0) {
 				/* Translate "None". */
 				SendMessage(h, CB_ADDSTRING, 0,
 					    win_string(IDS_NONE));
 			} else {
-				mbstowcs(temp, network_devs[c].description, sizeof_w(temp));
+				mbstowcs(temp, network_host_devs[c].description, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 			}
 		}
-
 		SendMessage(h, CB_SETCURSEL, network_card_to_id(temp_host_dev), 0);
 
 		/*NIC config*/
@@ -152,7 +170,6 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			nic_to_list[c] = d;
 			list_to_nic[d++] = c++;
 		}
-
 		SendMessage(h, CB_SETCURSEL, nic_to_list[temp_net_card], 0);
 
 		EnableWindow(h, d ? TRUE : FALSE);
@@ -177,7 +194,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 				h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
 				memset(temp_host_dev, '\0', sizeof(temp_host_dev));
-				strcpy(temp_host_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
+				strcpy(temp_host_dev, network_host_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
 
 				network_recalc_combos(hdlg);
 				break;
@@ -210,7 +227,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
 		memset(temp_host_dev, '\0', sizeof(temp_host_dev));
-		strcpy(temp_host_dev, network_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
+		strcpy(temp_host_dev, network_host_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
 		temp_net_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];

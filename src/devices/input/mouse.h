@@ -8,7 +8,7 @@
  *
  *		Definitions for the mouse driver.
  *
- * Version:	@(#)mouse.h	1.0.8	2018/09/13
+ * Version:	@(#)mouse.h	1.0.9	2018/11/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,7 +87,7 @@ extern const device_t	mouse_genibus_device;
 #endif
 extern const device_t	mouse_mssystems_device;
 extern const device_t	mouse_msserial_device;
-extern const device_t	mouse_logiserial_device;
+extern const device_t	mouse_ltserial_device;
 extern const device_t	mouse_mswhserial_device;
 extern const device_t	mouse_ps2_device;
 #endif
@@ -106,7 +106,6 @@ extern const char *mouse_get_internal_name(int mouse);
 extern int	mouse_get_from_internal_name(const char *s);
 extern int	mouse_has_config(int mouse);
 extern int	mouse_get_type(int mouse);
-extern int	mouse_get_ndev(void);
 extern int	mouse_get_buttons(void);
 
 #ifdef __cplusplus

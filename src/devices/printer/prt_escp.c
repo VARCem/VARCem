@@ -8,7 +8,7 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.4	2018/11/04
+ * Version:	@(#)prt_escp.c	1.0.5	2018/11/11
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -233,6 +233,7 @@ typedef struct {
     uint8_t	bg_bytes_read;		/* #bytes read so far for current col */
 
     /* handshake data */
+    uint8_t	ctrl;
     uint8_t	data;
     int8_t	ack;
     int8_t	select;
@@ -1909,20 +1910,23 @@ write_ctrl(uint8_t val, void *priv)
 	dev->select = 1;
     }
 
-    if ((val & 0x04) == 0) {
+    if ((val & 0x04) && !(dev->ctrl & 0x04)) {
 	/* reset printer */
 	dev->select = 0;
 
 	reset_printer(dev);
     }
 
-    if (val & 0x01) {		/* STROBE */
+    if (!(val & 0x01) && (dev->ctrl & 0x01)) {	/* STROBE */
 	/* Process incoming character. */
 	handle_char(dev);
 
 	/* ACK it, will be read on next READ STATUS. */
 	dev->ack = 1;
     }
+
+    /* Save new value. */
+    dev->ctrl = val;
 }
 
 
@@ -1996,6 +2000,7 @@ escp_init(const lpt_device_t *info)
     dev = (escp_t *)mem_alloc(sizeof(escp_t));
     memset(dev, 0x00, sizeof(escp_t));
     dev->name = info->name;
+    dev->ctrl = 0x04;
 
     /* Create a full pathname for the font files. */
     wcscpy(dev->fontpath, rom_path(PRINTER_PATH));

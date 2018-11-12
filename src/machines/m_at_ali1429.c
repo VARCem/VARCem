@@ -8,7 +8,7 @@
  *
  *		Implementation the ALI M1429 mainboard.
  *
- * Version:	@(#)m_at_ali1429.c	1.0.5	2018/05/06
+ * Version:	@(#)m_at_ali1429.c	1.0.6	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -161,6 +161,4 @@ machine_at_ali1429_init(const machine_t *model, void *arg)
     device_add(&fdc_at_device);
 
     ali1429_init();
-
-    secondary_ide_check();
 }

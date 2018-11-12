@@ -10,7 +10,7 @@
  *		which require some weird processing. This file allows us
  *		to use a single master for all those languages.
  *
- * Version:	@(#)VARCem.rpp	1.0.2	2018/09/26
+ * Version:	@(#)VARCem.rpp	1.0.3	2018/11/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,23 +49,23 @@
 PREAMBLE #pragma code_page(65001)
 PREAMBLE #include <inttypes.h>
 PREAMBLE #include <windows.h>
-PREAMBLE #include "../version.h"
-PREAMBLE #include "../ui/ui.h"
-PREAMBLE #include "resource.h"
+PREAMBLE #include "version.h"
+PREAMBLE #include "ui/ui.h"
+PREAMBLE #include "win/resource.h"
 
 
 /* Some MacroMagic(tm) .. */
 #define _TEXT_(x)	#x
-#define __HEX4(x)	0x ## x
-#define __INCL(a,b,c)	_TEXT_(../ui/lang/ ## a ## - ## b ## . ## c)
-#define __DLLNM(a,b,c)	_TEXT_(a ## - ## b ## . ## c)
-#define __BLKNM(id)	_TEXT_(id ## fde9)
-#define INCLUDE(l)	__INCL(VARCem, l, str)
-#define DLLNAME(l)	__DLLNM(VARCem, l, dll)
+#define __HEX4(x)	0x##x
+#define __INCL(a,b,c)	_TEXT_(ui/lang/##a##-##b##.##c)
+#define __DLLNM(a,b,c)	_TEXT_(a##-##b##.##c)
+#define __BLKNM(id)	_TEXT_(id##fde9)
+#define INCLUDE(l)	__INCL(VARCem,l,str)
+#define DLLNAME(l)	__DLLNM(VARCem,l,dll)
 #define BLOCKNAME(l)	__BLKNM(l)
 
 PREAMBLE #define TEXT_(x)	#x
-PREAMBLE #define CATSTR(a,b)	TEXT_(a ## b)
+PREAMBLE #define CATSTR(a,b)	TEXT_(a##b)
 
 PREAMBLE #ifndef SUBLANG
 PREAMBLE # define SUBLANG	0x01		/* Lithuanian, for example */
@@ -77,7 +77,7 @@ LANGUAGE PRILANG, SUBLANG
 
 PREAMBLE #include INCLUDE(LANG)
 
-PREAMBLE #include "VARCem-common.rc"
+PREAMBLE #include "win/VARCem-common.rc"
 
 
 PREAMBLE #pragma code_page(DEFAULT)

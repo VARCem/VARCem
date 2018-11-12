@@ -8,11 +8,7 @@
  *
  *		Implementation of the network module.
  *
- * NOTE		The definition of the netcard_t is currently not optimal;
- *		it should be malloc'ed and then linked to the NETCARD def.
- *		Will be done later.
- *
- * Version:	@(#)network.c	1.0.15	2018/10/20
+ * Version:	@(#)network.c	1.0.17	2018/11/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -64,62 +60,102 @@
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "network.h"
-#include "net_ne2000.h"
-#include "net_wd80x3.h"
-#include "net_3com.h"
 
 
-static netcard_t net_cards[] = {
-  { "none",		NULL,			NULL	},
+typedef struct {
+    mutex_t	*mutex;
 
-  { "ne1k",		&ne1000_device,		NULL	},
-  { "ne2k",		&ne2000_device,		NULL	},
-  { "3c503",		&tc503_device,		NULL	},
-  { "ne2kpnp",		&rtl8019as_device,	NULL	},
-  { "wd8003e",		&wd8003e_device,	NULL	},
-  { "wd8013ebt",	&wd8013ebt_device,	NULL	},
+    void	*priv;				/* card priv data */
+    int		(*poll)(void *);		/* card poll function */
+    NETRXCB	rx;				/* card RX function */
+    uint8_t	*mac;				/* card MAC address */
 
-  { "ne2",		&ne2_mca_device,	NULL	},
-  { "ne2_enext",	&ne2_enext_mca_device,	NULL	},
-  { "wd8013epa",	&wd8013epa_device,	NULL	},
-
-  { "ne2kpci",		&rtl8029as_device,	NULL	},
-
-  { NULL,		NULL,			NULL	}
-};
+    volatile int poll_busy,			/* polling thread data */
+		queue_in_use;
+    event_t	*poll_wake,
+		*poll_complete,
+		*queue_not_in_use;
+} netdata_t;
 
 
 /* Global variables. */
-int		network_ndev;
-netdev_t	network_devs[32];
 #ifdef ENABLE_NETWORK_LOG
 int		network_do_log = ENABLE_NETWORK_LOG;
 #endif
-#ifdef ENABLE_NETWORK_DEV_LOG
-int		network_card_do_log = ENABLE_NETWORK_DEV_LOG;
+int		network_host_ndev;
+netdev_t	network_host_devs[32];
+
+
+static netdata_t	netdata;		/* operational data per card */
+static const struct {
+    const char		*internal_name;
+    const network_t	*net;
+} networks[] = {
+    { "none",	NULL		},
+    { "slirp",	&network_slirp	},
+    { "pcap",	&network_pcap	},
+#ifdef USE_VNS
+    { "vns",	&network_vns	},
 #endif
-static mutex_t	*network_mutex;
-static uint8_t	*network_mac;
+    { NULL,	NULL		}
+};
 
 
-static struct {
-    volatile int	busy,
-			queue_in_use;
+/* UI */
+int
+network_get_from_internal_name(const char *s)
+{
+    int c = 0;
+	
+    while (networks[c].internal_name != NULL) {
+	if (! strcmp(networks[c].internal_name, s))
+			return(c);
+	c++;
+    }
 
-    event_t		*wake_poll_thread,
-			*poll_complete,
-			*queue_not_in_use;
-} poll_data;
+    /* Not found. */
+    return(0);
+}
+
+
+/* UI */
+const char *
+network_get_internal_name(int net)
+{
+    return(networks[net].internal_name);
+}
+
+
+/* UI */
+const char *
+network_getname(int net)
+{
+    if (networks[net].net != NULL)
+	return(networks[net].net->name);
+
+    return(NULL);
+}
+
+
+/* UI */
+int
+network_available(int net)
+{
+#if 0
+    if (networks[net].net != NULL)
+	return(networks[net].net->available());
+#endif
+
+    return(1);
+}
 
 
 #ifdef _DEBUG
-# define is_print(c)	(isalnum((int)(c)) || ((c) == ' '))
-
-
 /* Dump a buffer in hex to output buffer. */
 void
 hexdump_p(char *ptr, uint8_t *bufp, int len)
 {
+# define is_print(c)	(isalnum((int)(c)) || ((c) == ' '))
     char asci[20];
     uint8_t c;
     int addr;
@@ -173,57 +209,40 @@ network_log(int level, const char *fmt, ...)
 #endif
 
 
-#ifdef _LOGGING
 void
-network_card_log(int level, const char *fmt, ...)
+network_wait(int8_t do_wait)
 {
-# ifdef ENABLE_NETWORK_DEV_LOG
-    va_list ap;
-
-    if (network_card_do_log >= level) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-    }
-# endif
-}
-#endif
-
-
-void
-network_wait(uint8_t wait)
-{
-    if (wait)
-	thread_wait_mutex(network_mutex);
+    if (do_wait)
+	thread_wait_mutex(netdata.mutex);
       else
-	thread_release_mutex(network_mutex);
+	thread_release_mutex(netdata.mutex);
 }
 
 
 void
 network_poll(void)
 {
-    while (poll_data.busy)
-	thread_wait_event(poll_data.wake_poll_thread, -1);
+    while (netdata.poll_busy)
+	thread_wait_event(netdata.poll_wake, -1);
 
-    thread_reset_event(poll_data.wake_poll_thread);
+    thread_reset_event(netdata.poll_wake);
 }
 
 
 void
-network_busy(uint8_t set)
+network_busy(int8_t set)
 {
-    poll_data.busy = !!set;
+    netdata.poll_busy = !!set;
 
     if (! set)
-	thread_set_event(poll_data.wake_poll_thread);
+	thread_set_event(netdata.poll_wake);
 }
 
 
 void
 network_end(void)
 {
-    thread_set_event(poll_data.poll_complete);
+    thread_set_event(netdata.poll_complete);
 }
 
 
@@ -237,21 +256,30 @@ network_end(void)
 void
 network_init(void)
 {
-    int i;
+    int i, k;
+
+    /* Clear the local data. */
+    memset(&netdata, 0x00, sizeof(netdata_t));
 
     /* Initialize to a known state. */
-    network_type = NET_TYPE_NONE;
+    network_type = 0;
     network_card = 0;
 
     /* Create a first device entry that's always there, as needed by UI. */
-    strcpy(network_devs[0].device, "none");
-    strcpy(network_devs[0].description, "None");
-    network_ndev = 1;
+    strcpy(network_host_devs[0].device, "none");
+    strcpy(network_host_devs[0].description, "None");
+    network_host_ndev = 1;
 
-    /* Initialize the Pcap system module, if present. */
-    i = net_pcap_prepare(&network_devs[network_ndev]);
-    if (i > 0)
-	network_ndev += i;
+    /* Initialize the network provider modules, if present. */
+    i = 0;
+    while (networks[i].internal_name != NULL) {
+	if (networks[i].net != NULL) {
+		k = networks[i].net->init(&network_host_devs[network_host_ndev]);
+		if (k > 0)
+			network_host_ndev += k;
+	}
+	i++;
+    }
 }
 
 
@@ -265,27 +293,35 @@ network_init(void)
 void
 network_attach(void *dev, uint8_t *mac, NETRXCB rx)
 {
+    wchar_t temp[256];
+
     if (network_card == 0) return;
 
     /* Save the card's info. */
-    net_cards[network_card].priv = dev;
-    net_cards[network_card].rx = rx;
-    network_mac = mac;
+    netdata.priv = dev;
+    netdata.rx = rx;
+    netdata.mac = mac;
+
+    /* Reset the network provider module. */
+    if (networks[network_type].net->reset(mac) < 0) {
+	/* Tell user we can't do this (at the moment.) */
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_PCAP), networks[network_type].net->name);
+	ui_msgbox(MBX_ERROR, temp);
+
+	// FIXME: we should ask in the dialog if they want to
+	//	  reconfigure or quit, and throw them into the
+	//	  Settings dialog if yes.
+
+	/* Disable network. */
+	network_type = 0;
+
+	return;
+    }
 
     /* Create the network events. */
-    poll_data.wake_poll_thread = thread_create_event();
-    poll_data.poll_complete = thread_create_event();
-
-    /* Activate the platform module. */
-    switch(network_type) {
-	case NET_TYPE_PCAP:
-		(void)net_pcap_reset(&net_cards[network_card], network_mac);
-		break;
-
-	case NET_TYPE_SLIRP:
-		(void)net_slirp_reset(&net_cards[network_card], network_mac);
-		break;
-    }
+    netdata.poll_wake = thread_create_event();
+    netdata.poll_complete = thread_create_event();
 }
 
 
@@ -293,29 +329,31 @@ network_attach(void *dev, uint8_t *mac, NETRXCB rx)
 void
 network_close(void)
 {
+    int i = 0;
+
     /* If already closed, do nothing. */
-    if (network_mutex == NULL) return;
+    if (netdata.mutex == NULL) return;
 
-    /* Force-close the PCAP module. */
-    net_pcap_close();
-
-    /* Force-close the SLIRP module. */
-    net_slirp_close();
- 
-    /* Close the network events. */
-    if (poll_data.wake_poll_thread != NULL) {
-	thread_destroy_event(poll_data.wake_poll_thread);
-	poll_data.wake_poll_thread = NULL;
+    /* Force-close the network provider modules. */
+    while (networks[i].internal_name != NULL) {
+	if (networks[i].net)
+		networks[i].net->close();
+	i++;
     }
-    if (poll_data.poll_complete != NULL) {
-	thread_destroy_event(poll_data.poll_complete);
-	poll_data.poll_complete = NULL;
+
+    /* Close the network events. */
+    if (netdata.poll_wake != NULL) {
+	thread_destroy_event(netdata.poll_wake);
+	netdata.poll_wake = NULL;
+    }
+    if (netdata.poll_complete != NULL) {
+	thread_destroy_event(netdata.poll_complete);
+	netdata.poll_complete = NULL;
     }
 
     /* Close the network thread mutex. */
-    thread_close_mutex(network_mutex);
-    network_mutex = NULL;
-    network_mac = NULL;
+    thread_close_mutex(netdata.mutex);
+    netdata.mutex = NULL;
 
     INFO("NETWORK: closed.\n");
 }
@@ -332,7 +370,7 @@ network_close(void)
 void
 network_reset(void)
 {
-    int i = -1;
+    const device_t *dev;
 
 #ifdef ENABLE_NETWORK_LOG
     INFO("NETWORK: reset (type=%d, card=%d) debug=%d\n",
@@ -347,45 +385,17 @@ network_reset(void)
     network_close();
 
     /* If no active card, we're done. */
-    if ((network_type==NET_TYPE_NONE) || (network_card==0)) return;
+    if ((network_type == 0) || (network_card == 0)) return;
 
-    network_mutex = thread_create_mutex(L"VARCem.NetMutex");
-
-    /* Initialize the platform module. */
-    switch(network_type) {
-	case NET_TYPE_PCAP:
-		i = net_pcap_init();
-		break;
-
-	case NET_TYPE_SLIRP:
-		i = net_slirp_init();
-		break;
-    }
-
-    if (i < 0) {
-	/* Tell user we can't do this (at the moment.) */
-	ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP);
-
-	// FIXME: we should ask in the dialog if they want to
-	//	  reconfigure or quit, and throw them into the
-	//	  Settings dialog if yes.
-
-	/* Disable network. */
-	network_type = NET_TYPE_NONE;
-
-	return;
-    }
+    netdata.mutex = thread_create_mutex(L"VARCem.NetMutex");
 
     INFO("NETWORK: set up for %s, card='%s'\n",
-	 (network_type==NET_TYPE_SLIRP)?"SLiRP":"Pcap",
-	 network_card_getname(network_card));
+	network_getname(network_type), network_card_getname(network_card));
 
-    /* Add the (new?) card to the I/O system. */
-    if (net_cards[network_card].device) {
-	INFO("NETWORK: adding device '%s'\n",
-	     network_card_getname(network_card));
-	device_add(net_cards[network_card].device);
-    }
+    /* Add the selected card to the I/O system. */
+    dev = network_card_getdevice(network_card);
+    if (dev != NULL)
+	device_add(dev);
 }
 
 
@@ -403,105 +413,43 @@ network_tx(uint8_t *bufp, int len)
 }
 #endif
 
-    switch(network_type) {
-	case NET_TYPE_PCAP:
-		net_pcap_in(bufp, len);
-		break;
-
-	case NET_TYPE_SLIRP:
-		net_slirp_in(bufp, len);
-		break;
-    }
+    networks[network_type].net->send(bufp, len);
 
     ui_sb_icon_update(SB_NETWORK, 0);
 }
 
 
+/* Process a packet received from one of the network providers. */
+void
+network_rx(uint8_t *bufp, int len)
+{
+    ui_sb_icon_update(SB_NETWORK, 1);
+
+#ifdef ENABLE_NETWORK_DUMP
+{
+    char temp[8192];
+    hexdump_p(temp, bufp, len);
+    DBGLOG(2, "NETWORK: << len=%d\n%s\n", len, temp);
+}
+#endif
+
+    if (netdata.rx && netdata.priv)
+	netdata.rx(netdata.priv, bufp, len);
+
+    ui_sb_icon_update(SB_NETWORK, 0);
+}
+
+
+/* Get name of host-based network interface. */
 int
 network_card_to_id(const char *devname)
 {
     int i = 0;
 
-    for (i = 0; i < network_ndev; i++) {
-	if (! strcmp(network_devs[i].device, devname)) {
+    for (i = 0; i < network_host_ndev; i++) {
+	if (! strcmp(network_host_devs[i].device, devname)) {
 		return(i);
 	}
-    }
-
-    /* Not found. */
-    return(0);
-}
-
-
-/* UI */
-int
-network_available(void)
-{
-    if ((network_type == NET_TYPE_NONE) || (network_card == 0)) return(0);
-
-    return(1);
-}
-
-
-/* UI */
-int
-network_card_available(int card)
-{
-    if (net_cards[card].device != NULL)
-	return(device_available(net_cards[card].device));
-
-    return(1);
-}
-
-
-/* UI */
-const char *
-network_card_getname(int card)
-{
-    if (net_cards[card].device != NULL)
-	return(net_cards[card].device->name);
-
-    return(NULL);
-}
-
-
-/* UI */
-const device_t *
-network_card_getdevice(int card)
-{
-    return(net_cards[card].device);
-}
-
-
-/* UI */
-int
-network_card_has_config(int card)
-{
-    if (net_cards[card].device != NULL)
-	return(net_cards[card].device->config ? 1 : 0);
-
-    return(0);
-}
-
-
-/* UI */
-const char *
-network_card_get_internal_name(int card)
-{
-    return(net_cards[card].internal_name);
-}
-
-
-/* UI */
-int
-network_card_get_from_internal_name(const char *s)
-{
-    int c = 0;
-	
-    while (net_cards[c].internal_name != NULL) {
-	if (! strcmp(net_cards[c].internal_name, s))
-			return(c);
-	c++;
     }
 
     /* Not found. */

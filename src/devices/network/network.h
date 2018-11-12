@@ -8,7 +8,7 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.6	2018/10/16
+ * Version:	@(#)network.h	1.0.7	2018/11/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,29 +49,29 @@
 # include <stdint.h>
 
 
-/* Network provider types. */
 enum {
-    NET_TYPE_NONE = 0,			/* networking disabled */
-    NET_TYPE_PCAP,			/* use the (Win)Pcap API */
-    NET_TYPE_SLIRP			/* use the SLiRP port forwarder */
+    NET_TYPE_NONE = 0,
+    NET_TYPE_SLIRP,
+    NET_TYPE_PCAP,
+    NET_TYPE_VNS
 };
 
 
-typedef void (*NETRXCB)(void *, uint8_t *, int);
-
-
-typedef struct {
-    const char		*internal_name;
-    const device_t	*device;
-    void		*priv;
-    int			(*poll)(void *);
-    NETRXCB		rx;
-} netcard_t;
+typedef void (*NETRXCB)(void *, uint8_t *bufp, int);
 
 typedef struct {
     char		device[128];
     char		description[128];
 } netdev_t;
+
+typedef struct {
+    const char		*name;
+
+    int			(*init)(netdev_t *);
+    void		(*close)(void);
+    int			(*reset)(uint8_t *);
+    void		(*send)(uint8_t *, int);
+} network_t;
 
 
 #ifdef __cplusplus
@@ -79,42 +79,43 @@ extern "C" {
 #endif
 
 /* Global variables. */
-extern int      network_ndev;
-extern netdev_t network_devs[32];
+extern int      network_host_ndev;
+extern netdev_t network_host_devs[32];
+
+extern const network_t	network_slirp;
+extern const network_t	network_pcap;
+#ifdef USE_VNS
+extern const network_t	network_vns;
+#endif
 
 
 /* Function prototypes. */
-extern void	network_wait(uint8_t wait);
-extern void	network_poll(void);
-extern void	network_busy(uint8_t set);
-extern void	network_end(void);
+extern int		network_get_from_internal_name(const char *s);
+extern const char	*network_get_internal_name(int net);
+extern const char	*network_getname(int net);
+extern int		network_available(int net);
 
-extern void	network_log(int level, const char *fmt, ...);
-extern void	network_init(void);
-extern void	network_attach(void *, uint8_t *, NETRXCB);
-extern void	network_close(void);
-extern void	network_reset(void);
-extern int	network_available(void);
-extern void	network_tx(uint8_t *, int);
+extern void		network_log(int level, const char *fmt, ...);
 
-extern int	net_pcap_prepare(netdev_t *);
-extern int	net_pcap_init(void);
-extern int	net_pcap_reset(const netcard_t *, uint8_t *);
-extern void	net_pcap_close(void);
-extern void	net_pcap_in(uint8_t *, int);
+extern void		network_init(void);
+extern void		network_close(void);
+extern void		network_reset(void);
+extern void		network_attach(void *, uint8_t *, NETRXCB);
+extern void		network_tx(uint8_t *, int);
+extern void		network_rx(uint8_t *, int);
 
-extern int	net_slirp_init(void);
-extern int	net_slirp_reset(const netcard_t *, uint8_t *);
-extern void	net_slirp_close(void);
-extern void	net_slirp_in(uint8_t *, int);
+extern void		network_wait(int8_t do_wait);
+extern void		network_poll(void);
+extern void		network_busy(int8_t set);
+extern void		network_end(void);
 
-extern void	network_card_log(int level, const char *fmt, ...);
-extern int	network_card_to_id(const char *);
-extern int	network_card_available(int);
-extern const char *network_card_getname(int);
-extern int	network_card_has_config(int);
-extern const char *network_card_get_internal_name(int);
-extern int	network_card_get_from_internal_name(const char *);
+extern void		network_card_log(int level, const char *fmt, ...);
+extern int		network_card_to_id(const char *);
+extern int		network_card_available(int);
+extern const char	*network_card_getname(int);
+extern int		network_card_has_config(int);
+extern const char	*network_card_get_internal_name(int);
+extern int		network_card_get_from_internal_name(const char *);
 extern const device_t	*network_card_getdevice(int);
 
 #ifdef __cplusplus

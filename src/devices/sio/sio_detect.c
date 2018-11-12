@@ -8,7 +8,7 @@
  *
  *		Super I/O chip detection code.
  *
- * Version:	@(#)sio_detect.c	1.0.3	2018/05/06
+ * Version:	@(#)sio_detect.c	1.0.4	2018/11/10
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../device.h"
@@ -44,39 +45,79 @@
 #include "sio.h"
 
 
-static uint8_t detect_regs[2];
+typedef struct {
+    uint8_t	regs[2];
+} sio_detect_t;
 
 
-static void superio_detect_write(uint16_t port, uint8_t val, void *priv)
+static void
+detect_write(uint16_t port, uint8_t val, void *priv)
 {
-        pclog("superio_detect_write : port=%04x = %02X\n", port, val);
+    sio_detect_t *dev = (sio_detect_t *)priv;
 
-	detect_regs[port & 1] = val;
+    DEBUG("superio_detect_write : port=%04x = %02X\n", port, val);
 
-	return;
+    dev->regs[port & 1] = val;
 }
 
 
-static uint8_t superio_detect_read(uint16_t port, void *priv)
+static uint8_t
+detect_read(uint16_t port, void *priv)
 {
-        pclog("superio_detect_read : port=%04x = %02X\n", port, detect_regs[port & 1]);
+    sio_detect_t *dev = (sio_detect_t *)priv;
+    uint8_t ret;
 
-	return detect_regs[port & 1];
+    ret = dev->regs[port & 1];
+
+    DEBUG("superio_detect_read : port=%04x = %02X\n", port, ret);
+
+    return ret;
 }
 
 
-void superio_detect_init(void)
+static void
+detect_close(void *priv)
 {
-	device_add(&fdc_at_smc_device);
+    sio_detect_t *dev = (sio_detect_t *)priv;
 
-        io_sethandler(0x24, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x26, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x2e, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x44, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x46, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x4e, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x108, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x250, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x370, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
-        io_sethandler(0x3f0, 0x0002, superio_detect_read, NULL, NULL, superio_detect_write, NULL, NULL,  NULL);
+    free(dev);
 }
+
+
+static void *
+detect_init(void)
+{
+    sio_detect_t *dev = (sio_detect_t *)mem_alloc(sizeof(sio_detect_t));
+    memset(dev, 0x00, sizeof(sio_detect_t));
+
+    device_add(&fdc_at_smc_device);
+
+    io_sethandler(0x0024, 4,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+    io_sethandler(0x002e, 2,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+    io_sethandler(0x0044, 4,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+    io_sethandler(0x004e, 2,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+    io_sethandler(0x0108, 2,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+    io_sethandler(0x0250, 2,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+    io_sethandler(0x0370, 2,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+    io_sethandler(0x03f0, 2,
+		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
+
+    return dev;
+}
+
+
+const device_t sio_detect_device = {
+    "Super I/O Detection Helper",
+    0,
+    0,
+    detect_init, detect_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

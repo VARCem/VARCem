@@ -8,7 +8,7 @@
  *
  *		Definitions for the Intel mainboard handlers.
  *
- * Version:	@(#)intel.h	1.0.1	2018/02/14
+ * Version:	@(#)intel.h	1.0.2	2018/11/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -36,12 +36,11 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef EMU_INTEL_H
-# define EMU_INTEL_H
+#ifndef DEVICES_INTEL_H
+# define DEVICES_INTEL_H
 
 
-extern void	intel_batman_init(void);
-extern void	intel_endeavor_init(void);
+extern const device_t	intel_batman_device;
 
 
-#endif	/*EMU_INTEL_H*/
+#endif	/*DEVICES_INTEL_H*/

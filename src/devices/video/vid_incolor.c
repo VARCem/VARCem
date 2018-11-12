@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.10	2018/10/16
+ * Version:	@(#)vid_incolor.c	1.0.11	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1068,7 +1068,7 @@ incolor_init(const device_t *info)
 
     /* Force the LPT3 port to be enabled. */
     parallel_enabled[2] = 1;
-    parallel_setup(3, 0x3BC);
+    parallel_setup(2, 0x03bc);
 
     return dev;
 }

@@ -15,7 +15,7 @@
  *		printer mechanics. This would lead to a page being 66 lines
  *		of 80 characters each.
  *
- * Version:	@(#)prt_text.c	1.0.3	2018/10/05
+ * Version:	@(#)prt_text.c	1.0.4	2018/11/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -119,7 +119,9 @@ typedef struct {
 		lpi;			/* defined lines per inch */
 
     /* handshake data */
+    uint8_t	ctrl;
     uint8_t	data;
+
     int8_t	ack;
     int8_t	select;
     int8_t	busy;
@@ -359,20 +361,23 @@ write_ctrl(uint8_t val, void *priv)
 	dev->select = 1;
     }
 
-    if ((val & 0x04) == 0) {
+    if ((val & 0x04) && !(dev->ctrl & 0x04)) {
 	/* reset printer */
 	dev->select = 0;
 
 	reset_printer(dev);
     }
 
-    if (val & 0x01) {		/* STROBE */
+    if (!(val & 0x01) && (dev->ctrl & 0x01)) {	/* STROBE */
 	/* Process incoming character. */
 	handle_char(dev);
 
 	/* ACK it, will be read on next READ STATUS. */
 	dev->ack = 1;
     }
+
+    /* Save new value. */
+    dev->ctrl = val;
 }
 
 
@@ -406,6 +411,7 @@ prnt_init(const lpt_device_t *info)
     dev = (prnt_t *)mem_alloc(sizeof(prnt_t));
     memset(dev, 0x00, sizeof(prnt_t));
     dev->name = info->name;
+    dev->ctrl = 0x04;
 
     INFO("PRNT: LPT printer '%s' initializing\n", dev->name);
 

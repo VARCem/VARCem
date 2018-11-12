@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.5	2018/05/06
+ * Version:	@(#)intel.c	1.0.6	2018/11/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,74 +39,127 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
+#include "../../emu.h"
 #include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../timer.h"
+#include "../../device.h"
 #include "../../plat.h"
 #include "intel.h"
 #include "pit.h"
 
 
-static uint16_t	bm_timer_latch;
-static int64_t	bm_timer = 0;
+typedef struct {
+    uint16_t	timer_latch;
+    int64_t	timer;
+} batman_t;
 
 
-uint8_t batman_brdconfig(uint16_t port, UNUSED(void *p))
+static uint8_t
+config_read(uint16_t port, void *priv)
 {
-        switch (port)
-        {
-                case 0x73:
-                return 0xff;
-                case 0x75:
-                return 0xdf;
-        }
-        return 0;
+    uint8_t ret = 0x00;
+
+    switch (port & 0x000f) {
+	case 3:
+		ret = 0xff;
+		break;
+
+	case 5:
+		ret = 0xdf;
+		break;
+    }
+
+    return ret;
 }
 
 
-static void batman_timer_over(UNUSED(void *p))
+static void
+timer_over(void *priv)
 {
-        bm_timer = 0;
+    batman_t *dev = (batman_t *)priv;
+
+    dev->timer = 0;
 }
 
 
-static void batman_timer_write(uint16_t addr, uint8_t val, UNUSED(void *p))
+static void
+timer_write(uint16_t addr, uint8_t val, void *priv)
 {
-        if (addr & 1)
-                bm_timer_latch = (bm_timer_latch & 0xff) | (val << 8);
-        else
-                bm_timer_latch = (bm_timer_latch & 0xff00) | val;
-        bm_timer = bm_timer_latch * TIMER_USEC;
+    batman_t *dev = (batman_t *)priv;
+
+    if (addr & 1)
+	dev->timer_latch = (dev->timer_latch & 0xff) | (val << 8);
+    else
+	dev->timer_latch = (dev->timer_latch & 0xff00) | val;
+
+    dev->timer = dev->timer_latch * TIMER_USEC;
 }
 
 
-static uint8_t batman_timer_read(uint16_t addr, UNUSED(void *p))
+static uint8_t
+timer_read(uint16_t addr, void *priv)
 {
-        uint16_t latch;	//FIXME: or should we use the global ..latch var?
-        
-        cycles -= (int)PITCONST;
-        
-        timer_clock();
+    batman_t *dev = (batman_t *)priv;
+    uint16_t latch;
+    uint8_t ret;
 
-        if (bm_timer < 0)
-                return 0;
-        
-        latch = (uint16_t)(bm_timer / TIMER_USEC);
+    cycles -= (int)PITCONST;
 
-        if (addr & 1)
-                return latch >> 8;
-        return latch & 0xff;
+    timer_clock();
+
+    if (dev->timer < 0)
+	return 0;
+
+    latch = dev->timer / TIMER_USEC;
+
+    if (addr & 1)
+	ret = latch >> 8;
+    else
+	ret = latch & 0xff;
+
+    return ret;
 }
 
 
-void intel_batman_init(void)
+static void
+batman_close(void *priv)
 {
-        io_sethandler(0x0073, 0x0001, batman_brdconfig, NULL, NULL, NULL, NULL, NULL, NULL);
-        io_sethandler(0x0075, 0x0001, batman_brdconfig, NULL, NULL, NULL, NULL, NULL, NULL);
+    batman_t *dev = (batman_t *) priv;
 
-        io_sethandler(0x0078, 0x0002, batman_timer_read, NULL, NULL, batman_timer_write, NULL, NULL, NULL);
-        timer_add(batman_timer_over, &bm_timer, &bm_timer, NULL);
+    free(dev);
 }
+
+
+static void *
+batman_init(const device_t *info)
+{
+    batman_t *dev = (batman_t *)mem_alloc(sizeof(batman_t));
+    memset(dev, 0x00, sizeof(batman_t));
+
+    io_sethandler(0x0073, 0x0001,
+		  config_read,NULL,NULL, NULL,NULL,NULL, dev);
+    io_sethandler(0x0075, 0x0001,
+		  config_read,NULL,NULL, NULL,NULL,NULL, dev);
+
+    io_sethandler(0x0078, 0x0002,
+		  timer_read,NULL,NULL, timer_write,NULL,NULL, dev);
+
+    timer_add(timer_over, &dev->timer, &dev->timer, dev);
+
+    return dev;
+}
+
+
+const device_t intel_batman_device = {
+    "Intel Batman board chip",
+    0,
+    0,
+    batman_init, batman_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
