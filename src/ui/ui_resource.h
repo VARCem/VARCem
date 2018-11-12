@@ -12,7 +12,7 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.18	2018/10/18
+ * Version:	@(#)ui_resource.h	1.0.19	2018/11/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -262,7 +262,7 @@
 /* System errors (2200.) */
 #define IDS_ERR_ACCEL	2200		/* "Unable to load Accelerators" */
 #define IDS_ERR_INPUT	2201		/* "Unable to register Raw Input" */
-#define IDS_ERR_PCAP	2202		/* "PCap failed to set up.." */
+#define IDS_ERR_NONET	2202		/* "%s failed to set up.." */
 #define IDS_ERR_PCAP_NO	2203		/* "No PCap devices found" */
 #define IDS_ERR_PCAP_DEV 2204		/* "Invalid PCap device" */
 #define IDS_ERR_NOLIB	2205		/* "Unable to initialize %s.." */

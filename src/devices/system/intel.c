@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.6	2018/11/08
+ * Version:	@(#)intel.c	1.0.7	2018/11/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,7 +115,7 @@ timer_read(uint16_t addr, void *priv)
     if (dev->timer < 0)
 	return 0;
 
-    latch = dev->timer / TIMER_USEC;
+    latch = (uint16_t)(dev->timer / TIMER_USEC);
 
     if (addr & 1)
 	ret = latch >> 8;

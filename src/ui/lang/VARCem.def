@@ -8,7 +8,7 @@
  *
  *		String table for the application, shared by all platforms.
  *
- * Version:	@(#)VARCem.def	1.0.3	2018/10/18
+ * Version:	@(#)VARCem.def	1.0.4	2018/11/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,7 +58,7 @@ STRTBL( IDS_WARNING, STR_2103 )
 /* System errors (2200.) */
 STRTBL( IDS_ERR_ACCEL, STR_2200 )
 STRTBL( IDS_ERR_INPUT, STR_2201 )
-STRTBL( IDS_ERR_PCAP, STR_2202 )
+STRTBL( IDS_ERR_NONET, STR_2202 )
 STRTBL( IDS_ERR_PCAP_NO, STR_2203 )
 STRTBL( IDS_ERR_PCAP_DEV, STR_2204 )
 STRTBL( IDS_ERR_NOLIB, STR_2205 )

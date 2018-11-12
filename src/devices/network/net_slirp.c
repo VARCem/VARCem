@@ -8,7 +8,7 @@
  *
  *		Handle SLiRP library processing.
  *
- * Version:	@(#)net_slirp.c	1.0.5	2018/11/06
+ * Version:	@(#)net_slirp.c	1.0.6	2018/11/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -50,7 +50,11 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <stdarg.h>
-//#include <libslirp.h>
+#ifdef USE_LIBSLIRP
+# include <libslirp.h>
+#else
+typedef void slirp_t;				/* nicer than void.. */
+#endif
 #define HAVE_STDARG_H
 #define netdbg network_log
 #include "../../emu.h"
@@ -65,9 +69,6 @@
 #else
 # define SLIRP_DLL_PATH	"libslirp.so"
 #endif
-
-
-typedef void slirp_t;				/* nicer than void.. */
 
 
 static volatile void		*slirp_handle;	/* handle to SLiRP DLL */
@@ -204,18 +205,17 @@ slirp_can_output(void)
  * be properly initialized.
  */
 static int
-net_slirp_init(UNUSED(netdev_t *arg))
+net_slirp_init(netdev_t *list)
 {
-    wchar_t temp[512];
-    char tempA[128];
+    char temp[128];
     const char *fn = SLIRP_DLL_PATH;
 
     /* Try loading the DLL. */
     slirp_handle = dynld_module(fn, slirp_imports);
     if (slirp_handle == NULL) {
-        swprintf(temp, sizeof_w(temp),
-                 get_string(IDS_ERR_NOLIB), "SLiRP", fn);
-        ui_msgbox(MBX_ERROR, temp);
+	/* Forward module name back to caller. */
+	strcpy(list->description, fn);
+
         ERRLOG("SLIRP: unable to load '%s', SLiRP not available!\n", fn);
 	return(-1);
     } else {
@@ -226,11 +226,11 @@ net_slirp_init(UNUSED(netdev_t *arg))
     SLIRP_debug(handle_logging);
 
     /* Get the library version. */
-    if (SLIRP_version(tempA, sizeof(tempA)) <= 0) {
+    if (SLIRP_version(temp, sizeof(temp)) <= 0) {
 	ERRLOG("SLiRP could not get version!\n");
 	return(-1);
     }
-    INFO("SLiRP: initializing, version %s ..\n", tempA);
+    INFO("SLiRP: initializing, version %s ..\n", temp);
 
     return(1);
 }
@@ -292,6 +292,14 @@ net_slirp_close(void)
 }
 
 
+/* Are we available or not? */
+static int
+net_slirp_available(void)
+{
+    return((slirp_handle != NULL) ? 1 : 0);
+}
+
+
 /* Send a packet to the SLiRP interface. */
 static void
 net_slirp_send(uint8_t *pkt, int pkt_len)
@@ -311,5 +319,6 @@ const network_t network_slirp = {
     net_slirp_init,
     net_slirp_close,
     net_slirp_reset,
+    net_slirp_available,
     net_slirp_send
 };

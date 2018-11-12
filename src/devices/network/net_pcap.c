@@ -8,7 +8,7 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.9	2018/11/06
+ * Version:	@(#)net_pcap.c	1.0.10	2018/11/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -174,7 +174,6 @@ static int
 net_pcap_init(netdev_t *list)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
-    wchar_t temp[512];
     pcap_if_t *devlist, *dev;
     char *str = PCAP_DLL_PATH;
     int i = 0;
@@ -185,9 +184,9 @@ net_pcap_init(netdev_t *list)
     /* Try loading the DLL. */
     pcap_handle = dynld_module(str, pcap_imports);
     if (pcap_handle == NULL) {
-        swprintf(temp, sizeof_w(temp),
-                 get_string(IDS_ERR_NOLIB), "PCap", str);
-        ui_msgbox(MBX_ERROR, temp);
+	/* Forward module name back to caller. */
+	strcpy(list->description, str);
+
         ERRLOG("PCAP: unable to load '%s', PCAP not available!\n", str);
         return(-1);
     } else {
@@ -325,6 +324,14 @@ net_pcap_reset(uint8_t *mac)
 }
 
 
+/* Are we available or not? */
+static int
+net_pcap_available(void)
+{
+    return((pcap_handle != NULL) ? 1 : 0);
+}
+
+
 /* Send a packet to the Pcap interface. */
 static void
 net_pcap_send(uint8_t *bufp, int len)
@@ -348,5 +355,6 @@ const network_t network_pcap = {
     net_pcap_init,
     net_pcap_close,
     net_pcap_reset,
+    net_pcap_available,
     net_pcap_send
 };

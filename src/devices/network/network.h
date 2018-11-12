@@ -8,7 +8,7 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.7	2018/11/06
+ * Version:	@(#)network.h	1.0.8	2018/11/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -59,17 +59,20 @@ enum {
 
 typedef void (*NETRXCB)(void *, uint8_t *bufp, int);
 
+/* Define a host interface entry for a network provider. */
 typedef struct {
     char		device[128];
     char		description[128];
 } netdev_t;
 
+/* Define a network provider. */
 typedef struct {
     const char		*name;
 
     int			(*init)(netdev_t *);
     void		(*close)(void);
     int			(*reset)(uint8_t *);
+    int			(*available)(void);
     void		(*send)(uint8_t *, int);
 } network_t;
 

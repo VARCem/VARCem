@@ -8,7 +8,7 @@
  *
  *		Implementation of the network module.
  *
- * Version:	@(#)network.c	1.0.17	2018/11/06
+ * Version:	@(#)network.c	1.0.18	2018/11/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -92,11 +92,13 @@ static const struct {
     const network_t	*net;
 } networks[] = {
     { "none",	NULL		},
+
     { "slirp",	&network_slirp	},
     { "pcap",	&network_pcap	},
 #ifdef USE_VNS
     { "vns",	&network_vns	},
 #endif
+
     { NULL,	NULL		}
 };
 
@@ -141,10 +143,8 @@ network_getname(int net)
 int
 network_available(int net)
 {
-#if 0
-    if (networks[net].net != NULL)
+    if (networks[net].net && networks[net].net->available)
 	return(networks[net].net->available());
-#endif
 
     return(1);
 }
@@ -256,6 +256,7 @@ network_end(void)
 void
 network_init(void)
 {
+    wchar_t temp[512];
     int i, k;
 
     /* Clear the local data. */
@@ -271,14 +272,24 @@ network_init(void)
     network_host_ndev = 1;
 
     /* Initialize the network provider modules, if present. */
-    i = 0;
-    while (networks[i].internal_name != NULL) {
-	if (networks[i].net != NULL) {
-		k = networks[i].net->init(&network_host_devs[network_host_ndev]);
-		if (k > 0)
-			network_host_ndev += k;
+    for (i = 0; networks[i].internal_name != NULL; i++) {
+	if (networks[i].net == NULL) continue;
+
+	/* Try to load network provider module. */
+	k = networks[i].net->init(&network_host_devs[network_host_ndev]);
+	if ((k < 0) && (i == network_type)) {
+		/* Provider not available. */
+		swprintf(temp, sizeof_w(temp),
+			 get_string(IDS_ERR_NOLIB),
+			 networks[i].net->name,
+			 network_host_devs[network_host_ndev].description);
+		ui_msgbox(MBX_ERROR, temp);
+		continue;
 	}
-	i++;
+
+	/* If they have interfaces, add them. */
+	if (k > 0)
+		network_host_ndev += k;
     }
 }
 
@@ -306,7 +317,7 @@ network_attach(void *dev, uint8_t *mac, NETRXCB rx)
     if (networks[network_type].net->reset(mac) < 0) {
 	/* Tell user we can't do this (at the moment.) */
 	swprintf(temp, sizeof_w(temp),
-		 get_string(IDS_ERR_PCAP), networks[network_type].net->name);
+		 get_string(IDS_ERR_NONET), networks[network_type].net->name);
 	ui_msgbox(MBX_ERROR, temp);
 
 	// FIXME: we should ask in the dialog if they want to
