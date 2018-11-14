@@ -8,7 +8,7 @@
  *
  *		Definitions for the 32-bit code generator.
  *
- * Version:	@(#)codegen_x86.h	1.0.1	2018/02/14
+ * Version:	@(#)codegen_x86.h	1.0.2	2018/11/13
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,6 +34,10 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef CODEGEN_X86_H
+# define CODEGEN_X86_H
+
+
 #define BLOCK_SIZE 0x4000
 #define BLOCK_MASK 0x3fff
 #define BLOCK_START 0
@@ -76,3 +80,6 @@ extern uint32_t mem_store_addr_ea_l_no_abrt;
 extern uint32_t mem_check_write;
 extern uint32_t mem_check_write_w;
 extern uint32_t mem_check_write_l;
+
+
+#endif	/*CODEGEN_X86_H*/

@@ -8,7 +8,7 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen.h	1.0.3	2018/05/04
+ * Version:	@(#)codegen.h	1.0.4	2018/11/13
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,19 +34,28 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef _CODEGEN_H_
-#define _CODEGEN_H_
+#ifndef CPU_CODEGEN_H
+# define CPU_CODEGEN_H
 
-#include "../mem.h"
-#include "x86_ops.h"
+/* We only export this if at least mem.h was included. */
+#ifdef EMU_MEM_H
+# include "x86_ops.h"
 
 #ifdef __amd64__
-#include "codegen_x86-64.h"
+# include "codegen_x86-64.h"
 #elif defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
-#include "codegen_x86.h"
-#else
-#error Dynamic recompiler not implemented on your platform
+# include "codegen_x86.h"
+# else
+#  error Dynamic recompiler not implemented on your platform
+# endif
 #endif
+
+#if defined(CODEGEN_X86_H) || defined(CODEGEN_X86_64_H)
+#define PAGE_MASK_INDEX_MASK 3
+#define PAGE_MASK_INDEX_SHIFT 10
+#define PAGE_MASK_MASK 63
+#define PAGE_MASK_SHIFT 4
+
 
 /*Handling self-modifying code (of which there is a lot on x86) :
 
@@ -72,7 +81,6 @@
   avoiding most unnecessary evictions (eg when code & data are stored in the
   same page).
 */
-
 typedef struct codeblock_t
 {
         uint64_t page_mask, page_mask2;
@@ -106,6 +114,73 @@ typedef struct codeblock_t
 
         uint8_t data[2048];
 } codeblock_t;
+
+typedef struct
+{
+        void (*start)(void);
+        void (*prefix)(uint8_t prefix, uint32_t fetchdat);
+        void (*opcode)(uint8_t opcode, uint32_t fetchdat, int op_32);
+        void (*block_start)(void);
+        void (*block_end)(void);
+} codegen_timing_t;
+
+
+extern codeblock_t	*codeblock;
+extern codeblock_t	**codeblock_hash;
+
+extern int		cpu_block_end;
+extern uint32_t		codegen_endpc;
+
+/*Current physical page of block being recompiled. -1 if no recompilation taking place */
+extern int		block_current;
+extern int		block_pos;
+
+extern uint32_t		recomp_page;
+
+/*Set to 1 if flags have been changed in the block being recompiled, and hence
+  flags_op is known and can be relied on */
+extern int		codegen_flags_changed;
+
+extern int		codegen_in_recompile;
+
+extern int		codegen_fpu_entered;
+extern int		codegen_mmx_entered;
+
+extern int		codegen_fpu_loaded_iq[8];
+extern int		codegen_reg_loaded[8];
+
+extern int		codegen_block_cycles;
+
+extern int		cpu_new_blocks, cpu_new_blocks_latched,
+			cpu_reps, cpu_reps_latched,
+			cpu_notreps, cpu_notreps_latched;
+
+extern int		cpu_recomp_blocks, cpu_recomp_full_ins,
+			cpu_recomp_blocks_latched, cpu_recomp_ins_latched,
+			cpu_recomp_full_ins_latched,
+			cpu_recomp_flushes, cpu_recomp_flushes_latched,
+			cpu_recomp_evicted, cpu_recomp_evicted_latched,
+			cpu_recomp_reuse, cpu_recomp_reuse_latched,
+			cpu_recomp_removed, cpu_recomp_removed_latched;
+
+extern codegen_timing_t	codegen_timing_pentium;
+extern codegen_timing_t	codegen_timing_686;
+extern codegen_timing_t	codegen_timing_486;
+extern codegen_timing_t	codegen_timing_winchip;
+
+extern void	codegen_timing_set(codegen_timing_t *timing);
+
+extern void	(*codegen_timing_start)(void);
+extern void	(*codegen_timing_prefix)(uint8_t prefix, uint32_t fetchdat);
+extern void	(*codegen_timing_opcode)(uint8_t opcode, uint32_t fetchdat, int op_32);
+extern void	(*codegen_timing_block_start)(void);
+extern void	(*codegen_timing_block_end)(void);
+
+
+extern x86seg	*op_ea_seg;
+extern int	op_ssegs;
+extern uint32_t	op_old_pc;
+
 
 /*Code block uses FPU*/
 #define CODEBLOCK_HAS_FPU 1
@@ -283,68 +358,6 @@ static INLINE void codeblock_tree_delete(codeblock_t *block)
         }
 }
 
-#define PAGE_MASK_INDEX_MASK 3
-#define PAGE_MASK_INDEX_SHIFT 10
-#define PAGE_MASK_MASK 63
-#define PAGE_MASK_SHIFT 4
-
-extern codeblock_t *codeblock;
-
-extern codeblock_t **codeblock_hash;
-
-void codegen_init();
-void codegen_reset();
-void codegen_block_init(uint32_t phys_addr);
-void codegen_block_remove();
-void codegen_block_start_recompile(codeblock_t *block);
-void codegen_block_end_recompile(codeblock_t *block);
-void codegen_block_end();
-void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_pc, uint32_t old_pc);
-void codegen_generate_seg_restore();
-void codegen_set_op32();
-void codegen_flush();
-void codegen_check_flush(page_t *page, uint64_t mask, uint32_t phys_addr);
-
-extern int cpu_block_end;
-extern uint32_t codegen_endpc;
-
-extern int cpu_recomp_blocks, cpu_recomp_full_ins, cpu_new_blocks;
-extern int cpu_recomp_blocks_latched, cpu_recomp_ins_latched, cpu_recomp_full_ins_latched, cpu_new_blocks_latched;
-extern int cpu_recomp_flushes, cpu_recomp_flushes_latched;
-extern int cpu_recomp_evicted, cpu_recomp_evicted_latched;
-extern int cpu_recomp_reuse, cpu_recomp_reuse_latched;
-extern int cpu_recomp_removed, cpu_recomp_removed_latched;
-
-extern int cpu_reps, cpu_reps_latched;
-extern int cpu_notreps, cpu_notreps_latched;
-
-extern int codegen_block_cycles;
-
-extern void (*codegen_timing_start)();
-extern void (*codegen_timing_prefix)(uint8_t prefix, uint32_t fetchdat);
-extern void (*codegen_timing_opcode)(uint8_t opcode, uint32_t fetchdat, int op_32);
-extern void (*codegen_timing_block_start)();
-extern void (*codegen_timing_block_end)();
-
-typedef struct codegen_timing_t
-{
-        void (*start)();
-        void (*prefix)(uint8_t prefix, uint32_t fetchdat);
-        void (*opcode)(uint8_t opcode, uint32_t fetchdat, int op_32);
-        void (*block_start)();
-        void (*block_end)();
-} codegen_timing_t;
-
-extern codegen_timing_t codegen_timing_pentium;
-extern codegen_timing_t codegen_timing_686;
-extern codegen_timing_t codegen_timing_486;
-extern codegen_timing_t codegen_timing_winchip;
-
-void codegen_timing_set(codegen_timing_t *timing);
-
-extern int block_current;
-extern int block_pos;
-
 #define CPU_BLOCK_END() cpu_block_end = 1
 
 static INLINE void addbyte(uint8_t val)
@@ -389,23 +402,22 @@ static INLINE void addquad(uint64_t val)
         }
 }
 
-/*Current physical page of block being recompiled. -1 if no recompilation taking place */
-extern uint32_t recomp_page;
 
-extern x86seg *op_ea_seg;
-extern int op_ssegs;
-extern uint32_t op_old_pc;
-
-/*Set to 1 if flags have been changed in the block being recompiled, and hence
-  flags_op is known and can be relied on */
-extern int codegen_flags_changed;
-
-extern int codegen_fpu_entered;
-extern int codegen_mmx_entered;
-
-extern int codegen_fpu_loaded_iq[8];
-extern int codegen_reg_loaded[8];
-
-extern int codegen_in_recompile;
-
+void codegen_block_start_recompile(codeblock_t *block);
+void codegen_block_end_recompile(codeblock_t *block);
+void codegen_block_end(void);
+void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_pc, uint32_t old_pc);
+void codegen_generate_seg_restore(void);
+void codegen_set_op32(void);
+void codegen_check_flush(page_t *page, uint64_t mask, uint32_t phys_addr);
 #endif
+
+
+void codegen_init(void);
+void codegen_reset(void);
+void codegen_block_init(uint32_t phys_addr);
+void codegen_block_remove(void);
+void codegen_flush(void);
+
+
+#endif	/*CPU_CODEGEN_H*/

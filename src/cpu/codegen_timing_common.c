@@ -8,7 +8,7 @@
  *
  *		Generic timing for code generator.
  *
- * Version:	@(#)codegen_timing_common.c	1.0.1	2018/02/14
+ * Version:	@(#)codegen_timing_common.c	1.0.2	2018/11/13
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../mem.h" 
 #include "cpu.h"
 #include "x86.h"
 #include "codegen_timing_common.h"

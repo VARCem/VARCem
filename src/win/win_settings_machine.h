@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.11	2018/10/24
+ * Version:	@(#)win_settings_machine.h	1.0.12	2018/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,9 @@ machine_recalc_cpu(HWND hdlg)
     int cpu_type;
 
     cpu_type = machines[temp_machine].cpu[temp_cpu_m].cpus[temp_cpu].cpu_type;
+#ifdef USE_DYNAREC
     cpu_flags = machines[temp_machine].cpu[temp_cpu_m].cpus[temp_cpu].cpu_flags;
+#endif
 
     h = GetDlgItem(hdlg, IDC_COMBO_WS);
     if ((cpu_type >= CPU_286) && (cpu_type <= CPU_386DX))

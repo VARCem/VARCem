@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.60	2018/10/25
+ * Version:	@(#)pc.c	1.0.61	2018/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,7 @@
 #endif
 #include "machines/machine.h"
 #include "io.h"
+#include "mem.h"
 #include "devices/system/dma.h"
 #include "devices/system/pic.h"
 #include "devices/system/pit.h"

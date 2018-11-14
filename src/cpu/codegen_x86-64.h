@@ -8,7 +8,7 @@
  *
  *		Definitions for the 64-bit code generator.
  *
- * Version:	@(#)codegen_x86-64.h	1.0.1	2018/02/14
+ * Version:	@(#)codegen_x86-64.h	1.0.2	2018/11/13
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,6 +34,10 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef CODEGEN_X86_64_H
+# define CODEGEN_X86_64_H
+
+
 #define BLOCK_SIZE 0x4000
 #define BLOCK_MASK 0x3fff
 #define BLOCK_START 0
@@ -57,3 +61,6 @@ enum
 extern int host_reg_mapping[NR_HOST_REGS];
 #define NR_HOST_XMM_REGS 8
 extern int host_reg_xmm_mapping[NR_HOST_XMM_REGS];
+
+
+#endif	/*CODEGEN_X86_64_H*/

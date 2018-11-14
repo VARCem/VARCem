@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.12	2018/10/24
+ * Version:	@(#)vid_voodoo.c	1.0.13	2018/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2685,7 +2685,9 @@ static inline void voodoo_tmu_fetch_and_blend(voodoo_t *voodoo, voodoo_params_t 
 # endif
 #else
 # define NO_CODEGEN
+# ifdef USE_DYNAREC
 static int voodoo_recomp = 0;
+# endif
 #endif
 
 

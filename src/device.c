@@ -9,7 +9,7 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.17	2018/10/25
+ * Version:	@(#)device.c	1.0.18	2018/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -318,8 +318,9 @@ device_available(const device_t *d)
     if (d == NULL) return(1);
 
 #ifdef RELEASE_BUILD
-    if (d->flags & DEVICE_NOT_WORKING) return(0);
+    if (d->flags & DEVICE_UNSTABLE) return(0);
 #endif
+
     if (d->dev_available != NULL) {
 	func = d->dev_available;
 	return(func());
