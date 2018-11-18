@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.10	2018/11/11
+ * Version:	@(#)vid_hercules.c	1.0.11	2018/11/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -404,9 +404,13 @@ hercules_init(const device_t *info)
 
     timer_add(hercules_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
 
+    /*
+     * Map in the memory, enable exec on it (for software like basich.com
+     * that relocates code to it, and executes it from there..)
+     */
     mem_map_add(&dev->mapping, 0xb0000, 0x08000,
 		hercules_read,NULL,NULL, hercules_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		dev->vram, MEM_MAPPING_EXTERNAL, dev);
 
     io_sethandler(0x03b0, 16,
 		  hercules_in,NULL,NULL, hercules_out,NULL,NULL, dev);
