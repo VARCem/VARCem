@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.39	2018/11/06
+ * Version:	@(#)config.c	1.0.40	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -305,7 +305,7 @@ save_general(const char *cat)
     if (vid_resize == 0)
 	config_delete_var(cat, "vid_resize");
 
-    str = vidapi_internal_name(vid_api);
+    str = vidapi_get_internal_name(vid_api);
     if (! strcmp(str, "default")) {
 	config_delete_var(cat, "vid_renderer");
     } else {

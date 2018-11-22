@@ -10,7 +10,7 @@
  *
  * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)vnc.c	1.0.7	2018/10/05
+ * Version:	@(#)vnc.c	1.0.8	2018/11/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -427,13 +427,17 @@ vnc_available(void)
     void *handle;
 
     handle = dynld_module(PATH_VNC_DLL, NULL);
-    if (handle != NULL) return(1);
+    if (handle != NULL) {
+	dynld_close(handle);
+	return(1);
+    }
 
     return(0);
 }
 
 
 const vidapi_t vnc_vidapi = {
+    "vnc",
     "VNC",
     0,
     vnc_init,

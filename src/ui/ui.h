@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.15	2018/09/29
+ * Version:	@(#)ui.h	1.0.16	2018/11/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -195,7 +195,8 @@ extern int      dlg_file(const wchar_t *filt, const wchar_t *ifn,
 extern int	vidapi_count(void);
 extern int	vidapi_available(int api);
 extern int	vidapi_from_internal_name(const char *name);
-extern const char *vidapi_internal_name(int api);
+extern const char *vidapi_get_internal_name(int api);
+extern const char *vidapi_getname(int api);
 extern int	vidapi_set(int api);
 extern void	vidapi_resize(int x, int y);
 extern int	vidapi_pause(void);

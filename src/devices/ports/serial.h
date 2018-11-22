@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.6	2018/11/11
+ * Version:	@(#)serial.h	1.0.8	2018/11/15
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,6 +49,7 @@
 
 
 #define SERIAL_MAX		2	/* two ports supported */
+#define SERIAL_FIFO_MAX		64	/* maximum FIFO size */
 
 /* Default settings for the standard ports. */
 #define SERIAL1_ADDR		0x03f8
@@ -61,64 +62,35 @@
 #define UART_TYPE_8250A		1	/* updated NS8250(A) */
 #define UART_TYPE_16450		2	/* 16450 */
 #define UART_TYPE_16550		3	/* 16550 (broken fifo) */
-#define UART_TYPE_16550A	4	/* 16550a (working fifo) */
+#define UART_TYPE_16550A	4	/* 16550A (working fifo) */
 #define UART_TYPE_16670		5	/* 16670 (64b fifo) */
 
 
-typedef struct SERIAL {
-    int8_t	port;			/* port number (1,2,..) */
-    int8_t	irq;			/* IRQ channel used */
-    uint16_t	base;			/* I/O address used */
-
-    int8_t	is_pcjr;		/* PCjr UART (fixed OUT2) */
-    int8_t	type;			/* UART type */
-    uint8_t	int_status;
-
-    uint8_t	lsr, thr, mcr, rcr,	/* UART registers */
-		iir, ier, lcr, msr;
-    uint8_t	dlab1, dlab2;
-    uint8_t	dat,
-		hold;
-    uint8_t	scratch;
-    uint8_t	fcr;
-
-    /* Access to internal functions. */
-    void	(*clear_fifo)(struct SERIAL *);
-    void	(*write_fifo)(struct SERIAL *, uint8_t *, uint8_t);
-
-    /* Data for the RTS-toggle callback. */
-    void	(*rts_callback)(struct SERIAL *, void *);
-    void	*rts_callback_p;
-
-    int64_t	delay;
-
-#ifdef WALTJE_SERIAL
-    void	*bh;			/* BottomHalf handler */
-#endif
-
-    int		fifo_read,
-		fifo_write;
-    uint8_t	fifo[256];
-} SERIAL;
+typedef struct {
+    void	(*mcr)(void *dev, void *arg);
+    uint8_t	(*read)(void *dev, void *arg);
+    void	(*write)(void *dev, void *arg, uint8_t val);
+} serial_ops_t;
 
 
 /* Global variables. */
 #ifdef EMU_DEVICE_H
-extern const device_t serial_1_device;
-extern const device_t serial_1_pcjr_device;
-extern const device_t serial_2_device;
+extern const device_t	serial_1_device;
+extern const device_t	serial_2_device;
+
+extern const device_t	serial_1_pcjr_device;
 #endif
 
 
 /* Functions. */
-extern void	serial_log(int level, const char *fmt, ...);
 extern void	serial_reset(void);
-extern void	serial_setup(int port, uint16_t addr, int8_t irq);
-extern SERIAL	*serial_attach(int port, void *func, void *priv);
 
-#ifdef WALTJE_SERIAL
-extern int	serial_link(int port, char *name);
-#endif
+extern void	serial_setup(int port, uint16_t addr, int8_t irq);
+extern void	*serial_attach(int port, serial_ops_t *ops, void *priv);
+extern int	serial_link(int port, const char *name);
+
+extern void	serial_clear(void *arg);
+extern void	serial_write(void *arg, uint8_t *ptr, uint8_t len);
 
 
 #endif	/*EMU_SERIAL_H*/

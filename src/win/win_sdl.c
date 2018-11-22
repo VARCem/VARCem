@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.6	2018/10/21
+ * Version:	@(#)win_sdl.c  	1.0.7	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -512,7 +512,8 @@ sdl_available(void)
 
 
 const vidapi_t sdl_vidapi = {
-    "SDL",
+    "sdl",
+    "SDL2",
     1,
     sdl_init,
     sdl_close,

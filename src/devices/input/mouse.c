@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.15	2018/11/10
+ * Version:	@(#)mouse.c	1.0.16	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -90,6 +90,7 @@ static const struct {
     const device_t	*device;
 } mouse_devices[] = {
     { "none",		&mouse_none_device		},
+
     { "internal",	&mouse_internal_device		},
     { "logibus",	&mouse_logibus_device		},
     { "msbus",		&mouse_msinport_device		},
@@ -101,6 +102,7 @@ static const struct {
     { "ltserial",	&mouse_ltserial_device		},
     { "mswhserial",	&mouse_mswhserial_device	},
     { "ps2",		&mouse_ps2_device		},
+
     { NULL,		NULL				}
 };
 

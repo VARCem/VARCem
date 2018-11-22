@@ -53,7 +53,7 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.2	2018/10/21
+ * Version:	@(#)mouse_bus.c	1.1.3	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -390,6 +390,7 @@ ms_read(uint16_t port, void *priv)
     }
 
     DBGLOG(2, "MOUSE: read(%04x) = %02x\n", port, ret);
+pclog(0,"MOUSE: read(%04x) = %02x\n", port, ret);
 
     return(ret);
 }
@@ -402,6 +403,7 @@ ms_write(uint16_t port, uint8_t val, void *priv)
     mouse_t *dev = (mouse_t *)priv;
 
     DBGLOG(2, "MOUSE: write(%04x, %02x)\n", port, val);
+pclog(0,"MOUSE: write(%04x, %02x)\n", port, val);
 
     switch (port & 0x0003) {
 	case INP_PORT_CONTROL:
@@ -724,7 +726,7 @@ bm_init(const device_t *info)
 
     timer_add(bm_timer, &dev->timer, &dev->timer_enabled, dev);
 
-    INFO("MOUSE: %s (I/O=%04x, IRQ=%d, buttons=%d\n",
+    INFO("MOUSE: %s (I/O=%04x, IRQ=%i, buttons=%i\n",
 		dev->name, dev->base, dev->irq, dev->bn);
 
     return(dev);
@@ -878,16 +880,17 @@ const device_t mouse_logibus_device = {
 const device_t mouse_logibus_internal_device = {
     "Logitech Bus Mouse (Internal)",
     0,
-    2,
+    1,
     bm_init, bm_close, NULL,
-    bm_poll, NULL, NULL, NULL,
+    bm_poll,
+    NULL, NULL, NULL,
     NULL
 };
 
 const device_t mouse_msinport_device = {
     "Microsoft Bus Mouse (InPort)",
     DEVICE_ISA,
-    1,
+    10,
     bm_init, bm_close, NULL,
     bm_poll,
     NULL, NULL, NULL,

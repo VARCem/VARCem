@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.27	2018/10/24
+ * Version:	@(#)video_dev.c	1.0.28	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -108,6 +108,7 @@ static const struct {
 #if defined(DEV_BRANCH) && defined(USE_TI)
     { "ti_cf62011",		&ti_cf62011_device		},
 #endif
+    { "tvga8900cx",		&tvga8900cx_device		},
     { "tvga8900d",		&tvga8900d_device		},
     { "et4000ax",		&et4000_isa_device		},
     { "tgkorvga",		&et4000k_isa_device		},

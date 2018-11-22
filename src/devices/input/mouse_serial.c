@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.11	2018/11/11
+ * Version:	@(#)mouse_serial.c	1.0.12	2018/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,7 +93,7 @@ typedef struct {
     int64_t	period,
 		delay;
 
-    SERIAL	*serial;
+    void	*serial;
 
     uint8_t	id[255],
 		data[5];
@@ -104,22 +104,6 @@ typedef struct {
 #define FLAG_INTR	0x04			/* dev can send interrupts */
 #define FLAG_FROZEN	0x02			/* do not update counters */
 #define FLAG_ENABLED	0x01			/* dev is enabled for use */
-
-
-/* Callback from serial driver: RTS was toggled. */
-static void
-ser_callback(struct SERIAL *serial, void *priv)
-{
-    mouse_t *dev = (mouse_t *)priv;
-
-    dev->serial->clear_fifo(serial);
-
-    dev->pos = 0;
-    dev->phase = PHASE_ID;
-
-    /* Start a timer to wake us up in a little while. */
-    dev->delay = dev->period;
-}
 
 
 static uint8_t
@@ -261,7 +245,7 @@ ser_report(mouse_t *dev, int x, int y, int z, int b)
 {
     int len = 0;
 
-    memset(dev->data, 0x00, 5);
+    memset(dev->data, 0x00, sizeof(dev->data));
 
     switch(dev->type) {
 	case MOUSE_MSYSTEMS:
@@ -319,21 +303,22 @@ ser_report(mouse_t *dev, int x, int y, int z, int b)
 
     if (! dev->delay)
 	dev->delay = dev->period;
+//pclog(0,"SerMouse%d: report(%d), len=%d\n", dev->port,dev->type,dev->data_len);
 }
 
 
-/* Callback timer expired, now send our "mouse ID" to the serial port. */
+/* Timer expired, now send data (back) to the serial port. */
 static void
 ser_timer(void *priv)
 {
     mouse_t *dev = (mouse_t *)priv;
-    uint8_t b;
+    uint8_t b = 0x00;
 
+//pclog(0,"SerMouse%d: timer, phase=%d pos=%d\n",dev->port,dev->phase,dev->pos);
     switch (dev->phase) {
 	case PHASE_ID:
+		/* Grab next ID byte. */
 		b = dev->id[dev->pos];
-		if (dev->serial != NULL)
-			dev->serial->write_fifo(dev->serial, &b, 1);
 		if (++dev->pos == dev->id_len) {
 			dev->delay = 0LL;
 			dev->pos = 0;
@@ -343,9 +328,8 @@ ser_timer(void *priv)
 		break;
 
 	case PHASE_DATA:
+		/* Grab next data byte. */
 		b = dev->data[dev->pos];
-		if (dev->serial != NULL)
-			dev->serial->write_fifo(dev->serial, &b, 1);
 		if (++dev->pos == dev->data_len) {
 			dev->delay = 0LL;
 			dev->pos = 0;
@@ -356,8 +340,6 @@ ser_timer(void *priv)
 
 	case PHASE_STATUS:
 		b = dev->status;
-		if (dev->serial != NULL)
-			dev->serial->write_fifo(dev->serial, &b, 1);
 		dev->delay = 0LL;
 		dev->pos = 0;
 		dev->phase = PHASE_IDLE;
@@ -373,8 +355,6 @@ ser_timer(void *priv)
 			 */
 			b = 0x00;
 		}
-		if (dev->serial != NULL)
-			dev->serial->write_fifo(dev->serial, &b, 1);
 		if (++dev->pos == 3) {
 			dev->delay = 0LL;
 			dev->pos = 0;
@@ -385,8 +365,6 @@ ser_timer(void *priv)
 
 	case PHASE_FMT_REV:
 		b = 0x10 | (dev->format << 1);
-		if (dev->serial != NULL)
-			dev->serial->write_fifo(dev->serial, &b, 1);
 		dev->delay = 0LL;
 		dev->pos = 0;
 		dev->phase = PHASE_IDLE;
@@ -396,8 +374,33 @@ ser_timer(void *priv)
 		dev->delay = 0LL;
 		dev->pos = 0;
 		dev->phase = PHASE_IDLE;
-		break;
+		return;
     }
+
+    /* Send byte if we can. */
+    if (dev->serial != NULL) {
+	serial_write(dev->serial, &b, 1);
+//pclog(0,"SerMouse%d: writing %02x\n",dev->port, b);
+}
+}
+
+
+/* Callback from serial driver: RTS was toggled. */
+static void
+ser_callback(void *serial, void *priv)
+{
+    mouse_t *dev = (mouse_t *)priv;
+
+pclog(0,"Serial%d: callback @%08lx\n", dev->port, dev->serial);
+    if (serial == NULL) return;
+
+    serial_clear(serial);
+
+    dev->pos = 0;
+    dev->phase = PHASE_ID;
+
+    /* Wait a little while and then actually send the ID. */
+    dev->delay = dev->period;
 }
 
 
@@ -407,9 +410,9 @@ ser_poll(int x, int y, int z, int b, void *priv)
     mouse_t *dev = (mouse_t *)priv;
 
     if (!x && !y && (b == dev->oldb) && dev->continuous)
-	return(1);
+	return(0);
 
-    DBGLOG(1, "MOUSE: poll(%d,%d,%d,%02x)\n", x, y, z, b);
+    DBGLOG(1, "MOUSE: poll(%i,%i,%i,%02x)\n", x, y, z, b);
 
     dev->oldb = b;
 
@@ -444,14 +447,16 @@ ser_poll(int x, int y, int z, int b, void *priv)
     if (!dev->prompt && !dev->want_data)
 	ser_report(dev, x, y, z, b);
 
-    return(0);
+    return(1);
 }
 
 
 static void
-ltser_write(SERIAL *serial, void *priv, uint8_t data)
+ltser_write(void *serial, void *priv, uint8_t data)
 {
     mouse_t *dev = (mouse_t *)priv;
+
+    pclog(0,"MOUSE: ltwrite(%02x) @%08lx\n", data, dev->serial);
 
 #if 0
     /* Make sure to stop any transmission when we receive a byte. */
@@ -593,6 +598,11 @@ ser_close(void *priv)
 static void *
 ser_init(const device_t *info)
 {
+    static serial_ops_t ops = {
+	ser_callback,	/* mcr */
+	NULL,		/* read */
+	ltser_write,	/* write */
+    };
     mouse_t *dev;
     int i;
 
@@ -625,7 +635,7 @@ ser_init(const device_t *info)
 		case 3:
 			dev->id_len = 2;
 			dev->id[1] = '3';
-			/*FALLTHROUGH*/
+			break;
 
 		case 4:
 			dev->type = MOUSE_MSWHEEL;
@@ -640,20 +650,15 @@ ser_init(const device_t *info)
     }
 
     /* Attach a serial port to the mouse. */
-    dev->serial = serial_attach(dev->port-1, ser_callback, dev);
+    dev->serial = serial_attach(dev->port, &ops, dev);
     if (dev->serial == NULL) {
-	ERRLOG("MOUSE: %s (port=COM%i, butons=%i) port disabled!\n",
-					dev->name, dev->port+1, i);
+	ERRLOG("MOUSE: %s (port COM%i not available) device disabled!\n",
+						dev->name, dev->port+1);
 	free(dev);
 	return(NULL);
     }
 
-#if 0
-    /* Add our WRITE routine. */
-    serial_attach2(dev->port-1, ser_write, dev);
-#endif
-
-    INFO("MOUSE: %s (port=COM%d, butons=%d)\n", dev->name, dev->port+1, i);
+    INFO("MOUSE: %s (port=COM%i, buttons=%i)\n", dev->name, dev->port+1, i);
 
     timer_add(ser_timer, &dev->delay, &dev->delay, dev);
 
@@ -667,15 +672,12 @@ ser_init(const device_t *info)
 
 static const device_config_t ser_config[] = {
     {
-	"port", "Serial Port", CONFIG_SELECTION, "", 1, {
+	"port", "Serial Port", CONFIG_SELECTION, "", 0, {
 		{
-			"Disabled", 0
+			"COM1", 0
 		},
 		{
-			"COM1", 1
-		},
-		{
-			"COM2", 2
+			"COM2", 1
 		},
 		{
 			""

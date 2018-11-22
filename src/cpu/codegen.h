@@ -176,7 +176,6 @@ extern void	(*codegen_timing_opcode)(uint8_t opcode, uint32_t fetchdat, int op_3
 extern void	(*codegen_timing_block_start)(void);
 extern void	(*codegen_timing_block_end)(void);
 
-
 extern x86seg	*op_ea_seg;
 extern int	op_ssegs;
 extern uint32_t	op_old_pc;

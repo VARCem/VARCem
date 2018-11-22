@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.12	2018/10/05
+ * Version:	@(#)win_d3d.cpp	1.0.13	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -623,7 +623,8 @@ d3d_screenshot(const wchar_t *fn)
 
 
 const vidapi_t d3d_vidapi = {
-    "D3D",
+    "d3d",
+    "DirectDraw 3D",
     1,
     d3d_init,
     d3d_close,

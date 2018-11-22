@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.20	2018/10/26
+ * Version:	@(#)ui_main.c	1.0.21	2018/11/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -295,14 +295,16 @@ main_reset_all(void)
     menu_set_item(IDM_REMEMBER, window_remember);
 
     /* Add all renderers to the Renderer menu. */
-    for (i = 0; i < vidapi_count(); i++) {
-	if (vidapi_available(i)) {
-		/* Get name of the renderer and add a menu item. */
-		mbstowcs(temp, vidapi_internal_name(i), sizeof_w(temp));
-		menu_add_item(IDM_RENDER, ITEM_RADIO, IDM_RENDER_1 + i, temp);
-	}
+    for (i = 0; vidapi_getname(i) != NULL; i++) {
+	/* Get name of the renderer and add a menu item. */
+	mbstowcs(temp, vidapi_getname(i), sizeof_w(temp));
+	menu_add_item(IDM_RENDER, ITEM_RADIO, IDM_RENDER_1 + i, temp);
+
+	/* Disable entries that are not available. */
+	if (! vidapi_available(i))
+		menu_enable_item(IDM_RENDER_1 + i, 0);
     }
-    menu_set_radio_item(IDM_RENDER_1, vidapi_count(), vid_api);
+    menu_set_radio_item(IDM_RENDER_1, i, vid_api);
 
     menu_set_radio_item(IDM_SCALE_1, 4, scale);
 

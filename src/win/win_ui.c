@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.32	2018/10/25
+ * Version:	@(#)win_ui.c	1.0.33	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -816,7 +816,8 @@ again:
 	 * to the system default one instead.
 	 */
 	swprintf(title, sizeof_w(title),
-		 get_string(IDS_ERR_NORENDR), vidapi_internal_name(vid_api));
+		 get_string(IDS_ERR_NORENDR),
+		 vidapi_get_internal_name(vid_api));
 	if (ui_msgbox(MBX_CONFIG, title) != 0) {
 		/* Nope, they don't, so just exit. */
 		return(5);

@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.28	2018/11/11
+ * Version:	@(#)hdc_ide_ata.c	1.0.29	2018/11/13
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -2229,6 +2229,8 @@ ide_set_handlers(uint8_t board)
 static void
 ide_remove_handlers(uint8_t board)
 {
+    if (ide_boards[board] == NULL) return;
+
     if (ide_boards[board]->bit32) {
 	io_removehandler(ide_base_main[board], 1,
 			 ide_readb,           ide_readw,  ide_readl,

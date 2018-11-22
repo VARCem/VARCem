@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct2D.
  *
- * Version:	@(#)win_d2d.cpp	1.0.2	2018/10/05
+ * Version:	@(#)win_d2d.cpp	1.0.3	2018/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		David Hrdlicka, <hrdlickadavid@outlook.com>
@@ -57,19 +57,16 @@
 #include "win_d2d.h"
 
 
-#ifdef USE_D2D
-
-# if USE_D2D == 2
-#  define PATH_D2D_DLL	"d2d1.dll"
-#  define DLLFUNC(x)	D2D1_ ## x
+#if USE_D2D == 2
+# define PATH_D2D_DLL	"d2d1.dll"
+# define DLLFUNC(x)	D2D1_ ## x
 
 
 /* Pointers to the real functions. */
-static bool	(*D2D1_CreateFactory)(
-			D2D1_FACTORY_TYPE factoryType,
-			REFIID riid,
-			CONST D2D1_FACTORY_OPTIONS *pFactoryOptions,
-			void **ppIFactory);
+static bool	(*D2D1_CreateFactory)(D2D1_FACTORY_TYPE facType,
+				      REFIID riid,
+				      CONST D2D1_FACTORY_OPTIONS *pFacOptions,
+				      void **ppIFactory);
 
 static const dllimp_t d2d_imports[] = {
   { "D2D1CreateFactory",	&D2D1_CreateFactory		},
@@ -77,9 +74,8 @@ static const dllimp_t d2d_imports[] = {
 };
 
 static void			*d2d_handle = NULL;
-# else
-#  define DLLFUNC(x)	D2D1 ## x
-# endif
+#else
+# define DLLFUNC(x)	D2D1 ## x
 #endif
 
 
@@ -209,16 +205,13 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
 		hr = d2d_hwndRT->CreateCompatibleRenderTarget(
 				D2D1::SizeF((float)w, (float)h),
 				&d2d_btmpRT);
-		if (SUCCEEDED(hr)) {
-			d2d_width = w;
-			d2d_height = h;
-		}
 	} else {
 		hr = d2d_hwndRT->Resize(D2D1::SizeU(w, h));
-		if (SUCCEEDED(hr)) {
-			d2d_width = w;
-			d2d_height = h;
-		}
+	}
+
+	if (SUCCEEDED(hr)) {
+		d2d_width = w;
+		d2d_height = h;
 	}
     }
 
@@ -231,31 +224,33 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
     srcdata = mem_alloc(h * w * 4);
     for (yy = y1; yy < y2; yy++) {
 	if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
-#if 0
 		if (vid_grayscale || invert_display)
 			video_transform_copy(
-				(uint32_t *) &(((uint8_t *)srcdata)[yy * w * 4]),
+				(uint32_t *)&(((uint8_t *)srcdata)[yy * w * 4]),
 				&(((uint32_t *)buffer32->line[y + yy])[x]),
 				w);
 		else
-#endif
 			memcpy(
-				(uint32_t *) &(((uint8_t *)srcdata)[yy * w * 4]),
+				(uint32_t *)&(((uint8_t *)srcdata)[yy * w * 4]),
 				&(((uint32_t *)buffer32->line[y + yy])[x]),
 				w * 4);
 	}
     }
-
     video_blit_complete();
 
     rectU = D2D1::RectU(0, 0, w, h);
     hr = d2d_bitmap->CopyFromMemory(&rectU, srcdata, w * 4);
-    // In fullscreen mode we first draw offscreen to an intermediate
-    // BitmapRenderTarget, which then gets rendered to the actual
-    // HwndRenderTarget in order to implement different scaling modes
-    // In windowed mode we draw directly to the HwndRenderTarget
+
+    /*
+     * In fullscreen mode we first draw offscreen to an intermediate
+     * BitmapRenderTarget, which then gets rendered to the actual
+     * HwndRenderTarget in order to implement different scaling modes.
+     *
+     * In windowed mode we draw directly to the HwndRenderTarget.
+     */
     if (SUCCEEDED(hr)) {
-	RT = d2d_fs ? (ID2D1RenderTarget *) d2d_btmpRT : (ID2D1RenderTarget *) d2d_hwndRT;
+	RT = d2d_fs ? (ID2D1RenderTarget *)d2d_btmpRT
+		    : (ID2D1RenderTarget *)d2d_hwndRT;
 	RT->BeginDraw();
 	RT->DrawBitmap(d2d_bitmap,
 		       D2D1::RectF(0, (float)y1, (float)w, (float)y2),
@@ -268,15 +263,20 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
     if (d2d_fs) {
 	if (SUCCEEDED(hr))
 		hr = d2d_btmpRT->GetBitmap(&fs_bitmap);
+
 	if (SUCCEEDED(hr)) {
 		d2d_stretch(&fs_w, &fs_h, &fs_x, &fs_y);
+
 		d2d_hwndRT->BeginDraw();
+
 		d2d_hwndRT->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+
 		d2d_hwndRT->DrawBitmap(fs_bitmap,
 				       D2D1::RectF(fs_x, fs_y, fs_x + fs_w, fs_y + fs_h),
 				       1.0f,
 				       D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
 				       D2D1::RectF(0, 0, (float)w, (float)h));
+
 		hr = d2d_hwndRT->EndDraw();
 	}
     }
@@ -309,10 +309,12 @@ d2d_close(void)
 	d2d_hwndRT->Release();
 	d2d_hwndRT = NULL;
     }
+
     if (d2d_factory) {
 	d2d_factory->Release();
 	d2d_factory = NULL;
     }
+
     if (d2d_hwnd) {
 	hwndMain = old_hwndMain;
 	plat_set_input(hwndMain);
@@ -321,7 +323,7 @@ d2d_close(void)
 	old_hwndMain = NULL;
     }
 
-#if defined(USE_D2D) && USE_D2D == 2
+#if USE_D2D == 2
     /* Quit and unload the DLL if possible. */
     if (d2d_handle != NULL) {
 	dynld_close(d2d_handle);
@@ -342,7 +344,7 @@ d2d_init(int fs)
 
     cgapal_rebuild();
 
-#if defined(USE_D2D) && USE_D2D == 2
+#if USE_D2D == 2
     /* Try loading the DLL. */
     d2d_handle = dynld_module(PATH_D2D_DLL, d2d_imports);
     if (d2d_handle == NULL) {
@@ -436,8 +438,25 @@ d2d_screenshot(const wchar_t *fn)
 }
 
 
+/* See if this module is available or not. */
+static int
+d2d_available(void)
+{
+    void *handle;
+
+    handle = dynld_module(PATH_D2D_DLL, NULL);
+    if (handle != NULL) {
+        dynld_close(handle);
+        return(1);
+    }
+
+    return(0);
+}
+
+
 const vidapi_t d2d_vidapi = {
-    "D2D",
+    "d2d",
+    "Direct 2D",
     1,
     d2d_init,
     d2d_close,
@@ -445,5 +464,5 @@ const vidapi_t d2d_vidapi = {
     NULL,
     NULL,
     d2d_screenshot,
-    NULL
+    d2d_available
 };

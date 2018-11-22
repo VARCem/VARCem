@@ -8,7 +8,7 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.3	2018/09/26
+ * Version:	@(#)ui_vidapi.c	1.0.4	2018/11/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -74,16 +74,13 @@ vidapi_available(int api)
 int
 vidapi_from_internal_name(const char *name)
 {
-    int i = 0;
+    int i;
 
     if (!strcasecmp(name, "default") ||
 	!strcasecmp(name, "system")) return(0);
 
-    while(plat_vidapis[i] != NULL) {
-	if (! strcasecmp(plat_vidapis[i]->name, name)) return(i);
-
-	i++;
-    }
+    for (i = 0; plat_vidapis[i] != NULL; i++)
+	if (! strcasecmp(plat_vidapis[i]->internal_name, name)) return(i);
 
     /* Default value. */
     return(0);
@@ -92,9 +89,22 @@ vidapi_from_internal_name(const char *name)
 
 /* Return the VIDAPI name for the given number. */
 const char *
-vidapi_internal_name(int api)
+vidapi_get_internal_name(int api)
 {
     const char *name = "default";
+
+    if (plat_vidapis[api] != NULL)
+	return(plat_vidapis[api]->internal_name);
+
+    return(name);
+}
+
+
+/* Return the VIDAPI dpslay name for the given number. */
+const char *
+vidapi_getname(int api)
+{
+    const char *name = NULL;
 
     if (plat_vidapis[api] != NULL)
 	return(plat_vidapis[api]->name);

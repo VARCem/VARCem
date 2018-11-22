@@ -760,7 +760,8 @@ ddraw_screenshot(const wchar_t *fn)
 
 
 const vidapi_t ddraw_vidapi = {
-    "DDraw",
+    "ddraw",
+    "DirectDraw 9+",
     1,
     ddraw_init,
     ddraw_close,

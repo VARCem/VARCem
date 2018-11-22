@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.20	2018/10/24
+ * Version:	@(#)plat.h	1.0.21	2018/11/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -115,8 +115,11 @@ extern "C" {
 
 /* Define a "vidapi", or, rather, a Renderer API. */
 typedef struct {
+    const char	*internal_name;
     const char	*name;
+
     int		local;
+
     int		(*init)(int fs);
     void	(*close)(void);
     void	(*reset)(int fs);
