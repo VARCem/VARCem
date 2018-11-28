@@ -131,9 +131,6 @@
     <ClCompile Include="..\..\..\devices\cdrom\cdrom_image.cpp">
       <Filter>devices\cdrom</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\cdrom\cdrom_null.c">
-      <Filter>devices\cdrom</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\devices\disk\hdc.c">
       <Filter>devices\disk</Filter>
     </ClCompile>
@@ -241,57 +238,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\devices\input\mouse_serial.c">
       <Filter>devices\input</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\bootp.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\cksum.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\debug.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\if.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\ip_icmp.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\ip_input.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\ip_output.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\mbuf.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\queue.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\sbuf.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\slirp.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\socket.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\tcp_input.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\tcp_output.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\tcp_subr.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\tcp_timer.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\network\slirp\udp.c">
-      <Filter>devices\network\slirp</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\network\net_ne2000.c">
       <Filter>devices\network</Filter>
@@ -755,12 +701,6 @@
     <ClCompile Include="..\..\..\machines\m_at_scat.c">
       <Filter>machines</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_sis_85c471.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_sis_85c496.c">
-      <Filter>machines</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\machines\m_at_t3100e.c">
       <Filter>machines</Filter>
     </ClCompile>
@@ -828,9 +768,6 @@
       <Filter>ui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\misc.c" />
-    <ClCompile Include="..\..\..\devices\network\slirp\slirp_misc.c">
-      <Filter>devices\network\slirp</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\win_new_image.c">
       <Filter>win</Filter>
     </ClCompile>
@@ -888,6 +825,21 @@
     <ClCompile Include="..\..\..\png.c" />
     <ClCompile Include="..\..\..\ui\ui_misc.c">
       <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\network\network_dev.c">
+      <Filter>devices\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_sigma.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\scsi\scsi_cdrom.c">
+      <Filter>devices\scsi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_at_sis471.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_at_sis496.c">
+      <Filter>machines</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1124,9 +1076,6 @@
     <ClInclude Include="..\..\..\devices\cdrom\cdrom_image.h">
       <Filter>devices\cdrom</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\devices\cdrom\cdrom_null.h">
-      <Filter>devices\cdrom</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\devices\disk\hdc.h">
       <Filter>devices\disk</Filter>
     </ClInclude>
@@ -1189,69 +1138,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\devices\input\mouse.h">
       <Filter>devices\input</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\bootp.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\ctl.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\debug.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\icmp_var.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\if.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\ip.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\ip_icmp.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\libslirp.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\main.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\mbuf.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\misc.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\queue.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\sbuf.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\slirp.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\slirp_config.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\socket.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\tcp.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\tcp_timer.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\tcp_var.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\tcpip.h">
-      <Filter>devices\network\slirp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\network\slirp\udp.h">
-      <Filter>devices\network\slirp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\devices\network\bswap.h">
       <Filter>devices\network</Filter>
@@ -1659,6 +1545,9 @@
       <Filter>devices\video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\png.h" />
+    <ClInclude Include="..\..\..\devices\scsi\scsi_cdrom.h">
+      <Filter>devices\scsi</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cpu">
@@ -1693,9 +1582,6 @@
     </Filter>
     <Filter Include="devices\network">
       <UniqueIdentifier>{7cae45b9-af45-4f82-9c53-a4e3094ddee4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="devices\network\slirp">
-      <UniqueIdentifier>{c0afa9df-08d3-40a6-a4d4-88fb97816009}</UniqueIdentifier>
     </Filter>
     <Filter Include="devices\ports">
       <UniqueIdentifier>{b9d0388f-b14d-4448-85fe-7179fff3f77f}</UniqueIdentifier>
