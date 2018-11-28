@@ -189,7 +189,7 @@ ICON_FLOPPY_D		ICON		"icons/floppy_disabled.ico"
 ICON_CDROM_D		ICON		"icons/cdrom_disabled.ico"
 ICON_ZIP_D		ICON		"icons/zip_disabled.ico"
 
-1			RT_MANIFEST	"../VARCem.manifest"
+1			RT_MANIFEST	"VARCem.manifest"
 
 
 VS_VERSION_INFO VERSIONINFO
