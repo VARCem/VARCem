@@ -1,4 +1,4 @@
-#
+﻿#
 # VARCem	Virtual ARchaeological Computer EMulator.
 #		An emulator of (mostly) x86-based PC systems and devices,
 #		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.55	2018/11/11
+# Version:	@(#)Makefile.VC	1.0.56	2018/11/30
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -47,7 +47,7 @@
 
 # Various compile-time options.
 ifndef STUFF
- STUFF		:=
+	STUFF	:=
 endif
 
 # Add feature selections here.
@@ -153,7 +153,9 @@ endif
 ifndef PRINTER
  PRINTER	:= n
 endif
-
+ifndef GUSMAX
+ GUSMAX		:= n
+endif
 
 # Name of the executable.
 NETIF		:= pcap_if
@@ -188,6 +190,7 @@ ifeq ($(DEV_BUILD), y)
  WONDER		:= y
  HOSTCD		:= y
  PRINTER	:= y
+ GUSMAX		:= y
 endif
 
 
@@ -550,6 +553,11 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(PRINTER), y)
   OPTS		+= -DUSE_PRINTER
   DEVBROBJ	+= prt_parallel.obj
+ endif
+ 
+ ifeq ($(GUSMAX), y)
+  OPTS		+= -DUSE_GUSMAX
+  DEVBROBJ	+= snd_cs423x.obj
  endif
 endif
 

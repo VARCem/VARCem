@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.69	2018/11/11
+# Version:	@(#)Makefile.mingw	1.0.70	2018/11/30
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -152,6 +152,9 @@ endif
 ifndef HOSTCD
  HOSTCD		:= n
 endif
+ifndef GUSMAX
+ GUSMAX		:= n
+endif
 
 
 # Name of the executable.
@@ -186,6 +189,7 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
+ GUSMAX		:= y
 endif
 
 
@@ -571,6 +575,10 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_HOST_CDROM
  endif
 
+ ifeq ($(GUSMAX), y)
+  OPTS		+= -DUSE_GUSMAX
+  DEVBROBJ	+= snd_cs423x.o
+ endif
 endif
 
 

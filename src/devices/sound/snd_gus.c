@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.7	2018/10/16
+ * Version:	@(#)snd_gus.c	1.0.8	2018/11/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,6 +50,10 @@
 #include "../system/nmi.h"
 #include "../system/pic.h"
 #include "sound.h"
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+#include "snd_cs423x.h"
+#include <math.h>
+#endif
 
 
 typedef struct {
@@ -134,6 +138,12 @@ typedef struct {
 		gp2_addr;
 
     uint8_t	usrr;
+
+    uint8_t	max_ctrl;
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+    cs423x_t    cs423x; 
+#endif    
+
 } gus_t;
 
 
@@ -567,6 +577,9 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 			case 0:
 				if (dev->latch_enable == 1)
 					dev->dma = gus_dmas[val & 7];
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+					cs423x_setdma(&dev->cs423x, dev->dma);
+#endif					
 				if (dev->latch_enable == 2) {
 					dev->irq = gus_irqs[val & 7];
 
@@ -577,7 +590,9 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 							dev->irq_midi = dev->irq;
 					} else
 						dev->irq_midi = gus_irqs_midi[(val >> 3) & 7];
-
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)		
+						cs423x_setirq(&dev->cs423x, dev->irq);			
+#endif
 					dev->sb_nmi = val & 0x80;
 				}
 				dev->latch_enable = 0;
@@ -643,6 +658,17 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 	case 0x24f:
 		dev->reg_ctrl = val;
 		break;
+	
+	case 0x346:
+		if (dev->dma >= 4)
+			val |= 0x30;
+		dev->max_ctrl = (val >> 6) & 1;
+		pclog (0,"Enable CS4231 %X, val %02X\n", dev->max_ctrl,val);	
+		if (val & 0x40) {
+			 if ((val & 0xF) != ((addr >> 4) & 0xF)) 
+				 pclog(0,"DOS application is attempting to relocate the CS4231 codec\n");
+		}
+		break;
     }
 }
 
@@ -675,7 +701,10 @@ gus_read(uint16_t addr, void *priv)
 		break;
 
 	case 0x24F:
-		val = 0x00;
+		if(dev->max_ctrl)
+			val = 0x02;
+		else
+			val = 0x00;
 		break;
 
 	case 0x342:
@@ -788,7 +817,10 @@ gus_read(uint16_t addr, void *priv)
 		break;
 
 	case 0x346:
-		val = 0xff;
+		if (dev->max_ctrl)
+			val = 0x0a; /* GUS MAX */
+		else
+			val = 0xff;
 		break;
 
 	case 0x347: /*DRAM access*/
@@ -801,7 +833,10 @@ gus_read(uint16_t addr, void *priv)
 		break;
 
 	case 0x746: /*Revision level*/
-		val = 0xff;		/*Pre 3.7 - no mixer*/
+		if (dev->max_ctrl)
+			val = 0x0a; 	/* GUS MAX */
+		else
+			val = 0xff;	/*Pre 3.7 - no mixer*/
 		break;
 
 	case 0x24b:
@@ -1088,10 +1123,24 @@ get_buffer(int32_t *buffer, int len, void *priv)
     gus_t *dev = (gus_t *)priv;
     int c;
 
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)  
+    if(dev->max_ctrl)	
+		cs423x_update(&dev->cs423x);
+#endif	
     gus_update(dev);
 
-    for (c = 0; c < len * 2; c++)
+    for (c = 0; c < len * 2; c++) {
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)    
+	if (dev->max_ctrl) 
+		buffer[c] += (int32_t)(dev->cs423x.buffer[c] / 2); 
+#endif		
 	buffer[c] += (int32_t)dev->buffer[c & 1][c >> 1];
+    }
+
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)    
+    if(dev->max_ctrl)
+	dev->cs423x.pos = 0;
+#endif	
 
     dev->pos = 0;
 }
@@ -1145,6 +1194,60 @@ gus_init(const device_t *info)
     return(dev);
 }
 
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+static void *
+gus_max_init(const device_t *info)
+{
+    int c;
+	double out = 1.0;
+    gus_t *dev = (gus_t *)mem_alloc(sizeof(gus_t)); 
+	
+    memset(dev, 0x00, sizeof(gus_t));
+
+	dev->ram = (uint8_t *)mem_alloc(1 << 20); // Maximum 1 Mb RAM
+	memset(dev->ram, 0x00, 1 << 20);
+               
+    for (c=0;c<32;c++)  {
+                dev->ctrl[c]=1;
+                dev->rctrl[c]=1;
+                dev->rfreq[c]=63*512;
+    }
+
+	for (c=4095;c>=0;c--) {
+		vol16bit[c]=out;
+		out/=1.002709201;		
+	}
+
+	dev->voices=14;
+
+    dev->samp_timer = dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / 44100.0));
+
+    dev->t1l = dev->t2l = 0xff;
+
+	cs423x_init(&dev->cs423x);
+	cs423x_setirq(&dev->cs423x, 7);
+    cs423x_setdma(&dev->cs423x, 3);   
+		
+    io_sethandler(0x0240, 16,
+	      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
+    io_sethandler(0x0340, 9,
+	      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
+    io_sethandler(0x0746, 1,
+	      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);      
+    io_sethandler(0x0388, 2,
+	      gus_read, NULL, NULL, gus_write, NULL, NULL,  dev);         
+	io_sethandler(0x034c, 4,
+          cs423x_read, NULL, NULL, cs423x_write, NULL, NULL, &dev->cs423x);    
+		      
+    timer_add(poll_wave, &dev->samp_timer, TIMER_ALWAYS_ENABLED,  dev);
+    timer_add(poll_timer_1, &dev->timer_1, TIMER_ALWAYS_ENABLED,  dev);
+    timer_add(poll_timer_2, &dev->timer_2, TIMER_ALWAYS_ENABLED,  dev);
+
+    sound_add_handler(get_buffer, dev);
+        
+    return(dev);
+}
+#endif
 
 static void
 gus_close(void *priv)
@@ -1166,6 +1269,11 @@ speed_changed(void *priv)
 	dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / 44100.0));
     else
 	dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / gusfreqs[dev->voices - 14]));
+	
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+    if (dev->max_ctrl)			 
+		cs423x_speed_changed(&dev->cs423x);
+#endif
 }
 
 
@@ -1177,3 +1285,14 @@ const device_t gus_device = {
     speed_changed, NULL, NULL,
     NULL
 };
+
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+const device_t gusmax_device = {
+    "Gravis UltraSound MAX",
+    DEVICE_ISA, 
+    0,
+    gus_max_init, gus_close, NULL, NULL, 
+    speed_changed, NULL, NULL,
+    NULL
+};
+#endif
