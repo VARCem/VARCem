@@ -32,33 +32,33 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
- 
+
 typedef struct cs423x_t
 {
-        int index;
-		uint8_t regs[32];
-        uint8_t status;
-        
-        int trd;
-        int mce;
-		int ia4;
-		int mode2;
-		int initb;
-        
-        int count;
-        
-        int16_t out_l, out_r;
-                
-        int64_t enable;
+	int index;
+	uint8_t regs[32];
+	uint8_t status;
 
-        int irq, dma;
-        
-        int64_t freq;
-        
-        int64_t timer_count, timer_latch;
+	int trd;
+	int mce;
+	int ia4;
+	int mode2;
+	int initb;
 
-        int16_t buffer[SOUNDBUFLEN * 2];
-        int pos;
+	int count;
+
+	int16_t out_l, out_r;
+
+	int64_t enable;
+
+	int irq, dma;
+
+	int64_t freq;
+
+	int64_t timer_count, timer_latch;
+
+	int16_t buffer[SOUNDBUFLEN * 2];
+	int pos;
 } cs423x_t;
 
 void cs423x_setirq(cs423x_t *cs423x, int irq);
