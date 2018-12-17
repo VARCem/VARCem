@@ -246,6 +246,7 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 	gus_t *dev = (gus_t *)priv;
 	int c, d;
 	int old;
+	uint16_t ioport;
 
 	if (dev->latch_enable && addr != 0x24b)
 		dev->latch_enable = 0;
@@ -668,14 +669,19 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 		dev->reg_ctrl = val;
 		break;
 
-	case 0x346:
+	case 0x346: case 0x746:
 		if (dev->dma >= 4)
 			val |= 0x30;
 		dev->max_ctrl = (val >> 6) & 1;
-		pclog(0, "Enable CS4231 %X, val %02X\n", dev->max_ctrl, val);
 		if (val & 0x40) {
-			if ((val & 0xF) != ((addr >> 4) & 0xF))
-				pclog(0, "DOS application is attempting to relocate the CS4231 codec\n");
+			if ((val & 0xF) != ((addr >> 4) & 0xF)) { /* Fix me : why is DOS application attempting to relocate the CODEC ? */
+				ioport = 0x30c | ((addr >> 4) & 0xf);
+				io_removehandler(ioport, 4,
+					cs423x_read, NULL, NULL, cs423x_write, NULL, NULL, &dev->cs423x);
+				ioport = 0x30c | ((val & 0xf) << 4);
+				io_sethandler(ioport, 4,
+					cs423x_read, NULL, NULL, cs423x_write, NULL, NULL, &dev->cs423x);
+			}
 		}
 		break;
 	}
@@ -825,11 +831,11 @@ gus_read(uint16_t addr, void *priv)
 		}
 		break;
 
-	case 0x346:
+	case 0x346: case 0x746:
 		if (dev->max_ctrl)
 			val = 0x0a; /* GUS MAX */
 		else
-			val = 0xff;
+			val = 0xff; /*Pre 3.7 - no mixer*/
 		break;
 
 	case 0x347: /*DRAM access*/
@@ -839,13 +845,6 @@ gus_read(uint16_t addr, void *priv)
 
 	case 0x349:
 		val = 0x00;
-		break;
-
-	case 0x746: /*Revision level*/
-		if (dev->max_ctrl)
-			val = 0x0a; 	/* GUS MAX */
-		else
-			val = 0xff;	/*Pre 3.7 - no mixer*/
 		break;
 
 	case 0x24b:
@@ -1243,7 +1242,7 @@ gus_max_init(const device_t *info)
 	dev->t1l = dev->t2l = 0xff;
 
 	cs423x_init(&dev->cs423x);
-	cs423x_setirq(&dev->cs423x, 7);
+	cs423x_setirq(&dev->cs423x, 5); /*Default irq and dma from GUS SDK*/
 	cs423x_setdma(&dev->cs423x, 3);
 
 	io_sethandler(0x0240, 16,

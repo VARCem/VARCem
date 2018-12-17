@@ -195,8 +195,7 @@ static void cs423x_poll(void *p)
 
 	cs423x_update(cs423x);
 
-	if (cs423x->enable)
-	{
+	if (cs423x->enable)	{
 		int32_t temp;
 
 		if (!(cs423x->mode2)) {
@@ -273,11 +272,10 @@ static void cs423x_poll(void *p)
 			cs423x->count = cs423x->regs[15] | (cs423x->regs[14] << 8);
 			if (!(cs423x->status & 0x01)) {
 				cs423x->status |= 0x01;
-				if (cs423x->regs[0xa] & 2)
+				if (cs423x->regs[10] & 2)
 					picint(1 << cs423x->irq);
 			}
 		}
-
 		cs423x->count--;
 	}
 	else {
