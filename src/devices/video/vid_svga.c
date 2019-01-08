@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.14	2018/10/21
+ * Version:	@(#)vid_svga.c	1.0.15	2019/01/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -883,29 +883,34 @@ svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *p)
 
     if (! linear) {
 	memory_map_mode = (svga->gdcreg[6] >> 2) & 3;
-	addr &= 0x1ffff;
+	//addr &= 0x1ffff;
 
 	switch (memory_map_mode) {
 		case 0:
+			addr &= svga->banked_mask;
 			break;
 
 		case 1:
-			if (addr >= 0x10000)
-				return;
+			//if (addr >= 0x10000)
+				//return;
+			addr &= svga->banked_mask;
 			addr += svga->write_bank;
 			break;
 
 		case 2:
-			addr -= 0x10000;
-			if (addr >= 0x8000)
-				return;
+			//addr -= 0x10000;
+			//if (addr >= 0x8000)
+			//	return;
+			addr &= svga->banked_mask;
 			break;
 
 		default:
 		case 3:
-			addr -= 0x18000;
-			if (addr >= 0x8000)
-				return;
+			//addr -= 0x18000;
+			//if (addr >= 0x8000)
+			//	return;
+			addr &= svga->banked_mask;
+			addr += svga->write_bank;
 			break;
 	}
     }

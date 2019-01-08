@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.23	2018/11/20
+ * Version:	@(#)video.h	1.0.24	2019/01/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -171,6 +171,8 @@ extern const device_t	cga_device;
 
 /* Cirrus Logic GD-series cards. */
 #if defined(DEV_BRANCH)
+extern const device_t	gd5402_isa_device;
+extern const device_t	gd5420_isa_device;
 extern const device_t	gd5422_isa_device;
 extern const device_t	gd5424_vlb_device;
 #endif
