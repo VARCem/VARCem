@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.28	2018/11/20
+ * Version:	@(#)video_dev.c	1.0.29	2019/01/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,6 +85,8 @@ static const struct {
 #endif
     { "superega",		&sega_device			},
 #if defined(DEV_BRANCH)
+    { "cl_gd5402_isa",		&gd5402_isa_device		},
+    { "cl_gd5420_isa",		&gd5420_isa_device		},
     { "cl_gd5422_isa",		&gd5422_isa_device		},
 #endif
     { "cl_gd5428_isa",		&gd5428_isa_device		},
