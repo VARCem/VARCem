@@ -8,11 +8,11 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.13	2018/11/01
+ * Version:	@(#)nvr.c	1.0.14	2019/01/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -60,7 +60,9 @@
 int	nvr_dosave;		/* NVR is dirty, needs saved */
 
 
-static int8_t	days_in_month[12] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
+static const int8_t days_in_month[12] = {
+    31,28,31,30,31,30,31,31,30,31,30,31
+};
 static struct tm intclk;
 static nvr_t	*saved_nvr = NULL;
 

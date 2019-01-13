@@ -8,13 +8,13 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.8	2018/11/27
+ * Version:	@(#)snd_gus.c	1.0.9	2019/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -56,94 +56,116 @@
 #endif
 
 
-typedef struct {
-	int		reset;
+enum {
+    MIDI_INT_RECEIVE = 0x01,
+    MIDI_INT_TRANSMIT = 0x02,
+    MIDI_INT_MASTER = 0x80
+};
 
-	int		global;
-	uint32_t	addr,
+enum {
+    MIDI_CTRL_TRANSMIT_MASK = 0x60,
+    MIDI_CTRL_TRANSMIT = 0x20,
+    MIDI_CTRL_RECEIVE = 0x80
+};
+
+enum {
+    GUS_INT_MIDI_TRANSMIT = 0x01,
+    GUS_INT_MIDI_RECEIVE = 0x02
+};
+
+enum {
+    GUS_TIMER_CTRL_AUTO = 0x01
+};
+
+
+typedef struct {
+    int		reset;
+
+    int		global;
+    uint32_t	addr,
 		dmaaddr;
-	int		voice;
-	uint32_t	start[32],
+    int		voice;
+    uint32_t	start[32],
 		end[32],
 		cur[32];
-	uint32_t	startx[32],
+    uint32_t	startx[32],
 		endx[32],
 		curx[32];
-	int		rstart[32],
+    int		rstart[32],
 		rend[32];
-	int		rcur[32];
-	uint16_t	freq[32];
-	uint16_t	rfreq[32];
-	uint8_t	ctrl[32];
-	uint8_t	rctrl[32];
-	int		curvol[32];
-	int		pan_l[32],
+    int		rcur[32];
+    uint16_t	freq[32];
+    uint16_t	rfreq[32];
+    uint8_t	ctrl[32];
+    uint8_t	rctrl[32];
+    int		curvol[32];
+    int		pan_l[32],
 		pan_r[32];
-	int		t1on,
+    int		t1on,
 		t2on;
-	uint8_t	tctrl;
-	uint16_t	t1,
+    uint8_t	tctrl;
+    uint16_t	t1,
 		t2,
 		t1l,
 		t2l;
-	uint8_t	irqstatus,
+    uint8_t	irqstatus,
 		irqstatus2;
-	uint8_t	adcommand;
-	int		waveirqs[32],
+    uint8_t	adcommand;
+    int		waveirqs[32],
 		rampirqs[32];
-	int		voices;
-	uint8_t	dmactrl;
+    int		voices;
+    uint8_t	dmactrl;
 
-	int32_t	out_l,
+    int32_t	out_l,
 		out_r;
 
-	int64_t	samp_timer,
+    int64_t	samp_timer,
 		samp_latch;
 
-	uint8_t	*ram;
+    uint8_t	*ram;
 
-	int pos;
-	int16_t	buffer[2][SOUNDBUFLEN];
+    int		pos;
+    int16_t	buffer[2][SOUNDBUFLEN];
 
-	int		irqnext;
+    int		irqnext;
 
-	int64_t	timer_1,
+    int64_t	timer_1,
 		timer_2;
 
-	int		irq,
+    int		irq,
 		dma,
 		irq_midi;
-	int		latch_enable;
+    int		latch_enable;
 
-	uint8_t	sb_2xa,
+    uint8_t	sb_2xa,
 		sb_2xc,
 		sb_2xe;
-	uint8_t	sb_ctrl;
-	int		sb_nmi;
+    uint8_t	sb_ctrl;
+    int		sb_nmi;
 
-	uint8_t	reg_ctrl;
+    uint8_t	reg_ctrl;
 
-	uint8_t	ad_status,
+    uint8_t	ad_status,
 		ad_data;
-	uint8_t	ad_timer_ctrl;
+    uint8_t	ad_timer_ctrl;
 
-	uint8_t	midi_ctrl,
+    uint8_t	midi_ctrl,
 		midi_status;
-	uint8_t	midi_data;
-	int		midi_loopback;
+    uint8_t	midi_data;
+    int		midi_loopback;
 
-	uint8_t	gp1,
+    uint8_t	gp1,
 		gp2;
-	uint16_t	gp1_addr,
+    uint16_t	gp1_addr,
 		gp2_addr;
 
-	uint8_t	usrr;
+    uint8_t	usrr;
 
-	uint8_t	max_ctrl;
+    uint8_t	max_ctrl;
+
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-	cs423x_t    cs423x;
+    cs423x_t cs423x;
 #endif    
-
 } gus_t;
 
 
@@ -151,107 +173,80 @@ static const int gus_irqs[8] = { -1, 2, 5, 3, 7, 11, 12, 15 };
 static const int gus_irqs_midi[8] = { -1, 2, 5, 3, 7, 11, 12, 15 };
 static const int gus_dmas[8] = { -1, 1, 3, 5, 6, 7, -1, -1 };
 static const int gusfreqs[] = {
-	44100, 41160, 38587, 36317, 34300, 32494, 30870, 29400,
-	28063, 26843, 25725, 24696, 23746, 22866, 22050, 21289,
-	20580, 19916, 19293
+    44100, 41160, 38587, 36317, 34300, 32494, 30870, 29400,
+    28063, 26843, 25725, 24696, 23746, 22866, 22050, 21289,
+    20580, 19916, 19293
 };
-
-
-static double vol16bit[4096];
+static double	vol16bit[4096];
 
 
 static void
 poll_irqs(gus_t *dev)
 {
-	int c;
+    int c;
 
-	dev->irqstatus &= ~0x60;
-	for (c = 0; c < 32; c++) {
-		if (dev->waveirqs[c]) {
-			dev->irqstatus2 = 0x60 | c;
-			if (dev->rampirqs[c])
-				dev->irqstatus2 |= 0x80;
-			dev->irqstatus |= 0x20;
-			if (dev->irq != -1)
-				picint(1 << dev->irq);
-			return;
-		}
+    dev->irqstatus &= ~0x60;
 
-		if (dev->rampirqs[c]) {
-			dev->irqstatus2 = 0xA0 | c;
-			dev->irqstatus |= 0x40;
-			if (dev->irq != -1)
-				picint(1 << dev->irq);
-			return;
-		}
+    for (c = 0; c < 32; c++) {
+	if (dev->waveirqs[c]) {
+		dev->irqstatus2 = 0x60 | c;
+		if (dev->rampirqs[c])
+			dev->irqstatus2 |= 0x80;
+		dev->irqstatus |= 0x20;
+		if (dev->irq != -1)
+			picint(1 << dev->irq);
+		return;
 	}
 
-	dev->irqstatus2 = 0xE0;
+	if (dev->rampirqs[c]) {
+		dev->irqstatus2 = 0xa0 | c;
+		dev->irqstatus |= 0x40;
+		if (dev->irq != -1)
+			picint(1 << dev->irq);
+		return;
+	}
+    }
 
-	if (!dev->irqstatus && dev->irq != -1)
-		picintc(1 << dev->irq);
+    dev->irqstatus2 = 0xe0;
+
+    if (!dev->irqstatus && dev->irq != -1)
+	picintc(1 << dev->irq);
 }
-
-
-enum {
-	MIDI_INT_RECEIVE = 0x01,
-	MIDI_INT_TRANSMIT = 0x02,
-	MIDI_INT_MASTER = 0x80
-};
-
-enum {
-	MIDI_CTRL_TRANSMIT_MASK = 0x60,
-	MIDI_CTRL_TRANSMIT = 0x20,
-	MIDI_CTRL_RECEIVE = 0x80
-};
-
-enum {
-	GUS_INT_MIDI_TRANSMIT = 0x01,
-	GUS_INT_MIDI_RECEIVE = 0x02
-};
-
-enum {
-	GUS_TIMER_CTRL_AUTO = 0x01
-};
 
 
 static void
 midi_update_int_status(gus_t *dev)
 {
-	dev->midi_status &= ~MIDI_INT_MASTER;
+    dev->midi_status &= ~MIDI_INT_MASTER;
 
-	if ((dev->midi_ctrl & MIDI_CTRL_TRANSMIT_MASK) == MIDI_CTRL_TRANSMIT && (dev->midi_status & MIDI_INT_TRANSMIT)) {
-		dev->midi_status |= MIDI_INT_MASTER;
-		dev->irqstatus |= GUS_INT_MIDI_TRANSMIT;
-	}
-	else
-		dev->irqstatus &= ~GUS_INT_MIDI_TRANSMIT;
+    if ((dev->midi_ctrl & MIDI_CTRL_TRANSMIT_MASK) == MIDI_CTRL_TRANSMIT && (dev->midi_status & MIDI_INT_TRANSMIT)) {
+	dev->midi_status |= MIDI_INT_MASTER;
+	dev->irqstatus |= GUS_INT_MIDI_TRANSMIT;
+    } else
+	dev->irqstatus &= ~GUS_INT_MIDI_TRANSMIT;
 
-	if ((dev->midi_ctrl & MIDI_CTRL_RECEIVE) && (dev->midi_status & MIDI_INT_RECEIVE)) {
-		dev->midi_status |= MIDI_INT_MASTER;
-		dev->irqstatus |= GUS_INT_MIDI_RECEIVE;
-	}
-	else
-		dev->irqstatus &= ~GUS_INT_MIDI_RECEIVE;
+    if ((dev->midi_ctrl & MIDI_CTRL_RECEIVE) && (dev->midi_status & MIDI_INT_RECEIVE)) {
+	dev->midi_status |= MIDI_INT_MASTER;
+	dev->irqstatus |= GUS_INT_MIDI_RECEIVE;
+    } else
+	dev->irqstatus &= ~GUS_INT_MIDI_RECEIVE;
 
-	if ((dev->midi_status & MIDI_INT_MASTER) && (dev->irq_midi != -1)) {
-		picint(1 << dev->irq_midi);
-	}
+    if ((dev->midi_status & MIDI_INT_MASTER) && (dev->irq_midi != -1))
+	picint(1 << dev->irq_midi);
 }
 
 
 static void
 gus_write(uint16_t addr, uint8_t val, void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
-	int c, d;
-	int old;
-	uint16_t ioport;
+    gus_t *dev = (gus_t *)priv;
+    uint16_t ioport;
+    int c, d, old;
 
-	if (dev->latch_enable && addr != 0x24b)
-		dev->latch_enable = 0;
+    if (dev->latch_enable && addr != 0x24b)
+	dev->latch_enable = 0;
 
-	switch (addr) {
+    switch (addr) {
 	case 0x340: /*MIDI control*/
 		old = dev->midi_ctrl;
 		dev->midi_ctrl = val;
@@ -282,262 +277,260 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 
 	case 0x344: /*Global low*/
 		switch (dev->global) {
-		case 0: /*Voice control*/
-			dev->ctrl[dev->voice] = val;
-			break;
+			case 0: /*Voice control*/
+				dev->ctrl[dev->voice] = val;
+				break;
 
-		case 1: /*Frequency control*/
-			dev->freq[dev->voice] = (dev->freq[dev->voice] & 0xFF00) | val;
-			break;
+			case 1: /*Frequency control*/
+				dev->freq[dev->voice] = (dev->freq[dev->voice] & 0xFF00) | val;
+				break;
 
-		case 2: /*Start addr high*/
-			dev->startx[dev->voice] = (dev->startx[dev->voice] & 0xF807F) | (val << 7);
-			dev->start[dev->voice] = (dev->start[dev->voice] & 0x1F00FFFF) | (val << 16);
-			break;
+			case 2: /*Start addr high*/
+				dev->startx[dev->voice] = (dev->startx[dev->voice] & 0xF807F) | (val << 7);
+				dev->start[dev->voice] = (dev->start[dev->voice] & 0x1F00FFFF) | (val << 16);
+				break;
 
-		case 3: /*Start addr low*/
-			dev->start[dev->voice] = (dev->start[dev->voice] & 0x1FFFFF00) | val;
-			break;
+			case 3: /*Start addr low*/
+				dev->start[dev->voice] = (dev->start[dev->voice] & 0x1FFFFF00) | val;
+				break;
 
-		case 4: /*End addr high*/
-			dev->endx[dev->voice] = (dev->endx[dev->voice] & 0xF807F) | (val << 7);
-			dev->end[dev->voice] = (dev->end[dev->voice] & 0x1F00FFFF) | (val << 16);
-			break;
+			case 4: /*End addr high*/
+				dev->endx[dev->voice] = (dev->endx[dev->voice] & 0xF807F) | (val << 7);
+				dev->end[dev->voice] = (dev->end[dev->voice] & 0x1F00FFFF) | (val << 16);
+				break;
 
-		case 5: /*End addr low*/
-			dev->end[dev->voice] = (dev->end[dev->voice] & 0x1FFFFF00) | val;
-			break;
+			case 5: /*End addr low*/
+				dev->end[dev->voice] = (dev->end[dev->voice] & 0x1FFFFF00) | val;
+				break;
 
-		case 0x6: /*Ramp frequency*/
-			dev->rfreq[dev->voice] = (int)((double)((val & 63) * 512) / (double)(1 << (3 * (val >> 6))));
-			break;
+			case 0x6: /*Ramp frequency*/
+				dev->rfreq[dev->voice] = (int)((double)((val & 63) * 512) / (double)(1 << (3 * (val >> 6))));
+				break;
 
-		case 0x9: /*Current volume*/
-			dev->curvol[dev->voice] = dev->rcur[dev->voice] = (dev->rcur[dev->voice] & ~(0xff << 6)) | (val << 6);
-			break;
+			case 0x9: /*Current volume*/
+				dev->curvol[dev->voice] = dev->rcur[dev->voice] = (dev->rcur[dev->voice] & ~(0xff << 6)) | (val << 6);
+				break;
 
-		case 0xA: /*Current addr high*/
-			dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x1F00FFFF) | (val << 16);
-			dev->curx[dev->voice] = (dev->curx[dev->voice] & 0xF807F00) | ((val << 7) << 8);
-			break;
+			case 0xA: /*Current addr high*/
+				dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x1F00FFFF) | (val << 16);
+				dev->curx[dev->voice] = (dev->curx[dev->voice] & 0xF807F00) | ((val << 7) << 8);
+				break;
+	
+			case 0xB: /*Current addr low*/
+				dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x1FFFFF00) | val;
+				break;
 
-		case 0xB: /*Current addr low*/
-			dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x1FFFFF00) | val;
-			break;
+			case 0x42: /*DMA address low*/
+				dev->dmaaddr = (dev->dmaaddr & 0xFF000) | (val << 4);
+				break;
 
-		case 0x42: /*DMA address low*/
-			dev->dmaaddr = (dev->dmaaddr & 0xFF000) | (val << 4);
-			break;
+			case 0x43: /*Address low*/
+				dev->addr = (dev->addr & 0xFFF00) | val;
+				break;
 
-		case 0x43: /*Address low*/
-			dev->addr = (dev->addr & 0xFFF00) | val;
-			break;
-
-		case 0x45: /*Timer control*/
-			dev->tctrl = val;
-			break;
+			case 0x45: /*Timer control*/
+				dev->tctrl = val;
+				break;
 		}
 		break;
 
 	case 0x345: /*Global high*/
-		switch (dev->global) {
-		case 0: /*Voice control*/
-			if (!(val & 1) && dev->ctrl[dev->voice] & 1) {
-			}
+			switch (dev->global) {
+			case 0: /*Voice control*/
+				if (!(val & 1) && dev->ctrl[dev->voice] & 1) {
+					//FIXME: what?
+				}
 
-			dev->ctrl[dev->voice] = val & 0x7f;
+				dev->ctrl[dev->voice] = val & 0x7f;
 
-			old = dev->waveirqs[dev->voice];
-			dev->waveirqs[dev->voice] = ((val & 0xa0) == 0xa0) ? 1 : 0;
-			if (dev->waveirqs[dev->voice] != old)
-				poll_irqs(dev);
-			break;
+				old = dev->waveirqs[dev->voice];
+				dev->waveirqs[dev->voice] = ((val & 0xa0) == 0xa0) ? 1 : 0;
+				if (dev->waveirqs[dev->voice] != old)
+					poll_irqs(dev);
+				break;
 
-		case 1: /*Frequency control*/
-			dev->freq[dev->voice] = (dev->freq[dev->voice] & 0xFF) | (val << 8);
-			break;
+			case 1: /*Frequency control*/
+				dev->freq[dev->voice] = (dev->freq[dev->voice] & 0xFF) | (val << 8);
+				break;
 
-		case 2: /*Start addr high*/
-			dev->startx[dev->voice] = (dev->startx[dev->voice] & 0x07FFF) | (val << 15);
-			dev->start[dev->voice] = (dev->start[dev->voice] & 0x00FFFFFF) | ((val & 0x1F) << 24);
-			break;
+			case 2: /*Start addr high*/
+				dev->startx[dev->voice] = (dev->startx[dev->voice] & 0x07FFF) | (val << 15);
+				dev->start[dev->voice] = (dev->start[dev->voice] & 0x00FFFFFF) | ((val & 0x1F) << 24);
+				break;
 
-		case 3: /*Start addr low*/
-			dev->startx[dev->voice] = (dev->startx[dev->voice] & 0xFFF80) | (val & 0x7F);
-			dev->start[dev->voice] = (dev->start[dev->voice] & 0x1FFF00FF) | (val << 8);
-			break;
+			case 3: /*Start addr low*/
+				dev->startx[dev->voice] = (dev->startx[dev->voice] & 0xFFF80) | (val & 0x7F);
+				dev->start[dev->voice] = (dev->start[dev->voice] & 0x1FFF00FF) | (val << 8);
+				break;
 
-		case 4: /*End addr high*/
-			dev->endx[dev->voice] = (dev->endx[dev->voice] & 0x07FFF) | (val << 15);
-			dev->end[dev->voice] = (dev->end[dev->voice] & 0x00FFFFFF) | ((val & 0x1F) << 24);
-			break;
+			case 4: /*End addr high*/
+				dev->endx[dev->voice] = (dev->endx[dev->voice] & 0x07FFF) | (val << 15);
+				dev->end[dev->voice] = (dev->end[dev->voice] & 0x00FFFFFF) | ((val & 0x1F) << 24);
+				break;
 
-		case 5: /*End addr low*/
-			dev->endx[dev->voice] = (dev->endx[dev->voice] & 0xFFF80) | (val & 0x7F);
-			dev->end[dev->voice] = (dev->end[dev->voice] & 0x1FFF00FF) | (val << 8);
-			break;
+			case 5: /*End addr low*/
+				dev->endx[dev->voice] = (dev->endx[dev->voice] & 0xFFF80) | (val & 0x7F);
+				dev->end[dev->voice] = (dev->end[dev->voice] & 0x1FFF00FF) | (val << 8);
+				break;
 
-		case 0x6: /*Ramp frequency*/
-			dev->rfreq[dev->voice] = (int)((double)((val & 63) * (1 << 10)) / (double)(1 << (3 * (val >> 6))));
-			break;
+			case 0x6: /*Ramp frequency*/
+				dev->rfreq[dev->voice] = (int)((double)((val & 63) * (1 << 10)) / (double)(1 << (3 * (val >> 6))));
+				break;
 
-		case 0x7: /*Ramp start*/
-			dev->rstart[dev->voice] = val << 14;
-			break;
+			case 0x7: /*Ramp start*/
+				dev->rstart[dev->voice] = val << 14;
+				break;
 
-		case 0x8: /*Ramp end*/
-			dev->rend[dev->voice] = val << 14;
-			break;
+			case 0x8: /*Ramp end*/
+				dev->rend[dev->voice] = val << 14;
+				break;
 
-		case 0x9: /*Current volume*/
-			dev->curvol[dev->voice] = dev->rcur[dev->voice] = (dev->rcur[dev->voice] & ~(0xff << 14)) | (val << 14);
-			break;
+			case 0x9: /*Current volume*/
+				dev->curvol[dev->voice] = dev->rcur[dev->voice] = (dev->rcur[dev->voice] & ~(0xff << 14)) | (val << 14);
+				break;
 
-		case 0xA: /*Current addr high*/
-			dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x00FFFFFF) | ((val & 0x1F) << 24);
-			dev->curx[dev->voice] = (dev->curx[dev->voice] & 0x07FFF00) | ((val << 15) << 8);
-			break;
+			case 0xA: /*Current addr high*/
+				dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x00FFFFFF) | ((val & 0x1F) << 24);
+				dev->curx[dev->voice] = (dev->curx[dev->voice] & 0x07FFF00) | ((val << 15) << 8);
+				break;
 
-		case 0xB: /*Current addr low*/
-			dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x1FFF00FF) | (val << 8);
-			dev->curx[dev->voice] = (dev->curx[dev->voice] & 0xFFF8000) | ((val & 0x7F) << 8);
-			break;
+			case 0xB: /*Current addr low*/
+				dev->cur[dev->voice] = (dev->cur[dev->voice] & 0x1FFF00FF) | (val << 8);
+				dev->curx[dev->voice] = (dev->curx[dev->voice] & 0xFFF8000) | ((val & 0x7F) << 8);
+				break;
 
-		case 0xC: /*Pan*/
-			dev->pan_l[dev->voice] = 15 - (val & 0xf);
-			dev->pan_r[dev->voice] = (val & 0xf);
-			break;
+			case 0xC: /*Pan*/
+				dev->pan_l[dev->voice] = 15 - (val & 0xf);
+				dev->pan_r[dev->voice] = (val & 0xf);
+				break;
 
-		case 0xD: /*Ramp control*/
-			old = dev->rampirqs[dev->voice];
-			dev->rctrl[dev->voice] = val & 0x7F;
-			dev->rampirqs[dev->voice] = ((val & 0xa0) == 0xa0) ? 1 : 0;
-			if (dev->rampirqs[dev->voice] != old)
-				poll_irqs(dev);
-			break;
+			case 0xD: /*Ramp control*/
+				old = dev->rampirqs[dev->voice];
+				dev->rctrl[dev->voice] = val & 0x7F;
+				dev->rampirqs[dev->voice] = ((val & 0xa0) == 0xa0) ? 1 : 0;
+				if (dev->rampirqs[dev->voice] != old)
+					poll_irqs(dev);
+				break;
 
-		case 0xE:
-			dev->voices = (val & 63) + 1;
-			if (dev->voices > 32) dev->voices = 32;
-			if (dev->voices < 14) dev->voices = 14;
-			dev->global = val;
-			if (dev->voices < 14)
-				dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / 44100.0));
-			else
-				dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / gusfreqs[dev->voices - 14]));
-			break;
+			case 0xE:
+				dev->voices = (val & 63) + 1;
+				if (dev->voices > 32) dev->voices = 32;
+				if (dev->voices < 14) dev->voices = 14;
+				dev->global = val;
+				if (dev->voices < 14)
+					dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / 44100.0));
+				else
+					dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / gusfreqs[dev->voices - 14]));
+				break;
 
-		case 0x41: /*DMA*/
-			if (val & 1 && dev->dma != -1) {
-				if (val & 2) {
-					c = 0;
-					while (c < 65536) {
-						int dma_result;
-
-						if (val & 0x04) {
-							uint32_t gus_addr = (dev->dmaaddr & 0xc0000) | ((dev->dmaaddr & 0x1ffff) << 1);
-							d = dev->ram[gus_addr] | (dev->ram[gus_addr + 1] << 8);
-							if (val & 0x80)
-								d ^= 0x8080;
-							dma_result = dma_channel_write(dev->dma, d);
-							if (dma_result == DMA_NODATA)
+			case 0x41: /*DMA*/
+				if (val & 1 && dev->dma != -1) {
+					if (val & 2) {
+						c = 0;
+						while (c < 65536) {
+							int dma_result;
+	
+							if (val & 0x04) {
+								uint32_t gus_addr = (dev->dmaaddr & 0xc0000) | ((dev->dmaaddr & 0x1ffff) << 1);
+								d = dev->ram[gus_addr] | (dev->ram[gus_addr + 1] << 8);
+								if (val & 0x80)
+									d ^= 0x8080;
+								dma_result = dma_channel_write(dev->dma, d);
+								if (dma_result == DMA_NODATA)
+									break;
+							} else {
+								d = dev->ram[dev->dmaaddr];
+								if (val & 0x80)
+									d ^= 0x80;
+								dma_result = dma_channel_write(dev->dma, d);
+								if (dma_result == DMA_NODATA)
+									break;
+							}
+							dev->dmaaddr++;
+							dev->dmaaddr &= 0xFFFFF;
+							c++;
+							if (dma_result & DMA_OVER)
 								break;
 						}
-						else {
-							d = dev->ram[dev->dmaaddr];
-							if (val & 0x80)
-								d ^= 0x80;
-							dma_result = dma_channel_write(dev->dma, d);
-							if (dma_result == DMA_NODATA)
+						dev->dmactrl = val & ~0x40;
+						if (val & 0x20)
+							dev->irqnext = 1;
+					} else {
+						c = 0;
+						while (c < 65536) {
+							d = dma_channel_read(dev->dma);
+							if (d == DMA_NODATA)
+								break;
+							if (val & 0x04) {
+								uint32_t gus_addr = (dev->dmaaddr & 0xc0000) | ((dev->dmaaddr & 0x1ffff) << 1);
+								if (val & 0x80)
+									d ^= 0x8080;
+								dev->ram[gus_addr] = d & 0xff;
+								dev->ram[gus_addr + 1] = (d >> 8) & 0xff;
+							} else {
+								if (val & 0x80)
+									d ^= 0x80;
+								dev->ram[dev->dmaaddr] = d;
+							}
+							dev->dmaaddr++;
+							dev->dmaaddr &= 0xFFFFF;
+							c++;
+							if (d & DMA_OVER)
 								break;
 						}
-						dev->dmaaddr++;
-						dev->dmaaddr &= 0xFFFFF;
-						c++;
-						if (dma_result & DMA_OVER)
-							break;
+						dev->dmactrl = val & ~0x40;
+						if (val & 0x20)
+							dev->irqnext = 1;
 					}
-					dev->dmactrl = val & ~0x40;
-					if (val & 0x20)
-						dev->irqnext = 1;
 				}
-				else {
-					c = 0;
-					while (c < 65536) {
-						d = dma_channel_read(dev->dma);
-						if (d == DMA_NODATA)
-							break;
-						if (val & 0x04) {
-							uint32_t gus_addr = (dev->dmaaddr & 0xc0000) | ((dev->dmaaddr & 0x1ffff) << 1);
-							if (val & 0x80)
-								d ^= 0x8080;
-							dev->ram[gus_addr] = d & 0xff;
-							dev->ram[gus_addr + 1] = (d >> 8) & 0xff;
-						}
-						else {
-							if (val & 0x80)
-								d ^= 0x80;
-							dev->ram[dev->dmaaddr] = d;
-						}
-						dev->dmaaddr++;
-						dev->dmaaddr &= 0xFFFFF;
-						c++;
-						if (d & DMA_OVER)
-							break;
-					}
-					dev->dmactrl = val & ~0x40;
-					if (val & 0x20)
-						dev->irqnext = 1;
+				break;
+
+			case 0x42: /*DMA address low*/
+				dev->dmaaddr = (dev->dmaaddr & 0xFF0) | (val << 12);
+				break;
+
+			case 0x43: /*Address low*/
+				dev->addr = (dev->addr & 0xF00FF) | (val << 8);
+				break;
+
+			case 0x44: /*Address high*/
+				dev->addr = (dev->addr & 0xFFFF) | ((val << 16) & 0xF0000);
+				break;
+
+			case 0x45: /*Timer control*/
+				if (!(val & 4)) dev->irqstatus &= ~4;
+				if (!(val & 8)) dev->irqstatus &= ~8;
+				if (!(val & 0x20)) {
+					dev->ad_status &= ~0x18;
+					nmi = 0;
 				}
-			}
-			break;
+				if (!(val & 0x02)) {
+					dev->ad_status &= ~0x01;
+					nmi = 0;
+				}
+				dev->tctrl = val;
+				dev->sb_ctrl = val;
+				break;
 
-		case 0x42: /*DMA address low*/
-			dev->dmaaddr = (dev->dmaaddr & 0xFF0) | (val << 12);
-			break;
+			case 0x46: /*Timer 1*/
+				dev->t1 = dev->t1l = val;
+				dev->t1on = 1;
+				break;
 
-		case 0x43: /*Address low*/
-			dev->addr = (dev->addr & 0xF00FF) | (val << 8);
-			break;
+			case 0x47: /*Timer 2*/
+				dev->t2 = dev->t2l = val;
+				dev->t2on = 1;
+				break;
 
-		case 0x44: /*Address high*/
-			dev->addr = (dev->addr & 0xFFFF) | ((val << 16) & 0xF0000);
-			break;
-
-		case 0x45: /*Timer control*/
-			if (!(val & 4)) dev->irqstatus &= ~4;
-			if (!(val & 8)) dev->irqstatus &= ~8;
-			if (!(val & 0x20)) {
-				dev->ad_status &= ~0x18;
-				nmi = 0;
-			}
-			if (!(val & 0x02)) {
-				dev->ad_status &= ~0x01;
-				nmi = 0;
-			}
-			dev->tctrl = val;
-			dev->sb_ctrl = val;
-			break;
-
-		case 0x46: /*Timer 1*/
-			dev->t1 = dev->t1l = val;
-			dev->t1on = 1;
-			break;
-
-		case 0x47: /*Timer 2*/
-			dev->t2 = dev->t2l = val;
-			dev->t2on = 1;
-			break;
-
-		case 0x4c: /*Reset*/
-			dev->reset = val;
-			break;
+			case 0x4c: /*Reset*/
+				dev->reset = val;
+				break;
 		}
 		break;
 
 	case 0x347: /*DRAM access*/
 		dev->ram[dev->addr] = val;
-		dev->addr &= 0xFFFFF;
+		dev->addr &= 0xfffff;
 		break;
 
 	case 0x248:
@@ -583,53 +576,52 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 
 	case 0x24b:
 		switch (dev->reg_ctrl & 0x07) {
-		case 0:
-			if (dev->latch_enable == 1)
-				dev->dma = gus_dmas[val & 7];
+			case 0:
+				if (dev->latch_enable == 1)
+					dev->dma = gus_dmas[val & 7];
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-			cs423x_setdma(&dev->cs423x, dev->dma);
+				cs423x_setdma(&dev->cs423x, dev->dma);
 #endif					
-			if (dev->latch_enable == 2) {
-				dev->irq = gus_irqs[val & 7];
+				if (dev->latch_enable == 2) {
+					dev->irq = gus_irqs[val & 7];
 
-				if (val & 0x40) {
-					if (dev->irq == -1)
-						dev->irq = dev->irq_midi = gus_irqs[(val >> 3) & 7];
-					else
-						dev->irq_midi = dev->irq;
-				}
-				else
-					dev->irq_midi = gus_irqs_midi[(val >> 3) & 7];
+					if (val & 0x40) {
+						if (dev->irq == -1)
+							dev->irq = dev->irq_midi = gus_irqs[(val >> 3) & 7];
+						else
+							dev->irq_midi = dev->irq;
+					} else
+						dev->irq_midi = gus_irqs_midi[(val >> 3) & 7];
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)		
-				cs423x_setirq(&dev->cs423x, dev->irq);
+					cs423x_setirq(&dev->cs423x, dev->irq);
 #endif
-				dev->sb_nmi = val & 0x80;
-			}
-			dev->latch_enable = 0;
-			break;
+					dev->sb_nmi = val & 0x80;
+				}
+				dev->latch_enable = 0;
+				break;
 
-		case 1:
-			dev->gp1 = val;
-			break;
+			case 1:
+				dev->gp1 = val;
+				break;
 
-		case 2:
-			dev->gp2 = val;
-			break;
+			case 2:
+				dev->gp2 = val;
+				break;
 
-		case 3:
-			dev->gp1_addr = val;
-			break;
+			case 3:
+				dev->gp1_addr = val;
+				break;
 
-		case 4:
-			dev->gp2_addr = val;
-			break;
+			case 4:
+				dev->gp2_addr = val;
+				break;
 
-		case 5:
-			dev->usrr = 0;
-			break;
+			case 5:
+				dev->usrr = 0;
+				break;
 
-		case 6:
-			break;
+			case 6:
+				break;
 		}
 		break;
 
@@ -673,16 +665,20 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 		if (dev->dma >= 4)
 			val |= 0x30;
 		dev->max_ctrl = (val >> 6) & 1;
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
 		if (val & 0x40) {
 			if ((val & 0xF) != ((addr >> 4) & 0xF)) { /* Fix me : why is DOS application attempting to relocate the CODEC ? */
 				ioport = 0x30c | ((addr >> 4) & 0xf);
 				io_removehandler(ioport, 4,
-					cs423x_read, NULL, NULL, cs423x_write, NULL, NULL, &dev->cs423x);
+						 cs423x_read,NULL,NULL,
+						 cs423x_write,NULL,NULL,&dev->cs423x);
 				ioport = 0x30c | ((val & 0xf) << 4);
 				io_sethandler(ioport, 4,
-					cs423x_read, NULL, NULL, cs423x_write, NULL, NULL, &dev->cs423x);
+					      cs423x_read,NULL,NULL,
+					      cs423x_write,NULL,NULL, &dev->cs423x);
 			}
 		}
+#endif
 		break;
 	}
 }
@@ -691,10 +687,10 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 static uint8_t
 gus_read(uint16_t addr, void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
-	uint8_t val = 0xff;
+    gus_t *dev = (gus_t *)priv;
+    uint8_t val = 0xff;
 
-	switch (addr) {
+    switch (addr) {
 	case 0x340: /*MIDI status*/
 		val = dev->midi_status;
 		break;
@@ -901,415 +897,384 @@ gus_read(uint16_t addr, void *priv)
 		val = dev->adcommand;
 		break;
 
-	}
+    }
 
-	return(val);
+    return(val);
 }
 
 
 static void
 poll_timer_1(void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
+    gus_t *dev = (gus_t *)priv;
 
-	dev->timer_1 += (TIMER_USEC * 80LL);
-	if (dev->t1on) {
-		dev->t1++;
-		if (dev->t1 > 0xFF) {
-			dev->t1 = dev->t1l;
-			dev->ad_status |= 0x40;
-			if (dev->tctrl & 4) {
-				if (dev->irq != -1)
-					picint(1 << dev->irq);
-				dev->ad_status |= 0x04;
-				dev->irqstatus |= 0x04;
-			}
+    dev->timer_1 += (TIMER_USEC * 80LL);
+
+    if (dev->t1on) {
+	dev->t1++;
+	if (dev->t1 > 0xFF) {
+		dev->t1 = dev->t1l;
+		dev->ad_status |= 0x40;
+		if (dev->tctrl & 4) {
+			if (dev->irq != -1)
+				picint(1 << dev->irq);
+			dev->ad_status |= 0x04;
+			dev->irqstatus |= 0x04;
 		}
 	}
+    }
 
-	if (dev->irqnext) {
-		dev->irqnext = 0;
-		dev->irqstatus |= 0x80;
-		if (dev->irq != -1)
-			picint(1 << dev->irq);
-	}
+    if (dev->irqnext) {
+	dev->irqnext = 0;
+	dev->irqstatus |= 0x80;
+	if (dev->irq != -1)
+		picint(1 << dev->irq);
+    }
 
-	midi_update_int_status(dev);
+    midi_update_int_status(dev);
 }
 
 
 static void
 poll_timer_2(void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
+    gus_t *dev = (gus_t *)priv;
 
-	dev->timer_2 += (TIMER_USEC * 320LL);
-	if (dev->t2on) {
-		dev->t2++;
-		if (dev->t2 > 0xFF) {
-			dev->t2 = dev->t2l;
-			dev->ad_status |= 0x20;
-			if (dev->tctrl & 8) {
-				if (dev->irq != -1)
-					picint(1 << dev->irq);
-				dev->ad_status |= 0x02;
-				dev->irqstatus |= 0x08;
-			}
+    dev->timer_2 += (TIMER_USEC * 320LL);
+
+    if (dev->t2on) {
+	dev->t2++;
+	if (dev->t2 > 0xFF) {
+		dev->t2 = dev->t2l;
+		dev->ad_status |= 0x20;
+		if (dev->tctrl & 8) {
+			if (dev->irq != -1)
+				picint(1 << dev->irq);
+			dev->ad_status |= 0x02;
+			dev->irqstatus |= 0x08;
 		}
 	}
+    }
 
-	if (dev->irqnext) {
-		dev->irqnext = 0;
-		dev->irqstatus |= 0x80;
-		if (dev->irq != -1)
-			picint(1 << dev->irq);
-	}
+    if (dev->irqnext) {
+	dev->irqnext = 0;
+	dev->irqstatus |= 0x80;
+	if (dev->irq != -1)
+		picint(1 << dev->irq);
+    }
 }
 
 
 static void
 gus_update(gus_t *dev)
 {
-	for (; dev->pos < sound_pos_global; dev->pos++) {
-		if (dev->out_l < -32768)
-			dev->buffer[0][dev->pos] = -32768;
-		else if (dev->out_l > 32767)
-			dev->buffer[0][dev->pos] = 32767;
-		else
-			dev->buffer[0][dev->pos] = dev->out_l;
-		if (dev->out_r < -32768)
-			dev->buffer[1][dev->pos] = -32768;
-		else if (dev->out_r > 32767)
-			dev->buffer[1][dev->pos] = 32767;
-		else
-			dev->buffer[1][dev->pos] = dev->out_r;
-	}
+    for (; dev->pos < sound_pos_global; dev->pos++) {
+	if (dev->out_l < -32768)
+		dev->buffer[0][dev->pos] = -32768;
+	else if (dev->out_l > 32767)
+		dev->buffer[0][dev->pos] = 32767;
+	else
+		dev->buffer[0][dev->pos] = dev->out_l;
+	if (dev->out_r < -32768)
+		dev->buffer[1][dev->pos] = -32768;
+	else if (dev->out_r > 32767)
+		dev->buffer[1][dev->pos] = 32767;
+	else
+		dev->buffer[1][dev->pos] = dev->out_r;
+    }
 }
 
 
 static void
 poll_wave(void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
-	uint32_t addr;
-	int d;
-	int16_t v;
-	int32_t vl;
-	int update_irqs = 0;
+    gus_t *dev = (gus_t *)priv;
+    uint32_t addr;
+    int d;
+    int16_t v;
+    int32_t vl;
+    int update_irqs = 0;
 
-	gus_update(dev);
+    gus_update(dev);
 
-	dev->samp_timer += dev->samp_latch;
+    dev->samp_timer += dev->samp_latch;
 
-	dev->out_l = dev->out_r = 0;
+    dev->out_l = dev->out_r = 0;
 
-	if ((dev->reset & 3) != 3)
-		return;
+    if ((dev->reset & 3) != 3)
+	return;
 
-	for (d = 0; d < 32; d++) {
-		if (!(dev->ctrl[d] & 3)) {
-			if (dev->ctrl[d] & 4) {
-				addr = dev->cur[d] >> 9;
-				addr = (addr & 0xC0000) | ((addr << 1) & 0x3FFFE);
+    for (d = 0; d < 32; d++) {
+	if (!(dev->ctrl[d] & 3)) {
+		if (dev->ctrl[d] & 4) {
+			addr = dev->cur[d] >> 9;
+			addr = (addr & 0xC0000) | ((addr << 1) & 0x3FFFE);
 
-				if (!(dev->freq[d] >> 10)) {	/*Interpolate*/
-					vl = (int16_t)(int8_t)((dev->ram[(addr + 1) & 0xFFFFF] ^ 0x80) - 0x80) * (511 - (dev->cur[d] & 511));
-					vl += (int16_t)(int8_t)((dev->ram[(addr + 3) & 0xFFFFF] ^ 0x80) - 0x80) * (dev->cur[d] & 511);
-					v = vl >> 9;
-				}
-				else
-					v = (int16_t)(int8_t)((dev->ram[(addr + 1) & 0xFFFFF] ^ 0x80) - 0x80);
-			}
-			else {
-				if (!(dev->freq[d] >> 10)) {	/*Interpolate*/
-					vl = ((int8_t)((dev->ram[(dev->cur[d] >> 9) & 0xFFFFF] ^ 0x80) - 0x80)) * (511 - (dev->cur[d] & 511));
-					vl += ((int8_t)((dev->ram[((dev->cur[d] >> 9) + 1) & 0xFFFFF] ^ 0x80) - 0x80)) * (dev->cur[d] & 511);
-					v = vl >> 9;
-				}
-				else
-					v = (int16_t)(int8_t)((dev->ram[(dev->cur[d] >> 9) & 0xFFFFF] ^ 0x80) - 0x80);
-			}
-
-			if ((dev->rcur[d] >> 14) > 4095)
-				v = (int16_t)((float)v * 24.0 * vol16bit[4095]);
-			else
-				v = (int16_t)((float)v * 24.0 * vol16bit[(dev->rcur[d] >> 10) & 4095]);
-
-			dev->out_l += (v * dev->pan_l[d]) / 7;
-			dev->out_r += (v * dev->pan_r[d]) / 7;
-
-			if (dev->ctrl[d] & 0x40) {
-				dev->cur[d] -= (dev->freq[d] >> 1);
-				if (dev->cur[d] <= dev->start[d]) {
-					int diff = dev->start[d] - dev->cur[d];
-
-					if (dev->ctrl[d] & 8) {
-						if (dev->ctrl[d] & 0x10)
-							dev->ctrl[d] ^= 0x40;
-						dev->cur[d] = (dev->ctrl[d] & 0x40) ? (dev->end[d] - diff) : (dev->start[d] + diff);
-					}
-					else if (!(dev->rctrl[d] & 4)) {
-						dev->ctrl[d] |= 1;
-						dev->cur[d] = (dev->ctrl[d] & 0x40) ? dev->end[d] : dev->start[d];
-					}
-
-					if ((dev->ctrl[d] & 0x20) && !dev->waveirqs[d]) {
-						dev->waveirqs[d] = 1;
-						update_irqs = 1;
-					}
-				}
-			}
-			else {
-				dev->cur[d] += (dev->freq[d] >> 1);
-
-				if (dev->cur[d] >= dev->end[d]) {
-					int diff = dev->cur[d] - dev->end[d];
-
-					if (dev->ctrl[d] & 8) {
-						if (dev->ctrl[d] & 0x10)
-							dev->ctrl[d] ^= 0x40;
-						dev->cur[d] = (dev->ctrl[d] & 0x40) ? (dev->end[d] - diff) : (dev->start[d] + diff);
-					}
-					else if (!(dev->rctrl[d] & 4)) {
-						dev->ctrl[d] |= 1;
-						dev->cur[d] = (dev->ctrl[d] & 0x40) ? dev->end[d] : dev->start[d];
-					}
-
-					if ((dev->ctrl[d] & 0x20) && !dev->waveirqs[d]) {
-						dev->waveirqs[d] = 1;
-						update_irqs = 1;
-					}
-				}
-			}
+			if (!(dev->freq[d] >> 10)) {	/*Interpolate*/
+				vl = (int16_t)(int8_t)((dev->ram[(addr + 1) & 0xFFFFF] ^ 0x80) - 0x80) * (511 - (dev->cur[d] & 511));
+				vl += (int16_t)(int8_t)((dev->ram[(addr + 3) & 0xFFFFF] ^ 0x80) - 0x80) * (dev->cur[d] & 511);
+				v = vl >> 9;
+			} else
+				v = (int16_t)(int8_t)((dev->ram[(addr + 1) & 0xFFFFF] ^ 0x80) - 0x80);
+		} else {
+			if (!(dev->freq[d] >> 10)) {	/*Interpolate*/
+				vl = ((int8_t)((dev->ram[(dev->cur[d] >> 9) & 0xFFFFF] ^ 0x80) - 0x80)) * (511 - (dev->cur[d] & 511));
+				vl += ((int8_t)((dev->ram[((dev->cur[d] >> 9) + 1) & 0xFFFFF] ^ 0x80) - 0x80)) * (dev->cur[d] & 511);
+				v = vl >> 9;
+			} else
+				v = (int16_t)(int8_t)((dev->ram[(dev->cur[d] >> 9) & 0xFFFFF] ^ 0x80) - 0x80);
 		}
 
-		if (!(dev->rctrl[d] & 3)) {
-			if (dev->rctrl[d] & 0x40) {
-				dev->rcur[d] -= dev->rfreq[d];
-				if (dev->rcur[d] <= dev->rstart[d]) {
-					int diff = dev->rstart[d] - dev->rcur[d];
+		if ((dev->rcur[d] >> 14) > 4095)
+			v = (int16_t)((float)v * 24.0 * vol16bit[4095]);
+		else
+			v = (int16_t)((float)v * 24.0 * vol16bit[(dev->rcur[d] >> 10) & 4095]);
 
-					if (!(dev->rctrl[d] & 8)) {
-						dev->rctrl[d] |= 1;
-						dev->rcur[d] = (dev->rctrl[d] & 0x40) ? dev->rstart[d] : dev->rend[d];
-					}
-					else {
-						if (dev->rctrl[d] & 0x10)
-							dev->rctrl[d] ^= 0x40;
-						dev->rcur[d] = (dev->rctrl[d] & 0x40) ? (dev->rend[d] - diff) : (dev->rstart[d] + diff);
-					}
+		dev->out_l += (v * dev->pan_l[d]) / 7;
+		dev->out_r += (v * dev->pan_r[d]) / 7;
 
-					if ((dev->rctrl[d] & 0x20) && !dev->rampirqs[d]) {
-						dev->rampirqs[d] = 1;
-						update_irqs = 1;
-					}
+		if (dev->ctrl[d] & 0x40) {
+			dev->cur[d] -= (dev->freq[d] >> 1);
+			if (dev->cur[d] <= dev->start[d]) {
+				int diff = dev->start[d] - dev->cur[d];
+
+				if (dev->ctrl[d] & 8) {
+					if (dev->ctrl[d] & 0x10)
+						dev->ctrl[d] ^= 0x40;
+					dev->cur[d] = (dev->ctrl[d] & 0x40) ? (dev->end[d] - diff) : (dev->start[d] + diff);
+				} else if (!(dev->rctrl[d] & 4)) {
+					dev->ctrl[d] |= 1;
+					dev->cur[d] = (dev->ctrl[d] & 0x40) ? dev->end[d] : dev->start[d];
+				}
+
+				if ((dev->ctrl[d] & 0x20) && !dev->waveirqs[d]) {
+					dev->waveirqs[d] = 1;
+					update_irqs = 1;
 				}
 			}
-			else {
-				dev->rcur[d] += dev->rfreq[d];
-				if (dev->rcur[d] >= dev->rend[d]) {
-					int diff = dev->rcur[d] - dev->rend[d];
+		} else {
+			dev->cur[d] += (dev->freq[d] >> 1);
 
-					if (!(dev->rctrl[d] & 8)) {
-						dev->rctrl[d] |= 1;
-						dev->rcur[d] = (dev->rctrl[d] & 0x40) ? dev->rstart[d] : dev->rend[d];
-					}
-					else {
-						if (dev->rctrl[d] & 0x10)
-							dev->rctrl[d] ^= 0x40;
-						dev->rcur[d] = (dev->rctrl[d] & 0x40) ? (dev->rend[d] - diff) : (dev->rstart[d] + diff);
-					}
+			if (dev->cur[d] >= dev->end[d]) {
+				int diff = dev->cur[d] - dev->end[d];
 
-					if ((dev->rctrl[d] & 0x20) && !dev->rampirqs[d]) {
-						dev->rampirqs[d] = 1;
-						update_irqs = 1;
-					}
+				if (dev->ctrl[d] & 8) {
+					if (dev->ctrl[d] & 0x10)
+						dev->ctrl[d] ^= 0x40;
+					dev->cur[d] = (dev->ctrl[d] & 0x40) ? (dev->end[d] - diff) : (dev->start[d] + diff);
+				} else if (!(dev->rctrl[d] & 4)) {
+					dev->ctrl[d] |= 1;
+					dev->cur[d] = (dev->ctrl[d] & 0x40) ? dev->end[d] : dev->start[d];
+				}
+
+				if ((dev->ctrl[d] & 0x20) && !dev->waveirqs[d]) {
+					dev->waveirqs[d] = 1;
+					update_irqs = 1;
 				}
 			}
 		}
 	}
 
-	if (update_irqs)
-		poll_irqs(dev);
+	if (!(dev->rctrl[d] & 3)) {
+		if (dev->rctrl[d] & 0x40) {
+			dev->rcur[d] -= dev->rfreq[d];
+			if (dev->rcur[d] <= dev->rstart[d]) {
+				int diff = dev->rstart[d] - dev->rcur[d];
+
+				if (!(dev->rctrl[d] & 8)) {
+					dev->rctrl[d] |= 1;
+					dev->rcur[d] = (dev->rctrl[d] & 0x40) ? dev->rstart[d] : dev->rend[d];
+				} else {
+					if (dev->rctrl[d] & 0x10)
+						dev->rctrl[d] ^= 0x40;
+					dev->rcur[d] = (dev->rctrl[d] & 0x40) ? (dev->rend[d] - diff) : (dev->rstart[d] + diff);
+				}
+
+				if ((dev->rctrl[d] & 0x20) && !dev->rampirqs[d]) {
+					dev->rampirqs[d] = 1;
+					update_irqs = 1;
+				}
+			}
+		} else {
+			dev->rcur[d] += dev->rfreq[d];
+			if (dev->rcur[d] >= dev->rend[d]) {
+				int diff = dev->rcur[d] - dev->rend[d];
+
+				if (!(dev->rctrl[d] & 8)) {
+					dev->rctrl[d] |= 1;
+					dev->rcur[d] = (dev->rctrl[d] & 0x40) ? dev->rstart[d] : dev->rend[d];
+				} else {
+					if (dev->rctrl[d] & 0x10)
+						dev->rctrl[d] ^= 0x40;
+					dev->rcur[d] = (dev->rctrl[d] & 0x40) ? (dev->rend[d] - diff) : (dev->rstart[d] + diff);
+				}
+
+				if ((dev->rctrl[d] & 0x20) && !dev->rampirqs[d]) {
+					dev->rampirqs[d] = 1;
+					update_irqs = 1;
+				}
+			}
+		}
+	}
+    }
+
+    if (update_irqs)
+	poll_irqs(dev);
 }
 
 
 static void
 get_buffer(int32_t *buffer, int len, void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
-	int c;
+    gus_t *dev = (gus_t *)priv;
+    int c;
 
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)  
-	if (dev->max_ctrl)
-		cs423x_update(&dev->cs423x);
+    if (dev->max_ctrl)
+	cs423x_update(&dev->cs423x);
 #endif	
-	gus_update(dev);
+    gus_update(dev);
 
-	for (c = 0; c < len * 2; c++) {
+    for (c = 0; c < len * 2; c++) {
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)    
-		if (dev->max_ctrl)
-			buffer[c] += (int32_t)(dev->cs423x.buffer[c] / 2);
+	if (dev->max_ctrl)
+		buffer[c] += (int32_t)(dev->cs423x.buffer[c] / 2);
 #endif		
-		buffer[c] += (int32_t)dev->buffer[c & 1][c >> 1];
-	}
+	buffer[c] += (int32_t)dev->buffer[c & 1][c >> 1];
+    }
 
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)    
-	if (dev->max_ctrl)
-		dev->cs423x.pos = 0;
+    if (dev->max_ctrl)
+	dev->cs423x.pos = 0;
 #endif	
 
-	dev->pos = 0;
+    dev->pos = 0;
 }
 
 
 static void *
 gus_init(const device_t *info)
 {
-	int c;
-	double out = 1.0;
-	gus_t *dev = (gus_t *)mem_alloc(sizeof(gus_t));
+    gus_t *dev;
+    double out = 1.0;
+    int c;
 
-	memset(dev, 0x00, sizeof(gus_t));
+    dev = (gus_t *)mem_alloc(sizeof(gus_t));
+    memset(dev, 0x00, sizeof(gus_t));
 
-	dev->ram = (uint8_t *)mem_alloc(1 << 20);
-	memset(dev->ram, 0x00, 1 << 20);
+    dev->ram = (uint8_t *)mem_alloc(1 << 20);
+    memset(dev->ram, 0x00, 1 << 20);
 
-	for (c = 0; c < 32; c++) {
-		dev->ctrl[c] = 1;
-		dev->rctrl[c] = 1;
-		dev->rfreq[c] = 63 * 512;
-	}
+    for (c = 0; c < 32; c++) {
+	dev->ctrl[c] = 1;
+	dev->rctrl[c] = 1;
+	dev->rfreq[c] = 63 * 512;
+    }
 
-	for (c = 4095; c >= 0; c--) {
-		vol16bit[c] = out;
-		out /= 1.002709201;		/* 0.0235 dB Steps */
-	}
+    for (c = 4095; c >= 0; c--) {
+	vol16bit[c] = out;
+	out /= 1.002709201;		/* 0.0235 dB Steps */
+    }
 
-	//   DEBUG("GUS: top volume %f %f %f %f\n",vol16bit[4095],vol16bit[3800],vol16bit[3000],vol16bit[2048]);
-	dev->voices = 14;
+    //   DEBUG("GUS: top volume %f %f %f %f\n",vol16bit[4095],vol16bit[3800],vol16bit[3000],vol16bit[2048]);
 
-	dev->samp_timer = dev->samp_latch = (int64_t)(TIMER_USEC * (1000000.0 / 44100.0));
+    dev->voices = 14;
 
-	dev->t1l = dev->t2l = 0xff;
+    dev->samp_timer = dev->samp_latch = (int64_t)(TIMER_USEC * (1000000.0 / 44100.0));
 
-	io_sethandler(0x0240, 16,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
-	io_sethandler(0x0340, 16,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
-	io_sethandler(0x0746, 1,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
-	io_sethandler(0x0388, 2,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
+    dev->t1l = dev->t2l = 0xff;
 
-	timer_add(poll_wave, &dev->samp_timer, TIMER_ALWAYS_ENABLED, dev);
-	timer_add(poll_timer_1, &dev->timer_1, TIMER_ALWAYS_ENABLED, dev);
-	timer_add(poll_timer_2, &dev->timer_2, TIMER_ALWAYS_ENABLED, dev);
+    switch(info->local) {
+	case 0:		/* Standard GUS */
+		io_sethandler(0x0240, 16,
+			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
+		io_sethandler(0x0340, 16,
+			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
+		io_sethandler(0x0746, 1,
+			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
+		io_sethandler(0x0388, 2,
+			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
 
-	sound_add_handler(get_buffer, dev);
-
-	return(dev);
-}
+		break;
 
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-static void *
-gus_max_init(const device_t *info)
-{
-	int c;
-	double out = 1.0;
-	gus_t *dev = (gus_t *)mem_alloc(sizeof(gus_t));
+	case 1:		/* GUS MAX */
+		cs423x_init(&dev->cs423x);
+		cs423x_setirq(&dev->cs423x, 5); /*Default irq and dma from GUS SDK*/
+		cs423x_setdma(&dev->cs423x, 3);
 
-	memset(dev, 0x00, sizeof(gus_t));
+		io_sethandler(0x0240, 16,
+			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
+		io_sethandler(0x0340, 9,
+			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
+		io_sethandler(0x0746, 1,
+			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
+		io_sethandler(0x0388, 2,
+			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
+		io_sethandler(0x034c, 4,
+			      cs423x_read,NULL,NULL, cs423x_write,NULL,NULL, &dev->cs423x);
 
-	dev->ram = (uint8_t *)mem_alloc(1 << 20); // Maximum 1 Mb RAM
-	memset(dev->ram, 0x00, 1 << 20);
-
-	for (c = 0;c < 32;c++) {
-		dev->ctrl[c] = 1;
-		dev->rctrl[c] = 1;
-		dev->rfreq[c] = 63 * 512;
-	}
-
-	for (c = 4095;c >= 0;c--) {
-		vol16bit[c] = out;
-		out /= 1.002709201;
-	}
-
-	dev->voices = 14;
-
-	dev->samp_timer = dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / 44100.0));
-
-	dev->t1l = dev->t2l = 0xff;
-
-	cs423x_init(&dev->cs423x);
-	cs423x_setirq(&dev->cs423x, 5); /*Default irq and dma from GUS SDK*/
-	cs423x_setdma(&dev->cs423x, 3);
-
-	io_sethandler(0x0240, 16,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
-	io_sethandler(0x0340, 9,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
-	io_sethandler(0x0746, 1,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
-	io_sethandler(0x0388, 2,
-		gus_read, NULL, NULL, gus_write, NULL, NULL, dev);
-	io_sethandler(0x034c, 4,
-		cs423x_read, NULL, NULL, cs423x_write, NULL, NULL, &dev->cs423x);
-
-	timer_add(poll_wave, &dev->samp_timer, TIMER_ALWAYS_ENABLED, dev);
-	timer_add(poll_timer_1, &dev->timer_1, TIMER_ALWAYS_ENABLED, dev);
-	timer_add(poll_timer_2, &dev->timer_2, TIMER_ALWAYS_ENABLED, dev);
-
-	sound_add_handler(get_buffer, dev);
-
-	return(dev);
-}
+		break;
 #endif
+    }
+
+    timer_add(poll_wave, &dev->samp_timer, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(poll_timer_1, &dev->timer_1, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(poll_timer_2, &dev->timer_2, TIMER_ALWAYS_ENABLED, dev);
+
+    sound_add_handler(get_buffer, dev);
+
+    return(dev);
+}
+
 
 static void
 gus_close(void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
+    gus_t *dev = (gus_t *)priv;
 
+    if (dev->ram != NULL)
 	free(dev->ram);
 
-	free(dev);
+    free(dev);
 }
 
 
 static void
 speed_changed(void *priv)
 {
-	gus_t *dev = (gus_t *)priv;
+    gus_t *dev = (gus_t *)priv;
 
-	if (dev->voices < 14)
-		dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / 44100.0));
-	else
-		dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / gusfreqs[dev->voices - 14]));
+    if (dev->voices < 14)
+	dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / 44100.0));
+    else
+	dev->samp_latch = (int)(TIMER_USEC * (1000000.0 / gusfreqs[dev->voices - 14]));
 
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-	if (dev->max_ctrl)
-		cs423x_speed_changed(&dev->cs423x);
+    if (dev->max_ctrl)
+	cs423x_speed_changed(&dev->cs423x);
 #endif
 }
 
 
 const device_t gus_device = {
-	"Gravis UltraSound",
-	DEVICE_ISA,
-	0,
-	gus_init, gus_close, NULL, NULL,
-	speed_changed, NULL, NULL,
-	NULL
+    "Gravis UltraSound",
+    DEVICE_ISA,
+    0,
+    gus_init, gus_close, NULL,
+    NULL,
+    speed_changed, NULL, NULL,
+    NULL
 };
 
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
 const device_t gusmax_device = {
-	"Gravis UltraSound MAX",
-	DEVICE_ISA,
-	0,
-	gus_max_init, gus_close, NULL, NULL,
-	speed_changed, NULL, NULL,
-	NULL
+    "Gravis UltraSound MAX",
+    DEVICE_ISA,
+    1,
+    gus_init, gus_close, NULL,
+    NULL,
+    speed_changed, NULL, NULL,
+    NULL
 };
 #endif

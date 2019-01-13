@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.21	2018/11/20
+ * Version:	@(#)plat.h	1.0.22	2018/11/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -190,7 +190,6 @@ extern int	plat_midi_write(uint8_t val);
 
 extern int	plat_midi_get_num_devs();
 extern void	plat_midi_get_dev_name(int num, char *s);
-
 
 /* Thread support. */
 typedef void thread_t;

@@ -8,13 +8,13 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.11	2018/11/27
+ * Version:	@(#)sound_dev.c	1.0.12	2019/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *

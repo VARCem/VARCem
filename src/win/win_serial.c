@@ -12,7 +12,7 @@
  *		Windows and UNIX systems, with support for FTDI and Prolific
  *		USB ports. Support for these has been removed.
  *
- * Version:	@(#)win_serial.c	1.0.4	2018/10/07
+ * Version:	@(#)win_serial.c	1.0.5	2018/11/22
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -53,79 +53,88 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define PLAT_SERIAL_C
 #include "../emu.h"
 #include "../plat.h"
 #include "../devices/ports/serial.h"
 
 
+typedef struct {
+    char	name[80];		/* name of open port */
+    void	(*rd_done)(void *, int);
+    void	*rd_arg;
+    HANDLE	handle;
+    OVERLAPPED	rov,			/* READ and WRITE events */
+		wov;
+    int		tmo;			/* current timeout value */
+    DCB		dcb,			/* terminal settings */
+		odcb;
+    thread_t	*tid;			/* pointer to receiver thread */
+    char	buff[1024];
+    int		icnt, ihead, itail;
+} serial_t;
+
+
 /* Handle the receiving of data from the host port. */
 static void
-bhtty_reader(void *arg)
+reader_thread(void *arg)
 {
-    BHTTY *pp = (BHTTY *)arg;
-    unsigned char b;
+    serial_t *dev = (serial_t *)arg;
+    uint8_t b;
     DWORD n;
 
-    pclog("%s: thread started\n", pp->name);
+    INFO("%s: thread started\n", dev->name);
 
     /* As long as the channel is open.. */
-    while (pp->tid != NULL) {
+    while (dev->tid != NULL) {
 	/* Post a READ on the device. */
 	n = 0;
-	if (ReadFile(pp->handle, &b, (DWORD)1, &n, &pp->rov) == FALSE) {
+	if (ReadFile(dev->handle, &b, (DWORD)1, &n, &dev->rov) == FALSE) {
 		n = GetLastError();
 		if (n != ERROR_IO_PENDING) {
 			/* Not good, we got an error. */
-			pclog("%s: I/O error %d in read!\n", pp->name, n);
+			ERRLOG("%s: I/O error %i in read!\n", dev->name, n);
 			break;
 		}
 
 		/* The read is pending, wait for it.. */
-		if (GetOverlappedResult(pp->handle, &pp->rov, &n, TRUE) == FALSE) {
+		if (GetOverlappedResult(dev->handle, &dev->rov, &n, TRUE) == FALSE) {
 			n = GetLastError();
-			pclog("%s: I/O error %d in read!\n", pp->name, n);
+			ERRLOG("%s: I/O error %i in read!\n", dev->name, n);
 			break;
 		}
 	}
 
-pclog("%s: got %d bytes of data\n", pp->name, n);
+pclog(0,"%s: got %i bytes of data\n", dev->name, n);
 	if (n == 1) {
 		/* We got data, update stuff. */
-		if (pp->icnt < sizeof(pp->buff)) {
-pclog("%s: queued byte %02x (%d)\n", pp->name, b, pp->icnt+1);
-			pp->buff[pp->ihead++] = b;
-			pp->ihead &= (sizeof(pp->buff)-1);
-			pp->icnt++;
+		if (dev->icnt < sizeof(dev->buff)) {
+pclog(0,"%s: queued byte %02x (%i)\n", dev->name, b, dev->icnt+1);
+			dev->buff[dev->ihead++] = b;
+			dev->ihead &= (sizeof(dev->buff)-1);
+			dev->icnt++;
 
 			/* Do a callback to let them know. */
-			if (pp->rd_done != NULL)
-				pp->rd_done(pp->rd_arg, n);
+			if (dev->rd_done != NULL)
+				dev->rd_done(dev->rd_arg, n);
 		} else {
-			pclog("%s: RX buffer overrun!\n", pp->name);
+			ERRLOG("%s: RX buffer overrun!\n", dev->name);
 		}
 	}
     }
 
     /* Error or done, clean up. */
-    pp->tid = NULL;
-    pclog("%s: thread stopped.\n", pp->name);
+    dev->tid = NULL;
+    INFO("%s: thread stopped.\n", dev->name);
 }
 
 
 /* Set the state of a port. */
-int
-bhtty_sstate(BHTTY *pp, void *arg)
+static int
+set_state(serial_t *dev, void *arg)
 {
-    /* Make sure we can do this. */
-    if (arg == NULL) {
-	pclog("%s: invalid argument\n", pp->name);
-	return(-1);
-    }
-
-    if (SetCommState(pp->handle, (DCB *)arg) == FALSE) {
-	/* Mark an error. */
-	pclog("%s: set state: %d\n", pp->name, GetLastError());
+    if (SetCommState(dev->handle, (DCB *)arg) == FALSE) {
+	/* Mark as error. */
+	ERRLOG("%s: set state: %i\n", dev->name, GetLastError());
 	return(-1);
     }
 
@@ -134,18 +143,12 @@ bhtty_sstate(BHTTY *pp, void *arg)
 
 
 /* Fetch the state of a port. */
-int
-bhtty_gstate(BHTTY *pp, void *arg)
+static int
+get_state(serial_t *dev, void *arg)
 {
-    /* Make sure we can do this. */
-    if (arg == NULL) {
-	pclog("%s: invalid argument\n", pp->name);
-	return(-1);
-    }
-
-    if (GetCommState(pp->handle, (DCB *)arg) == FALSE) {
-	/* Mark an error. */
-	pclog("%s: get state: %d\n", pp->name, GetLastError());
+    if (GetCommState(dev->handle, (DCB *)arg) == FALSE) {
+	/* Mark as error. */
+	ERRLOG("%s: get state: %i\n", dev->name, GetLastError());
 	return(-1);
     }
 
@@ -154,42 +157,42 @@ bhtty_gstate(BHTTY *pp, void *arg)
 
 
 /* Enable or disable RTS/CTS mode (hardware handshaking.) */
-int
-bhtty_crtscts(BHTTY *pp, char yesno)
+static int
+set_crtscts(serial_t *dev, int8_t yes)
 {
     /* Get the current mode. */
-    if (bhtty_gstate(pp, &pp->dcb) < 0) return(-1);
+    if (get_state(dev, &dev->dcb) < 0) return(-1);
 
-    switch(yesno) {
+    switch (yes) {
 	case 0:		/* disable CRTSCTS */
-		pp->dcb.fOutxDsrFlow = 0;	/* disable DSR/DCD mode */
-		pp->dcb.fDsrSensitivity = 0;
+		dev->dcb.fOutxDsrFlow = 0;	/* disable DSR/DCD mode */
+		dev->dcb.fDsrSensitivity = 0;
 
-		pp->dcb.fOutxCtsFlow = 0;	/* disable RTS/CTS mode */
+		dev->dcb.fOutxCtsFlow = 0;	/* disable RTS/CTS mode */
 
-		pp->dcb.fTXContinueOnXoff = 0;	/* disable XON/XOFF mode */
-		pp->dcb.fOutX = 0;
-		pp->dcb.fInX = 0;
+		dev->dcb.fTXContinueOnXoff = 0;	/* disable XON/XOFF mode */
+		dev->dcb.fOutX = 0;
+		dev->dcb.fInX = 0;
 		break;
 
 	case 1:		/* enable CRTSCTS */
-		pp->dcb.fOutxDsrFlow = 0;	/* disable DSR/DCD mode */
-		pp->dcb.fDsrSensitivity = 0;
+		dev->dcb.fOutxDsrFlow = 0;	/* disable DSR/DCD mode */
+		dev->dcb.fDsrSensitivity = 0;
 
-		pp->dcb.fOutxCtsFlow = 1;	/* enable RTS/CTS mode */
+		dev->dcb.fOutxCtsFlow = 1;	/* enable RTS/CTS mode */
 
-		pp->dcb.fTXContinueOnXoff = 0;	/* disable XON/XOFF mode */
-		pp->dcb.fOutX = 0;
-		pp->dcb.fInX = 0;
+		dev->dcb.fTXContinueOnXoff = 0;	/* disable XON/XOFF mode */
+		dev->dcb.fOutX = 0;
+		dev->dcb.fInX = 0;
 		break;
 
 	default:
-		pclog("%s: invalid parameter '%d'!\n", pp->name, yesno);
+		ERRLOG("%s: invalid parameter '%i'!\n", dev->name, yes);
 		return(-1);
     }
 
     /* Set new mode. */
-    if (bhtty_sstate(pp, &pp->dcb) < 0) return(-1);
+    if (set_state(dev, &dev->dcb) < 0) return(-1);
 
     return(0);
 }
@@ -197,13 +200,15 @@ bhtty_crtscts(BHTTY *pp, char yesno)
 
 /* Set the port parameters. */
 int
-bhtty_params(BHTTY *pp, char dbit, char par, char sbit)
+plat_serial_params(void *arg, char dbit, char par, char sbit)
 {
+    serial_t *dev = (serial_t *)arg;
+
     /* Get the current mode. */
-    if (bhtty_gstate(pp, &pp->dcb) < 0) return(-1);
+    if (get_state(dev, &dev->dcb) < 0) return(-1);
 
     /* Set the desired word length. */
-    switch((int)dbit) {
+    switch ((int)dbit) {
 	case -1:			/* no change */
 		break;
 
@@ -214,36 +219,36 @@ bhtty_params(BHTTY *pp, char dbit, char par, char sbit)
 
 	case 7:
 	case 8:
-		pp->dcb.ByteSize = dbit;
+		dev->dcb.ByteSize = dbit;
 		break;
 
 	default:
-		pclog("%s: invalid parameter '%d'!\n", pp->name, dbit);
+		ERRLOG("%s: invalid parameter '%i'!\n", dev->name, dbit);
 		return(-1);
     }
 
     /* Set the type of parity encoding. */
-    switch((int)par) {
+    switch ((int)par) {
 	case -1:			/* no change */
 	case ' ':
 		break;
 
 	case 0:
 	case 'N':
-		pp->dcb.fParity = FALSE;
-		pp->dcb.Parity = NOPARITY;
+		dev->dcb.fParity = FALSE;
+		dev->dcb.Parity = NOPARITY;
 		break;
 
 	case 1:
 	case 'O':
-		pp->dcb.fParity = TRUE;
-		pp->dcb.Parity = ODDPARITY;
+		dev->dcb.fParity = TRUE;
+		dev->dcb.Parity = ODDPARITY;
 		break;
 
 	case 2:
 	case 'E':
-		pp->dcb.fParity = TRUE;
-		pp->dcb.Parity = EVENPARITY;
+		dev->dcb.fParity = TRUE;
+		dev->dcb.Parity = EVENPARITY;
 		break;
 
 	case 3:
@@ -253,30 +258,30 @@ bhtty_params(BHTTY *pp, char dbit, char par, char sbit)
 		break;
 
 	default:
-		pclog("%s: invalid parameter '%c'!\n", pp->name, par);
+		ERRLOG("%s: invalid parameter '%c'!\n", dev->name, par);
 		return(-1);
     }
 
     /* Set the number of stop bits. */
-    switch((int)sbit) {
+    switch ((int)sbit) {
 	case -1:			/* no change */
 		break;
 
 	case 1:
-		pp->dcb.StopBits = ONESTOPBIT;
+		dev->dcb.StopBits = ONESTOPBIT;
 		break;
 
 	case 2:
-		pp->dcb.StopBits = TWOSTOPBITS;
+		dev->dcb.StopBits = TWOSTOPBITS;
 		break;
 
 	default:
-		pclog("%s: invalid parameter '%d'!\n", pp->name, sbit);
+		ERRLOG("%s: invalid parameter '%i'!\n", dev->name, sbit);
 		return(-1);
     }
 
     /* Set new mode. */
-    if (bhtty_sstate(pp, &pp->dcb) < 0) return(-1);
+    if (set_state(dev, &dev->dcb) < 0) return(-1);
 
     return(0);
 }
@@ -284,13 +289,14 @@ bhtty_params(BHTTY *pp, char dbit, char par, char sbit)
 
 /* Put a port in transparent ("raw") state. */
 void
-bhtty_raw(BHTTY *pp, void *arg)
+plat_serial_raw(void *arg, void *data)
 {
-    DCB *dcb = (DCB *)arg;
+    serial_t *dev = (serial_t *)arg;
+    DCB *dcb = (DCB *)data;
 
     /* Make sure we can do this. */
-    if (arg == NULL) {
-	pclog("%s: invalid parameter\n", pp->name);
+    if (dcb == NULL) {
+	ERRLOG("%s: invalid parameter\n", dev->name);
 	return;
     }
 
@@ -328,10 +334,12 @@ bhtty_raw(BHTTY *pp, void *arg)
 
 /* Set the port speed. */
 int
-bhtty_speed(BHTTY *pp, long speed)
+plat_serial_speed(void *arg, long speed)
 {
+    serial_t *dev = (serial_t *)arg;
+
     /* Get the current mode and speed. */
-    if (bhtty_gstate(pp, &pp->dcb) < 0) return(-1);
+    if (get_state(dev, &dev->dcb) < 0) return(-1);
 
     /*
      * Set speed.
@@ -340,10 +348,10 @@ bhtty_speed(BHTTY *pp, long speed)
      * with DCB_xxx speed values here, but we removed that
      * and just hardcode the speed value into DCB.  --FvK
      */
-    pp->dcb.BaudRate = speed;
+    dev->dcb.BaudRate = speed;
 
     /* Set new speed. */
-    if (bhtty_sstate(pp, &pp->dcb) < 0) return(-1);
+    if (set_state(dev, &dev->dcb) < 0) return(-1);
 
     return(0);
 }
@@ -351,25 +359,26 @@ bhtty_speed(BHTTY *pp, long speed)
 
 /* Clean up and flush. */
 int
-bhtty_flush(BHTTY *pp)
+plat_serial_flush(void *arg)
 {
+    serial_t *dev = (serial_t *)arg;
     DWORD dwErrs;
     COMSTAT cst;
 
     /* First, clear any errors. */
-    (void)ClearCommError(pp->handle, &dwErrs, &cst);
+    (void)ClearCommError(dev->handle, &dwErrs, &cst);
 
     /* Now flush all buffers. */
-    if (PurgeComm(pp->handle,
+    if (PurgeComm(dev->handle,
 		  (PURGE_RXABORT | PURGE_TXABORT | \
 		   PURGE_RXCLEAR | PURGE_TXCLEAR)) == FALSE) {
-	pclog("%s: flush: %d\n", pp->name, GetLastError());
+	ERRLOG("%s: flush: %i\n", dev->name, GetLastError());
 	return(-1);
     }
 
     /* Re-clear any errors. */
-    if (ClearCommError(pp->handle, &dwErrs, &cst) == FALSE) {
-	pclog("%s: clear errors: %d\n", pp->name, GetLastError());
+    if (ClearCommError(dev->handle, &dwErrs, &cst) == FALSE) {
+	ERRLOG("%s: clear errors: %i\n", dev->name, GetLastError());
 	return(-1);
     }
 
@@ -377,80 +386,76 @@ bhtty_flush(BHTTY *pp)
 }
 
 
-/* Close an open serial port. */
+/* API: close an open serial port. */
 void
-bhtty_close(BHTTY *pp)
+plat_serial_close(void *arg)
 {
+    serial_t *dev = (serial_t *)arg;
+
     /* If the polling thread is running, stop it. */
-    (void)bhtty_active(pp, 0);
+    plat_serial_active(arg, 0);
 
     /* Close the event handles. */
-    if (pp->rov.hEvent != INVALID_HANDLE_VALUE)
-	CloseHandle(pp->rov.hEvent);
-    if (pp->wov.hEvent != INVALID_HANDLE_VALUE)
-	CloseHandle(pp->wov.hEvent);
+    if (dev->rov.hEvent != INVALID_HANDLE_VALUE)
+	CloseHandle(dev->rov.hEvent);
+    if (dev->wov.hEvent != INVALID_HANDLE_VALUE)
+	CloseHandle(dev->wov.hEvent);
 
-    if (pp->handle != INVALID_HANDLE_VALUE) {
-	pclog("%s: closing host port\n", pp->name);
+    if (dev->handle != INVALID_HANDLE_VALUE) {
+	INFO("%s: closing host port\n", dev->name);
 
 	/* Restore the previous port state, if any. */
-	(void)bhtty_sstate(pp, &pp->odcb);
+	set_state(dev, &dev->odcb);
 
 	/* Close the port. */
-	CloseHandle(pp->handle);
-	pp->handle = INVALID_HANDLE_VALUE;
+	CloseHandle(dev->handle);
     }
 
     /* Release the control block. */
-    free(pp);
+    free(dev);
 }
 
 
-/* Open a host serial port for I/O. */
-BHTTY *
-bhtty_open(char *port, int tmo)
+/* API: open a host serial port for I/O. */
+void *
+plat_serial_open(const char *port, int tmo)
 {
     char temp[84];
     COMMTIMEOUTS to;
     COMMCONFIG conf;
-    BHTTY *pp;
+    serial_t *dev;
     DWORD d;
 
     /* First things first... create a control block. */
-    if ((pp = (BHTTY *)mem_alloc(sizeof(BHTTY))) == NULL) {
-	pclog("%s: out of memory!\n", port);
+    if ((dev = (serial_t *)mem_alloc(sizeof(serial_t))) == NULL) {
+	ERRLOG("%s: out of memory!\n", port);
 	return(NULL);
     }
-    memset(pp, 0x00, sizeof(BHTTY));
-    strncpy(pp->name, port, sizeof(pp->name)-1);
+    memset(dev, 0x00, sizeof(serial_t));
+    strncpy(dev->name, port, sizeof(dev->name)-1);
 
     /* Try a regular Win32 serial port. */
-    sprintf(temp, "\\\\.\\%s", pp->name);
-    if ((pp->handle = CreateFile(temp,
-				 (GENERIC_READ|GENERIC_WRITE),
-				 0,
-				 NULL,
-				 OPEN_EXISTING,
-				 FILE_FLAG_OVERLAPPED,
-				 0)) == INVALID_HANDLE_VALUE) {
-	pclog("%s: open port: %d\n", pp->name, GetLastError());
-	free(pp);
+    sprintf(temp, "\\\\.\\%s", dev->name);
+    if ((dev->handle = CreateFile(temp,
+				  (GENERIC_READ|GENERIC_WRITE),
+				  0,
+				  NULL,
+				  OPEN_EXISTING,
+				  FILE_FLAG_OVERLAPPED,
+				  0)) == INVALID_HANDLE_VALUE) {
+	ERRLOG("%s: open port: %i\n", dev->name, GetLastError());
+	free(dev);
 	return(NULL);
     }
 
     /* Create event handles. */
-    pp->rov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    pp->wov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    dev->rov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    dev->wov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
     /* Set up buffer size of the port. */
-    if (SetupComm(pp->handle, 32768L, 32768L) == FALSE) {
-	/* This fails on FTDI-based devices. */
-	pclog("%s: set buffers: %d\n", pp->name, GetLastError());
-#if 0
-	CloseHandle(pp->handle);
-	free(pp);
-	return(NULL);
-#endif
+    if (SetupComm(dev->handle, 32768L, 32768L) == FALSE) {
+	/* This fails on FTDI-based devices, so, not fatal. */
+	ERRLOG("%s: set buffers: %i\n", dev->name, GetLastError());
     }
 
     /* Grab default config for the driver and set it. */
@@ -461,48 +466,44 @@ bhtty_open(char *port, int tmo)
 	/* Change config here... */
 
 	/* Set new configuration. */
-	if (SetCommConfig(pp->handle, &conf, d) == FALSE) {
-		/* This fails on FTDI-based devices. */
-		pclog("%s: set configuration: %d\n", pp->name, GetLastError());
-#if 0
-		CloseHandle(pp->handle);
-		free(pp);
-		return(NULL);
-#endif
+	if (SetCommConfig(dev->handle, &conf, d) == FALSE) {
+		/* This fails on FTDI-based devices, so, not fatal. */
+		ERRLOG("%s: set config: %i\n", dev->name, GetLastError());
 	}
     }
-    pclog("%s: host port '%s' open\n", pp->name, temp);
+    ERRLOG("%s: host port '%s' open\n", dev->name, temp);
 
     /*
      * We now have an open port. To allow for clean exit
      * of the application, we first retrieve the port's
      * current settings, and save these for later.
      */
-    if (bhtty_gstate(pp, &pp->odcb) < 0) {
-	(void)bhtty_close(pp);
+    if (get_state(dev, &dev->odcb) < 0) {
+	plat_serial_close(dev);
 	return(NULL);
     }
-    memcpy(&pp->dcb, &pp->odcb, sizeof(DCB));
+    memcpy(&dev->dcb, &dev->odcb, sizeof(DCB));
 
     /* Force the port to BINARY mode. */
-    bhtty_raw(pp, &pp->dcb);
+    plat_serial_raw(dev, &dev->dcb);
 
     /* Set new state of this port. */
-    if (bhtty_sstate(pp, &pp->dcb) < 0) {
-	(void)bhtty_close(pp);
+    if (set_state(dev, &dev->dcb) < 0) {
+	plat_serial_close(dev);
 	return(NULL);
     }
 
     /* Just to make sure.. disable RTS/CTS mode. */
-    (void)bhtty_crtscts(pp, 0);
+    set_crtscts(dev, 0);
 
     /* Set new timeout values. */
-    if (GetCommTimeouts(pp->handle, &to) == FALSE) {
-	pclog("%s: error %d while getting current TO\n",
-				pp->name, GetLastError());
-	(void)bhtty_close(pp);
+    if (GetCommTimeouts(dev->handle, &to) == FALSE) {
+	ERRLOG("%s: error %i while getting current TO\n",
+				dev->name, GetLastError());
+	plat_serial_close(dev);
 	return(NULL);
     }
+
     if (tmo < 0) {
 	/* No timeout, immediate return. */
 	to.ReadIntervalTimeout = MAXDWORD;
@@ -517,34 +518,36 @@ bhtty_open(char *port, int tmo)
 	to.ReadTotalTimeoutMultiplier = MAXDWORD;
 	to.ReadTotalTimeoutConstant = tmo;
     }
-    if (SetCommTimeouts(pp->handle, &to) == FALSE) {
-	pclog("%s: error %d while setting TO\n", pp->name, GetLastError());
-	(void)bhtty_close(pp);
+    if (SetCommTimeouts(dev->handle, &to) == FALSE) {
+	ERRLOG("%s: error %i while setting TO\n", dev->name, GetLastError());
+	plat_serial_close(dev);
 	return(NULL);
     }
 
     /* Clear all errors and flush all buffers. */
-    if (bhtty_flush(pp) < 0) {
-	(void)bhtty_close(pp);
+    if (plat_serial_flush(dev) < 0) {
+	plat_serial_close(dev);
 	return(NULL);
     }
 
-    return(pp);
+    return(dev);
 }
 
 
-/* Activate the I/O for this port. */
+/* API: activate the I/O for this port. */
 int
-bhtty_active(BHTTY *pp, int flg)
+plat_serial_active(void *arg, int flg)
 {
+    serial_t *dev = (serial_t *)arg;
+
     if (flg) {
-	pclog("%s: starting thread..\n", pp->name);
-	pp->tid = thread_create(bhtty_reader, pp);
+	INFO("%s: starting thread..\n", dev->name);
+	dev->tid = thread_create(reader_thread, dev);
     } else {
-	if (pp->tid != NULL) {
-		pclog("%s: stopping thread..\n", pp->name);
-		thread_kill(pp->tid);
-		pp->tid = NULL;
+	if (dev->tid != NULL) {
+		INFO("%s: stopping thread..\n", dev->name);
+		thread_kill(dev->tid);
+		dev->tid = NULL;
 	}
     }
 
@@ -552,25 +555,26 @@ bhtty_active(BHTTY *pp, int flg)
 }
 
 
-/* Try to write data to an open port. */
+/* API: try to write data to an open port. */
 int
-bhtty_write(BHTTY *pp, unsigned char val)
+plat_serial_write(void *arg, unsigned char val)
 {
+    serial_t *dev = (serial_t *)arg;
     DWORD n = 0;
 
-pclog("%s: writing byte %02x\n", pp->name, val);
-    if (WriteFile(pp->handle, &val, 1, &n, &pp->wov) == FALSE) {
+pclog(0,"%s: writing byte %02x\n", dev->name, val);
+    if (WriteFile(dev->handle, &val, 1, &n, &dev->wov) == FALSE) {
 	n = GetLastError();
 	if (n != ERROR_IO_PENDING) {
 		/* Not good, we got an error. */
-		pclog("%s: I/O error %d in write!\n", pp->name, n);
+		ERRLOG("%s: I/O error %i in write!\n", dev->name, n);
 		return(-1);
 	}
 
 	/* The write is pending, wait for it.. */
-	if (GetOverlappedResult(pp->handle, &pp->wov, &n, TRUE) == FALSE) {
+	if (GetOverlappedResult(dev->handle, &dev->wov, &n, TRUE) == FALSE) {
 		n = GetLastError();
-		pclog("%s: I/O error %d in write!\n", pp->name, n);
+		ERRLOG("%s: I/O error %i in write!\n", dev->name, n);
 		return(-1);
 	}
     }
@@ -580,22 +584,24 @@ pclog("%s: writing byte %02x\n", pp->name, val);
 
 
 /*
- * Try to read data from an open port.
+ * API: try to read data from an open port.
  *
  * For now, we will use one byte per call.  Eventually,
  * we should go back to loading a buffer full of data,
  * just to speed things up a bit.  --FvK
  */
 int
-bhtty_read(BHTTY *pp, unsigned char *bufp, int max)
+plat_serial_read(void *arg, unsigned char *bufp, int max)
 {
-    if (pp->icnt == 0) return(0);
+    serial_t *dev = (serial_t *)arg;
+
+    if (dev->icnt == 0) return(0);
 
     while (max-- > 0) {
-	*bufp++ = pp->buff[pp->itail++];
-pclog("%s: dequeued byte %02x (%d)\n", pp->name, *(bufp-1), pp->icnt);
-	pp->itail &= (sizeof(pp->buff)-1);
-	if (--pp->icnt == 0) break;
+	*bufp++ = dev->buff[dev->itail++];
+pclog(0,"%s: dequeued byte %02x (%i)\n", dev->name, *(bufp-1), dev->icnt);
+	dev->itail &= (sizeof(dev->buff)-1);
+	if (--dev->icnt == 0) break;
     }
 
     return(max);

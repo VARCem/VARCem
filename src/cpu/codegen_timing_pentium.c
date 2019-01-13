@@ -20,7 +20,7 @@
  *		  - PMMX decode queue
  *		  - MMX latencies
  *
- * Version:	@(#)codegen_timing_pentium.c	1.0.3	2018/09/04
+ * Version:	@(#)codegen_timing_pentium.c	1.0.4	2018/12/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -975,20 +975,20 @@ static INLINE int codegen_timing_instr_length(uint64_t timing, uint32_t fetchdat
 }
 
 
-void codegen_timing_pentium_block_start(void)
+static void codegen_timing_pentium_block_start(void)
 {
         u_pipe_full = decode_delay = decode_delay_offset = 0;
 }
 
 
-void codegen_timing_pentium_start(void)
+static void codegen_timing_pentium_start(void)
 {
         last_prefix = 0;
         prefixes = 0;
 }
 
 
-void codegen_timing_pentium_prefix(uint8_t prefix, uint32_t fetchdat)
+static void codegen_timing_pentium_prefix(uint8_t prefix, uint32_t fetchdat)
 {
         prefixes++;
         if ((prefix & 0xf8) == 0xd8)
@@ -1122,7 +1122,7 @@ static void codegen_instruction(const uint64_t *timings, uint64_t *deps, uint8_t
         }
 }
 
-void codegen_timing_pentium_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
+static void codegen_timing_pentium_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
 {
         const uint64_t *timings;
         uint64_t *deps;
@@ -1346,7 +1346,7 @@ nopair:
         addr_regmask = 0;
 }
 
-void codegen_timing_pentium_block_end()
+static void codegen_timing_pentium_block_end(void)
 {
         if (u_pipe_full)
         {

@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.70	2018/11/30
+# Version:	@(#)Makefile.mingw	1.0.71	2019/01/13
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017,2018 Fred N. van Kempen.
+#		Copyright 2017-2018 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -140,6 +140,9 @@ endif
 ifndef PAS16
  PAS16		:= n
 endif
+ifndef GUSMAX
+ GUSMAX		:= n
+endif
 ifndef XL24
  XL24		:= n
 endif
@@ -151,9 +154,6 @@ ifndef PRINTER
 endif
 ifndef HOSTCD
  HOSTCD		:= n
-endif
-ifndef GUSMAX
- GUSMAX		:= n
 endif
 
 
@@ -186,10 +186,10 @@ ifeq ($(DEV_BUILD), y)
  PORTABLE3	:= y
  I686		:= y
  PAS16		:= y
+ GUSMAX		:= y
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
- GUSMAX		:= y
 endif
 
 
@@ -558,6 +558,11 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= snd_pas16.o
  endif
 
+ ifeq ($(GUSMAX), y)
+  OPTS		+= -DUSE_GUSMAX
+  DEVBROBJ	+= snd_cs423x.o
+ endif
+
  ifeq ($(WONDER), y)
   OPTS		+= -DUSE_WONDER
  endif
@@ -575,10 +580,6 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_HOST_CDROM
  endif
 
- ifeq ($(GUSMAX), y)
-  OPTS		+= -DUSE_GUSMAX
-  DEVBROBJ	+= snd_cs423x.o
- endif
 endif
 
 
@@ -740,7 +741,7 @@ VIDOBJ		:= video.o \
 PLATOBJ		:= win.o \
 		    win_lang.o win_dynld.o win_opendir.o win_thread.o \
 		    win_cdrom.o win_keyboard.o win_mouse.o win_joystick.o \
-		    win_midi.o
+		    win_serial.o win_midi.o
 ifeq ($(CRASHDUMP), y)
 PLATOBJ		+= win_crashdump.o
 endif

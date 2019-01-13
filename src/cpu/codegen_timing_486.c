@@ -8,7 +8,7 @@
  *
  *		Instruction timing for i486-class.
  *
- * Version:	@(#)codegen_timing_486.c	1.0.1	2018/02/14
+ * Version:	@(#)codegen_timing_486.c	1.0.2	2018/12/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -319,24 +319,24 @@ static INLINE int COUNT(int *c, int op_32)
         return *c;
 }
 
-void codegen_timing_486_block_start()
+static void codegen_timing_486_block_start(void)
 {
         regmask_modified = 0;
 }
 
-void codegen_timing_486_start()
+static void codegen_timing_486_start(void)
 {
         timing_count = 0;
         last_prefix = 0;
 }
 
-void codegen_timing_486_prefix(uint8_t prefix, uint32_t fetchdat)
+static void codegen_timing_486_prefix(uint8_t prefix, uint32_t fetchdat)
 {
         timing_count += COUNT(opcode_timings[prefix], 0);
         last_prefix = prefix;
 }
 
-void codegen_timing_486_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
+static void codegen_timing_486_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
 {
         int **timings;
         uint64_t *deps;
@@ -442,7 +442,7 @@ void codegen_timing_486_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
         regmask_modified = get_dstdep_mask(deps[opcode], fetchdat, bit8);
 }
 
-void codegen_timing_486_block_end()
+static void codegen_timing_486_block_end(void)
 {
 }
 

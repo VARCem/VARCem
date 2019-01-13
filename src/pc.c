@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.61	2018/11/13
+ * Version:	@(#)pc.c	1.0.62	2018/11/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -873,9 +873,6 @@ pc_init(void)
     codegen_init();
 #endif
 
-#ifdef WALTJE_SERIAL
-    serial_init();
-#endif
     keyboard_init();
     joystick_init();
     video_init();

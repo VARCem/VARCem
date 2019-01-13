@@ -8,11 +8,11 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.35	2018/11/05
+ * Version:	@(#)VARCem.rc	1.0.36	2019/01/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -226,7 +226,7 @@ VS_VERSION_INFO VERSIONINFO
             VALUE "FileDescription", "Virtual ARchaeological Computer EMulator"
             VALUE "FileVersion", EMU_VERSION
             VALUE "InternalName", EMU_NAME
-            VALUE "LegalCopyright", "Copyright Fred N. van Kempen and others, 2007-2018, Released under a mixed BSD 3-Clause and GPL License"
+            VALUE "LegalCopyright", "Copyright Fred N. van Kempen and others, 2007-2019, Released under a mixed BSD 3-Clause and GPL License"
             VALUE "OriginalFilename", "VARCem.exe"
             VALUE "ProductName", "VARCem Emulator"
             VALUE "ProductVersion", EMU_VERSION

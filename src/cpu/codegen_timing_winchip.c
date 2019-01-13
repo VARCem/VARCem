@@ -8,7 +8,7 @@
  *
  *		Code generation timing for IDT WinChip processors.
  *
- * Version:	@(#)codegen_timing_winchip.c	1.0.1	2018/02/14
+ * Version:	@(#)codegen_timing_winchip.c	1.0.2	2018/12/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,7 @@
 #define CYCLES(c) (int *)c
 #define CYCLES2(c16, c32) (int *)((-1 & ~0xffff) | c16 | (c32 << 8))
 
-static int *opcode_timings[256] =
+static const int *opcode_timings[256] =
 {
 /*00*/  &timing_mr,     &timing_mr,     &timing_rm,     &timing_rm,     &timing_rr,     &timing_rr,     CYCLES(2),      CYCLES(3),      &timing_mr,     &timing_mr,     &timing_rm,     &timing_rm,     &timing_rr,     &timing_rr,     CYCLES(2),      NULL,
 /*10*/  &timing_mr,     &timing_mr,     &timing_rm,     &timing_rm,     &timing_rr,     &timing_rr,     CYCLES(2),      CYCLES(3),      &timing_mr,     &timing_mr,     &timing_rm,     &timing_rm,     &timing_rr,     &timing_rr,     CYCLES(2),      CYCLES(3),
@@ -74,7 +74,7 @@ static int *opcode_timings[256] =
 /*f0*/  CYCLES(4),      CYCLES(0),      CYCLES(0),      CYCLES(0),      CYCLES(4),      CYCLES(2),      NULL,           NULL,           CYCLES(2),      CYCLES(2),      CYCLES(3),      CYCLES(2),      CYCLES(2),      CYCLES(2),      CYCLES(3),      NULL
 };
 
-static int *opcode_timings_mod3[256] =
+static const int *opcode_timings_mod3[256] =
 {
 /*00*/  &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     CYCLES(2),      CYCLES(3),      &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     CYCLES(2),      NULL,
 /*10*/  &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     CYCLES(2),      CYCLES(3),      &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     &timing_rr,     CYCLES(2),      CYCLES(3),
@@ -97,7 +97,7 @@ static int *opcode_timings_mod3[256] =
 /*f0*/  CYCLES(4),      CYCLES(0),      CYCLES(0),      CYCLES(0),      CYCLES(4),      CYCLES(2),      NULL,           NULL,           CYCLES(2),      CYCLES(2),      CYCLES(3),      CYCLES(2),      CYCLES(2),      CYCLES(2),      CYCLES(3),      NULL
 };
 
-static int *opcode_timings_0f[256] =
+static const int *opcode_timings_0f[256] =
 {
 /*00*/  CYCLES(20),     CYCLES(11),     CYCLES(11),     CYCLES(10),     NULL,           CYCLES(195),    CYCLES(7),      NULL,           CYCLES(1000),   CYCLES(10000),  NULL,           NULL,           NULL,           NULL,           NULL,           NULL,
 /*10*/  NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,
@@ -119,7 +119,7 @@ static int *opcode_timings_0f[256] =
 /*e0*/  NULL,           &timing_rm,     &timing_rm,     NULL,           NULL,           &timing_rm,     NULL,           NULL,           &timing_rm,     &timing_rm,     NULL,           &timing_rm,     &timing_rm,     &timing_rm,     NULL,           &timing_rm,
 /*f0*/  NULL,           &timing_rm,     &timing_rm,     &timing_rm,     NULL,           &timing_rm,     NULL,           NULL,           &timing_rm,     &timing_rm,     &timing_rm,     NULL,           &timing_rm,     &timing_rm,     &timing_rm,     NULL,
 };
-static int *opcode_timings_0f_mod3[256] =
+static const int *opcode_timings_0f_mod3[256] =
 {
 /*00*/  CYCLES(20),     CYCLES(11),     CYCLES(11),     CYCLES(10),     NULL,           CYCLES(195),    CYCLES(7),      NULL,           CYCLES(1000),   CYCLES(10000),  NULL,           NULL,           NULL,           NULL,           NULL,           NULL,
 /*10*/  NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,
@@ -142,57 +142,57 @@ static int *opcode_timings_0f_mod3[256] =
 /*f0*/  NULL,           &timing_rr,     &timing_rr,     &timing_rr,     NULL,           &timing_rr,     NULL,           NULL,           &timing_rr,     &timing_rr,     &timing_rr,     NULL,           &timing_rr,     &timing_rr,     &timing_rr,     NULL,
 };
 
-static int *opcode_timings_shift[8] =
+static const int *opcode_timings_shift[8] =
 {
         CYCLES(7),      CYCLES(7),      CYCLES(10),     CYCLES(10),     CYCLES(7),      CYCLES(7),      CYCLES(7),      CYCLES(7)
 };
-static int *opcode_timings_shift_mod3[8] =
+static const int *opcode_timings_shift_mod3[8] =
 {
         CYCLES(3),      CYCLES(3),      CYCLES(9),      CYCLES(9),      CYCLES(3),      CYCLES(3),      CYCLES(3),      CYCLES(3)
 };
 
-static int *opcode_timings_f6[8] =
+static const int *opcode_timings_f6[8] =
 {
         &timing_rm,     NULL,           &timing_mm,     &timing_mm,     CYCLES(13),     CYCLES(14),     CYCLES(16),     CYCLES(19)
 };
-static int *opcode_timings_f6_mod3[8] =
+static const int *opcode_timings_f6_mod3[8] =
 {
         &timing_rr,     NULL,           &timing_rr,     &timing_rr,     CYCLES(13),     CYCLES(14),     CYCLES(16),     CYCLES(19)
 };
-static int *opcode_timings_f7[8] =
+static const int *opcode_timings_f7[8] =
 {
         &timing_rm,     NULL,           &timing_mm,     &timing_mm,     CYCLES(21),     CYCLES2(22,38), CYCLES2(24,40), CYCLES2(27,43)
 };
-static int *opcode_timings_f7_mod3[8] =
+static const int *opcode_timings_f7_mod3[8] =
 {
         &timing_rr,     NULL,           &timing_rr,     &timing_rr,     CYCLES(21),     CYCLES2(22,38), CYCLES2(24,40), CYCLES2(27,43)
 };
-static int *opcode_timings_ff[8] =
+static const int *opcode_timings_ff[8] =
 {
         &timing_mm,     &timing_mm,     CYCLES(5),      CYCLES(0),      CYCLES(5),      CYCLES(0),      CYCLES(5),      NULL
 };
-static int *opcode_timings_ff_mod3[8] =
+static const int *opcode_timings_ff_mod3[8] =
 {
         &timing_rr,     &timing_rr,     CYCLES(5),      CYCLES(0),      CYCLES(5),      CYCLES(0),      CYCLES(5),      NULL
 };
 
-static int *opcode_timings_d8[8] =
+static const int *opcode_timings_d8[8] =
 {
 /*      FADDil          FMULil          FCOMil          FCOMPil         FSUBil          FSUBRil         FDIVil          FDIVRil*/
         CYCLES(10),     CYCLES(12),     CYCLES(9),      CYCLES(9),      CYCLES(10),     CYCLES(10),     CYCLES(78),     CYCLES(78)
 };
-static int *opcode_timings_d8_mod3[8] =
+static const int *opcode_timings_d8_mod3[8] =
 {
 /*      FADD            FMUL            FCOM            FCOMP           FSUB            FSUBR           FDIV            FDIVR*/
         CYCLES(4),      CYCLES(6),      CYCLES(3),      CYCLES(3),      CYCLES(4),      CYCLES(4),      CYCLES(72),     CYCLES(72)
 };
 
-static int *opcode_timings_d9[8] =
+static const int *opcode_timings_d9[8] =
 {
 /*      FLDs                            FSTs            FSTPs           FLDENV          FLDCW           FSTENV          FSTCW*/
         CYCLES(2),      NULL,           CYCLES(7),      CYCLES(7),      CYCLES(34),     CYCLES(4),      CYCLES(67),     CYCLES(3)
 };
-static int *opcode_timings_d9_mod3[64] =
+static const int *opcode_timings_d9_mod3[64] =
 {
         /*FLD*/
         CYCLES(1),      CYCLES(1),      CYCLES(1),      CYCLES(1),      CYCLES(1),      CYCLES(1),      CYCLES(1),      CYCLES(1),
@@ -212,23 +212,23 @@ static int *opcode_timings_d9_mod3[64] =
         CYCLES(70),     NULL,           CYCLES(72),     CYCLES(292),    CYCLES(21),     CYCLES(30),     CYCLES(474),    CYCLES(474)
 };
 
-static int *opcode_timings_da[8] =
+static const int *opcode_timings_da[8] =
 {
 /*      FADDil          FMULil          FCOMil          FCOMPil         FSUBil          FSUBRil         FDIVil          FDIVRil*/
         CYCLES(10),     CYCLES(12),     CYCLES(9),      CYCLES(9),      CYCLES(10),     CYCLES(10),     CYCLES(78),     CYCLES(78)
 };
-static int *opcode_timings_da_mod3[8] =
+static const int *opcode_timings_da_mod3[8] =
 {
         NULL,           NULL,           NULL,           NULL,           NULL,           CYCLES(5),      NULL,           NULL
 };
 
 
-static int *opcode_timings_db[8] =
+static const int *opcode_timings_db[8] =
 {
 /*      FLDil                           FSTil           FSTPil                          FLDe                            FSTPe*/
         CYCLES(6),      NULL,           CYCLES(7),      CYCLES(7),      NULL,           CYCLES(8),      NULL,           CYCLES(8)
 };
-static int *opcode_timings_db_mod3[64] =
+static const int *opcode_timings_db_mod3[64] =
 {
         NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,
         NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,
@@ -241,63 +241,63 @@ static int *opcode_timings_db_mod3[64] =
         NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,           NULL,
 };
 
-static int *opcode_timings_dc[8] =
+static const int *opcode_timings_dc[8] =
 {
 /*      opFADDd_a16     opFMULd_a16     opFCOMd_a16     opFCOMPd_a16    opFSUBd_a16     opFSUBRd_a16    opFDIVd_a16     opFDIVRd_a16*/
         CYCLES(6),      CYCLES(8),      CYCLES(5),      CYCLES(5),      CYCLES(6),      CYCLES(6),      CYCLES(74),     CYCLES(74)
 };
-static int *opcode_timings_dc_mod3[8] =
+static const int *opcode_timings_dc_mod3[8] =
 {
 /*      opFADDr         opFMULr                                         opFSUBRr        opFSUBr         opFDIVRr        opFDIVr*/
         CYCLES(4),      CYCLES(6),      NULL,           NULL,           CYCLES(4),      CYCLES(4),      CYCLES(72),     CYCLES(72)
 };
 
-static int *opcode_timings_dd[8] =
+static const int *opcode_timings_dd[8] =
 {
 /*      FLDd                            FSTd            FSTPd           FRSTOR                           FSAVE          FSTSW*/
         CYCLES(2),      NULL,           CYCLES(8),      CYCLES(8),      CYCLES(131),     NULL,           CYCLES(154),   CYCLES(5)
 };
-static int *opcode_timings_dd_mod3[8] =
+static const int *opcode_timings_dd_mod3[8] =
 {
 /*      FFFREE                          FST             FSTP            FUCOM            FUCOMP*/
         CYCLES(3),      NULL,           CYCLES(1),      CYCLES(1),      CYCLES(3),       CYCLES(3),      NULL,          NULL
 };
 
-static int *opcode_timings_de[8] =
+static const int *opcode_timings_de[8] =
 {
 /*      FADDiw          FMULiw          FCOMiw          FCOMPiw         FSUBil          FSUBRil         FDIVil          FDIVRil*/
         CYCLES(10),     CYCLES(12),     CYCLES(9),      CYCLES(9),      CYCLES(10),     CYCLES(10),     CYCLES(78),     CYCLES(78)
 };
-static int *opcode_timings_de_mod3[8] =
+static const int *opcode_timings_de_mod3[8] =
 {
 /*      FADD            FMUL                            FCOMPP          FSUB            FSUBR           FDIV            FDIVR*/
         CYCLES(4),      CYCLES(6),      NULL,           CYCLES(3),      CYCLES(4),      CYCLES(4),      CYCLES(72),     CYCLES(72)
 };
 
-static int *opcode_timings_df[8] =
+static const int *opcode_timings_df[8] =
 {
 /*      FILDiw                          FISTiw          FISTPiw                          FILDiq          FBSTP          FISTPiq*/
         CYCLES(6),      NULL,           CYCLES(7),      CYCLES(7),      NULL,            CYCLES(8),      CYCLES(172),   CYCLES(8)
 };
-static int *opcode_timings_df_mod3[8] =
+static const int *opcode_timings_df_mod3[8] =
 {
 /*      FFREE                           FST             FSTP            FUCOM            FUCOMP*/
         CYCLES(3),      NULL,           CYCLES(1),      CYCLES(1),      CYCLES(3),       CYCLES(3),      NULL,          NULL
 };
 
-static int *opcode_timings_8x[8] =
+static const int *opcode_timings_8x[8] =
 {
         &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_rm
 };
-static int *opcode_timings_8x_mod3[8] =
+static const int *opcode_timings_8x_mod3[8] =
 {
         &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_rm
 };
-static int *opcode_timings_81[8] =
+static const int *opcode_timings_81[8] =
 {
         &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_rm
 };
-static int *opcode_timings_81_mod3[8] =
+static const int *opcode_timings_81_mod3[8] =
 {
         &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_mr,     &timing_rm
 };
@@ -306,7 +306,7 @@ static int timing_count;
 static uint8_t last_prefix;
 static uint32_t regmask_modified;
 
-static INLINE int COUNT(int *c, int op_32)
+static INLINE int COUNT(const int *c, int op_32)
 {
         if ((uintptr_t)c <= 10000)
                 return (int)(uintptr_t)c;
@@ -319,26 +319,26 @@ static INLINE int COUNT(int *c, int op_32)
         return *c;
 }
 
-void codegen_timing_winchip_block_start()
+static void codegen_timing_winchip_block_start(void)
 {
         regmask_modified = 0;
 }
 
-void codegen_timing_winchip_start()
+static void codegen_timing_winchip_start(void)
 {
         timing_count = 0;
         last_prefix = 0;
 }
 
-void codegen_timing_winchip_prefix(uint8_t prefix, uint32_t fetchdat)
+static void codegen_timing_winchip_prefix(uint8_t prefix, uint32_t fetchdat)
 {
         timing_count += COUNT(opcode_timings[prefix], 0);
         last_prefix = prefix;
 }
 
-void codegen_timing_winchip_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
+static void codegen_timing_winchip_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
 {
-        int **timings;
+        const int **timings;
         uint64_t *deps;
         int mod3 = ((fetchdat & 0xc0) == 0xc0);
         int bit8 = !(opcode & 1);
@@ -442,7 +442,7 @@ void codegen_timing_winchip_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
         regmask_modified = get_dstdep_mask(deps[opcode], fetchdat, bit8);
 }
 
-void codegen_timing_winchip_block_end()
+static void codegen_timing_winchip_block_end(void)
 {
 }
 

@@ -10,11 +10,11 @@
  *		which require some weird processing. This file allows us
  *		to use a single master for all those languages.
  *
- * Version:	@(#)VARCem.rpp	1.0.3	2018/11/05
+ * Version:	@(#)VARCem.rpp	1.0.4	2019/01/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -98,7 +98,7 @@ VS_VERSION_INFO VERSIONINFO
             VALUE "FileDescription", "VARCem Language Module"
             VALUE "FileVersion", STR(STR_VERSION)
             VALUE "InternalName", EMU_NAME
-            VALUE "LegalCopyright", "Copyright 2018 The VARCem Team"
+            VALUE "LegalCopyright", "Copyright 2018,2019 The VARCem Team"
             VALUE "OriginalFilename", DLLNAME(LANG)
             VALUE "ProductName", "VARCem Emulator"
             VALUE "ProductVersion", EMU_VERSION
