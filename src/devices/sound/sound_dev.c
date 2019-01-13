@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.10	2018/10/20
+ * Version:	@(#)sound_dev.c	1.0.11	2018/11/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,6 +63,9 @@ extern const device_t es1371_device;
 extern const device_t sbpci128_device;
 extern const device_t cms_device;
 extern const device_t gus_device;
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+extern const device_t gusmax_device;
+#endif
 #if defined(DEV_BRANCH) && defined(USE_PAS16)
 extern const device_t pas16_device;
 #endif
@@ -91,6 +94,9 @@ static const struct {
     { "adlibgold",	&adgold_device			},
     { "cms",		&cms_device			},
     { "gus",		&gus_device			},
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+    { "gusmax",		&gusmax_device			},
+#endif
     { "ssi2001",	&ssi2001_device			},
     { "sb",		&sb_1_device			},
     { "sb1.5",		&sb_15_device			},
