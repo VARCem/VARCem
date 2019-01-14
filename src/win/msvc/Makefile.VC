@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.57	2019/01/13
+# Version:	@(#)Makefile.VC	1.0.58	2019/01/13
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -591,6 +591,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_xt.obj m_xt_compaq.obj \
 		    m_xt_t1000.obj m_xt_t1000_vid.obj \
 		    m_xt_xi8088.obj \
+		    m_zenith.obj \
 		    m_pcjr.obj \
 		    m_amstrad.obj m_europc.obj \
 		    m_olivetti_m24.obj m_tandy.obj \

@@ -8,15 +8,15 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.5	2018/09/22
+ * Version:	@(#)vid_cga.c	1.0.7	2019/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2019 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -256,8 +256,14 @@ cga_poll(void *priv)
 
 		if (dev->cgamode & 1) {
 			for (x = 0; x < dev->crtc[1]; x++) {
-				chr = dev->charbuffer[x << 1];
-				attr = dev->charbuffer[(x << 1) + 1];
+				if (dev->cgamode & 8) {
+					chr = dev->charbuffer[x << 1];
+					attr = dev->charbuffer[(x << 1) + 1];
+				} else {
+					chr = 0;
+					attr = 0;
+				}
+
 				drawcursor = ((dev->ma == ca) && dev->con && dev->cursoron);
 				if (dev->cgamode & 0x20) {
 					cols[1] = (attr & 15) + 16;
@@ -280,8 +286,14 @@ cga_poll(void *priv)
 			}
 		} else if (!(dev->cgamode & 2)) {
 			for (x = 0; x < dev->crtc[1]; x++) {
-				chr  = dev->vram[((dev->ma << 1) & 0x3fff)];
-				attr = dev->vram[(((dev->ma << 1) + 1) & 0x3fff)];
+				if (dev->cgamode & 8) {
+					chr  = dev->vram[((dev->ma << 1) & 0x3fff)];
+					attr = dev->vram[(((dev->ma << 1) + 1) & 0x3fff)];
+				} else {
+					chr = 0;
+					attr = 0;
+				}
+
 				drawcursor = ((dev->ma == ca) && dev->con && dev->cursoron);
 				if (dev->cgamode & 0x20) {
 					cols[1] = (attr & 15) + 16;
@@ -319,8 +331,13 @@ cga_poll(void *priv)
 			}
 
 			for (x = 0; x < dev->crtc[1]; x++) {
-				dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
+				if (dev->cgamode & 8)
+					dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
+				  else
+					dat = 0;
+
 				dev->ma++;
+
 				for (c = 0; c < 8; c++) {
 					buffer->line[dev->displine][(x << 4) + (c << 1) + 8] = buffer->line[dev->displine][(x << 4) + (c << 1) + 1 + 8] = cols[dat >> 14];
 					dat <<= 2;
@@ -329,7 +346,11 @@ cga_poll(void *priv)
 		} else {
 			cols[0] = 0; cols[1] = (dev->cgacol & 15) + 16;
 			for (x = 0; x < dev->crtc[1]; x++) {
-				dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
+				if (dev->cgamode & 8)
+					dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
+				  else
+					dat = 0;
+
 				dev->ma++;
 
 				for (c = 0; c < 16; c++) {

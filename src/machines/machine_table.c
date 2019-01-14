@@ -8,13 +8,13 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.30	2018/11/02
+ * Version:	@(#)machine_table.c	1.0.31	2019/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -84,6 +84,7 @@ const machine_t machines[] = {
     { "[8088] VTech Laser Turbo XT",		"vtech_ltxt",		L"vtech/ltxt",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												512,  512, 256,   0,	      machine_xt_laserxt_init, NULL,			NULL			},
 #endif
     { "[8088] Xi8088",				"malinov_xi8088",	L"malinov/xi8088",		{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA /*| MACDHINE_AT*/ | MACHINE_PS2,								 64, 1024, 128, 128,	       machine_xt_xi8088_init, NULL,			NULL			},
+    { "[8088] Zenith Data SupersPORT",		"zenith_supersport",	L"zenith/supersport",		{{"Intel", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												128,  640, 128,   0,   machine_zenith_supersport_init, NULL,			NULL			},
 
     /* 8086 */
     { "[8086] Amstrad PC1512",			"amstrad_pc1512",	L"amstrad/pc1512",		{{"Intel", cpus_pc1512},	{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								512,  640, 128,  64,	    machine_amstrad_1512_init, NULL,			NULL			},

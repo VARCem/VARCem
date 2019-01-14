@@ -229,6 +229,8 @@ extern const device_t	m_tandy1k_sl2_device;
 #endif
 extern int		tandy1k_eeprom_read(void);
 
+extern void		machine_zenith_supersport_init(const machine_t *, void *);
+
 extern void		machine_pc_init(const machine_t *, void *);
 extern void		machine_xt_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
