@@ -6,16 +6,16 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the Zenith SuperSport.
+ *		Implementation of the Zenith SupersPORT.
  *
- * Version:	@(#)m_zenith.c	1.0.1	2019/01/13
+ * Version:	@(#)m_zenith.c	1.0.2	2019/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original patch for PCem by 'Tux'
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2019 Fred N. van Kempen.
- *		Copyright 2019 Sarah Walker.
+ *		Copyright 2018,2019 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,16 +91,20 @@ scratchpad_init(const device_t *info)
 
     dev = (zenith_t *)mem_alloc(sizeof(zenith_t));
     memset(dev, 0x00, sizeof(zenith_t));	
-	
-    dev->scratchpad_ram = mem_alloc(0x4000);
-    
+
+    /* Disable ROM area at F0000, need it for Scratchpad RAM. */
     mem_map_disable(&bios_mapping[4]);
     mem_map_disable(&bios_mapping[5]);
 
-    mem_map_add(&dev->scratchpad_mapping, 0xf0000, 0x4000,
+    /* Allocate and initialize the Scratchpad RAM area. */
+    dev->scratchpad_ram = mem_alloc(16384);
+    memset(dev->scratchpad_ram, 0x00, 16384);	
+
+    /* Create and enable a mapping for this memory. */
+    mem_map_add(&dev->scratchpad_mapping, 0xf0000, 16384,
 		scratchpad_read,NULL,NULL, scratchpad_write,NULL,NULL,
 		dev->scratchpad_ram, MEM_MAPPING_EXTERNAL, dev);
-			
+
     return dev;
 }
 
@@ -121,9 +125,7 @@ static const device_t scratchpad_device = {
     "Zenith scratchpad RAM",
     0, 0,
     scratchpad_init, scratchpad_close, NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 

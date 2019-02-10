@@ -8,11 +8,11 @@
  *
  *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)parallel_dev.c	1.0.9	2018/10/06
+ * Version:	@(#)parallel_dev.c	1.0.10	2019/01/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the

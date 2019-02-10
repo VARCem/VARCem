@@ -51,7 +51,14 @@
 #include "resource.h"
 
 
+#define RTL	0
+
+
+#if RTL
+LANGUAGE LANG_HEBREW, 0x01
+#else
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#endif
 
 #include "../ui/lang/VARCem.str"
 
@@ -220,7 +227,11 @@ VS_VERSION_INFO VERSIONINFO
  BEGIN
     BLOCK "StringFileInfo"
     BEGIN
+#if RTL
+        BLOCK "040dfde9"
+#else
         BLOCK "0409fde9"
+#endif
         BEGIN
             VALUE "CompanyName", "IRC #VARCem on FreeNode"
             VALUE "FileDescription", "Virtual ARchaeological Computer EMulator"
@@ -237,6 +248,10 @@ VS_VERSION_INFO VERSIONINFO
     END
     BLOCK "VarFileInfo"
     BEGIN
+#if RTL
+        VALUE "Translation", 0x040d, 65001
+#else
         VALUE "Translation", 0x0409, 65001
+#endif
     END
 END

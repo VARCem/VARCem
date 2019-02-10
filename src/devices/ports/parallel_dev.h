@@ -8,11 +8,11 @@
  *
  *		Definitions for the parallel port-attached devices.
  *
- * Version:	@(#)parallel_dev.h	1.0.4	2018/09/03
+ * Version:	@(#)parallel_dev.h	1.0.5	2019/01/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -55,6 +55,8 @@ typedef struct _lpt_device_ {
     void	(*close)(void *priv);
     void	(*write_data)(uint8_t val, void *priv);
     void	(*write_ctrl)(uint8_t val, void *priv);
+    uint8_t	(*read_data)(void *priv);
+    uint8_t	(*read_ctrl)(void *priv);
     uint8_t	(*read_status)(void *priv);
 } lpt_device_t;
 

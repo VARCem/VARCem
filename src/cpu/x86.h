@@ -62,7 +62,6 @@ extern int skipnextprint;
 extern int inhlt;
 
 extern uint8_t opcode;
-extern int noint;
 
 extern uint16_t lastcs,lastpc;
 extern int timetolive,keyboardtimer;
@@ -102,8 +101,6 @@ extern uint32_t oxpc;
 extern uint16_t *mod1add[2][8];
 extern uint32_t *mod1seg[8];
 
-
-#define IRQTEST ((flags&I_FLAG) && (pic.pend&~pic.mask) && !noint)
 
 extern int cgate32;
 

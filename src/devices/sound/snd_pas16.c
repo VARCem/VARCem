@@ -79,13 +79,13 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.8	2018/10/16
+ * Version:	@(#)snd_pas16.c	1.0.9	2019/02/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -430,12 +430,18 @@ static void pas16_out(uint16_t port, uint8_t val, void *p)
         }
         if (cpu_state.pc == 0x80048CF3)
         {
+#if 0
                 if (output)
+#endif
                         fatal("here\n");
+#if 0
                 output = 3;
+#endif
         }
-/*        if (CS == 0x1FF4 && pc == 0x0431)
-                output = 3;*/
+#if 0
+        if (CS == 0x1FF4 && pc == 0x0431)
+                output = 3;
+#endif
 }
 
 static void pas16_pit_out(uint16_t port, uint8_t val, void *p)

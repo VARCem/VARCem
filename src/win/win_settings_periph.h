@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.16	2018/10/24
+ * Version:	@(#)win_settings_periph.h	1.0.17	2019/01/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -109,7 +109,6 @@ recalc_hdc_list(HWND hdlg)
     h = GetDlgItem(hdlg, IDC_COMBO_HDC);
     SendMessage(h, CB_RESETCONTENT, 0, 0);
 
-INFO("LIST: active=%d (%s)\n", temp_hdc_type, hdc_get_name(temp_hdc_type));
     c = d = 0;
     for (;;) {
 	stransi = hdc_get_internal_name(c);
@@ -145,7 +144,6 @@ INFO("LIST: active=%d (%s)\n", temp_hdc_type, hdc_get_name(temp_hdc_type));
 
 	hdc_to_list[c] = d;			
 	list_to_hdc[d] = c;
-INFO("[%d]=%d\n", c, hdc_to_list[c], d, list_to_hdc[d]);
 	c++; d++;
     }
 

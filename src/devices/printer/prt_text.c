@@ -15,11 +15,11 @@
  *		printer mechanics. This would lead to a page being 66 lines
  *		of 80 characters each.
  *
- * Version:	@(#)prt_text.c	1.0.4	2018/11/11
+ * Version:	@(#)prt_text.c	1.0.6	2019/01/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -63,13 +63,13 @@
 #include "printer.h"
 
 
-#define FULL_PAGE	1			/* set if no top/bot margins */
+#define FULL_PAGE	1		/* set if no top/bot margins */
 
 
 /* Default page values (for now.) */
-#define PAGE_WIDTH	8.5			/* standard U.S. Letter */
+#define PAGE_WIDTH	8.5		/* standard U.S. Letter */
 #define PAGE_HEIGHT	11
-#define PAGE_LMARGIN	0.25			/* 0.25" left and right */
+#define PAGE_LMARGIN	0.25		/* 0.25" left and right */
 #define PAGE_RMARGIN	0.25
 #if FULL_PAGE
 # define PAGE_TMARGIN	0
@@ -78,18 +78,18 @@
 # define PAGE_TMARGIN	0.25
 # define PAGE_BMARGIN	0.25
 #endif
-#define PAGE_CPI	10.0			/* standard 10 cpi */
-#define PAGE_LPI	6.0			/* standard 6 lpi */
+#define PAGE_CPI	10.0		/* standard 10 cpi */
+#define PAGE_LPI	6.0		/* standard 6 lpi */
 
 
 typedef struct {
-    int8_t	dirty;		/* has the page been printed on? */
+    int8_t	dirty;			/* has the page been printed on? */
     char	pad;
 
-    uint8_t	w;		/* size info */
+    uint8_t	w;			/* size info */
     uint8_t	h;
 
-    char	*chars;		/* character data */
+    char	*chars;			/* character data */
 } psurface_t;
 
 
@@ -99,35 +99,35 @@ typedef struct {
     /* Output file name. */
     wchar_t	filename[1024];
 
-    /* page data (TODO: make configurable) */
-    double	page_width,	/* all in inches */
+    /* Page data (TODO: make configurable.) */
+    double	page_width,		/* all in inches */
 		page_height,
 		left_margin,
 		top_margin, 
 		right_margin,
 		bot_margin;
+    double	cpi,			/* chars per inch */
+		lpi;			/* lines per inch */
 
-    /* internal page data */
+    /* Internal page data. */
     psurface_t	*page;
     uint8_t	max_chars,
 		max_lines;
     uint8_t	curr_x,			/* print head position (chars) */
 		curr_y;
 
-    /* font data */
-    double	cpi,			/* defined chars per inch */
-		lpi;			/* defined lines per inch */
+    /* Printer timeout. */
+    int64_t	timeout;
 
-    /* handshake data */
-    uint8_t	ctrl;
-    uint8_t	data;
-
-    int8_t	ack;
-    int8_t	select;
-    int8_t	busy;
-    int8_t	int_pending;
-    int8_t	error;
-    int8_t	autofeed;
+    /* Port Interface data */
+    int8_t	ack,
+		select,
+		busy,
+		int_pending,
+		error,
+		autofeed;
+    uint8_t	ctrl,
+		data;
 } prnt_t;
 
 
@@ -192,8 +192,9 @@ new_page(prnt_t *dev)
 }
 
 
+/* API: reset the printer device. */
 static void
-reset_printer(prnt_t *dev)
+prnt_reset(prnt_t *dev)
 {
     /* TODO: these three should be configurable */
     dev->page_width = PAGE_WIDTH;
@@ -224,7 +225,7 @@ reset_printer(prnt_t *dev)
 
 
 static int
-process_char(prnt_t *dev, uint8_t ch)
+process_data(prnt_t *dev, uint8_t ch)
 {
     uint8_t i;
 
@@ -310,19 +311,21 @@ process_char(prnt_t *dev, uint8_t ch)
 }
 
 
+/* API: process incoming data. */
 static void
-handle_char(prnt_t *dev)
+prnt_handle(prnt_t *dev, uint8_t ch)
 {
-    uint8_t ch = dev->data;
+    /* Character has been seen. */
+    dev->ack = 1;
 
     if (dev->page == NULL) return;
 
-    if (process_char(dev, ch) == 1) {
-	/* Command was processed. */
+    if (process_data(dev, ch) == 1) {
+	/* A printer command was processed. */
 	return;
     }
 
-    /* Store character in the page buffer. */
+    /* No command; store printable character in the page buffer. */
     dev->page->chars[(dev->curr_y * dev->page->w) + dev->curr_x] = ch;
     dev->page->dirty = 1;
 
@@ -335,73 +338,20 @@ handle_char(prnt_t *dev)
 }
 
 
+/* API: the interface port timed out. */
 static void
-write_data(uint8_t val, void *priv)
+prnt_timeout(void *priv)
 {
     prnt_t *dev = (prnt_t *)priv;
 
-    if (dev == NULL) return;
+    if (dev->page->dirty)
+	new_page(dev);
 
-    dev->data = val;
+    dev->timeout = 0LL;
 }
+ 
 
-
-static void
-write_ctrl(uint8_t val, void *priv)
-{
-    prnt_t *dev = (prnt_t *)priv;
-
-    if (dev == NULL) return;
-
-    /* set autofeed value */
-    dev->autofeed = val & 0x02 ? 1 : 0;
-
-    if (val & 0x08) {		/* SELECT */
-	/* select printer */
-	dev->select = 1;
-    }
-
-    if ((val & 0x04) && !(dev->ctrl & 0x04)) {
-	/* reset printer */
-	dev->select = 0;
-
-	reset_printer(dev);
-    }
-
-    if (!(val & 0x01) && (dev->ctrl & 0x01)) {	/* STROBE */
-	/* Process incoming character. */
-	handle_char(dev);
-
-	/* ACK it, will be read on next READ STATUS. */
-	dev->ack = 1;
-    }
-
-    /* Save new value. */
-    dev->ctrl = val;
-}
-
-
-static uint8_t
-read_status(void *priv)
-{
-    prnt_t *dev = (prnt_t *)priv;
-    uint8_t ret = 0xff;
-
-    if (dev == NULL) return(ret);
-
-    ret = (dev->ack ? 0x00 : 0x40) |
-	  (dev->select ? 0x10 : 0x00) |
-	  (dev->busy ? 0x00 : 0x80) |
-	  (dev->int_pending ? 0x00 : 0x04) |
-	  (dev->error ? 0x00 : 0x08);
-
-    /* Clear ACK after reading status. */
-    dev->ack = 0;
-
-    return(ret);
-}
-
-
+/* API: create and initialize the printer device. */
 static void *
 prnt_init(const lpt_device_t *info)
 {
@@ -411,12 +361,14 @@ prnt_init(const lpt_device_t *info)
     dev = (prnt_t *)mem_alloc(sizeof(prnt_t));
     memset(dev, 0x00, sizeof(prnt_t));
     dev->name = info->name;
-    dev->ctrl = 0x04;
 
-    INFO("PRNT: LPT printer '%s' initializing\n", dev->name);
+    INFO("PRNT: printer '%s' initializing\n", dev->name);
 
     /* Initialize parameters. */
-    reset_printer(dev);
+    prnt_reset(dev);
+
+    /* Create a timer to catch port timeouts. */
+    timer_add(prnt_timeout, &dev->timeout, &dev->timeout, dev);
 
     /* Create a page buffer. */
     dev->page = (psurface_t *)mem_alloc(sizeof(psurface_t));
@@ -425,12 +377,15 @@ prnt_init(const lpt_device_t *info)
     dev->page->chars = (char *)mem_alloc(dev->page->w * dev->page->h);
     memset(dev->page->chars, 0x00, dev->page->w * dev->page->h);
 
+    dev->ctrl = 0x04;
+
     DEBUG("PRNT: created a virtual %ix%i page.\n", dev->page->w, dev->page->h);
 
     return(dev);
 }
 
 
+/* API: close and release the printer device. */
 static void
 prnt_close(void *priv)
 {
@@ -452,12 +407,135 @@ prnt_close(void *priv)
 }
 
 
+/* Reset a parallel printer device. */
+static void
+parprnt_reset(prnt_t *dev)
+{
+    /* Reset the port interface. */
+    dev->timeout = 0LL;
+    dev->ack = 0;
+
+    /* Reset the printer. */
+    prnt_reset(dev);
+}
+
+
+static void
+parprnt_write_data(uint8_t val, void *priv)
+{
+    prnt_t *dev = (prnt_t *)priv;
+
+    DBGLOG(1, "PARPRNT: data(%02x)\n", val);
+
+    if (dev != NULL)
+	dev->data = val;
+}
+
+
+static void
+parprnt_write_ctrl(uint8_t val, void *priv)
+{
+    prnt_t *dev = (prnt_t *)priv;
+
+    DEBUG("PARPRNT: ctrl(%02x)\n", val);
+
+    if (dev == NULL) return;
+
+    if (val & 0x08) {		/* SELECT */
+	/* select printer */
+	dev->select = 1;
+    }
+
+    if ((val & 0x04) && !(dev->ctrl & 0x04)) {
+	/* reset printer */
+	dev->select = 0;
+
+	parprnt_reset(dev);
+    }
+
+    /* set autofeed value */
+    dev->autofeed = val & 0x02 ? 1 : 0;
+
+    /*
+     * Data is strobed to the parallel printer
+     * on the falling edge of the strobe bit.
+     */
+    if (!(val & 0x01) && (dev->ctrl & 0x01)) {
+	/* Process incoming character. */
+	prnt_handle(dev, dev->data);
+
+	/* ACK it, will be read on next READ STATUS. */
+	dev->ack = 1;
+
+	dev->timeout = 500000LL * TIMER_USEC;
+    }
+
+    /* Save new value. */
+    dev->ctrl = val;
+}
+
+
+static uint8_t
+parprnt_read_data(void *priv)
+{
+    prnt_t *dev = (prnt_t *)priv;
+    uint8_t ret = 0xff;
+
+    if (dev != NULL)
+	ret = dev->data;
+
+    DBGLOG(1, "PARPRNT: data=%02x\n", ret);
+
+    return(ret);
+}
+
+
+static uint8_t
+parprnt_read_ctrl(void *priv)
+{
+    prnt_t *dev = (prnt_t *)priv;
+    uint8_t ret = 0xe0;
+
+    if (dev != NULL)
+	ret |= (dev->autofeed ? 0x02 : 0x00 | (dev->ctrl & 0xfd));
+
+    DEBUG("PARPRNT: ctrl=%02x\n", ret);
+
+    return(ret);
+}
+
+
+static uint8_t
+parprnt_read_status(void *priv)
+{
+    prnt_t *dev = (prnt_t *)priv;
+    uint8_t ret = 0x1f;
+
+    if (dev != NULL) {
+	ret = (dev->select ? 0x10 : 0x00) |
+	      (dev->int_pending ? 0x00 : 0x04) |
+	      (dev->error ? 0x00 : 0x08);
+
+#if 0
+	if (! dev->busy)
+#endif
+		ret |= 0x80;
+
+	if (! dev->ack)
+		ret |= 0x40;
+    }
+
+    DEBUG("PARPRNT: status=%02x\n", ret);
+
+    return(ret);
+}
+
+
 const lpt_device_t lpt_prt_text_device = {
     "Generic TEXT printer",
     0,
-    prnt_init,
-    prnt_close,
-    write_data,
-    write_ctrl,
-    read_status
+    prnt_init, prnt_close,
+    parprnt_write_data, parprnt_write_ctrl,
+    parprnt_read_data, parprnt_read_ctrl,
+    parprnt_read_status
 };

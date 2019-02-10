@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.9	2019/01/13
+ * Version:	@(#)snd_gus.c	1.0.10	2019/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -240,7 +240,9 @@ static void
 gus_write(uint16_t addr, uint8_t val, void *priv)
 {
     gus_t *dev = (gus_t *)priv;
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
     uint16_t ioport;
+#endif
     int c, d, old;
 
     if (dev->latch_enable && addr != 0x24b)

@@ -717,7 +717,12 @@ ui_init(int nCmdShow)
      * always keep in mind when changing the window size.
      */
     swprintf(title, sizeof_w(title), L"%s %s", EMU_NAME, emu_version);
-    hwndMain = CreateWindow(
+    hwndMain = CreateWindowEx(
+#if 0
+		WS_EX_LAYOUTRTL | WS_EX_RIGHT,
+#else
+		0,
+#endif
 		CLASS_NAME,			/* class name */
 		title,				/* Title Text */
 		flags,				/* style flags */

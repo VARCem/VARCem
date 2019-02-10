@@ -8,11 +8,11 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.4	2018/10/07
+ * Version:	@(#)png.c	1.0.5	2019/01/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -97,6 +97,16 @@ static void		(*PNG_set_IHDR)(png_const_structrp png_ptr,
 				     int color_type, int interlace_method,
 				     int compression_method,
 				     int filter_method);
+static void		(*PNG_set_PLTE)(png_structrp png_ptr,
+				        png_inforp info_ptr,
+					png_const_colorp palette,
+					int num_palette);
+static void		(*PNG_set_rows)(png_const_structrp png_ptr,
+				        png_inforp info_ptr,
+				        png_bytepp row_pointers);
+static void		(*PNG_write_png)(png_structrp png_ptr,
+					 png_inforp info_ptr,
+					 int transforms, png_voidp params);
 static png_size_t	(*PNG_get_rowbytes)(png_const_structrp png_ptr,
 				    png_const_inforp info_ptr);
 static void		(*PNG_write_info)(png_structrp png_ptr,
@@ -110,25 +120,47 @@ static void		(*PNG_write_rows)(png_structrp png_ptr,
 static void		(*PNG_write_end)(png_structrp png_ptr,
 				      png_inforp info_ptr);
 
+static void		(*PNG_set_compression_level)(png_structrp png_ptr,
+						     int level);
+static void		(*PNG_set_compression_mem_level)(png_structrp png_ptr,
+							 int mem_level);
+static void		(*PNG_set_compression_strategy)(png_structrp png_ptr,
+							int strategy);
+static void		(*PNG_set_compression_window_bits)(png_structrp png_ptr,
+							   int window_bits);
+static void		(*PNG_set_compression_method)(png_structrp png_ptr,
+						      int method);
+static void		(*PNG_set_compression_buffer_size)(png_structrp png_ptr,
+							   png_size_t size);
+
 
 static const dllimp_t png_imports[] = {
-  { "png_create_write_struct",	&PNG_create_write_struct	},
-  { "png_destroy_write_struct",	&PNG_destroy_write_struct	},
-  { "png_create_info_struct",	&PNG_create_info_struct		},
+  { "png_create_write_struct",		&PNG_create_write_struct	},
+  { "png_destroy_write_struct",		&PNG_destroy_write_struct	},
+  { "png_create_info_struct",		&PNG_create_info_struct		},
 # if USE_CUSTOM_IO
-  { "png_set_write_fn",		&PNG_set_write_fn		},
-  { "png_get_io_ptr",		&PNG_get_io_ptr			},
+  { "png_set_write_fn",			&PNG_set_write_fn		},
+  { "png_get_io_ptr",			&PNG_get_io_ptr			},
 # else
-  { "png_init_io",		&PNG_init_io			},
+  { "png_init_io",			&PNG_init_io			},
 # endif
-  { "png_set_IHDR",		&PNG_set_IHDR			},
-  { "png_get_rowbytes",		&PNG_get_rowbytes		},
-  { "png_write_info",		&PNG_write_info			},
-  { "png_write_row",		&PNG_write_row			},
-  { "png_write_rows",		&PNG_write_rows			},
-  { "png_write_image",		&PNG_write_image		},
-  { "png_write_end",		&PNG_write_end			},
-  { NULL,			NULL				}
+  { "png_set_IHDR",			&PNG_set_IHDR			},
+  { "png_set_PLTE",			&PNG_set_PLTE			},
+  { "png_get_rowbytes",			&PNG_get_rowbytes		},
+  { "png_set_rows",			&PNG_set_rows			},
+  { "png_write_png",			&PNG_write_png			},
+  { "png_write_info",			&PNG_write_info			},
+  { "png_write_row",			&PNG_write_row			},
+  { "png_write_rows",			&PNG_write_rows			},
+  { "png_write_image",			&PNG_write_image		},
+  { "png_write_end",			&PNG_write_end			},
+  { "png_set_compression_level",	&PNG_set_compression_level	},
+  { "png_set_compression_mem_level",	&PNG_set_compression_mem_level	},
+  { "png_set_compression_strategy",	&PNG_set_compression_strategy	},
+  { "png_set_compression_window_bits",	&PNG_set_compression_window_bits},
+  { "png_set_compression_method",	&PNG_set_compression_method	},
+  { "png_set_compression_buffer_size",	&PNG_set_compression_buffer_size},
+  { NULL,				NULL				}
 };
 #endif
 
@@ -170,7 +202,7 @@ flush_handler(png_struct *png_ptr)
 #endif
 
 
-/* Prepare the PNG library for use, load DLL if needed. */
+/* Prepare for use, load DLL if needed. */
 int
 png_load(void)
 {
@@ -201,7 +233,7 @@ png_load(void)
 }
 
 
-/* PNG library no longer needed, unload DLL if needed. */
+/* No longer needed, unload DLL if needed. */
 void
 png_unload(void)
 {
@@ -214,7 +246,7 @@ png_unload(void)
 }
 
 
-/* Write the given image as an 8-bit GrayScale PNG image file. */
+/* Write the given image as an 8-bit GrayScale file. */
 int
 png_write_gray(const wchar_t *fn, int inv, uint8_t *pix, int16_t w, int16_t h)
 {
@@ -278,6 +310,14 @@ error:
 #else
     PNGFUNC(init_io)(png, fp);
 #endif
+    PNGFUNC(set_compression_level)(png, 9);
+
+    /* Set other "zlib" parameters. */
+    PNGFUNC(set_compression_mem_level)(png, 8);
+    PNGFUNC(set_compression_strategy)(png, PNG_Z_DEFAULT_STRATEGY);
+    PNGFUNC(set_compression_window_bits)(png, 15);
+    PNGFUNC(set_compression_method)(png, 8);
+    PNGFUNC(set_compression_buffer_size)(png, 8192);    
 
     PNGFUNC(set_IHDR)(png, info, w, h, 8, PNG_COLOR_TYPE_GRAY,
 		      PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
@@ -316,7 +356,7 @@ error:
 }
 
 
-/* Write the given BITMAP-format image as an 8-bit RGBA PNG image file. */
+/* Write the given BITMAP-format image as an 8-bit RGBA file. */
 int
 png_write_rgb(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h)
 {
@@ -370,6 +410,14 @@ error:
 #else
     PNGFUNC(init_io)(png, fp);
 #endif
+    PNGFUNC(set_compression_level)(png, 9);
+
+    /* Set other "zlib" parameters. */
+    PNGFUNC(set_compression_mem_level)(png, 8);
+    PNGFUNC(set_compression_strategy)(png, PNG_Z_DEFAULT_STRATEGY);
+    PNGFUNC(set_compression_window_bits)(png, 15);
+    PNGFUNC(set_compression_method)(png, 8);
+    PNGFUNC(set_compression_buffer_size)(png, 8192);    
 
     PNGFUNC(set_IHDR)(png, info, w, h, 8, PNG_COLOR_TYPE_RGB,
 		      PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
@@ -421,6 +469,105 @@ error:
     free(rows);
 
     PNGFUNC(write_end)(png, NULL);
+
+    PNGFUNC(destroy_write_struct)(&png, &info);
+
+    /* Clean up. */
+    (void)fclose(fp);
+
+    return(1);
+}
+
+
+/* Write the given BITMAP-format image as an 8-bit color palette file. */
+int
+png_write_pal(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h, uint16_t pitch, PALETTE pal)
+{
+    png_color palette[256];
+    png_structp png = NULL;
+    png_infop info = NULL;
+    png_bytepp rows;
+    FILE *fp;
+    int i;
+
+    /* Load the DLL if needed, give up if that fails. */
+    if (! png_load()) return(0);
+
+    /* Create the image file. */
+    fp = plat_fopen(fn, L"wb");
+    if (fp == NULL) {
+	ERRLOG("PNG: File %ls could not be opened for writing!\n", fn);
+error:
+	if (png != NULL)
+		PNGFUNC(destroy_write_struct)(&png, &info);
+	if (fp != NULL)
+		(void)fclose(fp);
+	return(0);
+    }
+
+    /* Initialize PNG stuff. */
+    png = PNGFUNC(create_write_struct)(PNG_LIBPNG_VER_STRING, NULL,
+				       error_handler, warning_handler);
+    if (png == NULL) {
+	ERRLOG("PNG: create_write_struct failed!\n");
+	goto error;
+    }
+
+    info = PNGFUNC(create_info_struct)(png);
+    if (info == NULL) {
+	ERRLOG("PNG: create_info_struct failed!\n");
+	goto error;
+    }
+
+#if USE_CUSTOM_IO
+    /*
+     * We use our own I/O routines, because it seems that some of
+     * the PNG DLL's out there are compiled in Debug mode, which
+     * causes the 'FILE' definition to be different. This in turn
+     * results in pretty bad crashes when trying to write..
+     *
+     * Using custom I/O routines, we avoid this issue.
+     */
+    PNGFUNC(set_write_fn)(png, (void *)fp, write_handler, flush_handler);
+#else
+    PNGFUNC(init_io)(png, fp);
+#endif
+    PNGFUNC(set_compression_level)(png, 9);
+
+    /* Set other "zlib" parameters. */
+    PNGFUNC(set_compression_mem_level)(png, 8);
+    PNGFUNC(set_compression_strategy)(png, PNG_Z_DEFAULT_STRATEGY);
+    PNGFUNC(set_compression_window_bits)(png, 15);
+    PNGFUNC(set_compression_method)(png, 8);
+    PNGFUNC(set_compression_buffer_size)(png, 8192);    
+
+    PNGFUNC(set_IHDR)(png, info, w, h, 8, PNG_COLOR_TYPE_PALETTE,
+		      PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+		      PNG_FILTER_TYPE_DEFAULT);
+
+    PNGFUNC(write_info)(png, info);
+
+    /* Create the palette. */
+    for (i = 0; i < 256; i++) {
+	    palette[i].red = pal[i].r;
+	    palette[i].green = pal[i].g;
+	    palette[i].blue = pal[i].b;
+    }
+    PNGFUNC(set_PLTE)(png, info, palette, i);
+
+    /* Create a buffer for scanlines of pixels. */
+    rows = (png_bytep *)mem_alloc(sizeof(png_bytep) * h);
+    for (i = 0; i < h; i++) {
+	/* Create a buffer for this scanline. */
+	rows[i] = (pix + (i * pitch));
+    }
+    PNGFUNC(set_rows)(png, info, rows);
+
+    /* Write image to the file. */
+    PNGFUNC(write_png)(png, info, 0, NULL);
+
+    /* No longer need the row buffers. */
+    free(rows);
 
     PNGFUNC(destroy_write_struct)(&png, &info);
 

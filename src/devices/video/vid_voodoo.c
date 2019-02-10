@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.13	2018/11/13
+ * Version:	@(#)vid_voodoo.c	1.0.14	2019/01/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1675,13 +1675,13 @@ static void flush_texture_cache(voodoo_t *voodoo, uint32_t dirty_addr, int tmu)
                         
                         for (d = 0; d < 4; d++)
                         {
-                                int addr_start = voodoo->texture_cache[tmu][c].addr_start[d];
-                                int addr_end = voodoo->texture_cache[tmu][c].addr_end[d];
+                                uint32_t addr_start = voodoo->texture_cache[tmu][c].addr_start[d];
+                                uint32_t addr_end = voodoo->texture_cache[tmu][c].addr_end[d];
                                 
                                 if (addr_end != 0)
                                 {
-                                        int addr_start_masked = addr_start & voodoo->texture_mask & ~0x3ff;
-                                        int addr_end_masked = ((addr_end & voodoo->texture_mask) + 0x3ff) & ~0x3ff;
+                                        uint32_t addr_start_masked = addr_start & voodoo->texture_mask & ~0x3ff;
+                                        uint32_t addr_end_masked = ((addr_end & voodoo->texture_mask) + 0x3ff) & ~0x3ff;
                                         
                                         if (addr_end_masked < addr_start_masked)
                                                 addr_end_masked = voodoo->texture_mask+1;
@@ -3626,7 +3626,7 @@ static void render_thread(void *param, int odd_even)
                                 thread_set_event(voodoo->render_not_full_event[odd_even]);
 
                         end_time = plat_timer_read();
-                        voodoo->render_time[odd_even] += end_time - start_time;
+                        voodoo->render_time[odd_even] += (int) (end_time - start_time);
                 }
 
                 voodoo->render_voodoo_busy[odd_even] = 0;
@@ -5973,7 +5973,7 @@ static uint16_t voodoo_readw(uint32_t addr, void *p)
         
         addr &= 0xffffff;
 
-        cycles -= voodoo->read_time;
+        cycles -= (int)voodoo->read_time;
         
         if ((addr & 0xc00000) == 0x400000) /*Framebuffer*/
         {
@@ -6030,7 +6030,7 @@ static uint32_t voodoo_readl(uint32_t addr, void *p)
         voodoo->rd_count++;
         addr &= 0xffffff;
         
-        cycles -= voodoo->read_time;
+        cycles -= (int)voodoo->read_time;
 
         if (addr & 0x800000) /*Texture*/
         {
@@ -6235,9 +6235,9 @@ static void voodoo_writew(uint32_t addr, uint16_t val, void *p)
         addr &= 0xffffff;
 
         if (addr == voodoo->last_write_addr+4)
-                cycles -= voodoo->burst_time;
+                cycles -= (int)voodoo->burst_time;
         else
-                cycles -= voodoo->write_time;
+                cycles -= (int)voodoo->write_time;
         voodoo->last_write_addr = addr;
 
         if ((addr & 0xc00000) == 0x400000) /*Framebuffer*/
@@ -6249,7 +6249,7 @@ static void voodoo_pixelclock_update(voodoo_t *voodoo)
         int m  =  (voodoo->dac_pll_regs[0] & 0x7f) + 2;
         int n1 = ((voodoo->dac_pll_regs[0] >>  8) & 0x1f) + 2;
         int n2 = ((voodoo->dac_pll_regs[0] >> 13) & 0x07);
-        float t = (14318184.0 * ((float)m / (float)n1)) / (float)(1 << n2);
+        float t = (float) (14318184.0 * ((float)m / (float)n1)) / (float)(1 << n2);
         double clock_const;
         int line_length;
         
@@ -6277,9 +6277,9 @@ static void voodoo_writel(uint32_t addr, uint32_t val, void *p)
         addr &= 0xffffff;
         
         if (addr == voodoo->last_write_addr+4)
-                cycles -= voodoo->burst_time;
+                cycles -= (int)voodoo->burst_time;
         else
-                cycles -= voodoo->write_time;
+                cycles -= (int)voodoo->write_time;
         voodoo->last_write_addr = addr;
 
         if (addr & 0x800000) /*Texture*/
@@ -7018,9 +7018,9 @@ static void voodoo_generate_filter_v1(voodoo_t *voodoo)
         float thiscol, thiscolg, thiscolb, lined;
 	float fcr, fcg, fcb;
 	
-	fcr = FILTCAP * 5;
-	fcg = FILTCAPG * 6;
-	fcb = FILTCAPB * 5;
+	fcr = (float) (FILTCAP * 5);
+	fcg = (float) (FILTCAPG * 6);
+	fcb = (float) (FILTCAPB * 5);
 
         for (g=0;g<FILTDIV;g++)         // pixel 1
         {
@@ -7030,22 +7030,22 @@ static void voodoo_generate_filter_v1(voodoo_t *voodoo)
                         diffg = difference;
                         diffb = difference;
 
-			thiscol = thiscolg = thiscolb = g;
+			thiscol = thiscolg = thiscolb = (float)g;
 
-                        if (difference > FILTCAP)
-                                difference = FILTCAP;
-                        if (difference < -FILTCAP)
-                                difference = -FILTCAP;
+                        if (difference > (float)FILTCAP)
+                                difference = (float)FILTCAP;
+                        if (difference < (float)-FILTCAP)
+                                difference = (float)-FILTCAP;
 
-                        if (diffg > FILTCAPG)
-                                diffg = FILTCAPG;
-                        if (diffg < -FILTCAPG)
-                                diffg = -FILTCAPG;
+                        if (diffg > (float)FILTCAPG)
+                                diffg = (float)FILTCAPG;
+                        if (diffg < (float)-FILTCAPG)
+                                diffg = (float)-FILTCAPG;
 
-                        if (diffb > FILTCAPB)
-                                diffb = FILTCAPB;
-                        if (diffb < -FILTCAPB)
-                                diffb = -FILTCAPB;
+                        if (diffb > (float)FILTCAPB)
+                                diffb = (float)FILTCAPB;
+                        if (diffb < (float)-FILTCAPB)
+                                diffb = (float)-FILTCAPB;
 			
 			// hack - to make it not bleed onto black
 			//if (g == 0){
@@ -7053,11 +7053,11 @@ static void voodoo_generate_filter_v1(voodoo_t *voodoo)
 			//}
 			
 			if ((difference < fcr) || (-difference > -fcr))
-        			thiscol =  g + (difference / 2);
+        			thiscol =  (float) (g + (difference / 2));
 			if ((diffg < fcg) || (-diffg > -fcg))
-        			thiscolg =  g + (diffg / 2);		/* need these divides so we can actually undither! */
+        			thiscolg =  (float) (g + (diffg / 2));		/* need these divides so we can actually undither! */
 			if ((diffb < fcb) || (-diffb > -fcb))
-        			thiscolb =  g + (diffb / 2);
+        			thiscolb =  (float) (g + (diffb / 2));
 
                         if (thiscol < 0)
                                 thiscol = 0;
@@ -7074,21 +7074,21 @@ static void voodoo_generate_filter_v1(voodoo_t *voodoo)
                         if (thiscolb > FILTDIV-1)
                                 thiscolb = FILTDIV-1;
 
-                        voodoo->thefilter[g][h] = thiscol;
-                        voodoo->thefilterg[g][h] = thiscolg;
-                        voodoo->thefilterb[g][h] = thiscolb;
+                        voodoo->thefilter[g][h] = (uint8_t)thiscol;
+                        voodoo->thefilterg[g][h] = (uint8_t)thiscolg;
+                        voodoo->thefilterb[g][h] = (uint8_t)thiscolb;
                 }
 
-                lined = g + 4;
+                lined = (float) (g + 4);
                 if (lined > 255)
-                        lined = 255;
-                voodoo->purpleline[g][0] = lined;
-                voodoo->purpleline[g][2] = lined;
+                        lined = (float)255;
+                voodoo->purpleline[g][0] = (uint16_t)lined;
+                voodoo->purpleline[g][2] = (uint16_t)lined;
 
-                lined = g + 0;
+                lined = (float) (g + 0);
                 if (lined > 255)
-                        lined = 255;
-                voodoo->purpleline[g][1] = lined;
+                        lined = (float)255;
+                voodoo->purpleline[g][1] = (uint16_t)lined;
         }
 }
 
@@ -7102,13 +7102,13 @@ static void voodoo_generate_filter_v2(voodoo_t *voodoo)
 
 	// pre-clamping
 
-	fcr = FILTCAP;
-	fcg = FILTCAPG;
-	fcb = FILTCAPB;
+	fcr = (float)FILTCAP;
+	fcg = (float)FILTCAPG;
+	fcb = (float)FILTCAPB;
 
-	if (fcr > 32) fcr = 32;
-	if (fcg > 32) fcg = 32;
-	if (fcb > 32) fcb = 32;
+	if (fcr > 32) fcr = (float)32;
+	if (fcg > 32) fcg = (float)32;
+	if (fcb > 32) fcb = (float)32;
 
         for (g=0;g<256;g++)         	// pixel 1 - our target pixel we want to bleed into
         {
@@ -7123,7 +7123,7 @@ static void voodoo_generate_filter_v2(voodoo_t *voodoo)
 			if (avgdiff < 0) avgdiff *= -1;
 			if (difference < 0) difference *= -1;
 		
-			thiscol = thiscolg = thiscolb = g;
+			thiscol = thiscolg = thiscolb = (float)g;
 	
 			// try lighten
 			if (h > g)
@@ -7140,11 +7140,11 @@ static void voodoo_generate_filter_v2(voodoo_t *voodoo)
 				thiscolb = g + clb;
 		
 				if (thiscol>g+FILTCAP)
-					thiscol=g+FILTCAP;
+					thiscol=(float) (g+FILTCAP);
 				if (thiscolg>g+FILTCAPG)
-					thiscolg=g+FILTCAPG;
+					thiscolg=(float) (g+FILTCAPG);
 				if (thiscolb>g+FILTCAPB)
-					thiscolb=g+FILTCAPB;
+					thiscolb=(float) (g+FILTCAPB);
 		
 		
 				if (thiscol>g+avgdiff)
@@ -7157,37 +7157,37 @@ static void voodoo_generate_filter_v2(voodoo_t *voodoo)
 			}
 	
 			if (difference > FILTCAP)
-				thiscol = g;
+				thiscol = (float)g;
 			if (difference > FILTCAPG)
-				thiscolg = g;
+				thiscolg = (float)g;
 			if (difference > FILTCAPB)
-				thiscolb = g;
+				thiscolb = (float)g;
 	
 			// clamp 
-			if (thiscol < 0) thiscol = 0;
-			if (thiscolg < 0) thiscolg = 0;
-			if (thiscolb < 0) thiscolb = 0;
+			if (thiscol < 0) thiscol = (float)0;
+			if (thiscolg < 0) thiscolg = (float)0;
+			if (thiscolb < 0) thiscolb = (float)0;
 	
-			if (thiscol > 255) thiscol = 255;
-			if (thiscolg > 255) thiscolg = 255;
-			if (thiscolb > 255) thiscolb = 255;
+			if (thiscol > 255) thiscol = (float)255;
+			if (thiscolg > 255) thiscolg = (float)255;
+			if (thiscolb > 255) thiscolb = (float)255;
 	
 			// add to the table
-			voodoo->thefilter[g][h] = (thiscol);
-			voodoo->thefilterg[g][h] = (thiscolg);
-			voodoo->thefilterb[g][h] = (thiscolb);
+			voodoo->thefilter[g][h] = (uint8_t)thiscol;
+			voodoo->thefilterg[g][h] = (uint8_t)thiscolg;
+			voodoo->thefilterb[g][h] = (uint8_t)thiscolb;
 	
 			// debug the ones that don't give us much of a difference
 			//if (difference < FILTCAP)
 			//DEBUG("Voodoofilter: %ix%i - %f difference, %f average difference, R=%f, G=%f, B=%f\n", g, h, difference, avgdiff, thiscol, thiscolg, thiscolb);	
                 }
 
-                lined = g + 3;
+                lined = (float) (g + 3);
                 if (lined > 255)
-                        lined = 255;
-                voodoo->purpleline[g][0] = lined;
-                voodoo->purpleline[g][1] = 0;
-                voodoo->purpleline[g][2] = lined;
+                        lined = (float)255;
+                voodoo->purpleline[g][0] = (uint16_t)lined;
+                voodoo->purpleline[g][1] = (uint16_t)0;
+                voodoo->purpleline[g][2] = (uint16_t)lined;
         }
 }
 
@@ -7256,9 +7256,9 @@ static void voodoo_filterline_v1(voodoo_t *voodoo, uint8_t *fil, int column, uin
         {
                 for (x=0; x<column;x++)
                 {
-                        fil[x*3] = voodoo->purpleline[fil[x*3]][0];
-                        fil[x*3+1] = voodoo->purpleline[fil[x*3+1]][1];
-                        fil[x*3+2] = voodoo->purpleline[fil[x*3+2]][2];
+                        fil[x*3] = (uint8_t)voodoo->purpleline[fil[x*3]][0];
+                        fil[x*3+1] = (uint8_t)voodoo->purpleline[fil[x*3+1]][1];
+                        fil[x*3+2] = (uint8_t)voodoo->purpleline[fil[x*3+2]][2];
                 }
         }
 

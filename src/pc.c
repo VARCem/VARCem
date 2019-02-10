@@ -8,13 +8,13 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.62	2018/11/22
+ * Version:	@(#)pc.c	1.0.63	2019/01/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -215,8 +215,13 @@ pclog_ex(const char *fmt, va_list ap)
     /* If a logpath was set, override the default. */
     if (log_path[0] != L'\0') {
 	fp = plat_fopen(log_path, L"w");
-	if (fp != NULL)
+	if (fp != NULL) {
+		/* Set the new logging handle. */
 		logfp = fp;
+
+		/* Clear the path so we do not try this again. */
+		memset(log_path, 0x00, sizeof(log_path));
+	}
     }
 
     vsprintf(temp, fmt, ap);

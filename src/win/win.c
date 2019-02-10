@@ -216,6 +216,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 
     /* First, set our (default) language. */
     lang = (int)GetUserDefaultUILanguage();
+INFO("WIN: uilang = %04x\n", lang);
 
     /*
      * Set the initial active language for this application.
@@ -230,6 +231,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 	lang = 0x0409;
 	(void)ui_lang_set(lang);
     }
+INFO("WIN: initial lang = %04x\n", lang);
 
 #ifdef USE_CRASHDUMP
     /* Enable crash dump services. */
@@ -257,6 +259,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 	lang = emu_lang_id;
 	(void)ui_lang_set(lang);
     }
+INFO("WIN: lang = %04x / %04x\n", language, lang);
 
 #ifdef USE_HOST_CDROM
     cdrom_host_init();

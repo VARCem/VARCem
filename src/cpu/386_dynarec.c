@@ -87,7 +87,7 @@ int		cpu_recomp_blocks_latched, cpu_recomp_ins_latched,
 
 int		inrecomp = 0;
 int		cpu_block_end = 0;
-int		nmi_enable = 1;
+//int		nmi_enable = 1;		808x.c
 
 int cpl_override=0;
 int fpucount=0;

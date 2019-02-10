@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.7	2019/01/13
+ * Version:	@(#)vid_cga.c	1.0.8	2019/02/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -429,10 +429,20 @@ cga_poll(void *priv)
 				dev->cgadispon = 1;
 			if (! dev->vadj)
 				dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
-			if ((dev->crtc[10] & 0x60) == 0x20)
-				dev->cursoron = 0;
-			else
-				dev->cursoron = dev->cgablink & 8;
+
+			switch (dev->crtc[10] & 0x60) {
+				case 0x20:
+					dev->cursoron = 0;
+					break;
+
+				case 0x60:
+					dev->cursoron = dev->cgablink & 0x10;
+					break;
+
+				default:
+					dev->cursoron = dev->cgablink & 8;
+					break;
+			}
 		}
 
 		if (dev->vc == dev->crtc[7]) {

@@ -8,13 +8,13 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.14 	2018/11/11
+ * Version:	@(#)parallel.c	1.0.15 	2019/01/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -103,13 +103,16 @@ parallel_write(uint16_t port, uint8_t val, void *priv)
     DBGLOG(2, "PARALLEL: write(%04X, %02X)\n", port, val);
 
     switch (port & 3) {
-	case 0:
+	case 0:		/* data */
 		if (dev->dev_ts != NULL)
 			dev->dev_ts->write_data(val, dev->dev_ps);
 		dev->dat = val;
 		break;
 
-	case 2:
+	case 1:		/* status */
+		break;
+
+	case 2:		/* control */
 		if (dev->dev_ts != NULL)
 			dev->dev_ts->write_ctrl(val, dev->dev_ps);
 		dev->ctrl = val;
@@ -126,18 +129,25 @@ parallel_read(uint16_t port, void *priv)
     uint8_t ret = 0xff;
 
     switch (port & 3) {
-	case 0:
-		ret = dev->dat;
+	case 0:		/* data */
+		if (dev->dev_ts != NULL)
+			ret = dev->dev_ts->read_data(dev->dev_ps);
+		  else
+			ret = dev->dat;
 		break;
 
-	case 1:
+	case 1:		/* status */
 		if (dev->dev_ts != NULL)
 			ret = dev->dev_ts->read_status(dev->dev_ps);
-		  else ret = 0x00;
+		  else
+			ret = 0x00;
 		break;
 
-	case 2:
-		ret = dev->ctrl;
+	case 2:		/* control */
+		if (dev->dev_ts != NULL)
+			ret = dev->dev_ts->read_ctrl(dev->dev_ps);
+		  else
+			ret = dev->ctrl;
 		break;
     }
 
@@ -202,7 +212,7 @@ parallel_close(void *priv)
 
 
 const device_t parallel_1_device = {
-    "LPT1:",
+    "LPT1",
     0,
     0,
     parallel_init, parallel_close, NULL,
@@ -212,7 +222,7 @@ const device_t parallel_1_device = {
 
 
 const device_t parallel_2_device = {
-    "LPT2:",
+    "LPT2",
     0,
     1,
     parallel_init, parallel_close, NULL,
@@ -222,7 +232,7 @@ const device_t parallel_2_device = {
 
 
 const device_t parallel_3_device = {
-    "LPT3:",
+    "LPT3",
     0,
     2,
     parallel_init, parallel_close, NULL,

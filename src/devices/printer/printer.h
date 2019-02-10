@@ -8,7 +8,7 @@
  *
  *		Definitions for the printers module.
  *
- * Version:	@(#)printer.h	1.0.3	2018/09/03
+ * Version:	@(#)printer.h	1.0.4	2018/11/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -48,6 +48,9 @@
 # define PRINTER_H
 
 
+#define PRT_TIMEOUT		500000LL
+
+
 #define FONT_FILE_DOTMATRIX	L"dotmatrix.ttf"
 
 #define FONT_FILE_ROMAN		L"roman.ttf"
@@ -66,7 +69,7 @@ extern const lpt_device_t	lpt_prt_escp_device;
 #endif
 
 
-extern const uint16_t		*select_codepage(uint16_t num);
+extern void	select_codepage(uint16_t code, uint16_t *bufp);
 
 
 #endif	/*PRINTER_H*/
