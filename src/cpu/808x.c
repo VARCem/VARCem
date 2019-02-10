@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.8	2019/02/08
+ * Version:	@(#)808x.c	1.0.9	2019/02/10
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner, <https://www.reenigne.org>
@@ -1426,7 +1426,7 @@ stos(int bits)
     if (bits == 16)
 	writememw(es, DI, cpu_data);
     else
-	writememb(es + DI, cpu_data);
+	writememb(es + DI, (uint8_t)(cpu_data & 0xff));
     if (flags & D_FLAG)
 	DI -= (bits >> 3);
     else
@@ -1563,14 +1563,14 @@ opcodestart:
 					if (opcode & 1)
 						seteaw(cpu_data);
 					else
-						seteab(cpu_data);
+						seteab((uint8_t) (cpu_data & 0xff));
 					if (cpu_mod == 3)
 						wait(1, 0);
 				} else {
 					if (opcode & 1)
 						cpu_state.regs[cpu_reg].w = cpu_data;
 					else
-					       setr8(cpu_reg, cpu_data);
+						setr8(cpu_reg, (uint8_t)(cpu_data & 0xff));
 					wait(1, 0);
 				}
 			} else
@@ -1781,7 +1781,7 @@ opcodestart:
 				if (opcode & 1)
 					seteaw(cpu_data);
 				else
-					seteab(cpu_data);
+					seteab((uint8_t)(cpu_data & 0xff));
 			} else {
 				if (cpu_mod != 3)
 					wait(1, 0);
@@ -1816,14 +1816,14 @@ opcodestart:
 			} else {
 				cpu_data = geteab();
 				cpu_src = getr8(cpu_reg);
-				setr8(cpu_reg, cpu_data);
+				setr8(cpu_reg, (uint8_t)(cpu_data & 0xff));
 			}
 			wait(3, 0);
 			access(12, bits);
 			if (opcode & 1)
 				seteaw(cpu_src);
 			else
-				seteab(cpu_src);
+				seteab((uint8_t)(cpu_src & 0xff));
 			break;
 
 		case 0x88: case 0x89:
@@ -2028,7 +2028,7 @@ opcodestart:
 				if (opcode & 1)
 					AX = cpu_data;
 				else
-					AL = cpu_data;
+					AL = (uint8_t)(cpu_data & 0xff);
 				if (in_rep != 0)
 					wait(2, 0);
 			}
@@ -2203,7 +2203,7 @@ opcodestart:
 			if (opcode & 1)
 				seteaw(cpu_data);
 			else
-				seteab(cpu_data);
+				seteab((uint8_t)(cpu_data & 0xff));
 			break;
 
 		case 0xCC:	/*INT 3*/
@@ -2326,7 +2326,7 @@ opcodestart:
 			if (opcode & 1)
 				seteaw(cpu_data);
 			else
-				seteab(cpu_data);
+				seteab((uint8_t)(cpu_data & 0xff));
 			break;
 
 		case 0xD4:	/*AAM*/
@@ -2518,7 +2518,7 @@ opcodestart:
 					if (opcode & 1)
 						seteaw(cpu_data);
 					else
-						seteab(cpu_data);
+						seteab((uint8_t)(cpu_data & 0xff));
 					break;
 				case 0x20:	/* MUL */
 				case 0x28:	/* IMUL */
@@ -2591,7 +2591,7 @@ opcodestart:
 					if (opcode & 1)
 						seteaw(cpu_data);
 					else
-						seteab(cpu_data);
+						seteab((uint8_t)(cpu_data & 0xff));
 					break;
 				case 0x10:	/* CALL rm */
 					if (!(opcode & 1)) {

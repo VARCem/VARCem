@@ -8,7 +8,7 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.6	2019/01/11
+ * Version:	@(#)prt_escp.c	1.0.7	2019/02/10
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -607,7 +607,8 @@ printer_reset(escp_t *dev)
     dev->dpi = PAGE_DPI;    
 
     dev->autofeed = 0;
-    dev->esc_seen = dev->esc_pending = dev->fss_seen = 0;
+    dev->esc_seen = dev->fss_seen = 0;
+    dev->esc_pending = 0;
     dev->esc_parms_req = dev->esc_parms_curr = 0;
 
     dev->hmi = -1;
