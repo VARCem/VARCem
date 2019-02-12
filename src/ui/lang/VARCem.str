@@ -13,11 +13,11 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem.str	1.0.13	2018/10/18
+ * Version:	@(#)VARCem.str	1.0.14	2019/02/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -307,10 +307,10 @@
 #define STR_3908	"&Notify disk change"
 
 #define STR_3910	"Floppy %i (%s): %ls"
-#define STR_3911	"All images\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f\0All files\0*.*\0"
-#define STR_3912	"All images\0*.86f;*.ddi;*.dsk;*.flp;*.im?;*.*fd?\0Basic sector images\0*.ddi;*.dsk;*.flp;*.im?;*.img;*.*fd?\0Surface images\0*.86f\0"
-#define STR_3913	"Surface images\0*.86f\0"
-#define STR_3914	"E&xport to 86F..."
+#define STR_3911	"All images\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.json;*.mfm;*.td0;*.*fd?;*.xdf\0Advanced sector images\0*.imd;*.json;*.mfm;*.td0\0Basic sector images\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Flux images\0*.fdi\0Surface images\0*.86f;*.mfm\0All files\0*.*\0"
+#define STR_3912	"All images\0*.86f;*.ddi;*.dsk;*.flp;*.im?;*.mfm;*.*fd?\0Basic sector images\0*.ddi;*.dsk;*.flp;*.im?;*.img;*.*fd?\0Surface images\0*.86f;*.mfm\0"
+#define STR_3913	"Surface images\0*.86f;*.mfm\0"
+#define STR_3914	"E&xport to ..."
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Host CD/DVD Drive (%c:)"

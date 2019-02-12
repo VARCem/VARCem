@@ -8,14 +8,14 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.7	2018/09/28
+ * Version:	@(#)keyboard.h	1.0.8	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -82,12 +82,16 @@ extern const scancode	scancode_xt[512];
 
 #ifdef EMU_DEVICE_H
 extern const device_t	keyboard_pc_device;
+extern const device_t	keyboard_pc82_device;
 extern const device_t	keyboard_xt_device;
-extern const device_t	keyboard_xt_lxt3_device;
+extern const device_t	keyboard_xt86_device;
 extern const device_t	keyboard_tandy_device;
+extern const device_t	keyboard_xt_lxt3_device;
+
 extern const device_t	keyboard_at_device;
 extern const device_t	keyboard_at_ami_device;
 extern const device_t	keyboard_at_toshiba_device;
+
 extern const device_t	keyboard_ps2_device;
 extern const device_t	keyboard_ps2_xi8088_device;
 extern const device_t	keyboard_ps2_ami_device;

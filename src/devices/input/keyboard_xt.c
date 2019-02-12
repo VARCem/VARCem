@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.10	2019/02/10
+ * Version:	@(#)keyboard_xt.c	1.0.11	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,6 +50,7 @@
 #include "../system/pic.h"
 #include "../system/pit.h"
 #include "../system/ppi.h"
+#include "../floppy/fdd.h"
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
 #include "../video/video.h"
@@ -70,8 +71,9 @@ typedef struct {
     uint8_t	type;
     int8_t	tandy;  
 
-    uint8_t	pa;
-    uint8_t	pb;
+    uint8_t	pa,
+		pb,
+		pd;
 
     int8_t	want_irq;  
     int8_t	blocked;
@@ -485,28 +487,14 @@ kbd_read(uint16_t port, void *priv)
 {
     xtkbd_t *kbd = (xtkbd_t *)priv;
     uint8_t ret = 0xff;
-    int vid;
 
     switch (port) {
 	case 0x60:
-		if (kbd->pb & 0x80) switch(kbd->type) {
-			case 0:
-				vid = video_type();
-				if (vid == VID_TYPE_SPEC)
-					ret = 0x4d;		/* EGA/VGA */
-				  else if (vid == VID_TYPE_MDA)
-					ret = 0x7d;		/* MDA/Herc */
-				  else
-					ret = 0x6d;		/* CGA */
-				break;
-
-			case 1:
-				/*
-				 * According to Ruud on the PCem forum, this
-				 * is supposed to return 0xFF on the XT.
-				 */
-				ret = 0xff;
-		} else
+		if ((kbd->type <= 1) && (kbd->pb & 0x80))
+			ret = kbd->pd;
+		else if (((kbd->type == 2) || (kbd->type == 3)) && (kbd->pb & 0x80))
+			ret = 0xff;	/* According to Ruud on the PCem forum, this is supposed to return 0xFF on the XT. */
+		else
 			ret = kbd->pa;
 		break;
 
@@ -515,34 +503,37 @@ kbd_read(uint16_t port, void *priv)
 		break;
 
 	case 0x62:
-		if (kbd->type == 0) {
+		if (! kbd->type)
+			ret = 0x00;
+		else if (kbd->type == 1) {
 			if (kbd->pb & 0x04)
-				ret = ((mem_size-64) / 32) & 0x0f;
+				ret = ((mem_size - 64) / 32) & 0x0f;
 			else
-				ret = ((mem_size-64) / 32) >> 4;
-		} else if (kbd->pb & 0x08) {
-			vid = video_type();
-			if (vid == VID_TYPE_SPEC)
-				ret = 0x4;		/* EGA/VGA */
-			  else if (vid == VID_TYPE_MDA)
-				ret = 0x7;		/* MDA/Hercules */
-			  else
-				ret = 0x6;		/* CGA */
-		} else {
-			/* LaserXT = Always 512k RAM;
-			   LaserXT/3 = Bit 0: set = 512k, clear = 256k. */
+				ret = ((mem_size - 64) / 32) >> 4;
+			if (kbd->pb & 0x08)
+				ret = kbd->pd >> 4;
+			else {
+				/* LaserXT = Always 512k RAM;
+			   	 * LaserXT/3 = Bit 0: 1=512K, 0=256K
+				 */
 #if defined(DEV_BRANCH) && defined(USE_LASERXT)
-			if (kbd->type == 3)
-				ret = (mem_size == 512) ? 0x0d : 0x0c;
-			else
+				if (kbd->type == 5)
+					ret = (mem_size == 512) ? 0x0d : 0x0c;
+				else
 #endif
-				ret = 0x0d;
+					ret = kbd->pd & 0x0f;
+			}
 		}
 
 		ret |= (ppispeakon ? 0x20 : 0);
 
-		if (kbd->type == 2)
+		if (kbd->type == 4)
 			ret |= (tandy1k_eeprom_read() ? 0x10 : 0);
+		break;
+
+	case 0x63:
+		if ((kbd->type == 2) || (kbd->type == 3))
+			ret = kbd->pd;
 		break;
 
 	default:
@@ -574,6 +565,7 @@ kbd_reset(void *priv)
 static void *
 kbd_init(const device_t *info)
 {
+    int i, fdd_count = 0;
     xtkbd_t *kbd;
 
     kbd = (xtkbd_t *)mem_alloc(sizeof(xtkbd_t));
@@ -585,6 +577,101 @@ kbd_init(const device_t *info)
     keyboard_send = kbd_adddata_ex;
     kbd_reset(kbd);
     kbd->type = info->local;
+
+    if (kbd->type <= 3) {
+	for (i = 0; i < FDD_NUM; i++) {
+		if (fdd_get_flags(i))
+			fdd_count++;
+	}
+
+	/*
+	 * DIP switch readout: bit set = OFF, clear = ON.
+	 *
+	 * Switches 7, 8 - floppy drives.
+	 */
+	if (fdd_count == 0)
+		kbd->pd = 0x00;
+	else
+		kbd->pd = ((fdd_count - 1) << 6);
+
+	/* Switches 5, 6 - video. */
+	i = video_type();
+	if (i == VID_TYPE_MDA)
+		kbd->pd |= 0x30;	/* MDA/Herc */
+#if 0
+	else if (i == VID_TYPE_CGA40)
+		kbd->pd |= 0x10;	/* CGA, 40 columns */
+#endif
+	else if (i == VID_TYPE_CGA)
+		kbd->pd |= 0x20;	/* CGA, 80 colums */
+	else if (i == VID_TYPE_SPEC)
+		kbd->pd |= 0x00;	/* EGA/VGA */
+
+	/* Switches 3, 4 - memory size. */
+	if (kbd->type == 3) {
+		switch (mem_size) {
+			case 256:
+				kbd->pd |= 0x00;
+				break;
+
+			case 512:
+				kbd->pd |= 0x04;
+				break;
+
+			case 576:
+				kbd->pd |= 0x08;
+				break;
+
+			case 640:
+			default:
+				kbd->pd |= 0x0c;
+				break;
+		}
+	} else if (kbd->type == 2) {
+		switch (mem_size) {
+			case 64:
+				kbd->pd |= 0x00;
+				break;
+
+			case 128:
+				kbd->pd |= 0x04;
+				break;
+
+			case 192:
+				kbd->pd |= 0x08;
+				break;
+			case 256:
+			default:
+
+				kbd->pd |= 0x0c;
+				break;
+		}
+	} else {
+		switch (mem_size) {
+			case 16:
+				kbd->pd |= 0x00;
+				break;
+
+			case 32:
+				kbd->pd |= 0x04;
+				break;
+
+			case 48:
+				kbd->pd |= 0x08;
+				break;
+
+			case 64:
+			default:
+				kbd->pd |= 0x0c;
+				break;
+		}
+	}
+
+	/* Switch 2 - return bit clear (switch ON) because no 8087 right now. */
+
+	/* Switch 1 - always off. */
+		kbd->pd |= 0x01;
+    }
 
     timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
 
@@ -615,7 +702,7 @@ kbd_close(void *priv)
 
 
 const device_t keyboard_pc_device = {
-    "IBM PC Keyboard",
+    "IBM PC (1981) Keyboard",
     0,
     0,
     kbd_init, kbd_close, kbd_reset,
@@ -623,10 +710,28 @@ const device_t keyboard_pc_device = {
     NULL
 };
 
-const device_t keyboard_xt_device = {
-    "IBM PC/XT Keyboard",
+const device_t keyboard_pc82_device = {
+    "IBM PC (1982) Keyboard",
     0,
     1,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t keyboard_xt_device = {
+    "IBM PC/XT (1982) Keyboard",
+    0,
+    2,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t keyboard_xt86_device = {
+    "IBM PC/XT (1986) Keyboard",
+    0,
+    3,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -635,7 +740,7 @@ const device_t keyboard_xt_device = {
 const device_t keyboard_tandy_device = {
     "Tandy 1000 Keyboard",
     0,
-    2,
+    4,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -644,7 +749,11 @@ const device_t keyboard_tandy_device = {
 const device_t keyboard_xt_lxt3_device = {
     "VTech Laser XT3 Keyboard",
     0,
+#if 1
     3,
+#else
+    5,
+#endif
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL

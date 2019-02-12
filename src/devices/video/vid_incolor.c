@@ -8,14 +8,14 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.11	2018/11/11
+ * Version:	@(#)vid_incolor.c	1.0.12	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -227,22 +227,27 @@ static void
 incolor_out(uint16_t port, uint8_t val, void *priv)
 {
     incolor_t *dev = (incolor_t *)priv;
+    uint8_t old;
 
     switch (port) {
-	case 0x3b0:
-	case 0x3b2:
-	case 0x3b4:
-	case 0x3b6:
+	case 0x03b0:
+	case 0x03b2:
+	case 0x03b4:
+	case 0x03b6:
 		dev->crtcreg = val & 31;
 		return;
 
-	case 0x3b1: case 0x3b3: case 0x3b5: case 0x3b7:
+	case 0x03b1:
+	case 0x03b3:
+	case 0x03b5:
+	case 0x03b7:
 		if (dev->crtcreg > 28) return;
 		/* Palette load register */
 		if (dev->crtcreg == INCOLOR_CRTC_PALETTE) {
 			dev->palette[dev->palette_idx % 16] = val;
 			++dev->palette_idx;
 		} 
+		old = dev->crtc[dev->crtcreg];
 		dev->crtc[dev->crtcreg] = val;
 
 		if (dev->crtc[10] == 6 && dev->crtc[11] == 7) {
@@ -251,14 +256,18 @@ incolor_out(uint16_t port, uint8_t val, void *priv)
 			dev->crtc[10] = 0xb;
 			dev->crtc[11] = 0xc;
 		}
-		recalc_timings(dev);
+		if (old ^ val)
+			recalc_timings(dev);
 		return;
 
-	case 0x3b8:
+	case 0x03b8:
+		old = dev->ctrl;
 		dev->ctrl = val;
+		if (old ^ val)
+			recalc_timings(dev);
 		return;
 
-	case 0x3bf:
+	case 0x03bf:
 		dev->ctrl2 = val;
 		if (val & 2)
 			mem_map_set_addr(&dev->mapping, 0xb0000, 0x10000);
@@ -276,24 +285,24 @@ incolor_in(uint16_t port, void *priv)
     uint8_t ret = 0xff;
 
     switch (port) {
-	case 0x3b0:
-	case 0x3b2:
-	case 0x3b4:
-	case 0x3b6:
+	case 0x03b0:
+	case 0x03b2:
+	case 0x03b4:
+	case 0x03b6:
 		ret = dev->crtcreg;
 		break;
 
-	case 0x3b1:
-	case 0x3b3:
-	case 0x3b5:
-	case 0x3b7:
+	case 0x03b1:
+	case 0x03b3:
+	case 0x03b5:
+	case 0x03b7:
 		if (dev->crtcreg > 28) break;
 
 		dev->palette_idx = 0;	/* Read resets the palette index */
 		ret = dev->crtc[dev->crtcreg];
 		break;
 
-	case 0x3ba:
+	case 0x03ba:
 		/* 0x50: InColor card identity */
 		ret = (dev->stat & 0xf) | ((dev->stat & 8) << 4) | 0x50;
 		break;
@@ -812,8 +821,11 @@ text_line(incolor_t *dev, uint16_t ca)
     uint32_t col;
 
     for (x = 0; x < dev->crtc[1]; x++) {
-	chr  = dev->vram[(dev->ma << 1) & 0xfff];
-	attr = dev->vram[((dev->ma << 1) + 1) & 0xfff];
+	if (dev->ctrl & 8) {
+		chr  = dev->vram[(dev->ma << 1) & 0xfff];
+		attr = dev->vram[((dev->ma << 1) + 1) & 0xfff];
+	} else
+		chr = attr = 0;
 
 	drawcursor = ((dev->ma == ca) && dev->con && dev->cursoron);
 
@@ -877,24 +889,26 @@ graphics_line(incolor_t *dev)
 
     for (x = 0; x < dev->crtc[1]; x++) {
 	mask = dev->crtc[INCOLOR_CRTC_MASK];	/* Planes to display */
-	for (plane = 0; plane < 4; plane++, mask = mask >> 1)
-	{
-		if (mask & 1) 
-			val[plane] = (dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane] << 8) | 
-				      dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane + 1];
-		else	val[plane] = 0;
+	for (plane = 0; plane < 4; plane++, mask = mask >> 1) {
+		if (dev->ctrl & 8) {
+			if (mask & 1) 
+				val[plane] = (dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane] << 8) | 
+					      dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane + 1];
+			else	val[plane] = 0;
+		} else
+			val[plane] = 0;
 	}
 	dev->ma++;
 
-	for (c = 0; c < 16; c++)
-	{
+	for (c = 0; c < 16; c++) {
 		ink = 0;
-		for (plane = 0; plane < 4; plane++)
-		{
+
+		for (plane = 0; plane < 4; plane++) {
 			ink = ink >> 1;
 			if (val[plane] & 0x8000) ink |= 8;
 			val[plane] = val[plane] << 1;
 		}
+
 		/* Is palette in use? */
 		if (dev->crtc[INCOLOR_CRTC_EXCEPT] & INCOLOR_EXCEPT_PALETTE)
 			col = dev->palette[ink];
@@ -993,7 +1007,8 @@ incolor_poll(void *priv)
 				else
 				       x = dev->crtc[1] * 9;
 				dev->lastline++;
-				if ((x != xsize) || ((dev->lastline - dev->firstline) != ysize) || video_force_resize_get()) {
+				if ((dev->ctrl & 8) &&
+				   ((x != xsize) || ((dev->lastline - dev->firstline) != ysize) || video_force_resize_get())) {
 					xsize = x;
 					ysize = dev->lastline - dev->firstline;
 					if (xsize < 64) xsize = 656;

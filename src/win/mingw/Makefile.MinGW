@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.74	2019/02/10
+# Version:	@(#)Makefile.mingw	1.0.75	2019/02/11
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -119,9 +119,6 @@ endif
 ifndef AMD_K
  AMD_K		:= n
 endif
-ifndef LASERXT
- LASERXT	:= n
-endif
 ifndef PORTABLE3
  PORTABLE3	:= n
 endif
@@ -182,7 +179,6 @@ ifeq ($(DEV_BUILD), y)
  CRASHDUMP	:= y
  DEV_BRANCH	:= y
  AMD_K		:= y
- LASERXT	:= y
  PORTABLE3	:= y
  I686		:= y
  PAS16		:= y
@@ -540,11 +536,6 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_AMD_K
  endif
 
- ifeq ($(LASERXT), y)
-  OPTS		+= -DUSE_LASERXT
-  DEVBROBJ	+= m_xt_laserxt.o
- endif
-
  ifeq ($(PORTABLE3), y)
   OPTS		+= -DUSE_PORTABLE3
  endif
@@ -616,7 +607,7 @@ CPUOBJ		:= cpu.o cpu_table.o \
 MCHOBJ		:= machine.o machine_table.o \
 		    m_xt.o m_xt_compaq.o \
 		    m_xt_t1000.o m_xt_t1000_vid.o \
-		    m_xt_xi8088.o \
+		    m_xt_laserxt.o m_xt_xi8088.o \
 		    m_zenith.o \
 		    m_pcjr.o \
 		    m_amstrad.o m_europc.o \

@@ -8,15 +8,15 @@
  *
  *		Interface to the actual OPL emulator.
  *
- * Version:	@(#)snd_opl.c	1.0.4	2018/10/16
+ * Version:	@(#)snd_opl.c	1.0.5	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@ uint8_t opl2_read(uint16_t a, void *priv)
 {
         opl_t *opl = (opl_t *)priv;
 
-        cycles -= (int)(isa_timing * 8);
+        cycles -= ISA_CYCLES(8);
         opl2_update2(opl);
         return opl_read(0, a);
 }
@@ -73,7 +73,7 @@ uint8_t opl2_l_read(uint16_t a, void *priv)
 {
         opl_t *opl = (opl_t *)priv;
 
-        cycles -= (int)(isa_timing * 8);
+        cycles -= ISA_CYCLES(8);
         opl2_update2(opl);
         return opl_read(0, a);
 }
@@ -89,7 +89,7 @@ uint8_t opl2_r_read(uint16_t a, void *priv)
 {
         opl_t *opl = (opl_t *)priv;
 
-        cycles -= (int)(isa_timing * 8);
+        cycles -= ISA_CYCLES(8);
         opl2_update2(opl);
         return opl_read(1, a);
 }
@@ -105,7 +105,7 @@ uint8_t opl3_read(uint16_t a, void *priv)
 {
         opl_t *opl = (opl_t *)priv;
 
-        cycles -= (int)(isa_timing * 8);
+        cycles -= ISA_CYCLES(8);
         opl3_update2(opl);
         return opl_read(0, a);
 }

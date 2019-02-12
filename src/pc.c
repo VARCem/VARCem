@@ -8,14 +8,14 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.63	2019/01/27
+ * Version:	@(#)pc.c	1.0.64	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -738,10 +738,7 @@ usage:
 void
 pc_set_speed(void)
 {
-    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286)
-	setpitclock((float)machine_speed());
-      else
-	setpitclock(14318184.0);
+    setpitclock((float)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
 }
 
 

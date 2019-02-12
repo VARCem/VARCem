@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.60	2019/02/10
+# Version:	@(#)Makefile.VC	1.0.61	2019/02/11
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -120,9 +120,6 @@ endif
 ifndef AMD_K
  AMD_K		:= n
 endif
-ifndef LASERXT
- LASERXT	:= n
-endif
 ifndef PORTABLE3
  PORTABLE3	:= n
 endif
@@ -182,7 +179,6 @@ ifeq ($(DEV_BUILD), y)
  CRASHDUMP	:= y
  DEV_BRANCH	:= y
  AMD_K		:= y
- LASERXT	:= y
  PORTABLE3	:= y
  I686		:= y
  PAS16		:= y
@@ -520,11 +516,6 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_AMD_K
  endif
 
- ifeq ($(LASERXT), y)
-  OPTS		+= -DUSE_LASERXT
-  DEVBROBJ	+= m_xt_laserxt.obj
- endif
-
  ifeq ($(PORTABLE3), y)
   OPTS		+= -DUSE_PORTABLE3
  endif
@@ -590,7 +581,7 @@ CPUOBJ		:= cpu.obj cpu_table.obj \
 MCHOBJ		:= machine.obj machine_table.obj \
 		    m_xt.obj m_xt_compaq.obj \
 		    m_xt_t1000.obj m_xt_t1000_vid.obj \
-		    m_xt_xi8088.obj \
+		    m_xt_laserxt.obj m_xt_xi8088.obj \
 		    m_zenith.obj \
 		    m_pcjr.obj \
 		    m_amstrad.obj m_europc.obj \

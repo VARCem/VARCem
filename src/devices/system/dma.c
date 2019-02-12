@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.7	2019/02/10
+ * Version:	@(#)dma.c	1.0.8	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -748,7 +748,7 @@ dma_channel_read(int channel)
     if ((dma_c->mode & 0xC) != 8)
 	return(DMA_NODATA);
 
-    if (!AT && !channel)
+    if (! AT)
 	refreshread();
 
     if (! dma_c->size) {
@@ -819,7 +819,7 @@ dma_channel_write(int channel, uint16_t val)
     if ((dma_c->mode & 0xC) != 4)
 	return(DMA_NODATA);
 
-    if (!AT && !channel)
+    if (! AT)
 	refreshread();
 
     if (! dma_c->size) {

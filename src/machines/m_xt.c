@@ -8,14 +8,14 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.11	2018/09/15
+ * Version:	@(#)m_xt.c	1.0.12	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -75,8 +75,9 @@ static const device_config_t pcxt_config[] = {
 };
 
 
+/* Generic PC/XT system board with just the basics. */
 void
-machine_pc_init(const machine_t *model, void *arg)
+machine_pc_common_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
 
@@ -89,8 +90,6 @@ machine_pc_init(const machine_t *model, void *arg)
     }
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
-
-    device_add(&keyboard_pc_device);
 
     device_add(&fdc_xt_device);
 
@@ -98,26 +97,43 @@ machine_pc_init(const machine_t *model, void *arg)
 }
 
 
+/* The original IBM PC, 1981 model. */
+void
+machine_pc_init(const machine_t *model, void *arg)
+{
+    machine_pc_common_init(model, arg);
+
+    device_add(&keyboard_pc_device);
+}
+
+
+/* The later IBM PC from 1982. */
+void
+machine_pc82_init(const machine_t *model, void *arg)
+{
+    machine_pc_common_init(model, arg);
+
+    device_add(&keyboard_pc82_device);
+}
+
+
+/* The original IBM PC/XT, 1982 model. */
 void
 machine_xt_init(const machine_t *model, void *arg)
 {
-    machine_common_init(model, arg);
-
-    /* Check if we support a BASIC ROM. */
-    if (model->device != NULL) {
-	DEBUG("This (%s) machine supports a BASIC ROM.\n", model->name);
-
-	rom_basic = machine_get_config_int("rom_basic");
-	DEBUG("ROM BASIC is currently %sabled.\n", (rom_basic)?"en":"dis");
-    }
-
-    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+    machine_pc_common_init(model, arg);
 
     device_add(&keyboard_xt_device);
+}
 
-    device_add(&fdc_xt_device);
 
-    nmi_init();
+/* The later IBM PC/XT from 1986. */
+void
+machine_xt86_init(const machine_t *model, void *arg)
+{
+    machine_pc_common_init(model, arg);
+
+    device_add(&keyboard_xt86_device);
 }
 
 

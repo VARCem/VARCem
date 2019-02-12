@@ -8,14 +8,14 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.31	2019/01/13
+ * Version:	@(#)machine_table.c	1.0.32	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017,2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,9 +63,11 @@
 
 const machine_t machines[] = {
     /* 8088 */
-    { "[8088] IBM PC",				"ibm_pc",		L"ibm/pc",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  32,   0,		      machine_pc_init, &m_pc_device,		NULL			},
+    { "[8088] IBM PC (1981)",			"ibm_pc",		L"ibm/pc",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 16,  256,  16,   0,		      machine_pc_init, &m_pc_device,		NULL			},
+    { "[8088] IBM PC (1982)",			"ibm_pc82",		L"ibm/pc82",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  32,   0,		    machine_pc82_init, &m_pc_device,		NULL			},
     { "[8088] IBM PCjr",			"ibm_pcjr",		L"ibm/pcjr",			{{"Intel", cpus_pcjr},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,		    machine_pcjr_init, &m_pcjr_device,		NULL			},
-    { "[8088] IBM XT",				"ibm_xt",		L"ibm/xt",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
+    { "[8088] IBM XT (1982)",			"ibm_xt",		L"ibm/xt",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
+    { "[8088] IBM XT (1986)",			"ibm_xt86",		L"ibm/xt86",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		    machine_xt86_init, &m_xt_device,		NULL			},
 
     { "[8088] AMI XT (generic)",		"ami_xt",		L"generic/xt/ami",		{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] Award XT (generic)",		"awd_xt",		L"generic/xt/award",		{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
@@ -77,12 +79,10 @@ const machine_t machines[] = {
     { "[8088] DTK XT",				"dtk_xt",		L"dtk/xt",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] Juko XT",				"juko_pc",		L"juko/pc",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, NULL,			NULL			},
     { "[8088] Schneider EuroPC",		"schneider_europc",	L"schneider/europc",		{{"Siemens", cpus_europc},	{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,						512,  640, 128,  16,		  machine_europc_init, NULL,			NULL			},
-    { "[8088] Tandy 1000",			"tandy_1000",		L"tandy/t1000",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,		 machine_tandy1k_init, &m_tandy1k_device,	NULL			},
-    { "[8088] Tandy 1000 HX",			"tandy_1000hx",		L"tandy/t1000hx",		{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										256,  640, 128,   0,	      machine_tandy1k_hx_init, &m_tandy1k_hx_device,	NULL			},
+    { "[8088] Tandy 1000",			"tandy_1000",		L"tandy/t1000",			{{"Intel", cpus_europc},	{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,		 machine_tandy1k_init, &m_tandy1k_device,	NULL			},
+    { "[8088] Tandy 1000 HX",			"tandy_1000hx",		L"tandy/t1000hx",		{{"Intel", cpus_europc},	{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										256,  640, 128,   0,	      machine_tandy1k_hx_init, &m_tandy1k_hx_device,	NULL			},
     { "[8088] Toshiba T1000",			"toshiba_t1000",	L"toshiba/t1000",		{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										512, 1280, 768,  64,		machine_xt_t1000_init, &m_xt_t1000_device,	machine_xt_t1x00_close	},
-#if defined(DEV_BRANCH) && defined(USE_LASERXT)
-    { "[8088] VTech Laser Turbo XT",		"vtech_ltxt",		L"vtech/ltxt",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												512,  512, 256,   0,	      machine_xt_laserxt_init, NULL,			NULL			},
-#endif
+    { "[8088] VTech Laser Turbo XT",		"vtech_ltxt",		L"vtech/ltxt",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												256,  640, 256,   0,	      machine_xt_laserxt_init, NULL,			NULL			},
     { "[8088] Xi8088",				"malinov_xi8088",	L"malinov/xi8088",		{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA /*| MACDHINE_AT*/ | MACHINE_PS2,								 64, 1024, 128, 128,	       machine_xt_xi8088_init, NULL,			NULL			},
     { "[8088] Zenith Data SupersPORT",		"zenith_supersport",	L"zenith/supersport",		{{"Intel", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												128,  640, 128,   0,   machine_zenith_supersport_init, NULL,			NULL			},
 
@@ -95,9 +95,7 @@ const machine_t machines[] = {
     { "[8086] Olivetti M24",			"olivetti_m24",		L"olivetti/m24",		{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								128,  640, 128,   0,		  machine_olim24_init, NULL,			NULL			},
     { "[8086] Tandy 1000 SL/2",			"tandy_1000sl2",	L"tandy/t1000sl2",		{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												512,  768, 128,   0,	     machine_tandy1k_sl2_init, &m_tandy1k_sl2_device,	NULL			},
     { "[8086] Toshiba T1200",			"toshiba_t1200",	L"toshiba/t1200",		{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_HDC,							       1024, 2048,1024,  64,		machine_xt_t1200_init, &t1200_video_device,	machine_xt_t1x00_close	},
-#if defined(DEV_BRANCH) && defined(USE_LASERXT)
-    { "[8086] VTech Laser XT3",			"vtech_lxt3",		L"vtech/lxt3",			{{"Intel", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												256,  512, 256,   0,	         machine_xt_lxt3_init, NULL,			NULL			},
-#endif
+    { "[8086] VTech Laser XT3",			"vtech_lxt3",		L"vtech/lxt3",			{{"Intel", cpus_8086},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												256,  640, 256,   0,	         machine_xt_lxt3_init, NULL,			NULL			},
 
     /* 80286 */
     { "[286 ISA] IBM AT",			"ibm_at",		L"ibm/at",			{{"", cpus_ibmat},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_AT,										256,15872, 128,  64,		  machine_at_ibm_init, NULL,			NULL			},

@@ -8,15 +8,15 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.h	1.0.7	2018/09/19
+ * Version:	@(#)cpu.h	1.0.8	2019/02/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
  *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
- *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,6 +88,7 @@
 
 #define CPU_SUPPORTS_DYNAREC 1
 #define CPU_REQUIRES_DYNAREC 2
+#define CPU_ALTERNATE_XTAL   4
 
 
 typedef struct {

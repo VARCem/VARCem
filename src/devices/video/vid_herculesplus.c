@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.13	2019/02/10
+ * Version:	@(#)vid_hercules_plus.c	1.0.14	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -131,20 +131,22 @@ static void
 herculesplus_out(uint16_t port, uint8_t val, void *priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
+    uint8_t old;
 
     switch (port) {
-	case 0x3b0:
-	case 0x3b2:
-	case 0x3b4:
-	case 0x3b6:
+	case 0x03b0:
+	case 0x03b2:
+	case 0x03b4:
+	case 0x03b6:
 		dev->crtcreg = val & 31;
 		return;
 
-	case 0x3b1:
-	case 0x3b3:
-	case 0x3b5:
-	case 0x3b7:
+	case 0x03b1:
+	case 0x03b3:
+	case 0x03b5:
+	case 0x03b7:
 		if (dev->crtcreg > 22) return;
+		old = dev->crtc[dev->crtcreg];
 		dev->crtc[dev->crtcreg] = val;
 		if (dev->crtc[10] == 6 && dev->crtc[11] == 7) {
 			/*Fix for Generic Turbo XT BIOS,
@@ -152,21 +154,25 @@ herculesplus_out(uint16_t port, uint8_t val, void *priv)
 			dev->crtc[10] = 0xb;
 			dev->crtc[11] = 0xc;
 		}
-		recalc_timings(dev);
+		if (old ^ val)
+			recalc_timings(dev);
 		return;
 
-	case 0x3b8:
+	case 0x03b8:
+		old = dev->ctrl;
 		dev->ctrl = val;
+		if (old ^ val)
+			recalc_timings(dev);
 		return;
 
-	case 0x3bf:
+	case 0x03bf:
 		dev->ctrl2 = val;
 		if (val & 2)
 			mem_map_set_addr(&dev->mapping, 0xb0000, 0x10000);
 		else
 			mem_map_set_addr(&dev->mapping, 0xb0000, 0x08000);
 		return;
-	}
+    }
 }
 
 
@@ -177,22 +183,22 @@ herculesplus_in(uint16_t port, void *priv)
     uint8_t ret = 0xff;
 
     switch (port) {
-	case 0x3b0:
-	case 0x3b2:
-	case 0x3b4:
-	case 0x3b6:
+	case 0x03b0:
+	case 0x03b2:
+	case 0x03b4:
+	case 0x03b6:
 		ret = dev->crtcreg;
 		break;
 
-	case 0x3b1:
-	case 0x3b3:
-	case 0x3b5:
-	case 0x3b7:
+	case 0x03b1:
+	case 0x03b3:
+	case 0x03b5:
+	case 0x03b7:
 		if (dev->crtcreg <= 22)
 			ret = dev->crtc[dev->crtcreg];
 		break;
 
-	case 0x3ba:
+	case 0x03ba:
 		/* 0x50: InColor card identity */
 		ret = (dev->stat & 0xf) | ((dev->stat & 8) << 4) | 0x10;
 		break;
@@ -432,8 +438,11 @@ text_line(herculesplus_t *dev, uint16_t ca)
     uint32_t col;
 
     for (x = 0; x < dev->crtc[1]; x++) {
-	chr  = dev->vram[(dev->ma << 1) & 0xfff];
-	attr = dev->vram[((dev->ma << 1) + 1) & 0xfff];
+	if (dev->ctrl & 8) {
+		chr  = dev->vram[(dev->ma << 1) & 0xfff];
+		attr = dev->vram[((dev->ma << 1) + 1) & 0xfff];
+	} else
+		chr  = attr = 0;
 
 	drawcursor = ((dev->ma == ca) && dev->con && dev->cursoron);
 
@@ -477,8 +486,11 @@ graphics_line(herculesplus_t *dev)
 	ca += 0x8000;
 
     for (x = 0; x < dev->crtc[1]; x++) {
-	val = (dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane] << 8)
-	    | dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane + 1];
+	if (dev->ctrl & 8)
+		val = (dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane] << 8)
+		    | dev->vram[((dev->ma << 1) & 0x1fff) + ca + 0x10000 * plane + 1];
+	else
+		val = 0;
 
 	dev->ma++;
 	for (c = 0; c < 16; c++) {
@@ -579,9 +591,10 @@ herculesplus_poll(void *priv)
 				if ((dev->ctrl & HERCULESPLUS_CTRL_GRAPH) && (dev->ctrl2 & HERCULESPLUS_CTRL2_GRAPH)) 
 					x = dev->crtc[1] << 4;
 				else
-					      x = dev->crtc[1] * 9;
+					x = dev->crtc[1] * 9;
 				dev->lastline++;
-				if ((x != xsize) || ((dev->lastline - dev->firstline) != ysize) || video_force_resize_get()) {
+				if ((dev->ctrl & 8) &&
+				    ((x != xsize) || ((dev->lastline - dev->firstline) != ysize) || video_force_resize_get())) {
 					xsize = x;
 					ysize = dev->lastline - dev->firstline;
 					if (xsize < 64) xsize = 656;

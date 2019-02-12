@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.17	2018/10/05
+ * Version:	@(#)m_europc.c	1.0.18	2019/02/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -78,7 +78,7 @@
  *		Schneider's schematics and technical manuals, and the
  *		input from people with real EuroPC hardware.
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -122,6 +122,7 @@
 #include "../rom.h"
 #include "../device.h"
 #include "../nvr.h"
+#include "../devices/system/pit.h"
 #include "../devices/system/nmi.h"
 #include "../devices/ports/parallel.h"
 #include "../devices/input/keyboard.h"
@@ -778,6 +779,8 @@ void
 machine_europc_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
+
+    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
 
     nmi_init();
 

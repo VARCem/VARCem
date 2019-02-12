@@ -8,14 +8,14 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.25	2018/11/02
+ * Version:	@(#)machine.h	1.0.26	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -232,7 +232,9 @@ extern int		tandy1k_eeprom_read(void);
 extern void		machine_zenith_supersport_init(const machine_t *, void *);
 
 extern void		machine_pc_init(const machine_t *, void *);
+extern void		machine_pc82_init(const machine_t *, void *);
 extern void		machine_xt_init(const machine_t *, void *);
+extern void		machine_xt86_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern const device_t	m_pc_device;
 extern const device_t	m_xt_device;
@@ -240,10 +242,8 @@ extern const device_t	m_xt_device;
 
 extern void		machine_xt_compaq_p1_init(const machine_t *, void *);
 
-#if defined(DEV_BRANCH) && defined(USE_LASERXT)
 extern void		machine_xt_laserxt_init(const machine_t *, void *);
 extern void		machine_xt_lxt3_init(const machine_t *, void *);
-#endif
 
 extern void		machine_xt_t1000_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
