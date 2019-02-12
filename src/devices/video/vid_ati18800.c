@@ -8,14 +8,14 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.9	2018/10/05
+ * Version:	@(#)vid_ati18800.c	1.0.10	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -193,7 +193,7 @@ static void ati18800_recalctimings(svga_t *svga)
                 svga->vblankstart <<= 1;
         }
 
-        if (!svga->scrblank && (ati18800->regs[0xb0] & 0x20)) /*Extended 256 colour modes*/
+        if (!svga->scrblank && ((ati18800->regs[0xb0] & 0x02) || (ati18800->regs[0xb0] & 0x04))) /*Extended 256 color modes*/
         {
                 svga->render = svga_render_8bpp_highres;
 				svga->bpp = 8;
@@ -236,7 +236,7 @@ ati18800_init(const device_t *info)
 		 0, MEM_MAPPING_EXTERNAL);
     }
 
-    svga_init(&dev->svga, dev, 1 << 19, /*512kb*/
+    svga_init(&dev->svga, dev, 1 << 20, /*512KB*/
               ati18800_recalctimings, ati18800_in, ati18800_out, NULL, NULL);
 
     io_sethandler(0x01ce, 0x0002,

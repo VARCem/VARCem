@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.24	2019/01/08
+ * Version:	@(#)video.h	1.0.25	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -248,6 +248,8 @@ extern const device_t	paradise_wd90c11_device;
 extern const device_t	paradise_wd90c30_device;
 
 /* S3, Inc standard series cards. */
+extern const device_t	s3_v7mirage_86c801_isa_device;
+extern const device_t	s3_phoenix_86c805_vlb_device;
 extern const device_t	s3_bahamas64_vlb_device;
 extern const device_t	s3_bahamas64_pci_device;
 extern const device_t	s3_9fx_vlb_device;
@@ -278,6 +280,7 @@ extern const device_t	s3_virge_375_4_pci_device;
 extern const device_t	sigma_device;
 
 /* Trident 8900 series cards. */
+extern const device_t	tvga8900b_device;
 extern const device_t	tvga8900cx_device;
 extern const device_t	tvga8900d_device;
 

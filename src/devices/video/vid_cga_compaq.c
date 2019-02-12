@@ -8,14 +8,14 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.4	2018/09/22
+ * Version:	@(#)vid_cga_compaq.c	1.0.5	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -387,7 +387,7 @@ compaq_cga_init(const device_t *info)
 
     mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		dev->cga.vram, MEM_MAPPING_EXTERNAL, dev);
 
     io_sethandler(0x03d0, 16,
 		  cga_in,NULL,NULL, cga_out,NULL,NULL, dev);

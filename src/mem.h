@@ -8,12 +8,12 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.11	2018/10/07
+ * Version:	@(#)mem.h	1.0.12	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -134,7 +134,6 @@ extern uint32_t		get_phys_virt,get_phys_phys;
 extern int		shadowbios,
 			shadowbios_write;
 
-extern int		nopageerrors;
 extern int		memspeed[11];
 
 extern int		mmu_perm;
@@ -210,11 +209,8 @@ extern void	mem_map_enable(mem_map_t *);
 extern void	mem_set_mem_state(uint32_t base, uint32_t size, int state);
 
 extern uint8_t	mem_readb_phys(uint32_t addr);
-extern uint8_t	mem_readb_phys_dma(uint32_t addr);
 extern uint16_t	mem_readw_phys(uint32_t addr);
 extern void	mem_writeb_phys(uint32_t addr, uint8_t val);
-extern void	mem_writeb_phys_dma(uint32_t addr, uint8_t val);
-extern void	mem_writew_phys(uint32_t addr, uint16_t val);
 
 extern uint8_t	mem_read_ram(uint32_t addr, void *priv);
 extern uint16_t	mem_read_ramw(uint32_t addr, void *priv);

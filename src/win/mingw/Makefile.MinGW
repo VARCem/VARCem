@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.72	2019/01/13
+# Version:	@(#)Makefile.mingw	1.0.74	2019/02/10
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017-2018 Fred N. van Kempen.
+#		Copyright 2017-2019 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -657,7 +657,7 @@ FDDOBJ		:= fdc.o \
 		   fdd.o \
 		    fdd_common.o fdd_86f.o \
 		    fdd_fdi.o fdi2raw.o lzf_c.o lzf_d.o \
-		    fdd_imd.o fdd_img.o fdd_json.o fdd_td0.o
+		    fdd_imd.o fdd_img.o fdd_json.o fdd_mfm.o fdd_td0.o
 
 HDDOBJ		:= hdd.o \
 		    hdd_image.o hdd_table.o \
@@ -726,7 +726,8 @@ VIDOBJ		:= video.o \
 		    vid_ati_eeprom.o \
 		    vid_ati18800.o vid_ati28800.o \
 		    vid_ati_mach64.o vid_ati68860_ramdac.o \
-		    vid_bt48x_ramdac.o vid_icd2061.o vid_ics2595.o \
+                    vid_att20c49x_ramdac.o vid_bt48x_ramdac.o \
+                    vid_av9194.o vid_icd2061.o vid_ics2595.o \
 		    vid_cl54xx.o \
 		    vid_et4000.o vid_sc1502x_ramdac.o \
 		    vid_et4000w32.o vid_stg_ramdac.o \

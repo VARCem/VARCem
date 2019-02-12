@@ -12,13 +12,13 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.29	2019/01/08
+ * Version:	@(#)video_dev.c	1.0.30	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,9 @@ static const struct {
     { "hercules",		&hercules_device		},
 
     { "mach64gx_isa",		&mach64gx_isa_device		},
+#if 0
+    { "mach8_isa",		&mach8_device			},
+#endif
     { "ati28800k",		&ati28800k_device		},
     { "ati18800v",		&ati18800_vga88_device		},
     { "ati28800",		&ati28800_device		},
@@ -104,12 +107,14 @@ static const struct {
     { "oti077",			&oti077_device			},
     { "pvga1a",			&paradise_pvga1a_device		},
     { "sigma400",		&sigma_device			},
+    { "px_s3_v7_801_isa",	&s3_v7mirage_86c801_isa_device	},
     { "wd90c11",		&paradise_wd90c11_device	},
     { "wd90c30",		&paradise_wd90c30_device	},
     { "plantronics",		&colorplus_device		},
 #if defined(DEV_BRANCH) && defined(USE_TI)
     { "ti_cf62011",		&ti_cf62011_device		},
 #endif
+    { "tvga8900b",		&tvga8900b_device		},
     { "tvga8900cx",		&tvga8900cx_device		},
     { "tvga8900d",		&tvga8900d_device		},
     { "et4000ax",		&et4000_isa_device		},
@@ -147,6 +152,7 @@ static const struct {
 #if defined(DEV_BRANCH)
     { "cl_gd5424_vlb",		&gd5424_vlb_device		},
 #endif
+    { "cl_gd5428_vlb",		&gd5428_vlb_device		},
     { "cl_gd5429_vlb",		&gd5429_vlb_device		},
     { "cl_gd5434_vlb",		&gd5434_vlb_device		},
     { "stealth32_vlb",		&et4000w32p_vlb_device		},
@@ -158,6 +164,7 @@ static const struct {
     { "stealth64v_vlb",		&s3_diamond_stealth64_964_vlb_device},
     { "n9_9fx_vlb",		&s3_9fx_vlb_device		},
     { "bahamas64_vlb",		&s3_bahamas64_vlb_device	},
+    { "px_86c805_vlb",		&s3_phoenix_86c805_vlb_device	},
     { "px_vision864_vlb",	&s3_phoenix_vision864_vlb_device},
     { "px_trio32_vlb",		&s3_phoenix_trio32_vlb_device	},
     { "px_trio64_vlb",		&s3_phoenix_trio64_vlb_device	},

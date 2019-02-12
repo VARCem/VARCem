@@ -8,13 +8,13 @@
  *
  *		Definitions for the 86F floppy image format.
  *
- * Version:	@(#)floppy_86f.h	1.0.5	2018/04/10
+ * Version:	@(#)floppy_86f.h	1.0.6	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
 # define EMU_FLOPPY_86F_H
 
 
-#define D86FVER		0x020B
+#define D86FVER		0x020C
 
 
 extern void	d86f_init(void);

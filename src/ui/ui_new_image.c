@@ -12,13 +12,13 @@
  *		format handlers, and re-integrated with that code. This is
  *		just the wrong place for it..
  *
- * Version:	@(#)ui_new_image.c	1.0.5	2018/10/26
+ * Version:	@(#)ui_new_image.c	1.0.6	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
- *		Copyright 2018 Miran Grca.
+ *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ floppy_create_86f(const wchar_t *fn, int8_t ds, int8_t rpm_mode)
     FILE *f;
 
     uint32_t magic = 0x46423638;
-    uint16_t version = 0x020B;
+    uint16_t version = 0x020C;
     uint16_t dflags = 0;
     uint16_t tflags = 0;
     uint32_t index_hole_pos = 0;

@@ -10,13 +10,13 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.15	2018/10/20
+ * Version:	@(#)fdd_86f.c	1.0.16	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -190,6 +190,10 @@ typedef struct _sector_ {
  *  Bits 10, 9	Zone type (3 = Commodore 64 zoned, 2 = Apple zoned,
  *		1 = Pre-Apple zoned #2, 0 = Pre-Apple zoned #1)
  *  Bit 11	Data and surface bits are stored in reverse byte endianness
+ *  Bit 12	If bits 6, 5 are not 0, they specify % of speedup instead
+ *		of slowdown;
+ *		If bits 6, 5 are 0, and bit 7 is 1, the extra bitcell count
+ *		specifies the entire bitcell count
  */
 typedef struct {
     FILE	*f;
@@ -362,6 +366,14 @@ d86f_get_rpm_mode(int drive)
     return (d86f_handler[drive].disk_flags(drive) & 0x60) >> 5;
 }
 
+
+int
+d86f_get_speed_shift_dir(int drive)
+{
+    return (d86f_handler[drive].disk_flags(drive) & 0x1000) >> 12;
+}
+
+
 int
 d86f_reverse_bytes(int drive)
 {
@@ -523,12 +535,15 @@ common_get_raw_size(int drive, int side)
     double rpm, rpm_diff;
     double size = 100000.0;
     int mfm;
+    int rm, ssd;
 
     mfm = d86f_is_mfm(drive);
     rpm = ((d86f_track_flags(drive) & 0xE0) == 0x20) ? 360.0 : 300.0;
     rpm_diff = 1.0;
+    rm = d86f_get_rpm_mode(drive);
+    ssd = d86f_get_speed_shift_dir(drive);
 
-    switch (d86f_get_rpm_mode(drive)) {
+    switch (rm) {
 	case 1:
 		rpm_diff = 1.01;
 		break;
@@ -545,6 +560,9 @@ common_get_raw_size(int drive, int side)
 		rpm_diff = 1.0;
 		break;
     }
+
+    if (ssd)
+	rpm_diff = 1.0 / rpm_diff;
 
     switch (d86f_track_flags(drive) & 7) {
 	case 0:
@@ -574,9 +592,13 @@ common_get_raw_size(int drive, int side)
 
     if (! mfm) rate /= 2.0;
 
-    size = (size / 250.0) * rate;
-    size = (size * 300.0) / rpm;
-    size *= rpm_diff;
+    if (!rm && ssd)
+	size = 0.0;
+    else {
+	size = (size / 250.0) * rate;
+	size = (size * 300.0) / rpm;
+	size *= rpm_diff;
+    }
 
     /*
      * Round down to a multiple of 16 and add the extra bit cells,
@@ -642,26 +664,30 @@ d86f_get_array_size(int drive, int side)
 {
     int array_size;
     int hole, rm;
+    int ssd;
 
     rm = d86f_get_rpm_mode(drive);
-
+    ssd = d86f_get_speed_shift_dir(drive);
     hole = (d86f_handler[drive].disk_flags(drive) & 6) >> 1;
-    switch (hole) {
+
+    if (!rm && ssd)	/* Special case - extra bit cells size specifies entire array size. */
+	array_size = 0;
+    else switch (hole) {
 	case 0:
 	case 1:
 	default:
 		array_size = 12500;
 		switch (rm) {
 			case 1:
-				array_size = 12625;
+				array_size = ssd ? 12376 : 12625;
 				break;
 
 			case 2:
-				array_size = 12687;
+				array_size = ssd ? 12315 : 12687;
 				break;
 
 			case 3:
-				array_size = 12750;
+				array_size = ssd ? 12254 : 12750;
 				break;
 
 			default:
@@ -673,15 +699,15 @@ d86f_get_array_size(int drive, int side)
 		array_size = 25000;
 		switch (rm) {
 			case 1:
-				array_size = 25250;
+				array_size = ssd ? 24752 : 25250;
 				break;
 
 			case 2:
-				array_size = 25375;
+				array_size = ssd ? 24630 : 25375;
 				break;
 
 			case 3:
-				array_size = 25500;
+				array_size = ssd ? 24509 : 25500;
 				break;
 
 			default:
@@ -693,15 +719,15 @@ d86f_get_array_size(int drive, int side)
 		array_size = 50000;
 		switch (rm) {
 			case 1:
-				array_size = 50500;
+				array_size = ssd ? 49504 : 50500;
 				break;
 
 			case 2:
-				array_size = 50750;
+				array_size = ssd ? 49261 : 50750;
 				break;
 
 			case 3:
-				array_size = 51000;
+				array_size = ssd ? 49019 : 51000;
 				break;
 
 			default:
@@ -1106,23 +1132,16 @@ d86f_get_bit(int drive, int side)
     if (d86f_has_surface_desc(drive) &&
         dev->track_surface_data && dev->track_surface_data[side]) {
 	surface_bit = (surface_data >> track_bit) & 1;
-	if (! surface_bit) {
-		if (! current_bit) {
-			/* Bit is 0 and is not set to fuzzy, we add it as read. */
-			dev->last_word[side] |= 1;
-		} else {
-			/* Bit is 1 and is not set to fuzzy, we add it as read. */
-			dev->last_word[side] |= 1;
-		}
-	} else {
+	if (! surface_bit)
+		dev->last_word[side] |= current_bit;
+	else {
 		if (current_bit) {
 			/* Bit is 1 and is set to fuzzy, we randomly generate it. */
 			dev->last_word[side] |= (random_generate() & 1);
 		}
 	}
-    } else {
+    } else
 	dev->last_word[side] |= current_bit;
-    }
 }
 
 
@@ -1274,7 +1293,7 @@ d86f_word_is_aligned(int drive, int side, uint32_t base_pos)
 
 /* State 1: Find sector ID */
 void
-d86f_find_address_mark_fm(int drive, int side, find_t *find, uint16_t req_am, uint16_t other_am, uint16_t ignore_other_am)
+d86f_find_address_mark_fm(int drive, int side, find_t *find, uint16_t req_am, uint16_t other_am, uint16_t wrong_am, uint16_t ignore_other_am)
 {
     d86f_t *dev = d86f[drive];
 
@@ -1287,6 +1306,15 @@ d86f_find_address_mark_fm(int drive, int side, find_t *find, uint16_t req_am, ui
 	find->sync_pos = 0xFFFFFFFF;
 	dev->preceding_bit[side] = dev->last_word[side] & 1;
 	dev->state++;
+	return;
+    }
+
+    if ((wrong_am) && (dev->last_word[side] == wrong_am)) {
+	dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
+	dev->error_condition = 0;
+	dev->state = STATE_IDLE;
+	fdc_finishread(d86f_fdc);
+	fdc_nodataam(d86f_fdc);
 	return;
     }
 
@@ -1336,7 +1364,7 @@ d86f_write_find_address_mark_fm(int drive, int side, find_t *find)
 
 
 void
-d86f_find_address_mark_mfm(int drive, int side, find_t *find, uint16_t req_am, uint16_t other_am, uint16_t ignore_other_am)
+d86f_find_address_mark_mfm(int drive, int side, find_t *find, uint16_t req_am, uint16_t other_am, uint16_t wrong_am, uint16_t ignore_other_am)
 {
     d86f_t *dev = d86f[drive];
 
@@ -1345,6 +1373,15 @@ d86f_find_address_mark_mfm(int drive, int side, find_t *find, uint16_t req_am, u
     if (dev->last_word[side] == 0x4489) {
 	find->sync_marks++;
 	find->sync_pos = dev->track_pos;
+	return;
+    }
+
+    if ((wrong_am) && (dev->last_word[side] == wrong_am) && (find->sync_marks >= 3)) {
+	dev->data_find.sync_marks = dev->data_find.bits_obtained = dev->data_find.bytes_obtained = 0;
+	dev->error_condition = 0;
+	dev->state = STATE_IDLE;
+	fdc_finishread(d86f_fdc);
+	fdc_nodataam(d86f_fdc);
 	return;
     }
 
@@ -1437,7 +1474,7 @@ d86f_read_sector_id(int drive, int side, int match)
 
 		if (dev->id_find.bytes_obtained == 6) {
 			/* We've got the ID. */
-			if (dev->calc_crc.word != dev->track_crc.word) {
+			if ((dev->calc_crc.word != dev->track_crc.word) && (dev->last_sector.dword == dev->req_sector.dword)) {
 				dev->id_find.sync_marks = dev->id_find.bits_obtained = dev->id_find.bytes_obtained = 0;
 				DEBUG("86F: ID CRC error: %04X != %04X (%08X)\n", dev->track_crc.word, dev->calc_crc.word, dev->last_sector.dword);
 				if ((dev->state != STATE_02_READ_ID) && (dev->state != STATE_0A_READ_ID)) {
@@ -2413,9 +2450,9 @@ d86f_poll(int drive)
 	case STATE_11_FIND_ID:
 	case STATE_16_FIND_ID:
 		if (mfm)
-			d86f_find_address_mark_mfm(drive, side, &(dev->id_find), 0x5554, 0, 0);
+			d86f_find_address_mark_mfm(drive, side, &(dev->id_find), 0x5554, 0, 0, 0);
 		else
-			d86f_find_address_mark_fm(drive, side, &(dev->id_find), 0xF57E, 0, 0);
+			d86f_find_address_mark_fm(drive, side, &(dev->id_find), 0xF57E, 0, 0, 0);
 		break;
 
 	case STATE_0A_READ_ID:
@@ -2434,18 +2471,18 @@ d86f_poll(int drive)
 
 	case STATE_02_FIND_DATA:
 		if (mfm)
-			d86f_find_address_mark_mfm(drive, side, &(dev->data_find), 0x5545, 0x554A, 2);
+			d86f_find_address_mark_mfm(drive, side, &(dev->data_find), 0x5545, 0x554A, 0x5554, 2);
 		else
-			d86f_find_address_mark_fm(drive, side, &(dev->data_find), 0xF56F, 0xF56A, 2);
+			d86f_find_address_mark_fm(drive, side, &(dev->data_find), 0xF56F, 0xF56A, 0xF57E, 2);
 		break;
 
 	case STATE_06_FIND_DATA:
 	case STATE_11_FIND_DATA:
 	case STATE_16_FIND_DATA:
 		if (mfm)
-			d86f_find_address_mark_mfm(drive, side, &(dev->data_find), 0x5545, 0x554A, fdc_is_sk(d86f_fdc) | 2);
+			d86f_find_address_mark_mfm(drive, side, &(dev->data_find), 0x5545, 0x554A, 0x5554, fdc_is_sk(d86f_fdc) | 2);
 		else
-			d86f_find_address_mark_fm(drive, side, &(dev->data_find), 0xF56F, 0xF56A, fdc_is_sk(d86f_fdc) | 2);
+			d86f_find_address_mark_fm(drive, side, &(dev->data_find), 0xF56F, 0xF56A, 0xF57E, fdc_is_sk(d86f_fdc) | 2);
 		break;
 
 	case STATE_05_FIND_DATA:
@@ -2458,9 +2495,9 @@ d86f_poll(int drive)
 
 	case STATE_0C_FIND_DATA:
 		if (mfm)
-			d86f_find_address_mark_mfm(drive, side, &(dev->data_find), 0x554A, 0x5545, fdc_is_sk(d86f_fdc) | 2);
+			d86f_find_address_mark_mfm(drive, side, &(dev->data_find), 0x554A, 0x5545, 0x5554, fdc_is_sk(d86f_fdc) | 2);
 		else
-			d86f_find_address_mark_fm(drive, side, &(dev->data_find), 0xF56A, 0xF56F, fdc_is_sk(d86f_fdc) | 2);
+			d86f_find_address_mark_fm(drive, side, &(dev->data_find), 0xF56A, 0xF56F, 0xF57E, fdc_is_sk(d86f_fdc) | 2);
 		break;
 
 	case STATE_02_READ_DATA:
@@ -2820,6 +2857,8 @@ d86f_decompose_encoded_buffer(int drive, int side)
     uint16_t *src1_s = dev->thin_track_surface_data[0][side];
     uint16_t *src2 = dev->thin_track_encoded_data[1][side];
     uint16_t *src2_s = dev->thin_track_surface_data[1][side];
+
+    dst = d86f_handler[drive].encoded_data(drive, side);
     len = d86f_get_array_size(drive, side);
 
     for (i = 0; i < len; i++) {
@@ -2869,17 +2908,19 @@ d86f_read_track(int drive, int track, int thin_track, int side, uint16_t *da, ui
 		fread(&(dev->side_flags[side]), 2, 1, dev->f);
 		if (d86f_has_extra_bit_cells(drive)) {
 			fread(&(dev->extra_bit_cells[side]), 4, 1, dev->f);
-			if (dev->extra_bit_cells[side] < -32768)
-				dev->extra_bit_cells[side] = -32768;
-			if (dev->extra_bit_cells[side] > 32768)
-				dev->extra_bit_cells[side] = 32768;
-		} else {
+			/* If RPM shift is 0% and direction is 1, do not adjust extra bit cells,
+			   as that is the whole track length. */
+			if (d86f_get_rpm_mode(drive) || !d86f_get_speed_shift_dir(drive)) {
+				if (dev->extra_bit_cells[side] < -32768)
+					dev->extra_bit_cells[side] = -32768;
+				if (dev->extra_bit_cells[side] > 32768)
+					dev->extra_bit_cells[side] = 32768;
+			}
+		} else
 			dev->extra_bit_cells[side] = 0;
-		}
 		fread(&(dev->index_hole_pos[side]), 4, 1, dev->f);
-	} else {
+	} else
 		fseek(dev->f, dev->track_offset[logical_track] + d86f_track_header_size(drive), SEEK_SET);
-	}
 	array_size = d86f_get_array_size(drive, side) << 1;
 	if (d86f_has_surface_desc(drive))
 		fread(sa, 1, array_size, dev->f);
@@ -3020,11 +3061,14 @@ d86f_write_tracks(int drive, FILE **f, uint32_t *track_table)
 	tbl = track_table;
 
     if (! fdd_doublestep_40(drive)) {
-	for (side = 0; side < sides; side++) {
-		fdd_set_head(drive, side);
-		d86f_decompose_encoded_buffer(drive, side);
+	d86f_decompose_encoded_buffer(drive, 0);
+	if (sides == 2)
+		d86f_decompose_encoded_buffer(drive, 1);
 
-		for (thin_track = 0; thin_track < 2; thin_track++) {
+	for (thin_track = 0; thin_track < 2; thin_track++) {
+		for (side = 0; side < sides; side++) {
+			fdd_set_head(drive, side);
+
 			if (sides == 2)
 				logical_track = ((dev->cur_track + thin_track) << 1) + side;
 			else
@@ -3032,11 +3076,12 @@ d86f_write_tracks(int drive, FILE **f, uint32_t *track_table)
 
 			if (track_table && !tbl[logical_track]) {
 				fseek(*f, 0, SEEK_END);
-				track_table[logical_track] = ftell(*f);
+				tbl[logical_track] = ftell(*f);
 			}
+
 			if (tbl[logical_track]) {
 				fseek(*f, tbl[logical_track], SEEK_SET);
-				d86f_write_track(drive, f, side, dev->thin_track_encoded_data[thin_track][side], dev->thin_track_surface_data[thin_track][side]);
+				d86f_write_track(drive, f, side, d86f_handler[drive].encoded_data(drive, side), dev->track_surface_data[side]);
 			}
 		}
 	}
@@ -3388,7 +3433,7 @@ d86f_export(int drive, const wchar_t *fn)
     int i;
     int inc = 1;
     uint32_t magic = 0x46423638;
-    uint16_t version = 0x020B;
+    uint16_t version = 0x020C;
     uint16_t disk_flags = d86f_handler[drive].disk_flags(drive);
 
     memset(tt, 0, 512 * sizeof(uint32_t));

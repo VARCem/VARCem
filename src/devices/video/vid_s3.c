@@ -10,14 +10,14 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.13	2018/10/08
+ * Version:	@(#)vid_s3.c	1.0.14	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,11 +54,15 @@
 #include "vid_svga.h"
 #include "vid_svga_render.h"
 #include "vid_sdac_ramdac.h"
+#include "vid_att20c49x_ramdac.h"
 #include "vid_bt48x_ramdac.h"
 #include "vid_icd2061.h"
+#include "vid_av9194.h"
 
 
 #define ROM_PARADISE_BAHAMAS64		L"video/s3/s3/bahamas64.bin"
+#define ROM_V7MIRAGE_86C801		L"video/s3/s3/v7mirage.vbi"
+#define ROM_PHOENIX_86C805		L"video/s3/s3/805.vbi"
 #define ROM_PHOENIX_VISION864		L"video/s3/s3/86c864p.bin"
 #define ROM_EXPERTCOLOR_DSV3868P_CF55	L"video/s3/s3/1-dsv3868.bin"
 #define ROM_DIAMOND_STEALTH64_964	L"video/s3/s3/stealth64-vram.bin"
@@ -76,21 +80,19 @@ enum {
     S3_PHOENIX_TRIO64,
     S3_PHOENIX_TRIO64_ONBOARD,
     S3_PHOENIX_VISION864,
-    S3_DIAMOND_STEALTH64_764
+    S3_DIAMOND_STEALTH64_764,
+    S3_V7MIRAGE_86C801,
+    S3_PHOENIX_86C805
 };
 
 enum {
+    S3_86C801,
+    S3_86C805,
     S3_VISION864,
     S3_VISION964,
     S3_TRIO32,
     S3_TRIO64
 };
-
-static const video_timings_t timing_s3_stealth64 = {VID_BUS,2,2,4,26,26,42};
-static const video_timings_t timing_s3_vision864 = {VID_BUS,4,4,5,20,20,35};
-static const video_timings_t timing_s3_vision964 = {VID_BUS,2,2,4,20,20,35};
-static const video_timings_t timing_s3_trio32	 = {VID_BUS,4,3,5,26,26,42};
-static const video_timings_t timing_s3_trio64	 = {VID_BUS,3,2,4,25,25,40};
 
 enum {
     VRAM_4MB = 0,
@@ -134,7 +136,6 @@ typedef struct {
     rom_t bios_rom;
 
     svga_t svga;
-    icd2061_t icd2061;
 
     uint8_t bank;
     uint8_t ma_ext;
@@ -149,8 +150,6 @@ typedef struct {
 
     int packed_mmio;
 
-    int p86c911_compat;
-
     uint32_t linear_base, linear_size;
 
     uint8_t pci_regs[256];
@@ -158,6 +157,7 @@ typedef struct {
 
     uint32_t vram_mask;
     uint8_t status_9ae8;
+    uint8_t data_available;
 
     struct {
 	uint16_t subsys_cntl;
@@ -222,6 +222,15 @@ typedef struct {
 #define INT_FIFO_OVR (1 << 2)
 #define INT_FIFO_EMP (1 << 3)
 #define INT_MASK     0xf
+
+
+static const video_timings_t timing_s3_86c801    = {VID_ISA,4,4,5,20,20,35};
+static const video_timings_t timing_s3_86c805    = {VID_BUS,4,4,5,20,20,35};
+static const video_timings_t timing_s3_stealth64 = {VID_BUS,2,2,4,26,26,42};
+static const video_timings_t timing_s3_vision864 = {VID_BUS,4,4,5,20,20,35};
+static const video_timings_t timing_s3_vision964 = {VID_BUS,2,2,4,20,20,35};
+static const video_timings_t timing_s3_trio32	 = {VID_BUS,4,3,5,26,26,42};
+static const video_timings_t timing_s3_trio64	 = {VID_BUS,3,2,4,25,25,40};
 
 
 void s3_updatemapping();
@@ -1033,7 +1042,7 @@ void s3_out(uint16_t addr, uint8_t val, void *p)
 		case 0x3c2:
 		if (s3->chip == S3_VISION964) {
 			if (((val >> 2) & 3) != 3)
-	                	icd2061_write(&s3->icd2061, (val >> 2) & 3);
+	                	icd2061_write(svga->clock_gen, (val >> 2) & 3);
 		}
                 break;
 
@@ -1059,18 +1068,20 @@ void s3_out(uint16_t addr, uint8_t val, void *p)
 		
 		case 0x3C6: case 0x3C7: case 0x3C8: case 0x3C9:
 		if ((svga->crtc[0x55] & 0x03) == 0x00)
-			rs2 = !!(svga->crtc[0x43] & 2);
+			rs2 = !!(svga->crtc[0x43] & 0x02);
 		else
 			rs2 = (svga->crtc[0x55] & 0x01);
 		if (s3->chip == S3_TRIO32 || s3->chip == S3_TRIO64)
 			svga_out(addr, val, svga);
 		else if (s3->chip == S3_VISION964) {
-			if (!(svga->crtc[0x45] & 0x02))
+			if (!(svga->crtc[0x45] & 0x20))
 				rs3 = !!(svga->crtc[0x55] & 0x02);
 			else
 				rs3 = 0;
 			bt48x_ramdac_out(addr, rs2, rs3, val, svga->ramdac, svga);
-		} else
+		} else if (s3->chip == S3_86C801 || s3->chip == S3_86C805)
+			att49x_ramdac_out(addr, val, svga->ramdac, svga);
+		else
 			sdac_ramdac_out(addr, rs2, val, svga->ramdac, svga);
 		return;
 
@@ -1082,7 +1093,14 @@ void s3_out(uint16_t addr, uint8_t val, void *p)
 			return;
 		if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
 			val = (svga->crtc[7] & ~0x10) | (val & 0x10);
-		if (svga->crtcreg >= 0x20 && svga->crtcreg != 0x38 && (svga->crtc[0x38] & 0xcc) != 0x48) return;
+		if ((svga->crtcreg >= 0x20) && (svga->crtcreg < 0x40) &&
+		    (svga->crtcreg != 0x36) && (svga->crtcreg != 0x38) &&
+		    (svga->crtcreg != 0x39) && ((svga->crtc[0x38] & 0xcc) != 0x48))
+			return;
+		if ((svga->crtcreg >= 0x40) && ((svga->crtc[0x39] & 0xe0) != 0xa0))
+			return;
+		if ((svga->crtcreg == 0x36) && (svga->crtc[0x39] != 0xa5))
+			return;
 		old = svga->crtc[svga->crtcreg];
 		svga->crtc[svga->crtcreg] = val;
 		switch (svga->crtcreg)
@@ -1154,6 +1172,8 @@ void s3_out(uint16_t addr, uint8_t val, void *p)
 			svga->hwcursor.addr = ((((svga->crtc[0x4c] << 8) | svga->crtc[0x4d]) & 0xfff) * 1024) + (svga->hwcursor.yoff * 16);
 			if ((s3->chip == S3_TRIO32 || s3->chip == S3_TRIO64) && svga->bpp == 32)
 				svga->hwcursor.x <<= 1;
+			else if ((s3->chip == S3_86C801 || s3->chip == S3_86C805) && (svga->bpp == 15 || svga->bpp == 16))
+				svga->hwcursor.x >>= 1;
 			break;
 
 			case 0x4a:
@@ -1195,7 +1215,7 @@ void s3_out(uint16_t addr, uint8_t val, void *p)
 			case 0x42:
 			if (s3->chip == S3_VISION964) {
 				if (((svga->miscout >> 2) & 3) == 3)
-	        	        	icd2061_write(&s3->icd2061, svga->crtc[0x42] & 0x0f);
+	        	        	icd2061_write(svga->clock_gen, svga->crtc[0x42] & 0x0f);
 			}
 			break;
 
@@ -1255,7 +1275,9 @@ uint8_t s3_in(uint16_t addr, void *p)
 		else if (s3->chip == S3_VISION964) {
 			rs3 = !!(svga->crtc[0x55] & 0x02);
 			return bt48x_ramdac_in(addr, rs2, rs3, svga->ramdac, svga);
-		} else
+		} else if (s3->chip == S3_86C801 || s3->chip == S3_86C805)
+			return att49x_ramdac_in(addr, svga->ramdac, svga);
+		else
 			return sdac_ramdac_in(addr, rs2, svga->ramdac, svga);	
 		break;
 
@@ -1281,6 +1303,10 @@ uint8_t s3_in(uint16_t addr, void *p)
 				   return temp;
 			case 0x69: return s3->ma_ext;
 			case 0x6a: return s3->bank;
+			/* Phoenix S3 video BIOS'es seem to expect CRTC registers 6B and 6C
+			   to be mirrors of 59 and 5A. */
+			case 0x6b: return svga->crtc[0x59];
+			case 0x6c: return svga->crtc[0x5a] & 0x80;
 		}
 		return svga->crtc[svga->crtcreg];
 	}
@@ -1318,6 +1344,12 @@ void s3_recalctimings(svga_t *svga)
 			svga->clock = cpuclock / svga->getclock(svga->crtc[0x42] & 0x0f, svga->clock_gen);
 		else
 			svga->clock = cpuclock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
+	} else if (s3->chip == S3_86C801 || s3->chip == S3_86C805) {
+		svga->interlace = svga->crtc[0x42] & 0x20;
+		if (((svga->miscout >> 2) & 3) == 3)
+			svga->clock = cpuclock / svga->getclock(svga->crtc[0x42] & 0x0f, svga->clock_gen);
+		else
+			svga->clock = cpuclock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
 	} else {
 		svga->interlace = svga->crtc[0x42] & 0x20;
 		svga->clock = cpuclock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
@@ -1340,17 +1372,20 @@ void s3_recalctimings(svga_t *svga)
 			break;
 			case 15: 
 			svga->render = svga_render_15bpp_highres; 
-			if (s3->chip != S3_VISION964)
+			if (s3->chip != S3_VISION964 && s3->chip != S3_86C801)
 				svga->hdisp /= 2;
 			break;
 			case 16: 
 			svga->render = svga_render_16bpp_highres; 
-			if (s3->chip != S3_VISION964)
+			if (s3->chip != S3_VISION964 && s3->chip != S3_86C801)
 				svga->hdisp /= 2;
 			break;
-			case 24: 
+			case 24:
 			svga->render = svga_render_24bpp_highres; 
-			svga->hdisp /= 3;
+			if (s3->chip != S3_86C801 && s3->chip != S3_86C805)
+				svga->hdisp /= 3;
+			else
+				svga->hdisp = (svga->hdisp * 2) / 3;
 			break;
 			case 32:
 			svga->render = svga_render_32bpp_highres; 
@@ -1400,8 +1435,9 @@ void s3_updatemapping(s3_t *s3)
 		break;
 	}
 	
-	if (svga->crtc[0x58] & 0x10) /*Linear framebuffer*/
+	if ((svga->crtc[0x58] & 0x10) || (s3->accel.advfunc_cntl & 0x10))
 	{
+		/*Linear framebuffer*/
 		mem_map_disable(&svga->mapping);
 		
 		s3->linear_base = (svga->crtc[0x5a] << 16) | (svga->crtc[0x59] << 24);
@@ -1420,6 +1456,8 @@ void s3_updatemapping(s3_t *s3)
 			switch (s3->chip) {
 				case S3_TRIO32:
 				case S3_TRIO64:
+				case S3_86C801:
+				case S3_86C805:
 					s3->linear_size = 0x400000;
 					break;
 				default:
@@ -1492,6 +1530,7 @@ void s3_accel_out(uint16_t port, uint8_t val, void *p)
 		break;
 		case 0x4ae8:
 		s3->accel.advfunc_cntl = val;
+		s3_updatemapping(s3);
 		break;
 	}
 }
@@ -1564,19 +1603,29 @@ uint8_t s3_accel_in(uint16_t port, void *p)
 		case 0x9ae8:
 		if (!s3->blitter_busy)
 			wake_fifo_thread(s3);
-		if (FIFO_FULL)
+		if (FIFO_FULL && s3->chip != S3_86C801 && s3->chip != S3_86C805)
 			return 0xff; /*FIFO full*/
 		return 0;    /*FIFO empty*/
 		case 0x9ae9:
 		if (!s3->blitter_busy)
 			wake_fifo_thread(s3);
 		temp = 0;
-		if (!FIFO_EMPTY)
-			temp |= 0x02; /*Hardware busy*/
+		if (s3->chip == S3_86C801 || s3->chip == S3_86C805)
+		{
+			if (!FIFO_EMPTY)
+				temp |= 0x02;
+			if (s3->data_available)
+				temp |= 0x01;
+		}
 		else
-			temp |= s3->status_9ae8; /*FIFO empty*/
-		if (FIFO_FULL)
-			temp |= 0xf8; /*FIFO full*/
+		{
+			if (!FIFO_EMPTY)
+				temp |= 0x02; /*Hardware busy*/
+			else
+				temp |= s3->status_9ae8; /*FIFO empty*/
+			if (FIFO_FULL)
+				temp |= 0xf8; /*FIFO full*/
+		}
 		return temp;
 
 		case 0xa2e8:
@@ -1828,7 +1877,7 @@ void s3_accel_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat
 	int compare_mode = (s3->accel.multifunc[0xe] >> 7) & 3;
 	uint32_t rd_mask = s3->accel.rd_mask;
 	int cmd = s3->accel.cmd >> 13;
-	
+
 	if ((s3->chip == S3_TRIO64) && (s3->accel.cmd & (1 << 11)))
 		cmd |= 8;
 
@@ -1868,6 +1917,7 @@ void s3_accel_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat
 
 	if (s3->bpp == 0) compare &=   0xff;
 	if (s3->bpp == 1) compare &= 0xffff;
+
 	switch (cmd)
 	{
 		case 1: /*Draw line*/
@@ -1883,9 +1933,12 @@ void s3_accel_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat
 
 		s3->status_9ae8 = 4; /*To avoid the spam from OS/2's drivers*/
 
+		s3->data_available = 0;
+
 		if ((s3->accel.cmd & 0x100) && !cpu_input)
 		{
 			s3->status_9ae8 = 2; /*To avoid the spam from OS/2's drivers*/
+			s3->data_available = 1;
 			return; /*Wait for data from CPU*/
 		}				
 
@@ -2032,9 +2085,12 @@ void s3_accel_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat
 
 		s3->status_9ae8 = 4; /*To avoid the spam from OS/2's drivers*/
 
+		s3->data_available = 0;
+
 		if ((s3->accel.cmd & 0x100) && !cpu_input)
 		{
 			s3->status_9ae8 = 2; /*To avoid the spam from OS/2's drivers*/
+			s3->data_available = 1;
 			return; /*Wait for data from CPU*/
 		}				
 
@@ -2765,16 +2821,13 @@ void s3_pci_write(int func, int addr, uint8_t val, void *p)
 		break;
 		
 		case 0x12: 
-		svga->crtc[0x5a] = val & 0x80;
-#if 0
 		svga->crtc[0x5a] = (svga->crtc[0x5a] & 0x7f) | (val & 0x80);
-#endif
-		s3_updatemapping(s3); 
+		s3_updatemapping(s3);
 		break;
-		case 0x13: 
-		svga->crtc[0x59] = val;	
-		s3_updatemapping(s3); 
-		break;		
+		case 0x13:
+		svga->crtc[0x59] = val;
+		s3_updatemapping(s3);
+		break;
 
 		case 0x30: case 0x32: case 0x33:
 		if (!s3->has_bios)
@@ -2822,6 +2875,16 @@ s3_init(const device_t *info)
 	uint32_t vram_size;
 
 	switch(info->local) {
+		case S3_V7MIRAGE_86C801:
+			bios_fn = ROM_V7MIRAGE_86C801;
+			chip = S3_86C801;
+			video_inform(VID_TYPE_SPEC, &timing_s3_86c801);
+			break;
+		case S3_PHOENIX_86C805:
+			bios_fn = ROM_PHOENIX_86C805;
+			chip = S3_86C805;
+			video_inform(VID_TYPE_SPEC, &timing_s3_86c805);
+			break;
 		case S3_PARADISE_BAHAMAS64:
 			bios_fn = ROM_PARADISE_BAHAMAS64;
 			chip = S3_VISION864;
@@ -2909,38 +2972,42 @@ s3_init(const device_t *info)
 		s3_hwcursor_draw,
 		NULL);
 
-	switch (vram) {
-		case 0:		/* 512 kB */
-			svga->vram_mask = (1 << 19) - 1;
-			svga->vram_max = 2 << 20;
-			break;
-		case 1:		/* 1 MB */
-			/* VRAM in first MB, mirrored in 2nd MB, 3rd and 4th MBs are open bus.
-			   This works with the #9 9FX BIOS, and matches how my real Trio64 behaves,
-			   but does not work with the Phoenix EDO BIOS. Possibly an FPM/EDO difference? */
-			svga->vram_mask = (1 << 20) - 1;
-			svga->vram_max = 2 << 20;
-			break;
-		case 2:
-		default:	/*2 MB */
-			/* VRAM in first 2 MB, 3rd and 4th MBs are open bus. */
-			svga->vram_mask = (2 << 20) - 1;
-			svga->vram_max = 2 << 20;
-			break;
-		case 4: /*4MB*/
-			svga->vram_mask = (4 << 20) - 1;
-			svga->vram_max = 4 << 20;
-			break;
-		case 8: /*8MB*/
-			svga->vram_mask = (8 << 20) - 1;
-			svga->vram_max = 8 << 20;
-			break;
+	if (s3->chip != S3_86C801 && s3->chip != S3_86C805) {
+		switch (vram) {
+			case 0:		/* 512 kB */
+				svga->vram_mask = (1 << 19) - 1;
+				svga->vram_max = 2 << 20;
+				break;
+			case 1:		/* 1 MB */
+				/* VRAM in first MB, mirrored in 2nd MB, 3rd and 4th MBs are open bus.
+				   This works with the #9 9FX BIOS, and matches how my real Trio64 behaves,
+				   but does not work with the Phoenix EDO BIOS. Possibly an FPM/EDO difference? */
+				svga->vram_mask = (1 << 20) - 1;
+				svga->vram_max = 2 << 20;
+				break;
+			case 2:
+			default:	/*2 MB */
+				/* VRAM in first 2 MB, 3rd and 4th MBs are open bus. */
+				svga->vram_mask = (2 << 20) - 1;
+				svga->vram_max = 2 << 20;
+				break;
+			case 4: /*4MB*/
+				svga->vram_mask = (4 << 20) - 1;
+				svga->vram_max = 4 << 20;
+				break;
+			case 8: /*8MB*/
+				svga->vram_mask = (8 << 20) - 1;
+				svga->vram_max = 8 << 20;
+				break;
+		}
 	}
 
 	if (info->flags & DEVICE_PCI)
 		svga->crtc[0x36] = 2 | (3 << 2) | (1 << 4) | (vram_sizes[vram] << 5);
-	else
+	else if (info->flags & DEVICE_VLB)
 		svga->crtc[0x36] = 1 | (3 << 2) | (1 << 4) | (vram_sizes[vram] << 5);
+	else
+		svga->crtc[0x36] = 3 | (3 << 2) | (1 << 4) | (vram_sizes[vram] << 5);
 	svga->crtc[0x37] = 1 | (7 << 5);
 
 	svga->vblank_start = s3_vblank_start;
@@ -2965,6 +3032,34 @@ s3_init(const device_t *info)
 	s3->int_line = 0;
 
 	switch(info->local) {
+		case S3_V7MIRAGE_86C801:
+			svga->decode_mask = (2 << 20) - 1;
+			stepping = 0xa0; /*86C801/86C805*/
+			s3->id = stepping;
+			s3->id_ext = stepping;
+			s3->id_ext_pci = 0;
+			s3->packed_mmio = 0;
+			svga->crtc[0x5a] = 0x0a;
+
+			svga->ramdac = device_add(&att490_ramdac_device);
+			svga->clock_gen = device_add(&av9194_device);
+			svga->getclock = av9194_getclock;
+			break;
+
+		case S3_PHOENIX_86C805:
+			svga->decode_mask = (2 << 20) - 1;
+			stepping = 0xa0; /*86C801/86C805*/
+			s3->id = stepping;
+			s3->id_ext = stepping;
+			s3->id_ext_pci = 0;
+			s3->packed_mmio = 0;
+			svga->crtc[0x5a] = 0x0a;
+
+			svga->ramdac = device_add(&att492_ramdac_device);
+			svga->clock_gen = device_add(&av9194_device);
+			svga->getclock = av9194_getclock;
+			break;
+
 		case S3_PARADISE_BAHAMAS64:
 		case S3_PHOENIX_VISION864:
 			svga->decode_mask = (8 << 20) - 1;
@@ -3027,6 +3122,17 @@ s3_init(const device_t *info)
 	}
 
 	return s3;
+}
+
+
+static int s3_v7mirage_86c801_available(void)
+{
+	return rom_present(ROM_V7MIRAGE_86C801);
+}
+
+static int s3_phoenix_86c805_available(void)
+{
+	return rom_present(ROM_PHOENIX_86C805);
 }
 
 static int s3_bahamas64_available(void)
@@ -3185,6 +3291,30 @@ static const device_config_t s3_config[] =
 	}
 };
 
+
+const device_t s3_v7mirage_86c801_isa_device = {
+    "SPEA V7 Mirage (S3 86c801) ISA",
+    DEVICE_AT | DEVICE_ISA,
+    S3_V7MIRAGE_86C801,
+    s3_init, s3_close, NULL,
+    s3_v7mirage_86c801_available,
+    s3_speed_changed,
+    s3_force_redraw,
+    NULL,
+    s3_9fx_config
+};
+
+const device_t s3_phoenix_86c805_vlb_device = {
+    "Phoenix S3 86c805 VLB",
+    DEVICE_VLB,
+    S3_PHOENIX_86C805,
+    s3_init, s3_close, NULL,
+    s3_phoenix_86c805_available,
+    s3_speed_changed,
+    s3_force_redraw,
+    NULL,
+    s3_9fx_config
+};
 
 const device_t s3_bahamas64_vlb_device = {
     "Paradise Bahamas 64 (S3 Vision864)",

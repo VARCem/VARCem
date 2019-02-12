@@ -8,14 +8,14 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.8	2019/02/09
+ * Version:	@(#)vid_cga.c	1.0.9	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2019 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -70,6 +70,58 @@ static const uint8_t crtcmask[32] = {
     0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
+static const int ws_array[16] = {3,4,5,6,7,8,4,5,6,7,8,4,5,6,7,8};
+static const video_timings_t cga_timing = { VID_ISA,8,16,32,8,16,32 };
+
+
+#ifdef _DEBUG
+void
+cga_print(cga_t *dev)
+{
+    int x_res = dev->crtc[0x02];
+    int hchar = 3;
+    char ncol = '4';
+
+    if (! (dev->cgamode & 0x08))
+	return;
+
+#if 0
+    if (dev->cgamode & 1)
+	x_res <<= 3;
+    else if (! (dev->cgamode & 2))
+	x_res <<= 4;
+    else if (! (dev->cgamode & 16))
+	x_res <<= 3;
+    else
+	x_res <<= 4;
+#else
+    if ((dev->cgamode & 0x12) == 0x02)
+	hchar++;
+    else if ((dev->cgamode & 0x03) == 0x00)
+	hchar++;
+    x_res <<= hchar;
+#endif
+
+    if ((dev->cgamode & 0x12) == 0x12)
+	ncol = '8';
+    else if ((dev->cgamode & 0x03) == 0x01)
+	ncol = '8';
+    if ((dev->cgamode & 0x12) == 0x10)
+	ncol = 't';
+    else if ((dev->cgamode & 0x03) == 0x03)
+	ncol = 'g';
+
+#if 0
+    INFO("CGA: HSync Pos: %i chars (%i p), VSync Pos: %i chars (%i p)\n",
+	dev->crtc[0x02], x_res, dev->crtc[0x07], dev->crtc[0x07] * (dev->crtc[0x09] + 1));
+#else
+    INFO("CGA: [%c%c%i] HSync Pos: %i chars (%i p), VSync Pos: %i chars (%i p)\n",
+       (dev->cgamode & 2) ? 'G' : 'T', ncol, hchar,
+       dev->crtc[0x02], x_res,
+       dev->crtc[0x07], dev->crtc[0x07] * (dev->crtc[0x09] + 1));
+#endif
+}
+#endif
 
 
 void
@@ -101,37 +153,36 @@ cga_out(uint16_t port, uint8_t val, void *priv)
     uint8_t old;
 
     switch (port) {
-	case 0x3d4:
+	case 0x03d4:
 		dev->crtcreg = val & 31;
 		return;
 
-	case 0x3d5:
+	case 0x03d5:
 		old = dev->crtc[dev->crtcreg];
 		dev->crtc[dev->crtcreg] = val & crtcmask[dev->crtcreg];
 		if (old != val) {
-			if (dev->crtcreg < 0xe || dev->crtcreg > 0x10) {
+			if ((dev->crtcreg < 0x0e) || (dev->crtcreg > 0x10)) {
 				fullchange = changeframecount;
 				cga_recalctimings(dev);
 			}
 		}
 		return;
 
-	case 0x3d8:
-		if (((dev->cgamode ^ val) & 5) != 0) {
-			dev->cgamode = val;
-			update_cga16_color(dev->cgamode);
-		}
-
-		if ((dev->cgamode ^ val) & 1) {
-			cga_palette = (dev->rgb_type << 1);
-			cgapal_rebuild();
-		}
-
+	case 0x03d8:
+		old = dev->cgamode;
 		dev->cgamode = val;
+		if (old ^ val) {
+			if ((old ^ val) & 0x05)
+				update_cga16_color(val);
+			cga_recalctimings(dev);
+		}
 		return;
 
-	case 0x3d9:
+	case 0x03d9:
+		old = dev->cgacol;
 		dev->cgacol = val;
+		if (old ^ val)
+			cga_recalctimings(dev);
 		return;
     }
 }
@@ -144,15 +195,15 @@ cga_in(uint16_t port, void *priv)
     uint8_t ret = 0xff;
 
     switch (port) {
-	case 0x3d4:
+	case 0x03d4:
 		ret = dev->crtcreg;
 		break;
 
-	case 0x3d5:
+	case 0x03d5:
 		ret = dev->crtc[dev->crtcreg];
 		break;
 
-	case 0x3da:
+	case 0x03da:
 		ret = dev->cgastat;
 		break;
 
@@ -165,17 +216,28 @@ cga_in(uint16_t port, void *priv)
 
 
 void
+cga_waitstates(void *priv)
+{
+    int ws;
+
+    ws = ws_array[cycles & 0x0f];
+    cycles -= ws;
+}
+
+
+void
 cga_write(uint32_t addr, uint8_t val, void *priv)
 {
     cga_t *dev = (cga_t *)priv;
 
     dev->vram[addr & 0x3fff] = val;
+
     if (dev->snow_enabled) {
 	dev->charbuffer[ ((int)(((dev->dispontime - dev->vidtime) * 2) / CGACONST)) & 0xfc] = val;
 	dev->charbuffer[(((int)(((dev->dispontime - dev->vidtime) * 2) / CGACONST)) & 0xfc) | 1] = val;
     }
 
-    cycles -= 4;
+    cga_waitstates(dev);
 }
 
 
@@ -184,7 +246,7 @@ cga_read(uint32_t addr, void *priv)
 {
     cga_t *dev = (cga_t *)priv;
 
-    cycles -= 4;	
+    cga_waitstates(dev);
 
     if (dev->snow_enabled) {
 	dev->charbuffer[ ((int)(((dev->dispontime - dev->vidtime) * 2) / CGACONST)) & 0xfc] = dev->vram[addr & 0x3fff];
@@ -217,6 +279,7 @@ cga_poll(void *priv)
     int x, c;
     int oldvc;
     uint8_t chr, attr;
+    uint8_t border;
     uint16_t dat;
     int cols[4];
     int col;
@@ -229,7 +292,7 @@ cga_poll(void *priv)
 	oldsc = dev->sc;
 
 	if ((dev->crtc[8] & 3) == 3) 
-	   dev->sc = ((dev->sc << 1) + dev->oddeven) & 7;
+		dev->sc = ((dev->sc << 1) + dev->oddeven) & 7;
 
 	if (dev->cgadispon) {
 		if (dev->displine < dev->firstline) {
@@ -240,80 +303,93 @@ cga_poll(void *priv)
 
 		for (c = 0; c < 8; c++) {
 			if ((dev->cgamode & 0x12) == 0x12) {
-				buffer->line[dev->displine][c] = 0;
-				if (dev->cgamode & 1)
-					buffer->line[dev->displine][c + (dev->crtc[1] << 3) + 8] = 0;
-				else
-					buffer->line[dev->displine][c + (dev->crtc[1] << 4) + 8] = 0;
+				buffer->line[(dev->displine << 1)][c] =
+				buffer->line[(dev->displine << 1) + 1][c] = 0;
+				if (dev->cgamode & 1) {
+					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 3) + 8] =
+					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 3) + 8] = 0;
+				} else {
+					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 4) + 8] =
+					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 4) + 8] = 0;
+				}
 			} else {
-				buffer->line[dev->displine][c] = (dev->cgacol & 15) + 16;
-				if (dev->cgamode & 1)
-					buffer->line[dev->displine][c + (dev->crtc[1] << 3) + 8] = (dev->cgacol & 15) + 16;
-				else
-					buffer->line[dev->displine][c + (dev->crtc[1] << 4) + 8] = (dev->cgacol & 15) + 16;
+				buffer->line[(dev->displine << 1)][c] =
+				buffer->line[(dev->displine << 1) + 1][c] = (dev->cgacol & 15) + 16;
+				if (dev->cgamode & 1) {
+					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 3) + 8] =
+					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 3) + 8] = (dev->cgacol & 15) + 16;
+				} else {
+					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 4) + 8] =
+					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 4) + 8] = (dev->cgacol & 15) + 16;
+				}
 			}
 		}
 
 		if (dev->cgamode & 1) {
 			for (x = 0; x < dev->crtc[1]; x++) {
-				if (dev->cgamode & 8) {
+				if (dev->cgamode & 8) {	
 					chr = dev->charbuffer[x << 1];
 					attr = dev->charbuffer[(x << 1) + 1];
-				} else {
-					chr = 0;
-					attr = 0;
-				}
-
+				} else
+					chr = attr = 0;
 				drawcursor = ((dev->ma == ca) && dev->con && dev->cursoron);
+				cols[1] = (attr & 15) + 16;
 				if (dev->cgamode & 0x20) {
-					cols[1] = (attr & 15) + 16;
 					cols[0] = ((attr >> 4) & 7) + 16;
 					if ((dev->cgablink & 8) && (attr & 0x80) && !dev->drawcursor) 
 						cols[1] = cols[0];
-				} else {
-					cols[1] = (attr & 15) + 16;
+				} else
 					cols[0] = (attr >> 4) + 16;
-				}
-
 				if (drawcursor) {
-					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					for (c = 0; c < 8; c++) {
+						buffer->line[(dev->displine << 1)][(x << 3) + c + 8] =
+						buffer->line[(dev->displine << 1) + 1][(x << 3) + c + 8] =
+							cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					}
 				} else {
-					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					for (c = 0; c < 8; c++) {
+						buffer->line[(dev->displine << 1)][(x << 3) + c + 8] =
+						buffer->line[(dev->displine << 1) + 1][(x << 3) + c + 8] =
+							cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					}
 				}
 				dev->ma++;
 			}
-		} else if (!(dev->cgamode & 2)) {
+		} else if (! (dev->cgamode & 2)) {
 			for (x = 0; x < dev->crtc[1]; x++) {
 				if (dev->cgamode & 8) {
 					chr  = dev->vram[((dev->ma << 1) & 0x3fff)];
 					attr = dev->vram[(((dev->ma << 1) + 1) & 0x3fff)];
-				} else {
-					chr = 0;
-					attr = 0;
-				}
-
+				} else
+					chr = attr = 0;
 				drawcursor = ((dev->ma == ca) && dev->con && dev->cursoron);
+				cols[1] = (attr & 15) + 16;
 				if (dev->cgamode & 0x20) {
-					cols[1] = (attr & 15) + 16;
 					cols[0] = ((attr >> 4) & 7) + 16;
-					if ((dev->cgablink & 8) && (attr & 0x80)) cols[1] = cols[0];
-				} else {
-					cols[1] = (attr & 15) + 16;
+					if ((dev->cgablink & 8) && (attr & 0x80))
+						cols[1] = cols[0];
+				} else
 					cols[0] = (attr >> 4) + 16;
-				}
 				dev->ma++;
-
 				if (drawcursor) {
-					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 4)+(c << 1) + 8] = buffer->line[dev->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					for (c = 0; c < 8; c++) {
+						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8] =
+						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8] =
+						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8] =
+						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8] =
+							cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					}
 				} else {
-					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 4) + (c << 1) + 8] = buffer->line[dev->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					for (c = 0; c < 8; c++) {
+						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8] =
+						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8] =
+						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8] =
+						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8] =
+						cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					}
 				}
 			}
-		} else if (!(dev->cgamode & 16)) {
+		} else if (! (dev->cgamode & 16)) {
 			cols[0] = (dev->cgacol & 15) | 16;
 			col = (dev->cgacol & 16) ? 24 : 16;
 			if (dev->cgamode & 4) {
@@ -333,38 +409,43 @@ cga_poll(void *priv)
 			for (x = 0; x < dev->crtc[1]; x++) {
 				if (dev->cgamode & 8)
 					dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
-				  else
+				else
 					dat = 0;
-
 				dev->ma++;
-
 				for (c = 0; c < 8; c++) {
-					buffer->line[dev->displine][(x << 4) + (c << 1) + 8] = buffer->line[dev->displine][(x << 4) + (c << 1) + 1 + 8] = cols[dat >> 14];
+					buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8] =
+					buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8] =
+					buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8] =
+					buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8] =
+						cols[dat >> 14];
 					dat <<= 2;
 				}
 			}
 		} else {
 			cols[0] = 0; cols[1] = (dev->cgacol & 15) + 16;
 			for (x = 0; x < dev->crtc[1]; x++) {
-				if (dev->cgamode & 8)
+				if (dev->cgamode & 8)	
 					dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
-				  else
+				else
 					dat = 0;
-
 				dev->ma++;
-
 				for (c = 0; c < 16; c++) {
-					buffer->line[dev->displine][(x << 4) + c + 8] = cols[dat >> 15];
+					buffer->line[(dev->displine << 1)][(x << 4) + c + 8] =
+					buffer->line[(dev->displine << 1) + 1][(x << 4) + c + 8] =
+						cols[dat >> 15];
 					dat <<= 1;
 				}
 			}
 		}
 	} else {
 		cols[0] = ((dev->cgamode & 0x12) == 0x12) ? 0 : (dev->cgacol & 15) + 16;
-		if (dev->cgamode & 1)
-			cga_hline(buffer, 0, dev->displine, (dev->crtc[1] << 3) + 16, cols[0]);
-		else
-			cga_hline(buffer, 0, dev->displine, (dev->crtc[1] << 4) + 16, cols[0]);
+		if (dev->cgamode & 1) {
+			cga_hline(buffer, 0, (dev->displine << 1), (dev->crtc[1] << 3) + 16, cols[0]);
+			cga_hline(buffer, 0, (dev->displine << 1) + 1, (dev->crtc[1] << 3) + 16, cols[0]);
+		} else {
+			cga_hline(buffer, 0, (dev->displine << 1), (dev->crtc[1] << 4) + 16, cols[0]);
+			cga_hline(buffer, 0, (dev->displine << 1) + 1, (dev->crtc[1] << 4) + 16, cols[0]);
+		}
 	}
 
 	if (dev->cgamode & 1)
@@ -373,15 +454,23 @@ cga_poll(void *priv)
 		x = (dev->crtc[1] << 4) + 16;
 
 	if (dev->composite) {
-		for (c = 0; c < x; c++)
-			buffer32->line[dev->displine][c] = buffer->line[dev->displine][c] & 0xf;
+		for (c = 0; c < x; c++) {
+			buffer32->line[(dev->displine << 1)][c] = buffer->line[(dev->displine << 1)][c] & 0xf;
+			buffer32->line[(dev->displine << 1) + 1][c] = buffer->line[(dev->displine << 1) + 1][c] & 0xf;
+		}
 
-		Composite_Process(dev->cgamode, 0, x >> 2, buffer32->line[dev->displine]);
+		if (dev->cgamode & 0x10)
+			border = 0x00;
+		else
+			border = dev->cgacol & 0x0f;
+
+		Composite_Process(dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1)]);
+		Composite_Process(dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1) + 1]);
 	}
 
 	dev->sc = oldsc;
 	if (dev->vc == dev->crtc[7] && !dev->sc)
-	   dev->cgastat |= 8;
+		dev->cgastat |= 8;
 	dev->displine++;
 	if (dev->displine >= 360) 
 		dev->displine = 0;
@@ -390,8 +479,8 @@ cga_poll(void *priv)
 	dev->linepos = 0;
 	if (dev->vsynctime) {
 		dev->vsynctime--;
-		if (!dev->vsynctime)
-		   dev->cgastat &= ~8;
+		if (! dev->vsynctime)
+			dev->cgastat &= ~8;
 	}
 
 	if (dev->sc == (dev->crtc[11] & 31) || ((dev->crtc[8] & 3) == 3 && dev->sc == ((dev->crtc[11] & 31) >> 1))) { 
@@ -400,7 +489,7 @@ cga_poll(void *priv)
 	}
 
 	if ((dev->crtc[8] & 3) == 3 && dev->sc == (dev->crtc[9] >> 1))
-	   dev->maback = dev->ma;
+		dev->maback = dev->ma;
 
 	if (dev->vadj) {
 		dev->sc++;
@@ -425,10 +514,10 @@ cga_poll(void *priv)
 		if (oldvc == dev->crtc[4]) {
 			dev->vc = 0;
 			dev->vadj = dev->crtc[5];
-			if (! dev->vadj)
+			if (! dev->vadj) {
 				dev->cgadispon = 1;
-			if (! dev->vadj)
 				dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
+			}
 
 			switch (dev->crtc[10] & 0x60) {
 				case 0x20:
@@ -449,28 +538,35 @@ cga_poll(void *priv)
 			dev->cgadispon = 0;
 			dev->displine = 0;
 			dev->vsynctime = 16;
+
 			if (dev->crtc[7]) {
 				if (dev->cgamode & 1)
 					x = (dev->crtc[1] << 3) + 16;
 				else
 					x = (dev->crtc[1] << 4) + 16;
 				dev->lastline++;
-
-				if ((x != xsize) || ((dev->lastline - dev->firstline) != ysize) || video_force_resize_get()) {
+#ifdef _DEBUG
+				cga_print(dev);
+#endif
+				if ((dev->cgamode & 8) && x && (dev->lastline - dev->firstline) &&
+				    ((x != xsize) || (((dev->lastline - dev->firstline) << 1) != ysize) ||
+				    video_force_resize_get())) {
 					xsize = x;
-					ysize = dev->lastline - dev->firstline;
+					ysize = (dev->lastline - dev->firstline) << 1;
 					if (xsize < 64) xsize = 656;
-					if (ysize < 32) ysize = 200;
-					set_screen_size(xsize, (ysize << 1) + 16);
+					if (ysize < 32) ysize = 400;
+					set_screen_size(xsize, ysize + 16);
 
 					if (video_force_resize_get())
 						video_force_resize_set(0);
 				}
-					
+
 				if (dev->composite) 
-				   video_blit_memtoscreen(0, dev->firstline - 4, 0, (dev->lastline - dev->firstline) + 8, xsize, (dev->lastline - dev->firstline) + 8);
-				else	  
-				   video_blit_memtoscreen_8(0, dev->firstline - 4, 0, (dev->lastline - dev->firstline) + 8, xsize, (dev->lastline - dev->firstline) + 8);
+					video_blit_memtoscreen(0, (dev->firstline - 4) << 1, 0, ((dev->lastline - dev->firstline) + 8) << 1,
+							       xsize, ((dev->lastline - dev->firstline) + 8) << 1);
+				else
+					video_blit_memtoscreen_8(0, (dev->firstline - 4) << 1, 0, ((dev->lastline - dev->firstline) + 8) << 1,
+								 xsize, ((dev->lastline - dev->firstline) + 8) << 1);
 				frames++;
 
 				video_res_x = xsize - 16;
@@ -479,16 +575,15 @@ cga_poll(void *priv)
 					video_res_x /= 8;
 					video_res_y /= dev->crtc[9] + 1;
 					video_bpp = 0;
-				} else if (!(dev->cgamode & 2)) {
+				} else if (! (dev->cgamode & 2)) {
 					video_res_x /= 16;
 					video_res_y /= dev->crtc[9] + 1;
 					video_bpp = 0;
-				} else if (!(dev->cgamode & 16)) {
+				} else if (! (dev->cgamode & 16)) {
 					video_res_x /= 2;
 					video_bpp = 2;
-				} else {
+				} else
 					video_bpp = 1;
-				}
 			}
 			dev->firstline = 1000;
 			dev->lastline = 0;
@@ -509,7 +604,7 @@ cga_poll(void *priv)
 
 	if (dev->cgadispon && (dev->cgamode & 1)) {
 		for (x = 0; x < (dev->crtc[1] << 1); x++)
-		    dev->charbuffer[x] = dev->vram[(((dev->ma << 1) + x) & 0x3fff)];
+			dev->charbuffer[x] = dev->vram[(((dev->ma << 1) + x) & 0x3fff)];
 	}
     }
 }
@@ -525,8 +620,8 @@ cga_init(cga_t *dev)
 void *
 cga_standalone_init(const device_t *info)
 {
-    cga_t *dev;
     int display_type;
+    cga_t *dev;
 
     dev = (cga_t *)mem_alloc(sizeof(cga_t));
     memset(dev, 0x00, sizeof(cga_t));
@@ -546,7 +641,7 @@ cga_standalone_init(const device_t *info)
 
     mem_map_add(&dev->mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		dev->vram, MEM_MAPPING_EXTERNAL, dev);
 
     io_sethandler(0x03d0, 16,
 		  cga_in,NULL,NULL, cga_out,NULL,NULL, dev);
@@ -657,7 +752,6 @@ const device_config_t cga_config[] = {
     }
 };
 
-static const video_timings_t cga_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t cga_device = {
     "CGA",
@@ -666,6 +760,6 @@ const device_t cga_device = {
     NULL,
     cga_speed_changed,
     NULL,
-    &cga_timings,
+    &cga_timing,
     cga_config
 };

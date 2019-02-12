@@ -8,11 +8,11 @@
  *
  *		Shared code for all the floppy modules.
  *
- * Version:	@(#)fdd_common.c	1.0.5	2018/09/13
+ * Version:	@(#)fdd_common.c	1.0.6	2019/02/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
 #include "fdd_imd.h"
 #include "fdd_img.h"
 #include "fdd_json.h"
+#include "fdd_mfm.h"
 #include "fdd_td0.h"
 
 
@@ -478,6 +479,7 @@ floppy_init(void)
     td0_init();
     imd_init();
     json_init();
+    mfm_init();
 
     /* Reset all drives. */
     for (i = 0; i < FDD_NUM; i++) {

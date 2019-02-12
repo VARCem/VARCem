@@ -12,15 +12,15 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.40	2018/11/20
+ * Version:	@(#)config.c	1.0.41	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		David Simunic, <simunic.david@outlook.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -203,7 +203,7 @@ create_section(const char *name)
     section_t *ns = (section_t *)mem_alloc(sizeof(section_t));
 
     memset(ns, 0x00, sizeof(section_t));
-    strncpy(ns->name, name, sizeof(ns->name));
+    strncpy(ns->name, name, strlen(ns->name));
     list_add(&ns->list, &config_head);
 
     return(ns);
@@ -216,7 +216,7 @@ create_entry(section_t *section, const char *name)
     entry_t *ne = (entry_t *)mem_alloc(sizeof(entry_t));
 
     memset(ne, 0x00, sizeof(entry_t));
-    strncpy(ne->name, name, sizeof(ne->name));
+    strncpy(ne->name, name, strlen(ne->name));
     list_add(&ne->list, &section->entry_head);
 
     return(ne);
@@ -1947,7 +1947,7 @@ config_set_string(const char *cat, const char *name, const char *val)
     if (ent == NULL)
 	ent = create_entry(section, name);
 
-    strncpy(ent->data, val, sizeof(ent->data));
+    strncpy(ent->data, val, strlen(ent->data));
     mbstowcs(ent->wdata, ent->data, sizeof_w(ent->wdata));
 }
 

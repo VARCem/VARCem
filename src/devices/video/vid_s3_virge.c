@@ -8,14 +8,14 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.14	2018/10/26
+ * Version:	@(#)vid_s3_virge.c	1.0.15	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -2984,7 +2984,7 @@ static void dest_pixel_lit_texture_modulate(s3d_state_t *state)
 static void tri(virge_t *virge, s3d_t *s3d_tri, s3d_state_t *state, int yc, int32_t dx1, int32_t dx2)
 {
 	svga_t *svga = &virge->svga;
-        uint8_t *vram = virge->svga.vram;
+        uint8_t *vram = svga->vram;
 
         int x_dir = s3d_tri->tlr ? 1 : -1;
         
@@ -3039,7 +3039,7 @@ static void tri(virge_t *virge, s3d_t *s3d_tri, s3d_state_t *state, int yc, int3
                         y_count -= diff_y;
                 }
                 if ((state->y - y_count) < s3d_tri->clip_t)
-                        y_count = state->y - s3d_tri->clip_t;
+                        y_count = (state->y - s3d_tri->clip_t) + 1;
         }
 
         dest_offset = s3d_tri->dest_base + (state->y * s3d_tri->dest_str);
@@ -3082,7 +3082,7 @@ static void tri(virge_t *virge, s3d_t *s3d_tri, s3d_state_t *state, int yc, int3
                                         if (xe < s3d_tri->clip_l)
                                                 goto tri_skip_line;
                                         if (xe > s3d_tri->clip_r)
-                                                xe = s3d_tri->clip_r;
+                                                xe = s3d_tri->clip_r + 1;
                                         if (x < s3d_tri->clip_l)
                                         {
                                                 int diff_x = s3d_tri->clip_l - x;
@@ -3107,7 +3107,7 @@ static void tri(virge_t *virge, s3d_t *s3d_tri, s3d_state_t *state, int yc, int3
                                         if (xe > s3d_tri->clip_r)
                                                 goto tri_skip_line;
                                         if (xe < s3d_tri->clip_l)
-                                                xe = s3d_tri->clip_l;
+                                                xe = s3d_tri->clip_l - 1;
                                         if (x > s3d_tri->clip_r)
                                         {
                                                 int diff_x = x - s3d_tri->clip_r;
@@ -3131,6 +3131,9 @@ static void tri(virge_t *virge, s3d_t *s3d_tri, s3d_state_t *state, int yc, int3
 
                         dest_addr = dest_offset + (x * (bpp + 1));
                         z_addr = z_offset + (x << 1);
+
+                        x &= 0xfff;
+                        xe &= 0xfff;			
 
                         for (; x != xe; x = (x + x_dir) & 0xfff)
                         {

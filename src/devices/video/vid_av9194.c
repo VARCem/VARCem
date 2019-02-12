@@ -6,17 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the Commodore PC3 system.
+ *		AV9194 clock generator emulation..
  *
- * Version:	@(#)m_at_commodore.c	1.0.11	2019/02/10
+ * Version:	@(#)vid_av9194.c	1.0.1	2019/01/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2019 Fred N. van Kempen.
+ *		Copyright 2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,63 +37,97 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
-#include "../emu.h"
-#include "../io.h"
-#include "../mem.h"
-#include "../device.h"
-#include "../devices/ports/parallel.h"
-#include "../devices/ports/serial.h"
-#include "../devices/floppy/fdd.h"
-#include "../devices/floppy/fdc.h"
-#include "machine.h"
+#include "../../emu.h"
+#include "../../device.h"
+#include "video.h"
+#include "vid_av9194.h"
 
 
-static void
-pc3_write(uint16_t port, uint8_t val, void *priv)
+float
+av9194_getclock(int clock, void *priv)
 {
-    switch (val & 0x03) {
+    float ret = 0.0;
+
+    switch (clock & 0x0f) {
+	case 0:
+		ret = 25175000.0;
+		break;
+
 	case 1:
-		parallel_setup(0, 0x03bc);
+		ret = 28322000.0;
 		break;
 
 	case 2:
-       		parallel_setup(0, 0x0378);
+		ret = 40000000.0;
 		break;
 
-	case 3:
-		parallel_setup(0, 0x0278);
+	case 4:
+		ret = 50000000.0;
+		break;
+	case 5:
+		ret = 77000000.0;
+		break;
+
+	case 6:
+		ret = 36000000.0;
+		break;
+
+	case 7:
+		ret = 44900000.0;
+		break;
+
+	case 8:
+		ret = 130000000.0;
+		break;
+
+	case 9:
+		ret = 120000000.0;
+		break;
+
+	case 0xa:
+		ret = 80000000.0;
+		break;
+
+	case 0xb:
+		ret = 31500000.0;
+		break;
+
+	case 0xc:
+		ret = 110000000.0;
+		break;
+
+	case 0xd:
+		ret = 65000000.0;
+		break;
+
+	case 0xe:
+		ret = 75000000.0;
+		break;
+
+	case 0xf:
+		ret = 94500000.0;
 		break;
     }
 
-    switch (val & 0x0c) {
-	case 0x04:
-		serial_setup(0, 0x02f8, 3);
-		break;
-
-	case 0x08:
-		serial_setup(0, 0x03f8, 4);
-		break;
-    }
+    return ret;
 }
 
 
-static void
-pc3_init(void)
+static void *
+av9194_init(const device_t *info)
 {
-    io_sethandler(0x0230, 1,
-		  NULL,NULL,NULL, pc3_write,NULL,NULL, NULL);
+    /* Return something non-NULL. */
+    return (void *)&av9194_device;
 }
 
 
-void
-machine_at_cmdpc_init(const machine_t *model, void *arg)
-{
-    machine_at_ide_init(model, arg);
-
-    mem_remap_top(384);
-
-    device_add(&fdc_at_device);
-
-    pc3_init();
-}
+const device_t av9194_device = {
+    "AV9194 Clock Generator",
+    0,
+    0,
+    av9194_init, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

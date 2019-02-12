@@ -8,14 +8,14 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.12	2018/11/11
+ * Version:	@(#)vid_hercules_plus.c	1.0.13	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -642,7 +642,7 @@ herculesplus_init(const device_t *info)
     mem_map_add(&dev->mapping, 0xb0000, 0x10000,
 		herculesplus_read,NULL,NULL,
 		herculesplus_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		dev->vram, MEM_MAPPING_EXTERNAL, dev);
 
     io_sethandler(0x03b0, 16,
 		  herculesplus_in,NULL, NULL, herculesplus_out,NULL,NULL, dev);

@@ -8,13 +8,13 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.11	2018/11/02
+ * Version:	@(#)scsi_cdrom.c	1.0.12	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2195,6 +2195,12 @@ do_command(void *p, uint8_t *cdb)
 	case GPCMD_PLAY_AUDIO_12:
 	case GPCMD_PLAY_AUDIO_MSF:
 	case GPCMD_PLAY_AUDIO_TRACK_INDEX:
+#if 0
+	case GPCMD_PLAY_AUDIO_TRACK_RELATIVE_10:
+	case GPCMD_PLAY_AUDIO_TRACK_RELATIVE_12:
+#endif
+		len = 0;
+
 		set_phase(dev, SCSI_PHASE_STATUS);
 
 		switch(cdb[0]) {
@@ -2349,7 +2355,7 @@ do_command(void *p, uint8_t *cdb)
 				if (ret) {
 					set_buf_len(dev, BufLen, &alloc_length);
 					data_command_finish(dev, alloc_length, alloc_length,
-								       len, 0);
+								       alloc_length, 0);
 				} else
 					buf_free(dev);
 				return;

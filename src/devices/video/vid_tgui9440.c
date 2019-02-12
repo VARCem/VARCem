@@ -47,14 +47,14 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.10	2018/10/08
+ * Version:	@(#)vid_tgui9440.c	1.0.11	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -281,7 +281,7 @@ void tgui_out(uint16_t addr, uint8_t val, void *p)
                         break;
                         case 0xC: 
                         if (svga->seqregs[0xe] & 0x80) 
-                        svga->seqregs[0xc] = val; 
+                        	svga->seqregs[0xc] = val; 
                         break;
                         case 0xd: 
                         if (tgui->oldmode)
@@ -541,15 +541,6 @@ void tgui_recalctimings(svga_t *svga)
         if (svga->interlace && tgui->type < TGUI_9440)
                 svga->rowoffset >>= 1;
 
-        if (svga->crtc[0x17] & 4)
-        {
-                svga->vtotal *= 2;
-                svga->dispend *= 2;
-                svga->vsyncstart *= 2;
-                svga->split *= 2;
-                svga->vblankstart *= 2;
-        }
-        
         if (tgui->type >= TGUI_9440)
         {
                 if (svga->miscout & 8)

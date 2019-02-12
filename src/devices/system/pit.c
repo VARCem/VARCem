@@ -13,14 +13,14 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.7	2018/09/22
+ * Version:	@(#)pit.c	1.0.8	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -310,7 +310,7 @@ pit_read_timer(PIT *dev, int t)
     timer_clock();
 
     if (dev->using_timer[t] && !(dev->m[t] == 3 && !dev->gate[t])) {
-	r = (int)((int64_t)((dev->c[t] + ((1LL << TIMER_SHIFT) - 1)) / PITCONST) >> TIMER_SHIFT);
+	r = (int)((dev->c[t] + ((1 << TIMER_SHIFT) - 1)) / PITCONST) >> TIMER_SHIFT;
 
 	if (dev->m[t] == 2)
 		r++;
@@ -335,6 +335,7 @@ static void
 pit_write(uint16_t addr, uint8_t val, void *priv)
 {
     PIT *dev = (PIT *)priv;
+    double sv = 0.0;
     int t;
 
     switch (addr & 3) {
@@ -426,7 +427,9 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 				break;
 		}
 
-		speakval = (int)(((float)dev->l[2]/(float)dev->l[0])*0x4000)-0x2000;
+		/* PIT latches are in fractions of 60 ms, so convert to sample using the formula below. */
+		sv = (((double) dev->l[2]) / 60.0) * 16384.0;
+		speakval = ((int) sv) - 0x2000;
 		if (speakval > 0x2000)
 			speakval = 0x2000;
 		break;
@@ -645,21 +648,47 @@ setrtcconst(float clock)
 void
 setpitclock(float clock)
 {
+    /*
+     * Some calculations are done differently for 4.77 MHz, 7.16 MHz,
+     * and 9.54 MHz CPU's, so that loss of precision is avoided and
+     * the various component kept in better synchronization.
+     */
     cpuclock = clock;
 
-    PITCONST = clock/(1193181.0f + (2.0f / 3.0f));
-    CGACONST = (clock/(19687503.0f/11.0f));
-    MDACONST = (clock/2032125.0f);
-    VGACONST1 = (clock/25175000.0f);
-    VGACONST2 = (clock/28322000.0f);
+    if (clock == 4772728.0) {
+       	PITCONST = 4.0;
+        CGACONST = (float)(8.0 / 3.0);
+    } else if (clock == 7159092.0) {
+	/* 7.16 MHz - simplify the calculation to avoid loss of precision. */
+       	PITCONST = 6.0;
+        CGACONST = 4.0;
+    } else if (clock == 9545456.0) {
+	/* 9.54 MHz - simplify the calculation to avoid loss of precision. */
+       	PITCONST = 8.0;
+        CGACONST = (float)(8.0 / 1.5);
+    } else {
+        PITCONST = clock / 1193182.0;
+        CGACONST = (float)(clock / (19687503.0 / 11.0));
+    }
 
-    isa_timing = clock/8000000.0f;
-    bus_timing = clock/(float)cpu_busspeed;
+    MDACONST = (clock / 2032125.0f);
+    VGACONST1 = (clock / 25175000.0f);
+    VGACONST2 = (clock / 28322000.0f);
+
+    isa_timing = clock / 8000000.0f;
+    bus_timing = clock / (float)cpu_busspeed;
 
     video_update_timing();
 
-    xt_cpu_multi = (int)((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machine_speed());
-//    TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
+    if (clock == 4772728.0) {
+       	xt_cpu_multi = (int) (3 * (1 << TIMER_SHIFT));
+    } else if (clock == 7159092.0) {
+	xt_cpu_multi = (int) (2 * (1 << TIMER_SHIFT));
+    } else if (clock == 9545456.0) {
+	xt_cpu_multi = (int) (1.5*(double)(1 << TIMER_SHIFT));
+    } else {
+	xt_cpu_multi = (int) ((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
+    }
 
     device_speed_changed();
 }
@@ -675,7 +704,7 @@ clearpit(void)
 int
 pit_get_timer_0(void)
 {
-    int r = (int)((int64_t)((pit.c[0] + ((1LL << TIMER_SHIFT) - 1)) / PITCONST) >> TIMER_SHIFT);
+    int r = (int)((pit.c[0] + ((1LL << TIMER_SHIFT) - 1)) / PITCONST) >> TIMER_SHIFT;
 
     if (pit.m[0] == 2)
 	r++;
@@ -687,16 +716,6 @@ pit_get_timer_0(void)
 	r <<= 1;
 
     return r;
-}
-
-
-float
-pit_timer0_freq(void)
-{
-    if (pit.l[0])
-	return (1193181.0f + (2.0f / 3.0f))/(float)pit.l[0];
-      else
-	return (1193181.0f + (2.0f / 3.0f))/(float)0x10000;
 }
 
 

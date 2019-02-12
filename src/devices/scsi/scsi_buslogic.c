@@ -13,14 +13,14 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.13	2018/10/16
+ * Version:	@(#)scsi_buslogic.c	1.0.14	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,6 +70,7 @@
 #define BT640A_BIOS_PATH	L"scsi/buslogic/bt-640a_bios.rom"
 #define BT445S_BIOS_PATH	L"scsi/buslogic/bt-445s_bios.rom"
 #define BT445S_AUTO_BIOS_PATH	L"scsi/buslogic/bt-445s_autoscsi.rom"
+#define BT445S_SCAM_BIOS_PATH	L"scsi/buslogic/bt-445s_scam.rom"
 #define BT958D_BIOS_PATH	L"scsi/buslogic/bt-958d_bios.rom"
 #define BT958D_AUTO_BIOS_PATH	L"scsi/buslogic/bt-958d_autoscsi.rom"
 #define BT958D_SCAM_BIOS_PATH	L"scsi/buslogic/bt-958d_scam.rom"
@@ -1690,6 +1691,7 @@ buslogic_init(const device_t *info)
 		has_scam_rom = 0;
 		dev->fw_rev = "AA335";
 		dev->ha_bps = 5000000.0;	/* normal SCSI */
+		dev->max_id = 7;		/* narrow SCSI */
 		break;
 
 	case CHIP_BUSLOGIC_ISA:
@@ -1704,6 +1706,7 @@ buslogic_init(const device_t *info)
 		has_scam_rom = 0;
 		dev->fw_rev = "AA421E";
 		dev->ha_bps = 10000000.0;	/* fast SCSI */
+		dev->max_id = 7;		/* narrow SCSI */
 		break;
 
 	case CHIP_BUSLOGIC_MCA:
@@ -1719,6 +1722,7 @@ buslogic_init(const device_t *info)
 		dev->pos_regs[1] = 0x07;	
 		mca_add(buslogic_mca_read, buslogic_mca_write, dev);
 		dev->ha_bps = 5000000.0;	/* normal SCSI */
+		dev->max_id = 7;		/* narrow SCSI */
 		break;
 
 	case CHIP_BUSLOGIC_VLB:
@@ -1729,10 +1733,13 @@ buslogic_init(const device_t *info)
 		has_autoscsi_rom = 1;
 		autoscsi_rom_name = BT445S_AUTO_BIOS_PATH;
 		autoscsi_rom_size = 0x4000;
-		has_scam_rom = 0;
-		dev->fw_rev = "AA421E";
+		has_scam_rom = 1;
+		scam_rom_name = BT445S_SCAM_BIOS_PATH;
+		scam_rom_size = 0x0200;
+		dev->fw_rev = "AA507B";
 		dev->bit32 = 1;
 		dev->ha_bps = 10000000.0;	/* fast SCSI */
+		dev->max_id = 7;		/* narrow SCSI */
 		break;
 
 	case CHIP_BUSLOGIC_PCI:

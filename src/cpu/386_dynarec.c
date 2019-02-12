@@ -8,13 +8,15 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.5	2018/10/05
+ * Version:	@(#)386_dynarec.c	1.0.6	2019/02/10
  *
- * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
+ *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
+ *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,8 +66,6 @@
 /* Also in 386.c: */
 cpu_state_t	cpu_state;
 int		inscounts[256];
-uint32_t	oldpc2;
-uint32_t	oldcs2;
 uint32_t	oxpc;
 int		trap;
 int		inttype;

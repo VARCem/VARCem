@@ -8,14 +8,14 @@
  *
  *		Definitions for the Bt48x RAMDAC series driver.
  *
- * Version:	@(#)vid_bt485_ramdac.h	1.0.3	2018/10/05
+ * Version:	@(#)vid_bt485_ramdac.h	1.0.4	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,8 @@ typedef struct {
     uint32_t	extpallook[256];
     uint8_t	cursor32_data[256];
     uint8_t	cursor64_data[1024];
-    int		hwc_y, hwc_x;
+    int		hwc_y,
+		hwc_x;
     uint8_t	cr0;
     uint8_t	cr1;
     uint8_t	cr2;
@@ -53,7 +54,6 @@ typedef struct {
     uint8_t	cr4;
     uint8_t	status;
     uint8_t	type;
-    uint8_t	ext_addr;
 } bt48x_ramdac_t;
 
 

@@ -8,14 +8,14 @@
  *
  *		Implementation of Intel 8259 interrupt controller.
  *
- * Version:	@(#)pic.c	1.0.3	2018/10/05
+ * Version:	@(#)pic.c	1.0.4	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -61,7 +61,7 @@ pic_updatepending(void)
     uint16_t temp_pending = 0;
 
     if (AT) {
-	if ((pic2.pend&~pic2.mask)&~pic2.mask2)
+	if ((pic2.pend & ~pic2.mask) & ~pic2.mask2)
 		pic.pend |= pic.icw3;
 	else
 		pic.pend &= ~pic.icw3;
@@ -145,7 +145,7 @@ pic_autoeoi(void)
 		pic_update_mask(&pic.mask2, pic.ins);
 
 		if (AT) {
-			if (((1 << c) == pic.icw3) && (pic2.pend&~pic2.mask)&~pic2.mask2)
+			if (((1 << c) == pic.icw3) && (pic2.pend & ~pic2.mask) & ~pic2.mask2)
 				pic.pend |= pic.icw3;
 		}
 
@@ -169,34 +169,34 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
     if (addr&1) {
 	switch (pic.icw) {
 		case 0: /*OCW1*/
-			pic.mask=val;
+			pic.mask = val;
 			pic_updatepending();
 			break;
 
 		case 1: /*ICW2*/
-			pic.vector=val&0xF8;
-			if (pic.icw1 & 2) pic.icw=3;
-			else		  pic.icw=2;
+			pic.vector = val & 0xF8;
+			if (pic.icw1 & 2) pic.icw = 3;
+			else		  pic.icw = 2;
 			break;
 
 		case 2: /*ICW3*/
 			pic.icw3 = val;
 			DBGLOG(1, "PIC1 ICW3 now %02X\n", val);
-			if (pic.icw1 & 1) pic.icw=3;
-			else		  pic.icw=0;
+			if (pic.icw1 & 1) pic.icw = 3;
+			else		  pic.icw = 0;
 			break;
 
 		case 3: /*ICW4*/
 			pic.icw4 = val;
-			pic.icw=0;
+			pic.icw = 0;
 			break;
 	}
     } else {
 	if (val & 16) { /*ICW1*/
 		pic.mask = 0;
-		pic.mask2=0;
-		pic.icw=1;
-		pic.icw1=val;
+		pic.mask2 = 0;
+		pic.icw = 1;
+		pic.icw1 = val;
 		pic.ins = 0;
 		pic_updatepending();
 	}
@@ -205,7 +205,7 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
 			pic.ins &= ~(1 << (val & 7));
 			pic_update_mask(&pic.mask2, pic.ins);
 			if (AT) {
-				if (((val&7) == pic2.icw3) && (pic2.pend&~pic2.mask)&~pic2.mask2)
+				if (((val&7) == pic2.icw3) && (pic2.pend & ~pic2.mask) & ~pic2.mask2)
 					pic.pend |= pic.icw3;
 			}
 
@@ -222,7 +222,7 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
 					pic_update_mask(&pic.mask2, pic.ins);
 
 					if (AT) {
-						if (((1 << c) == pic.icw3) && (pic2.pend&~pic2.mask)&~pic2.mask2)
+						if (((1 << c) == pic.icw3) && (pic2.pend & ~pic2.mask) & ~pic2.mask2)
 							pic.pend |= pic.icw3;
 					}
 
@@ -231,8 +231,8 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
 							pic.pend |= 1 << c;
 					}
 
-					if (c==1 && keywaiting)
-						intclear&=~1;
+					if (c == 1 && keywaiting)
+						intclear &= ~1;
 					pic_updatepending();
 					return;
 				}
@@ -240,7 +240,7 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
 		}
 	} else {               /*OCW3*/
 		if (val & 2)
-			pic.read=(val & 1);
+			pic.read = (val & 1);
 	}
     }
 }
@@ -256,7 +256,10 @@ pic_read(uint16_t addr, void *priv)
 
     if (pic.read) {
 	DBGLOG(1, "Read PIC ins %02X\n", pic.ins);
-	return pic.ins | (pic2.ins ? 4 : 0);
+	if (AT)
+		return pic.ins | (pic2.ins ? 4 : 0);
+	else
+		return pic.ins;
     }
 
     return pic.pend;
@@ -301,34 +304,34 @@ pic2_write(uint16_t addr, uint8_t val, void *priv)
     if (addr & 1) {
 	switch (pic2.icw) {
 		case 0: /*OCW1*/
-			pic2.mask=val;
+			pic2.mask = val;
 			pic_updatepending();
 			break;
 
 		case 1: /*ICW2*/
-			pic2.vector=val & 0xF8;
+			pic2.vector = val & 0xF8;
 			DBGLOG(1, "PIC2 vector now: %02X\n", pic2.vector);
-			if (pic2.icw1 & 2) pic2.icw=3;
-			else		   pic2.icw=2;
+			if (pic2.icw1 & 2) pic2.icw = 3;
+			else		   pic2.icw = 2;
 			break;
 
 		case 2: /*ICW3*/
 			pic2.icw3 = val;
 			DBGLOG(1, "PIC2 ICW3 now %02X\n", val);
-			if (pic2.icw1 & 1) pic2.icw=3;
-			else		   pic2.icw=0;
+			if (pic2.icw1 & 1) pic2.icw = 3;
+			else		   pic2.icw = 0;
 			break;
 
 		case 3: /*ICW4*/
 			pic2.icw4 = val;
-			pic2.icw=0;
+			pic2.icw = 0;
 			break;
 	}
     } else {
 	if (val & 16) { /*ICW1*/
 		pic2.mask = 0;
-		pic2.mask2=0;
-		pic2.icw=1;
+		pic2.mask2 = 0;
+		pic2.icw = 1;
 		pic2.icw1 = val;
 		pic2.ins = 0;
 		pic_updatepending();
@@ -345,7 +348,7 @@ pic2_write(uint16_t addr, uint8_t val, void *priv)
 			pic_updatepending();
 		} else {
 			for (c = 0; c < 8; c++) {
-				if (pic2.ins&(1<<c)) {
+				if (pic2.ins & (1 << c)) {
 					pic2.ins &= ~(1<<c);
 					pic_update_mask(&pic2.mask2, pic2.ins);
 
@@ -361,7 +364,7 @@ pic2_write(uint16_t addr, uint8_t val, void *priv)
 		}
 	} else {               /*OCW3*/
 		if (val & 2)
-			pic2.read=(val & 1);
+			pic2.read = (val & 1);
 	}
     }
 }
@@ -513,13 +516,19 @@ pic_process_interrupt(PIC* target_pic, int c)
 
     int pic_int = c & 7;
     int pic_int_num = 1 << pic_int;
+    int in_service = 0;
 
-    if (pending & pic_int_num) {
+    in_service = (target_pic->ins & (pic_int_num - 1));
+
+    if (AT && (c >= 8))
+	in_service |= (pic.ins & 0x03);
+
+    if ((pending & pic_int_num) && !in_service) {
 	target_pic->pend &= ~pic_int_num;
 	target_pic->ins |= pic_int_num;
 	pic_update_mask(&target_pic->mask2, target_pic->ins);
 
-	if (c >= 8) {
+	if (AT && (c >= 8)) {
 		pic.ins |= (1 << pic2.icw3); /*Cascade IRQ*/
 		pic_update_mask(&pic.mask2, pic.ins);
 	}
@@ -527,7 +536,7 @@ pic_process_interrupt(PIC* target_pic, int c)
 	pic_updatepending();
 
 	if (target_pic->icw4 & 0x02)
-		(c >= 8) ? pic2_autoeoi() : pic_autoeoi();
+		(AT && (c >= 8)) ? pic2_autoeoi() : pic_autoeoi();
 
 	if (! c)
 		pit_set_gate(&pit2, 0, 0);

@@ -8,14 +8,14 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.8	2018/09/19
+ * Version:	@(#)device.h	1.0.9	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -55,15 +55,16 @@
 enum {
     DEVICE_ALL = 0x0000,	/* any/all device */
     DEVICE_UNSTABLE = 0x0001,	/* unstable device, be cautious */
-    DEVICE_AT = 0x0002,		/* requires an AT-compatible system */
-    DEVICE_PS2 = 0x0004,	/* requires a PS/1 or PS/2 system */
+    DEVICE_PCJR = 0x0002,	/* requires an IBM PCjr */
+    DEVICE_AT = 0x0004,		/* requires an AT-compatible system */
+    DEVICE_PS2 = 0x0008,	/* requires a PS/1 or PS/2 system */
     DEVICE_ISA = 0x0100,	/* requires the ISA bus */
-    DEVICE_CBUS = 0x0200,	/* requires the C-BUS bus */
-    DEVICE_MCA = 0x0400,	/* requires the MCA bus */
-    DEVICE_EISA = 0x0800,	/* requires the EISA bus */
-    DEVICE_VLB = 0x1000,	/* requires the PCI bus */
-    DEVICE_PCI = 0x2000,	/* requires the VLB bus */
-    DEVICE_AGP = 0x4000		/* requires the AGP bus */
+    DEVICE_EISA = 0x0200,	/* requires the EISA bus */
+    DEVICE_VLB = 0x0400,	/* requires the VLB bus */
+    DEVICE_PCI = 0x0800,	/* requires the PCI bus */
+    DEVICE_AGP = 0x1000,	/* requires the AGP bus */
+    DEVICE_MCA = 0x2000,	/* requires the MCA bus */
+    DEVICE_CBUS = 0x4000	/* requires the C-BUS bus (PC98) */
 };
 #define DEVICE_SYS_MASK	0x0006
 #define DEVICE_BUS_MASK	0xff00

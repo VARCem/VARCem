@@ -8,14 +8,14 @@
  *
  *		Implementation of the PC-Speaker device.
  *
- * Version:	@(#)snd_speaker.c	1.0.4	2018/10/16
+ * Version:	@(#)snd_speaker.c	1.0.5	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,28 +47,31 @@
 #include "snd_speaker.h"
 
 
-int		speaker_mute,
-		speaker_gated,
-		speaker_enable,
-		was_speaker_enable;
+int		speaker_mute = 0,
+		speaker_gated = 0,
+		speaker_enable = 0,
+		was_speaker_enable = 0;
 
 int		gated,
 		speakval,
 		speakon;
 
 
-static int16_t	speaker_buffer[SOUNDBUFLEN];
+static int32_t	speaker_buffer[SOUNDBUFLEN];
 static int	speaker_pos;
 
 
 void
 speaker_update(void)
 {
-    int16_t val;
+    int32_t val;
+
+    if (speaker_pos >= sound_pos_global)
+	return;
 
     for (; speaker_pos < sound_pos_global; speaker_pos++) {
 	if (speaker_gated && was_speaker_enable) {
-		if (!pit.m[2] || pit.m[2]==4)
+		if (!pit.m[2] || pit.m[2] == 4)
 			val = speakval;
 		else if (pit.l[2] < 0x40)
 			val = 0x0a00;
@@ -88,13 +91,17 @@ speaker_update(void)
 static void
 get_buffer(int32_t *buffer, int len, void *p)
 {
+    int32_t val;
     int c;
 
     speaker_update();
         
     if (! speaker_mute) {
-	for (c = 0; c < len * 2; c++)
-		buffer[c] += speaker_buffer[c >> 1];
+	for (c = 0; c < len * 2; c++) {
+		val = speaker_buffer[c >> 1];
+		buffer[c++] += val;
+		buffer[c] += val;
+	}
     }
 
     speaker_pos = 0;

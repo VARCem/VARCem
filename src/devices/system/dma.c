@@ -8,14 +8,14 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.6	2018/06/25
+ * Version:	@(#)dma.c	1.0.7	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -84,7 +84,7 @@ static struct {
 static uint8_t
 _dma_read(int32_t addr)
 {
-    uint8_t temp = mem_readb_phys_dma(addr);
+    uint8_t temp = mem_readb_phys(addr);
 
     return(temp);
 }
@@ -93,7 +93,7 @@ _dma_read(int32_t addr)
 static void
 _dma_write(uint32_t addr, uint8_t val)
 {
-    mem_writeb_phys_dma(addr, val);
+    mem_writeb_phys(addr, val);
     mem_invalidate_range(addr, addr);
 }
 
@@ -743,13 +743,13 @@ dma_channel_read(int channel)
 		return(DMA_NODATA);
     }
 
-    if (! AT)
-	refreshread();
-
     if (dma_m & (1 << channel))
 	return(DMA_NODATA);
     if ((dma_c->mode & 0xC) != 8)
 	return(DMA_NODATA);
+
+    if (!AT && !channel)
+	refreshread();
 
     if (! dma_c->size) {
 	temp = _dma_read(dma_c->ac);
@@ -814,13 +814,13 @@ dma_channel_write(int channel, uint16_t val)
 		return(DMA_NODATA);
     }
 
-    if (! AT)
-	refreshread();
-
     if (dma_m & (1 << channel))
 	return(DMA_NODATA);
     if ((dma_c->mode & 0xC) != 4)
 	return(DMA_NODATA);
+
+    if (!AT && !channel)
+	refreshread();
 
     if (! dma_c->size) {
 	_dma_write(dma_c->ac, val & 0xff);
@@ -851,7 +851,7 @@ dma_channel_write(int channel, uint16_t val)
 			dma_c->ac += 2;
 		  else
 			dma_c->ac = (dma_c->ac & 0xfe0000) | ((dma_c->ac + 2) & 0x1ffff);
-	}
+	}
     }
 
     dma_stat_rq |= (1 << channel);
@@ -893,7 +893,7 @@ DMAPageRead(uint32_t PhysAddress, uint8_t *DataRead, uint32_t TotalSize)
     memcpy(DataRead, &ram[PhysAddress], TotalSize);
 #else
     for (i = 0; i < TotalSize; i++)
-	DataRead[i] = mem_readb_phys_dma(PhysAddress + i);
+	DataRead[i] = mem_readb_phys(PhysAddress + i);
 #endif
 }
 
@@ -908,7 +908,7 @@ DMAPageWrite(uint32_t PhysAddress, const uint8_t *DataWrite, uint32_t TotalSize)
     memcpy(&ram[PhysAddress], DataWrite, TotalSize);
 #else
     for (i = 0; i < TotalSize; i++)
-	mem_writeb_phys_dma(PhysAddress + i, DataWrite[i]);
+	mem_writeb_phys(PhysAddress + i, DataWrite[i]);
 
     mem_invalidate_range(PhysAddress, PhysAddress + TotalSize - 1);
 #endif

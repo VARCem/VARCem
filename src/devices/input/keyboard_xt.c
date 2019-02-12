@@ -8,14 +8,14 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.9	2018/11/02
+ * Version:	@(#)keyboard_xt.c	1.0.10	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -67,11 +67,15 @@
 
 
 typedef struct {
-    int8_t	blocked;
     uint8_t	type;
+    int8_t	tandy;  
 
     uint8_t	pa;
     uint8_t	pb;
+
+    int8_t	want_irq;  
+    int8_t	blocked;
+    uint8_t	key_waiting;
 } xtkbd_t;
 
 
@@ -348,13 +352,22 @@ kbd_poll(void *priv)
 
     keyboard_delay += (1000LL * TIMER_USEC);
 
-    if (key_queue_start != key_queue_end && !kbd->blocked) {
-	kbd->pa = key_queue[key_queue_start];
+    if (!(kbd->pb & 0x40) && (! kbd->tandy))
+	return;
+
+    if (kbd->want_irq) {
+	kbd->want_irq = 0;
+	kbd->pa = kbd->key_waiting;
+	kbd->blocked = 1;
 	picint(2);
+    }
+
+    if (key_queue_start != key_queue_end && !kbd->blocked) {
+	kbd->key_waiting = key_queue[key_queue_start];
 	DBGLOG(1, "XTkbd: reading %02X from the key queue at %i\n",
 					kbd->pa, key_queue_start);
 	key_queue_start = (key_queue_start + 1) & 0x0f;
-	kbd->blocked = 1;
+	kbd->want_irq = 1;
     }
 }
 
@@ -436,31 +449,34 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 {
     xtkbd_t *kbd = (xtkbd_t *)priv;
 
-    if (port != 0x61) return;
+    switch (port) {
+	case 0x61:
+		if (!(kbd->pb & 0x40) && (val & 0x40)) {
+			key_queue_start = key_queue_end = 0;
+			kbd->want_irq = 0;
+			kbd->blocked = 0;
+			kbd_adddata(0xaa);
+		}
+		kbd->pb = val;
+		ppi.pb = val;
 
-    if (!(kbd->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
-	DEBUG("XTkbd: reset keyboard\n");
-	key_queue_end = key_queue_start;
-	kbd_adddata(0xaa);
+		timer_process();
+		timer_update_outstanding();
+
+		speaker_update();
+		speaker_gated = val & 1;
+		speaker_enable = val & 2;
+		if (speaker_enable) 
+			was_speaker_enable = 1;
+		pit_set_gate(&pit, 2, val & 1);
+
+		if (val & 0x80) {
+			kbd->pa = 0;
+			kbd->blocked = 0;
+			picintc(2);
+		}
+		break;
     }
-
-    if ((kbd->pb & 0x80)==0 && (val & 0x80)!=0) {
-	kbd->pa = 0;
-	kbd->blocked = 0;
-	picintc(2);
-    }
-    kbd->pb = val;
-    ppi.pb = val;
-
-    timer_process();
-    timer_update_outstanding();
-
-    speaker_update();
-    speaker_gated = val & 1;
-    speaker_enable = val & 2;
-    if (speaker_enable) 
-	was_speaker_enable = 1;
-    pit_set_gate(&pit, 2, val & 1);
 }
 
 
@@ -473,14 +489,23 @@ kbd_read(uint16_t port, void *priv)
 
     switch (port) {
 	case 0x60:
-		if ((kbd->type == 0) && (kbd->pb & 0x80)) {
-			vid = video_type();
-			if (vid == VID_TYPE_SPEC)
-				ret = 0x4d;		/* EGA/VGA */
-			  else if (vid == VID_TYPE_MDA)
-				ret = 0x7d;		/* MDA/Hercules */
-			  else
-				ret = 0x6d;		/* CGA */
+		if (kbd->pb & 0x80) switch(kbd->type) {
+			case 0:
+				vid = video_type();
+				if (vid == VID_TYPE_SPEC)
+					ret = 0x4d;		/* EGA/VGA */
+				  else if (vid == VID_TYPE_MDA)
+					ret = 0x7d;		/* MDA/Herc */
+				  else
+					ret = 0x6d;		/* CGA */
+				break;
+
+			case 1:
+				/*
+				 * According to Ruud on the PCem forum, this
+				 * is supposed to return 0xFF on the XT.
+				 */
+				ret = 0xff;
 		} else
 			ret = kbd->pa;
 		break;
@@ -534,9 +559,12 @@ kbd_reset(void *priv)
 {
     xtkbd_t *kbd = (xtkbd_t *)priv;
 
+    kbd->want_irq = 0;
     kbd->blocked = 0;
     kbd->pa = 0x00;
     kbd->pb = 0x00;
+
+    keyboard_scan = 1;
 
     key_queue_start = 0,
     key_queue_end = 0;
@@ -550,18 +578,17 @@ kbd_init(const device_t *info)
 
     kbd = (xtkbd_t *)mem_alloc(sizeof(xtkbd_t));
     memset(kbd, 0x00, sizeof(xtkbd_t));
-    kbd->type = info->local;
-
-    keyboard_set_table(scancode_xt);
-
-    keyboard_scan = 1;
 
     io_sethandler(0x0060, 4,
 		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, kbd);
 
     keyboard_send = kbd_adddata_ex;
+    kbd_reset(kbd);
+    kbd->type = info->local;
 
     timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
+
+    keyboard_set_table(scancode_xt);
 
     return(kbd);
 }

@@ -8,13 +8,15 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.5	2018/09/19
+ * Version:	@(#)386.c	1.0.6	2019/02/10
  *
- * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,8 +82,7 @@ int		timetolive = 0;
 /* Also in 386_dynarec.c: */
 cpu_state_t	cpu_state;
 int		inscounts[256];
-uint32_t	oldpc2;
-uint32_t	oldcs2;
+//uint32_t	oldcs2, oldpc2;
 uint32_t	oxpc;
 int		trap;
 int		inttype;

@@ -9,14 +9,14 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.9	2018/09/22
+ * Version:	@(#)vid_ega.c	1.0.10	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -495,7 +495,7 @@ ega_out(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 0x3c2:
-		egaswitchread = val & 0xc;
+                egaswitchread = (val & 0xc) >> 2;
 		dev->vres = !(val & 0x80);
 		dev->pallook = dev->vres ? pallook16 : pallook64;
 		dev->vidclock = val & 4; /*printf("3C2 write %02X\n",val);*/
@@ -620,12 +620,7 @@ ega_in(uint16_t port, void *priv)
 		break;
 
 	case 0x3c2:
-		switch (egaswitchread) {
-			case 0xc: ret = (egaswitches & 1) ? 0x10 : 0; break;
-			case 0x8: ret = (egaswitches & 2) ? 0x10 : 0; break;
-			case 0x4: ret = (egaswitches & 4) ? 0x10 : 0; break;
-			case 0x0: ret = (egaswitches & 8) ? 0x10 : 0; break;
-		}
+		return (egaswitches & (8 >> egaswitchread)) ? 0x10 : 0x00;
 		break;
 
 	case 0x3c4: 
@@ -912,8 +907,8 @@ ega_init(ega_t *dev, int monitor_type, int is_mono)
 	
     dev->vram = (uint8_t *)mem_alloc(0x40000);
     dev->vram_limit = 256 * 1024;
-    dev->vrammask = dev->vram_limit-1;
-	
+    dev->vrammask = dev->vram_limit - 1;
+
     for (c = 0; c < 256; c++) {
 	e = c;
 	for (d = 0; d < 8; d++) {
@@ -1096,10 +1091,10 @@ ega_standalone_init(const device_t *info)
     }
 
     c = device_get_config_int("monitor_type");
-    ega_init(dev, c, (c & 0xf) == 10);
+    ega_init(dev, c, (c & 0x0f) == 0x0b);
 
     dev->vram_limit = device_get_config_int("memory") * 1024;
-    dev->vrammask = dev->vram_limit-1;
+    dev->vrammask = dev->vram_limit - 1;
 
     mem_map_add(&dev->mapping, 0xa0000, 0x20000,
 		ega_read,NULL,NULL, ega_write,NULL,NULL,
@@ -1248,6 +1243,17 @@ sega_standalone_available(void)
 }
 
 
+/*
+ * SW1 SW2 SW3 SW4
+ * OFF OFF  ON OFF	Monochrome			(5151)	1011	0x0b
+ *  ON OFF OFF  ON	Color 40x25			(5153)	0110	0x06
+ * OFF OFF OFF  ON	Color 80x25			(5153)	0111	0x07
+ *  ON  ON  ON OFF	Enhanced Color - Normal Mode	(5154)	1000	0x08
+ * OFF  ON  ON OFF	Enhanced Color - Enhanced Mode	(5154)	1001	0x09
+ *
+ * 0 = Switch closed (ON);
+ * 1 = Switch open   (OFF).
+ */
 static const device_config_t ega_config[] = {
     {
 	"memory", "Memory size", CONFIG_SELECTION, "", 256,
@@ -1270,22 +1276,28 @@ static const device_config_t ega_config[] = {
 	"monitor_type","Monitor type",CONFIG_SELECTION,"",9,
 	{
 		{
-			"EGA Color, 40x25",6
+			"Monochrome (5151/MDA) (white)",
+                        0x0b | (DISPLAY_WHITE << 4)
+                },
+                {
+                        "Monochrome (5151/MDA) (green)",
+                        0x0b | (DISPLAY_GREEN << 4)
 		},
 		{
-			"EGA Color, 80x25",7
+                        "Monochrome (5151/MDA) (amber)",
+                        0x0b | (DISPLAY_AMBER << 4)
 		},
 		{
-			"EGA Color, ECD",9
+                        "Color 40x25 (5153/CGA)", 0x06
 		},
 		{
-			"EGA Monochrome (white)",10 | (DISPLAY_WHITE << 4)
+                        "Color 80x25 (5153/CGA)", 0x07
 		},
 		{
-			"EGA Monochrome (green)",10 | (DISPLAY_GREEN << 4)
+                        "Enhanced Color - Normal Mode (5154/ECD)", 0x08
 		},
 		{
-			"EGA Monochrome (amber)",10 | (DISPLAY_AMBER << 4)
+                        "Enhanced Color - Enhanced Mode (5154/ECD)", 0x09
 		},
 		{
 			""

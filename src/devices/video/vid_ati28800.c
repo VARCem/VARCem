@@ -8,15 +8,15 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.15	2018/10/05
+ * Version:	@(#)vid_ati28800.c	1.0.16	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		greatpsycho, <greatpsycho@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -119,25 +119,14 @@ ati28800_out(uint16_t port, uint8_t val, void *priv)
 		old = dev->regs[dev->index];
 		dev->regs[dev->index] = val;
 		switch (dev->index) {
-			case 0xb2:
 			case 0xbd:
 			case 0xbe:
 				if (dev->regs[0xbe] & 8) /*Read/write bank mode*/ {
-					if (dev->regs[0xbd] & 4) {
-						svga->read_bank  = (((dev->regs[0xb2] >> 5) & 7) * 0x20000);
-						svga->write_bank = (((dev->regs[0xb2] >> 1) & 7) * 0x20000);
-					} else {
-						svga->read_bank  = (((dev->regs[0xb2] >> 5) & 7) * 0x10000);
-						svga->write_bank = (((dev->regs[0xb2] >> 1) & 7) * 0x10000);
-					}
+					svga->read_bank  = (((dev->regs[0xb2] >> 5) & 7) * 0x10000);
+					svga->write_bank = (((dev->regs[0xb2] >> 1) & 7) * 0x10000);
 				} else {	/*Single bank mode*/
-					if (dev->regs[0xbd] & 4) {
-						svga->read_bank =  (((dev->regs[0xb2] >> 1) & 7) * 0x20000);
-						svga->write_bank = (((dev->regs[0xb2] >> 1) & 7) * 0x20000);
-					} else {
-						svga->read_bank  = (((dev->regs[0xb2] >> 1) & 7) * 0x10000);
-						svga->write_bank = (((dev->regs[0xb2] >> 1) & 7) * 0x10000);
-					}
+					svga->read_bank  = (((dev->regs[0xb2] >> 1) & 7) * 0x10000);
+					svga->write_bank = (((dev->regs[0xb2] >> 1) & 7) * 0x10000);
 				}
 				break;
 
@@ -180,6 +169,7 @@ ati28800_out(uint16_t port, uint8_t val, void *priv)
 			return;
 		if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
 			val = (svga->crtc[7] & ~0x10) | (val & 0x10);
+
 		old = svga->crtc[svga->crtcreg];
 		svga->crtc[svga->crtcreg] = val;
 		if (old != val) {
@@ -382,9 +372,15 @@ ati28800_recalctimings(svga_t *svga)
     switch(((dev->regs[0xbe] & 0x10) >> 1) | ((dev->regs[0xb9] & 2) << 1) | ((svga->miscout & 0x0C) >> 2)) {
 	case 0x00: svga->clock = cpuclock / 42954000.0; break;
 	case 0x01: svga->clock = cpuclock / 48771000.0; break;
+#if 0
+	case 0x02: INFO("ATI: Clock 2\n", break;
+#endif
 	case 0x03: svga->clock = cpuclock / 36000000.0; break;
 	case 0x04: svga->clock = cpuclock / 50350000.0; break;
 	case 0x05: svga->clock = cpuclock / 56640000.0; break;
+#if 0
+	case 0x06: INFO("ATI: Clock 2\n", break;
+#endif
 	case 0x07: svga->clock = cpuclock / 44900000.0; break;
 	case 0x08: svga->clock = cpuclock / 30240000.0; break;
 	case 0x09: svga->clock = cpuclock / 32000000.0; break;
@@ -397,7 +393,8 @@ ati28800_recalctimings(svga_t *svga)
 	default: break;
     }
 
-    if (dev->regs[0xb8] & 0x40) svga->clock *= 2;
+    if (dev->regs[0xb8] & 0x40)
+	svga->clock *= 2;
 
     if (dev->regs[0xb6] & 0x10) {
 	svga->hdisp <<= 1;

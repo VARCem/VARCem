@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.58	2019/01/13
+# Version:	@(#)Makefile.VC	1.0.60	2019/02/10
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -631,7 +631,8 @@ FDDOBJ		:= fdc.obj \
 		   fdd.obj \
 		    fdd_common.obj fdd_86f.obj \
 		    fdd_fdi.obj fdi2raw.obj lzf_c.obj lzf_d.obj \
-		    fdd_imd.obj fdd_img.obj fdd_json.obj fdd_td0.obj
+		    fdd_imd.obj fdd_img.obj fdd_json.obj fdd_mfm.obj \
+		    fdd_td0.obj
 
 HDDOBJ		:= hdd.obj \
 		    hdd_image.obj hdd_table.obj \
@@ -701,7 +702,8 @@ VIDOBJ		:= video.obj \
 		    vid_ati_eeprom.obj \
 		    vid_ati18800.obj vid_ati28800.obj \
 		    vid_ati_mach64.obj vid_ati68860_ramdac.obj \
-		    vid_bt48x_ramdac.obj vid_icd2061.obj vid_ics2595.obj \
+		    vid_att20c49x_ramdac.obj vid_bt48x_ramdac.obj \
+		    vid_av9194.obj vid_icd2061.obj vid_ics2595.obj \
 		    vid_cl54xx.obj \
 		    vid_et4000.obj vid_sc1502x_ramdac.obj \
 		    vid_et4000w32.obj vid_stg_ramdac.obj \

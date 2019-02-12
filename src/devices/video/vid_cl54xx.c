@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.24	2019/01/07
+ * Version:	@(#)vid_cl54xx.c	1.0.25	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -17,8 +17,8 @@
  *		Barry Rodewald,
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2018 Barry Rodewald.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -58,7 +58,6 @@
 #include "vid_svga_render.h"
 
 
-
 #define BIOS_GD5420_PATH	L"video/cirruslogic/5420.vbi"
 #define BIOS_GD5422_PATH	L"video/cirruslogic/cl5422.bin"
 #define BIOS_GD5426_PATH	L"video/cirruslogic/diamond speedstar pro vlb v3.04.bin"
@@ -73,7 +72,6 @@
 #define BIOS_GD5446_PATH	L"video/cirruslogic/gd5446bv.vbi"
 #define BIOS_GD5446_STB_PATH	L"video/cirruslogic/stb_nitro64v.bin"
 #define BIOS_GD5480_PATH	L"video/cirruslogic/gd5480.rom"
-
 
 
 #define CIRRUS_ID_CLGD5402	  	0x89
@@ -91,7 +89,6 @@
 #define CIRRUS_ID_CLGD5480		0xbc
 
 
-
 /* sequencer 0x07 */
 #define CIRRUS_SR7_BPP_VGA		0x00
 #define CIRRUS_SR7_BPP_SVGA		0x01
@@ -106,18 +103,18 @@
 /* sequencer 0x12 */
 #define CIRRUS_CURSOR_SHOW		0x01
 #define CIRRUS_CURSOR_HIDDENPEL		0x02
-#define CIRRUS_CURSOR_LARGE		0x04	/* 64x64 if set, 32x32 if clear */
+#define CIRRUS_CURSOR_LARGE		0x04	/* 64x64 if set, else 32x32 */
 
-// sequencer 0x17
-#define CIRRUS_BUSTYPE_VLBFAST   0x10
-#define CIRRUS_BUSTYPE_PCI       0x20
-#define CIRRUS_BUSTYPE_VLBSLOW   0x30
-#define CIRRUS_BUSTYPE_ISA       0x38
-#define CIRRUS_MMIO_ENABLE       0x04
-#define CIRRUS_MMIO_USE_PCIADDR  0x40	/* 0xb8000 if cleared. */
-#define CIRRUS_MEMSIZEEXT_DOUBLE 0x80
+/* sequencer 0x17 */
+#define CIRRUS_BUSTYPE_VLBFAST		0x10
+#define CIRRUS_BUSTYPE_PCI		0x20
+#define CIRRUS_BUSTYPE_VLBSLOW		0x30
+#define CIRRUS_BUSTYPE_ISA		0x38
+#define CIRRUS_MMIO_ENABLE		0x04
+#define CIRRUS_MMIO_USE_PCIADDR		0x40	/* 0xb8000 if cleared. */
+#define CIRRUS_MEMSIZEEXT_DOUBLE	0x80
 
-// control 0x0b
+/* control 0x0b */
 #define CIRRUS_BANKING_DUAL             0x01
 #define CIRRUS_BANKING_GRANULARITY_16K  0x20	/* set:16k, clear:4k */
 
@@ -134,41 +131,43 @@
 #define CIRRUS_BLTMODE_PIXELWIDTH24	0x20
 #define CIRRUS_BLTMODE_PIXELWIDTH32	0x30
 
-// control 0x31
+/* control 0x31 */
 #define CIRRUS_BLT_BUSY                 0x01
 #define CIRRUS_BLT_START                0x02
 #define CIRRUS_BLT_RESET                0x04
 #define CIRRUS_BLT_FIFOUSED             0x10
 #define CIRRUS_BLT_AUTOSTART            0x80
 
-// control 0x33
+/* control 0x33 */
 #define CIRRUS_BLTMODEEXT_SOLIDFILL        0x04
 #define CIRRUS_BLTMODEEXT_COLOREXPINV      0x02
 #define CIRRUS_BLTMODEEXT_DWORDGRANULARITY 0x01
 
-#define CL_GD5429_SYSTEM_BUS_VESA 5
-#define CL_GD5429_SYSTEM_BUS_ISA  7
+#define CL_GD5429_SYSTEM_BUS_VESA	5
+#define CL_GD5429_SYSTEM_BUS_ISA	7
 
-#define CL_GD543X_SYSTEM_BUS_PCI  4
-#define CL_GD543X_SYSTEM_BUS_VESA 6
-#define CL_GD543X_SYSTEM_BUS_ISA  7
+#define CL_GD543X_SYSTEM_BUS_PCI	4
+#define CL_GD543X_SYSTEM_BUS_VESA	6
+#define CL_GD543X_SYSTEM_BUS_ISA	7
 
-typedef struct gd54xx_t
-{
-    mem_map_t	mmio_mapping;
-    mem_map_t 	linear_mapping;
 
-    svga_t	svga;
+typedef struct {
+    mem_map_t		mmio_mapping;
+    mem_map_t	 	linear_mapping;
 
-    int		has_bios, rev;
-    rom_t	bios_rom;
+    svga_t		svga;
 
-    uint32_t	vram_size;
-    uint32_t	vram_mask;
+    int			has_bios,
+			rev;
 
-    uint8_t	vclk_n[4];
-    uint8_t	vclk_d[4];        
-    uint32_t	bank[2];
+    rom_t		bios_rom;
+
+    uint32_t		vram_size;
+    uint32_t		vram_mask;
+
+    uint8_t		vclk_n[4];
+    uint8_t		vclk_d[4];        
+    uint32_t		bank[2];
 
     struct {
 	uint8_t	state;
@@ -201,8 +200,8 @@ typedef struct gd54xx_t
     uint8_t		pci_regs[256];
     uint8_t		int_line;
 
-    uint8_t		fc;		/* Feature Connector */
-						//FIXME: move to SVGA?  --FvK
+    /* FIXME: move to SVGA?  --FvK */
+    uint8_t		fc;			/* Feature Connector */
 
     uint8_t		clgd_latch[8];
 
@@ -223,608 +222,109 @@ static void	gd543x_mmio_writel(uint32_t addr, uint32_t val, void *p);
 static uint8_t	gd543x_mmio_read(uint32_t addr, void *p);
 static uint16_t	gd543x_mmio_readw(uint32_t addr, void *p);
 static uint32_t	gd543x_mmio_readl(uint32_t addr, void *p);
-static void	gd54xx_recalc_banking(gd54xx_t *gd54xx);
-static void	gd543x_recalc_mapping(gd54xx_t *gd54xx);
 static void	gd54xx_start_blit(uint32_t cpu_dat, int count,
 				  gd54xx_t *gd54xx, svga_t *svga);
 
+
 /* Returns 1 if the card is a 5422+ */
 static int
-gd54xx_is_5422(svga_t *svga)
+is_5422(svga_t *svga)
 {
-	if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5422)
-		return 1;
-	else
-		return 0;
+    if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5422)
+	return 1;
+
+    return 0;
 }
+
 
 /* Returns 1 if the card is a 5434, 5436/46, or 5480. */
 static int
-gd54xx_is_5434(svga_t *svga)
+is_5434(svga_t *svga)
 {
     if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5434)
 	return 1;
-    else
-	return 0;
+
+    return 0;
 }
 
 
 static void
-gd54xx_out(uint16_t addr, uint8_t val, void *p)
+recalc_banking(gd54xx_t *dev)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
-    uint8_t old;
-    int c;
-    uint8_t o, indx;
-    uint32_t o32;
+    svga_t *svga = &dev->svga;
 
-    if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) &&
-	!(svga->miscout & 1)) addr ^= 0x60;
+    if (! is_5422(svga)) {
+	dev->bank[0] = (svga->gdcreg[0x09] & 0x7f) << 12;
 
-    switch (addr) {
-	case 0x3ba:
-	case 0x3da:
-		gd54xx->fc = val;		//FIXME: move to SVGA? --FvK
-		break;
-	case 0x3c0:
-	case 0x3c1:
-		if (!svga->attrff) {
-			svga->attraddr = val & 0x3f;
-			if ((val & 0x20) != svga->attr_palette_enable) {
-				svga->fullchange = 3;
-				svga->attr_palette_enable = val & 0x20;
-				svga_recalctimings(svga);
-			}
-		} else {
-			o = svga->attrregs[svga->attraddr & 0x3f];
-			if ((svga->attraddr < 0x20) || (svga->attraddr >= 0x30))
-				svga->attrregs[svga->attraddr & 0x3f] = val;
-			if (svga->attraddr < 0x10) 
-				svga->fullchange = changeframecount;
-			if (svga->attraddr == 0x10 || svga->attraddr == 0x14 || svga->attraddr < 0x10) {
-				for (c = 0; c < 16; c++) {
-					if (svga->attrregs[0x10] & 0x80) svga->egapal[c] = (svga->attrregs[c] &  0xf) | ((svga->attrregs[0x14] & 0xf) << 4);
-					else                             svga->egapal[c] = (svga->attrregs[c] & 0x3f) | ((svga->attrregs[0x14] & 0xc) << 4);
-				}
-			}
-			/* Recalculate timings on change of attribute register 0x11 (overscan border color) too. */
-			if (svga->attraddr == 0x10) {
-				if (o != val)
-					svga_recalctimings(svga);
-			} else if (svga->attraddr == 0x11) {
-				if (!(svga->seqregs[0x12] & 0x80)) {
-					svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
-					if (o != val)  svga_recalctimings(svga);
-				}
-			} else if (svga->attraddr == 0x12) {
-				if ((val & 0xf) != svga->plane_mask)
-					svga->fullchange = changeframecount;
-				svga->plane_mask = val & 0xf;
-			}
-		}
-		svga->attrff ^= 1;
-                return;
-	case 0x3c4:
-		svga->seqaddr = val;
-		break;
-	case 0x3c5:
-		if (svga->seqaddr > 5) {
-			o = svga->seqregs[svga->seqaddr & 0x1f];
-			svga->seqregs[svga->seqaddr & 0x1f] = val;
-			switch (svga->seqaddr) {
-				case 0x06:
-					val &= 0x17;
-					if (val == 0x12)
-						svga->seqregs[6] = 0x12;
-					else
-						svga->seqregs[6] = 0x0f;
-				break;
-				
-				
-				case 0x08:	// Todo EEPROM
-					break;
-					
-				case 0x0a:
-					if (gd54xx_is_5434(svga))
-						{
-						svga->seqregs[0x0a] = val;
-						}
-					else { /* Hack to force memory size on some GD-542x BIOSes*/
-						val &= 0xe7;
-						switch (gd54xx->vram_size) {
-							case 0x80000:
-								svga->seqregs[0x0a] = val | 0x08;
-								break;
-
-							case 0x100000:
-								svga->seqregs[0x0a] = val | 0x10;
-								break;
-
-							case 0x200000:
-								svga->seqregs[0x0a] = val | 0x18;
-								break;
-						}
-					}
-					break;
-				case 0x0b: case 0x0c: case 0x0d: case 0x0e: /* VCLK stuff */
-					gd54xx->vclk_n[svga->seqaddr-0x0b] = val;
-					break;
-				case 0x1b: case 0x1c: case 0x1d: case 0x1e: /* VCLK stuff */
-					gd54xx->vclk_d[svga->seqaddr-0x1b] = val;
-					break;
-				case 0x10: case 0x30: case 0x50: case 0x70:
-				case 0x90: case 0xb0: case 0xd0: case 0xf0:
-					svga->hwcursor.x = (val << 3) | (svga->seqaddr >> 5);
-					break;
-				case 0x11: case 0x31: case 0x51: case 0x71:
-				case 0x91: case 0xb1: case 0xd1: case 0xf1:
-					svga->hwcursor.y = (val << 3) | (svga->seqaddr >> 5);
-					break;
-				case 0x12:
-					svga->ext_overscan = !!(val & 0x80);
-					if (svga->ext_overscan)
-						svga->overscan_color = gd54xx->extpallook[2];
-					else
-						svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
-					svga_recalctimings(svga);
-					svga->hwcursor.ena = val & CIRRUS_CURSOR_SHOW;
-					svga->hwcursor.xsize = svga->hwcursor.ysize = (val & CIRRUS_CURSOR_LARGE) ? 64 : 32;
-					svga->hwcursor.yoff = (svga->hwcursor.ysize == 32) ? 32 : 0;
-					if (val & CIRRUS_CURSOR_LARGE)
-						svga->hwcursor.addr = (((svga->vram_display_mask + 1)-0x4000) + ((svga->seqregs[0x13] & 0x3c) * 256));
-					else
-						svga->hwcursor.addr = (((svga->vram_display_mask + 1)-0x4000) + ((svga->seqregs[0x13] & 0x3f) * 256));
-					break;
-				case 0x13:
-					if (svga->seqregs[0x12] & CIRRUS_CURSOR_LARGE)
-						svga->hwcursor.addr = (((svga->vram_display_mask + 1)-0x4000) + ((val & 0x3c) * 256));
-					else
-						svga->hwcursor.addr = (((svga->vram_display_mask + 1)-0x4000) + ((val & 0x3f) * 256));
-					break;
-				case 0x15:
-					if (gd54xx_is_5434(svga)) {
-						/* Hack to force memory size on some GD-543x BIOSes*/
-						val &= 0xf8;
-						switch (gd54xx->vram_size) {				
-							case 0x100000:
-								svga->seqregs[0x15] = val | 0x2;
-								break;
-
-							case 0x200000:
-								svga->seqregs[0x15] = val | 0x3;
-								break;
-
-							case 0x400000:
-								svga->seqregs[0x15] = val | 0x4;
-								break;
-						}
-					} else
-						return;
-					break;
-				case 0x07:
-				if (!gd54xx_is_5422(svga)) {
-					svga->seqregs[svga->seqaddr] &= 0x0f;
-					gd543x_recalc_mapping(gd54xx);
-				}
-				if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5429)
-					svga->set_reset_disabled = svga->seqregs[7] & 1;
-			case 0x17:
-				if (gd54xx_is_5422(svga))
-					gd543x_recalc_mapping(gd54xx);
-				else
-					return;
-				break;
-			}
-			return;
-		}
-		break;
-	case 0x3C6:
-		if (gd54xx->ramdac.state == 4) {
-			gd54xx->ramdac.state = 0;
-			gd54xx->ramdac.ctrl = val;
-			svga_recalctimings(svga);
-			return;
-		}
-		gd54xx->ramdac.state = 0;
-		break;
-	case 0x3C9:
-		svga->dac_status = 0;
-		svga->fullchange = changeframecount;
-		switch (svga->dac_pos) {
-			case 0:
-				svga->dac_r = val;
-				svga->dac_pos++; 
-				break;
-			case 1:
-				svga->dac_g = val;
-				svga->dac_pos++; 
-				break;
-                        case 2:
-				indx = svga->dac_addr & 0xff;
-				if (svga->seqregs[0x12] & 2) {
-					indx &= 0x0f;
-					gd54xx->extpal[indx].r = svga->dac_r;
-					gd54xx->extpal[indx].g = svga->dac_g;
-					gd54xx->extpal[indx].b = val; 
-					gd54xx->extpallook[indx] = makecol32(video_6to8[gd54xx->extpal[indx].r & 0x3f], video_6to8[gd54xx->extpal[indx].g & 0x3f], video_6to8[gd54xx->extpal[indx].b & 0x3f]);
-					if (svga->ext_overscan && (indx == 2)) {
-						o32 = svga->overscan_color;
-						svga->overscan_color = gd54xx->extpallook[2];
-						if (o32 != svga->overscan_color)
-							svga_recalctimings(svga);
-					}
-				} else {
-					svga->vgapal[indx].r = svga->dac_r;
-					svga->vgapal[indx].g = svga->dac_g;
-					svga->vgapal[indx].b = val; 
-					svga->pallook[indx] = makecol32(video_6to8[svga->vgapal[indx].r & 0x3f], video_6to8[svga->vgapal[indx].g & 0x3f], video_6to8[svga->vgapal[indx].b & 0x3f]);
-				}
-				svga->dac_addr = (svga->dac_addr + 1) & 255;
-				svga->dac_pos = 0; 
-                        break;
-                }
-                return;
-	case 0x3cf:
-		if (svga->gdcaddr == 0)
-			gd543x_mmio_write(0xb8000, val, gd54xx);
-		if (svga->gdcaddr == 1)
-			gd543x_mmio_write(0xb8004, val, gd54xx);
-	
-		if (svga->gdcaddr == 5) {
-			svga->gdcreg[5] = val;
-			if (svga->gdcreg[0xb] & 0x04)
-				svga->writemode = svga->gdcreg[5] & 7;
-			else
-				svga->writemode = svga->gdcreg[5] & 3;
-			svga->readmode = val & 8;
-			svga->chain2_read = val & 0x10;
-			return;
-		}
-
-		if (svga->gdcaddr == 6) {
-			if ((svga->gdcreg[6] & 0xc) != (val & 0xc)) {
-				svga->gdcreg[6] = val;
-				gd543x_recalc_mapping(gd54xx);
-			}
-			svga->gdcreg[6] = val;
-			return;
-		}
-
-		if (svga->gdcaddr > 8) {
-			svga->gdcreg[svga->gdcaddr & 0x3f] = val;
-			switch (svga->gdcaddr) {
-				case 0x09: case 0x0a: case 0x0b:
-					gd54xx_recalc_banking(gd54xx);
-					if (svga->gdcreg[0xb] & 0x04)
-						svga->writemode = svga->gdcreg[5] & 7;
-					else
-						svga->writemode = svga->gdcreg[5] & 3;
-					break;
-					
-				case 0x10:
-					gd543x_mmio_write(0xb8001, val, gd54xx);
-					break;
-				case 0x11:
-					gd543x_mmio_write(0xb8005, val, gd54xx);
-					break;
-				case 0x12:
-					gd543x_mmio_write(0xb8002, val, gd54xx);
-					break;
-				case 0x13:
-					gd543x_mmio_write(0xb8006, val, gd54xx);
-					break;
-				case 0x14:
-					gd543x_mmio_write(0xb8003, val, gd54xx);
-					break;
-				case 0x15:
-					gd543x_mmio_write(0xb8007, val, gd54xx);
-					break;
-					
-				case 0x20:
-					gd543x_mmio_write(0xb8008, val, gd54xx);
-					break;
-				case 0x21:
-					gd543x_mmio_write(0xb8009, val, gd54xx);
-					break;
-					case 0x22:
-				gd543x_mmio_write(0xb800a, val, gd54xx);
-					break;
-				case 0x23:
-					gd543x_mmio_write(0xb800b, val, gd54xx);
-					break;
-				case 0x24:
-					gd543x_mmio_write(0xb800c, val, gd54xx);
-					break;
-				case 0x25:
-					gd543x_mmio_write(0xb800d, val, gd54xx);
-					break;
-				case 0x26:
-					gd543x_mmio_write(0xb800e, val, gd54xx);
-					break;
-				case 0x27:
-					gd543x_mmio_write(0xb800f, val, gd54xx);
-					break;
-	
-				case 0x28:
-					gd543x_mmio_write(0xb8010, val, gd54xx);
-					break;
-				case 0x29:
-					gd543x_mmio_write(0xb8011, val, gd54xx);
-					break;
-				case 0x2a:
-					gd543x_mmio_write(0xb8012, val, gd54xx);
-					break;
-
-				case 0x2c:
-					gd543x_mmio_write(0xb8014, val, gd54xx);
-					break;
-				case 0x2d:
-					gd543x_mmio_write(0xb8015, val, gd54xx);
-					break;
-				case 0x2e:
-					gd543x_mmio_write(0xb8016, val, gd54xx);
-					break;
-
-				case 0x2f:
-					gd543x_mmio_write(0xb8017, val, gd54xx);
-					break;
-				case 0x30:
-					gd543x_mmio_write(0xb8018, val, gd54xx);
-					break;
-	
-				case 0x32:
-					gd543x_mmio_write(0xb801a, val, gd54xx);
-					break;
-
-				case 0x33:
-					gd543x_mmio_write(0xb801b, val, gd54xx);
-					break;
-					
-				case 0x31:
-					gd543x_mmio_write(0xb8040, val, gd54xx);
-					break;
-					
-				case 0x34:
-					gd543x_mmio_write(0xb801c, val, gd54xx);
-					break;
-					
-				case 0x35:
-					gd543x_mmio_write(0xb801d, val, gd54xx);
-					break;
-
-				case 0x38:
-					gd543x_mmio_write(0xb8020, val, gd54xx);
-					break;
-
-				case 0x39:
-					gd543x_mmio_write(0xb8021, val, gd54xx);
-					break;
-			}
-			return;
-		}
-		break;
-	case 0x3D4:
-		svga->crtcreg = val & 0x3f;
-		return;
-	case 0x3D5:
-		if ((svga->crtcreg < 7) && (svga->crtc[0x11] & 0x80))
-			return;
-		if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
-			val = (svga->crtc[7] & ~0x10) | (val & 0x10);
-		if ((svga->crtcreg == 0x25) || (svga->crtcreg == 0x27))  
-			return;
-		old = svga->crtc[svga->crtcreg];
-		svga->crtc[svga->crtcreg] = val;
-		
-		if (old != val) {
-			if (svga->crtcreg < 0xe || svga->crtcreg > 0x10) {
-				svga->fullchange = changeframecount;
-				svga_recalctimings(svga);
-			}
-		}
-		break;
-    }
-    svga_out(addr, val, svga);
-}
-
-
-static uint8_t
-gd54xx_in(uint16_t addr, void *p)
-{
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
-    uint8_t indx, temp;
-
-    if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3d0) &&
-	!(svga->miscout & 1)) addr ^= 0x60;
-
-    switch (addr) {
-	case 0x3c4:
-		if ((svga->seqregs[6] & 0x17) == 0x12) {
-			temp = svga->seqaddr;
-			if ((temp & 0x1e) == 0x10) {
-				if (temp & 1)
-					temp = ((svga->hwcursor.y & 7) << 5) | 0x11;
-				else
-					temp = ((svga->hwcursor.x & 7) << 5) | 0x10;
-			}
-			return temp;
-		}
-		return svga->seqaddr;
-	
-	case 0x3c5:
-		if (svga->seqaddr > 5) {
-			switch (svga->seqaddr) {
-				case 6:
-					return ((svga->seqregs[6] & 0x17) == 0x12) ? 0x12 : 0x0f;				
-				case 0x0b: case 0x0c: case 0x0d: case 0x0e:
-					return gd54xx->vclk_n[svga->seqaddr-0x0b];		
-				case 0x17:
-					temp = svga->gdcreg[0x17] & ~(7 << 3);
-					if (svga->crtc[0x27] <= CIRRUS_ID_CLGD5429) {
-						if (gd54xx->vlb)
-							temp |= (CL_GD5429_SYSTEM_BUS_VESA << 3);
-						else
-							temp |= (CL_GD5429_SYSTEM_BUS_ISA << 3);
-					} else {
-						if (gd54xx->pci)
-							temp |= (CL_GD543X_SYSTEM_BUS_PCI << 3);
-						else if (gd54xx->vlb)
-							temp |= (CL_GD543X_SYSTEM_BUS_VESA << 3);
-						else
-							temp |= (CL_GD543X_SYSTEM_BUS_ISA << 3);
-					}
-					return temp;
-				case 0x1b: case 0x1c: case 0x1d: case 0x1e:
-					return gd54xx->vclk_d[svga->seqaddr-0x1b];
-			}
-			return svga->seqregs[svga->seqaddr & 0x3f];
-		}
-		break;
-
-	case 0x3c6:
-		if (gd54xx->ramdac.state == 4) {
-			gd54xx->ramdac.state = 0;
-			return gd54xx->ramdac.ctrl;
-		}
-		gd54xx->ramdac.state++;
-		break;
-		
-	case 0x3ca:
-		return gd54xx->fc;		//FIXME: move to SVGA? --FvK
-		
-	case 0x3c9:
-		svga->dac_status = 3;
-		indx = (svga->dac_addr - 1) & 0xff;
-		if (svga->seqregs[0x12] & 2)
-			indx &= 0x0f;
-		switch (svga->dac_pos) {
-			case 0:
-				svga->dac_pos++;
-				if (svga->seqregs[0x12] & 2)
-					return gd54xx->extpal[indx].r & 0x3f;
-				else
-					return svga->vgapal[indx].r & 0x3f;
-			case 1: 
-				svga->dac_pos++;
-				if (svga->seqregs[0x12] & 2)
-					return gd54xx->extpal[indx].g & 0x3f;
-				else
-					return svga->vgapal[indx].g & 0x3f;
-                        case 2: 
-				svga->dac_pos = 0;
-				svga->dac_addr = (svga->dac_addr + 1) & 255;
-				if (svga->seqregs[0x12] & 2)
-                        		return gd54xx->extpal[indx].b & 0x3f;
-				else
-                        		return svga->vgapal[indx].b & 0x3f;
-                }
-                return 0xFF;
-
-	case 0x3cf:
-		if (svga->gdcaddr > 8) {
-			return svga->gdcreg[svga->gdcaddr & 0x3f];
-		}
-		break;
-
-	case 0x3d4:
-		return svga->crtcreg;
-
-	case 0x3d5:
-		switch (svga->crtcreg) {
-			case 0x24: /*Attribute controller toggle readback (R)*/
-				return svga->attrff << 7;
-			case 0x26: /*Attribute controller index readback (R)*/
-				return svga->attraddr & 0x3f;	
-			case 0x27: /*ID*/
-				return svga->crtc[0x27]; /*GD542x/GD543x*/
-			case 0x28: /*Class ID*/
-				if ((svga->crtc[0x27] == CIRRUS_ID_CLGD5430) || (svga->crtc[0x27] == CIRRUS_ID_CLGD5440))
-					return 0xff; /*Standard CL-GD5430/40*/
-				break;
-		}
-		return svga->crtc[svga->crtcreg];
-    }
-    return svga_in(addr, svga);
-}
-
-
-static void
-gd54xx_recalc_banking(gd54xx_t *gd54xx)
-{
-    svga_t *svga = &gd54xx->svga;
-
-	if (!gd54xx_is_5422(svga)) {
-		gd54xx->bank[0] = (svga->gdcreg[0x09] & 0x7f) << 12;
-
-		if (svga->gdcreg[0x0b] & CIRRUS_BANKING_DUAL)
-			gd54xx->bank[1] = (svga->gdcreg[0x0a] & 0x7f) << 12;
-		else
-			gd54xx->bank[1] = gd54xx->bank[0] + 0x8000;
-	}
-	else {
-    if (svga->gdcreg[0x0b] & CIRRUS_BANKING_GRANULARITY_16K)
-	gd54xx->bank[0] = svga->gdcreg[0x09] << 14;
-    else
-	gd54xx->bank[0] = svga->gdcreg[0x09] << 12;
-                        
-    if (svga->gdcreg[0x0b] & CIRRUS_BANKING_DUAL) {
-	if (svga->gdcreg[0x0b] & CIRRUS_BANKING_GRANULARITY_16K)
-		gd54xx->bank[1] = svga->gdcreg[0x0a] << 14;
+	if (svga->gdcreg[0x0b] & CIRRUS_BANKING_DUAL)
+		dev->bank[1] = (svga->gdcreg[0x0a] & 0x7f) << 12;
 	else
-		gd54xx->bank[1] = svga->gdcreg[0x0a] << 12;
-		}
-		else
+		dev->bank[1] = dev->bank[0] + 0x8000;
+    } else {
+	if (svga->gdcreg[0x0b] & CIRRUS_BANKING_GRANULARITY_16K)
+		dev->bank[0] = svga->gdcreg[0x09] << 14;
+	else
+		dev->bank[0] = svga->gdcreg[0x09] << 12;
 
-			gd54xx->bank[1] = gd54xx->bank[0] + 0x8000;
-	}
+	if (svga->gdcreg[0x0b] & CIRRUS_BANKING_DUAL) {
+		if (svga->gdcreg[0x0b] & CIRRUS_BANKING_GRANULARITY_16K)
+			dev->bank[1] = svga->gdcreg[0x0a] << 14;
+		else
+			dev->bank[1] = svga->gdcreg[0x0a] << 12;
+	} else
+		dev->bank[1] = dev->bank[0] + 0x8000;
+    }
 }
 
 
 static void 
-gd543x_recalc_mapping(gd54xx_t *gd54xx)
+recalc_mapping(gd54xx_t *dev)
 {
-    svga_t *svga = &gd54xx->svga;
+    svga_t *svga = &dev->svga;
+    uint32_t base, size;
         
-    if (!(gd54xx->pci_regs[PCI_REG_COMMAND] & PCI_COMMAND_MEM)) {
+    if (! (dev->pci_regs[PCI_REG_COMMAND] & PCI_COMMAND_MEM)) {
 	mem_map_disable(&svga->mapping);
-	mem_map_disable(&gd54xx->linear_mapping);
-	mem_map_disable(&gd54xx->mmio_mapping);
+	mem_map_disable(&dev->linear_mapping);
+	mem_map_disable(&dev->mmio_mapping);
 	return;
     }
-	
-    gd54xx->mmio_vram_overlap = 0;
 
-    if (!(svga->seqregs[7] & 0xf0)) {
-	mem_map_disable(&gd54xx->linear_mapping);
+    dev->mmio_vram_overlap = 0;
+
+    if (! (svga->seqregs[7] & 0xf0)) {
+	mem_map_disable(&dev->linear_mapping);
+
 	switch (svga->gdcreg[6] & 0x0c) {
-		case 0x0: /*128k at A0000*/
+		case 0x00:	/*128K at A0000*/
 			mem_map_set_addr(&svga->mapping, 0xa0000, 0x20000);
 			svga->banked_mask = 0x1ffff;
 			break;
-		case 0x4: /*64k at A0000*/
+
+		case 0x04:	/*64K at A0000*/
 			mem_map_set_addr(&svga->mapping, 0xa0000, 0x10000);
 			svga->banked_mask = 0xffff;
 			break;
-		case 0x8: /*32k at B0000*/
+
+		case 0x08:	/*32K at B0000*/
 			mem_map_set_addr(&svga->mapping, 0xb0000, 0x08000);
 			svga->banked_mask = 0x7fff;
 			break;
-		case 0xC: /*32k at B8000*/
+
+		case 0x0c:	/*32K at B8000*/
 			mem_map_set_addr(&svga->mapping, 0xb8000, 0x08000);
 			svga->banked_mask = 0x7fff;
-			gd54xx->mmio_vram_overlap = 1;
+			dev->mmio_vram_overlap = 1;
 			break;
 	}
-	if (svga->seqregs[0x17] & CIRRUS_MMIO_ENABLE)
-		mem_map_set_addr(&gd54xx->mmio_mapping, 0xb8000, 0x00100);
-	else
-		mem_map_disable(&gd54xx->mmio_mapping);
-    } else {
-	uint32_t base, size;
 
-	if (svga->crtc[0x27] <= CIRRUS_ID_CLGD5429 || (!gd54xx->pci && !gd54xx->vlb)) {
+	if (svga->seqregs[0x17] & CIRRUS_MMIO_ENABLE)
+		mem_map_set_addr(&dev->mmio_mapping, 0xb8000, 0x00100);
+	else
+		mem_map_disable(&dev->mmio_mapping);
+    } else {
+	if (svga->crtc[0x27] <= CIRRUS_ID_CLGD5429 ||
+	    (!dev->pci && !dev->vlb)) {
 		if (svga->gdcreg[0x0b] & CIRRUS_BANKING_GRANULARITY_16K) {
 			base = (svga->seqregs[7] & 0xf0) << 16;
 			size = 1 * 1024 * 1024;
@@ -832,14 +332,15 @@ gd543x_recalc_mapping(gd54xx_t *gd54xx)
 			base = (svga->seqregs[7] & 0xe0) << 16;
 			size = 2 * 1024 * 1024;
 		}
-	} else if (gd54xx->pci) {
-		base = gd54xx->lfb_base;
+	} else if (dev->pci) {
+		base = dev->lfb_base;
+
 		if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5436)
 			size = 16 * 1024 * 1024;
 		else
 			size = 4 * 1024 * 1024;
 	} else { /*VLB*/
-		base = 128*1024*1024;
+		base = 128 * 1024 * 1024;
 		if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5436)
 			size = 16 * 1024 * 1024;
 		else
@@ -847,27 +348,28 @@ gd543x_recalc_mapping(gd54xx_t *gd54xx)
 	}
 
 	mem_map_disable(&svga->mapping);
-	mem_map_set_addr(&gd54xx->linear_mapping, base, size);
+	mem_map_set_addr(&dev->linear_mapping, base, size);
+
 	if (svga->seqregs[0x17] & CIRRUS_MMIO_ENABLE) {
 		if (svga->seqregs[0x17] & CIRRUS_MMIO_USE_PCIADDR) {
 			if (size >= (4 * 1024 * 1024))
-				mem_map_disable(&gd54xx->mmio_mapping); /* MMIO is handled in the linear read/write functions */
+				mem_map_disable(&dev->mmio_mapping); /* MMIO is handled in the linear read/write functions */
 			else {
-				mem_map_set_addr(&gd54xx->linear_mapping, base, size - 256);
-				mem_map_set_addr(&gd54xx->mmio_mapping, base + size - 256, 0x00100);
+				mem_map_set_addr(&dev->linear_mapping, base, size - 256);
+				mem_map_set_addr(&dev->mmio_mapping, base + size - 256, 0x00100);
 			}
 		} else
-			mem_map_set_addr(&gd54xx->mmio_mapping, 0xb8000, 0x00100);
+			mem_map_set_addr(&dev->mmio_mapping, 0xb8000, 0x00100);
 	} else
-		mem_map_disable(&gd54xx->mmio_mapping);
+		mem_map_disable(&dev->mmio_mapping);
     }    
 }
 
 
 static void
-gd54xx_recalctimings(svga_t *svga)
+recalc_timings(svga_t *svga)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;	
+    gd54xx_t *dev = (gd54xx_t *)svga->p;	
     uint8_t clocksel;
 
     svga->rowoffset = (svga->crtc[0x13]) | ((svga->crtc[0x1b] & 0x10) << 4);
@@ -883,11 +385,11 @@ gd54xx_recalctimings(svga_t *svga)
 
     svga->bpp = 8;
 
-    if (gd54xx->ramdac.ctrl & 0x80)  { /* Extended Color Mode enabled */
-	if (gd54xx->ramdac.ctrl & 0x40) { /* Enable all Extended modes */
-		switch (gd54xx->ramdac.ctrl & 0xf) {
+    if (dev->ramdac.ctrl & 0x80)  { /* Extended Color Mode enabled */
+	if (dev->ramdac.ctrl & 0x40) { /* Enable all Extended modes */
+		switch (dev->ramdac.ctrl & 0xf) {
 			case 0:
-				if (gd54xx->ramdac.ctrl & 0x10) { /* Mixed Mode */
+				if (dev->ramdac.ctrl & 0x10) { /* Mixed Mode */
 					svga->render = svga_render_mixed_highres;
 				} else {
 					svga->bpp = 15;
@@ -901,7 +403,7 @@ gd54xx_recalctimings(svga_t *svga)
 				break;
 
 			case 5:
-				if (gd54xx_is_5434(svga) && (svga->seqregs[7] & CIRRUS_SR7_BPP_32)) {
+				if (is_5434(svga) && (svga->seqregs[7] & CIRRUS_SR7_BPP_32)) {
 					svga->bpp = 32;
 					svga->render = svga_render_32bpp_highres;
 					if (svga->crtc[0x27] < CIRRUS_ID_CLGD5436)
@@ -955,46 +457,591 @@ gd54xx_recalctimings(svga_t *svga)
 
     clocksel = (svga->miscout >> 2) & 3;
 
-    if (!gd54xx->vclk_n[clocksel] || !gd54xx->vclk_d[clocksel])
+    if (!dev->vclk_n[clocksel] || !dev->vclk_d[clocksel])
 	svga->clock = cpuclock / ((svga->miscout & 0xc) ? 28322000.0 : 25175000.0);
     else {
-	int n = gd54xx->vclk_n[clocksel] & 0x7f;
-	int d = (gd54xx->vclk_d[clocksel] & 0x3e) >> 1;
-	int m = gd54xx->vclk_d[clocksel] & 0x01 ? 2 : 1;
+	int n = dev->vclk_n[clocksel] & 0x7f;
+	int d = (dev->vclk_d[clocksel] & 0x3e) >> 1;
+	int m = dev->vclk_d[clocksel] & 0x01 ? 2 : 1;
 	float freq = ((float)14318184.0 * ((float)n / ((float)d * m)));
-	if (gd54xx_is_5422(svga)) {
-	switch (svga->seqregs[7] & (gd54xx_is_5434(svga) ? 0xe : 6)) {
-		case 2:
-			freq /= 2.0;
-			break;
-		case 4:
-			if (!gd54xx_is_5434(svga))
-				freq /= 3.0; 
-			break;
+	if (is_5422(svga)) {
+		switch (svga->seqregs[7] & (is_5434(svga) ? 0xe : 6)) {
+			case 2:
+				freq /= 2.0;
+				break;
+
+			case 4:
+				if (! is_5434(svga))
+					freq /= 3.0; 
+				break;
+		}
 	}
-	}
+
 	svga->clock = cpuclock / freq;
     }
 
-	if (gd54xx->vram_size == (1 << 19)) /* Note : why 512Kb VRAM cards does not wrap */
-		svga->vram_display_mask = gd54xx->vram_mask;
-	else
-		svga->vram_display_mask = (svga->crtc[0x1b] & 2) ? gd54xx->vram_mask : 0x3ffff;
-
-		
+    if (dev->vram_size == (1 << 19)) /* Note : why 512KB VRAM cards does not wrap */
+	svga->vram_display_mask = dev->vram_mask;
+    else
+	svga->vram_display_mask = (svga->crtc[0x1b] & 2) ? dev->vram_mask : 0x3ffff;
 }
 
-static
-void gd54xx_hwcursor_draw(svga_t *svga, int displine)
+
+static void
+gd54xx_out(uint16_t addr, uint8_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;	
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
+    uint8_t o, indx, old;
+    uint32_t o32;
+    int c;
+
+    if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) &&
+	!(svga->miscout & 1)) addr ^= 0x60;
+
+    switch (addr) {
+	case 0x03ba:
+	case 0x03da:
+		dev->fc = val;		//FIXME: move to SVGA? --FvK
+		break;
+
+	case 0x03c0:
+	case 0x03c1:
+		if (! svga->attrff) {
+			svga->attraddr = val & 0x3f;
+			if ((val & 0x20) != svga->attr_palette_enable) {
+				svga->fullchange = 3;
+				svga->attr_palette_enable = val & 0x20;
+				svga_recalctimings(svga);
+			}
+		} else {
+			o = svga->attrregs[svga->attraddr & 0x3f];
+			if ((svga->attraddr < 0x20) || (svga->attraddr >= 0x30))
+				svga->attrregs[svga->attraddr & 0x3f] = val;
+			if (svga->attraddr < 0x10) 
+				svga->fullchange = changeframecount;
+			if (svga->attraddr == 0x10 || svga->attraddr == 0x14 || svga->attraddr < 0x10) {
+				for (c = 0; c < 16; c++) {
+					if (svga->attrregs[0x10] & 0x80) svga->egapal[c] = (svga->attrregs[c] &  0xf) | ((svga->attrregs[0x14] & 0xf) << 4);
+					else                             svga->egapal[c] = (svga->attrregs[c] & 0x3f) | ((svga->attrregs[0x14] & 0xc) << 4);
+				}
+			}
+
+			/* Recalculate timings on change of attribute register 0x11 (overscan border color) too. */
+			if (svga->attraddr == 0x10) {
+				if (o != val)
+					svga_recalctimings(svga);
+			} else if (svga->attraddr == 0x11) {
+				if (! (svga->seqregs[0x12] & 0x80)) {
+					svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
+					if (o != val)  svga_recalctimings(svga);
+				}
+			} else if (svga->attraddr == 0x12) {
+				if ((val & 0xf) != svga->plane_mask)
+					svga->fullchange = changeframecount;
+				svga->plane_mask = val & 0xf;
+			}
+		}
+		svga->attrff ^= 1;
+                return;
+
+	case 0x03c4:
+		svga->seqaddr = val;
+		break;
+
+	case 0x03c5:
+		if (svga->seqaddr > 5) {
+			o = svga->seqregs[svga->seqaddr & 0x1f];
+			svga->seqregs[svga->seqaddr & 0x1f] = val;
+			switch (svga->seqaddr) {
+				case 0x06:
+					val &= 0x17;
+					if (val == 0x12)
+						svga->seqregs[6] = 0x12;
+					else
+						svga->seqregs[6] = 0x0f;
+					break;
+
+				case 0x08:	// Todo EEPROM
+					break;
+					
+				case 0x0a:
+					if (is_5434(svga)) {
+						svga->seqregs[0x0a] = val;
+					} else {
+						/* Hack to force memory size on some GD-542x BIOSes*/
+						val &= 0xe7;
+						switch (dev->vram_size) {
+							case 0x080000:
+								svga->seqregs[0x0a] = val | 0x08;
+								break;
+
+							case 0x100000:
+								svga->seqregs[0x0a] = val | 0x10;
+								break;
+
+							case 0x200000:
+								svga->seqregs[0x0a] = val | 0x18;
+								break;
+						}
+					}
+					break;
+
+				case 0x0b: case 0x0c: case 0x0d: case 0x0e: /* VCLK stuff */
+					dev->vclk_n[svga->seqaddr - 0x0b] = val;
+					break;
+
+				case 0x1b: case 0x1c: case 0x1d: case 0x1e: /* VCLK stuff */
+					dev->vclk_d[svga->seqaddr-0x1b] = val;
+					break;
+
+				case 0x10: case 0x30: case 0x50: case 0x70:
+				case 0x90: case 0xb0: case 0xd0: case 0xf0:
+					svga->hwcursor.x = (val << 3) | (svga->seqaddr >> 5);
+					break;
+
+				case 0x11: case 0x31: case 0x51: case 0x71:
+				case 0x91: case 0xb1: case 0xd1: case 0xf1:
+					svga->hwcursor.y = (val << 3) | (svga->seqaddr >> 5);
+					break;
+
+				case 0x12:
+					svga->ext_overscan = !!(val & 0x80);
+					if (svga->ext_overscan)
+						svga->overscan_color = dev->extpallook[2];
+					else
+						svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
+					svga_recalctimings(svga);
+					svga->hwcursor.ena = val & CIRRUS_CURSOR_SHOW;
+					svga->hwcursor.xsize = svga->hwcursor.ysize = (val & CIRRUS_CURSOR_LARGE) ? 64 : 32;
+					svga->hwcursor.yoff = (svga->hwcursor.ysize == 32) ? 32 : 0;
+					if (val & CIRRUS_CURSOR_LARGE)
+						svga->hwcursor.addr = (((svga->vram_display_mask + 1) - 0x4000) + ((svga->seqregs[0x13] & 0x3c) * 256));
+					else
+						svga->hwcursor.addr = (((svga->vram_display_mask + 1) - 0x4000) + ((svga->seqregs[0x13] & 0x3f) * 256));
+					break;
+
+				case 0x13:
+					if (svga->seqregs[0x12] & CIRRUS_CURSOR_LARGE)
+						svga->hwcursor.addr = (((svga->vram_display_mask + 1) - 0x4000) + ((val & 0x3c) * 256));
+					else
+						svga->hwcursor.addr = (((svga->vram_display_mask + 1) - 0x4000) + ((val & 0x3f) * 256));
+					break;
+
+				case 0x15:
+					if (is_5434(svga)) {
+						/* Hack to force memory size on some GD-543x BIOSes*/
+						val &= 0xf8;
+						switch (dev->vram_size) {				
+							case 0x100000:
+								svga->seqregs[0x15] = val | 0x2;
+								break;
+
+							case 0x200000:
+								svga->seqregs[0x15] = val | 0x3;
+								break;
+
+							case 0x400000:
+								svga->seqregs[0x15] = val | 0x4;
+								break;
+						}
+					} else
+						return;
+					break;
+
+				case 0x07:
+					if (! is_5422(svga)) {
+						svga->seqregs[svga->seqaddr] &= 0x0f;
+						recalc_mapping(dev);
+					}
+					if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5429)
+						svga->set_reset_disabled = svga->seqregs[7] & 1;
+					break;
+
+				case 0x17:
+					if (is_5422(svga))
+						recalc_mapping(dev);
+					else
+						return;
+					break;
+			}
+			return;
+		}
+		break;
+
+	case 0x03c6:
+		if (dev->ramdac.state == 4) {
+			dev->ramdac.state = 0;
+			dev->ramdac.ctrl = val;
+			svga_recalctimings(svga);
+			return;
+		}
+		dev->ramdac.state = 0;
+		break;
+
+	case 0x03c9:
+		svga->dac_status = 0;
+		svga->fullchange = changeframecount;
+		switch (svga->dac_pos) {
+			case 0:
+				svga->dac_r = val;
+				svga->dac_pos++; 
+				break;
+
+			case 1:
+				svga->dac_g = val;
+				svga->dac_pos++; 
+				break;
+
+                        case 2:
+				indx = svga->dac_addr & 0xff;
+				if (svga->seqregs[0x12] & 2) {
+					indx &= 0x0f;
+					dev->extpal[indx].r = svga->dac_r;
+					dev->extpal[indx].g = svga->dac_g;
+					dev->extpal[indx].b = val; 
+					dev->extpallook[indx] = makecol32(video_6to8[dev->extpal[indx].r & 0x3f], video_6to8[dev->extpal[indx].g & 0x3f], video_6to8[dev->extpal[indx].b & 0x3f]);
+					if (svga->ext_overscan && (indx == 2)) {
+						o32 = svga->overscan_color;
+						svga->overscan_color = dev->extpallook[2];
+						if (o32 != svga->overscan_color)
+							svga_recalctimings(svga);
+					}
+				} else {
+					svga->vgapal[indx].r = svga->dac_r;
+					svga->vgapal[indx].g = svga->dac_g;
+					svga->vgapal[indx].b = val; 
+					svga->pallook[indx] = makecol32(video_6to8[svga->vgapal[indx].r & 0x3f], video_6to8[svga->vgapal[indx].g & 0x3f], video_6to8[svga->vgapal[indx].b & 0x3f]);
+				}
+				svga->dac_addr = (svga->dac_addr + 1) & 255;
+				svga->dac_pos = 0; 
+                        	break;
+                }
+                return;
+
+	case 0x03cf:
+		if (svga->gdcaddr == 0)
+			gd543x_mmio_write(0xb8000, val, dev);
+		if (svga->gdcaddr == 1)
+			gd543x_mmio_write(0xb8004, val, dev);
+	
+		if (svga->gdcaddr == 5) {
+			svga->gdcreg[5] = val;
+			if (svga->gdcreg[0xb] & 0x04)
+				svga->writemode = svga->gdcreg[5] & 7;
+			else
+				svga->writemode = svga->gdcreg[5] & 3;
+			svga->readmode = val & 8;
+			svga->chain2_read = val & 0x10;
+			return;
+		}
+
+		if (svga->gdcaddr == 6) {
+			if ((svga->gdcreg[6] & 0x0c) != (val & 0x0c)) {
+				svga->gdcreg[6] = val;
+				recalc_mapping(dev);
+			}
+			svga->gdcreg[6] = val;
+			return;
+		}
+
+		if (svga->gdcaddr > 8) {
+			svga->gdcreg[svga->gdcaddr & 0x3f] = val;
+			switch (svga->gdcaddr) {
+				case 0x09: case 0x0a: case 0x0b:
+					recalc_banking(dev);
+					if (svga->gdcreg[0xb] & 0x04)
+						svga->writemode = svga->gdcreg[5] & 7;
+					else
+						svga->writemode = svga->gdcreg[5] & 3;
+					break;
+					
+				case 0x10:
+					gd543x_mmio_write(0xb8001, val, dev);
+					break;
+
+				case 0x11:
+					gd543x_mmio_write(0xb8005, val, dev);
+					break;
+
+				case 0x12:
+					gd543x_mmio_write(0xb8002, val, dev);
+					break;
+
+				case 0x13:
+					gd543x_mmio_write(0xb8006, val, dev);
+					break;
+
+				case 0x14:
+					gd543x_mmio_write(0xb8003, val, dev);
+					break;
+
+				case 0x15:
+					gd543x_mmio_write(0xb8007, val, dev);
+					break;
+					
+				case 0x20:
+					gd543x_mmio_write(0xb8008, val, dev);
+					break;
+
+				case 0x21:
+					gd543x_mmio_write(0xb8009, val, dev);
+					break;
+
+				case 0x22:
+					gd543x_mmio_write(0xb800a, val, dev);
+					break;
+
+				case 0x23:
+					gd543x_mmio_write(0xb800b, val, dev);
+					break;
+
+				case 0x24:
+					gd543x_mmio_write(0xb800c, val, dev);
+					break;
+
+				case 0x25:
+					gd543x_mmio_write(0xb800d, val, dev);
+					break;
+
+				case 0x26:
+					gd543x_mmio_write(0xb800e, val, dev);
+					break;
+
+				case 0x27:
+					gd543x_mmio_write(0xb800f, val, dev);
+					break;
+
+				case 0x28:
+					gd543x_mmio_write(0xb8010, val, dev);
+					break;
+
+				case 0x29:
+					gd543x_mmio_write(0xb8011, val, dev);
+					break;
+
+				case 0x2a:
+					gd543x_mmio_write(0xb8012, val, dev);
+					break;
+
+				case 0x2c:
+					gd543x_mmio_write(0xb8014, val, dev);
+					break;
+
+				case 0x2d:
+					gd543x_mmio_write(0xb8015, val, dev);
+					break;
+
+				case 0x2e:
+					gd543x_mmio_write(0xb8016, val, dev);
+					break;
+
+				case 0x2f:
+					gd543x_mmio_write(0xb8017, val, dev);
+					break;
+
+				case 0x30:
+					gd543x_mmio_write(0xb8018, val, dev);
+					break;
+	
+				case 0x32:
+					gd543x_mmio_write(0xb801a, val, dev);
+					break;
+
+				case 0x33:
+					gd543x_mmio_write(0xb801b, val, dev);
+					break;
+					
+				case 0x31:
+					gd543x_mmio_write(0xb8040, val, dev);
+					break;
+					
+				case 0x34:
+					gd543x_mmio_write(0xb801c, val, dev);
+					break;
+					
+				case 0x35:
+					gd543x_mmio_write(0xb801d, val, dev);
+					break;
+
+				case 0x38:
+					gd543x_mmio_write(0xb8020, val, dev);
+					break;
+
+				case 0x39:
+					gd543x_mmio_write(0xb8021, val, dev);
+					break;
+			}
+			return;
+		}
+		break;
+
+	case 0x03d4:
+		svga->crtcreg = val & 0x3f;
+		return;
+
+	case 0x03d5:
+		if ((svga->crtcreg < 7) && (svga->crtc[0x11] & 0x80))
+			return;
+		if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
+			val = (svga->crtc[7] & ~0x10) | (val & 0x10);
+		if ((svga->crtcreg == 0x25) || (svga->crtcreg == 0x27))  
+			return;
+
+		old = svga->crtc[svga->crtcreg];
+		svga->crtc[svga->crtcreg] = val;
+		
+		if (old != val) {
+			if (svga->crtcreg < 0xe || svga->crtcreg > 0x10) {
+				svga->fullchange = changeframecount;
+				svga_recalctimings(svga);
+			}
+		}
+		break;
+    }
+
+    svga_out(addr, val, svga);
+}
+
+
+static uint8_t
+gd54xx_in(uint16_t addr, void *priv)
+{
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
+    uint8_t indx, temp;
+
+    if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3d0) &&
+	!(svga->miscout & 1)) addr ^= 0x60;
+
+    switch (addr) {
+	case 0x03c4:
+		if ((svga->seqregs[6] & 0x17) == 0x12) {
+			temp = svga->seqaddr;
+			if ((temp & 0x1e) == 0x10) {
+				if (temp & 1)
+					temp = ((svga->hwcursor.y & 7) << 5) | 0x11;
+				else
+					temp = ((svga->hwcursor.x & 7) << 5) | 0x10;
+			}
+			return temp;
+		}
+		return svga->seqaddr;
+	
+	case 0x03c5:
+		if (svga->seqaddr > 5) {
+			switch (svga->seqaddr) {
+				case 0x06:
+					return ((svga->seqregs[6] & 0x17) == 0x12) ? 0x12 : 0x0f;
+
+				case 0x0b: case 0x0c: case 0x0d: case 0x0e:
+					return dev->vclk_n[svga->seqaddr-0x0b];
+
+				case 0x17:
+					temp = svga->gdcreg[0x17] & ~(7 << 3);
+					if (svga->crtc[0x27] <= CIRRUS_ID_CLGD5429) {
+						if (dev->vlb)
+							temp |= (CL_GD5429_SYSTEM_BUS_VESA << 3);
+						else
+							temp |= (CL_GD5429_SYSTEM_BUS_ISA << 3);
+					} else {
+						if (dev->pci)
+							temp |= (CL_GD543X_SYSTEM_BUS_PCI << 3);
+						else if (dev->vlb)
+							temp |= (CL_GD543X_SYSTEM_BUS_VESA << 3);
+						else
+							temp |= (CL_GD543X_SYSTEM_BUS_ISA << 3);
+					}
+					return temp;
+
+				case 0x1b: case 0x1c: case 0x1d: case 0x1e:
+					return dev->vclk_d[svga->seqaddr-0x1b];
+			}
+			return svga->seqregs[svga->seqaddr & 0x3f];
+		}
+		break;
+
+	case 0x03c6:
+		if (dev->ramdac.state == 4) {
+			dev->ramdac.state = 0;
+			return dev->ramdac.ctrl;
+		}
+		dev->ramdac.state++;
+		break;
+		
+	case 0x03ca:
+		return dev->fc;		//FIXME: move to SVGA? --FvK
+		
+	case 0x03c9:
+		svga->dac_status = 3;
+		indx = (svga->dac_addr - 1) & 0xff;
+		if (svga->seqregs[0x12] & 2)
+			indx &= 0x0f;
+
+		switch (svga->dac_pos) {
+			case 0:
+				svga->dac_pos++;
+				if (svga->seqregs[0x12] & 2)
+					return dev->extpal[indx].r & 0x3f;
+				return svga->vgapal[indx].r & 0x3f;
+
+			case 1: 
+				svga->dac_pos++;
+				if (svga->seqregs[0x12] & 2)
+					return dev->extpal[indx].g & 0x3f;
+				return svga->vgapal[indx].g & 0x3f;
+
+                        case 2: 
+				svga->dac_pos = 0;
+				svga->dac_addr = (svga->dac_addr + 1) & 255;
+				if (svga->seqregs[0x12] & 2)
+                        		return dev->extpal[indx].b & 0x3f;
+                        	return svga->vgapal[indx].b & 0x3f;
+                }
+                return 0xff;
+
+	case 0x03cf:
+		if (svga->gdcaddr > 8)
+			return svga->gdcreg[svga->gdcaddr & 0x3f];
+		break;
+
+	case 0x03d4:
+		return svga->crtcreg;
+
+	case 0x03d5:
+		switch (svga->crtcreg) {
+			case 0x24: /*Attribute controller toggle readback (R)*/
+				return svga->attrff << 7;
+
+			case 0x26: /*Attribute controller index readback (R)*/
+				return svga->attraddr & 0x3f;	
+
+			case 0x27: /*ID*/
+				return svga->crtc[0x27]; /*GD542x/GD543x*/
+
+			case 0x28: /*Class ID*/
+				if ((svga->crtc[0x27] == CIRRUS_ID_CLGD5430) || (svga->crtc[0x27] == CIRRUS_ID_CLGD5440))
+					return 0xff; /*Standard CL-GD5430/40*/
+				break;
+		}
+		return svga->crtc[svga->crtcreg];
+    }
+
+    return svga_in(addr, svga);
+}
+
+
+static void
+hwcursor_draw(svga_t *svga, int displine)
+{
+    gd54xx_t *dev = (gd54xx_t *)svga->p;	
     int x, xx, comb, b0, b1;
     uint8_t dat[2];
     int offset = svga->hwcursor_latch.x - svga->hwcursor_latch.xoff;
     int y_add, x_add;
     int pitch = (svga->hwcursor.xsize == 64) ? 16 : 4;
-    uint32_t bgcol = gd54xx->extpallook[0x00];
-    uint32_t fgcol = gd54xx->extpallook[0x0f];
+    uint32_t bgcol = dev->extpallook[0x00];
+    uint32_t fgcol = dev->extpallook[0x0f];
 
     y_add = (enable_overscan && !suppress_overscan) ? (overscan_y >> 1) : 0;
     x_add = (enable_overscan && !suppress_overscan) ? 8 : 0;
@@ -1045,118 +1092,131 @@ void gd54xx_hwcursor_draw(svga_t *svga, int displine)
 	svga->hwcursor_latch.addr += pitch;
 }
 
+
 static void
-gd54xx_memsrc_rop(gd54xx_t *gd54xx, svga_t *svga, uint8_t src, uint8_t dst)
+gd54xx_rop(gd54xx_t *dev, uint8_t *res, uint8_t *dst, const uint8_t *src)
 {
-    uint8_t res = src;
-    svga->changedvram[(gd54xx->blt.dst_addr_backup & svga->vram_mask) >> 12] = changeframecount;
-
-    switch (gd54xx->blt.rop) {
-	case 0x00: res = 0;             break;
-	case 0x05: res =   src &  dst;  break;
-	case 0x06: res =   dst;         break;
-	case 0x09: res =   src & ~dst;  break;
-	case 0x0b: res = ~ dst;         break;
-	case 0x0d: res =   src;         break;
-	case 0x0e: res = 0xff;          break;
-	case 0x50: res = ~ src &  dst;  break;
-	case 0x59: res =   src ^  dst;  break;
-	case 0x6d: res =   src |  dst;  break;
-	case 0x90: res = ~(src |  dst); break;
-	case 0x95: res = ~(src ^  dst); break;
-	case 0xad: res =   src | ~dst;  break;
-	case 0xd0: res =  ~src;         break;
-	case 0xd6: res =  ~src |  dst;  break;
-	case 0xda: res = ~(src &  dst); break;
+    switch (dev->blt.rop) {
+	case 0x00: *res =   0x00;          break;
+	case 0x05: *res =   *src &  *dst;  break;
+	case 0x06: *res =   *dst;          break;
+	case 0x09: *res =   *src & ~*dst;  break;
+	case 0x0b: *res =  ~*dst;          break;
+	case 0x0d: *res =   *src;          break;
+	case 0x0e: *res =   0xff;          break;
+	case 0x50: *res =  ~*src &  *dst;  break;
+	case 0x59: *res =   *src ^  *dst;  break;
+	case 0x6d: *res =   *src |  *dst;  break;
+	case 0x90: *res = ~(*src |  *dst); break;
+	case 0x95: *res = ~(*src ^  *dst); break;
+	case 0xad: *res =   *src | ~*dst;  break;
+	case 0xd0: *res =  ~*src;          break;
+	case 0xd6: *res =  ~*src |  *dst;  break;
+	case 0xda: *res = ~(*src &  *dst); break;
     }
-
-	/* handle transparency compare */
-	if(gd54xx->blt.mode & CIRRUS_BLTMODE_TRANSPARENTCOMP) {  /* TODO: 16-bit compare */
-	/* if ROP result matches the transparency colour, don't change the pixel */
-	if((res & (~gd54xx->blt.trans_mask & 0xff)) == ((gd54xx->blt.trans_col & 0xff) & (~gd54xx->blt.trans_mask & 0xff)))
-		return;
-	}
-
-    svga->vram[gd54xx->blt.dst_addr_backup & svga->vram_mask] = res;	
 }
 
 
-/* non colour-expanded BitBLTs from system memory must be doubleword sized, extra bytes are ignored */
+static void
+memsrc_rop(gd54xx_t *dev, svga_t *svga, uint8_t src, uint8_t dst)
+{
+    uint8_t res = src;
+
+    svga->changedvram[(dev->blt.dst_addr_backup & svga->vram_mask) >> 12] = changeframecount;
+
+    gd54xx_rop(dev, &res, &dst, (const uint8_t *) &src);
+
+    /* Handle transparency compare. */
+    if (dev->blt.mode & CIRRUS_BLTMODE_TRANSPARENTCOMP) {
+	/* TODO: 16-bit compare */
+	/* if ROP result matches the transparency color, don't change the pixel */
+	if ((res & (~dev->blt.trans_mask & 0xff)) == ((dev->blt.trans_col & 0xff) & (~dev->blt.trans_mask & 0xff)))
+		return;
+    }
+
+    svga->vram[dev->blt.dst_addr_backup & svga->vram_mask] = res;	
+}
+
+
+/* non color-expanded BitBLTs from system memory must be doubleword sized, extra bytes are ignored */
 static void 
-gd54xx_blit_dword(gd54xx_t *gd54xx, svga_t *svga)
+blit_dword(gd54xx_t *dev, svga_t *svga)
 {
     /* TODO: add support for reverse direction */
     uint8_t x, pixel;
 
-    for (x=0;x<32;x+=8) {
-	pixel = ((gd54xx->blt.sys_buf & (0xff << x)) >> x);
-	if(gd54xx->blt.pixel_cnt <= gd54xx->blt.width)
-		gd54xx_memsrc_rop(gd54xx, svga, pixel, svga->vram[gd54xx->blt.dst_addr_backup & svga->vram_mask]);
-	gd54xx->blt.dst_addr_backup++;
-	gd54xx->blt.pixel_cnt++;
+    for (x = 0; x < 32; x += 8) {
+	pixel = ((dev->blt.sys_buf & (0xff << x)) >> x);
+	if (dev->blt.pixel_cnt <= dev->blt.width)
+		memsrc_rop(dev, svga, pixel,
+			  svga->vram[dev->blt.dst_addr_backup & svga->vram_mask]);
+	dev->blt.dst_addr_backup++;
+	dev->blt.pixel_cnt++;
     }
-    if (gd54xx->blt.pixel_cnt > gd54xx->blt.width) {
-	gd54xx->blt.pixel_cnt = 0;
-	gd54xx->blt.scan_cnt++;
-	gd54xx->blt.dst_addr_backup = gd54xx->blt.dst_addr + (gd54xx->blt.dst_pitch*gd54xx->blt.scan_cnt);
+
+    if (dev->blt.pixel_cnt > dev->blt.width) {
+	dev->blt.pixel_cnt = 0;
+	dev->blt.scan_cnt++;
+	dev->blt.dst_addr_backup = dev->blt.dst_addr + (dev->blt.dst_pitch*dev->blt.scan_cnt);
     }
-    if (gd54xx->blt.scan_cnt > gd54xx->blt.height) {
-	gd54xx->blt.sys_tx = 0;  /*  BitBLT complete */
-	gd543x_recalc_mapping(gd54xx);
+
+    if (dev->blt.scan_cnt > dev->blt.height) {
+	dev->blt.sys_tx = 0;  /*  BitBLT complete */
+	recalc_mapping(dev);
     }
 }
 
 
 static void
-gd54xx_blt_write_w(uint32_t addr, uint16_t val, void *p)
+blit_write_w(uint32_t addr, uint16_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
+    gd54xx_t *dev = (gd54xx_t *)priv;
 
-    gd54xx_start_blit(val, 16, gd54xx, &gd54xx->svga);
+    gd54xx_start_blit(val, 16, dev, &dev->svga);
 }
 
 
 static void
-gd54xx_blt_write_l(uint32_t addr, uint32_t val, void *p)
+blit_write_l(uint32_t addr, uint32_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
+    gd54xx_t *dev = (gd54xx_t *)priv;
 
-    if ((gd54xx->blt.mode & (CIRRUS_BLTMODE_MEMSYSSRC|CIRRUS_BLTMODE_COLOREXPAND)) == (CIRRUS_BLTMODE_MEMSYSSRC|CIRRUS_BLTMODE_COLOREXPAND)) {
-	gd54xx_start_blit(val & 0xff, 8, gd54xx, &gd54xx->svga);
-	gd54xx_start_blit((val>>8) & 0xff, 8, gd54xx, &gd54xx->svga);
-	gd54xx_start_blit((val>>16) & 0xff, 8, gd54xx, &gd54xx->svga);
-	gd54xx_start_blit((val>>24) & 0xff, 8, gd54xx, &gd54xx->svga);
+    if ((dev->blt.mode & (CIRRUS_BLTMODE_MEMSYSSRC|CIRRUS_BLTMODE_COLOREXPAND)) == (CIRRUS_BLTMODE_MEMSYSSRC|CIRRUS_BLTMODE_COLOREXPAND)) {
+	gd54xx_start_blit(val & 0xff, 8, dev, &dev->svga);
+	gd54xx_start_blit((val>>8) & 0xff, 8, dev, &dev->svga);
+	gd54xx_start_blit((val>>16) & 0xff, 8, dev, &dev->svga);
+	gd54xx_start_blit((val>>24) & 0xff, 8, dev, &dev->svga);
     } else
-	gd54xx_start_blit(val, 32, gd54xx, &gd54xx->svga);
+	gd54xx_start_blit(val, 32, dev, &dev->svga);
 }
 
 
 static void
-gd54xx_write(uint32_t addr, uint8_t val, void *p)
+gd54xx_write(uint32_t addr, uint8_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;	
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;	
 
 	if (svga->gdcreg[0x0b] & 1) {
-		svga->write_bank = gd54xx->bank[(addr >> 15) & 1];
+		svga->write_bank = dev->bank[(addr >> 15) & 1];
 		addr = addr & 0x7fff;
 	}
 	else
-		svga->write_bank = gd54xx->bank[0];
+		svga->write_bank = dev->bank[0];
 
     if ((svga->seqregs[0x07] & 0x01) == 0) {
 	svga_write(addr, val, svga);
 	return;
     }
 
-    if (gd54xx->blt.sys_tx) {
-	if (gd54xx->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
-		gd54xx->blt.sys_buf &= ~(0xff << (gd54xx->blt.sys_cnt * 8));
-		gd54xx->blt.sys_buf |= (val << (gd54xx->blt.sys_cnt * 8));
-		gd54xx->blt.sys_cnt++;
-		if (gd54xx->blt.sys_cnt >= 4) {
-			gd54xx_blit_dword(gd54xx, svga);
-			gd54xx->blt.sys_cnt = 0;
+    if (dev->blt.sys_tx) {
+	if (dev->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
+		dev->blt.sys_buf &= ~(0xff << (dev->blt.sys_cnt * 8));
+		dev->blt.sys_buf |= (val << (dev->blt.sys_cnt * 8));
+		dev->blt.sys_cnt++;
+		if (dev->blt.sys_cnt >= 4) {
+			blit_dword(dev, svga);
+			dev->blt.sys_cnt = 0;
 		}
 	}
 	return;
@@ -1164,39 +1224,38 @@ gd54xx_write(uint32_t addr, uint8_t val, void *p)
 
     addr &= svga->banked_mask;
     if (svga->banked_mask != 0x1ffff)
-	addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+	addr = (addr & 0x7fff) + dev->bank[(addr >> 15) & 1];
 
     svga_write_linear(addr, val, svga);
 }
 
 
 static void 
-gd54xx_writew(uint32_t addr, uint16_t val, void *p)
+gd54xx_writew(uint32_t addr, uint16_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 	
-	if (svga->gdcreg[0x0b] & 1) {
-		svga->write_bank = gd54xx->bank[(addr >> 15) & 1];
-		addr = addr & 0x7fff;
-	}
-	else
-		svga->write_bank = gd54xx->bank[0];
+    if (svga->gdcreg[0x0b] & 1) {
+	svga->write_bank = dev->bank[(addr >> 15) & 1];
+	addr = addr & 0x7fff;
+    } else
+	svga->write_bank = dev->bank[0];
 	
-	if ((svga->seqregs[0x07] & 0x01) == 0) {
+    if ((svga->seqregs[0x07] & 0x01) == 0) {
 	svga_writew(addr, val, svga);
 	return;
     }
 
-    if (gd54xx->blt.sys_tx) {
-	gd54xx_write(addr, val & 0xff, gd54xx);
-	gd54xx_write(addr+1, val >> 8, gd54xx);
+    if (dev->blt.sys_tx) {
+	gd54xx_write(addr, val & 0xff, dev);
+	gd54xx_write(addr+1, val >> 8, dev);
 	return;
     }
 
     addr &= svga->banked_mask;
     if (svga->banked_mask != 0x1ffff)
-	addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+	addr = (addr & 0x7fff) + dev->bank[(addr >> 15) & 1];
 
     if (svga->writemode < 4)	
     	svga_writew_linear(addr, val, svga);
@@ -1208,27 +1267,27 @@ gd54xx_writew(uint32_t addr, uint16_t val, void *p)
 
 
 static void
-gd54xx_writel(uint32_t addr, uint32_t val, void *p)
+gd54xx_writel(uint32_t addr, uint32_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
-	if ((svga->seqregs[0x07] & 0x01) == 0) {
+    if ((svga->seqregs[0x07] & 0x01) == 0) {
 	svga_writel(addr, val, svga);
 	return;
     }
 
-    if (gd54xx->blt.sys_tx) {
-	gd54xx_write(addr, val, gd54xx);
-	gd54xx_write(addr+1, val >> 8, gd54xx);
-	gd54xx_write(addr+2, val >> 16, gd54xx);
-	gd54xx_write(addr+3, val >> 24, gd54xx);
+    if (dev->blt.sys_tx) {
+	gd54xx_write(addr, val, dev);
+	gd54xx_write(addr+1, val >> 8, dev);
+	gd54xx_write(addr+2, val >> 16, dev);
+	gd54xx_write(addr+3, val >> 24, dev);
 	return;
     }
 
     addr &= svga->banked_mask;
     if (svga->banked_mask != 0x1ffff)
-	addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+	addr = (addr & 0x7fff) + dev->bank[(addr >> 15) & 1];
 
     if (svga->writemode < 4)
 	svga_writel_linear(addr, val, svga);
@@ -1301,15 +1360,16 @@ static uint8_t
 gd54xx_get_aperture(uint32_t addr)
 {
     uint32_t ap = addr >> 22;
+
     return (uint8_t) (ap & 0x03);
 }
 
 
 static uint8_t
-gd54xx_readb_linear(uint32_t addr, void *p)
+gd54xx_readb_linear(uint32_t addr, void *priv)
 {
-    svga_t *svga = (svga_t *)p;
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
+    svga_t *svga = (svga_t *)priv;
+    gd54xx_t *dev = (gd54xx_t *)svga->p;
 
     uint8_t ap = gd54xx_get_aperture(addr);
     addr &= 0x003fffff;	/* 4 MB mask */
@@ -1318,32 +1378,35 @@ gd54xx_readb_linear(uint32_t addr, void *p)
 	case 0:
 	default:		
 		break;
+
 	case 1:
 		/* 0 -> 1, 1 -> 0, 2 -> 3, 3 -> 2 */
 		addr ^= 0x00000001;
 		break;
+
 	case 2:
 		/* 0 -> 3, 1 -> 2, 2 -> 1, 3 -> 0 */
 		addr ^= 0x00000003;
 		break;
+
 	case 3:
 		return 0xff;
     }
 
     if ((addr & 0x003fff00) == 0x003fff00) {
 	if ((svga->seqregs[0x17] & CIRRUS_MMIO_ENABLE) && (svga->seqregs[0x17] & CIRRUS_MMIO_USE_PCIADDR))
-		return gd543x_mmio_read(addr & 0x000000ff, gd54xx);
+		return gd543x_mmio_read(addr & 0x000000ff, dev);
     }
 
-    return svga_read_linear(addr, p);
+    return svga_read_linear(addr, priv);
 }
 
 
 static uint16_t
-gd54xx_readw_linear(uint32_t addr, void *p)
+gd54xx_readw_linear(uint32_t addr, void *priv)
 {
-    svga_t *svga = (svga_t *)p;
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
+    svga_t *svga = (svga_t *)priv;
+    gd54xx_t *dev = (gd54xx_t *)svga->p;
 
     uint8_t ap = gd54xx_get_aperture(addr);
     uint16_t temp, temp2;
@@ -1355,17 +1418,19 @@ gd54xx_readw_linear(uint32_t addr, void *p)
 		if (ap == 2)
 			addr ^= 0x00000002;
 
-		temp = gd543x_mmio_readw(addr & 0x000000ff, gd54xx);
+		temp = gd543x_mmio_readw(addr & 0x000000ff, dev);
 
 		switch(ap) {
 			case 0:
 			default:
 				return temp;
+
 			case 1:
 			case 2:
 				temp2 = temp >> 8;
 				temp2 |= ((temp & 0xff) << 8);
 				return temp;
+
 			case 3:
 				return 0xffff;
 		}
@@ -1375,18 +1440,21 @@ gd54xx_readw_linear(uint32_t addr, void *p)
     switch (ap) {
 	case 0:
 	default:		
-		return svga_readw_linear(addr, p);
+		return svga_readw_linear(addr, priv);
+
 	case 2:
 		/* 0 -> 3, 1 -> 2, 2 -> 1, 3 -> 0 */
 		addr ^= 0x00000002;
+
 	case 1:
-		temp = svga_readb_linear(addr + 1, p);
-		temp |= (svga_readb_linear(addr, p) << 8);
+		temp = svga_readb_linear(addr + 1, priv);
+		temp |= (svga_readb_linear(addr, priv) << 8);
 
 		if (svga->fast)
 		        cycles -= video_timing_read_w;
 
 		return temp;
+
 	case 3:
 		return 0xffff;
     }
@@ -1394,10 +1462,10 @@ gd54xx_readw_linear(uint32_t addr, void *p)
 
 
 static uint32_t
-gd54xx_readl_linear(uint32_t addr, void *p)
+gd54xx_readl_linear(uint32_t addr, void *priv)
 {
-    svga_t *svga = (svga_t *)p;
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
+    svga_t *svga = (svga_t *)priv;
+    gd54xx_t *dev = (gd54xx_t *)svga->p;
 
     uint8_t ap = gd54xx_get_aperture(addr);
     uint32_t temp, temp2;
@@ -1406,26 +1474,27 @@ gd54xx_readl_linear(uint32_t addr, void *p)
 
     if ((addr & 0x003fff00) == 0x003fff00) {
 	if ((svga->seqregs[0x17] & CIRRUS_MMIO_ENABLE) && (svga->seqregs[0x17] & CIRRUS_MMIO_USE_PCIADDR)) {
-		temp = gd543x_mmio_readl(addr & 0x000000ff, gd54xx);
+		temp = gd543x_mmio_readl(addr & 0x000000ff, dev);
 
 		switch(ap) {
 			case 0:
 			default:
 				return temp;
+
 			case 1:
 				temp2 = temp >> 24;
 				temp2 |= ((temp >> 16) & 0xff) << 8;
 				temp2 |= ((temp >> 8) & 0xff) << 16;
 				temp2 |= (temp & 0xff) << 24;
-
 				return temp2;
+
 			case 2:
 				temp2 = (temp >> 8) & 0xff;
 				temp2 |= (temp & 0xff) << 8;
 				temp2 = ((temp >> 24) & 0xff) << 16;
 				temp2 = ((temp >> 16) & 0xff) << 24;
-
 				return temp2;
+
 			case 3:
 				return 0xffffffff;
 		}
@@ -1435,27 +1504,30 @@ gd54xx_readl_linear(uint32_t addr, void *p)
     switch (ap) {
 	case 0:
 	default:		
-		return svga_readw_linear(addr, p);
+		return svga_readw_linear(addr, priv);
+
 	case 1:
-		temp = svga_readb_linear(addr + 1, p);
-		temp |= (svga_readb_linear(addr, p) << 8);
-		temp |= (svga_readb_linear(addr + 3, p) << 16);
-		temp |= (svga_readb_linear(addr + 2, p) << 24);
+		temp = svga_readb_linear(addr + 1, priv);
+		temp |= (svga_readb_linear(addr, priv) << 8);
+		temp |= (svga_readb_linear(addr + 3, priv) << 16);
+		temp |= (svga_readb_linear(addr + 2, priv) << 24);
 
 		if (svga->fast)
 		        cycles -= video_timing_read_l;
 
 		return temp;
+
 	case 2:
-		temp = svga_readb_linear(addr + 3, p);
-		temp |= (svga_readb_linear(addr + 2, p) << 8);
-		temp |= (svga_readb_linear(addr + 1, p) << 16);
-		temp |= (svga_readb_linear(addr, p) << 24);
+		temp = svga_readb_linear(addr + 3, priv);
+		temp |= (svga_readb_linear(addr + 2, priv) << 8);
+		temp |= (svga_readb_linear(addr + 1, priv) << 16);
+		temp |= (svga_readb_linear(addr, priv) << 24);
 
 		if (svga->fast)
 		        cycles -= video_timing_read_l;
 
 		return temp;
+
 	case 3:
 		return 0xffffffff;
     }
@@ -1463,10 +1535,10 @@ gd54xx_readl_linear(uint32_t addr, void *p)
 
 
 static void
-gd54xx_writeb_linear(uint32_t addr, uint8_t val, void *p)
+gd54xx_writeb_linear(uint32_t addr, uint8_t val, void *priv)
 {
-    svga_t *svga = (svga_t *)p;
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
+    svga_t *svga = (svga_t *)priv;
+    gd54xx_t *dev = (gd54xx_t *)svga->p;
 
     uint8_t ap = gd54xx_get_aperture(addr);
     addr &= 0x003fffff;	/* 4 MB mask */
@@ -1475,31 +1547,34 @@ gd54xx_writeb_linear(uint32_t addr, uint8_t val, void *p)
 	case 0:
 	default:
 		break;
+
 	case 1:
 		/* 0 -> 1, 1 -> 0, 2 -> 3, 3 -> 2 */
 		addr ^= 0x00000001;
 		break;
+
 	case 2:
 		/* 0 -> 3, 1 -> 2, 2 -> 1, 3 -> 0 */
 		addr ^= 0x00000003;
 		break;
+
 	case 3:
 		return;
     }
 
     if ((addr & 0x003fff00) == 0x003fff00) {
 	if ((svga->seqregs[0x17] & CIRRUS_MMIO_ENABLE) && (svga->seqregs[0x17] & CIRRUS_MMIO_USE_PCIADDR))
-		gd543x_mmio_write(addr & 0x000000ff, val, gd54xx);
+		gd543x_mmio_write(addr & 0x000000ff, val, dev);
     }
 
-    if (gd54xx->blt.sys_tx) {
-	if (gd54xx->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
-		gd54xx->blt.sys_buf &= ~(0xff << (gd54xx->blt.sys_cnt * 8));
-		gd54xx->blt.sys_buf |= (val << (gd54xx->blt.sys_cnt * 8));
-		gd54xx->blt.sys_cnt++;
-		if (gd54xx->blt.sys_cnt >= 4) {
-			gd54xx_blit_dword(gd54xx, svga);
-			gd54xx->blt.sys_cnt = 0;
+    if (dev->blt.sys_tx) {
+	if (dev->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
+		dev->blt.sys_buf &= ~(0xff << (dev->blt.sys_cnt * 8));
+		dev->blt.sys_buf |= (val << (dev->blt.sys_cnt * 8));
+		dev->blt.sys_cnt++;
+		if (dev->blt.sys_cnt >= 4) {
+			blit_dword(dev, svga);
+			dev->blt.sys_cnt = 0;
 		}
 	}
 	return;
@@ -1510,10 +1585,10 @@ gd54xx_writeb_linear(uint32_t addr, uint8_t val, void *p)
 
 
 static void 
-gd54xx_writew_linear(uint32_t addr, uint16_t val, void *p)
+gd54xx_writew_linear(uint32_t addr, uint16_t val, void *priv)
 {
-    svga_t *svga = (svga_t *)p;
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
+    svga_t *svga = (svga_t *)priv;
+    gd54xx_t *dev = (gd54xx_t *)svga->p;
 
     uint8_t ap = gd54xx_get_aperture(addr);
     uint16_t temp;
@@ -1523,21 +1598,26 @@ gd54xx_writew_linear(uint32_t addr, uint16_t val, void *p)
 		switch(ap) {
 			case 0:
 			default:
-				gd543x_mmio_writew(addr & 0x000000ff, val, gd54xx);
+				gd543x_mmio_writew(addr & 0x000000ff, val, dev);
 				return;
+
 			case 2:
 				addr ^= 0x00000002;
+				/*FALLTHROUGH*/
+
 			case 1:
 				temp = (val >> 8);
 				temp |= ((val & 0xff) << 8);
-				gd543x_mmio_writew(addr & 0x000000ff, temp, gd54xx);
+				gd543x_mmio_writew(addr & 0x000000ff, temp, dev);
+				return;
+
 			case 3:
 				return;
 		}
 	}
     }
 
-    if (gd54xx->blt.sys_tx) {
+    if (dev->blt.sys_tx) {
 	gd54xx_writeb_linear(addr, val & 0xff, svga);
 	gd54xx_writeb_linear(addr+1, val >> 8, svga);
 	return;
@@ -1551,14 +1631,19 @@ gd54xx_writew_linear(uint32_t addr, uint16_t val, void *p)
 		default:
 			svga_writew_linear(addr, val, svga);
 			return;
+
 		case 2:
 			addr ^= 0x00000002;
+			/*FALLTHROUGH*/
+
 		case 1:
 			svga_writeb_linear(addr + 1, val & 0xff, svga);
 			svga_writeb_linear(addr, val >> 8, svga);
 
 			if (svga->fast)
 		        	cycles -= video_timing_write_w;
+			return;
+
 		case 3:
 			return;
 	}
@@ -1569,11 +1654,16 @@ gd54xx_writew_linear(uint32_t addr, uint16_t val, void *p)
 			svga_write_linear(addr, val & 0xff, svga);
 			svga_write_linear(addr + 1, val >> 8, svga);
 			return;
+
 		case 2:
 			addr ^= 0x00000002;
+			/*FALLTHROUGH*/
+
 		case 1:
 			svga_write_linear(addr + 1, val & 0xff, svga);
 			svga_write_linear(addr, val >> 8, svga);
+			return;
+
 		case 3:
 			return;
 	}
@@ -1582,10 +1672,10 @@ gd54xx_writew_linear(uint32_t addr, uint16_t val, void *p)
 
 
 static void 
-gd54xx_writel_linear(uint32_t addr, uint32_t val, void *p)
+gd54xx_writel_linear(uint32_t addr, uint32_t val, void *priv)
 {
-    svga_t *svga = (svga_t *)p;
-    gd54xx_t *gd54xx = (gd54xx_t *)svga->p;
+    svga_t *svga = (svga_t *)priv;
+    gd54xx_t *dev = (gd54xx_t *)svga->p;
 
     uint8_t ap = gd54xx_get_aperture(addr);
     uint32_t temp;
@@ -1595,29 +1685,32 @@ gd54xx_writel_linear(uint32_t addr, uint32_t val, void *p)
 		switch(ap) {
 			case 0:
 			default:
-				gd543x_mmio_writel(addr & 0x000000ff, val, gd54xx);
+				gd543x_mmio_writel(addr & 0x000000ff, val, dev);
 				return;
+
 			case 2:
 				temp = (val >> 24);
 				temp |= ((val >> 16) & 0xff) << 8;
 				temp |= ((val >> 8) & 0xff) << 16;
 				temp |= (val & 0xff) << 24;
-				gd543x_mmio_writel(addr & 0x000000ff, temp, gd54xx);
+				gd543x_mmio_writel(addr & 0x000000ff, temp, dev);
 				return;
+
 			case 1:
 				temp = ((val >> 8) & 0xff);
 				temp |= (val & 0xff) << 8;
 				temp |= (val >> 24) << 16;
 				temp |= ((val >> 16) & 0xff) << 24;
-				gd543x_mmio_writel(addr & 0x000000ff, temp, gd54xx);
+				gd543x_mmio_writel(addr & 0x000000ff, temp, dev);
 				return;
+
 			case 3:
 				return;
 		}
 	}
     }
 
-    if (gd54xx->blt.sys_tx) {
+    if (dev->blt.sys_tx) {
 	gd54xx_writeb_linear(addr, val, svga);
 	gd54xx_writeb_linear(addr+1, val >> 8, svga);
 	gd54xx_writeb_linear(addr+2, val >> 16, svga);
@@ -1633,17 +1726,21 @@ gd54xx_writel_linear(uint32_t addr, uint32_t val, void *p)
 		default:
 			svga_writel_linear(addr, val, svga);
 			return;
+
 		case 1:
 			svga_writeb_linear(addr + 1, val & 0xff, svga);
 			svga_writeb_linear(addr, val >> 8, svga);
 			svga_writeb_linear(addr + 3, val >> 16, svga);
 			svga_writeb_linear(addr + 2, val >> 24, svga);
 			return;
+
 		case 2:
 			svga_writeb_linear(addr + 3, val & 0xff, svga);
 			svga_writeb_linear(addr + 2, val >> 8, svga);
 			svga_writeb_linear(addr + 1, val >> 16, svga);
 			svga_writeb_linear(addr, val >> 24, svga);
+			return;
+
 		case 3:
 			return;
 	}
@@ -1659,17 +1756,21 @@ gd54xx_writel_linear(uint32_t addr, uint32_t val, void *p)
 			svga_write_linear(addr+2, val >> 16, svga);
 			svga_write_linear(addr+3, val >> 24, svga);
 			return;
+
 		case 1:
 			svga_write_linear(addr + 1, val & 0xff, svga);
 			svga_write_linear(addr, val >> 8, svga);
 			svga_write_linear(addr + 3, val >> 16, svga);
 			svga_write_linear(addr + 2, val >> 24, svga);
 			return;
+
 		case 2:
 			svga_write_linear(addr + 3, val & 0xff, svga);
 			svga_write_linear(addr + 2, val >> 8, svga);
 			svga_write_linear(addr + 1, val >> 16, svga);
 			svga_write_linear(addr, val >> 24, svga);
+			return;
+
 		case 3:
 			return;
 	}
@@ -1678,53 +1779,51 @@ gd54xx_writel_linear(uint32_t addr, uint32_t val, void *p)
 
 
 static uint8_t
-gd54xx_read(uint32_t addr, void *p)
+gd54xx_read(uint32_t addr, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if ((svga->seqregs[0x07] & 0x01) == 0)
 	return svga_read(addr, svga);
 
     addr &= svga->banked_mask;
-    addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+    addr = (addr & 0x7fff) + dev->bank[(addr >> 15) & 1];
 
     addr &= svga->vram_mask;
-
-
 
     return svga_read_linear(addr, svga);
 }
 
 
 static uint16_t
-gd54xx_readw(uint32_t addr, void *p)
+gd54xx_readw(uint32_t addr, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if ((svga->seqregs[0x07] & 0x01) == 0)
 	return svga_readw(addr, svga);
 
     addr &= svga->banked_mask;
     if (svga->banked_mask != 0x1ffff)
-	addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+	addr = (addr & 0x7fff) + dev->bank[(addr >> 15) & 1];
 
     return svga_readw_linear(addr, svga);
 }
 
 
 static uint32_t
-gd54xx_readl(uint32_t addr, void *p)
+gd54xx_readl(uint32_t addr, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if ((svga->seqregs[0x07] & 0x01) == 0)
 	return svga_readl(addr, svga);
 
     addr &= svga->banked_mask;
-    addr = (addr & 0x7fff) + gd54xx->bank[(addr >> 15) & 1];
+    addr = (addr & 0x7fff) + dev->bank[(addr >> 15) & 1];
 
     return svga_readl_linear(addr, svga);
 }
@@ -1741,218 +1840,238 @@ gd543x_do_mmio(svga_t *svga, uint32_t addr)
 
 
 static void
-gd543x_mmio_write(uint32_t addr, uint8_t val, void *p)
+gd543x_mmio_write(uint32_t addr, uint8_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 	
     if (gd543x_do_mmio(svga, addr)) {
 	switch (addr & 0xff) {
 		case 0x00:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.bg_col = (gd54xx->blt.bg_col & 0xffffff00) | val;
+			if (is_5434(svga))
+				dev->blt.bg_col = (dev->blt.bg_col & 0xffffff00) | val;
 			else
-				gd54xx->blt.bg_col = (gd54xx->blt.bg_col & 0xff00) | val;
+				dev->blt.bg_col = (dev->blt.bg_col & 0xff00) | val;
 			break;
+
 		case 0x01:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.bg_col = (gd54xx->blt.bg_col & 0xffff00ff) | (val << 8);
+			if (is_5434(svga))
+				dev->blt.bg_col = (dev->blt.bg_col & 0xffff00ff) | (val << 8);
 			else
-				gd54xx->blt.bg_col = (gd54xx->blt.bg_col & 0x00ff) | (val << 8);
+				dev->blt.bg_col = (dev->blt.bg_col & 0x00ff) | (val << 8);
 			break;
+
 		case 0x02:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.bg_col = (gd54xx->blt.bg_col & 0xff00ffff) | (val << 16);
+			if (is_5434(svga))
+				dev->blt.bg_col = (dev->blt.bg_col & 0xff00ffff) | (val << 16);
 			break;
+
 		case 0x03:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.bg_col = (gd54xx->blt.bg_col & 0x00ffffff) | (val << 24);
+			if (is_5434(svga))
+				dev->blt.bg_col = (dev->blt.bg_col & 0x00ffffff) | (val << 24);
 			break;
 
 		case 0x04:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.fg_col = (gd54xx->blt.fg_col & 0xffffff00) | val;
+			if (is_5434(svga))
+				dev->blt.fg_col = (dev->blt.fg_col & 0xffffff00) | val;
 			else
-				gd54xx->blt.fg_col = (gd54xx->blt.fg_col & 0xff00) | val;
+				dev->blt.fg_col = (dev->blt.fg_col & 0xff00) | val;
 			break;
+
 		case 0x05:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.fg_col = (gd54xx->blt.fg_col & 0xffff00ff) | (val << 8);
+			if (is_5434(svga))
+				dev->blt.fg_col = (dev->blt.fg_col & 0xffff00ff) | (val << 8);
 			else
-				gd54xx->blt.fg_col = (gd54xx->blt.fg_col & 0x00ff) | (val << 8);
+				dev->blt.fg_col = (dev->blt.fg_col & 0x00ff) | (val << 8);
 			break;
+
 		case 0x06:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.fg_col = (gd54xx->blt.fg_col & 0xff00ffff) | (val << 16);
+			if (is_5434(svga))
+				dev->blt.fg_col = (dev->blt.fg_col & 0xff00ffff) | (val << 16);
 			break;
+
 		case 0x07:
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.fg_col = (gd54xx->blt.fg_col & 0x00ffffff) | (val << 24);
+			if (is_5434(svga))
+				dev->blt.fg_col = (dev->blt.fg_col & 0x00ffffff) | (val << 24);
 			break;
 
 		case 0x08:
-			gd54xx->blt.width = (gd54xx->blt.width & 0xff00) | val;
+			dev->blt.width = (dev->blt.width & 0xff00) | val;
 			break;
+
 		case 0x09:
-			gd54xx->blt.width = (gd54xx->blt.width & 0x00ff) | (val << 8);
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.width &= 0x1fff;
+			dev->blt.width = (dev->blt.width & 0x00ff) | (val << 8);
+			if (is_5434(svga))
+				dev->blt.width &= 0x1fff;
 			else
-				gd54xx->blt.width &= 0x07ff;
+				dev->blt.width &= 0x07ff;
 			break;
+
 		case 0x0a:
-			gd54xx->blt.height = (gd54xx->blt.height & 0xff00) | val;
+			dev->blt.height = (dev->blt.height & 0xff00) | val;
 			break;
+
 		case 0x0b:
-			gd54xx->blt.height = (gd54xx->blt.height & 0x00ff) | (val << 8);
-			gd54xx->blt.height &= 0x03ff;
+			dev->blt.height = (dev->blt.height & 0x00ff) | (val << 8);
+			if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5436)
+				dev->blt.height &= 0x07ff;
+			else
+				dev->blt.height &= 0x03ff;
 			break;
+
 		case 0x0c:
-			gd54xx->blt.dst_pitch = (gd54xx->blt.dst_pitch & 0xff00) | val;
+			dev->blt.dst_pitch = (dev->blt.dst_pitch & 0xff00) | val;
 			break;
+
 		case 0x0d:
-			gd54xx->blt.dst_pitch = (gd54xx->blt.dst_pitch & 0x00ff) | (val << 8);
+			dev->blt.dst_pitch = (dev->blt.dst_pitch & 0x00ff) | (val << 8);
 			break;
+
 		case 0x0e:
-			gd54xx->blt.src_pitch = (gd54xx->blt.src_pitch & 0xff00) | val;
+			dev->blt.src_pitch = (dev->blt.src_pitch & 0xff00) | val;
 			break;
+
 		case 0x0f:
-			gd54xx->blt.src_pitch = (gd54xx->blt.src_pitch & 0x00ff) | (val << 8);
+			dev->blt.src_pitch = (dev->blt.src_pitch & 0x00ff) | (val << 8);
 			break;
 
 		case 0x10:
-			gd54xx->blt.dst_addr = (gd54xx->blt.dst_addr & 0xffff00) | val;
+			dev->blt.dst_addr = (dev->blt.dst_addr & 0xffff00) | val;
 			break;
 			case 0x11:
-			gd54xx->blt.dst_addr = (gd54xx->blt.dst_addr & 0xff00ff) | (val << 8);
+			dev->blt.dst_addr = (dev->blt.dst_addr & 0xff00ff) | (val << 8);
 			break;
-		case 0x12:
-			gd54xx->blt.dst_addr = (gd54xx->blt.dst_addr & 0x00ffff) | (val << 16);
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.dst_addr &= 0x3fffff;
-			else
-				gd54xx->blt.dst_addr &= 0x1fffff;
 
-			if ((svga->crtc[0x27] >= CIRRUS_ID_CLGD5436) && (gd54xx->blt.status & CIRRUS_BLT_AUTOSTART)) {
-				if (gd54xx->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
-					gd54xx->blt.sys_tx = 1;
-					gd54xx->blt.sys_cnt = 0;
-					gd54xx->blt.sys_buf = 0;
-					gd54xx->blt.pixel_cnt = gd54xx->blt.scan_cnt = 0;
-					gd54xx->blt.src_addr_backup = gd54xx->blt.src_addr;
-					gd54xx->blt.dst_addr_backup = gd54xx->blt.dst_addr;						
+		case 0x12:
+			dev->blt.dst_addr = (dev->blt.dst_addr & 0x00ffff) | (val << 16);
+			if (is_5434(svga))
+				dev->blt.dst_addr &= 0x3fffff;
+			else
+				dev->blt.dst_addr &= 0x1fffff;
+
+			if ((svga->crtc[0x27] >= CIRRUS_ID_CLGD5436) && (dev->blt.status & CIRRUS_BLT_AUTOSTART)) {
+				if (dev->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
+					dev->blt.sys_tx = 1;
+					dev->blt.sys_cnt = 0;
+					dev->blt.sys_buf = 0;
+					dev->blt.pixel_cnt = dev->blt.scan_cnt = 0;
+					dev->blt.src_addr_backup = dev->blt.src_addr;
+					dev->blt.dst_addr_backup = dev->blt.dst_addr;						
 				} else
-					gd54xx_start_blit(0, -1, gd54xx, svga);
+					gd54xx_start_blit(0, -1, dev, svga);
 			}
 			break;
 
 		case 0x14:
-			gd54xx->blt.src_addr = (gd54xx->blt.src_addr & 0xffff00) | val;
+			dev->blt.src_addr = (dev->blt.src_addr & 0xffff00) | val;
 			break;
+
 		case 0x15:
-			gd54xx->blt.src_addr = (gd54xx->blt.src_addr & 0xff00ff) | (val << 8);
+			dev->blt.src_addr = (dev->blt.src_addr & 0xff00ff) | (val << 8);
 			break;
+
 		case 0x16:
-			gd54xx->blt.src_addr = (gd54xx->blt.src_addr & 0x00ffff) | (val << 16);
-			if (gd54xx_is_5434(svga))
-				gd54xx->blt.src_addr &= 0x3fffff;
+			dev->blt.src_addr = (dev->blt.src_addr & 0x00ffff) | (val << 16);
+			if (is_5434(svga))
+				dev->blt.src_addr &= 0x3fffff;
 			else
-				gd54xx->blt.src_addr &= 0x1fffff;
+				dev->blt.src_addr &= 0x1fffff;
 			break;
 
 		case 0x17:
-			gd54xx->blt.mask = val;
+			dev->blt.mask = val;
 			break;
+
 		case 0x18:
-			gd54xx->blt.mode = val;
+			dev->blt.mode = val;
 			break;
 
 		case 0x1a:
-			gd54xx->blt.rop = val;
+			dev->blt.rop = val;
 			break;
 
 		case 0x1b:
 			if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5436)	
-				gd54xx->blt.modeext = val;
+				dev->blt.modeext = val;
 			break;		
 		
 		case 0x1c:
-			gd54xx->blt.trans_col = (gd54xx->blt.trans_col & 0xff00) | val;
+			dev->blt.trans_col = (dev->blt.trans_col & 0xff00) | val;
 			break;
 		
 		case 0x1d:	
-			gd54xx->blt.trans_col = (gd54xx->blt.trans_col & 0x00ff) | (val << 8);
+			dev->blt.trans_col = (dev->blt.trans_col & 0x00ff) | (val << 8);
 			break;
 		
 		case 0x20:
-			gd54xx->blt.trans_mask = (gd54xx->blt.trans_mask & 0xff00) | val;
+			dev->blt.trans_mask = (dev->blt.trans_mask & 0xff00) | val;
 			break;
 		
 		case 0x21:
-			gd54xx->blt.trans_mask = (gd54xx->blt.trans_mask & 0x00ff) | (val << 8);
+			dev->blt.trans_mask = (dev->blt.trans_mask & 0x00ff) | (val << 8);
 			break;
 		
 		case 0x40:
-			gd54xx->blt.status = val;
-			if (gd54xx->blt.status & CIRRUS_BLT_START) {
-				if (gd54xx->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
-					gd54xx->blt.sys_tx = 1;
-					gd54xx->blt.sys_cnt = 0;
-					gd54xx->blt.sys_buf = 0;
-					gd54xx->blt.pixel_cnt = gd54xx->blt.scan_cnt = 0;
-					gd54xx->blt.src_addr_backup = gd54xx->blt.src_addr;
-					gd54xx->blt.dst_addr_backup = gd54xx->blt.dst_addr;						
+			dev->blt.status = val;
+			if (dev->blt.status & CIRRUS_BLT_START) {
+				if (dev->blt.mode == CIRRUS_BLTMODE_MEMSYSSRC) {
+					dev->blt.sys_tx = 1;
+					dev->blt.sys_cnt = 0;
+					dev->blt.sys_buf = 0;
+					dev->blt.pixel_cnt = dev->blt.scan_cnt = 0;
+					dev->blt.src_addr_backup = dev->blt.src_addr;
+					dev->blt.dst_addr_backup = dev->blt.dst_addr;						
 				} else
-					gd54xx_start_blit(0, -1, gd54xx, svga);
+					gd54xx_start_blit(0, -1, dev, svga);
 			}
 			break;
 		}		
-    } else if (gd54xx->mmio_vram_overlap)
-	gd54xx_write(addr, val, gd54xx);
+    } else if (dev->mmio_vram_overlap)
+	gd54xx_write(addr, val, dev);
 }
 
 
 static void
-gd543x_mmio_writew(uint32_t addr, uint16_t val, void *p)
+gd543x_mmio_writew(uint32_t addr, uint16_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if (gd543x_do_mmio(svga, addr)) {
-	gd543x_mmio_write(addr, val & 0xff, gd54xx);
-	gd543x_mmio_write(addr+1, val >> 8, gd54xx);		
-    } else if (gd54xx->mmio_vram_overlap) {
-	gd54xx_write(addr, val & 0xff, gd54xx);
-	gd54xx_write(addr+1, val >> 8, gd54xx);
+	gd543x_mmio_write(addr, val & 0xff, dev);
+	gd543x_mmio_write(addr+1, val >> 8, dev);		
+    } else if (dev->mmio_vram_overlap) {
+	gd54xx_write(addr, val & 0xff, dev);
+	gd54xx_write(addr+1, val >> 8, dev);
     }
 }
 
 
 static void
-gd543x_mmio_writel(uint32_t addr, uint32_t val, void *p)
+gd543x_mmio_writel(uint32_t addr, uint32_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if (gd543x_do_mmio(svga, addr)) {
-	gd543x_mmio_write(addr, val & 0xff, gd54xx);
-	gd543x_mmio_write(addr+1, val >> 8, gd54xx);
-	gd543x_mmio_write(addr+2, val >> 16, gd54xx);
-	gd543x_mmio_write(addr+3, val >> 24, gd54xx);		
-    } else if (gd54xx->mmio_vram_overlap) {
-	gd54xx_write(addr, val, gd54xx);
-	gd54xx_write(addr+1, val >> 8, gd54xx);
-	gd54xx_write(addr+2, val >> 16, gd54xx);
-	gd54xx_write(addr+3, val >> 24, gd54xx);	
+	gd543x_mmio_write(addr, val & 0xff, dev);
+	gd543x_mmio_write(addr+1, val >> 8, dev);
+	gd543x_mmio_write(addr+2, val >> 16, dev);
+	gd543x_mmio_write(addr+3, val >> 24, dev);		
+    } else if (dev->mmio_vram_overlap) {
+	gd54xx_write(addr, val, dev);
+	gd54xx_write(addr+1, val >> 8, dev);
+	gd54xx_write(addr+2, val >> 16, dev);
+	gd54xx_write(addr+3, val >> 24, dev);	
     }
 }
 
 
 static uint8_t
-gd543x_mmio_read(uint32_t addr, void *p)
+gd543x_mmio_read(uint32_t addr, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if (gd543x_do_mmio(svga, addr)) {
 	switch (addr & 0xff) {
@@ -1961,67 +2080,85 @@ gd543x_mmio_read(uint32_t addr, void *p)
 	}
 	return 0xff; /*All other registers read-only*/
     }
-    else if (gd54xx->mmio_vram_overlap)
-	return gd54xx_read(addr, gd54xx);
+    else if (dev->mmio_vram_overlap)
+	return gd54xx_read(addr, dev);
 
     return 0xff;
 }
 
 
 static uint16_t
-gd543x_mmio_readw(uint32_t addr, void *p)
+gd543x_mmio_readw(uint32_t addr, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if (gd543x_do_mmio(svga, addr))
-	return gd543x_mmio_read(addr, gd54xx) | (gd543x_mmio_read(addr+1, gd54xx) << 8);
-    else if (gd54xx->mmio_vram_overlap)
-	return gd54xx_read(addr, gd54xx) | (gd54xx_read(addr+1, gd54xx) << 8);
+	return gd543x_mmio_read(addr, dev) | (gd543x_mmio_read(addr+1, dev) << 8);
+    else if (dev->mmio_vram_overlap)
+	return gd54xx_read(addr, dev) | (gd54xx_read(addr+1, dev) << 8);
 
     return 0xffff;
 }
 
 
 static uint32_t
-gd543x_mmio_readl(uint32_t addr, void *p)
+gd543x_mmio_readl(uint32_t addr, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
     if (gd543x_do_mmio(svga, addr))
-	return gd543x_mmio_read(addr, gd54xx) | (gd543x_mmio_read(addr+1, gd54xx) << 8) | (gd543x_mmio_read(addr+2, gd54xx) << 16) | (gd543x_mmio_read(addr+3, gd54xx) << 24);
-    else if (gd54xx->mmio_vram_overlap)
-	return gd54xx_read(addr, gd54xx) | (gd54xx_read(addr+1, gd54xx) << 8) | (gd54xx_read(addr+2, gd54xx) << 16) | (gd54xx_read(addr+3, gd54xx) << 24);
+	return gd543x_mmio_read(addr, dev) | (gd543x_mmio_read(addr+1, dev) << 8) | (gd543x_mmio_read(addr+2, dev) << 16) | (gd543x_mmio_read(addr+3, dev) << 24);
+    else if (dev->mmio_vram_overlap)
+	return gd54xx_read(addr, dev) | (gd54xx_read(addr+1, dev) << 8) | (gd54xx_read(addr+2, dev) << 16) | (gd54xx_read(addr+3, dev) << 24);
 
     return 0xffffffff;
 }
 
 
+static uint8_t
+gd54xx_color_expand(gd54xx_t *dev, int mask, int shift)
+{
+    uint8_t ret;
+
+    if (dev->blt.mode & CIRRUS_BLTMODE_TRANSPARENTCOMP)
+	ret = dev->blt.fg_col >> (shift << 3);
+    else
+	ret = mask ? (dev->blt.fg_col >> (shift << 3))
+		   : (dev->blt.bg_col >> (shift << 3));
+
+    return ret;
+}
+
+
 static void 
-gd54xx_start_blit(uint32_t cpu_dat, int count, gd54xx_t *gd54xx, svga_t *svga)
+gd54xx_start_blit(uint32_t cpu_dat, int count, gd54xx_t *dev, svga_t *svga)
 {
     int blt_mask = 0;
     int x_max = 0;
-
     int shift = 0, last_x = 0;
-	
-    switch (gd54xx->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
+    uint32_t src_addr = dev->blt.src_addr;
+
+    switch (dev->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
 	case CIRRUS_BLTMODE_PIXELWIDTH8:
-		blt_mask = gd54xx->blt.mask & 7;
+		blt_mask = dev->blt.mask & 7;
 		x_max = 8;
 		break;
+
 	case CIRRUS_BLTMODE_PIXELWIDTH16:
-		blt_mask = gd54xx->blt.mask & 7;
+		blt_mask = dev->blt.mask & 7;
 		x_max = 16;
 		blt_mask *= 2;
 		break;
+
 	case CIRRUS_BLTMODE_PIXELWIDTH24:
-		blt_mask = (gd54xx->blt.mask & 0x1f);
+		blt_mask = (dev->blt.mask & 0x1f);
 		x_max = 24;
 		break;
+
 	case CIRRUS_BLTMODE_PIXELWIDTH32:
-		blt_mask = gd54xx->blt.mask & 7;
+		blt_mask = dev->blt.mask & 7;
 		x_max = 32;
 		blt_mask *= 4;
 		break;
@@ -2030,67 +2167,66 @@ gd54xx_start_blit(uint32_t cpu_dat, int count, gd54xx_t *gd54xx, svga_t *svga)
     last_x = (x_max >> 3) - 1;
 
     if (count == -1) {
-	gd54xx->blt.dst_addr_backup = gd54xx->blt.dst_addr;
-	gd54xx->blt.src_addr_backup = gd54xx->blt.src_addr;
-	gd54xx->blt.width_backup    = gd54xx->blt.width;
-	gd54xx->blt.height_internal = gd54xx->blt.height;
-	gd54xx->blt.x_count = 0;
-	if ((gd54xx->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) == (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND))
-		gd54xx->blt.y_count = gd54xx->blt.src_addr & 7;
+	dev->blt.dst_addr_backup = dev->blt.dst_addr;
+	dev->blt.src_addr_backup = dev->blt.src_addr;
+	dev->blt.width_backup    = dev->blt.width;
+	dev->blt.height_internal = dev->blt.height;
+	dev->blt.x_count = 0;
+	if ((dev->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) == (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND))
+		dev->blt.y_count = src_addr & 7;
 	else
-		gd54xx->blt.y_count = 0;
+		dev->blt.y_count = 0;
 
-	if (gd54xx->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC) {
+	if (dev->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC) {
 		if (!(svga->seqregs[7] & 0xf0)) {
-			mem_map_set_handler(&svga->mapping, NULL, NULL, NULL, NULL, gd54xx_blt_write_w, gd54xx_blt_write_l);
-			mem_map_set_p(&svga->mapping, gd54xx);
+			mem_map_set_handler(&svga->mapping, NULL, NULL, NULL, NULL, blit_write_w, blit_write_l);
+			mem_map_set_p(&svga->mapping, dev);
 		} else {
-			mem_map_set_handler(&gd54xx->linear_mapping, NULL, NULL, NULL, NULL, gd54xx_blt_write_w, gd54xx_blt_write_l);
-			mem_map_set_p(&gd54xx->linear_mapping, gd54xx);
+			mem_map_set_handler(&dev->linear_mapping, NULL, NULL, NULL, NULL, blit_write_w, blit_write_l);
+			mem_map_set_p(&dev->linear_mapping, dev);
 		}
-		gd543x_recalc_mapping(gd54xx);
+		recalc_mapping(dev);
 		return;
 	} else {
 		if (!(svga->seqregs[7] & 0xf0)) {
 			mem_map_set_handler(&svga->mapping, gd54xx_read, gd54xx_readw, gd54xx_readl, gd54xx_write, gd54xx_writew, gd54xx_writel);
-			mem_map_set_p(&gd54xx->svga.mapping, gd54xx);			
+			mem_map_set_p(&dev->svga.mapping, dev);			
 		} else {
-			mem_map_set_handler(&gd54xx->linear_mapping, svga_readb_linear, svga_readw_linear, svga_readl_linear, gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear);
-			mem_map_set_p(&gd54xx->linear_mapping, svga);
+			mem_map_set_handler(&dev->linear_mapping, svga_readb_linear, svga_readw_linear, svga_readl_linear, gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear);
+			mem_map_set_p(&dev->linear_mapping, svga);
 		}
-		gd543x_recalc_mapping(gd54xx);
+		recalc_mapping(dev);
 	}
-    } else if (gd54xx->blt.height_internal == 0xffff)
+    } else if (dev->blt.height_internal == 0xffff)
 	return;
 
     while (count) {
 	uint8_t src = 0, dst;
 	int mask = 0;
 
-	if (gd54xx->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC) {
-		if (gd54xx->blt.mode & CIRRUS_BLTMODE_COLOREXPAND) {			
-			if (gd54xx->blt.modeext & CIRRUS_BLTMODEEXT_DWORDGRANULARITY)
-				mask = (cpu_dat >> 31);
+	if (dev->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC) {
+		if (dev->blt.mode & CIRRUS_BLTMODE_COLOREXPAND) {			
+			if (dev->blt.modeext & CIRRUS_BLTMODEEXT_DWORDGRANULARITY)
+				mask = !!(cpu_dat >> 31);
 			else
-				mask = cpu_dat & 0x80;
+				mask = !!(cpu_dat & 0x80);
 
-			switch (gd54xx->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
-					case CIRRUS_BLTMODE_PIXELWIDTH8:
-					src = mask ? gd54xx->blt.fg_col : gd54xx->blt.bg_col;
+			switch (dev->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
+				case CIRRUS_BLTMODE_PIXELWIDTH8:
 					shift = 0;
 					break;
-					case CIRRUS_BLTMODE_PIXELWIDTH16:
-					shift = (gd54xx->blt.x_count & 1);
+				case CIRRUS_BLTMODE_PIXELWIDTH16:
+					shift = (dev->blt.x_count & 1);
 					break;
-					case CIRRUS_BLTMODE_PIXELWIDTH24:
-					shift = (gd54xx->blt.x_count % 3);
+				case CIRRUS_BLTMODE_PIXELWIDTH24:
+					shift = (dev->blt.x_count % 3);
 					break;
-					case CIRRUS_BLTMODE_PIXELWIDTH32:
-					shift = (gd54xx->blt.x_count & 3);
+				case CIRRUS_BLTMODE_PIXELWIDTH32:
+					shift = (dev->blt.x_count & 3);
 					break;
 			}
 
-			src = mask ? (gd54xx->blt.fg_col >> (shift << 3)) : (gd54xx->blt.bg_col >> (shift << 3));
+			src = gd54xx_color_expand(dev, mask, shift);
 
 			if (shift == last_x) {
 				cpu_dat <<= 1;
@@ -2104,176 +2240,155 @@ gd54xx_start_blit(uint32_t cpu_dat, int count, gd54xx_t *gd54xx, svga_t *svga)
 			mask = 1;
 		}
 	} else {
-		switch (gd54xx->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) {
+		switch (dev->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) {
 			case 0x00:
-				src = svga->vram[gd54xx->blt.src_addr & svga->vram_mask];
-				gd54xx->blt.src_addr += ((gd54xx->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -1 : 1);
+				src = svga->vram[dev->blt.src_addr & svga->vram_mask];
+				src_addr += ((dev->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -1 : 1);
+				dev->blt.src_addr += ((dev->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -1 : 1);
 				mask = 1;
 				break;
 			case CIRRUS_BLTMODE_PATTERNCOPY:
-				switch (gd54xx->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
-						case CIRRUS_BLTMODE_PIXELWIDTH8:
-						src = svga->vram[(gd54xx->blt.src_addr & (svga->vram_mask & ~7)) + (gd54xx->blt.y_count << 3) + (gd54xx->blt.x_count & 7)];
+				switch (dev->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
+					case CIRRUS_BLTMODE_PIXELWIDTH8:
+						src = svga->vram[(src_addr & (svga->vram_mask & ~7)) + (dev->blt.y_count << 3) + (dev->blt.x_count & 7)];
 						break;
-						case CIRRUS_BLTMODE_PIXELWIDTH16:
-						src = svga->vram[(gd54xx->blt.src_addr & (svga->vram_mask & ~15)) + (gd54xx->blt.y_count << 4) + (gd54xx->blt.x_count & 15)];
+					case CIRRUS_BLTMODE_PIXELWIDTH16:
+						src = svga->vram[(src_addr & (svga->vram_mask & ~15)) + (dev->blt.y_count << 4) + (dev->blt.x_count & 15)];
 						break;
-						case CIRRUS_BLTMODE_PIXELWIDTH24:
-						src = svga->vram[(gd54xx->blt.src_addr & (svga->vram_mask & ~31)) + (gd54xx->blt.y_count << 5) + (gd54xx->blt.x_count % 24)];
+					case CIRRUS_BLTMODE_PIXELWIDTH24:
+						src = svga->vram[(src_addr & (svga->vram_mask & ~31)) + (dev->blt.y_count << 5) + (dev->blt.x_count % 24)];
 						break;
-						case CIRRUS_BLTMODE_PIXELWIDTH32:
-						src = svga->vram[(gd54xx->blt.src_addr & (svga->vram_mask & ~31)) + (gd54xx->blt.y_count << 5) + (gd54xx->blt.x_count & 31)];
+					case CIRRUS_BLTMODE_PIXELWIDTH32:
+						src = svga->vram[(src_addr & (svga->vram_mask & ~31)) + (dev->blt.y_count << 5) + (dev->blt.x_count & 31)];
 						break;
 				}
 				mask = 1;
 				break;
+
 			case CIRRUS_BLTMODE_COLOREXPAND:
-				switch (gd54xx->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
-						case CIRRUS_BLTMODE_PIXELWIDTH8:
-						mask = svga->vram[gd54xx->blt.src_addr & svga->vram_mask] & (0x80 >> gd54xx->blt.x_count);
+				switch (dev->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
+					case CIRRUS_BLTMODE_PIXELWIDTH8:
+						mask = svga->vram[src_addr & svga->vram_mask] & (0x80 >> dev->blt.x_count);
 						shift = 0;
 						break;
-						case CIRRUS_BLTMODE_PIXELWIDTH16:
-						mask = svga->vram[gd54xx->blt.src_addr & svga->vram_mask] & (0x80 >> (gd54xx->blt.x_count >> 1));
-						shift = (gd54xx->blt.dst_addr & 1);
+					case CIRRUS_BLTMODE_PIXELWIDTH16:
+						mask = svga->vram[src_addr & svga->vram_mask] & (0x80 >> (dev->blt.x_count >> 1));
+						shift = (dev->blt.x_count & 1);
 						break;
-						case CIRRUS_BLTMODE_PIXELWIDTH24:
-						mask = svga->vram[gd54xx->blt.src_addr & svga->vram_mask] & (0x80 >> (gd54xx->blt.x_count / 3));
-						shift = (gd54xx->blt.dst_addr % 3);
+					case CIRRUS_BLTMODE_PIXELWIDTH24:
+						mask = svga->vram[src_addr & svga->vram_mask] & (0x80 >> (dev->blt.x_count / 3));
+						shift = (dev->blt.x_count % 3);
 						break;
-						case CIRRUS_BLTMODE_PIXELWIDTH32:
-						mask = svga->vram[gd54xx->blt.src_addr & svga->vram_mask] & (0x80 >> (gd54xx->blt.x_count >> 2));
-						shift = (gd54xx->blt.dst_addr & 3);
+					case CIRRUS_BLTMODE_PIXELWIDTH32:
+						mask = svga->vram[src_addr & svga->vram_mask] & (0x80 >> (dev->blt.x_count >> 2));
+						shift = (dev->blt.x_count & 3);
 						break;
 				}
-				src = mask ? (gd54xx->blt.fg_col >> (shift << 3)) : (gd54xx->blt.bg_col >> (shift << 3));
+				src = gd54xx_color_expand(dev, mask, shift);
 				break;
+
 			case CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND:
-				if (gd54xx->blt.modeext & CIRRUS_BLTMODEEXT_SOLIDFILL) {
-					switch (gd54xx->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
-							case CIRRUS_BLTMODE_PIXELWIDTH8:
+				if (dev->blt.modeext & CIRRUS_BLTMODEEXT_SOLIDFILL) {
+					switch (dev->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
+						case CIRRUS_BLTMODE_PIXELWIDTH8:
 							shift = 0;
 							break;
-							case CIRRUS_BLTMODE_PIXELWIDTH16:
-							shift = (gd54xx->blt.dst_addr & 1);
+						case CIRRUS_BLTMODE_PIXELWIDTH16:
+							shift = (dev->blt.x_count & 1);
 							break;
-							case CIRRUS_BLTMODE_PIXELWIDTH24:
-							shift = (gd54xx->blt.dst_addr % 3);
+						case CIRRUS_BLTMODE_PIXELWIDTH24:
+							shift = (dev->blt.x_count % 3);
 							break;
-							case CIRRUS_BLTMODE_PIXELWIDTH32:
-							shift = (gd54xx->blt.dst_addr & 3);
+						case CIRRUS_BLTMODE_PIXELWIDTH32:
+							shift = (dev->blt.x_count & 3);
 							break;
 					}					
-					src = (gd54xx->blt.fg_col >> (shift << 3));
+					src = (dev->blt.fg_col >> (shift << 3));
 				} else {
-					switch (gd54xx->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
-							case CIRRUS_BLTMODE_PIXELWIDTH8:
-							mask = svga->vram[(gd54xx->blt.src_addr & svga->vram_mask & ~7) | gd54xx->blt.y_count] & (0x80 >> gd54xx->blt.x_count);
+					switch (dev->blt.mode & CIRRUS_BLTMODE_PIXELWIDTHMASK) {
+						case CIRRUS_BLTMODE_PIXELWIDTH8:
+							mask = svga->vram[(src_addr & svga->vram_mask & ~7) | dev->blt.y_count] & (0x80 >> dev->blt.x_count);
 							shift = 0;
 							break;
-							case CIRRUS_BLTMODE_PIXELWIDTH16:
-							mask = svga->vram[(gd54xx->blt.src_addr & svga->vram_mask & ~7) | gd54xx->blt.y_count] & (0x80 >> (gd54xx->blt.x_count >> 1));
-							shift = (gd54xx->blt.dst_addr & 1);
+						case CIRRUS_BLTMODE_PIXELWIDTH16:
+							mask = svga->vram[(src_addr & svga->vram_mask & ~7) | dev->blt.y_count] & (0x80 >> (dev->blt.x_count >> 1));
+							shift = (dev->blt.x_count & 1);
 							break;
-							case CIRRUS_BLTMODE_PIXELWIDTH24:
-							mask = svga->vram[(gd54xx->blt.src_addr & svga->vram_mask & ~7) | gd54xx->blt.y_count] & (0x80 >> (gd54xx->blt.x_count / 3));
-							shift = (gd54xx->blt.dst_addr % 3);
+						case CIRRUS_BLTMODE_PIXELWIDTH24:
+							mask = svga->vram[(src_addr & svga->vram_mask & ~7) | dev->blt.y_count] & (0x80 >> (dev->blt.x_count / 3));
+							shift = (dev->blt.x_count % 3);
 							break;							
-							case CIRRUS_BLTMODE_PIXELWIDTH32:
-							mask = svga->vram[(gd54xx->blt.src_addr & svga->vram_mask & ~7) | gd54xx->blt.y_count] & (0x80 >> (gd54xx->blt.x_count >> 2));
-							shift = (gd54xx->blt.dst_addr & 3);
+						case CIRRUS_BLTMODE_PIXELWIDTH32:
+							mask = svga->vram[(src_addr & svga->vram_mask & ~7) | dev->blt.y_count] & (0x80 >> (dev->blt.x_count >> 2));
+							shift = (dev->blt.x_count & 3);
 							break;
 					}
-
-					src = mask ? (gd54xx->blt.fg_col >> (shift << 3)) : (gd54xx->blt.bg_col >> (shift << 3));
+					src = gd54xx_color_expand(dev, mask, shift);
 				}
 				break;
 		}
 		count--;
 	}
-	dst = svga->vram[gd54xx->blt.dst_addr & svga->vram_mask];
-	svga->changedvram[(gd54xx->blt.dst_addr & svga->vram_mask) >> 12] = changeframecount;
+	dst = svga->vram[dev->blt.dst_addr & svga->vram_mask];
+	svga->changedvram[(dev->blt.dst_addr & svga->vram_mask) >> 12] = changeframecount;
 
-	switch (gd54xx->blt.rop) {
-		case 0x00: dst = 0;             break;
-		case 0x05: dst =   src &  dst;  break;
-#if 0	/* Does NOT DO anything! */
-		case 0x06: dst =   dst;         break;
-#endif
-		case 0x09: dst =   src & ~dst;  break;
-		case 0x0b: dst = ~ dst;         break;
-		case 0x0d: dst =   src;         break;
-		case 0x0e: dst = 0xff;          break;
-		case 0x50: dst = ~ src &  dst;  break;
-		case 0x59: dst =   src ^  dst;  break;
-		case 0x6d: dst =   src |  dst;  break;
-		case 0x90: dst = ~(src |  dst); break;
-		case 0x95: dst = ~(src ^  dst); break;
-		case 0xad: dst =   src | ~dst;  break;
-		case 0xd0: dst =  ~src;         break;
-		case 0xd6: dst =  ~src |  dst;  break;
-		case 0xda: dst = ~(src &  dst); break;                       
-	}
-	
-	if (gd54xx->blt.modeext & CIRRUS_BLTMODEEXT_COLOREXPINV) {
-		if ((gd54xx->blt.width_backup - gd54xx->blt.width) >= blt_mask &&
-			!((gd54xx->blt.mode & CIRRUS_BLTMODE_TRANSPARENTCOMP) && mask))
-			svga->vram[gd54xx->blt.dst_addr & svga->vram_mask] = dst;		
-	} else {
-		if ((gd54xx->blt.width_backup - gd54xx->blt.width) >= blt_mask &&
-			!((gd54xx->blt.mode & CIRRUS_BLTMODE_TRANSPARENTCOMP) && !mask))
-			svga->vram[gd54xx->blt.dst_addr & svga->vram_mask] = dst;
+	gd54xx_rop(dev, (uint8_t *)&dst, (uint8_t *)&dst, (const uint8_t *) &src);
+
+	if ((dev->blt.mode & CIRRUS_BLTMODE_COLOREXPAND) && (dev->blt.modeext & CIRRUS_BLTMODEEXT_COLOREXPINV))
+		mask = !mask;
+
+	if ((dev->blt.width_backup - dev->blt.width) >= blt_mask &&
+		!((dev->blt.mode & CIRRUS_BLTMODE_TRANSPARENTCOMP) && !mask))
+		svga->vram[dev->blt.dst_addr & svga->vram_mask] = dst;
+
+	dev->blt.dst_addr += ((dev->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -1 : 1);
+
+	dev->blt.x_count++;
+	if (dev->blt.x_count == x_max) {
+		dev->blt.x_count = 0;
+		if ((dev->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) == CIRRUS_BLTMODE_COLOREXPAND)
+			src_addr++;
 	}
 
-	gd54xx->blt.dst_addr += ((gd54xx->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -1 : 1);
+	dev->blt.width--;
+	if (dev->blt.width == 0xffff) {
+		dev->blt.width = dev->blt.width_backup;
 
-	gd54xx->blt.x_count++;
+		dev->blt.dst_addr = dev->blt.dst_addr_backup = dev->blt.dst_addr_backup + ((dev->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -dev->blt.dst_pitch : dev->blt.dst_pitch);
 
-	if (gd54xx->blt.x_count == x_max) {
-		gd54xx->blt.x_count = 0;
-		if ((gd54xx->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) == CIRRUS_BLTMODE_COLOREXPAND)
-			gd54xx->blt.src_addr++;
-	}
-
-	gd54xx->blt.width--;
-
-	if (gd54xx->blt.width == 0xffff) {
-		gd54xx->blt.width = gd54xx->blt.width_backup;
-
-		gd54xx->blt.dst_addr = gd54xx->blt.dst_addr_backup = gd54xx->blt.dst_addr_backup + ((gd54xx->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -gd54xx->blt.dst_pitch : gd54xx->blt.dst_pitch);
-
-		switch (gd54xx->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) {
+		switch (dev->blt.mode & (CIRRUS_BLTMODE_PATTERNCOPY|CIRRUS_BLTMODE_COLOREXPAND)) {
 			case 0x00:
-				gd54xx->blt.src_addr = gd54xx->blt.src_addr_backup = gd54xx->blt.src_addr_backup + ((gd54xx->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -gd54xx->blt.src_pitch : gd54xx->blt.src_pitch);
+				src_addr = dev->blt.src_addr_backup = dev->blt.src_addr_backup + ((dev->blt.mode & CIRRUS_BLTMODE_BACKWARDS) ? -dev->blt.src_pitch : dev->blt.src_pitch);
 				break;
+
 			case CIRRUS_BLTMODE_COLOREXPAND:
-				if (gd54xx->blt.x_count != 0)
-					gd54xx->blt.src_addr++;
+				if (dev->blt.x_count != 0)
+					src_addr++;
 				break;
 		}
 
-		gd54xx->blt.x_count = 0;
-		if (gd54xx->blt.mode & CIRRUS_BLTMODE_BACKWARDS)
-			gd54xx->blt.y_count = (gd54xx->blt.y_count - 1) & 7;
+		dev->blt.x_count = 0;
+		if (dev->blt.mode & CIRRUS_BLTMODE_BACKWARDS)
+			dev->blt.y_count = (dev->blt.y_count - 1) & 7;
 		else
-			gd54xx->blt.y_count = (gd54xx->blt.y_count + 1) & 7;
+			dev->blt.y_count = (dev->blt.y_count + 1) & 7;
 
-		gd54xx->blt.height_internal--;
-		if (gd54xx->blt.height_internal == 0xffff) {
-			if (gd54xx->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC) {
+		dev->blt.height_internal--;
+		if (dev->blt.height_internal == 0xffff) {
+			if (dev->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC) {
 				if (!(svga->seqregs[7] & 0xf0)) {
 					mem_map_set_handler(&svga->mapping, gd54xx_read, gd54xx_readw, gd54xx_readl, gd54xx_write, gd54xx_writew, gd54xx_writel);
-					mem_map_set_p(&svga->mapping, gd54xx);					
+					mem_map_set_p(&svga->mapping, dev);					
 				} else {
-					mem_map_set_handler(&gd54xx->linear_mapping, svga_readb_linear, svga_readw_linear, svga_readl_linear, gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear);
-					mem_map_set_p(&gd54xx->linear_mapping, svga);					
+					mem_map_set_handler(&dev->linear_mapping, svga_readb_linear, svga_readw_linear, svga_readl_linear, gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear);
+					mem_map_set_p(&dev->linear_mapping, svga);					
 				}
-				gd543x_recalc_mapping(gd54xx);
+				recalc_mapping(dev);
 			}
 			return;
 		}
 
-		if (gd54xx->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC)
+		if (dev->blt.mode & CIRRUS_BLTMODE_MEMSYSSRC)
 			return;
 	}
     }
@@ -2281,12 +2396,12 @@ gd54xx_start_blit(uint32_t cpu_dat, int count, gd54xx_t *gd54xx, svga_t *svga)
 
 
 static uint8_t 
-cl_pci_read(int func, int addr, void *p)
+cl_pci_read(int func, int addr, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)priv;
+    svga_t *svga = &dev->svga;
 
-    if ((addr >= 0x30) && (addr <= 0x33) && (!gd54xx->has_bios))
+    if ((addr >= 0x30) && (addr <= 0x33) && (!dev->has_bios))
 	return 0;
 
     switch (addr) {
@@ -2298,12 +2413,12 @@ cl_pci_read(int func, int addr, void *p)
 	case 0x03: return 0x00;
 	
 	case PCI_REG_COMMAND:
-		return gd54xx->pci_regs[PCI_REG_COMMAND]; /*Respond to IO and memory accesses*/
+		return dev->pci_regs[PCI_REG_COMMAND]; /*Respond to IO and memory accesses*/
 
 	// case 0x07: return 0 << 1; /*Fast DEVSEL timing*/
 	case 0x07: return 0x02; /*Fast DEVSEL timing*/
         
-	case 0x08: return gd54xx->rev; /*Revision ID*/
+	case 0x08: return dev->rev; /*Revision ID*/
 	case 0x09: return 0x00; /*Programming interface*/
         
 	case 0x0a: return 0x00; /*Supports VGA interface*/
@@ -2312,53 +2427,54 @@ cl_pci_read(int func, int addr, void *p)
 	case 0x10: return 0x08; /*Linear frame buffer address*/
 	case 0x11: return 0x00;
 	case 0x12: return 0x00;
-	case 0x13: return gd54xx->lfb_base >> 24;
+	case 0x13: return dev->lfb_base >> 24;
 
-	case 0x30: return (gd54xx->pci_regs[0x30] & 0x01); /*BIOS ROM address*/
+	case 0x30: return (dev->pci_regs[0x30] & 0x01); /*BIOS ROM address*/
 	case 0x31: return 0x00;
-	case 0x32: return gd54xx->pci_regs[0x32];
-	case 0x33: return gd54xx->pci_regs[0x33];
+	case 0x32: return dev->pci_regs[0x32];
+	case 0x33: return dev->pci_regs[0x33];
 
-	case 0x3c: return gd54xx->int_line;
+	case 0x3c: return dev->int_line;
 	case 0x3d: return PCI_INTA;
     }
+
     return 0;
 }
 
 
 static void 
-cl_pci_write(int func, int addr, uint8_t val, void *p)
+cl_pci_write(int func, int addr, uint8_t val, void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
+    gd54xx_t *dev = (gd54xx_t *)priv;
 
-    if ((addr >= 0x30) && (addr <= 0x33) && (!gd54xx->has_bios))
+    if ((addr >= 0x30) && (addr <= 0x33) && (!dev->has_bios))
 	return;
 
     switch (addr) {
 	case PCI_REG_COMMAND:
-		gd54xx->pci_regs[PCI_REG_COMMAND] = val & 0x23;
-		io_removehandler(0x03c0, 0x0020, gd54xx_in, NULL, NULL, gd54xx_out, NULL, NULL, gd54xx);
+		dev->pci_regs[PCI_REG_COMMAND] = val & 0x23;
+		io_removehandler(0x03c0, 0x0020, gd54xx_in, NULL, NULL, gd54xx_out, NULL, NULL, dev);
 		if (val & PCI_COMMAND_IO)
-			io_sethandler(0x03c0, 0x0020, gd54xx_in, NULL, NULL, gd54xx_out, NULL, NULL, gd54xx);
-		gd543x_recalc_mapping(gd54xx);
+			io_sethandler(0x03c0, 0x0020, gd54xx_in, NULL, NULL, gd54xx_out, NULL, NULL, dev);
+		recalc_mapping(dev);
 		break;
 
 	case 0x13: 
-		gd54xx->lfb_base = val << 24;
-		gd543x_recalc_mapping(gd54xx); 
+		dev->lfb_base = val << 24;
+		recalc_mapping(dev); 
 		break;                
 
 	case 0x30: case 0x32: case 0x33:
-		gd54xx->pci_regs[addr] = val;
-		if (gd54xx->pci_regs[0x30] & 0x01) {
-			uint32_t addr = (gd54xx->pci_regs[0x32] << 16) | (gd54xx->pci_regs[0x33] << 24);
-			mem_map_set_addr(&gd54xx->bios_rom.mapping, addr, 0x8000);
+		dev->pci_regs[addr] = val;
+		if (dev->pci_regs[0x30] & 0x01) {
+			uint32_t addr = (dev->pci_regs[0x32] << 16) | (dev->pci_regs[0x33] << 24);
+			mem_map_set_addr(&dev->bios_rom.mapping, addr, 0x8000);
 		} else
-			mem_map_disable(&gd54xx->bios_rom.mapping);
+			mem_map_disable(&dev->bios_rom.mapping);
 		return;
 
 	case 0x3c:
-		gd54xx->int_line = val;
+		dev->int_line = val;
 		return;
     }
 }
@@ -2367,24 +2483,24 @@ cl_pci_write(int func, int addr, uint8_t val, void *p)
 static void *
 gd54xx_init(const device_t *info)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)mem_alloc(sizeof(gd54xx_t));
-    svga_t *svga = &gd54xx->svga;
+    gd54xx_t *dev = (gd54xx_t *)mem_alloc(sizeof(gd54xx_t));
+    svga_t *svga = &dev->svga;
     int id = info->local & 0xff;
-	int vram;
     wchar_t *romfn = NULL;
-    memset(gd54xx, 0, sizeof(gd54xx_t));
+    int vram;
 
-    gd54xx->pci = !!(info->flags & DEVICE_PCI);	
-    gd54xx->vlb = !!(info->flags & DEVICE_VLB);	
+    memset(dev, 0x00, sizeof(gd54xx_t));
+    dev->pci = !!(info->flags & DEVICE_PCI);	
+    dev->vlb = !!(info->flags & DEVICE_VLB);	
+    dev->rev = 0;
+    dev->has_bios = 1;
 
-    gd54xx->rev = 0;
-    gd54xx->has_bios = 1;
     switch (id) {
-	
 	case CIRRUS_ID_CLGD5402:
 	case CIRRUS_ID_CLGD5420:
 		romfn = BIOS_GD5420_PATH;
 		break;
+
 	case CIRRUS_ID_CLGD5422:
 	case CIRRUS_ID_CLGD5424:
 		romfn = BIOS_GD5422_PATH;
@@ -2395,7 +2511,7 @@ gd54xx_init(const device_t *info)
 		break;
 		
 	case CIRRUS_ID_CLGD5428:
-		if (gd54xx->vlb)
+		if (dev->vlb)
 			romfn = BIOS_GD5428_VLB_PATH;
 		else
 			romfn = BIOS_GD5428_ISA_PATH;
@@ -2416,15 +2532,15 @@ gd54xx_init(const device_t *info)
 	case CIRRUS_ID_CLGD5430:
 		if (info->local & 0x400) {
 			/* CL-GD 5440 */
-			gd54xx->rev = 0x47;
+			dev->rev = 0x47;
 			if (info->local & 0x200) {
 				romfn = NULL;
-				gd54xx->has_bios = 0;
+				dev->has_bios = 0;
 			} else
 				romfn = BIOS_GD5440_PATH;
 		} else {
 			/* CL-GD 5430 */
-			if (gd54xx->pci)
+			if (dev->pci)
 				romfn = BIOS_GD5430_PCI_PATH;
 			else
 				romfn = BIOS_GD5430_VLB_PATH;
@@ -2443,108 +2559,119 @@ gd54xx_init(const device_t *info)
 		break;
     }
 
-	if (id >= CIRRUS_ID_CLGD5420)
-		vram = device_get_config_int("memory");
-	else
-		vram = 0;
-    if (vram)
-	gd54xx->vram_size = vram << 20;	
+    if (id >= CIRRUS_ID_CLGD5420)
+	vram = device_get_config_int("memory");
     else
-	gd54xx->vram_size = 1 << 19;
-    gd54xx->vram_mask = gd54xx->vram_size - 1;
+	vram = 0;
+
+    if (vram)
+	dev->vram_size = vram << 20;	
+    else
+	dev->vram_size = 1 << 19;
+    dev->vram_mask = dev->vram_size - 1;
 
     if (romfn)
-	rom_init(&gd54xx->bios_rom, romfn, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+	rom_init(&dev->bios_rom, romfn, 0xc0000, 0x8000, 0x7fff,
+		 0, MEM_MAPPING_EXTERNAL);
 
-    svga_init(&gd54xx->svga, gd54xx, gd54xx->vram_size,
-	      gd54xx_recalctimings, gd54xx_in, gd54xx_out,
-	      gd54xx_hwcursor_draw, NULL);
+    svga_init(&dev->svga, dev, dev->vram_size,
+	      recalc_timings, gd54xx_in, gd54xx_out,
+	      hwcursor_draw, NULL);
     svga->ven_write = gd54xx_write_modes45;
 
-    mem_map_set_handler(&svga->mapping, gd54xx_read, gd54xx_readw, gd54xx_readl, gd54xx_write, gd54xx_writew, gd54xx_writel);
-    mem_map_set_p(&svga->mapping, gd54xx);
+    mem_map_set_handler(&svga->mapping,
+			gd54xx_read, gd54xx_readw, gd54xx_readl,
+			gd54xx_write, gd54xx_writew, gd54xx_writel);
+    mem_map_set_p(&svga->mapping, dev);
 
-    mem_map_add(&gd54xx->mmio_mapping, 0, 0, gd543x_mmio_read, gd543x_mmio_readw, gd543x_mmio_readl, gd543x_mmio_write, gd543x_mmio_writew, gd543x_mmio_writel,  NULL, 0, gd54xx);
-    mem_map_add(&gd54xx->linear_mapping, 0, 0, gd54xx_readb_linear, gd54xx_readw_linear, gd54xx_readl_linear, gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear,  NULL, 0, svga);
+    mem_map_add(&dev->mmio_mapping, 0, 0,
+		gd543x_mmio_read, gd543x_mmio_readw, gd543x_mmio_readl,
+		gd543x_mmio_write, gd543x_mmio_writew, gd543x_mmio_writel,
+		NULL, 0, dev);
 
-    io_sethandler(0x03c0, 0x0020, gd54xx_in, NULL, NULL, gd54xx_out, NULL, NULL, gd54xx);
+    mem_map_add(&dev->linear_mapping, 0, 0,
+		gd54xx_readb_linear, gd54xx_readw_linear, gd54xx_readl_linear,
+		gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear,
+		NULL, 0, svga);
+
+    io_sethandler(0x03c0, 32,
+		  gd54xx_in,NULL,NULL, gd54xx_out,NULL,NULL, dev);
 
     svga->hwcursor.yoff = 32;
     svga->hwcursor.xoff = 0;
 
-	if (id >= CIRRUS_ID_CLGD5420) {
-		gd54xx->vclk_n[0] = 0x4a;
-		gd54xx->vclk_d[0] = 0x2b;
-		gd54xx->vclk_n[1] = 0x5b;
-		gd54xx->vclk_d[1] = 0x2f;
-		gd54xx->vclk_n[2] = 0x45;
-		gd54xx->vclk_d[2] = 0x30;
-		gd54xx->vclk_n[3] = 0x7e;
-		gd54xx->vclk_d[3] = 0x33;
-	}
-	else {
-		gd54xx->vclk_n[0] = 0x66;
-		gd54xx->vclk_d[0] = 0x3b;
-		gd54xx->vclk_n[1] = 0x5b;
-		gd54xx->vclk_d[1] = 0x2f;
-		gd54xx->vclk_n[1] = 0x45;
-		gd54xx->vclk_d[1] = 0x2c;
-		gd54xx->vclk_n[1] = 0x7e;
-		gd54xx->vclk_d[1] = 0x33;
-	}
+    if (id >= CIRRUS_ID_CLGD5420) {
+	dev->vclk_n[0] = 0x4a;
+	dev->vclk_d[0] = 0x2b;
+	dev->vclk_n[1] = 0x5b;
+	dev->vclk_d[1] = 0x2f;
+	dev->vclk_n[2] = 0x45;
+	dev->vclk_d[2] = 0x30;
+	dev->vclk_n[3] = 0x7e;
+	dev->vclk_d[3] = 0x33;
+    } else {
+	dev->vclk_n[0] = 0x66;
+	dev->vclk_d[0] = 0x3b;
+	dev->vclk_n[1] = 0x5b;
+	dev->vclk_d[1] = 0x2f;
+	dev->vclk_n[1] = 0x45;
+	dev->vclk_d[1] = 0x2c;
+	dev->vclk_n[1] = 0x7e;
+	dev->vclk_d[1] = 0x33;
+    }
 
-    gd54xx->bank[1] = 0x8000;
+    dev->bank[1] = 0x8000;
 
-    if (gd54xx->pci && id >= CIRRUS_ID_CLGD5430)
-	pci_add_card(PCI_ADD_VIDEO, cl_pci_read, cl_pci_write, gd54xx);
+    if (dev->pci && id >= CIRRUS_ID_CLGD5430)
+	pci_add_card(PCI_ADD_VIDEO, cl_pci_read, cl_pci_write, dev);
 
-    gd54xx->pci_regs[PCI_REG_COMMAND] = 7;
+    dev->pci_regs[PCI_REG_COMMAND] = 7;
 
-    gd54xx->pci_regs[0x30] = 0x00;
-    gd54xx->pci_regs[0x32] = 0x0c;
-    gd54xx->pci_regs[0x33] = 0x00;
+    dev->pci_regs[0x30] = 0x00;
+    dev->pci_regs[0x32] = 0x0c;
+    dev->pci_regs[0x33] = 0x00;
 	
     svga->crtc[0x27] = id;
 
-    video_inform(VID_TYPE_SPEC,
-		 (const video_timings_t *)info->vid_timing);
+    video_inform(VID_TYPE_SPEC, (const video_timings_t *)info->vid_timing);
 
-    return gd54xx;
+    return dev;
 }
 
 
 static void
-gd54xx_close(void *p)
+gd54xx_close(void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
+    gd54xx_t *dev = (gd54xx_t *)priv;
 	
-    svga_close(&gd54xx->svga);
+    svga_close(&dev->svga);
     
-    free(gd54xx);
+    free(dev);
 }
 
 
 static void
-gd54xx_speed_changed(void *p)
+gd54xx_speed_changed(void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
+    gd54xx_t *dev = (gd54xx_t *)priv;
     
-    svga_recalctimings(&gd54xx->svga);
+    svga_recalctimings(&dev->svga);
 }
 
 
 static void
-gd54xx_force_redraw(void *p)
+gd54xx_force_redraw(void *priv)
 {
-    gd54xx_t *gd54xx = (gd54xx_t *)p;
+    gd54xx_t *dev = (gd54xx_t *)priv;
 
-    gd54xx->svga.fullchange = changeframecount;
+    dev->svga.fullchange = changeframecount;
 }
+
 
 static int
 gd5420_available(void)
 {
-	return rom_present(BIOS_GD5420_PATH);
+    return rom_present(BIOS_GD5420_PATH);
 }
 
 static int
@@ -2714,40 +2841,36 @@ static const video_timings_t cl_gd_isa_timing = {VID_ISA,3,3,6,8,8,12};
 static const video_timings_t cl_gd_vlb_timing = {VID_BUS,4,4,8,10,10,20};
 static const video_timings_t cl_gd_pci_timing = {VID_BUS,4,4,8,10,10,20};
 
-const device_t gd5402_isa_device =
-{
-	"Cirrus Logic GD-5402 (ACUMOS AVGA2)",
-	DEVICE_AT | DEVICE_ISA,
-	CIRRUS_ID_CLGD5402,
-	gd54xx_init, gd54xx_close,
-	NULL,
-	gd5420_available, /* Common BIOS between 5402 and 5420 */
-	gd54xx_speed_changed,
-	gd54xx_force_redraw,
-	&cl_gd_isa_timing,
-	NULL,
+const device_t gd5402_isa_device = {
+    "Cirrus Logic GD-5402 (ACUMOS AVGA2)",
+    DEVICE_AT | DEVICE_ISA,
+    CIRRUS_ID_CLGD5402,
+    gd54xx_init, gd54xx_close, NULL,
+    gd5420_available,		/* Common BIOS between 5402 and 5420 */
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_isa_timing,
+    NULL,
 };
 
-const device_t gd5420_isa_device =
-{
-	"Cirrus Logic GD-5420",
-	DEVICE_AT | DEVICE_ISA,
-	CIRRUS_ID_CLGD5420,
-	gd54xx_init, gd54xx_close,
-	NULL,
-	gd5420_available, /* Common BIOS between 5402 and 5420 */
-	gd54xx_speed_changed,
-	gd54xx_force_redraw,
-	&cl_gd_isa_timing,
-	gd5422_config,
+const device_t gd5420_isa_device = {
+    "Cirrus Logic GD-5420",
+    DEVICE_AT | DEVICE_ISA,
+    CIRRUS_ID_CLGD5420,
+    gd54xx_init, gd54xx_close, NULL,
+    gd5420_available,		/* Common BIOS between 5402 and 5420 */
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_isa_timing,
+    gd5422_config,
 };
+
 const device_t gd5422_isa_device = {
     "Cirrus Logic GD-5422",
     DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5422,
-	gd54xx_init, gd54xx_close,
-	NULL,
-	gd5422_available, /* Common BIOS between 5422 and 5424 */
+    gd54xx_init, gd54xx_close, NULL,
+    gd5422_available,		/* Common BIOS between 5422 and 5424 */
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_isa_timing,
@@ -2758,9 +2881,8 @@ const device_t gd5424_vlb_device = {
     "Cirrus Logic GD-5424",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5424,
-	gd54xx_init, gd54xx_close,
-	NULL,
-	gd5422_available, /* Common BIOS between 5422 and 5424 */
+    gd54xx_init, gd54xx_close, NULL,
+    gd5422_available,		/* Common BIOS between 5422 and 5424 */
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
@@ -2771,9 +2893,7 @@ const device_t gd5426_vlb_device = {
     "Cirrus Logic GD-5426",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5426,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5426_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2785,9 +2905,7 @@ const device_t gd5428_isa_device = {
     "Cirrus Logic GD-5428",
     DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5428,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5428_isa_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2799,9 +2917,7 @@ const device_t gd5428_vlb_device = {
     "Cirrus Logic GD-5428",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5428,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5428_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2813,9 +2929,7 @@ const device_t gd5429_isa_device = {
     "Cirrus Logic GD-5429",
     DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5429,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5429_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2827,9 +2941,7 @@ const device_t gd5429_vlb_device = {
     "Cirrus Logic GD-5429",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5429,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5429_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2841,9 +2953,7 @@ const device_t gd5430_vlb_device = {
     "Cirrus Logic GD-5430",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5430,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5430_vlb_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2855,9 +2965,7 @@ const device_t gd5430_pci_device = {
     "Cirrus Logic GD-5430",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5430,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5430_pci_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2869,9 +2977,7 @@ const device_t gd5434_isa_device = {
     "Cirrus Logic GD-5434",
     DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5434,
-    gd54xx_init, 
-    gd54xx_close,
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5434_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2883,9 +2989,7 @@ const device_t gd5434_vlb_device = {
     "Cirrus Logic GD-5434",
     DEVICE_VLB,
     CIRRUS_ID_CLGD5434,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5434_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2897,9 +3001,7 @@ const device_t gd5434_pci_device = {
     "Cirrus Logic GD-5434",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5434,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5434_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2911,9 +3013,7 @@ const device_t gd5436_pci_device = {
     "Cirrus Logic GD-5436",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5436,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5436_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2925,9 +3025,7 @@ const device_t gd5440_onboard_pci_device = {
     "Onboard Cirrus Logic GD-5440",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5440 | 0x600,
-    gd54xx_init,
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2939,9 +3037,7 @@ const device_t gd5440_pci_device = {
     "Cirrus Logic GD-5440",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5440 | 0x400,
-    gd54xx_init,
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5440_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2953,9 +3049,7 @@ const device_t gd5446_pci_device = {
     "Cirrus Logic GD-5446",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5446,
-    gd54xx_init,
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5446_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2967,9 +3061,7 @@ const device_t gd5446_stb_pci_device = {
     "STB Nitro 64V",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5446 | 0x100,
-    gd54xx_init,
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5446_stb_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
@@ -2981,9 +3073,7 @@ const device_t gd5480_pci_device = {
     "Cirrus Logic GD-5480",
     DEVICE_PCI,
     CIRRUS_ID_CLGD5480,
-    gd54xx_init, 
-    gd54xx_close, 
-    NULL,
+    gd54xx_init, gd54xx_close, NULL,
     gd5480_available,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
