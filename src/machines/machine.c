@@ -8,13 +8,13 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.16	2018/09/22
+ * Version:	@(#)machine.c	1.0.17	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -53,6 +53,7 @@
 #include "../devices/ports/parallel.h"
 #include "../devices/video/video.h"
 #include "../plat.h"
+#include "../ui/ui.h"
 #include "machine.h"
 
 
@@ -79,7 +80,17 @@ machine_reset(void)
     wcscpy(temp, MACHINES_PATH);
     plat_append_slash(temp);
     wcscat(temp, machines[machine].bios_path);
-    if (! rom_load_bios(&r, temp, 0)) return;
+    if (! rom_load_bios(&r, temp, 0)) {
+	/*
+	 * The machine's ROM BIOS could not be loaded.
+	 *
+	 * Since this is kinda fatal, we inform the user
+	 * and bail out, since continuing is pointless.
+	 */
+	ui_msgbox(MBX_ERROR|MBX_FATAL, get_string(IDS_ERR_NOBIOS));
+
+	return;
+    }
 
     /* Activate the ROM BIOS. */
     mem_add_bios();

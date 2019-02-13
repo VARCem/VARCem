@@ -8,14 +8,14 @@
  *
  *		Definitions for Intel 8253 timer module.
  *
- * Version:	@(#)pit.h	1.0.4	2018/09/05
+ * Version:	@(#)pit.h	1.0.5	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -80,7 +80,9 @@ typedef struct PIT {
 
 extern PIT	pit,
 		pit2;
+
 extern double	PITCONST;
+
 extern float	CGACONST,
 		MDACONST,
 		VGACONST1,

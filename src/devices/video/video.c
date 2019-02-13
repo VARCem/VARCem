@@ -40,14 +40,14 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.23	2018/11/03
+ * Version:	@(#)video.c	1.0.24	2019/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -110,6 +110,7 @@ int		changeframecount = 2;
 uint8_t		rotatevga[8][256];
 int		frames = 0;
 int		fullchange = 0;
+int		displine = 0;
 uint8_t		edatlookup[4][4];
 int		update_overscan = 0;
 int		overscan_x = 0,

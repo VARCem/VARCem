@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.12	2019/02/11
+ * Version:	@(#)m_xt.c	1.0.13	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,9 +51,6 @@
 #include "machine.h"
 
 
-static int	rom_basic = 0;			/* is ROM BASIC enabled? */
-
-
 static const device_config_t pcxt_config[] = {
     {
 	"rom_basic", "ROM BASIC", CONFIG_SELECTION, "", 0,
@@ -79,6 +76,8 @@ static const device_config_t pcxt_config[] = {
 void
 machine_pc_common_init(const machine_t *model, void *arg)
 {
+    int rom_basic;
+
     machine_common_init(model, arg);
 
     /* Check if we support a BASIC ROM. */

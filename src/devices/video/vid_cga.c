@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.9	2019/02/10
+ * Version:	@(#)vid_cga.c	1.0.10	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,7 +74,7 @@ static const int ws_array[16] = {3,4,5,6,7,8,4,5,6,7,8,4,5,6,7,8};
 static const video_timings_t cga_timing = { VID_ISA,8,16,32,8,16,32 };
 
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(CGA_DEBUG)
 void
 cga_print(cga_t *dev)
 {
@@ -545,7 +545,7 @@ cga_poll(void *priv)
 				else
 					x = (dev->crtc[1] << 4) + 16;
 				dev->lastline++;
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(CGA_DEBUG)
 				cga_print(dev);
 #endif
 				if ((dev->cgamode & 8) && x && (dev->lastline - dev->firstline) &&

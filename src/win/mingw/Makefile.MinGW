@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.75	2019/02/11
+# Version:	@(#)Makefile.mingw	1.0.75	2019/02/12
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #

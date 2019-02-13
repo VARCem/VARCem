@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.9	2019/02/11
+ * Version:	@(#)pit.c	1.0.8	2019/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,7 +67,7 @@ int	firsttime = 1;
 PIT	pit,
 	pit2;
 float	cpuclock;
-float	bus_timing;
+float	isa_timing, bus_timing;
 double	PITCONST;
 float	CGACONST;
 float	MDACONST;
@@ -636,83 +636,59 @@ pit_reset(PIT *dev)
 }
 
 
-/* Set default CPU/crystal clock and xt_cpu_multi. */
 void
 setrtcconst(float clock)
 {
-    cpuclock = 14318184.0;
+    RTCCONST = clock / (float)32768.0;
 
-    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) {
-	cpuclock = clock;
-	PITCONST = cpuclock / 1193182.0;
-	CGACONST = (float) (cpuclock  / (19687503.0 / 11.0));
-	xt_cpu_multi = 1;
-    } else {
-       	PITCONST = 12.0;
-        CGACONST = 8.0;
-	xt_cpu_multi = 3;
-
-	switch (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed) {
-		case 7159092:	/* 7.16 MHz */
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_flags & CPU_ALTERNATE_XTAL) {
-				cpuclock = 28636368.0;
-				xt_cpu_multi = 4;
-			} else
-				xt_cpu_multi = 2;
-			break;
-
-		case 8000000:	/* 8 MHz */
-			cpuclock = 24000000.0;
-			break;
-
-		case 9545456:	/* 9.54 MHz */
-			cpuclock = 28636368.0;
-			break;
-
-		case 10000000:	/* 10 MHz */
-			cpuclock = 30000000.0;
-			break;
-
-		case 12000000:	/* 12 MHz */
-			cpuclock = 36000000.0;
-			break;
-
-		case 16000000:	/* 16 MHz */
-			cpuclock = 48000000.0;
-			break;
-
-		default:
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_flags & CPU_ALTERNATE_XTAL) {
-				cpuclock = 28636368.0;
-				xt_cpu_multi = 6;
-			}
-			break;
-		}
-
-		if (cpuclock == 28636368.0) {
-	        	PITCONST = 24.0;
-		        CGACONST = 16.0;
-		} else if (cpuclock != 14318184.0) {
-			PITCONST = cpuclock / 1193182.0;
-			CGACONST = (float) (cpuclock / (19687503.0 / 11.0));
-		}
-	}
-
-	xt_cpu_multi <<= TIMER_SHIFT;
-
-        MDACONST = (float) (cpuclock / 2032125.0);
-        VGACONST1 = (float) (cpuclock / 25175000.0);
-        VGACONST2 = (float) (cpuclock / 28322000.0);
-        RTCCONST = (float) (cpuclock / 32768.0);
-	TIMER_USEC = (int64_t)((cpuclock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
-        bus_timing = (float) (cpuclock / (double)cpu_busspeed);
+    TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1LL << TIMER_SHIFT));
 }
 
 
 void
 setpitclock(float clock)
 {
+    /*
+     * Some calculations are done differently for 4.77 MHz, 7.16 MHz,
+     * and 9.54 MHz CPU's, so that loss of precision is avoided and
+     * the various component kept in better synchronization.
+     */
+    cpuclock = clock;
+
+    if (clock == 4772728.0) {
+       	PITCONST = 4.0;
+        CGACONST = (float)(8.0 / 3.0);
+    } else if (clock == 7159092.0) {
+	/* 7.16 MHz - simplify the calculation to avoid loss of precision. */
+       	PITCONST = 6.0;
+        CGACONST = 4.0;
+    } else if (clock == 9545456.0) {
+	/* 9.54 MHz - simplify the calculation to avoid loss of precision. */
+       	PITCONST = 8.0;
+        CGACONST = (float)(8.0 / 1.5);
+    } else {
+        PITCONST = clock / 1193182.0;
+        CGACONST = (float)(clock / (19687503.0 / 11.0));
+    }
+
+    MDACONST = (clock / 2032125.0f);
+    VGACONST1 = (clock / 25175000.0f);
+    VGACONST2 = (clock / 28322000.0f);
+
+    isa_timing = clock / 8000000.0f;
+    bus_timing = clock / (float)cpu_busspeed;
+
     video_update_timing();
+
+    if (clock == 4772728.0) {
+       	xt_cpu_multi = (int) (3 * (1 << TIMER_SHIFT));
+    } else if (clock == 7159092.0) {
+	xt_cpu_multi = (int) (2 * (1 << TIMER_SHIFT));
+    } else if (clock == 9545456.0) {
+	xt_cpu_multi = (int) (1.5*(double)(1 << TIMER_SHIFT));
+    } else {
+	xt_cpu_multi = (int) ((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
+    }
 
     device_speed_changed();
 }
@@ -759,39 +735,6 @@ pit_set_gate(PIT *dev, int t, int gate)
 }
 
 
-static int64_t
-pit_read_timer_ex(PIT *pit, int t)
-{
-    int64_t r;
-
-    timer_clock();
-
-    if (pit->using_timer[t] && !(pit->m[t] == 3 && !pit->gate[t])) {
-	r = (int)(pit->c[t] + ((1 << TIMER_SHIFT) - 1));
-	if (pit->m[t] == 2)
-		r += (int64_t)((1LL << TIMER_SHIFT) * PITCONST);
-	if (r < 0)
-		r = 0;
-	if (r > ((0x10000LL << TIMER_SHIFT) * PITCONST))
-		r = (int64_t)((0x10000LL << TIMER_SHIFT) * PITCONST);
-	if (pit->m[t] == 3)
-		r <<= 1;
-
-	return r;
-    }
-
-    if (pit->m[t] == 2) {
-	r = (int64_t) (((pit->count[t] + 1LL) << TIMER_SHIFT) * PITCONST);
-
-	return r;
-    }
-
-    r = (int64_t) ((pit->count[t] << TIMER_SHIFT) * PITCONST);
-
-    return r;
-}
-
-
 void
 pit_set_using_timer(PIT *dev, int t, int using_timer)
 {
@@ -799,9 +742,8 @@ pit_set_using_timer(PIT *dev, int t, int using_timer)
 
     if (dev->using_timer[t] && !using_timer)
 	dev->count[t] = pit_read_timer(dev, t);
-
     if (!dev->using_timer[t] && using_timer)
-	dev->c[t] = pit_read_timer_ex(dev, t);
+	dev->c[t] = (int64_t)((((int64_t) dev->count[t]) << TIMER_SHIFT) * PITCONST);
 
     dev->using_timer[t] = using_timer;
     dev->running[t] = dev->enabled[t] &&

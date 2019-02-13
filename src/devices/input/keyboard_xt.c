@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.11	2019/02/11
+ * Version:	@(#)keyboard_xt.c	1.0.12	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,6 +65,16 @@
 #define STAT_SYSFLAG    0x04
 #define STAT_IFULL      0x02
 #define STAT_OFULL      0x01
+
+
+enum {
+  KBC_PC = 0,		/* IBM PC, 1981 */
+  KBC_PC82,		/* IBM PC, 1982 */
+  KBC_XT,		/* IBM PC/XT, 1982 */
+  KBC_XT86,		/* IBM PC/XT, 1986, and most clones */
+  KBC_TANDY,		/* Tandy XT */
+  KBC_LASER		/* VTech LaserXT */
+};
 
 
 typedef struct {
@@ -466,8 +476,29 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		timer_update_outstanding();
 
 		speaker_update();
+
+		/* Enable or disable the PC Speaker. */
 		speaker_gated = val & 1;
 		speaker_enable = val & 2;
+
+		if (kbd->type <= KBC_PC82) {
+			/*
+			 * Cassette Port present.
+ 			 *
+			 * Normally, the PC BIOS will disable the
+			 * PC Speaker when doing cassette I/O, as
+			 * they share the same hardware.
+			 *
+			 * For us, it is more fun to actually have
+			 * that audio, so we do some tricks here.
+			 */
+			if (! (val & 0x08)) {
+				/* PB3, MotorOn - enable audio */
+				speaker_gated = 1;
+				speaker_enable = 1;
+			}
+		}
+
 		if (speaker_enable) 
 			was_speaker_enable = 1;
 		pit_set_gate(&pit, 2, val & 1);
@@ -490,9 +521,10 @@ kbd_read(uint16_t port, void *priv)
 
     switch (port) {
 	case 0x60:
-		if ((kbd->type <= 1) && (kbd->pb & 0x80))
+		if ((kbd->type <= KBC_PC82) && (kbd->pb & 0x80))
 			ret = kbd->pd;
-		else if (((kbd->type == 2) || (kbd->type == 3)) && (kbd->pb & 0x80))
+		else if (((kbd->type == KBC_XT) || (kbd->type == KBC_XT86)) &&
+			 (kbd->pb & 0x80))
 			ret = 0xff;	/* According to Ruud on the PCem forum, this is supposed to return 0xFF on the XT. */
 		else
 			ret = kbd->pa;
@@ -503,36 +535,41 @@ kbd_read(uint16_t port, void *priv)
 		break;
 
 	case 0x62:
-		if (! kbd->type)
+		if (kbd->type == KBC_PC)
 			ret = 0x00;
-		else if (kbd->type == 1) {
+		else if (kbd->type == KBC_PC82) {
 			if (kbd->pb & 0x04)
 				ret = ((mem_size - 64) / 32) & 0x0f;
 			else
 				ret = ((mem_size - 64) / 32) >> 4;
+		} else {
 			if (kbd->pb & 0x08)
 				ret = kbd->pd >> 4;
 			else {
-				/* LaserXT = Always 512k RAM;
-			   	 * LaserXT/3 = Bit 0: 1=512K, 0=256K
-				 */
-#if defined(DEV_BRANCH) && defined(USE_LASERXT)
-				if (kbd->type == 5)
+				if (kbd->type == KBC_LASER)
+					/* LaserXT = Always 512k RAM;
+					 * LaserXT/3 = Bit 0: 1=512K, 0=256K
+					 */
 					ret = (mem_size == 512) ? 0x0d : 0x0c;
 				else
-#endif
 					ret = kbd->pd & 0x0f;
 			}
+
+			if (kbd->type == KBC_TANDY)
+				ret |= (tandy1k_eeprom_read() ? 0x10 : 0);
 		}
 
+		/* Indicate the PC SPEAKER state. */
 		ret |= (ppispeakon ? 0x20 : 0);
 
-		if (kbd->type == 4)
-			ret |= (tandy1k_eeprom_read() ? 0x10 : 0);
+		/* Make the IBM PC BIOS happy (Cassette Interface.) */
+		if (kbd->type <= KBC_PC82)
+			ret |= (ppispeakon ? 0x10 : 0);
+
 		break;
 
 	case 0x63:
-		if ((kbd->type == 2) || (kbd->type == 3))
+		if ((kbd->type == KBC_XT) || (kbd->type == KBC_XT86))
 			ret = kbd->pd;
 		break;
 
@@ -570,19 +607,15 @@ kbd_init(const device_t *info)
 
     kbd = (xtkbd_t *)mem_alloc(sizeof(xtkbd_t));
     memset(kbd, 0x00, sizeof(xtkbd_t));
-
-    io_sethandler(0x0060, 4,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, kbd);
-
-    keyboard_send = kbd_adddata_ex;
-    kbd_reset(kbd);
     kbd->type = info->local;
 
-    if (kbd->type <= 3) {
-	for (i = 0; i < FDD_NUM; i++) {
-		if (fdd_get_flags(i))
-			fdd_count++;
-	}
+    /* See how many diskette drives we have. */
+    for (i = 0; i < FDD_NUM; i++) {
+	if (fdd_get_flags(i))
+		fdd_count++;
+    }
+
+    if (kbd->type <= KBC_XT86) {
 
 	/*
 	 * DIP switch readout: bit set = OFF, clear = ON.
@@ -608,7 +641,8 @@ kbd_init(const device_t *info)
 		kbd->pd |= 0x00;	/* EGA/VGA */
 
 	/* Switches 3, 4 - memory size. */
-	if (kbd->type == 3) {
+	if (kbd->type == KBC_XT86) {
+		/* PC/XT (1986) and up. */
 		switch (mem_size) {
 			case 256:
 				kbd->pd |= 0x00;
@@ -627,7 +661,8 @@ kbd_init(const device_t *info)
 				kbd->pd |= 0x0c;
 				break;
 		}
-	} else if (kbd->type == 2) {
+	} else if (kbd->type >= KBC_PC82) {
+		/* PC (1982) and PC/XT (1982.) */
 		switch (mem_size) {
 			case 64:
 				kbd->pd |= 0x00;
@@ -647,6 +682,7 @@ kbd_init(const device_t *info)
 				break;
 		}
 	} else {
+		/* PC (1981.) */
 		switch (mem_size) {
 			case 16:
 				kbd->pd |= 0x00;
@@ -669,9 +705,16 @@ kbd_init(const device_t *info)
 
 	/* Switch 2 - return bit clear (switch ON) because no 8087 right now. */
 
-	/* Switch 1 - always off. */
+	/* Switch 1 - diskette drives available? */
+	if (fdd_count > 0)
 		kbd->pd |= 0x01;
     }
+
+    keyboard_send = kbd_adddata_ex;
+    kbd_reset(kbd);
+
+    io_sethandler(0x0060, 4,
+		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, kbd);
 
     timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
 
@@ -704,7 +747,7 @@ kbd_close(void *priv)
 const device_t keyboard_pc_device = {
     "IBM PC (1981) Keyboard",
     0,
-    0,
+    KBC_PC,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -713,7 +756,7 @@ const device_t keyboard_pc_device = {
 const device_t keyboard_pc82_device = {
     "IBM PC (1982) Keyboard",
     0,
-    1,
+    KBC_PC82,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -722,7 +765,7 @@ const device_t keyboard_pc82_device = {
 const device_t keyboard_xt_device = {
     "IBM PC/XT (1982) Keyboard",
     0,
-    2,
+    KBC_XT,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -731,7 +774,7 @@ const device_t keyboard_xt_device = {
 const device_t keyboard_xt86_device = {
     "IBM PC/XT (1986) Keyboard",
     0,
-    3,
+    KBC_XT86,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -740,7 +783,7 @@ const device_t keyboard_xt86_device = {
 const device_t keyboard_tandy_device = {
     "Tandy 1000 Keyboard",
     0,
-    4,
+    KBC_TANDY,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -749,11 +792,7 @@ const device_t keyboard_tandy_device = {
 const device_t keyboard_xt_lxt3_device = {
     "VTech Laser XT3 Keyboard",
     0,
-#if 1
-    3,
-#else
-    5,
-#endif
+    KBC_LASER,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL

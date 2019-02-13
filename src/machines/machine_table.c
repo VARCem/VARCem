@@ -8,13 +8,13 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.32	2019/02/11
+ * Version:	@(#)machine_table.c	1.0.33	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2019 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -64,7 +64,7 @@
 const machine_t machines[] = {
     /* 8088 */
     { "[8088] IBM PC (1981)",			"ibm_pc",		L"ibm/pc",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 16,  256,  16,   0,		      machine_pc_init, &m_pc_device,		NULL			},
-    { "[8088] IBM PC (1982)",			"ibm_pc82",		L"ibm/pc82",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  32,   0,		    machine_pc82_init, &m_pc_device,		NULL			},
+    { "[8088] IBM PC (1982)",			"ibm_pc82",		L"ibm/pc82",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  256,  32,   0,		    machine_pc82_init, &m_pc_device,		NULL			},
     { "[8088] IBM PCjr",			"ibm_pcjr",		L"ibm/pcjr",			{{"Intel", cpus_pcjr},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO,										128,  640, 128,   0,		    machine_pcjr_init, &m_pcjr_device,		NULL			},
     { "[8088] IBM XT (1982)",			"ibm_xt",		L"ibm/xt",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		      machine_xt_init, &m_xt_device,		NULL			},
     { "[8088] IBM XT (1986)",			"ibm_xt86",		L"ibm/xt86",			{{"Intel", cpus_8088},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												 64,  640,  64,   0,		    machine_xt86_init, &m_xt_device,		NULL			},

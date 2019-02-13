@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.13	2019/02/11
+ * Version:	@(#)vid_hercules.c	1.0.14	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -140,14 +140,14 @@ hercules_out(uint16_t addr, uint8_t val, void *priv)
 			dev->crtc[11] = 0xc;
 		}
 
-		if (old ^ val)
+		if (old != val)
 			recalc_timings(dev);
 		break;
 
 	case 0x03b8:
 		old = dev->ctrl;
 		dev->ctrl = val;
-		if (old ^ val)
+		if (old != val)
 			recalc_timings(dev);
 		break;
 
@@ -190,6 +190,7 @@ hercules_in(uint16_t addr, void *priv)
 		ret = 0x72;	/* Hercules ident */
 		if (dev->stat & 0x08)
 			ret |= 0x88;
+		ret |= (dev->stat & 0x01);
 		break;
 
 	default:

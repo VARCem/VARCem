@@ -851,7 +851,7 @@ dma_channel_write(int channel, uint16_t val)
 			dma_c->ac += 2;
 		  else
 			dma_c->ac = (dma_c->ac & 0xfe0000) | ((dma_c->ac + 2) & 0x1ffff);
-	}
+	}
     }
 
     dma_stat_rq |= (1 << channel);

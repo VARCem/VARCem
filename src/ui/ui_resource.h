@@ -12,11 +12,11 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.19	2018/11/12
+ * Version:	@(#)ui_resource.h	1.0.20	2019/02/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -276,6 +276,7 @@
 #define IDS_ERR_SAVEIT	2305		/* "Must save settings first.." */
 #define IDS_ERR_SCRSHOT	2306		/* "Unable to create bitmap file" */
 #define IDS_ERR_NO_USB	2307		/* "USB is not yet supported" */
+#define IDS_ERR_NOBIOS	IDS_ERR_NOCONF	/* "No BIOS found.." */
 
 /* Application messages (2400.) */
 #define IDS_MSG_SAVE	2400		/* "Are you sure you want to save.." */

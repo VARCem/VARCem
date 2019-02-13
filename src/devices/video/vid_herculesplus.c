@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.14	2019/02/11
+ * Version:	@(#)vid_hercules_plus.c	1.0.15	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -154,14 +154,14 @@ herculesplus_out(uint16_t port, uint8_t val, void *priv)
 			dev->crtc[10] = 0xb;
 			dev->crtc[11] = 0xc;
 		}
-		if (old ^ val)
+		if (old != val)
 			recalc_timings(dev);
 		return;
 
 	case 0x03b8:
 		old = dev->ctrl;
 		dev->ctrl = val;
-		if (old ^ val)
+		if (old != val)
 			recalc_timings(dev);
 		return;
 
@@ -199,8 +199,8 @@ herculesplus_in(uint16_t port, void *priv)
 		break;
 
 	case 0x03ba:
-		/* 0x50: InColor card identity */
-		ret = (dev->stat & 0xf) | ((dev->stat & 8) << 4) | 0x10;
+		/* 0x10: HerculesPlus card identity */
+		ret = (dev->stat & 0x0f) | ((dev->stat & 8) << 4) | 0x10;
 		break;
     }
 

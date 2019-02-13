@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.12	2019/02/11
+ * Version:	@(#)vid_incolor.c	1.0.13	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -256,14 +256,14 @@ incolor_out(uint16_t port, uint8_t val, void *priv)
 			dev->crtc[10] = 0xb;
 			dev->crtc[11] = 0xc;
 		}
-		if (old ^ val)
+		if (old != val)
 			recalc_timings(dev);
 		return;
 
 	case 0x03b8:
 		old = dev->ctrl;
 		dev->ctrl = val;
-		if (old ^ val)
+		if (old != val)
 			recalc_timings(dev);
 		return;
 

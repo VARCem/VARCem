@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.41	2019/02/10
+ * Version:	@(#)config.c	1.0.42	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1540,7 +1540,7 @@ config_read(const wchar_t *fn)
 		d = 0;
 		while (buff[c] && (buff[c] != L']'))
 			wctomb(&(sname[d++]), buff[c++]);
-		sname[d] = L'\0';
+		sname[d] = '\0';
 
 		/* Is the section name properly terminated? */
 		if (buff[c] != L']') continue;
@@ -1947,7 +1947,7 @@ config_set_string(const char *cat, const char *name, const char *val)
     if (ent == NULL)
 	ent = create_entry(section, name);
 
-    strncpy(ent->data, val, strlen(ent->data));
+    strncpy(ent->data, val, sizeof(ent->data));
     mbstowcs(ent->wdata, ent->data, sizeof_w(ent->wdata));
 }
 

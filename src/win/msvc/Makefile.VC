@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.61	2019/02/11
+# Version:	@(#)Makefile.VC	1.0.61	2019/02/12
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -186,7 +186,6 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
- PRINTER	:= y
 endif
 
 

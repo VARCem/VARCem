@@ -8,13 +8,13 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.25	2018/11/20
+ * Version:	@(#)win.c	1.0.26	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -216,7 +216,6 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 
     /* First, set our (default) language. */
     lang = (int)GetUserDefaultUILanguage();
-INFO("WIN: uilang = %04x\n", lang);
 
     /*
      * Set the initial active language for this application.
@@ -231,7 +230,6 @@ INFO("WIN: uilang = %04x\n", lang);
 	lang = 0x0409;
 	(void)ui_lang_set(lang);
     }
-INFO("WIN: initial lang = %04x\n", lang);
 
 #ifdef USE_CRASHDUMP
     /* Enable crash dump services. */
@@ -259,7 +257,6 @@ INFO("WIN: initial lang = %04x\n", lang);
 	lang = emu_lang_id;
 	(void)ui_lang_set(lang);
     }
-INFO("WIN: lang = %04x / %04x\n", language, lang);
 
 #ifdef USE_HOST_CDROM
     cdrom_host_init();
