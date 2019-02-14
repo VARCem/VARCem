@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.13	2019/02/12
+ * Version:	@(#)m_xt.c	1.0.14	2019/02/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,28 +48,10 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#ifdef USE_CASSETTE
+# include <cassette.h>
+#endif
 #include "machine.h"
-
-
-static const device_config_t pcxt_config[] = {
-    {
-	"rom_basic", "ROM BASIC", CONFIG_SELECTION, "", 0,
-	{
-		{
-			"Disabled", 0
-		},
-		{
-			"Enabled", 1
-		},
-		{
-			""
-		}
-	}
-    },
-    {
-	"", "", -1
-    }
-};
 
 
 /* Generic PC/XT system board with just the basics. */
@@ -103,6 +85,10 @@ machine_pc_init(const machine_t *model, void *arg)
     machine_pc_common_init(model, arg);
 
     device_add(&keyboard_pc_device);
+
+#ifdef USE_CASSETTE
+    device_add(&cassette_device);
+#endif
 }
 
 
@@ -113,6 +99,10 @@ machine_pc82_init(const machine_t *model, void *arg)
     machine_pc_common_init(model, arg);
 
     device_add(&keyboard_pc82_device);
+
+#ifdef USE_CASSETTE
+    device_add(&cassette_device);
+#endif
 }
 
 
@@ -134,6 +124,27 @@ machine_xt86_init(const machine_t *model, void *arg)
 
     device_add(&keyboard_xt86_device);
 }
+
+
+static const device_config_t pcxt_config[] = {
+    {
+	"rom_basic", "ROM BASIC", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
+};
 
 
 const device_t m_pc_device = {

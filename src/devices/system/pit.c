@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.8	2019/02/10
+ * Version:	@(#)pit.c	1.0.9	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -429,9 +429,9 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 
 		/* PIT latches are in fractions of 60 ms, so convert to sample using the formula below. */
 		sv = (((double) dev->l[2]) / 60.0) * 16384.0;
-		speakval = ((int) sv) - 0x2000;
-		if (speakval > 0x2000)
-			speakval = 0x2000;
+		speaker_val = ((int) sv) - 0x2000;
+		if (speaker_val > 0x2000)
+			speaker_val = 0x2000;
 		break;
     }
 }
@@ -444,7 +444,7 @@ pit_read(uint16_t addr, void *priv)
     uint8_t temp = 0xff;
     int t;
 
-    switch (addr&3) {
+    switch (addr & 3) {
 	case 0: /*Timers*/
 	case 1:
 	case 2:
@@ -523,9 +523,9 @@ pit_speaker_timer(int new_out, int old_out)
 
     l = pit.l[2] ? pit.l[2] : 0x10000LL;
     if (l < 25LL)
-	speakon = 0;
+	speaker_on = 0;
       else
-	speakon = new_out;
+	speaker_on = new_out;
 
     ppispeakon = new_out;
 }

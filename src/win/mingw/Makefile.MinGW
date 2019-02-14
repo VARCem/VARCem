@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.75	2019/02/12
+# Version:	@(#)Makefile.mingw	1.0.76	2019/02/13
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -151,6 +151,9 @@ ifndef PRINTER
 endif
 ifndef HOSTCD
  HOSTCD		:= n
+endif
+ifndef CASSETTE
+ CASSETTE	:= n
 endif
 
 
@@ -569,6 +572,11 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(HOSTCD), y)
   OPTS		+= -DUSE_HOST_CDROM
+ endif
+
+ ifeq ($(CASSETTE), y)
+  OPTS		+= -DUSE_CASSETTE
+  DEVBROBJ	+= cassette.o
  endif
 
 endif

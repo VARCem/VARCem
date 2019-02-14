@@ -8,13 +8,13 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.10	2018/11/02
+ * Version:	@(#)m_pcjr.c	1.0.11	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -576,7 +576,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		speaker_gated = val & 1;
 		speaker_enable = val & 2;
 		if (speaker_enable) 
-			was_speaker_enable = 1;
+			speaker_was_enable = 1;
 		pit_set_gate(&pit, 2, val & 1);
 		sn76489_mute = speaker_mute = 1;
 		switch (val & 0x60) {

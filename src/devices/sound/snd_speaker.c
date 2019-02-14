@@ -8,7 +8,7 @@
  *
  *		Implementation of the PC-Speaker device.
  *
- * Version:	@(#)snd_speaker.c	1.0.5	2019/02/10
+ * Version:	@(#)snd_speaker.c	1.0.6	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,11 +50,10 @@
 int		speaker_mute = 0,
 		speaker_gated = 0,
 		speaker_enable = 0,
-		was_speaker_enable = 0;
+		speaker_was_enable = 0;
 
-int		gated,
-		speakval,
-		speakon;
+int		speaker_val,
+		speaker_on;
 
 
 static int32_t	speaker_buffer[SOUNDBUFLEN];
@@ -70,18 +69,18 @@ speaker_update(void)
 	return;
 
     for (; speaker_pos < sound_pos_global; speaker_pos++) {
-	if (speaker_gated && was_speaker_enable) {
+	if (speaker_gated && speaker_was_enable) {
 		if (!pit.m[2] || pit.m[2] == 4)
-			val = speakval;
+			val = speaker_val;
 		else if (pit.l[2] < 0x40)
 			val = 0x0a00;
 		else 
-			val = speakon ? 0x1400 : 0;
+			val = speaker_on ? 0x1400 : 0;
 	} else
-		val = was_speaker_enable ? 0x1400 : 0;
+		val = speaker_was_enable ? 0x1400 : 0;
 
 	if (! speaker_enable)
-		was_speaker_enable = 0;
+		speaker_was_enable = 0;
 
 	speaker_buffer[speaker_pos] = val;
     }
@@ -116,6 +115,6 @@ speaker_reset(void)
     sound_add_handler(get_buffer, NULL);
 
     speaker_mute = speaker_gated = 0;
-    speaker_enable = was_speaker_enable = 0;
+    speaker_enable = speaker_was_enable = 0;
     speaker_pos = 0;
 }

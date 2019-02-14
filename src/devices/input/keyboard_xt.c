@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.12	2019/02/12
+ * Version:	@(#)keyboard_xt.c	1.0.13	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -500,7 +500,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		}
 
 		if (speaker_enable) 
-			was_speaker_enable = 1;
+			speaker_was_enable = 1;
 		pit_set_gate(&pit, 2, val & 1);
 
 		if (val & 0x80) {

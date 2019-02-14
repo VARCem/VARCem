@@ -8,13 +8,13 @@
  *
  *		Definitions for the PC-Speaker driver.
  *
- * Version:	@(#)snd_speaker.h	1.0.2	2018/09/22
+ * Version:	@(#)snd_speaker.h	1.0.3	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -43,11 +43,10 @@
 extern int	speaker_mute;
 extern int	speaker_gated;
 extern int	speaker_enable,
-		was_speaker_enable;
+		speaker_was_enable;
 
-extern int      gated,
-                speakval,
-                speakon;
+extern int	speaker_val,
+                speaker_on;
 
 
 extern void	speaker_reset(void);

@@ -32,13 +32,13 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.19	2018/10/05
+ * Version:	@(#)m_amstrad.c	1.0.20	2019/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -1003,7 +1003,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		speaker_gated = val & 0x01;
 		speaker_enable = val & 0x02;
 		if (speaker_enable) 
-			was_speaker_enable = 1;
+			speaker_was_enable = 1;
 		pit_set_gate(&pit, 2, val & 0x01);
 
 		if (val & 0x80) {

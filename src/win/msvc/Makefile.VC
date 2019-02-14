@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.61	2019/02/12
+# Version:	@(#)Makefile.VC	1.0.62	2019/02/13
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -147,11 +147,14 @@ endif
 ifndef WONDER
  WONDER		:= n
 endif
+ifndef PRINTER
+ PRINTER	:= n
+endif
 ifndef HOSTCD
  HOSTCD		:= n
 endif
-ifndef PRINTER
- PRINTER	:= n
+ifndef CASSETTE
+ CASSETTE	:= n
 endif
 
 # Name of the executable.
@@ -541,14 +544,20 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_WONDER
  endif
 
- ifeq ($(HOSTCD), y)
-  OPTS		+= -DUSE_HOST_CDROM
- endif
-
  ifeq ($(PRINTER), y)
   OPTS		+= -DUSE_PRINTER
   DEVBROBJ	+= prt_parallel.obj
  endif
+
+ ifeq ($(HOSTCD), y)
+  OPTS		+= -DUSE_HOST_CDROM
+ endif
+
+ ifeq ($(CASSETTE), y)
+  OPTS		+= -DUSE_CASSETTE
+  DEVBROBJ	+= cassette.obj
+ endif
+
 endif
 
 
