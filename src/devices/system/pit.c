@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.9	2019/02/12
+ * Version:	@(#)pit.c	1.0.10	2019/02/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,9 @@
 #include "../../timer.h"
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
+#ifdef USE_CASSETTE
+# include <cassette.h>
+#endif
 #include "../video/video.h"
 #include "nmi.h"
 #include "dma.h"
@@ -403,6 +406,13 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 	case 2:
 		t = addr & 3;
 		switch (dev->wm[t]) {
+			case 0:
+				dev->l[t] &= 0xff;
+				dev->l[t] |= (val << 8);
+				pit_load(dev, t);
+				dev->wm[t] = 3;
+				break;
+
 			case 1:
 				dev->l[t] = val;
 				pit_load(dev, t);
@@ -413,17 +423,15 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 				pit_load(dev, t);
 				break;
 
-			case 0:
-				dev->l[t] &= 0xff;
-				dev->l[t] |= (val << 8);
-				pit_load(dev, t);
-				dev->wm[t] = 3;
-				break;
-
 			case 3:
 				dev->l[t] &= 0xff00;
 				dev->l[t] |= val;
 				dev->wm[t] = 0;
+#ifdef USE_CASSETTE
+				if (t == 2) {
+					cassette_write(dev->l[t]);
+				}
+#endif
 				break;
 		}
 

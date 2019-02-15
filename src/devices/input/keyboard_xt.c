@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.13	2019/02/12
+ * Version:	@(#)keyboard_xt.c	1.0.14	2019/02/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,7 @@
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
 #include "../video/video.h"
+#include <cassette.h>
 #include "keyboard.h"
 
 
@@ -482,21 +483,10 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		speaker_enable = val & 2;
 
 		if (kbd->type <= KBC_PC82) {
-			/*
-			 * Cassette Port present.
- 			 *
-			 * Normally, the PC BIOS will disable the
-			 * PC Speaker when doing cassette I/O, as
-			 * they share the same hardware.
-			 *
-			 * For us, it is more fun to actually have
-			 * that audio, so we do some tricks here.
-			 */
-			if (! (val & 0x08)) {
-				/* PB3, MotorOn - enable audio */
-				speaker_gated = 1;
-				speaker_enable = 1;
-			}
+#ifdef USE_CASSETTE
+			if (cassette_enabled)
+				cassette_motor(! (val & 0x08));
+#endif
 		}
 
 		if (speaker_enable) 
