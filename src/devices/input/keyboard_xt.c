@@ -54,7 +54,9 @@
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
 #include "../video/video.h"
-#include <cassette.h>
+#ifdef USE_CASSETTE
+# include <cassette.h>
+#endif
 #include "keyboard.h"
 
 
