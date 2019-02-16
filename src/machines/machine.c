@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.17	2019/02/12
+ * Version:	@(#)machine.c	1.0.18	2019/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -164,10 +164,8 @@ machine_common_init(const machine_t *model, UNUSED(void *arg))
 
     cpu_set();
 
-    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286)
-	setrtcconst((float)machine_speed());
-      else
-	setrtcconst(14318184.0);
+    /* Start with (max/turbo) speed. */
+    pc_set_speed();
 
     if (game_enabled)
 	device_add(&game_device);

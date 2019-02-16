@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.11	2019/02/12
+ * Version:	@(#)m_pcjr.c	1.0.12	2019/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -768,11 +768,7 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
 
     cpu_set();
 
-    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >=
-CPU_286)
-	setrtcconst((float)machine_speed());
-    else
-	setrtcconst(14318184.0);
+    pc_set_speed();
 
     if (serial_enabled[0]) {
 	serial_setup(1, 0x2f8, 3);

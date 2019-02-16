@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.63	2019/01/27
+ * Version:	@(#)pc.c	1.0.64	2019/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -739,9 +739,9 @@ void
 pc_set_speed(void)
 {
     if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286)
-	setpitclock((float)machine_speed());
+	pit_setclock(machine_speed());
       else
-	setpitclock(14318184.0);
+	pit_setclock(14318184);
 }
 
 

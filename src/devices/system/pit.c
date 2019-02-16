@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.10	2019/02/14
+ * Version:	@(#)pit.c	1.0.11	2019/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,12 +65,12 @@
 #include "ppi.h"
 
 
-int	displine;
-int	firsttime = 1;
 PIT	pit,
 	pit2;
+
 float	cpuclock;
-float	isa_timing, bus_timing;
+float	bus_timing;
+
 double	PITCONST;
 float	CGACONST;
 float	MDACONST;
@@ -80,7 +80,7 @@ float	RTCCONST;
 
 
 static void
-pit_set_out(PIT *dev, int t, int out)
+set_out(PIT *dev, int t, int out)
 {
     dev->set_out_funcs[t](out, dev->out[t]);
     dev->out[t] = out;
@@ -88,147 +88,7 @@ pit_set_out(PIT *dev, int t, int out)
 
 
 static void
-pit_load(PIT *dev, int t)
-{
-    int l = dev->l[t] ? dev->l[t] : 0x10000;
-
-    timer_clock();
-
-    dev->newcount[t] = 0;
-    dev->disabled[t] = 0;
-
-    switch (dev->m[t]) {
-	case 0: /*Interrupt on terminal count*/
-                dev->count[t] = l;
-                dev->c[t] = (int64_t)((((int64_t) l) << TIMER_SHIFT) * PITCONST);
-		pit_set_out(dev, t, 0);
-		dev->thit[t] = 0;
-		dev->enabled[t] = dev->gate[t];
-		break;
-
-	case 1: /*Hardware retriggerable one-shot*/
-		dev->enabled[t] = 1;
-		break;
-
-	case 2: /*Rate generator*/
-		if (dev->initial[t]) {
-                        dev->count[t] = l - 1;
-                        dev->c[t] = (int64_t)(((((int64_t) l) - 1LL) << TIMER_SHIFT) * PITCONST);
-			pit_set_out(dev, t, 1);
-			dev->thit[t] = 0;
-		}
-		dev->enabled[t] = dev->gate[t];
-		break;
-
-	case 3: /*Square wave mode*/
-		if (dev->initial[t]) {
-                        dev->count[t] = l;
-                        dev->c[t] = (int64_t)((((((int64_t) l) + 1LL) >> 1) << TIMER_SHIFT) * PITCONST);
-			pit_set_out(dev, t, 1);
-			dev->thit[t] = 0;
-		}
-		dev->enabled[t] = dev->gate[t];
-		break;
-
-	case 4: /*Software triggered stobe*/
-		if (!dev->thit[t] && !dev->initial[t]) {
-			dev->newcount[t] = 1;
-		} else {
-                        dev->count[t] = l;
-                        dev->c[t] = (int64_t)((l << TIMER_SHIFT) * PITCONST);
-			pit_set_out(dev, t, 0);
-			dev->thit[t] = 0;
-		}
-		dev->enabled[t] = dev->gate[t];
-		break;
-
-	case 5: /*Hardware triggered stobe*/
-		dev->enabled[t] = 1;
-		break;
-    }
-
-    dev->initial[t] = 0;
-    dev->running[t] = dev->enabled[t] &&
-		      dev->using_timer[t] && !dev->disabled[t];
-
-    timer_update_outstanding();
-}
-
-
-static void
-pit_over(PIT *dev, int t)
-{
-    int64_t l = dev->l[t] ? dev->l[t] : 0x10000LL;
-
-    if (dev->disabled[t]) {
-	dev->count[t] += 0xffff;
-	dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
-	return;
-    }
-
-    switch (dev->m[t]) {
-	case 0: /*Interrupt on terminal count*/
-	case 1: /*Hardware retriggerable one-shot*/
-		if (! dev->thit[t])
-			pit_set_out(dev, t, 1);
-		dev->thit[t] = 1;
-		dev->count[t] += 0xffff;
-		dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
-		break;
-
-	case 2: /*Rate generator*/
-		dev->count[t] += (int)l;
-		dev->c[t] += (int64_t)((l << TIMER_SHIFT) * PITCONST);
-		pit_set_out(dev, t, 0);
-		pit_set_out(dev, t, 1);
-		break;
-
-	case 3: /*Square wave mode*/
-		if (dev->out[t]) {
-			pit_set_out(dev, t, 0);
-			dev->count[t] += (int)(l >> 1);
-			dev->c[t] += (int64_t)(((l >> 1) << TIMER_SHIFT) * PITCONST);
-		} else {
-			pit_set_out(dev, t, 1);
-			dev->count[t] += (int)((l + 1) >> 1);
-			dev->c[t] = (int64_t)((((l + 1) >> 1) << TIMER_SHIFT) * PITCONST);
-		}
-		break;
-
-	case 4: /*Software triggered strobe*/
-		if (! dev->thit[t]) {
-			pit_set_out(dev, t, 0);
-			pit_set_out(dev, t, 1);
-		}
-		if (dev->newcount[t]) {
-			dev->newcount[t] = 0;
-			dev->count[t] += (int)l;
-			dev->c[t] += (int64_t)((l << TIMER_SHIFT) * PITCONST);
-		} else {
-			dev->thit[t] = 1;
-			dev->count[t] += 0xffff;
-			dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
-		}
-		break;
-
-	case 5: /*Hardware triggered strobe*/
-		if (! dev->thit[t]) {
-			pit_set_out(dev, t, 0);
-			pit_set_out(dev, t, 1);
-		}
-		dev->thit[t] = 1;
-		dev->count[t] += 0xffff;
-		dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
-		break;
-    }
-
-    dev->running[t] = dev->enabled[t] &&
-		      dev->using_timer[t] && !dev->disabled[t];
-}
-
-
-static void
-pit_set_gate_no_timer(PIT *dev, int t, int gate)
+set_gate_no_timer(PIT *dev, int t, int gate)
 {
     int64_t l = dev->l[t] ? dev->l[t] : 0x10000LL;
 
@@ -238,37 +98,37 @@ pit_set_gate_no_timer(PIT *dev, int t, int gate)
     }
 
     switch (dev->m[t]) {
-	case 0: /*Interrupt on terminal count*/
-	case 4: /*Software triggered stobe*/
+	case 0:		/* interrupt on terminal count */
+	case 4:		/* software triggered strobe */
 		dev->enabled[t] = gate;
 		break;
 
-	case 1: /*Hardware retriggerable one-shot*/
-	case 5: /*Hardware triggered stobe*/
+	case 1:		/* hardware retriggerable one-shot */
+	case 5:		/* hardware triggered strobe */
 		if (gate && !dev->gate[t]) {
 			dev->count[t] = (int)l;
                         dev->c[t] = (int64_t)((l << TIMER_SHIFT) * PITCONST);
-			pit_set_out(dev, t, 0);
+			set_out(dev, t, 0);
 			dev->thit[t] = 0;
 			dev->enabled[t] = 1;
 		}
 		break;
 
-	case 2: /*Rate generator*/
+	case 2:		/* rate generator */
 		if (gate && !dev->gate[t]) {
 			dev->count[t] = (int)(l - 1);
                         dev->c[t] = (int64_t)((l << TIMER_SHIFT) * PITCONST);
-			pit_set_out(dev, t, 1);
+			set_out(dev, t, 1);
 			dev->thit[t] = 0;
 		}		
 		dev->enabled[t] = gate;
 		break;
 
-	case 3: /*Square wave mode*/
+	case 3:		/* square wave mode */
 		if (gate && !dev->gate[t]) {
 			dev->count[t] = (int)l;
 			dev->c[t] = (int64_t)((((l+1)>>1)<<TIMER_SHIFT)*PITCONST);
-			pit_set_out(dev, t, 1);
+			set_out(dev, t, 1);
 			dev->thit[t] = 0;
 		}
 		dev->enabled[t] = gate;
@@ -282,6 +142,78 @@ pit_set_gate_no_timer(PIT *dev, int t, int gate)
 
 
 static void
+do_over(PIT *dev, int t)
+{
+    int64_t l = dev->l[t] ? dev->l[t] : 0x10000LL;
+
+    if (dev->disabled[t]) {
+	dev->count[t] += 0xffff;
+	dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+	return;
+    }
+
+    switch (dev->m[t]) {
+	case 0:		/* interrupt on terminal count */
+	case 1:		/* hardware retriggerable one-shot */
+		if (! dev->thit[t])
+			set_out(dev, t, 1);
+		dev->thit[t] = 1;
+		dev->count[t] += 0xffff;
+		dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+		break;
+
+	case 2:		/* rate generator */
+		dev->count[t] += (int)l;
+		dev->c[t] += (int64_t)((l << TIMER_SHIFT) * PITCONST);
+		set_out(dev, t, 0);
+		set_out(dev, t, 1);
+		break;
+
+	case 3:		/* square wave mode */
+		if (dev->out[t]) {
+			set_out(dev, t, 0);
+			dev->count[t] += (int)(l >> 1);
+			dev->c[t] += (int64_t)(((l >> 1) << TIMER_SHIFT) * PITCONST);
+		} else {
+			set_out(dev, t, 1);
+			dev->count[t] += (int)((l + 1) >> 1);
+			dev->c[t] = (int64_t)((((l + 1) >> 1) << TIMER_SHIFT) * PITCONST);
+		}
+		break;
+
+	case 4:		/* software triggered strobe */
+		if (! dev->thit[t]) {
+			set_out(dev, t, 0);
+			set_out(dev, t, 1);
+		}
+		if (dev->newcount[t]) {
+			dev->newcount[t] = 0;
+			dev->count[t] += (int)l;
+			dev->c[t] += (int64_t)((l << TIMER_SHIFT) * PITCONST);
+		} else {
+			dev->thit[t] = 1;
+			dev->count[t] += 0xffff;
+			dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+		}
+		break;
+
+	case 5:		/* hardware triggered strobe */
+		if (! dev->thit[t]) {
+			set_out(dev, t, 0);
+			set_out(dev, t, 1);
+		}
+		dev->thit[t] = 1;
+		dev->count[t] += 0xffff;
+		dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+		break;
+    }
+
+    dev->running[t] = dev->enabled[t] &&
+		      dev->using_timer[t] && !dev->disabled[t];
+}
+
+
+static void
 pit_clock(PIT *dev, int t)
 {
     if (dev->thit[t] || !dev->enabled[t]) return;
@@ -289,24 +221,24 @@ pit_clock(PIT *dev, int t)
     if (dev->using_timer[t]) return;
 
     dev->count[t] -= (dev->m[t] == 3) ? 2 : 1;
-    if (! dev->count[t])
-	pit_over(dev, t);
+    if (dev->count[t] == 0)
+	do_over(dev, t);
 }
 
 
 static void
-pit_timer_over(void *priv)
+timer_over(void *priv)
 {
     PIT_nr *pit_nr = (PIT_nr *)priv;
     PIT *dev = pit_nr->pit;
-    int timer = pit_nr->nr;
+    int t = pit_nr->nr;
 
-    pit_over(dev, timer);
+    do_over(dev, t);
 }
 
 
 static int
-pit_read_timer(PIT *dev, int t)
+read_timer(PIT *dev, int t)
 {
     int r;
 
@@ -335,6 +267,74 @@ pit_read_timer(PIT *dev, int t)
 
 
 static void
+load_timer(PIT *dev, int t)
+{
+    int l = dev->l[t] ? dev->l[t] : 0x10000;
+
+    timer_clock();
+
+    dev->newcount[t] = 0;
+    dev->disabled[t] = 0;
+
+    switch (dev->m[t]) {
+	case 0:		/* interrupt on terminal count */
+                dev->count[t] = l;
+                dev->c[t] = (int64_t)((((int64_t) l) << TIMER_SHIFT) * PITCONST);
+		set_out(dev, t, 0);
+		dev->thit[t] = 0;
+		dev->enabled[t] = dev->gate[t];
+		break;
+
+	case 1:		/* hardware retriggerable one-shot */
+		dev->enabled[t] = 1;
+		break;
+
+	case 2:		/* rate generator */
+		if (dev->initial[t]) {
+                        dev->count[t] = l - 1;
+                        dev->c[t] = (int64_t)(((((int64_t) l) - 1LL) << TIMER_SHIFT) * PITCONST);
+			set_out(dev, t, 1);
+			dev->thit[t] = 0;
+		}
+		dev->enabled[t] = dev->gate[t];
+		break;
+
+	case 3:		/* square wave mode */
+		if (dev->initial[t]) {
+                        dev->count[t] = l;
+                        dev->c[t] = (int64_t)((((((int64_t) l) + 1LL) >> 1) << TIMER_SHIFT) * PITCONST);
+			set_out(dev, t, 1);
+			dev->thit[t] = 0;
+		}
+		dev->enabled[t] = dev->gate[t];
+		break;
+
+	case 4:		/* software triggered strobe */
+		if (!dev->thit[t] && !dev->initial[t]) {
+			dev->newcount[t] = 1;
+		} else {
+                        dev->count[t] = l;
+                        dev->c[t] = (int64_t)((l << TIMER_SHIFT) * PITCONST);
+			set_out(dev, t, 0);
+			dev->thit[t] = 0;
+		}
+		dev->enabled[t] = dev->gate[t];
+		break;
+
+	case 5:		/* hardware triggered strobe */
+		dev->enabled[t] = 1;
+		break;
+    }
+
+    dev->initial[t] = 0;
+    dev->running[t] = dev->enabled[t] &&
+		      dev->using_timer[t] && !dev->disabled[t];
+
+    timer_update_outstanding();
+}
+
+
+static void
 pit_write(uint16_t addr, uint8_t val, void *priv)
 {
     PIT *dev = (PIT *)priv;
@@ -342,15 +342,15 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
     int t;
 
     switch (addr & 3) {
-	case 3: /*CTRL*/
+	case 3:		/* control */
 		if ((val & 0xc0) == 0xc0) {
 			 if (! (val & 0x20)) {
 				if (val & 2)
-					dev->rl[0] = (uint32_t)pit_read_timer(dev, 0);
+					dev->rl[0] = (uint32_t)read_timer(dev, 0);
 				if (val & 4)
-					dev->rl[1] = (uint32_t)pit_read_timer(dev, 1);
+					dev->rl[1] = (uint32_t)read_timer(dev, 1);
 				if (val & 8)
-					dev->rl[2] = (uint32_t)pit_read_timer(dev, 2);
+					dev->rl[2] = (uint32_t)read_timer(dev, 2);
 			}
 			if (! (val & 0x10)) {
 				if (val & 2) {
@@ -374,7 +374,7 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 			return;
 
 		if (! (dev->ctrl & 0x30)) {
-			dev->rl[t] = (uint32_t)pit_read_timer(dev, t);
+			dev->rl[t] = (uint32_t)read_timer(dev, t);
 			dev->ctrl |= 0x30;
 			dev->rereadlatch[t] = 0;
 			dev->rm[t] = 3;
@@ -387,21 +387,21 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 				dev->m[t] &= 3;
 			if (! (dev->rm[t])) {
 				dev->rm[t] = 3;
-				dev->rl[t] = (uint32_t)pit_read_timer(dev, t);
+				dev->rl[t] = (uint32_t)read_timer(dev, t);
 			}
 			dev->rereadlatch[t] = 1;
 			dev->initial[t] = 1;
-			if (! dev->m[t])
-				pit_set_out(dev, t, 0);
+			if (dev->m[t])
+				set_out(dev, t, 1);
 			  else
-				pit_set_out(dev, t, 1);
+				set_out(dev, t, 0);
 			dev->disabled[t] = 1;
 		}
 		dev->wp = 0;
 		dev->thit[t] = 0;
 		break;
 
-	case 0: /*Timers*/
+	case 0:		/* the actual timers */
 	case 1:
 	case 2:
 		t = addr & 3;
@@ -409,18 +409,18 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 			case 0:
 				dev->l[t] &= 0xff;
 				dev->l[t] |= (val << 8);
-				pit_load(dev, t);
+				load_timer(dev, t);
 				dev->wm[t] = 3;
 				break;
 
 			case 1:
 				dev->l[t] = val;
-				pit_load(dev, t);
+				load_timer(dev, t);
 				break;
 
 			case 2:
 				dev->l[t] = (val << 8);
-				pit_load(dev, t);
+				load_timer(dev, t);
 				break;
 
 			case 3:
@@ -453,7 +453,11 @@ pit_read(uint16_t addr, void *priv)
     int t;
 
     switch (addr & 3) {
-	case 0: /*Timers*/
+	case 3:		/* control */
+		temp = dev->ctrl;
+		break;
+
+	case 0:		/*the actual timers */
 	case 1:
 	case 2:
 		t = addr & 3;
@@ -464,7 +468,7 @@ pit_read(uint16_t addr, void *priv)
 		}
 		if (dev->rereadlatch[addr & 3] && !dev->latched[addr & 3]) {
 			dev->rereadlatch[addr & 3] = 0;
-			dev->rl[t] = pit_read_timer(dev, t);
+			dev->rl[t] = read_timer(dev, t);
 		}
 		switch (dev->rm[addr & 3]) {
 			case 0:
@@ -495,24 +499,22 @@ pit_read(uint16_t addr, void *priv)
 				break;
 		}
 		break;
-
-	case 3: /*Control*/
-		temp = dev->ctrl;
-		break;
     }
 
     return temp;
 }
 
 
+/* FIXME: should be removed. */
 static void
-pit_null_timer(int new_out, int old_out)
+null_timer(int new_out, int old_out)
 {
 }
 
 
+/* FIXME: should be moved to machine.c (default for most machines..) */
 static void
-pit_irq0_timer(int new_out, int old_out)
+irq0_timer(int new_out, int old_out)
 {
     if (new_out && !old_out)
 	picint(1);
@@ -522,8 +524,9 @@ pit_irq0_timer(int new_out, int old_out)
 }
 
 
+/* FIXME: should be moved to snd_speaker.c */
 static void
-pit_speaker_timer(int new_out, int old_out)
+speaker_timer(int new_out, int old_out)
 {
     int64_t l;
 
@@ -542,39 +545,42 @@ pit_speaker_timer(int new_out, int old_out)
 void
 pit_init(void)
 {
+    int i;
+
     pit_reset(&pit);
+
+    for (i = 0; i < 3; i++) {
+	pit.pit_nr[i].nr = i;
+	pit.pit_nr[i].pit = &pit;
+
+	pit.gate[i] = 1;
+	pit.using_timer[i] = 1;
+
+	timer_add(timer_over,
+		  &pit.c[i], &pit.running[i], (void *)&pit.pit_nr[i]);
+    }
 
     io_sethandler(0x0040, 4,
 		  pit_read,NULL,NULL, pit_write,NULL,NULL, &pit);
 
-    pit.gate[0] = pit.gate[1] = 1;
+    /* Timer0: the TOD clock. */
+    pit_set_out_func(&pit, 0, irq0_timer);
+
+    /* Timer1: unused. */
+    pit_set_out_func(&pit, 1, null_timer);
+
+    /* Timer2: speaker and cassette. */
+    pit_set_out_func(&pit, 2, speaker_timer);
     pit.gate[2] = 0;
-    pit.using_timer[0] = pit.using_timer[1] = pit.using_timer[2] = 1;
-
-    pit.pit_nr[0].nr = 0;
-    pit.pit_nr[1].nr = 1;
-    pit.pit_nr[2].nr = 2;
-    pit.pit_nr[0].pit = pit.pit_nr[1].pit = pit.pit_nr[2].pit = &pit;
-
-    timer_add(pit_timer_over,
-	      &pit.c[0], &pit.running[0], (void *)&pit.pit_nr[0]);
-    timer_add(pit_timer_over,
-	      &pit.c[1], &pit.running[1], (void *)&pit.pit_nr[1]);
-    timer_add(pit_timer_over,
-	      &pit.c[2], &pit.running[2], (void *)&pit.pit_nr[2]);
-
-    pit_set_out_func(&pit, 0, pit_irq0_timer);
-    pit_set_out_func(&pit, 1, pit_null_timer);
-    pit_set_out_func(&pit, 2, pit_speaker_timer);
 }
 
 
 static void
-pit_ps2_irq0(int new_out, int old_out)
+ps2_irq0(int new_out, int old_out)
 {
     if (new_out && !old_out) {
 	picint(1);
-	pit_set_gate_no_timer(&pit2, 0, 1);
+	set_gate_no_timer(&pit2, 0, 1);
     }
 
     if (! new_out)
@@ -586,7 +592,7 @@ pit_ps2_irq0(int new_out, int old_out)
 
 
 static void
-pit_ps2_nmi(int new_out, int old_out)
+ps2_nmi(int new_out, int old_out)
 {
     nmi = new_out;
 
@@ -600,11 +606,6 @@ pit_ps2_init(void)
 {
     pit_reset(&pit2);
 
-    io_sethandler(0x0044, 1,
-		  pit_read,NULL,NULL, pit_write,NULL,NULL, &pit2);
-    io_sethandler(0x0047, 1,
-		  pit_read,NULL,NULL, pit_write,NULL,NULL, &pit2);
-
     pit2.gate[0] = 0;
     pit2.using_timer[0] = 0;
     pit2.disabled[0] = 1;
@@ -612,11 +613,16 @@ pit_ps2_init(void)
     pit2.pit_nr[0].nr = 0;
     pit2.pit_nr[0].pit = &pit2;
 
-    timer_add(pit_timer_over,
+    timer_add(timer_over,
 	      &pit2.c[0], &pit2.running[0], (void *)&pit2.pit_nr[0]);
 
-    pit_set_out_func(&pit, 0, pit_ps2_irq0);
-    pit_set_out_func(&pit2, 0, pit_ps2_nmi);
+    io_sethandler(0x0044, 1,
+		  pit_read,NULL,NULL, pit_write,NULL,NULL, &pit2);
+    io_sethandler(0x0047, 1,
+		  pit_read,NULL,NULL, pit_write,NULL,NULL, &pit2);
+
+    pit_set_out_func(&pit, 0, ps2_irq0);
+    pit_set_out_func(&pit2, 0, ps2_nmi);
 }
 
 
@@ -625,6 +631,7 @@ pit_reset(PIT *dev)
 {
     void (*old_set_out_funcs[3])(int new_out, int old_out);
     PIT_nr old_pit_nr[3];
+    int i;
 
     memcpy(old_set_out_funcs, dev->set_out_funcs, 3 * sizeof(void *));
     memcpy(old_pit_nr, dev->pit_nr, 3 * sizeof(PIT_nr));
@@ -632,71 +639,94 @@ pit_reset(PIT *dev)
     memcpy(dev->set_out_funcs, old_set_out_funcs, 3 * sizeof(void *));
     memcpy(dev->pit_nr, old_pit_nr, 3 * sizeof(PIT_nr));
 
-    dev->l[0] = 0xffff; dev->c[0] = (int64_t)(0xffffLL*PITCONST);
-    dev->l[1] = 0xffff; dev->c[1] = (int64_t)(0xffffLL*PITCONST);
-    dev->l[2] = 0xffff; dev->c[2] = (int64_t)(0xffffLL*PITCONST);
-    dev->m[0] = dev->m[1] = dev->m[2] = 0;
-    dev->ctrls[0] = dev->ctrls[1] = dev->ctrls[2] = 0;
-    dev->thit[0] = 1;
-    dev->gate[0] = dev->gate[1] = 1;
-    dev->gate[2] = 0;
-    dev->using_timer[0] = dev->using_timer[1] = dev->using_timer[2] = 1;
-}
+    for (i = 0; i < 3; i++) {
+	dev->ctrls[i] = 0;
+	dev->thit[i] = 1;
 
-
-void
-setrtcconst(float clock)
-{
-    RTCCONST = clock / (float)32768.0;
-
-    TIMER_USEC = (int64_t)((clock / 1000000.0f) * (float)(1LL << TIMER_SHIFT));
-}
-
-
-void
-setpitclock(float clock)
-{
-    /*
-     * Some calculations are done differently for 4.77 MHz, 7.16 MHz,
-     * and 9.54 MHz CPU's, so that loss of precision is avoided and
-     * the various component kept in better synchronization.
-     */
-    cpuclock = clock;
-
-    if (clock == 4772728.0) {
-       	PITCONST = 4.0;
-        CGACONST = (float)(8.0 / 3.0);
-    } else if (clock == 7159092.0) {
-	/* 7.16 MHz - simplify the calculation to avoid loss of precision. */
-       	PITCONST = 6.0;
-        CGACONST = 4.0;
-    } else if (clock == 9545456.0) {
-	/* 9.54 MHz - simplify the calculation to avoid loss of precision. */
-       	PITCONST = 8.0;
-        CGACONST = (float)(8.0 / 1.5);
-    } else {
-        PITCONST = clock / 1193182.0;
-        CGACONST = (float)(clock / (19687503.0 / 11.0));
+	dev->m[i] = 0;
+	dev->gate[i] = 1;
+	dev->l[i] = 0xffff;
+	dev->c[i] = (int64_t)(0xffffLL * PITCONST);
+	dev->using_timer[i] = 1;
     }
 
-    MDACONST = (clock / 2032125.0f);
-    VGACONST1 = (clock / 25175000.0f);
-    VGACONST2 = (clock / 28322000.0f);
+    /* Disable speaker gate. */
+    dev->gate[2] = 0;
+}
 
-    isa_timing = clock / 8000000.0f;
-    bus_timing = clock / (float)cpu_busspeed;
+
+/* Set default CPU/crystal clock and xt_cpu_multi. */
+void
+pit_setclock(uint32_t freq)
+{
+    uint32_t speed;
+
+    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) {
+	/* For 286 and up, this is easy. */
+	cpuclock = (double)freq;
+	PITCONST = cpuclock / 1193182.0;
+	CGACONST = (float) (cpuclock  / (19687503.0 / 11.0));
+	xt_cpu_multi = 1;
+    } else {
+	/* Not so much for XT-class systems. */
+	cpuclock = 14318184.0;
+       	PITCONST = 12.0;
+        CGACONST = 8.0;
+	xt_cpu_multi = 3;
+
+	/* Get selected CPU's (max) clock rate. */
+	speed = machine_speed();
+
+	switch (speed) {
+		case 7159092:	/* 7.16 MHz */
+			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_flags & CPU_ALTERNATE_XTAL) {
+				cpuclock = 28636368.0;
+				xt_cpu_multi = 4;
+			} else
+				xt_cpu_multi = 2;
+			break;
+
+		case 8000000:	/* 8 MHz */
+		case 9545456:	/* 9.54 MHz */
+		case 10000000:	/* 10 MHz */
+		case 12000000:	/* 12 MHz */
+		case 16000000:	/* 16 MHz */
+			cpuclock = ((double)speed * xt_cpu_multi);
+			break;
+
+		default:
+			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_flags & CPU_ALTERNATE_XTAL) {
+				cpuclock = 28636368.0;
+				xt_cpu_multi = 6;
+			}
+			break;
+	}
+
+	if (cpuclock == 28636368.0) {
+        	PITCONST = 24.0;
+	        CGACONST = 16.0;
+	} else if (cpuclock != 14318184.0) {
+		PITCONST = cpuclock / 1193182.0;
+		CGACONST = (float) (cpuclock / (19687503.0 / 11.0));
+	}
+   }
+
+    xt_cpu_multi <<= TIMER_SHIFT;
+
+    MDACONST = (float) (cpuclock / 2032125.0);
+    VGACONST1 = (float) (cpuclock / 25175000.0);
+    VGACONST2 = (float) (cpuclock / 28322000.0);
+    RTCCONST = (float) (cpuclock / 32768.0);
+
+    TIMER_USEC = (int64_t)((cpuclock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
+
+    bus_timing = (float) (cpuclock / (double)cpu_busspeed);
+
+INFO("PIT: cpu=%.2f xt=%d PIT=%.2f RTC=%.2f CGA=%.2f MDA=%.2f TMR=%" PRIu64 "\n",
+	cpuclock, xt_cpu_multi, (float)PITCONST, RTCCONST, CGACONST, MDACONST,
+	TIMER_USEC);
 
     video_update_timing();
-
-    if (clock == 4772728.0) {
-       	xt_cpu_multi = (int) (3 * (1 << TIMER_SHIFT));
-    } else if (clock == 7159092.0) {
-	xt_cpu_multi = (int) (2 * (1 << TIMER_SHIFT));
-    } else if (clock == 9545456.0) {
-	xt_cpu_multi = (int) (1.5*(double)(1 << TIMER_SHIFT));
-    } else {
-	xt_cpu_multi = (int) ((14318184.0*(double)(1 << TIMER_SHIFT)) / (double)machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed);
-    }
 
     device_speed_changed();
 }
@@ -705,7 +735,7 @@ setpitclock(float clock)
 void
 clearpit(void)
 {
-    pit.c[0] = (pit.l[0]<<2);
+    pit.c[0] = (pit.l[0] << 2);
 }
 
 
@@ -737,9 +767,42 @@ pit_set_gate(PIT *dev, int t, int gate)
 
     timer_process();
 
-    pit_set_gate_no_timer(dev, t, gate);
+    set_gate_no_timer(dev, t, gate);
 
     timer_update_outstanding();
+}
+
+
+static int64_t
+read_timer_ex(PIT *pit, int t)
+{
+    int64_t r;
+
+    timer_clock();
+
+    if (pit->using_timer[t] && !(pit->m[t] == 3 && !pit->gate[t])) {
+	r = (int)(pit->c[t] + ((1 << TIMER_SHIFT) - 1));
+	if (pit->m[t] == 2)
+		r += (int64_t)((1LL << TIMER_SHIFT) * PITCONST);
+	if (r < 0)
+		r = 0;
+	if (r > ((0x10000LL << TIMER_SHIFT) * PITCONST))
+		r = (int64_t)((0x10000LL << TIMER_SHIFT) * PITCONST);
+	if (pit->m[t] == 3)
+		r <<= 1;
+
+	return r;
+    }
+
+    if (pit->m[t] == 2) {
+	r = (int64_t) (((pit->count[t] + 1LL) << TIMER_SHIFT) * PITCONST);
+
+	return r;
+    }
+
+    r = (int64_t) ((pit->count[t] << TIMER_SHIFT) * PITCONST);
+
+    return r;
 }
 
 
@@ -749,9 +812,10 @@ pit_set_using_timer(PIT *dev, int t, int using_timer)
     timer_process();
 
     if (dev->using_timer[t] && !using_timer)
-	dev->count[t] = pit_read_timer(dev, t);
+	dev->count[t] = read_timer(dev, t);
+
     if (!dev->using_timer[t] && using_timer)
-	dev->c[t] = (int64_t)((((int64_t) dev->count[t]) << TIMER_SHIFT) * PITCONST);
+	dev->c[t] = read_timer_ex(dev, t);
 
     dev->using_timer[t] = using_timer;
     dev->running[t] = dev->enabled[t] &&
@@ -768,6 +832,7 @@ pit_set_out_func(PIT *dev, int t, void (*func)(int new_out, int old_out))
 }
 
 
+/* FIXME: should be moved to m_pcjr.c */
 void
 pit_irq0_timer_pcjr(int new_out, int old_out)
 {
@@ -781,6 +846,7 @@ pit_irq0_timer_pcjr(int new_out, int old_out)
 }
 
 
+/* FIXME: should be moved to m_xt.c */
 void
 pit_refresh_timer_xt(int new_out, int old_out)
 {
@@ -789,6 +855,7 @@ pit_refresh_timer_xt(int new_out, int old_out)
 }
 
 
+/* FIXME: should be moved to m_at.c */
 void
 pit_refresh_timer_at(int new_out, int old_out)
 {
