@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.42	2019/02/12
+ * Version:	@(#)config.c	1.0.43	2019/02/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -203,7 +203,7 @@ create_section(const char *name)
     section_t *ns = (section_t *)mem_alloc(sizeof(section_t));
 
     memset(ns, 0x00, sizeof(section_t));
-    strncpy(ns->name, name, strlen(ns->name));
+    strncpy(ns->name, name, sizeof(ns->name) - 1);
     list_add(&ns->list, &config_head);
 
     return(ns);
@@ -216,7 +216,7 @@ create_entry(section_t *section, const char *name)
     entry_t *ne = (entry_t *)mem_alloc(sizeof(entry_t));
 
     memset(ne, 0x00, sizeof(entry_t));
-    strncpy(ne->name, name, strlen(ne->name));
+    strncpy(ne->name, name, sizeof(ne->name) - 1);
     list_add(&ne->list, &section->entry_head);
 
     return(ne);
@@ -443,10 +443,7 @@ save_machine(const char *cat)
       else
 	config_set_int(cat, "cpu_waitstates", cpu_waitstates);
 
-    if (mem_size == 4096)
-	config_delete_var(cat, "mem_size");
-      else
-	config_set_int(cat, "mem_size", mem_size);
+    config_set_int(cat, "mem_size", mem_size);
 
     config_set_int(cat, "cpu_use_dynarec", cpu_use_dynarec);
 
@@ -520,20 +517,20 @@ load_input(const char *cat)
     //FIXME: should be an internal_name string!!
     joystick_type = config_get_int(cat, "joystick_type", 0);
 
-    for (c=0; c<gamedev_get_max_joysticks(joystick_type); c++) {
+    for (c = 0; c < gamedev_get_max_joysticks(joystick_type); c++) {
 	sprintf(temp, "joystick_%i_nr", c);
 	joystick_state[c].plat_joystick_nr = config_get_int(cat, temp, 0);
 
 	if (joystick_state[c].plat_joystick_nr) {
-		for (d=0; d<gamedev_get_axis_count(joystick_type); d++) {
+		for (d = 0; d < gamedev_get_axis_count(joystick_type); d++) {
 			sprintf(temp, "joystick_%i_axis_%i", c, d);
 			joystick_state[c].axis_mapping[d] = config_get_int(cat, temp, d);
 		}
-		for (d=0; d<gamedev_get_button_count(joystick_type); d++) {			
+		for (d = 0; d < gamedev_get_button_count(joystick_type); d++) {			
 			sprintf(temp, "joystick_%i_button_%i", c, d);
 			joystick_state[c].button_mapping[d] = config_get_int(cat, temp, d);
 		}
-		for (d=0; d<gamedev_get_pov_count(joystick_type); d++) {
+		for (d = 0; d < gamedev_get_pov_count(joystick_type); d++) {
 			sprintf(temp, "joystick_%i_pov_%i", c, d);
 			p = config_get_string(cat, temp, "0, 0");
 			joystick_state[c].pov_mapping[d][0] = joystick_state[c].pov_mapping[d][1] = 0;
@@ -556,20 +553,20 @@ save_input(const char *cat)
     if (joystick_type != 0) {
 	config_set_int(cat, "joystick_type", joystick_type);
 
-	for (c=0; c<gamedev_get_max_joysticks(joystick_type); c++) {
+	for (c = 0; c < gamedev_get_max_joysticks(joystick_type); c++) {
 		sprintf(tmp2, "joystick_%i_nr", c);
 		config_set_int(cat, tmp2, joystick_state[c].plat_joystick_nr);
 
 		if (joystick_state[c].plat_joystick_nr) {
-			for (d=0; d<gamedev_get_axis_count(joystick_type); d++) {			
+			for (d = 0; d < gamedev_get_axis_count(joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_axis_%i", c, d);
 				config_set_int(cat, tmp2, joystick_state[c].axis_mapping[d]);
 			}
-			for (d=0; d<gamedev_get_button_count(joystick_type); d++) {			
+			for (d = 0; d < gamedev_get_button_count(joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_button_%i", c, d);
 				config_set_int(cat, tmp2, joystick_state[c].button_mapping[d]);
 			}
-			for (d=0; d<gamedev_get_pov_count(joystick_type); d++) {			
+			for (d = 0; d < gamedev_get_pov_count(joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_pov_%i", c, d);
 				sprintf(temp, "%i, %i", joystick_state[c].pov_mapping[d][0], joystick_state[c].pov_mapping[d][1]);
 				config_set_string(cat, tmp2, temp);
@@ -1966,6 +1963,6 @@ config_set_wstring(const char *cat, const char *name, const wchar_t *val)
     if (ent == NULL)
 	ent = create_entry(section, name);
 
-    memcpy(ent->wdata, val, sizeof_w(ent->wdata));
+    wcsncpy(ent->wdata, val, sizeof_w(ent->wdata));
     wcstombs(ent->data, ent->wdata, sizeof(ent->data));
 }
