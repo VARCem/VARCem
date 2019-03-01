@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.11	2019/02/15
+ * Version:	@(#)pit.c	1.0.12	2019/02/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -663,7 +663,7 @@ pit_setclock(uint32_t freq)
 
     if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) {
 	/* For 286 and up, this is easy. */
-	cpuclock = (double)freq;
+	cpuclock = (float)freq;
 	PITCONST = cpuclock / 1193182.0;
 	CGACONST = (float) (cpuclock  / (19687503.0 / 11.0));
 	xt_cpu_multi = 1;
@@ -675,7 +675,7 @@ pit_setclock(uint32_t freq)
 	xt_cpu_multi = 3;
 
 	/* Get selected CPU's (max) clock rate. */
-	speed = machine_speed();
+	speed = machine_speed(1);	//FIXME:
 
 	switch (speed) {
 		case 7159092:	/* 7.16 MHz */
@@ -691,7 +691,7 @@ pit_setclock(uint32_t freq)
 		case 10000000:	/* 10 MHz */
 		case 12000000:	/* 12 MHz */
 		case 16000000:	/* 16 MHz */
-			cpuclock = ((double)speed * xt_cpu_multi);
+			cpuclock = ((float)speed * xt_cpu_multi);
 			break;
 
 		default:

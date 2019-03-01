@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_misc.h	1.0.2	2018/10/05
+ * Version:	@(#)x86_ops_misc.h	1.0.4	2019/02/28
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -147,7 +147,7 @@ static int opF6_a16(uint32_t fetchdat)
                 {
                         AH = src16 % dst;
                         AL = (src16 / dst) &0xff;
-                        if (!cpu_iscyrix) 
+                        if (!is_cyrix) 
                         {
                                 flags_rebuild();
                                 flags |= 0x8D5; /*Not a Cyrix*/
@@ -160,8 +160,8 @@ static int opF6_a16(uint32_t fetchdat)
                         x86_int(0);
                         return 1;
                 }
-                CLOCK_CYCLES((is486 && !cpu_iscyrix) ? 24 : 22);
-                PREFETCH_RUN((is486 && !cpu_iscyrix) ? 24 : 22, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 0);
+                CLOCK_CYCLES((is486 && !is_cyrix) ? 24 : 22);
+                PREFETCH_RUN((is486 && !is_cyrix) ? 24 : 22, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 0);
                 break;
                 case 0x38: /*IDIV AL,b*/
                 tempws = (int)(int16_t)AX;
@@ -171,7 +171,7 @@ static int opF6_a16(uint32_t fetchdat)
                 {
                         AH = (tempws % (int)((int8_t)dst)) & 0xff;
                         AL = tempws2 & 0xff;
-                        if (!cpu_iscyrix) 
+                        if (!is_cyrix) 
                         {
                                 flags_rebuild();
                                 flags|=0x8D5; /*Not a Cyrix*/
@@ -249,7 +249,7 @@ static int opF6_a32(uint32_t fetchdat)
                 {
                         AH = src16 % dst;
                         AL = (src16 / dst) &0xff;
-                        if (!cpu_iscyrix) 
+                        if (!is_cyrix) 
                         {
                                 flags_rebuild();
                                 flags |= 0x8D5; /*Not a Cyrix*/
@@ -261,8 +261,8 @@ static int opF6_a32(uint32_t fetchdat)
                         x86_int(0);
                         return 1;
                 }
-                CLOCK_CYCLES((is486 && !cpu_iscyrix) ? 16 : 14);
-                PREFETCH_RUN((is486 && !cpu_iscyrix) ? 16 : 14, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 1);
+                CLOCK_CYCLES((is486 && !is_cyrix) ? 16 : 14);
+                PREFETCH_RUN((is486 && !is_cyrix) ? 16 : 14, 2, rmdat, (cpu_mod == 3) ? 0:1,0,0,0, 1);
                 break;
                 case 0x38: /*IDIV AL,b*/
                 tempws = (int)(int16_t)AX;
@@ -272,7 +272,7 @@ static int opF6_a32(uint32_t fetchdat)
                 {
                         AH = (tempws % (int)((int8_t)dst)) & 0xff;
                         AL = tempws2 & 0xff;
-                        if (!cpu_iscyrix) 
+                        if (!is_cyrix) 
                         {
                                 flags_rebuild();
                                 flags|=0x8D5; /*Not a Cyrix*/
@@ -353,7 +353,7 @@ static int opF7_w_a16(uint32_t fetchdat)
                 {
                         DX = templ % dst;
                         AX = (templ / dst) & 0xffff;
-                        if (!cpu_iscyrix) setznp16(AX); /*Not a Cyrix*/                                                
+                        if (!is_cyrix) setznp16(AX); /*Not a Cyrix*/                                                
                 }
                 else
                 {
@@ -371,7 +371,7 @@ static int opF7_w_a16(uint32_t fetchdat)
                 {
                         DX = tempws % (int)((int16_t)dst);
                         AX = tempws2 & 0xffff;
-                        if (!cpu_iscyrix) setznp16(AX); /*Not a Cyrix*/
+                        if (!is_cyrix) setznp16(AX); /*Not a Cyrix*/
                 }
                 else
                 {
@@ -445,7 +445,7 @@ static int opF7_w_a32(uint32_t fetchdat)
                 {
                         DX = templ % dst;
                         AX = (templ / dst) & 0xffff;
-                        if (!cpu_iscyrix) setznp16(AX); /*Not a Cyrix*/                                                
+                        if (!is_cyrix) setznp16(AX); /*Not a Cyrix*/                                                
                 }
                 else
                 {
@@ -463,7 +463,7 @@ static int opF7_w_a32(uint32_t fetchdat)
                 {
                         DX = tempws % (int)((int16_t)dst);
                         AX = tempws2 & 0xffff;
-                        if (!cpu_iscyrix) setznp16(AX); /*Not a Cyrix*/
+                        if (!is_cyrix) setznp16(AX); /*Not a Cyrix*/
                 }
                 else
                 {
@@ -533,14 +533,14 @@ static int opF7_l_a16(uint32_t fetchdat)
                 case 0x30: /*DIV EAX,l*/
                 if (divl(dst))
                         return 1;
-                if (!cpu_iscyrix) setznp32(EAX); /*Not a Cyrix*/
+                if (!is_cyrix) setznp32(EAX); /*Not a Cyrix*/
                 CLOCK_CYCLES((is486) ? 40 : 38);
                 PREFETCH_RUN(is486 ? 40:38, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,0, 0);
                 break;
                 case 0x38: /*IDIV EAX,l*/
                 if (idivl((int32_t)dst))
                         return 1;
-                if (!cpu_iscyrix) setznp32(EAX); /*Not a Cyrix*/
+                if (!is_cyrix) setznp32(EAX); /*Not a Cyrix*/
                 CLOCK_CYCLES(43);
                 PREFETCH_RUN(43, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,0, 0);
                 break;
@@ -603,14 +603,14 @@ static int opF7_l_a32(uint32_t fetchdat)
                 case 0x30: /*DIV EAX,l*/
                 if (divl(dst))
                         return 1;
-                if (!cpu_iscyrix) setznp32(EAX); /*Not a Cyrix*/
+                if (!is_cyrix) setznp32(EAX); /*Not a Cyrix*/
                 CLOCK_CYCLES((is486) ? 40 : 38);
                 PREFETCH_RUN(is486 ? 40 : 38, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,0, 1);
                 break;
                 case 0x38: /*IDIV EAX,l*/
                 if (idivl((int32_t)dst))
                         return 1;
-                if (!cpu_iscyrix) setznp32(EAX); /*Not a Cyrix*/
+                if (!is_cyrix) setznp32(EAX); /*Not a Cyrix*/
                 CLOCK_CYCLES(43);
                 PREFETCH_RUN(43, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,0, 1);
                 break;
@@ -630,7 +630,7 @@ static int opHLT(uint32_t fetchdat)
                 x86gpf(NULL,0);
                 return 1;
         }
-        if (!((flags&I_FLAG) && pic_intpending))
+        if (!((flags&I_FLAG) && pic_pending))
         {
                 CLOCK_CYCLES_ALWAYS(100);
                 cpu_state.pc--;

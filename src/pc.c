@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.64	2019/02/15
+ * Version:	@(#)pc.c	1.0.65	2019/02/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -341,7 +341,7 @@ fatal(const char *fmt, ...)
 
     config_save();
 
-    dumppic();
+    pic_dump();
     dumpregs(1);
 
     /*
@@ -735,13 +735,39 @@ usage:
 }
 
 
+/* Set the active processor speed for this machine. */
 void
 pc_set_speed(void)
 {
-    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286)
-	pit_setclock(machine_speed());
-      else
-	pit_setclock(14318184);
+    uint32_t speed;
+    int turbo = 1;	/* for now */
+
+    /*
+     * Get the selected processor's desired speed.
+     *
+     * For 286+, this is usually 8 (slow) or max speed.
+     * For PC and XT class, this will return max speed.
+     */
+    speed = machine_speed(turbo);
+INFO("PC: set_speed(%d): speed=%lu\n", speed);
+
+    if (machine_type() >= CPU_286) {
+	/* For 286+, we are done. */
+	pit_setclock(speed);
+    } else {
+	/*
+	 * Not so easy for PC and XT class machines.
+	 *
+	 * The TURBO setting on these machines (if they had
+	 * one at all) basically is the maximum speed of the
+	 * selected processor.  The slow speed is, in pretty
+	 * much all cases, the original 4.77MHz setting.
+	 */
+	if (turbo)
+		pit_setclock(14318184);
+	  else
+		pit_setclock(14318184);
+    }
 }
 
 
@@ -867,7 +893,7 @@ pc_init(void)
      * video card are available, so we can proceed with the
      * initialization of things.
      */
-    cpuspeed2 = (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) ? 2 : 1;
+    cpuspeed2 = (machine_type() >= CPU_286) ? 2 : 1;
     atfullspeed = 0;
 
     random_init();
@@ -934,7 +960,7 @@ pc_close(thread_t *ptr)
 //    floppy_close();
 
     if (dump_on_exit)
-	dumppic();
+	pic_dump();
     dumpregs(0);
 
     video_close();
@@ -1009,7 +1035,7 @@ pc_reset_hard_init(void)
      * For now, we will call their reset functions here, but
      * that will be a call to device_reset_all() later !
      */
-#if 0
+#if 1
     /* FIXME: move elsewhere? */
     shadowbios = 0;
 #endif
@@ -1137,7 +1163,8 @@ pc_thread(void *param)
 
 		/* Run a block of code. */
 		plat_startblit();
-		clockrate = machine_speed();
+		clockrate = machine_speed(1);
+//INFO("PC: clockrate=%lu, cpuspeed=%lu\n", clockrate, cpuspeed);
 
 		if (is386) {
 #ifdef USE_DYNAREC
@@ -1146,7 +1173,7 @@ pc_thread(void *param)
 			  else
 #endif
 				exec386(clockrate/100);
-		} else if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) {
+		} else if (machine_type() >= CPU_286) {
 			exec386(clockrate/100);
 		} else {
 			execx86(clockrate/100);

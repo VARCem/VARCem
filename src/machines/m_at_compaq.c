@@ -8,14 +8,14 @@
  *
  *		Emulation of various Compaq PC's.
  *
- * Version:	@(#)m_at_compaq.c	1.0.8	2018/09/15
+ * Version:	@(#)m_at_compaq.c	1.0.9	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -120,7 +120,7 @@ write_raml(uint32_t addr, uint32_t val, void *priv)
 static void
 compaq_common_init(const machine_t *model, void *arg, int type)
 {
-    machine_at_init(model, arg);
+    m_at_init(model, arg);
 
     mem_remap_top(384);
 
@@ -140,11 +140,11 @@ compaq_common_init(const machine_t *model, void *arg, int type)
 
 #if defined(DEV_BRANCH) && defined(USE_PORTABLE3)
 	case 3:			/* Portable III */
-		machine_olim24_video_init();
+		m_olim24_video_init();
 		break;
 
 	case 3+386:		/* Portable III/386 */
-		machine_olim24_video_init();
+		m_olim24_video_init();
 		if (hdc_type == 1)
 			device_add(&ide_isa_device);
 		break;
@@ -161,28 +161,28 @@ compaq_common_init(const machine_t *model, void *arg, int type)
 
 
 void
-machine_at_compaq_p1_init(const machine_t *model, void *arg)
+m_at_compaq_p1_init(const machine_t *model, void *arg)
 {
     compaq_common_init(model, arg, 0);
 }
 
 
 void
-machine_at_compaq_p2_init(const machine_t *model, void *arg)
+m_at_compaq_p2_init(const machine_t *model, void *arg)
 {
     compaq_common_init(model, arg, 2);
 }
 
 
 void
-machine_at_compaq_p3_init(const machine_t *model, void *arg)
+m_at_compaq_p3_init(const machine_t *model, void *arg)
 {
     compaq_common_init(model, arg, 3);
 }
 
 
 void
-machine_at_compaq_p3_386_init(const machine_t *model, void *arg)
+m_at_compaq_p3_386_init(const machine_t *model, void *arg)
 {
     compaq_common_init(model, arg, 3+386);
 }

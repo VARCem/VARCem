@@ -8,13 +8,13 @@
  *
  *		Definitions for the Intel 8259 module.
  *
- * Version:	@(#)pic.h	1.0.2	2018/09/05
+ * Version:	@(#)pic.h	1.0.3	2019/02/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -40,7 +40,7 @@
 # define EMU_PIC_H
 
 
-typedef struct PIC {
+typedef struct {
     uint8_t	icw1,
 		icw3,
 		icw4,
@@ -56,19 +56,19 @@ typedef struct PIC {
 
 extern PIC	pic,
 		pic2;
-extern int	pic_intpending;
+extern int	pic_pending;		/*FIXME: used by x86_ops_misc.h */
 
 
 extern void	pic_init(void);
 extern void	pic2_init(void);
 extern void	pic_reset(void);
+extern uint8_t	pic_interrupt(void);
+extern void	pic_clear(int num);
+extern void	pic_dump(void);
 
 extern void	picint(uint16_t num);
 extern void	picintlevel(uint16_t num);
 extern void	picintc(uint16_t num);
-extern uint8_t	picinterrupt(void);
-extern void	picclear(int num);
-extern void	dumppic(void);
 
 
 #endif	/*EMU_PIC_H*/

@@ -10,13 +10,13 @@
  *
  * FIXME:	fix the mem_map_t stuff in mem_read_b() et al!
  *
- * Version:	@(#)m_at_headland.c	1.0.9	2018/11/02
+ * Version:	@(#)m_at_headland.c	1.0.10	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2017,2018 Miran Grca.
  *		Copyright 2017,2018 GreatPsycho.
  *
@@ -387,7 +387,7 @@ hl_read(uint16_t addr, void *priv)
 		break;
 
 	case 0x0023:
-		if ((dev->indx >= 0xc0 || dev->indx == 0x20) && cpu_iscyrix)
+		if ((dev->indx >= 0xc0 || dev->indx == 0x20) && is_cyrix)
 			ret = 0xff; /*Don't conflict with Cyrix config registers*/
 		else
 			ret = dev->regs[dev->indx];
@@ -654,9 +654,9 @@ headland_common_init(int ht386)
 
 
 void
-machine_at_tg286m_init(const machine_t *model, void *arg)
+m_at_tg286m_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&ide_isa_device);
 
@@ -666,9 +666,9 @@ machine_at_tg286m_init(const machine_t *model, void *arg)
 
 /* Generic Headland 386SX machine. */
 void
-machine_at_headland_init(const machine_t *model, void *arg)
+m_at_headland_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&ide_isa_device);
 
@@ -678,12 +678,12 @@ machine_at_headland_init(const machine_t *model, void *arg)
 
 /* Arche Technologies AMA-932J-25 (Headland HT18 386SX-25.) */
 void
-machine_at_ama932j_init(const machine_t *model, void *arg)
+m_at_ama932j_init(const machine_t *model, void *arg)
 {
     romdef_t *roms = (romdef_t *)arg;
     headland_t *dev;
 
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&ide_isa_device);
 

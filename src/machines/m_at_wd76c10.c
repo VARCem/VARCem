@@ -8,13 +8,13 @@
  *
  *		Implementation of the WD76C10 system controller.
  *
- * Version:	@(#)m_at_wd76c10.c	1.0.10	2018/11/10
+ * Version:	@(#)m_at_wd76c10.c	1.0.11	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -218,11 +218,11 @@ wd76c10_init(void)
 
 
 void
-machine_at_wd76c10_init(const machine_t *model, void *arg)
+m_at_wd76c10_init(const machine_t *model, void *arg)
 {
     wd76c10_t *dev;
 
-    machine_at_common_ide_init(model, arg);
+    m_at_common_ide_init(model, arg);
 
     device_add(&keyboard_ps2_quadtel_device);
 

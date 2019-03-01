@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.18	2019/02/11
+ * Version:	@(#)m_europc.c	1.0.19	2019/02/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -776,7 +776,7 @@ const device_t europc_device = {
  * user.
  */
 void
-machine_europc_init(const machine_t *model, void *arg)
+m_europc_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
 

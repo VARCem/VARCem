@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.20	2019/02/12
+ * Version:	@(#)m_amstrad.c	1.0.21	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1311,42 +1311,42 @@ amstrad_common_init(const machine_t *model, void *arg, int type)
 
 
 void
-machine_amstrad_1512_init(const machine_t *model, void *arg)
+m_amstrad_1512_init(const machine_t *model, void *arg)
 {
     amstrad_common_init(model, arg, 0);
 }
 
 
 void
-machine_amstrad_1640_init(const machine_t *model, void *arg)
+m_amstrad_1640_init(const machine_t *model, void *arg)
 {
     amstrad_common_init(model, arg, 1);
 }
 
 
 void
-machine_amstrad_200_init(const machine_t *model, void *arg)
+m_amstrad_200_init(const machine_t *model, void *arg)
 {
     amstrad_common_init(model, arg, 2);
 }
 
 
 void
-machine_amstrad_2086_init(const machine_t *model, void *arg)
+m_amstrad_2086_init(const machine_t *model, void *arg)
 {
     amstrad_common_init(model, arg, 3);
 }
 
 
 void
-machine_amstrad_3086_init(const machine_t *model, void *arg)
+m_amstrad_3086_init(const machine_t *model, void *arg)
 {
     amstrad_common_init(model, arg, 4);
 }
 
 
 void
-machine_amstrad_mega_init(const machine_t *model, void *arg)
+m_amstrad_mega_init(const machine_t *model, void *arg)
 {
     amstrad_common_init(model, arg, 5);
 }

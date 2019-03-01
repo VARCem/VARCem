@@ -8,7 +8,7 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.6	2019/02/10
+ * Version:	@(#)386.c	1.0.7	2019/02/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -250,8 +250,8 @@ exec386(int cycs)
 				nmi_auto_clear = 0;
 				nmi = 0;
 			}
-		} else if ((flags & I_FLAG) && pic_intpending) {
-			temp = picinterrupt();
+		} else if (flags & I_FLAG) {
+			temp = pic_interrupt();
 			if (temp != 0xFF) {
 				flags_rebuild();
 

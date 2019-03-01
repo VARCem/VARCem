@@ -48,13 +48,13 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.19	2018/11/11
+ * Version:	@(#)m_ps2_mca.c	1.0.20	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -698,7 +698,7 @@ model_50_write(uint16_t port, uint8_t val)
 
 
 static void
-board_model_50_init(void)
+model_50_init(void)
 {
     board_common_init();
 
@@ -846,7 +846,7 @@ model_55sx_write(uint16_t port, uint8_t val)
 
 
 static void
-board_model_55sx_init(void)
+model_55sx_init(void)
 {
     board_common_init();
 
@@ -1165,7 +1165,7 @@ model_70_type3_write(uint16_t port, uint8_t val)
 
 
 static void
-board_model_70_type34_init(int is_type4)
+model_70_type34_init(int is_type4)
 {
     board_common_init();
 
@@ -1337,7 +1337,7 @@ model_80_write(uint16_t port, uint8_t val)
 
 
 static void
-board_model_80_type2_init(int is_486)
+model_80_type2_init(int is_486)
 {
     board_common_init();
 
@@ -1420,45 +1420,45 @@ ps2_common_init(const machine_t *model, void *arg)
 
 
 void
-machine_ps2_model_50_init(const machine_t *model, void *arg)
+m_ps2_model_50_init(const machine_t *model, void *arg)
 {
     ps2_common_init(model, arg);
 
-    board_model_50_init();
+    model_50_init();
 }
 
 
 void
-machine_ps2_model_55sx_init(const machine_t *model, void *arg)
+m_ps2_model_55sx_init(const machine_t *model, void *arg)
 {
     ps2_common_init(model, arg);
 
-    board_model_55sx_init();
+    model_55sx_init();
 }
 
 
 void
-machine_ps2_model_70_type3_init(const machine_t *model, void *arg)
+m_ps2_model_70_type3_init(const machine_t *model, void *arg)
 {
     ps2_common_init(model, arg);
 
-    board_model_70_type34_init(0);
+    model_70_type34_init(0);
 }
 
 
 void
-machine_ps2_model_70_type4_init(const machine_t *model, void *arg)
+m_ps2_model_70_type4_init(const machine_t *model, void *arg)
 {
     ps2_common_init(model, arg);
 
-    board_model_70_type34_init(1);
+    model_70_type34_init(1);
 }
 
 
 void
-machine_ps2_model_80_init(const machine_t *model, void *arg)
+m_ps2_model_80_init(const machine_t *model, void *arg)
 {
     ps2_common_init(model, arg);
 
-    board_model_80_type2_init(0);
+    model_80_type2_init(0);
 }

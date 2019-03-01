@@ -8,7 +8,7 @@
  *
  *		Implementation of the Commodore PC3 system.
  *
- * Version:	@(#)m_at_commodore.c	1.0.11	2019/02/10
+ * Version:	@(#)m_at_commodore.c	1.0.12	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,9 +89,9 @@ pc3_init(void)
 
 
 void
-machine_at_cmdpc_init(const machine_t *model, void *arg)
+m_at_cmdpc_init(const machine_t *model, void *arg)
 {
-    machine_at_ide_init(model, arg);
+    m_at_ide_init(model, arg);
 
     mem_remap_top(384);
 

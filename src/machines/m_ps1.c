@@ -22,13 +22,13 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.22	2018/11/11
+ * Version:	@(#)m_ps1.c	1.0.23	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -655,7 +655,7 @@ ps1_set_feedback(void *priv)
 
 
 void
-machine_ps1_m2011_init(const machine_t *model, void *arg)
+m_ps1_m2011_init(const machine_t *model, void *arg)
 {
     ps1_common_init(model, arg);
 
@@ -664,7 +664,7 @@ machine_ps1_m2011_init(const machine_t *model, void *arg)
 
 
 void
-machine_ps1_m2121_init(const machine_t *model, void *arg)
+m_ps1_m2121_init(const machine_t *model, void *arg)
 {
     ps1_common_init(model, arg);
 
@@ -673,7 +673,7 @@ machine_ps1_m2121_init(const machine_t *model, void *arg)
 
 
 void
-machine_ps1_m2133_init(const machine_t *model, void *arg)
+m_ps1_m2133_init(const machine_t *model, void *arg)
 {
     ps1_common_init(model, arg);
 

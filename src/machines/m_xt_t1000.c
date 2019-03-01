@@ -96,13 +96,13 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_xt_t1000.c	1.0.14	2018/09/22
+ * Version:	@(#)m_xt_t1000.c	1.0.15	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		John Elliott, <jce@seasip.info>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
  *		Copyright 2017,2018 John Elliott.
  *
@@ -936,7 +936,7 @@ const device_t m_xt_t1000_device = {
 
 
 void
-machine_xt_t1000_init(const machine_t *model, void *arg)
+m_xt_t1000_init(const machine_t *model, void *arg)
 {
     FILE *f;
     int pg;
@@ -1036,7 +1036,7 @@ t1200_nvram_write(uint32_t addr, uint8_t val, void *priv)
 
 
 void
-machine_xt_t1200_init(const machine_t *model, void *arg)
+m_xt_t1200_init(const machine_t *model, void *arg)
 {
     int pg;
 
@@ -1092,7 +1092,7 @@ machine_xt_t1200_init(const machine_t *model, void *arg)
 
 
 void
-machine_xt_t1x00_close(void)
+m_xt_t1x00_close(void)
 {
     cfgsys_save(&t1000);
 }

@@ -8,13 +8,13 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.10	2018/08/20
+ * Version:	@(#)m_at.c	1.0.11	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -55,7 +55,7 @@
 
 
 void
-machine_at_common_init(const machine_t *model, void *arg)
+m_at_common_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
 
@@ -68,18 +68,18 @@ machine_at_common_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_init(const machine_t *model, void *arg)
+m_at_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_at_device);
 }
 
 
 void
-machine_at_ibm_init(const machine_t *model, void *arg)
+m_at_ibm_init(const machine_t *model, void *arg)
 {
-    machine_at_init(model, arg);
+    m_at_init(model, arg);
 
     mem_remap_top(384);
 
@@ -88,36 +88,36 @@ machine_at_ibm_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_ps2_init(const machine_t *model, void *arg)
+m_at_ps2_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_device);
 }
 
 
 void
-machine_at_common_ide_init(const machine_t *model, void *arg)
+m_at_common_ide_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&ide_isa_2ch_opt_device);
 }
 
 
 void
-machine_at_ide_init(const machine_t *model, void *arg)
+m_at_ide_init(const machine_t *model, void *arg)
 {
-    machine_at_init(model, arg);
+    m_at_init(model, arg);
 
     device_add(&ide_isa_2ch_opt_device);
 }
 
 
 void
-machine_at_ps2_ide_init(const machine_t *model, void *arg)
+m_at_ps2_ide_init(const machine_t *model, void *arg)
 {
-    machine_at_ps2_init(model, arg);
+    m_at_ps2_init(model, arg);
 
     device_add(&ide_isa_2ch_opt_device);
 }

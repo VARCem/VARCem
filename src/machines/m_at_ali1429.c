@@ -8,13 +8,13 @@
  *
  *		Implementation the ALI M1429 mainboard.
  *
- * Version:	@(#)m_at_ali1429.c	1.0.6	2018/11/11
+ * Version:	@(#)m_at_ali1429.c	1.0.7	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -127,7 +127,7 @@ ali1429_read(uint16_t port, void *priv)
     if (! (port & 1)) 
 	return(ali1429_index);
 
-    if ((ali1429_index >= 0xc0 || ali1429_index == 0x20) && cpu_iscyrix)
+    if ((ali1429_index >= 0xc0 || ali1429_index == 0x20) && is_cyrix)
 	return(0xff); /*Don't conflict with Cyrix config registers*/
 
     return(ali1429_regs[ali1429_index]);
@@ -150,11 +150,11 @@ ali1429_init(void)
 
 
 void
-machine_at_ali1429_init(const machine_t *model, void *arg)
+m_at_ali1429_init(const machine_t *model, void *arg)
 {
     ali1429_reset();
 
-    machine_at_common_ide_init(model, arg);
+    m_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
 

@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.18	2019/02/15
+ * Version:	@(#)machine.c	1.0.19	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -125,13 +125,43 @@ machine_close(void)
 }
 
 
-/* Return the (maximum) speed at which this machine will run. */
+/* Return the machine type. */
+int
+machine_type(void)
+{
+    return (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type);
+}
+
+
+/* Return this machine's default or slow speed. */
 uint32_t
-machine_speed(void)
+machine_speed(int turbo)
 {
     uint32_t k;
+    int mhz;
 
+    /* Get the current CPU's maximum speed. */
     k = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed;
+
+    /*
+     * If not on turbo, use the speed the mainboard
+     * has set as its fallback ("slow") speed.
+     */
+    if (! turbo) {
+	mhz = machines[machine].slow_mhz;
+	switch(mhz) {
+		case -1:	/* machine has no slow/turbo switching */
+			break;
+
+		case 0:		/* use half of current max speed */
+			k >>= 1;
+			break;
+
+		default:	/* use specified speed */
+			k = (mhz << 20);
+			break;
+	}
+    }
 
     return(k);
 }

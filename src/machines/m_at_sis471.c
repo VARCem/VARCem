@@ -8,12 +8,12 @@
  *
  *		Emulation of the SiS 85c471 Super I/O chip.
  *
- * Version:	@(#)m_at_sis471.c	1.0.12	2018/11/11
+ * Version:	@(#)m_at_sis471.c	1.0.13	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -286,9 +286,9 @@ const device_t sis_85c471_device = {
 
 
 void
-machine_at_dtk486_init(const machine_t *model, void *arg)
+m_at_dtk486_init(const machine_t *model, void *arg)
 {
-    machine_at_ide_init(model, arg);
+    m_at_ide_init(model, arg);
 
     device_add(&fdc_at_device);
 

@@ -8,13 +8,13 @@
  *
  *		Implementation of Chips&Technology's SCAT (82C235) chipset.
  *
- * Version:	@(#)m_at_scat.c	1.0.12	2018/09/15
+ * Version:	@(#)m_at_scat.c	1.0.13	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1319,9 +1319,10 @@ scat_common_init(int type)
 
 
 void
-machine_at_scat_init(const machine_t *model, void *arg)
+m_at_scat_init(const machine_t *model, void *arg)
 {
-    machine_at_init(model, arg);
+    m_at_init(model, arg);
+
     device_add(&fdc_at_device);
 
     scat_common_init(0);
@@ -1329,9 +1330,9 @@ machine_at_scat_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_scat_gw286ct_init(const machine_t *model, void *arg)
+m_at_scat_gw286ct_init(const machine_t *model, void *arg)
 {
-    machine_at_init(model, arg);
+    m_at_init(model, arg);
 
     device_add(&fdc_at_device);
 
@@ -1340,9 +1341,9 @@ machine_at_scat_gw286ct_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_scat_spc4216p_init(const machine_t *model, void *arg)
+m_at_scat_spc4216p_init(const machine_t *model, void *arg)
 {
-    machine_at_init(model, arg);
+    m_at_init(model, arg);
 
     device_add(&fdc_at_device);
 
@@ -1426,9 +1427,9 @@ scatsx_common_init(void)
 
 
 void
-machine_at_scatsx_init(const machine_t *model, void *arg)
+m_at_scatsx_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
     device_add(&fdc_at_device);

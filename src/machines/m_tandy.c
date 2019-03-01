@@ -11,13 +11,13 @@
  * NOTE:	It might be better (after all..) to split off the video
  *		driver from the main code, to keep it a little cleaner.
  *
- * Version:	@(#)m_tandy.c	1.0.14	2018/10/24
+ * Version:	@(#)m_tandy.c	1.0.15	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -1991,21 +1991,21 @@ tandy1k_common_init(const machine_t *model, void *arg, int type)
 
 
 void
-machine_tandy1k_init(const machine_t *model, void *arg)
+m_tandy1k_init(const machine_t *model, void *arg)
 {
     tandy1k_common_init(model, arg, 0);
 }
 
 
 void
-machine_tandy1k_hx_init(const machine_t *model, void *arg)
+m_tandy1k_hx_init(const machine_t *model, void *arg)
 {
     tandy1k_common_init(model, arg, 1);
 }
 
 
 void
-machine_tandy1k_sl2_init(const machine_t *model, void *arg)
+m_tandy1k_sl2_init(const machine_t *model, void *arg)
 {
     tandy1k_common_init(model, arg, 2);
 }

@@ -8,13 +8,13 @@
  *
  *		Implementation of the SiS 85C496/497 chipset.
  *
- * Version:	@(#)m_at_sis49x.c	1.0.8	2018/11/10
+ * Version:	@(#)m_at_sis49x.c	1.0.9	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -409,9 +409,9 @@ const device_t sis_85c496_device = {
 
 
 static void
-machine_at_sis_85c496_common_init(const machine_t *model, void *arg)
+common_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
     device_add(&ide_pci_device);
@@ -435,9 +435,9 @@ machine_at_sis_85c496_common_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_sis496_ami_init(const machine_t *model, void *arg)
+m_at_sis496_ami_init(const machine_t *model, void *arg)
 {
-    machine_at_common_ide_init(model, arg);
+    m_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
     device_add(&fdc_at_device);
@@ -463,9 +463,9 @@ machine_at_sis496_ami_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_r418_init(const machine_t *model, void *arg)
+m_at_r418_init(const machine_t *model, void *arg)
 {
-    machine_at_sis_85c496_common_init(model, arg);
+    common_init(model, arg);
 
     device_add(&fdc37c665_device);
 }

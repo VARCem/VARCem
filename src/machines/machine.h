@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.26	2019/02/11
+ * Version:	@(#)machine.h	1.0.27	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,6 +65,7 @@ typedef struct _machine_ {
     const char		*name;
     const char		*internal_name;
     const wchar_t	*bios_path;
+    int			slow_mhz;
     struct {
 	const char	*name;
 #ifdef EMU_CPU_H
@@ -103,7 +104,8 @@ extern int		machine_get_from_internal_name(const char *s);
 extern int		machine_available(int id);
 extern void		machine_reset(void);
 extern void		machine_close(void);
-extern uint32_t		machine_speed(void);
+extern int		machine_type(void);
+extern uint32_t		machine_speed(int turbo);
 #ifdef EMU_DEVICE_H
 extern const device_t	*machine_getdevice(int machine);
 #endif
@@ -114,82 +116,82 @@ extern const char	*machine_get_config_string(const char *s);
 /* Initialization functions for boards and systems. */
 extern void		machine_common_init(const machine_t *, void *);
 
-extern void		machine_at_common_init(const machine_t *, void *);
-extern void		machine_at_init(const machine_t *, void *);
-extern void		machine_at_ibm_init(const machine_t *, void *);
-extern void		machine_at_ps2_init(const machine_t *, void *);
-extern void		machine_at_common_ide_init(const machine_t *, void *);
-extern void		machine_at_ide_init(const machine_t *, void *);
-extern void		machine_at_ps2_ide_init(const machine_t *, void *);
+extern void		m_at_common_init(const machine_t *, void *);
+extern void		m_at_init(const machine_t *, void *);
+extern void		m_at_ibm_init(const machine_t *, void *);
+extern void		m_at_ps2_init(const machine_t *, void *);
+extern void		m_at_common_ide_init(const machine_t *, void *);
+extern void		m_at_ide_init(const machine_t *, void *);
+extern void		m_at_ps2_ide_init(const machine_t *, void *);
 
-extern void		machine_at_t3100e_init(const machine_t *, void *);
+extern void		m_at_t3100e_init(const machine_t *, void *);
 
-extern void		machine_at_p54tp4xe_init(const machine_t *, void *);
-extern void		machine_at_endeavor_init(const machine_t *, void *);
-extern void		machine_at_zappa_init(const machine_t *, void *);
-extern void		machine_at_mb500n_init(const machine_t *, void *);
-extern void		machine_at_president_init(const machine_t *, void *);
-extern void		machine_at_thor_init(const machine_t *, void *);
-extern void		machine_at_pb640_init(const machine_t *, void *);
+extern void		m_at_p54tp4xe_init(const machine_t *, void *);
+extern void		m_at_endeavor_init(const machine_t *, void *);
+extern void		m_at_zappa_init(const machine_t *, void *);
+extern void		m_at_mb500n_init(const machine_t *, void *);
+extern void		m_at_president_init(const machine_t *, void *);
+extern void		m_at_thor_init(const machine_t *, void *);
+extern void		m_at_pb640_init(const machine_t *, void *);
 
-extern void		machine_at_acerm3a_init(const machine_t *, void *);
-extern void		machine_at_acerv35n_init(const machine_t *, void *);
-extern void		machine_at_ap53_init(const machine_t *, void *);
-extern void		machine_at_p55t2p4_init(const machine_t *, void *);
-extern void		machine_at_p55t2s_init(const machine_t *, void *);
+extern void		m_at_acerm3a_init(const machine_t *, void *);
+extern void		m_at_acerv35n_init(const machine_t *, void *);
+extern void		m_at_ap53_init(const machine_t *, void *);
+extern void		m_at_p55t2p4_init(const machine_t *, void *);
+extern void		m_at_p55t2s_init(const machine_t *, void *);
 
-extern void		machine_at_batman_init(const machine_t *, void *);
-extern void		machine_at_plato_init(const machine_t *, void *);
+extern void		m_at_batman_init(const machine_t *, void *);
+extern void		m_at_plato_init(const machine_t *, void *);
 
-extern void		machine_at_p55tvp4_init(const machine_t *, void *);
-extern void		machine_at_i430vx_init(const machine_t *, void *);
-extern void		machine_at_p55va_init(const machine_t *, void *);
-extern void		machine_at_j656vxd_init(const machine_t *, void *);
+extern void		m_at_p55tvp4_init(const machine_t *, void *);
+extern void		m_at_i430vx_init(const machine_t *, void *);
+extern void		m_at_p55va_init(const machine_t *, void *);
+extern void		m_at_j656vxd_init(const machine_t *, void *);
 
 #if defined(DEV_BRANCH) && defined(USE_I686)
-extern void		machine_at_i440fx_init(const machine_t *, void *);
-extern void		machine_at_s1668_init(const machine_t *, void *);
+extern void		m_at_i440fx_init(const machine_t *, void *);
+extern void		m_at_s1668_init(const machine_t *, void *);
 #endif
-extern void		machine_at_ali1429_init(const machine_t *, void *);
-extern void		machine_at_cmdpc_init(const machine_t *, void *);
+extern void		m_at_ali1429_init(const machine_t *, void *);
+extern void		m_at_cmdpc_init(const machine_t *, void *);
 
-extern void		machine_at_tg286m_init(const machine_t *, void *);
-extern void		machine_at_headland_init(const machine_t *, void *);
-extern void		machine_at_ama932j_init(const machine_t *, void *);
-extern void		machine_at_neat_init(const machine_t *, void *);
-extern void		machine_at_neat_ami_init(const machine_t *, void *);
+extern void		m_at_tg286m_init(const machine_t *, void *);
+extern void		m_at_headland_init(const machine_t *, void *);
+extern void		m_at_ama932j_init(const machine_t *, void *);
+extern void		m_at_neat_init(const machine_t *, void *);
+extern void		m_at_neat_ami_init(const machine_t *, void *);
 
-extern void		machine_at_opti495_ami_init(const machine_t *, void *);
-extern void		machine_at_opti495_award_init(const machine_t *, void *);
-extern void		machine_at_opti495_mr_init(const machine_t *, void *);
+extern void		m_at_opti495_ami_init(const machine_t *, void *);
+extern void		m_at_opti495_award_init(const machine_t *, void *);
+extern void		m_at_opti495_mr_init(const machine_t *, void *);
 
-extern void		machine_at_sis471_ami_init(const machine_t *, void *);
-extern void		machine_at_dtk486_init(const machine_t *, void *);
+extern void		m_at_sis471_ami_init(const machine_t *, void *);
+extern void		m_at_dtk486_init(const machine_t *, void *);
 
-extern void		machine_at_sis496_ami_init(const machine_t *, void *);
-extern void		machine_at_r418_init(const machine_t *, void *);
+extern void		m_at_sis496_ami_init(const machine_t *, void *);
+extern void		m_at_r418_init(const machine_t *, void *);
 
-extern void		machine_at_scat_init(const machine_t*, void*);
-extern void		machine_at_scat_gw286ct_init(const machine_t*, void*);
-extern void		machine_at_scat_spc4216p_init(const machine_t*, void*);
+extern void		m_at_scat_init(const machine_t*, void*);
+extern void		m_at_scat_gw286ct_init(const machine_t*, void*);
+extern void		m_at_scat_spc4216p_init(const machine_t*, void*);
 
-extern void		machine_at_scatsx_init(const machine_t*, void*);
+extern void		m_at_scatsx_init(const machine_t*, void*);
 
-extern void		machine_at_compaq_p1_init(const machine_t*, void*);
-extern void		machine_at_compaq_p2_init(const machine_t*, void*);
-extern void		machine_at_compaq_p3_init(const machine_t*, void*);
-extern void		machine_at_compaq_p3_386_init(const machine_t*, void*);
+extern void		m_at_compaq_p1_init(const machine_t*, void*);
+extern void		m_at_compaq_p2_init(const machine_t*, void*);
+extern void		m_at_compaq_p3_init(const machine_t*, void*);
+extern void		m_at_compaq_p3_386_init(const machine_t*, void*);
 
-extern void		machine_at_wd76c10_init(const machine_t *, void *);
+extern void		m_at_wd76c10_init(const machine_t *, void *);
 
-extern void		machine_pcjr_init(const machine_t *, void *);
+extern void		m_pcjr_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern const device_t	m_pcjr_device;
 #endif
 
-extern void		machine_ps1_m2011_init(const machine_t *, void *);
-extern void		machine_ps1_m2121_init(const machine_t *, void *);
-extern void		machine_ps1_m2133_init(const machine_t *, void *);
+extern void		m_ps1_m2011_init(const machine_t *, void *);
+extern void		m_ps1_m2121_init(const machine_t *, void *);
+extern void		m_ps1_m2133_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern void		ps1_hdc_inform(void *, void *);
 extern void		ps1_set_feedback(void *);
@@ -197,31 +199,31 @@ extern const device_t	m_ps1_device;
 extern const device_t	ps1_hdc_device;
 #endif
 
-extern void		machine_ps2_m30_286_init(const machine_t *, void *);
-extern void		machine_ps2_model_50_init(const machine_t *, void *);
-extern void		machine_ps2_model_55sx_init(const machine_t *, void *);
-extern void		machine_ps2_model_70_type3_init(const machine_t *, void *);
-extern void		machine_ps2_model_70_type4_init(const machine_t *, void *);
-extern void		machine_ps2_model_80_init(const machine_t *, void *);
+extern void		m_ps2_m30_286_init(const machine_t *, void *);
+extern void		m_ps2_model_50_init(const machine_t *, void *);
+extern void		m_ps2_model_55sx_init(const machine_t *, void *);
+extern void		m_ps2_model_70_type3_init(const machine_t *, void *);
+extern void		m_ps2_model_70_type4_init(const machine_t *, void *);
+extern void		m_ps2_model_80_init(const machine_t *, void *);
 
-extern void		machine_amstrad_1512_init(const machine_t *, void *);
-extern void		machine_amstrad_1640_init(const machine_t *, void *);
-extern void		machine_amstrad_200_init(const machine_t *, void *);
-extern void		machine_amstrad_2086_init(const machine_t *, void *);
-extern void		machine_amstrad_3086_init(const machine_t *, void *);
-extern void		machine_amstrad_mega_init(const machine_t *, void *);
+extern void		m_amstrad_1512_init(const machine_t *, void *);
+extern void		m_amstrad_1640_init(const machine_t *, void *);
+extern void		m_amstrad_200_init(const machine_t *, void *);
+extern void		m_amstrad_2086_init(const machine_t *, void *);
+extern void		m_amstrad_3086_init(const machine_t *, void *);
+extern void		m_amstrad_mega_init(const machine_t *, void *);
 
-extern void		machine_europc_init(const machine_t *, void *);
+extern void		m_europc_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern const device_t	m_europc_device;
 #endif
 
-extern void		machine_olim24_init(const machine_t *, void *);
-extern void		machine_olim24_video_init(void);
+extern void		m_olim24_init(const machine_t *, void *);
+extern void		m_olim24_video_init(void);
 
-extern void		machine_tandy1k_init(const machine_t *, void *);
-extern void		machine_tandy1k_hx_init(const machine_t *, void *);
-extern void		machine_tandy1k_sl2_init(const machine_t *, void *);
+extern void		m_tandy1k_init(const machine_t *, void *);
+extern void		m_tandy1k_hx_init(const machine_t *, void *);
+extern void		m_tandy1k_sl2_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern const device_t	m_tandy1k_device;
 extern const device_t	m_tandy1k_hx_device;
@@ -229,32 +231,32 @@ extern const device_t	m_tandy1k_sl2_device;
 #endif
 extern int		tandy1k_eeprom_read(void);
 
-extern void		machine_zenith_supersport_init(const machine_t *, void *);
+extern void		m_zenith_supersport_init(const machine_t *, void *);
 
-extern void		machine_pc_init(const machine_t *, void *);
-extern void		machine_pc82_init(const machine_t *, void *);
-extern void		machine_xt_init(const machine_t *, void *);
-extern void		machine_xt86_init(const machine_t *, void *);
+extern void		m_pc_init(const machine_t *, void *);
+extern void		m_pc82_init(const machine_t *, void *);
+extern void		m_xt_init(const machine_t *, void *);
+extern void		m_xt86_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern const device_t	m_pc_device;
 extern const device_t	m_xt_device;
 #endif
 
-extern void		machine_xt_compaq_p1_init(const machine_t *, void *);
+extern void		m_xt_compaq_p1_init(const machine_t *, void *);
 
-extern void		machine_xt_laserxt_init(const machine_t *, void *);
-extern void		machine_xt_lxt3_init(const machine_t *, void *);
+extern void		m_xt_laserxt_init(const machine_t *, void *);
+extern void		m_xt_lxt3_init(const machine_t *, void *);
 
-extern void		machine_xt_t1000_init(const machine_t *, void *);
+extern void		m_xt_t1000_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern const device_t	m_xt_t1000_device;
 extern const device_t	t1000_video_device;
 extern const device_t	t1200_video_device;
 #endif
-extern void		machine_xt_t1200_init(const machine_t *, void *);
-extern void		machine_xt_t1x00_close(void);
+extern void		m_xt_t1200_init(const machine_t *, void *);
+extern void		m_xt_t1x00_close(void);
 
-extern void		machine_xt_xi8088_init(const machine_t *, void *);
+extern void		m_xt_xi8088_init(const machine_t *, void *);
 #ifdef EMU_DEVICE_H
 extern const device_t	m_xi8088_device;
 #endif

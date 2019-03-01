@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.14	2019/02/13
+ * Version:	@(#)m_xt.c	1.0.15	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,7 +56,7 @@
 
 /* Generic PC/XT system board with just the basics. */
 void
-machine_pc_common_init(const machine_t *model, void *arg)
+m_pc_common_init(const machine_t *model, void *arg)
 {
     int rom_basic;
 
@@ -80,9 +80,9 @@ machine_pc_common_init(const machine_t *model, void *arg)
 
 /* The original IBM PC, 1981 model. */
 void
-machine_pc_init(const machine_t *model, void *arg)
+m_pc_init(const machine_t *model, void *arg)
 {
-    machine_pc_common_init(model, arg);
+    m_pc_common_init(model, arg);
 
     device_add(&keyboard_pc_device);
 
@@ -94,9 +94,9 @@ machine_pc_init(const machine_t *model, void *arg)
 
 /* The later IBM PC from 1982. */
 void
-machine_pc82_init(const machine_t *model, void *arg)
+m_pc82_init(const machine_t *model, void *arg)
 {
-    machine_pc_common_init(model, arg);
+    m_pc_common_init(model, arg);
 
     device_add(&keyboard_pc82_device);
 
@@ -108,9 +108,9 @@ machine_pc82_init(const machine_t *model, void *arg)
 
 /* The original IBM PC/XT, 1982 model. */
 void
-machine_xt_init(const machine_t *model, void *arg)
+m_xt_init(const machine_t *model, void *arg)
 {
-    machine_pc_common_init(model, arg);
+    m_pc_common_init(model, arg);
 
     device_add(&keyboard_xt_device);
 }
@@ -118,9 +118,9 @@ machine_xt_init(const machine_t *model, void *arg)
 
 /* The later IBM PC/XT from 1986. */
 void
-machine_xt86_init(const machine_t *model, void *arg)
+m_xt86_init(const machine_t *model, void *arg)
 {
-    machine_pc_common_init(model, arg);
+    m_pc_common_init(model, arg);
 
     device_add(&keyboard_xt86_device);
 }

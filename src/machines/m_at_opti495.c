@@ -260,13 +260,13 @@ Note:	the block address is forced to be a multiple of the block size by
 	  ignoring the appropriate number of the least-significant bits
 SeeAlso: #P0178,#P0187
  *
- * Version:	@(#)m_at_opti495.c	1.0.8	2018/11/02
+ * Version:	@(#)m_at_opti495.c	1.0.9	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -363,9 +363,9 @@ opti495_init(void)
 
 
 void
-machine_at_opti495_ami_init(const machine_t *model, void *arg)
+m_at_opti495_ami_init(const machine_t *model, void *arg)
 {
-    machine_at_common_ide_init(model, arg);
+    m_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
     device_add(&fdc_at_device);
@@ -375,9 +375,9 @@ machine_at_opti495_ami_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_opti495_award_init(const machine_t *model, void *arg)
+m_at_opti495_award_init(const machine_t *model, void *arg)
 {
-    machine_at_common_ide_init(model, arg);
+    m_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_device);
     device_add(&fdc_at_device);
@@ -387,9 +387,9 @@ machine_at_opti495_award_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_opti495_mr_init(const machine_t *model, void *arg)
+m_at_opti495_mr_init(const machine_t *model, void *arg)
 {
-    machine_at_common_ide_init(model, arg);
+    m_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_ami_device);
     device_add(&fdc_at_device);

@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.12	2019/02/15
+ * Version:	@(#)m_pcjr.c	1.0.13	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -751,16 +751,16 @@ const device_t m_pcjr_device = {
 
 
 void
-machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
+m_pcjr_init(const machine_t *model, UNUSED(void *arg))
 {
     int display_type;
-    pcjr_t *pcjr;
+    pcjr_t *dev;
 
-    pcjr = (pcjr_t *)mem_alloc(sizeof(pcjr_t));
-    memset(pcjr, 0x00, sizeof(pcjr_t));
-    pcjr->memctrl = -1;
+    dev = (pcjr_t *)mem_alloc(sizeof(pcjr_t));
+    memset(dev, 0x00, sizeof(pcjr_t));
+    dev->memctrl = -1;
     display_type = machine_get_config_int("display_type");
-    pcjr->composite = (display_type != PCJR_RGB);
+    dev->composite = (display_type != PCJR_RGB);
 
     pic_init();
     pit_init();
@@ -776,13 +776,13 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
     }
 
     /* Initialize the video controller. */
-    mem_map_add(&pcjr->mapping, 0xb8000, 0x08000,
+    mem_map_add(&dev->mapping, 0xb8000, 0x08000,
 		vid_read, NULL, NULL,
-		vid_write, NULL, NULL,  NULL, 0, pcjr);
+		vid_write, NULL, NULL,  NULL, 0, dev);
     io_sethandler(0x03d0, 16,
-		  vid_in, NULL, NULL, vid_out, NULL, NULL, pcjr);
-    timer_add(vid_poll, &pcjr->vidtime, TIMER_ALWAYS_ENABLED, pcjr);
-    device_add_ex(&m_pcjr_device, pcjr);
+		  vid_in, NULL, NULL, vid_out, NULL, NULL, dev);
+    timer_add(vid_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    device_add_ex(&m_pcjr_device, dev);
     video_inform(VID_TYPE_CGA,
 		 (const video_timings_t *)&m_pcjr_device.vid_timing);
 
@@ -790,10 +790,10 @@ machine_pcjr_init(const machine_t *model, UNUSED(void *arg))
     keyboard_scan = 1;
     key_queue_start = key_queue_end = 0;
     io_sethandler(0x0060, 4,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, pcjr);
+		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
     io_sethandler(0x00a0, 8,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, pcjr);
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, pcjr);
+		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
+    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
     keyboard_set_table(scancode_xt);
     keyboard_send = kbd_adddata_ex;
 

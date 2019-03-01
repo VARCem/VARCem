@@ -121,13 +121,13 @@
  *                       bit 2 set for single-pixel LCD font
  *                       bits 0,1 for display font
  *
- * Version:	@(#)m_at_t3100e.c	1.0.9	2018/09/13
+ * Version:	@(#)m_at_t3100e.c	1.0.10	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		John Elliott, <jce@seasip.info>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2017-2018 John Elliott.
  *
@@ -603,13 +603,13 @@ upper_write_raml(uint32_t addr, uint32_t val, void *priv)
 
 
 void
-machine_at_t3100e_init(const machine_t *model, void *arg)
+m_at_t3100e_init(const machine_t *model, void *arg)
 {
     int pg;
 
     memset(&t3100e, 0x00, sizeof(t3100e_t));
 
-    machine_at_common_ide_init(model, arg);
+    m_at_common_ide_init(model, arg);
 
     device_add(&keyboard_at_toshiba_device);
 

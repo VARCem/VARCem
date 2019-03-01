@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.8	2019/02/11
+ * Version:	@(#)dma.c	1.0.9	2019/02/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -427,6 +427,7 @@ dma_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 			dma_m |=  (1 << (val & 3));
 		  else
 			dma_m &= ~(1 << (val & 3));
+if ((val & 3) == 3) INFO("DMA: mask=%02x\n", dma_m);
 		return;
 
 	case 0xb: /*Mode*/
@@ -736,17 +737,25 @@ dma_channel_read(int channel)
     int tc = 0;
 
     if (channel < 4) {
-	if (dma_command & 0x04)
+	if (dma_command & 0x04) {
+		DEBUG("DMA: chan_read(%i) & 04\n", channel);
 		return(DMA_NODATA);
+	}
     } else {
-	if (dma16_command & 0x04)
+	if (dma16_command & 0x04) {
+		DEBUG("DMA: chan_read(%i) & 04\n", channel);
 		return(DMA_NODATA);
+	}
     }
 
-    if (dma_m & (1 << channel))
+    if (dma_m & (1 << channel)) {
+	DEBUG("DMA: chan_write(%i) mask %02x\n", channel, dma_m);
 	return(DMA_NODATA);
-    if ((dma_c->mode & 0xC) != 8)
+    }
+    if ((dma_c->mode & 0xC) != 8) {
+	DEBUG("DMA: chan_write(%i) mode %02x\n", channel, dma_c->mode);
 	return(DMA_NODATA);
+    }
 
     if (! AT)
 	refreshread();
@@ -807,17 +816,25 @@ dma_channel_write(int channel, uint16_t val)
     dma_t *dma_c = &dma[channel];
 
     if (channel < 4) {
-	if (dma_command & 0x04)
+	if (dma_command & 0x04) {
+		DEBUG("DMA: chan_write(%i) & 04\n", channel);
 		return(DMA_NODATA);
+	}
     } else {
-	if (dma16_command & 0x04)
+	if (dma16_command & 0x04) {
+		DEBUG("DMA: chan_write(%i) & 04\n", channel);
 		return(DMA_NODATA);
+	}
     }
 
-    if (dma_m & (1 << channel))
+    if (dma_m & (1 << channel)) {
+	DEBUG("DMA: chan_write(%i) mask %02x\n", channel, dma_m);
 	return(DMA_NODATA);
-    if ((dma_c->mode & 0xC) != 4)
+    }
+    if ((dma_c->mode & 0xC) != 4) {
+	DEBUG("DMA: chan_write(%i) mode %02x\n", channel, dma_c->mode);
 	return(DMA_NODATA);
+    }
 
     if (! AT)
 	refreshread();

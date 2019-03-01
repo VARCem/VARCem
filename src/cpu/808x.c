@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.11	2019/02/15
+ * Version:	@(#)808x.c	1.0.14	2019/02/28
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner, <https://www.reenigne.org>
@@ -143,14 +143,14 @@ dumpregs(int force)
 	      cpu_state.pc, CS, DS, ES, SS, flags);
     INFO("Old CS:EIP: %04X:%08X; %i ins\n", oldcs, cpu_state.oldpc, ins);
     for (c = 0; c < 4; c++) {
-	INFO("%s : base=%06X limit=%08X access=%02X  limit_low=%08X limit_high=%08X\n",
+	INFO("%s : base=%06X limit=%08X access=%02X  low=%08X high=%08X\n",
 		  seg_names[c], _opseg[c]->base, _opseg[c]->limit,
 		  _opseg[c]->access, _opseg[c]->limit_low, _opseg[c]->limit_high);
     }
     if (is386) {
-	INFO("FS : base=%06X limit=%08X access=%02X  limit_low=%08X limit_high=%08X\n",
+	INFO("FS : base=%06X limit=%08X access=%02X  low=%08X limit_high=%08X\n",
 		  seg_fs, _fs.limit, _fs.access, _fs.limit_low, _fs.limit_high);
-	INFO("GS : base=%06X limit=%08X access=%02X  limit_low=%08X limit_high=%08X\n",
+	INFO("GS : base=%06X limit=%08X access=%02X  low=%08X limit_high=%08X\n",
 		  gs, _gs.limit, _gs.access, _gs.limit_low, _gs.limit_high);
 	INFO("GDT : base=%06X limit=%04X\n", gdt.base, gdt.limit);
 	INFO("LDT : base=%06X limit=%04X\n", ldt.base, ldt.limit);
@@ -2824,7 +2824,7 @@ on_halt:
 		do_intr(2, 1);
 		nmi_enable = 0;
 	} else if (takeint && !noint) {
-		temp = picinterrupt();
+		temp = pic_interrupt();
 		if (temp != 0xFF) {
 			halt = 0;
 			do_intr(temp, 1);

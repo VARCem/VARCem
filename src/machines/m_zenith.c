@@ -8,7 +8,7 @@
  *
  *		Implementation of the Zenith SupersPORT.
  *
- * Version:	@(#)m_zenith.c	1.0.2	2019/01/13
+ * Version:	@(#)m_zenith.c	1.0.3	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original patch for PCem by 'Tux'
@@ -131,7 +131,7 @@ static const device_t scratchpad_device = {
 
 
 void
-machine_zenith_supersport_init(const machine_t *model, void *arg)
+m_zenith_supersport_init(const machine_t *model, void *arg)
 {		
     machine_common_init(model, arg);
 

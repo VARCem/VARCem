@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.13	2019/02/12
+ * Version:	@(#)m_olivetti_m24.c	1.0.14	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -801,7 +801,7 @@ const device_t m24_device = {
 
 
 void
-machine_olim24_init(const machine_t *model, void *arg)
+m_olim24_init(const machine_t *model, void *arg)
 {
     olim24_t *dev;
 
@@ -859,7 +859,7 @@ machine_olim24_init(const machine_t *model, void *arg)
 #if defined(DEV_BRANCH) && defined(USE_PORTABLE3)
 /* Compaq Portable III also seems to use this. */
 void
-machine_olim24_video_init(void)
+m_olim24_video_init(void)
 {
     olim24_t *dev;
 

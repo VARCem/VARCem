@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.h	1.0.8	2019/02/11
+ * Version:	@(#)cpu.h	1.0.9	2019/02/17
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
@@ -159,9 +159,7 @@ extern CPU	cpus_Pentium2D[];
 #define CR4_PSE		(1 << 4)
 
 #define CPL ((_cs.access>>5)&3)
-
 #define IOPL ((flags>>12)&3)
-
 #define IOPLp ((!(msw&1)) || (CPL<=IOPL))
 
 
@@ -323,15 +321,14 @@ COMPILE_TIME_ASSERT(sizeof(cpu_state) <= 128)
 
 
 /* Global variables. */
-extern int		cpu_iscyrix;
+extern int		xt_cpu_multi;
 extern int		cpu_16bitbus;
 extern int		cpu_busspeed;
-extern int		cpu_multi;
 extern int		cpu_cyrix_alignment;	/*Cyrix 5x86/6x86 only has data misalignment
 					  penalties when crossing 8-byte boundaries*/
 
 extern int		is8086,	is186, is286, is386, is486;
-extern int		is_nec, is_rapidcad, is_pentium;
+extern int		is_nec, is_rapidcad, is_cyrix, is_pentium;
 extern int		hasfpu;
 extern int		cpu_hasrdtsc;
 extern int		cpu_hasMSR;
@@ -348,11 +345,9 @@ extern int		cycles_lost;
 extern uint8_t		opcode;
 extern int		fpucount;
 extern float		mips,flops;
-extern int		clockrate;
 extern int		cgate16;
 extern int		cpl_override;
 extern int		CPUID;
-extern int		xt_cpu_multi;
 extern int		isa_cycles;
 extern int		cpu_effective;
 
@@ -363,7 +358,8 @@ extern int		cycdiff;
 extern uint32_t		pccache;
 extern uint8_t		*pccache2;
 
-extern float		isa_timing, bus_timing;
+extern float		isa_timing,
+			bus_timing;
 extern uint64_t		pmc[2];
 extern uint16_t		temp_seg_data[4];
 extern uint16_t		cs_msr;
@@ -406,10 +402,12 @@ extern x86seg	_oldds;
 #define ISA_CYCLES_SHIFT 6
 #define ISA_CYCLES(x)    ((x * isa_cycles) >> ISA_CYCLES_SHIFT)
 
-extern int	cpu_cycles_read, cpu_cycles_read_l, cpu_cycles_write, cpu_cycles_write_l;
-extern int	cpu_prefetch_cycles, cpu_prefetch_width, cpu_mem_prefetch_cycles, cpu_rom_prefetch_cycles;
-extern int	cpu_waitstates;
+extern int	cpu_cycles_read, cpu_cycles_read_l,
+		cpu_cycles_write, cpu_cycles_write_l;
+extern int	cpu_prefetch_cycles, cpu_prefetch_width,
+		cpu_mem_prefetch_cycles, cpu_rom_prefetch_cycles;
 extern int	cpu_cache_int_enabled, cpu_cache_ext_enabled;
+extern int	cpu_waitstates;
 extern int	cpu_pci_speed;
 
 extern int	timing_rr;

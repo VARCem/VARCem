@@ -13,14 +13,14 @@
  *		8MB of DRAM chips', because it works fine with bus-based
  *		memory expansion.
  *
- * Version:	@(#)m_at_neat.c	1.0.2	2018/10/05
+ * Version:	@(#)m_at_neat.c	1.0.3	2019/02/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
- 		or  without modification, are permitted  provided that the
+ * 		or  without modification, are permitted  provided that the
  *		following conditions are met:
  *
  *		1. Redistributions of  source  code must retain the entire
@@ -811,9 +811,9 @@ neat_init(void)
 
 
 void
-machine_at_neat_init(const machine_t *model, void *arg)
+m_at_neat_init(const machine_t *model, void *arg)
 {
-    machine_at_init(model, arg);
+    m_at_init(model, arg);
 
     neat_init();
 
@@ -822,9 +822,9 @@ machine_at_neat_init(const machine_t *model, void *arg)
 
 
 void
-machine_at_neat_ami_init(const machine_t *model, void *arg)
+m_at_neat_ami_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     neat_init();
 

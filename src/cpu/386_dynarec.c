@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.6	2019/02/10
+ * Version:	@(#)386_dynarec.c	1.0.7	2019/02/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -910,9 +910,9 @@ inrecomp=0;
                                 nmi = 0;
                         }
                 }
-                else if ((flags&I_FLAG) && pic_intpending)
+                else if (flags&I_FLAG)
                 {
-                        temp=picinterrupt();
+                        temp=pic_interrupt();
                         if (temp!=0xFF)
                         {
                                 CPU_BLOCK_END();

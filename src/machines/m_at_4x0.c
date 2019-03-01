@@ -8,13 +8,13 @@
  *
  *		Implementation of the Intel 430xx 440xx PCISet chips.
  *
- * Version:	@(#)m_at_4x0.c	1.0.3	2018/11/08
+ * Version:	@(#)m_at_4x0.c	1.0.4	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -431,9 +431,9 @@ static const device_t i440fx_device = {
 
 
 static void
-machine_at_premiere_common_init(const machine_t *model, void *arg)
+m_at_premiere_common_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -458,9 +458,9 @@ machine_at_premiere_common_init(const machine_t *model, void *arg)
 
 /* Revenge: Intel Premiere/PCI I/430LX/AMI/SMC FDC37C665 */
 void
-machine_at_batman_init(const machine_t *model, void *arg)
+m_at_batman_init(const machine_t *model, void *arg)
 {
-    machine_at_premiere_common_init(model, arg);
+    m_at_premiere_common_init(model, arg);
 
     device_add(&i430lx_device);
 }
@@ -468,9 +468,9 @@ machine_at_batman_init(const machine_t *model, void *arg)
 
 /* Plato:   Intel Premiere/PCI II/430NX/AMI/SMC FDC37C665 */
 void
-machine_at_plato_init(const machine_t *model, void *arg)
+m_at_plato_init(const machine_t *model, void *arg)
 {
-    machine_at_premiere_common_init(model, arg);
+    m_at_premiere_common_init(model, arg);
 
     device_add(&i430nx_device);
 }
@@ -478,9 +478,9 @@ machine_at_plato_init(const machine_t *model, void *arg)
 
 /* P54TP4XE: ASUS P/I-P55TP4XE/430FX/Award/SMC FDC37C665 */
 void
-machine_at_p54tp4xe_init(const machine_t *model, void *arg)
+m_at_p54tp4xe_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -503,11 +503,11 @@ machine_at_p54tp4xe_init(const machine_t *model, void *arg)
 
 /* Endeavor: Intel Advanced_EV/430FX/AMI/NS PC87306 */
 void
-machine_at_endeavor_init(const machine_t *model, void *arg)
+m_at_endeavor_init(const machine_t *model, void *arg)
 {
     static video_timings_t endeavor_timing = {VID_BUS,3,2,4,25,25,40};
 
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -536,9 +536,9 @@ machine_at_endeavor_init(const machine_t *model, void *arg)
 
 /* Zappa: Intel Advanced_ZP/430FX/AMI/NS PC87306 */
 void
-machine_at_zappa_init(const machine_t *model, void *arg)
+m_at_zappa_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -560,9 +560,9 @@ machine_at_zappa_init(const machine_t *model, void *arg)
 
 /* MB500N: PC Partner MB500N/430FX/Award/SMC FDC37C665 */
 void
-machine_at_mb500n_init(const machine_t *model, void *arg)
+m_at_mb500n_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -583,9 +583,9 @@ machine_at_mb500n_init(const machine_t *model, void *arg)
 
 /* President: President Award 430FX PCI/430FX/Award/Unknown SIO */
 void
-machine_at_president_init(const machine_t *model, void *arg)
+m_at_president_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -609,9 +609,9 @@ machine_at_president_init(const machine_t *model, void *arg)
 /* Thor: Intel Advanced_ATX/430FX/AMI/NS PC87306 */
 /* MRthor: Intel Advanced_ATX/430FX/MR.BIOS/NS PC87306 */
 void
-machine_at_thor_init(const machine_t *model, void *arg)
+m_at_thor_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -635,9 +635,9 @@ machine_at_thor_init(const machine_t *model, void *arg)
 
 /* PB640: Packard Bell PB640/430FX/AMI/NS PC87306 */
 void
-machine_at_pb640_init(const machine_t *model, void *arg)
+m_at_pb640_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -665,9 +665,9 @@ machine_at_pb640_init(const machine_t *model, void *arg)
 
 /* AP53: AOpen AP53/430HX/AMI/SMC FDC37C665/669 */
 void
-machine_at_ap53_init(const machine_t *model, void *arg)
+m_at_ap53_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -693,9 +693,9 @@ machine_at_ap53_init(const machine_t *model, void *arg)
 
 /* P55T2P4: ASUS P/I-P55T2P4/430HX/Award/Winbond W8387F*/
 void
-machine_at_p55t2p4_init(const machine_t *model, void *arg)
+m_at_p55t2p4_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -718,9 +718,9 @@ machine_at_p55t2p4_init(const machine_t *model, void *arg)
 
 /* P55T2S: ASUS P/I-P55T2S/430HX/AMI/NS PC87306 */
 void
-machine_at_p55t2s_init(const machine_t *model, void *arg)
+m_at_p55t2s_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -745,9 +745,9 @@ machine_at_p55t2s_init(const machine_t *model, void *arg)
 
 /* P55TVP4: ASUS P/I-P55TVP4/430VX/Award/Winbond W8387F*/
 void
-machine_at_p55tvp4_init(const machine_t *model, void *arg)
+m_at_p55tvp4_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -770,9 +770,9 @@ machine_at_p55tvp4_init(const machine_t *model, void *arg)
 
 /* 430VX: Award 430VX PCI/430VX/Award/UMC UM8669F*/
 void
-machine_at_i430vx_init(const machine_t *model, void *arg)
+m_at_i430vx_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -795,9 +795,9 @@ machine_at_i430vx_init(const machine_t *model, void *arg)
 
 /* P55VA: Epox P55-VA/430VX/Award/SMC FDC37C932FR*/
 void
-machine_at_p55va_init(const machine_t *model, void *arg)
+m_at_p55va_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -818,9 +818,9 @@ machine_at_p55va_init(const machine_t *model, void *arg)
 
 /* J656VXD: Jetway J656VXD/430VX/Award/SMC FDC37C669*/
 void
-machine_at_j656vxd_init(const machine_t *model, void *arg)
+m_at_j656vxd_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -841,9 +841,9 @@ machine_at_j656vxd_init(const machine_t *model, void *arg)
 #if defined(DEV_BRANCH) && defined(USE_I686)
 /* 440FX: Tyan Titan-Pro AT/440FX/Award BIOS/SMC FDC37C665 */
 void
-machine_at_i440fx_init(const machine_t *model, void *arg)
+m_at_i440fx_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -867,9 +867,9 @@ machine_at_i440fx_init(const machine_t *model, void *arg)
 
 /* S1668: Tyan Titan-Pro ATX/440FX/AMI/SMC FDC37C669 */
 void
-machine_at_s1668_init(const machine_t *model, void *arg)
+m_at_s1668_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_ami_pci_device);
 
@@ -952,9 +952,9 @@ static const device_t acerm3a_device = {
 
 /* ACERM3A: Acer M3A/430HX/Acer/SMC FDC37C932FR */
 void
-machine_at_acerm3a_init(const machine_t *model, void *arg)
+m_at_acerm3a_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 
@@ -979,9 +979,9 @@ machine_at_acerm3a_init(const machine_t *model, void *arg)
 
 /* ACERV35N: Acer V35N/430HX/Acer/SMC FDC37C932FR */
 void
-machine_at_acerv35n_init(const machine_t *model, void *arg)
+m_at_acerv35n_init(const machine_t *model, void *arg)
 {
-    machine_at_common_init(model, arg);
+    m_at_common_init(model, arg);
 
     device_add(&keyboard_ps2_pci_device);
 

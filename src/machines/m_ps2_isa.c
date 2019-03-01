@@ -8,13 +8,13 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.14	2018/11/11
+ * Version:	@(#)m_ps2_isa.c	1.0.15	2019/02/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -182,7 +182,7 @@ ps2_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-ps2board_init(void)
+ps2_common_init(void)
 {
     io_sethandler(0x0091, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
     io_sethandler(0x0094, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
@@ -205,7 +205,7 @@ ps2board_init(void)
 
 
 void
-machine_ps2_m30_286_init(const machine_t *model, void *arg)
+m_ps2_m30_286_init(const machine_t *model, void *arg)
 {
     machine_common_init(model, arg);
 
@@ -215,7 +215,7 @@ machine_ps2_m30_286_init(const machine_t *model, void *arg)
     dma16_init();
     pic2_init();
 
-    ps2board_init();
+    ps2_common_init();
 
     device_add(&keyboard_ps2_device);
     device_add(&ps_nvr_device);
