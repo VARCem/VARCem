@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.15	2019/02/24
+ * Version:	@(#)hdc_st506_xt.c	1.0.16	2019/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -75,7 +75,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-//#define dbglog hdc_log
+#define dbglog hdc_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -469,7 +469,6 @@ st506_callback(void *priv)
 				DEBUG("ST506: FORMAT_DRIVE%s(%i) interleave=%i\n",
 					(dev->command[0] == CMD_FORMAT_DRIVE_ST11) ? "_ST11" : "",
 					dev->drive_sel, dev->command[4]);
-DEBUG("ST506: start_cyl = %i\n", dev->cylinder);
 				hdd_active(drive->hdd_num, 1);
 				dev->callback = ST506_TIME;
 				dev->state = STATE_SEND_DATA;
@@ -582,7 +581,6 @@ DEBUG("ST506: start_cyl = %i\n", dev->cylinder);
 					dev->head, dev->sector, dev->count);
 
 				if (! get_sector(dev, drive, &addr)) {
-INFO("ST506: get_sector error on %d/%d/%d\n", dev->cylinder,dev->head,dev->sector);
 					st506_error(dev, dev->error);
 					st506_complete(dev);
 					return;
@@ -622,9 +620,7 @@ INFO("ST506: get_sector error on %d/%d/%d\n", dev->cylinder,dev->head,dev->secto
 				break;
 
 			case STATE_SENT_DATA:
-INFO("ST506: block read, count= %d\n", dev->count);
 				if (--dev->count == 0) {
-INFO("ST506: block read DONE, status %d\n", dev->error);
 					hdd_active(drive->hdd_num, 0);
 					st506_complete(dev);
 					break;
@@ -633,7 +629,6 @@ INFO("ST506: block read DONE, status %d\n", dev->error);
 				next_sector(dev, drive);
 
 				if (! get_sector(dev, drive, &addr)) {
-INFO("ST506: get_sector2 error on %d/%d/%d\n", dev->cylinder,dev->head,dev->sector);
 					hdd_active(drive->hdd_num, 0);
 					st506_error(dev, dev->error);
 					st506_complete(dev);
@@ -669,7 +664,6 @@ INFO("ST506: get_sector2 error on %d/%d/%d\n", dev->cylinder,dev->head,dev->sect
 					dev->head, dev->sector, dev->count);
 
 				if (! get_sector(dev, drive, &addr)) {
-INFO("ST506: get_sector error on %d/%d/%d\n", dev->cylinder,dev->head,dev->sector);
 					st506_error(dev, dev->error);
 					st506_complete(dev);
 					return;
@@ -709,7 +703,6 @@ INFO("ST506: get_sector error on %d/%d/%d\n", dev->cylinder,dev->head,dev->secto
 
 			case STATE_RECEIVED_DATA:
 				if (! get_sector(dev, drive, &addr)) {
-INFO("ST506: get_sector2 error on %d/%d/%d\n", dev->cylinder,dev->head,dev->sector);
 					hdd_active(drive->hdd_num, 0);
 					st506_error(dev, dev->error);
 					st506_complete(dev);
@@ -720,9 +713,7 @@ INFO("ST506: get_sector2 error on %d/%d/%d\n", dev->cylinder,dev->head,dev->sect
 				hdd_image_write(drive->hdd_num, addr, 1,
 						(uint8_t *)dev->buff);
 
-INFO("ST506: block written, count= %d\n", dev->count);
 				if (--dev->count == 0) {
-INFO("ST506: block write DONE, status %d\n", dev->error);
 					hdd_active(drive->hdd_num, 0);
 					st506_complete(dev);
 					break;
@@ -900,7 +891,6 @@ INFO("ST506: block write DONE, status %d\n", dev->error);
 	case CMD_GET_GEOMETRY_ST11:
 		if (dev->type == 11 || dev->type == 12) switch (dev->state) {
 			/*
-			 * 42? bytes
 			 *  [0] = 0xda;			// magic
 			 *  [1] = 0xbe;			// magic
 			 *  [2] = cyl_hi
@@ -916,6 +906,15 @@ INFO("ST506: block write DONE, status %d\n", dev->error);
 			 *  [12] = 'SEAGATESTxxxxxx'	// magic
 			 *  [29] .. = 00
 			 *  [41] = 02			// ??
+			 *
+			 * This is the data block written to cylinder 0
+			 * somewhere by the ST-11 BIOS, and which we
+			 * read back here, and then send to the caller.
+			 *
+			 * We do not yet know where this block is, so
+			 * for now, we just fake it. Of course, since
+			 * we do not with real drives, we could simply
+			 * write it anywhere on that cylinder, but OK..
 			 */
 			case STATE_START_COMMAND:
 				/* Send geometry data. */
@@ -960,10 +959,25 @@ INFO("ST506: block write DONE, status %d\n", dev->error);
 				break;
 
 			case STATE_RECEIVED_DATA:
-INFO("ST506: GEO data for drive %i:\n", dev->drive_sel);
-INFO("ST506: [ %02x %02x %02x %02x %02x %02x %02x %02x ]\n",
-dev->buff[0], dev->buff[1], dev->buff[2], dev->buff[3],
-dev->buff[4], dev->buff[5], dev->buff[6], dev->buff[7]);
+				/*
+				 * See above as well.
+				 *
+				 * This is the data block written to cylinder 0
+				 * somewhere by the ST-11 BIOS, and which we
+				 * read back here, and then send to the caller.
+				 *
+				 * We do not yet know where this block is, so
+				 * for now, we just fake it. Of course, since
+				 * we do not with real drives, we could simply
+				 * write it anywhere on that cylinder, but OK..
+				 */
+				INFO("ST506: GEO data for drive %i:\n",
+							dev->drive_sel);
+				INFO("ST506: [ %02x %02x %02x %02x %02x %02x %02x %02x ]\n",
+					dev->buff[0], dev->buff[1],
+					dev->buff[2], dev->buff[3],
+					dev->buff[4], dev->buff[5],
+					dev->buff[6], dev->buff[7]);
 				st506_complete(dev);
 				break;
 		} else if (dev->type == 1) {
