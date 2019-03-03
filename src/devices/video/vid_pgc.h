@@ -8,7 +8,7 @@
  *
  *		Definitions for the PGC driver.
  *
- * Version:	@(#)vid_pgc.h	1.0.1	2019/03/01
+ * Version:	@(#)vid_pgc.h	1.0.2	2019/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -78,17 +78,18 @@ typedef struct pgc {
 
     pgc_cl_t	*clist,
 		*clcur;
-    const pgc_cmd_t *commands;
+    const pgc_cmd_t *master,
+		*commands;
 
-    uint8_t	mapram[2048];	/* Host <--> PGC communication buffer */
+    uint8_t	mapram[2048];		/* host <> PGC communication buffer */
     uint8_t	*cga_vram;
     uint8_t	*vram;
     char	asc_command[7];
     uint8_t	hex_command;
     uint32_t	palette[256];
     uint32_t	userpal[256];
-    uint32_t	maxw, maxh;	/* Maximum framebuffer size */
-    uint32_t	visw, vish;	/* Maximum screen size */
+    uint32_t	maxw, maxh;		/* maximum framebuffer size */
+    uint32_t	visw, vish;		/* maximum screen size */
     uint32_t	screenw, screenh;
     int16_t	pan_x, pan_y;
     uint16_t	win_x1, win_x2, win_y1, win_y2;
@@ -97,11 +98,11 @@ typedef struct pgc {
     int16_t	line_pattern;
     uint8_t	draw_mode;
     uint8_t	fill_mode;
-    uint8_t	colour;
-    uint8_t	tjust_h;	/* hor alignment 1=left 2=center 3=right*/
-    uint8_t	tjust_v;	/* vert alignment 1=bottom 2=center 3=top*/
+    uint8_t	color;
+    uint8_t	tjust_h;		/* hor alignment 1=left 2=ctr 3=right*/
+    uint8_t	tjust_v;		/* vert alignment 1=bottom 2=ctr 3=top*/
 
-    int32_t	x, y, z;	/* drawing position */
+    int32_t	x, y, z;		/* drawing position */
 
     thread_t	*pgc_thread;
     event_t	*pgc_wake_thread;
@@ -116,7 +117,8 @@ typedef struct pgc {
     int		result_count;
  
     int		fontbase;
-    int		linepos, displine;
+    int		linepos,
+		displine;
     int		vc;
     int		cgadispon;
     int		con, coff, cursoron, cgablink;
@@ -143,14 +145,14 @@ extern void	pgc_poll(void *priv);
 extern void	pgc_reset(pgc_t *);
 extern void	pgc_wake(pgc_t *);
 extern void	pgc_sleep(pgc_t *);
-extern void	pgc_close(void *priv);
+extern void	pgc_setdisplay(pgc_t *, int cga);
 extern void	pgc_speed_changed(void *priv);
+extern void	pgc_close(void *priv);
 extern void	pgc_init(pgc_t *,
 			 int maxw, int maxh, int visw, int vish,
 			 int (*inpbyte)(pgc_t *, uint8_t *));
 
 /* Misc support functions. */
-extern uint8_t	*pgc_vram_addr(pgc_t *, int16_t x, int16_t y);
 extern void	pgc_sto_raster(pgc_t *, int16_t *x, int16_t *y);
 extern void	pgc_ito_raster(pgc_t *, int32_t *x, int32_t *y);
 extern void	pgc_dto_raster(pgc_t *, double *x, double *y);
@@ -162,20 +164,22 @@ extern int	pgc_error_string(pgc_t *, const char *val);
 extern int	pgc_error(pgc_t *, int err);
 
 /* Graphics functions. */
-extern void	pgc_plot(pgc_t *, uint16_t x, uint16_t y);
+extern uint8_t	*pgc_vram_addr(pgc_t *, int16_t x, int16_t y);
 extern void	pgc_write_pixel(pgc_t *, uint16_t x, uint16_t y, uint8_t ink);
 extern uint8_t	pgc_read_pixel(pgc_t *, uint16_t x, uint16_t y);
-extern uint16_t	pgc_draw_line(pgc_t *, int32_t x1, int32_t y1,
-			      int32_t x2, int32_t y2, uint16_t linemask);
+extern void	pgc_plot(pgc_t *, uint16_t x, uint16_t y);
 extern uint16_t	pgc_draw_line_r(pgc_t *, int32_t x1, int32_t y1,
 				int32_t x2, int32_t y2, uint16_t linemask);
+extern void	pgc_fill_line_r(pgc_t *, int32_t x0, int32_t x1, int32_t y);
+extern uint16_t	pgc_draw_line(pgc_t *, int32_t x1, int32_t y1,
+			      int32_t x2, int32_t y2, uint16_t linemask);
 extern void	pgc_draw_ellipse(pgc_t *, int32_t x, int32_t y);
 extern void	pgc_fill_polygon(pgc_t *,
 				 unsigned corners, int32_t *x, int32_t *y);
-extern void	pgc_fill_line_r(pgc_t *, int32_t x0, int32_t x1, int32_t y);
 
 /* Command and parameter handling functions. */
-extern int	pgc_commandlist_append(pgc_cl_t *, uint8_t v);
+extern int	pgc_clist_byte(pgc_t *, uint8_t *val);
+extern int	pgc_cl_append(pgc_cl_t *, uint8_t v);
 extern int	pgc_parse_bytes(pgc_t *, pgc_cl_t *, int p);
 extern int	pgc_parse_words(pgc_t *, pgc_cl_t *, int p);
 extern int	pgc_parse_coords(pgc_t *, pgc_cl_t *, int p);
@@ -186,6 +190,7 @@ extern int	pgc_result_byte(pgc_t *, uint8_t val);
 extern int	pgc_result_word(pgc_t *, int16_t val);
 extern int	pgc_result_coord(pgc_t *, int32_t val);
 
+/* Special overload functions for non-IBM implementations. */
 extern void	pgc_hndl_lut8(pgc_t *);
 extern void	pgc_hndl_lut8rd(pgc_t *);
 

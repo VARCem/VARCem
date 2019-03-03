@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.24	2019/02/11
+ * Version:	@(#)video.c	1.0.25	2019/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -912,31 +912,21 @@ video_load_font(const wchar_t *s, int format)
     switch (format) {
 	case 0:		/* MDA */
 		for (c = 0; c < 256; c++)
-			for (d = 0; d < 8; d++)
-				fontdatm[c][d] = fgetc(fp);
+                       	(void)fread(&fontdatm[c][0], 1, 8, fp);
 		for (c = 0; c < 256; c++)
-			for (d = 0; d < 8; d++)
-				fontdatm[c][d + 8] = fgetc(fp);
-#if 0
-		(void)fseek(f, 4096+2048, SEEK_SET);
-		for (c = 0; c < 256; c++)
-			for (d = 0; d < 8; d++)
-				fontdat[c][d] = fgetc(fp);
-#endif
+                       	(void)fread(&fontdatm[c][8], 1, 8, fp);
 		break;
 
 	case 1:		/* PC200 */
 		for (c = 0; c < 256; c++)
-			for (d = 0; d < 8; d++)
-				fontdatm[c][d] = fgetc(fp);
+                       	(void)fread(&fontdatm[c][0], 1, 8, fp);
 		for (c = 0; c < 256; c++)
-		       	for (d = 0; d < 8; d++)
-				fontdatm[c][d + 8] = fgetc(fp);
+                       	(void)fread(&fontdatm[c][8], 1, 8, fp);
 		(void)fseek(fp, 4096, SEEK_SET);
 		for (c = 0; c < 256; c++) {
+                       	(void)fread(&fontdat[c][0], 1, 8, fp);
 			for (d = 0; d < 8; d++)
-				fontdat[c][d] = fgetc(fp);
-			for (d = 0; d < 8; d++) (void)fgetc(fp);
+				(void)fgetc(fp);
 		}
 		break;
 
@@ -947,20 +937,17 @@ video_load_font(const wchar_t *s, int format)
 			(void)fseek(fp, 2048, SEEK_SET);
 		}
 		for (c = 0; c < 256; c++)
-		       	for (d = 0; d < 8; d++)
-				fontdat[c][d] = fgetc(fp);
+                       	(void)fread(&fontdat[c][0], 1, 8, fp);
 		break;
 
 	case 3:		/* Wyse 700 */
 		for (c = 0; c < 512; c++)
-			for (d = 0; d < 32; d++)
-				fontdatw[c][d] = fgetc(fp);
+                       	(void)fread(&fontdatw[c][0], 1, 32, fp);
 		break;
 
 	case 4:		/* MDSI Genius */
 		for (c = 0; c < 256; c++)
-			for (d = 0; d < 16; d++)
-				fontdat8x12[c][d] = fgetc(fp);
+                       	(void)fread(&fontdat8x12[c][0], 1, 16, fp);
 		break;
 
 	case 5: /* Toshiba 3100e */
@@ -1006,6 +993,8 @@ video_load_font(const wchar_t *s, int format)
 			(void)fread(&fontdatm[c][0], 1, 16, fp);
 		break;
     }
+
+    DEBUG("VIDEO: font #%i loaded\n", format);
 
     (void)fclose(fp);
 }

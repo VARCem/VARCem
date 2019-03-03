@@ -38,7 +38,7 @@
  *		This is implemented by holding a FIFO of unlimited depth in
  *		the IM1024 to receive the data.
  *
- * Version:	@(#)vid_im1024.c	1.0.1	2019/03/01
+ * Version:	@(#)vid_im1024.c	1.0.2	2019/03/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -100,7 +100,7 @@ static void
 fifo_write(im1024_t *dev, uint8_t val)
 {
 #if 0
-    DEBUG(("fifo_write: %02x [rd=%04x wr=%04x]\n",
+    DEBUG(("IM1024: fifo_write: %02x [rd=%04x wr=%04x]\n",
 	val, dev->fifo_rdptr, dev->fifo_wrptr));
 #endif
 
@@ -108,7 +108,8 @@ fifo_write(im1024_t *dev, uint8_t val)
 	/* FIFO is full. Double its size. */
 	uint8_t *buf;
 
-	DEBUG("fifo_resize: %d to %d\n", dev->fifo_len, 2 * dev->fifo_len);
+	DEBUG("IM1024: fifo_resize: %i to %i\n",
+		dev->fifo_len, 2 * dev->fifo_len);
 
 	buf  = realloc(dev->fifo, 2 * dev->fifo_len);
 	if (buf == NULL) return;
@@ -141,7 +142,7 @@ fifo_read(im1024_t *dev)
     if (dev->fifo_rdptr >= dev->fifo_len)
 	dev->fifo_rdptr = 0;
 
-    DBGLOG(1, "fifo_read: %02x\n", ret);
+    DBGLOG(1, "IM1024: fifo_read: %02x\n", ret);
 
     return(ret);
 }
@@ -162,17 +163,17 @@ input_byte(pgc_t *pgc, uint8_t *result)
 	pgc_sleep(pgc);	
     }
 
-    if (pgc->mapram[0x3ff]) {	/* Reset triggered */
+    if (pgc->mapram[0x3ff]) {
+	/* Reset triggered. */
 	pgc_reset(pgc);
 	return(0);
     }
 
     if (dev->fifo_wrptr == dev->fifo_rdptr) {
 	*result = pgc->mapram[pgc->mapram[0x301]];
-	++pgc->mapram[0x301];
-    } else {
+	pgc->mapram[0x301]++;
+    } else
 	 *result = fifo_read(dev);
-    }
 
     return(1);
 }
@@ -225,7 +226,7 @@ im1024_write(uint32_t addr, uint8_t val, void *priv)
     if (addr >= 0xC6000 && addr < 0xC6100 && dev->pgc.mapram[0x330] == 1) {
 	fifo_write(dev, val);
 
-	DBGLOG(1, "im1024_write(%02x)\n", val);
+	DBGLOG(1, "IM1024: write(%02x)\n", val);
 
 	if (dev->pgc.waiting_input_fifo) {
 		dev->pgc.waiting_input_fifo = 0;
@@ -254,7 +255,7 @@ hndl_imgsiz(pgc_t *pgc)
     if (! pgc_param_byte(pgc, &a)) return;
     if (! pgc_param_byte(pgc, &b)) return;
 
-    DEBUG("IMGSIZ %d,%d,%d,%d\n", w, h, a, b);
+    DEBUG("IM1024: IMGSIZ %i,%i,%i,%i\n", w, h, a, b);
 }
 
 
@@ -270,7 +271,30 @@ hndl_iprec(pgc_t *pgc)
 
     if (! pgc_param_byte(pgc, &param)) return;
 
-    DEBUG("IPREC %d\n", param);
+    DEBUG("IM1024: IPREC %i\n", param);
+}
+
+
+/*
+ * Set drawing mode. 
+ * 
+ * 0 => Draw
+ * 1 => Invert
+ * 2 => XOR (IM-1024)
+ * 3 => AND (IM-1024)
+ */
+static void
+hndl_linfun(pgc_t *pgc)
+{
+    uint8_t param;
+
+    if (! pgc_param_byte(pgc, &param)) return;
+
+    if (param < 4) {
+	pgc->draw_mode = param;
+	DEBUG("IM1024: LINFUN(%i)\n", param);
+    } else
+	pgc_error(pgc, PGC_ERROR_RANGE);
 }
 
 
@@ -284,7 +308,7 @@ hndl_pan(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x)) return;
     if (! pgc_param_word(pgc, &y)) return;
 
-    DEBUG("PAN %d,%d\n", x, y);
+    DEBUG("IM1024: PAN %i,%i\n", x, y);
 
     pgc->pan_x = x;
     pgc->pan_y = y;
@@ -302,11 +326,11 @@ hndl_pline(pgc_t *pgc)
 
     if (! pgc_param_byte(pgc, &count)) return;
 
-    DEBUG("PLINE<IM1024> (%d)  ", count);
+    DEBUG("IM1024: PLINE (%i)  ", count);
     for (n = 0; n < count; n++) {
 	if (! pgc_param_word(pgc, &x[n])) return;
 	if (! pgc_param_word(pgc, &y[n])) return;
-	DEBUG("    (%d,%d)\n", x[n], y[n]);
+	DEBUG("    (%i,%i)\n", x[n], y[n]);
     }
 
     for (n = 1; n < count; n++) {
@@ -374,7 +398,7 @@ hndl_blkmov(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x2)) return;
     if (! pgc_param_word(pgc, &y2)) return;
 
-    DEBUG("BLKMOV %d,%d,%d,%d,%d,%d\n", x0, y0, x1, y1, x2, y2);
+    DEBUG("IM1024: BLKMOV %i,%i,%i,%i,%i,%i\n", x0, y0, x1, y1, x2, y2);
 
     /* Disable clipping. */
     PUSHCLIP
@@ -404,7 +428,8 @@ hndl_ellipse(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x)) return;
     if (! pgc_param_word(pgc, &y)) return;
 
-    DEBUG("ELLIPSE<IM1024> %d,%d @ %d,%d\n", x, y, pgc->x >> 16, pgc->y >> 16);
+    DEBUG("IM1024: ELLIPSE %i,%i @ %i,%i\n",
+		x, y, pgc->x >> 16, pgc->y >> 16);
 
     pgc_draw_ellipse(pgc, x << 16, y << 16);
 }
@@ -423,7 +448,7 @@ hndl_move(pgc_t *pgc)
     pgc->x = x << 16;
     pgc->y = y << 16;
 
-    DEBUG("MOVE<IM1024> %d,%d\n", x, y);
+    DEBUG("IM1024: MOVE %i,%i\n", x, y);
 }
 
 
@@ -437,7 +462,7 @@ hndl_draw(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x)) return;
     if (! pgc_param_word(pgc, &y)) return;
 
-    DEBUG("DRAW<IM1024> %d,%d to %d,%d\n", pgc->x >> 16, pgc->y >> 16, x, y);
+    DEBUG("IM1024: DRAW %i,%i to %i,%i\n", pgc->x >> 16, pgc->y >> 16, x, y);
 
     pgc_draw_line(pgc, pgc->x, pgc->y, x << 16, y << 16, pgc->line_pattern);
     pgc->x = x << 16;
@@ -461,7 +486,7 @@ hndl_poly(pgc_t *pgc)
     y = (int32_t *)mem_alloc(as * sizeof(int32_t));
 
     if (!x || !y) {
-	DEBUG("hndl_poly: malloc failed\n");
+	DEBUG("IM1024: POLY: out of memory\n");
 	return;
     }
 
@@ -472,7 +497,7 @@ hndl_poly(pgc_t *pgc)
 		nx = (int32_t *)realloc(x, 2 * as * sizeof(int32_t));	
 		ny = (int32_t *)realloc(y, 2 * as * sizeof(int32_t));	
 		if (!x || !y) {
-			DEBUG("hndl_poly: realloc failed\n");
+			DEBUG("IM1024: poly: realloc failed\n");
 			break;
 		}
 		x = nx;
@@ -500,7 +525,7 @@ hndl_poly(pgc_t *pgc)
 	parsing = 0;
 	if (pgc->clcur && (pgc->clcur->rdptr+1) < pgc->clcur->wrptr &&
 	    pgc->clcur->list[pgc->clcur->rdptr] == 0x30) {
-		DEBUG("hndl_poly: POLY continues!\n");
+		DEBUG("IM1024: POLY continues!\n");
 		parsing = 1;
 
 		/* Swallow the POLY. */
@@ -508,7 +533,7 @@ hndl_poly(pgc_t *pgc)
 	}
     };
 
-    DEBUG("POLY<IM1024> (%i) fill_mode=%d\n", realcount, pgc->fill_mode);
+    DEBUG("IM1024: POLY (%i) fill_mode=%i\n", realcount, pgc->fill_mode);
     for (n = 0; n < realcount; n++) {
 	DEBUG("     (%i,%i)\n", x[n] >> 16, y[n] >> 16);
     }
@@ -532,17 +557,17 @@ parse_poly(pgc_t *pgc, pgc_cl_t *cl, int c)
 {
     uint8_t count;
 
-    DEBUG("parse_poly<IM1024>\n");
+    DEBUG("IM1024: parse_poly\n");
 
     if (! pgc_param_byte(pgc, &count)) return 0;
 
-    DEBUG("parse_poly<IM1024>: count=%02x\n", count);
-    if (! pgc_commandlist_append(cl, count)) {
+    DEBUG("IM1024: parse_poly: count=%02x\n", count);
+    if (! pgc_cl_append(cl, count)) {
 	pgc_error(pgc, PGC_ERROR_OVERFLOW);
 	return 0;	
     }
 
-    DEBUG("parse_poly<IM1024>: parse %d words\n", 2 * count);
+    DEBUG("IM1024: parse_poly: parse %i words\n", 2 * count);
 
     return pgc_parse_words(pgc, cl, count * 2);
 }
@@ -567,13 +592,13 @@ hndl_rect(pgc_t *pgc)
 
     if (x0 > x1) { p = x0; x0 = x1; x1 = p; }
     if (y0 > y1) { q = y0; y0 = y1; y1 = q; }
-    DEBUG("RECT<IM1024> (%d,%d) -> (%d,%d)\n", x0, y0, x1, y1);
+    DEBUG("IM1024: RECT (%i,%i) -> (%i,%i)\n", x0, y0, x1, y1);
 
     if (pgc->fill_mode) {
 	for (p = y0; p <= y1; p++)
 		pgc_fill_line_r(pgc, x0, x1, p);
     } else {
-	/* Outline: 4 lines */
+	/* Outline: 4 lines. */
 	p = pgc->line_pattern;
 	p = pgc_draw_line_r(pgc, x0, y0, x1, y0, p);		
 	p = pgc_draw_line_r(pgc, x1, y0, x1, y1, p);		
@@ -597,23 +622,12 @@ hndl_tdefin(pgc_t *pgc)
     if (! pgc_param_byte(pgc, &rows)) return;
     if (! pgc_param_byte(pgc, &cols)) return;
 
-    DEBUG("TDEFIN<IM1024> (%d,%d,%d) 0x%02x 0x%02x\n",
+    DEBUG("IM1024: TDEFIN (%i,%i,%i) 0x%02x 0x%02x\n",
 	ch, rows, cols, pgc->mapram[0x300], pgc->mapram[0x301]);
 
     len = ((cols + 7) / 8) * rows;
     for (n = 0; n < len; n++) {
-//	char buf[10];
-
 	if (! pgc_param_byte(pgc, &bt)) return;
-
-//	buf[0] = 0;	
-//	for (mask = 0x80; mask != 0; mask >>= 1) {
-//		if (bt & mask) strcat(buf, "#");	
-//		else	       strcat(buf, "-");	
-//		++x;
-//		if (x == cols) { strcat(buf, "\n"); x = 0; }
-//	}	
-//	DEBUG(buf);
 
 	if (n < sizeof(dev->font[ch]))
 		dev->font[ch][n] = bt;
@@ -648,12 +662,13 @@ hndl_twrite(pgc_t *pgc)
     }
 
     pgc_sto_raster(pgc, &x0, &y0);
-    DEBUG("TWRITE<IM1024> (%d,%-*.*s) x0=%d y0=%d\n",
+
+    DEBUG("IM1024: TWRITE (%i,%-*.*s) x0=%i y0=%i\n",
 		count, count, count, rbuf, x0, y0);
 
     for (n = 0; n < count; n++) {
 	wb = (dev->fontx[buf[n]] + 7) / 8;
-	DEBUG("ch=0x%02x w=%d h=%d wb=%d\n", 
+	DEBUG("IM1024: ch=0x%02x w=%d h=%i wb=%i\n", 
 		buf[n], dev->fontx[buf[n]], dev->fonty[buf[n]], wb);
 
 	for (y = 0; y < dev->fonty[buf[n]]; y++) {
@@ -671,7 +686,6 @@ hndl_twrite(pgc_t *pgc)
 		}
 		rbuf[x++] = '\n';
 		rbuf[x++] = 0;
-//		DEBUG(rbuf);
 	}
 
 	x0 += dev->fontx[buf[n]];
@@ -692,19 +706,20 @@ hndl_imagew(pgc_t *pgc)
 
     /* IMAGEW already uses raster coordinates so there is no need to
      * convert it */
-    DEBUG("IMAGEW<IM1024> (row=%d,col1=%d,col2=%d)\n", row1, col1, col2);
+    DEBUG("IM1024: IMAGEW (row=%i,col1=%i,col2=%i)\n", row1, col1, col2);
 
     vp_x1 = pgc->vp_x1;
     vp_y1 = pgc->vp_y1;
     vp_x2 = pgc->vp_x2;
     vp_y2 = pgc->vp_y2;
-    /* Disable clipping */
+
+    /* Disable clipping. */
     pgc->vp_x1 = 0;
     pgc->vp_y1 = 0;
     pgc->vp_x2 = pgc->maxw - 1;
     pgc->vp_y2 = pgc->maxh - 1;
 
-    /* In ASCII mode, what is written is a stream of bytes */
+    /* In ASCII mode, what is written is a stream of bytes. */
     if (pgc->ascii_mode) {
 	while (col1 <= col2) {
 		if (! pgc_param_byte(pgc, &v1))
@@ -717,12 +732,12 @@ hndl_imagew(pgc_t *pgc)
 	return;
     }
 
-    /* In hex mode, it's RLE compressed */
+    /* In hex mode, it's RLE compressed. */
     while (col1 <= col2) {
 	if (! pgc_param_byte(pgc, &v1)) return;
 
 	if (v1 & 0x80) {
-		/* Literal run */
+		/* Literal run. */
 		v1 -= 0x7f;
 		while (col1 <= col2 && v1 != 0)	{	
 			if (! pgc_param_byte(pgc, &v2)) return;
@@ -731,7 +746,7 @@ hndl_imagew(pgc_t *pgc)
 			v1--;
 		}
 	} else {
-	 	/* Repeated run */
+	 	/* Repeated run. */
 		if (! pgc_param_byte(pgc, &v2)) return;
 
 		v1++;
@@ -743,7 +758,7 @@ hndl_imagew(pgc_t *pgc)
 	}	
     }
 
-    /* Restore clipping */
+    /* Restore clipping. */
     pgc->vp_x1 = vp_x1;
     pgc->vp_y1 = vp_y1;
     pgc->vp_x2 = vp_x2;
@@ -763,7 +778,8 @@ hndl_dot(pgc_t *pgc)
 
     pgc_sto_raster(pgc, &x, &y);	
 
-    DEBUG("Dot @ %d,%d ink=%d mode=%d\n", x, y, pgc->colour, pgc->draw_mode);
+    DEBUG("IM1024: DOT @ %i,%i ink=%i mode=%i\n",
+		x, y, pgc->color, pgc->draw_mode);
 
     pgc_plot(pgc, x, y);
 }
@@ -785,7 +801,7 @@ hndl_imagex(pgc_t *pgc)
     if (! pgc_param_word(pgc, &y1)) return;
 
     /* IMAGEX already uses raster coordinates so don't convert */
-    DEBUG("IMAGEX<IM1024> (%d,%d,%d,%d)\n", x0,y0,x1,y1);
+    DEBUG("IM1024: IMAGEX (%i,%i,%i,%i)\n", x0,y0,x1,y1);
 
     for (p = y0; p <= y1; p++) {
 	for (q = x0; q <= x1; q++) {
@@ -820,6 +836,8 @@ static const pgc_cmd_t im1024_commands[] = {
     { "IMGSIZ", 0x4e,	hndl_imgsiz,	NULL,			0	},
     { "LUT8",   0xe6,	pgc_hndl_lut8,	NULL,			0	},
     { "L8",     0xe6,	pgc_hndl_lut8,	NULL,			0	},
+    { "LINFUN", 0xeb,	hndl_linfun,	pgc_parse_bytes,	1	},
+    { "LF",     0xeb,	hndl_linfun,	pgc_parse_bytes,	1	},
     { "LUT8RD", 0x53,	pgc_hndl_lut8rd,NULL,			0	},
     { "L8RD",   0x53,	pgc_hndl_lut8rd,NULL,			0	},
     { "PAN",    0xb7,	hndl_pan,	NULL,			0	},
@@ -886,7 +904,7 @@ static void
 speed_changed(void *priv)
 {
     im1024_t *dev = (im1024_t *)priv;
-	
+
     pgc_speed_changed(&dev->pgc);
 }
 
