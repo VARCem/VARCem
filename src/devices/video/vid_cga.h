@@ -8,13 +8,13 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.5	2018/10/05
+ * Version:	@(#)vid_cga.h	1.0.6	2019/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -38,6 +38,9 @@
  */
 #ifndef VIDEO_CGA_H
 # define VIDEO_CGA_H
+
+
+#define CGA_FONT_ROM_PATH	L"video/ibm/cga/cga.rom"
 
 
 typedef struct {

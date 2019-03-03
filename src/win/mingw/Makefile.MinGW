@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.76	2019/02/13
+# Version:	@(#)Makefile.mingw	1.0.77	2019/03/01
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -717,6 +717,7 @@ VIDOBJ		:= video.o \
 		    vid_hercules.o vid_herculesplus.o vid_incolor.o \
 		    vid_colorplus.o \
 		    vid_genius.o \
+		    vid_pgc.o vid_im1024.o \
 		    vid_sigma.o \
 		    vid_wy700.o \
 		    vid_ega.o vid_ega_render.o \

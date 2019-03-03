@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.30	2019/02/10
+ * Version:	@(#)video_dev.c	1.0.31	2019/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,6 +102,10 @@ static const struct {
     { "hercules_plus",		&herculesplus_device		},
     { "incolor",		&incolor_device			},
     { "genius",			&genius_device			},
+#if 0
+    { "pgc",			&pgc_device			},
+#endif
+    { "im1024",			&im1024_device			},
     { "oti037c",		&oti037c_device			},
     { "oti067",			&oti067_device			},
     { "oti077",			&oti077_device			},

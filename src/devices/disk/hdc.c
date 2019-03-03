@@ -8,12 +8,12 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.16	2018/10/20
+ * Version:	@(#)hdc.c	1.0.17	2019/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,6 +63,10 @@ static const struct {
 
     { "st506_xt",		&st506_xt_xebec_device		},
     { "st506_dtc5150x",		&st506_xt_dtc5150x_device	},
+    { "st506_st11_m",		&st506_xt_st11_m_device		},
+    { "st506_st11_r",		&st506_xt_st11_r_device		},
+    { "st506_wd1002a_wx1",	&st506_xt_wd1002a_wx1_device	},
+    { "st506_wd1002a_27x",	&st506_xt_wd1002a_27x_device	},
 
     { "xta_wdxt150",		&xta_wdxt150_device		},
 
@@ -97,7 +101,7 @@ hdc_log(int level, const char *fmt, ...)
 # ifdef ENABLE_HDC_LOG
    va_list ap;
 
-   if (hdc_do_log >= level) {
+   if ((hdc_do_log + LOG_INFO) >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);

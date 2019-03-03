@@ -427,7 +427,6 @@ dma_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 			dma_m |=  (1 << (val & 3));
 		  else
 			dma_m &= ~(1 << (val & 3));
-if ((val & 3) == 3) INFO("DMA: mask=%02x\n", dma_m);
 		return;
 
 	case 0xb: /*Mode*/

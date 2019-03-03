@@ -8,12 +8,12 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.14	2018/09/28
+ * Version:	@(#)hdc.h	1.0.15	2019/02/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -57,6 +57,10 @@ extern "C" {
 #ifdef EMU_DEVICE_H
 extern const device_t	st506_xt_xebec_device;		/* st506_xt_xebec */
 extern const device_t	st506_xt_dtc5150x_device;	/* st506_xt_dtc */
+extern const device_t	st506_xt_st11_m_device;		/* st506_xt_st11_m */
+extern const device_t	st506_xt_st11_r_device;		/* st506_xt_st11_r */
+extern const device_t	st506_xt_wd1002a_wx1_device;	/* st506_xt_wd1002a_wx1 */
+extern const device_t	st506_xt_wd1002a_27x_device;	/* st506_xt_wd1002a_27x */
 
 extern const device_t	st506_at_wd1003_device;		/* st506_at_wd1003 */
 

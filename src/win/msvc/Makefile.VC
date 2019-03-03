@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.62	2019/02/13
+# Version:	@(#)Makefile.VC	1.0.63	2019/03/01
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -693,6 +693,7 @@ VIDOBJ		:= video.obj \
 		    vid_hercules.obj vid_herculesplus.obj vid_incolor.obj \
 		    vid_colorplus.obj \
 		    vid_genius.obj \
+		    vid_pgc.obj vid_im1024.obj \
 		    vid_sigma.obj \
 		    vid_wy700.obj \
 		    vid_ega.obj vid_ega_render.obj \

@@ -8,13 +8,13 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.25	2019/02/10
+ * Version:	@(#)video.h	1.0.26	2019/03/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -169,6 +169,9 @@ extern const device_t	mach64vt2_device;
 /* IBM CGA and compatibles. */
 extern const device_t	cga_device;
 
+/* IBM PGC. */
+extern const device_t	pgc_device;
+
 /* Cirrus Logic GD-series cards. */
 #if defined(DEV_BRANCH)
 extern const device_t	gd5402_isa_device;
@@ -216,6 +219,9 @@ extern const device_t	et4000w32p_cardex_pci_device;
 
 /* MDSI Genius VHR card. */
 extern const device_t	genius_device;
+
+/* ImageManager 1024 card. */
+extern const device_t	im1024_device;
 
 /* Hercules series cards and compatibles. */
 extern const device_t	hercules_device;
