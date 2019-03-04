@@ -305,7 +305,7 @@ parse_command(pgc_t *dev, const pgc_cmd_t **pcmd)
     *pcmd = NULL;
     dev->hex_command = 0;
     memset(dev->asc_command, ' ', 6);
-    dev->asc_command[7] = 0;
+    dev->asc_command[6] = 0;
 
     if (! read_command(dev)) {
 	/* PGC has been reset. */
@@ -1257,7 +1257,7 @@ hndl_tjust(pgc_t *dev)
 static void
 hndl_tsize(pgc_t *pgc)
 {
-    int32_t param;
+    int32_t param = 0;
 
     if (! pgc_param_coord(pgc, &param)) return;
 
