@@ -8,13 +8,13 @@
  *
  *		Definitions for the IBM CGA composite filter.
  *
- * Version:	@(#)vid_cga_comp.h	1.0.1	2018/02/14
+ * Version:	@(#)vid_cga_comp.h	1.0.2	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		reengine,
+ *		Andrew Jenner (reenigne), <andrew@reenigne.org>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,14 +39,13 @@
 # define VIDEO_CGA_COMP_H
 
 
-#define Bit8u uint8_t
-#define Bit32u uint32_t
-#define Bitu unsigned int
-#define bool uint8_t
+extern void	*cga_comp_init(int revision);
+extern void	cga_comp_close(void *);
 
-void update_cga16_color(uint8_t cgamode);
-void cga_comp_init(int revision);
-Bit8u * Composite_Process(uint8_t cgamode, Bit8u border, Bit32u blocks/*, bool doublewidth*/, Bit8u *TempLine);
+extern void	cga_comp_update(void *, uint8_t cgamode);
+extern uint8_t	*cga_comp_process(void *, uint8_t cgamode, uint8_t border,
+				  uint32_t blocks, /*int8_t doublewidth,*/
+				  uint8_t *TempLine);
 
 
 #endif	/*VIDEO_CGA_COMP_H*/

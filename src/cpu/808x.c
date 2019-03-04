@@ -11,7 +11,7 @@
  * Version:	@(#)808x.c	1.0.14	2019/02/28
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
- *		Andrew Jenner, <https://www.reenigne.org>
+ *		Andrew Jenner (reenigne), <andrew@reenigne.org>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2016-2019 Fred N. van Kempen.

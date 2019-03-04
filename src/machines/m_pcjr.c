@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.13	2019/02/16
+ * Version:	@(#)m_pcjr.c	1.0.14	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,6 +102,7 @@ typedef struct {
     int64_t	dispontime, dispofftime, vidtime;
     int		firstline, lastline;
     int		composite;
+    void	*cpriv;
 
     /* Keyboard Controller stuff. */
     int		latched;
@@ -188,7 +189,7 @@ vid_out(uint16_t addr, uint8_t val, void *p)
 				val &= 0x0f;
 			pcjr->array[pcjr->array_index & 0x1f] = val;
 			if (!(pcjr->array_index & 0x1f))
-				update_cga16_color(val);
+				cga_comp_update(pcjr->cpriv, val);
 		}
 		pcjr->array_ff = !pcjr->array_ff;
 		break;
@@ -460,7 +461,7 @@ vid_poll(void *p)
 		for (c = 0; c < x; c++)
 			buffer32->line[pcjr->displine][c] = buffer->line[pcjr->displine][c] & 0xf;
 
-		Composite_Process(pcjr->array[0], 0, x >> 2, buffer32->line[pcjr->displine]);
+		cga_comp_process(pcjr->cpriv, pcjr->array[0], 0, x >> 2, buffer32->line[pcjr->displine]);
 	}
 	pcjr->sc = oldsc;
 	if (pcjr->vc == pcjr->crtc[7] && !pcjr->sc) {
@@ -707,6 +708,18 @@ kbd_adddata_ex(uint16_t val)
 
 
 static void
+pcjr_close(void *priv)
+{
+    pcjr_t *pcjr = (pcjr_t *)priv;
+
+    if (pcjr->composite && pcjr->cpriv)
+	cga_comp_close(pcjr->cpriv);
+
+    free(pcjr);
+}
+
+
+static void
 speed_changed(void *priv)
 {
     pcjr_t *pcjr = (pcjr_t *)priv;
@@ -741,7 +754,7 @@ static const video_timings_t pcjr_timings = { VID_BUS,0,0,0,0,0,0 };
 const device_t m_pcjr_device = {
     "IBM PCjr",
     0, 0,
-    NULL, NULL, NULL,
+    NULL, pcjr_close, NULL,
     NULL,
     speed_changed,
     NULL,
@@ -761,6 +774,8 @@ m_pcjr_init(const machine_t *model, UNUSED(void *arg))
     dev->memctrl = -1;
     display_type = machine_get_config_int("display_type");
     dev->composite = (display_type != PCJR_RGB);
+    if (dev->composite)
+	dev->cpriv = cga_comp_init(0);
 
     pic_init();
     pit_init();

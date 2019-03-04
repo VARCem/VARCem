@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.5	2019/02/10
+ * Version:	@(#)vid_cga_compaq.c	1.0.6	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -112,7 +112,7 @@ compaq_poll(void *priv)
 	oldsc = dev->cga.sc;
 
 	if ((dev->cga.crtc[8] & 3) == 3) 
-	   dev->cga.sc = ((dev->cga.sc << 1) + dev->cga.oddeven) & 7;
+		dev->cga.sc = ((dev->cga.sc << 1) + dev->cga.oddeven) & 7;
 
 	if (dev->cga.cgadispon) {
 		if (dev->cga.displine < dev->cga.firstline) {
@@ -120,7 +120,7 @@ compaq_poll(void *priv)
 			video_wait_for_buffer();
 		}
 		dev->cga.lastline = dev->cga.displine;
-		       
+
 		cols[0] = (dev->cga.cgacol & 15);
 
 		for (c = 0; c < 8; c++) {
@@ -232,9 +232,9 @@ compaq_poll(void *priv)
 				buffer32->line[dev->cga.displine][c] = ((uint32_t *)buffer32->line[dev->cga.displine])[c] & 0xf;
 
 		if (dev->flags)
-			Composite_Process(dev->cga.cgamode & 0x7F, 0, x >> 2, buffer32->line[dev->cga.displine]);
+			cga_comp_process(dev->cga.cpriv, dev->cga.cgamode & 0x7F, 0, x >> 2, buffer32->line[dev->cga.displine]);
 		else
-			Composite_Process(dev->cga.cgamode, 0, x >> 2, buffer32->line[dev->cga.displine]);
+			cga_comp_process(dev->cga.cpriv, dev->cga.cgamode, 0, x >> 2, buffer32->line[dev->cga.displine]);
 	} else {
 		for (c = 0; c < x; c++)
 			buffer->line[dev->cga.displine][c] = ((uint32_t *)buffer32->line[dev->cga.displine])[c];
@@ -381,7 +381,7 @@ compaq_cga_init(const device_t *info)
 
     dev->cga.vram = (uint8_t *)mem_alloc(0x4000);
 
-    cga_comp_init(dev->cga.revision);
+    dev->cga.cpriv = cga_comp_init(dev->cga.revision);
 
     timer_add(compaq_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
 
@@ -432,7 +432,11 @@ compaq_cga_close(void *priv)
 {
     compaq_cga_t *dev = (compaq_cga_t *)priv;
 
+    if (dev->cga.cpriv != NULL)
+	cga_comp_close(dev->cga.cpriv);
+
     free(dev->cga.vram);
+
     free(dev);
 }
 

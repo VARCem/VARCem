@@ -11,7 +11,7 @@
  * NOTE:	It might be better (after all..) to split off the video
  *		driver from the main code, to keep it a little cleaner.
  *
- * Version:	@(#)m_tandy.c	1.0.15	2019/02/16
+ * Version:	@(#)m_tandy.c	1.0.16	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -116,6 +116,7 @@ typedef struct {
 		lastline;
 
     int		composite;
+    void	*cpriv;
 } t1kvid_t;
 
 typedef struct {
@@ -554,7 +555,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 	case 0x03d8:
 		vid->mode = val;
 		if (dev->type != 2)
-			update_cga16_color(vid->mode);
+			cga_comp_update(vid->cpriv, vid->mode);
 		break;
 
 	case 0x03d9:
@@ -879,7 +880,7 @@ vid_poll(void *priv)
 		for (c = 0; c < x; c++)
 			buffer32->line[vid->displine][c] = buffer->line[vid->displine][c] & 0xf;
 
-		Composite_Process(vid->mode, 0, x >> 2, buffer32->line[vid->displine]);
+		cga_comp_process(vid->cpriv, vid->mode, 0, x >> 2, buffer32->line[vid->displine]);
 	}
 	vid->sc = oldsc;
 	if (vid->vc == vid->crtc[7] && !vid->sc)
@@ -1355,6 +1356,12 @@ static void
 vid_close(void *priv)
 {
     tandy_t *dev = (tandy_t *)priv;
+    t1kvid_t *vid = dev->vid;
+
+    if (vid->cpriv != NULL) {
+	cga_comp_close(vid->cpriv);
+	vid->cpriv = NULL;
+    }
 
     free(dev->vid);
     dev->vid = NULL;
@@ -1374,8 +1381,7 @@ vid_init(tandy_t *dev)
 
     display_type = machine_get_config_int("display_type");
     vid->composite = (display_type != TANDY_RGB);
-
-    cga_comp_init(1);
+    vid->cpriv = cga_comp_init(1);
 
     if (dev->type == 2) {
 	vid->b8000_limit = 0x8000;

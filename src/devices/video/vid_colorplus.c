@@ -8,13 +8,13 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.9	2018/11/11
+ * Version:	@(#)vid_colorplus.c	1.0.10	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -251,7 +251,7 @@ colorplus_poll(void *priv)
 		for (c = 0; c < x; c++)
 			buffer32->line[dev->cga.displine][c] = buffer->line[dev->cga.displine][c] & 0xf;
 
-		Composite_Process(dev->cga.cgamode, 0, x >> 2, buffer32->line[dev->cga.displine]);
+		cga_comp_process(dev->cga.cpriv, dev->cga.cgamode, 0, x >> 2, buffer32->line[dev->cga.displine]);
 	}
 
 	dev->cga.sc = oldsc;
@@ -395,8 +395,8 @@ colorplus_init(const device_t *info)
     dev->cga.snow_enabled = device_get_config_int("snow_enabled");
 
     dev->cga.vram = (uint8_t *)mem_alloc(0x8000);
-		
-    cga_comp_init(1);
+
+    dev->cga.cpriv = cga_comp_init(1);
 
     timer_add(colorplus_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
 
@@ -422,7 +422,11 @@ colorplus_close(void *priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
 
+    if (dev->cga.cpriv != NULL)
+	cga_comp_close(dev->cga.cpriv);
+
     free(dev->cga.vram);
+
     free(dev);
 }
 

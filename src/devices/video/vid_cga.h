@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.6	2019/03/01
+ * Version:	@(#)vid_cga.h	1.0.7	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -78,10 +78,12 @@ typedef struct {
     uint8_t	charbuffer[256];
 
     int		revision;
-    int		composite;
     int		snow_enabled;
     int		rgb_type;
     int		font_type;
+
+    int		composite;
+    void	*cpriv;
 } cga_t;
 
 

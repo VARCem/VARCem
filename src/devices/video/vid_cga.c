@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.12	2019/03/03
+ * Version:	@(#)vid_cga.c	1.0.12	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -171,7 +171,7 @@ cga_out(uint16_t port, uint8_t val, void *priv)
 		dev->cgamode = val;
 		if (old ^ val) {
 			if ((old ^ val) & 0x05)
-				update_cga16_color(val);
+				cga_comp_update(dev->cpriv, val);
 			cga_recalctimings(dev);
 		}
 		return;
@@ -462,8 +462,8 @@ cga_poll(void *priv)
 		else
 			border = dev->cgacol & 0x0f;
 
-		Composite_Process(dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1)]);
-		Composite_Process(dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1) + 1]);
+		cga_comp_process(dev->cpriv, dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1)]);
+		cga_comp_process(dev->cpriv, dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1) + 1]);
 	}
 
 	dev->sc = oldsc;
@@ -612,6 +612,10 @@ void
 cga_init(cga_t *dev)
 {
     dev->composite = 0;
+    if (dev->cpriv != NULL) {
+	cga_comp_close(dev->cpriv);
+	dev->cpriv = NULL;
+    }
 }
 
 
@@ -633,7 +637,7 @@ cga_standalone_init(const device_t *info)
 
     dev->vram = (uint8_t *)mem_alloc(0x4000);
 
-    cga_comp_init(dev->revision);
+    dev->cpriv = cga_comp_init(dev->revision);
 
     timer_add(cga_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
 
@@ -663,6 +667,10 @@ cga_close(void *priv)
     cga_t *dev = (cga_t *)priv;
 
     free(dev->vram);
+
+    if (dev->cpriv != NULL)
+	cga_comp_close(dev->cpriv);
+
     free(dev);
 }
 
