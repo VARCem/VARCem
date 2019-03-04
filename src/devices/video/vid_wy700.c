@@ -53,13 +53,13 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.5	2018/09/22
+ * Version:	@(#)vid_wy700.c	1.0.6	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -93,13 +93,14 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../system/pit.h"
+#include "../../plat.h"
 #include "video.h"
 
 
 #define WY700_XSIZE	1280
 #define WY700_YSIZE	800
 
-#define BIOS_ROM_PATH	L"video/wyse/wyse700/wy700.rom"
+#define FONT_ROM_PATH	L"video/wyse/wyse700/wy700.rom"
 
 
 /* The microcontroller sets up the real CRTC with one of five fixed mode
@@ -186,11 +187,9 @@ static const uint8_t mode_40x24[] = {
 };
 
 
-/* Font ROM: Two fonts, each containing 256 characters, 16x16 pixels */
-extern uint8_t fontdatw[512][32];
-
-
 typedef struct {
+    const char	*name;
+
     mem_map_t	mapping;
 
     /* The microcontroller works by watching four ports: 
@@ -238,6 +237,9 @@ typedef struct {
 
     /* ... and MDA emulation. */
     int		mdacols[256][2][2];
+
+    /* Font ROM: Two fonts, each containing 256 characters, 16x16 pixels */
+    uint8_t	fontdat[512][32];
 
     uint8_t	*vram;
 } wy700_t;
@@ -528,13 +530,12 @@ text_line(wy700_t *dev)
     int cw = (dev->wy700_mode == 0) ? 32 : 16;
     uint8_t chr, attr;
     uint8_t bitmap[2];
-    uint8_t *fontbase = &fontdatw[0][0];
+    uint8_t *fontbase = &dev->fontdat[0][0];
     int blink, c;
     int drawcursor, cursorline;
     int mda = 0;
     uint16_t addr;
     uint8_t sc;
-
 
     /* The fake CRTC character height register selects whether MDA or CGA 
      * attributes are used */
@@ -854,6 +855,27 @@ wy700_poll(void *priv)
 }
 
 
+static int
+load_font(wy700_t *dev, const wchar_t *s)
+{
+    FILE *fp;
+    int c;
+
+    fp = plat_fopen(rom_path(s), L"rb");
+    if (fp == NULL) {
+	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
+	return(0);
+    }
+
+    for (c = 0; c < 512; c++)
+	(void)fread(&dev->fontdat[c][0], 1, 32, fp);
+
+    (void)fclose(fp);
+
+    return(1);
+}
+
+
 static void *
 wy700_init(const device_t *info)
 {
@@ -862,11 +884,15 @@ wy700_init(const device_t *info)
 
     dev = (wy700_t *)mem_alloc(sizeof(wy700_t));
     memset(dev, 0x00, sizeof(wy700_t));
+    dev->name = info->name;
 
-    /* 128k video RAM */
+    if (! load_font(dev, FONT_ROM_PATH)) {
+	free(dev);
+	return(NULL);
+    }
+
+    /* 128K video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x20000);
-
-    video_load_font(BIOS_ROM_PATH, 3);
 
     timer_add(wy700_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
 
@@ -979,7 +1005,7 @@ wy700_close(void *priv)
 static int
 wy700_available(void)
 {
-    return rom_present(BIOS_ROM_PATH);
+    return rom_present(FONT_ROM_PATH);
 }
 
 

@@ -41,13 +41,13 @@
  *		even-numbered columns, so the top bit of the control register
  *		at 0x2D9 is used to adjust the position.
  *
- * Version:	@(#)vid_sigma.c	1.0.2	2018/11/03
+ * Version:	@(#)vid_sigma.c	1.0.3	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *              John Elliott, <jce@seasip.info>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
  *		Copyright 2018 John Elliott.
  *
@@ -165,6 +165,8 @@
 
 
 typedef struct {
+    const char	*name;
+
     mem_map_t	mapping,
 		bios_ram;
 
@@ -213,6 +215,8 @@ typedef struct {
     int64_t	vidtime;
 
     uint8_t	*vram;
+    uint8_t	fontdat[256][8];		/* 8x8 font */
+    uint8_t	fontdat16[256][16];		/* 8x16 font */
     uint8_t	bram[2048];       
     uint8_t	palette[16];
 } sigma_t;
@@ -485,16 +489,16 @@ sigma_text80(sigma_t *dev)
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
 			if (dev->sigmamode & MODE_FONT16)
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdatm[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
+				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 			else
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
+				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 		}
 	} else {
 		for (c = 0; c < 8; c++) {
 			if (dev->sigmamode & MODE_FONT16)
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdatm[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
+				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 			else
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 		}
 	}
 	++ma;
@@ -540,12 +544,12 @@ sigma_text40(sigma_t *dev)
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) { 
 			buffer->line[dev->displine][(x << 4) + 2*c + 8] = 
-			buffer->line[dev->displine][(x << 4) + 2*c + 9] = cols[(fontdatm[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
+			buffer->line[dev->displine][(x << 4) + 2*c + 9] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 		}
 	} else {
 		for (c = 0; c < 8; c++) {
 			buffer->line[dev->displine][(x << 4) + 2*c + 8] = 
-			buffer->line[dev->displine][(x << 4) + 2*c + 9] = cols[(fontdatm[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
+			buffer->line[dev->displine][(x << 4) + 2*c + 9] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 		}	
 	}
 	ma++;
@@ -836,11 +840,47 @@ sigma_poll(void *priv)
 }
 
 
+static int
+load_font(sigma_t *dev, const wchar_t *s)
+{
+    FILE *fp;
+    int c;
+
+    fp = plat_fopen(rom_path(s), L"rb");
+    if (fp == NULL) {
+	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
+	return(0);
+    }
+
+    /* The first 4K of the character ROM holds an 8x8 font. */
+    for (c = 0; c < 256; c++) {
+	(void)fread(&dev->fontdat[c][0], 1, 8, fp);
+	(void)fseek(fp, 8, SEEK_CUR);
+    }
+
+    /* The second 4K holds an 8x16 font. */
+    for (c = 0; c < 256; c++)
+	(void)fread(&dev->fontdat16[c][0], 1, 16, fp);
+
+    (void)fclose(fp);
+
+    return(1);
+}
+
+
 static void *
 sigma_init(const device_t *info)
 {
-    sigma_t *dev = malloc(sizeof(sigma_t));
-    memset(dev, 0, sizeof(sigma_t));
+    sigma_t *dev;
+
+    dev = (sigma_t *)mem_alloc(sizeof(sigma_t));
+    memset(dev, 0x00, sizeof(sigma_t));
+    dev->name = info->name;
+
+    if (! load_font(dev, FONT_ROM_PATH)) {
+	free(dev);
+	return(NULL);
+    }
 
     dev->enable_nmi = device_get_config_int("enable_nmi");
 
@@ -854,8 +894,6 @@ sigma_init(const device_t *info)
     mem_map_add(&dev->mapping, 0xb8000, 0x08000, 
 		sigma_read,NULL,NULL, sigma_write,NULL,NULL,  
 		NULL, MEM_MAPPING_EXTERNAL, dev);
-
-    video_load_font(FONT_ROM_PATH, 7);
 
     rom_init(&dev->bios_rom, BIOS_ROM_PATH,
 	     0xc0000, 0x2000, 0x1fff, 0, MEM_MAPPING_EXTERNAL);

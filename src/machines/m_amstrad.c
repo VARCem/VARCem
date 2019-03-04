@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.21	2019/02/16
+ * Version:	@(#)m_amstrad.c	1.0.22	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,6 +88,7 @@
 #include "../devices/video/video.h"
 #include "../devices/video/vid_cga.h"
 #include "../devices/video/vid_ega.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -132,6 +133,7 @@ typedef struct {
     int		firstline,
 		lastline;
     uint8_t	*vram;
+    uint8_t	fontdat[256][8];	/* 1512/200 */
 } amsvid_t;
 
 typedef struct {
@@ -346,10 +348,10 @@ vid_poll_1512(void *priv)
 				}
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 				vid->ma++;
 			}
@@ -371,11 +373,11 @@ vid_poll_1512(void *priv)
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
 					    buffer->line[vid->displine][(x << 4) + (c << 1) + 8] = 
-					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
 					    buffer->line[vid->displine][(x << 4) + (c << 1) + 8] = 
-					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 			}
 		} else if (! (vid->cgamode & 16)) {
@@ -533,13 +535,30 @@ vid_poll_1512(void *priv)
 
 
 static void
-vid_init_1512(amstrad_t *ams)
+vid_init_1512(amstrad_t *ams, const wchar_t *fn, int num)
 {
     amsvid_t *vid;
+    FILE *fp;
+    int c;
 
     /* Allocate a video controller block. */
     vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
+
+    /* Load the PC1512 CGA Character Set ROM. */
+    fp = plat_fopen(rom_path(fn), L"rb");
+    if (fp != NULL) {
+	if (num == 8) {
+		/* Use the second ("thick") font in the ROM. */
+		(void)fseek(fp, 2048, SEEK_SET);
+	}
+	for (c = 0; c < 256; c++)
+		(void)fread(&vid->fontdat[c][0], 1, 8, fp);
+	(void)fclose(fp);
+    } else {
+	ERRLOG("AMSTRAD: cannot load font '%ls'\n", fn);
+	return;
+    }
 
     vid->vram = (uint8_t *)mem_alloc(0x10000);
     vid->cgacol = 7;
@@ -581,8 +600,7 @@ vid_speed_change_1512(void *priv)
 
 static const device_t vid_1512_device = {
     "Amstrad PC1512 (video)",
-    0,
-    0,
+    0, 0,
     NULL, vid_close_1512, NULL,
     NULL,
     vid_speed_change_1512,
@@ -752,8 +770,7 @@ vid_speed_changed_1640(void *priv)
 
 static const device_t vid_1640_device = {
     "Amstrad PC1640 (video)",
-    0,
-    0,
+    0, 0,
     NULL, vid_close_1640, NULL,
     NULL,
     vid_speed_changed_1640,
@@ -841,14 +858,39 @@ vid_in_200(uint16_t addr, void *priv)
 
 
 static void
-vid_init_200(amstrad_t *ams)
+vid_init_200(amstrad_t *ams, const wchar_t *fn)
 {
     amsvid_t *vid;
     cga_t *cga;
+    FILE *fp;
+    int c, d;
 
     /* Allocate a video controller block. */
     vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
+
+    /* Load the PC200 CGA Character Set ROM. */
+    fp = plat_fopen(rom_path(fn), L"rb");
+    if (fp != NULL) {
+	for (c = 0; c < 256; c++)
+		(void)fread(&fontdatm[c][0], 1, 8, fp);
+	for (c = 0; c < 256; c++)
+		(void)fread(&fontdatm[c][8], 1, 8, fp);
+
+	(void)fseek(fp, 4096, SEEK_SET);
+
+	for (c = 0; c < 256; c++) {
+		(void)fread(&fontdat[c][0], 1, 8, fp);
+
+		for (d = 0; d < 8; d++)
+			(void)fgetc(fp);
+	}
+
+	(void)fclose(fp);
+    } else {
+	ERRLOG("AMSTRAD: cannot load font '%ls'\n", fn);
+	return;
+    }
 
     cga = &vid->cga;
     cga->vram = (uint8_t *)mem_alloc(0x4000);
@@ -891,8 +933,7 @@ vid_speed_changed_200(void *priv)
 
 static const device_t vid_200_device = {
     "Amstrad PC200 (video)",
-    0,
-    0,
+    0, 0,
     NULL, vid_close_200, NULL,
     NULL,
     vid_speed_changed_200,
@@ -1219,6 +1260,59 @@ amstrad_common_init(const machine_t *model, void *arg, int type)
 
     nmi_init();
 
+    switch(ams->type) {
+	case 0:		/* 1512 */
+		device_add(&fdc_xt_device);
+		if (video_card == VID_INTERNAL) {
+			/* Initialize the internal CGA controller. */
+			vid_init_1512(ams, roms->fontfn, roms->fontnum);
+			device_add_ex(&vid_1512_device, ams->vid);
+		}
+		break;
+
+	case 1:		/* 1640 */
+		device_add(&fdc_xt_device);
+		if (video_card == VID_INTERNAL) {
+			/* Initialize the internal CGA/EGA controller. */
+			vid_init_1640(ams, roms->vidfn, roms->vidsz);
+			device_add_ex(&vid_1640_device, ams->vid);
+		}
+		break;
+
+	case 2:		/* PC200 */
+		device_add(&fdc_xt_device);
+		if (video_card == VID_INTERNAL) {
+			/* Initialize the internal CGA controller. */
+			vid_init_200(ams, roms->fontfn);
+			device_add_ex(&vid_200_device, ams->vid);
+		}
+		break;
+
+	case 3:		/* PC2086 */
+		device_add(&fdc_at_actlow_device);
+		if (video_card == VID_INTERNAL) {
+			device_add(&paradise_pvga1a_pc2086_device);
+			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
+		}
+		break;
+
+	case 4:		/* PC3086 */
+		device_add(&fdc_at_actlow_device);
+		if (video_card == VID_INTERNAL) {
+			device_add(&paradise_pvga1a_pc3086_device);
+			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
+		}
+		break;
+
+	case 5:		/* MEGAPC */
+		device_add(&fdc_at_actlow_device);
+		if (video_card == VID_INTERNAL) {
+			device_add(&paradise_wd90c11_megapc_device);
+			video_inform(VID_TYPE_SPEC, &wd90c11_timing);
+		}
+		break;
+    }
+
     device_add(&amstrad_nvr_device);
 
 //FIXME:    parallel_remove_amstrad();
@@ -1234,64 +1328,6 @@ amstrad_common_init(const machine_t *model, void *arg, int type)
 
     io_sethandler(0xdead, 1,
 		  ams_read, NULL, NULL, ams_write, NULL, NULL, ams);
-
-    switch(ams->type) {
-	case 0:
-		device_add(&fdc_xt_device);
-		if (video_card == VID_INTERNAL) {
-			/* Load the PC1512 CGA Character Set ROM. */
-			video_load_font(roms->fontfn, roms->fontnum);
-
-			/* Initialize the internal CGA controller. */
-			vid_init_1512(ams);
-			device_add_ex(&vid_1512_device, ams->vid);
-		}
-		break;
-
-	case 1:
-		device_add(&fdc_xt_device);
-		if (video_card == VID_INTERNAL) {
-			/* Load the BIOS for the internal CGA/EGA. */
-			vid_init_1640(ams, roms->vidfn, roms->vidsz);
-			device_add_ex(&vid_1640_device, ams->vid);
-		}
-		break;
-
-	case 2:
-		device_add(&fdc_xt_device);
-		if (video_card == VID_INTERNAL) {
-			/* Load the PC200 CGA Character Set ROM. */
-			video_load_font(roms->fontfn, roms->fontnum);
-
-			vid_init_200(ams);
-			device_add_ex(&vid_200_device, ams->vid);
-		}
-		break;
-
-	case 3:
-		device_add(&fdc_at_actlow_device);
-		if (video_card == VID_INTERNAL) {
-			device_add(&paradise_pvga1a_pc2086_device);
-			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
-		}
-		break;
-
-	case 4:
-		device_add(&fdc_at_actlow_device);
-		if (video_card == VID_INTERNAL) {
-			device_add(&paradise_pvga1a_pc3086_device);
-			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
-		}
-		break;
-
-	case 5:
-		device_add(&fdc_at_actlow_device);
-		if (video_card == VID_INTERNAL) {
-			device_add(&paradise_wd90c11_megapc_device);
-			video_inform(VID_TYPE_SPEC, &wd90c11_timing);
-		}
-		break;
-    }
 
     /* Initialize the (custom) keyboard/mouse interface. */
     ams->wantirq = 0;

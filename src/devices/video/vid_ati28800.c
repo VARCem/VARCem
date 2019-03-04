@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.16	2019/02/10
+ * Version:	@(#)vid_ati28800.c	1.0.18	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,11 +47,12 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
 #include "vid_sc1502x_ramdac.h"
-#include "vid_ati_eeprom.h"
+#include "vid_ati.h"
 
 
 enum {
@@ -220,7 +221,7 @@ ati28800k_out(uint16_t port, uint8_t val, void *priv)
 		dev->in_get_korean_font_kind_set = 0;
 		if (dev->get_korean_font_enabled) {
 			if ((dev->get_korean_font_base & 0x7F) > 0x20 && (dev->get_korean_font_base & 0x7F) < 0x7F)
-				fontdatksc5601_user[(dev->get_korean_font_kind & 4) * 24 + (dev->get_korean_font_base & 0x7F) - 0x20].chr[dev->get_korean_font_index] = val;
+				fontdatk_user[(dev->get_korean_font_kind & 4) * 24 + (dev->get_korean_font_base & 0x7F) - 0x20].chr[dev->get_korean_font_index] = val;
 			dev->get_korean_font_index++;
 			dev->get_korean_font_index &= 0x1F;
 		} else {
@@ -337,12 +338,12 @@ ati28800k_in(uint16_t port, void *priv)
 		if (dev->get_korean_font_enabled) {
 			switch(dev->get_korean_font_kind >> 8) {
 				case 4: /* ROM font */
-					ret = fontdatksc5601[dev->get_korean_font_base].chr[dev->get_korean_font_index++];
+					ret = fontdatk[dev->get_korean_font_base].chr[dev->get_korean_font_index++];
 					break;
 
 				case 2: /* User defined font */
 					if ((dev->get_korean_font_base & 0x7F) > 0x20 && (dev->get_korean_font_base & 0x7F) < 0x7F)
-						ret = fontdatksc5601_user[(dev->get_korean_font_kind & 4) * 24 + (dev->get_korean_font_base & 0x7F) - 0x20].chr[dev->get_korean_font_index];
+						ret = fontdatk_user[(dev->get_korean_font_kind & 4) * 24 + (dev->get_korean_font_base & 0x7F) - 0x20].chr[dev->get_korean_font_index];
 					else
 						ret = 0xff;
 					dev->get_korean_font_index++;
@@ -443,6 +444,44 @@ ati28800k_recalctimings(svga_t *svga)
 }
 
 
+/*
+ * Also used by the Korean ET4000AX.
+ *
+ * This will eventually need the 'svga' pointer to store
+ * the font data in to, which is global data right now.
+ */
+int
+ati28800k_load_font(svga_t *svga, const wchar_t *fn)
+{
+    FILE *fp;
+    int c, d;
+
+    fp = plat_fopen(rom_path(fn), L"rb");
+    if (fp == NULL) {
+	ERRLOG("ATI28800K: cannot load font '%ls'\n", fn);
+	return(0);
+    }
+
+    if (fontdatk == NULL)
+	fontdatk = (dbcs_font_t *)mem_alloc(16384 * sizeof(dbcs_font_t));
+
+    if (fontdatk_user == NULL) {
+	c = 192 * sizeof(dbcs_font_t);
+	fontdatk_user = (dbcs_font_t *)mem_alloc(c);
+	memset(fontdatk_user, 0x00, c);
+    }
+
+    for (c = 0; c < 16384; c++) {
+	for (d = 0; d < 32; d++)
+		fontdatk[c].chr[d] = fgetc(fp);
+    }
+
+    (void)fclose(fp);
+
+    return(1);
+}
+
+
 static void *
 ati28800_init(const device_t *info)
 {
@@ -494,8 +533,6 @@ ati28800_init(const device_t *info)
 		dev->in_get_korean_font_kind_set = 0;
 		dev->ksc5601_mode_enabled = 0;
 
-		video_load_font(FONT_ATIKOR_PATH, 6);
-
 		rom_init(&dev->bios_rom, BIOS_ATIKOR_PATH,
 			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 		ati_eeprom_load(&dev->eeprom, L"atikorvga.nvr", 0);
@@ -532,6 +569,14 @@ ati28800_init(const device_t *info)
     }
 
     dev->svga.miscout = 1;
+
+    if (info->local == VID_ATIKOREANVGA) {
+	if (! ati28800k_load_font(&dev->svga, FONT_ATIKOR_PATH)) {
+		svga_close(&dev->svga);
+		free(dev);
+		return(NULL);
+	}
+    }
 
     video_inform(VID_TYPE_SPEC,
 		 (const video_timings_t *)info->vid_timing);

@@ -8,14 +8,14 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.13	2018/10/08
+ * Version:	@(#)vid_et4000.c	1.0.14	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		GreatPsycho, <greatpsycho@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -51,6 +51,7 @@
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
+#include "vid_ati.h"		/* for the font loader */
 #include "vid_sc1502x_ramdac.h"
 
 
@@ -155,7 +156,7 @@ et4000k_in(uint16_t addr, void *priv)
 		switch(dev->get_korean_font_enabled) {
 			case 3:
 				if ((dev->port_32cb_val & 0x30) == 0x30) {
-					val = fontdatksc5601[dev->get_korean_font_base].chr[dev->get_korean_font_index++];
+					val = fontdatk[dev->get_korean_font_base].chr[dev->get_korean_font_index++];
 					dev->get_korean_font_index &= 0x1f;
 				} else
 				if ((dev->port_32cb_val & 0x30) == 0x20 &&
@@ -164,18 +165,18 @@ et4000k_in(uint16_t addr, void *priv)
 					switch(dev->get_korean_font_base & 0x3f80) {
 						case 0x2480:
 							if (dev->get_korean_font_index < 16)
-								val = fontdatksc5601_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index];
+								val = fontdatk_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index];
 							else
 							if (dev->get_korean_font_index >= 24 && dev->get_korean_font_index < 40)
-								val = fontdatksc5601_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8];
+								val = fontdatk_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8];
 							break;
 
 						case 0x3f00:
 							if (dev->get_korean_font_index < 16)
-								val = fontdatksc5601_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index];
+								val = fontdatk_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index];
 							else
 							if (dev->get_korean_font_index >= 24 && dev->get_korean_font_index < 40)
-								val = fontdatksc5601_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8];
+								val = fontdatk_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8];
 							break;
 
 						default:
@@ -358,18 +359,18 @@ et4000k_out(uint16_t addr, uint8_t val, void *priv)
 					switch (dev->get_korean_font_base & 0x3f80) {
 						case 0x2480:
 							if (dev->get_korean_font_index < 16)
-								fontdatksc5601_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index] = val;
+								fontdatk_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index] = val;
 							else
 							if (dev->get_korean_font_index >= 24 && dev->get_korean_font_index < 40)
-								fontdatksc5601_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8] = val;
+								fontdatk_user[(dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8] = val;
 							break;
 
 						case 0x3f00:
 							if (dev->get_korean_font_index < 16)
-								fontdatksc5601_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index] = val;
+								fontdatk_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index] = val;
 							else
 							if (dev->get_korean_font_index >= 24 && dev->get_korean_font_index < 40)
-								fontdatksc5601_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8] = val;
+								fontdatk_user[96 + (dev->get_korean_font_base & 0x7f) - 0x20].chr[dev->get_korean_font_index - 8] = val;
 							break;
 
 						default:
@@ -487,9 +488,11 @@ et4000_init(const device_t *info)
     switch(dev->type) {
 	case 0:		/* ISA ET4000AX */
 		dev->vram_size = device_get_config_int("memory") << 10;
+
 		svga_init(&dev->svga, dev, dev->vram_size,
 			  et4000_recalctimings, et4000_in, et4000_out,
 			  NULL, NULL);
+
 		io_sethandler(0x03c0, 32,
 			      et4000_in,NULL,NULL, et4000_out,NULL,NULL, dev);
 		break;
@@ -497,11 +500,14 @@ et4000_init(const device_t *info)
 	case 1:		/* MCA ET4000AX */
 		dev->is_mca = 1;
 		dev->vram_size = 1024 << 10;
+
 		svga_init(&dev->svga, dev, dev->vram_size,
 			  et4000_recalctimings, et4000_in, et4000_out,
 			  NULL, NULL);
+
 		io_sethandler(0x03c0, 32,
 			      et4000_in,NULL,NULL, et4000_out,NULL,NULL, dev);
+
 		dev->pos_regs[0] = 0xf2;	/* ET4000 MCA board ID */
 		dev->pos_regs[1] = 0x80;	
 		mca_add(et4000_mca_read, et4000_mca_write, dev);
@@ -513,9 +519,17 @@ et4000_init(const device_t *info)
 		dev->port_22cb_val = 0x60;
 		dev->port_32cb_val = 0;
 		dev->svga.ksc5601_sbyte_mask = 0x80;
+
 		svga_init(&dev->svga, dev, dev->vram_size,
 			  et4000_recalctimings, et4000k_in, et4000k_out,
 			  NULL, NULL);
+
+		if (! ati28800k_load_font(&dev->svga, KOREAN_FONT_ROM_PATH)) {
+			svga_close(&dev->svga);
+			free(dev);
+			return(NULL);
+		}
+
 		io_sethandler(0x03c0, 32,
 			      et4000k_in,NULL,NULL, et4000k_out,NULL,NULL, dev);
 		io_sethandler(0x22cb, 1,
@@ -524,7 +538,6 @@ et4000_init(const device_t *info)
 			      et4000k_in,NULL,NULL, et4000k_out,NULL,NULL, dev);
 		io_sethandler(0x32cb, 1,
 			      et4000k_in,NULL,NULL, et4000k_out,NULL,NULL, dev);
-		video_load_font(KOREAN_FONT_ROM_PATH, 6);
         	fn = KOREAN_BIOS_ROM_PATH;
 		break;
     }
@@ -536,7 +549,7 @@ et4000_init(const device_t *info)
     rom_init(&dev->bios_rom, fn,
 	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
-    DEBUG("VIDEO: %s (vram=%dKB)\n", dev->name, dev->vram_size>>10);
+    DEBUG("VIDEO: %s (vram=%iKB)\n", dev->name, dev->vram_size>>10);
 
     video_inform(VID_TYPE_SPEC,
 		 (const video_timings_t *)info->vid_timing);

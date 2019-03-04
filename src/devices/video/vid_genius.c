@@ -63,13 +63,13 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.8	2018/10/24
+ * Version:	@(#)vid_genius.c	1.0.9	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *              John Elliott, <jce@seasip.info>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2016-2018 John Elliott.
  *
@@ -107,7 +107,7 @@
 #include "video.h"
 
 
-#define BIOS_ROM_PATH	L"video/mdsi/genius/8x12.bin"
+#define FONT_ROM_PATH	L"video/mdsi/genius/8x12.bin"
 
 
 #define GENIUS_XSIZE	728
@@ -115,6 +115,8 @@
 
 
 typedef struct {
+    const char	*name;
+
     mem_map_t	mapping;
 
     uint8_t	mda_crtc[32];	/* The 'CRTC' as the host PC sees it */
@@ -153,6 +155,8 @@ typedef struct {
     uint32_t	pal[4];
 
     int		cols[256][2][2];
+
+    uint8_t	fontdat[256][16];
 
     uint8_t	*vram;
 } genius_t;
@@ -369,7 +373,7 @@ text_line(genius_t *dev, uint8_t background)
 		}
 	} else	{
 		/* Draw 8 pixels of character */
-		bitmap[0] = fontdat8x12[chr][sc];
+		bitmap[0] = dev->fontdat[chr][sc];
 		for (c = 0; c < 8; c++) {
 			col = dev->cols[attr][blink][(bitmap[0] & (1 << (c ^ 7))) ? 1 : 0];
 			if (!(dev->enabled) || !(dev->mda_ctrl & 8))
@@ -559,6 +563,27 @@ genius_poll(void *priv)
 }
 
 
+static int
+load_font(genius_t *dev, const wchar_t *s)
+{
+    FILE *fp;
+    int c;
+
+    fp = plat_fopen(rom_path(s), L"rb");
+    if (fp == NULL) {
+	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
+	return(0);
+    }
+
+    for (c = 0; c < 256; c++)
+	(void)fread(&dev->fontdat[c][0], 1, 16, fp);
+
+    (void)fclose(fp);
+
+    return(1);
+}
+
+
 static void *
 genius_init(const device_t *info)
 {
@@ -567,11 +592,15 @@ genius_init(const device_t *info)
 
     dev = (genius_t *)mem_alloc(sizeof(genius_t));
     memset(dev, 0x00, sizeof(genius_t));
+    dev->name = info->name;
+
+    if (! load_font(dev, FONT_ROM_PATH)) {
+	free(dev);
+	return(NULL);
+    }
 
     /* 160k video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x28000);
-
-    video_load_font(BIOS_ROM_PATH, 4);
 
     timer_add(genius_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
 
@@ -645,7 +674,7 @@ genius_close(void *priv)
 static int
 genius_available(void)
 {
-    return rom_present(BIOS_ROM_PATH);
+    return rom_present(FONT_ROM_PATH);
 }
 
 

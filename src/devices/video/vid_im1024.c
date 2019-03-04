@@ -38,7 +38,7 @@
  *		This is implemented by holding a FIFO of unlimited depth in
  *		the IM1024 to receive the data.
  *
- * Version:	@(#)vid_im1024.c	1.0.2	2019/03/02
+ * Version:	@(#)vid_im1024.c	1.0.3	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -99,16 +99,14 @@ typedef struct {
 static void
 fifo_write(im1024_t *dev, uint8_t val)
 {
-#if 0
-    DEBUG(("IM1024: fifo_write: %02x [rd=%04x wr=%04x]\n",
-	val, dev->fifo_rdptr, dev->fifo_wrptr));
-#endif
+    DBGLOG(1, "IM1024: fifo_write: %02x [rd=%04x wr=%04x]\n",
+	val, dev->fifo_rdptr, dev->fifo_wrptr);
 
     if (((dev->fifo_wrptr + 1) % dev->fifo_len) == dev->fifo_rdptr) {
 	/* FIFO is full. Double its size. */
 	uint8_t *buf;
 
-	DEBUG("IM1024: fifo_resize: %i to %i\n",
+	DBGLOG(1, "IM1024: fifo_resize: %i to %i\n",
 		dev->fifo_len, 2 * dev->fifo_len);
 
 	buf  = realloc(dev->fifo, 2 * dev->fifo_len);
@@ -121,10 +119,10 @@ fifo_write(im1024_t *dev, uint8_t val)
 	dev->fifo_len *= 2;
     }
 
-    /* Append to the queue */	
+    /* Append to the queue. */	
     dev->fifo[dev->fifo_wrptr++] = val;
 
-    /* Wrap if end of buffer reached */
+    /* Wrap if end of buffer reached. */
     if (dev->fifo_wrptr >= dev->fifo_len)
 	dev->fifo_wrptr = 0;
 }
@@ -148,15 +146,18 @@ fifo_read(im1024_t *dev)
 }
 
 
-/* Where a normal PGC would just read from the ring buffer at 0xC6300, the
- * IM-1024 can read either from this or from its internal FIFO. The internal
- * FIFO has priority. */
+/*
+ * Where a normal PGC would just read from the ring buffer at 0xC6300,
+ * the IM-1024 can read from either this or from its internal FIFO.
+ *
+ * The internal FIFO has priority.
+ */
 static int
 input_byte(pgc_t *pgc, uint8_t *result)
 {
     im1024_t *dev = (im1024_t *)pgc;
 
-    /* If input buffer empty, wait for it to fill */
+    /* If input buffer empty, wait for it to fill. */
     while ((dev->fifo_wrptr == dev->fifo_rdptr) &&
 	   (pgc->mapram[0x300] == pgc->mapram[0x301])) {
 	pgc->waiting_input_fifo = 1;
@@ -179,7 +180,7 @@ input_byte(pgc_t *pgc, uint8_t *result)
 }
 
 
-/* Macros to disable clipping and save clip state */
+/* Macros to disable clipping and save clip state. */
 #define PUSHCLIP { \
 	uint16_t vp_x1, vp_x2, vp_y1, vp_y2; \
 	vp_x1 = pgc->vp_x1; \
@@ -206,7 +207,7 @@ im1024_read(uint32_t addr, void *priv)
 {
     im1024_t *dev = (im1024_t *)priv;
 
-    if (addr == 0xC6331 && dev->pgc.mapram[0x330] == 1) {
+    if (addr == 0xc6331 && dev->pgc.mapram[0x330] == 1) {
 	/* Hardcode that there are 128 bytes free. */
 	return(0x80);
     }
@@ -221,9 +222,11 @@ im1024_write(uint32_t addr, uint8_t val, void *priv)
 {
     im1024_t *dev = (im1024_t *)priv;
 
-    /* If we are in 'fast' input mode, send all writes to the internal
-     * FIFO */
-    if (addr >= 0xC6000 && addr < 0xC6100 && dev->pgc.mapram[0x330] == 1) {
+    /*
+     * If we are in 'fast' input mode, send all
+     * writes to the internal FIFO.
+     */
+    if (addr >= 0xc6000 && addr < 0xc6100 && dev->pgc.mapram[0x330] == 1) {
 	fifo_write(dev, val);
 
 	DBGLOG(1, "IM1024: write(%02x)\n", val);
@@ -239,8 +242,10 @@ im1024_write(uint32_t addr, uint8_t val, void *priv)
 }
 
 
-/* I don't know what the IMGSIZ command does, only that the Windows driver
- * issues it. So just parse and ignore it */
+/*
+ * I don't know what the IMGSIZ command does, only that the
+ * Windows driver issues it. So just parse and ignore it.
+ */
 static void
 hndl_imgsiz(pgc_t *pgc)
 {
@@ -259,8 +264,10 @@ hndl_imgsiz(pgc_t *pgc)
 }
 
 
-/* I don't know what the IPREC command does, only that the Windows driver
- * issues it. So just parse and ignore it */
+/*
+ * I don't know what the IPREC command does, only that the
+ * Windows driver issues it. So just parse and ignore it.
+ */
 static void
 hndl_iprec(pgc_t *pgc)
 {
@@ -298,8 +305,10 @@ hndl_linfun(pgc_t *pgc)
 }
 
 
-/* I think PAN controls which part of the 1024x1024 framebuffer is displayed
- * in the 1024x800 visible screen. */
+/*
+ * I think PAN controls which part of the 1024x1024 framebuffer
+ * is displayed in the 1024x800 visible screen.
+ */
 static void
 hndl_pan(pgc_t *pgc)
 {
@@ -315,7 +324,7 @@ hndl_pan(pgc_t *pgc)
 }
 
 
-/* PLINE draws a non-filled polyline at a fixed position */
+/* PLINE draws a non-filled polyline at a fixed position. */
 static void
 hndl_pline(pgc_t *pgc)
 {
@@ -340,9 +349,12 @@ hndl_pline(pgc_t *pgc)
 }
 
 
-/* Blit a single row of pixels from one location to another. To avoid 
- * difficulties if the two overlap, read both rows into memory, process them
- * there, and write the result back. */
+/*
+ * Blit a single row of pixels from one location to another.
+ *
+ * To avoid difficulties if the two overlap, read both rows
+ * into memory, process them there, and write the result back.
+ */
 static void
 blkmov_row(pgc_t *pgc, int16_t x0, int16_t x1, int16_t x2, int16_t sy, int16_t ty)
 {
@@ -355,37 +367,35 @@ blkmov_row(pgc_t *pgc, int16_t x0, int16_t x1, int16_t x2, int16_t sy, int16_t t
 	dst[x - x0] = pgc_read_pixel(pgc, x - x0 + x2, ty);
     }
 
-    for (x = x0; x <= x1; x++) {
-	switch (pgc->draw_mode) {
-		default:
-		case 0:
-			pgc_write_pixel(pgc, (x - x0 + x2), ty, src[x - x0]);
-			break;
+    for (x = x0; x <= x1; x++) switch (pgc->draw_mode) {
+	default:
+	case 0:
+		pgc_write_pixel(pgc, (x - x0 + x2), ty, src[x - x0]);
+		break;
 
-		case 1:
-			pgc_write_pixel(pgc, (x - x0 + x2), ty, dst[x - x0] ^ 0xFF);
-			break;
+	case 1:
+		pgc_write_pixel(pgc, (x - x0 + x2), ty, dst[x - x0] ^ 0xff);
+		break;
 
-		case 2:
-			pgc_write_pixel(pgc, (x - x0 + x2), ty, src[x - x0] ^ dst[x - x0]);
-			break;
+	case 2:
+		pgc_write_pixel(pgc, (x - x0 + x2), ty, src[x - x0] ^ dst[x - x0]);
+		break;
 
-		case 3:
-			pgc_write_pixel(pgc, (x - x0 + x2), ty, src[x - x0] & dst[x - x0]);
-			break;
-	}
+	case 3:
+		pgc_write_pixel(pgc, (x - x0 + x2), ty, src[x - x0] & dst[x - x0]);
+		break;
     }
 }
 
 
-/* BLKMOV blits a rectangular area from one location to another, with no
- * clipping. */
+/*
+ * BLKMOV blits a rectangular area from one location to another.
+ *
+ * Clipping is disabled.
+ */
 static void
 hndl_blkmov(pgc_t *pgc)
 {
-#if 0
-    im1024_t *dev = (im1024_t *)pgc;
-#endif
     int16_t x0, y0;
     int16_t x1, y1;
     int16_t x2, y2;
@@ -398,13 +408,15 @@ hndl_blkmov(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x2)) return;
     if (! pgc_param_word(pgc, &y2)) return;
 
-    DEBUG("IM1024: BLKMOV %i,%i,%i,%i,%i,%i\n", x0, y0, x1, y1, x2, y2);
+    DEBUG("IM1024: BLKMOV %i,%i,%i,%i,%i,%i\n", x0,y0,x1,y1,x2,y2);
 
     /* Disable clipping. */
     PUSHCLIP
 
-    /* Either go down from the top, or up from the bottom, depending
-     * whether areas might overlap */
+    /*
+     * Either go down from the top, or up from the bottom,
+     * depending whether areas might overlap.
+     */
     if (y2 <= y0) {
 	for (y = y0; y <= y1; y++)
 		blkmov_row(pgc, x0, x1, x2, y, y - y0 + y2);
@@ -418,8 +430,10 @@ hndl_blkmov(pgc_t *pgc)
 }
 
 
-/* This overrides the PGC ELIPSE command to parse its parameters as words
- * rather than coordinates */
+/*
+ * Override the PGC ELIPSE command to parse its
+ * parameters as words rather than coordinates.
+  */
 static void
 hndl_ellipse(pgc_t *pgc)
 {
@@ -435,8 +449,10 @@ hndl_ellipse(pgc_t *pgc)
 }
 
 
-/* This overrides the PGC MOVE command to parse its parameters as words
- * rather than coordinates */
+/*
+ * Override the PGC MOVE command to parse its
+ * parameters as words rather than coordinates.
+ */
 static void
 hndl_move(pgc_t *pgc)
 {
@@ -445,15 +461,17 @@ hndl_move(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x)) return;
     if (! pgc_param_word(pgc, &y)) return;
 
+    DEBUG("IM1024: MOVE %i,%i\n", x, y);
+
     pgc->x = x << 16;
     pgc->y = y << 16;
-
-    DEBUG("IM1024: MOVE %i,%i\n", x, y);
 }
 
 
-/* This overrides the PGC DRAW command to parse its parameters as words
- * rather than coordinates */
+/*
+ * Override the PGC DRAW command to parse its
+ * parameters as words rather than coordinates.
+ */
 static void
 hndl_draw(pgc_t *pgc)
 {
@@ -465,13 +483,16 @@ hndl_draw(pgc_t *pgc)
     DEBUG("IM1024: DRAW %i,%i to %i,%i\n", pgc->x >> 16, pgc->y >> 16, x, y);
 
     pgc_draw_line(pgc, pgc->x, pgc->y, x << 16, y << 16, pgc->line_pattern);
+
     pgc->x = x << 16;
     pgc->y = y << 16;
 }
 
 
-/* This overrides the PGC POLY command to parse its parameters as words
- * rather than coordinates */
+/*
+ * Override the PGC POLY command to parse its
+ * parameters as words rather than coordinates.
+ */
 static void
 hndl_poly(pgc_t *pgc)
 {
@@ -484,7 +505,6 @@ hndl_poly(pgc_t *pgc)
 
     x = (int32_t *)mem_alloc(as * sizeof(int32_t));
     y = (int32_t *)mem_alloc(as * sizeof(int32_t));
-
     if (!x || !y) {
 	DEBUG("IM1024: POLY: out of memory\n");
 	return;
@@ -519,9 +539,11 @@ hndl_poly(pgc_t *pgc)
 		realcount++;
 	}
 
-	/* If we are in a command list, peek ahead to see if the next
+	/*
+	 * If we are in a command list, peek ahead to see if the next
 	 * command is also POLY. If so, that's a continuation of this
-	 * polygon! */
+	 * polygon!
+	 */
 	parsing = 0;
 	if (pgc->clcur && (pgc->clcur->rdptr+1) < pgc->clcur->wrptr &&
 	    pgc->clcur->list[pgc->clcur->rdptr] == 0x30) {
@@ -573,8 +595,10 @@ parse_poly(pgc_t *pgc, pgc_cl_t *cl, int c)
 }
 
 
-/* This overrides the PGC RECT command to parse its parameters as words
- * rather than coordinates */
+/*
+ * Override the PGC RECT command to parse its
+ * parameters as words rather than coordinates.
+ */
 static void
 hndl_rect(pgc_t *pgc)
 {
@@ -586,7 +610,7 @@ hndl_rect(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x1)) return;
     if (! pgc_param_word(pgc, &y1)) return;
 
-    /* Convert to raster coords */
+    /* Convert to raster coords. */
     pgc_sto_raster(pgc, &x0, &y0);
     pgc_sto_raster(pgc, &x1, &y1);
 
@@ -608,8 +632,13 @@ hndl_rect(pgc_t *pgc)
 }
 
 
-/* TODO: Text drawing should probably be implemented in vid_pgc.c rather
- * than vid_im1024.c */
+/*
+ * FIXME:
+ * Define a font character.
+ *
+ * Text drawing should probably be implemented in
+ * vid_pgc.c rather than here..
+ */
 static void
 hndl_tdefin(pgc_t *pgc)
 {
@@ -619,8 +648,8 @@ hndl_tdefin(pgc_t *pgc)
     unsigned len, n;
 
     if (! pgc_param_byte(pgc, &ch)) return;
-    if (! pgc_param_byte(pgc, &rows)) return;
     if (! pgc_param_byte(pgc, &cols)) return;
+    if (! pgc_param_byte(pgc, &rows)) return;
 
     DEBUG("IM1024: TDEFIN (%i,%i,%i) 0x%02x 0x%02x\n",
 	ch, rows, cols, pgc->mapram[0x300], pgc->mapram[0x301]);
@@ -633,15 +662,27 @@ hndl_tdefin(pgc_t *pgc)
 		dev->font[ch][n] = bt;
     }
 
-    dev->fontx[ch] = rows;
-    dev->fonty[ch] = cols;
+    dev->fontx[ch] = cols;
+    dev->fonty[ch] = rows;
+}
+
+
+static void
+hndl_tsize(pgc_t *pgc)
+{
+    int16_t size;
+
+    if (!pgc_param_word(pgc, &size)) return;
+    DEBUG("IM1024: TSIZE(%i)\n", size);
+
+    pgc->tsize = size << 16;
 }
 
 
 static void
 hndl_twrite(pgc_t *pgc)
 {
-    uint8_t buf[256], rbuf[256];
+    uint8_t buf[256];
     im1024_t *dev = (im1024_t *)pgc;
     uint8_t count, mask, *row;
     int x, y, wb, n;
@@ -652,30 +693,21 @@ hndl_twrite(pgc_t *pgc)
 
     for (n = 0; n < count; n++)
 	if (! pgc_param_byte(pgc, &buf[n])) return;
-
     buf[count] = 0;
-    for (n = 0; n <= count; n++) {
-	if (isprint(buf[n]) || 0 == buf[n])
-		rbuf[n] = buf[n];
-	else
-		rbuf[n] = '?';
-    }
 
     pgc_sto_raster(pgc, &x0, &y0);
 
-    DEBUG("IM1024: TWRITE (%i,%-*.*s) x0=%i y0=%i\n",
-		count, count, count, rbuf, x0, y0);
+    DEBUG("IM1024: TWRITE (%i) x0=%i y0=%i\n", count, x0, y0);
 
     for (n = 0; n < count; n++) {
 	wb = (dev->fontx[buf[n]] + 7) / 8;
-	DEBUG("IM1024: ch=0x%02x w=%d h=%i wb=%i\n", 
+	DEBUG("IM1024: ch=0x%02x w=%i h=%i wb=%i\n", 
 		buf[n], dev->fontx[buf[n]], dev->fonty[buf[n]], wb);
 
 	for (y = 0; y < dev->fonty[buf[n]]; y++) {
 		mask = 0x80;
 		row = &dev->font[buf[n]][y * wb];
 		for (x = 0; x < dev->fontx[buf[n]]; x++) {
-			rbuf[x] = (row[0] & mask) ? '#' : '-';
 			if (row[0] & mask)
 				pgc_plot(pgc, x + x0, y0 - y);
 			mask = mask >> 1;
@@ -684,8 +716,50 @@ hndl_twrite(pgc_t *pgc)
 				row++;
 			}
 		}
-		rbuf[x++] = '\n';
-		rbuf[x++] = 0;
+	}
+
+	x0 += dev->fontx[buf[n]];
+    }
+}
+
+
+static void
+hndl_txt88(pgc_t *pgc)
+{
+    uint8_t buf[256];
+    im1024_t *dev = (im1024_t *)pgc;
+    uint8_t count, mask, *row;
+    int16_t x0 = pgc->x >> 16;
+    int16_t y0 = pgc->y >> 16;
+    unsigned n;
+    int x, y, wb;
+
+    if (! pgc_param_byte(pgc, &count)) return;
+
+    for (n = 0; n < count; n++)
+	if (! pgc_param_byte(pgc, &buf[n])) return;
+    buf[count] = 0;
+
+    pgc_sto_raster(pgc, &x0, &y0);
+
+    DEBUG("IM204: TWRITE (%i) x0=%i y0=%i\n", count, x0, y0);
+
+    for (n = 0; n < count; n++) {
+	wb = (dev->fontx[buf[n]] + 7) / 8;
+	DEBUG("IM1024: ch=0x%02x w=%i h=%i wb=%i\n", 
+		buf[n], dev->fontx[buf[n]], dev->fonty[buf[n]], wb);
+
+	for (y = 0; y < dev->fonty[buf[n]]; y++) {
+		mask = 0x80;
+		row = &dev->font[buf[n]][y * wb];
+		for (x = 0; x < dev->fontx[buf[n]]; x++) {
+			if (row[0] & mask) pgc_plot(pgc, x + x0, y0 - y);
+			mask = mask >> 1;
+			if (mask == 0) {
+				mask = 0x80;
+				row++;
+			}
+		}
 	}
 
 	x0 += dev->fontx[buf[n]];
@@ -704,8 +778,7 @@ hndl_imagew(pgc_t *pgc)
     if (! pgc_param_word(pgc, &col1)) return;
     if (! pgc_param_word(pgc, &col2)) return;
 
-    /* IMAGEW already uses raster coordinates so there is no need to
-     * convert it */
+    /* Already using raster coordinates, no need to convert. */
     DEBUG("IM1024: IMAGEW (row=%i,col1=%i,col2=%i)\n", row1, col1, col2);
 
     vp_x1 = pgc->vp_x1;
@@ -728,34 +801,32 @@ hndl_imagew(pgc_t *pgc)
 		pgc_write_pixel(pgc, col1, row1, v1);
 		col1++;
 	}
+    } else {
+	/* In hex mode, it's RLE compressed. */
+	while (col1 <= col2) {
+		if (! pgc_param_byte(pgc, &v1)) return;
 
-	return;
-    }
-
-    /* In hex mode, it's RLE compressed. */
-    while (col1 <= col2) {
-	if (! pgc_param_byte(pgc, &v1)) return;
-
-	if (v1 & 0x80) {
-		/* Literal run. */
-		v1 -= 0x7f;
-		while (col1 <= col2 && v1 != 0)	{	
+		if (v1 & 0x80) {
+			/* Literal run. */
+			v1 -= 0x7f;
+			while (col1 <= col2 && v1 != 0)	{	
+				if (! pgc_param_byte(pgc, &v2)) return;
+				pgc_write_pixel(pgc, col1, row1, v2);
+				col1++;
+				v1--;
+			}
+		} else {
+	 		/* Repeated run. */
 			if (! pgc_param_byte(pgc, &v2)) return;
-			pgc_write_pixel(pgc, col1, row1, v2);
-			col1++;
-			v1--;
-		}
-	} else {
-	 	/* Repeated run. */
-		if (! pgc_param_byte(pgc, &v2)) return;
 
-		v1++;
-		while (col1 <= col2 && v1 != 0)	{	
-			pgc_write_pixel(pgc, col1, row1, v2);
-			col1++;
-			v1--;
-		}
-	}	
+			v1++;
+			while (col1 <= col2 && v1 != 0)	{	
+				pgc_write_pixel(pgc, col1, row1, v2);
+				col1++;
+				v1--;
+			}
+		}	
+	}
     }
 
     /* Restore clipping. */
@@ -774,7 +845,8 @@ hndl_imagew(pgc_t *pgc)
 static void
 hndl_dot(pgc_t *pgc)
 {
-    int16_t x = pgc->x >> 16, y = pgc->y >> 16;
+    int16_t x = pgc->x >> 16,
+	    y = pgc->y >> 16;
 
     pgc_sto_raster(pgc, &x, &y);	
 
@@ -785,10 +857,12 @@ hndl_dot(pgc_t *pgc)
 }
 
 
-/* This command (which I have called IMAGEX, since I don't know its real 
+/*
+ * This command (which I have called IMAGEX, since I don't know its real 
  * name) is a screen-to-memory blit. It reads a rectangle of bytes, rather
  * than the single row read by IMAGER, and does not attempt to compress 
- * the result */
+ * the result.
+ */
 static void
 hndl_imagex(pgc_t *pgc)
 {
@@ -800,7 +874,7 @@ hndl_imagex(pgc_t *pgc)
     if (! pgc_param_word(pgc, &x1)) return;
     if (! pgc_param_word(pgc, &y1)) return;
 
-    /* IMAGEX already uses raster coordinates so don't convert */
+    /* Already using raster coordinates, no need to convert. */
     DEBUG("IM1024: IMAGEX (%i,%i,%i,%i)\n", x0,y0,x1,y1);
 
     for (p = y0; p <= y1; p++) {
@@ -812,7 +886,8 @@ hndl_imagex(pgc_t *pgc)
 }
 
 
-/* Commands implemented by the IM-1024.
+/*
+ * Commands implemented by the IM-1024.
  *
  * TODO: A lot of commands need commandlist parsers.
  * TODO: The IM-1024 has a lot more commands that are not included here
@@ -827,19 +902,22 @@ static const pgc_cmd_t im1024_commands[] = {
     { "ELIPSE", 0x39,	hndl_ellipse,	pgc_parse_words,	2	},
     { "EL",     0x39,	hndl_ellipse,	pgc_parse_words,	2	},
     { "IMAGEW", 0xd9,	hndl_imagew,	NULL,			0	},
-    { "IW",     0xd9,	hndl_imagew,	NULL,			0	},
     { "IMAGEX", 0xda,	hndl_imagex,	NULL,			0	},
-    { "TWRITE", 0x8b,	hndl_twrite,	NULL,			0	},
-    { "TDEFIN", 0x84,	hndl_tdefin,	NULL,			0	},
-    { "TD",     0x84,	hndl_tdefin,	NULL,			0	},
-    { "IPREC",  0xe4,	hndl_iprec,	NULL,			0	},
     { "IMGSIZ", 0x4e,	hndl_imgsiz,	NULL,			0	},
-    { "LUT8",   0xe6,	pgc_hndl_lut8,	NULL,			0	},
+    { "IPREC",  0xe4,	hndl_iprec,	NULL,			0	},
+    { "IW",     0xd9,	hndl_imagew,	NULL,			0	},
     { "L8",     0xe6,	pgc_hndl_lut8,	NULL,			0	},
-    { "LINFUN", 0xeb,	hndl_linfun,	pgc_parse_bytes,	1	},
     { "LF",     0xeb,	hndl_linfun,	pgc_parse_bytes,	1	},
+    { "LINFUN", 0xeb,	hndl_linfun,	pgc_parse_bytes,	1	},
+    { "LUT8",   0xe6,	pgc_hndl_lut8,	NULL,			0	},
     { "LUT8RD", 0x53,	pgc_hndl_lut8rd,NULL,			0	},
     { "L8RD",   0x53,	pgc_hndl_lut8rd,NULL,			0	},
+    { "TDEFIN", 0x84,	hndl_tdefin,	NULL,			0	},
+    { "TD",     0x84,	hndl_tdefin,	NULL,			0	},
+    { "TSIZE",  0x81,	hndl_tsize,	NULL,			0	},
+    { "TS",     0x81,	hndl_tsize,	NULL,			0	},
+    { "TWRITE", 0x8b,	hndl_twrite,	NULL,			0	},
+    { "TXT88",  0x88,	hndl_txt88,	NULL,			0	},
     { "PAN",    0xb7,	hndl_pan,	NULL,			0	},
     { "POLY",   0x30,	hndl_poly,	parse_poly,		0	},
     { "P",      0x30,	hndl_poly,	parse_poly,		0	},
@@ -861,8 +939,8 @@ im1024_init(const device_t *info)
     dev = (im1024_t *)mem_alloc(sizeof(im1024_t));
     memset(dev, 0x00, sizeof(im1024_t));
 
-    dev->fifo = (uint8_t *)mem_alloc(4096);
     dev->fifo_len = 4096;
+    dev->fifo = (uint8_t *)mem_alloc(dev->fifo_len);
     dev->fifo_wrptr = 0;
     dev->fifo_rdptr = 0;
 

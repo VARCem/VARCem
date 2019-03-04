@@ -31,8 +31,7 @@
  *		instructions left there for it. We simulate this behavior
  *		with a separate thread.
  *
- * **NOTE**	This driver does not yet work, pending (proper) conversion
- *		to the video backend, which is different from PCem's:
+ * **NOTE**	This driver is not finished yet:
  *
  *		- cursor will blink at very high speed if used on a machine
  *		  with clock greater than 4.77MHz. We should  "scale down"
@@ -43,10 +42,9 @@
  *
  *		- test it with the Windows 1.x driver?
  *
- *		Until these are fixed, both the PGC as well as the IM1024
- *		will remain in DevBranch mode.
+ *		This is expected to be done shortly.
  *
- * Version:	@(#)vid_pgc.c	1.0.2	2019/03/02
+ * Version:	@(#)vid_pgc.c	1.0.2	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -357,7 +355,7 @@ static void
 hndl_clbeg(pgc_t *dev)
 {
     const pgc_cmd_t *cmd;
-    uint8_t param;
+    uint8_t param = 0;
     pgc_cl_t cl;
 
     if (! pgc_param_byte(dev, &param)) return;
@@ -409,7 +407,7 @@ static void
 hndl_clrun(pgc_t *dev)
 {
     pgc_cl_t *clprev = dev->clcur;
-    uint8_t param;
+    uint8_t param = 0;
 
     if (! pgc_param_byte(dev, &param)) return;
 
@@ -425,8 +423,8 @@ static void
 hndl_cloop(pgc_t *dev)
 {
     pgc_cl_t *clprev = dev->clcur;
-    uint8_t param;
-    int16_t repeat;
+    uint8_t param = 0;
+    int16_t repeat = 0;
 
     if (! pgc_param_byte(dev, &param)) return;
     if (! pgc_param_word(dev, &repeat)) return;
@@ -442,7 +440,7 @@ hndl_cloop(pgc_t *dev)
 static void
 hndl_clread(pgc_t *dev)
 {
-    uint8_t param;
+    uint8_t param = 0;
     uint32_t n;
 
     if (! pgc_param_byte(dev, &param)) return;
@@ -458,7 +456,7 @@ hndl_clread(pgc_t *dev)
 static void
 hndl_cldel(pgc_t *dev)
 {
-    uint8_t param;
+    uint8_t param = 0;
 
     if (! pgc_param_byte(dev, &param)) return;
 
@@ -470,7 +468,7 @@ hndl_cldel(pgc_t *dev)
 static void
 hndl_clears(pgc_t *dev)
 {
-    uint8_t param;
+    uint8_t param = 0;
     uint32_t y;
 
     if (! pgc_param_byte(dev, &param)) return;
@@ -484,7 +482,7 @@ hndl_clears(pgc_t *dev)
 static void
 hndl_color(pgc_t *dev)
 {
-    uint8_t param;
+    uint8_t param = 0;
 
     if (! pgc_param_byte(dev, &param)) return;
 
@@ -502,7 +500,7 @@ hndl_color(pgc_t *dev)
 static void
 hndl_linfun(pgc_t *dev)
 {
-    uint8_t param;
+    uint8_t param = 0;
 
     if (! pgc_param_byte(dev, &param)) return;
 
@@ -518,7 +516,7 @@ hndl_linfun(pgc_t *dev)
 static void
 hndl_linpat(pgc_t *dev)
 {
-    uint16_t param;
+    uint16_t param = 0;
 
     if (! pgc_param_word(dev, (int16_t *)&param)) return;
 
@@ -531,7 +529,7 @@ hndl_linpat(pgc_t *dev)
 static void
 hndl_prmfil(pgc_t *dev)
 {
-    uint8_t param;
+    uint8_t param = 0;
 
     if (! pgc_param_byte(dev, &param)) return;
 
@@ -547,7 +545,7 @@ hndl_prmfil(pgc_t *dev)
 static void
 hndl_move(pgc_t *dev)
 {
-    int32_t x, y;
+    int32_t x = 0, y = 0;
 
     if (! pgc_param_coord(dev, &x)) return;
     if (! pgc_param_coord(dev, &y)) return;
@@ -563,7 +561,7 @@ hndl_move(pgc_t *dev)
 static void
 hndl_move3(pgc_t *dev)
 {
-    int32_t x, y, z;
+    int32_t x = 0, y = 0, z = 0;
 
     if (! pgc_param_coord(dev, &x)) return;
     if (! pgc_param_coord(dev, &y)) return;
@@ -579,7 +577,7 @@ hndl_move3(pgc_t *dev)
 static void
 hndl_mover(pgc_t *dev)
 {
-    int32_t x, y;
+    int32_t x = 0, y = 0;
 
     if (! pgc_param_coord(dev, &x)) return;
     if (! pgc_param_coord(dev, &y)) return;
@@ -593,7 +591,7 @@ hndl_mover(pgc_t *dev)
 static void
 hndl_mover3(pgc_t *dev)
 {
-    int32_t x, y, z;
+    int32_t x = 0, y = 0, z = 0;
 
     if (! pgc_param_coord(dev, &x)) return;
     if (! pgc_param_coord(dev, &y)) return;
@@ -952,7 +950,7 @@ pgc_draw_ellipse(pgc_t *dev, int32_t x, int32_t y)
 static void
 hndl_ellipse(pgc_t *dev)
 {
-    int32_t x, y;
+    int32_t x = 0, y = 0;
 
     if (! pgc_param_coord(dev, &x)) return;
     if (! pgc_param_coord(dev, &y)) return;
@@ -1007,6 +1005,8 @@ hndl_display(pgc_t *dev)
     uint8_t param;
 
     if (! pgc_param_byte(dev, &param)) return;
+
+    DEBUG("PGC: DISPLAY(%i)\n", param);
 
     if (param > 1) 
 	pgc_error(dev, PGC_ERROR_RANGE);
@@ -1253,6 +1253,19 @@ hndl_tjust(pgc_t *dev)
 }
 
 
+/* TSIZE controls text horizontal spacing. */
+static void
+hndl_tsize(pgc_t *pgc)
+{
+    int32_t param;
+
+    if (! pgc_param_coord(pgc, &param)) return;
+
+    DEBUG("PGC: TSIZE %i\n", param);
+    pgc->tsize = param;
+}
+
+
 /*
  * VWPORT sets up the viewport (roughly, the clip rectangle) in
  * raster coordinates, measured from the bottom left of the screen.
@@ -1369,6 +1382,8 @@ static const pgc_cmd_t pgc_commands[] = {
     { "RF",     0x04, hndl_resetf,	NULL,			0	},
     { "TJUST",  0x85, hndl_tjust,	pgc_parse_bytes,	2	},
     { "TJ",     0x85, hndl_tjust,	pgc_parse_bytes,	2	},
+    { "TSIZE",  0x81, hndl_tsize,	pgc_parse_coords,	1	},
+    { "TS",     0x81, hndl_tsize,	pgc_parse_coords,	1	},
     { "VWPORT", 0xb2, hndl_vwport,	pgc_parse_words,	4	},
     { "VWP",    0xb2, hndl_vwport,	pgc_parse_words,	4	},
     { "WINDOW", 0xb3, hndl_window,	pgc_parse_words,	4	},
@@ -1508,6 +1523,8 @@ pgc_reset(pgc_t *dev)
 
     /* The 'CGA disable' jumper is not currently implemented. */
     dev->mapram[0x30b] = dev->cga_enabled = 1;
+    dev->mapram[0x30c] = dev->cga_enabled;
+    dev->mapram[0x30d] = dev->cga_enabled;
 
     dev->mapram[0x3f8] = 0x03;		/* minor version */
     dev->mapram[0x3f9] = 0x01;		/* minor version */
@@ -1556,6 +1573,9 @@ pgc_reset(pgc_t *dev)
 void
 pgc_setdisplay(pgc_t *dev, int cga)
 {
+    DEBUG("PGC: setdisplay(%i): cga_selected=%i cga_enabled=%i\n",
+			cga, dev->cga_selected, dev->cga_enabled);
+
     if (dev->cga_selected != (dev->cga_enabled && cga)) {
 	dev->cga_selected = (dev->cga_enabled && cga);
 
@@ -1626,7 +1646,10 @@ pgc_clist_byte(pgc_t *dev, uint8_t *val)
 {
     if (dev->clcur == NULL) return 0;
 
-    *val = dev->clcur->list[dev->clcur->rdptr++];
+    if (dev->clcur->rdptr < dev->clcur->wrptr)
+	*val = dev->clcur->list[dev->clcur->rdptr++];
+    else 
+	*val = 0;
 
     /* If we've reached the end, reset to the beginning and
      * (if repeating) run the repeat */
@@ -2139,6 +2162,7 @@ pgc_write(uint32_t addr, uint8_t val, void *priv)
 
 	if (dev->mapram[addr] != val) {
 		dev->mapram[addr] = val;
+
 		switch (addr) {
 			case 0x300:	/* input write pointer */
 				if (dev->waiting_input_fifo &&
@@ -2174,7 +2198,7 @@ pgc_write(uint32_t addr, uint8_t val, void *priv)
 				dev->mapram[0x30d] = dev->mapram[0x30c];
 				break;
 
-			case 0x3ff:	/* reboot the PGC  */
+			case 0x3ff:	/* reboot the PGC */
 				pgc_wake(dev);
 				break;
 		}
@@ -2226,9 +2250,8 @@ pgc_cga_text(pgc_t *dev, int w)
     ma += (dev->displine / pitch) * w;	
 
     for (x = 0; x < w; x++) {
-	chr  = addr[0];
-	attr = addr[1];
-	addr += 2;
+	chr  = *addr++;
+	attr = *addr++;
 
 	/* Cursor enabled? */           
 	if (ma == ca && (dev->cgablink & 8) &&
@@ -2239,13 +2262,13 @@ pgc_cga_text(pgc_t *dev, int w)
 		drawcursor = 0;
 
 	if (dev->mapram[0x3d8] & 0x20) {
-		cols[1] = attr & 15;
-		cols[0] = (attr >> 4) & 7;
+		cols[1] = (attr & 15) + 16;
+		cols[0] = ((attr >> 4) & 7) + 16;
 		if ((dev->cgablink & 8) && (attr & 0x80) && !drawcursor) 
 			cols[1] = cols[0];
 	} else { 
-		cols[1] = attr & 15; 
-		cols[0] = attr >> 4;
+		cols[1] = (attr & 15) + 16;
+		cols[0] = (attr >> 4) + 16;
 	}
 
 	for (c = 0; c < cw; c++) { 
@@ -2272,8 +2295,8 @@ pgc_cga_gfx40(pgc_t *dev)
     uint8_t *addr;
     uint16_t dat;
 
-    cols[0] = dev->mapram[0x3d9] & 15; 
-    col = (dev->mapram[0x3d9] & 16) ? 8 : 0; 
+    cols[0] = (dev->mapram[0x3d9] & 15) + 16;
+    col = ((dev->mapram[0x3d9] & 16) ? 8 : 0) + 16;
 
     if (dev->mapram[0x3d8] & 4) { 
 	cols[1] = col | 3; 
@@ -2312,8 +2335,8 @@ pgc_cga_gfx80(pgc_t *dev)
     uint8_t *addr;
     uint16_t dat;
 
-    cols[0] = 0;
-    cols[1] = dev->mapram[0x3d9] & 15; 
+    cols[0] = 16;
+    cols[1] = (dev->mapram[0x3d9] & 15) + 16;
 
     for (x = 0; x < 40; x++) {
 	addr = &dev->cga_vram[(ma + 2 * x + 80 * (dev->displine >> 2) + 0x2000 * ((dev->displine >> 1) & 1)) & 0x3fff];
@@ -2332,7 +2355,6 @@ void
 pgc_cga_poll(pgc_t *dev)
 {
     uint32_t cols[2];
-    int c;
 
     if (! dev->linepos) {
 	dev->vidtime += dev->dispofftime;
@@ -2352,12 +2374,9 @@ pgc_cga_poll(pgc_t *dev)
 		else 
 			pgc_cga_text(dev, 40);
 	} else {
-		cols[0] = ((dev->mapram[0x03d8] & 0x12) == 0x12) ? 0 : (dev->mapram[0x03d9] & 15);
+		cols[0] = ((dev->mapram[0x03d8] & 0x12) == 0x12) ? 0 : ((dev->mapram[0x03d9] & 15) + 16);
 		cga_hline(buffer, 0, dev->displine, PGC_CGA_WIDTH, cols[0]);
 	}
-
-	for (c = 0; c < PGC_CGA_WIDTH; c++)
-		((uint32_t *)buffer32->line[dev->displine])[c] = *((uint32_t *)&cgapal[buffer->line[dev->displine][c] & 0x0f]);
 
 	if (++dev->displine == PGC_CGA_HEIGHT) {
                	dev->mapram[0x3da] |= 8;
@@ -2383,7 +2402,7 @@ pgc_cga_poll(pgc_t *dev)
 			if (video_force_resize_get())
 				video_force_resize_set(0);
 		} 
-		video_blit_memtoscreen(0, 0, 0, ysize, xsize, ysize);
+		video_blit_memtoscreen_8(0, 0, 0, ysize, xsize, ysize);
 		frames++;
 
 		/* We have a fixed 640x400 screen for CGA modes. */
@@ -2434,14 +2453,13 @@ pgc_poll(void *priv)
 		 * 224. */
 		y = dev->displine - 2 * dev->pan_y;
 		for (x = 0; x < dev->screenw; x++) {
-			if (x + dev->pan_x < dev->maxw) {
-				buffer->line[dev->displine][x] = dev->palette[dev->vram[y * dev->maxw + x]];
-			} else {
-				buffer->line[dev->displine][x] = dev->palette[0];
-			}
+			if (x + dev->pan_x < dev->maxw)
+				((uint32_t *)buffer32->line[dev->displine])[x] = dev->palette[dev->vram[y * dev->maxw + x]];
+			else
+				((uint32_t *)buffer32->line[dev->displine])[x] = dev->palette[0];
 		}
 	} else {
-		cga_hline(buffer, 0, dev->displine, dev->screenw, dev->palette[0]);
+		cga_hline(buffer32, 0, dev->displine, dev->screenw, dev->palette[0]);
 	}
 
 	if (++dev->displine == dev->screenh) {
@@ -2557,7 +2575,6 @@ pgc_init(pgc_t *dev, int maxw, int maxh, int visw, int vish,
     dev->pgc_wake_thread = thread_create_event();
     dev->pgc_thread = thread_create(pgc_thread, dev);
 
-pclog_repeat(0);
     timer_add(pgc_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
  
     timer_add(wake_timer, &dev->wake_timer, &dev->wake_timer, (void *)dev);

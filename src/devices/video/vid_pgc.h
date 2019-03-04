@@ -8,7 +8,7 @@
  *
  *		Definitions for the PGC driver.
  *
- * Version:	@(#)vid_pgc.h	1.0.2	2019/03/02
+ * Version:	@(#)vid_pgc.h	1.0.2	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -101,6 +101,7 @@ typedef struct pgc {
     uint8_t	color;
     uint8_t	tjust_h;		/* hor alignment 1=left 2=ctr 3=right*/
     uint8_t	tjust_v;		/* vert alignment 1=bottom 2=ctr 3=top*/
+    int32_t	tsize;			/* horizontal spacing */
 
     int32_t	x, y, z;		/* drawing position */
 
@@ -126,8 +127,9 @@ typedef struct pgc {
     uint16_t	ma, maback;
     int		oddeven;
 
-    int		dispontime, dispofftime;
-    int64_t	vidtime;
+    int64_t	dispontime,
+		dispofftime,
+		vidtime;
 
     int		drawcursor;
 

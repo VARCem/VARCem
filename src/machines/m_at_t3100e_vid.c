@@ -22,13 +22,13 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_at_t3100e_vid.c	1.0.6	2018/09/22
+ * Version:	@(#)m_at_t3100e_vid.c	1.0.7	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -59,15 +59,18 @@
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
+#include "../rom.h"
 #include "../timer.h"
 #include "../device.h"
 #include "../devices/video/video.h"
 #include "../devices/video/vid_cga.h"
+#include "../plat.h"
 #include "m_at_t3100e.h"
 
 
-#define T3100E_XSIZE 640
-#define T3100E_YSIZE 400
+#define FONT_ROM_PATH	L"machines/toshiba/t3100e/t3100e_font.bin"
+#define T3100E_XSIZE	640
+#define T3100E_YSIZE	400
 
 
 /* Mapping of attributes to colours */
@@ -108,6 +111,9 @@ typedef struct {
     uint8_t	video_options;
 
     uint8_t	*vram;
+
+    uint8_t	fontdat[2048][8];
+    uint8_t	fontdatm[2048][16];
 } t3100e_t;
 
 
@@ -363,11 +369,11 @@ text_row80(t3100e_t *dev)
 
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
-			((uint32_t *)buffer32->line[dev->displine])[(x << 3) + c] = cols[(fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
+			((uint32_t *)buffer32->line[dev->displine])[(x << 3) + c] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
 		}
 	} else {
 		for (c = 0; c < 8; c++)
-			((uint32_t *)buffer32->line[dev->displine])[(x << 3) + c] = cols[(fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
+			((uint32_t *)buffer32->line[dev->displine])[(x << 3) + c] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
 	}
 	++ma;
     }
@@ -427,11 +433,11 @@ text_row40(t3100e_t *dev)
 
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
-			((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2] = ((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2 + 1] = cols[(fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
+			((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2] = ((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2 + 1] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
 		}
 	} else {
 		for (c = 0; c < 8; c++) {
-			((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2] = ((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2+1] = cols[(fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
+			((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2] = ((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2+1] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
 		}
 	}
 	++ma;
@@ -640,6 +646,44 @@ t3100e_poll(void *priv)
 }
 
 
+static int
+load_font(t3100e_t *dev, const wchar_t *s)
+{
+    FILE *fp;
+    int c, d;
+
+    fp = plat_fopen(rom_path(s), L"rb");
+    if (fp == NULL) {
+	ERRLOG("T3100e: cannot load font '%ls'\n", s);
+	return(0);
+    }
+
+    /* Fonts for 4 languages... */
+    for (d = 0; d < 2048; d += 512) {
+	for (c = d; c < d+256; c++)
+		(void)fread(&dev->fontdatm[c][8], 1, 8, fp);
+	for (c = d+256; c < d+512; c++)
+		(void)fread(&dev->fontdatm[c][8], 1, 8, fp);
+	for (c = d; c < d+256; c++)
+		(void)fread(&dev->fontdatm[c][0], 1, 8, fp);
+	for (c = d+256; c < d+512; c++)
+		(void)fread(&dev->fontdatm[c][0], 1, 8, fp);
+
+	/* Skip blank section. */
+	(void)fseek(fp, 4096, SEEK_CUR);
+
+	for (c = d; c < d+256; c++)
+		(void)fread(&dev->fontdat[c][0], 1, 8, fp);
+	for (c = d+256; c < d+512; c++)
+		(void)fread(&dev->fontdat[c][0], 1, 8, fp);
+    }
+
+    (void)fclose(fp);
+
+    return(1);
+}
+
+
 static void *
 t3100e_init(const device_t *info)
 {
@@ -647,6 +691,11 @@ t3100e_init(const device_t *info)
 
     dev = (t3100e_t *)mem_alloc(sizeof(t3100e_t));
     memset(dev, 0x00, sizeof(t3100e_t));
+
+    if (! load_font(dev, FONT_ROM_PATH)) {
+	free(dev);
+	return(NULL);
+    }
 
     cga_init(&dev->cga);
 

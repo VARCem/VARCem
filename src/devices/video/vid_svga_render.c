@@ -8,13 +8,13 @@
  *
  *		SVGA renderers.
  *
- * Version:	@(#)vid_svga_render.c	1.0.13	2018/10/22
+ * Version:	@(#)vid_svga_render.c	1.0.14	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -246,9 +246,9 @@ svga_render_text_80_ksc5601(svga_t *svga)
 
 		if(x + xinc < svga->hdisp && (chr & (nextchr | svga->ksc5601_sbyte_mask) & 0x80)) {
 			if ((chr == 0xc9 || chr == 0xfe) && (nextchr > 0xa0 && nextchr < 0xff))
-				dat = fontdatksc5601_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20].chr[svga->sc];
+				dat = fontdatk_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20].chr[svga->sc];
 			else if (nextchr & 0x80)
-				dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc];
+				dat = fontdatk[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc];
 			else
 				dat = 0xff;
 		} else {
@@ -292,9 +292,9 @@ svga_render_text_80_ksc5601(svga_t *svga)
 			}
 
 			if ((chr == 0xc9 || chr == 0xfe) && (nextchr > 0xa0 && nextchr < 0xff))
-				dat = fontdatksc5601_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20].chr[svga->sc + 16];
+				dat = fontdatk_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20].chr[svga->sc + 16];
 			else if (nextchr & 0x80)
-				dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc + 16];
+				dat = fontdatk[((chr & 0x7F) << 7) | (nextchr & 0x7F)].chr[svga->sc + 16];
 			else
 				dat = 0xff;
 

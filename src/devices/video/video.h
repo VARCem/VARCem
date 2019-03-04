@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.26	2019/03/01
+ * Version:	@(#)video.h	1.0.27	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -113,16 +113,17 @@ typedef rgb_t PALETTE[256];
 
 extern int		changeframecount;
 
+/* These will go away soon. */
+extern uint8_t		fontdat[256][8];
+extern uint8_t		fontdatm[256][16];
+extern dbcs_font_t	*fontdatk,
+			*fontdatk_user;
+
 extern bitmap_t		*buffer,
 			*buffer32;
 extern PALETTE		cgapal,
 			cgapal_mono[6];
 extern uint32_t		pal_lookup[256];
-extern uint8_t		fontdat[2048][8];
-extern uint8_t		fontdatm[2048][16];
-extern uint8_t		fontdat8x12[256][16];
-extern dbcs_font_t	*fontdatksc5601,
-			*fontdatksc5601_user;
 extern uint32_t		*video_6to8,
 			*video_15to32,
 			*video_16to32;
@@ -334,6 +335,10 @@ extern void		video_wait_for_blit(void);
 extern void		video_wait_for_buffer(void);
 
 extern void		cgapal_rebuild(void);
+
+#ifdef VIDEO_SVGA_H
+extern int		ati28800k_load_font(svga_t *, const wchar_t *);
+#endif
 
 extern void		video_log(int level, const char *fmt, ...);
 extern void		video_init(void);

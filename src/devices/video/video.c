@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.25	2019/03/02
+ * Version:	@(#)video.c	1.0.25	2019/03/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -91,14 +91,15 @@
 #ifdef ENABLE_VIDEO_LOG
 int		video_do_log = ENABLE_VIDEO_LOG;
 #endif
+
+/* These will go away soon. */
+uint8_t		fontdat[256][8];		/* IBM CGA font */
+uint8_t		fontdatm[256][16];		/* IBM MDA font */
+dbcs_font_t	*fontdatk = NULL,		/* Korean KSC-5601 font */
+		*fontdatk_user = NULL;		/* Korean KSC-5601 font (user)*/
+
 bitmap_t	*buffer = NULL,
 		*buffer32 = NULL;
-uint8_t		fontdat[2048][8];		/* IBM CGA font */
-uint8_t		fontdatm[2048][16];		/* IBM MDA font */
-uint8_t		fontdatw[512][32];		/* Wyse700 font */
-uint8_t		fontdat8x12[256][16];		/* MDSI Genius font */
-dbcs_font_t	*fontdatksc5601 = NULL,		/* Korean KSC-5601 font */
-		*fontdatksc5601_user = NULL;	/* Korean KSC-5601 font (user)*/
 uint32_t	pal_lookup[256];
 int		xsize = 1,
 		ysize = 1;
@@ -884,14 +885,14 @@ video_type(void)
 void
 video_reset_font(void)
 {
-    if (fontdatksc5601 != NULL) {
-	free(fontdatksc5601);
-	fontdatksc5601 = NULL;
+    if (fontdatk != NULL) {
+	free(fontdatk);
+	fontdatk = NULL;
     }
 
-    if (fontdatksc5601_user != NULL) {
-	free(fontdatksc5601_user);
-	fontdatksc5601_user = NULL;
+    if (fontdatk_user != NULL) {
+	free(fontdatk_user);
+	fontdatk_user = NULL;
     }
 }
 
@@ -901,11 +902,11 @@ void
 video_load_font(const wchar_t *s, int format)
 {
     FILE *fp;
-    int c, d;
+    int c;
 
     fp = plat_fopen(rom_path(s), L"rb");
     if (fp == NULL) {
-	ERRLOG("VIDEO: cannot load font '%ls', fmt=%d\n", s, format);
+	ERRLOG("VIDEO: cannot load font '%ls', fmt=%i\n", s, format);
 	return;
     }
 
@@ -917,80 +918,14 @@ video_load_font(const wchar_t *s, int format)
                        	(void)fread(&fontdatm[c][8], 1, 8, fp);
 		break;
 
-	case 1:		/* PC200 */
-		for (c = 0; c < 256; c++)
-                       	(void)fread(&fontdatm[c][0], 1, 8, fp);
-		for (c = 0; c < 256; c++)
-                       	(void)fread(&fontdatm[c][8], 1, 8, fp);
-		(void)fseek(fp, 4096, SEEK_SET);
-		for (c = 0; c < 256; c++) {
-                       	(void)fread(&fontdat[c][0], 1, 8, fp);
-			for (d = 0; d < 8; d++)
-				(void)fgetc(fp);
-		}
-		break;
-
-	case 2:		/* CGA, thin font */
-	case 8:		/* CGA, thick font */
-		if (format == 8) {
+	case 1:		/* CGA, thin font */
+	case 2:		/* CGA, thick font */
+		if (format == 2) {
 			/* Use the second ("thick") font in the ROM. */
 			(void)fseek(fp, 2048, SEEK_SET);
 		}
 		for (c = 0; c < 256; c++)
                        	(void)fread(&fontdat[c][0], 1, 8, fp);
-		break;
-
-	case 3:		/* Wyse 700 */
-		for (c = 0; c < 512; c++)
-                       	(void)fread(&fontdatw[c][0], 1, 32, fp);
-		break;
-
-	case 4:		/* MDSI Genius */
-		for (c = 0; c < 256; c++)
-                       	(void)fread(&fontdat8x12[c][0], 1, 16, fp);
-		break;
-
-	case 5: /* Toshiba 3100e */
-		for (d = 0; d < 2048; d += 512) {    /* Four languages... */
-	                for (c = d; c < d+256; c++)
-                       		(void)fread(&fontdatm[c][8], 1, 8, fp);
-                	for (c = d+256; c < d+512; c++)
-                        	(void)fread(&fontdatm[c][8], 1, 8, fp);
-	                for (c = d; c < d+256; c++)
-                        	(void)fread(&fontdatm[c][0], 1, 8, fp);
-                	for (c = d+256; c < d+512; c++)
-                        	(void)fread(&fontdatm[c][0], 1, 8, fp);
-			(void)fseek(fp, 4096, SEEK_CUR);	/* Skip blank section */
-	                for (c = d; c < d+256; c++)
-                       		(void)fread(&fontdat[c][0], 1, 8, fp);
-                	for (c = d+256; c < d+512; c++)
-                        	(void)fread(&fontdat[c][0], 1, 8, fp);
-		}
-                break;
-
-	case 6: /* Korean KSC-5601 */
-		if (fontdatksc5601 == NULL)
-			fontdatksc5601 = (dbcs_font_t *)mem_alloc(16384 * sizeof(dbcs_font_t));
-
-		if (fontdatksc5601_user == NULL)
-			fontdatksc5601_user = (dbcs_font_t *)mem_alloc(192 * sizeof(dbcs_font_t));
-
-		for (c = 0; c < 16384; c++) {
-			for (d = 0; d < 32; d++)
-				fontdatksc5601[c].chr[d] = fgetc(fp);
-		}
-		break;
-
-	case 7: /* Sigma Color 400 */
-		/* The first 4K of the character ROM holds an 8x8 font. */
-		for (c = 0; c < 256; c++) {
-			(void)fread(&fontdat[c][0], 1, 8, fp);
-			(void)fseek(fp, 8, SEEK_CUR);
-		}
-
-		/* The second 4K holds an 8x16 font. */
-		for (c = 0; c < 256; c++)
-			(void)fread(&fontdatm[c][0], 1, 16, fp);
 		break;
     }
 
