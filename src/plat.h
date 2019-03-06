@@ -8,11 +8,11 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.22	2018/11/24
+ * Version:	@(#)plat.h	1.0.23	2019/03/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -52,7 +52,7 @@
 #ifdef _WIN32
 # ifndef _MSC_VER
 #  undef swprintf
-#  define swprintf __swprintf
+#  define swprintf	__swprintf
 # endif
 # define wcsncasecmp	_wcsnicmp
 # define wcscasecmp	_wcsicmp
@@ -62,12 +62,12 @@
 
 #if defined(UNIX) && defined(FREEBSD)
 /* FreeBSD has largefile by default. */
-# define fopen64        fopen
+//# define fopen64        fopen
 # define fseeko64       fseeko
 # define ftello64       ftello
 # define off64_t        off_t
 #elif defined(_MSC_VER)
-# define fopen64        fopen
+//# define fopen64        fopen
 # define fseeko64       _fseeki64
 # define ftello64       _ftelli64
 # define off64_t        off_t
@@ -141,12 +141,14 @@ extern void	plat_console(int on);
 #endif
 extern wchar_t	*fix_emu_path(const wchar_t *str);
 extern FILE	*plat_fopen(const wchar_t *path, const wchar_t *mode);
+extern FILE	*plat_fopen64(const wchar_t *path, const wchar_t *mode);
 extern void	plat_remove(const wchar_t *path);
 extern int	plat_getcwd(wchar_t *bufp, int max);
 extern int	plat_chdir(const wchar_t *path);
 extern void	plat_tempfile(wchar_t *bufp, const wchar_t *prefix, const wchar_t *suffix);
 extern void	plat_get_exe_name(wchar_t *path, int size);
 extern wchar_t	*plat_get_basename(const wchar_t *path);
+extern void	plat_get_dirname(wchar_t *dest, const wchar_t *path);
 extern wchar_t	*plat_get_filename(const wchar_t *path);
 extern wchar_t	*plat_get_extension(const wchar_t *path);
 extern void	plat_append_filename(wchar_t *dest, const wchar_t *s1, const wchar_t *s2);

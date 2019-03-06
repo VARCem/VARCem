@@ -8,7 +8,7 @@
  *
  *		Definitions for the PGC driver.
  *
- * Version:	@(#)vid_pgc.h	1.0.2	2019/03/03
+ * Version:	@(#)vid_pgc.h	1.0.3	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -71,7 +71,10 @@ typedef struct pgc_cmd {
 } pgc_cmd_t;
 
 typedef struct pgc {
-    int		type;			/* board type */
+    int8_t	type;			/* board type */
+    int8_t	cga_enabled;
+    int8_t	cga_selected;
+    volatile int8_t stopped;
 
     mem_map_t	mapping;
     mem_map_t	cga_mapping;
@@ -112,8 +115,6 @@ typedef struct pgc {
     int		waiting_input_fifo;
     int		waiting_output_fifo;
     int		waiting_error_fifo;
-    int		cga_enabled;
-    int		cga_selected;
     int		ascii_mode;
     int		result_count;
  

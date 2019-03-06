@@ -8,13 +8,13 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.19	2018/10/21
+ * Version:	@(#)cdrom_image.cpp	1.0.20	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		RichardG,
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1082,7 +1082,6 @@ static const cdrom_ops_t cdrom_image_ops = {
 int
 cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
 {
-    char temp[1024];
     CDROM_Interface_Image *img;
 
     wcscpy(dev->image_path, fn);
@@ -1096,10 +1095,8 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
     img = new CDROM_Interface_Image();
     dev->local = img;
 
-    /* Convert filename and open the image. */
-    memset(temp, '\0', sizeof(temp));
-    wcstombs(temp, fn, sizeof(temp));
-    if (! img->SetDevice(temp, false)) {
+    /* Open the image. */
+    if (! img->SetDevice(fn, false)) {
 	image_close(dev);
 	dev->ops = NULL;
 	dev->host_drive = 0;

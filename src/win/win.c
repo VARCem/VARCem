@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.26	2019/02/12
+ * Version:	@(#)win.c	1.0.27	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -402,8 +402,17 @@ plat_chdir(const wchar_t *path)
 }
 
 
+/* Open a file, using Unicode pathname. */
 FILE *
 plat_fopen(const wchar_t *path, const wchar_t *mode)
+{
+    return(_wfopen(path, mode));
+}
+
+
+/* Open a file, using Unicode pathname, with 64bit pointers. */
+FILE *
+plat_fopen64(const wchar_t *path, const wchar_t *mode)
 {
     return(_wfopen(path, mode));
 }
@@ -454,6 +463,30 @@ plat_get_basename(const wchar_t *path)
 }
 
 
+/* Return the 'directory' element of a pathname. */
+void
+plat_get_dirname(wchar_t *dest, const wchar_t *path)
+{
+    int c = (int)wcslen(path);
+    wchar_t *ptr;
+
+    ptr = (wchar_t *)path;
+
+    while (c > 0) {
+	if (path[c] == L'/' || path[c] == L'\\') {
+		ptr = (wchar_t *)&path[c];
+		break;
+	}
+ 	c--;
+    }
+
+    /* Copy to destination. */
+    while (path < ptr)
+	*dest++ = *path++;
+    *dest = L'\0';
+}
+
+
 wchar_t *
 plat_get_filename(const wchar_t *path)
 {
@@ -491,6 +524,7 @@ void
 plat_append_filename(wchar_t *dest, const wchar_t *s1, const wchar_t *s2)
 {
     wcscat(dest, s1);
+    plat_append_slash(dest);
     wcscat(dest, s2);
 }
 

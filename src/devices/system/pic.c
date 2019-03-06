@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel 8259 interrupt controller.
  *
- * Version:	@(#)pic.c	1.0.5	2019/02/28
+ * Version:	@(#)pic.c	1.0.6	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -133,7 +133,7 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
 
 		case 1:		/* ICW2 */
 			dev->vector = val & 0xf8;
-			DEBUG("PIC: vector now: %02X\n", dev->vector);
+			DBGLOG(1, "PIC: vector now: %02X\n", dev->vector);
 			if (dev->icw1 & 0x02)
 				dev->icw = 3;
 			else
@@ -142,7 +142,7 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
 
 		case 2:		/* ICW3 */
 			dev->icw3 = val;
-			DEBUG("PIC: ICW3 now %02x\n", val);
+			DBGLOG(1, "PIC: ICW3 now %02x\n", val);
 			if (dev->icw1 & 0x01)
 				dev->icw = 3;
 			else
@@ -228,12 +228,12 @@ pic_read(uint16_t addr, void *priv)
     PIC *dev = (PIC *)priv;
 
     if (addr & 1) {
-	DEBUG("PIC1: read mask %02X\n", dev->mask);
+	DBGLOG(1, "PIC1: read mask %02X\n", dev->mask);
 	return(pic.mask);
     }
 
     if (dev->read) {
-	DEBUG("PIC1: read ins %02X\n", dev->ins);
+	DBGLOG(1, "PIC1: read ins %02X\n", dev->ins);
 	if (AT)
 		return(dev->ins | (pic2.ins ? 4 : 0));
 	else
@@ -288,7 +288,7 @@ pic2_write(uint16_t addr, uint8_t val, void *priv)
 
 		case 1:		/* ICW2 */
 			dev->vector = val & 0xf8;
-			DEBUG("PIC2: vector now: %02X\n", dev->vector);
+			DBGLOG(1, "PIC2: vector now: %02X\n", dev->vector);
 			if (dev->icw1 & 0x02)
 				dev->icw = 3;
 			else
@@ -297,7 +297,7 @@ pic2_write(uint16_t addr, uint8_t val, void *priv)
 
 		case 2:		/* ICW3 */
 			dev->icw3 = val;
-			DEBUG("PIC2: ICW3 now %02X\n", val);
+			DBGLOG(1, "PIC2: ICW3 now %02X\n", val);
 			if (dev->icw1 & 1)
 				dev->icw = 3;
 			else

@@ -44,7 +44,7 @@
  *
  *		This is expected to be done shortly.
  *
- * Version:	@(#)vid_pgc.c	1.0.2	2019/03/03
+ * Version:	@(#)vid_pgc.c	1.0.2	2019/03/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -137,7 +137,7 @@ static int
 output_byte(pgc_t *dev, uint8_t val)
 {
     /* If output buffer full, wait for it to empty. */
-    while (dev->mapram[0x302] == (uint8_t)(dev->mapram[0x303] - 1)) {
+    while (!dev->stopped && dev->mapram[0x302] == (uint8_t)(dev->mapram[0x303] - 1)) {
 	DEBUG("PGC: output buffer state: %02x %02x  Sleeping\n",
 		dev->mapram[0x302], dev->mapram[0x303]);
 	dev->waiting_output_fifo = 1;
@@ -178,7 +178,7 @@ static int
 error_byte(pgc_t *dev, uint8_t val)
 {
     /* If error buffer full, wait for it to empty. */
-    while (dev->mapram[0x304] == dev->mapram[0x305] - 1) {
+    while (!dev->stopped && dev->mapram[0x304] == dev->mapram[0x305] - 1) {
 	dev->waiting_error_fifo = 1;
 	pgc_sleep(dev);	
     }
@@ -219,7 +219,7 @@ static int
 input_byte(pgc_t *dev, uint8_t *result)
 {
     /* If input buffer empty, wait for it to fill. */
-    while (dev->mapram[0x300] == dev->mapram[0x301]) {
+    while (!dev->stopped && dev->mapram[0x300] == dev->mapram[0x301]) {
 	dev->waiting_input_fifo = 1;
 	pgc_sleep(dev);	
     }
@@ -1419,9 +1419,16 @@ pgc_thread(void *priv)
 
     DEBUG("PGC: thread begins\n");
 
-    while (1) {
+    for (;;) {
 	if (! parse_command(dev, &cmd)) {
-		/* PGC has been reset. */
+		/* Are we shutting down? */
+		if (dev->stopped) {
+INFO("PGC: thread stopping..\n");
+			dev->stopped = 0;
+			break;
+		}
+
+		/* Nope, just a reset. */
 		continue;
 	} 
 
@@ -1434,6 +1441,8 @@ pgc_thread(void *priv)
 	} else
 		pgc_error(dev, PGC_ERROR_OPCODE);
     }
+
+    DEBUG("PGC: thread stopped\n");
 }
 
 
@@ -1616,9 +1625,13 @@ pgc_wake(pgc_t *dev)
 void
 pgc_sleep(pgc_t *dev)
 {
-    DEBUG("PGC: sleeping on %i %i %i 0x%02x 0x%02x\n",
+    DEBUG("PGC: sleeping on %i %i %i %i 0x%02x 0x%02x\n",
+	dev->stopped,
 	dev->waiting_input_fifo, dev->waiting_output_fifo,
 	dev->waiting_error_fifo, dev->mapram[0x300], dev->mapram[0x301]); 
+
+    /* Avoid entering waiting state. */
+    if (dev->stopped) return;
 
     /* Race condition: If host wrote to the PGC during the that
      * won't be noticed */
@@ -2075,26 +2088,27 @@ pgc_out(uint16_t addr, uint8_t val, void *priv)
     DEBUG("PGC: out(%04x, %02x)\n", addr, val);
 
     switch(addr) {
-	case 0x03d0:
+	case 0x03d0:	/* CRTC Index register */
 	case 0x03d2:
 	case 0x03d4:
 	case 0x03d6:
 		dev->mapram[0x03d0] = val;
 		break;
 
-	case 0x03d1:
+	case 0x03d1:	/* CRTC Data register */
 	case 0x03d3:
 	case 0x03d5:
 	case 0x03d7:
-		if (dev->mapram[0x03d0] < 18)
+		/* We store the CRTC registers in RAM at offset 0x03e0. */
+		if (dev->mapram[0x03d0] <= 15)
 			dev->mapram[0x03e0 + dev->mapram[0x03d0]] = val; 
 		break;
 
-	case 0x03d8:
+	case 0x03d8:	/* CRTC Mode Control register */
 		dev->mapram[0x03d8] = val;
 		break;
 
-	case 0x03d9:
+	case 0x03d9:	/* CRTC Color Select register */
 		dev->mapram[0x03d9] = val;
 		break;
     }
@@ -2109,30 +2123,31 @@ pgc_in(uint16_t addr, void *priv)
     uint8_t ret = 0xff;
 
     switch(addr) {
-	case 0x03d0:
+	case 0x03d0:	/* CRTC Index register */
 	case 0x03d2:
 	case 0x03d4:
 	case 0x03d6:
 		ret = dev->mapram[0x03d0];
 		break;
 
-	case 0x03d1:
+	case 0x03d1:	/* CRTC Data register */
 	case 0x03d3:
 	case 0x03d5:
 	case 0x03d7:
-		if (dev->mapram[0x03d0] < 18)
+		/* We store the CRTC registers in RAM at offset 0x03e0. */
+		if (dev->mapram[0x03d0] <= 15)
 			ret = dev->mapram[0x03e0 + dev->mapram[0x03d0]];
 		break;
 
-	case 0x03d8:
+	case 0x03d8:	/* CRTC Mode Control register */
 		ret = dev->mapram[0x03d8];
 		break;
 
-	case 0x03d9:
+	case 0x03d9:	/* CRTC Color Select register */
 		ret = dev->mapram[0x03d9];
 		break;
 
-	case 0x03da:
+	case 0x03da:	/* CRTC Status register */
 		ret = dev->mapram[0x03da];
 		break;
     }
@@ -2205,7 +2220,7 @@ pgc_write(uint32_t addr, uint8_t val, void *priv)
 	}
     }
 
-    if (addr >= 0xb8000 && addr < 0xbc000 && dev->cga_selected) {
+    if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
 	addr &= 0x3fff;
 	dev->cga_vram[addr] = val;
     }
@@ -2221,7 +2236,7 @@ pgc_read(uint32_t addr, void *priv)
     if (addr >= 0xc6000 && addr < 0xc6800) {
 	addr &= 0x7ff;
 	ret = dev->mapram[addr];
-    } else if (addr >= 0xb8000 && addr < 0xbc000 && dev->cga_selected) {
+    } else if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
 	addr &= 0x3fff;
 	ret = dev->cga_vram[addr];
     }
@@ -2513,6 +2528,24 @@ pgc_close(void *priv)
 {
     pgc_t *dev = (pgc_t *)priv;
 
+    /*
+     * Close down the worker thread by setting a
+     * flag, and then simulating a reset so it
+     * stops reading data.
+     */
+INFO("PGC: telling thread to stop..\n");
+    dev->stopped = 1;
+    dev->mapram[0x3ff] = 1;
+    if (dev->waiting_input_fifo || dev->waiting_output_fifo) {
+	/* Do an immediate wake-up. */
+	wake_timer(priv);
+    }
+
+    /* Wait for thread to stop. */
+INFO("PGC: waiting for thread to stop..\n");
+    while (dev->stopped);
+INFO("PGC: thread stopped, closing up.\n");
+
     if (dev->cga_vram)
        	free(dev->cga_vram);
     if (dev->vram)
@@ -2590,7 +2623,7 @@ pgc_standalone_init(const device_t *info)
     memset(dev, 0x00, sizeof(pgc_t));
     dev->type = info->local;
 
-    /* Framebuffer and screen are both 640x480 */
+    /* Framebuffer and screen are both 640x480. */
     pgc_init(dev, 640, 480, 640, 480, input_byte);
 
     video_inform(VID_TYPE_CGA, info->vid_timing);

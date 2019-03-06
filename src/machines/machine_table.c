@@ -156,7 +156,7 @@ const machine_t machines[] = {
 #if defined(DEV_BRANCH) && defined(USE_SIS471)
     { "[486 ISA] AMI 486 (SiS471)",		"ami_486_sis471",	L"sis471/ami",			0,	{{"Intel", cpus_i486},		{"AMD", cpus_Am486},	{"Cyrix", cpus_Cx486},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,						  1,  128,   1, 128,	m_at_sis471_ami_init,		NULL,			NULL			},
 #endif
-    { "[486 ISA] AMI WinBIOS486 (ALi1429)",	"ami_win486_ali1429",	L"ali1429/ami_win",		0,	{{"Intel", cpus_i486},		{"AMD", cpus_Am486},	{"Cyrix", cpus_Cx486},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,						  1,   32,   1, 128,	m_at_ali1429_init,		NULL,			NULL			},
+    { "[486 ISA] AMI WinBIOS486 (ALi1429)",	"ami_win486_ali1429",	L"ali1429/ami_win",		0,	{{"Intel", cpus_i486},		{"AMD", cpus_Am486},	{"Cyrix", cpus_Cx486},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,						  1,   64,   1, 128,	m_at_ali1429_init,		NULL,			NULL			},
     { "[486 ISA] Award 486 (Opti495)",		"award_486_opti495",	L"opti495/award",		0,	{{"Intel", cpus_i486},		{"AMD", cpus_Am486},	{"Cyrix", cpus_Cx486},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,						  1,   32,   1, 128,	m_at_opti495_award_init,	NULL,			NULL			},
     { "[486 ISA] MR 486 (Opti495)",		"mr_486dx_opti495",	L"opti495/mr",			0,	{{"Intel", cpus_i386DX},	{"AMD", cpus_Am386DX},	{"Cyrix", cpus_486DLC},	{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,						  1,   32,   1, 128,	m_at_opti495_mr_init,		NULL,			NULL			},
 
