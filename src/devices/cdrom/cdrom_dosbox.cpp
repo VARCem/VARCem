@@ -50,12 +50,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <ctype.h>
-#include <wchar.h>
 #ifdef _WIN32
 # include <string.h>
 #else
 # include <libgen.h>
 #endif
+#include <wchar.h>
 #include <vector>
 #include "../../emu.h"
 #include "../../plat.h"
