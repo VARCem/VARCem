@@ -47,6 +47,7 @@
 #define _LARGEFILE64_SOURCE
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <ctype.h>
