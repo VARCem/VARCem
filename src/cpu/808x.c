@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.14	2019/02/28
+ * Version:	@(#)808x.c	1.0.15	2019/03/05
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -2657,6 +2657,8 @@ opcodestart:
 						do_mul(AL, cpu_data);
 						AL = (uint8_t)cpu_data;
 						AH = (uint8_t)cpu_dest;
+						if (! is_nec)
+							cpu_data |= AH;
 						set_co_do_mul(AH != (((AL & 0x80) == 0) || ((rmdat & 0x38) == 0x20) ? 0 : 0xff));
 					}
 					set_zf(bits);

@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.27	2019/02/16
+ * Version:	@(#)machine.h	1.0.28	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -207,8 +207,14 @@ extern void		m_ps2_model_70_type4_init(const machine_t *, void *);
 extern void		m_ps2_model_80_init(const machine_t *, void *);
 
 extern void		m_amstrad_1512_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t	m_amstrad_1512_device;
+#endif
 extern void		m_amstrad_1640_init(const machine_t *, void *);
 extern void		m_amstrad_200_init(const machine_t *, void *);
+#ifdef EMU_DEVICE_H
+extern const device_t	m_amstrad_200_device;
+#endif
 extern void		m_amstrad_2086_init(const machine_t *, void *);
 extern void		m_amstrad_3086_init(const machine_t *, void *);
 extern void		m_amstrad_mega_init(const machine_t *, void *);

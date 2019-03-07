@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.27	2019/03/03
+ * Version:	@(#)video.h	1.0.28	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,6 +76,12 @@ enum {
     FULLSCR_SCALE_KEEPRATIO
 };
 
+typedef enum {
+    FONT_MDA = 0,		/* MDA 8x14 */
+    FONT_CGA_THIN,		/* CGA 8x8, thin lines */
+    FONT_CGA_THICK,		/* CGA 8x8, thick lines */
+} fontformat_t;
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,8 +120,8 @@ typedef rgb_t PALETTE[256];
 extern int		changeframecount;
 
 /* These will go away soon. */
-extern uint8_t		fontdat[256][8];
-extern uint8_t		fontdatm[256][16];
+extern uint8_t		fontdat[1024][8];		/* 1024 characters */
+extern uint8_t		fontdatm[1024][16];		/* 1024 characters */
 extern dbcs_font_t	*fontdatk,
 			*fontdatk_user;
 
@@ -348,7 +354,7 @@ extern void		video_update_timing(void);
 extern void		video_inform(int type, const video_timings_t *ptr);
 extern int		video_type(void);
 extern void		video_reset_font(void);
-extern void		video_load_font(const wchar_t *s, int format);
+extern void		video_load_font(const wchar_t *s, fontformat_t num);
 extern uint8_t		video_force_resize_get(void);
 extern void		video_force_resize_set(uint8_t res);
 extern uint32_t		video_color_transform(uint32_t color);

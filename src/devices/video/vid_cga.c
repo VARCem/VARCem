@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.12	2019/03/04
+ * Version:	@(#)vid_cga.c	1.0.13	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -653,7 +653,8 @@ cga_standalone_init(const device_t *info)
     cga_palette = (dev->rgb_type << 1);
     cgapal_rebuild();
 
-    video_load_font(CGA_FONT_ROM_PATH, (dev->font_type) ? 2 : 1);
+    video_load_font(CGA_FONT_ROM_PATH,
+		    (dev->font_type) ? FONT_CGA_THICK : FONT_CGA_THIN);
 
     video_inform(VID_TYPE_CGA, info->vid_timing);
 

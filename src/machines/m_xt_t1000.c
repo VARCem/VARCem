@@ -96,7 +96,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_xt_t1000.c	1.0.15	2019/02/16
+ * Version:	@(#)m_xt_t1000.c	1.0.16	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -152,6 +152,8 @@
 
 #define T1000_ROMDOS_SIZE	(512*1024UL)	/* Max romdrive size is 512k */
 #define T1000_ROMDOS_PATH	L"machines/toshiba/t1000/t1000dos.rom"
+#define T1000_FONT_PATH		L"machines/toshiba/t1000/t1000font.rom"
+#define T1200_FONT_PATH		L"machines/toshiba/t1200/t1000font.bin"
 
 
 enum TC8521_ADDR {
@@ -1007,7 +1009,7 @@ m_xt_t1000_init(const machine_t *model, void *arg)
 
     if (video_card == VID_INTERNAL) {
 	/* Load the T1000 CGA Font ROM. */
-	video_load_font(L"machines/toshiba/t1000/t1000font.rom", 2);
+	video_load_font(T1000_FONT_PATH, FONT_CGA_THICK);
 
 	device_add(&t1000_video_device);
     }
@@ -1081,7 +1083,7 @@ m_xt_t1200_init(const machine_t *model, void *arg)
 
     if (video_card == VID_INTERNAL) {
 	/* Load the T1200 CGA Font ROM. */
-	video_load_font(L"machines/toshiba/t1200/t1000font.bin", 2);
+	video_load_font(T1200_FONT_PATH, FONT_CGA_THICK);
 
 	device_add(&t1200_video_device);
     }

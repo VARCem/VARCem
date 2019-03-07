@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.36	2019/03/04
+ * Version:	@(#)machine_table.c	1.0.37	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,11 +87,11 @@ const machine_t machines[] = {
     { "[8088] Zenith Data SupersPORT",		"zenith_supersport",	L"zenith/supersport",		-1,	{{"Intel", cpus_8088},		{"", NULL},		{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA,												128,  640, 128,   0,	m_zenith_supersport_init,	NULL,			NULL			},
 
     /* 8086 */
-    { "[8086] Amstrad PC1512",			"amstrad_pc1512",	L"amstrad/pc1512",		-1,	{{"Intel", cpus_pc1512},	{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								512,  640, 128,  64,	m_amstrad_1512_init,		NULL,			NULL			},
+    { "[8086] Amstrad PC1512",			"amstrad_pc1512",	L"amstrad/pc1512",		-1,	{{"Intel", cpus_pc1512},	{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								512,  640, 128,  64,	m_amstrad_1512_init,		&m_amstrad_1512_device,	NULL			},
     { "[8086] Amstrad PC1640",			"amstrad_pc1640",	L"amstrad/pc1640",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	0, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								640,  640,   0,  64,	m_amstrad_1640_init,		NULL,			NULL			},
     { "[8086] Amstrad PC2086",			"amstrad_pc2086",	L"amstrad/pc2086",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								640,  640,   0,  64,	m_amstrad_2086_init,		NULL,			NULL			},
     { "[8086] Amstrad PC3086",			"amstrad_pc3086",	L"amstrad/pc3086",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								640,  640,   0,  64,	m_amstrad_3086_init,		NULL,			NULL			},
-    { "[8086] Amstrad PC20(0)",			"amstrad_pc200",	L"amstrad/pc200",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								512,  640, 128,  64,	m_amstrad_200_init,		NULL,			NULL			},
+    { "[8086] Amstrad PC20(0)",			"amstrad_pc200",	L"amstrad/pc200",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								512,  640, 128,  64,	m_amstrad_200_init,		&m_amstrad_200_device,	NULL			},
     { "[8086] Olivetti M24",			"olivetti_m24",		L"olivetti/m24",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,								128,  640, 128,   0,	m_olim24_init,			NULL,			NULL			},
     { "[8086] Tandy 1000 SL/2",			"tandy_1000sl2",	L"tandy/t1000sl2",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA,												512,  768, 128,   0,	m_tandy1k_sl2_init,		&m_tandy1k_sl2_device,	NULL			},
     { "[8086] Toshiba T1200",			"toshiba_t1200",	L"toshiba/t1200",		-1,	{{"Intel", cpus_8086},		{"NEC", cpus_nec},	{"", NULL},		{"", NULL},		{"", NULL}},	1, MACHINE_ISA | MACHINE_VIDEO | MACHINE_HDC,							       1024, 2048,1024,  64,	m_xt_t1200_init,		&t1200_video_device,	m_xt_t1x00_close	},

@@ -40,7 +40,7 @@
  *		W = 3 bus clocks
  *		L = 4 bus clocks
  *
- * Version:	@(#)video.c	1.0.25	2019/03/03
+ * Version:	@(#)video.c	1.0.25	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,8 +93,8 @@ int		video_do_log = ENABLE_VIDEO_LOG;
 #endif
 
 /* These will go away soon. */
-uint8_t		fontdat[256][8];		/* IBM CGA font */
-uint8_t		fontdatm[256][16];		/* IBM MDA font */
+uint8_t		fontdat[1024][8];		/* IBM CGA font */
+uint8_t		fontdatm[1024][16];		/* IBM MDA font */
 dbcs_font_t	*fontdatk = NULL,		/* Korean KSC-5601 font */
 		*fontdatk_user = NULL;		/* Korean KSC-5601 font (user)*/
 
@@ -899,28 +899,28 @@ video_reset_font(void)
 
 /* Load a font from its ROM source. */
 void
-video_load_font(const wchar_t *s, int format)
+video_load_font(const wchar_t *s, fontformat_t num)
 {
     FILE *fp;
     int c;
 
     fp = plat_fopen(rom_path(s), L"rb");
     if (fp == NULL) {
-	ERRLOG("VIDEO: cannot load font '%ls', fmt=%i\n", s, format);
+	ERRLOG("VIDEO: cannot load font '%ls', fmt=%i\n", s, num);
 	return;
     }
 
-    switch (format) {
-	case 0:		/* MDA */
+    switch (num) {
+	case FONT_MDA:		/* MDA */
 		for (c = 0; c < 256; c++)
                        	(void)fread(&fontdatm[c][0], 1, 8, fp);
 		for (c = 0; c < 256; c++)
                        	(void)fread(&fontdatm[c][8], 1, 8, fp);
 		break;
 
-	case 1:		/* CGA, thin font */
-	case 2:		/* CGA, thick font */
-		if (format == 2) {
+	case FONT_CGA_THIN:	/* CGA, thin font */
+	case FONT_CGA_THICK:	/* CGA, thick font */
+		if (num == FONT_CGA_THICK) {
 			/* Use the second ("thick") font in the ROM. */
 			(void)fseek(fp, 2048, SEEK_SET);
 		}
@@ -929,7 +929,7 @@ video_load_font(const wchar_t *s, int format)
 		break;
     }
 
-    DEBUG("VIDEO: font #%i loaded\n", format);
+    DEBUG("VIDEO: font #%i loaded\n", num);
 
     (void)fclose(fp);
 }

@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.22	2019/03/03
+ * Version:	@(#)m_amstrad.c	1.0.23	2019/03/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -109,6 +109,7 @@ typedef struct {
     uint8_t	crtc[32];
     int		crtcreg;
     int		cga_enabled;		/* 1640 */
+    int		fontbase;		/* 1512/200 */
     uint8_t	cgacol,
 		cgamode,
 		stat;
@@ -133,7 +134,7 @@ typedef struct {
     int		firstline,
 		lastline;
     uint8_t	*vram;
-    uint8_t	fontdat[256][8];	/* 1512/200 */
+    uint8_t	fontdat[1024][8];	/* 1512/200 */
 } amsvid_t;
 
 typedef struct {
@@ -269,10 +270,14 @@ vid_write_1512(uint32_t addr, uint8_t val, void *priv)
     addr &= 0x3fff;
 
     if ((vid->cgamode & 0x12) == 0x12) {
-	if (vid->plane_write & 1) vid->vram[addr] = val;
-	if (vid->plane_write & 2) vid->vram[addr | 0x4000] = val;
-	if (vid->plane_write & 4) vid->vram[addr | 0x8000] = val;
-	if (vid->plane_write & 8) vid->vram[addr | 0xc000] = val;
+	if (vid->plane_write & 0x01)
+		vid->vram[addr] = val;
+	if (vid->plane_write & 0x02)
+		vid->vram[addr | 0x4000] = val;
+	if (vid->plane_write & 0x04)
+		vid->vram[addr | 0x8000] = val;
+	if (vid->plane_write & 0x08)
+		vid->vram[addr | 0xc000] = val;
     } else
 	vid->vram[addr] = val;
 }
@@ -348,10 +353,10 @@ vid_poll_1512(void *priv)
 				}
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 				vid->ma++;
 			}
@@ -373,11 +378,11 @@ vid_poll_1512(void *priv)
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
 					    buffer->line[vid->displine][(x << 4) + (c << 1) + 8] = 
-					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
 					    buffer->line[vid->displine][(x << 4) + (c << 1) + 8] = 
-					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 			}
 		} else if (! (vid->cgamode & 16)) {
@@ -535,51 +540,6 @@ vid_poll_1512(void *priv)
 
 
 static void
-vid_init_1512(amstrad_t *ams, const wchar_t *fn, int num)
-{
-    amsvid_t *vid;
-    FILE *fp;
-    int c;
-
-    /* Allocate a video controller block. */
-    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
-    memset(vid, 0x00, sizeof(amsvid_t));
-
-    /* Load the PC1512 CGA Character Set ROM. */
-    fp = plat_fopen(rom_path(fn), L"rb");
-    if (fp != NULL) {
-	if (num == 8) {
-		/* Use the second ("thick") font in the ROM. */
-		(void)fseek(fp, 2048, SEEK_SET);
-	}
-	for (c = 0; c < 256; c++)
-		(void)fread(&vid->fontdat[c][0], 1, 8, fp);
-	(void)fclose(fp);
-    } else {
-	ERRLOG("AMSTRAD: cannot load font '%ls'\n", fn);
-	return;
-    }
-
-    vid->vram = (uint8_t *)mem_alloc(0x10000);
-    vid->cgacol = 7;
-    vid->cgamode = 0x12;
-
-    timer_add(vid_poll_1512, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
-    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
-		vid_read_1512, NULL, NULL, vid_write_1512, NULL, NULL,
-		NULL, 0, vid);
-    io_sethandler(0x03d0, 16,
-		  vid_in_1512, NULL, NULL, vid_out_1512, NULL, NULL, vid);
-
-    overscan_x = overscan_y = 16;
-
-    video_inform(VID_TYPE_CGA, &pc1512_timing);
-
-    ams->vid = vid;
-}
-
-
-static void
 vid_close_1512(void *priv)
 {
     amsvid_t *vid = (amsvid_t *)priv;
@@ -598,15 +558,98 @@ vid_speed_change_1512(void *priv)
 }
 
 
-static const device_t vid_1512_device = {
-    "Amstrad PC1512 (video)",
+static void
+vid_init_1512(amstrad_t *ams, const wchar_t *fn, int num)
+{
+    amsvid_t *vid;
+    FILE *fp;
+    int c, d;
+
+    /* Allocate a video controller block. */
+    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
+    memset(vid, 0x00, sizeof(amsvid_t));
+
+    /* Load the PC1512 CGA Character Set ROM. */
+    fp = plat_fopen(rom_path(fn), L"rb");
+    if (fp != NULL) {
+	if (num == FONT_CGA_THICK) {
+		/* Use the second ("thick") font in the ROM. */
+		(void)fseek(fp, 2048, SEEK_SET);
+	}
+
+	/* The ROM has 4 fonts. */
+	for (d = 0; d < 4; d++) {
+		/* 8x8 CGA. */
+		for (c = 0; c < 256; c++)
+			fread(&vid->fontdat[256 * d + c], 1, 8, fp);
+	}
+
+	(void)fclose(fp);
+    } else {
+	ERRLOG("AMSTRAD: cannot load fonts from '%ls'\n", fn);
+	return;
+    }
+
+    /* Add the device to the system. */
+    device_add_ex(&m_amstrad_1512_device, vid);
+
+    vid->fontbase = (device_get_config_int("codepage") & 3) * 256;
+
+    vid->vram = (uint8_t *)mem_alloc(0x10000);
+    vid->cgacol = 7;
+    vid->cgamode = 0x12;
+
+    timer_add(vid_poll_1512, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
+    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
+		vid_read_1512, NULL, NULL, vid_write_1512, NULL, NULL,
+		NULL, 0, vid);
+    io_sethandler(0x03d0, 16,
+		  vid_in_1512, NULL, NULL, vid_out_1512, NULL, NULL, vid);
+
+    overscan_x = overscan_y = 16;
+
+    cgapal_rebuild();
+
+    video_inform(VID_TYPE_CGA, &pc1512_timing);
+
+    ams->vid = vid;
+}
+
+
+static const device_config_t pc1512_config[] = {
+    {
+	"codepage", "Hardware font", CONFIG_SELECTION, "", 3,
+	{
+		{
+			"US English", 3
+		},
+		// FIXME: what is 2 ??
+		{
+			"Danish", 1
+		},
+		{
+			"Greek", 0
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
+};
+
+
+const device_t m_amstrad_1512_device = {
+    "Amstrad PC1512",
     0, 0,
     NULL, vid_close_1512, NULL,
     NULL,
     vid_speed_change_1512,
     NULL,
     &pc1512_timing,
-    NULL
+    pc1512_config
 };
 
 
@@ -769,7 +812,7 @@ vid_speed_changed_1640(void *priv)
 
 
 static const device_t vid_1640_device = {
-    "Amstrad PC1640 (video)",
+    "Amstrad PC1640",
     0, 0,
     NULL, vid_close_1640, NULL,
     NULL,
@@ -858,7 +901,7 @@ vid_in_200(uint16_t addr, void *priv)
 
 
 static void
-vid_init_200(amstrad_t *ams, const wchar_t *fn)
+vid_init_200(amstrad_t *dev, const wchar_t *fn)
 {
     amsvid_t *vid;
     cga_t *cga;
@@ -869,32 +912,37 @@ vid_init_200(amstrad_t *ams, const wchar_t *fn)
     vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
     memset(vid, 0x00, sizeof(amsvid_t));
 
+    /* Add the device to the system. */
+    device_add_ex(&m_amstrad_200_device, vid);
+
+    vid->fontbase = (device_get_config_int("codepage") & 3) * 256;
+
     /* Load the PC200 CGA Character Set ROM. */
     fp = plat_fopen(rom_path(fn), L"rb");
     if (fp != NULL) {
-	for (c = 0; c < 256; c++)
-		(void)fread(&fontdatm[c][0], 1, 8, fp);
-	for (c = 0; c < 256; c++)
-		(void)fread(&fontdatm[c][8], 1, 8, fp);
+	/* The ROM has 4 fonts. */
+	for (d = 0; d < 4; d++) {
+		/* 8x14 MDA in 8x16 cell. */
+		for (c = 0; c < 256; c++)
+			fread(&fontdatm[256 * d + c], 1, 16, fp);
 
-	(void)fseek(fp, 4096, SEEK_SET);
-
-	for (c = 0; c < 256; c++) {
-		(void)fread(&fontdat[c][0], 1, 8, fp);
-
-		for (d = 0; d < 8; d++)
-			(void)fgetc(fp);
+		/* 8x8 CGA in 8x16 cell. */
+		for (c = 0; c < 256; c++) {
+			fread(&fontdat[256 * d + c], 1, 8, fp);
+			fseek(fp, 8, SEEK_CUR);
+		}
 	}
 
 	(void)fclose(fp);
     } else {
-	ERRLOG("AMSTRAD: cannot load font '%ls'\n", fn);
+	ERRLOG("AMSTRAD: cannot load fonts from '%ls'\n", fn);
 	return;
     }
 
     cga = &vid->cga;
     cga->vram = (uint8_t *)mem_alloc(0x4000);
     cga_init(cga);
+    vid->cga.fontbase = vid->fontbase;
 
     mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL, NULL, 0, cga);
@@ -905,9 +953,11 @@ vid_init_200(amstrad_t *ams, const wchar_t *fn)
 
     overscan_x = overscan_y = 16;
 
+    cgapal_rebuild();
+
     video_inform(VID_TYPE_CGA, &pc200_timing);
 
-    ams->vid = vid;
+    dev->vid = vid;
 }
 
 
@@ -931,71 +981,104 @@ vid_speed_changed_200(void *priv)
 }
 
 
-static const device_t vid_200_device = {
-    "Amstrad PC200 (video)",
+/*
+ * TODO: Should have options here for:
+ *
+ *	> Video emulation (CGA / MDA)
+ *	> Display port (TTL or RF)
+ */
+static const device_config_t pc200_config[] = {
+    {
+	"codepage", "Hardware font", CONFIG_SELECTION, "", 3,
+	{
+		{
+			"US English", 3
+		},
+		{
+			"Portugese", 2
+		},
+		{
+			"Norwegian", 1
+		},
+		{
+			"Greek", 0
+		},
+		{
+			""
+		}
+	}
+    },
+    {
+	"", "", -1
+    }
+};
+
+
+const device_t m_amstrad_200_device = {
+    "Amstrad PC200",
     0, 0,
     NULL, vid_close_200, NULL,
     NULL,
     vid_speed_changed_200,
     NULL,
     &pc200_timing,
-    NULL
+    pc200_config
 };
 
 
 static void
 mse_write(uint16_t addr, uint8_t val, void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
 
-    if (addr == 0x78)
-	ams->mousex = 0;
+    if (addr == 0x0078)
+	dev->mousex = 0;
       else
-	ams->mousey = 0;
+	dev->mousey = 0;
 }
 
 
 static uint8_t
 mse_read(uint16_t addr, void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
 
-    if (addr == 0x78)
-	return(ams->mousex);
+    if (addr == 0x0078)
+	return(dev->mousex);
 
-    return(ams->mousey);
+    return(dev->mousey);
 }
 
 
 static int
 mse_poll(int x, int y, int z, int b, void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
 
-    ams->mousex += x;
-    ams->mousey -= y;
+    dev->mousex += x;
+    dev->mousey -= y;
 
-    if ((b & 1) && !(ams->oldb & 1))
+    if ((b & 1) && !(dev->oldb & 1))
 	keyboard_send(0x7e);
-    if ((b & 2) && !(ams->oldb & 2))
+    if ((b & 2) && !(dev->oldb & 2))
 	keyboard_send(0x7d);
-    if (!(b & 1) && (ams->oldb & 1))
+    if (!(b & 1) && (dev->oldb & 1))
 	keyboard_send(0xfe);
-    if (!(b & 2) && (ams->oldb & 2))
+    if (!(b & 2) && (dev->oldb & 2))
 	keyboard_send(0xfd);
 
-    ams->oldb = b;
+    dev->oldb = b;
 
-    return(0);
+    return(1);
 }
 
 
 static void
 kbd_adddata(uint16_t val)
 {
-    key_queue[key_queue_end] = (uint8_t)(val&0xff);
+    key_queue[key_queue_end] = (uint8_t)(val & 0xff);
     DBGLOG(1, "AMSkb: %02X added to key queue at %i\n", val, key_queue_end);
-    key_queue_end = (key_queue_end + 1) & 0xf;
+    key_queue_end = (key_queue_end + 1) & 0x0f;
 }
 
 
@@ -1009,9 +1092,9 @@ kbd_adddata_ex(uint16_t val)
 static void
 kbd_write(uint16_t port, uint8_t val, void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
 
-    DBGLOG(2, "AMSkb: write %04X %02X %02X\n", port, val, ams->pb);
+    DBGLOG(2, "AMSkb: write %04X %02X %02X\n", port, val, dev->pb);
 
     switch (port) {
 	case 0x61:
@@ -1029,12 +1112,12 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		 *
 		 * This register is controlled by BIOS and/or ROS.
 		 */
-		DBGLOG(1, "AMSkb: write PB %02x (%02x)\n", val, ams->pb);
-		if (!(ams->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
+		DBGLOG(1, "AMSkb: write PB %02x (%02x)\n", val, dev->pb);
+		if (!(dev->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
 			DEBUG("AMSkb: reset keyboard\n");
 			kbd_adddata(0xaa);
 		}
-		ams->pb = val;
+		dev->pb = val;
 		ppi.pb = val;
 
 		timer_process();
@@ -1049,7 +1132,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 		if (val & 0x80) {
 			/* Keyboard enabled, so enable PA reading. */
-			ams->pa = 0x00;
+			dev->pa = 0x00;
 		}
 		break;
 
@@ -1057,11 +1140,11 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 0x64:
-		ams->stat1 = val;
+		dev->stat1 = val;
 		break;
 
 	case 0x65:
-		ams->stat2 = val;
+		dev->stat2 = val;
 		break;
 
 	case 0x66:
@@ -1077,12 +1160,12 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 static uint8_t
 kbd_read(uint16_t port, void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port) {
 	case 0x60:
-		if (ams->pb & 0x80) {
+		if (dev->pb & 0x80) {
 			/*
 			 * PortA - System Status 1
 			 *
@@ -1105,21 +1188,21 @@ kbd_read(uint16_t port, void *priv)
 			 * 2. The ROS then sets the initial VDU state based
 			 * on the DDM value.
 			 */
-			ret = (0x0d | ams->stat1) & 0x7f;
+			ret = (0x0d | dev->stat1) & 0x7f;
 		} else {
-			ret = ams->pa;
+			ret = dev->pa;
 			if (key_queue_start == key_queue_end) {
-				ams->wantirq = 0;
+				dev->wantirq = 0;
 			} else {
-				ams->key_waiting = key_queue[key_queue_start];
+				dev->key_waiting = key_queue[key_queue_start];
 				key_queue_start = (key_queue_start + 1) & 0xf;
-				ams->wantirq = 1;	
+				dev->wantirq = 1;	
 			}
 		}	
 		break;
 
 	case 0x61:
-		ret = ams->pb;
+		ret = dev->pb;
 		break;
 
 	case 0x62:
@@ -1148,10 +1231,10 @@ kbd_read(uint16_t port, void *priv)
 		 * 10001	608K bytes (96K external).
 		 * 10010	640K bytes (128K external or fitted on-board).
 		 */
-		if (ams->pb & 0x04)
-			ret = ams->stat2 & 0x0f;
+		if (dev->pb & 0x04)
+			ret = dev->stat2 & 0x0f;
 		  else
-			ret = ams->stat2 >> 4;
+			ret = dev->stat2 >> 4;
 		ret |= (ppispeakon ? 0x20 : 0);
 		if (nmi)
 			ret |= 0x40;
@@ -1168,23 +1251,23 @@ kbd_read(uint16_t port, void *priv)
 static void
 kbd_poll(void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
 
     keyboard_delay += (1000 * TIMER_USEC);
 
-    if (ams->wantirq) {
-	ams->wantirq = 0;
-	ams->pa = ams->key_waiting;
+    if (dev->wantirq) {
+	dev->wantirq = 0;
+	dev->pa = dev->key_waiting;
 	picint(2);
 	DBGLOG(1, "AMSkb: take IRQ\n");
     }
 
-    if (key_queue_start != key_queue_end && !ams->pa) {
-	ams->key_waiting = key_queue[key_queue_start];
+    if (key_queue_start != key_queue_end && !dev->pa) {
+	dev->key_waiting = key_queue[key_queue_start];
 	DBGLOG(1, "AMSkb: reading %02X from the key queue at %i\n",
-				ams->key_waiting, key_queue_start);
-	key_queue_start = (key_queue_start + 1) & 0xf;
-	ams->wantirq = 1;
+				dev->key_waiting, key_queue_start);
+	key_queue_start = (key_queue_start + 1) & 0x0f;
+	dev->wantirq = 1;
     }
 }
 
@@ -1192,11 +1275,11 @@ kbd_poll(void *priv)
 static void
 ams_write(uint16_t port, uint8_t val, void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
 
     switch (port) {
 	case 0xdead:
-		ams->dead = val;
+		dev->dead = val;
 		break;
     }
 }
@@ -1205,7 +1288,7 @@ ams_write(uint16_t port, uint8_t val, void *priv)
 static uint8_t
 ams_read(uint16_t port, void *priv)
 {
-    amstrad_t *ams = (amstrad_t *)priv;
+    amstrad_t *dev = (amstrad_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port) {
@@ -1223,7 +1306,7 @@ ams_read(uint16_t port, void *priv)
 		break;
 
 	case 0x037a:	/* printer status */
-		switch(ams->type) {
+		switch(dev->type) {
 			case 0:
 				ret = 0x20;
 				break;
@@ -1238,7 +1321,7 @@ ams_read(uint16_t port, void *priv)
 		break;
 
 	case 0xdead:
-		ret = ams->dead;
+		ret = dev->dead;
 		break;
     }
 
@@ -1250,23 +1333,22 @@ static void
 amstrad_common_init(const machine_t *model, void *arg, int type)
 {
     romdef_t *roms = (romdef_t *)arg;
-    amstrad_t *ams;
+    amstrad_t *dev;
 
-    ams = (amstrad_t *)mem_alloc(sizeof(amstrad_t));
-    memset(ams, 0x00, sizeof(amstrad_t));
-    ams->type = type;
+    dev = (amstrad_t *)mem_alloc(sizeof(amstrad_t));
+    memset(dev, 0x00, sizeof(amstrad_t));
+    dev->type = type;
 
     machine_common_init(model, arg);
 
     nmi_init();
 
-    switch(ams->type) {
+    switch(dev->type) {
 	case 0:		/* 1512 */
 		device_add(&fdc_xt_device);
 		if (video_card == VID_INTERNAL) {
 			/* Initialize the internal CGA controller. */
-			vid_init_1512(ams, roms->fontfn, roms->fontnum);
-			device_add_ex(&vid_1512_device, ams->vid);
+			vid_init_1512(dev, roms->fontfn, roms->fontnum);
 		}
 		break;
 
@@ -1274,8 +1356,8 @@ amstrad_common_init(const machine_t *model, void *arg, int type)
 		device_add(&fdc_xt_device);
 		if (video_card == VID_INTERNAL) {
 			/* Initialize the internal CGA/EGA controller. */
-			vid_init_1640(ams, roms->vidfn, roms->vidsz);
-			device_add_ex(&vid_1640_device, ams->vid);
+			vid_init_1640(dev, roms->vidfn, roms->vidsz);
+			device_add_ex(&vid_1640_device, dev->vid);
 		}
 		break;
 
@@ -1283,8 +1365,7 @@ amstrad_common_init(const machine_t *model, void *arg, int type)
 		device_add(&fdc_xt_device);
 		if (video_card == VID_INTERNAL) {
 			/* Initialize the internal CGA controller. */
-			vid_init_200(ams, roms->fontfn);
-			device_add_ex(&vid_200_device, ams->vid);
+			vid_init_200(dev, roms->fontfn);
 		}
 		break;
 
@@ -1318,22 +1399,22 @@ amstrad_common_init(const machine_t *model, void *arg, int type)
 //FIXME:    parallel_remove_amstrad();
 
     io_sethandler(0x0078, 1,
-		  mse_read, NULL, NULL, mse_write, NULL, NULL, ams);
+		  mse_read, NULL, NULL, mse_write, NULL, NULL, dev);
 
     io_sethandler(0x007a, 1,
-		  mse_read, NULL, NULL, mse_write, NULL, NULL, ams);
+		  mse_read, NULL, NULL, mse_write, NULL, NULL, dev);
 
     io_sethandler(0x0379, 2,
-		  ams_read, NULL, NULL, NULL, NULL, NULL, ams);
+		  ams_read, NULL, NULL, NULL, NULL, NULL, dev);
 
     io_sethandler(0xdead, 1,
-		  ams_read, NULL, NULL, ams_write, NULL, NULL, ams);
+		  ams_read, NULL, NULL, ams_write, NULL, NULL, dev);
 
     /* Initialize the (custom) keyboard/mouse interface. */
-    ams->wantirq = 0;
+    dev->wantirq = 0;
     io_sethandler(0x0060, 7,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, ams);
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, ams);
+		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
+    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
     keyboard_set_table(scancode_xt);
     keyboard_send = kbd_adddata_ex;
     keyboard_scan = 1;
@@ -1341,7 +1422,7 @@ amstrad_common_init(const machine_t *model, void *arg, int type)
     /* Tell mouse driver about our internal mouse. */
     if (mouse_type == MOUSE_INTERNAL) {
 	mouse_reset();
-	mouse_set_poll(mse_poll, ams);
+	mouse_set_poll(mse_poll, dev);
     }
 }
 

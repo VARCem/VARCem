@@ -9,13 +9,13 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.18	2018/11/13
+ * Version:	@(#)device.c	1.0.19	2019/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -213,6 +213,13 @@ device_add_ex(const device_t *d, void *priv)
 
     devices[c] = (device_t *)d;
     device_priv[c] = priv;
+
+    /*
+     * Do set the 'current' pointer, so we can do configuration
+     * right after adding our device. Obviously, this will only
+     * be valid until the next device is added.
+     */
+    device_current = (device_t *)d;
 }
 
 

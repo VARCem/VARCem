@@ -120,8 +120,8 @@ CDROM_Interface_Image::BinaryFile::getLength(void)
     if (file == NULL) return 0;
 
     fseeko64(file, 0, SEEK_END);
-    len = ftello64(file);
-    DEBUG("CDROM: binary_length(%08lx) = %" PRIu64 "\n", file, len);
+    len = (off64_t)ftello64(file);
+    DEBUG("CDROM: binary_length(%08lx) = %" PRIu64 "\n", file, (uint64_t)len);
 
     return len;
 }
@@ -586,7 +586,7 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 		currPregap = 0;
 		prestart = 0;
 
-		track.number = CueGetNumber(&line);
+		track.number = (int)CueGetNumber(&line);
 		track.track_number = track.number;
 		string type;
 		success = CueGetKeyword(type, &line);

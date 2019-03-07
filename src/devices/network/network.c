@@ -8,11 +8,11 @@
  *
  *		Implementation of the network module.
  *
- * Version:	@(#)network.c	1.0.18	2018/11/12
+ * Version:	@(#)network.c	1.0.19	2019/03/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -50,9 +50,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wchar.h>
-#ifdef _DEBUG
-# include <ctype.h>
-#endif
 #define HAVE_STDARG_H
 #define dbglog network_log
 #include "../../emu.h"
@@ -148,48 +145,6 @@ network_available(int net)
 
     return(1);
 }
-
-
-#ifdef _DEBUG
-/* Dump a buffer in hex to output buffer. */
-void
-hexdump_p(char *ptr, uint8_t *bufp, int len)
-{
-# define is_print(c)	(isalnum((int)(c)) || ((c) == ' '))
-    char asci[20];
-    uint8_t c;
-    int addr;
-
-    addr = 0;
-    while (len-- > 0) {
-	c = bufp[addr];
-	if ((addr % 16) == 0) {
-		sprintf(ptr, "%06X  %02X", addr, c);
-	} else {
-		sprintf(ptr, " %02X", c);
-	}
-	ptr += strlen(ptr);
-	asci[(addr & 15)] = (char)((is_print(c) ? c : '.') & 0xff);
-	if ((++addr % 16) == 0) {
-		asci[16] = '\0';
-		sprintf(ptr, "  | %s |\n", asci);
-		ptr += strlen(ptr);
-	}
-    }
-
-    if (addr % 16) {
-	while (addr % 16) {
-		sprintf(ptr, "   ");
-		ptr += strlen(ptr);
-		asci[(addr & 15)] = ' ';
-		addr++;
-	}
-	asci[16] = '\0';
-	sprintf(ptr, "  | %s |\n", asci);
-	ptr += strlen(ptr);
-    }
-}
-#endif
 
 
 #ifdef _LOGGING
@@ -416,7 +371,7 @@ network_tx(uint8_t *bufp, int len)
 {
     ui_sb_icon_update(SB_NETWORK, 1);
 
-#ifdef ENABLE_NETWORK_DUMP
+#if defined(WALTJE) && defined(_DEBUG) && defined(ENABLE_NETWORK_DUMP)
 {
     char temp[8192];
     hexdump_p(temp, bufp, len);
@@ -436,7 +391,7 @@ network_rx(uint8_t *bufp, int len)
 {
     ui_sb_icon_update(SB_NETWORK, 1);
 
-#ifdef ENABLE_NETWORK_DUMP
+#if defined(WALTJE) && defined(_DEBUG) && defined(ENABLE_NETWORK_DUMP)
 {
     char temp[8192];
     hexdump_p(temp, bufp, len);
