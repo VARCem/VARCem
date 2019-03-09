@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.9	2019/03/03
+ * Version:	@(#)vid_genius.c	1.0.10	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -154,7 +154,7 @@ typedef struct {
 
     uint32_t	pal[4];
 
-    int		cols[256][2][2];
+    uint32_t	cols[256][2][2];
 
     uint8_t	fontdat[256][16];
 
@@ -311,7 +311,7 @@ text_line(genius_t *dev, uint8_t background)
 {
     int x;
     int w  = 80;	/* 80 characters across */
-    int cw = 9;	/* Each character is 9 pixels wide */
+    int cw = 9;		/* Each character is 9 pixels wide */
     uint8_t chr, attr;
     uint8_t bitmap[2];
     int blink, c, row;
@@ -321,7 +321,7 @@ text_line(genius_t *dev, uint8_t background)
     int charh;
     uint16_t ma = (dev->mda_crtc[13] | (dev->mda_crtc[12] << 8)) & 0x3fff;
     uint16_t ca = (dev->mda_crtc[15] | (dev->mda_crtc[14] << 8)) & 0x3fff;
-    unsigned char *framebuf = dev->vram + 0x10000;
+    uint8_t *framebuf = dev->vram + 0x10000;
     uint32_t col;
 
     /* Character height is 12-15 */
@@ -369,7 +369,7 @@ text_line(genius_t *dev, uint8_t background)
 
 		for (c = 0; c < cw; c++) {
 			if (col != background) 
-				((uint32_t *)buffer32->line[dev->displine])[(x * cw) + c] = col;
+				screen->line[dev->displine][(x * cw) + c].val = col;
 		}
 	} else	{
 		/* Draw 8 pixels of character */
@@ -383,15 +383,15 @@ text_line(genius_t *dev, uint8_t background)
 				col ^= 0xffffff;
 
 			if (col != background)
-				((uint32_t *)buffer32->line[dev->displine])[(x * cw) + c] = col;
+				screen->line[dev->displine][(x * cw) + c].val = col;
 		}
 
 		/* The ninth pixel column... */
 		if ((chr & ~0x1f) == 0xc0) {
 			/* Echo column 8 for the graphics chars */
-			col = ((uint32_t *)buffer32->line[dev->displine])[(x * cw) + 7];
+			col = screen->line[dev->displine][(x * cw) + 7].val;
 			if (col != background)
-				((uint32_t *)buffer32->line[dev->displine])[(x * cw) + 8] = col;
+				screen->line[dev->displine][(x * cw) + 8].val = col;
 		} else {
 			/* Otherwise fill with background */	
 			col = dev->cols[attr][blink][0];
@@ -400,11 +400,11 @@ text_line(genius_t *dev, uint8_t background)
 
 			if (col != background)
 				if (col != background)
-                                        ((uint32_t *)buffer32->line[dev->displine])[(x * cw) + 8] = col;
+                                        screen->line[dev->displine][(x * cw) + 8].val = col;
 		}
 		if (drawcursor) {
 			for (c = 0; c < cw; c++)
-                               	((uint32_t *)buffer32->line[dev->displine])[(x * cw) + c] ^= dev->cols[attr][0][1];
+                               	screen->line[dev->displine][(x * cw) + c].val ^= dev->cols[attr][0][1];
 		}
 		++ma;
 	}
@@ -416,10 +416,10 @@ text_line(genius_t *dev, uint8_t background)
 static void
 cga_line(genius_t *dev)
 {
-    int x, c;
     uint32_t dat;
     uint32_t ink;
     uint32_t addr;
+    int x, c;
 
     ink = (dev->genius_control & 0x20) ? dev->pal[0] : dev->pal[3];
 
@@ -436,7 +436,7 @@ cga_line(genius_t *dev)
 
 	for (c = 0; c < 8; c++) {
 		if (dat & 0x80)
-			((uint32_t *)buffer32->line[dev->displine])[x*8 + c] = ink;
+			screen->line[dev->displine][x*8 + c].val = ink;
 		dat = dat << 1;
 	}
     }
@@ -447,10 +447,10 @@ cga_line(genius_t *dev)
 static void
 hires_line(genius_t *dev)
 {
-    int x, c;
     uint32_t dat;
     uint32_t ink;
     uint32_t addr;
+    int x, c;
 
     ink = (dev->genius_control & 0x20) ? dev->pal[0] : dev->pal[3];
 
@@ -468,7 +468,7 @@ hires_line(genius_t *dev)
 
 	for (c = 0; c < 8; c++) {
 		if (dat & 0x80)
-			((uint32_t *)buffer32->line[dev->displine])[x*8 + c] = ink;
+			screen->line[dev->displine][x*8 + c].val = ink;
 		dat = dat << 1;
 	}
     }
@@ -494,11 +494,11 @@ genius_poll(void *priv)
 			background = dev->pal[0];
 
 		if (dev->displine == 0)
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 
 		/* Start off with a blank line */
 		for (x = 0; x < GENIUS_XSIZE; x++)
-			((uint32_t *)buffer32->line[dev->displine])[x] = background;
+			screen->line[dev->displine][x].val = background;
 
 		/* If graphics display enabled, draw graphics on top
 		 * of the blanked line */
@@ -549,8 +549,8 @@ genius_poll(void *priv)
 			if (video_force_resize_get())
 				video_force_resize_set(0);
 		}
-		video_blit_memtoscreen(0, 0, 0, ysize, xsize, ysize);
 
+		video_blit_start(0, 0, 0, 0, ysize, xsize, ysize);
 		frames++;
 
 		/* Fixed 728x1008 resolution */

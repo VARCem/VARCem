@@ -15,7 +15,7 @@
  * **NOTE**	This code will very soon be replaced with a C variant, so
  *		no more changes will be done.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.11	2019/03/05
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.12	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -223,7 +223,7 @@ CDROM_Interface_Image::GetMediaTrayStatus(bool& mediaPresent, bool& mediaChanged
 
 
 bool
-CDROM_Interface_Image::ReadSectors(PhysPt buffer, bool raw, uint32_t sector, uint32_t num)
+CDROM_Interface_Image::ReadSectors(size_t buffer, bool raw, uint32_t sector, uint32_t num)
 {
     int sectorSize = raw ? RAW_SECTOR_SIZE : COOKED_SECTOR_SIZE;
     uint8_t buflen = num * sectorSize;
@@ -369,6 +369,7 @@ CDROM_Interface_Image::IsoLoadFile(const wchar_t *filename)
     // data track
     Track track = {0, 0, 0, 0, 0, 0, 0, 0, false, NULL};
     bool error;
+
     track.file = new BinaryFile(filename, error);
     if (error) {
 	delete track.file;
@@ -488,6 +489,7 @@ CDROM_Interface_Image::CueGetString(string &dest, char **line)
 }
 
 
+/* Get a keyword from the input line, handling uppercasing. */
 bool
 CDROM_Interface_Image::CueGetKeyword(string &dest, char **line)
 {
@@ -502,39 +504,39 @@ CDROM_Interface_Image::CueGetKeyword(string &dest, char **line)
 }
 
 
-/* Get a string from the input line, handling quotes properly. */
-uint64_t
-CDROM_Interface_Image::CueGetNumber(char **line)
+/* Get a number from the input line. */
+bool
+CDROM_Interface_Image::CueGetNumber(int &arg, char **line)
 {
     char temp[128];
-    uint64_t num;
+    bool success;
+    int num = 0;
 
-    if (! CueGetBuffer(temp, line, false))
-	return 0;
+    success = CueGetBuffer(temp, line, false);
+    if (success)
+	success = (sscanf(temp, "%i", &num) == 1);
 
-    if (sscanf(temp, "%" PRIu64, &num) != 1)
-	return 0;
+    arg = num;
 
-    return num;
+    return success;
 }
 
 
+/* Get a frame ID from the input line. */
 bool
-CDROM_Interface_Image::CueGetFrame(uint64_t &frames, char **line)
+CDROM_Interface_Image::CueGetFrame(uint64_t &arg, char **line)
 {
     char temp[128];
     int min, sec, fr;
     bool success;
 
     success = CueGetBuffer(temp, line, false);
-    if (! success) return false;
+    if (success)
+	success = (sscanf(temp, "%d:%d:%d", &min, &sec, &fr) == 3);
 
-    success = sscanf(temp, "%d:%d:%d", &min, &sec, &fr) == 3;
-    if (! success) return false;
+    arg = MSF_TO_FRAMES(min, sec, fr);
 
-    frames = MSF_TO_FRAMES(min, sec, fr);
-
-    return true;
+    return success;
 }
 
 
@@ -543,10 +545,14 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 {
     Track track = {0, 0, 0, 0, 0, 0, 0, 0, false, NULL};
     wchar_t pathname[MAX_FILENAME_LENGTH];
+    char buf[MAX_LINE_LENGTH], *line;
     uint64_t shift = 0;
     uint64_t currPregap = 0;
     uint64_t totalPregap = 0;
     uint64_t prestart = 0;
+    uint64_t frame;
+    int index;
+    string command, type;
     bool canAddTrack = false;
     bool success;
     FILE *fp;
@@ -564,15 +570,13 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
     success = false;
 
     for (;;) {
-	char buf[MAX_LINE_LENGTH];
-	char *line = buf;
+	line = buf;
 
 	/* Read a line from the cuesheet file. */
-	if (fgets(buf, sizeof(buf), fp) == NULL || ferror(fp) || feof(fp))
+	if (fgets(line, sizeof(buf), fp) == NULL || ferror(fp) || feof(fp))
 		break;
-	buf[strlen(buf) - 1] = '\0';	/* nuke trailing newline */
+	buf[strlen(line) - 1] = '\0';	/* nuke trailing newline */
 
-	string command;
 	success = CueGetKeyword(command, &line);
 
 	if (command == "TRACK") {
@@ -580,19 +584,20 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 			success = AddTrack(track, shift, prestart, totalPregap, currPregap);
 		else
 			success = true;
+		if (! success) break;
 
+		success = CueGetNumber(track.number, &line);
+		if (! success) break;
+
+		track.track_number = track.number;
 		track.start = 0;
 		track.skip = 0;
+		track.form = 0;
 		currPregap = 0;
 		prestart = 0;
 
-		track.number = (int)CueGetNumber(&line);
-		track.track_number = track.number;
-		string type;
 		success = CueGetKeyword(type, &line);
 		if (! success) break;
-
-		track.form = 0;
 
 		if (type == "AUDIO") {
 			track.sectorSize = RAW_SECTOR_SIZE;
@@ -642,9 +647,11 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 
 		canAddTrack = true;
 	} else if (command == "INDEX") {
-		uint64_t frame, index;
-		index = CueGetNumber(&line);
+		success = CueGetNumber(index, &line);
+		if (! success) break;
+
 		success = CueGetFrame(frame, &line);
+		if (! success) break;
 
 		switch(index) {
 			case 0:
@@ -664,11 +671,12 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 			success = AddTrack(track, shift, prestart, totalPregap, currPregap);
 		else
 			success = true;
+		if (! success) break;
+
 		canAddTrack = false;
 
 		char ansi[MAX_FILENAME_LENGTH];
 		wchar_t filename[MAX_FILENAME_LENGTH];
-		string type;
 
 		success = CueGetBuffer(ansi, &line, false);
 		if (! success) break;

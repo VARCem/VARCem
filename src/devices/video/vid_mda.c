@@ -8,13 +8,13 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.9	2018/11/11
+ * Version:	@(#)vid_mda.c	1.0.10	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -73,7 +73,7 @@ typedef struct {
     int64_t	vsynctime;
     int		vadj;
 
-    int		cols[256][2][2];
+    uint8_t	cols[256][2][2];
 
     uint8_t	*vram;
 } mda_t;
@@ -191,19 +191,23 @@ mda_poll(void *priv)
     uint8_t chr, attr;
     int oldsc;
     int blink;
+    pel_t *pels;
 
     if (! dev->linepos) {
 	dev->vidtime += dev->dispofftime;
 	dev->stat |= 1;
 	dev->linepos = 1;
 	oldsc = dev->sc;
+	pels = screen->line[dev->displine];
 
 	if ((dev->crtc[8] & 3) == 3) 
 		dev->sc = (dev->sc << 1) & 7;
 
 	if (dev->dispon) {
-		if (dev->displine < dev->firstline)
+		if (dev->displine < dev->firstline) {
 			dev->firstline = dev->displine;
+			video_blit_wait_buffer();
+		}
 		dev->lastline = dev->displine;
 
 		for (x = 0; x < dev->crtc[1]; x++) {
@@ -213,20 +217,20 @@ mda_poll(void *priv)
 			blink = ((dev->blink & 16) && (dev->ctrl & 0x20) && (attr & 0x80) && !drawcursor);
 			if (dev->sc == 12 && ((attr & 7) == 1)) {
 				for (c = 0; c < 9; c++)
-				    buffer->line[dev->displine][(x * 9) + c] = dev->cols[attr][blink][1];
+				    pels[(x * 9) + c].pal = dev->cols[attr][blink][1];
 			} else {
 				for (c = 0; c < 8; c++)
-				    buffer->line[dev->displine][(x * 9) + c] = dev->cols[attr][blink][(fontdatm[chr][dev->sc] & (1 << (c ^ 7))) ? 1 : 0];
+				    pels[(x * 9) + c].pal = dev->cols[attr][blink][(fontdatm[chr][dev->sc] & (1 << (c ^ 7))) ? 1 : 0];
 				if ((chr & ~0x1f) == 0xc0)
-					buffer->line[dev->displine][(x * 9) + 8] = dev->cols[attr][blink][fontdatm[chr][dev->sc] & 1];
+					pels[(x * 9) + 8].pal = dev->cols[attr][blink][fontdatm[chr][dev->sc] & 1];
 				else
-					buffer->line[dev->displine][(x * 9) + 8] = dev->cols[attr][blink][0];
+					pels[(x * 9) + 8].pal = dev->cols[attr][blink][0];
 			}
 			dev->ma++;
 
 			if (drawcursor) {
 				for (c = 0; c < 9; c++)
-				    buffer->line[dev->displine][(x * 9) + c] ^= dev->cols[attr][0][1];
+				    pels[(x * 9) + c].pal ^= dev->cols[attr][0][1];
 			}
 		}
 	}
@@ -236,7 +240,7 @@ mda_poll(void *priv)
 		dev->stat |= 8;
 	dev->displine++;
 	if (dev->displine >= 500) 
-		dev->displine=0;
+		dev->displine = 0;
     } else {
 	dev->vidtime += dev->dispontime;
 	if (dev->dispon)
@@ -300,8 +304,10 @@ mda_poll(void *priv)
 					if (video_force_resize_get())
 						video_force_resize_set(0);
 				}
-				video_blit_memtoscreen_8(0, dev->firstline, 0, ysize, xsize, ysize);
+
+				video_blit_start(1, 0, dev->firstline, 0, ysize, xsize, ysize);
 				frames++;
+
 				video_res_x = dev->crtc[1];
 				video_res_y = dev->crtc[6];
 				video_bpp = 0;
@@ -372,7 +378,7 @@ mda_init(const device_t *info)
     cga_palette = device_get_config_int("rgb_type") << 1;
     if (cga_palette > 6)
 	cga_palette = 0;
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     video_inform(VID_TYPE_MDA, info->vid_timing);
 

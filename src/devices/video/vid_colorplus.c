@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.10	2019/03/04
+ * Version:	@(#)vid_colorplus.c	1.0.11	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -78,8 +78,8 @@ typedef struct {
 
 
 static const int cols16[16] = {
-    0x10,0x12,0x14,0x16, 0x18,0x1A,0x1C,0x1E,
-    0x11,0x13,0x15,0x17, 0x19,0x1B,0x1D,0x1F
+    0x10,0x12,0x14,0x16, 0x18,0x1a,0x1c,0x1e,
+    0x11,0x13,0x15,0x17, 0x19,0x1b,0x1d,0x1f
 };
 
 
@@ -185,14 +185,13 @@ colorplus_poll(void *priv)
 	if (dev->cga.cgadispon) {
 		if (dev->cga.displine < dev->cga.firstline) {
 			dev->cga.firstline = dev->cga.displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 		dev->cga.lastline = dev->cga.displine;
 
 		/* Left / right border */
 		for (c = 0; c < 8; c++) {
-			buffer->line[dev->cga.displine][c] = 
-			buffer->line[dev->cga.displine][c + (dev->cga.crtc[1] << 4) + 8] = (dev->cga.cgacol & 15) + 16;
+			screen->line[dev->cga.displine][c].pal = screen->line[dev->cga.displine][c + (dev->cga.crtc[1] << 4) + 8].pal = (dev->cga.cgacol & 15) + 16;
 		}
 
 		if (dev->control & COLORPLUS_320x200_MODE) {
@@ -204,7 +203,7 @@ colorplus_poll(void *priv)
 				dev->cga.ma++;
 
 				for (c = 0; c < 8; c++) {
-					buffer->line[dev->cga.displine][(x << 4) + (c << 1) + 8] = buffer->line[dev->cga.displine][(x << 4) + (c << 1) + 1 + 8] = cols16[(dat0 >> 14) | ((dat1 >> 14) << 2)];
+					screen->line[dev->cga.displine][(x << 4) + (c << 1) + 8].pal = screen->line[dev->cga.displine][(x << 4) + (c << 1) + 1 + 8].pal = cols16[(dat0 >> 14) | ((dat1 >> 14) << 2)];
 					dat0 <<= 2;
 					dat1 <<= 2;
 				}
@@ -234,7 +233,7 @@ colorplus_poll(void *priv)
 				dev->cga.ma++;
 
 				for (c = 0; c < 16; c++) {
-					buffer->line[dev->cga.displine][(x << 4) + c + 8] = cols[(dat0 >> 15) | ((dat1 >> 15) << 1)];
+					screen->line[dev->cga.displine][(x << 4) + c + 8].pal = cols[(dat0 >> 15) | ((dat1 >> 15) << 1)];
 					dat0 <<= 1;
 					dat1 <<= 1;
 				}
@@ -242,17 +241,13 @@ colorplus_poll(void *priv)
 		}
 	} else {	/* Top / bottom border */
 		cols[0] = (dev->cga.cgacol & 15) + 16;
-		cga_hline(buffer, 0, dev->cga.displine, (dev->cga.crtc[1] << 4) + 16, cols[0]);
+		cga_hline(screen, 0, dev->cga.displine, (dev->cga.crtc[1] << 4) + 16, cols[0]);
 	}
 
 	x = (dev->cga.crtc[1] << 4) + 16;
 
-	if (dev->cga.composite) {
-		for (c = 0; c < x; c++)
-			buffer32->line[dev->cga.displine][c] = buffer->line[dev->cga.displine][c] & 0xf;
-
-		cga_comp_process(dev->cga.cpriv, dev->cga.cgamode, 0, x >> 2, buffer32->line[dev->cga.displine]);
-	}
+	if (dev->cga.composite)
+		cga_comp_process(dev->cga.cpriv, dev->cga.cgamode, 0, x >> 2, screen->line[dev->cga.displine]);
 
 	dev->cga.sc = oldsc;
 	if (dev->cga.vc == dev->cga.crtc[7] && !dev->cga.sc)
@@ -331,9 +326,9 @@ colorplus_poll(void *priv)
 				}
 					
 				if (dev->cga.composite) 
-					video_blit_memtoscreen(0, dev->cga.firstline - 4, 0, (dev->cga.lastline - dev->cga.firstline) + 8, xsize, (dev->cga.lastline - dev->cga.firstline) + 8);
+					video_blit_start(0, 0, dev->cga.firstline - 4, 0, (dev->cga.lastline - dev->cga.firstline) + 8, xsize, (dev->cga.lastline - dev->cga.firstline) + 8);
 				else	  
-					video_blit_memtoscreen_8(0, dev->cga.firstline - 4, 0, (dev->cga.lastline - dev->cga.firstline) + 8, xsize, (dev->cga.lastline - dev->cga.firstline) + 8);
+					video_blit_start(1, 0, dev->cga.firstline - 4, 0, (dev->cga.lastline - dev->cga.firstline) + 8, xsize, (dev->cga.lastline - dev->cga.firstline) + 8);
 				frames++;
 
 				video_res_x = xsize - 16;
@@ -386,9 +381,6 @@ colorplus_init(const device_t *info)
     dev = (colorplus_t *)mem_alloc(sizeof(colorplus_t));
     memset(dev, 0x00, sizeof(colorplus_t));
 
-    /* Copied from the CGA init. Ideally this would be done by 
-     * calling a helper function rather than duplicating code.
-     */
     display_type = device_get_config_int("display_type");
     dev->cga.composite = (display_type != CGA_RGB);
     dev->cga.revision = device_get_config_int("composite_type");

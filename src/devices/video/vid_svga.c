@@ -11,13 +11,13 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.15	2019/01/08
+ * Version:	@(#)vid_svga.c	1.0.16	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -626,7 +626,7 @@ svga_poll(void *p)
 		svga->ma &= svga->vram_display_mask;
 		if (svga->firstline == 2000) {
 			svga->firstline = svga->displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 
 		if (svga->hwcursor_on || svga->overlay_on) {
@@ -1162,7 +1162,6 @@ svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
 {
     int y_add = (enable_overscan) ? overscan_y : 0;
     int x_add = (enable_overscan) ? 16 : 0;
-    uint32_t *p;
     int i, j;
 
     svga->frames++;
@@ -1175,7 +1174,7 @@ svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
 	suppress_overscan = 0;
 
     if (y1 > y2) {
-	video_blit_memtoscreen(32, 0, 0, 0, xsize + x_add, ysize + y_add);
+	video_blit_start(0, 32, 0, 0, 0, xsize + x_add, ysize + y_add);
 	return;
     }
 
@@ -1198,32 +1197,26 @@ svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
 	if ((wx >= 160) && ((wy + 1) >= 120)) {
 		/* Draw (overscan_size - scroll size) lines of overscan on top. */
 		for (i  = 0; i < (y_add >> 1); i++) {
-			p = &((uint32_t *)buffer32->line[i & 0x7ff])[32];
-
 			for (j = 0; j < (xsize + x_add); j++)
-				p[j] = svga->overscan_color;
+				screen->line[i & 0x7ff][32 + j].val = svga->overscan_color;
 		}
 
 		/* Draw (overscan_size + scroll size) lines of overscan on the bottom. */
 		for (i  = 0; i < (y_add >> 1); i++) {
-			p = &((uint32_t *)buffer32->line[(ysize + (y_add >> 1) + i) & 0x7ff])[32];
-
 			for (j = 0; j < (xsize + x_add); j++)
-				p[j] = svga->overscan_color;
+				screen->line[(ysize + (y_add >> 1) + i) & 0x7ff][32 + j].val = svga->overscan_color;
 		}
 
 		for (i = (y_add >> 1); i < (ysize + (y_add >> 1)); i ++) {
-			p = &((uint32_t *)buffer32->line[i & 0x7ff])[32];
-
 			for (j = 0; j < 8; j++) {
-				p[j] = svga->pallook[svga->overscan_color];
-				p[xsize + (x_add >> 1) + j] = svga->overscan_color;
+				screen->line[i & 0x7ff][32 + j].val = svga->pallook[svga->overscan_color];
+				screen->line[i & 0x7ff][32 + xsize + (x_add >> 1) + j].val = svga->overscan_color;
 			}
 		}
 	}
     }
 
-    video_blit_memtoscreen(32, 0, y1, y2 + y_add, xsize + x_add, ysize + y_add);
+    video_blit_start(0, 32, 0, y1, y2 + y_add, xsize + x_add, ysize + y_add);
 }
 
 

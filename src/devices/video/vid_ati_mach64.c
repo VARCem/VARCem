@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.15	2019/03/03
+ * Version:	@(#)vid_ati_mach64.c	1.0.16	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2811,17 +2811,17 @@ void mach64_hwcursor_draw(svga_t *svga, int disp_line)
         for (x = 0; x < 64 - svga->hwcursor_latch.xoff; x += 4)
         {
                 dat = svga->vram[svga->hwcursor_latch.addr + (offset >> 2)];
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 32 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 32 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 32 + x_add].val  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 32 + x_add].val ^= 0xFFFFFF;
                 dat >>= 2;
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 33 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 33 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 33 + x_add].val  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 33 + x_add].val ^= 0xFFFFFF;
                 dat >>= 2;
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 34 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 34 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 34 + x_add].val  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 34 + x_add].val ^= 0xFFFFFF;
                 dat >>= 2;
-                if (!(dat & 2))          ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 35 + x_add]  = (dat & 1) ? col1 : col0;
-                else if ((dat & 3) == 3) ((uint32_t *)buffer32->line[disp_line + y_add])[svga->hwcursor_latch.x + x + 35 + x_add] ^= 0xFFFFFF;
+                if (!(dat & 2))          screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 35 + x_add].val  = (dat & 1) ? col1 : col0;
+                else if ((dat & 3) == 3) screen->line[disp_line + y_add][svga->hwcursor_latch.x + x + 35 + x_add].val ^= 0xFFFFFF;
                 dat >>= 2;
                 offset += 4;
         }
@@ -2972,7 +2972,7 @@ void mach64_overlay_draw(svga_t *svga, int disp_line)
         int h_inc = mach64->overlay_scale_inc >> 16;
         int v_max = mach64->scaler_height_width & 0x3ff;
         int v_inc = mach64->overlay_scale_inc & 0xffff;
-        uint32_t *p;
+        pel_t *p;
         uint8_t *src = &svga->vram[svga->overlay.addr];
         int old_y = mach64->overlay_v_acc;
         int y_diff;
@@ -2980,7 +2980,7 @@ void mach64_overlay_draw(svga_t *svga, int disp_line)
         int graphics_key_fn = (mach64->overlay_key_cntl >> 4) & 5;
         int overlay_cmp_mix = (mach64->overlay_key_cntl >> 8) & 0xf;
 
-        p = &((uint32_t *)buffer32->line[disp_line])[32 + mach64->svga.overlay_latch.x];
+        p = &screen->line[disp_line][32 + mach64->svga.overlay_latch.x];
 
         if (mach64->scaler_update)
         {
@@ -3017,7 +3017,7 @@ void mach64_overlay_draw(svga_t *svga, int disp_line)
                 {
                         int h = h_acc >> 12;
 
-                        p[x] = mach64->overlay_dat[h];
+                        p[x].val = mach64->overlay_dat[h];
 
                         h_acc += h_inc;
                         if (h_acc > (h_max << 12))
@@ -3043,8 +3043,8 @@ void mach64_overlay_draw(svga_t *svga, int disp_line)
                         {
                                 case 0: gr_cmp = 0; break;
                                 case 1: gr_cmp = 1; break;
-                                case 4: gr_cmp =  (((p[x]) ^ mach64->overlay_graphics_key_clr) & mach64->overlay_graphics_key_msk & 0xffffff); break;
-                                case 5: gr_cmp = !(((p[x]) ^ mach64->overlay_graphics_key_clr) & mach64->overlay_graphics_key_msk & 0xffffff); break;
+                                case 4: gr_cmp =  (((p[x].val) ^ mach64->overlay_graphics_key_clr) & mach64->overlay_graphics_key_msk & 0xffffff); break;
+                                case 5: gr_cmp = !(((p[x].val) ^ mach64->overlay_graphics_key_clr) & mach64->overlay_graphics_key_msk & 0xffffff); break;
                         }
                         vid_cmp = vid_cmp ? -1 : 0;
                         gr_cmp = gr_cmp ? -1 : 0;
@@ -3070,7 +3070,7 @@ void mach64_overlay_draw(svga_t *svga, int disp_line)
                         }
 
                         if (use_video)
-                                p[x] = mach64->overlay_dat[h];
+                                p[x].val = mach64->overlay_dat[h];
 
                         h_acc += h_inc;
                         if (h_acc > (h_max << 12))

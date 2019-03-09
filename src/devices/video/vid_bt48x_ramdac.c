@@ -8,7 +8,7 @@
  *
  *		Brooktree Bt48x series true color RAMDAC emulation.
  *
- * Version:	@(#)vid_bt48x_ramdac.c	1.0.10	2019/02/10
+ * Version:	@(#)vid_bt48x_ramdac.c	1.0.11	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -388,8 +388,9 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
     int offset = svga->hwcursor_latch.x - svga->hwcursor_latch.xoff;
     int y_add, x_add;
     int pitch, bppl, mode, x_pos, y_pos;
-    uint32_t clr1, clr2, clr3, *p;
+    uint32_t clr1, clr2, clr3;
     uint8_t *cd;
+    pel_t *p;
 
     clr1 = dev->extpallook[1];
     clr2 = dev->extpallook[2];
@@ -428,22 +429,22 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
 
 		y_pos = displine + y_add;
 		x_pos = offset + 32 + x_add;
-		p = ((uint32_t *)buffer32->line[y_pos]);
+		p = &screen->line[y_pos][0];
 
 		if (offset >= svga->hwcursor_latch.x) {
 			switch (mode) {
 				case 1:		/* Three Color */
 					switch (comb) {
 						case 1:
-							p[x_pos] = clr1;
+							p[x_pos].val = clr1;
 							break;
 
 						case 2:
-							p[x_pos] = clr2;
+							p[x_pos].val = clr2;
 							break;
 
 						case 3:
-							p[x_pos] = clr3;
+							p[x_pos].val = clr3;
 							break;
 					}
 					break;
@@ -451,15 +452,15 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
 				case 2:		/* PM/Windows */
 					switch (comb) {
 						case 0:
-							p[x_pos] = clr1;
+							p[x_pos].val = clr1;
 							break;
 
 						case 1:
-							p[x_pos] = clr2;
+							p[x_pos].val = clr2;
 							break;
 
 						case 3:
-							p[x_pos] ^= 0xffffff;
+							p[x_pos].val ^= 0xffffff;
 							break;
 					}
 					break;
@@ -467,11 +468,11 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
 				case 3:		/* X-Windows */
 					switch (comb) {
 						case 2:
-							p[x_pos] = clr1;
+							p[x_pos].val = clr1;
 							break;
 
 						case 3:
-							p[x_pos] = clr2;
+							p[x_pos].val = clr2;
 							break;
 					}
 					break;

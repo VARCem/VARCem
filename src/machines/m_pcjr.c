@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.14	2019/03/04
+ * Version:	@(#)m_pcjr.c	1.0.15	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -277,16 +277,16 @@ vid_poll(void *p)
 
 		if (pcjr->displine < pcjr->firstline) {
 			pcjr->firstline = pcjr->displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 		pcjr->lastline = pcjr->displine;
 		cols[0] = (pcjr->array[2] & 0xf) + 16;
 		for (c = 0; c < 8; c++) {
-			buffer->line[pcjr->displine][c] = cols[0];
+			screen->line[pcjr->displine][c].pal = cols[0];
 			if (pcjr->array[0] & 1)
-				buffer->line[pcjr->displine][c + (pcjr->crtc[1] << 3) + 8] = cols[0];
+				screen->line[pcjr->displine][c + (pcjr->crtc[1] << 3) + 8].pal = cols[0];
 			  else
-				buffer->line[pcjr->displine][c + (pcjr->crtc[1] << 4) + 8] = cols[0];
+				screen->line[pcjr->displine][c + (pcjr->crtc[1] << 4) + 8].pal = cols[0];
 		}
 
 		switch (pcjr->addr_mode) {
@@ -301,45 +301,48 @@ vid_poll(void *p)
 				offset = (pcjr->sc & 3) * 0x2000;
 				break;
 		}
+
 		switch ((pcjr->array[0] & 0x13) | ((pcjr->array[3] & 0x08) << 5)) {
 			case 0x13: /*320x200x16*/
 				for (x = 0; x < pcjr->crtc[1]; x++) {
 					dat = (pcjr->vram[((pcjr->ma << 1) & mask) + offset] << 8) | 
 					       pcjr->vram[((pcjr->ma << 1) & mask) + offset + 1];
 					pcjr->ma++;
-					buffer->line[pcjr->displine][(x << 3) + 8]  = 
-					buffer->line[pcjr->displine][(x << 3) + 9]  = pcjr->array[((dat >> 12) & pcjr->array[1]) + 16] + 16;
-					buffer->line[pcjr->displine][(x << 3) + 10] = 
-					buffer->line[pcjr->displine][(x << 3) + 11] = pcjr->array[((dat >>  8) & pcjr->array[1]) + 16] + 16;
-					buffer->line[pcjr->displine][(x << 3) + 12] = 
-					buffer->line[pcjr->displine][(x << 3) + 13] = pcjr->array[((dat >>  4) & pcjr->array[1]) + 16] + 16;
-					buffer->line[pcjr->displine][(x << 3) + 14] = 
-					buffer->line[pcjr->displine][(x << 3) + 15] = pcjr->array[(dat	 & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 3) + 8].pal  = 
+					screen->line[pcjr->displine][(x << 3) + 9].pal  = pcjr->array[((dat >> 12) & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 3) + 10].pal = 
+					screen->line[pcjr->displine][(x << 3) + 11].pal = pcjr->array[((dat >>  8) & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 3) + 12].pal = 
+					screen->line[pcjr->displine][(x << 3) + 13].pal = pcjr->array[((dat >>  4) & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 3) + 14].pal = 
+					screen->line[pcjr->displine][(x << 3) + 15].pal = pcjr->array[(dat	 & pcjr->array[1]) + 16] + 16;
 				}
 				break;
+
 			case 0x12: /*160x200x16*/
 				for (x = 0; x < pcjr->crtc[1]; x++) {
 					dat = (pcjr->vram[((pcjr->ma << 1) & mask) + offset] << 8) | 
 					       pcjr->vram[((pcjr->ma << 1) & mask) + offset + 1];
 					pcjr->ma++;
-					buffer->line[pcjr->displine][(x << 4) + 8]  = 
-					buffer->line[pcjr->displine][(x << 4) + 9]  = 
-					buffer->line[pcjr->displine][(x << 4) + 10] =
-					buffer->line[pcjr->displine][(x << 4) + 11] = pcjr->array[((dat >> 12) & pcjr->array[1]) + 16] + 16;
-					buffer->line[pcjr->displine][(x << 4) + 12] = 
-					buffer->line[pcjr->displine][(x << 4) + 13] =
-					buffer->line[pcjr->displine][(x << 4) + 14] =
-					buffer->line[pcjr->displine][(x << 4) + 15] = pcjr->array[((dat >>  8) & pcjr->array[1]) + 16] + 16;
-					buffer->line[pcjr->displine][(x << 4) + 16] = 
-					buffer->line[pcjr->displine][(x << 4) + 17] =
-					buffer->line[pcjr->displine][(x << 4) + 18] =
-					buffer->line[pcjr->displine][(x << 4) + 19] = pcjr->array[((dat >>  4) & pcjr->array[1]) + 16] + 16;
-					buffer->line[pcjr->displine][(x << 4) + 20] = 
-					buffer->line[pcjr->displine][(x << 4) + 21] =
-					buffer->line[pcjr->displine][(x << 4) + 22] =
-					buffer->line[pcjr->displine][(x << 4) + 23] = pcjr->array[(dat	 & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 4) + 8].pal  = 
+					screen->line[pcjr->displine][(x << 4) + 9].pal  = 
+					screen->line[pcjr->displine][(x << 4) + 10].pal =
+					screen->line[pcjr->displine][(x << 4) + 11].pal = pcjr->array[((dat >> 12) & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 4) + 12].pal = 
+					screen->line[pcjr->displine][(x << 4) + 13].pal =
+					screen->line[pcjr->displine][(x << 4) + 14].pal =
+					screen->line[pcjr->displine][(x << 4) + 15].pal = pcjr->array[((dat >>  8) & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 4) + 16].pal = 
+					screen->line[pcjr->displine][(x << 4) + 17].pal =
+					screen->line[pcjr->displine][(x << 4) + 18].pal =
+					screen->line[pcjr->displine][(x << 4) + 19].pal = pcjr->array[((dat >>  4) & pcjr->array[1]) + 16] + 16;
+					screen->line[pcjr->displine][(x << 4) + 20].pal = 
+					screen->line[pcjr->displine][(x << 4) + 21].pal =
+					screen->line[pcjr->displine][(x << 4) + 22].pal =
+					screen->line[pcjr->displine][(x << 4) + 23].pal = pcjr->array[(dat	 & pcjr->array[1]) + 16] + 16;
 				}
 				break;
+
 			case 0x03: /*640x200x4*/
 				for (x = 0; x < pcjr->crtc[1]; x++) {
 					dat = (pcjr->vram[((pcjr->ma << 1) & mask) + offset] << 8) |
@@ -348,11 +351,12 @@ vid_poll(void *p)
 					for (c = 0; c < 8; c++) {
 						chr  =  (dat >>  7) & 1;
 						chr |= ((dat >> 14) & 2);
-						buffer->line[pcjr->displine][(x << 3) + 8 + c] = pcjr->array[(chr & pcjr->array[1]) + 16] + 16;
+						screen->line[pcjr->displine][(x << 3) + 8 + c].pal = pcjr->array[(chr & pcjr->array[1]) + 16] + 16;
 						dat <<= 1;
 					}
 				}
 				break;
+
 			case 0x01: /*80 column text*/
 				for (x = 0; x < pcjr->crtc[1]; x++) {
 					chr  = pcjr->vram[((pcjr->ma << 1) & mask) + offset];
@@ -369,18 +373,19 @@ vid_poll(void *p)
 					}
 					if (pcjr->sc & 8) {
 						for (c = 0; c < 8; c++)
-						    buffer->line[pcjr->displine][(x << 3) + c + 8] = cols[0];
+						    screen->line[pcjr->displine][(x << 3) + c + 8].pal = cols[0];
 					} else {
 						for (c = 0; c < 8; c++)
-						    buffer->line[pcjr->displine][(x << 3) + c + 8] = cols[(fontdat[chr][pcjr->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+						    screen->line[pcjr->displine][(x << 3) + c + 8].pal = cols[(fontdat[chr][pcjr->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 					}
 					if (drawcursor) {
 						for (c = 0; c < 8; c++)
-						    buffer->line[pcjr->displine][(x << 3) + c + 8] ^= 15;
+						    screen->line[pcjr->displine][(x << 3) + c + 8].pal ^= 15;
 					}
 					pcjr->ma++;
 				}
 				break;
+
 			case 0x00: /*40 column text*/
 				for (x = 0; x < pcjr->crtc[1]; x++) {
 					chr  = pcjr->vram[((pcjr->ma << 1) & mask) + offset];
@@ -398,19 +403,20 @@ vid_poll(void *p)
 					pcjr->ma++;
 					if (pcjr->sc & 8) {
 						for (c = 0; c < 8; c++)
-						    buffer->line[pcjr->displine][(x << 4) + (c << 1) + 8] = 
-						    buffer->line[pcjr->displine][(x << 4) + (c << 1) + 1 + 8] = cols[0];
+						    screen->line[pcjr->displine][(x << 4) + (c << 1) + 8].pal = 
+						    screen->line[pcjr->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[0];
 					} else {
 						for (c = 0; c < 8; c++)
-						    buffer->line[pcjr->displine][(x << 4) + (c << 1) + 8] = 
-						    buffer->line[pcjr->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(fontdat[chr][pcjr->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+						    screen->line[pcjr->displine][(x << 4) + (c << 1) + 8].pal = 
+						    screen->line[pcjr->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(fontdat[chr][pcjr->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 					}
 					if (drawcursor) {
 						for (c = 0; c < 16; c++)
-						    buffer->line[pcjr->displine][(x << 4) + c + 8] ^= 15;
+						    screen->line[pcjr->displine][(x << 4) + c + 8].pal ^= 15;
 					}
 				}
 				break;
+
 			case 0x02: /*320x200x4*/
 				cols[0] = pcjr->array[0 + 16] + 16;
 				cols[1] = pcjr->array[1 + 16] + 16;
@@ -421,12 +427,13 @@ vid_poll(void *p)
 					       pcjr->vram[((pcjr->ma << 1) & mask) + offset + 1];
 					pcjr->ma++;
 					for (c = 0; c < 8; c++) {
-						buffer->line[pcjr->displine][(x << 4) + (c << 1) + 8] =
-						buffer->line[pcjr->displine][(x << 4) + (c << 1) + 1 + 8] = cols[dat >> 14];
+						screen->line[pcjr->displine][(x << 4) + (c << 1) + 8].pal =
+						screen->line[pcjr->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[dat >> 14];
 						dat <<= 2;
 					}
 				}
 				break;
+
 			case 0x102: /*640x200x2*/
 				cols[0] = pcjr->array[0 + 16] + 16;
 				cols[1] = pcjr->array[1 + 16] + 16;
@@ -435,7 +442,7 @@ vid_poll(void *p)
 					       pcjr->vram[((pcjr->ma << 1) & mask) + offset + 1];
 					pcjr->ma++;
 					for (c = 0; c < 16; c++) {
-						buffer->line[pcjr->displine][(x << 4) + c + 8] = cols[dat >> 15];
+						screen->line[pcjr->displine][(x << 4) + c + 8].pal = cols[dat >> 15];
 						dat <<= 1;
 					}
 				}
@@ -444,25 +451,25 @@ vid_poll(void *p)
 	} else {
 		if (pcjr->array[3] & 4) {
 			if (pcjr->array[0] & 1)
-				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, (pcjr->array[2] & 0xf) + 16);
+				cga_hline(screen, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, (pcjr->array[2] & 0xf) + 16);
 			else
-				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, (pcjr->array[2] & 0xf) + 16);
+				cga_hline(screen, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, (pcjr->array[2] & 0xf) + 16);
 		} else {
 			cols[0] = pcjr->array[0 + 16] + 16;
 			if (pcjr->array[0] & 1)
-				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, cols[0]);
+				cga_hline(screen, 0, pcjr->displine, (pcjr->crtc[1] << 3) + 16, cols[0]);
 			else
-				cga_hline(buffer, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, cols[0]);
+				cga_hline(screen, 0, pcjr->displine, (pcjr->crtc[1] << 4) + 16, cols[0]);
 		}
 	}
-	if (pcjr->array[0] & 1) x = (pcjr->crtc[1] << 3) + 16;
-	else		    x = (pcjr->crtc[1] << 4) + 16;
-	if (pcjr->composite) {
-		for (c = 0; c < x; c++)
-			buffer32->line[pcjr->displine][c] = buffer->line[pcjr->displine][c] & 0xf;
+	if (pcjr->array[0] & 1)
+		x = (pcjr->crtc[1] << 3) + 16;
+	else
+		x = (pcjr->crtc[1] << 4) + 16;
 
-		cga_comp_process(pcjr->cpriv, pcjr->array[0], 0, x >> 2, buffer32->line[pcjr->displine]);
-	}
+	if (pcjr->composite)
+		cga_comp_process(pcjr->cpriv, pcjr->array[0], 0, x >> 2, screen->line[pcjr->displine]);
+
 	pcjr->sc = oldsc;
 	if (pcjr->vc == pcjr->crtc[7] && !pcjr->sc) {
 		pcjr->stat |= 8;
@@ -510,8 +517,10 @@ vid_poll(void *p)
 				pcjr->dispon = 1;
 			if (!pcjr->vadj) 
 				pcjr->ma = pcjr->maback = (pcjr->crtc[13] | (pcjr->crtc[12] << 8)) & 0x3fff;
-			if ((pcjr->crtc[10] & 0x60) == 0x20) pcjr->cursoron = 0;
-			else				  pcjr->cursoron = pcjr->blink & 16;
+			if ((pcjr->crtc[10] & 0x60) == 0x20)
+				pcjr->cursoron = 0;
+			else
+				pcjr->cursoron = pcjr->blink & 16;
 		}
 		if (pcjr->vc == pcjr->crtc[7]) {
 			pcjr->dispon = 0;
@@ -519,8 +528,10 @@ vid_poll(void *p)
 			pcjr->vsynctime = 16;
 			picint(1 << 5);
 			if (pcjr->crtc[7]) {
-				if (pcjr->array[0] & 1) x = (pcjr->crtc[1] << 3) + 16;
-				else		    x = (pcjr->crtc[1] << 4) + 16;
+				if (pcjr->array[0] & 1)
+					x = (pcjr->crtc[1] << 3) + 16;
+				else
+					x = (pcjr->crtc[1] << 4) + 16;
 				pcjr->lastline++;
 				if ((x != xsize) || ((pcjr->lastline - pcjr->firstline) != ysize) || video_force_resize_get()) {
 					xsize = x;
@@ -534,9 +545,9 @@ vid_poll(void *p)
 				}
 
 				if (pcjr->composite) 
-				   video_blit_memtoscreen(0, pcjr->firstline-4, 0, (pcjr->lastline - pcjr->firstline) + 8, xsize, (pcjr->lastline - pcjr->firstline) + 8);
+				   video_blit_start(0, 0, pcjr->firstline-4, 0, (pcjr->lastline - pcjr->firstline) + 8, xsize, (pcjr->lastline - pcjr->firstline) + 8);
 				else	  
-				   video_blit_memtoscreen_8(0, pcjr->firstline-4, 0, (pcjr->lastline - pcjr->firstline) + 8, xsize, (pcjr->lastline - pcjr->firstline) + 8);
+				   video_blit_start(1, 0, pcjr->firstline-4, 0, (pcjr->lastline - pcjr->firstline) + 8, xsize, (pcjr->lastline - pcjr->firstline) + 8);
 
 				frames++;
 				video_res_x = xsize - 16;

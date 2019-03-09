@@ -11,11 +11,11 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.21	2018/11/20
+ * Version:	@(#)ui_main.c	1.0.22	2019/03/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -272,7 +272,7 @@ static void
 toggle_video_item(int idm, int *val)
 {
     plat_startblit();
-    video_wait_for_blit();
+    video_blit_wait();
     *val ^= 1;
     plat_endblit();
 
@@ -508,7 +508,7 @@ ui_menu_command(int idm)
 	case IDM_CGA_CONTR:			/* DISPLAY menu */
 		vid_cga_contrast ^= 1;
 		menu_set_item(idm, vid_cga_contrast);
-		cgapal_rebuild();
+		video_palette_rebuild();
 		config_save();
 		break;
 
@@ -641,7 +641,7 @@ ui_fullscreen(int on)
 
     /* OK, claim the video. */
     plat_startblit();
-    video_wait_for_blit();
+    video_blit_wait();
 
 //  plat_mouse_close();
 

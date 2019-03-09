@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.10	2019/02/10
+ * Version:	@(#)vid_ega.c	1.0.11	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,10 +92,12 @@ typedef struct {
     uint16_t	end;
 } fontxTbl;
 
-static __inline int ega_jega_enabled(ega_t *ega)
+
+static __inline int
+ega_jega_enabled(ega_t *ega)
 {
     if (! ega->is_jega)
-		return 0;
+	return 0;
 
     return !(ega->RMOD1 & 0x40);
 }
@@ -127,6 +129,7 @@ ega_jega_write_font(ega_t *ega)
 		ega->font_index = 0;
 	jfont_sbcs_19[(chr * 19) + ega->font_index] = ega->RDFAP;					/* 8x19 font */
     }
+
     ega->font_index++;
     ega->RSTAT |= 0x02;
 }
@@ -158,6 +161,7 @@ ega_jega_read_font(ega_t *ega)
 		ega->font_index = 0;
 	ega->RDFAP = jfont_sbcs_19[(chr * 19) + ega->font_index];					/* 8x19 font */
     }
+
     ega->font_index++;
     ega->RSTAT |= 0x02;
 }
@@ -234,7 +238,6 @@ ega_poll(void *priv)
     int x_add_ex = enable_overscan ? 16 : 0;
     int wx = 640, wy = 350;
     int drawcursor = 0;
-    uint32_t *q;
     int i, j, x;
 
    if (! dev->linepos) {
@@ -246,7 +249,7 @@ ega_poll(void *priv)
 	if (dev->dispon) {
 		if (dev->firstline == 2000) {
 			dev->firstline = dev->displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 
 		if (dev->scrblank)
@@ -378,28 +381,22 @@ ega_poll(void *priv)
 			if ((x >= 160) && ((dev->lastline - dev->firstline) >= 120)) {
 				/* Draw (overscan_size - scroll size) lines of overscan on top. */
 				for (i  = 0; i < (y_add - (dev->crtc[8] & 0x1f)); i++) {
-					q = &((uint32_t *)buffer32->line[i & 0x7ff])[32];
-
 					for (j = 0; j < (xsize + x_add_ex); j++) {
-						q[j] = dev->pallook[dev->attrregs[0x11]];
+						screen->line[i & 0x7ff][32 + j].val = dev->pallook[dev->attrregs[0x11]];
 					}
 				}
 
 				/* Draw (overscan_size + scroll size) lines of overscan on the bottom. */
 				for (i  = 0; i < (y_add + (dev->crtc[8] & 0x1f)); i++) {
-					q = &((uint32_t *)buffer32->line[(ysize + y_add + i - (dev->crtc[8] & 0x1f)) & 0x7ff])[32];
-
 					for (j = 0; j < (xsize + x_add_ex); j++) {
-						q[j] = dev->pallook[dev->attrregs[0x11]];
+						screen->line[(ysize + y_add + i - (dev->crtc[8] & 0x1f)) & 0x7ff][32 + j].val = dev->pallook[dev->attrregs[0x11]];
 					}
 				}
 
 				for (i = (y_add - (dev->crtc[8] & 0x1f)); i < (ysize + y_add - (dev->crtc[8] & 0x1f)); i ++) {
-					q = &((uint32_t *)buffer32->line[(i - (dev->crtc[8] & 0x1f)) & 0x7ff])[32];
-
 					for (j = 0; j < x_add; j++) {
-						q[j] = dev->pallook[dev->attrregs[0x11]];
-						q[xsize + x_add + j] = dev->pallook[dev->attrregs[0x11]];
+						screen->line[(i - (dev->crtc[8] & 0x1f)) & 0x7ff][32 + j].val = dev->pallook[dev->attrregs[0x11]];
+						screen->line[(i - (dev->crtc[8] & 0x1f)) & 0x7ff][32 + xsize + x_add + j].val = dev->pallook[dev->attrregs[0x11]];
 					}
 				}
 			}
@@ -407,17 +404,14 @@ ega_poll(void *priv)
 			if (dev->crtc[8] & 0x1f) {
 				/* Draw (scroll size) lines of overscan on the bottom. */
 				for (i  = 0; i < (dev->crtc[8] & 0x1f); i++) {
-					q = &((uint32_t *)buffer32->line[(ysize + i - (dev->crtc[8] & 0x1f)) & 0x7ff])[32];
-
 					for (j = 0; j < xsize; j++) {
-						q[j] = dev->pallook[dev->attrregs[0x11]];
+						screen->line[(ysize + i - (dev->crtc[8] & 0x1f)) & 0x7ff][32 + j].val = dev->pallook[dev->attrregs[0x11]];
 					}
 				}
 			}
 		}
 	 
-		video_blit_memtoscreen(32, 0, dev->firstline, dev->lastline + 1 + y_add_ex, xsize + x_add_ex, dev->lastline - dev->firstline + 1 + y_add_ex);
-
+		video_blit_start(0, 32, 0, dev->firstline, dev->lastline + 1 + y_add_ex, xsize + x_add_ex, dev->lastline - dev->firstline + 1 + y_add_ex);
 		frames++;
 			
 		dev->video_res_x = wx;

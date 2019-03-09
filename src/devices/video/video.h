@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.28	2019/03/05
+ * Version:	@(#)video.h	1.0.29	2019/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,7 +87,6 @@ typedef enum {
 extern "C" {
 #endif
 
-
 typedef struct video_timings {
     int		type;
     int		write_b, write_w, write_l;
@@ -95,26 +94,26 @@ typedef struct video_timings {
 } video_timings_t;
 
 typedef struct {
-    int		w, h;
-    uint8_t	*dat;
-#if 1
-    /* Most compilers are OK with this, as long as its at end of struct. */
-    uint8_t	*line[];
-#else
-    /* However, just in case we need it... */
-    uint8_t	*line[2048];
-#endif
-} bitmap_t;
-
-typedef struct {
     uint8_t	r, g, b;
 } rgb_t;
+
+typedef union {
+    uint32_t	val;			/* pel, accessed as 32b value */
+    uint8_t	pal;			/* pel, accessed as 8b palette index */
+    rgb_t	rgb;			/* pel, accessed as RGB value */
+} pel_t;
+
+typedef struct {
+    int		w, h;			/* screen buffer sizes */
+    pel_t	*pels;			/* pointer to actual pels */
+    pel_t	*line[];		/* array with line pointers */
+} bitmap_t;
+
+typedef rgb_t PALETTE[256];
 
 typedef struct {
     uint8_t	chr[32];
 } dbcs_font_t;
-
-typedef rgb_t PALETTE[256];
 
 
 extern int		changeframecount;
@@ -125,11 +124,7 @@ extern uint8_t		fontdatm[1024][16];		/* 1024 characters */
 extern dbcs_font_t	*fontdatk,
 			*fontdatk_user;
 
-extern bitmap_t		*buffer,
-			*buffer32;
-extern PALETTE		cgapal,
-			cgapal_mono[6];
-extern uint32_t		pal_lookup[256];
+extern bitmap_t		*screen;
 extern uint32_t		*video_6to8,
 			*video_15to32,
 			*video_16to32;
@@ -332,15 +327,14 @@ extern int		video_card_has_config(int card);
 extern const device_t	*video_card_getdevice(int card);
 #endif
 
-extern void		video_setblit(void(*blit)(int,int,int,int,int,int));
+extern void		video_blit_set(void(*)(bitmap_t *,int,int,int,int,int,int));
+extern void		video_blit_done(void);
+extern void		video_blit_wait(void);
+extern void		video_blit_wait_buffer(void);
+extern void		video_blit_start(int pal, int x, int y,
+					 int y1, int y2, int w, int h);
 extern void		video_blend(int x, int y);
-extern void		video_blit_memtoscreen(int x, int y, int y1, int y2, int w, int h);
-extern void		video_blit_memtoscreen_8(int x, int y, int y1, int y2, int w, int h);
-extern void		video_blit_complete(void);
-extern void		video_wait_for_blit(void);
-extern void		video_wait_for_buffer(void);
-
-extern void		cgapal_rebuild(void);
+extern void		video_palette_rebuild(void);
 
 #ifdef VIDEO_SVGA_H
 extern int		ati28800k_load_font(svga_t *, const wchar_t *);
@@ -358,7 +352,7 @@ extern void		video_load_font(const wchar_t *s, fontformat_t num);
 extern uint8_t		video_force_resize_get(void);
 extern void		video_force_resize_set(uint8_t res);
 extern uint32_t		video_color_transform(uint32_t color);
-extern void		video_transform_copy(uint32_t *dst, uint32_t *src, int len);
+extern void		video_transform_copy(uint32_t *dst, pel_t *src, int len);
 
 extern void		updatewindowsize(int x, int y);
 extern int		get_actual_size_x(void);

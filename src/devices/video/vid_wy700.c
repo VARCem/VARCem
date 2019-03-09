@@ -20,7 +20,7 @@
  *		memory ranges. Either range can be disabled by means of
  *		jumpers; this allows the Wy700 to coexist with a CGA or MDA. 
  * 
- *		wy700->wy700_mode indicates which of the supported video
+ *		dev->wy700_mode indicates which of the supported video
  *		modes is in use:
  *
  *		  0x00:   40x 25   text     (CGA compatible) [32x32 char cell]
@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.6	2019/03/03
+ * Version:	@(#)vid_wy700.c	1.0.7	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -215,7 +215,7 @@ typedef struct {
     uint8_t	wy700_control;	/* Native control / command register */
     uint8_t	wy700_mode;	/* Current mode (see list at top of file) */
     uint8_t	cga_ctrl;	/* Emulated MDA/CGA control register */
-    uint8_t	cga_colour;	/* Emulated CGA colour register (ignored) */
+    uint8_t	cga_color;	/* Emulated CGA color register (ignored) */
 
     uint8_t	mda_stat;	/* MDA status (IN 0x3BA) */
     uint8_t	cga_stat;	/* CGA status (IN 0x3DA) */
@@ -232,11 +232,11 @@ typedef struct {
     int		dispon, blink;
     int64_t	vsynctime;
 
-    /* Mapping of attributes to colours, in CGA emulation... */
-    int		cgacols[256][2][2];
+    /* Mapping of attributes to colors, in CGA emulation... */
+    uint8_t	cgacols[256][2][2];
 
     /* ... and MDA emulation. */
-    int		mdacols[256][2][2];
+    uint8_t	mdacols[256][2][2];
 
     /* Font ROM: Two fonts, each containing 256 characters, 16x16 pixels */
     uint8_t	fontdat[512][32];
@@ -426,7 +426,6 @@ wy700_out(uint16_t port, uint8_t val, void *priv)
 	case 0x3b1: case 0x3b3: case 0x3b5: case 0x3b7:
 	case 0x3d1: case 0x3d3: case 0x3d5: case 0x3d7:
 		dev->cga_crtc[dev->cga_crtcreg] = val;
-
 		check_changes(dev);
 		recalc_timings(dev);
 		return;
@@ -438,9 +437,9 @@ wy700_out(uint16_t port, uint8_t val, void *priv)
 		check_changes(dev);
 	      	return;
 
-	/* Emulated CGA colour register */
+	/* Emulated CGA color register */
 	case 0x3d9:
-	       	dev->cga_colour = val;
+	       	dev->cga_color = val;
 	      	return;
     }
 }
@@ -464,7 +463,7 @@ wy700_in(uint16_t port, void *priv)
 		return dev->cga_ctrl;
 
 	case 0x3d9:
-		return dev->cga_colour;
+		return dev->cga_color;
 
 	case 0x3ba: 
 		return dev->mda_stat;
@@ -572,28 +571,29 @@ text_line(wy700_t *dev)
 	/* MDA underline */
 	if (sc == 14 && mda && ((attr & 7) == 1)) {
 		for (c = 0; c < cw; c++)
-			buffer->line[dev->displine][(x * cw) + c] =
-				dev->mdacols[attr][blink][1];
+			screen->line[dev->displine][(x * cw) + c].pal = dev->mdacols[attr][blink][1];
 	} else {	/* Draw 16 pixels of character */
 		bitmap[0] = fontbase[chr * 32 + 2 * sc];
 		bitmap[1] = fontbase[chr * 32 + 2 * sc + 1];
 		for (c = 0; c < 16; c++) {
-			int col;
+			uint8_t col;
+
 			if (c < 8)
 				col = (mda ? dev->mdacols : dev->cgacols)[attr][blink][(bitmap[0] & (1 << (c ^ 7))) ? 1 : 0];
 			else    col = (mda ? dev->mdacols : dev->cgacols)[attr][blink][(bitmap[1] & (1 << ((c & 7) ^ 7))) ? 1 : 0];
 			if (!(dev->enabled) || !(dev->cga_ctrl & 8))
 				col = dev->mdacols[0][0][0];
+
 			if (w == 40) {
-				buffer->line[dev->displine][(x * cw) + 2*c] = col;
-				buffer->line[dev->displine][(x * cw) + 2*c + 1] = col;
+				screen->line[dev->displine][(x * cw) + 2*c].pal = col;
+				screen->line[dev->displine][(x * cw) + 2*c + 1].pal = col;
 			} else
-				buffer->line[dev->displine][(x * cw) + c] = col;
+				screen->line[dev->displine][(x * cw) + c].pal = col;
 		}
 
 		if (drawcursor) {
 			for (c = 0; c < cw; c++)
-				buffer->line[dev->displine][(x * cw) + c] ^= (mda ? dev->mdacols : dev->cgacols)[attr][0][1];
+				screen->line[dev->displine][(x * cw) + c].pal ^= (mda ? dev->mdacols : dev->cgacols)[attr][0][1];
 		}
 		++ma;
 	}
@@ -628,7 +628,7 @@ cga_line(wy700_t *dev)
 			ink = (dat & 0x80000000) ? 16 + 15: 16 + 0;
 			if (!(dev->enabled) || !(dev->cga_ctrl & 8))
 				ink = 16;
-			buffer->line[dev->displine][x*64 + 2*c] = buffer->line[dev->displine][x*64 + 2*c+1] = ink;
+			screen->line[dev->displine][x*64 + 2*c].pal = screen->line[dev->displine][x*64 + 2*c+1].pal = ink;
 			dat = dat << 1;
 		}
 	} else {
@@ -641,7 +641,7 @@ cga_line(wy700_t *dev)
 			}
 			if (!(dev->enabled) || !(dev->cga_ctrl & 8))
 				ink = 16;
-			buffer->line[dev->displine][x*64 + 4*c] = buffer->line[dev->displine][x*64 + 4*c+1] = buffer->line[dev->displine][x*64 + 4*c+2] = buffer->line[dev->displine][x*64 + 4*c+3] = ink;
+			screen->line[dev->displine][x*64 + 4*c].pal = screen->line[dev->displine][x*64 + 4*c+1].pal = screen->line[dev->displine][x*64 + 4*c+2].pal = screen->line[dev->displine][x*64 + 4*c+3].pal = ink;
 			dat = dat << 2;
 		}
 	}
@@ -678,7 +678,7 @@ medres_line(wy700_t *dev)
 
 			/* Display disabled? */
 			if (!(dev->wy700_mode & 8)) ink = 16;
-			buffer->line[dev->displine][x*64 + 4*c] = buffer->line[dev->displine][x*64 + 4*c+1] = buffer->line[dev->displine][x*64 + 4*c+2] = buffer->line[dev->displine][x*64 + 4*c+3] = ink;
+			screen->line[dev->displine][x*64 + 4*c].pal = screen->line[dev->displine][x*64 + 4*c+1].pal = screen->line[dev->displine][x*64 + 4*c+2].pal = screen->line[dev->displine][x*64 + 4*c+3].pal = ink;
 			dat = dat << 2;
 		}
 	} else {
@@ -687,7 +687,7 @@ medres_line(wy700_t *dev)
 
 			/* Display disabled? */
 			if (!(dev->wy700_mode & 8)) ink = 16;
-			buffer->line[dev->displine][x*64 + 2*c]   = buffer->line[dev->displine][x*64 + 2*c+1] = ink;
+			screen->line[dev->displine][x*64 + 2*c].pal = screen->line[dev->displine][x*64 + 2*c+1].pal = ink;
 			dat = dat << 1;
 		}
 	}
@@ -728,7 +728,7 @@ hires_line(wy700_t *dev)
 
 			/* Display disabled? */
 			if (!(dev->wy700_mode & 8)) ink = 16;
-			buffer->line[dev->displine][x*32 + 2*c] = buffer->line[dev->displine][x*32 + 2*c+1] = ink;
+			screen->line[dev->displine][x*32 + 2*c].pal = screen->line[dev->displine][x*32 + 2*c+1].pal = ink;
 			dat = dat << 2;
 		}
 	} else {
@@ -737,7 +737,7 @@ hires_line(wy700_t *dev)
 
 			/* Display disabled? */
 			if (!(dev->wy700_mode & 8)) ink = 16;
-			buffer->line[dev->displine][x*32 + c] = ink;
+			screen->line[dev->displine][x*32 + c].pal = ink;
 			dat = dat << 1;
 		}
 	}
@@ -758,7 +758,7 @@ wy700_poll(void *priv)
 	dev->linepos = 1;
 	if (dev->dispon) {
 		if (dev->displine == 0)
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 	
 		if (dev->wy700_mode & 0x80) 
 			mode = dev->wy700_mode & 0xF0;
@@ -826,8 +826,8 @@ wy700_poll(void *priv)
 			if (video_force_resize_get())
 				video_force_resize_set(0);
 		}
-		video_blit_memtoscreen_8(0, 0, 0, ysize, xsize, ysize);
 
+		video_blit_start(1, 0, 0, 0, ysize, xsize, ysize);
 		frames++;
 
 		/* Fixed 1280x800 resolution */

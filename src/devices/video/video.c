@@ -8,39 +8,7 @@
  *
  *		Main video-rendering module.
  *
- *		Video timing settings -
- *
- *		8-bit - 1mb/sec
- *		B = 8 ISA clocks
- *		W = 16 ISA clocks
- *		L = 32 ISA clocks
- *
- *		Slow 16-bit - 2mb/sec
- *		B = 6 ISA clocks
- *		W = 8 ISA clocks
- *		L = 16 ISA clocks
- *
- *		Fast 16-bit - 4mb/sec
- *		B = 3 ISA clocks
- *		W = 3 ISA clocks
- *		L = 6 ISA clocks
- *
- *		Slow VLB/PCI - 8mb/sec (ish)
- *		B = 4 bus clocks
- *		W = 8 bus clocks
- *		L = 16 bus clocks
- *
- *		Mid VLB/PCI -
- *		B = 4 bus clocks
- *		W = 5 bus clocks
- *		L = 10 bus clocks
- *
- *		Fast VLB/PCI -
- *		B = 3 bus clocks
- *		W = 3 bus clocks
- *		L = 4 bus clocks
- *
- * Version:	@(#)video.c	1.0.25	2019/03/05
+ * Version:	@(#)video.c	1.0.26	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,24 +66,23 @@ uint8_t		fontdatm[1024][16];		/* IBM MDA font */
 dbcs_font_t	*fontdatk = NULL,		/* Korean KSC-5601 font */
 		*fontdatk_user = NULL;		/* Korean KSC-5601 font (user)*/
 
-bitmap_t	*buffer = NULL,
-		*buffer32 = NULL;
-uint32_t	pal_lookup[256];
-int		xsize = 1,
-		ysize = 1;
-int		cga_palette = 0;
+bitmap_t	*screen = NULL;
+
 uint32_t	*video_6to8 = NULL,
 		*video_15to32 = NULL,
 		*video_16to32 = NULL;
+uint8_t		edatlookup[4][4];
+int		xsize = 1,
+		ysize = 1;
+int		cga_palette = 0;
 int		changeframecount = 2;
-uint8_t		rotatevga[8][256];
 int		frames = 0;
 int		fullchange = 0;
 int		displine = 0;
-uint8_t		edatlookup[4][4];
 int		update_overscan = 0;
 int		overscan_x = 0,
 		overscan_y = 0;
+
 int		video_timing_read_b = 0,
 		video_timing_read_w = 0,
 		video_timing_read_l = 0;
@@ -125,6 +92,7 @@ int		video_timing_write_b = 0,
 int		video_res_x = 0,
 		video_res_y = 0,
 		video_bpp = 0;
+
 PALETTE		cgapal = {
     {0,0,0},    {0,42,0},   {42,0,0},   {42,21,0},
     {0,0,0},    {0,42,42},  {42,0,42},  {42,42,42},
@@ -201,7 +169,6 @@ static const video_timings_t timing_default = {
     VID_ISA, 8, 16, 32, 8, 16, 32
 };
 static const video_timings_t *video_timing;
-static int		video_card_type;
 static const uint32_t	shade[5][256] = {
     {0},/* RGB Color (unused) */
     {0},/* RGB Grayscale (unused) */
@@ -405,103 +372,93 @@ static const uint32_t	shade[5][256] = {
     }
 };
 static uint32_t	cga_2_table[16];
-
-
-static struct {
-    int		x, y, y1, y2, w, h;
-    int		busy;
-    int		buffer_in_use;
-
-    thread_t	*blit_thread;
-    event_t	*wake_blit_thread;
-    event_t	*blit_complete;
-    event_t	*buffer_not_in_use;
-}		blit_data;
+static uint32_t	pal_lookup[256];
+static uint8_t	rotatevga[8][256];
 static int	video_force_resize;
-static void	(*blit_func)(int x, int y, int y1, int y2, int w, int h);
+static int	video_card_type;
+
+
+static struct blitter {
+    int		x, y, y1, y2, w, h;
+
+    volatile int busy;
+    event_t	*busy_ev;
+
+    volatile int inuse;
+    event_t	*inuse_ev;
+
+    thread_t	*thread;
+    event_t	*wake_ev;
+
+    void	(*func)(bitmap_t *,int x, int y, int y1, int y2, int w, int h);
+}		video_blit;
 
 
 static void
 blit_thread(void *param)
 {
-    while (1) {
-	thread_wait_event(blit_data.wake_blit_thread, -1);
-	thread_reset_event(blit_data.wake_blit_thread);
+    struct blitter *blit = (struct blitter *)param;
 
-	if (blit_func != NULL)
-		blit_func(blit_data.x, blit_data.y,
-			  blit_data.y1, blit_data.y2,
-			  blit_data.w, blit_data.h);
+    for (;;) {
+	thread_wait_event(blit->wake_ev, -1);
+	thread_reset_event(blit->wake_ev);
 
-	blit_data.busy = 0;
+	if (blit->func != NULL)
+		blit->func(screen, blit->x, blit->y,
+			   blit->y1, blit->y2, blit->w, blit->h);
 
-	thread_set_event(blit_data.blit_complete);
+	blit->busy = 0;
+	thread_set_event(blit->busy_ev);
     }
 }
 
 
+/* Set address of renderer blit function. */
 void
-video_setblit(void(*blit)(int,int,int,int,int,int))
+video_blit_set(void(*blit)(bitmap_t *,int,int,int,int,int,int))
 {
-    blit_func = blit;
+    video_blit.func = blit;
+}
+
+
+/* Renderer blit function is done. */
+void
+video_blit_done(void)
+{
+    video_blit.inuse = 0;
+
+    thread_set_event(video_blit.inuse_ev);
 }
 
 
 void
-video_blit_complete(void)
+video_blit_wait(void)
 {
-    blit_data.buffer_in_use = 0;
+    while (video_blit.busy)
+	thread_wait_event(video_blit.busy_ev, -1);
 
-    thread_set_event(blit_data.buffer_not_in_use);
+    thread_reset_event(video_blit.busy_ev);
 }
 
 
 void
-video_wait_for_blit(void)
+video_blit_wait_buffer(void)
 {
-    while (blit_data.busy)
-	thread_wait_event(blit_data.blit_complete, -1);
-    thread_reset_event(blit_data.blit_complete);
-}
+    while (video_blit.inuse)
+	thread_wait_event(video_blit.inuse_ev, -1);
 
-
-void
-video_wait_for_buffer(void)
-{
-    while (blit_data.buffer_in_use)
-	thread_wait_event(blit_data.buffer_not_in_use, -1);
-    thread_reset_event(blit_data.buffer_not_in_use);
-}
-
-
-void
-video_blit_memtoscreen(int x, int y, int y1, int y2, int w, int h)
-{
-    if (h <= 0) return;
-
-    video_wait_for_blit();
-
-    blit_data.busy = 1;
-    blit_data.buffer_in_use = 1;
-    blit_data.x = x;
-    blit_data.y = y;
-    blit_data.y1 = y1;
-    blit_data.y2 = y2;
-    blit_data.w = w;
-    blit_data.h = h;
-
-    thread_set_event(blit_data.wake_blit_thread);
+    thread_reset_event(video_blit.inuse_ev);
 }
 
 
 static uint8_t
-pixels8(uint8_t *pixels)
+pixels8(pel_t *pixels)
 {
     uint8_t temp = 0;
     int i;
 
     for (i = 0; i < 8; i++)
-	temp |= (!!*(pixels + i) << (i ^ 7));
+	temp |= (!!pixels[i].val << (i ^ 7));
 
     return temp;
 }
@@ -543,7 +500,7 @@ video_blend(int x, int y)
     if (x == 0)
 	carry = 0;
 
-    val1 = pixels8(&(buffer->line[y][x]));
+    val1 = pixels8(&screen->line[y][x]);
     val2 = (val1 >> 1) + carry;
     carry = (val1 & 1) << 7;
 
@@ -551,32 +508,55 @@ video_blend(int x, int y)
     pixels32_2 = cga_2_table[val1 & 0xf] + cga_2_table[val2 & 0xf];
 
     for (xx = 0; xx < 4; xx++) {
-	buffer->line[y][x + xx] = pixel_to_color((uint8_t *)&pixels32_1, xx);
-	buffer->line[y][x + (xx | 4)] = pixel_to_color((uint8_t *)&pixels32_2, xx);
+	screen->line[y][x + xx].val = pixel_to_color((uint8_t *)&pixels32_1, xx);
+	screen->line[y][x + (xx | 4)].val = pixel_to_color((uint8_t *)&pixels32_2, xx);
     }
 }
 
 
+/* Set up the blitter, and then wake it up to process the screen buffer. */
 void
-video_blit_memtoscreen_8(int x, int y, int y1, int y2, int w, int h)
+video_blit_start(int pal, int x, int y, int y1, int y2, int w, int h)
 {
     int yy, xx;
+    uint32_t val;
+    pel_t *p;
 
     if (h <= 0) return;
 
-    for (yy = 0; yy < h; yy++) {
-	if ((y + yy) >= 0 && (y + yy) < buffer->h) {
-		for (xx = 0; xx < w; xx++)
-			*(uint32_t *) &(buffer32->line[y + yy][(x + xx) << 2]) = pal_lookup[buffer->line[y + yy][x + xx]];
+    if (pal) {
+	/* In palette mode, first convert the values. */
+	for (yy = 0; yy < h; yy++) {
+		if ((y + yy) >= 0 && (y + yy) < screen->h) {
+			for (xx = 0; xx < w; xx++) {
+				p = &screen->line[y + yy][x + xx];
+				val = pal_lookup[p->pal];
+				p->val = val;
+			}
+		}
 	}
     }
 
-    video_blit_memtoscreen(x, y, y1, y2, w, h);
+    /* Wait for access to the blitter. */
+    video_blit_wait();
+
+    video_blit.busy = 1;
+    video_blit.inuse = 1;
+
+    video_blit.x = x;
+    video_blit.y = y;
+    video_blit.y1 = y1;
+    video_blit.y2 = y2;
+    video_blit.w = w;
+    video_blit.h = h;
+
+    /* Wake up the blitter. */
+    thread_set_event(video_blit.wake_ev);
 }
 
 
 void
-cgapal_rebuild(void)
+video_palette_rebuild(void)
 {
     int c;
 
@@ -689,8 +669,9 @@ calc_16to32(int c)
 static void
 destroy_bitmap(bitmap_t *b)
 {
-    if (b->dat != NULL)
-	free(b->dat);
+    if (b->pels != NULL)
+	free(b->pels);
+
     free(b);
 }
 
@@ -698,14 +679,16 @@ destroy_bitmap(bitmap_t *b)
 static bitmap_t *
 create_bitmap(int x, int y)
 {
-    bitmap_t *b = (bitmap_t *)mem_alloc(sizeof(bitmap_t) + (y * sizeof(uint8_t *)));
+    bitmap_t *b;
     int c;
 
-    b->dat = (uint8_t *)mem_alloc(x * y * 4);
-    for (c = 0; c < y; c++)
-	b->line[c] = b->dat + (c * x * 4);
+    b = (bitmap_t *)mem_alloc(sizeof(bitmap_t) + (y * sizeof(pel_t *)));
     b->w = x;
     b->h = y;
+
+    b->pels = (pel_t *)mem_alloc(x * y * sizeof(pel_t));
+    for (c = 0; c < y; c++)
+	b->line[c] = &b->pels[c * x];
 
     return(b);
 }
@@ -741,13 +724,6 @@ video_init(void)
 			 (total[(c >> 0) & 1] << 24);
     }
 
-    /* Initialize video type and timing. */
-    video_inform(VID_TYPE_DFLT, NULL);
-
-    /* Account for overscan. */
-    buffer32 = create_bitmap(2048, 2048);
-    buffer = create_bitmap(2048, 2048);
-
     for (c = 0; c < 64; c++) {
 	cgapal[c + 64].r = (((c & 4) ? 2 : 0) | ((c & 0x10) ? 1 : 0)) * 21;
 	cgapal[c + 64].g = (((c & 2) ? 2 : 0) | ((c & 0x10) ? 1 : 0)) * 21;
@@ -768,6 +744,7 @@ video_init(void)
 		e = (e >> 1) | ((e & 1) ? 0x80 : 0);
 	}
     }
+
     for (c = 0; c < 4; c++) {
 	for (d = 0; d < 4; d++) {
 		edatlookup[c][d] = 0;
@@ -782,42 +759,39 @@ video_init(void)
     for (c = 0; c < 256; c++)
 	video_6to8[c] = calc_6to8(c);
     video_15to32 = (uint32_t *)mem_alloc(4 * 65536);
-#if 0
-    for (c = 0; c < 65536; c++)
-	video_15to32[c] = ((c & 31) << 3) | (((c >> 5) & 31) << 11) | (((c >> 10) & 31) << 19);
-#endif
     for (c = 0; c < 65536; c++)
 	video_15to32[c] = calc_15to32(c);
 
     video_16to32 = (uint32_t *)mem_alloc(4 * 65536);
-#if 0
-    for (c = 0; c < 65536; c++)
-	video_16to32[c] = ((c & 31) << 3) | (((c >> 5) & 63) << 10) | (((c >> 11) & 31) << 19);
-#endif
     for (c = 0; c < 65536; c++)
 	video_16to32[c] = calc_16to32(c);
 
-    blit_data.wake_blit_thread = thread_create_event();
-    blit_data.blit_complete = thread_create_event();
-    blit_data.buffer_not_in_use = thread_create_event();
-    blit_data.blit_thread = thread_create(blit_thread, NULL);
+    /* Create the screen buffer. */
+    screen = create_bitmap(2048, 2048);
+
+    video_blit.wake_ev = thread_create_event();
+    video_blit.busy_ev = thread_create_event();
+    video_blit.inuse_ev = thread_create_event();
+    video_blit.thread = thread_create(blit_thread, &video_blit);
+
+    /* Initialize video type and timing. */
+    video_inform(VID_TYPE_DFLT, NULL);
 }
 
 
 void
 video_close(void)
 {
-    thread_kill(blit_data.blit_thread);
-    thread_destroy_event(blit_data.buffer_not_in_use);
-    thread_destroy_event(blit_data.blit_complete);
-    thread_destroy_event(blit_data.wake_blit_thread);
+    thread_kill(video_blit.thread);
+    thread_destroy_event(video_blit.inuse_ev);
+    thread_destroy_event(video_blit.busy_ev);
+    thread_destroy_event(video_blit.wake_ev);
 
     free(video_6to8);
     free(video_15to32);
     free(video_16to32);
 
-    destroy_bitmap(buffer);
-    destroy_bitmap(buffer32);
+    destroy_bitmap(screen);
 
     video_reset_font();
 }
@@ -899,14 +873,14 @@ video_reset_font(void)
 
 /* Load a font from its ROM source. */
 void
-video_load_font(const wchar_t *s, fontformat_t num)
+video_load_font(const wchar_t *fn, fontformat_t num)
 {
     FILE *fp;
     int c;
 
-    fp = plat_fopen(rom_path(s), L"rb");
+    fp = plat_fopen(rom_path(fn), L"rb");
     if (fp == NULL) {
-	ERRLOG("VIDEO: cannot load font '%ls', fmt=%i\n", s, num);
+	ERRLOG("VIDEO: cannot load font '%ls', fmt=%i\n", fn, num);
 	return;
     }
 
@@ -929,7 +903,7 @@ video_load_font(const wchar_t *s, fontformat_t num)
 		break;
     }
 
-    DEBUG("VIDEO: font #%i loaded\n", num);
+    DEBUG("VIDEO: font #%i loaded from %ls\n", num, fn);
 
     (void)fclose(fp);
 }
@@ -990,13 +964,10 @@ video_color_transform(uint32_t color)
 
 
 void
-video_transform_copy(uint32_t *dst, uint32_t *src, int len)
+video_transform_copy(uint32_t *dst, pel_t *src, int len)
 {
     int i;
 
-    for (i = 0; i < len; i++) {
-	*dst = video_color_transform(*src);
-	dst++;
-	src++;
-    }
+    for (i = 0; i < len; i++)
+	*dst++ = video_color_transform(src[i].val);
 }

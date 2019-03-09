@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.7	2019/03/04
+ * Version:	@(#)vid_cga.h	1.0.8	2019/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,13 +93,14 @@ extern const device_config_t cga_config[];
 
 
 extern void    cga_init(cga_t *cga);
-extern void    cga_out(uint16_t addr, uint8_t val, void *p);
-extern uint8_t cga_in(uint16_t addr, void *p);
-extern void    cga_write(uint32_t addr, uint8_t val, void *p);
-extern uint8_t cga_read(uint32_t addr, void *p);
+extern void    cga_out(uint16_t addr, uint8_t val, void *priv);
+extern uint8_t cga_in(uint16_t addr, void *priv);
+extern void    cga_write(uint32_t addr, uint8_t val, void *priv);
+extern uint8_t cga_read(uint32_t addr, void *priv);
 extern void    cga_recalctimings(cga_t *cga);
-extern void    cga_poll(void *p);
-extern void    cga_hline(bitmap_t *b, int x1, int y, int x2, uint32_t col);
+extern void    cga_poll(void *priv);
+
+extern void    cga_hline(bitmap_t *b, int x1, int y, int x2, uint8_t col);
 
 
 #endif	/*VIDEO_CGA_H*/

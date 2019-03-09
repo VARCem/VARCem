@@ -8,14 +8,14 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.14	2019/01/16
+ * Version:	@(#)vid_voodoo.c	1.0.15	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		leilei,
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 leilei.
  *		Copyright 2008-2018 Sarah Walker.
@@ -7402,7 +7402,7 @@ void voodoo_callback(void *priv)
                         
                         if (draw_voodoo->dirty_line[draw_line])
                         {
-                                uint32_t *p = &((uint32_t *)buffer32->line[voodoo->line + y_add])[32 + x_add];
+                                pel_t *p = &screen->line[voodoo->line + y_add][32 + x_add];
                                 uint16_t *src = (uint16_t *)&draw_voodoo->fb_mem[draw_voodoo->front_offset + draw_line*draw_voodoo->row_width];
                                 int x;
 
@@ -7411,7 +7411,7 @@ void voodoo_callback(void *priv)
                                 if (voodoo->line < voodoo->dirty_line_low)
                                 {
                                         voodoo->dirty_line_low = voodoo->line;
-                                        video_wait_for_buffer();
+                                        video_blit_wait_buffer();
                                 }
                                 if (voodoo->line > voodoo->dirty_line_high)
                                         voodoo->dirty_line_high = voodoo->line;
@@ -7436,14 +7436,14 @@ void voodoo_callback(void *priv)
 
                                         for (x = 0; x < voodoo->h_disp; x++)
                                         {
-                                                p[x] = (voodoo->clutData256[fil[x*3]].b << 0 | voodoo->clutData256[fil[x*3+1]].g << 8 | voodoo->clutData256[fil[x*3+2]].r << 16);
+                                                p[x].val = (voodoo->clutData256[fil[x*3]].b << 0 | voodoo->clutData256[fil[x*3+1]].g << 8 | voodoo->clutData256[fil[x*3+2]].r << 16);
                                         }
                                 }
                                 else
                                 {
                                         for (x = 0; x < voodoo->h_disp; x++)
                                         {
-                                                p[x] = draw_voodoo->video_16to32[src[x]];
+                                                p[x].val = draw_voodoo->video_16to32[src[x]];
                                         }
                                 }
                         }

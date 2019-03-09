@@ -10,12 +10,12 @@
  *
  * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)vnc.c	1.0.8	2018/11/20
+ * Version:	@(#)vnc.c	1.0.9	2019/03/08
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -245,7 +245,7 @@ vnc_display(rfbClientPtr cl)
 
 
 static void
-vnc_blit(int x, int y, int y1, int y2, int w, int h)
+vnc_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 {
     uint32_t *p;
     int yy;
@@ -255,13 +255,13 @@ vnc_blit(int x, int y, int y1, int y2, int w, int h)
 
 	if ((y+yy) >= 0 && (y+yy) < VNC_MAX_Y) {
 		if (vid_grayscale || invert_display)
-			video_transform_copy(p, &(((uint32_t *)buffer32->line[y+yy])[x]), w);
+			video_transform_copy(p, &scr->line[y+yy][x], w);
 		  else
-			memcpy(p, &(((uint32_t *)buffer32->line[y+yy])[x]), w*4);
+			memcpy(p, &scr->line[y+yy][x], w*4);
 	}
     }
  
-    video_blit_complete();
+    video_blit_done();
 
     if (! updatingSize)
 	f_rfbMarkRectAsModified(rfb, 0,0, allowedX,allowedY);
@@ -312,8 +312,6 @@ vnc_init(int fs)
     rfbLogEnable(1);
 #endif
 
-    cgapal_rebuild();
-
     if (rfb == NULL) {
 	wcstombs(title, ui_window_title(NULL), sizeof(title));
 	updatingSize = 0;
@@ -341,7 +339,7 @@ vnc_init(int fs)
     }
  
     /* Set up our BLIT handlers. */
-    video_setblit(vnc_blit);
+    video_blit_set(vnc_blit);
 
     clients = 0;
 
@@ -354,7 +352,7 @@ vnc_init(int fs)
 static void
 vnc_close(void)
 {
-    video_setblit(NULL);
+    video_blit_set(NULL);
 
     if (rfb != NULL) {
 	free(rfb->frameBuffer);

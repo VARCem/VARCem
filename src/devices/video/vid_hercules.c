@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.14	2019/02/12
+ * Version:	@(#)vid_hercules.c	1.0.15	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,7 +84,7 @@ typedef struct {
     int		blend;
     int64_t	vsynctime;
 
-    int		cols[256][2][2];
+    uint8_t	cols[256][2][2];
 
     uint8_t	*vram;
 } hercules_t;
@@ -256,8 +256,8 @@ hercules_poll(void *priv)
 
 	if (dev->dispon) {
 		if (dev->displine < dev->firstline) {
-				dev->firstline = dev->displine;
-				video_wait_for_buffer();
+			dev->firstline = dev->displine;
+			video_blit_wait_buffer();
 		}
 		dev->lastline = dev->displine;
 
@@ -273,7 +273,7 @@ hercules_poll(void *priv)
 					dat = 0;
 				dev->ma++;
 				for (c = 0; c < 16; c++) {
-				    buffer->line[dev->displine][(x << 4) + c] = (dat & (32768 >> c)) ? 7 : 0;
+				    screen->line[dev->displine][(x << 4) + c].pal = (dat & (32768 >> c)) ? 7 : 0;
 
 				}
 
@@ -294,21 +294,21 @@ hercules_poll(void *priv)
 
 				if (dev->sc == 12 && ((attr & 7) == 1)) {
 					for (c = 0; c < 9; c++)
-					    buffer->line[dev->displine][(x * 9) + c] = dev->cols[attr][blink][1];
+					    screen->line[dev->displine][(x * 9) + c].pal = dev->cols[attr][blink][1];
 				} else {
 					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x * 9) + c] = dev->cols[attr][blink][(fontdatm[chr][dev->sc] & (1 << (c ^ 7))) ? 1 : 0];
+					    screen->line[dev->displine][(x * 9) + c].pal = dev->cols[attr][blink][(fontdatm[chr][dev->sc] & (1 << (c ^ 7))) ? 1 : 0];
 
 					if ((chr & ~0x1f) == 0xc0)
-						buffer->line[dev->displine][(x * 9) + 8] = dev->cols[attr][blink][fontdatm[chr][dev->sc] & 1];
+						screen->line[dev->displine][(x * 9) + 8].pal = dev->cols[attr][blink][fontdatm[chr][dev->sc] & 1];
 					  else
-						buffer->line[dev->displine][(x * 9) + 8] = dev->cols[attr][blink][0];
+						screen->line[dev->displine][(x * 9) + 8].pal = dev->cols[attr][blink][0];
 				}
 				dev->ma++;
 
 				if (drawcursor) {
 					for (c = 0; c < 9; c++)
-					    buffer->line[dev->displine][(x * 9) + c] ^= dev->cols[attr][0][1];
+					    screen->line[dev->displine][(x * 9) + c].pal ^= dev->cols[attr][0][1];
 				}
 			}
 		}
@@ -372,7 +372,7 @@ hercules_poll(void *priv)
 		if (dev->vc == dev->crtc[7]) {
 			dev->dispon = 0;
 			dev->displine = 0;
-			dev->vsynctime = 16;//(crtcm[3]>>4)+1;
+			dev->vsynctime = 16;	//(crtcm[3]>>4)+1;
 			if (dev->crtc[7]) {
 				if ((dev->ctrl & 2) && (dev->ctrl2 & 1))
 					x = dev->crtc[1] << 4;
@@ -392,8 +392,9 @@ hercules_poll(void *priv)
 						video_force_resize_set(0);
 				}
 
-				video_blit_memtoscreen_8(0, dev->firstline, 0, ysize, xsize, ysize);
+				video_blit_start(1, 0, dev->firstline, 0, ysize, xsize, ysize);
 				frames++;
+
 				if ((dev->ctrl & 2) && (dev->ctrl2 & 1)) {
 					video_res_x = dev->crtc[1] * 16;
 					video_res_y = dev->crtc[6] * 4;
@@ -480,7 +481,7 @@ hercules_init(const device_t *info)
     cga_palette = device_get_config_int("rgb_type") << 1;
     if (cga_palette > 6)
 	cga_palette = 0;
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     video_inform(VID_TYPE_MDA, info->vid_timing);
 

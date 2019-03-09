@@ -8,7 +8,7 @@
  *
  *		Definitions for the IBM CGA composite filter.
  *
- * Version:	@(#)vid_cga_comp.h	1.0.2	2019/03/04
+ * Version:	@(#)vid_cga_comp.h	1.0.3	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,9 +43,9 @@ extern void	*cga_comp_init(int revision);
 extern void	cga_comp_close(void *);
 
 extern void	cga_comp_update(void *, uint8_t cgamode);
-extern uint8_t	*cga_comp_process(void *, uint8_t cgamode, uint8_t border,
-				  uint32_t blocks, /*int8_t doublewidth,*/
-				  uint8_t *TempLine);
+extern void	cga_comp_process(void *, uint8_t cgamode, uint8_t border,
+				 uint32_t blocks, /*int8_t doublewidth,*/
+				 pel_t *pels);
 
 
 #endif	/*VIDEO_CGA_COMP_H*/

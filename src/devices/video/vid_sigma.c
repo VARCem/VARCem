@@ -41,7 +41,7 @@
  *		even-numbered columns, so the top bit of the control register
  *		at 0x2D9 is used to adjust the position.
  *
- * Version:	@(#)vid_sigma.c	1.0.3	2019/03/03
+ * Version:	@(#)vid_sigma.c	1.0.4	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -462,7 +462,7 @@ sigma_text80(sigma_t *dev)
     uint8_t *vram = dev->vram + (ma << 1);
     int drawcursor, x, c;
     uint8_t chr, attr;
-    uint32_t cols[4];
+    uint8_t cols[4];
 
     ca = ca << 1;
     if (dev->sigma_ctl & CTL_CURSOR)
@@ -489,16 +489,16 @@ sigma_text80(sigma_t *dev)
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
 			if (dev->sigmamode & MODE_FONT16)
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
+				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 			else
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
+				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 		}
 	} else {
 		for (c = 0; c < 8; c++) {
 			if (dev->sigmamode & MODE_FONT16)
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
+				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 			else
-				buffer->line[dev->displine][(x << 3) + c + 8] = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 		}
 	}
 	++ma;
@@ -517,7 +517,7 @@ sigma_text40(sigma_t *dev)
     uint8_t *vram = dev->vram + ((ma << 1) & 0x3FFF);
     int drawcursor, x, c;
     uint8_t chr, attr;
-    uint32_t cols[4];
+    uint8_t cols[4];
 
     ca = ca << 1;
     if (dev->sigma_ctl & CTL_CURSOR)
@@ -543,13 +543,11 @@ sigma_text40(sigma_t *dev)
 
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) { 
-			buffer->line[dev->displine][(x << 4) + 2*c + 8] = 
-			buffer->line[dev->displine][(x << 4) + 2*c + 9] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
+			screen->line[dev->displine][(x << 4) + 2*c + 8].pal = screen->line[dev->displine][(x << 4) + 2*c + 9].pal = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 		}
 	} else {
 		for (c = 0; c < 8; c++) {
-			buffer->line[dev->displine][(x << 4) + 2*c + 8] = 
-			buffer->line[dev->displine][(x << 4) + 2*c + 9] = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
+			screen->line[dev->displine][(x << 4) + 2*c + 8].pal = screen->line[dev->displine][(x << 4) + 2*c + 9].pal = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 		}	
 	}
 	ma++;
@@ -580,7 +578,7 @@ sigma_gfx400(sigma_t *dev)
 		      ((plane[1] & mask) ? 2 : 0) | 
 		      ((plane[0] & mask) ? 1 : 0);
 		col |= 16;
-		buffer->line[dev->displine][(x << 3) + c + 8] = col;
+		screen->line[dev->displine][(x << 3) + c + 8].pal = col;
 	}
 
 	if (x & 1) dev->ma++;
@@ -613,7 +611,7 @@ sigma_gfx200(sigma_t *dev)
 		      ((plane[1] & mask) ? 2 : 0) | 
 		      ((plane[0] & mask) ? 1 : 0);
 		col |= 16;
-		buffer->line[dev->displine][(x << 3) + c + 8] = col;
+		screen->line[dev->displine][(x << 3) + c + 8].pal = col;
 	}
 
 	if (x & 1) dev->ma++;
@@ -646,8 +644,7 @@ sigma_gfx4col(sigma_t *dev)
 		col |= 16;
 		mask = mask >> 1;
 
-		buffer->line[dev->displine][(x << 3) + (c << 1) + 8] = 
-		buffer->line[dev->displine][(x << 3) + (c << 1) + 9] = col;
+		screen->line[dev->displine][(x << 3) + (c << 1) + 8].pal = screen->line[dev->displine][(x << 3) + (c << 1) + 9].pal = col;
 	}
 
 	if (x & 1) dev->ma++;
@@ -659,7 +656,7 @@ static void
 sigma_poll(void *priv)
 {
     sigma_t *dev = (sigma_t *)priv;
-    uint32_t cols[4];
+    uint8_t cols[4];
     int oldsc, oldvc;
     int x, c;
 
@@ -673,7 +670,7 @@ sigma_poll(void *priv)
 	if (dev->cgadispon) {
 		if (dev->displine < dev->firstline) {
 			dev->firstline = dev->displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 		dev->lastline = dev->displine;
 
@@ -681,11 +678,11 @@ sigma_poll(void *priv)
 
 		/* Left overscan */
 		for (c = 0; c < 8; c++) {
-			buffer->line[dev->displine][c] = cols[0];
+			screen->line[dev->displine][c].pal = cols[0];
 			if (dev->sigmamode & MODE_80COLS)
-				buffer->line[dev->displine][c + (dev->crtc[1] << 4) + 8] = cols[0];
+				screen->line[dev->displine][c + (dev->crtc[1] << 4) + 8].pal = cols[0];
 			else
-				buffer->line[dev->displine][c + (dev->crtc[1] << 5) + 8] = cols[0];
+				screen->line[dev->displine][c + (dev->crtc[1] << 5) + 8].pal = cols[0];
 		}
 
 		if (dev->sigmamode & MODE_GRAPHICS) {
@@ -704,9 +701,9 @@ sigma_poll(void *priv)
 	} else {
 		cols[0] = 16;
 		if (dev->sigmamode & MODE_80COLS) 
-			cga_hline(buffer, 0, dev->displine, (dev->crtc[1] << 4) + 16, cols[0]);
+			cga_hline(screen, 0, dev->displine, (dev->crtc[1] << 4) + 16, cols[0]);
 		else
-			cga_hline(buffer, 0, dev->displine, (dev->crtc[1] << 5) + 16, cols[0]);
+			cga_hline(screen, 0, dev->displine, (dev->crtc[1] << 5) + 16, cols[0]);
 	}
 
 	if (dev->sigmamode & MODE_80COLS) 
@@ -715,7 +712,7 @@ sigma_poll(void *priv)
 		x = (dev->crtc[1] << 5) + 16;
 
 	for (c = 0; c < x; c++)
-		buffer->line[dev->displine][c] = dev->palette[buffer->line[dev->displine][c] & 0xf] | 16;
+		screen->line[dev->displine][c].pal = dev->palette[screen->line[dev->displine][c].pal & 0x0f] | 16;
 
 	dev->sc = oldsc;
 	if (dev->vc == dev->crtc[7] && !dev->sc)
@@ -797,7 +794,7 @@ sigma_poll(void *priv)
 						video_force_resize_set(0);
 				}
 
-				video_blit_memtoscreen_8(0, dev->firstline - 4, 0, (dev->lastline - dev->firstline) + 8, xsize, (dev->lastline - dev->firstline) + 8);
+				video_blit_start(1, 0, dev->firstline - 4, 0, (dev->lastline - dev->firstline) + 8, xsize, (dev->lastline - dev->firstline) + 8);
 				frames++;
 
 				video_res_x = xsize - 16;
@@ -887,7 +884,7 @@ sigma_init(const device_t *info)
     cga_palette = device_get_config_int("rgb_type") << 1;
     if (cga_palette > 6)
 	cga_palette = 0;
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     dev->vram = malloc(0x8000 * 4);
 

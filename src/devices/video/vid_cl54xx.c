@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.25	2019/02/10
+ * Version:	@(#)vid_cl54xx.c	1.0.26	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1066,16 +1066,16 @@ hwcursor_draw(svga_t *svga, int displine)
 					break;
 				case 1:
 					/* The pixel is shown in the cursor background color */
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] = bgcol;
+					screen->line[displine + y_add][offset + 32 + x_add].val = bgcol;
 					break;
 				case 2:
 					/* The pixel is shown as the inverse of the original screen pixel
 					   (XOR cursor) */
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+					screen->line[displine + y_add][offset + 32 + x_add].val ^= 0xffffff;
 					break;
 				case 3:
 					/* The pixel is shown in the cursor foreground color */
-					((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] = fgcol;
+					screen->line[displine + y_add][offset + 32 + x_add].val = fgcol;
 					break;
 			}
 		}

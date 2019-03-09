@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.15	2019/02/12
+ * Version:	@(#)vid_hercules_plus.c	1.0.16	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -104,7 +104,7 @@ typedef struct {
     int		blend;
     int64_t	vsynctime;
 
-    int		cols[256][2][2];
+    uint8_t	cols[256][2][2];
 
     uint8_t	*vram;
 } herculesplus_t;
@@ -275,7 +275,7 @@ draw_char_rom(herculesplus_t *dev, int x, uint8_t chr, uint8_t attr)
     }
 
     for (i = 0; i < cw; i++) {
-	buffer->line[dev->displine][x * cw + i] = (val & 0x100) ? ifg : ibg;
+	screen->line[dev->displine][x * cw + i].pal = (val & 0x100) ? ifg : ibg;
 	val = val << 1;
     }
 }
@@ -338,7 +338,7 @@ draw_char_ram4(herculesplus_t *dev, int x, uint8_t chr, uint8_t attr)
 	if ((attr & 0x77) == 0)
 		cfg = ibg;	/* 'blank' attribute */
 
-	buffer->line[dev->displine][x * cw + i] = dev->cols[attr][blink][cfg];
+	screen->line[dev->displine][x * cw + i].pal = dev->cols[attr][blink][cfg];
 	val = val << 1;
     }
 }
@@ -423,7 +423,7 @@ draw_char_ram48(herculesplus_t *dev, int x, uint8_t chr, uint8_t attr)
 	else
 	   	cfg |= ibg;
 		
-	buffer->line[dev->displine][(x * cw) + i] = dev->cols[attr][blink][cfg];
+	screen->line[dev->displine][(x * cw) + i].pal = dev->cols[attr][blink][cfg];
 	val = val << 1;
     }
 }
@@ -467,7 +467,7 @@ text_line(herculesplus_t *dev, uint16_t ca)
 
 		col = dev->cols[attr][0][1];
 		for (c = 0; c < cw; c++)
-			buffer->line[dev->displine][x * cw + c] = col;
+			screen->line[dev->displine][x * cw + c].pal = col;
 	}
     }
 }
@@ -496,7 +496,7 @@ graphics_line(herculesplus_t *dev)
 	for (c = 0; c < 16; c++) {
 		val >>= 1;
 
-		buffer->line[dev->displine][(x << 4) + c] = (val & 1) ? 7 : 0;
+		screen->line[dev->displine][(x << 4) + c].pal = (val & 1) ? 7 : 0;
 	}
 
 	if (dev->blend) {
@@ -524,9 +524,10 @@ herculesplus_poll(void *priv)
 	if (dev->dispon) {
 		if (dev->displine < dev->firstline) {
 			dev->firstline = dev->displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 		dev->lastline = dev->displine;
+
 		if ((dev->ctrl & HERCULESPLUS_CTRL_GRAPH) && (dev->ctrl2 & HERCULESPLUS_CTRL2_GRAPH))
 			graphics_line(dev);
 		else
@@ -604,8 +605,10 @@ herculesplus_poll(void *priv)
 					if (video_force_resize_get())
 						video_force_resize_set(0);
 				}
-				video_blit_memtoscreen_8(0, dev->firstline, 0, dev->lastline - dev->firstline, xsize, dev->lastline - dev->firstline);
+
+				video_blit_start(1, 0, dev->firstline, 0, dev->lastline - dev->firstline, xsize, dev->lastline - dev->firstline);
 				frames++;
+
 				if ((dev->ctrl & HERCULESPLUS_CTRL_GRAPH) && (dev->ctrl2 & HERCULESPLUS_CTRL2_GRAPH)) {
 					video_res_x = dev->crtc[1] * 16;
 					video_res_y = dev->crtc[6] * 4;
@@ -646,7 +649,7 @@ herculesplus_init(const device_t *info)
     cga_palette = device_get_config_int("rgb_type") << 1;
     if (cga_palette > 6)
 	cga_palette = 0;
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     dev->vram = (uint8_t *)mem_alloc(0x10000);	/* 64k VRAM */
 

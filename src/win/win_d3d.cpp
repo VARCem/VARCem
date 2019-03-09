@@ -8,13 +8,13 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.13	2018/11/20
+ * Version:	@(#)win_d3d.cpp	1.0.14	2019/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -183,7 +183,7 @@ d3d_size(RECT w_rect, double *l, double *t, double *r, double *b, int w, int h)
 
 
 static void
-d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
+d3d_blit_fs(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 {
     HRESULT hr = D3D_OK;
     HRESULT hbsr = D3D_OK;
@@ -194,7 +194,7 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
     double l = 0, t = 0, r = 0, b = 0;
 
     if ((y1 == y2) || (h <= 0)) {
-	video_blit_complete();
+	video_blit_done();
 	return; /*Nothing to do*/
     }
 
@@ -209,22 +209,22 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
 	hr = d3dTexture->LockRect(0, &dr, &lock_rect, 0);
 	if (hr == D3D_OK) {
 		for (yy = y1; yy < y2; yy++) {
-			if (buffer32) {
+			if (scr) {
 				if (vid_grayscale || invert_display)
-					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w);
+					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &scr->line[yy + y][x], w);
 				else
-					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w * 4);
+					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &scr->line[yy + y][x], w * 4);
 			}
 		}
 
-		video_blit_complete();
+		video_blit_done();
 		d3dTexture->UnlockRect(0);
 	} else {
-		video_blit_complete();
+		video_blit_done();
 		return;
 	}
     } else
-	video_blit_complete();
+	video_blit_done();
 
     d3d_verts[0].tu = d3d_verts[2].tu = d3d_verts[3].tu = 0;
     d3d_verts[0].tv = d3d_verts[3].tv = d3d_verts[4].tv = 0;
@@ -297,7 +297,7 @@ d3d_blit_fs(int x, int y, int y1, int y2, int w, int h)
 
 
 static void
-d3d_blit(int x, int y, int y1, int y2, int w, int h)
+d3d_blit(bitmap_t *b, int x, int y, int y1, int y2, int w, int h)
 {
     HRESULT hr = D3D_OK;
     HRESULT hbsr = D3D_OK;
@@ -307,7 +307,7 @@ d3d_blit(int x, int y, int y1, int y2, int w, int h)
     int yy;
 
     if ((y1 == y2) || (h <= 0)) {
-	video_blit_complete();
+	video_blit_done();
 	return; /*Nothing to do*/
     }
 
@@ -319,20 +319,20 @@ d3d_blit(int x, int y, int y1, int y2, int w, int h)
     hr = d3dTexture->LockRect(0, &dr, &r, 0);
     if (hr == D3D_OK) {	
 	for (yy = y1; yy < y2; yy++) {
-		if (buffer32) {
-			if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+		if (b) {
+			if ((y + yy) >= 0 && (y + yy) < screen->h) {
 				if (vid_grayscale || invert_display)
-					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w);
+					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &b->line[yy + y][x], w);
 				else
-					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &(((uint32_t *)buffer32->line[yy + y])[x]), w * 4);
+					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &b->line[yy + y][x], w * 4);
 			}
 		}
 	}
 
-	video_blit_complete();
+	video_blit_done();
 	d3dTexture->UnlockRect(0);
     } else {
-	video_blit_complete();
+	video_blit_done();
 	return;
     }
 
@@ -446,7 +446,7 @@ d3d_reset(int fs)
 static void
 d3d_close(void)
 {       
-    video_setblit(NULL);
+    video_blit_set(NULL);
 
     if (d3dTexture) {
 	d3dTexture->Release();
@@ -485,8 +485,6 @@ d3d_init(int fs)
     INFO("D3D: init (fs=%d)\n", fs);
 
     d3d_hwnd = hwndRender;
-
-    cgapal_rebuild();
 
     if (fs) {
 	d3d_w = GetSystemMetrics(SM_CXSCREEN);
@@ -587,9 +585,9 @@ d3d_init(int fs)
     d3ddev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 
     if (fs)
-	video_setblit(d3d_blit_fs);
+	video_blit_set(d3d_blit_fs);
       else
-	video_setblit(d3d_blit);
+	video_blit_set(d3d_blit);
 
     return(1);
 }

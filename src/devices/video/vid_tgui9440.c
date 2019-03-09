@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.11	2019/02/10
+ * Version:	@(#)vid_tgui9440.c	1.0.12	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -718,10 +718,10 @@ void tgui_hwcursor_draw(svga_t *svga, int disp_line)
                 if (offset >= svga->hwcursor_latch.x)
                 {
                         if (!(dat[0] & 0x80000000))
-                                ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add]  = (dat[1] & 0x80000000) ? 0xffffff : 0;
+                                screen->line[displine + y_add][offset + 32 + x_add].val  = (dat[1] & 0x80000000) ? 0xffffff : 0;
                         else if (dat[1] & 0x80000000)
 
-                                ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+                                screen->line[displine + y_add][offset + 32 + x_add].val ^= 0xffffff;
                 }
                            
                 offset++;

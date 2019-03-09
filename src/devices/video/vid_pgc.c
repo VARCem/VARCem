@@ -44,7 +44,7 @@
  *
  *		This is expected to be done shortly.
  *
- * Version:	@(#)vid_pgc.c	1.0.2	2019/03/04
+ * Version:	@(#)vid_pgc.c	1.0.3	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -2249,7 +2249,6 @@ pgc_read(uint32_t addr, void *priv)
 void
 pgc_cga_text(pgc_t *dev, int w)
 {
-    int x, c;
     uint8_t chr, attr;
     int drawcursor = 0;
     uint32_t cols[2];
@@ -2259,6 +2258,7 @@ pgc_cga_text(pgc_t *dev, int w)
     uint16_t ca = (dev->mapram[0x3ef] | (dev->mapram[0x3ee] << 8)) & 0x3fff;
     uint8_t *addr;
     uint32_t val;
+    int x, c;
     int cw = (w == 80) ? 8 : 16;
 
     addr = &dev->cga_vram[(((ma << 1) + ((dev->displine / pitch)*w)) * 2) & 0x3ffe];
@@ -2291,7 +2291,7 @@ pgc_cga_text(pgc_t *dev, int w)
 			val = cols[(fontdatm[chr + dev->fontbase][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 		else
 			val = cols[(fontdatm[chr + dev->fontbase][sc] & (1 << (c ^ 7))) ? 1 : 0];
-		buffer->line[dev->displine][(x * cw) + c] = val;
+		screen->line[dev->displine][(x * cw) + c].pal = val;
 	}
 
 	ma++;
@@ -2304,7 +2304,7 @@ void
 pgc_cga_gfx40(pgc_t *dev)
 {
     int x, c;
-    uint32_t cols[4];
+    uint8_t cols[4];
     int col;
     uint16_t ma = (dev->mapram[0x3ed] | (dev->mapram[0x3ec] << 8)) & 0x3fff;
     uint8_t *addr;
@@ -2332,8 +2332,7 @@ pgc_cga_gfx40(pgc_t *dev)
 	dat = (addr[0] << 8) | addr[1];
 	dev->ma++;
 	for (c = 0; c < 8; c++) { 
-		buffer->line[dev->displine][(x << 4) + (c << 1)] = 
-		buffer->line[dev->displine][(x << 4) + (c << 1) + 1] = cols[dat >> 14]; 
+		screen->line[dev->displine][(x << 4) + (c << 1)].pal = screen->line[dev->displine][(x << 4) + (c << 1) + 1].pal = cols[dat >> 14]; 
 		dat <<= 2; 
 	}
     }
@@ -2345,7 +2344,7 @@ void
 pgc_cga_gfx80(pgc_t *dev)
 {
     int x, c;
-    uint32_t cols[2];
+    uint8_t cols[2];
     uint16_t ma = (dev->mapram[0x3ed] | (dev->mapram[0x3ec] << 8)) & 0x3fff;
     uint8_t *addr;
     uint16_t dat;
@@ -2358,7 +2357,7 @@ pgc_cga_gfx80(pgc_t *dev)
 	dat = (addr[0] << 8) | addr[1];
 	dev->ma++;
 	for (c = 0; c < 16; c++) { 
-		buffer->line[dev->displine][(x << 4) + c] = cols[dat >> 15]; 
+		screen->line[dev->displine][(x << 4) + c].val = cols[dat >> 15]; 
 		dat <<= 1;
 	}
     }
@@ -2369,7 +2368,7 @@ pgc_cga_gfx80(pgc_t *dev)
 void
 pgc_cga_poll(pgc_t *dev)
 {
-    uint32_t cols[2];
+    uint8_t cols[2];
 
     if (! dev->linepos) {
 	dev->vidtime += dev->dispofftime;
@@ -2378,7 +2377,7 @@ pgc_cga_poll(pgc_t *dev)
 
 	if (dev->cgadispon) {
 		if (dev->displine == 0)
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 
 		if ((dev->mapram[0x03d8] & 0x12) == 0x12)
 			pgc_cga_gfx80(dev);	
@@ -2390,7 +2389,7 @@ pgc_cga_poll(pgc_t *dev)
 			pgc_cga_text(dev, 40);
 	} else {
 		cols[0] = ((dev->mapram[0x03d8] & 0x12) == 0x12) ? 0 : ((dev->mapram[0x03d9] & 15) + 16);
-		cga_hline(buffer, 0, dev->displine, PGC_CGA_WIDTH, cols[0]);
+		cga_hline(screen, 0, dev->displine, PGC_CGA_WIDTH, cols[0]);
 	}
 
 	if (++dev->displine == PGC_CGA_HEIGHT) {
@@ -2417,7 +2416,7 @@ pgc_cga_poll(pgc_t *dev)
 			if (video_force_resize_get())
 				video_force_resize_set(0);
 		} 
-		video_blit_memtoscreen_8(0, 0, 0, ysize, xsize, ysize);
+		video_blit_start(1, 0, 0, 0, ysize, xsize, ysize);
 		frames++;
 
 		/* We have a fixed 640x400 screen for CGA modes. */
@@ -2461,7 +2460,7 @@ pgc_poll(void *priv)
 	dev->linepos = 1;
 	if (dev->cgadispon && (uint32_t)dev->displine < dev->maxh) {
 		if (dev->displine == 0)
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 
 		/* Don't know why pan needs to be multiplied by -2, but
 		 * the IM1024 driver uses PAN -112 for an offset of 
@@ -2469,12 +2468,13 @@ pgc_poll(void *priv)
 		y = dev->displine - 2 * dev->pan_y;
 		for (x = 0; x < dev->screenw; x++) {
 			if (x + dev->pan_x < dev->maxw)
-				((uint32_t *)buffer32->line[dev->displine])[x] = dev->palette[dev->vram[y * dev->maxw + x]];
+				screen->line[dev->displine][x].val = dev->palette[dev->vram[y * dev->maxw + x]];
 			else
-				((uint32_t *)buffer32->line[dev->displine])[x] = dev->palette[0];
+				screen->line[dev->displine][x].val = dev->palette[0];
 		}
 	} else {
-		cga_hline(buffer32, 0, dev->displine, dev->screenw, dev->palette[0]);
+		for (x = 0; x < dev->screenw; x++)
+			screen->line[dev->displine][x].val = dev->palette[0];
 	}
 
 	if (++dev->displine == dev->screenh) {
@@ -2502,7 +2502,8 @@ pgc_poll(void *priv)
 			if (video_force_resize_get())
 				video_force_resize_set(0);
 		} 
-		video_blit_memtoscreen(0, 0, 0, ysize, xsize, ysize);
+
+		video_blit_start(0, 0, 0, 0, ysize, xsize, ysize);
 		frames++;
 
 		video_res_x = dev->screenw;

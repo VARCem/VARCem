@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.13	2019/03/05
+ * Version:	@(#)vid_cga.c	1.0.14	2019/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -256,15 +256,15 @@ cga_read(uint32_t addr, void *priv)
 
 
 void
-cga_hline(bitmap_t *b, int x1, int y, int x2, uint32_t col)
+cga_hline(bitmap_t *b, int x1, int y, int x2, uint8_t col)
 {
-    if (y < 0 || y >= buffer->h)
+    int c;
+
+    if (y < 0 || y >= b->h)
 	   return;
 
-    if (b == buffer)
-	memset(&b->line[y][x1], col, x2 - x1);
-      else
-	memset(&((uint32_t *)b->line[y])[x1], col, (x2 - x1) * 4);
+    for (c = 0; c < x2 - x1; c++)
+	b->line[y][x1].pal = col;
 }
 
 
@@ -295,30 +295,30 @@ cga_poll(void *priv)
 	if (dev->cgadispon) {
 		if (dev->displine < dev->firstline) {
 			dev->firstline = dev->displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 		dev->lastline = dev->displine;
 
 		for (c = 0; c < 8; c++) {
 			if ((dev->cgamode & 0x12) == 0x12) {
-				buffer->line[(dev->displine << 1)][c] =
-				buffer->line[(dev->displine << 1) + 1][c] = 0;
+				screen->line[(dev->displine << 1)][c].pal =
+				screen->line[(dev->displine << 1) + 1][c].pal = 0;
 				if (dev->cgamode & 1) {
-					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 3) + 8] =
-					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 3) + 8] = 0;
+					screen->line[(dev->displine << 1)][c + (dev->crtc[1] << 3) + 8].pal =
+					screen->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 3) + 8].pal = 0;
 				} else {
-					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 4) + 8] =
-					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 4) + 8] = 0;
+					screen->line[(dev->displine << 1)][c + (dev->crtc[1] << 4) + 8].pal =
+					screen->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 4) + 8].pal = 0;
 				}
 			} else {
-				buffer->line[(dev->displine << 1)][c] =
-				buffer->line[(dev->displine << 1) + 1][c] = (dev->cgacol & 15) + 16;
+				screen->line[(dev->displine << 1)][c].pal =
+				screen->line[(dev->displine << 1) + 1][c].pal = (dev->cgacol & 15) + 16;
 				if (dev->cgamode & 1) {
-					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 3) + 8] =
-					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 3) + 8] = (dev->cgacol & 15) + 16;
+					screen->line[(dev->displine << 1)][c + (dev->crtc[1] << 3) + 8].pal =
+					screen->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 3) + 8].pal = (dev->cgacol & 15) + 16;
 				} else {
-					buffer->line[(dev->displine << 1)][c + (dev->crtc[1] << 4) + 8] =
-					buffer->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 4) + 8] = (dev->cgacol & 15) + 16;
+					screen->line[(dev->displine << 1)][c + (dev->crtc[1] << 4) + 8].pal =
+					screen->line[(dev->displine << 1) + 1][c + (dev->crtc[1] << 4) + 8].pal = (dev->cgacol & 15) + 16;
 				}
 			}
 		}
@@ -340,14 +340,14 @@ cga_poll(void *priv)
 					cols[0] = (attr >> 4) + 16;
 				if (drawcursor) {
 					for (c = 0; c < 8; c++) {
-						buffer->line[(dev->displine << 1)][(x << 3) + c + 8] =
-						buffer->line[(dev->displine << 1) + 1][(x << 3) + c + 8] =
+						screen->line[(dev->displine << 1)][(x << 3) + c + 8].pal =
+						screen->line[(dev->displine << 1) + 1][(x << 3) + c + 8].pal =
 							cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 					}
 				} else {
 					for (c = 0; c < 8; c++) {
-						buffer->line[(dev->displine << 1)][(x << 3) + c + 8] =
-						buffer->line[(dev->displine << 1) + 1][(x << 3) + c + 8] =
+						screen->line[(dev->displine << 1)][(x << 3) + c + 8].pal =
+						screen->line[(dev->displine << 1) + 1][(x << 3) + c + 8].pal =
 							cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 					}
 				}
@@ -371,18 +371,18 @@ cga_poll(void *priv)
 				dev->ma++;
 				if (drawcursor) {
 					for (c = 0; c < 8; c++) {
-						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8] =
-						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8] =
-						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8] =
-						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8] =
+						screen->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8].pal =
+						screen->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8].pal =
+						screen->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8].pal =
+						screen->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8].pal =
 							cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 					}
 				} else {
 					for (c = 0; c < 8; c++) {
-						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8] =
-						buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8] =
-						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8] =
-						buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8] =
+						screen->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8].pal =
+						screen->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8].pal =
+						screen->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8].pal =
+						screen->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8].pal =
 						cols[(fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 					}
 				}
@@ -411,10 +411,10 @@ cga_poll(void *priv)
 					dat = 0;
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8] =
-					buffer->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8] =
-					buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8] =
-					buffer->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8] =
+					screen->line[(dev->displine << 1)][(x << 4) + (c << 1) + 8].pal =
+					screen->line[(dev->displine << 1)][(x << 4) + (c << 1) + 1 + 8].pal =
+					screen->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 8].pal =
+					screen->line[(dev->displine << 1) + 1][(x << 4) + (c << 1) + 1 + 8].pal =
 						cols[dat >> 14];
 					dat <<= 2;
 				}
@@ -428,8 +428,8 @@ cga_poll(void *priv)
 					dat = 0;
 				dev->ma++;
 				for (c = 0; c < 16; c++) {
-					buffer->line[(dev->displine << 1)][(x << 4) + c + 8] =
-					buffer->line[(dev->displine << 1) + 1][(x << 4) + c + 8] =
+					screen->line[(dev->displine << 1)][(x << 4) + c + 8].pal =
+					screen->line[(dev->displine << 1) + 1][(x << 4) + c + 8].pal =
 						cols[dat >> 15];
 					dat <<= 1;
 				}
@@ -438,11 +438,11 @@ cga_poll(void *priv)
 	} else {
 		cols[0] = ((dev->cgamode & 0x12) == 0x12) ? 0 : (dev->cgacol & 15) + 16;
 		if (dev->cgamode & 1) {
-			cga_hline(buffer, 0, (dev->displine << 1), (dev->crtc[1] << 3) + 16, cols[0]);
-			cga_hline(buffer, 0, (dev->displine << 1) + 1, (dev->crtc[1] << 3) + 16, cols[0]);
+			cga_hline(screen, 0, (dev->displine << 1), (dev->crtc[1] << 3) + 16, cols[0]);
+			cga_hline(screen, 0, (dev->displine << 1) + 1, (dev->crtc[1] << 3) + 16, cols[0]);
 		} else {
-			cga_hline(buffer, 0, (dev->displine << 1), (dev->crtc[1] << 4) + 16, cols[0]);
-			cga_hline(buffer, 0, (dev->displine << 1) + 1, (dev->crtc[1] << 4) + 16, cols[0]);
+			cga_hline(screen, 0, (dev->displine << 1), (dev->crtc[1] << 4) + 16, cols[0]);
+			cga_hline(screen, 0, (dev->displine << 1) + 1, (dev->crtc[1] << 4) + 16, cols[0]);
 		}
 	}
 
@@ -452,18 +452,13 @@ cga_poll(void *priv)
 		x = (dev->crtc[1] << 4) + 16;
 
 	if (dev->composite) {
-		for (c = 0; c < x; c++) {
-			buffer32->line[(dev->displine << 1)][c] = buffer->line[(dev->displine << 1)][c] & 0xf;
-			buffer32->line[(dev->displine << 1) + 1][c] = buffer->line[(dev->displine << 1) + 1][c] & 0xf;
-		}
-
 		if (dev->cgamode & 0x10)
 			border = 0x00;
 		else
 			border = dev->cgacol & 0x0f;
 
-		cga_comp_process(dev->cpriv, dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1)]);
-		cga_comp_process(dev->cpriv, dev->cgamode, border, x >> 2, buffer32->line[(dev->displine << 1) + 1]);
+		cga_comp_process(dev->cpriv, dev->cgamode, border, x >> 2, screen->line[(dev->displine << 1)]);
+		cga_comp_process(dev->cpriv, dev->cgamode, border, x >> 2, screen->line[(dev->displine << 1) + 1]);
 	}
 
 	dev->sc = oldsc;
@@ -560,10 +555,10 @@ cga_poll(void *priv)
 				}
 
 				if (dev->composite) 
-					video_blit_memtoscreen(0, (dev->firstline - 4) << 1, 0, ((dev->lastline - dev->firstline) + 8) << 1,
+					video_blit_start(0, 0, (dev->firstline - 4) << 1, 0, ((dev->lastline - dev->firstline) + 8) << 1,
 							       xsize, ((dev->lastline - dev->firstline) + 8) << 1);
 				else
-					video_blit_memtoscreen_8(0, (dev->firstline - 4) << 1, 0, ((dev->lastline - dev->firstline) + 8) << 1,
+					video_blit_start(1, 0, (dev->firstline - 4) << 1, 0, ((dev->lastline - dev->firstline) + 8) << 1,
 								 xsize, ((dev->lastline - dev->firstline) + 8) << 1);
 				frames++;
 
@@ -651,7 +646,7 @@ cga_standalone_init(const device_t *info)
     overscan_x = overscan_y = 16;
 
     cga_palette = (dev->rgb_type << 1);
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     video_load_font(CGA_FONT_ROM_PATH,
 		    (dev->font_type) ? FONT_CGA_THICK : FONT_CGA_THIN);

@@ -8,12 +8,12 @@
  *
  *		Rendering module for Microsoft Direct2D.
  *
- * Version:	@(#)win_d2d.cpp	1.0.3	2018/11/20
+ * Version:	@(#)win_d2d.cpp	1.0.4	2019/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		David Hrdlicka, <hrdlickadavid@outlook.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2018 David Hrdlicka.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -180,7 +180,7 @@ d2d_stretch(float *w, float *h, float *x, float *y)
 
 
 static void
-d2d_blit(int x, int y, int y1, int y2, int w, int h)
+d2d_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 {
     ID2D1Bitmap *fs_bitmap;
     ID2D1RenderTarget *RT;
@@ -215,28 +215,26 @@ d2d_blit(int x, int y, int y1, int y2, int w, int h)
 	}
     }
 
-    if ((y1 == y2) || (buffer32 == NULL)) {
-	video_blit_complete();
+    if ((y1 == y2) || (scr == NULL)) {
+	video_blit_done();
 	return;
     }
 
     // TODO: Copy data directly from buffer32 to d2d_bitmap
     srcdata = mem_alloc(h * w * 4);
     for (yy = y1; yy < y2; yy++) {
-	if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+	if ((y + yy) >= 0 && (y + yy) < scr->h) {
 		if (vid_grayscale || invert_display)
 			video_transform_copy(
 				(uint32_t *)&(((uint8_t *)srcdata)[yy * w * 4]),
-				&(((uint32_t *)buffer32->line[y + yy])[x]),
-				w);
+				&scr->line[y + yy][x], w);
 		else
 			memcpy(
 				(uint32_t *)&(((uint8_t *)srcdata)[yy * w * 4]),
-				&(((uint32_t *)buffer32->line[y + yy])[x]),
-				w * 4);
+				&scr->line[y + yy][x], w * 4);
 	}
     }
-    video_blit_complete();
+    video_blit_done();
 
     rectU = D2D1::RectU(0, 0, w, h);
     hr = d2d_bitmap->CopyFromMemory(&rectU, srcdata, w * 4);
@@ -294,7 +292,7 @@ d2d_close(void)
 {
     DEBUG("D2D: close()\n");
 
-    video_setblit(NULL);
+    video_blit_set(NULL);
 
     if (d2d_bitmap) {
 	d2d_bitmap->Release();
@@ -341,8 +339,6 @@ d2d_init(int fs)
     HRESULT hr = S_OK;
 
     INFO("D2D: init(fs=%d)\n", fs);
-
-    cgapal_rebuild();
 
 #if USE_D2D == 2
     /* Try loading the DLL. */
@@ -422,7 +418,7 @@ d2d_init(int fs)
     atexit(d2d_close);
 
     /* Register our renderer! */
-    video_setblit(d2d_blit);
+    video_blit_set(d2d_blit);
 
     return(1);
 }

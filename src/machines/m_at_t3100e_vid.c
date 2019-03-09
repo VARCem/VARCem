@@ -22,7 +22,7 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_at_t3100e_vid.c	1.0.7	2019/03/03
+ * Version:	@(#)m_at_t3100e_vid.c	1.0.8	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -316,7 +316,7 @@ t3100e_read(uint32_t addr, void *priv)
 }
 
 
-/* Draw a row of text in 80-column mode */
+/* Draw a row of text in 80-column mode. */
 static void
 text_row80(t3100e_t *dev)
 {
@@ -369,18 +369,18 @@ text_row80(t3100e_t *dev)
 
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
-			((uint32_t *)buffer32->line[dev->displine])[(x << 3) + c] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
+			screen->line[dev->displine][(x << 3) + c].val = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
 		}
 	} else {
 		for (c = 0; c < 8; c++)
-			((uint32_t *)buffer32->line[dev->displine])[(x << 3) + c] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
+			screen->line[dev->displine][(x << 3) + c].val = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
 	}
 	++ma;
     }
 }
 
 
-/* Draw a row of text in 40-column mode */
+/* Draw a row of text in 40-column mode. */
 static void
 text_row40(t3100e_t *dev)
 {
@@ -433,11 +433,11 @@ text_row40(t3100e_t *dev)
 
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
-			((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2] = ((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2 + 1] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
+			screen->line[dev->displine][(x << 4) + c*2].val = screen->line[dev->displine][(x << 4) + c*2 + 1].val = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (amber ^ black);
 		}
 	} else {
 		for (c = 0; c < 8; c++) {
-			((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2] = ((uint32_t *)buffer32->line[dev->displine])[(x << 4) + c*2+1] = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
+			screen->line[dev->displine][(x << 4) + c*2].val = screen->line[dev->displine][(x << 4) + c*2+1].val = cols[(dev->fontdatm[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
 		}
 	}
 	++ma;
@@ -445,7 +445,7 @@ text_row40(t3100e_t *dev)
 }
 
 
-/* Draw a line in CGA 640x200 or T3100e 640x400 mode */
+/* Draw a line in CGA 640x200 or T3100e 640x400 mode. */
 static void
 cga_line6(t3100e_t *dev)
 {
@@ -476,7 +476,7 @@ cga_line6(t3100e_t *dev)
 		ink = (dat & 0x80) ? fg : bg;
 		if (!(dev->cga.cgamode & 8))
 			ink = black;
-		((uint32_t *)buffer32->line[dev->displine])[x*8+c] = ink;
+		screen->line[dev->displine][x*8+c].val = ink;
 		dat = dat << 1;
 	}
     }
@@ -540,8 +540,8 @@ cga_line4(t3100e_t *dev)
 
 		}
 
-		((uint32_t *)buffer32->line[dev->displine])[x*8+2*c] = ink0;
-		((uint32_t *)buffer32->line[dev->displine])[x*8+2*c+1] = ink1;
+		screen->line[dev->displine][x*8+2*c].val = ink0;
+		screen->line[dev->displine][x*8+2*c+1].val = ink1;
 		dat = dat << 2;
 	}
     }
@@ -584,7 +584,7 @@ t3100e_poll(void *priv)
 	dev->linepos = 1;
 	if (dev->dispon) {
 		if (dev->displine == 0)
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 
 		/* Graphics */
 		if (dev->cga.cgamode & 0x02)	{
@@ -626,7 +626,8 @@ t3100e_poll(void *priv)
 			if (ysize < 32) ysize = 200;
 			set_screen_size(xsize, ysize);
 		}
-		video_blit_memtoscreen(0, 0, 0, ysize, xsize, ysize);
+
+		video_blit_start(1, 0, 0, 0, ysize, xsize, ysize);
 		frames++;
 
 		/* Fixed 640x400 resolution */

@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24.
  *
- * Version:	@(#)m_olivetti_m24.c	1.0.14	2019/02/16
+ * Version:	@(#)m_olivetti_m24.c	1.0.15	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -260,7 +260,7 @@ vid_poll(void *priv)
     int col;
     int oldsc;
 
-    if (!dev->linepos) {
+    if (! dev->linepos) {
 	dev->vidtime += dev->dispofftime;
 	dev->stat |= 1;
 	dev->linepos = 1;
@@ -270,21 +270,22 @@ vid_poll(void *priv)
 	if (dev->dispon) {
 		if (dev->displine < dev->firstline) {
 			dev->firstline = dev->displine;
+                        video_blit_wait_buffer();
 		}
 		dev->lastline = dev->displine;
 		for (c = 0; c < 8; c++) {
 			if ((dev->cgamode & 0x12) == 0x12) {
-				buffer->line[dev->displine][c] = 0;
+				screen->line[dev->displine][c].pal = 0;
 				if (dev->cgamode & 1)
-					buffer->line[dev->displine][c + (dev->crtc[1] << 3) + 8] = 0;
+					screen->line[dev->displine][c + (dev->crtc[1] << 3) + 8].pal = 0;
 				  else
-					buffer->line[dev->displine][c + (dev->crtc[1] << 4) + 8] = 0;
+					screen->line[dev->displine][c + (dev->crtc[1] << 4) + 8].pal = 0;
 			} else {
-				buffer->line[dev->displine][c] = (dev->cgacol & 15) + 16;
+				screen->line[dev->displine][c].pal = (dev->cgacol & 15) + 16;
 				if (dev->cgamode & 1)
-					buffer->line[dev->displine][c + (dev->crtc[1] << 3) + 8] = (dev->cgacol & 15) + 16;
+					screen->line[dev->displine][c + (dev->crtc[1] << 3) + 8].pal = (dev->cgacol & 15) + 16;
 				else
-					buffer->line[dev->displine][c + (dev->crtc[1] << 4) + 8] = (dev->cgacol & 15) + 16;
+					screen->line[dev->displine][c + (dev->crtc[1] << 4) + 8].pal = (dev->cgacol & 15) + 16;
 			}
 		}
 		if (dev->cgamode & 1) {
@@ -303,10 +304,10 @@ vid_poll(void *priv)
 				}
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 3) + c + 8] = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0];
+					    screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 				dev->ma++;
 			}
@@ -327,12 +328,12 @@ vid_poll(void *priv)
 				dev->ma++;
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 4) + (c << 1) + 8] = 
-					    buffer->line[dev->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    screen->line[dev->displine][(x << 4) + (c << 1) + 8].pal = 
+						screen->line[dev->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
-					    buffer->line[dev->displine][(x << 4) + (c << 1) + 8] = 
-					    buffer->line[dev->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0];
+					    screen->line[dev->displine][(x << 4) + (c << 1) + 8].pal = 
+					    	screen->line[dev->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(fontdatm[chr][((dev->sc & 7) << 1) | dev->lineff] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 			}
 		} else if (! (dev->cgamode & 16)) {
@@ -356,8 +357,8 @@ vid_poll(void *priv)
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1 + dev->base];
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					buffer->line[dev->displine][(x << 4) + (c << 1) + 8] =
-					buffer->line[dev->displine][(x << 4) + (c << 1) + 1 + 8] = cols[dat >> 14];
+					screen->line[dev->displine][(x << 4) + (c << 1) + 8].pal =
+					screen->line[dev->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[dat >> 14];
 					dat <<= 2;
 				}
 			}
@@ -374,7 +375,7 @@ vid_poll(void *priv)
 				dat = (dev->vram[((dev->ma << 1) & 0x1fff) + dat2] << 8) | dev->vram[((dev->ma << 1) & 0x1fff) + dat2 + 1];
 				dev->ma++;
 				for (c = 0; c < 16; c++) {
-					buffer->line[dev->displine][(x << 4) + c + 8] = cols[dat >> 15];
+					screen->line[dev->displine][(x << 4) + c + 8].pal = cols[dat >> 15];
 					dat <<= 1;
 				}
 			}
@@ -382,9 +383,9 @@ vid_poll(void *priv)
 	} else {
 		cols[0] = ((dev->cgamode & 0x12) == 0x12) ? 0 : (dev->cgacol & 15) + 16;
 		if (dev->cgamode & 1)
-			cga_hline(buffer, 0, dev->displine, (dev->crtc[1] << 3) + 16, cols[0]);
+			cga_hline(screen, 0, dev->displine, (dev->crtc[1] << 3) + 16, cols[0]);
 		else
-			cga_hline(buffer, 0, dev->displine, (dev->crtc[1] << 4) + 16, cols[0]);
+			cga_hline(screen, 0, dev->displine, (dev->crtc[1] << 4) + 16, cols[0]);
 	}
 
 	if (dev->cgamode & 1)
@@ -469,7 +470,7 @@ vid_poll(void *priv)
 							video_force_resize_set(0);
 					}
 
-					video_blit_memtoscreen_8(0, dev->firstline - 8, 0, (dev->lastline - dev->firstline) + 16, xsize, (dev->lastline - dev->firstline) + 16);
+					video_blit_start(1, 0, dev->firstline - 8, 0, (dev->lastline - dev->firstline) + 16, xsize, (dev->lastline - dev->firstline) + 16);
 					frames++;
 
 					video_res_x = xsize - 16;

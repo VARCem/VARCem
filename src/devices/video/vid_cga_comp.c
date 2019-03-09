@@ -15,7 +15,7 @@
  *
  *		Reworked to have its data on the heap.
  *
- * Version:	@(#)vid_cga_comp.c	1.0.6	2019/03/04
+ * Version:	@(#)vid_cga_comp.c	1.0.7	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,15 +119,15 @@ byte_clamp(int v)
 }
 
 
-uint8_t *
+void
 cga_comp_process(void *priv, uint8_t cgamode, uint8_t border,
-		 uint32_t blocks/*, int8_t doublewidth*/, uint8_t *TempLine)
+		 uint32_t blocks/*, int8_t doublewidth*/, pel_t *pels)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
-    uint32_t x2, *srgb;
+    uint32_t x2;
+    pel_t *ptr;
     int x, w = blocks*4;
     int *o, *b2, *i, *ap, *bp;
-    uint8_t *rgbi;
 
 #define COMPOSITE_CONVERT(I, Q) do { \
         i[1] = (i[1]<<3) - ap[1]; \
@@ -142,40 +142,40 @@ cga_comp_process(void *priv, uint8_t cgamode, uint8_t border,
         ++i; \
         ++ap; \
         ++bp; \
-        *srgb = (byte_clamp(rr)<<16) | (byte_clamp(gg)<<8) | byte_clamp(bb); \
-        ++srgb; \
+        ptr[0].val = (byte_clamp(rr)<<16) | (byte_clamp(gg)<<8) | byte_clamp(bb); \
+        ptr++; \
     } while (0)
 
 #define OUT(v) do { *o = (v); ++o; } while (0)
 
     /* Simulate CGA composite output. */
+    ptr = pels;
     o = state->temp;
-    rgbi = TempLine;
     b2 = &state->table[border * 68];
     for (x = 0; x < 4; ++x)
 	OUT(b2[(x+3)&3]);
-    OUT(state->table[(border<<6) | ((*rgbi)<<2) | 3]);
+    OUT(state->table[(border<<6) | ((ptr[0].pal & 0x0f)<<2) | 3]);
 
     for (x = 0; x < w-1; ++x) {
-	OUT(state->table[(rgbi[0]<<6) | (rgbi[1]<<2) | (x&3)]);
-	++rgbi;
+	OUT(state->table[((ptr[0].pal & 0x0f)<<6) | ((ptr[1].pal & 0x0f)<<2) | (x&3)]);
+	ptr++;
     }
-    OUT(state->table[((*rgbi)<<6) | (border<<2) | 3]);
+    OUT(state->table[((ptr[0].pal & 0x0f)<<6) | (border<<2) | 3]);
 
     for (x = 0; x < 5; ++x)
 	OUT(b2[x&3]);
 
+    ptr = pels;
     if ((cgamode & 4) != 0) {
 	/* Decode. */
 	i = state->temp + 5;
-	srgb = (uint32_t *)TempLine;
 	for (x2 = 0; x2 < blocks*4; ++x2) {
 		int c = (i[0]+i[0])<<3;
 		int d = (i[-1]+i[1])<<3;
 		int y = ((c+d)<<8) + state->video_sharpness*(c-d);
 		++i;
-		*srgb = byte_clamp(y)*0x10101;
-		++srgb;
+		ptr[0].val = byte_clamp(y)*0x10101;
+		ptr++;
 	}
     } else {
 	/* Store chroma. */
@@ -192,7 +192,6 @@ cga_comp_process(void *priv, uint8_t cgamode, uint8_t border,
 	i = state->temp + 5;
 	i[-1] = (i[-1]<<3) - ap[-1];
 	i[0] = (i[0]<<3) - ap[0];
-	srgb = (uint32_t *)TempLine;
 	for (x2 = 0; x2 < blocks; ++x2) {
 		int y,a,b,c,d,rr,gg,bb;
 
@@ -202,8 +201,6 @@ cga_comp_process(void *priv, uint8_t cgamode, uint8_t border,
 		COMPOSITE_CONVERT(b, -a);
 	}
     }
-
-    return TempLine;
 }
 
 

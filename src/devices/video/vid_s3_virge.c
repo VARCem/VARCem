@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.15	2019/02/10
+ * Version:	@(#)vid_s3_virge.c	1.0.16	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3467,7 +3467,7 @@ static void s3_virge_hwcursor_draw(svga_t *svga, int displine)
                                 if (offset >= svga->hwcursor_latch.x)
                                 {
                                         if (dat[0] & 0x8000)
-                                                ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
+                                                screen->line[displine + y_add][offset + 32 + x_add].val  = (dat[1] & 0x8000) ? fg : bg;
                                 }
                            
                                 offset++;
@@ -3483,9 +3483,9 @@ static void s3_virge_hwcursor_draw(svga_t *svga, int displine)
                                 if (offset >= svga->hwcursor_latch.x)
                                 {
                                         if (!(dat[0] & 0x8000))
-                                           ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
+                                           screen->line[displine + y_add][offset + 32 + x_add].val  = (dat[1] & 0x8000) ? fg : bg;
                                         else if (dat[1] & 0x8000)
-                                           ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+                                           screen->line[displine + y_add][offset + 32 + x_add].val ^= 0xffffff;
                                 }
                            
                                 offset++;
@@ -3734,12 +3734,12 @@ static void s3_virge_overlay_draw(svga_t *svga, int displine)
         int r[8], g[8], b[8];
         int x_size, x_read = 4, x_write = 4;
         int x;
-        uint32_t *p;
         uint8_t *src = &svga->vram[svga->overlay_latch.addr];
 	int y_add = enable_overscan ? 16 : 0;
 	int x_add = enable_overscan ? 8 : 0;
+        pel_t *p;
         
-        p = &((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add];
+        p = &screen->line[displine + y_add][offset + 32 + x_add];
         
         if ((offset + virge->streams.sec_w) > virge->streams.pri_w)
                 x_size = (virge->streams.pri_w - virge->streams.sec_x) + 1;
@@ -3750,7 +3750,8 @@ static void s3_virge_overlay_draw(svga_t *svga, int displine)
         
         for (x = 0; x < x_size; x++)
         {
-                *p++ = r[x_read] | (g[x_read] << 8) | (b[x_read] << 16);
+                p[0].val = r[x_read] | (g[x_read] << 8) | (b[x_read] << 16);
+		p++;
 
                 h_acc += virge->streams.k1_horiz_scale;
                 if (h_acc >= 0)

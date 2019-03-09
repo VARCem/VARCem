@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.6	2019/03/04
+ * Version:	@(#)vid_cga_compaq.c	1.0.7	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -91,7 +91,7 @@ compaq_poll(void *priv)
     int x, c;
     int oldvc;
     uint8_t chr, attr;
-    uint32_t cols[4];
+    uint8_t cols[4];
     int oldsc;
     int underline = 0;
     int blink = 0;
@@ -101,8 +101,9 @@ compaq_poll(void *priv)
 	overscan_x = overscan_y = 16;
 	cga_poll(&dev->cga);
 	return;
-    } else
-	overscan_x = overscan_y = 0;
+    }
+
+    overscan_x = overscan_y = 0;
 
     /* We are in Compaq 350-line CGA territory */
     if (! dev->cga.linepos) {
@@ -117,18 +118,18 @@ compaq_poll(void *priv)
 	if (dev->cga.cgadispon) {
 		if (dev->cga.displine < dev->cga.firstline) {
 			dev->cga.firstline = dev->cga.displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 		dev->cga.lastline = dev->cga.displine;
 
 		cols[0] = (dev->cga.cgacol & 15);
 
 		for (c = 0; c < 8; c++) {
-			((uint32_t *)buffer32->line[dev->cga.displine])[c] = cols[0];
+			screen->line[dev->cga.displine][c].val = cols[0];
 			if (dev->cga.cgamode & 1)
-				((uint32_t *)buffer32->line[dev->cga.displine])[c + (dev->cga.crtc[1] << 3) + 8] = cols[0];
+				screen->line[dev->cga.displine][c + (dev->cga.crtc[1] << 3) + 8].pal = cols[0];
 			else
-				((uint32_t *)buffer32->line[dev->cga.displine])[c + (dev->cga.crtc[1] << 4) + 8] = cols[0];
+				screen->line[dev->cga.displine][c + (dev->cga.crtc[1] << 4) + 8].pal = cols[0];
 		}
 
 		if (dev->cga.cgamode & 1) {
@@ -162,13 +163,13 @@ compaq_poll(void *priv)
 
 				if (dev->flags && underline) {
 					for (c = 0; c < 8; c++)
-						((uint32_t *)buffer32->line[dev->cga.displine])[(x << 3) + c + 8] = dev->attr[attr][blink][1];
+						screen->line[dev->cga.displine][(x << 3) + c + 8].pal = dev->attr[attr][blink][1];
 				} else if (drawcursor) {
 					for (c = 0; c < 8; c++)
-						((uint32_t *)buffer32->line[dev->cga.displine])[(x << 3) + c + 8] = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0xffffff;
+						screen->line[dev->cga.displine][(x << 3) + c + 8].pal = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0xffffff;
 				} else {
 					for (c = 0; c < 8; c++)
-						((uint32_t *)buffer32->line[dev->cga.displine])[(x << 3) + c + 8] = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
+						screen->line[dev->cga.displine][(x << 3) + c + 8].pal = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 				dev->cga.ma++;
 			}
@@ -204,40 +205,34 @@ compaq_poll(void *priv)
 
 				if (dev->flags && underline) {
 					for (c = 0; c < 8; c++)
-						((uint32_t *)buffer32->line[dev->cga.displine])[(x << 4)+(c << 1) + 8] = ((uint32_t *)buffer32->line[dev->cga.displine])[(x << 4)+(c << 1) + 9] = dev->attr[attr][blink][1];
+						screen->line[dev->cga.displine][(x << 4)+(c << 1) + 8].pal = screen->line[dev->cga.displine][(x << 4)+(c << 1) + 9].pal = dev->attr[attr][blink][1];
 				} else if (drawcursor) {
 					for (c = 0; c < 8; c++)
-						((uint32_t *)buffer32->line[dev->cga.displine])[(x << 4)+(c << 1) + 8] = ((uint32_t *)buffer32->line[dev->cga.displine])[(x << 4) + (c << 1) + 1 + 8] = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+						screen->line[dev->cga.displine][(x << 4)+(c << 1) + 8].pal = screen->line[dev->cga.displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
-						((uint32_t *)buffer32->line[dev->cga.displine])[(x << 4) + (c << 1) + 8] = ((uint32_t *)buffer32->line[dev->cga.displine])[(x << 4) + (c << 1) + 1 + 8] = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
+						screen->line[dev->cga.displine][(x << 4) + (c << 1) + 8].pal = screen->line[dev->cga.displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(fontdatm[chr + dev->cga.fontbase][dev->cga.sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 			}
 		}
 	} else {
 		cols[0] = (dev->cga.cgacol & 15) + 16;
 		if (dev->cga.cgamode & 1)
-			cga_hline(buffer32, 0, dev->cga.displine, (dev->cga.crtc[1] << 3) + 16, cols[0]);
+			cga_hline(screen, 0, dev->cga.displine, (dev->cga.crtc[1] << 3) + 16, cols[0]);
 		else
-			cga_hline(buffer32, 0, dev->cga.displine, (dev->cga.crtc[1] << 4) + 16, cols[0]);
-		}
+			cga_hline(screen, 0, dev->cga.displine, (dev->cga.crtc[1] << 4) + 16, cols[0]);
+	}
 
-		if (dev->cga.cgamode & 1)
-			x = (dev->cga.crtc[1] << 3) + 16;
-		else
-			x = (dev->cga.crtc[1] << 4) + 16;
+	if (dev->cga.cgamode & 1)
+		x = (dev->cga.crtc[1] << 3) + 16;
+	else
+		x = (dev->cga.crtc[1] << 4) + 16;
 
-		if (dev->cga.composite) {
-			for (c = 0; c < x; c++)
-				buffer32->line[dev->cga.displine][c] = ((uint32_t *)buffer32->line[dev->cga.displine])[c] & 0xf;
-
+	if (dev->cga.composite) {
 		if (dev->flags)
-			cga_comp_process(dev->cga.cpriv, dev->cga.cgamode & 0x7F, 0, x >> 2, buffer32->line[dev->cga.displine]);
+			cga_comp_process(dev->cga.cpriv, dev->cga.cgamode & 0x7F, 0, x >> 2, screen->line[dev->cga.displine]);
 		else
-			cga_comp_process(dev->cga.cpriv, dev->cga.cgamode, 0, x >> 2, buffer32->line[dev->cga.displine]);
-	} else {
-		for (c = 0; c < x; c++)
-			buffer->line[dev->cga.displine][c] = ((uint32_t *)buffer32->line[dev->cga.displine])[c];
+			cga_comp_process(dev->cga.cpriv, dev->cga.cgamode, 0, x >> 2, screen->line[dev->cga.displine]);
 	}			
 
 	dev->cga.sc = oldsc;
@@ -317,9 +312,9 @@ compaq_poll(void *priv)
 				}
 					
 				if (dev->cga.composite) 
-					video_blit_memtoscreen(8, dev->cga.firstline, 0, ysize, xsize, ysize);
+					video_blit_start(0, 8, dev->cga.firstline, 0, ysize, xsize, ysize);
 				else	  
-					video_blit_memtoscreen_8(8, dev->cga.firstline, 0, ysize, xsize, ysize);
+					video_blit_start(1, 8, dev->cga.firstline, 0, ysize, xsize, ysize);
 				frames++;
 
 				video_res_x = xsize - 16;
@@ -419,7 +414,7 @@ compaq_cga_init(const device_t *info)
     overscan_x = overscan_y = 16;
 
     cga_palette = (dev->cga.rgb_type << 1);
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     video_inform(VID_TYPE_CGA, info->vid_timing);
 

@@ -9,13 +9,13 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_xt_t1000_vid.c	1.0.7	2018/09/24
+ * Version:	@(#)m_xt_t1000_vid.c	1.0.8	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *              John Elliott, <jce@seasip.info>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2017,2018 Miran Grca.
  *              Copyright 2017,2018 John Elliott.
  *
@@ -71,9 +71,9 @@ static uint8_t  langid;
  * Bit  1:   Danish
  * Bit  0:   Thin font
  */
-static uint8_t st_video_options;
-static uint8_t st_enabled = 1;
-static int8_t st_display_internal = -1;
+static uint8_t	st_video_options;
+static uint8_t	st_enabled = 1;
+static int8_t	st_display_internal = -1;
 
 
 void
@@ -84,7 +84,8 @@ t1000_video_options_set(uint8_t options)
 }
 
 
-void t1000_video_enable(uint8_t enabled)
+void
+t1000_video_enable(uint8_t enabled)
 {
     st_enabled = enabled;
 }
@@ -237,73 +238,70 @@ t1000_recalctimings(t1000_t *t1000)
 static void
 t1000_text_row80(t1000_t *t1000)
 {
-	uint32_t cols[2];
-	int x, c;
-        uint8_t chr, attr;
-        int drawcursor;
-	int cursorline;
-	int bold;
-	int blink;
-	uint16_t addr;
-	uint8_t sc;
-	uint16_t ma = (t1000->cga.crtc[13] | (t1000->cga.crtc[12] << 8)) & 0x3fff;
-	uint16_t ca = (t1000->cga.crtc[15] | (t1000->cga.crtc[14] << 8)) & 0x3fff;
+    uint32_t cols[2];
+    int x, c;
+       uint8_t chr, attr;
+       int drawcursor;
+    int cursorline;
+    int bold;
+    int blink;
+    uint16_t addr;
+    uint8_t sc;
+    uint16_t ma = (t1000->cga.crtc[13] | (t1000->cga.crtc[12] << 8)) & 0x3fff;
+    uint16_t ca = (t1000->cga.crtc[15] | (t1000->cga.crtc[14] << 8)) & 0x3fff;
 
-	sc = (t1000->displine) & 7;
-	addr = ((ma & ~1) + (t1000->displine >> 3) * 80) * 2;
-	ma += (t1000->displine >> 3) * 80;
+    sc = (t1000->displine) & 7;
+    addr = ((ma & ~1) + (t1000->displine >> 3) * 80) * 2;
+    ma += (t1000->displine >> 3) * 80;
 
-	if ((t1000->cga.crtc[10] & 0x60) == 0x20)
-	{
-		cursorline = 0;
+    if ((t1000->cga.crtc[10] & 0x60) == 0x20) {
+	cursorline = 0;
+    } else {
+	cursorline = ((t1000->cga.crtc[10] & 0x0F) <= sc) &&
+		     ((t1000->cga.crtc[11] & 0x0F) >= sc);
+    }
+
+    for (x = 0; x < 80; x++) {
+	chr  = t1000->vram[(addr + 2 * x) & 0x3FFF];
+	attr = t1000->vram[(addr + 2 * x + 1) & 0x3FFF];
+               drawcursor = ((ma == ca) && cursorline &&
+		(t1000->cga.cgamode & 8) && (t1000->cga.cgablink & 16));
+
+	blink = ((t1000->cga.cgablink & 16) && (t1000->cga.cgamode & 0x20) &&
+		(attr & 0x80) && !drawcursor);
+
+	if (t1000->video_options & 1)
+		bold = boldcols[attr] ? chr : chr + 256;
+	else
+		bold = boldcols[attr] ? chr + 256 : chr;
+	if (t1000->video_options & 2)
+		bold += 512;
+
+        if (t1000->cga.cgamode & 0x20)	/* Blink */
+        {
+		cols[1] = blinkcols[attr][1]; 		
+		cols[0] = blinkcols[attr][0]; 		
+                if (blink) cols[1] = cols[0];
 	}
 	else
 	{
-		cursorline = ((t1000->cga.crtc[10] & 0x0F) <= sc) &&
-			     ((t1000->cga.crtc[11] & 0x0F) >= sc);
+		cols[1] = normcols[attr][1];
+		cols[0] = normcols[attr][0];
 	}
-	for (x = 0; x < 80; x++)
+        if (drawcursor)
         {
-		chr  = t1000->vram[(addr + 2 * x) & 0x3FFF];
-		attr = t1000->vram[(addr + 2 * x + 1) & 0x3FFF];
-                drawcursor = ((ma == ca) && cursorline &&
-			(t1000->cga.cgamode & 8) && (t1000->cga.cgablink & 16));
-
-		blink = ((t1000->cga.cgablink & 16) && (t1000->cga.cgamode & 0x20) &&
-			(attr & 0x80) && !drawcursor);
-
-		if (t1000->video_options & 1)
-                        bold = boldcols[attr] ? chr : chr + 256;
-		else
-			bold = boldcols[attr] ? chr + 256 : chr;
-		if (t1000->video_options & 2)
-                        bold += 512;
-
-                if (t1000->cga.cgamode & 0x20)	/* Blink */
-                {
-			cols[1] = blinkcols[attr][1]; 		
-			cols[0] = blinkcols[attr][0]; 		
-                        if (blink) cols[1] = cols[0];
-		}
-		else
+               	for (c = 0; c < 8; c++)
 		{
-			cols[1] = normcols[attr][1];
-			cols[0] = normcols[attr][0];
+               		screen->line[t1000->displine][(x << 3) + c].val = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (blue ^ grey);
 		}
-                if (drawcursor)
-                {
-                	for (c = 0; c < 8; c++)
-			{
-                       		((uint32_t *)buffer32->line[t1000->displine])[(x << 3) + c] = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (blue ^ grey);
-			}
-		}
-                else
-                {
-                	for (c = 0; c < 8; c++)
-				((uint32_t *)buffer32->line[t1000->displine])[(x << 3) + c] = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
-                }
-		++ma;
 	}
+        else
+        {
+               	for (c = 0; c < 8; c++)
+			screen->line[t1000->displine][(x << 3) + c].val = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
+        }
+	++ma;
+    }
 }
 
 
@@ -368,16 +366,16 @@ t1000_text_row40(t1000_t *t1000)
                 {
                 	for (c = 0; c < 8; c++)
 			{
-                       		((uint32_t *)buffer32->line[t1000->displine])[(x << 4) + c*2] = 
-                       		((uint32_t *)buffer32->line[t1000->displine])[(x << 4) + c*2 + 1] = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (blue ^ grey);
+                       		screen->line[t1000->displine][(x << 4) + c*2].val = 
+                       		screen->line[t1000->displine][(x << 4) + c*2 + 1].val = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0] ^ (blue ^ grey);
 			}
 		}
                 else
                 {
                 	for (c = 0; c < 8; c++)
 			{
-				((uint32_t *)buffer32->line[t1000->displine])[(x << 4) + c*2] = 
-				((uint32_t *)buffer32->line[t1000->displine])[(x << 4) + c*2+1] = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
+				screen->line[t1000->displine][(x << 4) + c*2].val = 
+				screen->line[t1000->displine][(x << 4) + c*2+1].val = cols[(fontdat[bold][sc] & (1 << (c ^ 7))) ? 1 : 0];
 			}
                 }
 		++ma;
@@ -412,7 +410,7 @@ t1000_cgaline6(t1000_t *t1000)
 			ink = (dat & 0x80) ? fg : bg;
 			if (!(t1000->cga.cgamode & 8))
                                 ink = grey;
-			((uint32_t *)buffer32->line[t1000->displine])[x*8+c] = ink;
+			screen->line[t1000->displine][x*8+c].val = ink;
 			dat = dat << 1;
 		}
 	}
@@ -469,8 +467,8 @@ t1000_cgaline4(t1000_t *t1000)
 				case 3: ink0 = ink1 = blue; break;
 
 			}
-			((uint32_t *)buffer32->line[t1000->displine])[x*8+2*c] = ink0;
-			((uint32_t *)buffer32->line[t1000->displine])[x*8+2*c+1] = ink1;
+			screen->line[t1000->displine][x*8+2*c].val = ink0;
+			screen->line[t1000->displine][x*8+2*c+1].val = ink1;
 			dat = dat << 2;
 		}
 	}
@@ -518,7 +516,7 @@ t1000_poll(void *p)
                 {
                         if (t1000->displine == 0)
                         {
-                                video_wait_for_buffer();
+                                video_blit_wait_buffer();
                         }
 
 			/* Graphics */
@@ -572,9 +570,10 @@ t1000_poll(void *p)
                                 if (ysize < 32) ysize = 200;
                                 set_screen_size(xsize, ysize);
                         }
-                        video_blit_memtoscreen(0, 0, 0, ysize, xsize, ysize);
+                        video_blit_start(0, 0, 0, 0, ysize, xsize, ysize);
 
                         frames++;
+
 			/* Fixed 640x200 resolution */
 			video_res_x = T1000_XSIZE;
 			video_res_y = T1000_YSIZE;

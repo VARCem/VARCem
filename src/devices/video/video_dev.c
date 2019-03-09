@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.33	2019/03/05
+ * Version:	@(#)video_dev.c	1.0.34	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -204,7 +204,7 @@ video_reset(void)
 
     /* Reset the CGA palette. */
     cga_palette = 0;
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     /*
      * Clear (deallocate) any video font memory.

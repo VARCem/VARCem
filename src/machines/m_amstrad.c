@@ -32,7 +32,7 @@
  *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
  *		ROM files for a given machine, such as font roms here..
  *
- * Version:	@(#)m_amstrad.c	1.0.23	2019/03/06
+ * Version:	@(#)m_amstrad.c	1.0.23	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -319,22 +319,23 @@ vid_poll_1512(void *priv)
 	if (vid->dispon) {
 		if (vid->displine < vid->firstline) {
 			vid->firstline = vid->displine;
-			video_wait_for_buffer();
+			video_blit_wait_buffer();
 		}
 		vid->lastline = vid->displine;
+
 		for (c = 0; c < 8; c++) {
 			if ((vid->cgamode & 0x12) == 0x12) {
-				buffer->line[vid->displine][c] = (vid->border & 15) + 16;
+				screen->line[vid->displine][c].pal = (vid->border & 15) + 16;
 				if (vid->cgamode & 1)
-					buffer->line[vid->displine][c + (vid->crtc[1] << 3) + 8] = 0;
+					screen->line[vid->displine][c + (vid->crtc[1] << 3) + 8].pal = 0;
 				  else
-					buffer->line[vid->displine][c + (vid->crtc[1] << 4) + 8] = 0;
+					screen->line[vid->displine][c + (vid->crtc[1] << 4) + 8].pal = 0;
 			} else {
-				buffer->line[vid->displine][c] = (vid->cgacol & 15) + 16;
+				screen->line[vid->displine][c].pal = (vid->cgacol & 15) + 16;
 				if (vid->cgamode & 1)
-					buffer->line[vid->displine][c + (vid->crtc[1] << 3) + 8] = (vid->cgacol & 15) + 16;
+					screen->line[vid->displine][c + (vid->crtc[1] << 3) + 8].pal = (vid->cgacol & 15) + 16;
 				  else
-					buffer->line[vid->displine][c + (vid->crtc[1] << 4) + 8] = (vid->cgacol & 15) + 16;
+					screen->line[vid->displine][c + (vid->crtc[1] << 4) + 8].pal = (vid->cgacol & 15) + 16;
 			}
 		}
 		if (vid->cgamode & 1) {
@@ -353,10 +354,10 @@ vid_poll_1512(void *priv)
 				}
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    screen->line[vid->displine][(x << 3) + c + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 3) + c + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					    screen->line[vid->displine][(x << 3) + c + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 				vid->ma++;
 			}
@@ -377,12 +378,12 @@ vid_poll_1512(void *priv)
 				vid->ma++;
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 4) + (c << 1) + 8] = 
-					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
+					    screen->line[vid->displine][(x << 4) + (c << 1) + 8].pal = 
+					    	screen->line[vid->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
-					    buffer->line[vid->displine][(x << 4) + (c << 1) + 8] = 
-					    	buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
+					    screen->line[vid->displine][(x << 4) + (c << 1) + 8].pal = 
+					    	screen->line[vid->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 				}
 			}
 		} else if (! (vid->cgamode & 16)) {
@@ -405,8 +406,8 @@ vid_poll_1512(void *priv)
 				dat = (vid->vram[((vid->ma << 1) & 0x1fff) + ((vid->sc & 1) * 0x2000)] << 8) | vid->vram[((vid->ma << 1) & 0x1fff) + ((vid->sc & 1) * 0x2000) + 1];
 				vid->ma++;
 				for (c = 0; c < 8; c++) {
-					buffer->line[vid->displine][(x << 4) + (c << 1) + 8] =
-						buffer->line[vid->displine][(x << 4) + (c << 1) + 1 + 8] = cols[dat >> 14];
+					screen->line[vid->displine][(x << 4) + (c << 1) + 8].pal =
+						screen->line[vid->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[dat >> 14];
 					dat <<= 2;
 				}
 			}
@@ -420,7 +421,7 @@ vid_poll_1512(void *priv)
 
 				vid->ma++;
 				for (c = 0; c < 16; c++) {
-					buffer->line[vid->displine][(x << 4) + c + 8] = (((dat >> 15) | ((dat2 >> 15) << 1) | ((dat3 >> 15) << 2) | ((dat4 >> 15) << 3)) & (vid->cgacol & 15)) + 16;
+					screen->line[vid->displine][(x << 4) + c + 8].pal = (((dat >> 15) | ((dat2 >> 15) << 1) | ((dat3 >> 15) << 2) | ((dat4 >> 15) << 3)) & (vid->cgacol & 15)) + 16;
 					dat  <<= 1;
 					dat2 <<= 1;
 					dat3 <<= 1;
@@ -431,9 +432,9 @@ vid_poll_1512(void *priv)
 	} else {
 		cols[0] = ((vid->cgamode & 0x12) == 0x12) ? 0 : (vid->cgacol & 15) + 16;
 		if (vid->cgamode & 1)
-			cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
+			cga_hline(screen, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
 		else
-			cga_hline(buffer, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
+			cga_hline(screen, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
 	}
 
 	vid->sc = oldsc;
@@ -505,7 +506,7 @@ vid_poll_1512(void *priv)
 					video_force_resize_set(0);
 			}
 
-			video_blit_memtoscreen_8(0, vid->firstline - 4, 0, (vid->lastline - vid->firstline) + 8, xsize, (vid->lastline - vid->firstline) + 8);
+			video_blit_start(1, 0, vid->firstline - 4, 0, (vid->lastline - vid->firstline) + 8, xsize, (vid->lastline - vid->firstline) + 8);
 
 			video_res_x = xsize - 16;
 			video_res_y = ysize;
@@ -608,7 +609,7 @@ vid_init_1512(amstrad_t *ams, const wchar_t *fn, int num)
 
     overscan_x = overscan_y = 16;
 
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     video_inform(VID_TYPE_CGA, &pc1512_timing);
 
@@ -953,7 +954,7 @@ vid_init_200(amstrad_t *dev, const wchar_t *fn)
 
     overscan_x = overscan_y = 16;
 
-    cgapal_rebuild();
+    video_palette_rebuild();
 
     video_inform(VID_TYPE_CGA, &pc200_timing);
 

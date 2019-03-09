@@ -12,12 +12,12 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.7	2018/11/20
+ * Version:	@(#)win_sdl.c  	1.0.8	2019/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2018 Michael Drüing.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -245,20 +245,15 @@ sdl_resize(int x, int y)
 
 
 static void
-sdl_blit(int x, int y, int y1, int y2, int w, int h)
+sdl_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 {
     SDL_Rect r_src;
     void *pixeldata;
     int xx, yy, ret;
     int pitch;
 
-    if (y1 == y2) {
-	video_blit_complete();
-	return;
-    }
-
-    if (buffer32 == NULL) {
-	video_blit_complete();
+    if ((y1 == y2) || (scr == NULL)) {
+	video_blit_done();
 	return;
     }
 
@@ -270,15 +265,15 @@ sdl_blit(int x, int y, int y1, int y2, int w, int h)
     sdl_LockTexture(sdl_tex, 0, &pixeldata, &pitch);
 
     for (yy = y1; yy < y2; yy++) {
-       	if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+       	if ((y + yy) >= 0 && (y + yy) < scr->h) {
 		if (vid_grayscale || invert_display)
-			video_transform_copy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
+			video_transform_copy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &scr->line[y + yy][x], w);
 		else
-			memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+			memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &scr->line[y + yy][x], w * 4);
 	}
     }
 
-    video_blit_complete();
+    video_blit_done();
 
     sdl_UnlockTexture(sdl_tex);
 
@@ -307,7 +302,7 @@ static void
 sdl_close(void)
 {
     /* Unregister our renderer! */
-    video_setblit(NULL);
+    video_blit_set(NULL);
 
     if (sdl_tex != NULL) {
 	sdl_DestroyTexture(sdl_tex);
@@ -357,8 +352,6 @@ sdl_init(int fs)
     int x, y;
 
     INFO("SDL: init (fs=%d)\n", fs);
-
-    cgapal_rebuild();
 
     /* Try loading the DLL. */
     sdl_handle = dynld_module(PATH_SDL_DLL, sdl_imports);
@@ -464,7 +457,7 @@ sdl_init(int fs)
     atexit(sdl_close);
 
     /* Register our renderer! */
-    video_setblit(sdl_blit);
+    video_blit_set(sdl_blit);
 
     return(1);
 }

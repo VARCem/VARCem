@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.14	2019/02/10
+ * Version:	@(#)vid_s3.c	1.0.15	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2676,9 +2676,9 @@ void s3_hwcursor_draw(svga_t *svga, int displine)
 			if (offset >= svga->hwcursor_latch.x)
 			{
 				if (!(dat[0] & 0x8000))
-				   ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add]  = (dat[1] & 0x8000) ? fg : bg;
+				   screen->line[displine + y_add][offset + 32 + x_add].val  = (dat[1] & 0x8000) ? fg : bg;
 				else if (dat[1] & 0x8000)
-				   ((uint32_t *)buffer32->line[displine + y_add])[offset + 32 + x_add] ^= 0xffffff;
+				   screen->line[displine + y_add][offset + 32 + x_add].val ^= 0xffffff;
 			}
 			   
 			offset++;

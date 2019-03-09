@@ -8,13 +8,13 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.18	2018/10/05
+ * Version:	@(#)win_ddraw.cpp	1.0.19	2019/03/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -245,7 +245,7 @@ ddraw_fs_size(RECT w_rect, RECT *r_dest, int w, int h)
 
 
 static void
-ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
+ddraw_blit_fs(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 {
     DDSURFACEDESC2 ddsd;
     RECT r_src, r_dest, w_rect;
@@ -253,13 +253,8 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
     HRESULT hr;
     int yy;
 
-    if (lpdds_back == NULL) {
-	video_blit_complete();
-	return; /*Nothing to do*/
-    }
-
-    if ((y1 == y2) || (h <= 0)) {
-	video_blit_complete();
+    if ((lpdds_back == NULL) || (y1 == y2) || (h <= 0)) {
+	video_blit_done();
 	return;
     }
 
@@ -275,20 +270,21 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
 	device_force_redraw();
     }
     if (! ddsd.lpSurface) {
-	video_blit_complete();
+	video_blit_done();
 	return;
     }
 
     for (yy = y1; yy < y2; yy++) {
-	if (buffer32) {
+	if (scr) {
 		if (vid_grayscale || invert_display)
-			video_transform_copy((uint32_t *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
+			video_transform_copy((uint32_t *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &scr->line[y + yy][x], w);
 		else
-			memcpy((void *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+			memcpy((void *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &scr->line[y + yy][x], w * 4);
 	}
     }
 
-    video_blit_complete();
+    video_blit_done();
+
     lpdds_back->Unlock(NULL);
 
     w_rect.left = 0;
@@ -323,7 +319,7 @@ ddraw_blit_fs(int x, int y, int y1, int y2, int w, int h)
 
 
 static void
-ddraw_blit(int x, int y, int y1, int y2, int w, int h)
+ddraw_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 {
     DDSURFACEDESC2 ddsd;
     RECT r_src, r_dest;
@@ -331,13 +327,8 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
     POINT po;
     int yy;
 
-    if (lpdds_back == NULL) {
-	video_blit_complete();
-	return; /*Nothing to do*/
-    }
-
-    if ((y1 == y2) || (h <= 0)) {
-	video_blit_complete();
+    if ((lpdds_back == NULL) || (y1 == y2) || (h <= 0)) {
+	video_blit_done();
 	return;
     }
 
@@ -354,22 +345,23 @@ ddraw_blit(int x, int y, int y1, int y2, int w, int h)
     }
 
     if (! ddsd.lpSurface) {
-	video_blit_complete();
+	video_blit_done();
 	return;
     }
 
     for (yy = y1; yy < y2; yy++) {
-	if (buffer32) {
-		if ((y + yy) >= 0 && (y + yy) < buffer32->h) {
+	if (scr) {
+		if ((y + yy) >= 0 && (y + yy) < scr->h) {
 			if (vid_grayscale || invert_display)
-				video_transform_copy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w);
+				video_transform_copy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &scr->line[y + yy][x], w);
 			else
-				memcpy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &(((uint32_t *)buffer32->line[y + yy])[x]), w * 4);
+				memcpy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &scr->line[y + yy][x], w * 4);
 		}
 	}
     }
 
-    video_blit_complete();
+    video_blit_done();
+
     lpdds_back->Unlock(NULL);
 
     po.x = po.y = 0;
@@ -404,7 +396,7 @@ ddraw_close(void)
 {
     DEBUG("DDRAW: close\n");
 
-    video_setblit(NULL);
+    video_blit_set(NULL);
 
     if (lpdds_back2 != NULL) {
 	lpdds_back2->Release();
@@ -439,8 +431,6 @@ ddraw_init(int fs)
     HWND h;
 
     INFO("DDraw: initializing (fs=%d)\n", fs);
-
-    cgapal_rebuild();
 
     hr = DirectDrawCreate(NULL, &lpdd, NULL);
     if (FAILED(hr)) {
@@ -568,9 +558,9 @@ ddraw_init(int fs)
     ddraw_hwnd = h;
 
     if (fs)
-	video_setblit(ddraw_blit_fs);
+	video_blit_set(ddraw_blit_fs);
       else
-	video_setblit(ddraw_blit);
+	video_blit_set(ddraw_blit);
 
     return(1);
 }

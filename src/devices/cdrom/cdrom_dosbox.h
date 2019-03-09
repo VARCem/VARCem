@@ -8,7 +8,7 @@
  *
  *		Definitions for the CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.h	1.0.3	2019/03/05
+ * Version:	@(#)cdrom_dosbox.h	1.0.4	2019/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,16 +46,6 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-
-//typedef signed int Bits;
-//typedef unsigned int Bitu;
-//typedef int8_t   Bit8s;
-//typedef int16_t  Bit16s;
-//typedef uint16_t Bit16u;
-//typedef int32_t  Bit32s;
-//typedef uint32_t Bit32u;
-
-typedef size_t PhysPt;
 
 
 #define RAW_SECTOR_SIZE		2352
@@ -103,7 +93,7 @@ public:
     virtual bool    GetAudioSub(int sector, uint8_t& attr, uint8_t& track, uint8_t& index, TMSF& relPos, TMSF& absPos) = 0;
     virtual bool	GetMediaTrayStatus(bool& mediaPresent, bool& mediaChanged, bool& trayOpen) = 0;
 
-    virtual bool	ReadSectors(PhysPt buffer, bool raw, uint32_t sector, uint32_t num) = 0;
+    virtual bool	ReadSectors(size_t buffer, bool raw, uint32_t sector, uint32_t num) = 0;
 
     virtual bool	LoadUnloadMedia(bool unload) = 0;
 
@@ -155,7 +145,7 @@ public:
     bool	GetAudioTrackInfo(int track, int& number, TMSF& start, uint8_t& attr);
     bool    GetAudioSub(int sector, uint8_t& attr, uint8_t& track, uint8_t& index, TMSF& relPos, TMSF& absPos);
     bool	GetMediaTrayStatus(bool& mediaPresent, bool& mediaChanged, bool& trayOpen);
-    bool	ReadSectors(PhysPt buffer, bool raw, uint32_t sector, uint32_t num);
+    bool	ReadSectors(size_t buffer, bool raw, uint32_t sector, uint32_t num);
     bool	LoadUnloadMedia(bool unload);
     bool	ReadSector(uint8_t *buffer, bool raw, uint32_t sector);
     bool	ReadSectorSub(uint8_t *buffer, uint32_t sector);
@@ -179,7 +169,7 @@ private:
     bool	CueGetBuffer(char *str, char **line, bool up);
     bool	CueGetString(std::string &str, char **line);
     bool	CueGetKeyword(std::string &keyword, char **line);
-    uint64_t	CueGetNumber(char **line);
+    bool	CueGetNumber(int &number, char **line);
     bool	CueGetFrame(uint64_t &frames, char **line);
     bool	CueLoadSheet(const wchar_t *cuefile);
     bool	AddTrack(Track &curr, uint64_t &shift, uint64_t prestart, uint64_t &totalPregap, uint64_t currPregap);
