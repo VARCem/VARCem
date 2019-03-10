@@ -1,8 +1,7 @@
 Welcome to **VARCem**, the Virtual Archaeological Computer EMulator.
 
 VARCem is a software application which emulates a selection of of (mostly)
-x86-based PC systems and devices based on the ISA, EISA, VLB, MCA and PCI
-system buses.
+x86-based PC systems and devices based on the ISA, VLB, MCA and PCI buses.
 
 The program tries to be cycle-exact, meaning the guest software (the software
 being run inside the emulated system) will run as fast (or, depending on how
@@ -26,11 +25,14 @@ which is compatible with the GPL (GNU Public License) version 2 or later that
 is used by many of the modules imported from other emulator projects. Author
 credits and specific copyrights can be found in each of the source files.
 
+Obviously, where license terms of individual modules deviate from the general
+project license terms, the terms of such an individual module prevail.
+
 
 Community and Support
 ---------------------
 Information, downloads, additional modules and such can be found on our
-[Website](http://www.varcem.com/). Live support and general help can
+[Website](http://www.VARCem.com/). Live support and general help can
 also be found on our [IRC channel](https://kiwiirc.com/client/irc.freenode.net/?nick=VARCem_Guest|?#VARCem)
 
 
@@ -53,4 +55,4 @@ BUILD STATUS
 ------------
 The auto-builds handled by Travis-CI are [![Build Status](https://travis-ci.org/VARCem/VARCem.svg?branch=master)](https://travis-ci.org/VARCem/VARCem)
 
-Last Updated: 10/06/2018
+Last Updated: 2019/03/10

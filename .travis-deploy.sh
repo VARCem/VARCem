@@ -9,11 +9,11 @@
 #
 #		Deployment script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-deploy.sh	1.0.2	2018/04/17
+# Version:	@(#).travis-deploy.sh	1.0.3	2019/03/10
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2018 Fred N. van Kempen.
+#		Copyright 2018,2019 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
