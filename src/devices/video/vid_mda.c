@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.10	2019/03/07
+ * Version:	@(#)vid_mda.c	1.0.11	2019/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,37 +50,14 @@
 #include "../system/pit.h"
 #include "../ports/parallel.h"
 #include "video.h"
+#include "vid_mda.h"
 
 
-typedef struct {
-    mem_map_t	mapping;
-
-    uint8_t	crtc[32];
-    int		crtcreg;
-
-    uint8_t	ctrl, stat;
-
-    int64_t	dispontime, dispofftime;
-    int64_t	vidtime;
-
-    int		firstline, lastline;
-
-    int		linepos, displine;
-    int		vc, sc;
-    uint16_t	ma, maback;
-    int		con, coff, cursoron;
-    int		dispon, blink;
-    int64_t	vsynctime;
-    int		vadj;
-
-    uint8_t	cols[256][2][2];
-
-    uint8_t	*vram;
-} mda_t;
+static const video_timings_t mda_timings = { VID_ISA,8,16,32,8,16,32 };
 
 
-static void
-recalc_timings(mda_t *dev)
+void
+mda_recalctimings(mda_t *dev)
 {
     double _dispontime, _dispofftime, disptime;
 
@@ -95,23 +72,23 @@ recalc_timings(mda_t *dev)
 }
 
 
-static void
+void
 mda_out(uint16_t port, uint8_t val, void *priv)
 {
     mda_t *dev = (mda_t *)priv;
 
     switch (port) {
-	case 0x3b0:
-	case 0x3b2:
-	case 0x3b4:
-	case 0x3b6:
+	case 0x03b0:
+	case 0x03b2:
+	case 0x03b4:
+	case 0x03b6:
 		dev->crtcreg = val & 31;
 		break;
 
-	case 0x3b1:
-	case 0x3b3:
-	case 0x3b5:
-	case 0x3b7:
+	case 0x03b1:
+	case 0x03b3:
+	case 0x03b5:
+	case 0x03b7:
 		dev->crtc[dev->crtcreg] = val;
 		if (dev->crtc[10] == 6 && dev->crtc[11] == 7) {
 			/*Fix for Generic Turbo XT BIOS,
@@ -119,38 +96,38 @@ mda_out(uint16_t port, uint8_t val, void *priv)
 			dev->crtc[10] = 0xb;
 			dev->crtc[11] = 0xc;
 		}
-		recalc_timings(dev);
+		mda_recalctimings(dev);
 		break;
 
-	case 0x3b8:
+	case 0x03b8:
 		dev->ctrl = val;
 		break;
     }
 }
 
 
-static uint8_t
+uint8_t
 mda_in(uint16_t port, void *priv)
 {
     mda_t *dev = (mda_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port) {
-	case 0x3b0:
-	case 0x3b2:
-	case 0x3b4:
-	case 0x3b6:
+	case 0x03b0:
+	case 0x03b2:
+	case 0x03b4:
+	case 0x03b6:
 		ret = dev->crtcreg;
 		break;
 
-	case 0x3b1:
-	case 0x3b3:
-	case 0x3b5:
-	case 0x3b7:
+	case 0x03b1:
+	case 0x03b3:
+	case 0x03b5:
+	case 0x03b7:
 		ret = dev->crtc[dev->crtcreg];
 		break;
 
-	case 0x3ba:
+	case 0x03ba:
 		ret = dev->stat | 0xF0;
 		break;
 
@@ -162,7 +139,7 @@ mda_in(uint16_t port, void *priv)
 }
 
 
-static void
+void
 mda_write(uint32_t addr, uint8_t val, void *priv)
 {
     mda_t *dev = (mda_t *)priv;
@@ -171,7 +148,7 @@ mda_write(uint32_t addr, uint8_t val, void *priv)
 }
 
 
-static uint8_t
+uint8_t
 mda_read(uint32_t addr, void *priv)
 {
     mda_t *dev = (mda_t *)priv;
@@ -180,7 +157,7 @@ mda_read(uint32_t addr, void *priv)
 }
 
 
-static void
+void
 mda_poll(void *priv)
 {
     mda_t *dev = (mda_t *)priv;
@@ -312,6 +289,7 @@ mda_poll(void *priv)
 				video_res_y = dev->crtc[6];
 				video_bpp = 0;
 			}
+
 			dev->firstline = 1000;
 			dev->lastline = 0;
 			dev->blink++;
@@ -329,25 +307,10 @@ mda_poll(void *priv)
 }
 
 
-static void *
-mda_init(const device_t *info)
+void
+mda_init(mda_t *dev)
 {
-    mda_t *dev;
     int c;
-
-    dev = (mda_t *)mem_alloc(sizeof(mda_t));
-    memset(dev, 0x00, sizeof(mda_t));
-
-    dev->vram = (uint8_t *)mem_alloc(0x1000);
-
-    timer_add(mda_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
-
-    mem_map_add(&dev->mapping, 0xb0000, 0x08000,
-		mda_read,NULL,NULL, mda_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
-
-    io_sethandler(0x03b0, 16,
-		  mda_in,NULL,NULL, mda_out,NULL,NULL, dev);
 
     for (c = 0; c < 256; c++) {
 	dev->cols[c][0][0] = dev->cols[c][1][0] = dev->cols[c][1][1] = 16;
@@ -380,13 +343,37 @@ mda_init(const device_t *info)
 	cga_palette = 0;
     video_palette_rebuild();
 
-    video_inform(VID_TYPE_MDA, info->vid_timing);
+    timer_add(mda_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+
+    mem_map_add(&dev->mapping, 0xb0000, 0x08000,
+		mda_read,NULL,NULL, mda_write,NULL,NULL,
+		NULL, MEM_MAPPING_EXTERNAL, dev);
+
+    io_sethandler(0x03b0, 16,
+		  mda_in,NULL,NULL, mda_out,NULL,NULL, dev);
+
+    video_inform(VID_TYPE_MDA, &mda_timings);
+}
+
+
+static void *
+mda_standalone_init(const device_t *info)
+{
+    mda_t *dev;
+
+    dev = (mda_t *)mem_alloc(sizeof(mda_t));
+    memset(dev, 0x00, sizeof(mda_t));
+    dev->type = info->local;
+
+    dev->vram = (uint8_t *)mem_alloc(0x1000);
+
+    mda_init(dev);
 
     /* Force the LPT3 port to be enabled. */
     parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -396,6 +383,7 @@ mda_close(void *priv)
     mda_t *dev = (mda_t *)priv;
 
     free(dev->vram);
+
     free(dev);
 }
 
@@ -404,12 +392,12 @@ static void
 speed_changed(void *priv)
 {
     mda_t *dev = (mda_t *)priv;
-	
-    recalc_timings(dev);
+
+    mda_recalctimings(dev);
 }
 
 
-static const device_config_t mda_config[] = {
+const device_config_t mda_config[] = {
     {
 	"rgb_type", "Display type", CONFIG_SELECTION, "", 0,
 	{
@@ -435,16 +423,21 @@ static const device_config_t mda_config[] = {
     }
 };
 
-static const video_timings_t mda_timings = { VID_ISA,8,16,32,8,16,32 };
-
 const device_t mda_device = {
     "MDA",
     DEVICE_ISA,
     0,
-    mda_init, mda_close, NULL,
+    mda_standalone_init, mda_close, NULL,
     NULL,
     speed_changed,
     NULL,
-    &mda_timings,
+    NULL,
     mda_config
 };
+
+
+void
+mda_setcol(mda_t *dev, int chr, int blink, int fg, uint8_t cga_ink)
+{
+    dev->cols[chr][blink][fg] = pal_lookup[cga_ink];
+}

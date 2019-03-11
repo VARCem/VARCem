@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.26	2019/03/07
+ * Version:	@(#)video.c	1.0.27	2019/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,8 +61,8 @@ int		video_do_log = ENABLE_VIDEO_LOG;
 #endif
 
 /* These will go away soon. */
-uint8_t		fontdat[1024][8];		/* IBM CGA font */
-uint8_t		fontdatm[1024][16];		/* IBM MDA font */
+uint8_t		fontdat[2048][8];		/* IBM CGA font */
+uint8_t		fontdatm[2048][16];		/* IBM MDA font */
 dbcs_font_t	*fontdatk = NULL,		/* Korean KSC-5601 font */
 		*fontdatk_user = NULL;		/* Korean KSC-5601 font (user)*/
 
@@ -71,6 +71,7 @@ bitmap_t	*screen = NULL;
 uint32_t	*video_6to8 = NULL,
 		*video_15to32 = NULL,
 		*video_16to32 = NULL;
+uint32_t	pal_lookup[256];
 uint8_t		edatlookup[4][4];
 int		xsize = 1,
 		ysize = 1;
@@ -372,7 +373,6 @@ static const uint32_t	shade[5][256] = {
     }
 };
 static uint32_t	cga_2_table[16];
-static uint32_t	pal_lookup[256];
 static uint8_t	rotatevga[8][256];
 static int	video_force_resize;
 static int	video_card_type;

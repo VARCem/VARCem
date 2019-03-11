@@ -15,7 +15,7 @@
  * **NOTE**	This code will very soon be replaced with a C variant, so
  *		no more changes will be done.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.12	2019/03/07
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.13	2019/03/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -516,7 +516,8 @@ CDROM_Interface_Image::CueGetNumber(int &arg, char **line)
     if (success)
 	success = (sscanf(temp, "%i", &num) == 1);
 
-    arg = num;
+    if (success)
+	arg = num;
 
     return success;
 }
@@ -534,7 +535,8 @@ CDROM_Interface_Image::CueGetFrame(uint64_t &arg, char **line)
     if (success)
 	success = (sscanf(temp, "%d:%d:%d", &min, &sec, &fr) == 3);
 
-    arg = MSF_TO_FRAMES(min, sec, fr);
+    if (success)
+	arg = MSF_TO_FRAMES(min, sec, fr);
 
     return success;
 }
@@ -545,6 +547,9 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 {
     Track track = {0, 0, 0, 0, 0, 0, 0, 0, false, NULL};
     wchar_t pathname[MAX_FILENAME_LENGTH];
+    wchar_t filename[MAX_FILENAME_LENGTH];
+    wchar_t temp[MAX_FILENAME_LENGTH];
+    char ansi[MAX_FILENAME_LENGTH];
     char buf[MAX_LINE_LENGTH], *line;
     uint64_t shift = 0;
     uint64_t currPregap = 0;
@@ -576,6 +581,9 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 	if (fgets(line, sizeof(buf), fp) == NULL || ferror(fp) || feof(fp))
 		break;
 	buf[strlen(line) - 1] = '\0';	/* nuke trailing newline */
+
+	/* Ignore empty lines, and 'comment' lines. */
+	if (*line == '\0' || *line == '#' || *line == ';') continue;
 
 	success = CueGetKeyword(command, &line);
 
@@ -675,11 +683,9 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 
 		canAddTrack = false;
 
-		char ansi[MAX_FILENAME_LENGTH];
-		wchar_t filename[MAX_FILENAME_LENGTH];
-
 		success = CueGetBuffer(ansi, &line, false);
 		if (! success) break;
+
 		success = CueGetKeyword(type, &line);
 		if (! success) break;
 
@@ -687,9 +693,9 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 		bool error = true;
 
 		if (type == "BINARY") {
-			wchar_t temp[MAX_FILENAME_LENGTH];
 			mbstowcs(temp, ansi, sizeof_w(temp));
 
+			memset(filename, 0x00, sizeof(filename));
 			plat_append_filename(filename, pathname, temp);
 			track.file = new BinaryFile(filename, error);
 		}
@@ -705,9 +711,9 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 	else if (command == "CATALOG") {
 		success = CueGetString(mcn, &line);
 	// ignored commands
-	} else if (command == "CDTEXTFILE" || command == "FLAGS" || command == "ISRC"
-		|| command == "PERFORMER" || command == "POSTGAP" || command == "REM"
-		|| command == "SONGWRITER" || command == "TITLE" || command == "") success = true;
+	} else if (command == "CDTEXTFILE" || command == "FLAGS" || command == "ISRC" ||
+		   command == "PERFORMER" || command == "POSTGAP" || command == "REM" ||
+		   command == "SONGWRITER" || command == "TITLE" || command == "") success = true;
 	// failure
 	else {
 		ERRLOG("CUE: unsupported command '%s' in cue sheet!\n",

@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.29	2019/03/08
+ * Version:	@(#)video.h	1.0.30	2019/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,8 +119,8 @@ typedef struct {
 extern int		changeframecount;
 
 /* These will go away soon. */
-extern uint8_t		fontdat[1024][8];		/* 1024 characters */
-extern uint8_t		fontdatm[1024][16];		/* 1024 characters */
+extern uint8_t		fontdat[2048][8];		/* 2048!! characters */
+extern uint8_t		fontdatm[2048][16];		/* 2048!! characters */
 extern dbcs_font_t	*fontdatk,
 			*fontdatk_user;
 
@@ -128,6 +128,7 @@ extern bitmap_t		*screen;
 extern uint32_t		*video_6to8,
 			*video_15to32,
 			*video_16to32;
+extern uint32_t		pal_lookup[256];
 extern int		fullchange;
 extern int		xsize,ysize;
 extern int		update_overscan;

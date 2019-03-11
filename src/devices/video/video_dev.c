@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.34	2019/03/07
+ * Version:	@(#)video_dev.c	1.0.35	2019/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@
 #include "../../device.h"
 #include "../../plat.h"
 #include "video.h"
+#include "vid_mda.h"
 
 
 #ifdef ENABLE_VIDEO_DEV_LOG
@@ -216,7 +217,7 @@ video_reset(void)
     video_reset_font();
 
     /* Initialize the video font tables. */
-    video_load_font(L"video/ibm/mda/mda.rom", FONT_MDA);
+    video_load_font(MDA_FONT_ROM_PATH, FONT_MDA);
 
     /* Do not initialize internal cards here. */
     if ((video_card == VID_NONE) || \
