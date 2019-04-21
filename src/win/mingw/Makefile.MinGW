@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.80	2019/04/20
+# Version:	@(#)Makefile.mingw	1.0.81	2019/04/21
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -300,6 +300,10 @@ ifneq ($(CROSS), n)
  endif
  PREPROC	:= /usr/bin/$(MINGW)-cpp
  WINDRES	:= /usr/bin/$(MINGW)-windres
+ STRIP		:= /usr/bin/$(MINGW)-strip
+ ifndef CAT
+  CAT		:= cat
+ endif
 
  SYSINC		:= -I/usr/$(MINGW)/include -Iwin/mingw/include
  SYSLIB		:= -L/usr/$(MINGW)/lib
