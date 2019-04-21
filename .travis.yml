@@ -8,7 +8,7 @@
 #
 #		Project file for the Travis CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.13	2019/03/10
+# Version:	@(#).travis.yml	1.0.14	2019/04/21
 #
 # Authors:	Natalia Portillo, <claunia@claunia.com>
 #		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -57,8 +57,8 @@ env:
 
   matrix:
     - PROG=VARCem CROSS=y DEBUG=n
-    - PROG=VARCem-debug CROSS=y DEBUG=y
-    - PROG=VARCem-dev CROSS=y DEBUG=y DEV_BUILD=y
+    - PROG=VARCem CROSS=y DEBUG=y
+    - PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
 
 before_install:
   # Kill off the (most likely running) APT daily update.
