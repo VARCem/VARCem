@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.15	2019/03/07
+ * Version:	@(#)vid_hercules.c	1.0.17	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pit.h"
 #include "../ports/parallel.h"
 #include "video.h"
@@ -426,7 +427,7 @@ hercules_poll(void *priv)
 
 
 static void *
-hercules_init(const device_t *info)
+hercules_init(const device_t *info, UNUSED(void *parent))
 {
     hercules_t *dev;
     int c;
@@ -483,7 +484,8 @@ hercules_init(const device_t *info)
 	cga_palette = 0;
     video_palette_rebuild();
 
-    video_inform(VID_TYPE_MDA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
     /* Force the LPT3 port to be enabled. */
     parallel_enabled[2] = 1;
@@ -534,7 +536,7 @@ static const device_config_t hercules_config[] = {
 			"Gray", 3
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -542,7 +544,7 @@ static const device_config_t hercules_config[] = {
 	"blend", "Blend", CONFIG_BINARY, "", 1
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -550,8 +552,9 @@ static const video_timings_t hercules_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t hercules_device = {
     "Hercules",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_MDA) | DEVICE_ISA,
     0,
+    NULL,
     hercules_init, hercules_close, NULL,
     NULL,
     speed_changed,

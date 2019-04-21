@@ -8,13 +8,13 @@
  *
  *		Implementation of the SSI2001 sound device.
  *
- * Version:	@(#)snd_ssi2001.c	1.0.7	2018/10/16
+ * Version:	@(#)snd_ssi2001.c	1.0.9	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -45,6 +45,7 @@
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "sound.h"
 #include "snd_resid.h"
 
@@ -109,7 +110,7 @@ ssi_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static void *
-ssi_init(const device_t *info)
+ssi_init(const device_t *info, UNUSED(void *parent))
 {
     ssi2001_t *dev;
 
@@ -155,19 +156,19 @@ static const device_config_t ssi2001_config[] = {
 	"base", "Address", CONFIG_HEX16, "", 0x280,
 	{
 		{
-			"0x280", 0x280
+			"280H", 0x280
 		},
 		{
-			"0x2A0", 0x2a0
+			"2A0H", 0x2a0
 		},
 		{
-			"0x2C0", 0x2c0
+			"2C0H", 0x2c0
 		},
 		{
-			"0x2E0", 0x2e0
+			"2E0H", 0x2e0
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -181,19 +182,21 @@ static const device_config_t ssi2001_config[] = {
 			"Enabled", 1
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
+
 
 const device_t ssi2001_device = {
     "Innovation SSI-2001",
     DEVICE_ISA,
     0,
+    NULL,
     ssi_init, ssi_close, NULL,
     NULL, NULL, NULL, NULL,
     ssi2001_config

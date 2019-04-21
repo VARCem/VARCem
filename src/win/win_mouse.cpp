@@ -53,6 +53,16 @@ static DIMOUSESTATE		mousestate;
 
 
 void
+win_mouse_close(void)
+{
+    if (lpdi_mouse != NULL) {
+	lpdi_mouse->Release();
+	lpdi_mouse = NULL;
+    }
+}
+
+
+void
 win_mouse_init(void)
 {
     atexit(win_mouse_close);
@@ -72,16 +82,6 @@ win_mouse_init(void)
 
     if (FAILED(lpdi_mouse->SetDataFormat(&c_dfDIMouse)))
 	fatal("plat_mouse_init: SetDataFormat failed\n");
-}
-
-
-void
-win_mouse_close(void)
-{
-    if (lpdi_mouse != NULL) {
-	lpdi_mouse->Release();
-	lpdi_mouse = NULL;
-    }
 }
 
 

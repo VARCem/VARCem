@@ -8,13 +8,13 @@
  *
  *		Definitions for the PCI handler module.
  *
- * Version:	@(#)pci.h	1.0.2	2018/09/04
+ * Version:	@(#)pci.h	1.0.3	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -74,10 +74,6 @@ typedef union {
 } bar_t;
 
 
-extern int	pci_burst_time,
-		pci_nonburst_time;
-
-
 extern void	pci_set_irq_routing(int pci_int, int irq);
 
 extern void	pci_enable_mirq(int mirq);
@@ -94,6 +90,8 @@ extern void	pci_clear_irq(uint8_t card, uint8_t pci_int);
 
 extern void	pci_reset(void);
 extern void	pci_init(int type);
+extern void	pci_set_speed(uint32_t speed);
+extern uint32_t	pci_get_speed(int burst);
 extern void	pci_register_slot(int card, int type,
 				  int inta, int intb, int intc, int intd);
 extern void	pci_close(void);

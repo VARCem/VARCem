@@ -8,10 +8,12 @@
  *
  *		Emulation of the NatSemi PC87306 Super I/O chip.
  *
- * Version:	@(#)sio_pc87306.c	1.0.9	2018/11/11
+ * Version:	@(#)sio_pc87306.c	1.0.11	2019/04/09
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,6 +49,7 @@
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
+#include "../../plat.h"
 #include "sio.h"
 
 
@@ -440,7 +443,7 @@ pc87306_close(void *priv)
 
 
 static void *
-pc87306_init(const device_t *info)
+pc87306_init(const device_t *info, UNUSED(void *parent))
 {
     pc87306_t *dev = (pc87306_t *)mem_alloc(sizeof(pc87306_t));
     memset(dev, 0x00, sizeof(pc87306_t));
@@ -458,8 +461,7 @@ pc87306_init(const device_t *info)
 
 const device_t pc87306_device = {
     "National Semiconductor PC87306 Super I/O",
-    0,
-    0,
+    0, 0, NULL,
     pc87306_init, pc87306_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

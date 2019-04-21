@@ -8,13 +8,13 @@
  *
  *		ICS2595 clock chip emulation.  Used by ATI Mach64.
  *
- * Version:	@(#)vid_ics2595.c	1.0.3	2018/10/05
+ * Version:	@(#)vid_ics2595.c	1.0.5	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2018 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -43,6 +43,7 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "vid_ics2595.h"
 
 
@@ -95,7 +96,7 @@ ics2595_write(ics2595_t *dev, int strobe, int dat)
 
 
 static void *
-ics2595_init(const device_t *info)
+ics2595_init(const device_t *info, UNUSED(void *parent))
 {
     ics2595_t *dev = (ics2595_t *)mem_alloc(sizeof(ics2595_t));
     memset(dev, 0x00, sizeof(ics2595_t));
@@ -116,8 +117,7 @@ ics2595_close(void *priv)
 
 const device_t ics2595_device = {
     "ICS2595 clock chip",
-    0,
-    0,
+    0, 0, NULL,
     ics2595_init, ics2595_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

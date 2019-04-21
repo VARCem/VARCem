@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.16	2019/02/10
+ * Version:	@(#)fdd_86f.c	1.0.18	2019/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -536,12 +536,20 @@ common_get_raw_size(int drive, int side)
     double size = 100000.0;
     int mfm;
     int rm, ssd;
+    uint32_t extra_bc = 0;
 
     mfm = d86f_is_mfm(drive);
     rpm = ((d86f_track_flags(drive) & 0xE0) == 0x20) ? 360.0 : 300.0;
     rpm_diff = 1.0;
     rm = d86f_get_rpm_mode(drive);
     ssd = d86f_get_speed_shift_dir(drive);
+
+    /* 0% speed shift and shift direction 1: special case where extra bit cells are the entire track size. */
+    if (!rm && ssd)
+	extra_bc = d86f_handler[drive].extra_bit_cells(drive, side);
+
+    if (extra_bc)
+	return extra_bc;
 
     switch (rm) {
 	case 1:
@@ -592,13 +600,9 @@ common_get_raw_size(int drive, int side)
 
     if (! mfm) rate /= 2.0;
 
-    if (!rm && ssd)
-	size = 0.0;
-    else {
-	size = (size / 250.0) * rate;
-	size = (size * 300.0) / rpm;
-	size *= rpm_diff;
-    }
+    size = (size / 250.0) * rate;
+    size = (size * 300.0) / rpm;
+    size *= rpm_diff;
 
     /*
      * Round down to a multiple of 16 and add the extra bit cells,
@@ -660,7 +664,7 @@ d86f_register_86f(int drive)
 
 
 int
-d86f_get_array_size(int drive, int side)
+d86f_get_array_size(int drive, int side, int words)
 {
     int array_size;
     int hole, rm;
@@ -738,10 +742,14 @@ d86f_get_array_size(int drive, int side)
 
     array_size <<= 4;
     array_size += d86f_handler[drive].extra_bit_cells(drive, side);
-    array_size >>= 4;
 
-    if (d86f_handler[drive].extra_bit_cells(drive, side) & 15)
-	array_size++;
+    if (array_size & 15)
+	array_size = (array_size >> 4) + 1;
+    else
+	array_size = (array_size >> 4);
+
+    if (!words)
+	array_size <<= 1;
 
     return array_size;
 }
@@ -1115,9 +1123,8 @@ d86f_get_bit(int drive, int side)
     /*
      * In some cases, misidentification occurs so we need
      * to make sure the surface data array is not not NULL.
-    */
-    if (d86f_has_surface_desc(drive) &&
-        dev->track_surface_data && dev->track_surface_data[side]) {
+     */
+    if (d86f_has_surface_desc(drive) && dev->track_surface_data[side]) {
 	if (d86f_reverse_bytes(drive)) {
 		surface_data = dev->track_surface_data[side][track_word] & 0xFF;
 	} else {
@@ -1129,8 +1136,7 @@ d86f_get_bit(int drive, int side)
     current_bit = (encoded_data >> track_bit) & 1;
     dev->last_word[side] <<= 1;
 
-    if (d86f_has_surface_desc(drive) &&
-        dev->track_surface_data && dev->track_surface_data[side]) {
+    if (d86f_has_surface_desc(drive) && dev->track_surface_data[side]) {
 	surface_bit = (surface_data >> track_bit) & 1;
 	if (! surface_bit)
 		dev->last_word[side] |= current_bit;
@@ -2629,7 +2635,11 @@ d86f_prepare_pretrack(int drive, int side, int iso)
     sync_len = mfm ? 12 : 6;
     real_gap1_len = mfm ? 50 : 26;
     gap_fill = mfm ? 0x4E : 0xFF;
-    raw_size = d86f_handler[drive].get_raw_size(drive, side) >> 4;
+    raw_size = d86f_handler[drive].get_raw_size(drive, side);
+    if (raw_size & 15)
+	raw_size = (raw_size >> 4) + 1;
+    else
+	raw_size = (raw_size >> 4);
 
     dev->index_hole_pos[side] = 0;
 
@@ -2705,7 +2715,11 @@ d86f_prepare_sector(int drive, int side, int prev_pos, uint8_t *id_buf, uint8_t 
     mfm = d86f_is_mfm(drive);
 
     gap_fill = mfm ? 0x4E : 0xFF;
-    raw_size = d86f_handler[drive].get_raw_size(drive, side) >> 4;
+    raw_size = d86f_handler[drive].get_raw_size(drive, side);
+    if (raw_size & 15)
+	raw_size = (raw_size >> 4) + 1;
+    else
+	raw_size = (raw_size >> 4);
 
     pos = prev_pos;
 
@@ -2811,7 +2825,7 @@ d86f_construct_encoded_buffer(int drive, int side)
     uint16_t *src1_s = dev->thin_track_surface_data[0][side];
     uint16_t *src2 = dev->thin_track_encoded_data[1][side];
     uint16_t *src2_s = dev->thin_track_surface_data[1][side];
-    len = d86f_get_array_size(drive, side);
+    len = d86f_get_array_size(drive, side, 1);
 
     for (i = 0; i < len; i++) {
 	/* The two bits differ. */
@@ -2859,7 +2873,7 @@ d86f_decompose_encoded_buffer(int drive, int side)
     uint16_t *src2_s = dev->thin_track_surface_data[1][side];
 
     dst = d86f_handler[drive].encoded_data(drive, side);
-    len = d86f_get_array_size(drive, side);
+    len = d86f_get_array_size(drive, side, 1);
 
     for (i = 0; i < len; i++) {
 	if (d86f_has_surface_desc(drive)) {
@@ -2921,7 +2935,7 @@ d86f_read_track(int drive, int track, int thin_track, int side, uint16_t *da, ui
 		fread(&(dev->index_hole_pos[side]), 4, 1, dev->f);
 	} else
 		fseek(dev->f, dev->track_offset[logical_track] + d86f_track_header_size(drive), SEEK_SET);
-	array_size = d86f_get_array_size(drive, side) << 1;
+	array_size = d86f_get_array_size(drive, side, 0);
 	if (d86f_has_surface_desc(drive))
 		fread(sa, 1, array_size, dev->f);
 	fread(da, 1, array_size, dev->f);
@@ -3007,6 +3021,7 @@ d86f_seek(int drive, int track)
 void
 d86f_write_track(int drive, FILE **f, int side, uint16_t *da0, uint16_t *sa0)
 {
+    uint32_t array_size = d86f_get_array_size(drive, side, 0);
     uint16_t side_flags = d86f_handler[drive].side_flags(drive);
     uint32_t extra_bit_cells = d86f_handler[drive].extra_bit_cells(drive, side);
     uint32_t index_hole_pos = d86f_handler[drive].index_hole_pos(drive, side);
@@ -3019,9 +3034,9 @@ d86f_write_track(int drive, FILE **f, int side, uint16_t *da0, uint16_t *sa0)
     fwrite(&index_hole_pos, 1, 4, *f);
 
     if (d86f_has_surface_desc(drive))
-	fwrite(sa0, 1, d86f_get_array_size(drive, side) << 1, *f);
+	fwrite(sa0, 1, array_size, *f);
 
-    fwrite(da0, 1, d86f_get_array_size(drive, side) << 1, *f);
+    fwrite(da0, 1, array_size, *f);
 }
 
 
@@ -3060,7 +3075,7 @@ d86f_write_tracks(int drive, FILE **f, uint32_t *track_table)
     if (track_table)
 	tbl = track_table;
 
-    if (! fdd_doublestep_40(drive)) {
+    if (!fdd_doublestep_40(drive)) {
 	d86f_decompose_encoded_buffer(drive, 0);
 	if (sides == 2)
 		d86f_decompose_encoded_buffer(drive, 1);
@@ -3293,8 +3308,7 @@ d86f_add_track(int drive, int track, int side)
     uint32_t array_size;
     int logical_track;
 
-    array_size = d86f_get_array_size(drive, side);
-    array_size <<= 1;
+    array_size = d86f_get_array_size(drive, side, 0);
 
     if (d86f_get_sides(drive) == 2) {
 	logical_track = (track << 1) + side;
@@ -3350,7 +3364,7 @@ d86f_common_format(int drive, int side, int rate, uint8_t fill, int proxy)
 			return;
 		}
 
-		array_size = d86f_get_array_size(drive, side);
+		array_size = d86f_get_array_size(drive, side, 0);
 
 		if (d86f_has_surface_desc(drive)) {
 			/* Preserve the physical holes but get rid of the fuzzy bytes. */
@@ -3363,7 +3377,7 @@ d86f_common_format(int drive, int side, int rate, uint8_t fill, int proxy)
 		}
 
 		/* Zero the data buffer. */
-		memset(dev->track_encoded_data[side], 0, array_size << 1);
+		memset(dev->track_encoded_data[side], 0, array_size);
 
 		d86f_add_track(drive, dev->cur_track, side);
 		if (! fdd_doublestep_40(drive))
@@ -3716,8 +3730,10 @@ d86f_load(int drive, const wchar_t *fn)
     fread(&(dev->side_flags[0]), 2, 1, dev->f);
     if (dev->disk_flags & 0x80) {
 	fread(&(dev->extra_bit_cells[0]), 4, 1, dev->f);
-	if (dev->extra_bit_cells[0] < -32768)  dev->extra_bit_cells[0] = -32768;
-	if (dev->extra_bit_cells[0] > 32768)  dev->extra_bit_cells[0] = 32768;
+	if ((dev->disk_flags & 0x1060) != 0x1000) {
+		if (dev->extra_bit_cells[0] < -32768)  dev->extra_bit_cells[0] = -32768;
+		if (dev->extra_bit_cells[0] > 32768)  dev->extra_bit_cells[0] = 32768;
+	}
     } else {
 	dev->extra_bit_cells[0] = 0;
     }
@@ -3727,8 +3743,10 @@ d86f_load(int drive, const wchar_t *fn)
 	fread(&(dev->side_flags[1]), 2, 1, dev->f);
 	if (dev->disk_flags & 0x80) {
 		fread(&(dev->extra_bit_cells[1]), 4, 1, dev->f);
-		if (dev->extra_bit_cells[1] < -32768)  dev->extra_bit_cells[1] = -32768;
-		if (dev->extra_bit_cells[1] > 32768)  dev->extra_bit_cells[1] = 32768;
+		if ((dev->disk_flags & 0x1060) != 0x1000) {
+			if (dev->extra_bit_cells[1] < -32768)  dev->extra_bit_cells[1] = -32768;
+			if (dev->extra_bit_cells[1] > 32768)  dev->extra_bit_cells[1] = 32768;
+		}
 	} else {
 		dev->extra_bit_cells[0] = 0;
 	}

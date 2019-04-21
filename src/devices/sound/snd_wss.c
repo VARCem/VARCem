@@ -8,14 +8,14 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.6	2018/10/16
+ * Version:	@(#)snd_wss.c	1.0.8	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2018 TheCollector1995.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
@@ -48,6 +48,7 @@
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/mca.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
@@ -165,7 +166,7 @@ ncr_audio_mca_write(int port, uint8_t val, void *priv)
 
 
 static void *
-wss_init(const device_t *info)
+wss_init(const device_t *info, UNUSED(void *parent))
 {
     wss_t *dev;
 
@@ -226,6 +227,7 @@ const device_t wss_device = {
     "Windows Sound System",
     DEVICE_ISA,
     0,
+    NULL,
     wss_init, wss_close, NULL,
     NULL,
     wss_speed_changed,
@@ -237,6 +239,7 @@ const device_t ncr_business_audio_device = {
     "NCR Business Audio",
     DEVICE_MCA,
     1,
+    NULL,
     wss_init, wss_close, NULL,
     NULL,
     wss_speed_changed,

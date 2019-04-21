@@ -10,10 +10,12 @@
  *
  *		Winbond W83877F Super I/O Chip
  *
- * Version:	@(#)sio_w83877f.c	1.0.9	2018/11/11
+ * Version:	@(#)sio_w83877f.c	1.0.11	2019/04/09
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,6 +51,7 @@
 #include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
+#include "../../plat.h"
 #include "sio.h"
 
 
@@ -454,7 +457,7 @@ w83877f_close(void *priv)
 
 
 static void *
-w83877f_init(const device_t *info)
+w83877f_init(const device_t *info, UNUSED(void *parent))
 {
     w83877f_t *dev = (w83877f_t *)mem_alloc(sizeof(w83877f_t));
     memset(dev, 0x00, sizeof(w83877f_t));
@@ -472,6 +475,7 @@ const device_t w83877f_device = {
     "Winbond W83877F Super I/O",
     0,
     5,
+    NULL,
     w83877f_init, w83877f_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -482,6 +486,7 @@ const device_t w83877f_president_device = {
     "Winbond W83877F Super I/O (President)",
     0,
     4,
+    NULL,
     w83877f_init, w83877f_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

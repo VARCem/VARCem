@@ -9,7 +9,9 @@
  *		Implementation of the generic device interface to handle
  *		all devices attached to the emulator.
  *
- * Version:	@(#)device.c	1.0.19	2019/03/05
+ * **TODO**	Merge the various 'add' variants, its getting too messy.
+ *
+ * Version:	@(#)device.c	1.0.21	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +46,8 @@
 #include <wchar.h>
 #include "emu.h"
 #include "config.h"
+#include "mem.h"
+#include "rom.h"
 #include "device.h"
 #include "machines/machine.h"
 #include "devices/sound/sound.h"
@@ -69,7 +73,7 @@ static clonedev_t	*clones = NULL;
 
 /* Initialize the module for use. */
 void
-device_init(void)
+device_reset(void)
 {
     clonedev_t *ptr;
 
@@ -84,6 +88,23 @@ device_init(void)
 
     clones = NULL;
 }
+
+
+#ifdef _DEBUG
+void
+device_dump(void)
+{
+    int c;
+
+    for (c = 0; c < DEVICE_MAX; c++) {
+	if (devices[c] == NULL) continue;
+
+	INFO("DEVICE [%3i] = '%s' flags=%08lx local=%08lx priv=%08lx\n",
+		c, devices[c]->name,
+		devices[c]->flags, devices[c]->local, device_priv[c]);
+    }
+}
+#endif
 
 
 /* Clone a master device for multi-instance devices. */
@@ -130,8 +151,9 @@ device_clone(const device_t *master)
 }
 
 
+/* Add a new device to the system. */
 void *
-device_add(const device_t *d)
+device_add_parent(const device_t *d, void *parent)
 {
     wchar_t temp[1024];
     void *priv = NULL;
@@ -165,23 +187,31 @@ device_add(const device_t *d)
 	INFO("DEVICE: device '%s' is unstable, user agreed!\n", d->name);
     }
 
-    old = device_current;
-    device_current = (device_t *)d;
-
     /*
-     * Do this so that a chained device_add will not identify the
-     * same ID its master device is already trying to assign.
+     * Allocate device 'c' to the device being initialized.
+     *
+     * We have to do this BEFORE calling the init function, or
+     * else this go bad if that function in turn adds devices
+     * as well (chain loading) - which would then use this same
+     * slot as it was not allocated yet.
      */
     devices[c] = (device_t *)d;
 
+    /* Keep track of our current device, which is used for configuration. */
+    old = device_current;
+    device_current = (device_t *)d;
+
+    /* We do not initialize 'root' (machine) devices. */
     if (d->init != NULL) {
-	priv = d->init(d);
+	/* Pass the provided 'parent' argument. */
+	priv = d->init(d, parent);
 	if (priv == NULL) {
 		if (d->name)
 			ERRLOG("DEVICE: device '%s' init failed\n", d->name);
 		  else
 			ERRLOG("DEVICE: device init failed\n");
 
+		/* Free up this slot. */
 		devices[c] = NULL;
 
 		return(NULL);
@@ -192,6 +222,13 @@ device_add(const device_t *d)
     device_current = old;
 
     return(priv);
+}
+
+
+void *
+device_add(const device_t *d)
+{
+    return(device_add_parent(d, device_priv[0]));
 }
 
 
@@ -328,11 +365,17 @@ device_available(const device_t *d)
     if (d->flags & DEVICE_UNSTABLE) return(0);
 #endif
 
+    /* If the 'available' function member is set, use that. */
     if (d->dev_available != NULL) {
 	func = d->dev_available;
 	return(func());
     }
 
+    /* Otherwise, just do a 'present' check on the ROM path. */
+    if (d->path != NULL)
+	return(rom_present(d->path));
+
+    /* Neither... always available. */
     return(1);
 }
 
@@ -372,10 +415,9 @@ device_get_config_string(const char *s)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name))
 		return(config_get_string(device_current->name, s, c->default_string));
-
 	c++;
     }
 
@@ -388,10 +430,9 @@ device_get_config_int(const char *s)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name))
 		return(config_get_int(device_current->name, s, c->default_int));
-
 	c++;
     }
 
@@ -404,10 +445,9 @@ device_get_config_int_ex(const char *s, int def)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name))
 		return(config_get_int(device_current->name, s, def));
-
 	c++;
     }
 
@@ -420,10 +460,9 @@ device_get_config_hex16(const char *s)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name))
 		return(config_get_hex16(device_current->name, s, c->default_int));
-
 	c++;
     }
 
@@ -436,10 +475,9 @@ device_get_config_hex20(const char *s)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name))
 		return(config_get_hex20(device_current->name, s, c->default_int));
-
 	c++;
     }
 
@@ -452,10 +490,9 @@ device_get_config_mac(const char *s, int def)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name))
 		return(config_get_mac(device_current->name, s, def));
-
 	c++;
     }
 
@@ -468,7 +505,7 @@ device_set_config_int(const char *s, int val)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name)) {
  		config_set_int(device_current->name, s, val);
 		break;
@@ -484,7 +521,7 @@ device_set_config_hex16(const char *s, int val)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name)) {
 		config_set_hex16(device_current->name, s, val);
 		break;
@@ -500,7 +537,7 @@ device_set_config_hex20(const char *s, int val)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name)) {
 		config_set_hex20(device_current->name, s, val);
 		break;
@@ -516,7 +553,7 @@ device_set_config_mac(const char *s, int val)
 {
     const device_config_t *c = device_current->config;
 
-    while (c && c->type != -1) {
+    while (c && c->name) {
 	if (! strcmp(s, c->name)) {
 		config_set_mac(device_current->name, s, val);
 		break;

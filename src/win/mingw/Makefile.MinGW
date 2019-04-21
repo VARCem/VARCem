@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.77	2019/03/01
+# Version:	@(#)Makefile.mingw	1.0.80	2019/04/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -83,8 +83,20 @@ endif
 ifndef X64
  X64		:= n
 endif
+ifndef ARM
+ARM		:= n
+endif
+ifndef ARM64
+ARM64		:= n
+endif
 ifndef DYNAREC
  DYNAREC	:= y
+ ifeq ($(ARM), y)
+  DYNAREC	:= n
+ endif
+ ifeq ($(ARM64), y)
+  DYNAREC	:= n
+ endif
 endif
 ifndef WX
  WX		:= n
@@ -119,11 +131,32 @@ endif
 ifndef AMD_K
  AMD_K		:= n
 endif
-ifndef PORTABLE3
- PORTABLE3	:= n
+ifndef SIS471
+ SIS471		:= n
 endif
-ifndef I686
- I686		:= n
+ifndef SIS496
+ SIS496		:= n
+endif
+ifndef COMPAQ
+ COMPAQ		:= n
+endif
+ifndef SUPERSPORT
+ SUPERSPORT	:= n
+endif
+ifndef DINPUT
+ DINPUT		:= y
+ ifeq ($(ARM), y)
+  DINPUT	:= n
+ endif
+endif
+ifndef D3DX
+ D3DX		:= y
+ ifeq ($(ARM), y)
+  D3DX		:= n
+ endif
+ ifeq ($(ARM64), y)
+  D3DX		:= n
+ endif
 endif
 ifndef OPENAL
  OPENAL		:= y
@@ -182,8 +215,12 @@ ifeq ($(DEV_BUILD), y)
  CRASHDUMP	:= y
  DEV_BRANCH	:= y
  AMD_K		:= y
- PORTABLE3	:= y
- I686		:= y
+ SIS471		:= y
+ SIS496		:= y
+ COMPAQ		:= y
+ SUPERSPORT	:= y
+ ST11		:= y
+ WD1002		:= y
  PAS16		:= y
  GUSMAX		:= y
  XL24		:= y
@@ -230,10 +267,11 @@ endif
 #########################################################################
 VPATH		:= $(EXPATH) . cpu \
 		   devices \
-		    devices/cdrom devices/disk devices/floppy \
-		    devices/floppy/lzf devices/input devices/input/game \
-		    devices/network devices/ports devices/printer \
-		    devices/sio devices/system devices/scsi devices/misc \
+		    devices/chipsets devices/system devices/sio \
+		    devices/input devices/input/game devices/ports \
+		    devices/network devices/printer devices/misc \
+		    devices/floppy devices/floppy/lzf \
+		    devices/disk devices/cdrom devices/scsi \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
@@ -267,17 +305,35 @@ ifneq ($(CROSS), n)
  SYSLIB		:= -L/usr/$(MINGW)/lib
 else
  # Native compilation using MinGW for Windows.
+ CPP		:= g++ -m32
+ CC		:= gcc -m32
+ PREPROC	:= cpp
+ WINDRES	:= windres
+ STRIP		:= strip
+ ifndef CAT
+  CAT		:= cat
+ endif
+
+ # Overrides for Windows, X64.
  ifeq ($(X64), y)
   CPP		:= g++ -m64
   CC		:= gcc -m64
- else
-  CPP		:= g++ -m32
-  CC		:= gcc -m32
  endif
- PREPROC	:= cpp
- WINDRES	:= windres
- ifndef CAT
-  CAT		:= cat
+
+ # Overrides for Windows, ARM.
+ ifeq ($(ARM), y)
+  CPP		:= armv7-w64-mingw32-g++
+  CC		:= armv7-w64-mingw32-gcc
+  WINDRES	:= armv7-w64-mingw32-windres
+  STRIP		:= armv7-w64-mingw32-strip
+ endif
+
+ # Overrides for Windows, ARM64.
+ ifeq ($(ARM64), y)
+  CPP		:= aarch64-w64-mingw32-g++
+  CC		:= aarch64-w64-mingw32-gcc
+  WINDRES	:= aarch64-w64-mingw32-windres
+  STRIP		:= aarch64-w64-mingw32-strip
  endif
 
  SYSINC		:= -Iwin/mingw/include
@@ -291,9 +347,37 @@ DEPFILE		:= win/mingw/.depends
 OPTS		:= $(EXTRAS) $(STUFF) \
 		   -D_CRT_NON_CONFORMING_SWPRINTFS \
 		   -D__USE_MINGW_ANSI_STDIO_X
-AFLAGS		:= -msse2 -mfpmath=sse
 RFLAGS		:= --input-format=rc -O coff
 LDFLAGS		:=
+
+# Options fow Windows, X86.
+AFLAGS		:= -msse2 -mfpmath=sse
+ifeq ($(OPTIM), y)
+ DFLAGS		:= -march=native
+else
+ DFLAGS		:= -march=i686
+endif
+
+# Options for Windows, X64.
+ifeq ($(X64), y)
+ ifeq ($(OPTIM), y)
+  DFLAGS	:= -march=native
+ endif
+endif
+
+# Options for Windows, ARM.
+ifeq ($(ARM), y)
+ AFLAGS		:= -mfloat-abi=hard
+ DFLAGS		:= -march=armv7-a
+endif
+
+# Options for Windows, ARM64.
+ifeq ($(ARM64), y)
+ AFLAGS		:= -mfloat-abi=hard
+ DFLAGS		:= -march=armv8-a
+endif
+
+
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
 endif
@@ -312,19 +396,6 @@ endif
  OPTS		+= $(SYSINC)
 ifneq ($(CROSS), n)
   OPTS		+= -DUSE_CROSS
-endif
-ifeq ($(X64), y)
- ifeq ($(OPTIM), y)
-  DFLAGS	:= -march=native
- else
-  DFLAGS	:= 
- endif
-else
- ifeq ($(OPTIM), y)
-  DFLAGS	:= -march=native
- else
-  DFLAGS	:= -march=i686
- endif
 endif
 ifeq ($(DEBUG), y)
  DFLAGS		+= -ggdb -D_DEBUG
@@ -373,8 +444,15 @@ else
  VCG		:= vid_voodoo_codegen_x86.h
 endif
 LIBS		:= -mwindows \
-		   -lddraw -ldinput8 -ldxguid -ld3d9 -ld3dx9 \
-		   -lversion -lcomctl32 -lwinmm
+		   -lddraw -ldxguid -ld3d9 -lversion -lcomctl32 -lwinmm
+ifeq ($(DINPUT), y)
+ LIBS		+= -ldinput8
+else
+ LIBS		+= -lxinput
+endif
+ifeq ($(D3DX), y)
+ LIBS		+= -ld3dx9
+endif
 LIBS		+= -lws2_32 -lwsock32 -liphlpapi -lpsapi
 LIBS		+= -static -lstdc++ -lgcc
 #ifneq ($(X64), y)
@@ -459,6 +537,14 @@ ifneq ($(D2D), n)
  D2DOBJ		:= win_d2d.o
 endif
 
+ifeq ($(D3DX), y)
+OPTS		+= -DUSE_D3DX
+endif
+
+ifeq ($(DINPUT), y)
+OPTS		+= -DUSE_DINPUT
+endif
+
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(VNC), n)
  OPTS		+= -DUSE_VNC
@@ -539,12 +625,30 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_AMD_K
  endif
 
- ifeq ($(PORTABLE3), y)
-  OPTS		+= -DUSE_PORTABLE3
+ ifeq ($(SIS471), y)
+  OPTS		+= -DUSE_SIS471
  endif
 
- ifeq ($(I686), y)
-  OPTS		+= -DUSE_I686
+ ifeq ($(SIS496), y)
+  OPTS		+= -DUSE_SIS496
+ endif
+
+ ifeq ($(COMPAQ), y)
+  OPTS		+= -DUSE_COMPAQ
+  DEVBROBJ	+= m_compaq.o m_compaq_vid.o vid_cga_compaq.o
+ endif
+
+ ifeq ($(SUPERSPORT), y)
+  OPTS		+= -DUSE_SUPERSPORT
+  DEVBROBJ	+= m_zenith.o m_zenith_vid.o
+ endif
+
+ ifeq ($(ST11), y)
+  OPTS		+= -DUSE_ST11
+ endif
+
+ ifeq ($(WD1002), y)
+  OPTS		+= -DUSE_WD1002
  endif
 
  ifeq ($(PAS16), y)
@@ -605,36 +709,36 @@ MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
 UIOBJ		+= ui_main.o ui_lang.o ui_stbar.o ui_vidapi.o \
 		   ui_cdrom.o ui_new_image.o ui_misc.o
 
-SYSOBJ		:= dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o mcr.o \
-		   memregs.o nvr_at.o nvr_ps2.o
-
 CPUOBJ		:= cpu.o cpu_table.o \
 		    808x.o 386.o x86seg.o x87.o \
 		    386_dynarec.o $(DYNARECOBJ)
 
+SYSOBJ		:= dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o mcr.o \
+		   memregs.o nvr_at.o nvr_ps2.o
+
+CHIPOBJ		:= neat.o scat.o headland.o \
+		    intel4x0.o ali1429.o opti495.o sis471.o sis496.o \
+		    wd76c10.o
+
 MCHOBJ		:= machine.o machine_table.o \
-		    m_xt.o m_xt_compaq.o \
-		    m_xt_t1000.o m_xt_t1000_vid.o \
-		    m_xt_laserxt.o m_xt_xi8088.o \
-		    m_zenith.o \
+		    m_xt.o \
+		    m_amstrad.o m_amstrad_vid.o \
+		    m_europc.o m_laserxt.o \
+		    m_olim24.o m_olim24_vid.o \
+		    m_tandy1000.o m_tandy1000_vid.o \
+		    m_tosh1x00.o m_tosh1x00_vid.o \
+		    m_xi8088.o \
 		    m_pcjr.o \
-		    m_amstrad.o m_europc.o \
-		    m_olivetti_m24.o m_tandy.o \
-		    m_at.o \
-		    m_at_ali1429.o m_at_commodore.o \
-		    m_at_neat.o m_at_headland.o \
-		    m_at_t3100e.o m_at_t3100e_vid.o \
 		    m_ps1.o m_ps1_hdc.o \
 		    m_ps2_isa.o m_ps2_mca.o \
-		    m_at_opti495.o m_at_scat.o \
-		    m_at_compaq.o m_at_wd76c10.o \
-		    m_at_sis471.o m_at_sis496.o \
-		    m_at_4x0.o
-
-INTELOBJ	:= intel.o \
-		    intel_flash.o \
-		    intel_sio.o \
-		    intel_piix.o
+		    m_at.o \
+		    m_neat.o m_headland.o m_scat.o \
+		    m_commodore.o \
+		    m_tosh3100e.o m_tosh3100e_vid.o \
+		    m_ali.o m_opti495.o m_sis471.o m_sis496.o \
+		    m_wd76c10.o m_intel4x0.o \
+		    m_acer.o m_aopen.o m_asus.o m_pbell.o m_tyan.o \
+		    m_misc.o
 
 DEVOBJ		:= bugger.o \
 		   isamem.o isartc.o \
@@ -644,6 +748,7 @@ DEVOBJ		:= bugger.o \
 		   serial.o \
 		   sio_fdc37c66x.o sio_fdc37c669.o sio_fdc37c93x.o \
 		   sio_pc87306.o sio_w83877f.o sio_um8669f.o \
+		   intel.o intel_flash.o intel_sio.o intel_piix.o \
 		   keyboard.o \
 		    keyboard_xt.o keyboard_at.o \
 		   mouse.o \
@@ -712,7 +817,6 @@ SNDOBJ		:= sound.o \
 VIDOBJ		:= video.o \
 		    video_dev.o \
 		    vid_cga.o vid_cga_comp.o \
-		    vid_cga_compaq.o \
 		    vid_mda.o \
 		    vid_hercules.o vid_herculesplus.o vid_incolor.o \
 		    vid_colorplus.o \
@@ -742,15 +846,19 @@ VIDOBJ		:= video.o \
 
 PLATOBJ		:= win.o \
 		    win_lang.o win_dynld.o win_opendir.o win_thread.o \
-		    win_cdrom.o win_keyboard.o win_mouse.o win_joystick.o \
-		    win_serial.o win_midi.o
+		    win_cdrom.o win_keyboard.o win_serial.o win_midi.o
+ifeq ($(DINPUT), y)
+ PLATOBJ	+= win_mouse.o win_joystick.o
+else
+ PLATOBJ	+= win_mouse_ri.o win_joystick_xi.o
+endif
 ifeq ($(CRASHDUMP), y)
 PLATOBJ		+= win_crashdump.o
 endif
 
 
-OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
-		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
+OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \
+		   $(DEVOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
 		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
 ifdef EXOBJ
@@ -801,7 +909,7 @@ $(PROG).exe:	$(OBJ) VARCem.res
 		@$(CC) $(LDFLAGS) -o $@ \
 			$(OBJ) VARCem.res $(LIBS)
 ifneq ($(DEBUG), y)
-		@strip $(PROG).exe
+		@$(STRIP) $(PROG).exe
 endif
 
 pcap_if.res:	pcap_if.rc
@@ -813,7 +921,7 @@ $(NETIF).exe:	pcap_if.o win_dynld.o pcap_if.res
 		@$(CC) $(LDFLAGS) -o $@ \
 			pcap_if.o win_dynld.o pcap_if.res
 ifneq ($(DEBUG), y)
-		@strip $(NETIF).exe
+		@$(STRIP) $(NETIF).exe
 endif
 
 

@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.12	2019/03/07
+ * Version:	@(#)vid_tgui9440.c	1.0.14	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1665,9 +1665,8 @@ void tgui_accel_write_fb_l(uint32_t addr, uint32_t val, void *p)
 
 
 static void *
-tgui_init(const device_t *info)
+tgui_init(const device_t *info, UNUSED(void *parent))
 {
-	const wchar_t *bios_fn;
         tgui_t *tgui = (tgui_t *)mem_alloc(sizeof(tgui_t));
         memset(tgui, 0x00, sizeof(tgui_t));
         tgui->type = info->local;
@@ -1676,21 +1675,8 @@ tgui_init(const device_t *info)
         tgui->vram_size = device_get_config_int("memory") << 20;
         tgui->vram_mask = tgui->vram_size - 1;
         
-	switch(info->local) {
-		case TGUI_9400CXI:
-			bios_fn = ROM_TGUI_9400CXI;
-			break;
-		case TGUI_9440:
-			bios_fn = ROM_TGUI_9440;
-			break;
-		default:
-			free(tgui);
-			return NULL;
-	}
-
-        rom_init(&tgui->bios_rom, (wchar_t *) bios_fn, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
-
-	video_inform(VID_TYPE_SPEC, &tgui_timing);
+        rom_init(&tgui->bios_rom, info->path,
+		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
         svga_init(&tgui->svga, tgui, tgui->vram_size,
                    tgui_recalctimings,
@@ -1716,6 +1702,8 @@ tgui_init(const device_t *info)
         tgui->fifo_not_full_event = thread_create_event();
         tgui->fifo_thread = thread_create(fifo_thread, tgui);
 
+	video_inform(DEVICE_VIDEO_GET(info->flags), &tgui_timing);
+
         return tgui;
 }
 
@@ -1736,7 +1724,7 @@ tgui_close(void *priv)
 
 
 static void
-tgui_speed_changed(void *priv)
+speed_changed(void *priv)
 {
         tgui_t *tgui = (tgui_t *)priv;
         
@@ -1745,22 +1733,11 @@ tgui_speed_changed(void *priv)
 
 
 static void
-tgui_force_redraw(void *priv)
+force_redraw(void *priv)
 {
         tgui_t *tgui = (tgui_t *)priv;
+
         tgui->svga.fullchange = changeframecount;
-}
-
-
-static int
-tgui9400cxi_available(void)
-{
-        return rom_present(ROM_TGUI_9400CXI);
-}
-
-static int tgui9440_available(void)
-{
-        return rom_present(ROM_TGUI_9440);
 }
 
 
@@ -1776,47 +1753,50 @@ static const device_config_t tgui9440_config[] =
                                 "2 MB",2
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
         {
-                "","",-1
+                NULL
         }
 };
 
 const device_t tgui9400cxi_device = {
         "Trident TGUI 9400CXi",
-        DEVICE_VLB,
+        DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
         TGUI_9400CXI,
+	ROM_TGUI_9400CXI,
         tgui_init, tgui_close, NULL,
-        tgui9400cxi_available,
-        tgui_speed_changed,
-        tgui_force_redraw,
+        NULL,
+        speed_changed,
+        force_redraw,
         NULL,
         tgui9440_config
 };
 
 const device_t tgui9440_vlb_device = {
         "Trident TGUI 9440",
-        DEVICE_VLB,
+        DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
 	TGUI_9440,
+	ROM_TGUI_9440,
         tgui_init, tgui_close, NULL,
-        tgui9440_available,
-        tgui_speed_changed,
-        tgui_force_redraw,
+        NULL,
+        speed_changed,
+        force_redraw,
         NULL,
         tgui9440_config
 };
 
 const device_t tgui9440_pci_device = {
         "Trident TGUI 9440",
-        DEVICE_PCI,
+        DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
 	TGUI_9440,
+	ROM_TGUI_9440,
         tgui_init, tgui_close, NULL,
-        tgui9440_available,
-        tgui_speed_changed,
-        tgui_force_redraw,
+        NULL,
+        speed_changed,
+        force_redraw,
         NULL,
         tgui9440_config
 };

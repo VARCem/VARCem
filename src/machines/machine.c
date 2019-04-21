@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.19	2019/02/16
+ * Version:	@(#)machine.c	1.0.20	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,41 +51,69 @@
 #include "../devices/ports/game.h"
 #include "../devices/ports/serial.h"
 #include "../devices/ports/parallel.h"
-#include "../devices/video/video.h"
 #include "../plat.h"
 #include "../ui/ui.h"
 #include "machine.h"
 
 
-int	AT, MCA, PCI;
+const machine_t	*machine;
+
+
+static void	*m_priv;
+
+
+/* Get the machine definition for the selected machine. */
+const device_t *
+machine_load(void)
+{
+    const device_t *dev;
+
+    dev = machine_get_device_ex(machine_type);
+    if (dev != NULL)
+	machine = (machine_t *)dev->mach_info;
+
+    return(dev);
+}
 
 
 void
 machine_reset(void)
 {
     wchar_t temp[1024];
-    romdef_t r;
+    const device_t *dev;
+    romdef_t roms;
 
-    INFO("Initializing as \"%s\"\n", machine_getname());
+    INFO("Initializing as \"%s\"\n", machine_get_name());
+
+    /* Initialize the configured machine and CPU. */
+    dev = machine_load();
+
+    /* Set up the selected CPU at default speed. */
+    cpu_set_type(machine->cpu[cpu_manufacturer].cpus, cpu_type);
+
+    /* Start with (max/turbo) speed. */
+    pc_set_speed(1);
 
     /* Set up the architecture flags. */
-    AT = IS_ARCH(machine, MACHINE_AT);
-    PCI = IS_ARCH(machine, MACHINE_PCI);
-    MCA = IS_ARCH(machine, MACHINE_MCA);
+    AT = IS_ARCH(MACHINE_AT);
+    MCA = IS_ARCH(MACHINE_MCA);
+    PCI = IS_ARCH(MACHINE_PCI);
 
     /* Reset memory and the MMU. */
     mem_reset();
+    rom_reset();
+
+    /* Disable shadowing for now. */
+    shadowbios = 0;
 
     /* Load the machine's ROM BIOS. */
-    wcscpy(temp, MACHINES_PATH);
-    plat_append_slash(temp);
-    wcscat(temp, machines[machine].bios_path);
-    if (! rom_load_bios(&r, temp, 0)) {
+    plat_append_filename(temp, MACHINES_PATH, dev->path);
+    if (! rom_load_bios(&roms, temp, 0)) {
 	/*
 	 * The machine's ROM BIOS could not be loaded.
 	 *
-	 * Since this is kinda fatal, we inform the user
-	 * and bail out, since continuing is pointless.
+	 * This is kinda fatal, inform the user and
+	 * bail out, since continuing is pointless.
 	 */
 	ui_msgbox(MBX_ERROR|MBX_FATAL, get_string(IDS_ERR_NOBIOS));
 
@@ -93,62 +121,61 @@ machine_reset(void)
     }
 
     /* Activate the ROM BIOS. */
-    mem_add_bios();
-
-    /*
-     * If this is not a PCI or MCA machine, reset the video
-     * card before initializing the machine, to please the
-     * EuroPC and other systems that need this.
-     */
-    if (!PCI && !MCA)
-	video_reset();
+    rom_add_bios();
 
     /* All good, boot the machine! */
-    machines[machine].init(&machines[machine], &r);
-
-    /*
-     * If this is a PCI or MCA machine, reset the video
-     * card after initializing the machine, so the bus
-     * slots work correctly.
-     */
-    if (PCI || MCA)
-	video_reset();
+    m_priv = dev->init(dev, &roms);
 }
 
 
-/* Close down the machine (saving stuff, etc.) */
-void
-machine_close(void)
-{
-    if (machines[machine].close != NULL)
-	machines[machine].close();
-}
-
-
-/* Return the machine type. */
+/* Return the current machine's flags. */
 int
-machine_type(void)
+machine_get_flags(void)
 {
-    return (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type);
+    int ret = 0;
+
+    if (machine != NULL)
+	ret = machine->flags;
+
+    return(ret);
+}
+
+
+/* Return a machine's (adjusted) memory size. */
+int
+machine_get_memsize(int mem)
+{
+    int k;
+
+    k = ((machine->flags & MACHINE_AT) && (machine->ram_granularity < 128))
+	? machine->min_ram * 1024 : machine->min_ram;
+
+    if (mem < k)
+        mem = k;
+
+    if (mem > 1048576)
+        mem = 1048576;
+
+    return(mem);
 }
 
 
 /* Return this machine's default or slow speed. */
 uint32_t
-machine_speed(int turbo)
+machine_get_speed(int turbo)
 {
     uint32_t k;
     int mhz;
 
     /* Get the current CPU's maximum speed. */
-    k = machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed;
+    k = cpu_get_speed();
 
     /*
      * If not on turbo, use the speed the mainboard
      * has set as its fallback ("slow") speed.
      */
     if (! turbo) {
-	mhz = machines[machine].slow_mhz;
+	mhz = machine->slow_mhz;
 	switch(mhz) {
 		case -1:	/* machine has no slow/turbo switching */
 			break;
@@ -172,12 +199,15 @@ int
 machine_available(int id)
 {
     wchar_t temp[1024];
+    const device_t *dev;
     romdef_t r;
     int i;
 
+    dev = machine_get_device_ex(machine_type);
+
     wcscpy(temp, MACHINES_PATH);
     plat_append_slash(temp);
-    wcscat(temp, machines[id].bios_path);
+    wcscat(temp, dev->path);
     i = rom_load_bios(&r, temp, 1);
 
     return(i);
@@ -185,17 +215,12 @@ machine_available(int id)
 
 
 void
-machine_common_init(const machine_t *model, UNUSED(void *arg))
+machine_common_init(void)
 {
     /* System devices first. */
     pic_init();
     dma_init();
     pit_init();
-
-    cpu_set();
-
-    /* Start with (max/turbo) speed. */
-    pc_set_speed();
 
     if (game_enabled)
 	device_add(&game_device);

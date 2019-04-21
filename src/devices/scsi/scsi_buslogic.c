@@ -13,7 +13,7 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.14	2019/02/10
+ * Version:	@(#)scsi_buslogic.c	1.0.16	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1611,10 +1611,10 @@ BuslogicDeviceReset(void *priv)
 
 
 static void *
-buslogic_init(const device_t *info)
+buslogic_init(const device_t *info, UNUSED(void *parent))
 {
     x54x_t *dev;
-    wchar_t *bios_rom_name;
+    const wchar_t *bios_rom_name;
     uint16_t bios_rom_size;
     uint16_t bios_rom_mask;
     uint8_t has_autoscsi_rom;
@@ -1629,10 +1629,10 @@ buslogic_init(const device_t *info)
 
     /* Call common initializer. */
     dev = (x54x_t *)x54x_init(info);
+    bios_rom_name = info->path;
 
     dev->ven_data = mem_alloc(sizeof(buslogic_data_t));
     memset(dev->ven_data, 0x00, sizeof(buslogic_data_t));
-
     bl = (buslogic_data_t *)dev->ven_data;
 
     dev->bus = info->flags;
@@ -1684,7 +1684,6 @@ buslogic_init(const device_t *info)
     switch(bl->chip) {
 	case CHIP_BUSLOGIC_ISA_542:
 		strcpy(dev->name, "BT-542BH");
-		bios_rom_name = BT542_BIOS_PATH;
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 0;
@@ -1697,7 +1696,6 @@ buslogic_init(const device_t *info)
 	case CHIP_BUSLOGIC_ISA:
 	default:
 		strcpy(dev->name, "BT-545S");
-		bios_rom_name = BT545_BIOS_PATH;
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 1;
@@ -1711,7 +1709,6 @@ buslogic_init(const device_t *info)
 
 	case CHIP_BUSLOGIC_MCA:
 		strcpy(dev->name, "BT-640A");
-		bios_rom_name = BT640A_BIOS_PATH;
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 0;
@@ -1727,7 +1724,6 @@ buslogic_init(const device_t *info)
 
 	case CHIP_BUSLOGIC_VLB:
 		strcpy(dev->name, "BT-445S");
-		bios_rom_name = BT445S_BIOS_PATH;
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 1;
@@ -1744,7 +1740,6 @@ buslogic_init(const device_t *info)
 
 	case CHIP_BUSLOGIC_PCI:
 		strcpy(dev->name, "BT-958D");
-		bios_rom_name = BT958D_BIOS_PATH;
 		bios_rom_size = 0x4000;
 		bios_rom_mask = 0x3fff;
 		has_autoscsi_rom = 1;
@@ -1834,25 +1829,25 @@ static const device_config_t BT_ISA_Config[] = {
         "base", "Address", CONFIG_HEX16, "", 0x334,
         {
                 {
-                        "0x330", 0x330
+                        "330H", 0x330
                 },
                 {
-                        "0x334", 0x334
+                        "334H", 0x334
                 },
                 {
-                        "0x230", 0x230
+                        "230H", 0x230
                 },
                 {
-                        "0x234", 0x234
+                        "234H", 0x234
                 },
                 {
-                        "0x130", 0x130
+                        "130H", 0x130
                 },
                 {
-                        "0x134", 0x134
+                        "134H", 0x134
                 },
                 {
-                        "", 0
+                        NULL
                 }
         }
     },
@@ -1878,7 +1873,7 @@ static const device_config_t BT_ISA_Config[] = {
                         "IRQ 15", 15
                 },
                 {
-                        "", 0
+                        NULL
                 }
         }
     },
@@ -1895,7 +1890,7 @@ static const device_config_t BT_ISA_Config[] = {
                         "DMA 7", 7
                 },
                 {
-                        "", 0
+                        NULL
                 }
         }
     },
@@ -1915,12 +1910,12 @@ static const device_config_t BT_ISA_Config[] = {
                         "D800H", 0xd8000
                 },
                 {
-                        "", 0
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -1930,7 +1925,7 @@ static const device_config_t BT958D_Config[] = {
         "bios", "Enable BIOS", CONFIG_BINARY, "", 0
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -1939,6 +1934,7 @@ const device_t buslogic_device = {
     "Buslogic BT-542BH ISA",
     DEVICE_ISA | DEVICE_AT,
     CHIP_BUSLOGIC_ISA_542,
+    BT542_BIOS_PATH,
     buslogic_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     BT_ISA_Config
@@ -1948,6 +1944,7 @@ const device_t buslogic_545s_device = {
     "Buslogic BT-545S ISA",
     DEVICE_ISA | DEVICE_AT,
     CHIP_BUSLOGIC_ISA,
+    BT545_BIOS_PATH,
     buslogic_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     BT_ISA_Config
@@ -1957,6 +1954,7 @@ const device_t buslogic_640a_device = {
     "Buslogic BT-640A MCA",
     DEVICE_MCA,
     CHIP_BUSLOGIC_MCA,
+    BT640A_BIOS_PATH,
     buslogic_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -1966,6 +1964,7 @@ const device_t buslogic_445s_device = {
     "Buslogic BT-445S ISA",
     DEVICE_VLB,
     CHIP_BUSLOGIC_VLB,
+    BT445S_BIOS_PATH,
     buslogic_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     BT_ISA_Config
@@ -1975,6 +1974,7 @@ const device_t buslogic_pci_device = {
     "Buslogic BT-958D PCI",
     DEVICE_PCI,
     CHIP_BUSLOGIC_PCI,
+    BT958D_BIOS_PATH,
     buslogic_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     BT958D_Config

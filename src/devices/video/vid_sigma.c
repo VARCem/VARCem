@@ -41,7 +41,7 @@
  *		even-numbered columns, so the top bit of the control register
  *		at 0x2D9 is used to adjust the position.
  *
- * Version:	@(#)vid_sigma.c	1.0.4	2019/03/07
+ * Version:	@(#)vid_sigma.c	1.0.6	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -866,7 +866,7 @@ load_font(sigma_t *dev, const wchar_t *s)
 
 
 static void *
-sigma_init(const device_t *info)
+sigma_init(const device_t *info, UNUSED(void *parent))
 {
     sigma_t *dev;
 
@@ -892,7 +892,7 @@ sigma_init(const device_t *info)
 		sigma_read,NULL,NULL, sigma_write,NULL,NULL,  
 		NULL, MEM_MAPPING_EXTERNAL, dev);
 
-    rom_init(&dev->bios_rom, BIOS_ROM_PATH,
+    rom_init(&dev->bios_rom, info->path,
 	     0xc0000, 0x2000, 0x1fff, 0, MEM_MAPPING_EXTERNAL);
 
     /*
@@ -919,9 +919,10 @@ sigma_init(const device_t *info)
     if (dev->enable_nmi)
 	dev->sigmastat = STATUS_LPEN_T;
 
-    video_inform(VID_TYPE_CGA, &sigma_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)&sigma_timing);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -972,7 +973,7 @@ static const device_config_t sigma_config[] = {
 			"Color (no brown)", 4
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -980,15 +981,16 @@ static const device_config_t sigma_config[] = {
 	"enable_nmi", "Enable NMI for CGA emulation", CONFIG_BINARY, "", 1
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
 
 const device_t sigma_device = {
     "Sigma Color 400",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
     0,
+    BIOS_ROM_PATH,
     sigma_init, sigma_close, NULL,
     sigma_available,
     speed_changed,

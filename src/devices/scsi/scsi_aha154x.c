@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.11	2018/10/16
+ * Version:	@(#)scsi_aha154x.c	1.0.13	2019/04/11
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -18,7 +18,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -731,12 +731,13 @@ set_nvr(x54x_t *dev)
 
 /* General initialization routine for all boards. */
 static void *
-aha_init(const device_t *info)
+aha_init(const device_t *info, UNUSED(void *parent))
 {
     x54x_t *dev;
 
     /* Call common initializer. */
     dev = (x54x_t *)x54x_init(info);
+    dev->bios_path = info->path;
 
     /*
      * Set up the (initial) I/O address, IRQ and DMA info.
@@ -788,7 +789,6 @@ aha_init(const device_t *info)
 
 	case AHA_154xC:
 		strcpy(dev->name, "AHA-154xC");
-		dev->bios_path = AHA1540C_BIOS_PATH;
 		dev->nvr_path = L"aha1542c.nvr";
 		dev->fw_rev = "D001";
 		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
@@ -803,7 +803,6 @@ aha_init(const device_t *info)
 
 	case AHA_154xCF:
 		strcpy(dev->name, "AHA-154xCF");
-		dev->bios_path = AHA1540CF_BIOS_PATH;
 		dev->nvr_path = L"aha1542cf.nvr";
 		dev->fw_rev = "E001";
 		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
@@ -819,7 +818,6 @@ aha_init(const device_t *info)
 
 	case AHA_154xCP:
 		strcpy(dev->name, "AHA-154xCP");
-		dev->bios_path = AHA1540CP_BIOS_PATH;
 		dev->nvr_path = L"aha1540cp.nvr";
 		dev->fw_rev = "F001";
 		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
@@ -834,7 +832,6 @@ aha_init(const device_t *info)
 
 	case AHA_1640:
 		strcpy(dev->name, "AHA-1640");
-		dev->bios_path = AHA1640_BIOS_PATH;
 		dev->fw_rev = "BB01";
 
 		dev->lba_bios = 1;
@@ -881,25 +878,25 @@ static const device_config_t aha_154xb_config[] = {
                         "None",      0
                 },
                 {
-                        "0x330", 0x330
+                        "330H", 0x330
                 },
                 {
-                        "0x334", 0x334
+                        "334H", 0x334
                 },
                 {
-                        "0x230", 0x230
+                        "230H", 0x230
                 },
                 {
-                        "0x234", 0x234
+                        "234H", 0x234
                 },
                 {
-                        "0x130", 0x130
+                        "130H", 0x130
                 },
                 {
-                        "0x134", 0x134
+                        "134H", 0x134
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -925,7 +922,7 @@ static const device_config_t aha_154xb_config[] = {
                         "IRQ 15", 15
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -942,7 +939,7 @@ static const device_config_t aha_154xb_config[] = {
                         "DMA 7", 7
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -974,7 +971,7 @@ static const device_config_t aha_154xb_config[] = {
                         "7", 7
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -994,12 +991,12 @@ static const device_config_t aha_154xb_config[] = {
                         "D800H", 0xd8000
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -1012,25 +1009,25 @@ static const device_config_t aha_154x_config[] = {
                         "None",      0
                 },
                 {
-                        "0x330", 0x330
+                        "330H", 0x330
                 },
                 {
-                        "0x334", 0x334
+                        "334H", 0x334
                 },
                 {
-                        "0x230", 0x230
+                        "230H", 0x230
                 },
                 {
-                        "0x234", 0x234
+                        "234H", 0x234
                 },
                 {
-                        "0x130", 0x130
+                        "130H", 0x130
                 },
                 {
-                        "0x134", 0x134
+                        "134H", 0x134
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -1056,7 +1053,7 @@ static const device_config_t aha_154x_config[] = {
                         "IRQ 15", 15
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -1073,7 +1070,7 @@ static const device_config_t aha_154x_config[] = {
                         "DMA 7", 7
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -1093,12 +1090,12 @@ static const device_config_t aha_154x_config[] = {
                         "D800H", 0xd8000
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -1107,6 +1104,7 @@ const device_t aha1540b_device = {
     "Adaptec AHA-1540B",
     DEVICE_ISA | DEVICE_AT,
     AHA_154xB,
+    NULL,
     aha_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     aha_154xb_config
@@ -1116,6 +1114,7 @@ const device_t aha1542c_device = {
     "Adaptec AHA-1542C",
     DEVICE_ISA | DEVICE_AT,
     AHA_154xC,
+    AHA1540C_BIOS_PATH,
     aha_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     aha_154x_config
@@ -1125,6 +1124,17 @@ const device_t aha1542cf_device = {
     "Adaptec AHA-1542CF",
     DEVICE_ISA | DEVICE_AT,
     AHA_154xCF,
+    AHA1540CF_BIOS_PATH,
+    aha_init, x54x_close, NULL,
+    NULL, NULL, NULL, NULL,
+    aha_154x_config
+};
+
+const device_t aha1542cp_device = {
+    "Adaptec AHA-1542CP",
+    DEVICE_ISA | DEVICE_AT,
+    AHA_154xCP,
+    AHA1540CP_BIOS_PATH,
     aha_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     aha_154x_config
@@ -1134,6 +1144,7 @@ const device_t aha1640_device = {
     "Adaptec AHA-1640",
     DEVICE_MCA,
     AHA_1640,
+    AHA1640_BIOS_PATH,
     aha_init, x54x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

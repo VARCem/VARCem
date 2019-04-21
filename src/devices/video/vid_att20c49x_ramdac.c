@@ -8,7 +8,7 @@
  *
  *		Emulation of a AT&T 20c490/491 and 492/493 RAMDAC.
  *
- * Version:	@(#)vid_att20c49x_ramdac.c	1.0.1	2019/01/12
+ * Version:	@(#)vid_att20c49x_ramdac.c	1.0.3	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_att20c49x_ramdac.h"
@@ -139,7 +140,7 @@ att49x_ramdac_in(uint16_t addr, att49x_ramdac_t *ramdac, svga_t *svga)
 
 
 static void *
-att49x_ramdac_init(const device_t *info)
+att49x_ramdac_init(const device_t *info, UNUSED(void *parent))
 {
     att49x_ramdac_t *dev;
 
@@ -166,6 +167,7 @@ const device_t att490_ramdac_device = {
     "AT&T 20c490/20c491 RAMDAC",
     0,
     ATT_490_1,
+    NULL,
     att49x_ramdac_init, att49x_ramdac_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -175,6 +177,7 @@ const device_t att492_ramdac_device = {
     "AT&T 20c492/20c493 RAMDAC",
     0,
     ATT_492_3,
+    NULL,
     att49x_ramdac_init, att49x_ramdac_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

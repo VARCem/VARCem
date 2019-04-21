@@ -11,7 +11,7 @@
  * NOTE:	Several changes to disable Mode1 for now, as this breaks 
  *		 the TSX32 operating system. More cleanups needed..
  *
- * Version:	@(#)keyboard_at.c	1.0.17	2019/02/12
+ * Version:	@(#)keyboard_at.c	1.0.21	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,6 @@
 #define dbglog kbd_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../timer.h"
@@ -60,10 +59,11 @@
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
 #include "../video/video.h"
+#include "../../plat.h"
 #include "keyboard.h"
 
-#include "../../machines/m_at_t3100e.h"
-#include "../../machines/m_xt_xi8088.h"
+//FIXME: get rid of this!
+#include "../../machines/m_tosh3100e.h"
 
 
 #define STAT_PARITY		0x80
@@ -143,6 +143,11 @@ typedef struct {
 
     uint8_t	(*write60_ven)(void *p, uint8_t val);
     uint8_t	(*write64_ven)(void *p, uint8_t val);
+
+    /* Custom machine-dependent keyboard stuff. */
+    uint8_t	(*read_func)(void *priv);
+    void	(*write_func)(void *priv, uint8_t val);
+    void	*func_priv;
 } atkbd_t;
 
 
@@ -741,13 +746,14 @@ kbd_adddata_vals(uint8_t *val, uint8_t len)
 static void
 kbd_adddata_keyboard(uint16_t val)
 {
-    int xt_mode = (keyboard_mode & 0x20) && ((CurrentKbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1);
+    atkbd_t *kbd = CurrentKbd;
+    int xt_mode = (keyboard_mode & 0x20) && ((kbd->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_1);
     int translate = (keyboard_mode & 0x40);
     uint8_t fake_shift[4];
     uint8_t num_lock = 0, shift_states = 0;
 
     translate = translate || (keyboard_mode & 0x40) || xt_mode;
-    translate = translate || ((CurrentKbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2);
+    translate = translate || ((kbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2);
 
     num_lock = !!(keyboard_get_state() & KBD_FLAG_NUM);
     shift_states = keyboard_get_shift() & STATE_SHIFT_MASK;
@@ -767,24 +773,24 @@ kbd_adddata_keyboard(uint16_t val)
     }
 
     /* Test for T3100E 'Fn' key (Right Alt / Right Ctrl) */
-    if ((CurrentKbd != NULL) &&
-        ((CurrentKbd->flags & KBC_VEN_MASK) == KBC_VEN_TOSHIBA) &&
+    if ((kbd != NULL) &&
+        ((kbd->flags & KBC_VEN_MASK) == KBC_VEN_TOSHIBA) &&
 	(keyboard_recv(0xb8) || keyboard_recv(0x9d))) switch (val) {
-	case 0x4f: t3100e_notify_set(0x01); break; /* End */
-	case 0x50: t3100e_notify_set(0x02); break; /* Down */
-	case 0x51: t3100e_notify_set(0x03); break; /* PgDn */
-	case 0x52: t3100e_notify_set(0x04); break; /* Ins */
-	case 0x53: t3100e_notify_set(0x05); break; /* Del */
-	case 0x54: t3100e_notify_set(0x06); break; /* SysRQ */
-	case 0x45: t3100e_notify_set(0x07); break; /* NumLock */
-	case 0x46: t3100e_notify_set(0x08); break; /* ScrLock */
-	case 0x47: t3100e_notify_set(0x09); break; /* Home */
-	case 0x48: t3100e_notify_set(0x0A); break; /* Up */
-	case 0x49: t3100e_notify_set(0x0B); break; /* PgUp */
-	case 0x4A: t3100e_notify_set(0x0C); break; /* Keypad -*/
-	case 0x4B: t3100e_notify_set(0x0D); break; /* Left */
-	case 0x4C: t3100e_notify_set(0x0E); break; /* KP 5 */
-	case 0x4D: t3100e_notify_set(0x0F); break; /* Right */
+	case 0x4f: t3100e_notify_set(kbd->func_priv, 0x01); break; /* End */
+	case 0x50: t3100e_notify_set(kbd->func_priv, 0x02); break; /* Down */
+	case 0x51: t3100e_notify_set(kbd->func_priv, 0x03); break; /* PgDn */
+	case 0x52: t3100e_notify_set(kbd->func_priv, 0x04); break; /* Ins */
+	case 0x53: t3100e_notify_set(kbd->func_priv, 0x05); break; /* Del */
+	case 0x54: t3100e_notify_set(kbd->func_priv, 0x06); break; /* SysRQ */
+	case 0x45: t3100e_notify_set(kbd->func_priv, 0x07); break; /* NumLock */
+	case 0x46: t3100e_notify_set(kbd->func_priv, 0x08); break; /* ScrLock */
+	case 0x47: t3100e_notify_set(kbd->func_priv, 0x09); break; /* Home */
+	case 0x48: t3100e_notify_set(kbd->func_priv, 0x0a); break; /* Up */
+	case 0x49: t3100e_notify_set(kbd->func_priv, 0x0b); break; /* PgUp */
+	case 0x4A: t3100e_notify_set(kbd->func_priv, 0x0c); break; /* Keypad -*/
+	case 0x4B: t3100e_notify_set(kbd->func_priv, 0x0d); break; /* Left */
+	case 0x4C: t3100e_notify_set(kbd->func_priv, 0x0e); break; /* KP 5 */
+	case 0x4D: t3100e_notify_set(kbd->func_priv, 0x0f); break; /* Right */
     }
 
     DEBUG("ATkbd: translate is %s, ", translate ? "on" : "off");
@@ -954,8 +960,7 @@ kbd_output_write(atkbd_t *kbd, uint8_t val)
     }
     if ((kbd->output_port ^ val) & 0x01) { /*Reset*/
 	if (! (val & 0x01)) {
-		/* Pin 0 selected. */
-		softresetx86(); /*Pulse reset!*/
+		cpu_reset(0);
 		cpu_set_edx();
 	}
     }
@@ -1427,7 +1432,7 @@ kbd_write60_toshiba(void *p, uint8_t val)
 
     switch(kbd->command) {
 	case 0xb6:	/* T3100e - set color/mono switch */
-		t3100e_mono_set(val);
+		t3100e_mono_set(kbd->func_priv, val);
 		return 0;
     }
 
@@ -1446,11 +1451,11 @@ kbd_write64_toshiba(void *p, uint8_t val)
 		return 1;
 
 	case 0xb0:	/* T3100e: Turbo on */
-		t3100e_turbo_set(1);
+		t3100e_turbo_set(kbd->func_priv, 1);
 		return 0;
 
 	case 0xb1:	/* T3100e: Turbo off */
-		t3100e_turbo_set(0);
+		t3100e_turbo_set(kbd->func_priv, 0);
 		return 0;
 
 	case 0xb2:	/* T3100e: Select external display */
@@ -1462,11 +1467,11 @@ kbd_write64_toshiba(void *p, uint8_t val)
 		return 0;
 
 	case 0xb4:	/* T3100e: Get configuration / status */
-		kbd_adddata(t3100e_config_get());
+		kbd_adddata(t3100e_config_get(kbd->func_priv));
 		return 0;
 
 	case 0xb5:	/* T3100e: Get colour / mono byte */
-		kbd_adddata(t3100e_mono_get());
+		kbd_adddata(t3100e_mono_get(kbd->func_priv));
 		return 0;
 
 	case 0xb6:	/* T3100e: Set colour / mono byte */
@@ -1488,7 +1493,7 @@ kbd_write64_toshiba(void *p, uint8_t val)
 		return 0;
 
 	case 0xbc:	/* T3100e: Reset Fn+Key notification */
-		t3100e_notify_set(0x00);
+		t3100e_notify_set(kbd->func_priv, 0x00);
 		return 0;
 
 	case 0xc0:	/*Read input port*/
@@ -1496,7 +1501,7 @@ kbd_write64_toshiba(void *p, uint8_t val)
 
 		/* The T3100e returns all bits set except bit 6 which
 		 * is set by t3100e_mono_set() */
-		kbd->input_port = (t3100e_mono_get() & 1) ? 0xff : 0xbf;
+		kbd->input_port = (t3100e_mono_get(kbd->func_priv) & 1) ? 0xff : 0xbf;
 		kbd_adddata(kbd->input_port);
 		return 0;
 
@@ -1772,10 +1777,7 @@ do_command:
 		pit_set_gate(&pit, 2, val & 1);
 
                 if ((kbd->flags & KBC_VEN_MASK) == KBC_VEN_XI8088) {
-                        if (val & 0x04)
-                                xi8088_turbo_set(1);
-                        else
-                                xi8088_turbo_set(0);
+			kbd->write_func(kbd->func_priv, !!(val & 0x04));
                 }
 		break;
 
@@ -1946,7 +1948,7 @@ kbd_read(uint16_t port, void *priv)
 				ret &= ~0x10;
 		}
                 if ((kbd->flags & KBC_VEN_MASK) == KBC_VEN_XI8088) {
-                        if (xi8088_turbo_get())
+			if (kbd->read_func(kbd->func_priv))
                                 ret |= 0x04;
                         else
                                 ret &= ~0x04;
@@ -2013,7 +2015,7 @@ kbd_reset(void *priv)
 
 
 static void *
-kbd_init(const device_t *info)
+kbd_init(const device_t *info, UNUSED(void *parent))
 {
     atkbd_t *kbd;
 
@@ -2110,6 +2112,7 @@ const device_t keyboard_at_device = {
     "PC/AT Keyboard",
     0,
     KBC_TYPE_ISA | KBC_VEN_GENERIC,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2119,6 +2122,7 @@ const device_t keyboard_at_ami_device = {
     "PC/AT Keyboard (AMI)",
     0,
     KBC_TYPE_ISA | KBC_VEN_AMI,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2128,6 +2132,7 @@ const device_t keyboard_at_toshiba_device = {
     "PC/AT Keyboard (Toshiba)",
     0,
     KBC_TYPE_ISA | KBC_VEN_TOSHIBA,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2137,6 +2142,7 @@ const device_t keyboard_ps2_device = {
     "PS/2 Keyboard",
     0,
     KBC_TYPE_PS2_1 | KBC_VEN_GENERIC,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2146,6 +2152,7 @@ const device_t keyboard_ps2_xi8088_device = {
     "PS/2 Keyboard (Xi8088)",
     0,
     KBC_TYPE_PS2_1 | KBC_VEN_XI8088,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2155,6 +2162,7 @@ const device_t keyboard_ps2_ami_device = {
     "PS/2 Keyboard (AMI)",
     0,
     KBC_TYPE_PS2_1 | KBC_VEN_AMI,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2164,6 +2172,7 @@ const device_t keyboard_ps2_mca_device = {
     "PS/2 Keyboard",
     0,
     KBC_TYPE_PS2_1 | KBC_VEN_IBM_MCA,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2173,6 +2182,7 @@ const device_t keyboard_ps2_mca_2_device = {
     "PS/2 Keyboard",
     0,
     KBC_TYPE_PS2_2 | KBC_VEN_IBM_MCA,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2182,6 +2192,7 @@ const device_t keyboard_ps2_quadtel_device = {
     "PS/2 Keyboard (Quadtel/MegaPC)",
     0,
     KBC_TYPE_PS2_1 | KBC_VEN_QUADTEL,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2191,6 +2202,7 @@ const device_t keyboard_ps2_pci_device = {
     "PS/2 Keyboard",
     DEVICE_PCI,
     KBC_TYPE_PS2_1 | KBC_VEN_GENERIC,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2200,6 +2212,7 @@ const device_t keyboard_ps2_ami_pci_device = {
     "PS/2 Keyboard (AMI)",
     DEVICE_PCI,
     KBC_TYPE_PS2_1 | KBC_VEN_AMI,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2227,6 +2240,18 @@ keyboard_at_adddata_mouse(uint8_t val)
 {
     mouse_queue[mouse_queue_end] = val;
     mouse_queue_end = (mouse_queue_end + 1) & 0xf;
+}
+
+
+/* Set custom machine-dependent keyboard stuff. */
+void
+keyboard_at_set_funcs(void *arg, uint8_t (*readfunc)(void *), void (*writefunc)(void *, uint8_t), void *priv)
+{
+    atkbd_t *kbd = (atkbd_t *)arg;
+
+    kbd->read_func = readfunc;
+    kbd->write_func = writefunc;
+    kbd->func_priv = priv;
 }
 
 

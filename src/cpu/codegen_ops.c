@@ -8,7 +8,7 @@
  *
  *		Instruction parsing and generation.
  *
- * Version:	@(#)codegen_ops.c	1.0.2	2018/10/24
+ * Version:	@(#)codegen_ops.c	1.0.3	2019/03/21
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,9 +59,10 @@
 #endif
 
 #ifdef __GNUC__
+//FIXME: this is wrong. use the _M_xxx identifiers.
 # ifdef __amd64__
 #  include "codegen_ops_x86-64.h"		/* 64-bit */
-# elif defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
+#elif defined(i386) || defined(__i386) || defined(__i386__) || defined(_X86_) || defined(_M_IX86) || defined(_M_X64)
 #  include "codegen_ops_x86.h"			/* 32-bit */
 # endif
 #endif

@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.26	2019/03/07
+ * Version:	@(#)vid_cl54xx.c	1.0.28	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,6 +52,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pci.h"
 #include "video.h"
 #include "vid_svga.h"
@@ -1059,20 +1060,24 @@ hwcursor_draw(svga_t *svga, int displine)
 		b0 = (dat[0] >> (7 - xx)) & 1;
 		b1 = (dat[1] >> (7 - xx)) & 1;
 		comb = (b1 | (b0 << 1));
+
 		if (offset >= svga->hwcursor_latch.x) {
 			switch(comb) {
 				case 0:
 					/* The original screen pixel is shown (invisible cursor) */
 					break;
+
 				case 1:
 					/* The pixel is shown in the cursor background color */
 					screen->line[displine + y_add][offset + 32 + x_add].val = bgcol;
 					break;
+
 				case 2:
 					/* The pixel is shown as the inverse of the original screen pixel
 					   (XOR cursor) */
 					screen->line[displine + y_add][offset + 32 + x_add].val ^= 0xffffff;
 					break;
+
 				case 3:
 					/* The pixel is shown in the cursor foreground color */
 					screen->line[displine + y_add][offset + 32 + x_add].val = fgcol;
@@ -1082,6 +1087,7 @@ hwcursor_draw(svga_t *svga, int displine)
 		   
 		offset++;
 	}
+
 	svga->hwcursor_latch.addr++;
     }
 
@@ -2481,12 +2487,12 @@ cl_pci_write(int func, int addr, uint8_t val, void *priv)
 
 
 static void *
-gd54xx_init(const device_t *info)
+gd54xx_init(const device_t *info, UNUSED(void *parent))
 {
     gd54xx_t *dev = (gd54xx_t *)mem_alloc(sizeof(gd54xx_t));
     svga_t *svga = &dev->svga;
     int id = info->local & 0xff;
-    wchar_t *romfn = NULL;
+    const wchar_t *romfn = info->path;
     int vram;
 
     memset(dev, 0x00, sizeof(gd54xx_t));
@@ -2498,16 +2504,13 @@ gd54xx_init(const device_t *info)
     switch (id) {
 	case CIRRUS_ID_CLGD5402:
 	case CIRRUS_ID_CLGD5420:
-		romfn = BIOS_GD5420_PATH;
 		break;
 
 	case CIRRUS_ID_CLGD5422:
 	case CIRRUS_ID_CLGD5424:
-		romfn = BIOS_GD5422_PATH;
 		break;
 
 	case CIRRUS_ID_CLGD5426:
-		romfn = BIOS_GD5426_PATH;
 		break;
 		
 	case CIRRUS_ID_CLGD5428:
@@ -2518,15 +2521,12 @@ gd54xx_init(const device_t *info)
 		break;
 
 	case CIRRUS_ID_CLGD5429:
-		romfn = BIOS_GD5429_PATH;
 		break;
 
 	case CIRRUS_ID_CLGD5434:
-		romfn = BIOS_GD5434_PATH;
 		break;
 		
 	case CIRRUS_ID_CLGD5436:
-		romfn = BIOS_GD5436_PATH;
 		break;
 
 	case CIRRUS_ID_CLGD5430:
@@ -2555,7 +2555,6 @@ gd54xx_init(const device_t *info)
 		break;
 
 	case CIRRUS_ID_CLGD5480:
-		romfn = BIOS_GD5480_PATH;
 		break;
     }
 
@@ -2633,9 +2632,10 @@ gd54xx_init(const device_t *info)
 	
     svga->crtc[0x27] = id;
 
-    video_inform(VID_TYPE_SPEC, (const video_timings_t *)info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -2668,91 +2668,6 @@ gd54xx_force_redraw(void *priv)
 }
 
 
-static int
-gd5420_available(void)
-{
-    return rom_present(BIOS_GD5420_PATH);
-}
-
-static int
-gd5422_available(void)
-{
-    return rom_present(BIOS_GD5422_PATH);
-}
-
-static int
-gd5426_available(void)
-{
-    return rom_present(BIOS_GD5426_PATH);
-}
-
-static int
-gd5428_available(void)
-{
-    return rom_present(BIOS_GD5428_VLB_PATH);
-}
-
-static int
-gd5428_isa_available(void)
-{
-    return rom_present(BIOS_GD5428_ISA_PATH);
-}
-
-static int
-gd5429_available(void)
-{
-    return rom_present(BIOS_GD5429_PATH);
-}
-
-static int
-gd5430_vlb_available(void)
-{
-    return rom_present(BIOS_GD5430_VLB_PATH);
-}
-
-static int
-gd5430_pci_available(void)
-{
-    return rom_present(BIOS_GD5430_PCI_PATH);
-}
-
-static int
-gd5434_available(void)
-{
-    return rom_present(BIOS_GD5434_PATH);
-}
-
-static int
-gd5436_available(void)
-{
-    return rom_present(BIOS_GD5436_PATH);
-}
-
-static int
-gd5440_available(void)
-{
-    return rom_present(BIOS_GD5440_PATH);
-}
-
-static int
-gd5446_available(void)
-{
-    return rom_present(BIOS_GD5446_PATH);
-}
-
-static int
-gd5446_stb_available(void)
-{
-    return rom_present(BIOS_GD5446_STB_PATH);
-}
-
-static int
-gd5480_available(void)
-{
-    return rom_present(BIOS_GD5480_PATH);
-}
-
-
 static const device_config_t gd5422_config[] =
 {
         {
@@ -2765,12 +2680,12 @@ static const device_config_t gd5422_config[] =
                                 "1 MB",1
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
         {
-                "","",-1
+                NULL
         }
 };
 
@@ -2786,12 +2701,12 @@ static const device_config_t gd5428_config[] =
                                 "2 MB",2
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
         {
-                "","",-1
+                NULL
         }
 };
 
@@ -2807,12 +2722,12 @@ static const device_config_t gd5440_onboard_config[] =
                                 "2 MB",2
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
         {
-                "","",-1
+                NULL
         }
 };
 
@@ -2828,12 +2743,12 @@ static const device_config_t gd5434_config[] =
                                 "4 MB",4
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
         {
-                "","",-1
+                NULL
         }
 };
 
@@ -2843,10 +2758,11 @@ static const video_timings_t cl_gd_pci_timing = {VID_BUS,4,4,8,10,10,20};
 
 const device_t gd5402_isa_device = {
     "Cirrus Logic GD-5402 (ACUMOS AVGA2)",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5402,
+    BIOS_GD5420_PATH,		/* Common BIOS between 5402 and 5420 */
     gd54xx_init, gd54xx_close, NULL,
-    gd5420_available,		/* Common BIOS between 5402 and 5420 */
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_isa_timing,
@@ -2855,10 +2771,11 @@ const device_t gd5402_isa_device = {
 
 const device_t gd5420_isa_device = {
     "Cirrus Logic GD-5420",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5420,
+    BIOS_GD5420_PATH,		/* Common BIOS between 5402 and 5420 */
     gd54xx_init, gd54xx_close, NULL,
-    gd5420_available,		/* Common BIOS between 5402 and 5420 */
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_isa_timing,
@@ -2867,10 +2784,11 @@ const device_t gd5420_isa_device = {
 
 const device_t gd5422_isa_device = {
     "Cirrus Logic GD-5422",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5422,
+    BIOS_GD5422_PATH,		/* Common BIOS between 5422 and 5424 */
     gd54xx_init, gd54xx_close, NULL,
-    gd5422_available,		/* Common BIOS between 5422 and 5424 */
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_isa_timing,
@@ -2879,10 +2797,11 @@ const device_t gd5422_isa_device = {
 
 const device_t gd5424_vlb_device = {
     "Cirrus Logic GD-5424",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     CIRRUS_ID_CLGD5424,
+    BIOS_GD5422_PATH,		/* Common BIOS between 5422 and 5424 */
     gd54xx_init, gd54xx_close, NULL,
-    gd5422_available,		/* Common BIOS between 5422 and 5424 */
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
@@ -2891,10 +2810,11 @@ const device_t gd5424_vlb_device = {
 
 const device_t gd5426_vlb_device = {
     "Cirrus Logic GD-5426",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     CIRRUS_ID_CLGD5426,
+    BIOS_GD5426_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5426_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
@@ -2903,10 +2823,11 @@ const device_t gd5426_vlb_device = {
 
 const device_t gd5428_isa_device = {
     "Cirrus Logic GD-5428",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5428,
+    BIOS_GD5428_ISA_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5428_isa_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_isa_timing,
@@ -2915,10 +2836,11 @@ const device_t gd5428_isa_device = {
 
 const device_t gd5428_vlb_device = {
     "Cirrus Logic GD-5428",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     CIRRUS_ID_CLGD5428,
+    BIOS_GD5428_VLB_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5428_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
@@ -2927,10 +2849,11 @@ const device_t gd5428_vlb_device = {
 
 const device_t gd5429_isa_device = {
     "Cirrus Logic GD-5429",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5429,
+    BIOS_GD5429_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5429_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_isa_timing,
@@ -2939,10 +2862,11 @@ const device_t gd5429_isa_device = {
 
 const device_t gd5429_vlb_device = {
     "Cirrus Logic GD-5429",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     CIRRUS_ID_CLGD5429,
+    BIOS_GD5429_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5429_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
@@ -2951,10 +2875,11 @@ const device_t gd5429_vlb_device = {
 
 const device_t gd5430_vlb_device = {
     "Cirrus Logic GD-5430",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     CIRRUS_ID_CLGD5430,
+    BIOS_GD5430_VLB_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5430_vlb_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
@@ -2963,10 +2888,11 @@ const device_t gd5430_vlb_device = {
 
 const device_t gd5430_pci_device = {
     "Cirrus Logic GD-5430",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     CIRRUS_ID_CLGD5430,
+    BIOS_GD5430_PCI_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5430_pci_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_pci_timing,
@@ -2975,10 +2901,11 @@ const device_t gd5430_pci_device = {
 
 const device_t gd5434_isa_device = {
     "Cirrus Logic GD-5434",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     CIRRUS_ID_CLGD5434,
+    BIOS_GD5434_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5434_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_isa_timing,
@@ -2987,10 +2914,11 @@ const device_t gd5434_isa_device = {
 
 const device_t gd5434_vlb_device = {
     "Cirrus Logic GD-5434",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     CIRRUS_ID_CLGD5434,
+    BIOS_GD5434_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5434_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
@@ -2999,10 +2927,11 @@ const device_t gd5434_vlb_device = {
 
 const device_t gd5434_pci_device = {
     "Cirrus Logic GD-5434",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     CIRRUS_ID_CLGD5434,
+    BIOS_GD5434_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5434_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_pci_timing,
@@ -3011,20 +2940,35 @@ const device_t gd5434_pci_device = {
 
 const device_t gd5436_pci_device = {
     "Cirrus Logic GD-5436",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     CIRRUS_ID_CLGD5436,
+    BIOS_GD5436_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5436_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_pci_timing,
     gd5434_config
 };
 
+const device_t gd5440_pci_device = {
+    "Cirrus Logic GD-5440",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
+    CIRRUS_ID_CLGD5440 | 0x400,
+    BIOS_GD5440_PATH,
+    gd54xx_init, gd54xx_close, NULL,
+    NULL,
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_pci_timing,
+    gd5428_config
+};
+
 const device_t gd5440_onboard_pci_device = {
     "Onboard Cirrus Logic GD-5440",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     CIRRUS_ID_CLGD5440 | 0x600,
+    NULL,
     gd54xx_init, gd54xx_close, NULL,
     NULL,
     gd54xx_speed_changed,
@@ -3033,24 +2977,13 @@ const device_t gd5440_onboard_pci_device = {
     gd5440_onboard_config
 };
 
-const device_t gd5440_pci_device = {
-    "Cirrus Logic GD-5440",
-    DEVICE_PCI,
-    CIRRUS_ID_CLGD5440 | 0x400,
-    gd54xx_init, gd54xx_close, NULL,
-    gd5440_available,
-    gd54xx_speed_changed,
-    gd54xx_force_redraw,
-    &cl_gd_pci_timing,
-    gd5428_config
-};
-
 const device_t gd5446_pci_device = {
     "Cirrus Logic GD-5446",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     CIRRUS_ID_CLGD5446,
+    BIOS_GD5446_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5446_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_pci_timing,
@@ -3059,10 +2992,11 @@ const device_t gd5446_pci_device = {
 
 const device_t gd5446_stb_pci_device = {
     "STB Nitro 64V",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     CIRRUS_ID_CLGD5446 | 0x100,
+    BIOS_GD5446_STB_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5446_stb_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_pci_timing,
@@ -3071,10 +3005,11 @@ const device_t gd5446_stb_pci_device = {
 
 const device_t gd5480_pci_device = {
     "Cirrus Logic GD-5480",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     CIRRUS_ID_CLGD5480,
+    BIOS_GD5480_PATH,
     gd54xx_init, gd54xx_close, NULL,
-    gd5480_available,
+    NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
     &cl_gd_pci_timing,

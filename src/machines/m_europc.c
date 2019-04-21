@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.19	2019/02/16
+ * Version:	@(#)m_europc.c	1.0.21	2019/04/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -117,6 +117,7 @@
 #include <wchar.h>
 #include <time.h>
 #include "../emu.h"
+#include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
@@ -162,9 +163,6 @@ typedef struct {
     uint8_t	nvr_stat;
     uint8_t	nvr_addr;
 } europc_t;
-
-
-static europc_t europc;
 
 
 /*
@@ -365,7 +363,7 @@ rtc_reset(nvr_t *nvr)
 
 /* Execute a JIM control command. */
 static void
-jim_set(europc_t *sys, uint8_t reg, uint8_t val)
+jim_set(europc_t *dev, uint8_t reg, uint8_t val)
 {
     switch(reg) {
 	case 0:		/* MISC control (WO) */
@@ -427,7 +425,7 @@ jim_set(europc_t *sys, uint8_t reg, uint8_t val)
 		break;
     }
 
-    sys->regs[reg] = val;
+    dev->regs[reg] = val;
 }
 
 
@@ -435,7 +433,7 @@ jim_set(europc_t *sys, uint8_t reg, uint8_t val)
 static void
 jim_write(uint16_t addr, uint8_t val, void *priv)
 {
-    europc_t *sys = (europc_t *)priv;
+    europc_t *dev = (europc_t *)priv;
     uint8_t b;
 
     DBGLOG(2, "EuroPC: jim_wr(%04x, %02x)\n", addr, val);
@@ -449,29 +447,29 @@ jim_write(uint16_t addr, uint8_t val, void *priv)
 	case 0x05:
 	case 0x06:
 	case 0x07:
-		jim_set(sys, (addr & 0x07), val);
+		jim_set(dev, (addr & 0x07), val);
 		break;
 
 	case 0x0a:		/* M3002 RTC INDEX/DATA register */
-		switch(sys->nvr_stat) {
+		switch(dev->nvr_stat) {
 			case 0:		/* save index */
-				sys->nvr_addr = val & 0x0f;
-				sys->nvr_stat++;
+				dev->nvr_addr = val & 0x0f;
+				dev->nvr_stat++;
 				break;
 
 			case 1:		/* save data HI nibble */
-				b = sys->nvr.regs[sys->nvr_addr] & 0x0f;
+				b = dev->nvr.regs[dev->nvr_addr] & 0x0f;
 				b |= (val << 4);
-				sys->nvr.regs[sys->nvr_addr] = b;
-				sys->nvr_stat++;
+				dev->nvr.regs[dev->nvr_addr] = b;
+				dev->nvr_stat++;
 				nvr_dosave++;
 				break;
 
 			case 2:		/* save data LO nibble */
-				b = sys->nvr.regs[sys->nvr_addr] & 0xf0;
+				b = dev->nvr.regs[dev->nvr_addr] & 0xf0;
 				b |= (val & 0x0f);
-				sys->nvr.regs[sys->nvr_addr] = b;
-				sys->nvr_stat = 0;
+				dev->nvr.regs[dev->nvr_addr] = b;
+				dev->nvr_stat = 0;
 				nvr_dosave++;
 				break;
 		}
@@ -488,7 +486,7 @@ jim_write(uint16_t addr, uint8_t val, void *priv)
 static uint8_t
 jim_read(uint16_t addr, void *priv)
 {
-    europc_t *sys = (europc_t *)priv;
+    europc_t *dev = (europc_t *)priv;
     uint8_t r = 0xff;
 
     switch (addr & 0x000f) {
@@ -503,23 +501,23 @@ jim_read(uint16_t addr, void *priv)
 	case 0x05:
 	case 0x06:
 	case 0x07:
-		r = sys->regs[addr & 0x07];
+		r = dev->regs[addr & 0x07];
 		break;
 
 	case 0x0a:		/* M3002 RTC INDEX/DATA register */
-		switch(sys->nvr_stat) {
+		switch(dev->nvr_stat) {
 			case 0:
 				r = 0x00;
 				break;
 
 			case 1:		/* read data HI nibble */
-				r = (sys->nvr.regs[sys->nvr_addr] >> 4);
-				sys->nvr_stat++;
+				r = (dev->nvr.regs[dev->nvr_addr] >> 4);
+				dev->nvr_stat++;
 				break;
 
 			case 2:		/* read data LO nibble */
-				r = (sys->nvr.regs[sys->nvr_addr] & 0x0f);
-				sys->nvr_stat = 0;
+				r = (dev->nvr.regs[dev->nvr_addr] & 0x0f);
+				dev->nvr_stat = 0;
 				break;
 		}
 		break;
@@ -535,15 +533,39 @@ jim_read(uint16_t addr, void *priv)
 }
 
 
-/* Initialize the mainboard 'device' of the machine. */
+/*
+ * Initialize the mainboard 'device' of the machine.
+ *
+ * Its task is to allocate a clean machine data block,
+ * and then simply enable the mainboard "device" which
+ * allows it to reset (dev init) and configured by the
+ * user.
+ */
 static void *
-europc_boot(const device_t *info)
+europc_init(const device_t *info, void *arg)
 {
-    europc_t *sys = &europc;
+    europc_t *dev;
     uint8_t b;
-    int vid;
+    int i;
 
-    DEBUG("EuroPC: booting mainboard..\n");
+    /* Clear the machine state. */
+    dev = (europc_t *)mem_alloc(sizeof(europc_t));
+    memset(dev, 0x00, sizeof(europc_t));
+
+    /* Add the machine device. */
+    device_add_ex(info, dev);
+
+    /* Get configurable things. */
+    i = machine_get_config_int("js9");
+    dev->jim = (i == 1) ? 0x0350 : 0x0250;
+
+    /* Set up and initialize the NVR. */
+    dev->nvr.size = machine->nvrsz;
+    dev->nvr.irq = -1;
+    dev->nvr.reset = rtc_reset;
+    dev->nvr.start = rtc_start;
+    dev->nvr.tick = rtc_ticker;
+    nvr_init(&dev->nvr);
 
     /*
      * This is not quite correct, but it works.
@@ -559,17 +581,17 @@ europc_boot(const device_t *info)
     }
 
     DEBUG("EuroPC: NVR=[ %02x %02x %02x %02x %02x ] %sVALID\n",
-	  sys->nvr.regs[MRTC_CONF_A], sys->nvr.regs[MRTC_CONF_B],
-	  sys->nvr.regs[MRTC_CONF_C], sys->nvr.regs[MRTC_CONF_D],
-	  sys->nvr.regs[MRTC_CONF_E],
-	  (sys->nvr.regs[MRTC_CHECK_LO]!=rtc_checksum(sys->nvr.regs))?"IN":"");
+	  dev->nvr.regs[MRTC_CONF_A], dev->nvr.regs[MRTC_CONF_B],
+	  dev->nvr.regs[MRTC_CONF_C], dev->nvr.regs[MRTC_CONF_D],
+	  dev->nvr.regs[MRTC_CONF_E],
+	  (dev->nvr.regs[MRTC_CHECK_LO]!=rtc_checksum(dev->nvr.regs))?"IN":"");
 
     /*
      * Now that we have initialized the NVR (either from file,
      * or by setting it to defaults) we can start overriding it
      * with values set by the user.
      */
-    b = (sys->nvr.regs[MRTC_CONF_D] & ~0x17);
+    b = (dev->nvr.regs[MRTC_CONF_D] & ~0x17);
     if (video_card != VID_INTERNAL) {
 	/*
 	 * OK, this is not exactly correct, either.
@@ -594,8 +616,8 @@ europc_boot(const device_t *info)
 			b |= 0x10;	/* external video, special */
 	}
     } else {
-    	vid = video_type();
-    	switch(vid) {
+    	i = video_type();
+    	switch(i) {
 		case VID_TYPE_MDA:	/* Monochrome, MDA, Hercules */
 			b |= 0x03;	/* external video, mono */
 			break;
@@ -609,14 +631,14 @@ europc_boot(const device_t *info)
 			break;
 
 		default:
-			ERRLOG("EuroPC: unknown video type %d !\n", vid);
+			ERRLOG("EuroPC: unknown video type %i !\n", i);
 			break;
 	}
     }
-    sys->nvr.regs[MRTC_CONF_D] = b;
+    dev->nvr.regs[MRTC_CONF_D] = b;
 
     /* Update the memory size. */
-    b = (sys->nvr.regs[MRTC_CONF_C] & 0xf3);
+    b = (dev->nvr.regs[MRTC_CONF_C] & 0xf3);
     switch(mem_size) {
 	case 256:
 		b |= 0x04;
@@ -630,11 +652,11 @@ europc_boot(const device_t *info)
 		b |= 0x00;
 		break;
     }
-    sys->nvr.regs[MRTC_CONF_C] = b;
+    dev->nvr.regs[MRTC_CONF_C] = b;
 
     /* Update CPU speed. */
-    b = (sys->nvr.regs[MRTC_CONF_D] & 0x3f);
-    switch(cpu) {
+    b = (dev->nvr.regs[MRTC_CONF_D] & 0x3f);
+    switch(cpu_type) {
 	case 0:		/* 8088, 4.77 MHz */
 		b |= 0x00;
 		break;
@@ -647,10 +669,10 @@ europc_boot(const device_t *info)
 		b |= 0x80;
 		break;
     }
-    sys->nvr.regs[MRTC_CONF_D] = b;
+    dev->nvr.regs[MRTC_CONF_D] = b;
 
     /* Set up game port. */
-    b = (sys->nvr.regs[MRTC_CONF_C] & 0xfc);
+    b = (dev->nvr.regs[MRTC_CONF_C] & 0xfc);
     if (mouse_type == MOUSE_INTERNAL) {
 	/* Enable the Logitech Bus Mouse device. */
 	device_add(&mouse_logibus_internal_device);
@@ -660,10 +682,10 @@ europc_boot(const device_t *info)
     } else if (game_enabled) {
 	b |= 0x02;	/* enable port as joysticks */
     }
-    sys->nvr.regs[MRTC_CONF_C] = b;
+    dev->nvr.regs[MRTC_CONF_C] = b;
 
     /* Set up hard disks. */
-    b = sys->nvr.regs[MRTC_CONF_B] & 0x84;
+    b = dev->nvr.regs[MRTC_CONF_B] & 0x84;
     if (hdc_type != HDC_NONE)
 	b |= 0x20;			/* HD20 #1 */
 
@@ -689,11 +711,17 @@ europc_boot(const device_t *info)
 	} else
 		ERRLOG("EuroPC: unsupported HD type for floppy drive 1\n");
     }
-    sys->nvr.regs[MRTC_CONF_B] = b;
+    dev->nvr.regs[MRTC_CONF_B] = b;
 
     /* Validate the NVR checksum and save. */
-    sys->nvr.regs[MRTC_CHECK_LO] = rtc_checksum(sys->nvr.regs);
+    dev->nvr.regs[MRTC_CHECK_LO] = rtc_checksum(dev->nvr.regs);
     nvr_dosave++;
+
+    machine_common_init();
+
+    nmi_init();
+
+    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
 
     /*
      * Allocate the system's I/O handlers.
@@ -703,14 +731,14 @@ europc_boot(const device_t *info)
      * (JS9) can be used to "move" it to 0x0350, to get it out of
      * the way of other cards that need this range.
      */
-    io_sethandler(sys->jim, 16,
-		  jim_read,NULL,NULL, jim_write,NULL,NULL, sys);
+    io_sethandler(dev->jim, 16,
+		  jim_read,NULL,NULL, jim_write,NULL,NULL, dev);
 
     /* Only after JIM has been initialized. */
-    (void)device_add(&keyboard_xt_device);
+    device_add(&keyboard_xt_device);
 
     /* Enable and set up the FDC. */
-    (void)device_add(&fdc_xt_device);
+    device_add(&fdc_xt_device);
 
     /*
      * Set up and enable the HD20 disk controller.
@@ -720,19 +748,22 @@ europc_boot(const device_t *info)
     if (hdc_type == HDC_INTERNAL)
 	(void)device_add(&xta_hd20_device);
 
-    return(sys);
+    return(dev);
 }
 
 
 static void
 europc_close(void *priv)
 {
-    nvr_t *nvr = &europc.nvr;
+    europc_t *dev = (europc_t *)priv;
+    nvr_t *nvr = &dev->nvr;
 
     if (nvr->fn != NULL) {
 	free((wchar_t *)nvr->fn);
 	nvr->fn = NULL;
     }
+
+    free(dev);
 }
 
 
@@ -747,59 +778,37 @@ static const device_config_t europc_config[] = {
 			"Enabled (350h)", 1
 		},
 		{
-			""
+			NULL
 		}
 	},
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
 
-const device_t europc_device = {
-    "EuroPC System Board",
-    0,
-    0,
-    europc_boot, europc_close, NULL,
-    NULL, NULL, NULL, NULL,
-    europc_config
+static const CPU cpus_europc[] = {
+    { "8088/4.77", CPU_8088, 4772728, 1, 0, 0, 0, 0, CPU_ALTERNATE_XTAL, 0,0,0,0, 1 },
+    { "8088/7.16", CPU_8088, 7159092, 1, 0, 0, 0, 0, CPU_ALTERNATE_XTAL, 0,0,0,0, 1 },
+    { "8088/9.54", CPU_8088, 9545456, 1, 0, 0, 0, 0, 0, 0,0,0,0, 1 },
+    { NULL }
 };
 
+static const machine_t europc_info = {
+    MACHINE_ISA | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,
+    0,
+    512, 640, 128, 16, 0,
+    {{"Siemens",cpus_europc}}
+};
 
-/*
- * This function sets up the Scheider EuroPC machine.
- *
- * Its task is to allocate a clean machine data block,
- * and then simply enable the mainboard "device" which
- * allows it to reset (dev init) and configured by the
- * user.
- */
-void
-m_europc_init(const machine_t *model, void *arg)
-{
-    machine_common_init(model, arg);
-
-    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
-
-    nmi_init();
-
-    /* Clear the machine state. */
-    memset(&europc, 0x00, sizeof(europc_t));
-    europc.jim = 0x0250;
-
-    /* This is machine specific. */
-    europc.nvr.size = model->nvrsz;
-    europc.nvr.irq = -1;
-
-    /* Set up any local handlers here. */
-    europc.nvr.reset = rtc_reset;
-    europc.nvr.start = rtc_start;
-    europc.nvr.tick = rtc_ticker;
-
-    /* Initialize the actual NVR. */
-    nvr_init(&europc.nvr);
-
-    /* Enable and set up the mainboard device. */
-    device_add(&europc_device);
-}
+const device_t m_europc = {
+    "Schneider EuroPC",
+    DEVICE_ROOT,
+    0,
+    L"schneider/europc",
+    europc_init, europc_close, NULL,
+    NULL, NULL, NULL,
+    &europc_info,
+    europc_config
+};

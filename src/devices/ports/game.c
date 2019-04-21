@@ -8,12 +8,12 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.18	2018/10/20
+ * Version:	@(#)game.c	1.0.20	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,12 @@
 #define HAVE_STDARG_H
 #define dbglog game_log
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
+#include "../input/game/joystick.h"
 #include "game.h"
 #include "game_dev.h"
 
@@ -167,8 +168,24 @@ game_over(void *priv)
 }
 
 
+static void
+game_close(void *priv)
+{
+    game_t *dev = (game_t *)priv;
+
+    if (dev == NULL) return;
+
+    if (dev->joystick != NULL)
+	dev->joystick->close(dev->joystick_priv);
+
+    game_global = NULL;
+
+    free(dev);
+}
+
+
 static void *
-game_init(const device_t *info)
+game_init(const device_t *info, UNUSED(void *parent))
 {
     game_t *dev;
     int i;
@@ -209,26 +226,9 @@ game_init(const device_t *info)
 }
 
 
-static void
-game_close(void *priv)
-{
-    game_t *dev = (game_t *)priv;
-
-    if (dev == NULL) return;
-
-    if (dev->joystick != NULL)
-	dev->joystick->close(dev->joystick_priv);
-
-    game_global = NULL;
-
-    free(dev);
-}
-
-
 const device_t game_device = {
     "Standard Game Port",
-    0,
-    0,
+    0, 0, NULL,
     game_init, game_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -236,8 +236,7 @@ const device_t game_device = {
 
 const device_t game_201_device = {
     "Custom Game Port (201H)",
-    0,
-    1,
+    0, 1, NULL,
     game_init, game_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -245,12 +244,18 @@ const device_t game_201_device = {
 
 
 void
-game_update_joystick_type(void)
+game_reset(void)
 {
     game_t *dev = game_global;
 
-    if (dev != NULL) {
+    if (dev == NULL) return;
+
+    if (dev->joystick != NULL) {
 	dev->joystick->close(dev->joystick_priv);
+	dev->joystick = NULL;
+    }
+
+    if (joystick_type != JOYSTICK_NONE) {
 	dev->joystick = gamedev_get_device(joystick_type);
 	dev->joystick_priv = dev->joystick->init();
     }

@@ -8,7 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.14	2019/03/03
+ * Version:	@(#)vid_et4000.c	1.0.16	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,6 +47,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/mca.h"
 #include "video.h"
 #include "vid_svga.h"
@@ -474,16 +475,14 @@ et4000_mca_write(int port, uint8_t val, void *priv)
 
 
 static void *
-et4000_init(const device_t *info)
+et4000_init(const device_t *info, UNUSED(void *parent))
 {
-    const wchar_t *fn;
     et4000_t *dev;
 
     dev = (et4000_t *)mem_alloc(sizeof(et4000_t));
     memset(dev, 0x00, sizeof(et4000_t));
     dev->name = info->name;
     dev->type = info->local;
-    fn = BIOS_ROM_PATH;
 
     switch(dev->type) {
 	case 0:		/* ISA ET4000AX */
@@ -538,7 +537,6 @@ et4000_init(const device_t *info)
 			      et4000k_in,NULL,NULL, et4000k_out,NULL,NULL, dev);
 		io_sethandler(0x32cb, 1,
 			      et4000k_in,NULL,NULL, et4000k_out,NULL,NULL, dev);
-        	fn = KOREAN_BIOS_ROM_PATH;
 		break;
     }
 
@@ -546,12 +544,12 @@ et4000_init(const device_t *info)
 
     dev->vram_mask = dev->vram_size - 1;
 
-    rom_init(&dev->bios_rom, fn,
+    rom_init(&dev->bios_rom, info->path,
 	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
     DEBUG("VIDEO: %s (vram=%iKB)\n", dev->name, dev->vram_size>>10);
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
     return(dev);
@@ -570,7 +568,7 @@ et4000_close(void *priv)
 
 
 static void
-et4000_speed_changed(void *priv)
+speed_changed(void *priv)
 {
     et4000_t *dev = (et4000_t *)priv;
 
@@ -579,18 +577,11 @@ et4000_speed_changed(void *priv)
 
 
 static void
-et4000_force_redraw(void *priv)
+force_redraw(void *priv)
 {
     et4000_t *dev = (et4000_t *)priv;
 
     dev->svga.fullchange = changeframecount;
-}
-
-
-static int
-et4000_available(void)
-{
-    return rom_present(BIOS_ROM_PATH);
 }
 
 
@@ -602,28 +593,27 @@ et4000k_available(void)
 }
 
 
-static const device_config_t et4000_config[] =
-{
+static const device_config_t et4000_config[] = {
+    {
+	"memory", "Memory size", CONFIG_SELECTION, "", 1024,
 	{
-		"memory", "Memory size", CONFIG_SELECTION, "", 1024,
 		{
-			{
-				"256 KB", 256
-			},
-			{
-				"512 KB", 512
-			},
-			{
-				"1 MB", 1024
-			},
-			{
-				""
-			}
+			"256 KB", 256
+		},
+		{
+			"512 KB", 512
+		},
+		{
+			"1 MB", 1024
+		},
+		{
+			NULL
 		}
-	},
-	{
-		"", "", -1
 	}
+    },
+    {
+	NULL
+    }
 };
 
 static const video_timings_t et4000ax_isa_timing = {VID_ISA,3,3,6,5,5,10};
@@ -632,48 +622,52 @@ static const video_timings_t et4000ax_mca_timing = {VID_MCA,4,5,10,5,5,10};
 
 const device_t et4000_isa_device = {
     "Tseng Labs ET4000AX",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     0,
+    BIOS_ROM_PATH,
     et4000_init, et4000_close, NULL,
-    et4000_available,
-    et4000_speed_changed,
-    et4000_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &et4000ax_isa_timing,
     et4000_config
 };
 
 const device_t et4000_mca_device = {
     "Tseng Labs ET4000AX",
-    DEVICE_MCA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_MCA,
     1,
+    BIOS_ROM_PATH,
     et4000_init, et4000_close, NULL,
-    et4000_available,
-    et4000_speed_changed,
-    et4000_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &et4000ax_mca_timing,
     et4000_config
 };
 
 const device_t et4000k_isa_device = {
     "Tseng Labs ET4000AX (Korean)",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     2,
+    KOREAN_BIOS_ROM_PATH,
     et4000_init, et4000_close, NULL,
     et4000k_available,
-    et4000_speed_changed,
-    et4000_force_redraw,
+    speed_changed,
+    force_redraw,
     &et4000ax_isa_timing,
     et4000_config
 };
 
 const device_t et4000k_tg286_isa_device = {
     "Trigem Korean VGA (Trigem 286M)",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     3,
+    KOREAN_BIOS_ROM_PATH,
     et4000_init, et4000_close, NULL,
     et4000k_available,
-    et4000_speed_changed,
-    et4000_force_redraw,
+    speed_changed,
+    force_redraw,
     &et4000ax_isa_timing,
     et4000_config
 };

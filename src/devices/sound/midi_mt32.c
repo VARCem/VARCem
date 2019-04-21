@@ -8,13 +8,13 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.7	2018/10/25
+ * Version:	@(#)midi_mt32.c	1.0.9	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -293,14 +293,14 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 
 
 static void *
-mt32_init(const device_t *info)
+mt32_init(const device_t *info, UNUSED(void *parent))
 {
     return mt32emu_init(MT32_CTRL_ROM_PATH, MT32_PCM_ROM_PATH);
 }
 
 
 static void *
-cm32l_init(const device_t *info)
+cm32l_init(const device_t *info, UNUSED(void *parent))
 {
     return mt32emu_init(CM32_CTRL_ROM_PATH, CM32_PCM_ROM_PATH);
 }
@@ -365,14 +365,14 @@ static const device_config_t mt32_config[] =
 		"nice_ramp","Nice ramp",CONFIG_BINARY,"",1
 	},
 	{
-		"","",-1
+		NULL
 	}
 };
 
 
 const device_t mt32_device = {
     "Roland MT-32 Emulation",
-    0, 0,
+    0, 0, NULL,
     mt32_init, mt32_close, NULL,
     mt32_available,
     NULL, NULL, NULL,
@@ -381,7 +381,7 @@ const device_t mt32_device = {
 
 const device_t cm32l_device = {
     "Roland CM-32L Emulation",
-    0, 0,
+    0, 0, NULL,
     cm32l_init, mt32_close, NULL,
     cm32l_available,
     NULL, NULL, NULL,

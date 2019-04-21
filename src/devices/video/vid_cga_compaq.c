@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.7	2019/03/07
+ * Version:	@(#)vid_cga_compaq.c	1.0.9	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pit.h"
 #include "video.h"
 #include "vid_cga.h"
@@ -360,7 +361,7 @@ compaq_poll(void *priv)
 
 
 static void *
-compaq_cga_init(const device_t *info)
+compaq_cga_init(const device_t *info, UNUSED(void *parent))
 {
     compaq_cga_t *dev;
     int c, display_type;
@@ -416,9 +417,10 @@ compaq_cga_init(const device_t *info)
     cga_palette = (dev->cga.rgb_type << 1);
     video_palette_rebuild();
 
-    video_inform(VID_TYPE_CGA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -453,7 +455,9 @@ static const video_timings_t cga_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t cga_compaq_device = {
     "Compaq CGA",
-    DEVICE_ISA, 0,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
+    0,
+    NULL,
     compaq_cga_init, compaq_cga_close, NULL,
     NULL,
     speed_changed,
@@ -464,7 +468,9 @@ const device_t cga_compaq_device = {
 
 const device_t cga_compaq2_device = {
     "Compaq CGA 2",
-    DEVICE_ISA, 1,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
+    1,
+    NULL,
     compaq_cga_init, compaq_cga_close, NULL,
     NULL,
     speed_changed,

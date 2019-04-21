@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.18	2018/10/24
+ * Version:	@(#)win_settings_disk.h	1.0.19	2019/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1044,13 +1044,16 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						fwrite(&zero, 1, 4, f);			/* 00000004: [Translation] Heads per cylinder */
 					}
 
+INFO("DISK: new_image(size=%i, sector=%i)", size, sector_size);
 					memset(buf, 0, 512);
 					size >>= 9;
 					r = (size >> 11) << 11;
 					size -= r;
 					r >>= 11;
+INFO(" = %i blocks (+%i sectors)\n", size, r);
 
 					if (size || r) {
+						/* Hide filename controls. */
 						h = GetDlgItem(hdlg, IDT_1731);
 						EnableWindow(h, FALSE);
 						ShowWindow(h, SW_HIDE);
@@ -1063,21 +1066,24 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						EnableWindow(h, FALSE);
 						ShowWindow(h, SW_HIDE);
 
-						h = GetDlgItem(hdlg, IDC_PBAR_IMG_CREATE);
-						SendMessage(h, PBM_SETRANGE32, (WPARAM) 0, (LPARAM) (size + r - 1));
-						SendMessage(h, PBM_SETPOS, (WPARAM) 0, (LPARAM) 0);
-						EnableWindow(h, TRUE);
-						ShowWindow(h, SW_SHOW);
-
+						/* Enable PB label. */
 						h = GetDlgItem(hdlg, IDT_1752);
 						EnableWindow(h, TRUE);
 						ShowWindow(h, SW_SHOW);
+
+						/* Create progress bar. */
+						h = GetDlgItem(hdlg, IDC_PBAR_IMG_CREATE);
+						EnableWindow(h, TRUE);
+						SendMessage(h, PBM_SETRANGE32, (WPARAM)0, (LPARAM)(size + r - 1));
+						SendMessage(h, PBM_SETPOS, (WPARAM)0, (LPARAM)0);
+						ShowWindow(h, SW_SHOW);
+
 					}
 
 					if (size) {
 						for (i = 0; i < size; i++) {
 							fwrite(buf, 1, 512, f);
-							SendMessage(h, PBM_SETPOS, (WPARAM) i, (LPARAM) 0);
+							SendMessage(h, PBM_SETPOS, (WPARAM)i, (LPARAM)0);
 						}
 					}
 
@@ -1086,12 +1092,20 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						memset(big_buf, 0, 1048576);
 						for (i = 0; i < r; i++) {
 							fwrite(big_buf, 1, 1048576, f);
-							SendMessage(h, PBM_SETPOS, (WPARAM) (size + i), (LPARAM) 0);
+							SendMessage(h, PBM_SETPOS, (WPARAM)(size + i), (LPARAM)0);
 						}
 						free(big_buf);
 					}
 
+					/* Hide progress bar and label. */
+					EnableWindow(h, FALSE);
+					ShowWindow(h, SW_HIDE);
+					h = GetDlgItem(hdlg, IDT_1752);
+					EnableWindow(h, FALSE);
+					ShowWindow(h, SW_HIDE);
+
 					fclose(f);
+
 					settings_msgbox(MBX_INFO, (wchar_t *)IDS_3537);
 				}
 
@@ -1574,7 +1588,7 @@ disk_track_all(void)
 static WIN_RESULT CALLBACK
 disk_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND h;
+    HWND h = NULL;
     int old_sel = 0;
     int b = 0;
     int assign = 0;

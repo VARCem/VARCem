@@ -10,12 +10,12 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.16	2018/11/20
+ * Version:	@(#)mouse.c	1.0.18	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -57,6 +57,7 @@
 #define dbglog mouse_log
 #include "../../emu.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "mouse.h"
 
 
@@ -71,14 +72,14 @@ int	mouse_x,
 
 static const device_t mouse_none_device = {
     "Disabled",
-    0, MOUSE_NONE,
+    0, MOUSE_NONE, NULL,
     NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL
 };
 static const device_t mouse_internal_device = {
     "Internal",
-    0, MOUSE_INTERNAL,
+    0, MOUSE_INTERNAL, NULL,
     NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL

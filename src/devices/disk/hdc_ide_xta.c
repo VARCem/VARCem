@@ -46,13 +46,13 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.10	2018/10/15
+ * Version:	@(#)hdc_ide_xta.c	1.0.13	2019/04/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Based on my earlier HD20 driver for the EuroPC.
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -384,7 +384,7 @@ do_format(hdc_t *dev, drive_t *drive, dcb_t *dcb)
 		dev->head = dcb->head;
 		dev->sector = 0;
 
-		DEBUG("%s: format_%s(%d) %d,%d\n", dev->name,
+		DEBUG("%s: format_%s(%i) %i,%i\n", dev->name,
 		      (dcb->cmd==CMD_FORMAT_DRIVE)?"drive":"track",
 		      drive->id, dev->track, dev->head);
 
@@ -450,7 +450,7 @@ hdc_callback(void *priv)
 
     switch (dcb->cmd) {
 	case CMD_TEST_READY:
-		DEBUG("%s: test_ready(%d) ready=%d\n",
+		DEBUG("%s: test_ready(%i) ready=%i\n",
 		      dev->name, dcb->drvsel, drive->present);
 
 		if (! drive->present) {
@@ -461,7 +461,7 @@ hdc_callback(void *priv)
 		break;
 
 	case CMD_RECALIBRATE:
-		DEBUG("%s: recalibrate(%d) ready=%d\n",
+		DEBUG("%s: recalibrate(%i) ready=%i\n",
 		      dev->name, dcb->drvsel, drive->present);
 
 		if (! drive->present) {
@@ -476,7 +476,7 @@ hdc_callback(void *priv)
 	case CMD_READ_SENSE:
 		switch(dev->state) {
 			case STATE_IDLE:
-				DEBUG("%s: sense(%d)\n",
+				DEBUG("%s: sense(%i)\n",
 				      dev->name, dcb->drvsel);
 
 				dev->buf_idx = 0;
@@ -530,7 +530,7 @@ hdc_callback(void *priv)
 				/* Activate the status icon. */
 				hdd_active(drive->hdd_num, 1);
 
-				DEBUG("%s: read_%s(%d: %d,%d,%d) cnt=%d\n",
+				DEBUG("%s: read_%s(%i: %i,%i,%i) cnt=%i\n",
 				      dev->name, (no_data)?"verify":"sector",
 				      drive->id, dev->track, dev->head,
 				      dev->sector, dev->count);
@@ -578,7 +578,7 @@ do_send:
 						val = dma_channel_write(dev->dma,
 							*dev->buf_ptr);
 						if (val == DMA_NODATA) {
-							ERRLOG("%s: CMD_READ_SECTORS out of data (idx=%d, len=%d)!\n",
+							ERRLOG("%s: CMD_READ_SECTORS out of data (idx=%i, len=%i)!\n",
 								dev->name, dev->buf_idx, dev->buf_len);
 
 							dev->status |= (STAT_CD | STAT_IO| STAT_REQ);
@@ -596,7 +596,7 @@ do_send:
 			case STATE_SDONE:
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
-					DEBUG("%s: read_%s(%d) DONE\n",
+					DEBUG("%s: read_%s(%i) DONE\n",
 					      dev->name,
 					      (no_data)?"verify":"sector",
 					      drive->id);
@@ -652,7 +652,7 @@ do_send:
 				/* Activate the status icon. */
 				hdd_active(drive->hdd_num, 1);
 
-				DEBUG("%s: write_%s(%d: %d,%d,%d) cnt=%d\n",
+				DEBUG("%s: write_%s(%i: %i,%i,%i) cnt=%i\n",
 				      dev->name, (no_data)?"verify":"sector",
 				      dcb->drvsel, dev->track,
 				      dev->head, dev->sector, dev->count);
@@ -683,11 +683,9 @@ do_recv:
 					while (dev->buf_idx < dev->buf_len) {
 						val = dma_channel_read(dev->dma);
 						if (val == DMA_NODATA) {
-							ERRLOG("%s: CMD_WRITE_SECTORS out of data (idx=%d, len=%d)!\n",
+							ERRLOG("%s: CMD_WRITE_SECTORS out of data (idx=%i, len=%i)!\n",
 								dev->name, dev->buf_idx, dev->buf_len);
 
-							ERRLOG("%s: CMD_WRITE_SECTORS out of data!\n",
-								dev->name);
 							dev->status |= (STAT_CD | STAT_IO | STAT_REQ);
 							dev->callback = HDC_TIME;
 							return;
@@ -723,7 +721,7 @@ do_recv:
 
 				dev->buf_idx = 0;
 				if (--dev->count == 0) {
-					DEBUG("%s: write_%s(%d) DONE\n",
+					DEBUG("%s: write_%s(%i) DONE\n",
 					      dev->name,
 					      (no_data)?"verify":"sector",
 					      drive->id);
@@ -759,7 +757,7 @@ do_recv:
 		/* Seek to cylinder. */
 		val = (dcb->cyl_low | (dcb->cyl_high << 8));
 
-		DEBUG("%s: seek(%d) %d/%d ready=%d\n", dev->name,
+		DEBUG("%s: seek(%i) %i/%i ready=%i\n", dev->name,
 		      dcb->drvsel, val, drive->cur_cyl, drive->present);
 
 		if (drive->present) {
@@ -791,8 +789,8 @@ do_recv:
 				    (params->cyl_high << 8) | params->cyl_low;
 				drive->hpc = params->heads;
 				drive->spt = dev->spt;	/*hardcoded*/
-
-				INFO("%s: set_params(%d) cyl=%d,hd=%d,spt=%d\n",
+//FIXME: not correct
+				INFO("%s: set_params(%i) cyl=%i,hd=%i,spt=%i\n",
 				      dev->name, dcb->drvsel, drive->tracks,
 				      drive->hpc, drive->spt);
 
@@ -865,7 +863,7 @@ do_recv:
 	case CMD_DRIVE_DIAGS:
 		switch(dev->state) {
 			case STATE_IDLE:
-				DEBUG("%s: drive_diags(%d) ready=%d\n",
+				DEBUG("%s: drive_diags(%i) ready=%i\n",
 				      dev->name, dcb->drvsel, drive->present);
 
 				if (drive->present) {
@@ -1016,10 +1014,9 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void *
-xta_init(const device_t *info)
+xta_init(const device_t *info, UNUSED(void *parent))
 {
     drive_t *drive;
-    wchar_t *fn = NULL;
     hdc_t *dev;
     int c, i;
     int bus;
@@ -1039,7 +1036,6 @@ xta_init(const device_t *info)
 		dev->rom_addr = device_get_config_hex20("bios_addr");
 		dev->dma = 3;
 		dev->spt = 17;	/* MFM */
-		fn = WD_BIOS_FILE;
 		break;
 
 	case 1:		/* EuroPC */
@@ -1056,12 +1052,11 @@ xta_init(const device_t *info)
 		dev->irq = 5;
 		dev->dma = 3;
 		dev->rom_addr = 0xc8000;
-		dev->spt = 17;
-		fn = WD_BIOS_FILE;
+		dev->spt = 34;
 		break;
     }
 
-    INFO("%s: initializing (I/O=%04X, IRQ=%d, DMA=%d",
+    INFO("%s: initializing (I/O=%04X, IRQ=%i, DMA=%i",
 		dev->name, dev->base, dev->irq, dev->dma);
     if (dev->rom_addr != 0x000000)
 	INFO(", BIOS=%06X", dev->rom_addr);
@@ -1082,18 +1077,18 @@ xta_init(const device_t *info)
 		drive->present = 1;
 
 		/* These are the "hardware" parameters (from the image.) */
-		drive->cfg_spt = (uint8_t)(hdd[i].spt & 0xff);
-		drive->cfg_hpc = (uint8_t)(hdd[i].hpc & 0xff);
-		drive->cfg_tracks = (uint16_t)hdd[i].tracks;
+		drive->spt = (uint8_t)(hdd[i].spt & 0xff);
+		drive->hpc = (uint8_t)(hdd[i].hpc & 0xff);
+		drive->tracks = (uint16_t)hdd[i].tracks;
 
 		/* Use them as "configured" parameters until overwritten. */
-		drive->spt = drive->cfg_spt;
-		drive->hpc = drive->cfg_hpc;
-		drive->tracks = drive->cfg_tracks;
+		drive->cfg_spt = drive->spt;
+		drive->cfg_hpc = drive->hpc;
+		drive->cfg_tracks = drive->tracks;
 
-		INFO("%s: drive%d (cyl=%d,hd=%d,spt=%d), disk %d\n",
-		     dev->name, hdd[i].bus_id.ide_channel, drive->tracks,
-		     drive->hpc, drive->spt, i);
+		INFO("%s: drive%i (cyl=%i,hd=%i,spt=%i), disk %i\n",
+		     dev->name, hdd[i].bus_id.ide_channel,
+		     drive->tracks, drive->hpc, drive->spt, i);
 
 		if (++c > XTA_NUM) break;
 	}
@@ -1105,7 +1100,7 @@ xta_init(const device_t *info)
 
     /* Load BIOS if it has one. */
     if (dev->rom_addr != 0x000000)
-	rom_init(&dev->bios_rom, fn,
+	rom_init(&dev->bios_rom, info->path,
 		 dev->rom_addr, 0x2000, 0x1fff, 0, MEM_MAPPING_EXTERNAL);
 		
     /* Create a timer for command delays. */
@@ -1143,46 +1138,46 @@ static const device_config_t wdxt150_config[] = {
         "base", "Address", CONFIG_HEX16, "", 0x0320,		/*W2*/
         {
                 {
-                        "320H", 0x0320
-                },
+			"320H", 0x0320
+		},
                 {
-                        "324H", 0x0324
-                },
+			"324H", 0x0324
+		},
                 {
-                        ""
-                }
+			NULL
+		}
         }
     },
     {
         "irq", "IRQ", CONFIG_SELECTION, "", 5,			/*W3*/
         {
                 {
-                        "IRQ 5", 5
-                },
+			"IRQ 5", 5
+		},
                 {
-                        "IRQ 4", 4
-                },
+			"IRQ 4", 4
+		},
                 {
-                        ""
-                }
+			NULL
+		}
         }
     },
     {
         "bios_addr", "BIOS Address", CONFIG_HEX20, "", 0xc8000, /*W1*/
         {
                 {
-                        "C800H", 0xc8000
-                },
+			"C800H", 0xc8000
+		},
                 {
-                        "CA00H", 0xca000
-                },
+			"CA00H", 0xca000
+		},
                 {
-                        ""
-                }
+			NULL
+		}
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -1191,6 +1186,7 @@ const device_t xta_wdxt150_device = {
     "WDXT-150 XTA Fixed Disk Controller",
     DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 0,
+    WD_BIOS_FILE,
     xta_init, xta_close, NULL,
     NULL, NULL, NULL, NULL,
     wdxt150_config
@@ -1200,6 +1196,7 @@ const device_t xta_hd20_device = {
     "EuroPC HD20 Fixed Disk Controller",
     DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 1,
+    NULL,
     xta_init, xta_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -1210,6 +1207,7 @@ const device_t xta_t1200_device = {
     "Toshiba T1200 Fixed Disk Controller",
     DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 2,
+    NULL,
     xta_init, xta_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

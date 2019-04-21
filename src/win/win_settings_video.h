@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_video.h	1.0.10	2018/10/28
+ * Version:	@(#)win_settings_video.h	1.0.11	2019/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,10 +53,15 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     WCHAR temp[128];
     const char *stransi;
     const device_t *dev;
+    const machine_t *m;
     int c, d;
     int vid;
     HWND h;
 
+    /* Get info about the selected machine. */
+    dev = machine_get_device_ex(temp_machine);
+    m = (machine_t *)dev->mach_info;
+    
     switch (message) {
 	case WM_INITDIALOG:
 		/* Clear the video cards combo. */
@@ -73,8 +78,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (stransi == NULL) break;
 
 			/* Skip "internal" if machine doesn't have it. */
-			if (c == VID_INTERNAL &&
-			    !(machines[temp_machine].flags&MACHINE_VIDEO)) {
+			if (c == VID_INTERNAL && !(m->flags & MACHINE_VIDEO)) {
 				c++;
 				continue;
 			}
@@ -88,7 +92,7 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				/* Translate "Internal". */
 				wcscpy(temp, get_string(IDS_INTERNAL));
 			} else if (video_card_available(c) &&
-				   device_is_valid(dev, machines[temp_machine].flags)) {
+				   device_is_valid(dev, m->flags)) {
 				sprintf(tempA, "[%s] %s",
 					device_get_bus_name(dev),
 					video_card_getname(c));
@@ -117,13 +121,13 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		/* Machine with fixed video card have this disabled. */
-		EnableWindow(h, machines[temp_machine].fixed_vidcard ? FALSE : TRUE);
+		EnableWindow(h, (m->flags_fixed&MACHINE_VIDEO) ? FALSE : TRUE);
 
 		/* Disable Voodoo on PCI machine? */
 		h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
-		EnableWindow(h, (machines[temp_machine].flags & MACHINE_PCI) ? TRUE:FALSE);
+		EnableWindow(h, (m->flags & MACHINE_PCI) ? TRUE:FALSE);
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_VOODOO);
-		EnableWindow(h, ((machines[temp_machine].flags & MACHINE_PCI) && temp_voodoo) ? TRUE : FALSE);
+		EnableWindow(h, ((m->flags & MACHINE_PCI) && temp_voodoo) ? TRUE : FALSE);
 
 		return TRUE;
 

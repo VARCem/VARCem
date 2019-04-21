@@ -8,13 +8,13 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.7	2018/11/11
+ * Version:	@(#)intel.c	1.0.9	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -43,7 +43,6 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../timer.h"
@@ -136,7 +135,7 @@ batman_close(void *priv)
 
 
 static void *
-batman_init(const device_t *info)
+batman_init(const device_t *info, UNUSED(void *parent))
 {
     batman_t *dev = (batman_t *)mem_alloc(sizeof(batman_t));
     memset(dev, 0x00, sizeof(batman_t));
@@ -151,14 +150,13 @@ batman_init(const device_t *info)
 
     timer_add(timer_over, &dev->timer, &dev->timer, dev);
 
-    return dev;
+    return(dev);
 }
 
 
 const device_t intel_batman_device = {
     "Intel Batman board chip",
-    0,
-    0,
+    0, 0, NULL,
     batman_init, batman_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

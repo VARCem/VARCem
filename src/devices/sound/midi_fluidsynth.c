@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.14	2018/10/25
+ * Version:	@(#)midi_fluidsynth.c	1.0.16	2019/04/11
  *
  *		Code borrowed from scummvm.
  *
@@ -25,7 +25,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -260,7 +260,7 @@ fluidsynth_sysex(uint8_t *data, unsigned int len)
 
 
 static void *
-fluidsynth_init(const device_t *info)
+fluidsynth_init(const device_t *info, UNUSED(void *parent))
 {
     fluidsynth_t *data = &fsdev;
     midi_device_t* dev;
@@ -429,6 +429,9 @@ static const device_config_t fluidsynth_config[] = {
 	{
 		{
 			"SF2 Sound Fonts","sf2"
+		},
+		{
+			NULL
 		}
 	}
     },
@@ -486,6 +489,9 @@ static const device_config_t fluidsynth_config[] = {
 		},
 		{
 			"Triangle",1
+		},
+		{
+			NULL
 		}
 	}
     },
@@ -542,22 +548,20 @@ static const device_config_t fluidsynth_config[] = {
 			"7th Order",3
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"","",-1
+	NULL
     }
 };
 
 
 const device_t fluidsynth_device = {
     "FluidSynth",
-    0, 0,
-    fluidsynth_init,
-    fluidsynth_close,
-    NULL,
+    0, 0, NULL,
+    fluidsynth_init, fluidsynth_close, NULL,
     fluidsynth_available,
     NULL,
     NULL,

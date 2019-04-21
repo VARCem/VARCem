@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.17	2019/02/24
+ * Version:	@(#)hdc.c	1.0.18	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,10 +63,14 @@ static const struct {
 
     { "st506_xt",		&st506_xt_xebec_device		},
     { "st506_dtc5150x",		&st506_xt_dtc5150x_device	},
+#ifdef USE_ST11
     { "st506_st11_m",		&st506_xt_st11_m_device		},
     { "st506_st11_r",		&st506_xt_st11_r_device		},
+#endif
+#ifdef USE_WD1002
     { "st506_wd1002a_wx1",	&st506_xt_wd1002a_wx1_device	},
     { "st506_wd1002a_27x",	&st506_xt_wd1002a_27x_device	},
+#endif
 
     { "xta_wdxt150",		&xta_wdxt150_device		},
 
@@ -125,7 +129,7 @@ void
 hdc_reset(void)
 {
     INFO("HDC: reset(current=%d, internal=%d)\n",
-	 hdc_type, !!(machines[machine].flags & MACHINE_HDC));
+	 hdc_type, !!(machine->flags & MACHINE_HDC));
 
     /* If we have a valid controller, add its device. */
     if (controllers[hdc_type].device != NULL)

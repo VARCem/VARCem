@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.27	2019/03/09
+ * Version:	@(#)video.c	1.0.28	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,12 +47,15 @@
 #define dbglog video_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
+#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
+#include "../../device.h"
 #include "../../timer.h"
 #include "../../plat.h"
 #include "video.h"
+#include "vid_mda.h"
 #include "vid_svga.h"
 
 
@@ -169,7 +172,6 @@ PALETTE		cgapal_mono[6] = {
 static const video_timings_t timing_default = {
     VID_ISA, 8, 16, 32, 8, 16, 32
 };
-static const video_timings_t *video_timing;
 static const uint32_t	shade[5][256] = {
     {0},/* RGB Color (unused) */
     {0},/* RGB Grayscale (unused) */
@@ -376,6 +378,7 @@ static uint32_t	cga_2_table[16];
 static uint8_t	rotatevga[8][256];
 static int	video_force_resize;
 static int	video_card_type;
+static const video_timings_t *video_timing;
 
 
 static struct blitter {
@@ -717,6 +720,10 @@ video_init(void)
     uint8_t total[2] = { 0, 1 };
     int c, d, e;
 
+    /* Initialize video type and timing. */
+    video_card_type = -1;
+    video_timing = &timing_default;
+
     for (c = 0; c < 16; c++) {
 	cga_2_table[c] = (total[(c >> 3) & 1] << 0 ) |
 			 (total[(c >> 2) & 1] << 8 ) |
@@ -773,9 +780,6 @@ video_init(void)
     video_blit.busy_ev = thread_create_event();
     video_blit.inuse_ev = thread_create_event();
     video_blit.thread = thread_create(blit_thread, &video_blit);
-
-    /* Initialize video type and timing. */
-    video_inform(VID_TYPE_DFLT, NULL);
 }
 
 
@@ -794,6 +798,86 @@ video_close(void)
     destroy_bitmap(screen);
 
     video_reset_font();
+
+    /* Close up. */
+    video_card_type = -1;
+    video_timing = &timing_default;
+}
+
+
+void
+video_reset(void)
+{
+    const device_t *dev;
+
+    INFO("VIDEO: reset (video_card=%i, internal=%i)\n",
+       	 video_card, (machine->flags & MACHINE_VIDEO) ? 1 : 0);
+
+    /* Initialize the video font tables. */
+    video_load_font(MDA_FONT_ROM_PATH, FONT_MDA);
+
+    /* Do not initialize internal cards here. */
+    if ((video_card == VID_NONE) || \
+	(video_card == VID_INTERNAL) || \
+	(machine->flags_fixed & MACHINE_VIDEO)) return;
+
+    /* Configure default timing parameters for the card. */
+    video_inform(VID_TYPE_SPEC, NULL);
+
+    /* Reset the CGA palette. */
+    cga_palette = 0;
+    video_palette_rebuild();
+
+    /* Clear (deallocate) any video font memory. */
+    video_reset_font();
+
+    dev = video_card_getdevice(video_card);
+    if (dev != NULL)
+	device_add(dev);
+
+    /* Enable the Voodoo if configured. */
+    if (voodoo_enabled)
+       	device_add(&voodoo_device);
+}
+
+
+/* Inform the video module what type a card is, and what its timings are. */
+void
+video_inform(int type, const video_timings_t *ptr)
+{
+    /* Save the video card type. */
+    video_card_type = (type == VID_TYPE_DFLT) ? VID_TYPE_SPEC : type;
+
+    /* Save the card's timing parameters. */
+    video_timing = (ptr == NULL) ? &timing_default : ptr;
+
+    /* Make sure these are used. */
+    video_update_timing();
+
+    if (type != VID_TYPE_DFLT)
+        DEBUG("VIDEO: card type %i, timings {%i: %i,%i,%i %i,%i,%i}\n",
+	      video_card_type, video_timing->type,
+	      video_timing->write_b,video_timing->write_w,video_timing->write_l,
+	      video_timing->read_b,video_timing->read_w,video_timing->read_l);
+}
+
+
+/* Return the current video card's type. */
+int
+video_type(void)
+{
+    const device_t *dev;
+    int type = -1;
+
+    if (video_card_type == -1) {
+	/* No video device loaded yet. */
+	dev = video_card_getdevice(video_card);
+	if (dev != NULL)
+		type = DEVICE_VIDEO_GET(dev->flags);
+    } else
+	type = video_card_type;
+
+    return(type);
 }
 
 
@@ -823,35 +907,6 @@ video_update_timing(void)
 	video_timing_read_l = video_timing_read_w * 2;
 	video_timing_write_l = video_timing_write_w * 2;
     }
-}
-
-
-/* Inform the video module what type a card is, and what its timings are. */
-void
-video_inform(int type, const video_timings_t *ptr)
-{
-    /* Save the video card type. */
-    video_card_type = (type == VID_TYPE_DFLT) ? VID_TYPE_SPEC : type;
-
-    /* Save the card's timing parameters. */
-    video_timing = (ptr == NULL) ? &timing_default : ptr;
-
-    /* Make sure these are used. */
-    video_update_timing();
-
-    if (type != VID_TYPE_DFLT)
-        DEBUG("VIDEO: card type %i, timings {%i: %i,%i,%i %i,%i,%i}\n",
-	      video_card_type, video_timing->type,
-	      video_timing->write_b,video_timing->write_w,video_timing->write_l,
-	      video_timing->read_b,video_timing->read_w,video_timing->read_l);
-}
-
-
-/* Return the current video card's type. */
-int
-video_type(void)
-{
-    return(video_card_type);
 }
 
 

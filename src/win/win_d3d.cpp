@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.14	2019/03/08
+ * Version:	@(#)win_d3d.cpp	1.0.16	2019/04/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -608,6 +608,7 @@ d3d_resize(int x, int y)
 static void
 d3d_screenshot(const wchar_t *fn)
 {
+#ifdef USE_D3DX
     LPDIRECT3DSURFACE9 d3dSurface = NULL;
 
     if (! d3dTexture) return;
@@ -617,6 +618,10 @@ d3d_screenshot(const wchar_t *fn)
 
     d3dSurface->Release();
     d3dSurface = NULL;
+#else
+    /* OK, screenshots not yet possible without D3DX. */
+    (void)fn;
+#endif
 }
 
 

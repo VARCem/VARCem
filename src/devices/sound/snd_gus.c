@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.10	2019/01/13
+ * Version:	@(#)snd_gus.c	1.0.12	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include "../../io.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/dma.h"
 #include "../system/nmi.h"
 #include "../system/pic.h"
@@ -1155,7 +1156,7 @@ get_buffer(int32_t *buffer, int len, void *priv)
 
 
 static void *
-gus_init(const device_t *info)
+gus_init(const device_t *info, UNUSED(void *parent))
 {
     gus_t *dev;
     double out = 1.0;
@@ -1263,6 +1264,7 @@ const device_t gus_device = {
     "Gravis UltraSound",
     DEVICE_ISA,
     0,
+    NULL,
     gus_init, gus_close, NULL,
     NULL,
     speed_changed, NULL, NULL,
@@ -1274,6 +1276,7 @@ const device_t gusmax_device = {
     "Gravis UltraSound MAX",
     DEVICE_ISA,
     1,
+    NULL,
     gus_init, gus_close, NULL,
     NULL,
     speed_changed, NULL, NULL,

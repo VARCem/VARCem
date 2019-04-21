@@ -10,12 +10,12 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.12	2018/11/13
+ * Version:	@(#)mouse_serial.c	1.0.14	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -58,6 +58,7 @@
 #include "../../device.h"
 #include "../../timer.h"
 #include "../ports/serial.h"
+#include "../../plat.h"
 #include "mouse.h"
 
 
@@ -596,7 +597,7 @@ ser_close(void *priv)
 
 /* Initialize the device for use by the user. */
 static void *
-ser_init(const device_t *info)
+ser_init(const device_t *info, UNUSED(void *parent))
 {
     static serial_ops_t ops = {
 	ser_callback,	/* mcr */
@@ -680,7 +681,7 @@ static const device_config_t ser_config[] = {
 			"COM2", 1
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -696,12 +697,12 @@ static const device_config_t ser_config[] = {
 			"Wheel", 4
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -715,7 +716,7 @@ static const device_config_t ltser_config[] = {
 			"COM2", 1
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -728,12 +729,12 @@ static const device_config_t ltser_config[] = {
 			"Three", 3
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -742,6 +743,7 @@ const device_t mouse_mssystems_device = {
     "Mouse Systems Serial Mouse",
     0,
     MOUSE_MSYSTEMS,
+    NULL,
     ser_init, ser_close, NULL,
     ser_poll, NULL, NULL, NULL,
     ser_config
@@ -751,6 +753,7 @@ const device_t mouse_msserial_device = {
     "Microsoft Serial Mouse",
     0,
     MOUSE_MICROSOFT,
+    NULL,
     ser_init, ser_close, NULL,
     ser_poll, NULL, NULL, NULL,
     ser_config
@@ -760,6 +763,7 @@ const device_t mouse_ltserial_device = {
     "Logitech Serial Mouse",
     0,
     MOUSE_LOGITECH,
+    NULL,
     ser_init, ser_close, NULL,
     ser_poll, NULL, NULL, NULL,
     ltser_config
@@ -770,6 +774,7 @@ const device_t mouse_mswhserial_device = {
     "Microsoft Serial Wheel Mouse",
     0,
     MOUSE_MSWHEEL,
+    NULL,
     ser_init, ser_close, NULL,
     ser_poll, NULL, NULL, NULL,
     ser_config

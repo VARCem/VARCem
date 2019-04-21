@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.18	2019/02/10
+ * Version:	@(#)fdc.c	1.0.20	2019/04/11
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -45,7 +45,6 @@
 #define dbglog fdc_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -54,6 +53,7 @@
 #include "../../ui/ui.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
+#include "../../plat.h"
 #include "fdd.h"
 #include "fdc.h"
 
@@ -2279,13 +2279,14 @@ fdc_close(void *priv)
 
 
 static void *
-fdc_init(const device_t *info)
+fdc_init(const device_t *info, UNUSED(void *parent))
 {
-    fdc_t *fdc = (fdc_t *)mem_alloc(sizeof(fdc_t));
+    fdc_t *fdc;
 
+    fdc = (fdc_t *)mem_alloc(sizeof(fdc_t));
     memset(fdc, 0x00, sizeof(fdc_t));
-
     fdc->flags = info->local;
+
     fdc_reset(fdc);
 
     fdc->irq = 6;
@@ -2324,6 +2325,7 @@ const device_t fdc_xt_device = {
     "PC/XT Floppy Drive Controller",
     0,
     0,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2333,6 +2335,7 @@ const device_t fdc_pcjr_device = {
     "PCjr Floppy Drive Controller",
     0,
     FDC_FLAG_PCJR,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2342,6 +2345,7 @@ const device_t fdc_at_device = {
     "PC/AT Floppy Drive Controller",
     0,
     FDC_FLAG_AT,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2351,6 +2355,7 @@ const device_t fdc_at_actlow_device = {
     "PC/AT Floppy Drive Controller (Active low)",
     0,
     FDC_FLAG_AT|FDC_FLAG_DISKCHG_ACTLOW,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2360,6 +2365,7 @@ const device_t fdc_at_ps1_device = {
     "PC/AT Floppy Drive Controller (PS/1, PS/2 ISA)",
     0,
     FDC_FLAG_AT|FDC_FLAG_PS1|FDC_FLAG_DISKCHG_ACTLOW,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2369,6 +2375,7 @@ const device_t fdc_at_smc_device = {
     "PC/AT Floppy Drive Controller (SM(s)C FDC37Cxxx)",
     0,
     FDC_FLAG_AT|FDC_FLAG_SUPERIO,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2378,9 +2385,8 @@ const device_t fdc_at_winbond_device = {
     "PC/AT Floppy Drive Controller (Winbond W83x77F)",
     0,
     FDC_FLAG_AT|FDC_FLAG_SUPERIO|FDC_FLAG_START_RWC_1|FDC_FLAG_MORE_TRACKS,
-    fdc_init,
-    fdc_close,
-    fdc_reset,
+    NULL,
+    fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
 };
@@ -2389,6 +2395,7 @@ const device_t fdc_at_nsc_device = {
     "PC/AT Floppy Drive Controller (NSC PC8730x)",
     0,
     FDC_FLAG_AT|FDC_FLAG_MORE_TRACKS|FDC_FLAG_NSC,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2398,6 +2405,7 @@ const device_t fdc_toshiba_device = {
     "Toshiba TC8565 Floppy Drive Controller",
     0,
     FDC_FLAG_TOSHIBA,
+    NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
     NULL

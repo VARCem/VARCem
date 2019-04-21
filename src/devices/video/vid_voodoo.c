@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.15	2019/03/07
+ * Version:	@(#)vid_voodoo.c	1.0.18	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,9 +46,7 @@
 #include <wchar.h>
 #include <math.h>
 #include "../../emu.h"
-#undef ERROR
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../mem.h"
 #include "../../timer.h"
 #include "../../device.h"
@@ -6271,6 +6269,7 @@ static void voodoo_pixelclock_update(voodoo_t *voodoo)
 static void voodoo_writel(uint32_t addr, uint32_t val, void *p)
 {
         voodoo_t *voodoo = (voodoo_t *)p;
+	uint32_t pci_time;
 
         voodoo->wr_count++;
 
@@ -6354,8 +6353,9 @@ static void voodoo_writel(uint32_t addr, uint32_t val, void *p)
                 case SST_fbiInit4:
                 if (voodoo->initEnable & 0x01)
                 {
+			pci_time = pci_get_speed(0) + pci_get_speed(1);
                         voodoo->fbiInit4 = val;
-                        voodoo->read_time = pci_nonburst_time + pci_burst_time * ((voodoo->fbiInit4 & 1) ? 2 : 1);
+                        voodoo->read_time = pci_time * ((voodoo->fbiInit4 & 1) ? 2 : 1);
 //                        DEBUG("fbiInit4 write %08x - read_time=%i\n", val, voodoo->read_time);
                 }
                 break;
@@ -6396,8 +6396,10 @@ static void voodoo_writel(uint32_t addr, uint32_t val, void *p)
                                 voodoo->retrace_count = 0;
                         }
                         voodoo->fbiInit1 = (val & ~5) | (voodoo->fbiInit1 & 5);
-                        voodoo->write_time = pci_nonburst_time + pci_burst_time * ((voodoo->fbiInit1 & 2) ? 1 : 0);
-                        voodoo->burst_time = pci_burst_time * ((voodoo->fbiInit1 & 2) ? 2 : 1);
+			pci_time = pci_get_speed(1);
+                        voodoo->burst_time = pci_time * ((voodoo->fbiInit1 & 2) ? 2 : 1);
+			pci_time += pci_get_speed(0);
+                        voodoo->write_time = pci_time * ((voodoo->fbiInit1 & 2) ? 1 : 0);
 //                        DEBUG("fbiInit1 write %08x - write_time=%i burst_time=%i\n", val, voodoo->write_time, voodoo->burst_time);
                 }
                 break;
@@ -7535,17 +7537,20 @@ skip_draw:
 static void voodoo_speed_changed(void *p)
 {
         voodoo_set_t *voodoo_set = (voodoo_set_t *)p;
+	uint32_t pci_time = pci_get_speed(1);
         
         voodoo_pixelclock_update(voodoo_set->voodoos[0]);
-        voodoo_set->voodoos[0]->read_time = pci_nonburst_time + pci_burst_time * ((voodoo_set->voodoos[0]->fbiInit4 & 1) ? 2 : 1);
-        voodoo_set->voodoos[0]->write_time = pci_nonburst_time + pci_burst_time * ((voodoo_set->voodoos[0]->fbiInit1 & 2) ? 1 : 0);
-        voodoo_set->voodoos[0]->burst_time = pci_burst_time * ((voodoo_set->voodoos[0]->fbiInit1 & 2) ? 2 : 1);
+        voodoo_set->voodoos[0]->burst_time = pci_time * ((voodoo_set->voodoos[0]->fbiInit1 & 2) ? 2 : 1);
+	pci_time += pci_get_speed(0);
+        voodoo_set->voodoos[0]->read_time = pci_time * ((voodoo_set->voodoos[0]->fbiInit4 & 1) ? 2 : 1);
+        voodoo_set->voodoos[0]->write_time = pci_time * ((voodoo_set->voodoos[0]->fbiInit1 & 2) ? 1 : 0);
         if (voodoo_set->nr_cards == 2)
         {
                 voodoo_pixelclock_update(voodoo_set->voodoos[1]);
-                voodoo_set->voodoos[1]->read_time = pci_nonburst_time + pci_burst_time * ((voodoo_set->voodoos[1]->fbiInit4 & 1) ? 2 : 1);
-                voodoo_set->voodoos[1]->write_time = pci_nonburst_time + pci_burst_time * ((voodoo_set->voodoos[1]->fbiInit1 & 2) ? 1 : 0);
-                voodoo_set->voodoos[1]->burst_time = pci_burst_time * ((voodoo_set->voodoos[1]->fbiInit1 & 2) ? 2 : 1);
+                voodoo_set->voodoos[1]->read_time = pci_time * ((voodoo_set->voodoos[1]->fbiInit4 & 1) ? 2 : 1);
+                voodoo_set->voodoos[1]->write_time = pci_time * ((voodoo_set->voodoos[1]->fbiInit1 & 2) ? 1 : 0);
+		pci_time = pci_get_speed(1);
+                voodoo_set->voodoos[1]->burst_time = pci_time * ((voodoo_set->voodoos[1]->fbiInit1 & 2) ? 2 : 1);
         }
 //        DEBUG("Voodoo read_time=%i write_time=%i burst_time=%i %08x %08x\n", voodoo->read_time, voodoo->write_time, voodoo->burst_time, voodoo->fbiInit1, voodoo->fbiInit4);
 }
@@ -7687,7 +7692,9 @@ void *voodoo_card_init()
         return voodoo;
 }
 
-void *voodoo_init(const device_t *info)
+
+static void *
+voodoo_init(const device_t *info, UNUSED(void *parent))
 {
         voodoo_set_t *voodoo_set = (voodoo_set_t *)mem_alloc(sizeof(voodoo_set_t));
         uint32_t tmuConfig = 1;
@@ -7752,7 +7759,9 @@ void *voodoo_init(const device_t *info)
         return voodoo_set;
 }
 
-void voodoo_card_close(voodoo_t *voodoo)
+
+static void
+voodoo_card_close(voodoo_t *voodoo)
 {
 #ifndef RELEASE_BUILD
         FILE *f;
@@ -7805,7 +7814,9 @@ void voodoo_card_close(voodoo_t *voodoo)
         free(voodoo);
 }
 
-void voodoo_close(void *p)
+
+static void
+voodoo_close(void *p)
 {
         voodoo_set_t *voodoo_set = (voodoo_set_t *)p;
         
@@ -7823,6 +7834,7 @@ void voodoo_close(void *p)
         free(voodoo_set);
 }
 
+
 static const device_config_t voodoo_config[] =
 {
         {
@@ -7838,7 +7850,7 @@ static const device_config_t voodoo_config[] =
                                 "Voodoo 2",VOODOO_2
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
@@ -7852,7 +7864,7 @@ static const device_config_t voodoo_config[] =
                                 "4 MB",4
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
@@ -7866,7 +7878,7 @@ static const device_config_t voodoo_config[] =
                                 "4 MB",4
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
@@ -7886,7 +7898,7 @@ static const device_config_t voodoo_config[] =
                                 "2",2
                         },
                         {
-                                ""
+                                NULL
                         }
                 },
         },
@@ -7899,21 +7911,20 @@ static const device_config_t voodoo_config[] =
         },
 #endif
         {
-                "","",-1
+                NULL
         }
 };
 
-const device_t voodoo_device =
-{
-        "3DFX Voodoo Graphics",
-        DEVICE_PCI,
-	0,
-        voodoo_init,
-        voodoo_close,
-	NULL,
-        NULL,
-        voodoo_speed_changed,
-        NULL,
-        NULL,
-        voodoo_config
+
+const device_t voodoo_device = {
+    "3DFX Voodoo Graphics",
+    DEVICE_PCI,
+    0,
+    NULL,
+    voodoo_init, voodoo_close, NULL,
+    NULL,
+    voodoo_speed_changed,
+    NULL,
+    NULL,
+    voodoo_config
 };

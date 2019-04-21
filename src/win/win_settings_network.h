@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.11	2018/11/06
+ * Version:	@(#)win_settings_network.h	1.0.12	2019/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -91,11 +91,16 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     WCHAR temp[128];
     const char *stransi;
     const device_t *dev;
+    const machine_t *m;
     HWND h;
     int c, d;
 
     switch (message) {
 	case WM_INITDIALOG:
+		/* Get info about the selected machine. */
+		dev = machine_get_device_ex(temp_machine);
+		m = (machine_t *)dev->mach_info;
+
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
 		c = d = 0;
 		for (;;) {
@@ -149,8 +154,7 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (stransi == NULL) break;
 
 			dev = network_card_getdevice(c);
-			if (!network_card_available(c) ||
-			    !device_is_valid(dev, machines[temp_machine].flags)) {
+			if (!network_card_available(c) || !device_is_valid(dev, m->flags)) {
 				c++;
 				continue;
 			}

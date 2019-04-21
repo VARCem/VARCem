@@ -8,11 +8,11 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.12	2018/09/11
+ * Version:	@(#)rom.h	1.0.13	2019/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -76,12 +76,31 @@ typedef struct {
 } romdef_t;
 
 
-extern uint8_t	rom_read(uint32_t addr, void *p);
-extern uint16_t	rom_readw(uint32_t addr, void *p);
-extern uint32_t	rom_readl(uint32_t addr, void *p);
+extern uint8_t	*bios;
+extern uint32_t	biosmask;
+
+extern mem_map_t bios_mapping[8],
+		bios_high_mapping[8];
+
+extern int	shadowbios,
+		shadowbios_write;
+
+
+extern uint8_t	rom_bios_read(uint32_t addr, void *priv);
+extern uint16_t	rom_bios_readw(uint32_t addr, void *priv);
+extern uint32_t	rom_bios_readl(uint32_t addr, void *priv);
+
+extern uint8_t	rom_read(uint32_t addr, void *priv);
+extern uint16_t	rom_readw(uint32_t addr, void *priv);
+extern uint32_t	rom_readl(uint32_t addr, void *priv);
+
+extern void	rom_reset(void);
 
 extern wchar_t	*rom_path(const wchar_t *fn);
 extern int	rom_present(const wchar_t *fn);
+
+extern void	rom_add_upper_bios(void);
+extern void	rom_add_bios(void);
 
 extern int	rom_load_linear(const wchar_t *fn, uint32_t addr, int sz,
 				int off, uint8_t *ptr);

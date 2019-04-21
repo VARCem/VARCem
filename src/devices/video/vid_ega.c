@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.11	2019/03/07
+ * Version:	@(#)vid_ega.c	1.0.13	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pit.h"
 #include "video.h"
 #include "vid_ega.h"
@@ -1040,10 +1041,9 @@ speed_changed(void *priv)
 
 
 static void *
-ega_standalone_init(const device_t *info)
+ega_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     ega_t *dev;
-    const wchar_t *fn = NULL;
     uint8_t temp;
     int c;
 
@@ -1053,25 +1053,8 @@ ega_standalone_init(const device_t *info)
     overscan_x = 16;
     overscan_y = 28;
 
-    switch(info->local) {
-	case EGA_IBM:
-		fn = BIOS_IBM_PATH;
-		break;
-
-	case EGA_COMPAQ:
-		fn = BIOS_CPQ_PATH;
-		break;
-
-	case EGA_SUPEREGA:
-		fn = BIOS_SEGA_PATH;
-		break;
-
-	default:
-		break;
-    }
-
-    if (fn != NULL) {
-	rom_init(&dev->bios_rom, fn,
+    if (info->path != NULL) {
+	rom_init(&dev->bios_rom, info->path,
 		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
 	if (dev->bios_rom.rom[0x3ffe] == 0xaa &&
@@ -1099,7 +1082,7 @@ ega_standalone_init(const device_t *info)
     io_sethandler(0x03a0, 0x0040,
 		  ega_in,NULL,NULL, ega_out,NULL,NULL, dev);
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
     return dev;
@@ -1204,7 +1187,7 @@ LoadFontxFile(wchar_t *fname)
 
 
 static void *
-jega_standalone_init(const device_t *info)
+jega_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     ega_t *dev = (ega_t *)ega_standalone_init(info);
 
@@ -1216,25 +1199,6 @@ jega_standalone_init(const device_t *info)
     return dev;
 }
 #endif
-
-
-static int
-ega_standalone_available(void)
-{
-    return rom_present(BIOS_IBM_PATH);
-}
-
-static int
-cpqega_standalone_available(void)
-{
-    return rom_present(BIOS_CPQ_PATH);
-}
-
-static int
-sega_standalone_available(void)
-{
-    return rom_present(BIOS_SEGA_PATH);
-}
 
 
 /*
@@ -1262,7 +1226,7 @@ static const device_config_t ega_config[] = {
 			"256 KB", 256
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -1294,12 +1258,12 @@ static const device_config_t ega_config[] = {
                         "Enhanced Color - Enhanced Mode (5154/ECD)", 0x09
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"","",-1
+	NULL
     }
 };
 
@@ -1307,10 +1271,11 @@ static const device_config_t ega_config[] = {
 static const video_timings_t ega_timing = {VID_ISA,8,16,32,8,16,32};
 const device_t ega_device = {
     "EGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     EGA_IBM,
+    BIOS_CPQ_PATH,
     ega_standalone_init, ega_close, NULL,
-    ega_standalone_available,
+    NULL,
     speed_changed,
     NULL,
     &ega_timing,
@@ -1320,10 +1285,11 @@ const device_t ega_device = {
 static const video_timings_t ega_compaq_timing = {VID_ISA,8,16,32,8,16,32};
 const device_t ega_compaq_device = {
     "Compaq EGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     EGA_COMPAQ,
+    BIOS_CPQ_PATH,
     ega_standalone_init, ega_close, NULL,
-    cpqega_standalone_available,
+    NULL,
     speed_changed,
     NULL,
     &ega_compaq_timing,
@@ -1333,10 +1299,11 @@ const device_t ega_compaq_device = {
 static const video_timings_t sega_timing = {VID_ISA,8,16,32,8,16,32};
 const device_t sega_device = {
     "SuperEGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     EGA_SUPEREGA,
+    BIOS_SEGA_PATH,
     ega_standalone_init, ega_close, NULL,
-    sega_standalone_available,
+    NULL,
     speed_changed,
     NULL,
     &sega_timing,
@@ -1346,10 +1313,11 @@ const device_t sega_device = {
 #ifdef JEGA
 const device_t jega_device = {
     "AX JEGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     EGA_SUPEREGA,
+    NULL,
     ega_standalone_init, ega_close, NULL,
-    sega_standalone_available,	//FIXME: check JEGA roms/fonts?? --FvK
+    jega_standalone_available,	//FIXME: check JEGA roms/fonts?? --FvK
     speed_changed,
     NULL,
     &sega_timing,		//FIXME: check these??  --FvK

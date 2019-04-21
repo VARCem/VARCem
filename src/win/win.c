@@ -523,6 +523,8 @@ plat_get_extension(const wchar_t *path)
 void
 plat_append_filename(wchar_t *dest, const wchar_t *s1, const wchar_t *s2)
 {
+    dest[0] = L'\0';
+
     wcscat(dest, s1);
     plat_append_slash(dest);
     wcscat(dest, s2);

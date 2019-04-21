@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.15	2019/03/07
+ * Version:	@(#)vid_s3.c	1.0.17	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2865,9 +2865,8 @@ static int vram_sizes[] =
 
 
 static void *
-s3_init(const device_t *info)
+s3_init(const device_t *info, UNUSED(void *parent))
 {
-	const wchar_t *bios_fn;
 	int chip, stepping;
 	s3_t *s3 = (s3_t *)mem_alloc(sizeof(s3_t));
 	svga_t *svga = &s3->svga;
@@ -2876,55 +2875,55 @@ s3_init(const device_t *info)
 
 	switch(info->local) {
 		case S3_V7MIRAGE_86C801:
-			bios_fn = ROM_V7MIRAGE_86C801;
 			chip = S3_86C801;
-			video_inform(VID_TYPE_SPEC, &timing_s3_86c801);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_86c801);
 			break;
+
 		case S3_PHOENIX_86C805:
-			bios_fn = ROM_PHOENIX_86C805;
 			chip = S3_86C805;
-			video_inform(VID_TYPE_SPEC, &timing_s3_86c805);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_86c805);
 			break;
+
 		case S3_PARADISE_BAHAMAS64:
-			bios_fn = ROM_PARADISE_BAHAMAS64;
 			chip = S3_VISION864;
-			video_inform(VID_TYPE_SPEC, &timing_s3_vision864);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_vision864);
 			break;
+
 		case S3_PHOENIX_VISION864:
-			bios_fn = ROM_PHOENIX_VISION864;
 			chip = S3_VISION864;
-			video_inform(VID_TYPE_SPEC, &timing_s3_vision864);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_vision864);
 			break;
+
 		case S3_DIAMOND_STEALTH64_964:
-			bios_fn = ROM_DIAMOND_STEALTH64_964;
 			chip = S3_VISION964;
-			video_inform(VID_TYPE_SPEC, &timing_s3_vision964);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_vision964);
 			break;
+
 		case S3_PHOENIX_TRIO32:
-			bios_fn = ROM_PHOENIX_TRIO32;
 			chip = S3_TRIO32;
-			video_inform(VID_TYPE_SPEC, &timing_s3_trio32);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_trio32);
 			break;
+
 		case S3_PHOENIX_TRIO64:
-			bios_fn = ROM_PHOENIX_TRIO64;
 			chip = S3_TRIO64;
-			video_inform(VID_TYPE_SPEC, &timing_s3_trio64);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_trio64);
 			break;
+
 		case S3_PHOENIX_TRIO64_ONBOARD:
-			bios_fn = NULL;
 			chip = S3_TRIO64;
-			video_inform(VID_TYPE_SPEC, &timing_s3_trio64);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_trio64);
 			break;
+
 		case S3_DIAMOND_STEALTH64_764:
-			bios_fn = ROM_DIAMOND_STEALTH64_764;
 			chip = S3_TRIO64;
-			video_inform(VID_TYPE_SPEC, &timing_s3_stealth64);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_stealth64);
 			break;
+
 		case S3_NUMBER9_9FX:
-			bios_fn = ROM_NUMBER9_9FX;
 			chip = S3_TRIO64;
-			video_inform(VID_TYPE_SPEC, &timing_s3_trio64);
+			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_trio64);
 			break;
+
 		default:
 			free(s3);
 			return NULL;
@@ -2940,9 +2939,10 @@ s3_init(const device_t *info)
 		vram_size = 512 << 10;
 	s3->vram_mask = vram_size - 1;
 
-	s3->has_bios = (bios_fn != NULL);
+	s3->has_bios = (info->path != NULL);
 	if (s3->has_bios) {
-		rom_init(&s3->bios_rom, (wchar_t *) bios_fn, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+		rom_init(&s3->bios_rom, info->path,
+			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 		if (info->flags & DEVICE_PCI)
 			mem_map_disable(&s3->bios_rom.mapping);
 	}
@@ -3125,51 +3125,6 @@ s3_init(const device_t *info)
 }
 
 
-static int s3_v7mirage_86c801_available(void)
-{
-	return rom_present(ROM_V7MIRAGE_86C801);
-}
-
-static int s3_phoenix_86c805_available(void)
-{
-	return rom_present(ROM_PHOENIX_86C805);
-}
-
-static int s3_bahamas64_available(void)
-{
-	return rom_present(ROM_PARADISE_BAHAMAS64);
-}
-
-static int s3_phoenix_vision864_available(void)
-{
-	return rom_present(ROM_PHOENIX_VISION864);
-}
-
-static int s3_diamond_stealth64_964_available(void)
-{
-	return rom_present(ROM_DIAMOND_STEALTH64_964);
-}
-
-static int s3_phoenix_trio32_available(void)
-{
-	return rom_present(ROM_PHOENIX_TRIO32);
-}
-
-static int s3_9fx_available(void)
-{
-	return rom_present(ROM_NUMBER9_9FX);
-}
-
-static int s3_phoenix_trio64_available(void)
-{
-	return rom_present(ROM_PHOENIX_TRIO64);
-}
-
-static int s3_diamond_stealth64_764_available(void)
-{
-	return rom_present(ROM_DIAMOND_STEALTH64_764);
-}
-
 static void s3_close(void *p)
 {
 	s3_t *s3 = (s3_t *)p;
@@ -3210,12 +3165,12 @@ static const device_config_t s3_9fx_config[] =
 			},
 			/*Trio64 also supports 4 MB, however the Number Nine BIOS does not*/
 			{
-				""
+				NULL
 			}
 		}
 	},
 	{
-		"", "", -1
+		NULL
 	}
 };
 
@@ -3234,12 +3189,12 @@ static const device_config_t s3_phoenix_trio32_config[] =
 				"2 MB", 2
 			},
 			{
-				""
+				NULL
 			}
 		}
 	},
 	{
-		"", "", -1
+		NULL
 	}
 };
 
@@ -3258,12 +3213,12 @@ static const device_config_t s3_phoenix_trio64_onboard_config[] =
 				"4 MB", 4
 			},
 			{
-				""
+				NULL
 			}
 		}
 	},
 	{
-		"", "", -1
+		NULL
 	}
 };
 
@@ -3282,22 +3237,23 @@ static const device_config_t s3_config[] =
 				"4 MB", 4
 			},
 			{
-				""
+				NULL
 			}
 		}
 	},
 	{
-		"", "", -1
+		NULL
 	}
 };
 
 
 const device_t s3_v7mirage_86c801_isa_device = {
     "SPEA V7 Mirage (S3 86c801) ISA",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     S3_V7MIRAGE_86C801,
+    ROM_V7MIRAGE_86C801,
     s3_init, s3_close, NULL,
-    s3_v7mirage_86c801_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3306,10 +3262,11 @@ const device_t s3_v7mirage_86c801_isa_device = {
 
 const device_t s3_phoenix_86c805_vlb_device = {
     "Phoenix S3 86c805 VLB",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_PHOENIX_86C805,
+    ROM_PHOENIX_86C805,
     s3_init, s3_close, NULL,
-    s3_phoenix_86c805_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3318,10 +3275,11 @@ const device_t s3_phoenix_86c805_vlb_device = {
 
 const device_t s3_bahamas64_vlb_device = {
     "Paradise Bahamas 64 (S3 Vision864)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_PARADISE_BAHAMAS64,
+    ROM_PARADISE_BAHAMAS64,
     s3_init, s3_close, NULL,
-    s3_bahamas64_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3330,10 +3288,11 @@ const device_t s3_bahamas64_vlb_device = {
 
 const device_t s3_bahamas64_pci_device = {
     "Paradise Bahamas 64 (S3 Vision864)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_PARADISE_BAHAMAS64,
+    ROM_PARADISE_BAHAMAS64,
     s3_init, s3_close, NULL,
-    s3_bahamas64_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3342,10 +3301,11 @@ const device_t s3_bahamas64_pci_device = {
 
 const device_t s3_diamond_stealth64_964_vlb_device = {
     "S3 Vision964 (Diamond Stealth64 VRAM)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_DIAMOND_STEALTH64_964,
+    ROM_DIAMOND_STEALTH64_964,
     s3_init, s3_close, NULL,
-    s3_diamond_stealth64_964_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3354,10 +3314,11 @@ const device_t s3_diamond_stealth64_964_vlb_device = {
 
 const device_t s3_diamond_stealth64_964_pci_device = {
     "S3 Vision964 (Diamond Stealth64 VRAM)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_DIAMOND_STEALTH64_964,
+    ROM_DIAMOND_STEALTH64_964,
     s3_init, s3_close, NULL,
-    s3_diamond_stealth64_964_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3366,10 +3327,11 @@ const device_t s3_diamond_stealth64_964_pci_device = {
 
 const device_t s3_9fx_vlb_device = {
     "Number 9 9FX (S3 Trio64)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_NUMBER9_9FX,
+    ROM_NUMBER9_9FX,
     s3_init, s3_close, NULL,
-    s3_9fx_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3378,10 +3340,11 @@ const device_t s3_9fx_vlb_device = {
 
 const device_t s3_9fx_pci_device = {
     "Number 9 9FX (S3 Trio64)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_NUMBER9_9FX,
+    ROM_NUMBER9_9FX,
     s3_init, s3_close, NULL,
-    s3_9fx_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3390,10 +3353,11 @@ const device_t s3_9fx_pci_device = {
 
 const device_t s3_phoenix_trio32_vlb_device = {
     "Phoenix S3 Trio32",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_PHOENIX_TRIO32,
+    ROM_PHOENIX_TRIO32,
     s3_init, s3_close, NULL,
-    s3_phoenix_trio32_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3402,10 +3366,11 @@ const device_t s3_phoenix_trio32_vlb_device = {
 
 const device_t s3_phoenix_trio32_pci_device = {
     "Phoenix S3 Trio32",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_PHOENIX_TRIO32,
+    ROM_PHOENIX_TRIO32,
     s3_init, s3_close, NULL,
-    s3_phoenix_trio32_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3414,10 +3379,11 @@ const device_t s3_phoenix_trio32_pci_device = {
 
 const device_t s3_phoenix_trio64_vlb_device = {
     "Phoenix S3 Trio64",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_PHOENIX_TRIO64,
+    ROM_PHOENIX_TRIO64,
     s3_init, s3_close, NULL,
-    s3_phoenix_trio64_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3426,10 +3392,11 @@ const device_t s3_phoenix_trio64_vlb_device = {
 
 const device_t s3_phoenix_trio64_pci_device = {
     "Phoenix S3 Trio64",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_PHOENIX_TRIO64,
+    ROM_PHOENIX_TRIO64,
     s3_init, s3_close, NULL,
-    s3_phoenix_trio64_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3438,8 +3405,9 @@ const device_t s3_phoenix_trio64_pci_device = {
 
 const device_t s3_phoenix_trio64_onboard_pci_device = {
     "Onboard Phoenix S3 Trio64",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_PHOENIX_TRIO64_ONBOARD,
+    NULL,
     s3_init, s3_close, NULL,
     NULL,
     s3_speed_changed,
@@ -3450,10 +3418,11 @@ const device_t s3_phoenix_trio64_onboard_pci_device = {
 
 const device_t s3_phoenix_vision864_vlb_device = {
     "Phoenix S3 Vision864",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_PHOENIX_VISION864,
+    ROM_PHOENIX_VISION864,
     s3_init, s3_close, NULL,
-    s3_phoenix_vision864_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3462,10 +3431,11 @@ const device_t s3_phoenix_vision864_vlb_device = {
 
 const device_t s3_phoenix_vision864_pci_device = {
     "Phoenix S3 Vision864",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_PHOENIX_VISION864,
+    ROM_PHOENIX_VISION864,
     s3_init, s3_close, NULL,
-    s3_phoenix_vision864_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,
@@ -3474,10 +3444,11 @@ const device_t s3_phoenix_vision864_pci_device = {
 
 const device_t s3_diamond_stealth64_vlb_device = {
     "S3 Trio64 (Diamond Stealth64 DRAM)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_DIAMOND_STEALTH64_764,
+    ROM_DIAMOND_STEALTH64_764,
     s3_init, s3_close, NULL,
-    s3_diamond_stealth64_764_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     s3_config
@@ -3485,10 +3456,11 @@ const device_t s3_diamond_stealth64_vlb_device = {
 
 const device_t s3_diamond_stealth64_pci_device = {
     "S3 Trio64 (Diamond Stealth64 DRAM)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_DIAMOND_STEALTH64_764,
+    ROM_DIAMOND_STEALTH64_764,
     s3_init, s3_close, NULL,
-    s3_diamond_stealth64_764_available,
+    NULL,
     s3_speed_changed,
     s3_force_redraw,
     NULL,

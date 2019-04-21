@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.12	2019/02/10
+ * Version:	@(#)mem.h	1.0.14	2019/03/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -102,9 +102,6 @@ typedef struct _page_ {
 extern uint8_t		*ram;
 extern uint32_t		rammask;
 
-extern uint8_t		*rom;
-extern uint32_t		biosmask;
-
 extern int		readlookup[256],
 			readlookupp[256];
 extern uintptr_t	*readlookup2;
@@ -119,10 +116,7 @@ extern mem_map_t	base_mapping,
 			ram_low_mapping,
 			ram_mid_mapping,
 			ram_remapped_mapping,
-			ram_high_mapping,
-			bios_mapping[8],
-			bios_high_mapping[8],
-			romext_mapping;
+			ram_high_mapping;
 
 extern uint32_t		mem_logical_addr;
 
@@ -130,9 +124,6 @@ extern page_t		*pages,
 			**page_lookup;
 
 extern uint32_t		get_phys_virt,get_phys_phys;
-
-extern int		shadowbios,
-			shadowbios_write;
 
 extern int		memspeed[11];
 
@@ -198,6 +189,7 @@ extern void	mem_map_set_handler(mem_map_t *,
                     void (*write_l)(uint32_t addr, uint32_t val, void *p));
 
 extern void	mem_map_set_p(mem_map_t *, void *p);
+extern void	mem_map_set_p2(mem_map_t *, void *p);
 
 extern void	mem_map_set_dev(mem_map_t *, void *dev);
 
@@ -218,10 +210,6 @@ extern uint32_t	mem_read_raml(uint32_t addr, void *priv);
 extern void	mem_write_ram(uint32_t addr, uint8_t val, void *priv);
 extern void	mem_write_ramw(uint32_t addr, uint16_t val, void *priv);
 extern void	mem_write_raml(uint32_t addr, uint32_t val, void *priv);
-
-extern uint8_t	mem_read_bios(uint32_t addr, void *priv);
-extern uint16_t	mem_read_biosw(uint32_t addr, void *priv);
-extern uint32_t	mem_read_biosl(uint32_t addr, void *priv);
 
 extern void	mem_write_null(uint32_t addr, uint8_t val, void *p);
 extern void	mem_write_nullw(uint32_t addr, uint16_t val, void *p);
@@ -244,9 +232,6 @@ extern void	flushmmucache_nopc(void);
 extern void     mmu_invalidate(uint32_t addr);
 
 extern void	mem_a20_recalc(void);
-
-extern void	mem_add_bios(void);
-extern void	mem_add_upper_bios(void);
 
 extern void	mem_init(void);
 extern void	mem_reset(void);

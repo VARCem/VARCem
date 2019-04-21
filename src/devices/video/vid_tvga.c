@@ -8,7 +8,7 @@
  *
  *		Trident TVGA (8900B/8900C/8900D) emulation.
  *
- * Version:	@(#)vid_tvga.c	1.0.11	2019/02/10
+ * Version:	@(#)vid_tvga.c	1.0.13	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -346,9 +347,8 @@ tvga_recalctimings(svga_t *svga)
 
 
 static void *
-tvga_init(const device_t *info)
+tvga_init(const device_t *info, UNUSED(void *parent))
 {
-    const wchar_t *fn = NULL;
     tvga_t *tvga;
 
     tvga = (tvga_t *)mem_alloc(sizeof(tvga_t));
@@ -363,34 +363,31 @@ tvga_init(const device_t *info)
 
     switch(info->local) {
 	case TVGA8900B_ID:	/* TVGA 8900B */
-		fn = ROM_TVGA_8900B;
 		tvga->svga.ramdac = device_add(&tkd8001_ramdac_device);
 		break;
 
 	case TVGA8900CLD_ID:	/* TVGA 8900CX LC2 */
-		fn = ROM_TVGA_8900CLD;
 		tvga->svga.ramdac = device_add(&tkd8001_ramdac_device);
 		break;
 
 #if 0
 	case 1:		/* TVGA 8900D */
-		fn = ROM_TVGA_8900D;
 		tvga->svga.ramdac = device_add(&tkd8001_ramdac_device);
 		break;
 #endif
     }
 
-    if (fn != NULL)
-	rom_init(&tvga->bios_rom, fn,
+    if (info->path)
+	rom_init(&tvga->bios_rom, info->path,
 		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
     io_sethandler(0x03c0, 32,
 		  tvga_in,NULL,NULL, tvga_out,NULL,NULL, tvga);
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return tvga;
+    return(tvga);
 }
 
 
@@ -406,7 +403,7 @@ tvga_close(void *priv)
 
 
 static void
-tvga_speed_changed(void *p)
+speed_changed(void *p)
 {
     tvga_t *tvga = (tvga_t *)p;
 
@@ -415,30 +412,11 @@ tvga_speed_changed(void *p)
 
 
 static void
-tvga_force_redraw(void *p)
+force_redraw(void *p)
 {
     tvga_t *tvga = (tvga_t *)p;
 
     tvga->svga.fullchange = changeframecount;
-}
-
-
-static int
-tvga8900b_available(void)
-{
-    return rom_present(ROM_TVGA_8900B);
-}
-
-static int
-tvga8900cx_available(void)
-{
-    return rom_present(ROM_TVGA_8900CLD);
-}
-
-static int
-tvga8900d_available(void)
-{
-    return rom_present(ROM_TVGA_8900D);
 }
 
 
@@ -458,12 +436,12 @@ static const device_config_t tvga_config[] =
 			},
 			 /*Chip supports 2MB, but drivers are buggy*/
 			{
-				""
+				NULL
 			}
 		}
 	},
 	{
-		"", "", -1
+		NULL
 	}
 };
 
@@ -472,36 +450,39 @@ static const video_timings_t tvga8900_timing = {VID_ISA,3,3,6,8,8,12};
 
 const device_t tvga8900b_device = {
     "Trident TVGA 8900B",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     TVGA8900B_ID,
+    ROM_TVGA_8900B,
     tvga_init, tvga_close, NULL,
-    tvga8900b_available,
-    tvga_speed_changed,
-    tvga_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &tvga8900_timing,
     tvga_config
 };
 
 const device_t tvga8900cx_device = {
     "Trident TVGA 8900CX 2/4/8 LC2 Rev.A",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     TVGA8900CLD_ID,
+    ROM_TVGA_8900CLD,
     tvga_init, tvga_close, NULL,
-    tvga8900cx_available,
-    tvga_speed_changed,
-    tvga_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &tvga8900_timing,
     tvga_config
 };
 
 const device_t tvga8900d_device = {
     "Trident TVGA 8900D",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     1,
+    ROM_TVGA_8900D,
     tvga_init, tvga_close, NULL,
-    tvga8900d_available,
-    tvga_speed_changed,
-    tvga_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &tvga8900_timing,
     tvga_config
 };

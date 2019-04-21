@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.16	2019/03/07
+ * Version:	@(#)vid_s3_virge.c	1.0.18	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3873,10 +3873,9 @@ static void s3_virge_pci_write(int func, int addr, uint8_t val, void *p)
 
 
 static void *
-s3_virge_init(const device_t *info)
+s3_virge_init(const device_t *info, UNUSED(void *parent))
 {
     virge_t *virge;
-    const wchar_t *bios_fn;
 
     virge = (virge_t *)mem_alloc(sizeof(virge_t));
     memset(virge, 0, sizeof(virge_t));
@@ -3885,28 +3884,6 @@ s3_virge_init(const device_t *info)
     virge->dithering_enabled = device_get_config_int("dithering");
     virge->memory_size = device_get_config_int("memory");
         
-    switch(info->local) {
-	case S3_DIAMOND_STEALTH3D_2000:
-		bios_fn = ROM_DIAMOND_STEALTH3D_2000;
-		break;
-
-	case S3_DIAMOND_STEALTH3D_3000:
-		bios_fn = ROM_DIAMOND_STEALTH3D_3000;
-		break;
-
-	case S3_VIRGE_DX:
-		bios_fn = ROM_VIRGE_DX;
-		break;
-
-	case S3_VIRGE_DX_VBE20:
-		bios_fn = ROM_VIRGE_DX_VBE20;
-		break;
-
-	default:
-		free(virge);
-		return NULL;
-    }
-
     svga_init(&virge->svga, virge, virge->memory_size << 20,
               s3_virge_recalctimings,
               s3_virge_in, s3_virge_out,
@@ -3916,7 +3893,7 @@ s3_virge_init(const device_t *info)
 
     virge->pci = !!(info->flags & DEVICE_PCI);
 
-    rom_init(&virge->bios_rom, bios_fn,
+    rom_init(&virge->bios_rom, info->path,
 	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
     if (info->flags & DEVICE_PCI)
 	mem_map_disable(&virge->bios_rom.mapping);
@@ -3963,20 +3940,23 @@ s3_virge_init(const device_t *info)
     virge->svga.crtc[0x53] = 1 << 3;
     virge->svga.crtc[0x59] = 0x70;
 
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
+
     switch(info->local) {
 	case S3_DIAMOND_STEALTH3D_2000:
 		virge->svga.vblank_start = s3_virge_vblank_start;
 	        virge->virge_id_high = 0x56;
 	        virge->virge_id_low = 0x31;
 		virge->chip = S3_VIRGE;
-		video_inform(VID_TYPE_SPEC, &timing_diamond_stealth3d_2000);
+		video_inform(DEVICE_VIDEO_GET(info->flags), &timing_diamond_stealth3d_2000);
 		break;
 
 	case S3_DIAMOND_STEALTH3D_3000:
 	        virge->virge_id_high = 0x88;
 	        virge->virge_id_low = 0x3d;
 		virge->chip = S3_VIRGEVX;
-		video_inform(VID_TYPE_SPEC, &timing_diamond_stealth3d_3000);
+		video_inform(DEVICE_VIDEO_GET(info->flags), &timing_diamond_stealth3d_3000);
 		break;
 
 	default:
@@ -3984,7 +3964,7 @@ s3_virge_init(const device_t *info)
 	        virge->virge_id_high = 0x8a;
 	        virge->virge_id_low = 0x01;
 		virge->chip = S3_VIRGEDX;
-		video_inform(VID_TYPE_SPEC, &timing_virge_dx);
+		video_inform(DEVICE_VIDEO_GET(info->flags), &timing_virge_dx);
 		break;
     }
 
@@ -4001,9 +3981,6 @@ s3_virge_init(const device_t *info)
     virge->fifo_not_full_event = thread_create_event();
     virge->fifo_thread = thread_create(fifo_thread, virge);
  
-    video_inform(VID_TYPE_SPEC,
-		 (const video_timings_t *)info->vid_timing);
-
     return virge;
 }
 
@@ -4046,31 +4023,6 @@ s3_virge_force_redraw(void *p)
 }
 
 
-static int
-s3_virge_available(void)
-{
-    return rom_present(ROM_DIAMOND_STEALTH3D_2000);
-}
-
-static int
-s3_virge_988_available(void)
-{
-    return rom_present(ROM_DIAMOND_STEALTH3D_3000);
-}
-
-static int
-s3_virge_375_1_available(void)
-{
-    return rom_present(ROM_VIRGE_DX);
-}
-
-static int
-s3_virge_375_4_available(void)
-{
-    return rom_present(ROM_VIRGE_DX_VBE20);
-}
-
-
 static const device_config_t s3_virge_config[] =
 {
         {
@@ -4083,7 +4035,7 @@ static const device_config_t s3_virge_config[] =
                                 "4 MB", 4
                         },
                         {
-                                ""
+                                NULL
                         }
                 }
         },
@@ -4094,7 +4046,7 @@ static const device_config_t s3_virge_config[] =
                 "dithering", "Dithering", CONFIG_BINARY, "", 1
         },
         {
-                "", "", -1
+                NULL
         }
 };
 
@@ -4104,10 +4056,11 @@ static const video_timings_t virge375_pci_timing = {VID_BUS,2,2,3,28,28,45};
 
 const device_t s3_virge_vlb_device = {
     "Diamond Stealth 3D 2000 (S3 ViRGE)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_DIAMOND_STEALTH3D_2000,
+    ROM_DIAMOND_STEALTH3D_2000,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_vlb_timing,
@@ -4116,10 +4069,11 @@ const device_t s3_virge_vlb_device = {
 
 const device_t s3_virge_pci_device = {
     "Diamond Stealth 3D 2000 (S3 ViRGE)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_DIAMOND_STEALTH3D_2000,
+    ROM_DIAMOND_STEALTH3D_2000,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_pci_timing,
@@ -4128,10 +4082,11 @@ const device_t s3_virge_pci_device = {
 
 const device_t s3_virge_988_vlb_device = {
     "Diamond Stealth 3D 3000 (S3 ViRGE/VX)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_DIAMOND_STEALTH3D_3000,
+    ROM_DIAMOND_STEALTH3D_3000,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_988_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_vlb_timing,
@@ -4140,10 +4095,11 @@ const device_t s3_virge_988_vlb_device = {
 
 const device_t s3_virge_988_pci_device = {
     "Diamond Stealth 3D 3000 (S3 ViRGE/VX)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_DIAMOND_STEALTH3D_3000,
+    ROM_DIAMOND_STEALTH3D_3000,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_988_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_pci_timing,
@@ -4152,10 +4108,11 @@ const device_t s3_virge_988_pci_device = {
 
 const device_t s3_virge_375_vlb_device = {
     "S3 ViRGE/DX",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_VIRGE_DX,
+    ROM_VIRGE_DX,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_375_1_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_vlb_timing,
@@ -4164,10 +4121,11 @@ const device_t s3_virge_375_vlb_device = {
 
 const device_t s3_virge_375_pci_device = {
     "S3 ViRGE/DX",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_VIRGE_DX,
+    ROM_VIRGE_DX,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_375_1_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_pci_timing,
@@ -4176,10 +4134,11 @@ const device_t s3_virge_375_pci_device = {
 
 const device_t s3_virge_375_4_vlb_device = {
     "S3 ViRGE/DX (VBE 2.0)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_VIRGE_DX_VBE20,
+    ROM_VIRGE_DX_VBE20,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_375_4_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_vlb_timing,
@@ -4188,10 +4147,11 @@ const device_t s3_virge_375_4_vlb_device = {
 
 const device_t s3_virge_375_4_pci_device = {
     "S3 ViRGE/DX (VBE 2.0)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     S3_VIRGE_DX_VBE20,
+    ROM_VIRGE_DX_VBE20,
     s3_virge_init, s3_virge_close, NULL,
-    s3_virge_375_4_available,
+    NULL,
     s3_virge_speed_changed,
     s3_virge_force_redraw,
     &virge375_pci_timing,

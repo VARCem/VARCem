@@ -8,13 +8,13 @@
  *
  *		87C716 'SDAC' true colour RAMDAC emulation.
  *
- * Version:	@(#)vid_sdac_ramdac.c	1.0.6	2018/10/05
+ * Version:	@(#)vid_sdac_ramdac.c	1.0.8	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,6 +44,7 @@
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_sdac_ramdac.h"
@@ -216,7 +217,7 @@ sdac_getclock(int clock, void *priv)
 
 
 static void *
-sdac_init(const device_t *info)
+sdac_init(const device_t *info, UNUSED(void *parent))
 {
     sdac_ramdac_t *dev = (sdac_ramdac_t *)mem_alloc(sizeof(sdac_ramdac_t));
     memset(dev, 0x00, sizeof(sdac_ramdac_t));
@@ -240,8 +241,7 @@ sdac_close(void *priv)
 
 const device_t sdac_ramdac_device = {
     "S3 SDAC 86c716 RAMDAC",
-    0,
-    0,
+    0, 0, NULL,
     sdac_init, sdac_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

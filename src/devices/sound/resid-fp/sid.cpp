@@ -106,7 +106,7 @@ static int host_cpu_features(void)
   static int features = 0;
   static int features_detected = 0;
 /* 32-bit only */
-#if defined(__i386__) || (defined(_MSC_VER) && defined(_WIN32))
+#if defined(__i386__) || (defined(_MSC_VER) && defined(_M_IX86))
   unsigned long temp1, temp2;
 #endif
 
@@ -114,7 +114,7 @@ static int host_cpu_features(void)
     return features;
   features_detected = 1;
 
-#if defined(_MSC_VER) && defined(_WIN32) /* MSVC compatible assembly appropriate for 32-bit Windows */
+#if defined(_MSC_VER) && defined(_M_IX86) /* MSVC compatible assembly appropriate for 32-bit Windows */
   /* see if we are dealing with a cpu that has the cpuid instruction */
   __asm {
     pushf
@@ -137,7 +137,7 @@ static int host_cpu_features(void)
       :
       : "eax");
 #endif
-#if defined(__i386__) || (defined(_MSC_VER) && defined(_WIN32))
+#if defined(__i386__) || (defined(_MSC_VER) && defined(_M_IX86))
   temp1 &= 0x200000;
   temp2 &= 0x200000;
   if (temp1 == temp2) {

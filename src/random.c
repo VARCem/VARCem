@@ -9,10 +9,12 @@
  *		A better random number generation, used for floppy weak bits
  *		and network MAC address generation.
  *
- * Version:	@(#)random.c	1.0.2	2018/10/05
+ * Version:	@(#)random.c	1.0.3	2019/03/21
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,6 +42,10 @@
 #include "random.h"
 
 
+#define ROTATE_LEFT	rotl32c
+#define ROTATE_RIGHT	rotr32c
+
+
 static uint32_t preconst = 0x6ed9eba1;
 
 
@@ -63,38 +69,6 @@ rotr32c (uint32_t x, uint32_t n)
     return (x >> n) | (x << (-n & 31));
 #endif
 }
-
-
-#define ROTATE_LEFT rotl32c
-#define ROTATE_RIGHT rotr32c
-
-
-#if 0	/* deprecated */
-static __inline unsigned long long
-rdtsc(void)
-{
-    unsigned hi, lo;
-
-#ifdef _MSC_VER
-    __asm {
-	rdtsc
-	mov hi, edx	; EDX:EAX is already standard return!!
-	mov lo, eax
-    }
-#else
-    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-#endif
-
-    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
-}
-
-
-static uint32_t
-RDTSC(void)
-{
-    return (uint32_t) (rdtsc());
-}
-#endif	/* deprecated */
 
 
 static void
@@ -121,11 +95,7 @@ random_generate(void)
 void
 random_init(void)
 {
-#if 0	/* deprecated */
-    uint32_t seed = RDTSC();
-#else
     uint32_t seed = (uint32_t)plat_timer_read();
-#endif
 
     srand(seed);
 }

@@ -12,12 +12,12 @@
  *		but without the need for tuning (which is irrelevant in
  *		emulation anyway).
  *
- * Version:	@(#)vid_icd2061.c	1.0.4	2018/10/05
+ * Version:	@(#)vid_icd2061.c	1.0.6	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,6 +45,7 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_icd2061.h"
 
@@ -132,7 +133,7 @@ icd2061_getclock(int clock, void *priv)
 
 
 static void *
-icd2061_init(const device_t *info)
+icd2061_init(const device_t *info, UNUSED(void *parent))
 {
     icd2061_t *dev = (icd2061_t *)mem_alloc(sizeof(icd2061_t));
     memset(dev, 0x00, sizeof(icd2061_t));
@@ -157,8 +158,7 @@ icd2061_close(void *priv)
 
 const device_t icd2061_device = {
     "ICD2061 Clock Generator",
-    0,
-    0,
+    0, 0, NULL,
     icd2061_init, icd2061_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -166,8 +166,7 @@ const device_t icd2061_device = {
 
 const device_t ics9161_device = {
     "ICS9161 Clock Generator",
-    0,
-    0,
+    0, 0, NULL,
     icd2061_init, icd2061_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

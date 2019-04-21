@@ -8,13 +8,13 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.14	2018/10/08
+ * Version:	@(#)vid_oak_oti.c	1.0.16	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -46,6 +46,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 
@@ -375,10 +376,9 @@ force_redraw(void *priv)
 
 
 static void *
-oti_init(const device_t *info)
+oti_init(const device_t *info, UNUSED(void *parent))
 {
     oti_t *dev;
-    wchar_t *fn;
 
     dev = (oti_t *)mem_alloc(sizeof(oti_t));
     memset(dev, 0x00, sizeof(oti_t));
@@ -386,10 +386,8 @@ oti_init(const device_t *info)
 
     dev->dipswitch_val = 0x18;
 
-    fn = NULL;
     switch(dev->chip_id) {
 	case OTI_037C:
-		fn = BIOS_037C_PATH;
 		dev->vram_size = 256;
 
 		/*
@@ -400,12 +398,6 @@ oti_init(const device_t *info)
 		break;
 
 	case OTI_067:
-#ifdef BIOS_067_PATH
-		fn = BIOS_067_PATH;
-#else
-		fn = BIOS_077_PATH;
-#endif
-
 		dev->vram_size = device_get_config_int("memory");
 
 		/*
@@ -435,7 +427,6 @@ oti_init(const device_t *info)
 		break;
 
 	case OTI_077:
-		fn = BIOS_077_PATH;
 		dev->vram_size = device_get_config_int("memory");
 
 		/*
@@ -449,8 +440,8 @@ oti_init(const device_t *info)
 		break;
     }
 
-    if (fn != NULL)
-	rom_init(&dev->bios_rom, fn,
+    if (info->path)
+	rom_init(&dev->bios_rom, info->path,
 		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
     dev->vram_mask = (dev->vram_size << 10) - 1;
@@ -466,7 +457,7 @@ oti_init(const device_t *info)
 
     dev->svga.miscout = 1;
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
     return(dev);
@@ -484,90 +475,67 @@ oti_close(void *priv)
 }
 
 
-static int
-oti037c_available(void)
-{
-    return(rom_present(BIOS_037C_PATH));
-}
-
-static int
-oti067_available(void)
-{
-#ifdef BIOS_67_PATH
-    return(rom_present(BIOS_067_PATH));
-#else
-    return(rom_present(BIOS_077_PATH));
-#endif
-}
-
-static int
-oti077_available(void)
-{
-    return(rom_present(BIOS_077_PATH));
-}
-
-
 static const device_config_t oti067_config[] = {
+    {
+	"memory", "Memory size", CONFIG_SELECTION, "", 512,
 	{
-		"memory", "Memory size", CONFIG_SELECTION, "", 512,
 		{
-			{
-				"256 KB", 256
-			},
-			{
-				"512 KB", 512
-			},
-			{
-				""
-			}
+			"256 KB", 256
+		},
+		{
+			"512 KB", 512
+		},
+		{
+			NULL
 		}
-	},
-	{
-		"", "", -1
 	}
+    },
+    {
+	NULL
+    }
 };
 
 static const device_config_t oti067_onboard_config[] = {
+    {
+	"memory", "Memory size", CONFIG_SELECTION, "", 256,
 	{
-		"memory", "Memory size", CONFIG_SELECTION, "", 256,
 		{
-			{
-				"256 KB", 256
-			},
-			{
-				"512 KB", 512
-			},
-			{
-				""
-			}
+			"256 KB", 256
+		},
+		{
+			"512 KB", 512
+		},
+		{
+			NULL
 		}
-	},
-	{
-		"", "", -1
 	}
+    },
+    {
+	NULL
+    }
 };
 
 static const device_config_t oti077_config[] = {
+    {
+	"memory", "Memory size", CONFIG_SELECTION, "", 1024,
 	{
-		"memory", "Memory size", CONFIG_SELECTION, "", 1024,
 		{
-			{
-				"256 KB", 256
-			},
-			{
-				"512 KB", 512
-			},
-			{
-				"1 MB", 1024
-			},
-			{
-				""
-			}
+			"256 KB", 256
+		},
+		{
+			"512 KB", 512
+		},
+		{
+			"1 MB", 1024
+		},
+		{
+			NULL
 		}
-	},
-	{
-		"", "", -1
 	}
+    },
+    {
+	NULL
+    }
 };
 
 static const video_timings_t oti_timing = {VID_ISA,6,8,16,6,8,16};
@@ -575,10 +543,11 @@ static const video_timings_t oti_timing = {VID_ISA,6,8,16,6,8,16};
 
 const device_t oti037c_device = {
     "Oak OTI-037C",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     OTI_037C,
+    BIOS_037C_PATH,
     oti_init, oti_close, NULL,
-    oti037c_available,
+    NULL,
     speed_changed,
     force_redraw,
     &oti_timing,
@@ -587,10 +556,15 @@ const device_t oti037c_device = {
 
 const device_t oti067_device = {
     "Oak OTI-067",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     OTI_067,
+#ifdef BIOS_67_PATH
+    BIOS_067_PATH,
+#else
+    BIOS_077_PATH,
+#endif
     oti_init, oti_close, NULL,
-    oti067_available,
+    NULL,
     speed_changed,
     force_redraw,
     &oti_timing,
@@ -599,8 +573,9 @@ const device_t oti067_device = {
 
 const device_t oti067_onboard_device = {
     "Onboard Oak OTI-067",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     OTI_067_AMA932J,
+    NULL,
     oti_init, oti_close, NULL,
     NULL,
     speed_changed,
@@ -611,10 +586,11 @@ const device_t oti067_onboard_device = {
 
 const device_t oti077_device = {
     "Oak OTI-077",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     OTI_077,
+    BIOS_077_PATH,
     oti_init, oti_close, NULL,
-    oti077_available,
+    NULL,
     speed_changed,
     force_redraw,
     &oti_timing,

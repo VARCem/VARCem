@@ -43,14 +43,14 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.9	2018/10/15
+ * Version:	@(#)m_ps1_hdc.c	1.0.11	2018/04/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Based on my earlier HD20 driver for the EuroPC.
  *		Thanks to Marco Bortolin for the help and feedback !!
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -102,6 +102,7 @@
 #include "../ui/ui.h"
 #include "../plat.h"
 #include "machine.h"
+#include "m_ps1.h"
 
 
 #define HDC_TIME	(50*TIMER_USEC)
@@ -1379,8 +1380,32 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 }
 
 
+static void
+hdc_close(void *priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    drive_t *drive;
+    int d;
+
+    /* Remove the I/O handler. */
+    io_removehandler(dev->base, 5,
+		     hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
+
+    /* Close all disks and their images. */
+    for (d = 0; d < PS1_HDD_NUM; d++) {
+	drive = &dev->drives[d];
+
+	if (drive->present)
+		hdd_image_close(drive->hdd_num);
+    }
+
+    /* Release the device. */
+    free(dev);
+}
+
+
 static void *
-ps1_hdc_init(const device_t *info)
+hdc_init_ps1(const device_t *info, void *parent)
 {
     drive_t *drive;
     hdc_t *dev;
@@ -1389,6 +1414,7 @@ ps1_hdc_init(const device_t *info)
     /* Allocate and initialize device block. */
     dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
+    dev->sys = parent;
 
     /* Set up controller parameters for PS/1 2011. */
     dev->base = 0x0320;
@@ -1446,56 +1472,12 @@ ps1_hdc_init(const device_t *info)
 }
 
 
-static void
-ps1_hdc_close(void *priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-    drive_t *drive;
-    int d;
-
-    /* Remove the I/O handler. */
-    io_removehandler(dev->base, 5,
-		     hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
-
-    /* Close all disks and their images. */
-    for (d = 0; d < PS1_HDD_NUM; d++) {
-	drive = &dev->drives[d];
-
-	if (drive->present)
-		hdd_image_close(drive->hdd_num);
-    }
-
-    /* Release the device. */
-    free(dev);
-}
-
-
 const device_t ps1_hdc_device = {
     "PS/1 2011 Fixed Disk Controller",
     DEVICE_ISA | DEVICE_PS2,
     0,
-    ps1_hdc_init, ps1_hdc_close, NULL,
+    NULL,
+    hdc_init_ps1, hdc_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
 };
-
-
-/*
- * Very nasty.
- *
- * The PS/1 systems employ a feedback system where external
- * cards let the system know they were 'addressed' by setting
- * their Card Selected Flag (CSF) in register 0x0091.  Driver
- * software can test this register to see if they are talking
- * to hardware or not.
- *
- * This means, that we must somehow do the same, and yes, I
- * agree that the current solution is nasty.
- */
-void
-ps1_hdc_inform(void *priv, void *arg)
-{
-    hdc_t *dev = (hdc_t *)priv;
-
-    dev->sys = arg;
-}

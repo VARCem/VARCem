@@ -14,12 +14,12 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.29	2018/11/13
+ * Version:	@(#)hdc_ide_ata.c	1.0.31	2019/04/11
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,7 +54,6 @@
 #include "../../emu.h"
 #include "../../version.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -807,10 +806,14 @@ ide_set_sector(ide_t *ide, int64_t sector_num)
 static void
 ide_zero(int d)
 {
-    ide_t *dev;
-    ide_drives[d] = (ide_t *)mem_alloc(sizeof(ide_t));
-    memset(ide_drives[d], 0, sizeof(ide_t));
-    dev = ide_drives[d];
+    ide_t *dev = ide_drives[d];
+
+    if (dev == NULL) {
+	dev = (ide_t *)mem_alloc(sizeof(ide_t));
+	memset(dev, 0x00, sizeof(ide_t));
+	ide_drives[d] = dev;
+    }
+
     dev->channel = d;
     dev->type = IDE_NONE;
     dev->hdd_num = -1;
@@ -831,9 +834,12 @@ ide_board_close(int board)
     for (d = 0; d < 2; d++) {
 	c = (board << 1) + d;
 	dev = ide_drives[c];
+	if (dev == NULL) continue;
 
-	if ((dev->type == IDE_HDD) && (dev->hdd_num != -1))
+	if ((dev->type == IDE_HDD) && (dev->hdd_num != -1)) {
 		hdd_image_close(dev->hdd_num);
+		dev->hdd_num = -1;
+	}
 
 	if (board < 4) {
 		if (ide_drive_is_atapi(dev)) {
@@ -842,14 +848,19 @@ ide_board_close(int board)
 		}
 	}
 
-	if (dev->buffer)
+	if (dev->buffer) {
 		free(dev->buffer);
+		dev->buffer = NULL;
+	}
 
-	if (dev->sector_buffer)
+	if (dev->sector_buffer) {
 		free(dev->sector_buffer);
+		dev->sector_buffer = NULL;
+	}
 
-	if (dev)
-		free(dev);
+	ide_drives[c] = NULL;
+
+	free(dev);
     }
 }
 
@@ -857,11 +868,16 @@ ide_board_close(int board)
 void
 ide_allocate_buffer(ide_t *dev)
 {
-    if (dev->buffer)
-	return;
+    uint32_t sz = 65536 * sizeof(uint16_t);
 
-    dev->buffer = (uint16_t *)mem_alloc(65536 * sizeof(uint16_t));
-    memset(dev->buffer, 0, 65536 * sizeof(uint16_t));
+    if (dev->buffer) {
+INFO("IDE: buffer already present @%08lx\n", dev->buffer);
+	return;
+    }
+
+    dev->buffer = (uint16_t *)mem_alloc(sz);
+    memset(dev->buffer, 0x00, sz);
+INFO("IDE: buffer allocated @%08lx\n", dev->buffer);
 }
 
 
@@ -2296,7 +2312,7 @@ ide_set_side(int controller, uint16_t port)
 
 
 static void *
-ide_ter_init(const device_t *info)
+ide_ter_init(const device_t *info, UNUSED(void *parent))
 {
     ide_boards[2] = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
     memset(ide_boards[2], 0, sizeof(ide_board_t));
@@ -2328,7 +2344,7 @@ ide_ter_close(void *priv)
 
 
 static void *
-ide_qua_init(const device_t *info)
+ide_qua_init(const device_t *info, UNUSED(void *parent))
 {
     ide_boards[3] = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
     memset(ide_boards[3], 0, sizeof(ide_board_t));
@@ -2426,7 +2442,7 @@ secondary_ide_check(void)
 
 
 static void *
-ide_init(const device_t *info)
+ide_init(const device_t *info, UNUSED(void *parent))
 {
     DEBUG("Initializing IDE...\n");
 
@@ -2569,6 +2585,7 @@ const device_t ide_isa_device = {
     "PC/AT IDE Controller",
     DEVICE_ISA | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 0,
+    NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2578,6 +2595,7 @@ const device_t ide_isa_2ch_device = {
     "PC/AT IDE Controller (Dual-Channel)",
     DEVICE_ISA | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 2,
+    NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2587,6 +2605,7 @@ const device_t ide_isa_2ch_opt_device = {
     "PC/AT IDE Controller (Single/Dual)",
     DEVICE_ISA | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 3,
+    NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2596,6 +2615,7 @@ const device_t ide_vlb_device = {
     "IDE Controller",
     DEVICE_VLB | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 4,
+    NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2605,6 +2625,7 @@ const device_t ide_vlb_2ch_device = {
     "IDE Controller (Dual-Channel)",
     DEVICE_VLB | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 6,
+    NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2614,6 +2635,7 @@ const device_t ide_pci_device = {
     "IDE Controller",
     DEVICE_PCI | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 8,
+    NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2623,6 +2645,7 @@ const device_t ide_pci_2ch_device = {
     "IDE Controller (Dual-Channel)",
     DEVICE_PCI | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 10,
+    NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -2661,12 +2684,12 @@ static const device_config_t ide_ter_config[] = {
                         "IRQ 12", 12
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -2674,6 +2697,7 @@ const device_t ide_ter_device = {
     "Tertiary IDE Controller",
     DEVICE_AT,
     (HDD_BUS_IDE << 8) | 0,
+    NULL,
     ide_ter_init, ide_ter_close, NULL,
     NULL, NULL, NULL, NULL,
     ide_ter_config
@@ -2712,12 +2736,12 @@ static const device_config_t ide_qua_config[] = {
                         "IRQ 12", 12
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -2725,6 +2749,7 @@ const device_t ide_qua_device = {
     "Quaternary IDE Controller",
     DEVICE_AT,
     (HDD_BUS_IDE << 8) | 0,
+    NULL,
     ide_qua_init, ide_qua_close, NULL,
     NULL, NULL, NULL, NULL,
     ide_qua_config

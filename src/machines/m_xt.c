@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.15	2019/02/16
+ * Version:	@(#)m_xt.c	1.0.17	2019/04/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,14 +38,17 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../device.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pit.h"
 #include "../devices/input/keyboard.h"
+#include "../devices/ports/parallel.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #ifdef USE_CASSETTE
@@ -54,79 +57,78 @@
 #include "machine.h"
 
 
-/* Generic PC/XT system board with just the basics. */
-void
-m_pc_common_init(const machine_t *model, void *arg)
-{
-    int rom_basic;
+typedef struct {
+    uint8_t	type;
 
-    machine_common_init(model, arg);
+    int8_t	basic;
+    int8_t	floppy;
+} pcxt_t;
+
+
+/* Generic PC/XT system board with just the basics. */
+static void *
+xt_common_init(const device_t *info, void *arg)
+{
+    pcxt_t *dev;
+
+    /* Allocate private control block for machine. */
+    dev = (pcxt_t *)mem_alloc(sizeof(pcxt_t));
+    memset(dev, 0x00, sizeof(pcxt_t));
+    dev->type = info->local;
+
+    /* First of all, add the root device. */
+    device_add_ex(info, dev);
 
     /* Check if we support a BASIC ROM. */
-    if (model->device != NULL) {
-	DEBUG("This (%s) machine supports a BASIC ROM.\n", model->name);
+    dev->basic = machine_get_config_int("rom_basic");
+    dev->floppy = machine_get_config_int("floppy");
 
-	rom_basic = machine_get_config_int("rom_basic");
-	DEBUG("ROM BASIC is currently %sabled.\n", (rom_basic)?"en":"dis");
-    }
+    machine_common_init();
+
+    nmi_init();
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
 
-    device_add(&fdc_xt_device);
-
-    nmi_init();
-}
-
-
-/* The original IBM PC, 1981 model. */
-void
-m_pc_init(const machine_t *model, void *arg)
-{
-    m_pc_common_init(model, arg);
-
-    device_add(&keyboard_pc_device);
-
+    switch(dev->type) {
+	case 0:		/* PC, 1981 */
+	case 1:		/* PC, 1982 */
+		if (dev->type == 1)
+			device_add(&keyboard_pc82_device);
+		else
+			device_add(&keyboard_pc_device);
 #ifdef USE_CASSETTE
-    device_add(&cassette_device);
+		device_add(&cassette_device);
 #endif
+		break;
+
+	case 10:	/* XT, 1982 */
+	case 11:	/* XT, 1986 */
+		if (dev->type == 11)
+			device_add(&keyboard_xt86_device);
+		else
+			device_add(&keyboard_xt_device);
+		break;
+
+	default:	/* clones */
+		device_add(&keyboard_xt86_device);
+    }
+
+    /* Not entirely correct, they were optional. */
+    if (dev->floppy)
+	device_add(&fdc_xt_device);
+
+    return(dev);
 }
 
 
-/* The later IBM PC from 1982. */
-void
-m_pc82_init(const machine_t *model, void *arg)
+static void
+xt_close(void *priv)
 {
-    m_pc_common_init(model, arg);
-
-    device_add(&keyboard_pc82_device);
-
-#ifdef USE_CASSETTE
-    device_add(&cassette_device);
-#endif
+    free(priv);
 }
 
 
-/* The original IBM PC/XT, 1982 model. */
-void
-m_xt_init(const machine_t *model, void *arg)
-{
-    m_pc_common_init(model, arg);
-
-    device_add(&keyboard_xt_device);
-}
-
-
-/* The later IBM PC/XT from 1986. */
-void
-m_xt86_init(const machine_t *model, void *arg)
-{
-    m_pc_common_init(model, arg);
-
-    device_add(&keyboard_xt86_device);
-}
-
-
-static const device_config_t pcxt_config[] = {
+static const device_config_t xt_config[] = {
     {
 	"rom_basic", "ROM BASIC", CONFIG_SELECTION, "", 0,
 	{
@@ -137,28 +139,215 @@ static const device_config_t pcxt_config[] = {
 			"Enabled", 1
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	"floppy", "Floppy Controller", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"Not present", 0
+		},
+		{
+			"Present", 1
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	NULL
     }
 };
 
 
-const device_t m_pc_device = {
-    "IBM PC",
-    0, 0,
-    NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
-    pcxt_config
+static const machine_t pc81_info = {
+    MACHINE_ISA,
+    0,
+    16, 256, 16, 0, -1,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
 };
 
-const device_t m_xt_device = {
-    "PC/XT",
-    0, 0,
+const device_t m_pc81 = {
+    "IBM PC (1981)",
+    DEVICE_ROOT,
+    0,
+    L"ibm/pc",
+    xt_common_init, xt_close, NULL,
     NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
-    pcxt_config
+    &pc81_info,
+    xt_config
+};
+
+
+static const machine_t pc82_info = {
+    MACHINE_ISA,
+    0,
+    64, 256, 32, 0, -1,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_pc82 = {
+    "IBM PC (1982)",
+    DEVICE_ROOT,
+    1,
+    L"ibm/pc82",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &pc82_info,
+    xt_config
+};
+
+
+static const machine_t xt82_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, -1,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt82 = {
+    "PC/XT (1982)",
+    DEVICE_ROOT,
+    10,
+    L"ibm/xt",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &xt82_info,
+    xt_config
+};
+
+
+static const machine_t xt86_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, -1,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt86 = {
+    "PC/XT (1986)",
+    DEVICE_ROOT,
+    11,
+    L"ibm/xt86",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &xt86_info,
+    xt_config
+};
+
+
+static const machine_t ami_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, 0,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt_ami = {
+    "XT (AMI, generic)",
+    DEVICE_ROOT,
+    100,
+    L"generic/xt/ami",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &ami_info,
+    xt_config
+};
+
+
+static const machine_t award_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, 0,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt_award = {
+    "XT (Award, generic)",
+    DEVICE_ROOT,
+    101,
+    L"generic/xt/award",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &award_info,
+    xt_config
+};
+
+
+static const machine_t phoenix_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, 0,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt_phoenix = {
+    "XT (generic, Phoenix)",
+    DEVICE_ROOT,
+    102,
+    L"generic/xt/phoenix",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &phoenix_info,
+    xt_config
+};
+
+
+static const machine_t openxt_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, 0,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt_openxt = {
+    "XT (generic, OpenXT)",
+    DEVICE_ROOT,
+    103,
+    L"generic/xt/open_xt",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &openxt_info,
+    xt_config
+};
+
+
+static const machine_t dtk_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, 0,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt_dtk = {
+    "DTK Data-1000 Turbo XT",
+    DEVICE_ROOT,
+    104,
+    L"dtk/xt",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &dtk_info,
+    xt_config
+};
+
+
+static const machine_t juko_info = {
+    MACHINE_ISA,
+    0,
+    64, 640, 64, 0, 0,
+    {{"Intel",cpus_8088},{"NEC",cpus_nec}}
+};
+
+const device_t m_xt_juko = {
+    "Juko XT",
+    DEVICE_ROOT,
+    105,
+    L"juko/pc",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &juko_info,
+    xt_config
 };

@@ -8,13 +8,13 @@
  *
  *		Emulation of Intel System I/O PCI chip.
  *
- * Version:	@(#)intel_sio.c	1.0.4	2018/10/05
+ * Version:	@(#)intel_sio.c	1.0.6	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -45,6 +45,7 @@
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "dma.h"
 #include "pci.h"
 #include "intel_sio.h"
@@ -194,7 +195,7 @@ sio_close(void *p)
 
 
 static void *
-sio_init(const device_t *info)
+sio_init(const device_t *info, UNUSED(void *parent))
 {
     sio_t *sio = (sio_t *)mem_alloc(sizeof(sio_t));
     memset(sio, 0, sizeof(sio_t));
@@ -217,6 +218,7 @@ const device_t sio_device = {
     "Intel 82378IB (SIO)",
     DEVICE_PCI,
     0,
+    NULL,
     sio_init, sio_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

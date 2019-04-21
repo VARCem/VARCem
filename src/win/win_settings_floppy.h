@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_floppy.h	1.0.10	2018/10/25
+ * Version:	@(#)win_settings_floppy.h	1.0.11	2019/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -211,7 +211,7 @@ static WIN_RESULT CALLBACK
 floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
-    HWND h;
+    HWND h = NULL;
     int i;
     int old_sel = 0;
 

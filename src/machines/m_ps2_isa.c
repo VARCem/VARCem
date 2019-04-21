@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.15	2019/02/16
+ * Version:	@(#)m_ps2_isa.c	1.0.16	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
 #include "../cpu/cpu.h"
@@ -59,18 +60,27 @@
 #include "machine.h"
 
 
-static uint8_t ps2_94, ps2_102, ps2_103, ps2_104, ps2_105, ps2_190;
+typedef struct {
+    uint8_t	type;
 
+    uint8_t	reg_94,
+		reg_102,
+		reg_103,
+		reg_104,
+		reg_105,
+		reg_190;
 
-static struct {
-    uint8_t status, int_status;
-    uint8_t attention, ctrl;
-} ps2_hd;
+    uint8_t	hd_status,
+		hd_istat;
+    uint8_t	hd_attn,
+		hd_ctrl;
+} ps2_t;
 
 
 static uint8_t
 ps2_read(uint16_t port, void *priv)
 {
+    ps2_t *dev = (ps2_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port) {
@@ -79,52 +89,54 @@ ps2_read(uint16_t port, void *priv)
 		break;
 
 	case 0x0094:
-		ret = ps2_94;
+		ret = dev->reg_94;
 		break;
 
 	case 0x0102:
-		ret = ps2_102 | 8;
+		ret = dev->reg_102 | 8;
 		break;
 
 	case 0x0103:
-		ret = ps2_103;
+		ret = dev->reg_103;
 		break;
 
 	case 0x0104:
-		ret = ps2_104;
+		ret = dev->reg_104;
 		break;
 
 	case 0x0105:
-		ret = ps2_105;
+		ret = dev->reg_105;
 		break;
 
 	case 0x0190:
-		ret = ps2_190;
+		ret = dev->reg_190;
 		break;
 
 	case 0x0322:
-		ret = ps2_hd.status;
+		ret = dev->hd_status;
 		break;
 
 	case 0x0324:
-		ret = ps2_hd.int_status;
-		ps2_hd.int_status &= ~0x02;
+		ret = dev->hd_istat;
+		dev->hd_istat &= ~0x02;
 		break;
 
 	default:
 		break;
     }
 
-    return ret;
+    return(ret);
 }
 
 
 static void
 ps2_write(uint16_t port, uint8_t val, void *priv)
 {
+    ps2_t *dev = (ps2_t *)priv;
+
     switch (port) {
 	case 0x0094:
-		ps2_94 = val;
+		dev->reg_94 = val;
 		break;
 
 	case 0x0102:
@@ -147,77 +159,128 @@ ps2_write(uint16_t port, uint8_t val, void *priv)
 				parallel_setup(0, 0x0278);
 				break;
 		}
-		ps2_102 = val;
+		dev->reg_102 = val;
 		break;
 
 	case 0x0103:
-		ps2_103 = val;
+		dev->reg_103 = val;
 		break;
 
 	case 0x0104:
-		ps2_104 = val;
+		dev->reg_104 = val;
 		break;
 
 	case 0x0105:
-		ps2_105 = val;
+		dev->reg_105 = val;
 		break;
 
 	case 0x0190:
-		ps2_190 = val;
+		dev->reg_190 = val;
 		break;
 
 	case 0x0322:
-		ps2_hd.ctrl = val;
+		dev->hd_ctrl = val;
 		if (val & 0x80)
-			ps2_hd.status |= 0x02;
+			dev->hd_status |= 0x02;
 		break;
 
 	case 0x0324:
-		ps2_hd.attention = val & 0xf0;
-		if (ps2_hd.attention)
-			ps2_hd.status = 0x14;
+		dev->hd_attn = val & 0xf0;
+		if (dev->hd_attn)
+			dev->hd_status = 0x14;
 		break;
     }
 }
 
 
 static void
-ps2_common_init(void)
+common_init(ps2_t *dev)
 {
-    io_sethandler(0x0091, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
-    io_sethandler(0x0094, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
-    io_sethandler(0x0102, 4, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
-    io_sethandler(0x0190, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
+    io_sethandler(0x0091, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
+    io_sethandler(0x0094, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
+    io_sethandler(0x0102, 4, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
+    io_sethandler(0x0190, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
 
-    io_sethandler(0x0320, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
-    io_sethandler(0x0322, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
-    io_sethandler(0x0324, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, NULL);
+    io_sethandler(0x0320, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
+    io_sethandler(0x0322, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
+    io_sethandler(0x0324, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
 
     port_92_reset();
     port_92_add();
 
-    ps2_190 = 0;
+    dev->reg_190 = 0;
 
     parallel_setup(0, 0x03bc);
-
-    memset(&ps2_hd, 0x00, sizeof(ps2_hd));
 }
 
 
-void
-m_ps2_m30_286_init(const machine_t *model, void *arg)
+static void
+ps2_close(void *priv)
 {
-    machine_common_init(model, arg);
+    ps2_t *dev = (ps2_t *)priv;
 
-    device_add(&fdc_at_ps1_device);
+    free(dev);
+}
+
+
+static void *
+ps2_init(const device_t *info, void *arg)
+{
+    ps2_t *dev;
+
+    dev = (ps2_t *)mem_alloc(sizeof(ps2_t));
+    memset(dev, 0x00, sizeof(ps2_t));
+    dev->type = info->local;
+
+    /* Add machine device to system. */
+    device_add_ex(info, dev);
+
+    machine_common_init();
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_at);
     dma16_init();
     pic2_init();
 
-    ps2_common_init();
+    device_add(&ps_nvr_device);
 
     device_add(&keyboard_ps2_device);
-    device_add(&ps_nvr_device);
-    device_add(&ps1vga_device);
+
+    device_add(&fdc_at_ps1_device);
+
+    switch(dev->type) {
+	case 0:		/* Model 30/286 */
+		device_add(&ps1vga_device);
+		break;
+    }
+
+    common_init(dev);
+
+    return(dev);
 }
+
+
+static const CPU cpus_ps2_m30_286[] = {
+    { "286/10", CPU_286, 10000000, 1, 0, 0, 0, 0, 0, 2,2,2,2, 1 },
+    { "286/12", CPU_286, 12000000, 1, 0, 0, 0, 0, 0, 3,3,3,3, 2 },
+    { "286/16", CPU_286, 16000000, 1, 0, 0, 0, 0, 0, 3,3,3,3, 2 },
+    { "286/20", CPU_286, 20000000, 1, 0, 0, 0, 0, 0, 4,4,4,4, 3 },
+    { NULL }
+};
+
+static const machine_t m30_info = {
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,
+    MACHINE_VIDEO,
+    1, 16, 1, 64, -1,
+    {{"",cpus_ps2_m30_286}}
+};
+
+const device_t m_ps2_m30_286 = {
+    "IBM PS/2 M30/286",
+    DEVICE_ROOT,
+    0,
+    L"ibm/ps2_m30_286",
+    ps2_init, ps2_close, NULL,
+    NULL, NULL, NULL,
+    &m30_info,
+    NULL
+};

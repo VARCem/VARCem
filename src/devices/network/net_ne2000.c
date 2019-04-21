@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.14	2018/10/24
+ * Version:	@(#)net_ne2000.c	1.0.16	2019/04/11
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -2379,7 +2379,7 @@ nic_mca_write(int port, uint8_t val, void *priv)
 
 
 static void *
-nic_init(const device_t *info)
+nic_init(const device_t *info, UNUSED(void *parent))
 {
     char *ansi_id = "REALTEK PLUG & PLAY ETHERNET CARD";
     uint32_t mac;
@@ -2678,154 +2678,154 @@ nic_close(void *priv)
 
 
 static const device_config_t ne1000_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x300,
 	{
-		"base", "Address", CONFIG_HEX16, "", 0x300,
 		{
-			{
-				"0x280", 0x280
-			},
-			{
-				"0x300", 0x300
-			},
-			{
-				"0x320", 0x320
-			},
-			{
-				"0x340", 0x340
-			},
-			{
-				"0x360", 0x360
-			},
-			{
-				"0x380", 0x380
-			},
-			{
-				""
-			}
+			"280H", 0x280
 		},
-	},
-	{
-		"irq", "IRQ", CONFIG_SELECTION, "", 3,
 		{
-			{
-				"IRQ 2", 2
-			},
-			{
-				"IRQ 3", 3
-			},
-			{
-				"IRQ 4", 4
-			},
-			{
-				"IRQ 5", 5
-			},
-			{
-				"IRQ 7", 7
-			},
-			{
-				""
-			}
+			"300H", 0x300
 		},
-	},
-	{
-		"mac", "MAC Address", CONFIG_MAC, "", -1
-	},
-	{
-		"", "", -1
+		{
+			"320H", 0x320
+		},
+		{
+			"340H", 0x340
+		},
+		{
+			"360H", 0x360
+		},
+		{
+			"380H", 0x380
+		},
+		{
+			NULL
+		}
 	}
+    },
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", 3,
+	{
+		{
+			"IRQ 2", 2
+		},
+		{
+			"IRQ 3", 3
+		},
+		{
+			"IRQ 4", 4
+		},
+		{
+			"IRQ 5", 5
+		},
+		{
+			"IRQ 7", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"mac", "MAC Address", CONFIG_MAC, "", -1
+    },
+    {
+	NULL
+    }
 };
 
 static const device_config_t ne2000_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x300,
 	{
-		"base", "Address", CONFIG_HEX16, "", 0x300,
 		{
-			{
-				"0x280", 0x280
-			},
-			{
-				"0x300", 0x300
-			},
-			{
-				"0x320", 0x320
-			},
-			{
-				"0x340", 0x340
-			},
-			{
-				"0x360", 0x360
-			},
-			{
-				"0x380", 0x380
-			},
-			{
-				""
-			}
+			"280H", 0x280
 		},
-	},
-	{
-		"irq", "IRQ", CONFIG_SELECTION, "", 10,
 		{
-			{
-				"IRQ 2", 2
-			},
-			{
-				"IRQ 3", 3
-			},
-			{
-				"IRQ 4", 4
-			},
-			{
-				"IRQ 5", 5
-			},
-			{
-				"IRQ 7", 7
-			},
-			{
-				"IRQ 10", 10
-			},
-			{
-				"IRQ 11", 11
-			},
-			{
-				""
-			}
+			"300H", 0x300
 		},
-	},
-	{
-		"mac", "MAC Address", CONFIG_MAC, "", -1
-	},
-	{
-		"bios_addr", "BIOS address", CONFIG_HEX20, "", 0,
 		{
-			{
-				"Disabled", 0x00000
-			},
-			{
-				"D000", 0xD0000
-			},
-			{
-				"D800", 0xD8000
-			},
-			{
-				"C800", 0xC8000
-			},
-			{
-				""
-			}
+			"320H", 0x320
 		},
-	},
-	{
-		"", "", -1
+		{
+			"340H", 0x340
+		},
+		{
+			"360H", 0x360
+		},
+		{
+			"380H", 0x380
+		},
+		{
+			NULL
+		}
 	}
+    },
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", 10,
+	{
+		{
+			"IRQ 2", 2
+		},
+		{
+			"IRQ 3", 3
+		},
+		{
+			"IRQ 4", 4
+		},
+		{
+			"IRQ 5", 5
+		},
+		{
+			"IRQ 7", 7
+		},
+		{
+			"IRQ 10", 10
+		},
+		{
+			"IRQ 11", 11
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"mac", "MAC Address", CONFIG_MAC, "", -1
+    },
+    {
+	"bios_addr", "BIOS address", CONFIG_HEX20, "", 0,
+	{
+		{
+			"Disabled", 0x00000
+		},
+		{
+			"D000H", 0xD0000
+		},
+		{
+			"D800H", 0xD8000
+		},
+		{
+			"C800H", 0xC8000
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	NULL
+    }
 };
 
 static const device_config_t ne2_mca_config[] = {
-	{
-		"mac", "MAC Address", CONFIG_MAC, "", -1
-	},
-	{
-		"", "", -1
-	}
+    {
+	"mac", "MAC Address", CONFIG_MAC, "", -1
+    },
+    {
+	NULL
+    }
 };
 static const rsl_t ne2_mca_rsl = {
 	{ 0x1000, 0x2020, 0x8020, 0xa0a0, 0xb0b0,
@@ -2839,24 +2839,24 @@ static const rsl_t ne2_enext_mca_rsl = {
 };
 
 static const device_config_t rtl8019as_config[] = {
-	{
-		"mac", "MAC Address", CONFIG_MAC, "", -1
-	},
-	{
-		"", "", -1
-	}
+    {
+	"mac", "MAC Address", CONFIG_MAC, "", -1
+    },
+    {
+	NULL
+    }
 };
 
 static const device_config_t rtl8029as_config[] = {
-	{
-		"bios", "Enable BIOS", CONFIG_BINARY, "", 0
-	},
-	{
-		"mac", "MAC Address", CONFIG_MAC, "", -1
-	},
-	{
-		"", "", -1
-	}
+    {
+	"bios", "Enable BIOS", CONFIG_BINARY, "", 0
+    },
+    {
+	"mac", "MAC Address", CONFIG_MAC, "", -1
+    },
+    {
+	NULL
+    }
 };
 
 
@@ -2864,6 +2864,7 @@ const device_t ne1000_device = {
     "Novell NE1000",
     DEVICE_ISA,
     NE2K_NE1000,
+    NULL,
     nic_init, nic_close, NULL,
     NULL, NULL, NULL, NULL,
     ne1000_config
@@ -2873,6 +2874,7 @@ const device_t ne2000_device = {
     "Novell NE2000",
     DEVICE_ISA | DEVICE_AT,
     NE2K_NE2000,
+    NULL,
     nic_init, nic_close, NULL,
     NULL, NULL, NULL, NULL,
     ne2000_config
@@ -2882,6 +2884,7 @@ const device_t ne2_mca_device = {
     "Novell NE/2",
     DEVICE_MCA,
     NE2K_NE2_MCA,
+    NULL,
     nic_init, nic_close, NULL,
     NULL, NULL, NULL,
     (void *)&ne2_mca_rsl,
@@ -2892,6 +2895,7 @@ const device_t ne2_enext_mca_device = {
     "NetWorth Ethernet/MC",
     DEVICE_MCA,
     NE2K_NE2_ENEXT_MCA,
+    NULL,
     nic_init, nic_close, NULL,
     NULL, NULL, NULL,
     (void *)&ne2_enext_mca_rsl,
@@ -2902,6 +2906,7 @@ const device_t rtl8019as_device = {
     "Realtek RTL8019AS",
     DEVICE_ISA | DEVICE_AT,
     NE2K_RTL8019AS,
+    NULL,
     nic_init, nic_close, NULL,
     NULL, NULL, NULL, NULL,
     rtl8019as_config
@@ -2911,6 +2916,7 @@ const device_t rtl8029as_device = {
     "Realtek RTL8029AS",
     DEVICE_PCI,
     NE2K_RTL8029AS,
+    NULL,
     nic_init, nic_close, NULL,
     NULL, NULL, NULL, NULL,
     rtl8029as_config

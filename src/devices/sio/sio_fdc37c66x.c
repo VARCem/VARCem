@@ -9,13 +9,13 @@
  *		Implementation of the SMC FDC37C663 and FDC37C665 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c66x.c	1.0.9	2018/11/11
+ * Version:	@(#)sio_fdc37c66x.c	1.0.11	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -52,6 +52,7 @@
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
+#include "../../plat.h"
 #include "sio.h"
 
 
@@ -276,7 +277,7 @@ fdc37c66x_close(void *priv)
 
 
 static void *
-fdc37c66x_init(const device_t *info)
+fdc37c66x_init(const device_t *info, UNUSED(void *parent))
 {
     fdc37c66x_t *dev = (fdc37c66x_t *)mem_alloc(sizeof(fdc37c66x_t));
     memset(dev, 0x00, sizeof(fdc37c66x_t));
@@ -298,6 +299,7 @@ const device_t fdc37c663_device = {
     "SMC FDC37C663 Super I/O",
     0,
     0x63,
+    NULL,
     fdc37c66x_init, fdc37c66x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -307,6 +309,7 @@ const device_t fdc37c665_device = {
     "SMC FDC37C665 Super I/O",
     0,
     0x65,
+    NULL,
     fdc37c66x_init, fdc37c66x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -316,6 +319,7 @@ const device_t fdc37c666_device = {
     "SMC FDC37C666 Super I/O",
     0,
     0x66,
+    NULL,
     fdc37c66x_init, fdc37c66x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

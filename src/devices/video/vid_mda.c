@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.11	2019/03/09
+ * Version:	@(#)vid_mda.c	1.0.13	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,6 +47,7 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pit.h"
 #include "../ports/parallel.h"
 #include "video.h"
@@ -342,22 +343,11 @@ mda_init(mda_t *dev)
     if (cga_palette > 6)
 	cga_palette = 0;
     video_palette_rebuild();
-
-    timer_add(mda_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
-
-    mem_map_add(&dev->mapping, 0xb0000, 0x08000,
-		mda_read,NULL,NULL, mda_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
-
-    io_sethandler(0x03b0, 16,
-		  mda_in,NULL,NULL, mda_out,NULL,NULL, dev);
-
-    video_inform(VID_TYPE_MDA, &mda_timings);
 }
 
 
 static void *
-mda_standalone_init(const device_t *info)
+mda_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     mda_t *dev;
 
@@ -368,6 +358,18 @@ mda_standalone_init(const device_t *info)
     dev->vram = (uint8_t *)mem_alloc(0x1000);
 
     mda_init(dev);
+
+    mem_map_add(&dev->mapping, 0xb0000, 0x08000,
+		mda_read,NULL,NULL, mda_write,NULL,NULL,
+		NULL, MEM_MAPPING_EXTERNAL, dev);
+
+    io_sethandler(0x03b0, 16,
+		  mda_in,NULL,NULL, mda_out,NULL,NULL, dev);
+
+    timer_add(mda_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)&mda_timings);
 
     /* Force the LPT3 port to be enabled. */
     parallel_enabled[2] = 1;
@@ -414,19 +416,20 @@ const device_config_t mda_config[] = {
 			"Gray", 3
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
 const device_t mda_device = {
     "MDA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_MDA) | DEVICE_ISA,
     0,
+    NULL,
     mda_standalone_init, mda_close, NULL,
     NULL,
     speed_changed,

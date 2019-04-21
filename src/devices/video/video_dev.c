@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.35	2019/03/09
+ * Version:	@(#)video_dev.c	1.0.37	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,12 +46,9 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../mem.h"
 #include "../../device.h"
-#include "../../plat.h"
 #include "video.h"
-#include "vid_mda.h"
 
 
 #ifdef ENABLE_VIDEO_DEV_LOG
@@ -98,9 +95,11 @@ static const struct {
     { "cl_gd5429_isa",		&gd5429_isa_device		},
     { "cl_gd5434_isa",		&gd5434_isa_device		},
     { "compaq_ati28800",	&ati28800_compaq_device		},
+#if defined(DEV_BRANCH) && defined(USE_COMPAQ)
     { "compaq_cga",		&cga_compaq_device		},
     { "compaq_cga_2",		&cga_compaq2_device		},
     { "compaq_ega",		&ega_compaq_device		},
+#endif
     { "hercules_plus",		&herculesplus_device		},
     { "incolor",		&incolor_device			},
     { "genius",			&genius_device			},
@@ -195,44 +194,6 @@ video_card_log(int level, const char *fmt, ...)
 # endif
 }
 #endif
-
-
-void
-video_reset(void)
-{
-    INFO("VIDEO: reset (video_card=%d, internal=%d)\n",
-       	 video_card, (machines[machine].flags & MACHINE_VIDEO) ? 1 : 0);
-
-    /* Reset the CGA palette. */
-    cga_palette = 0;
-    video_palette_rebuild();
-
-    /*
-     * Clear (deallocate) any video font memory.
-     *
-     * We have to do this before the machine is reset, as
-     * that *might* allocate it if that uses an internal
-     * controller using extended font memory..
-     */
-    video_reset_font();
-
-    /* Initialize the video font tables. */
-    video_load_font(MDA_FONT_ROM_PATH, FONT_MDA);
-
-    /* Do not initialize internal cards here. */
-    if ((video_card == VID_NONE) || \
-	(video_card == VID_INTERNAL) || \
-	machines[machine].fixed_vidcard) return;
-
-    /* Configure default timing parameters for the card. */
-    video_inform(VID_TYPE_SPEC, NULL);
-
-    device_add(video_cards[video_card].device);
-
-    /* Enable the Voodoo if configured. */
-    if (voodoo_enabled)
-       	device_add(&voodoo_device);
-}
 
 
 int

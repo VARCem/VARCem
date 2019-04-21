@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.17	2019/01/15
+ * Version:	@(#)win_settings_periph.h	1.0.18	2019/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,7 @@ static int	hdc_to_list[20],
 
 /* Populate the HDC combo. */
 static void
-recalc_scsi_list(HWND hdlg)
+recalc_scsi_list(const machine_t *m, HWND hdlg)
 {
     WCHAR temp[128];
     char tempA[128];
@@ -69,8 +69,7 @@ recalc_scsi_list(HWND hdlg)
 
 	dev = scsi_card_getdevice(c);
 
-	if (!scsi_card_available(c) ||
-	    !device_is_valid(dev, machines[temp_machine].flags)) {
+	if (!scsi_card_available(c) || !device_is_valid(dev, m->flags)) {
 		c++;
 		continue;
 	}
@@ -96,7 +95,7 @@ recalc_scsi_list(HWND hdlg)
 
 /* Populate the HDC combo. */
 static void
-recalc_hdc_list(HWND hdlg)
+recalc_hdc_list(const machine_t *m, HWND hdlg)
 {
     WCHAR temp[128];
     char tempA[128];
@@ -116,8 +115,7 @@ recalc_hdc_list(HWND hdlg)
 
 	dev = hdc_get_device(c);
 
-	if (!hdc_available(c) ||
-	    !device_is_valid(dev, machines[temp_machine].flags)) {
+	if (!hdc_available(c) || !device_is_valid(dev, m->flags)) {
 		c++;
 		continue;
 	}
@@ -125,7 +123,7 @@ recalc_hdc_list(HWND hdlg)
 	if (c == 0) {
 		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
 	} else if (c == 1) {
-		if (! (machines[temp_machine].flags&MACHINE_HDC)) {
+		if (! (m->flags & MACHINE_HDC)) {
 			/* Skip "Internal" if machine doesn't have one. */
 			c++;
 			continue;
@@ -158,12 +156,17 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     WCHAR temp[128];
     const char *stransi;
     const device_t *dev;
+    const machine_t *m;
     int c, d;
     HWND h;
 
     switch (message) {
 	case WM_INITDIALOG:
-		recalc_scsi_list(hdlg);
+		/* Get info about the selected machine. */
+		dev = machine_get_device_ex(temp_machine);
+		m = (machine_t *)dev->mach_info;
+
+		recalc_scsi_list(m, hdlg);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
 		if (scsi_card_has_config(temp_scsi_card))
@@ -171,7 +174,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		else
 			EnableWindow(h, FALSE);
 
-		recalc_hdc_list(hdlg);
+		recalc_hdc_list(m, hdlg);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
 		if (hdc_has_config(temp_hdc_type))
@@ -179,7 +182,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		else
 			EnableWindow(h, FALSE);
 
-		if (machines[temp_machine].flags & MACHINE_AT) {
+		if (m->flags & MACHINE_AT) {
 			h = GetDlgItem(hdlg, IDC_CHECK_IDE_TER);
 			EnableWindow(h, TRUE);
 			SendMessage(h, BM_SETCHECK, temp_ide_ter, 0);

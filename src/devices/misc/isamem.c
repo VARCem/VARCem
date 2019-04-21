@@ -32,11 +32,11 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.6	2018/10/24
+ * Version:	@(#)isamem.c	1.0.8	2019/04/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -75,7 +75,6 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../device.h"
@@ -366,7 +365,7 @@ DEBUG("EMS: write(%02x) to register 1 !\n");
 
 /* Initialize the device for use. */
 static void *
-isamem_init(const device_t *info)
+isamem_init(const device_t *info, UNUSED(void *parent))
 {
     memdev_t *dev;
     uint32_t k, t;
@@ -648,239 +647,239 @@ isamem_close(void *priv)
 }
 
 
-static const device_config_t ibmxt_config[] =
-{
-	{
-		"size", "Memory Size", CONFIG_SPINNER, "", 128,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 512, 16 }
-	},
-	{
-		"start", "Start Address", CONFIG_SPINNER, "", 256,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 640-64, 64 }
-	},
-	{
-		"", "", -1
-	}
+static const device_config_t ibmxt_config[] = {
+    {
+	"size", "Memory Size", CONFIG_SPINNER, "", 128,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 512, 16 }
+    },
+    {
+	"start", "Start Address", CONFIG_SPINNER, "", 256,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 640-64, 64 }
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t ibmxt_device = {
     "IBM PC/XT Memory Expansion",
     DEVICE_ISA,
     0,
+    NULL,
     isamem_init, isamem_close, NULL,
     NULL, NULL, NULL, NULL,
     ibmxt_config
 };
 
 
-static const device_config_t ibmat_config[] =
-{
-	{
-		"size", "Memory Size", CONFIG_SPINNER, "", 512,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 4096, 512 }
-	},
-	{
-		"start", "Start Address", CONFIG_SPINNER, "", 512,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 16128, 128 }
-	},
-	{
-		"", "", -1
-	}
+static const device_config_t ibmat_config[] = {
+    {
+	"size", "Memory Size", CONFIG_SPINNER, "", 512,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 4096, 512 }
+    },
+    {
+	"start", "Start Address", CONFIG_SPINNER, "", 512,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 16128, 128 }
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t ibmat_device = {
     "IBM PC/AT Memory Expansion",
     DEVICE_ISA,
     1,
+    NULL,
     isamem_init, isamem_close, NULL,
     NULL, NULL, NULL, NULL,
     ibmat_config
 };
 
 
-static const device_config_t p5pak_config[] =
-{
-	{
-		"size", "Memory Size", CONFIG_SPINNER, "", 128,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 384, 64 }
-	},
-	{
-		"start", "Start Address", CONFIG_SPINNER, "", 512,
-		{ { 0 } },
-		{ { 0 } },
-		{ 64, 576, 64 }
-	},
-	{
-		"", "", -1
-	}
+static const device_config_t p5pak_config[] = {
+    {
+	"size", "Memory Size", CONFIG_SPINNER, "", 128,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 384, 64 }
+    },
+    {
+	"start", "Start Address", CONFIG_SPINNER, "", 512,
+	{ { 0 } },
+	{ { 0 } },
+	{ 64, 576, 64 }
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t p5pak_device = {
     "Paradise Systems 5-PAK",
     DEVICE_ISA,
     2,
+    NULL,
     isamem_init, isamem_close, NULL,
     NULL, NULL, NULL, NULL,
     p5pak_config
 };
 
 
-static const device_config_t ems5150_config[] =
-{
+static const device_config_t ems5150_config[] = {
+    {
+	"size", "Memory Size", CONFIG_SPINNER, "", 256,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 2048, 64 }
+    },
+    {
+	"base", "Address", CONFIG_HEX16, "", 0,
 	{
-		"size", "Memory Size", CONFIG_SPINNER, "", 256,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 2048, 64 }
-	},
-	{
-		"base", "Address", CONFIG_HEX16, "", 0,
 		{
-			{
-				"Disabled", 0
-			},
-			{
-				"Board 1", 0x0208
-			},
-			{
-				"Board 2", 0x020a
-			},
-			{
-				"Board 3", 0x020c
-			},
-			{
-				"Board 4", 0x020e
-			},
-			{
-				""
-			}
+			"Disabled", 0
 		},
+		{
+			"Board 1", 0x0208
+		},
+		{
+			"Board 2", 0x020a
+		},
+		{
+			"Board 3", 0x020c
+		},
+		{
+			"Board 4", 0x020e
+		},
+		{
+			NULL
+		}
 	},
-	{
-		"", "", -1
-	}
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t ems5150_device = {
     "Micro Mainframe EMS-5150(T)",
     DEVICE_ISA,
     3,
+    NULL,
     isamem_init, isamem_close, NULL,
     NULL, NULL, NULL, NULL,
     ems5150_config
 };
 
 
-static const device_config_t ev159_config[] =
-{
+static const device_config_t ev159_config[] = {
+    {
+	"size", "Memory Size", CONFIG_SPINNER, "", 512,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 3072, 512 }
+    },
+    {
+	"start", "Start Address", CONFIG_SPINNER, "", 0,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 16128, 128 }
+    },
+    {
+	"length", "Contiguous Size", CONFIG_SPINNER, "", 0,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 16384, 128 }
+    },
+    {
+	"width", "I/O Width", CONFIG_SELECTION, "", 0,
 	{
-		"size", "Memory Size", CONFIG_SPINNER, "", 512,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 3072, 512 }
-	},
-	{
-		"start", "Start Address", CONFIG_SPINNER, "", 0,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 16128, 128 }
-	},
-	{
-		"length", "Contiguous Size", CONFIG_SPINNER, "", 0,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 16384, 128 }
-	},
-	{
-		"width", "I/O Width", CONFIG_SELECTION, "", 0,
 		{
-			{
-				"8-bit", 0
-			},
-			{
-				"16-bit", 1
-			},
-			{
-				""
-			}
+			"8-bit", 0
 		},
-	},
-	{
-		"speed", "Transfer Speed", CONFIG_SELECTION, "", 0,
 		{
-			{
-				"Standard (150ns)", 0
-			},
-			{
-				"High-Speed (120ns)", 1
-			},
-			{
-				""
-			}
+			"16-bit", 1
+		},
+		{
+			NULL
 		}
 	},
+    },
+    {
+	"speed", "Transfer Speed", CONFIG_SELECTION, "", 0,
 	{
-		"ems", "EMS mode", CONFIG_SELECTION, "", 0,
 		{
-			{
-				"Disabled", 0
-			},
-			{
-				"Enabled", 1
-			},
-			{
-				""
-			}
+			"Standard (150ns)", 0
 		},
-	},
-	{
-		"base", "Address", CONFIG_HEX16, "", 0x0258,
 		{
-			{
-				"208H", 0x0208
-			},
-			{
-				"218H", 0x0218
-			},
-			{
-				"258H", 0x0258
-			},
-			{
-				"268H", 0x0268
-			},
-			{
-				"2A8H", 0x02A8
-			},
-			{
-				"2B8H", 0x02B8
-			},
-			{
-				"2E8H", 0x02E8
-			},
-			{
-				""
-			}
+			"High-Speed (120ns)", 1
 		},
-	},
-	{
-		"", "", -1
+		{
+			NULL
+		}
 	}
+    },
+    {
+	"ems", "EMS mode", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			NULL
+		}
+	},
+    },
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x0258,
+	{
+		{
+			"208H", 0x0208
+		},
+		{
+			"218H", 0x0218
+		},
+		{
+			"258H", 0x0258
+		},
+		{
+			"268H", 0x0268
+		},
+		{
+			"2A8H", 0x02A8
+		},
+		{
+			"2B8H", 0x02B8
+		},
+		{
+			"2E8H", 0x02E8
+		},
+		{
+			NULL
+		}
+	},
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t ev159_device = {
     "Everex EV-159 RAM 3000 Deluxe",
     DEVICE_ISA,
     10,
+    NULL,
     isamem_init, isamem_close, NULL,
     NULL, NULL, NULL, NULL,
     ev159_config
@@ -888,100 +887,100 @@ static const device_t ev159_device = {
 
 
 #ifdef USE_ISAMEM_RAMPAGE
-static const device_config_t rampage_config[] =
-{
+static const device_config_t rampage_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x0258,
 	{
-		"base", "Address", CONFIG_HEX16, "", 0x0258,
 		{
-			{
-				"208H", 0x0208
-			},
-			{
-				"218H", 0x0218
-			},
-			{
-				"258H", 0x0258
-			},
-			{
-				"268H", 0x0268
-			},
-			{
-				"2A8H", 0x02A8
-			},
-			{
-				"2B8H", 0x02B8
-			},
-			{
-				"2E8H", 0x02E8
-			},
-			{
-				""
-			}
+			"208H", 0x0208
 		},
-	},
-	{
-		"frame", "Frame Address", CONFIG_HEX20, "", 0,
 		{
-			{
-				"Disabled", 0x00000
-			},
-			{
-				"C000H", 0xC0000
-			},
-			{
-				"D000H", 0xD0000
-			},
-			{
-				"E000H", 0xE0000
-			},
-			{
-				""
-			}
+			"218H", 0x0218
 		},
-	},
-	{
-		"width", "I/O Width", CONFIG_SELECTION, "", 8,
 		{
-			{
-				"8-bit", 8
-			},
-			{
-				"16-bit", 16
-			},
-			{
-				""
-			}
+			"258H", 0x0258
 		},
-	},
-	{
-		"speed", "Transfer Speed", CONFIG_SELECTION, "", 0,
 		{
-			{
-				"Standard", 0
-			},
-			{
-				"High-Speed", 1
-			},
-			{
-				""
-			}
+			"268H", 0x0268
+		},
+		{
+			"2A8H", 0x02A8
+		},
+		{
+			"2B8H", 0x02B8
+		},
+		{
+			"2E8H", 0x02E8
+		},
+		{
+			NULL
 		}
-	},
-	{
-		"size", "Memory Size", CONFIG_SPINNER, "", 128,
-		{ { 0 } },
-		{ { 0 } },
-		{ 0, 8192, 128 }
-	},
-	{
-		"", "", -1
 	}
+    },
+    {
+	"frame", "Frame Address", CONFIG_HEX20, "", 0,
+	{
+		{
+			"Disabled", 0x00000
+		},
+		{
+			"C000H", 0xC0000
+		},
+		{
+			"D000H", 0xD0000
+		},
+		{
+			"E000H", 0xE0000
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"width", "I/O Width", CONFIG_SELECTION, "", 8,
+	{
+		{
+			"8-bit", 8
+		},
+		{
+			"16-bit", 16
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"speed", "Transfer Speed", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"Standard", 0
+		},
+		{
+			"High-Speed", 1
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"size", "Memory Size", CONFIG_SPINNER, "", 128,
+	{ { 0 } },
+	{ { 0 } },
+	{ 0, 8192, 128 }
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t isamem_rampage_device = {
     "AST RAMpage/XT",
     DEVICE_ISA,
     11,
+    NULL,
     isamem_init, isamem_close, NULL,
     NULL, NULL, NULL, NULL,
     rampage_config

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.65	2019/02/28
+ * Version:	@(#)pc.c	1.0.68	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,6 +55,7 @@
 #include "machines/machine.h"
 #include "io.h"
 #include "mem.h"
+#include "rom.h"
 #include "devices/system/dma.h"
 #include "devices/system/pic.h"
 #include "devices/system/pit.h"
@@ -65,9 +66,9 @@
 #include "devices/ports/game.h"
 #include "devices/ports/serial.h"
 #include "devices/ports/parallel.h"
+#include "devices/input/game/joystick.h"
 #include "devices/input/keyboard.h"
 #include "devices/input/mouse.h"
-#include "devices/input/game/joystick.h"
 #include "devices/floppy/fdd.h"
 #include "devices/floppy/fdd_common.h"
 #include "devices/disk/hdd.h"
@@ -148,10 +149,10 @@ int	sound_card = 0,				/* (C) selected sound card */
 	midi_device;				/* (C) selected midi device */
 int	joystick_type = 0;			/* (C) joystick type */
 int	mem_size = 0;				/* (C) memory size */
-int	machine = -1;				/* (C) current machine ID */
+int	machine_type = -1;			/* (C) current machine ID */
 int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
+	cpu_type = 3,				/* (C) cpu type */
 	cpu_use_dynarec = 0,			/* (C) cpu uses/needs Dyna */
-	cpu = 3,				/* (C) cpu type */
 	enable_external_fpu = 0;		/* (C) enable external FPU */
 int	network_type;				/* (C) net provider type */
 int	network_card;				/* (C) net interface num */
@@ -172,13 +173,14 @@ int	config_changed,				/* config has changed */
 	dopause = 0,				/* system is paused */
 	doresize = 0,				/* screen resize requested */
 	mouse_capture = 0;			/* mouse is captured in app */
+int	AT,					/* machine is AT class */
+	MCA,					/* machine has MCA bus */
+	PCI;					/* machine has PCI bus */
 
 /* Local variables. */
 static int	fps,				/* statistics */
 		framecount,
-		title_update,			/* we want title updated */
-		atfullspeed,
-		cpuspeed2;
+		title_update;			/* we want title updated */
 static int	unscaled_size_x = SCREEN_RES_X,	/* current unscaled size X */
 		unscaled_size_y = SCREEN_RES_Y,	/* current unscaled size Y */
 		efscrnsz_y = SCREEN_RES_Y;
@@ -342,7 +344,7 @@ fatal(const char *fmt, ...)
     config_save();
 
     pic_dump();
-    dumpregs(1);
+    cpu_dumpregs(1);
 
     /*
      * Attempt to perform a clean exit by terminating the
@@ -735,23 +737,39 @@ usage:
 }
 
 
-/* Set the active processor speed for this machine. */
+/*
+ * Set the active processor speed for this machine.
+ *
+ * The argument is either 0 for 'slowest speed', or an
+ * index into the CPU table to select that model' speed.
+ *
+ * This function handles two things:
+ *
+ * - it sets up the correct/expected XTAL frequency for
+ *   the desired operating speed;
+ *
+ * - it then tells the CPU module to activate that CPU
+ *   and/or speed.
+ *
+ * In addition, after the speed change, it updates timings.
+ */
 void
-pc_set_speed(void)
+pc_set_speed(int turbo)
 {
     uint32_t speed;
-    int turbo = 1;	/* for now */
 
     /*
+     * Part One - Set up the correct XTAL frequency.
+     *
      * Get the selected processor's desired speed.
      *
      * For 286+, this is usually 8 (slow) or max speed.
      * For PC and XT class, this will return max speed.
      */
-    speed = machine_speed(turbo);
-INFO("PC: set_speed(%d): speed=%lu\n", speed);
+    speed = machine_get_speed(turbo);
+INFO("PC: set_speed(%i) -> speed %lu\n", turbo, speed);
 
-    if (machine_type() >= CPU_286) {
+    if (cpu_get_type() >= CPU_286) {
 	/* For 286+, we are done. */
 	pit_setclock(speed);
     } else {
@@ -764,33 +782,22 @@ INFO("PC: set_speed(%d): speed=%lu\n", speed);
 	 * much all cases, the original 4.77MHz setting.
 	 */
 	if (turbo)
-		pit_setclock(14318184);
+		pit_setclock(14318184);	// speed * xt_multi ?
 	  else
 		pit_setclock(14318184);
     }
-}
 
+    /*
+     * Part Two - set the correct processor type.
+     */
 
-void
-pc_full_speed(void)
-{
-    cpuspeed2 = cpuspeed;
-
-    if (! atfullspeed) {
-	DEBUG("Set fullspeed - %i\n", cpuspeed2);
-	pc_set_speed();
-	atfullspeed = 1;
-    }
-
-    nvr_period_recalc();
-}
-
-
-void
-pc_speed_changed(void)
-{
-    pc_set_speed();
-
+    /*
+     * Part Three - update several timing constants.
+     *
+     * This is necessary because the emulator's entire
+     * timer system is built around the CPU clock as a
+     * base unit. So, if we change that, everything does..
+     */
     nvr_period_recalc();
 }
 
@@ -839,25 +846,25 @@ pc_init(void)
     const char *stransi;
 
     /* If no machine selected, force user into Setup Wizard. */
-    if (machine < 0) {
+    if (machine_type < 0) {
 	str = get_string(IDS_ERR_NOCONF);
 
 	/* Show the messagebox, and abort if 'No' was selected. */
 	if (ui_msgbox(MBX_QUESTION, str) != 0) return(0);
 
 	/* OK, user wants to set up a machine. */
-	machine = 0;
+	machine_type = 0;
 
 	return(2);
     }
 
     /* Load the ROMs for the selected machine. */
-    if (! machine_available(machine)) {
+    if (! machine_available(machine_type)) {
 	/* Whoops, selected machine not available. */
-	stransi = machine_getname();
+	stransi = machine_get_name();
 	if (stransi == NULL) {
 		/* This happens if configured machine is not even in table.. */
-		sprintf(tempA, "machine_%i", machine);
+		sprintf(tempA, "machine_%i", machine_type);
 		stransi = (const char *)tempA;
 	}
 
@@ -893,9 +900,6 @@ pc_init(void)
      * video card are available, so we can proceed with the
      * initialization of things.
      */
-    cpuspeed2 = (machine_type() >= CPU_286) ? 2 : 1;
-    atfullspeed = 0;
-
     random_init();
 
     mem_init();
@@ -904,13 +908,12 @@ pc_init(void)
     codegen_init();
 #endif
 
+    timer_reset();
+
     keyboard_init();
     joystick_init();
+
     video_init();
-
-    device_init();
-
-    timer_reset();
 
     sound_init();
 
@@ -919,9 +922,6 @@ pc_init(void)
 #else
     floppy_init();		//FIXME: fdd_init() now?
 #endif
-
-    pc_full_speed();
-    shadowbios = 0;
 
     return(1);
 }
@@ -947,8 +947,6 @@ pc_close(thread_t *ptr)
 
     nvr_save();
 
-    machine_close();
-
     config_save();
 
     ui_mouse_capture(0);
@@ -961,11 +959,11 @@ pc_close(thread_t *ptr)
 
     if (dump_on_exit)
 	pic_dump();
-    dumpregs(0);
-
-    video_close();
+    cpu_dumpregs(0);
 
     device_close_all();
+
+    video_close();
 
     network_close();
 
@@ -978,11 +976,7 @@ pc_close(thread_t *ptr)
 void
 pc_reset_hard_close(void)
 {
-    suppress_overscan = 0;
-
     nvr_save();
-
-    machine_close();
 
     mouse_close();
 
@@ -1010,11 +1004,17 @@ void
 pc_reset_hard_init(void)
 {
     /* Reset the general machine support modules. */
-    io_init();
+    io_reset();
     timer_reset();
-    device_init();
+    device_reset();
 
-    /* Reset the ports [before machine!] so they can be configured. */
+    /*
+     * Reset the portsi.
+     *
+     * We do this before the machine is initialized, so its
+     * BIOS can override port settings on SIO chips etc.
+     */
+    game_reset();
     parallel_reset();
     serial_reset();
 
@@ -1027,18 +1027,8 @@ pc_reset_hard_init(void)
      */
     machine_reset();
 
-    /*
-     * Once the machine has been initialized, all that remains
-     * should be resetting all devices set up for it, to their
-     * current configurations !
-     *
-     * For now, we will call their reset functions here, but
-     * that will be a call to device_reset_all() later !
-     */
-#if 1
-    /* FIXME: move elsewhere? */
-    shadowbios = 0;
-#endif
+    /* Reset the video system. */
+    video_reset();
 
     /* Reset any ISA memory cards. */
     isamem_reset();
@@ -1067,10 +1057,6 @@ pc_reset_hard_init(void)
     /* Reset and reconfigure the Network Card layer. */
     network_reset();
 
-    //FIXME: this needs to be re-done. */
-    if (joystick_type != JOYSTICK_NONE)
-	game_update_joystick_type();
-
     if (config_changed) {
 	ui_sb_reset();
 
@@ -1086,11 +1072,22 @@ pc_reset_hard_init(void)
     /* Needs the status bar initialized. */
     ui_mouse_capture(-1);
 
+    /*
+     * At this point, all configurable hardware has
+     * been initialized, and we are about ready to
+     * start executing instructions.
+     */
+#ifdef _DEBUG
+    device_dump();
+#endif
+
     /* Reset the CPU module. */
-    resetx86();
+    cpu_reset(1);
     dma_reset();
     pic_reset();
-    pc_set_speed();
+
+    //FIXME: already done in machine_reset() - why needed here??
+    pc_set_speed(1);
 }
 
 
@@ -1111,8 +1108,6 @@ pc_reset(int hard)
     plat_delay_ms(100);
 
     nvr_save();
-
-    machine_close();
 
     config_save();
 
@@ -1149,6 +1144,7 @@ pc_thread(void *param)
     title_update = 1;
     old_time = plat_get_ticks();
     done = drawits = frm = 0;
+
     while (! *quitp) {
 	/* See if it is time to run a frame of code. */
 	new_time = plat_get_ticks();
@@ -1163,8 +1159,7 @@ pc_thread(void *param)
 
 		/* Run a block of code. */
 		plat_startblit();
-		clockrate = machine_speed(1);
-//INFO("PC: clockrate=%lu, cpuspeed=%lu\n", clockrate, cpuspeed);
+		clockrate = machine_get_speed(1);
 
 		if (is386) {
 #ifdef USE_DYNAREC
@@ -1173,7 +1168,7 @@ pc_thread(void *param)
 			  else
 #endif
 				exec386(clockrate/100);
-		} else if (machine_type() >= CPU_286) {
+		} else if (cpu_get_type() >= CPU_286) {
 			exec386(clockrate/100);
 		} else {
 			execx86(clockrate/100);
@@ -1188,8 +1183,8 @@ pc_thread(void *param)
 		if (title_update) {
 			swprintf(temp, sizeof_w(temp),
 				 L"%s %s - %i%% - %s - %s",
-				 EMU_NAME,emu_version,fps,machine_getname(),
-				 machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].name);
+				 EMU_NAME, emu_version, fps,
+				 machine_get_name(), cpu_get_name());
 			ui_window_title(temp);
 
 			title_update = 0;
@@ -1300,6 +1295,7 @@ set_screen_size(int x, int y)
 
 	/* Account for possible overscan. */
 	vid = video_type();
+INFO("SetScreenSize(%d,%d) type=%d\n", x, y, vid);
 	if ((vid == VID_TYPE_CGA) && (temp_overscan_y == 16)) {
 		/* CGA */
 		dy = (((dx - dtx) / 4.0) * 3.0) + dty;

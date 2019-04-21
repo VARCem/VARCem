@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.12	2019/03/06
+ * Version:	@(#)nvr_at.c	1.0.14	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -232,6 +232,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../nvr.h"
+#include "../../plat.h"
 #include "nmi.h"
 #include "pic.h"
 #include "pit.h"
@@ -561,8 +562,7 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
 	}
     } else {
 	local->addr = (val & (nvr->size - 1));
-	if (!(machines[machine].flags & MACHINE_MCA) &&
-	    !(machines[machine].flags & MACHINE_NONMI))
+	if (!(machine->flags&MACHINE_MCA) && !(machine->flags&MACHINE_NONMI))
 		nmi_mask = (~val & 0x80);
     }
 }
@@ -652,7 +652,7 @@ nvr_recalc(nvr_t *nvr)
 
 
 static void *
-nvr_at_init(const device_t *info)
+nvr_at_init(const device_t *info, UNUSED(void *parent))
 {
     local_t *local;
     nvr_t *nvr;
@@ -665,7 +665,7 @@ nvr_at_init(const device_t *info)
     nvr->data = local;
 
     /* This is machine specific. */
-    nvr->size = machines[machine].nvrsz;
+    nvr->size = machine->nvrsz;
     switch(info->local) {
 	case 0:		/* standard AT (no century register) */
 		nvr->irq = 8;
@@ -728,6 +728,7 @@ const device_t at_nvr_old_device = {
     "PC/AT NVRAM (No Century)",
     DEVICE_ISA | DEVICE_AT,
     0,
+    NULL,
     nvr_at_init, nvr_at_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -737,6 +738,7 @@ const device_t at_nvr_device = {
     "PC/AT NVRAM",
     DEVICE_ISA | DEVICE_AT,
     1,
+    NULL,
     nvr_at_init, nvr_at_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -746,6 +748,7 @@ const device_t ps_nvr_device = {
     "PS/1 or PS/2 NVRAM",
     DEVICE_PS2,
     2,
+    NULL,
     nvr_at_init, nvr_at_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -755,6 +758,7 @@ const device_t amstrad_nvr_device = {
     "Amstrad NVRAM",
     DEVICE_ISA | DEVICE_AT,
     3,
+    NULL,
     nvr_at_init, nvr_at_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

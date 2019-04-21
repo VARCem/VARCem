@@ -28,11 +28,11 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.5	2018/09/22
+ * Version:	@(#)isartc.c	1.0.7	2019/04/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -72,7 +72,6 @@
 #include <time.h>
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../device.h"
 #include "../../nvr.h"
@@ -459,7 +458,7 @@ DEBUG("RTC: write test=%02x\n", val);
 
 /* Initialize the device for use. */
 static void *
-isartc_init(const device_t *info)
+isartc_init(const device_t *info, UNUSED(void *parent))
 {
     rtcdev_t *dev;
 
@@ -554,49 +553,50 @@ isartc_close(void *priv)
 
 
 static const device_config_t ev170_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x02C0,
 	{
-		"base", "Address", CONFIG_HEX16, "", 0x02C0,
 		{
-			{
-				"240H", 0x0240
-			},
-			{
-				"2C0H", 0x02c0
-			},
-			{
-				""
-			}
+			"240H", 0x0240
 		},
-	},
-	{
-		"irq", "IRQ", CONFIG_SELECTION, "", -1,
 		{
-			{
-				"Disabled", -1
-			},
-			{
-				"IRQ2", 2
-			},
-			{
-				"IRQ5", 5
-			},
-			{
-				"IRQ7", 7
-			},
-			{
-				""
-			}
+			"2C0H", 0x02c0
 		},
-	},
-	{
-		"", "", -1
+		{
+			NULL
+		}
 	}
+    },
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", -1,
+	{
+		{
+			"Disabled", -1
+		},
+		{
+			"IRQ2", 2
+		},
+		{
+			"IRQ5", 5
+		},
+		{
+			"IRQ7", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t ev170_device = {
     "Everex EV-170 Magic I/O",
     DEVICE_ISA,
     0,
+    NULL,
     isartc_init, isartc_close, NULL,
     NULL, NULL, NULL, NULL,
     ev170_config
@@ -604,29 +604,30 @@ static const device_t ev170_device = {
 
 
 static const device_config_t pii147_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x0240,
 	{
-		"base", "Address", CONFIG_HEX16, "", 0x0240,
 		{
-			{
-				"Clock 1", 0x0240
-			},
-			{
-				"Clock 2", 0x0340
-			},
-			{
-				""
-			}
+			"Clock 1", 0x0240
 		},
-	},
-	{
-		"", "", -1
+		{
+			"Clock 2", 0x0340
+		},
+		{
+			NULL
+		}
 	}
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t pii147_device = {
     "DTK PII-147 Hexa I/O Plus",
     DEVICE_ISA,
     1,
+    NULL,
     isartc_init, isartc_close, NULL,
     NULL, NULL, NULL, NULL,
     pii147_config
@@ -634,35 +635,36 @@ static const device_t pii147_device = {
 
 
 static const device_config_t p5pak_config[] = {
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", -1,
 	{
-		"irq", "IRQ", CONFIG_SELECTION, "", -1,
 		{
-			{
-				"Disabled", -1
-			},
-			{
-				"IRQ2", 2
-			},
-			{
-				"IRQ3", 3
-			},
-			{
-				"IRQ5", 5
-			},
-			{
-				""
-			}
+			"Disabled", -1
 		},
-	},
-	{
-		"", "", -1
+		{
+			"IRQ2", 2
+		},
+		{
+			"IRQ3", 3
+		},
+		{
+			"IRQ5", 5
+		},
+		{
+			NULL
+		}
 	}
+    },
+    {
+	NULL
+    }
 };
 
 static const device_t p5pak_device = {
     "Paradise Systems 5-PAK",
     DEVICE_ISA,
     2,
+    NULL,
     isartc_init, isartc_close, NULL,
     NULL, NULL, NULL, NULL,
     p5pak_config

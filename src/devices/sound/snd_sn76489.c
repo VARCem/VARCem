@@ -8,13 +8,13 @@
  *
  *		Implementation of the TI SN74689 PSG sound devices.
  *
- * Version:	@(#)snd_sn76489.c	1.0.6	2018/10/16
+ * Version:	@(#)snd_sn76489.c	1.0.8	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -46,6 +46,7 @@
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "sound.h"
 #include "snd_sn76489.h"
 
@@ -244,7 +245,7 @@ void sn76489_init(sn76489_t *sn76489, uint16_t base, uint16_t size, int type, in
         io_sethandler(base, size, NULL, NULL, NULL, sn76489_write, NULL, NULL, sn76489);
 }
 
-void *sn76489_device_init(const device_t *info)
+void *sn76489_device_init(const device_t *info, UNUSED(void *parent))
 {
         sn76489_t *sn76489 = (sn76489_t *)mem_alloc(sizeof(sn76489_t));
         memset(sn76489, 0, sizeof(sn76489_t));
@@ -253,7 +254,7 @@ void *sn76489_device_init(const device_t *info)
 
         return sn76489;
 }
-void *ncr8496_device_init(const device_t *info)
+void *ncr8496_device_init(const device_t *info, UNUSED(void *parent))
 {
         sn76489_t *sn76489 = (sn76489_t *)mem_alloc(sizeof(sn76489_t));
         memset(sn76489, 0, sizeof(sn76489_t));
@@ -270,23 +271,19 @@ void sn76489_device_close(void *p)
         free(sn76489);        
 }
 
-const device_t sn76489_device =
-{
-        "TI SN74689 PSG",
-        0,
-	0,
-        sn76489_device_init,
-        sn76489_device_close,
-	NULL, NULL, NULL, NULL,
-        NULL
+
+const device_t sn76489_device = {
+    "TI SN74689 PSG",
+    0, 0, NULL,
+    sn76489_device_init, sn76489_device_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };
-const device_t ncr8496_device =
-{
-        "NCR8496 PSG",
-        0,
-	0,
-        ncr8496_device_init,
-        sn76489_device_close,
-	NULL, NULL, NULL, NULL,
-        NULL
+
+const device_t ncr8496_device = {
+    "NCR8496 PSG",
+    0, 0, NULL,
+    ncr8496_device_init, sn76489_device_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };

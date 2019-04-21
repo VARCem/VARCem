@@ -9,10 +9,12 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.11	2018/11/11
+ * Version:	@(#)sio_fdc37c93x.c	1.0.13	2019/04/09
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -48,6 +50,7 @@
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
+#include "../../plat.h"
 #include "sio.h"
 
 
@@ -662,7 +665,7 @@ access_bus_close(void *priv)
 
 
 static void *
-access_bus_init(const device_t *info)
+access_bus_init(const device_t *info, UNUSED(void *parent))
 {
     access_bus_t *dev = (access_bus_t *)mem_alloc(sizeof(access_bus_t));
     memset(dev, 0x00, sizeof(access_bus_t));
@@ -675,6 +678,7 @@ static const device_t access_bus_device = {
     "SMC FDC37C932FR ACCESS.bus",
     0,
     0x03,
+    NULL,
     access_bus_init, access_bus_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -691,7 +695,7 @@ fdc37c93x_close(void *priv)
 
 
 static void *
-fdc37c93x_init(const device_t *info)
+fdc37c93x_init(const device_t *info, UNUSED(void *parent))
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)mem_alloc(sizeof(fdc37c93x_t));
     memset(dev, 0x00, sizeof(fdc37c93x_t));
@@ -718,6 +722,7 @@ const device_t fdc37c932fr_device = {
     "SMC FDC37C932FR Super I/O",
     0,
     0x03,
+    NULL,
     fdc37c93x_init, fdc37c93x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -727,6 +732,7 @@ const device_t fdc37c935_device = {
     "SMC FDC37C935 Super I/O",
     0,
     0x02,
+    NULL,
     fdc37c93x_init, fdc37c93x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

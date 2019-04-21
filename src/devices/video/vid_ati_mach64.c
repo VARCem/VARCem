@@ -8,7 +8,7 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.16	2019/03/07
+ * Version:	@(#)vid_ati_mach64.c	1.0.18	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3305,7 +3305,9 @@ void mach64_pci_write(int func, int addr, uint8_t val, void *p)
         }
 }
 
-static void *mach64_common_init(const device_t *info)
+
+static void *
+mach64_common_init(const device_t *info)
 {
         mach64_t *mach64 = (mach64_t *)mem_alloc(sizeof(mach64_t));
         memset(mach64, 0, sizeof(mach64_t));
@@ -3349,13 +3351,15 @@ static void *mach64_common_init(const device_t *info)
         mach64->fifo_not_full_event = thread_create_event();
         mach64->fifo_thread = thread_create(fifo_thread, mach64);
         
-	video_inform(VID_TYPE_SPEC,
+	video_inform(DEVICE_VIDEO_GET(info->flags),
 		     (const video_timings_t *)info->vid_timing);
 
         return mach64;
 }
 
-static void *mach64gx_init(const device_t *info)
+
+static void *
+mach64gx_init(const device_t *info, UNUSED(void *parent))
 {
         mach64_t *mach64 = (mach64_t *)mach64_common_init(info);
 
@@ -3373,15 +3377,18 @@ static void *mach64gx_init(const device_t *info)
         ati_eeprom_load(&mach64->eeprom, L"mach64.nvr", 1);
 
         if (info->flags & DEVICE_PCI)
-	        rom_init(&mach64->bios_rom, BIOS_ROM_PATH, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+	        rom_init(&mach64->bios_rom, info->path, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 	else if (info->flags & DEVICE_VLB)
-	        rom_init(&mach64->bios_rom, BIOS_VLB_ROM_PATH, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+	        rom_init(&mach64->bios_rom, info->path, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 	else if (info->flags & DEVICE_ISA)
-	        rom_init(&mach64->bios_rom, BIOS_ISA_ROM_PATH, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+	        rom_init(&mach64->bios_rom, info->path, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
                 
         return mach64;
 }
-static void *mach64vt2_init(const device_t *info)
+
+
+static void *
+mach64vt2_init(const device_t *info, UNUSED(void *parent))
 {
         mach64_t *mach64 = (mach64_t *)mach64_common_init(info);
         svga_t *svga = &mach64->svga;
@@ -3396,31 +3403,16 @@ static void *mach64vt2_init(const device_t *info)
         
         ati_eeprom_load(&mach64->eeprom, L"mach64vt.nvr", 1);
 
-        rom_init(&mach64->bios_rom, BIOS_ROMVT2_PATH, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
+        rom_init(&mach64->bios_rom, info->path, 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
         
         svga->vblank_start = mach64_vblank_start;
         
         return mach64;
 }
 
-int mach64gx_available(void)
-{
-        return rom_present(BIOS_ROM_PATH);
-}
-int mach64gx_isa_available(void)
-{
-        return rom_present(BIOS_ISA_ROM_PATH);
-}
-int mach64gx_vlb_available(void)
-{
-        return rom_present(BIOS_VLB_ROM_PATH);
-}
-int mach64vt2_available(void)
-{
-        return rom_present(BIOS_ROMVT2_PATH);
-}
 
-void mach64_close(void *p)
+static void
+mach64_close(void *p)
 {
         mach64_t *mach64 = (mach64_t *)p;
 
@@ -3433,14 +3425,18 @@ void mach64_close(void *p)
         free(mach64);
 }
 
-void mach64_speed_changed(void *p)
+
+static void
+mach64_speed_changed(void *p)
 {
         mach64_t *mach64 = (mach64_t *)p;
         
         svga_recalctimings(&mach64->svga);
 }
 
-void mach64_force_redraw(void *p)
+
+static void
+mach64_force_redraw(void *p)
 {
         mach64_t *mach64 = (mach64_t *)p;
 
@@ -3463,12 +3459,12 @@ static const device_config_t mach64gx_config[] =
                                 "4 MB", 4
                         },
                         {
-                                ""
+                                NULL
                         }
                 }
         },
         {
-                "", "", -1
+                NULL
         }
 };
 
@@ -3484,12 +3480,12 @@ static const device_config_t mach64vt2_config[] =
                                 "4 MB", 4
                         },
                         {
-                                ""
+                                NULL
                         }
                 }
         },
         {
-                "", "", -1
+                NULL
         }
 };
 
@@ -3497,10 +3493,11 @@ static const device_config_t mach64vt2_config[] =
 static const video_timings_t mach64gx_isa_timing = {VID_ISA,3,3,6,5,5,10};
 const device_t mach64gx_isa_device = {
     "ATI Mach64GX",
-    DEVICE_AT | DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
     0,
+    BIOS_ISA_ROM_PATH,
     mach64gx_init, mach64_close, NULL,
-    mach64gx_isa_available,
+    NULL,
     mach64_speed_changed,
     mach64_force_redraw,
     &mach64gx_isa_timing,
@@ -3510,10 +3507,11 @@ const device_t mach64gx_isa_device = {
 static const video_timings_t mach64gx_vlb_timing = {VID_BUS,2,2,1,20,20,21};
 const device_t mach64gx_vlb_device = {
     "ATI Mach64GX",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     0,
+    BIOS_VLB_ROM_PATH,
     mach64gx_init, mach64_close, NULL,
-    mach64gx_vlb_available,
+    NULL,
     mach64_speed_changed,
     mach64_force_redraw,
     &mach64gx_vlb_timing,
@@ -3523,10 +3521,11 @@ const device_t mach64gx_vlb_device = {
 static const video_timings_t mach64gx_pci_timing = {VID_BUS,2,2,1,20,20,21};
 const device_t mach64gx_pci_device = {
     "ATI Mach64GX",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     0,
+    BIOS_ROM_PATH,
     mach64gx_init, mach64_close, NULL,
-    mach64gx_available,
+    NULL,
     mach64_speed_changed,
     mach64_force_redraw,
     &mach64gx_pci_timing,
@@ -3536,10 +3535,11 @@ const device_t mach64gx_pci_device = {
 static const video_timings_t mach64vt2_timing = {VID_BUS,2,2,1,20,20,21};
 const device_t mach64vt2_device = {
     "ATI Mach64VT2",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     0,
+    BIOS_ROMVT2_PATH,
     mach64vt2_init, mach64_close, NULL,
-    mach64vt2_available,
+    NULL,
     mach64_speed_changed,
     mach64_force_redraw,
     &mach64vt2_timing,

@@ -8,14 +8,14 @@
  *
  *		x87 FPU instructions core.
  *
- * Version:	@(#)x87_ops.h	1.0.7	2018/10/24
+ * Version:	@(#)x87_ops.h	1.0.8	2019/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
  *		Copyright 2016-2018 Miran Grca.
@@ -332,7 +332,7 @@ static INLINE uint16_t x87_compare(double a, double b)
         return result & (C0|C2|C3);
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && (defined(__i386) || defined(__i386__) || defined(_X86_) || defined(_M_IX86) || defined(_M_X64))
 	if (!is386)
 	{
 		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))

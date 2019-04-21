@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.9	2019/02/10
+ * Version:	@(#)device.h	1.0.12	2019/04/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,21 +53,26 @@
 
 
 enum {
-    DEVICE_ALL = 0x0000,	/* any/all device */
-    DEVICE_UNSTABLE = 0x0001,	/* unstable device, be cautious */
-    DEVICE_PCJR = 0x0002,	/* requires an IBM PCjr */
-    DEVICE_AT = 0x0004,		/* requires an AT-compatible system */
-    DEVICE_PS2 = 0x0008,	/* requires a PS/1 or PS/2 system */
-    DEVICE_ISA = 0x0100,	/* requires the ISA bus */
-    DEVICE_EISA = 0x0200,	/* requires the EISA bus */
-    DEVICE_VLB = 0x0400,	/* requires the VLB bus */
-    DEVICE_PCI = 0x0800,	/* requires the PCI bus */
-    DEVICE_AGP = 0x1000,	/* requires the AGP bus */
-    DEVICE_MCA = 0x2000,	/* requires the MCA bus */
-    DEVICE_CBUS = 0x4000	/* requires the C-BUS bus (PC98) */
+    DEVICE_ALL = 0x00000000,		/* any/all device */
+    DEVICE_UNSTABLE = 0x00000001,	/* unstable device, be cautious */
+    DEVICE_PCJR = 0x00000002,		/* requires an IBM PCjr */
+    DEVICE_AT = 0x00000004,		/* requires an AT-compatible system */
+    DEVICE_PS2 = 0x00000008,		/* requires a PS/1 or PS/2 system */
+    DEVICE_ISA = 0x00000100,		/* requires the ISA bus */
+    DEVICE_EISA = 0x00000200,		/* requires the EISA bus */
+    DEVICE_VLB = 0x00000400,		/* requires the VLB bus */
+    DEVICE_PCI = 0x00000800,		/* requires the PCI bus */
+    DEVICE_AGP = 0x00001000,		/* requires the AGP bus */
+    DEVICE_MCA = 0x00002000,		/* requires the MCA bus */
+    DEVICE_CBUS = 0x00004000,		/* requires the C-BUS bus (PC98) */
+    DEVICE_VIDTYPE = 0xc0000000,	/* video type bits in device flags */
+    DEVICE_ROOT = 0xffffffff		/* machine root device */
 };
 #define DEVICE_SYS_MASK	0x0006
 #define DEVICE_BUS_MASK	0xff00
+
+#define DEVICE_VIDEO(x)	(((x) & 0x03) << 30)
+#define DEVICE_VIDEO_GET(x)	(((x) >> 30) & 0x03)
 
 
 typedef struct {
@@ -99,10 +104,12 @@ typedef struct {
 
 typedef struct _device_ {
     const char	*name;
-    uint32_t	flags;		/* system flags */
-    uint32_t	local;		/* flags local to device */
+    uint32_t	flags;			/* system flags */
+    uint32_t	local;			/* flags local to device */
 
-    void	*(*init)(const struct _device_ *);
+    const wchar_t *path;		/* path to BIOS/ROM file(s) */
+
+    void	*(*init)(const struct _device_ *, void *arg);
     void	(*close)(void *priv);
     void	(*reset)(void *priv);
     void	*u1_reuse;
@@ -113,6 +120,7 @@ typedef struct _device_ {
     const void	*u2_reuse;
 #define vid_timing	u2_reuse
 #define mca_reslist	u2_reuse
+#define mach_info	u2_reuse
     const device_config_t *config;
 } device_t;
 
@@ -121,10 +129,14 @@ typedef struct _device_ {
 extern "C" {
 #endif
 
-extern void		device_init(void);
+extern void		device_reset(void);
+#ifdef _DEBUG
+extern void		device_dump(void);
+#endif
 extern const device_t	*device_clone(const device_t *master);
 extern void		*device_add(const device_t *);
-extern void		device_add_ex(const device_t *d, void *priv);
+extern void		*device_add_parent(const device_t *, void *parent);
+extern void		device_add_ex(const device_t *, void *priv);
 extern void		device_close_all(void);
 extern void		device_reset_all(int flags);
 extern void		*device_get_priv(const device_t *);

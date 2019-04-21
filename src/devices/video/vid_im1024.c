@@ -38,7 +38,7 @@
  *		This is implemented by holding a FIFO of unlimited depth in
  *		the IM1024 to receive the data.
  *
- * Version:	@(#)vid_im1024.c	1.0.3	2019/03/03
+ * Version:	@(#)vid_im1024.c	1.0.4	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -76,8 +76,8 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
-#include "../system/pit.h"
 #include "../../plat.h"
+#include "../system/pit.h"
 #include "video.h"
 #include "vid_pgc.h"
 
@@ -158,11 +158,13 @@ input_byte(pgc_t *pgc, uint8_t *result)
     im1024_t *dev = (im1024_t *)pgc;
 
     /* If input buffer empty, wait for it to fill. */
-    while ((dev->fifo_wrptr == dev->fifo_rdptr) &&
-	   (pgc->mapram[0x300] == pgc->mapram[0x301])) {
+    while (!pgc->stopped && ((dev->fifo_wrptr == dev->fifo_rdptr) &&
+	   (pgc->mapram[0x300] == pgc->mapram[0x301]))) {
 	pgc->waiting_input_fifo = 1;
 	pgc_sleep(pgc);	
     }
+
+    if (pgc->stopped) return(0);
 
     if (pgc->mapram[0x3ff]) {
 	/* Reset triggered. */
@@ -932,7 +934,7 @@ static const pgc_cmd_t im1024_commands[] = {
 
 
 static void *
-im1024_init(const device_t *info)
+im1024_init(const device_t *info, UNUSED(void *parent))
 {
     im1024_t *dev;
 
@@ -952,7 +954,8 @@ im1024_init(const device_t *info)
     mem_map_set_handler(&dev->pgc.mapping,
 			im1024_read,NULL,NULL, im1024_write,NULL,NULL);
 
-    video_inform(VID_TYPE_CGA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
     return(dev);
 }
@@ -969,15 +972,6 @@ im1024_close(void *priv)
 }
 
 
-#if 0
-static int
-im1024_available(void)
-{
-    return rom_present(BIOS_ROM_PATH);
-}
-#endif
-
-
 static void
 speed_changed(void *priv)
 {
@@ -991,15 +985,16 @@ static const video_timings_t im1024_timings = { VID_ISA,8,16,32,8,16,32 };
 
 static const device_config_t im1024_config[] = {
     {
-	"", "", -1
+	NULL
     }
 };
 
 
 const device_t im1024_device = {
     "ImageManager 1024",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
     0,
+    NULL,
     im1024_init, im1024_close, NULL,
     NULL,
     speed_changed,

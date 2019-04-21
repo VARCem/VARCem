@@ -8,13 +8,13 @@
  *
  *		Handling of ROM image files.
  *
- * Version:	@(#)rom.c	1.0.15	2018/10/05
+ * Version:	@(#)rom.c	1.0.18	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -42,9 +42,106 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "emu.h"
+#include "cpu/cpu.h"
 #include "mem.h"
 #include "rom.h"
 #include "plat.h"
+
+
+mem_map_t	bios_mapping[8],
+		bios_high_mapping[8];
+uint8_t		*bios = NULL;
+uint32_t	biosmask;
+int		shadowbios = 0,
+		shadowbios_write;
+
+
+/* Read one byte from the BIOS ROM area. */
+uint8_t
+rom_bios_read(uint32_t addr, void *priv)
+{
+    return bios[addr & biosmask];
+}
+
+
+/* Read one word from the BIOS ROM area. */
+uint16_t
+rom_bios_readw(uint32_t addr, void *priv)
+{
+    return *(uint16_t *)&bios[addr & biosmask];
+}
+
+
+/* Read one doubleword from the BIOS ROM area. */
+uint32_t
+rom_bios_readl(uint32_t addr, void *priv)
+{
+    return *(uint32_t *)&bios[addr & biosmask];
+}
+
+
+/* Read a byte from some area in ROM. */
+uint8_t
+rom_read(uint32_t addr, void *priv)
+{
+    rom_t *ptr = (rom_t *)priv;
+
+#ifdef ROM_TRACE
+    if (ptr->mapping.base == ROM_TRACE)
+	DEBUG("ROM: read byte from BIOS at %06lX\n", addr);
+#endif
+
+    return(ptr->rom[addr & ptr->mask]);
+}
+
+
+/* Read a word from some area in ROM. */
+uint16_t
+rom_readw(uint32_t addr, void *priv)
+{
+    rom_t *ptr = (rom_t *)priv;
+
+#ifdef ROM_TRACE
+    if (ptr->mapping.base == ROM_TRACE)
+	DEBUG("ROM: read word from BIOS at %06lX\n", addr);
+#endif
+
+    return(*(uint16_t *)&ptr->rom[addr & ptr->mask]);
+}
+
+
+/* Read a double-word from some area in ROM. */
+uint32_t
+rom_readl(uint32_t addr, void *priv)
+{
+    rom_t *ptr = (rom_t *)priv;
+
+#ifdef ROM_TRACE
+    if (ptr->mapping.base == ROM_TRACE)
+	DEBUG("ROM: read long from BIOS at %06lX\n", addr);
+#endif
+
+    return(*(uint32_t *)&ptr->rom[addr & ptr->mask]);
+}
+
+
+/* (Re-)allocate ROM area and reset size mask. */
+void
+rom_reset(void)
+{
+    uint32_t c;
+
+    if (bios != NULL)
+	free(bios);
+
+    /* Allocate 128KB of BIOS space. */
+    c = 1024UL * 128;
+    bios = (uint8_t *)mem_alloc(c);
+    memset(bios, 0xff, c);
+
+    /* Set mask for a 64K (or smaller) ROM. */
+    biosmask = 0x00ffff;
+}
 
 
 /* Return the base path for ROM images. */
@@ -70,11 +167,11 @@ rom_path(const wchar_t *str)
 int
 rom_present(const wchar_t *fn)
 {
-    FILE *f;
+    FILE *fp;
 
-    f = plat_fopen(rom_path(fn), L"rb");
-    if (f != NULL) {
-	(void)fclose(f);
+    fp = plat_fopen(rom_path(fn), L"rb");
+    if (fp != NULL) {
+	(void)fclose(fp);
 	return(1);
     }
 
@@ -84,48 +181,56 @@ rom_present(const wchar_t *fn)
 }
 
 
-/* Read a byte from some area in ROM. */
-uint8_t
-rom_read(uint32_t addr, void *priv)
+/* Map in the E0000 ROM segments. */
+void
+rom_add_upper_bios(void)
 {
-    rom_t *ptr = (rom_t *)priv;
+    uint32_t base = 0x0e0000;
+    uint32_t size = 0x4000;
+    int i;
 
-#ifdef ROM_TRACE
-    if (ptr->mapping.base==ROM_TRACE)
-	DEBUG("ROM: read byte from BIOS at %06lX\n", addr);
-#endif
-
-    return(ptr->rom[addr & ptr->mask]);
+    for (i = 0; i < 4; i++) {
+	mem_map_add(&bios_mapping[i], base, size,
+			    rom_bios_read,rom_bios_readw,rom_bios_readl,
+			    mem_write_null,mem_write_nullw,mem_write_nulll,
+			    bios + ((0x10000 + (size * i)) & biosmask),
+			    MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+	base += size;
+    }
 }
 
 
-/* Read a word from some area in ROM. */
-uint16_t
-rom_readw(uint32_t addr, void *priv)
+/* Map in the BIOS ROM segments. */
+void
+rom_add_bios(void)
 {
-    rom_t *ptr = (rom_t *)priv;
+    uint32_t hibase = (AT && cpu_16bitbus) ? 0xfe0000 : 0xfffe0000;
+    uint32_t lobase = 0x0f0000;
+    uint32_t size = 0x4000;
+    int i;
 
-#ifdef ROM_TRACE
-    if (ptr->mapping.base==ROM_TRACE)
-	DEBUG("ROM: read word from BIOS at %06lX\n", addr);
-#endif
+    /* Add E0000-EFFFF mappings for AT+ systems. */
+    if (AT)
+	rom_add_upper_bios();
 
-    return(*(uint16_t *)&ptr->rom[addr & ptr->mask]);
-}
+    /* Add F0000-FFFFF mappings. */
+    for (i = 0; i < 4; i++) {
+	mem_map_add(&bios_mapping[i + 4], lobase, size,
+		    rom_bios_read,rom_bios_readw,rom_bios_readl,
+		    mem_write_null,mem_write_nullw,mem_write_nulll,
+		    bios + ((0x10000 + (size * i)) & biosmask),
+		    MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
+	lobase += size;
+    }
 
-
-/* Read a double-word from some area in ROM. */
-uint32_t
-rom_readl(uint32_t addr, void *priv)
-{
-    rom_t *ptr = (rom_t *)priv;
-
-#ifdef ROM_TRACE
-    if (ptr->mapping.base==ROM_TRACE)
-	DEBUG("ROM: read long from BIOS at %06lX\n", addr);
-#endif
-
-    return(*(uint32_t *)&ptr->rom[addr & ptr->mask]);
+    /* Add FE0000-FFFFFF mappings for 286+ systems. */
+    for (i = 0; i < 8; i++) {
+	mem_map_add(&bios_high_mapping[i], hibase, size,
+		    rom_bios_read,rom_bios_readw,rom_bios_readl,
+		    mem_write_null,mem_write_nullw,mem_write_nulll,
+		    bios + ((size * i) & biosmask), MEM_MAPPING_ROM, 0);
+	hibase += size;
+    }
 }
 
 
@@ -133,10 +238,10 @@ rom_readl(uint32_t addr, void *priv)
 int
 rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
-    FILE *f;
+    FILE *fp;
  
-    f = plat_fopen(rom_path(fn), L"rb");
-    if (f == NULL) {
+    fp = plat_fopen(rom_path(fn), L"rb");
+    if (fp == NULL) {
 	ERRLOG("ROM: image '%ls' not found\n", fn);
 	return(0);
     }
@@ -147,9 +252,9 @@ rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
       else
 	addr &= 0x03ffff;
 
-    (void)fseek(f, off, SEEK_SET);
-    (void)fread(ptr+addr, sz, 1, f);
-    (void)fclose(f);
+    (void)fseek(fp, off, SEEK_SET);
+    (void)fread(ptr + addr, sz, 1, fp);
+    (void)fclose(fp);
 
     return(1);
 }
@@ -180,9 +285,9 @@ rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int 
 
     (void)fseek(fl, off, SEEK_SET);
     (void)fseek(fh, off, SEEK_SET);
-    for (c=0; c<sz; c+=2) {
-	ptr[addr+c] = fgetc(fl);
-	ptr[addr+c+1] = fgetc(fh);
+    for (c = 0; c < sz; c += 2) {
+	ptr[addr + c] = fgetc(fl);
+	ptr[addr + c + 1] = fgetc(fh);
     }
     (void)fclose(fh);
     (void)fclose(fl);

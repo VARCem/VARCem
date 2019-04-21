@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.7	2019/02/28
+ * Version:	@(#)386_dynarec.c	1.0.8	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -238,7 +238,7 @@ void x86_int(uint32_t num)
                         if (idt.limit < 35)
                         {
                                 cpu_state.abrt = 0;
-                                softresetx86();
+                                cpu_reset(0);
                                 cpu_set_edx();
                                 INFO("CPU: triple fault in real mode - reset\n");
                         }
@@ -870,7 +870,7 @@ inrecomp=0;
                                 if (cpu_state.abrt)
                                 {
                                         cpu_state.abrt = 0;
-                                        softresetx86();
+                                        cpu_reset(0);
 					cpu_set_edx();
                                         ERRLOG("CPU: triple fault - reset\n");
                                 }

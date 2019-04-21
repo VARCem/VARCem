@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.12	2018/11/13
+ * Version:	@(#)win_settings_machine.h	1.0.13	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,14 +51,20 @@ static void
 machine_recalc_cpu(HWND hdlg)
 {
     HWND h;
+    const device_t *dev;
+    const machine_t *m;
 #ifdef USE_DYNAREC
     int cpu_flags;
 #endif
     int cpu_type;
 
-    cpu_type = machines[temp_machine].cpu[temp_cpu_m].cpus[temp_cpu].cpu_type;
+    /* Get info about the selected machine. */
+    dev = machine_get_device_ex(temp_machine);
+    m = (machine_t *)dev->mach_info;
+
+    cpu_type = m->cpu[temp_cpu_m].cpus[temp_cpu].type;
 #ifdef USE_DYNAREC
-    cpu_flags = machines[temp_machine].cpu[temp_cpu_m].cpus[temp_cpu].cpu_flags;
+    cpu_flags = m->cpu[temp_cpu_m].cpus[temp_cpu].flags;
 #endif
 
     h = GetDlgItem(hdlg, IDC_COMBO_WS);
@@ -123,15 +129,24 @@ static void
 machine_recalc_cpu_m(HWND hdlg)
 {
     WCHAR temp[128];
+    const device_t *dev;
+    const machine_t *m;
     const char *stransi;
     HWND h;
     int c = 0;
 
+    /* Get info about the selected machine. */
+    dev = machine_get_device_ex(temp_machine);
+    m = (machine_t *)dev->mach_info;
+
     h = GetDlgItem(hdlg, IDC_COMBO_CPU);
     SendMessage(h, CB_RESETCONTENT, 0, 0);
     c = 0;
-    while (machines[temp_machine].cpu[temp_cpu_m].cpus[c].cpu_type != -1) {
-	stransi = machines[temp_machine].cpu[temp_cpu_m].cpus[c].name;
+    for (;;) {
+	stransi = m->cpu[temp_cpu_m].cpus[c].name;
+	if (stransi == NULL)
+		break;
+
 	mbstowcs(temp, stransi, sizeof_w(temp));
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	c++;
@@ -152,12 +167,16 @@ machine_recalc_machine(HWND hdlg)
     WCHAR temp[128];
     const char *stransi;
     const device_t *dev;
+    const machine_t *m;
     UDACCEL accel;
     HWND h;
     int c;
 
+    /* Get info about the selected machine. */
+    dev = machine_get_device_ex(temp_machine);
+    m = (machine_t *)dev->mach_info;
+
     h = GetDlgItem(hdlg, IDC_CONFIGURE_MACHINE);
-    dev = machine_getdevice(temp_machine);
     if (dev != NULL && dev->config != NULL)
 	EnableWindow(h, TRUE);
       else
@@ -166,8 +185,8 @@ machine_recalc_machine(HWND hdlg)
     h = GetDlgItem(hdlg, IDC_COMBO_CPU_TYPE);
     SendMessage(h, CB_RESETCONTENT, 0, 0);
     c = 0;
-    while (machines[temp_machine].cpu[c].cpus != NULL && c < 4) {
-	stransi = machines[temp_machine].cpu[c].name;
+    while (m->cpu[c].cpus != NULL && c < 4) {
+	stransi = m->cpu[c].name;
 	mbstowcs(temp, stransi, sizeof_w(temp));
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	c++;
@@ -185,12 +204,12 @@ machine_recalc_machine(HWND hdlg)
     machine_recalc_cpu_m(hdlg);
 
     h = GetDlgItem(hdlg, IDC_MEMSPIN);
-    SendMessage(h, UDM_SETRANGE, 0, (machines[temp_machine].min_ram << 16) | machines[temp_machine].max_ram);
+    SendMessage(h, UDM_SETRANGE, 0, (m->min_ram << 16) | m->max_ram);
     accel.nSec = 0;
-    accel.nInc = machines[temp_machine].ram_granularity;
+    accel.nInc = m->ram_granularity;
     SendMessage(h, UDM_SETACCEL, 1, (LPARAM)&accel);
 
-    if (!(machines[temp_machine].flags & MACHINE_AT) || (machines[temp_machine].ram_granularity >= 128)) {
+    if (!(m->flags & MACHINE_AT) || (m->ram_granularity >= 128)) {
 	SendMessage(h, UDM_SETPOS, 0, temp_mem_size);
 	h = GetDlgItem(hdlg, IDC_TEXT_MB);
 	SendMessage(h, WM_SETTEXT, 0, win_string(IDS_3334));
@@ -207,6 +226,8 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
     char tempA[128];
+    const device_t *dev;
+    const machine_t *m;
     wchar_t *str;
     HWND h;
     int c, d;
@@ -296,7 +317,8 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
 				d = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				temp_machine = list_to_mach[d];
-				temp_deviceconfig |= dlg_devconf(hdlg, machine_getdevice(temp_machine));
+				dev = machine_get_device_ex(temp_machine);
+				temp_deviceconfig |= dlg_devconf(hdlg, dev);
 				break;
 
 			case IDC_COMBO_SYNC:
@@ -310,6 +332,10 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		return FALSE;
 
 	case WM_SAVE_CFG:
+		/* Get info about the selected machine. */
+		dev = machine_get_device_ex(temp_machine);
+		m = (machine_t *)dev->mach_info;
+
 #ifdef USE_DYNAREC
 		h = GetDlgItem(hdlg, IDC_CHECK_DYNAREC);
 		temp_dynarec = (int)SendMessage(h, BM_GETCHECK, 0, 0);
@@ -325,20 +351,20 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(h, WM_GETTEXT, sizeof_w(temp), (LPARAM)temp);
 		wcstombs(tempA, temp, sizeof(tempA));
 		sscanf(tempA, "%i", &temp_mem_size);
-		temp_mem_size &= ~(machines[temp_machine].ram_granularity - 1);
-		if (temp_mem_size < (int)machines[temp_machine].min_ram)
-			temp_mem_size = machines[temp_machine].min_ram;
-		else if (temp_mem_size > (int)machines[temp_machine].max_ram)
-			temp_mem_size = machines[temp_machine].max_ram;
-		if ((machines[temp_machine].flags & MACHINE_AT) && (machines[temp_machine].ram_granularity < 128))
+		temp_mem_size &= ~(m->ram_granularity - 1);
+		if (temp_mem_size < (int)m->min_ram)
+			temp_mem_size = m->min_ram;
+		else if (temp_mem_size > (int)m->max_ram)
+			temp_mem_size = m->max_ram;
+		if ((m->flags & MACHINE_AT) && (m->ram_granularity < 128))
 			temp_mem_size *= 1024;
-		if (machines[temp_machine].flags & MACHINE_VIDEO)
+		if (m->flags & MACHINE_VIDEO)
 			video_card = VID_INTERNAL;
-		if (machines[temp_machine].flags & MACHINE_MOUSE)
+		if (m->flags & MACHINE_MOUSE)
 			mouse_type = MOUSE_INTERNAL;
-		if (machines[temp_machine].flags & MACHINE_SOUND)
+		if (m->flags & MACHINE_SOUND)
 			sound_card = SOUND_INTERNAL;
-		if (machines[temp_machine].flags & MACHINE_HDC)
+		if (m->flags & MACHINE_HDC)
 			hdc_type = HDC_INTERNAL;
 		return FALSE;
 

@@ -8,12 +8,12 @@
  *
  *		Handling of the PS/2 series CMOS devices.
  *
- * Version:	@(#)nvr_ps2.c	1.0.9	2018/10/24
+ * Version:	@(#)nvr_ps2.c	1.0.12	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -104,7 +104,7 @@ ps2_nvr_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void *
-ps2_nvr_init(const device_t *info)
+ps2_nvr_init(const device_t *info, UNUSED(void *parent))
 {
     char temp[128];
     ps2_nvr_t *nvr;
@@ -147,14 +147,14 @@ ps2_nvr_close(void *priv)
     }
 
     free(nvr->fn);
-    free(nvr->ram);
+
     free(nvr);
 }
 
 
 const device_t ps2_nvr_device = {
     "PS/2 Secondary NVRAM",
-    0, 0,
+    0, 0, NULL,
     ps2_nvr_init, ps2_nvr_close, NULL,
     NULL, NULL, NULL,
     NULL

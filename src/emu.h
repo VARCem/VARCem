@@ -8,11 +8,11 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.33	2018/10/16
+ * Version:	@(#)emu.h	1.0.34	2019/04/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -214,9 +214,9 @@ extern int	sound_card,			/* (C) selected sound card */
 		midi_device;			/* (C) selected midi device */
 extern int	joystick_type;			/* (C) joystick type */
 extern int	mem_size;			/* (C) memory size */
-extern int	machine;			/* (C) current machine ID */
+extern int	machine_type;			/* (C) current machine ID */
 extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
-		cpu,				/* (C) cpu type */
+		cpu_type,			/* (C) cpu type */
 		cpu_use_dynarec,		/* (C) cpu uses/needs Dyna */
 		enable_external_fpu;		/* (C) enable external FPU */
 extern int	network_type;			/* (C) net provider type */
@@ -238,6 +238,9 @@ extern int	config_changed,			/* config has changed */
 		dopause,			/* system is paused */
 		doresize,			/* screen resize requested */
 		mouse_capture;			/* mouse is captured in app */
+extern int	AT,				/* machine is AT class */
+		MCA,				/* machine has MCA bus */
+		PCI;				/* machine has PCI bus */
 
 #ifdef _LOGGING
 extern int	pci_do_log;
@@ -287,9 +290,7 @@ extern void		pc_reset_hard_init(void);
 extern void		pc_reset_hard(void);
 extern void		pc_reset(int hard);
 extern void		pc_reload(const wchar_t *fn);
-extern void		pc_set_speed(void);
-extern void		pc_full_speed(void);
-extern void		pc_speed_changed(void);
+extern void		pc_set_speed(int);
 extern void		pc_thread(void *param);
 extern void		pc_pause(int p);
 extern void		pc_onesec(void);

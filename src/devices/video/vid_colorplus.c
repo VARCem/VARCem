@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.11	2019/03/07
+ * Version:	@(#)vid_colorplus.c	1.0.13	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include "../../mem.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pit.h"
 #include "../ports/parallel.h"
 #include "video.h"
@@ -373,7 +374,7 @@ colorplus_poll(void *priv)
 
 
 static void *
-colorplus_init(const device_t *info)
+colorplus_init(const device_t *info, UNUSED(void *parent))
 {
     colorplus_t *dev;
     int display_type;
@@ -399,7 +400,8 @@ colorplus_init(const device_t *info)
     io_sethandler(0x03d0, 16,
 		  colorplus_in,NULL,NULL, colorplus_out,NULL,NULL, dev);
 
-    video_inform(VID_TYPE_CGA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
     /* Force the LPT3 port to be enabled. */
     parallel_enabled[2] = 1;
@@ -443,7 +445,7 @@ static const device_config_t colorplus_config[] = {
 			"Composite", CGA_COMPOSITE
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -457,7 +459,7 @@ static const device_config_t colorplus_config[] = {
 			"New", COMPOSITE_NEW
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -465,7 +467,7 @@ static const device_config_t colorplus_config[] = {
 	"snow_enabled", "Snow emulation", CONFIG_BINARY, "", 1
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -473,8 +475,9 @@ static const video_timings_t colorplus_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t colorplus_device = {
     "Plantronics ColorPlus",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
     0,
+    NULL,
     colorplus_init, colorplus_close, NULL,
     NULL,
     speed_changed,

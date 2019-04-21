@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.7	2019/03/07
+ * Version:	@(#)vid_wy700.c	1.0.9	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,8 +92,8 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
-#include "../system/pit.h"
 #include "../../plat.h"
+#include "../system/pit.h"
 #include "video.h"
 
 
@@ -877,7 +877,7 @@ load_font(wy700_t *dev, const wchar_t *s)
 
 
 static void *
-wy700_init(const device_t *info)
+wy700_init(const device_t *info, UNUSED(void *parent))
 {
     wy700_t *dev;
     int c;
@@ -886,7 +886,7 @@ wy700_init(const device_t *info)
     memset(dev, 0x00, sizeof(wy700_t));
     dev->name = info->name;
 
-    if (! load_font(dev, FONT_ROM_PATH)) {
+    if (! load_font(dev, info->path)) {
 	free(dev);
 	return(NULL);
     }
@@ -986,9 +986,10 @@ wy700_init(const device_t *info)
     dev->enabled    = 1;
     memcpy(dev->real_crtc, mode_80x24, sizeof(mode_80x24));
 
-    video_inform(VID_TYPE_CGA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -998,14 +999,8 @@ wy700_close(void *priv)
     wy700_t *dev = (wy700_t *)priv;
 
     free(dev->vram);
+
     free(dev);
-}
-
-
-static int
-wy700_available(void)
-{
-    return rom_present(FONT_ROM_PATH);
 }
 
 
@@ -1022,10 +1017,11 @@ static const video_timings_t wy700_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t wy700_device = {
     "Wyse 700",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
     0,
+    FONT_ROM_PATH,
     wy700_init, wy700_close, NULL,
-    wy700_available,
+    NULL,
     speed_changed,
     NULL,
     &wy700_timings,

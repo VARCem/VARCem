@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.15	2019/03/05
+ * Version:	@(#)808x.c	1.0.17	2019/04/20
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -46,7 +46,6 @@
 #include "cpu.h"
 #include "x86.h"
 #include "../io.h"
-#include "../machines/machine.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/nmi.h"
 #include "../mem.h"
@@ -126,12 +125,10 @@ static uint16_t	cpu_data = 0;
 static uint32_t	*ovr_seg = NULL;
 
 
-int indump = 0;
-
-
 void
-dumpregs(int force)
+cpu_dumpregs(int force)
 {
+    static int indump = 0;
     char *seg_names[4] = { "ES", "CS", "SS", "DS" };
     int c;
 
@@ -179,6 +176,117 @@ dumpregs(int force)
 }
 
 
+/* Preparation of the various arrays needed to speed up the MOD and R/M work. */
+static void
+makemod1table(void)
+{
+    mod1add[0][0] = &BX;
+    mod1add[0][1] = &BX;
+    mod1add[0][2] = &BP;
+    mod1add[0][3] = &BP;
+    mod1add[0][4] = &SI;
+    mod1add[0][5] = &DI;
+    mod1add[0][6] = &BP;
+    mod1add[0][7] = &BX;
+    mod1add[1][0] = &SI;
+    mod1add[1][1] = &DI;
+    mod1add[1][2] = &SI;
+    mod1add[1][3] = &DI;
+    mod1add[1][4] = &zero;
+    mod1add[1][5] = &zero;
+    mod1add[1][6] = &zero;
+    mod1add[1][7] = &zero;
+    mod1seg[0] = &ds;
+    mod1seg[1] = &ds;
+    mod1seg[2] = &ss;
+    mod1seg[3] = &ss;
+    mod1seg[4] = &ds;
+    mod1seg[5] = &ds;
+    mod1seg[6] = &ss;
+    mod1seg[7] = &ds;
+    opseg[0] = &es;
+    opseg[1] = &cs;
+    opseg[2] = &ss;
+    opseg[3] = &ds;
+    _opseg[0] = &_es;
+    _opseg[1] = &_cs;
+    _opseg[2] = &_ss;
+    _opseg[3] = &_ds;
+}
+
+
+/* Prepare the ZNP table needed to speed up the setting of the Z, N, and P flags. */
+static void
+makeznptable(void)
+{
+    int c, d;
+    for (c = 0; c < 256; c++) {
+	d = 0;
+	if (c & 1)
+		d++;
+	if (c & 2)
+		d++;
+	if (c & 4)
+		d++;
+	if (c & 8)
+		d++;
+	if (c & 16)
+		d++;
+	if (c & 32)
+		d++;
+	if (c & 64)
+		d++;
+	if (c & 128)
+		d++;
+	if (d & 1)
+		znptable8[c] = 0;
+	else
+		znptable8[c] = P_FLAG;
+	if (c == 0xb1)
+		DEBUG("znp8 b1 = %i %02X\n", d, znptable8[c]);
+	if (c == 0x65b1)
+		DEBUG("znp16 65b1 = %i %02X\n", d, znptable16[c]);
+	if (!c)
+		znptable8[c] |= Z_FLAG;
+	if (c & 0x80)
+		znptable8[c] |= N_FLAG;
+    }
+
+    for (c = 0; c < 65536; c++) {
+	d = 0;
+	if (c & 1)
+		d++;
+	if (c & 2)
+		d++;
+	if (c & 4)
+		d++;
+	if (c & 8)
+		d++;
+	if (c & 16)
+		d++;
+	if (c & 32)
+		d++;
+	if (c & 64)
+		d++;
+	if (c & 128)
+		d++;
+	if (d & 1)
+		znptable16[c] = 0;
+	else
+		znptable16[c] = P_FLAG;
+	if (c == 0xb1)
+		DEBUG("znp16 b1 = %i %02X\n", d, znptable16[c]);
+	if (c == 0x65b1)
+		DEBUG("znp16 65b1 = %i %02X\n", d, znptable16[c]);
+	if (!c)
+		znptable16[c] |= Z_FLAG;
+	if (c & 0x8000)
+		znptable16[c] |= N_FLAG;
+    }
+}
+
+
+/* Fetches the effective address from the prefetch queue according to MOD and R/M. */
 static void	pfq_add(int c);
 static void	set_pzs(int bits);
 
@@ -348,9 +456,9 @@ pfq_write(void)
 	   read more than one byte even on the 8086. */
 	if (is8086 && !(pfq_ip & 1) && !(pfq_pos & 1)) {
 		tempw = readmemwf(pfq_ip);
-		*(uint16_t *) &(pfq[pfq_pos]) = tempw;
+		pfq[pfq_pos++] = (tempw & 0xff);
+		pfq[pfq_pos++] = (tempw >> 8);
 		pfq_ip += 2;
-		pfq_pos += 2;
     	} else {
 		pfq[pfq_pos] = readmembf(pfq_ip);
 		pfq_ip++;
@@ -442,46 +550,6 @@ pfq_clear(void)
 }
 
 
-/* Preparation of the various arrays needed to speed up the MOD and R/M work. */
-static void
-makemod1table(void)
-{
-    mod1add[0][0] = &BX;
-    mod1add[0][1] = &BX;
-    mod1add[0][2] = &BP;
-    mod1add[0][3] = &BP;
-    mod1add[0][4] = &SI;
-    mod1add[0][5] = &DI;
-    mod1add[0][6] = &BP;
-    mod1add[0][7] = &BX;
-    mod1add[1][0] = &SI;
-    mod1add[1][1] = &DI;
-    mod1add[1][2] = &SI;
-    mod1add[1][3] = &DI;
-    mod1add[1][4] = &zero;
-    mod1add[1][5] = &zero;
-    mod1add[1][6] = &zero;
-    mod1add[1][7] = &zero;
-    mod1seg[0] = &ds;
-    mod1seg[1] = &ds;
-    mod1seg[2] = &ss;
-    mod1seg[3] = &ss;
-    mod1seg[4] = &ds;
-    mod1seg[5] = &ds;
-    mod1seg[6] = &ss;
-    mod1seg[7] = &ds;
-    opseg[0] = &es;
-    opseg[1] = &cs;
-    opseg[2] = &ss;
-    opseg[3] = &ds;
-    _opseg[0] = &_es;
-    _opseg[1] = &_cs;
-    _opseg[2] = &_ss;
-    _opseg[3] = &_ds;
-}
-
-
-/* Fetches the effective address from the prefetch queue according to MOD and R/M. */
 static void
 do_mod_rm(void)
 {
@@ -616,138 +684,6 @@ seteaw(uint16_t val)
 	cpu_state.regs[cpu_rm].w = val;
     else
 	writememw(easeg, cpu_state.eaaddr, val);
-}
-
-
-/* Prepare the ZNP table needed to speed up the setting of the Z, N, and P flags. */
-static void
-makeznptable(void)
-{
-    int c, d;
-    for (c = 0; c < 256; c++) {
-	d = 0;
-	if (c & 1)
-		d++;
-	if (c & 2)
-		d++;
-	if (c & 4)
-		d++;
-	if (c & 8)
-		d++;
-	if (c & 16)
-		d++;
-	if (c & 32)
-		d++;
-	if (c & 64)
-		d++;
-	if (c & 128)
-		d++;
-	if (d & 1)
-		znptable8[c] = 0;
-	else
-		znptable8[c] = P_FLAG;
-	if (c == 0xb1)
-		DEBUG("znp8 b1 = %i %02X\n", d, znptable8[c]);
-	if (c == 0x65b1)
-		DEBUG("znp16 65b1 = %i %02X\n", d, znptable16[c]);
-	if (!c)
-		znptable8[c] |= Z_FLAG;
-	if (c & 0x80)
-		znptable8[c] |= N_FLAG;
-    }
-
-    for (c = 0; c < 65536; c++) {
-	d = 0;
-	if (c & 1)
-		d++;
-	if (c & 2)
-		d++;
-	if (c & 4)
-		d++;
-	if (c & 8)
-		d++;
-	if (c & 16)
-		d++;
-	if (c & 32)
-		d++;
-	if (c & 64)
-		d++;
-	if (c & 128)
-		d++;
-	if (d & 1)
-		znptable16[c] = 0;
-	else
-		znptable16[c] = P_FLAG;
-	if (c == 0xb1)
-		DEBUG("znp16 b1 = %i %02X\n", d, znptable16[c]);
-	if (c == 0x65b1)
-		DEBUG("znp16 65b1 = %i %02X\n", d, znptable16[c]);
-	if (!c)
-		znptable16[c] |= Z_FLAG;
-	if (c & 0x8000)
-		znptable16[c] |= N_FLAG;
-    }
-}
-
-
-/* Common reset function. */
-static void
-reset_common(int hard)
-{
-    if (hard) {
-	INFO("x86 reset\n");
-	ins = 0;
-    }
-    use32 = 0;
-    cpu_cur_status = 0;
-    stack32 = 0;
-    msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-    msw = 0;
-    if (is486)
-	cr0 = 1 << 30;
-    else
-	cr0 = 0;
-    cpu_cache_int_enabled = 0;
-    cpu_update_waitstates();
-    cr4 = 0;
-    eflags = 0;
-    cgate32 = 0;
-    if (AT) {
-	loadcs(0xF000);
-	cpu_state.pc = 0xFFF0;
-	rammask = cpu_16bitbus ? 0xFFFFFF : 0xFFFFFFFF;
-    } else {
-	loadcs(0xFFFF);
-	cpu_state.pc=0;
-	rammask = 0xfffff;
-    }
-    idt.base = 0;
-    idt.limit = is386 ? 0x03FF : 0xFFFF;
-    flags = 2;
-    trap = 0;
-    ovr_seg = NULL;
-    in_lock = halt = 0;
-
-    if (hard) {
-	makeznptable();
-	resetreadlookup();
-	makemod1table();
-	resetmcr();
-	pfq_clear();
-	cpu_set_edx();
-	EAX = 0;
-	ESP = 0;
-	mmu_perm = 4;
-	pfq_size = (is8086) ? 6 : 4;
-    }
-
-    x86seg_reset();
-#ifdef USE_DYNAREC
-    if (hard)
-	codegen_reset();
-#endif
-    x86_was_reset = 1;
-    port_92_clear_reset();
 }
 
 
@@ -2846,7 +2782,7 @@ on_halt:
 void
 refreshread(void)
 {
-    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].rspeed > 4772728)
+    if (cpu_get_speed() > 4772728)
 	cpu_wait(8, 1);	/* insert extra wait states */
 
     /*
@@ -2872,17 +2808,64 @@ refreshread(void)
 }
 
 
-/* Hard reset. */
+/* Reset the CPU. */
 void
-resetx86(void)
+cpu_reset(int hard)
 {
-    reset_common(1);
-}
+    if (hard) {
+	INFO("CPU: reset\n");
+	ins = 0;
+    }
+    use32 = 0;
+    cpu_cur_status = 0;
+    stack32 = 0;
+    msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
+    msw = 0;
+    if (is486)
+	cr0 = 1 << 30;
+    else
+	cr0 = 0;
+    cpu_cache_int_enabled = 0;
+    cpu_update_waitstates();
+    cr4 = 0;
+    eflags = 0;
+    cgate32 = 0;
 
+    if (AT) {
+	loadcs(0xF000);
+	cpu_state.pc = 0xFFF0;
+	rammask = cpu_16bitbus ? 0xFFFFFF : 0xFFFFFFFF;
+    } else {
+	loadcs(0xFFFF);
+	cpu_state.pc=0;
+	rammask = 0xfffff;
+    }
 
-/* Soft reset. */
-void
-softresetx86(void)
-{
-    reset_common(0);
+    idt.base = 0;
+    idt.limit = is386 ? 0x03FF : 0xFFFF;
+    flags = 2;
+    trap = 0;
+    ovr_seg = NULL;
+    in_lock = halt = 0;
+
+    if (hard) {
+	makeznptable();
+	resetreadlookup();
+	makemod1table();
+	resetmcr();
+	pfq_clear();
+	cpu_set_edx();
+	EAX = 0;
+	ESP = 0;
+	mmu_perm = 4;
+	pfq_size = (is8086) ? 6 : 4;
+    }
+
+    x86seg_reset();
+#ifdef USE_DYNAREC
+    if (hard)
+	codegen_reset();
+#endif
+    x86_was_reset = 1;
+    port_92_clear_reset();
 }

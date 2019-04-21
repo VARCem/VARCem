@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.14	2019/03/07
+ * Version:	@(#)vid_incolor.c	1.0.16	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,6 +47,7 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pit.h"
 #include "../ports/parallel.h"
 #include "video.h"
@@ -979,7 +980,7 @@ incolor_poll(void *priv)
 
 
 static void *
-incolor_init(const device_t *info)
+incolor_init(const device_t *info, UNUSED(void *parent))
 {
     incolor_t *dev;
     int c;
@@ -1011,13 +1012,14 @@ incolor_init(const device_t *info)
 	dev->palette[c] = defpal[c];
     dev->palette_idx = 0;
 
-    video_inform(VID_TYPE_MDA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
     /* Force the LPT3 port to be enabled. */
     parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -1049,8 +1051,9 @@ static const video_timings_t incolor_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t incolor_device = {
     "Hercules InColor",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_MDA) | DEVICE_ISA,
     0,
+    NULL,
     incolor_init, incolor_close, NULL,
     NULL,
     speed_changed,

@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops.h	1.0.2	2018/05/05
+ * Version:	@(#)x86_ops.h	1.0.3	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
@@ -89,10 +89,9 @@ extern const OpFn dynarec_ops_c6x86mx_0f[1024];
 extern const OpFn dynarec_ops_k6_0f[1024];
 #endif
 
-#if defined(DEV_BRANCH) && defined(USE_I686)
 extern const OpFn dynarec_ops_pentiumpro_0f[1024];
+extern const OpFn dynarec_ops_pentium2_0f[1024];
 extern const OpFn dynarec_ops_pentium2d_0f[1024];
-#endif
 
 extern const OpFn dynarec_ops_fpu_287_d9_a16[256];
 extern const OpFn dynarec_ops_fpu_287_d9_a32[256];
@@ -181,10 +180,9 @@ extern const OpFn ops_c6x86mx_0f[1024];
 extern const OpFn ops_k6_0f[1024];
 #endif
 
-#if defined(DEV_BRANCH) && defined(USE_I686)
 extern const OpFn ops_pentiumpro_0f[1024];
+extern const OpFn ops_pentium2_0f[1024];
 extern const OpFn ops_pentium2d_0f[1024];
-#endif
 
 extern const OpFn ops_fpu_287_d9_a16[256];
 extern const OpFn ops_fpu_287_d9_a32[256];

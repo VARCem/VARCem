@@ -8,13 +8,13 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.10	2018/11/10
+ * Version:	@(#)pci.c	1.0.11	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,7 +44,6 @@
 #define HAVE_STDARG_H
 #define dbglog pcilog
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -74,13 +73,13 @@ typedef struct {
 #ifdef ENABLE_BUS_LOG
 int			pci_do_log = ENABLE_BUS_LOG;
 #endif
-int			pci_burst_time,
-			pci_nonburst_time;
 
 static pci_card_t	pci_cards[32];
 static uint8_t		last_pci_card = 0;
 static uint8_t		pci_card_to_slot_mapping[32];
 static uint8_t		elcr[2] = { 0, 0 };
+static int		pci_burst_time,
+			pci_nonburst_time;
 static uint8_t		pci_irqs[4];
 static uint64_t		pci_irq_hold[16];
 static pci_mirq_t	pci_mirqs[2];
@@ -623,7 +622,7 @@ trc_reset(uint8_t val)
 	pci_reset();
     }
 
-    resetx86();
+    cpu_reset(1);
 }
 
 
@@ -684,6 +683,31 @@ pci_init(int type)
 	pci_mirqs[c].enabled = 0;
 	pci_mirqs[c].irq_line = PCI_IRQ_DISABLED;
     }
+}
+
+
+void
+pci_set_speed(uint32_t fsb_speed)
+{
+    uint32_t cpu_speed = cpu_get_speed();
+
+    if (fsb_speed) {
+	pci_nonburst_time = (4 * cpu_speed) / fsb_speed;
+	pci_burst_time = cpu_speed / fsb_speed;
+    } else {
+	pci_nonburst_time = 4;
+	pci_burst_time = 1;
+    }
+}
+
+
+uint32_t
+pci_get_speed(int burst)
+{
+    if (burst)
+	return(pci_burst_time);
+
+    return(pci_nonburst_time);
 }
 
 

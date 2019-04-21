@@ -8,13 +8,13 @@
  *
  *		Emulation of a Sierra SC1502X RAMDAC.
  *
- * Version:	@(#)vid_sc1502x_ramdac.c	1.0.3	2018/10/05
+ * Version:	@(#)vid_sc1502x_ramdac.c	1.0.5	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,6 +44,7 @@
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_sc1502x_ramdac.h"
@@ -146,7 +147,7 @@ sc1502x_ramdac_in(uint16_t addr, sc1502x_ramdac_t *dev, svga_t *svga)
 
 
 static void *
-sc1502x_init(const device_t *info)
+sc1502x_init(const device_t *info, UNUSED(void *parent))
 {
     sc1502x_ramdac_t *dev = (sc1502x_ramdac_t *)mem_alloc(sizeof(sc1502x_ramdac_t));
     memset(dev, 0x00, sizeof(sc1502x_ramdac_t));
@@ -167,8 +168,7 @@ sc1502x_close(void *priv)
 
 const device_t sc1502x_ramdac_device = {
     "Sierra SC1502x RAMDAC",
-    0,
-    0,
+    0, 0, NULL,
     sc1502x_init, sc1502x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

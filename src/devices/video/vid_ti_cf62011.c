@@ -42,13 +42,13 @@
  *		which are the same as the XGA. It supports up to 1MB of VRAM,
  *		but we lock it down to 512K. The PS/1 2122 had 256K.
  *
- * Version:	@(#)vid_ti_cf62011.c	1.0.7	2018/10/08
+ * Version:	@(#)vid_ti_cf62011.c	1.0.9	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -80,6 +80,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 
@@ -221,7 +222,7 @@ vid_in(uint16_t addr, void *priv)
 
 
 static void
-vid_speed_changed(void *priv)
+speed_changed(void *priv)
 {
     tivga_t *ti = (tivga_t *)priv;
 
@@ -230,7 +231,7 @@ vid_speed_changed(void *priv)
 
 
 static void
-vid_force_redraw(void *priv)
+force_redraw(void *priv)
 {
     tivga_t *ti = (tivga_t *)priv;
 
@@ -250,7 +251,7 @@ vid_close(void *priv)
 
 
 static void *
-vid_init(const device_t *info)
+vid_init(const device_t *info, UNUSED(void *parent))
 {
     tivga_t *ti;
 
@@ -277,7 +278,7 @@ vid_init(const device_t *info)
     ti->svga.bpp = 8;
     ti->svga.miscout = 1;
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
     return(ti);
@@ -285,7 +286,7 @@ vid_init(const device_t *info)
 
 
 #if defined(DEV_BRANCH) && defined(USE_TI)
-static const device_config_t vid_config[] =
+static const device_config_t ti_cf62011_config[] =
 {
         {
                 "vram_size", "Memory Size", CONFIG_SELECTION, "", 256,
@@ -300,38 +301,40 @@ static const device_config_t vid_config[] =
                                 "1024K", 1024
                         },
                         {
-                                ""
+                                NULL
                         }
                 }
         },
         {
-                "", "", -1
+                NULL
         }
 };
 
 
 const device_t ti_cf62011_device = {
     "TI CF62011 SVGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     0,
+    NULL,
     vid_init, vid_close, NULL,
     NULL,
-    vid_speed_changed,
-    vid_force_redraw,
+    speed_changed,
+    force_redraw,
     &ti_cf62011_timing,
-    vid_config
+    ti_cf62011_config
 };
 #endif
 
 
 const device_t ibm_ps1_2121_device = {
     "IBM PS/1 Model 2121 SVGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     512,
+    NULL,
     vid_init, vid_close, NULL,
     NULL,
-    vid_speed_changed,
-    vid_force_redraw,
+    speed_changed,
+    force_redraw,
     &ti_cf62011_timing,
     NULL
 };

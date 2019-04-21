@@ -6,14 +6,16 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		CPU type handler.
+ *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.9	2019/02/17
+ * Version:	@(#)cpu.h	1.0.10	2019/04/20
  *
- * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
- *		leilei,
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
+ *		Sarah Walker, <tommowalker@tommowalker.co.uk>
+ *		leilei,
  *
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
@@ -40,6 +42,17 @@
 # define EMU_CPU_H
 
 
+/* Supported CPU manufacturers. */
+#define MANU_INTEL	0
+#define MANU_AMD	1
+#define MANU_CYRIX	2
+#define MANU_IDT	3
+#define MANU_NEC	4
+
+/*
+ * Supported CPU types.
+ * FIXME: We should encode the CPU class in the ID's.
+ */
 #define CPU_8088	0		/* 808x class CPUs */
 #define CPU_8086	1
 #define CPU_NEC		2		/* NEC V20 or V30 */
@@ -60,31 +73,17 @@
 #define CPU_Cx5x86	17
 #define CPU_WINCHIP	18		/* 586 class CPUs */
 #define CPU_PENTIUM	19
-#define CPU_PENTIUMMMX	20
+#define CPU_PENTIUM_MMX	20
 #define CPU_Cx6x86 	21
 #define CPU_Cx6x86MX 	22
 #define CPU_Cx6x86L 	23
 #define CPU_CxGX1 	24
-#if defined(DEV_BRANCH) && defined(USE_AMD_K)
 #define CPU_K5		25
 #define CPU_5K86	26
 #define CPU_K6		27
-#endif
-#if defined(DEV_BRANCH) && defined(USE_I686)
-#define CPU_PENTIUMPRO	28		/* 686 class CPUs */
-#if 0
-# define CPU_PENTIUM2	29
-# define CPU_PENTIUM2D	30
-#else
-# define CPU_PENTIUM2D	29
-#endif
-#endif
-
-#define MANU_INTEL	0
-#define MANU_AMD	1
-#define MANU_CYRIX	2
-#define MANU_IDT	3
-#define MANU_NEC	4
+#define CPU_PENTIUM_PRO	28		/* 686 class CPUs */
+#define CPU_PENTIUM_2	29
+#define CPU_PENTIUM_2D	30
 
 #define CPU_SUPPORTS_DYNAREC 1
 #define CPU_REQUIRES_DYNAREC 2
@@ -93,49 +92,59 @@
 
 typedef struct {
     const char	*name;
-    int		cpu_type;
-    int		speed;
+    int		type;
+
     uint32_t	rspeed;
     int		multi;
-    int		pci_speed;
+    int		fsb_speed;
+
     uint32_t	edx_reset;
     uint32_t	cpuid_model;
     uint16_t	cyrix_id;
-    int		cpu_flags;
-    int		mem_read_cycles, mem_write_cycles;
-    int		cache_read_cycles, cache_write_cycles;
+
+    int		flags;
+
+    int		mem_read_cycles,
+		mem_write_cycles;
+    int		cache_read_cycles,
+		cache_write_cycles;
+
     int		atclk_div;
 } CPU;
 
-extern CPU	cpus_8088[];
-extern CPU	cpus_8086[];
-extern CPU	cpus_nec[];
-extern CPU	cpus_186[];
-extern CPU	cpus_286[];
-extern CPU	cpus_i386SX[];
-extern CPU	cpus_i386DX[];
-extern CPU	cpus_Am386SX[];
-extern CPU	cpus_Am386DX[];
-extern CPU	cpus_486SLC[];
-extern CPU	cpus_486DLC[];
-extern CPU	cpus_i486[];
-extern CPU	cpus_Am486[];
-extern CPU	cpus_Cx486[];
-extern CPU	cpus_WinChip[];
-extern CPU	cpus_Pentium5V[];
-extern CPU	cpus_Pentium5V50[];
-extern CPU	cpus_PentiumS5[];
+
+extern const CPU	cpus_8088[];
+extern const CPU	cpus_8086[];
+extern const CPU	cpus_nec[];
+extern const CPU	cpus_186[];
+extern const CPU	cpus_286[];
+extern const CPU	cpus_i386SX[];
+extern const CPU	cpus_i386DX[];
+extern const CPU	cpus_Am386SX[];
+extern const CPU	cpus_Am386DX[];
+extern const CPU	cpus_486SLC[];
+extern const CPU	cpus_486DLC[];
+extern const CPU	cpus_i486[];
+extern const CPU	cpus_Am486[];
+extern const CPU	cpus_Cx486[];
+extern const CPU	cpus_WinChip[];
+extern const CPU	cpus_Pentium5V[];
+extern const CPU	cpus_Pentium5V50[];
+extern const CPU	cpus_PentiumS5[];
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
-extern CPU	cpus_K5[];
-extern CPU	cpus_K56[];
+extern const CPU	cpus_K5[];
+extern const CPU	cpus_K56[];
+# define CPU_AMD_K5	{"AMD",cpus_K5}
+# define CPU_AMD_K56	{"AMD",cpus_K56}
+#else
+# define CPU_AMD_K5	{"",NULL}
+# define CPU_AMD_K56	{"",NULL}
 #endif
-extern CPU	cpus_Pentium[];
-extern CPU	cpus_6x86[];
-#if defined(DEV_BRANCH) && defined(USE_I686)
-extern CPU	cpus_PentiumPro[];
-extern CPU	cpus_Pentium2[];
-extern CPU	cpus_Pentium2D[];
-#endif
+extern const CPU	cpus_Pentium[];
+extern const CPU	cpus_6x86[];
+extern const CPU	cpus_PentiumPro[];
+extern const CPU	cpus_Pentium2[];
+extern const CPU	cpus_Pentium2D[];
 
 
 #define C_FLAG		0x0001
@@ -158,9 +167,9 @@ extern CPU	cpus_Pentium2D[];
 #define CR4_PVI		(1 << 1)
 #define CR4_PSE		(1 << 4)
 
-#define CPL ((_cs.access>>5)&3)
-#define IOPL ((flags>>12)&3)
-#define IOPLp ((!(msw&1)) || (CPL<=IOPL))
+#define CPL		((_cs.access>>5)&3)
+#define IOPL		((flags>>12)&3)
+#define IOPLp		((!(msw&1)) || (CPL<=IOPL))
 
 
 typedef union {
@@ -321,15 +330,14 @@ COMPILE_TIME_ASSERT(sizeof(cpu_state) <= 128)
 
 
 /* Global variables. */
-extern int		xt_cpu_multi;
-extern int		cpu_16bitbus;
 extern int		cpu_busspeed;
+extern int		cpu_16bitbus;
+extern int		xt_cpu_multi;
 extern int		cpu_cyrix_alignment;	/*Cyrix 5x86/6x86 only has data misalignment
 					  penalties when crossing 8-byte boundaries*/
 
 extern int		is8086,	is186, is286, is386, is486;
 extern int		is_nec, is_rapidcad, is_cyrix, is_pentium;
-extern int		hasfpu;
 extern int		cpu_hasrdtsc;
 extern int		cpu_hasMSR;
 extern int		cpu_hasMMX;
@@ -340,7 +348,6 @@ extern uint32_t		cpu_cur_status;
 extern uint64_t		cpu_CR4_mask;
 extern uint64_t		tsc;
 extern msr_t		msr;
-extern int		cpuspeed;
 extern int		cycles_lost;
 extern uint8_t		opcode;
 extern int		fpucount;
@@ -349,11 +356,10 @@ extern int		cgate16;
 extern int		cpl_override;
 extern int		CPUID;
 extern int		isa_cycles;
-extern int		cpu_effective;
 
 extern uint16_t		flags,eflags;
 extern uint32_t		oldds,oldss,olddslimit,oldsslimit,olddslimitw,oldsslimitw;
-extern int		ins,output;
+extern int		ins;		// FIXME: get rid of this!
 extern int		cycdiff;
 extern uint32_t		pccache;
 extern uint8_t		*pccache2;
@@ -424,29 +430,27 @@ extern int	timing_jmp_rm, timing_jmp_pm, timing_jmp_pm_gate;
 extern int	timing_misaligned;
 
 
-extern CPU	cpus_pcjr[];		// FIXME: should be in machine file!
-extern CPU	cpus_europc[];		// FIXME: should be in machine file!
-extern CPU	cpus_pc1512[];		// FIXME: should be in machine file!
-extern CPU	cpus_ibmat[];		// FIXME: should be in machine file!
-extern CPU	cpus_ibmxt286[];	// FIXME: should be in machine file!
-extern CPU	cpus_ps1_m2011[];	// FIXME: should be in machine file!
-extern CPU	cpus_ps2_m30_286[];	// FIXME: should be in machine file!
-#if 0
-extern CPU	cpus_acer[];		// FIXME: should be in machine file!
-#endif
-
-
 /* Functions. */
 extern void	cyrix_write(uint16_t addr, uint8_t val, void *priv);
 extern uint8_t	cyrix_read(uint16_t addr, void *priv);
 extern void	loadseg(uint16_t seg, x86seg *s);
 extern void	loadcs(uint16_t seg);
 
-extern char	*cpu_current_pc(char *bufp);
-extern void	cpu_dynamic_switch(int new_cpu);
-
+extern void	cpu_set_type(const CPU *list, int type);
+extern int	cpu_get_type(void);
+extern const char *cpu_get_name(void);
+extern int	cpu_set_speed(int new_speed);
+extern uint32_t	cpu_get_speed(void);
+extern int	cpu_get_flags(void);
 extern void	cpu_update_waitstates(void);
-extern void	cpu_set(void);
+extern char	*cpu_current_pc(char *bufp);
+extern void	cpu_set_edx(void);
+extern void	cpu_reset(int hard);
+extern void	cpu_dumpregs(int __force);
+
+extern void	execx86(int cycs);
+extern void	exec386(int cycs);
+extern void	exec386_dynarec(int cycs);
 
 extern void	cpu_CPUID(void);
 extern void	cpu_RDMSR(void);
@@ -455,12 +459,7 @@ extern void	cpu_WRMSR(void);
 extern int	checkio(uint32_t port);
 extern void	codegen_block_end(void);
 extern void	codegen_reset(void);
-extern void	cpu_set_edx(void);
 extern int	divl(uint32_t val);
-extern void	dumpregs(int __force);
-extern void	execx86(int cycs);
-extern void	exec386(int cycs);
-extern void	exec386_dynarec(int cycs);
 extern int	idivl(int32_t val);
 extern void	loadcscall(uint16_t seg);
 extern void	loadcsjmp(uint16_t seg, uint32_t oxpc);
@@ -468,10 +467,8 @@ extern void	pmodeint(int num, int soft);
 extern void	pmoderetf(int is32, uint16_t off);
 extern void	pmodeiret(int is32);
 extern void	resetmcr(void);
-extern void	resetx86(void);
 extern void	refreshread(void);
 extern void	resetreadlookup(void);
-extern void	softresetx86(void);
 extern void	x86_int_sw(uint32_t num);
 extern int	x86_int_sw_rm(int num);
 extern void	x86gpf(char *s, uint16_t error);

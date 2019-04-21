@@ -8,7 +8,7 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.11	2019/03/03
+ * Version:	@(#)vid_ati18800.c	1.0.13	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -204,10 +205,9 @@ static void ati18800_recalctimings(svga_t *svga)
 
 
 static void *
-ati18800_init(const device_t *info)
+ati18800_init(const device_t *info, UNUSED(void *parent))
 {
     ati18800_t *dev;
-    const wchar_t *fn = NULL;
 
     dev = (ati18800_t *)mem_alloc(sizeof(ati18800_t));
     memset(dev, 0x00, sizeof(ati18800_t));
@@ -215,24 +215,21 @@ ati18800_init(const device_t *info)
     switch (info->local) {
 #if defined(DEV_BRANCH) && defined(USE_WONDER)
 	case ATI18800_WONDER:
-	        fn = BIOS_ROM_PATH_WONDER;
 		break;
 #endif
 
 	case ATI18800_VGA88:
-	        fn = BIOS_ROM_PATH_VGA88;
 		break;
 
 	case ATI18800_EDGE16:
-		fn = BIOS_ROM_PATH_EDGE16;
 		break;
 
 	default:
 		break;
     };
         
-    if (fn != NULL) {
-	rom_init(&dev->bios_rom, fn, 0xc0000, 0x8000, 0x7fff,
+    if (info->path != NULL) {
+	rom_init(&dev->bios_rom, info->path, 0xc0000, 0x8000, 0x7fff,
 		 0, MEM_MAPPING_EXTERNAL);
     }
 
@@ -248,7 +245,7 @@ ati18800_init(const device_t *info)
 
     ati_eeprom_load(&dev->eeprom, L"ati18800.nvr", 0);
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
     return dev;
@@ -282,36 +279,16 @@ force_redraw(void *priv)
 }
 
 
-#if defined(DEV_BRANCH) && defined(USE_WONDER)
-static int
-ati18800_wonder_available(void)
-{
-    return rom_present(BIOS_ROM_PATH_WONDER);
-}
-#endif
-
-static int
-ati18800_vga88_available(void)
-{
-    return rom_present(BIOS_ROM_PATH_VGA88);
-}
-
-static int
-ati18800_available(void)
-{
-    return rom_present(BIOS_ROM_PATH_EDGE16);
-}
-
-
 static const video_timings_t ati18800_timing = {VID_ISA,8,16,32,8,16,32};
 
 #if defined(DEV_BRANCH) && defined(USE_WONDER)
 const device_t ati18800_wonder_device = {
     "ATI-18800",
-    DEVICE_ISA | DEVICE_UNSTABLE,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA | DEVICE_UNSTABLE,
     ATI18800_WONDER,
+    BIOS_ROM_PATH_WONDER,
     ati18800_init, ati18800_close, NULL,
-    ati18800_wonder_available,
+    NULL,
     speed_changed,
     force_redraw,
     &ati18800_timing,
@@ -321,10 +298,11 @@ const device_t ati18800_wonder_device = {
 
 const device_t ati18800_vga88_device = {
     "ATI-18800-1",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     ATI18800_VGA88,
+    BIOS_ROM_PATH_VGA88,
     ati18800_init, ati18800_close, NULL,
-    ati18800_vga88_available,
+    NULL,
     speed_changed,
     force_redraw,
     &ati18800_timing,
@@ -333,10 +311,11 @@ const device_t ati18800_vga88_device = {
 
 const device_t ati18800_device = {
     "ATI-18800-5",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     ATI18800_EDGE16,
+    BIOS_ROM_PATH_EDGE16,
     ati18800_init, ati18800_close, NULL,
-    ati18800_available,
+    NULL,
     speed_changed,
     force_redraw,
     &ati18800_timing,

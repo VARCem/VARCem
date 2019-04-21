@@ -12,13 +12,13 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.22	2018/10/24
+ * Version:	@(#)win_devconf.c	1.0.23	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -79,7 +79,7 @@ dlg_init(HWND hdlg)
     id = IDC_CONFIGURE_DEV;
     cfg = dev->config;
 
-    while (cfg->type != -1) {
+    while (cfg->name != NULL) {
 	sel = cfg->selection;
 	h = GetDlgItem(hdlg, id);
 
@@ -95,7 +95,7 @@ dlg_init(HWND hdlg)
 			val = config_get_int(dev->name,
 					     cfg->name, cfg->default_int);
 			c = 0;
-			while (sel->description && sel->description[0]) {
+			while (sel->description) {
 				mbstowcs(temp, sel->description, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)temp);
 				if (val == sel->value)
@@ -139,7 +139,7 @@ dlg_init(HWND hdlg)
 			val = config_get_hex16(dev->name,
 					       cfg->name, cfg->default_int);
 			c = 0;
-			while (sel->description && sel->description[0]) {
+			while (sel->description) {
 				mbstowcs(temp, sel->description, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)temp);
 				if (val == sel->value)
@@ -154,7 +154,7 @@ dlg_init(HWND hdlg)
 			val = config_get_hex20(dev->name,
 					       cfg->name, cfg->default_int);
 			c = 0;
-			while (sel->description && sel->description[0]) {
+			while (sel->description) {
 				mbstowcs(temp, sel->description, sizeof_w(temp));
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)(LPCSTR)temp);
 				if (val == sel->value)
@@ -193,7 +193,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			id = IDC_CONFIGURE_DEV;
 			changed = 0;
 
-			while (cfg->type != -1) {
+			while (cfg->name != NULL) {
 				sel = cfg->selection;
 				h = GetDlgItem(hdlg, id);
 
@@ -293,7 +293,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			id = IDC_CONFIGURE_DEV;
 			cfg = dev->config;
 				
-			while (cfg->type != -1) {
+			while (cfg->name != NULL) {
 				sel = cfg->selection;
 				h = GetDlgItem(hdlg, id);
 
@@ -372,7 +372,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			id = IDC_CONFIGURE_DEV;
 			cfg = dev->config;
 
-			while (cfg->type != -1) {
+			while (cfg->name != NULL) {
 				switch (cfg->type) {
 					case CONFIG_BINARY:
 						id++;
@@ -392,13 +392,13 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 							file_filter[0] = 0;
 
 							c = 0;
-							while (cfg->file_filter[c].description && cfg->file_filter[c].description[0]) {
+							while (cfg->file_filter[c].description) {
 								if (c > 0)
 									strcat(file_filter, "|");
 								strcat(file_filter, cfg->file_filter[c].description);
 								strcat(file_filter, " (");
 								d = 0;
-								while (cfg->file_filter[c].extensions[d] && cfg->file_filter[c].extensions[d][0]) {
+								while (cfg->file_filter[c].extensions[d]) {
 										if (d > 0)
 									strcat(file_filter, ";");
 									strcat(file_filter, "*.");
@@ -407,7 +407,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 								}
 								strcat(file_filter, ")|");
 								d = 0;
-								while (cfg->file_filter[c].extensions[d] && cfg->file_filter[c].extensions[d][0]) {
+								while (cfg->file_filter[c].extensions[d]) {
 									if (d > 0)
 										strcat(file_filter, ";");
 									strcat(file_filter, "*.");
@@ -508,7 +508,7 @@ dlg_devconf(HWND hwnd, const device_t *device)
 
     /* Now add the items from the configuration. */
     id = IDC_CONFIGURE_DEV;
-    while (cfg->type != -1) {
+    while (cfg->name != NULL) {
 	/* Align 'data' to DWORD */
 	itm = (DLGITEMTEMPLATE *)data;
 
@@ -554,7 +554,7 @@ dlg_devconf(HWND hwnd, const device_t *device)
 			if (((uintptr_t)data) & 2)
 				data++;		/* align */
 
-			/* static tex t*/
+			/* static text */
 			itm = (DLGITEMTEMPLATE *)data;
 			itm->style = WS_CHILD | WS_VISIBLE;
 			itm->x = 10;

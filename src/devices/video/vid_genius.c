@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.10	2019/03/07
+ * Version:	@(#)vid_genius.c	1.0.12	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -585,7 +585,7 @@ load_font(genius_t *dev, const wchar_t *s)
 
 
 static void *
-genius_init(const device_t *info)
+genius_init(const device_t *info, UNUSED(void *parent))
 {
     genius_t *dev;
     int c;
@@ -599,7 +599,7 @@ genius_init(const device_t *info)
 	return(NULL);
     }
 
-    /* 160k video RAM */
+    /* 160K video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x28000);
 
     timer_add(genius_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
@@ -655,9 +655,10 @@ genius_init(const device_t *info)
     dev->enabled    = 1;
     dev->genius_charh = 0x90; /* Native character height register */
 
-    video_inform(VID_TYPE_MDA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
-    return dev;
+    return(dev);
 }
 
 
@@ -668,13 +669,6 @@ genius_close(void *priv)
 
     free(dev->vram);
     free(dev);
-}
-
-
-static int
-genius_available(void)
-{
-    return rom_present(FONT_ROM_PATH);
 }
 
 
@@ -691,9 +685,11 @@ static const video_timings_t genius_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t genius_device = {
     "Genius VHR",
-    DEVICE_ISA, 0,
+    DEVICE_VIDEO(VID_TYPE_MDA) | DEVICE_ISA,
+    0,
+    FONT_ROM_PATH,
     genius_init, genius_close, NULL,
-    genius_available,
+    NULL,
     speed_changed,
     NULL,
     &genius_timings,

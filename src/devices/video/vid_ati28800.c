@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.18	2019/03/03
+ * Version:	@(#)vid_ati28800.c	1.0.20	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -483,7 +483,7 @@ ati28800k_load_font(svga_t *svga, const wchar_t *fn)
 
 
 static void *
-ati28800_init(const device_t *info)
+ati28800_init(const device_t *info, UNUSED(void *parent))
 {
     ati28800_t *dev;
 
@@ -495,8 +495,7 @@ ati28800_init(const device_t *info)
     switch(info->local) {
 	case 0:
 		dev->id = 5;
-		rom_init(&dev->bios_rom,
-			 BIOS_ROM_PATH,
+		rom_init(&dev->bios_rom, info->path,
 			 0xc0000, 0x8000, 0x7fff,
 			 0, MEM_MAPPING_EXTERNAL);
 		ati_eeprom_load(&dev->eeprom, L"ati28800.nvr", 0);
@@ -533,7 +532,7 @@ ati28800_init(const device_t *info)
 		dev->in_get_korean_font_kind_set = 0;
 		dev->ksc5601_mode_enabled = 0;
 
-		rom_init(&dev->bios_rom, BIOS_ATIKOR_PATH,
+		rom_init(&dev->bios_rom, info->path,
 			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 		ati_eeprom_load(&dev->eeprom, L"atikorvga.nvr", 0);
 		break;
@@ -578,7 +577,7 @@ ati28800_init(const device_t *info)
 	}
     }
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
     return(dev);
@@ -595,12 +594,6 @@ ati28800_close(void *priv)
     free(dev);
 }
 
-
-static int
-ati28800_available(void)
-{
-    return(rom_present(BIOS_ROM_PATH));
-}
 
 static int
 ati28800k_available(void)
@@ -658,12 +651,12 @@ static const device_config_t ati28800_config[] = {
 			"1 MB", 1024
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -682,12 +675,12 @@ static const device_config_t ati28800_wonderxl_config[] = {
 			"1 MB", 1024
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 #endif
@@ -696,10 +689,11 @@ static const device_config_t ati28800_wonderxl_config[] = {
 static const video_timings_t ati28800_timing = {VID_ISA,3,3,6,5,5,10};
 const device_t ati28800_device = {
     "ATI-28800",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     0,
+    BIOS_ROM_PATH,
     ati28800_init, ati28800_close, NULL,
-    ati28800_available,
+    NULL,
     speed_changed,
     force_redraw,
     &ati28800_timing,
@@ -709,8 +703,9 @@ const device_t ati28800_device = {
 static const video_timings_t ati28800k_timing = {VID_ISA,3,3,6,5,5,10};
 const device_t ati28800k_device = {
     "ATI Korean VGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     VID_ATIKOREANVGA,
+    BIOS_ATIKOR_PATH,
     ati28800_init, ati28800_close, NULL,
     ati28800k_available,
     speed_changed,
@@ -722,8 +717,9 @@ const device_t ati28800k_device = {
 static const video_timings_t ati28800_compaq_timing = {VID_ISA,3,3,6,5,5,10};
 const device_t ati28800_compaq_device = {
     "Compaq ATI-28800",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     VID_VGAWONDERXL,
+    NULL,
     ati28800_init, ati28800_close, NULL,
     ati28800_compaq_available,
     speed_changed,
@@ -736,8 +732,9 @@ const device_t ati28800_compaq_device = {
 static const video_timings_t ati28800w_timing = {VID_ISA,3,3,6,5,5,10};
 const device_t ati28800_wonderxl24_device = {
     "ATI-28800 (VGA Wonder XL24)",
-    DEVICE_ISA | DEVICE_UNSTABLE,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA | DEVICE_UNSTABLE,
     VID_VGAWONDERXL24,
+    NULL,
     ati28800_init, ati28800_close, NULL,
     ati28800_wonderxl24_available,
     speed_changed,

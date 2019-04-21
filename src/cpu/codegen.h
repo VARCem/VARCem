@@ -8,7 +8,7 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen.h	1.0.4	2018/11/13
+ * Version:	@(#)codegen.h	1.0.5	2019/03/21
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,9 +41,10 @@
 #ifdef EMU_MEM_H
 # include "x86_ops.h"
 
+//FIXME: this is wrong. use _M_xx indentifiers.
 #ifdef __amd64__
 # include "codegen_x86-64.h"
-#elif defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
+#elif defined(i386) || defined(__i386) || defined(__i386__) || defined(_X86_) || defined(_M_IX86) || defined(_M_X64)
 # include "codegen_x86.h"
 # else
 #  error Dynamic recompiler not implemented on your platform

@@ -12,13 +12,13 @@
  *		    word 0 - base address
  *		    word 1 - bits 1-15 = byte count, bit 31 = end of transfer
  *
- * Version:	@(#)intel_piix.c	1.0.8	2018/10/14
+ * Version:	@(#)intel_piix.c	1.0.10	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -49,6 +49,7 @@
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../input/keyboard.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
@@ -839,7 +840,7 @@ piix_close(void *p)
 
 
 static void *
-piix_init(const device_t *info)
+piix_init(const device_t *info, UNUSED(void *parent))
 {
     piix_t *piix = (piix_t *)mem_alloc(sizeof(piix_t));
     memset(piix, 0, sizeof(piix_t));
@@ -872,6 +873,7 @@ const device_t piix_device = {
     "Intel 82371FB (PIIX)",
     DEVICE_PCI,
     1,
+    NULL,
     piix_init, piix_close, piix_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -881,6 +883,7 @@ const device_t piix_pb640_device = {
     "Intel 82371FB (PIIX) (PB640)",
     DEVICE_PCI,
     0x101,
+    NULL,
     piix_init, piix_close, piix_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -890,6 +893,7 @@ const device_t piix3_device = {
     "Intel 82371SB (PIIX3)",
     DEVICE_PCI,
     3,
+    NULL,
     piix_init, piix_close, piix_reset,
     NULL, NULL, NULL, NULL,
     NULL

@@ -8,14 +8,14 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)snd_sb.c	1.0.9	2018/10/25
+ * Version:	@(#)snd_sb.c	1.0.11	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -48,6 +48,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/mca.h"
 #include "sound.h"
 #include "filters.h"
@@ -1019,7 +1020,7 @@ void sb_pro_mcv_write(int port, uint8_t val, void *p)
         sb_dsp_setdma8(&sb->dsp, sb->pos_regs[4] & 3);
 }
 
-void *sb_1_init(const device_t *info)
+void *sb_1_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1045,7 +1046,7 @@ void *sb_1_init(const device_t *info)
         sound_add_handler(sb_get_buffer_sb2, sb);
         return sb;
 }
-void *sb_15_init(const device_t *info)
+void *sb_15_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1072,7 +1073,7 @@ void *sb_15_init(const device_t *info)
         return sb;
 }
 
-void *sb_mcv_init(const device_t *info)
+void *sb_mcv_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x6, 2xA, 2xC, 2xE -> DSP chip
@@ -1094,7 +1095,7 @@ void *sb_mcv_init(const device_t *info)
         sb->pos_regs[1] = 0x50;
         return sb;
 }
-void *sb_2_init(const device_t *info)
+void *sb_2_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb2 port mappings. 220h or 240h.
           2x0 to 2x3 -> CMS chip
@@ -1144,7 +1145,7 @@ void *sb_2_init(const device_t *info)
         return sb;
 }
 
-void *sb_pro_v1_init(const device_t *info)
+void *sb_pro_v1_init(const device_t *info, UNUSED(void *parent))
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (9*2 voices)
@@ -1177,7 +1178,7 @@ void *sb_pro_v1_init(const device_t *info)
         return sb;
 }
 
-void *sb_pro_v2_init(const device_t *info)
+void *sb_pro_v2_init(const device_t *info, UNUSED(void *parent))
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip (18 voices)
@@ -1209,7 +1210,7 @@ void *sb_pro_v2_init(const device_t *info)
         return sb;
 }
 
-void *sb_pro_mcv_init(const device_t *info)
+void *sb_pro_mcv_init(const device_t *info, UNUSED(void *parent))
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (18 voices)
@@ -1234,7 +1235,7 @@ void *sb_pro_mcv_init(const device_t *info)
         return sb;
 }
 
-void *sb_16_init(const device_t *info)
+void *sb_16_init(const device_t *info, UNUSED(void *parent))
 {
         sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
@@ -1268,12 +1269,7 @@ void *sb_16_init(const device_t *info)
         return sb;
 }
 
-int sb_awe32_available(void)
-{
-        return rom_present(ROM_PATH_AWE32);
-}
-
-void *sb_awe32_init(const device_t *info)
+void *sb_awe32_init(const device_t *info, UNUSED(void *parent))
 {
         sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
@@ -1348,513 +1344,518 @@ void sb_speed_changed(void *p)
         sb_dsp_speed_changed(&sb->dsp);
 }
 
-static const device_config_t sb_config[] =
-{
-        {
-                "base", "Address", CONFIG_HEX16, "", 0x220,
-                {
-                        {
-                                "0x220", 0x220
-                        },
-                        {
-                                "0x240", 0x240
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "irq", "IRQ", CONFIG_SELECTION, "", 7,
-                {
-                        {
-                                "IRQ 2", 2
-                        },
-                        {
-                                "IRQ 3", 3
-                        },
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 7", 7
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "dma", "DMA", CONFIG_SELECTION, "", 1,
-                {
-                        {
-                                "DMA 1", 1
-                        },
-                        {
-                                "DMA 3", 3
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
+
+static const device_config_t sb_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x220,
 	{
-		"opl", "Enable OPL", CONFIG_BINARY, "", 1
-	},
-        {
-                "", "", -1
-        }
+		{
+			"220H", 0x220
+		},
+		{
+			"240H", 0x240
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", 7,
+	{
+		{
+			"IRQ 2", 2
+		},
+		{
+			"IRQ 3", 3
+		},
+		{
+			"IRQ 5", 5
+		},
+		{
+			"IRQ 7", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"dma", "DMA", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"DMA 1", 1
+		},
+		{
+			"DMA 3", 3
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"opl", "Enable OPL", CONFIG_BINARY, "", 1
+    },
+    {
+	NULL
+    }
 };
 
-static const device_config_t sb_mcv_config[] =
-{
-        {
-                "irq", "IRQ", CONFIG_SELECTION, "", 7,
-                {
-                        {
-                                "IRQ 3", 3
-                        },
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 7", 7
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "dma", "DMA", CONFIG_SELECTION, "", 1,
-                {
-                        {
-                                "DMA 1", 1
-                        },
-                        {
-                                "DMA 3", 3
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
+static const device_config_t sb_mcv_config[] = {
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", 7,
 	{
-		"opl", "Enable OPL", CONFIG_BINARY, "", 1
-	},
-        {
-                "", "", -1
-        }
+		{
+			"IRQ 3", 3
+		},
+		{
+			"IRQ 5", 5
+		},
+		{
+			"IRQ 7", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"dma", "DMA", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"DMA 1", 1
+		},
+		{
+			"DMA 3", 3
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"opl", "Enable OPL", CONFIG_BINARY, "", 1
+    },
+    {
+	NULL
+    }
 };
 
-static const device_config_t sb_pro_config[] =
-{
-        {
-                "base", "Address", CONFIG_HEX16, "", 0x220,
-                {
-                        {
-                                "0x220", 0x220
-                        },
-                        {
-                                "0x240", 0x240
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "irq", "IRQ", CONFIG_SELECTION, "", 7,
-                {
-                        {
-                                "IRQ 2", 2
-                        },
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 7", 7
-                        },
-                        {
-                                "IRQ 10", 10
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "dma", "DMA", CONFIG_SELECTION, "", 1,
-                {
-                        {
-                                "DMA 1", 1
-                        },
-                        {
-                                "DMA 3", 3
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
+static const device_config_t sb_pro_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x220,
 	{
-		"opl", "Enable OPL", CONFIG_BINARY, "", 1
-	},
-        {
-                "", "", -1
-        }
+		{
+			"220H", 0x220
+		},
+		{
+			"240H", 0x240
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", 7,
+	{
+		{
+			"IRQ 2", 2
+		},
+		{
+			"IRQ 5", 5
+		},
+		{
+			"IRQ 7", 7
+		},
+		{
+			"IRQ 10", 10
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"dma", "DMA", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"DMA 1", 1
+		},
+		{
+			"DMA 3", 3
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"opl", "Enable OPL", CONFIG_BINARY, "", 1
+    },
+    {
+	NULL
+    }
 };
 
-static const device_config_t sb_16_config[] =
-{
-        {
-                "base", "Address", CONFIG_HEX16, "", 0x220,
-                {
-                        {
-                                "0x220", 0x220
-                        },
-                        {
-                                "0x240", 0x240
-                        },
-                        {
-                                "0x260", 0x260
-                        },
-                        {
-                                "0x280", 0x280
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "base401", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
-                {
-                        {
-                                "Disabled", 0
-                        },
-                        {
-                                "0x300", 0x300
-                        },
-                        {
-                                "0x330", 0x330
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "irq", "IRQ", CONFIG_SELECTION, "", 5,
-                {
-                        {
-                                "IRQ 2", 2
-                        },
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 7", 7
-                        },
-                        {
-                                "IRQ 10", 10
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "dma", "Low DMA channel", CONFIG_SELECTION, "", 1,
-                {
-                        {
-                                "DMA 0", 0
-                        },
-                        {
-                                "DMA 1", 1
-                        },
-                        {
-                                "DMA 3", 3
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "dma16", "High DMA channel", CONFIG_SELECTION, "", 5,
-                {
-                        {
-                                "DMA 5", 5
-                        },
-                        {
-                                "DMA 6", 6
-                        },
-                        {
-                                "DMA 7", 7
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
+static const device_config_t sb_16_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x220,
 	{
-		"opl", "Enable OPL", CONFIG_BINARY, "", 1
-	},
-        {
-                "", "", -1
-        }
+		{
+			"220H", 0x220
+		},
+		{
+			"240H", 0x240
+		},
+		{
+			"260H", 0x260
+		},
+		{
+			"280H", 0x280
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"base401", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"300H", 0x300
+		},
+		{
+			"330H", 0x330
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", 5,
+	{
+		{
+			"IRQ 2", 2
+		},
+		{
+			"IRQ 5", 5
+		},
+		{
+			"IRQ 7", 7
+		},
+		{
+			"IRQ 10", 10
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"dma", "Low DMA channel", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"DMA 0", 0
+		},
+		{
+			"DMA 1", 1
+		},
+		{
+			"DMA 3", 3
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"dma16", "High DMA channel", CONFIG_SELECTION, "", 5,
+	{
+		{
+			"DMA 5", 5
+		},
+		{
+			"DMA 6", 6
+		},
+		{
+			"DMA 7", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"opl", "Enable OPL", CONFIG_BINARY, "", 1
+    },
+    {
+	NULL
+    }
 };
 
-static const device_config_t sb_awe32_config[] =
-{
-        {
-                "base", "Address", CONFIG_HEX16, "", 0x220,
-                {
-                        {
-                                "0x220", 0x220
-                        },
-                        {
-                                "0x240", 0x240
-                        },
-                        {
-                                "0x260", 0x260
-                        },
-                        {
-                                "0x280", 0x280
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "emu_base", "EMU8000 Address", CONFIG_HEX16, "", 0x620,
-                {
-                        {
-                                "0x620", 0x620
-                        },
-                        {
-                                "0x640", 0x640
-                        },
-                        {
-                                "0x660", 0x660
-                        },
-                        {
-                                "0x680", 0x680
-                        },
-                        {
-                                .description = ""
-                        }
-                }
-        },
-        {
-                "base401", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
-                {
-                        {
-                                "Disabled", 0
-                        },
-                        {
-                                "0x300", 0x300
-                        },
-                        {
-                                "0x330", 0x330
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "irq", "IRQ", CONFIG_SELECTION, "", 5,
-                {
-                        {
-                                "IRQ 2", 2
-                        },
-                        {
-                                "IRQ 5", 5
-                        },
-                        {
-                                "IRQ 7", 7
-                        },
-                        {
-                                "IRQ 10", 10
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "dma", "Low DMA channel", CONFIG_SELECTION, "", 1,
-                {
-                        {
-                                "DMA 0", 0
-                        },
-                        {
-                                "DMA 1", 1
-                        },
-                        {
-                                "DMA 3", 3
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "dma16", "High DMA channel", CONFIG_SELECTION, "", 5,
-                {
-                        {
-                                "DMA 5", 5
-                        },
-                        {
-                                "DMA 6", 6
-                        },
-                        {
-                                "DMA 7", 7
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "onboard_ram", "Onboard RAM", CONFIG_SELECTION, "", 512,
-                {
-                        {
-                                "None", 0
-                        },
-                        {
-                                "512 KB", 512
-                        },
-                        {
-                                "2 MB", 2048
-                        },
-                        {
-                                "8 MB", 8192
-                        },
-                        {
-                                "28 MB", 28*1024
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
+static const device_config_t sb_awe32_config[] = {
+    {
+	"base", "Address", CONFIG_HEX16, "", 0x220,
 	{
-		"opl", "Enable OPL", CONFIG_BINARY, "", 1
-	},
-        {
-                "", "", -1
-        }
+		{
+			"220H", 0x220
+		},
+		{
+			"240H", 0x240
+		},
+		{
+			"260H", 0x260
+		},
+		{
+			"280H", 0x280
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"emu_base", "EMU8000 Address", CONFIG_HEX16, "", 0x620,
+	{
+		{
+			"620H", 0x620
+		},
+		{
+			"640H", 0x640
+		},
+		{
+			"660H", 0x660
+		},
+		{
+			"680H", 0x680
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"base401", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"300H", 0x300
+		},
+		{
+			"330H", 0x330
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"irq", "IRQ", CONFIG_SELECTION, "", 5,
+	{
+		{
+			"IRQ 2", 2
+		},
+		{
+			"IRQ 5", 5
+		},
+		{
+			"IRQ 7", 7
+		},
+		{
+			"IRQ 10", 10
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"dma", "Low DMA channel", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"DMA 0", 0
+		},
+		{
+			"DMA 1", 1
+		},
+		{
+			"DMA 3", 3
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"dma16", "High DMA channel", CONFIG_SELECTION, "", 5,
+	{
+		{
+			"DMA 5", 5
+		},
+		{
+			"DMA 6", 6
+		},
+		{
+			"DMA 7", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"onboard_ram", "Onboard RAM", CONFIG_SELECTION, "", 512,
+	{
+		{
+			"None", 0
+		},
+		{
+			"512 KB", 512
+		},
+		{
+			"2 MB", 2048
+		},
+		{
+			"8 MB", 8192
+		},
+		{
+			"28 MB", 28*1024
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"opl", "Enable OPL", CONFIG_BINARY, "", 1
+    },
+    {
+	NULL
+    }
 };
 
-const device_t sb_1_device =
-{
-        "Sound Blaster v1.0",
-        DEVICE_ISA,
-	0,
-        sb_1_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-        NULL,
-	NULL,
-        sb_config
+
+const device_t sb_1_device = {
+    "Sound Blaster v1.0",
+    DEVICE_ISA,
+    0,
+    NULL,
+    sb_1_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_config
 };
-const device_t sb_15_device =
-{
-        "Sound Blaster v1.5",
-        DEVICE_ISA,
-	0,
-        sb_15_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-        NULL,
-	NULL,
-        sb_config
+
+const device_t sb_15_device = {
+    "Sound Blaster v1.5",
+    DEVICE_ISA,
+    0,
+    NULL,
+    sb_15_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_config
 };
-const device_t sb_mcv_device =
-{
-        "Sound Blaster MCV",
-        DEVICE_MCA,
-	0,
-        sb_mcv_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-        NULL,
-	NULL,
-        sb_mcv_config
+
+const device_t sb_mcv_device = {
+    "Sound Blaster MCV",
+    DEVICE_MCA,
+    0,
+    NULL,
+    sb_mcv_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_mcv_config
 };
-const device_t sb_2_device =
-{
-        "Sound Blaster v2.0",
-        DEVICE_ISA,
-	0,
-        sb_2_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-	NULL,
-        NULL,
-        sb_config
+
+const device_t sb_2_device = {
+    "Sound Blaster v2.0",
+    DEVICE_ISA,
+    0,
+    NULL,
+    sb_2_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_config
 };
-const device_t sb_pro_v1_device =
-{
-        "Sound Blaster Pro",
-        DEVICE_ISA,
-	0,
-        sb_pro_v1_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-        NULL,
-        NULL,
-        sb_pro_config
+
+const device_t sb_pro_v1_device = {
+    "Sound Blaster Pro",
+    DEVICE_ISA,
+    0,
+    NULL,
+    sb_pro_v1_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_pro_config
 };
-const device_t sb_pro_v2_device =
-{
-        "Sound Blaster Pro v2",
-        DEVICE_ISA,
-	0,
-        sb_pro_v2_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-        NULL,
-        NULL,
-        sb_pro_config
+
+const device_t sb_pro_v2_device = {
+    "Sound Blaster Pro v2",
+    DEVICE_ISA,
+    0,
+    NULL,
+    sb_pro_v2_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_pro_config
 };
-const device_t sb_pro_mcv_device =
-{
-        "Sound Blaster Pro MCV",
-        DEVICE_MCA,
-	0,
-        sb_pro_mcv_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-        NULL,
-        NULL,
-        NULL
+
+const device_t sb_pro_mcv_device = {
+    "Sound Blaster Pro MCV",
+    DEVICE_MCA,
+    0,
+    NULL,
+    sb_pro_mcv_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    NULL
 };
-const device_t sb_16_device =
-{
-        "Sound Blaster 16",
-        DEVICE_ISA,
-	0,
-        sb_16_init, sb_close, NULL,
-	NULL,
-        sb_speed_changed,
-        NULL,
-        NULL,
-        sb_16_config
+
+const device_t sb_16_device = {
+    "Sound Blaster 16",
+    DEVICE_ISA,
+    0,
+    NULL,
+    sb_16_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_16_config
 };
-const device_t sb_awe32_device =
-{
-        "Sound Blaster AWE32",
-        DEVICE_ISA,
-	0,
-        sb_awe32_init, sb_close, NULL,
-        sb_awe32_available,
-        sb_speed_changed,
-        NULL,
-        NULL,
-        sb_awe32_config
+
+const device_t sb_awe32_device = {
+    "Sound Blaster AWE32",
+    DEVICE_ISA,
+    0,
+    ROM_PATH_AWE32,
+    sb_awe32_init, sb_close, NULL,
+    NULL,
+    sb_speed_changed,
+    NULL,
+    NULL,
+    sb_awe32_config
 };

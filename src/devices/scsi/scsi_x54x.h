@@ -8,13 +8,13 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.6	2018/10/21
+ * Version:	@(#)scsi_x54x.h	1.0.7	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -395,7 +395,7 @@ typedef struct {
     uint32_t	Base;
     uint8_t	pos_regs[8];			/* MCA */
 
-    wchar_t	*bios_path;			/* path to BIOS image file */
+    const wchar_t *bios_path;			/* path to BIOS image file */
     uint32_t	rom_addr;			/* address of BIOS ROM */
     uint16_t	rom_ioaddr;			/* offset in BIOS of I/O addr */
     uint16_t	rom_shram;			/* index to shared RAM */

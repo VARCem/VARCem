@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.15 	2019/01/03
+ * Version:	@(#)parallel.c	1.0.17 	2019/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "parallel.h"
 #include "parallel_dev.h"
 
@@ -56,6 +57,10 @@ typedef struct {
 
     uint8_t		dat,			/* port data register */
 			ctrl;			/* port control register */
+
+    /* Port overloading stuff. */
+    void		*func_priv;
+    uint8_t		(*func_read)(uint16_t, void *);
 
     /* Device stuff. */
     int			dev_id;			/* attached device */
@@ -141,6 +146,9 @@ parallel_read(uint16_t port, void *priv)
 			ret = dev->dev_ts->read_status(dev->dev_ps);
 		  else
 			ret = 0x00;
+
+		if (dev->func_read != NULL)
+			ret |= dev->func_read(port, dev->func_priv);
 		break;
 
 	case 2:		/* control */
@@ -148,43 +156,15 @@ parallel_read(uint16_t port, void *priv)
 			ret = dev->dev_ts->read_ctrl(dev->dev_ps);
 		  else
 			ret = dev->ctrl;
+
+		if (dev->func_read != NULL)
+			ret |= dev->func_read(port, dev->func_priv);
 		break;
     }
 
     DBGLOG(2, "PARALLEL: read(%04X) => %02X\n", port, ret);
 
     return(ret);
-}
-
-
-static void *
-parallel_init(const device_t *info)
-{
-    parallel_t *dev;
-
-    /* Get the correct device. */
-    dev = &ports[info->local];
-
-    /* Clear port. */
-    dev->dat = 0x00;
-    dev->ctrl = 0x04;
-
-    /* Enable the I/O handler for this port. */
-    io_sethandler(dev->base, 3,
-		  parallel_read,NULL,NULL,
-		  parallel_write,NULL,NULL, dev);
-
-    /* If the user configured a device for this port, attach it. */
-    if (parallel_device[info->local] != 0) {
-	dev->dev_ts = parallel_device_get_device(parallel_device[info->local]);
-	if (dev->dev_ts != NULL)
-		dev->dev_ps = dev->dev_ts->init(dev->dev_ts);
-    }
-
-    INFO("PARALLEL: LPT%i (I/O=%04X, device=%i)\n",
-	info->local+1, dev->base, parallel_device[info->local]);
-
-    return(dev);
 }
 
 
@@ -200,6 +180,10 @@ parallel_close(void *priv)
 	dev->dev_ps = NULL;
     }
 
+    /* Remove overloads. */
+    dev->func_priv = NULL;
+    dev->func_read = NULL;
+
     /* Remove the I/O handler. */
     io_removehandler(dev->base, 3,
 		     parallel_read,NULL,NULL,
@@ -211,30 +195,57 @@ parallel_close(void *priv)
 }
 
 
+static void *
+parallel_init(const device_t *info, UNUSED(void *parent))
+{
+    parallel_t *dev;
+    int port = info->local;
+
+    /* Get the correct device. */
+    dev = &ports[port];
+
+    /* Clear port. */
+    dev->dat = 0x00;
+    dev->ctrl = 0x04;
+
+    /* Enable the I/O handler for this port. */
+    io_sethandler(dev->base, 4,
+		  parallel_read,NULL,NULL,
+		  parallel_write,NULL,NULL, dev);
+
+    /* If the user configured a device for this port, attach it. */
+    if (parallel_device[port] != 0) {
+	dev->dev_ts = parallel_device_get_device(parallel_device[port]);
+	if (dev->dev_ts != NULL)
+		dev->dev_ps = dev->dev_ts->init(dev->dev_ts);
+    }
+
+    INFO("PARALLEL: %s (I/O=%04X, device=%i)\n",
+	info->name, dev->base, parallel_device[port]);
+
+    return(dev);
+}
+
+
 const device_t parallel_1_device = {
     "LPT1",
-    0,
-    0,
+    0, 0, NULL,
     parallel_init, parallel_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
 };
-
 
 const device_t parallel_2_device = {
     "LPT2",
-    0,
-    1,
+    0, 1, NULL,
     parallel_init, parallel_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
 };
 
-
 const device_t parallel_3_device = {
     "LPT3",
-    0,
-    2,
+    0, 2, NULL,
     parallel_init, parallel_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -272,4 +283,14 @@ parallel_setup(int id, uint16_t port)
     if (! parallel_enabled[id]) return;
 
     dev->base = port;
+}
+
+
+void
+parallel_set_func(void *arg, uint8_t (*rfunc)(uint16_t, void *), void *priv)
+{
+    parallel_t *dev = (parallel_t *)arg;
+
+    dev->func_priv = priv;
+    dev->func_read = rfunc;
 }

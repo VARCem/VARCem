@@ -8,13 +8,13 @@
  *
  *		STG1702 true color RAMDAC emulation.
  *
- * Version:	@(#)vid_stg_ramdac.c	1.0.4	2018/10/05
+ * Version:	@(#)vid_stg_ramdac.c	1.0.6	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,6 +44,7 @@
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_stg_ramdac.h"
@@ -238,7 +239,7 @@ stg_getclock(int clock, void *priv)
 
 
 static void *
-stg_init(const device_t *info)
+stg_init(const device_t *info, UNUSED(void *parent))
 {
     stg_ramdac_t *dev = (stg_ramdac_t *)mem_alloc(sizeof(stg_ramdac_t));
     memset(dev, 0x00, sizeof(stg_ramdac_t));
@@ -259,8 +260,7 @@ stg_close(void *priv)
 
 const device_t stg_ramdac_device = {
     "SGS-Thompson STG170x RAMDAC",
-    0,
-    0,
+    0, 0, NULL,
     stg_init, stg_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

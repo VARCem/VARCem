@@ -12,12 +12,12 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.12	2018/10/15
+ * Version:	@(#)hdc_st506_at.c	1.0.14	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,6 @@
 #define dbglog hdc_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../timer.h"
 #include "../../device.h"
@@ -698,7 +697,7 @@ loadhd(hdc_t *dev, int c, int d, const wchar_t *fn)
 
 
 static void *
-st506_init(const device_t *info)
+st506_init(const device_t *info, UNUSED(void *parent))
 {
     hdc_t *dev;
     int c, d;
@@ -760,6 +759,7 @@ const device_t st506_at_wd1003_device = {
     "IBM PC/AT Fixed Disk Adapter",
     DEVICE_ISA | DEVICE_AT,
     (HDD_BUS_ST506 << 8) | 0,
+    NULL,
     st506_init, st506_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

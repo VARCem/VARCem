@@ -8,13 +8,13 @@
  *
  *		Definitions for the I/O handler.
  *
- * Version:	@(#)io.h	1.0.1	2018/02/14
+ * Version:	@(#)io.h	1.0.2	2019/04/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -40,7 +40,7 @@
 # define EMU_IO_H
 
 
-extern void	io_init(void);
+extern void	io_reset(void);
 
 extern void	io_sethandler(uint16_t base, int size,
 			uint8_t (*inb)(uint16_t addr, void *priv),

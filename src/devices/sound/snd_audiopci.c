@@ -8,13 +8,13 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.14	2018/10/16
+ * Version:	@(#)snd_audiopci.c	1.0.16	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -48,6 +48,7 @@
 #include "../../mem.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/nmi.h"
 #include "../system/pci.h"
 #include "sound.h"
@@ -1330,7 +1331,7 @@ es1371_pci_write(int func, int addr, uint8_t val, void *p)
 
 
 static void *
-es1371_init(const device_t *info)
+es1371_init(const device_t *info, UNUSED(void *parent))
 {
     es1371_t *dev = (es1371_t *)mem_alloc(sizeof(es1371_t));
     memset(dev, 0, sizeof(es1371_t));
@@ -1370,6 +1371,7 @@ const device_t es1371_device = {
     "Ensoniq AudioPCI (ES1371)",
     DEVICE_PCI,
     0,
+    NULL,
     es1371_init, es1371_close, NULL,
     NULL,
     es1371_speed_changed,
@@ -1383,6 +1385,7 @@ const device_t sbpci128_device = {
     "Sound Blaster 128",
     DEVICE_PCI,
     1,
+    NULL,
     es1371_init, es1371_close, NULL,
     NULL,
     es1371_speed_changed,

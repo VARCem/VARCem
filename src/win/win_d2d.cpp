@@ -336,7 +336,7 @@ d2d_init(int fs)
 {
     WCHAR title[200];
     D2D1_HWND_RENDER_TARGET_PROPERTIES props;
-    HRESULT hr = S_OK;
+    HRESULT hr;
 
     INFO("D2D: init(fs=%d)\n", fs);
 
@@ -346,7 +346,8 @@ d2d_init(int fs)
     if (d2d_handle == NULL) {
 	ERRLOG("D2D: unable to load '%s', D2D not available.\n", PATH_D2D_DLL);
 	return(0);
-    }
+    } else
+	INFO("D2D: module '%s' loaded.\n", PATH_D2D_DLL);
 #endif
 
     /* Get and log the version of the DLL we are using. */
@@ -378,11 +379,15 @@ d2d_init(int fs)
 		     0,0, d2d_screen_width,d2d_screen_height, SWP_SHOWWINDOW);	
     }
 
-    if (SUCCEEDED(hr))
-	hr = DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
-				    __uuidof(ID2D1Factory),
-				    NULL,
-				    reinterpret_cast <void **>(&d2d_factory));
+    hr = DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
+			        __uuidof(ID2D1Factory),
+			        NULL,
+			        reinterpret_cast <void **>(&d2d_factory));
+    if (FAILED(hr)) {
+	ERRLOG("D2D: unable to load factory, D2D not available.\n");
+	d2d_close();
+	return(0);
+    }
 
     if (fs) {
 	props = D2D1::HwndRenderTargetProperties(d2d_hwnd,
@@ -393,10 +398,8 @@ d2d_init(int fs)
 	props = D2D1::HwndRenderTargetProperties(hwndRender);
     }
 
-    if (SUCCEEDED(hr))
-	hr = d2d_factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),
-						 props,
-						 &d2d_hwndRT);
+    hr = d2d_factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),
+					     props, &d2d_hwndRT);
     if (SUCCEEDED(hr)) {
 	// Create a bitmap for storing intermediate data
 	hr = d2d_hwndRT->CreateBitmap(D2D1::SizeU(2048, 2048),

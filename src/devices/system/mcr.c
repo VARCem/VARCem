@@ -10,13 +10,13 @@
  *		This chip was used as part of many 386 chipsets.
  *		It controls memory addressing and shadowing.
  *
- * Version:	@(#)mcr.c	1.0.3	2018/10/05
+ * Version:	@(#)mcr.c	1.0.4	2019/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,6 +44,7 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../mem.h"
+#include "../../rom.h"
 
 
 int	nextreg6;

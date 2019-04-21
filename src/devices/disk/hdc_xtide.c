@@ -24,12 +24,12 @@
  * FIXME:	Make sure this works with the new IDE stuff, the AT and PS/2
  *		controllers do not have dev->ide set to anything...
  *
- * Version:	@(#)hdc_xtide.c	1.0.9	2018/09/22
+ * Version:	@(#)hdc_xtide.c	1.0.11	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -61,6 +61,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "hdc.h"
 #include "hdc_ide.h"
 #include "hdd.h"
@@ -150,9 +151,8 @@ hdc_read(uint16_t port, void *priv)
 
 
 static void *
-xtide_init(const device_t *info)
+xtide_init(const device_t *info, UNUSED(void *parent))
 {
-    wchar_t *fn = NULL;
     int rom_sz = 0;
     int io = 0;
     hdc_t *dev;
@@ -162,34 +162,30 @@ xtide_init(const device_t *info)
 
     switch(info->local) {
 	case 0:
-		fn = ROM_PATH_XT;
 		rom_sz = 0x4000;
 		io = 0x300;
 		dev->ide_board = ide_xtide_init();
 		break;
 
 	case 1:
-		fn = ROM_PATH_AT;
 		rom_sz = 0x4000;
 		io = 0x300;
 		device_add(&ide_isa_2ch_device);
 		break;
 
 	case 2:
-		fn = ROM_PATH_PS2;
 		rom_sz = 0x8000;		//FIXME: file is 8KB ?
 		io = 0x360;
 		dev->ide_board = ide_xtide_init();
 		break;
 
 	case 3:
-		fn = ROM_PATH_PS2_AT;
 		rom_sz = 0x4000;		//FIXME: no I/O address?
 		device_add(&ide_isa_2ch_device);
 		break;
     }
 
-    rom_init(&dev->bios_rom, fn,
+    rom_init(&dev->bios_rom, info->path,
 	     0xc8000, rom_sz, rom_sz-1, 0, MEM_MAPPING_EXTERNAL);
 
     if (io != 0)
@@ -211,38 +207,13 @@ xtide_close(void *priv)
 }
 
 
-static int
-xtide_available(void)
-{
-    return(rom_present(ROM_PATH_XT));
-}
-
-static int
-xtide_at_available(void)
-{
-    return(rom_present(ROM_PATH_AT));
-}
-
-static int
-xtide_acculogic_available(void)
-{
-    return(rom_present(ROM_PATH_PS2));
-}
-
-static int
-xtide_at_ps2_available(void)
-{
-    return(rom_present(ROM_PATH_PS2_AT));
-}
-
-
 const device_t xtide_device = {
     "PC/XT XTIDE",
     DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 0,
+    ROM_PATH_XT,
     xtide_init, xtide_close, NULL,
-    xtide_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -250,9 +221,9 @@ const device_t xtide_at_device = {
     "PC/AT XTIDE",
     DEVICE_ISA | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 1,
+    ROM_PATH_AT,
     xtide_init, xtide_close, NULL,
-    xtide_at_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -260,9 +231,9 @@ const device_t xtide_acculogic_device = {
     "PC/XT XTIDE (Acculogic)",
     DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 2,
+    ROM_PATH_PS2,
     xtide_init, xtide_close, NULL,
-    xtide_acculogic_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -270,8 +241,8 @@ const device_t xtide_at_ps2_device = {
     "PS/2 AT XTIDE (1.1.5)",
     DEVICE_ISA | DEVICE_PS2,
     (HDD_BUS_IDE << 8) | 3,
+    ROM_PATH_PS2_AT,
     xtide_init, xtide_close, NULL,
-    xtide_at_ps2_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };

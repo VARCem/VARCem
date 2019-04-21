@@ -8,13 +8,13 @@
  *
  *		Implement I/O ports and their operations.
  *
- * Version:	@(#)io.c	1.0.3	2018/09/22
+ * Version:	@(#)io.c	1.0.4	2019/04/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -80,7 +80,7 @@ static void null_outl(uint16_t addr, uint32_t val, void *priv) { DEBUG("IO: writ
 
 
 void
-io_init(void)
+io_reset(void)
 {
     io_t *p, *q;
     int c;

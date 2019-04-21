@@ -29,11 +29,13 @@
  *			70 - IRQ
  *			74 - DMA
  *
- * Version:	@(#)sio_um8669f.c	1.0.9	2018/11/11
+ * Version:	@(#)sio_um8669f.c	1.0.11	2019/04/09
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -68,6 +70,7 @@
 #include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
+#include "../../plat.h"
 #include "sio.h"
 
 
@@ -344,7 +347,7 @@ um8669f_close(void *priv)
 
 
 static void *
-um8669f_init(const device_t *info)
+um8669f_init(const device_t *info, UNUSED(void *parent))
 {
     um8669f_t *dev = (um8669f_t *)mem_alloc(sizeof(um8669f_t));
     memset(dev, 0x00, sizeof(um8669f_t));
@@ -362,8 +365,7 @@ um8669f_init(const device_t *info)
 
 const device_t um8669f_device = {
     "UMC UM8669F Super I/O",
-    0,
-    0,
+    0, 0, NULL,
     um8669f_init, um8669f_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

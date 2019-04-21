@@ -8,7 +8,7 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.7	2019/02/28
+ * Version:	@(#)386.c	1.0.8	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -216,7 +216,7 @@ exec386(int cycs)
 				pmodeint(8, 0);
 				if (cpu_state.abrt) {
 					cpu_state.abrt = 0;
-					softresetx86();
+					cpu_reset(0);
 					cpu_set_edx();
 					INFO("CPU: triple fault - reset\n");
 				}

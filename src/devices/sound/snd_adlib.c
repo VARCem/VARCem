@@ -8,13 +8,13 @@
  *
  *		Implementation of the ADLIB sound device.
  *
- * Version:	@(#)snd_adlib.c	1.0.7	2018/10/16
+ * Version:	@(#)snd_adlib.c	1.0.9	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -45,101 +45,116 @@
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/mca.h"
 #include "sound.h"
 #include "snd_opl.h"
 
 
-typedef struct adlib_t
-{
-        opl_t   opl;
-        
-        uint8_t pos_regs[8];
+typedef struct {
+    opl_t	opl;
+
+    uint8_t	pos_regs[8];
 } adlib_t;
 
 
-static void adlib_get_buffer(int32_t *buffer, int len, void *p)
+static void
+get_buffer(int32_t *buffer, int len, void *priv)
 {
-        adlib_t *adlib = (adlib_t *)p;
-        int c;
+    adlib_t *dev = (adlib_t *)priv;
+    int c;
 
-        opl2_update2(&adlib->opl);
-        
-        for (c = 0; c < len * 2; c++)
-                buffer[c] += (int32_t)adlib->opl.buffer[c];
+    opl2_update2(&dev->opl);
 
-        adlib->opl.pos = 0;
-}
+    for (c = 0; c < len * 2; c++)
+	buffer[c] += (int32_t)dev->opl.buffer[c];
 
-uint8_t adlib_mca_read(int port, void *p)
-{
-        adlib_t *adlib = (adlib_t *)p;
-        
-        DBGLOG(1, "adlib_mca_read: port=%04x\n", port);
-        
-        return adlib->pos_regs[port & 7];
-}
-
-void adlib_mca_write(int port, uint8_t val, void *p)
-{
-        adlib_t *adlib = (adlib_t *)p;
-
-        if (port < 0x102)
-                return;
-        
-        DBGLOG(1, "adlib_mca_write: port=%04x val=%02x\n", port, val);
-        
-        switch (port)
-        {
-                case 0x102:
-                if ((adlib->pos_regs[2] & 1) && !(val & 1))
-                        io_removehandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &adlib->opl);
-                if (!(adlib->pos_regs[2] & 1) && (val & 1))
-                        io_sethandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &adlib->opl);
-                break;
-        }
-        adlib->pos_regs[port & 7] = val;
+    dev->opl.pos = 0;
 }
 
 
-void *
-adlib_init(const device_t *info)
+static uint8_t
+adlib_mca_read(int port, void *priv)
 {
-        adlib_t *adlib = (adlib_t *)mem_alloc(sizeof(adlib_t));
-        memset(adlib, 0, sizeof(adlib_t));
-        
-        DEBUG("adlib_init\n");
-        opl2_init(&adlib->opl);
-        io_sethandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &adlib->opl);
-        sound_add_handler(adlib_get_buffer, adlib);
-        return adlib;
+    adlib_t *dev = (adlib_t *)priv;
+
+    DBGLOG(1, "adlib_mca_read: port=%04x\n", port);
+
+    return dev->pos_regs[port & 7];
 }
 
 
-void *
-adlib_mca_init(const device_t *info)
+static void
+adlib_mca_write(int port, uint8_t val, void *priv)
 {
-        adlib_t *adlib = (adlib_t *)adlib_init(info);
-        
-        io_removehandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &adlib->opl);
-        mca_add(adlib_mca_read, adlib_mca_write, adlib);
-        adlib->pos_regs[0] = 0xd7;
-        adlib->pos_regs[1] = 0x70;
+    adlib_t *dev = (adlib_t *)priv;
 
-        return adlib;
+    if (port < 0x102)
+	return;
+
+    DBGLOG(1, "adlib_mca_write: port=%04x val=%02x\n", port, val);
+
+    switch (port) {
+	case 0x102:
+		if ((dev->pos_regs[2] & 1) && !(val & 1))
+			io_removehandler(0x0388, 0x0002,
+					 opl2_read, NULL, NULL,
+					 opl2_write, NULL, NULL, &dev->opl);
+		if (! (dev->pos_regs[2] & 1) && (val & 1))
+			io_sethandler(0x0388, 0x0002,
+				      opl2_read, NULL, NULL,
+				      opl2_write, NULL, NULL, &dev->opl);
+		break;
+    }
+
+    dev->pos_regs[port & 7] = val;
 }
 
-void adlib_close(void *p)
-{
-        adlib_t *adlib = (adlib_t *)p;
 
-        free(adlib);
+static void *
+adlib_init(const device_t *info, UNUSED(void *parent))
+{
+    adlib_t *dev;
+
+    dev = (adlib_t *)mem_alloc(sizeof(adlib_t));
+    memset(dev, 0x00, sizeof(adlib_t));
+
+    switch(info->local) {
+	case 0:		/* ISA */
+		io_sethandler(0x0388, 2,
+			      opl2_read,NULL,NULL,
+			      opl2_write,NULL,NULL, &dev->opl);
+		break;
+
+	case 1:		/* MCA */
+		dev->pos_regs[0] = 0xd7;
+		dev->pos_regs[1] = 0x70;
+		mca_add(adlib_mca_read, adlib_mca_write, dev);
+		break;
+    }
+
+    opl2_init(&dev->opl);
+
+    sound_add_handler(get_buffer, dev);
+
+    return(dev);
 }
+
+
+static void
+adlib_close(void *priv)
+{
+    adlib_t *dev = (adlib_t *)priv;
+
+    free(dev);
+}
+
 
 const device_t adlib_device = {
     "AdLib",
     DEVICE_ISA,
     0,
+    NULL,
     adlib_init, adlib_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -148,7 +163,8 @@ const device_t adlib_device = {
 const device_t adlib_mca_device = {
     "AdLib",
     DEVICE_MCA,
-    0,
+    1,
+    NULL,
     adlib_init, adlib_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.63	2019/03/01
+# Version:	@(#)Makefile.VC	1.0.65	2019/04/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -84,8 +84,20 @@ endif
 ifndef X64
  X64		:= n
 endif
+ifndef ARM
+ARM		:= n
+endif
+ifndef ARM64
+ARM64		:= n
+endif
 ifndef DYNAREC
  DYNAREC	:= y
+ ifeq ($(ARM), y)
+  DYNAREC	:= n
+ endif
+ ifeq ($(ARM64), y)
+  DYNAREC	:= n
+ endif
 endif
 ifndef WX
  WX		:= n
@@ -120,11 +132,32 @@ endif
 ifndef AMD_K
  AMD_K		:= n
 endif
-ifndef PORTABLE3
- PORTABLE3	:= n
+ifndef SIS471
+ SIS471		:= n
 endif
-ifndef I686
- I686		:= n
+ifndef SIS496
+ SIS496		:= n
+endif
+ifndef COMPAQ
+ COMPAQ		:= n
+endif
+ifndef SUPERSPORT
+ SUPERSPORT	:= n
+endif
+ifndef DINPUT
+ DINPUT		:= y
+ ifeq ($(ARM), y)
+  DINPUT	:= n
+ endif
+endif
+ifndef D3DX
+ D3DX		:= y
+ ifeq ($(ARM), y)
+  D3DX		:= n
+ endif
+ ifeq ($(ARM64), y)
+  D3DX		:= n
+ endif
 endif
 ifndef OPENAL
  OPENAL		:= y
@@ -182,8 +215,12 @@ ifeq ($(DEV_BUILD), y)
  CRASHDUMP	:= y
  DEV_BRANCH	:= y
  AMD_K		:= y
- PORTABLE3	:= y
- I686		:= y
+ SIS471		:= y
+ SIS496		:= y
+ COMPAQ		:= y
+ SUPERSPORT	:= y
+ ST11		:= y
+ WD1002		:= y
  PAS16		:= y
  GUSMAX		:= y
  XL24		:= y
@@ -231,11 +268,11 @@ endif
 
 VPATH		:= $(EXPATH) . cpu \
 		   devices \
-		    devices/cdrom devices/disk devices/floppy \
-		    devices/floppy/lzf devices/input devices/input/game \
-		    devices/network devices/network/slirp devices/ports \
-		    devices/printer devices/sio devices/system devices/scsi \
-		    devices/misc \
+		    devices/chipsets devices/system devices/sio \
+		    devices/input devices/input/game devices/ports \
+		    devices/network devices/printer devices/misc \
+		    devices/floppy devices/floppy/lzf \
+		    devices/disk devices/cdrom devices/scsi \
 		    devices/sound \
 		     devices/sound/munt devices/sound/munt/c_interface \
 		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
@@ -351,10 +388,18 @@ else
  CGOPS		:= codegen_ops_x86.h
  VCG		:= vid_voodoo_codegen_x86.h
 endif
-LIBS		:= ddraw.lib dinput8.lib dxguid.lib d3d9.lib d3dx9.lib \
-		   version.lib comctl32.lib winmm.lib comdlg32.lib \
-		   advapi32.lib gdi32.lib shell32.lib user32.lib \
-		   ws2_32.lib wsock32.lib iphlpapi.lib psapi.lib
+LIBS		:= ddraw.lib dxguid.lib d3d9.lib version.lib winmm.lib
+ifeq ($(DINPUT), y)
+ LIBS		+= dinput8.lib
+else
+ LIBS		+= xinput.lib
+endif
+ifeq ($(D3DX), y)
+ LIBS		+= d3dx9.lib
+endif
+LIBS		+= comctl32.lib comdlg32.lib advapi32.lib gdi32.lib \
+		   shell32.lib user32.lib
+LIBS		+= ws2_32.lib wsock32.lib iphlpapi.lib psapi.lib
 ifeq ($(DEBUG), y)
 LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
 endif
@@ -438,6 +483,14 @@ ifneq ($(D2D), n)
  D2DOBJ		:= win_d2d.obj
 endif
 
+ifeq ($(D3DX), y)
+OPTS		+= -DUSE_D3DX
+endif
+
+ifeq ($(DINPUT), y)
+OPTS		+= -DUSE_DINPUT
+endif
+
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(VNC), n)
  OPTS		+= -DUSE_VNC
@@ -518,12 +571,30 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_AMD_K
  endif
 
- ifeq ($(PORTABLE3), y)
-  OPTS		+= -DUSE_PORTABLE3
+ ifeq ($(SIS471), y)
+  OPTS		+= -DUSE_SIS471
  endif
 
- ifeq ($(I686), y)
-  OPTS		+= -DUSE_I686
+ ifeq ($(SIS496), y)
+  OPTS		+= -DUSE_SIS496
+ endif
+
+ ifeq ($(COMPAQ), y)
+  OPTS		+= -DUSE_COMPAQ
+  DEVBROBJ	+= m_compaq.obj m_compaq_vid.obj vid_cga_compaq.obj
+ endif
+
+ ifeq ($(SUPERSPORT), y)
+  OPTS		+= -DUSE_SUPERSPORT
+  DEVBROBJ	+= m_zenith.obj m_zenith_vid.obj
+ endif
+
+ ifeq ($(ST11), y)
+  OPTS		+= -DUSE_ST11
+ endif
+
+ ifeq ($(WD1002), y)
+  OPTS		+= -DUSE_WD1002
  endif
 
  ifeq ($(PAS16), y)
@@ -579,36 +650,36 @@ MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
 UIOBJ		+= ui_main.obj ui_lang.obj ui_stbar.obj ui_vidapi.obj \
 		   ui_cdrom.obj ui_new_image.obj ui_misc.obj
 
-SYSOBJ		:= dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj mca.obj \
-		   mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj
-
 CPUOBJ		:= cpu.obj cpu_table.obj \
 		    808x.obj 386.obj x86seg.obj x87.obj \
 		    386_dynarec.obj $(DYNARECOBJ)
 
+SYSOBJ		:= dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj mca.obj \
+		   mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj
+
+CHIPOBJ		:= neat.obj scat.obj headland.obj \
+		    intel4x0.obj ali1429.obj opti495.obj sis471.obj sis496.obj \
+		    wd76c10.obj
+
 MCHOBJ		:= machine.obj machine_table.obj \
-		    m_xt.obj m_xt_compaq.obj \
-		    m_xt_t1000.obj m_xt_t1000_vid.obj \
-		    m_xt_laserxt.obj m_xt_xi8088.obj \
-		    m_zenith.obj \
+		    m_xt.obj \
+		    m_amstrad.obj m_amstrad_vid.obj \
+		    m_europc.obj m_laserxt.obj \
+		    m_olim24.obj m_olim24_vid.obj \
+		    m_tandy1000.obj m_tandy1000_vid.obj \
+		    m_tosh1x00.obj m_tosh1x00_vid.obj \
+		    m_xi8088.obj \
 		    m_pcjr.obj \
-		    m_amstrad.obj m_europc.obj \
-		    m_olivetti_m24.obj m_tandy.obj \
-		    m_at.obj \
-		    m_at_ali1429.obj m_at_commodore.obj \
-		    m_at_neat.obj m_at_headland.obj \
-		    m_at_t3100e.obj m_at_t3100e_vid.obj \
 		    m_ps1.obj m_ps1_hdc.obj \
 		    m_ps2_isa.obj m_ps2_mca.obj \
-		    m_at_opti495.obj m_at_scat.obj \
-		    m_at_compaq.obj m_at_wd76c10.obj \
-		    m_at_sis471.obj m_at_sis496.obj \
-		    m_at_4x0.obj
-
-INTELOBJ	:= intel.obj \
-		    intel_flash.obj \
-		    intel_sio.obj \
-		    intel_piix.obj
+		    m_at.obj \
+		    m_neat.obj m_headland.obj m_scat.obj \
+		    m_commodore.obj \
+		    m_tosh3100e.obj m_tosh3100e_vid.obj \
+		    m_ali.obj m_opti495.obj m_sis471.obj m_sis496.obj \
+		    m_wd76c10.obj m_intel4x0.obj \
+		    m_acer.obj m_aopen.obj m_asus.obj m_pbell.obj m_tyan.obj \
+		    m_misc.obj
 
 DEVOBJ		:= bugger.obj \
 		   isamem.obj isartc.obj \
@@ -618,6 +689,7 @@ DEVOBJ		:= bugger.obj \
 		   serial.obj \
 		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
 		   sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
+		   intel.obj intel_flash.obj intel_sio.obj intel_piix.obj \
 		   keyboard.obj \
 		    keyboard_xt.obj keyboard_at.obj \
 		   mouse.obj \
@@ -688,7 +760,6 @@ SNDOBJ		:= sound.obj \
 VIDOBJ		:= video.obj \
 		    video_dev.obj \
 		    vid_cga.obj vid_cga_comp.obj \
-		    vid_cga_compaq.obj \
 		    vid_mda.obj \
 		    vid_hercules.obj vid_herculesplus.obj vid_incolor.obj \
 		    vid_colorplus.obj \
@@ -725,8 +796,8 @@ PLATOBJ		+= win_crashdump.obj
 endif
 
 
-OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(DEVOBJ) \
-		   $(INTELOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
+OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \
+		   $(DEVOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
 		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
 		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
 ifdef EXOBJ

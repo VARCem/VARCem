@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.8	2018/11/15
+ * Version:	@(#)serial.h	1.0.9	2018/11/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -60,7 +60,7 @@
 /* Supported UART types. */
 #define UART_TYPE_8250		0	/* standard NS8250 */
 #define UART_TYPE_8250A		1	/* updated NS8250(A) */
-#define UART_TYPE_16450		2	/* 16450 */
+#define UART_TYPE_16450		2	/* 8250B / 16450 */
 #define UART_TYPE_16550		3	/* 16550 (broken fifo) */
 #define UART_TYPE_16550A	4	/* 16550A (working fifo) */
 #define UART_TYPE_16670		5	/* 16670 (64b fifo) */
@@ -91,6 +91,16 @@ extern int	serial_link(int port, const char *name);
 
 extern void	serial_clear(void *arg);
 extern void	serial_write(void *arg, uint8_t *ptr, uint8_t len);
+
+/* Platform serial driver support. */
+extern void	*plat_serial_open(const char *port, int tmo);
+extern void	plat_serial_close(void *);
+extern int	plat_serial_active(void *, int flg);
+extern int	plat_serial_params(void *, char dbit, char par, char sbit);
+extern int	plat_serial_flush(void *);
+extern int	plat_serial_speed(void *, long speed);
+extern int	plat_serial_write(void *, uint8_t val);
+extern int	plat_serial_read(void *, uint8_t *bufp, int max);
 
 
 #endif	/*EMU_SERIAL_H*/

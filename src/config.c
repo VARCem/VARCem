@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.43	2019/02/23
+ * Version:	@(#)config.c	1.0.45	2019/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,9 +49,9 @@
 #include "emu.h"
 #include "config.h"
 #include "cpu/cpu.h"
-#include "machines/machine.h"
 #include "nvr.h"
 #include "device.h"
+#include "machines/machine.h"
 #include "devices/misc/isamem.h"
 #include "devices/misc/isartc.h"
 #include "devices/ports/game_dev.h"
@@ -394,20 +394,17 @@ load_machine(const char *cat)
 
     p = config_get_string(cat, "machine", NULL);
     if (p != NULL)
-	machine = machine_get_from_internal_name(p);
+	machine_type = machine_get_from_internal_name(p);
       else 
-	machine = -1;
+	machine_type = -1;
+    (void)machine_load();
 
     cpu_manufacturer = config_get_int(cat, "cpu_manufacturer", 0);
-    cpu = config_get_int(cat, "cpu", 0);
+    cpu_type = config_get_int(cat, "cpu", 0);
     cpu_waitstates = config_get_int(cat, "cpu_waitstates", 0);
 
     mem_size = config_get_int(cat, "mem_size", 4096);
-    if ((uint32_t)mem_size < (((machines[machine].flags & MACHINE_AT) &&
-        (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram))
-	mem_size = (((machines[machine].flags & MACHINE_AT) && (machines[machine].ram_granularity < 128)) ? machines[machine].min_ram*1024 : machines[machine].min_ram);
-    if (mem_size > 1048576)
-	mem_size = 1048576;
+    mem_size = machine_get_memsize(mem_size);
 
     cpu_use_dynarec = !!config_get_int(cat, "cpu_use_dynarec", 0);
 
@@ -415,7 +412,7 @@ load_machine(const char *cat)
 
     time_sync = config_get_int(cat, "enable_sync", -1);
     if (time_sync != -1) {
-	/* FIXME: remove this after 12/01/2018 --FvK */
+	/* FIXME: remove this after 12/31/2019 --FvK */
 	config_delete_var(cat, "enable_sync");
     } else
 	time_sync = config_get_int(cat, "time_sync", TIME_SYNC_DISABLED);
@@ -433,10 +430,10 @@ save_machine(const char *cat)
       else
 	config_set_int(cat, "cpu_manufacturer", cpu_manufacturer);
 
-    if (cpu == 0)
+    if (cpu_type == 0)
 	config_delete_var(cat, "cpu");
       else
-	config_set_int(cat, "cpu", cpu);
+	config_set_int(cat, "cpu", cpu_type);
 
     if (cpu_waitstates == 0)
 	config_delete_var(cat, "cpu_waitstates");
@@ -467,22 +464,19 @@ load_video(const char *cat)
 {
     char *p;
 
-    if (machines[machine].fixed_vidcard) {
+    if (machine->flags_fixed & MACHINE_VIDEO) {
 	config_delete_var(cat, "video_card");
 	video_card = VID_INTERNAL;
     } else {
 	p = config_get_string(cat, "video_card", NULL);
 	if (p == NULL) {
-		if (machines[machine].flags & MACHINE_VIDEO)
+		if (machine->flags & MACHINE_VIDEO)
 			p = "internal";
 		  else
 			p = "none";
 	}
 	video_card = video_get_video_from_internal_name(p);
     }
-
-    /*FXME: remove by 12/01/2018 --FvK */
-    config_delete_var(cat, "video_speed");
 
     voodoo_enabled = !!config_get_int(cat, "voodoo", 0);
 }
@@ -806,7 +800,7 @@ load_other(const char *cat)
 
     p = config_get_string(cat, "hdc", NULL);
     if (p == NULL) {
-	if (machines[machine].flags & MACHINE_HDC)
+	if (machine->flags & MACHINE_HDC)
 		p = "internal";
 	  else
 		p = "none";
@@ -1466,7 +1460,8 @@ config_default(void)
 {
     int i;
 
-    cpu = 0;
+    cpu_manufacturer = 0;
+    cpu_type = 0;
     scale = 1;
     video_card = VID_CGA;
     vid_api = vidapi_from_internal_name("default");;
@@ -1670,7 +1665,7 @@ config_load(void)
 	config_default();
 
 	/* Flag this as an invalid configuration. */
-	machine = -1;
+	machine_type = -1;
     }
 
     return(i);
@@ -1701,7 +1696,7 @@ config_dump(void)
     while (sec != NULL) {
 	entry_t *ent;
 
-	if (sec->name && sec->name[0])
+	if (sec->name[0])
 		INFO("[%s]\n", sec->name);
 	
 	ent = (entry_t *)sec->entry_head.next;

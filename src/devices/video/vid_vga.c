@@ -8,13 +8,13 @@
  *
  *		IBM VGA emulation.
  *
- * Version:	@(#)vid_vga.c	1.0.7	2018/09/22
+ * Version:	@(#)vid_vga.c	1.0.9	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -46,6 +46,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 
@@ -131,22 +132,16 @@ vga_in(uint16_t port, void *priv)
 
 
 static void *
-vga_init(const device_t *info)
+vga_init(const device_t *info, UNUSED(void *parent))
 {
     vga_t *dev;
 
     dev = (vga_t *)mem_alloc(sizeof(vga_t));
     memset(dev, 0x00, sizeof(vga_t));
 
-    switch(info->local) {
-	case 0:		/* IBM VGA */
-		rom_init(&dev->bios_rom, BIOS_ROM_PATH,
-			 0xc0000, 0x8000, 0x7fff, 0x2000, MEM_MAPPING_EXTERNAL);
-		break;
-
-	case 1:		/* IBM PS/1 VGA */
-		break;
-    }
+    if (info->path != NULL)
+	rom_init(&dev->bios_rom, info->path,
+		 0xc0000, 0x8000, 0x7fff, 0x2000, MEM_MAPPING_EXTERNAL);
 
     svga_init(&dev->svga, dev, 1 << 18, /*256kb*/
 	      NULL, vga_in, vga_out, NULL, NULL);
@@ -157,14 +152,10 @@ vga_init(const device_t *info)
     dev->svga.bpp = 8;
     dev->svga.miscout = 1;
 
-    return dev;
-}
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
-
-static int
-vga_available(void)
-{
-    return rom_present(BIOS_ROM_PATH);
+    return(dev);
 }
 
 
@@ -201,10 +192,11 @@ static video_timings_t vga_timing = {VID_ISA, 8,16,32, 8,16,32};
 
 const device_t vga_device = {
     "VGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     0,
+    BIOS_ROM_PATH,
     vga_init, vga_close, NULL,
-    vga_available,
+    NULL,
     speed_changed,
     force_redraw,
     &vga_timing,
@@ -216,8 +208,9 @@ static const video_timings_t ps1vga_timing = {VID_ISA,6,8,16,6,8,16};
 
 const device_t ps1vga_device = {
     "PS/1 VGA",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     1,
+    NULL,
     vga_init, vga_close, NULL,
     NULL,
     speed_changed,
@@ -228,8 +221,9 @@ const device_t ps1vga_device = {
 
 const device_t ps1vga_mca_device = {
     "PS/1 VGA",
-    DEVICE_MCA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_MCA,
     1,
+    NULL,
     vga_init, vga_close, NULL,
     NULL,
     speed_changed,

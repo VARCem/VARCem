@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.10	2018/09/22
+ * Version:	@(#)snd_mpu401.c	1.0.13	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -16,7 +16,7 @@
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		DOSBox Team,
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2008-2017 DOSBox Team.
@@ -48,9 +48,9 @@
 #define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../io.h"
-#include "../../machines/machine.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pic.h"
 #include "../system/mca.h"
 #include "sound.h"
@@ -927,7 +927,7 @@ void
 mpu401_device_add(void)
 {
 
-    if (machines[machine].flags & MACHINE_MCA)
+    if (MCA)
 	device_add(&mpu401_mca_device);
       else
 	device_add(&mpu401_device);
@@ -968,7 +968,7 @@ mpu401_mca_write(int port, uint8_t val, void *priv)
 
 
 static void *
-mpu401_standalone_init(const device_t *info)
+mpu401_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     mpu_t *dev;
     uint16_t base;
@@ -1009,13 +1009,13 @@ static const device_config_t mpu401_standalone_config[] = {
         "base", "MPU-401 Address", CONFIG_HEX16, "", 0x330,
         {
                 {
-                        "0x300", 0x300
+                        "300H", 0x300
                 },
                 {
-                        "0x330", 0x330
+                        "330H", 0x330
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -1041,12 +1041,12 @@ static const device_config_t mpu401_standalone_config[] = {
                         "IRQ 10", 10
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -1054,11 +1054,9 @@ const device_t mpu401_device = {
     "Roland MPU-IPC-T",
     DEVICE_ISA,
     0,
+    NULL,
     mpu401_standalone_init, mpu401_standalone_close, NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL, NULL, NULL, NULL,
     mpu401_standalone_config
 };
 
@@ -1066,10 +1064,8 @@ const device_t mpu401_mca_device = {
     "MPU-401 MCA (Standalone)",
     DEVICE_MCA,
     0,
+    NULL,
     mpu401_standalone_init, mpu401_standalone_close, NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };

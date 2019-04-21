@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_input.h	1.0.11	2018/10/24
+ * Version:	@(#)win_settings_input.h	1.0.12	2018/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,16 +47,20 @@ static int	mouse_to_list[20],
 
 
 static int
-mouse_valid(int num, int m)
+mouse_valid(int num, int nm)
 {
     const device_t *dev;
+    const machine_t *m;
 
-    if ((num == MOUSE_INTERNAL) &&
-	!(machines[m].flags & MACHINE_MOUSE)) return(0);
+    /* Get info about the selected machine. */
+    dev = machine_get_device_ex(nm);
+    m = (machine_t *)dev->mach_info;
+
+    if ((num == MOUSE_INTERNAL) && !(m->flags & MACHINE_MOUSE)) return(0);
 
     dev = mouse_get_device(num);
 
-    return(device_is_valid(dev, machines[m].flags));
+    return(device_is_valid(dev, m->flags));
 }
 
 
@@ -65,12 +69,18 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WCHAR temp[128];
     const char *stransi;
+    const device_t *dev;
+    const machine_t *m;
     HWND h;
     int c;
     int d = 0;
 
     switch (message) {
 	case WM_INITDIALOG:
+		/* Get info about the selected machine. */
+		dev = machine_get_device_ex(temp_machine);
+		m = (machine_t *)dev->mach_info;
+
 		h = GetDlgItem(hdlg, IDC_COMBO_MOUSE);
 
 		c = d = 0;
@@ -87,7 +97,7 @@ input_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (c == 0) {
 				SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
 			} else if (c == 1) {
-				if (! (machines[temp_machine].flags&MACHINE_MOUSE)) {
+				if (! (m->flags & MACHINE_MOUSE)) {
 					/* Skip "Internal" if machine doesn't have one. */
 					c++;
 					continue;

@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.11	2019/02/16
+ * Version:	@(#)m_at.c	1.0.13	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../device.h"
 #include "../nvr.h"
@@ -55,9 +56,9 @@
 
 
 void
-m_at_common_init(const machine_t *model, void *arg)
+m_at_common_init(void)
 {
-    machine_common_init(model, arg);
+    machine_common_init();
 
     pit_set_out_func(&pit, 1, pit_refresh_timer_at);
     pic2_init();
@@ -68,56 +69,109 @@ m_at_common_init(const machine_t *model, void *arg)
 
 
 void
-m_at_init(const machine_t *model, void *arg)
+m_at_init(void)
 {
-    m_at_common_init(model, arg);
+    m_at_common_init();
 
     device_add(&keyboard_at_device);
 }
 
 
 void
-m_at_ibm_init(const machine_t *model, void *arg)
+m_at_ps2_init(void)
 {
-    m_at_init(model, arg);
-
-    mem_remap_top(384);
-
-    device_add(&fdc_at_device);
-}
-
-
-void
-m_at_ps2_init(const machine_t *model, void *arg)
-{
-    m_at_common_init(model, arg);
+    m_at_common_init();
 
     device_add(&keyboard_ps2_device);
 }
 
 
 void
-m_at_common_ide_init(const machine_t *model, void *arg)
+m_at_common_ide_init(void)
 {
-    m_at_common_init(model, arg);
+    m_at_common_init();
 
     device_add(&ide_isa_2ch_opt_device);
 }
 
 
 void
-m_at_ide_init(const machine_t *model, void *arg)
+m_at_ide_init(void)
 {
-    m_at_init(model, arg);
+    m_at_init();
 
     device_add(&ide_isa_2ch_opt_device);
 }
 
 
 void
-m_at_ps2_ide_init(const machine_t *model, void *arg)
+m_at_ps2_ide_init(void)
 {
-    m_at_ps2_init(model, arg);
+    m_at_ps2_init();
 
     device_add(&ide_isa_2ch_opt_device);
 }
+
+
+static void *
+ibm_at_init(const device_t *info, void *arg)
+{
+    device_add_ex(info, arg);
+
+    m_at_init();
+
+    mem_remap_top(384);
+
+    device_add(&fdc_at_device);
+
+    return(arg);
+}
+
+
+static const CPU cpus_ibmat[] = {
+    { "286/6", CPU_286, 6000000, 1, 0, 0, 0, 0, 0, 3,3,3,3, 1 },
+    { "286/8", CPU_286, 8000000, 1, 0, 0, 0, 0, 0, 3,3,3,3, 1 },
+    { NULL }
+};
+
+static const machine_t at_info = {
+    MACHINE_ISA | MACHINE_AT,
+    0,
+    256, 15872, 128, 64, -1,
+    {{"",cpus_ibmat}}
+};
+
+const device_t m_at = {
+    "IBM PC/AT",
+    DEVICE_ROOT,
+    0,
+    L"ibm/at",
+    ibm_at_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &at_info,
+    NULL
+};
+
+
+static const CPU cpus_ibmxt286[] = {
+    { "286/6", CPU_286, 6000000, 1, 0, 0, 0, 0, 0, 2,2,2,2, 1 },
+    { NULL }
+};
+
+static const machine_t xt286_info = {
+    MACHINE_ISA | MACHINE_AT,
+    0,
+    256, 15872, 128, 128, -1,
+    {{"",cpus_ibmxt286}}
+};
+
+const device_t m_xt286 = {
+    "IBM PC/XT286",
+    DEVICE_ROOT,
+    1,
+    L"ibm/xt286",
+    ibm_at_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &xt286_info,
+    NULL
+};

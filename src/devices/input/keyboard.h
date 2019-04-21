@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.8	2019/02/11
+ * Version:	@(#)keyboard.h	1.0.10	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,8 +85,9 @@ extern const device_t	keyboard_pc_device;
 extern const device_t	keyboard_pc82_device;
 extern const device_t	keyboard_xt_device;
 extern const device_t	keyboard_xt86_device;
+extern const device_t	keyboard_generic_device;
 extern const device_t	keyboard_tandy_device;
-extern const device_t	keyboard_xt_lxt3_device;
+extern const device_t	keyboard_laserxt3_device;
 
 extern const device_t	keyboard_at_device;
 extern const device_t	keyboard_at_ami_device;
@@ -125,6 +126,13 @@ extern void	keyboard_cae(void);
 extern void	keyboard_cab(void);
 extern int	keyboard_isfsexit(void);
 extern int	keyboard_ismsexit(void);
+
+extern void	keyboard_xt_set_funcs(void *arg,
+				      uint8_t (*func)(void *), void *priv);
+extern void	keyboard_at_set_funcs(void *arg,
+				      uint8_t (*rfunc)(void *),
+				      void (*wfunc)(void *, uint8_t),
+				      void *priv);
 
 extern void	keyboard_at_adddata_keyboard_raw(uint8_t val);
 extern void	keyboard_at_adddata_mouse(uint8_t val);

@@ -8,13 +8,13 @@
  *
  *		Implementation of the Intel 2 Mbit 8-bit flash devices.
  *
- * Version:	@(#)intel_flash.c	1.0.8	2018/10/24
+ * Version:	@(#)intel_flash.c	1.0.12	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -42,11 +42,12 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../device.h"
 #include "../../mem.h"
+#include "../../rom.h"
 #include "../../nvr.h"
 #include "../../plat.h"
+#include "../../machines/machine.h"
 
 
 #define FLASH_IS_BXB	2
@@ -195,9 +196,9 @@ void *intel_flash_init(uint8_t type)
 	flash = (flash_t *)mem_alloc(sizeof(flash_t));
         memset(flash, 0, sizeof(flash_t));
 
-	l = (int)strlen(machine_get_internal_name_ex(machine))+1;
+	l = (int)strlen(machine_get_internal_name())+1;
 	machine_name = (wchar_t *)mem_alloc(l * sizeof(wchar_t));
-	mbstowcs(machine_name, machine_get_internal_name_ex(machine), l);
+	mbstowcs(machine_name, machine_get_internal_name(), l);
 	l = (int)wcslen(machine_name)+5;
 	flash_name = (wchar_t *)mem_alloc(l*sizeof(wchar_t));
 	swprintf(flash_name, l, L"%ls.bin", machine_name);
@@ -239,11 +240,11 @@ void *intel_flash_init(uint8_t type)
 	}
 
 	if (flash->invert_high_pin) {
-		memcpy(flash->array, rom + 65536, 65536);
-		memcpy(flash->array + 65536, rom, 65536);
+		memcpy(flash->array, bios + 65536, 65536);
+		memcpy(flash->array + 65536, bios, 65536);
 	}
 	else
-		memcpy(flash->array, rom, 131072);
+		memcpy(flash->array, bios, 131072);
 
 	if (flash->invert_high_pin)
 		intel_flash_add_mappings_inverted(flash);
@@ -267,25 +268,25 @@ void *intel_flash_init(uint8_t type)
         return flash;
 }
 
-void *intel_flash_bxb_ami_init(const device_t *info)
+void *intel_flash_bxb_ami_init(const device_t *info, UNUSED(void *parent))
 {
 	return intel_flash_init(info->local);
 }
 
 /* For AMI BIOS'es - Intel 28F001BXT with high address pin inverted. */
-void *intel_flash_bxt_ami_init(const device_t *info)
+void *intel_flash_bxt_ami_init(const device_t *info, UNUSED(void *parent))
 {
 	return intel_flash_init(info->local);
 }
 
 /* For Award BIOS'es - Intel 28F001BXT with high address pin not inverted. */
-void *intel_flash_bxt_init(const device_t *info)
+void *intel_flash_bxt_init(const device_t *info, UNUSED(void *parent))
 {
 	return intel_flash_init(info->local);
 }
 
 /* For Acer BIOS'es - Intel 28F001BXB. */
-void *intel_flash_bxb_init(const device_t *info)
+void *intel_flash_bxb_init(const device_t *info, UNUSED(void *parent))
 {
 	return intel_flash_init(info->local);
 }
@@ -305,42 +306,38 @@ void intel_flash_close(void *p)
 }
 
 
-const device_t intel_flash_bxt_ami_device =
-{
-        "Intel 28F001BXT Flash BIOS",
-        0, FLASH_INVERT,
-        intel_flash_bxt_ami_init,
-        intel_flash_close,
-	NULL,
-        NULL, NULL, NULL, NULL, NULL
+const device_t intel_flash_bxt_ami_device = {
+    "Intel 28F001BXT Flash BIOS",
+    0, FLASH_INVERT,
+    NULL,
+    intel_flash_bxt_ami_init, intel_flash_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
-const device_t intel_flash_bxb_ami_device =
-{
-        "Intel 28F001BXB Flash BIOS",
-        0, FLASH_IS_BXB | FLASH_INVERT,
-        intel_flash_bxb_ami_init,
-        intel_flash_close,
-	NULL,
-        NULL, NULL, NULL, NULL, NULL
+const device_t intel_flash_bxb_ami_device = {
+    "Intel 28F001BXB Flash BIOS",
+    0, FLASH_IS_BXB | FLASH_INVERT,
+    NULL,
+    intel_flash_bxb_ami_init, intel_flash_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
-const device_t intel_flash_bxt_device =
-{
-        "Intel 28F001BXT Flash BIOS",
-        0, 0,
-        intel_flash_bxt_init,
-        intel_flash_close,
-	NULL,
-        NULL, NULL, NULL, NULL, NULL
+const device_t intel_flash_bxt_device = {
+    "Intel 28F001BXT Flash BIOS",
+    0, 0,
+    NULL,
+    intel_flash_bxt_init, intel_flash_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };
 
-const device_t intel_flash_bxb_device =
-{
-        "Intel 28F001BXB Flash BIOS",
-        0, FLASH_IS_BXB,
-        intel_flash_bxb_init,
-        intel_flash_close,
-	NULL,
-        NULL, NULL, NULL, NULL, NULL
+const device_t intel_flash_bxb_device = {
+    "Intel 28F001BXB Flash BIOS",
+    0, FLASH_IS_BXB,
+    NULL,
+    intel_flash_bxb_init, intel_flash_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
 };

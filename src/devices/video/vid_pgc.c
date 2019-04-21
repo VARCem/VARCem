@@ -44,7 +44,7 @@
  *
  *		This is expected to be done shortly.
  *
- * Version:	@(#)vid_pgc.c	1.0.3	2019/03/07
+ * Version:	@(#)vid_pgc.c	1.0.4	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -83,8 +83,8 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
-#include "../system/pit.h"
 #include "../../plat.h"
+#include "../system/pit.h"
 #include "video.h"
 #include "vid_cga.h"
 #include "vid_pgc.h"
@@ -223,6 +223,8 @@ input_byte(pgc_t *dev, uint8_t *result)
 	dev->waiting_input_fifo = 1;
 	pgc_sleep(dev);	
     }
+
+    if (dev->stopped) return 0;
 
     if (dev->mapram[0x3ff]) {
 	/* Reset triggered. */
@@ -1588,6 +1590,8 @@ pgc_setdisplay(pgc_t *dev, int cga)
     if (dev->cga_selected != (dev->cga_enabled && cga)) {
 	dev->cga_selected = (dev->cga_enabled && cga);
 
+	dev->displine = 0;
+
 	if (dev->cga_selected) {
 		mem_map_enable(&dev->cga_mapping);
 		dev->screenw = PGC_CGA_WIDTH;
@@ -2616,7 +2620,7 @@ pgc_init(pgc_t *dev, int maxw, int maxh, int visw, int vish,
 
 
 static void *
-pgc_standalone_init(const device_t *info)
+pgc_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     pgc_t *dev;
 
@@ -2627,7 +2631,8 @@ pgc_standalone_init(const device_t *info)
     /* Framebuffer and screen are both 640x480. */
     pgc_init(dev, 640, 480, 640, 480, input_byte);
 
-    video_inform(VID_TYPE_CGA, info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+		 (const video_timings_t *)info->vid_timing);
 
     return(dev);
 }
@@ -2637,15 +2642,16 @@ static const video_timings_t pgc_timings = { VID_ISA,8,16,32,8,16,32 };
 
 static const device_config_t pgc_config[] = {
     {
-	"", "", -1
+	NULL
     }
 };
 
 
 const device_t pgc_device = {
     "PGC",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
     0,
+    NULL,
     pgc_standalone_init, pgc_close, NULL,
     NULL,
     pgc_speed_changed,

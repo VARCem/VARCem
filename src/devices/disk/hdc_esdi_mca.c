@@ -52,12 +52,12 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.14	2018/10/15
+ * Version:	@(#)hdc_esdi_mca.c	1.0.16	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -90,6 +90,7 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../../ui/ui.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
@@ -1074,7 +1075,7 @@ hdc_mca_write(int port, uint8_t val, void *priv)
 
 
 static void *
-esdi_init(const device_t *info)
+esdi_init(const device_t *info, UNUSED(void *parent))
 {
     drive_t *drive;
     hdc_t *dev;
@@ -1165,7 +1166,7 @@ esdi_close(void *priv)
 static int
 esdi_available(void)
 {
-    return(rom_present(BIOS_FILE_L) && rom_present(BIOS_FILE_H));
+    return( rom_present(BIOS_FILE_L) && rom_present(BIOS_FILE_H) );
 }
 
 
@@ -1173,6 +1174,7 @@ const device_t esdi_ps2_device = {
     "IBM PS/2 ESDI Fixed Disk Adapter",
     DEVICE_MCA,
     (HDD_BUS_ESDI << 8) | 0,
+    NULL,
     esdi_init, esdi_close, NULL,
     esdi_available,
     NULL, NULL, NULL,

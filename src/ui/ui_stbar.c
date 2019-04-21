@@ -8,12 +8,12 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.17	2018/11/06
+ * Version:	@(#)ui_stbar.c	1.0.18	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,10 +41,9 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
-#include "../cpu/cpu.h"
-#include "../machines/machine.h"
 #include "../device.h"
 #include "../plat.h"
+#include "../machines/machine.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/disk/hdd.h"
@@ -58,7 +57,6 @@
 #include "../devices/sound/sound.h"
 #include "../devices/video/video.h"
 #include "ui.h"
-#include "ui_resource.h"
 
 
 #define USE_SPACER	1			/* include a spacer field */
@@ -488,7 +486,7 @@ ui_sb_reset(void)
 	sb_nparts = 0;
     }
 
-    hdint = (machines[machine].flags & MACHINE_HDC) ? 1 : 0;
+    hdint = (machine_get_flags() & MACHINE_HDC) ? 1 : 0;
     do_net = !!((network_type != 0) && (network_card != 0));
     do_sound = !!(sound_card != 0);
 

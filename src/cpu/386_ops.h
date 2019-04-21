@@ -8,14 +8,14 @@
  *
  *		286/386+ instruction handlers list.
  *
- * Version:	@(#)386_ops.h	1.0.3	2018/10/05
+ * Version:	@(#)386_ops.h	1.0.4	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
  *		Copyright 2016-2018 Miran Grca.
@@ -185,9 +185,7 @@ static int ILLEGAL(uint32_t fetchdat)
 #include "x86_ops_jump.h"
 #include "x86_ops_misc.h"
 #include "x87_ops.h"
-#if defined(DEV_BRANCH) && defined(USE_I686)
-# include "x86_ops_i686.h"
-#endif
+#include "x86_ops_i686.h"
 #include "x86_ops_mmx.h"
 #include "x86_ops_mmx_arith.h"
 #include "x86_ops_mmx_cmp.h"
@@ -984,8 +982,6 @@ const OpFn OP_TABLE(c6x86mx_0f)[1024] =
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  ILLEGAL,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
 };
 
-#ifdef DEV_BRANCH
-#ifdef USE_I686
 const OpFn OP_TABLE(pentiumpro_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
@@ -1077,7 +1073,6 @@ const OpFn OP_TABLE(pentiumpro_0f)[1024] =
 /*f0*/  ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,
 };
 
-#if 0
 const OpFn OP_TABLE(pentium2_0f)[1024] = 
 {
         /*16-bit data, 16-bit addr*/
@@ -1168,7 +1163,6 @@ const OpFn OP_TABLE(pentium2_0f)[1024] =
 /*e0*/  ILLEGAL,        opPSRAW_a32,    opPSRAD_a32,    ILLEGAL,        ILLEGAL,        opPMULHW_a32,   ILLEGAL,        ILLEGAL,        opPSUBSB_a32,   opPSUBSW_a32,   NULL,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   NULL,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  ILLEGAL,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
 };
-#endif
 
 const OpFn OP_TABLE(pentium2d_0f)[1024] = 
 {
@@ -1260,8 +1254,6 @@ const OpFn OP_TABLE(pentium2d_0f)[1024] =
 /*e0*/  ILLEGAL,        opPSRAW_a32,    opPSRAD_a32,    ILLEGAL,        ILLEGAL,        opPMULHW_a32,   ILLEGAL,        ILLEGAL,        opPSUBSB_a32,   opPSUBSW_a32,   NULL,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   NULL,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  ILLEGAL,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
 };
-#endif
-#endif
 
 const OpFn OP_TABLE(286)[1024] = 
 {

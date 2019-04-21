@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.14	2019/03/08
+ * Version:	@(#)vid_cga.c	1.0.16	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "../system/pit.h"
 #include "video.h"
 #include "vid_cga.h"
@@ -170,7 +171,7 @@ cga_out(uint16_t port, uint8_t val, void *priv)
 		old = dev->cgamode;
 		dev->cgamode = val;
 		if (old ^ val) {
-			if ((old ^ val) & 0x05)
+			if (((old ^ val) & 0x05) && dev->cpriv)
 				cga_comp_update(dev->cpriv, val);
 			cga_recalctimings(dev);
 		}
@@ -607,53 +608,11 @@ void
 cga_init(cga_t *dev)
 {
     dev->composite = 0;
+
     if (dev->cpriv != NULL) {
 	cga_comp_close(dev->cpriv);
 	dev->cpriv = NULL;
     }
-}
-
-
-void *
-cga_standalone_init(const device_t *info)
-{
-    int display_type;
-    cga_t *dev;
-
-    dev = (cga_t *)mem_alloc(sizeof(cga_t));
-    memset(dev, 0x00, sizeof(cga_t));
-
-    display_type = device_get_config_int("display_type");
-    dev->composite = (display_type != CGA_RGB);
-    dev->revision = device_get_config_int("composite_type");
-    dev->snow_enabled = device_get_config_int("snow_enabled");
-    dev->font_type = device_get_config_int("font_type");
-    dev->rgb_type = device_get_config_int("rgb_type");
-
-    dev->vram = (uint8_t *)mem_alloc(0x4000);
-
-    dev->cpriv = cga_comp_init(dev->revision);
-
-    timer_add(cga_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
-
-    mem_map_add(&dev->mapping, 0xb8000, 0x08000,
-		cga_read,NULL,NULL, cga_write,NULL,NULL,
-		dev->vram, MEM_MAPPING_EXTERNAL, dev);
-
-    io_sethandler(0x03d0, 16,
-		  cga_in,NULL,NULL, cga_out,NULL,NULL, dev);
-
-    overscan_x = overscan_y = 16;
-
-    cga_palette = (dev->rgb_type << 1);
-    video_palette_rebuild();
-
-    video_load_font(CGA_FONT_ROM_PATH,
-		    (dev->font_type) ? FONT_CGA_THICK : FONT_CGA_THIN);
-
-    video_inform(VID_TYPE_CGA, info->vid_timing);
-
-    return dev;
 }
 
 
@@ -680,6 +639,53 @@ cga_speed_changed(void *priv)
 }
 
 
+static void *
+cga_standalone_init(const device_t *info, UNUSED(void *parent))
+{
+    int display_type;
+    cga_t *dev;
+
+    dev = (cga_t *)mem_alloc(sizeof(cga_t));
+    memset(dev, 0x00, sizeof(cga_t));
+
+    cga_init(dev);
+
+    display_type = device_get_config_int("display_type");
+    dev->composite = (display_type != CGA_RGB);
+    dev->revision = device_get_config_int("composite_type");
+    dev->snow_enabled = device_get_config_int("snow_enabled");
+    dev->font_type = device_get_config_int("font_type");
+    dev->rgb_type = device_get_config_int("rgb_type");
+
+    dev->vram = (uint8_t *)mem_alloc(0x4000);
+
+    if (dev->composite)
+	dev->cpriv = cga_comp_init(dev->revision);
+
+    timer_add(cga_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+
+    mem_map_add(&dev->mapping, 0xb8000, 0x08000,
+		cga_read,NULL,NULL, cga_write,NULL,NULL,
+		dev->vram, MEM_MAPPING_EXTERNAL, dev);
+
+    io_sethandler(0x03d0, 16,
+		  cga_in,NULL,NULL, cga_out,NULL,NULL, dev);
+
+    overscan_x = overscan_y = 16;
+
+    cga_palette = (dev->rgb_type << 1);
+    video_palette_rebuild();
+
+    video_load_font(CGA_FONT_ROM_PATH,
+		    (dev->font_type) ? FONT_CGA_THICK : FONT_CGA_THIN);
+
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+	         (const video_timings_t *)info->vid_timing);
+
+    return(dev);
+}
+
+
 const device_config_t cga_config[] = {
     {
 	"display_type", "Display type", CONFIG_SELECTION, "", CGA_RGB,
@@ -691,7 +697,7 @@ const device_config_t cga_config[] = {
 			"Composite", CGA_COMPOSITE
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -705,7 +711,7 @@ const device_config_t cga_config[] = {
 			"New", COMPOSITE_NEW
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -728,7 +734,7 @@ const device_config_t cga_config[] = {
 			"Color (no brown)", 4
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -742,7 +748,7 @@ const device_config_t cga_config[] = {
 			"Thick", 1
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -750,14 +756,16 @@ const device_config_t cga_config[] = {
 	"snow_enabled", "Snow emulation", CONFIG_BINARY, "", 1
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
 
 const device_t cga_device = {
     "CGA",
-    DEVICE_ISA, 0,
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
+    0,
+    NULL,
     cga_standalone_init, cga_close, NULL,
     NULL,
     cga_speed_changed,

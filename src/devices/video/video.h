@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.30	2019/03/09
+ * Version:	@(#)video.h	1.0.31	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -199,13 +199,17 @@ extern const device_t	gd5440_pci_device;
 extern const device_t	gd5446_stb_pci_device;
 extern const device_t	gd5480_pci_device;
 
+#if defined(DEV_BRANCH) && defined(USE_COMPAQ)
 /* COMPAQ CGA-derived cards. */
 extern const device_t	cga_compaq_device;
 extern const device_t	cga_compaq2_device;
+#endif
 
 /* IBM EGA and compatibles. */
 extern const device_t	ega_device;
+#if defined(DEV_BRANCH) && defined(USE_COMPAQ)
 extern const device_t	ega_compaq_device;
+#endif
 extern const device_t	sega_device;
 
 /* Tseng Labs ET4000 series cards. */
@@ -337,27 +341,19 @@ extern void		video_blit_start(int pal, int x, int y,
 extern void		video_blend(int x, int y);
 extern void		video_palette_rebuild(void);
 
-#ifdef VIDEO_SVGA_H
-extern int		ati28800k_load_font(svga_t *, const wchar_t *);
-#endif
-
 extern void		video_log(int level, const char *fmt, ...);
 extern void		video_init(void);
 extern void		video_close(void);
 extern void		video_reset(void);
-extern void		video_update_timing(void);
 extern void		video_inform(int type, const video_timings_t *ptr);
 extern int		video_type(void);
+extern void		video_update_timing(void);
 extern void		video_reset_font(void);
 extern void		video_load_font(const wchar_t *s, fontformat_t num);
 extern uint8_t		video_force_resize_get(void);
 extern void		video_force_resize_set(uint8_t res);
 extern uint32_t		video_color_transform(uint32_t color);
 extern void		video_transform_copy(uint32_t *dst, pel_t *src, int len);
-
-extern void		updatewindowsize(int x, int y);
-extern int		get_actual_size_x(void);
-extern int		get_actual_size_y(void);
 
 #ifdef __cplusplus
 }

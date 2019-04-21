@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel 8259 interrupt controller.
  *
- * Version:	@(#)pic.c	1.0.6	2019/03/04
+ * Version:	@(#)pic.c	1.0.7	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,6 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "pci.h"
 #include "pic.h"

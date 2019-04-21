@@ -15,7 +15,7 @@
  * **NOTE**	This code will very soon be replaced with a C variant, so
  *		no more changes will be done.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.13	2019/03/11
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.14	2019/04/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -72,9 +72,11 @@ using namespace std;
 
 CDROM_Interface_Image::BinaryFile::BinaryFile(const wchar_t *filename, bool &error)
 {
+    const wstring cwstr(L"rb");
+
     memset(fn, 0x00, sizeof(fn));
     wcscpy(fn, filename);
-    file = plat_fopen64(fn, L"rb");
+    file = plat_fopen64(fn, (const wchar_t *)cwstr.c_str());
     DEBUG("CDROM: binary_open(%ls) = %08lx\n", fn, file);
 
     if (file == NULL)
@@ -533,7 +535,7 @@ CDROM_Interface_Image::CueGetFrame(uint64_t &arg, char **line)
 
     success = CueGetBuffer(temp, line, false);
     if (success)
-	success = (sscanf(temp, "%d:%d:%d", &min, &sec, &fr) == 3);
+	success = (sscanf(temp, "%i:%i:%i", &min, &sec, &fr) == 3);
 
     if (success)
 	arg = MSF_TO_FRAMES(min, sec, fr);
@@ -551,6 +553,7 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
     wchar_t temp[MAX_FILENAME_LENGTH];
     char ansi[MAX_FILENAME_LENGTH];
     char buf[MAX_LINE_LENGTH], *line;
+    const wstring cwstr(L"r");
     uint64_t shift = 0;
     uint64_t currPregap = 0;
     uint64_t totalPregap = 0;
@@ -568,7 +571,7 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
     plat_get_dirname(pathname, cuefile);
 
     /* Open the file. */
-    fp = plat_fopen(cuefile, L"r");
+    fp = plat_fopen(cuefile, (wchar_t *)cwstr.c_str());
     if (fp == NULL)
 	return false;
 
@@ -698,13 +701,20 @@ CDROM_Interface_Image::CueLoadSheet(const wchar_t *cuefile)
 			memset(filename, 0x00, sizeof(filename));
 			plat_append_filename(filename, pathname, temp);
 			track.file = new BinaryFile(filename, error);
+		} else {
+			ERRLOG("CUE: unsupported track format '%s' in cue sheet!\n",
+								type.c_str());
+			success = false;
+			break;
 		}
+
 		if (error) {
 			ERRLOG("CUE: cannot open fille '%ls' in cue sheet!\n",
 								filename);
 			delete track.file;
 			track.file = NULL;
 			success = false;
+			break;
 		}
 	} else if (command == "PREGAP")
 		success = CueGetFrame(currPregap, &line);

@@ -32,11 +32,11 @@
  *		The lower half of the driver can interface to the host system
  *		serial ports, or other channels, for real-world access.
  *
- * Version:	@(#)serial.c	1.0.12	2018/11/16
+ * Version:	@(#)serial.c	1.0.14	2019/04/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -82,7 +82,8 @@
 #include "../../rom.h"
 #include "../../timer.h"
 #include "../../device.h"
-#include "../../devices/system/pic.h"
+#include "../system/pic.h"
+#include "../../plat.h"
 #include "serial.h"
 
 
@@ -260,7 +261,10 @@ update_ints(serial_t *dev)
     DEBUG("Serial%d: intr, IIR=%02X, type=%d, mcr=%02X\n",
 		dev->port, dev->iir, dev->type, dev->mcr);
 
-    if (stat && ((dev->mcr & MCR_OUT2) || dev->is_pcjr)) {
+    /* Are hardware interrupts enabled? */
+    if (!(dev->mcr & MCR_OUT2) && !dev->is_pcjr) return;
+
+    if (stat) {
 	/* Raise an interrupt. */
 	if (dev->type < UART_TYPE_16450) {
 		/* Edge-triggered. */
@@ -363,7 +367,6 @@ reset_port(serial_t *dev)
 }
 
 
-/* Fake interrupt generator, needed for Serial Mouse. */
 static void
 read_timer(void *priv)
 {
@@ -380,7 +383,7 @@ read_timer(void *priv)
 
 
 #ifdef USE_HOST_SERIAL
-/* BHTTY READ COMPLETE handler. */
+/* Platform module has data, so read it! */
 static void
 read_done(void *arg, int num)
 {
@@ -389,14 +392,14 @@ read_done(void *arg, int num)
     /* We can do at least 'num' bytes.. */
     while (num-- > 0) {
 	/* Get a byte from them. */
-	if (bhtty_read(dev->bh, &dev->hold, 1) < 0) break;
+	if (plat_serial_read(dev->bh, &dev->hold, 1) < 0) break;
 
 	/* Stuff it into the FIFO and set intr. */
 	write_fifo(dev, &dev->hold, 1);
     }
 
     /* We have data waiting for us.. delay a little, and then read it. */
-    timer_add(ser_timer, &dev->delay, &dev->delay, dev);
+//    timer_add(ser_timer, &dev->delay, &dev->delay, dev);
 }
 #endif
 
@@ -405,13 +408,18 @@ static void
 ser_write(uint16_t addr, uint8_t val, void *priv)
 {
     serial_t *dev = (serial_t *)priv;
-    uint8_t wl, sb, pa, msr;
-    uint32_t baud, speed;
+#if defined(_LOGGING) || defined(USE_HOST_SERIAL)
+    uint32_t speed;
+    uint8_t wl, sb, pa;
+#endif
+    uint32_t baud;
+    uint8_t msr;
+
 
     DEBUG("Serial%i: write(%i, %02x)\n", dev->port, (addr & 0x0007), val);
 
     switch (addr & 0x0007) {
-	case 0:		/* DLAB, DATA */
+	case 0:		/* DATA,DLAB1 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, set DLAB low byte. */
                         dev->dlab1 = val;
@@ -424,8 +432,8 @@ ser_write(uint16_t addr, uint8_t val, void *priv)
 #ifdef USE_HOST_SERIAL
 		if (dev->bh != NULL) {
 			/* We are linked, so send to BH layer. */
-			bhtty_write((BHTTY *)dev->bh, dev->thr);
-		}
+			plat_serial_write(dev->bh, dev->thr);
+		} else
 #endif
 
 		if (dev->ops && dev->ops->write)
@@ -445,7 +453,7 @@ ser_write(uint16_t addr, uint8_t val, void *priv)
 		}
                 break;
 
-	case 1:		/* DLAB, IER */
+	case 1:		/* IER,DLAB2 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, set DLAB high byte. */
                         dev->dlab2 = val;
@@ -458,14 +466,10 @@ ser_write(uint16_t addr, uint8_t val, void *priv)
                 break;
 
 	case 2:		/* FCR */
-#if 0
 		if (dev->type >= UART_TYPE_16550) {
-DEBUG("Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->type);
+pclog(0,"Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->type);
 			dev->fcr = val;
 		}
-#else
-                dev->fcr = val;
-#endif
                 break;
 
 	case 3:		/* LCR */
@@ -473,12 +477,14 @@ DEBUG("Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->
 			/* We dropped DLAB, so handle baudrate. */
 			baud = ((dev->dlab2 << 8) | dev->dlab1);
 			if (baud > 0) {
+#if defined(_LOGGING) || defined(USE_HOST_SERIAL)
 				speed = 115200UL / baud;
+#endif
 				DEBUG("Serial%i: divisor %u, baudrate %i\n",
 						dev->port, baud, speed);
 #ifdef USE_HOST_SERIAL
 				if (dev->bh != NULL)
-					bhtty_speed((BHTTY *)dev->bh, speed);
+					plat_serial_speed(dev->bh, speed);
 #endif
 			} else {
 				DEBUG("Serial%i: divisor %u invalid!\n",
@@ -486,25 +492,25 @@ DEBUG("Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->
 			}
 		}
 
+#if defined(_LOGGING) || defined(USE_HOST_SERIAL)
 		wl = (val & LCR_WLS) + 5;		/* databits */
 		sb = (val & LCR_SBS) ? 2 : 1;		/* stopbits */
 		pa = (val & (LCR_PE|LCR_EP|LCR_PS)) >> 3;
+#endif
 		DEBUG("Serial%i: WL=%i SB=%i PA=%i\n", dev->port, wl, sb, pa);
 #ifdef USE_HOST_SERIAL
 		if (dev->bh != NULL)
-			bhtty_params((BHTTY *)dev->bh, wl, pa, sb);
+			plat_serial_params(dev->bh, wl, pa, sb);
 #endif
 
 		dev->lcr = val;
 		break;
 
-	case 4:		/*MCR*/
-#ifdef USE_HOST_SERIAL
+	case 4:		/* MCR */
 		if (dev->bh == NULL) {
 			/* Not linked, force LOOPBACK mode. */
 			val |= MCR_LMS;
 		}
-#endif
 
 		if ((val & MCR_RTS) && !(dev->mcr & MCR_RTS)) {
 			/*
@@ -523,7 +529,7 @@ DEBUG("Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->
 #ifdef USE_HOST_SERIAL
 			if (dev->bh != NULL) {
 				/* Linked, start host port. */
-				(void)bhtty_active(dev->bh, 1);
+				(void)plat_serial_active(dev->bh, 1);
 			} else {
 #endif
 				/* Not linked, start RX timer. */
@@ -561,7 +567,7 @@ DEBUG("Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->
 		}
 		break;
 
-	case 5:		/*LSR*/
+	case 5:		/* LSR */
                 if (val & LSR_MASK)
                         dev->int_status |= SER_INT_LSR;
                 if (val & LSR_DR)
@@ -572,14 +578,14 @@ DEBUG("Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->
                 update_ints(dev);
                 break;
 
-	case 6:		/*MSR*/
+	case 6:		/* MSR */
                 dev->msr = val;
 		if (dev->msr & MSR_MASK)
                         dev->int_status |= SER_INT_MSR;
                 update_ints(dev);
                 break;
 
-	case 7:		/*SCRATCH*/
+	case 7:		/* SCRATCH */
 		if (dev->type > UART_TYPE_8250) {
 			dev->scratch = val;
 		}
@@ -686,7 +692,7 @@ ser_read(uint16_t addr, void *priv)
 
 
 static void *
-ser_init(const device_t *info)
+ser_init(const device_t *info, UNUSED(void *parent))
 {
     serial_t *dev;
 
@@ -733,27 +739,26 @@ ser_close(void *priv)
 
 
 const device_t serial_1_device = {
-    "COM1:",
-    0,
-    1,
+    "COM1",
+    0, 1, NULL,
     ser_init, ser_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
 };
 
 const device_t serial_2_device = {
-    "COM2:",
-    0,
-    2,
+    "COM2",
+    0, 2, NULL,
     ser_init, ser_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL,
 };
 
 const device_t serial_1_pcjr_device = {
-    "COM1:",
+    "COM1 (PCjr)",
     0,
     1+128,
+    NULL,
     ser_init, ser_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -843,6 +848,52 @@ serial_attach(int port, serial_ops_t *ops, void *arg)
 
     return(dev);
 }
+
+
+#ifdef USE_HOST_SERIAL
+/* Link a serial port to a host (serial) port. */
+int
+serial_link(int port, const char *arg)
+{
+    serial_t *dev;
+
+    /* No can do if port not enabled. */
+    if (! serial_enabled[port]) return(-1);
+
+    /* Grab the desired port block. */
+    dev = &ports[port];
+
+    if (arg != NULL) {
+	/* Make sure we're not already linked. */
+	if (dev->bh != NULL) {
+		ERRLOG("Serial%i already linked !\n", port);
+		return(-1);
+	}
+
+	/* Request a port from the host system. */
+	dev->bh = plat_serial_open(arg, 0);
+	if (dev->bh == NULL) {
+		ERRLOG("Serial%i unable to link to '%s' !\n", port, arg);
+		return(-1);
+	}
+
+	/* Set up bottom-half I/O callback info. */
+#if 0
+	bh->rd_done = read_done;
+	bh->rd_arg = dev;
+#endif
+    } else {
+	/* If we are linked, unlink it. */
+	if (dev->bh != NULL) {
+		plat_serial_close(dev->bh);
+		dev->bh = NULL;
+	}
+
+    }
+
+    return(0);
+}
+#endif
 
 
 /* API: clear the FIFO buffers of a serial port. */

@@ -8,13 +8,13 @@
  *
  *		Dynamic Recompiler for Intel 32-bit systems.
  *
- * Version:	@(#)codegen_x86.c	1.0.4	2018/09/22
+ * Version:	@(#)codegen_x86.c	1.0.5	2019/03/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
@@ -36,7 +36,7 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#if defined i386 || defined __i386 || defined __i386__ || defined _X86_ || defined _WIN32
+#if defined(i386) || defined(__i386) || defined(__i386__) || defined(_X86_) || defined(_M_IX86) || defined(_M_X64)
 
 #include <stdio.h>
 #include <stdint.h>

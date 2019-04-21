@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.38	2018/10/26
+ * Version:	@(#)win_settings.c	1.0.40	2019/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -178,10 +178,10 @@ settings_init(void)
     int i;
 
     /* Machine category */
-    temp_machine = machine;
+    temp_machine = machine_type;
     temp_cpu_m = cpu_manufacturer;
     temp_wait_states = cpu_waitstates;
-    temp_cpu = cpu;
+    temp_cpu = cpu_type;
     temp_mem_size = mem_size;
 #ifdef USE_DYNAREC
     temp_dynarec = cpu_use_dynarec;
@@ -256,10 +256,10 @@ settings_changed(void)
     int i = 0, j;
 
     /* Machine category */
-    i = i || (machine != temp_machine);
+    i = i || (machine_type != temp_machine);
     i = i || (cpu_manufacturer != temp_cpu_m);
     i = i || (cpu_waitstates != temp_wait_states);
-    i = i || (cpu != temp_cpu);
+    i = i || (cpu_type != temp_cpu);
     i = i || (mem_size != temp_mem_size);
 #ifdef USE_DYNAREC
     i = i || (temp_dynarec != cpu_use_dynarec);
@@ -359,10 +359,10 @@ settings_save(void)
     pc_reset_hard_close();
 
     /* Machine category */
-    machine = temp_machine;
+    machine_type = temp_machine;
     cpu_manufacturer = temp_cpu_m;
     cpu_waitstates = temp_wait_states;
-    cpu = temp_cpu;
+    cpu_type = temp_cpu;
     mem_size = temp_mem_size;
 #ifdef USE_DYNAREC
     cpu_use_dynarec = temp_dynarec;
@@ -560,7 +560,7 @@ image_list_init(HWND hwndList)
 
     for (i = 0; i < PAGE_MAX; i++) {
 #if (defined(_MSC_VER) && defined(_M_X64)) || \
-    (defined(__GNUC__) && defined(__amd64__))
+    (defined(__GNUC__) && defined(__amd64__)) || defined(__aarch64__)
 	hiconItem = LoadIcon(hInstance, (LPCWSTR)((uint64_t)icons[i]));
 #else
 	hiconItem = LoadIcon(hInstance, (LPCWSTR)((uint32_t)icons[i]));
@@ -643,7 +643,7 @@ settings_confirm(HWND hdlg, int button)
 static WIN_RESULT CALLBACK
 dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND h;
+    HWND h = NULL;
     int category;
     int i, j;
 
@@ -721,7 +721,7 @@ find_roms(void)
     c = d = 0;
     while(1) {
 	/* Get ANSI name of machine. */
-	str = machine_getname_ex(c);
+	str = machine_get_name_ex(c);
 	if (str == NULL)
 		break;
 

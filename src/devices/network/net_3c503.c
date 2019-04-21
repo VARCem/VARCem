@@ -8,7 +8,7 @@
  *		Implementation of the following network controllers:
  *			- 3Com Etherlink II 3c503 (ISA 8-bit).
  *
- * Version:	@(#)net_3c503.c	1.0.4	2018/10/24
+ * Version:	@(#)net_3c503.c	1.0.6	2019/04/11
  *
  * Based on	@(#)3c503.cpp Carl (MAME)
  *
@@ -17,7 +17,6 @@
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *		Carl, <unknown e-mail address>
  *
- *		Copyright 2018 TheCollector1995.
  *		Copyright 2018 Miran Grca.
  *		Copyright 2017,2018 Fred N. van Kempen.
  *		Portions Copyright (C) 2018  MAME Project
@@ -1448,7 +1447,7 @@ tc503_rx(void *priv, uint8_t *buf, int io_len)
 
 
 static void *
-tc503_init(const device_t *info)
+tc503_init(const device_t *info, UNUSED(void *parent))
 {
     uint32_t mac;
     tc503_t *dev;
@@ -1534,35 +1533,33 @@ static const device_config_t tc503_config[] = {
 	"base", "Address", CONFIG_HEX16, "", 0x300,
 	{
 		{
-			"0x250", 0x250
+			"250H", 0x250
 		},
 		{
-			"0x280", 0x280
+			"280H", 0x280
 		},
 		{
-			"0x2a0", 0x2a0
+			"2A0H", 0x2a0
 		},
 		{
-			"0x2e0", 0x2e0
+			"2E0H", 0x2e0
 		},
 		{
-			"0x300", 0x300
+			"300H", 0x300
 		},
 		{
-			"0x310", 0x310
+			"310H", 0x310
 		},
 		{
-			"0x330", 0x330
+			"330H", 0x330
 		},
 		{
-			"0x350", 0x350
+			"350H", 0x350
 		},
 		{
-			"", 0
+			NULL
 		}
-	},
-	{	{	NULL, { NULL }	}	},
-	{	0, 0, 0		}
+	}
     },
     {
 	"irq", "IRQ", CONFIG_SELECTION, "", 3,
@@ -1580,11 +1577,9 @@ static const device_config_t tc503_config[] = {
 			"IRQ 5", 5
 		},
 		{
-			"", 0
+			NULL
 		}
-	},
-	{	{	NULL, { NULL }	}	},
-	{	0, 0, 0		}
+	}
     },
     {
 	"dma", "DMA", CONFIG_SELECTION, "", 3,
@@ -1599,53 +1594,40 @@ static const device_config_t tc503_config[] = {
 			"DMA 3", 3
 		},
 		{
-			"", 0
+			NULL
 		}
-	},
-	{	{	NULL, { NULL }	}	},
-	{	0, 0, 0		}
+	}
     },
     {
 	"mac", "MAC Address", CONFIG_MAC, "", -1,
 	{
 		{
-			"", 0
+			NULL
 		}
-	},
-	{	{	NULL, { NULL }	}	},
-	{	0, 0, 0		}
+	}
     },
     {
 	"bios_addr", "BIOS address", CONFIG_HEX20, "", 0xCC000,
 	{
 		{
-			"DC00", 0xDC000
+			"DC00H", 0xDC000
 		},
 		{
-			"D800", 0xD8000
+			"D800H", 0xD8000
 		},
 		{
-			"C800", 0xC8000
+			"C800H", 0xC8000
 		},
 		{
-			"CC00", 0xCC000
+			"CC00H", 0xCC000
 		},
 		{
-			"", 0
+			NULL
 		}
-	},
-	{	{	NULL, { NULL }	}	},
-	{	0, 0, 0		}
+	}
     },
     {
-	"", "", -1, "", -1,
-	{
-		{
-			"", 0
-		}
-	},
-	{	{	NULL, { NULL }	}	},
-	{	0, 0, 0		}
+	NULL,
     }
 };
 
@@ -1654,6 +1636,7 @@ const device_t tc503_device = {
     "3Com EtherLink II",
     DEVICE_ISA,
     0,
+    NULL,
     tc503_init, tc503_close, NULL,
     NULL, NULL, NULL, NULL,
     tc503_config

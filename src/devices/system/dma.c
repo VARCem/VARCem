@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.9	2019/02/28
+ * Version:	@(#)dma.c	1.0.10	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,6 @@
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
 #include "../../cpu/x86.h"
-#include "../../machines/machine.h"
 #include "../../mem.h"
 #include "../../io.h"
 #include "../../plat.h"

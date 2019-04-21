@@ -8,13 +8,13 @@
  *
  *		Interface to system MIDI driver.
  *
- * Version:	@(#)midi_system.c	1.0.5	2018/09/22
+ * Version:	@(#)midi_system.c	1.0.7	2019/04/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -50,7 +50,7 @@
 
 
 void *
-system_midi_init(const device_t *info)
+system_midi_init(const device_t *info, UNUSED(void *parent))
 {
     midi_device_t *dev;
 
@@ -98,7 +98,7 @@ static const device_config_t system_midi_config[] = {
 
 const device_t system_midi_device = {
     SYSTEM_MIDI_NAME,
-    0, 0,
+    0, 0, NULL,
     system_midi_init, system_midi_close, NULL,
     system_midi_available,
     NULL, NULL, NULL,

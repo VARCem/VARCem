@@ -8,7 +8,7 @@
  *
  *		Super I/O chip detection code.
  *
- * Version:	@(#)sio_detect.c	1.0.4	2018/11/10
+ * Version:	@(#)sio_detect.c	1.0.6	2019/04/09
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -42,6 +42,7 @@
 #include "../../io.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
+#include "../../plat.h"
 #include "sio.h"
 
 
@@ -85,7 +86,7 @@ detect_close(void *priv)
 
 
 static void *
-detect_init(void)
+detect_init(const device_t *info, UNUSED(void *parent))
 {
     sio_detect_t *dev = (sio_detect_t *)mem_alloc(sizeof(sio_detect_t));
     memset(dev, 0x00, sizeof(sio_detect_t));
@@ -115,8 +116,7 @@ detect_init(void)
 
 const device_t sio_detect_device = {
     "Super I/O Detection Helper",
-    0,
-    0,
+    0, 0, NULL,
     detect_init, detect_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

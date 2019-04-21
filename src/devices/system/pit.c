@@ -6,14 +6,14 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implement the PIT (Programmable Interval Timer.)
+ *		Implement the Intel 8254 PIT (Programmable Interval Timer.)
  *
  *		B0 to 40, two writes to 43, then two reads
  *			- value does not change!
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.12	2019/02/17
+ * Version:	@(#)pit.c	1.0.13	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,6 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../device.h"
 #include "../../timer.h"
@@ -661,7 +660,7 @@ pit_setclock(uint32_t freq)
 {
     uint32_t speed;
 
-    if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_type >= CPU_286) {
+    if (cpu_get_type() >= CPU_286) {
 	/* For 286 and up, this is easy. */
 	cpuclock = (float)freq;
 	PITCONST = cpuclock / 1193182.0;
@@ -675,11 +674,11 @@ pit_setclock(uint32_t freq)
 	xt_cpu_multi = 3;
 
 	/* Get selected CPU's (max) clock rate. */
-	speed = machine_speed(1);	//FIXME:
+	speed = cpu_get_speed();
 
 	switch (speed) {
 		case 7159092:	/* 7.16 MHz */
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_flags & CPU_ALTERNATE_XTAL) {
+			if (cpu_get_flags() & CPU_ALTERNATE_XTAL) {
 				cpuclock = 28636368.0;
 				xt_cpu_multi = 4;
 			} else
@@ -695,7 +694,7 @@ pit_setclock(uint32_t freq)
 			break;
 
 		default:
-			if (machines[machine].cpu[cpu_manufacturer].cpus[cpu_effective].cpu_flags & CPU_ALTERNATE_XTAL) {
+			if (cpu_get_flags() & CPU_ALTERNATE_XTAL) {
 				cpuclock = 28636368.0;
 				xt_cpu_multi = 6;
 			}

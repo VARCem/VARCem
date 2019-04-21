@@ -8,13 +8,15 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.5	2018/10/05
+ * Version:	@(#)x86seg.c	1.0.6	2019/04/20
  *
- * Authors:	Sarah Walker, <http://pcem-emulator.co.uk/>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
+ *		Sarah Walker, <http://pcem-emulator.co.uk/>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +45,6 @@
 #define HAVE_STDARG_H
 #include "../emu.h"
 #include "cpu.h"
-#include "../machines/machine.h"
 #include "../mem.h"
 #include "../nvr.h"
 #include "x86.h"
@@ -88,7 +89,7 @@ x86abort(const char *fmt, ...)
     pclog(-1, NULL);
 
     nvr_save();
-    dumpregs(1);
+    cpu_dumpregs(1);
 
     exit(-1);
 }
@@ -1612,7 +1613,7 @@ void pmodeint(int num, int soft)
                 if (num==8)
                 {
                         /*Triple fault - reset!*/
-                        softresetx86();
+                        cpu_reset(0);
 			cpu_set_edx();
                 }
                 else if (num==0xD)

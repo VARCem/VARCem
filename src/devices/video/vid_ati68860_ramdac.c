@@ -28,13 +28,13 @@
  *		    7  If set can remove "snow" in some cases
  *			(A860_Delay_L ?) ??
  *
- * Version:	@(#)vid_ati68860.c	1.0.4	2018/10/05
+ * Version:	@(#)vid_ati68860.c	1.0.6	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -64,6 +64,7 @@
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -244,7 +245,7 @@ ati68860_set_ramdac_type(ati68860_ramdac_t *dev, int type)
 
 
 static void *
-ati68860_init(const device_t *info)
+ati68860_init(const device_t *info, UNUSED(void *parent))
 {
     ati68860_ramdac_t *dev;
 
@@ -269,8 +270,7 @@ ati68860_close(void *priv)
 
 const device_t ati68860_ramdac_device = {
     "ATi-68860 RAMDAC",
-    0,
-    0,
+    0, 0, NULL,
     ati68860_init, ati68860_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

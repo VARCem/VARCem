@@ -8,7 +8,7 @@
  *
  *		Memory handling and MMU.
  *
- * Version:	@(#)mem.c	1.0.26	2019/02/10
+ * Version:	@(#)mem.c	1.0.29	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,7 +46,6 @@
 #include "cpu/x86_ops.h"
 #include "cpu/x86.h"
 #include "machines/machine.h"
-#include "machines/m_xt_xi8088.h"		//FIXME: remove?
 #include "config.h"
 #include "io.h"
 #include "mem.h"
@@ -61,23 +60,18 @@
 #endif
 
 
+uint8_t		*ram;				/* the virtual RAM */
+uint32_t	rammask;
+
 mem_map_t	base_mapping,
 		ram_low_mapping,		/* 0..640K mapping */
 		ram_mid_mapping,
 		ram_remapped_mapping,		/* 640..1024K mapping */
-		ram_high_mapping,		/* 1024K+ mapping */
-		bios_mapping[8],
-		bios_high_mapping[8];
+		ram_high_mapping;		/* 1024K+ mapping */
 
 page_t		*pages,				/* RAM page table */
 		**page_lookup;			/* pagetable lookup */
 uint32_t	pages_sz = 0;			/* #pages in table */
-
-uint8_t		*ram;				/* the virtual RAM */
-uint32_t	rammask;
-
-uint8_t		*rom;				/* the virtual ROM */
-uint32_t	biosmask;
 
 uint32_t	pccache;
 uint8_t		*pccache2;
@@ -93,8 +87,6 @@ uintptr_t	*writelookup2;
 
 uint32_t	mem_logical_addr;
 
-int		shadowbios = 0,
-		shadowbios_write;
 int		pctrans = 0;
 int		cachesize = 256;
 
@@ -433,7 +425,7 @@ getpccache(uint32_t a)
     a2 = a;
 
     if (cr0 >> 31) {
-	pctrans=1;
+	pctrans = 1;
 	a = mmutranslate_read(a);
 	pctrans = 0;
 
@@ -1143,27 +1135,6 @@ mem_write_remappedl(uint32_t addr, uint32_t val, void *priv)
 }
 
 
-uint8_t
-mem_read_bios(uint32_t addr, void *priv)
-{
-    return rom[addr & biosmask];
-}
-
-
-uint16_t
-mem_read_biosw(uint32_t addr, void *priv)
-{
-    return *(uint16_t *)&rom[addr & biosmask];
-}
-
-
-uint32_t
-mem_read_biosl(uint32_t addr, void *priv)
-{
-    return *(uint32_t *)&rom[addr & biosmask];
-}
-
-
 void
 mem_write_null(uint32_t addr, uint8_t val, void *p)
 {
@@ -1218,7 +1189,7 @@ mem_map_read_allowed(uint32_t fl, int state)
 		return !(fl & MEM_MAPPING_EXTERNAL);
 
 	default:
-		fatal("mem_mapping_read_allowed : bad state %x\n", state);
+		fatal("mem_map_read_allowed : bad state %x\n", state);
     }
 
     return 0;
@@ -1238,7 +1209,7 @@ mem_map_write_allowed(uint32_t fl, int state)
 	case MEM_WRITE_INTERNAL:
 		return !(fl & MEM_MAPPING_EXTERNAL);
 	default:
-		fatal("mem_mapping_write_allowed : bad state %x\n", state);
+		fatal("mem_map_write_allowed : bad state %x\n", state);
     }
 
     return 0;
@@ -1358,6 +1329,7 @@ mem_map_add(mem_map_t *map, uint32_t base, uint32_t size,
     map->exec    = exec;
     map->flags   = fl;
     map->p       = p;
+    map->p2      = NULL;
     map->dev     = NULL;
     map->next    = NULL;
 
@@ -1418,6 +1390,13 @@ mem_map_set_p(mem_map_t *map, void *p)
 
 
 void
+mem_map_set_p2(mem_map_t *map, void *p)
+{
+    map->p2 = p;
+}
+
+
+void
 mem_map_set_dev(mem_map_t *map, void *p)
 {
     map->dev = p;
@@ -1455,114 +1434,6 @@ mem_set_mem_state(uint32_t base, uint32_t size, int state)
 
 
 void
-mem_add_upper_bios(void)
-{
-    mem_map_add(&bios_mapping[0], 0xe0000, 0x04000,
-		mem_read_bios,mem_read_biosw,mem_read_biosl,
-		mem_write_null,mem_write_nullw,mem_write_nulll,
-		rom,MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_mapping[1], 0xe4000, 0x04000,
-		mem_read_bios,mem_read_biosw,mem_read_biosl,
-		mem_write_null,mem_write_nullw,mem_write_nulll,
-		rom + (0x4000  & biosmask),
-		MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_mapping[2], 0xe8000, 0x04000,
-		mem_read_bios,mem_read_biosw,mem_read_biosl,
-		mem_write_null,mem_write_nullw,mem_write_nulll,
-		rom + (0x8000  & biosmask),
-		MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_mapping[3], 0xec000, 0x04000,
-		mem_read_bios,mem_read_biosw,mem_read_biosl,
-		mem_write_null,mem_write_nullw,mem_write_nulll,
-		rom + (0xc000  & biosmask),
-		MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-}
-
-
-void
-mem_add_bios(void)
-{
-    if (AT)
-	mem_add_upper_bios();
-
-    mem_map_add(&bios_mapping[4], 0xf0000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x10000 & biosmask),
-	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_mapping[5], 0xf4000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x14000 & biosmask),
-	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_mapping[6], 0xf8000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x18000 & biosmask),
-	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_mapping[7], 0xfc000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x1c000 & biosmask),
-	        MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[0],
-	        (AT && cpu_16bitbus) ? 0xfe0000 : 0xfffe0000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom, MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[1],
-	        (AT && cpu_16bitbus) ? 0xfe4000 : 0xfffe4000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x4000  & biosmask), MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[2],
-	        (AT && cpu_16bitbus) ? 0xfe8000 : 0xfffe8000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x8000  & biosmask), MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[3],
-	        (AT && cpu_16bitbus) ? 0xfec000 : 0xfffec000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0xc000  & biosmask), MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[4],
-	        (AT && cpu_16bitbus) ? 0xff0000 : 0xffff0000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x10000 & biosmask), MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[5],
-	        (AT && cpu_16bitbus) ? 0xff4000 : 0xffff4000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x14000 & biosmask), MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[6],
-	        (AT && cpu_16bitbus) ? 0xff8000 : 0xffff8000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x18000 & biosmask), MEM_MAPPING_ROM, 0);
-
-    mem_map_add(&bios_high_mapping[7],
-	        (AT && cpu_16bitbus) ? 0xffc000 : 0xffffc000, 0x04000,
-	        mem_read_bios,mem_read_biosw,mem_read_biosl,
-	        mem_write_null,mem_write_nullw,mem_write_nulll,
-	        rom + (0x1c000 & biosmask), MEM_MAPPING_ROM, 0);
-}
-
-
-void
 mem_a20_init(void)
 {
     if (AT) {
@@ -1583,20 +1454,13 @@ mem_reset(void)
 {
     uint32_t c, m;
 
-    /* Free the ROM memory and reset size mask. */
-    if (rom != NULL) {
-	free(rom);
-	rom = NULL;
-    }
-    biosmask = 0xffff;
-
     /*
      * Make sure the configured amount of RAM does not
      * exceed the physical limit of the machine to avoid
      * nasty crashes all over the place.
      */
     m = mem_size;
-    c = machines[machine].max_ram;
+    c = machine->max_ram;
     if (AT)
 	c <<= 10;	/* make KB */
     if (m > c) {
@@ -1639,8 +1503,8 @@ mem_reset(void)
     if (pages_sz != m || pages_sz == 0) {
 	pages_sz = m;
 	free(pages);
-	pages = (page_t *)mem_alloc(m*sizeof(page_t));
-	memset(pages, 0x00, m*sizeof(page_t));
+	pages = (page_t *)mem_alloc(m * sizeof(page_t));
+	memset(pages, 0x00, m * sizeof(page_t));
     }
 
     /* Initialize the page table. */
@@ -1718,7 +1582,7 @@ void
 mem_init(void)
 {
     /* Perform a one-time init. */
-    ram = rom = NULL;
+    ram = NULL;
     pages = NULL;
     pages_sz = 0;
 
@@ -1831,7 +1695,7 @@ port_92_write(uint16_t port, uint8_t val, void *priv)
     }
 
     if ((~port_92_reg & val) & 1) {
-	softresetx86();
+	cpu_reset(0);
 	cpu_set_edx();
     }
 

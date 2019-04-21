@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.14	2018/10/25
+ * Version:	@(#)win_settings_sound.h	1.0.15	2019/04/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -81,11 +81,16 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     char tempA[128];
     const char *stransi;
     const device_t *dev;
+    const machine_t *m;
     HWND h;
     int c, d;
 
     switch (message) {
 	case WM_INITDIALOG:
+		/* Get info about the selected machine. */
+		dev = machine_get_device_ex(temp_machine);
+		m = (machine_t *)dev->mach_info;
+
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
 		c = d = 0;
 		for (;;) {
@@ -95,7 +100,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			dev = sound_card_getdevice(c);
 
 			if (!sound_card_available(c) ||
-			    !device_is_valid(dev, machines[temp_machine].flags)) {
+			    !device_is_valid(dev, m->flags)) {
 				c++;
 				continue;
 			}
@@ -105,7 +110,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				SendMessage(h, CB_ADDSTRING, 0,
 					    win_string(IDS_NONE));
 			} else if (c == 1) {
-				if (! (machines[temp_machine].flags&MACHINE_SOUND)) {
+				if (! (m->flags & MACHINE_SOUND)) {
 					c++;
 					continue;
 				}
@@ -246,7 +251,10 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDC_CONFIGURE_MPU401:
-				temp_deviceconfig |= dlg_devconf(hdlg, (machines[temp_machine].flags & MACHINE_MCA) ?
+				/* Get info about the selected machine. */
+				dev = machine_get_device_ex(temp_machine);
+				m = (machine_t *)dev->mach_info;
+				temp_deviceconfig |= dlg_devconf(hdlg, (m->flags & MACHINE_MCA) ?
 								       &mpu401_mca_device : &mpu401_device);
 				break;
 		}

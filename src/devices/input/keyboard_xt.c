@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.14	2019/02/14
+ * Version:	@(#)keyboard_xt.c	1.0.16	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,7 +43,6 @@
 #include <wchar.h>
 #define dbglog kbd_log
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../timer.h"
 #include "../../device.h"
@@ -54,6 +53,7 @@
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
 #include "../video/video.h"
+#include "../../plat.h"
 #ifdef USE_CASSETTE
 # include <cassette.h>
 #endif
@@ -75,6 +75,7 @@ enum {
   KBC_PC82,		/* IBM PC, 1982 */
   KBC_XT,		/* IBM PC/XT, 1982 */
   KBC_XT86,		/* IBM PC/XT, 1986, and most clones */
+  KBC_GENERIC,		/* Generic XT (no FDD count or memory size) */
   KBC_TANDY,		/* Tandy XT */
   KBC_LASER		/* VTech LaserXT */
 };
@@ -82,7 +83,6 @@ enum {
 
 typedef struct {
     uint8_t	type;
-    int8_t	tandy;  
 
     uint8_t	pa,
 		pb,
@@ -91,6 +91,9 @@ typedef struct {
     int8_t	want_irq;  
     int8_t	blocked;
     uint8_t	key_waiting;
+
+    uint8_t	(*read_func)(void *);
+    void	*func_priv;
 } xtkbd_t;
 
 
@@ -363,26 +366,24 @@ static int	key_queue_start,
 static void
 kbd_poll(void *priv)
 {
-    xtkbd_t *kbd = (xtkbd_t *)priv;
+    xtkbd_t *dev = (xtkbd_t *)priv;
 
     keyboard_delay += (1000LL * TIMER_USEC);
 
-    if (!(kbd->pb & 0x40) && (! kbd->tandy))
+    if (!(dev->pb & 0x40) && (dev->type != KBC_TANDY))
 	return;
 
-    if (kbd->want_irq) {
-	kbd->want_irq = 0;
-	kbd->pa = kbd->key_waiting;
-	kbd->blocked = 1;
+    if (dev->want_irq) {
+	dev->want_irq = 0;
+	dev->pa = dev->key_waiting;
+	dev->blocked = 1;
 	picint(2);
     }
 
-    if (key_queue_start != key_queue_end && !kbd->blocked) {
-	kbd->key_waiting = key_queue[key_queue_start];
-	DBGLOG(1, "XTkbd: reading %02X from the key queue at %i\n",
-					kbd->pa, key_queue_start);
+    if (key_queue_start != key_queue_end && !dev->blocked) {
+	dev->key_waiting = key_queue[key_queue_start];
 	key_queue_start = (key_queue_start + 1) & 0x0f;
-	kbd->want_irq = 1;
+	dev->want_irq = 1;
     }
 }
 
@@ -391,9 +392,6 @@ static void
 kbd_adddata(uint16_t val)
 {
     key_queue[key_queue_end] = val & 0xff;
-
-    DBGLOG(1, "XTkbd: %02X added to key queue at %i\n",
-				val, key_queue_end);
     key_queue_end = (key_queue_end + 1) & 0x0f;
 }
 
@@ -411,7 +409,7 @@ kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val))
     switch(val) {
 	case FAKE_LSHIFT_ON:
 		if (num_lock) {
-			if (!shift_states) {
+			if (! shift_states) {
 				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
 				adddata(0x2a);
 			}
@@ -429,7 +427,7 @@ kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val))
 
 	case FAKE_LSHIFT_OFF:
 		if (num_lock) {
-			if (!shift_states) {
+			if (! shift_states) {
 				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
 				adddata(0xaa);
 			}
@@ -462,17 +460,17 @@ kbd_adddata_ex(uint16_t val)
 static void
 kbd_write(uint16_t port, uint8_t val, void *priv)
 {
-    xtkbd_t *kbd = (xtkbd_t *)priv;
+    xtkbd_t *dev = (xtkbd_t *)priv;
 
     switch (port) {
 	case 0x61:
-		if (!(kbd->pb & 0x40) && (val & 0x40)) {
+		if (!(dev->pb & 0x40) && (val & 0x40)) {
 			key_queue_start = key_queue_end = 0;
-			kbd->want_irq = 0;
-			kbd->blocked = 0;
+			dev->want_irq = 0;
+			dev->blocked = 0;
 			kbd_adddata(0xaa);
 		}
-		kbd->pb = val;
+		dev->pb = val;
 		ppi.pb = val;
 
 		timer_process();
@@ -484,22 +482,38 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		speaker_gated = val & 1;
 		speaker_enable = val & 2;
 
-		if (kbd->type <= KBC_PC82) {
 #ifdef USE_CASSETTE
+		if (dev->type <= KBC_PC82) {
 			if (cassette_enabled)
 				cassette_motor(! (val & 0x08));
-#endif
 		}
+#endif
 
 		if (speaker_enable) 
 			speaker_was_enable = 1;
 		pit_set_gate(&pit, 2, val & 1);
 
 		if (val & 0x80) {
-			kbd->pa = 0;
-			kbd->blocked = 0;
+			dev->pa = 0;
+			dev->blocked = 0;
 			picintc(2);
 		}
+		break;
+
+	case 0x63:
+		/*
+		 * The value written to port 63H is normally 99H,
+		 * being the correct 'setup byte' for the original
+		 * Intel 8255 PPI device.
+		 *
+		 * We ignore it here.
+		 */
+		if (val == 0x99)
+			break;
+		/*FALLTHROUGH*/
+
+	default:
+		ERRLOG("XTkbd: write(%04x, %02x) invalid\n", port, val);
 		break;
     }
 }
@@ -508,65 +522,69 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 static uint8_t
 kbd_read(uint16_t port, void *priv)
 {
-    xtkbd_t *kbd = (xtkbd_t *)priv;
+    xtkbd_t *dev = (xtkbd_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port) {
 	case 0x60:
-		if ((kbd->type <= KBC_PC82) && (kbd->pb & 0x80))
-			ret = kbd->pd;
-		else if (((kbd->type == KBC_XT) || (kbd->type == KBC_XT86)) &&
-			 (kbd->pb & 0x80))
-			ret = 0xff;	/* According to Ruud on the PCem forum, this is supposed to return 0xFF on the XT. */
+		if ((dev->type <= KBC_PC82) && (dev->pb & 0x80))
+			ret = dev->pd;
+		else if (((dev->type == KBC_XT) || (dev->type == KBC_XT86)) &&
+			 (dev->pb & 0x80))
+			ret = 0xff;	/* According to Ruud on the PCem forum,
+					 * this is supposed to return 0xff on
+					 * the XT.   FIXME: check!
+					 */
 		else
-			ret = kbd->pa;
+			ret = dev->pa;
 		break;
 
 	case 0x61:
-		ret = kbd->pb;
+		ret = dev->pb;
 		break;
 
 	case 0x62:
-		if (kbd->type == KBC_PC)
+		if (dev->type == KBC_PC)
 			ret = 0x00;
-		else if (kbd->type == KBC_PC82) {
-			if (kbd->pb & 0x04)
+		else if (dev->type == KBC_PC82) {
+			if (dev->pb & 0x04)
 				ret = ((mem_size - 64) / 32) & 0x0f;
 			else
 				ret = ((mem_size - 64) / 32) >> 4;
 		} else {
-			if (kbd->pb & 0x08)
-				ret = kbd->pd >> 4;
+			if (dev->pb & 0x08)
+				ret = dev->pd >> 4;
 			else {
-				if (kbd->type == KBC_LASER)
+				if (dev->type == KBC_LASER)
 					/* LaserXT = Always 512k RAM;
 					 * LaserXT/3 = Bit 0: 1=512K, 0=256K
 					 */
 					ret = (mem_size == 512) ? 0x0d : 0x0c;
 				else
-					ret = kbd->pd & 0x0f;
+					ret = dev->pd & 0x0f;
 			}
 
-			if (kbd->type == KBC_TANDY)
-				ret |= (tandy1k_eeprom_read() ? 0x10 : 0);
+			/* Tandy uses bit4 for the Serial EEPROM. */
+			if (dev->type == KBC_TANDY)
+				ret |= dev->read_func(dev->func_priv) ? 0x10 : 0x00;
 		}
 
 		/* Indicate the PC SPEAKER state. */
 		ret |= (ppispeakon ? 0x20 : 0);
 
 		/* Make the IBM PC BIOS happy (Cassette Interface.) */
-		if (kbd->type <= KBC_PC82)
+		if (dev->type <= KBC_PC82)
 			ret |= (ppispeakon ? 0x10 : 0);
 
 		break;
 
 	case 0x63:
-		if ((kbd->type == KBC_XT) || (kbd->type == KBC_XT86))
-			ret = kbd->pd;
+		if ((dev->type == KBC_XT) || (dev->type == KBC_XT86) || (dev->type == KBC_GENERIC))
+			ret = dev->pd;
 		break;
 
 	default:
-		ERRLOG("XTkbd: bad read %04X\n", port);
+		ERRLOG("XTkbd: read(%04x) invalid\n", port);
 		break;
     }
 
@@ -577,29 +595,29 @@ kbd_read(uint16_t port, void *priv)
 static void
 kbd_reset(void *priv)
 {
-    xtkbd_t *kbd = (xtkbd_t *)priv;
+    xtkbd_t *dev = (xtkbd_t *)priv;
 
-    kbd->want_irq = 0;
-    kbd->blocked = 0;
-    kbd->pa = 0x00;
-    kbd->pb = 0x00;
+    dev->want_irq = 0;
+    dev->blocked = 0;
+    dev->pa = 0x00;
+    dev->pb = 0x00;
 
     keyboard_scan = 1;
 
-    key_queue_start = 0,
+    key_queue_start = 0;
     key_queue_end = 0;
 }
 
 
 static void *
-kbd_init(const device_t *info)
+kbd_init(const device_t *info, UNUSED(void *parent))
 {
     int i, fdd_count = 0;
-    xtkbd_t *kbd;
+    xtkbd_t *dev;
 
-    kbd = (xtkbd_t *)mem_alloc(sizeof(xtkbd_t));
-    memset(kbd, 0x00, sizeof(xtkbd_t));
-    kbd->type = info->local;
+    dev = (xtkbd_t *)mem_alloc(sizeof(xtkbd_t));
+    memset(dev, 0x00, sizeof(xtkbd_t));
+    dev->type = info->local;
 
     /* See how many diskette drives we have. */
     for (i = 0; i < FDD_NUM; i++) {
@@ -607,90 +625,89 @@ kbd_init(const device_t *info)
 		fdd_count++;
     }
 
-    if (kbd->type <= KBC_XT86) {
-
+    if (dev->type <= KBC_XT86) {
 	/*
 	 * DIP switch readout: bit set = OFF, clear = ON.
 	 *
 	 * Switches 7, 8 - floppy drives.
 	 */
 	if (fdd_count == 0)
-		kbd->pd = 0x00;
+		dev->pd = 0x00;
 	else
-		kbd->pd = ((fdd_count - 1) << 6);
+		dev->pd = ((fdd_count - 1) << 6);
 
 	/* Switches 5, 6 - video. */
 	i = video_type();
 	if (i == VID_TYPE_MDA)
-		kbd->pd |= 0x30;	/* MDA/Herc */
+		dev->pd |= 0x30;	/* MDA/Herc */
 #if 0
 	else if (i == VID_TYPE_CGA40)
-		kbd->pd |= 0x10;	/* CGA, 40 columns */
+		dev->pd |= 0x10;	/* CGA, 40 columns */
 #endif
 	else if (i == VID_TYPE_CGA)
-		kbd->pd |= 0x20;	/* CGA, 80 colums */
+		dev->pd |= 0x20;	/* CGA, 80 colums */
 	else if (i == VID_TYPE_SPEC)
-		kbd->pd |= 0x00;	/* EGA/VGA */
+		dev->pd |= 0x00;	/* EGA/VGA */
 
 	/* Switches 3, 4 - memory size. */
-	if (kbd->type == KBC_XT86) {
+	if (dev->type == KBC_XT86) {
 		/* PC/XT (1986) and up. */
 		switch (mem_size) {
 			case 256:
-				kbd->pd |= 0x00;
+				dev->pd |= 0x00;
 				break;
 
 			case 512:
-				kbd->pd |= 0x04;
+				dev->pd |= 0x04;
 				break;
 
 			case 576:
-				kbd->pd |= 0x08;
+				dev->pd |= 0x08;
 				break;
 
 			case 640:
 			default:
-				kbd->pd |= 0x0c;
+				dev->pd |= 0x0c;
 				break;
 		}
-	} else if (kbd->type >= KBC_PC82) {
+	} else if (dev->type >= KBC_PC82) {
 		/* PC (1982) and PC/XT (1982.) */
 		switch (mem_size) {
 			case 64:
-				kbd->pd |= 0x00;
+				dev->pd |= 0x00;
 				break;
 
 			case 128:
-				kbd->pd |= 0x04;
+				dev->pd |= 0x04;
 				break;
 
 			case 192:
-				kbd->pd |= 0x08;
+				dev->pd |= 0x08;
 				break;
 			case 256:
 			default:
 
-				kbd->pd |= 0x0c;
+				dev->pd |= 0x0c;
 				break;
 		}
-	} else {
+	} else if (dev->type >= KBC_PC) {
 		/* PC (1981.) */
 		switch (mem_size) {
 			case 16:
-				kbd->pd |= 0x00;
+				dev->pd |= 0x00;
 				break;
 
 			case 32:
-				kbd->pd |= 0x04;
+				dev->pd |= 0x04;
 				break;
 
 			case 48:
-				kbd->pd |= 0x08;
+				dev->pd |= 0x08;
 				break;
 
 			case 64:
 			default:
-				kbd->pd |= 0x0c;
+				dev->pd |= 0x0c;
 				break;
 		}
 	}
@@ -699,27 +716,27 @@ kbd_init(const device_t *info)
 
 	/* Switch 1 - diskette drives available? */
 	if (fdd_count > 0)
-		kbd->pd |= 0x01;
+		dev->pd |= 0x01;
     }
 
     keyboard_send = kbd_adddata_ex;
-    kbd_reset(kbd);
+    kbd_reset(dev);
 
     io_sethandler(0x0060, 4,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, kbd);
+		  kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
 
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
+    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
 
     keyboard_set_table(scancode_xt);
 
-    return(kbd);
+    return(dev);
 }
 
 
 static void
 kbd_close(void *priv)
 {
-    xtkbd_t *kbd = (xtkbd_t *)priv;
+    xtkbd_t *dev = (xtkbd_t *)priv;
 
     /* Stop the timer. */
     keyboard_delay = 0;
@@ -730,9 +747,9 @@ kbd_close(void *priv)
     keyboard_send = NULL;
 
     io_removehandler(0x0060, 4,
-		     kbd_read, NULL, NULL, kbd_write, NULL, NULL, kbd);
+		     kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
 
-    free(kbd);
+    free(dev);
 }
 
 
@@ -740,6 +757,7 @@ const device_t keyboard_pc_device = {
     "IBM PC (1981) Keyboard",
     0,
     KBC_PC,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -749,6 +767,7 @@ const device_t keyboard_pc82_device = {
     "IBM PC (1982) Keyboard",
     0,
     KBC_PC82,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -758,6 +777,7 @@ const device_t keyboard_xt_device = {
     "IBM PC/XT (1982) Keyboard",
     0,
     KBC_XT,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -767,6 +787,17 @@ const device_t keyboard_xt86_device = {
     "IBM PC/XT (1986) Keyboard",
     0,
     KBC_XT86,
+    NULL,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t keyboard_generic_device = {
+    "Generic XT Keyboard",
+    0,
+    KBC_GENERIC,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
@@ -776,16 +807,28 @@ const device_t keyboard_tandy_device = {
     "Tandy 1000 Keyboard",
     0,
     KBC_TANDY,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
 };
 
-const device_t keyboard_xt_lxt3_device = {
+const device_t keyboard_laserxt3_device = {
     "VTech Laser XT3 Keyboard",
     0,
     KBC_LASER,
+    NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
     NULL
 };
+
+
+void
+keyboard_xt_set_funcs(void *arg, uint8_t (*func)(void *), void *priv)
+{
+    xtkbd_t *dev = (xtkbd_t *)arg;
+
+    dev->read_func = func;
+    dev->func_priv = priv;
+}

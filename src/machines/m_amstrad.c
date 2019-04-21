@@ -6,41 +6,24 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Emulation of the Amstrad series of PC's: PC1512, PC1640 and
- *		PC200, including their keyboard, mouse and video devices, as
- *		well as the PC2086 and PC3086 systems.
+ *		Emulation of the Amstrad series of PC's: PC1512, PPC512,
+ *		PC1640 and PC200, including their keyboard/mouse devices,
+ *		as well as the PC2086 and PC3086 systems.
  *
- * PC1512:	The PC1512 extends CGA with a bit-planar 640x200x16 mode.
- *		Most CRTC registers are fixed.
+ * **NOTE**	The PC200 still has the weirdness that if Television mode
+ *		is selected, it will ignore that, and select CGA mode in
+ *		80 columns. To be fixed...
+ *		Also, the DDM bits stuff needs to be verified.
  *
- *		The Technical Reference Manual lists the video waitstate
- *		time as between 12 and 46 cycles. We currently always use
- *		the lower number.
- *
- * PC1640:	Mostly standard EGA, but with CGA & Hercules emulation.
- *
- * PC200:	CGA with some NMI stuff. But we don't need that as it's only
- *		used for TV and LCD displays, and we're emulating a CRT.
- *
- * TODO:	This module is not complete yet:
- *  PC1512:	The BIOS assumes 512K RAM, because I cannot figure out how to
- *		read the status of the LK4 jumper on the mainboard, which is
- *		somehow linked to the bus gate array on the NDMACS line...
- *  PC1612:	EGA mode does not seem to work in the PC1640; it works fine
- *		in alpha mode, but in highres ("ECD350") mode, it displays
- *		some semi-random junk. Video-memory pointer maybe?
- *  BIOSES:	I need to re-do the bios.txt format so we can load non-BIOS
- *		ROM files for a given machine, such as font roms here..
- *
- * Version:	@(#)m_amstrad.c	1.0.23	2019/03/07
+ * Version:	@(#)m_amstrad.c	1.0.25	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
+ *              John Elliott, <jce@seasip.info>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *              Copyright 2017-2019 Fred N. van Kempen.
+ *              Copyright 2016-2018 Miran Grca.
+ *              Copyright 2017-2018 John Elliott.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,7 +37,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the:
- *
+ 
  *   Free Software Foundation, Inc.
  *   59 Temple Place - Suite 330
  *   Boston, MA 02111-1307
@@ -73,6 +56,7 @@
 #include "../rom.h"
 #include "../timer.h"
 #include "../device.h"
+#include "../machines/machine.h"
 #include "../nvr.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
@@ -86,11 +70,20 @@
 #include "../devices/sound/sound.h"
 #include "../devices/sound/snd_speaker.h"
 #include "../devices/video/video.h"
-#include "../devices/video/vid_cga.h"
-#include "../devices/video/vid_ega.h"
 #include "../plat.h"
 #include "machine.h"
+#include "m_amstrad.h"
 
+
+/* Values for LK1-3 jumpers (BIOS language.) */
+#define LK13_EN		0		/* English */
+#define LK13_DE		1		/* German */
+#define LK13_FR		2		/* French */
+#define LK13_ES		3		/* Spanish */
+#define LK13_DK		4		/* Danish */
+#define LK13_SE		5		/* Swedish */
+#define LK13_IT		6		/* Italian */
+#define LK13_DIAG	7		/* Diagnostic Mode */
 
 #define STAT_PARITY     0x80
 #define STAT_RTIMEOUT   0x40
@@ -103,936 +96,49 @@
 
 
 typedef struct {
-    rom_t	bios_rom;		/* 1640 */
-    cga_t	cga;			/* 1640/200 */
-    ega_t	ega;			/* 1640 */
-    uint8_t	crtc[32];
-    int		crtcreg;
-    int		cga_enabled;		/* 1640 */
-    int		fontbase;		/* 1512/200 */
-    uint8_t	cgacol,
-		cgamode,
-		stat;
-    uint8_t	plane_write,		/* 1512/200 */
-		plane_read,		/* 1512/200 */
-		border;			/* 1512/200 */
-    int		linepos,
-		displine;
-    int		sc, vc;
-    int		cgadispon;
-    int		con, coff,
-		cursoron,
-		cgablink;
-    int64_t	vsynctime;
-    int		vadj;
-    uint16_t	ma, maback;
-    int		dispon;
-    int		blink;
-    int64_t	dispontime,		/* 1512/1640 */
-		dispofftime;		/* 1512/1640 */
-    int64_t	vidtime;		/* 1512/1640 */
-    int		firstline,
-		lastline;
-    uint8_t	*vram;
-    uint8_t	fontdat[1024][8];	/* 1512/200 */
-} amsvid_t;
-
-typedef struct {
     /* Machine stuff. */
     int8_t	type;
     uint8_t	dead;
     uint8_t	stat1,
 		stat2;
 
+    /* Configuration options. */
+    int		flopswap;
+    int		codepage;
+    int		language;
+    int		vidtype;
+    int		disptype;
+
     /* Keyboard stuff. */
     int8_t	wantirq;
     uint8_t	key_waiting;
-    uint8_t	pa;
-    uint8_t	pb;
+    uint8_t	pa,
+		pb;
+
+    /* Video stuff. */
+    void	*vid;
 
     /* Mouse stuff. */
     uint8_t	mousex,
 		mousey;
     int		oldb;
-
-    /* Video stuff. */
-    amsvid_t	*vid;
 } amstrad_t;
 
+
+static const video_timings_t pvga1a_timing = {VID_ISA,6,8,16,6,8,16};
+static const video_timings_t wd90c11_timing = {VID_ISA,3,3,6,5,5,10};
 
 static uint8_t	key_queue[16];
 static int	key_queue_start = 0,
 		key_queue_end = 0;
-static const uint8_t	crtc_mask[32] = {
-    0xff, 0xff, 0xff, 0xff, 0x7f, 0x1f, 0x7f, 0x7f,
-    0xf3, 0x1f, 0x7f, 0x1f, 0x3f, 0xff, 0x3f, 0xff,
-    0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-static const video_timings_t pc1512_timing = {VID_BUS,0,0,0,0,0,0};
-static const video_timings_t pc1640_timing = {VID_ISA,8,16,32,8,16,32};
-static const video_timings_t pc200_timing = {VID_ISA,8,16,32,8,16,32};
-static const video_timings_t pvga1a_timing = {VID_ISA,6,8,16,6,8,16};
-static const video_timings_t wd90c11_timing = {VID_ISA,3,3,6,5,5,10};
 
 
 static void
-recalc_timings_1512(amsvid_t *vid)
-{
-    double _dispontime, _dispofftime, disptime;
-
-    disptime = 128; /*Fixed on PC1512*/
-    _dispontime = 80;
-    _dispofftime = disptime - _dispontime;
-    _dispontime  *= CGACONST;
-    _dispofftime *= CGACONST;
-    vid->dispontime  = (int64_t)(_dispontime * (1 << TIMER_SHIFT));
-    vid->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
-}
-
-
-static void
-vid_out_1512(uint16_t addr, uint8_t val, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-    uint8_t old;
-
-    switch (addr) {
-	case 0x03d4:
-		vid->crtcreg = val & 31;
-		return;
-
-	case 0x03d5:
-		old = vid->crtc[vid->crtcreg];
-		vid->crtc[vid->crtcreg] = val & crtc_mask[vid->crtcreg];
-		if (old != val) {
-			if (vid->crtcreg < 0xe || vid->crtcreg > 0x10) {
-				fullchange = changeframecount;
-				recalc_timings_1512(vid);
-			}
-		}
-		return;
-
-	case 0x03d8:
-		if ((val & 0x12) == 0x12 && (vid->cgamode & 0x12) != 0x12) {
-			vid->plane_write = 0xf;
-			vid->plane_read  = 0;
-		}
-		vid->cgamode = val;
-		return;
-
-	case 0x03d9:
-		vid->cgacol = val;
-		return;
-
-	case 0x03dd:
-		vid->plane_write = val;
-		return;
-
-	case 0x03de:
-		vid->plane_read = val & 3;
-		return;
-
-	case 0x03df:
-		vid->border = val;
-		return;
-    }
-}
-
-
-static uint8_t
-vid_in_1512(uint16_t addr, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-    uint8_t ret = 0xff;
-
-    switch (addr) {
-	case 0x03d4:
-		ret = vid->crtcreg;
-
-	case 0x03d5:
-		ret = vid->crtc[vid->crtcreg];
-
-	case 0x03da:
-		ret = vid->stat;
-    }
-
-    return(ret);
-}
-
-
-static void
-vid_write_1512(uint32_t addr, uint8_t val, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    cycles -= 12;
-    addr &= 0x3fff;
-
-    if ((vid->cgamode & 0x12) == 0x12) {
-	if (vid->plane_write & 0x01)
-		vid->vram[addr] = val;
-	if (vid->plane_write & 0x02)
-		vid->vram[addr | 0x4000] = val;
-	if (vid->plane_write & 0x04)
-		vid->vram[addr | 0x8000] = val;
-	if (vid->plane_write & 0x08)
-		vid->vram[addr | 0xc000] = val;
-    } else
-	vid->vram[addr] = val;
-}
-
-
-static uint8_t
-vid_read_1512(uint32_t addr, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    cycles -= 12;
-    addr &= 0x3fff;
-
-    if ((vid->cgamode & 0x12) == 0x12)
-	return(vid->vram[addr | (vid->plane_read << 14)]);
-
-    return(vid->vram[addr]);
-}
-
-
-static void
-vid_poll_1512(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-    uint16_t ca = (vid->crtc[15] | (vid->crtc[14] << 8)) & 0x3fff;
-    int drawcursor;
-    int x, c;
-    uint8_t chr, attr;
-    uint16_t dat, dat2, dat3, dat4;
-    int cols[4];
-    int col;
-    int oldsc;
-
-    if (! vid->linepos) {
-	vid->vidtime += vid->dispofftime;
-	vid->stat |= 1;
-	vid->linepos = 1;
-	oldsc = vid->sc;
-	if (vid->dispon) {
-		if (vid->displine < vid->firstline) {
-			vid->firstline = vid->displine;
-			video_blit_wait_buffer();
-		}
-		vid->lastline = vid->displine;
-
-		for (c = 0; c < 8; c++) {
-			if ((vid->cgamode & 0x12) == 0x12) {
-				screen->line[vid->displine][c].pal = (vid->border & 15) + 16;
-				if (vid->cgamode & 1)
-					screen->line[vid->displine][c + (vid->crtc[1] << 3) + 8].pal = 0;
-				  else
-					screen->line[vid->displine][c + (vid->crtc[1] << 4) + 8].pal = 0;
-			} else {
-				screen->line[vid->displine][c].pal = (vid->cgacol & 15) + 16;
-				if (vid->cgamode & 1)
-					screen->line[vid->displine][c + (vid->crtc[1] << 3) + 8].pal = (vid->cgacol & 15) + 16;
-				  else
-					screen->line[vid->displine][c + (vid->crtc[1] << 4) + 8].pal = (vid->cgacol & 15) + 16;
-			}
-		}
-		if (vid->cgamode & 1) {
-			for (x = 0; x < 80; x++) {
-				chr  = vid->vram[ ((vid->ma << 1) & 0x3fff)];
-				attr = vid->vram[(((vid->ma << 1) + 1) & 0x3fff)];
-				drawcursor = ((vid->ma == ca) && vid->con && vid->cursoron);
-				if (vid->cgamode & 0x20) {
-					cols[1] = (attr & 15) + 16;
-					cols[0] = ((attr >> 4) & 7) + 16;
-					if ((vid->blink & 16) && (attr & 0x80) && !drawcursor) 
-						cols[1] = cols[0];
-				} else {
-					cols[1] = (attr & 15) + 16;
-					cols[0] = (attr >> 4) + 16;
-				}
-				if (drawcursor) {
-					for (c = 0; c < 8; c++)
-					    screen->line[vid->displine][(x << 3) + c + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
-				} else {
-					for (c = 0; c < 8; c++)
-					    screen->line[vid->displine][(x << 3) + c + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
-				}
-				vid->ma++;
-			}
-		} else if (! (vid->cgamode & 2)) {
-			for (x = 0; x < 40; x++) {
-				chr = vid->vram[((vid->ma << 1) & 0x3fff)];
-				attr = vid->vram[(((vid->ma << 1) + 1) & 0x3fff)];
-				drawcursor = ((vid->ma == ca) && vid->con && vid->cursoron);
-				if (vid->cgamode & 0x20) {
-					cols[1] = (attr & 15) + 16;
-					cols[0] = ((attr >> 4) & 7) + 16;
-					if ((vid->blink & 16) && (attr & 0x80)) 
-						cols[1] = cols[0];
-				} else {
-					cols[1] = (attr & 15) + 16;
-					cols[0] = (attr >> 4) + 16;
-				}
-				vid->ma++;
-				if (drawcursor) {
-					for (c = 0; c < 8; c++)
-					    screen->line[vid->displine][(x << 4) + (c << 1) + 8].pal = 
-					    	screen->line[vid->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
-				} else {
-					for (c = 0; c < 8; c++)
-					    screen->line[vid->displine][(x << 4) + (c << 1) + 8].pal = 
-					    	screen->line[vid->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[(vid->fontdat[chr + vid->fontbase][vid->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
-				}
-			}
-		} else if (! (vid->cgamode & 16)) {
-			cols[0] = (vid->cgacol & 15) | 16;
-			col = (vid->cgacol & 16) ? 24 : 16;
-			if (vid->cgamode & 4) {
-				cols[1] = col | 3;
-				cols[2] = col | 4;
-				cols[3] = col | 7;
-			} else if (vid->cgacol & 32) {
-				cols[1] = col | 3;
-				cols[2] = col | 5;
-				cols[3] = col | 7;
-			} else {
-				cols[1] = col | 2;
-				cols[2] = col | 4;
-				cols[3] = col | 6;
-			}
-			for (x = 0; x < 40; x++) {
-				dat = (vid->vram[((vid->ma << 1) & 0x1fff) + ((vid->sc & 1) * 0x2000)] << 8) | vid->vram[((vid->ma << 1) & 0x1fff) + ((vid->sc & 1) * 0x2000) + 1];
-				vid->ma++;
-				for (c = 0; c < 8; c++) {
-					screen->line[vid->displine][(x << 4) + (c << 1) + 8].pal =
-						screen->line[vid->displine][(x << 4) + (c << 1) + 1 + 8].pal = cols[dat >> 14];
-					dat <<= 2;
-				}
-			}
-		} else {
-			for (x = 0; x < 40; x++) {
-				ca = ((vid->ma << 1) & 0x1fff) + ((vid->sc & 1) * 0x2000);
-				dat  = (vid->vram[ca] << 8) | vid->vram[ca + 1];
-				dat2 = (vid->vram[ca + 0x4000] << 8) | vid->vram[ca + 0x4001];
-				dat3 = (vid->vram[ca + 0x8000] << 8) | vid->vram[ca + 0x8001];
-				dat4 = (vid->vram[ca + 0xc000] << 8) | vid->vram[ca + 0xc001];
-
-				vid->ma++;
-				for (c = 0; c < 16; c++) {
-					screen->line[vid->displine][(x << 4) + c + 8].pal = (((dat >> 15) | ((dat2 >> 15) << 1) | ((dat3 >> 15) << 2) | ((dat4 >> 15) << 3)) & (vid->cgacol & 15)) + 16;
-					dat  <<= 1;
-					dat2 <<= 1;
-					dat3 <<= 1;
-					dat4 <<= 1;
-				}
-			}
-		}
-	} else {
-		cols[0] = ((vid->cgamode & 0x12) == 0x12) ? 0 : (vid->cgacol & 15) + 16;
-		if (vid->cgamode & 1)
-			cga_hline(screen, 0, vid->displine, (vid->crtc[1] << 3) + 16, cols[0]);
-		else
-			cga_hline(screen, 0, vid->displine, (vid->crtc[1] << 4) + 16, cols[0]);
-	}
-
-	vid->sc = oldsc;
-	if (vid->vsynctime)
-	   vid->stat |= 8;
-	vid->displine++;
-	if (vid->displine >= 360) 
-		vid->displine = 0;
-    } else {
-	vid->vidtime += vid->dispontime;
-	if ((vid->lastline - vid->firstline) == 199) 
-		vid->dispon = 0; /*Amstrad PC1512 always displays 200 lines, regardless of CRTC settings*/
-	if (vid->dispon) 
-		vid->stat &= ~1;
-	vid->linepos = 0;
-	if (vid->vsynctime) {
-		vid->vsynctime--;
-		if (! vid->vsynctime)
-		   vid->stat &= ~8;
-	}
-	if (vid->sc == (vid->crtc[11] & 31)) { 
-		vid->con = 0; 
-		vid->coff = 1; 
-	}
-	if (vid->vadj) {
-		vid->sc++;
-		vid->sc &= 31;
-		vid->ma = vid->maback;
-		vid->vadj--;
-		if (! vid->vadj) {
-			vid->dispon = 1;
-			vid->ma = vid->maback = (vid->crtc[13] | (vid->crtc[12] << 8)) & 0x3fff;
-			vid->sc = 0;
-		}
-	} else if (vid->sc == vid->crtc[9]) {
-		vid->maback = vid->ma;
-		vid->sc = 0;
-		vid->vc++;
-		vid->vc &= 127;
-
-		if (vid->displine == 32) {
-			vid->vc = 0;
-			vid->vadj = 6;
-			if ((vid->crtc[10] & 0x60) == 0x20)
-				vid->cursoron = 0;
-			  else
-				vid->cursoron = vid->blink & 16;
-		}
-
-		if (vid->displine >= 262) {
-			vid->dispon = 0;
-			vid->displine = 0;
-			vid->vsynctime = 46;
-
-			if (vid->cgamode&1)
-				x = (vid->crtc[1] << 3) + 16;
-			  else
-				x = (vid->crtc[1] << 4) + 16;
-			vid->lastline++;
-
-			if ((x != xsize) || ((vid->lastline - vid->firstline) != ysize) || video_force_resize_get()) {
-				xsize = x;
-				ysize = vid->lastline - vid->firstline;
-				if (xsize < 64) xsize = 656;
-				if (ysize < 32) ysize = 200;
-				set_screen_size(xsize, (ysize << 1) + 16);
-
-				if (video_force_resize_get())
-					video_force_resize_set(0);
-			}
-
-			video_blit_start(1, 0, vid->firstline - 4, 0, (vid->lastline - vid->firstline) + 8, xsize, (vid->lastline - vid->firstline) + 8);
-
-			video_res_x = xsize - 16;
-			video_res_y = ysize;
-			if (vid->cgamode & 1) {
-			video_res_x /= 8;
-				video_res_y /= vid->crtc[9] + 1;
-				video_bpp = 0;
-			} else if (! (vid->cgamode & 2)) {
-				video_res_x /= 16;
-				video_res_y /= vid->crtc[9] + 1;
-				video_bpp = 0;
-			} else if (! (vid->cgamode & 16)) {
-				video_res_x /= 2;
-				video_bpp = 2;
-			} else {
-				video_bpp = 4;
-			}
-
-			vid->firstline = 1000;
-			vid->lastline = 0;
-			vid->blink++;
-		}
-	} else {
-		vid->sc++;
-		vid->sc &= 31;
-		vid->ma = vid->maback;
-	}
-	if (vid->sc == (vid->crtc[10] & 31))
-		vid->con = 1;
-    }
-}
-
-
-static void
-vid_close_1512(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    free(vid->vram);
-    free(vid);
-}
-
-
-static void
-vid_speed_change_1512(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    recalc_timings_1512(vid);
-}
-
-
-static void
-vid_init_1512(amstrad_t *ams, const wchar_t *fn, int num)
-{
-    amsvid_t *vid;
-    FILE *fp;
-    int c, d;
-
-    /* Allocate a video controller block. */
-    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
-    memset(vid, 0x00, sizeof(amsvid_t));
-
-    /* Load the PC1512 CGA Character Set ROM. */
-    fp = plat_fopen(rom_path(fn), L"rb");
-    if (fp != NULL) {
-	if (num == FONT_CGA_THICK) {
-		/* Use the second ("thick") font in the ROM. */
-		(void)fseek(fp, 2048, SEEK_SET);
-	}
-
-	/* The ROM has 4 fonts. */
-	for (d = 0; d < 4; d++) {
-		/* 8x8 CGA. */
-		for (c = 0; c < 256; c++)
-			fread(&vid->fontdat[256 * d + c], 1, 8, fp);
-	}
-
-	(void)fclose(fp);
-    } else {
-	ERRLOG("AMSTRAD: cannot load fonts from '%ls'\n", fn);
-	return;
-    }
-
-    /* Add the device to the system. */
-    device_add_ex(&m_amstrad_1512_device, vid);
-
-    vid->fontbase = (device_get_config_int("codepage") & 3) * 256;
-
-    vid->vram = (uint8_t *)mem_alloc(0x10000);
-    vid->cgacol = 7;
-    vid->cgamode = 0x12;
-
-    timer_add(vid_poll_1512, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
-    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
-		vid_read_1512, NULL, NULL, vid_write_1512, NULL, NULL,
-		NULL, 0, vid);
-    io_sethandler(0x03d0, 16,
-		  vid_in_1512, NULL, NULL, vid_out_1512, NULL, NULL, vid);
-
-    overscan_x = overscan_y = 16;
-
-    video_palette_rebuild();
-
-    video_inform(VID_TYPE_CGA, &pc1512_timing);
-
-    ams->vid = vid;
-}
-
-
-static const device_config_t pc1512_config[] = {
-    {
-	"codepage", "Hardware font", CONFIG_SELECTION, "", 3,
-	{
-		{
-			"US English", 3
-		},
-		// FIXME: what is 2 ??
-		{
-			"Danish", 1
-		},
-		{
-			"Greek", 0
-		},
-		{
-			""
-		}
-	}
-    },
-    {
-	"", "", -1
-    }
-};
-
-
-const device_t m_amstrad_1512_device = {
-    "Amstrad PC1512",
-    0, 0,
-    NULL, vid_close_1512, NULL,
-    NULL,
-    vid_speed_change_1512,
-    NULL,
-    &pc1512_timing,
-    pc1512_config
-};
-
-
-static void
-recalc_timings_1640(amsvid_t *vid)
-{
-    cga_recalctimings(&vid->cga);
-    ega_recalctimings(&vid->ega);
-
-    if (vid->cga_enabled) {
-	overscan_x = overscan_y = 16;
-
-	vid->dispontime  = vid->cga.dispontime;
-	vid->dispofftime = vid->cga.dispofftime;
-    } else {
-	overscan_x = 16; overscan_y = 28;
-
-	vid->dispontime  = vid->ega.dispontime;
-	vid->dispofftime = vid->ega.dispofftime;
-    }
-}
-
-
-static void
-vid_out_1640(uint16_t addr, uint8_t val, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    switch (addr) {
-	case 0x03db:
-		vid->cga_enabled = val & 0x40;
-		if (vid->cga_enabled) {
-			mem_map_enable(&vid->cga.mapping);
-			mem_map_disable(&vid->ega.mapping);
-			video_inform(VID_TYPE_CGA, &pc1640_timing);
-		} else {
-			mem_map_disable(&vid->cga.mapping);
-			switch (vid->ega.gdcreg[6] & 0xc) {
-				case 0x0: /*128k at A0000*/
-					mem_map_set_addr(&vid->ega.mapping,
-							 0xa0000, 0x20000);
-					break;
-
-				case 0x4: /*64k at A0000*/
-					mem_map_set_addr(&vid->ega.mapping,
-							 0xa0000, 0x10000);
-					break;
-
-				case 0x8: /*32k at B0000*/
-					mem_map_set_addr(&vid->ega.mapping,
-							 0xb0000, 0x08000);
-					break;
-
-				case 0xC: /*32k at B8000*/
-					mem_map_set_addr(&vid->ega.mapping,
-							 0xb8000, 0x08000);
-					break;
-			}
-			video_inform(VID_TYPE_SPEC, &pc1640_timing);
-		}
-		return;
-    }
-
-    if (vid->cga_enabled)
-	cga_out(addr, val, &vid->cga);
-      else
-	ega_out(addr, val, &vid->ega);
-}
-
-
-static uint8_t
-vid_in_1640(uint16_t addr, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-#if 0
-    switch (addr) {
-    }
-#endif
-
-    if (vid->cga_enabled)
-	return(cga_in(addr, &vid->cga));
-      else
-	return(ega_in(addr, &vid->ega));
-}
-
-
-static void
-vid_poll_1640(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    if (vid->cga_enabled) {
-	overscan_x = overscan_y = 16;
-
-	vid->cga.vidtime = vid->vidtime;
-	cga_poll(&vid->cga);
-	vid->vidtime = vid->cga.vidtime;
-    } else {
-	overscan_x = 16; overscan_y = 28;
-
-	vid->ega.vidtime = vid->vidtime;
-	ega_poll(&vid->ega);
-	vid->vidtime = vid->ega.vidtime;
-    }
-}
-
-
-static void
-vid_init_1640(amstrad_t *ams, wchar_t *fn, int sz)
-{
-    amsvid_t *vid;
-
-    /* Allocate a video controller block. */
-    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
-    memset(vid, 0x00, sizeof(amsvid_t));
-
-    /* Load the BIOS. */
-    rom_init(&vid->bios_rom, fn, 0xc0000, sz, sz - 1, 0, 0);
-
-    ega_init(&vid->ega, 9, 0);
-    vid->cga.vram = vid->ega.vram;
-    vid->cga_enabled = 1;
-    cga_init(&vid->cga);
-
-    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
-		cga_read,NULL,NULL, cga_write,NULL,NULL, NULL, 0, &vid->cga);
-    mem_map_add(&vid->ega.mapping, 0,       0,
-		ega_read,NULL,NULL, ega_write,NULL,NULL, NULL, 0, &vid->ega);
-    io_sethandler(0x03a0, 64,
-		  vid_in_1640, NULL, NULL, vid_out_1640, NULL, NULL, vid);
-
-    timer_add(vid_poll_1640, &vid->vidtime, TIMER_ALWAYS_ENABLED, vid);
-
-    overscan_x = overscan_y = 16;
-
-    video_inform(VID_TYPE_CGA, &pc1640_timing);
-
-    ams->vid = vid;
-}
-
-
-static void
-vid_close_1640(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    free(vid->ega.vram);
-    free(vid);
-}
-
-
-static void
-vid_speed_changed_1640(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    recalc_timings_1640(vid);
-}
-
-
-static const device_t vid_1640_device = {
-    "Amstrad PC1640",
-    0, 0,
-    NULL, vid_close_1640, NULL,
-    NULL,
-    vid_speed_changed_1640,
-    NULL,
-    &pc1640_timing,
-    NULL
-};
-
-
-static void
-vid_out_200(uint16_t addr, uint8_t val, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-    cga_t *cga = &vid->cga;
-    uint8_t old;
-
-    switch (addr) {
-	case 0x03d5:
-		if (!(vid->plane_read & 0x40) && cga->crtcreg <= 11) {
-			if (vid->plane_read & 0x80) 
-				nmi = 1;
-
-			vid->plane_write = 0x20 | (cga->crtcreg & 0x1f);
-			vid->border = val;
-			return;
-		}
-		old = cga->crtc[cga->crtcreg];
-		cga->crtc[cga->crtcreg] = val & crtc_mask[cga->crtcreg];
-		if (old != val) {
-			if (cga->crtcreg < 0xe || cga->crtcreg > 0x10) {
-				fullchange = changeframecount;
-				cga_recalctimings(cga);
-			}
-		}
-		return;
-
-	case 0x03d8:
-		old = cga->cgamode;
-		cga->cgamode = val;
-		if ((cga->cgamode ^ old) & 3)
-		   cga_recalctimings(cga);
-		vid->plane_write |= 0x80;
-		if (vid->plane_read & 0x80)
-			nmi = 1;
-		return;
-
-	case 0x03de:
-		vid->plane_read = val;
-		vid->plane_write = 0x1f;
-		if (val & 0x80) 
-			vid->plane_write |= 0x40;
-		return;
-    }
-
-    cga_out(addr, val, cga);
-}
-
-
-static uint8_t
-vid_in_200(uint16_t addr, void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-    cga_t *cga = &vid->cga;
-    uint8_t ret;
-
-    switch (addr) {
-	case 0x03d8:
-		return(cga->cgamode);
-
-	case 0x03dd:
-		ret = vid->plane_write;
-		vid->plane_write &= 0x1f;
-		nmi = 0;
-		return(ret);
-
-	case 0x03de:
-		return((vid->plane_read & 0xc7) | 0x10); /*External CGA*/
-
-	case 0x03df:
-		return(vid->border);
-    }
-
-    return(cga_in(addr, cga));
-}
-
-
-static void
-vid_init_200(amstrad_t *dev, const wchar_t *fn)
-{
-    amsvid_t *vid;
-    cga_t *cga;
-    FILE *fp;
-    int c, d;
-
-    /* Allocate a video controller block. */
-    vid = (amsvid_t *)mem_alloc(sizeof(amsvid_t));
-    memset(vid, 0x00, sizeof(amsvid_t));
-
-    /* Add the device to the system. */
-    device_add_ex(&m_amstrad_200_device, vid);
-
-    vid->fontbase = (device_get_config_int("codepage") & 3) * 256;
-
-    /* Load the PC200 CGA Character Set ROM. */
-    fp = plat_fopen(rom_path(fn), L"rb");
-    if (fp != NULL) {
-	/* The ROM has 4 fonts. */
-	for (d = 0; d < 4; d++) {
-		/* 8x14 MDA in 8x16 cell. */
-		for (c = 0; c < 256; c++)
-			fread(&fontdatm[256 * d + c], 1, 16, fp);
-
-		/* 8x8 CGA in 8x16 cell. */
-		for (c = 0; c < 256; c++) {
-			fread(&fontdat[256 * d + c], 1, 8, fp);
-			fseek(fp, 8, SEEK_CUR);
-		}
-	}
-
-	(void)fclose(fp);
-    } else {
-	ERRLOG("AMSTRAD: cannot load fonts from '%ls'\n", fn);
-	return;
-    }
-
-    cga = &vid->cga;
-    cga->vram = (uint8_t *)mem_alloc(0x4000);
-    cga_init(cga);
-    vid->cga.fontbase = vid->fontbase;
-
-    mem_map_add(&vid->cga.mapping, 0xb8000, 0x08000,
-		cga_read,NULL,NULL, cga_write,NULL,NULL, NULL, 0, cga);
-    io_sethandler(0x03d0, 16,
-		  vid_in_200, NULL, NULL, vid_out_200, NULL, NULL, vid);
-
-    timer_add(cga_poll, &cga->vidtime, TIMER_ALWAYS_ENABLED, cga);
-
-    overscan_x = overscan_y = 16;
-
-    video_palette_rebuild();
-
-    video_inform(VID_TYPE_CGA, &pc200_timing);
-
-    dev->vid = vid;
-}
-
-
-static void
-vid_close_200(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    free(vid->cga.vram);
-
-    free(vid);
-}
-
-
-static void
-vid_speed_changed_200(void *priv)
-{
-    amsvid_t *vid = (amsvid_t *)priv;
-
-    cga_recalctimings(&vid->cga);
-}
-
-
-/*
- * TODO: Should have options here for:
- *
- *	> Video emulation (CGA / MDA)
- *	> Display port (TTL or RF)
- */
-static const device_config_t pc200_config[] = {
-    {
-	"codepage", "Hardware font", CONFIG_SELECTION, "", 3,
-	{
-		{
-			"US English", 3
-		},
-		{
-			"Portugese", 2
-		},
-		{
-			"Norwegian", 1
-		},
-		{
-			"Greek", 0
-		},
-		{
-			""
-		}
-	}
-    },
-    {
-	"", "", -1
-    }
-};
-
-
-const device_t m_amstrad_200_device = {
-    "Amstrad PC200",
-    0, 0,
-    NULL, vid_close_200, NULL,
-    NULL,
-    vid_speed_changed_200,
-    NULL,
-    &pc200_timing,
-    pc200_config
-};
-
-
-static void
-mse_write(uint16_t addr, uint8_t val, void *priv)
+mse_write(uint16_t port, uint8_t val, void *priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
-    if (addr == 0x0078)
+    if (port == 0x0078)
 	dev->mousex = 0;
       else
 	dev->mousey = 0;
@@ -1040,14 +146,20 @@ mse_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-mse_read(uint16_t addr, void *priv)
+mse_read(uint16_t port, void *priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
+    uint8_t ret;
 
-    if (addr == 0x0078)
-	return(dev->mousex);
+    if (port == 0x0078) {
+	ret = dev->mousex;
+	dev->mousex = 0;
+    } else {
+	ret = dev->mousey;
+	dev->mousey = 0;
+    }
 
-    return(dev->mousey);
+    return(ret);
 }
 
 
@@ -1061,10 +173,11 @@ mse_poll(int x, int y, int z, int b, void *priv)
 
     if ((b & 1) && !(dev->oldb & 1))
 	keyboard_send(0x7e);
-    if ((b & 2) && !(dev->oldb & 2))
-	keyboard_send(0x7d);
     if (!(b & 1) && (dev->oldb & 1))
 	keyboard_send(0xfe);
+
+    if ((b & 2) && !(dev->oldb & 2))
+	keyboard_send(0x7d);
     if (!(b & 2) && (dev->oldb & 2))
 	keyboard_send(0xfd);
 
@@ -1078,7 +191,6 @@ static void
 kbd_adddata(uint16_t val)
 {
     key_queue[key_queue_end] = (uint8_t)(val & 0xff);
-    DBGLOG(1, "AMSkb: %02X added to key queue at %i\n", val, key_queue_end);
     key_queue_end = (key_queue_end + 1) & 0x0f;
 }
 
@@ -1095,7 +207,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
-    DBGLOG(2, "AMSkb: write %04X %02X %02X\n", port, val, dev->pb);
+    DBGLOG(2, "AMSkb: write(%04x,%02x) pb=%02x\n", port, val, dev->pb);
 
     switch (port) {
 	case 0x61:
@@ -1113,7 +225,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		 *
 		 * This register is controlled by BIOS and/or ROS.
 		 */
-		DBGLOG(1, "AMSkb: write PB %02x (%02x)\n", val, dev->pb);
+		DBGLOG(1, "AMSkb: write PB=%02x (%02x)\n", val, dev->pb);
 		if (!(dev->pb & 0x40) && (val & 0x40)) { /*Reset keyboard*/
 			DEBUG("AMSkb: reset keyboard\n");
 			kbd_adddata(0xaa);
@@ -1132,7 +244,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		pit_set_gate(&pit, 2, val & 0x01);
 
 		if (val & 0x80) {
-			/* Keyboard enabled, so enable PA reading. */
+			/* Keyboard disabled, so enable PA reading. */
 			dev->pa = 0x00;
 		}
 		break;
@@ -1141,10 +253,20 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case 0x64:
+		/*
+		 * ROS writes to this port the bits that can be
+		 * read back at the KBC controller, port C, the
+		 * the DDM bits at 7:6.
+		 */
 		dev->stat1 = val;
 		break;
 
 	case 0x65:
+		/*
+		 * ROS writes to this register the bits that are
+		 * normally read out at the printer status port,
+		 * indicating memory size, DDM and so on.
+		 */
 		dev->stat2 = val;
 		break;
 
@@ -1179,11 +301,11 @@ kbd_read(uint16_t port, void *priv)
 			 *  1	8087 NDP installed		    (KBD1)
 			 *  0	Always 1			    (KBD0)
 			 *
-			 * DDM00
-			 *    00 unknown, external color?
+			 * DDM10
+			 *    00 External controller
 			 *    01 Color,alpha,40x25, bright white on black.
 			 *    10 Color,alpha,80x25, bright white on black.
-			 *    11 External Monochrome,80x25.
+			 *    11 Monochrome,80x25.
 			 *
 			 * Following a reset, the hardware selects VDU mode
 			 * 2. The ROS then sets the initial VDU state based
@@ -1233,16 +355,16 @@ kbd_read(uint16_t port, void *priv)
 		 * 10010	640K bytes (128K external or fitted on-board).
 		 */
 		if (dev->pb & 0x04)
-			ret = dev->stat2 & 0x0f;
+			ret = (dev->stat2 & 0x0f);
 		  else
-			ret = dev->stat2 >> 4;
+			ret = (dev->stat2 >> 4);
 		ret |= (ppispeakon ? 0x20 : 0);
 		if (nmi)
 			ret |= 0x40;
 		break;
 
 	default:
-		ERRLOG("AMDkb: bad keyboard read %04X\n", port);
+		ERRLOG("AMSkb: bad keyboard read %04X\n", port);
     }
 
     return(ret);
@@ -1256,17 +378,14 @@ kbd_poll(void *priv)
 
     keyboard_delay += (1000 * TIMER_USEC);
 
-    if (dev->wantirq) {
+    if (dev->wantirq) {
 	dev->wantirq = 0;
 	dev->pa = dev->key_waiting;
-	picint(2);
-	DBGLOG(1, "AMSkb: take IRQ\n");
+	picint(1 << 1);
     }
 
     if (key_queue_start != key_queue_end && !dev->pa) {
 	dev->key_waiting = key_queue[key_queue_start];
-	DBGLOG(1, "AMSkb: reading %02X from the key queue at %i\n",
-				dev->key_waiting, key_queue_start);
 	key_queue_start = (key_queue_start + 1) & 0x0f;
 	dev->wantirq = 1;
     }
@@ -1290,10 +409,11 @@ static uint8_t
 ams_read(uint16_t port, void *priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
-    uint8_t ret = 0xff;
+    uint8_t ddm, ret = 0xff;
+    int i;
 
     switch (port) {
-	case 0x0379:	/* printer control, also set LK1-3.
+	case 0x0379:	/* printer status, also set LK1-3.
 			 *   0	English Language.
 			 *   1	German Language.
 			 *   2	French Language.
@@ -1303,22 +423,54 @@ ams_read(uint16_t port, void *priv)
 			 *   6	Italian Language.
 			 *   7	Diagnostic Mode.
 			 */
-		ret = 0x02;	/* ENGLISH. no Diags mode */
+		ret = dev->language;
+		ret ^= 0x07;				/* bits inverted! */
 		break;
 
-	case 0x037a:	/* printer status */
+	case 0x037a:	/* printer control */
+		ret = 0x00;
 		switch(dev->type) {
-			case 0:
-				ret = 0x20;
+			case 0:		/* PC1512 */
+				ret |= 0x20;
 				break;
 
-			case 2:
-				ret = 0x80;
+			case 2:		/* PC200 */
+			case 3:		/* PPC */
+				if (dev->vid != NULL) {
+					/* IDA is enabled. */
+					ddm = m_amstrad_ida_ddm(dev->vid);
+#if 0
+					ret |= ((ddm & 0x01) << 7);  /* DDM0 */
+					ret |= ((ddm & 0x02) << 5);  /* DDM1 */
+#else
+					ret |= ((ddm & 0x03) << 6);  /* DDM */
+#endif
+				} else {
+					/* External controller. */
+					i = video_type();
+					if (i == VID_TYPE_MDA)
+               					ret |= 0xc0;	/* MDA/Herc */
+				  	else
+						ret |= 0x40;	/* CGA */
+				}
+
+#if 0
+				if (dev->type == 3)
+					ret ^= 0xc0;	/* bits inverted! */
+#endif
 				break;
 
 			default:
-				ret = 0x00;
+				break;
 		}
+		break;
+
+	case 0x03de:
+		/*
+		 * This port is only mapped in for the PC200, and
+		 * then only if External Video controller is in use.
+		 */
+		ret = 0x20;
 		break;
 
 	case 0xdead:
@@ -1331,140 +483,614 @@ ams_read(uint16_t port, void *priv)
 
 
 static void
-amstrad_common_init(const machine_t *model, void *arg, int type)
+amstrad_close(void *priv)
+{
+    amstrad_t *dev = (amstrad_t *)priv;
+
+    free(dev);
+}
+
+
+static void *
+amstrad_init(const device_t *info, void *arg)
 {
     romdef_t *roms = (romdef_t *)arg;
     amstrad_t *dev;
+    void *lpt;
 
     dev = (amstrad_t *)mem_alloc(sizeof(amstrad_t));
     memset(dev, 0x00, sizeof(amstrad_t));
-    dev->type = type;
+    dev->type = info->local;
 
-    machine_common_init(model, arg);
+    /* Add machine device to system. */
+    device_add_ex(info, dev);
+
+    /* Force the LPT1 port disabled and add our own. */
+    parallel_enabled[0] = 0;
+    machine_common_init();
+    lpt = device_add(&parallel_1_device);
 
     nmi_init();
 
+    device_add(&amstrad_nvr_device);
+
     switch(dev->type) {
-	case 0:		/* 1512 */
+	case 0:		/* PC1512 */
+		dev->codepage = device_get_config_int("codepage");
+		dev->language = device_get_config_int("language");
+
+		/* Initialize the internal CGA controller. */
+		dev->vid = m_amstrad_1512_vid_init(roms->fontfn,
+						   roms->fontnum,
+						   dev->codepage);
 		device_add(&fdc_xt_device);
-		if (video_card == VID_INTERNAL) {
-			/* Initialize the internal CGA controller. */
-			vid_init_1512(dev, roms->fontfn, roms->fontnum);
-		}
+		parallel_set_func(lpt, ams_read, dev);
 		break;
 
-	case 1:		/* 1640 */
+	case 1:		/* PC1640 */
+		dev->language = device_get_config_int("language");
+
+		/* Initialize the internal CGA/EGA controller. */
+		dev->vid = m_amstrad_1640_vid_init(roms->vidfn, roms->vidsz);
+
 		device_add(&fdc_xt_device);
-		if (video_card == VID_INTERNAL) {
-			/* Initialize the internal CGA/EGA controller. */
-			vid_init_1640(dev, roms->vidfn, roms->vidsz);
-			device_add_ex(&vid_1640_device, dev->vid);
-		}
+		parallel_set_func(lpt, ams_read, dev);
 		break;
 
 	case 2:		/* PC200 */
-		device_add(&fdc_xt_device);
+		dev->codepage = device_get_config_int("codepage");
+		dev->language = device_get_config_int("language");
+		dev->flopswap = device_get_config_int("floppy_swap");
+		dev->vidtype = device_get_config_int("video_emulation");
+		dev->disptype = device_get_config_int("display_type");
+
 		if (video_card == VID_INTERNAL) {
-			/* Initialize the internal CGA controller. */
-			vid_init_200(dev, roms->fontfn);
+			/* Initialize the internal video controller. */
+			dev->vid = m_amstrad_ida_init(dev->type, roms->fontfn,
+						      dev->codepage,
+						      dev->vidtype,
+						      dev->disptype);
+		} else {
+			io_sethandler(0x03de, 1,
+				      ams_read,NULL,NULL, NULL,NULL,NULL, dev);
 		}
+
+		device_add(&fdc_xt_device);
+		parallel_set_func(lpt, ams_read, dev);
 		break;
 
-	case 3:		/* PC2086 */
-		device_add(&fdc_at_actlow_device);
+	case 3:		/* PPC */
+		dev->codepage = device_get_config_int("codepage");
+		dev->language = device_get_config_int("language");
+		dev->vidtype = device_get_config_int("video_emulation");
+		dev->disptype = device_get_config_int("display_type");
+
+		if (video_card == VID_INTERNAL) {
+			/* Initialize the internal video controller. */
+			dev->vid = m_amstrad_ida_init(1, roms->fontfn,
+						      dev->codepage,
+						      dev->vidtype,
+						      dev->disptype);
+		}
+
+		device_add(&fdc_xt_device);
+		parallel_set_func(lpt, ams_read, dev);
+		break;
+
+	case 4:		/* PC2086 */
 		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc2086_device);
 			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
 		}
+		device_add(&fdc_at_actlow_device);
 		break;
 
-	case 4:		/* PC3086 */
-		device_add(&fdc_at_actlow_device);
+	case 5:		/* PC3086 */
 		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc3086_device);
 			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
 		}
+		device_add(&fdc_at_actlow_device);
 		break;
 
-	case 5:		/* MEGAPC */
-		device_add(&fdc_at_actlow_device);
+	case 6:		/* MEGAPC */
 		if (video_card == VID_INTERNAL) {
 			device_add(&paradise_wd90c11_megapc_device);
 			video_inform(VID_TYPE_SPEC, &wd90c11_timing);
 		}
+		device_add(&fdc_at_actlow_device);
 		break;
     }
+    parallel_enabled[0] = 1;
 
-    device_add(&amstrad_nvr_device);
+    io_sethandler(0xdead, 1, ams_read,NULL,NULL, ams_write,NULL,NULL, dev);
 
-//FIXME:    parallel_remove_amstrad();
-
-    io_sethandler(0x0078, 1,
-		  mse_read, NULL, NULL, mse_write, NULL, NULL, dev);
-
-    io_sethandler(0x007a, 1,
-		  mse_read, NULL, NULL, mse_write, NULL, NULL, dev);
-
-    io_sethandler(0x0379, 2,
-		  ams_read, NULL, NULL, NULL, NULL, NULL, dev);
-
-    io_sethandler(0xdead, 1,
-		  ams_read, NULL, NULL, ams_write, NULL, NULL, dev);
-
-    /* Initialize the (custom) keyboard/mouse interface. */
+    /* Initialize the (custom) keyboard interface. */
     dev->wantirq = 0;
-    io_sethandler(0x0060, 7,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
+    io_sethandler(0x0060, 7, kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
     timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
     keyboard_set_table(scancode_xt);
     keyboard_send = kbd_adddata_ex;
     keyboard_scan = 1;
 
-    /* Tell mouse driver about our internal mouse. */
+    /* Initialize the (custom) mouse intercace if needed. */
     if (mouse_type == MOUSE_INTERNAL) {
+	io_sethandler(0x0078, 1, mse_read,NULL,NULL, mse_write,NULL,NULL, dev);
+	io_sethandler(0x007a, 1, mse_read,NULL,NULL, mse_write,NULL,NULL, dev);
+
 	mouse_reset();
+
 	mouse_set_poll(mse_poll, dev);
     }
+
+    return(dev);
 }
 
 
-void
-m_amstrad_1512_init(const machine_t *model, void *arg)
-{
-    amstrad_common_init(model, arg, 0);
-}
+static const device_config_t pc1512_config[] = {
+    {
+	"codepage", "Hardware font", CONFIG_SELECTION, "", 3,
+	{
+		{
+			"US English", 3
+		},
+		{
+			"Danish", 1
+		},
+		{
+			"Greek", 0
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"language", "ROS Language", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"English", 0
+		},
+		{
+			"German", 1
+		},
+		{
+			"French", 2
+		},
+		{
+			"Spanish", 3
+		},
+		{
+			"Danish", 4
+		},
+		{
+			"Swedish", 5
+		},
+		{
+			"Italian", 6
+		},
+		{
+			"DIAG Mode (English)", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	NULL
+    }
+};
+
+static const device_config_t pc1640_config[] = {
+    {
+	"language", "ROS Language", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"English", 0
+		},
+		{
+			"German", 1
+		},
+		{
+			"French", 2
+		},
+		{
+			"Spanish", 3
+		},
+		{
+			"Danish", 4
+		},
+		{
+			"Swedish", 5
+		},
+		{
+			"Italian", 6
+		},
+		{
+			"DIAG Mode (English)", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+#if 1
+    {
+	"iga", "Internal Graphics Adapter", CONFIG_SELECTION, "", 1,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"iga_mode", "Inititial Video Mode", CONFIG_SELECTION, "", 2,
+	{
+		{
+			"Monochrome", 0
+		},
+		{
+			"CO40", 1
+		},
+		{
+			"CO80", 2
+		},
+		{
+			"ECD200", 3
+		},
+		{
+			"ECD350", 4
+		},
+		{
+			NULL
+		}
+	}
+    },
+#endif
+    {
+	NULL
+    }
+};
+
+static const device_config_t pc200_config[] = {
+    {
+	"codepage", "Hardware font", CONFIG_SELECTION, "", 3,
+	{
+		{
+			"US English", 3
+		},
+		{
+			"Portugese", 2
+		},
+		{
+			"Norwegian", 1
+		},
+		{
+			"Greek", 0
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"language", "ROS Language", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"English", 0
+		},
+		{
+			"German", 1
+		},
+		{
+			"French", 2
+		},
+		{
+			"Spanish", 3
+		},
+		{
+			"Danish", 4
+		},
+		{
+			"Swedish", 5
+		},
+		{
+			"Italian", 6
+		},
+		{
+			"DIAG Mode (English)", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"video_emulation", "Display type", CONFIG_SELECTION, "", IDA_CGA,
+	{
+		{
+			"CGA monitor", IDA_CGA
+		},
+		{
+			"MDA monitor", IDA_MDA
+		},
+		{
+			"Television", IDA_TV
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"floppy_swap", "Swap Diskette Drives", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			NULL
+		}
+	}
+    },
+#if 0
+    {
+	"display_type", "Monitor type", CONFIG_SELECTION, "", DISPLAY_RGB,
+	{
+		{
+			"RGB", DISPLAY_RGB
+		},
+		{
+			"RGB (no brown)", DISPLAY_RGB_NO_BROWN
+		},
+		{
+			"Monochrome (green)", DISPLAY_GREEN
+		},
+		{
+			"Monochrome (amber)", DISPLAY_AMBER
+		},
+		{
+			"Monochrome (white)", DISPLAY_WHITE
+		},
+		{
+			NULL
+		}
+	}
+    },
+#endif
+    {
+	NULL
+    }
+};
+
+static const device_config_t ppc_config[] = {
+    {
+	"codepage", "Hardware font", CONFIG_SELECTION, "", 3,
+	{
+		{
+			"US English", 3
+		},
+		{
+			"Portugese", 2
+		},
+		{
+			"Norwegian", 1
+		},
+		{
+			"Greek", 0
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"language", "ROS Language", CONFIG_SELECTION, "", 0,
+	{
+		{
+			"English", 0
+		},
+		{
+			"German", 1
+		},
+		{
+			"French", 2
+		},
+		{
+			"Spanish", 3
+		},
+		{
+			"Danish", 4
+		},
+		{
+			"Swedish", 5
+		},
+		{
+			"Italian", 6
+		},
+		{
+			"DIAG Mode (English)", 7
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"video_emulation", "Display type", CONFIG_SELECTION, "", IDA_LCD_C,
+	{
+		{
+			"External monitor (CGA)", IDA_CGA,
+		},
+		{
+			"External monitor (MDA)", IDA_MDA,
+		},
+		{
+			"LCD (CGA mode)", IDA_LCD_C,
+		},
+		{
+			"LCD (MDA mode)", IDA_LCD_M,
+		},
+		{
+ 			NULL
+		}
+	}
+    },
+#if 0
+    {
+	"display_type", "External monitor", CONFIG_SELECTION, "", DISPLAY_RGB,
+	{
+		{
+			"RGB", DISPLAY_RGB
+		},
+		{
+			"RGB (no brown)", DISPLAY_RGB_NO_BROWN
+		},
+		{
+			"Monochrome (green)", DISPLAY_GREEN
+		},
+		{
+			"Monochrome (amber)", DISPLAY_AMBER
+		},
+		{
+			"Monochrome (white)", DISPLAY_WHITE
+		},
+		{
+			NULL
+		}
+	}
+    },
+#endif
+    {
+	NULL
+    }
+};
 
 
-void
-m_amstrad_1640_init(const machine_t *model, void *arg)
-{
-    amstrad_common_init(model, arg, 1);
-}
+static const CPU cpus_pc1512[] = {
+    { "8086/8", CPU_8086, 8000000, 1, 0, 0, 0, 0, 0, 0,0,0,0, 1 },
+    { NULL }
+};
+
+static const machine_t pc1512_info = {
+    MACHINE_ISA | MACHINE_NONMI | MACHINE_VIDEO | MACHINE_MOUSE,
+    MACHINE_VIDEO,
+    512, 640, 32, 64, -1,
+    {{"Intel",cpus_pc1512}}
+};
+
+const device_t m_amstrad_1512 = {
+    "Amstrad PC1512",
+    DEVICE_ROOT,
+    0,
+    L"amstrad/pc1512",
+    amstrad_init, amstrad_close, NULL,
+    NULL, NULL, NULL,
+    &pc1512_info,
+    pc1512_config
+};
 
 
-void
-m_amstrad_200_init(const machine_t *model, void *arg)
-{
-    amstrad_common_init(model, arg, 2);
-}
+static const machine_t pc1640_info = {
+    MACHINE_ISA | MACHINE_NONMI | MACHINE_VIDEO | MACHINE_MOUSE,
+    MACHINE_VIDEO,
+    640, 640, 0, 64, -1,
+    {{"Intel",cpus_8086}}
+};
+
+const device_t m_amstrad_1640 = {
+    "Amstrad PC1640",
+    DEVICE_ROOT,
+    1,
+    L"amstrad/pc1640",
+    amstrad_init, amstrad_close, NULL,
+    NULL, NULL, NULL,
+    &pc1640_info,
+    pc1640_config
+};
 
 
-void
-m_amstrad_2086_init(const machine_t *model, void *arg)
-{
-    amstrad_common_init(model, arg, 3);
-}
+static const machine_t pc200_info = {
+    MACHINE_ISA | MACHINE_NONMI | MACHINE_VIDEO | MACHINE_MOUSE,
+    MACHINE_VIDEO,
+    512, 640, 32, 64, -1,
+    {{"Intel",cpus_8086}}
+};
+
+const device_t m_amstrad_200 = {
+    "Amstrad PC200",
+    DEVICE_ROOT,
+    2,
+    L"amstrad/pc200",
+    amstrad_init, amstrad_close, NULL,
+    NULL, NULL, NULL,
+    &pc200_info,
+    pc200_config
+};
 
 
-void
-m_amstrad_3086_init(const machine_t *model, void *arg)
-{
-    amstrad_common_init(model, arg, 4);
-}
+static const machine_t ppc_info = {
+    MACHINE_ISA | MACHINE_NONMI | MACHINE_VIDEO,
+    0,
+    512, 640, 32, 64, -1,
+    {{"Intel",cpus_8086}}
+};
+
+const device_t m_amstrad_ppc = {
+    "Amstrad PPC512/640",
+    DEVICE_ROOT,
+    3,
+    L"amstrad/ppc512",
+    amstrad_init, amstrad_close, NULL,
+    NULL, NULL, NULL,
+    &ppc_info,
+    ppc_config
+};
 
 
-void
-m_amstrad_mega_init(const machine_t *model, void *arg)
-{
-    amstrad_common_init(model, arg, 5);
-}
+static const machine_t pc2086_info = {
+    MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,
+    MACHINE_VIDEO,
+    640, 640, 0, 64, -1,
+    {{"Intel",cpus_8086}}
+};
+
+const device_t m_amstrad_2086 = {
+    "Amstrad 2086",
+    DEVICE_ROOT,
+    4,
+    L"amstrad/pc2086",
+    amstrad_init, amstrad_close, NULL,
+    NULL, NULL, NULL,
+    &pc2086_info,
+    NULL
+};
+
+
+static const machine_t pc3086_info = {
+    MACHINE_ISA | MACHINE_VIDEO | MACHINE_MOUSE,
+    MACHINE_VIDEO,
+    640, 640, 0, 64, -1,
+    {{"Intel",cpus_8086}}
+};
+
+const device_t m_amstrad_3086 = {
+    "Amstrad 3086",
+    DEVICE_ROOT,
+    5,
+    L"amstrad/pc3086",
+    amstrad_init, amstrad_close, NULL,
+    NULL, NULL, NULL,
+    &pc3086_info,
+    NULL
+};

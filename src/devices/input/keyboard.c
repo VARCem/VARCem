@@ -8,13 +8,13 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.11	2018/10/20
+ * Version:	@(#)keyboard.c	1.0.12	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,7 +44,6 @@
 #define HAVE_STDARG_H
 #define dbglog kbd_log
 #include "../../emu.h"
-#include "../../machines/machine.h"
 #include "../../plat.h"
 #include "../../ui/ui.h"
 #include "keyboard.h"

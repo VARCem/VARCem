@@ -8,7 +8,7 @@
  *
  *		Brooktree Bt48x series true color RAMDAC emulation.
  *
- * Version:	@(#)vid_bt48x_ramdac.c	1.0.11	2019/03/07
+ * Version:	@(#)vid_bt48x_ramdac.c	1.0.14	2019/04/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_bt48x_ramdac.h"
@@ -207,7 +208,7 @@ bt48x_ramdac_out(uint16_t addr, int rs2, int rs3, uint8_t val, bt48x_ramdac_t *d
 		break;
 
 	case 0x0b:	/* Cursor RAM Data Register (RS value = 1011) */
-		indx = svga->dac_addr & 0x03ff;
+		indx = svga->dac_addr & da_mask;
 		if ((dev->type >= BT485) && (svga->hwcursor.xsize == 64))
 			cd = (uint8_t *) dev->cursor64_data;
 		else {
@@ -215,7 +216,6 @@ bt48x_ramdac_out(uint16_t addr, int rs2, int rs3, uint8_t val, bt48x_ramdac_t *d
 			cd = (uint8_t *) dev->cursor32_data;
 		}
 		cd[indx] = val;
-		svga->dac_addr++;
 		svga->dac_addr = (svga->dac_addr + 1) & da_mask;
 		break;
 
@@ -239,8 +239,6 @@ bt48x_ramdac_out(uint16_t addr, int rs2, int rs3, uint8_t val, bt48x_ramdac_t *d
 		svga->hwcursor.y = dev->hwc_y - svga->hwcursor.ysize;
 		break;
     }
-
-    return;
 }
 
 
@@ -429,22 +427,22 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
 
 		y_pos = displine + y_add;
 		x_pos = offset + 32 + x_add;
-		p = &screen->line[y_pos][0];
+		p = &screen->line[y_pos][x_pos];
 
 		if (offset >= svga->hwcursor_latch.x) {
 			switch (mode) {
 				case 1:		/* Three Color */
 					switch (comb) {
 						case 1:
-							p[x_pos].val = clr1;
+							p->val = clr1;
 							break;
 
 						case 2:
-							p[x_pos].val = clr2;
+							p->val = clr2;
 							break;
 
 						case 3:
-							p[x_pos].val = clr3;
+							p->val = clr3;
 							break;
 					}
 					break;
@@ -452,15 +450,15 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
 				case 2:		/* PM/Windows */
 					switch (comb) {
 						case 0:
-							p[x_pos].val = clr1;
+							p->val = clr1;
 							break;
 
 						case 1:
-							p[x_pos].val = clr2;
+							p->val = clr2;
 							break;
 
 						case 3:
-							p[x_pos].val ^= 0xffffff;
+							p->val ^= 0xffffff;
 							break;
 					}
 					break;
@@ -468,11 +466,11 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
 				case 3:		/* X-Windows */
 					switch (comb) {
 						case 2:
-							p[x_pos].val = clr1;
+							p->val = clr1;
 							break;
 
 						case 3:
-							p[x_pos].val = clr2;
+							p->val = clr2;
 							break;
 					}
 					break;
@@ -490,9 +488,8 @@ bt48x_hwcursor_draw(svga_t *svga, int displine)
 }
 
 
-
 static void *
-bt48x_init(const device_t *info)
+bt48x_init(const device_t *info, UNUSED(void *parent))
 {
     bt48x_ramdac_t *dev;
 
@@ -547,6 +544,7 @@ const device_t bt484_ramdac_device = {
     "Brooktree Bt484 RAMDAC",
     0,
     BT484,
+    NULL,
     bt48x_init, bt48x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -556,6 +554,7 @@ const device_t att20c504_ramdac_device = {
     "AT&T 20c504 RAMDAC",
     0,
     ATT20C504,
+    NULL,
     bt48x_init, bt48x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -565,6 +564,7 @@ const device_t bt485_ramdac_device = {
     "Brooktree Bt485 RAMDAC",
     0,
     BT485,
+    NULL,
     bt48x_init, bt48x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -574,6 +574,7 @@ const device_t att20c505_ramdac_device = {
     "AT&T 20c505 RAMDAC",
     0,
     ATT20C505,
+    NULL,
     bt48x_init, bt48x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -583,6 +584,7 @@ const device_t bt485a_ramdac_device = {
     "Brooktree Bt485A RAMDAC",
     0,
     BT485A,
+    NULL,
     bt48x_init, bt48x_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

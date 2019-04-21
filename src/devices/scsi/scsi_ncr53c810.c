@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.12	2018/10/16
+ * Version:	@(#)scsi_ncr53c810.c	1.0.14	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -18,7 +18,7 @@
  *		Artyom Tarasenko (QEMU)
  *		Paul Brook (QEMU)
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2009-2018 Artyom Tarasenko.
  *		Copyright 2006-2018 Paul Brook.
@@ -2251,7 +2251,7 @@ ncr53c810_pci_write(int func, int addr, uint8_t val, void *p)
 
 
 static void *
-ncr53c810_init(const device_t *info)
+ncr53c810_init(const device_t *info, UNUSED(void *parent))
 {
     ncr53c810_t *dev;
 
@@ -2279,14 +2279,14 @@ ncr53c810_init(const device_t *info)
 #if USE_PCI_BAR
     if (dev->has_bios) {
 	dev->bios_mask = 0xffffc000;
-	rom_init(&dev->bios, NCR53C810_ROM, 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
+	rom_init(&dev->bios, info->path, 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
 	ncr53c810_pci_bar[2].addr = 0xFFFFC000;
 	mem_map_disable(&dev->bios.mapping);
     } else
 	ncr53c810_pci_bar[2].addr = 0;
 #else
     if (dev->has_bios)
-	rom_init(&dev->bios, NCR53C810_ROM,
+	rom_init(&dev->bios, info->path,
 		 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 
@@ -2311,7 +2311,7 @@ static const device_config_t ncr53c810_pci_config[] = {
         "bios", "Enable BIOS", CONFIG_BINARY, "", 0
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -2319,6 +2319,7 @@ const device_t ncr53c810_pci_device = {
     "NCR 53c810 (SCSI)",
     DEVICE_PCI,
     0,
+    NCR53C810_ROM,
     ncr53c810_init, ncr53c810_close, NULL,
     NULL, NULL, NULL, NULL,
     ncr53c810_pci_config

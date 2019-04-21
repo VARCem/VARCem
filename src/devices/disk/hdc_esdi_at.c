@@ -8,13 +8,13 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.13	2018/10/15
+ * Version:	@(#)hdc_esdi_at.c	1.0.15	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -47,7 +47,6 @@
 #define dbglog hdc_log
 #include "../../emu.h"
 #include "../../cpu/cpu.h"
-#include "../../machines/machine.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -787,7 +786,7 @@ loadhd(hdc_t *dev, int hdd_num, int d, const wchar_t *fn)
 
 
 static void *
-wd1007vse1_init(const device_t *info)
+wd1007vse1_init(const device_t *info, UNUSED(void *parent))
 {
     hdc_t *dev;
     int c, d;
@@ -809,8 +808,8 @@ wd1007vse1_init(const device_t *info)
     dev->status = STAT_READY|STAT_DSC;
     dev->error = 1;
 
-    rom_init(&dev->bios_rom,
-	     ESDI_BIOS_FILE, 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
+    rom_init(&dev->bios_rom, info->path,
+	     0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
 
     io_sethandler(0x01f0, 1,
 		  hdc_read, hdc_readw, NULL,
@@ -846,19 +845,12 @@ wd1007vse1_close(void *priv)
 }
 
 
-static int
-wd1007vse1_available(void)
-{
-    return(rom_present(ESDI_BIOS_FILE));
-}
-
-
 const device_t esdi_at_wd1007vse1_device = {
     "PC/AT ESDI Fixed Disk Adapter",
     DEVICE_ISA | DEVICE_AT,
     (HDD_BUS_ESDI << 8) | 0,
+    ESDI_BIOS_FILE,
     wd1007vse1_init, wd1007vse1_close, NULL,
-    wd1007vse1_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };

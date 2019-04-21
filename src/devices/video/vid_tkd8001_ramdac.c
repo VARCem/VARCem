@@ -8,13 +8,13 @@
  *
  *		Trident TKD8001 RAMDAC emulation.
  *
- * Version:	@(#)vid_tkd8001_ramdac.c	1.0.3	2018/10/05
+ * Version:	@(#)vid_tkd8001_ramdac.c	1.0.5	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,6 +44,7 @@
 #include "../../emu.h"
 #include "../../mem.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_tkd8001_ramdac.h"
@@ -114,7 +115,7 @@ tkd8001_ramdac_in(uint16_t addr, tkd8001_ramdac_t *dev, svga_t *svga)
 
 
 static void *
-tkd8001_init(const device_t *info)
+tkd8001_init(const device_t *info, UNUSED(void *parent))
 {
     tkd8001_ramdac_t *dev = (tkd8001_ramdac_t *)mem_alloc(sizeof(tkd8001_ramdac_t));
     memset(dev, 0x00, sizeof(tkd8001_ramdac_t));
@@ -135,8 +136,7 @@ tkd8001_close(void *priv)
 
 const device_t tkd8001_ramdac_device = {
     "Trident TKD8001 RAMDAC",
-    0,
-    0,
+    0, 0, NULL,
     tkd8001_init, tkd8001_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

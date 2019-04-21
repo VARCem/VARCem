@@ -10,13 +10,13 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.10	2018/10/16
+ * Version:	@(#)snd_adlibgold.c	1.0.12	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -812,7 +812,7 @@ static void adgold_get_buffer(int32_t *buffer, int len, void *p)
 }
 
 
-void *adgold_init(const device_t *info)
+void *adgold_init(const device_t *info, UNUSED(void *parent))
 {
         FILE *f;
         int c;
@@ -891,14 +891,16 @@ static const device_config_t adgold_config[] = {
         "surround", "Surround module", CONFIG_BINARY, "", 1
     },
     {
-        "", "", -1
+        NULL
     }
 };
+
 
 const device_t adgold_device = {
     "AdLib Gold",
     DEVICE_ISA,
     0,
+    NULL,
     adgold_init, adgold_close, NULL,
     NULL, NULL, NULL, NULL,
     adgold_config

@@ -44,11 +44,11 @@
  *		configuration register (CTRL_SPCFG bit set) but have to
  *		remember that stuff first...
  *
- * Version:	@(#)bugger.c	1.0.8	2018/09/29
+ * Version:	@(#)bugger.c	1.0.10	2019/04/08
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -351,7 +351,7 @@ bug_read(uint16_t port, UNUSED(void *priv))
 
 /* Initialize the ISA BusBugger emulator. */
 static void *
-bug_init(const device_t *info)
+bug_init(const device_t *info, UNUSED(void *parent))
 {
     bugger_t *dev;
 
@@ -389,6 +389,7 @@ const device_t bugger_device = {
     "ISA/PCI Bus Bugger",
     DEVICE_ISA,
     0,
+    NULL,
     bug_init, bug_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

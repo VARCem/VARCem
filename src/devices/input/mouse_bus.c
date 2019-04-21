@@ -53,12 +53,12 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.3	2018/11/20
+ * Version:	@(#)mouse_bus.c	1.1.5	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2017,2018 Miran Grca.
  *		Copyright 200?-2018 Bochs.
  *
@@ -104,6 +104,7 @@
 #include "../../device.h"
 #include "../../random.h"
 #include "../system/pic.h"
+#include "../../plat.h"
 #include "mouse.h"
 
 
@@ -656,7 +657,7 @@ bm_close(void *priv)
 
 /* Initialize the device for use by the user. */
 static void *
-bm_init(const device_t *info)
+bm_init(const device_t *info, UNUSED(void *parent))
 {
     mouse_t *dev;
 
@@ -738,19 +739,19 @@ static const device_config_t lt_config[] = {
 	"base", "Address", CONFIG_HEX16, "", 0x23c,
 	{
 		{
-			"0x230", 0x230
+			"230H", 0x230
 		},
 		{
-			"0x234", 0x234
+			"234H", 0x234
 		},
 		{
-			"0x238", 0x238
+			"238H", 0x238
 		},
 		{
-			"0x23C", 0x23c
+			"23CH", 0x23c
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -769,7 +770,7 @@ static const device_config_t lt_config[] = {
 			"IRQ 5", 5
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -785,7 +786,7 @@ static const device_config_t lt_config[] = {
 			"60 Hz (JMP 2 = 2)", 60
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -798,12 +799,12 @@ static const device_config_t lt_config[] = {
 			"Three", 3
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -813,19 +814,19 @@ static const device_config_t ms_config[] = {
 	"base", "Address", CONFIG_HEX16, "", 0x23c,
 	{
 		{
-			"0x230", 0x230
+			"230H", 0x230
 		},
 		{
-			"0x234", 0x234
+			"234H", 0x234
 		},
 		{
-			"0x238", 0x238
+			"238H", 0x238
 		},
 		{
-			"0x23C", 0x23c
+			"23CH", 0x23c
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -844,7 +845,7 @@ static const device_config_t ms_config[] = {
 			"IRQ 5", 5
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
@@ -857,12 +858,12 @@ static const device_config_t ms_config[] = {
 			"Three", 3
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
@@ -871,6 +872,7 @@ const device_t mouse_logibus_device = {
     "Logitech Bus Mouse",
     DEVICE_ISA,
     0,
+    NULL,
     bm_init, bm_close, NULL,
     bm_poll,
     NULL, NULL, NULL,
@@ -881,6 +883,7 @@ const device_t mouse_logibus_internal_device = {
     "Logitech Bus Mouse (Internal)",
     0,
     1,
+    NULL,
     bm_init, bm_close, NULL,
     bm_poll,
     NULL, NULL, NULL,
@@ -891,6 +894,7 @@ const device_t mouse_msinport_device = {
     "Microsoft Bus Mouse (InPort)",
     DEVICE_ISA,
     10,
+    NULL,
     bm_init, bm_close, NULL,
     bm_poll,
     NULL, NULL, NULL,

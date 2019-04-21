@@ -11,14 +11,14 @@
  *
  * NOTE:	This code now only supports targets at LUN=0 !!
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.13	2018/10/20
+ * Version:	@(#)scsi_ncr5380.c	1.0.15	2019/04/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -1283,7 +1283,7 @@ scsiat_out(uint16_t port, uint8_t val, void *priv)
 
 
 static void *
-ncr_init(const device_t *info)
+ncr_init(const device_t *info, UNUSED(void *parent))
 {
     char temp[128];
     ncr5380_t *ncr_dev;
@@ -1296,7 +1296,7 @@ ncr_init(const device_t *info)
     switch(ncr_dev->type) {
 	case 0:		/* Longshine LCS6821N */
 		ncr_dev->rom_addr = 0xDC000;
-		rom_init(&ncr_dev->bios_rom, LCS6821N_ROM,
+		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
 			 0, MEM_MAPPING_EXTERNAL);
 
@@ -1310,7 +1310,7 @@ ncr_init(const device_t *info)
 
 	case 1:		/* Rancho RT1000B */
 		ncr_dev->rom_addr = 0xDC000;
-		rom_init(&ncr_dev->bios_rom, RT1000B_ROM,
+		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
 			 0, MEM_MAPPING_EXTERNAL);
 
@@ -1326,7 +1326,7 @@ ncr_init(const device_t *info)
 		ncr_dev->rom_addr = 0xDC000;
 		ncr_dev->base = device_get_config_hex16("base");
 		ncr_dev->irq = device_get_config_int("irq");
-		rom_init(&ncr_dev->bios_rom, T130B_ROM,
+		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
 			 0, MEM_MAPPING_EXTERNAL);
 
@@ -1343,7 +1343,7 @@ ncr_init(const device_t *info)
 		ncr_dev->base = device_get_config_hex16("base");
 		ncr_dev->irq = device_get_config_int("irq");
 		ncr_dev->rom_addr = device_get_config_hex20("bios_addr");
-		rom_init(&ncr_dev->bios_rom, SCSIAT_ROM,
+		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
 			 0, MEM_MAPPING_EXTERNAL);
 
@@ -1394,31 +1394,6 @@ ncr_close(void *priv)
 }
 
 
-static int
-lcs6821n_available(void)
-{
-    return(rom_present(LCS6821N_ROM));
-}
-
-static int
-rt1000b_available(void)
-{
-    return(rom_present(RT1000B_ROM));
-}
-
-static int
-t130b_available(void)
-{
-    return(rom_present(T130B_ROM));
-}
-
-static int
-scsiat_available(void)
-{
-    return(rom_present(SCSIAT_ROM));
-}
-
-
 static const device_config_t t130b_config[] = {
     {
         "base", "Address", CONFIG_HEX16, "", 0x0350,
@@ -1436,7 +1411,7 @@ static const device_config_t t130b_config[] = {
                         "350H", 0x0350
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -1453,12 +1428,12 @@ static const device_config_t t130b_config[] = {
                         "IRQ 7", 7
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -1494,7 +1469,7 @@ static const device_config_t scsiat_config[] = {
                         "370H", 0x0370
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -1526,7 +1501,7 @@ static const device_config_t scsiat_config[] = {
                         "IRQ 15", 15
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
@@ -1549,12 +1524,12 @@ static const device_config_t scsiat_config[] = {
                         "DC00H", 0xdc000
                 },
                 {
-                        ""
+                        NULL
                 }
         }
     },
     {
-        "", "", -1
+        NULL
     }
 };
 
@@ -1563,9 +1538,9 @@ const device_t scsi_lcs6821n_device = {
     "Longshine LCS-6821N",
     DEVICE_ISA,
     0,
+    LCS6821N_ROM,
     ncr_init, ncr_close, NULL,
-    lcs6821n_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -1573,9 +1548,9 @@ const device_t scsi_rt1000b_device = {
     "Ranco RT1000B",
     DEVICE_ISA,
     1,
+    RT1000B_ROM,
     ncr_init, ncr_close, NULL,
-    rt1000b_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     NULL
 };
 
@@ -1583,9 +1558,9 @@ const device_t scsi_t130b_device = {
     "Trantor T130B",
     DEVICE_ISA,
     2,
+    T130B_ROM,
     ncr_init, ncr_close, NULL,
-    t130b_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     t130b_config
 };
 
@@ -1593,8 +1568,8 @@ const device_t scsi_scsiat_device = {
     "Sumo SCSI-AT",
     DEVICE_ISA,
     3,
+    SCSIAT_ROM,
     ncr_init, ncr_close, NULL,
-    scsiat_available,
-    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
     scsiat_config
 };

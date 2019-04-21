@@ -8,7 +8,7 @@
  *
  *		AV9194 clock generator emulation..
  *
- * Version:	@(#)vid_av9194.c	1.0.1	2019/01/12
+ * Version:	@(#)vid_av9194.c	1.0.3	2019/04/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "video.h"
 #include "vid_av9194.h"
 
@@ -116,17 +117,16 @@ av9194_getclock(int clock, void *priv)
 
 
 static void *
-av9194_init(const device_t *info)
+av9194_init(const device_t *info, UNUSED(void *parent))
 {
     /* Return something non-NULL. */
-    return (void *)&av9194_device;
+    return (void *)info;
 }
 
 
 const device_t av9194_device = {
     "AV9194 Clock Generator",
-    0,
-    0,
+    0, 0, NULL,
     av9194_init, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL

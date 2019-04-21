@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.23	2019/02/16
+ * Version:	@(#)m_ps1.c	1.0.25	2019/04/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,6 +81,7 @@
 #include "../devices/video/video.h"
 #include "../plat.h"
 #include "machine.h"
+#include "m_ps1.h"
 
 
 typedef struct {
@@ -102,16 +103,16 @@ typedef struct {
     mem_map_t	romext_mapping;
     uint8_t	romext[32768];
 
-    uint8_t	ps1_91,
-		ps1_92,
-		ps1_94,
-		ps1_102,
-		ps1_103,
-		ps1_104,
-		ps1_105,
-		ps1_190;
-    int		ps1_e0_addr;
-    uint8_t	ps1_e0_regs[256];
+    uint8_t	reg_91,
+		reg_92,
+		reg_94,
+		reg_102,
+		reg_103,
+		reg_104,
+		reg_105,
+		reg_190;
+    int		e0_addr;
+    uint8_t	e0_regs[256];
 } ps1_t;
 
 
@@ -251,7 +252,7 @@ snd_get_buffer(int32_t *bufp, int len, void *priv)
 
 
 static void *
-snd_init(const device_t *info)
+snd_init(const device_t *info, UNUSED(void *parent))
 {
     ps1snd_t *snd;
 
@@ -284,7 +285,7 @@ snd_close(void *priv)
 
 static const device_t snd_device = {
     "PS/1 Audio",
-    0, 0,
+    0, 0, NULL,
     snd_init, snd_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL
@@ -325,13 +326,13 @@ recalc_memory(ps1_t *dev)
 {
     /* Enable first 512K */
     mem_set_mem_state(0x00000, 0x80000,
-		      (dev->ps1_e0_regs[0] & 0x01) ?
+		      (dev->e0_regs[0] & 0x01) ?
 			(MEM_READ_INTERNAL | MEM_WRITE_INTERNAL) :
 			(MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL));
 
     /* Enable 512-640K */
     mem_set_mem_state(0x80000, 0x20000,
-		      (dev->ps1_e0_regs[1] & 0x01) ?
+		      (dev->e0_regs[1] & 0x01) ?
 			(MEM_READ_INTERNAL | MEM_WRITE_INTERNAL) :
 			(MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL));
 }
@@ -346,29 +347,29 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 	case 0x0092:
 		if (dev->model != 2011) {
 			if (val & 1) {
-				softresetx86();
+				cpu_reset(0);
 				cpu_set_edx();
 			}
-			dev->ps1_92 = val & ~1;
+			dev->reg_92 = val & ~1;
 		} else {
-			dev->ps1_92 = val;    
+			dev->reg_92 = val;    
 		}
 		mem_a20_alt = val & 2;
 		mem_a20_recalc();
 		break;
 
 	case 0x0094:
-		dev->ps1_94 = val;
+		dev->reg_94 = val;
 		break;
 
 	case 0x00e0:
 		if (dev->model != 2011)
-			dev->ps1_e0_addr = val;
+			dev->e0_addr = val;
 		break;
 
 	case 0x00e1:
 		if (dev->model != 2011) {
-			dev->ps1_e0_regs[dev->ps1_e0_addr] = val;
+			dev->e0_regs[dev->e0_addr] = val;
 			recalc_memory(dev);
 		}
 		break;
@@ -395,23 +396,23 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 					break;
 			}
 		}
-		dev->ps1_102 = val;
+		dev->reg_102 = val;
 		break;
 
 	case 0x0103:
-		dev->ps1_103 = val;
+		dev->reg_103 = val;
 		break;
 
 	case 0x0104:
-		dev->ps1_104 = val;
+		dev->reg_104 = val;
 		break;
 
 	case 0x0105:
-		dev->ps1_105 = val;
+		dev->reg_105 = val;
 		break;
 
 	case 0x0190:
-		dev->ps1_190 = val;
+		dev->reg_190 = val;
 		break;
     }
 }
@@ -425,47 +426,47 @@ ps1_read(uint16_t port, void *priv)
 
     switch (port) {
 	case 0x0091:		/* Card Select Feedback register */
-		ret = dev->ps1_91;
-		dev->ps1_91 = 0;
+		ret = dev->reg_91;
+		dev->reg_91 = 0;
 		break;
 
 	case 0x0092:
-		ret = dev->ps1_92;
+		ret = dev->reg_92;
 		break;
 
 	case 0x0094:
-		ret = dev->ps1_94;
+		ret = dev->reg_94;
 		break;
 
 	case 0x00e1:
 		if (dev->model != 2011)
-			ret = dev->ps1_e0_regs[dev->ps1_e0_addr];
+			ret = dev->e0_regs[dev->e0_addr];
 		break;
 
 	case 0x0102:
 		if (dev->model == 2011)
-			ret = dev->ps1_102 | 0x08;
+			ret = dev->reg_102 | 0x08;
 		  else
-			ret = dev->ps1_102;
+			ret = dev->reg_102;
 		break;
 
 	case 0x0103:
-		ret = dev->ps1_103;
+		ret = dev->reg_103;
 		break;
 
 	case 0x0104:
-		ret = dev->ps1_104;
+		ret = dev->reg_104;
 		break;
 
 	case 0x0105:
 		if (dev->model == 2011)
-			ret = dev->ps1_105;
+			ret = dev->reg_105;
 		  else
-			ret = dev->ps1_105 | 0x80;
+			ret = dev->reg_105 | 0x80;
 		break;
 
 	case 0x0190:
-		ret = dev->ps1_190;
+		ret = dev->reg_190;
 		break;
 
 	default:
@@ -477,30 +478,29 @@ ps1_read(uint16_t port, void *priv)
 
 
 static void
-ps1_setup(int model, romdef_t *bios)
+ps1_close(void *priv)
 {
-    void *priv;
+    ps1_t *dev = (ps1_t *)priv;
+
+    free(dev);
+}
+
+
+static void *
+ps1_init(const device_t *info, void *arg)
+{
+//    romdef_t *bios = (romdef_t *)arg;
     ps1_t *dev;
+    int i;
 
     dev = (ps1_t *)mem_alloc(sizeof(ps1_t));
     memset(dev, 0x00, sizeof(ps1_t));
-    dev->model = model;
+    dev->model = info->local;
 
-    io_sethandler(0x0091, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
-    io_sethandler(0x0092, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
-    io_sethandler(0x0094, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
-    io_sethandler(0x0102, 4,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
-    io_sethandler(0x0190, 1,
-		  ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
+    /* Add machine device to system. */
+    device_add_ex(info, dev);
 
-    /* Set up the parallel port. */
-    parallel_setup(0, 0x03bc);
-
-    if (model == 2011) {
+    if (dev->model == 2011) {
 	/* Force some configuration settings. */
 	video_card = VID_INTERNAL;
 	mouse_type = MOUSE_PS2;
@@ -518,8 +518,7 @@ ps1_setup(int model, romdef_t *bios)
 	}
 
 	/* Enable the PS/1 VGA controller. */
-	if (video_card == VID_INTERNAL)
-		device_add(&ps1vga_device);
+	device_add(&ps1vga_device);
 
 	/* Enable the builtin sound chip. */
 	device_add(&snd_device);
@@ -528,24 +527,16 @@ ps1_setup(int model, romdef_t *bios)
 	device_add(&fdc_at_actlow_device);
 
  	/* Enable the builtin HDC. */
-	if (hdc_type == HDC_INTERNAL) {
-		priv = device_add(&ps1_hdc_device);
-
-		/*
-		 * This is nasty, we will have to generalize this
-		 * at some point for all PS/1 and/or PS/2 machines.
-		 */
-		ps1_hdc_inform(priv, dev);
-	}
+	if (hdc_type == HDC_INTERNAL)
+		device_add(&ps1_hdc_device);
     }
 
-    if (model == 2121) {
+    if (dev->model == 2121) {
 	/* Force some configuration settings. */
 	video_card = VID_INTERNAL;
 	mouse_type = MOUSE_PS2;
 
-	io_sethandler(0x00e0, 2,
-		      ps1_read, NULL, NULL, ps1_write, NULL, NULL, dev);
+	io_sethandler(0x00e0, 2, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
 
 	if (machine_get_config_int("rom_shell")) {
 		DEBUG("PS1: loading ROM Shell..\n");
@@ -557,8 +548,7 @@ ps1_setup(int model, romdef_t *bios)
 	}
 
 	/* Initialize the video controller. */
-	if (video_card == VID_INTERNAL)
-		device_add(&ibm_ps1_2121_device);
+	device_add(&ibm_ps1_2121_device);
 
 	/* Enable the builtin sound chip. */
 	device_add(&snd_device);
@@ -570,7 +560,7 @@ ps1_setup(int model, romdef_t *bios)
 	device_add(&ide_isa_device);
     }
 
-    if (model == 2133) {
+    if (dev->model == 2133) {
 	/* Force some configuration settings. */
 	hdc_type = HDC_INTERNAL;
 	mouse_type = MOUSE_PS2;
@@ -580,19 +570,23 @@ ps1_setup(int model, romdef_t *bios)
 
 	/* Enable the builtin IDE port. */
 	device_add(&ide_isa_device);
+
+	nmi_mask = 0x80;
     }
-}
 
+    io_sethandler(0x0091, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
+    io_sethandler(0x0092, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
+    io_sethandler(0x0094, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
+    io_sethandler(0x0102, 4, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
+    io_sethandler(0x0190, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
 
-static void
-ps1_common_init(const machine_t *model, void *arg)
-{
-    int i;
+    /* Set up the parallel port. */
+    parallel_setup(0, 0x03bc);
 
     /* Hack to prevent Game from being initialized there. */
     i = game_enabled;
     game_enabled = 0;
-    machine_common_init(model, arg);
+    machine_common_init();
     game_enabled = i;
 
     mem_remap_top(384);
@@ -611,6 +605,8 @@ ps1_common_init(const machine_t *model, void *arg)
     /* Audio uses ports 200h,202-207h, so only initialize gameport on 201h. */
     if (game_enabled)
 	device_add(&game_201_device);
+
+    return(dev);
 }
 
 
@@ -625,21 +621,74 @@ static const device_config_t ps1_config[] = {
 			"Enabled", 1
 		},
 		{
-			""
+			NULL
 		}
 	}
     },
     {
-	"", "", -1
+	NULL
     }
 };
 
 
-const device_t m_ps1_device = {
-    "PS/1",
-    0, 0,
+static const CPU cpus_ps1_m2011[] = {
+    { "286/10", CPU_286, 10000000, 1, 0, 0, 0, 0, 0, 2,2,2,2, 1 },
+    { NULL }
+};
+
+static const machine_t m2011_info = {
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC,
+    MACHINE_VIDEO,
+    512, 6144, 512, 64, -1,
+    {{"",cpus_ps1_m2011}}
+};
+
+const device_t m_ps1_2011 = {
+    "IBM PS/1 2011",
+    DEVICE_ROOT,
+    2011,
+    L"ibm/ps1_2011",
+    ps1_init, ps1_close, NULL,
     NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
+    &m2011_info,
+    ps1_config
+};
+
+
+static const machine_t m2121_info = {
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,
+    MACHINE_VIDEO,
+    1, 6, 1, 64, -1,
+    {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
+};
+
+const device_t m_ps1_2121 = {
+    "IBM PS/1 2121",
+    DEVICE_ROOT,
+    2121,
+    L"ibm/ps1_2121",
+    ps1_init, ps1_close, NULL,
+    NULL, NULL, NULL,
+    &m2121_info,
+    ps1_config
+};
+
+
+static const machine_t m2133_info = {
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_NONMI,
+    0,
+    1, 64, 1, 128, -1,
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
+};
+
+const device_t m_ps1_2133 = {
+    "IBM PS/1 2133",
+    DEVICE_ROOT,
+    2133,
+    L"ibm/ps1_2133",
+    ps1_init, ps1_close, NULL,
+    NULL, NULL, NULL,
+    &m2133_info,
     ps1_config
 };
 
@@ -650,34 +699,5 @@ ps1_set_feedback(void *priv)
 {
     ps1_t *dev = (ps1_t *)priv;
 
-    dev->ps1_91 |= 0x01;
-}
-
-
-void
-m_ps1_m2011_init(const machine_t *model, void *arg)
-{
-    ps1_common_init(model, arg);
-
-    ps1_setup(2011, (romdef_t *)arg);
-}
-
-
-void
-m_ps1_m2121_init(const machine_t *model, void *arg)
-{
-    ps1_common_init(model, arg);
-
-    ps1_setup(2121, (romdef_t *)arg);
-}
-
-
-void
-m_ps1_m2133_init(const machine_t *model, void *arg)
-{
-    ps1_common_init(model, arg);
-
-    ps1_setup(2133, (romdef_t *)arg);
-
-    nmi_mask = 0x80;
+    dev->reg_91 |= 0x01;
 }

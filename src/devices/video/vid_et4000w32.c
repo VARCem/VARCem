@@ -12,7 +12,7 @@
  *
  * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
  *
- * Version:	@(#)vid_et4000w32.c	1.0.17	2010/03/07
+ * Version:	@(#)vid_et4000w32.c	1.0.19	2019/04/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1234,7 +1234,7 @@ static void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
 
 
 static void *
-et4000w32p_init(const device_t *info)
+et4000w32p_init(const device_t *info, UNUSED(void *parent))
 {
     int vram_size;
     et4000w32p_t *et4000 = (et4000w32p_t *)mem_alloc(sizeof(et4000w32p_t));
@@ -1258,19 +1258,18 @@ et4000w32p_init(const device_t *info)
 
     switch(et4000->type) {
 	case ET4000W32_CARDEX:
-	        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_CARDEX,
-			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 		et4000->svga.clock_gen = et4000->svga.ramdac;
 		et4000->svga.getclock = stg_getclock;
 		break;
 
 	case ET4000W32_DIAMOND:
-	        rom_init(&et4000->bios_rom, BIOS_ROM_PATH_DIAMOND,
-			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 		et4000->svga.clock_gen = device_add(&icd2061_device);
 		et4000->svga.getclock = icd2061_getclock;
 		break;
     }
+
+    rom_init(&et4000->bios_rom, info->path,
+	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
     if (info->flags & DEVICE_PCI)
 	mem_map_disable(&et4000->bios_rom.mapping);
@@ -1309,7 +1308,7 @@ et4000w32p_init(const device_t *info)
     et4000->fifo_not_full_event = thread_create_event();
     et4000->fifo_thread = thread_create(fifo_thread, et4000);
 
-    video_inform(VID_TYPE_SPEC,
+    video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
     return et4000;
@@ -1332,7 +1331,7 @@ et4000w32p_close(void *p)
 
 
 static void
-et4000w32p_speed_changed(void *p)
+speed_changed(void *p)
 {
     et4000w32p_t *et4000 = (et4000w32p_t *)p;
         
@@ -1341,7 +1340,7 @@ et4000w32p_speed_changed(void *p)
 
 
 static void
-et4000w32p_force_redraw(void *p)
+force_redraw(void *p)
 {
     et4000w32p_t *et4000w32p = (et4000w32p_t *)p;
 
@@ -1349,38 +1348,24 @@ et4000w32p_force_redraw(void *p)
 }
 
 
-static int
-et4000w32p_available(void)
-{
-    return rom_present(BIOS_ROM_PATH_DIAMOND);
-}
-
-static int
-et4000w32p_cardex_available(void)
-{
-    return rom_present(BIOS_ROM_PATH_CARDEX);
-}
-
-
-static const device_config_t et4000w32p_config[] =
-{
-        {
-                "memory", "Memory size", CONFIG_SELECTION, "", 2,
-                {
-                        {
-                                "1 MB", 1
-                        },
-                        {
-                                "2 MB", 2
-                        },
-                        {
-                                ""
-                        }
-                }
-        },
-        {
-                "", "", -1
-        }
+static const device_config_t et4000w32p_config[] = {
+    {
+	"memory", "Memory size", CONFIG_SELECTION, "", 2,
+	{
+		{
+			"1 MB", 1
+		},
+		{
+			"2 MB", 2
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	NULL
+    }
 };
 
 static const video_timings_t et4000w32p_pci_timing = {VID_BUS,4,4,4,10,10,10};
@@ -1389,48 +1374,52 @@ static const video_timings_t et4000w32p_vlb_timing = {VID_BUS,4,4,4,10,10,10};
 
 const device_t et4000w32p_cardex_vlb_device = {
     "Tseng Labs ET4000/w32p (Cardex)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     ET4000W32_CARDEX,
+    BIOS_ROM_PATH_CARDEX,
     et4000w32p_init, et4000w32p_close, NULL,
-    et4000w32p_cardex_available,
-    et4000w32p_speed_changed,
-    et4000w32p_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &et4000w32p_vlb_timing,
     et4000w32p_config
 };
 
 const device_t et4000w32p_cardex_pci_device = {
     "Tseng Labs ET4000/w32p (Cardex)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     ET4000W32_CARDEX,
+    BIOS_ROM_PATH_CARDEX,
     et4000w32p_init, et4000w32p_close, NULL,
-    et4000w32p_cardex_available,
-    et4000w32p_speed_changed,
-    et4000w32p_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &et4000w32p_pci_timing,
     et4000w32p_config
 };
 
 const device_t et4000w32p_vlb_device = {
     "Tseng Labs ET4000/w32p (Diamond)",
-    DEVICE_VLB,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     ET4000W32_DIAMOND,
+    BIOS_ROM_PATH_DIAMOND,
     et4000w32p_init, et4000w32p_close, NULL,
-    et4000w32p_available,
-    et4000w32p_speed_changed,
-    et4000w32p_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &et4000w32p_vlb_timing,
     et4000w32p_config
 };
 
 const device_t et4000w32p_pci_device = {
     "Tseng Labs ET4000/w32p (Diamond)",
-    DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
     ET4000W32_DIAMOND,
+    BIOS_ROM_PATH_DIAMOND,
     et4000w32p_init, et4000w32p_close, NULL,
-    et4000w32p_available,
-    et4000w32p_speed_changed,
-    et4000w32p_force_redraw,
+    NULL,
+    speed_changed,
+    force_redraw,
     &et4000w32p_pci_timing,
     et4000w32p_config
 };
