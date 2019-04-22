@@ -11,7 +11,7 @@
  * NOTE:	Several changes to disable Mode1 for now, as this breaks 
  *		 the TSX32 operating system. More cleanups needed..
  *
- * Version:	@(#)keyboard_at.c	1.0.21	2019/04/20
+ * Version:	@(#)keyboard_at.c	1.0.22	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1885,6 +1885,10 @@ do_command:
 
 			case 0xd2:	/*Write keyboard output buffer*/
 				DEBUG("ATkbd: write keyboard output buffer\n");
+				kbd->want60 = 1;
+				break;
+
+			case 0xd4:	/* Dunno, but OS/2 2.00LA sends it */
 				kbd->want60 = 1;
 				break;
 
