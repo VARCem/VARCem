@@ -11,7 +11,7 @@
  *
  * **TODO**	Merge the various 'add' variants, its getting too messy.
  *
- * Version:	@(#)device.c	1.0.21	2019/04/20
+ * Version:	@(#)device.c	1.0.22	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,9 +99,8 @@ device_dump(void)
     for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] == NULL) continue;
 
-	INFO("DEVICE [%3i] = '%s' flags=%08lx local=%08lx priv=%08lx\n",
-		c, devices[c]->name,
-		devices[c]->flags, devices[c]->local, device_priv[c]);
+	INFO("DEVICE [%3i] = '%s' flags=%08lx local=%08lx\n",
+		c, devices[c]->name, devices[c]->flags, devices[c]->local);
     }
 }
 #endif

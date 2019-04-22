@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.14	2019/01/03
+ * Version:	@(#)nvr.c	1.0.15	2019/04/21
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -140,21 +140,59 @@ onesec_timer(void *priv)
 void
 nvr_init(nvr_t *nvr)
 {
+    wchar_t tempw[256];
     char temp[64];
     struct tm *tm;
     wchar_t *sp;
     time_t now;
+    FILE *fp;
     int c;
 
-    /* Set up the NVR file's name. */
-    if (nvr->fn != NULL)
+    /* Set up the NVR file's name unless we already have one. */
+    if (nvr->fn == NULL) {
+	/*
+	 * First, let us try if a file exists with the name of
+	 * the current configuration file in it. Such a 'named
+	 * NVR' is sometimes needed in situations where multiple
+	 * configurations share a single machine.
+	 *
+	 * Get the filename part of the configuration file path.
+	 */
+	sp = wcsrchr(cfg_path, L'/');
+	if (sp != NULL)
+		wcscpy(tempw, ++sp);
+	else
+		wcscpy(tempw, cfg_path);
+
+	/* Drop the suffix. */
+	sp = wcsrchr(tempw, L'.');
+	if (sp != NULL)
+		*sp = L'\0';
+
+	/* Add our suffix. */
+	wcscat(tempw, NVR_FILE_EXT);
+
+	/* Try to open this file. */
+	if ((fp = plat_fopen(nvr_path(tempw), L"rb")) != NULL) {
+		/* It exists, use it. */
+		(void)fclose(fp);
+	} else {
+		/* Does not exist, use the default name. */
+		strcpy(temp, machine_get_internal_name());
+		mbstowcs(tempw, temp, sizeof_w(tempw));
+		wcscat(tempw, NVR_FILE_EXT);
+	}
+    } else {
+	/* Already have a name, use that. */
 	strcpy(temp, (const char *)nvr->fn);
-      else
-	strcpy(temp, machine_get_internal_name());
-    c = (int)strlen(temp) + 1;
-    sp = (wchar_t *)mem_alloc((c+10) * sizeof(wchar_t));
-    mbstowcs(sp, temp, c);
-    wcscat(sp, NVR_FILE_EXT);
+	mbstowcs(tempw, temp, sizeof_w(tempw));
+	wcscat(tempw, NVR_FILE_EXT);
+    }
+
+    /* Either way, we now have a usable filename. */
+    c = (int)wcslen(tempw) + 1;
+    sp = (wchar_t *)mem_alloc(c * sizeof(wchar_t));
+    wcscpy(sp, tempw);
     nvr->fn = (const wchar_t *)sp;
 
     /* Initialize the internal clock as needed. */

@@ -53,7 +53,7 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.5	2019/04/11
+ * Version:	@(#)mouse_bus.c	1.1.6	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -553,7 +553,7 @@ bm_poll(int x, int y, int z, int b, void *priv)
 	}
     }
 
-    return(0);
+    return(1);
 }
 
 
@@ -660,6 +660,7 @@ static void *
 bm_init(const device_t *info, UNUSED(void *parent))
 {
     mouse_t *dev;
+    int hz;
 
     dev = (mouse_t *)mem_alloc(sizeof(mouse_t));
     memset(dev, 0x00, sizeof(mouse_t));
@@ -716,10 +717,14 @@ bm_init(const device_t *info, UNUSED(void *parent))
 	dev->conf = 0x9b;	/* the config port value - 0x9b is the
 				   default state of the 8255: all ports
 				   are set to input */
-	dev->period = 1000000.0 / ((double) device_get_config_int("hz"));
 
-	dev->timer = ((int64_t) dev->period) * TIMER_USEC;
-	dev->timer_enabled = 1LL;
+	hz = device_get_config_int("hz");
+	if (hz > 0) {
+		dev->period = 1000000.0 / (double)hz;
+
+		dev->timer = ((int64_t) dev->period) * TIMER_USEC;
+		dev->timer_enabled = 1LL;
+	}
 
 	io_sethandler(dev->base, 4,
 		      lt_read,NULL,NULL, lt_write,NULL,NULL, dev);
@@ -777,10 +782,13 @@ static const device_config_t lt_config[] = {
     {
 	"hz", "Hz", CONFIG_SELECTION, "", 45, {
 		{
-			"30 Hz (JMP2 = 1)", 30
+			"Original Mode", 0
 		},
 		{
 			"45 Hz (JMP2 not populated)", 45
+		},
+		{
+			"30 Hz (JMP2 = 1)", 30
 		},
 		{
 			"60 Hz (JMP 2 = 2)", 60

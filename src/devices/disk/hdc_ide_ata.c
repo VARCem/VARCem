@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.31	2019/04/11
+ * Version:	@(#)hdc_ide_ata.c	1.0.32	2019/04/21
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -163,7 +163,8 @@ static void	ide_callback(void *priv);
 
 
 uint8_t
-getstat(ide_t *ide) {
+getstat(ide_t *ide)
+{
     return ide->atastat;
 }
 
@@ -247,6 +248,7 @@ ide_get_period(ide_t *ide, int size)
     period = 1000000.0 / period;
     period *= (double) TIMER_USEC;
     period *= (double) size;
+
     return (int64_t) period;
 }
 
@@ -871,13 +873,11 @@ ide_allocate_buffer(ide_t *dev)
     uint32_t sz = 65536 * sizeof(uint16_t);
 
     if (dev->buffer) {
-INFO("IDE: buffer already present @%08lx\n", dev->buffer);
 	return;
     }
 
     dev->buffer = (uint16_t *)mem_alloc(sz);
     memset(dev->buffer, 0x00, sz);
-INFO("IDE: buffer allocated @%08lx\n", dev->buffer);
 }
 
 
