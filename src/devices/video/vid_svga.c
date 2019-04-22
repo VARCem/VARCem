@@ -11,10 +11,11 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.17	2019/04/11
+ * Version:	@(#)vid_svga.c	1.0.18	2019/04/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
+ *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
@@ -1282,10 +1283,10 @@ svga_writel_common(uint32_t addr, uint32_t val, uint8_t linear, void *p)
     svga_t *svga = (svga_t *)p;
 
     if (!svga->fast) {
-	svga_write(addr, val, p);
-	svga_write(addr + 1, val >> 8, p);
-	svga_write(addr + 2, val >> 16, p);
-	svga_write(addr + 3, val >> 24, p);
+	svga_write_common(addr, val, linear, p);
+	svga_write_common(addr + 1, val >> 8, linear, p);
+	svga_write_common(addr + 2, val >> 16, linear, p);
+	svga_write_common(addr + 3, val >> 24, linear, p);
 	return;
     }
 

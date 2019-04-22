@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.11	2019/04/11
+ * Version:	@(#)cpu.c	1.0.12	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -116,17 +116,16 @@ const OpFn	*x86_dynarec_opcodes_REPNE;
 
 int		cpu_busspeed;
 int		cpu_16bitbus;
+int		isa_cycles;
 int		cpu_cyrix_alignment;
 int		CPUID;
 uint64_t	cpu_CR4_mask;
-int		isa_cycles;
 int		cpu_cycles_read, cpu_cycles_read_l,
 		cpu_cycles_write, cpu_cycles_write_l;
 int		cpu_prefetch_cycles, cpu_prefetch_width,
 		cpu_mem_prefetch_cycles, cpu_rom_prefetch_cycles;
 int		cpu_waitstates;
 int		cpu_cache_int_enabled, cpu_cache_ext_enabled;
-int		cpu_pci_speed;
 
 int		is186,			/* 80186 */
 		is286,			/* 80286 */
@@ -146,9 +145,6 @@ int		cpu_hasrdtsc,
 uint64_t	tsc = 0;
 msr_t		msr;
 cr0_t		CR0;
-uint64_t	pmc[2] = {0, 0};
-
-uint16_t	temp_seg_data[4] = {0, 0, 0, 0};
 
 /* Variables for the 686+ processors. */
 uint16_t	cs_msr = 0;
@@ -178,9 +174,7 @@ uint64_t	ecx570_msr = 0;
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
 /* Variables for the AMD "K" processors. */
-uint64_t	ecx83_msr = 0;			/* AMD K5 and K6 MSR's. */
 uint64_t	star = 0;			/* These are K6-only. */
-uint64_t	sfmask = 0;
 #endif
 
 int		timing_rr;
@@ -204,6 +198,13 @@ static const CPU *cpu_list,
 static int	cpu_turbo = -1,
 		cpu_effective = -1;
 
+#if defined(DEV_BRANCH) && defined(USE_AMD_K)
+/* Variables for the AMD "K" processors. */
+static uint64_t	ecx83_msr = 0;			/* AMD K5 and K6 MSR's. */
+static uint64_t	sfmask = 0;
+#endif
+
+/* Variables for the Cyrix processors. */
 static uint8_t	ccr0, ccr1, ccr2, ccr3, ccr4, ccr5, ccr6;
 static int	cyrix_addr;
 

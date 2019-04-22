@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.14	2019/03/29
+ * Version:	@(#)mem.h	1.0.15	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -124,6 +124,9 @@ extern page_t		*pages,
 			**page_lookup;
 
 extern uint32_t		get_phys_virt,get_phys_phys;
+
+extern uint32_t		pccache;
+extern uint8_t		*pccache2;
 
 extern int		memspeed[11];
 

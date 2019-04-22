@@ -8,7 +8,7 @@
  *
  *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.10	2019/04/20
+ * Version:	@(#)cpu.h	1.0.11	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -348,10 +348,8 @@ extern uint32_t		cpu_cur_status;
 extern uint64_t		cpu_CR4_mask;
 extern uint64_t		tsc;
 extern msr_t		msr;
-extern int		cycles_lost;
 extern uint8_t		opcode;
 extern int		fpucount;
-extern float		mips,flops;
 extern int		cgate16;
 extern int		cpl_override;
 extern int		CPUID;
@@ -360,14 +358,8 @@ extern int		isa_cycles;
 extern uint16_t		flags,eflags;
 extern uint32_t		oldds,oldss,olddslimit,oldsslimit,olddslimitw,oldsslimitw;
 extern int		ins;		// FIXME: get rid of this!
-extern int		cycdiff;
-extern uint32_t		pccache;
-extern uint8_t		*pccache2;
 
-extern float		isa_timing,
-			bus_timing;
-extern uint64_t		pmc[2];
-extern uint16_t		temp_seg_data[4];
+extern float		bus_timing;
 extern uint16_t		cs_msr;
 extern uint32_t		esp_msr;
 extern uint32_t		eip_msr;
@@ -414,7 +406,6 @@ extern int	cpu_prefetch_cycles, cpu_prefetch_width,
 		cpu_mem_prefetch_cycles, cpu_rom_prefetch_cycles;
 extern int	cpu_cache_int_enabled, cpu_cache_ext_enabled;
 extern int	cpu_waitstates;
-extern int	cpu_pci_speed;
 
 extern int	timing_rr;
 extern int	timing_mr, timing_mrl;

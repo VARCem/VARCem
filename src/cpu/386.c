@@ -8,7 +8,7 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.8	2019/04/20
+ * Version:	@(#)386.c	1.0.9	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -82,7 +82,6 @@ int		timetolive = 0;
 /* Also in 386_dynarec.c: */
 cpu_state_t	cpu_state;
 int		inscounts[256];
-//uint32_t	oldcs2, oldpc2;
 uint32_t	oxpc;
 int		trap;
 int		inttype;
@@ -150,9 +149,9 @@ uint32_t	rmdat32;
 void
 exec386(int cycs)
 {
-    int64_t cycdiff;
     uint32_t addr;
     uint8_t temp;
+    int cycdiff;
     int oldcyc;
     int tempi;
 

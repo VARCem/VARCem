@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.8	2019/04/20
+ * Version:	@(#)386_dynarec.c	1.0.9	2019/04/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,7 +87,6 @@ int		cpu_recomp_blocks_latched, cpu_recomp_ins_latched,
 
 int		inrecomp = 0;
 int		cpu_block_end = 0;
-//int		nmi_enable = 1;		808x.c
 
 int cpl_override=0;
 int fpucount=0;
@@ -95,8 +94,6 @@ int oddeven=0;
 
 
 uint32_t rmdat32;
-//static uint32_t backupregs[16];
-//static uint32_t oldecx;
 
 
 static INLINE void fetch_ea_32_long(uint32_t rmdat)
