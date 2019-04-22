@@ -391,7 +391,6 @@ ms_read(uint16_t port, void *priv)
     }
 
     DBGLOG(2, "MOUSE: read(%04x) = %02x\n", port, ret);
-pclog(0,"MOUSE: read(%04x) = %02x\n", port, ret);
 
     return(ret);
 }
@@ -404,7 +403,6 @@ ms_write(uint16_t port, uint8_t val, void *priv)
     mouse_t *dev = (mouse_t *)priv;
 
     DBGLOG(2, "MOUSE: write(%04x, %02x)\n", port, val);
-pclog(0,"MOUSE: write(%04x, %02x)\n", port, val);
 
     switch (port & 0x0003) {
 	case INP_PORT_CONTROL:
