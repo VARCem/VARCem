@@ -2152,6 +2152,7 @@ const device_t keyboard_ps2_device = {
     NULL
 };
 
+
 const device_t keyboard_ps2_acer_device = {
     "Acer 90M002A PS/2 Keyboard",
     0,
