@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430xx-based Acer machines.
  *
- * Version:	@(#)m_acer.c	1.0.1	2019/04/08
+ * Version:	@(#)m_acer.c	1.0.2	2019/04/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -181,7 +181,7 @@ acer_init(const device_t *info, void *arg)
 		device_add(&intel_flash_bxb_device);
 
 		device_add(&fdc37c665_device);
-		device_add(&keyboard_ps2_ami_pci_device);
+		device_add(&keyboard_ps2_acer_device);
 
 		break;
     }

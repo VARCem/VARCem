@@ -11,7 +11,7 @@
  * NOTE:	Several changes to disable Mode1 for now, as this breaks 
  *		 the TSX32 operating system. More cleanups needed..
  *
- * Version:	@(#)keyboard_at.c	1.0.22	2019/04/21
+ * Version:	@(#)keyboard_at.c	1.0.23	2019/04/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2146,6 +2146,16 @@ const device_t keyboard_ps2_device = {
     "PS/2 Keyboard",
     0,
     KBC_TYPE_PS2_1 | KBC_VEN_GENERIC,
+    NULL,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t keyboard_ps2_acer_device = {
+    "Acer 90M002A PS/2 Keyboard",
+    0,
+    KBC_TYPE_PS2_2 | KBC_VEN_AMI,
     NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,
