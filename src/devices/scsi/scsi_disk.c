@@ -8,12 +8,12 @@
  *
  *		Emulation of SCSI fixed disks.
  *
- * Version:	@(#)scsi_disk.c	1.0.22	2018/11/02
+ * Version:	@(#)scsi_disk.c	1.0.23	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -196,13 +196,13 @@ static void
 mode_sense_load(scsi_disk_t *dev)
 {
     wchar_t temp[512];
-    const mode_sense_pages_t *ptr;
     FILE *fp;
 
-    ptr = &mode_sense_pages_default;
-    memcpy(&dev->ms_pages_saved, ptr, sizeof(mode_sense_pages_t));
+    /* Start out with a default set of pages. */
+    memcpy(&dev->ms_pages_saved,
+	   &mode_sense_pages_default, sizeof(mode_sense_pages_t));
 
-    memset(temp, 0, sizeof(temp));
+    /* Create the pathname for this data. */
     swprintf(temp, sizeof_w(temp),
 	     L"scsi_disk_%02i_mode_sense.bin", dev->id);
 
@@ -220,7 +220,7 @@ mode_sense_save(scsi_disk_t *dev)
     wchar_t temp[512];
     FILE *fp;
 
-    memset(temp, 0, sizeof(temp));
+    /* Create the pathname for this data. */
     swprintf(temp, sizeof_w(temp),
 	     L"scsi_disk_%02i_mode_sense.bin", dev->id);
 
@@ -257,22 +257,24 @@ read_capcity(void *p, uint8_t *cdb, uint8_t *buffer, uint32_t *len)
 static uint8_t
 mode_sense_read(scsi_disk_t *dev, uint8_t page_control, uint8_t page, uint8_t pos)
 {
+    uint8_t ret = 0x00;
+
     switch (page_control) {
 	case 0:
 	case 3:
-		return dev->ms_pages_saved.pages[page][pos];
+		ret = dev->ms_pages_saved.pages[page][pos];
 		break;
 
 	case 1:
-		return mode_sense_pages_changeable.pages[page][pos];
+		ret = mode_sense_pages_changeable.pages[page][pos];
 		break;
 
 	case 2:
-		return mode_sense_pages_default.pages[page][pos];
+		ret = mode_sense_pages_default.pages[page][pos];
 		break;
     }
 
-    return 0;
+    return ret;
 }
 
 
