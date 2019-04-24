@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.13	2019/04/11
+ * Version:	@(#)scsi_aha154x.c	1.0.14	2019/04/24
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -359,7 +359,8 @@ aha_cmds(void *priv)
 		 * and expects a 0x04 back in the INTR
 		 * register.  --FvK
 		 */
-		dev->Interrupt = shram_cmd(dev, dev->CmdBuf[0]);
+		if (dev->rom_shramsz > 0)
+			dev->Interrupt = shram_cmd(dev, dev->CmdBuf[0]);
 		break;
 
 	case CMD_BIOS_MBINIT: /* BIOS Mailbox Initialization */
@@ -782,8 +783,6 @@ aha_init(const device_t *info, UNUSED(void *parent))
 		}
 		dev->fw_rev = "A005";	/* The 3.2 microcode says A012. */
 		dev->HostID = device_get_config_int("hostid");
-		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
-		dev->rom_shramsz = 128;		/* size of shadow RAM */
 		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
 

@@ -8,6 +8,10 @@
  *
  *		Emulation of SCSI fixed disks.
  *
+ * **NOTE**	Some weirdness is still going on with the sense_read code;
+ *		until this is fixed, we return the actual device properties,
+ *		and keep the sense data unmodifyable.
+ *
  * Version:	@(#)scsi_disk.c	1.0.23	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
@@ -274,6 +278,8 @@ mode_sense_read(scsi_disk_t *dev, uint8_t page_control, uint8_t page, uint8_t po
 {
     uint8_t ret = 0x00;
 
+INFO("SCSI disk%i sense_read(%i, %i, %i)\n", dev->id, page_control, page, pos);
+
 #if 1
     if (page_control == 1)
 	return mode_sense_pages_changeable.pages[page][pos];
@@ -298,19 +304,23 @@ mode_sense_read(scsi_disk_t *dev, uint8_t page_control, uint8_t page, uint8_t po
  			case 2:
  			case 6:
  			case 9:
+INFO("SCSI: sense returning %i cyls (%02x)\n", dev->drv->tracks, (dev->drv->tracks >> 16) & 0xff);
  				return (dev->drv->tracks >> 16) & 0xff;
 
  			case 3:
  			case 7:
  			case 10:
+INFO("SCSI: sense returning %i cyls (%02x)\n", dev->drv->tracks, (dev->drv->tracks >> 8) & 0xff);
  				return (dev->drv->tracks >> 8) & 0xff;
 
  			case 4:
  			case 8:
  			case 11:
+INFO("SCSI: sense returning %i cyls (%02x)\n", dev->drv->tracks, dev->drv->tracks & 0xff);
  				return dev->drv->tracks & 0xff;
 
  			case 5:
+INFO("SCSI: sense returning %i heads\n", dev->drv->hpc);
  				return dev->drv->hpc & 0xff;
  		}
 #else
@@ -331,10 +341,12 @@ mode_sense_read(scsi_disk_t *dev, uint8_t page_control, uint8_t page, uint8_t po
 				return mode_sense_pages_default.pages[page][pos];
 
 			case 10:
-				return (dev->drv->spt >> 8) & 0xff;
+INFO("SCSI: sense returning %i spt (%02x)\n", (dev->drv->spt + 1), ((dev->drv->spt + 1) >> 8) & 0xff);
+				return ((dev->drv->spt + 1) >> 8) & 0xff;
 
 			case 11:
-				return dev->drv->spt & 0xff;
+INFO("SCSI: sense returning %i spt (%02x)\n", (dev->drv->spt + 1), (dev->drv->spt + 1) & 0xff);
+				return (dev->drv->spt + 1) & 0xff;
 		}
 		break;
    } else switch (page_control) {

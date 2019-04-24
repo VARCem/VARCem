@@ -12,13 +12,13 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.15	2018/10/16
+ * Version:	@(#)scsi_x54x.c	1.0.16	2019/04/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -509,10 +509,6 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 			ret = !!ret;
 		break;
 
-	default:
-		DEBUG("BIOS: Unimplemented command: %02X\n", cmd->command);
-		/*FALLTHROUGH*/
-
 	case 0x05:	/* Format Track, invalid since SCSI has no tracks */
 	case 0x0a:	/* ???? */
 	case 0x0b:	/* ???? */
@@ -529,7 +525,7 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 	case 0x0f:	/* Write Sector Buffer */
 	case 0x14:	/* Controller Diagnostic */
 //FIXME: add a longer delay here --FvK
-		ret = 0x80;
+		ret = 0x00;
 		break;
 
 	case 0x07:	/* Format Unit */
@@ -567,6 +563,10 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 		}
 
 		break;
+
+	default:
+		DEBUG("BIOS: Unimplemented command: %02X\n", cmd->command);
+		return(0x01);
     }
 	
     DEBUG("BIOS Request %02X complete: %02X\n", cmd->command, ret);
