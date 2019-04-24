@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.65	2019/04/20
+# Version:	@(#)Makefile.VC	1.0.66	2019/04/23
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -141,6 +141,9 @@ endif
 ifndef COMPAQ
  COMPAQ		:= n
 endif
+ifndef MICRAL
+ MICRAL		:= n
+endif
 ifndef SUPERSPORT
  SUPERSPORT	:= n
 endif
@@ -218,6 +221,7 @@ ifeq ($(DEV_BUILD), y)
  SIS471		:= y
  SIS496		:= y
  COMPAQ		:= y
+ MICRAL		:= y
  SUPERSPORT	:= y
  ST11		:= y
  WD1002		:= y
@@ -582,6 +586,11 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(COMPAQ), y)
   OPTS		+= -DUSE_COMPAQ
   DEVBROBJ	+= m_compaq.obj m_compaq_vid.obj vid_cga_compaq.obj
+ endif
+
+ ifeq ($(MICRAL), y)
+  OPTS		+= -DUSE_MICRAL
+  DEVBROBJ	+= m_bull.obj
  endif
 
  ifeq ($(SUPERSPORT), y)

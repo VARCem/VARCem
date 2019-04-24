@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.13	2019/04/19
+ * Version:	@(#)vid_ega.c	1.0.14	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1281,6 +1281,20 @@ const device_t ega_device = {
     &ega_timing,
     ega_config
 };
+
+const device_t ega_onboard_device = {
+    "Onboard EGA",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
+    EGA_IBM,
+    NULL,
+    ega_standalone_init, ega_close, NULL,
+    NULL,
+    speed_changed,
+    NULL,
+    &ega_timing,
+    ega_config
+};
+
 
 static const video_timings_t ega_compaq_timing = {VID_ISA,8,16,32,8,16,32};
 const device_t ega_compaq_device = {

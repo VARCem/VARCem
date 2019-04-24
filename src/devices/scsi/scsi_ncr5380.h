@@ -10,12 +10,12 @@
  *		made by NCR. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.2	2018/03/15
+ * Version:	@(#)scsi_ncr5380.c	1.0.3	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,10 +40,15 @@
 # define SCSI_NCR5380_H
 
 
+extern const device_t scsi_ncr53c80_onboard_device;
+
 extern const device_t scsi_lcs6821n_device;
 extern const device_t scsi_rt1000b_device;
 extern const device_t scsi_t130b_device;
 extern const device_t scsi_scsiat_device;
+
+
+extern void	scsi_ncr5380_set_info(void *priv, int base, int irq);
 
 
 #endif	/*SCSI_NCR5380_H*/

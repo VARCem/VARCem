@@ -8,12 +8,12 @@
  *
  *		The generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.c	1.0.13	2018/10/20
+ * Version:	@(#)scsi_device.c	1.0.14	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -134,7 +134,7 @@ scsi_device_reset(scsi_device_t *dev)
 int
 scsi_device_present(scsi_device_t *dev)
 {
-    if (dev->type == SCSI_NONE)
+    if (dev->type == SCSI_NO_DEVICE)
 	return 0;
 
     return 1;

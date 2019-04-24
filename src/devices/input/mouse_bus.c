@@ -53,7 +53,7 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.6	2019/04/21
+ * Version:	@(#)mouse_bus.c	1.1.7	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -284,7 +284,8 @@ lt_write(uint16_t port, uint8_t val, void *priv)
 		  else
 			dev->flags &= ~FLAG_HOLD;
 
-		picintc(1 << dev->irq);
+		if (dev->irq != -1)
+			picintc(1 << dev->irq);
 
 		break;
 
@@ -425,7 +426,8 @@ ms_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case INP_PORT_DATA:
-		picintc(1 << dev->irq);
+		if (dev->irq != -1)
+			picintc(1 << dev->irq);
 		switch (dev->cmd) {
 			case INP_CTRL_COMMAND:
 				if (val & INP_HOLD_COUNTER)
@@ -462,7 +464,8 @@ ms_write(uint16_t port, uint8_t val, void *priv)
 
 					case 6:
 						if (val & INP_ENABLE_TIMER_IRQ)
-							picint(1 << dev->irq);
+							if (dev->irq != -1)
+								picint(1 << dev->irq);
 						dev->ctrl &= INP_PERIOD_MASK;
 						dev->ctrl |= (val & ~INP_PERIOD_MASK);
 						break;
@@ -546,7 +549,8 @@ bm_poll(int x, int y, int z, int b, void *priv)
 
 	/* Send interrupt. */
 	if (dev->flags & FLAG_DATA_INT) {
-		picint(1 << dev->irq);
+		if (dev->irq != -1)
+			picint(1 << dev->irq);
 		DBGLOG(1, "MOUSE: Data Interrupt fired\n");
 	}
     }
@@ -673,13 +677,19 @@ bm_init(const device_t *info, UNUSED(void *parent))
 
 	case 1:		/* on-board controller, Logitech compatible */
 		dev->base = 0x023c;
-		dev->irq = 2;
+		dev->irq = -1;
 		break;
 
 	case 10:	/* Microsoft InPort controller */
 		dev->flags = FLAG_INPORT;
 		dev->base = device_get_config_hex16("base");
 		dev->irq = device_get_config_int("irq");
+		break;
+
+	case 11:	/* Microsoft InPort on-board controller */
+		dev->flags = FLAG_INPORT;
+		dev->base = 0x023c;
+		dev->irq = -1;
 		break;
     }
 
@@ -885,7 +895,7 @@ const device_t mouse_logibus_device = {
     lt_config
 };
 
-const device_t mouse_logibus_internal_device = {
+const device_t mouse_logibus_onboard_device = {
     "Logitech Bus Mouse (Internal)",
     0,
     1,
@@ -906,3 +916,31 @@ const device_t mouse_msinport_device = {
     NULL, NULL, NULL,
     ms_config
 };
+
+const device_t mouse_msinport_onboard_device = {
+    "Microsoft InPort Mouse (Internal)",
+    DEVICE_ISA,
+    11,
+    NULL,
+    bm_init, bm_close, NULL,
+    bm_poll,
+    NULL, NULL, NULL,
+    NULL
+};
+
+
+/*
+ * *** THIS IS A TEMPORARY FUNCTION ***
+ *
+ * Allows setting of the mouse device's IRQ value,
+ * currently needed for onboard devices.
+ */
+void
+mouse_bus_set_irq(void *priv, int irq)
+{
+    mouse_t *dev = (mouse_t *)priv;
+
+    DBGLOG(1, "MOUSE: Set_IRQ(%i)\n", irq);
+
+    dev->irq = irq;
+}

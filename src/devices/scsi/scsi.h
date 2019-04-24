@@ -8,13 +8,13 @@
  *
  *		SCSI module definitions.
  *
- * Version:	@(#)scsi.h	1.0.9	2018/10/16
+ * Version:	@(#)scsi.h	1.0.10	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,17 +39,21 @@
 #define EMU_SCSI_H
 
 
-extern void	scsi_card_log(int level, const char *fmt, ...);
+#define SCSI_NONE	0	/* no SCSI controller selected */
+#define SCSI_INTERNAL	1	/* internal/onboard controller selected */
 
-extern int	scsi_card_available(int card);
-extern const char *scsi_card_getname(int card);
+
+extern void		scsi_card_log(int level, const char *fmt, ...);
+
+extern int		scsi_card_available(int card);
+extern const char	*scsi_card_getname(int card);
 #ifdef EMU_DEVICE_H
-extern const device_t *scsi_card_getdevice(int card);
+extern const device_t	*scsi_card_getdevice(int card);
 #endif
-extern int	scsi_card_has_config(int card);
-extern const char *scsi_card_get_internal_name(int card);
-extern int	scsi_card_get_from_internal_name(const char *s);
-extern void	scsi_card_init(void);
+extern int		scsi_card_has_config(int card);
+extern const char	*scsi_card_get_internal_name(int card);
+extern int		scsi_card_get_from_internal_name(const char *s);
+extern void		scsi_card_init(void);
 
 
 #endif	/*EMU_SCSI_H*/

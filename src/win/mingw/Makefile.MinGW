@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.81	2019/04/21
+# Version:	@(#)Makefile.mingw	1.0.82	2019/04/23
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -140,6 +140,9 @@ endif
 ifndef COMPAQ
  COMPAQ		:= n
 endif
+ifndef MICRAL
+ MICRAL		:= n
+endif
 ifndef SUPERSPORT
  SUPERSPORT	:= n
 endif
@@ -218,6 +221,7 @@ ifeq ($(DEV_BUILD), y)
  SIS471		:= y
  SIS496		:= y
  COMPAQ		:= y
+ MICRAL		:= y
  SUPERSPORT	:= y
  ST11		:= y
  WD1002		:= y
@@ -640,6 +644,11 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(COMPAQ), y)
   OPTS		+= -DUSE_COMPAQ
   DEVBROBJ	+= m_compaq.o m_compaq_vid.o vid_cga_compaq.o
+ endif
+
+ ifeq ($(MICRAL), y)
+  OPTS		+= -DUSE_MICRAL
+  DEVBROBJ	+= m_bull.o
  endif
 
  ifeq ($(SUPERSPORT), y)

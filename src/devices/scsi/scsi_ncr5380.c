@@ -11,7 +11,7 @@
  *
  * NOTE:	This code now only supports targets at LUN=0 !!
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.15	2019/04/11
+ * Version:	@(#)scsi_ncr5380.c	1.0.16	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -369,7 +369,8 @@ ncr_callback(void *priv)
 				DEBUG("NCR: CurBus BSY|REQ=%02x\n", ncr->cur_bus);
 				ncr->command_pos = 0;
 				SET_BUS_STATE(ncr, SCSI_PHASE_COMMAND);
-				picint(1 << ncr_dev->irq);
+				if (ncr_dev->irq != -1)
+					picint(1 << ncr_dev->irq);
 			} else {
 				ncr->state = STATE_IDLE;
 				ncr->cur_bus = 0;
@@ -506,7 +507,7 @@ ncr_callback(void *priv)
 	ncr->bus_in = ncr->bus_host;
     }
 
-    if (ncr_dev->type < 3) {
+    if (ncr_dev->type < 13) {	//FIXME:
 	if (ncr->dma_mode == DMA_INITIATOR_RECEIVE) {
 		if (!(ncr_dev->status_ctrl & CTRL_DATA_DIR)) {
 			DEBUG("NCR: DMA_INITIATOR_RECEIVE with DMA direction set wrong\n");
@@ -564,7 +565,8 @@ ncr_callback(void *priv)
 					if (ncr->mode & MODE_ENA_EOP_INT) {
 						DEBUG("NCR: NCR read irq\n");
 						ncr->isr |= STATUS_INT;
-						picint(1 << ncr_dev->irq);
+						if (ncr_dev->irq != -1)
+							picint(1 << ncr_dev->irq);
 					}
 				}
 				break;
@@ -630,7 +632,8 @@ ncr_callback(void *priv)
 						if (ncr->mode & MODE_ENA_EOP_INT) {
 							DEBUG("NCR: write irq\n");
 							ncr->isr |= STATUS_INT;
-							picint(1 << ncr_dev->irq);
+							if (ncr_dev->irq != -1)
+								picint(1 << ncr_dev->irq);
 						}
 					}
 					break;
@@ -684,7 +687,8 @@ ncr_callback(void *priv)
 					if (ncr->mode & MODE_ENA_EOP_INT) {
 						DEBUG("NCR: read irq\n");
 						ncr->isr |= STATUS_INT;
-						picint(1 << ncr_dev->irq);
+						if (ncr_dev->irq != -1)
+							picint(1 << ncr_dev->irq);
 					}
 				}
 				break;
@@ -737,7 +741,8 @@ ncr_callback(void *priv)
 					if (ncr->mode & MODE_ENA_EOP_INT) {
 						DEBUG("NCR: write irq\n");
 						ncr->isr |= STATUS_INT;
-						picint(1 << ncr_dev->irq);
+						if (ncr_dev->irq != -1)
+							picint(1 << ncr_dev->irq);
 					}
 				}
 				break;
@@ -884,8 +889,10 @@ ncr_read(uint16_t port, void *priv)
 			(ncr->cur_bus & SCSI_PHASE_MESSAGE_IN)) {
 			DEBUG("Phase match\n");
 			ret |= STATUS_PHASE_MATCH;
-		} else
-			picint(1 << ncr_dev->irq);
+		} else {
+			if (ncr_dev->irq != -1)
+				picint(1 << ncr_dev->irq);
+		}
 
 		ncr_wait_process(ncr_dev);
 
@@ -917,7 +924,8 @@ ncr_read(uint16_t port, void *priv)
 
 	case 7:		/* reset Parity/Interrupt */
 		ncr->isr &= ~STATUS_INT;
-		picintc(1 << ncr_dev->irq);
+		if (ncr_dev->irq != -1)
+			picintc(1 << ncr_dev->irq);
 		DEBUG("Reset IRQ\n");
 		break;
 
@@ -1052,7 +1060,8 @@ memio_write(uint32_t addr, uint8_t val, void *priv)
 				DEBUG("Write 0x3980: val=%02x\n", val);
 				if (val & 0x80) {
 					DEBUG("Resetting the 53c400\n");
-					picint(1 << ncr_dev->irq);
+					if (ncr_dev->irq != -1)
+						picint(1 << ncr_dev->irq);
 				}
 
 				if ((val & CTRL_DATA_DIR) && !(ncr_dev->status_ctrl & CTRL_DATA_DIR)) {
@@ -1282,6 +1291,115 @@ scsiat_out(uint16_t port, uint8_t val, void *priv)
 }
 
 
+static uint8_t 
+dev_in(uint16_t port, void *priv)
+{
+    ncr5380_t *ncr_dev = (ncr5380_t *)priv;
+    uint8_t ret = 0xff;
+
+    switch (port & 0x0f) {
+	case 0x00:
+	case 0x01:
+	case 0x02:
+	case 0x03:
+	case 0x04:
+	case 0x05:
+	case 0x06:
+	case 0x07:
+		ret = ncr_read(port, ncr_dev);
+		break;
+    }
+
+    DBGLOG(2, "5380: in(0x%03x) = %02x\n", port, ret);	
+	
+    return(ret);
+}
+
+
+static void 
+dev_out(uint16_t port, uint8_t val, void *priv)
+{
+    ncr5380_t *ncr_dev = (ncr5380_t *)priv;
+    ncr_t *ncr = &ncr_dev->ncr;
+    scsi_device_t *dev = &scsi_devices[ncr->target_id][ncr->target_lun];
+
+    DBGLOG(2, "5380 write(0x%03x, %02x)\n", port, val);
+
+    switch (port & 0x0f) {
+	case 0x08:
+		ncr->unk_08 = val;	
+	
+		if (ncr->unk_08 & 0x08) {			
+			if (ncr->dma_mode == DMA_INITIATOR_RECEIVE) {
+				while (ncr_dev->buffer_host_pos < 128) {
+					uint8_t temp;
+					
+					temp = ncr_dev->buffer[ncr_dev->buffer_host_pos++];
+					
+					DBGLOG(1, "Read Buffer host=%d\n", ncr_dev->buffer_host_pos);
+					
+					ncr->bus_host = get_bus_host(ncr) & ~BUS_DATAMASK;
+					ncr->bus_host |= BUS_SETDATA(temp);					
+					
+					if (ncr_dev->buffer_host_pos == 128)
+						break;
+				}
+			} else if (ncr->dma_mode == DMA_SEND) {
+				while (ncr_dev->buffer_host_pos < 128) {
+					/* Data ready. */
+					uint8_t temp;
+
+					ncr_wait_process(ncr_dev);
+					temp = BUS_GETDATA(ncr->bus_host);
+					ncr->bus_host = get_bus_host(ncr);
+					
+					ncr_dev->buffer[ncr_dev->buffer_host_pos++] = temp;
+					
+					DBGLOG(1, "Write Buffer host=%d\n", ncr_dev->buffer_host_pos);
+
+					if (ncr_dev->buffer_host_pos == 128) {
+						
+						break;
+					}
+				}			
+			}
+		}
+		
+		if (ncr->unk_08 & 0x01) {
+			ncr_dev->block_count_loaded = 1;
+			ncr_dev->block_count = dev->buffer_length / 128;
+		}
+		break;		
+		
+	case 0x00:
+	case 0x01:
+	case 0x02:
+	case 0x03:
+	case 0x04:
+	case 0x05:
+	case 0x06:
+	case 0x07:
+		ncr_write(port, val, ncr_dev);
+		break;
+    }
+}
+
+
+static void 
+ncr_close(void *priv)
+{
+    ncr5380_t *ncr_dev = (ncr5380_t *)priv;
+
+    if (ncr_dev) {
+	/* Tell the timer to terminate. */
+	ncr_dev->timer_period = 0LL;
+	ncr_dev->timer_enabled = 0LL;
+
+	free(ncr_dev);
+    }
+}
+
+
 static void *
 ncr_init(const device_t *info, UNUSED(void *parent))
 {
@@ -1294,7 +1412,12 @@ ncr_init(const device_t *info, UNUSED(void *parent))
     ncr_dev->type = info->local;
 
     switch(ncr_dev->type) {
-	case 0:		/* Longshine LCS6821N */
+	case 0:		/* NCR 53C80 (on-board) */
+		ncr_dev->base = 0;
+		ncr_dev->irq = -1;
+		break;
+
+	case 10:	/* Longshine LCS6821N */
 		ncr_dev->rom_addr = 0xDC000;
 		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
@@ -1303,12 +1426,11 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 		mem_map_disable(&ncr_dev->bios_rom.mapping);
 
 		mem_map_add(&ncr_dev->mapping, ncr_dev->rom_addr, 0x4000, 
-			    memio_read, NULL, NULL,
-			    memio_write, NULL, NULL,
+			    memio_read, NULL, NULL, memio_write, NULL, NULL,
 			    ncr_dev->bios_rom.rom, 0, ncr_dev);
 		break;
 
-	case 1:		/* Rancho RT1000B */
+	case 11:	/* Rancho RT1000B */
 		ncr_dev->rom_addr = 0xDC000;
 		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
@@ -1317,12 +1439,11 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 		mem_map_disable(&ncr_dev->bios_rom.mapping);
 
 		mem_map_add(&ncr_dev->mapping, ncr_dev->rom_addr, 0x4000, 
-			    memio_read, NULL, NULL,
-			    memio_write, NULL, NULL,
+			    memio_read, NULL, NULL, memio_write, NULL, NULL,
 			    ncr_dev->bios_rom.rom, 0, ncr_dev);
 		break;
 
-	case 2:		/* Trantor T130B */
+	case 12:		/* Trantor T130B */
 		ncr_dev->rom_addr = 0xDC000;
 		ncr_dev->base = device_get_config_hex16("base");
 		ncr_dev->irq = device_get_config_int("irq");
@@ -1339,7 +1460,7 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 			      t130b_in,NULL,NULL, t130b_out,NULL,NULL, ncr_dev);
 		break;
 
-	case 3:		/* Sumo SCSI-AT */
+	case 13:		/* Sumo SCSI-AT */
 		ncr_dev->base = device_get_config_hex16("base");
 		ncr_dev->irq = device_get_config_int("irq");
 		ncr_dev->rom_addr = device_get_config_hex20("bios_addr");
@@ -1376,21 +1497,6 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 	      TIMER_ALWAYS_ENABLED, ncr_dev);
 
     return(ncr_dev);
-}
-
-
-static void 
-ncr_close(void *priv)
-{
-    ncr5380_t *ncr_dev = (ncr5380_t *)priv;
-
-    if (ncr_dev) {
-	/* Tell the timer to terminate. */
-	ncr_dev->timer_period = 0LL;
-	ncr_dev->timer_enabled = 0LL;
-
-	free(ncr_dev);
-    }
 }
 
 
@@ -1534,10 +1640,20 @@ static const device_config_t scsiat_config[] = {
 };
 
 
+const device_t scsi_ncr53c80_onboard_device = {
+    "NCR 53C80 (onboard)",
+    DEVICE_ISA,
+    0,
+    NULL,
+    ncr_init, ncr_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
 const device_t scsi_lcs6821n_device = {
     "Longshine LCS-6821N",
     DEVICE_ISA,
-    0,
+    10,
     LCS6821N_ROM,
     ncr_init, ncr_close, NULL,
     NULL, NULL, NULL, NULL,
@@ -1547,7 +1663,7 @@ const device_t scsi_lcs6821n_device = {
 const device_t scsi_rt1000b_device = {
     "Ranco RT1000B",
     DEVICE_ISA,
-    1,
+    11,
     RT1000B_ROM,
     ncr_init, ncr_close, NULL,
     NULL, NULL, NULL, NULL,
@@ -1557,7 +1673,7 @@ const device_t scsi_rt1000b_device = {
 const device_t scsi_t130b_device = {
     "Trantor T130B",
     DEVICE_ISA,
-    2,
+    12,
     T130B_ROM,
     ncr_init, ncr_close, NULL,
     NULL, NULL, NULL, NULL,
@@ -1567,9 +1683,33 @@ const device_t scsi_t130b_device = {
 const device_t scsi_scsiat_device = {
     "Sumo SCSI-AT",
     DEVICE_ISA,
-    3,
+    13,
     SCSIAT_ROM,
     ncr_init, ncr_close, NULL,
     NULL, NULL, NULL, NULL,
     scsiat_config
 };
+
+
+/*
+ * *** THIS IS A TEMPORARY FUNCTION ***
+ *
+ * Allows setting of the device's IRQ value,
+ * currently needed for onboard devices.
+ */
+void
+scsi_ncr5380_set_info(void *priv, int base, int irq)
+{
+    ncr5380_t *dev = (ncr5380_t *)priv;
+
+    DBGLOG(1, "5380: Set_Info(%04x, %i)\n", base, irq);
+
+    if (dev->base != 0)
+	io_removehandler(dev->base, 16,
+			 dev_in,NULL,NULL, dev_out,NULL,NULL, dev);
+    dev->base = base;
+    io_sethandler(dev->base, 16,
+		  dev_in,NULL,NULL, dev_out,NULL,NULL, dev);
+
+    dev->irq = irq;
+}

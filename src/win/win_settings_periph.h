@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.18	2019/04/08
+ * Version:	@(#)win_settings_periph.h	1.0.19	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,6 +76,13 @@ recalc_scsi_list(const machine_t *m, HWND hdlg)
 
 	if (c == 0) {
 		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_NONE));
+	} else if (c == 1) {
+		if (! (m->flags & MACHINE_SCSI)) {
+			/* Skip "Internal" if machine doesn't have one. */
+			c++;
+			continue;
+		}
+		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_INTERNAL));
 	} else {
 		stransi = scsi_card_getname(c);
 		sprintf(tempA, "[%s] %s",

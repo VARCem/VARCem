@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.21	2019/04/11
+ * Version:	@(#)m_europc.c	1.0.22	2019/04/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -545,6 +545,7 @@ static void *
 europc_init(const device_t *info, void *arg)
 {
     europc_t *dev;
+    void *priv;
     uint8_t b;
     int i;
 
@@ -675,7 +676,8 @@ europc_init(const device_t *info, void *arg)
     b = (dev->nvr.regs[MRTC_CONF_C] & 0xfc);
     if (mouse_type == MOUSE_INTERNAL) {
 	/* Enable the Logitech Bus Mouse device. */
-	device_add(&mouse_logibus_internal_device);
+	priv = device_add(&mouse_logibus_onboard_device);
+	mouse_bus_set_irq(priv, 2);
 
 	/* Configure the port for (Bus Mouse Compatible) Mouse. */
 	b |= 0x01;

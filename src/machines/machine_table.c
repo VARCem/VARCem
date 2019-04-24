@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.39	2019/04/20
+ * Version:	@(#)machine_table.c	1.0.40	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -106,6 +106,9 @@ static const struct {
     { "[286 ISA] AMI 286 (NEAT)",		"ami_286",		&m_neat_ami		},
     { "[286 ISA] Award 286 (SCAT)",		"award_286",		&m_scat_award		},
 
+#if defined(DEV_BRANCH) && defined(USE_MICRAL)
+    { "[286 ISA] Bull Micral 45",		"bull_micral45",	&m_bull_micral45	},
+#endif
     { "[286 ISA] Commodore PC-30",		"commodore_pc30",	&m_cbm_pc30		},
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
     { "[286 ISA] Compaq Portable (286)",	"compaq_portable286",	&m_cpq_p1_286		},

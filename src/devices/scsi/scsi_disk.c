@@ -143,13 +143,22 @@ static uint64_t mode_sense_page_flags = (GPMODEP_FORMAT_DEVICE_PAGE |
 /* This should be done in a better way but for time being, it's been done this way so it's not as huge and more readable. */
 static const mode_sense_pages_t mode_sense_pages_default =
 {	{	[GPMODE_FORMAT_DEVICE_PAGE] = {	GPMODE_FORMAT_DEVICE_PAGE, 0x16, 0,    1, 0,  1, 0, 1, 0, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0, 0 },
+#if 1
+		[GPMODE_RIGID_DISK_PAGE   ] = {	GPMODE_RIGID_DISK_PAGE, 0x16, 0, 0x10, 0, 64, 0, 0, 0, 0, 0, 0, 0, 200, 0xff, 0xff, 0xff, 0, 0, 0, 0x15, 0x18, 0, 0 },
+#else
 		[GPMODE_RIGID_DISK_PAGE   ] = {	GPMODE_RIGID_DISK_PAGE, 0x16, 0, 0x10, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0, 0, 0 },
+#endif
 		[GPMODE_UNK_VENDOR_PAGE   ] = {	0xB0, 0x16, '8', '6', 'B', 'o', 'x', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' }
 }	};
 
 static const mode_sense_pages_t mode_sense_pages_changeable =
+#if 1
+{	{	[GPMODE_FORMAT_DEVICE_PAGE] = {	GPMODE_FORMAT_DEVICE_PAGE, 0x16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		[GPMODE_RIGID_DISK_PAGE   ] = {	GPMODE_RIGID_DISK_PAGE, 0x16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+#else
 {	{	[GPMODE_FORMAT_DEVICE_PAGE] = {	GPMODE_FORMAT_DEVICE_PAGE, 0x16, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0 },
 		[GPMODE_RIGID_DISK_PAGE   ] = {	GPMODE_RIGID_DISK_PAGE, 0x16, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0 },
+#endif
 		[GPMODE_UNK_VENDOR_PAGE   ] = {	0xB0, 0x16, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }
 }	};
 
@@ -198,9 +207,15 @@ mode_sense_load(scsi_disk_t *dev)
     wchar_t temp[512];
     FILE *fp;
 
+#if 0
+    // FIXME:
+    // This seems to make NextStep, OpenStep and maybe other
+    // systems not like the SCSI Disk device we present to
+    // them.  Being investigated.
     /* Start out with a default set of pages. */
     memcpy(&dev->ms_pages_saved,
 	   &mode_sense_pages_default, sizeof(mode_sense_pages_t));
+#endif
 
     /* Create the pathname for this data. */
     swprintf(temp, sizeof_w(temp),
@@ -259,15 +274,78 @@ mode_sense_read(scsi_disk_t *dev, uint8_t page_control, uint8_t page, uint8_t po
 {
     uint8_t ret = 0x00;
 
+#if 1
+    if (page_control == 1)
+	return mode_sense_pages_changeable.pages[page][pos];
+
+    if (page == GPMODE_RIGID_DISK_PAGE) switch (page_control) {
+	/* Rigid disk geometry page. */
+	case 0:
+	case 2:
+	case 3:
+#else
     switch (page_control) {
 	case 0:
 	case 3:
+#endif
+#if 1
+ 		switch(pos) {
+ 			case 0:
+ 			case 1:
+ 			default:
+ 				return mode_sense_pages_default.pages[page][pos];
+
+ 			case 2:
+ 			case 6:
+ 			case 9:
+ 				return (dev->drv->tracks >> 16) & 0xff;
+
+ 			case 3:
+ 			case 7:
+ 			case 10:
+ 				return (dev->drv->tracks >> 8) & 0xff;
+
+ 			case 4:
+ 			case 8:
+ 			case 11:
+ 				return dev->drv->tracks & 0xff;
+
+ 			case 5:
+ 				return dev->drv->hpc & 0xff;
+ 		}
+#else
 		ret = dev->ms_pages_saved.pages[page][pos];
+#endif
 		break;
 
+#if 1
+    } else if (page == GPMODE_FORMAT_DEVICE_PAGE) switch (page_control) {
+	/* Format device page. */
+	case 0:
+	case 2:
+	case 3:
+		switch(pos) {
+			case 0:
+			case 1:
+			default:
+				return mode_sense_pages_default.pages[page][pos];
+
+			case 10:
+				return (dev->drv->spt >> 8) & 0xff;
+
+			case 11:
+				return dev->drv->spt & 0xff;
+		}
+		break;
+   } else switch (page_control) {
+	case 0:
+	case 3:
+		return dev->ms_pages_saved.pages[page][pos];
+#else
 	case 1:
 		ret = mode_sense_pages_changeable.pages[page][pos];
 		break;
+#endif
 
 	case 2:
 		ret = mode_sense_pages_default.pages[page][pos];

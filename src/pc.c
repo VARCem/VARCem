@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.68	2019/04/19
+ * Version:	@(#)pc.c	1.0.69	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -139,8 +139,8 @@ int	game_enabled = 0,			/* (C) enable game port */
 #ifdef WALTJE
 int	romdos_enabled = 0;			/* (C) enable ROM DOS */
 #endif
-int	hdc_type = 0;				/* (C) HDC type */
-int	scsi_card = 0;				/* (C) selected SCSI card */
+int	hdc_type = HDC_NONE;			/* (C) HDC type */
+int	scsi_card = SCSI_NONE;			/* (C) selected SCSI card */
 int	sound_card = 0,				/* (C) selected sound card */
 	sound_is_float = 1,			/* (C) sound uses FP values */
 	sound_gain = 0,				/* (C) sound volume gain */

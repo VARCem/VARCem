@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.h	1.0.6	2018/10/16
+ * Version:	@(#)scsi_device.h	1.0.7	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -286,7 +286,7 @@
 #define MODE_SELECT_PHASE_PAGE		4
 
 /* These are based on the INQUIRY values. */
-#define SCSI_NONE		0x0060
+#define SCSI_NO_DEVICE		0x0060
 #define SCSI_FIXED_DISK		0x0000
 #define SCSI_REMOVABLE_DISK	0x8000
 #define SCSI_REMOVABLE_CDROM	0x8005

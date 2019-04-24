@@ -8,13 +8,13 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.15	2018/10/20
+ * Version:	@(#)scsi.c	1.0.16	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -71,6 +71,7 @@ static const struct {
     const device_t	*device;
 } scsi_cards[] = {
     { "none",		NULL				},
+    { "internal",	NULL				},
 
     { "aha1540b",	&aha1540b_device		},
     { "aha1542c",	&aha1542c_device		},
@@ -189,7 +190,7 @@ scsi_card_init(void)
 
 		memset(&scsi_devices[i][j], 0x00, sizeof(scsi_device_t));
 
-		scsi_devices[i][j].type = SCSI_NONE;
+		scsi_devices[i][j].type = SCSI_NO_DEVICE;
 	}
     }
 

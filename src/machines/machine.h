@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.30	2019/04/14
+ * Version:	@(#)machine.h	1.0.31	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,6 +57,7 @@
 #define MACHINE_MOUSE		0x040000	/* sys has int mouse */
 #define MACHINE_SOUND		0x080000	/* sys has int sound */
 #define MACHINE_VIDEO		0x100000	/* sys has int video */
+#define MACHINE_SCSI		0x200000	/* sys has int SCSI */
 
 #define IS_ARCH(a)		(machine->flags & (a)) ? 1 : 0;
 
@@ -137,6 +138,10 @@ extern const device_t	m_xt286;
 
 extern const device_t	m_neat_ami;
 extern const device_t	m_neat_dtk;
+
+#if defined(DEV_BRANCH) && defined(USE_MICRAL)
+extern const device_t	m_bull_micral45;
+#endif
 
 extern const device_t	m_tg286m;
 extern const device_t	m_headland_386_ami;

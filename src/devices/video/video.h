@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.31	2019/04/19
+ * Version:	@(#)video.h	1.0.32	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -207,6 +207,7 @@ extern const device_t	cga_compaq2_device;
 
 /* IBM EGA and compatibles. */
 extern const device_t	ega_device;
+extern const device_t	ega_onboard_device;
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
 extern const device_t	ega_compaq_device;
 #endif

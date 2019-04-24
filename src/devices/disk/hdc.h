@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.15	2019/02/24
+ * Version:	@(#)hdc.h	1.0.16	2019/04/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,8 +46,8 @@
 				 * least 7 devices, with each device being
 				 * able to support 8 units, but hey... */
 
-#define HDC_NONE	0
-#define HDC_INTERNAL	1
+#define HDC_NONE	0	/* no disk controller selected */
+#define HDC_INTERNAL	1	/* internal/onboard controller selected */
 
 
 #ifdef __cplusplus
