@@ -8,7 +8,7 @@
  *
  *		Emulation of Intel System I/O PCI chip.
  *
- * Version:	@(#)intel_sio.c	1.0.6	2019/04/09
+ * Version:	@(#)intel_sio.c	1.0.7	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -103,7 +103,7 @@ sio_write(int func, int addr, uint8_t val, void *priv)
 			return;
 
 		if (val & 0x40)
-			port_92_add();
+			port_92_add(0);
 		else
 			port_92_remove();
 
@@ -206,7 +206,7 @@ sio_init(const device_t *info, UNUSED(void *parent))
 
     port_92_reset();
 
-    port_92_add();
+    port_92_add(0);
 
     dma_alias_set();
 

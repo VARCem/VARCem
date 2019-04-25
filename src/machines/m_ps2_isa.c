@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.16	2019/04/11
+ * Version:	@(#)m_ps2_isa.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -206,7 +206,7 @@ common_init(ps2_t *dev)
     io_sethandler(0x0324, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
 
     port_92_reset();
-    port_92_add();
+    port_92_add(0);
 
     dev->reg_190 = 0;
 

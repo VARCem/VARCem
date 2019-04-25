@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.21	2019/04/11
+ * Version:	@(#)m_ps2_mca.c	1.0.22	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1451,7 +1451,7 @@ ps2_init(const device_t *info, void *arg)
 
     port_92_reset();
 
-    port_92_add();
+    port_92_add(0);
 
     nmi_mask = 0x80;
 

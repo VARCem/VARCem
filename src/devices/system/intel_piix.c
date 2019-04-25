@@ -12,7 +12,7 @@
  *		    word 0 - base address
  *		    word 1 - bits 1-15 = byte count, bit 31 = end of transfer
  *
- * Version:	@(#)intel_piix.c	1.0.10	2019/04/09
+ * Version:	@(#)intel_piix.c	1.0.11	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -858,7 +858,7 @@ piix_init(const device_t *info, UNUSED(void *parent))
 
     port_92_reset();
 
-    port_92_add();
+    port_92_add(0);
 
     dma_alias_set();
 
