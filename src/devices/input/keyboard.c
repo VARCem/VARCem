@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.12	2019/04/11
+ * Version:	@(#)keyboard.c	1.0.13	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -123,16 +123,16 @@ static uint8_t
 fake_shift_needed(uint16_t scan)
 {
     switch(scan) {
-	case 0x147:
-	case 0x148:
-	case 0x149:
-	case 0x14a:
-	case 0x14d:
-	case 0x14f:
-	case 0x150:
-	case 0x151:
-	case 0x152:
-	case 0x153:
+	case 0x0147:
+	case 0x0148:
+	case 0x0149:
+	case 0x014a:
+	case 0x014d:
+	case 0x014f:
+	case 0x0150:
+	case 0x0151:
+	case 0x0152:
+	case 0x0153:
 		return(1);
 
 	default:
@@ -150,10 +150,10 @@ key_process(uint16_t scan, int down)
     if (! keyboard_scan) return;
 
     oldkey[scan] = down;
-    if (down && codes[scan].mk[0]  == -1)
+    if (down && codes[scan].mk[0] == 0)
 	return;
 
-    if (!down && codes[scan].brk[0] == -1)
+    if (!down && codes[scan].brk[0] == 0)
 	return;
 
     if (AT && ((keyboard_mode & 3) == 3)) {
@@ -166,10 +166,10 @@ key_process(uint16_t scan, int down)
 	/* Send the special code indicating an opening fake shift might be needed. */
 	if (fake_shift_needed(scan))
 		keyboard_send(0x100);
-	while (codes[scan].mk[c] != -1)
+	while (codes[scan].mk[c] != 0)
 		keyboard_send(codes[scan].mk[c++]);
     } else {
-	while (codes[scan].brk[c] != -1)
+	while (codes[scan].brk[c] != 0)
 		keyboard_send(codes[scan].brk[c++]);
 	/* Send the special code indicating a closing fake shift might be needed. */
 	if (fake_shift_needed(scan))
@@ -189,77 +189,81 @@ keyboard_input(int down, uint16_t scan)
     if ((scan >> 8) == 0xe0) {
 	scan &= 0x00ff;
 	scan |= 0x0100;		/* extended key code */
-    } else if ((scan >> 8) != 0x01)
-	scan &= 0x00ff;		/* we can receive a scan code whose upper byte is 0x01,
-				   this means we're the Win32 version running on windows
-				   that already sends us preprocessed scan codes, which
-				   means we then use the scan code as is, and need to
-				   make sure we do not accidentally strip that upper byte */
+    } else if ((scan >> 8) != 0x01) {
+	/*
+	 * we can receive a scan code whose upper byte is 0x01,
+	 * this means we're the Win32 version running on windows
+	 * that already sends us preprocessed scan codes, which
+	 * means we then use the scan code as is, and need to
+	 * make sure we do not accidentally strip that upper byte.
+	 */
+	scan &= 0x00ff;
+    }
 
-    if (recv_key[scan & 0x1ff] ^ down) {
+    if (recv_key[scan & 0x01ff] ^ down) {
 	if (down) {
-		switch(scan & 0x1ff) {
-			case 0x01c:	/* Left Ctrl */
+		switch(scan & 0x01ff) {
+			case 0x001c:	/* Left Ctrl */
 				shift |= 0x01;
 				break;
 
-			case 0x11c:	/* Right Ctrl */
+			case 0x011c:	/* Right Ctrl */
 				shift |= 0x10;
 				break;
 
-			case 0x02a:	/* Left Shift */
+			case 0x002a:	/* Left Shift */
 				shift |= 0x02;
 				break;
 
-			case 0x036:	/* Right Shift */
+			case 0x0036:	/* Right Shift */
 				shift |= 0x20;
 				break;
 
-			case 0x038:	/* Left Alt */
+			case 0x0038:	/* Left Alt */
 				shift |= 0x03;
 				break;
 
-			case 0x138:	/* Right Alt */
+			case 0x0138:	/* Right Alt */
 				shift |= 0x30;
 				break;
 		}
 	} else {
-		switch(scan & 0x1ff) {
-			case 0x01c:	/* Left Ctrl */
+		switch(scan & 0x01ff) {
+			case 0x001c:	/* Left Ctrl */
 				shift &= ~0x01;
 				break;
 
-			case 0x11c:	/* Right Ctrl */
+			case 0x011c:	/* Right Ctrl */
 				shift &= ~0x10;
 				break;
 
-			case 0x02a:	/* Left Shift */
+			case 0x002a:	/* Left Shift */
 				shift &= ~0x02;
 				break;
 
-			case 0x036:	/* Right Shift */
+			case 0x0036:	/* Right Shift */
 				shift &= ~0x20;
 				break;
 
-			case 0x038:	/* Left Alt */
+			case 0x0038:	/* Left Alt */
 				shift &= ~0x03;
 				break;
 
-			case 0x138:	/* Right Alt */
+			case 0x0138:	/* Right Alt */
 				shift &= ~0x30;
 				break;
 
-			case 0x03a:	/* Caps Lock */
+			case 0x003a:	/* Caps Lock */
 				caps_lock ^= 1;
 				uiflag++;
 				break;
 
-			case 0x045:
+			case 0x0045:
 				num_lock ^= 1;
 				uiflag++;
 				break;
 
-			case 0x046:
+			case 0x0046:
 				scroll_lock ^= 1;
 				uiflag++;
 				break;
@@ -277,7 +281,7 @@ keyboard_input(int down, uint16_t scan)
 	if (scroll_lock)
 		uiflag |= KBD_FLAG_SCROLL;
 	ui_sb_kbstate(uiflag);
-//pclog(0,"KBD: input: caps=%d num=%d scrl=%d\n", caps_lock,num_lock,scroll_lock);
+//INFO("KBD: input: caps=%d num=%d scrl=%d\n", caps_lock,num_lock,scroll_lock);
     }
 
     /*
@@ -286,13 +290,12 @@ keyboard_input(int down, uint16_t scan)
      */
 #if 0
     recv_key[scan >> 6] |= ((uint64_t) down << ((uint64_t) scan & 0x3fLL));
+#else
+    recv_key[scan & 0x01ff] = down;
 #endif
 
     DEBUG("Received scan code: %03X (%s)\n",scan & 0x1ff, down ? "down" : "up");
-
-    recv_key[scan & 0x1ff] = down;
-
-    key_process(scan & 0x1ff, down);
+    key_process(scan & 0x01ff, down);
 }
 
 
@@ -305,8 +308,8 @@ keyboard_do_break(uint16_t scan)
 	if (!keyboard_set3_all_break && !recv_key[scan] &&
 	    !(keyboard_set3_flags[codes[scan].mk[0]] & 2))
 		return(0);
-	  else
-		return(1);
+
+	return(1);
     }
 
     return(1);
@@ -332,7 +335,7 @@ keyboard_get_state(void)
     if (scroll_lock)
 	ret |= KBD_FLAG_SCROLL;
 
-//pclog(0,"KBD state: caps=%d num=%d scrl=%d\n", caps_lock,num_lock,scroll_lock);
+//INFO("KBD state: caps=%d num=%d scrl=%d\n", caps_lock,num_lock,scroll_lock);
     return(ret);
 }
 
@@ -351,11 +354,11 @@ keyboard_set_state(uint8_t flags)
     if (caps_lock != f) {
 #if 0
 	i = 0;
-	while (codes[0x03a].mk[i] != -1)
+	while (codes[0x03a].mk[i] != 0)
 		keyboard_send(codes[0x03a].mk[i++]);
 	if (keyboard_do_break(0x03a)) {
 		i = 0;
-		while (codes[0x03a].brk[i] != -1)
+		while (codes[0x03a].brk[i] != 0)
 			keyboard_send(codes[0x03a].brk[i++]);
 	}
 #endif
@@ -366,11 +369,11 @@ keyboard_set_state(uint8_t flags)
     if (num_lock != f) {
 #if 0
 	i = 0;
-	while (codes[0x045].mk[i] != -1)
+	while (codes[0x045].mk[i] != 0)
 		keyboard_send(codes[0x045].mk[i++]);
 	if (keyboard_do_break(0x045)) {
 		i = 0;
-		while (codes[0x045].brk[i] != -1)
+		while (codes[0x045].brk[i] != 0)
 		keyboard_send(codes[0x045].brk[i++]);
 	}
 #endif
@@ -381,11 +384,11 @@ keyboard_set_state(uint8_t flags)
     if (scroll_lock != f) {
 #if 0
 	i = 0;
-	while (codes[0x046].mk[i] != -1)
+	while (codes[0x046].mk[i] != 0)
 		keyboard_send(codes[0x046].mk[i++]);
 	if (keyboard_do_break(0x046)) {
 		i = 0;
-		while (codes[0x046].brk[i] != -1)
+		while (codes[0x046].brk[i] != 0)
 			keyboard_send(codes[0x046].brk[i++]);
 	}
 #endif
@@ -455,9 +458,9 @@ keyboard_cab(void)
 int
 keyboard_isfsexit(void)
 {
-    return( (recv_key[0x01D] || recv_key[0x11D]) &&
-	    (recv_key[0x038] || recv_key[0x138]) &&
-	    (recv_key[0x051] || recv_key[0x151]) );
+    return( (recv_key[0x001d] || recv_key[0x011d]) &&
+	    (recv_key[0x0038] || recv_key[0x0138]) &&
+	    (recv_key[0x0051] || recv_key[0x0151]) );
 }
 
 
@@ -470,7 +473,7 @@ keyboard_ismsexit(void)
     return( recv_key[0x042] && recv_key[0x058] );
 #else
     /* WxWidgets cannot do two regular keys.. CTRL+END */
-    return( (recv_key[0x01D] || recv_key[0x11D]) &&
-	    (recv_key[0x04F] || recv_key[0x14F]) );
+    return( (recv_key[0x001d] || recv_key[0x011d]) &&
+	    (recv_key[0x004f] || recv_key[0x014f]) );
 #endif
 }

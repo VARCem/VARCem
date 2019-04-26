@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.11	2019/04/22
+ * Version:	@(#)keyboard.h	1.0.12	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,8 +63,8 @@ extern "C" {
 #endif
 
 typedef struct {
-    int	mk[9];
-    int	brk[9];
+    uint8_t	mk[4];
+    uint8_t	brk[4];
 } scancode;
 
 
