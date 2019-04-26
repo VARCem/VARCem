@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.18	2019/02/10
+ * Version:	@(#)fdd.c	1.0.19	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -738,10 +738,10 @@ fdd_reset(void)
     curdrive = 0;
     fdd_period = 32;
 
-    timer_add(fdd_poll_0, &(fdd_poll_time[0]), &(motoron[0]), NULL);
-    timer_add(fdd_poll_1, &(fdd_poll_time[1]), &(motoron[1]), NULL);
-    timer_add(fdd_poll_2, &(fdd_poll_time[2]), &(motoron[2]), NULL);
-    timer_add(fdd_poll_3, &(fdd_poll_time[3]), &(motoron[3]), NULL);
+    timer_add(fdd_poll_0, NULL, &fdd_poll_time[0], &motoron[0]);
+    timer_add(fdd_poll_1, NULL, &fdd_poll_time[1], &motoron[1]);
+    timer_add(fdd_poll_2, NULL, &fdd_poll_time[2], &motoron[2]);
+    timer_add(fdd_poll_3, NULL, &fdd_poll_time[3], &motoron[3]);
 }
 
 

@@ -83,7 +83,7 @@ timer_process(void)
 	enable[c] = *timers[c].enable;
 	if (enable[c]) {
 		*timers[c].count = *timers[c].count - diff;
-		if (*timers[c].count <= 0)
+		if (*timers[c].count <= 0LL)
 			process = 1;
 	}
     }
@@ -91,8 +91,8 @@ timer_process(void)
     if (! process)
 	return;
 
-    while (1) {
-	int64_t lowest = 1;
+    for (;;) {
+	int64_t lowest = 1LL;
 	int lowest_c;
 
 	for (c = 0; c < present; c++) {

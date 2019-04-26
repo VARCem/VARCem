@@ -8,13 +8,13 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.17	2018/11/11
+ * Version:	@(#)sound.c	1.0.18	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -345,7 +345,7 @@ sound_reset(void)
     /* Reset OpenAL. */
     openal_reset();
 
-    timer_add(sound_poll, &poll_time, TIMER_ALWAYS_ENABLED, NULL);
+    timer_add(sound_poll, NULL, &poll_time, TIMER_ALWAYS_ENABLED);
 
     sound_cd_set_volume(65535, 65535);
 

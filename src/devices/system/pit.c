@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.13	2019/04/11
+ * Version:	@(#)pit.c	1.0.14	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -555,8 +555,7 @@ pit_init(void)
 	pit.gate[i] = 1;
 	pit.using_timer[i] = 1;
 
-	timer_add(timer_over,
-		  &pit.c[i], &pit.running[i], (void *)&pit.pit_nr[i]);
+	timer_add(timer_over, &pit.pit_nr[i], &pit.c[i], &pit.running[i]);
     }
 
     io_sethandler(0x0040, 4,
@@ -612,8 +611,7 @@ pit_ps2_init(void)
     pit2.pit_nr[0].nr = 0;
     pit2.pit_nr[0].pit = &pit2;
 
-    timer_add(timer_over,
-	      &pit2.c[0], &pit2.running[0], (void *)&pit2.pit_nr[0]);
+    timer_add(timer_over, &pit2.pit_nr[0], &pit2.c[0], &pit2.running[0]);
 
     io_sethandler(0x0044, 1,
 		  pit_read,NULL,NULL, pit_write,NULL,NULL, &pit2);

@@ -399,7 +399,7 @@ read_done(void *arg, int num)
     }
 
     /* We have data waiting for us.. delay a little, and then read it. */
-//    timer_add(ser_timer, &dev->delay, &dev->delay, dev);
+//    timer_add(ser_timer, dev, &dev->delay, &dev->delay);
 }
 #endif
 
