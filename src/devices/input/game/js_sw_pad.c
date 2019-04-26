@@ -29,12 +29,12 @@
  *		- Some DOS stuff will write to 0x201 while a packet is
  *		  being transferred. This seems to be ignored.
  *
- * Version:	@(#)js_sw_pad.c	1.0.9	2018/09/22
+ * Version:	@(#)js_sw_pad.c	1.0.10	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -137,8 +137,8 @@ sw_init(void)
     sw = (sw_data *)mem_alloc(sizeof(sw_data));
     memset(sw, 0x00, sizeof(sw_data));
 
-    timer_add(timer_over, &sw->poll_time, &sw->poll_time, sw);
-    timer_add(trigger_timer_over, &sw->trigger_time, &sw->trigger_time, sw);
+    timer_add(timer_over, sw, &sw->poll_time, &sw->poll_time);
+    timer_add(trigger_timer_over, sw, &sw->trigger_time, &sw->trigger_time);
 
     return(sw);
 }

@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.14	2019/04/11
+ * Version:	@(#)scsi_ncr53c810.c	1.0.15	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2270,8 +2270,7 @@ ncr53c810_init(const device_t *info, UNUSED(void *parent))
 
     ncr53c810_soft_reset(dev);
 
-    timer_add(ncr53c810_callback,
-	      &dev->timer_period, &dev->timer_enabled, dev);
+    timer_add(ncr53c810_callback, dev, &dev->timer_period, &dev->timer_enabled);
 
     dev->has_bios = device_get_config_int("bios");
 

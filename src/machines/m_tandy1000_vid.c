@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.2	2019/04/08
+ * Version:	@(#)m_tandy1000_vid.c	1.0.3	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1086,11 +1086,11 @@ tandy1k_video_init(int type, int display_type, uint32_t base, const wchar_t *fn)
 
 	io_sethandler(0x0065, 1, vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
 
-	timer_add(vid_poll_sl, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+	timer_add(vid_poll_sl, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
     } else {
 	dev->b8000_mask = 0x3fff;
 
-	timer_add(vid_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+	timer_add(vid_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
     }
 
     mem_map_add(&dev->mapping, 0xb8000, 0x08000,

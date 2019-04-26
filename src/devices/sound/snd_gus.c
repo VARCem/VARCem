@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.12	2019/04/09
+ * Version:	@(#)snd_gus.c	1.0.13	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1221,9 +1221,9 @@ gus_init(const device_t *info, UNUSED(void *parent))
 #endif
     }
 
-    timer_add(poll_wave, &dev->samp_timer, TIMER_ALWAYS_ENABLED, dev);
-    timer_add(poll_timer_1, &dev->timer_1, TIMER_ALWAYS_ENABLED, dev);
-    timer_add(poll_timer_2, &dev->timer_2, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(poll_wave, dev, &dev->samp_timer, TIMER_ALWAYS_ENABLED);
+    timer_add(poll_timer_1, dev, &dev->timer_1, TIMER_ALWAYS_ENABLED);
+    timer_add(poll_timer_2, dev, &dev->timer_2, TIMER_ALWAYS_ENABLED);
 
     sound_add_handler(get_buffer, dev);
 

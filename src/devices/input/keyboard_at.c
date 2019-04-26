@@ -11,7 +11,7 @@
  * NOTE:	Several changes to disable Mode1 for now, as this breaks 
  *		 the TSX32 operating system. More cleanups needed..
  *
- * Version:	@(#)keyboard_at.c	1.0.23	2019/04/22
+ * Version:	@(#)keyboard_at.c	1.0.24	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,6 +62,9 @@
 #include "../../plat.h"
 #include "keyboard.h"
 
+#undef DEBUG
+#define DEBUG INFO
+
 //FIXME: get rid of this!
 #include "../../machines/m_tosh3100e.h"
 
@@ -101,6 +104,7 @@
 #define KBC_VEN_QUADTEL		0x0c
 #define KBC_VEN_TOSHIBA		0x10
 #define KBC_VEN_XI8088		0x14
+#define KBC_VEN_ACER		0x18
 #define KBC_VEN_MASK		0x1c
 
 
@@ -1143,6 +1147,64 @@ kbd_write64_generic(void *p, uint8_t val)
 
 
 static uint8_t
+kbd_write60_acer(void *p, uint8_t val)
+{
+    atkbd_t *kbd = (atkbd_t *) p;
+
+INFO("ACER: write60(%02x, %02x)\n", kbd->command, val);
+    switch(kbd->command) {
+	/* 0x40 - 0x5F are aliases for 0x60-0x7F */
+	case 0x40: case 0x41: case 0x42: case 0x43:
+	case 0x44: case 0x45: case 0x46: case 0x47:
+	case 0x48: case 0x49: case 0x4a: case 0x4b:
+	case 0x4c: case 0x4d: case 0x4e: case 0x4f:
+	case 0x50: case 0x51: case 0x52: case 0x53:
+	case 0x54: case 0x55: case 0x56: case 0x57:
+	case 0x58: case 0x59: case 0x5a: case 0x5b:
+	case 0x5c: case 0x5d: case 0x5e: case 0x5f:
+		DEBUG("ATkbd: AMI - alias write to %08X\n", kbd->command);
+		kbd->mem[kbd->command & 0x1f] = val;
+		if (kbd->command == 0x60)
+			kbd_cmd_write(kbd, val);
+		return 0;
+
+	case 0xaf:	/*AMI - set extended controller RAM*/
+		DEBUG("ATkbd: AMI - set extended controller RAM\n");
+		if (kbd->secr_phase == 1) {
+			kbd->mem_addr = val;
+			kbd->want60 = 1;
+			kbd->secr_phase = 2;
+		} else if (kbd->secr_phase == 2) {
+			kbd->mem[kbd->mem_addr] = val;
+			kbd->secr_phase = 0;
+		}
+		return 0;
+
+	case 0xcb:	/*AMI - set keyboard mode*/
+		DEBUG("ATkbd: AMI - set keyboard mode\n");
+		return 0;
+    }
+
+    return 1;
+}
+
+
+static uint8_t
+kbd_write64_acer(void *p, uint8_t val)
+{
+    atkbd_t *kbd = (atkbd_t *) p;
+
+INFO("ACER: write64(%02x, %02x)\n", kbd->command, val);
+    switch (val) {
+	case 0xc0:	/* sent by Acer V30 BIOS */
+		return 0;
+    }
+
+    return kbd_write64_generic(kbd, val);
+}
+
+
+static uint8_t
 kbd_write60_ami(void *p, uint8_t val)
 {
     atkbd_t *kbd = (atkbd_t *) p;
@@ -2034,10 +2096,10 @@ kbd_init(const device_t *info, UNUSED(void *parent))
 		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, kbd);
     keyboard_send = kbd_adddata_keyboard;
 
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, kbd);
+    timer_add(kbd_poll, kbd, &keyboard_delay, TIMER_ALWAYS_ENABLED);
 
     if ((kbd->flags & KBC_TYPE_MASK) != KBC_TYPE_ISA) {
-#if 0
+#if 1
     	if ((kbd->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2) {
 		/*
 		 * These machines force translation off, so the
@@ -2048,12 +2110,10 @@ kbd_init(const device_t *info, UNUSED(void *parent))
 	}
 #endif
 
-	timer_add(kbd_refresh,
-		  &kbd->refresh_time, TIMER_ALWAYS_ENABLED, kbd);
+	timer_add(kbd_refresh, kbd, &kbd->refresh_time, TIMER_ALWAYS_ENABLED);
     }
 
-    timer_add(kbd_pulse_poll,
-	      &kbd->pulse_cb, &kbd->pulse_cb, kbd);
+    timer_add(kbd_pulse_poll, kbd, &kbd->pulse_cb, &kbd->pulse_cb);
 
     kbd->write60_ven = NULL;
     kbd->write64_ven = NULL;
@@ -2080,6 +2140,11 @@ kbd_init(const device_t *info, UNUSED(void *parent))
 	case KBC_VEN_TOSHIBA:
 		kbd->write60_ven = &kbd_write60_toshiba;
 		kbd->write64_ven = &kbd_write64_toshiba;
+		break;
+
+	case KBC_VEN_ACER:
+//		kbd->write60_ven = &kbd_write60_acer;
+		kbd->write64_ven = &kbd_write64_acer;
 		break;
     }
 
@@ -2156,7 +2221,7 @@ const device_t keyboard_ps2_device = {
 const device_t keyboard_ps2_acer_device = {
     "Acer 90M002A PS/2 Keyboard",
     0,
-    KBC_TYPE_PS2_2 | KBC_VEN_AMI,
+    KBC_TYPE_PS2_2 | KBC_VEN_ACER,
     NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,

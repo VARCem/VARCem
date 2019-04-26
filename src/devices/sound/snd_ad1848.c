@@ -8,13 +8,13 @@
  *
  *		Emulation of the AD1848 (Windows Sound System) CODEC.
  *
- * Version:	@(#)snd_ad1848.c	1.0.6	2018/10/16
+ * Version:	@(#)snd_ad1848.c	1.0.7	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -254,5 +254,5 @@ void ad1848_init(ad1848_t *ad1848)
                 ad1848_vols[c] = (int)(attenuation * 65536);
         }
         
-        timer_add(ad1848_poll, &ad1848->timer_count, &ad1848->enable, ad1848);
+        timer_add(ad1848_poll, ad1848, &ad1848->timer_count, &ad1848->enable);
 }

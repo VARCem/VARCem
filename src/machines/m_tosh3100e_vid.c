@@ -22,7 +22,7 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_t3100e_vid.c	1.0.10	2019/04/08
+ * Version:	@(#)m_t3100e_vid.c	1.0.11	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -713,7 +713,7 @@ vid_init(const device_t *info, UNUSED(void *parent))
     /* 32K video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x8000);
 
-    timer_add(vid_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(vid_poll, dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Occupy memory between 0xB8000 and 0xBFFFF */
     mem_map_add(&dev->mapping, 0xb8000, 0x8000,

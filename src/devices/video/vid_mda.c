@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.13	2019/04/19
+ * Version:	@(#)vid_mda.c	1.0.14	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -366,7 +366,7 @@ mda_standalone_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03b0, 16,
 		  mda_in,NULL,NULL, mda_out,NULL,NULL, dev);
 
-    timer_add(mda_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(mda_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)&mda_timings);

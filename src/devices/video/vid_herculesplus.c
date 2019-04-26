@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.18	2019/04/19
+ * Version:	@(#)vid_hercules_plus.c	1.0.19	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -654,7 +654,7 @@ herculesplus_init(const device_t *info, UNUSED(void *parent))
 
     dev->vram = (uint8_t *)mem_alloc(0x10000);	/* 64k VRAM */
 
-    timer_add(herculesplus_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(herculesplus_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->mapping, 0xb0000, 0x10000,
 		herculesplus_read,NULL,NULL,

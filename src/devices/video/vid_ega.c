@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.14	2019/04/23
+ * Version:	@(#)vid_ega.c	1.0.15	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1077,7 +1077,7 @@ ega_standalone_init(const device_t *info, UNUSED(void *parent))
 		ega_read,NULL,NULL, ega_write,NULL,NULL,
 		NULL, MEM_MAPPING_EXTERNAL, dev);
 
-    timer_add(ega_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(ega_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     io_sethandler(0x03a0, 0x0040,
 		  ega_in,NULL,NULL, ega_out,NULL,NULL, dev);

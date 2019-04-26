@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.14	2019/04/11
+ * Version:	@(#)hdc_st506_at.c	1.0.15	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -731,7 +731,7 @@ st506_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03f6, 1,
 		  NULL,     NULL,      NULL, hdc_write, NULL,       NULL, dev);
 
-    timer_add(do_callback, &dev->callback, &dev->callback, dev);	
+    timer_add(do_callback, dev, &dev->callback, &dev->callback);	
 
     return(dev);
 }

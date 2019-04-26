@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.25	2019/04/20
+ * Version:	@(#)m_ps1.c	1.0.26	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,7 +87,8 @@
 typedef struct {
     sn76489_t	sn76489;
     uint8_t	status, ctrl;
-    int64_t	timer_latch, timer_count, timer_enable;
+    int64_t	timer_latch, timer_count;
+    int64_t	timer_enable;
     uint8_t	fifo[2048];
     int		fifo_read_idx, fifo_write_idx;
     int		fifo_threshold;
@@ -266,7 +267,7 @@ snd_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0202, 6,
 		  snd_read,NULL,NULL, snd_write,NULL,NULL, snd);
 
-    timer_add(snd_callback, &snd->timer_count, &snd->timer_enable, snd);
+    timer_add(snd_callback, snd, &snd->timer_count, &snd->timer_enable);
 
     sound_add_handler(snd_get_buffer, snd);
 

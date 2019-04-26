@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.13	2019/04/11
+ * Version:	@(#)snd_mpu401.c	1.0.14	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -915,9 +915,13 @@ mpu401_init(mpu_t *mpu, uint16_t addr, int irq, int mode)
 		      mpu401_read, NULL, NULL, mpu401_write, NULL, NULL, mpu);
     io_sethandler(0x2A20, 16,
 		  NULL, NULL, NULL, imf_write, NULL, NULL, mpu);
-    timer_add(MPU401_Event, &mpu401_event_callback, &mpu401_event_callback, mpu);
-    timer_add(MPU401_EOIHandler, &mpu401_eoi_callback, &mpu401_eoi_callback, mpu);
-    timer_add(MPU401_ResetDone, &mpu401_reset_callback, &mpu401_reset_callback, mpu);
+
+    timer_add(MPU401_Event, mpu,
+	      &mpu401_event_callback, &mpu401_event_callback);
+    timer_add(MPU401_EOIHandler, mpu,
+	      &mpu401_eoi_callback, &mpu401_eoi_callback);
+    timer_add(MPU401_ResetDone, mpu,
+	      &mpu401_reset_callback, &mpu401_reset_callback);
 
     MPU401_Reset(mpu);
 }

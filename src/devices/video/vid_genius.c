@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.12	2019/04/19
+ * Version:	@(#)vid_genius.c	1.0.13	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -602,7 +602,7 @@ genius_init(const device_t *info, UNUSED(void *parent))
     /* 160K video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x28000);
 
-    timer_add(genius_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(genius_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Occupy memory between 0xB0000 and 0xBFFFF (moves to 0xA0000 in
      * high-resolution modes)  */

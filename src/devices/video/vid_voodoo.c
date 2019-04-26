@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.18	2019/04/11
+ * Version:	@(#)vid_voodoo.c	1.0.19	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -7615,7 +7615,8 @@ void *voodoo_card_init()
                 }
         }
 
-        timer_add(voodoo_callback, &voodoo->timer_count, TIMER_ALWAYS_ENABLED, voodoo);
+        timer_add(voodoo_callback, voodoo,
+		  &voodoo->timer_count, TIMER_ALWAYS_ENABLED);
         
         voodoo->svga = svga_get_pri();
         voodoo->fbiInit0 = 0;
@@ -7632,7 +7633,8 @@ void *voodoo_card_init()
         if (voodoo->render_threads == 2)
                 voodoo->render_thread[1] = thread_create(render_thread_2, voodoo);
 
-        timer_add(voodoo_wake_timer, &voodoo->wake_timer, &voodoo->wake_timer, (void *)voodoo);
+        timer_add(voodoo_wake_timer, voodoo,
+		  &voodoo->wake_timer, &voodoo->wake_timer);
         
         for (c = 0; c < 0x100; c++)
         {

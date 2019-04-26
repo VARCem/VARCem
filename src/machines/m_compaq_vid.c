@@ -19,7 +19,7 @@
  *		plasma display. The code for this was taken from the code
  *		for the Toshiba 3100e machine, which used a similar display.
  *
- * Version:	@(#)m_compaq_vid.c	1.0.1	2019/04/13
+ * Version:	@(#)m_compaq_vid.c	1.0.2	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -738,7 +738,7 @@ INFO("CPQ: video_init(type=%i)\n", dev->type);
     }
 
     if (dev->mode != 0)
-	timer_add(vid_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+	timer_add(vid_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
 #if 0
     /*

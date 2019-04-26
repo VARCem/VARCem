@@ -2322,7 +2322,8 @@ ide_ter_init(const device_t *info, UNUSED(void *parent))
 
     ide_set_handlers(2);
 
-    timer_add(ide_callback, &ide_boards[2]->callback, &ide_boards[2]->callback, ide_boards[2]);
+    timer_add(ide_callback, ide_boards[2],
+	      &ide_boards[2]->callback, &ide_boards[2]->callback);
 
     ide_board_init(2);
 
@@ -2354,7 +2355,8 @@ ide_qua_init(const device_t *info, UNUSED(void *parent))
 
     ide_set_handlers(3);
 
-    timer_add(ide_callback, &ide_boards[3]->callback, &ide_boards[3]->callback, ide_boards[3]);
+    timer_add(ide_callback, ide_boards[3],
+	      &ide_boards[3]->callback, &ide_boards[3]->callback);
 
     ide_board_init(3);
 
@@ -2394,8 +2396,8 @@ ide_xtide_init(void)
 	memset(ide_boards[0], 0, sizeof(ide_board_t));
 	ide_boards[0]->cur_dev = 0;
 
-	timer_add(ide_callback, &ide_boards[0]->callback, &ide_boards[0]->callback,
-		  ide_boards[0]);
+	timer_add(ide_callback, ide_boards[0],
+		  &ide_boards[0]->callback, &ide_boards[0]->callback);
 
 	ide_board_init(0);
     }
@@ -2471,8 +2473,8 @@ ide_init(const device_t *info, UNUSED(void *parent))
 			ide_base_main[0] = 0x1f0;
 			ide_side_main[0] = 0x3f6;
 			ide_set_handlers(0);
-			timer_add(ide_callback, &ide_boards[0]->callback, &ide_boards[0]->callback,
-				  ide_boards[0]);
+			timer_add(ide_callback, ide_boards[0],
+				  &ide_boards[0]->callback, &ide_boards[0]->callback);
 			DEBUG("Callback 0 pointer: %08X\n", &ide_boards[0]->callback);
 
 			ide_board_init(0);
@@ -2490,8 +2492,8 @@ ide_init(const device_t *info, UNUSED(void *parent))
 			ide_base_main[1] = 0x170;
 			ide_side_main[1] = 0x376;
 			ide_set_handlers(1);
-			timer_add(ide_callback, &ide_boards[1]->callback, &ide_boards[1]->callback,
-				  ide_boards[1]);
+			timer_add(ide_callback, ide_boards[1],
+				  &ide_boards[1]->callback, &ide_boards[1]->callback);
 			DEBUG("Callback 1 pointer: %08X\n", &ide_boards[1]->callback);
 
 			ide_board_init(1);

@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.14	2019/04/09
+ * Version:	@(#)nvr_at.c	1.0.15	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -698,8 +698,8 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
     nvr_init(nvr);
 
     /* Start the timers. */
-    timer_add(timer_update, &local->ecount, &local->ecount, nvr);
-    timer_add(timer_intr, &local->rtctime, TIMER_ALWAYS_ENABLED, nvr);
+    timer_add(timer_update, nvr, &local->ecount, &local->ecount);
+    timer_add(timer_intr, nvr, &local->rtctime, TIMER_ALWAYS_ENABLED);
 
     /* Set up the I/O handler for this device. */
     io_sethandler(0x0070, 2,

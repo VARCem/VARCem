@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.18	2019/04/20
+ * Version:	@(#)hdc_st506_xt.c	1.0.19	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1537,7 +1537,7 @@ st506_init(const device_t *info, UNUSED(void *parent))
 		  st506_read,NULL,NULL, st506_write,NULL,NULL, dev);
 
     /* Add the timer. */
-    timer_add(st506_callback, &dev->callback, &dev->callback, dev);
+    timer_add(st506_callback, dev, &dev->callback, &dev->callback);
 
     INFO("ST506: %s (I/O=%03X, IRQ=%i, DMA=%i, BIOS @0x%06lX, size %lu)\n",
 	info->name,dev->base,dev->irq,dev->dma, dev->bios_addr,dev->bios_size);

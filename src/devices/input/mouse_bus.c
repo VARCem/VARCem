@@ -53,7 +53,7 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.7	2019/04/23
+ * Version:	@(#)mouse_bus.c	1.1.8	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -738,7 +738,7 @@ bm_init(const device_t *info, UNUSED(void *parent))
 		      lt_read,NULL,NULL, lt_write,NULL,NULL, dev);
     }
 
-    timer_add(bm_timer, &dev->timer, &dev->timer_enabled, dev);
+    timer_add(bm_timer, dev, &dev->timer, &dev->timer_enabled);
 
     INFO("MOUSE: %s (I/O=%04x, IRQ=%i, buttons=%i\n",
 		dev->name, dev->base, dev->irq, dev->bn);

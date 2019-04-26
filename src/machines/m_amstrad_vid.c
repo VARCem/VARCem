@@ -25,7 +25,7 @@
  *		 by the ROS.
  *  PPC:	MDA Monitor results in half-screen, half-cell-height display??
  *
- * Version:	@(#)m_amstrad_vid.c	1.0.2	2019/04/20
+ * Version:	@(#)m_amstrad_vid.c	1.0.3	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -634,7 +634,7 @@ m_amstrad_1512_vid_init(const wchar_t *fn, int fnt, int cp)
     dev->cgacol = 7;
     dev->cgamode = 0x12;
 
-    timer_add(pc1512_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(pc1512_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
     mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
 		pc1512_read,NULL,NULL, pc1512_write,NULL,NULL, NULL, 0, dev);
     io_sethandler(0x03d0, 16, pc1512_in,NULL,NULL, pc1512_out,NULL,NULL, dev);
@@ -829,7 +829,7 @@ m_amstrad_1640_vid_init(const wchar_t *fn, int sz)
     /* We currently do not implement the MDA/Hercules mode regs at 3B0H */
     io_sethandler(0x03a0, 64, pc1640_in,NULL,NULL, pc1640_out,NULL,NULL, dev);
 
-    timer_add(pc1640_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(pc1640_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     overscan_x = overscan_y = 16;
 
@@ -1702,7 +1702,7 @@ m_amstrad_ida_init(int type, const wchar_t *fn, int cp, int em, int dt)
     dev->blue = makecol(0x0f, 0x21, 0x3f);
     set_lcd_cols(dev, 0);
 
-    timer_add(ida_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(ida_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     overscan_x = overscan_y = 16;
 

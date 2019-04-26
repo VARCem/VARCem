@@ -12,7 +12,7 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.30	2019/04/25
+ * Version:	@(#)mem.c	1.0.31	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -690,8 +690,8 @@ writememwl(uint32_t seg, uint32_t addr, uint16_t val)
     }
 
     if (map && map->write_b) {
-	map->write_b(addr2, val, map->p);
-	map->write_b(addr2 + 1, val >> 8, map->p);
+	map->write_b(addr2, (val & 0xff), map->p);
+	map->write_b(addr2 + 1, (val >> 8), map->p);
     }
 }
 
@@ -919,28 +919,28 @@ writememql(uint32_t seg, uint32_t addr, uint64_t val)
     map = write_mapping[addr2 >> 14];
 
     if (map && map->write_l) {
-	map->write_l(addr2,   val,       map->p);
-	map->write_l(addr2+4, val >> 32, map->p);
+	map->write_l(addr2, (val & 0xffffffff), map->p);
+	map->write_l(addr2+4, (val >> 32), map->p);
 	return;
     }
 
     if (map && map->write_w) {
-	map->write_w(addr2,     val,       map->p);
-	map->write_w(addr2 + 2, val >> 16, map->p);
-	map->write_w(addr2 + 4, val >> 32, map->p);
-	map->write_w(addr2 + 6, val >> 48, map->p);
+	map->write_w(addr2, (val & 0xffff), map->p);
+	map->write_w(addr2 + 2, (uint16_t)(val >> 16), map->p);
+	map->write_w(addr2 + 4, (uint16_t)(val >> 32), map->p);
+	map->write_w(addr2 + 6, (uint16_t)(val >> 48), map->p);
 	return;
     }
 
     if (map && map->write_b) {
-	map->write_b(addr2,     val,       map->p);
-	map->write_b(addr2 + 1, val >> 8,  map->p);
-	map->write_b(addr2 + 2, val >> 16, map->p);
-	map->write_b(addr2 + 3, val >> 24, map->p);
-	map->write_b(addr2 + 4, val >> 32, map->p);
-	map->write_b(addr2 + 5, val >> 40, map->p);
-	map->write_b(addr2 + 6, val >> 48, map->p);
-	map->write_b(addr2 + 7, val >> 56, map->p);
+	map->write_b(addr2, (val & 0xff), map->p);
+	map->write_b(addr2 + 1, (uint8_t)(val >> 8),  map->p);
+	map->write_b(addr2 + 2, (uint8_t)(val >> 16), map->p);
+	map->write_b(addr2 + 3, (uint8_t)(val >> 24), map->p);
+	map->write_b(addr2 + 4, (uint8_t)(val >> 32), map->p);
+	map->write_b(addr2 + 5, (uint8_t)(val >> 40), map->p);
+	map->write_b(addr2 + 6, (uint8_t)(val >> 48), map->p);
+	map->write_b(addr2 + 7, (uint8_t)(val >> 56), map->p);
     }
 }
 

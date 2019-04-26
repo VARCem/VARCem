@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.14	2019/04/11
+ * Version:	@(#)mouse_serial.c	1.0.15	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -661,7 +661,7 @@ ser_init(const device_t *info, UNUSED(void *parent))
 
     INFO("MOUSE: %s (port=COM%i, buttons=%i)\n", dev->name, dev->port+1, i);
 
-    timer_add(ser_timer, &dev->delay, &dev->delay, dev);
+    timer_add(ser_timer, dev, &dev->delay, &dev->delay);
 
     /* Tell them how many buttons we have. */
     mouse_set_buttons((dev->flags & FLAG_3BTN) ? 3 : 2);

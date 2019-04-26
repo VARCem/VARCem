@@ -8,7 +8,7 @@
  *
  *		Implementation of Cirrus Logic Crystal 423x sound devices.
  *
- * Version:	@(#)snd_cs423x.c	1.0.2	2019/03/15
+ * Version:	@(#)snd_cs423x.c	1.0.3	2019/04/25
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -349,7 +349,7 @@ cs423x_init(cs423x_t *dev)
 	cs423x_vols[c] = (int)(attenuation * 65536);
     }
 
-    timer_add(cs423x_poll, &dev->timer_count, &dev->enable, dev);
+    timer_add(cs423x_poll, dev, &dev->timer_count, &dev->enable);
 }
 
 

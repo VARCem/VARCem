@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.17	2019/04/19
+ * Version:	@(#)vid_hercules.c	1.0.18	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -439,7 +439,7 @@ hercules_init(const device_t *info, UNUSED(void *parent))
 
     dev->vram = (uint8_t *)mem_alloc(0x10000);
 
-    timer_add(hercules_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(hercules_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /*
      * Map in the memory, enable exec on it (for software like basich.com

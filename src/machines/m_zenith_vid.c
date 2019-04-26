@@ -17,7 +17,7 @@
  *		done on implementing other parts of the Yamaha V6355 chip
  *		that implements the video controller.
  *
- * Version:	@(#)m_zenith_vid.c	1.0.2	2019/04/21
+ * Version:	@(#)m_zenith_vid.c	1.0.3	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *              John Elliott, <jce@seasip.info>
@@ -655,7 +655,7 @@ vid_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03d0, 0x000c,
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
 
-    timer_add(vid_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(vid_poll, dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Load the CGA Font ROM. */
     video_load_font(CGA_FONT_ROM_PATH, FONT_CGA_THICK);

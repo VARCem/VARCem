@@ -11,7 +11,7 @@
  *
  * NOTE:	This code now only supports targets at LUN=0 !!
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.16	2019/04/23
+ * Version:	@(#)scsi_ncr5380.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1493,8 +1493,8 @@ ncr_init(const device_t *info, UNUSED(void *parent))
     ncr_dev->buffer_host_pos = 128;
 	
     ncr_dev->timer_period = 10LL * TIMER_USEC;
-    timer_add(ncr_callback, &ncr_dev->timer_period,
-	      TIMER_ALWAYS_ENABLED, ncr_dev);
+    timer_add(ncr_callback, ncr_dev,
+	      &ncr_dev->timer_period, TIMER_ALWAYS_ENABLED);
 
     return(ncr_dev);
 }

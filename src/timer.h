@@ -8,13 +8,13 @@
  *
  *		Definitions for the system timer module.
  *
- * Version:	@(#)timer.h	1.0.2	2018/05/04
+ * Version:	@(#)timer.h	1.0.3	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -40,57 +40,52 @@
 # define EMU_TIMER_H
 
 
-extern int64_t timer_start;
+#define TIMER_SHIFT		6
 
-#define timer_start_period(cycles)                      \
+#define TIMER_ALWAYS_ENABLED	&timer_one
+
+
+extern int64_t	TIMER_USEC;
+extern int64_t	timer_one;
+extern int64_t	timer_start;
+extern int64_t	timer_count;
+
+
+#define timer_start_period(cycles)				\
         timer_start = cycles;
 
-#define timer_end_period(cycles) 			\
-	do 						\
-	{						\
-                int64_t __diff = timer_start - (cycles);      \
-		timer_count -= __diff;			\
-                timer_start = cycles;                   \
-		if (timer_count <= 0)			\
-		{					\
-			timer_process();		\
-			timer_update_outstanding();	\
-		}					\
+#define timer_end_period(cycles)				\
+	do {							\
+                int64_t __diff = timer_start - (cycles);	\
+		timer_count -= __diff;				\
+                timer_start = cycles;				\
+		if (timer_count <= 0) {				\
+			timer_process();			\
+			timer_update_outstanding();		\
+		}						\
 	} while (0)
 
-#define timer_clock()                                                   \
-	do 						                \
-	{						                \
-                int64_t __diff;                                         \
-                if (AT)                                                 \
-                {                                                       \
-                        __diff = timer_start - (cycles << TIMER_SHIFT); \
-                        timer_start = cycles << TIMER_SHIFT;            \
-                }                                                       \
-                else                                                    \
-                {                                                       \
+#define timer_clock()						\
+	do {							\
+                int64_t __diff;					\
+                if (AT) {					\
+                        __diff = timer_start - (cycles << TIMER_SHIFT);	\
+                        timer_start = cycles << TIMER_SHIFT;	\
+                } else {					\
                         __diff = timer_start - (cycles * xt_cpu_multi); \
-                        timer_start = cycles * xt_cpu_multi;            \
-                }                                                       \
-		timer_count -= __diff;			                \
-		timer_process();		                        \
-        	timer_update_outstanding();	                        \
+                        timer_start = cycles * xt_cpu_multi;	\
+                }						\
+		timer_count -= __diff;				\
+		timer_process();				\
+        	timer_update_outstanding();			\
 	} while (0)
 
-extern void timer_process(void);
-extern void timer_update_outstanding(void);
-extern void timer_reset(void);
-extern int64_t timer_add(void (*callback)(void *priv), int64_t *count, int64_t *enable, void *priv);
-extern void timer_set_callback(int64_t timer, void (*callback)(void *priv));
 
-#define TIMER_ALWAYS_ENABLED &timer_one
-
-extern int64_t timer_count;
-extern int64_t timer_one;
-
-#define TIMER_SHIFT 6
-
-extern int64_t TIMER_USEC;
+extern void	timer_process(void);
+extern void	timer_update_outstanding(void);
+extern void	timer_reset(void);
+extern int	timer_add(void (*callback)(void *priv), void *priv,
+			  int64_t *count, int64_t *enable);
 
 
 #endif	/*EMU_TIMER_H*/

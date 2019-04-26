@@ -21,7 +21,7 @@
  *		data at all, so there seems to not be a way to properly do
  *		that..  The chip's interrupt pin is not connected.
  *
- * Version:	@(#)m_olim24.c	1.0.17	2019/04/21
+ * Version:	@(#)m_olim24.c	1.0.18	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -698,7 +698,7 @@ olim24_init(const device_t *info, void *arg)
     keyboard_set_table(scancode_xt);
     keyboard_send = kbd_adddata_ex;
     keyboard_scan = 1;
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
 
     /* Tell mouse driver about our internal mouse. */
     mouse_reset();

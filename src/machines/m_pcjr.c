@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.17	2019/04/11
+ * Version:	@(#)m_pcjr.c	1.0.18	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -785,7 +785,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
 		vid_write, NULL, NULL,  NULL, 0, dev);
     io_sethandler(0x03d0, 16,
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
-    timer_add(vid_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(vid_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
     video_inform(VID_TYPE_CGA, &pcjr_timings);
 
     /* Initialize the keyboard. */
@@ -795,7 +795,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
 		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
     io_sethandler(0x00a0, 8,
 		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
     keyboard_set_table(scancode_xt);
     keyboard_send = kbd_adddata_ex;
 

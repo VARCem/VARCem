@@ -44,7 +44,7 @@
  *
  *		This is expected to be done shortly.
  *
- * Version:	@(#)vid_pgc.c	1.0.4	2019/04/19
+ * Version:	@(#)vid_pgc.c	1.0.5	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -2613,9 +2613,8 @@ pgc_init(pgc_t *dev, int maxw, int maxh, int visw, int vish,
     dev->pgc_wake_thread = thread_create_event();
     dev->pgc_thread = thread_create(pgc_thread, dev);
 
-    timer_add(pgc_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
- 
-    timer_add(wake_timer, &dev->wake_timer, &dev->wake_timer, (void *)dev);
+    timer_add(pgc_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(wake_timer, dev, &dev->wake_timer, &dev->wake_timer);
 }
 
 

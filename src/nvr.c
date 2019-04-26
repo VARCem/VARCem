@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.15	2019/04/21
+ * Version:	@(#)nvr.c	1.0.16	2019/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -215,7 +215,7 @@ nvr_init(nvr_t *nvr)
     }
 
     /* Set up our timer. */
-    timer_add(onesec_timer, &nvr->onesec_time, TIMER_ALWAYS_ENABLED, nvr);
+    timer_add(onesec_timer, nvr, &nvr->onesec_time, TIMER_ALWAYS_ENABLED);
 
     /* It does not need saving yet. */
     nvr_dosave = 0;

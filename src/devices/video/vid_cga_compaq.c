@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.9	2019/04/11
+ * Version:	@(#)vid_cga_compaq.c	1.0.10	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -379,7 +379,7 @@ compaq_cga_init(const device_t *info, UNUSED(void *parent))
 
     dev->cga.cpriv = cga_comp_init(dev->cga.revision);
 
-    timer_add(compaq_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(compaq_poll, dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL,

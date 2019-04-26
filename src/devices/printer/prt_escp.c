@@ -8,7 +8,7 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.8	2019/04/11
+ * Version:	@(#)prt_escp.c	1.0.9	2019/04/25
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -2079,7 +2079,7 @@ escp_init(const lpt_device_t *info)
     memset(dev->page->pixels, 0x00, dev->page->pitch * dev->page->h);
 
     /* Create a timer to detect port timeouts. */
-    timer_add(printer_timeout, &dev->timeout, &dev->timeout, dev);
+    timer_add(printer_timeout, dev, &dev->timeout, &dev->timeout);
 
     dev->ctrl = 0x04;
 

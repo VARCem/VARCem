@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.15	2019/04/11
+ * Version:	@(#)hdc_esdi_at.c	1.0.16	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -820,7 +820,7 @@ wd1007vse1_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03f6, 1, NULL, NULL, NULL,
 		  hdc_write, NULL, NULL, dev);
 
-    timer_add(hdc_callback, &dev->callback, &dev->callback, dev);
+    timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
     return(dev);
 }

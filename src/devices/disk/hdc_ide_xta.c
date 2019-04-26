@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.13	2019/04/11
+ * Version:	@(#)hdc_ide_xta.c	1.0.14	2019/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -1104,7 +1104,7 @@ xta_init(const device_t *info, UNUSED(void *parent))
 		 dev->rom_addr, 0x2000, 0x1fff, 0, MEM_MAPPING_EXTERNAL);
 		
     /* Create a timer for command delays. */
-    timer_add(hdc_callback, &dev->callback, &dev->callback, dev);
+    timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
     return(dev);
 }

@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.18	2019/04/22
+ * Version:	@(#)vid_svga.c	1.0.19	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -851,7 +851,7 @@ svga_init(svga_t *svga, void *p, int vramsize,
 		svga_write, svga_writew, svga_writel,
 		NULL, MEM_MAPPING_EXTERNAL, svga);
 
-    timer_add(svga_poll, &svga->vidtime, TIMER_ALWAYS_ENABLED, svga);
+    timer_add(svga_poll, svga, &svga->vidtime, TIMER_ALWAYS_ENABLED);
 
     svga_pri = svga;
 

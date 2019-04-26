@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.9	2019/04/11
+ * Version:	@(#)intel.c	1.0.10	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -148,7 +148,7 @@ batman_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0078, 0x0002,
 		  timer_read,NULL,NULL, timer_write,NULL,NULL, dev);
 
-    timer_add(timer_over, &dev->timer, &dev->timer, dev);
+    timer_add(timer_over, dev, &dev->timer, &dev->timer);
 
     return(dev);
 }

@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.16	2019/04/19
+ * Version:	@(#)vid_incolor.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -990,7 +990,7 @@ incolor_init(const device_t *info, UNUSED(void *parent))
 
     dev->vram = (uint8_t *)mem_alloc(0x40000);	/* 4 planes of 64k */
 
-    timer_add(incolor_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(incolor_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->mapping, 0xb0000, 0x08000,
 		incolor_read,NULL,NULL, incolor_write,NULL,NULL,

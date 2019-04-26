@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy1000.c	1.0.19	2019/04/11
+ * Version:	@(#)m_tandy1000.c	1.0.20	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,8 +88,8 @@ typedef struct {
     int		amplitude;
 
     int		irq;
-    int64_t	timer_count;
-    int64_t	enable;
+    int64_t	timer_count,
+		enable;
 
     int		wave_pos;
     int		pulse_width;
@@ -574,7 +574,7 @@ snd_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x00c4, 4,
 		  snd_read,NULL,NULL, snd_write,NULL,NULL, dev);
 
-    timer_add(snd_callback, &dev->timer_count, &dev->enable, dev);
+    timer_add(snd_callback, dev, &dev->timer_count, &dev->enable);
 
     sound_add_handler(snd_get_buffer, dev);
 

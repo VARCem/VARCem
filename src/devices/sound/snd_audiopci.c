@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.16	2019/04/09
+ * Version:	@(#)snd_audiopci.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1341,7 +1341,7 @@ es1371_init(const device_t *info, UNUSED(void *parent))
     dev->card = pci_add_card(PCI_ADD_NORMAL,
 			     es1371_pci_read, es1371_pci_write, dev);
 
-    timer_add(es1371_poll, &dev->dac[1].time, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(es1371_poll, dev, &dev->dac[1].time, TIMER_ALWAYS_ENABLED);
 
     generate_es1371_filter();
 		

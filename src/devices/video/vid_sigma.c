@@ -41,7 +41,7 @@
  *		even-numbered columns, so the top bit of the control register
  *		at 0x2D9 is used to adjust the position.
  *
- * Version:	@(#)vid_sigma.c	1.0.6	2019/04/19
+ * Version:	@(#)vid_sigma.c	1.0.7	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -911,7 +911,7 @@ sigma_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x02d0, 16, 
 		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, dev);
 
-    timer_add(sigma_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(sigma_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Start with ROM paged in, BIOS RAM paged out */
     dev->rom_paged = 0x80;

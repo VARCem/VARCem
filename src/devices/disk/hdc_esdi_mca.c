@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.16	2019/04/09
+ * Version:	@(#)hdc_esdi_mca.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1138,7 +1138,7 @@ esdi_init(const device_t *info, UNUSED(void *parent))
     dev->status = STATUS_BUSY;
 
     /* Set the reply timer. */
-    timer_add(hdc_callback, &dev->callback, &dev->callback, dev);
+    timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
     return(dev);
 }

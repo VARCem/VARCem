@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.16	2019/04/19
+ * Version:	@(#)vid_cga.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -662,7 +662,7 @@ cga_standalone_init(const device_t *info, UNUSED(void *parent))
     if (dev->composite)
 	dev->cpriv = cga_comp_init(dev->revision);
 
-    timer_add(cga_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(cga_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL,

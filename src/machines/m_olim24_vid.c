@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24 built-in video controller.
  *
- * Version:	@(#)m_olim24_vid.c	1.0.2	2019/04/08
+ * Version:	@(#)m_olim24_vid.c	1.0.3	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -534,7 +534,7 @@ m_olim24_vid_init(int type)
 		break;
     }
 
-    timer_add(vid_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(vid_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     device_add_ex(&video_device, dev);
 

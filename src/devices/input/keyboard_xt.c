@@ -8,7 +8,7 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.16	2019/04/20
+ * Version:	@(#)keyboard_xt.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -725,7 +725,7 @@ kbd_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0060, 4,
 		  kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
 
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
 
     keyboard_set_table(scancode_xt);
 

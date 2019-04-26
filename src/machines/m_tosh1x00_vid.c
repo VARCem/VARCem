@@ -9,7 +9,7 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_tosh1x00_vid.c	1.0.10	2019/04/08
+ * Version:	@(#)m_tosh1x00_vid.c	1.0.11	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -675,7 +675,7 @@ vid_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03d0, 0x000c,
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
 
-    timer_add(vid_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(vid_poll, dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
     video_inform(VID_TYPE_CGA, &timing_t1000);
 

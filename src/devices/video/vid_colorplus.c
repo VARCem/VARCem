@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.13	2019/04/19
+ * Version:	@(#)vid_colorplus.c	1.0.14	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -391,7 +391,7 @@ colorplus_init(const device_t *info, UNUSED(void *parent))
 
     dev->cga.cpriv = cga_comp_init(1);
 
-    timer_add(colorplus_poll, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(colorplus_poll, dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
 	 	colorplus_read,NULL,NULL, colorplus_write,NULL,NULL,

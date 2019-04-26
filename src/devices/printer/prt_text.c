@@ -15,7 +15,7 @@
  *		printer mechanics. This would lead to a page being 66 lines
  *		of 80 characters each.
  *
- * Version:	@(#)prt_text.c	1.0.6	2019/01/13
+ * Version:	@(#)prt_text.c	1.0.7	2019/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -368,7 +368,7 @@ prnt_init(const lpt_device_t *info)
     prnt_reset(dev);
 
     /* Create a timer to catch port timeouts. */
-    timer_add(prnt_timeout, &dev->timeout, &dev->timeout, dev);
+    timer_add(prnt_timeout, dev, &dev->timeout, &dev->timeout);
 
     /* Create a page buffer. */
     dev->page = (psurface_t *)mem_alloc(sizeof(psurface_t));

@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.20	2019/04/19
+ * Version:	@(#)game.c	1.0.21	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -200,8 +200,8 @@ game_init(const device_t *info, UNUSED(void *parent))
 	dev->axis[i].game = dev;
 	dev->axis[i].axis_nr = i;
 
-	timer_add(game_over,
-		  &dev->axis[i].count, &dev->axis[i].count, &dev->axis[i]);
+	timer_add(game_over, &dev->axis[i],
+		  &dev->axis[i].count, &dev->axis[i].count);
     }
 
     if (joystick_type != 0) {

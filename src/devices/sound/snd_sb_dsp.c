@@ -14,13 +14,13 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.8	2018/10/16
+ * Version:	@(#)snd_sb_dsp.c	1.0.9	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -787,9 +787,9 @@ void sb_dsp_init(sb_dsp_t *dsp, int type)
         
         sb_doreset(dsp);
 
-        timer_add(pollsb, &dsp->sbcount, &dsp->sbenable, dsp);
-        timer_add(sb_poll_i, &dsp->sb_count_i, &dsp->sb_enable_i, dsp);
-        timer_add(sb_wb_clear, &dsp->wb_time, &dsp->wb_time, dsp);
+        timer_add(pollsb, dsp, &dsp->sbcount, &dsp->sbenable);
+        timer_add(sb_poll_i, dsp, &dsp->sb_count_i, &dsp->sb_enable_i);
+        timer_add(sb_wb_clear, dsp, &dsp->wb_time, &dsp->wb_time);
 
         /*Initialise SB16 filter to same cutoff as 8-bit SBs (3.2 kHz). This will be recalculated when
           a set frequency command is sent.*/

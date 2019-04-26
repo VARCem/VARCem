@@ -79,7 +79,7 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.12	2019/04/09
+ * Version:	@(#)snd_pas16.c	1.0.13	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -781,7 +781,8 @@ static void *pas16_init(const device_t *info, UNUSED(void *parent))
 
         io_sethandler(0x9a01, 0x0001, NULL, NULL, NULL, pas16_out_base, NULL, NULL,  pas16);
         
-        timer_add(pas16_pcm_poll, &pas16->pit.c[0], &pas16->pit.enable[0],  pas16);
+        timer_add(pas16_pcm_poll, pas16,
+		  &pas16->pit.c[0], &pas16->pit.enable[0]);
         
         sound_add_handler(pas16_get_buffer, pas16);
         

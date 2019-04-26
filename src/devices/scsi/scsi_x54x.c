@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.16	2019/04/24
+ * Version:	@(#)scsi_x54x.c	1.0.17	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1941,10 +1941,9 @@ x54x_init(const device_t *info)
     dev->bus = info->flags;
     dev->callback_phase = 0;
 
-    timer_add(x54x_reset_poll, &dev->ResetCB, &dev->ResetCB, dev);
+    timer_add(x54x_reset_poll, dev, &dev->ResetCB, &dev->ResetCB);
     dev->timer_period = 10LL * TIMER_USEC;
-    timer_add(x54x_cmd_callback,
-	      &dev->timer_period, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(x54x_cmd_callback, dev, &dev->timer_period, TIMER_ALWAYS_ENABLED);
 
     x54x_dev = dev;
 

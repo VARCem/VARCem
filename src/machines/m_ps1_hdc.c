@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.11	2018/04/19
+ * Version:	@(#)m_ps1_hdc.c	1.0.12	2018/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -1466,7 +1466,7 @@ hdc_init_ps1(const device_t *info, void *parent)
 		  hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
 
     /* Create a timer for command delays. */
-    timer_add(hdc_callback, &dev->callback, &dev->callback, dev);
+    timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
     return(dev);
 }

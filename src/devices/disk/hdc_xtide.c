@@ -24,7 +24,7 @@
  * FIXME:	Make sure this works with the new IDE stuff, the AT and PS/2
  *		controllers do not have dev->ide set to anything...
  *
- * Version:	@(#)hdc_xtide.c	1.0.11	2019/04/09
+ * Version:	@(#)hdc_xtide.c	1.0.12	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

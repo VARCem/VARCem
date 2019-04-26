@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.20	2019/04/11
+ * Version:	@(#)fdc.c	1.0.21	2019/04/25
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -2292,13 +2292,14 @@ fdc_init(const device_t *info, UNUSED(void *parent))
     fdc->irq = 6;
 
     if (fdc->flags & FDC_FLAG_PCJR)
-	timer_add(fdc_watchdog_poll, &fdc->watchdog_timer, &fdc->watchdog_timer, fdc);
+	timer_add(fdc_watchdog_poll, fdc,
+		  &fdc->watchdog_timer, &fdc->watchdog_timer);
     else
 	fdc->dma_ch = 2;
 
     DEBUG("FDC: %04X (flags: %08X)\n", fdc->base_address, fdc->flags);
 
-    timer_add(fdc_callback, &fdc->time, &fdc->time, fdc);
+    timer_add(fdc_callback, fdc, &fdc->time, &fdc->time);
 
     /* FIXME: should be handled through table. */
     d86f_set_fdc(fdc);

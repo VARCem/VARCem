@@ -32,7 +32,7 @@
  *		The lower half of the driver can interface to the host system
  *		serial ports, or other channels, for real-world access.
  *
- * Version:	@(#)serial.c	1.0.14	2019/04/14
+ * Version:	@(#)serial.c	1.0.15	2019/04/25
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -533,8 +533,8 @@ pclog(0,"Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev
 			} else {
 #endif
 				/* Not linked, start RX timer. */
-				timer_add(read_timer,
-					  &dev->delay, &dev->delay, dev);
+				timer_add(read_timer, dev,
+					  &dev->delay, &dev->delay);
 
 				/* Fake CTS, DSR and DCD (for now.) */
 				dev->msr = (MSR_CTS | MSR_DCTS |
@@ -709,7 +709,7 @@ ser_init(const device_t *info, UNUSED(void *parent))
     /* Enable the I/O handler for this port. */
     io_sethandler(dev->base, 8, ser_read,NULL,NULL, ser_write,NULL,NULL, dev);
 
-    timer_add(receive_callback, &dev->delay, &dev->delay, dev);
+    timer_add(receive_callback, dev, &dev->delay, &dev->delay);
 
     INFO("SERIAL: COM%i (I/O=%04X, IRQ=%i)\n",
 	 info->local & 127, dev->base, dev->irq);

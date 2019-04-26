@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.9	2019/04/19
+ * Version:	@(#)vid_wy700.c	1.0.10	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -894,7 +894,7 @@ wy700_init(const device_t *info, UNUSED(void *parent))
     /* 128K video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x20000);
 
-    timer_add(wy700_poll, &dev->vidtime, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(wy700_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Occupy memory between 0xB0000 and 0xBFFFF (moves to 0xA0000 in
      * high-resolution modes)

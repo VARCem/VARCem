@@ -15,7 +15,7 @@
  *		80 columns. To be fixed...
  *		Also, the DDM bits stuff needs to be verified.
  *
- * Version:	@(#)m_amstrad.c	1.0.25	2019/04/20
+ * Version:	@(#)m_amstrad.c	1.0.26	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -608,7 +608,7 @@ amstrad_init(const device_t *info, void *arg)
     /* Initialize the (custom) keyboard interface. */
     dev->wantirq = 0;
     io_sethandler(0x0060, 7, kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
-    timer_add(kbd_poll, &keyboard_delay, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
     keyboard_set_table(scancode_xt);
     keyboard_send = kbd_adddata_ex;
     keyboard_scan = 1;

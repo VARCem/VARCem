@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT-based DSS sound device.
  *
- * Version:	@(#)snd_lpt_dss.c	1.0.10	2019/04/11
+ * Version:	@(#)snd_lpt_dss.c	1.0.11	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -155,7 +155,7 @@ dss_init(const lpt_device_t *info)
 
     sound_add_handler(dss_get_buffer, dev);
 
-    timer_add(dss_callback, &dev->time, TIMER_ALWAYS_ENABLED, dev);
+    timer_add(dss_callback, dev, &dev->time, TIMER_ALWAYS_ENABLED);
 	
     return dev;
 }

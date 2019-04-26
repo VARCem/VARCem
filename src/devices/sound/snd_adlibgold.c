@@ -10,7 +10,7 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.12	2019/04/11
+ * Version:	@(#)snd_adlibgold.c	1.0.13	2019/04/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -863,7 +863,8 @@ void *adgold_init(const device_t *info, UNUSED(void *parent))
         /*388/389 are handled by adlib_init*/
         io_sethandler(0x0388, 0x0008, adgold_read, NULL, NULL, adgold_write, NULL, NULL, adgold);
         
-        timer_add(adgold_timer_poll, &adgold->adgold_mma_timer_count, TIMER_ALWAYS_ENABLED, adgold);
+        timer_add(adgold_timer_poll, adgold,
+		  &adgold->adgold_mma_timer_count, TIMER_ALWAYS_ENABLED);
 
         sound_add_handler(adgold_get_buffer, adgold);
         
