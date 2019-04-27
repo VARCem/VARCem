@@ -518,9 +518,6 @@
     <ClCompile Include="..\..\..\devices\system\dma.c">
       <Filter>devices\system</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\system\i82335.c">
-      <Filter>devices\system</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\devices\system\intel.c">
       <Filter>devices\system</Filter>
     </ClCompile>
@@ -680,40 +677,7 @@
     <ClCompile Include="..\..\..\machines\m_at.c">
       <Filter>machines</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_ali1429.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_commodore.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_compaq.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_headland.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_neat.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_opti495.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_scat.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_t3100e.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_t3100e_vid.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_wd76c10.c">
-      <Filter>machines</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\machines\m_europc.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_olivetti_m24.c">
       <Filter>machines</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machines\m_pcjr.c">
@@ -731,25 +695,7 @@
     <ClCompile Include="..\..\..\machines\m_ps2_mca.c">
       <Filter>machines</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_tandy.c">
-      <Filter>machines</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\machines\m_xt.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_xt_compaq.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_xt_laserxt.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_xt_t1000.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_xt_t1000_vid.c">
-      <Filter>machines</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_xt_xi8088.c">
       <Filter>machines</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\machines\machine.c">
@@ -813,9 +759,6 @@
     <ClCompile Include="..\..\..\devices\video\vid_cga_compaq.c">
       <Filter>devices\video</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_4x0.c">
-      <Filter>machines</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\ui\ui_cdrom.c">
       <Filter>ui</Filter>
     </ClCompile>
@@ -835,11 +778,146 @@
     <ClCompile Include="..\..\..\devices\scsi\scsi_cdrom.c">
       <Filter>devices\scsi</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_sis471.c">
+    <ClCompile Include="..\..\..\devices\chipsets\ali1429.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\headland.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\intel4x0.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\neat.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\opti495.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\scat.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\sis471.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\sis496.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\wd76c10.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\floppy\fdd_mfm.c">
+      <Filter>devices\floppy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_att20c49x_ramdac.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_av9194.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_im1024.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_pgc.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_acer.c">
       <Filter>machines</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\machines\m_at_sis496.c">
+    <ClCompile Include="..\..\..\machines\m_ali.c">
       <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_amstrad_vid.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_aopen.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_asus.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_bull.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_commodore.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_compaq.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_compaq_vid.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_headland.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_intel4x0.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_laserxt.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_misc.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_neat.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_olim24.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_olim24_vid.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_opti495.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_pbell.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_scat.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_sis471.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_sis496.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_tandy1000.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_tandy1000_vid.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_tosh1x00.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_tosh1x00_vid.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_tosh3100e.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_tosh3100e_vid.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_tyan.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_wd76c10.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_xi8088.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_zenith.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\machines\m_zenith_vid.c">
+      <Filter>machines</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\snd_cs423x.c">
+      <Filter>devices\sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1163,9 +1241,6 @@
     <ClInclude Include="..\..\..\devices\ports\serial.h">
       <Filter>devices\ports</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\devices\scsi\queue.h">
-      <Filter>devices\scsi</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\devices\scsi\scsi.h">
       <Filter>devices\scsi</Filter>
     </ClInclude>
@@ -1379,9 +1454,6 @@
     <ClInclude Include="..\..\..\devices\system\dma.h">
       <Filter>devices\system</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\devices\system\i82335.h">
-      <Filter>devices\system</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\devices\system\intel.h">
       <Filter>devices\system</Filter>
     </ClInclude>
@@ -1417,9 +1489,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\devices\system\ppi.h">
       <Filter>devices\system</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\devices\video\vid_ati_eeprom.h">
-      <Filter>devices\video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\devices\video\vid_ati68860_ramdac.h">
       <Filter>devices\video</Filter>
@@ -1471,15 +1540,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\devices\video\video.h">
       <Filter>devices\video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\machines\m_at_t3100e.h">
-      <Filter>machines</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\machines\m_xt_t1000.h">
-      <Filter>machines</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\machines\m_xt_xi8088.h">
-      <Filter>machines</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\machines\machine.h">
       <Filter>machines</Filter>
@@ -1547,6 +1607,75 @@
     <ClInclude Include="..\..\..\png.h" />
     <ClInclude Include="..\..\..\devices\scsi\scsi_cdrom.h">
       <Filter>devices\scsi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\ali1429.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\headland.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\intel4x0.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\neat.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\opti495.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\scat.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\sis471.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\sis496.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\wd76c10.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\floppy\fdd_mfm.h">
+      <Filter>devices\floppy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\video\vid_ati.h">
+      <Filter>devices\video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\video\vid_att20c49x_ramdac.h">
+      <Filter>devices\video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\video\vid_av9194.h">
+      <Filter>devices\video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\video\vid_mda.h">
+      <Filter>devices\video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\video\vid_pgc.h">
+      <Filter>devices\video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machines\m_amstrad.h">
+      <Filter>machines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machines\m_compaq.h">
+      <Filter>machines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machines\m_olim24.h">
+      <Filter>machines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machines\m_tandy1000.h">
+      <Filter>machines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machines\m_tosh1x00.h">
+      <Filter>machines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machines\m_tosh3100e.h">
+      <Filter>machines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\machines\m_zenith.h">
+      <Filter>machines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\snd_cs423x.h">
+      <Filter>devices\sound</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1621,6 +1750,9 @@
     </Filter>
     <Filter Include="devices\printer">
       <UniqueIdentifier>{4797388a-1c9d-4a4c-a7f9-aa1925cad334}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="devices\chipsets">
+      <UniqueIdentifier>{552b793b-68ef-4307-a736-304825db0e67}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
