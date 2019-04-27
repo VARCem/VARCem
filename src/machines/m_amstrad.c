@@ -15,7 +15,7 @@
  *		80 columns. To be fixed...
  *		Also, the DDM bits stuff needs to be verified.
  *
- * Version:	@(#)m_amstrad.c	1.0.26	2019/04/25
+ * Version:	@(#)m_amstrad.c	1.0.27	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -198,7 +198,7 @@ kbd_adddata(uint16_t val)
 static void
 kbd_adddata_ex(uint16_t val)
 {
-    kbd_adddata_process(val, kbd_adddata);
+    keyboard_adddata(val, kbd_adddata);
 }
 
 

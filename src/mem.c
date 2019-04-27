@@ -12,7 +12,7 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.31	2019/04/25
+ * Version:	@(#)mem.c	1.0.32	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -505,72 +505,25 @@ writemembl(uint32_t addr, uint8_t val)
 uint8_t
 readmemb386l(uint32_t seg, uint32_t addr)
 {
-    mem_map_t *map;
-
     if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 
-	return 0xff;
+	return -1;
     }
 
-    mem_logical_addr = addr = addr + seg;
-    if (addr < 0x100000 && ram_mapped_addr[addr >> 14]) {
-	addr = (ram_mapped_addr[addr >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr : (ram_mapped_addr[addr >> 14] & ~0x3fff) + (addr & 0x3fff);
-	if (addr < (uint32_t)(1024UL * mem_size))
-		return ram[addr];
-	return 0xff;
-    }
-
-    if (cr0 >> 31) {
-	addr = mmutranslate_read(addr);
-	if (addr == 0xffffffff)
-		return 0xff;
-    }
-
-    addr &= rammask;
-
-    map = read_mapping[addr >> 14];
-    if (map && map->read_b)
-	return map->read_b(addr, map->p);
-
-    return 0xff;
+    return readmembl(addr + seg);
 }
 
 
 void
 writememb386l(uint32_t seg, uint32_t addr, uint8_t val)
 {
-    mem_map_t *map;
-
     if (seg == (uint32_t)-1) {
 	x86gpf("NULL segment", 0);
 	return;
     }
 
-    mem_logical_addr = addr = addr + seg;
-    if (addr < 0x100000 && ram_mapped_addr[addr >> 14]) {
-	addr = (ram_mapped_addr[addr >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr : (ram_mapped_addr[addr >> 14] & ~0x3fff) + (addr & 0x3fff);
-	if (addr < (uint32_t)(1024UL * mem_size))
-		ram[addr] = val;
-	return;
-    }
-
-    if (page_lookup[addr>>12]) {
-	page_lookup[addr>>12]->write_b(addr, val, page_lookup[addr>>12]);
-
-	return;
-    }
-
-    if (cr0 >> 31) {
-	addr = mmutranslate_write(addr);
-	if (addr == 0xffffffff) return;
-    }
-
-    addr &= rammask;
-
-    map = write_mapping[addr >> 14];
-    if (map && map->write_b)
-	map->write_b(addr, val, map->p);
+    writemembl(addr + seg, val);
 }
 
 

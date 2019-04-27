@@ -8,7 +8,7 @@
  *
  *		General keyboard driver interface.
  *
- * Version:	@(#)keyboard.c	1.0.13	2019/04/26
+ * Version:	@(#)keyboard.c	1.0.14	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,7 @@ void	(*keyboard_send)(uint16_t val);
 
 static int	recv_key[512];		/* keyboard input buffer */
 static int	oldkey[512];
-static const scancode	*scan_table;	/* scancode table for keyboard */
+static const scancode_t	*scan_table;	/* scancode table for keyboard */
 
 static uint8_t	caps_lock = 0;
 static uint8_t	num_lock = 0;
@@ -84,41 +84,6 @@ kbd_log(int level, const char *fmt, ...)
 #endif
 
 
-/* Reset the keyboard driver. */
-void
-keyboard_init(void)
-{
-    memset(recv_key, 0x00, sizeof(recv_key));
-
-    keyboard_scan = 1;
-    keyboard_delay = 0;
-    scan_table = NULL;
-
-    memset(keyboard_set3_flags, 0x00, sizeof(keyboard_set3_flags));
-    keyboard_set3_all_repeat = 0;
-    keyboard_set3_all_break = 0;
-}
-
-
-void
-keyboard_reset(void)
-{
-    uint8_t i;
-
-    /* Initialize the key states from the platform keyboard. */
-    i = plat_kbd_state() & 0xff;
-
-    keyboard_set_state(i);
-}
-
-
-void
-keyboard_set_table(const scancode *ptr)
-{
-    scan_table = ptr;
-}
-
-
 static uint8_t
 fake_shift_needed(uint16_t scan)
 {
@@ -127,6 +92,7 @@ fake_shift_needed(uint16_t scan)
 	case 0x0148:
 	case 0x0149:
 	case 0x014a:
+	case 0x014b:
 	case 0x014d:
 	case 0x014f:
 	case 0x0150:
@@ -141,10 +107,10 @@ fake_shift_needed(uint16_t scan)
 }
 
 
-void
+static void
 key_process(uint16_t scan, int down)
 {
-    const scancode *codes = scan_table;
+    const scancode_t *codes = scan_table;
     int c;
 
     if (! keyboard_scan) return;
@@ -175,6 +141,61 @@ key_process(uint16_t scan, int down)
 	if (fake_shift_needed(scan))
 		keyboard_send(0x101);
     }
+}
+
+
+/* Insert keystrokes into the machine's keyboard buffer. */
+static void
+keyboard_send_scan(uint8_t val)
+{
+    if (AT)
+	keyboard_at_adddata_keyboard_raw(val);
+      else
+	keyboard_send(val);
+}
+
+
+/* Send the machine a Control-Alt sequence. */
+static void
+keyboard_ca(uint8_t sc)
+{
+    keyboard_send_scan(29);		/* Ctrl key pressed */
+    keyboard_send_scan(56);		/* Alt key pressed */
+
+    keyboard_send_scan(sc);		/* press */
+    keyboard_send_scan(sc | 0x80);	/* release */
+
+    keyboard_send_scan(184);		/* Alt key released */
+    keyboard_send_scan(157);		/* Ctrl key released */
+}
+
+
+/* Reset the keyboard driver. */
+void
+keyboard_reset(void)
+{
+    keyboard_scan = 1;
+    keyboard_delay = 0;
+
+    memset(recv_key, 0x00, sizeof(recv_key));
+
+    memset(keyboard_set3_flags, 0x00, sizeof(keyboard_set3_flags));
+    keyboard_set3_all_repeat = 0;
+    keyboard_set3_all_break = 0;
+}
+
+
+void
+keyboard_set_table(const scancode_t *ptr)
+{
+    scan_table = ptr;
+}
+
+
+int
+keyboard_recv(uint16_t key)
+{
+    return(recv_key[key]);
 }
 
 
@@ -220,11 +241,11 @@ keyboard_input(int down, uint16_t scan)
 				break;
 
 			case 0x0038:	/* Left Alt */
-				shift |= 0x03;
+				shift |= 0x04;
 				break;
 
 			case 0x0138:	/* Right Alt */
-				shift |= 0x30;
+				shift |= 0x40;
 				break;
 		}
 	} else {
@@ -246,11 +267,11 @@ keyboard_input(int down, uint16_t scan)
 				break;
 
 			case 0x0038:	/* Left Alt */
-				shift &= ~0x03;
+				shift &= ~0x04;
 				break;
 
 			case 0x0138:	/* Right Alt */
-				shift &= ~0x30;
+				shift &= ~0x40;
 				break;
 
 			case 0x003a:	/* Caps Lock */
@@ -280,39 +301,67 @@ keyboard_input(int down, uint16_t scan)
 		uiflag |= KBD_FLAG_NUM;
 	if (scroll_lock)
 		uiflag |= KBD_FLAG_SCROLL;
-	ui_sb_kbstate(uiflag);
-//INFO("KBD: input: caps=%d num=%d scrl=%d\n", caps_lock,num_lock,scroll_lock);
+
+	/* Update UI and possibly host. */
+	ui_set_kbd_state(uiflag);
     }
 
-    /*
-     * NOTE: Shouldn't this be some sort of bit shift?
-     * An array of 8 unsigned 64-bit integers should be enough.
-     */
-#if 0
-    recv_key[scan >> 6] |= ((uint64_t) down << ((uint64_t) scan & 0x3fLL));
-#else
-    recv_key[scan & 0x01ff] = down;
-#endif
-
     DEBUG("Received scan code: %03X (%s)\n",scan & 0x1ff, down ? "down" : "up");
+    recv_key[scan & 0x01ff] = down;
     key_process(scan & 0x01ff, down);
 }
 
 
-static uint8_t
-keyboard_do_break(uint16_t scan)
+void
+keyboard_adddata(uint16_t val, void (*add_data)(uint16_t val))
 {
-    const scancode *codes = scan_table;
+    uint8_t shift_states;
 
-    if (AT && ((keyboard_mode & 3) == 3)) {
-	if (!keyboard_set3_all_break && !recv_key[scan] &&
-	    !(keyboard_set3_flags[codes[scan].mk[0]] & 2))
-		return(0);
+    if (add_data == NULL) return;
 
-	return(1);
+    shift_states = shift & STATE_SHIFT_MASK;
+
+    switch(val) {
+	case FAKE_LSHIFT_ON:
+		if (num_lock) {
+			if (! shift_states) {
+				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
+				add_data(0x2a);
+			}
+		} else {
+			if (shift_states & STATE_LSHIFT) {
+				/* Num lock off and left shift pressed. */
+				add_data(0xaa);
+			}
+			if (shift_states & STATE_RSHIFT) {
+				/* Num lock off and right shift pressed. */
+				add_data(0xb6);
+			}
+		}
+		break;
+
+	case FAKE_LSHIFT_OFF:
+		if (num_lock) {
+			if (! shift_states) {
+				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
+				add_data(0xaa);
+			}
+		} else {
+			if (shift_states & STATE_LSHIFT) {
+				/* Num lock off and left shift pressed. */
+				add_data(0x2a);
+			}
+			if (shift_states & STATE_RSHIFT) {
+				/* Num lock off and right shift pressed. */
+				add_data(0x36);
+			}
+		}
+		break;
+
+	default:
+		add_data(val);
+		break;
     }
-
-    return(1);
 }
 
 
@@ -335,98 +384,7 @@ keyboard_get_state(void)
     if (scroll_lock)
 	ret |= KBD_FLAG_SCROLL;
 
-//INFO("KBD state: caps=%d num=%d scrl=%d\n", caps_lock,num_lock,scroll_lock);
     return(ret);
-}
-
-
-/*
- * Called by the UI to update the states of
- * Caps Lock, Num Lock, and Scroll Lock.
- */
-void
-keyboard_set_state(uint8_t flags)
-{
-    const scancode *codes = scan_table;
-    int i, f;
-
-    f = !!(flags & KBD_FLAG_CAPS);
-    if (caps_lock != f) {
-#if 0
-	i = 0;
-	while (codes[0x03a].mk[i] != 0)
-		keyboard_send(codes[0x03a].mk[i++]);
-	if (keyboard_do_break(0x03a)) {
-		i = 0;
-		while (codes[0x03a].brk[i] != 0)
-			keyboard_send(codes[0x03a].brk[i++]);
-	}
-#endif
-	caps_lock = f;
-    }
-
-    f = !!(flags & KBD_FLAG_NUM);
-    if (num_lock != f) {
-#if 0
-	i = 0;
-	while (codes[0x045].mk[i] != 0)
-		keyboard_send(codes[0x045].mk[i++]);
-	if (keyboard_do_break(0x045)) {
-		i = 0;
-		while (codes[0x045].brk[i] != 0)
-		keyboard_send(codes[0x045].brk[i++]);
-	}
-#endif
-	num_lock = f;
-    }
-
-    f = !!(flags & KBD_FLAG_SCROLL);
-    if (scroll_lock != f) {
-#if 0
-	i = 0;
-	while (codes[0x046].mk[i] != 0)
-		keyboard_send(codes[0x046].mk[i++]);
-	if (keyboard_do_break(0x046)) {
-		i = 0;
-		while (codes[0x046].brk[i] != 0)
-			keyboard_send(codes[0x046].brk[i++]);
-	}
-#endif
-	scroll_lock = f;
-    }
-}
-
-
-int
-keyboard_recv(uint16_t key)
-{
-    return(recv_key[key]);
-}
-
-
-/* Insert keystrokes into the machine's keyboard buffer. */
-static void
-keyboard_send_scan(uint8_t val)
-{
-    if (AT)
-	keyboard_at_adddata_keyboard_raw(val);
-      else
-	keyboard_send(val);
-}
-
-
-/* Send the machine a Control-Alt sequence. */
-static void
-keyboard_ca(uint8_t sc)
-{
-    keyboard_send_scan(29);		/* Ctrl key pressed */
-    keyboard_send_scan(56);		/* Alt key pressed */
-
-    keyboard_send_scan(sc);		/* press */
-    keyboard_send_scan(sc | 0x80);	/* release */
-
-    keyboard_send_scan(184);		/* Alt key released */
-    keyboard_send_scan(157);		/* Ctrl key released */
 }
 
 

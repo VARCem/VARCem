@@ -8,10 +8,15 @@
  *
  *		Intel 8042 (AT keyboard controller) emulation.
  *
- * NOTE:	Several changes to disable Mode1 for now, as this breaks 
+ * **NOTE**:	Several changes to disable Mode1 for now, as this breaks 
  *		 the TSX32 operating system. More cleanups needed..
  *
- * Version:	@(#)keyboard_at.c	1.0.24	2019/04/25
+ * **NOTE**	The input functions for the Acer KBC chip (used by V30) is
+ *		 not OK yet. One of the commands sent is confusuing it, and
+ *		 it either will not process ctrl-alt-esc, or it will not do
+ *		 ANY input.
+ *
+ * Version:	@(#)keyboard_at.c	1.0.25	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -216,7 +221,7 @@ static const uint8_t nont_to_t[256] = {
 };
 
 #if USE_SET1
-static const scancode scancode_set1[512] = {
+static const scancode_t scancode_set1[512] = {
     {	{ 0              },	{ 0              }	},	/* 000 */
     {	{ 0x01           },	{ 0x81           }	},
     {	{ 0x02           },	{ 0x82           }	},
@@ -717,7 +722,7 @@ static const scancode scancode_set1[512] = {
 };
 #endif
 
-static const scancode scancode_set2[512] = {
+static const scancode_t scancode_set2[512] = {
     {	{ 0              },	{ 0              }	},	/* 000 */
     {	{ 0x76           },	{ 0xf0,0x76      }	},
     {	{ 0x16           },	{ 0xf0,0x16      }	},
@@ -1217,7 +1222,7 @@ static const scancode scancode_set2[512] = {
     {	{ 0xe0,0xff      },	{ 0xe0,0xf0,0xff }	}
 };
 
-static const scancode scancode_set3[512] = {
+static const scancode_t scancode_set3[512] = {
     {	{ 0              },	{ 0              }	},	/* 000 */
     {	{ 0x08           },	{ 0xf0,0x08      }	},
     {	{ 0x16           },	{ 0xf0,0x16      }	},
@@ -3252,7 +3257,7 @@ kbd_init(const device_t *info, UNUSED(void *parent))
 		break;
 
 	case KBC_VEN_ACER:
-//		kbd->write60_ven = &kbd_write60_acer;
+		kbd->write60_ven = &kbd_write60_acer;
 		kbd->write64_ven = &kbd_write64_acer;
 		break;
     }

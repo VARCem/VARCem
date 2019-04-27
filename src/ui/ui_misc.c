@@ -8,11 +8,11 @@
  *
  *		Misc stuff for UI, doesn't fit anywhere else..
  *
- * Version:	@(#)ui_misc.c	1.0.1	2018/09/29
+ * Version:	@(#)ui_misc.c	1.0.2	2019/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -52,6 +52,15 @@
 #include "../emu.h"
 #include "../plat.h"
 #include "ui.h"
+
+
+/* Update the UI and/or host for the active keyboard state. */
+void
+ui_set_kbd_state(int flags)
+{
+    /* First of all, update our status bar. */
+    ui_sb_kbstate(flags);
+}
 
 
 /* Return icon number based on drive type. */

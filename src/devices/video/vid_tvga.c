@@ -8,7 +8,7 @@
  *
  *		Trident TVGA (8900B/8900C/8900D) emulation.
  *
- * Version:	@(#)vid_tvga.c	1.0.13	2019/04/19
+ * Version:	@(#)vid_tvga.c	1.0.14	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -370,11 +370,9 @@ tvga_init(const device_t *info, UNUSED(void *parent))
 		tvga->svga.ramdac = device_add(&tkd8001_ramdac_device);
 		break;
 
-#if 0
 	case 1:		/* TVGA 8900D */
 		tvga->svga.ramdac = device_add(&tkd8001_ramdac_device);
 		break;
-#endif
     }
 
     if (info->path)

@@ -8,11 +8,11 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.16	2018/11/20
+ * Version:	@(#)ui.h	1.0.17	2019/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -154,6 +154,7 @@ extern void	ui_show_cursor(int on);
 extern void	ui_show_render(int on);
 extern wchar_t  *ui_window_title(const wchar_t *s);
 extern int	ui_fdd_icon(int type);
+extern void	ui_set_kbd_state(int flags);
 extern void	menu_add_item(int idm, int type, int id, const wchar_t *str);
 extern void	menu_enable_item(int idm, int val);
 extern void	menu_set_item(int idm, int val);

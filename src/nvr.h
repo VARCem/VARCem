@@ -8,11 +8,11 @@
  *
  *		Definitions for the generic NVRAM/CMOS driver.
  *
- * Version:	@(#)nvr.h	1.0.8	2018/09/09
+ * Version:	@(#)nvr.h	1.0.9	2019/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -79,7 +79,6 @@ typedef struct _nvr_ {
     void		(*reset)(struct _nvr_ *);
     void		(*start)(struct _nvr_ *);
     void		(*tick)(struct _nvr_ *);
-    void		(*recalc)(struct _nvr_ *);
 
     uint8_t		regs[NVR_MAXSIZE];	/* these are the registers */
 } nvr_t;
@@ -99,7 +98,6 @@ extern void		nvr_init(nvr_t *);
 extern wchar_t		*nvr_path(const wchar_t *fn);
 extern int		nvr_load(void);
 extern int		nvr_save(void);
-extern void		nvr_period_recalc(void);
 
 extern int		nvr_is_leap(int year);
 extern int		nvr_get_days(int month, int year);

@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.18	2019/04/25
+ * Version:	@(#)m_pcjr.c	1.0.19	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -719,7 +719,7 @@ kbd_adddata(uint16_t val)
 static void
 kbd_adddata_ex(uint16_t val)
 {
-    kbd_adddata_process(val, kbd_adddata);
+    keyboard_adddata(val, kbd_adddata);
 }
 
 

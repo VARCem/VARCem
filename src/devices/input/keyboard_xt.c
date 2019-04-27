@@ -8,7 +8,9 @@
  *
  *		Implementation of the XT-style keyboard.
  *
- * Version:	@(#)keyboard_xt.c	1.0.17	2019/04/25
+ * **NOTE**	The key_queue stuff should be in the device data.
+ *
+ * Version:	@(#)keyboard_xt.c	1.0.18	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,7 +100,7 @@ typedef struct {
 
 
 /* PC/XT keyboard has no escape scancodes, and no scancodes beyond 53. */
-const scancode scancode_xt[512] = {
+const scancode_t scancode_xt[512] = {
     {	{ 0    }, { 0    }      },	/* 000 */
     {	{ 0x01 }, { 0x81 }	},
     {	{ 0x02 }, { 0x82 }	},
@@ -652,64 +654,10 @@ kbd_adddata(uint16_t val)
 }
 
 
-void
-kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val))
-{
-    uint8_t num_lock = 0, shift_states = 0;
-
-    if (adddata == NULL) return;
-
-    num_lock = !!(keyboard_get_state() & KBD_FLAG_NUM);
-    shift_states = keyboard_get_shift() & STATE_SHIFT_MASK;
-
-    switch(val) {
-	case FAKE_LSHIFT_ON:
-		if (num_lock) {
-			if (! shift_states) {
-				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
-				adddata(0x2a);
-			}
-		} else {
-			if (shift_states & STATE_LSHIFT) {
-				/* Num lock off and left shift pressed. */
-				adddata(0xaa);
-			}
-			if (shift_states & STATE_RSHIFT) {
-				/* Num lock off and right shift pressed. */
-				adddata(0xb6);
-			}
-		}
-		break;
-
-	case FAKE_LSHIFT_OFF:
-		if (num_lock) {
-			if (! shift_states) {
-				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
-				adddata(0xaa);
-			}
-		} else {
-			if (shift_states & STATE_LSHIFT) {
-				/* Num lock off and left shift pressed. */
-				adddata(0x2a);
-			}
-			if (shift_states & STATE_RSHIFT) {
-				/* Num lock off and right shift pressed. */
-				adddata(0x36);
-			}
-		}
-		break;
-
-	default:
-		adddata(val);
-		break;
-    }
-}
-
-
 static void
 kbd_adddata_ex(uint16_t val)
 {
-    kbd_adddata_process(val, kbd_adddata);
+    keyboard_adddata(val, kbd_adddata);
 }
 
 

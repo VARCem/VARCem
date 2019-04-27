@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.69	2019/04/23
+ * Version:	@(#)pc.c	1.0.71	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -798,7 +798,6 @@ INFO("PC: set_speed(%i) -> speed %lu\n", turbo, speed);
      * timer system is built around the CPU clock as a
      * base unit. So, if we change that, everything does..
      */
-    nvr_period_recalc();
 }
 
 
@@ -910,7 +909,6 @@ pc_init(void)
 
     timer_reset();
 
-    keyboard_init();
     joystick_init();
 
     video_init();
@@ -1037,8 +1035,8 @@ pc_reset_hard_init(void)
     isartc_reset();
 
     /* Reset some basic devices. */
-    mouse_reset();
     keyboard_reset();
+    mouse_reset();
 
     /* Reset sound system. This MAY add a game port, so before joystick! */
     sound_reset();

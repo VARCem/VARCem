@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.12	2019/04/25
+ * Version:	@(#)keyboard.h	1.0.13	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,7 +65,7 @@ extern "C" {
 typedef struct {
     uint8_t	mk[4];
     uint8_t	brk[4];
-} scancode;
+} scancode_t;
 
 
 extern uint8_t		keyboard_mode;
@@ -78,7 +78,7 @@ extern uint8_t		keyboard_set3_all_break;
 extern int		mouse_queue_start, mouse_queue_end;
 extern int		mouse_scan;
 
-extern const scancode	scancode_xt[512];
+extern const scancode_t	scancode_xt[512];
 
 #ifdef EMU_DEVICE_H
 extern const device_t	keyboard_pc_device;
@@ -107,21 +107,17 @@ extern const device_t	keyboard_ps2_ami_pci_device;
 extern void	(*keyboard_send)(uint16_t val);
 
 
-extern void	kbd_adddata_process(uint16_t val, void (*adddata)(uint16_t val));
+extern void	keyboard_adddata(uint16_t val, void (*adddata)(uint16_t val));
+extern void	keyboard_poll_host(void);
 
 extern void	kbd_log(int level, const char *fmt, ...);
-extern void	keyboard_init(void);
 extern void	keyboard_reset(void);
 extern void	keyboard_close(void);
-extern void	keyboard_set_table(const scancode *ptr);
-extern void	keyboard_poll_host(void);
-extern void	keyboard_process(void);
-extern uint16_t	keyboard_convert(int ch);
+extern void	keyboard_set_table(const scancode_t *ptr);
 extern void	keyboard_input(int down, uint16_t scan);
+extern int	keyboard_recv(uint16_t key);
 extern uint8_t	keyboard_get_shift(void);
 extern uint8_t	keyboard_get_state(void);
-extern void	keyboard_set_state(uint8_t);
-extern int	keyboard_recv(uint16_t key);
 extern void	keyboard_cad(void);
 extern void	keyboard_cae(void);
 extern void	keyboard_cab(void);

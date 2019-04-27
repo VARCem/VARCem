@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy1000.c	1.0.21	2019/04/26
+ * Version:	@(#)m_tandy1000.c	1.0.22	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -128,7 +128,7 @@ typedef struct {
 } tandy_t;
 
 
-static const scancode scancode_tandy[512] = {
+static const scancode_t scancode_tandy[512] = {
     {	{ 0    }, { 0    }	},
     {	{ 0x01 }, { 0x81 }	},
     {	{ 0x02 }, { 0x82 }	},

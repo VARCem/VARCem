@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.15	2019/04/25
+ * Version:	@(#)nvr_at.c	1.0.16	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -645,8 +645,10 @@ nvr_start(nvr_t *nvr)
 
 
 static void
-nvr_recalc(nvr_t *nvr)
+nvr_recalc(void *priv)
 {
+    nvr_t *nvr = (nvr_t *)priv;
+
     timer_recalc(nvr, 0);
 }
 
@@ -692,7 +694,6 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
     nvr->reset = nvr_reset;
     nvr->start = nvr_start;
     nvr->tick = timer_tick;
-    nvr->recalc = nvr_recalc;
 
     /* Initialize the generic NVR. */
     nvr_init(nvr);
@@ -730,7 +731,9 @@ const device_t at_nvr_old_device = {
     0,
     NULL,
     nvr_at_init, nvr_at_close, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL,
+    nvr_recalc,
+    NULL, NULL,
     NULL
 };
 
@@ -740,7 +743,9 @@ const device_t at_nvr_device = {
     1,
     NULL,
     nvr_at_init, nvr_at_close, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL,
+    nvr_recalc,
+    NULL, NULL,
     NULL
 };
 
@@ -750,7 +755,9 @@ const device_t ps_nvr_device = {
     2,
     NULL,
     nvr_at_init, nvr_at_close, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL,
+    nvr_recalc,
+    NULL, NULL,
     NULL
 };
 
@@ -760,6 +767,8 @@ const device_t amstrad_nvr_device = {
     3,
     NULL,
     nvr_at_init, nvr_at_close, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL,
+    nvr_recalc,
+    NULL, NULL,
     NULL
 };
