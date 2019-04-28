@@ -8,7 +8,7 @@
 #
 #		Project file for the Travis CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.14	2019/04/21
+# Version:	@(#).travis.yml	1.0.15	2019/04/27
 #
 # Authors:	Natalia Portillo, <claunia@claunia.com>
 #		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -57,6 +57,7 @@ env:
 
   matrix:
     - PROG=VARCem CROSS=y DEBUG=n
+    - PROG=VARCem CROSS=y DEBUG=n LOGGING=y
     - PROG=VARCem CROSS=y DEBUG=y
     - PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
 

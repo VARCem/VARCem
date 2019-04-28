@@ -9,7 +9,7 @@
 #
 #		Deployment script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-deploy.sh	1.0.3	2019/03/10
+# Version:	@(#).travis-deploy.sh	1.0.4	2019/04/27
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -48,13 +48,15 @@
     # Ignore the cron builds.
     [ "x${TRAVIS_EVENT_TYPE}" = "xcron" ] && exit 0
 
-    [ "x${DEBUG}" = "xy" ] && TARGET=debug
     if [ "x${DEV_BUILD}" = "xy" ]; then
 	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
 	BTYPE=dev
     elif [ "x${DEBUG}" = "xy" ]; then
-	TARGET="win-${TRAVIS_BUILD_NUMBER}_debug-x86"
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_dbg-x86"
 	BTYPE=debug
+    elif [ "x${LOGGING}" = "xy" ]; then
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_log-x86"
+	BTYPE=logging
     else
 	TARGET="win-${TRAVIS_BUILD_NUMBER}-x86"
 	BTYPE=regular
@@ -75,7 +77,7 @@
        -F "type=${BTYPE}" \
        -F "build=${TRAVIS_BUILD_NUMBER}" \
        -F "id=${COMMIT}" \
-       -F "notes=not available" \
+       -F "notes=GIT #${COMMIT}" \
        -F "file_name=@${TARGET}.zip" \
        ${SITE_URL}
 

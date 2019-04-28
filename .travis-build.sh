@@ -9,7 +9,7 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.5	2019/03/10
+# Version:	@(#).travis-build.sh	1.0.6	2019/04/27
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -45,11 +45,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-    [ "x${DEBUG}" = "xy" ] && TARGET=debug
     if [ "x${DEV_BUILD}" = "xy" ]; then
 	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
     elif [ "x${DEBUG}" = "xy" ]; then
-	TARGET="win-${TRAVIS_BUILD_NUMBER}_debug-x86"
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_dbg-x86"
+    elif [ "x${LOGGING}" = "xy" ]; then
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_log-x86"
     else
 	TARGET="win-${TRAVIS_BUILD_NUMBER}-x86"
     fi
