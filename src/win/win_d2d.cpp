@@ -222,7 +222,7 @@ d2d_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 	return;
     }
 
-    // TODO: Copy data directly from buffer32 to d2d_bitmap
+    // TODO: Copy data directly from screen to d2d_bitmap
     srcdata = mem_alloc(h * w * 4);
     for (yy = y1; yy < y2; yy++) {
 	if ((y + yy) >= 0 && (y + yy) < scr->h) {

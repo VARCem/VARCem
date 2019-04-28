@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.8	2019/03/08
+ * Version:	@(#)win_sdl.c  	1.0.9	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -65,6 +65,9 @@
 #include "../device.h"
 #include "../ui/ui.h"
 #include "../plat.h"
+#if USE_LIBPNG
+# include "../png.h"
+#endif
 #include "../devices/video/video.h"
 #include "win.h"
 #include "win_sdl.h"
@@ -90,28 +93,26 @@ static int		sdl_fs;
 
 
 /* Pointers to the real functions. */
-static void 		(*sdl_GetVersion)(SDL_version *ver);
+static void 		(*sdl_GetVersion)(SDL_version *);
 static char		*const (*sdl_GetError)(void);
-static int 		(*sdl_Init)(Uint32 flags);
+static int 		(*sdl_Init)(Uint32);
 static void	 	(*sdl_Quit)(void);
-static SDL_Window	*(*sdl_CreateWindowFrom)(const void *data);
-static void	 	(*sdl_DestroyWindow)(SDL_Window *window);
-static SDL_Renderer	*(*sdl_CreateRenderer)(SDL_Window *window,
-						int index, Uint32 flags);
-static void	 	(*sdl_DestroyRenderer)(SDL_Renderer *renderer);
-static SDL_Texture	*(*sdl_CreateTexture)(SDL_Renderer *renderer,
-						Uint32 format, int access,
-						int w, int h);
-static void	 	(*sdl_DestroyTexture)(SDL_Texture *texture);
-static int 		(*sdl_LockTexture)(SDL_Texture *texture,
-						const SDL_Rect *rect,
-						void **pixels, int *pitch);
-static void	 	(*sdl_UnlockTexture)(SDL_Texture *texture);
-static int 		(*sdl_RenderCopy)(SDL_Renderer *renderer,
-						SDL_Texture *texture,
-						const SDL_Rect *srcrect,
-						const SDL_Rect *dstrect);
-static void	 	(*sdl_RenderPresent)(SDL_Renderer *renderer);
+static void		(*sdl_GetWindowSize)(SDL_Window *, int *, int *);
+static SDL_Window	*(*sdl_CreateWindowFrom)(const void *);
+static void	 	(*sdl_DestroyWindow)(SDL_Window *);
+static SDL_Renderer	*(*sdl_CreateRenderer)(SDL_Window *, int, Uint32);
+static void	 	(*sdl_DestroyRenderer)(SDL_Renderer *);
+static SDL_Texture	*(*sdl_CreateTexture)(SDL_Renderer *, Uint32, int, int, int);
+static void	 	(*sdl_DestroyTexture)(SDL_Texture *);
+static int 		(*sdl_LockTexture)(SDL_Texture *, const SDL_Rect *,
+					   void **, int *);
+static void	 	(*sdl_UnlockTexture)(SDL_Texture *);
+static int 		(*sdl_RenderCopy)(SDL_Renderer *, SDL_Texture *,
+					  const SDL_Rect *, const SDL_Rect *);
+static void	 	(*sdl_RenderPresent)(SDL_Renderer *);
+static int		(*sdl_RenderReadPixels)(SDL_Renderer *,
+					        const SDL_Rect *,
+                                                Uint32, void *, int);
 
 
 static const dllimp_t sdl_imports[] = {
@@ -119,6 +120,7 @@ static const dllimp_t sdl_imports[] = {
   { "SDL_GetError",		&sdl_GetError		},
   { "SDL_Init",			&sdl_Init		},
   { "SDL_Quit",			&sdl_Quit		},
+  { "SDL_GetWindowSize",	&sdl_GetWindowSize	},
   { "SDL_CreateWindowFrom",	&sdl_CreateWindowFrom	},
   { "SDL_DestroyWindow",	&sdl_DestroyWindow	},
   { "SDL_CreateRenderer",	&sdl_CreateRenderer	},
@@ -129,6 +131,7 @@ static const dllimp_t sdl_imports[] = {
   { "SDL_UnlockTexture",	&sdl_UnlockTexture	},
   { "SDL_RenderCopy",		&sdl_RenderCopy		},
   { "SDL_RenderPresent",	&sdl_RenderPresent	},
+  { "SDL_RenderReadPixels",	&sdl_RenderReadPixels	},
   { NULL,			NULL			}
 };
 
@@ -466,9 +469,10 @@ sdl_init(int fs)
 static void
 sdl_screenshot(const wchar_t *fn)
 {
-#if 0
+    wchar_t temp[256];
+    int width = 0, height = 0;
     uint8_t *pixels = NULL;
-    int res;
+    int i = 0, res;
 
     sdl_GetWindowSize(sdl_win, &width, &height);
 
@@ -486,8 +490,20 @@ sdl_screenshot(const wchar_t *fn)
 	return;
     }
 
-    if (pixels) free(pixels);
+#ifdef USE_LIBPNG
+    /* Save the screenshot, using PNG. */
+    i = png_write_rgb(fn, 0, pixels, (int16_t)width, (int16_t)height);
 #endif
+
+    if (pixels)
+	free(pixels);
+
+    /* Show error message if needed. */
+    if (i == 0) {
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_SCRSHOT), fn);
+	ui_msgbox(MBX_ERROR, temp);
+    }
 }
 
 

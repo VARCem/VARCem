@@ -8,7 +8,7 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.5	2019/01/11
+ * Version:	@(#)png.c	1.0.6	2019/04/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -358,7 +358,7 @@ error:
 
 /* Write the given BITMAP-format image as an 8-bit RGBA file. */
 int
-png_write_rgb(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h)
+png_write_rgb(const wchar_t *fn, int flip, uint8_t *pix, int16_t w, int16_t h)
 {
     png_structp png = NULL;
     png_infop info = NULL;
@@ -427,22 +427,15 @@ error:
 
     /* Create a buffer for scanlines of pixels. */
     rows = (png_bytepp)mem_alloc(sizeof(png_bytep) * h);
+
+    /* Process all scanlines in the image. */
     for (y = 0; y < h; y++) {
 	/* Create a buffer for this scanline. */
 	rows[y] = (png_bytep)mem_alloc(PNGFUNC(get_rowbytes)(png, info));
-    }
 
-    /*
-     * Process all scanlines in the image.
-     *
-     * Since the bitmap is in 'bottom-up' mode, we have to
-     * convert all pixels to RGB mode, but also 'flip' the
-     * image to the normal top-down mode.
-     */
-    for (y = 0; y < h; y++) {
+	/* Process all pixels on this line */
 	for (x = 0; x < w; x++) {
-		/* Get pointer to pixel in bitmap data. */
-                b = &pix[((y * w) + x) * 4];
+               	b = &pix[((y * w) + x) * 4];
 
 		/* Transform if needed. */
 		if (vid_grayscale || invert_display) {
@@ -450,13 +443,30 @@ error:
 			*rgb = video_color_transform(*rgb);
 		}
 
-		/* Get pointer to png row data. */
-		r = &rows[(h - 1) - y][x * 3];
+		if (flip) {
+			/*
+			 * Since the bitmap is in 'bottom-up' mode, we
+			 * have to convert all pixels to RGB mode, but
+			 * also 'flip' the image to the normal top-down
+			 * mode.
+			 */
 
-                /* Copy the pixel data. */
-                r[0] = b[2];
-                r[1] = b[1];
-                r[2] = b[0];
+			/* Get pointer to png row data. */
+			r = &rows[(h - 1) - y][x * 3];
+
+               		/* Copy the pixel data. */
+               		r[0] = b[2];
+               		r[1] = b[1];
+               		r[2] = b[0];
+		} else {
+			/* Get pointer to png row data. */
+			r = &rows[y][x * 3];
+
+               		/* Copy the pixel data. */
+               		r[0] = b[0];
+               		r[1] = b[1];
+               		r[2] = b[2];
+		}
 	}
     }
 

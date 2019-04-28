@@ -8,7 +8,7 @@
  *
  *		Definitions for the centralized PNG image handler.
  *
- * Version:	@(#)png.h	1.0.2	2019/01/11
+ * Version:	@(#)png.h	1.0.3	2019/04/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,7 +58,7 @@ extern void	png_unload(void);
 extern int	png_write_gray(const wchar_t *path, int invert,
 			       uint8_t *pix, int16_t w, int16_t h);
 
-extern int	png_write_rgb(const wchar_t *fn, uint8_t *pix,
+extern int	png_write_rgb(const wchar_t *fn, int flip, uint8_t *pix,
 			      int16_t w, int16_t h);
 
 #ifdef EMU_VIDEO_H

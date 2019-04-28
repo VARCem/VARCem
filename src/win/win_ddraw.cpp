@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.19	2019/03/08
+ * Version:	@(#)win_ddraw.cpp	1.0.20	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -723,7 +723,7 @@ ddraw_screenshot(const wchar_t *fn)
 
 #ifdef USE_LIBPNG
     /* Save the screenshot, using PNG if available. */
-    i = png_write_rgb(path, pixels,
+    i = png_write_rgb(path, 1, pixels,
 		      (int16_t)bmi.bmiHeader.biWidth,
 		      (int16_t)abs(bmi.bmiHeader.biHeight));
     if (i == 0) {
