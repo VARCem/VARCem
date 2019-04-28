@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.16	2019/04/25
+ * Version:	@(#)mem.h	1.0.17	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -229,6 +229,8 @@ extern void	mem_flush_write_page(uint32_t addr, uint32_t virt);
 
 extern void	mem_reset_page_blocks(void);
 
+extern int	mem_addr_is_ram(uint32_t addr);
+
 extern void     flushmmucache(void);
 extern void     flushmmucache_cr3(void);
 extern void	flushmmucache_nopc(void);
@@ -249,35 +251,21 @@ extern void	port_92_reset(void);
 
 
 #ifdef EMU_CPU_H
-static __inline uint32_t get_phys(uint32_t addr)
-{
-    if (! ((addr ^ get_phys_virt) & ~0xfff))
-	return get_phys_phys | (addr & 0xfff);
-
-    get_phys_virt = addr;
-
-    if (! (cr0 >> 31)) {
-	get_phys_phys = (addr & rammask) & ~0xfff;
-
-	return addr & rammask;
-    }
-
-    get_phys_phys = (mmutranslatereal(addr, 0) & rammask) & ~0xfff;
-
-#if 1
-    return get_phys_phys | (addr & 0xfff);
-#else
-    return mmutranslatereal(addr, 0) & rammask;
-#endif
-}
-
-
 static __inline uint32_t get_phys_noabrt(uint32_t addr)
 {
-    if (! (cr0 >> 31))
+    uint32_t phys_addr;
+
+    if (!(cr0 >> 31))
 	return addr & rammask;
 
-    return mmutranslate_noabrt(addr, 0) & rammask;
+    if (readlookup2[addr >> 12] != -1)
+	return ((uintptr_t)readlookup2[addr >> 12] + addr) - (uintptr_t)ram;
+
+    phys_addr = mmutranslate_noabrt(addr, 0) & rammask;
+    if (phys_addr != 0xffffffff && mem_addr_is_ram(phys_addr))
+	addreadlookup(addr, phys_addr);
+
+    return phys_addr;
 }
 #endif
 

@@ -12,7 +12,7 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.32	2019/04/26
+ * Version:	@(#)mem.c	1.0.33	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,6 +115,18 @@ static uint8_t		ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
 
 static uint8_t		port_92_reg = 0,
 			port_92_mask = 0;
+
+
+int
+mem_addr_is_ram(uint32_t addr)
+{
+    mem_map_t *map = read_mapping[addr >> 14];
+
+    return (map == &ram_low_mapping) ||
+ 	   (map == &ram_high_mapping) ||
+	   (map == &ram_mid_mapping) ||
+	   (map == &ram_remapped_mapping);
+}
 
 
 void

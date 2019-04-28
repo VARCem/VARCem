@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.9	2019/04/21
+ * Version:	@(#)386_dynarec.c	1.0.10	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -96,7 +96,34 @@ int oddeven=0;
 uint32_t rmdat32;
 
 
-static INLINE void fetch_ea_32_long(uint32_t rmdat)
+static INLINE uint32_t
+get_phys(uint32_t addr)
+{
+    if (! ((addr ^ get_phys_virt) & ~0xfff))
+	return get_phys_phys | (addr & 0xfff);
+
+    get_phys_virt = addr;
+
+    if (! (cr0 >> 31)) {
+	get_phys_phys = (addr & rammask) & ~0xfff;
+
+	return addr & rammask;
+    }
+
+    if (readlookup2[addr >> 12] != -1)
+	get_phys_phys = ((uintptr_t)readlookup2[addr >> 12] + (addr & ~0xfff)) - (uintptr_t)ram;
+    else {
+	get_phys_phys = (mmutranslatereal(addr, 0) & rammask) & ~0xfff;
+
+	if (!cpu_state.abrt && mem_addr_is_ram(get_phys_phys))
+		addreadlookup(get_phys_virt, get_phys_phys);
+    }
+
+    return get_phys_phys | (addr & 0xfff);
+}
+
+static INLINE void
+fetch_ea_32_long(uint32_t rmdat)
 {
         eal_r = eal_w = NULL;
         easeg = cpu_state.ea_seg->base;
