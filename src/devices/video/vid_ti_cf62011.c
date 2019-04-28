@@ -42,7 +42,7 @@
  *		which are the same as the XGA. It supports up to 1MB of VRAM,
  *		but we lock it down to 512K. The PS/1 2122 had 256K.
  *
- * Version:	@(#)vid_ti_cf62011.c	1.0.9	2019/04/19
+ * Version:	@(#)vid_ti_cf62011.c	1.0.10	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -326,7 +326,7 @@ const device_t ti_cf62011_device = {
 #endif
 
 
-const device_t ibm_ps1_2121_device = {
+const device_t ti_ps1_device = {
     "IBM PS/1 Model 2121 SVGA",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     512,

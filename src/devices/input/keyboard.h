@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.13	2019/04/26
+ * Version:	@(#)keyboard.h	1.0.14	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,14 +94,16 @@ extern const device_t	keyboard_at_ami_device;
 extern const device_t	keyboard_at_toshiba_device;
 
 extern const device_t	keyboard_ps2_device;
+extern const device_t	keyboard_ps2_pci_device;
+extern const device_t	keyboard_ps2_ps1_device;
+extern const device_t	keyboard_ps2_ps2_device;
 extern const device_t	keyboard_ps2_acer_device;
-extern const device_t	keyboard_ps2_xi8088_device;
 extern const device_t	keyboard_ps2_ami_device;
+extern const device_t	keyboard_ps2_ami_pci_device;
 extern const device_t	keyboard_ps2_mca_device;
 extern const device_t	keyboard_ps2_mca_2_device;
 extern const device_t	keyboard_ps2_quadtel_device;
-extern const device_t	keyboard_ps2_pci_device;
-extern const device_t	keyboard_ps2_ami_pci_device;
+extern const device_t	keyboard_ps2_xi8088_device;
 #endif
 
 extern void	(*keyboard_send)(uint16_t val);

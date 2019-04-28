@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.34	2019/03/07
+ * Version:	@(#)win_ui.c	1.0.35	2019/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,6 +92,8 @@ static int	save_window_pos = 0;
 static int	cruft_x = 0,
 		cruft_y = 0,
 		cruft_sb = 0;
+static int	kbd_flags,		/* current keyboard flags */
+		win_kbd_flags;		/* original host keyboard flags */
 
 
 static VOID APIENTRY
@@ -581,6 +583,10 @@ input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 							 0);
 			hook_enabled = 1;
 		}
+
+		/* Update host keyboard state if needed. */
+		if (kbd_flags != win_kbd_flags)
+			plat_set_kbd_state(kbd_flags);
 		break;
 
 	case WM_KILLFOCUS:
@@ -590,6 +596,10 @@ input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			UnhookWindowsHookEx(hKeyboardHook);
 			hook_enabled = 0;
 		}
+
+		/* Update host keyboard state if needed. */
+		if (kbd_flags != win_kbd_flags)
+			plat_set_kbd_state(win_kbd_flags);
 		break;
 
 	case WM_LBUTTONUP:
@@ -770,6 +780,10 @@ ui_init(int nCmdShow)
     /* Set up the main window for RawInput. */
     plat_set_input(hwndMain);
 
+    /* Grab the current state of the (host) keyboard. */
+    win_kbd_flags = plat_get_kbd_state();
+    kbd_flags = win_kbd_flags;
+
     /* Create the Machine Rendering window. */
     hwndRender = CreateWindow(L"STATIC",
 			      NULL,
@@ -910,6 +924,9 @@ again:
 
     win_mouse_close();
 
+    /* Restore host keyboard state. */
+    plat_set_kbd_state(win_kbd_flags);
+
     return((int)messages.wParam);
 }
 
@@ -1015,7 +1032,7 @@ plat_pause(int paused)
 
 /* Grab the current keyboard state. */
 int
-plat_kbd_state(void)
+plat_get_kbd_state(void)
 {
     BYTE kbdata[256];
     int ret = 0x00;
@@ -1031,6 +1048,60 @@ plat_kbd_state(void)
     if (kbdata[VK_PAUSE]) ret |= KBD_FLAG_PAUSE;
 
     return(ret);
+}
+
+
+/* Set the active keyboard state. */
+void
+plat_set_kbd_state(int flags)
+{
+    INPUT kbdata[2];
+
+    memset(kbdata, 0x00, sizeof(kbdata));
+    kbdata[0].type = kbdata[1].type = INPUT_KEYBOARD;
+    kbdata[1].ki.dwFlags = KEYEVENTF_KEYUP;
+
+INFO("WIN kbd_state(%04x) [%04x] focus=%d\n" , flags, kbd_flags, infocus);
+    if (kbd_flags != flags) {
+	/* Save the new flags. */
+	kbd_flags = flags;
+
+	/* If we are active, update the host keyboard state. */
+	if (infocus) {
+		/* Pick out the keys we are interested in. */
+		if (flags & KBD_FLAG_NUM) {
+			kbdata[0].ki.wVk = kbdata[1].ki.wVk = VK_NUMLOCK;
+			if (SendInput(2, kbdata, sizeof(INPUT)) == 0) {
+				ERRLOG("WIN: cannot SendInput(%i): error %i\n",
+					kbdata[0].ki.wVk, GetLastError());
+			}
+		}
+
+		if (flags & KBD_FLAG_CAPS) {
+			kbdata[0].ki.wVk = kbdata[1].ki.wVk = VK_CAPITAL;
+			if (SendInput(2, kbdata, sizeof(INPUT)) == 0) {
+				ERRLOG("WIN: cannot SendInput(%i): error %i\n",
+					kbdata[0].ki.wVk, GetLastError());
+			}
+		}
+
+		if (flags & KBD_FLAG_SCROLL) {
+			kbdata[0].ki.wVk = kbdata[1].ki.wVk = VK_SCROLL;
+			if (SendInput(2, kbdata, sizeof(INPUT)) == 0) {
+				ERRLOG("WIN: cannot SendInput(%i): error %i\n",
+					kbdata[0].ki.wVk, GetLastError());
+			}
+		}
+
+		if (flags & KBD_FLAG_PAUSE) {
+			kbdata[0].ki.wVk = kbdata[1].ki.wVk = VK_PAUSE;
+			if (SendInput(2, kbdata, sizeof(INPUT)) == 0) {
+				ERRLOG("WIN: cannot SendInput(%i): error %i\n",
+					kbdata[0].ki.wVk, GetLastError());
+			}
+		}
+	}
+    }
 }
 
 

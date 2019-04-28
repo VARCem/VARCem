@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.19	2019/04/25
+ * Version:	@(#)vid_svga.c	1.0.20	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -135,7 +135,7 @@ svga_out(uint16_t addr, uint8_t val, void *priv)
 				if (o != val)
 					svga_recalctimings(svga);
 			} else if (svga->attraddr == 0x11) {
-				svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
+				svga->overscan_color = svga->pallook[svga->attrregs[0x11] & 0x3f];
 				if (o != val)
 					svga_recalctimings(svga);
 			} else if (svga->attraddr == 0x12) {
@@ -1209,7 +1209,7 @@ svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
 
 		for (i = (y_add >> 1); i < (ysize + (y_add >> 1)); i ++) {
 			for (j = 0; j < 8; j++) {
-				screen->line[i & 0x7ff][32 + j].val = svga->pallook[svga->overscan_color];
+				screen->line[i & 0x7ff][32 + j].val = svga->overscan_color;
 				screen->line[i & 0x7ff][32 + xsize + (x_add >> 1) + j].val = svga->overscan_color;
 			}
 		}

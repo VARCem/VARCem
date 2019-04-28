@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.17	2019/04/25
+ * Version:	@(#)m_ps2_isa.c	1.0.18	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -243,13 +243,13 @@ ps2_init(const device_t *info, void *arg)
 
     device_add(&ps_nvr_device);
 
-    device_add(&keyboard_ps2_device);
+    device_add(&keyboard_ps2_ps2_device);
 
     device_add(&fdc_at_ps1_device);
 
     switch(dev->type) {
 	case 0:		/* Model 30/286 */
-		device_add(&ps1vga_device);
+		device_add(&vga_ps1_device);
 		break;
     }
 

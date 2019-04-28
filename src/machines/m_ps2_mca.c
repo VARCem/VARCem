@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.22	2019/04/25
+ * Version:	@(#)m_ps2_mca.c	1.0.23	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -555,7 +555,7 @@ model_50_init(ps2_t *dev)
     }
 
     if (video_card == VID_INTERNAL)	
-	device_add(&ps1vga_device);
+	device_add(&vga_ps1_device);
 }
 
 
@@ -743,7 +743,7 @@ model_55sx_init(ps2_t *dev)
     dev->planar_write = model_55sx_write;
 
     if (video_card == VID_INTERNAL)	
-	device_add(&ps1vga_device);
+	device_add(&vga_ps1_device);
 }
 
 
@@ -1069,7 +1069,7 @@ model_70_init(ps2_t *dev)
     }
 
     if (video_card == VID_INTERNAL)	
-	device_add(&ps1vga_device);
+	device_add(&vga_ps1_device);
 }
 
 
@@ -1236,7 +1236,7 @@ model_80_init(ps2_t *dev)
     }
 
     if (video_card == VID_INTERNAL)	
-	device_add(&ps1vga_device);
+	device_add(&vga_ps1_device);
 }
 
 
@@ -1443,8 +1443,6 @@ ps2_init(const device_t *info, void *arg)
 
     device_add(&ps_nvr_device);
 
-    device_add(&keyboard_ps2_mca_device);
-
     device_add(&fdc_at_device);
 
     parallel_setup(0, 0x03bc);
@@ -1468,19 +1466,23 @@ ps2_init(const device_t *info, void *arg)
 
     switch(dev->type) {
 	case 50:	/* Model 50 */
+    		device_add(&keyboard_ps2_mca_device);
 		model_50_init(dev);
 		break;
 
 	case 55:	/* Model 55SX */
+    		device_add(&keyboard_ps2_mca_device);
 		model_55sx_init(dev);
 		break;
 
 	case 73:	/* Model 70, Type 3 */
 	case 74:	/* Model 70, Type 4 */
+    		device_add(&keyboard_ps2_mca_device);
 		model_70_init(dev);
 		break;
 
 	case 80:	/* Model 80 */
+    		device_add(&keyboard_ps2_mca_device);
 		model_80_init(dev);
 		break;
     }

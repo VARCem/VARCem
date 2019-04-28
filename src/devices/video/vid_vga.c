@@ -8,7 +8,7 @@
  *
  *		IBM VGA emulation.
  *
- * Version:	@(#)vid_vga.c	1.0.9	2019/04/19
+ * Version:	@(#)vid_vga.c	1.0.10	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -206,8 +206,8 @@ const device_t vga_device = {
 
 static const video_timings_t ps1vga_timing = {VID_ISA,6,8,16,6,8,16};
 
-const device_t ps1vga_device = {
-    "PS/1 VGA",
+const device_t vga_ps1_device = {
+    "VGA (PS/1)",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     1,
     NULL,
@@ -219,8 +219,8 @@ const device_t ps1vga_device = {
     NULL
 };
 
-const device_t ps1vga_mca_device = {
-    "PS/1 VGA",
+const device_t vga_ps1_mca_device = {
+    "VGA (PS/1, MCA)",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_MCA,
     1,
     NULL,

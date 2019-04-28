@@ -519,7 +519,7 @@ ps1_init(const device_t *info, void *arg)
 	}
 
 	/* Enable the PS/1 VGA controller. */
-	device_add(&ps1vga_device);
+	device_add(&vga_ps1_device);
 
 	/* Enable the builtin sound chip. */
 	device_add(&snd_device);
@@ -549,7 +549,7 @@ ps1_init(const device_t *info, void *arg)
 	}
 
 	/* Initialize the video controller. */
-	device_add(&ibm_ps1_2121_device);
+	device_add(&ti_ps1_device);
 
 	/* Enable the builtin sound chip. */
 	device_add(&snd_device);
@@ -599,7 +599,7 @@ ps1_init(const device_t *info, void *arg)
 
     device_add(&ps_nvr_device);
 
-    device_add(&keyboard_ps2_device);
+    device_add(&keyboard_ps2_ps1_device);
 
     device_add(&mouse_ps2_device);
 

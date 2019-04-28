@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.32	2019/04/23
+ * Version:	@(#)video.h	1.0.33	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -307,12 +307,12 @@ extern const device_t	tgui9440_pci_device;
 #if defined(DEV_BRANCH) && defined(USE_TI)
 extern const device_t	ti_cf62011_device;
 #endif
-extern const device_t	ibm_ps1_2121_device;
+extern const device_t	ti_ps1_device;
 
 /* IBM VGA and compatibles. */
 extern const device_t	vga_device;
-extern const device_t	ps1vga_device;
-extern const device_t	ps1vga_mca_device;
+extern const device_t	vga_ps1_device;
+extern const device_t	vga_ps1_mca_device;
 
 /* 3Dfx VooDoo-series cards. */
 extern const device_t	voodoo_device;

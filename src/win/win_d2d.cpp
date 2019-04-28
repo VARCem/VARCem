@@ -57,16 +57,18 @@
 #include "win_d2d.h"
 
 
+#define PATH_D2D_DLL	"d2d1.dll"
+
+
 #if USE_D2D == 2
-# define PATH_D2D_DLL	"d2d1.dll"
 # define DLLFUNC(x)	D2D1_ ## x
 
 
 /* Pointers to the real functions. */
-static bool	(*D2D1_CreateFactory)(D2D1_FACTORY_TYPE facType,
-				      REFIID riid,
-				      CONST D2D1_FACTORY_OPTIONS *pFacOptions,
-				      void **ppIFactory);
+static HRESULT (*D2D1_CreateFactory)(D2D1_FACTORY_TYPE facType,
+				     REFIID riid,
+				     CONST D2D1_FACTORY_OPTIONS *pFacOptions,
+				     void **ppIFactory);
 
 static const dllimp_t d2d_imports[] = {
   { "D2D1CreateFactory",	&D2D1_CreateFactory		},
@@ -350,7 +352,16 @@ d2d_init(int fs)
 	INFO("D2D: module '%s' loaded.\n", PATH_D2D_DLL);
 #endif
 
-    /* Get and log the version of the DLL we are using. */
+    hr = DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
+			        __uuidof(ID2D1Factory),
+			        NULL,
+			        reinterpret_cast <void **>(&d2d_factory));
+    if (FAILED(hr)) {
+	ERRLOG("D2D: unable to load factory, D2D not available.\n");
+	d2d_close();
+	return(0);
+    }
+
     if (fs) {
 	/*
 	 * Direct2D seems to lack any proper fullscreen mode,
@@ -377,19 +388,7 @@ d2d_init(int fs)
 	SetFocus(d2d_hwnd);
 	SetWindowPos(d2d_hwnd, HWND_TOPMOST,
 		     0,0, d2d_screen_width,d2d_screen_height, SWP_SHOWWINDOW);	
-    }
 
-    hr = DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
-			        __uuidof(ID2D1Factory),
-			        NULL,
-			        reinterpret_cast <void **>(&d2d_factory));
-    if (FAILED(hr)) {
-	ERRLOG("D2D: unable to load factory, D2D not available.\n");
-	d2d_close();
-	return(0);
-    }
-
-    if (fs) {
 	props = D2D1::HwndRenderTargetProperties(d2d_hwnd,
 		D2D1::SizeU(d2d_screen_width, d2d_screen_height));
     } else {

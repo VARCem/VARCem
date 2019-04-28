@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.23	2019/03/05
+ * Version:	@(#)plat.h	1.0.24	2019/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -160,7 +160,8 @@ extern uint64_t	plat_timer_read(void);
 extern uint32_t	plat_get_ticks(void);
 extern void	plat_delay_ms(uint32_t count);
 extern void	plat_mouse_capture(int on);
-extern int	plat_kbd_state(void);
+extern int	plat_get_kbd_state(void);
+extern void	plat_set_kbd_state(int flags);
 extern void	plat_fullscreen(int on);
 #ifdef EMU_UI_H
 extern const string_t *plat_lang_load(lang_t *ptr);

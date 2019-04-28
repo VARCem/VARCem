@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.21	2019/04/25
+ * Version:	@(#)fdc.c	1.0.22	2019/04/27
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -132,23 +132,9 @@ fdc_log(int level, const char *fmt, ...)
 
 
 uint8_t
-fdc_ps1_525(void)
+fdc_get_current_drive(void)
 {
-#if 1
-    return fdd_is_525(current_drive) ? 0x40 : 0x00;
-#else
-    switch (romset) {
-	case ROM_IBMPS1_2011:
-	case ROM_IBMPS1_2121:
-	case ROM_IBMPS1_2121_ISA:
-		return fdd_is_525(current_drive) ? 0x40 : 0x00;
-
-	default:
-		break;
-    }
-
-    return(0x00);
-#endif
+    return current_drive;
 }
 
 

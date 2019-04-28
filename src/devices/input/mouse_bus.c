@@ -53,7 +53,7 @@
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
  *
- * Version:	@(#)mouse_bus.c	1.1.8	2019/04/25
+ * Version:	@(#)mouse_bus.c	1.1.9	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -678,6 +678,7 @@ bm_init(const device_t *info, UNUSED(void *parent))
 	case 1:		/* on-board controller, Logitech compatible */
 		dev->base = 0x023c;
 		dev->irq = -1;
+		dev->bn = 2;
 		break;
 
 	case 10:	/* Microsoft InPort controller */
@@ -689,11 +690,13 @@ bm_init(const device_t *info, UNUSED(void *parent))
 	case 11:	/* Microsoft InPort on-board controller */
 		dev->flags = FLAG_INPORT;
 		dev->base = 0x023c;
+		dev->bn = 2;
 		dev->irq = -1;
 		break;
     }
 
-    dev->bn = device_get_config_int("buttons");
+    if (dev->bn == 0)
+	dev->bn = device_get_config_int("buttons");
     mouse_set_buttons(dev->bn);
 
     dev->timer_enabled = 0;

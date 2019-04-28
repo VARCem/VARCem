@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.h	1.0.5	2018/10/19
+ * Version:	@(#)fdc.h	1.0.6	2019/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -193,7 +193,7 @@ extern void	fdc_sectorid(fdc_t *fdc, uint8_t track, uint8_t side,
 extern uint8_t	fdc_read(uint16_t addr, void *priv);
 extern void	fdc_reset(void *priv);
 
-extern uint8_t	fdc_ps1_525(void);
+extern uint8_t	fdc_get_current_drive(void);
 
 
 #endif	/*EMU_FDC_H*/
