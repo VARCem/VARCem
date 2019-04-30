@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct2D.
  *
- * Version:	@(#)win_d2d.cpp	1.0.6	2019/04/29
+ * Version:	@(#)win_d2d.cpp	1.0.7	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		David Hrdlicka, <hrdlickadavid@outlook.com>
@@ -183,7 +183,7 @@ d2d_stretch(float *w, float *h, float *x, float *y)
 static void
 d2d_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 {
-    ID2D1Bitmap *fs_bitmap;
+    ID2D1Bitmap *fs_bitmap = 0;
     ID2D1RenderTarget *RT;
     D2D1_RECT_U rectU;
     HRESULT hr = S_OK;
