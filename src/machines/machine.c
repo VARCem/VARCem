@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.20	2019/04/19
+ * Version:	@(#)machine.c	1.0.21	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,10 +56,7 @@
 #include "machine.h"
 
 
-const machine_t	*machine;
-
-
-static void	*m_priv;
+static const machine_t	*machine = NULL;
 
 
 /* Get the machine definition for the selected machine. */
@@ -124,7 +121,7 @@ machine_reset(void)
     rom_add_bios();
 
     /* All good, boot the machine! */
-    m_priv = dev->init(dev, &roms);
+    (void)dev->init(dev, &roms);
 }
 
 
@@ -141,14 +138,56 @@ machine_get_flags(void)
 }
 
 
+/* Return the current machine's 'fixed devices' flags. */
+int
+machine_get_flags_fixed(void)
+{
+    int ret = 0;
+
+    if (machine != NULL)
+	ret = machine->flags_fixed;
+
+    return(ret);
+}
+
+
+/* Return a machine's maximum memory size. */
+int
+machine_get_maxmem(void)
+{
+    int ret = 0;
+
+    if (machine != NULL)
+	ret = machine->max_ram;
+
+    return(ret);
+}
+
+
+/* Return a machine's NVR size. */
+int
+machine_get_nvrsize(void)
+{
+    int ret = 0;
+
+    if (machine != NULL)
+	ret = machine->nvrsz;
+
+    return(ret);
+}
+
+
 /* Return a machine's (adjusted) memory size. */
 int
 machine_get_memsize(int mem)
 {
-    int k;
+    int k = 0;
 
-    k = ((machine->flags & MACHINE_AT) && (machine->ram_granularity < 128))
-	? machine->min_ram * 1024 : machine->min_ram;
+    if (machine != NULL) {
+	k = machine->min_ram;
+	if ((machine->flags & MACHINE_AT) && (machine->ram_granularity < 128))
+		k *= 1024;
+    }
 
     if (mem < k)
         mem = k;

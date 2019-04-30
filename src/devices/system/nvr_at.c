@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.16	2019/04/26
+ * Version:	@(#)nvr_at.c	1.0.17	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -515,6 +515,7 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
     local_t *local = (local_t *)nvr->data;
     struct tm tm;
     uint8_t old;
+    int f;
 
     cycles -= ISA_CYCLES(8);
 
@@ -562,7 +563,8 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
 	}
     } else {
 	local->addr = (val & (nvr->size - 1));
-	if (!(machine->flags&MACHINE_MCA) && !(machine->flags&MACHINE_NONMI))
+	f = machine_get_flags();
+	if (!(f & MACHINE_MCA) && !(f & MACHINE_NONMI))
 		nmi_mask = (~val & 0x80);
     }
 }
@@ -667,7 +669,7 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
     nvr->data = local;
 
     /* This is machine specific. */
-    nvr->size = machine->nvrsz;
+    nvr->size = machine_get_nvrsize();
     switch(info->local) {
 	case 0:		/* standard AT (no century register) */
 		nvr->irq = 8;

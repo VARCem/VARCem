@@ -12,7 +12,7 @@
  *		it on Windows XP, and possibly also Vista. Use the
  *		-DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.45	2019/04/08
+ * Version:	@(#)config.c	1.0.46	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -397,7 +397,8 @@ load_machine(const char *cat)
 	machine_type = machine_get_from_internal_name(p);
       else 
 	machine_type = -1;
-    (void)machine_load();
+    if (machine_load() == NULL)
+	machine_type = -1;
 
     cpu_manufacturer = config_get_int(cat, "cpu_manufacturer", 0);
     cpu_type = config_get_int(cat, "cpu", 0);
@@ -464,13 +465,13 @@ load_video(const char *cat)
 {
     char *p;
 
-    if (machine->flags_fixed & MACHINE_VIDEO) {
+    if (machine_get_flags_fixed() & MACHINE_VIDEO) {
 	config_delete_var(cat, "video_card");
 	video_card = VID_INTERNAL;
     } else {
 	p = config_get_string(cat, "video_card", NULL);
 	if (p == NULL) {
-		if (machine->flags & MACHINE_VIDEO)
+		if (machine_get_flags() & MACHINE_VIDEO)
 			p = "internal";
 		  else
 			p = "none";
@@ -800,7 +801,7 @@ load_other(const char *cat)
 
     p = config_get_string(cat, "hdc", NULL);
     if (p == NULL) {
-	if (machine->flags & MACHINE_HDC)
+	if (machine_get_flags() & MACHINE_HDC)
 		p = "internal";
 	  else
 		p = "none";

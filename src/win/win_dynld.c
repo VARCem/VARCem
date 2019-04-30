@@ -8,11 +8,11 @@
  *
  *		Try to load a support DLL.
  *
- * Version:	@(#)win_dynld.c	1.0.7	2018/10/05
+ * Version:	@(#)win_dynld.c	1.0.8	2019/04/28
  *
- * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -64,7 +64,7 @@ dynld_module(const char *name, const dllimp_t *table)
 
     /* See if we can load the desired module. */
     if ((h = LoadLibrary(name)) == NULL) {
-	ERRLOG("DynLd(\"%s\"): library not found!\n", name);
+	DEBUG("DynLd(\"%s\"): library not found!\n", name);
 	return(NULL);
     }
 

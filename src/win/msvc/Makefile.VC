@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.66	2019/04/23
+# Version:	@(#)Makefile.VC	1.0.67	2019/04/28
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -62,9 +62,6 @@ ifndef AUTODEP
 endif
 ifndef CRASHDUMP
  CRASHDUMP	:= n
-endif
-ifndef CROSS
- CROSS		:= n
 endif
 ifndef DEBUG
  DEBUG		:= n
@@ -323,13 +320,13 @@ COPTS		:= -W3
 CXXOPTS		:= -EHsc
 DOPTS		:= 
 ifeq ($(X64), y)
-LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
-LOPTS_C		:= -SUBSYSTEM:CONSOLE
-LOPTS_W		:= -SUBSYSTEM:WINDOWS
+ LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
+ LOPTS_C	:= -SUBSYSTEM:CONSOLE
+ LOPTS_W	:= -SUBSYSTEM:WINDOWS
 else
-LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
-LOPTS_C		:= -SUBSYSTEM:CONSOLE,5.01
-LOPTS_W		:= -SUBSYSTEM:WINDOWS,5.01
+ LOPTS		:= -MACHINE:$(ARCH) -LIBPATH:win\msvc\Lib\$(ARCH)
+ LOPTS_C	:= -SUBSYSTEM:CONSOLE,5.01
+ LOPTS_W	:= -SUBSYSTEM:WINDOWS,5.01
 endif
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
@@ -378,10 +375,6 @@ ifeq ($(RELEASE), y)
 endif
 ifeq ($(PROFILER), y)
  LOPTS		+= /MAP
-endif
-ifeq ($(VRAMDUMP), y)
- OPTS		+= -DENABLE_VRAM_DUMP
- RFLAGS		+= -DENABLE_VRAM_DUMP
 endif
 ifeq ($(X64), y)
  PLATCG		:= codegen_x86-64.obj
@@ -450,7 +443,6 @@ endif
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(SDL), n)
  OPTS		+= -DUSE_SDL
- RFLAGS		+= -DUSE_SDL
  ifneq ($(SDL_PATH), )
   OPTS		+= -I$(SDL_PATH)/include/msvc -I$(SDL_PATH)/include
   ifeq ($(X64), y)
@@ -472,7 +464,6 @@ ifneq ($(D2D), n)
  else
   OPTS		+= -DUSE_D2D=1
  endif
- RFLAGS		+= -DUSE_D2D
  ifneq ($(D2D_PATH), )
   OPTS		+= -I$(D2D_PATH)/include/msvc -I$(D2D_PATH)/include
   ifeq ($(X64), y)
@@ -498,7 +489,6 @@ endif
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(VNC), n)
  OPTS		+= -DUSE_VNC
- RFLAGS		+= -DUSE_VNC
  ifneq ($(VNC_PATH), )
   OPTS		+= -I$(VNC_PATH)/include/msvc -I$(VNC_PATH)/include
   ifeq ($(X64), y)
@@ -516,7 +506,6 @@ endif
 # N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(RDP), n)
  OPTS		+= -DUSE_RDP
- RFLAGS		+= -DUSE_RDP
  ifneq ($(RDP_PATH), )
   OPTS		+= -I$(RDP_PATH)/include/msvc -I$(RDP_PATH)/include
   ifeq ($(X64), y)
@@ -538,7 +527,6 @@ ifneq ($(PNG), n)
  else
   OPTS		+= -DUSE_LIBPNG=1
  endif
- RFLAGS		+= -DUSE_LIBPNG
  ifneq ($(PNG_PATH), )
   OPTS		+= -I$(PNG_PATH)/include/msvc -I$(PNG_PATH)/include
   ifeq ($(X64), y)

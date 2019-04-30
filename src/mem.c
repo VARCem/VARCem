@@ -12,7 +12,7 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.33	2019/04/27
+ * Version:	@(#)mem.c	1.0.34	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1441,7 +1441,7 @@ mem_reset(void)
      * nasty crashes all over the place.
      */
     m = mem_size;
-    c = machine->max_ram;
+    c = machine_get_maxmem();
     if (AT)
 	c <<= 10;	/* make KB */
     if (m > c) {

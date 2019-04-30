@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.71	2019/04/26
+ * Version:	@(#)pc.c	1.0.72	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -226,16 +226,20 @@ pclog_ex(const char *fmt, va_list ap)
 	}
     }
 
-    vsprintf(temp, fmt, ap);
-    if (logdetect && !strcmp(logbuff, temp)) {
-	logseen++;
+    if (logdetect) {
+	vsprintf(temp, fmt, ap);
+	if (strcmp(logbuff, temp)) {
+		if (logseen)
+			fprintf(logfp, "*** %i repeats ***\n", logseen);
+		logseen = 0;
+		if (logdetect)
+			strcpy(logbuff, temp);
+		fprintf(logfp, temp);
+	} else
+		logseen++;
     } else {
-	if (logseen)
-		fprintf(logfp, "*** %i repeats ***\n", logseen);
-	logseen = 0;
-	if (logdetect)
-		strcpy(logbuff, temp);
-	fprintf(logfp, temp, ap);
+	/* Not detecting duplicates, do not buffer. */
+	vfprintf(logfp, fmt, ap);
     }
 
     fflush(logfp);

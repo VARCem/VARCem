@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.28	2019/04/19
+ * Version:	@(#)video.c	1.0.29	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -811,15 +811,14 @@ video_reset(void)
     const device_t *dev;
 
     INFO("VIDEO: reset (video_card=%i, internal=%i)\n",
-       	 video_card, (machine->flags & MACHINE_VIDEO) ? 1 : 0);
+       	 video_card, (machine_get_flags() & MACHINE_VIDEO) ? 1 : 0);
 
     /* Initialize the video font tables. */
     video_load_font(MDA_FONT_ROM_PATH, FONT_MDA);
 
     /* Do not initialize internal cards here. */
-    if ((video_card == VID_NONE) || \
-	(video_card == VID_INTERNAL) || \
-	(machine->flags_fixed & MACHINE_VIDEO)) return;
+    if ((video_card == VID_NONE) || (video_card == VID_INTERNAL) || \
+	(machine_get_flags_fixed() & MACHINE_VIDEO)) return;
 
     /* Configure default timing parameters for the card. */
     video_inform(VID_TYPE_SPEC, NULL);

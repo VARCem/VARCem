@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.22	2019/04/23
+ * Version:	@(#)m_europc.c	1.0.23	2019/04/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -561,7 +561,7 @@ europc_init(const device_t *info, void *arg)
     dev->jim = (i == 1) ? 0x0350 : 0x0250;
 
     /* Set up and initialize the NVR. */
-    dev->nvr.size = machine->nvrsz;
+    dev->nvr.size = machine_get_nvrsize();
     dev->nvr.irq = -1;
     dev->nvr.reset = rtc_reset;
     dev->nvr.start = rtc_start;

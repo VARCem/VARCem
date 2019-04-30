@@ -8,7 +8,10 @@
  *
  *		Rendering module for Microsoft Direct2D.
  *
- * Version:	@(#)win_d2d.cpp	1.0.4	2019/03/08
+ * **NOTE**	This module currently does not work when compiled using
+ *		the GCC compiler (MinGW) and when used in dynamic mode.
+ *
+ * Version:	@(#)win_d2d.cpp	1.0.5	2019/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		David Hrdlicka, <hrdlickadavid@outlook.com>
@@ -61,7 +64,7 @@
 
 
 #if USE_D2D == 2
-# define DLLFUNC(x)	D2D1_ ## x
+# define DLLFUNC(x)	D2D1_##x
 
 
 /* Pointers to the real functions. */
@@ -77,7 +80,7 @@ static const dllimp_t d2d_imports[] = {
 
 static void			*d2d_handle = NULL;
 #else
-# define DLLFUNC(x)	D2D1 ## x
+# define DLLFUNC(x)	D2D1##x
 #endif
 
 
@@ -338,29 +341,20 @@ d2d_init(int fs)
 {
     WCHAR title[200];
     D2D1_HWND_RENDER_TARGET_PROPERTIES props;
-    HRESULT hr;
+    HRESULT hr = S_OK;
 
     INFO("D2D: init(fs=%d)\n", fs);
 
 #if USE_D2D == 2
     /* Try loading the DLL. */
-    d2d_handle = dynld_module(PATH_D2D_DLL, d2d_imports);
+    if (d2d_handle == NULL)
+	d2d_handle = dynld_module(PATH_D2D_DLL, d2d_imports);
     if (d2d_handle == NULL) {
 	ERRLOG("D2D: unable to load '%s', D2D not available.\n", PATH_D2D_DLL);
 	return(0);
     } else
 	INFO("D2D: module '%s' loaded.\n", PATH_D2D_DLL);
 #endif
-
-    hr = DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
-			        __uuidof(ID2D1Factory),
-			        NULL,
-			        reinterpret_cast <void **>(&d2d_factory));
-    if (FAILED(hr)) {
-	ERRLOG("D2D: unable to load factory, D2D not available.\n");
-	d2d_close();
-	return(0);
-    }
 
     if (fs) {
 	/*
@@ -395,6 +389,16 @@ d2d_init(int fs)
 	// HwndRenderTarget will get resized appropriately by d2d_blit,
 	// so it's fine to let D2D imply size of 0x0 for now
 	props = D2D1::HwndRenderTargetProperties(hwndRender);
+    }
+
+    hr = DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
+			        __uuidof(ID2D1Factory),
+			        NULL,
+			        reinterpret_cast <void **>(&d2d_factory));
+    if (FAILED(hr)) {
+	ERRLOG("D2D: unable to load factory, D2D not available.\n");
+	d2d_close();
+	return(0);
     }
 
     hr = d2d_factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.82	2019/04/23
+# Version:	@(#)Makefile.mingw	1.0.83	2019/04/28
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -56,160 +56,8 @@ ifndef EXTRAS
 endif
 
 # Defaults for several build options (possibly defined in a chained file.)
-ifndef AUTODEP
- AUTODEP	:= n
-endif
-ifndef CRASHDUMP
- CRASHDUMP	:= n
-endif
-ifndef CROSS
- CROSS		:= n
-endif
-ifndef DEBUG
- DEBUG		:= n
-endif
-ifndef LOGGING
- LOGGING	:= n
-endif
-ifndef PROFILER 
- PROFILER	:= n
-endif
-ifndef OPTIM
- OPTIM		:= n
-endif
-ifndef RELEASE
- RELEASE	:= n
-endif
-ifndef X64
- X64		:= n
-endif
-ifndef ARM
-ARM		:= n
-endif
-ifndef ARM64
-ARM64		:= n
-endif
-ifndef DYNAREC
- DYNAREC	:= y
- ifeq ($(ARM), y)
-  DYNAREC	:= n
- endif
- ifeq ($(ARM64), y)
-  DYNAREC	:= n
- endif
-endif
 ifndef WX
  WX		:= n
-endif
-ifndef USB
- USB		:= n
-endif
-ifndef VNS
- VNS		:= n
-endif
-ifndef SDL
- SDL		:= n
-endif
-ifndef D2D
- D2D		:= n
-endif
-ifndef VNC
- VNC		:= n
-endif
-ifndef RDP
- RDP		:= n
-endif
-ifndef PNG
- PNG		:= n
-endif
-ifndef DEV_BUILD
- DEV_BUILD	:= n
-endif
-ifndef DEV_BRANCH
- DEV_BRANCH	:= n
-endif
-ifndef AMD_K
- AMD_K		:= n
-endif
-ifndef SIS471
- SIS471		:= n
-endif
-ifndef SIS496
- SIS496		:= n
-endif
-ifndef COMPAQ
- COMPAQ		:= n
-endif
-ifndef MICRAL
- MICRAL		:= n
-endif
-ifndef SUPERSPORT
- SUPERSPORT	:= n
-endif
-ifndef DINPUT
- DINPUT		:= y
- ifeq ($(ARM), y)
-  DINPUT	:= n
- endif
-endif
-ifndef D3DX
- D3DX		:= y
- ifeq ($(ARM), y)
-  D3DX		:= n
- endif
- ifeq ($(ARM64), y)
-  D3DX		:= n
- endif
-endif
-ifndef OPENAL
- OPENAL		:= y
-endif
-ifndef FLUIDSYNTH
- FLUIDSYNTH	:= y
-endif
-ifndef MUNT
- MUNT		:= y
-endif
-ifndef PAS16
- PAS16		:= n
-endif
-ifndef GUSMAX
- GUSMAX		:= n
-endif
-ifndef XL24
- XL24		:= n
-endif
-ifndef WONDER
- WONDER		:= n
-endif
-ifndef PRINTER
- PRINTER	:= n
-endif
-ifndef HOSTCD
- HOSTCD		:= n
-endif
-ifndef CASSETTE
- CASSETTE	:= n
-endif
-
-
-# Name of the executable.
-NETIF		:= pcap_if
-ifndef PROG
- ifneq ($(WX), n)
-  PROG		:= WxVARCem
- else
-  PROG		:= VARCem
- endif
-endif
-ifeq ($(DEBUG), y)
- PROG		:= $(PROG)-d
- NETIF		:= $(NETIF)-d
- LOGGING	:= y
-else
- ifeq ($(LOGGING), y)
-  PROG		:= $(PROG)-l
- endif
 endif
 
 
@@ -230,6 +78,12 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
+endif
+
+
+# What is the location of our external dependencies?
+ifeq ($(EXT_PATH), )
+ EXT_PATH	:= ../external
 endif
 
 
@@ -283,11 +137,31 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/video \
 		   machines ui win
 
+#
+# Name of the executable.
+#
+NETIF		:= pcap_if
+ifndef PROG
+ ifneq ($(WX), n)
+  PROG		:= WxVARCem
+ else
+  PROG		:= VARCem
+ endif
+endif
+ifeq ($(DEBUG), y)
+ PROG		:= $(PROG)-d
+ NETIF		:= $(NETIF)-d
+ LOGGING	:= y
+else
+ ifeq ($(LOGGING), y)
+  PROG		:= $(PROG)-l
+ endif
+endif
 
 #
 # Select the required build environment. We have, uhm, many..
 #
-ifneq ($(CROSS), n)
+ifeq ($(CROSS), y)
  # Cross-compiling (under Linux), select proper version.
  ifeq ($(X64), y)
   MINGW		:= x86_64-w64-mingw32
@@ -386,6 +260,7 @@ ifeq ($(ARM64), y)
 endif
 
 
+# Add general build options from the environment.
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
 endif
@@ -402,7 +277,7 @@ ifdef EXINC
  OPTS		+= -I$(EXINC)
 endif
  OPTS		+= $(SYSINC)
-ifneq ($(CROSS), n)
+ifeq ($(CROSS), y)
   OPTS		+= -DUSE_CROSS
 endif
 ifeq ($(DEBUG), y)
@@ -438,10 +313,6 @@ ifeq ($(RELEASE), y)
  OPTS		+= -DRELEASE_BUILD
  RFLAGS		+= -DRELEASE_BUILD
 endif
-ifeq ($(VRAMDUMP), y)
- OPTS		+= -DENABLE_VRAM_DUMP
- RFLAGS		+= -DENABLE_VRAM_DUMP
-endif
 ifeq ($(X64), y)
  PLATCG		:= codegen_x86-64.o
  CGOPS		:= codegen_ops_x86-64.h
@@ -453,23 +324,21 @@ else
 endif
 LIBS		:= -mwindows \
 		   -lddraw -ldxguid -ld3d9 -lversion -lcomctl32 -lwinmm
-ifeq ($(DINPUT), y)
- LIBS		+= -ldinput8
-else
- LIBS		+= -lxinput
-endif
-ifeq ($(D3DX), y)
- LIBS		+= -ld3dx9
-endif
-LIBS		+= -lws2_32 -lwsock32 -liphlpapi -lpsapi
-LIBS		+= -static -lstdc++ -lgcc
-#ifneq ($(X64), y)
-# LIBS		+= -Wl,--large-address-aware
-#endif
 
 
 # Optional modules.
 MISCOBJ		:=
+
+# Dynamic Recompiler (compiled-in)
+ifndef DYNAREC
+ DYNAREC	:= y
+ ifeq ($(ARM), y)
+  DYNAREC	:= n
+ endif
+ ifeq ($(ARM64), y)
+  DYNAREC	:= n
+ endif
+endif
 ifeq ($(DYNAREC), y)
  OPTS		+= -DUSE_DYNAREC
  RFLAGS		+= -DUSE_DYNAREC
@@ -481,20 +350,51 @@ ifeq ($(DYNAREC), y)
 		    codegen_timing_winchip.o $(PLATCG)
 endif
 
-ifeq ($(VNS), y)
+# VNS: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef VNS
+ VNS		:= n
+endif
+ifneq ($(VNS), n)
  OPTS		+= -DUSE_VNS
+ ifeq ($(VNS_PATH), )
+  VNS_PATH	:= $(EXT_PATH)/vns
+ endif
+ OPTS		+= -I$(VNS_PATH)/include/mingw -I$(VNS_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(VNS_PATH)/lib/mingw/x64
+ else
+  LIBS		+= -L$(VNS_PATH)/lib/mingw/x86
+ endif
+ ifeq ($(VNS), y)
+  LIBS		+= -lvns.dll
+ endif
+ ifeq ($(VNS), s)
+  LIBS		+= -lvns
+ endif
  MISCOBJ	+= net_vns.o
 endif
 
+# OpenAL (always dynamic)
+ifndef OPENAL
+ OPENAL		:= y
+endif
 ifeq ($(OPENAL), y)
  OPTS		+= -DUSE_OPENAL
 endif
 
+# FluidSynth (always dynamic)
+ifndef FLUIDSYNTH
+ FLUIDSYNTH	:= y
+endif
 ifeq ($(FLUIDSYNTH), y)
  OPTS		+= -DUSE_FLUIDSYNTH
  MISCOBJ	+= midi_fluidsynth.o
 endif
 
+# MunT (compiled-in)
+ifndef MUNT
+ MUNT		:= y
+endif
 ifeq ($(MUNT), y)
  OPTS		+= -DUSE_MUNT
  MISCOBJ	+= midi_mt32.o \
@@ -505,32 +405,40 @@ ifeq ($(MUNT), y)
 		    Tables.o TVA.o TVF.o TVP.o sha1.o c_interface.o
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# SDL: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef SDL
+ SDL		:= n
+endif
 ifneq ($(SDL), n)
  OPTS		+= -DUSE_SDL
- RFLAGS		+= -DUSE_SDL
- ifneq ($(SDL_PATH), )
-  OPTS		+= -I$(SDL_PATH)/include/mingw -I$(SDL_PATH)/include
-  ifeq ($(X64), y)
-   LIBS		+= -L$(SDL_PATH)/lib/mingw/x64
-  else
-   LIBS		+= -L$(SDL_PATH)/lib/mingw/x86
-  endif
+ ifeq ($(SDL_PATH), )
+  SDL_PATH	:= $(EXT_PATH)/sdl
+ endif
+ OPTS		+= -I$(SDL_PATH)/include/mingw -I$(SDL_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(SDL_PATH)/lib/mingw/x64
+ else
+  LIBS		+= -L$(SDL_PATH)/lib/mingw/x86
  endif
  ifeq ($(SDL), y)
+  LIBS		+= -lsdl2.dll
+ endif
+ ifeq ($(SDL), s)
   LIBS		+= -lsdl2
  endif
  SDLOBJ		:= win_sdl.o
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# D2D: N=no, Y=yes,linked, D=yes,dynamic
+ifndef D2D
+ D2D		:= n
+endif
 ifneq ($(D2D), n)
  ifeq ($(D2D), d)
   OPTS		+= -DUSE_D2D=2
  else
   OPTS		+= -DUSE_D2D=1
  endif
- RFLAGS		+= -DUSE_D2D
  ifneq ($(D2D_PATH), )
   OPTS		+= -I$(D2D_PATH)/include/mingw -I$(D2D_PATH)/include
   ifeq ($(X64), y)
@@ -545,73 +453,121 @@ ifneq ($(D2D), n)
  D2DOBJ		:= win_d2d.o
 endif
 
+# D3DX (always hard-linked)
+ifndef D3DX
+ D3DX		:= y
+ ifeq ($(ARM), y)
+  D3DX		:= n
+ endif
+ ifeq ($(ARM64), y)
+  D3DX		:= n
+ endif
+endif
 ifeq ($(D3DX), y)
-OPTS		+= -DUSE_D3DX
+ OPTS		+= -DUSE_D3DX
+ LIBS		+= -ld3dx9
 endif
 
+# DINPUT and XInput (always hard-linked)
+ifndef DINPUT
+ DINPUT		:= y
+ ifeq ($(ARM), y)
+  DINPUT	:= n
+ endif
+endif
 ifeq ($(DINPUT), y)
-OPTS		+= -DUSE_DINPUT
+ OPTS		+= -DUSE_DINPUT
+ LIBS		+= -ldinput8
+else
+ LIBS		+= -lxinput
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# VNC: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef VNC
+ VNC		:= n
+endif
 ifneq ($(VNC), n)
- OPTS		+= -DUSE_VNC
- RFLAGS		+= -DUSE_VNC
- ifneq ($(VNC_PATH), )
-  OPTS		+= -I$(VNC_PATH)/include/mingw -I$(VNC_PATH)/include
-  ifeq ($(X64), y)
-   LIBS		+= -L$(VNC_PATH)/lib/x64
-  else
-   LIBS		+= -L$(VNC_PATH)/lib/x86
-  endif
+ ifeq ($(VNC), d)
+  OPTS		+= -DUSE_VNC=2
+ else
+  OPTS		+= -DUSE_VNC=1
+ endif
+ ifeq ($(VNC_PATH), )
+  VNC_PATH	:= $(EXT_PATH)/vnc
+ endif
+ OPTS		+= -I$(VNC_PATH)/include/mingw -I$(VNC_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(VNC_PATH)/lib/x64
+ else
+  LIBS		+= -L$(VNC_PATH)/lib/x86
  endif
  ifeq ($(VNC), y)
-  LIBS		+= -lvncserver_shared #-static -lpthreads
+  LIBS		+= -lvncserver.dll
+ endif
+ ifeq ($(VNC), s)
+  LIBS		+= -lvncserver -lz -static -lpthread
  endif
  MISCOBJ	+= vnc.o vnc_keymap.o
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# RDP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef RDP
+ RDP		:= n
+endif
 ifneq ($(RDP), n)
- OPTS		+= -DUSE_RDP
- RFLAGS		+= -DUSE_RDP
- ifneq ($(RDP_PATH), )
-  OPTS		+= -I$(RDP_PATH)/include/mingw -I$(RDP_PATH)/include
-  ifeq ($(X64), y)
-   LIBS		+= -L$(RDP_PATH)/lib/x64
-  else
-   LIBS		+= -L$(RDP_PATH)/lib/x86
-  endif
+ ifeq ($(RDP), d)
+  OPTS		+= -DUSE_RDP=2
+ else
+  OPTS		+= -DUSE_RDP=1
+ endif
+ ifeq ($(RDP_PATH), )
+  RDP_PATH	:= $(EXT_PATH)/rdp
+ endif
+ OPTS		+= -I$(RDP_PATH)/include/mingw -I$(RDP_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(RDP_PATH)/lib/x64
+ else
+  LIBS		+= -L$(RDP_PATH)/lib/x86
  endif
  ifeq ($(RDP), y)
+  LIBS		+= -lrdp.dll
+ endif
+ ifeq ($(RDP), s)
   LIBS		+= -lrdp
  endif
  MISCOBJ	+= rdp.o
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# PNG: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef PNG
+ PNG		:= n
+endif
 ifneq ($(PNG), n)
  ifeq ($(PNG), d)
   OPTS		+= -DUSE_LIBPNG=2
  else
   OPTS		+= -DUSE_LIBPNG=1
  endif
- RFLAGS		+= -DUSE_PNG
- ifneq ($(PNG_PATH), )
-  OPTS		+= -I$(PNG_PATH)/include/mingw -I$(PNG_PATH)/include
-  ifeq ($(X64), y)
-   LIBS		+= -L$(PNG_PATH)/lib/x64
-  else
-   LIBS		+= -L$(PNG_PATH)/lib/x86
-  endif
+ ifeq ($(PNG_PATH), )
+  PNG_PATH	:= $(EXT_PATH)/png
+ endif
+ OPTS		+= -I$(PNG_PATH)/include/mingw -I$(PNG_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(PNG_PATH)/lib/x64
+ else
+  LIBS		+= -L$(PNG_PATH)/lib/x86
  endif
  ifeq ($(PNG), y)
+  # FIXME: should be -lpng.dll
+  LIBS		+= -lpng -lz
+ endif
+ ifeq ($(PNG), s)
   LIBS		+= -lpng -lz
  endif
  MISCOBJ	+= png.o
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# WX: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(WX), n)
  OPTS		+= -DUSE_WX=$(WX) $(WX_FLAGS)
  LIBS		+= $(WX_LIBS) -lm
@@ -699,17 +655,27 @@ ifeq ($(DEV_BRANCH), y)
 endif
 
 
+# Finalize the list of libraries to load.
+LIBS		+= -lws2_32 -lwsock32 -liphlpapi -lpsapi
+LIBS		+= -static -lstdc++ -lgcc
+#ifneq ($(X64), y)
+# LIBS		+= -Wl,--large-address-aware
+#endif
+
+
 # Final versions of the toolchain flags.
 # FIXME: add the -Wsign-compare option soon!
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
+		   -fno-strict-aliasing \
 		   -Wall -Wundef #-Wshadow #-Wunused-parameter -Wmissing-declarations
 
 CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
-		   $(AFLAGS) -fno-strict-aliasing -fvisibility=hidden \
-		   -fvisibility-inlines-hidden \
+		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
+		   -fno-strict-aliasing \
 		   -Wall -Wundef -Wunused-parameter -Wmissing-declarations \
 		   -Wno-ctor-dtor-privacy -Woverloaded-virtual
+#		   -fvisibility=hidden -fvisibility-inlines-hidden
 
 
 #########################################################################

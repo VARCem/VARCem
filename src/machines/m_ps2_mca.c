@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.23	2019/04/27
+ * Version:	@(#)m_ps2_mca.c	1.0.24	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1493,12 +1493,9 @@ ps2_init(const device_t *info, void *arg)
 }
 
 
-static const CPU cpus_ps2_m30_286[] = {
+static const CPU cpus_ps2_m50[] = {
     { "286/10", CPU_286, 10000000, 1, 0, 0, 0, 0, 0, 2,2,2,2, 1 },
     { "286/12", CPU_286, 12000000, 1, 0, 0, 0, 0, 0, 3,3,3,3, 2 },
-    { "286/16", CPU_286, 16000000, 1, 0, 0, 0, 0, 0, 3,3,3,3, 2 },
-    { "286/20", CPU_286, 20000000, 1, 0, 0, 0, 0, 0, 4,4,4,4, 3 },
-    { "286/25", CPU_286, 25000000, 1, 0, 0, 0, 0, 0, 4,4,4,4, 3 },
     { NULL }
 };
 
@@ -1506,11 +1503,11 @@ static const machine_t m50_info = {
     MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,
     0,
     1, 10, 1, 64, -1,
-    {{"",cpus_ps2_m30_286}}	//FIXME:??? is for M30-286!
+    {{"",cpus_ps2_m50}}
 };
 
 const device_t m_ps2_m50 = {
-    "IBM PS/2 M50",
+    "IBM PS/2 M50 Type 1",
     DEVICE_ROOT,
     50,
     L"ibm/ps2_m50",
@@ -1529,7 +1526,7 @@ static const machine_t m55_info = {
 };
 
 const device_t m_ps2_m55sx = {
-    "IBM PS/2 M50",
+    "IBM PS/2 M55SX",
     DEVICE_ROOT,
     55,
     L"ibm/ps2_m55sx",

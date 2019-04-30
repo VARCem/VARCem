@@ -96,7 +96,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_tosh1x00.c	1.0.18	2019/04/11
+ * Version:	@(#)m_tosh1x00.c	1.0.19	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1027,7 +1027,7 @@ t1000_init(const device_t *info, void *arg)
 
     device_add(&keyboard_xt_device);
 
-    tc8521_init(&dev->nvr, machine->nvrsz);
+    tc8521_init(&dev->nvr, machine_get_nvrsize());
 
     if (dev->is_t1200) {
 	dev->fdc = (fdc_t *)device_add(&fdc_toshiba_device);

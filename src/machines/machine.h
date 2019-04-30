@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.31	2019/04/23
+ * Version:	@(#)machine.h	1.0.32	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,9 +83,6 @@ typedef struct {
 
 
 /* Global variables. */
-extern const machine_t	*machine;
-
-
 #ifdef EMU_DEVICE_H
 extern const device_t	m_pc81,
 			m_pc82;
@@ -242,7 +239,10 @@ extern const char	*machine_get_internal_name(void);
 extern const device_t	*machine_get_device(void);
 #endif
 extern int		machine_get_flags(void);
+extern int		machine_get_flags_fixed(void);
+extern int		machine_get_maxmem(void);
 extern int		machine_get_memsize(int memsz);
+extern int		machine_get_nvrsize(void);
 extern uint32_t		machine_get_speed(int turbo);
 
 extern const char	*machine_get_name_ex(int m);

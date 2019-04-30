@@ -282,6 +282,7 @@ rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int 
 	addr = 0;
       else
 	addr &= 0x03ffff;
+INFO("ROM: loading %i bytes at %06lx\n", sz, addr);
 
     (void)fseek(fl, off, SEEK_SET);
     (void)fseek(fh, off, SEEK_SET);

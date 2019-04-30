@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.18	2019/04/20
+ * Version:	@(#)hdc.c	1.0.19	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -129,7 +129,7 @@ void
 hdc_reset(void)
 {
     INFO("HDC: reset(current=%d, internal=%d)\n",
-	 hdc_type, !!(machine->flags & MACHINE_HDC));
+	 hdc_type, !!(machine_get_flags() & MACHINE_HDC));
 
     /* If we have a valid controller, add its device. */
     if (controllers[hdc_type].device != NULL)
