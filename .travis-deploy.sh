@@ -71,7 +71,7 @@
 	exit 1
     fi
 
-    echo "Uploading VARCem build #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
+    echo ; echo "Uploading VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
     curl -# -X POST \
        -F "type=${BTYPE}" \
        -F "build=${TRAVIS_BUILD_NUMBER}" \

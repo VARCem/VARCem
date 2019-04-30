@@ -189,7 +189,7 @@ d2d_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     HRESULT hr = S_OK;
     void *srcdata;
     int yy;	
-    float fs_x, fs_y;
+    float fs_x = 0, fs_y = 0;
     float fs_w = (float)w;
     float fs_h = (float)h;
 

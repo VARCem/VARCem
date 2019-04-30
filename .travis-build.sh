@@ -61,11 +61,11 @@
     # We only need the first few characters of the commit ID.
     export COMMIT=${TRAVIS_COMMIT::7}
 
-    echo "Downloading VARCem build dependencies.."
+    echo ; echo "Downloading VARCem build dependencies.."
     curl -# ${EXTDEP_URL} | tar xzf - 2>/dev/null
 
     # Build the project.
-    echo "Building VARCem, build #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
+    echo ; echo "Building VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
 
     cd src
 
@@ -77,9 +77,9 @@
     fi
 
     # Package the results so we can upload them.
-    echo "Build #${TRAVIS_BUILD_NUMBER} OK, packing up."
+    echo ; echo "Build #${TRAVIS_BUILD_NUMBER} OK, packing up."
 
-    zip -9 ../${TARGET}.zip *.exe
+    zip -q -9 ../${TARGET}.zip *.exe
     if [ $? != 0 ]; then
 	echo "ZIP failed, not uploading." 
 
