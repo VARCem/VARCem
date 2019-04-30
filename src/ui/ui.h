@@ -8,7 +8,7 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.17	2019/04/26
+ * Version:	@(#)ui.h	1.0.18	2019/04/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -201,6 +201,7 @@ extern const char *vidapi_getname(int api);
 extern int	vidapi_set(int api);
 extern void	vidapi_resize(int x, int y);
 extern int	vidapi_pause(void);
+extern void	vidapi_enable(int yes);
 extern void	vidapi_reset(void);
 extern void	vidapi_screenshot(void);
 extern void	plat_startblit(void);

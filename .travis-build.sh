@@ -9,7 +9,7 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.6	2019/04/27
+# Version:	@(#).travis-build.sh	1.0.7	2019/04/30
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -45,6 +45,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+    # Define the build options here.
+    OPTS=D2D=d SDL=d VNC=d PNG=d
+
     if [ "x${DEV_BUILD}" = "xy" ]; then
 	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
     elif [ "x${DEBUG}" = "xy" ]; then
@@ -54,21 +57,26 @@
     else
 	TARGET="win-${TRAVIS_BUILD_NUMBER}-x86"
     fi
-    echo "Building VARCem, build #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
-
-    cd src
 
     # We only need the first few characters of the commit ID.
     export COMMIT=${TRAVIS_COMMIT::7}
 
+    echo "Downloading VARCem build dependencies.."
+    curl -# ${EXTDEP_URL} | tar xzf - 2>/dev/null
+
     # Build the project.
-    make -f win/mingw/Makefile.MinGW BUILD=${TRAVIS_BUILD_NUMBER}
+    echo "Building VARCem, build #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
+
+    cd src
+
+    make -f win/mingw/Makefile.MinGW ${OPTS} BUILD=${TRAVIS_BUILD_NUMBER}
     if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 
 
 	exit 1
     fi
 
+    # Package the results so we can upload them.
     echo "Build #${TRAVIS_BUILD_NUMBER} OK, packing up."
 
     zip -9 ../${TARGET}.zip *.exe

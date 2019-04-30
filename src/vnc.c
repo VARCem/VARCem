@@ -10,7 +10,7 @@
  *
  * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)vnc.c	1.0.10	2019/04/28
+ * Version:	@(#)vnc.c	1.0.11	2019/04/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -464,11 +464,10 @@ const vidapi_t vnc_vidapi = {
     "vnc",
     "VNC",
     0,
-    vnc_init,
-    vnc_close,
-    NULL,
+    vnc_init, vnc_close, NULL,
     vnc_resize,
     vnc_pause,
+    NULL,
     vnc_screenshot,
     vnc_available
 };

@@ -8,7 +8,7 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.5	2019/03/07
+ * Version:	@(#)ui_vidapi.c	1.0.6	2019/04/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -178,6 +178,25 @@ vidapi_pause(void)
     if (plat_vidapis[vid_api]->pause == NULL) return(0);
 
     return(plat_vidapis[vid_api]->pause());
+}
+
+
+void
+vidapi_enable(int yes)
+{
+    /* If not defined, assume not needed. */
+    if (plat_vidapis[vid_api]->enable == NULL) return;
+
+    /* Lock the blitter. */
+    plat_startblit();
+
+    /* Wait for it to be ours. */
+    video_blit_wait();
+
+    plat_vidapis[vid_api]->enable(yes);
+
+    /* Release the blitter. */
+    plat_endblit();
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.20	2019/04/27
+ * Version:	@(#)win_ddraw.cpp	1.0.21	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,6 +63,7 @@ static LPDIRECTDRAWCLIPPER	lpdd_clipper = NULL;
 static HWND			ddraw_hwnd;
 static int			ddraw_w, ddraw_h,
 				xs, ys, ys2;
+static int			is_enabled;
 
 
 static const char *
@@ -253,6 +254,11 @@ ddraw_blit_fs(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     HRESULT hr;
     int yy;
 
+    if (! is_enabled) {
+	video_blit_done();
+	return;
+    }
+
     if ((lpdds_back == NULL) || (y1 == y2) || (h <= 0)) {
 	video_blit_done();
 	return;
@@ -326,6 +332,11 @@ ddraw_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     HRESULT hr;
     POINT po;
     int yy;
+
+    if (! is_enabled) {
+	video_blit_done();
+	return;
+    }
 
     if ((lpdds_back == NULL) || (y1 == y2) || (h <= 0)) {
 	video_blit_done();
@@ -418,6 +429,8 @@ ddraw_close(void)
 	lpdd4->Release();
 	lpdd4 = NULL;
     }
+
+    is_enabled = 0;
 }
 
 
@@ -562,7 +575,16 @@ ddraw_init(int fs)
       else
 	video_blit_set(ddraw_blit);
 
+    is_enabled = 1;
+
     return(1);
+}
+
+
+static void
+ddraw_enable(int yes)
+{
+    is_enabled = yes;
 }
 
 
@@ -753,11 +775,10 @@ const vidapi_t ddraw_vidapi = {
     "ddraw",
     "DirectDraw 9+",
     1,
-    ddraw_init,
-    ddraw_close,
+    ddraw_init, ddraw_close, NULL,
     NULL,
     NULL,
-    NULL,
+    ddraw_enable,
     ddraw_screenshot,
     NULL
 };

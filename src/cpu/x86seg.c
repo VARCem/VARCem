@@ -8,7 +8,7 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.6	2019/04/20
+ * Version:	@(#)x86seg.c	1.0.7	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -456,8 +456,10 @@ void loadseg(uint16_t seg, x86seg *s)
                 s->access = (3 << 5) | 2 | 0x80;
                 s->base = seg << 4;
                 s->seg = seg;
+#if 0
                 if (s == &_ss)
                         set_stack32(0);
+#endif
                 s->checked = 1;
 #ifdef USE_DYNAREC
                 if (s == &_ds)

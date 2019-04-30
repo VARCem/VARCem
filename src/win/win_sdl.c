@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.9	2019/04/27
+ * Version:	@(#)win_sdl.c  	1.0.10	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -90,6 +90,7 @@ static HWND		sdl_parent_hwnd = NULL;
 static int		sdl_w, sdl_h;
 static int		cur_w, cur_h;
 static int		sdl_fs;
+static int		is_enabled;
 
 
 /* Pointers to the real functions. */
@@ -255,6 +256,11 @@ sdl_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     int xx, yy, ret;
     int pitch;
 
+    if (! is_enabled) {
+	video_blit_done();
+	return;
+    }
+
     if ((y1 == y2) || (scr == NULL)) {
 	video_blit_done();
 	return;
@@ -344,6 +350,8 @@ sdl_close(void)
 	dynld_close(sdl_handle);
 	sdl_handle = NULL;
     }
+
+    is_enabled = 0;
 }
 
 
@@ -462,6 +470,8 @@ sdl_init(int fs)
     /* Register our renderer! */
     video_blit_set(sdl_blit);
 
+    is_enabled = 1;
+
     return(1);
 }
 
@@ -520,15 +530,21 @@ sdl_available(void)
 }
 
 
+static void
+sdl_enable(int yes)
+{
+    is_enabled = yes;
+}
+
+
 const vidapi_t sdl_vidapi = {
     "sdl",
     "SDL2",
     1,
-    sdl_init,
-    sdl_close,
-    NULL,
+    sdl_init, sdl_close, NULL,
     sdl_resize,
     NULL,
+    sdl_enable,
     sdl_screenshot,
     sdl_available
 };

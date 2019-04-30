@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.16	2019/04/07
+ * Version:	@(#)win_d3d.cpp	1.0.17	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,6 +69,7 @@ static HWND			d3d_hwnd;
 static HWND			d3d_device_window;
 static int			d3d_w,
 				d3d_h;
+static int			is_enabled;
 
 static CUSTOMVERTEX d3d_verts[] = {
     {   0.0f,    0.0f, 1.0f, 1.0f, 0xffffff, 0.0f, 0.0f},
@@ -193,6 +194,11 @@ d3d_blit_fs(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     int yy;
     double l = 0, t = 0, r = 0, b = 0;
 
+    if (! is_enabled) {
+	video_blit_done();
+	return;
+    }
+
     if ((y1 == y2) || (h <= 0)) {
 	video_blit_done();
 	return; /*Nothing to do*/
@@ -305,6 +311,11 @@ d3d_blit(bitmap_t *b, int x, int y, int y1, int y2, int w, int h)
     D3DLOCKED_RECT dr;
     RECT r;
     int yy;
+
+    if (! is_enabled) {
+	video_blit_done();
+	return;
+    }
 
     if ((y1 == y2) || (h <= 0)) {
 	video_blit_done();
@@ -470,6 +481,8 @@ d3d_close(void)
 	DestroyWindow(d3d_device_window);
 	d3d_device_window = NULL;
     }
+
+    is_enabled = 0;
 }
 
 
@@ -589,6 +602,8 @@ d3d_init(int fs)
       else
 	video_blit_set(d3d_blit);
 
+    is_enabled = 1;
+
     return(1);
 }
 
@@ -602,6 +617,13 @@ d3d_resize(int x, int y)
     d3dpp.BackBufferHeight = y;
 
     d3d_reset(0);
+}
+
+
+static void
+d3d_enable(int yes)
+{
+    is_enabled = yes;
 }
 
 
@@ -629,11 +651,10 @@ const vidapi_t d3d_vidapi = {
     "d3d",
     "DirectDraw 3D",
     1,
-    d3d_init,
-    d3d_close,
-    d3d_reset,
+    d3d_init, d3d_close, d3d_reset,
     d3d_resize,
     NULL,
+    d3d_enable,
     d3d_screenshot,
     NULL
 };

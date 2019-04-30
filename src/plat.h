@@ -8,7 +8,7 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.24	2019/04/26
+ * Version:	@(#)plat.h	1.0.25	2019/04/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -125,6 +125,7 @@ typedef struct {
     void	(*reset)(int fs);
     void	(*resize)(int x, int y);
     int		(*pause)(void);
+    void	(*enable)(int yes);
     void	(*screenshot)(const wchar_t *fn);
     int		(*is_available)(void);
 } vidapi_t;

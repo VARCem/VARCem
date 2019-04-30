@@ -9,7 +9,7 @@
 #
 #		Deployment script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-deploy.sh	1.0.4	2019/04/27
+# Version:	@(#).travis-deploy.sh	1.0.5	2019/04/30
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -62,17 +62,16 @@
 	BTYPE=regular
     fi
 
+    # We only need the first few characters of the commit ID.
+    export COMMIT=${TRAVIS_COMMIT::7}
+
     if [ ! -f ${TARGET}.zip ]; then
 	echo "Target file ${TARGET}.zip not found, giving up."
 
 	exit 1
     fi
 
-    # We only need the first few characters of the commit ID.
-    export COMMIT=${TRAVIS_COMMIT::7}
-
     echo "Uploading VARCem build #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
-
     curl -# -X POST \
        -F "type=${BTYPE}" \
        -F "build=${TRAVIS_BUILD_NUMBER}" \

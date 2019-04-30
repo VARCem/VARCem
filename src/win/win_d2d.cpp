@@ -8,10 +8,7 @@
  *
  *		Rendering module for Microsoft Direct2D.
  *
- * **NOTE**	This module currently does not work when compiled using
- *		the GCC compiler (MinGW) and when used in dynamic mode.
- *
- * Version:	@(#)win_d2d.cpp	1.0.5	2019/04/28
+ * Version:	@(#)win_d2d.cpp	1.0.6	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		David Hrdlicka, <hrdlickadavid@outlook.com>
@@ -68,10 +65,8 @@
 
 
 /* Pointers to the real functions. */
-static HRESULT (*D2D1_CreateFactory)(D2D1_FACTORY_TYPE facType,
-				     REFIID riid,
-				     CONST D2D1_FACTORY_OPTIONS *pFacOptions,
-				     void **ppIFactory);
+typedef HRESULT (WINAPI *MyCreateFactory_t)(D2D1_FACTORY_TYPE, REFIID, CONST D2D1_FACTORY_OPTIONS*, void**);
+static MyCreateFactory_t D2D1_CreateFactory;
 
 static const dllimp_t d2d_imports[] = {
   { "D2D1CreateFactory",	&D2D1_CreateFactory		},
@@ -92,6 +87,7 @@ static ID2D1Bitmap		*d2d_bitmap;
 static int			d2d_width, d2d_height,
 				d2d_screen_width, d2d_screen_height,
 				d2d_fs;
+static int			d2d_enabled;
 
 
 static void
@@ -198,6 +194,11 @@ d2d_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     float fs_h = (float)h;
 
     DEBUG("D2D: blit(x=%d, y=%d, y1=%d, y2=%d, w=%d, h=%d)\n", x,y, y1,y2, w,h);
+
+    if (! d2d_enabled) {
+	video_blit_done();
+	return;
+    }
 
     // TODO: Detect double scanned mode and resize render target
     // appropriately for more clear picture
@@ -333,6 +334,8 @@ d2d_close(void)
 	d2d_handle = NULL;
     }
 #endif
+
+    d2d_enabled = 0;
 }
 
 
@@ -341,7 +344,8 @@ d2d_init(int fs)
 {
     WCHAR title[200];
     D2D1_HWND_RENDER_TARGET_PROPERTIES props;
-    HRESULT hr = S_OK;
+    D2D1_FACTORY_OPTIONS options;
+    HRESULT hr;
 
     INFO("D2D: init(fs=%d)\n", fs);
 
@@ -355,6 +359,16 @@ d2d_init(int fs)
     } else
 	INFO("D2D: module '%s' loaded.\n", PATH_D2D_DLL);
 #endif
+
+    ZeroMemory(&options, sizeof(D2D1_FACTORY_OPTIONS));
+    if (FAILED(DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
+				      __uuidof(ID2D1Factory),
+				      &options,
+			        reinterpret_cast <void **>(&d2d_factory)))) {
+	ERRLOG("D2D: unable to load factory, D2D not available.\n");
+	d2d_close();
+	return(0);
+    }
 
     if (fs) {
 	/*
@@ -391,30 +405,23 @@ d2d_init(int fs)
 	props = D2D1::HwndRenderTargetProperties(hwndRender);
     }
 
-    hr = DLLFUNC(CreateFactory)(D2D1_FACTORY_TYPE_MULTI_THREADED,
-			        __uuidof(ID2D1Factory),
-			        NULL,
-			        reinterpret_cast <void **>(&d2d_factory));
-    if (FAILED(hr)) {
-	ERRLOG("D2D: unable to load factory, D2D not available.\n");
-	d2d_close();
-	return(0);
-    }
-
     hr = d2d_factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),
 					     props, &d2d_hwndRT);
-    if (SUCCEEDED(hr)) {
-	// Create a bitmap for storing intermediate data
-	hr = d2d_hwndRT->CreateBitmap(D2D1::SizeU(2048, 2048),
-				      D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),	
-				      &d2d_bitmap);
-    }	
-
     if (FAILED(hr)) {
-	ERRLOG("D2D: init: error 0x%08lx\n", hr);
+	ERRLOG("D2D: unable to create target: error 0x%08lx\n", hr);
 	d2d_close();
 	return(0);
     }
+
+    // Create a bitmap for storing intermediate data
+    hr = d2d_hwndRT->CreateBitmap(D2D1::SizeU(2048, 2048),
+				  D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),	
+				  &d2d_bitmap);
+    if (FAILED(hr)) {
+	ERRLOG("D2D: unable to create bitmap: error 0x%08lx\n", hr);
+	d2d_close();
+	return(0);
+    }	
 
     d2d_fs = fs;
     d2d_width = 0;
@@ -425,6 +432,8 @@ d2d_init(int fs)
 
     /* Register our renderer! */
     video_blit_set(d2d_blit);
+
+    d2d_enabled = 1;
 
     return(1);
 }
@@ -456,15 +465,21 @@ d2d_available(void)
 }
 
 
+static void
+d2d_enable(int yes)
+{
+    d2d_enabled = yes;
+}
+
+
 const vidapi_t d2d_vidapi = {
     "d2d",
     "Direct 2D",
     1,
-    d2d_init,
-    d2d_close,
+    d2d_init, d2d_close, NULL,
     NULL,
     NULL,
-    NULL,
+    d2d_enable,
     d2d_screenshot,
     d2d_available
 };

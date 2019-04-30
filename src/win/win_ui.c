@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.35	2019/04/26
+ * Version:	@(#)win_ui.c	1.0.36	2019/04/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,6 +86,7 @@ static HMENU	menuMain = NULL,	/* application menu bar */
 		*sb_menu = NULL;
 static int	sb_nparts = 0;
 static const sbpart_t *sb_parts = NULL;
+static int	minimized = 0;
 static int	infocus = 1;
 static int	hook_enabled = 0;
 static int	save_window_pos = 0;
@@ -422,10 +423,22 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			x += cruft_x;
 			y += (cruft_y + cruft_sb);
 		}
-		y -= cruft_sb;
+
+		if ((x <= 0) || (y <= 0)) {
+			minimized = 1;
+			break;
+		} else if (minimized == 1) {
+			minimized = 0;
+			video_force_resize_set(1);
+		}
+
+		/* Disable the renderer for now. */
+		vidapi_enable(0);
 
 		/* Request a re-size if needed. */
 		if ((x != scrnsz_x) || (y != scrnsz_y)) doresize = 1;
+
+		y -= cruft_sb;
 
 		/* Set the new panel size. */
  		scrnsz_x = x;
@@ -441,6 +454,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		/* Update the renderer if needed. */
 		vidapi_resize(scrnsz_x, scrnsz_y);
+
+		/* OK, safe to enable the renderer again. */
+		vidapi_enable(1);
 
 		/* Re-clip the mouse area if needed. */
 		if (mouse_capture) {

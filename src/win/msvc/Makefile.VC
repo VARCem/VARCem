@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.67	2019/04/28
+# Version:	@(#)Makefile.VC	1.0.68	2019/04/29
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -55,158 +55,9 @@ ifndef EXTRAS
  EXTRAS		:=
 endif
 
-
 # Defaults for several build options (possibly defined in a chained file.)
-ifndef AUTODEP
- AUTODEP	:= n
-endif
-ifndef CRASHDUMP
- CRASHDUMP	:= n
-endif
-ifndef DEBUG
- DEBUG		:= n
-endif
-ifndef LOGGING
- LOGGING	:= n
-endif
-ifndef PROFILER 
- PROFILER	:= n
-endif
-ifndef OPTIM
- OPTIM		:= n
-endif
-ifndef RELEASE
- RELEASE	:= n
-endif
-ifndef X64
- X64		:= n
-endif
-ifndef ARM
-ARM		:= n
-endif
-ifndef ARM64
-ARM64		:= n
-endif
-ifndef DYNAREC
- DYNAREC	:= y
- ifeq ($(ARM), y)
-  DYNAREC	:= n
- endif
- ifeq ($(ARM64), y)
-  DYNAREC	:= n
- endif
-endif
 ifndef WX
  WX		:= n
-endif
-ifndef USB
- USB		:= n
-endif
-ifndef VNS
- VNS		:= n
-endif
-ifndef SDL
- SDL		:= n
-endif
-ifndef D2D
- D2D		:= n
-endif
-ifndef VNC
- VNC		:= n
-endif
-ifndef RDP
- RDP		:= n
-endif
-ifndef PNG
- PNG		:= n
-endif
-ifndef DEV_BUILD
- DEV_BUILD	:= n
-endif
-ifndef DEV_BRANCH
- DEV_BRANCH	:= n
-endif
-ifndef AMD_K
- AMD_K		:= n
-endif
-ifndef SIS471
- SIS471		:= n
-endif
-ifndef SIS496
- SIS496		:= n
-endif
-ifndef COMPAQ
- COMPAQ		:= n
-endif
-ifndef MICRAL
- MICRAL		:= n
-endif
-ifndef SUPERSPORT
- SUPERSPORT	:= n
-endif
-ifndef DINPUT
- DINPUT		:= y
- ifeq ($(ARM), y)
-  DINPUT	:= n
- endif
-endif
-ifndef D3DX
- D3DX		:= y
- ifeq ($(ARM), y)
-  D3DX		:= n
- endif
- ifeq ($(ARM64), y)
-  D3DX		:= n
- endif
-endif
-ifndef OPENAL
- OPENAL		:= y
-endif
-ifndef FLUIDSYNTH
- FLUIDSYNTH	:= y
-endif
-ifndef MUNT
- MUNT		:= y
-endif
-ifndef PAS16
- PAS16		:= n
-endif
-ifndef GUSMAX
- GUSMAX		:= n
-endif
-ifndef XL24
- XL24		:= n
-endif
-ifndef WONDER
- WONDER		:= n
-endif
-ifndef PRINTER
- PRINTER	:= n
-endif
-ifndef HOSTCD
- HOSTCD		:= n
-endif
-ifndef CASSETTE
- CASSETTE	:= n
-endif
-
-# Name of the executable.
-NETIF		:= pcap_if
-ifndef PROG
- ifneq ($(WX), n)
-  PROG		:= WxVARCem
- else
-  PROG		:= VARCem
- endif
-endif
-ifeq ($(DEBUG), y)
- PROG		:= $(PROG)-d
- NETIF		:= $(NETIF)-d
- LOGGING	:= y
-else
- ifeq ($(LOGGING), y)
-  PROG		:= $(PROG)-l
- endif
 endif
 
 
@@ -227,6 +78,12 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
+endif
+
+
+# What is the location of our external dependencies?
+ifeq ($(EXT_PATH), )
+ EXT_PATH	:= ../external
 endif
 
 
@@ -283,6 +140,28 @@ VPATH		:= $(EXPATH) . cpu \
 
 
 #
+# Name of the executable.
+#
+NETIF		:= pcap_if
+ifndef PROG
+ ifneq ($(WX), n)
+  PROG		:= WxVARCem
+ else
+  PROG		:= VARCem
+ endif
+endif
+ifeq ($(DEBUG), y)
+ PROG		:= $(PROG)-d
+ NETIF		:= $(NETIF)-d
+ LOGGING	:= y
+else
+ ifeq ($(LOGGING), y)
+  PROG		:= $(PROG)-l
+ endif
+endif
+
+
+#
 # Select the required build environment.
 #
 VCOPTS		:= -D_CRT_SECURE_NO_WARNINGS -D__MSC__
@@ -328,6 +207,9 @@ else
  LOPTS_C	:= -SUBSYSTEM:CONSOLE,5.01
  LOPTS_W	:= -SUBSYSTEM:WINDOWS,5.01
 endif
+
+
+# Add general build options from the environment.
 ifdef BUILD
  OPTS		+= -DBUILD=$(BUILD)
 endif
@@ -385,25 +267,24 @@ else
  CGOPS		:= codegen_ops_x86.h
  VCG		:= vid_voodoo_codegen_x86.h
 endif
-LIBS		:= ddraw.lib dxguid.lib d3d9.lib version.lib winmm.lib
-ifeq ($(DINPUT), y)
- LIBS		+= dinput8.lib
-else
- LIBS		+= xinput.lib
-endif
-ifeq ($(D3DX), y)
- LIBS		+= d3dx9.lib
-endif
-LIBS		+= comctl32.lib comdlg32.lib advapi32.lib gdi32.lib \
+LIBS		:= ddraw.lib dxguid.lib d3d9.lib version.lib winmm.lib \
+		   comctl32.lib comdlg32.lib advapi32.lib gdi32.lib \
 		   shell32.lib user32.lib
-LIBS		+= ws2_32.lib wsock32.lib iphlpapi.lib psapi.lib
-ifeq ($(DEBUG), y)
-LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
-endif
 
 
 # Optional modules.
 MISCOBJ		:=
+
+# Dynamic Recompiler (compiled-in)
+ifndef DYNAREC
+ DYNAREC	:= y
+ ifeq ($(ARM), y)
+  DYNAREC	:= n
+ endif
+ ifeq ($(ARM64), y)
+  DYNAREC	:= n
+ endif
+endif
 ifeq ($(DYNAREC), y)
  OPTS		+= -DUSE_DYNAREC
  RFLAGS		+= -DUSE_DYNAREC
@@ -415,20 +296,51 @@ ifeq ($(DYNAREC), y)
 		    codegen_timing_winchip.obj $(PLATCG)
 endif
 
-ifeq ($(VNS), y)
+# VNS: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef VNS
+ VNS		:= n
+endif
+ifneq ($(VNS), n)
  OPTS		+= -DUSE_VNS
+ ifeq ($(VNS_PATH), )
+  VNS_PATH	:= $(EXT_PATH)/vns
+ endif
+ OPTS		+= -I$(VNS_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -LIBPATH:$(VNS_PATH)/lib/x64
+ else
+  LIBS		+= -LIBPATH:$(VNS_PATH)/lib/x86
+ endif
+ ifeq ($(VNS), y)
+  LIBS		+= libvns.lib
+ endif
+ ifeq ($(VNS), s)
+  LIBS		+= libvns_static.lib
+ endif
  MISCOBJ	+= net_vns.obj
 endif
 
+# OpenAL (always dynamic)
+ifndef OPENAL
+ OPENAL		:= y
+endif
 ifeq ($(OPENAL), y)
  OPTS		+= -DUSE_OPENAL
 endif
 
+# FluidSynth (always dynamic)
+ifndef FLUIDSYNTH
+ FLUIDSYNTH	:= y
+endif
 ifeq ($(FLUIDSYNTH), y)
  OPTS		+= -DUSE_FLUIDSYNTH
  MISCOBJ	+= midi_fluidsynth.obj
 endif
 
+# MunT (compiled-in)
+ifndef MUNT
+ MUNT		:= y
+endif
 ifeq ($(MUNT), y)
  OPTS		+= -DUSE_MUNT
  MISCOBJ	+= midi_mt32.obj \
@@ -440,24 +352,34 @@ ifeq ($(MUNT), y)
 		    TVA.obj TVF.obj TVP.obj sha1.obj c_interface.obj
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# SDL: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef SDL
+ SDL		:= n
+endif
 ifneq ($(SDL), n)
  OPTS		+= -DUSE_SDL
- ifneq ($(SDL_PATH), )
-  OPTS		+= -I$(SDL_PATH)/include/msvc -I$(SDL_PATH)/include
-  ifeq ($(X64), y)
-   LOPTS	+= -LIBPATH:$(SDL_PATH)\lib\msvc\x64
-  else
-   LOPTS	+= -LIBPATH:$(SDL_PATH)\lib\msvc\x86
-  endif
+ ifeq ($(SDL_PATH), )
+  SDL_PATH	:= $(EXT_PATH)/sdl
+ endif
+ OPTS		+= -I$(SDL_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -LIBPATH:$(SDL_PATH)/lib/x64
+ else
+  LIBS		+= -LIBPATH:$(SDL_PATH)/lib/x86
  endif
  ifeq ($(SDL), y)
   LIBS		+= sdl2.lib
  endif
+ ifeq ($(SDL), s)
+  LIBS		+= sdl2_static.lib
+ endif
  SDLOBJ		:= win_sdl.obj
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# D2D: N=no, Y=yes,linked, D=yes,dynamic
+ifndef D2D
+ D2D		:= n
+endif
 ifneq ($(D2D), n)
  ifeq ($(D2D), d)
   OPTS		+= -DUSE_D2D=2
@@ -465,11 +387,11 @@ ifneq ($(D2D), n)
   OPTS		+= -DUSE_D2D=1
  endif
  ifneq ($(D2D_PATH), )
-  OPTS		+= -I$(D2D_PATH)/include/msvc -I$(D2D_PATH)/include
+  OPTS		+= -I$(D2D_PATH)/include
   ifeq ($(X64), y)
-   LOPTS	+= -LIBPATH:$(D2D_PATH)\lib\msvc\x64
+   LOPTS	+= -LIBPATH:$(D2D_PATH)/lib/x64
   else
-   LOPTS	+= -LIBPATH:$(D2D_PATH)\lib\msvc\x86
+   LOPTS	+= -LIBPATH:$(D2D_PATH)/lib/x86
   endif
  endif
  ifeq ($(D2D), y)
@@ -478,73 +400,123 @@ ifneq ($(D2D), n)
  D2DOBJ		:= win_d2d.obj
 endif
 
+# D3DX (always hard-linked)
+ifndef D3DX
+ D3DX		:= y
+ ifeq ($(ARM), y)
+  D3DX		:= n
+ endif
+ ifeq ($(ARM64), y)
+  D3DX		:= n
+ endif
+endif
 ifeq ($(D3DX), y)
-OPTS		+= -DUSE_D3DX
+ OPTS		+= -DUSE_D3DX
+ LIBS		+= d3dx9.lib
 endif
 
+# DINPUT and XInput (always hard-linked)
+ifndef DINPUT
+ DINPUT		:= y
+ ifeq ($(ARM), y)
+  DINPUT	:= n
+ endif
+endif
 ifeq ($(DINPUT), y)
-OPTS		+= -DUSE_DINPUT
+ OPTS		+= -DUSE_DINPUT
+ LIBS		+= dinput8.lib
+else
+ LIBS		+= xinput.lib
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# VNC: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef VNC
+ VNC		:= n
+endif
 ifneq ($(VNC), n)
- OPTS		+= -DUSE_VNC
- ifneq ($(VNC_PATH), )
-  OPTS		+= -I$(VNC_PATH)/include/msvc -I$(VNC_PATH)/include
-  ifeq ($(X64), y)
-   LOPTS	+= -LIBPATH:$(VNC_PATH)\lib\x64
-  else
-   LOPTS	+= -LIBPATH:$(VNC_PATH)\lib\x86
-  endif
+ ifeq ($(VNC), d)
+  OPTS		+= -DUSE_VNC=2
+ else
+  OPTS		+= -DUSE_VNC=1
+ endif
+ ifeq ($(VNC_PATH), )
+  VNC_PATH	:= $(EXT_PATH)/vnc
+ endif
+ OPTS		+= -I$(VNC_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -LIBPATH:$(VNC_PATH)/lib/x64
+ else
+  LIBS		+= -LIBPATH:$(VNC_PATH)/lib/x86
  endif
  ifeq ($(VNC), y)
   LIBS		+= libvncserver.lib
  endif
+ ifeq ($(VNC), s)
+  LIBS		+= libvncserver_static.lib zlib.lib
+ endif
  MISCOBJ	+= vnc.obj vnc_keymap.obj
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# RDP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef RDP
+ RDP		:= n
+endif
 ifneq ($(RDP), n)
- OPTS		+= -DUSE_RDP
- ifneq ($(RDP_PATH), )
-  OPTS		+= -I$(RDP_PATH)/include/msvc -I$(RDP_PATH)/include
-  ifeq ($(X64), y)
-   LOPTS	+= -LIBPATH:$(RDP_PATH)\lib\x64
-  else
-   LOPTS	+= -LIBPATH:$(RDP_PATH)\lib\x86
-  endif
+ ifeq ($(RDP), d)
+  OPTS		+= -DUSE_RDP=2
+ else
+  OPTS		+= -DUSE_RDP=1
+ endif
+ ifeq ($(RDP_PATH), )
+  RDP_PATH	:= $(EXT_PATH)/rdp
+ endif
+ OPTS		+= -I$(RDP_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -LIBPATH:$(RDP_PATH)/lib/x64
+ else
+  LIBS		+= -LIBPATH:$(RDP_PATH)/lib/x86
  endif
  ifeq ($(RDP), y)
   LIBS		+= rdpsrvr.lib
  endif
+ ifeq ($(RDP), s)
+  LIBS		+= rdpsrvr_static.lib
+ endif
  MISCOBJ	+= rdp.obj
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# PNG: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef PNG
+ PNG		:= n
+endif
 ifneq ($(PNG), n)
  ifeq ($(PNG), d)
   OPTS		+= -DUSE_LIBPNG=2
  else
   OPTS		+= -DUSE_LIBPNG=1
  endif
- ifneq ($(PNG_PATH), )
-  OPTS		+= -I$(PNG_PATH)/include/msvc -I$(PNG_PATH)/include
-  ifeq ($(X64), y)
-   LOPTS	+= -LIBPATH:$(PNG_PATH)\lib\x64
-  else
-   LOPTS	+= -LIBPATH:$(PNG_PATH)\lib\x86
-  endif
+ ifeq ($(PNG_PATH), )
+  PNG_PATH	:= $(EXT_PATH)/png
+ endif
+ OPTS		+= -I$(PNG_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -LIBPATH:$(PNG_PATH)/lib/x64
+ else
+  LIBS		+= -LIBPATH:$(PNG_PATH)/lib/x86
  endif
  ifeq ($(PNG), y)
   LIBS		+= libpng16_dll.lib #zlib.lib
  endif
+ ifeq ($(PNG), s)
+  LIBS		+= libpng16.lib zlib.lib
+ endif
  MISCOBJ	+= png.obj
 endif
 
-# N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# WX: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(WX), n)
- OPTS		+= -DUSE_WX $(WX_FLAGS)
- LIBS		+= $(WX_LIBS) -lm
+ OPTS		+= -DUSE_WX=$(WX) $(WX_FLAGS)
+ LIBS		+= $(WX_LIBS)
  UIOBJ		:= wx_main.obj wx_ui.obj wx_stbar.obj wx_render.obj
 else
  UIOBJ		:= win_ui.obj \
@@ -626,6 +598,13 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= cassette.obj
  endif
 
+endif
+
+
+# Finalize the list of libraries to load.
+LIBS		+= ws2_32.lib wsock32.lib iphlpapi.lib psapi.lib
+ifeq ($(DEBUG), y)
+LIBS		+= libcmtd.lib libvcruntimed.lib  libucrtd.lib
 endif
 
 

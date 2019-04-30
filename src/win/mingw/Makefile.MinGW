@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.83	2019/04/28
+# Version:	@(#)Makefile.mingw	1.0.84	2019/04/29
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -359,11 +359,11 @@ ifneq ($(VNS), n)
  ifeq ($(VNS_PATH), )
   VNS_PATH	:= $(EXT_PATH)/vns
  endif
- OPTS		+= -I$(VNS_PATH)/include/mingw -I$(VNS_PATH)/include
+ OPTS		+= -I$(VNS_PATH)/include
  ifeq ($(X64), y)
-  LIBS		+= -L$(VNS_PATH)/lib/mingw/x64
+  LIBS		+= -L$(VNS_PATH)/lib/x64
  else
-  LIBS		+= -L$(VNS_PATH)/lib/mingw/x86
+  LIBS		+= -L$(VNS_PATH)/lib/x86
  endif
  ifeq ($(VNS), y)
   LIBS		+= -lvns.dll
@@ -414,11 +414,11 @@ ifneq ($(SDL), n)
  ifeq ($(SDL_PATH), )
   SDL_PATH	:= $(EXT_PATH)/sdl
  endif
- OPTS		+= -I$(SDL_PATH)/include/mingw -I$(SDL_PATH)/include
+ OPTS		+= -I$(SDL_PATH)/include
  ifeq ($(X64), y)
-  LIBS		+= -L$(SDL_PATH)/lib/mingw/x64
+  LIBS		+= -L$(SDL_PATH)/lib/x64
  else
-  LIBS		+= -L$(SDL_PATH)/lib/mingw/x86
+  LIBS		+= -L$(SDL_PATH)/lib/x86
  endif
  ifeq ($(SDL), y)
   LIBS		+= -lsdl2.dll
@@ -440,11 +440,11 @@ ifneq ($(D2D), n)
   OPTS		+= -DUSE_D2D=1
  endif
  ifneq ($(D2D_PATH), )
-  OPTS		+= -I$(D2D_PATH)/include/mingw -I$(D2D_PATH)/include
+  OPTS		+= -I$(D2D_PATH)/include
   ifeq ($(X64), y)
-   LOPTS	+= -L$(D2D_PATH)/lib/mingw/x64
+   LOPTS	+= -L$(D2D_PATH)/lib/x64
   else
-   LOPTS	+= -L$(D2D_PATH)/lib/mingw/x86
+   LOPTS	+= -L$(D2D_PATH)/lib/x86
   endif
  endif
  ifeq ($(D2D), y)
@@ -487,6 +487,7 @@ ifndef VNC
  VNC		:= n
 endif
 ifneq ($(VNC), n)
+ ZLIB		:= (VNC)
  ifeq ($(VNC), d)
   OPTS		+= -DUSE_VNC=2
  else
@@ -495,7 +496,7 @@ ifneq ($(VNC), n)
  ifeq ($(VNC_PATH), )
   VNC_PATH	:= $(EXT_PATH)/vnc
  endif
- OPTS		+= -I$(VNC_PATH)/include/mingw -I$(VNC_PATH)/include
+ OPTS		+= -I$(VNC_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -L$(VNC_PATH)/lib/x64
  else
@@ -523,7 +524,7 @@ ifneq ($(RDP), n)
  ifeq ($(RDP_PATH), )
   RDP_PATH	:= $(EXT_PATH)/rdp
  endif
- OPTS		+= -I$(RDP_PATH)/include/mingw -I$(RDP_PATH)/include
+ OPTS		+= -I$(RDP_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -L$(RDP_PATH)/lib/x64
  else
@@ -543,6 +544,7 @@ ifndef PNG
  PNG		:= n
 endif
 ifneq ($(PNG), n)
+ ZLIB		:= $(PNG)
  ifeq ($(PNG), d)
   OPTS		+= -DUSE_LIBPNG=2
  else
@@ -551,7 +553,7 @@ ifneq ($(PNG), n)
  ifeq ($(PNG_PATH), )
   PNG_PATH	:= $(EXT_PATH)/png
  endif
- OPTS		+= -I$(PNG_PATH)/include/mingw -I$(PNG_PATH)/include
+ OPTS		+= -I$(PNG_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -L$(PNG_PATH)/lib/x64
  else
@@ -565,6 +567,33 @@ ifneq ($(PNG), n)
   LIBS		+= -lpng -lz
  endif
  MISCOBJ	+= png.o
+endif
+
+# ZLIB: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef ZLIB
+ ZLIB		:= n
+endif
+ifneq ($(ZLIB), n)
+ ifeq ($(ZLIB), d)
+  OPTS		+= -DUSE_ZLIB=2
+ else
+  OPTS		+= -DUSE_ZLIB=1
+ endif
+ ifeq ($(ZLIB_PATH), )
+  ZLIB_PATH	:= $(EXT_PATH)/zlib
+ endif
+ OPTS		+= -I$(ZLIB_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(ZLIB_PATH)/lib/x64
+ else
+  LIBS		+= -L$(ZLIB_PATH)/lib/x86
+ endif
+ ifeq ($(ZLIB), y)
+  LIBS		+= -lz
+ endif
+ ifeq ($(ZLIB), s)
+  LIBS		+= -lz_static
+ endif
 endif
 
 # WX: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
