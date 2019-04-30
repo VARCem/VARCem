@@ -919,6 +919,9 @@
     <ClCompile Include="..\..\..\devices\sound\snd_cs423x.c">
       <Filter>devices\sound</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\win_d2d.cpp">
+      <Filter>win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\config.h" />
@@ -1676,6 +1679,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\devices\sound\snd_cs423x.h">
       <Filter>devices\sound</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_d2d.h">
+      <Filter>win</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

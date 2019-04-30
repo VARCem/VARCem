@@ -330,6 +330,7 @@
     <ClCompile Include="..\..\..\win\win_snd_gain.c" />
     <ClCompile Include="..\..\..\win\win_thread.c" />
     <ClCompile Include="..\..\..\win\win_ui.c" />
+    <ClCompile Include="..\..\win_d2d.cpp" />
     <ClCompile Include="..\..\win_lang.c" />
     <ClCompile Include="..\..\win_new_image.c" />
     <ClCompile Include="..\..\win_sdl.c" />
@@ -583,6 +584,7 @@
     <ClInclude Include="..\..\..\devices\video\vid_voodoo_dither.h" />
     <ClInclude Include="..\..\..\win\resource.h" />
     <ClInclude Include="..\..\..\win\win.h" />
+    <ClInclude Include="..\..\win_d2d.h" />
     <ClInclude Include="..\..\win_opendir.h" />
     <ClInclude Include="..\..\win_sdl.h" />
     <ClInclude Include="..\..\win_settings_disk.h" />
