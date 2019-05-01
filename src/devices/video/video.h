@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.33	2019/04/27
+ * Version:	@(#)video.h	1.0.34	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -212,6 +212,10 @@ extern const device_t	ega_onboard_device;
 extern const device_t	ega_compaq_device;
 #endif
 extern const device_t	sega_device;
+
+/* Paradise PEGA series cards and compatibles. */
+extern const device_t	paradise_pega1a_device;
+extern const device_t	paradise_pega2a_device;
 
 /* Tseng Labs ET4000 series cards. */
 extern const device_t	et4000_isa_device;

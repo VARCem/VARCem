@@ -8,14 +8,14 @@
  *
  *		Definitions for the IBM EGA driver.
  *
- * Version:	@(#)vid_ega.h	1.0.4	2018/09/11
+ * Version:	@(#)vid_ega.h	1.0.5	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		akm,
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -58,8 +58,20 @@
 #endif
 
 
+enum {
+    EGA_IBM = 0,
+    EGA_COMPAQ,
+    EGA_SUPEREGA,
+    EGA_JEGA,
+    EGA_PEGA1A,
+    EGA_PEGA2A
+};
+
+
 #if defined(EMU_MEM_H) && defined(EMU_ROM_H)
 typedef struct {
+    int		type;
+
     mem_map_t	mapping;
 
     rom_t	bios_rom;
@@ -140,8 +152,7 @@ typedef struct {
     uint8_t	RPPAJ;
     uint8_t	RCMOD, RCCLH, RCCLL, RCCSL, RCCEL, RCSKW,
 		ROMSL, RSTAT;
-    int		is_jega,
-		font_index;
+    int		font_index;
     int		chr_left,
 		chr_wide;
 #endif
@@ -150,8 +161,8 @@ typedef struct {
 
 
 #ifdef JEGA
-extern const uint8_t jfont_sbcs_19[SBCS19_LEN];	/* 256 * 19( * 8) */
-extern const uint8_t jfont_dbcs_16[DBCS16_LEN];	/* 65536 * 16 * 2 (* 8) */
+extern uint8_t	jfont_sbcs_19[SBCS19_LEN];	/* 256 * 19( * 8) */
+extern uint8_t	jfont_dbcs_16[DBCS16_LEN];	/* 65536 * 16 * 2 (* 8) */
 #endif
 
 

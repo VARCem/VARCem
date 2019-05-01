@@ -68,6 +68,7 @@
 #include "keyboard.h"
 
 #define USE_SET1		0
+#define USE_IGNORE		0
 
 //FIXME: get rid of this!
 #include "../../machines/m_tosh3100e.h"
@@ -2794,7 +2795,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 				 * code many times.  Fun!
 				 */
 				if (val == dev->key_command) {
-#if 1
+#if USE_IGNORE
 					/* Respond NAK and ignore it. */
 					add_data_kbd(0xfe);
 					dev->key_command = 0x00;
@@ -2839,7 +2840,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 				/* Keyboard command is now done. */
 				dev->key_command = 0x00;
 			} else {
-#if 0
+#if !USE_IGNORE
 do_command:
 #endif
 				/* No keyboard command in progress. */
@@ -3244,11 +3245,9 @@ kbd_close(void *priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
 
-    kbd_reset(dev);
-
-    /* Stop timers. */
-    keyboard_delay = 0;
+    /* Stop timers */
     dev->refresh_time = 0;
+    keyboard_delay = 0;
 
     keyboard_scan = 0;
     keyboard_send = NULL;
@@ -3257,6 +3256,7 @@ kbd_close(void *priv)
     keyboard_set_table(NULL);
 
     SavedKbd = NULL;
+
     free(dev);
 }
 

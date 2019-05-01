@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.15	2019/04/25
+ * Version:	@(#)vid_ega.c	1.0.16	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,30 +56,14 @@
 #include "vid_ega_render.h"
 
 
-#define BIOS_IBM_PATH	L"video/ibm/ega/ibm_6277356_ega_card_u44_27128.bin"
-#define BIOS_CPQ_PATH	L"video/compaq/ega/108281-001.bin"
-#define BIOS_SEGA_PATH	L"video/phoenix/ega/lega.vbi"
+#define BIOS_IBM_PATH		L"video/ibm/ega/ibm_6277356_ega_card_u44_27128.bin"
+#define BIOS_CPQ_PATH		L"video/compaq/ega/108281-001.bin"
+#define BIOS_SEGA_PATH		L"video/phoenix/ega/lega.vbi"
+#define BIOS_PEGA1A_PATH	L"video/paradise/pega1a/wd-pega.rom"
+#define BIOS_PEGA2A_PATH	L"video/paradise/pega2a/pega2a.bin"
 
 
-enum {
-    EGA_IBM = 0,
-    EGA_COMPAQ,
-    EGA_SUPEREGA
-};
-
-
-static uint8_t	ega_rotate[8][256];
-static uint32_t	pallook16[256],
-		pallook64[256];
-static int	old_overscan_color = 0;
-static int	egaswitchread,
-		egaswitches = 9;	/*7=CGA mode (200 lines),
-					 *9=EGA mode (350 lines),
-					 *8=EGA mode (200 lines)*/
 #ifdef JEGA
-static uint8_t	jfont_sbcs_19[SBCS19_LEN];	/* 256 * 19( * 8) */
-static uint8_t	jfont_dbcs_16[DBCS16_LEN];	/* 65536 * 16 * 2 (* 8) */
-
 typedef struct {
     char	id[ID_LEN];
     char	name[NAME_LEN];
@@ -92,79 +76,189 @@ typedef struct {
     uint16_t	start;
     uint16_t	end;
 } fontxTbl;
+#endif
+
+
+static uint8_t	ega_rotate[8][256];
+static uint32_t	pallook16[256],
+		pallook64[256];
+static int	old_overscan_color = 0;
+static int	egaswitchread,
+		egaswitches = 9;	/*7=CGA mode (200 lines),
+					 *9=EGA mode (350 lines),
+					 *8=EGA mode (200 lines)*/
+#ifdef JEGA
+uint8_t		jfont_sbcs_19[SBCS19_LEN];	/* 256 * 19( * 8) */
+uint8_t		jfont_dbcs_16[DBCS16_LEN];	/* 65536 * 16 * 2 (* 8) */
 
 
 static __inline int
-ega_jega_enabled(ega_t *ega)
+jega_enabled(ega_t *dev)
 {
-    if (! ega->is_jega)
+    if (dev->type != EGA_JEGA)
 	return 0;
 
-    return !(ega->RMOD1 & 0x40);
+    return !(dev->RMOD1 & 0x40);
 }
 
 
 void
-ega_jega_write_font(ega_t *ega)
+ega_jega_write_font(ega_t *dev)
 {
-    unsigned int chr = ega->RDFFB;
-    unsigned int chr_2 = ega->RDFSB;
+    unsigned int chr = dev->RDFFB;
+    unsigned int chr_2 = dev->RDFSB;
 
-    ega->RSTAT &= ~0x02;
+    dev->RSTAT &= ~0x02;
 
     /* Check if the character code is in the Wide character set of Shift-JIS */
     if (((chr >= 0x40) && (chr <= 0x7e)) || ((chr >= 0x80) && (chr <= 0xfc))) {
-	if (ega->font_index >= 32)
-		ega->font_index = 0;
+	if (dev->font_index >= 32)
+		dev->font_index = 0;
 	chr <<= 8;
 
 	/* Fix vertical character position */
 	chr |= chr_2;
-	if (ega->font_index < 16) {
-		jfont_dbcs_16[(chr * 32) + (ega->font_index * 2)] = ega->RDFAP;				/* 16x16 font */
+	if (dev->font_index < 16) {
+		jfont_dbcs_16[(chr * 32) + (dev->font_index * 2)] = dev->RDFAP;				/* 16x16 font */
 	} else {
-		jfont_dbcs_16[(chr * 32) + ((ega->font_index - 16) * 2) + 1] = ega->RDFAP;		/* 16x16 font */
+		jfont_dbcs_16[(chr * 32) + ((dev->font_index - 16) * 2) + 1] = dev->RDFAP;		/* 16x16 font */
 	}
     } else {
-	if (ega->font_index >= 19)
-		ega->font_index = 0;
-	jfont_sbcs_19[(chr * 19) + ega->font_index] = ega->RDFAP;					/* 8x19 font */
+	if (dev->font_index >= 19)
+		dev->font_index = 0;
+	jfont_sbcs_19[(chr * 19) + dev->font_index] = dev->RDFAP;					/* 8x19 font */
     }
 
-    ega->font_index++;
-    ega->RSTAT |= 0x02;
+    dev->font_index++;
+    dev->RSTAT |= 0x02;
 }
 
 
 void
-ega_jega_read_font(ega_t *ega)
+ega_jega_read_font(ega_t *dev)
 {
-    unsigned int chr = ega->RDFFB;
-    unsigned int chr_2 = ega->RDFSB;
+    unsigned int chr = dev->RDFFB;
+    unsigned int chr_2 = dev->RDFSB;
 
-    ega->RSTAT &= ~0x02;
+    dev->RSTAT &= ~0x02;
 
     /* Check if the character code is in the Wide character set of Shift-JIS */
     if (((chr >= 0x40) && (chr <= 0x7e)) || ((chr >= 0x80) && (chr <= 0xfc))) {
-	if (ega->font_index >= 32)
-		ega->font_index = 0;
+	if (dev->font_index >= 32)
+		dev->font_index = 0;
 	chr <<= 8;
 
 	/* Fix vertical character position */
 	chr |= chr_2;
-	if (ega->font_index < 16) {
-		ega->RDFAP = jfont_dbcs_16[(chr * 32) + (ega->font_index * 2)];				/* 16x16 font */
+	if (dev->font_index < 16) {
+		dev->RDFAP = jfont_dbcs_16[(chr * 32) + (dev->font_index * 2)];				/* 16x16 font */
 	} else {
-		ega->RDFAP = jfont_dbcs_16[(chr * 32) + ((ega->font_index - 16) * 2) + 1];		/* 16x16 font */
+		dev->RDFAP = jfont_dbcs_16[(chr * 32) + ((dev->font_index - 16) * 2) + 1];		/* 16x16 font */
 	}
     } else {
-	if (ega->font_index >= 19)
-		ega->font_index = 0;
-	ega->RDFAP = jfont_sbcs_19[(chr * 19) + ega->font_index];					/* 8x19 font */
+	if (dev->font_index >= 19)
+		dev->font_index = 0;
+	dev->RDFAP = jfont_sbcs_19[(chr * 19) + dev->font_index];					/* 8x19 font */
     }
 
-    ega->font_index++;
-    ega->RSTAT |= 0x02;
+    dev->font_index++;
+    dev->RSTAT |= 0x02;
+}
+
+
+static uint16_t
+chrtosht(FILE *fp)
+{
+    uint16_t i, j;
+
+    i = (uint8_t) fgetc(fp);
+    j = (uint8_t) fgetc(fp) << 8;
+
+    return(i | j);
+}
+
+
+static int
+getfontx2header(FILE *fp, fontx_h *header)
+{
+    fread(header->id, ID_LEN, 1, fp);
+    if (strncmp(header->id, "FONTX2", ID_LEN) != 0)
+	return(1);
+
+    fread(header->name, NAME_LEN, 1, fp);
+
+    header->width = (uint8_t)fgetc(fp);
+    header->height = (uint8_t)fgetc(fp);
+    header->type = (uint8_t)fgetc(fp);
+
+    return(0);
+}
+
+
+static void
+readfontxtbl(fontxTbl *table, unsigned int size, FILE *fp)
+{
+    while (size > 0) {
+	table->start = chrtosht(fp);
+	table->end = chrtosht(fp);
+
+	table++;
+	size++;
+    }
+}
+
+
+static void
+LoadFontxFile(const wchar_t *fn)
+{
+    fontx_h head;
+    fontxTbl *table;
+    unsigned int code;
+    uint8_t size;
+    unsigned int i;
+    FILE *fp;
+
+    if (fn == NULL) return;
+
+    fp = plat_fopen(rom_path(fn), L"rb");
+    if (fp == NULL) {
+	ERRLOG("EGA: Can't open FONTX2 file '%ls' !\n", fn);
+	return;
+    }
+
+    if (getfontx2header(fp, &head) != 0) {
+	DEBUG("EGA: FONTX2 header is incorrect\n");
+	fclose(fp);
+	return;
+    }
+
+    /* switch whether the font is DBCS or not */
+    if (head.type == DBCS) {
+	if (head.width != 16 || head.height != 16) {
+		ERRLOG("EGA: FONTX2 DBCS font size is not correct\n");
+		fclose(fp);
+		return;
+	}
+	size = getc(fp);
+	table = (fontxTbl *)mem_alloc(size * sizeof(fontxTbl));
+	memset(table, 0x00, size * sizeof(fontxTbl));
+	readfontxtbl(table, size, fp);
+	for (i = 0; i < size; i++) {
+		for (code = table[i].start; code <= table[i].end; code++) {
+			fread(&jfont_dbcs_16[(code * 32)], sizeof(uint8_t), 32, fp);
+		}
+	}
+    } else {
+	if (head.width != 8 || head.height != 19) {
+		ERRLOG("EGA: FONTX2 SBCS font size is not correct\n");
+		fclose(fp);
+		return;
+	}
+	fread(jfont_sbcs_19, sizeof(uint8_t), SBCS19_LEN, fp);
+	//FIXME: no actual data read? */
+    }
+
+    fclose(fp);
 }
 #endif
 
@@ -258,23 +352,19 @@ ega_poll(void *priv)
 		else if (!(dev->gdcreg[6] & 1)) {
 			if (fullchange) {
 #ifdef JEGA
-				if (ega_jega_enabled(dev)) {
+				if (jega_enabled(dev))
 					ega_render_text_jega(dev, drawcursor);
-				} else {
-					ega_render_text_standard(dev, drawcursor);
-				}
-#else
-				ega_render_text_standard(dev, drawcursor);
+				else
 #endif
+				ega_render_text_standard(dev, drawcursor);
 			}
 		} else {
 			switch (dev->gdcreg[5] & 0x20) {
 				case 0x00:
-					if (dev->seqregs[1] & 8) {
+					if (dev->seqregs[1] & 8)
 						ega_render_4bpp_lowres(dev);
-					} else {
+					else
 						ega_render_4bpp_highres(dev);
-					}
 					break;
 
 				case 0x20:
@@ -282,6 +372,7 @@ ega_poll(void *priv)
 					break;
 			}
 		}
+
 		if (dev->lastline < dev->displine) 
 			dev->lastline = dev->displine;
 	}
@@ -292,16 +383,19 @@ ega_poll(void *priv)
 	if ((dev->stat & 8) && ((dev->displine & 15) == (dev->crtc[0x11] & 15)) && dev->vslines)
 		dev->stat &= ~8;
 	dev->vslines++;
+
 	if (dev->displine > 500) 
 		dev->displine = 0;
     } else {
 	dev->vidtime += dev->dispontime;
 	if (dev->dispon) 
 		dev->stat &= ~1;
+
 	dev->linepos = 0;
 	if (dev->sc == (dev->crtc[11] & 31)) 
 		dev->con = 0; 
 	if (dev->dispon) {
+
 		if (dev->sc == (dev->crtc[9] & 31)) {
 			dev->sc = 0;
 			if (dev->sc == (dev->crtc[11] & 31))
@@ -318,6 +412,7 @@ ega_poll(void *priv)
 			dev->ma = dev->maback;
 		}
 	}
+
 	dev->vc++;
 	dev->vc &= 1023;
 	if (dev->vc == dev->split) {
@@ -465,12 +560,12 @@ ega_out(uint16_t port, uint8_t val, void *priv)
     uint8_t o, old;
     int c;
 	
-    if (((port & 0xfff0) == 0x3d0 ||
-	 (port & 0xfff0) == 0x3b0) && !(dev->miscout & 1)) port ^= 0x60;
+    if (((port & 0xfff0) == 0x03d0 ||
+	 (port & 0xfff0) == 0x03b0) && !(dev->miscout & 1)) port ^= 0x60;
 	
     switch (port) {
-	case 0x3c0:
-	case 0x3c1:
+	case 0x03c0:
+	case 0x03c1:
 		if (! dev->attrff)
 		   dev->attraddr = val & 31;
 		else {
@@ -489,24 +584,24 @@ ega_out(uint16_t port, uint8_t val, void *priv)
 		dev->attrff ^= 1;
 		break;
 
-	case 0x3c2:
+	case 0x03c2:
                 egaswitchread = (val & 0xc) >> 2;
 		dev->vres = !(val & 0x80);
 		dev->pallook = dev->vres ? pallook16 : pallook64;
-		dev->vidclock = val & 4; /*printf("3C2 write %02X\n",val);*/
-		dev->miscout=val;
+		dev->vidclock = val & 4;
+		dev->miscout = val;
 		break;
 
-	case 0x3c4: 
+	case 0x03c4: 
 		dev->seqaddr = val; 
 		break;
 
-	case 0x3c5:
-		o = dev->seqregs[dev->seqaddr & 0xf];
-		dev->seqregs[dev->seqaddr & 0xf] = val;
-		if (o != val && (dev->seqaddr & 0xf) == 1) 
+	case 0x03c5:
+		o = dev->seqregs[dev->seqaddr & 0x0f];
+		dev->seqregs[dev->seqaddr & 0x0f] = val;
+		if (o != val && (dev->seqaddr & 0x0f) == 1) 
 			ega_recalctimings(dev);
-		switch (dev->seqaddr & 0xf) {
+		switch (dev->seqaddr & 0x0f) {
 			case 1: 
 				if (dev->scrblank && !(val & 0x20)) 
 					fullchange = 3; 
@@ -514,7 +609,7 @@ ega_out(uint16_t port, uint8_t val, void *priv)
 				break;
 
 			case 2: 
-				dev->writemask = val & 0xf; 
+				dev->writemask = val & 0x0f; 
 				break;
 
 			case 3:
@@ -528,11 +623,11 @@ ega_out(uint16_t port, uint8_t val, void *priv)
 		}
 		break;
 
-	case 0x3ce: 
+	case 0x03ce: 
 		dev->gdcaddr = val; 
 		break;
 
-	case 0x3cf:
+	case 0x03cf:
 		dev->gdcreg[dev->gdcaddr & 15] = val;
 		switch (dev->gdcaddr & 15) {
 			case 2: 
@@ -550,20 +645,20 @@ ega_out(uint16_t port, uint8_t val, void *priv)
 				break;
 
 			case 6:
-				switch (val & 0xc) {
-					case 0x0: /*128k at A0000*/
+				switch (val & 0x0c) {
+					case 0x00: /*128K at A0000*/
 						mem_map_set_addr(&dev->mapping, 0xa0000, 0x20000);
 						break;
 
-					case 0x4: /*64k at A0000*/
+					case 0x04: /*64K at A0000*/
 						mem_map_set_addr(&dev->mapping, 0xa0000, 0x10000);
 						break;
 
-					case 0x8: /*32k at B0000*/
+					case 0x08: /*32K at B0000*/
 						mem_map_set_addr(&dev->mapping, 0xb0000, 0x08000);
 						break;
 
-					case 0xC: /*32k at B8000*/
+					case 0x0c: /*32K at B8000*/
 						mem_map_set_addr(&dev->mapping, 0xb8000, 0x08000);
 					break;
 				}
@@ -575,18 +670,18 @@ ega_out(uint16_t port, uint8_t val, void *priv)
 		}
 		break;
 
-	case 0x3d0:
-	case 0x3d4:
+	case 0x03d0:
+	case 0x03d4:
 		dev->crtcreg = val & 31;
 		return;
 
-	case 0x3d1:
-	case 0x3d5:
+	case 0x03d1:
+	case 0x03d5:
 		if (dev->crtcreg <= 7 && dev->crtc[0x11] & 0x80) return;
 		old = dev->crtc[dev->crtcreg];
 		dev->crtc[dev->crtcreg] = val;
 		if (old != val) {
-			if (dev->crtcreg < 0xe || dev->crtcreg > 0x10) {
+			if (dev->crtcreg < 0x0e || dev->crtcreg > 0x10) {
 				fullchange = changeframecount;
 				ega_recalctimings(dev);
 			}
@@ -602,64 +697,64 @@ ega_in(uint16_t port, void *priv)
     ega_t *dev = (ega_t *)priv;
     uint8_t ret = 0xff;
 
-    if (((port & 0xfff0) == 0x3d0 ||
-	 (port & 0xfff0) == 0x3b0) && !(dev->miscout & 1)) port ^= 0x60;
+    if (((port & 0xfff0) == 0x03d0 ||
+	 (port & 0xfff0) == 0x03b0) && !(dev->miscout & 1)) port ^= 0x60;
 
     switch (port) {
-	case 0x3c0: 
+	case 0x03c0: 
 		ret = dev->attraddr;
 		break;
 
-	case 0x3c1: 
+	case 0x03c1: 
 		ret = dev->attrregs[dev->attraddr];
 		break;
 
-	case 0x3c2:
+	case 0x03c2:
 		return (egaswitches & (8 >> egaswitchread)) ? 0x10 : 0x00;
 		break;
 
-	case 0x3c4: 
+	case 0x03c4: 
 		ret = dev->seqaddr;
 		break;
 
-	case 0x3c5:
+	case 0x03c5:
 		ret = dev->seqregs[dev->seqaddr & 0xf];
 		break;
 
-	case 0x3c8:
+	case 0x03c8:
 		ret = 2;
 		break;
 
-	case 0x3cc: 
+	case 0x03cc: 
 		ret = dev->miscout;
 		break;
 
-	case 0x3ce: 
+	case 0x03ce: 
 		ret = dev->gdcaddr;
 		break;
 
-	case 0x3cf:
-		ret = dev->gdcreg[dev->gdcaddr & 0xf];
+	case 0x03cf:
+		ret = dev->gdcreg[dev->gdcaddr & 0x0f];
 		break;
 
-	case 0x3d0:
-	case 0x3d4:
+	case 0x03d0:
+	case 0x03d4:
 		ret = dev->crtcreg;
 		break;
 
-	case 0x3d1:
-	case 0x3d5:
+	case 0x03d1:
+	case 0x03d5:
 		ret = dev->crtc[dev->crtcreg];
 		break;
 
-	case 0x3da:
+	case 0x03da:
 		dev->attrff = 0;
 		dev->stat ^= 0x30; /*Fools IBM EGA video BIOS self-test*/
 		ret = dev->stat;
 		break;
     }
 
-    return ret;
+    return(ret);
 }
 
 
@@ -672,13 +767,13 @@ ega_write(uint32_t addr, uint8_t val, void *priv)
 
     cycles -= video_timing_write_b;
 	
-    if (addr >= 0xB0000)
+    if (addr >= 0xb0000)
 	addr &= 0x7fff;
     else
 	addr &= 0xffff;
 
     if (dev->chain2_write) {
-	writemask2 &= ~0xa;
+	writemask2 &= ~0x0a;
 	if (addr & 1)
 		writemask2 <<= 1;
 	addr &= ~1;
@@ -1014,10 +1109,6 @@ ega_init(ega_t *dev, int monitor_type, int is_mono)
 
     dev->crtc[0] = 63;
     dev->crtc[6] = 255;
-
-#ifdef JEGA
-    dev->is_jega = 0;
-#endif
 }
 
 
@@ -1027,6 +1118,7 @@ ega_close(void *priv)
     ega_t *dev = (ega_t *)priv;
 
     free(dev->vram);
+
     free(dev);
 }
 
@@ -1049,9 +1141,22 @@ ega_standalone_init(const device_t *info, UNUSED(void *parent))
 
     dev = (ega_t *)mem_alloc(sizeof(ega_t));
     memset(dev, 0x00, sizeof(ega_t));
+    dev->type = info->local;
 
     overscan_x = 16;
     overscan_y = 28;
+
+    switch(dev->type) {
+#ifdef JEGA
+	case EGA_JEGA:
+		LoadFontxFile(L"video/ibm/ega/jpnhn19x.fnt");
+		LoadFontxFile(L"video/ibm/ega/jpnzn16x.fnt");
+		break;
+#endif
+
+	default:
+		break;
+    }
 
     if (info->path != NULL) {
 	rom_init(&dev->bios_rom, info->path,
@@ -1059,6 +1164,13 @@ ega_standalone_init(const device_t *info, UNUSED(void *parent))
 
 	if (dev->bios_rom.rom[0x3ffe] == 0xaa &&
 	    dev->bios_rom.rom[0x3fff] == 0x55) {
+		/*
+		 * This ROM seems to have its data in reverse,
+		 * which happens if it used inverted address
+		 * lines. Quickly convert it back to regular
+		 * order!
+		 */
+		ERRLOG("EGA: ROM (%ls) has reversed data!", info->path);
 		for (c = 0; c < 0x2000; c++) {
 			temp = dev->bios_rom.rom[c];
 			dev->bios_rom.rom[c] = dev->bios_rom.rom[0x3fff - c];
@@ -1079,126 +1191,14 @@ ega_standalone_init(const device_t *info, UNUSED(void *parent))
 
     timer_add(ega_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
-    io_sethandler(0x03a0, 0x0040,
+    io_sethandler(0x03a0, 64,
 		  ega_in,NULL,NULL, ega_out,NULL,NULL, dev);
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return dev;
+    return(dev);
 }
-
-
-#ifdef JEGA
-static uint16_t
-chrtosht(FILE *fp)
-{
-    uint16_t i, j;
-
-    i = (uint8_t) fgetc(fp);
-    j = (uint8_t) fgetc(fp) << 8;
-
-    return (i | j);
-}
-
-
-static unsigned int
-getfontx2header(FILE *fp, fontx_h *header)
-{
-    fread(header->id, ID_LEN, 1, fp);
-    if (strncmp(header->id, "FONTX2", ID_LEN) != 0) {
-	return 1;
-    }
-    fread(header->name, NAME_LEN, 1, fp);
-
-    header->width = (uint8_t)fgetc(fp);
-    header->height = (uint8_t)fgetc(fp);
-    header->type = (uint8_t)fgetc(fp);
-
-    return 0;
-}
-
-
-static void
-readfontxtbl(fontxTbl *table, unsigned int size, FILE *fp)
-{
-    while (size > 0) {
-	table->start = chrtosht(fp);
-	table->end = chrtosht(fp);
-	++table;
-	--size;
-    }
-}
-
-
-static void
-LoadFontxFile(wchar_t *fname)
-{
-    fontx_h head;
-    fontxTbl *table;
-    unsigned int code;
-    uint8_t size;
-    unsigned int i;
-    FILE *mfile;
-
-    if (fname == NULL) return;
-    if (*fname == '\0') return;
-
-    mfile = romfopen(fname, L"rb");
-    if (mfile == NULL) {
-	DEBUG("MSG: Can't open FONTX2 file: %s\n",fname);
-	return;
-    }
-
-    if (getfontx2header(mfile, &head) != 0) {
-	fclose(mfile);
-	DEBUG("MSG: FONTX2 header is incorrect\n");
-	return;
-    }
-
-    /* switch whether the font is DBCS or not */
-    if (head.type == DBCS) {
-	if (head.width == 16 && head.height == 16) {
-		size = getc(mfile);
-		table = (fontxTbl *)calloc(size, sizeof(fontxTbl));
-		readfontxtbl(table, size, mfile);
-		for (i = 0; i < size; i++) {
-			for (code = table[i].start; code <= table[i].end; code++) {
-				fread(&jfont_dbcs_16[(code * 32)], sizeof(uint8_t), 32, mfile);
-			}
-		}
-	} else {
-		fclose(mfile);
-		DEBUG("MSG: FONTX2 DBCS font size is not correct\n");
-		return;
-	}
-    } else {
-	if (head.width == 8 && head.height == 19) {
-		fread(jfont_sbcs_19, sizeof(uint8_t), SBCS19_LEN, mfile);
-	} else {
-		fclose(mfile);
-		DEBUG("MSG: FONTX2 SBCS font size is not correct\n");
-		return;
-	}
-    }
-
-    fclose(mfile);
-}
-
-
-static void *
-jega_standalone_init(const device_t *info, UNUSED(void *parent))
-{
-    ega_t *dev = (ega_t *)ega_standalone_init(info);
-
-    LoadFontxFile(L"video/ibm/ega/jpnhn19x.fnt");
-    LoadFontxFile(L"video/ibm/ega/jpnzn16x.fnt");
-
-    dev->is_jega = 1;
-
-    return dev;
-}
-#endif
 
 
 /*
@@ -1273,7 +1273,7 @@ const device_t ega_device = {
     "EGA",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     EGA_IBM,
-    BIOS_CPQ_PATH,
+    BIOS_IBM_PATH,
     ega_standalone_init, ega_close, NULL,
     NULL,
     speed_changed,
@@ -1283,7 +1283,7 @@ const device_t ega_device = {
 };
 
 const device_t ega_onboard_device = {
-    "Onboard EGA",
+    "EGA (onboard)",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     EGA_IBM,
     NULL,
@@ -1328,13 +1328,41 @@ const device_t sega_device = {
 const device_t jega_device = {
     "AX JEGA",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
-    EGA_SUPEREGA,
+    EGA_JEGA,
     NULL,
     ega_standalone_init, ega_close, NULL,
-    jega_standalone_available,	//FIXME: check JEGA roms/fonts?? --FvK
+    NULL,			//FIXME: check JEGA roms/fonts?? --FvK
     speed_changed,
     NULL,
     &sega_timing,		//FIXME: check these??  --FvK
     ega_config
 };
 #endif
+
+static const video_timings_t pega1a_timing = {VID_ISA,8,16,32,8,16,32};
+const device_t pega1a_device = {
+    "Paradide PEGA1A",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
+    EGA_PEGA1A,
+    BIOS_PEGA1A_PATH,
+    ega_standalone_init, ega_close, NULL,
+    NULL,
+    speed_changed,
+    NULL,
+    &pega1a_timing,
+    ega_config
+};
+
+static const video_timings_t pega2a_timing = {VID_ISA,8,16,32,8,16,32};
+const device_t pega2a_device = {
+    "Paradide PEGA2A",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
+    EGA_PEGA2A,
+    BIOS_PEGA2A_PATH,
+    ega_standalone_init, ega_close, NULL,
+    NULL,
+    speed_changed,
+    NULL,
+    &pega2a_timing,
+    ega_config
+};
