@@ -62,7 +62,8 @@
     export COMMIT=${TRAVIS_COMMIT::7}
 
     echo ; echo "Downloading VARCem build dependencies.."
-    curl -s ${EXTDEP_URL} | tar xvzf -
+    curl -# ${EXTDEP_URL}
+    tar xvzf external.tar.gz
 
     # Build the project.
     echo ; echo "Building VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
