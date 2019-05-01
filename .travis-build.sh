@@ -63,6 +63,7 @@
 
     echo ; echo "Downloading VARCem build dependencies.."
     curl -# ${EXTDEP_URL} | tar xzf - 2>/dev/null
+    ls -l external
 
     # Build the project.
     echo ; echo "Building VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
