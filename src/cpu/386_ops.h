@@ -8,7 +8,7 @@
  *
  *		286/386+ instruction handlers list.
  *
- * Version:	@(#)386_ops.h	1.0.4	2019/04/11
+ * Version:	@(#)386_ops.h	1.0.5	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -162,7 +162,8 @@ static int ILLEGAL(uint32_t fetchdat)
 {
         cpu_state.pc = cpu_state.oldpc;
 
-        ERRLOG("CPU: illegal instruction %08X (%02X)\n", fetchdat, fopcode);
+        ERRLOG("CPU: illegal instruction %08X (%02X) @%s\n",
+		fetchdat, fopcode, cpu_current_pc(NULL));
         x86illegal();
         return 0;
 }

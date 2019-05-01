@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.72	2019/04/29
+ * Version:	@(#)pc.c	1.0.73	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -771,7 +771,7 @@ pc_set_speed(int turbo)
      * For PC and XT class, this will return max speed.
      */
     speed = machine_get_speed(turbo);
-INFO("PC: set_speed(%i) -> speed %lu\n", turbo, speed);
+    DEBUG("PC: set_speed(%i) -> speed %lu\n", turbo, speed);
 
     if (cpu_get_type() >= CPU_286) {
 	/* For 286+, we are done. */

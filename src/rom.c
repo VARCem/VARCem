@@ -8,7 +8,7 @@
  *
  *		Handling of ROM image files.
  *
- * Version:	@(#)rom.c	1.0.18	2019/04/11
+ * Version:	@(#)rom.c	1.0.19	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -193,7 +193,7 @@ rom_add_upper_bios(void)
 	mem_map_add(&bios_mapping[i], base, size,
 			    rom_bios_read,rom_bios_readw,rom_bios_readl,
 			    mem_write_null,mem_write_nullw,mem_write_nulll,
-			    bios + ((0x10000 + (size * i)) & biosmask),
+			    bios + ((size * i) & biosmask),
 			    MEM_MAPPING_EXTERNAL|MEM_MAPPING_ROM, 0);
 	base += size;
     }
@@ -228,7 +228,8 @@ rom_add_bios(void)
 	mem_map_add(&bios_high_mapping[i], hibase, size,
 		    rom_bios_read,rom_bios_readw,rom_bios_readl,
 		    mem_write_null,mem_write_nullw,mem_write_nulll,
-		    bios + ((size * i) & biosmask), MEM_MAPPING_ROM, 0);
+		    bios + ((size * i) & biosmask),
+		    MEM_MAPPING_ROM, 0);
 	hibase += size;
     }
 }
@@ -282,7 +283,6 @@ rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int 
 	addr = 0;
       else
 	addr &= 0x03ffff;
-INFO("ROM: loading %i bytes at %06lx\n", sz, addr);
 
     (void)fseek(fl, off, SEEK_SET);
     (void)fseek(fh, off, SEEK_SET);

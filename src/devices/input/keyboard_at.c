@@ -16,7 +16,7 @@
  *		 it either will not process ctrl-alt-esc, or it will not do
  *		 ANY input.
  *
- * Version:	@(#)keyboard_at.c	1.0.26	2019/04/27
+ * Version:	@(#)keyboard_at.c	1.0.27	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,6 +102,7 @@
 #define KBC_TYPE_PS2_1		0x02		/* PS2 on PS/2, type 1 */
 #define KBC_TYPE_PS2_2		0x03		/* PS2 on PS/2, type 2 */
 #define KBC_TYPE_MASK		0x03
+#define KBC_TYPE(x)		((x)->flags & KBC_TYPE_MASK)
 
 #define KBC_VEN_GENERIC		0x00
 #define KBC_VEN_AMI		0x04
@@ -112,6 +113,7 @@
 #define KBC_VEN_IBM_PS1		0x18
 #define KBC_VEN_ACER		0x1c
 #define KBC_VEN_MASK		0x1c
+#define KBC_VENDOR(x)		((x)->flags & KBC_VEN_MASK)
 
 
 typedef struct {
@@ -1824,14 +1826,15 @@ add_data(atkbd_t *dev, uint8_t val)
 static void
 add_data_vals(atkbd_t *dev, uint8_t *val, uint8_t len)
 {
-    int xt_mode = (keyboard_mode & 0x20) && ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF);
+    int xt_mode = (keyboard_mode & 0x20) &&
+		  (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF);
     int translate = (keyboard_mode & 0x40);
     int i;
     uint8_t or = 0;
     uint8_t send;
 
     translate = translate || (keyboard_mode & 0x40) || xt_mode;
-    translate = translate || ((dev->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2);
+    translate = translate || (KBC_TYPE(dev) == KBC_TYPE_PS2_2);
 
     for (i = 0; i < len; i++) {
         if (translate) {
@@ -1867,13 +1870,14 @@ static void
 add_data_kbd(uint16_t val)
 {
     atkbd_t *dev = SavedKbd;
-    int xt_mode = (keyboard_mode & 0x20) && ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF);
+    int xt_mode = (keyboard_mode & 0x20) &&
+		  (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF);
     int translate = (keyboard_mode & 0x40);
     uint8_t fake_shift[4];
     uint8_t num_lock = 0, shift_states = 0;
 
     translate = translate || (keyboard_mode & 0x40) || xt_mode;
-    translate = translate || ((dev->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2);
+    translate = translate || (KBC_TYPE(dev) == KBC_TYPE_PS2_2);
 
     num_lock = !!(keyboard_get_state() & KBD_FLAG_NUM);
     shift_states = keyboard_get_shift() & STATE_SHIFT_MASK;
@@ -1893,8 +1897,7 @@ add_data_kbd(uint16_t val)
     }
 
     /* Test for T3100E 'Fn' key (Right Alt / Right Ctrl) */
-    if ((dev != NULL) &&
-        ((dev->flags & KBC_VEN_MASK) == KBC_VEN_TOSHIBA) &&
+    if ((dev != NULL) && (KBC_VENDOR(dev) == KBC_VEN_TOSHIBA) &&
 	(keyboard_recv(0xb8) || keyboard_recv(0x9d))) switch (val) {
 	case 0x4f: t3100e_notify_set(dev->func_priv, 0x01); break; /* End */
 	case 0x50: t3100e_notify_set(dev->func_priv, 0x02); break; /* Down */
@@ -2114,7 +2117,7 @@ write_cmd(atkbd_t *dev, uint8_t val)
 	dev->wantirq = 0;
 
     /* PS/2 type 2 keyboard controllers always force the XLAT bit to 0. */
-    if ((dev->flags & KBC_TYPE_MASK) == KBC_TYPE_PS2_2) {
+    if (KBC_TYPE(dev) == KBC_TYPE_PS2_2) {
 	val &= ~CCB_TRANSLATE;
 	dev->mem[0] &= ~CCB_TRANSLATE;
     }
@@ -2129,8 +2132,8 @@ write_cmd(atkbd_t *dev, uint8_t val)
 
     /* ISA AT keyboard controllers use bit 5 for keyboard mode (1 = PC/XT, 2 = AT);
        PS/2 (and EISA/PCI) keyboard controllers use it as the PS/2 mouse enable switch. */
-    if (((dev->flags & KBC_VEN_MASK) == KBC_VEN_AMI) ||
-        ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF)) {
+    if ((KBC_VENDOR(dev) == KBC_VEN_AMI) ||
+        (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF)) {
 	keyboard_mode &= ~CCB_PCMODE;
 
 	mouse_scan = !(val & 0x20);
@@ -2197,7 +2200,7 @@ write64_generic(void *priv, uint8_t val)
 
     switch (val) {
 	case 0xa4:	/* check if password installed */
-		if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: check if password installed\n");
 			add_data(dev, 0xf1);
 			return 0;
@@ -2206,7 +2209,7 @@ write64_generic(void *priv, uint8_t val)
 		break;
 
 	case 0xa7:	/* disable mouse port */
-		if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: disable mouse port\n");
 			set_enable_mouse(dev, 0);
 			return 0;
@@ -2214,8 +2217,8 @@ write64_generic(void *priv, uint8_t val)
 			ERRLOG("ATkbd: bad command A7\n");
 		break;
 
-	case 0xa8:	/*Enable mouse port*/
-		if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF) {
+	case 0xa8:	/* enable mouse port */
+		if (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: enable mouse port\n");
 			set_enable_mouse(dev, 1);
 			return 0;
@@ -2223,9 +2226,9 @@ write64_generic(void *priv, uint8_t val)
 			ERRLOG("ATkbd: bad command A8\n");
 		break;
 
-	case 0xa9:	/*Test mouse port*/
+	case 0xa9:	/* test mouse port */
 		DEBUG("ATkbd: test mouse port\n");
-		if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF) {
 			if (mouse_write)
 				add_data(dev, 0x00); /* no error */
 			else
@@ -2242,21 +2245,21 @@ write64_generic(void *priv, uint8_t val)
 
 	case 0xc0:	/* read input port */
 		DEBUG("ATkbd: read input port\n");
-		if ((dev->flags & KBC_VEN_MASK) == KBC_VEN_IBM_PS1) {
+		if (KBC_VENDOR(dev) == KBC_VEN_IBM_PS1) {
 			current_drive = fdc_get_current_drive();
-			add_data(dev, dev->input_port | 4 | (fdd_is_525(current_drive) ? 0x40 : 0x00));
+			add_data(dev, dev->input_port | (fdd_is_525(current_drive) ? 0x40 : 0x00));
 			dev->input_port = ((dev->input_port + 1) & 3) |
 					   (dev->input_port & 0xfc) |
 					   (fdd_is_525(current_drive) ? 0x40 : 0x00);
 		} else {
-			add_data(dev, dev->input_port | 4);
+			add_data(dev, dev->input_port);
 			dev->input_port = ((dev->input_port + 1) & 3) |
 					   (dev->input_port & 0xfc);
 		}
 		return 0;
 
 	case 0xd3:	/* write mouse output buffer */
-		if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: write mouse output buffer\n");
 			dev->want60 = 1;
 			return 0;
@@ -2265,7 +2268,7 @@ write64_generic(void *priv, uint8_t val)
 
 	case 0xd4:	/* write to mouse */
 #if 0
-		if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF) {
 #endif
 			DEBUG("ATkbd: write to mouse\n");
 			dev->want60 = 1;
@@ -2399,7 +2402,7 @@ write64_ami(void *priv, uint8_t val)
 		return 0;
 
 	case 0xa2:	/* clear keyboard controller lines P22/P23 */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: clear KBC lines P22/P23 (AMI)\n");
 			write_output(dev, dev->output_port & 0xf3);
 			add_data(dev, 0x00);
@@ -2408,7 +2411,7 @@ write64_ami(void *priv, uint8_t val)
 		break;
 
 	case 0xa3:	/* set keyboard controller lines P22/P23 */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: set KBC lines P22/P23 (AMI)\n");
 			write_output(dev, dev->output_port | 0x0c);
 			add_data(dev, 0x00);
@@ -2417,7 +2420,7 @@ write64_ami(void *priv, uint8_t val)
 		break;
 
 	case 0xa4:	/* write clock = low */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: write clock=low (AMI)\n");
 			dev->ami_stat &= 0xfe;
 			return 0;
@@ -2425,7 +2428,7 @@ write64_ami(void *priv, uint8_t val)
 		break;
 
 	case 0xa5:	/* write clock = high */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: write clock=high (AMI)\n");
 			dev->ami_stat |= 0x01;
 			return 0;
@@ -2433,7 +2436,7 @@ write64_ami(void *priv, uint8_t val)
 		break;
 
 	case 0xa6:	/* read clock */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: read clock (AMI)\n");
 			add_data(dev, !!(dev->ami_stat & 1));
 			return 0;
@@ -2441,7 +2444,7 @@ write64_ami(void *priv, uint8_t val)
 		break;
 
 	case 0xa7:	/* write cache bad */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: write cache bad (AMI)\n");
 			dev->ami_stat &= 0xfd;
 			return 0;
@@ -2449,7 +2452,7 @@ write64_ami(void *priv, uint8_t val)
 		break;
 
 	case 0xa8:	/* write cache good */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: write cache good (AMI)\n");
 			dev->ami_stat |= 0x02;
 			return 0;
@@ -2457,7 +2460,7 @@ write64_ami(void *priv, uint8_t val)
 		break;
 
 	case 0xa9:	/* read cache */
-		if ((dev->flags & KBC_TYPE_MASK) < KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) < KBC_TYPE_PS2_NOREF) {
 			DEBUG("ATkbd: read cache (AMI)\n");
 			add_data(dev, !!(dev->ami_stat & 2));
 			return 0;
@@ -2703,7 +2706,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
     int bad = 1;
     uint8_t mask;
 
-    if (((dev->flags & KBC_VEN_MASK) == KBC_VEN_XI8088) && (port == 0x63))
+    if ((KBC_VENDOR(dev) == KBC_VEN_XI8088) && (port == 0x63))
 	port = 0x61;
 
     DBGLOG(2, "ATkbd: write(%04x, %02x)\n", port, val);
@@ -2746,7 +2749,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 				case 0xd3: /* write to mouse output buffer */
 					DEBUG("ATkbd: write to mouse output buffer\n");
-					if (mouse_write && ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF))
+					if (mouse_write && (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF))
 						keyboard_at_adddata_mouse(val);
 					break;
 
@@ -2757,9 +2760,9 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 						break;
 
 					set_enable_mouse(dev, 1);
-					if (mouse_write && ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF))
+					if (mouse_write && (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF))
 						mouse_write(val, mouse_p);
-					else if (!mouse_write && ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF))
+					else if (!mouse_write && (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF))
 						keyboard_at_adddata_mouse(0xff);
 					break;
 
@@ -2991,9 +2994,8 @@ do_command:
 			speaker_was_enable = 1;
 		pit_set_gate(&pit, 2, val & 1);
 
-                if ((dev->flags & KBC_VEN_MASK) == KBC_VEN_XI8088) {
+                if (KBC_VENDOR(dev) == KBC_VEN_XI8088)
 			dev->write_func(dev->func_priv, !!(val & 0x04));
-                }
 		break;
 
 	case 0x64:
@@ -3027,7 +3029,7 @@ do_command:
 
 			case 0xaa:	/* self-test */
 				DEBUG("ATkbd: self-test\n");
-				if ((dev->flags & KBC_VEN_MASK) == KBC_VEN_TOSHIBA)
+				if (KBC_VENDOR(dev) == KBC_VEN_TOSHIBA)
 					dev->status |= STAT_IFULL;
 				if (! dev->initialized) {
 					dev->initialized = 1;
@@ -3037,7 +3039,7 @@ do_command:
 				dev->status |= STAT_SYSFLAG;
 				dev->mem[0] |= 0x04;
 				set_enable_kbd(dev, 1);
-				if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF)
+				if (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF)
 					set_enable_mouse(dev, 1);
 				write_output(dev, 0xcf);
 				add_data(dev, 0x55);
@@ -3072,7 +3074,7 @@ do_command:
 				mask = 0xff;
 				if (! keyboard_scan)
 					mask &= 0xbf;
-				if (!mouse_scan && ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_NOREF))
+				if (!mouse_scan && (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF))
 					mask &= 0xf7;
 				add_data(dev, dev->output_port & mask);
 				break;
@@ -3136,7 +3138,7 @@ kbd_read(uint16_t port, void *priv)
     atkbd_t *dev = (atkbd_t *)priv;
     uint8_t ret = 0xff;
 
-    if (((dev->flags & KBC_VEN_MASK) == KBC_VEN_XI8088) && (port == 0x63))
+    if ((KBC_VENDOR(dev) == KBC_VEN_XI8088) && (port == 0x63))
 	port = 0x61;
 
     switch (port) {
@@ -3153,13 +3155,13 @@ kbd_read(uint16_t port, void *priv)
 		ret = ppi.pb & ~0xe0;
 		if (ppispeakon)
 			ret |= 0x20;
-		if ((dev->flags & KBC_TYPE_MASK) > KBC_TYPE_PS2_NOREF) {
+		if (KBC_TYPE(dev) > KBC_TYPE_PS2_NOREF) {
 			if (dev->refresh)
 				ret |= 0x10;
 			else
 				ret &= ~0x10;
 		}
-                if ((dev->flags & KBC_VEN_MASK) == KBC_VEN_XI8088) {
+                if (KBC_VENDOR(dev) == KBC_VEN_XI8088) {
 			if (dev->read_func(dev->func_priv))
                                 ret |= 0x04;
                         else
@@ -3214,10 +3216,13 @@ kbd_reset(void *priv)
     dev->key_wantdata = 0;
 
     /* Set up the correct Video Type bits. */
-    if ((dev->flags & KBC_VEN_MASK) == KBC_VEN_XI8088)
+    if (KBC_VENDOR(dev) == KBC_VEN_XI8088)
 	dev->input_port = (video_type() == VID_TYPE_MDA) ? 0xb0 : 0xf0;
     else
 	dev->input_port = (video_type() == VID_TYPE_MDA) ? 0xf0 : 0xb0;
+
+    /* For now, always assume high-speed mode. */
+    dev->input_port |= 0x04;
     DEBUG("ATkbd: input port = %02x\n", dev->input_port);
 
     keyboard_mode = 0x02 | dev->dtrans;
@@ -3274,7 +3279,7 @@ kbd_init(const device_t *info, UNUSED(void *parent))
 
     timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
 
-    if ((dev->flags & KBC_TYPE_MASK) > KBC_TYPE_PS2_NOREF)
+    if (KBC_TYPE(dev) > KBC_TYPE_PS2_NOREF)
 	timer_add(kbd_refresh, dev, &dev->refresh_time, TIMER_ALWAYS_ENABLED);
 
     timer_add(pulse_poll, dev, &dev->pulse_cb, &dev->pulse_cb);
@@ -3282,7 +3287,7 @@ kbd_init(const device_t *info, UNUSED(void *parent))
     dev->write60_ven = NULL;
     dev->write64_ven = NULL;
 
-    switch(dev->flags & KBC_VEN_MASK) {
+    switch(KBC_VENDOR(dev)) {
 	case KBC_VEN_GENERIC:
 	case KBC_VEN_IBM_PS1:
 		dev->write64_ven = write64_generic;

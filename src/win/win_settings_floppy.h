@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_floppy.h	1.0.11	2019/03/21
+ * Version:	@(#)win_settings_floppy.h	1.0.12	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -252,11 +252,10 @@ floppy_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_LIST_FLOPPY_DRIVES)) {
 			old_sel = fdlv_current_sel;
-			h = GetDlgItem(hdlg, IDC_LIST_FLOPPY_DRIVES);
 			fdlv_current_sel = floppy_get_selected(hdlg);
-			if (fdlv_current_sel == old_sel) {
+			if (fdlv_current_sel == old_sel)
 				return FALSE;
-			} else if (fdlv_current_sel == -1) {
+			if (fdlv_current_sel == -1) {
 				fd_ignore_change = 1;
 				fdlv_current_sel = old_sel;
 				ListView_SetItemState(h, fdlv_current_sel, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);

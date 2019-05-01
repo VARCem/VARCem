@@ -32,7 +32,7 @@
  *		The lower half of the driver can interface to the host system
  *		serial ports, or other channels, for real-world access.
  *
- * Version:	@(#)serial.c	1.0.15	2019/04/25
+ * Version:	@(#)serial.c	1.0.16	2019/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -317,23 +317,22 @@ read_fifo(serial_t *dev)
 		dev->fifo_read = 0;
     }
 
-#if 0
-    /* If we have more, generate (new) int. */
-    if (sp->fifo_read != sp->fifo_write) {
 #if 1
-	sp->delay = 1000*TIMER_USEC;
+    /* If we have more, generate (new) int. */
+    if (dev->fifo_read != dev->fifo_write) {
+#if 1
+	dev->delay = 1000*TIMER_USEC;
 #else
-	if (sp->bh != NULL) {
-		sp->int_status |= SERINT_RECEIVE;
-		sp->lsr |= LSR_DR;
+	if (dev->bh != NULL) {
+		dev->int_status |= SERINT_RECEIVE;
+		dev->lsr |= LSR_DR;
 
 		/* Update interrupt state. */
-		update_ints(sp);
+		update_ints(dev);
 	} else {
-		sp->delay = 1000*TIMER_USEC;
+		dev->delay = 1000*TIMER_USEC;
 	}
 #endif
-	}
     }
 #endif
 
@@ -429,17 +428,17 @@ ser_write(uint16_t addr, uint8_t val, void *priv)
 		/* DLAB clear, regular data write. */
                 dev->thr = val;
 
+		if (dev->ops && dev->ops->write) {
+			dev->ops->write(dev, dev->ops_arg, dev->thr);
 #ifdef USE_HOST_SERIAL
-		if (dev->bh != NULL) {
+		} else if (dev->bh != NULL) {
 			/* We are linked, so send to BH layer. */
 			plat_serial_write(dev->bh, dev->thr);
-		} else
 #endif
-
-		if (dev->ops && dev->ops->write)
-			dev->ops->write(dev, dev->ops_arg, val);
+		}
 
 		/* WRITE completed, we are ready for more. */
+		//FIXME: add a callback delay here.
 		dev->lsr |= LSR_THRE;
                 dev->int_status |= SER_INT_TX;
                 update_ints(dev);
@@ -467,8 +466,12 @@ ser_write(uint16_t addr, uint8_t val, void *priv)
 
 	case 2:		/* FCR */
 		if (dev->type >= UART_TYPE_16550) {
-pclog(0,"Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev->type);
+INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 			dev->fcr = val;
+			if (val == 0x00)
+				dev->iir &= ~IIR_FIFOENB;	/* off */
+			else
+				dev->iir |= IIR_FIFOENB;	/* enabled */
 		}
                 break;
 
@@ -507,10 +510,12 @@ pclog(0,"Serial%i: tried to enable FIFO (%02x), type %d!\n", dev->port, val, dev
 		break;
 
 	case 4:		/* MCR */
+#if 0
 		if (dev->bh == NULL) {
 			/* Not linked, force LOOPBACK mode. */
 			val |= MCR_LMS;
 		}
+#endif
 
 		if ((val & MCR_RTS) && !(dev->mcr & MCR_RTS)) {
 			/*
@@ -686,6 +691,8 @@ ser_read(uint16_t addr, void *priv)
 		}
                 break;
     }
+ 
+    DEBUG("Serial%i: read(%i) = %02x\n", dev->port, (addr & 0x0007), ret);
 
     return(ret);
 }
@@ -780,7 +787,11 @@ serial_reset(void)
 	dev = &ports[i];
 	memset(dev, 0x00, sizeof(serial_t));
 	dev->port = i;
+#if 1
+	dev->type = UART_TYPE_16550;
+#else
 	dev->type = UART_TYPE_8250;
+#endif
 
 	/* Set up default port and IRQ for the device. */
 	switch(i) {
@@ -820,8 +831,8 @@ serial_setup(int id, uint16_t port, int8_t irq)
 {
     serial_t *dev = &ports[id];
 
-    INFO("SERIAL: setting up COM%i as %04X [enabled=%i]\n",
-			id+1, port, serial_enabled[id]);
+    INFO("SERIAL: setting up COM%i as %04X,%i [enabled=%i]\n",
+			id+1, port, irq, serial_enabled[id]);
 
     if (! serial_enabled[id]) return;
 

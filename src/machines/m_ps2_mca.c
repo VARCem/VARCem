@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.24	2019/04/29
+ * Version:	@(#)m_ps2_mca.c	1.0.24	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -550,7 +550,10 @@ model_50_init(ps2_t *dev)
     dev->planar_write = model_50_write;
 
     if (mem_size > 2048) {
-	/* Only 2 MB supported on planar, create a memory expansion card for the rest */
+	/*
+	 * The M50 planar only supports up to 2 MB.
+	 * If we have more, create a memory expansion card for the rest.
+	 */
 	mem_fffc_init(dev, 2);
     }
 
@@ -1437,9 +1440,11 @@ ps2_init(const device_t *info, void *arg)
     machine_common_init();
 
     dma16_init();
-    pic2_init();
     ps2_dma_init();
+    pic2_init();
     pit_ps2_init();
+
+    nmi_mask = 0x80;
 
     device_add(&ps_nvr_device);
 
@@ -1450,8 +1455,6 @@ ps2_init(const device_t *info, void *arg)
     port_92_reset();
 
     port_92_add(0);
-
-    nmi_mask = 0x80;
 
     io_sethandler(0x0091, 1,
 		  ps2_mca_read,NULL,NULL, ps2_mca_write,NULL,NULL, dev);

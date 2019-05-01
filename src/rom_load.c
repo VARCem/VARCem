@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.14	2019/03/17
+ * Version:	@(#)rom_load.c	1.0.15	2019/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -385,20 +385,20 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 	return(1);
 
     /* Show the resulting data. */
-    INFO("Size     : %lu\n", r->total);
-    INFO("Offset   : 0x%06lx (%lu)\n", r->offset, r->offset);
-    INFO("Mode     : %s\n", (r->mode == 1)?"interleaved":"linear");
-    INFO("Files    : %i\n", r->nfiles);
+    INFO(" Size     : %lu\n", r->total);
+    INFO(" Offset   : 0x%06lx (%lu)\n", r->offset, r->offset);
+    INFO(" Mode     : %s\n", (r->mode == 1)?"interleaved":"linear");
+    INFO(" Files    : %i\n", r->nfiles);
     for (c = 0; c < r->nfiles; c++) {
-	INFO("%c[%i]     : '%ls', %i, 0x%06lx, %i\n",
+	INFO(" %c[%i]     : '%ls', %i, 0x%06lx, %i\n",
 		(r->files[c].offset==0xffffffff)?'*':' ', c+1,
 		r->files[c].path, r->files[c].skip,
 		r->files[c].offset, r->files[c].size);
     }
     if (r->fontnum != -1)
-	INFO("Font     : %i, '%ls'\n", r->fontnum, r->fontfn);
+	INFO(" Font     : %i, '%ls'\n", r->fontnum, r->fontfn);
     if (r->vidsz != 0)
-	INFO("VideoBIOS: '%ls', %i\n", r->vidfn, r->vidsz);
+	INFO(" VideoBIOS: '%ls', %i\n", r->vidfn, r->vidsz);
 
     /* Actually perform the work. */
     switch(r->mode) {
@@ -428,7 +428,6 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 
 			pc_path(script, sizeof_w(script), r->files[c].path);
 			pc_path(temp, sizeof_w(temp), r->files[c+1].path);
-INFO("ROM: loading '%ls'/'%ls' at %06lx, size=%i, skip=%i\n", script, temp, r->files[c].offset, r->files[c].size, r->files[c].skip);
 
 			i = rom_load_interleaved(script, temp,
 					 	 r->files[c].offset,
@@ -445,20 +444,6 @@ INFO("ROM: loading '%ls'/'%ls' at %06lx, size=%i, skip=%i\n", script, temp, r->f
     else
 	biosmask = 0x00ffff;
 
-#if defined(WALTJE) && defined(_DEBUG)
-//FIXME: this will go away again!
-{
-char foo[32768];
-INFO("ROM loaded, total=%i, mask=%06x\n", r->total, biosmask);
-pclog_repeat(0);
-for (i = 0; i < r->total; i += 4096) {
-    hexdump_p(foo, i, &bios[i], 4096);
-    pclog(0, foo);
-}
-pclog_repeat(1);
-}
-#endif
-
     /* Create a full pathname for the video font file. */
     if (r->fontnum != -1) {
 	plat_append_filename(temp, path, r->fontfn);
@@ -471,7 +456,7 @@ pclog_repeat(1);
 	pc_path(r->vidfn, sizeof_w(r->vidfn), temp);
     }
 
-    INFO("ROM: tot %lu, mask 0x%06lx\n", r->total, biosmask);
+    INFO("ROM: total %lu, mask 0x%06lx\n", r->total, biosmask);
 
     return(1);
 }

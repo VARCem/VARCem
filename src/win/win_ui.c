@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.36	2019/04/29
+ * Version:	@(#)win_ui.c	1.0.37	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1077,7 +1077,9 @@ plat_set_kbd_state(int flags)
     kbdata[0].type = kbdata[1].type = INPUT_KEYBOARD;
     kbdata[1].ki.dwFlags = KEYEVENTF_KEYUP;
 
-INFO("WIN kbd_state(%04x) [%04x] focus=%d\n" , flags, kbd_flags, infocus);
+    DEBUG("WIN: set_kbd_state(%04x) [%04x] focus=%d\n",
+			flags, kbd_flags, infocus);
+
     if (kbd_flags != flags) {
 	/* Save the new flags. */
 	kbd_flags = flags;

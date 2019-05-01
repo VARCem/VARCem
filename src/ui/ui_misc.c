@@ -8,7 +8,7 @@
  *
  *		Misc stuff for UI, doesn't fit anywhere else..
  *
- * Version:	@(#)ui_misc.c	1.0.3	2019/04/26
+ * Version:	@(#)ui_misc.c	1.0.4	2019/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -61,8 +61,11 @@ ui_set_kbd_state(int flags)
     /* First of all, update our status bar. */
     ui_sb_kbstate(flags);
 
+#if 0
+//FIXME: not yet.
     /* Let the platform code try to update the host keyboard. */
     plat_set_kbd_state(flags);
+#endif
 }
 
 

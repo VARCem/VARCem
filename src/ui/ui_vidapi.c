@@ -8,7 +8,7 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.6	2019/04/29
+ * Version:	@(#)ui_vidapi.c	1.0.6	2019/04/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -119,7 +119,7 @@ vidapi_set(int api)
 {
     int i;
 
-    INFO("Initializing VIDAPI: api=%d\n", api);
+    INFO("VIDAPI: initializing (api=%i)\n", api);
 
     /* Lock the blitter. */
     plat_startblit();
@@ -218,7 +218,7 @@ vidapi_screenshot(void)
     struct tm *info;
     time_t now;
 
-    DEBUG("Screenshot: video API is: %i\n", vid_api);
+    DEBUG("VIDAPI: screenshot (api=%i)\n", vid_api);
 
     if (vid_api < 0) return;
 

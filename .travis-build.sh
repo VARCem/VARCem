@@ -66,6 +66,7 @@
 
     # Build the project.
     echo ; echo "Building VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
+    echo "Options selected: ${OPTS}"
 
     cd src
 

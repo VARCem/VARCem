@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.19	2019/04/25
+ * Version:	@(#)vid_voodoo.c	1.0.20	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -424,7 +424,7 @@ typedef struct voodoo_t
                 int dst_stride;
         } blt;
                 
-        rgbp_t clutData[33];
+        rgbp_t clutData[64];
         int clutData_dirty;
         rgbp_t clutData256[256];
         uint32_t video_16to32[0x10000];
