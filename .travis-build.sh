@@ -46,7 +46,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     # Define the build options here.
-    OPTS=D2D=d SDL=d VNC=d PNG=d
+    OPTS="D2D=d SDL=d VNC=d PNG=d"
 
     if [ "x${DEV_BUILD}" = "xy" ]; then
 	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
