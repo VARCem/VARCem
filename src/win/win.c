@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.28	2019/04/30
+ * Version:	@(#)win.c	1.0.29	2019/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -281,7 +281,9 @@ void
 plat_start(void)
 {
     LARGE_INTEGER qpc;
+#ifdef _LOGGING
     uint64_t freq;
+#endif
 
     /* We have not stopped yet. */
     quited = 0;
@@ -289,8 +291,10 @@ plat_start(void)
     /* Initialize the high-precision timer. */
     timeBeginPeriod(1);
     QueryPerformanceFrequency(&qpc);
+#ifdef _LOGGING
     freq = qpc.QuadPart;
     DEBUG("WIN: main timer precision: %llu\n", freq);
+#endif
 
     /* Start the emulator, really. */
     thMain = thread_create(pc_thread, &quited);
