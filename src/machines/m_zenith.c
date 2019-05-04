@@ -25,7 +25,7 @@
  *		to be done on implementing other parts of the Yamaha V6355
  *		chip that implements the video controller.
  *
- * Version:	@(#)m_zenith.c	1.0.5	2019/04/21
+ * Version:	@(#)m_zenith.c	1.0.6	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original patch for PCem by 'Tux'
@@ -57,6 +57,7 @@
 #include <wchar.h>
 #include <time.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -209,7 +210,7 @@ rtc_start(nvr_t *nvr)
     struct tm tm;
 
     /* Initialize the internal and chip times. */
-    if (time_sync != TIME_SYNC_DISABLED) {
+    if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
 	rtc_time_set(nvr->regs, &tm);
@@ -380,7 +381,7 @@ zenith_init(const device_t *info, void *arg)
 		dev->sp_ram, MEM_MAPPING_EXTERNAL, dev);
 
     /* Only use the LCD if configured. */
-    if (video_card == VID_INTERNAL) {
+    if (config.video_card == VID_INTERNAL) {
 	vid = device_add_parent(&zenith_ss_video_device, dev);
 	zenith_vid_set_internal(vid, dev->lcd);
     }

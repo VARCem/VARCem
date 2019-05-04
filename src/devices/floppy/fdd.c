@@ -8,7 +8,7 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.19	2019/04/25
+ * Version:	@(#)fdd.c	1.0.20	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,9 +58,23 @@
 #include "fdc.h"
 
 
+typedef struct {
+    int8_t	drive;
+    int8_t	type;
+    int8_t	turbo;
+    int8_t	check_bpb;
+
+    int		track;
+    int		densel;
+    int		head;
+} fdd_t;
+
+
 /* FIXME: these should be combined. */
 DRIVE		drives[FDD_NUM];
 wchar_t		floppyfns[4][512];
+fdd_t		fdd[FDD_NUM];
+int		ui_writeprot[FDD_NUM] = {0, 0, 0, 0};
 int		fdd_cur_track[FDD_NUM];
 int		writeprot[FDD_NUM], fwriteprot[FDD_NUM];
 int64_t		fdd_poll_time[FDD_NUM] = { 16LL, 16LL, 16LL, 16LL };
@@ -68,6 +82,7 @@ int		drive_type[FDD_NUM];
 int		drive_empty[FDD_NUM] = {1, 1, 1, 1};
 int		fdd_changed[FDD_NUM];
 int64_t		motoron[FDD_NUM];
+int		oldtrack[FDD_NUM] = {0, 0, 0, 0};
 d86f_handler_t	d86f_handler[FDD_NUM];
 
 int		defaultwriteprot = 0;
@@ -75,7 +90,6 @@ int		curdrive = 0;
 int		motorspin;
 int		fdc_indexcount = 52;
 int		fdd_notfound = 0;
-int		oldtrack[FDD_NUM] = {0, 0, 0, 0};
 #ifdef ENABLE_FDD_LOG
 int		fdd_do_log = ENABLE_FDD_LOG;
 #endif
@@ -129,20 +143,6 @@ static const struct {
 static int driveloaders[4];
 
 
-typedef struct {
-    int type;
-    int track;
-    int densel;
-    int head;
-    int turbo;
-    int check_bpb;
-} fdd_t;
-
-
-fdd_t	fdd[FDD_NUM];
-int	ui_writeprot[FDD_NUM] = {0, 0, 0, 0};
-
-
 /* Flags:
    Bit  0:	300 rpm supported;
    Bit  1:	360 rpm supported;
@@ -170,56 +170,78 @@ int	ui_writeprot[FDD_NUM] = {0, 0, 0, 0};
 
 
 static const struct {
+   const char	*internal_name;
+   const char	*name;
    int		max_track;
    int		flags;
-   const char	*name;
-   const char	*internal_name;
 } drive_types[] = {
-        {       /*None*/
-                0, 0, "None", "none"
-        },
-        {       /*5.25" 1DD*/
-                43, FLAG_RPM_300 | FLAG_525 | FLAG_HOLE0, "5.25\" 160/180K", "525_1dd"
-        },
-        {       /*5.25" DD*/
-                43, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0, "5.25\" 320/360K", "525_2dd"
-        },
-        {       /*5.25" QD*/
-                86, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "5.25\" 720K", "525_2qd"
-        },
-        {       /*5.25" HD PS/2*/
-                86, FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL | FLAG_PS2, "5.25\" 1.2M PS/2", "525_2hd_ps2"
-        },
-        {       /*5.25" HD*/
-                86, FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP, "5.25\" 1.2M", "525_2hd"
-        },
-        {       /*5.25" HD Dual RPM*/
-                86, FLAG_RPM_300 | FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP, "5.25\" 1.2M 300/360 RPM", "525_2hd_dualrpm"
-        },
-        {       /*3.5" 1DD*/
-                86, FLAG_RPM_300 | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "3.5\" 360K", "35_1dd"
-        },
-        {       /*3.5" DD*/
-                86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP, "3.5\" 720K", "35_2dd"
-        },
-        {       /*3.5" HD PS/2*/
-                86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL | FLAG_PS2, "3.5\" 1.44M PS/2", "35_2hd_ps2"
-        },
-        {       /*3.5" HD*/
-                86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP, "3.5\" 1.44M", "35_2hd"
-        },
-        {       /*3.5" HD PC-98*/
-                86, FLAG_RPM_300 | FLAG_RPM_360 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL, "3.5\" 1.25M PC-98", "35_2hd_nec"
-        },
-        {       /*3.5" HD 3-Mode*/
-                86, FLAG_RPM_300 | FLAG_RPM_360 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_DOUBLE_STEP, "3.5\" 1.44M 300/360 RPM", "35_2hd_3mode"
-        },
-        {       /*3.5" ED*/
-                86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | FLAG_HOLE2 | FLAG_DOUBLE_STEP, "3.5\" 2.88M", "35_2ed"
-        },
-        {       /*End of list*/
-		-1, -1, NULL, NULL
-        }
+    {
+	"none", "None",
+	0, 0
+    },
+    {
+	"525_1dd", "5.25\" 160/180K",
+	43, FLAG_RPM_300 | FLAG_525 | FLAG_HOLE0
+    },
+    {
+	"525_2dd", "5.25\" 320/360K",
+	43, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0
+    },
+    {
+	"525_2qd", "5.25\" 720K",
+	86, FLAG_RPM_300 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP
+    },
+    {
+	"525_2hd_ps2", "5.25\" 1.2M PS/2",
+	86, FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | \
+	      FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL | FLAG_PS2
+    },
+    {
+	"525_2hd", "5.25\" 1.2M",
+	86, FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | \
+	      FLAG_DOUBLE_STEP
+    },
+    {
+	"525_2hd_dualrpm", "5.25\" 1.2M 300/360 RPM",
+	86, FLAG_RPM_300 | FLAG_RPM_360 | FLAG_525 | FLAG_DS | FLAG_HOLE0 | \
+	    FLAG_HOLE1 | FLAG_DOUBLE_STEP
+    },
+    {
+	"35_1dd", "3.5\" 360K",
+	86, FLAG_RPM_300 | FLAG_HOLE0 | FLAG_DOUBLE_STEP
+    },
+    {
+	"35_2dd", "3.5\" 720K",
+	86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_DOUBLE_STEP
+    },
+    {
+	"35_2hd_ps2", "3.5\" 1.44M PS/2",
+	86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | \
+	    FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL | FLAG_PS2
+    },
+    {
+	"35_2hd", "3.5\" 1.44M",
+	86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | \
+	    FLAG_DOUBLE_STEP
+    },
+    {
+	"35_2hd_nec", "3.5\" 1.25M PC-98",
+	86, FLAG_RPM_300 | FLAG_RPM_360 | FLAG_DS | FLAG_HOLE0 | \
+	    FLAG_HOLE1 | FLAG_DOUBLE_STEP | FLAG_INVERT_DENSEL
+    },
+    {
+	"35_2hd_3mode", "3.5\" 1.44M 300/360 RPM",
+	86, FLAG_RPM_300 | FLAG_RPM_360 | FLAG_DS | FLAG_HOLE0 | \
+	    FLAG_HOLE1 | FLAG_DOUBLE_STEP
+    },
+    {
+	"35_2ed", "3.5\" 2.88M",
+	86, FLAG_RPM_300 | FLAG_DS | FLAG_HOLE0 | FLAG_HOLE1 | \
+	    FLAG_HOLE2 | FLAG_DOUBLE_STEP
+    },
+    {
+	NULL
+    }
 };
 
 
@@ -257,13 +279,11 @@ fdd_get_internal_name(int type)
 int
 fdd_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 
-    while (drive_types[c].internal_name != NULL) {
+    for (c = 0; drive_types[c].internal_name != NULL; c++)
 	if (! strcmp(drive_types[c].internal_name, s))
 		return c;
-	c++;
-    }
 
     /* Not found. */
     return 0;
@@ -508,7 +528,7 @@ fdd_load(int drive, const wchar_t *fn)
     wchar_t *p;
     FILE *f;
 
-    DEBUG("FDD: loading drive %d with '%ls'\n", drive, fn);
+    DEBUG("FDD: loading drive %i with '%ls'\n", drive, fn);
 
     if (!fn) return(0);
     p = plat_get_extension(fn);
@@ -626,8 +646,10 @@ fdd_real_period(int drive)
 void
 fdd_poll(int drive)
 {
-    if (drive >= FDD_NUM)
-	fatal("Attempting to poll floppy drive %i that is not supposed to be there\n", drive);
+    if (drive >= FDD_NUM) {
+	ERRLOG("FDD: polling impossible drive %i !\n", drive);
+	return;
+    }
 
     fdd_poll_time[drive] += (int64_t) fdd_real_period(drive);
 
@@ -667,6 +689,21 @@ void
 fdd_poll_3(void *priv)
 {
     fdd_poll(3);
+}
+
+
+void
+fdd_reset(void)
+{
+    INFO("FDD: reset\n");
+
+    curdrive = 0;
+    fdd_period = 32;
+
+    timer_add(fdd_poll_0, NULL, &fdd_poll_time[0], &motoron[0]);
+    timer_add(fdd_poll_1, NULL, &fdd_poll_time[1], &motoron[1]);
+    timer_add(fdd_poll_2, NULL, &fdd_poll_time[2], &motoron[2]);
+    timer_add(fdd_poll_3, NULL, &fdd_poll_time[3], &motoron[3]);
 }
 
 
@@ -729,19 +766,6 @@ fdd_set_rate(int drive, int drvden, int rate)
 		fdd_period = 8;
 		break;
     }
-}
-
-
-void
-fdd_reset(void)
-{
-    curdrive = 0;
-    fdd_period = 32;
-
-    timer_add(fdd_poll_0, NULL, &fdd_poll_time[0], &motoron[0]);
-    timer_add(fdd_poll_1, NULL, &fdd_poll_time[1], &motoron[1]);
-    timer_add(fdd_poll_2, NULL, &fdd_poll_time[2], &motoron[2]);
-    timer_add(fdd_poll_3, NULL, &fdd_poll_time[3], &motoron[3]);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Brooktree Bt48x series true color RAMDAC emulation.
  *
- * Version:	@(#)vid_bt48x_ramdac.c	1.0.14	2019/04/12
+ * Version:	@(#)vid_bt48x_ramdac.c	1.0.15	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

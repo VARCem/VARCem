@@ -8,7 +8,7 @@
  *
  *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.11	2019/04/21
+ * Version:	@(#)cpu.h	1.0.12	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -330,6 +330,8 @@ COMPILE_TIME_ASSERT(sizeof(cpu_state) <= 128)
 
 
 /* Global variables. */
+extern int		cpu_manuf;		/* cpu manufacturer */
+extern int		cpu_dynarec;		/* dynamic recompiler enabled */
 extern int		cpu_busspeed;
 extern int		cpu_16bitbus;
 extern int		xt_cpu_multi;
@@ -405,7 +407,6 @@ extern int	cpu_cycles_read, cpu_cycles_read_l,
 extern int	cpu_prefetch_cycles, cpu_prefetch_width,
 		cpu_mem_prefetch_cycles, cpu_rom_prefetch_cycles;
 extern int	cpu_cache_int_enabled, cpu_cache_ext_enabled;
-extern int	cpu_waitstates;
 
 extern int	timing_rr;
 extern int	timing_mr, timing_mrl;
@@ -427,7 +428,7 @@ extern uint8_t	cyrix_read(uint16_t addr, void *priv);
 extern void	loadseg(uint16_t seg, x86seg *s);
 extern void	loadcs(uint16_t seg);
 
-extern void	cpu_set_type(const CPU *list, int type);
+extern void	cpu_set_type(const CPU *list,int manuf,int type,int fpu,int dyna);
 extern int	cpu_get_type(void);
 extern const char *cpu_get_name(void);
 extern int	cpu_set_speed(int new_speed);

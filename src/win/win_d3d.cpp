@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.17	2019/04/29
+ * Version:	@(#)win_d3d.cpp	1.0.18	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../version.h"
 #include "../device.h"
 #include "../plat.h"
@@ -106,7 +107,7 @@ d3d_size(RECT w_rect, double *l, double *t, double *r, double *b, int w, int h)
     int ratio_w, ratio_h;
     double hsr, gsr, ra, d;
 
-    switch (vid_fullscreen_scale) {
+    switch (config.vid_fullscreen_scale) {
 	case FULLSCR_SCALE_FULL:
 		d3d_size_default(w_rect, l, t, r, b);
 		break;
@@ -216,7 +217,7 @@ d3d_blit_fs(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 	if (hr == D3D_OK) {
 		for (yy = y1; yy < y2; yy++) {
 			if (scr) {
-				if (vid_grayscale || invert_display)
+				if (config.vid_grayscale || config.invert_display)
 					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &scr->line[yy + y][x], w);
 				else
 					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &scr->line[yy + y][x], w * 4);
@@ -332,7 +333,7 @@ d3d_blit(bitmap_t *b, int x, int y, int y1, int y2, int w, int h)
 	for (yy = y1; yy < y2; yy++) {
 		if (b) {
 			if ((y + yy) >= 0 && (y + yy) < screen->h) {
-				if (vid_grayscale || invert_display)
+				if (config.vid_grayscale || config.invert_display)
 					video_transform_copy((uint32_t *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &b->line[yy + y][x], w);
 				else
 					memcpy((void *)((uintptr_t)dr.pBits + ((yy - y1) * dr.Pitch)), &b->line[yy + y][x], w * 4);

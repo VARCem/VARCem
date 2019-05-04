@@ -8,12 +8,12 @@
  *
  *		Windows raw keyboard input handler.
  *
- * Version:	@(#)win_keyboard.c	1.0.8	2018/10/05
+ * Version:	@(#)win_keyboard.c	1.0.9	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../device.h"
 #include "../plat.h"
 #include "../devices/input/keyboard.h"
@@ -228,7 +229,7 @@ keyboard_handle(LPARAM lParam, int focus)
 
 		/* Translate right CTRL to left ALT if the user has so
 		   chosen. */
-		if ((code == 0x11D) && rctrl_is_lalt)
+		if ((code == 0x11D) && config.rctrl_is_lalt)
 			code = 0x038;
 
 		/* Normal scan code pass through, pass it through as is if

@@ -32,7 +32,7 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.8	2019/04/11
+ * Version:	@(#)isamem.c	1.0.9	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -74,6 +74,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -1018,7 +1019,7 @@ isamem_reset(void)
     int k, i;
 
     for (i = 0; i < ISAMEM_MAX; i++) {
-	k = isamem_type[i];
+	k = config.isamem_type[i];
 	if (k == 0) continue;
 
 	/* Clone the device. */

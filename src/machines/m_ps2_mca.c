@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.24	2019/04/30
+ * Version:	@(#)m_ps2_mca.c	1.0.25	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,6 +82,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../cpu/x86.h"
 #include "../io.h"
@@ -557,7 +558,7 @@ model_50_init(ps2_t *dev)
 	mem_fffc_init(dev, 2);
     }
 
-    if (video_card == VID_INTERNAL)	
+    if (config.video_card == VID_INTERNAL)	
 	device_add(&vga_ps1_device);
 }
 
@@ -745,7 +746,7 @@ model_55sx_init(ps2_t *dev)
     dev->planar_read = model_55sx_read;
     dev->planar_write = model_55sx_write;
 
-    if (video_card == VID_INTERNAL)	
+    if (config.video_card == VID_INTERNAL)	
 	device_add(&vga_ps1_device);
 }
 
@@ -1071,7 +1072,7 @@ model_70_init(ps2_t *dev)
 	mem_fffc_init(dev, 8);
     }
 
-    if (video_card == VID_INTERNAL)	
+    if (config.video_card == VID_INTERNAL)	
 	device_add(&vga_ps1_device);
 }
 
@@ -1238,7 +1239,7 @@ model_80_init(ps2_t *dev)
 	mem_fffc_init(dev, 4);
     }
 
-    if (video_card == VID_INTERNAL)	
+    if (config.video_card == VID_INTERNAL)	
 	device_add(&vga_ps1_device);
 }
 

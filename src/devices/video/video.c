@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.29	2019/04/29
+ * Version:	@(#)video.c	1.0.30	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #define HAVE_STDARG_H
 #define dbglog video_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
 #include "../../io.h"
@@ -83,7 +84,9 @@ int		changeframecount = 2;
 int		frames = 0;
 int		fullchange = 0;
 int		displine = 0;
-int		update_overscan = 0;
+int		enable_overscan,
+		update_overscan,
+		suppress_overscan;
 int		overscan_x = 0,
 		overscan_y = 0;
 
@@ -573,7 +576,7 @@ video_palette_rebuild(void)
     }
 
     if ((cga_palette > 1) && (cga_palette < 8)) {
-	if (vid_cga_contrast != 0) {
+	if (config.vid_cga_contrast != 0) {
 		for (c = 0; c < 16; c++) {
 			pal_lookup[c] = makecol(video_6to8[cgapal_mono[cga_palette - 2][c].r],
 						video_6to8[cgapal_mono[cga_palette - 2][c].g],
@@ -811,13 +814,18 @@ video_reset(void)
     const device_t *dev;
 
     INFO("VIDEO: reset (video_card=%i, internal=%i)\n",
-       	 video_card, (machine_get_flags() & MACHINE_VIDEO) ? 1 : 0);
+       	 config.video_card, (machine_get_flags() & MACHINE_VIDEO) ? 1 : 0);
 
     /* Initialize the video font tables. */
     video_load_font(MDA_FONT_ROM_PATH, FONT_MDA);
 
+    enable_overscan = config.enable_overscan;
+    update_overscan = 0;
+    suppress_overscan = 0;
+
     /* Do not initialize internal cards here. */
-    if ((video_card == VID_NONE) || (video_card == VID_INTERNAL) || \
+    if ((config.video_card == VID_NONE) ||
+	(config.video_card == VID_INTERNAL) || \
 	(machine_get_flags_fixed() & MACHINE_VIDEO)) return;
 
     /* Configure default timing parameters for the card. */
@@ -830,12 +838,12 @@ video_reset(void)
     /* Clear (deallocate) any video font memory. */
     video_reset_font();
 
-    dev = video_card_getdevice(video_card);
+    dev = video_card_getdevice(config.video_card);
     if (dev != NULL)
 	device_add(dev);
 
     /* Enable the Voodoo if configured. */
-    if (voodoo_enabled)
+    if (config.voodoo_enabled)
        	device_add(&voodoo_device);
 }
 
@@ -870,7 +878,7 @@ video_type(void)
 
     if (video_card_type == -1) {
 	/* No video device loaded yet. */
-	dev = video_card_getdevice(video_card);
+	dev = video_card_getdevice(config.video_card);
 	if (dev != NULL)
 		type = DEVICE_VIDEO_GET(dev->flags);
     } else
@@ -983,23 +991,23 @@ video_color_transform(uint32_t color)
     uint8_t *clr8 = (uint8_t *)&color;
 
 #if 0
-    if (!vid_grayscale && !invert_display) return color;
+    if (!config.vid_grayscale && !config.invert_display) return color;
 #endif
 
-    if (vid_grayscale) {
-	if (vid_graytype) {
-		if (vid_graytype == 1)
+    if (config.vid_grayscale) {
+	if (config.vid_graytype) {
+		if (config.vid_graytype == 1)
 			color = ((54 * (uint32_t)clr8[2]) + (183 * (uint32_t)clr8[1]) + (18 * (uint32_t)clr8[0])) / 255;
 		else
 			color = ((uint32_t)clr8[2] + (uint32_t)clr8[1] + (uint32_t)clr8[0]) / 3;
 	} else
 		color = ((76 * (uint32_t)clr8[2]) + (150 * (uint32_t)clr8[1]) + (29 * (uint32_t)clr8[0])) / 255;
 
-	switch (vid_grayscale) {
+	switch (config.vid_grayscale) {
 		case 2:
 		case 3:
 		case 4:
-			color = (uint32_t)shade[vid_grayscale][color];
+			color = (uint32_t)shade[config.vid_grayscale][color];
 			break;
 
 		default:
@@ -1010,7 +1018,7 @@ video_color_transform(uint32_t color)
 	}
     }
 
-    if (invert_display)
+    if (config.invert_display)
 	color ^= 0x00ffffff;
 
     return color;

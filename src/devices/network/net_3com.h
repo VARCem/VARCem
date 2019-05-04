@@ -8,11 +8,11 @@
  *
  *		Definitions for the 3Com series of ethernet controllers.
  *
- * Version:	@(#)net_3com.h	1.0.2	2018/10/12
+ * Version:	@(#)net_3com.h	1.0.3	2019/05/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,10 @@
 # define NET_3COM_H
 
 
-extern const device_t	tc503_device;
+#if 0
+extern const device_t	el1_device;
+#endif
+extern const device_t	el2_device;
 
 
 #endif	/*NET_3COM_H*/

@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Hercules InColor emulation.
+ *		Hercules Plus emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.19	2019/04/25
+ * Version:	@(#)vid_hercules_plus.c	1.0.20	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -692,7 +693,7 @@ herculesplus_init(const device_t *info, UNUSED(void *parent))
 		 (const video_timings_t *)info->vid_timing);
 
     /* Force the LPT3 port to be enabled. */
-    parallel_enabled[2] = 1;
+    config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
     return dev;

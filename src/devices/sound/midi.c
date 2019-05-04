@@ -8,13 +8,13 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.10	2018/10/20
+ * Version:	@(#)midi.c	1.0.11	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -45,6 +45,7 @@
 #define HAVE_STDARG_H
 #define dbglog sound_midi_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "sound.h"
@@ -111,6 +112,7 @@ static const struct {
     const device_t	*device;
 } devices[] = {
     {"none",		NULL			},
+
 #ifdef USE_FLUIDSYNTH
     {"fluidsynth",	&fluidsynth_device	},
 #endif
@@ -119,6 +121,7 @@ static const struct {
     {"cm32l",		&cm32l_device		},
 #endif
     {SYSTEM_MIDI_INT,	&system_midi_device	},
+
     {NULL,		NULL			}
 };
 static midi_t		*midi = NULL;
@@ -171,13 +174,11 @@ midi_device_get_internal_name(int card)
 int
 midi_device_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 	
-    while (devices[c].internal_name != NULL) {
+    for (c = 0; devices[c].internal_name != NULL; c++)
 	if (! strcmp(devices[c].internal_name, s))
 		return(c);
-	c++;
-    }
 
     /* Not found. */
     return(0);
@@ -204,8 +205,8 @@ sound_midi_log(int level, const char *fmt, ...)
 void
 midi_device_init(void)
 {
-    if (devices[midi_device].device != NULL)
-	device_add(devices[midi_device].device);
+    if (devices[config.midi_device].device != NULL)
+	device_add(devices[config.midi_device].device);
 }
 
 

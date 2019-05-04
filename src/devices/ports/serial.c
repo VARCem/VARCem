@@ -32,7 +32,7 @@
  *		The lower half of the driver can interface to the host system
  *		serial ports, or other channels, for real-world access.
  *
- * Version:	@(#)serial.c	1.0.16	2019/04/30
+ * Version:	@(#)serial.c	1.0.17	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -77,6 +77,7 @@
 #define HAVE_STDARG_H
 #define dbglog serial_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -780,7 +781,7 @@ serial_reset(void)
     int i;
 
     DEBUG("SERIAL: reset ([%i] [%i])\n",
-	serial_enabled[0], serial_enabled[1]);
+	config.serial_enabled[0], config.serial_enabled[1]);
 
     for (i = 0; i < SERIAL_MAX; i++) {
 	/* Get the correct device and clear it. */
@@ -832,9 +833,9 @@ serial_setup(int id, uint16_t port, int8_t irq)
     serial_t *dev = &ports[id];
 
     INFO("SERIAL: setting up COM%i as %04X,%i [enabled=%i]\n",
-			id+1, port, irq, serial_enabled[id]);
+			id+1, port, irq, config.serial_enabled[id]);
 
-    if (! serial_enabled[id]) return;
+    if (! config.serial_enabled[id]) return;
 
     dev->base = port;
     dev->irq = irq;
@@ -848,7 +849,7 @@ serial_attach(int port, serial_ops_t *ops, void *arg)
     serial_t *dev;
 
     /* No can do if port not enabled. */
-    if (! serial_enabled[port]) return(NULL);
+    if (! config.serial_enabled[port]) return(NULL);
 
     /* Grab the desired port block. */
     dev = &ports[port];
@@ -869,7 +870,7 @@ serial_link(int port, const char *arg)
     serial_t *dev;
 
     /* No can do if port not enabled. */
-    if (! serial_enabled[port]) return(-1);
+    if (! config.serial_enabled[port]) return(-1);
 
     /* Grab the desired port block. */
     dev = &ports[port];

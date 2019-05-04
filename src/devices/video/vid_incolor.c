@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.17	2019/04/25
+ * Version:	@(#)vid_incolor.c	1.0.18	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -1016,7 +1017,7 @@ incolor_init(const device_t *info, UNUSED(void *parent))
 		 (const video_timings_t *)info->vid_timing);
 
     /* Force the LPT3 port to be enabled. */
-    parallel_enabled[2] = 1;
+    config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
     return(dev);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the C&T 82C235 ("SCAT") chipset.
  *
- * Version:	@(#)scat.c	1.0.16	2019/04/20
+ * Version:	@(#)scat.c	1.0.17	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../cpu/cpu.h"
 #include "../../cpu/x86.h"
 #include "../../io.h"
@@ -1087,7 +1088,7 @@ scat_write(uint16_t port, uint8_t val, void *priv)
 				map_update = 1;
 
 				if ((dev->regs[SCAT_VERSION] & 0xf0) == 0) {
-					cpu_waitstates = (val & 0x70) == 0 ? 1 : 2;
+					config.cpu_waitstates = (val & 0x70) == 0 ? 1 : 2;
 					cpu_update_waitstates();
 				}
 
@@ -1258,7 +1259,7 @@ scat_read(uint16_t port, void *priv)
 
 			case SCAT_DRAM_CONFIGURATION:
 				if ((dev->regs[SCAT_VERSION] & 0xf0) == 0)
-					ret = (dev->regs[dev->indx] & 0x8f) | (cpu_waitstates == 1 ? 0 : 0x10);
+					ret = (dev->regs[dev->indx] & 0x8f) | (config.cpu_waitstates == 1 ? 0 : 0x10);
 				else
 					ret = dev->regs[dev->indx];
 				break;
@@ -1467,7 +1468,7 @@ scat_init(const device_t *info, UNUSED(void *parent))
 	}
 	dev->regs[SCAT_CLOCK_CONTROL] = 2;
 	dev->regs[SCAT_PERIPHERAL_CONTROL] = 0x80;
-	dev->regs[SCAT_DRAM_CONFIGURATION] = cpu_waitstates == 1 ? 2 : 0x12;
+	dev->regs[SCAT_DRAM_CONFIGURATION] = config.cpu_waitstates == 1 ? 2 : 0x12;
     }
     dev->regs[SCAT_DMA_WAIT_STATE_CONTROL] = 0;
     dev->regs[SCAT_MISCELLANEOUS_STATUS] = 0x37;

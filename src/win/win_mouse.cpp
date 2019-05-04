@@ -8,13 +8,13 @@
  *
  *		Mouse interface to host device.
  *
- * Version:	@(#)win_mouse.cpp	1.0.7	2018/10/05
+ * Version:	@(#)win_mouse.cpp	1.0.8	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../plat.h"
 #include "../devices/input/mouse.h"
 #include "win.h"
@@ -77,7 +78,7 @@ win_mouse_init(void)
 	fatal("plat_mouse_init: CreateDevice failed\n");
 
     if (FAILED(lpdi_mouse->SetCooperativeLevel(hwndMain,
-	       DISCL_FOREGROUND | (vid_fullscreen ? DISCL_EXCLUSIVE : DISCL_NONEXCLUSIVE))))
+	       DISCL_FOREGROUND | (config.vid_fullscreen ? DISCL_EXCLUSIVE : DISCL_NONEXCLUSIVE))))
 	fatal("plat_mouse_init: SetCooperativeLevel failed\n");
 
     if (FAILED(lpdi_mouse->SetDataFormat(&c_dfDIMouse)))
@@ -98,7 +99,7 @@ mouse_poll(void)
 	lpdi_mouse->GetDeviceState(sizeof(DIMOUSESTATE), (LPVOID)&mousestate);
     }                
 
-    if (mouse_capture || vid_fullscreen) {
+    if (mouse_capture || config.vid_fullscreen) {
 	if (x != mousestate.lX || y != mousestate.lY || z != mousestate.lZ) {
 		mouse_x += mousestate.lX;
 		mouse_y += mousestate.lY;

@@ -14,7 +14,7 @@
  *		(which is in m_compaq_vid.c), the Portable 3 needs the
  *		Plasma driver, there are some ROM issues, etc.
  *
- * Version:	@(#)m_compaq.c	1.0.11	2019/04/14
+ * Version:	@(#)m_compaq.c	1.0.12	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../rom.h"
@@ -177,7 +178,7 @@ cpq_init(const device_t *info, void *arg)
 		device_add(&keyboard_xt_device);
 		parallel_setup(0, 0x03bc);
 
-		if (video_card == VID_INTERNAL)
+		if (config.video_card == VID_INTERNAL)
 			device_add(&compaq_video_device);
 
 		device_add(&fdc_xt_device);
@@ -191,7 +192,7 @@ cpq_init(const device_t *info, void *arg)
 			    write_ram,write_ramw,write_raml,
 			    ram + 0xa0000, MEM_MAPPING_INTERNAL, dev);
 
-		if (video_card == VID_INTERNAL)
+		if (config.video_card == VID_INTERNAL)
 			device_add(&compaq_video_device);
 
 		device_add(&fdc_at_device);
@@ -205,7 +206,7 @@ cpq_init(const device_t *info, void *arg)
 			    write_ram,write_ramw,write_raml,
 			    ram + 0xa0000, MEM_MAPPING_INTERNAL, dev);
 
-		if (video_card == VID_INTERNAL)
+		if (config.video_card == VID_INTERNAL)
 			device_add(&compaq_video_device);
 
 		device_add(&fdc_at_device);
@@ -219,7 +220,7 @@ cpq_init(const device_t *info, void *arg)
 			    write_ram,write_ramw,write_raml,
 			    ram + 0xa0000, MEM_MAPPING_INTERNAL, dev);
 
-		if (video_card == VID_INTERNAL)
+		if (config.video_card == VID_INTERNAL)
 			m_olim24_vid_init(1);
 
 		device_add(&fdc_at_device);
@@ -233,12 +234,12 @@ cpq_init(const device_t *info, void *arg)
 			    write_ram,write_ramw,write_raml,
 			    ram + 0xa0000, MEM_MAPPING_INTERNAL, dev);
 
-		if (video_card == VID_INTERNAL)
+		if (config.video_card == VID_INTERNAL)
 			m_olim24_vid_init(1);
 
 		device_add(&fdc_at_device);
 
-		if (hdc_type == HDC_INTERNAL)
+		if (config.hdc_type == HDC_INTERNAL)
 			device_add(&ide_isa_device);
 		break;
 
@@ -248,7 +249,7 @@ cpq_init(const device_t *info, void *arg)
 
 		device_add(&fdc_at_device);
 
-		if (hdc_type == HDC_INTERNAL)
+		if (config.hdc_type == HDC_INTERNAL)
 			device_add(&ide_isa_device);
 		break;
     }

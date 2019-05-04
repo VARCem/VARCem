@@ -15,7 +15,7 @@
  *		80 columns. To be fixed...
  *		Also, the DDM bits stuff needs to be verified.
  *
- * Version:	@(#)m_amstrad.c	1.0.27	2019/04/26
+ * Version:	@(#)m_amstrad.c	1.0.28	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,6 +50,7 @@
 #include <wchar.h>
 #define dbglog kbd_log
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -506,7 +507,7 @@ amstrad_init(const device_t *info, void *arg)
     device_add_ex(info, dev);
 
     /* Force the LPT1 port disabled and add our own. */
-    parallel_enabled[0] = 0;
+    config.parallel_enabled[0] = 0;
     machine_common_init();
     lpt = device_add(&parallel_1_device);
 
@@ -544,7 +545,7 @@ amstrad_init(const device_t *info, void *arg)
 		dev->vidtype = device_get_config_int("video_emulation");
 		dev->disptype = device_get_config_int("display_type");
 
-		if (video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL) {
 			/* Initialize the internal video controller. */
 			dev->vid = m_amstrad_ida_init(dev->type, roms->fontfn,
 						      dev->codepage,
@@ -565,7 +566,7 @@ amstrad_init(const device_t *info, void *arg)
 		dev->vidtype = device_get_config_int("video_emulation");
 		dev->disptype = device_get_config_int("display_type");
 
-		if (video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL) {
 			/* Initialize the internal video controller. */
 			dev->vid = m_amstrad_ida_init(1, roms->fontfn,
 						      dev->codepage,
@@ -578,7 +579,7 @@ amstrad_init(const device_t *info, void *arg)
 		break;
 
 	case 4:		/* PC2086 */
-		if (video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc2086_device);
 			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
 		}
@@ -586,7 +587,7 @@ amstrad_init(const device_t *info, void *arg)
 		break;
 
 	case 5:		/* PC3086 */
-		if (video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL) {
 			device_add(&paradise_pvga1a_pc3086_device);
 			video_inform(VID_TYPE_SPEC, &pvga1a_timing);
 		}
@@ -594,14 +595,14 @@ amstrad_init(const device_t *info, void *arg)
 		break;
 
 	case 6:		/* MEGAPC */
-		if (video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL) {
 			device_add(&paradise_wd90c11_megapc_device);
 			video_inform(VID_TYPE_SPEC, &wd90c11_timing);
 		}
 		device_add(&fdc_at_actlow_device);
 		break;
     }
-    parallel_enabled[0] = 1;
+    config.parallel_enabled[0] = 1;
 
     io_sethandler(0xdead, 1, ams_read,NULL,NULL, ams_write,NULL,NULL, dev);
 
@@ -614,7 +615,7 @@ amstrad_init(const device_t *info, void *arg)
     keyboard_scan = 1;
 
     /* Initialize the (custom) mouse intercace if needed. */
-    if (mouse_type == MOUSE_INTERNAL) {
+    if (config.mouse_type == MOUSE_INTERNAL) {
 	io_sethandler(0x0078, 1, mse_read,NULL,NULL, mse_write,NULL,NULL, dev);
 	io_sethandler(0x007a, 1, mse_read,NULL,NULL, mse_write,NULL,NULL, dev);
 

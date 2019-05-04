@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.22	2019/03/07
+ * Version:	@(#)ui_main.c	1.0.23	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -291,8 +291,8 @@ main_reset_all(void)
     wchar_t temp[128];
     int i;
 
-    menu_set_item(IDM_RESIZE, vid_resize);
-    menu_set_item(IDM_REMEMBER, window_remember);
+    menu_set_item(IDM_RESIZE, config.vid_resize);
+    menu_set_item(IDM_REMEMBER, config.window_remember);
 
     /* Add all renderers to the Renderer menu. */
     for (i = 0; vidapi_getname(i) != NULL; i++) {
@@ -304,26 +304,26 @@ main_reset_all(void)
 	if (! vidapi_available(i))
 		menu_enable_item(IDM_RENDER_1 + i, 0);
     }
-    menu_set_radio_item(IDM_RENDER_1, i, vid_api);
+    menu_set_radio_item(IDM_RENDER_1, i, config.vid_api);
 
-    menu_set_radio_item(IDM_SCALE_1, 4, scale);
+    menu_set_radio_item(IDM_SCALE_1, 4, config.scale);
 
-    menu_set_item(IDM_FULLSCREEN, vid_fullscreen);
+    menu_set_item(IDM_FULLSCREEN, config.vid_fullscreen);
 
-    menu_set_radio_item(IDM_STRETCH, 5, vid_fullscreen_scale);
+    menu_set_radio_item(IDM_STRETCH, 5, config.vid_fullscreen_scale);
 
-    menu_set_item(IDM_RCTRL_IS_LALT, rctrl_is_lalt);
+    menu_set_item(IDM_RCTRL_IS_LALT, config.rctrl_is_lalt);
 
-    menu_set_item(IDM_INVERT, invert_display);
-    menu_set_item(IDM_OVERSCAN, enable_overscan);
+    menu_set_item(IDM_INVERT, config.invert_display);
+    menu_set_item(IDM_OVERSCAN, config.enable_overscan);
 
-    menu_set_radio_item(IDM_SCREEN_RGB, 5, vid_grayscale);
+    menu_set_radio_item(IDM_SCREEN_RGB, 5, config.vid_grayscale);
 
-    menu_set_radio_item(IDM_GRAY_601, 3, vid_graytype);
+    menu_set_radio_item(IDM_GRAY_601, 3, config.vid_graytype);
 
-    menu_set_item(IDM_FORCE_43, force_43);
+    menu_set_item(IDM_FORCE_43, config.force_43);
 
-    menu_set_item(IDM_CGA_CONTR, vid_cga_contrast);
+    menu_set_item(IDM_CGA_CONTR, config.vid_cga_contrast);
 
 #ifdef _LOGGING
     for (i = IDM_LOG_BEGIN; i < IDM_LOG_END; i++) {
@@ -333,7 +333,7 @@ main_reset_all(void)
     }
 #endif
 
-#ifndef DEV_BRANCH
+#ifdef DEV_BRANCH
     /* FIXME: until we fix these.. --FvK */
     menu_enable_item(IDM_LOAD, 0);
     menu_enable_item(IDM_SAVE, 0);
@@ -401,17 +401,17 @@ ui_menu_command(int idm)
 		return(0);
 
 	case IDM_RESIZE:			/* VIEW menu */
-		vid_resize ^= 1;
-		menu_set_item(idm, vid_resize);
-		if (vid_resize) {
+		config.vid_resize ^= 1;
+		menu_set_item(idm, config.vid_resize);
+		if (config.vid_resize) {
 			/* Force scaling to 1.0. */
-			scale = 1;
-			menu_set_radio_item(IDM_SCALE_1, 4, scale);
+			config.scale = 1;
+			menu_set_radio_item(IDM_SCALE_1, 4, config.scale);
 		}
 
 		/* Disable scaling settings. */
 		for (i = 0; i < 4; i++)
-			menu_enable_item(IDM_SCALE_1+i, !vid_resize);
+			menu_enable_item(IDM_SCALE_1+i, !config.vid_resize);
 
 		device_force_redraw();
 		video_force_resize_set(1);
@@ -419,8 +419,8 @@ ui_menu_command(int idm)
 		return(0);
 
 	case IDM_REMEMBER:			/* VIEW menu */
-		window_remember ^= 1;
-		menu_set_item(idm, window_remember);
+		config.window_remember ^= 1;
+		menu_set_item(idm, config.window_remember);
 		return(0);
 
 	case IDM_RENDER_1:			/* VIEW menu */
@@ -445,8 +445,8 @@ ui_menu_command(int idm)
 	case IDM_STRETCH_SQ:                                
 	case IDM_STRETCH_INT:
 	case IDM_STRETCH_KEEP:
-		vid_fullscreen_scale = (idm - IDM_STRETCH);
-		menu_set_radio_item(IDM_STRETCH, 5, vid_fullscreen_scale);
+		config.vid_fullscreen_scale = (idm - IDM_STRETCH);
+		menu_set_radio_item(IDM_STRETCH, 5, config.vid_fullscreen_scale);
 		device_force_redraw();
 		config_save();
 		break;
@@ -455,32 +455,32 @@ ui_menu_command(int idm)
 	case IDM_SCALE_2:
 	case IDM_SCALE_3:
 	case IDM_SCALE_4:
-		scale = (idm - IDM_SCALE_1);
-		menu_set_radio_item(IDM_SCALE_1, 4, scale);
+		config.scale = (idm - IDM_SCALE_1);
+		menu_set_radio_item(IDM_SCALE_1, 4, config.scale);
 		device_force_redraw();
 		video_force_resize_set(1);
 		config_save();
 		break;
 
 	case IDM_FORCE_43:			/* VIEW menu */
-		toggle_video_item(idm, &force_43);
+		toggle_video_item(idm, &config.force_43);
 		video_force_resize_set(1);
 		config_save();
 		break;
 
 	case IDM_RCTRL_IS_LALT:			/* VIEW menu */
-		rctrl_is_lalt ^= 1;
-		menu_set_item(idm, rctrl_is_lalt);
+		config.rctrl_is_lalt ^= 1;
+		menu_set_item(idm, config.rctrl_is_lalt);
 		config_save();
 		break;
 
 	case IDM_INVERT:			/* DISPLAY menu */
-		toggle_video_item(idm, &invert_display);
+		toggle_video_item(idm, &config.invert_display);
 		config_save();
 		break;
 
 	case IDM_OVERSCAN:			/* DISPLAY menu */
-		toggle_video_item(idm, &enable_overscan);
+		toggle_video_item(idm, &config.enable_overscan);
 		video_force_resize_set(1);
 		config_save();
 		break;
@@ -490,8 +490,8 @@ ui_menu_command(int idm)
 	case IDM_SCREEN_AMBER:
 	case IDM_SCREEN_GREEN:
 	case IDM_SCREEN_WHITE:
-		vid_grayscale = (idm - IDM_SCREEN_RGB);
-		menu_set_radio_item(IDM_SCREEN_RGB, 5, vid_grayscale);
+		config.vid_grayscale = (idm - IDM_SCREEN_RGB);
+		menu_set_radio_item(IDM_SCREEN_RGB, 5, config.vid_grayscale);
 		device_force_redraw();
 		config_save();
 		break;
@@ -499,15 +499,15 @@ ui_menu_command(int idm)
 	case IDM_GRAY_601:			/* DISPLAY menu */
 	case IDM_GRAY_709:
 	case IDM_GRAY_AVE:
-		vid_graytype = (idm - IDM_GRAY_601);
-		menu_set_radio_item(IDM_GRAY_601, 3, vid_graytype);
+		config.vid_graytype = (idm - IDM_GRAY_601);
+		menu_set_radio_item(IDM_GRAY_601, 3, config.vid_graytype);
 		device_force_redraw();
 		config_save();
 		break;
 
 	case IDM_CGA_CONTR:			/* DISPLAY menu */
-		vid_cga_contrast ^= 1;
-		menu_set_item(idm, vid_cga_contrast);
+		config.vid_cga_contrast ^= 1;
+		menu_set_item(idm, config.vid_cga_contrast);
 		video_palette_rebuild();
 		config_save();
 		break;
@@ -629,13 +629,13 @@ void
 ui_fullscreen(int on)
 {
     /* Want off and already off? */
-    if (!on && !vid_fullscreen) return;
+    if (!on && !config.vid_fullscreen) return;
 
     /* Want on and already on? */
-    if (on && vid_fullscreen) return;
+    if (on && config.vid_fullscreen) return;
 
-    if (on && vid_fullscreen_first) {
-	vid_fullscreen_first = 0;
+    if (on && config.vid_fullscreen_first) {
+	config.vid_fullscreen_first = 0;
 	ui_msgbox(MBX_INFO, (wchar_t *)IDS_MSG_WINDOW);
     }
 
@@ -646,9 +646,9 @@ ui_fullscreen(int on)
 //  plat_mouse_close();
 
     /* Close the current mode, and open the new one. */
-    plat_vidapis[vid_api]->close();
-    vid_fullscreen = on;
-    plat_vidapis[vid_api]->init(vid_fullscreen);
+    plat_vidapis[config.vid_api]->close();
+    config.vid_fullscreen = on;
+    plat_vidapis[config.vid_api]->init(config.vid_fullscreen);
 
     plat_fullscreen(on);
 
@@ -659,7 +659,7 @@ ui_fullscreen(int on)
     device_force_redraw();
 
     /* Finally, handle the host's mouse cursor. */
-    ui_show_cursor(vid_fullscreen ? 0 : -1);
+    ui_show_cursor(config.vid_fullscreen ? 0 : -1);
 
     /* Update the menu item. */
     menu_set_item(IDM_FULLSCREEN, on);
@@ -674,7 +674,7 @@ ui_mouse_capture(int on)
     int state = mouse_capture;
 
     /* Do not try to capture the mouse if no mouse configured. */
-    if (mouse_type == MOUSE_NONE) return;
+    if (config.mouse_type == MOUSE_NONE) return;
 
     if ((on == 1) && !mouse_capture) {
 	state = 1;

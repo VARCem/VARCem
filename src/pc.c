@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.73	2019/04/30
+ * Version:	@(#)pc.c	1.0.74	2019/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,94 +88,45 @@
 #include "plat.h"
 
 
-#define PCLOG_BUFF_SIZE	8192			/* has to be big enough!! */
+#define PCLOG_BUFF_SIZE	1024			/* buffer for one line */
 
 
 /* Commandline options. */
-int	dump_on_exit = 0;			/* (O) dump regs on exit */
-int	do_dump_config = 0;			/* (O) dump config on load */
-int	start_in_fullscreen = 0;		/* (O) start in fullscreen */
+int		dump_on_exit = 0;		/* (O) dump regs on exit */
+int		do_dump_config = 0;		/* (O) dump config on load */
+int		start_in_fullscreen = 0;	/* (O) start in fullscreen */
 #ifdef _WIN32
-int	force_debug = 0;			/* (O) force debug output */
+int		force_debug = 0;		/* (O) force debug output */
 #endif
 #ifdef USE_WX
-int	video_fps = RENDER_FPS;			/* (O) render speed in fps */
+int		video_fps = RENDER_FPS;		/* (O) render speed in fps */
 #endif
-int	settings_only = 0;			/* (O) only the settings dlg */
-int	config_ro = 0;				/* (O) dont modify cfg file */
-int	log_level = LOG_INFO;			/* (O) global logging level */
-wchar_t log_path[1024] = { L'\0'};		/* (O) full path of logfile */
+int		settings_only = 0;		/* (O) only the settings dlg */
+int		config_ro = 0;			/* (O) dont modify cfg file */
+int		log_level = LOG_INFO;		/* (O) global logging level */
+wchar_t 	log_path[1024] = { L'\0'};	/* (O) full path of logfile */
 
 /* Configuration values. */
-int	language = 0x0000;			/* (C) language ID */
-int	window_w, window_h,			/* (C) window size and */
-	window_x, window_y,			/*     position info */
-	window_remember;
-int	vid_api = 0,				/* (C) video renderer */
-	vid_resize,				/* (C) allow resizing */
-	vid_cga_contrast = 0,			/* (C) video */
-	vid_fullscreen = 0,			/* (C) video */
-	vid_fullscreen_scale = 0,		/* (C) video */
-	vid_fullscreen_first = 0,		/* (C) video */
-	vid_grayscale = 0,			/* (C) video */
-	vid_graytype = 0,			/* (C) video */
-	invert_display = 0,			/* (C) invert the display */
-	suppress_overscan = 0,			/* (C) suppress overscans */
-	scale = 0,				/* (C) screen scale factor */
-	enable_overscan = 0,			/* (C) video */
-	force_43 = 0,				/* (C) video */
-	rctrl_is_lalt;				/* (C) set R-CTRL as L-ALT */
-int	video_card = 0,				/* (C) graphics/video card */
-	voodoo_enabled = 0;			/* (C) video option */
-int	mouse_type = 0;				/* (C) selected mouse type */
-int	time_sync = 0;				/* (C) enable time sync */
-int	game_enabled = 0,			/* (C) enable game port */
-	serial_enabled[] = {0,0},		/* (C) enable serial ports */
-	parallel_enabled[] = {0,0,0},		/* (C) enable LPT ports */
-	parallel_device[] = {0,0,0},		/* (C) set up LPT devices */
-	bugger_enabled = 0,			/* (C) enable ISAbugger */
-	isamem_type[ISAMEM_MAX] = { 0,0,0,0 },	/* (C) enable ISA mem cards */
-	isartc_type = 0;			/* (C) enable ISA RTC card */
-#ifdef WALTJE
-int	romdos_enabled = 0;			/* (C) enable ROM DOS */
-#endif
-int	hdc_type = HDC_NONE;			/* (C) HDC type */
-int	scsi_card = SCSI_NONE;			/* (C) selected SCSI card */
-int	sound_card = 0,				/* (C) selected sound card */
-	sound_is_float = 1,			/* (C) sound uses FP values */
-	sound_gain = 0,				/* (C) sound volume gain */
-	mpu401_standalone_enable = 0,		/* (C) sound option */
-	opl_type = 0,				/* (C) sound option */
-	midi_device;				/* (C) selected midi device */
-int	joystick_type = 0;			/* (C) joystick type */
-int	mem_size = 0;				/* (C) memory size */
-int	machine_type = -1;			/* (C) current machine ID */
-int	cpu_manufacturer = 0,			/* (C) cpu manufacturer */
-	cpu_type = 3,				/* (C) cpu type */
-	cpu_use_dynarec = 0,			/* (C) cpu uses/needs Dyna */
-	enable_external_fpu = 0;		/* (C) enable external FPU */
-int	network_type;				/* (C) net provider type */
-int	network_card;				/* (C) net interface num */
-char	network_host[512];			/* (C) host network intf */
+config_t	config;				/* (C) active configuration */
 
 /* Global variables. */
-char	emu_title[64];				/* full name of application */
-char	emu_version[32];			/* short version ID string */
-char	emu_fullversion[128];			/* full version ID string */
-wchar_t	exe_path[1024];				/* emu executable path */
-wchar_t	emu_path[1024];				/* emu installation path */
-wchar_t	usr_path[1024];				/* path (dir) of user data */
-wchar_t	cfg_path[1024];				/* full path of config file */
-int	emu_lang_id;				/* current language ID */
-int	scrnsz_x = SCREEN_RES_X,		/* current screen size, X */
-	scrnsz_y = SCREEN_RES_Y;		/* current screen size, Y */
-int	config_changed,				/* config has changed */
-	dopause = 0,				/* system is paused */
-	doresize = 0,				/* screen resize requested */
-	mouse_capture = 0;			/* mouse is captured in app */
-int	AT,					/* machine is AT class */
-	MCA,					/* machine has MCA bus */
-	PCI;					/* machine has PCI bus */
+char		emu_title[64];			/* full name of application */
+char		emu_version[32];		/* short version ID string */
+char		emu_fullversion[128];		/* full version ID string */
+wchar_t		exe_path[1024];			/* emu executable path */
+wchar_t		emu_path[1024];			/* emu installation path */
+wchar_t		usr_path[1024];			/* path (dir) of user data */
+wchar_t		cfg_path[1024];			/* full path of config file */
+int		emu_lang_id;			/* current language ID */
+int		scrnsz_x = SCREEN_RES_X,	/* current screen size, X */
+		scrnsz_y = SCREEN_RES_Y;	/* current screen size, Y */
+int		config_changed,			/* config has changed */
+		dopause = 0,			/* system is paused */
+		doresize = 0,			/* screen resize requested */
+		mouse_capture = 0;		/* mouse is captured in app */
+int		AT,				/* machine is AT class */
+		MCA,				/* machine has MCA bus */
+		PCI;				/* machine has PCI bus */
 
 /* Local variables. */
 static int	fps,				/* statistics */
@@ -721,20 +672,18 @@ usage:
     INFO("# Configuration file: %ls\n#\n\n", cfg_path);
 
     /*
-     * We are about to read the configuration file, which MAY
-     * put data into global variables (the hard- and floppy
-     * disks are an example) so we have to initialize those
-     * modules before we load the config..
+     * We are about to read the configuration file, so
+     * clear all the global configuration data now.
      */
+    config_init(&config);
     mouse_init();
     hdd_init();
     cdrom_global_init();
     zip_global_init();
-
     network_init();
 
     /* Load the configuration file. */
-    if (! config_load()) return(2);
+    if (! config_load(&config)) return(2);
 
     /* All good. */
     return(1);
@@ -742,104 +691,13 @@ usage:
 
 
 /*
- * Set the active processor speed for this machine.
+ * Initialize the configured PC - run once, after pc_setup() is done.
  *
- * The argument is either 0 for 'slowest speed', or an
- * index into the CPU table to select that model' speed.
- *
- * This function handles two things:
- *
- * - it sets up the correct/expected XTAL frequency for
- *   the desired operating speed;
- *
- * - it then tells the CPU module to activate that CPU
- *   and/or speed.
- *
- * In addition, after the speed change, it updates timings.
+ * At this point, we have loaded a configuration file (or are running
+ * with a default one), which may or may not be valid. So, we perform
+ * a number of sanity checks here, to avoid running into trouble at a
+ * later time..
  */
-void
-pc_set_speed(int turbo)
-{
-    uint32_t speed;
-
-    /*
-     * Part One - Set up the correct XTAL frequency.
-     *
-     * Get the selected processor's desired speed.
-     *
-     * For 286+, this is usually 8 (slow) or max speed.
-     * For PC and XT class, this will return max speed.
-     */
-    speed = machine_get_speed(turbo);
-    DEBUG("PC: set_speed(%i) -> speed %lu\n", turbo, speed);
-
-    if (cpu_get_type() >= CPU_286) {
-	/* For 286+, we are done. */
-	pit_setclock(speed);
-    } else {
-	/*
-	 * Not so easy for PC and XT class machines.
-	 *
-	 * The TURBO setting on these machines (if they had
-	 * one at all) basically is the maximum speed of the
-	 * selected processor.  The slow speed is, in pretty
-	 * much all cases, the original 4.77MHz setting.
-	 */
-	if (turbo)
-		pit_setclock(14318184);	// speed * xt_multi ?
-	  else
-		pit_setclock(14318184);
-    }
-
-    /*
-     * Part Two - set the correct processor type.
-     */
-
-    /*
-     * Part Three - update several timing constants.
-     *
-     * This is necessary because the emulator's entire
-     * timer system is built around the CPU clock as a
-     * base unit. So, if we change that, everything does..
-     */
-}
-
-
-/* Re-load system configuration and restart. */
-/* FIXME: this has to be reviewed! */
-void
-pc_reload(const wchar_t *fn)
-{
-    config_write(cfg_path);
-
-    floppy_close();
-
-    cdrom_close();
-
-    pc_reset_hard_close();
-
-    // FIXME: set up new config file path 'fn'... --FvK
-
-    config_load();
-
-    cdrom_hard_reset();
-
-    zip_hard_reset();
-
-    scsi_disk_hard_reset();
-
-    fdd_load(0, floppyfns[0]);
-    fdd_load(1, floppyfns[1]);
-    fdd_load(2, floppyfns[2]);
-    fdd_load(3, floppyfns[3]);
-
-    network_init();
-
-    pc_reset_hard_init();
-}
-
-
-/* Initialize the configured PC. Run once, after pc_setup() is done. */
 int
 pc_init(void)
 {
@@ -849,25 +707,25 @@ pc_init(void)
     const char *stransi;
 
     /* If no machine selected, force user into Setup Wizard. */
-    if (machine_type < 0) {
+    if (config.machine_type < 0) {
 	str = get_string(IDS_ERR_NOCONF);
 
 	/* Show the messagebox, and abort if 'No' was selected. */
 	if (ui_msgbox(MBX_QUESTION, str) != 0) return(0);
 
 	/* OK, user wants to set up a machine. */
-	machine_type = 0;
+	config.machine_type = 0;
 
 	return(2);
     }
 
     /* Load the ROMs for the selected machine. */
-    if (! machine_available(machine_type)) {
+    if (! machine_available(config.machine_type)) {
 	/* Whoops, selected machine not available. */
 	stransi = machine_get_name();
 	if (stransi == NULL) {
 		/* This happens if configured machine is not even in table.. */
-		sprintf(tempA, "machine_%i", machine_type);
+		sprintf(tempA, "machine_%i", config.machine_type);
 		stransi = (const char *)tempA;
 	}
 
@@ -880,18 +738,29 @@ pc_init(void)
 	return(2);
     }
 
-    if ((video_card < 0) || !video_card_available(video_card)) {
+    if ((config.video_card < 0) || !video_card_available(config.video_card)) {
 	/* Whoops, selected video not available. */
-	stransi = video_card_getname(video_card);
+	stransi = video_card_getname(config.video_card);
 	if (stransi == NULL) {
 		/* This happens if configured card is not even in table.. */
-		sprintf(tempA, "vid_%i", video_card);
+		sprintf(tempA, "vid_%i", config.video_card);
 		stransi = (const char *)tempA;
 	}
 
 	/* Show the messagebox, and abort if 'No' was selected. */
 	swprintf(temp, sizeof_w(temp),
 		 get_string(IDS_ERR_NOAVAIL), get_string(IDS_3311), stransi);
+	if (ui_msgbox(MBX_CONFIG, temp) == 1) return(0);
+
+	/* OK, user wants to (re-)configure.. */
+	return(2);
+    }
+
+    /* If we have selected a network provider, make sure it is available. */
+    if ((config.network_type < 0) || !network_available(config.network_type)) {
+	swprintf(temp, sizeof_w(temp), get_string(IDS_ERR_NOAVAIL),
+		 get_string(IDS_3314), network_getname(config.network_type));
+
 	if (ui_msgbox(MBX_CONFIG, temp) == 1) return(0);
 
 	/* OK, user wants to (re-)configure.. */
@@ -1068,7 +937,7 @@ pc_reset_hard_init(void)
     }
 
     /* Needs the status bar... */
-    if (bugger_enabled)
+    if (config.bugger_enabled)
 	device_add(&bugger_device);
 
     /* Needs the status bar initialized. */
@@ -1122,6 +991,39 @@ pc_reset(int hard)
 }
 
 
+/* FIXME: this has to be reviewed! */
+void
+pc_reload(const wchar_t *fn)
+{
+    config_write(cfg_path);
+
+    floppy_close();
+
+    cdrom_close();
+
+    pc_reset_hard_close();
+
+    // FIXME: set up new config file path 'fn'... --FvK
+
+    config_load(&config);
+
+    cdrom_hard_reset();
+
+    zip_hard_reset();
+
+    scsi_disk_hard_reset();
+
+    fdd_load(0, floppyfns[0]);
+    fdd_load(1, floppyfns[1]);
+    fdd_load(2, floppyfns[2]);
+    fdd_load(3, floppyfns[3]);
+
+    network_init();
+
+    pc_reset_hard_init();
+}
+
+
 /*
  * The main thread runs the actual emulator code.
  *
@@ -1165,7 +1067,7 @@ pc_thread(void *param)
 
 		if (is386) {
 #ifdef USE_DYNAREC
-			if (cpu_use_dynarec)
+			if (config.cpu_use_dynarec)
 				exec386_dynarec(clockrate/100);
 			  else
 #endif
@@ -1211,7 +1113,7 @@ pc_thread(void *param)
 	}
 
 	/* If needed, handle a screen resize. */
-	if (doresize && !vid_fullscreen) {
+	if (doresize && !config.vid_fullscreen) {
 		ui_resize(scrnsz_x, scrnsz_y);
 
 		doresize = 0;
@@ -1263,6 +1165,71 @@ pc_pause(int p)
 }
 
 
+/*
+ * Set the active processor speed for this machine.
+ *
+ * The argument is either 0 for 'slowest speed', or an
+ * index into the CPU table to select that model' speed.
+ *
+ * This function handles two things:
+ *
+ * - it sets up the correct/expected XTAL frequency for
+ *   the desired operating speed;
+ *
+ * - it then tells the CPU module to activate that CPU
+ *   and/or speed.
+ *
+ * In addition, after the speed change, it updates timings.
+ */
+void
+pc_set_speed(int turbo)
+{
+    uint32_t speed;
+
+    /*
+     * Part One - Set up the correct XTAL frequency.
+     *
+     * Get the selected processor's desired speed.
+     *
+     * For 286+, this is usually 8 (slow) or max speed.
+     * For PC and XT class, this will return max speed.
+     */
+    speed = machine_get_speed(turbo);
+    DEBUG("PC: set_speed(%i) -> speed %lu\n", turbo, speed);
+
+    if (cpu_get_type() >= CPU_286) {
+	/* For 286+, we are done. */
+	pit_setclock(speed);
+    } else {
+	/*
+	 * Not so easy for PC and XT class machines.
+	 *
+	 * The TURBO setting on these machines (if they had
+	 * one at all) basically is the maximum speed of the
+	 * selected processor.  The slow speed is, in pretty
+	 * much all cases, the original 4.77MHz setting.
+	 */
+	if (turbo)
+		pit_setclock(14318184);	// speed * xt_multi ?
+	  else
+		pit_setclock(14318184);
+    }
+
+    /*
+     * Part Two - set the correct processor type.
+     */
+
+    /*
+     * Part Three - update several timing constants.
+     *
+     * This is necessary because the emulator's entire
+     * timer system is built around the CPU clock as a
+     * base unit. So, if we change that, everything does..
+     */
+}
+
+
+/* Re-load system configuration and restart. */
 void
 set_screen_size(int x, int y)
 {
@@ -1273,7 +1240,7 @@ set_screen_size(int x, int y)
     double dx, dy, dtx, dty;
     int vid;
 
-    DEBUG("SetScreenSize(%i, %i) resize=%i\n", x, y, vid_resize);
+    DEBUG("SetScreenSize(%i, %i) resize=%i\n", x, y, config.vid_resize);
 
     /* Make sure we keep usable values. */
     if (x < 320) x = 320;
@@ -1288,7 +1255,7 @@ set_screen_size(int x, int y)
     if (suppress_overscan)
 	temp_overscan_x = temp_overscan_y = 0;
 
-    if (force_43) {
+    if (config.force_43) {
 	dx = (double)x;
 	dtx = (double)temp_overscan_x;
 
@@ -1305,7 +1272,7 @@ INFO("SetScreenSize(%d,%d) type=%d\n", x, y, vid);
 		/* MDA/Hercules */
 		dy = (x / 4.0) * 3.0;
 	} else {
-		if (enable_overscan) {
+		if (config.enable_overscan) {
 			/* EGA/(S)VGA with overscan */
 			dy = (((dx - dtx) / 4.0) * 3.0) + dty;
 		} else {
@@ -1318,7 +1285,7 @@ INFO("SetScreenSize(%d,%d) type=%d\n", x, y, vid);
 	unscaled_size_y = efscrnsz_y;
     }
 
-    switch(scale) {
+    switch(config.scale) {
 	case 0:		/* 50% */
 		scrnsz_x = (unscaled_size_x>>1);
 		scrnsz_y = (unscaled_size_y>>1);

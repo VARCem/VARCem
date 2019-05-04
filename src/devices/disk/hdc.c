@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.19	2019/04/29
+ * Version:	@(#)hdc.c	1.0.20	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #define HAVE_STDARG_H
 #define dbglog hdc_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../machines/machine.h"
 #include "../../device.h"
 #include "hdc.h"
@@ -57,7 +58,7 @@ int	hdc_do_log = ENABLE_HDC_LOG;
 static const struct {
     const char		*internal_name;
     const device_t	*device;
-} controllers[] = {
+} devices[] = {
     { "none",			NULL				},
     { "internal",		NULL				},
 
@@ -129,16 +130,17 @@ void
 hdc_reset(void)
 {
     INFO("HDC: reset(current=%d, internal=%d)\n",
-	 hdc_type, !!(machine_get_flags() & MACHINE_HDC));
+	 config.hdc_type, !!(machine_get_flags() & MACHINE_HDC));
 
-    /* If we have a valid controller, add its device. */
-    if (controllers[hdc_type].device != NULL)
-	device_add(controllers[hdc_type].device);
+    /* If we have a valid device, add it. */
+    if (devices[config.hdc_type].device != NULL)
+	device_add(devices[config.hdc_type].device);
 
     /* Now, add the tertiary and/or quaternary IDE controllers. */
-    if (ide_ter_enabled)
+    if (config.ide_ter_enabled)
 	device_add(&ide_ter_device);
-    if (ide_qua_enabled)
+
+    if (config.ide_qua_enabled)
 	device_add(&ide_qua_device);
 }
 
@@ -146,8 +148,8 @@ hdc_reset(void)
 const char *
 hdc_get_name(int hdc)
 {
-    if (controllers[hdc].device != NULL)
-	return(controllers[hdc].device->name);
+    if (devices[hdc].device != NULL)
+	return(devices[hdc].device->name);
 
     return(NULL);
 }
@@ -156,20 +158,18 @@ hdc_get_name(int hdc)
 const char *
 hdc_get_internal_name(int hdc)
 {
-    return(controllers[hdc].internal_name);
+    return(devices[hdc].internal_name);
 }
 
 
 int
 hdc_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 
-    while (controllers[c].internal_name != NULL) {
-	if (! strcmp(controllers[c].internal_name, s))
+    for (c = 0; devices[c].internal_name != NULL; c++)
+	if (! strcmp(devices[c].internal_name, s))
 		return(c);
-	c++;
-    }
 
     /* Not found. */
     return(0);
@@ -179,7 +179,7 @@ hdc_get_from_internal_name(const char *s)
 const device_t *
 hdc_get_device(int hdc)
 {
-    return(controllers[hdc].device);
+    return(devices[hdc].device);
 }
 
 
@@ -199,8 +199,8 @@ hdc_has_config(int hdc)
 int
 hdc_get_flags(int hdc)
 {
-    if (controllers[hdc].device != NULL)
-	return(controllers[hdc].device->flags);
+    if (devices[hdc].device != NULL)
+	return(devices[hdc].device->flags);
 
     return(0);
 }
@@ -209,5 +209,5 @@ hdc_get_flags(int hdc)
 int
 hdc_available(int hdc)
 {
-    return(device_available(controllers[hdc].device));
+    return(device_available(devices[hdc].device));
 }

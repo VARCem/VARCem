@@ -8,7 +8,7 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.6	2019/04/30
+ * Version:	@(#)ui_vidapi.c	1.0.7	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,6 +51,7 @@
 #include <wchar.h>
 #include <time.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../device.h"
 #include "../plat.h"
 #include "../devices/video/video.h"
@@ -128,17 +129,17 @@ vidapi_set(int api)
     video_blit_wait();
 
     /* Close the (old) API. */
-    plat_vidapis[vid_api]->close();
+    plat_vidapis[config.vid_api]->close();
 
     /* Initialize the (new) API. */
-    vid_api = api;
-    i = plat_vidapis[vid_api]->init(vid_fullscreen);
+    config.vid_api = api;
+    i = plat_vidapis[config.vid_api]->init(config.vid_fullscreen);
 
     /* Enable or disable the Render window. */
-    ui_show_render(plat_vidapis[vid_api]->local);
+    ui_show_render(plat_vidapis[config.vid_api]->local);
 
     /* Update the menu item. */
-    menu_set_radio_item(IDM_RENDER_1, vidapi_count(), vid_api);
+    menu_set_radio_item(IDM_RENDER_1, vidapi_count(), config.vid_api);
 
     /* OK, release the blitter. */
     plat_endblit();
@@ -156,7 +157,7 @@ void
 vidapi_resize(int x, int y)
 {
     /* If not defined, not supported or needed. */
-    if (plat_vidapis[vid_api]->resize == NULL) return;
+    if (plat_vidapis[config.vid_api]->resize == NULL) return;
 
     /* Lock the blitter. */
     plat_startblit();
@@ -164,7 +165,7 @@ vidapi_resize(int x, int y)
     /* Wait for it to be ours. */
     video_blit_wait();
 
-    plat_vidapis[vid_api]->resize(x, y);
+    plat_vidapis[config.vid_api]->resize(x, y);
 
     /* Release the blitter. */
     plat_endblit();
@@ -175,9 +176,9 @@ int
 vidapi_pause(void)
 {
     /* If not defined, assume always OK. */
-    if (plat_vidapis[vid_api]->pause == NULL) return(0);
+    if (plat_vidapis[config.vid_api]->pause == NULL) return(0);
 
-    return(plat_vidapis[vid_api]->pause());
+    return(plat_vidapis[config.vid_api]->pause());
 }
 
 
@@ -185,7 +186,7 @@ void
 vidapi_enable(int yes)
 {
     /* If not defined, assume not needed. */
-    if (plat_vidapis[vid_api]->enable == NULL) return;
+    if (plat_vidapis[config.vid_api]->enable == NULL) return;
 
     /* Lock the blitter. */
     plat_startblit();
@@ -193,7 +194,7 @@ vidapi_enable(int yes)
     /* Wait for it to be ours. */
     video_blit_wait();
 
-    plat_vidapis[vid_api]->enable(yes);
+    plat_vidapis[config.vid_api]->enable(yes);
 
     /* Release the blitter. */
     plat_endblit();
@@ -204,9 +205,9 @@ void
 vidapi_reset(void)
 {
     /* If not defined, assume always OK. */
-    if (plat_vidapis[vid_api]->reset == NULL) return;
+    if (plat_vidapis[config.vid_api]->reset == NULL) return;
 
-    plat_vidapis[vid_api]->reset(vid_fullscreen);
+    plat_vidapis[config.vid_api]->reset(config.vid_fullscreen);
 }
 
 
@@ -218,9 +219,10 @@ vidapi_screenshot(void)
     struct tm *info;
     time_t now;
 
-    DEBUG("VIDAPI: screenshot (api=%i)\n", vid_api);
+    DEBUG("VIDAPI: screenshot (api=%i)\n", config.vid_api);
 
-    if (vid_api < 0) return;
+    if ((config.vid_api < 0) ||
+        (plat_vidapis[config.vid_api]->screenshot != NULL)) return;
 
     (void)time(&now);
     info = localtime(&now);
@@ -236,6 +238,5 @@ vidapi_screenshot(void)
     wcsftime(fn, sizeof_w(fn), L"%Y%m%d_%H%M%S.png", info);
     wcscat(path, fn);
 
-    if (plat_vidapis[vid_api]->screenshot != NULL)
-	plat_vidapis[vid_api]->screenshot(path);
+    plat_vidapis[config.vid_api]->screenshot(path);
 }

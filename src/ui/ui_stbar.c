@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.18	2019/04/11
+ * Version:	@(#)ui_stbar.c	1.0.19	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -289,12 +289,12 @@ ui_sb_tip_update(uint8_t tag)
 		break;
 
 	case SB_NETWORK:
-		stransi = network_card_getname(network_card);
+		stransi = network_card_getname(config.network_card);
 		swprintf(tip, sizeof_w(tip), get_string(IDS_3960), stransi);
 		break;
 
 	case SB_SOUND:
-		stransi = sound_card_getname(sound_card);
+		stransi = sound_card_getname(config.sound_card);
 		swprintf(tip, sizeof_w(tip), get_string(IDS_3970), stransi);
 		break;
 
@@ -487,11 +487,11 @@ ui_sb_reset(void)
     }
 
     hdint = (machine_get_flags() & MACHINE_HDC) ? 1 : 0;
-    do_net = !!((network_type != 0) && (network_card != 0));
-    do_sound = !!(sound_card != 0);
+    do_net = !!((config.network_type != 0) && (config.network_card != 0));
+    do_sound = !!(config.sound_card != 0);
 
     /* Get name of current HDC. */
-    hdc = hdc_get_internal_name(hdc_type);
+    hdc = hdc_get_internal_name(config.hdc_type);
 
     /* Count all the floppy drives. */
     for (drive = 0; drive < FDD_NUM; drive++) {
@@ -507,7 +507,7 @@ ui_sb_reset(void)
 		continue;
 	}
 
-	if ((hdd[drive].bus == HDD_BUS_SCSI) && (scsi_card == 0)) {
+	if ((hdd[drive].bus == HDD_BUS_SCSI) && (config.scsi_card == 0)) {
 		/* Disk, but no controller for it. */
 		continue;
 	}
@@ -523,7 +523,7 @@ ui_sb_reset(void)
 		continue;
 	}
 
-	if ((cdrom[drive].bus_type == CDROM_BUS_SCSI) && (scsi_card == 0)) {
+	if ((cdrom[drive].bus_type == CDROM_BUS_SCSI) && (config.scsi_card == 0)) {
 		continue;
 	}
 
@@ -538,7 +538,7 @@ ui_sb_reset(void)
 		continue;
 	}
 
-	if ((zip_drives[drive].bus_type == ZIP_BUS_SCSI) && (scsi_card == 0))
+	if ((zip_drives[drive].bus_type == ZIP_BUS_SCSI) && (config.scsi_card == 0))
 		continue;
 
 	if (zip_drives[drive].bus_type != CDROM_BUS_DISABLED)
@@ -557,7 +557,7 @@ ui_sb_reset(void)
 #endif
 
     /* For devices like ISAbugger. */
-    if (bugger_enabled)
+    if (config.bugger_enabled)
 	sb_nparts++;
 
     /* General text message field. */
@@ -588,7 +588,7 @@ ui_sb_reset(void)
 		continue;
 	}
 
-	if ((hdd[drive].bus == HDD_BUS_SCSI) && (scsi_card == 0)) {
+	if ((hdd[drive].bus == HDD_BUS_SCSI) && (config.scsi_card == 0)) {
 		/* Disk, but no controller for it. */
 		continue;
 	}
@@ -607,7 +607,7 @@ ui_sb_reset(void)
 		continue;
 	}
 
-	if ((cdrom[drive].bus_type == CDROM_BUS_SCSI) && (scsi_card == 0))
+	if ((cdrom[drive].bus_type == CDROM_BUS_SCSI) && (config.scsi_card == 0))
 		continue;
 
 	if (cdrom[drive].bus_type != CDROM_BUS_DISABLED) {
@@ -624,7 +624,7 @@ ui_sb_reset(void)
 		continue;
 	}
 
-	if ((zip_drives[drive].bus_type == ZIP_BUS_SCSI) && (scsi_card == 0))
+	if ((zip_drives[drive].bus_type == ZIP_BUS_SCSI) && (config.scsi_card == 0))
 		continue;
 
 	if (zip_drives[drive].bus_type != 0) {
@@ -656,7 +656,7 @@ ui_sb_reset(void)
 #endif
 
     /* Fun! */
-    if (bugger_enabled) {
+    if (config.bugger_enabled) {
 	/* Add a text field for the ISAbugger. */
 	ptr = &sb_parts[sb_nparts++];
 	ptr->width = 175;

@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.14	2019/04/25
+ * Version:	@(#)vid_colorplus.c	1.0.15	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
 #include <wchar.h>
 #include <math.h>
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
@@ -404,7 +405,7 @@ colorplus_init(const device_t *info, UNUSED(void *parent))
 		 (const video_timings_t *)info->vid_timing);
 
     /* Force the LPT3 port to be enabled. */
-    parallel_enabled[2] = 1;
+    config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
     return dev;

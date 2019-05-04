@@ -8,14 +8,14 @@
  *
  *		Definitions for the DOSbox OPL emulator.
  *
- * Version:	@(#)snd_dbopl.h	1.0.3	2018/09/04
+ * Version:	@(#)snd_dbopl.h	1.0.4	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -44,15 +44,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	extern int opl_type;
 
-        void opl_init(void (*timer_callback)(void *param, int timer, int64_t period), void *timer_param, int nr, int is_opl3);
-        void opl_write(int nr, uint16_t addr, uint8_t val);
-        uint8_t opl_read(int nr, uint16_t addr);
-	void opl_status_update(int nr);
-        void opl_timer_over(int nr, int timer);
-        void opl2_update(int nr, int16_t *buffer, int samples);
-        void opl3_update(int nr, int16_t *buffer, int samples);
+void	opl_init(void (*timer_callback)(void *param, int timer, int64_t period), void *timer_param, int nr, int is_opl3);
+void	opl_write(int nr, uint16_t addr, uint8_t val);
+uint8_t	opl_read(int nr, uint16_t addr);
+void	opl_status_update(int nr);
+void	opl_timer_over(int nr, int timer);
+void	opl2_update(int nr, int16_t *buffer, int samples);
+void	opl3_update(int nr, int16_t *buffer, int samples);
+
 #ifdef __cplusplus
 }
 #endif

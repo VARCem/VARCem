@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.21	2019/04/29
+ * Version:	@(#)machine.c	1.0.22	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../rom.h"
@@ -65,7 +66,7 @@ machine_load(void)
 {
     const device_t *dev;
 
-    dev = machine_get_device_ex(machine_type);
+    dev = machine_get_device_ex(config.machine_type);
     if (dev != NULL)
 	machine = (machine_t *)dev->mach_info;
 
@@ -86,7 +87,9 @@ machine_reset(void)
     dev = machine_load();
 
     /* Set up the selected CPU at default speed. */
-    cpu_set_type(machine->cpu[cpu_manufacturer].cpus, cpu_type);
+    cpu_set_type(machine->cpu[config.cpu_manuf].cpus,
+		 config.cpu_manuf, config.cpu_type,
+		 config.enable_ext_fpu, config.cpu_use_dynarec);
 
     /* Start with (max/turbo) speed. */
     pc_set_speed(1);
@@ -242,7 +245,7 @@ machine_available(int id)
     romdef_t r;
     int i;
 
-    dev = machine_get_device_ex(machine_type);
+    dev = machine_get_device_ex(config.machine_type);
 
     wcscpy(temp, MACHINES_PATH);
     plat_append_slash(temp);
@@ -261,18 +264,18 @@ machine_common_init(void)
     dma_init();
     pit_init();
 
-    if (game_enabled)
+    if (config.game_enabled)
 	device_add(&game_device);
 
-    if (parallel_enabled[0])
+    if (config.parallel_enabled[0])
 	device_add(&parallel_1_device);
-    if (parallel_enabled[1])
+    if (config.parallel_enabled[1])
 	device_add(&parallel_2_device);
-    if (parallel_enabled[2])
+    if (config.parallel_enabled[2])
 	device_add(&parallel_3_device);
 
-    if (serial_enabled[0])
+    if (config.serial_enabled[0])
 	device_add(&serial_1_device);
-    if (serial_enabled[1])
+    if (config.serial_enabled[1])
 	device_add(&serial_2_device);
 }

@@ -8,11 +8,11 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.9	2018/11/23
+ * Version:	@(#)serial.h	1.0.10	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -48,7 +48,6 @@
 # define EMU_SERIAL_H
 
 
-#define SERIAL_MAX		2	/* two ports supported */
 #define SERIAL_FIFO_MAX		64	/* maximum FIFO size */
 
 /* Default settings for the standard ports. */

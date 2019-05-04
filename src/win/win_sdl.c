@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.10	2019/04/29
+ * Version:	@(#)win_sdl.c  	1.0.11	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -61,6 +61,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../version.h"
 #include "../device.h"
 #include "../ui/ui.h"
@@ -142,7 +143,7 @@ sdl_stretch(int *w, int *h, int *x, int *y)
 {
     double dw, dh, dx, dy, temp, temp2, ratio_w, ratio_h, gsr, hsr;
 
-    switch (vid_fullscreen_scale) {
+    switch (config.vid_fullscreen_scale) {
 	case FULLSCR_SCALE_FULL:
 		*w = sdl_w;
 		*h = sdl_h;
@@ -275,7 +276,7 @@ sdl_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 
     for (yy = y1; yy < y2; yy++) {
        	if ((y + yy) >= 0 && (y + yy) < scr->h) {
-		if (vid_grayscale || invert_display)
+		if (config.vid_grayscale || config.invert_display)
 			video_transform_copy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &scr->line[y + yy][x], w);
 		else
 			memcpy((uint32_t *) &(((uint8_t *)pixeldata)[yy * pitch]), &scr->line[y + yy][x], w * 4);

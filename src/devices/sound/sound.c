@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.18	2019/04/25
+ * Version:	@(#)sound.c	1.0.19	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,7 @@
 #define HAVE_STDARG_H
 #define dbglog sound_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
@@ -117,7 +118,7 @@ cd_thread(void *param)
 	if (! cd_audioon) return;
 
 	for (c = 0; c < CD_BUFLEN*2; c += 2) {
-		if (sound_is_float) {
+		if (config.sound_is_float) {
 			cd_out_buffer[c] = 0.0;
 			cd_out_buffer[c+1] = 0.0;
 		} else {
@@ -156,7 +157,7 @@ cd_thread(void *param)
 
 			if (! r) {
 				for (c = 0; c < CD_BUFLEN*2; c += 2) {
-					if (sound_is_float) {
+					if (config.sound_is_float) {
 						cd_out_buffer[c] += 0.0;
 						cd_out_buffer[c+1] += 0.0;
 					} else {
@@ -196,7 +197,7 @@ cd_thread(void *param)
 				cd_buffer_temp2[1] *= (float)cd_vol_r;
 				cd_buffer_temp2[1] /= 65535.0;
 
-				if (sound_is_float) {
+				if (config.sound_is_float) {
 					cd_out_buffer[c] += (float)(cd_buffer_temp2[0] / 32768.0);
 					cd_out_buffer[c+1] += (float)(cd_buffer_temp2[1] / 32768.0);
 				} else {
@@ -216,7 +217,7 @@ cd_thread(void *param)
 		}
 	}
 
-	if (sound_is_float)
+	if (config.sound_is_float)
 		openal_buffer_cd(cd_out_buffer);
 	else
 		openal_buffer_cd(cd_out_buffer_int16);
@@ -268,7 +269,7 @@ sound_poll(void *priv)
 		handlers[c].get_buffer(outbuffer, SOUNDBUFLEN, handlers[c].priv);
 
 	for (c = 0; c < SOUNDBUFLEN * 2; c++) {
-		if (sound_is_float) {
+		if (config.sound_is_float) {
 			outbuffer_ex[c] = (float)((outbuffer[c]) / 32768.0);
 		} else {
 			if (outbuffer[c] > 32767)
@@ -280,7 +281,7 @@ sound_poll(void *priv)
 		}
 	}
 
-	if (sound_is_float)
+	if (config.sound_is_float)
 		openal_buffer(outbuffer_ex);
 	else
 		openal_buffer(outbuffer_ex_int16);
@@ -321,7 +322,7 @@ sound_reset(void)
 {
     int i;
 
-    INFO("SOUND: reset (current=%i)\n", sound_card);
+    INFO("SOUND: reset (current=%i)\n", config.sound_card);
 
     /* Kill the CD-Audio thread. */
     sound_cd_stop();
@@ -331,7 +332,7 @@ sound_reset(void)
 	free(outbuffer_ex);
     if (outbuffer_ex_int16 != NULL)
 	free(outbuffer_ex_int16);
-    if (sound_is_float)
+    if (config.sound_is_float)
 	outbuffer_ex = (float *)mem_alloc(SOUNDBUFLEN * 2 * sizeof(float));
       else
 	outbuffer_ex_int16 = (int16_t *)mem_alloc(SOUNDBUFLEN * 2 * sizeof(int16_t));
@@ -361,7 +362,7 @@ sound_reset(void)
     sound_card_reset();
 
     /* Enable the standlone MPU401 if needed. */
-    if (mpu401_standalone_enable)
+    if (config.mpu401_standalone_enable)
 	mpu401_device_add();
 }
 

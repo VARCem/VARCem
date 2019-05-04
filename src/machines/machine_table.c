@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.40	2019/04/23
+ * Version:	@(#)machine_table.c	1.0.42	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -189,11 +189,11 @@ static const struct {
     { "[Socket 7 FX] Intel Advanced/ATX",	"intel_thor",		&m_thor			},
     { "[Socket 7 FX] MR Intel Advanced/ATX",	"intel_thor_mr",	&m_thor_mr		},
     { "[Socket 7 FX] Intel Advanced/EV",	"intel_endeavor",	&m_endeavor		},
+    { "[Socket 7 FX] Acer V30",			"acer_v30",		&m_acer_v30		},
     { "[Socket 7 FX] Packard Bell PB640",	"pbell_pb640",		&m_pb640		},
 
     /* Pentium, Socket7 (HX) */
     { "[Socket 7 HX] Acer M3a",			"acer_m3a",		&m_acer_m3a		},
-    { "[Socket 7 HX] Acer V30",			"acer_v30",		&m_acer_v30		},
     { "[Socket 7 HX] Acer V35n",		"acer_v35n",		&m_acer_v35n		},
     { "[Socket 7 HX] AOpen AP53",		"aopen_ap53",		&m_ap53			},
     { "[Socket 7 HX] ASUS P/I-P55T2P4",		"asus_p55t2p4",		&m_p55t2p4		},
@@ -240,7 +240,7 @@ machine_get_name_ex(int m)
 const char *
 machine_get_name(void)
 {
-    return(machine_get_name_ex(machine_type));
+    return(machine_get_name_ex(config.machine_type));
 }
 
 
@@ -254,7 +254,7 @@ machine_get_internal_name_ex(int m)
 const char *
 machine_get_internal_name(void)
 {
-    return(machine_get_internal_name_ex(machine_type));
+    return(machine_get_internal_name_ex(config.machine_type));
 }
 
 
@@ -268,7 +268,7 @@ machine_get_device_ex(int m)
 const device_t *
 machine_get_device(void)
 {
-    return(machine_get_device_ex(machine_type));
+    return(machine_get_device_ex(config.machine_type));
 }
 
 

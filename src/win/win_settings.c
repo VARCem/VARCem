@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.40	2019/04/08
+ * Version:	@(#)win_settings.c	1.0.41	2019/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,52 +83,12 @@
 extern const device_t voodoo_device;
 
 
-/* Machine category. */
-static int	temp_machine,
-		temp_cpu_m, temp_cpu, temp_wait_states,
-		temp_mem_size, temp_fpu, temp_sync;
-#ifdef USE_DYNAREC
-static int	temp_dynarec;
-#endif
-
-/* Video category. */
-static int	temp_video_card, temp_voodoo;
-
-/* Input devices category. */
-static int	temp_mouse, temp_joystick;
-
-/* Sound category. */
-static int	temp_sound_card, temp_midi_device, temp_mpu401,
-		temp_opl_type, temp_float;
-
-/* Network category. */
-static int	temp_net_type, temp_net_card;
-static char	temp_host_dev[128];
-
-/* Ports category. */
-static int	temp_game,
-		temp_serial[SERIAL_MAX],
-		temp_parallel[PARALLEL_MAX],
-		temp_parallel_device[PARALLEL_MAX];
-
-/* Other peripherals category. */
-static int	temp_hdc_type,
-		temp_scsi_card,
-		temp_ide_ter,
-		temp_ide_qua,
-		temp_bugger,
-		temp_isartc,
-		temp_isamem[ISAMEM_MAX];
-
 /* Floppy drives category. */
 static int	temp_fdd_types[FDD_NUM],
 		temp_fdd_turbo[FDD_NUM],
 		temp_fdd_check_bpb[FDD_NUM];
 
-/* Hard disks category. */
 static hard_disk_t temp_hdd[HDD_NUM];
-
-/* Other removable devices category. */
 static cdrom_t temp_cdrom_drives[CDROM_NUM];
 static zip_drive_t temp_zip_drives[ZIP_NUM];
 
@@ -138,6 +98,7 @@ static HWND	hwndParentDialog,
 static int	displayed_category = 0;
 static int	ask_sure = 0;
 static uint8_t	temp_deviceconfig;
+static config_t	temp_cfg;
 
 
 /* Show a MessageBox dialog.  This is nasty, I know.  --FvK */
@@ -177,59 +138,8 @@ settings_init(void)
 {
     int i;
 
-    /* Machine category */
-    temp_machine = machine_type;
-    temp_cpu_m = cpu_manufacturer;
-    temp_wait_states = cpu_waitstates;
-    temp_cpu = cpu_type;
-    temp_mem_size = mem_size;
-#ifdef USE_DYNAREC
-    temp_dynarec = cpu_use_dynarec;
-#endif
-    temp_fpu = enable_external_fpu;
-    temp_sync = time_sync;
-
-    /* Video category */
-    temp_video_card = video_card;
-    temp_voodoo = voodoo_enabled;
-
-    /* Input devices category */
-    temp_mouse = mouse_type;
-    temp_joystick = joystick_type;
-
-    /* Sound category */
-    temp_sound_card = sound_card;
-    temp_midi_device = midi_device;
-    temp_mpu401 = mpu401_standalone_enable;
-    temp_opl_type = opl_type;
-    temp_float = sound_is_float;
-
-    /* Network category */
-    temp_net_type = network_type;
-    memset(temp_host_dev, 0, sizeof(temp_host_dev));
-    strcpy(temp_host_dev, network_host);
-    temp_net_card = network_card;
-
-    /* Ports category */
-    temp_game = game_enabled;
-    for (i = 0; i < SERIAL_MAX; i++)
-	temp_serial[i] = serial_enabled[i];
-    for (i = 0; i < PARALLEL_MAX; i++) {
-	temp_parallel[i] = parallel_enabled[i];
-	temp_parallel_device[i] = parallel_device[i];
-    }
-
-    /* Other peripherals category */
-    temp_scsi_card = scsi_card;
-    temp_hdc_type = hdc_type;
-    temp_ide_ter = ide_ter_enabled;
-    temp_ide_qua = ide_qua_enabled;
-    temp_bugger = bugger_enabled;
-    temp_isartc = isartc_type;
-
-    /* ISA memory boards. */
-    for (i = 0; i < ISAMEM_MAX; i++)
-	temp_isamem[i] = isamem_type[i];
+    /* Copy the current configuration to a temporary one. */
+    memcpy(&temp_cfg, &config, sizeof(config_t));
 
     /* Floppy drives category */
     for (i = 0; i < FDD_NUM; i++) {
@@ -255,58 +165,8 @@ settings_changed(void)
 {
     int i = 0, j;
 
-    /* Machine category */
-    i = i || (machine_type != temp_machine);
-    i = i || (cpu_manufacturer != temp_cpu_m);
-    i = i || (cpu_waitstates != temp_wait_states);
-    i = i || (cpu_type != temp_cpu);
-    i = i || (mem_size != temp_mem_size);
-#ifdef USE_DYNAREC
-    i = i || (temp_dynarec != cpu_use_dynarec);
-#endif
-    i = i || (temp_fpu != enable_external_fpu);
-    i = i || (temp_sync != time_sync);
-
-    /* Video category */
-    i = i || (video_card != temp_video_card);
-    i = i || (voodoo_enabled != temp_voodoo);
-
-    /* Input devices category */
-    i = i || (mouse_type != temp_mouse);
-    i = i || (joystick_type != temp_joystick);
-
-    /* Sound category */
-    i = i || (sound_card != temp_sound_card);
-    i = i || (midi_device != temp_midi_device);
-    i = i || (mpu401_standalone_enable != temp_mpu401);
-    i = i || (opl_type != temp_opl_type);
-    i = i || (sound_is_float != temp_float);
-
-    /* Network category */
-    i = i || (network_type != temp_net_type);
-    i = i || strcmp(temp_host_dev, network_host);
-    i = i || (network_card != temp_net_card);
-
-    /* Ports category */
-    i = i || (temp_game != game_enabled);
-    for (j = 0; j < SERIAL_MAX; j++)
-	i = i || (temp_serial[j] != serial_enabled[j]);
-    for (j = 0; j < PARALLEL_MAX; j++) {
-	i = i || (temp_parallel[j] != parallel_enabled[j]);
-	i = i || (temp_parallel_device[j] != parallel_device[j]);
-    }
-
-    /* Peripherals category */
-    i = i || (temp_scsi_card != scsi_card);
-    i = i || (temp_hdc_type != hdc_type);
-    i = i || (temp_ide_ter != ide_ter_enabled);
-    i = i || (temp_ide_qua != ide_qua_enabled);
-    i = i || (temp_bugger != bugger_enabled);
-    i = i || (temp_isartc != isartc_type);
-
-    /* ISA memory boards. */
-    for (j = 0; j < ISAMEM_MAX; j++)
-	i = i || (temp_isamem[j] != isamem_type[j]);
+    /* If the main block has changed, done. */
+    if (config_compare(&config, &temp_cfg)) return(1);
 
     /* Hard disks category */
     i = i || memcmp(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
@@ -356,61 +216,11 @@ settings_save(void)
 {
     int i;
 
+    /* Shut down the active machine. */
     pc_reset_hard_close();
 
-    /* Machine category */
-    machine_type = temp_machine;
-    cpu_manufacturer = temp_cpu_m;
-    cpu_waitstates = temp_wait_states;
-    cpu_type = temp_cpu;
-    mem_size = temp_mem_size;
-#ifdef USE_DYNAREC
-    cpu_use_dynarec = temp_dynarec;
-#endif
-    enable_external_fpu = temp_fpu;
-    time_sync = temp_sync;
-
-    /* Video category */
-    video_card = temp_video_card;
-    voodoo_enabled = temp_voodoo;
-
-    /* Input devices category */
-    mouse_type = temp_mouse;
-    joystick_type = temp_joystick;
-
-    /* Sound category */
-    sound_card = temp_sound_card;
-    midi_device = temp_midi_device;
-    mpu401_standalone_enable = temp_mpu401;
-    opl_type = temp_opl_type;
-    sound_is_float = temp_float;
-
-    /* Network category */
-    network_type = temp_net_type;
-    memset(network_host, '\0', sizeof(network_host));
-    strcpy(network_host, temp_host_dev);
-    network_card = temp_net_card;
-
-    /* Ports category */
-    game_enabled = temp_game;
-    for (i = 0; i < SERIAL_MAX; i++)
-	serial_enabled[i] = temp_serial[i];
-    for (i = 0; i < PARALLEL_MAX; i++) {
-	parallel_enabled[i] = temp_parallel[i];
-	parallel_device[i] = temp_parallel_device[i];
-    }
-
-    /* Peripherals category */
-    scsi_card = temp_scsi_card;
-    hdc_type = temp_hdc_type;
-    ide_ter_enabled = temp_ide_ter;
-    ide_qua_enabled = temp_ide_qua;
-    bugger_enabled = temp_bugger;
-    isartc_type = temp_isartc;
-
-    /* ISA memory boards. */
-    for (i = 0; i < ISAMEM_MAX; i++)
-	isamem_type[i] = temp_isamem[i];
+    /* Save the temporary configuration back to the active one. */
+    memcpy(&config, &temp_cfg, sizeof(config_t));
 
     /* Hard disks category */
     memcpy(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
@@ -719,7 +529,7 @@ find_roms(void)
     int c, d, i;
 
     c = d = 0;
-    while(1) {
+    for (;;) {
 	/* Get ANSI name of machine. */
 	str = machine_get_name_ex(c);
 	if (str == NULL)

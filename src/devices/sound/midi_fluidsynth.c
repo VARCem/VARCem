@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.16	2019/04/11
+ * Version:	@(#)midi_fluidsynth.c	1.0.17	2019/05/03
  *
  *		Code borrowed from scummvm.
  *
@@ -178,7 +178,7 @@ fluidsynth_thread(void *param)
 	thread_wait_event(data->event, -1);
 	thread_reset_event(data->event);
 
-	if (sound_is_float) {
+	if (config.sound_is_float) {
 		float *buf = (float*)((uint8_t*)data->buffer + buf_pos);
 		memset(buf, 0, buf_size);
 		if (data->synth)
@@ -324,7 +324,7 @@ fluidsynth_init(const device_t *info, UNUSED(void *parent))
     double samplerate;
     f_fluid_settings_getnum(data->settings, "synth.sample-rate", &samplerate);
     data->samplerate = (int)samplerate;
-    if (sound_is_float) {
+    if (config.sound_is_float) {
 	data->buf_size = (data->samplerate/RENDER_RATE)*2*sizeof(float)*BUFFER_SEGMENTS;
 	data->buffer = (float *)mem_alloc(data->buf_size);
 	data->buffer_int16 = NULL;

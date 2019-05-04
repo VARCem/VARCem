@@ -8,11 +8,11 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.8	2018/11/12
+ * Version:	@(#)network.h	1.0.9	2019/05/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -50,10 +50,17 @@
 
 
 enum {
-    NET_TYPE_NONE = 0,
-    NET_TYPE_SLIRP,
-    NET_TYPE_PCAP,
-    NET_TYPE_VNS
+    NET_NONE = 0,
+    NET_SLIRP,
+    NET_PCAP
+#ifdef USE_VNS
+    ,NET_VNS
+#endif
+};
+
+enum {
+    NET_CARD_NONE = 0,
+    NET_CARD_INTERNAL
 };
 
 
@@ -103,7 +110,7 @@ extern void		network_log(int level, const char *fmt, ...);
 extern void		network_init(void);
 extern void		network_close(void);
 extern void		network_reset(void);
-extern void		network_attach(void *, uint8_t *, NETRXCB);
+extern int		network_attach(void *, uint8_t *, NETRXCB);
 extern void		network_tx(uint8_t *, int);
 extern void		network_rx(uint8_t *, int);
 

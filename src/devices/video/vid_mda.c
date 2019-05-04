@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.14	2019/04/25
+ * Version:	@(#)vid_mda.c	1.0.15	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
@@ -372,7 +373,7 @@ mda_standalone_init(const device_t *info, UNUSED(void *parent))
 		 (const video_timings_t *)&mda_timings);
 
     /* Force the LPT3 port to be enabled. */
-    parallel_enabled[2] = 1;
+    config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
     return(dev);

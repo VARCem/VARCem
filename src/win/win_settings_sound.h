@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.15	2019/04/08
+ * Version:	@(#)win_settings_sound.h	1.0.16	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,7 +55,7 @@ static int		midi_to_list[NUM_MIDI],
 static int
 mpu401_present(void)
 {
-    return temp_mpu401 ? 1 : 0;
+    return temp_cfg.mpu401_standalone_enable ? 1 : 0;
 }
 
 
@@ -64,7 +64,7 @@ mpu401_standalone_allow(void)
 {
     const char *md;
 
-    md = midi_device_get_internal_name(temp_midi_device);
+    md = midi_device_get_internal_name(temp_cfg.midi_device);
     if (md != NULL) {
 	if (! strcmp(md, "none"))
 		return 0;
@@ -88,14 +88,15 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INITDIALOG:
 		/* Get info about the selected machine. */
-		dev = machine_get_device_ex(temp_machine);
+		dev = machine_get_device_ex(temp_cfg.machine_type);
 		m = (machine_t *)dev->mach_info;
 
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
 		c = d = 0;
 		for (;;) {
 			stransi = sound_card_get_internal_name(c);
-			if (stransi == NULL) break;
+			if (stransi == NULL)
+				break;
 
 			dev = sound_card_getdevice(c);
 
@@ -130,13 +131,13 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			list_to_sound[d] = c;
 			d++; c++;
 		}
-
-		SendMessage(h, CB_SETCURSEL, sound_to_list[temp_sound_card], 0);
+		SendMessage(h, CB_SETCURSEL,
+			    sound_to_list[temp_cfg.sound_card], 0);
 
 		EnableWindow(h, d ? TRUE : FALSE);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_SOUND);
-		if (sound_card_has_config(temp_sound_card))
+		if (sound_card_has_config(temp_cfg.sound_card))
 			EnableWindow(h, TRUE);
 		else
 			EnableWindow(h, FALSE);
@@ -167,26 +168,27 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			c++;
 		}
-		SendMessage(h, CB_SETCURSEL, midi_to_list[temp_midi_device], 0);
+		SendMessage(h, CB_SETCURSEL,
+			    midi_to_list[temp_cfg.midi_device], 0);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_MIDI);
-		if (midi_device_has_config(temp_midi_device))
+		if (midi_device_has_config(temp_cfg.midi_device))
 			EnableWindow(h, TRUE);
 		else
 			EnableWindow(h, FALSE);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
-		SendMessage(h, BM_SETCHECK, temp_mpu401, 0);
+		SendMessage(h, BM_SETCHECK, temp_cfg.mpu401_standalone_enable, 0);
 		EnableWindow(h, mpu401_standalone_allow() ? TRUE : FALSE);
 
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_MPU401);
-		EnableWindow(h, (mpu401_standalone_allow() && temp_mpu401) ? TRUE : FALSE);
+		EnableWindow(h, (mpu401_standalone_allow() && temp_cfg.mpu401_standalone_enable) ? TRUE : FALSE);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
-		SendMessage(h, BM_SETCHECK, temp_opl_type, 0);
+		SendMessage(h, BM_SETCHECK, temp_cfg.opl_type, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_FLOAT);
-		SendMessage(h, BM_SETCHECK, temp_float, 0);
+		SendMessage(h, BM_SETCHECK, temp_cfg.sound_is_float, 0);
 
 		return TRUE;
 
@@ -194,57 +196,57 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 			case IDC_COMBO_SOUND:
 				h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
-				temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_SOUND);
-				if (sound_card_has_config(temp_sound_card))
+				if (sound_card_has_config(temp_cfg.sound_card))
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);
 
 				h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
-				SendMessage(h, BM_SETCHECK, temp_mpu401, 0);
+				SendMessage(h, BM_SETCHECK, temp_cfg.mpu401_standalone_enable, 0);
 				EnableWindow(h, mpu401_standalone_allow() ? TRUE : FALSE);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_MPU401);
-				EnableWindow(h, (mpu401_standalone_allow() && temp_mpu401) ? TRUE : FALSE);
+				EnableWindow(h, (mpu401_standalone_allow() && temp_cfg.mpu401_standalone_enable) ? TRUE : FALSE);
 				break;
 
 			case IDC_CONFIGURE_SOUND:
 				h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
-				temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= dlg_devconf(hdlg, sound_card_getdevice(temp_sound_card));
+				temp_deviceconfig |= dlg_devconf(hdlg, sound_card_getdevice(temp_cfg.sound_card));
 				break;
 
 			case IDC_COMBO_MIDI:
 				h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
-				temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_MIDI);
-				if (midi_device_has_config(temp_midi_device))
+				if (midi_device_has_config(temp_cfg.midi_device))
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);
 
 				h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
-				SendMessage(h, BM_SETCHECK, temp_mpu401, 0);
+				SendMessage(h, BM_SETCHECK, temp_cfg.mpu401_standalone_enable, 0);
 				EnableWindow(h, mpu401_standalone_allow() ? TRUE : FALSE);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_MPU401);
-				EnableWindow(h, (mpu401_standalone_allow() && temp_mpu401) ? TRUE : FALSE);
+				EnableWindow(h, (mpu401_standalone_allow() && temp_cfg.mpu401_standalone_enable) ? TRUE : FALSE);
 				break;
 
 			case IDC_CONFIGURE_MIDI:
 				h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
-				temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= dlg_devconf(hdlg, midi_device_getdevice(temp_midi_device));
+				temp_deviceconfig |= dlg_devconf(hdlg, midi_device_getdevice(temp_cfg.midi_device));
 				break;
 
 			case IDC_CHECK_MPU401:
 				h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
-				temp_mpu401 = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_cfg.mpu401_standalone_enable = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_MPU401);
 				EnableWindow(h, mpu401_present() ? TRUE : FALSE);
@@ -252,7 +254,7 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_MPU401:
 				/* Get info about the selected machine. */
-				dev = machine_get_device_ex(temp_machine);
+				dev = machine_get_device_ex(temp_cfg.machine_type);
 				m = (machine_t *)dev->mach_info;
 				temp_deviceconfig |= dlg_devconf(hdlg, (m->flags & MACHINE_MCA) ?
 								       &mpu401_mca_device : &mpu401_device);
@@ -262,23 +264,23 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_SOUND);
-		temp_sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		temp_cfg.sound_card = list_to_sound[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_MIDI);
-		temp_midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+		temp_cfg.midi_device = list_to_midi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
-		temp_mpu401 = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_cfg.mpu401_standalone_enable = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
-		temp_opl_type = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_cfg.opl_type = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_FLOAT);
-		temp_float = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_cfg.sound_is_float = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 		return FALSE;
 
 	default:
-	break;
+		break;
     }
 
     return FALSE;

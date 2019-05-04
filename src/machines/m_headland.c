@@ -12,7 +12,7 @@
  *		so we can add configuration dialog for the onboard video
  *		controller for the AMA machine.
  *
- * Version:	@(#)m_headland.c	1.0.12	2019/04/08
+ * Version:	@(#)m_headland.c	1.0.13	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -46,6 +46,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../cpu/x86.h"
 #include "../io.h"
@@ -109,7 +110,7 @@ headland_init(const device_t *info, void *arg)
 
 	case 12:	/* Arche Technologies AMA-932J-25 */
 		device_add(&headland_386_device);
-		if (video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL) {
 			/* Load the BIOS. */
 			rom_init(&dev->vid_bios, roms->vidfn,
 				 0xc0000, roms->vidsz, roms->vidsz - 1, 0, 0);

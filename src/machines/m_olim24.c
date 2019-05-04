@@ -21,7 +21,7 @@
  *		data at all, so there seems to not be a way to properly do
  *		that..  The chip's interrupt pin is not connected.
  *
- * Version:	@(#)m_olim24.c	1.0.19	2019/04/26
+ * Version:	@(#)m_olim24.c	1.0.209	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,6 +58,7 @@
 #include <time.h>
 #define dbglog kbd_log
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -472,7 +473,7 @@ rtc_start(nvr_t *nvr)
     struct tm tm;
 
     /* Initialize the internal and chip times. */
-    if (time_sync != TIME_SYNC_DISABLED) {
+    if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
 	rtc_time_set(nvr->regs, &tm);

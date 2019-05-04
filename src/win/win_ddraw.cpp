@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft DirectDraw 9.
  *
- * Version:	@(#)win_ddraw.cpp	1.0.21	2019/04/29
+ * Version:	@(#)win_ddraw.cpp	1.0.22	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../device.h"
 #include "../ui/ui.h"
 #include "../plat.h"
@@ -168,7 +169,7 @@ ddraw_fs_size(RECT w_rect, RECT *r_dest, int w, int h)
     int ratio_w, ratio_h;
     double hsr, gsr, ra, d;
 
-    switch (vid_fullscreen_scale) {
+    switch (config.vid_fullscreen_scale) {
 	case FULLSCR_SCALE_FULL:
 		ddraw_fs_size_default(w_rect, r_dest);
 		break;
@@ -282,7 +283,7 @@ ddraw_blit_fs(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 
     for (yy = y1; yy < y2; yy++) {
 	if (scr) {
-		if (vid_grayscale || invert_display)
+		if (config.vid_grayscale || config.invert_display)
 			video_transform_copy((uint32_t *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &scr->line[y + yy][x], w);
 		else
 			memcpy((void *)((uintptr_t)ddsd.lpSurface + (yy * ddsd.lPitch)), &scr->line[y + yy][x], w * 4);
@@ -363,7 +364,7 @@ ddraw_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     for (yy = y1; yy < y2; yy++) {
 	if (scr) {
 		if ((y + yy) >= 0 && (y + yy) < scr->h) {
-			if (vid_grayscale || invert_display)
+			if (config.vid_grayscale || config.invert_display)
 				video_transform_copy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &scr->line[y + yy][x], w);
 			else
 				memcpy((uint32_t *) &(((uint8_t *) ddsd.lpSurface)[yy * ddsd.lPitch]), &scr->line[y + yy][x], w * 4);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the network module.
  *
- * Version:	@(#)network.c	1.0.19	2019/03/06
+ * Version:	@(#)network.c	1.0.20	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -53,6 +53,7 @@
 #define HAVE_STDARG_H
 #define dbglog network_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -88,15 +89,15 @@ static const struct {
     const char		*internal_name;
     const network_t	*net;
 } networks[] = {
-    { "none",	NULL		},
+    { "none",		NULL		},
 
-    { "slirp",	&network_slirp	},
-    { "pcap",	&network_pcap	},
+    { "slirp",		&network_slirp	},
+    { "pcap",		&network_pcap	},
 #ifdef USE_VNS
-    { "vns",	&network_vns	},
+    { "vns",		&network_vns	},
 #endif
 
-    { NULL,	NULL		}
+    { NULL,		NULL		}
 };
 
 
@@ -104,15 +105,13 @@ static const struct {
 int
 network_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 	
-    while (networks[c].internal_name != NULL) {
+    for (c = 0; networks[c].internal_name != NULL; c++)
 	if (! strcmp(networks[c].internal_name, s))
-			return(c);
-	c++;
-    }
+		return(c);
 
-    /* Not found. */
+    /* Not found or not available. */
     return(0);
 }
 
@@ -211,15 +210,14 @@ network_end(void)
 void
 network_init(void)
 {
-    wchar_t temp[512];
     int i, k;
 
     /* Clear the local data. */
     memset(&netdata, 0x00, sizeof(netdata_t));
 
     /* Initialize to a known state. */
-    network_type = 0;
-    network_card = 0;
+    config.network_type = NET_NONE;
+    config.network_card = NET_CARD_NONE;
 
     /* Create a first device entry that's always there, as needed by UI. */
     strcpy(network_host_devs[0].device, "none");
@@ -232,15 +230,6 @@ network_init(void)
 
 	/* Try to load network provider module. */
 	k = networks[i].net->init(&network_host_devs[network_host_ndev]);
-	if ((k < 0) && (i == network_type)) {
-		/* Provider not available. */
-		swprintf(temp, sizeof_w(temp),
-			 get_string(IDS_ERR_NOLIB),
-			 networks[i].net->name,
-			 network_host_devs[network_host_ndev].description);
-		ui_msgbox(MBX_ERROR, temp);
-		continue;
-	}
 
 	/* If they have interfaces, add them. */
 	if (k > 0)
@@ -256,38 +245,35 @@ network_init(void)
  * finished initializing itself, to link itself to the platform support
  * modules.
  */
-void
+int
 network_attach(void *dev, uint8_t *mac, NETRXCB rx)
 {
     wchar_t temp[256];
 
-    if (network_card == 0) return;
+    if (config.network_card == NET_CARD_NONE)
+	return(1);
 
-    /* Save the card's info. */
+    /* Reset the network provider module. */
+    if (networks[config.network_type].net->reset(mac) < 0) {
+	/* Tell user we can't do this (at the moment.) */
+	swprintf(temp, sizeof_w(temp), get_string(IDS_ERR_NONET),
+		 networks[config.network_type].net->name);
+
+	(void)ui_msgbox(MBX_ERROR, temp);
+
+	return(0);
+    }
+
+    /* All good. Save the card's info. */
     netdata.priv = dev;
     netdata.rx = rx;
     netdata.mac = mac;
 
-    /* Reset the network provider module. */
-    if (networks[network_type].net->reset(mac) < 0) {
-	/* Tell user we can't do this (at the moment.) */
-	swprintf(temp, sizeof_w(temp),
-		 get_string(IDS_ERR_NONET), networks[network_type].net->name);
-	ui_msgbox(MBX_ERROR, temp);
-
-	// FIXME: we should ask in the dialog if they want to
-	//	  reconfigure or quit, and throw them into the
-	//	  Settings dialog if yes.
-
-	/* Disable network. */
-	network_type = 0;
-
-	return;
-    }
-
     /* Create the network events. */
     netdata.poll_wake = thread_create_event();
     netdata.poll_complete = thread_create_event();
+
+    return(1);
 }
 
 
@@ -295,16 +281,15 @@ network_attach(void *dev, uint8_t *mac, NETRXCB rx)
 void
 network_close(void)
 {
-    int i = 0;
+    int i;
 
     /* If already closed, do nothing. */
     if (netdata.mutex == NULL) return;
 
     /* Force-close the network provider modules. */
-    while (networks[i].internal_name != NULL) {
+    for (i = 0; networks[i].internal_name != NULL; i++) {
 	if (networks[i].net)
 		networks[i].net->close();
-	i++;
     }
 
     /* Close the network events. */
@@ -339,11 +324,11 @@ network_reset(void)
     const device_t *dev;
 
 #ifdef ENABLE_NETWORK_LOG
-    INFO("NETWORK: reset (type=%d, card=%d) debug=%d\n",
-		network_type, network_card, network_do_log);
+    INFO("NETWORK: reset (type=%i, card=%i) debug=%i\n",
+	config.network_type, config.network_card, network_do_log);
 #else
-    INFO("NETWORK: reset (type=%d, card=%d)\n",
-			network_type, network_card);
+    INFO("NETWORK: reset (type=%i, card=%i)\n",
+	config.network_type, config.network_card);
 #endif
     ui_sb_icon_update(SB_NETWORK, 0);
 
@@ -351,15 +336,18 @@ network_reset(void)
     network_close();
 
     /* If no active card, we're done. */
-    if ((network_type == 0) || (network_card == 0)) return;
+    if ((config.network_type == NET_NONE) ||
+	(config.network_card == NET_CARD_NONE)) return;
+
+    /* All good. */
+    INFO("NETWORK: set up for %s, card='%s'\n",
+	network_getname(config.network_type),
+	network_card_getname(config.network_card));
 
     netdata.mutex = thread_create_mutex(L"VARCem.NetMutex");
 
-    INFO("NETWORK: set up for %s, card='%s'\n",
-	network_getname(network_type), network_card_getname(network_card));
-
     /* Add the selected card to the I/O system. */
-    dev = network_card_getdevice(network_card);
+    dev = network_card_getdevice(config.network_card);
     if (dev != NULL)
 	device_add(dev);
 }
@@ -379,7 +367,7 @@ network_tx(uint8_t *bufp, int len)
 }
 #endif
 
-    networks[network_type].net->send(bufp, len);
+    networks[config.network_type].net->send(bufp, len);
 
     ui_sb_icon_update(SB_NETWORK, 0);
 }
@@ -410,7 +398,7 @@ network_rx(uint8_t *bufp, int len)
 int
 network_card_to_id(const char *devname)
 {
-    int i = 0;
+    int i;
 
     for (i = 0; i < network_host_ndev; i++) {
 	if (! strcmp(network_host_devs[i].device, devname)) {

@@ -8,13 +8,13 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.18	2018/10/24
+ * Version:	@(#)openal.c	1.0.19	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -53,6 +53,7 @@
 #endif
 #define dbglog sound_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "sound.h"
@@ -252,12 +253,12 @@ openal_reset(void)
      * If the current MIDI device is neither "none", nor system MIDI,
      * initialize the MIDI buffer and source, otherwise, do not.
      */
-    str = midi_device_get_internal_name(midi_device);
+    str = midi_device_get_internal_name(config.midi_device);
     if ((str != NULL) &&
 	(!strcmp(str, "none") || !strcmp(str, SYSTEM_MIDI_INT))) init_midi = 1;
 
 #ifdef USE_OPENAL
-    if (sound_is_float) {
+    if (config.sound_is_float) {
 	buf = (float *)mem_alloc((BUFLEN << 1) * sizeof(float));
 	cd_buf = (float *)mem_alloc((CD_BUFLEN << 1) * sizeof(float));
 	if (init_midi)
@@ -300,7 +301,7 @@ openal_reset(void)
 	f_alSourcei (source[2], AL_SOURCE_RELATIVE, AL_TRUE      );
     }
 
-    if (sound_is_float) {
+    if (config.sound_is_float) {
 	memset(buf,0,BUFLEN*2*sizeof(float));
 	memset(cd_buf,0,BUFLEN*2*sizeof(float));
 	if (init_midi)
@@ -313,7 +314,7 @@ openal_reset(void)
     }
 
     for (c=0; c<4; c++) {
-	if (sound_is_float) {
+	if (config.sound_is_float) {
 		f_alBufferData(buffers[c], AL_FORMAT_STEREO_FLOAT32, buf, BUFLEN*2*sizeof(float), FREQ);
 		f_alBufferData(buffers_cd[c], AL_FORMAT_STEREO_FLOAT32, cd_buf, CD_BUFLEN*2*sizeof(float), CD_FREQ);
 		if (init_midi)
@@ -335,7 +336,7 @@ openal_reset(void)
     if (init_midi)
 	f_alSourcePlay(source[2]);
 
-    if (sound_is_float) {
+    if (config.sound_is_float) {
 	if (init_midi)
 		free(midi_buf);
 	free(cd_buf);
@@ -369,12 +370,12 @@ openal_buffer_common(void *buf, uint8_t src, int size, int freq)
 
     f_alGetSourcei(source[src], AL_BUFFERS_PROCESSED, &processed);
     if (processed >= 1) {
-	gain = pow(10.0, (double)sound_gain / 20.0);
+	gain = pow(10.0, (double)config.sound_gain / 20.0);
 	f_alListenerf(AL_GAIN, (float)gain);
 
 	f_alSourceUnqueueBuffers(source[src], 1, &buffer);
 
-	if (sound_is_float) {
+	if (config.sound_is_float) {
 		f_alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, buf, size * sizeof(float), freq);
 	} else {
 		f_alBufferData(buffer, AL_FORMAT_STEREO16, buf, size * sizeof(int16_t), freq);

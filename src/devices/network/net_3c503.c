@@ -8,17 +8,17 @@
  *		Implementation of the following network controllers:
  *			- 3Com Etherlink II 3c503 (ISA 8-bit).
  *
- * Version:	@(#)net_3c503.c	1.0.6	2019/04/11
+ * Version:	@(#)net_3c503.c	1.0.7	2019/05/02
  *
  * Based on	@(#)3c503.cpp Carl (MAME)
  *
- * Authors:	TheCollector1995, <mariogplayer@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		TheCollector1995, <mariogplayer@gmail.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		Fred N. van Kempen, <decwiz@yahoo.com>
  *		Carl, <unknown e-mail address>
  *
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
- *		Copyright 2017,2018 Fred N. van Kempen.
  *		Portions Copyright (C) 2018  MAME Project
  *
  * This program is free software; you can redistribute it and/or modify
@@ -89,15 +89,15 @@ typedef struct {
 	uint8_t rfmsb;
 	uint8_t rflsb;
     } regs;
-} tc503_t;
+} el2_t;
 
 
-static void	tc503_rx(void *, uint8_t *, int);
-static void	tc503_tx(tc503_t *, uint32_t);
+static void	el2_rx(void *, uint8_t *, int);
+static void	el2_tx(el2_t *, uint32_t);
 
 
 static void
-tc503_interrupt(tc503_t *dev, int set)
+el2_interrupt(el2_t *dev, int set)
 {
     switch (dev->base_irq) {
 	case 2:
@@ -125,9 +125,9 @@ tc503_interrupt(tc503_t *dev, int set)
 
 
 static void
-tc503_ram_write(uint32_t addr, uint8_t val, void *priv)
+el2_ram_write(uint32_t addr, uint8_t val, void *priv)
 {
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
 
     if ((addr & 0x3fff) >= 0x2000)
 	return;
@@ -137,9 +137,9 @@ tc503_ram_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-tc503_ram_read(uint32_t addr, void *priv)
+el2_ram_read(uint32_t addr, void *priv)
 {
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
 
     if ((addr & 0x3fff) >= 0x2000)
 	return(0xff);
@@ -149,7 +149,7 @@ tc503_ram_read(uint32_t addr, void *priv)
 
 
 static void
-tc503_set_drq(tc503_t *dev)
+el2_set_drq(el2_t *dev)
 {
     switch (dev->dma_channel) {
 	case 1:
@@ -169,9 +169,9 @@ tc503_set_drq(tc503_t *dev)
 
 /* Restore state to power-up, cancelling all I/O. */
 static void
-tc503_reset(void *priv)
+el2_reset(void *priv)
 {
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
     int i;
 
     DEBUG("3C503: reset\n");
@@ -232,7 +232,7 @@ tc503_reset(void *priv)
 
     dev->regs.ctrl = 0x0a;	
 
-    tc503_interrupt(dev, 0);
+    el2_interrupt(dev, 0);
 }
 
 
@@ -246,7 +246,7 @@ tc503_reset(void *priv)
  * and there is 16K of buffer memory starting at 16K.
  */
 static uint32_t
-tc503_chipmem_read(tc503_t *dev, uint32_t addr, unsigned int len)
+el2_chipmem_read(el2_t *dev, uint32_t addr, unsigned int len)
 {
     uint32_t retval = 0;
 
@@ -271,7 +271,7 @@ tc503_chipmem_read(tc503_t *dev, uint32_t addr, unsigned int len)
 
 
 static void
-tc503_chipmem_write(tc503_t *dev, uint32_t addr, uint32_t val, unsigned len)
+el2_chipmem_write(el2_t *dev, uint32_t addr, uint32_t val, unsigned len)
 {
     if ((addr >= DP8390_WORD_MEMSTART) && (addr < DP8390_WORD_MEMEND)) {
 	dev->dp8390.mem[addr-DP8390_WORD_MEMSTART] = val & 0xff;
@@ -284,7 +284,7 @@ tc503_chipmem_write(tc503_t *dev, uint32_t addr, uint32_t val, unsigned len)
 
 /* Handle reads/writes to the 'zeroth' page of the DS8390 register file. */
 static uint32_t
-tc503_page0_read(tc503_t *dev, uint32_t off, unsigned int len)
+el2_page0_read(el2_t *dev, uint32_t off, unsigned int len)
 {
     uint8_t retval = 0;
 
@@ -392,7 +392,7 @@ tc503_page0_read(tc503_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-tc503_page0_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
+el2_page0_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 {
     uint8_t val2;
 
@@ -400,9 +400,9 @@ tc503_page0_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
 
     /* break up outw into two outb's */
     if (len == 2) {
-	tc503_page0_write(dev, off, (val & 0xff), 1);
+	el2_page0_write(dev, off, (val & 0xff), 1);
 	if (off < 0x0f)
-		tc503_page0_write(dev, off+1, ((val>>8)&0xff), 1);
+		el2_page0_write(dev, off+1, ((val>>8)&0xff), 1);
 	return;
     }
 
@@ -462,7 +462,7 @@ tc503_page0_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
 		        (dev->dp8390.IMR.tx_inte << 1) |
 		        (dev->dp8390.IMR.rx_inte));
 		if (val == 0x00)
-			tc503_interrupt(dev, 0);
+			el2_interrupt(dev, 0);
 		break;
 
 	case 0x08:	/* RSAR0 */
@@ -587,9 +587,9 @@ tc503_page0_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
 		        (dev->dp8390.ISR.pkt_tx    << 1) |
 		        (dev->dp8390.ISR.pkt_rx));
 		if (((val & val2) & 0x7f) == 0)
-			tc503_interrupt(dev, 0);
+			el2_interrupt(dev, 0);
 		else
-			tc503_interrupt(dev, 1);
+			el2_interrupt(dev, 1);
 		break;
 
 	default:
@@ -601,7 +601,7 @@ tc503_page0_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
 
 /* Handle reads/writes to the first page of the DS8390 register file. */
 static uint32_t
-tc503_page1_read(tc503_t *dev, uint32_t off, unsigned int len)
+el2_page1_read(el2_t *dev, uint32_t off, unsigned int len)
 {
     DBGLOG(2, "3C503: Page1 read from register 0x%02x, len=%u\n", off, len);
 
@@ -637,7 +637,7 @@ tc503_page1_read(tc503_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-tc503_page1_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
+el2_page1_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 {
     DBGLOG(2, "3C503: Page1 write to register 0x%02x, len=%u, value=0x%04x\n",
 								off, len, val);
@@ -681,7 +681,7 @@ tc503_page1_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
 
 /* Handle reads/writes to the second page of the DS8390 register file. */
 static uint32_t
-tc503_page2_read(tc503_t *dev, uint32_t off, unsigned int len)
+el2_page2_read(el2_t *dev, uint32_t off, unsigned int len)
 {
     DBGLOG(2, "3C503: Page2 read from register 0x%02x, len=%u\n", off, len);
   
@@ -758,7 +758,7 @@ tc503_page2_read(tc503_t *dev, uint32_t off, unsigned int len)
    affect internal operation, but let them through for now
    and print a warning. */
 static void
-tc503_page2_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
+el2_page2_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 {
     DBGLOG(2, "3C503: Page2 write to register 0x%02x, len=%u, value=0x%04x\n",
 								off, len, val);
@@ -819,7 +819,7 @@ tc503_page2_write(tc503_t *dev, uint32_t off, uint32_t val, unsigned len)
 
 /* Routines for handling reads/writes to the Command Register. */
 static uint32_t
-tc503_read_cr(tc503_t *dev)
+el2_read_cr(el2_t *dev)
 {
     uint32_t retval;
 
@@ -836,7 +836,7 @@ tc503_read_cr(tc503_t *dev)
 
 
 static void
-tc503_write_cr(tc503_t *dev, uint32_t val)
+el2_write_cr(el2_t *dev, uint32_t val)
 {
     DBGLOG(1, "3C503: wrote 0x%02x to CR\n", val);
 
@@ -867,7 +867,7 @@ tc503_write_cr(tc503_t *dev, uint32_t val)
     if (dev->dp8390.CR.rdma_cmd == 3) {
 	/* Set up DMA read from receive ring */
 	dev->dp8390.remote_start = dev->dp8390.remote_dma = dev->dp8390.bound_ptr * 256;
-	dev->dp8390.remote_bytes = (uint16_t) tc503_chipmem_read(dev, dev->dp8390.bound_ptr * 256 + 2, 2);
+	dev->dp8390.remote_bytes = (uint16_t) el2_chipmem_read(dev, dev->dp8390.bound_ptr * 256 + 2, 2);
 	DEBUG("3C503: sending buffer %x length %d\n",
 	      dev->dp8390.remote_start, dev->dp8390.remote_bytes);
     }
@@ -878,7 +878,7 @@ tc503_write_cr(tc503_t *dev, uint32_t val)
 		DEBUG("3C503: loop mode %d not supported\n",
 				 dev->dp8390.TCR.loop_cntl);
 	} else {
-		tc503_rx(dev,
+		el2_rx(dev,
 			  &dev->dp8390.mem[dev->dp8390.tx_page_start*256 - DP8390_WORD_MEMSTART],
 			  dev->dp8390.tx_bytes);
 	}
@@ -902,7 +902,7 @@ tc503_write_cr(tc503_t *dev, uint32_t val)
 		DEBUG("3C503: CR write, tx timer still active\n");
 	}
 
-	tc503_tx(dev, val);
+	el2_tx(dev, val);
     }
 
     /* Linux probes for an interrupt by setting up a remote-DMA read
@@ -911,17 +911,17 @@ tc503_write_cr(tc503_t *dev, uint32_t val)
     if (dev->dp8390.CR.rdma_cmd == 0x01 && dev->dp8390.CR.start && dev->dp8390.remote_bytes == 0) {
 	dev->dp8390.ISR.rdma_done = 1;
 	if (dev->dp8390.IMR.rdma_inte) {
-		tc503_interrupt(dev, 1);
-		tc503_interrupt(dev, 0);
+		el2_interrupt(dev, 1);
+		el2_interrupt(dev, 0);
 	}
     }
 }
 
 
 static uint8_t
-tc503_lo_read(uint16_t addr, void *priv)
+el2_lo_read(uint16_t addr, void *priv)
 {
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
     uint8_t retval = 0;
     int off = addr - dev->base_address;
 
@@ -929,18 +929,18 @@ tc503_lo_read(uint16_t addr, void *priv)
 	case 0x00:
 		DEBUG(0, "Read offset=%04x\n", off);
 		if (off == 0x00)
-			retval = tc503_read_cr(dev);
+			retval = el2_read_cr(dev);
 		else switch(dev->dp8390.CR.pgsel) {
 			case 0x00:
-				retval = tc503_page0_read(dev, off, 1);
+				retval = el2_page0_read(dev, off, 1);
 				break;
 
 			case 0x01:
-				retval = tc503_page1_read(dev, off, 1);
+				retval = el2_page1_read(dev, off, 1);
 				break;
 
 			case 0x02:
-				retval = tc503_page2_read(dev, off, 1);
+				retval = el2_page2_read(dev, off, 1);
 				break;
 
 			case 0x03:
@@ -967,9 +967,9 @@ tc503_lo_read(uint16_t addr, void *priv)
 
 
 static void
-tc503_lo_write(uint16_t addr, uint8_t val, void *priv)
+el2_lo_write(uint16_t addr, uint8_t val, void *priv)
 {
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
     int off = addr - dev->base_address;
 
     switch ((dev->regs.ctrl >> 2) & 3) {
@@ -979,18 +979,18 @@ tc503_lo_write(uint16_t addr, uint8_t val, void *priv)
 		   page being selected by the PS0,PS1 registers in the
 		   command register */
 		if (off == 0x00)
-			tc503_write_cr(dev, val);
+			el2_write_cr(dev, val);
 		else switch(dev->dp8390.CR.pgsel) {
 			case 0x00:
-				tc503_page0_write(dev, off, val, 1);
+				el2_page0_write(dev, off, val, 1);
 				break;
 
 			case 0x01:
-				tc503_page1_write(dev, off, val, 1);
+				el2_page1_write(dev, off, val, 1);
 				break;
 
 			case 0x02:
-				tc503_page2_write(dev, off, val, 1);
+				el2_page2_write(dev, off, val, 1);
 				break;
 
 			case 0x03:
@@ -1009,9 +1009,9 @@ tc503_lo_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-tc503_hi_read(uint16_t addr, void *priv)
+el2_hi_read(uint16_t addr, void *priv)
 {
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
 
     DEBUG("3C503: Read GA address=%04x\n", addr);
 
@@ -1114,9 +1114,9 @@ tc503_hi_read(uint16_t addr, void *priv)
 		if (!(dev->regs.ctrl & 0x80))
 			return 0xff;
 
-		tc503_set_drq(dev); 
+		el2_set_drq(dev); 
 
-		return tc503_chipmem_read(dev, dev->regs.da++, 1);
+		return el2_chipmem_read(dev, dev->regs.da++, 1);
     }
 
     return 0;
@@ -1124,9 +1124,9 @@ tc503_hi_read(uint16_t addr, void *priv)
 
 
 static void
-tc503_hi_write(uint16_t addr, uint8_t val, void *priv)
+el2_hi_write(uint16_t addr, uint8_t val, void *priv)
 {
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
 
     DEBUG("3C503: Write GA address=%04x, val=%04x\n", addr, val);
 
@@ -1162,16 +1162,16 @@ tc503_hi_write(uint16_t addr, uint8_t val, void *priv)
 		}
 
 		if (!(val & 0x80))
-			tc503_interrupt(dev, 1);
+			el2_interrupt(dev, 1);
 		else
-			tc503_interrupt(dev, 0);
+			el2_interrupt(dev, 0);
 
 		dev->regs.gacfr = val;
 		break;
 
 	case 0x06:
 		if (val & 1) {
-			tc503_reset(dev);
+			el2_reset(dev);
 			dev->dp8390.ISR.reset = 1;
 			dev->regs.ctrl = 0x0b;
 			return;
@@ -1244,42 +1244,42 @@ tc503_hi_write(uint16_t addr, uint8_t val, void *priv)
 		if (!(dev->regs.ctrl & 0x80))
 			return;
 
-		tc503_set_drq(dev); 
+		el2_set_drq(dev); 
 
-		tc503_chipmem_write(dev, dev->regs.da++, val, 1);
+		el2_chipmem_write(dev, dev->regs.da++, val, 1);
 		break;
     }
 }
 
 
 static void
-tc503_ioremove(tc503_t *dev, uint16_t addr)
+el2_ioremove(el2_t *dev, uint16_t addr)
 {
     io_removehandler(addr, 16,
-		     tc503_lo_read, NULL, NULL,
-		     tc503_lo_write, NULL, NULL, dev);	
+		     el2_lo_read, NULL, NULL,
+		     el2_lo_write, NULL, NULL, dev);	
 
     io_removehandler(addr+0x400, 16,
-		     tc503_hi_read, NULL, NULL,
-		     tc503_hi_write, NULL, NULL, dev);	
+		     el2_hi_read, NULL, NULL,
+		     el2_hi_write, NULL, NULL, dev);	
 }
 
 
 static void
-tc503_ioset(tc503_t *dev, uint16_t addr)
+el2_ioset(el2_t *dev, uint16_t addr)
 {
     io_sethandler(addr, 16,
-		  tc503_lo_read, NULL, NULL,
-		  tc503_lo_write, NULL, NULL, dev);	
+		  el2_lo_read, NULL, NULL,
+		  el2_lo_write, NULL, NULL, dev);	
 
     io_sethandler(addr+0x400, 16,
-		  tc503_hi_read, NULL, NULL,
-		  tc503_hi_write, NULL, NULL, dev);
+		  el2_hi_read, NULL, NULL,
+		  el2_hi_write, NULL, NULL, dev);
 }
 
 
 static void
-tc503_tx(tc503_t *dev, uint32_t val)
+el2_tx(el2_t *dev, uint32_t val)
 {
     dev->dp8390.CR.tx_packet = 0;
     dev->dp8390.TSR.tx_ok = 1;
@@ -1287,7 +1287,7 @@ tc503_tx(tc503_t *dev, uint32_t val)
 
     /* Generate an interrupt if not masked */
     if (dev->dp8390.IMR.tx_inte)
-	tc503_interrupt(dev, 1);
+	el2_interrupt(dev, 1);
 
     dev->dp8390.tx_timer_active = 0;
 }
@@ -1300,10 +1300,10 @@ tc503_tx(tc503_t *dev, uint32_t val)
  * it is copied into it and the receive process is updated.
  */
 static void
-tc503_rx(void *priv, uint8_t *buf, int io_len)
+el2_rx(void *priv, uint8_t *buf, int io_len)
 {
     static uint8_t bcast_addr[6] = {0xff,0xff,0xff,0xff,0xff,0xff};
-    tc503_t *dev = (tc503_t *)priv;
+    el2_t *dev = (el2_t *)priv;
     uint8_t pkthdr[4];
     uint8_t *startptr;
     int rx_pages, avail;
@@ -1439,21 +1439,37 @@ tc503_rx(void *priv, uint8_t *buf, int io_len)
     dev->dp8390.ISR.pkt_rx = 1;
 
     if (dev->dp8390.IMR.rx_inte)
-	tc503_interrupt(dev, 1);
+	el2_interrupt(dev, 1);
 
     /* FIXME: move to upper layer */
     ui_sb_icon_update(SB_NETWORK, 0);
 }
 
 
+static void
+el2_close(void *priv)
+{
+    el2_t *dev = (el2_t *)priv;
+	
+    /* Make sure the platform layer is shut down. */
+    network_close();
+
+    el2_ioremove(dev, dev->base_address);
+
+    DEBUG("3C503: closed\n");
+
+    free(dev);
+}
+
+
 static void *
-tc503_init(const device_t *info, UNUSED(void *parent))
+el2_init(const device_t *info, UNUSED(void *parent))
 {
     uint32_t mac;
-    tc503_t *dev;
+    el2_t *dev;
 
-    dev = (tc503_t *)mem_alloc(sizeof(tc503_t));
-    memset(dev, 0x00, sizeof(tc503_t));
+    dev = (el2_t *)mem_alloc(sizeof(el2_t));
+    memset(dev, 0x00, sizeof(el2_t));
     dev->maclocal[0] = 0x02;  /* 02:60:8C (3Com OID) */
     dev->maclocal[1] = 0x60;
     dev->maclocal[2] = 0x8C;
@@ -1471,7 +1487,7 @@ tc503_init(const device_t *info, UNUSED(void *parent))
      *
      * PnP and PCI devices start with address spaces inactive.
      */
-    tc503_ioset(dev, dev->base_address);
+    el2_ioset(dev, dev->base_address);
 	
     /* Set up our BIA. */
     if (mac & 0xff000000) {
@@ -1496,15 +1512,19 @@ tc503_init(const device_t *info, UNUSED(void *parent))
 	 dev->dp8390.physaddr[3], dev->dp8390.physaddr[4], dev->dp8390.physaddr[5]);
 
     /* Reset the board. */
-    tc503_reset(dev);
+    el2_reset(dev);
 
     /* Attach ourselves to the network module. */
-    network_attach(dev, dev->dp8390.physaddr, tc503_rx);
+    if (! network_attach(dev, dev->dp8390.physaddr, el2_rx)) {
+	el2_close(dev);
+
+	return(NULL);
+    }
 
     /* Map this system into the memory map. */
     mem_map_add(&dev->ram_mapping, dev->bios_addr, 0x4000,
-		tc503_ram_read, NULL, NULL,
-		tc503_ram_write, NULL, NULL,
+		el2_ram_read, NULL, NULL,
+		el2_ram_write, NULL, NULL,
 		NULL, MEM_MAPPING_EXTERNAL, dev);
     mem_map_disable(&dev->ram_mapping);
 
@@ -1512,23 +1532,7 @@ tc503_init(const device_t *info, UNUSED(void *parent))
 }
 
 
-static void
-tc503_close(void *priv)
-{
-    tc503_t *dev = (tc503_t *)priv;
-	
-    /* Make sure the platform layer is shut down. */
-    network_close();
-
-    tc503_ioremove(dev, dev->base_address);
-
-    DEBUG("3C503: closed\n");
-
-    free(dev);
-}
-
-
-static const device_config_t tc503_config[] = {
+static const device_config_t el2_config[] = {
     {
 	"base", "Address", CONFIG_HEX16, "", 0x300,
 	{
@@ -1632,12 +1636,12 @@ static const device_config_t tc503_config[] = {
 };
 
 
-const device_t tc503_device = {
+const device_t el2_device = {
     "3Com EtherLink II",
     DEVICE_ISA,
     0,
     NULL,
-    tc503_init, tc503_close, NULL,
+    el2_init, el2_close, NULL,
     NULL, NULL, NULL, NULL,
-    tc503_config
+    el2_config
 };

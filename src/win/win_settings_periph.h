@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_periph.h	1.0.19	2019/04/23
+ * Version:	@(#)win_settings_periph.h	1.0.20	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,7 @@ static int	hdc_to_list[20],
 
 /* Populate the HDC combo. */
 static void
-recalc_scsi_list(const machine_t *m, HWND hdlg)
+recalc_scsi_list(const machine_t *m, HWND hdlg, int card)
 {
     WCHAR temp[128];
     char tempA[128];
@@ -94,15 +94,21 @@ recalc_scsi_list(const machine_t *m, HWND hdlg)
 	scsi_to_list[c] = d;			
 	list_to_scsi[d++] = c++;
     }
+    SendMessage(h, CB_SETCURSEL, scsi_to_list[card], 0);
 
-    SendMessage(h, CB_SETCURSEL, scsi_to_list[temp_scsi_card], 0);
     EnableWindow(h, d ? TRUE : FALSE);
+
+    h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
+    if (scsi_card_has_config(card))
+	EnableWindow(h, TRUE);
+    else
+	EnableWindow(h, FALSE);
 }
 
 
 /* Populate the HDC combo. */
 static void
-recalc_hdc_list(const machine_t *m, HWND hdlg)
+recalc_hdc_list(const machine_t *m, HWND hdlg, int card)
 {
     WCHAR temp[128];
     char tempA[128];
@@ -151,9 +157,15 @@ recalc_hdc_list(const machine_t *m, HWND hdlg)
 	list_to_hdc[d] = c;
 	c++; d++;
     }
+    SendMessage(h, CB_SETCURSEL, hdc_to_list[card], 0);
 
-    SendMessage(h, CB_SETCURSEL, hdc_to_list[temp_hdc_type], 0);
     EnableWindow(h, d ? TRUE : FALSE);
+
+    h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
+    if (hdc_has_config(card))
+	EnableWindow(h, TRUE);
+    else
+	EnableWindow(h, FALSE);
 }
 
 
@@ -170,35 +182,23 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INITDIALOG:
 		/* Get info about the selected machine. */
-		dev = machine_get_device_ex(temp_machine);
+		dev = machine_get_device_ex(temp_cfg.machine_type);
 		m = (machine_t *)dev->mach_info;
 
-		recalc_scsi_list(m, hdlg);
+		recalc_scsi_list(m, hdlg, temp_cfg.scsi_card);
 
-		h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
-		if (scsi_card_has_config(temp_scsi_card))
-			EnableWindow(h, TRUE);
-		else
-			EnableWindow(h, FALSE);
-
-		recalc_hdc_list(m, hdlg);
-
-		h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
-		if (hdc_has_config(temp_hdc_type))
-			EnableWindow(h, TRUE);
-		else
-			EnableWindow(h, FALSE);
+		recalc_hdc_list(m, hdlg, temp_cfg.hdc_type);
 
 		if (m->flags & MACHINE_AT) {
 			h = GetDlgItem(hdlg, IDC_CHECK_IDE_TER);
 			EnableWindow(h, TRUE);
-			SendMessage(h, BM_SETCHECK, temp_ide_ter, 0);
+			SendMessage(h, BM_SETCHECK, temp_cfg.ide_ter_enabled, 0);
 			h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_TER);
 			EnableWindow(h, TRUE);
 
 			h = GetDlgItem(hdlg, IDC_CHECK_IDE_QUA);
 			EnableWindow(h, TRUE);
-			SendMessage(h, BM_SETCHECK, temp_ide_qua, 0);
+			SendMessage(h, BM_SETCHECK, temp_cfg.ide_qua_enabled, 0);
 			h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_QUA);
 			EnableWindow(h, TRUE);
 		} else {
@@ -214,7 +214,7 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		h = GetDlgItem(hdlg, IDC_CHECK_BUGGER);
-		SendMessage(h, BM_SETCHECK, temp_bugger, 0);
+		SendMessage(h, BM_SETCHECK, temp_cfg.bugger_enabled, 0);
 
 		/* Populate the ISA RTC card dropdown. */
 		h = GetDlgItem(hdlg, IDC_COMBO_ISARTC);
@@ -233,9 +233,9 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 			}
 		}
-		SendMessage(h, CB_SETCURSEL, temp_isartc, 0);
+		SendMessage(h, CB_SETCURSEL, temp_cfg.isartc_type, 0);
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_ISARTC);
-		if (temp_isartc != 0)
+		if (temp_cfg.isartc_type != 0)
 			EnableWindow(h, TRUE);
 		  else
 			EnableWindow(h, FALSE);
@@ -258,9 +258,9 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 					SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 				}
 			}
-			SendMessage(h, CB_SETCURSEL, temp_isamem[c], 0);
+			SendMessage(h, CB_SETCURSEL, temp_cfg.isamem_type[c], 0);
 			h = GetDlgItem(hdlg, IDC_CONFIGURE_ISAMEM_1 + c);
-			if (temp_isamem[c] != 0)
+			if (temp_cfg.isamem_type[c] != 0)
 				EnableWindow(h, TRUE);
 			  else
 				EnableWindow(h, FALSE);
@@ -272,10 +272,10 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 			case IDC_COMBO_SCSI:
 				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_SCSI);
-				if (scsi_card_has_config(temp_scsi_card))
+				if (scsi_card_has_config(temp_cfg.scsi_card))
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);
@@ -283,17 +283,17 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_SCSI:
 				h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
-				temp_scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.scsi_card = list_to_scsi[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= dlg_devconf(hdlg, scsi_card_getdevice(temp_scsi_card));
+				temp_deviceconfig |= dlg_devconf(hdlg, scsi_card_getdevice(temp_cfg.scsi_card));
 				break;
 
 			case IDC_COMBO_HDC:
 				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-				temp_hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_HDC);
-				if (hdc_has_config(temp_hdc_type))
+				if (hdc_has_config(temp_cfg.hdc_type))
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);
@@ -301,16 +301,16 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CONFIGURE_HDC:
 				h = GetDlgItem(hdlg, IDC_COMBO_HDC);
-				temp_hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
+				temp_cfg.hdc_type = list_to_hdc[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-				temp_deviceconfig |= dlg_devconf(hdlg, hdc_get_device(temp_hdc_type));
+				temp_deviceconfig |= dlg_devconf(hdlg, hdc_get_device(temp_cfg.hdc_type));
 				break;
 
 			case IDC_CHECK_IDE_TER:
         		        h = GetDlgItem(hdlg, IDC_CHECK_IDE_TER);
-				temp_ide_ter = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_cfg.ide_ter_enabled = (int)SendMessage(h, BM_GETCHECK, 0, 0);
         		        h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_TER);
-				EnableWindow(h, temp_ide_ter ? TRUE : FALSE);
+				EnableWindow(h, temp_cfg.ide_ter_enabled ? TRUE : FALSE);
 				break;
 
 			case IDC_CONFIGURE_IDE_TER:
@@ -319,9 +319,9 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_CHECK_IDE_QUA:
 	       		        h = GetDlgItem(hdlg, IDC_CHECK_IDE_QUA);
-				temp_ide_qua = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+				temp_cfg.ide_qua_enabled = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 	       		        h = GetDlgItem(hdlg, IDC_CONFIGURE_IDE_QUA);
-				EnableWindow(h, temp_ide_qua ? TRUE : FALSE);
+				EnableWindow(h, temp_cfg.ide_qua_enabled ? TRUE : FALSE);
 				break;
 
 			case IDC_CONFIGURE_IDE_QUA:
@@ -330,12 +330,18 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDC_COMBO_ISARTC:
 				h = GetDlgItem(hdlg, IDC_COMBO_ISARTC);
-				temp_isartc = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_cfg.isartc_type = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_ISARTC);
-				if (temp_isartc != 0)
+				if (temp_cfg.isartc_type != 0)
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);
+				break;
+
+			case IDC_CONFIGURE_ISARTC:
+				dev = isartc_get_device(temp_cfg.isartc_type);
+				if (dev != NULL)
+					temp_deviceconfig |= dlg_devconf(hdlg, dev);
 				break;
 
 			case IDC_COMBO_ISAMEM_1:
@@ -344,19 +350,13 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_ISAMEM_4:
 				c = LOWORD(wParam) - IDC_COMBO_ISAMEM_1;
 				h = GetDlgItem(hdlg, LOWORD(wParam));
-				temp_isamem[c] = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+				temp_cfg.isamem_type[c] = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 				h = GetDlgItem(hdlg, IDC_CONFIGURE_ISAMEM_1 + c);
-				if (temp_isamem[c] != 0)
+				if (temp_cfg.isamem_type[c] != 0)
 					EnableWindow(h, TRUE);
 				else
 					EnableWindow(h, FALSE);
-				break;
-
-			case IDC_CONFIGURE_ISARTC:
-				dev = isartc_get_device(temp_isartc);
-				if (dev != NULL)
-					temp_deviceconfig |= dlg_devconf(hdlg, dev);
 				break;
 
 			case IDC_CONFIGURE_ISAMEM_1:
@@ -376,14 +376,14 @@ peripherals_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_COMBO_HDC);
 		c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-		temp_hdc_type = list_to_hdc[c];
+		temp_cfg.hdc_type = list_to_hdc[c];
 
 		h = GetDlgItem(hdlg, IDC_COMBO_SCSI);
 		c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-		temp_scsi_card = list_to_scsi[c];
+		temp_cfg.scsi_card = list_to_scsi[c];
 
 		h = GetDlgItem(hdlg, IDC_CHECK_BUGGER);
-		temp_bugger = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_cfg.bugger_enabled = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		return FALSE;
 

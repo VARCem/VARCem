@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_ports.h	1.0.7	2018/10/24
+ * Version:	@(#)win_settings_ports.h	1.0.8	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,7 +54,7 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_INITDIALOG:
 		/* Set up the game port controls. */
 		h = GetDlgItem(hdlg, IDC_CHECK_GAME);
-		SendMessage(h, BM_SETCHECK, temp_game, 0);
+		SendMessage(h, BM_SETCHECK, temp_cfg.game_enabled, 0);
 
 		/* Set up the parallel port controls. */
 		for (i = 0; i < PARALLEL_MAX; i++) {
@@ -75,15 +75,14 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 
 				/* Currently selected device? */
-				if (temp_parallel_device[i] == c)
+				if (temp_cfg.parallel_device[i] == c)
 					d = c;
 				c++;
 			}
-
 			SendMessage(h, CB_SETCURSEL, d, 0);
 
 			/* Enable or disable this port. */
-			d = parallel_enabled[i];
+			d = temp_cfg.parallel_enabled[i];
 			EnableWindow(h, d ? TRUE : FALSE);
 			h = GetDlgItem(hdlg, IDC_CHECK_PARALLEL1+i);
 			SendMessage(h, BM_SETCHECK, d, 0);
@@ -92,7 +91,7 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		/* Set up the serial port controls. */
 		for (i = 0; i < SERIAL_MAX; i++) {
 			h = GetDlgItem(hdlg, IDC_CHECK_SERIAL1+i);
-			SendMessage(h, BM_SETCHECK, temp_serial[i], 0);
+			SendMessage(h, BM_SETCHECK, temp_cfg.serial_enabled[i], 0);
 		}
 		return TRUE;
 
@@ -112,20 +111,20 @@ ports_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVE_CFG:
 		h = GetDlgItem(hdlg, IDC_CHECK_GAME);
-		temp_game = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_cfg.game_enabled = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		for (i = 0; i < PARALLEL_MAX; i++) {
 			h = GetDlgItem(hdlg, IDC_CHECK_PARALLEL1+i);
-			temp_parallel[i] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+			temp_cfg.parallel_enabled[i] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 			h = GetDlgItem(hdlg, IDC_COMBO_PARALLEL1+i);
 			c = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-			temp_parallel_device[i] = c;
+			temp_cfg.parallel_device[i] = c;
 		}
 
 		for (i = 0; i < SERIAL_MAX; i++) {
 			h = GetDlgItem(hdlg, IDC_CHECK_SERIAL1+i);
-			temp_serial[i] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+			temp_cfg.serial_enabled[i] = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 		}
 		return FALSE;
 

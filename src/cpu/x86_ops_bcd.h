@@ -8,12 +8,12 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_bcd.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_bcd.h	1.0.2	2019/05/03
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2019 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -55,7 +55,7 @@ static int opAAA(uint32_t fetchdat)
 static int opAAD(uint32_t fetchdat)
 {
         int base = getbytef();
-        if (cpu_manufacturer != MANU_INTEL) base = 10;
+        if (cpu_manuf != MANU_INTEL) base = 10;
         AL = (AH * base) + AL;
         AH = 0;
         setznp16(AX);
@@ -67,7 +67,7 @@ static int opAAD(uint32_t fetchdat)
 static int opAAM(uint32_t fetchdat)
 {
         int base = getbytef();
-        if (!base || cpu_manufacturer != MANU_INTEL) base = 10;
+        if (!base || cpu_manuf != MANU_INTEL) base = 10;
         AH = AL / base;
         AL %= base;
         setznp16(AX);

@@ -10,7 +10,7 @@
  *
  * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)vnc.c	1.0.11	2019/04/29
+ * Version:	@(#)vnc.c	1.0.12	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -56,6 +56,7 @@
 //#define LIBVNCSERVER_HAVE_LIBPTHREAD
 #include <rfb/rfb.h>
 #include "emu.h"
+#include "config.h"
 #include "device.h"
 #include "devices/video/video.h"
 #include "devices/input/keyboard.h"
@@ -268,7 +269,7 @@ INFO("VNC: blit(%i,%i, %i,%i, %i,%i)\n", x,y, y1,y2, w,h);
 	p = (uint32_t *)&(((uint32_t *)rfb->frameBuffer)[yy*VNC_MAX_X]);
 
 	if ((y+yy) >= 0 && (y+yy) < VNC_MAX_Y) {
-		if (vid_grayscale || invert_display)
+		if (config.vid_grayscale || config.invert_display)
 			video_transform_copy(p, &scr->line[y+yy][x], w);
 		  else
 			memcpy(p, &scr->line[y+yy][x], w*4);

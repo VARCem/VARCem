@@ -12,7 +12,7 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.34	2019/04/29
+ * Version:	@(#)mem.c	1.0.35	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,7 +64,8 @@
 #endif
 
 
-uint8_t		*ram;				/* the virtual RAM */
+int		mem_size;			/* the virtual RAM */
+uint8_t		*ram;
 uint32_t	rammask;
 
 mem_map_t	base_mapping,
@@ -1434,6 +1435,9 @@ void
 mem_reset(void)
 {
     uint32_t c, m;
+
+    /* Get the configured memory size. */
+    mem_size = config.mem_size;
 
     /*
      * Make sure the configured amount of RAM does not

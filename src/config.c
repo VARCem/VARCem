@@ -8,11 +8,11 @@
  *
  *		Configuration file handler.
  *
- * NOTE:	Forcing config files to be in Unicode encoding breaks
- *		it on Windows XP, and possibly also Vista. Use the
- *		-DANSI_CFG for use on these systems.
+ * NOTE:	Forcing config files to be in Unicode encoding breaks it
+ *		on Windows XP, possibly Vista and several UNIX systems.
+ *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.46	2019/04/29
+ * Version:	@(#)config.c	1.0.47	2019/05/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,15 +87,12 @@ typedef struct _list_ {
 
 typedef struct {
     list_t	list;
-
     char	name[128];
-
     list_t	entry_head;
 } section_t;
 
 typedef struct {
     list_t	list;
-
     char	name[128];
     char	data[256];
     wchar_t	wdata[512];
@@ -251,136 +248,138 @@ config_free(void)
 
 /* Load "General" section. */
 static void
-load_general(const char *cat)
+load_general(config_t *cfg, const char *cat)
 {
     char *p;
 
-    vid_resize = !!config_get_int(cat, "vid_resize", 0);
+    cfg->language = config_get_hex16(cat, "language", emu_lang_id);
+
+    cfg->rctrl_is_lalt = config_get_int(cat, "rctrl_is_lalt", 0);
+
+    cfg->vid_resize = !!config_get_int(cat, "vid_resize", 0);
 
     p = config_get_string(cat, "vid_renderer", "default");
-    vid_api = vidapi_from_internal_name(p);
+    cfg->vid_api = vidapi_from_internal_name(p);
 
-    vid_fullscreen_scale = config_get_int(cat, "video_fullscreen_scale", 0);
+    cfg->vid_fullscreen_scale = config_get_int(cat, "video_fullscreen_scale", 0);
 
-    vid_fullscreen_first = config_get_int(cat, "video_fullscreen_first", 0);
+    cfg->vid_fullscreen_first = config_get_int(cat, "video_fullscreen_first", 0);
 
-    force_43 = !!config_get_int(cat, "force_43", 0);
-    scale = config_get_int(cat, "scale", 1);
-    if (scale > 3)
-	scale = 3;
+    cfg->force_43 = !!config_get_int(cat, "force_43", 0);
+    cfg->scale = config_get_int(cat, "scale", 1);
+    if (cfg->scale > 3)
+	cfg->scale = 3;
 
-    invert_display = !!config_get_int(cat, "invert_display", 0);
-    enable_overscan = !!config_get_int(cat, "enable_overscan", 0);
-    vid_cga_contrast = !!config_get_int(cat, "vid_cga_contrast", 0);
-    vid_grayscale = config_get_int(cat, "video_grayscale", 0);
-    vid_graytype = config_get_int(cat, "video_graytype", 0);
+    cfg->invert_display = !!config_get_int(cat, "invert_display", 0);
+    cfg->enable_overscan = !!config_get_int(cat, "enable_overscan", 0);
+    cfg->vid_cga_contrast = !!config_get_int(cat, "vid_cga_contrast", 0);
+    cfg->vid_grayscale = config_get_int(cat, "video_grayscale", 0);
+    cfg->vid_graytype = config_get_int(cat, "video_graytype", 0);
 
-    rctrl_is_lalt = config_get_int(cat, "rctrl_is_lalt", 0);
-
-    window_remember = config_get_int(cat, "window_remember", 0);
-    if (window_remember) {
+    cfg->window_remember = config_get_int(cat, "window_remember", 0);
+    if (cfg->window_remember) {
 	p = config_get_string(cat, "window_coordinates", "0, 0, 0, 0");
-	sscanf(p, "%i, %i, %i, %i", &window_w, &window_h, &window_x, &window_y);
+	sscanf(p, "%i, %i, %i, %i",
+	       &cfg->win_w, &cfg->win_h, &cfg->win_x, &cfg->win_y);
     } else {
 	config_delete_var(cat, "window_remember");
 	config_delete_var(cat, "window_coordinates");
 
-	window_w = window_h = window_x = window_y = 0;
+	cfg->win_w = cfg->win_h = cfg->win_x = cfg->win_y = 0;
     }
 
-    sound_gain = config_get_int(cat, "sound_gain", 0);
-
-    language = config_get_hex16(cat, "language", emu_lang_id);
+    cfg->sound_gain = config_get_int(cat, "sound_gain", 0);
 }
 
 
 /* Save "General" section. */
 static void
-save_general(const char *cat)
+save_general(const config_t *cfg, const char *cat)
 {
     char temp[512];
     const char *str;
 
-    config_set_int(cat, "vid_resize", vid_resize);
-    if (vid_resize == 0)
-	config_delete_var(cat, "vid_resize");
+    if (emu_lang_id == 0x0409)
+	config_delete_var(cat, "language");
+    else
+	config_set_hex16(cat, "language", emu_lang_id);
 
-    str = vidapi_get_internal_name(vid_api);
-    if (! strcmp(str, "default")) {
-	config_delete_var(cat, "vid_renderer");
-    } else {
-	config_set_string(cat, "vid_renderer", str);
-    }
-
-    if (vid_fullscreen_scale == 0)
-	config_delete_var(cat, "video_fullscreen_scale");
-      else
-	config_set_int(cat, "video_fullscreen_scale", vid_fullscreen_scale);
-
-    if (vid_fullscreen_first == 0)
-	config_delete_var(cat, "video_fullscreen_first");
-      else
-	config_set_int(cat, "video_fullscreen_first", vid_fullscreen_first);
-
-    if (force_43 == 0)
-	config_delete_var(cat, "force_43");
-      else
-	config_set_int(cat, "force_43", force_43);
-
-    if (scale == 1)
-	config_delete_var(cat, "scale");
-      else
-	config_set_int(cat, "scale", scale);
-
-    if (invert_display == 0)
-	config_delete_var(cat, "invert_display");
-      else
-	config_set_int(cat, "invert_display", invert_display);
-
-    if (enable_overscan == 0)
-	config_delete_var(cat, "enable_overscan");
-      else
-	config_set_int(cat, "enable_overscan", enable_overscan);
-
-    if (vid_cga_contrast == 0)
-	config_delete_var(cat, "vid_cga_contrast");
-      else
-	config_set_int(cat, "vid_cga_contrast", vid_cga_contrast);
-
-    if (vid_grayscale == 0)
-	config_delete_var(cat, "video_grayscale");
-      else
-	config_set_int(cat, "video_grayscale", vid_grayscale);
-
-    if (vid_graytype == 0)
-	config_delete_var(cat, "video_graytype");
-      else
-	config_set_int(cat, "video_graytype", vid_graytype);
-
-    if (rctrl_is_lalt == 0)
+    if (cfg->rctrl_is_lalt == 0)
 	config_delete_var(cat, "rctrl_is_lalt");
-      else
-	config_set_int(cat, "rctrl_is_lalt", rctrl_is_lalt);
+    else
+	config_set_int(cat, "rctrl_is_lalt", cfg->rctrl_is_lalt);
 
-    if (window_remember) {
-	config_set_int(cat, "window_remember", window_remember);
+    if (cfg->vid_resize == 0)
+	config_delete_var(cat, "vid_resize");
+    else
+	config_set_int(cat, "vid_resize", cfg->vid_resize);
 
-	sprintf(temp, "%i, %i, %i, %i", window_w, window_h, window_x, window_y);
+    str = vidapi_get_internal_name(cfg->vid_api);
+    if (! strcmp(str, "default"))
+	config_delete_var(cat, "vid_renderer");
+    else
+	config_set_string(cat, "vid_renderer", str);
+
+    if (cfg->vid_fullscreen_scale == 0)
+	config_delete_var(cat, "video_fullscreen_scale");
+    else
+	config_set_int(cat, "video_fullscreen_scale", cfg->vid_fullscreen_scale);
+
+    if (cfg->vid_fullscreen_first == 0)
+	config_delete_var(cat, "video_fullscreen_first");
+    else
+	config_set_int(cat, "video_fullscreen_first", cfg->vid_fullscreen_first);
+
+    if (cfg->force_43 == 0)
+	config_delete_var(cat, "force_43");
+    else
+	config_set_int(cat, "force_43", cfg->force_43);
+
+    if (cfg->scale == 1)
+	config_delete_var(cat, "scale");
+    else
+	config_set_int(cat, "scale", cfg->scale);
+
+    if (cfg->invert_display == 0)
+	config_delete_var(cat, "invert_display");
+    else
+	config_set_int(cat, "invert_display", cfg->invert_display);
+
+    if (cfg->enable_overscan == 0)
+	config_delete_var(cat, "enable_overscan");
+    else
+	config_set_int(cat, "enable_overscan", cfg->enable_overscan);
+
+    if (cfg->vid_cga_contrast == 0)
+	config_delete_var(cat, "vid_cga_contrast");
+    else
+	config_set_int(cat, "vid_cga_contrast", cfg->vid_cga_contrast);
+
+    if (cfg->vid_grayscale == 0)
+	config_delete_var(cat, "video_grayscale");
+    else
+	config_set_int(cat, "video_grayscale", cfg->vid_grayscale);
+
+    if (cfg->vid_graytype == 0)
+	config_delete_var(cat, "video_graytype");
+    else
+	config_set_int(cat, "video_graytype", cfg->vid_graytype);
+
+    if (cfg->window_remember) {
+	config_set_int(cat, "window_remember", cfg->window_remember);
+
+	sprintf(temp, "%i, %i, %i, %i",
+		cfg->win_w, cfg->win_h, cfg->win_x, cfg->win_y);
 	config_set_string(cat, "window_coordinates", temp);
     } else {
 	config_delete_var(cat, "window_remember");
 	config_delete_var(cat, "window_coordinates");
     }
 
-    if (sound_gain != 0)
-	config_set_int(cat, "sound_gain", sound_gain);
-      else
+    if (cfg->sound_gain == 0)
 	config_delete_var(cat, "sound_gain");
-
-    if (emu_lang_id == 0x0409)
-	config_delete_var(cat, "language");
-      else
-	config_set_hex16(cat, "language", emu_lang_id);
+    else
+	config_set_int(cat, "sound_gain", cfg->sound_gain);
 
     delete_section_if_empty(cat);
 }
@@ -388,72 +387,70 @@ save_general(const char *cat)
 
 /* Load "Machine" section. */
 static void
-load_machine(const char *cat)
+load_machine(config_t *cfg, const char *cat)
 {
     char *p;
 
     p = config_get_string(cat, "machine", NULL);
     if (p != NULL)
-	machine_type = machine_get_from_internal_name(p);
-      else 
-	machine_type = -1;
+	cfg->machine_type = machine_get_from_internal_name(p);
+    else 
+	cfg->machine_type = -1;
     if (machine_load() == NULL)
-	machine_type = -1;
+	cfg->machine_type = -1;
 
-    cpu_manufacturer = config_get_int(cat, "cpu_manufacturer", 0);
-    cpu_type = config_get_int(cat, "cpu", 0);
-    cpu_waitstates = config_get_int(cat, "cpu_waitstates", 0);
+    cfg->cpu_manuf = config_get_int(cat, "cpu_manufacturer", 0);
+    cfg->cpu_type = config_get_int(cat, "cpu", 0);
+    cfg->cpu_waitstates = config_get_int(cat, "cpu_waitstates", 0);
+    cfg->cpu_use_dynarec = !!config_get_int(cat, "cpu_use_dynarec", 0);
+    cfg->enable_ext_fpu = !!config_get_int(cat, "cpu_enable_fpu", 0);
 
-    mem_size = config_get_int(cat, "mem_size", 4096);
-    mem_size = machine_get_memsize(mem_size);
+    cfg->mem_size = config_get_int(cat, "mem_size", 4096);
+    cfg->mem_size = machine_get_memsize(cfg->mem_size);
 
-    cpu_use_dynarec = !!config_get_int(cat, "cpu_use_dynarec", 0);
-
-    enable_external_fpu = !!config_get_int(cat, "cpu_enable_fpu", 0);
-
-    time_sync = config_get_int(cat, "enable_sync", -1);
-    if (time_sync != -1) {
+    cfg->time_sync = config_get_int(cat, "enable_sync", -1);
+    if (cfg->time_sync != -1) {
 	/* FIXME: remove this after 12/31/2019 --FvK */
 	config_delete_var(cat, "enable_sync");
     } else
-	time_sync = config_get_int(cat, "time_sync", TIME_SYNC_DISABLED);
+	cfg->time_sync = config_get_int(cat, "time_sync", TIME_SYNC_DISABLED);
 }
 
 
 /* Save "Machine" section. */
 static void
-save_machine(const char *cat)
+save_machine(const config_t *cfg, const char *cat)
 {
     config_set_string(cat, "machine", machine_get_internal_name());
 
-    if (cpu_manufacturer == 0)
+    if (cfg->cpu_manuf == 0)
 	config_delete_var(cat, "cpu_manufacturer");
-      else
-	config_set_int(cat, "cpu_manufacturer", cpu_manufacturer);
+    else
+	config_set_int(cat, "cpu_manufacturer", cfg->cpu_manuf);
 
-    if (cpu_type == 0)
+    if (cfg->cpu_type == 0)
 	config_delete_var(cat, "cpu");
-      else
-	config_set_int(cat, "cpu", cpu_type);
+    else
+	config_set_int(cat, "cpu", cfg->cpu_type);
 
-    if (cpu_waitstates == 0)
+    if (cfg->cpu_waitstates == 0)
 	config_delete_var(cat, "cpu_waitstates");
-      else
-	config_set_int(cat, "cpu_waitstates", cpu_waitstates);
+    else
+	config_set_int(cat, "cpu_waitstates", cfg->cpu_waitstates);
 
-    config_set_int(cat, "mem_size", mem_size);
+    config_set_int(cat, "cpu_use_dynarec", cfg->cpu_use_dynarec);
 
-    config_set_int(cat, "cpu_use_dynarec", cpu_use_dynarec);
-
-    if (enable_external_fpu == 0)
+    if (cfg->enable_ext_fpu == 0)
 	config_delete_var(cat, "cpu_enable_fpu");
-      else
-	config_set_int(cat, "cpu_enable_fpu", enable_external_fpu);
+    else
+	config_set_int(cat, "cpu_enable_fpu", cfg->enable_ext_fpu);
 
-    if (time_sync == TIME_SYNC_DISABLED)
+    config_set_int(cat, "mem_size", cfg->mem_size);
+
+    if (cfg->time_sync == TIME_SYNC_DISABLED)
 	config_delete_var(cat, "time_sync");
-      else
-	config_set_int(cat, "time_sync", time_sync);
+    else
+	config_set_int(cat, "time_sync", cfg->time_sync);
 
     delete_section_if_empty(cat);
 }
@@ -461,13 +458,13 @@ save_machine(const char *cat)
 
 /* Load "Video" section. */
 static void
-load_video(const char *cat)
+load_video(config_t *cfg, const char *cat)
 {
     char *p;
 
     if (machine_get_flags_fixed() & MACHINE_VIDEO) {
 	config_delete_var(cat, "video_card");
-	video_card = VID_INTERNAL;
+	cfg->video_card = VID_INTERNAL;
     } else {
 	p = config_get_string(cat, "video_card", NULL);
 	if (p == NULL) {
@@ -476,23 +473,24 @@ load_video(const char *cat)
 		  else
 			p = "none";
 	}
-	video_card = video_get_video_from_internal_name(p);
+	cfg->video_card = video_get_video_from_internal_name(p);
     }
 
-    voodoo_enabled = !!config_get_int(cat, "voodoo", 0);
+    cfg->voodoo_enabled = !!config_get_int(cat, "voodoo", 0);
 }
 
 
 /* Save "Video" section. */
 static void
-save_video(const char *cat)
+save_video(const config_t *cfg, const char *cat)
 {
-    config_set_string(cat, "video_card", video_get_internal_name(video_card));
+    config_set_string(cat, "video_card",
+		      video_get_internal_name(cfg->video_card));
 
-    if (voodoo_enabled == 0)
+    if (cfg->voodoo_enabled == 0)
 	config_delete_var(cat, "voodoo");
-      else
-	config_set_int(cat, "voodoo", voodoo_enabled);
+    else
+	config_set_int(cat, "voodoo", cfg->voodoo_enabled);
 
     delete_section_if_empty(cat);
 }
@@ -500,32 +498,32 @@ save_video(const char *cat)
 
 /* Load "Input Devices" section. */
 static void
-load_input(const char *cat)
+load_input(config_t *cfg, const char *cat)
 {
     char temp[512];
     int c, d;
     char *p;
 
     p = config_get_string(cat, "mouse_type", "none");
-	mouse_type = mouse_get_from_internal_name(p);
+    cfg->mouse_type = mouse_get_from_internal_name(p);
 
     //FIXME: should be an internal_name string!!
-    joystick_type = config_get_int(cat, "joystick_type", 0);
+    cfg->joystick_type = config_get_int(cat, "joystick_type", 0);
 
-    for (c = 0; c < gamedev_get_max_joysticks(joystick_type); c++) {
+    for (c = 0; c < gamedev_get_max_joysticks(cfg->joystick_type); c++) {
 	sprintf(temp, "joystick_%i_nr", c);
 	joystick_state[c].plat_joystick_nr = config_get_int(cat, temp, 0);
-
+//FIXME: state should be in cfg!
 	if (joystick_state[c].plat_joystick_nr) {
-		for (d = 0; d < gamedev_get_axis_count(joystick_type); d++) {
+		for (d = 0; d < gamedev_get_axis_count(cfg->joystick_type); d++) {
 			sprintf(temp, "joystick_%i_axis_%i", c, d);
 			joystick_state[c].axis_mapping[d] = config_get_int(cat, temp, d);
 		}
-		for (d = 0; d < gamedev_get_button_count(joystick_type); d++) {			
+		for (d = 0; d < gamedev_get_button_count(cfg->joystick_type); d++) {			
 			sprintf(temp, "joystick_%i_button_%i", c, d);
 			joystick_state[c].button_mapping[d] = config_get_int(cat, temp, d);
 		}
-		for (d = 0; d < gamedev_get_pov_count(joystick_type); d++) {
+		for (d = 0; d < gamedev_get_pov_count(cfg->joystick_type); d++) {
 			sprintf(temp, "joystick_%i_pov_%i", c, d);
 			p = config_get_string(cat, temp, "0, 0");
 			joystick_state[c].pov_mapping[d][0] = joystick_state[c].pov_mapping[d][1] = 0;
@@ -538,30 +536,31 @@ load_input(const char *cat)
 
 /* Save "Input Devices" section. */
 static void
-save_input(const char *cat)
+save_input(const config_t *cfg, const char *cat)
 {
     char temp[512], tmp2[512];
     int c, d;
 
-    config_set_string(cat, "mouse_type", mouse_get_internal_name(mouse_type));
+    config_set_string(cat, "mouse_type",
+		      mouse_get_internal_name(cfg->mouse_type));
 
-    if (joystick_type != 0) {
-	config_set_int(cat, "joystick_type", joystick_type);
+    if (cfg->joystick_type != 0) {
+	config_set_int(cat, "joystick_type", cfg->joystick_type);
 
-	for (c = 0; c < gamedev_get_max_joysticks(joystick_type); c++) {
+	for (c = 0; c < gamedev_get_max_joysticks(cfg->joystick_type); c++) {
 		sprintf(tmp2, "joystick_%i_nr", c);
 		config_set_int(cat, tmp2, joystick_state[c].plat_joystick_nr);
 
 		if (joystick_state[c].plat_joystick_nr) {
-			for (d = 0; d < gamedev_get_axis_count(joystick_type); d++) {			
+			for (d = 0; d < gamedev_get_axis_count(cfg->joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_axis_%i", c, d);
 				config_set_int(cat, tmp2, joystick_state[c].axis_mapping[d]);
 			}
-			for (d = 0; d < gamedev_get_button_count(joystick_type); d++) {			
+			for (d = 0; d < gamedev_get_button_count(cfg->joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_button_%i", c, d);
 				config_set_int(cat, tmp2, joystick_state[c].button_mapping[d]);
 			}
-			for (d = 0; d < gamedev_get_pov_count(joystick_type); d++) {			
+			for (d = 0; d < gamedev_get_pov_count(cfg->joystick_type); d++) {			
 				sprintf(tmp2, "joystick_%i_pov_%i", c, d);
 				sprintf(temp, "%i, %i", joystick_state[c].pov_mapping[d][0], joystick_state[c].pov_mapping[d][1]);
 				config_set_string(cat, tmp2, temp);
@@ -596,62 +595,73 @@ save_input(const char *cat)
 
 /* Load "Sound" section. */
 static void
-load_sound(const char *cat)
+load_sound(config_t *cfg, const char *cat)
 {
     char *p;
 
-    p = config_get_string(cat, "sound_card", "none");
-    sound_card = sound_card_get_from_internal_name(p);
+    p = config_get_string(cat, "sound_type", "float");
+    if (!strcmp(p, "float") || !strcmp(p, "1"))
+	cfg->sound_is_float = 1;
+    else
+	cfg->sound_is_float = 0;
+
+    if (machine_get_flags_fixed() & MACHINE_SOUND) {
+	config_delete_var(cat, "sound_card");
+	cfg->sound_card = SOUND_INTERNAL;
+    } else {
+	p = config_get_string(cat, "sound_card", NULL);
+	if (p == NULL) {
+		if (machine_get_flags() & MACHINE_SOUND)
+			p = "internal";
+	  	else
+			p = "none";
+	}
+	cfg->sound_card = sound_card_get_from_internal_name(p);
+    }
 
     p = config_get_string(cat, "midi_device", "none");
-    midi_device = midi_device_get_from_internal_name(p);
+    cfg->midi_device = midi_device_get_from_internal_name(p);
 
-    mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
+    cfg->mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
 
     p = config_get_string(cat, "opl_type", "dbopl");
     if (!strcmp(p, "nukedopl") || !strcmp(p, "1"))
-	opl_type = 1;
-      else
-	opl_type = 0;
-
-    p = config_get_string(cat, "sound_type", "float");
-    if (!strcmp(p, "float") || !strcmp(p, "1"))
-	sound_is_float = 1;
-      else
-	sound_is_float = 0;
+	cfg->opl_type = 1;
+    else
+	cfg->opl_type = 0;
 }
 
 
 /* Save "Sound" section. */
 static void
-save_sound(const char *cat)
+save_sound(const config_t *cfg, const char *cat)
 {
-    if (sound_card == 0)
-	config_delete_var(cat, "sound_card");
-      else
-	config_set_string(cat, "sound_card",
-			  sound_card_get_internal_name(sound_card));
-
-    if (!strcmp(midi_device_get_internal_name(midi_device), "none"))
-	config_delete_var(cat, "midi_device");
-      else
-	config_set_string(cat, "midi_device",
-			  midi_device_get_internal_name(midi_device));
-
-    if (mpu401_standalone_enable == 0)
-	config_delete_var(cat, "mpu401_standalone");
-      else
-	config_set_int(cat, "mpu401_standalone", mpu401_standalone_enable);
-
-    if (opl_type == 0)
-	config_delete_var(cat, "opl_type");
-      else
-	config_set_string(cat, "opl_type", (opl_type == 1) ? "nukedopl" : "dbopl");
-
-    if (sound_is_float == 1)
+    if (cfg->sound_is_float == 1)
 	config_delete_var(cat, "sound_type");
-      else
-	config_set_string(cat, "sound_type", (sound_is_float == 1) ? "float" : "int16");
+    else
+	config_set_string(cat, "sound_type", (cfg->sound_is_float == 1) ? "float" : "int16");
+
+    if (cfg->sound_card == SOUND_NONE)
+	config_delete_var(cat, "sound_card");
+    else
+	config_set_string(cat, "sound_card",
+			  sound_card_get_internal_name(cfg->sound_card));
+
+    if (!strcmp(midi_device_get_internal_name(cfg->midi_device), "none"))
+	config_delete_var(cat, "midi_device");
+    else
+	config_set_string(cat, "midi_device",
+			  midi_device_get_internal_name(cfg->midi_device));
+
+    if (cfg->mpu401_standalone_enable == 0)
+	config_delete_var(cat, "mpu401_standalone");
+    else
+	config_set_int(cat, "mpu401_standalone", cfg->mpu401_standalone_enable);
+
+    if (cfg->opl_type == 0)
+	config_delete_var(cat, "opl_type");
+    else
+	config_set_string(cat, "opl_type", (cfg->opl_type == 1) ? "nukedopl" : "dbopl");
 
     delete_section_if_empty(cat);
 }
@@ -659,14 +669,14 @@ save_sound(const char *cat)
 
 /* Load "Network" section. */
 static void
-load_network(const char *cat)
+load_network(config_t *cfg, const char *cat)
 {
     char *p;
 
     p = config_get_string(cat, "net_type", "none");
-    network_type = network_get_from_internal_name(p);
+    cfg->network_type = network_get_from_internal_name(p);
 
-    memset(network_host, '\0', sizeof(network_host));
+    memset(cfg->network_host, '\0', sizeof(cfg->network_host));
     p = config_get_string(cat, "net_host_device", NULL);
     if (p == NULL) {
 	p = config_get_string(cat, "net_pcap_device", NULL);
@@ -675,48 +685,59 @@ load_network(const char *cat)
     }
     if (p != NULL) {
 	if ((network_card_to_id(p) == -1) || (network_host_ndev == 1)) {
-		if ((network_host_ndev == 1) && strcmp(network_host, "none")) {
+		if ((network_host_ndev == 1) && strcmp(cfg->network_host, "none")) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_NO);
 		} else if (network_card_to_id(p) == -1) {
 			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_DEV);
 		}
 
-		strcpy(network_host, "none");
+		strcpy(cfg->network_host, "none");
 	} else {
-		strcpy(network_host, p);
+		strcpy(cfg->network_host, p);
 	}
     } else
-	strcpy(network_host, "none");
+	strcpy(cfg->network_host, "none");
 
-    p = config_get_string(cat, "net_card", "none");
-	network_card = network_card_get_from_internal_name(p);
+    if (machine_get_flags_fixed() & MACHINE_NETWORK) {
+	config_delete_var(cat, "net_card");
+	cfg->network_card = NET_CARD_INTERNAL;
+    } else {
+	p = config_get_string(cat, "net_card", NULL);
+	if (p == NULL) {
+		if (machine_get_flags() & MACHINE_NETWORK)
+			p = "internal";
+	  	else
+			p = "none";
+	}
+	cfg->network_card = network_card_get_from_internal_name(p);
+    }
 }
 
 
 /* Save "Network" section. */
 static void
-save_network(const char *cat)
+save_network(const config_t *cfg, const char *cat)
 {
-    if (network_type == 0)
+    if (cfg->network_type == NET_NONE)
 	config_delete_var(cat, "net_type");
-      else
+    else
 	config_set_string(cat, "net_type",
-			  network_get_internal_name(network_type));
+			  network_get_internal_name(cfg->network_type));
 
-    if (network_host[0] != '\0') {
-	if (! strcmp(network_host, "none"))
+    if (cfg->network_host[0] != '\0') {
+	if (! strcmp(cfg->network_host, "none"))
 		config_delete_var(cat, "net_host_device");
-	  else
-		config_set_string(cat, "net_host_device", network_host);
+	else
+		config_set_string(cat, "net_host_device", cfg->network_host);
     } else {
 	config_delete_var(cat, "net_host_device");
     }
 
-    if (network_card == 0)
+    if (cfg->network_card == 0)
 	config_delete_var(cat, "net_card");
-      else
+    else
 	config_set_string(cat, "net_card",
-			  network_card_get_internal_name(network_card));
+			  network_card_get_internal_name(cfg->network_card));
 
     delete_section_if_empty(cat);
 }
@@ -724,47 +745,47 @@ save_network(const char *cat)
 
 /* Load "Ports" section. */
 static void
-load_ports(const char *cat)
+load_ports(config_t *cfg, const char *cat)
 {
     char temp[128];
     char *p;
     int i;
 
     sprintf(temp, "game_enabled");
-    game_enabled = !!config_get_int(cat, temp, 0);
+    cfg->game_enabled = !!config_get_int(cat, temp, 0);
 
     for (i = 0; i < SERIAL_MAX; i++) {
 	sprintf(temp, "serial%i_enabled", i);
-	serial_enabled[i] = !!config_get_int(cat, temp, 0);
+	cfg->serial_enabled[i] = !!config_get_int(cat, temp, 0);
     }
 
     for (i = 0; i < PARALLEL_MAX; i++) {
 	sprintf(temp, "parallel%i_enabled", i);
-	parallel_enabled[i] = !!config_get_int(cat, temp, 0);
+	cfg->parallel_enabled[i] = !!config_get_int(cat, temp, 0);
 
 	sprintf(temp, "parallel%i_device", i);
 	p = (char *)config_get_string(cat, temp, "none");
-	parallel_device[i] = parallel_device_get_from_internal_name(p);
+	cfg->parallel_device[i] = parallel_device_get_from_internal_name(p);
     }
 }
 
 
 /* Save "Ports" section. */
 static void
-save_ports(const char *cat)
+save_ports(const config_t *cfg, const char *cat)
 {
     char temp[128];
     int i;
 
     sprintf(temp, "game_enabled");
-    if (game_enabled) {
+    if (cfg->game_enabled) {
 	config_set_int(cat, temp, 1);
     } else
 	config_delete_var(cat, temp);
 
     for (i = 0; i < SERIAL_MAX; i++) {
 	sprintf(temp, "serial%i_enabled", i);
-	if (serial_enabled[i]) {
+	if (cfg->serial_enabled[i]) {
 		config_set_int(cat, temp, 1);
 	} else
 		config_delete_var(cat, temp);
@@ -772,16 +793,16 @@ save_ports(const char *cat)
 
     for (i = 0; i < PARALLEL_MAX; i++) {
 	sprintf(temp, "parallel%i_enabled", i);
-	if (parallel_enabled[i])
+	if (cfg->parallel_enabled[i])
 		config_set_int(cat, temp, 1);
-	  else
+	else
 		config_delete_var(cat, temp);
 
 	sprintf(temp, "parallel%i_device", i);
-	if (parallel_device[i] != 0)
+	if (cfg->parallel_device[i] != 0)
 		config_set_string(cat, temp,
-			parallel_device_get_internal_name(parallel_device[i]));
-	  else
+			parallel_device_get_internal_name(cfg->parallel_device[i]));
+	else
 		config_delete_var(cat, temp);
     }
 
@@ -791,96 +812,117 @@ save_ports(const char *cat)
 
 /* Load "Other Peripherals" section. */
 static void
-load_other(const char *cat)
+load_other(config_t *cfg, const char *cat)
 {
     char temp[128], *p;
     int c;
 
-    p = config_get_string(cat, "scsi_card", "none");
-    scsi_card = scsi_card_get_from_internal_name(p);
-
-    p = config_get_string(cat, "hdc", NULL);
-    if (p == NULL) {
-	if (machine_get_flags() & MACHINE_HDC)
-		p = "internal";
-	  else
-		p = "none";
+    if (machine_get_flags_fixed() & MACHINE_HDC) {
+	config_delete_var(cat, "hdc");
+	cfg->hdc_type = HDC_INTERNAL;
+    } else {
+	p = config_get_string(cat, "hdc", NULL);
+	if (p == NULL) {
+		if (machine_get_flags() & MACHINE_HDC)
+			p = "internal";
+	  	else
+			p = "none";
+	}
+	cfg->hdc_type = hdc_get_from_internal_name(p);
     }
-    hdc_type = hdc_get_from_internal_name(p);
 
-    ide_ter_enabled = !!config_get_int(cat, "ide_ter", 0);
-    ide_qua_enabled = !!config_get_int(cat, "ide_qua", 0);
+    cfg->ide_ter_enabled = !!config_get_int(cat, "ide_ter", 0);
+    cfg->ide_qua_enabled = !!config_get_int(cat, "ide_qua", 0);
 
-    bugger_enabled = !!config_get_int(cat, "bugger_enabled", 0);
+    if (machine_get_flags_fixed() & MACHINE_SCSI) {
+	config_delete_var(cat, "scsi_card");
+	cfg->scsi_card = SCSI_INTERNAL;
+    } else {
+	p = config_get_string(cat, "scsi_card", "none");
+	if (p == NULL) {
+		if (machine_get_flags() & MACHINE_SCSI)
+			p = "internal";
+	  	else
+			p = "none";
+	}
+	cfg->scsi_card = scsi_card_get_from_internal_name(p);
+    }
+
+    cfg->bugger_enabled = !!config_get_int(cat, "bugger_enabled", 0);
 
     for (c = 0; c < ISAMEM_MAX; c++) {
 	sprintf(temp, "isamem%i_type", c);
 
 	p = config_get_string(cat, temp, "none");
-	isamem_type[c] = isamem_get_from_internal_name(p);
+	cfg->isamem_type[c] = isamem_get_from_internal_name(p);
     }
 
     p = config_get_string(cat, "isartc_type", "none");
-    isartc_type = isartc_get_from_internal_name(p);
+    cfg->isartc_type = isartc_get_from_internal_name(p);
 
 #ifdef WALTJE
-    romdos_enabled = !!config_get_int(cat, "romdos_enabled", 0);
+    cfg->romdos_enabled = !!config_get_int(cat, "romdos_enabled", 0);
 #endif
 }
 
 
 /* Save "Other Peripherals" section. */
 static void
-save_other(const char *cat)
+save_other(const config_t *cfg, const char *cat)
 {
     char temp[512];
     int c;
 
-    if (scsi_card == 0)
-	config_delete_var(cat, "scsi_card");
-      else
-	config_set_string(cat, "scsi_card",
-			  scsi_card_get_internal_name(scsi_card));
+    if (cfg->hdc_type == HDC_NONE)
+	config_delete_var(cat, "hdc");
+    else
+	config_set_string(cat, "hdc",
+			  hdc_get_internal_name(cfg->hdc_type));
 
-    config_set_string(cat, "hdc", hdc_get_internal_name(hdc_type));
-
-    if (ide_ter_enabled == 0)
+    if (cfg->ide_ter_enabled == 0)
 	config_delete_var(cat, "ide_ter");
-      else
-	config_set_int(cat, "ide_ter", ide_ter_enabled);
+    else
+	config_set_int(cat, "ide_ter", cfg->ide_ter_enabled);
 
-    if (ide_qua_enabled == 0)
+    if (cfg->ide_qua_enabled == 0)
 	config_delete_var(cat, "ide_qua");
-      else
-	config_set_int(cat, "ide_qua", ide_qua_enabled);
+    else
+	config_set_int(cat, "ide_qua", cfg->ide_qua_enabled);
 
-    if (bugger_enabled == 0)
+    if (cfg->scsi_card == SCSI_NONE)
+	config_delete_var(cat, "scsi_card");
+    else
+	config_set_string(cat, "scsi_card",
+			  scsi_card_get_internal_name(cfg->scsi_card));
+
+    if (cfg->bugger_enabled == 0)
 	config_delete_var(cat, "bugger_enabled");
-      else
-	config_set_int(cat, "bugger_enabled", bugger_enabled);
+    else
+	config_set_int(cat, "bugger_enabled", cfg->bugger_enabled);
 
     for (c = 0; c < ISAMEM_MAX; c++) {
 	sprintf(temp, "isamem%i_type", c);
-	if (isamem_type[c] == 0)
+	if (cfg->isamem_type[c] == 0)
 		config_delete_var(cat, temp);
-	  else
+	else
 		config_set_string(cat, temp,
-				  isamem_get_internal_name(isamem_type[c]));
+				  isamem_get_internal_name(cfg->isamem_type[c]));
     }
 
-    if (isartc_type == 0)
+    if (cfg->isartc_type == 0)
 	config_delete_var(cat, "isartc_type");
-      else
+    else
 	config_set_string(cat, "isartc_type",
-			  isartc_get_internal_name(isartc_type));
+			  isartc_get_internal_name(cfg->isartc_type));
 
     delete_section_if_empty(cat);
 }
 
 
 /* Load "Hard Disks" section. */
+//FIXME: hdd[] should be loaded into config_t
 static void
-load_disks(const char *cat)
+load_disks(config_t *cfg, const char *cat)
 {
     char temp[512], tmp2[512], s[512];
     uint32_t max_spt, max_hpc, max_tracks;
@@ -1013,7 +1055,7 @@ load_disks(const char *cat)
 
 /* Save "Hard Disks" section. */
 static void
-save_disks(const char *cat)
+save_disks(const config_t *cfg, const char *cat)
 {
     char temp[128], tmp2[128];
     const char *str;
@@ -1073,52 +1115,56 @@ save_disks(const char *cat)
 
 
 /* Load "Floppy Drives" section. */
+//FIXME: we should load stuff into config_t !
 static void
-load_floppy(const char *cat)
+load_floppy(config_t *cfg, const char *cat)
 {
     char temp[512], *p;
     wchar_t *wp;
     int c;
 
     for (c = 0; c < FDD_NUM; c++) {
-	sprintf(temp, "fdd_%02i_type", c+1);
+	sprintf(temp, "fdd_%i_type", c+1);
 	p = config_get_string(cat, temp, (c < 2) ? "525_2dd" : "none");
        	fdd_set_type(c, fdd_get_from_internal_name(p));
 	if (fdd_get_type(c) > 13)
 		fdd_set_type(c, 13);
 
-	sprintf(temp, "fdd_%02i_fn", c + 1);
+	/* Try to make paths relative, and copy to destination. */
+	sprintf(temp, "fdd_%i_fn", c + 1);
 	wp = config_get_wstring(cat, temp, L"");
-
-	/* Try to make relative, and copy to destination. */
 	pc_path(floppyfns[c], sizeof_w(floppyfns[c]), wp);
 
-	sprintf(temp, "fdd_%02i_writeprot", c+1);
+	sprintf(temp, "fdd_%i_writeprot", c+1);
 	ui_writeprot[c] = !!config_get_int(cat, temp, 0);
-	sprintf(temp, "fdd_%02i_turbo", c + 1);
+	sprintf(temp, "fdd_%i_turbo", c + 1);
 	fdd_set_turbo(c, !!config_get_int(cat, temp, 0));
-	sprintf(temp, "fdd_%02i_check_bpb", c+1);
+	sprintf(temp, "fdd_%i_check_bpb", c+1);
 	fdd_set_check_bpb(c, !!config_get_int(cat, temp, 1));
 
-	/* Check whether each value is default, if yes, delete it so that only non-default values will later be saved. */
+	/*
+	 * Check whether or not each value is default, and if yes,
+	 * delete it so that only non-default values will later be
+         * saved.
+	 */
 	if (fdd_get_type(c) == ((c < 2) ? 2 : 0)) {
-		sprintf(temp, "fdd_%02i_type", c+1);
+		sprintf(temp, "fdd_%i_type", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (wcslen(floppyfns[c]) == 0) {
-		sprintf(temp, "fdd_%02i_fn", c+1);
+		sprintf(temp, "fdd_%i_fn", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (! ui_writeprot[c]) {
-		sprintf(temp, "fdd_%02i_writeprot", c+1);
+		sprintf(temp, "fdd_%i_writeprot", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (! fdd_get_turbo(c)) {
-		sprintf(temp, "fdd_%02i_turbo", c+1);
+		sprintf(temp, "fdd_%i_turbo", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (! fdd_get_check_bpb(c)) {
-		sprintf(temp, "fdd_%02i_check_bpb", c+1);
+		sprintf(temp, "fdd_%i_check_bpb", c+1);
 		config_delete_var(cat, temp);
 	}
     }
@@ -1127,47 +1173,46 @@ load_floppy(const char *cat)
 
 /* Save "Floppy Drives" section. */
 static void
-save_floppy(const char *cat)
+save_floppy(const config_t *cfg, const char *cat)
 {
     char temp[512];
     int c;
 
     for (c = 0; c < FDD_NUM; c++) {
-	sprintf(temp, "fdd_%02i_type", c+1);
+	sprintf(temp, "fdd_%i_type", c+1);
 	if (fdd_get_type(c) == ((c < 2) ? 2 : 0))
 		config_delete_var(cat, temp);
 	  else
 		config_set_string(cat, temp,
 				  fdd_get_internal_name(fdd_get_type(c)));
 
-	sprintf(temp, "fdd_%02i_fn", c+1);
+	sprintf(temp, "fdd_%i_fn", c+1);
 	if (wcslen(floppyfns[c]) == 0) {
 		config_delete_var(cat, temp);
 
 		ui_writeprot[c] = 0;
 
-		sprintf(temp, "fdd_%02i_writeprot", c+1);
+		sprintf(temp, "fdd_%i_writeprot", c+1);
 		config_delete_var(cat, temp);
-	} else {
+	} else
 		config_set_wstring(cat, temp, floppyfns[c]);
-	}
 
-	sprintf(temp, "fdd_%02i_writeprot", c+1);
+	sprintf(temp, "fdd_%i_writeprot", c+1);
 	if (ui_writeprot[c] == 0)
 		config_delete_var(cat, temp);
-	  else
+	else
 		config_set_int(cat, temp, ui_writeprot[c]);
 
-	sprintf(temp, "fdd_%02i_turbo", c+1);
+	sprintf(temp, "fdd_%i_turbo", c+1);
 	if (fdd_get_turbo(c) == 0)
 		config_delete_var(cat, temp);
-	  else
+	else
 		config_set_int(cat, temp, fdd_get_turbo(c));
 
-	sprintf(temp, "fdd_%02i_check_bpb", c+1);
+	sprintf(temp, "fdd_%i_check_bpb", c+1);
 	if (fdd_get_check_bpb(c) == 1)
 		config_delete_var(cat, temp);
-	  else
+	else
 		config_set_int(cat, temp, fdd_get_check_bpb(c));
     }
 
@@ -1176,8 +1221,9 @@ save_floppy(const char *cat)
 
 
 /* Load "Removable Devices" section. */
+//FIXME: stuff should be loaded into config_t !
 static void
-load_removable(const char *cat)
+load_removable(config_t *cfg, const char *cat)
 {
     char temp[512], tmp2[512], *p;
     char s[512];
@@ -1336,7 +1382,7 @@ load_removable(const char *cat)
 
 /* Save "Other Removable Devices" section. */
 static void
-save_removable(const char *cat)
+save_removable(const config_t *cfg, const char *cat)
 {
     char temp[512], tmp2[512];
     int c;
@@ -1437,8 +1483,8 @@ save_removable(const char *cat)
 
 static const struct {
     const char	*name;
-    void	(*load)(const char *);
-    void	(*save)(const char *);
+    void	(*load)(config_t *, const char *);
+    void	(*save)(const config_t *, const char *);
 } categories[] = {
   { "General",		load_general,		save_general		},
   { "Machine",		load_machine,		save_machine		},
@@ -1453,36 +1499,6 @@ static const struct {
   { "Other removable devices",load_removable,	save_removable		},
   { NULL,		NULL,			NULL			}
 };
-
-
-/* Create a usable default configuration. */
-static void
-config_default(void)
-{
-    int i;
-
-    cpu_manufacturer = 0;
-    cpu_type = 0;
-    scale = 1;
-    video_card = VID_CGA;
-    vid_api = vidapi_from_internal_name("default");;
-    time_sync = TIME_SYNC_DISABLED;
-    joystick_type = 0;
-    hdc_type = 0;
-
-    for (i = 0; i < SERIAL_MAX; i++)
-	serial_enabled[i] = 0;
-
-    for (i = 0; i < PARALLEL_MAX; i++)
-	parallel_enabled[i] = 0;
-
-    fdd_set_type(0, 2);
-    fdd_set_check_bpb(0, 1);
-    fdd_set_type(1, 2);
-    fdd_set_check_bpb(1, 1);
-
-    mem_size = 640;
-}
 
 
 /* Read and parse the configuration file into memory. */
@@ -1647,26 +1663,110 @@ config_write(const wchar_t *fn)
 }
 
 
+/* Create a usable default configuration. */
+void
+config_init(config_t *cfg)
+{
+    int i;
+
+    cfg->language = 0x0000;			/* language ID */
+    cfg->rctrl_is_lalt = 0;			/* set R-CTRL as L-ALT */
+
+    cfg->window_remember = 0;			/* window size and */
+    cfg->win_w = 0; cfg->win_h = 0;		/* position info */
+    cfg->win_x = 0; cfg->win_y = 0;
+
+    cfg->machine_type = -1;			/* current machine ID */
+    cfg->cpu_manuf = 0;				/* cpu manufacturer */
+    cfg->cpu_type = 3;				/* cpu type */
+    cfg->cpu_use_dynarec = 0,			/* cpu uses/needs Dyna */
+    cfg->enable_ext_fpu = 0;			/* enable external FPU */
+    cfg->mem_size = 256;			/* memory size */
+    cfg->time_sync = TIME_SYNC_DISABLED;	/* enable time sync */
+
+    i = vidapi_from_internal_name("default");	/* video renderer */
+    cfg->vid_api = i;				/* video renderer */
+
+    cfg->video_card = VID_CGA,			/* graphics/video card */
+    cfg->voodoo_enabled = 0;			/* video option */
+    cfg->scale = 1;				/* screen scale factor */
+    cfg->vid_resize = 0;				/* allow resizing */
+    cfg->vid_cga_contrast = 0;			/* video */
+    cfg->vid_fullscreen = 0;			/* video */
+    cfg->vid_fullscreen_scale = 0;		/* video */
+    cfg->vid_fullscreen_first = 0;		/* video */
+    cfg->vid_grayscale = 0;			/* video */
+    cfg->vid_graytype = 0;			/* video */
+    cfg->invert_display = 0;			/* invert the display */
+    cfg->enable_overscan = 0;			/* enable overscans */
+    cfg->force_43 = 0;				/* video */
+
+    cfg->mouse_type = MOUSE_NONE;		/* selected mouse type */
+    cfg->joystick_type = 0;			/* joystick type */
+
+    cfg->sound_is_float = 1;			/* sound uses FP values */
+    cfg->sound_gain = 0;			/* sound volume gain */
+    cfg->opl_type = 0;				/* sound option */
+    cfg->sound_card = SOUND_NONE;		/* selected sound card */
+    cfg->mpu401_standalone_enable = 0;		/* sound option */
+    cfg->midi_device = 0;			/* selected midi device */
+
+    cfg->game_enabled = 0;			/* enable game port */
+
+    for (i = 0; i < SERIAL_MAX; i++)		/* enable serial ports */
+	cfg->serial_enabled[i] = 0;
+
+    for (i = 0; i < PARALLEL_MAX; i++) {	/* enable LPT ports */
+	cfg->parallel_enabled[i] = 0;
+	cfg->parallel_device[i] = 0;		/* set up LPT devices */
+    }
+
+    fdd_set_type(0, 2);
+    fdd_set_check_bpb(0, 1);
+    fdd_set_type(1, 2);
+    fdd_set_check_bpb(1, 1);
+
+    cfg->hdc_type = HDC_NONE;			/* HDC type */
+
+    cfg->scsi_card = SCSI_NONE;			/* selected SCSI card */
+
+    cfg->network_type = NET_NONE;		/* network provider type */
+    cfg->network_card = NET_CARD_NONE;		/* network interface num */
+    strcpy(cfg->network_host, "");		/* host network intf */
+
+    cfg->bugger_enabled = 0;			/* enable ISAbugger */
+
+    for (i = 0; i < ISAMEM_MAX; i++)		/* enable ISA mem cards */
+	cfg->isamem_type[i] = 0;
+    cfg->isartc_type = 0;			/* enable ISA RTC card */
+
+#ifdef WALTJE
+    cfg->romdos_enabled = 0;			/* enable ROM DOS */
+#endif
+
+    /* Mark the configuration as clean. */
+    config_changed = 0;
+}
+
+
 /* Load the specified or a default configuration file. */
 int
-config_load(void)
+config_load(config_t *cfg)
 {
     int i = 0;
+
+    /* Start with a clean, known configuration. */
+    config_init(cfg);
 
     if (config_read(cfg_path)) {
 	/* Load all the categories. */
 	for (i = 0; categories[i].name != NULL; i++)
-		categories[i].load(categories[i].name);
+		categories[i].load(cfg, categories[i].name);
 
 	/* Mark the configuration as changed. */
 	config_changed = 1;
     } else {
 	ERRLOG("CONFIG: file not present or invalid, using defaults!\n");
-
-	config_default();
-
-	/* Flag this as an invalid configuration. */
-	machine_type = -1;
     }
 
     return(i);
@@ -1676,11 +1776,12 @@ config_load(void)
 void
 config_save(void)
 {
+    config_t *cfg = &config;
     int i;
 
     /* Save all the categories. */
     for (i = 0; categories[i].name != NULL; i++)
-	categories[i].save(categories[i].name);
+	categories[i].save(cfg, categories[i].name);
 
     /* Write it back to file if enabled. */
     if (! config_ro)
@@ -1709,6 +1810,102 @@ config_dump(void)
 
 	sec = (section_t *)sec->list.next;
     }
+}
+
+
+/* Compare two configurations. */
+int
+config_compare(const config_t *one, const config_t *two)
+{
+    int i;
+#if 0
+    int j;
+#endif
+
+    i = memcmp(one, two, sizeof(config_t));
+    DEBUG("COMPARE: memcmp=%i\n", i);
+
+#if 0
+    /*
+     * Compare the data old-style, per variable.
+     * We keep this until the migration is completed.
+     */
+
+    /* Machine category */
+    i = 0;
+    i = i || (one->machine_type != two->machine_type);
+    i = i || (one->cpu_manuf != two->cpu_manuf);
+    i = i || (one->cpu_waitstates != two->cpu_waitstates);
+    i = i || (one->cpu_type != two->cpu_type);
+    i = i || (one->mem_size != two->mem_size);
+#ifdef USE_DYNAREC
+    i = i || (one->cpu_use_dynarec != two->cpu_use_dynarec);
+#endif
+    i = i || (one->enable_ext_fpu != two->enable_ext_fpu);
+    i = i || (one->time_sync != two->time_sync);
+
+    /* Video category */
+    i = i || (one->video_card != two->video_card);
+    i = i || (one->voodoo_enabled != two->voodoo_enabled);
+
+    /* Input devices category */
+    i = i || (one->mouse_type != two->mouse_type);
+    i = i || (one->joystick_type != two->joystick_type);
+
+    /* Sound category */
+    i = i || (one->sound_card != two->sound_card);
+    i = i || (one->midi_device != two->midi_device);
+    i = i || (one->mpu401_standalone_enable != two->mpu401_standalone_enable);
+    i = i || (one->opl_type != two->opl_type);
+    i = i || (one->sound_is_float != two->sound_is_float);
+
+    /* Network category */
+    i = i || (one->network_type != two->network_type);
+    i = i || strcmp(one->network_host, two->network_host);
+    i = i || (one->network_card != two->network_card);
+
+    /* Ports category */
+    i = i || (one->game_enabled != two->game_enabled);
+    for (j = 0; j < SERIAL_MAX; j++)
+	i = i || (one->serial_enabled[j] != two->serial_enabled[j]);
+    for (j = 0; j < PARALLEL_MAX; j++) {
+	i = i || (one->parallel_enabled[j] != two->parallel_enabled[j]);
+	i = i || (one->parallel_device[j] != two->parallel_device[j]);
+    }
+
+    /* Peripherals category */
+    i = i || (one->scsi_card != two->scsi_card);
+    i = i || (one->hdc_type != two->hdc_type);
+    i = i || (one->ide_ter_enabled != two->ide_ter_enabled);
+    i = i || (one->ide_qua_enabled != two->ide_qua_enabled);
+    i = i || (one->bugger_enabled != two->bugger_enabled);
+    i = i || (one->isartc_type != two->isartc_type);
+
+    /* ISA memory boards. */
+    for (j = 0; j < ISAMEM_MAX; j++)
+	i = i || (one->isamem_type[j] != two->isamem_type[j]);
+
+# if 0
+    /* Hard disks category */
+    i = i || memcmp(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
+
+    /* Floppy drives category */
+    for (j = 0; j < FDD_NUM; j++) {
+	i = i || (temp_fdd_types[j] != fdd_get_type(j));
+	i = i || (temp_fdd_turbo[j] != fdd_get_turbo(j));
+	i = i || (temp_fdd_check_bpb[j] != fdd_get_check_bpb(j));
+    }
+
+    /* Other removable devices category */
+    i = i || memcmp(cdrom, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_t));
+    i = i || memcmp(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+
+    i = i || !!temp_deviceconfig;
+# endif
+    DEBUG("COMPARE: vars=%i\n", i);
+#endif
+
+    return(i);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.34	2019/04/11
+ * Version:	@(#)emu.h	1.0.35	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -171,58 +171,6 @@ extern int	settings_only;			/* (O) only the settings dlg */
 extern int	log_level;			/* (O) global logging level */
 extern wchar_t	log_path[1024];			/* (O) full path of logfile */
 
-/* Configuration variables. */
-extern int	language;			/* (C) language ID */
-extern int	window_w, window_h,		/* (C) window size and */
-		window_x, window_y,		/*     position info */
-		window_remember;
-extern int	vid_api,			/* (C) video renderer */
-		vid_resize,			/* (C) allow resizing */
-		vid_cga_contrast,		/* (C) video */
-		vid_fullscreen,			/* (C) video */
-		vid_fullscreen_first,		/* (C) video */
-		vid_fullscreen_scale,		/* (C) video */
-		vid_grayscale,			/* (C) video */
-		vid_graytype,			/* (C) video */
-		invert_display,			/* (C) invert the display */
-		suppress_overscan,		/* (C) suppress overscans */
-		scale,				/* (C) screen scale factor */
-		enable_overscan,		/* (C) video */
-		force_43,			/* (C) video */
-		rctrl_is_lalt;			/* (C) set R-CTRL as L-ALT */
-extern int	video_card,			/* (C) graphics/video card */
-		voodoo_enabled;			/* (C) video option */
-extern int	mouse_type;			/* (C) selected mouse type */
-extern int	time_sync;			/* (C) enable time sync */
-extern int	game_enabled,			/* (C) enable game port */
-		serial_enabled[],		/* (C) enable serial ports */
-		parallel_enabled[],		/* (C) enable LPT ports */
-		parallel_device[],		/* (C) set up LPT devices */
-		bugger_enabled,			/* (C) enable ISAbugger */
-		isamem_type[],			/* (C) enable ISA mem cards */
-		isartc_type;			/* (C) enable ISA RTC card */
-#ifdef WALTJE
-extern int	romdos_enabled;			/* (C) enable ROM DOS */
-#endif
-extern int	hdc_type;			/* (C) HDC type */
-extern int	scsi_card;			/* (C) selected SCSI card */
-extern int	sound_card,			/* (C) selected sound card */
-		sound_is_float,			/* (C) sound uses FP values */
-		sound_gain,			/* (C) sound volume gain */
-		mpu401_standalone_enable,	/* (C) sound option */
-		opl_type,			/* (C) sound option */
-		midi_device;			/* (C) selected midi device */
-extern int	joystick_type;			/* (C) joystick type */
-extern int	mem_size;			/* (C) memory size */
-extern int	machine_type;			/* (C) current machine ID */
-extern int	cpu_manufacturer,		/* (C) cpu manufacturer */
-		cpu_type,			/* (C) cpu type */
-		cpu_use_dynarec,		/* (C) cpu uses/needs Dyna */
-		enable_external_fpu;		/* (C) enable external FPU */
-extern int	network_type;			/* (C) net provider type */
-extern int	network_card;			/* (C) net interface num */
-extern char	network_host[512];		/* (C) host network intf */
-
 /* Global variables. */
 extern char	emu_title[64];			/* full name of application */
 extern char	emu_version[32];		/* short version ID string */
@@ -231,6 +179,7 @@ extern wchar_t	exe_path[1024];			/* emu executable path */
 extern wchar_t	emu_path[1024];			/* emu installation path */
 extern wchar_t	usr_path[1024];			/* path (dir) of user data */
 extern wchar_t  cfg_path[1024];			/* full path of config file */
+extern int	mem_size;			/* configured memory size */
 extern int	emu_lang_id;			/* current language ID */
 extern int	scrnsz_x,			/* current screen size, X */
 		scrnsz_y;			/* current screen size, Y */

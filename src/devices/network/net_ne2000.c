@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.16	2019/04/11
+ * Version:	@(#)net_ne2000.c	1.0.17	2019/05/02
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -25,7 +25,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Peter Grehan, <grehan@iprg.nokia.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Portions Copyright (C) 2002  MandrakeSoft S.A.
  *
@@ -2378,6 +2378,22 @@ nic_mca_write(int port, uint8_t val, void *priv)
 }
 
 
+static void
+nic_close(void *priv)
+{
+    nic_t *dev = (nic_t *)priv;
+
+    /* Make sure the platform layer is shut down. */
+    network_close();
+
+    nic_ioremove(dev, dev->base_address);
+
+    DEBUG("%s: closed\n", dev->name);
+
+    free(dev);
+}
+
+
 static void *
 nic_init(const device_t *info, UNUSED(void *parent))
 {
@@ -2481,9 +2497,6 @@ nic_init(const device_t *info, UNUSED(void *parent))
      */
     if ((dev->board < NE2K_RTL8019AS) && !dev->is_mca)
 	nic_ioset(dev, dev->base_address);
-
-    /* Set up our BIOS ROM space, if any. */
-    nic_rom_init(dev, fn);
 
     /* See if we have a local MAC address configured. */
     mac = device_get_config_mac("mac", -1);
@@ -2652,28 +2665,19 @@ nic_init(const device_t *info, UNUSED(void *parent))
     nic_reset(dev);
 
     /* Attach ourselves to the network module. */
-    network_attach(dev, dev->dp8390.physaddr, nic_rx);
+    if (! network_attach(dev, dev->dp8390.physaddr, nic_rx)) {
+	nic_close(dev);
+
+	return(NULL);
+    }
 
     INFO("%s: %s attached IO=0x%X IRQ=%d\n", dev->name,
 	 dev->is_pci?"PCI":"ISA", dev->base_address, dev->base_irq);
 
+    /* Set up our BIOS ROM space, if any. */
+    nic_rom_init(dev, fn);
+
     return(dev);
-}
-
-
-static void
-nic_close(void *priv)
-{
-    nic_t *dev = (nic_t *)priv;
-
-    /* Make sure the platform layer is shut down. */
-    network_close();
-
-    nic_ioremove(dev, dev->base_address);
-
-    DEBUG("%s: closed\n", dev->name);
-
-    free(dev);
 }
 
 

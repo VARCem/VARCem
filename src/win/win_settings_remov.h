@@ -8,7 +8,7 @@
  *
  *		Implementation of the "Removable Devices" dialog.
  *
- * Version:	@(#)win_settings_remov.h	1.0.13	2019/03/21
+ * Version:	@(#)win_settings_remov.h	1.0.14	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

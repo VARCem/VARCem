@@ -13,13 +13,13 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.20	2018/10/24
+ * Version:	@(#)win_joystick.cpp	1.0.21	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -179,9 +179,9 @@ joystick_init(void)
     int c;
 
     /* Only initialize if the game port is enabled. */
-    if (! game_enabled) return;
+    if (! config.game_enabled) return;
 
-    INFO("JOYSTICK: initializing (type=%d)\n", joystick_type);
+    INFO("JOYSTICK: initializing (type=%i)\n", config.joystick_type);
 
     atexit(joystick_close);
 	
@@ -305,7 +305,7 @@ joystick_process(void)
 {
     int c, d;
 
-    if (joystick_type == JOYSTICK_NONE) return;
+    if (config.joystick_type == JOYSTICK_NONE) return;
 
     for (c = 0; c < joysticks_present; c++) {		
 	DIJOYSTATE joystate;
@@ -334,16 +334,16 @@ joystick_process(void)
 		plat_joystick_state[c].p[b] = joystate.rgdwPOV[b];
     }
 
-    for (c = 0; c < gamedev_get_max_joysticks(joystick_type); c++) {
+    for (c = 0; c < gamedev_get_max_joysticks(config.joystick_type); c++) {
 	if (joystick_state[c].plat_joystick_nr) {
 		int joystick_nr = joystick_state[c].plat_joystick_nr - 1;
 
-		for (d = 0; d < gamedev_get_axis_count(joystick_type); d++)
+		for (d = 0; d < gamedev_get_axis_count(config.joystick_type); d++)
 			joystick_state[c].axis[d] = get_axis(joystick_nr, joystick_state[c].axis_mapping[d]);
-		for (d = 0; d < gamedev_get_button_count(joystick_type); d++)
+		for (d = 0; d < gamedev_get_button_count(config.joystick_type); d++)
 			joystick_state[c].button[d] = plat_joystick_state[joystick_nr].b[joystick_state[c].button_mapping[d]];
 
-		for (d = 0; d < gamedev_get_pov_count(joystick_type); d++) {
+		for (d = 0; d < gamedev_get_pov_count(config.joystick_type); d++) {
 			int x, y;
 			double angle, magnitude;
 
@@ -359,11 +359,11 @@ joystick_process(void)
 				joystick_state[c].pov[d] = ((int)angle + 90 + 360) % 360;
 		}
 	} else {
-		for (d = 0; d < gamedev_get_axis_count(joystick_type); d++)
+		for (d = 0; d < gamedev_get_axis_count(config.joystick_type); d++)
 			joystick_state[c].axis[d] = 0;
-		for (d = 0; d < gamedev_get_button_count(joystick_type); d++)
+		for (d = 0; d < gamedev_get_button_count(config.joystick_type); d++)
 			joystick_state[c].button[d] = 0;
-		for (d = 0; d < gamedev_get_pov_count(joystick_type); d++)
+		for (d = 0; d < gamedev_get_pov_count(config.joystick_type); d++)
 			joystick_state[c].pov[d] = -1;
 	}
     }

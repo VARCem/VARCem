@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_machine.h	1.0.13	2019/04/11
+ * Version:	@(#)win_settings_machine.h	1.0.14	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,12 +59,12 @@ machine_recalc_cpu(HWND hdlg)
     int cpu_type;
 
     /* Get info about the selected machine. */
-    dev = machine_get_device_ex(temp_machine);
+    dev = machine_get_device_ex(temp_cfg.machine_type);
     m = (machine_t *)dev->mach_info;
 
-    cpu_type = m->cpu[temp_cpu_m].cpus[temp_cpu].type;
+    cpu_type = m->cpu[temp_cfg.cpu_manuf].cpus[temp_cfg.cpu_type].type;
 #ifdef USE_DYNAREC
-    cpu_flags = m->cpu[temp_cpu_m].cpus[temp_cpu].flags;
+    cpu_flags = m->cpu[temp_cfg.cpu_manuf].cpus[temp_cfg.cpu_type].flags;
 #endif
 
     h = GetDlgItem(hdlg, IDC_COMBO_WS);
@@ -76,7 +76,7 @@ machine_recalc_cpu(HWND hdlg)
 #ifdef USE_DYNAREC
     h = GetDlgItem(hdlg, IDC_CHECK_DYNAREC);
     if (cpu_flags & CPU_SUPPORTS_DYNAREC) {
-	SendMessage(h, BM_SETCHECK, temp_dynarec, 0);
+	SendMessage(h, BM_SETCHECK, temp_cfg.cpu_use_dynarec, 0);
 
 	/*
 	 * If Dynarec is not enabled, see if the CPU requires
@@ -86,7 +86,7 @@ machine_recalc_cpu(HWND hdlg)
 	 */
 	if (cpu_flags & CPU_REQUIRES_DYNAREC) {
 #if 0
-		if (! temp_dynarec) {
+		if (! temp_cfg.cpu_use_dynarec) {
 			//FIXME: make this a messagebox with a user warning instead!  --FvK
 			fatal("Attempting to select a CPU that requires the recompiler and does not support it at the same time\n");
 		}
@@ -102,8 +102,8 @@ machine_recalc_cpu(HWND hdlg)
 	}
     } else {
 	/* CPU does not support Dynarec, un-check it. */
-	temp_dynarec = 0;
-	SendMessage(h, BM_SETCHECK, temp_dynarec, 0);
+	temp_cfg.cpu_use_dynarec = 0;
+	SendMessage(h, BM_SETCHECK, temp_cfg.cpu_use_dynarec, 0);
 
 	/* Since it is not supported, lock the checkbox. */
 	EnableWindow(h, FALSE);
@@ -114,14 +114,14 @@ machine_recalc_cpu(HWND hdlg)
     if ((cpu_type < CPU_i486DX) && (cpu_type >= CPU_286)) {
 	EnableWindow(h, TRUE);
     } else if (cpu_type < CPU_286) {
-	temp_fpu = 0;
+	temp_cfg.enable_ext_fpu = 0;
 	EnableWindow(h, FALSE);
     } else {
-	temp_fpu = 1;
+	temp_cfg.enable_ext_fpu = 1;
 	EnableWindow(h, FALSE);
     }
 
-    SendMessage(h, BM_SETCHECK, temp_fpu, 0);
+    SendMessage(h, BM_SETCHECK, temp_cfg.enable_ext_fpu, 0);
 }
 
 
@@ -136,14 +136,14 @@ machine_recalc_cpu_m(HWND hdlg)
     int c = 0;
 
     /* Get info about the selected machine. */
-    dev = machine_get_device_ex(temp_machine);
+    dev = machine_get_device_ex(temp_cfg.machine_type);
     m = (machine_t *)dev->mach_info;
 
     h = GetDlgItem(hdlg, IDC_COMBO_CPU);
     SendMessage(h, CB_RESETCONTENT, 0, 0);
     c = 0;
     for (;;) {
-	stransi = m->cpu[temp_cpu_m].cpus[c].name;
+	stransi = m->cpu[temp_cfg.cpu_manuf].cpus[c].name;
 	if (stransi == NULL)
 		break;
 
@@ -153,9 +153,9 @@ machine_recalc_cpu_m(HWND hdlg)
     }
     EnableWindow(h, TRUE);
 
-    if (temp_cpu >= c)
-	temp_cpu = (c - 1);
-    SendMessage(h, CB_SETCURSEL, temp_cpu, 0);
+    if (temp_cfg.cpu_type >= c)
+	temp_cfg.cpu_type = (c - 1);
+    SendMessage(h, CB_SETCURSEL, temp_cfg.cpu_type, 0);
 
     machine_recalc_cpu(hdlg);
 }
@@ -173,7 +173,7 @@ machine_recalc_machine(HWND hdlg)
     int c;
 
     /* Get info about the selected machine. */
-    dev = machine_get_device_ex(temp_machine);
+    dev = machine_get_device_ex(temp_cfg.machine_type);
     m = (machine_t *)dev->mach_info;
 
     h = GetDlgItem(hdlg, IDC_CONFIGURE_MACHINE);
@@ -193,9 +193,9 @@ machine_recalc_machine(HWND hdlg)
     }
     EnableWindow(h, TRUE);
 
-    if (temp_cpu_m >= c)
-	temp_cpu_m = (c - 1);
-    SendMessage(h, CB_SETCURSEL, temp_cpu_m, 0);
+    if (temp_cfg.cpu_manuf >= c)
+	temp_cfg.cpu_manuf = (c - 1);
+    SendMessage(h, CB_SETCURSEL, temp_cfg.cpu_manuf, 0);
     if (c == 1)
 	EnableWindow(h, FALSE);
       else
@@ -210,11 +210,11 @@ machine_recalc_machine(HWND hdlg)
     SendMessage(h, UDM_SETACCEL, 1, (LPARAM)&accel);
 
     if (!(m->flags & MACHINE_AT) || (m->ram_granularity >= 128)) {
-	SendMessage(h, UDM_SETPOS, 0, temp_mem_size);
+	SendMessage(h, UDM_SETPOS, 0, temp_cfg.mem_size);
 	h = GetDlgItem(hdlg, IDC_TEXT_MB);
 	SendMessage(h, WM_SETTEXT, 0, win_string(IDS_3334));
     } else {
-	SendMessage(h, UDM_SETPOS, 0, temp_mem_size / 1024);
+	SendMessage(h, UDM_SETPOS, 0, temp_cfg.mem_size / 1024);
 	h = GetDlgItem(hdlg, IDC_TEXT_MB);
 	SendMessage(h, WM_SETTEXT, 0, win_string(IDS_3330));
     }
@@ -251,8 +251,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)str);
 		}
-
-		SendMessage(h, CB_SETCURSEL, mach_to_list[temp_machine], 0);
+		SendMessage(h, CB_SETCURSEL, mach_to_list[temp_cfg.machine_type], 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_WS);
                 SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3335));
@@ -260,11 +259,11 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			swprintf(temp, sizeof_w(temp), L"%i", c);
         	        SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 		}
-		SendMessage(h, CB_SETCURSEL, temp_wait_states, 0);
+		SendMessage(h, CB_SETCURSEL, temp_cfg.cpu_waitstates, 0);
 
 #ifdef USE_DYNAREC
        	        h = GetDlgItem(hdlg, IDC_CHECK_DYNAREC);
-                SendMessage(h, BM_SETCHECK, temp_dynarec, 0);
+                SendMessage(h, BM_SETCHECK, temp_cfg.cpu_use_dynarec, 0);
 #endif
 
 		h = GetDlgItem(hdlg, IDC_MEMSPIN);
@@ -277,7 +276,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			    TIME_SYNC_ENABLED, win_string(IDS_ENABLED));
                	SendMessage(h, CB_ADDSTRING,
 			    TIME_SYNC_ENABLED_UTC, win_string(IDS_3336));
-		SendMessage(h, CB_SETCURSEL, temp_sync, 0);
+		SendMessage(h, CB_SETCURSEL, temp_cfg.time_sync, 0);
 
 		machine_recalc_machine(hdlg);
 
@@ -289,7 +288,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
 					d = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-					temp_machine = list_to_mach[d];
+					temp_cfg.machine_type = list_to_mach[d];
 					machine_recalc_machine(hdlg);
 				}
 				break;
@@ -297,9 +296,9 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_CPU_TYPE:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_CPU_TYPE);
-					temp_cpu_m = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_cfg.cpu_manuf = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
-					temp_cpu = 0;
+					temp_cfg.cpu_type = 0;
 					machine_recalc_cpu_m(hdlg);
 				}
 				break;
@@ -307,7 +306,7 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_COMBO_CPU:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_CPU);
-					temp_cpu = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_cfg.cpu_type = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 					machine_recalc_cpu(hdlg);
 				}
@@ -316,15 +315,15 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDC_CONFIGURE_MACHINE:
 				h = GetDlgItem(hdlg, IDC_COMBO_MACHINE);
 				d = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_machine = list_to_mach[d];
-				dev = machine_get_device_ex(temp_machine);
+				temp_cfg.machine_type = list_to_mach[d];
+				dev = machine_get_device_ex(temp_cfg.machine_type);
 				temp_deviceconfig |= dlg_devconf(hdlg, dev);
 				break;
 
 			case IDC_COMBO_SYNC:
 				if (HIWORD(wParam) == CBN_SELCHANGE) {
 					h = GetDlgItem(hdlg, IDC_COMBO_SYNC);
-					temp_sync = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+					temp_cfg.time_sync = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				}
 				break;
 		}
@@ -333,39 +332,41 @@ machine_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_SAVE_CFG:
 		/* Get info about the selected machine. */
-		dev = machine_get_device_ex(temp_machine);
+		dev = machine_get_device_ex(temp_cfg.machine_type);
 		m = (machine_t *)dev->mach_info;
 
 #ifdef USE_DYNAREC
 		h = GetDlgItem(hdlg, IDC_CHECK_DYNAREC);
-		temp_dynarec = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_cfg.cpu_use_dynarec = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 #endif
 
 		h = GetDlgItem(hdlg, IDC_CHECK_FPU);
-		temp_fpu = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+		temp_cfg.enable_ext_fpu = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_COMBO_WS);
-		temp_wait_states = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+		temp_cfg.cpu_waitstates = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_MEMTEXT);
 		SendMessage(h, WM_GETTEXT, sizeof_w(temp), (LPARAM)temp);
 		wcstombs(tempA, temp, sizeof(tempA));
-		sscanf(tempA, "%i", &temp_mem_size);
-		temp_mem_size &= ~(m->ram_granularity - 1);
-		if (temp_mem_size < (int)m->min_ram)
-			temp_mem_size = m->min_ram;
-		else if (temp_mem_size > (int)m->max_ram)
-			temp_mem_size = m->max_ram;
+		sscanf(tempA, "%i", &temp_cfg.mem_size);
+		temp_cfg.mem_size &= ~(m->ram_granularity - 1);
+		if (temp_cfg.mem_size < (int)m->min_ram)
+			temp_cfg.mem_size = m->min_ram;
+		else if (temp_cfg.mem_size > (int)m->max_ram)
+			temp_cfg.mem_size = m->max_ram;
 		if ((m->flags & MACHINE_AT) && (m->ram_granularity < 128))
-			temp_mem_size *= 1024;
+			temp_cfg.mem_size *= 1024;
+#if 0
 		if (m->flags & MACHINE_VIDEO)
-			video_card = VID_INTERNAL;
+			temp_cfg.video_card = VID_INTERNAL;
 		if (m->flags & MACHINE_MOUSE)
-			mouse_type = MOUSE_INTERNAL;
+			temp_cfg.mouse_type = MOUSE_INTERNAL;
 		if (m->flags & MACHINE_SOUND)
-			sound_card = SOUND_INTERNAL;
+			temp_cfg.sound_card = SOUND_INTERNAL;
 		if (m->flags & MACHINE_HDC)
-			hdc_type = HDC_INTERNAL;
+			temp_cfg.hdc_type = HDC_INTERNAL;
+#endif
 		return FALSE;
 
 	default:

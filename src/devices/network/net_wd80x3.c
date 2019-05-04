@@ -11,7 +11,7 @@
  *			- SMC/WD 8013EBT (ISA 16-bit);
  *			- SMC/WD 8013EP/A (MCA).
  *
- * Version:	@(#)net_wd80x3.c	1.0.6	2019/04/11
+ * Version:	@(#)net_wd80x3.c	1.0.7	2019/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -116,23 +116,23 @@ typedef struct {
 } nic_t;
 
 
-static void	wd_rx(void *, uint8_t *, int);
+static void	nic_rx(void *, uint8_t *, int);
 static void	nic_tx(nic_t *, uint32_t);
 
 
 static void
-wd_interrupt(nic_t *dev, int set)
+nic_interrupt(nic_t *dev, int set)
 {
     if (set)
-	picint(1<<dev->base_irq);
+	picint(1 << dev->base_irq);
       else
-	picintc(1<<dev->base_irq);
+	picintc(1 << dev->base_irq);
 }
 
 
 /* reset - restore state to power-up, cancelling all i/o */
 static void
-wd_reset(void *priv)
+nic_reset(void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -182,12 +182,12 @@ wd_reset(void *priv)
     dev->dp8390.ISR.reset    = 1;
     dev->dp8390.DCR.longaddr = 1;
 	
-    wd_interrupt(dev, 0);
+    nic_interrupt(dev, 0);
 }
 
 
 static uint32_t
-wd_chipmem_read(nic_t *dev, uint32_t addr, unsigned int len)
+chipmem_read(nic_t *dev, uint32_t addr, unsigned int len)
 {
     uint32_t retval = 0;
 
@@ -210,7 +210,7 @@ wd_chipmem_read(nic_t *dev, uint32_t addr, unsigned int len)
 
 
 static uint32_t
-wd_ram_read(uint32_t addr, unsigned len, void *priv)
+ram_read(uint32_t addr, unsigned len, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
     uint32_t ret;
@@ -239,34 +239,34 @@ wd_ram_read(uint32_t addr, unsigned len, void *priv)
 
 
 static uint8_t
-wd_ram_readb(uint32_t addr, void *priv)
+ram_readb(uint32_t addr, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 	
-    return wd_ram_read(addr, 1, dev);
+    return ram_read(addr, 1, dev);
 }
 
 
 static uint16_t
-wd_ram_readw(uint32_t addr, void *priv)
+ram_readw(uint32_t addr, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 	
-    return wd_ram_read(addr, 2, dev);
+    return ram_read(addr, 2, dev);
 }
 
 
 static uint32_t
-wd_ram_readl(uint32_t addr, void *priv)
+ram_readl(uint32_t addr, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 	
-    return wd_ram_read(addr, 4, dev);
+    return ram_read(addr, 4, dev);
 }
 
 
 static void
-wd_ram_write(uint32_t addr, uint32_t val, unsigned len, void *priv)
+ram_write(uint32_t addr, uint32_t val, unsigned len, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -284,34 +284,34 @@ wd_ram_write(uint32_t addr, uint32_t val, unsigned len, void *priv)
 
 
 static void
-wd_ram_writeb(uint32_t addr, uint8_t val, void *priv)
+ram_writeb(uint32_t addr, uint8_t val, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 
-    wd_ram_write(addr, val, 1, dev);
+    ram_write(addr, val, 1, dev);
 }
 
 
 static void
-wd_ram_writew(uint32_t addr, uint16_t val, void *priv)
+ram_writew(uint32_t addr, uint16_t val, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 
-    wd_ram_write(addr, val, 2, dev);
+    ram_write(addr, val, 2, dev);
 }
 
 
 static void
-wd_ram_writel(uint32_t addr, uint32_t val, void *priv)
+ram_writel(uint32_t addr, uint32_t val, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 
-    wd_ram_write(addr, val, 4, dev);
+    ram_write(addr, val, 4, dev);
 }
 
 
 static uint32_t
-wd_smc_read(nic_t *dev, uint32_t off)
+smc_read(nic_t *dev, uint32_t off)
 {
     uint32_t sum;
     uint32_t ret = 0;
@@ -400,7 +400,7 @@ wd_smc_read(nic_t *dev, uint32_t off)
 
 
 static void
-wd_smc_write(nic_t *dev, uint32_t off, uint32_t val)
+smc_write(nic_t *dev, uint32_t off, uint32_t val)
 {
     DBGLOG(2, "%s: ASIC write addr=0x%02x, value=0x%04x\n",
 		dev->name, (unsigned)off, (unsigned)val);
@@ -609,7 +609,7 @@ page0_write(nic_t *dev, uint32_t off, uint8_t val)
 		        (dev->dp8390.IMR.tx_inte << 1) |
 		        (dev->dp8390.IMR.rx_inte));
 		if (val == 0x00)
-			wd_interrupt(dev, 0);
+			nic_interrupt(dev, 0);
 		break;
 
 	case 0x08:	/* RSAR0 */
@@ -737,9 +737,9 @@ page0_write(nic_t *dev, uint32_t off, uint8_t val)
 		        (dev->dp8390.ISR.pkt_tx    << 1) |
 		        (dev->dp8390.ISR.pkt_rx));
 		if (((val & val2) & 0x7f) == 0)
-			wd_interrupt(dev, 0);
+			nic_interrupt(dev, 0);
 		  else
-			wd_interrupt(dev, 1);
+			nic_interrupt(dev, 1);
 		break;
 
 	default:
@@ -1028,7 +1028,7 @@ write_cr(nic_t *dev, uint8_t val)
     if (dev->dp8390.CR.rdma_cmd == 3) {
 	/* Set up DMA read from receive ring */
 	dev->dp8390.remote_start = dev->dp8390.remote_dma = dev->dp8390.bound_ptr * 256;
-	dev->dp8390.remote_bytes = (uint16_t) wd_chipmem_read(dev, dev->dp8390.bound_ptr * 256 + 2, 2);
+	dev->dp8390.remote_bytes = (uint16_t)chipmem_read(dev, dev->dp8390.bound_ptr * 256 + 2, 2);
 	DBGLOG(1, "%s: sending buffer #x%x length %d\n",
 		dev->name, dev->dp8390.remote_start, dev->dp8390.remote_bytes);
     }
@@ -1036,7 +1036,7 @@ write_cr(nic_t *dev, uint8_t val)
     /* Check for start-tx */
 	if ((val & 0x04) && dev->dp8390.TCR.loop_cntl) {
 	if (dev->dp8390.TCR.loop_cntl) {
-		wd_rx(dev, &dev->dp8390.mem[dev->dp8390.tx_page_start*256 - DP8390_WORD_MEMSTART],
+		nic_rx(dev, &dev->dp8390.mem[dev->dp8390.tx_page_start*256 - DP8390_WORD_MEMSTART],
 			  dev->dp8390.tx_bytes);
 	}
     } else if (val & 0x04) {
@@ -1065,15 +1065,15 @@ write_cr(nic_t *dev, uint8_t val)
     if (dev->dp8390.CR.rdma_cmd == 0x01 && dev->dp8390.CR.start && dev->dp8390.remote_bytes == 0) {
 	dev->dp8390.ISR.rdma_done = 1;
 	if (dev->dp8390.IMR.rdma_inte) {
-		wd_interrupt(dev, 1);
-		wd_interrupt(dev, 0);
+		nic_interrupt(dev, 1);
+		nic_interrupt(dev, 0);
 	}
     }
 }
 
 
 static uint8_t
-wd_readb(uint16_t addr, void *priv)
+nic_readb(uint16_t addr, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
     int off = addr - dev->base_address;
@@ -1084,7 +1084,7 @@ wd_readb(uint16_t addr, void *priv)
     if (off == 0x10)
 	retval = read_cr(dev);
     else if (off >= 0x00 && off <= 0x0f)
-	retval = wd_smc_read(dev, off);	
+	retval = smc_read(dev, off);	
     else switch(dev->dp8390.CR.pgsel) {
 	case 0x00:
 		retval = page0_read(dev, off - 0x10);
@@ -1109,7 +1109,7 @@ wd_readb(uint16_t addr, void *priv)
 
 
 static void
-wd_writeb(uint16_t addr, uint8_t val, void *priv)
+nic_writeb(uint16_t addr, uint8_t val, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
     int off = addr - dev->base_address;
@@ -1119,7 +1119,7 @@ wd_writeb(uint16_t addr, uint8_t val, void *priv)
     if (off == 0x10)
 	write_cr(dev, val);
     else if (off >= 0x00 && off <= 0x0f)
-	wd_smc_write(dev, off, val);	
+	smc_write(dev, off, val);	
     else switch(dev->dp8390.CR.pgsel) {
 	case 0x00:
 		page0_write(dev, off - 0x10, val);
@@ -1138,18 +1138,18 @@ wd_writeb(uint16_t addr, uint8_t val, void *priv)
 
 
 static void
-wd_ioset(nic_t *dev, uint16_t addr)
+nic_ioset(nic_t *dev, uint16_t addr)
 {	
     io_sethandler(addr, 0x20,
-		  wd_readb, NULL, NULL, wd_writeb, NULL, NULL, dev);
+		  nic_readb, NULL, NULL, nic_writeb, NULL, NULL, dev);
 }
 
 
 static void
-wd_ioremove(nic_t *dev, uint16_t addr)
+nic_ioremove(nic_t *dev, uint16_t addr)
 {	
     io_removehandler(addr, 0x20,
-		     wd_readb, NULL, NULL, wd_writeb, NULL, NULL, dev);
+		     nic_readb, NULL, NULL, nic_writeb, NULL, NULL, dev);
 }
 
 
@@ -1160,7 +1160,7 @@ wd_ioremove(nic_t *dev, uint16_t addr)
  * it is copied into it and the receive process is updated.
  */
 static void
-wd_rx(void *priv, uint8_t *buf, int io_len)
+nic_rx(void *priv, uint8_t *buf, int io_len)
 {
     static uint8_t bcast_addr[6] = {0xff,0xff,0xff,0xff,0xff,0xff};
     nic_t *dev = (nic_t *)priv;
@@ -1287,7 +1287,7 @@ wd_rx(void *priv, uint8_t *buf, int io_len)
     dev->dp8390.ISR.pkt_rx = 1;
 
     if (dev->dp8390.IMR.rx_inte)
-	wd_interrupt(dev, 1);
+	nic_interrupt(dev, 1);
 
     ui_sb_icon_update(SB_NETWORK, 0);
 }
@@ -1302,14 +1302,14 @@ nic_tx(nic_t *dev, uint32_t val)
 
     /* Generate an interrupt if not masked */
     if (dev->dp8390.IMR.tx_inte)
-		wd_interrupt(dev, 1);
+		nic_interrupt(dev, 1);
 
     dev->dp8390.tx_timer_active = 0;
 }
 
 
 static uint8_t
-wd_mca_read(int port, void *priv)
+nic_mca_read(int port, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -1318,7 +1318,7 @@ wd_mca_read(int port, void *priv)
 
 
 static void
-wd_mca_write(int port, uint8_t val, void *priv)
+nic_mca_write(int port, uint8_t val, void *priv)
 {
     nic_t *dev = (nic_t *)priv;
     int8_t irqs[4] = { 3, 4, 10, 15 };
@@ -1330,7 +1330,7 @@ wd_mca_write(int port, uint8_t val, void *priv)
     /* Save the MCA register value. */
     dev->pos_regs[port & 7] = val;
 
-    wd_ioremove(dev, dev->base_address);	
+    nic_ioremove(dev, dev->base_address);	
 
     dev->base_address = 0x800 + (((dev->pos_regs[2] & 0xf0) >> 4) * 0x1000);
     dev->base_irq = irqs[(dev->pos_regs[5] & 0x0c) >> 2];
@@ -1349,13 +1349,13 @@ wd_mca_write(int port, uint8_t val, void *priv)
     /* Initialize the device if fully configured. */
     if (dev->pos_regs[2] & 0x01) {
 	/* Card enabled; register (new) I/O handler. */
-	wd_ioset(dev, dev->base_address);
+	nic_ioset(dev, dev->base_address);
 
-	wd_reset(dev);
+	nic_reset(dev);
 
 	mem_map_add(&dev->ram_mapping, dev->ram_addr, ram_size,
-		    wd_ram_readb, wd_ram_readw, wd_ram_readl,
-		    wd_ram_writeb, wd_ram_writew, wd_ram_writel,
+		    ram_readb, ram_readw, ram_readl,
+		    ram_writeb, ram_writew, ram_writel,
 		    NULL, MEM_MAPPING_EXTERNAL, dev);	
 
 	mem_map_disable(&dev->ram_mapping);	
@@ -1366,8 +1366,24 @@ wd_mca_write(int port, uint8_t val, void *priv)
 }
 
 
+static void
+nic_close(void *priv)
+{
+    nic_t *dev = (nic_t *)priv;
+
+    /* Make sure the platform layer is shut down. */
+    network_close();
+
+    nic_ioremove(dev, dev->base_address);
+
+    DEBUG("%s: closed\n", dev->name);
+
+    free(dev);
+}
+
+
 static void *
-wd_init(const device_t *info, UNUSED(void *parent))
+nic_init(const device_t *info, UNUSED(void *parent))
 {
     uint32_t mac;
     nic_t *dev;
@@ -1407,7 +1423,7 @@ wd_init(const device_t *info, UNUSED(void *parent))
 	dev->base_irq = device_get_config_int("irq");
 	dev->ram_addr = device_get_config_hex20("ram_addr");
     } else {
-	mca_add(wd_mca_read, wd_mca_write, dev);	
+	mca_add(nic_mca_read, nic_mca_write, dev);	
     }
 
     /* See if we have a local MAC address configured. */
@@ -1418,7 +1434,7 @@ wd_init(const device_t *info, UNUSED(void *parent))
      * PnP and PCI devices start with address spaces inactive.
      */
     if (dev->board != WD8013EPA)
-	wd_ioset(dev, dev->base_address);
+	nic_ioset(dev, dev->base_address);
 
     /* Set up our BIA. */
     if (mac & 0xff000000) {
@@ -1445,16 +1461,19 @@ wd_init(const device_t *info, UNUSED(void *parent))
 
     /* Reset the board. */
     if (dev->board != WD8013EPA)	
-	wd_reset(dev);
+	nic_reset(dev);
 
     /* Attach ourselves to the network module. */
-    network_attach(dev, dev->dp8390.physaddr, wd_rx);
+    if (! network_attach(dev, dev->dp8390.physaddr, nic_rx)) {
+	nic_close(dev);
+
+	return(NULL);
+    }
 	
     /* Map this system into the memory map. */	
     if (dev->board != WD8013EPA) {
 	mem_map_add(&dev->ram_mapping, dev->ram_addr, 0x4000,
-		    wd_ram_readb, NULL, NULL,
-		    wd_ram_writeb, NULL, NULL,
+		    ram_readb, NULL, NULL, ram_writeb, NULL, NULL,
 		    NULL, MEM_MAPPING_EXTERNAL, dev);
 	mem_map_disable(&dev->ram_mapping);		
 
@@ -1463,22 +1482,6 @@ wd_init(const device_t *info, UNUSED(void *parent))
     }
 
     return(dev);
-}
-
-
-static void
-wd_close(void *priv)
-{
-    nic_t *dev = (nic_t *)priv;
-
-    /* Make sure the platform layer is shut down. */
-    network_close();
-
-    wd_ioremove(dev, dev->base_address);
-
-    DEBUG("%s: closed\n", dev->name);
-
-    free(dev);
 }
 
 
@@ -1656,7 +1659,7 @@ const device_t wd8003e_device = {
     DEVICE_ISA,
     WD8003E,
     NULL,
-    wd_init, wd_close, NULL,
+    nic_init, nic_close, NULL,
     NULL, NULL, NULL, NULL,
     wd8003_config
 };
@@ -1666,7 +1669,7 @@ const device_t wd8013ebt_device = {
     DEVICE_ISA,
     WD8013EBT,
     NULL,
-    wd_init, wd_close, NULL,
+    nic_init, nic_close, NULL,
     NULL, NULL, NULL, NULL,
     wd8013_config
 };
@@ -1676,7 +1679,7 @@ const device_t wd8013epa_device = {
     DEVICE_MCA,
     WD8013EPA,
     NULL,
-    wd_init, wd_close, NULL,
+    nic_init, nic_close, NULL,
     NULL, NULL, NULL, NULL,
     mca_config
 };

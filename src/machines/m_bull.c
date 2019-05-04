@@ -18,7 +18,7 @@
  *
  *		Other than the above, the machine works as expected.
  *
- * Version:	@(#)m_bull.c	1.0.1	2019/04/23
+ * Version:	@(#)m_bull.c	1.0.2	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Idea from a patch for PCem by DNS2KV2, but fully rewritten.
@@ -61,6 +61,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -98,20 +99,20 @@ common_init(const device_t *info, void *arg)
 		/* Mainboard switch. */
 		mem_remap_top(384);
 
-		if (hdc_type == HDC_INTERNAL)
+		if (config.hdc_type == HDC_INTERNAL)
 			device_add(&st506_at_wd1003_device);
 
-		if (video_card == VID_INTERNAL && ega) {
+		if (config.video_card == VID_INTERNAL && ega) {
 			/* Paradise PGA2A, really! */
 			device_add(&ega_onboard_device);
 		}
 
-		if (mouse_type == MOUSE_INTERNAL && mouse) {
+		if (config.mouse_type == MOUSE_INTERNAL && mouse) {
 			priv = device_add(&mouse_msinport_onboard_device);
 			mouse_bus_set_irq(priv, mouse);
 		}
 
-		if (scsi_card == SCSI_INTERNAL && scsi) {
+		if (config.scsi_card == SCSI_INTERNAL && scsi) {
 			priv = device_add(&scsi_ncr53c80_onboard_device);
 			irq = machine_get_config_int("scsi_irq");
 			scsi_ncr5380_set_info(priv, scsi, irq);

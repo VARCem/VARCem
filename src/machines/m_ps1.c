@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.26	2019/04/25
+ * Version:	@(#)m_ps1.c	1.0.27	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,6 +56,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -503,8 +504,8 @@ ps1_init(const device_t *info, void *arg)
 
     if (dev->model == 2011) {
 	/* Force some configuration settings. */
-	video_card = VID_INTERNAL;
-	mouse_type = MOUSE_PS2;
+	config.video_card = VID_INTERNAL;
+	config.mouse_type = MOUSE_PS2;
 
 	mem_map_add(&dev->romext_mapping, 0xc8000, 0x08000,
 		    ps1_read_romext,ps1_read_romextw,ps1_read_romextl,
@@ -528,14 +529,14 @@ ps1_init(const device_t *info, void *arg)
 	device_add(&fdc_at_actlow_device);
 
  	/* Enable the builtin HDC. */
-	if (hdc_type == HDC_INTERNAL)
+	if (config.hdc_type == HDC_INTERNAL)
 		device_add(&ps1_hdc_device);
     }
 
     if (dev->model == 2121) {
 	/* Force some configuration settings. */
-	video_card = VID_INTERNAL;
-	mouse_type = MOUSE_PS2;
+	config.video_card = VID_INTERNAL;
+	config.mouse_type = MOUSE_PS2;
 
 	io_sethandler(0x00e0, 2, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
 
@@ -563,8 +564,8 @@ ps1_init(const device_t *info, void *arg)
 
     if (dev->model == 2133) {
 	/* Force some configuration settings. */
-	hdc_type = HDC_INTERNAL;
-	mouse_type = MOUSE_PS2;
+	config.hdc_type = HDC_INTERNAL;
+	config.mouse_type = MOUSE_PS2;
 
 	/* Enable the builtin FDC. */
 	device_add(&fdc_at_device);
@@ -585,10 +586,10 @@ ps1_init(const device_t *info, void *arg)
     parallel_setup(0, 0x03bc);
 
     /* Hack to prevent Game from being initialized there. */
-    i = game_enabled;
-    game_enabled = 0;
+    i = config.game_enabled;
+    config.game_enabled = 0;
     machine_common_init();
-    game_enabled = i;
+    config.game_enabled = i;
 
     mem_remap_top(384);
 
@@ -604,7 +605,7 @@ ps1_init(const device_t *info, void *arg)
     device_add(&mouse_ps2_device);
 
     /* Audio uses ports 200h,202-207h, so only initialize gameport on 201h. */
-    if (game_enabled)
+    if (config.game_enabled)
 	device_add(&game_201_device);
 
     return(dev);

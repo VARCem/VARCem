@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.34	2019/04/30
+ * Version:	@(#)video.h	1.0.35	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -131,7 +131,9 @@ extern uint32_t		*video_6to8,
 extern uint32_t		pal_lookup[256];
 extern int		fullchange;
 extern int		xsize,ysize;
-extern int		update_overscan;
+extern int		enable_overscan,
+			update_overscan,
+			suppress_overscan;
 extern int		overscan_x,
 			overscan_y;
 extern int		video_timing_read_b,

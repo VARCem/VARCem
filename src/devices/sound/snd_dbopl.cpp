@@ -10,14 +10,14 @@
  *
  * NOTE:	See MSC_ macros for allocation on stack. --FvK
  *
- * Version:	@(#)snd_dbopl.cpp	1.0.8	2018/10/25
+ * Version:	@(#)snd_dbopl.cpp	1.0.9	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -39,14 +39,12 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifdef _MSC_VER
-  /* for malloc() and printing of the related error message with pclog() */
-# include <stdio.h>
-# include <stdlib.h>
-# include <stdint.h>
-# define dbglog sound_log
-# include "../../emu.h"
-#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#define dbglog sound_log
+#include "../../emu.h"
+#include "../../config.h"
 #include "dbopl.h"
 #include "nukedopl.h"
 #include "sound.h"
@@ -89,7 +87,7 @@ void opl_init(void (*timer_callback)(void *param, int timer, int64_t period), vo
 	opl[nr].timer_callback = timer_callback;
 	opl[nr].timer_param = timer_param;
 	opl[nr].is_opl3 = is_opl3;
-	if (!opl_type)
+	if (! config.opl_type)
 	{
 		DBOPL::InitTables();
 		opl[nr].chip.Setup(48000, is_opl3);
@@ -129,7 +127,7 @@ void opl_write(int nr, uint16_t addr, uint8_t val)
 {
         if (!(addr & 1))
 	{
-		if (!opl_type)
+		if (! config.opl_type)
 			opl[nr].addr = (int)opl[nr].chip.WriteAddr(addr, val) & 0x1ff;
 		else
 			opl[nr].addr = (int)OPL3_WriteAddr(&opl[nr].opl3chip, addr, val) & 0x1ff;
@@ -138,7 +136,7 @@ void opl_write(int nr, uint16_t addr, uint8_t val)
 	}
         else
         {
-		if (!opl_type)
+		if (! config.opl_type)
 			opl[nr].chip.WriteReg(opl[nr].addr, val);
 		else {
 			OPL3_WriteRegBuffered(&opl[nr].opl3chip, (uint16_t) opl[nr].addr, val);
@@ -214,7 +212,7 @@ void opl2_update(int nr, int16_t *buffer, int samples)
 #endif
         int c;
 
-	if (opl_type)
+	if (config.opl_type)
 	{
 		OPL3_GenerateStream(&opl[nr].opl3chip, buffer, samples);
 	}
@@ -248,7 +246,7 @@ void opl3_update(int nr, int16_t *buffer, int samples)
 #endif
         int c;
 
-	if (opl_type)
+	if (config.opl_type)
 	{
 		OPL3_GenerateStream(&opl[nr].opl3chip, buffer, samples);
 	}

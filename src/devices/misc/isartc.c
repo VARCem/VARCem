@@ -28,7 +28,7 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.7	2019/04/11
+ * Version:	@(#)isartc.c	1.0.8	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -71,6 +71,7 @@
 #include <wchar.h>
 #include <time.h>
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../device.h"
@@ -324,7 +325,7 @@ mm67_start(nvr_t *nvr)
     struct tm tm;
 
     /* Initialize the internal and chip times. */
-    if (time_sync != TIME_SYNC_DISABLED) {
+    if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
 	mm67_time_set(nvr, &tm);
@@ -527,7 +528,7 @@ isartc_init(const device_t *info, UNUSED(void *parent))
 		  dev->f_rd,NULL,NULL, dev->f_wr,NULL,NULL, dev);
 
     /* Hook into the NVR backend. */
-    dev->nvr.fn = (const wchar_t *)isartc_get_internal_name(isartc_type);
+    dev->nvr.fn = (const wchar_t *)isartc_get_internal_name(config.isartc_type);
     dev->nvr.irq = dev->irq;
     nvr_init(&dev->nvr);
 
@@ -686,10 +687,10 @@ static const struct {
 void
 isartc_reset(void)
 {
-    if (isartc_type == 0) return;
+    if (config.isartc_type == 0) return;
 
     /* Add the device to the system. */
-    device_add(boards[isartc_type].dev);
+    device_add(boards[config.isartc_type].dev);
 }
 
 

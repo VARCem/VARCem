@@ -8,7 +8,7 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.9	2019/04/11
+ * Version:	@(#)midi_mt32.c	1.0.10	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,7 @@
 #include "munt/c_interface/c_interface.h"
 #define dbglog sound_midi_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
@@ -184,7 +185,7 @@ mt32_thread(void *param)
 	thread_wait_event(event, -1);
 	thread_reset_event(event);
 
-	if (sound_is_float) {
+	if (config.sound_is_float) {
 		buf = (float *) ((uint8_t*)buffer + buf_pos);
 
 		memset(buf, 0, bsize);
@@ -245,7 +246,7 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
     samplerate = mt32emu_get_actual_stereo_output_samplerate(context);
 
     /* buf_size = samplerate/RENDER_RATE*2; */
-    if (sound_is_float) {
+    if (config.sound_is_float) {
 	buf_size = (samplerate/RENDER_RATE)*2*BUFFER_SEGMENTS*sizeof(float);
 	buffer = (float *)mem_alloc(buf_size);
 	buffer_int16 = NULL;

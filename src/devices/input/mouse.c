@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius bus- and serial mouse.
  *
- * Version:	@(#)mouse.c	1.0.18	2019/04/09
+ * Version:	@(#)mouse.c	1.0.19	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,6 +56,7 @@
 #define HAVE_STDARG_H
 #define dbglog mouse_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "mouse.h"
@@ -70,29 +71,13 @@ int	mouse_x,
 	mouse_buttons;
 
 
-static const device_t mouse_none_device = {
-    "Disabled",
-    0, MOUSE_NONE, NULL,
-    NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
-    NULL
-};
-static const device_t mouse_internal_device = {
-    "Internal",
-    0, MOUSE_INTERNAL, NULL,
-    NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
-    NULL
-};
-
-
 static const struct {
     const char		*internal_name;
     const device_t	*device;
-} mouse_devices[] = {
-    { "none",		&mouse_none_device		},
+} devices[] = {
+    { "none",		NULL				},
+    { "internal",	NULL				},
 
-    { "internal",	&mouse_internal_device		},
     { "logibus",	&mouse_logibus_device		},
     { "msbus",		&mouse_msinport_device		},
 #if 0
@@ -108,9 +93,9 @@ static const struct {
 };
 
 
-static void	*mouse_priv;
 static int	mouse_nbut;
-static device_t	mouse_dev;
+static void	*mouse_priv;
+static int	(*mouse_func)(int,int,int,int,void *);
 
 
 #ifdef _LOGGING
@@ -138,8 +123,6 @@ mouse_init(void)
     mouse_x = mouse_y = mouse_z = 0;
     mouse_buttons = 0x00;
 
-    mouse_type = MOUSE_NONE;
-
     mouse_close();
 }
 
@@ -147,8 +130,9 @@ mouse_init(void)
 void
 mouse_close(void)
 {
-    mouse_priv = NULL;
     mouse_nbut = 0;
+    mouse_priv = NULL;
+    mouse_func = NULL;
 }
 
 
@@ -156,21 +140,18 @@ void
 mouse_reset(void)
 {
     /* Nothing to do if no mouse, or a machine-internal one. */
-    if (mouse_type <= MOUSE_INTERNAL) return;
+    if (config.mouse_type <= MOUSE_INTERNAL) return;
 
-    INFO("MOUSE: reset(type=%d, '%s')\n",
-	 mouse_type, mouse_devices[mouse_type].device->name);
+    INFO("MOUSE: reset(type=%i, '%s')\n",
+	 config.mouse_type, devices[config.mouse_type].device->name);
 
     /* Clear local data. */
     mouse_x = mouse_y = mouse_z = 0;
     mouse_buttons = 0x00;
 
-    /* Copy the (R/O) mouse info. */
-    if (mouse_devices[mouse_type].device != NULL) {
-	memcpy(&mouse_dev, mouse_devices[mouse_type].device,
-					sizeof(device_t));
-	mouse_priv = device_add(&mouse_dev);
-    }
+    /* Initialize the mouse device. */
+    if (devices[config.mouse_type].device != NULL)
+	mouse_priv = device_add(devices[config.mouse_type].device);
 }
 
 
@@ -186,18 +167,16 @@ void
 mouse_process(void)
 {
     static int poll_delay = 2;
-    int (*func)(int, int, int, int, void *);
 
     if ((mouse_priv == NULL) ||		/* no or no active device */
-	(mouse_type == MOUSE_NONE)) return;
+	(config.mouse_type == MOUSE_NONE)) return;
 
     if (--poll_delay) return;
 
     mouse_poll();
 
-    func = mouse_dev.ms_poll;
-    if (func != NULL) {
-    	if (! func(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv)) {
+    if (mouse_func != NULL) {
+    	if (! mouse_func(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv)) {
 		/* Poll failed, maybe port closed? */
 		mouse_close();
 
@@ -217,9 +196,9 @@ mouse_process(void)
 void
 mouse_set_poll(int (*func)(int,int,int,int,void *), void *arg)
 {
-    if (mouse_type != MOUSE_INTERNAL) return;
+    if (config.mouse_type != MOUSE_INTERNAL) return;
 
-    mouse_dev.ms_poll = func;
+    mouse_func = func;
     mouse_priv = arg;
 }
 
@@ -227,8 +206,8 @@ mouse_set_poll(int (*func)(int,int,int,int,void *), void *arg)
 const char *
 mouse_get_name(int mouse)
 {
-    if (mouse_devices[mouse].device != NULL)
-	return(mouse_devices[mouse].device->name);
+    if (devices[mouse].device != NULL)
+	return(devices[mouse].device->name);
 
     return(NULL);
 }
@@ -237,20 +216,18 @@ mouse_get_name(int mouse)
 const char *
 mouse_get_internal_name(int mouse)
 {
-    return(mouse_devices[mouse].internal_name);
+    return(devices[mouse].internal_name);
 }
 
 
 int
 mouse_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 
-    while (mouse_devices[c].internal_name != NULL) {
-	if (! strcmp(mouse_devices[c].internal_name, s))
+    for (c = 0; devices[c].internal_name != NULL; c++)
+	if (! strcmp(devices[c].internal_name, s))
 		return(c);
-	c++;
-    }
 
     /* Not found. */
     return(0);
@@ -260,8 +237,8 @@ mouse_get_from_internal_name(const char *s)
 int
 mouse_has_config(int mouse)
 {
-    if (mouse_devices[mouse].device != NULL)
-	return(mouse_devices[mouse].device->config ? 1 : 0);
+    if (devices[mouse].device != NULL)
+	return(devices[mouse].device->config ? 1 : 0);
 
     return(0);
 }
@@ -270,7 +247,7 @@ mouse_has_config(int mouse)
 const device_t *
 mouse_get_device(int mouse)
 {
-    return(mouse_devices[mouse].device);
+    return(devices[mouse].device);
 }
 
 

@@ -8,11 +8,11 @@
  *
  *		Handle SLiRP library processing.
  *
- * Version:	@(#)net_slirp.c	1.0.6	2018/11/12
+ * Version:	@(#)net_slirp.c	1.0.7	2019/05/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -85,6 +85,7 @@ static void	(*SLIRP_close)(slirp_t *);
 static void	(*SLIRP_poll)(slirp_t *);
 static int	(*SLIRP_recv)(slirp_t *, uint8_t *);
 static int	(*SLIRP_send)(slirp_t *, const uint8_t *, int);
+
 static const dllimp_t slirp_imports[] = {
   { "slirp_debug",		&SLIRP_debug	},
   { "slirp_version",		&SLIRP_version	},
@@ -205,7 +206,7 @@ slirp_can_output(void)
  * be properly initialized.
  */
 static int
-net_slirp_init(netdev_t *list)
+do_init(netdev_t *list)
 {
     char temp[128];
     const char *fn = SLIRP_DLL_PATH;
@@ -238,7 +239,7 @@ net_slirp_init(netdev_t *list)
 
 /* Initialize SLiRP for use. */
 static int
-net_slirp_reset(uint8_t *mac)
+do_reset(uint8_t *mac)
 {
     /* Make sure local variables are cleared. */
     poll_tid = NULL;
@@ -260,7 +261,7 @@ net_slirp_reset(uint8_t *mac)
 
 
 static void
-net_slirp_close(void)
+do_close(void)
 {
     slirp_t *sl;
 
@@ -294,7 +295,7 @@ net_slirp_close(void)
 
 /* Are we available or not? */
 static int
-net_slirp_available(void)
+do_available(void)
 {
     return((slirp_handle != NULL) ? 1 : 0);
 }
@@ -302,7 +303,7 @@ net_slirp_available(void)
 
 /* Send a packet to the SLiRP interface. */
 static void
-net_slirp_send(uint8_t *pkt, int pkt_len)
+do_send(uint8_t *pkt, int pkt_len)
 {
     if (slirp != NULL) {
 	network_busy(1);
@@ -316,9 +317,9 @@ net_slirp_send(uint8_t *pkt, int pkt_len)
 
 const network_t network_slirp = {
     "SLiRP",
-    net_slirp_init,
-    net_slirp_close,
-    net_slirp_reset,
-    net_slirp_available,
-    net_slirp_send
+    do_init,
+    do_close,
+    do_reset,
+    do_available,
+    do_send
 };

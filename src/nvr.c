@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.17	2019/04/26
+ * Version:	@(#)nvr.c	1.0.18	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -51,6 +51,7 @@
 #include <time.h>
 #include <wchar.h>
 #include "emu.h"
+#include "config.h"
 #include "machines/machine.h"
 #include "timer.h"
 #include "plat.h"
@@ -198,11 +199,11 @@ nvr_init(nvr_t *nvr)
 
     /* Initialize the internal clock as needed. */
     memset(&intclk, 0x00, sizeof(intclk));
-    if (time_sync != TIME_SYNC_DISABLED) {
+    if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Get the current time of day, and convert to local time. */
 	(void)time(&now);
 
-	if (time_sync == TIME_SYNC_ENABLED_UTC)
+	if (config.time_sync == TIME_SYNC_ENABLED_UTC)
 		tm = gmtime(&now);
 	  else
 		tm = localtime(&now);

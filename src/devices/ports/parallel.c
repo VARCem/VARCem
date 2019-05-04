@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.17 	2019/04/14
+ * Version:	@(#)parallel.c	1.0.18 	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,7 @@
 #define HAVE_STDARG_H
 #define dbglog parallel_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../io.h"
 #include "../../device.h"
 #include "../../plat.h"
@@ -214,14 +215,14 @@ parallel_init(const device_t *info, UNUSED(void *parent))
 		  parallel_write,NULL,NULL, dev);
 
     /* If the user configured a device for this port, attach it. */
-    if (parallel_device[port] != 0) {
-	dev->dev_ts = parallel_device_get_device(parallel_device[port]);
+    if (config.parallel_device[port] != 0) {
+	dev->dev_ts = parallel_device_get_device(config.parallel_device[port]);
 	if (dev->dev_ts != NULL)
 		dev->dev_ps = dev->dev_ts->init(dev->dev_ts);
     }
 
     INFO("PARALLEL: %s (I/O=%04X, device=%i)\n",
-	info->name, dev->base, parallel_device[port]);
+	info->name, dev->base, config.parallel_device[port]);
 
     return(dev);
 }
@@ -260,7 +261,7 @@ parallel_reset(void)
     int i;
 
     DEBUG("PARALLEL: reset ([%i] [%i] [%i])\n",
-	  parallel_enabled[0], parallel_enabled[1], parallel_enabled[2]);
+	  config.parallel_enabled[0], config.parallel_enabled[1], config.parallel_enabled[2]);
 
     for (i = 0; i < PARALLEL_MAX; i++) {
 	dev = &ports[i];
@@ -279,8 +280,8 @@ parallel_setup(int id, uint16_t port)
     parallel_t *dev = &ports[id];
 
     DEBUG("PARALLEL: setting up LPT%i as %04X [enabled=%i]\n",
-			id+1, port, parallel_enabled[id]);
-    if (! parallel_enabled[id]) return;
+			id+1, port, config.parallel_enabled[id]);
+    if (! config.parallel_enabled[id]) return;
 
     dev->base = port;
 }

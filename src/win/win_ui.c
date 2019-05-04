@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.37	2019/04/30
+ * Version:	@(#)win_ui.c	1.0.38	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -278,7 +278,8 @@ LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     BOOL bControlKeyDown;
     KBDLLHOOKSTRUCT *p;
 
-    if (nCode < 0 || nCode != HC_ACTION || (!mouse_capture && !vid_fullscreen))
+    if (nCode < 0 || nCode != HC_ACTION ||
+	(!mouse_capture && !config.vid_fullscreen))
 	return(CallNextHookEx(hKeyboardHook, nCode, wParam, lParam));
 	
     p = (KBDLLHOOKSTRUCT*)lParam;
@@ -380,7 +381,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_RESIZE:
 				/* Set up for resizing if configured. */
 				flags = WS_OVERLAPPEDWINDOW;
-				if (! vid_resize)
+				if (! config.vid_resize)
 					flags &= ~(WS_SIZEBOX | WS_THICKFRAME |
 						   WS_MAXIMIZEBOX);
 				SetWindowLongPtr(hwnd, GWL_STYLE, flags);
@@ -396,11 +397,11 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case IDM_REMEMBER:
 				GetWindowRect(hwnd, &rect);
-				if (window_remember) {
-					window_x = rect.left;
-					window_y = rect.top;
-					window_w = rect.right - rect.left;
-					window_h = rect.bottom - rect.top;
+				if (config.window_remember) {
+					config.win_x = rect.left;
+					config.win_y = rect.top;
+					config.win_w = rect.right - rect.left;
+					config.win_h = rect.bottom - rect.top;
 				}
 				config_save();
 				break;
@@ -465,13 +466,13 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ClipCursor(&rect);
 		}
 
-		if (window_remember) {
+		if (config.window_remember) {
 			GetWindowRect(hwndMain, &rect);
 
-			window_x = rect.left;
-			window_y = rect.top;
-			window_w = rect.right - rect.left;
-			window_h = rect.bottom - rect.top;
+			config.win_x = rect.left;
+			config.win_y = rect.top;
+			config.win_w = rect.right - rect.left;
+			config.win_h = rect.bottom - rect.top;
 			save_window_pos = 1;
 
 			config_save();
@@ -483,16 +484,16 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		 * If window is not resizable, then tell the main thread			 * to resize it, as sometimes, moves can mess up the window
 		 * size.
 		 */
-		if (! vid_resize)
+		if (! config.vid_resize)
 			doresize = 1;
 
-		if (window_remember) {
+		if (config.window_remember) {
 			GetWindowRect(hwndMain, &rect);
 
-			window_x = rect.left;
-			window_y = rect.top;
-			window_w = rect.right - rect.left;
-			window_h = rect.bottom - rect.top;
+			config.win_x = rect.left;
+			config.win_y = rect.top;
+			config.win_w = rect.right - rect.left;
+			config.win_h = rect.bottom - rect.top;
 			save_window_pos = 1;
 		}
 		break;
@@ -619,7 +620,7 @@ input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_LBUTTONUP:
-		if (! vid_fullscreen)
+		if (! config.vid_fullscreen)
 			ui_mouse_capture(1);
 		break;
 
@@ -723,7 +724,7 @@ ui_init(int nCmdShow)
 
     /* Set up main window for resizing if configured. */
     flags = WS_OVERLAPPEDWINDOW;
-    if (! vid_resize)
+    if (! config.vid_resize)
 	flags &= ~(WS_SIZEBOX | WS_THICKFRAME | WS_MAXIMIZEBOX);
 
     /*
@@ -768,8 +769,8 @@ ui_init(int nCmdShow)
     ui_reset();
 
     /* Move to the last-saved position if needed. */
-    if (window_remember)
-	MoveWindow(hwndMain, window_x, window_y, window_w, window_h, FALSE);
+    if (config.window_remember)
+	MoveWindow(hwndMain, config.win_x, config.win_y, config.win_w, config.win_h, FALSE);
 
     /* Load the accelerator table */
     haccel = LoadAccelerators(hInstance, ACCEL_NAME);
@@ -839,7 +840,7 @@ ui_init(int nCmdShow)
 
     /* Initialize the configured Video API. */
 again:
-    if (! vidapi_set(vid_api)) {
+    if (! vidapi_set(config.vid_api)) {
 	/*
 	 * Selected renderer is not available.
 	 *
@@ -852,14 +853,14 @@ again:
 	 */
 	swprintf(title, sizeof_w(title),
 		 get_string(IDS_ERR_NORENDR),
-		 vidapi_get_internal_name(vid_api));
+		 vidapi_get_internal_name(config.vid_api));
 	if (ui_msgbox(MBX_CONFIG, title) != 0) {
 		/* Nope, they don't, so just exit. */
 		return(5);
 	}
 
 	/* OK, reset to the default one and retry. */
-	vid_api = vidapi_from_internal_name("default");
+	config.vid_api = vidapi_from_internal_name("default");
 	goto again;
     }
 
@@ -920,7 +921,7 @@ again:
 		ui_mouse_capture(0);
         }
 
-	if (vid_fullscreen && keyboard_isfsexit()) {
+	if (config.vid_fullscreen && keyboard_isfsexit()) {
 		/* Signal "exit fullscreen mode". */
 		/* INFO("leave full screen though key combination\n"); */
 		ui_fullscreen(0);
@@ -954,7 +955,7 @@ ui_resize(int x, int y)
     RECT r;
 
     /* First, see if we should resize the UI window. */
-    if (vid_resize) return;
+    if (config.vid_resize) return;
 
     video_blit_wait();
 
@@ -969,7 +970,7 @@ ui_resize(int x, int y)
 wchar_t *
 ui_window_title(const wchar_t *s)
 {
-    if (! vid_fullscreen) {
+    if (! config.vid_fullscreen) {
 	if (s != NULL)
 		wcscpy(wTitle, s);
 	  else

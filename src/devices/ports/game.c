@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.21	2019/04/25
+ * Version:	@(#)game.c	1.0.22	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -43,6 +43,7 @@
 #define HAVE_STDARG_H
 #define dbglog game_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../timer.h"
@@ -190,7 +191,7 @@ game_init(const device_t *info, UNUSED(void *parent))
     game_t *dev;
     int i;
 
-    INFO("GAME: initializing, type=%d\n", joystick_type);
+    INFO("GAME: initializing, type=%d\n", config.joystick_type);
 
     dev = (game_t *)mem_alloc(sizeof(game_t));
     memset(dev, 0x00, sizeof(game_t));
@@ -204,8 +205,8 @@ game_init(const device_t *info, UNUSED(void *parent))
 		  &dev->axis[i].count, &dev->axis[i].count);
     }
 
-    if (joystick_type != 0) {
-	dev->joystick = gamedev_get_device(joystick_type);
+    if (config.joystick_type != 0) {
+	dev->joystick = gamedev_get_device(config.joystick_type);
 	dev->joystick_priv = dev->joystick->init();
     }
 
@@ -255,8 +256,8 @@ game_reset(void)
 	dev->joystick = NULL;
     }
 
-    if (joystick_type != JOYSTICK_NONE) {
-	dev->joystick = gamedev_get_device(joystick_type);
+    if (config.joystick_type != JOYSTICK_NONE) {
+	dev->joystick = gamedev_get_device(config.joystick_type);
 	dev->joystick_priv = dev->joystick->init();
     }
 }

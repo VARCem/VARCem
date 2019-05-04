@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.12	2019/04/21
+ * Version:	@(#)cpu.c	1.0.13	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -114,6 +114,8 @@ const OpFn	*x86_dynarec_opcodes_REPNE;
 #endif
 
 
+int		cpu_manuf;
+int		cpu_dynarec;
 int		cpu_busspeed;
 int		cpu_16bitbus;
 int		isa_cycles;
@@ -124,7 +126,6 @@ int		cpu_cycles_read, cpu_cycles_read_l,
 		cpu_cycles_write, cpu_cycles_write_l;
 int		cpu_prefetch_cycles, cpu_prefetch_width,
 		cpu_mem_prefetch_cycles, cpu_rom_prefetch_cycles;
-int		cpu_waitstates;
 int		cpu_cache_int_enabled, cpu_cache_ext_enabled;
 
 int		is186,			/* 80186 */
@@ -196,7 +197,9 @@ int		timing_misaligned;
 static const CPU *cpu_list,
 		*cpu = NULL;
 static int	cpu_turbo = -1,
-		cpu_effective = -1;
+		cpu_effective = -1,
+		cpu_waitstates,
+		cpu_extfpu;
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
 /* Variables for the AMD "K" processors. */
@@ -242,7 +245,7 @@ cpu_activate(void)
     is_pentium = (cpu->type >= CPU_WINCHIP);
     hasfpu   = (cpu->type >= CPU_i486DX) || (cpu->type == CPU_RAPIDCAD);
     DEBUG("CPU: manuf=%i model=%i cpuid=%08lx\n",
-	cpu_manufacturer, cpu_effective, CPUID);
+	cpu_manuf, cpu_effective, CPUID);
     DEBUG("     8086=%i nec=%i 186=%i 286=%i 386=%i rcad=%i cyrix=%i 486=%i pent=%i\n",
 	is8086,is_nec,is186,is286,is386,is_rapidcad,is_cyrix,is486,is_pentium);
     DEBUG("     hasfpu=%i\n", hasfpu);
@@ -261,7 +264,7 @@ cpu_activate(void)
 
     if ((cpu->type == CPU_286) || (cpu->type == CPU_386SX) ||
 	(cpu->type == CPU_386DX) || (cpu->type == CPU_i486SX)) {
-	if (enable_external_fpu)
+	if (cpu_extfpu)
 		hasfpu = 1;
     }
 
@@ -390,7 +393,7 @@ cpu_activate(void)
 #else
 		x86_setopcodes(ops_286, ops_286_0f);
 #endif
-		if (enable_external_fpu) {
+		if (cpu_extfpu) {
 #ifdef USE_DYNAREC
 			x86_dynarec_opcodes_d9_a16 = dynarec_ops_fpu_287_d9_a16;
 			x86_dynarec_opcodes_d9_a32 = dynarec_ops_fpu_287_d9_a32;
@@ -1303,13 +1306,16 @@ cpu_activate(void)
  * In the future, this will be changed.
  */
 void
-cpu_set_type(const CPU *list, int type)
+cpu_set_type(const CPU *list, int manuf, int type, int fpu, int dyna)
 {
     if (list == NULL) {
 	fatal("CPU: invalid CPU list, aborting!\n");
 	/*NOTREACHED*/
     }
     cpu_list = list;
+    cpu_manuf = manuf;
+    cpu_extfpu = fpu;
+    cpu_dynarec = dyna;
 
     /* The 'turbo' speed is the one we got called with. */
     cpu_turbo = type;

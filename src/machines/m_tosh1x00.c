@@ -96,7 +96,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_tosh1x00.c	1.0.19	2019/04/29
+ * Version:	@(#)m_tosh1x00.c	1.0.20	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -131,6 +131,7 @@
 #include <wchar.h>
 #include <time.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -283,7 +284,7 @@ tc8521_start(nvr_t *nvr)
     struct tm tm;
 
     /* Initialize the internal and chip times. */
-    if (time_sync != TIME_SYNC_DISABLED) {
+    if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
 	tc8521_time_set(nvr->regs, &tm);
@@ -1032,19 +1033,19 @@ t1000_init(const device_t *info, void *arg)
     if (dev->is_t1200) {
 	dev->fdc = (fdc_t *)device_add(&fdc_toshiba_device);
 
-	if (video_card == VID_INTERNAL) {
+	if (config.video_card == VID_INTERNAL) {
 		/* Load the T1200 CGA Font ROM. */
 		video_load_font(T1200_FONT_PATH, FONT_CGA_THICK);
 
 		device_add(&t1200_video_device);
 	}
 
-	if (hdc_type == HDC_INTERNAL)
+	if (config.hdc_type == HDC_INTERNAL)
 		(void)device_add(&xta_t1200_device);
     } else {
 	dev->fdc = (fdc_t *)device_add(&fdc_xt_device);
 
-	if (video_card == VID_INTERNAL) {
+	if (config.video_card == VID_INTERNAL) {
 		/* Load the T1000 CGA Font ROM. */
 		video_load_font(T1000_FONT_PATH, FONT_CGA_THICK);
 

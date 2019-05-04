@@ -8,11 +8,11 @@
  *
  *		Definitions for the ISAMEM cards.
  *
- * Version:	@(#)isamem.h	1.0.1	2018/08/18
+ * Version:	@(#)isamem.h	1.0.2	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -46,9 +46,6 @@
  */
 #ifndef ISAMEM_H
 # define ISAMEM_H
-
-
-#define ISAMEM_MAX	4			/* max #cards in system */
 
 
 #ifdef __cplusplus

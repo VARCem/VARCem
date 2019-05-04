@@ -8,12 +8,12 @@
  *
  *		Implementation of the Sound Gain dialog.
  *
- * Version:	@(#)win_snd_gain.c	1.0.10	2018/10/25
+ * Version:	@(#)win_snd_gain.c	1.0.11	2018/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,10 +63,10 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INITDIALOG:
 		dialog_center(hdlg);
-		old_gain = sound_gain;
+		old_gain = config.sound_gain;
 		h = GetDlgItem(hdlg, IDC_SLIDER_GAIN);
 		SendMessage(h, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(0, 9));
-		SendMessage(h, TBM_SETPOS, (WPARAM)1, 9 - (sound_gain >> 1));
+		SendMessage(h, TBM_SETPOS, (WPARAM)1, 9 - (config.sound_gain >> 1));
 		SendMessage(h, TBM_SETTICFREQ, (WPARAM)1, 0);
 		SendMessage(h, TBM_SETLINESIZE, (WPARAM)0, 1);
 		SendMessage(h, TBM_SETPAGESIZE, (WPARAM)0, 2);
@@ -74,20 +74,20 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_VSCROLL:
 		h = GetDlgItem(hdlg, IDC_SLIDER_GAIN);
-		sound_gain = (9 - (int)SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
+		config.sound_gain = (9 - (int)SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
 		break;
 
 	case WM_COMMAND:
                 switch (LOWORD(wParam)) {
 			case IDOK:
 				h = GetDlgItem(hdlg, IDC_SLIDER_GAIN);
-				sound_gain = (9 - (int)SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
+				config.sound_gain = (9 - (int)SendMessage(h, TBM_GETPOS, (WPARAM)0, 0)) << 1;
 				config_save();
 				EndDialog(hdlg, 0);
 				return TRUE;
 
 			case IDCANCEL:
-				sound_gain = old_gain;
+				config.sound_gain = old_gain;
 				config_save();
 				EndDialog(hdlg, 0);
 				return TRUE;

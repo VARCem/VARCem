@@ -8,7 +8,7 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.6	2019/04/27
+ * Version:	@(#)png.c	1.0.7	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -54,6 +54,7 @@
 #include <png.h>
 #include "./png.h"
 #include "emu.h"
+#include "config.h"
 #include "plat.h"
 #include "ui/ui.h"
 #include "devices/video/video.h"
@@ -438,7 +439,7 @@ error:
                	b = &pix[((y * w) + x) * 4];
 
 		/* Transform if needed. */
-		if (vid_grayscale || invert_display) {
+		if (config.vid_grayscale || config.invert_display) {
 			rgb = (uint32_t *)b;
 			*rgb = video_color_transform(*rgb);
 		}

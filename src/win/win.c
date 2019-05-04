@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.29	2019/04/30
+ * Version:	@(#)win.c	1.0.30	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -212,7 +212,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
     (void)pc_setup(0, (wchar_t **)stdout);
 
     /* Set this to the default value (windowed mode). */
-    vid_fullscreen = 0;
+    config.vid_fullscreen = 0;
 
     /* First, set our (default) language. */
     lang = (int)GetUserDefaultUILanguage();
@@ -252,7 +252,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 	plat_console(0);
 
     /* Set the active language for this application. */
-    if (! ui_lang_set(language)) {
+    if (! ui_lang_set(config.language)) {
 	/* That did not work. Revert back to default and try again. */
 	lang = emu_lang_id;
 	(void)ui_lang_set(lang);

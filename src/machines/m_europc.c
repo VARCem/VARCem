@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.23	2019/04/29
+ * Version:	@(#)m_europc.c	1.0.24	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -117,6 +117,7 @@
 #include <wchar.h>
 #include <time.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -255,7 +256,7 @@ rtc_start(nvr_t *nvr)
     struct tm tm;
 
     /* Initialize the internal and chip times. */
-    if (time_sync != TIME_SYNC_DISABLED) {
+    if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
 	nvr_time_get(&tm);
 	rtc_time_set(nvr->regs, &tm);
@@ -576,7 +577,7 @@ europc_init(const device_t *info, void *arg)
      * support it. To keep the NVRAM valid, however, we act
      * like we have it configured.
      */
-    if (video_card == VID_INTERNAL) {
+    if (config.video_card == VID_INTERNAL) {
 	INFO("EuroPC: enabling CGA in place of AGA!\n");
 	device_add(&cga_device);
     }
@@ -593,7 +594,7 @@ europc_init(const device_t *info, void *arg)
      * with values set by the user.
      */
     b = (dev->nvr.regs[MRTC_CONF_D] & ~0x17);
-    if (video_card != VID_INTERNAL) {
+    if (config.video_card != VID_INTERNAL) {
 	/*
 	 * OK, this is not exactly correct, either.
 	 *
@@ -603,7 +604,7 @@ europc_init(const device_t *info, void *arg)
 	 * at the configured video card type, and perform an
 	 * "educated guess" as to its type..
 	 */
-	switch(video_card) {
+	switch(config.video_card) {
 		case VID_MDA:		/* MDA */
 		case VID_HERCULES:	/* Hercules */
 			b |= 0x03;	/* external video, mono */
@@ -657,7 +658,7 @@ europc_init(const device_t *info, void *arg)
 
     /* Update CPU speed. */
     b = (dev->nvr.regs[MRTC_CONF_D] & 0x3f);
-    switch(cpu_type) {
+    switch(config.cpu_type) {
 	case 0:		/* 8088, 4.77 MHz */
 		b |= 0x00;
 		break;
@@ -674,21 +675,21 @@ europc_init(const device_t *info, void *arg)
 
     /* Set up game port. */
     b = (dev->nvr.regs[MRTC_CONF_C] & 0xfc);
-    if (mouse_type == MOUSE_INTERNAL) {
+    if (config.mouse_type == MOUSE_INTERNAL) {
 	/* Enable the Logitech Bus Mouse device. */
 	priv = device_add(&mouse_logibus_onboard_device);
 	mouse_bus_set_irq(priv, 2);
 
 	/* Configure the port for (Bus Mouse Compatible) Mouse. */
 	b |= 0x01;
-    } else if (game_enabled) {
+    } else if (config.game_enabled) {
 	b |= 0x02;	/* enable port as joysticks */
     }
     dev->nvr.regs[MRTC_CONF_C] = b;
 
     /* Set up hard disks. */
     b = dev->nvr.regs[MRTC_CONF_B] & 0x84;
-    if (hdc_type != HDC_NONE)
+    if (config.hdc_type != HDC_NONE)
 	b |= 0x20;			/* HD20 #1 */
 
     /* Set up floppy types. */
@@ -747,7 +748,7 @@ europc_init(const device_t *info, void *arg)
      *
      * We only do this if we have not configured another one.
      */
-    if (hdc_type == HDC_INTERNAL)
+    if (config.hdc_type == HDC_INTERNAL)
 	(void)device_add(&xta_hd20_device);
 
     return(dev);

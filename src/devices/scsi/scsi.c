@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.16	2019/04/23
+ * Version:	@(#)scsi.c	1.0.17	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,7 @@
 #define HAVE_STDARG_H
 #define dbglog scsi_card_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../disk/hdc.h"
@@ -69,7 +70,7 @@ int	scsi_card_do_log = ENABLE_SCSI_DEV_LOG;
 static const struct {
     const char		*internal_name;
     const device_t	*device;
-} scsi_cards[] = {
+} devices[] = {
     { "none",		NULL				},
     { "internal",	NULL				},
 
@@ -101,20 +102,18 @@ static const struct {
 const char *
 scsi_card_get_internal_name(int card)
 {
-    return(scsi_cards[card].internal_name);
+    return(devices[card].internal_name);
 }
 
 
 int
 scsi_card_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 
-    while (scsi_cards[c].internal_name != NULL) {
-	if (! strcmp(scsi_cards[c].internal_name, s))
+    for (c = 0; devices[c].internal_name != NULL; c++)
+	if (! strcmp(devices[c].internal_name, s))
 		return(c);
-	c++;
-    }
 
     /* Not found. */
     return(0);
@@ -124,8 +123,8 @@ scsi_card_get_from_internal_name(const char *s)
 const char *
 scsi_card_getname(int card)
 {
-    if (scsi_cards[card].device != NULL)
-	return(scsi_cards[card].device->name);
+    if (devices[card].device != NULL)
+	return(devices[card].device->name);
 
     return(NULL);
 }
@@ -134,15 +133,15 @@ scsi_card_getname(int card)
 const device_t *
 scsi_card_getdevice(int card)
 {
-    return(scsi_cards[card].device);
+    return(devices[card].device);
 }
 
 
 int
 scsi_card_has_config(int card)
 {
-    if (scsi_cards[card].device != NULL)
-	return(scsi_cards[card].device->config ? 1 : 0);
+    if (devices[card].device != NULL)
+	return(devices[card].device->config ? 1 : 0);
 
     return(0);
 }
@@ -168,13 +167,14 @@ scsi_card_log(int level, const char *fmt, ...)
 int
 scsi_card_available(int card)
 {
-    if (scsi_cards[card].device)
-	return(device_available(scsi_cards[card].device));
+    if (devices[card].device)
+	return(device_available(devices[card].device));
 
     return(1);
 }
 
 
+//FIXME: move part of this stuff to scsi_reset()
 void
 scsi_card_init(void)
 {
@@ -195,6 +195,6 @@ scsi_card_init(void)
     }
 
     /* If we have one, initialize the configured SCSI controller. */
-    if (scsi_cards[scsi_card].device != NULL)
-	device_add(scsi_cards[scsi_card].device);
+    if (devices[config.scsi_card].device != NULL)
+	device_add(devices[config.scsi_card].device);
 }

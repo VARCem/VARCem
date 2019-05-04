@@ -8,7 +8,7 @@
  *
  *		Implementation of various Packard Bell machines.
  *
- * Version:	@(#)m_pbell.c	1.0.1	2019/04/08
+ * Version:	@(#)m_pbell.c	1.0.2	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -88,7 +89,7 @@ common_init(const device_t *info, void *arg)
 		ide_enable_pio_override();
 		device_add(&pc87306_device);
 
-		if (video_card == VID_INTERNAL)
+		if (config.video_card == VID_INTERNAL)
 			device_add(&gd5440_onboard_pci_device);
 		break;
     }

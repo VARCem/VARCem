@@ -9,7 +9,7 @@
  *		EGA renderers.
  * NOTE:	FIXME: make sure this works (line 99 shadow parameter)
  *
- * Version:	@(#)vid_ega_render.c	1.0.4	2019/03/07
+ * Version:	@(#)vid_ega_render.c	1.0.5	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

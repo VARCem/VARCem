@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.12	2019/01/13
+ * Version:	@(#)sound_dev.c	1.0.13	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,7 @@
 #define HAVE_STDARG_H
 #define dbglog sound_card_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "sound.h"
@@ -86,7 +87,7 @@ extern const device_t ncr_business_audio_device;
 static const struct {
     const char		*internal_name;
     const device_t	*device;
-} sound_cards[] = {
+} devices[] = {
     { "none",		NULL				},
     { "internal",	NULL				},
 
@@ -141,16 +142,16 @@ sound_card_log(int level, const char *fmt, ...)
 void
 sound_card_reset(void)
 {
-    if (sound_cards[sound_card].device != NULL)
-	device_add(sound_cards[sound_card].device);
+    if (devices[config.sound_card].device != NULL)
+	device_add(devices[config.sound_card].device);
 }
 
 
 int
 sound_card_available(int card)
 {
-    if (sound_cards[card].device != NULL)
-	return(device_available(sound_cards[card].device));
+    if (devices[card].device != NULL)
+	return(device_available(devices[card].device));
 
     return(1);
 }
@@ -159,8 +160,8 @@ sound_card_available(int card)
 const char *
 sound_card_getname(int card)
 {
-    if (sound_cards[card].device != NULL)
-	return(sound_cards[card].device->name);
+    if (devices[card].device != NULL)
+	return(devices[card].device->name);
 
     return(NULL);
 }
@@ -169,36 +170,35 @@ sound_card_getname(int card)
 const device_t *
 sound_card_getdevice(int card)
 {
-    return(sound_cards[card].device);
+    return(devices[card].device);
 }
 
 
 int
 sound_card_has_config(int card)
 {
-    if (sound_cards[card].device == NULL) return(0);
+    if (devices[card].device != NULL)
+	return(devices[card].device->config ? 1 : 0);
 
-    return(sound_cards[card].device->config ? 1 : 0);
+    return(0);
 }
 
 
 const char *
 sound_card_get_internal_name(int card)
 {
-    return(sound_cards[card].internal_name);
+    return(devices[card].internal_name);
 }
 
 
 int
 sound_card_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 
-    while (sound_cards[c].internal_name != NULL) {
-	if (! strcmp(sound_cards[c].internal_name, s))
+    for (c = 0; devices[c].internal_name != NULL; c++)
+	if (! strcmp(devices[c].internal_name, s))
 		return(c);
-	c++;
-    }
 
     /* Not found. */
     return(0);

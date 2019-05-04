@@ -8,7 +8,7 @@
  *
  *		Definitions for the "LPT" parallel port handlerss.
  *
- * Version:	@(#)parallel.h	1.0.6	2019/04/14
+ * Version:	@(#)parallel.h	1.0.7	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,8 +39,6 @@
 #ifndef EMU_PARALLEL_H
 # define EMU_PARALLEL_H
 
-
-#define PARALLEL_MAX	3			/* three ports supported */
 
 #define PARALLEL1_ADDR	0x0378
 #define PARALLEL2_ADDR	0x0278

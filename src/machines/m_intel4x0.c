@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440-based machines.
  *
- * Version:	@(#)m_intel4x0.c	1.0.6	2019/04/08
+ * Version:	@(#)m_intel4x0.c	1.0.7	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -132,7 +133,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&keyboard_ps2_ami_pci_device);
 		device_add(&pc87306_device);
 
-		if (video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL) {
 			device_add(&s3_phoenix_trio64_onboard_pci_device);
 			video_inform(VID_TYPE_SPEC, &endeavor_timing);
 		}

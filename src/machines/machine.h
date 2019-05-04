@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.32	2019/04/29
+ * Version:	@(#)machine.h	1.0.33	2019/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,6 +58,7 @@
 #define MACHINE_SOUND		0x080000	/* sys has int sound */
 #define MACHINE_VIDEO		0x100000	/* sys has int video */
 #define MACHINE_SCSI		0x200000	/* sys has int SCSI */
+#define MACHINE_NETWORK		0x400000	/* sys has int network */
 
 #define IS_ARCH(a)		(machine->flags & (a)) ? 1 : 0;
 

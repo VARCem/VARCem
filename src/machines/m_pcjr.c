@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.19	2019/04/26
+ * Version:	@(#)m_pcjr.c	1.0.20	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
 #include <math.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
@@ -774,7 +775,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
 
     nmi_mask = 0x80;
 
-    if (serial_enabled[0]) {
+    if (config.serial_enabled[0]) {
 	serial_setup(1, 0x2f8, 3);
 	device_add(&serial_1_pcjr_device);
     }

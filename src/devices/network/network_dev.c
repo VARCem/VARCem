@@ -12,11 +12,11 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network_dev.c	1.0.1	2018/11/04
+ * Version:	@(#)network_dev.c	1.0.2	2019/05/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -71,11 +71,15 @@ static const struct {
     const device_t      *device;
 } net_cards[] = {
     { "none",		NULL			},
+    { "internal",	NULL			},
 
     /* ISA cards. */
     { "ne1k",		&ne1000_device		},
     { "ne2k",		&ne2000_device		},
-    { "3c503",		&tc503_device		},
+#if 0
+    { "3c501",		&el1_device		},
+#endif
+    { "3c503",		&el2_device		},
     { "ne2kpnp",	&rtl8019as_device	},
     { "wd8003e",	&wd8003e_device		},
     { "wd8013ebt",	&wd8013ebt_device	},
@@ -119,13 +123,11 @@ network_card_log(int level, const char *fmt, ...)
 int
 network_card_get_from_internal_name(const char *s)
 {
-    int c = 0;
+    int c;
 	
-    while (net_cards[c].internal_name != NULL) {
+    for (c = 0; net_cards[c].internal_name != NULL; c++)
 	if (! strcmp(net_cards[c].internal_name, s))
-			return(c);
-	c++;
-    }
+		return(c);
 
     /* Not found. */
     return(0);

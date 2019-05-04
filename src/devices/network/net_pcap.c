@@ -8,11 +8,11 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.10	2018/11/12
+ * Version:	@(#)net_pcap.c	1.0.11	2019/05/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -55,6 +55,7 @@
 #include <pcap/pcap.h>
 #define dbglog network_log
 #include "../../emu.h"
+#include "../../config.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../../ui/ui.h"
@@ -76,15 +77,16 @@ static event_t			*poll_state;
 
 /* Pointers to the real functions. */
 static char	*const (*PCAP_lib_version)(void);
-static int	(*PCAP_findalldevs)(pcap_if_t **,char *);
+static int	(*PCAP_findalldevs)(pcap_if_t **, char *);
 static void	(*PCAP_freealldevs)(pcap_if_t *);
-static pcap_t	*(*PCAP_open_live)(const char *,int,int,int,char *);
+static pcap_t	*(*PCAP_open_live)(const char *, int, int, int, char *);
 static int	(*PCAP_compile)(pcap_t *,struct bpf_program *,
-				  const char *,int,bpf_u_int32);
-static int	(*PCAP_setfilter)(pcap_t *,struct bpf_program *);
-static u_char	*const (*PCAP_next)(pcap_t *,struct pcap_pkthdr *);
-static int	(*PCAP_sendpacket)(pcap_t *,const u_char *,int);
+				  const char *, int, bpf_u_int32);
+static int	(*PCAP_setfilter)(pcap_t *, struct bpf_program *);
+static uint8_t	*const (*PCAP_next)(pcap_t *, struct pcap_pkthdr *);
+static int	(*PCAP_sendpacket)(pcap_t *, const uint8_t *, int);
 static void	(*PCAP_close)(pcap_t *);
+
 static const dllimp_t pcap_imports[] = {
   { "pcap_lib_version",	&PCAP_lib_version	},
   { "pcap_findalldevs",	&PCAP_findalldevs	},
@@ -171,7 +173,7 @@ poll_thread(void *arg)
  * a list of (usable) intefaces for it.
  */
 static int
-net_pcap_init(netdev_t *list)
+do_init(netdev_t *list)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_if_t *devlist, *dev;
@@ -225,7 +227,7 @@ net_pcap_init(netdev_t *list)
 
 /* Close up shop. */
 static void
-net_pcap_close(void)
+do_close(void)
 {
     pcap_t *pc;
 
@@ -270,7 +272,7 @@ net_pcap_close(void)
  * tries to attach to the network module.
  */
 static int
-net_pcap_reset(uint8_t *mac)
+do_reset(uint8_t *mac)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     char filter_exp[255];
@@ -281,21 +283,22 @@ net_pcap_reset(uint8_t *mac)
     poll_state = NULL;
 
     /* Get the value of our capture interface. */
-    if ((network_host[0] == '\0') || !strcmp(network_host, "none")) {
+    if ((config.network_host[0] == '\0') ||
+	!strcmp(config.network_host, "none")) {
 	ERRLOG("PCAP: no interface configured!\n");
 	return(-1);
     }
 
     /* Open a PCAP live channel. */
-    if ((pcap = PCAP_open_live(network_host,		/* interface name */
+    if ((pcap = PCAP_open_live(config.network_host,	/* interface name */
 			       1518,			/* max packet size */
 			       1,			/* promiscuous mode? */
 			       10,			/* timeout in msec */
 			       errbuf)) == NULL) {	/* error buffer */
-	ERRLOG(" Unable to open device: %s!\n", network_host);
+	ERRLOG(" Unable to open device: %s!\n", config.network_host);
 	return(-1);
     }
-    DEBUG("PCAP: interface: %s\n", network_host);
+    DEBUG("PCAP: interface: %s\n", config.network_host);
 
     /* Create a MAC address based packet filter. */
     DEBUG("PCAP: installing filter for MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -326,7 +329,7 @@ net_pcap_reset(uint8_t *mac)
 
 /* Are we available or not? */
 static int
-net_pcap_available(void)
+do_available(void)
 {
     return((pcap_handle != NULL) ? 1 : 0);
 }
@@ -334,7 +337,7 @@ net_pcap_available(void)
 
 /* Send a packet to the Pcap interface. */
 static void
-net_pcap_send(uint8_t *bufp, int len)
+do_send(uint8_t *bufp, int len)
 {
     if (pcap == NULL) return;
 
@@ -352,9 +355,7 @@ const network_t network_pcap = {
 #else
     "PCap",
 #endif
-    net_pcap_init,
-    net_pcap_close,
-    net_pcap_reset,
-    net_pcap_available,
-    net_pcap_send
+    do_init, do_close, do_reset,
+    do_available,
+    do_send
 };

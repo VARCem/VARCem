@@ -12,7 +12,7 @@
  *
  * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
  *
- * Version:	@(#)vid_et4000w32.c	1.0.19	2019/04/19
+ * Version:	@(#)vid_et4000w32.c	1.0.20	2019/05/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

@@ -8,11 +8,11 @@
  *
  *		Define application version and build info.
  *
- * Version:	@(#)version.h	1.0.20	2018/10/05
+ * Version:	@(#)version.h	1.0.21	2019/05/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -54,7 +54,7 @@
 /* Version info. */
 #define EMU_VER_MAJOR	1
 #define EMU_VER_MINOR	7
-#define EMU_VER_REV	0
+#define EMU_VER_REV	1
 //#define EMU_VER_PATCH	0
 
 
