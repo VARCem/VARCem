@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.19	2019/04/25
+ * Version:	@(#)hdc_st506_xt.c	1.0.20	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -1332,7 +1332,7 @@ loadrom(hdc_t *dev, const wchar_t *fn)
     uint32_t size;
     FILE *fp;
 
-    if ((fp = plat_fopen(rom_path(fn), L"rb")) == NULL) {
+    if ((fp = rom_fopen(fn, L"rb")) == NULL) {
 	ERRLOG("ST506: BIOS ROM '%ls' not found!\n", fn);
 	return;
     }

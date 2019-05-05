@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.13	2019/04/25
+ * Version:	@(#)vid_genius.c	1.0.14	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -569,7 +569,7 @@ load_font(genius_t *dev, const wchar_t *s)
     FILE *fp;
     int c;
 
-    fp = plat_fopen(rom_path(s), L"rb");
+    fp = rom_fopen(s, L"rb");
     if (fp == NULL) {
 	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
 	return(0);

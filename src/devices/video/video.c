@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.30	2019/05/03
+ * Version:	@(#)video.c	1.0.31	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -940,7 +940,7 @@ video_load_font(const wchar_t *fn, fontformat_t num)
     FILE *fp;
     int c;
 
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
 	ERRLOG("VIDEO: cannot load font '%ls', fmt=%i\n", fn, num);
 	return;

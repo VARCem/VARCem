@@ -8,13 +8,13 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.13	2018/10/16
+ * Version:	@(#)snd_emu8k.c	1.0.14	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -2157,7 +2157,7 @@ void emu8k_init(emu8k_t *emu8k, const wchar_t *romfile, uint16_t emu_addr, int o
         int c;
         double out;
  
-        fp = plat_fopen(rom_path(romfile), L"rb");
+        fp = rom_fopen(romfile, L"rb");
         if (fp == NULL)
                 fatal("EMU8K: ROM file not found\n");
         

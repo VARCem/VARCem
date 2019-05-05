@@ -13,7 +13,7 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.16	2019/04/11
+ * Version:	@(#)scsi_buslogic.c	1.0.17	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1772,7 +1772,7 @@ buslogic_init(const device_t *info, UNUSED(void *parent))
 	rom_init(&bl->bios, bios_rom_name, bios_rom_addr, bios_rom_size, bios_rom_mask, 0, MEM_MAPPING_EXTERNAL);
 
 	if (has_autoscsi_rom) {
-		f = plat_fopen(rom_path(autoscsi_rom_name), L"rb");
+		f = rom_fopen(autoscsi_rom_name, L"rb");
 		if (f != NULL) {
 			(void)fread(bl->AutoSCSIROM, 1, autoscsi_rom_size, f);
 			fclose(f);
@@ -1780,7 +1780,7 @@ buslogic_init(const device_t *info, UNUSED(void *parent))
 	}
 
 	if (has_scam_rom) {
-		f = plat_fopen(rom_path(scam_rom_name), L"rb");
+		f = rom_fopen(scam_rom_name, L"rb");
 		if (f != NULL) {
 			(void)fread(bl->SCAMData, 1, scam_rom_size, f);
 			fclose(f);

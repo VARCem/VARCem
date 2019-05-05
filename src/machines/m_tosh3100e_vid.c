@@ -22,7 +22,7 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_t3100e_vid.c	1.0.11	2019/04/25
+ * Version:	@(#)m_t3100e_vid.c	1.0.12	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -661,7 +661,7 @@ load_font(vid_t *dev, const wchar_t *s)
     FILE *fp;
     int c, d;
 
-    fp = plat_fopen(rom_path(s), L"rb");
+    fp = rom_fopen(s, L"rb");
     if (fp == NULL) {
 	ERRLOG("T3100e: cannot load font '%ls'\n", s);
 	return(0);

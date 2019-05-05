@@ -8,7 +8,7 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.13	2019/03/20
+ * Version:	@(#)rom.h	1.0.14	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -97,6 +97,7 @@ extern uint32_t	rom_readl(uint32_t addr, void *priv);
 extern void	rom_reset(void);
 
 extern wchar_t	*rom_path(const wchar_t *fn);
+extern FILE	*rom_fopen(const wchar_t *fn, const wchar_t *mode);
 extern int	rom_present(const wchar_t *fn);
 
 extern void	rom_add_upper_bios(void);

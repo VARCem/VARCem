@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.17	2019/05/03
+ * Version:	@(#)vid_ega.c	1.0.18	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -220,7 +220,7 @@ LoadFontxFile(const wchar_t *fn)
 
     if (fn == NULL) return;
 
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
 	ERRLOG("EGA: Can't open FONTX2 file '%ls' !\n", fn);
 	return;

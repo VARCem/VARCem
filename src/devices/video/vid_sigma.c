@@ -41,7 +41,7 @@
  *		even-numbered columns, so the top bit of the control register
  *		at 0x2D9 is used to adjust the position.
  *
- * Version:	@(#)vid_sigma.c	1.0.7	2019/04/25
+ * Version:	@(#)vid_sigma.c	1.0.8	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -843,7 +843,7 @@ load_font(sigma_t *dev, const wchar_t *s)
     FILE *fp;
     int c;
 
-    fp = plat_fopen(rom_path(s), L"rb");
+    fp = rom_fopen(s, L"rb");
     if (fp == NULL) {
 	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
 	return(0);

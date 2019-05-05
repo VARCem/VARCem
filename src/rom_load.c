@@ -17,7 +17,7 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.15	2019/04/30
+ * Version:	@(#)rom_load.c	1.0.16	2019/05/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -364,11 +364,11 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
     pc_path(script, sizeof_w(script), NULL);
 
     if (! test_only)
-	INFO("ROM: loading script '%ls'\n", rom_path(script));
+	INFO("ROM: loading script '%ls'\n", script);
 
     /* Open the script file. */
-    if ((fp = plat_fopen(rom_path(script), L"rb")) == NULL) {
-	ERRLOG("ROM: unable to open '%ls'\n", rom_path(script));
+    if ((fp = rom_fopen(script, L"rb")) == NULL) {
+	ERRLOG("ROM: unable to open '%ls'\n", script);
 	return(0);
     }
 

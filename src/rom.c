@@ -8,7 +8,7 @@
  *
  *		Handling of ROM image files.
  *
- * Version:	@(#)rom.c	1.0.19	2019/04/30
+ * Version:	@(#)rom.c	1.0.20	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -150,16 +150,58 @@ rom_path(const wchar_t *str)
 {
     static wchar_t temp[1024];
 
-    /* Get the full path in place. */
+    /* Get the full path in place and make sure path is clean. */
     wcscpy(temp, emu_path);
     wcscat(temp, ROMS_PATH);
     plat_append_slash(temp);
     wcscat(temp, str);
-
-    /* Make sure path is clean. */
     pc_path(temp, sizeof_w(temp), NULL);
 
     return(temp);
+}
+
+
+/* Search for a given ROM image and open if found. */
+FILE *
+rom_fopen(const wchar_t *fn, const wchar_t *mode)
+{
+    wchar_t temp[512];
+    const wchar_t *sp;
+    int state = 3;
+    FILE *fp = NULL;
+
+    while (state > 0) {
+	switch(state) {
+		case 1:		/* try vm short path */
+			sp = wcsrchr(fn, L'/');
+			if (sp != NULL)
+				fn = sp + 1;
+			/*FALLTHROUGH*/
+
+		case 2:		/* try vm path */
+			wcscpy(temp, usr_path);
+			break;
+
+		case 3:		/* try system path */
+			wcscpy(temp, emu_path);
+			break;
+	}
+
+	/* Build complete path. */
+	wcscat(temp, ROMS_PATH);
+	plat_append_slash(temp);
+	wcscat(temp, fn);
+	pc_path(temp, sizeof_w(temp), NULL);
+
+	/* Try opening the file. */
+	fp = plat_fopen(temp, mode);
+	if (fp != NULL)
+		state = 0;
+  	else
+		state--;
+    }
+
+    return(fp);
 }
 
 
@@ -169,7 +211,7 @@ rom_present(const wchar_t *fn)
 {
     FILE *fp;
 
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp != NULL) {
 	(void)fclose(fp);
 	return(1);
@@ -241,7 +283,7 @@ rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
     FILE *fp;
  
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
 	ERRLOG("ROM: image '%ls' not found\n", fn);
 	return(0);
@@ -265,8 +307,8 @@ rom_load_linear(const wchar_t *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
 int
 rom_load_interleaved(const wchar_t *fnl, const wchar_t *fnh, uint32_t addr, int sz, int off, uint8_t *ptr)
 {
-    FILE *fl = plat_fopen(rom_path(fnl), L"rb");
-    FILE *fh = plat_fopen(rom_path(fnh), L"rb");
+    FILE *fl = rom_fopen(fnl, L"rb");
+    FILE *fh = rom_fopen(fnh, L"rb");
     int c;
 
     if (fl == NULL || fh == NULL) {

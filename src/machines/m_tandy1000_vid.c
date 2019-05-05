@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.3	2019/04/25
+ * Version:	@(#)m_tandy1000_vid.c	1.0.4	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1047,7 +1047,7 @@ load_font(t1kvid_t *dev, const wchar_t *fn)
     FILE *fp;
     int c;
 
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
 	ERRLOG("Tandy1000: cannot load font '%ls'\n", fn);
 	return;

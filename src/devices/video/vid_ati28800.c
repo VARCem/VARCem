@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.20	2019/04/19
+ * Version:	@(#)vid_ati28800.c	1.0.21	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -456,7 +456,7 @@ ati28800k_load_font(svga_t *svga, const wchar_t *fn)
     FILE *fp;
     int c, d;
 
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
 	ERRLOG("ATI28800K: cannot load font '%ls'\n", fn);
 	return(0);

@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.17	2019/05/02
+ * Version:	@(#)net_ne2000.c	1.0.18	2019/05/05
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -2298,7 +2298,7 @@ nic_rom_init(nic_t *dev, wchar_t *s)
 
     if (dev->bios_addr == 0) return;
 
-    if ((f = plat_fopen(rom_path(s), L"rb")) != NULL) {
+    if ((f = rom_fopen(s, L"rb")) != NULL) {
 	fseek(f, 0L, SEEK_END);
 	temp = ftell(f);
 	fclose(f);

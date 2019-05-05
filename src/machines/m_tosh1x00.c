@@ -96,7 +96,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_tosh1x00.c	1.0.20	2019/05/03
+ * Version:	@(#)m_tosh1x00.c	1.0.21	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -976,7 +976,7 @@ t1000_init(const device_t *info, void *arg)
 	 */
 	dev->rom_dos = machine_get_config_int("rom_dos");
 	if (dev->rom_dos) {
-		fp = plat_fopen(rom_path(T1000_ROMDOS_PATH), L"rb");
+		fp = rom_fopen(T1000_ROMDOS_PATH, L"rb");
 		if (fp != NULL) {
 			dev->romdrive = (uint8_t *)mem_alloc(T1000_ROMDOS_SIZE);
 			if (dev->romdrive) {

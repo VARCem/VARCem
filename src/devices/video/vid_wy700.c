@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.10	2019/04/25
+ * Version:	@(#)vid_wy700.c	1.0.11	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -861,7 +861,7 @@ load_font(wy700_t *dev, const wchar_t *s)
     FILE *fp;
     int c;
 
-    fp = plat_fopen(rom_path(s), L"rb");
+    fp = rom_fopen(s, L"rb");
     if (fp == NULL) {
 	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
 	return(0);

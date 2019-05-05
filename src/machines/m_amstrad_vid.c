@@ -25,7 +25,7 @@
  *		 by the ROS.
  *  PPC:	MDA Monitor results in half-screen, half-cell-height display??
  *
- * Version:	@(#)m_amstrad_vid.c	1.0.3	2019/04/25
+ * Version:	@(#)m_amstrad_vid.c	1.0.4	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -607,7 +607,7 @@ m_amstrad_1512_vid_init(const wchar_t *fn, int fnt, int cp)
     dev->fontbase = (cp & 0x03) * 256;
 
     /* Load the PC1512 CGA Character Set ROM. */
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp != NULL) {
 	if (fnt == FONT_CGA_THICK) {
 		/* Use the second ("thick") font in the ROM. */
@@ -1608,7 +1608,7 @@ m_amstrad_ida_init(int type, const wchar_t *fn, int cp, int em, int dt)
     dev->ida_mode = em;
 
     /* Load the Character Set ROM. */
-    fp = plat_fopen(rom_path(fn), L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp != NULL) {
 	/* The ROM has 4 fonts. */
 	for (d = 0; d < 4; d++) {
