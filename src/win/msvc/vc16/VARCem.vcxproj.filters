@@ -922,6 +922,18 @@
     <ClCompile Include="..\..\win_d2d.cpp">
       <Filter>win</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\devices\chipsets\acc2168.c">
+      <Filter>devices\chipsets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sio\sio_acc3221.c">
+      <Filter>devices\sio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\system\clk.c">
+      <Filter>devices\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\video\vid_ht216.c">
+      <Filter>devices\video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\config.h" />
@@ -1682,6 +1694,12 @@
     </ClInclude>
     <ClInclude Include="..\..\win_d2d.h">
       <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\chipsets\acc2168.h">
+      <Filter>devices\chipsets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\system\clk.h">
+      <Filter>devices\system</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
