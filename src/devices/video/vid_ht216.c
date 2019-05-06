@@ -97,9 +97,12 @@ typedef struct {
     int		ext_reg_enable;
     int		clk_sel;
         
-    uint8_t	read_bank_reg[2], write_bank_reg[2];
-    uint32_t	read_bank[2], write_bank[2];
-    uint8_t	misc, pad;
+    uint8_t	read_bank_reg[2],
+		write_bank_reg[2];
+    uint32_t	read_bank[2],
+		write_bank[2];
+    uint8_t	misc,
+		pad;
     uint16_t	id;
         
     uint8_t	bg_latch[8];
@@ -108,7 +111,7 @@ typedef struct {
 } ht216_t;
 
 
-static video_timings_t	timing_v7vga = {VID_ISA,5,5,9,20,20,30};
+static const video_timings_t	v7vga_timings = {VID_ISA,5,5,9,20,20,30};
 
 
 
@@ -412,8 +415,6 @@ ht216_out(uint16_t addr, uint8_t val, void *priv)
 		break;
 
 	case 0x46e8:
-		if (dev->id != 0x7861) break;
-
 		io_removehandler(0x03c0, 32,
 				 ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
 		mem_map_disable(&dev->svga.mapping);
@@ -631,7 +632,7 @@ ht216_write(uint32_t addr, uint8_t val, void *priv)
     if (dev->ht_regs[0xcd])
 	write_common(dev, addr, val);
     else
-	svga_write_linear(addr, val, &dev->svga);
+	svga_write_linear(addr, val, svga);
 }
 
 
@@ -648,7 +649,7 @@ ht216_writew(uint32_t addr, uint16_t val, void *priv)
 	write_common(dev, addr, val & 0xff);
 	write_common(dev, addr+1, val >> 8);
     } else
-	svga_writew_linear(addr, val, &dev->svga);
+	svga_writew_linear(addr, val, svga);
 }
 
 
@@ -662,12 +663,12 @@ ht216_writel(uint32_t addr, uint32_t val, void *priv)
     addr = (addr & 0x7fff) + dev->write_bank[(addr >> 15) & 1];
 
     if (dev->ht_regs[0xcd]) {
-	write_common(dev, addr, val);
+	write_common(dev, addr, val & 0xff);
 	write_common(dev, addr+1, val >> 8);
 	write_common(dev, addr+2, val >> 16);
 	write_common(dev, addr+3, val >> 24);
     } else
-	svga_writel_linear(addr, val, &dev->svga);
+	svga_writel_linear(addr, val, svga);
 }
 
 
@@ -683,7 +684,7 @@ write_linear(uint32_t addr, uint8_t val, void *priv)
     if (dev->ht_regs[0xcd])
 	write_common(dev, addr, val);
     else
-	svga_write_linear(addr, val, &dev->svga);
+	svga_write_linear(addr, val, svga);
 }
 
 
@@ -700,7 +701,7 @@ writew_linear(uint32_t addr, uint16_t val, void *priv)
 	write_common(dev, addr, val & 0xff);
 	write_common(dev, addr+1, val >> 8);
     } else
-	svga_writew_linear(addr, val, &dev->svga);
+	svga_writew_linear(addr, val, svga);
 }
 
 
@@ -714,12 +715,12 @@ writel_linear(uint32_t addr, uint32_t val, void *priv)
 	addr = (addr & 0xffff) | ((addr & 0xc0000) >> 2);
 
     if (dev->ht_regs[0xcd]) {
-	write_common(dev, addr, val);
+	write_common(dev, addr, val & 0xff);
 	write_common(dev, addr+1, val >> 8);
 	write_common(dev, addr+2, val >> 16);
 	write_common(dev, addr+3, val >> 24);
     } else
-	svga_writel_linear(addr, val, &dev->svga);
+	svga_writel_linear(addr, val, svga);
 }
 
 
@@ -882,8 +883,6 @@ ht216_init(const device_t *info, UNUSED(void *parent))
 		break;
 
 	case 0x7861:	/* Packard-Bell 410A On-Board */
-		io_sethandler(0x46e8, 1,
-			      ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
 		vram_sz = (1 << 20);
 		break;
     }
@@ -892,6 +891,8 @@ ht216_init(const device_t *info, UNUSED(void *parent))
     dev->ht_regs[0xb4] = 0x08; /*32-bit DRAM bus*/
 
     io_sethandler(0x03c0, 32,
+		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
+    io_sethandler(0x46e8, 1,
 		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
 
     if (info->path != NULL)
@@ -906,17 +907,17 @@ ht216_init(const device_t *info, UNUSED(void *parent))
     svga->bpp = 8;
     svga->miscout = 1;
 
-    mem_map_set_handler(&dev->svga.mapping,
+    mem_map_set_handler(&svga->mapping,
 			ht216_read,NULL,NULL,
 			ht216_write,ht216_writew,ht216_writel);
-    mem_map_set_p(&dev->svga.mapping, dev);
+    mem_map_set_p(&svga->mapping, dev);
 
     mem_map_add(&dev->linear_mapping, 0, 0,
 		read_linear,NULL,NULL,
 		write_linear,writew_linear,writel_linear,
-		NULL, 0, &dev->svga);
+		NULL, 0, svga);
 
-    video_inform(VID_TYPE_SPEC, &timing_v7vga);
+    video_inform(VID_TYPE_SPEC, &v7vga_timings);
 
     return(dev);
 }
@@ -963,7 +964,7 @@ static const device_config_t v7_vga_1024i_config[] = {
 
 const device_t video7_vga_1024i_device = {
     "Video7 VGA 1024i",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     0x7010,
     BIOS_VIDEO7_VGA_1024I_PATH,
     ht216_init, ht216_close, NULL,
@@ -976,7 +977,7 @@ const device_t video7_vga_1024i_device = {
 
 const device_t ht216_32_pb410a_device = {
     "Headland HT216-32 (Packard Bell PB410A)",
-    DEVICE_ISA,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
     0x7861,	/*HT216-32*/
     NULL,
     ht216_init, ht216_close, NULL,

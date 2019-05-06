@@ -640,6 +640,9 @@ nvr_start(nvr_t *nvr)
 	nvr_time_set(&tm);
     }
 
+    /* Mark the battery as Good. */
+    nvr->regs[RTC_REGD] |= REGD_VRT;
+
     /* Start the RTC. */
     nvr->regs[RTC_REGA] = (REGA_RS2|REGA_RS1);
     nvr->regs[RTC_REGB] = REGB_2412;
@@ -692,6 +695,9 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
 		local->cent = RTC_CENTURY_AT;
 		break;
     }
+
+    /* Clear the RAM bytes to FF (per DS12885/887/887A spec.) */
+    memset(&nvr->regs[RTC_REGS], 0xff, nvr->size - RTC_REGS);
 
     /* Set up any local handlers here. */
     nvr->reset = nvr_reset;

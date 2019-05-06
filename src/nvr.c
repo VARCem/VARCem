@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.18	2019/05/03
+ * Version:	@(#)nvr.c	1.0.19	2019/05/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -137,7 +137,6 @@ onesec_timer(void *priv)
 }
 
 
-/* Get current time from internal clock. */
 /* Initialize the generic NVRAM/RTC device. */
 void
 nvr_init(nvr_t *nvr)
@@ -275,9 +274,6 @@ nvr_load(void)
     /* Make sure we have been initialized. */
     if (saved_nvr == NULL) return(0);
 
-    /* Clear out any old data. NVR is RAM, so zero it. */
-    memset(saved_nvr->regs, 0x00, sizeof(saved_nvr->regs));
-
     /* Set the defaults. */
     if (saved_nvr->reset != NULL)
 	saved_nvr->reset(saved_nvr);
@@ -330,6 +326,7 @@ nvr_save(void)
 }
 
 
+/* Get current time from internal clock. */
 void
 nvr_time_get(struct tm *tm)
 {
