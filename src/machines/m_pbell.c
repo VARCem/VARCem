@@ -45,6 +45,7 @@
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
+#include "../devices/chipsets/acc2168.h"
 #include "../devices/chipsets/intel4x0.h"
 #include "../devices/system/pci.h"
 #include "../devices/system/memregs.h"
@@ -69,8 +70,19 @@ common_init(const device_t *info, void *arg)
     device_add_ex(info, arg);
 
     switch(info->local) {
+	/* PB410A/PB430/ACC2168/ACC3221 */
+	case 410:
+		device_add(&acc2168_device);
+		m_at_common_ide_init();
+		device_add(&keyboard_ps2_device);
+		memregs_init();
+		device_add(&acc3221_device);
+		if (config.video_card == VID_INTERNAL)
+			device_add(&ht216_32_pb410a_device);	
+		break;
+
 	/* PB640: Packard Bell PB640/430FX/AMI/NS PC87306 */
-	case 0:
+	case 640:
 		device_add(&i430fx_pb640_device);
 		device_add(&piix_pb640_device);
 		device_add(&intel_flash_bxt_ami_device);
@@ -108,10 +120,29 @@ static const machine_t pb640_info = {
 const device_t m_pb640 = {
     "Packard Bell 640",
     DEVICE_ROOT,
-    0,
+    640,
     L"pbell/pb640",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &pb640_info,
     NULL		/* &gd5440_onboard_pci_device */
+};
+
+
+static const machine_t pb410a_info = {
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,
+    0,
+    1, 32, 1, 128, -1,
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
+};
+
+const device_t m_pb410a = {
+    "Packard Bell 410A",
+    DEVICE_ROOT,
+    410,
+    L"pbell/pb410a",
+    common_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &pb410a_info,
+    NULL
 };

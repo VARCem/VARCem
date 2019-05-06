@@ -6,13 +6,13 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the Super I/O chips.
+ *		Definitions for the ACC2168 chipset.
  *
- * Version:	@(#)sio.h	1.0.3	2019/05/02
+ * Version:	@(#)acc2168.h	1.0.1	2019/05/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -44,30 +44,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef EMU_SIO_H
-# define EMU_SIO_H
+#ifndef ACC2168_H
+# define ACC2168_H
 
 
-extern const device_t	sio_detect_device;
-
-extern const device_t	acc3221_device;
-
-extern const device_t	fdc37c663_device;
-
-extern const device_t	fdc37c665_device;
-extern const device_t	fdc37c666_device;
-extern const device_t	fdc37c669_device;
-
-extern const device_t	fdc37c932fr_device;
-
-extern const device_t	fdc37c935_device;
-
-extern const device_t	pc87306_device;
-
-extern const device_t	um8669f_device;
-
-extern const device_t	w83877f_device;
-extern const device_t	w83877f_president_device;
+#ifdef EMU_DEVICE_H
+extern const device_t	acc2168_device;
+#endif
 
 
-#endif	/*EMU_SIO_H*/
+#endif	/*ACC2168_H*/

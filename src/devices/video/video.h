@@ -267,6 +267,10 @@ extern const device_t	paradise_wd90c11_megapc_device;
 extern const device_t	paradise_wd90c11_device;
 extern const device_t	paradise_wd90c30_device;
 
+/* Video7 HT-216 based cards. */
+extern const device_t	video7_vga_1024i_device;
+extern const device_t	ht216_32_pb410a_device;
+
 /* S3, Inc standard series cards. */
 extern const device_t	s3_v7mirage_86c801_isa_device;
 extern const device_t	s3_phoenix_86c805_vlb_device;

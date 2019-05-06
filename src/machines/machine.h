@@ -222,6 +222,8 @@ extern const device_t	m_aw430vx;
 extern const device_t	m_p55va;
 extern const device_t	m_j656vxd;
 extern const device_t	m_p55t2s;
+
+extern const device_t	m_pb410a;
 extern const device_t	m_pb640;
 
 extern const device_t	m_tyan_1662_ami;

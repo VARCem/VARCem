@@ -1711,6 +1711,7 @@ void
 port_92_reset(void)
 {
     port_92_reg = 0;
+
     mem_a20_alt = 0;
     mem_a20_recalc();
 

@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.68	2019/04/29
+# Version:	@(#)Makefile.VC	1.0.69	2019/05/05
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -634,8 +634,8 @@ SYSOBJ		:= dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj mca.obj \
 		   mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj
 
 CHIPOBJ		:= neat.obj scat.obj headland.obj \
-		    intel4x0.obj ali1429.obj opti495.obj sis471.obj sis496.obj \
-		    wd76c10.obj
+		    acc2168.obj ali1429.obj opti495.obj sis471.obj sis496.obj \
+		    wd76c10.obj intel4x0.obj
 
 MCHOBJ		:= machine.obj machine_table.obj \
 		    m_xt.obj \
@@ -663,8 +663,9 @@ DEVOBJ		:= bugger.obj \
 		   parallel.obj parallel_dev.obj \
 		    prt_text.obj prt_cpmap.obj prt_escp.obj \
 		   serial.obj \
-		   sio_fdc37c66x.obj sio_fdc37c669.obj sio_fdc37c93x.obj \
-		   sio_pc87306.obj sio_w83877f.obj sio_um8669f.obj \
+		   sio_acc3221.obj sio_fdc37c66x.obj sio_fdc37c669.obj \
+		   sio_fdc37c93x.obj sio_pc87306.obj sio_w83877f.obj \
+		   sio_um8669f.obj \
 		   intel.obj intel_flash.obj intel_sio.obj intel_piix.obj \
 		   keyboard.obj \
 		    keyboard_xt.obj keyboard_at.obj \
@@ -754,6 +755,7 @@ VIDOBJ		:= video.obj \
 		    vid_cl54xx.obj \
 		    vid_et4000.obj vid_sc1502x_ramdac.obj \
 		    vid_et4000w32.obj vid_stg_ramdac.obj \
+		    vid_ht216.obj \
 		    vid_oak_oti.obj \
 		    vid_paradise.obj \
 		    vid_ti_cf62011.obj \

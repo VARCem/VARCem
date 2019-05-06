@@ -9,7 +9,7 @@
  *		EGA renderers.
  * NOTE:	FIXME: make sure this works (line 99 shadow parameter)
  *
- * Version:	@(#)vid_ega_render.c	1.0.5	2019/05/03
+ * Version:	@(#)vid_ega_render.c	1.0.6	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -214,7 +214,8 @@ ega_render_text_jega(ega_t *ega, int draw)
     int blocks = ega->hdisp;
     int fline;
 
-    unsigned int pad_y, exattr;
+    int pad_y;
+    unsigned int exattr;
 
     if (fullchange) {
 	for (x = 0; x < ega->hdisp; x++) {
@@ -257,7 +258,7 @@ ega_render_text_jega(ega_t *ega, int draw)
 			}
 
 			/* Stay drawing if the char code is DBCS and not at last column. */
-			if (is_kanji1(dat) && (blocks > 1)) {
+			if (is_kanji1((uint8_t)dat) && (blocks > 1)) {
 				/* Set the present char/attr code to the next loop. */
 				chr_left = chr;
 				chr_wide = 1;
@@ -293,7 +294,7 @@ ega_render_text_jega(ega_t *ega, int draw)
 
 			if (ega->sc >= pad_y && ega->sc < 16 + pad_y) {
 				/* Check the char code is in Wide charset of Shift-JIS. */
-				if (is_kanji2(chr)) {
+				if (is_kanji2((uint8_t)chr)) {
 					fline = ega->sc - pad_y;
 					chr_left <<= 8;
 					/* Fix vertical position. */

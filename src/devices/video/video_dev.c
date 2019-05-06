@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.37	2019/04/19
+ * Version:	@(#)video_dev.c	1.0.38	2019/05/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -110,6 +110,7 @@ static const struct {
     { "pvga1a",			&paradise_pvga1a_device		},
     { "sigma400",		&sigma_device			},
     { "px_s3_v7_801_isa",	&s3_v7mirage_86c801_isa_device	},
+    { "video7_vga_1024i",	&video7_vga_1024i_device	},
     { "wd90c11",		&paradise_wd90c11_device	},
     { "wd90c30",		&paradise_wd90c30_device	},
     { "plantronics",		&colorplus_device		},
