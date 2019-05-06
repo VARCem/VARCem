@@ -25,7 +25,7 @@
  *		to be done on implementing other parts of the Yamaha V6355
  *		chip that implements the video controller.
  *
- * Version:	@(#)m_zenith.c	1.0.6	2019/05/03
+ * Version:	@(#)m_zenith.c	1.0.7	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original patch for PCem by 'Tux'
@@ -355,7 +355,8 @@ zenith_init(const device_t *info, void *arg)
 
     nmi_init();
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+    /* Set up our DRAM refresh timer. */
+    pit_set_out_func(&pit, 1, m_xt_refresh_timer);
 
     /* Set up and initialize the Ricoh RP5C15 RTC. */
     dev->nvr.size = 64;

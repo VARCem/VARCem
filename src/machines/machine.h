@@ -264,6 +264,9 @@ extern const char	*machine_get_config_string(const char *s);
 extern void		machine_common_init(void);
 
 /* Functions shared by other machines. */
+extern void		m_xt_refresh_timer(int new_out, int old_out);
+
+extern void		m_at_refresh_timer(int new_out, int old_out);
 extern void		m_at_common_init(void);
 extern void		m_at_init(void);
 extern void		m_at_common_ide_init(void);

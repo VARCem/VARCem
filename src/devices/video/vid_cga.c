@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.17	2019/04/25
+ * Version:	@(#)vid_cga.c	1.0.18	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
-#include "../system/pit.h"
+#include "../system/clk.h"
 #include "video.h"
 #include "vid_cga.h"
 #include "vid_cga_comp.h"

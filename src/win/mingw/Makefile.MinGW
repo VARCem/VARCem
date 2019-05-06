@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.85	2019/05/02
+# Version:	@(#)Makefile.mingw	1.0.86	2019/05/05
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -721,8 +721,8 @@ CPUOBJ		:= cpu.o cpu_table.o \
 		    808x.o 386.o x86seg.o x87.o \
 		    386_dynarec.o $(DYNARECOBJ)
 
-SYSOBJ		:= dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o mcr.o \
-		   memregs.o nvr_at.o nvr_ps2.o
+SYSOBJ		:= clk.o dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o \
+		   mcr.o memregs.o nvr_at.o nvr_ps2.o
 
 CHIPOBJ		:= neat.o scat.o headland.o \
 		    acc2168.o ali1429.o opti495.o sis471.o sis496.o \

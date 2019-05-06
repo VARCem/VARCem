@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.13	2019/04/11
+ * Version:	@(#)m_at.c	1.0.14	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,6 +47,7 @@
 #include "../nvr.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
+#include "../devices/system/ppi.h"
 #include "../devices/system/dma.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
@@ -60,7 +61,8 @@ m_at_common_init(void)
 {
     machine_common_init();
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_at);
+    pit_set_out_func(&pit, 1, m_at_refresh_timer);
+
     pic2_init();
     dma16_init();
 
@@ -175,3 +177,12 @@ const device_t m_xt286 = {
     &xt286_info,
     NULL
 };
+
+
+/* Emulate a DRAM refresh cycle. */
+void
+m_at_refresh_timer(int new_out, int old_out)
+{
+    if (new_out && !old_out)
+        ppi.pb ^= 0x10;
+}

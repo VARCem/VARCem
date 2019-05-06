@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.11	2019/05/05
+ * Version:	@(#)vid_wy700.c	1.0.12	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,7 +93,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
-#include "../system/pit.h"
+#include "../system/clk.h"
 #include "video.h"
 
 

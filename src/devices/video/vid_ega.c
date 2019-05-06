@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.18	2019/05/05
+ * Version:	@(#)vid_ega.c	1.0.19	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
-#include "../system/pit.h"
+#include "../system/clk.h"
 #include "video.h"
 #include "vid_ega.h"
 #include "vid_ega_render.h"

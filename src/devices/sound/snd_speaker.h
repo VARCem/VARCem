@@ -8,7 +8,7 @@
  *
  *		Definitions for the PC-Speaker driver.
  *
- * Version:	@(#)snd_speaker.h	1.0.3	2019/02/12
+ * Version:	@(#)snd_speaker.h	1.0.4	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@ extern int	speaker_val,
 
 extern void	speaker_reset(void);
 extern void	speaker_update(void);
+extern void	speaker_timer(int new_out, int old_out);
 
 
 #endif	/*SOUND_SPEAKER_H*/

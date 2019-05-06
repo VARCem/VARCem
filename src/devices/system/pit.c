@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.14	2019/04/25
+ * Version:	@(#)pit.c	1.0.15	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,32 +56,21 @@
 #ifdef USE_CASSETTE
 # include <cassette.h>
 #endif
-#include "../video/video.h"
+#include "clk.h"
 #include "nmi.h"
-#include "dma.h"
 #include "pic.h"
 #include "pit.h"
-#include "ppi.h"
 
 
 PIT	pit,
 	pit2;
 
-float	cpuclock;
-float	bus_timing;
-
-double	PITCONST;
-float	CGACONST;
-float	MDACONST;
-float	VGACONST1,
-	VGACONST2;
-float	RTCCONST;
-
 
 static void
 set_out(PIT *dev, int t, int out)
 {
-    dev->set_out_funcs[t](out, dev->out[t]);
+    if (dev->funcs[t])
+	dev->funcs[t](out, dev->out[t]);
     dev->out[t] = out;
 }
 
@@ -209,19 +198,6 @@ do_over(PIT *dev, int t)
 
     dev->running[t] = dev->enabled[t] &&
 		      dev->using_timer[t] && !dev->disabled[t];
-}
-
-
-static void
-pit_clock(PIT *dev, int t)
-{
-    if (dev->thit[t] || !dev->enabled[t]) return;
-
-    if (dev->using_timer[t]) return;
-
-    dev->count[t] -= (dev->m[t] == 3) ? 2 : 1;
-    if (dev->count[t] == 0)
-	do_over(dev, t);
 }
 
 
@@ -504,13 +480,6 @@ pit_read(uint16_t addr, void *priv)
 }
 
 
-/* FIXME: should be removed. */
-static void
-null_timer(int new_out, int old_out)
-{
-}
-
-
 /* FIXME: should be moved to machine.c (default for most machines..) */
 static void
 irq0_timer(int new_out, int old_out)
@@ -520,24 +489,6 @@ irq0_timer(int new_out, int old_out)
 
     if (! new_out)
 	picintc(1);
-}
-
-
-/* FIXME: should be moved to snd_speaker.c */
-static void
-speaker_timer(int new_out, int old_out)
-{
-    int64_t l;
-
-    speaker_update();
-
-    l = pit.l[2] ? pit.l[2] : 0x10000LL;
-    if (l < 25LL)
-	speaker_on = 0;
-      else
-	speaker_on = new_out;
-
-    ppispeakon = new_out;
 }
 
 
@@ -561,11 +512,9 @@ pit_init(void)
     io_sethandler(0x0040, 4,
 		  pit_read,NULL,NULL, pit_write,NULL,NULL, &pit);
 
+//FIXME: these two should be moved to the machine files!
     /* Timer0: the TOD clock. */
     pit_set_out_func(&pit, 0, irq0_timer);
-
-    /* Timer1: unused. */
-    pit_set_out_func(&pit, 1, null_timer);
 
     /* Timer2: speaker and cassette. */
     pit_set_out_func(&pit, 2, speaker_timer);
@@ -626,14 +575,14 @@ pit_ps2_init(void)
 void
 pit_reset(PIT *dev)
 {
-    void (*old_set_out_funcs[3])(int new_out, int old_out);
+    void (*old_funcs[3])(int new_out, int old_out);
     PIT_nr old_pit_nr[3];
     int i;
 
-    memcpy(old_set_out_funcs, dev->set_out_funcs, 3 * sizeof(void *));
+    memcpy(old_funcs, dev->funcs, 3 * sizeof(void *));
     memcpy(old_pit_nr, dev->pit_nr, 3 * sizeof(PIT_nr));
-    memset(dev, 0, sizeof(PIT));
-    memcpy(dev->set_out_funcs, old_set_out_funcs, 3 * sizeof(void *));
+    memset(dev, 0x00, sizeof(PIT));
+    memcpy(dev->funcs, old_funcs, 3 * sizeof(void *));
     memcpy(dev->pit_nr, old_pit_nr, 3 * sizeof(PIT_nr));
 
     for (i = 0; i < 3; i++) {
@@ -652,105 +601,16 @@ pit_reset(PIT *dev)
 }
 
 
-/* Set default CPU/crystal clock and xt_cpu_multi. */
 void
-pit_setclock(uint32_t freq)
+pit_clock(PIT *dev, int t)
 {
-    uint32_t speed;
+    if (dev->thit[t] || !dev->enabled[t]) return;
 
-    if (cpu_get_type() >= CPU_286) {
-	/* For 286 and up, this is easy. */
-	cpuclock = (float)freq;
-	PITCONST = cpuclock / 1193182.0;
-	CGACONST = (float) (cpuclock  / (19687503.0 / 11.0));
-	xt_cpu_multi = 1;
-    } else {
-	/* Not so much for XT-class systems. */
-	cpuclock = 14318184.0;
-       	PITCONST = 12.0;
-        CGACONST = 8.0;
-	xt_cpu_multi = 3;
+    if (dev->using_timer[t]) return;
 
-	/* Get selected CPU's (max) clock rate. */
-	speed = cpu_get_speed();
-
-	switch (speed) {
-		case 7159092:	/* 7.16 MHz */
-			if (cpu_get_flags() & CPU_ALTERNATE_XTAL) {
-				cpuclock = 28636368.0;
-				xt_cpu_multi = 4;
-			} else
-				xt_cpu_multi = 2;
-			break;
-
-		case 8000000:	/* 8 MHz */
-		case 9545456:	/* 9.54 MHz */
-		case 10000000:	/* 10 MHz */
-		case 12000000:	/* 12 MHz */
-		case 16000000:	/* 16 MHz */
-			cpuclock = ((float)speed * xt_cpu_multi);
-			break;
-
-		default:
-			if (cpu_get_flags() & CPU_ALTERNATE_XTAL) {
-				cpuclock = 28636368.0;
-				xt_cpu_multi = 6;
-			}
-			break;
-	}
-
-	if (cpuclock == 28636368.0) {
-        	PITCONST = 24.0;
-	        CGACONST = 16.0;
-	} else if (cpuclock != 14318184.0) {
-		PITCONST = cpuclock / 1193182.0;
-		CGACONST = (float) (cpuclock / (19687503.0 / 11.0));
-	}
-   }
-
-    xt_cpu_multi <<= TIMER_SHIFT;
-
-    MDACONST = (float) (cpuclock / 2032125.0);
-    VGACONST1 = (float) (cpuclock / 25175000.0);
-    VGACONST2 = (float) (cpuclock / 28322000.0);
-    RTCCONST = (float) (cpuclock / 32768.0);
-
-    TIMER_USEC = (int64_t)((cpuclock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
-
-    bus_timing = (float) (cpuclock / (double)cpu_busspeed);
-
-INFO("PIT: cpu=%.2f xt=%d PIT=%.2f RTC=%.2f CGA=%.2f MDA=%.2f TMR=%" PRIu64 "\n",
-	cpuclock, xt_cpu_multi, (float)PITCONST, RTCCONST, CGACONST, MDACONST,
-	TIMER_USEC);
-
-    video_update_timing();
-
-    device_speed_changed();
-}
-
-
-void
-clearpit(void)
-{
-    pit.c[0] = (pit.l[0] << 2);
-}
-
-
-int
-pit_get_timer_0(void)
-{
-    int r = (int)((pit.c[0] + ((1LL << TIMER_SHIFT) - 1)) / PITCONST) >> TIMER_SHIFT;
-
-    if (pit.m[0] == 2)
-	r++;
-    if (r < 0)
-	r = 0;
-    if (r > 0x10000)
-	r = 0x10000;
-    if (pit.m[0] == 3)
-	r <<= 1;
-
-    return r;
+    dev->count[t] -= (dev->m[t] == 3) ? 2 : 1;
+    if (dev->count[t] == 0)
+	do_over(dev, t);
 }
 
 
@@ -825,37 +685,5 @@ pit_set_using_timer(PIT *dev, int t, int using_timer)
 void
 pit_set_out_func(PIT *dev, int t, void (*func)(int new_out, int old_out))
 {
-    dev->set_out_funcs[t] = func;
-}
-
-
-/* FIXME: should be moved to m_pcjr.c */
-void
-pit_irq0_timer_pcjr(int new_out, int old_out)
-{
-    if (new_out && !old_out) {
-	picint(1);
-	pit_clock(&pit, 1);
-    }
-
-    if (! new_out)
-	picintc(1);
-}
-
-
-/* FIXME: should be moved to m_xt.c */
-void
-pit_refresh_timer_xt(int new_out, int old_out)
-{
-    if (new_out && !old_out)
-	dma_channel_read(0);
-}
-
-
-/* FIXME: should be moved to m_at.c */
-void
-pit_refresh_timer_at(int new_out, int old_out)
-{
-    if (new_out && !old_out)
-	ppi.pb ^= 0x10;
+    dev->funcs[t] = func;
 }

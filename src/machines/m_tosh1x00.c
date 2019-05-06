@@ -96,7 +96,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_tosh1x00.c	1.0.21	2019/05/05
+ * Version:	@(#)m_tosh1x00.c	1.0.22	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1022,7 +1022,8 @@ t1000_init(const device_t *info, void *arg)
 
     machine_common_init();
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+    /* Set up our DRAM refresh timer. */
+    pit_set_out_func(&pit, 1, m_xt_refresh_timer);
 
     nmi_init();
 

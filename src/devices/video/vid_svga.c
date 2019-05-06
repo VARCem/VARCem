@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.21	2019/05/03
+ * Version:	@(#)vid_svga.c	1.0.22	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,7 +52,7 @@
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../timer.h"
-#include "../system/pit.h"
+#include "../system/clk.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"

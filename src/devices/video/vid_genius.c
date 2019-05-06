@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.14	2019/05/05
+ * Version:	@(#)vid_genius.c	1.0.15	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -103,7 +103,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
-#include "../system/pit.h"
+#include "../system/clk.h"
 #include "video.h"
 
 

@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24 built-in video controller.
  *
- * Version:	@(#)m_olim24_vid.c	1.0.3	2019/04/25
+ * Version:	@(#)m_olim24_vid.c	1.0.4	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,7 @@
 #include "../mem.h"
 #include "../timer.h"
 #include "../device.h"
-#include "../devices/system/pit.h"
+#include "../devices/system/clk.h"
 #include "../devices/video/video.h"
 #include "../devices/video/vid_cga.h"
 #include "machine.h"

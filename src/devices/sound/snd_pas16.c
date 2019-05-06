@@ -79,7 +79,7 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.13	2019/04/25
+ * Version:	@(#)snd_pas16.c	1.0.14	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,6 +119,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "../system/pit.h"

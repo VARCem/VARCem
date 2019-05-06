@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_laserxt.c	1.0.11	2019/04/20
+ * Version:	@(#)m_laserxt.c	1.0.12	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -187,7 +187,8 @@ laser_init(const device_t *info, void *arg)
 
     nmi_init();
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+    /* Set up our DRAM refresh timer. */
+    pit_set_out_func(&pit, 1, m_xt_refresh_timer);
 
     switch(dev->type) {
 	case 0:		/* Laser XT */

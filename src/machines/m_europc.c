@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.24	2019/05/03
+ * Version:	@(#)m_europc.c	1.0.25	2019/05/05
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -724,7 +724,8 @@ europc_init(const device_t *info, void *arg)
 
     nmi_init();
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+    /* Set up our DRAM refresh timer. */
+    pit_set_out_func(&pit, 1, m_xt_refresh_timer);
 
     /*
      * Allocate the system's I/O handlers.

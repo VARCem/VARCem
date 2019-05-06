@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.27	2019/05/03
+ * Version:	@(#)m_ps1.c	1.0.28	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -593,7 +593,8 @@ ps1_init(const device_t *info, void *arg)
 
     mem_remap_top(384);
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_at);
+    /* Set up our DRAM refresh timer. */
+    pit_set_out_func(&pit, 1, m_at_refresh_timer);
 
     dma16_init();
     pic2_init();

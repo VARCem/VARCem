@@ -49,7 +49,7 @@
 #include "../timer.h"
 #include "../nvr.h"
 #include "../device.h"
-#include "../devices/system/pit.h"
+#include "../devices/system/clk.h"
 #include "../devices/video/video.h"
 #include "../devices/video/vid_cga.h"
 #include "../devices/video/vid_cga_comp.h"

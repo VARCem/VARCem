@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.74	2019/05/02
+ * Version:	@(#)pc.c	1.0.75	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,9 +56,9 @@
 #include "io.h"
 #include "mem.h"
 #include "rom.h"
+#include "devices/system/clk.h"
 #include "devices/system/dma.h"
 #include "devices/system/pic.h"
-#include "devices/system/pit.h"
 #include "random.h"
 #include "timer.h"
 #include "device.h"
@@ -1199,7 +1199,7 @@ pc_set_speed(int turbo)
 
     if (cpu_get_type() >= CPU_286) {
 	/* For 286+, we are done. */
-	pit_setclock(speed);
+	clk_setup(speed);
     } else {
 	/*
 	 * Not so easy for PC and XT class machines.
@@ -1210,9 +1210,9 @@ pc_set_speed(int turbo)
 	 * much all cases, the original 4.77MHz setting.
 	 */
 	if (turbo)
-		pit_setclock(14318184);	// speed * xt_multi ?
+		clk_setup(14318184);	// speed * xt_multi ?
 	  else
-		pit_setclock(14318184);
+		clk_setup(14318184);
     }
 
     /*

@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.18	2019/05/03
+ * Version:	@(#)nvr_at.c	1.0.19	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -234,9 +234,9 @@
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
+#include "clk.h"
 #include "nmi.h"
 #include "pic.h"
-#include "pit.h"
 
 
 /* RTC registers and bit definitions. */

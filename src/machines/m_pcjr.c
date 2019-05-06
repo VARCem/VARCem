@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.20	2019/05/03
+ * Version:	@(#)m_pcjr.c	1.0.21	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #include "../mem.h"
 #include "../timer.h"
 #include "../device.h"
+#include "../devices/system/clk.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
@@ -725,6 +726,19 @@ kbd_adddata_ex(uint16_t val)
 
 
 static void
+irq0_timer(int new_out, int old_out)
+{
+    if (new_out && !old_out) {
+	picint(1);
+	pit_clock(&pit, 1);
+    }
+
+    if (! new_out)
+	picintc(1);
+}
+
+
+static void
 pcjr_close(void *priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
@@ -765,13 +779,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     pic_init();
 
     pit_init();
-    pit_set_out_func(&pit, 0, pit_irq0_timer_pcjr);
-
-#if 0
-    // FIXME: already done in machine_reset()
-    (void)cpu_set();
-    pc_set_speed();
-#endif
+    pit_set_out_func(&pit, 0, irq0_timer);
 
     nmi_mask = 0x80;
 

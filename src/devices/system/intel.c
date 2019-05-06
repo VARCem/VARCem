@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.10	2019/04/25
+ * Version:	@(#)intel.c	1.0.11	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,7 +49,7 @@
 #include "../../device.h"
 #include "../../plat.h"
 #include "intel.h"
-#include "pit.h"
+#include "clk.h"
 
 
 typedef struct {

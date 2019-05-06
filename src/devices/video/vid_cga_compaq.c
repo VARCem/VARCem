@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.10	2019/04/25
+ * Version:	@(#)vid_cga_compaq.c	1.0.11	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,7 +49,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
-#include "../system/pit.h"
+#include "../system/clk.h"
 #include "video.h"
 #include "vid_cga.h"
 #include "vid_cga_comp.h"

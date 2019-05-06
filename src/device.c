@@ -11,7 +11,7 @@
  *
  * **TODO**	Merge the various 'add' variants, its getting too messy.
  *
- * Version:	@(#)device.c	1.0.22	2019/04/21
+ * Version:	@(#)device.c	1.0.24	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@
 #include "device.h"
 #include "machines/machine.h"
 #include "devices/sound/sound.h"
+#include "devices/video/video.h"
 #include "ui/ui.h"
 #include "plat.h"
 
@@ -392,6 +393,8 @@ device_speed_changed(void)
     }
 
     sound_speed_changed();
+
+    video_update_timing();
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the PC-Speaker device.
  *
- * Version:	@(#)snd_speaker.c	1.0.6	2019/02/12
+ * Version:	@(#)snd_speaker.c	1.0.7	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,6 +43,7 @@
 #define dbglog sound_card_log
 #include "../../emu.h"
 #include "../system/pit.h"
+#include "../system/ppi.h"
 #include "sound.h"
 #include "snd_speaker.h"
 
@@ -58,6 +59,26 @@ int		speaker_val,
 
 static int32_t	speaker_buffer[SOUNDBUFLEN];
 static int	speaker_pos;
+
+
+static void
+get_buffer(int32_t *buffer, int len, void *p)
+{
+    int32_t val;
+    int c;
+
+    speaker_update();
+        
+    if (! speaker_mute) {
+	for (c = 0; c < len * 2; c++) {
+		val = speaker_buffer[c >> 1];
+		buffer[c++] += val;
+		buffer[c] += val;
+	}
+    }
+
+    speaker_pos = 0;
+}
 
 
 void
@@ -87,23 +108,20 @@ speaker_update(void)
 }
 
 
-static void
-get_buffer(int32_t *buffer, int len, void *p)
+void
+speaker_timer(int new_out, int old_out)
 {
-    int32_t val;
-    int c;
+    int64_t l;
 
     speaker_update();
-        
-    if (! speaker_mute) {
-	for (c = 0; c < len * 2; c++) {
-		val = speaker_buffer[c >> 1];
-		buffer[c++] += val;
-		buffer[c] += val;
-	}
-    }
 
-    speaker_pos = 0;
+    l = pit.l[2] ? pit.l[2] : 0x10000LL;
+    if (l < 25LL)
+        speaker_on = 0;
+      else
+        speaker_on = new_out;
+
+    ppispeakon = new_out;
 }
 
 

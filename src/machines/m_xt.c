@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.17	2019/04/13
+ * Version:	@(#)m_xt.c	1.0.18	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include "../mem.h"
 #include "../device.h"
 #include "../devices/system/nmi.h"
+#include "../devices/system/dma.h"
 #include "../devices/system/pit.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/ports/parallel.h"
@@ -87,7 +88,8 @@ xt_common_init(const device_t *info, void *arg)
 
     nmi_init();
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+    /* Set up the DRAM refresh timer. */
+    pit_set_out_func(&pit, 1, m_xt_refresh_timer);
 
     switch(dev->type) {
 	case 0:		/* PC, 1981 */
@@ -351,3 +353,12 @@ const device_t m_xt_juko = {
     &juko_info,
     xt_config
 };
+
+
+/* Start a DRAM refresh cycle by issuing a DMA read. */
+void
+m_xt_refresh_timer(int new_out, int old_out)
+{
+    if (new_out && !old_out)
+        dma_channel_read(0);
+}

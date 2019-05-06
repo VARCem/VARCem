@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.18	2019/04/27
+ * Version:	@(#)m_ps2_isa.c	1.0.19	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -237,7 +237,9 @@ ps2_init(const device_t *info, void *arg)
 
     machine_common_init();
 
-    pit_set_out_func(&pit, 1, pit_refresh_timer_at);
+    /* Set up our DRAM refresh timer. */
+    pit_set_out_func(&pit, 1, m_at_refresh_timer);
+
     dma16_init();
     pic2_init();
 
