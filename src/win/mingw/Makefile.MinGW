@@ -151,7 +151,7 @@ endif
 ifeq ($(DEBUG), y)
  PROG		:= $(PROG)-d
  NETIF		:= $(NETIF)-d
- LOGGING	:= y
+ override LOGGING := y
 else
  ifeq ($(LOGGING), y)
   PROG		:= $(PROG)-l
