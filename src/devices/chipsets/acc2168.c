@@ -8,7 +8,7 @@
  *
  *		Implementation of the ACC 2168 chipset.
  *
- * Version:	@(#)acc2168.c	1.0.1	2019/05/02
+ * Version:	@(#)acc2168.c	1.0.2	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -142,13 +142,6 @@ acc2168_read(uint16_t addr, void *priv)
 }
 
 
-static uint8_t 
-port78_read(uint16_t addr, void *priv)
-{
-    return(0);
-}
-
-
 static void
 acc2168_close(void *priv)
 {
@@ -168,8 +161,6 @@ acc2168_init(const device_t *info, UNUSED(void *parent))
 	
     io_sethandler(0x00f2, 2,
 		  acc2168_read,NULL,NULL, acc2168_write,NULL,NULL, dev);	
-    io_sethandler(0x0078, 1,
-		  port78_read,NULL,NULL, NULL,NULL,NULL, dev);	
 
     port_92_add(1);
 

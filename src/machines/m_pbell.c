@@ -8,7 +8,14 @@
  *
  *		Implementation of various Packard Bell machines.
  *
- * Version:	@(#)m_pbell.c	1.0.2	2019/05/03
+ * **NOTE**	The 410A is not complete yet.  Several mainboard jumpers
+ *		and switches need to be implemented to allow it to fully
+ *		work.  Currently, system seems to assume monochrome VGA
+ *		on the onboard VGA (there is a jumper for it!), and we
+ *		_MUST_ enable the Internal mouse, or the PS/2 mouse as
+ *		this is onboard. There is a jumper for this as well.
+ *
+ * Version:	@(#)m_pbell.c	1.0.3	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +61,7 @@
 #include "../devices/system/intel_sio.h"
 #include "../devices/system/intel_piix.h"
 #include "../devices/input/keyboard.h"
+#include "../devices/input/mouse.h"
 #include "../devices/sio/sio.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
@@ -61,6 +69,27 @@
 #include "../devices/disk/hdc_ide.h"
 #include "../devices/video/video.h"
 #include "machine.h"
+
+
+/* Read out the configuration port. */
+//FIXME: bit5 makes it sound an alarm of some kind!
+static uint8_t 
+port78_read(uint16_t addr, void *priv)
+{
+    uint8_t ret = 0x00;
+
+    if (config.video_card != VID_INTERNAL)
+	ret |= 0x40;
+
+#if 0
+    if (config.mouse_type != MOUSE_INTERNAL)
+	ret |= 0x80;
+#endif
+
+    DEBUG("PB410A: read(%04x) = %02x\n", addr, ret);
+
+    return(ret);
+}
 
 
 static void *
@@ -73,12 +102,16 @@ common_init(const device_t *info, void *arg)
 	/* PB410A/PB430/ACC2168/ACC3221 */
 	case 410:
 		device_add(&acc2168_device);
+		io_sethandler(0x0078, 1,
+			      port78_read,NULL,NULL, NULL,NULL,NULL, NULL);	
+		memregs_init();
 		m_at_common_ide_init();
 		device_add(&keyboard_ps2_device);
-		memregs_init();
 		device_add(&acc3221_device);
 		if (config.video_card == VID_INTERNAL)
 			device_add(&ht216_32_pb410a_device);	
+		if (config.mouse_type == MOUSE_INTERNAL)
+			device_add(&mouse_ps2_device);	
 		break;
 
 	/* PB640: Packard Bell PB640/430FX/AMI/NS PC87306 */
@@ -111,7 +144,7 @@ common_init(const device_t *info, void *arg)
 
 
 static const machine_t pb640_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,
     0,
     8, 128, 8, 128, -1,
     {{"Intel",cpus_Pentium},{"IDT",cpus_WinChip},CPU_AMD_K56,{"Cyrix",cpus_6x86}}
@@ -130,7 +163,7 @@ const device_t m_pb640 = {
 
 
 static const machine_t pb410a_info = {
-    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,
     0,
     1, 32, 1, 128, -1,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}

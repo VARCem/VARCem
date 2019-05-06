@@ -8,7 +8,7 @@
  *
  *		Video7 VGA 1024i emulation.
  *
- * Version:	@(#)vid_ht216.c	1.0.1	2019/05/02
+ * Version:	@(#)vid_ht216.c	1.0.2	2019/05/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -412,6 +412,8 @@ ht216_out(uint16_t addr, uint8_t val, void *priv)
 		break;
 
 	case 0x46e8:
+		if (dev->id != 0x7861) break;
+
 		io_removehandler(0x03c0, 32,
 				 ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
 		mem_map_disable(&dev->svga.mapping);
@@ -880,6 +882,8 @@ ht216_init(const device_t *info, UNUSED(void *parent))
 		break;
 
 	case 0x7861:	/* Packard-Bell 410A On-Board */
+		io_sethandler(0x46e8, 1,
+			      ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
 		vram_sz = (1 << 20);
 		break;
     }
@@ -888,8 +892,6 @@ ht216_init(const device_t *info, UNUSED(void *parent))
     dev->ht_regs[0xb4] = 0x08; /*32-bit DRAM bus*/
 
     io_sethandler(0x03c0, 32,
-		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
-    io_sethandler(0x46e8, 1,
 		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
 
     if (info->path != NULL)
