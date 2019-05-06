@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\devices\cdrom\cdrom_speed.c" />
+    <ClCompile Include="..\..\..\devices\chipsets\acc2168.c" />
     <ClCompile Include="..\..\..\devices\chipsets\ali1429.c" />
     <ClCompile Include="..\..\..\devices\chipsets\headland.c" />
     <ClCompile Include="..\..\..\devices\chipsets\intel4x0.c" />
@@ -83,6 +84,7 @@
     <ClCompile Include="..\..\..\devices\scsi\scsi_ncr5380.c" />
     <ClCompile Include="..\..\..\devices\scsi\scsi_ncr53c810.c" />
     <ClCompile Include="..\..\..\devices\scsi\scsi_x54x.c" />
+    <ClCompile Include="..\..\..\devices\sio\sio_acc3221.c" />
     <ClCompile Include="..\..\..\devices\sio\sio_detect.c" />
     <ClCompile Include="..\..\..\devices\sio\sio_fdc37c669.c" />
     <ClCompile Include="..\..\..\devices\sio\sio_fdc37c66x.c" />
@@ -157,6 +159,7 @@
     <ClCompile Include="..\..\..\devices\sound\snd_ym7128.c" />
     <ClCompile Include="..\..\..\devices\sound\sound.c" />
     <ClCompile Include="..\..\..\devices\sound\sound_dev.c" />
+    <ClCompile Include="..\..\..\devices\system\clk.c" />
     <ClCompile Include="..\..\..\devices\system\dma.c" />
     <ClCompile Include="..\..\..\devices\system\intel.c" />
     <ClCompile Include="..\..\..\devices\system\intel_flash.c" />
@@ -201,6 +204,7 @@
     <ClCompile Include="..\..\..\devices\video\vid_av9194.c" />
     <ClCompile Include="..\..\..\devices\video\vid_bt48x_ramdac.c" />
     <ClCompile Include="..\..\..\devices\video\vid_cga_compaq.c" />
+    <ClCompile Include="..\..\..\devices\video\vid_ht216.c" />
     <ClCompile Include="..\..\..\devices\video\vid_im1024.c" />
     <ClCompile Include="..\..\..\devices\video\vid_pgc.c" />
     <ClCompile Include="..\..\..\devices\video\vid_sigma.c" />
@@ -335,6 +339,7 @@
     <ClCompile Include="..\..\win_sdl.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\devices\chipsets\acc2168.h" />
     <ClInclude Include="..\..\..\devices\chipsets\ali1429.h" />
     <ClInclude Include="..\..\..\devices\chipsets\headland.h" />
     <ClInclude Include="..\..\..\devices\chipsets\intel4x0.h" />
@@ -496,6 +501,7 @@
     <ClInclude Include="..\..\..\devices\sound\snd_speaker.h" />
     <ClInclude Include="..\..\..\devices\sound\snd_ym7128.h" />
     <ClInclude Include="..\..\..\devices\sound\sound.h" />
+    <ClInclude Include="..\..\..\devices\system\clk.h" />
     <ClInclude Include="..\..\..\devices\system\dma.h" />
     <ClInclude Include="..\..\..\devices\system\intel.h" />
     <ClInclude Include="..\..\..\devices\system\intel_flash.h" />
