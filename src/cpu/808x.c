@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.17	2019/04/20
+ * Version:	@(#)808x.c	1.0.18	2019/05/07
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -2474,7 +2474,7 @@ opcodestart:
 				} else {
 					AL = inb(cpu_data);
 					if (opcode & 1)
-						AH = inb(temp + 1);
+						AH = inb(cpu_data + 1);
 					cpu_wait(bits >> 1, 1);	/* I/O do_access. */
 				}
 				cpu_wait(1, 0);
