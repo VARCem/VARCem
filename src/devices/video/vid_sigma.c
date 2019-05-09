@@ -17,6 +17,10 @@
  *
  *                    <http://arvutimuuseum.ee/th99/v/S-T/52579.htm>
  *
+ *		The full-length card is the Color 400; the half-length card
+ *		has a label saying 'Color 400S'. John has the 400S, Fred has
+ *		the 400 (with the AT Enhancer daughterboard.)
+ *
  *		The card is CGA-compatible at BIOS level, but to improve
  *		compatibility attempts to write to the CGA I/O ports at
  *		0x3D0-0x3DF trigger an NMI. The card's BIOS handles the NMI
@@ -33,7 +37,9 @@
  *		configures itself to work or not as required. I've therefore
  *		added a configuration option to handle this.
  *
- *		The card's real CRTC at 0x2D0/0x2D1 appears to be a 6845.
+ *		The card's CRTC at 0x2D0/0x2D1 is a real HD6845 on the long
+ *		card, and integrated into the ASICs on the short card.
+ *
  *		One oddity is that all its horizontal counts are halved
  *		compared to what a real CGA uses; 40-column modes have a width
  *		of 20, and 80-column modes have a width of 40. This means that
@@ -41,7 +47,14 @@
  *		even-numbered columns, so the top bit of the control register
  *		at 0x2D9 is used to adjust the position.
  *
- * Version:	@(#)vid_sigma.c	1.0.9	2019/05/05
+ * **NOTE**	This driver doesn't seem to play very nice on the DTK-XT
+ *		machine. It works, but will beep a lot. This only happens if
+ *		it is used in CGA emulation mode, so there might be something
+ *		going on with the NMI stuff. If native mode is selected, all
+ *		is well, but some strange mishaps with cursor positioning
+ *		occur.
+ *
+ * Version:	@(#)vid_sigma.c	1.0.10	2019/05/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,8 +101,19 @@
 #include "vid_cga.h"
 
 
-#define FONT_ROM_PATH	L"video/sigma/sigma400_font.rom"
-#define BIOS_ROM_PATH	L"video/sigma/sigma400_bios.rom"
+#define ENABLE_CGA	1		/* set to 1 to enable CGA mode */
+#define SHORT_CARD	0		/* set to 1 to use the new ROMs */
+
+
+#if SHORT_CARD
+/* ROMs from the short card. */
+# define FONT_ROM_PATH	L"video/sigma/sigma400_font_2.52l.rom"
+# define BIOS_ROM_PATH	L"video/sigma/sigma400_bios_2.52l.rom"
+#else
+/* ROMs from the long card. */
+# define FONT_ROM_PATH	L"video/sigma/sigma400_font_2.49h.rom"
+# define BIOS_ROM_PATH	L"video/sigma/sigma400_bios_2.49h.rom"
+#endif
 
 
 /* 0x2D8: Mode register. Values written by the card BIOS are:
@@ -172,29 +196,28 @@ typedef struct {
 
     rom_t	bios_rom; 
 
-    uint8_t	crtc[32];	/* CRTC: Real values */
+    uint8_t	crtc[32];	/* CRTC: real values */
+    int		crtcreg;	/* CRTC: Real selected register */        
 
-    uint8_t	lastport;	/* Last I/O port written */
-    uint8_t	lastwrite;	/* Value written to that port */
-    uint8_t	sigma_ctl;	/* Controls register:
-				 * Bit 7 is low bit of cursor position 
-				 * Bit 5 set if writes to CGA ports trigger NMI
-				 * Bit 3 clears lightpen latch
-				 * Bit 2 sets lightpen latch
-				 * Bit 1 controls meaning of port 2DE 
+    int8_t	enable_nmi;	/* enable NMI mechanism for CGA emulation */
+    int8_t	rom_paged;	/* is ROM paged in at 0x0c1800? */
+
+    uint8_t	lastport;	/* last I/O port written */
+    uint8_t	lastwrite;	/* value written to that port */
+    uint8_t	sigma_ctl;	/* controls register:
+				 *  bit 7 is low bit of cursor position 
+				 *  bit 5 set if writes to CGA ports trigger NMI
+				 *  bit 3 clears lightpen latch
+				 *  bit 2 sets lightpen latch
+				 *  bit 1 controls meaning of port 0x02de 
 				 */
-    uint8_t	enable_nmi;	/* Enable the NMI mechanism for CGA emulation?*/
-    uint8_t	rom_paged;	/* Is ROM paged in at 0xC1800? */
+    uint8_t	crtc_value;	/* value to return from a CRTC register read */
 
-    uint8_t	crtc_value;	/* Value to return from a CRTC register read */
+    uint8_t	sigma_stat;	/* status register [0x02da] */
 
-    uint8_t	sigmastat;	/* Status register [0x2DA] */
-
-    uint8_t	sigmamode;	/* Mode control register [0x2D8] */
+    uint8_t	sigma_mode;	/* mode control register [0x02d8] */
 
     uint16_t	ma, maback;
-
-    int		crtcreg;	/* CRTC: Real selected register */        
 
     int		linepos, displine;
     int		sc, vc;
@@ -207,10 +230,7 @@ typedef struct {
 
     int		firstline, lastline;
 
-    int		drawcursor;
-
     int		plane;
-    int		revision;
 
     int64_t	vidtime;
 
@@ -238,7 +258,7 @@ recalc_timings(sigma_t *dev)
     double disptime;
     double _dispontime, _dispofftime;
 
-    if (dev->sigmamode & MODE_80COLS) {
+    if (dev->sigma_mode & MODE_80COLS) {
 	disptime = (dev->crtc[0] + 1) << 1;
 	_dispontime = (dev->crtc[1]) << 1;
     } else {
@@ -261,70 +281,74 @@ sigma_out(uint16_t port, uint8_t val, void *priv)
     sigma_t *dev = (sigma_t *)priv;
     uint8_t old;
 
-    if (port >= 0x3d0 && port < 0x3e0) {
+    DBGLOG(1, "SIGMA: out(%04x, %02x)\n", port, val);
+
+    if (port >= 0x03d0 && port < 0x03e0) {
 	dev->lastport = port & 0x0f;
 	dev->lastwrite = val;
 
 	/* If set to NMI on video I/O... */
 	if (dev->enable_nmi && (dev->sigma_ctl & CTL_NMI)) {
-		dev->lastport |= 0x80; 	/* Card raised NMI */
+		dev->lastport |= 0x80; 	/* card raised NMI */
 		nmi = 1;
 	}
 
-	/* For CRTC emulation, the card BIOS sets the value to be
-	 * read from port 0x3D1 like this */
-	if (port == 0x3d1)
+	/*
+	 * For CRTC emulation, the card BIOS sets the
+	 * value to be read from port 0x03d1 like this.
+	 */
+	if (port == 0x03d1)
 		dev->crtc_value = val;
 
 	return;
     }
 
     switch (port) {
-	case 0x2d0:
-	case 0x2d2:
-	case 0x2d4:
-	case 0x2d6:
-		dev->crtcreg = val & 31;
+	case 0x02d0:
+	case 0x02d2:
+	case 0x02d4:
+	case 0x02d6:
+		dev->crtcreg = val & 0x1f;
 		break;
 
-	case 0x2d1:
-	case 0x2d3:
-	case 0x2d5:
-	case 0x2d7:
+	case 0x02d1:
+	case 0x02d3:
+	case 0x02d5:
+	case 0x02d7:
 		old = dev->crtc[dev->crtcreg];
 		dev->crtc[dev->crtcreg] = val & crtcmask[dev->crtcreg];
 		if (old != val) {
-			if (dev->crtcreg < 0xe || dev->crtcreg > 0x10) {
+			if (dev->crtcreg < 0x0e || dev->crtcreg > 0x10) {
 				fullchange = changeframecount;
 				recalc_timings(dev);
 			} 
 		}
 		break;
 
-	case 0x2d8:
-		dev->sigmamode = val;
+	case 0x02d8:
+		dev->sigma_mode = val;
 		break;
 
-	case 0x2d9:
+	case 0x02d9:
 		dev->sigma_ctl = val;
 		break;
 
-	case 0x2db:
-		dev->lastport &= 0x7F;
+	case 0x02db:
+		dev->lastport &= 0x7f;
 		break;
 
-	case 0x2dc:	/* Reset NMI */
+	case 0x02dc:	/* reset NMI */
 		nmi = 0;
-		dev->lastport &= 0x7F;
+		dev->lastport &= 0x7f;
 		break;
 
-	case 0x2dd:	/* Page in RAM at 0xC1800 */
-		if (dev->rom_paged != 0)
-			mmu_invalidate(0xc0000);
+	case 0x02dd:	/* page in RAM at 0x0c1800 */
+		if (dev->rom_paged)
+			mmu_invalidate(0x0c0000);
 		dev->rom_paged = 0;
 		break;
 
-	case 0x2de:
+	case 0x02de:
 		if (dev->sigma_ctl & CTL_PALETTE)
 			dev->palette[val >> 4] = (val & 0x0f) ^ 0x0f;
 		else
@@ -341,43 +365,43 @@ sigma_in(uint16_t port, void *priv)
     uint8_t ret = 0xff;
 
     switch (port) {
-	case 0x2d0:
-	case 0x2d2:
-	case 0x2d4:
-	case 0x2d6:
+	case 0x02d0:
+	case 0x02d2:
+	case 0x02d4:
+	case 0x02d6:
 		ret = dev->crtcreg;
 		break;
 
-	case 0x2d1:
-	case 0x2d3:
-	case 0x2d5:
-	case 0x2d7:
+	case 0x02d1:
+	case 0x02d3:
+	case 0x02d5:
+	case 0x02d7:
 		ret = dev->crtc[dev->crtcreg & 0x1f];
 		break;
 
 	case 0x2da:
-		ret = (dev->sigma_ctl & 0xe0) | (dev->sigmastat & 0x1f);
+		ret = (dev->sigma_ctl & 0xe0) | (dev->sigma_stat & 0x1f);
 		break;
 
-	case 0x2db: 
-		ret = dev->lastwrite;		/* Value that triggered NMI */
+	case 0x2db:	/* return value that triggered NMI */
+		ret = dev->lastwrite;
 		break;
 
-	case 0x2dc: 
-		ret = dev->lastport;		/* Port that triggered NMI */
+	case 0x2dc:	/* port that triggered NMI */
+		ret = dev->lastport;
 		break;
 
-	case 0x2dd:				/* Page in ROM at 0xC1800 */
+	case 0x2dd:	/* page in ROM at 0x0c1800 */
 		ret = (dev->rom_paged ? 0x80 : 0);
-		if (dev->rom_paged != 0x80)
-			mmu_invalidate(0xc0000);
-		dev->rom_paged = 0x80;
+		if (dev->rom_paged)
+			mmu_invalidate(0x0c0000);
+		dev->rom_paged = 1;
 		break;
 
-	case 0x3d1:
-	case 0x3d3:
-	case 0x3d5:
-	case 0x3d7:
+	case 0x03d1:
+	case 0x03d3:
+	case 0x03d5:
+	case 0x03d7:
 		ret = dev->crtc_value;
 		break;
 
@@ -386,13 +410,16 @@ sigma_in(uint16_t port, void *priv)
 	 * on this port. On a real card this functionality can be turned
 	 * on or off with SW1/6.
 	 */
-	case 0x3da:
-		ret = dev->sigmastat & 7;
-		if (dev->sigmastat & STATUS_RETR_V) ret |= 8;
+	case 0x03da:
+		ret = dev->sigma_stat & 0x07;
+		if (dev->sigma_stat & STATUS_RETR_V)
+			ret |= 0x08;
 		break;
     }
 
-    return ret;
+    DBGLOG(1, "SIGMA: in(%04x) = %02x\n", port, ret);
+
+    return(ret);
 }
 
 
@@ -414,46 +441,46 @@ sigma_read(uint32_t addr, void *priv)
 
     cycles -= 4;        
 
-    return dev->vram[dev->plane * 0x8000 + (addr & 0x7fff)];
+    return(dev->vram[dev->plane * 0x8000 + (addr & 0x7fff)]);
 }
 
 
+/* Write to the RAM part of the 8K ROM/RAM area. */
 static void
 sigma_bwrite(uint32_t addr, uint8_t val, void *priv)
 {
     sigma_t *dev = (sigma_t *)priv;
 
     addr &= 0x3fff;
-#if 0
-    if ((addr >= 0x1800) && !dev->rom_paged && (addr < 0x2000))
-#endif
-    if ((addr < 0x1800) || dev->rom_paged || (addr >= 0x2000))
-	;
-    else
-	dev->bram[addr & 0x7ff] = val;
+    if ((addr >= 0x1800) && (addr < 0x2000) && !dev->rom_paged)
+	dev->bram[addr & 0x07ff] = val;
 }
 
 
+/* Read from the 8K ROM/RAM area. */
 static uint8_t
 sigma_bread(uint32_t addr, void *priv)
 {
     sigma_t *dev = (sigma_t *)priv;
-    uint8_t ret;
+    uint8_t ret = 0xff;
 
+    /* If address higher than 8K, no go. */
     addr &= 0x3fff;
-    if (addr >= 0x2000)
-	return 0xff;
+    if (addr < 0x2000) {
+	if (addr < 0x1800 || dev->rom_paged) {
+		/* Read from the ROM. */
+		ret = dev->bios_rom.rom[addr];
+	} else {
+		/* Read from the RAM. */
+		ret = dev->bram[addr & 0x07ff];
+	}
+    }
 
-    if (addr < 0x1800 || dev->rom_paged)
-	ret = dev->bios_rom.rom[addr & 0x1fff];
-    else
-	ret = dev->bram[addr & 0x7ff];
-
-    return ret;
+    return(ret);
 }
 
 
-/* Render a line in 80-column text mode */
+/* Render a line in 80-column text mode. */
 static void
 sigma_text80(sigma_t *dev)
 {
@@ -469,52 +496,56 @@ sigma_text80(sigma_t *dev)
 	ca++;
     ca &= 0x3fff;
 
-    /* The Sigma 400 seems to use screen widths stated in words
-       (40 for 80-column, 20 for 40-column) */
+    /*
+     * The Sigma 400 seems to use screen widths stated
+     * in words (40 for 80-column, 20 for 40-column.)
+     */
     for (x = 0; x < (dev->crtc[1] << 1); x++) {
 	chr  = vram[x << 1];
 	attr = vram[(x << 1) + 1];
 	drawcursor = ((ma == ca) && dev->con && dev->cursoron);
 
-	if (! (dev->sigmamode & MODE_NOBLINK)) {
+	if (! (dev->sigma_mode & MODE_NOBLINK)) {
 		cols[1] = (attr & 15) | 16;
 		cols[0] = ((attr >> 4) & 7) | 16;
-		if ((dev->cgablink & 8) && (attr & 0x80) && !dev->drawcursor) 
+		if ((dev->cgablink & 8) && (attr & 0x80) && !drawcursor) 
 			cols[1] = cols[0];
-	} else {	/* No blink */
+	} else {
+		/* No blink. */
 		cols[1] = (attr & 15) | 16;
 		cols[0] = (attr >> 4) | 16;
 	}
 
 	if (drawcursor) {
 		for (c = 0; c < 8; c++) {
-			if (dev->sigmamode & MODE_FONT16)
+			if (dev->sigma_mode & MODE_FONT16)
 				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 			else
 				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 0x0f;
 		}
 	} else {
 		for (c = 0; c < 8; c++) {
-			if (dev->sigmamode & MODE_FONT16)
+			if (dev->sigma_mode & MODE_FONT16)
 				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 			else
 				screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat[chr][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
 		}
 	}
-	++ma;
+
+	ma++;
     }
 
     dev->ma += dev->crtc[1];
 }
 
 
-/* Render a line in 40-column text mode */
+/* Render a line in 40-column text mode. */
 static void
 sigma_text40(sigma_t *dev)
 {
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8));
-    uint16_t ma = ((dev->ma & 0x3FFF) << 1);
-    uint8_t *vram = dev->vram + ((ma << 1) & 0x3FFF);
+    uint16_t ma = ((dev->ma & 0x3fff) << 1);
+    uint8_t *vram = dev->vram + ((ma << 1) & 0x3fff);
     int drawcursor, x, c;
     uint8_t chr, attr;
     uint8_t cols[4];
@@ -524,19 +555,22 @@ sigma_text40(sigma_t *dev)
 	++ca;
     ca &= 0x3fff;
 
-    /* The Sigma 400 seems to use screen widths stated in words
-       (40 for 80-column, 20 for 40-column) */
+    /*
+     * The Sigma 400 seems to use screen widths stated
+     * in words (40 for 80-column, 20 for 40-column.)
+     */
     for (x = 0; x < (dev->crtc[1] << 1); x++) {
 	chr  = vram[x << 1];
 	attr = vram[(x << 1) + 1];
 	drawcursor = ((ma == ca) && dev->con && dev->cursoron);
 
-	if (!(dev->sigmamode & MODE_NOBLINK)) {
+	if (!(dev->sigma_mode & MODE_NOBLINK)) {
 		cols[1] = (attr & 15) | 16;
 		cols[0] = ((attr >> 4) & 7) | 16;
-		if ((dev->cgablink & 8) && (attr & 0x80) && !dev->drawcursor) 
+		if ((dev->cgablink & 8) && (attr & 0x80) && !drawcursor) 
 			cols[1] = cols[0];
-	} else {	/* No blink */
+	} else {
+		/* No blink. */
 		cols[1] = (attr & 15) | 16;
 		cols[0] = (attr >> 4) | 16;
 	}
@@ -550,6 +584,7 @@ sigma_text40(sigma_t *dev)
 			screen->line[dev->displine][(x << 4) + 2*c + 8].pal = screen->line[dev->displine][(x << 4) + 2*c + 9].pal = cols[(dev->fontdat16[chr][dev->sc & 15] & (1 << (c ^ 7))) ? 1 : 0];
 		}	
 	}
+
 	ma++;
     }
 
@@ -557,14 +592,16 @@ sigma_text40(sigma_t *dev)
 }
 
 
-/* Draw a line in the 640x400 graphics mode */
+/* Draw a line in the 640x400 graphics mode. */
 static void
 sigma_gfx400(sigma_t *dev)
 {
-    uint8_t *vram = &dev->vram[((dev->ma << 1) & 0x1fff) + (dev->sc & 3) * 0x2000];
     uint8_t mask, col, c;	
     uint8_t plane[4];
+    uint8_t *vram;
     int x;
+
+    vram = &dev->vram[((dev->ma << 1) & 0x1fff) + (dev->sc & 3) * 0x2000];
 
     for (x = 0; x < (dev->crtc[1] << 1); x++) {
 	plane[0] = vram[x];	
@@ -578,26 +615,34 @@ sigma_gfx400(sigma_t *dev)
 		      ((plane[1] & mask) ? 2 : 0) | 
 		      ((plane[0] & mask) ? 1 : 0);
 		col |= 16;
+
 		screen->line[dev->displine][(x << 3) + c + 8].pal = col;
 	}
 
-	if (x & 1) dev->ma++;
+	if (x & 1)
+		dev->ma++;
     }
 }
 
 
-/* Draw a line in the 640x200 graphics mode.
- * This is actually a 640x200x16 mode; on startup, the BIOS selects plane 2,
- * blanks the other planes, and sets palette ink 4 to white. Pixels plotted
- * in plane 2 come out in white, others black; but by programming the palette
- * and plane registers manually you can get the full resolution. */
+/*
+ * Draw a line in the 640x200 graphics mode.
+ *
+ * This is actually a 640x200x16 mode; on startup, the BIOS
+ * selects plane 2, blanks the other planes, and sets palette
+ * ink 4 to white. Pixels plotted in plane 2 come out in white,
+ * others black; but by programming the palette and plane
+ * registers manually you can get the full resolution.
+ */
 static void
 sigma_gfx200(sigma_t *dev)
 {
-    uint8_t *vram = &dev->vram[((dev->ma << 1) & 0x1fff) + (dev->sc & 2) * 0x1000];
     uint8_t mask, col, c;	
     uint8_t plane[4];
+    uint8_t *vram;
     int x;
+
+    vram = &dev->vram[((dev->ma << 1) & 0x1fff) + (dev->sc & 2) * 0x1000];
 
     for (x = 0; x < (dev->crtc[1] << 1); x++) {
 	plane[0] = vram[x];	
@@ -611,22 +656,26 @@ sigma_gfx200(sigma_t *dev)
 		      ((plane[1] & mask) ? 2 : 0) | 
 		      ((plane[0] & mask) ? 1 : 0);
 		col |= 16;
+
 		screen->line[dev->displine][(x << 3) + c + 8].pal = col;
 	}
 
-	if (x & 1) dev->ma++;
+	if (x & 1)
+		dev->ma++;
     }
 }
 
 
-/* Draw a line in the 320x200 graphics mode */
+/* Draw a line in the 320x200 graphics mode. */
 static void
 sigma_gfx4col(sigma_t *dev)
 {
-    uint8_t *vram = &dev->vram[((dev->ma << 1) & 0x1fff) + (dev->sc & 2) * 0x1000];
     uint8_t mask, col, c;	
     uint8_t plane[4];
+    uint8_t *vram;
     int x;
+
+    vram = &dev->vram[((dev->ma << 1) & 0x1fff) + (dev->sc & 2) * 0x1000];
 
     for (x = 0; x < (dev->crtc[1] << 1); x++) {
 	plane[0] = vram[x];	
@@ -647,7 +696,8 @@ sigma_gfx4col(sigma_t *dev)
 		screen->line[dev->displine][(x << 3) + (c << 1) + 8].pal = screen->line[dev->displine][(x << 3) + (c << 1) + 9].pal = col;
 	}
 
-	if (x & 1) dev->ma++;
+	if (x & 1)
+		dev->ma++;
     }
 }
 
@@ -662,11 +712,13 @@ sigma_poll(void *priv)
 
     if (! dev->linepos) {
 	dev->vidtime += dev->dispofftime;
-	dev->sigmastat |= STATUS_RETR_H;
+	dev->sigma_stat |= STATUS_RETR_H;
 	dev->linepos = 1;
+
 	oldsc = dev->sc;
 	if ((dev->crtc[8] & 3) == 3) 
 		dev->sc = ((dev->sc << 1) + dev->oddeven) & 7;
+
 	if (dev->cgadispon) {
 		if (dev->displine < dev->firstline) {
 			dev->firstline = dev->displine;
@@ -676,37 +728,38 @@ sigma_poll(void *priv)
 
 		cols[0] = 16; 
 
-		/* Left overscan */
+		/* Left overscan. */
 		for (c = 0; c < 8; c++) {
 			screen->line[dev->displine][c].pal = cols[0];
-			if (dev->sigmamode & MODE_80COLS)
+			if (dev->sigma_mode & MODE_80COLS)
 				screen->line[dev->displine][c + (dev->crtc[1] << 4) + 8].pal = cols[0];
 			else
 				screen->line[dev->displine][c + (dev->crtc[1] << 5) + 8].pal = cols[0];
 		}
 
-		if (dev->sigmamode & MODE_GRAPHICS) {
-			if (dev->sigmamode & MODE_640x400)
+		if (dev->sigma_mode & MODE_GRAPHICS) {
+			if (dev->sigma_mode & MODE_640x400)
 				sigma_gfx400(dev);
-			else if (dev->sigmamode & MODE_HRGFX)
+			else if (dev->sigma_mode & MODE_HRGFX)
 				sigma_gfx200(dev);
 			else
 				sigma_gfx4col(dev);
-		} else {	/* Text modes */
-			if (dev->sigmamode & MODE_80COLS)
+		} else {
+			/* Text modes. */
+			if (dev->sigma_mode & MODE_80COLS)
 				sigma_text80(dev);
 			else
 				sigma_text40(dev);
 		}
 	} else {
 		cols[0] = 16;
-		if (dev->sigmamode & MODE_80COLS) 
+		if (dev->sigma_mode & MODE_80COLS) 
 			cga_hline(screen, 0, dev->displine, (dev->crtc[1] << 4) + 16, cols[0]);
 		else
 			cga_hline(screen, 0, dev->displine, (dev->crtc[1] << 5) + 16, cols[0]);
 	}
 
-	if (dev->sigmamode & MODE_80COLS) 
+	if (dev->sigma_mode & MODE_80COLS) 
 		x = (dev->crtc[1] << 4) + 16;
 	else
 		x = (dev->crtc[1] << 5) + 16;
@@ -716,31 +769,36 @@ sigma_poll(void *priv)
 
 	dev->sc = oldsc;
 	if (dev->vc == dev->crtc[7] && !dev->sc)
-		dev->sigmastat |= STATUS_RETR_V;
+		dev->sigma_stat |= STATUS_RETR_V;
 	dev->displine++;
 	if (dev->displine >= 560) 
 		dev->displine = 0;
     } else {
 	dev->vidtime += dev->dispontime;
 	dev->linepos = 0;
+
 	if (dev->vsynctime) {
 		dev->vsynctime--;
-		if (!dev->vsynctime)
-			dev->sigmastat &= ~STATUS_RETR_V;
+		if (! dev->vsynctime)
+			dev->sigma_stat &= ~STATUS_RETR_V;
 	}
+
 	if (dev->sc == (dev->crtc[11] & 31) ||
 	    ((dev->crtc[8] & 3) == 3 && dev->sc == ((dev->crtc[11] & 31) >> 1))) { 
 		dev->con = 0; 
 		dev->coff = 1; 
 	}
+
 	if ((dev->crtc[8] & 3) == 3 && dev->sc == (dev->crtc[9] >> 1))
 		dev->maback = dev->ma;
+
 	if (dev->vadj) {
 		dev->sc++;
 		dev->sc &= 31;
 		dev->ma = dev->maback;
+
 		dev->vadj--;
-		if (!dev->vadj) {
+		if (! dev->vadj) {
 			dev->cgadispon = 1;
 			dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
 			dev->sc = 0;
@@ -758,8 +816,11 @@ sigma_poll(void *priv)
 		if (oldvc == dev->crtc[4]) {
 			dev->vc = 0;
 			dev->vadj = dev->crtc[5];
-			if (!dev->vadj) dev->cgadispon = 1;
-			if (!dev->vadj) dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
+			if (! dev->vadj)
+				dev->cgadispon = 1;
+			if (! dev->vadj)
+				dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
+
 			if ((dev->crtc[10] & 0x60) == 0x20)
 				dev->cursoron = 0;
 			else
@@ -770,8 +831,9 @@ sigma_poll(void *priv)
 			dev->cgadispon = 0;
 			dev->displine = 0;
 			dev->vsynctime = 16;
+
 			if (dev->crtc[7]) {
-				if (dev->sigmamode & MODE_80COLS) 
+				if (dev->sigma_mode & MODE_80COLS) 
 					x = (dev->crtc[1] << 4) + 16;
 				else
 					x = (dev->crtc[1] << 5) + 16;
@@ -799,20 +861,20 @@ sigma_poll(void *priv)
 
 				video_res_x = xsize - 16;
 				video_res_y = ysize;
-				if (dev->sigmamode & MODE_GRAPHICS) {
-					if (dev->sigmamode & (MODE_HRGFX | MODE_640x400))
+				if (dev->sigma_mode & MODE_GRAPHICS) {
+					if (dev->sigma_mode & (MODE_HRGFX | MODE_640x400))
 						video_bpp = 1;
 					else {
 						video_res_x /= 2;
 						video_bpp = 2;
 					}
-				} else if (dev->sigmamode & MODE_80COLS) {
-					/* 80-column text */
+				} else if (dev->sigma_mode & MODE_80COLS) {
+					/* 80-column text. */
 					video_res_x /= 8;
 					video_res_y /= dev->crtc[9] + 1;
 					video_bpp = 0;
 				} else {
-					/* 40-column text */
+					/* 40-column text. */
 					video_res_x /= 16;
 					video_res_y /= dev->crtc[9] + 1;
 					video_bpp = 0;
@@ -828,8 +890,10 @@ sigma_poll(void *priv)
 		dev->sc &= 31;
 		dev->ma = dev->maback;
 	}
+
 	if (dev->cgadispon)
-		dev->sigmastat &= ~STATUS_RETR_H;
+		dev->sigma_stat &= ~STATUS_RETR_H;
+
 	if ((dev->sc == (dev->crtc[10] & 31) ||
 	    ((dev->crtc[8] & 3) == 3 && dev->sc == ((dev->crtc[10] & 31) >> 1)))) 
 		dev->con = 1;
@@ -838,14 +902,14 @@ sigma_poll(void *priv)
 
 
 static int
-load_font(sigma_t *dev, const wchar_t *s)
+load_font(sigma_t *dev, const wchar_t *fn)
 {
     FILE *fp;
     int c;
 
-    fp = rom_fopen(s, L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
-	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
+	ERRLOG("%s: cannot load font '%ls'\n", dev->name, fn);
 	return(0);
     }
 
@@ -862,6 +926,26 @@ load_font(sigma_t *dev, const wchar_t *s)
     (void)fclose(fp);
 
     return(1);
+}
+
+
+static void
+sigma_close(void *priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+
+    free(dev->vram);
+
+    free(dev);
+}
+
+
+static void
+speed_changed(void *priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+
+    recalc_timings(dev);
 }
 
 
@@ -886,7 +970,8 @@ sigma_init(const device_t *info, UNUSED(void *parent))
 	cga_palette = 0;
     video_palette_rebuild();
 
-    dev->vram = malloc(0x8000 * 4);
+    /* Allocate 128KB video memory. */
+    dev->vram = (uint8_t *)mem_alloc(131072);
 
     mem_map_add(&dev->mapping, 0xb8000, 0x08000, 
 		sigma_read,NULL,NULL, sigma_write,NULL,NULL,  
@@ -902,7 +987,7 @@ sigma_init(const device_t *info, UNUSED(void *parent))
     mem_map_disable(&dev->bios_rom.mapping);
     memcpy(dev->bram, &dev->bios_rom.rom[0x1800], 0x0800);
 
-    mem_map_add(&dev->bios_ram, 0xc1800, 0x0800,
+    mem_map_add(&dev->bios_ram, 0xc0000, 0x2000,
 		sigma_bread,NULL,NULL, sigma_bwrite,NULL,NULL,  
 		dev->bios_rom.rom, MEM_MAPPING_EXTERNAL, dev);
 
@@ -914,35 +999,14 @@ sigma_init(const device_t *info, UNUSED(void *parent))
     timer_add(sigma_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Start with ROM paged in, BIOS RAM paged out */
-    dev->rom_paged = 0x80;
+    dev->rom_paged = 1;
 
     if (dev->enable_nmi)
-	dev->sigmastat = STATUS_LPEN_T;
+	dev->sigma_stat = STATUS_LPEN_T;
 
-    video_inform(DEVICE_VIDEO_GET(info->flags),
-		 (const video_timings_t *)&sigma_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags), &sigma_timing);
 
     return(dev);
-}
-
-
-static void
-sigma_close(void *priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-
-    free(dev->vram);
-
-    free(dev);
-}
-
-
-void
-speed_changed(void *priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-
-    recalc_timings(dev);
 }
 
 
@@ -988,7 +1052,11 @@ static const device_config_t sigma_config[] = {
 
 const device_t sigma_device = {
     "Sigma Color 400",
+#if ENABLE_CGA
     DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
+#else
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
+#endif
     0,
     BIOS_ROM_PATH,
     sigma_init, sigma_close, NULL,
