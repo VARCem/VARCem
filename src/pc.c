@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.75	2019/05/05
+ * Version:	@(#)pc.c	1.0.76	2019/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -676,7 +676,6 @@ usage:
      * clear all the global configuration data now.
      */
     config_init(&config);
-    mouse_init();
     hdd_init();
     cdrom_global_init();
     zip_global_init();

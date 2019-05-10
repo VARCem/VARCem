@@ -46,20 +46,22 @@
  *		  Microsoft Windows 3.10.026
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 95
+ *		  Linux kernel 1.2.13-ELF
  *
  *		InPort verified with:
  *		  Logitech LMouse.com 6.12
  *		  Logitech LMouse.com 6.41
  *		  Microsoft Windows NT 3.1
  *		  Microsoft Windows 98 SE
+ *		  Linux kernel 1.2.13-ELF
  *
- * Version:	@(#)mouse_bus.c	1.1.9	2019/04/27
+ * Version:	@(#)mouse_bus.c	1.1.10	2019/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2017,2018 Miran Grca.
+ *		Copyright 2017,2019 Miran Grca.
  *		Copyright 200?-2018 Bochs.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -108,53 +110,47 @@
 #include "mouse.h"
 
 
-#define IRQ_MASK ((1 << 5) >> dev->irq)
+#define IRQ_MASK		((1 << 5) >> dev->irq)
 
-/* MS Inport Bus Mouse Adapter */
-#define INP_PORT_CONTROL     0
-#define INP_PORT_DATA        1
-#define INP_PORT_SIGNATURE   2
-#define INP_PORT_CONFIG      3
+/* Microsoft Inport Bus Mouse Adapter. */
+#define INP_PORT_CONTROL	0
+# define INP_CTRL_READ_BUTTONS	0x00
+# define INP_CTRL_READ_X	0x01
+# define INP_CTRL_READ_Y	0x02
+# define INP_CTRL_COMMAND	0x07
+# define INP_CTRL_RAISE_IRQ	0x16
+# define INP_ENABLE_DATA_IRQ	0x08
+# define INP_ENABLE_TIMER_IRQ	0x10
+# define INP_HOLD_COUNTER	0x20
+# define INP_CTRL_RESET		0x80
 
-#define INP_CTRL_READ_BUTTONS 0x00
-#define INP_CTRL_READ_X       0x01
-#define INP_CTRL_READ_Y       0x02
-#define INP_CTRL_COMMAND      0x07
-#define INP_CTRL_RAISE_IRQ    0x16
-#define INP_CTRL_RESET        0x80
+#define INP_PORT_DATA		1
 
-#define INP_HOLD_COUNTER      (1 << 5)
-#define INP_ENABLE_TIMER_IRQ  (1 << 4)
-#define INP_ENABLE_DATA_IRQ   (1 << 3)
-#define INP_PERIOD_MASK       0x07
+#define INP_PORT_SIGNATURE	2
 
-/* MS/Logictech Standard Bus Mouse Adapter */
-#define BUSM_PORT_DATA        0
-#define BUSM_PORT_SIGNATURE   1
-#define BUSM_PORT_CONTROL     2
-#define BUSM_PORT_CONFIG      3
+#define INP_PERIOD_MASK		0x07
 
-#define HOLD_COUNTER  (1 << 7)
-#define READ_X        (0 << 6)
-#define READ_Y        (1 << 6)
-#define READ_LOW      (0 << 5)
-#define READ_HIGH     (1 << 5)
-#define DISABLE_IRQ   (1 << 4)
 
-#define DEVICE_ACTIVE (1 << 7)
+/* Logitech/Microsoft Standard Bus Mouse Adapter. */
+#define BUSM_PORT_DATA		0
 
-#define READ_X_LOW    (READ_X | READ_LOW)
-#define READ_X_HIGH   (READ_X | READ_HIGH)
-#define READ_Y_LOW    (READ_Y | READ_LOW)
-#define READ_Y_HIGH   (READ_Y | READ_HIGH)
+#define BUSM_PORT_SIGNATURE	1
 
-#define FLAG_INPORT	(1 << 0)
-#define FLAG_ENABLED	(1 << 1)
-#define FLAG_HOLD	(1 << 2)
-#define FLAG_TIMER_INT	(1 << 3)
-#define FLAG_DATA_INT	(1 << 4)
+#define BUSM_PORT_CONTROL	2
+# define CTRL_DISABLE_IRQ	(1 << 4)
+# define CTRL_READ_LOW		(0 << 5)
+# define CTRL_READ_HIGH		(1 << 5)
+# define CTRL_READ_X		(0 << 6)
+# define CTRL_READ_Y		(1 << 6)
+# define CTRL_HOLD_COUNTER	(1 << 7)
 
-static const double periods[4] = { 30.0, 50.0, 100.0, 200.0 };
+# define CTRL_READ_X_LOW	(CTRL_READ_X | CTRL_READ_LOW)
+# define CTRL_READ_X_HIGH	(CTRL_READ_X | CTRL_READ_HIGH)
+# define CTRL_READ_Y_LOW	(CTRL_READ_Y | CTRL_READ_LOW)
+# define CTRL_READ_Y_HIGH	(CTRL_READ_Y | CTRL_READ_HIGH)
+
+#define BUSM_PORT_CONFIG	3
+# define CONF_DEVICE_ACTIVE	0x80
 
 
 /* Our mouse device. */
@@ -165,22 +161,30 @@ typedef struct mouse {
     int8_t	irq,
 		bn;
     uint8_t	flags;
+# define FLAG_INPORT	0x01
+# define FLAG_ENABLED	0x02
+# define FLAG_HOLD	0x04
+# define FLAG_TIMER_INT	0x08
+# define FLAG_DATA_INT	0x10
 
-    int		delayed_dx, delayed_dy,
+    int8_t	curr_x, curr_y;
+    uint8_t	curr_b,
 		buttons,
-		buttons_last,
-
-		curr_x, curr_y,
-		curr_b;
+		buttons_last;
 
     uint8_t	ctrl, conf, sig,
 		cmd, toggle;
 
-    double	period;
+    int		delayed_dx,
+		delayed_dy;
 
-    int64_t	timer_enabled;
-    int64_t	timer;
+    double	period;
+    int64_t	timer,
+		timer_enabled;
 } mouse_t;
+
+
+static const double periods[4] = { 30.0, 50.0, 100.0, 200.0 };
 
 
 /* Handle a READ operation from one of the Logitech registers. */
@@ -198,20 +202,24 @@ lt_read(uint16_t port, void *priv)
 		 * to change this a bit.
 		 */
 		switch (dev->ctrl & 0x60) {
-			case READ_X_LOW:
+			case CTRL_READ_X_LOW:
 				ret = dev->curr_x & 0x0f;
+				dev->curr_x &= 0xf0;
 				break;
 
-			case READ_X_HIGH:
+			case CTRL_READ_X_HIGH:
 				ret = (dev->curr_x >> 4) & 0x0f;
+				dev->curr_x &= 0x0f;
 				break;
 
-			case READ_Y_LOW:
+			case CTRL_READ_Y_LOW:
 				ret = dev->curr_y & 0x0f;
+				dev->curr_y &= 0xf0;
 				break;
 
-			case READ_Y_HIGH:
+			case CTRL_READ_Y_HIGH:
 				ret = (dev->curr_y >> 4) & 0x0f;
+				dev->curr_y &= 0x0f;
 				break;
 
 			default:
@@ -274,19 +282,18 @@ lt_write(uint16_t port, uint8_t val, void *priv)
 
 	case BUSM_PORT_CONTROL:
 		dev->ctrl = val | 0x0f;
-		if (! (val & DISABLE_IRQ))
+		if (! (val & CTRL_DISABLE_IRQ))
 			dev->flags |= FLAG_TIMER_INT;
 		else
 			dev->flags &= ~FLAG_TIMER_INT;
 
-		if (val & HOLD_COUNTER)
+		if (val & CTRL_HOLD_COUNTER)
 			dev->flags |= FLAG_HOLD;
 		  else
 			dev->flags &= ~FLAG_HOLD;
 
 		if (dev->irq != -1)
 			picintc(1 << dev->irq);
-
 		break;
 
 	case BUSM_PORT_CONFIG:
@@ -324,12 +331,11 @@ lt_write(uint16_t port, uint8_t val, void *priv)
 		 * The only difference is - port C upper and port B go from
 		 * input to output.
 		 */
-		dev->conf = val;
-		if (val & DEVICE_ACTIVE) {
+		if (val & CONF_DEVICE_ACTIVE) {
 			/* Mode set/reset - enable this */
 			dev->conf = val;
 			dev->flags |= (FLAG_ENABLED | FLAG_TIMER_INT);
-			dev->ctrl = 0x0F & ~IRQ_MASK;
+			dev->ctrl = 0x0f & ~IRQ_MASK;
 		} else {
 			/* Single-bit set/reset */
 			bit = 1 << ((val >> 1) & 0x07);		/* Bits 3-1 specify the target bit */
@@ -358,15 +364,17 @@ ms_read(uint16_t port, void *priv)
 	case INP_PORT_DATA:
 		switch (dev->cmd) {
 			case INP_CTRL_READ_BUTTONS:
-				ret = dev->curr_b | 0x80;
+				ret = dev->curr_b;
 				break;
 
 			case INP_CTRL_READ_X:
 				ret = dev->curr_x;
+				dev->curr_x = 0;
 				break;
 
 			case INP_CTRL_READ_Y:
 				ret = dev->curr_y;
+				dev->curr_y = 0;
 				break;
 
 			case INP_CTRL_COMMAND:
@@ -382,12 +390,8 @@ ms_read(uint16_t port, void *priv)
 		if (dev->toggle)
 			ret = 0x12;
 		else
-			ret = 0xDE;
+			ret = 0xde;
 		dev->toggle ^= 1;
-		break;
-
-	case INP_PORT_CONFIG:
-		ERRLOG("MOUSE: READ from port %04x\n", port);
 		break;
     }
 
@@ -428,21 +432,22 @@ ms_write(uint16_t port, uint8_t val, void *priv)
 	case INP_PORT_DATA:
 		if (dev->irq != -1)
 			picintc(1 << dev->irq);
+
 		switch (dev->cmd) {
 			case INP_CTRL_COMMAND:
 				if (val & INP_HOLD_COUNTER)
 					dev->flags |= FLAG_HOLD;
-				  else
+				else
 					dev->flags &= ~FLAG_HOLD;
 
 				if (val & INP_ENABLE_TIMER_IRQ)
 					dev->flags |= FLAG_TIMER_INT;
-				  else
+				else
 					dev->flags &= ~FLAG_TIMER_INT;
 
 				if (val & INP_ENABLE_DATA_IRQ)
 					dev->flags |= FLAG_DATA_INT;
-				  else
+				else
 					dev->flags &= ~FLAG_DATA_INT;
 
 				switch (val & INP_PERIOD_MASK) {
@@ -457,9 +462,9 @@ ms_write(uint16_t port, uint8_t val, void *priv)
 					case 3:
 					case 4:
 						dev->period = 1000000.0 / periods[(val & INP_PERIOD_MASK) - 1];
-						dev->timer = ((int64_t) dev->period) * TIMER_USEC;
+						dev->timer = (int64_t)(dev->period * TIMER_USEC);
 						dev->timer_enabled = (val & INP_ENABLE_TIMER_IRQ) ? 1LL : 0LL;
-						DBGLOG(1, "MOUSE timer is now %sabled at period %i\n", (val & INP_ENABLE_TIMER_IRQ) ? "en" : "dis", (int32_t) dev->period);
+						DBGLOG(1, "MOUSE timer is now %sabled at period %i\n", (val & INP_ENABLE_TIMER_IRQ) ? "en" : "dis", (int32_t)dev->period);
 						break;
 
 					case 6:
@@ -483,7 +488,6 @@ ms_write(uint16_t port, uint8_t val, void *priv)
 		break;
 
 	case INP_PORT_SIGNATURE:
-	case INP_PORT_CONFIG:
 		ERRLOG("MOUSE: WRITE %02x to port %04x\n", val, port);
 		break;
     }
@@ -502,6 +506,7 @@ bm_poll(int x, int y, int z, int b, void *priv)
 
     /* Has its state changed? */
     if (!x && !y && !((b ^ dev->buttons_last) & 0x07)) {
+	/* No, so clear the 'status changed' bits that are also in there. */
 	dev->buttons_last = b;
 	return(1);
     }
@@ -529,10 +534,10 @@ bm_poll(int x, int y, int z, int b, void *priv)
     dev->buttons_last = b;
 
     /* Clamp x and y to between -128 and 127 (int8_t range). */
-    if (x > 127)  x = 127;
-    if (x < -128)  x = -128;
-    if (y > 127)  y = 127;
-    if (y < -128)  y = -128;
+    if (x > 127) x = 127;
+    if (x < -128) x = -128;
+    if (y > 127) y = 127;
+    if (y < -128) y = -128;
 
     if (dev->timer_enabled) {
 	/* Update delayed coordinates. */
@@ -541,9 +546,8 @@ bm_poll(int x, int y, int z, int b, void *priv)
     } else {
 	/* If the counters are not frozen, update them. */
 	if (! (dev->flags & FLAG_HOLD)) {
-		dev->curr_x = (int8_t) x;
-		dev->curr_y = (int8_t) y;
-
+		dev->curr_x = (int8_t)x;
+		dev->curr_y = (int8_t)y;
 		dev->curr_b = dev->buttons;
 	}
 
@@ -560,43 +564,65 @@ bm_poll(int x, int y, int z, int b, void *priv)
 
 
 /*
- * The timer calls us on every tick if the mouse is in 
- * timer mode (InPort mouse is so configured, MS/Logitech
- * Bus mouse always).
+ * Called at the configured period (InPort mouse) or at
+ * 45 times per second (MS/Logitech Bus mouse).
  */
 static void
-bm_update_data(mouse_t *dev)
+bm_timer(void *priv)
 {
+    mouse_t *dev = (mouse_t *)priv;
     int delta_x, delta_y;
     int xor;
 
-    /* Update the deltas and the delays. */
-    if (dev->delayed_dx > 127) {
-	delta_x = 127;
-	dev->delayed_dx -= 127;
-    } else if (dev->delayed_dx < -128) {
-	delta_x = -128;
-	dev->delayed_dx += 128;
-    } else {
-	delta_x = dev->delayed_dx;
-	dev->delayed_dx = 0;
+    DBGLOG(1, "MOUSE: Timer Tick (flags=%08x)\n", dev->flags);
+
+    /*
+     * The period is configured either via emulator settings
+     * (for MS/Logitech Bus mouse) or via software (for
+     * InPort mouse).
+    */
+    dev->timer += ((int64_t) dev->period) * TIMER_USEC;
+
+    if (dev->flags & FLAG_TIMER_INT) {
+	picint(1 << dev->irq);
+	DBGLOG(1, "MOUSE: Timer Interrupt fired\n");
     }
 
-    if (dev->delayed_dy > 127) {
-	delta_y = 127;
-	dev->delayed_dy -= 127;
-    } else if (dev->delayed_dy < -128) {
-	delta_y = -128;
-	dev->delayed_dy += 128;
-    } else {
-	delta_y = dev->delayed_dy;
-	dev->delayed_dy = 0;
-    }
-
-    /* If the counters are not frozen, update them. */
+    /*
+     * Update the counters and deltas if the mouse is in timed mode.
+     *
+     * If the counters are not frozen, update them.
+     */
     if (! (dev->flags & FLAG_HOLD)) {
-	dev->curr_x = (uint8_t) delta_x;
-	dev->curr_y = (uint8_t) delta_y;
+	/* Grab as much 'delta data' as the guest will take (int8_t max.) */
+	if (dev->delayed_dx > 127) {
+		delta_x = 127;
+		dev->delayed_dx -= 127;
+	} else if (dev->delayed_dx < -128) {
+		delta_x = -128;
+		dev->delayed_dx += 128;
+	} else {
+		delta_x = dev->delayed_dx;
+		dev->delayed_dx = 0;
+	}
+
+	if (dev->delayed_dy > 127) {
+		delta_y = 127;
+		dev->delayed_dy -= 127;
+	} else if (dev->delayed_dy < -128) {
+		delta_y = -128;
+		dev->delayed_dy += 128;
+	} else {
+		delta_y = dev->delayed_dy;
+		dev->delayed_dy = 0;
+	}
+
+	/* Make this chunk of data available to the guest. */
+	dev->curr_x = (int8_t)delta_x;
+	dev->curr_y = (int8_t)delta_y;
+    } else {
+	/* Frozen, so, no deltas to give. */
+	delta_x = delta_y = 0;
     }
 
     if (dev->flags & FLAG_INPORT) {
@@ -616,33 +642,6 @@ bm_update_data(mouse_t *dev)
 	 */
 	dev->curr_b = dev->buttons;
     }
-}
-
-
-/*
- * Called at the configured period (InPort mouse) or at
- * 45 times per second (MS/Logitech Bus mouse).
- */
-static void
-bm_timer(void *priv)
-{
-    mouse_t *dev = (mouse_t *)priv;
-
-    DBGLOG(1, "MOUSE: Timer Tick (flags=%08x)\n", dev->flags);
-
-    /*
-     * The period is configured either via emulator settings
-     * (for MS/Logitech Bus mouse) or via software (for
-     * InPort mouse).
-    */
-    dev->timer += ((int64_t) dev->period) * TIMER_USEC;
-
-    if (dev->flags & FLAG_TIMER_INT) {
-	picint(1 << dev->irq);
-	DBGLOG(1, "MOUSE: Timer Interrupt fired\n");
-    }
-
-    bm_update_data(dev);
 }
 
 
@@ -670,7 +669,6 @@ bm_init(const device_t *info, UNUSED(void *parent))
 
     switch(info->local) {
 	case 0:		/* original Logitech controller */
-		dev->flags = 0;
 		dev->base = device_get_config_hex16("base");
 		dev->irq = device_get_config_int("irq");
 		break;
@@ -721,7 +719,7 @@ bm_init(const device_t *info, UNUSED(void *parent))
 	dev->timer = 0LL;
 	dev->timer_enabled = 0LL;
 
-	io_sethandler(dev->base, 4,
+	io_sethandler(dev->base, 3,
 		      ms_read,NULL,NULL, ms_write,NULL,NULL, dev);
     } else {
 	dev->ctrl = 0x0f;	/* the control port value */
@@ -735,7 +733,8 @@ bm_init(const device_t *info, UNUSED(void *parent))
 
 		dev->timer = ((int64_t) dev->period) * TIMER_USEC;
 		dev->timer_enabled = 1LL;
-	}
+	} else
+		dev->flags |= FLAG_DATA_INT;
 
 	io_sethandler(dev->base, 4,
 		      lt_read,NULL,NULL, lt_write,NULL,NULL, dev);
@@ -752,19 +751,19 @@ bm_init(const device_t *info, UNUSED(void *parent))
 
 static const device_config_t lt_config[] = {
     {
-	"base", "Address", CONFIG_HEX16, "", 0x23c,
+	"base", "Address", CONFIG_HEX16, "", 0x023c,
 	{
 		{
-			"230H", 0x230
+			"230H", 0x0230
 		},
 		{
-			"234H", 0x234
+			"234H", 0x0234
 		},
 		{
-			"238H", 0x238
+			"238H", 0x0238
 		},
 		{
-			"23CH", 0x23c
+			"23CH", 0x023c
 		},
 		{
 			NULL
@@ -772,7 +771,8 @@ static const device_config_t lt_config[] = {
 	}
     },
     {
-	"irq", "IRQ", CONFIG_SELECTION, "", 5, {
+	"irq", "IRQ", CONFIG_SELECTION, "", 5,
+	{
 		{
 			"IRQ 2", 2
 		},
@@ -791,7 +791,8 @@ static const device_config_t lt_config[] = {
 	}
     },
     {
-	"hz", "Hz", CONFIG_SELECTION, "", 45, {
+	"hz", "Hz", CONFIG_SELECTION, "", 45,
+	{
 		{
 			"Original Mode", 0
 		},
@@ -810,7 +811,8 @@ static const device_config_t lt_config[] = {
 	}
     },
     {
-	"buttons", "Buttons", CONFIG_SELECTION, "", 2, {
+	"buttons", "Buttons", CONFIG_SELECTION, "", 2,
+	{
 		{
 			"Two", 2
 		},
@@ -830,19 +832,19 @@ static const device_config_t lt_config[] = {
 
 static const device_config_t ms_config[] = {
     {
-	"base", "Address", CONFIG_HEX16, "", 0x23c,
+	"base", "Address", CONFIG_HEX16, "", 0x023c,
 	{
 		{
-			"230H", 0x230
+			"230H", 0x0230
 		},
 		{
-			"234H", 0x234
+			"234H", 0x0234
 		},
 		{
-			"238H", 0x238
+			"238H", 0x0238
 		},
 		{
-			"23CH", 0x23c
+			"23CH", 0x023c
 		},
 		{
 			NULL
@@ -850,7 +852,8 @@ static const device_config_t ms_config[] = {
 	}
     },
     {
-	"irq", "IRQ", CONFIG_SELECTION, "", 5, {
+	"irq", "IRQ", CONFIG_SELECTION, "", 5,
+	{
 		{
 			"IRQ 2", 2
 		},
@@ -869,7 +872,8 @@ static const device_config_t ms_config[] = {
 	}
     },
     {
-	"buttons", "Buttons", CONFIG_SELECTION, "", 2, {
+	"buttons", "Buttons", CONFIG_SELECTION, "", 2,
+	{
 		{
 			"Two", 2
 		},
@@ -922,7 +926,7 @@ const device_t mouse_msinport_device = {
 
 const device_t mouse_msinport_onboard_device = {
     "Microsoft InPort Mouse (Internal)",
-    DEVICE_ISA,
+    0,
     11,
     NULL,
     bm_init, bm_close, NULL,

@@ -8,7 +8,7 @@
  *
  *		Definitions for the mouse driver.
  *
- * Version:	@(#)mouse.h	1.0.11	2019/04/23
+ * Version:	@(#)mouse.h	1.0.12	2019/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,17 +54,11 @@
 #define MOUSE_INTERNAL		1	/* machine has internal mouse */
 #define MOUSE_LOGIBUS		2	/* Logitech/ATI Bus Mouse */
 #define MOUSE_INPORT		3	/* Microsoft InPort Mouse */
-#if 0
-# define MOUSE_GENIBUS		4	/* Genius Bus Mouse */
-# define MOUSE_NEXT		5
-#else
-# define MOUSE_NEXT		4
-#endif
-#define MOUSE_MSYSTEMS		MOUSE_NEXT+0	/* Mouse Systems mouse */
-#define MOUSE_MICROSOFT		MOUSE_NEXT+1	/* Microsoft Serial Mouse */
-#define MOUSE_LOGITECH		MOUSE_NEXT+2	/* Logitech Serial Mouse */
-#define MOUSE_MSWHEEL		MOUSE_NEXT+3	/* Serial Wheel Mouse */
-#define MOUSE_PS2		MOUSE_NEXT+4	/* PS/2 series Bus Mouse */
+#define MOUSE_MSYSTEMS		4	/* Mouse Systems mouse */
+#define MOUSE_MICROSOFT		5	/* Microsoft Serial Mouse */
+#define MOUSE_LOGITECH		6	/* Logitech Serial Mouse */
+#define MOUSE_MSWHEEL		7	/* Serial Wheel Mouse */
+#define MOUSE_PS2		8	/* PS/2 series Bus Mouse */
 
 
 #ifdef __cplusplus
@@ -83,9 +77,6 @@ extern const device_t	mouse_logibus_device;
 extern const device_t	mouse_logibus_onboard_device;
 extern const device_t	mouse_msinport_device;
 extern const device_t	mouse_msinport_onboard_device;
-#if 0
-extern const device_t	mouse_genibus_device;
-#endif
 extern const device_t	mouse_mssystems_device;
 extern const device_t	mouse_msserial_device;
 extern const device_t	mouse_ltserial_device;
@@ -93,23 +84,23 @@ extern const device_t	mouse_mswhserial_device;
 extern const device_t	mouse_ps2_device;
 #endif
 
-extern void	mouse_log(int level, const char *fmt, ...);
-extern void	mouse_init(void);
-extern void	mouse_close(void);
-extern void	mouse_reset(void);
-extern void	mouse_set_buttons(int buttons);
-extern void	mouse_process(void);
-extern void	mouse_set_poll(int (*f)(int,int,int,int,void *), void *);
-extern void	mouse_poll(void);
+extern void		mouse_log(int level, const char *fmt, ...);
+extern void		mouse_init(void);
+extern void		mouse_close(void);
+extern void		mouse_reset(void);
+extern void		mouse_set_buttons(int buttons);
+extern void		mouse_process(void);
+extern void		mouse_set_poll(int (*f)(int,int,int,int,void*), void*);
+extern void		mouse_poll(void);
 
-extern void	mouse_bus_set_irq(void *priv, int irq);
+extern void		mouse_bus_set_irq(void *priv, int irq);
 
-extern const char *mouse_get_name(int mouse);
-extern const char *mouse_get_internal_name(int mouse);
-extern int	mouse_get_from_internal_name(const char *s);
-extern int	mouse_has_config(int mouse);
-extern int	mouse_get_type(int mouse);
-extern int	mouse_get_buttons(void);
+extern const char	*mouse_get_name(int mouse);
+extern const char	*mouse_get_internal_name(int mouse);
+extern int		mouse_get_from_internal_name(const char *s);
+extern int		mouse_has_config(int mouse);
+extern int		mouse_get_type(int mouse);
+extern int		mouse_get_buttons(void);
 
 #ifdef __cplusplus
 }

@@ -8,9 +8,7 @@
  *
  *		Common driver module for MOUSE devices.
  *
- * TODO:	Add the Genius bus- and serial mouse.
- *
- * Version:	@(#)mouse.c	1.0.19	2019/05/03
+ * Version:	@(#)mouse.c	1.0.20	2019/05/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -80,9 +78,6 @@ static const struct {
 
     { "logibus",	&mouse_logibus_device		},
     { "msbus",		&mouse_msinport_device		},
-#if 0
-    { "genibus",	&mouse_genibus_device		},
-#endif
     { "mssystems",	&mouse_mssystems_device		},
     { "msserial",	&mouse_msserial_device		},
     { "ltserial",	&mouse_ltserial_device		},
@@ -115,22 +110,14 @@ mouse_log(int level, const char *fmt, ...)
 #endif
 
 
-/* Initialize the mouse module. */
-void
-mouse_init(void)
-{
-    /* Initialize local data. */
-    mouse_x = mouse_y = mouse_z = 0;
-    mouse_buttons = 0x00;
-
-    mouse_close();
-}
-
-
 void
 mouse_close(void)
 {
     mouse_nbut = 0;
+
+    mouse_x = mouse_y = mouse_z = 0;
+    mouse_buttons = 0x00;
+
     mouse_priv = NULL;
     mouse_func = NULL;
 }
@@ -148,10 +135,15 @@ mouse_reset(void)
     /* Clear local data. */
     mouse_x = mouse_y = mouse_z = 0;
     mouse_buttons = 0x00;
+    mouse_priv = NULL;
+    mouse_func = NULL;
 
     /* Initialize the mouse device. */
-    if (devices[config.mouse_type].device != NULL)
+    if (devices[config.mouse_type].device != NULL) {
 	mouse_priv = device_add(devices[config.mouse_type].device);
+	mouse_func = (int (*)(int,int,int,int,void *))
+			devices[config.mouse_type].device->ms_poll;
+    }
 }
 
 
