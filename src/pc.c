@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.76	2019/05/09
+ * Version:	@(#)pc.c	1.0.76	2019/05/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -226,12 +226,12 @@ pclog_repeat(int enabled)
 }
 
 
-#ifdef _DEBUG
 /* Log a block of code around the current CS:IP. */
 void
 pclog_dump(int num)
 {
     char buff[128];
+    uint32_t addr;
     char *sp = NULL;
     int i, k;
 
@@ -242,32 +242,41 @@ pclog_dump(int num)
     /* Disable the repeat-detection. */
     pclog_repeat(0);
 
+    addr = (uint32_t)(_cs.base | cpu_state.pc);
+
     while (i < num) {
 	if (sp == NULL) {
 		sp = buff;
-		sprintf(sp, "%08lx:", (unsigned long)cpu_state.pc + i);
+		sprintf(sp, "%08x:", addr + i);
 		sp += strlen(sp);
 	}
 
 	/* Get byte from memory. */
-        k = readmembl(cpu_state.pc + i);
+        k = readmembl(addr + i);
 	i++;
 
         sprintf(sp, " %02x", k & 0xff);
 	sp += strlen(sp);
 
 	if ((i % 16) == 0) {
+#ifdef _DEBUG
+		INFO("%s\n", buff);
+#else
 		DBGLOG(2, "%s\n", buff);
+#endif
 		sp = NULL;
 	}
     }
     if (sp != NULL)
+#ifdef _DEBUG
+	INFO("%s\n", buff);
+#else
 	DBGLOG(2, "%s\n", buff);
+#endif
 
     /* Re-enable the repeat-detection. */
     pclog_repeat(1);
 }
-#endif
 
 
 /* Log a fatal error, and display a UI message before exiting. */

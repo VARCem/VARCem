@@ -8,7 +8,7 @@
  *
  *		Handling of ROM image files.
  *
- * Version:	@(#)rom.c	1.0.20	2019/05/05
+ * Version:	@(#)rom.c	1.0.21	2019/05/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -91,6 +91,12 @@ rom_read(uint32_t addr, void *priv)
 	DEBUG("ROM: read byte from BIOS at %06lX\n", addr);
 #endif
 
+    if (addr < ptr->mapping.base)
+	return 0xff;
+
+    if (addr >= (ptr->mapping.base + ptr->sz))
+	return 0xff;
+
     return(ptr->rom[addr & ptr->mask]);
 }
 
@@ -106,6 +112,12 @@ rom_readw(uint32_t addr, void *priv)
 	DEBUG("ROM: read word from BIOS at %06lX\n", addr);
 #endif
 
+    if (addr < (ptr->mapping.base - 1))
+	return 0xffff;
+
+    if (addr >= (ptr->mapping.base + ptr->sz))
+	return 0xffff;
+
     return(*(uint16_t *)&ptr->rom[addr & ptr->mask]);
 }
 
@@ -120,6 +132,12 @@ rom_readl(uint32_t addr, void *priv)
     if (ptr->mapping.base == ROM_TRACE)
 	DEBUG("ROM: read long from BIOS at %06lX\n", addr);
 #endif
+
+    if (addr < (ptr->mapping.base - 3))
+	return 0xffffffff;
+
+    if (addr >= (ptr->mapping.base + ptr->sz))
+	return 0xffffffff;
 
     return(*(uint32_t *)&ptr->rom[addr & ptr->mask]);
 }
@@ -355,6 +373,7 @@ rom_init(rom_t *ptr, const wchar_t *fn, uint32_t addr, int sz, int mask, int off
 	return(0);
     }
 
+    ptr->sz = sz;
     ptr->mask = mask;
 
     mem_map_add(&ptr->mapping, addr, sz,
@@ -381,6 +400,7 @@ rom_init_interleaved(rom_t *ptr, const wchar_t *fnl, const wchar_t *fnh, uint32_
 	return(0);
     }
 
+    ptr->sz = sz;
     ptr->mask = mask;
 
     mem_map_add(&ptr->mapping, addr, sz,

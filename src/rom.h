@@ -8,7 +8,7 @@
  *
  *		Definitions for the ROM image handler.
  *
- * Version:	@(#)rom.h	1.0.14	2019/05/05
+ * Version:	@(#)rom.h	1.0.15	2019/05/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -53,6 +53,7 @@
 
 typedef struct {
     uint8_t	*rom;
+    uint32_t	sz;
     uint32_t	mask;
     mem_map_t	mapping;
 } rom_t;
