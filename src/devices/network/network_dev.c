@@ -12,7 +12,7 @@
  *		it should be malloc'ed and then linked to the NETCARD def.
  *		Will be done later.
  *
- * Version:	@(#)network_dev.c	1.0.2	2019/05/02
+ * Version:	@(#)network_dev.c	1.0.5	2019/05/12
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -61,9 +61,15 @@
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "network.h"
+#include "net_3com.h"
+#ifdef USE_ARTISOFT
+#include "net_arti.h"
+#endif
+#ifdef USE_IBMPCNET
+#include "net_ibm.h"
+#endif
 #include "net_ne2000.h"
 #include "net_wd80x3.h"
-#include "net_3com.h"
 
 
 static const struct {
@@ -74,12 +80,22 @@ static const struct {
     { "internal",	NULL			},
 
     /* ISA cards. */
+#ifdef USE_ARTISOFT
+    { "arti_e2m",	&arti_e2m_device	},
+    { "arti_a2m",	&arti_a2m_device	},
+#endif
+#ifdef USE_IBMPCNET
+    { "ibm_pcnet",	&ibm_pcnet_device	},
+#endif
     { "ne1k",		&ne1000_device		},
     { "ne2k",		&ne2000_device		},
-#if 0
+#ifdef USE_EL1
     { "3c501",		&el1_device		},
 #endif
     { "3c503",		&el2_device		},
+#ifdef USE_EL3
+    { "3c509",		&el3_device		},
+#endif
     { "ne2kpnp",	&rtl8019as_device	},
     { "wd8003e",	&wd8003e_device		},
     { "wd8013ebt",	&wd8013ebt_device	},

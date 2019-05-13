@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.70	2019/05/05
+# Version:	@(#)Makefile.VC	1.0.72	2019/05/12
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -596,6 +596,21 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(CASSETTE), y)
   OPTS		+= -DUSE_CASSETTE
   DEVBROBJ	+= cassette.obj
+ endif
+
+ ifeq ($(EL1), y)
+  OPTS		+= -DUSE_EL1
+  DEVBROBJ	+= net_3c501.o
+ endif
+
+ ifeq ($(PCNET), y)
+  OPTS		+= -DUSE_IBMPCNET
+  DEVBROBJ	+= net_ibmpcnet.o
+ endif
+
+ ifeq ($(ARTI), y)
+  OPTS		+= -DUSE_ARTISOFT
+  DEVBROBJ	+= net_arti2m.o
  endif
 
 endif

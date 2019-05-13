@@ -8,7 +8,7 @@
  *
  *		Definitions for the 3Com series of ethernet controllers.
  *
- * Version:	@(#)net_3com.h	1.0.3	2019/05/02
+ * Version:	@(#)net_3com.h	1.0.4	2019/05/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -36,9 +36,7 @@
 # define NET_3COM_H
 
 
-#if 0
 extern const device_t	el1_device;
-#endif
 extern const device_t	el2_device;
 
 

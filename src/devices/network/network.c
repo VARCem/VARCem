@@ -8,7 +8,7 @@
  *
  *		Implementation of the network module.
  *
- * Version:	@(#)network.c	1.0.20	2019/05/03
+ * Version:	@(#)network.c	1.0.21	2019/05/07
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,6 +58,9 @@
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "network.h"
+
+
+#define ENABLE_NETWORK_DUMP	1
 
 
 typedef struct {
@@ -359,11 +362,13 @@ network_tx(uint8_t *bufp, int len)
 {
     ui_sb_icon_update(SB_NETWORK, 1);
 
-#if defined(WALTJE) && defined(_DEBUG) && defined(ENABLE_NETWORK_DUMP)
+#if defined(WALTJE) && defined(_DEBUG) && ENABLE_NETWORK_DUMP
 {
-    char temp[8192];
-    hexdump_p(temp, bufp, len);
-    DBGLOG(2, "NETWORK: >> len=%d\n%s\n", len, temp);
+    char temp[16384];
+    hexdump_p(temp, 0, bufp, len);
+    pclog_repeat(0);
+    DEBUG("NETWORK: >> len=%i\n%s\n", len, temp);
+    pclog_repeat(1);
 }
 #endif
 
@@ -379,11 +384,13 @@ network_rx(uint8_t *bufp, int len)
 {
     ui_sb_icon_update(SB_NETWORK, 1);
 
-#if defined(WALTJE) && defined(_DEBUG) && defined(ENABLE_NETWORK_DUMP)
+#if defined(WALTJE) && defined(_DEBUG) && ENABLE_NETWORK_DUMP
 {
-    char temp[8192];
-    hexdump_p(temp, bufp, len);
-    DBGLOG(2, "NETWORK: << len=%d\n%s\n", len, temp);
+    char temp[16384];
+    hexdump_p(temp, 0, bufp, len);
+    pclog_repeat(0);
+    DEBUG("NETWORK: << len=%i\n%s\n", len, temp);
+    pclog_repeat(1);
 }
 #endif
 

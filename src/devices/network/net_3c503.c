@@ -1,14 +1,14 @@
 /*
- * 86Box	An emulator of (mostly) x86-based PC systems and devices,
- *		using the ISA, EISA, VLB, MCA, and PCI system buses,
- *		roughly spanning the era between 1981 and 1995.
+ * VARCem	Virtual ARchaeological Computer EMulator.
+ *		An emulator of (mostly) x86-based PC systems and devices,
+ *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+ *		spanning the era between 1981 and 1995.
  *
- *		This file is part of the 86Box Project.
+ *		This file is part of the VARCem Project.
  *
- *		Implementation of the following network controllers:
- *			- 3Com Etherlink II 3c503 (ISA 8-bit).
+ *		Implementation of the 3Com Etherlink II 3c503 (ISA 8-bit).
  *
- * Version:	@(#)net_3c503.c	1.0.7	2019/05/02
+ * Version:	@(#)net_3c503.c	1.0.8	2019/05/06
  *
  * Based on	@(#)3c503.cpp Carl (MAME)
  *

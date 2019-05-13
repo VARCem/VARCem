@@ -8,7 +8,7 @@
  *
  *		Video7 VGA 1024i emulation.
  *
- * Version:	@(#)vid_ht216.c	1.0.3	2019/05/10
+ * Version:	@(#)vid_ht216.c	1.0.4	2019/05/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -885,7 +885,7 @@ ht216_writew(uint32_t addr, uint16_t val, void *priv)
     addr &= svga->banked_mask;
     addr = (addr & 0x7fff) + dev->write_bank[(addr >> 15) & 1];
     if (dev->ht_regs[0xcd]) {
-	write_common(dev, addr, val);
+	write_common(dev, addr, val & 0xff);
 	write_common(dev, addr+1, val >> 8);
     } else
 	svga_writew_linear(addr, val, &dev->svga);
