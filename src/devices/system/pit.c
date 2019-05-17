@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.15	2019/05/05
+ * Version:	@(#)pit.c	1.0.16	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -310,7 +310,7 @@ load_timer(PIT *dev, int t)
 
 
 static void
-pit_write(uint16_t addr, uint8_t val, void *priv)
+pit_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     PIT *dev = (PIT *)priv;
     double sv = 0.0;
@@ -421,7 +421,7 @@ pit_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-pit_read(uint16_t addr, void *priv)
+pit_read(uint16_t addr, priv_t priv)
 {
     PIT *dev = (PIT *)priv;
     uint8_t temp = 0xff;

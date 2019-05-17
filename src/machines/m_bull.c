@@ -18,7 +18,7 @@
  *
  *		Other than the above, the machine works as expected.
  *
- * Version:	@(#)m_bull.c	1.0.2	2019/05/03
+ * Version:	@(#)m_bull.c	1.0.3	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Idea from a patch for PCem by DNS2KV2, but fully rewritten.
@@ -77,15 +77,15 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     int ega, mouse, scsi;
-    void *priv;
+    priv_t priv;
     int irq;
 
     /* Allocate machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     ega = machine_get_config_int("pega");
     mouse = machine_get_config_int("mouse");
@@ -123,7 +123,7 @@ common_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

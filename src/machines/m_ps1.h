@@ -8,7 +8,7 @@
  *
  *		Definitions for the IBM PS/1 machines.
  *
- * Version:	@(#)m_ps1.h	1.0.1	2019/04/19
+ * Version:	@(#)m_ps1.h	1.0.2	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,7 +58,7 @@ extern const device_t	ps1_hdc_device;
 #endif
 
 
-extern void		ps1_set_feedback(void *);
+extern void		ps1_set_feedback(priv_t);
 
 
 #endif	/*MACHINE_PS1_H*/

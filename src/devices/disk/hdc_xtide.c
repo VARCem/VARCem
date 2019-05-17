@@ -24,7 +24,7 @@
  * FIXME:	Make sure this works with the new IDE stuff, the AT and PS/2
  *		controllers do not have dev->ide set to anything...
  *
- * Version:	@(#)hdc_xtide.c	1.0.12	2019/04/25
+ * Version:	@(#)hdc_xtide.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,7 +82,7 @@ typedef struct {
 
 
 static void
-hdc_write(uint16_t port, uint8_t val, void *priv)
+hdc_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -113,7 +113,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-hdc_read(uint16_t port, void *priv)
+hdc_read(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint16_t tempw = 0xffff;
@@ -150,7 +150,18 @@ hdc_read(uint16_t port, void *priv)
 }
 
 
-static void *
+static void
+xtide_close(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+
+    free(dev);
+
+    ide_xtide_close();
+}
+
+
+static priv_t
 xtide_init(const device_t *info, UNUSED(void *parent))
 {
     int rom_sz = 0;
@@ -192,18 +203,7 @@ xtide_init(const device_t *info, UNUSED(void *parent))
 	io_sethandler(io, 16,
 		      hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
 
-    return(dev);
-}
-
-
-static void
-xtide_close(void *priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-
-    free(dev);
-
-    ide_xtide_close();
+    return((priv_t)dev);
 }
 
 

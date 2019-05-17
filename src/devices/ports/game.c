@@ -8,7 +8,7 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.22	2019/05/03
+ * Version:	@(#)game.c	1.0.23	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -109,7 +109,7 @@ game_time(int axis)
 
 
 static void
-game_write(uint16_t addr, uint8_t val, void *priv)
+game_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     game_t *dev = (game_t *)priv;
     int i;
@@ -134,7 +134,7 @@ game_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-game_read(uint16_t addr, void *priv)
+game_read(uint16_t addr, priv_t priv)
 {
     game_t *dev = (game_t *)priv;
     uint8_t ret;
@@ -156,7 +156,7 @@ game_read(uint16_t addr, void *priv)
 
 /* Timer expired... game over. Just couldn't resist... --FvK */
 static void
-game_over(void *priv)
+game_over(priv_t priv)
 {
     g_axis_t *axis = (g_axis_t *)priv;
     game_t *dev = axis->game;
@@ -170,7 +170,7 @@ game_over(void *priv)
 
 
 static void
-game_close(void *priv)
+game_close(priv_t priv)
 {
     game_t *dev = (game_t *)priv;
 
@@ -185,13 +185,13 @@ game_close(void *priv)
 }
 
 
-static void *
+static priv_t
 game_init(const device_t *info, UNUSED(void *parent))
 {
     game_t *dev;
     int i;
 
-    INFO("GAME: initializing, type=%d\n", config.joystick_type);
+    INFO("GAME: initializing, type=%i\n", config.joystick_type);
 
     dev = (game_t *)mem_alloc(sizeof(game_t));
     memset(dev, 0x00, sizeof(game_t));
@@ -223,7 +223,7 @@ game_init(const device_t *info, UNUSED(void *parent))
 
     }
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

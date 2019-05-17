@@ -8,7 +8,7 @@
  *
  *		Emulation of Intel System I/O PCI chip.
  *
- * Version:	@(#)intel_sio.c	1.0.7	2019/04/25
+ * Version:	@(#)intel_sio.c	1.0.8	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #include "dma.h"
 #include "pci.h"
 #include "intel_sio.h"
+#include "port92.h"
 
 
 typedef struct {
@@ -57,9 +58,9 @@ typedef struct {
 
 
 static void
-sio_write(int func, int addr, uint8_t val, void *priv)
+sio_write(int func, int addr, uint8_t val, priv_t priv)
 {
-    sio_t *dev = (sio_t *) priv;
+    sio_t *dev = (sio_t *)priv;
 
     if (func > 0)
 	return;
@@ -103,9 +104,9 @@ sio_write(int func, int addr, uint8_t val, void *priv)
 			return;
 
 		if (val & 0x40)
-			port_92_add(0);
+			device_add_parent(&port92_device, (priv_t)dev);
 		else
-			port_92_remove();
+			device_remove(&port92_device, (priv_t)dev);
 
 	case 0x60:
 		if (val & 0x80)
@@ -137,9 +138,9 @@ sio_write(int func, int addr, uint8_t val, void *priv)
 
 
 static uint8_t
-sio_read(int func, int addr, void *priv)
+sio_read(int func, int addr, priv_t priv)
 {
-    sio_t *dev = (sio_t *) priv;
+    sio_t *dev = (sio_t *)priv;
     uint8_t ret;
 
     ret = 0xff;
@@ -152,9 +153,9 @@ sio_read(int func, int addr, void *priv)
 
 
 static void
-sio_reset(void *priv)
+sio_reset(priv_t priv)
 {
-    sio_t *dev = (sio_t *) priv;
+    sio_t *dev = (sio_t *)priv;
 
     memset(dev->regs, 0, 256);
 
@@ -186,31 +187,31 @@ sio_reset(void *priv)
 
 
 static void
-sio_close(void *p)
+sio_close(priv_t priv)
 {
-    sio_t *sio = (sio_t *)p;
+    sio_t *sio = (sio_t *)priv;
 
     free(sio);
 }
 
 
-static void *
+static priv_t
 sio_init(const device_t *info, UNUSED(void *parent))
 {
-    sio_t *sio = (sio_t *)mem_alloc(sizeof(sio_t));
-    memset(sio, 0, sizeof(sio_t));
+    sio_t *sio;
+
+    sio = (sio_t *)mem_alloc(sizeof(sio_t));
+    memset(sio, 0x00, sizeof(sio_t));
 
     pci_add_card(2, sio_read, sio_write, sio);
-        
+
     sio_reset(sio);
 
-    port_92_reset();
-
-    port_92_add(0);
+    device_add_parent(&port92_device, (priv_t)sio);
 
     dma_alias_set();
 
-    return sio;
+    return((priv_t)sio);
 }
 
 

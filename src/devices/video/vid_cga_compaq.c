@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.11	2019/05/05
+ * Version:	@(#)vid_cga_compaq.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,7 +84,7 @@ recalc_timings(compaq_cga_t *dev)
 
 
 static void
-compaq_poll(void *priv)
+compaq_poll(priv_t priv)
 {
     compaq_cga_t *dev = (compaq_cga_t *)priv;
     uint16_t ca = (dev->cga.crtc[15] | (dev->cga.crtc[14] << 8)) & 0x3fff;
@@ -360,7 +360,7 @@ compaq_poll(void *priv)
 }
 
 
-static void *
+static priv_t
 compaq_cga_init(const device_t *info, UNUSED(void *parent))
 {
     compaq_cga_t *dev;
@@ -379,14 +379,14 @@ compaq_cga_init(const device_t *info, UNUSED(void *parent))
 
     dev->cga.cpriv = cga_comp_init(dev->cga.revision);
 
-    timer_add(compaq_poll, dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(compaq_poll, (priv_t)dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL,
-		dev->cga.vram, MEM_MAPPING_EXTERNAL, dev);
+		dev->cga.vram, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03d0, 16,
-		  cga_in,NULL,NULL, cga_out,NULL,NULL, dev);
+		  cga_in,NULL,NULL, cga_out,NULL,NULL, (priv_t)dev);
 
     if (info->local) {
 	for (c = 0; c < 256; c++) {
@@ -420,12 +420,12 @@ compaq_cga_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-compaq_cga_close(void *priv)
+compaq_cga_close(priv_t priv)
 {
     compaq_cga_t *dev = (compaq_cga_t *)priv;
 
@@ -439,7 +439,7 @@ compaq_cga_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     compaq_cga_t *dev = (compaq_cga_t *)priv;
  

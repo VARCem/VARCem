@@ -8,7 +8,7 @@
  *
  *		Implementation of the HEADLAND AT286 chipset.
  *
- * Version:	@(#)headland.c	1.0.12	2019/04/20
+ * Version:	@(#)headland.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -209,7 +209,7 @@ memmap_state_update(headland_t *dev)
 
 
 static void
-hl_write(uint16_t addr, uint8_t val, void *priv)
+hl_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     headland_t *dev = (headland_t *)priv;
     uint32_t base_addr, virt_addr;
@@ -335,7 +335,7 @@ hl_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static void
-hl_writew(uint16_t addr, uint16_t val, void *priv)
+hl_writew(uint16_t addr, uint16_t val, priv_t priv)
 {
     headland_t *dev = (headland_t *)priv;
     uint32_t base_addr, virt_addr;
@@ -377,7 +377,7 @@ hl_writew(uint16_t addr, uint16_t val, void *priv)
 
 
 static uint8_t
-hl_read(uint16_t addr, void *priv)
+hl_read(uint16_t addr, priv_t priv)
 {
     headland_t *dev = (headland_t *)priv;
     uint8_t ret = 0xff;
@@ -444,7 +444,7 @@ hl_read(uint16_t addr, void *priv)
 
 
 static uint16_t
-hl_readw(uint16_t addr, void *priv)
+hl_readw(uint16_t addr, priv_t priv)
 {
     headland_t *dev = (headland_t *)priv;
     uint16_t ret = 0xffff;
@@ -465,7 +465,7 @@ hl_readw(uint16_t addr, void *priv)
 
 
 static uint8_t
-mem_read_b(uint32_t addr, void *priv)
+mem_read_b(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     headland_t *dev = (headland_t *)map->dev;
@@ -481,7 +481,7 @@ mem_read_b(uint32_t addr, void *priv)
 
 
 static uint16_t
-mem_read_w(uint32_t addr, void *priv)
+mem_read_w(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     headland_t *dev = (headland_t *)map->dev;
@@ -497,7 +497,7 @@ mem_read_w(uint32_t addr, void *priv)
 
 
 static uint32_t
-mem_read_l(uint32_t addr, void *priv)
+mem_read_l(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     headland_t *dev = (headland_t *)map->dev;
@@ -513,7 +513,7 @@ mem_read_l(uint32_t addr, void *priv)
 
 
 static void
-mem_write_b(uint32_t addr, uint8_t val, void *priv)
+mem_write_b(uint32_t addr, uint8_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     headland_t *dev = (headland_t *)map->dev;
@@ -526,7 +526,7 @@ mem_write_b(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-mem_write_w(uint32_t addr, uint16_t val, void *priv)
+mem_write_w(uint32_t addr, uint16_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     headland_t *dev = (headland_t *)map->dev;
@@ -539,7 +539,7 @@ mem_write_w(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-mem_write_l(uint32_t addr, uint32_t val, void *priv)
+mem_write_l(uint32_t addr, uint32_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     headland_t *dev = (headland_t *)map->dev;
@@ -552,7 +552,7 @@ mem_write_l(uint32_t addr, uint32_t val, void *priv)
 
 
 static void
-headland_close(void *priv)
+headland_close(priv_t priv)
 {
     headland_t *dev = (headland_t *)priv;
 
@@ -560,7 +560,7 @@ headland_close(void *priv)
 }
 
 
-static void *
+static priv_t
 headland_init(const device_t *info, UNUSED(void *parent))
 {
     headland_t *dev;
@@ -648,7 +648,7 @@ headland_init(const device_t *info, UNUSED(void *parent))
 
     memmap_state_update(dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

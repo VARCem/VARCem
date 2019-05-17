@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.19	2019/05/05
+ * Version:	@(#)m_ps2_isa.c	1.0.20	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,7 @@
 #include "../devices/system/dma.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
+#include "../devices/system/port92.h"
 #include "../devices/ports/parallel.h"
 #include "../devices/ports/serial.h"
 #include "../devices/input/keyboard.h"
@@ -78,7 +79,7 @@ typedef struct {
 
 
 static uint8_t
-ps2_read(uint16_t port, void *priv)
+ps2_read(uint16_t port, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
     uint8_t ret = 0xff;
@@ -130,7 +131,7 @@ ps2_read(uint16_t port, void *priv)
 
 
 static void
-ps2_write(uint16_t port, uint8_t val, void *priv)
+ps2_write(uint16_t port, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -205,8 +206,7 @@ common_init(ps2_t *dev)
     io_sethandler(0x0322, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
     io_sethandler(0x0324, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
 
-    port_92_reset();
-    port_92_add(0);
+    device_add_parent(&port92_device, (priv_t)dev);
 
     dev->reg_190 = 0;
 
@@ -215,7 +215,7 @@ common_init(ps2_t *dev)
 
 
 static void
-ps2_close(void *priv)
+ps2_close(priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -223,7 +223,7 @@ ps2_close(void *priv)
 }
 
 
-static void *
+static priv_t
 ps2_init(const device_t *info, void *arg)
 {
     ps2_t *dev;
@@ -233,7 +233,7 @@ ps2_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     machine_common_init();
 
@@ -257,7 +257,7 @@ ps2_init(const device_t *info, void *arg)
 
     common_init(dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Opti 82C495 based machines.
  *
- * Version:	@(#)m_opti495.c	1.0.11	2019/04/08
+ * Version:	@(#)m_opti495.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,11 +53,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Add machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     device_add(&opti495_device);
 
@@ -79,7 +79,7 @@ common_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the PCI handler module.
  *
- * Version:	@(#)pci.h	1.0.3	2019/04/11
+ * Version:	@(#)pci.h	1.0.4	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -95,7 +95,7 @@ extern uint32_t	pci_get_speed(int burst);
 extern void	pci_register_slot(int card, int type,
 				  int inta, int intb, int intc, int intd);
 extern void	pci_close(void);
-extern uint8_t	pci_add_card(uint8_t add_type, uint8_t (*read)(int func, int addr, void *priv), void (*write)(int func, int addr, uint8_t val, void *priv), void *priv);
+extern uint8_t	pci_add_card(uint8_t add_type, uint8_t (*read)(int, int, priv_t), void (*write)(int, int, uint8_t, priv_t), priv_t priv);
 
 extern void     trc_init(void);
 

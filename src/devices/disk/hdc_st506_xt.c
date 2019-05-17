@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.20	2019/05/05
+ * Version:	@(#)hdc_st506_xt.c	1.0.21	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -385,7 +385,7 @@ get_chs(hdc_t *dev, drive_t *drive)
 
 
 static void
-st506_callback(void *priv)
+st506_callback(priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     drive_t *drive;
@@ -1157,7 +1157,7 @@ st506_callback(void *priv)
 
 /* Read from one of the registers. */
 static uint8_t
-st506_read(uint16_t port, void *priv)
+st506_read(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
@@ -1201,7 +1201,7 @@ st506_read(uint16_t port, void *priv)
 
 /* Write to one of the registers. */
 static void
-st506_write(uint16_t port, uint8_t val, void *priv)
+st506_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -1254,7 +1254,7 @@ st506_write(uint16_t port, uint8_t val, void *priv)
 
 /* Write to ROM (or scratchpad RAM.) */
 static void
-mem_write(uint32_t addr, uint8_t val, void *priv)
+mem_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint32_t ptr, mask = 0;
@@ -1280,7 +1280,7 @@ mem_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-mem_read(uint32_t addr, void *priv)
+mem_read(uint32_t addr, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint32_t ptr, mask = 0;
@@ -1438,7 +1438,29 @@ set_switches(hdc_t *dev)
 }
 
 
-static void *
+static void
+st506_close(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    drive_t *drive;
+    int d;
+
+    for (d = 0; d < ST506_NUM; d++) {
+	drive = &dev->drives[d];
+
+	hdd_image_close(drive->hdd_num);
+    }
+
+    if (dev->bios_rom.rom != NULL) {
+	free(dev->bios_rom.rom);
+	dev->bios_rom.rom = NULL;
+    }
+
+    free(dev);
+}
+
+
+static priv_t
 st506_init(const device_t *info, UNUSED(void *parent))
 {
     const wchar_t *fn;
@@ -1566,29 +1588,7 @@ st506_init(const device_t *info, UNUSED(void *parent))
 	dev->drives[c].cfg_spt = dev->drives[c].spt;
     }
 
-    return(dev);
-}
-
-
-static void
-st506_close(void *priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-    drive_t *drive;
-    int d;
-
-    for (d = 0; d < ST506_NUM; d++) {
-	drive = &dev->drives[d];
-
-	hdd_image_close(drive->hdd_num);
-    }
-
-    if (dev->bios_rom.rom != NULL) {
-	free(dev->bios_rom.rom);
-	dev->bios_rom.rom = NULL;
-    }
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

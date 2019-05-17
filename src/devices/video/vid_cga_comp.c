@@ -15,7 +15,7 @@
  *
  *		Reworked to have its data on the heap.
  *
- * Version:	@(#)vid_cga_comp.c	1.0.7	2019/03/07
+ * Version:	@(#)vid_cga_comp.c	1.0.8	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -120,7 +120,7 @@ byte_clamp(int v)
 
 
 void
-cga_comp_process(void *priv, uint8_t cgamode, uint8_t border,
+cga_comp_process(priv_t priv, uint8_t cgamode, uint8_t border,
 		 uint32_t blocks/*, int8_t doublewidth*/, pel_t *pels)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
@@ -205,7 +205,7 @@ cga_comp_process(void *priv, uint8_t cgamode, uint8_t border,
 
 
 void
-cga_comp_update(void *priv, uint8_t cgamode)
+cga_comp_update(priv_t priv, uint8_t cgamode)
 {
     static const double ri = 0.9563;
     static const double rq = 0.6210;
@@ -285,7 +285,7 @@ cga_comp_update(void *priv, uint8_t cgamode)
 }
 
 
-void *
+priv_t
 cga_comp_init(int revision)
 {
     cga_comp_t *state;
@@ -300,12 +300,12 @@ cga_comp_init(int revision)
 
     cga_comp_update(state, 0);
 
-    return(state);
+    return((priv_t)state);
 }
 
 
 void
-cga_comp_close(void *priv)
+cga_comp_close(priv_t priv)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -315,7 +315,7 @@ cga_comp_close(void *priv)
 
 #if 0	/*NOT_USED*/
 void
-IncreaseHue(void *priv, uint8_t cgamode)
+IncreaseHue(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -326,7 +326,7 @@ IncreaseHue(void *priv, uint8_t cgamode)
 
 
 void
-DecreaseHue(void *priv, uint8_t cgamode)
+DecreaseHue(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -337,7 +337,7 @@ DecreaseHue(void *priv, uint8_t cgamode)
 
 
 void
-IncreaseSaturation(void *priv, uint8_t cgamode)
+IncreaseSaturation(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -348,7 +348,7 @@ IncreaseSaturation(void *priv, uint8_t cgamode)
 
 
 void
-DecreaseSaturation(void *priv, uint8_t cgamode)
+DecreaseSaturation(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -359,7 +359,7 @@ DecreaseSaturation(void *priv, uint8_t cgamode)
 
 
 void
-IncreaseContrast(void *priv, uint8_t cgamode)
+IncreaseContrast(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -370,7 +370,7 @@ IncreaseContrast(void *priv, uint8_t cgamode)
 
 
 void
-DecreaseContrast(void *priv, uint8_t cgamode)
+DecreaseContrast(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -381,7 +381,7 @@ DecreaseContrast(void *priv, uint8_t cgamode)
 
 
 void
-IncreaseBrightness(void *priv, uint8_t cgamode)
+IncreaseBrightness(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -392,7 +392,7 @@ IncreaseBrightness(void *priv, uint8_t cgamode)
 
 
 void
-DecreaseBrightness(void *priv, uint8_t cgamode)
+DecreaseBrightness(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -403,7 +403,7 @@ DecreaseBrightness(void *priv, uint8_t cgamode)
 
 
 void
-IncreaseSharpness(void *priv, uint8_t cgamode)
+IncreaseSharpness(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 
@@ -414,7 +414,7 @@ IncreaseSharpness(void *priv, uint8_t cgamode)
 
 
 void
-DecreaseSharpness(void *priv, uint8_t cgamode)
+DecreaseSharpness(priv_t priv, uint8_t cgamode)
 {
     cga_comp_t *state = (cga_comp_t *)priv;
 

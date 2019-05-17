@@ -10,7 +10,7 @@
  *
  *		Winbond W83877F Super I/O Chip
  *
- * Version:	@(#)sio_w83877f.c	1.0.11	2019/04/09
+ * Version:	@(#)sio_w83877f.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,8 +93,8 @@ typedef struct {
 } w83877f_t;
 
 
-static void	w83877f_write(uint16_t port, uint8_t val, void *priv);
-static uint8_t	w83877f_read(uint16_t port, void *priv);
+static void	w83877f_write(uint16_t port, uint8_t val, priv_t priv);
+static uint8_t	w83877f_read(uint16_t port, priv_t priv);
 
 
 static void
@@ -196,7 +196,7 @@ serial_handler(w83877f_t *dev, int uart)
 
 
 static void
-w83877f_write(uint16_t port, uint8_t val, void *priv)
+w83877f_write(uint16_t port, uint8_t val, priv_t priv)
 {
     w83877f_t *dev = (w83877f_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -380,7 +380,7 @@ w83877f_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-w83877f_read(uint16_t port, void *priv)
+w83877f_read(uint16_t port, priv_t priv)
 {
     w83877f_t *dev = (w83877f_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -448,7 +448,7 @@ w83877f_reset(w83877f_t *dev)
 
 
 static void
-w83877f_close(void *priv)
+w83877f_close(priv_t priv)
 {
     w83877f_t *dev = (w83877f_t *)priv;
 
@@ -456,7 +456,7 @@ w83877f_close(void *priv)
 }
 
 
-static void *
+static priv_t
 w83877f_init(const device_t *info, UNUSED(void *parent))
 {
     w83877f_t *dev = (w83877f_t *)mem_alloc(sizeof(w83877f_t));
@@ -467,7 +467,7 @@ w83877f_init(const device_t *info, UNUSED(void *parent))
 
     w83877f_reset(dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

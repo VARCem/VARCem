@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.18	2019/05/05
+ * Version:	@(#)m_xt.c	1.0.19	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,8 +66,15 @@ typedef struct {
 } pcxt_t;
 
 
+static void
+xt_close(priv_t priv)
+{
+    free(priv);
+}
+
+
 /* Generic PC/XT system board with just the basics. */
-static void *
+static priv_t
 xt_common_init(const device_t *info, void *arg)
 {
     pcxt_t *dev;
@@ -78,7 +85,7 @@ xt_common_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* First of all, add the root device. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     /* Check if we support a BASIC ROM. */
     dev->basic = machine_get_config_int("rom_basic");
@@ -119,14 +126,7 @@ xt_common_init(const device_t *info, void *arg)
     if (dev->floppy)
 	device_add(&fdc_xt_device);
 
-    return(dev);
-}
-
-
-static void
-xt_close(void *priv)
-{
-    free(priv);
+    return((priv_t)dev);
 }
 
 

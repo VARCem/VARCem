@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.23	2019/04/11
+ * Version:	@(#)win_devconf.c	1.0.24	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -70,7 +70,7 @@ dlg_init(HWND hdlg)
     wchar_t temp[512];
     char ansitmp[512];
     const device_config_t *cfg;
-    const device_config_selection_t *sel;
+    const devcfg_selection_t *sel;
     const device_t *dev = devconf_device;
     int c, id, num, val;
     wchar_t* str;
@@ -175,7 +175,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     wchar_t ws[512], temp[512];
     char s[512], *ansistr;
-    const device_config_selection_t *sel;
+    const devcfg_selection_t *sel;
     const device_t *dev = devconf_device;
     const device_config_t *cfg = dev->config;
     int c, cid, changed, d, id, val;

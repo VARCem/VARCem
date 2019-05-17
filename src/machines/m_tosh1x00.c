@@ -96,7 +96,7 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_tosh1x00.c	1.0.22	2019/05/05
+ * Version:	@(#)m_tosh1x00.c	1.0.23	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -227,7 +227,7 @@ typedef struct {
 
 /* Set the chip time. */
 static void
-tc8521_time_set(uint8_t *regs, struct tm *tm)
+tc8521_time_set(uint8_t *regs, const struct tm *tm)
 {
     regs[TC8521_SECOND1] = (tm->tm_sec % 10);
     regs[TC8521_SECOND10] = (tm->tm_sec / 10);
@@ -303,7 +303,7 @@ tc8521_start(nvr_t *nvr)
 
 /* Write to one of the chip registers. */
 static void
-tc8521_write(uint16_t addr, uint8_t val, void *priv)
+tc8521_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     uint8_t page;
@@ -324,7 +324,7 @@ tc8521_write(uint16_t addr, uint8_t val, void *priv)
 
 /* Read from one of the chip registers. */
 static uint8_t
-tc8521_read(uint16_t addr, void *priv)
+tc8521_read(uint16_t addr, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     uint8_t page;
@@ -396,7 +396,7 @@ ems_execaddr(t1000_t *dev, int pg, uint16_t val)
 
 
 static uint8_t
-ems_in(uint16_t addr, void *priv)
+ems_in(uint16_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     uint8_t ret;
@@ -409,7 +409,7 @@ ems_in(uint16_t addr, void *priv)
 
 
 static void
-ems_out(uint16_t addr, uint8_t val, void *priv)
+ems_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     int pg = (addr >> 14) & 3;
@@ -507,7 +507,7 @@ addr_to_page(uint32_t addr)
 
 /* Read RAM in the EMS page frame. */
 static uint8_t
-ems_read(uint32_t addr, void *priv)
+ems_read(uint32_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     int pg = addr_to_page(addr);
@@ -520,7 +520,7 @@ ems_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-ems_readw(uint32_t addr, void *priv)
+ems_readw(uint32_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     int pg = addr_to_page(addr);
@@ -539,7 +539,7 @@ ems_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-ems_readl(uint32_t addr, void *priv)
+ems_readl(uint32_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     int pg = addr_to_page(addr);
@@ -555,7 +555,7 @@ ems_readl(uint32_t addr, void *priv)
 
 /* Write RAM in the EMS page frame. */
 static void
-ems_write(uint32_t addr, uint8_t val, void *priv)
+ems_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     int pg = addr_to_page(addr);
@@ -571,7 +571,7 @@ ems_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-ems_writew(uint32_t addr, uint16_t val, void *priv)
+ems_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     int pg = addr_to_page(addr);
@@ -590,7 +590,7 @@ ems_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-ems_writel(uint32_t addr, uint32_t val, void *priv)
+ems_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     int pg = addr_to_page(addr);
@@ -602,44 +602,6 @@ ems_writel(uint32_t addr, uint32_t val, void *priv)
 	nvr_dosave = 1;	
 
     *(uint32_t *)&ram[addr] = val;
-}
-
-
-static uint8_t
-read_ctl(uint16_t addr, void *priv)
-{
-    t1000_t *dev = (t1000_t *)priv;
-    uint8_t ret = 0xff;
-
-    switch (addr & 0x0f) {
-	case 1:
-		ret = dev->syskeys;
-		break;
-
-	case 0x0f:	/* Detect EMS board */
-		switch (dev->sys_ctl[0x0e]) {
-			case 0x50:
-				if (mem_size > 512) break;
-					ret = (0x90 | dev->ems_port_index);
-				break;
-
-			case 0x51:
-				/* 0x60 is the page frame address:
-				   (0xd000 - 0xc400) / 0x20 */
-				ret = (dev->ems_base | 0x60);
-				break;
-
-			case 0x52:
-				ret = (dev->is_640k ? 0x80 : 0);
-				break;
-		}
-		break;
-
-	default:
-		ret = (dev->sys_ctl[addr & 0x0f]); 
-    }
-
-    return(ret);
 }
 
 
@@ -729,7 +691,7 @@ turbo_set(t1000_t *dev, uint8_t value)
 
 
 static void
-write_ctl(uint16_t addr, uint8_t val, void *priv)
+ctl_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -773,6 +735,44 @@ write_ctl(uint16_t addr, uint8_t val, void *priv)
 }
 
 
+static uint8_t
+ctl_read(uint16_t addr, priv_t priv)
+{
+    t1000_t *dev = (t1000_t *)priv;
+    uint8_t ret = 0xff;
+
+    switch (addr & 0x0f) {
+	case 1:
+		ret = dev->syskeys;
+		break;
+
+	case 0x0f:	/* Detect EMS board */
+		switch (dev->sys_ctl[0x0e]) {
+			case 0x50:
+				if (mem_size > 512) break;
+					ret = (0x90 | dev->ems_port_index);
+				break;
+
+			case 0x51:
+				/* 0x60 is the page frame address:
+				   (0xd000 - 0xc400) / 0x20 */
+				ret = (dev->ems_base | 0x60);
+				break;
+
+			case 0x52:
+				ret = (dev->is_640k ? 0x80 : 0);
+				break;
+		}
+		break;
+
+	default:
+		ret = (dev->sys_ctl[addr & 0x0f]); 
+    }
+
+    return(ret);
+}
+
+
 /*
  * Ports 0xc0 to 0xc3 appear to have two purposes:
  *
@@ -782,7 +782,7 @@ write_ctl(uint16_t addr, uint8_t val, void *priv)
  *
  */
 static uint8_t
-read_nvram(uint16_t addr, void *priv)
+nvram_read(uint16_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
     uint8_t tmp = 0xff;
@@ -808,18 +808,17 @@ read_nvram(uint16_t addr, void *priv)
 }
 
 
-/* Read from T1200 NVRAM. */
 static uint8_t
-nvram_read(uint32_t addr, void *priv)
+nvram_mem_read(uint32_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
-    return(dev->cfgsys[addr & 0x7ff]);
+    return(dev->cfgsys[addr & 0x07ff]);
 }
 
 
 static void
-write_nvram(uint16_t addr, uint8_t val, void *priv)
+nvram_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -866,22 +865,22 @@ write_nvram(uint16_t addr, uint8_t val, void *priv)
 }
 
 
-/* Write to T1200 NVRAM. */
 static void
-nvram_write(uint32_t addr, uint8_t val, void *priv)
+nvram_mem_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
-    if (dev->cfgsys[addr & 0x7ff] != val) 
+    if (dev->cfgsys[addr & 0x07ff] != val) {
 	nvr_dosave = 1;
 
-    dev->cfgsys[addr & 0x7ff] = val;
+	dev->cfgsys[addr & 0x07ff] = val;
+    }
 }
 
 
 /* Port 0xc8 controls the ROM drive. */
 static uint8_t
-read_rom_ctl(uint16_t addr, void *priv)
+ctl_rom_read(uint16_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -890,7 +889,7 @@ read_rom_ctl(uint16_t addr, void *priv)
 
 
 static void
-write_rom_ctl(uint16_t addr, uint8_t val, void *priv)
+ctl_rom_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -909,7 +908,7 @@ write_rom_ctl(uint16_t addr, uint8_t val, void *priv)
 
 /* Read the ROM drive */
 static uint8_t
-read_rom(uint32_t addr, void *priv)
+read_rom(uint32_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -921,7 +920,7 @@ read_rom(uint32_t addr, void *priv)
 
 
 static uint16_t
-read_romw(uint32_t addr, void *priv)
+read_romw(uint32_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -933,7 +932,7 @@ read_romw(uint32_t addr, void *priv)
 
 
 static uint32_t
-read_roml(uint32_t addr, void *priv)
+read_roml(uint32_t addr, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -944,7 +943,21 @@ read_roml(uint32_t addr, void *priv)
 }
 
 
-static void *
+static void
+t1000_close(priv_t priv)
+{
+    t1000_t *dev = (t1000_t *)priv;
+
+    if (dev->romdrive != NULL)
+	free(dev->romdrive);
+
+    cfgsys_save(dev);
+
+    free(dev);
+}
+
+
+static priv_t
 t1000_init(const device_t *info, void *arg)
 {
     t1000_t *dev;
@@ -959,14 +972,15 @@ t1000_init(const device_t *info, void *arg)
     dev->ems_port_index = 7;	/* EMS disabled */
 
     /* Add machine device to the system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     if (dev->is_t1200) {
 	/* Non-volatile RAM for CONFIG.SYS */
 	dev->cfgsys_len = 2048;
 	dev->cfgsys = (uint8_t *)mem_alloc(dev->cfgsys_len);
 	mem_map_add(&dev->nvr_mapping, 0x0f0000, dev->cfgsys_len,
-		    nvram_read,NULL,NULL, nvram_write,NULL,NULL, NULL, 0, dev);
+		    nvram_mem_read,NULL,NULL,
+		    nvram_mem_write,NULL,NULL, NULL, 0, dev);
     } else {
 	/*
 	 * The ROM drive is optional.
@@ -992,14 +1006,14 @@ t1000_init(const device_t *info, void *arg)
 		}
 
 		io_sethandler(0xc8, 1,
-			read_rom_ctl,NULL,NULL, write_rom_ctl,NULL,NULL, dev);
+			ctl_rom_read,NULL,NULL, ctl_rom_write,NULL,NULL, dev);
 	}
 
 	/* Non-volatile RAM for CONFIG.SYS */
 	dev->cfgsys_len = 160;
 	dev->cfgsys = (uint8_t *)mem_alloc(dev->cfgsys_len);
 	io_sethandler(0xc0, 4,
-		      read_nvram,NULL,NULL, write_nvram,NULL,NULL, dev);
+		      nvram_read,NULL,NULL, nvram_write,NULL,NULL, dev);
     }
 
     /* Load or initialize the NVRAM "config.sys" file. */
@@ -1018,7 +1032,7 @@ t1000_init(const device_t *info, void *arg)
 
     /* System control functions, and add-on memory board */
     io_sethandler(0xe0, 16,
-		  read_ctl,NULL,NULL, write_ctl,NULL,NULL, dev);
+		  ctl_read,NULL,NULL, ctl_write,NULL,NULL, dev);
 
     machine_common_init();
 
@@ -1054,21 +1068,7 @@ t1000_init(const device_t *info, void *arg)
 	}
     }
 
-    return(dev);
-}
-
-
-static void
-t1000_close(void *priv)
-{
-    t1000_t *dev = (t1000_t *)priv;
-
-    if (dev->romdrive != NULL)
-	free(dev->romdrive);
-
-    cfgsys_save(dev);
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

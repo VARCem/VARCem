@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.28	2019/05/05
+ * Version:	@(#)m_ps1.c	1.0.29	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -118,11 +118,6 @@ typedef struct {
 } ps1_t;
 
 
-/* Defined in the Video module. */
-extern const device_t ps1vga_device;
-extern const device_t ibm_ps1_2121_device;
-
-
 static void
 snd_update_irq(ps1snd_t *snd)
 {
@@ -134,7 +129,7 @@ snd_update_irq(ps1snd_t *snd)
 
 
 static uint8_t
-snd_read(uint16_t port, void *priv)
+snd_read(uint16_t port, priv_t priv)
 {
     ps1snd_t *snd = (ps1snd_t *)priv;
     uint8_t ret = 0xff;
@@ -176,7 +171,7 @@ snd_read(uint16_t port, void *priv)
 
 
 static void
-snd_write(uint16_t port, uint8_t val, void *priv)
+snd_write(uint16_t port, uint8_t val, priv_t priv)
 {
     ps1snd_t *snd = (ps1snd_t *)priv;
 
@@ -217,7 +212,7 @@ snd_update(ps1snd_t *snd)
 
 
 static void
-snd_callback(void *priv)
+snd_callback(priv_t priv)
 {
     ps1snd_t *snd = (ps1snd_t *)priv;
 
@@ -239,7 +234,7 @@ snd_callback(void *priv)
 
 
 static void
-snd_get_buffer(int32_t *bufp, int len, void *priv)
+snd_get_buffer(int32_t *bufp, int len, priv_t priv)
 {
     ps1snd_t *snd = (ps1snd_t *)priv;
     int c;
@@ -253,7 +248,16 @@ snd_get_buffer(int32_t *bufp, int len, void *priv)
 }
 
 
-static void *
+static void
+snd_close(priv_t priv)
+{
+    ps1snd_t *snd = (ps1snd_t *)priv;
+
+    free(snd);
+}
+
+
+static priv_t
 snd_init(const device_t *info, UNUSED(void *parent))
 {
     ps1snd_t *snd;
@@ -272,16 +276,7 @@ snd_init(const device_t *info, UNUSED(void *parent))
 
     sound_add_handler(snd_get_buffer, snd);
 
-    return(snd);
-}
-
-
-static void
-snd_close(void *priv)
-{
-    ps1snd_t *snd = (ps1snd_t *)priv;
-
-    free(snd);
+    return((priv_t)snd);
 }
 
 
@@ -295,7 +290,7 @@ static const device_t snd_device = {
 
 
 static uint8_t
-ps1_read_romext(uint32_t addr, void *priv)
+read_romext(uint32_t addr, priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
 
@@ -304,7 +299,7 @@ ps1_read_romext(uint32_t addr, void *priv)
 
 
 static uint16_t
-ps1_read_romextw(uint32_t addr, void *priv)
+read_romextw(uint32_t addr, priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
     uint16_t *p = (uint16_t *)&dev->romext[addr & 0x7fff];
@@ -314,7 +309,7 @@ ps1_read_romextw(uint32_t addr, void *priv)
 
 
 static uint32_t
-ps1_read_romextl(uint32_t addr, void *priv)
+read_romextl(uint32_t addr, priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
     uint32_t *p = (uint32_t *)&dev->romext[addr & 0x7fff];
@@ -341,7 +336,7 @@ recalc_memory(ps1_t *dev)
 
 
 static void
-ps1_write(uint16_t port, uint8_t val, void *priv)
+ps1_write(uint16_t port, uint8_t val, priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
 
@@ -421,7 +416,7 @@ ps1_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-ps1_read(uint16_t port, void *priv)
+ps1_read(uint16_t port, priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
     uint8_t ret = 0xff;
@@ -480,7 +475,7 @@ ps1_read(uint16_t port, void *priv)
 
 
 static void
-ps1_close(void *priv)
+ps1_close(priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
 
@@ -488,7 +483,7 @@ ps1_close(void *priv)
 }
 
 
-static void *
+static priv_t
 ps1_init(const device_t *info, void *arg)
 {
 //    romdef_t *bios = (romdef_t *)arg;
@@ -500,7 +495,7 @@ ps1_init(const device_t *info, void *arg)
     dev->model = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     if (dev->model == 2011) {
 	/* Force some configuration settings. */
@@ -508,7 +503,7 @@ ps1_init(const device_t *info, void *arg)
 	config.mouse_type = MOUSE_PS2;
 
 	mem_map_add(&dev->romext_mapping, 0xc8000, 0x08000,
-		    ps1_read_romext,ps1_read_romextw,ps1_read_romextl,
+		    read_romext,read_romextw,read_romextl,
 		    NULL,NULL, NULL, dev->romext, 0, dev);
 
 	if (machine_get_config_int("rom_shell")) {
@@ -609,7 +604,7 @@ ps1_init(const device_t *info, void *arg)
     if (config.game_enabled)
 	device_add(&game_201_device);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
@@ -698,7 +693,7 @@ const device_t m_ps1_2133 = {
 
 /* Set the Card Selected Flag */
 void
-ps1_set_feedback(void *priv)
+ps1_set_feedback(priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
 

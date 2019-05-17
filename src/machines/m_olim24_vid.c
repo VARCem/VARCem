@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24 built-in video controller.
  *
- * Version:	@(#)m_olim24_vid.c	1.0.4	2019/05/05
+ * Version:	@(#)m_olim24_vid.c	1.0.5	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -111,7 +111,7 @@ recalc_timings(olivid_t *dev)
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, void *priv)
+vid_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     olivid_t *dev = (olivid_t *)priv;
     uint8_t old;
@@ -157,7 +157,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_in(uint16_t addr, void *priv)
+vid_in(uint16_t addr, priv_t priv)
 {
     olivid_t *dev = (olivid_t *)priv;
     uint8_t ret = 0xff;
@@ -189,7 +189,7 @@ vid_in(uint16_t addr, void *priv)
 
 
 static void
-vid_write(uint32_t addr, uint8_t val, void *priv)
+vid_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     olivid_t *dev = (olivid_t *)priv;
 
@@ -200,7 +200,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_read(uint32_t addr, void *priv)
+vid_read(uint32_t addr, priv_t priv)
 {
     olivid_t *dev = (olivid_t *)priv;
 
@@ -209,7 +209,7 @@ vid_read(uint32_t addr, void *priv)
 
 
 static void
-vid_poll(void *priv)
+vid_poll(priv_t priv)
 {
     olivid_t *dev = (olivid_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -475,7 +475,7 @@ vid_poll(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     olivid_t *dev = (olivid_t *)priv;
 
@@ -484,7 +484,7 @@ speed_changed(void *priv)
 
 
 static void
-vid_close(void *priv)
+vid_close(priv_t priv)
 {
     olivid_t *dev = (olivid_t *)priv;
 

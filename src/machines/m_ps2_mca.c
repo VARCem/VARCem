@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.25	2019/05/03
+ * Version:	@(#)m_ps2_mca.c	1.0.26	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,6 +94,7 @@
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
+#include "../devices/system/port92.h"
 #include "../devices/system/mca.h"
 #include "../devices/system/nvr_ps2.h"
 #include "../devices/ports/parallel.h"
@@ -150,11 +151,11 @@ typedef struct _ps2_ {
 } ps2_t;
 
 
-static void	*saved_dev = NULL;		/* needed for clear_cache() */
+static ps2_t	*saved_dev = NULL;		/* needed for clear_cache() */
 
 
 static uint8_t
-cache_read(uint32_t addr, void *priv)
+cache_read(uint32_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -172,7 +173,7 @@ cache_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-cache_readw(uint32_t addr, void *priv)
+cache_readw(uint32_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -190,7 +191,7 @@ cache_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-cache_readl(uint32_t addr, void *priv)
+cache_readl(uint32_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -208,7 +209,7 @@ cache_readl(uint32_t addr, void *priv)
 
 
 static void
-cache_write(uint32_t addr, uint8_t val, void *priv)
+cache_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -230,7 +231,7 @@ ps2_cache_clean(void)
 
 
 static uint8_t
-shadow_read(uint32_t addr, void *priv)
+shadow_read(uint32_t addr, priv_t priv)
 {
     addr = (addr & 0x1ffff) + 0xe0000;
 
@@ -239,7 +240,7 @@ shadow_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-shadow_readw(uint32_t addr, void *priv)
+shadow_readw(uint32_t addr, priv_t priv)
 {
     addr = (addr & 0x1ffff) + 0xe0000;
 
@@ -248,7 +249,7 @@ shadow_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-shadow_readl(uint32_t addr, void *priv)
+shadow_readl(uint32_t addr, priv_t priv)
 {
     addr = (addr & 0x1ffff) + 0xe0000;
 
@@ -257,7 +258,7 @@ shadow_readl(uint32_t addr, void *priv)
 
 
 static void
-shadow_write(uint32_t addr, uint8_t val, void *priv)
+shadow_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     addr = (addr & 0x1ffff) + 0xe0000;
 
@@ -266,7 +267,7 @@ shadow_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-shadow_writew(uint32_t addr, uint16_t val, void *priv)
+shadow_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     addr = (addr & 0x1ffff) + 0xe0000;
 
@@ -275,7 +276,7 @@ shadow_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-shadow_writel(uint32_t addr, uint32_t val, void *priv)
+shadow_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     addr = (addr & 0x1ffff) + 0xe0000;
 
@@ -284,7 +285,7 @@ shadow_writel(uint32_t addr, uint32_t val, void *priv)
 
 
 static uint8_t
-split_read(uint32_t addr, void *priv)
+split_read(uint32_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -295,7 +296,7 @@ split_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-split_readw(uint32_t addr, void *priv)
+split_readw(uint32_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -306,7 +307,7 @@ split_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-split_readl(uint32_t addr, void *priv)
+split_readl(uint32_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -317,7 +318,7 @@ split_readl(uint32_t addr, void *priv)
 
 
 static void
-split_write(uint32_t addr, uint8_t val, void *priv)
+split_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -328,7 +329,7 @@ split_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-split_writew(uint32_t addr, uint16_t val, void *priv)
+split_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -339,7 +340,7 @@ split_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-split_writel(uint32_t addr, uint32_t val, void *priv)
+split_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -350,7 +351,7 @@ split_writel(uint32_t addr, uint32_t val, void *priv)
 
 
 static uint8_t
-exp_read(int port, void *priv)
+exp_read(int port, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -359,7 +360,7 @@ exp_read(int port, void *priv)
 
 
 static void
-exp_write(int port, uint8_t val, void *priv)
+exp_write(int port, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -796,7 +797,7 @@ mem_encoding_update(ps2_t *dev)
 
 
 static uint8_t
-mem_encoding_read(uint16_t addr, void *priv)
+mem_encoding_read(uint16_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
     uint8_t ret = 0xff;
@@ -816,7 +817,7 @@ mem_encoding_read(uint16_t addr, void *priv)
 
 
 static void
-mem_encoding_write(uint16_t addr, uint8_t val, void *priv)
+mem_encoding_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -835,7 +836,7 @@ mem_encoding_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-mem_encoding_read_cached(uint16_t addr, void *priv)
+mem_encoding_read_cached(uint16_t addr, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
     uint8_t ret = 0xff;
@@ -859,7 +860,7 @@ mem_encoding_read_cached(uint16_t addr, void *priv)
 
 
 static void
-mem_encoding_write_cached(uint16_t addr, uint8_t val, void *priv)
+mem_encoding_write_cached(uint16_t addr, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
     uint8_t old;
@@ -1245,7 +1246,7 @@ model_80_init(ps2_t *dev)
 
 
 static uint8_t
-ps2_mca_read(uint16_t port, void *priv)
+ps2_mca_read(uint16_t port, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
     uint8_t ret = 0xff;
@@ -1337,7 +1338,7 @@ ps2_mca_read(uint16_t port, void *priv)
 
 
 static void
-ps2_mca_write(uint16_t port, uint8_t val, void *priv)
+ps2_mca_write(uint16_t port, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -1416,7 +1417,7 @@ ps2_mca_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-ps2_close(void *priv)
+ps2_close(priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -1426,7 +1427,7 @@ ps2_close(void *priv)
 }
 
 
-static void *
+static priv_t
 ps2_init(const device_t *info, void *arg)
 {
     ps2_t *dev;
@@ -1436,7 +1437,7 @@ ps2_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     machine_common_init();
 
@@ -1453,9 +1454,7 @@ ps2_init(const device_t *info, void *arg)
 
     parallel_setup(0, 0x03bc);
 
-    port_92_reset();
-
-    port_92_add(0);
+    device_add_parent(&port92_device, (priv_t)dev);
 
     io_sethandler(0x0091, 1,
 		  ps2_mca_read,NULL,NULL, ps2_mca_write,NULL,NULL, dev);
@@ -1493,7 +1492,7 @@ ps2_init(const device_t *info, void *arg)
 
     saved_dev = dev;
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

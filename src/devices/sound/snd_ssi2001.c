@@ -8,7 +8,7 @@
  *
  *		Implementation of the SSI2001 sound device.
  *
- * Version:	@(#)snd_ssi2001.c	1.0.9	2019/04/11
+ * Version:	@(#)snd_ssi2001.c	1.0.10	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,7 +54,7 @@ typedef struct {
     uint16_t	base;
     int16_t	game;
 
-    void	*psid;
+    priv_t	psid;
 
     int		pos;
     int16_t	buffer[SOUNDBUFLEN * 2];
@@ -73,7 +73,7 @@ ssi_update(ssi2001_t *dev)
 
 
 static void
-get_buffer(int32_t *buffer, int len, void *priv)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     ssi2001_t *dev = (ssi2001_t *)priv;
     int c;
@@ -88,28 +88,44 @@ get_buffer(int32_t *buffer, int len, void *priv)
 
 
 static uint8_t
-ssi_read(uint16_t addr, void *priv)
+ssi_read(uint16_t addr, priv_t priv)
 {
     ssi2001_t *dev = (ssi2001_t *)priv;
-	
+
     ssi_update(dev);
-	
+
     return(sid_read(addr, priv));
 }
 
 
 static void
-ssi_write(uint16_t addr, uint8_t val, void *priv)
+ssi_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     ssi2001_t *dev = (ssi2001_t *)priv;
-	
-    ssi_update(dev);	
+
+    ssi_update(dev);
 
     sid_write(addr, val, priv);
 }
 
 
-static void *
+static void
+ssi_close(priv_t priv)
+{
+    ssi2001_t *dev = (ssi2001_t *)priv;
+
+    /* Remove our I/O handler. */
+    io_removehandler(dev->base, 32,
+		     ssi_read,NULL,NULL, ssi_write,NULL,NULL, (priv_t)dev);
+
+    /* Close the SID. */
+    sid_close(dev->psid);
+
+    free(dev);
+}
+
+
+static priv_t
 ssi_init(const device_t *info, UNUSED(void *parent))
 {
     ssi2001_t *dev;
@@ -127,27 +143,11 @@ ssi_init(const device_t *info, UNUSED(void *parent))
 
     /* Set up our I/O handler. */
     io_sethandler(dev->base, 32,
-		  ssi_read,NULL,NULL, ssi_write,NULL,NULL, dev);
+		  ssi_read,NULL,NULL, ssi_write,NULL,NULL, (priv_t)dev);
 
     sound_add_handler(get_buffer, dev);
 
-    return(dev);
-}
-
-
-static void
-ssi_close(void *priv)
-{
-    ssi2001_t *dev = (ssi2001_t *)priv;
-
-    /* Remove our I/O handler. */
-    io_removehandler(dev->base, 32,
-		     ssi_read,NULL,NULL, ssi_write,NULL,NULL, dev);
-
-    /* Close the SID. */
-    sid_close(dev->psid);
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

@@ -12,11 +12,11 @@
  *		Windows and UNIX systems, with support for FTDI and Prolific
  *		USB ports. Support for these has been removed.
  *
- * Version:	@(#)win_serial.c	1.0.5	2018/11/22
+ * Version:	@(#)win_serial.c	1.0.6	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -60,8 +60,8 @@
 
 typedef struct {
     char	name[80];		/* name of open port */
-    void	(*rd_done)(void *, int);
-    void	*rd_arg;
+    void	(*rd_done)(priv_t, int);
+    priv_t	rd_arg;
     HANDLE	handle;
     OVERLAPPED	rov,			/* READ and WRITE events */
 		wov;
@@ -200,7 +200,7 @@ set_crtscts(serial_t *dev, int8_t yes)
 
 /* Set the port parameters. */
 int
-plat_serial_params(void *arg, char dbit, char par, char sbit)
+plat_serial_params(priv_t arg, char dbit, char par, char sbit)
 {
     serial_t *dev = (serial_t *)arg;
 
@@ -289,7 +289,7 @@ plat_serial_params(void *arg, char dbit, char par, char sbit)
 
 /* Put a port in transparent ("raw") state. */
 void
-plat_serial_raw(void *arg, void *data)
+plat_serial_raw(priv_t arg, void *data)
 {
     serial_t *dev = (serial_t *)arg;
     DCB *dcb = (DCB *)data;
@@ -334,7 +334,7 @@ plat_serial_raw(void *arg, void *data)
 
 /* Set the port speed. */
 int
-plat_serial_speed(void *arg, long speed)
+plat_serial_speed(priv_t arg, long speed)
 {
     serial_t *dev = (serial_t *)arg;
 
@@ -359,7 +359,7 @@ plat_serial_speed(void *arg, long speed)
 
 /* Clean up and flush. */
 int
-plat_serial_flush(void *arg)
+plat_serial_flush(priv_t arg)
 {
     serial_t *dev = (serial_t *)arg;
     DWORD dwErrs;
@@ -388,7 +388,7 @@ plat_serial_flush(void *arg)
 
 /* API: close an open serial port. */
 void
-plat_serial_close(void *arg)
+plat_serial_close(priv_t arg)
 {
     serial_t *dev = (serial_t *)arg;
 
@@ -417,7 +417,7 @@ plat_serial_close(void *arg)
 
 
 /* API: open a host serial port for I/O. */
-void *
+priv_t
 plat_serial_open(const char *port, int tmo)
 {
     char temp[84];
@@ -479,17 +479,17 @@ plat_serial_open(const char *port, int tmo)
      * current settings, and save these for later.
      */
     if (get_state(dev, &dev->odcb) < 0) {
-	plat_serial_close(dev);
+	plat_serial_close((priv_t)dev);
 	return(NULL);
     }
     memcpy(&dev->dcb, &dev->odcb, sizeof(DCB));
 
     /* Force the port to BINARY mode. */
-    plat_serial_raw(dev, &dev->dcb);
+    plat_serial_raw((priv_t)dev, &dev->dcb);
 
     /* Set new state of this port. */
     if (set_state(dev, &dev->dcb) < 0) {
-	plat_serial_close(dev);
+	plat_serial_close((priv_t)dev);
 	return(NULL);
     }
 
@@ -500,7 +500,7 @@ plat_serial_open(const char *port, int tmo)
     if (GetCommTimeouts(dev->handle, &to) == FALSE) {
 	ERRLOG("%s: error %i while getting current TO\n",
 				dev->name, GetLastError());
-	plat_serial_close(dev);
+	plat_serial_close((priv_t)dev);
 	return(NULL);
     }
 
@@ -520,23 +520,23 @@ plat_serial_open(const char *port, int tmo)
     }
     if (SetCommTimeouts(dev->handle, &to) == FALSE) {
 	ERRLOG("%s: error %i while setting TO\n", dev->name, GetLastError());
-	plat_serial_close(dev);
+	plat_serial_close((priv_t)dev);
 	return(NULL);
     }
 
     /* Clear all errors and flush all buffers. */
-    if (plat_serial_flush(dev) < 0) {
-	plat_serial_close(dev);
+    if (plat_serial_flush((priv_t)dev) < 0) {
+	plat_serial_close((priv_t)dev);
 	return(NULL);
     }
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 /* API: activate the I/O for this port. */
 int
-plat_serial_active(void *arg, int flg)
+plat_serial_active(priv_t arg, int flg)
 {
     serial_t *dev = (serial_t *)arg;
 
@@ -557,7 +557,7 @@ plat_serial_active(void *arg, int flg)
 
 /* API: try to write data to an open port. */
 int
-plat_serial_write(void *arg, unsigned char val)
+plat_serial_write(priv_t arg, unsigned char val)
 {
     serial_t *dev = (serial_t *)arg;
     DWORD n = 0;
@@ -591,7 +591,7 @@ pclog(0,"%s: writing byte %02x\n", dev->name, val);
  * just to speed things up a bit.  --FvK
  */
 int
-plat_serial_read(void *arg, unsigned char *bufp, int max)
+plat_serial_read(priv_t arg, unsigned char *bufp, int max)
 {
     serial_t *dev = (serial_t *)arg;
 

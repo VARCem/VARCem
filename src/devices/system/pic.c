@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel 8259 interrupt controller.
  *
- * Version:	@(#)pic.c	1.0.7	2019/04/11
+ * Version:	@(#)pic.c	1.0.8	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -118,7 +118,7 @@ update_pending(void)
 
 
 static void
-pic_write(uint16_t addr, uint8_t val, void *priv)
+pic_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     PIC *dev = (PIC *)priv;
     int c;
@@ -222,7 +222,7 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-pic_read(uint16_t addr, void *priv)
+pic_read(uint16_t addr, priv_t priv)
 {
     PIC *dev = (PIC *)priv;
 
@@ -273,7 +273,7 @@ pic_autoeoi(void)
 
 
 static void
-pic2_write(uint16_t addr, uint8_t val, void *priv)
+pic2_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     PIC *dev = (PIC *)priv;
     int c;
@@ -364,7 +364,7 @@ pic2_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-pic2_read(uint16_t addr, void *priv)
+pic2_read(uint16_t addr, priv_t priv)
 {
     PIC *dev = (PIC *)priv;
 

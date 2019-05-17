@@ -38,7 +38,7 @@
  *		This is implemented by holding a FIFO of unlimited depth in
  *		the IM1024 to receive the data.
  *
- * Version:	@(#)vid_im1024.c	1.0.4	2019/04/19
+ * Version:	@(#)vid_im1024.c	1.0.5	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -94,6 +94,9 @@ typedef struct {
 		fifo_wrptr,
 		fifo_rdptr;
 } im1024_t;
+
+
+static const video_timings_t im1024_timings = { VID_ISA,8,16,32,8,16,32 };
 
 
 static void
@@ -205,7 +208,7 @@ input_byte(pgc_t *pgc, uint8_t *result)
 
 /* Override memory read to return FIFO space. */
 static uint8_t
-im1024_read(uint32_t addr, void *priv)
+im1024_read(uint32_t addr, priv_t priv)
 {
     im1024_t *dev = (im1024_t *)priv;
 
@@ -220,7 +223,7 @@ im1024_read(uint32_t addr, void *priv)
 
 /* Override memory write to handle writes to the FIFO. */
 static void
-im1024_write(uint32_t addr, uint8_t val, void *priv)
+im1024_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     im1024_t *dev = (im1024_t *)priv;
 
@@ -933,7 +936,27 @@ static const pgc_cmd_t im1024_commands[] = {
 };
 
 
-static void *
+static void
+im1024_close(priv_t priv)
+{
+    im1024_t *dev = (im1024_t *)priv;
+
+    pgc_close(&dev->pgc);
+
+    free(dev);
+}
+
+
+static void
+speed_changed(priv_t priv)
+{
+    im1024_t *dev = (im1024_t *)priv;
+
+    pgc_speed_changed(&dev->pgc);
+}
+
+
+static priv_t
 im1024_init(const device_t *info, UNUSED(void *parent))
 {
     im1024_t *dev;
@@ -954,34 +977,11 @@ im1024_init(const device_t *info, UNUSED(void *parent))
     mem_map_set_handler(&dev->pgc.mapping,
 			im1024_read,NULL,NULL, im1024_write,NULL,NULL);
 
-    video_inform(DEVICE_VIDEO_GET(info->flags),
-		 (const video_timings_t *)info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags), &im1024_timings);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
-
-static void
-im1024_close(void *priv)
-{
-    im1024_t *dev = (im1024_t *)priv;
-
-    pgc_close(&dev->pgc);
-
-    free(dev);
-}
-
-
-static void
-speed_changed(void *priv)
-{
-    im1024_t *dev = (im1024_t *)priv;
-
-    pgc_speed_changed(&dev->pgc);
-}
-
-
-static const video_timings_t im1024_timings = { VID_ISA,8,16,32,8,16,32 };
 
 static const device_config_t im1024_config[] = {
     {
@@ -999,6 +999,6 @@ const device_t im1024_device = {
     NULL,
     speed_changed,
     NULL,
-    &im1024_timings,
+    NULL,
     im1024_config
 };

@@ -8,7 +8,7 @@
  *
  *		System timer module.
  *
- * Version:	@(#)timer.c	1.0.3	2019/04/25
+ * Version:	@(#)timer.c	1.0.4	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,8 +59,8 @@ static struct {
     int64_t	*count;
     int64_t	*enable;
 
-    void	(*callback)(void *priv);
-    void	*priv;
+    void	(*callback)(priv_t);
+    priv_t	priv;
 }		timers[TIMERS_MAX];
 static int	present = 0;
 static int64_t	latch = 0;
@@ -140,7 +140,7 @@ timer_reset(void)
 
 
 int
-timer_add(void (*callback)(void *priv), void *priv, int64_t *count, int64_t *enable)
+timer_add(void (*callback)(priv_t), priv_t priv, int64_t *count, int64_t *enable)
 {
     int i = 0;
 

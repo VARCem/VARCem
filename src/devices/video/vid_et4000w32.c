@@ -12,7 +12,7 @@
  *
  * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
  *
- * Version:	@(#)vid_et4000w32.c	1.0.20	2019/05/03
+ * Version:	@(#)vid_et4000w32.c	1.0.21	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -161,8 +161,8 @@ typedef struct
 } et4000w32p_t;
 
 
-static uint8_t et4000w32p_mmu_read(uint32_t addr, void *p);
-static void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p);
+static uint8_t et4000w32p_mmu_read(uint32_t addr, priv_t);
+static void et4000w32p_mmu_write(uint32_t addr, uint8_t val, priv_t);
 static void et4000w32_blit_start(et4000w32p_t *et4000);
 static void et4000w32_blit(int count, uint32_t mix, uint32_t sdat, int cpu_input, et4000w32p_t *et4000);
 
@@ -268,9 +268,9 @@ et4000w32p_recalctimings(svga_t *svga)
 
 
 static uint8_t
-et4000w32p_in(uint16_t addr, void *p)
+et4000w32p_in(uint16_t addr, priv_t priv)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+        et4000w32p_t *et4000 = (et4000w32p_t *)priv;
         svga_t *svga = &et4000->svga;
 
         if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) 
@@ -323,9 +323,9 @@ et4000w32p_in(uint16_t addr, void *p)
 
 
 static void
-et4000w32p_out(uint16_t addr, uint8_t val, void *p)
+et4000w32p_out(uint16_t addr, uint8_t val, priv_t priv)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+        et4000w32p_t *et4000 = (et4000w32p_t *)priv;
         svga_t *svga = &et4000->svga;
         uint8_t old;
 
@@ -596,9 +596,9 @@ static void et4000w32p_queue(et4000w32p_t *et4000, uint32_t addr, uint32_t val, 
                 wake_fifo_thread(et4000);
 }
 
-static void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p)
+static void et4000w32p_mmu_write(uint32_t addr, uint8_t val, priv_t priv)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+        et4000w32p_t *et4000 = (et4000w32p_t *)priv;
         svga_t *svga = &et4000->svga;
         int bank;
         switch (addr & 0x6000)
@@ -645,9 +645,9 @@ static void et4000w32p_mmu_write(uint32_t addr, uint8_t val, void *p)
         }
 }
 
-static uint8_t et4000w32p_mmu_read(uint32_t addr, void *p)
+static uint8_t et4000w32p_mmu_read(uint32_t addr, priv_t pric)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+        et4000w32p_t *et4000 = (et4000w32p_t *)pric;
         svga_t *svga = &et4000->svga;
         int bank;
         uint8_t temp;
@@ -1142,9 +1142,9 @@ static void et4000w32p_io_set(et4000w32p_t *et4000)
         io_sethandler(0x217A, 0x0002, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
 }
 
-static uint8_t et4000w32p_pci_read(int func, int addr, void *p)
+static uint8_t et4000w32p_pci_read(int func, int addr, priv_t priv)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+        et4000w32p_t *et4000 = (et4000w32p_t *)priv;
 
 	addr &= 0xff;
 
@@ -1181,9 +1181,9 @@ static uint8_t et4000w32p_pci_read(int func, int addr, void *p)
         return 0;
 }
 
-static void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
+static void et4000w32p_pci_write(int func, int addr, uint8_t val, priv_t priv)
 {
-        et4000w32p_t *et4000 = (et4000w32p_t *)p;
+        et4000w32p_t *et4000 = (et4000w32p_t *)priv;
         svga_t *svga = &et4000->svga;
 
 	addr &= 0xff;
@@ -1233,7 +1233,7 @@ static void et4000w32p_pci_write(int func, int addr, uint8_t val, void *p)
 }
 
 
-static void *
+static priv_t
 et4000w32p_init(const device_t *info, UNUSED(void *parent))
 {
     int vram_size;
@@ -1243,14 +1243,14 @@ et4000w32p_init(const device_t *info, UNUSED(void *parent))
     et4000->pci = !!(info->flags & DEVICE_PCI);
 
     vram_size = device_get_config_int("memory");
-        
+
     et4000->interleaved = (vram_size == 2) ? 1 : 0;
-        
+
     svga_init(&et4000->svga, et4000, vram_size << 20,
               et4000w32p_recalctimings,
               et4000w32p_in, et4000w32p_out,
               et4000w32p_hwcursor_draw,
-              NULL); 
+              NULL);
 
     et4000->svga.ramdac = device_add(&stg_ramdac_device);
 
@@ -1284,26 +1284,26 @@ et4000w32p_init(const device_t *info, UNUSED(void *parent))
 		et4000w32p_mmu_write, NULL, NULL, NULL, 0, et4000);
 
     et4000w32p_io_set(et4000);
-        
+
     if (info->flags & DEVICE_PCI)
         pci_add_card(PCI_ADD_VIDEO,
-		     et4000w32p_pci_read, et4000w32p_pci_write, et4000);
+		     et4000w32p_pci_read, et4000w32p_pci_write, (priv_t)et4000);
 
     /* Hardwired bits: 00000000 1xx0x0xx */
     /* R/W bits:                 xx xxxx */
     /* PCem bits:                    111 */
     et4000->pci_regs[0x04] = 0x83;
-        
+
     et4000->pci_regs[0x10] = 0x00;
     et4000->pci_regs[0x11] = 0x00;
     et4000->pci_regs[0x12] = 0xff;
     et4000->pci_regs[0x13] = 0xff;
-        
+
     et4000->pci_regs[0x30] = 0x00;
     et4000->pci_regs[0x31] = 0x00;
     et4000->pci_regs[0x32] = 0x00;
     et4000->pci_regs[0x33] = 0xf0;
-        
+
     et4000->wake_fifo_thread = thread_create_event();
     et4000->fifo_not_full_event = thread_create_event();
     et4000->fifo_thread = thread_create(fifo_thread, et4000);
@@ -1311,17 +1311,17 @@ et4000w32p_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return et4000;
+    return (priv_t)et4000;
 }
 
 
 static void
-et4000w32p_close(void *p)
+et4000w32p_close(priv_t priv)
 {
-    et4000w32p_t *et4000 = (et4000w32p_t *)p;
+    et4000w32p_t *et4000 = (et4000w32p_t *)priv;
 
     svga_close(&et4000->svga);
-        
+
     thread_kill(et4000->fifo_thread);
     thread_destroy_event(et4000->wake_fifo_thread);
     thread_destroy_event(et4000->fifo_not_full_event);
@@ -1331,18 +1331,18 @@ et4000w32p_close(void *p)
 
 
 static void
-speed_changed(void *p)
+speed_changed(priv_t priv)
 {
-    et4000w32p_t *et4000 = (et4000w32p_t *)p;
-        
+    et4000w32p_t *et4000 = (et4000w32p_t *)priv;
+
     svga_recalctimings(&et4000->svga);
 }
 
 
 static void
-force_redraw(void *p)
+force_redraw(priv_t priv)
 {
-    et4000w32p_t *et4000w32p = (et4000w32p_t *)p;
+    et4000w32p_t *et4000w32p = (et4000w32p_t *)priv;
 
     et4000w32p->svga.fullchange = changeframecount;
 }

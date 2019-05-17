@@ -8,7 +8,7 @@
  *
  *		Super I/O chip detection code.
  *
- * Version:	@(#)sio_detect.c	1.0.6	2019/04/09
+ * Version:	@(#)sio_detect.c	1.0.7	2019/05/13
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -52,7 +52,7 @@ typedef struct {
 
 
 static void
-detect_write(uint16_t port, uint8_t val, void *priv)
+detect_write(uint16_t port, uint8_t val, priv_t priv)
 {
     sio_detect_t *dev = (sio_detect_t *)priv;
 
@@ -63,7 +63,7 @@ detect_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-detect_read(uint16_t port, void *priv)
+detect_read(uint16_t port, priv_t priv)
 {
     sio_detect_t *dev = (sio_detect_t *)priv;
     uint8_t ret;
@@ -77,7 +77,7 @@ detect_read(uint16_t port, void *priv)
 
 
 static void
-detect_close(void *priv)
+detect_close(priv_t priv)
 {
     sio_detect_t *dev = (sio_detect_t *)priv;
 
@@ -85,7 +85,7 @@ detect_close(void *priv)
 }
 
 
-static void *
+static priv_t
 detect_init(const device_t *info, UNUSED(void *parent))
 {
     sio_detect_t *dev = (sio_detect_t *)mem_alloc(sizeof(sio_detect_t));
@@ -110,7 +110,7 @@ detect_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03f0, 2,
 		  detect_read,NULL,NULL, detect_write,NULL,NULL, dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

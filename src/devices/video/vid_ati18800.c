@@ -8,7 +8,7 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.13	2019/04/19
+ * Version:	@(#)vid_ati18800.c	1.0.14	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,9 +82,9 @@ typedef struct ati18800_t
 } ati18800_t;
 
 
-static void ati18800_out(uint16_t addr, uint8_t val, void *p)
+static void ati18800_out(uint16_t addr, uint8_t val, priv_t priv)
 {
-        ati18800_t *ati18800 = (ati18800_t *)p;
+        ati18800_t *ati18800 = (ati18800_t *)priv;
         svga_t *svga = &ati18800->svga;
         uint8_t old;
         
@@ -141,9 +141,9 @@ static void ati18800_out(uint16_t addr, uint8_t val, void *p)
         svga_out(addr, val, svga);
 }
 
-static uint8_t ati18800_in(uint16_t addr, void *p)
+static uint8_t ati18800_in(uint16_t addr, priv_t priv)
 {
-        ati18800_t *ati18800 = (ati18800_t *)p;
+        ati18800_t *ati18800 = (ati18800_t *)priv;
         svga_t *svga = &ati18800->svga;
         uint8_t temp;
 
@@ -204,7 +204,7 @@ static void ati18800_recalctimings(svga_t *svga)
 }
 
 
-static void *
+static priv_t
 ati18800_init(const device_t *info, UNUSED(void *parent))
 {
     ati18800_t *dev;
@@ -212,34 +212,18 @@ ati18800_init(const device_t *info, UNUSED(void *parent))
     dev = (ati18800_t *)mem_alloc(sizeof(ati18800_t));
     memset(dev, 0x00, sizeof(ati18800_t));
 
-    switch (info->local) {
-#if defined(DEV_BRANCH) && defined(USE_WONDER)
-	case ATI18800_WONDER:
-		break;
-#endif
-
-	case ATI18800_VGA88:
-		break;
-
-	case ATI18800_EDGE16:
-		break;
-
-	default:
-		break;
-    };
-        
     if (info->path != NULL) {
 	rom_init(&dev->bios_rom, info->path, 0xc0000, 0x8000, 0x7fff,
 		 0, MEM_MAPPING_EXTERNAL);
     }
 
-    svga_init(&dev->svga, dev, 1 << 20, /*512KB*/
+    svga_init(&dev->svga, (priv_t)dev, 1 << 20, /*512KB*/
               ati18800_recalctimings, ati18800_in, ati18800_out, NULL, NULL);
 
     io_sethandler(0x01ce, 0x0002,
-		  ati18800_in,NULL,NULL, ati18800_out,NULL,NULL, dev);
+		  ati18800_in,NULL,NULL, ati18800_out,NULL,NULL, (priv_t)dev);
     io_sethandler(0x03c0, 0x0020,
-		  ati18800_in,NULL,NULL, ati18800_out,NULL,NULL, dev);
+		  ati18800_in,NULL,NULL, ati18800_out,NULL,NULL, (priv_t)dev);
 
     dev->svga.miscout = 1;
 
@@ -248,12 +232,12 @@ ati18800_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return dev;
+    return (priv_t)dev;
 }
 
 
 static void
-ati18800_close(void *priv)
+ati18800_close(priv_t priv)
 {
     ati18800_t *dev = (ati18800_t *)priv;
 
@@ -262,7 +246,7 @@ ati18800_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     ati18800_t *dev = (ati18800_t *)priv;
         
@@ -271,7 +255,7 @@ speed_changed(void *priv)
 
 
 static void
-force_redraw(void *priv)
+force_redraw(priv_t priv)
 {
     ati18800_t *dev = (ati18800_t *)priv;
 

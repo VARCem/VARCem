@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.20	2019/05/05
+ * Version:	@(#)vid_hercules.c	1.0.21	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -113,7 +113,7 @@ recalc_timings(hercules_t *dev)
 
 
 static void
-hercules_out(uint16_t addr, uint8_t val, void *priv)
+hercules_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
     uint8_t old;
@@ -168,7 +168,7 @@ hercules_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-hercules_in(uint16_t addr, void *priv)
+hercules_in(uint16_t addr, priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
     uint8_t ret = 0xff;
@@ -204,7 +204,7 @@ hercules_in(uint16_t addr, void *priv)
 
 
 static void
-hercules_waitstates(void *p)
+hercules_waitstates(priv_t priv)
 {
     int ws;
 
@@ -215,7 +215,7 @@ hercules_waitstates(void *p)
 
 
 static void
-hercules_write(uint32_t addr, uint8_t val, void *priv)
+hercules_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
 
@@ -225,7 +225,7 @@ hercules_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-hercules_read(uint32_t addr, void *priv)
+hercules_read(uint32_t addr, priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
 
@@ -236,7 +236,7 @@ hercules_read(uint32_t addr, void *priv)
 
 
 static void
-hercules_poll(void *priv)
+hercules_poll(priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
     uint8_t chr, attr;
@@ -427,7 +427,7 @@ hercules_poll(void *priv)
 }
 
 
-static void *
+static priv_t
 hercules_init(const device_t *info, UNUSED(void *parent))
 {
     hercules_t *dev;
@@ -440,7 +440,7 @@ hercules_init(const device_t *info, UNUSED(void *parent))
 
     dev->vram = (uint8_t *)mem_alloc(0x10000);
 
-    timer_add(hercules_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(hercules_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /*
      * Map in the memory, enable exec on it (for software like basich.com
@@ -448,10 +448,10 @@ hercules_init(const device_t *info, UNUSED(void *parent))
      */
     mem_map_add(&dev->mapping, 0xb0000, 0x08000,
 		hercules_read,NULL,NULL, hercules_write,NULL,NULL,
-		dev->vram, MEM_MAPPING_EXTERNAL, dev);
+		dev->vram, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03b0, 16,
-		  hercules_in,NULL,NULL, hercules_out,NULL,NULL, dev);
+		  hercules_in,NULL,NULL, hercules_out,NULL,NULL, (priv_t)dev);
 
     for (c = 0; c < 256; c++) {
 	dev->cols[c][0][0] = dev->cols[c][1][0] = dev->cols[c][1][1] = 16;
@@ -492,12 +492,12 @@ hercules_init(const device_t *info, UNUSED(void *parent))
     config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-hercules_close(void *priv)
+hercules_close(priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
 
@@ -512,7 +512,7 @@ hercules_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
 	

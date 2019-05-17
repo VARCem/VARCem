@@ -8,7 +8,7 @@
  *
  *		Implementation of the ACC 3221 Super I/O Chip.
  *
- * Version:	@(#)sio_acc3221.c	1.0.1	2019/05/02
+ * Version:	@(#)sio_acc3221.c	1.0.2	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,6 +58,7 @@
 typedef struct {
     int		reg_idx;
     uint8_t	regs[256];
+
     fdc_t	*fdc;
 } acc3221_t;
 
@@ -127,7 +128,7 @@ serial2_handler(acc3221_t *dev)
 
 
 static void 
-acc3221_write(uint16_t addr, uint8_t val, void *priv)
+acc3221_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     acc3221_t *dev = (acc3221_t *)priv; 
     uint8_t old;
@@ -193,7 +194,7 @@ acc3221_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t 
-acc3221_read(uint16_t addr, void *priv)
+acc3221_read(uint16_t addr, priv_t priv)
 {
     acc3221_t *dev = (acc3221_t *)priv; 
     uint8_t ret = 0xff;
@@ -228,7 +229,7 @@ acc3221_reset(acc3221_t *dev)
 
 
 static void
-acc3221_close(void *priv)
+acc3221_close(priv_t priv)
 {
     acc3221_t *dev = (acc3221_t *)priv;
 
@@ -236,7 +237,7 @@ acc3221_close(void *priv)
 }
 
 
-static void *
+static priv_t
 acc3221_init(const device_t *info, UNUSED(void *parent))
 {
     acc3221_t *dev;
@@ -251,7 +252,7 @@ acc3221_init(const device_t *info, UNUSED(void *parent))
 
     acc3221_reset(dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

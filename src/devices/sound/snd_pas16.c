@@ -79,13 +79,13 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.14	2019/05/05
+ * Version:	@(#)snd_pas16.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2019 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -134,30 +134,18 @@
 typedef struct pas16_t
 {
         uint16_t base;
-        
         int irq, dma;
- 
         uint8_t audiofilt;
-        
         uint8_t audio_mixer;
-               
         uint8_t compat, compat_base;
-        
         uint8_t enhancedscsi;
-        
         uint8_t io_conf_1, io_conf_2, io_conf_3, io_conf_4;
-        
         uint8_t irq_stat, irq_ena;
-        
         uint8_t pcm_ctrl;
         uint16_t pcm_dat;
-
         uint16_t pcm_dat_l, pcm_dat_r;
-                
         uint8_t sb_irqdma;
-        
         int stereo_lr;
-        
         uint8_t sys_conf_1, sys_conf_2, sys_conf_3, sys_conf_4;
         
         struct
@@ -182,9 +170,9 @@ typedef struct pas16_t
         int pos;
 } pas16_t;
 
-static uint8_t pas16_pit_in(uint16_t port, void *priv);
-static void pas16_pit_out(uint16_t port, uint8_t val, void *priv);
-static void pas16_update(pas16_t *pas16);
+static uint8_t pas16_pit_in(uint16_t, priv_t);
+static void pas16_pit_out(uint16_t, uint8_t, priv_t);
+static void pas16_update(pas16_t *);
 
 static int pas16_dmas[8] = {4, 1, 2, 3, 0, 5, 6, 7};
 static int pas16_irqs[16] = {0, 2, 3, 4, 5, 6, 7, 10, 11, 12, 14, 15, 0, 0, 0, 0};
@@ -214,13 +202,10 @@ enum
         PAS16_FILT_MUTE = 0x20
 };
 
-static uint8_t pas16_in(uint16_t port, void *p)
+static uint8_t pas16_in(uint16_t port, priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
+        pas16_t *pas16 = (pas16_t *)priv;
         uint8_t temp;
-
-/*        if (CS == 0xCA53 && pc == 0x3AFC)
-                fatal("here");*/
 
         switch ((port - pas16->base) + 0x388)
         {
@@ -313,24 +298,12 @@ static uint8_t pas16_in(uint16_t port, void *p)
 		break;
         }
 
-/*        if (port != 0x388 && port != 0x389 && port != 0xb8b) */DEBUG("pas16_in : port %04X return %02X  %04X:%04X\n", port, temp, CS,cpu_state.pc);
-/*        if (CS == 0x1FF4 && pc == 0x0585)
-        {
-                if (output)
-                        fatal("here");
-                output = 3;
-        }*/
-
         return temp;
 }
 
-static void pas16_out(uint16_t port, uint8_t val, void *p)
+static void pas16_out(uint16_t port, uint8_t val, priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
-
-/*        if (port != 0x388 && port != 0x389) */DEBUG("pas16_out : port %04X val %02X  %04X:%04X\n", port, val, CS,cpu_state.pc);
-/*        if (CS == 0x369 && pc == 0x2AC5)
-                fatal("here\n");*/
+        pas16_t *pas16 = (pas16_t *)priv;
 
         switch ((port - pas16->base) + 0x388)
         {
@@ -430,25 +403,11 @@ static void pas16_out(uint16_t port, uint8_t val, void *p)
                 default:
                 DEBUG("pas16_out : unknown %04X\n", port);
         }
-        if (cpu_state.pc == 0x80048CF3)
-        {
-#if 0
-                if (output)
-#endif
-                        fatal("here\n");
-#if 0
-                output = 3;
-#endif
-        }
-#if 0
-        if (CS == 0x1FF4 && pc == 0x0431)
-                output = 3;
-#endif
 }
 
-static void pas16_pit_out(uint16_t port, uint8_t val, void *p)
+static void pas16_pit_out(uint16_t port, uint8_t val, priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
+        pas16_t *pas16 = (pas16_t *)priv;
         int t;
         switch (port & 3)
         {
@@ -546,9 +505,9 @@ static void pas16_pit_out(uint16_t port, uint8_t val, void *p)
         }
 }
 
-static uint8_t pas16_pit_in(uint16_t port, void *p)
+static uint8_t pas16_pit_in(uint16_t port, priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
+        pas16_t *pas16 = (pas16_t *)priv;
         uint8_t temp = 0xff;
         int t = port & 3;
         switch (port & 3)
@@ -604,9 +563,9 @@ static uint8_t pas16_readdma(pas16_t *pas16)
         return dma_channel_read(pas16->dma);
 }
 
-static void pas16_pcm_poll(void *p)
+static void pas16_pcm_poll(priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
+        pas16_t *pas16 = (pas16_t *)priv;
         
         pas16_update(pas16);
         if (pas16->pit.m[0] & 2)
@@ -684,9 +643,9 @@ static void pas16_pcm_poll(void *p)
         }
 }
 
-static void pas16_out_base(uint16_t port, uint8_t val, void *p)
+static void pas16_out_base(uint16_t port, uint8_t val, priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
+        pas16_t *pas16 = (pas16_t *)priv;
 
         io_removehandler((pas16->base - 0x388) + 0x0388, 0x0004, pas16_in, NULL, NULL, pas16_out, NULL, NULL,  pas16);
         io_removehandler((pas16->base - 0x388) + 0x0788, 0x0004, pas16_in, NULL, NULL, pas16_out, NULL, NULL,  pas16);
@@ -706,7 +665,7 @@ static void pas16_out_base(uint16_t port, uint8_t val, void *p)
         io_removehandler((pas16->base - 0x388) + 0xf788, 0x0004, pas16_in, NULL, NULL, pas16_out, NULL, NULL,  pas16);
         io_removehandler((pas16->base - 0x388) + 0xfb88, 0x0004, pas16_in, NULL, NULL, pas16_out, NULL, NULL,  pas16);
         io_removehandler((pas16->base - 0x388) + 0xff88, 0x0004, pas16_in, NULL, NULL, pas16_out, NULL, NULL,  pas16);
-        
+
         pas16->base = val << 2;
         DEBUG("pas16_write_base : PAS16 base now at %04X\n", pas16->base);
 
@@ -751,9 +710,9 @@ static void pas16_update(pas16_t *pas16)
         }
 }
 
-void pas16_get_buffer(int32_t *buffer, int len, void *p)
+void pas16_get_buffer(int32_t *buffer, int len, priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
+        pas16_t *pas16 = (pas16_t *)priv;
         int c;
 
         opl3_update2(&pas16->opl);
@@ -772,7 +731,8 @@ void pas16_get_buffer(int32_t *buffer, int len, void *p)
 }
 
 
-static void *pas16_init(const device_t *info, UNUSED(void *parent))
+static priv_t
+pas16_init(const device_t *info, UNUSED(void *parent))
 {
         pas16_t *pas16 = (pas16_t *)mem_alloc(sizeof(pas16_t));
         memset(pas16, 0, sizeof(pas16_t));
@@ -781,19 +741,19 @@ static void *pas16_init(const device_t *info, UNUSED(void *parent))
         sb_dsp_init(&pas16->dsp, SB2);
 
         io_sethandler(0x9a01, 0x0001, NULL, NULL, NULL, pas16_out_base, NULL, NULL,  pas16);
-        
+
         timer_add(pas16_pcm_poll, pas16,
 		  &pas16->pit.c[0], &pas16->pit.enable[0]);
-        
+
         sound_add_handler(pas16_get_buffer, pas16);
-        
-        return pas16;
+
+        return (priv_t)pas16;
 }
 
-static void pas16_close(void *p)
+static void pas16_close(priv_t priv)
 {
-        pas16_t *pas16 = (pas16_t *)p;
-        
+        pas16_t *pas16 = (pas16_t *)priv;
+
         free(pas16);
 }
 

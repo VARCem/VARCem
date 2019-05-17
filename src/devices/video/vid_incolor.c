@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.19	2019/05/05
+ * Version:	@(#)vid_incolor.c	1.0.20	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -226,7 +226,7 @@ recalc_timings(incolor_t *dev)
 
 
 static void
-incolor_out(uint16_t port, uint8_t val, void *priv)
+incolor_out(uint16_t port, uint8_t val, priv_t priv)
 {
     incolor_t *dev = (incolor_t *)priv;
     uint8_t old;
@@ -281,7 +281,7 @@ incolor_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-incolor_in(uint16_t port, void *priv)
+incolor_in(uint16_t port, priv_t priv)
 {
     incolor_t *dev = (incolor_t *)priv;
     uint8_t ret = 0xff;
@@ -318,7 +318,7 @@ incolor_in(uint16_t port, void *priv)
 
 
 static void
-incolor_write(uint32_t addr, uint8_t val, void *priv)
+incolor_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     incolor_t *dev = (incolor_t *)priv;
     uint8_t wmask = dev->crtc[INCOLOR_CRTC_MASK];
@@ -384,7 +384,7 @@ incolor_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-incolor_read(uint32_t addr, void *priv)
+incolor_read(uint32_t addr, priv_t priv)
 {
     incolor_t *dev = (incolor_t *)priv;
     uint8_t plane;
@@ -855,7 +855,7 @@ graphics_line(incolor_t *dev)
 
 
 static void
-incolor_poll(void *priv)
+incolor_poll(priv_t priv)
 {
     incolor_t *dev = (incolor_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -980,7 +980,7 @@ incolor_poll(void *priv)
 }
 
 
-static void *
+static priv_t
 incolor_init(const device_t *info, UNUSED(void *parent))
 {
     incolor_t *dev;
@@ -991,14 +991,14 @@ incolor_init(const device_t *info, UNUSED(void *parent))
 
     dev->vram = (uint8_t *)mem_alloc(0x40000);	/* 4 planes of 64k */
 
-    timer_add(incolor_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(incolor_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->mapping, 0xb0000, 0x08000,
 		incolor_read,NULL,NULL, incolor_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03b0, 16,
-		  incolor_in,NULL,NULL, incolor_out,NULL,NULL, dev);
+		  incolor_in,NULL,NULL, incolor_out,NULL,NULL, (priv_t)dev);
 
     for (c = 0; c < 64; c++) {
 	dev->rgb[c] = makecol32(init_rgb[c][0], init_rgb[c][1], init_rgb[c][2]);
@@ -1020,12 +1020,12 @@ incolor_init(const device_t *info, UNUSED(void *parent))
     config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-incolor_close(void *priv)
+incolor_close(priv_t priv)
 {
     incolor_t *dev = (incolor_t *)priv;
 
@@ -1040,7 +1040,7 @@ incolor_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     incolor_t *dev = (incolor_t *)priv;
 	

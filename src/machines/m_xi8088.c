@@ -8,7 +8,7 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xi8088.c	1.0.14	2019/04/10
+ * Version:	@(#)m_xi8088.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,7 +82,7 @@ bios_128k_set(xi8088_t *dev, int val)
 
 
 static uint8_t
-turbo_get(void *priv)
+turbo_get(priv_t priv)
 {
     xi8088_t *dev = (xi8088_t *)priv;
 
@@ -91,7 +91,7 @@ turbo_get(void *priv)
 
 
 static void
-turbo_set(void *priv, uint8_t val)
+turbo_set(priv_t priv, uint8_t val)
 {
     xi8088_t *dev = (xi8088_t *)priv;
 
@@ -103,17 +103,26 @@ turbo_set(void *priv, uint8_t val)
 }
 
 
-static void *
+static void
+xi_close(priv_t priv)
+{
+    xi8088_t *dev = (xi8088_t *)priv;
+
+    free(dev);
+}
+
+
+static priv_t
 xi_init(const device_t *info, void *arg)
 {
     xi8088_t *dev;
-    void *kbd;
+    priv_t kbd;
 
     dev = (xi8088_t *)mem_alloc(sizeof(xi8088_t));
     memset(dev, 0x00, sizeof(xi8088_t));
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     machine_common_init();
 
@@ -152,16 +161,7 @@ xi_init(const device_t *info, void *arg)
 
     device_add(&fdc_xt_device);
 
-    return(dev);
-}
-
-
-static void
-xi_close(void *priv)
-{
-    xi8088_t *dev = (xi8088_t *)priv;
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.13	2019/04/09
+ * Version:	@(#)sio_fdc37c93x.c	1.0.14	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,7 +100,7 @@ make_port(fdc37c93x_t *dev, uint8_t ld)
 
 
 static uint8_t
-auxio_read(uint16_t port, void *priv)
+auxio_read(uint16_t port, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
@@ -109,7 +109,7 @@ auxio_read(uint16_t port, void *priv)
 
 
 static void
-auxio_write(uint16_t port, uint8_t val, void *priv)
+auxio_write(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
@@ -136,7 +136,7 @@ auxio_handler(fdc37c93x_t *dev)
 
 
 static uint8_t
-gpio_read(uint16_t port, void *priv)
+gpio_read(uint16_t port, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
@@ -145,7 +145,7 @@ gpio_read(uint16_t port, void *priv)
 
 
 static void
-gpio_write(uint16_t port, uint8_t val, void *priv)
+gpio_write(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
@@ -239,7 +239,7 @@ serial_handler(fdc37c93x_t *dev, int uart)
 
 
 static uint8_t
-access_bus_read(uint16_t port, void *priv)
+access_bus_read(uint16_t port, priv_t priv)
 {
     access_bus_t *dev = (access_bus_t *)priv;
     uint8_t ret = 0xff;
@@ -267,7 +267,7 @@ access_bus_read(uint16_t port, void *priv)
 
 
 static void
-access_bus_write(uint16_t port, uint8_t val, void *priv)
+access_bus_write(uint16_t port, uint8_t val, priv_t priv)
 {
     access_bus_t *dev = (access_bus_t *)priv;
 
@@ -293,6 +293,36 @@ access_bus_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
+access_bus_close(priv_t priv)
+{
+    access_bus_t *dev = (access_bus_t *)priv;
+
+    free(dev);
+}
+
+
+static priv_t
+access_bus_init(const device_t *info, UNUSED(void *parent))
+{
+    access_bus_t *dev = (access_bus_t *)mem_alloc(sizeof(access_bus_t));
+    memset(dev, 0x00, sizeof(access_bus_t));
+
+    return((priv_t)dev);
+}
+
+
+static const device_t access_bus_device = {
+    "SMC FDC37C932FR ACCESS.bus",
+    0,
+    0x03,
+    NULL,
+    access_bus_init, access_bus_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+
+static void
 access_bus_handler(fdc37c93x_t *dev)
 {
     uint8_t global_enable = !!(dev->regs[0x22] & (1 << 6));
@@ -314,7 +344,7 @@ access_bus_handler(fdc37c93x_t *dev)
 
 
 static void
-fdc37c93x_write(uint16_t port, uint8_t val, void *priv)
+fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -526,7 +556,7 @@ fdc37c93x_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-fdc37c93x_read(uint16_t port, void *priv)
+fdc37c93x_read(uint16_t port, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -656,37 +686,7 @@ fdc37c93x_reset(fdc37c93x_t *dev)
 
 
 static void
-access_bus_close(void *priv)
-{
-    access_bus_t *dev = (access_bus_t *)priv;
-
-    free(dev);
-}
-
-
-static void *
-access_bus_init(const device_t *info, UNUSED(void *parent))
-{
-    access_bus_t *dev = (access_bus_t *)mem_alloc(sizeof(access_bus_t));
-    memset(dev, 0x00, sizeof(access_bus_t));
-
-    return dev;
-}
-
-
-static const device_t access_bus_device = {
-    "SMC FDC37C932FR ACCESS.bus",
-    0,
-    0x03,
-    NULL,
-    access_bus_init, access_bus_close, NULL,
-    NULL, NULL, NULL, NULL,
-    NULL
-};
-
-
-static void
-fdc37c93x_close(void *priv)
+fdc37c93x_close(priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
@@ -694,10 +694,12 @@ fdc37c93x_close(void *priv)
 }
 
 
-static void *
-fdc37c93x_init(const device_t *info, UNUSED(void *parent))
+static priv_t
+fdc37c93x_init(const device_t *info, void *parent)
 {
-    fdc37c93x_t *dev = (fdc37c93x_t *)mem_alloc(sizeof(fdc37c93x_t));
+    fdc37c93x_t *dev;
+
+    dev = (fdc37c93x_t *)mem_alloc(sizeof(fdc37c93x_t));
     memset(dev, 0x00, sizeof(fdc37c93x_t));
     dev->chip_id = info->local;
 
@@ -707,14 +709,14 @@ fdc37c93x_init(const device_t *info, UNUSED(void *parent))
     dev->gpio_regs[1] = 0xff;
 
     if (dev->chip_id == 0x03)
-	dev->access_bus = device_add(&access_bus_device);
+	dev->access_bus = device_add_parent(&access_bus_device, parent);
 
     io_sethandler(0x3f0, 2,
 		  fdc37c93x_read,NULL,NULL, fdc37c93x_write,NULL,NULL, dev);
 
     fdc37c93x_reset(dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

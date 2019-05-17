@@ -8,7 +8,7 @@
  *
  *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.12	2019/05/03
+ * Version:	@(#)cpu.h	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -423,8 +423,6 @@ extern int	timing_misaligned;
 
 
 /* Functions. */
-extern void	cyrix_write(uint16_t addr, uint8_t val, void *priv);
-extern uint8_t	cyrix_read(uint16_t addr, void *priv);
 extern void	loadseg(uint16_t seg, x86seg *s);
 extern void	loadcs(uint16_t seg);
 

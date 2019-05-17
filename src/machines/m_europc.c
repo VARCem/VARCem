@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.25	2019/05/05
+ * Version:	@(#)m_europc.c	1.0.26	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -234,7 +234,7 @@ rtc_time_get(uint8_t *regs, struct tm *tm)
 
 /* Set the current NVR time. */
 static void
-rtc_time_set(uint8_t *regs, struct tm *tm)
+rtc_time_set(uint8_t *regs, const struct tm *tm)
 {
     /* NVR is in BCD data mode. */
     regs[MRTC_SECONDS] = RTC_BCD(tm->tm_sec);
@@ -432,7 +432,7 @@ jim_set(europc_t *dev, uint8_t reg, uint8_t val)
 
 /* Write to one of the JIM registers. */
 static void
-jim_write(uint16_t addr, uint8_t val, void *priv)
+jim_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     europc_t *dev = (europc_t *)priv;
     uint8_t b;
@@ -485,7 +485,7 @@ jim_write(uint16_t addr, uint8_t val, void *priv)
 
 /* Read from one of the JIM registers. */
 static uint8_t
-jim_read(uint16_t addr, void *priv)
+jim_read(uint16_t addr, priv_t priv)
 {
     europc_t *dev = (europc_t *)priv;
     uint8_t r = 0xff;
@@ -534,6 +534,21 @@ jim_read(uint16_t addr, void *priv)
 }
 
 
+static void
+europc_close(priv_t priv)
+{
+    europc_t *dev = (europc_t *)priv;
+    nvr_t *nvr = &dev->nvr;
+
+    if (nvr->fn != NULL) {
+	free((wchar_t *)nvr->fn);
+	nvr->fn = NULL;
+    }
+
+    free(dev);
+}
+
+
 /*
  * Initialize the mainboard 'device' of the machine.
  *
@@ -542,7 +557,7 @@ jim_read(uint16_t addr, void *priv)
  * allows it to reset (dev init) and configured by the
  * user.
  */
-static void *
+static priv_t
 europc_init(const device_t *info, void *arg)
 {
     europc_t *dev;
@@ -555,7 +570,7 @@ europc_init(const device_t *info, void *arg)
     memset(dev, 0x00, sizeof(europc_t));
 
     /* Add the machine device. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     /* Get configurable things. */
     i = machine_get_config_int("js9");
@@ -752,22 +767,7 @@ europc_init(const device_t *info, void *arg)
     if (config.hdc_type == HDC_INTERNAL)
 	(void)device_add(&xta_hd20_device);
 
-    return(dev);
-}
-
-
-static void
-europc_close(void *priv)
-{
-    europc_t *dev = (europc_t *)priv;
-    nvr_t *nvr = &dev->nvr;
-
-    if (nvr->fn != NULL) {
-	free((wchar_t *)nvr->fn);
-	nvr->fn = NULL;
-    }
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

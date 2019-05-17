@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.16	2019/05/05
+ * Version:	@(#)vid_colorplus.c	1.0.17	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,7 +86,7 @@ static const int cols16[16] = {
 
 
 static void
-colorplus_out(uint16_t port, uint8_t val, void *priv)
+colorplus_out(uint16_t port, uint8_t val, priv_t priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
 
@@ -98,7 +98,7 @@ colorplus_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-colorplus_in(uint16_t port, void *priv)
+colorplus_in(uint16_t port, priv_t priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
 
@@ -107,7 +107,7 @@ colorplus_in(uint16_t port, void *priv)
 
 
 static void
-colorplus_write(uint32_t addr, uint8_t val, void *priv)
+colorplus_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
 
@@ -130,7 +130,7 @@ colorplus_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-colorplus_read(uint32_t addr, void *priv)
+colorplus_read(uint32_t addr, priv_t priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
 
@@ -154,7 +154,7 @@ colorplus_read(uint32_t addr, void *priv)
 
 
 static void
-colorplus_poll(void *priv)
+colorplus_poll(priv_t priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
     uint8_t *plane0 = dev->cga.vram;
@@ -374,7 +374,7 @@ colorplus_poll(void *priv)
 }
 
 
-static void *
+static priv_t
 colorplus_init(const device_t *info, UNUSED(void *parent))
 {
     colorplus_t *dev;
@@ -392,14 +392,14 @@ colorplus_init(const device_t *info, UNUSED(void *parent))
 
     dev->cga.cpriv = cga_comp_init(1);
 
-    timer_add(colorplus_poll, dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(colorplus_poll, (priv_t)dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
 	 	colorplus_read,NULL,NULL, colorplus_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03d0, 16,
-		  colorplus_in,NULL,NULL, colorplus_out,NULL,NULL, dev);
+		  colorplus_in,NULL,NULL, colorplus_out,NULL,NULL, (priv_t)dev);
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
@@ -408,12 +408,12 @@ colorplus_init(const device_t *info, UNUSED(void *parent))
     config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
-    return dev;
+    return (priv_t)dev;
 }
 
 
 static void
-colorplus_close(void *priv)
+colorplus_close(priv_t priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
 
@@ -427,10 +427,10 @@ colorplus_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     colorplus_t *dev = (colorplus_t *)priv;
-	
+
     cga_recalctimings(&dev->cga);
 }
 

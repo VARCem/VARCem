@@ -9,7 +9,7 @@
  *		Implementation of the SMC FDC37C663 and FDC37C665 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c66x.c	1.0.11	2019/04/09
+ * Version:	@(#)sio_fdc37c66x.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -157,7 +157,7 @@ lpt1_handler(fdc37c66x_t *dev)
 
 
 static void
-fdc37c66x_write(uint16_t port, uint8_t val, void *priv)
+fdc37c66x_write(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c66x_t *dev = (fdc37c66x_t *)priv;
     uint8_t valxor = 0;
@@ -221,7 +221,7 @@ fdc37c66x_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-fdc37c66x_read(uint16_t port, void *priv)
+fdc37c66x_read(uint16_t port, priv_t priv)
 {
     fdc37c66x_t *dev = (fdc37c66x_t *)priv;
     uint8_t ret = 0xff;
@@ -268,7 +268,7 @@ fdc37c66x_reset(fdc37c66x_t *dev)
 
 
 static void
-fdc37c66x_close(void *priv)
+fdc37c66x_close(priv_t priv)
 {
     fdc37c66x_t *dev = (fdc37c66x_t *)priv;
 
@@ -276,7 +276,7 @@ fdc37c66x_close(void *priv)
 }
 
 
-static void *
+static priv_t
 fdc37c66x_init(const device_t *info, UNUSED(void *parent))
 {
     fdc37c66x_t *dev = (fdc37c66x_t *)mem_alloc(sizeof(fdc37c66x_t));
@@ -290,7 +290,7 @@ fdc37c66x_init(const device_t *info, UNUSED(void *parent))
 
     fdc37c66x_reset(dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

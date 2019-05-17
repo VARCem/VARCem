@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.18	2019/05/07
+ * Version:	@(#)808x.c	1.0.19	2019/05/15
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -2867,5 +2867,4 @@ cpu_reset(int hard)
 	codegen_reset();
 #endif
     x86_was_reset = 1;
-    port_92_clear_reset();
 }

@@ -25,7 +25,7 @@
  *		to be done on implementing other parts of the Yamaha V6355
  *		chip that implements the video controller.
  *
- * Version:	@(#)m_zenith.c	1.0.7	2019/05/05
+ * Version:	@(#)m_zenith.c	1.0.8	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original patch for PCem by 'Tux'
@@ -123,7 +123,7 @@ typedef struct {
 /* Set the current NVR time. */
 #define set_nibbles(a, v) regs[(a##10)] = ((v)/10) ; regs[(a##1)] = ((v)%10)
 static void
-rtc_time_set(uint8_t *regs, struct tm *tm)
+rtc_time_set(uint8_t *regs, const struct tm *tm)
 {
     set_nibbles(RTC_SECOND, tm->tm_sec);
     set_nibbles(RTC_MINUTE, tm->tm_min);
@@ -245,7 +245,7 @@ rtc_reset(nvr_t *nvr)
 
 /* Write to one of the RTC registers. */
 static void
-rtc_write(uint16_t addr, uint8_t val, void *priv)
+rtc_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     uint8_t *ptr;
@@ -274,7 +274,7 @@ INFO("Zenith: rtc_wr(%04x, %02x)\n", addr, val);
 
 /* Read from one of the RTC registers. */
 static uint8_t
-rtc_read(uint16_t addr, void *priv)
+rtc_read(uint16_t addr, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     uint8_t r = 0xff;
@@ -303,7 +303,7 @@ INFO("Zenith: rtc_rd(%04x) = %02x\n", addr, r);
 
 /* Read from the Scratchpad RAM, which is apparently 2K in size. */
 static uint8_t
-sp_read(uint32_t addr, void *priv)
+sp_read(uint32_t addr, priv_t priv)
 {
     zenith_t *dev = (zenith_t *)priv;
 
@@ -313,7 +313,7 @@ sp_read(uint32_t addr, void *priv)
 
 /* Write to the Scratchpad RAM, which is apparently 2K in size. */
 static void
-sp_write(uint32_t addr, uint8_t val, void *priv)
+sp_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     zenith_t *dev = (zenith_t *)priv;
 
@@ -322,7 +322,7 @@ sp_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void 
-zenith_close(void *priv)
+zenith_close(priv_t priv)
 {
     zenith_t *dev = (zenith_t *)priv;
 
@@ -337,17 +337,17 @@ zenith_close(void *priv)
 }
 
 
-static void *
+static priv_t
 zenith_init(const device_t *info, void *arg)
 {		
     zenith_t *dev;
-    void *vid;
+    priv_t vid;
 
     dev = (zenith_t *)mem_alloc(sizeof(zenith_t));
     memset(dev, 0x00, sizeof(zenith_t));	
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     dev->lcd = machine_get_config_int("lcd");
 
@@ -391,7 +391,7 @@ zenith_init(const device_t *info, void *arg)
 
     device_add(&fdc_xt_device);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

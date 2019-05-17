@@ -27,7 +27,7 @@
  *		As stated above, it is hoped that by re-adding these, more
  *		testing will get done so they can be 'completed' sometime.
  *
- * Version:	@(#)m_tyan.c	1.0.1	2019/04/13
+ * Version:	@(#)m_tyan.c	1.0.2	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -79,11 +79,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Allocate machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     switch(info->local) {
 	/* S1662: Tyan Titan-Pro AT/440FX/Award BIOS/SMC FDC37C665 */
@@ -102,7 +102,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&intel_flash_bxt_device);
 		m_at_common_init();
 		device_add(&keyboard_ps2_pci_device);
-		memregs_init();
+		device_add(&memregs_device);
 
 		device_add(&fdc37c669_device);
 		break;
@@ -123,13 +123,13 @@ common_init(const device_t *info, void *arg)
 		device_add(&intel_flash_bxt_device);
 		m_at_common_init();
 		device_add(&keyboard_ps2_ami_pci_device);
-		memregs_init();
+		device_add(&memregs_device);
 
 		device_add(&fdc37c665_device);
 		break;
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

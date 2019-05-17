@@ -6,10 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the NEC uPD-765 and compatible floppy disk
- *		controller.
+ *		Definitions for the floppy disk	controller driver.
  *
- * Version:	@(#)fdc.h	1.0.6	2019/04/27
+ * Version:	@(#)fdc.h	1.0.8	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -190,8 +189,8 @@ extern void	fdc_sectorid(fdc_t *fdc, uint8_t track, uint8_t side,
 			     uint8_t sector, uint8_t size, uint8_t crc1,
 			     uint8_t crc2);
 
-extern uint8_t	fdc_read(uint16_t addr, void *priv);
-extern void	fdc_reset(void *priv);
+extern uint8_t	fdc_read(uint16_t addr, priv_t priv);
+extern void	fdc_reset(priv_t priv);
 
 extern uint8_t	fdc_get_current_drive(void);
 

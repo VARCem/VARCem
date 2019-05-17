@@ -8,13 +8,13 @@
  *
  *		Implementation of the MCA bus primitives.
  *
- * Version:	@(#)mca.c	1.0.2	2018/05/06
+ * Version:	@(#)mca.c	1.0.3	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -40,13 +40,14 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#include "../../emu.h"
 #include "../../io.h"
 #include "mca.h"
 
 
-void    (*mca_card_write[8])(int addr, uint8_t val, void *priv);
-uint8_t  (*mca_card_read[8])(int addr, void *priv);
-void           *mca_priv[8];
+void    (*mca_card_write[8])(int addr, uint8_t val, priv_t);
+uint8_t	(*mca_card_read[8])(int addr, priv_t);
+priv_t	*mca_priv[8];
 
 static int mca_index;
 static int mca_nr_cards;
@@ -56,7 +57,7 @@ void
 mca_init(int nr_cards)
 {
     int c;
-	
+
     for (c = 0; c < 8; c++) {
 	mca_card_read[c] = NULL;
 	mca_card_write[c] = NULL;
@@ -100,7 +101,7 @@ mca_write(uint16_t port, uint8_t val)
 
 
 void
-mca_add(uint8_t (*read)(int addr, void *priv), void (*write)(int addr, uint8_t val, void *priv), void *priv)
+mca_add(uint8_t (*read)(int, priv_t), void (*write)(int, uint8_t, priv_t), priv_t priv)
 {
     int c;
 

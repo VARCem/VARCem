@@ -8,7 +8,7 @@
  *
  *		Implementation of the ADLIB sound device.
  *
- * Version:	@(#)snd_adlib.c	1.0.9	2019/04/09
+ * Version:	@(#)snd_adlib.c	1.0.10	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,7 @@ typedef struct {
 
 
 static void
-get_buffer(int32_t *buffer, int len, void *priv)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     adlib_t *dev = (adlib_t *)priv;
     int c;
@@ -74,7 +74,7 @@ get_buffer(int32_t *buffer, int len, void *priv)
 
 
 static uint8_t
-adlib_mca_read(int port, void *priv)
+adlib_mca_read(int port, priv_t priv)
 {
     adlib_t *dev = (adlib_t *)priv;
 
@@ -85,7 +85,7 @@ adlib_mca_read(int port, void *priv)
 
 
 static void
-adlib_mca_write(int port, uint8_t val, void *priv)
+adlib_mca_write(int port, uint8_t val, priv_t priv)
 {
     adlib_t *dev = (adlib_t *)priv;
 
@@ -111,7 +111,7 @@ adlib_mca_write(int port, uint8_t val, void *priv)
 }
 
 
-static void *
+static priv_t
 adlib_init(const device_t *info, UNUSED(void *parent))
 {
     adlib_t *dev;
@@ -129,20 +129,20 @@ adlib_init(const device_t *info, UNUSED(void *parent))
 	case 1:		/* MCA */
 		dev->pos_regs[0] = 0xd7;
 		dev->pos_regs[1] = 0x70;
-		mca_add(adlib_mca_read, adlib_mca_write, dev);
+		mca_add(adlib_mca_read, adlib_mca_write, (priv_t)dev);
 		break;
     }
 
     opl2_init(&dev->opl);
 
-    sound_add_handler(get_buffer, dev);
+    sound_add_handler(get_buffer, (priv_t)dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-adlib_close(void *priv)
+adlib_close(priv_t priv)
 {
     adlib_t *dev = (adlib_t *)priv;
 

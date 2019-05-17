@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.35	2019/05/03
+ * Version:	@(#)emu.h	1.0.36	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -155,6 +155,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Define global types. */
+typedef void *priv_t;				/* generic "handle" type */
+//typedef float *priv_t;				/* generic "handle" type */
+
 
 /* Commandline option variables. */
 extern int	dump_on_exit;			/* (O) dump regs on exit*/

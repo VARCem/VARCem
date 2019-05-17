@@ -8,7 +8,7 @@
  *
  *		Handling of the PS/2 series CMOS devices.
  *
- * Version:	@(#)nvr_ps2.c	1.0.12	2019/04/09
+ * Version:	@(#)nvr_ps2.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -59,7 +59,7 @@ typedef struct {
 
 
 static uint8_t
-ps2_nvr_read(uint16_t port, void *priv)
+ps2_nvr_read(uint16_t port, priv_t priv)
 {
     ps2_nvr_t *nvr = (ps2_nvr_t *)priv;
     uint8_t ret = 0xff;
@@ -83,7 +83,7 @@ ps2_nvr_read(uint16_t port, void *priv)
 
 
 static void
-ps2_nvr_write(uint16_t port, uint8_t val, void *priv)
+ps2_nvr_write(uint16_t port, uint8_t val, priv_t priv)
 {
     ps2_nvr_t *nvr = (ps2_nvr_t *)priv;
 
@@ -103,7 +103,25 @@ ps2_nvr_write(uint16_t port, uint8_t val, void *priv)
 }
 
 
-static void *
+static void
+ps2_nvr_close(priv_t priv)
+{
+    ps2_nvr_t *nvr = (ps2_nvr_t *)priv;
+    FILE *fp;
+
+    fp = plat_fopen(nvr_path(nvr->fn), L"wb");
+    if (fp != NULL) {
+	(void)fwrite(nvr->ram, sizeof(nvr->ram), 1, fp);
+	fclose(fp);
+    }
+
+    free(nvr->fn);
+
+    free(nvr);
+}
+
+
+static priv_t
 ps2_nvr_init(const device_t *info, UNUSED(void *parent))
 {
     char temp[128];
@@ -130,25 +148,7 @@ ps2_nvr_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0074, 3,
 		  ps2_nvr_read,NULL,NULL, ps2_nvr_write,NULL,NULL, nvr);
 
-    return(nvr);
-}
-
-
-static void
-ps2_nvr_close(void *priv)
-{
-    ps2_nvr_t *nvr = (ps2_nvr_t *)priv;
-    FILE *fp;
-
-    fp = plat_fopen(nvr_path(nvr->fn), L"wb");
-    if (fp != NULL) {
-	(void)fwrite(nvr->ram, sizeof(nvr->ram), 1, fp);
-	fclose(fp);
-    }
-
-    free(nvr->fn);
-
-    free(nvr);
+    return((priv_t)nvr);
 }
 
 

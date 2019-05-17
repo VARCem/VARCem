@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.15	2019/05/03
+ * Version:	@(#)vid_tgui9440.c	1.0.16	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -172,10 +172,10 @@ typedef struct tgui_t
         mem_map_t accel_mapping;
 
         rom_t bios_rom;
-        
+
         svga_t svga;
 	int pci;
-        
+
         int type;
 
         struct
@@ -190,17 +190,17 @@ typedef struct tgui_t
         	int command;
         	int offset;
         	uint8_t ger22;
-	
+
         	int x, y;
         	uint32_t src, dst, src_old, dst_old;
         	int pat_x, pat_y;
         	int use_src;
-	
+
         	int pitch, bpp;
 
                 uint16_t tgui_pattern[8][8];
         } accel;
-        
+
         uint8_t ext_gdc_regs[16]; /*TGUI9400CXi only*/
         uint8_t copy_latch[16];
 
@@ -210,12 +210,12 @@ typedef struct tgui_t
         uint8_t oldctrl2,newctrl2;
 
         uint32_t linear_base, linear_size;
-        
+
         int ramdac_state;
         uint8_t ramdac_ctrl;
-        
+
         int clock_m, clock_n, clock_k;
-        
+
         uint32_t vram_size, vram_mask;
 
         fifo_entry_t fifo[FIFO_SIZE];
@@ -224,11 +224,11 @@ typedef struct tgui_t
         thread_t *fifo_thread;
         event_t *wake_fifo_thread;
         event_t *fifo_not_full_event;
-        
+
         int blitter_busy;
         uint64_t blitter_time;
         uint64_t status_time;
-        
+
         volatile int write_blitter;
 } tgui_t;
 
@@ -240,31 +240,31 @@ void tgui_recalcmapping(tgui_t *tgui);
 
 static void fifo_thread(void *param);
 
-uint8_t tgui_accel_read(uint32_t addr, void *priv);
-uint16_t tgui_accel_read_w(uint32_t addr, void *priv);
-uint32_t tgui_accel_read_l(uint32_t addr, void *priv);
+uint8_t tgui_accel_read(uint32_t addr, priv_t);
+uint16_t tgui_accel_read_w(uint32_t addr, priv_t);
+uint32_t tgui_accel_read_l(uint32_t addr, priv_t);
 
-void tgui_accel_write(uint32_t addr, uint8_t val, void *priv);
-void tgui_accel_write_w(uint32_t addr, uint16_t val, void *priv);
-void tgui_accel_write_l(uint32_t addr, uint32_t val, void *priv);
+void tgui_accel_write(uint32_t addr, uint8_t val, priv_t);
+void tgui_accel_write_w(uint32_t addr, uint16_t val, priv_t);
+void tgui_accel_write_l(uint32_t addr, uint32_t val, priv_t);
 
-void tgui_accel_write_fb_b(uint32_t addr, uint8_t val, void *priv);
-void tgui_accel_write_fb_w(uint32_t addr, uint16_t val, void *priv);
-void tgui_accel_write_fb_l(uint32_t addr, uint32_t val, void *priv);
+void tgui_accel_write_fb_b(uint32_t addr, uint8_t val, priv_t);
+void tgui_accel_write_fb_w(uint32_t addr, uint16_t val, priv_t);
+void tgui_accel_write_fb_l(uint32_t addr, uint32_t val, priv_t);
 
-static uint8_t tgui_ext_linear_read(uint32_t addr, void *p);
-static void tgui_ext_linear_write(uint32_t addr, uint8_t val, void *p);
-static void tgui_ext_linear_writew(uint32_t addr, uint16_t val, void *p);
-static void tgui_ext_linear_writel(uint32_t addr, uint32_t val, void *p);
+static uint8_t tgui_ext_linear_read(uint32_t addr, priv_t);
+static void tgui_ext_linear_write(uint32_t addr, uint8_t val, priv_t);
+static void tgui_ext_linear_writew(uint32_t addr, uint16_t val, priv_t);
+static void tgui_ext_linear_writel(uint32_t addr, uint32_t val, priv_t);
 
-static uint8_t tgui_ext_read(uint32_t addr, void *p);
-static void tgui_ext_write(uint32_t addr, uint8_t val, void *p);
-static void tgui_ext_writew(uint32_t addr, uint16_t val, void *p);
-static void tgui_ext_writel(uint32_t addr, uint32_t val, void *p);
+static uint8_t tgui_ext_read(uint32_t addr, priv_t);
+static void tgui_ext_write(uint32_t addr, uint8_t val, priv_t);
+static void tgui_ext_writew(uint32_t addr, uint16_t val, priv_t);
+static void tgui_ext_writel(uint32_t addr, uint32_t val, priv_t);
 
-void tgui_out(uint16_t addr, uint8_t val, void *p)
+void tgui_out(uint16_t addr, uint8_t val, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
         svga_t *svga = &tgui->svga;
 
         uint8_t old;
@@ -452,9 +452,9 @@ void tgui_out(uint16_t addr, uint8_t val, void *p)
         svga_out(addr, val, svga);
 }
 
-uint8_t tgui_in(uint16_t addr, void *p)
+uint8_t tgui_in(uint16_t addr, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
         svga_t *svga = &tgui->svga;
 
         if (((addr&0xFFF0) == 0x3D0 || (addr&0xFFF0) == 0x3B0) && !(svga->miscout & 1)) addr ^= 0x60;
@@ -734,9 +734,9 @@ void tgui_hwcursor_draw(svga_t *svga, int disp_line)
                 svga->hwcursor_latch.addr += 8;
 }
 
-uint8_t tgui_pci_read(int func, int addr, void *p)
+uint8_t tgui_pci_read(int func, int addr, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
 
         switch (addr)
         {
@@ -769,9 +769,9 @@ uint8_t tgui_pci_read(int func, int addr, void *p)
         return 0;
 }
 
-void tgui_pci_write(int func, int addr, uint8_t val, void *p)
+void tgui_pci_write(int func, int addr, uint8_t val, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
         svga_t *svga = &tgui->svga;
 
         switch (addr)
@@ -794,9 +794,9 @@ void tgui_pci_write(int func, int addr, uint8_t val, void *p)
 }
 
 
-static uint8_t tgui_ext_linear_read(uint32_t addr, void *p)
+static uint8_t tgui_ext_linear_read(uint32_t addr, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         tgui_t *tgui = (tgui_t *)svga->p;
         int c;
   
@@ -813,18 +813,18 @@ static uint8_t tgui_ext_linear_read(uint32_t addr, void *p)
         return svga->vram[addr & svga->vram_mask]; 
 }
 
-static uint8_t tgui_ext_read(uint32_t addr, void *p)
+static uint8_t tgui_ext_read(uint32_t addr, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         
         addr = (addr & svga->banked_mask) + svga->read_bank;
         
         return tgui_ext_linear_read(addr, svga);
 }
 
-static void tgui_ext_linear_write(uint32_t addr, uint8_t val, void *p)
+static void tgui_ext_linear_write(uint32_t addr, uint8_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         tgui_t *tgui = (tgui_t *)svga->p;
         int c;
         uint8_t fg[2] = {tgui->ext_gdc_regs[4], tgui->ext_gdc_regs[5]};
@@ -891,9 +891,9 @@ static void tgui_ext_linear_write(uint32_t addr, uint8_t val, void *p)
         }
 }
 
-static void tgui_ext_linear_writew(uint32_t addr, uint16_t val, void *p)
+static void tgui_ext_linear_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         tgui_t *tgui = (tgui_t *)svga->p;
         int c;
         uint8_t fg[2] = {tgui->ext_gdc_regs[4], tgui->ext_gdc_regs[5]};
@@ -961,30 +961,30 @@ static void tgui_ext_linear_writew(uint32_t addr, uint16_t val, void *p)
         }
 }
 
-static void tgui_ext_linear_writel(uint32_t addr, uint32_t val, void *p)
+static void tgui_ext_linear_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
-        tgui_ext_linear_writew(addr, val, p);
+        tgui_ext_linear_writew(addr, val, priv);
 }
 
-static void tgui_ext_write(uint32_t addr, uint8_t val, void *p)
+static void tgui_ext_write(uint32_t addr, uint8_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         
         addr = (addr & svga->banked_mask) + svga->read_bank;
 
         tgui_ext_linear_write(addr, val, svga);
 }
-static void tgui_ext_writew(uint32_t addr, uint16_t val, void *p)
+static void tgui_ext_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         
         addr = (addr & svga->banked_mask) + svga->read_bank;
 
         tgui_ext_linear_writew(addr, val, svga);
 }
-static void tgui_ext_writel(uint32_t addr, uint32_t val, void *p)
+static void tgui_ext_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         
         addr = (addr & svga->banked_mask) + svga->read_bank;
 
@@ -1495,33 +1495,33 @@ static void tgui_queue(tgui_t *tgui, uint32_t addr, uint32_t val, uint32_t type)
 }
 
 
-void tgui_accel_write(uint32_t addr, uint8_t val, void *p)
+void tgui_accel_write(uint32_t addr, uint8_t val, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
 	if ((addr & ~0xff) != 0xbff00)
 		return;
 	tgui_queue(tgui, addr, val, FIFO_WRITE_BYTE);
 }
 
-void tgui_accel_write_w(uint32_t addr, uint16_t val, void *p)
+void tgui_accel_write_w(uint32_t addr, uint16_t val, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
 	tgui_accel_write(addr, val & 0xff, tgui);
 	tgui_accel_write(addr + 1, val >> 8, tgui);
 }
 
-void tgui_accel_write_l(uint32_t addr, uint32_t val, void *p)
+void tgui_accel_write_l(uint32_t addr, uint32_t val, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
 	tgui_accel_write(addr, val, tgui);
 	tgui_accel_write(addr + 1, val >> 8, tgui);
 	tgui_accel_write(addr + 2, val >> 16, tgui);
 	tgui_accel_write(addr + 3, val >> 24, tgui);
 }
 
-uint8_t tgui_accel_read(uint32_t addr, void *p)
+uint8_t tgui_accel_read(uint32_t addr, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
 	if ((addr & ~0xff) != 0xbff00)
 		return 0xff;
 	if ((addr & 0xff) != 0x20)
@@ -1532,10 +1532,10 @@ uint8_t tgui_accel_read(uint32_t addr, void *p)
 		if (!FIFO_EMPTY)
 		      return 1 << 5;
 		return 0;
-		
+
 		case 0x27: /*ROP*/
 		return tgui->accel.rop;
-		
+
 		case 0x28: /*Flags*/
 		return tgui->accel.flags & 0xff;
 		case 0x29: /*Flags*/
@@ -1543,7 +1543,7 @@ uint8_t tgui_accel_read(uint32_t addr, void *p)
 
 		case 0x2b:
 		return tgui->accel.offset;
-		
+
 		case 0x2c: /*Background colour*/
 		return tgui->accel.bg_col & 0xff;
 		case 0x2d: /*Background colour*/
@@ -1580,7 +1580,7 @@ uint8_t tgui_accel_read(uint32_t addr, void *p)
 		return tgui->accel.size_y & 0xff;
 		case 0x43: /*Size Y*/
 		return tgui->accel.size_y >> 8;
-		
+
 		case 0x80: case 0x81: case 0x82: case 0x83:
 		case 0x84: case 0x85: case 0x86: case 0x87:
 		case 0x88: case 0x89: case 0x8a: case 0x8b:
@@ -1618,21 +1618,21 @@ uint8_t tgui_accel_read(uint32_t addr, void *p)
 	return 0xff;
 }
 
-uint16_t tgui_accel_read_w(uint32_t addr, void *p)
+uint16_t tgui_accel_read_w(uint32_t addr, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
 	return tgui_accel_read(addr, tgui) | (tgui_accel_read(addr + 1, tgui) << 8);
 }
 
-uint32_t tgui_accel_read_l(uint32_t addr, void *p)
+uint32_t tgui_accel_read_l(uint32_t addr, priv_t priv)
 {
-        tgui_t *tgui = (tgui_t *)p;
+        tgui_t *tgui = (tgui_t *)priv;
 	return tgui_accel_read_w(addr, tgui) | (tgui_accel_read_w(addr + 2, tgui) << 16);
 }
 
-void tgui_accel_write_fb_b(uint32_t addr, uint8_t val, void *p)
+void tgui_accel_write_fb_b(uint32_t addr, uint8_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         tgui_t *tgui = (tgui_t *)svga->p;
 
         if (tgui->write_blitter)
@@ -1641,9 +1641,9 @@ void tgui_accel_write_fb_b(uint32_t addr, uint8_t val, void *p)
                 svga_write_linear(addr, val, svga);
 }
 
-void tgui_accel_write_fb_w(uint32_t addr, uint16_t val, void *p)
+void tgui_accel_write_fb_w(uint32_t addr, uint16_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         tgui_t *tgui = (tgui_t *)svga->p;
 
         if (tgui->write_blitter)
@@ -1652,9 +1652,9 @@ void tgui_accel_write_fb_w(uint32_t addr, uint16_t val, void *p)
                 svga_writew_linear(addr, val, svga);
 }
 
-void tgui_accel_write_fb_l(uint32_t addr, uint32_t val, void *p)
+void tgui_accel_write_fb_l(uint32_t addr, uint32_t val, priv_t priv)
 {
-        svga_t *svga = (svga_t *)p;
+        svga_t *svga = (svga_t *)priv;
         tgui_t *tgui = (tgui_t *)svga->p;
 
         if (tgui->write_blitter)
@@ -1664,7 +1664,7 @@ void tgui_accel_write_fb_l(uint32_t addr, uint32_t val, void *p)
 }
 
 
-static void *
+static priv_t
 tgui_init(const device_t *info, UNUSED(void *parent))
 {
         tgui_t *tgui = (tgui_t *)mem_alloc(sizeof(tgui_t));
@@ -1674,15 +1674,13 @@ tgui_init(const device_t *info, UNUSED(void *parent))
 
         tgui->vram_size = device_get_config_int("memory") << 20;
         tgui->vram_mask = tgui->vram_size - 1;
-        
+
         rom_init(&tgui->bios_rom, info->path,
 		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
-        svga_init(&tgui->svga, tgui, tgui->vram_size,
-                   tgui_recalctimings,
-                   tgui_in, tgui_out,
-                   tgui_hwcursor_draw,
-                   NULL);
+        svga_init(&tgui->svga, (priv_t)tgui,
+		  tgui->vram_size, tgui_recalctimings,
+		  tgui_in, tgui_out, tgui_hwcursor_draw, NULL);
 
         if (tgui->type == TGUI_9400CXI)
 		tgui->svga.ramdac = device_add(&tkd8001_ramdac_device);
@@ -1704,12 +1702,12 @@ tgui_init(const device_t *info, UNUSED(void *parent))
 
 	video_inform(DEVICE_VIDEO_GET(info->flags), &tgui_timing);
 
-        return tgui;
+        return (priv_t)tgui;
 }
 
 
 static void
-tgui_close(void *priv)
+tgui_close(priv_t priv)
 {
         tgui_t *tgui = (tgui_t *)priv;
         
@@ -1724,7 +1722,7 @@ tgui_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
         tgui_t *tgui = (tgui_t *)priv;
         
@@ -1733,7 +1731,7 @@ speed_changed(void *priv)
 
 
 static void
-force_redraw(void *priv)
+force_redraw(priv_t priv)
 {
         tgui_t *tgui = (tgui_t *)priv;
 

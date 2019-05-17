@@ -8,7 +8,7 @@
  *
  *		Implementation of the Creative CMS/GameBlaster sound device.
  *
- * Version:	@(#)snd_cms.c	1.0.9	2019/04/09
+ * Version:	@(#)snd_cms.c	1.0.10	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -136,7 +136,7 @@ cms_update(cms_t *dev)
 
 
 static void
-get_buffer(int32_t *buffer, int len, void *priv)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     cms_t *dev = (cms_t *)priv;
     int c;
@@ -151,7 +151,7 @@ get_buffer(int32_t *buffer, int len, void *priv)
 
 
 static void
-cms_write(uint16_t addr, uint8_t val, void *priv)
+cms_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     cms_t *dev = (cms_t *)priv;
     int voice;
@@ -209,7 +209,7 @@ cms_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-cms_read(uint16_t addr, void *priv)
+cms_read(uint16_t addr, priv_t priv)
 {
     cms_t *dev = (cms_t *)priv;
     uint8_t ret = 0xff;
@@ -240,7 +240,7 @@ cms_read(uint16_t addr, void *priv)
 }
 
 
-static void *
+static priv_t
 cms_init(const device_t *info, UNUSED(void *parent))
 {
     cms_t *dev;
@@ -249,16 +249,16 @@ cms_init(const device_t *info, UNUSED(void *parent))
     memset(dev, 0x00, sizeof(cms_t));
 
     io_sethandler(0x0220, 16,
-		  cms_read,NULL,NULL, cms_write,NULL,NULL, dev);
+		  cms_read,NULL,NULL, cms_write,NULL,NULL, (priv_t)dev);
 
-    sound_add_handler(get_buffer, dev);
+    sound_add_handler(get_buffer, (priv_t)dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-cms_close(void *priv)
+cms_close(priv_t priv)
 {
     cms_t *dev = (cms_t *)priv;
 

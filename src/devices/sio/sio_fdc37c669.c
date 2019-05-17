@@ -8,7 +8,7 @@
  *
  *		Implementation of the SMC FDC37C669 Super I/O Chip.
  *
- * Version:	@(#)sio_fdc37c669.c	1.0.11	2019/04/09
+ * Version:	@(#)sio_fdc37c669.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,7 +98,7 @@ make_port(fdc37c669_t *dev, uint8_t reg)
 
 
 static void
-fdc37c669_write(uint16_t port, uint8_t val, void *priv)
+fdc37c669_write(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c669_t *dev = (fdc37c669_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -244,7 +244,7 @@ fdc37c669_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-fdc37c669_read(uint16_t port, void *priv)
+fdc37c669_read(uint16_t port, priv_t priv)
 {
     fdc37c669_t *dev = (fdc37c669_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -300,7 +300,7 @@ fdc37c669_reset(fdc37c669_t *dev)
 
 
 static void
-fdc37c669_close(void *priv)
+fdc37c669_close(priv_t priv)
 {
     fdc37c669_t *dev = (fdc37c669_t *)priv;
 
@@ -308,7 +308,7 @@ fdc37c669_close(void *priv)
 }
 
 
-static void *
+static priv_t
 fdc37c669_init(const device_t *info, UNUSED(void *parent))
 {
     fdc37c669_t *dev = (fdc37c669_t *)mem_alloc(sizeof(fdc37c669_t));
@@ -321,7 +321,7 @@ fdc37c669_init(const device_t *info, UNUSED(void *parent))
 
     fdc37c669_reset(dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

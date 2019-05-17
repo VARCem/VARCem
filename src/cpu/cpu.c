@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.13	2019/05/03
+ * Version:	@(#)cpu.c	1.0.14	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -212,6 +212,79 @@ static uint8_t	ccr0, ccr1, ccr2, ccr3, ccr4, ccr5, ccr6;
 static int	cyrix_addr;
 
 
+static void
+cyrix_write(uint16_t addr, uint8_t val, priv_t priv)
+{
+    if (addr & 1) switch (cyrix_addr) {
+	case 0xc0: /*CCR0*/
+		ccr0 = val;
+		break;
+
+	case 0xc1: /*CCR1*/
+		ccr1 = val;
+		break;
+
+	case 0xc2: /*CCR2*/
+		ccr2 = val;
+		break;
+
+	case 0xc3: /*CCR3*/
+		ccr3 = val;
+		break;
+
+	case 0xe8: /*CCR4*/
+		if ((ccr3 & 0xf0) == 0x10) {
+			ccr4 = val;
+			if (cpu->type >= CPU_Cx6x86) {
+				if (val & 0x80)
+					CPUID = cpu->cpuid_model;
+				else
+					CPUID = 0;
+			}
+		}
+		break;
+
+	case 0xe9: /*CCR5*/
+		if ((ccr3 & 0xf0) == 0x10)
+			ccr5 = val;
+		break;
+
+	case 0xea: /*CCR6*/
+		if ((ccr3 & 0xf0) == 0x10)
+			ccr6 = val;
+		break;
+    } else
+	cyrix_addr = val;
+}
+
+
+static uint8_t
+cyrix_read(uint16_t addr, priv_t priv)
+{
+    if (addr & 1) {
+	switch (cyrix_addr) {
+		case 0xc0: return ccr0;
+		case 0xc1: return ccr1;
+		case 0xc2: return ccr2;
+		case 0xc3: return ccr3;
+		case 0xe8: return ((ccr3 & 0xf0) == 0x10) ? ccr4 : 0xff;
+		case 0xe9: return ((ccr3 & 0xf0) == 0x10) ? ccr5 : 0xff;
+		case 0xea: return ((ccr3 & 0xf0) == 0x10) ? ccr6 : 0xff;
+		case 0xfe: return cpu->cyrix_id & 0xff;
+		case 0xff: return cpu->cyrix_id >> 8;
+	}
+
+	if ((cyrix_addr & 0xf0) == 0xc0)
+		return 0xff;
+
+	if (cyrix_addr == 0x20 && cpu->type == CPU_Cx5x86)
+		return 0xff;
+    }
+
+    return 0xff;
+}
+
+
 /*
  * Actually do the 'setup' work.
  *
@@ -282,8 +355,8 @@ cpu_activate(void)
     pci_set_speed(cpu->fsb_speed);
 
     if (is_cyrix)
-	 io_sethandler(0x0022, 2,
-		       cyrix_read,NULL,NULL, cyrix_write,NULL,NULL, NULL);
+	io_sethandler(0x0022, 2,
+		      cyrix_read,NULL,NULL, cyrix_write,NULL,NULL, NULL);
     else
 	io_removehandler(0x0022, 2,
 			 cyrix_read,NULL,NULL, cyrix_write,NULL,NULL, NULL);
@@ -2231,79 +2304,6 @@ i686_invalid_wrmsr:
 		}
 		break;
     }
-}
-
-
-void
-cyrix_write(uint16_t addr, uint8_t val, void *priv)
-{
-    if (addr & 1) switch (cyrix_addr) {
-	case 0xc0: /*CCR0*/
-		ccr0 = val;
-		break;
-
-	case 0xc1: /*CCR1*/
-		ccr1 = val;
-		break;
-
-	case 0xc2: /*CCR2*/
-		ccr2 = val;
-		break;
-
-	case 0xc3: /*CCR3*/
-		ccr3 = val;
-		break;
-
-	case 0xe8: /*CCR4*/
-		if ((ccr3 & 0xf0) == 0x10) {
-			ccr4 = val;
-			if (cpu->type >= CPU_Cx6x86) {
-				if (val & 0x80)
-					CPUID = cpu->cpuid_model;
-				else
-					CPUID = 0;
-			}
-		}
-		break;
-
-	case 0xe9: /*CCR5*/
-		if ((ccr3 & 0xf0) == 0x10)
-			ccr5 = val;
-		break;
-
-	case 0xea: /*CCR6*/
-		if ((ccr3 & 0xf0) == 0x10)
-			ccr6 = val;
-		break;
-    } else
-	cyrix_addr = val;
-}
-
-
-uint8_t
-cyrix_read(uint16_t addr, void *priv)
-{
-    if (addr & 1) {
-	switch (cyrix_addr) {
-		case 0xc0: return ccr0;
-		case 0xc1: return ccr1;
-		case 0xc2: return ccr2;
-		case 0xc3: return ccr3;
-		case 0xe8: return ((ccr3 & 0xf0) == 0x10) ? ccr4 : 0xff;
-		case 0xe9: return ((ccr3 & 0xf0) == 0x10) ? ccr5 : 0xff;
-		case 0xea: return ((ccr3 & 0xf0) == 0x10) ? ccr6 : 0xff;
-		case 0xfe: return cpu->cyrix_id & 0xff;
-		case 0xff: return cpu->cyrix_id >> 8;
-	}
-
-	if ((cyrix_addr & 0xf0) == 0xc0)
-		return 0xff;
-
-	if (cyrix_addr == 0x20 && cpu->type == CPU_Cx5x86)
-		return 0xff;
-    }
-
-    return 0xff;
 }
 
 

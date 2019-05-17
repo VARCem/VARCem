@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy1000.c	1.0.22	2019/04/26
+ * Version:	@(#)m_tandy1000.c	1.0.23	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -653,7 +653,7 @@ snd_update_irq(t1ksnd_t *dev)
 
 
 static void
-snd_write(uint16_t port, uint8_t val, void *priv)
+snd_write(uint16_t port, uint8_t val, priv_t priv)
 {
     t1ksnd_t *dev = (t1ksnd_t *)priv;
 
@@ -693,7 +693,7 @@ snd_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-snd_read(uint16_t port, void *priv)
+snd_read(uint16_t port, priv_t priv)
 {
     t1ksnd_t *dev = (t1ksnd_t *)priv;
     uint8_t ret = 0xff;
@@ -749,7 +749,7 @@ snd_update(t1ksnd_t *dev)
 
 
 static void
-snd_callback(void *priv)
+snd_callback(priv_t priv)
 {
     t1ksnd_t *dev = (t1ksnd_t *)priv;
     int data;
@@ -803,7 +803,7 @@ snd_callback(void *priv)
 
 
 static void
-snd_get_buffer(int32_t *bufp, int len, void *priv)
+snd_get_buffer(int32_t *bufp, int len, priv_t priv)
 {
     t1ksnd_t *dev = (t1ksnd_t *)priv;
     int c;
@@ -817,7 +817,7 @@ snd_get_buffer(int32_t *bufp, int len, void *priv)
 }
 
 
-static void *
+static priv_t
 snd_init(const device_t *info, UNUSED(void *parent))
 {
     t1ksnd_t *dev;
@@ -834,12 +834,12 @@ snd_init(const device_t *info, UNUSED(void *parent))
 
     sound_add_handler(snd_get_buffer, dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-snd_close(void *priv)
+snd_close(priv_t priv)
 {
     t1ksnd_t *dev = (t1ksnd_t *)priv;
 
@@ -858,7 +858,7 @@ static const device_t snd_device = {
 
 
 static void
-eep_write(uint16_t addr, uint8_t val, void *priv)
+eep_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     t1keep_t *dev = (t1keep_t *)priv;
 
@@ -932,7 +932,25 @@ eep_write(uint16_t addr, uint8_t val, void *priv)
 }
 
 
-static void *
+static void
+eep_close(priv_t priv)
+{
+    t1keep_t *dev = (t1keep_t *)priv;
+    FILE *fp;
+
+    fp = plat_fopen(nvr_path(dev->fn), L"wb");
+    if (fp != NULL) {
+	(void)fwrite(dev->store, sizeof(dev->store), 1, fp);
+	(void)fclose(fp);
+    }
+
+    free(dev->fn);
+
+    free(dev);
+}
+
+
+static priv_t
 eep_init(const device_t *info, UNUSED(void *parent))
 {
     char temp[128];
@@ -957,31 +975,13 @@ eep_init(const device_t *info, UNUSED(void *parent))
 
     io_sethandler(0x037c, 1, NULL,NULL,NULL, eep_write,NULL,NULL, dev);
 
-    return(dev);
-}
-
-
-static void
-eep_close(void *priv)
-{
-    t1keep_t *dev = (t1keep_t *)priv;
-    FILE *fp;
-
-    fp = plat_fopen(nvr_path(dev->fn), L"wb");
-    if (fp != NULL) {
-	(void)fwrite(dev->store, sizeof(dev->store), 1, fp);
-	(void)fclose(fp);
-    }
-
-    free(dev->fn);
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 
 /* Called by the keyboard driver to read the next bit. */
 static uint8_t
-eep_readbit(void *priv)
+eep_readbit(priv_t priv)
 {
     t1keep_t *dev = (t1keep_t *)priv;
 
@@ -999,7 +999,7 @@ static const device_t eep_device = {
 
 
 static void
-tandy_write(uint16_t addr, uint8_t val, void *priv)
+tandy_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     tandy_t *dev = (tandy_t *)priv;
 
@@ -1031,7 +1031,7 @@ tandy_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-tandy_read(uint16_t addr, void *priv)
+tandy_read(uint16_t addr, priv_t priv)
 {
     tandy_t *dev = (tandy_t *)priv;
     uint8_t ret = 0xff;
@@ -1055,7 +1055,7 @@ tandy_read(uint16_t addr, void *priv)
 
 
 static void
-write_ram(uint32_t addr, uint8_t val, void *priv)
+write_ram(uint32_t addr, uint8_t val, priv_t priv)
 {
     tandy_t *dev = (tandy_t *)priv;
 
@@ -1064,7 +1064,7 @@ write_ram(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-read_ram(uint32_t addr, void *priv)
+read_ram(uint32_t addr, priv_t priv)
 {
     tandy_t *dev = (tandy_t *)priv;
 
@@ -1073,7 +1073,7 @@ read_ram(uint32_t addr, void *priv)
 
 
 static uint8_t
-read_rom(uint32_t addr, void *priv)
+read_rom(uint32_t addr, priv_t priv)
 {
     tandy_t *dev = (tandy_t *)priv;
     uint32_t addr2 = (addr & 0xffff) + dev->rom_offset;
@@ -1083,7 +1083,7 @@ read_rom(uint32_t addr, void *priv)
 
 
 static uint16_t
-read_romw(uint32_t addr, void *priv)
+read_romw(uint32_t addr, priv_t priv)
 {
     tandy_t *dev = (tandy_t *)priv;
     uint32_t addr2 = (addr & 0xffff) + dev->rom_offset;
@@ -1093,7 +1093,7 @@ read_romw(uint32_t addr, void *priv)
 
 
 static uint32_t
-read_roml(uint32_t addr, void *priv)
+read_roml(uint32_t addr, priv_t priv)
 {
     tandy_t *dev = (tandy_t *)priv;
 
@@ -1147,11 +1147,23 @@ init_romdos(tandy_t *dev, romdef_t *roms)
 }
 
 
-static void *
+static void
+tandy_close(priv_t priv)
+{
+    tandy_t *dev = (tandy_t *)priv;
+
+    if (dev->rom != NULL)
+	free(dev->rom);
+
+    free(dev);
+}
+
+
+static priv_t
 tandy_init(const device_t *info, void *arg)
 {
     romdef_t *roms = (romdef_t *)arg;
-    void *eep = NULL, *kbd;
+    priv_t eep = NULL, kbd;
     tandy_t *dev;
 
     dev = (tandy_t *)mem_alloc(sizeof(tandy_t));
@@ -1159,7 +1171,7 @@ tandy_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     dev->display_type = machine_get_config_int("display_type");
 
@@ -1210,19 +1222,7 @@ tandy_init(const device_t *info, void *arg)
     /* Set the callback function for the keyboard controller. */
     keyboard_xt_set_funcs(kbd, eep_readbit, eep);
 
-    return(dev);
-}
-
-
-static void
-tandy_close(void *priv)
-{
-    tandy_t *dev = (tandy_t *)priv;
-
-    if (dev->rom != NULL)
-	free(dev->rom);
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

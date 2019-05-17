@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496/497 based machines.
  *
- * Version:	@(#)m_sis49x.c	1.0.11	2019/04/08
+ * Version:	@(#)m_sis49x.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,11 +57,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Add machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     switch(info->local) {
 	case 0:		/* Generic SiS496 */
@@ -78,7 +78,7 @@ common_init(const device_t *info, void *arg)
 		pci_set_irq_routing(PCI_INTC, PCI_IRQ_DISABLED);
 		pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 
-		memregs_init();
+		device_add(&memregs_device);
 /////////
 		device_add(&sis_85c496_device);
 		m_at_common_ide_init();
@@ -99,7 +99,7 @@ common_init(const device_t *info, void *arg)
 		pci_set_irq_routing(PCI_INTC, PCI_IRQ_DISABLED);
 		pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 
-		memregs_init();
+		device_add(&memregs_device);
 
 		device_add(&sis_85c496_device);
 		m_at_common_init();
@@ -108,7 +108,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&fdc37c665_device);
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

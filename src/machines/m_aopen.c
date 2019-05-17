@@ -8,7 +8,7 @@
  *
  *		Implementation of various A/Open mainboards.
  *
- * Version:	@(#)m_aopen.c	1.0.1	2019/04/08
+ * Version:	@(#)m_aopen.c	1.0.2	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,11 +63,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Allocate machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     switch(info->local) {
 	/* AP53: AOpen AP53/430HX/AMI/SMC FDC37C665/669 */
@@ -81,8 +81,8 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 		pci_register_slot(0x06, PCI_CARD_ONBOARD, 1, 2, 3, 4);
 
-		memregs_init();
-		powermate_memregs_init();
+		device_add(&memregs_device);
+		device_add(&memregs_powermate_device);
 
 		device_add(&i430hx_device);
 		device_add(&piix3_device);
@@ -96,7 +96,7 @@ common_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.13	2019/04/25
+ * Version:	@(#)snd_gus.c	1.0.14	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -238,7 +238,7 @@ midi_update_int_status(gus_t *dev)
 
 
 static void
-gus_write(uint16_t addr, uint8_t val, void *priv)
+gus_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
@@ -688,7 +688,7 @@ gus_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-gus_read(uint16_t addr, void *priv)
+gus_read(uint16_t addr, priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
     uint8_t val = 0xff;
@@ -907,7 +907,7 @@ gus_read(uint16_t addr, void *priv)
 
 
 static void
-poll_timer_1(void *priv)
+poll_timer_1(priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
 
@@ -939,7 +939,7 @@ poll_timer_1(void *priv)
 
 
 static void
-poll_timer_2(void *priv)
+poll_timer_2(priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
 
@@ -989,7 +989,7 @@ gus_update(gus_t *dev)
 
 
 static void
-poll_wave(void *priv)
+poll_wave(priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
     uint32_t addr;
@@ -1127,7 +1127,7 @@ poll_wave(void *priv)
 
 
 static void
-get_buffer(int32_t *buffer, int len, void *priv)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
     int c;
@@ -1155,7 +1155,7 @@ get_buffer(int32_t *buffer, int len, void *priv)
 }
 
 
-static void *
+static priv_t
 gus_init(const device_t *info, UNUSED(void *parent))
 {
     gus_t *dev;
@@ -1221,18 +1221,18 @@ gus_init(const device_t *info, UNUSED(void *parent))
 #endif
     }
 
-    timer_add(poll_wave, dev, &dev->samp_timer, TIMER_ALWAYS_ENABLED);
-    timer_add(poll_timer_1, dev, &dev->timer_1, TIMER_ALWAYS_ENABLED);
-    timer_add(poll_timer_2, dev, &dev->timer_2, TIMER_ALWAYS_ENABLED);
+    timer_add(poll_wave, (priv_t)dev, &dev->samp_timer, TIMER_ALWAYS_ENABLED);
+    timer_add(poll_timer_1, (priv_t)dev, &dev->timer_1, TIMER_ALWAYS_ENABLED);
+    timer_add(poll_timer_2, (priv_t)dev, &dev->timer_2, TIMER_ALWAYS_ENABLED);
 
-    sound_add_handler(get_buffer, dev);
+    sound_add_handler(get_buffer, (priv_t)dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-gus_close(void *priv)
+gus_close(priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
 
@@ -1244,7 +1244,7 @@ gus_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
 

@@ -121,7 +121,7 @@
  *                       bit 2 set for single-pixel LCD font
  *                       bits 0,1 for display font
  *
- * Version:	@(#)m_t3100e.c	1.0.12	2019/04/10
+ * Version:	@(#)m_t3100e.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -193,7 +193,7 @@ typedef struct {
 } t3100e_t;
 
 
-static void	ems_out(uint16_t addr, uint8_t val, void *priv);
+static void	ems_out(uint16_t, uint8_t, priv_t);
 
 
 /* Given a memory address (which ought to be in the page frame at 0xD0000), 
@@ -378,7 +378,7 @@ map_ram(t3100e_t *dev, uint8_t val)
 
 
 static uint8_t
-sys_in(uint16_t addr, void *priv)
+sys_in(uint16_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -393,7 +393,7 @@ sys_in(uint16_t addr, void *priv)
 
 /* Handle writes to the T3100e system control port at 0x8084 */
 static void
-sys_out(uint16_t addr, uint8_t val, void *priv)
+sys_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -419,7 +419,7 @@ sys_out(uint16_t addr, uint8_t val, void *priv)
 
 /* Read EMS page register */
 static uint8_t
-ems_in(uint16_t addr, void *priv)
+ems_in(uint16_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -430,7 +430,7 @@ ems_in(uint16_t addr, void *priv)
 
 /* Write EMS page register */
 static void
-ems_out(uint16_t addr, uint8_t val, void *priv)
+ems_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     int pg = port_to_page(addr);
@@ -455,7 +455,7 @@ ems_out(uint16_t addr, uint8_t val, void *priv)
 
 /* Read RAM in the EMS page frame. */
 static uint8_t
-ems_read(uint32_t addr, void *priv)
+ems_read(uint32_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     int pg = addr_to_page(addr);
@@ -469,7 +469,7 @@ ems_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-ems_readw(uint32_t addr, void *priv)
+ems_readw(uint32_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     int pg = addr_to_page(addr);
@@ -485,7 +485,7 @@ ems_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-ems_readl(uint32_t addr, void *priv)
+ems_readl(uint32_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     int pg = addr_to_page(addr);
@@ -500,7 +500,7 @@ ems_readl(uint32_t addr, void *priv)
 
 /* Write RAM in the EMS page frame. */
 static void
-ems_write(uint32_t addr, uint8_t val, void *priv)
+ems_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     int pg = addr_to_page(addr);
@@ -513,7 +513,7 @@ ems_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-ems_writew(uint32_t addr, uint16_t val, void *priv)
+ems_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     int pg = addr_to_page(addr);
@@ -529,7 +529,7 @@ ems_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-ems_writel(uint32_t addr, uint32_t val, void *priv)
+ems_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     int pg = addr_to_page(addr);
@@ -544,7 +544,7 @@ ems_writel(uint32_t addr, uint32_t val, void *priv)
 /* Read RAM in the upper area. This is basically what the 'remapped'
  * mapping in mem.c does, except that the upper area can move around */
 static uint8_t
-upper_read(uint32_t addr, void *priv)
+upper_read(uint32_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -555,7 +555,7 @@ upper_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-upper_readw(uint32_t addr, void *priv)
+upper_readw(uint32_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -566,7 +566,7 @@ upper_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-upper_readl(uint32_t addr, void *priv)
+upper_readl(uint32_t addr, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -577,7 +577,7 @@ upper_readl(uint32_t addr, void *priv)
 
 
 static void
-upper_write(uint32_t addr, uint8_t val, void *priv)
+upper_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -587,7 +587,7 @@ upper_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-upper_writew(uint32_t addr, uint16_t val, void *priv)
+upper_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -597,7 +597,7 @@ upper_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-upper_writel(uint32_t addr, uint32_t val, void *priv)
+upper_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -607,7 +607,7 @@ upper_writel(uint32_t addr, uint32_t val, void *priv)
 
 
 static uint8_t
-kbd_get(void *priv)
+kbd_get(priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -616,7 +616,7 @@ kbd_get(void *priv)
 
 
 static void
-kbd_set(void *priv, uint8_t value)
+kbd_set(priv_t priv, uint8_t value)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -625,7 +625,7 @@ kbd_set(void *priv, uint8_t value)
 
 
 static void
-t3100e_close(void *priv)
+t3100e_close(priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -633,7 +633,7 @@ t3100e_close(void *priv)
 }
 
 
-static void *
+static priv_t
 t3100e_init(const device_t *info, void *arg)
 {
     t3100e_t *dev;
@@ -644,7 +644,7 @@ t3100e_init(const device_t *info, void *arg)
     memset(dev, 0x00, sizeof(t3100e_t));
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     m_at_common_ide_init();
 
@@ -686,7 +686,7 @@ t3100e_init(const device_t *info, void *arg)
 
     device_add(&t3100e_vid_device);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
@@ -721,7 +721,7 @@ const device_t m_tosh_3100e = {
  *  Bit 0: Set if the F2HD jumper is present (internal floppy is 720k)
  */
 uint8_t
-t3100e_config_get(void *priv)
+t3100e_config_get(priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
     uint8_t ret = 0x28;			/* start with bits 5 and 3 set */
@@ -792,7 +792,7 @@ t3100e_config_get(void *priv)
 
 
 void
-t3100e_notify_set(void *priv, uint8_t val)
+t3100e_notify_set(priv_t priv, uint8_t val)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -801,7 +801,7 @@ t3100e_notify_set(void *priv, uint8_t val)
 
 
 void
-t3100e_mono_set(void *priv, uint8_t val)
+t3100e_mono_set(priv_t priv, uint8_t val)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -810,7 +810,7 @@ t3100e_mono_set(void *priv, uint8_t val)
 
 
 uint8_t
-t3100e_mono_get(void *priv)
+t3100e_mono_get(priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -819,7 +819,7 @@ t3100e_mono_get(void *priv)
 
 
 void
-t3100e_turbo_set(void *priv, uint8_t val)
+t3100e_turbo_set(priv_t priv, uint8_t val)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 

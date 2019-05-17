@@ -8,7 +8,7 @@
  *
  *		Implementation of the C&T 82C235 ("SCAT") based machines.
  *
- * Version:	@(#)m_scat.c	1.0.16	2019/04/08
+ * Version:	@(#)m_scat.c	1.0.17	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -54,11 +54,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Add machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     switch(info->local) {
 	case 0:		/* Generic Award SCAT */
@@ -91,7 +91,7 @@ common_init(const device_t *info, void *arg)
 
     device_add(&fdc_at_device);
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85C50x PCI chips.
  *
- * Version:	@(#)sis50x.c	1.0.6	2019/04/08
+ * Version:	@(#)sis50x.c	1.0.7	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -106,7 +106,7 @@ static void
 
 
 static void
-85c501_write(int func, int addr, uint8_t val, void *p)
+85c501_write(int func, int addr, uint8_t val, priv_t priv)
 {
     if (func)
 	   return;
@@ -149,7 +149,7 @@ static void
 
 
 static uint8_t
-85c501_read(int func, int addr, void *p)
+85c501_read(int func, int addr, priv_t priv)
 {
     if (func)
 	return 0xff;
@@ -202,7 +202,7 @@ static void
 
 
 static void
-85c503_write(int func, int addr, uint8_t val, void *p)
+85c503_write(int func, int addr, uint8_t val, priv_t priv)
 {
     if (func > 0)
 	return;
@@ -271,7 +271,7 @@ static void
 
 
 static uint8_t
-85c503_read(int func, int addr, void *p)
+85c503_read(int func, int addr, priv_t priv)
 {
     if (func > 0)
 	return 0xff;
@@ -317,7 +317,6 @@ static void
     trc_init();
 
     port_92_reset();
-
     port_92_add();
 
     pci_reset_handler.pci_set_reset = 85c503_reset;
@@ -325,7 +324,7 @@ static void
 
 
 static void
-85c50x_isa_write(uint16_t port, uint8_t val, void *priv)
+85c50x_isa_write(uint16_t port, uint8_t val, priv_t priv)
 {
     if (port & 1) {
 	if (85c50x_isa.reg <= 0x0b)
@@ -336,7 +335,7 @@ static void
 
 
 static uint8_t
-85c50x_isa_read(uint16_t port, void *priv)
+85c50x_isa_read(uint16_t port, priv_t priv)
 {
     if (port & 1) {
 	if (85c50x_isa.reg <= 0x0b)

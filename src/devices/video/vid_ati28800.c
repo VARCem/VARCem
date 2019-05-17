@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.21	2019/05/05
+ * Version:	@(#)vid_ati28800.c	1.0.22	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -102,7 +102,7 @@ typedef struct {
 
 
 static void
-ati28800_out(uint16_t port, uint8_t val, void *priv)
+ati28800_out(uint16_t port, uint8_t val, priv_t priv)
 {
     ati28800_t *dev = (ati28800_t *)priv;
     svga_t *svga = &dev->svga;
@@ -187,7 +187,7 @@ ati28800_out(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-ati28800k_out(uint16_t port, uint8_t val, void *priv)
+ati28800k_out(uint16_t port, uint8_t val, priv_t priv)
 {
     ati28800_t *dev = (ati28800_t *)priv;
     svga_t *svga = &dev->svga;
@@ -250,7 +250,7 @@ ati28800k_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-ati28800_in(uint16_t port, void *priv)
+ati28800_in(uint16_t port, priv_t priv)
 {
     ati28800_t *dev = (ati28800_t *)priv;
     svga_t *svga = &dev->svga;
@@ -323,7 +323,7 @@ ati28800_in(uint16_t port, void *priv)
 
 
 static uint8_t
-ati28800k_in(uint16_t port, void *priv)
+ati28800k_in(uint16_t port, priv_t priv)
 {
     ati28800_t *dev = (ati28800_t *)priv;
     svga_t *svga = &dev->svga;
@@ -482,7 +482,7 @@ ati28800k_load_font(svga_t *svga, const wchar_t *fn)
 }
 
 
-static void *
+static priv_t
 ati28800_init(const device_t *info, UNUSED(void *parent))
 {
     ati28800_t *dev;
@@ -542,7 +542,7 @@ ati28800_init(const device_t *info, UNUSED(void *parent))
     }
 
     if (info->local == VID_ATIKOREANVGA) {
-	svga_init(&dev->svga, dev, dev->memory << 10, /*default: 512KB*/
+	svga_init(&dev->svga, (priv_t)dev, dev->memory << 10, /*default: 512KB*/
 		  ati28800k_recalctimings,
 		  ati28800k_in, ati28800k_out, NULL, NULL);
 	dev->svga.ksc5601_sbyte_mask = 0;
@@ -550,21 +550,21 @@ ati28800_init(const device_t *info, UNUSED(void *parent))
 	dev->svga.ramdac = device_add(&sc1502x_ramdac_device);
 
 	io_sethandler(0x01ce, 2,
-		      ati28800k_in,NULL,NULL, ati28800k_out,NULL,NULL, dev);
+		      ati28800k_in,NULL,NULL, ati28800k_out,NULL,NULL, (priv_t)dev);
 	io_sethandler(0x03c0, 32,
-		      ati28800k_in,NULL,NULL, ati28800k_out,NULL,NULL, dev);
+		      ati28800k_in,NULL,NULL, ati28800k_out,NULL,NULL, (priv_t)dev);
 
     } else {
-	svga_init(&dev->svga, dev, dev->memory << 10, /*default: 512kb*/
+	svga_init(&dev->svga, (priv_t)dev, dev->memory << 10, /*default: 512kb*/
 		  ati28800_recalctimings,
 		  ati28800_in, ati28800_out, NULL, NULL);
 
 	dev->svga.ramdac = device_add(&sc1502x_ramdac_device);
 
 	io_sethandler(0x01ce, 2,
-		      ati28800_in,NULL,NULL, ati28800_out,NULL,NULL, dev);
+		      ati28800_in,NULL,NULL, ati28800_out,NULL,NULL, (priv_t)dev);
 	io_sethandler(0x03c0, 32,
-		      ati28800_in,NULL,NULL, ati28800_out,NULL,NULL, dev);
+		      ati28800_in,NULL,NULL, ati28800_out,NULL,NULL, (priv_t)dev);
     }
 
     dev->svga.miscout = 1;
@@ -580,12 +580,12 @@ ati28800_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-ati28800_close(void *priv)
+ati28800_close(priv_t priv)
 {
     ati28800_t *dev = (ati28800_t *)priv;
 
@@ -620,7 +620,7 @@ ati28800_wonderxl24_available(void)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     ati28800_t *dev = (ati28800_t *)priv;
 
@@ -629,7 +629,7 @@ speed_changed(void *priv)
 
 
 static void
-force_redraw(void *priv)
+force_redraw(priv_t priv)
 {
     ati28800_t *dev = (ati28800_t *)priv;
 

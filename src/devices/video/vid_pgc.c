@@ -44,7 +44,7 @@
  *
  *		This is expected to be done shortly.
  *
- * Version:	@(#)vid_pgc.c	1.0.5	2019/04/25
+ * Version:	@(#)vid_pgc.c	1.0.6	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -99,6 +99,8 @@
 #define WAKE_DELAY	(TIMER_USEC * 500)
 
 
+static const video_timings_t pgc_timings = { VID_ISA,8,16,32,8,16,32 };
+
 static const char *pgc_err_msgs[] = {
     "Range   \r",
     "Integer \r",
@@ -120,7 +122,7 @@ static const uint32_t init_palette[6][256] = {
 };
 
 
-static inline int
+static __inline int
 is_whitespace(char ch)
 {
     return (ch != 0 && strchr(" \r\n\t,;()+-", ch) != NULL);
@@ -2083,172 +2085,6 @@ pgc_recalctimings(pgc_t *dev)
 }
 
 
-/* Write to CGA registers are copied into the transfer memory buffer. */
-void
-pgc_out(uint16_t addr, uint8_t val, void *priv)
-{
-    pgc_t *dev = (pgc_t *)priv;
-
-    DEBUG("PGC: out(%04x, %02x)\n", addr, val);
-
-    switch(addr) {
-	case 0x03d0:	/* CRTC Index register */
-	case 0x03d2:
-	case 0x03d4:
-	case 0x03d6:
-		dev->mapram[0x03d0] = val;
-		break;
-
-	case 0x03d1:	/* CRTC Data register */
-	case 0x03d3:
-	case 0x03d5:
-	case 0x03d7:
-		/* We store the CRTC registers in RAM at offset 0x03e0. */
-		if (dev->mapram[0x03d0] <= 15)
-			dev->mapram[0x03e0 + dev->mapram[0x03d0]] = val; 
-		break;
-
-	case 0x03d8:	/* CRTC Mode Control register */
-		dev->mapram[0x03d8] = val;
-		break;
-
-	case 0x03d9:	/* CRTC Color Select register */
-		dev->mapram[0x03d9] = val;
-		break;
-    }
-}
-
-
-/* Read back the CGA registers. */
-uint8_t
-pgc_in(uint16_t addr, void *priv)
-{
-    pgc_t *dev = (pgc_t *)priv;
-    uint8_t ret = 0xff;
-
-    switch(addr) {
-	case 0x03d0:	/* CRTC Index register */
-	case 0x03d2:
-	case 0x03d4:
-	case 0x03d6:
-		ret = dev->mapram[0x03d0];
-		break;
-
-	case 0x03d1:	/* CRTC Data register */
-	case 0x03d3:
-	case 0x03d5:
-	case 0x03d7:
-		/* We store the CRTC registers in RAM at offset 0x03e0. */
-		if (dev->mapram[0x03d0] <= 15)
-			ret = dev->mapram[0x03e0 + dev->mapram[0x03d0]];
-		break;
-
-	case 0x03d8:	/* CRTC Mode Control register */
-		ret = dev->mapram[0x03d8];
-		break;
-
-	case 0x03d9:	/* CRTC Color Select register */
-		ret = dev->mapram[0x03d9];
-		break;
-
-	case 0x03da:	/* CRTC Status register */
-		ret = dev->mapram[0x03da];
-		break;
-    }
-
-    DEBUG("PGC: in(%04x) = %02x\n", addr, ret);
-
-    return ret;
-}
-
-
-/* Memory write to the transfer buffer. */
-void
-pgc_write(uint32_t addr, uint8_t val, void *priv)
-{
-    pgc_t *dev = (pgc_t *)priv;
-
-    /*
-     * It seems variable whether the PGC maps 1K or 2K at 0xc6000. 
-     *
-     * Map 2K here in case a clone requires it.
-     */
-    if (addr >= 0xc6000 && addr < 0xc6800) {
-	addr &= 0x7ff;
-
-	/* If one of the FIFOs has been updated, this may cause
-	 * the drawing thread to be woken */
-
-	if (dev->mapram[addr] != val) {
-		dev->mapram[addr] = val;
-
-		switch (addr) {
-			case 0x300:	/* input write pointer */
-				if (dev->waiting_input_fifo &&
-				    dev->mapram[0x300] != dev->mapram[0x301]) {
-					dev->waiting_input_fifo = 0;
-					pgc_wake(dev);
-				}
-				break;
-
-			case 0x303:	/* output read pointer */
-				if (dev->waiting_output_fifo &&
-				    dev->mapram[0x302] != (uint8_t)(dev->mapram[0x303] - 1)) {
-					dev->waiting_output_fifo = 0;
-					pgc_wake(dev);
-				}
-				break;
-			
-			case 0x305:	/* error read pointer */
-				if (dev->waiting_error_fifo &&
-				    dev->mapram[0x304] != (uint8_t)(dev->mapram[0x305] - 1)) {
-					dev->waiting_error_fifo = 0;
-					pgc_wake(dev);
-				}
-				break;
-
-			case 0x306:	/* cold start flag */
-				/* XXX This should be in IM-1024 specific code */
-				dev->mapram[0x306] = 0;
-				break;
-
-			case 0x30c:	/* display type */
-				pgc_setdisplay(priv, dev->mapram[0x30c]);
-				dev->mapram[0x30d] = dev->mapram[0x30c];
-				break;
-
-			case 0x3ff:	/* reboot the PGC */
-				pgc_wake(dev);
-				break;
-		}
-	}
-    }
-
-    if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
-	addr &= 0x3fff;
-	dev->cga_vram[addr] = val;
-    }
-}
-
-
-uint8_t
-pgc_read(uint32_t addr, void *priv)
-{
-    pgc_t *dev = (pgc_t *)priv;
-    uint8_t ret = 0xff;
-
-    if (addr >= 0xc6000 && addr < 0xc6800) {
-	addr &= 0x7ff;
-	ret = dev->mapram[addr];
-    } else if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
-	addr &= 0x3fff;
-	ret = dev->cga_vram[addr];
-    }
-
-    return ret;
-}
-
-
 /* Draw the display in CGA (640x400) text mode. */
 void
 pgc_cga_text(pgc_t *dev, int w)
@@ -2447,7 +2283,7 @@ pgc_cga_poll(pgc_t *dev)
 
 /* Draw the screen in CGA or native mode. */
 void
-pgc_poll(void *priv)
+pgc_poll(priv_t priv)
 {
     pgc_t *dev = (pgc_t *)priv;
     uint32_t x, y;
@@ -2519,8 +2355,174 @@ pgc_poll(void *priv)
 }
 
 
+/* Write to CGA registers are copied into the transfer memory buffer. */
 void
-pgc_speed_changed(void *priv)
+pgc_out(uint16_t addr, uint8_t val, priv_t priv)
+{
+    pgc_t *dev = (pgc_t *)priv;
+
+    DEBUG("PGC: out(%04x, %02x)\n", addr, val);
+
+    switch(addr) {
+	case 0x03d0:	/* CRTC Index register */
+	case 0x03d2:
+	case 0x03d4:
+	case 0x03d6:
+		dev->mapram[0x03d0] = val;
+		break;
+
+	case 0x03d1:	/* CRTC Data register */
+	case 0x03d3:
+	case 0x03d5:
+	case 0x03d7:
+		/* We store the CRTC registers in RAM at offset 0x03e0. */
+		if (dev->mapram[0x03d0] <= 15)
+			dev->mapram[0x03e0 + dev->mapram[0x03d0]] = val; 
+		break;
+
+	case 0x03d8:	/* CRTC Mode Control register */
+		dev->mapram[0x03d8] = val;
+		break;
+
+	case 0x03d9:	/* CRTC Color Select register */
+		dev->mapram[0x03d9] = val;
+		break;
+    }
+}
+
+
+/* Read back the CGA registers. */
+uint8_t
+pgc_in(uint16_t addr, priv_t priv)
+{
+    pgc_t *dev = (pgc_t *)priv;
+    uint8_t ret = 0xff;
+
+    switch(addr) {
+	case 0x03d0:	/* CRTC Index register */
+	case 0x03d2:
+	case 0x03d4:
+	case 0x03d6:
+		ret = dev->mapram[0x03d0];
+		break;
+
+	case 0x03d1:	/* CRTC Data register */
+	case 0x03d3:
+	case 0x03d5:
+	case 0x03d7:
+		/* We store the CRTC registers in RAM at offset 0x03e0. */
+		if (dev->mapram[0x03d0] <= 15)
+			ret = dev->mapram[0x03e0 + dev->mapram[0x03d0]];
+		break;
+
+	case 0x03d8:	/* CRTC Mode Control register */
+		ret = dev->mapram[0x03d8];
+		break;
+
+	case 0x03d9:	/* CRTC Color Select register */
+		ret = dev->mapram[0x03d9];
+		break;
+
+	case 0x03da:	/* CRTC Status register */
+		ret = dev->mapram[0x03da];
+		break;
+    }
+
+    DEBUG("PGC: in(%04x) = %02x\n", addr, ret);
+
+    return ret;
+}
+
+
+void
+pgc_write(uint32_t addr, uint8_t val, priv_t priv)
+{
+    pgc_t *dev = (pgc_t *)priv;
+
+    /*
+     * It seems variable whether the PGC maps 1K or 2K at 0xc6000. 
+     *
+     * Map 2K here in case a clone requires it.
+     */
+    if (addr >= 0xc6000 && addr < 0xc6800) {
+	addr &= 0x7ff;
+
+	/* If one of the FIFOs has been updated, this may cause
+	 * the drawing thread to be woken */
+
+	if (dev->mapram[addr] != val) {
+		dev->mapram[addr] = val;
+
+		switch (addr) {
+			case 0x300:	/* input write pointer */
+				if (dev->waiting_input_fifo &&
+				    dev->mapram[0x300] != dev->mapram[0x301]) {
+					dev->waiting_input_fifo = 0;
+					pgc_wake(dev);
+				}
+				break;
+
+			case 0x303:	/* output read pointer */
+				if (dev->waiting_output_fifo &&
+				    dev->mapram[0x302] != (uint8_t)(dev->mapram[0x303] - 1)) {
+					dev->waiting_output_fifo = 0;
+					pgc_wake(dev);
+				}
+				break;
+			
+			case 0x305:	/* error read pointer */
+				if (dev->waiting_error_fifo &&
+				    dev->mapram[0x304] != (uint8_t)(dev->mapram[0x305] - 1)) {
+					dev->waiting_error_fifo = 0;
+					pgc_wake(dev);
+				}
+				break;
+
+			case 0x306:	/* cold start flag */
+				/* XXX This should be in IM-1024 specific code */
+				dev->mapram[0x306] = 0;
+				break;
+
+			case 0x30c:	/* display type */
+				pgc_setdisplay(priv, dev->mapram[0x30c]);
+				dev->mapram[0x30d] = dev->mapram[0x30c];
+				break;
+
+			case 0x3ff:	/* reboot the PGC */
+				pgc_wake(dev);
+				break;
+		}
+	}
+    }
+
+    if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
+	addr &= 0x3fff;
+	dev->cga_vram[addr] = val;
+    }
+}
+
+
+uint8_t
+pgc_read(uint32_t addr, priv_t priv)
+{
+    pgc_t *dev = (pgc_t *)priv;
+    uint8_t ret = 0xff;
+
+    if (addr >= 0xc6000 && addr < 0xc6800) {
+	addr &= 0x7ff;
+	ret = dev->mapram[addr];
+    } else if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
+	addr &= 0x3fff;
+	ret = dev->cga_vram[addr];
+    }
+
+    return ret;
+}
+
+
+/* Memory write to the transfer buffer. */
+void
+pgc_speed_changed(priv_t priv)
 {
     pgc_t *dev = (pgc_t *)priv;
 
@@ -2529,7 +2531,7 @@ pgc_speed_changed(void *priv)
 
 
 void
-pgc_close(void *priv)
+pgc_close(priv_t priv)
 {
     pgc_t *dev = (pgc_t *)priv;
 
@@ -2538,7 +2540,6 @@ pgc_close(void *priv)
      * flag, and then simulating a reset so it
      * stops reading data.
      */
-INFO("PGC: telling thread to stop..\n");
     dev->stopped = 1;
     dev->mapram[0x3ff] = 1;
     if (dev->waiting_input_fifo || dev->waiting_output_fifo) {
@@ -2547,9 +2548,7 @@ INFO("PGC: telling thread to stop..\n");
     }
 
     /* Wait for thread to stop. */
-INFO("PGC: waiting for thread to stop..\n");
     while (dev->stopped);
-INFO("PGC: thread stopped, closing up.\n");
 
     if (dev->cga_vram)
        	free(dev->cga_vram);
@@ -2575,13 +2574,13 @@ pgc_init(pgc_t *dev, int maxw, int maxh, int visw, int vish,
 
     mem_map_add(&dev->mapping, 0xc6000, 2048, 
 		pgc_read,NULL,NULL, pgc_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
     mem_map_add(&dev->cga_mapping, 0xb8000, 32768, 
 		pgc_read,NULL,NULL, pgc_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03d0, 16,
-		  pgc_in,NULL,NULL, pgc_out,NULL,NULL, dev);
+		  pgc_in,NULL,NULL, pgc_out,NULL,NULL, (priv_t)dev);
 
     dev->maxw = maxw;
     dev->maxh = maxh;
@@ -2613,12 +2612,12 @@ pgc_init(pgc_t *dev, int maxw, int maxh, int visw, int vish,
     dev->pgc_wake_thread = thread_create_event();
     dev->pgc_thread = thread_create(pgc_thread, dev);
 
-    timer_add(pgc_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
-    timer_add(wake_timer, dev, &dev->wake_timer, &dev->wake_timer);
+    timer_add(pgc_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(wake_timer, (priv_t)dev, &dev->wake_timer, &dev->wake_timer);
 }
 
 
-static void *
+static priv_t
 pgc_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     pgc_t *dev;
@@ -2630,14 +2629,11 @@ pgc_standalone_init(const device_t *info, UNUSED(void *parent))
     /* Framebuffer and screen are both 640x480. */
     pgc_init(dev, 640, 480, 640, 480, input_byte);
 
-    video_inform(DEVICE_VIDEO_GET(info->flags),
-		 (const video_timings_t *)info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags), &pgc_timings);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
-
-static const video_timings_t pgc_timings = { VID_ISA,8,16,32,8,16,32 };
 
 static const device_config_t pgc_config[] = {
     {
@@ -2655,6 +2651,6 @@ const device_t pgc_device = {
     NULL,
     pgc_speed_changed,
     NULL,
-    &pgc_timings,
+    NULL,
     pgc_config
 };

@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.15	2019/04/25
+ * Version:	@(#)scsi_ncr53c810.c	1.0.16	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -242,7 +242,7 @@ typedef struct {
     ncr53c810_request_t *current;
 
     int irq;
-	
+
     uint32_t dsa;
     uint32_t temp;
     uint32_t dnad;
@@ -321,8 +321,7 @@ sextract32(uint32_t value, int start, int length)
 
 #if 0	/*NOT_USED*/
 static __inline uint32_t
-deposit32(uint32_t value, int start, int length,
-                                 uint32_t fieldval)
+deposit32(uint32_t value, int start, int length, uint32_t fieldval)
 {
     uint32_t mask;
     mask = (~0U >> (32 - length)) << start;
@@ -586,7 +585,7 @@ ncr53c810_bad_selection(ncr53c810_t *dev, uint32_t id)
 
 /* Callback to indicate that the SCSI layer has completed a command.  */
 static void
-ncr53c810_command_complete(void *priv, uint32_t status)
+ncr53c810_command_complete(priv_t priv, uint32_t status)
 {
     ncr53c810_t *dev = (ncr53c810_t *)priv;
     int out;
@@ -1377,9 +1376,9 @@ ncr53c810_execute_script(ncr53c810_t *dev)
 
 
 static void
-ncr53c810_callback(void *p)
+ncr53c810_callback(priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *) p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     dev->timer_period = 0;
     if (!dev->sstop) {
@@ -1832,17 +1831,17 @@ ncr53c810_reg_readb(ncr53c810_t *dev, uint32_t offset)
 
 
 static uint8_t
-ncr53c810_io_readb(uint16_t addr, void *p)
+ncr53c810_io_readb(uint16_t addr, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
     return ncr53c810_reg_readb(dev, addr & 0xff);
 }
 
 
 static uint16_t
-ncr53c810_io_readw(uint16_t addr, void *p)
+ncr53c810_io_readw(uint16_t addr, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
     uint16_t val;
 	
     addr &= 0xff;
@@ -1853,9 +1852,9 @@ ncr53c810_io_readw(uint16_t addr, void *p)
 
 
 static uint32_t
-ncr53c810_io_readl(uint16_t addr, void *p)
+ncr53c810_io_readl(uint16_t addr, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
     uint32_t val;
 	
     addr &= 0xff;
@@ -1868,18 +1867,18 @@ ncr53c810_io_readl(uint16_t addr, void *p)
 
 
 static void
-ncr53c810_io_writeb(uint16_t addr, uint8_t val, void *p)
+ncr53c810_io_writeb(uint16_t addr, uint8_t val, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     ncr53c810_reg_writeb(dev, addr & 0xff, val);
 }
 
 
 static void
-ncr53c810_io_writew(uint16_t addr, uint16_t val, void *p)
+ncr53c810_io_writew(uint16_t addr, uint16_t val, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;	
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     addr &= 0xff;
     ncr53c810_reg_writeb(dev, addr, val & 0xff);
@@ -1888,9 +1887,9 @@ ncr53c810_io_writew(uint16_t addr, uint16_t val, void *p)
 
 
 static void
-ncr53c810_io_writel(uint16_t addr, uint32_t val, void *p)
+ncr53c810_io_writel(uint16_t addr, uint32_t val, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     addr &= 0xff;
     ncr53c810_reg_writeb(dev, addr, val & 0xff);
@@ -1901,18 +1900,18 @@ ncr53c810_io_writel(uint16_t addr, uint32_t val, void *p)
 
 
 static void
-ncr53c810_mmio_writeb(uint32_t addr, uint8_t val, void *p)
+ncr53c810_mmio_writeb(uint32_t addr, uint8_t val, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     ncr53c810_reg_writeb(dev, addr & 0xff, val);
 }
 
 
 static void
-ncr53c810_mmio_writew(uint32_t addr, uint16_t val, void *p)
+ncr53c810_mmio_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     addr &= 0xff;
     ncr53c810_reg_writeb(dev, addr, val & 0xff);
@@ -1921,9 +1920,9 @@ ncr53c810_mmio_writew(uint32_t addr, uint16_t val, void *p)
 
 
 static void
-ncr53c810_mmio_writel(uint32_t addr, uint32_t val, void *p)
+ncr53c810_mmio_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     addr &= 0xff;
     ncr53c810_reg_writeb(dev, addr, val & 0xff);
@@ -1934,18 +1933,18 @@ ncr53c810_mmio_writel(uint32_t addr, uint32_t val, void *p)
 
 
 static uint8_t
-ncr53c810_mmio_readb(uint32_t addr, void *p)
+ncr53c810_mmio_readb(uint32_t addr, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     return ncr53c810_reg_readb(dev, addr & 0xff);
 }
 
 
 static uint16_t
-ncr53c810_mmio_readw(uint32_t addr, void *p)
+ncr53c810_mmio_readw(uint32_t addr, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
     uint16_t val;
 
     addr &= 0xff;
@@ -1957,9 +1956,9 @@ ncr53c810_mmio_readw(uint32_t addr, void *p)
  
 
 static uint32_t
-ncr53c810_mmio_readl(uint32_t addr, void *p)
+ncr53c810_mmio_readl(uint32_t addr, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
     uint32_t val;
 
     addr &= 0xff;
@@ -2048,9 +2047,9 @@ bar_t	ncr53c810_pci_bar[2];
 
 
 static uint8_t
-ncr53c810_pci_read(int func, int addr, void *p)
+ncr53c810_pci_read(int func, int addr, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
 
     DEBUG("NCR53c810: Reading register %02X\n", addr & 0xff);
 
@@ -2142,9 +2141,9 @@ ncr53c810_pci_read(int func, int addr, void *p)
 
 
 static void
-ncr53c810_pci_write(int func, int addr, uint8_t val, void *p)
+ncr53c810_pci_write(int func, int addr, uint8_t val, priv_t priv)
 {
-    ncr53c810_t *dev = (ncr53c810_t *)p;
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
     uint8_t valxor;
 
     DEBUG("NCR53c810: Write value %02X to register %02X\n", val, addr & 0xff);
@@ -2250,7 +2249,19 @@ ncr53c810_pci_write(int func, int addr, uint8_t val, void *p)
 }
 
 
-static void *
+static void 
+ncr53c810_close(priv_t priv)
+{
+    ncr53c810_t *dev = (ncr53c810_t *)priv;
+
+    if (dev) {
+	free(dev);
+	dev = NULL;
+    }
+}
+
+
+static priv_t
 ncr53c810_init(const device_t *info, UNUSED(void *parent))
 {
     ncr53c810_t *dev;
@@ -2289,19 +2300,7 @@ ncr53c810_init(const device_t *info, UNUSED(void *parent))
 		 0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
 #endif
 
-    return(dev);
-}
-
-
-static void 
-ncr53c810_close(void *priv)
-{
-    ncr53c810_t *dev = (ncr53c810_t *)priv;
-
-    if (dev) {
-	free(dev);
-	dev = NULL;
-    }
+    return((priv_t)dev);
 }
 
 

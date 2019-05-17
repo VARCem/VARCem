@@ -25,7 +25,7 @@
  *		 by the ROS.
  *  PPC:	MDA Monitor results in half-screen, half-cell-height display??
  *
- * Version:	@(#)m_amstrad_vid.c	1.0.4	2019/05/05
+ * Version:	@(#)m_amstrad_vid.c	1.0.5	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -211,7 +211,7 @@ pc1512_recalc_timings(vid_t *dev)
 
 
 static void
-pc1512_out(uint16_t addr, uint8_t val, void *priv)
+pc1512_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     uint8_t old;
@@ -260,7 +260,7 @@ pc1512_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-pc1512_in(uint16_t addr, void *priv)
+pc1512_in(uint16_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     uint8_t ret = 0xff;
@@ -281,7 +281,7 @@ pc1512_in(uint16_t addr, void *priv)
 
 
 static void
-pc1512_write(uint32_t addr, uint8_t val, void *priv)
+pc1512_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -303,7 +303,7 @@ pc1512_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-pc1512_read(uint32_t addr, void *priv)
+pc1512_read(uint32_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -318,7 +318,7 @@ pc1512_read(uint32_t addr, void *priv)
 
 
 static void
-pc1512_poll(void *priv)
+pc1512_poll(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -560,7 +560,7 @@ pc1512_poll(void *priv)
 
 
 static void
-pc1512_close(void *priv)
+pc1512_close(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -571,7 +571,7 @@ pc1512_close(void *priv)
 
 
 static void
-pc1512_speed_change(void *priv)
+pc1512_speed_change(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -592,7 +592,7 @@ static const device_t pc1512_video_device = {
 
 
 /* Initialize the PC1512 display controller, return the correct DDM bits. */
-void *
+priv_t
 m_amstrad_1512_vid_init(const wchar_t *fn, int fnt, int cp)
 {
     vid_t *dev;
@@ -645,7 +645,7 @@ m_amstrad_1512_vid_init(const wchar_t *fn, int fnt, int cp)
 
     video_inform(VID_TYPE_CGA, &pc1512_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
@@ -671,7 +671,7 @@ pc1640_recalc_timings(vid_t *dev)
 
 
 static void
-pc1640_out(uint16_t addr, uint8_t val, void *priv)
+pc1640_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -731,7 +731,7 @@ pc1640_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-pc1640_in(uint16_t addr, void *priv)
+pc1640_in(uint16_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -748,7 +748,7 @@ pc1640_in(uint16_t addr, void *priv)
 
 
 static void
-pc1640_poll(void *priv)
+pc1640_poll(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -769,7 +769,7 @@ pc1640_poll(void *priv)
 
 
 static void
-pc1640_close(void *priv)
+pc1640_close(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -780,7 +780,7 @@ pc1640_close(void *priv)
 
 
 static void
-pc1640_speed_changed(void *priv)
+pc1640_speed_changed(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -801,7 +801,7 @@ static const device_t pc1640_video_device = {
 
 
 /* Initialize the PC1640 display controller, return the correct DDM bits. */
-void *
+priv_t
 m_amstrad_1640_vid_init(const wchar_t *fn, int sz)
 {
     vid_t *dev;
@@ -835,7 +835,7 @@ m_amstrad_1640_vid_init(const wchar_t *fn, int sz)
 
     video_inform(VID_TYPE_CGA, &pc1640_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
@@ -1310,7 +1310,7 @@ cga->ma++;
 
 
 static void
-ida_poll(void *priv)
+ida_poll(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -1340,7 +1340,7 @@ ida_poll(void *priv)
  
  
 static void
-ida_out(uint16_t addr, uint8_t val, void *priv)
+ida_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     cga_t *cga = &dev->cga;
@@ -1511,7 +1511,7 @@ ida_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-ida_in(uint16_t addr, void *priv)
+ida_in(uint16_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     cga_t *cga = &dev->cga;
@@ -1552,7 +1552,7 @@ ida_in(uint16_t addr, void *priv)
 
 
 static void
-ida_close(void *priv)
+ida_close(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -1563,7 +1563,7 @@ ida_close(void *priv)
 
 
 static void
-ida_speed_changed(void *priv)
+ida_speed_changed(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -1587,7 +1587,7 @@ static const device_t ida_video_device = {
 
 
 /* Initialize the PC200/PPC display controller, return the correct DDM bits. */
-void *
+priv_t
 m_amstrad_ida_init(int type, const wchar_t *fn, int cp, int em, int dt)
 {
     vid_t *dev;
@@ -1717,12 +1717,12 @@ m_amstrad_ida_init(int type, const wchar_t *fn, int cp, int em, int dt)
     else
 	video_inform(VID_TYPE_CGA, &ida_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 uint8_t
-m_amstrad_ida_ddm(void *arg)
+m_amstrad_ida_ddm(priv_t arg)
 {
     vid_t *dev = (vid_t *)arg;
     uint8_t ret = 0x00;

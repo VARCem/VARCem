@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.19	2019/05/05
+ * Version:	@(#)nvr.c	1.0.20	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -118,7 +118,7 @@ rtc_tick(void)
 
 /* This is the RTC one-second timer. */
 static void
-onesec_timer(void *priv)
+onesec_timer(priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
 

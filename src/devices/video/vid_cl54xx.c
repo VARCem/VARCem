@@ -9,7 +9,7 @@
  *		Emulation of select Cirrus Logic cards (CL-GD 5428,
  *		CL-GD 5429, 5430, 5434 and 5436 are supported).
  *
- * Version:	@(#)vid_cl54xx.c	1.0.29	2019/05/03
+ * Version:	@(#)vid_cl54xx.c	1.0.30	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -217,12 +217,12 @@ typedef struct {
 } gd54xx_t;
 
 
-static void	gd543x_mmio_write(uint32_t addr, uint8_t val, void *p);
-static void	gd543x_mmio_writew(uint32_t addr, uint16_t val, void *p);
-static void	gd543x_mmio_writel(uint32_t addr, uint32_t val, void *p);
-static uint8_t	gd543x_mmio_read(uint32_t addr, void *p);
-static uint16_t	gd543x_mmio_readw(uint32_t addr, void *p);
-static uint32_t	gd543x_mmio_readl(uint32_t addr, void *p);
+static void	gd543x_mmio_write(uint32_t addr, uint8_t val, priv_t);
+static void	gd543x_mmio_writew(uint32_t addr, uint16_t val, priv_t);
+static void	gd543x_mmio_writel(uint32_t addr, uint32_t val, priv_t);
+static uint8_t	gd543x_mmio_read(uint32_t addr, priv_t);
+static uint16_t	gd543x_mmio_readw(uint32_t addr, priv_t);
+static uint32_t	gd543x_mmio_readl(uint32_t addr, priv_t);
 static void	gd54xx_start_blit(uint32_t cpu_dat, int count,
 				  gd54xx_t *gd54xx, svga_t *svga);
 
@@ -489,7 +489,7 @@ recalc_timings(svga_t *svga)
 
 
 static void
-gd54xx_out(uint16_t addr, uint8_t val, void *priv)
+gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -906,7 +906,7 @@ gd54xx_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-gd54xx_in(uint16_t addr, void *priv)
+gd54xx_in(uint16_t addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1174,7 +1174,7 @@ blit_dword(gd54xx_t *dev, svga_t *svga)
 
 
 static void
-blit_write_w(uint32_t addr, uint16_t val, void *priv)
+blit_write_w(uint32_t addr, uint16_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
 
@@ -1183,7 +1183,7 @@ blit_write_w(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-blit_write_l(uint32_t addr, uint32_t val, void *priv)
+blit_write_l(uint32_t addr, uint32_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
 
@@ -1198,7 +1198,7 @@ blit_write_l(uint32_t addr, uint32_t val, void *priv)
 
 
 static void
-gd54xx_write(uint32_t addr, uint8_t val, void *priv)
+gd54xx_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;	
@@ -1237,7 +1237,7 @@ gd54xx_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void 
-gd54xx_writew(uint32_t addr, uint16_t val, void *priv)
+gd54xx_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1273,7 +1273,7 @@ gd54xx_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-gd54xx_writel(uint32_t addr, uint32_t val, void *priv)
+gd54xx_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1372,7 +1372,7 @@ gd54xx_get_aperture(uint32_t addr)
 
 
 static uint8_t
-gd54xx_readb_linear(uint32_t addr, void *priv)
+gd54xx_readb_linear(uint32_t addr, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     gd54xx_t *dev = (gd54xx_t *)svga->p;
@@ -1409,7 +1409,7 @@ gd54xx_readb_linear(uint32_t addr, void *priv)
 
 
 static uint16_t
-gd54xx_readw_linear(uint32_t addr, void *priv)
+gd54xx_readw_linear(uint32_t addr, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     gd54xx_t *dev = (gd54xx_t *)svga->p;
@@ -1468,7 +1468,7 @@ gd54xx_readw_linear(uint32_t addr, void *priv)
 
 
 static uint32_t
-gd54xx_readl_linear(uint32_t addr, void *priv)
+gd54xx_readl_linear(uint32_t addr, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     gd54xx_t *dev = (gd54xx_t *)svga->p;
@@ -1541,7 +1541,7 @@ gd54xx_readl_linear(uint32_t addr, void *priv)
 
 
 static void
-gd54xx_writeb_linear(uint32_t addr, uint8_t val, void *priv)
+gd54xx_writeb_linear(uint32_t addr, uint8_t val, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     gd54xx_t *dev = (gd54xx_t *)svga->p;
@@ -1591,7 +1591,7 @@ gd54xx_writeb_linear(uint32_t addr, uint8_t val, void *priv)
 
 
 static void 
-gd54xx_writew_linear(uint32_t addr, uint16_t val, void *priv)
+gd54xx_writew_linear(uint32_t addr, uint16_t val, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     gd54xx_t *dev = (gd54xx_t *)svga->p;
@@ -1678,7 +1678,7 @@ gd54xx_writew_linear(uint32_t addr, uint16_t val, void *priv)
 
 
 static void 
-gd54xx_writel_linear(uint32_t addr, uint32_t val, void *priv)
+gd54xx_writel_linear(uint32_t addr, uint32_t val, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     gd54xx_t *dev = (gd54xx_t *)svga->p;
@@ -1785,7 +1785,7 @@ gd54xx_writel_linear(uint32_t addr, uint32_t val, void *priv)
 
 
 static uint8_t
-gd54xx_read(uint32_t addr, void *priv)
+gd54xx_read(uint32_t addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1803,7 +1803,7 @@ gd54xx_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-gd54xx_readw(uint32_t addr, void *priv)
+gd54xx_readw(uint32_t addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1820,7 +1820,7 @@ gd54xx_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-gd54xx_readl(uint32_t addr, void *priv)
+gd54xx_readl(uint32_t addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1846,7 +1846,7 @@ gd543x_do_mmio(svga_t *svga, uint32_t addr)
 
 
 static void
-gd543x_mmio_write(uint32_t addr, uint8_t val, void *priv)
+gd543x_mmio_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -2038,14 +2038,14 @@ gd543x_mmio_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-gd543x_mmio_writew(uint32_t addr, uint16_t val, void *priv)
+gd543x_mmio_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
 
     if (gd543x_do_mmio(svga, addr)) {
 	gd543x_mmio_write(addr, val & 0xff, dev);
-	gd543x_mmio_write(addr+1, val >> 8, dev);		
+	gd543x_mmio_write(addr+1, val >> 8, dev);
     } else if (dev->mmio_vram_overlap) {
 	gd54xx_write(addr, val & 0xff, dev);
 	gd54xx_write(addr+1, val >> 8, dev);
@@ -2054,7 +2054,7 @@ gd543x_mmio_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-gd543x_mmio_writel(uint32_t addr, uint32_t val, void *priv)
+gd543x_mmio_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -2063,18 +2063,18 @@ gd543x_mmio_writel(uint32_t addr, uint32_t val, void *priv)
 	gd543x_mmio_write(addr, val & 0xff, dev);
 	gd543x_mmio_write(addr+1, val >> 8, dev);
 	gd543x_mmio_write(addr+2, val >> 16, dev);
-	gd543x_mmio_write(addr+3, val >> 24, dev);		
+	gd543x_mmio_write(addr+3, val >> 24, dev);
     } else if (dev->mmio_vram_overlap) {
 	gd54xx_write(addr, val, dev);
 	gd54xx_write(addr+1, val >> 8, dev);
 	gd54xx_write(addr+2, val >> 16, dev);
-	gd54xx_write(addr+3, val >> 24, dev);	
+	gd54xx_write(addr+3, val >> 24, dev);
     }
 }
 
 
 static uint8_t
-gd543x_mmio_read(uint32_t addr, void *priv)
+gd543x_mmio_read(uint32_t addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -2094,7 +2094,7 @@ gd543x_mmio_read(uint32_t addr, void *priv)
 
 
 static uint16_t
-gd543x_mmio_readw(uint32_t addr, void *priv)
+gd543x_mmio_readw(uint32_t addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -2109,7 +2109,7 @@ gd543x_mmio_readw(uint32_t addr, void *priv)
 
 
 static uint32_t
-gd543x_mmio_readl(uint32_t addr, void *priv)
+gd543x_mmio_readl(uint32_t addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -2402,7 +2402,7 @@ gd54xx_start_blit(uint32_t cpu_dat, int count, gd54xx_t *dev, svga_t *svga)
 
 
 static uint8_t 
-cl_pci_read(int func, int addr, void *priv)
+cl_pci_read(int func, int addr, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
@@ -2449,7 +2449,7 @@ cl_pci_read(int func, int addr, void *priv)
 
 
 static void 
-cl_pci_write(int func, int addr, uint8_t val, void *priv)
+cl_pci_write(int func, int addr, uint8_t val, priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
 
@@ -2486,7 +2486,7 @@ cl_pci_write(int func, int addr, uint8_t val, void *priv)
 }
 
 
-static void *
+static priv_t
 gd54xx_init(const device_t *info, UNUSED(void *parent))
 {
     gd54xx_t *dev = (gd54xx_t *)mem_alloc(sizeof(gd54xx_t));
@@ -2496,8 +2496,8 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
     int vram;
 
     memset(dev, 0x00, sizeof(gd54xx_t));
-    dev->pci = !!(info->flags & DEVICE_PCI);	
-    dev->vlb = !!(info->flags & DEVICE_VLB);	
+    dev->pci = !!(info->flags & DEVICE_PCI);
+    dev->vlb = !!(info->flags & DEVICE_VLB);
     dev->rev = 0;
     dev->has_bios = 1;
 
@@ -2512,7 +2512,7 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
 
 	case CIRRUS_ID_CLGD5426:
 		break;
-		
+
 	case CIRRUS_ID_CLGD5428:
 		if (dev->vlb)
 			romfn = BIOS_GD5428_VLB_PATH;
@@ -2564,7 +2564,7 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
 	vram = 0;
 
     if (vram)
-	dev->vram_size = vram << 20;	
+	dev->vram_size = vram << 20;
     else
 	dev->vram_size = 1 << 19;
     dev->vram_mask = dev->vram_size - 1;
@@ -2594,7 +2594,7 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
 		NULL, 0, svga);
 
     io_sethandler(0x03c0, 32,
-		  gd54xx_in,NULL,NULL, gd54xx_out,NULL,NULL, dev);
+		  gd54xx_in,NULL,NULL, gd54xx_out,NULL,NULL, (priv_t)dev);
 
     svga->hwcursor.yoff = 32;
     svga->hwcursor.xoff = 0;
@@ -2635,12 +2635,12 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-gd54xx_close(void *priv)
+gd54xx_close(priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
 	
@@ -2651,7 +2651,7 @@ gd54xx_close(void *priv)
 
 
 static void
-gd54xx_speed_changed(void *priv)
+gd54xx_speed_changed(priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
     
@@ -2660,7 +2660,7 @@ gd54xx_speed_changed(void *priv)
 
 
 static void
-gd54xx_force_redraw(void *priv)
+gd54xx_force_redraw(priv_t priv)
 {
     gd54xx_t *dev = (gd54xx_t *)priv;
 

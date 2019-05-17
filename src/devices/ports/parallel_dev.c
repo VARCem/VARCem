@@ -8,7 +8,7 @@
  *
  *		Implementation of the parallel-port-attached devices.
  *
- * Version:	@(#)parallel_dev.c	1.0.10	2019/01/03
+ * Version:	@(#)parallel_dev.c	1.0.11	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *

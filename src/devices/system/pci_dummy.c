@@ -8,7 +8,7 @@
  *
  *		Example implementation of a PCI device.
  *
- * Version:	@(#)pci_dummy.c	1.0.5	2018/09/04
+ * Version:	@(#)pci_dummy.c	1.0.6	2019/05/13
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -59,7 +59,7 @@ dummy_interrupt(int set)
 
 
 static uint8_t
-dummy_read(uint16_t port, void *priv)
+dummy_read(uint16_t port, priv_t priv)
 {
     uint8_t ret = 0;
 
@@ -98,21 +98,21 @@ dummy_read(uint16_t port, void *priv)
 
 
 static uint16_t
-dummy_readw(uint16_t port, void *priv)
+dummy_readw(uint16_t port, priv_t priv)
 {
     return(dummy_read(port, priv));
 }
 
 
 static uint32_t
-dummy_readl(uint16_t port, void *priv)
+dummy_readl(uint16_t port, priv_t priv)
 {
     return(dummy_read(port, priv));
 }
 
 
 static void
-dummy_write(uint16_t port, uint8_t val, void *priv)
+dummy_write(uint16_t port, uint8_t val, priv_t priv)
 {
     switch(port & 0x20) {
 	case 0x06:
@@ -129,14 +129,14 @@ dummy_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-dummy_writew(uint16_t port, uint16_t val, void *priv)
+dummy_writew(uint16_t port, uint16_t val, priv_t priv)
 {
     dummy_write(port, val & 0xff, priv);
 }
 
 
 static void
-dummy_writel(uint16_t port, uint32_t val, void *priv)
+dummy_writel(uint16_t port, uint32_t val, priv_t priv)
 {
     dummy_write(port, val & 0xff, priv);
 }
@@ -159,9 +159,9 @@ dummy_io_set(void)
 
 
 static uint8_t
-dummy_pci_read(int func, int addr, void *priv)
+dummy_pci_read(int func, int addr, priv_t priv)
 {
-    pclog("AB0B:071A: PCI_Read(%d, %04x)\n", func, addr);
+    DEBUG("AB0B:071A: PCI_Read(%d, %04x)\n", func, addr);
 
     switch(addr) {
 	case 0x00:
@@ -232,11 +232,11 @@ dummy_pci_read(int func, int addr, void *priv)
 
 
 static void
-dummy_pci_write(int func, int addr, uint8_t val, void *priv)
+dummy_pci_write(int func, int addr, uint8_t val, priv_t priv)
 {
     uint8_t valxor;
 
-    pclog("AB0B:071A: PCI_Write(%d, %04x, %02x)\n", func, addr, val);
+    DEBUG("AB0B:071A: PCI_Write(%d, %04x, %02x)\n", func, addr, val);
 
     switch(addr) {
 	case 0x04:			/* PCI_COMMAND_LO */

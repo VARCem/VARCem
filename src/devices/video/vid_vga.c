@@ -8,7 +8,7 @@
  *
  *		IBM VGA emulation.
  *
- * Version:	@(#)vid_vga.c	1.0.10	2019/04/27
+ * Version:	@(#)vid_vga.c	1.0.11	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,16 +61,18 @@ typedef struct {
 } vga_t;
 
 
+static video_timings_t vga_timing = {VID_ISA, 8,16,32, 8,16,32};
+
+
 static void
-vga_out(uint16_t port, uint8_t val, void *priv)
+vga_out(uint16_t port, uint8_t val, priv_t priv)
 {
     vga_t *dev = (vga_t *)priv;
     svga_t *svga = &dev->svga;
     uint8_t old;
 
     if (((port & 0xfff0) == 0x3d0 ||
-	 (port & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) 
-	port ^= 0x60;
+	 (port & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) port ^= 0x60;
 
     switch (port) {
 	case 0x3d4:
@@ -100,15 +102,14 @@ vga_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-vga_in(uint16_t port, void *priv)
+vga_in(uint16_t port, priv_t priv)
 {
     vga_t *dev = (vga_t *)priv;
     svga_t *svga = &dev->svga;
     uint8_t ret;
 
     if (((port & 0xfff0) == 0x3d0 ||
-	 (port & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) 
-	port ^= 0x60;
+	 (port & 0xfff0) == 0x3b0) && !(svga->miscout & 1)) port ^= 0x60;
 
     switch (port) {
 	case 0x3d4:
@@ -127,11 +128,40 @@ vga_in(uint16_t port, void *priv)
 		break;
     }
 
-    return ret;
+    return(ret);
 }
 
 
-static void *
+static void
+vga_close(priv_t priv)
+{
+    vga_t *dev = (vga_t *)priv;
+
+    svga_close(&dev->svga);
+
+    free(dev);
+}
+
+
+static void
+speed_changed(priv_t priv)
+{
+    vga_t *dev = (vga_t *)priv;
+
+    svga_recalctimings(&dev->svga);
+}
+
+
+static void
+force_redraw(priv_t priv)
+{
+    vga_t *dev = (vga_t *)priv;
+
+    dev->svga.fullchange = changeframecount;
+}
+
+
+static priv_t
 vga_init(const device_t *info, UNUSED(void *parent))
 {
     vga_t *dev;
@@ -143,11 +173,11 @@ vga_init(const device_t *info, UNUSED(void *parent))
 	rom_init(&dev->bios_rom, info->path,
 		 0xc0000, 0x8000, 0x7fff, 0x2000, MEM_MAPPING_EXTERNAL);
 
-    svga_init(&dev->svga, dev, 1 << 18, /*256kb*/
+    svga_init(&dev->svga, (priv_t)dev, 1 << 18, /*256kb*/
 	      NULL, vga_in, vga_out, NULL, NULL);
 
     io_sethandler(0x03c0, 32,
-		  vga_in,NULL,NULL, vga_out,NULL,NULL, dev);
+		  vga_in,NULL,NULL, vga_out,NULL,NULL, (priv_t)dev);
 
     dev->svga.bpp = 8;
     dev->svga.miscout = 1;
@@ -155,40 +185,9 @@ vga_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
-
-static void
-vga_close(void *priv)
-{
-    vga_t *dev = (vga_t *)priv;
-
-    svga_close(&dev->svga);
-
-    free(dev);
-}
-
-
-static void
-speed_changed(void *priv)
-{
-    vga_t *dev = (vga_t *)priv;
-
-    svga_recalctimings(&dev->svga);
-}
-
-
-static void
-force_redraw(void *priv)
-{
-    vga_t *dev = (vga_t *)priv;
-
-    dev->svga.fullchange = changeframecount;
-}
-
-
-static video_timings_t vga_timing = {VID_ISA, 8,16,32, 8,16,32};
 
 const device_t vga_device = {
     "VGA",

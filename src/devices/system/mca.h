@@ -8,13 +8,13 @@
  *
  *		Definitions for the MCA bus handlers.
  *
- * Version:	@(#)mca.h	1.0.2	2018/03/12
+ * Version:	@(#)mca.h	1.0.3	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -41,7 +41,8 @@
 
 
 extern void mca_init(int nr_cards);
-extern void mca_add(uint8_t (*read)(int addr, void *priv), void (*write)(int addr, uint8_t val, void *priv), void *priv);
+
+extern void mca_add(uint8_t (*read)(int, priv_t), void (*write)(int, uint8_t, priv_t), priv_t priv);
 extern void mca_set_index(int index);
 extern uint8_t mca_read(uint16_t port);
 extern void mca_write(uint16_t port, uint8_t val);

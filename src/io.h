@@ -8,7 +8,7 @@
  *
  *		Definitions for the I/O handler.
  *
- * Version:	@(#)io.h	1.0.2	2019/04/12
+ * Version:	@(#)io.h	1.0.3	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,41 +43,41 @@
 extern void	io_reset(void);
 
 extern void	io_sethandler(uint16_t base, int size,
-			uint8_t (*inb)(uint16_t addr, void *priv),
-			uint16_t (*inw)(uint16_t addr, void *priv),
-			uint32_t (*inl)(uint16_t addr, void *priv),
-			void (*outb)(uint16_t addr, uint8_t val, void *priv),
-			void (*outw)(uint16_t addr, uint16_t val, void *priv),
-			void (*outl)(uint16_t addr, uint32_t val, void *priv),
-			void *priv);
+			uint8_t (*inb)(uint16_t addr, priv_t),
+			uint16_t (*inw)(uint16_t addr, priv_t),
+			uint32_t (*inl)(uint16_t addr, priv_t),
+			void (*outb)(uint16_t addr, uint8_t val, priv_t),
+			void (*outw)(uint16_t addr, uint16_t val, priv_t),
+			void (*outl)(uint16_t addr, uint32_t val, priv_t),
+			priv_t);
 
 extern void	io_removehandler(uint16_t base, int size,
-			uint8_t (*inb)(uint16_t addr, void *priv),
-			uint16_t (*inw)(uint16_t addr, void *priv),
-			uint32_t (*inl)(uint16_t addr, void *priv),
-			void (*outb)(uint16_t addr, uint8_t val, void *priv),
-			void (*outw)(uint16_t addr, uint16_t val, void *priv),
-			void (*outl)(uint16_t addr, uint32_t val, void *priv),
-			void *priv);
+			uint8_t (*inb)(uint16_t addr, priv_t),
+			uint16_t (*inw)(uint16_t addr, priv_t),
+			uint32_t (*inl)(uint16_t addr, priv_t),
+			void (*outb)(uint16_t addr, uint8_t val, priv_t),
+			void (*outw)(uint16_t addr, uint16_t val, priv_t),
+			void (*outl)(uint16_t addr, uint32_t val, priv_t),
+			priv_t);
 
 #ifdef PC98
 extern void	io_sethandler_interleaved(uint16_t base, int size,
-			uint8_t (*inb)(uint16_t addr, void *priv),
-			uint16_t (*inw)(uint16_t addr, void *priv),
-			uint32_t (*inl)(uint16_t addr, void *priv),
-			void (*outb)(uint16_t addr, uint8_t val, void *priv),
-			void (*outw)(uint16_t addr, uint16_t val, void *priv),
-			void (*outl)(uint16_t addr, uint32_t val, void *priv),
-			void *priv);
+			uint8_t (*inb)(uint16_t addr, priv_t),
+			uint16_t (*inw)(uint16_t addr, priv_t),
+			uint32_t (*inl)(uint16_t addr, priv_t),
+			void (*outb)(uint16_t addr, uint8_t val, priv_t),
+			void (*outw)(uint16_t addr, uint16_t val, priv_t),
+			void (*outl)(uint16_t addr, uint32_t val, priv_t),
+			priv_t);
 
 extern void	io_removehandler_interleaved(uint16_t base, int size,
-			uint8_t (*inb)(uint16_t addr, void *priv),
-			uint16_t (*inw)(uint16_t addr, void *priv),
-			uint32_t (*inl)(uint16_t addr, void *priv),
-			void (*outb)(uint16_t addr, uint8_t val, void *priv),
-			void (*outw)(uint16_t addr, uint16_t val, void *priv),
-			void (*outl)(uint16_t addr, uint32_t val, void *priv),
-			void *priv);
+			uint8_t (*inb)(uint16_t addr, priv_t),
+			uint16_t (*inw)(uint16_t addr, priv_t),
+			uint32_t (*inl)(uint16_t addr, priv_t),
+			void (*outb)(uint16_t addr, uint8_t val, priv_t),
+			void (*outw)(uint16_t addr, uint16_t val, priv_t),
+			void (*outl)(uint16_t addr, uint32_t val, priv_t),
+			priv_t);
 #endif
 
 extern uint8_t	inb(uint16_t port);

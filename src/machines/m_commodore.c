@@ -8,7 +8,7 @@
  *
  *		Implementation of the Commodore PC-30 system.
  *
- * Version:	@(#)m_commodore.c	1.0.14	2019/04/08
+ * Version:	@(#)m_commodore.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,7 @@ typedef struct {
 
 
 static void
-pc30_write(uint16_t port, uint8_t val, void *priv)
+pc30_write(uint16_t port, uint8_t val, priv_t priv)
 {
     switch (val & 0x03) {
 	case 1:
@@ -88,7 +88,7 @@ pc30_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-pc30_close(void *priv)
+pc30_close(priv_t priv)
 {
     pc30_t *dev = (pc30_t *)priv;
 
@@ -96,7 +96,7 @@ pc30_close(void *priv)
 }
 
 
-static void *
+static priv_t
 pc30_init(const device_t *info, void *arg)
 {
     pc30_t *dev;
@@ -106,7 +106,7 @@ pc30_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     m_at_ide_init();
 
@@ -117,7 +117,7 @@ pc30_init(const device_t *info, void *arg)
     io_sethandler(0x0230, 1,
 		  NULL,NULL,NULL, pc30_write,NULL,NULL, NULL);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

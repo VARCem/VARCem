@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.12	2019/04/18
+ * Version:	@(#)device.h	1.0.13	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,30 +76,30 @@ enum {
 
 
 typedef struct {
-    const char *description;
-    int  value;
-} device_config_selection_t;
+    const char		*description;
+    int			 value;
+} devcfg_selection_t;
 
 typedef struct {
-    const char *description;
-    const char *extensions[5];
-} device_config_file_filter_t;
+    const char		*description;
+    const char		*extensions[5];
+} devcfg_fn_filter_t;
 
 typedef struct {
-    int min;
-    int max;
-    int step;
-} device_config_spinner_t;
+    int			min;
+    int			max;
+    int			step;
+} devcfg_spinner_t;
 
 typedef struct {
-    const char *name;
-    const char *description;
-    int type;
-    const char *default_string;
-    int default_int;
-    device_config_selection_t selection[16];
-    device_config_file_filter_t file_filter[16];
-    device_config_spinner_t spinner;
+    const char		*name;
+    const char		*description;
+    int			type;
+    const char		*default_string;
+    int			default_int;
+    devcfg_selection_t	selection[16];
+    devcfg_fn_filter_t	file_filter[16];
+    devcfg_spinner_t	spinner;
 } device_config_t;
 
 typedef struct _device_ {
@@ -109,14 +109,14 @@ typedef struct _device_ {
 
     const wchar_t *path;		/* path to BIOS/ROM file(s) */
 
-    void	*(*init)(const struct _device_ *, void *arg);
-    void	(*close)(void *priv);
-    void	(*reset)(void *priv);
+    priv_t	(*init)(const struct _device_ *, void *arg);
+    void	(*close)(priv_t);
+    void	(*reset)(priv_t);
     void	*u1_reuse;
 #define ms_poll		u1_reuse
 #define dev_available	u1_reuse
-    void	(*speed_changed)(void *priv);
-    void	(*force_redraw)(void *priv);
+    void	(*speed_changed)(priv_t);
+    void	(*force_redraw)(priv_t);
     const void	*u2_reuse;
 #define vid_timing	u2_reuse
 #define mca_reslist	u2_reuse
@@ -134,12 +134,13 @@ extern void		device_reset(void);
 extern void		device_dump(void);
 #endif
 extern const device_t	*device_clone(const device_t *master);
-extern void		*device_add(const device_t *);
-extern void		*device_add_parent(const device_t *, void *parent);
-extern void		device_add_ex(const device_t *, void *priv);
+extern priv_t		device_add(const device_t *);
+extern priv_t		device_add_parent(const device_t *, priv_t parent);
+extern void		device_add_ex(const device_t *, priv_t);
+extern void		device_remove(const device_t *, priv_t);
 extern void		device_close_all(void);
 extern void		device_reset_all(int flags);
-extern void		*device_get_priv(const device_t *);
+extern priv_t		device_get_priv(const device_t *);
 extern const char	*device_get_bus_name(const device_t *);
 extern int		device_available(const device_t *);
 extern void		device_speed_changed(void);
@@ -148,10 +149,10 @@ extern void		device_force_redraw(void);
 extern int		device_is_valid(const device_t *, int machine_flags);
 
 extern int		device_get_config_int(const char *name);
-extern int		device_get_config_int_ex(const char *s, int dflt_int);
+extern int		device_get_config_int_ex(const char *s, int dflt);
 extern int		device_get_config_hex16(const char *name);
 extern int		device_get_config_hex20(const char *name);
-extern int		device_get_config_mac(const char *name, int dflt_int);
+extern int		device_get_config_mac(const char *name, int dflt);
 extern void		device_set_config_int(const char *s, int val);
 extern void		device_set_config_hex16(const char *s, int val);
 extern void		device_set_config_hex20(const char *s, int val);

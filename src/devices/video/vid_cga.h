@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.8	2019/03/08
+ * Version:	@(#)vid_cga.h	1.0.9	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,7 +83,7 @@ typedef struct {
     int		font_type;
 
     int		composite;
-    void	*cpriv;
+    priv_t	cpriv;
 } cga_t;
 
 
@@ -93,12 +93,12 @@ extern const device_config_t cga_config[];
 
 
 extern void    cga_init(cga_t *cga);
-extern void    cga_out(uint16_t addr, uint8_t val, void *priv);
-extern uint8_t cga_in(uint16_t addr, void *priv);
-extern void    cga_write(uint32_t addr, uint8_t val, void *priv);
-extern uint8_t cga_read(uint32_t addr, void *priv);
+extern void    cga_out(uint16_t addr, uint8_t val, priv_t);
+extern uint8_t cga_in(uint16_t addr, priv_t);
+extern void    cga_write(uint32_t addr, uint8_t val, priv_t);
+extern uint8_t cga_read(uint32_t addr, priv_t);
 extern void    cga_recalctimings(cga_t *cga);
-extern void    cga_poll(void *priv);
+extern void    cga_poll(priv_t);
 
 extern void    cga_hline(bitmap_t *b, int x1, int y, int x2, uint8_t col);
 

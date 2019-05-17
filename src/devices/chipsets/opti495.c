@@ -258,7 +258,7 @@ Note:	the block address is forced to be a multiple of the block size by
 	  ignoring the appropriate number of the least-significant bits
 SeeAlso: #P0178,#P0187
  *
- * Version:	@(#)opti495.c	1.0.11	2019/04/08
+ * Version:	@(#)opti495.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -310,7 +310,7 @@ typedef struct {
 
 
 static void
-opti495_write(uint16_t addr, uint8_t val, void *priv)
+opti495_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     opti_t *dev = (opti_t *)priv;
 
@@ -341,7 +341,7 @@ opti495_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-opti495_read(uint16_t addr, void *priv)
+opti495_read(uint16_t addr, priv_t priv)
 {
     opti_t *dev = (opti_t *)priv;
     uint8_t ret = 0xff;
@@ -358,7 +358,7 @@ opti495_read(uint16_t addr, void *priv)
 
 
 static void
-opti_close(void *priv)
+opti_close(priv_t priv)
 {
     opti_t *dev = (opti_t *)priv;
 
@@ -366,7 +366,7 @@ opti_close(void *priv)
 }
 
 
-static void *
+static priv_t
 opti_init(const device_t *info, UNUSED(void *parent))
 {
     opti_t *dev;
@@ -382,7 +382,7 @@ opti_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0024, 1,
 		  opti495_read,NULL,NULL, opti495_write,NULL,NULL, dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

@@ -14,7 +14,7 @@
  *		(which is in m_compaq_vid.c), the Portable 3 needs the
  *		Plasma driver, there are some ROM issues, etc.
  *
- * Version:	@(#)m_compaq.c	1.0.13	2019/05/05
+ * Version:	@(#)m_compaq.c	1.0.14	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,7 +77,7 @@ typedef struct {
 
 
 static uint8_t
-read_ram(uint32_t addr, void *priv)
+read_ram(uint32_t addr, priv_t priv)
 {
 //    cpq_t *dev = (cpq_t *)priv;
 
@@ -89,7 +89,7 @@ read_ram(uint32_t addr, void *priv)
 
 
 static uint16_t
-read_ramw(uint32_t addr, void *priv)
+read_ramw(uint32_t addr, priv_t priv)
 {
 //    cpq_t *dev = (cpq_t *)priv;
 
@@ -101,7 +101,7 @@ read_ramw(uint32_t addr, void *priv)
 
 
 static uint32_t
-read_raml(uint32_t addr, void *priv)
+read_raml(uint32_t addr, priv_t priv)
 {
 //    cpq_t *dev = (cpq_t *)priv;
 
@@ -113,7 +113,7 @@ read_raml(uint32_t addr, void *priv)
 
 
 static void
-write_ram(uint32_t addr, uint8_t val, void *priv)
+write_ram(uint32_t addr, uint8_t val, priv_t priv)
 {
 //    cpq_t *dev = (cpq_t *)priv;
 
@@ -125,7 +125,7 @@ write_ram(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-write_ramw(uint32_t addr, uint16_t val, void *priv)
+write_ramw(uint32_t addr, uint16_t val, priv_t priv)
 {
 //    cpq_t *dev = (cpq_t *)priv;
 
@@ -137,7 +137,7 @@ write_ramw(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-write_raml(uint32_t addr, uint32_t val, void *priv)
+write_raml(uint32_t addr, uint32_t val, priv_t priv)
 {
 //    cpq_t *dev = (cpq_t *)priv;
 
@@ -149,7 +149,7 @@ write_raml(uint32_t addr, uint32_t val, void *priv)
 
 
 static void
-cpq_close(void *priv)
+cpq_close(priv_t priv)
 {
     cpq_t *dev = (cpq_t *)priv;
 
@@ -157,7 +157,7 @@ cpq_close(void *priv)
 }
 
 
-static void *
+static priv_t
 cpq_init(const device_t *info, void *arg)
 {
     cpq_t *dev;
@@ -167,7 +167,7 @@ cpq_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     switch(dev->type) {
 	case 0:		/* Portable */
@@ -256,7 +256,7 @@ cpq_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

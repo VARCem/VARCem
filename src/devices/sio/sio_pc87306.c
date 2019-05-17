@@ -8,7 +8,7 @@
  *
  *		Emulation of the NatSemi PC87306 Super I/O chip.
  *
- * Version:	@(#)sio_pc87306.c	1.0.11	2019/04/09
+ * Version:	@(#)sio_pc87306.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,7 +65,7 @@ typedef struct {
 
 
 static void
-gpio_write(uint16_t port, uint8_t val, void *priv)
+gpio_write(uint16_t port, uint8_t val, priv_t priv)
 {
     pc87306_t *dev = (pc87306_t *)priv;
 
@@ -74,7 +74,7 @@ gpio_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-gpio_read(uint16_t port, void *priv)
+gpio_read(uint16_t port, priv_t priv)
 {
     pc87306_t *dev = (pc87306_t *)priv;
 
@@ -216,7 +216,7 @@ serial_handler(pc87306_t *dev, int uart)
 
 
 static void
-pc87306_write(uint16_t port, uint8_t val, void *priv)
+pc87306_write(uint16_t port, uint8_t val, priv_t priv)
 {
     pc87306_t *dev = (pc87306_t *)priv;
     uint8_t indx, valxor;
@@ -369,7 +369,7 @@ pc87306_write(uint16_t port, uint8_t val, void *priv)
 
 
 uint8_t
-pc87306_read(uint16_t port, void *priv)
+pc87306_read(uint16_t port, priv_t priv)
 {
     pc87306_t *dev = (pc87306_t *)priv;
     uint8_t ret = 0xff, indx;
@@ -434,7 +434,7 @@ pc87306_reset(pc87306_t *dev)
 
 
 static void
-pc87306_close(void *priv)
+pc87306_close(priv_t priv)
 {
     pc87306_t *dev = (pc87306_t *)priv;
 
@@ -442,7 +442,7 @@ pc87306_close(void *priv)
 }
 
 
-static void *
+static priv_t
 pc87306_init(const device_t *info, UNUSED(void *parent))
 {
     pc87306_t *dev = (pc87306_t *)mem_alloc(sizeof(pc87306_t));
@@ -455,7 +455,7 @@ pc87306_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x02e, 2,
 		  pc87306_read,NULL,NULL, pc87306_write,NULL,NULL, dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

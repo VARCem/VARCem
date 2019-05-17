@@ -8,7 +8,7 @@
  *
  *		Definitions for the system timer module.
  *
- * Version:	@(#)timer.h	1.0.3	2019/04/25
+ * Version:	@(#)timer.h	1.0.4	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,7 +84,7 @@ extern int64_t	timer_count;
 extern void	timer_process(void);
 extern void	timer_update_outstanding(void);
 extern void	timer_reset(void);
-extern int	timer_add(void (*callback)(void *priv), void *priv,
+extern int	timer_add(void (*callback)(priv_t), priv_t priv,
 			  int64_t *count, int64_t *enable);
 
 

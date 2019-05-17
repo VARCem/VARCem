@@ -8,7 +8,7 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)snd_sb.c	1.0.12	2019/04/27
+ * Version:	@(#)snd_sb.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -197,9 +197,9 @@ const int32_t sb_att_7dbstep_2bits[]=
 
 
 /* sb 1, 1.5, 2, 2 mvc do not have a mixer, so signal is hardwired */
-static void sb_get_buffer_sb2(int32_t *buffer, int len, void *p)
+static void sb_get_buffer_sb2(int32_t *buffer, int len, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
                 
         int c;
 
@@ -223,9 +223,9 @@ static void sb_get_buffer_sb2(int32_t *buffer, int len, void *p)
         sb->dsp.pos = 0;
 }
 
-static void sb_get_buffer_sb2_mixer(int32_t *buffer, int len, void *p)
+static void sb_get_buffer_sb2_mixer(int32_t *buffer, int len, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1335_mixer_t *mixer = &sb->mixer_sb2;
                 
         int c;
@@ -254,9 +254,9 @@ static void sb_get_buffer_sb2_mixer(int32_t *buffer, int len, void *p)
         sb->dsp.pos = 0;
 }
 
-static void sb_get_buffer_sbpro(int32_t *buffer, int len, void *p)
+static void sb_get_buffer_sbpro(int32_t *buffer, int len, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1345_mixer_t *mixer = &sb->mixer_sbpro;
                 
         int c;
@@ -303,9 +303,9 @@ static void sb_get_buffer_sbpro(int32_t *buffer, int len, void *p)
         sb->dsp.pos = 0;
 }
 
-static void sb_get_buffer_sb16(int32_t *buffer, int len, void *p)
+static void sb_get_buffer_sb16(int32_t *buffer, int len, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
                 
         int c;
@@ -384,9 +384,9 @@ int last_crecord=0;
 #endif
 
 
-static void sb_get_buffer_emu8k(int32_t *buffer, int len, void *p)
+static void sb_get_buffer_emu8k(int32_t *buffer, int len, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
                 
         int c;
@@ -491,9 +491,9 @@ static void sb_get_buffer_emu8k(int32_t *buffer, int len, void *p)
 }
 
 
-void sb_ct1335_mixer_write(uint16_t addr, uint8_t val, void *p)
+void sb_ct1335_mixer_write(uint16_t addr, uint8_t val, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1335_mixer_t *mixer = &sb->mixer_sb2;
         
         if (!(addr & 1))
@@ -535,9 +535,9 @@ void sb_ct1335_mixer_write(uint16_t addr, uint8_t val, void *p)
         }
 }
 
-uint8_t sb_ct1335_mixer_read(uint16_t addr, void *p)
+uint8_t sb_ct1335_mixer_read(uint16_t addr, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1335_mixer_t *mixer = &sb->mixer_sb2;
 
         if (!(addr & 1))
@@ -561,9 +561,9 @@ void sb_ct1335_mixer_reset(sb_t* sb)
         sb_ct1335_mixer_write(0x255,0,sb);
 }
 
-void sb_ct1345_mixer_write(uint16_t addr, uint8_t val, void *p)
+void sb_ct1345_mixer_write(uint16_t addr, uint8_t val, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1345_mixer_t *mixer = &sb->mixer_sbpro;
         
         if (!(addr & 1))
@@ -656,9 +656,9 @@ void sb_ct1345_mixer_write(uint16_t addr, uint8_t val, void *p)
         }
 }
 
-uint8_t sb_ct1345_mixer_read(uint16_t addr, void *p)
+uint8_t sb_ct1345_mixer_read(uint16_t addr, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1345_mixer_t *mixer = &sb->mixer_sbpro;
 
         if (!(addr & 1))
@@ -684,9 +684,9 @@ void sb_ct1345_mixer_reset(sb_t* sb)
         sb_ct1345_mixer_write(5,0,sb);
 }
 
-void sb_ct1745_mixer_write(uint16_t addr, uint8_t val, void *p)
+void sb_ct1745_mixer_write(uint16_t addr, uint8_t val, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
         
         if (!(addr & 1))
@@ -823,9 +823,9 @@ void sb_ct1745_mixer_write(uint16_t addr, uint8_t val, void *p)
         }
 }
 
-uint8_t sb_ct1745_mixer_read(uint16_t addr, void *p)
+uint8_t sb_ct1745_mixer_read(uint16_t addr, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
 	uint8_t temp;
 
@@ -933,19 +933,19 @@ void sb_ct1745_mixer_reset(sb_t* sb)
 
 static uint16_t sb_mcv_addr[8] = {0x200, 0x210, 0x220, 0x230, 0x240, 0x250, 0x260, 0x270};
 
-uint8_t sb_mcv_read(int port, void *p)
+uint8_t sb_mcv_read(int port, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
 
         DEBUG("sb_mcv_read: port=%04x\n", port);
 
         return sb->pos_regs[port & 7];
 }
 
-void sb_mcv_write(int port, uint8_t val, void *p)
+void sb_mcv_write(int port, uint8_t val, priv_t priv)
 {
         uint16_t addr;
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
 
         if (port < 0x102)
                 return;
@@ -977,19 +977,19 @@ void sb_mcv_write(int port, uint8_t val, void *p)
 
 static int sb_pro_mcv_irqs[4] = {7, 5, 3, 3};
 
-uint8_t sb_pro_mcv_read(int port, void *p)
+uint8_t sb_pro_mcv_read(int port, priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
 
         DEBUG("sb_pro_mcv_read: port=%04x\n", port);
 
         return sb->pos_regs[port & 7];
 }
 
-void sb_pro_mcv_write(int port, uint8_t val, void *p)
+void sb_pro_mcv_write(int port, uint8_t val, priv_t priv)
 {
         uint16_t addr;
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
 
         if (port < 0x102)
                 return;
@@ -1021,7 +1021,8 @@ void sb_pro_mcv_write(int port, uint8_t val, void *p)
         sb_dsp_setdma8(&sb->dsp, sb->pos_regs[4] & 3);
 }
 
-void *sb_1_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_1_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1044,10 +1045,11 @@ void *sb_1_init(const device_t *info, UNUSED(void *parent))
         	io_sethandler(addr+8, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &sb->opl);
         	io_sethandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &sb->opl);
 	}
-        sound_add_handler(sb_get_buffer_sb2, sb);
-        return sb;
+        sound_add_handler(sb_get_buffer_sb2, (priv_t)sb);
+        return (priv_t)sb;
 }
-void *sb_15_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_15_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x0 to 2x3 -> CMS chip
@@ -1070,11 +1072,12 @@ void *sb_15_init(const device_t *info, UNUSED(void *parent))
         	io_sethandler(addr+8, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &sb->opl);
         	io_sethandler(0x0388, 0x0002, opl2_read, NULL, NULL, opl2_write, NULL, NULL, &sb->opl);
 	}
-        sound_add_handler(sb_get_buffer_sb2, sb);
-        return sb;
+        sound_add_handler(sb_get_buffer_sb2, (priv_t)sb);
+        return (priv_t)sb;
 }
 
-void *sb_mcv_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_mcv_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb1/2 port mappings, 210h to 260h in 10h steps
           2x6, 2xA, 2xC, 2xE -> DSP chip
@@ -1089,14 +1092,15 @@ void *sb_mcv_init(const device_t *info, UNUSED(void *parent))
         sb_dsp_setaddr(&sb->dsp, 0);//addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
-        sound_add_handler(sb_get_buffer_sb2, sb);
+        sound_add_handler(sb_get_buffer_sb2, (priv_t)sb);
         /* I/O handlers activated in sb_mcv_write */
-        mca_add(sb_mcv_read, sb_mcv_write, sb);
+        mca_add(sb_mcv_read, sb_mcv_write, (priv_t)sb);
         sb->pos_regs[0] = 0x84;
         sb->pos_regs[1] = 0x50;
-        return sb;
+        return (priv_t)sb;
 }
-void *sb_2_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_2_init(const device_t *info, UNUSED(void *parent))
 {
         /*sb2 port mappings. 220h or 240h.
           2x0 to 2x3 -> CMS chip
@@ -1138,15 +1142,16 @@ void *sb_2_init(const device_t *info, UNUSED(void *parent))
         if (mixer_addr > 0)
         {
                 io_sethandler(mixer_addr+4, 0x0002, sb_ct1335_mixer_read, NULL, NULL, sb_ct1335_mixer_write, NULL, NULL, sb);
-                sound_add_handler(sb_get_buffer_sb2_mixer, sb);
+                sound_add_handler(sb_get_buffer_sb2_mixer, (priv_t)sb);
         }
         else
-                sound_add_handler(sb_get_buffer_sb2, sb);    
+                sound_add_handler(sb_get_buffer_sb2, (priv_t)sb);
 
-        return sb;
+        return (priv_t)sb;
 }
 
-void *sb_pro_v1_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_pro_v1_init(const device_t *info, UNUSED(void *parent))
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (9*2 voices)
@@ -1174,12 +1179,13 @@ void *sb_pro_v1_init(const device_t *info, UNUSED(void *parent))
         	io_sethandler(0x0388, 0x0002, opl2_read,   NULL, NULL, opl2_write,   NULL, NULL, &sb->opl);
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1345_mixer_read, NULL, NULL, sb_ct1345_mixer_write, NULL, NULL, sb);
-        sound_add_handler(sb_get_buffer_sbpro, sb);
+        sound_add_handler(sb_get_buffer_sbpro, (priv_t)sb);
 
-        return sb;
+        return (priv_t)sb;
 }
 
-void *sb_pro_v2_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_pro_v2_init(const device_t *info, UNUSED(void *parent))
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip (18 voices)
@@ -1206,12 +1212,13 @@ void *sb_pro_v2_init(const device_t *info, UNUSED(void *parent))
         	io_sethandler(0x0388, 0x0004, opl3_read,   NULL, NULL, opl3_write,   NULL, NULL, &sb->opl);
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1345_mixer_read, NULL, NULL, sb_ct1345_mixer_write, NULL, NULL, sb);
-        sound_add_handler(sb_get_buffer_sbpro, sb);
+        sound_add_handler(sb_get_buffer_sbpro, (priv_t)sb);
 
-        return sb;
+        return (priv_t)sb;
 }
 
-void *sb_pro_mcv_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_pro_mcv_init(const device_t *info, UNUSED(void *parent))
 {
         /*sbpro port mappings. 220h or 240h.
           2x0 to 2x3 -> FM chip, Left and Right (18 voices)
@@ -1226,17 +1233,18 @@ void *sb_pro_mcv_init(const device_t *info, UNUSED(void *parent))
         sb_dsp_init(&sb->dsp, SBPRO2);
         sb_ct1345_mixer_reset(sb);
         /* I/O handlers activated in sb_mcv_write */
-        sound_add_handler(sb_get_buffer_sbpro, sb);
+        sound_add_handler(sb_get_buffer_sbpro, (priv_t)sb);
 
         /* I/O handlers activated in sb_pro_mcv_write */
-        mca_add(sb_pro_mcv_read, sb_pro_mcv_write, sb);
+        mca_add(sb_pro_mcv_read, sb_pro_mcv_write, (priv_t)sb);
         sb->pos_regs[0] = 0x03;
         sb->pos_regs[1] = 0x51;
 
-        return sb;
+        return (priv_t)sb;
 }
 
-void *sb_16_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_16_init(const device_t *info, UNUSED(void *parent))
 {
         sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
@@ -1258,7 +1266,7 @@ void *sb_16_init(const device_t *info, UNUSED(void *parent))
         	io_sethandler(0x0388, 0x0004, opl3_read,   NULL, NULL, opl3_write,   NULL, NULL, &sb->opl);
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1745_mixer_read, NULL, NULL, sb_ct1745_mixer_write, NULL, NULL, sb);
-        sound_add_handler(sb_get_buffer_sb16, sb);
+        sound_add_handler(sb_get_buffer_sb16, (priv_t)sb);
 	if (mpu_addr) {
 		sb->mpu = (mpu_t *)mem_alloc(sizeof(mpu_t));
 		memset(sb->mpu, 0, sizeof(mpu_t));
@@ -1267,10 +1275,11 @@ void *sb_16_init(const device_t *info, UNUSED(void *parent))
 	} else
 		sb->mpu = NULL;
 
-        return sb;
+        return (priv_t)sb;
 }
 
-void *sb_awe32_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sb_awe32_init(const device_t *info, UNUSED(void *parent))
 {
         sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
         uint16_t addr = device_get_config_hex16("base");
@@ -1278,7 +1287,6 @@ void *sb_awe32_init(const device_t *info, UNUSED(void *parent))
         uint16_t emu_addr = device_get_config_hex16("emu_base");
         int onboard_ram = device_get_config_int("onboard_ram");
         memset(sb, 0, sizeof(sb_t));
-
 
 	sb->opl_enabled = device_get_config_int("opl");
 	if (sb->opl_enabled)
@@ -1296,7 +1304,7 @@ void *sb_awe32_init(const device_t *info, UNUSED(void *parent))
         	io_sethandler(0x0388, 0x0004, opl3_read,   NULL, NULL, opl3_write,   NULL, NULL, &sb->opl);
 	}
         io_sethandler(addr+4, 0x0002, sb_ct1745_mixer_read, NULL, NULL, sb_ct1745_mixer_write, NULL, NULL, sb);
-        sound_add_handler(sb_get_buffer_emu8k, sb);
+        sound_add_handler(sb_get_buffer_emu8k, (priv_t)sb);
 	if (mpu_addr) {
 		sb->mpu = (mpu_t *)mem_alloc(sizeof(mpu_t));
 		memset(sb->mpu, 0, sizeof(mpu_t));
@@ -1306,12 +1314,12 @@ void *sb_awe32_init(const device_t *info, UNUSED(void *parent))
 		sb->mpu = NULL;
         emu8k_init(&sb->emu8k, ROM_PATH_AWE32, emu_addr, onboard_ram);
 
-        return sb;
+        return (priv_t)sb;
 }
 
-void sb_close(void *p)
+void sb_close(priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         sb_dsp_close(&sb->dsp);
         #ifdef SB_DSP_RECORD_DEBUG
             if (soundfsb != 0)
@@ -1329,18 +1337,18 @@ void sb_close(void *p)
         free(sb);
 }
 
-void sb_awe32_close(void *p)
+void sb_awe32_close(priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         
         emu8k_close(&sb->emu8k);
 
         sb_close(sb);
 }
 
-void sb_speed_changed(void *p)
+void sb_speed_changed(priv_t priv)
 {
-        sb_t *sb = (sb_t *)p;
+        sb_t *sb = (sb_t *)priv;
         
         sb_dsp_speed_changed(&sb->dsp);
 }

@@ -8,7 +8,7 @@
  *
  *		Implementation of the WD76C10 System Controller chip.
  *
- * Version:	@(#)wd76c10.c	1.0.12	2019/04/08
+ * Version:	@(#)wd76c10.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -66,7 +66,7 @@ typedef struct {
 
 
 static uint16_t
-wd76c10_read(uint16_t port, void *priv)
+wd76c10_read(uint16_t port, priv_t priv)
 {
     wd76c10_t *dev = (wd76c10_t *)priv;
     int16_t ret = 0xffff;
@@ -93,8 +93,18 @@ wd76c10_read(uint16_t port, void *priv)
 }
 
 
+static uint8_t
+wd76c10_readb(uint16_t port, priv_t priv)
+{
+    if (port & 1)
+	return(wd76c10_read(port & ~1, priv) >> 8);
+
+    return(wd76c10_read(port, priv) & 0xff);
+}
+
+
 static void
-wd76c10_write(uint16_t port, uint16_t val, void *priv)
+wd76c10_write(uint16_t port, uint16_t val, priv_t priv)
 {
     wd76c10_t *dev = (wd76c10_t *)priv;
 
@@ -176,18 +186,8 @@ wd76c10_write(uint16_t port, uint16_t val, void *priv)
 }
 
 
-static uint8_t
-wd76c10_readb(uint16_t port, void *priv)
-{
-    if (port & 1)
-	return(wd76c10_read(port & ~1, priv) >> 8);
-
-    return(wd76c10_read(port, priv) & 0xff);
-}
-
-
 static void
-wd76c10_writeb(uint16_t port, uint8_t val, void *priv)
+wd76c10_writeb(uint16_t port, uint8_t val, priv_t priv)
 {
     uint16_t temp = wd76c10_read(port, priv);
 
@@ -199,7 +199,7 @@ wd76c10_writeb(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-wd76c10_close(void *priv)
+wd76c10_close(priv_t priv)
 {
     wd76c10_t *dev = (wd76c10_t *)priv;
 
@@ -207,7 +207,7 @@ wd76c10_close(void *priv)
 }
 
 
-static void *
+static priv_t
 wd76c10_init(const device_t *info, UNUSED(void *parent))
 {
     wd76c10_t *dev;
@@ -231,7 +231,7 @@ wd76c10_init(const device_t *info, UNUSED(void *parent))
 		  wd76c10_readb,wd76c10_read,NULL,
 		  wd76c10_writeb,wd76c10_write,NULL, dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

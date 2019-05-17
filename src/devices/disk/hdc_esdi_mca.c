@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.17	2019/04/25
+ * Version:	@(#)hdc_esdi_mca.c	1.0.18	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -128,7 +128,9 @@ typedef struct {
 
     uint32_t	bios;
     rom_t	bios_rom;
-       
+
+    uint8_t	pos_regs[8];
+
     uint8_t	basic_ctrl;
     uint8_t	status;
     uint8_t	irq_status;
@@ -138,35 +140,32 @@ typedef struct {
     uint16_t	cmd_data[4];
     int		cmd_dev;
 
-    int		status_pos,
-		status_len;
+    int		command;
+    int		cmd_state;
 
-    uint16_t	status_data[256];
+    int		in_reset;
+    int64_t	callback;
+
+    uint32_t	rba;
+
+    struct {
+        int req_in_progress;
+    }		cmds[3];
+
+    drive_t	drives[2];
 
     int		data_pos;
     uint16_t	data[256];
 
+    int		status_pos,
+		status_len;
+    uint16_t	status_data[256];
+
+    int		sector_pos,
+		sector_count;
     uint16_t	sector_buffer[256][256];
-
-    int		sector_pos;
-    int		sector_count;
-                
-    int		command;
-    int		cmd_state;
-        
-    int		in_reset;
-    int64_t	callback;
-        
-    uint32_t	rba;
-        
-    struct {
-        int req_in_progress;
-    }		cmds[3];
-        
-    drive_t	drives[2];
-
-    uint8_t	pos_regs[8];
 } hdc_t;
+
 
 #define STATUS_DMA_ENA		(1 << 7)
 #define STATUS_IRQ_PENDING	(1 << 6)
@@ -262,8 +261,8 @@ device_not_present(hdc_t *dev)
     dev->status_data[3] = 0;
     dev->status_data[4] = 0;
     dev->status_data[5] = 0;
-    dev->status_data[6] = 0;                        
-    dev->status_data[7] = 0;                       
+    dev->status_data[6] = 0;
+    dev->status_data[7] = 0;
     dev->status_data[8] = 0;
 
     dev->status = STATUS_IRQ | STATUS_STATUS_OUT_FULL;
@@ -284,8 +283,8 @@ rba_out_of_range(hdc_t *dev)
     dev->status_data[3] = 0;
     dev->status_data[4] = 0;
     dev->status_data[5] = 0;
-    dev->status_data[6] = 0;                        
-    dev->status_data[7] = 0;                       
+    dev->status_data[6] = 0;
+    dev->status_data[7] = 0;
     dev->status_data[8] = 0;
 
     dev->status = STATUS_IRQ | STATUS_STATUS_OUT_FULL;
@@ -332,10 +331,10 @@ complete_command_status(hdc_t *dev)
     else						\
 	drive = &dev->drives[1];			\
 } while (0)
-                
+
 
 static void
-hdc_callback(void *priv)
+hdc_callback(priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     drive_t *drive;
@@ -382,7 +381,7 @@ hdc_callback(void *priv)
                         	dev->callback = ESDI_TIME;
                         	dev->data_pos = 0;
                         	break;
-                        
+
                         case 1:
                         	if (!(dev->basic_ctrl & CTRL_DMA_ENA)) {
                                 	dev->callback = ESDI_TIME;
@@ -400,7 +399,7 @@ hdc_callback(void *priv)
 
                                 	while (dev->data_pos < 256) {
                                         	val = dma_channel_write(dev->dma, dev->data[dev->data_pos]);
-                                
+
                                         	if (val == DMA_NODATA) {
                                                 	dev->callback = ESDI_TIME;
                                                 	return;
@@ -436,7 +435,7 @@ hdc_callback(void *priv)
                         device_not_present(dev);
                         return;
                 }
-                
+
                 switch (dev->cmd_state) {
                         case 0:
                         	dev->rba = (dev->cmd_data[2] | (dev->cmd_data[3] << 16)) & 0x0fffffff;
@@ -453,7 +452,7 @@ hdc_callback(void *priv)
                         	dev->irq_status = dev->cmd_dev | IRQ_DATA_TRANSFER_READY;
                         	dev->irq_in_progress = 1;
                         	set_irq(dev);
-                        
+
                         	dev->cmd_state = 1;
                         	dev->callback = ESDI_TIME;
                         	dev->data_pos = 0;
@@ -468,7 +467,7 @@ hdc_callback(void *priv)
 				while (dev->sector_pos < dev->sector_count) {
                                 	while (dev->data_pos < 256) {
 	                                        val = dma_channel_read(dev->dma);
-                                
+
                                         	if (val == DMA_NODATA) {
                                                 	dev->callback = ESDI_TIME;
                                                 	return;
@@ -640,7 +639,7 @@ hdc_callback(void *priv)
                         	dev->callback = ESDI_TIME;
                         	dev->data_pos = 0;
                         	break;
-                        
+
                         case 1:
                         	if (! (dev->basic_ctrl & CTRL_DMA_ENA)) {
                                 	dev->callback = ESDI_TIME;
@@ -649,7 +648,7 @@ hdc_callback(void *priv)
                         	while (dev->sector_pos < dev->sector_count) {
                                 	while (dev->data_pos < 256) {
                                         	val = dma_channel_read(dev->dma);
-                                
+
                                         	if (val == DMA_NODATA) {
                                                 	dev->callback = ESDI_TIME;
                                                 	return;
@@ -706,7 +705,7 @@ hdc_callback(void *priv)
                                         	memcpy(dev->data, dev->sector_buffer[dev->sector_pos++], 512);
                                 	while (dev->data_pos < 256) {
                                         	val = dma_channel_write(dev->dma, dev->data[dev->data_pos]);
-                                
+
                                         	if (val == DMA_NODATA) {
                                                 	dev->callback = ESDI_TIME;
                                                 	return;
@@ -756,7 +755,7 @@ hdc_callback(void *priv)
 
 
 static uint8_t
-hdc_read(uint16_t port, void *priv)
+hdc_read(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
@@ -782,7 +781,7 @@ hdc_read(uint16_t port, void *priv)
 
 
 static void
-hdc_write(uint16_t port, uint8_t val, void *priv)
+hdc_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -843,13 +842,13 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
                                			dev->cmd_pos = 0;
                                 		dev->status_pos = 0;
                                			break;
-          
+
                                		case ATTN_EOI:
                                			dev->irq_in_progress = 0;
                                			dev->status &= ~STATUS_IRQ;
                                			clear_irq(dev);
                                			break;
-    
+
                                		default:
                                			DEBUG("ESDI: bad attention request %02x\n", val);
                        		}
@@ -871,7 +870,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
                                			dev->status &= ~STATUS_IRQ;
                                			clear_irq(dev);
                                			break;
-     
+
                                		default:
                                			DEBUG("ESDI: bad attention request %02x\n", val);
                        		}
@@ -889,7 +888,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint16_t
-hdc_readw(uint16_t port, void *priv)
+hdc_readw(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint16_t ret = 0xffff;
@@ -908,13 +907,13 @@ hdc_readw(uint16_t port, void *priv)
 	default:
 		DEBUG("ESDI: readw from invalid port %04x\n", port);
     }
-        
+
     return(ret);
 }
 
 
 static void
-hdc_writew(uint16_t port, uint16_t val, void *priv)
+hdc_writew(uint16_t port, uint16_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -947,7 +946,7 @@ hdc_writew(uint16_t port, uint16_t val, void *priv)
 
 
 static uint8_t
-hdc_mca_read(int port, void *priv)
+hdc_mca_read(int port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = dev->pos_regs[port & 7];
@@ -959,7 +958,7 @@ hdc_mca_read(int port, void *priv)
 
 
 static void
-hdc_mca_write(int port, uint8_t val, void *priv)
+hdc_mca_write(int port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -1074,7 +1073,26 @@ hdc_mca_write(int port, uint8_t val, void *priv)
 }
 
 
-static void *
+static void
+esdi_close(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    drive_t *drive;
+    int d;
+
+    dev->drives[0].present = dev->drives[1].present = 0;
+
+    for (d = 0; d < ESDI_NUM; d++) {
+	drive = &dev->drives[d];
+
+	hdd_image_close(drive->hdd_num);
+    }
+
+    free(dev);
+}
+
+
+static priv_t
 esdi_init(const device_t *info, UNUSED(void *parent))
 {
     drive_t *drive;
@@ -1140,26 +1158,7 @@ esdi_init(const device_t *info, UNUSED(void *parent))
     /* Set the reply timer. */
     timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
-    return(dev);
-}
-
-
-static void
-esdi_close(void *priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-    drive_t *drive;
-    int d;
-
-    dev->drives[0].present = dev->drives[1].present = 0;
-
-    for (d = 0; d < ESDI_NUM; d++) {
-	drive = &dev->drives[d];
-
-	hdd_image_close(drive->hdd_num);
-    }
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

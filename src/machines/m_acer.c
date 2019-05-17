@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430xx-based Acer machines.
  *
- * Version:	@(#)m_acer.c	1.0.2	2019/04/22
+ * Version:	@(#)m_acer.c	1.0.4	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,7 +69,7 @@ typedef struct {
 
 
 static void
-m3a_out(uint16_t port, uint8_t val, void *priv)
+m3a_out(uint16_t port, uint8_t val, priv_t priv)
 {
     acer_t *dev = (acer_t *)priv;
 
@@ -79,7 +79,7 @@ m3a_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-m3a_in(uint16_t port, void *priv)
+m3a_in(uint16_t port, priv_t priv)
 {
     acer_t *dev = (acer_t *)priv;
 
@@ -95,7 +95,7 @@ m3a_in(uint16_t port, void *priv)
 
 
 static void
-acer_close(void *priv)
+acer_close(priv_t priv)
 {
     acer_t *dev = (acer_t *)priv;
 
@@ -103,7 +103,7 @@ acer_close(void *priv)
 }
 
 
-static void *
+static priv_t
 acer_init(const device_t *info, void *arg)
 {
     acer_t *dev;
@@ -113,7 +113,7 @@ acer_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     m_at_common_init();
 
@@ -128,7 +128,7 @@ acer_init(const device_t *info, void *arg)
 		pci_register_slot(0x1F, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x10, PCI_CARD_ONBOARD, 4, 0, 0, 0);
 
-		powermate_memregs_init();
+		device_add(&memregs_powermate_device);
 
 		device_add(&i430hx_device);
 		device_add(&piix3_device);
@@ -151,7 +151,7 @@ acer_init(const device_t *info, void *arg)
 		pci_register_slot(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4);
 
-		powermate_memregs_init();
+		device_add(&memregs_powermate_device);
 
 		device_add(&i430hx_device);
 		device_add(&piix3_device);
@@ -174,7 +174,7 @@ acer_init(const device_t *info, void *arg)
 		pci_register_slot(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4);
 
-		powermate_memregs_init();
+		device_add(&memregs_powermate_device);
 
 		device_add(&i430fx_device);
 		device_add(&piix3_device);
@@ -186,7 +186,7 @@ acer_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

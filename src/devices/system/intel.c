@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.11	2019/05/05
+ * Version:	@(#)intel.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,8 +59,9 @@ typedef struct {
 
 
 static uint8_t
-config_read(uint16_t port, void *priv)
+config_read(uint16_t port, priv_t priv)
 {
+//    batman_t *dev = (batman_t *)priv;
     uint8_t ret = 0x00;
 
     switch (port & 0x000f) {
@@ -73,12 +74,12 @@ config_read(uint16_t port, void *priv)
 		break;
     }
 
-    return ret;
+    return(ret);
 }
 
 
 static void
-timer_over(void *priv)
+timer_over(priv_t priv)
 {
     batman_t *dev = (batman_t *)priv;
 
@@ -87,7 +88,7 @@ timer_over(void *priv)
 
 
 static void
-timer_write(uint16_t addr, uint8_t val, void *priv)
+timer_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     batman_t *dev = (batman_t *)priv;
 
@@ -101,7 +102,7 @@ timer_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-timer_read(uint16_t addr, void *priv)
+timer_read(uint16_t addr, priv_t priv)
 {
     batman_t *dev = (batman_t *)priv;
     uint16_t latch;
@@ -121,36 +122,38 @@ timer_read(uint16_t addr, void *priv)
     else
 	ret = latch & 0xff;
 
-    return ret;
+    return(ret);
 }
 
 
 static void
-batman_close(void *priv)
+batman_close(priv_t priv)
 {
-    batman_t *dev = (batman_t *) priv;
+    batman_t *dev = (batman_t *)priv;
 
     free(dev);
 }
 
 
-static void *
+static priv_t
 batman_init(const device_t *info, UNUSED(void *parent))
 {
-    batman_t *dev = (batman_t *)mem_alloc(sizeof(batman_t));
+    batman_t *dev;
+
+    dev = (batman_t *)mem_alloc(sizeof(batman_t));
     memset(dev, 0x00, sizeof(batman_t));
 
-    io_sethandler(0x0073, 0x0001,
+    io_sethandler(0x0073, 1,
 		  config_read,NULL,NULL, NULL,NULL,NULL, dev);
-    io_sethandler(0x0075, 0x0001,
+    io_sethandler(0x0075, 1,
 		  config_read,NULL,NULL, NULL,NULL,NULL, dev);
 
-    io_sethandler(0x0078, 0x0002,
+    io_sethandler(0x0078, 2,
 		  timer_read,NULL,NULL, timer_write,NULL,NULL, dev);
 
     timer_add(timer_over, dev, &dev->timer, &dev->timer);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

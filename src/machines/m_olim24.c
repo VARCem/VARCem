@@ -21,7 +21,7 @@
  *		data at all, so there seems to not be a way to properly do
  *		that..  The chip's interrupt pin is not connected.
  *
- * Version:	@(#)m_olim24.c	1.0.209	2019/05/03
+ * Version:	@(#)m_olim24.c	1.0.21	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -144,7 +144,7 @@ static int	key_queue_start = 0,
 
 
 static void
-kbd_poll(void *priv)
+kbd_poll(priv_t priv)
 {
     olim24_t *dev = (olim24_t *)priv;
 
@@ -180,7 +180,7 @@ kbd_adddata_ex(uint16_t val)
 
 
 static void
-kbd_write(uint16_t port, uint8_t val, void *priv)
+kbd_write(uint16_t port, uint8_t val, priv_t priv)
 {
     olim24_t *dev = (olim24_t *)priv;
 
@@ -260,7 +260,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-kbd_read(uint16_t port, void *priv)
+kbd_read(uint16_t port, priv_t priv)
 {
     olim24_t *dev = (olim24_t *)priv;
     uint8_t ret = 0xff;
@@ -299,7 +299,7 @@ kbd_read(uint16_t port, void *priv)
 
 
 static int
-mse_poll(int x, int y, int z, int b, void *priv)
+mse_poll(int x, int y, int z, int b, priv_t priv)
 {
     olim24_t *dev = (olim24_t *)priv;
 
@@ -386,7 +386,7 @@ mse_poll(int x, int y, int z, int b, void *priv)
 /* Set the current NVR time. */
 #define set_nibbles(a, v) regs[(a##10)] = ((v)/10) ; regs[(a##1)] = ((v)%10)
 static void
-rtc_time_set(uint8_t *regs, struct tm *tm)
+rtc_time_set(uint8_t *regs, const struct tm *tm)
 {
     set_nibbles(RTC_SECOND, tm->tm_sec);
     set_nibbles(RTC_MINUTE, tm->tm_min);
@@ -503,7 +503,7 @@ rtc_reset(nvr_t *nvr)
 
 /* Write to one of the RTC registers. */
 static void
-rtc_write(uint16_t addr, uint8_t val, void *priv)
+rtc_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     uint8_t *regs = nvr->regs;
@@ -543,7 +543,7 @@ rtc_write(uint16_t addr, uint8_t val, void *priv)
 
 /* Read from one of the RTC registers. */
 static uint8_t
-rtc_read(uint16_t addr, void *priv)
+rtc_read(uint16_t addr, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     uint8_t *regs = nvr->regs;
@@ -580,7 +580,7 @@ rtc_read(uint16_t addr, void *priv)
 
 
 static uint8_t
-m24_read(uint16_t port, void *priv)
+m24_read(uint16_t port, priv_t priv)
 {
     switch (port) {
 	case 0x66:	/* System Configuration 1 (DIPSW-0) */
@@ -636,7 +636,7 @@ m24_read(uint16_t port, void *priv)
 
 
 static void
-olim24_close(void *priv)
+olim24_close(priv_t priv)
 {
     olim24_t *dev = (olim24_t *)priv;
     nvr_t *nvr = &dev->nvr;
@@ -651,7 +651,7 @@ olim24_close(void *priv)
 }
 
 
-static void *
+static priv_t
 olim24_init(const device_t *info, void *arg)
 {
     olim24_t *dev;
@@ -661,7 +661,7 @@ olim24_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     machine_common_init();
 
@@ -710,7 +710,7 @@ olim24_init(const device_t *info, void *arg)
     if (dev->type == 2)
 	device_add(&st506_xt_olim240_hdc_device);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

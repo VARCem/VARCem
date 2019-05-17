@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.16	2019/04/25
+ * Version:	@(#)hdc_esdi_at.c	1.0.17	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -211,7 +211,7 @@ next_sector(hdc_t *dev)
 
 
 static void
-hdc_writew(uint16_t port, uint16_t val, void *priv)
+hdc_writew(uint16_t port, uint16_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -232,7 +232,7 @@ hdc_writew(uint16_t port, uint16_t val, void *priv)
 
 
 static void
-hdc_write(uint16_t port, uint8_t val, void *priv)
+hdc_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -406,7 +406,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint16_t
-hdc_readw(uint16_t port, void *priv)
+hdc_readw(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint16_t temp;
@@ -437,7 +437,7 @@ hdc_readw(uint16_t port, void *priv)
 
 
 static uint8_t
-hdc_read(uint16_t port, void *priv)
+hdc_read(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t temp = 0xff;
@@ -484,7 +484,7 @@ hdc_read(uint16_t port, void *priv)
 
 
 static void
-hdc_callback(void *priv)
+hdc_callback(priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     drive_t *drive = &dev->drives[dev->drive_sel];
@@ -785,7 +785,26 @@ loadhd(hdc_t *dev, int hdd_num, int d, const wchar_t *fn)
 }
 
 
-static void *
+static void
+wd1007vse1_close(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    drive_t *drive;
+    int d;
+
+    for (d=0; d<2; d++) {
+	drive = &dev->drives[d];
+
+	hdd_image_close(drive->hdd_num);
+    }
+
+    free(dev);
+
+    ui_sb_icon_update(SB_DISK | HDD_BUS_ESDI, 0);
+}
+
+
+static priv_t
 wd1007vse1_init(const device_t *info, UNUSED(void *parent))
 {
     hdc_t *dev;
@@ -822,26 +841,7 @@ wd1007vse1_init(const device_t *info, UNUSED(void *parent))
 
     timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
-    return(dev);
-}
-
-
-static void
-wd1007vse1_close(void *priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-    drive_t *drive;
-    int d;
-
-    for (d=0; d<2; d++) {
-	drive = &dev->drives[d];
-
-	hdd_image_close(drive->hdd_num);
-    }
-
-    free(dev);
-
-    ui_sb_icon_update(SB_DISK | HDD_BUS_ESDI, 0);
+    return((priv_t)dev);
 }
 
 

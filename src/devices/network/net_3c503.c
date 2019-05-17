@@ -8,7 +8,7 @@
  *
  *		Implementation of the 3Com Etherlink II 3c503 (ISA 8-bit).
  *
- * Version:	@(#)net_3c503.c	1.0.8	2019/05/06
+ * Version:	@(#)net_3c503.c	1.0.9	2019/05/13
  *
  * Based on	@(#)3c503.cpp Carl (MAME)
  *
@@ -92,10 +92,6 @@ typedef struct {
 } el2_t;
 
 
-static void	el2_rx(void *, uint8_t *, int);
-static void	el2_tx(el2_t *, uint32_t);
-
-
 static void
 el2_interrupt(el2_t *dev, int set)
 {
@@ -124,115 +120,171 @@ el2_interrupt(el2_t *dev, int set)
 }
 
 
+/*
+ * Called by the platform-specific code when an Ethernet frame
+ * has been received. The destination address is tested to see
+ * if it should be accepted, and if the RX ring has enough room,
+ * it is copied into it and the receive process is updated.
+ */
 static void
-el2_ram_write(uint32_t addr, uint8_t val, void *priv)
+el2_rx(void *priv, uint8_t *buf, int io_len)
 {
+    static uint8_t bcast_addr[6] = {0xff,0xff,0xff,0xff,0xff,0xff};
     el2_t *dev = (el2_t *)priv;
+    uint8_t pkthdr[4];
+    uint8_t *startptr;
+    int rx_pages, avail;
+    int idx, nextpage;
+    int endbytes;
 
-    if ((addr & 0x3fff) >= 0x2000)
+    /* FIXME: move to upper layer */
+    ui_sb_icon_update(SB_NETWORK, 1);
+
+    if (io_len != 60) {
+	DEBUG("3C503: rx_frame with length %d\n", io_len);
+    }
+
+    if ((dev->dp8390.CR.stop != 0) || (dev->dp8390.page_start == 0)) return;
+
+    /*
+     * Add the pkt header + CRC to the length, and work
+     * out how many 256-byte pages the frame would occupy.
+     */
+    rx_pages = (io_len + sizeof(pkthdr) + sizeof(uint32_t) + 255)/256;
+    if (dev->dp8390.curr_page < dev->dp8390.bound_ptr) {
+	avail = dev->dp8390.bound_ptr - dev->dp8390.curr_page;
+    } else {
+	avail = (dev->dp8390.page_stop - dev->dp8390.page_start) -
+		(dev->dp8390.curr_page - dev->dp8390.bound_ptr);
+    }
+
+    /*
+     * Avoid getting into a buffer overflow condition by
+     * not attempting to do partial receives. The emulation
+     * to handle this condition seems particularly painful.
+     */
+    if	((avail < rx_pages)
+#if DP8390_NEVER_FULL_RING
+		 || (avail == rx_pages)
+#endif
+		) {
+	DEBUG("3C503: no space\n");
+
+	/* FIXME: move to upper layer */
+	ui_sb_icon_update(SB_NETWORK, 0);
 	return;
+    }
 
-    dev->dp8390.mem[addr & 0x1fff] = val;
-}
+    if ((io_len < 40/*60*/) && !dev->dp8390.RCR.runts_ok) {
+	DEBUG("3C503: rejected small packet, length %d\n", io_len);
 
+    /* FIXME: move to upper layer */
+	ui_sb_icon_update(SB_NETWORK, 0);
+	return;
+    }
 
-static uint8_t
-el2_ram_read(uint32_t addr, void *priv)
-{
-    el2_t *dev = (el2_t *)priv;
+    /* Some computers don't care... */
+    if (io_len < 60)
+	io_len = 60;
 
-    if ((addr & 0x3fff) >= 0x2000)
-	return(0xff);
+    DBGLOG(1, "3C503: RX %x:%x:%x:%x:%x:%x > %x:%x:%x:%x:%x:%x len %d\n",
+	   buf[6], buf[7], buf[8], buf[9], buf[10], buf[11],
+	   buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], io_len);
 
-    return(dev->dp8390.mem[addr & 0x1fff]);
+    /* Do address filtering if not in promiscuous mode. */
+    if (! dev->dp8390.RCR.promisc) {
+	/* If this is a broadcast frame.. */
+	if (! memcmp(buf, bcast_addr, 6)) {
+		/* Broadcast not enabled, we're done. */
+		if (! dev->dp8390.RCR.broadcast) {
+			DEBUG("3C503: RX BC disabled\n");
+
+    /* FIXME: move to upper layer */
+			ui_sb_icon_update(SB_NETWORK, 0);
+			return;
+		}
+	}
+
+	/* If this is a multicast frame.. */
+	else if (buf[0] & 0x01) {
+		/* Multicast not enabled, we're done. */
+		if (! dev->dp8390.RCR.multicast) {
+			DEBUG("3C503: RX MC disabled\n");
+
+			/* FIXME: move to upper layer */
+			ui_sb_icon_update(SB_NETWORK, 0);
+			return;
+		}
+
+		/* Are we listening to this multicast address? */
+		idx = mcast_index(buf);
+		if (! (dev->dp8390.mchash[idx>>3] & (1<<(idx&0x7)))) {
+			DEBUG("3C503: RX MC not listed\n");
+
+			/* FIXME: move to upper layer */
+			ui_sb_icon_update(SB_NETWORK, 0);
+			return;
+		}
+	}
+
+	/* Unicast, must be for us.. */
+	else if (memcmp(buf, dev->dp8390.physaddr, 6)) return;
+    } else {
+	DEBUG("3C503: RX promiscuous receive\n");
+    }
+
+    nextpage = dev->dp8390.curr_page + rx_pages;
+    if (nextpage >= dev->dp8390.page_stop)
+	nextpage -= (dev->dp8390.page_stop - dev->dp8390.page_start);
+
+    /* Set up packet header. */
+    pkthdr[0] = 0x01;			/* RXOK - packet is OK */
+    if (buf[0] & 0x01)
+	pkthdr[0] |= 0x20;		/* MULTICAST packet */
+    pkthdr[1] = nextpage;		/* ptr to next packet */
+    pkthdr[2] = (uint8_t) ((io_len + sizeof(pkthdr)) & 0xff);	/* length-low */
+    pkthdr[3] = (uint8_t) ((io_len + sizeof(pkthdr)) >> 8);	/* length-hi */
+    DBGLOG(1, "3C503: RX pkthdr [%02x %02x %02x %02x]\n",
+	   pkthdr[0], pkthdr[1], pkthdr[2], pkthdr[3]);
+
+    /* Copy into buffer, update curpage, and signal interrupt if config'd */
+	startptr = &dev->dp8390.mem[(dev->dp8390.curr_page * 256) - DP8390_WORD_MEMSTART];
+    memcpy(startptr, pkthdr, sizeof(pkthdr));
+    if ((nextpage > dev->dp8390.curr_page) ||
+	((dev->dp8390.curr_page + rx_pages) == dev->dp8390.page_stop)) {
+	memcpy(startptr+sizeof(pkthdr), buf, io_len);
+    } else {
+	endbytes = (dev->dp8390.page_stop - dev->dp8390.curr_page) * 256;
+	memcpy(startptr+sizeof(pkthdr), buf, endbytes-sizeof(pkthdr));
+	startptr = &dev->dp8390.mem[(dev->dp8390.page_start * 256) - DP8390_WORD_MEMSTART];
+	memcpy(startptr, buf+endbytes-sizeof(pkthdr), io_len-endbytes+8);
+    }
+    dev->dp8390.curr_page = nextpage;
+
+    dev->dp8390.RSR.rx_ok = 1;
+    dev->dp8390.RSR.rx_mbit = (buf[0] & 0x01) ? 1 : 0;
+    dev->dp8390.ISR.pkt_rx = 1;
+
+    if (dev->dp8390.IMR.rx_inte)
+	el2_interrupt(dev, 1);
+
+    /* FIXME: move to upper layer */
+    ui_sb_icon_update(SB_NETWORK, 0);
 }
 
 
 static void
-el2_set_drq(el2_t *dev)
+el2_tx(el2_t *dev, uint32_t val)
 {
-    switch (dev->dma_channel) {
-	case 1:
-		dev->regs.idcfr = 1;
-		break;
+    dev->dp8390.CR.tx_packet = 0;
+    dev->dp8390.TSR.tx_ok = 1;
+    dev->dp8390.ISR.pkt_tx = 1;
 
-	case 2:
-		dev->regs.idcfr = 2;
-		break;
-
-	case 3:
-		dev->regs.idcfr = 4;
-		break;
-    }	
-}
-
-
-/* Restore state to power-up, cancelling all I/O. */
-static void
-el2_reset(void *priv)
-{
-    el2_t *dev = (el2_t *)priv;
-    int i;
-
-    DEBUG("3C503: reset\n");
-
-    /* Initialize the MAC address area by doubling the physical address. */
-    dev->prom[0]  = dev->dp8390.physaddr[0];
-    dev->prom[1]  = dev->dp8390.physaddr[1];
-    dev->prom[2]  = dev->dp8390.physaddr[2];
-    dev->prom[3]  = dev->dp8390.physaddr[3];
-    dev->prom[4]  = dev->dp8390.physaddr[4];
-    dev->prom[5]  = dev->dp8390.physaddr[5];
-
-//FIXME: why??  --Fvk
-    /* NE1K signature. */
-    for (i = 6; i < 16; i++)
-	dev->prom[i] = 0x57;
-
-    /* Zero out registers and memory. */
-    memset(&dev->dp8390.CR,  0x00, sizeof(dev->dp8390.CR) );
-    memset(&dev->dp8390.ISR, 0x00, sizeof(dev->dp8390.ISR));
-    memset(&dev->dp8390.IMR, 0x00, sizeof(dev->dp8390.IMR));
-    memset(&dev->dp8390.DCR, 0x00, sizeof(dev->dp8390.DCR));
-    memset(&dev->dp8390.TCR, 0x00, sizeof(dev->dp8390.TCR));
-    memset(&dev->dp8390.TSR, 0x00, sizeof(dev->dp8390.TSR));
-    memset(&dev->dp8390.RSR, 0x00, sizeof(dev->dp8390.RSR));
+    /* Generate an interrupt if not masked */
+    if (dev->dp8390.IMR.tx_inte)
+	el2_interrupt(dev, 1);
 
     dev->dp8390.tx_timer_active = 0;
-    dev->dp8390.local_dma  = 0;
-    dev->dp8390.page_start = 0;
-    dev->dp8390.page_stop  = 0;
-    dev->dp8390.bound_ptr  = 0;
-    dev->dp8390.tx_page_start = 0;
-    dev->dp8390.num_coll   = 0;
-    dev->dp8390.tx_bytes   = 0;
-    dev->dp8390.fifo       = 0;
-    dev->dp8390.remote_dma = 0;
-    dev->dp8390.remote_start = 0;
-    dev->dp8390.remote_bytes = 0;
-    dev->dp8390.tallycnt_0 = 0;
-    dev->dp8390.tallycnt_1 = 0;
-    dev->dp8390.tallycnt_2 = 0;
-
-    dev->dp8390.curr_page = 0;
-
-    dev->dp8390.rempkt_ptr   = 0;
-    dev->dp8390.localpkt_ptr = 0;
-    dev->dp8390.address_cnt  = 0;
-
-    memset(&dev->dp8390.mem, 0x00, sizeof(dev->dp8390.mem));
-
-    /* Set power-up conditions. */
-    dev->dp8390.CR.stop      = 1;
-    dev->dp8390.CR.rdma_cmd  = 4;
-    dev->dp8390.ISR.reset    = 1;
-    dev->dp8390.DCR.longaddr = 1;
-
-    memset(&dev->regs, 0, sizeof(dev->regs));
-
-    dev->regs.ctrl = 0x0a;	
-
-    el2_interrupt(dev, 0);
 }
 
 
@@ -246,7 +298,7 @@ el2_reset(void *priv)
  * and there is 16K of buffer memory starting at 16K.
  */
 static uint32_t
-el2_chipmem_read(el2_t *dev, uint32_t addr, unsigned int len)
+chipmem_read(el2_t *dev, uint32_t addr, unsigned int len)
 {
     uint32_t retval = 0;
 
@@ -271,7 +323,7 @@ el2_chipmem_read(el2_t *dev, uint32_t addr, unsigned int len)
 
 
 static void
-el2_chipmem_write(el2_t *dev, uint32_t addr, uint32_t val, unsigned len)
+chipmem_write(el2_t *dev, uint32_t addr, uint32_t val, unsigned len)
 {
     if ((addr >= DP8390_WORD_MEMSTART) && (addr < DP8390_WORD_MEMEND)) {
 	dev->dp8390.mem[addr-DP8390_WORD_MEMSTART] = val & 0xff;
@@ -284,7 +336,7 @@ el2_chipmem_write(el2_t *dev, uint32_t addr, uint32_t val, unsigned len)
 
 /* Handle reads/writes to the 'zeroth' page of the DS8390 register file. */
 static uint32_t
-el2_page0_read(el2_t *dev, uint32_t off, unsigned int len)
+page0_read(el2_t *dev, uint32_t off, unsigned int len)
 {
     uint8_t retval = 0;
 
@@ -392,7 +444,7 @@ el2_page0_read(el2_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-el2_page0_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
+page0_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 {
     uint8_t val2;
 
@@ -400,9 +452,9 @@ el2_page0_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 
     /* break up outw into two outb's */
     if (len == 2) {
-	el2_page0_write(dev, off, (val & 0xff), 1);
+	page0_write(dev, off, (val & 0xff), 1);
 	if (off < 0x0f)
-		el2_page0_write(dev, off+1, ((val>>8)&0xff), 1);
+		page0_write(dev, off+1, ((val>>8)&0xff), 1);
 	return;
     }
 
@@ -601,7 +653,7 @@ el2_page0_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 
 /* Handle reads/writes to the first page of the DS8390 register file. */
 static uint32_t
-el2_page1_read(el2_t *dev, uint32_t off, unsigned int len)
+page1_read(el2_t *dev, uint32_t off, unsigned int len)
 {
     DBGLOG(2, "3C503: Page1 read from register 0x%02x, len=%u\n", off, len);
 
@@ -637,7 +689,7 @@ el2_page1_read(el2_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-el2_page1_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
+page1_write(el2_t *dev, uint32_t off, uint32_t val, unsigned int len)
 {
     DBGLOG(2, "3C503: Page1 write to register 0x%02x, len=%u, value=0x%04x\n",
 								off, len, val);
@@ -681,7 +733,7 @@ el2_page1_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 
 /* Handle reads/writes to the second page of the DS8390 register file. */
 static uint32_t
-el2_page2_read(el2_t *dev, uint32_t off, unsigned int len)
+page2_read(el2_t *dev, uint32_t off, unsigned int len)
 {
     DBGLOG(2, "3C503: Page2 read from register 0x%02x, len=%u\n", off, len);
   
@@ -758,7 +810,7 @@ el2_page2_read(el2_t *dev, uint32_t off, unsigned int len)
    affect internal operation, but let them through for now
    and print a warning. */
 static void
-el2_page2_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
+page2_write(el2_t *dev, uint32_t off, uint32_t val, unsigned int len)
 {
     DBGLOG(2, "3C503: Page2 write to register 0x%02x, len=%u, value=0x%04x\n",
 								off, len, val);
@@ -817,9 +869,28 @@ el2_page2_write(el2_t *dev, uint32_t off, uint32_t val, unsigned len)
 }
 
 
+static void
+set_drq(el2_t *dev)
+{
+    switch (dev->dma_channel) {
+	case 1:
+		dev->regs.idcfr = 1;
+		break;
+
+	case 2:
+		dev->regs.idcfr = 2;
+		break;
+
+	case 3:
+		dev->regs.idcfr = 4;
+		break;
+    }	
+}
+
+
 /* Routines for handling reads/writes to the Command Register. */
 static uint32_t
-el2_read_cr(el2_t *dev)
+read_cr(el2_t *dev)
 {
     uint32_t retval;
 
@@ -836,7 +907,7 @@ el2_read_cr(el2_t *dev)
 
 
 static void
-el2_write_cr(el2_t *dev, uint32_t val)
+write_cr(el2_t *dev, uint32_t val)
 {
     DBGLOG(1, "3C503: wrote 0x%02x to CR\n", val);
 
@@ -867,7 +938,7 @@ el2_write_cr(el2_t *dev, uint32_t val)
     if (dev->dp8390.CR.rdma_cmd == 3) {
 	/* Set up DMA read from receive ring */
 	dev->dp8390.remote_start = dev->dp8390.remote_dma = dev->dp8390.bound_ptr * 256;
-	dev->dp8390.remote_bytes = (uint16_t) el2_chipmem_read(dev, dev->dp8390.bound_ptr * 256 + 2, 2);
+	dev->dp8390.remote_bytes = (uint16_t)chipmem_read(dev, dev->dp8390.bound_ptr * 256 + 2, 2);
 	DEBUG("3C503: sending buffer %x length %d\n",
 	      dev->dp8390.remote_start, dev->dp8390.remote_bytes);
     }
@@ -919,34 +990,33 @@ el2_write_cr(el2_t *dev, uint32_t val)
 
 
 static uint8_t
-el2_lo_read(uint16_t addr, void *priv)
+read_lo(uint16_t addr, priv_t priv)
 {
     el2_t *dev = (el2_t *)priv;
-    uint8_t retval = 0;
     int off = addr - dev->base_address;
+    uint8_t retval = 0;
 
     switch ((dev->regs.ctrl >> 2) & 3) {
 	case 0x00:
 		DEBUG(0, "Read offset=%04x\n", off);
-		if (off == 0x00)
-			retval = el2_read_cr(dev);
-		else switch(dev->dp8390.CR.pgsel) {
+		if (off != 0x00) switch(dev->dp8390.CR.pgsel) {
 			case 0x00:
-				retval = el2_page0_read(dev, off, 1);
+				retval = page0_read(dev, off, 1);
 				break;
 
 			case 0x01:
-				retval = el2_page1_read(dev, off, 1);
+				retval = page1_read(dev, off, 1);
 				break;
 
 			case 0x02:
-				retval = el2_page2_read(dev, off, 1);
+				retval = page2_read(dev, off, 1);
 				break;
 
 			case 0x03:
 				retval = 0xff;
 				break;
-		}
+		} else
+			retval = read_cr(dev);
 		break;
 
 	case 0x01:
@@ -967,7 +1037,7 @@ el2_lo_read(uint16_t addr, void *priv)
 
 
 static void
-el2_lo_write(uint16_t addr, uint8_t val, void *priv)
+write_lo(uint16_t addr, uint8_t val, priv_t priv)
 {
     el2_t *dev = (el2_t *)priv;
     int off = addr - dev->base_address;
@@ -978,24 +1048,23 @@ el2_lo_write(uint16_t addr, uint8_t val, void *priv)
 		   the low 16 bytes are for the DS8390, with the current
 		   page being selected by the PS0,PS1 registers in the
 		   command register */
-		if (off == 0x00)
-			el2_write_cr(dev, val);
-		else switch(dev->dp8390.CR.pgsel) {
+		if (off != 0x00) switch(dev->dp8390.CR.pgsel) {
 			case 0x00:
-				el2_page0_write(dev, off, val, 1);
+				page0_write(dev, off, val, 1);
 				break;
 
 			case 0x01:
-				el2_page1_write(dev, off, val, 1);
+				page1_write(dev, off, val, 1);
 				break;
 
 			case 0x02:
-				el2_page2_write(dev, off, val, 1);
+				page2_write(dev, off, val, 1);
 				break;
 
 			case 0x03:
 				break;
-		}
+		} else
+			write_cr(dev, val);
 		break;
 
 	case 0x01:
@@ -1008,8 +1077,77 @@ el2_lo_write(uint16_t addr, uint8_t val, void *priv)
 }
 
 
+/* Restore state to power-up, cancelling all I/O. */
+static void
+el2_reset(priv_t priv)
+{
+    el2_t *dev = (el2_t *)priv;
+    int i;
+
+    DEBUG("3C503: reset\n");
+
+    /* Initialize the MAC address area by doubling the physical address. */
+    dev->prom[0]  = dev->dp8390.physaddr[0];
+    dev->prom[1]  = dev->dp8390.physaddr[1];
+    dev->prom[2]  = dev->dp8390.physaddr[2];
+    dev->prom[3]  = dev->dp8390.physaddr[3];
+    dev->prom[4]  = dev->dp8390.physaddr[4];
+    dev->prom[5]  = dev->dp8390.physaddr[5];
+
+//FIXME: why??  --Fvk
+    /* NE1K signature. */
+    for (i = 6; i < 16; i++)
+	dev->prom[i] = 0x57;
+
+    /* Zero out registers and memory. */
+    memset(&dev->dp8390.CR,  0x00, sizeof(dev->dp8390.CR) );
+    memset(&dev->dp8390.ISR, 0x00, sizeof(dev->dp8390.ISR));
+    memset(&dev->dp8390.IMR, 0x00, sizeof(dev->dp8390.IMR));
+    memset(&dev->dp8390.DCR, 0x00, sizeof(dev->dp8390.DCR));
+    memset(&dev->dp8390.TCR, 0x00, sizeof(dev->dp8390.TCR));
+    memset(&dev->dp8390.TSR, 0x00, sizeof(dev->dp8390.TSR));
+    memset(&dev->dp8390.RSR, 0x00, sizeof(dev->dp8390.RSR));
+
+    dev->dp8390.tx_timer_active = 0;
+    dev->dp8390.local_dma  = 0;
+    dev->dp8390.page_start = 0;
+    dev->dp8390.page_stop  = 0;
+    dev->dp8390.bound_ptr  = 0;
+    dev->dp8390.tx_page_start = 0;
+    dev->dp8390.num_coll   = 0;
+    dev->dp8390.tx_bytes   = 0;
+    dev->dp8390.fifo       = 0;
+    dev->dp8390.remote_dma = 0;
+    dev->dp8390.remote_start = 0;
+    dev->dp8390.remote_bytes = 0;
+    dev->dp8390.tallycnt_0 = 0;
+    dev->dp8390.tallycnt_1 = 0;
+    dev->dp8390.tallycnt_2 = 0;
+
+    dev->dp8390.curr_page = 0;
+
+    dev->dp8390.rempkt_ptr   = 0;
+    dev->dp8390.localpkt_ptr = 0;
+    dev->dp8390.address_cnt  = 0;
+
+    memset(&dev->dp8390.mem, 0x00, sizeof(dev->dp8390.mem));
+
+    /* Set power-up conditions. */
+    dev->dp8390.CR.stop      = 1;
+    dev->dp8390.CR.rdma_cmd  = 4;
+    dev->dp8390.ISR.reset    = 1;
+    dev->dp8390.DCR.longaddr = 1;
+
+    memset(&dev->regs, 0, sizeof(dev->regs));
+
+    dev->regs.ctrl = 0x0a;	
+
+    el2_interrupt(dev, 0);
+}
+
+
 static uint8_t
-el2_hi_read(uint16_t addr, void *priv)
+read_hi(uint16_t addr, priv_t priv)
 {
     el2_t *dev = (el2_t *)priv;
 
@@ -1114,9 +1252,9 @@ el2_hi_read(uint16_t addr, void *priv)
 		if (!(dev->regs.ctrl & 0x80))
 			return 0xff;
 
-		el2_set_drq(dev); 
+		set_drq(dev); 
 
-		return el2_chipmem_read(dev, dev->regs.da++, 1);
+		return chipmem_read(dev, dev->regs.da++, 1);
     }
 
     return 0;
@@ -1124,7 +1262,7 @@ el2_hi_read(uint16_t addr, void *priv)
 
 
 static void
-el2_hi_write(uint16_t addr, uint8_t val, void *priv)
+write_hi(uint16_t addr, uint8_t val, priv_t priv)
 {
     el2_t *dev = (el2_t *)priv;
 
@@ -1244,9 +1382,9 @@ el2_hi_write(uint16_t addr, uint8_t val, void *priv)
 		if (!(dev->regs.ctrl & 0x80))
 			return;
 
-		el2_set_drq(dev); 
+		set_drq(dev); 
 
-		el2_chipmem_write(dev, dev->regs.da++, val, 1);
+		chipmem_write(dev, dev->regs.da++, val, 1);
 		break;
     }
 }
@@ -1256,12 +1394,10 @@ static void
 el2_ioremove(el2_t *dev, uint16_t addr)
 {
     io_removehandler(addr, 16,
-		     el2_lo_read, NULL, NULL,
-		     el2_lo_write, NULL, NULL, dev);	
+		     read_lo,NULL,NULL, write_lo,NULL,NULL, dev);
 
-    io_removehandler(addr+0x400, 16,
-		     el2_hi_read, NULL, NULL,
-		     el2_hi_write, NULL, NULL, dev);	
+    io_removehandler(addr + 0x400, 16,
+		     read_hi,NULL,NULL, write_hi,NULL,NULL, dev);
 }
 
 
@@ -1269,185 +1405,39 @@ static void
 el2_ioset(el2_t *dev, uint16_t addr)
 {
     io_sethandler(addr, 16,
-		  el2_lo_read, NULL, NULL,
-		  el2_lo_write, NULL, NULL, dev);	
+		  read_lo,NULL,NULL, write_lo,NULL,NULL, dev);
 
-    io_sethandler(addr+0x400, 16,
-		  el2_hi_read, NULL, NULL,
-		  el2_hi_write, NULL, NULL, dev);
+    io_sethandler(addr + 0x400, 16,
+		  read_hi,NULL,NULL, write_hi,NULL,NULL, dev);
 }
 
 
-static void
-el2_tx(el2_t *dev, uint32_t val)
+static uint8_t
+ram_read(uint32_t addr, priv_t priv)
 {
-    dev->dp8390.CR.tx_packet = 0;
-    dev->dp8390.TSR.tx_ok = 1;
-    dev->dp8390.ISR.pkt_tx = 1;
-
-    /* Generate an interrupt if not masked */
-    if (dev->dp8390.IMR.tx_inte)
-	el2_interrupt(dev, 1);
-
-    dev->dp8390.tx_timer_active = 0;
-}
-
-
-/*
- * Called by the platform-specific code when an Ethernet frame
- * has been received. The destination address is tested to see
- * if it should be accepted, and if the RX ring has enough room,
- * it is copied into it and the receive process is updated.
- */
-static void
-el2_rx(void *priv, uint8_t *buf, int io_len)
-{
-    static uint8_t bcast_addr[6] = {0xff,0xff,0xff,0xff,0xff,0xff};
     el2_t *dev = (el2_t *)priv;
-    uint8_t pkthdr[4];
-    uint8_t *startptr;
-    int rx_pages, avail;
-    int idx, nextpage;
-    int endbytes;
 
-    /* FIXME: move to upper layer */
-    ui_sb_icon_update(SB_NETWORK, 1);
+    if ((addr & 0x3fff) >= 0x2000)
+	return(0xff);
 
-    if (io_len != 60) {
-	DEBUG("3C503: rx_frame with length %d\n", io_len);
-    }
-
-    if ((dev->dp8390.CR.stop != 0) || (dev->dp8390.page_start == 0)) return;
-
-    /*
-     * Add the pkt header + CRC to the length, and work
-     * out how many 256-byte pages the frame would occupy.
-     */
-    rx_pages = (io_len + sizeof(pkthdr) + sizeof(uint32_t) + 255)/256;
-    if (dev->dp8390.curr_page < dev->dp8390.bound_ptr) {
-	avail = dev->dp8390.bound_ptr - dev->dp8390.curr_page;
-    } else {
-	avail = (dev->dp8390.page_stop - dev->dp8390.page_start) -
-		(dev->dp8390.curr_page - dev->dp8390.bound_ptr);
-    }
-
-    /*
-     * Avoid getting into a buffer overflow condition by
-     * not attempting to do partial receives. The emulation
-     * to handle this condition seems particularly painful.
-     */
-    if	((avail < rx_pages)
-#if DP8390_NEVER_FULL_RING
-		 || (avail == rx_pages)
-#endif
-		) {
-	DEBUG("3C503: no space\n");
-
-	/* FIXME: move to upper layer */
-	ui_sb_icon_update(SB_NETWORK, 0);
-	return;
-    }
-
-    if ((io_len < 40/*60*/) && !dev->dp8390.RCR.runts_ok) {
-	DEBUG("3C503: rejected small packet, length %d\n", io_len);
-
-    /* FIXME: move to upper layer */
-	ui_sb_icon_update(SB_NETWORK, 0);
-	return;
-    }
-
-    /* Some computers don't care... */
-    if (io_len < 60)
-	io_len = 60;
-
-    DBGLOG(1, "3C503: RX %x:%x:%x:%x:%x:%x > %x:%x:%x:%x:%x:%x len %d\n",
-	   buf[6], buf[7], buf[8], buf[9], buf[10], buf[11],
-	   buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], io_len);
-
-    /* Do address filtering if not in promiscuous mode. */
-    if (! dev->dp8390.RCR.promisc) {
-	/* If this is a broadcast frame.. */
-	if (! memcmp(buf, bcast_addr, 6)) {
-		/* Broadcast not enabled, we're done. */
-		if (! dev->dp8390.RCR.broadcast) {
-			DEBUG("3C503: RX BC disabled\n");
-
-    /* FIXME: move to upper layer */
-			ui_sb_icon_update(SB_NETWORK, 0);
-			return;
-		}
-	}
-
-	/* If this is a multicast frame.. */
-	else if (buf[0] & 0x01) {
-		/* Multicast not enabled, we're done. */
-		if (! dev->dp8390.RCR.multicast) {
-			DEBUG("3C503: RX MC disabled\n");
-
-			/* FIXME: move to upper layer */
-			ui_sb_icon_update(SB_NETWORK, 0);
-			return;
-		}
-
-		/* Are we listening to this multicast address? */
-		idx = mcast_index(buf);
-		if (! (dev->dp8390.mchash[idx>>3] & (1<<(idx&0x7)))) {
-			DEBUG("3C503: RX MC not listed\n");
-
-			/* FIXME: move to upper layer */
-			ui_sb_icon_update(SB_NETWORK, 0);
-			return;
-		}
-	}
-
-	/* Unicast, must be for us.. */
-	else if (memcmp(buf, dev->dp8390.physaddr, 6)) return;
-    } else {
-	DEBUG("3C503: RX promiscuous receive\n");
-    }
-
-    nextpage = dev->dp8390.curr_page + rx_pages;
-    if (nextpage >= dev->dp8390.page_stop)
-	nextpage -= (dev->dp8390.page_stop - dev->dp8390.page_start);
-
-    /* Set up packet header. */
-    pkthdr[0] = 0x01;			/* RXOK - packet is OK */
-    if (buf[0] & 0x01)
-	pkthdr[0] |= 0x20;		/* MULTICAST packet */
-    pkthdr[1] = nextpage;		/* ptr to next packet */
-    pkthdr[2] = (uint8_t) ((io_len + sizeof(pkthdr)) & 0xff);	/* length-low */
-    pkthdr[3] = (uint8_t) ((io_len + sizeof(pkthdr)) >> 8);	/* length-hi */
-    DBGLOG(1, "3C503: RX pkthdr [%02x %02x %02x %02x]\n",
-	   pkthdr[0], pkthdr[1], pkthdr[2], pkthdr[3]);
-
-    /* Copy into buffer, update curpage, and signal interrupt if config'd */
-	startptr = &dev->dp8390.mem[(dev->dp8390.curr_page * 256) - DP8390_WORD_MEMSTART];
-    memcpy(startptr, pkthdr, sizeof(pkthdr));
-    if ((nextpage > dev->dp8390.curr_page) ||
-	((dev->dp8390.curr_page + rx_pages) == dev->dp8390.page_stop)) {
-	memcpy(startptr+sizeof(pkthdr), buf, io_len);
-    } else {
-	endbytes = (dev->dp8390.page_stop - dev->dp8390.curr_page) * 256;
-	memcpy(startptr+sizeof(pkthdr), buf, endbytes-sizeof(pkthdr));
-	startptr = &dev->dp8390.mem[(dev->dp8390.page_start * 256) - DP8390_WORD_MEMSTART];
-	memcpy(startptr, buf+endbytes-sizeof(pkthdr), io_len-endbytes+8);
-    }
-    dev->dp8390.curr_page = nextpage;
-
-    dev->dp8390.RSR.rx_ok = 1;
-    dev->dp8390.RSR.rx_mbit = (buf[0] & 0x01) ? 1 : 0;
-    dev->dp8390.ISR.pkt_rx = 1;
-
-    if (dev->dp8390.IMR.rx_inte)
-	el2_interrupt(dev, 1);
-
-    /* FIXME: move to upper layer */
-    ui_sb_icon_update(SB_NETWORK, 0);
+    return(dev->dp8390.mem[addr & 0x1fff]);
 }
 
 
 static void
-el2_close(void *priv)
+ram_write(uint32_t addr, uint8_t val, priv_t priv)
+{
+    el2_t *dev = (el2_t *)priv;
+
+    if ((addr & 0x3fff) >= 0x2000)
+	return;
+
+    dev->dp8390.mem[addr & 0x1fff] = val;
+}
+
+
+static void
+el2_close(priv_t priv)
 {
     el2_t *dev = (el2_t *)priv;
 	
@@ -1462,7 +1452,7 @@ el2_close(void *priv)
 }
 
 
-static void *
+static priv_t
 el2_init(const device_t *info, UNUSED(void *parent))
 {
     uint32_t mac;
@@ -1506,16 +1496,16 @@ el2_init(const device_t *info, UNUSED(void *parent))
     }
     memcpy(dev->dp8390.physaddr, dev->maclocal, sizeof(dev->maclocal));
 
-    INFO("I/O=%04x, IRQ=%d, MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+    INFO("I/O=%04x, IRQ=%i, MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
 	 dev->base_address, dev->base_irq,
-	 dev->dp8390.physaddr[0], dev->dp8390.physaddr[1], dev->dp8390.physaddr[2],
-	 dev->dp8390.physaddr[3], dev->dp8390.physaddr[4], dev->dp8390.physaddr[5]);
+	 dev->maclocal[0], dev->maclocal[1], dev->maclocal[2],
+	 dev->maclocal[3], dev->maclocal[4], dev->maclocal[5]);
 
     /* Reset the board. */
     el2_reset(dev);
 
     /* Attach ourselves to the network module. */
-    if (! network_attach(dev, dev->dp8390.physaddr, el2_rx)) {
+    if (! network_attach(dev, dev->maclocal, el2_rx)) {
 	el2_close(dev);
 
 	return(NULL);
@@ -1523,12 +1513,11 @@ el2_init(const device_t *info, UNUSED(void *parent))
 
     /* Map this system into the memory map. */
     mem_map_add(&dev->ram_mapping, dev->bios_addr, 0x4000,
-		el2_ram_read, NULL, NULL,
-		el2_ram_write, NULL, NULL,
+		ram_read,NULL,NULL, ram_write,NULL,NULL,
 		NULL, MEM_MAPPING_EXTERNAL, dev);
     mem_map_disable(&dev->ram_mapping);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

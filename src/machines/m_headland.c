@@ -12,7 +12,7 @@
  *		so we can add configuration dialog for the onboard video
  *		controller for the AMA machine.
  *
- * Version:	@(#)m_headland.c	1.0.13	2019/05/03
+ * Version:	@(#)m_headland.c	1.0.14	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -70,7 +70,7 @@ typedef struct {
 
 
 static void
-headland_close(void *priv)
+headland_close(priv_t priv)
 {
     headland_t *dev = (headland_t *)priv;
 
@@ -78,7 +78,7 @@ headland_close(void *priv)
 }
 
 
-static void *
+static priv_t
 headland_init(const device_t *info, void *arg)
 {
     romdef_t *roms = (romdef_t *)arg;
@@ -89,7 +89,7 @@ headland_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     m_at_common_init();
 
@@ -121,7 +121,7 @@ headland_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

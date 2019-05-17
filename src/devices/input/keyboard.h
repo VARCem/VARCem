@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.14	2019/04/27
+ * Version:	@(#)keyboard.h	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -126,16 +126,16 @@ extern void	keyboard_cab(void);
 extern int	keyboard_isfsexit(void);
 extern int	keyboard_ismsexit(void);
 
-extern void	keyboard_xt_set_funcs(void *arg,
-				      uint8_t (*func)(void *), void *priv);
-extern void	keyboard_at_set_funcs(void *arg,
-				      uint8_t (*rfunc)(void *),
-				      void (*wfunc)(void *, uint8_t),
-				      void *priv);
+extern void	keyboard_xt_set_funcs(priv_t arg,
+				      uint8_t (*func)(priv_t), priv_t priv);
+extern void	keyboard_at_set_funcs(priv_t arg,
+				      uint8_t (*rfunc)(priv_t),
+				      void (*wfunc)(priv_t, uint8_t),
+				      priv_t priv);
 
 extern void	keyboard_at_adddata_keyboard_raw(uint8_t val);
 extern void	keyboard_at_adddata_mouse(uint8_t val);
-extern void	keyboard_at_set_mouse(void (*mouse_write)(uint8_t val,void *), void *);
+extern void	keyboard_at_set_mouse(void (*mouse_write)(uint8_t val,priv_t), priv_t);
 extern uint8_t	keyboard_at_get_mouse_scan(void);
 extern void	keyboard_at_set_mouse_scan(uint8_t val);
 

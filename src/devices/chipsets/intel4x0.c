@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440 PCISet chipsets.
  *
- * Version:	@(#)intel4x0.c	1.0.6	2019/04/11
+ * Version:	@(#)intel4x0.c	1.0.7	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,7 +100,7 @@ i4x0_map(uint32_t addr, uint32_t size, int state)
 
 
 static void
-i4x0_write(int func, int addr, uint8_t val, void *priv)
+i4x0_write(int func, int addr, uint8_t val, priv_t priv)
 {
     i4x0_t *dev = (i4x0_t *)priv;
 
@@ -210,7 +210,7 @@ i4x0_write(int func, int addr, uint8_t val, void *priv)
 
 
 static uint8_t
-i4x0_read(int func, int addr, void *priv)
+i4x0_read(int func, int addr, priv_t priv)
 {
     i4x0_t *dev = (i4x0_t *)priv;
 
@@ -222,7 +222,7 @@ i4x0_read(int func, int addr, void *priv)
 
 
 static void
-i4x0_reset(void *priv)
+i4x0_reset(priv_t priv)
 {
     i4x0_t *dev = (i4x0_t *)priv;
 
@@ -233,7 +233,7 @@ i4x0_reset(void *priv)
 
 
 static void
-i4x0_close(void *priv)
+i4x0_close(priv_t priv)
 {
     i4x0_t *dev = (i4x0_t *)priv;
 
@@ -241,7 +241,7 @@ i4x0_close(void *priv)
 }
 
 
-static void *
+static priv_t
 i4x0_init(const device_t *info, UNUSED(void *parent))
 {
     i4x0_t *dev;
@@ -343,7 +343,7 @@ i4x0_init(const device_t *info, UNUSED(void *parent))
 
     pci_add_card(0, i4x0_read, i4x0_write, dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

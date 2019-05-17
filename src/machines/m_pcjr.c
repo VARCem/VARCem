@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.21	2019/05/05
+ * Version:	@(#)m_pcjr.c	1.0.22	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -165,7 +165,7 @@ recalc_timings(pcjr_t *dev)
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, void *priv)
+vid_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     uint8_t old;
@@ -209,7 +209,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_in(uint16_t addr, void *priv)
+vid_in(uint16_t addr, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     uint8_t ret = 0xff;
@@ -235,7 +235,7 @@ vid_in(uint16_t addr, void *priv)
 
 
 static void
-vid_write(uint32_t addr, uint8_t val, void *priv)
+vid_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
 
@@ -246,7 +246,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_read(uint32_t addr, void *priv)
+vid_read(uint32_t addr, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
 
@@ -257,7 +257,7 @@ vid_read(uint32_t addr, void *priv)
 
 
 static void
-vid_poll(void *priv)
+vid_poll(priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -576,7 +576,7 @@ vid_poll(void *priv)
 
 
 static void
-kbd_write(uint16_t port, uint8_t val, void *priv)
+kbd_write(uint16_t port, uint8_t val, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
 
@@ -618,7 +618,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-kbd_read(uint16_t port, void *priv)
+kbd_read(uint16_t port, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     uint8_t ret = 0xff;
@@ -656,7 +656,7 @@ kbd_read(uint16_t port, void *priv)
 
 
 static void
-kbd_poll(void *priv)
+kbd_poll(priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     int c, p = 0, key;
@@ -739,7 +739,7 @@ irq0_timer(int new_out, int old_out)
 
 
 static void
-pcjr_close(void *priv)
+pcjr_close(priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
 
@@ -751,7 +751,7 @@ pcjr_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
 
@@ -759,7 +759,7 @@ speed_changed(void *priv)
 }
 
 
-static void *
+static priv_t
 pcjr_init(const device_t *info, UNUSED(void *arg))
 {
     pcjr_t *dev;
@@ -768,7 +768,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     memset(dev, 0x00, sizeof(pcjr_t));
 
     /* Add the machine device. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     dev->memctrl = -1;
     dev->display_type = machine_get_config_int("display_type");
@@ -814,7 +814,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     /* Add the floppy controller. */
     device_add(&fdc_pcjr_device);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the ALi-based machines.
  *
- * Version:	@(#)m_ali.c	1.0.8	2019/04/08
+ * Version:	@(#)m_ali.c	1.0.9	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,11 +55,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Allocate machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     device_add(&ali1429_device);
 
@@ -74,7 +74,7 @@ common_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the TI SN74689 PSG sound devices.
  *
- * Version:	@(#)snd_sn76489.c	1.0.8	2019/04/09
+ * Version:	@(#)snd_sn76489.c	1.0.9	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -105,9 +105,9 @@ void sn76489_update(sn76489_t *sn76489)
         }
 }
 
-void sn76489_get_buffer(int32_t *buffer, int len, void *p)
+void sn76489_get_buffer(int32_t *buffer, int len, priv_t priv)
 {
-        sn76489_t *sn76489 = (sn76489_t *)p;
+        sn76489_t *sn76489 = (sn76489_t *)priv;
         
         int c;
         
@@ -122,9 +122,9 @@ void sn76489_get_buffer(int32_t *buffer, int len, void *p)
         sn76489->pos = 0;
 }
 
-void sn76489_write(uint16_t addr, uint8_t data, void *p)
+void sn76489_write(uint16_t addr, uint8_t data, priv_t priv)
 {
-        sn76489_t *sn76489 = (sn76489_t *)p;
+        sn76489_t *sn76489 = (sn76489_t *)priv;
         int freq;
 
         sn76489_update(sn76489);
@@ -245,28 +245,32 @@ void sn76489_init(sn76489_t *sn76489, uint16_t base, uint16_t size, int type, in
         io_sethandler(base, size, NULL, NULL, NULL, sn76489_write, NULL, NULL, sn76489);
 }
 
-void *sn76489_device_init(const device_t *info, UNUSED(void *parent))
+priv_t
+sn76489_device_init(const device_t *info, UNUSED(void *parent))
 {
         sn76489_t *sn76489 = (sn76489_t *)mem_alloc(sizeof(sn76489_t));
         memset(sn76489, 0, sizeof(sn76489_t));
 
         sn76489_init(sn76489, 0x00c0, 0x0008, SN76496, 3579545);
 
-        return sn76489;
+        return (priv_t)sn76489;
 }
-void *ncr8496_device_init(const device_t *info, UNUSED(void *parent))
+
+
+priv_t
+ncr8496_device_init(const device_t *info, UNUSED(void *parent))
 {
         sn76489_t *sn76489 = (sn76489_t *)mem_alloc(sizeof(sn76489_t));
         memset(sn76489, 0, sizeof(sn76489_t));
 
         sn76489_init(sn76489, 0x00c0, 0x0008, NCR8496, 3579545);
 
-        return sn76489;
+        return (priv_t)sn76489;
 }
 
-void sn76489_device_close(void *p)
+void sn76489_device_close(priv_t priv)
 {
-        sn76489_t *sn76489 = (sn76489_t *)p;
+        sn76489_t *sn76489 = (sn76489_t *)priv;
 
         free(sn76489);        
 }

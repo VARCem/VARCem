@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.22	2019/04/27
+ * Version:	@(#)fdc.c	1.0.23	2019/05/13
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -111,7 +111,7 @@ int	floppymodified[FDD_NUM];
 int	floppyrate[FDD_NUM];
 
 
-static void fdc_callback(void *priv);
+static void fdc_callback(priv_t priv);
 
 
 #ifdef _LOGGING
@@ -139,7 +139,7 @@ fdc_get_current_drive(void)
 
 
 void
-fdc_ctrl_reset(void *priv)
+fdc_ctrl_reset(priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
 
@@ -347,7 +347,7 @@ fdc_int(fdc_t *fdc)
 
 
 static void
-fdc_watchdog_poll(void *priv)
+fdc_watchdog_poll(priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
 
@@ -721,7 +721,7 @@ fdc_sis(fdc_t *fdc)
 
 
 static void
-fdc_write(uint16_t addr, uint8_t val, void *priv)
+fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     fdc_t *fdc = (fdc_t *) priv;
 
@@ -1244,7 +1244,7 @@ fdc_write(uint16_t addr, uint8_t val, void *priv)
 
 
 uint8_t
-fdc_read(uint16_t addr, void *priv)
+fdc_read(uint16_t addr, priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
     uint8_t ret = 0xff;
@@ -1498,7 +1498,7 @@ fdc_no_dma_end(fdc_t *fdc, int compare)
 
 
 static void
-fdc_callback(void *priv)
+fdc_callback(priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
     int compare = 0;
@@ -2187,7 +2187,7 @@ fdc_remove(fdc_t *fdc)
 
 
 void
-fdc_reset(void *priv)
+fdc_reset(priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
     uint8_t default_rwc;
@@ -2248,7 +2248,7 @@ fdc_reset(void *priv)
 
 
 static void
-fdc_close(void *priv)
+fdc_close(priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
 
@@ -2264,7 +2264,7 @@ fdc_close(void *priv)
 }
 
 
-static void *
+static priv_t
 fdc_init(const device_t *info, UNUSED(void *parent))
 {
     fdc_t *fdc;
@@ -2297,7 +2297,7 @@ fdc_init(const device_t *info, UNUSED(void *parent))
 
     fdc_reset(fdc);
 
-    return(fdc);
+    return((priv_t)fdc);
 }
 
 

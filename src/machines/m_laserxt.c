@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_laserxt.c	1.0.12	2019/05/05
+ * Version:	@(#)m_laserxt.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,8 +77,58 @@ ems_addr(laser_t *dev, uint32_t addr)
 }
 
 
+static uint8_t
+ems_read(uint32_t addr, priv_t priv)
+{
+    laser_t *dev = (laser_t *)priv;
+    uint8_t val = 0xff;
+
+    addr = ems_addr(dev, addr);
+
+    if (addr < ((uint32_t)mem_size << 10))
+		val = ram[addr];
+
+    return val;
+}
+
+
 static void
-do_write(uint16_t port, uint8_t val, void *priv)
+ems_write(uint32_t addr, uint8_t val, priv_t priv)
+{
+    laser_t *dev = (laser_t *)priv;
+
+    addr = ems_addr(dev, addr);
+
+    if (addr < ((uint32_t)mem_size << 10))
+	ram[addr] = val;
+}
+
+
+static uint8_t
+do_read(uint16_t port, priv_t priv)
+{
+    laser_t *dev = (laser_t *)priv;
+
+    switch (port) {
+	case 0x0208:
+	case 0x4208:
+	case 0x8208:
+	case 0xc208:
+		return dev->ems_page[port >> 14];
+
+	case 0x0209:
+	case 0x4209:
+	case 0x8209:
+	case 0xc209:
+		return dev->ems_control[port >> 14];
+    }
+
+    return 0xff;
+}
+
+
+static void
+do_write(uint16_t port, uint8_t val, priv_t priv)
 {
     laser_t *dev = (laser_t *)priv;
     uint32_t paddr, vaddr;
@@ -120,57 +170,16 @@ do_write(uint16_t port, uint8_t val, void *priv)
 }
 
 
-static uint8_t
-do_read(uint16_t port, void *priv)
-{
-    laser_t *dev = (laser_t *)priv;
-
-    switch (port) {
-	case 0x0208:
-	case 0x4208:
-	case 0x8208:
-	case 0xc208:
-		return dev->ems_page[port >> 14];
-
-	case 0x0209:
-	case 0x4209:
-	case 0x8209:
-	case 0xc209:
-		return dev->ems_control[port >> 14];
-    }
-
-    return 0xff;
-}
-
-
 static void
-ems_write(uint32_t addr, uint8_t val, void *priv)
+laser_close(priv_t priv)
 {
     laser_t *dev = (laser_t *)priv;
 
-    addr = ems_addr(dev, addr);
-
-    if (addr < ((uint32_t)mem_size << 10))
-	ram[addr] = val;
+    free(dev);
 }
 
 
-static uint8_t
-ems_read(uint32_t addr, void *priv)
-{
-    laser_t *dev = (laser_t *)priv;
-    uint8_t val = 0xff;
-
-    addr = ems_addr(dev, addr);
-
-    if (addr < ((uint32_t)mem_size << 10))
-		val = ram[addr];
-
-    return val;
-}
-
-
-static void *
+static priv_t
 laser_init(const device_t *info, void *arg)
 {
     laser_t *dev;
@@ -181,7 +190,7 @@ laser_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     machine_common_init();
 
@@ -231,16 +240,7 @@ laser_init(const device_t *info, void *arg)
     mem_set_mem_state(0x0c0000, 0x40000,
 		      MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
 
-    return(dev);
-}
-
-
-static void
-laser_close(void *priv)
-{
-    laser_t *dev = (laser_t *)priv;
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

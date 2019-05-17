@@ -8,10 +8,12 @@
  *
  *		Definitions for the memory control module.
  *
- * Version:	@(#)memregs.h	1.0.1	2018/02/14
+ * Version:	@(#)memregs.h	1.0.2	2019/05/13
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,8 +38,8 @@
 # define EMU_MEMREGS_H
 
 
-extern void powermate_memregs_init(void);
-extern void memregs_init(void);
+extern const device_t	memregs_device;
+extern const device_t	memregs_powermate_device;
 
 
 #endif	/*EMU_MEMREGS_H*/

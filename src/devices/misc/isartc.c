@@ -28,7 +28,7 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.8	2019/05/03
+ * Version:	@(#)isartc.c	1.0.9	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -95,8 +95,8 @@ typedef struct {
     uint32_t	base_addr;			/* configured I/O address */
 
     /* Fields for the specific driver. */
-    void	(*f_wr)(uint16_t, uint8_t, void *);
-    uint8_t	(*f_rd)(uint16_t, void *);
+    void	(*f_wr)(uint16_t, uint8_t, priv_t);
+    uint8_t	(*f_rd)(uint16_t, priv_t);
     int8_t	year;				/* register for YEAR value */
     char	pad[3];
 
@@ -290,7 +290,7 @@ mm67_time_get(nvr_t *nvr, struct tm *tm)
 
 /* Set the current NVR time. */
 static void
-mm67_time_set(nvr_t *nvr, struct tm *tm)
+mm67_time_set(nvr_t *nvr, const struct tm *tm)
 {
     rtcdev_t *dev = (rtcdev_t *)nvr->data;
     uint8_t *regs = nvr->regs;
@@ -354,7 +354,7 @@ mm67_reset(nvr_t *nvr)
 
 /* Handle a READ operation from one of our registers. */
 static uint8_t
-mm67_read(uint16_t port, void *priv)
+mm67_read(uint16_t port, priv_t priv)
 {
     rtcdev_t *dev = (rtcdev_t *)priv;
     int reg = port - dev->base_addr;
@@ -384,7 +384,7 @@ mm67_read(uint16_t port, void *priv)
 
 /* Handle a WRITE operation to one of our registers. */
 static void
-mm67_write(uint16_t port, uint8_t val, void *priv)
+mm67_write(uint16_t port, uint8_t val, priv_t priv)
 {
     rtcdev_t *dev = (rtcdev_t *)priv;
     int reg = port - dev->base_addr;
@@ -457,8 +457,24 @@ DEBUG("RTC: write test=%02x\n", val);
  *									*
  ************************************************************************/
 
+/* Remove the device from the system. */
+static void
+isartc_close(priv_t priv)
+{
+    rtcdev_t *dev = (rtcdev_t *)priv;
+
+    io_removehandler(dev->base_addr, dev->base_addrsz,
+		     dev->f_rd,NULL,NULL, dev->f_wr,NULL,NULL, dev);
+
+    if (dev->nvr.fn != NULL)
+	free((wchar_t *)dev->nvr.fn);
+
+    free(dev);
+}
+
+
 /* Initialize the device for use. */
-static void *
+static priv_t
 isartc_init(const device_t *info, UNUSED(void *parent))
 {
     rtcdev_t *dev;
@@ -533,23 +549,7 @@ isartc_init(const device_t *info, UNUSED(void *parent))
     nvr_init(&dev->nvr);
 
     /* Let them know our device instance. */
-    return(dev);
-}
-
-
-/* Remove the device from the system. */
-static void
-isartc_close(void *priv)
-{
-    rtcdev_t *dev = (rtcdev_t *)priv;
-
-    io_removehandler(dev->base_addr, dev->base_addrsz,
-		     dev->f_rd,NULL,NULL, dev->f_wr,NULL,NULL, dev);
-
-    if (dev->nvr.fn != NULL)
-	free((wchar_t *)dev->nvr.fn);
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 
@@ -592,6 +592,7 @@ static const device_config_t ev170_config[] = {
 	NULL
     }
 };
+
 
 static const device_t ev170_device = {
     "Everex EV-170 Magic I/O",

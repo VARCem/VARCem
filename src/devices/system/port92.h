@@ -6,16 +6,14 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the NMI handler.
+ *		Definitions for the Port92 pseudo-device.
  *
- * Version:	@(#)nmi.c	1.0.3	2019/05/13
+ * Version:	@(#)port92.h	1.0.1	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
- *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,30 +34,12 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <wchar.h>
-#include "../../emu.h"
-#include "../../io.h"
-#include "nmi.h"
+#ifndef PORT_92_H
+# define PORT_92_H
 
 
-int	nmi_mask;
+extern const device_t	port92_device;
+extern const device_t	port92_inverted_device;
 
 
-static void
-nmi_write(uint16_t port, uint8_t val, priv_t priv)
-{
-    nmi_mask = val & 0x80;
-}
-
-
-void
-nmi_init(void)
-{
-    io_sethandler(0x00a0, 1,
-		  NULL,NULL,NULL, nmi_write,NULL,NULL, NULL);
-
-    nmi_mask = 0;
-}
+#endif	/*PORT_92_H*/

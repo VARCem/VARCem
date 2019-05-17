@@ -8,7 +8,7 @@
  *
  *		Emulation of C&T CS8121 ("NEAT") based machines.
  *
- * Version:	@(#)m_neat.c	1.0.5	2019/04/08
+ * Version:	@(#)m_neat.c	1.0.6	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -60,11 +60,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Add machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     device_add(&neat_device);
 
@@ -81,7 +81,7 @@ common_init(const device_t *info, void *arg)
 
     device_add(&fdc_at_device);
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

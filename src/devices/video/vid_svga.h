@@ -8,13 +8,13 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.6	2018/10/05
+ * Version:	@(#)vid_svga.h	1.0.7	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -103,18 +103,18 @@ typedef struct svga_t
 
     void (*render)(struct svga_t *svga);
     void (*recalctimings_ex)(struct svga_t *svga);
-    void    (*video_out)(uint16_t addr, uint8_t val, void *p);
-    uint8_t (*video_in) (uint16_t addr, void *p);
+    void    (*video_out)(uint16_t addr, uint8_t val, priv_t);
+    uint8_t (*video_in) (uint16_t addr, priv_t);
     void (*hwcursor_draw)(struct svga_t *svga, int displine);
     void (*overlay_draw)(struct svga_t *svga, int displine);
     void (*vblank_start)(struct svga_t *svga);
     void (*ven_write)(struct svga_t *svga, uint8_t val, uint32_t addr);
-    float (*getclock)(int clock, void *p);
+    float (*getclock)(int clock, priv_t);
 
     /*If set then another device is driving the monitor output and the SVGA
       card should not attempt to display anything */
-    int override;
-    void *p;
+    int		override;
+    priv_t	p;
 
     uint8_t crtc[128], gdcreg[64], attrregs[32], seqregs[64],
 	    egapal[16],
@@ -127,37 +127,38 @@ typedef struct svga_t
 	    dac_mask, dac_status,
 	    ksc5601_sbyte_mask;
 
-    void *ramdac, *clock_gen;
+    priv_t	ramdac,
+		clock_gen;
 } svga_t;
 
 
-extern int	svga_init(svga_t *svga, void *p, int memsize, 
+extern int	svga_init(svga_t *svga, priv_t, int memsize, 
 			  void (*recalctimings_ex)(struct svga_t *svga),
-			  uint8_t (*video_in) (uint16_t addr, void *p),
-			  void    (*video_out)(uint16_t addr, uint8_t val, void *p),
+			  uint8_t (*video_in) (uint16_t addr, priv_t),
+			  void    (*video_out)(uint16_t addr, uint8_t val, priv_t),
 			  void (*hwcursor_draw)(struct svga_t *svga, int displine),
 			  void (*overlay_draw)(struct svga_t *svga, int displine));
 extern void	svga_recalctimings(svga_t *svga);
 extern void	svga_close(svga_t *svga);
-uint8_t		svga_read(uint32_t addr, void *p);
-uint16_t	svga_readw(uint32_t addr, void *p);
-uint32_t	svga_readl(uint32_t addr, void *p);
-void		svga_write(uint32_t addr, uint8_t val, void *p);
-void		svga_writew(uint32_t addr, uint16_t val, void *p);
-void		svga_writel(uint32_t addr, uint32_t val, void *p);
-uint8_t		svga_read_linear(uint32_t addr, void *p);
-uint8_t		svga_readb_linear(uint32_t addr, void *p);
-uint16_t	svga_readw_linear(uint32_t addr, void *p);
-uint32_t	svga_readl_linear(uint32_t addr, void *p);
-void		svga_write_linear(uint32_t addr, uint8_t val, void *p);
-void		svga_writeb_linear(uint32_t addr, uint8_t val, void *p);
-void		svga_writew_linear(uint32_t addr, uint16_t val, void *p);
-void		svga_writel_linear(uint32_t addr, uint32_t val, void *p);
+uint8_t		svga_read(uint32_t addr, priv_t);
+uint16_t	svga_readw(uint32_t addr, priv_t);
+uint32_t	svga_readl(uint32_t addr, priv_t);
+void		svga_write(uint32_t addr, uint8_t val, priv_t);
+void		svga_writew(uint32_t addr, uint16_t val, priv_t);
+void		svga_writel(uint32_t addr, uint32_t val, priv_t);
+uint8_t		svga_read_linear(uint32_t addr, priv_t);
+uint8_t		svga_readb_linear(uint32_t addr, priv_t);
+uint16_t	svga_readw_linear(uint32_t addr, priv_t);
+uint32_t	svga_readl_linear(uint32_t addr, priv_t);
+void		svga_write_linear(uint32_t addr, uint8_t val, priv_t);
+void		svga_writeb_linear(uint32_t addr, uint8_t val, priv_t);
+void		svga_writew_linear(uint32_t addr, uint16_t val, priv_t);
+void		svga_writel_linear(uint32_t addr, uint32_t val, priv_t);
 
 extern uint8_t	svga_rotate[8][256];
 
-extern void	svga_out(uint16_t addr, uint8_t val, void *p);
-extern uint8_t	svga_in(uint16_t addr, void *p);
+extern void	svga_out(uint16_t addr, uint8_t val, priv_t);
+extern uint8_t	svga_in(uint16_t addr, priv_t);
 
 extern svga_t	*svga_get_pri(void);
 extern void	svga_set_override(svga_t *svga, int val);

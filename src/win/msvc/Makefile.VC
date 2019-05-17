@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.72	2019/05/12
+# Version:	@(#)Makefile.VC	1.0.72	2019/05/15
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -646,7 +646,8 @@ CPUOBJ		:= cpu.obj cpu_table.obj \
 		    386_dynarec.obj $(DYNARECOBJ)
 
 SYSOBJ		:= clk.obj dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj \
-		   mca.obj mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj
+		   mca.obj mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj \
+		   port92.obj
 
 CHIPOBJ		:= neat.obj scat.obj headland.obj \
 		    acc2168.obj ali1429.obj opti495.obj sis471.obj sis496.obj \

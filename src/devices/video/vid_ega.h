@@ -8,7 +8,7 @@
  *
  *		Definitions for the IBM EGA driver.
  *
- * Version:	@(#)vid_ega.h	1.0.5	2019/04/30
+ * Version:	@(#)vid_ega.h	1.0.6	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -171,11 +171,11 @@ extern void	ega_init(ega_t *ega, int monitor_type, int is_mono);
 extern void	ega_recalctimings(ega_t *ega);
 #endif
 
-extern void	ega_out(uint16_t addr, uint8_t val, void *p);
-extern uint8_t	ega_in(uint16_t addr, void *p);
-extern void	ega_poll(void *p);
-extern void	ega_write(uint32_t addr, uint8_t val, void *p);
-extern uint8_t	ega_read(uint32_t addr, void *p);
+extern void	ega_out(uint16_t addr, uint8_t val, priv_t);
+extern uint8_t	ega_in(uint16_t addr, priv_t);
+extern void	ega_poll(priv_t);
+extern void	ega_write(uint32_t addr, uint8_t val, priv_t);
+extern uint8_t	ega_read(uint32_t addr, priv_t);
 
 
 #endif	/*VIDEO_EGA_H*/

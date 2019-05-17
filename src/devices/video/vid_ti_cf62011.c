@@ -42,7 +42,7 @@
  *		which are the same as the XGA. It supports up to 1MB of VRAM,
  *		but we lock it down to 512K. The PS/1 2122 had 256K.
  *
- * Version:	@(#)vid_ti_cf62011.c	1.0.10	2019/04/27
+ * Version:	@(#)vid_ti_cf62011.c	1.0.11	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -104,20 +104,20 @@ static const video_timings_t ti_cf62011_timing = {VID_ISA,8,16,32,8,16,32};
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, void *priv)
+vid_out(uint16_t addr, uint8_t val, priv_t priv)
 {
-    tivga_t *ti = (tivga_t *)priv;
-    svga_t *svga = &ti->svga;
+    tivga_t *dev = (tivga_t *)priv;
+    svga_t *svga = &dev->svga;
     uint8_t old;
 
 #if 0
-    if (((addr & 0xfff0) == 0x03d0 || (addr & 0xfff0) == 0x03b0) &&
-	!(svga->miscout & 1)) addr ^= 0x60;
+    if (((addr & 0xfff0) == 0x03d0 ||
+	(addr & 0xfff0) == 0x03b0) && !(svga->miscout & 1)) addr ^= 0x60;
 #endif
 
     switch (addr) {
 	case 0x0102:
-		ti->enabled = (val & 0x01);
+		dev->enabled = (val & 0x01);
 		return;
 
 	case 0x03d4:
@@ -142,21 +142,21 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 		break;
 
 	case 0x2100:
-		ti->reg_2100 = val;
+		dev->reg_2100 = val;
 		if ((val & 7) < 4)
 			svga->read_bank = svga->write_bank = 0;
 		  else
-			svga->read_bank = svga->write_bank = (ti->banking & 0x7) * 0x10000;
+			svga->read_bank = svga->write_bank = (dev->banking & 0x7) * 0x10000;
 		break;
 
 	case 0x2108:
-		if ((ti->reg_2100 & 7) >= 4)
+		if ((dev->reg_2100 & 7) >= 4)
 			svga->read_bank = svga->write_bank = (val & 0x7) * 0x10000;
-		ti->banking = val;
+		dev->banking = val;
 		break;
 
 	case 0x210a:
-		ti->reg_210a = val;
+		dev->reg_210a = val;
 		break;
     }
 
@@ -165,15 +165,15 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_in(uint16_t addr, void *priv)
+vid_in(uint16_t addr, priv_t priv)
 {
-    tivga_t *ti = (tivga_t *)priv;
-    svga_t *svga = &ti->svga;
+    tivga_t *dev = (tivga_t *)priv;
+    svga_t *svga = &dev->svga;
     uint8_t ret;
 
 #if 0
-    if (((addr & 0xfff0) == 0x03d0 || (addr & 0xfff0) == 0x03b0) &&
-	!(svga->miscout & 1)) addr ^= 0x60;
+    if (((addr & 0xfff0) == 0x03d0 ||
+	(addr & 0xfff0) == 0x03b0) && !(svga->miscout & 1)) addr ^= 0x60;
 #endif
 
     switch (addr) {
@@ -186,7 +186,7 @@ vid_in(uint16_t addr, void *priv)
 		break;
 
 	case 0x0102:
-		ret = ti->enabled;
+		ret = dev->enabled;
 		break;
 
 	case 0x03d4:
@@ -201,15 +201,15 @@ vid_in(uint16_t addr, void *priv)
 		break;
 
 	case 0x2100:
-		ret = ti->reg_2100;
+		ret = dev->reg_2100;
 		break;
 
 	case 0x2108:
-		ret = ti->banking;
+		ret = dev->banking;
 		break;
 
 	case 0x210a:
-		ret = ti->reg_210a;
+		ret = dev->reg_210a;
 		break;
 
 	default:
@@ -222,92 +222,93 @@ vid_in(uint16_t addr, void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
-    tivga_t *ti = (tivga_t *)priv;
+    tivga_t *dev = (tivga_t *)priv;
 
-    svga_recalctimings(&ti->svga);
+    svga_recalctimings(&dev->svga);
 }
 
 
 static void
-force_redraw(void *priv)
+force_redraw(priv_t priv)
 {
-    tivga_t *ti = (tivga_t *)priv;
+    tivga_t *dev = (tivga_t *)priv;
 
-    ti->svga.fullchange = changeframecount;
+    dev->svga.fullchange = changeframecount;
 }
 
 
 static void
-vid_close(void *priv)
+vid_close(priv_t priv)
 {
-    tivga_t *ti = (tivga_t *)priv;
+    tivga_t *dev = (tivga_t *)priv;
 
-    svga_close(&ti->svga);
+    svga_close(&dev->svga);
 
-    free(ti);
+    free(dev);
 }
 
 
-static void *
+static priv_t
 vid_init(const device_t *info, UNUSED(void *parent))
 {
-    tivga_t *ti;
+    tivga_t *dev;
 
     /* Allocate control block and initialize. */
-    ti = (tivga_t *)mem_alloc(sizeof(tivga_t));
-    memset(ti, 0x00, sizeof(tivga_t));
+    dev = (tivga_t *)mem_alloc(sizeof(tivga_t));
+    memset(dev, 0x00, sizeof(tivga_t));
 
     /* Set amount of VRAM in KB. */
     if (info->local == 0)
-	ti->vram_size = device_get_config_int("vram_size");
+	dev->vram_size = device_get_config_int("vram_size");
       else
-	ti->vram_size = info->local;
+	dev->vram_size = info->local;
 
-    DEBUG("VIDEO: initializing %s, %dK VRAM\n", info->name, ti->vram_size);
+    DEBUG("VIDEO: initializing %s, %iK VRAM\n", info->name, dev->vram_size);
 
-    svga_init(&ti->svga, ti,
-	      ti->vram_size<<10,
-	      NULL, vid_in, vid_out, NULL, NULL);
+    svga_init(&dev->svga, (priv_t)dev,
+	      dev->vram_size << 10, NULL, vid_in, vid_out, NULL, NULL);
 
-    io_sethandler(0x0100, 2, vid_in, NULL, NULL, NULL, NULL, NULL, ti);
-    io_sethandler(0x03c0, 32, vid_in, NULL, NULL, vid_out, NULL, NULL, ti);
-    io_sethandler(0x2100, 16, vid_in, NULL, NULL, vid_out, NULL, NULL, ti);
+    io_sethandler(0x0100, 2,
+		  vid_in,NULL,NULL, NULL,NULL,NULL, (priv_t)dev);
+    io_sethandler(0x03c0, 32,
+		  vid_in,NULL,NULL, vid_out,NULL,NULL, (priv_t)dev);
+    io_sethandler(0x2100, 16,
+		  vid_in,NULL,NULL, vid_out,NULL,NULL, (priv_t)dev);
 
-    ti->svga.bpp = 8;
-    ti->svga.miscout = 1;
+    dev->svga.bpp = 8;
+    dev->svga.miscout = 1;
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(ti);
+    return((priv_t)dev);
 }
 
 
 #if defined(DEV_BRANCH) && defined(USE_TI)
-static const device_config_t ti_cf62011_config[] =
-{
-        {
-                "vram_size", "Memory Size", CONFIG_SELECTION, "", 256,
-                {
-                        {
-                                "256K", 256
-                        },
-                        {
-                                "512K", 512
-                        },
-                        {
-                                "1024K", 1024
-                        },
-                        {
-                                NULL
-                        }
-                }
-        },
-        {
-                NULL
-        }
+static const device_config_t ti_cf62011_config[] = {
+    {
+	"vram_size", "Memory Size", CONFIG_SELECTION, "", 256,
+	{
+		{
+			"256K", 256
+		},
+		{
+			"512K", 512
+		},
+		{
+			"1024K", 1024
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	NULL
+    }
 };
 
 
@@ -324,7 +325,6 @@ const device_t ti_cf62011_device = {
     ti_cf62011_config
 };
 #endif
-
 
 const device_t ti_ps1_device = {
     "IBM PS/1 Model 2121 SVGA",

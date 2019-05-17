@@ -15,7 +15,7 @@
  *		80 columns. To be fixed...
  *		Also, the DDM bits stuff needs to be verified.
  *
- * Version:	@(#)m_amstrad.c	1.0.28	2019/05/03
+ * Version:	@(#)m_amstrad.c	1.0.29	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,7 +117,7 @@ typedef struct {
 		pb;
 
     /* Video stuff. */
-    void	*vid;
+    priv_t	vid;
 
     /* Mouse stuff. */
     uint8_t	mousex,
@@ -135,7 +135,7 @@ static int	key_queue_start = 0,
 
 
 static void
-mse_write(uint16_t port, uint8_t val, void *priv)
+mse_write(uint16_t port, uint8_t val, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
@@ -147,7 +147,7 @@ mse_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-mse_read(uint16_t port, void *priv)
+mse_read(uint16_t port, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
     uint8_t ret;
@@ -165,7 +165,7 @@ mse_read(uint16_t port, void *priv)
 
 
 static int
-mse_poll(int x, int y, int z, int b, void *priv)
+mse_poll(int x, int y, int z, int b, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
@@ -204,7 +204,7 @@ kbd_adddata_ex(uint16_t val)
 
 
 static void
-kbd_write(uint16_t port, uint8_t val, void *priv)
+kbd_write(uint16_t port, uint8_t val, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
@@ -282,7 +282,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-kbd_read(uint16_t port, void *priv)
+kbd_read(uint16_t port, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
     uint8_t ret = 0xff;
@@ -373,7 +373,7 @@ kbd_read(uint16_t port, void *priv)
 
 
 static void
-kbd_poll(void *priv)
+kbd_poll(priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
@@ -394,7 +394,7 @@ kbd_poll(void *priv)
 
 
 static void
-ams_write(uint16_t port, uint8_t val, void *priv)
+ams_write(uint16_t port, uint8_t val, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
@@ -407,7 +407,7 @@ ams_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-ams_read(uint16_t port, void *priv)
+ams_read(uint16_t port, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
     uint8_t ddm, ret = 0xff;
@@ -484,7 +484,7 @@ ams_read(uint16_t port, void *priv)
 
 
 static void
-amstrad_close(void *priv)
+amstrad_close(priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
@@ -492,7 +492,7 @@ amstrad_close(void *priv)
 }
 
 
-static void *
+static priv_t
 amstrad_init(const device_t *info, void *arg)
 {
     romdef_t *roms = (romdef_t *)arg;
@@ -504,7 +504,7 @@ amstrad_init(const device_t *info, void *arg)
     dev->type = info->local;
 
     /* Add machine device to system. */
-    device_add_ex(info, dev);
+    device_add_ex(info, (priv_t)dev);
 
     /* Force the LPT1 port disabled and add our own. */
     config.parallel_enabled[0] = 0;
@@ -525,7 +525,7 @@ amstrad_init(const device_t *info, void *arg)
 						   roms->fontnum,
 						   dev->codepage);
 		device_add(&fdc_xt_device);
-		parallel_set_func(lpt, ams_read, dev);
+		parallel_set_func(lpt, ams_read, (priv_t)dev);
 		break;
 
 	case 1:		/* PC1640 */
@@ -535,7 +535,7 @@ amstrad_init(const device_t *info, void *arg)
 		dev->vid = m_amstrad_1640_vid_init(roms->vidfn, roms->vidsz);
 
 		device_add(&fdc_xt_device);
-		parallel_set_func(lpt, ams_read, dev);
+		parallel_set_func(lpt, ams_read, (priv_t)dev);
 		break;
 
 	case 2:		/* PC200 */
@@ -557,7 +557,7 @@ amstrad_init(const device_t *info, void *arg)
 		}
 
 		device_add(&fdc_xt_device);
-		parallel_set_func(lpt, ams_read, dev);
+		parallel_set_func(lpt, ams_read, (priv_t)dev);
 		break;
 
 	case 3:		/* PPC */
@@ -575,7 +575,7 @@ amstrad_init(const device_t *info, void *arg)
 		}
 
 		device_add(&fdc_xt_device);
-		parallel_set_func(lpt, ams_read, dev);
+		parallel_set_func(lpt, ams_read, (priv_t)dev);
 		break;
 
 	case 4:		/* PC2086 */
@@ -621,10 +621,10 @@ amstrad_init(const device_t *info, void *arg)
 
 	mouse_reset();
 
-	mouse_set_poll(mse_poll, dev);
+	mouse_set_poll(mse_poll, (priv_t)dev);
     }
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.32	2019/04/21
+ * Version:	@(#)hdc_ide_ata.c	1.0.33	2019/05/13
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -145,10 +145,10 @@ static ide_board_t	*ide_boards[4];
 static int		pio_override = 0;
 
 ide_t	*ide_drives[IDE_NUM+XTIDE_NUM];
-int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length, void *priv);
-int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length, void *priv);
-void	(*ide_bus_master_set_irq)(int channel, void *priv);
-void	*ide_bus_master_priv[2];
+int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length, priv_t priv);
+int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length, priv_t priv);
+void	(*ide_bus_master_set_irq)(int channel, priv_t priv);
+priv_t	ide_bus_master_priv[2];
 int	ide_inited = 0;
 int	ide_sec_optional = 0;
 int	ide_ter_enabled = 0, ide_qua_enabled = 0;
@@ -156,7 +156,7 @@ int	ide_ter_enabled = 0, ide_qua_enabled = 0;
 static uint16_t	ide_base_main[4] = { 0x1f0, 0x170, 0x168, 0x1e8 };
 static uint16_t	ide_side_main[4] = { 0x3f6, 0x376, 0x36e, 0x3ee };
 
-static void	ide_callback(void *priv);
+static void	ide_callback(priv_t priv);
 
 
 #define IDE_TIME (20LL * TIMER_USEC) / 3LL
@@ -368,7 +368,8 @@ ide_padstr(char *str, const char *src, int len)
  *                 this length will be padded with spaces.
  * @param src      Source string
  */
-void ide_padstr8(uint8_t *buf, int buf_size, const char *src)
+void
+ide_padstr8(uint8_t *buf, int buf_size, const char *src)
 {
     int i;
 
@@ -1020,9 +1021,9 @@ ide_write_data(ide_t *ide, uint32_t val, int length)
 
 
 void
-ide_writew(uint16_t addr, uint16_t val, void *priv)
+ide_writew(uint16_t addr, uint16_t val, priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     ide_t *ide;
     int ch;
 
@@ -1045,9 +1046,9 @@ ide_writew(uint16_t addr, uint16_t val, void *priv)
 
 
 static void
-ide_writel(uint16_t addr, uint32_t val, void *priv)
+ide_writel(uint16_t addr, uint32_t val, priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     ide_t *ide;
     int ch;
 
@@ -1071,9 +1072,9 @@ ide_writel(uint16_t addr, uint32_t val, void *priv)
 
 
 void
-ide_write_devctl(uint16_t addr, uint8_t val, void *priv)
+ide_write_devctl(uint16_t addr, uint8_t val, priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     scsi_device_data_t *atapi;
     ide_t *ide, *ide_other;
     int ch;
@@ -1115,9 +1116,9 @@ ide_write_devctl(uint16_t addr, uint8_t val, void *priv)
 
 
 void
-ide_writeb(uint16_t addr, uint8_t val, void *priv)
+ide_writeb(uint16_t addr, uint8_t val, priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     scsi_device_data_t *atapi, *atapi_other;
     ide_t *ide, *ide_other;
     int ch;
@@ -1569,9 +1570,9 @@ ide_status(ide_t *ide, int ch)
 
 
 uint8_t
-ide_readb(uint16_t addr, void *priv)
+ide_readb(uint16_t addr, priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     scsi_device_data_t *atapi;
     int ch;
     ide_t *ide;
@@ -1670,11 +1671,11 @@ ide_readb(uint16_t addr, void *priv)
 
 
 uint8_t
-ide_read_alt_status(uint16_t addr, void *priv)
+ide_read_alt_status(uint16_t addr, priv_t priv)
 {
     uint8_t temp = 0xff;
 
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
 
     ide_t *ide;
     int ch;
@@ -1692,9 +1693,9 @@ ide_read_alt_status(uint16_t addr, void *priv)
 
 
 uint16_t
-ide_readw(uint16_t addr, void *priv)
+ide_readw(uint16_t addr, priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     uint16_t temp = 0xffff;
     ide_t *ide;
     int ch;
@@ -1714,9 +1715,9 @@ ide_readw(uint16_t addr, void *priv)
 
 
 static uint32_t
-ide_readl(uint16_t addr, void *priv)
+ide_readl(uint16_t addr, priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     uint32_t temp = 0xffffffff;
     uint16_t temp2;
     ide_t *ide;
@@ -1738,9 +1739,9 @@ ide_readl(uint16_t addr, void *priv)
 
 
 static void
-ide_callback(void *priv)
+ide_callback(priv_t priv)
 {
-    ide_board_t *dev = (ide_board_t *) priv;
+    ide_board_t *dev = (ide_board_t *)priv;
     scsi_device_data_t *atapi, *atapi_other;
     ide_t *ide, *ide_other;
     int snum, ret, ch;
@@ -2114,7 +2115,7 @@ ide_callback(void *priv)
 			ide->cfg_spt = ide->secount;
 			ide->cfg_hpc = ide->head + 1;
 		}
-		ide->command = 0x00;	
+		ide->command = 0x00;
 		ide->atastat = DRDY_STAT | DSC_STAT;
 		ide->error = 1;
 		ide_irq_raise(ide);
@@ -2311,32 +2312,36 @@ ide_set_side(int controller, uint16_t port)
 }
 
 
-static void *
+static priv_t
 ide_ter_init(const device_t *info, UNUSED(void *parent))
 {
-    ide_boards[2] = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
-    memset(ide_boards[2], 0, sizeof(ide_board_t));
+    ide_board_t *dev;
 
-    ide_boards[2]->irq = device_get_config_int("irq");
-    ide_boards[2]->cur_dev = 4;
+    dev = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
+    memset(dev, 0x00, sizeof(ide_board_t));
+
+    dev->irq = device_get_config_int("irq");
+    dev->cur_dev = 4;
+    ide_boards[2] = dev;
 
     ide_set_handlers(2);
 
-    timer_add(ide_callback, ide_boards[2],
-	      &ide_boards[2]->callback, &ide_boards[2]->callback);
+    timer_add(ide_callback, dev, &dev->callback, &dev->callback);
 
     ide_board_init(2);
 
-    return(ide_drives);
+    return((priv_t)dev);
 }
 
 
 /* Close a standalone IDE unit. */
 static void
-ide_ter_close(void *priv)
+ide_ter_close(priv_t priv)
 {
-    if (ide_boards[2]) {
-	free(ide_boards[2]);
+    ide_board_t *dev = (ide_board_t *)priv;
+
+    if (dev) {
+	free(dev);
 	ide_boards[2] = NULL;
 
 	ide_board_close(2);
@@ -2344,32 +2349,36 @@ ide_ter_close(void *priv)
 }
 
 
-static void *
+static priv_t
 ide_qua_init(const device_t *info, UNUSED(void *parent))
 {
-    ide_boards[3] = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
-    memset(ide_boards[3], 0, sizeof(ide_board_t));
+    ide_board_t *dev;
 
-    ide_boards[3]->irq = device_get_config_int("irq");
-    ide_boards[3]->cur_dev = 6;
+    dev = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
+    memset(dev, 0x00, sizeof(ide_board_t));
+
+    dev->irq = device_get_config_int("irq");
+    dev->cur_dev = 6;
+    ide_boards[3] = dev;
 
     ide_set_handlers(3);
 
-    timer_add(ide_callback, ide_boards[3],
-	      &ide_boards[3]->callback, &ide_boards[3]->callback);
+    timer_add(ide_callback, dev, &dev->callback, &dev->callback);
 
     ide_board_init(3);
 
-    return(ide_drives);
+    return((priv_t)dev);
 }
 
 
 /* Close a standalone IDE unit. */
 static void
-ide_qua_close(void *priv)
+ide_qua_close(priv_t priv)
 {
-    if (ide_boards[3]) {
-	free(ide_boards[3]);
+    ide_board_t *dev = (ide_board_t *)priv;
+
+    if (dev) {
+	free(dev);
 	ide_boards[3] = NULL;
 
 	ide_board_close(3);
@@ -2389,21 +2398,24 @@ ide_clear_bus_master(void)
 void *
 ide_xtide_init(void)
 {
+    ide_board_t *dev;
+
     ide_clear_bus_master();
 
-    if (!ide_boards[0]) {
-	ide_boards[0] = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
-	memset(ide_boards[0], 0, sizeof(ide_board_t));
-	ide_boards[0]->cur_dev = 0;
+    if (! ide_boards[0]) {
+	dev = (ide_board_t *)mem_alloc(sizeof(ide_board_t));
+	memset(dev, 0x00, sizeof(ide_board_t));
+	dev->cur_dev = 0;
+	ide_boards[0] = dev;
 
-	timer_add(ide_callback, ide_boards[0],
-		  &ide_boards[0]->callback, &ide_boards[0]->callback);
+	timer_add(ide_callback, dev, &dev->callback, &dev->callback);
 
 	ide_board_init(0);
-    }
-    ide_boards[0]->irq = -1;
+    } else
+	dev = ide_boards[0];
+    dev->irq = -1;
 
-    return ide_boards[0];
+    return((priv_t)dev);
 }
 
 
@@ -2420,10 +2432,10 @@ ide_xtide_close(void)
 
 
 void
-ide_set_bus_master(int (*read)(int channel, uint8_t *data, int transfer_length, void *priv),
-		   int (*write)(int channel, uint8_t *data, int transfer_length, void *priv),
-		   void (*set_irq)(int channel, void *priv),
-		   void *priv0, void *priv1)
+ide_set_bus_master(int (*read)(int channel, uint8_t *data, int transfer_length, priv_t priv),
+		   int (*write)(int channel, uint8_t *data, int transfer_length, priv_t priv),
+		   void (*set_irq)(int channel, priv_t priv),
+		   priv_t priv0, priv_t priv1)
 {
     ide_bus_master_read = read;
     ide_bus_master_write = write;
@@ -2443,8 +2455,8 @@ secondary_ide_check(void)
 }
 
 
-static void *
-ide_init(const device_t *info, UNUSED(void *parent))
+static priv_t
+ide_init(const device_t *info, void *parent)
 {
     DEBUG("Initializing IDE...\n");
 
@@ -2505,7 +2517,7 @@ ide_init(const device_t *info, UNUSED(void *parent))
 		break;
     }
 
-    return(ide_drives);
+    return((priv_t)parent);
 }
 
 
@@ -2541,7 +2553,7 @@ ide_drive_reset(int d)
 
 /* Reset a standalone IDE unit. */
 static void
-ide_reset(void *p)
+ide_reset(priv_t priv)
 {
     int d;
 
@@ -2561,7 +2573,7 @@ ide_reset(void *p)
 
 /* Close a standalone IDE unit. */
 static void
-ide_close(void *priv)
+ide_close(priv_t priv)
 {
     DEBUG("Closing IDE...\n");
 

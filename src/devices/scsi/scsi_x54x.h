@@ -8,7 +8,7 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.7	2019/04/09
+ * Version:	@(#)scsi_x54x.h	1.0.8	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -513,20 +513,21 @@ typedef struct {
 } x54x_t;
 
 
-extern void	x54x_reset_ctrl(x54x_t *dev, uint8_t Reset);
-extern void	x54x_buf_alloc(scsi_device_t *sd, int length);
-extern void	x54x_buf_free(scsi_device_t *sd);
-extern uint8_t	x54x_mbo_process(x54x_t *dev);
+extern void	x54x_buf_alloc(scsi_device_t *, int length);
+extern void	x54x_buf_free(scsi_device_t *);
+
+extern uint8_t	x54x_mbo_process(x54x_t *);
 extern void	x54x_wait_for_poll(void);
-extern void	x54x_io_set(x54x_t *dev, uint32_t base, uint8_t len);
-extern void	x54x_io_remove(x54x_t *dev, uint32_t base, uint8_t len);
-extern void	x54x_mem_init(x54x_t *dev, uint32_t addr);
-extern void	x54x_mem_enable(x54x_t *dev);
-extern void	x54x_mem_set_addr(x54x_t *dev, uint32_t base);
-extern void	x54x_mem_disable(x54x_t *dev);
-extern void	*x54x_init(const device_t *info);
-extern void	x54x_close(void *priv);
-extern void	x54x_device_reset(void *priv);
+extern void	x54x_io_set(x54x_t *, uint32_t base, uint8_t len);
+extern void	x54x_io_remove(x54x_t *, uint32_t base, uint8_t len);
+extern void	x54x_mem_init(x54x_t *, uint32_t addr);
+extern void	x54x_mem_enable(x54x_t *);
+extern void	x54x_mem_set_addr(x54x_t *, uint32_t base);
+extern void	x54x_mem_disable(x54x_t *);
+extern void	x54x_reset_ctrl(x54x_t *, uint8_t Reset);
+extern void	x54x_device_reset(x54x_t *);
+extern priv_t	x54x_init(const device_t *info);
+extern void	x54x_close(priv_t);
 
 
 #endif	/*SCSI_X54X_H*/

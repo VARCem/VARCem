@@ -8,7 +8,7 @@
  *
  *		Common driver module for MOUSE devices.
  *
- * Version:	@(#)mouse.c	1.0.20	2019/05/09
+ * Version:	@(#)mouse.c	1.0.21	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,8 +89,8 @@ static const struct {
 
 
 static int	mouse_nbut;
-static void	*mouse_priv;
-static int	(*mouse_func)(int,int,int,int,void *);
+static priv_t	mouse_priv;
+static int	(*mouse_func)(int,int,int,int,priv_t);
 
 
 #ifdef _LOGGING
@@ -186,7 +186,7 @@ mouse_process(void)
 
 
 void
-mouse_set_poll(int (*func)(int,int,int,int,void *), void *arg)
+mouse_set_poll(int (*func)(int,int,int,int,priv_t), priv_t arg)
 {
     if (config.mouse_type != MOUSE_INTERNAL) return;
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.12	2019/05/03
+ * Version:	@(#)hdc_ide.h	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -128,16 +128,16 @@ extern void	ide_irq_lower(ide_t *);
 extern void	*ide_xtide_init(void);
 extern void	ide_xtide_close(void);
 
-extern void	ide_writew(uint16_t addr, uint16_t val, void *priv);
-extern void	ide_write_devctl(uint16_t addr, uint8_t val, void *priv);
-extern void	ide_writeb(uint16_t addr, uint8_t val, void *priv);
-extern uint8_t	ide_readb(uint16_t addr, void *priv);
-extern uint8_t	ide_read_alt_status(uint16_t addr, void *priv);
-extern uint16_t	ide_readw(uint16_t addr, void *priv);
-extern void	ide_set_bus_master(int (*read)(int channel, uint8_t *data, int transfer_length, void *priv),
-				   int (*write)(int channel, uint8_t *data, int transfer_length, void *priv),
-				   void (*set_irq)(int channel, void *priv),
-				   void *priv0, void *priv1);
+extern void	ide_writew(uint16_t addr, uint16_t val, priv_t priv);
+extern void	ide_write_devctl(uint16_t addr, uint8_t val, priv_t priv);
+extern void	ide_writeb(uint16_t addr, uint8_t val, priv_t priv);
+extern uint8_t	ide_readb(uint16_t addr, priv_t priv);
+extern uint8_t	ide_read_alt_status(uint16_t addr, priv_t priv);
+extern uint16_t	ide_readw(uint16_t addr, priv_t priv);
+extern void	ide_set_bus_master(int (*read)(int channel, uint8_t *data, int transfer_length, priv_t priv),
+				   int (*write)(int channel, uint8_t *data, int transfer_length, priv_t priv),
+				   void (*set_irq)(int channel, priv_t priv),
+				   priv_t priv0, priv_t priv1);
 
 
 extern void	win_cdrom_eject(uint8_t id);
@@ -158,10 +158,10 @@ extern void	secondary_ide_check(void);
 extern void	ide_padstr(char *str, const char *src, int len);
 extern void	ide_padstr8(uint8_t *buf, int buf_size, const char *src);
 
-extern int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length, void *priv);
-extern int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length, void *priv);
-extern void	(*ide_bus_master_set_irq)(int channel, void *priv);
-extern void	*ide_bus_master_priv[2];
+extern int	(*ide_bus_master_read)(int channel, uint8_t *data, int transfer_length, priv_t priv);
+extern int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length, priv_t priv);
+extern void	(*ide_bus_master_set_irq)(int channel, priv_t priv);
+extern priv_t	ide_bus_master_priv[2];
 
 extern void	ide_enable_pio_override(void);
 extern void	ide_allocate_buffer(ide_t *dev);

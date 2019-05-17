@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.18	2019/05/05
+ * Version:	@(#)vid_cga.c	1.0.19	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -146,7 +146,7 @@ cga_recalctimings(cga_t *dev)
 
 
 void
-cga_out(uint16_t port, uint8_t val, void *priv)
+cga_out(uint16_t port, uint8_t val, priv_t priv)
 {
     cga_t *dev = (cga_t *)priv;
     uint8_t old;
@@ -188,7 +188,7 @@ cga_out(uint16_t port, uint8_t val, void *priv)
 
 
 uint8_t
-cga_in(uint16_t port, void *priv)
+cga_in(uint16_t port, priv_t priv)
 {
     cga_t *dev = (cga_t *)priv;
     uint8_t ret = 0xff;
@@ -215,7 +215,7 @@ cga_in(uint16_t port, void *priv)
 
 
 void
-cga_waitstates(void *priv)
+cga_waitstates(priv_t priv)
 {
     int ws;
 
@@ -225,7 +225,7 @@ cga_waitstates(void *priv)
 
 
 void
-cga_write(uint32_t addr, uint8_t val, void *priv)
+cga_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     cga_t *dev = (cga_t *)priv;
 
@@ -241,7 +241,7 @@ cga_write(uint32_t addr, uint8_t val, void *priv)
 
 
 uint8_t
-cga_read(uint32_t addr, void *priv)
+cga_read(uint32_t addr, priv_t priv)
 {
     cga_t *dev = (cga_t *)priv;
 
@@ -270,7 +270,7 @@ cga_hline(bitmap_t *b, int x1, int y, int x2, uint8_t col)
 
 
 void
-cga_poll(void *priv)
+cga_poll(priv_t priv)
 {
     cga_t *dev = (cga_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -617,7 +617,7 @@ cga_init(cga_t *dev)
 
 
 void
-cga_close(void *priv)
+cga_close(priv_t priv)
 {
     cga_t *dev = (cga_t *)priv;
 
@@ -631,7 +631,7 @@ cga_close(void *priv)
 
 
 void
-cga_speed_changed(void *priv)
+cga_speed_changed(priv_t priv)
 {
     cga_t *dev = (cga_t *)priv;
 
@@ -639,7 +639,7 @@ cga_speed_changed(void *priv)
 }
 
 
-static void *
+static priv_t
 cga_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     int display_type;
@@ -662,14 +662,14 @@ cga_standalone_init(const device_t *info, UNUSED(void *parent))
     if (dev->composite)
 	dev->cpriv = cga_comp_init(dev->revision);
 
-    timer_add(cga_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(cga_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL,
-		dev->vram, MEM_MAPPING_EXTERNAL, dev);
+		dev->vram, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03d0, 16,
-		  cga_in,NULL,NULL, cga_out,NULL,NULL, dev);
+		  cga_in,NULL,NULL, cga_out,NULL,NULL, (priv_t)dev);
 
     overscan_x = overscan_y = 16;
 
@@ -682,7 +682,7 @@ cga_standalone_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 	         (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.18	2019/05/05
+ * Version:	@(#)net_ne2000.c	1.0.19	2019/05/13
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -191,7 +191,7 @@ nic_interrupt(nic_t *dev, int set)
 
 /* Restore state to power-up, cancelling all I/O .*/
 static void
-nic_reset(void *priv)
+nic_reset(priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
     dp8390_t *dp = &dev->dp8390;
@@ -276,7 +276,7 @@ nic_reset(void *priv)
 
 
 static void
-nic_soft_reset(void *priv)
+nic_soft_reset(priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
     dp8390_t *dp = &dev->dp8390;
@@ -295,7 +295,7 @@ nic_soft_reset(void *priv)
  * it is copied into it and the receive process is updated.
  */
 static void
-nic_rx(void *priv, uint8_t *buf, int io_len)
+nic_rx(priv_t priv, uint8_t *buf, int io_len)
 {
     static uint8_t bcast_addr[6] = {0xff,0xff,0xff,0xff,0xff,0xff};
     nic_t *dev = (nic_t *)priv;
@@ -530,7 +530,7 @@ chipmem_read(nic_t *dev, uint32_t addr, unsigned int len)
 
 
 static void
-chipmem_write(nic_t *dev, uint32_t addr, uint32_t val, unsigned len)
+chipmem_write(nic_t *dev, uint32_t addr, uint32_t val, unsigned int len)
 {
     dp8390_t *dp = &dev->dp8390;
 
@@ -659,7 +659,7 @@ asic_read(nic_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-asic_write(nic_t *dev, uint32_t off, uint32_t val, unsigned len)
+asic_write(nic_t *dev, uint32_t off, uint32_t val, unsigned int len)
 {
     dp8390_t *dp = &dev->dp8390;
 
@@ -856,7 +856,7 @@ page0_read(nic_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-page0_write(nic_t *dev, uint32_t off, uint32_t val, unsigned len)
+page0_write(nic_t *dev, uint32_t off, uint32_t val, unsigned int len)
 {
     dp8390_t *dp = &dev->dp8390;
     uint8_t val2;
@@ -1110,7 +1110,7 @@ page1_read(nic_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-page1_write(nic_t *dev, uint32_t off, uint32_t val, unsigned len)
+page1_write(nic_t *dev, uint32_t off, uint32_t val, unsigned int len)
 {
     dp8390_t *dp = &dev->dp8390;
 
@@ -1251,7 +1251,7 @@ page2_read(nic_t *dev, uint32_t off, unsigned int len)
    affect internal operation, but let them through for now
    and print a warning. */
 static void
-page2_write(nic_t *dev, uint32_t off, uint32_t val, unsigned len)
+page2_write(nic_t *dev, uint32_t off, uint32_t val, unsigned int len)
 {
     dp8390_t *dp = &dev->dp8390;
 
@@ -1361,7 +1361,7 @@ page3_read(nic_t *dev, uint32_t off, unsigned int len)
 
 
 static void
-page3_write(nic_t *dev, uint32_t off, uint32_t val, unsigned len)
+page3_write(nic_t *dev, uint32_t off, uint32_t val, unsigned int len)
 {
     if (dev->board >= NE2K_RTL8019AS) {
 	DBGLOG(2, "%s: Page3 write to register 0x%02x, len=%u, value=0x%04x\n",
@@ -1512,7 +1512,7 @@ write_cr(nic_t *dev, uint32_t val)
 
 
 static uint32_t
-nic_read(nic_t *dev, uint32_t addr, unsigned len)
+nic_read(nic_t *dev, uint32_t addr, unsigned int len)
 {
     int off = addr - dev->base_address;
     uint32_t ret = 0;
@@ -1551,14 +1551,14 @@ nic_read(nic_t *dev, uint32_t addr, unsigned len)
 
 
 static uint8_t
-nic_readb(uint16_t addr, void *priv)
+nic_readb(uint16_t addr, priv_t priv)
 {
     return(nic_read((nic_t *)priv, addr, 1));
 }
 
 
 static uint16_t
-nic_readw(uint16_t addr, void *priv)
+nic_readw(uint16_t addr, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -1570,14 +1570,14 @@ nic_readw(uint16_t addr, void *priv)
 
 
 static uint32_t
-nic_readl(uint16_t addr, void *priv)
+nic_readl(uint16_t addr, priv_t priv)
 {
     return(nic_read((nic_t *)priv, addr, 4));
 }
 
 
 static void
-nic_write(nic_t *dev, uint32_t addr, uint32_t val, unsigned len)
+nic_write(nic_t *dev, uint32_t addr, uint32_t val, unsigned int len)
 {
     int off = addr - dev->base_address;
 
@@ -1617,14 +1617,14 @@ nic_write(nic_t *dev, uint32_t addr, uint32_t val, unsigned len)
 
 
 static void
-nic_writeb(uint16_t addr, uint8_t val, void *priv)
+nic_writeb(uint16_t addr, uint8_t val, priv_t priv)
 {
     nic_write((nic_t *)priv, addr, val, 1);
 }
 
 
 static void
-nic_writew(uint16_t addr, uint16_t val, void *priv)
+nic_writew(uint16_t addr, uint16_t val, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -1636,20 +1636,97 @@ nic_writew(uint16_t addr, uint16_t val, void *priv)
 
 
 static void
-nic_writel(uint16_t addr, uint32_t val, void *priv)
+nic_writel(uint16_t addr, uint32_t val, priv_t priv)
 {
     nic_write((nic_t *)priv, addr, val, 4);
 }
 
 
-static void	nic_iocheckset(nic_t *dev, uint16_t addr);
-static void	nic_iocheckremove(nic_t *dev, uint16_t addr);
-static void	nic_ioset(nic_t *dev, uint16_t addr);
-static void	nic_ioremove(nic_t *dev, uint16_t addr);
+static void
+nic_ioset(nic_t *dev, uint16_t addr)
+{
+    if (dev->is_mca) {
+	io_sethandler(addr, 16,
+		      nic_readb, nic_readw, nic_readl,
+		      nic_writeb, nic_writew, nic_writel, dev);
+	io_sethandler(addr+16, 16,
+		      nic_readb, nic_readw, nic_readl,
+		      nic_writeb, nic_writew, nic_writel, dev);
+	io_sethandler(addr+0x1f, 16,
+		      nic_readb, nic_readw, nic_readl,
+		      nic_writeb, nic_writew, nic_writel, dev);
+    } else if (dev->is_pci) {
+	io_sethandler(addr, 16,
+		      nic_readb, nic_readw, nic_readl,
+		      nic_writeb, nic_writew, nic_writel, dev);
+	io_sethandler(addr+16, 16,
+		      nic_readb, nic_readw, nic_readl,
+		      nic_writeb, nic_writew, nic_writel, dev);
+	io_sethandler(addr+0x1f, 1,
+		      nic_readb, nic_readw, nic_readl,
+		      nic_writeb, nic_writew, nic_writel, dev);
+    } else {
+	io_sethandler(addr, 16,
+		      nic_readb,NULL,NULL, nic_writeb,NULL,NULL, dev);
+	if (dev->is_8bit)
+		io_sethandler(addr+16, 16,
+			      nic_readb, NULL, NULL,
+			      nic_writeb, NULL, NULL, dev);
+	  else
+		io_sethandler(addr+16, 16,
+			      nic_readb, nic_readw, NULL,
+			      nic_writeb, nic_writew, NULL, dev);
+	io_sethandler(addr+0x1f, 1,
+		      nic_readb, NULL, NULL, nic_writeb, NULL, NULL, dev);
+    }
+}
 
 
+static void
+nic_ioremove(nic_t *dev, uint16_t addr)
+{
+    if (dev->is_mca) {
+	io_removehandler(addr, 16,
+			 nic_readb, nic_readw, nic_readl,
+			 nic_writeb, nic_writew, nic_writel, dev);
+	io_removehandler(addr+16, 16,
+			 nic_readb, nic_readw, nic_readl,
+			 nic_writeb, nic_writew, nic_writel, dev);
+	io_removehandler(addr+0x1f, 16,
+			 nic_readb, nic_readw, nic_readl,
+			 nic_writeb, nic_writew, nic_writel, dev);
+    } else if (dev->is_pci) {
+	io_removehandler(addr, 16,
+			 nic_readb, nic_readw, nic_readl,
+			 nic_writeb, nic_writew, nic_writel, dev);
+	io_removehandler(addr+16, 16,
+			 nic_readb, nic_readw, nic_readl,
+			 nic_writeb, nic_writew, nic_writel, dev);
+	io_removehandler(addr+0x1f, 1,
+			 nic_readb, nic_readw, nic_readl,
+			 nic_writeb, nic_writew, nic_writel, dev);
+    } else {
+	io_removehandler(addr, 16,
+			 nic_readb, NULL, NULL,
+			 nic_writeb, NULL, NULL, dev);
+	if (dev->is_8bit)
+		io_removehandler(addr+16, 16,
+				 nic_readb, NULL, NULL,
+				 nic_writeb, NULL, NULL, dev);
+	  else
+		io_removehandler(addr+16, 16,
+				 nic_readb, nic_readw, NULL,
+				 nic_writeb, nic_writew, NULL, dev);
+	io_removehandler(addr+0x1f, 1,
+			 nic_readb, NULL, NULL,
+			 nic_writeb, NULL, NULL, dev);
+    }
+}
+
+
+/* FIXME: ISA-PNP handlers, should be moved to devices/system/isa.c */
 static uint8_t
-nic_pnp_io_check_readb(uint16_t addr, void *priv)
+pnp_io_check_readb(uint16_t addr, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -1657,8 +1734,24 @@ nic_pnp_io_check_readb(uint16_t addr, void *priv)
 }
 
 
+static void
+pnp_io_checkset(nic_t *dev, uint16_t addr)
+{
+    io_sethandler(addr, 32,
+		  pnp_io_check_readb,NULL,NULL, NULL,NULL,NULL, dev);
+}
+
+
+static void
+pnp_io_checkremove(nic_t *dev, uint16_t addr)
+{
+    io_removehandler(addr, 32,
+		     pnp_io_check_readb,NULL,NULL, NULL,NULL,NULL, dev);
+}
+
+
 static uint8_t
-nic_pnp_readb(uint16_t addr, void *priv)
+pnp_readb(uint16_t addr, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
     uint8_t bit, next_shift;
@@ -1747,7 +1840,7 @@ nic_pnp_readb(uint16_t addr, void *priv)
 		break;
 
 	case 0x61:	/* I/O base address bits[7:0] */
-		ret = (dev->base_address & 0xFF);
+		ret = (dev->base_address & 0xff);
 		break;
 
 	/* Interrupt Configuration Registers */
@@ -1783,23 +1876,41 @@ nic_pnp_readb(uint16_t addr, void *priv)
 		ret = (dev->pnp_csnsav);
 		break;
     }
-    DBGLOG(1, "nic_pnp_readb(%04X) = %02X\n", addr, ret);
+    DBGLOG(1, "pnp_readb(%04X) = %02X\n", addr, ret);
 
     return(ret);
 }
 
 
-static void	nic_pnp_io_set(nic_t *dev, uint16_t read_addr);
-static void	nic_pnp_io_remove(nic_t *dev);
+static void
+pnp_io_set(nic_t *dev, uint16_t read_addr)
+{
+    if ((read_addr >= 0x0200) && (read_addr <= 0x03FF)) {
+	io_sethandler(read_addr, 1,
+		      pnp_readb,NULL,NULL, NULL,NULL,NULL, dev);
+    }
+
+    dev->pnp_read = read_addr;
+}
 
 
 static void
-nic_pnp_writeb(uint16_t addr, uint8_t val, void *priv)
+pnp_io_remove(nic_t *dev)
+{
+    if ((dev->pnp_read >= 0x0200) && (dev->pnp_read <= 0x03FF)) {
+	io_removehandler(dev->pnp_read, 1,
+		         pnp_readb,NULL,NULL, NULL,NULL,NULL, dev);
+    }
+}
+
+
+static void
+pnp_writeb(uint16_t addr, uint8_t val, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
     uint16_t new_addr = 0;
 
-    DBGLOG(1, "nic_pnp_writeb(%04X, %02X)\n", addr, val);
+    DBGLOG(1, "pnp_writeb(%04X, %02X)\n", addr, val);
 
     /* Plug and Play Registers */
     switch(dev->pnp_address) {
@@ -1808,15 +1919,15 @@ nic_pnp_writeb(uint16_t addr, uint8_t val, void *priv)
 		new_addr = val;
 		new_addr <<= 2;
 		new_addr |= 3;
-		nic_pnp_io_remove(dev);
-		nic_pnp_io_set(dev, new_addr);
+		pnp_io_remove(dev);
+		pnp_io_set(dev, new_addr);
 		DBGLOG(1, "PnP read data address now: %04X\n", new_addr);
 		break;
 
 	case 0x02:	/* Config Control */
 		if (val & 0x01) {
 			/* Reset command */
-			nic_pnp_io_remove(dev);
+			pnp_io_remove(dev);
 			memset(dev->pnp_regs, 0, 256);
 			DBGLOG(1, "All logical devices reset\n");
 		}
@@ -1866,9 +1977,9 @@ nic_pnp_writeb(uint16_t addr, uint8_t val, void *priv)
 
 	case 0x31:	/* I/O Range Check */
 		if ((dev->pnp_io_check ^ val) & 0x02) {
-			nic_iocheckremove(dev, dev->base_address);
+			pnp_io_checkremove(dev, dev->base_address);
 			if (val & 0x02)
-				nic_iocheckset(dev, dev->base_address);
+				pnp_io_checkset(dev, dev->base_address);
 
 			DBGLOG(1, "I/O range check %sabled\n",
 				val & 0x02 ? "en" : "dis");
@@ -1913,38 +2024,15 @@ nic_pnp_writeb(uint16_t addr, uint8_t val, void *priv)
 		dev->pnp_csn = 0;
 		break;
     }
-    return;
 }
 
 
 static void
-nic_pnp_io_set(nic_t *dev, uint16_t read_addr)
-{
-    if ((read_addr >= 0x0200) && (read_addr <= 0x03FF)) {
-	io_sethandler(read_addr, 1,
-		      nic_pnp_readb,NULL,NULL, NULL,NULL,NULL, dev);
-    }
-
-    dev->pnp_read = read_addr;
-}
-
-
-static void
-nic_pnp_io_remove(nic_t *dev)
-{
-    if ((dev->pnp_read >= 0x0200) && (dev->pnp_read <= 0x03FF)) {
-	io_removehandler(dev->pnp_read, 1,
-		      nic_pnp_readb,NULL,NULL, NULL,NULL,NULL, dev);
-    }
-}
-
-
-static void
-nic_pnp_address_writeb(uint16_t addr, uint8_t val, void *priv)
+pnp_address_writeb(uint16_t addr, uint8_t val, void *priv)
 {
     nic_t *dev = (nic_t *) priv;
 
-    /* DBGLOG(2, "nic_pnp_address_writeb(%04X, %02X)\n", addr, val); */
+    /* DBGLOG(2, "pnp_address_writeb(%04X, %02X)\n", addr, val); */
 
     switch(dev->pnp_phase) {
 	case PNP_PHASE_WAIT_FOR_KEY:
@@ -1959,107 +2047,6 @@ nic_pnp_address_writeb(uint16_t addr, uint8_t val, void *priv)
 	default:
 		dev->pnp_address = val;
 		break;
-    }
-    return;
-}
-
-
-static void
-nic_iocheckset(nic_t *dev, uint16_t addr)
-{
-    io_sethandler(addr, 32,
-		  nic_pnp_io_check_readb, NULL, NULL,
-		  NULL, NULL, NULL, dev);
-}
-
-
-static void
-nic_iocheckremove(nic_t *dev, uint16_t addr)
-{
-    io_removehandler(addr, 32,
-		     nic_pnp_io_check_readb, NULL, NULL,
-		     NULL, NULL, NULL, dev);
-}
-
-
-static void
-nic_ioset(nic_t *dev, uint16_t addr)
-{
-    if (dev->is_mca) {
-	io_sethandler(addr, 16,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-	io_sethandler(addr+16, 16,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-	io_sethandler(addr+0x1f, 16,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-    } else if (dev->is_pci) {
-	io_sethandler(addr, 16,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-	io_sethandler(addr+16, 16,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-	io_sethandler(addr+0x1f, 1,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-    } else {
-	io_sethandler(addr, 16,
-		      nic_readb,NULL,NULL, nic_writeb,NULL,NULL, dev);
-	if (dev->is_8bit)
-		io_sethandler(addr+16, 16,
-			      nic_readb, NULL, NULL,
-			      nic_writeb, NULL, NULL, dev);
-	  else
-		io_sethandler(addr+16, 16,
-			      nic_readb, nic_readw, NULL,
-			      nic_writeb, nic_writew, NULL, dev);
-	io_sethandler(addr+0x1f, 1,
-		      nic_readb, NULL, NULL, nic_writeb, NULL, NULL, dev);
-    }
-}
-
-
-static void
-nic_ioremove(nic_t *dev, uint16_t addr)
-{
-    if (dev->is_mca) {
-	io_removehandler(addr, 16,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-	io_removehandler(addr+16, 16,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-	io_removehandler(addr+0x1f, 16,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-    } else if (dev->is_pci) {
-	io_removehandler(addr, 16,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-	io_removehandler(addr+16, 16,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-	io_removehandler(addr+0x1f, 1,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-    } else {
-	io_removehandler(addr, 16,
-			 nic_readb, NULL, NULL,
-			 nic_writeb, NULL, NULL, dev);
-	if (dev->is_8bit)
-		io_removehandler(addr+16, 16,
-				 nic_readb, NULL, NULL,
-				 nic_writeb, NULL, NULL, dev);
-	  else
-		io_removehandler(addr+16, 16,
-				 nic_readb, nic_readw, NULL,
-				 nic_writeb, nic_writew, NULL, dev);
-	io_removehandler(addr+0x1f, 1,
-			 nic_readb, NULL, NULL,
-			 nic_writeb, NULL, NULL, dev);
     }
 }
 
@@ -2089,7 +2076,7 @@ nic_update_bios(nic_t *dev)
 
 
 static uint8_t
-nic_pci_read(int func, int addr, void *priv)
+nic_pci_read(int func, int addr, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
     uint8_t ret = 0x00;
@@ -2197,7 +2184,7 @@ nic_pci_read(int func, int addr, void *priv)
 
 
 static void
-nic_pci_write(int func, int addr, uint8_t val, void *priv)
+nic_pci_write(int func, int addr, uint8_t val, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
     uint8_t valxor;
@@ -2288,46 +2275,8 @@ nic_pci_write(int func, int addr, uint8_t val, void *priv)
 }
 
 
-static void
-nic_rom_init(nic_t *dev, wchar_t *s)
-{
-    uint32_t temp;
-    FILE *f;
-
-    if (s == NULL) return;
-
-    if (dev->bios_addr == 0) return;
-
-    if ((f = rom_fopen(s, L"rb")) != NULL) {
-	fseek(f, 0L, SEEK_END);
-	temp = ftell(f);
-	fclose(f);
-	dev->bios_size = 0x10000;
-	if (temp <= 0x8000)
-		dev->bios_size = 0x8000;
-	if (temp <= 0x4000)
-		dev->bios_size = 0x4000;
-	if (temp <= 0x2000)
-		dev->bios_size = 0x2000;
-	dev->bios_mask = (dev->bios_size >> 8) & 0xff;
-		dev->bios_mask = (0x100 - dev->bios_mask) & 0xff;
-    } else {
-	dev->bios_addr = 0x00000;
-	dev->bios_size = 0;
-	return;
-    }
-
-    /* Create a memory mapping for the space. */
-    rom_init(&dev->bios_rom, s, dev->bios_addr,
-	     dev->bios_size, dev->bios_size-1, 0, MEM_MAPPING_EXTERNAL);
-
-    INFO("%s: BIOS configured at %06lX (size %lu)\n",
-	 dev->name, dev->bios_addr, dev->bios_size);
-}
-
-
 static uint8_t
-nic_mca_read(int port, void *priv)
+nic_mca_read(int port, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -2336,7 +2285,7 @@ nic_mca_read(int port, void *priv)
 
 
 static void
-nic_mca_write(int port, uint8_t val, void *priv)
+nic_mca_write(int port, uint8_t val, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -2379,7 +2328,41 @@ nic_mca_write(int port, uint8_t val, void *priv)
 
 
 static void
-nic_close(void *priv)
+nic_rom_init(nic_t *dev, const wchar_t *fn)
+{
+    uint32_t temp;
+    FILE *fp;
+
+    if ((fp = rom_fopen(fn, L"rb")) != NULL) {
+	fseek(fp, 0L, SEEK_END);
+	temp = ftell(fp);
+	fclose(fp);
+	dev->bios_size = 0x10000;
+	if (temp <= 0x8000)
+		dev->bios_size = 0x8000;
+	if (temp <= 0x4000)
+		dev->bios_size = 0x4000;
+	if (temp <= 0x2000)
+		dev->bios_size = 0x2000;
+	dev->bios_mask = (dev->bios_size >> 8) & 0xff;
+		dev->bios_mask = (0x100 - dev->bios_mask) & 0xff;
+    } else {
+	dev->bios_addr = 0x00000;
+	dev->bios_size = 0;
+	return;
+    }
+
+    /* Create a memory mapping for the space. */
+    rom_init(&dev->bios_rom, fn, dev->bios_addr,
+	     dev->bios_size, dev->bios_size-1, 0, MEM_MAPPING_EXTERNAL);
+
+    INFO("%s: BIOS configured at %06lX (size %iKB)\n",
+	 dev->name, dev->bios_addr, dev->bios_size>>10);
+}
+
+
+static void
+nic_close(priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
 
@@ -2394,12 +2377,12 @@ nic_close(void *priv)
 }
 
 
-static void *
+static priv_t
 nic_init(const device_t *info, UNUSED(void *parent))
 {
     char *ansi_id = "REALTEK PLUG & PLAY ETHERNET CARD";
+    const wchar_t *fn;
     uint32_t mac;
-    wchar_t *fn;
     nic_t *dev;
     int c;
 
@@ -2519,7 +2502,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
 	dev->maclocal[5] = (mac & 0xff);
     }
 
-    INFO("%s: I/O=%04x, IRQ=%d, MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+    INFO("%s: I/O=%04x, IRQ=%i, MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
 	 dev->name, dev->base_address, dev->base_irq,
 	 dev->maclocal[0], dev->maclocal[1], dev->maclocal[2],
 	 dev->maclocal[3], dev->maclocal[4], dev->maclocal[5]);
@@ -2572,8 +2555,8 @@ nic_init(const device_t *info, UNUSED(void *parent))
 					 nic_pci_read, nic_pci_write, dev);
 	} else {
 		io_sethandler(0x0279, 1,
-			      NULL, NULL, NULL,
-			      nic_pnp_address_writeb, NULL, NULL, dev);
+			      NULL,NULL,NULL,
+			      pnp_address_writeb,NULL,NULL, dev);
 
 		dev->pnp_id = PNP_DEVID;
 		dev->pnp_id <<= 32LL;
@@ -2654,7 +2637,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
 
 		io_sethandler(0x0A79, 1,
 			      NULL, NULL, NULL,
-			      nic_pnp_writeb, NULL, NULL, dev);
+			      pnp_writeb, NULL, NULL, dev);
 	}
     }
 
@@ -2665,19 +2648,20 @@ nic_init(const device_t *info, UNUSED(void *parent))
     nic_reset(dev);
 
     /* Attach ourselves to the network module. */
-    if (! network_attach(dev, dev->dp8390.physaddr, nic_rx)) {
+    if (! network_attach(dev, dev->maclocal, nic_rx)) {
 	nic_close(dev);
 
 	return(NULL);
     }
 
-    INFO("%s: %s attached IO=0x%X IRQ=%d\n", dev->name,
+    INFO("%s: %s attached IO=0x%X IRQ=%i\n", dev->name,
 	 dev->is_pci?"PCI":"ISA", dev->base_address, dev->base_irq);
 
     /* Set up our BIOS ROM space, if any. */
-    nic_rom_init(dev, fn);
+    if ((fn != NULL) && (dev->bios_addr > 0))
+	nic_rom_init(dev, fn);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

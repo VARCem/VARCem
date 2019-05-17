@@ -8,13 +8,13 @@
  *
  *		Emulation of the Intel PIIX and PIIX3 Xcelerators.
  *
- * Version:	@(#)intel_piix.h	1.0.2	2018/09/06
+ * Version:	@(#)intel_piix.h	1.0.3	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -47,10 +47,10 @@ extern const device_t piix_pb640_device;
 #endif
 
 
-extern int	piix_bus_master_dma_read(int channel, uint8_t *data, int transfer_length, void *priv);
-extern int	piix_bus_master_dma_write(int channel, uint8_t *data, int transfer_length, void *priv);
+extern int	piix_bus_master_dma_read(int channel, uint8_t *data, int transfer_length, priv_t priv);
+extern int	piix_bus_master_dma_write(int channel, uint8_t *data, int transfer_length, priv_t priv);
 
-extern void	piix_bus_master_set_irq(int channel, void *priv);
+extern void	piix_bus_master_set_irq(int channel, priv_t priv);
 
 
 #endif	/*EMU_INTELPIIX_H*/

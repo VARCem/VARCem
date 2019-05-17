@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.15	2019/05/05
+ * Version:	@(#)vid_genius.c	1.0.16	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -180,7 +180,7 @@ recalc_timings(genius_t *dev)
 
 
 static void
-genius_out(uint16_t port, uint8_t val, void *priv)
+genius_out(uint16_t port, uint8_t val, priv_t priv)
 {
     genius_t *dev = (genius_t *)priv;
 
@@ -229,7 +229,7 @@ genius_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-genius_in(uint16_t port, void *priv)
+genius_in(uint16_t port, priv_t priv)
 {
     genius_t *dev = (genius_t *)priv;
     uint8_t ret = 0xff;
@@ -274,7 +274,7 @@ genius_in(uint16_t port, void *priv)
 
 
 static void
-genius_write(uint32_t addr, uint8_t val, void *priv)
+genius_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     genius_t *dev = (genius_t *)priv;
 
@@ -290,7 +290,7 @@ genius_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-genius_read(uint32_t addr, void *priv)
+genius_read(uint32_t addr, priv_t priv)
 {
     genius_t *dev = (genius_t *)priv;
 
@@ -476,7 +476,7 @@ hires_line(genius_t *dev)
 
 
 static void
-genius_poll(void *priv)
+genius_poll(priv_t priv)
 {
     genius_t *dev = (genius_t *)priv;
     uint8_t background;
@@ -584,7 +584,7 @@ load_font(genius_t *dev, const wchar_t *s)
 }
 
 
-static void *
+static priv_t
 genius_init(const device_t *info, UNUSED(void *parent))
 {
     genius_t *dev;
@@ -602,19 +602,19 @@ genius_init(const device_t *info, UNUSED(void *parent))
     /* 160K video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x28000);
 
-    timer_add(genius_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(genius_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Occupy memory between 0xB0000 and 0xBFFFF (moves to 0xA0000 in
      * high-resolution modes)  */
     mem_map_add(&dev->mapping, 0xb0000, 0x10000,
 		genius_read,NULL,NULL, genius_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     /* Respond to both MDA and CGA I/O ports */
     io_sethandler(0x03b0, 0x000C,
-		  genius_in,NULL,NULL, genius_out,NULL,NULL, dev);
+		  genius_in,NULL,NULL, genius_out,NULL,NULL, (priv_t)dev);
     io_sethandler(0x03d0, 0x0010,
-		  genius_in,NULL,NULL, genius_out,NULL,NULL, dev);
+		  genius_in,NULL,NULL, genius_out,NULL,NULL, (priv_t)dev);
 
     dev->pal[0] = makecol(0x00, 0x00, 0x00);
     dev->pal[1] = makecol(0x55, 0x55, 0x55);
@@ -658,12 +658,12 @@ genius_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-genius_close(void *priv)
+genius_close(priv_t priv)
 {
     genius_t *dev = (genius_t *)priv;
 
@@ -673,7 +673,7 @@ genius_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     genius_t *dev = (genius_t *)priv;
 

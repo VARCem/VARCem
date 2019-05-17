@@ -12,7 +12,7 @@
  *		    word 0 - base address
  *		    word 1 - bits 1-15 = byte count, bit 31 = end of transfer
  *
- * Version:	@(#)intel_piix.c	1.0.11	2019/04/25
+ * Version:	@(#)intel_piix.c	1.0.12	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,6 +61,7 @@
 #include "dma.h"
 #include "pic.h"
 #include "intel_piix.h"
+#include "port92.h"
 
 
 typedef struct
@@ -80,12 +81,12 @@ typedef struct
 } piix_t;
 
 
-static uint8_t	piix_bus_master_read(uint16_t port, void *priv);
-static uint16_t	piix_bus_master_readw(uint16_t port, void *priv);
-static uint32_t	piix_bus_master_readl(uint16_t port, void *priv);
-static void	piix_bus_master_write(uint16_t port, uint8_t val, void *priv);
-static void	piix_bus_master_writew(uint16_t port, uint16_t val, void *priv);
-static void	piix_bus_master_writel(uint16_t port, uint32_t val, void *priv);
+static uint8_t	piix_bus_master_read(uint16_t port, priv_t priv);
+static uint16_t	piix_bus_master_readw(uint16_t port, priv_t priv);
+static uint32_t	piix_bus_master_readl(uint16_t port, priv_t priv);
+static void	piix_bus_master_write(uint16_t port, uint8_t val, priv_t priv);
+static void	piix_bus_master_writew(uint16_t port, uint16_t val, priv_t priv);
+static void	piix_bus_master_writel(uint16_t port, uint32_t val, priv_t priv);
 
 
 static void
@@ -117,9 +118,9 @@ piix_bus_master_handlers(piix_t *dev, uint16_t old_base)
 
 
 static void
-piix_write(int func, int addr, uint8_t val, void *priv)
+piix_write(int func, int addr, uint8_t val, priv_t priv)
 {
-    piix_t *dev = (piix_t *) priv;
+    piix_t *dev = (piix_t *)priv;
     uint8_t valxor;
 
     uint16_t old_base = (dev->regs_ide[0x20] & 0xf0) | (dev->regs_ide[0x21] << 8);
@@ -276,9 +277,9 @@ piix_write(int func, int addr, uint8_t val, void *priv)
 
 
 static uint8_t
-piix_read(int func, int addr, void *priv)
+piix_read(int func, int addr, priv_t priv)
 {
-    piix_t *dev = (piix_t *) priv;
+    piix_t *dev = (piix_t *)priv;
 
     if ((func == 1) && (dev->type & 0x100))	/* PB640's PIIX has no IDE part. */
 	return 0xff;
@@ -425,9 +426,9 @@ piix_bus_master_next_addr(piix_busmaster_t *dev)
 
 
 static void
-piix_bus_master_write(uint16_t port, uint8_t val, void *priv)
+piix_bus_master_write(uint16_t port, uint8_t val, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
 #ifdef _LOGGING
     int channel = (port & 8) ? 1 : 0;
 #endif
@@ -481,9 +482,9 @@ piix_bus_master_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-piix_bus_master_writew(uint16_t port, uint16_t val, void *priv)
+piix_bus_master_writew(uint16_t port, uint16_t val, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
 
     DBGLOG(1, "PIIX Bus master WORD  write: %04X     %04X\n", port, val);
 
@@ -506,9 +507,9 @@ piix_bus_master_writew(uint16_t port, uint16_t val, void *priv)
 
 
 static void
-piix_bus_master_writel(uint16_t port, uint32_t val, void *priv)
+piix_bus_master_writel(uint16_t port, uint32_t val, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
 
     DBGLOG(1, "PIIX Bus master DWORD write: %04X %08X\n", port, val);
 
@@ -527,10 +528,9 @@ piix_bus_master_writel(uint16_t port, uint32_t val, void *priv)
 
 
 static uint8_t
-piix_bus_master_read(uint16_t port, void *priv)
+piix_bus_master_read(uint16_t port, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
-
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
     uint8_t ret = 0xff;
 
     switch (port & 7) {
@@ -561,10 +561,9 @@ piix_bus_master_read(uint16_t port, void *priv)
 
 
 static uint16_t
-piix_bus_master_readw(uint16_t port, void *priv)
+piix_bus_master_readw(uint16_t port, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
-
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
     uint16_t ret = 0xffff;
 
     switch (port & 7) {
@@ -587,10 +586,9 @@ piix_bus_master_readw(uint16_t port, void *priv)
 
 
 static uint32_t
-piix_bus_master_readl(uint16_t port, void *priv)
+piix_bus_master_readl(uint16_t port, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
-
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
     uint32_t ret = 0xffffffff;
 
     switch (port & 7) {
@@ -610,9 +608,9 @@ piix_bus_master_readl(uint16_t port, void *priv)
 
 
 static int
-piix_bus_master_dma_op(int channel, uint8_t *data, int transfer_length, int out, void *priv)
+piix_bus_master_dma_op(int channel, uint8_t *data, int transfer_length, int out, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
     int force_end = 0, buffer_pos = 0;
 #ifdef _LOGGING
     char *sop = out ? "Writ" : "Read";
@@ -673,23 +671,23 @@ piix_bus_master_dma_op(int channel, uint8_t *data, int transfer_length, int out,
 
 
 int
-piix_bus_master_dma_read(int channel, uint8_t *data, int transfer_length, void *priv)
+piix_bus_master_dma_read(int channel, uint8_t *data, int transfer_length, priv_t priv)
 {
     return piix_bus_master_dma_op(channel, data, transfer_length, 1, priv);
 }
 
 
 int
-piix_bus_master_dma_write(int channel, uint8_t *data, int transfer_length, void *priv)
+piix_bus_master_dma_write(int channel, uint8_t *data, int transfer_length, priv_t priv)
 {
     return piix_bus_master_dma_op(channel, data, transfer_length, 0, priv);
 }
 
 
 void
-piix_bus_master_set_irq(int channel, void *priv)
+piix_bus_master_set_irq(int channel, priv_t priv)
 {
-    piix_busmaster_t *dev = (piix_busmaster_t *) priv;
+    piix_busmaster_t *dev = (piix_busmaster_t *)priv;
     dev->status &= ~4;
     dev->status |= (channel >> 4);
 
@@ -737,9 +735,9 @@ piix_bus_master_reset(piix_t *dev)
 
 
 static void
-piix_reset_hard(void *priv)
+piix_reset_hard(priv_t priv)
 {
-    piix_t *piix = (piix_t *) priv;
+    piix_t *piix = (piix_t *)priv;
 
     piix_bus_master_reset(piix);
 
@@ -822,7 +820,7 @@ piix_reset_hard(void *priv)
 
 
 static void
-piix_reset(void *p)
+piix_reset(priv_t priv)
 {
     //FIXME: this should be ide_reset() ...
     cdrom_reset_bus(CDROM_BUS_ATAPI);
@@ -831,41 +829,40 @@ piix_reset(void *p)
 
 
 static void
-piix_close(void *p)
+piix_close(priv_t priv)
 {
-    piix_t *piix = (piix_t *)p;
+    piix_t *dev = (piix_t *)priv;
 
-    free(piix);
+    free(dev);
 }
 
 
-static void *
+static priv_t
 piix_init(const device_t *info, UNUSED(void *parent))
 {
-    piix_t *piix = (piix_t *)mem_alloc(sizeof(piix_t));
-    memset(piix, 0, sizeof(piix_t));
+    piix_t *dev;
 
-    device_add(&ide_pci_2ch_device);
+    dev = (piix_t *)mem_alloc(sizeof(piix_t));
+    memset(dev, 0x00, sizeof(piix_t));
+    dev->type = info->local;
 
-    pci_add_card(7, piix_read, piix_write, piix);
+    device_add_parent(&ide_pci_2ch_device, dev);
 
-    piix->type = info->local;
-    piix_reset_hard(piix);
+    pci_add_card(7, piix_read, piix_write, dev);
+
+    piix_reset_hard(dev);
 
     ide_set_bus_master(piix_bus_master_dma_read, piix_bus_master_dma_write,
-		       piix_bus_master_set_irq,
-		       &piix->bm[0], &piix->bm[1]);
+		       piix_bus_master_set_irq, &dev->bm[0], &dev->bm[1]);
 
-    port_92_reset();
-
-    port_92_add(0);
+    device_add_parent(&port92_device, (priv_t)dev);
 
     dma_alias_set();
 
     pci_enable_mirq(0);
     pci_enable_mirq(1);
 
-    return piix;
+    return((priv_t)dev);
 }
 
 

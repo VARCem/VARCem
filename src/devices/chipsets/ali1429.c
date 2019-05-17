@@ -8,7 +8,7 @@
  *
  *		Implementation of the ALi M-1429/1431 chipset.
  *
- * Version:	@(#)ali1429.c	1.0.8	2019/04/08
+ * Version:	@(#)ali1429.c	1.0.9	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,7 +101,7 @@ ali1429_recalc(ali_t *dev)
 
 
 static void
-ali1429_write(uint16_t port, uint8_t val, void *priv)
+ali1429_write(uint16_t port, uint8_t val, priv_t priv)
 {
     ali_t *dev = (ali_t *)priv;
 
@@ -125,7 +125,7 @@ ali1429_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-ali1429_read(uint16_t port, void *priv)
+ali1429_read(uint16_t port, priv_t priv)
 {
     ali_t *dev = (ali_t *)priv;
 
@@ -147,7 +147,7 @@ ali1429_reset(ali_t *dev)
 
 
 static void
-ali_close(void *priv)
+ali_close(priv_t priv)
 {
     ali_t *dev = (ali_t *)priv;
 
@@ -155,7 +155,7 @@ ali_close(void *priv)
 }
 
 
-static void *
+static priv_t
 ali_init(const device_t *info, UNUSED(void *parent))
 {
     ali_t *dev;
@@ -169,7 +169,7 @@ ali_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0022, 2,
 		  ali1429_read,NULL,NULL, ali1429_write,NULL,NULL, dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

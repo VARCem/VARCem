@@ -6,15 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for Intel 82335 SX emulation.
+ *		Definitions for Intel 82335SX emulation.
  *
- * Version:	@(#)i82335.h	1.0.1	2018/02/14
+ * Version:	@(#)i82335.h	1.0.2	2019/05/34
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -40,7 +40,7 @@
 # define EMU_I82335_H
 
 
-extern void	i82335_init(void);
+extern const device_t	i82335_device;
 
 
 #endif	/*EMU_I82335*/

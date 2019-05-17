@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.22	2019/05/05
+ * Version:	@(#)vid_svga.c	1.0.23	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -95,7 +95,7 @@ svga_set_override(svga_t *svga, int val)
 
 
 void
-svga_out(uint16_t addr, uint8_t val, void *priv)
+svga_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     uint8_t indx, o;
@@ -299,7 +299,7 @@ svga_out(uint16_t addr, uint8_t val, void *priv)
 
 
 uint8_t
-svga_in(uint16_t addr, void *priv)
+svga_in(uint16_t addr, priv_t priv)
 {
     svga_t *svga = (svga_t *)priv;
     uint8_t indx, ret = 0xff;
@@ -588,9 +588,9 @@ svga_recalctimings(svga_t *svga)
 
 
 void
-svga_poll(void *p)
+svga_poll(priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
     uint32_t x;
     int wx, wy;
 
@@ -802,16 +802,16 @@ svga_poll(void *p)
 
 
 int
-svga_init(svga_t *svga, void *p, int vramsize, 
+svga_init(svga_t *svga, priv_t priv, int vramsize, 
 	  void (*recalctimings_ex)(struct svga_t *svga),
-	  uint8_t (*video_in) (uint16_t addr, void *p),
-	  void    (*video_out)(uint16_t addr, uint8_t val, void *p),
+	  uint8_t (*video_in) (uint16_t addr, priv_t),
+	  void    (*video_out)(uint16_t addr, uint8_t val, priv_t),
 	  void (*hwcursor_draw)(struct svga_t *svga, int displine),
 	  void (*overlay_draw)(struct svga_t *svga, int displine))
 {
     int c, d, e;
 
-    svga->p = p;
+    svga->p = priv;
 
     for (c = 0; c < 256; c++) {
 	e = c;
@@ -872,9 +872,9 @@ svga_close(svga_t *svga)
 
 
 void
-svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *p)
+svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
     uint32_t write_mask, bit_mask, set_mask, val32 = (uint32_t) val;
     int func_select, writemask2 = svga->writemask;
     int memory_map_mode;
@@ -1033,9 +1033,9 @@ svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *p)
 
 
 uint8_t
-svga_read_common(uint32_t addr, uint8_t linear, void *p)
+svga_read_common(uint32_t addr, uint8_t linear, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
     uint32_t latch_addr = 0, ret;
     int memory_map_mode, readplane = svga->readplane;
 
@@ -1130,30 +1130,30 @@ svga_read_common(uint32_t addr, uint8_t linear, void *p)
 
 
 void
-svga_write(uint32_t addr, uint8_t val, void *p)
+svga_write(uint32_t addr, uint8_t val, priv_t priv)
 {
-    svga_write_common(addr, val, 0, p);
+    svga_write_common(addr, val, 0, priv);
 }
 
 
 void
-svga_write_linear(uint32_t addr, uint8_t val, void *p)
+svga_write_linear(uint32_t addr, uint8_t val, priv_t priv)
 {
-    svga_write_common(addr, val, 1, p);
+    svga_write_common(addr, val, 1, priv);
 }
 
 
 uint8_t
-svga_read(uint32_t addr, void *p)
+svga_read(uint32_t addr, priv_t priv)
 {
-    return svga_read_common(addr, 0, p);
+    return svga_read_common(addr, 0, priv);
 }
 
 
 uint8_t
-svga_read_linear(uint32_t addr, void *p)
+svga_read_linear(uint32_t addr, priv_t priv)
 {
-    return svga_read_common(addr, 1, p);
+    return svga_read_common(addr, 1, priv);
 }
 
 
@@ -1221,12 +1221,12 @@ svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
 
 
 void
-svga_writeb_linear(uint32_t addr, uint8_t val, void *p)
+svga_writeb_linear(uint32_t addr, uint8_t val, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
 
     if (!svga->fast) {
-	svga_write_linear(addr, val, p);
+	svga_write_linear(addr, val, priv);
 	return;
     }
 
@@ -1240,13 +1240,13 @@ svga_writeb_linear(uint32_t addr, uint8_t val, void *p)
 
 
 void
-svga_writew_common(uint32_t addr, uint16_t val, uint8_t linear, void *p)
+svga_writew_common(uint32_t addr, uint16_t val, uint8_t linear, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
 
     if (!svga->fast) {
-	svga_write_common(addr, val & 0xff, linear, p);
-	svga_write_common(addr + 1, val >> 8, linear, p);
+	svga_write_common(addr, val & 0xff, linear, priv);
+	svga_write_common(addr + 1, val >> 8, linear, priv);
 	return;
     }
 
@@ -1264,29 +1264,29 @@ svga_writew_common(uint32_t addr, uint16_t val, uint8_t linear, void *p)
 
 
 void
-svga_writew(uint32_t addr, uint16_t val, void *p)
+svga_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
-    svga_writew_common(addr, val, 0, p);
+    svga_writew_common(addr, val, 0, priv);
 }
 
 
 void
-svga_writew_linear(uint32_t addr, uint16_t val, void *p)
+svga_writew_linear(uint32_t addr, uint16_t val, priv_t priv)
 {
-    svga_writew_common(addr, val, 1, p);
+    svga_writew_common(addr, val, 1, priv);
 }
 
 
 void
-svga_writel_common(uint32_t addr, uint32_t val, uint8_t linear, void *p)
+svga_writel_common(uint32_t addr, uint32_t val, uint8_t linear, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
 
     if (!svga->fast) {
-	svga_write_common(addr, val, linear, p);
-	svga_write_common(addr + 1, val >> 8, linear, p);
-	svga_write_common(addr + 2, val >> 16, linear, p);
-	svga_write_common(addr + 3, val >> 24, linear, p);
+	svga_write_common(addr, val, linear, priv);
+	svga_write_common(addr + 1, val >> 8, linear, priv);
+	svga_write_common(addr + 2, val >> 16, linear, priv);
+	svga_write_common(addr + 3, val >> 24, linear, priv);
 	return;
     }
 
@@ -1305,26 +1305,26 @@ svga_writel_common(uint32_t addr, uint32_t val, uint8_t linear, void *p)
 
 
 void
-svga_writel(uint32_t addr, uint32_t val, void *p)
+svga_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
-    svga_writel_common(addr, val, 0, p);
+    svga_writel_common(addr, val, 0, priv);
 }
 
 
 void
-svga_writel_linear(uint32_t addr, uint32_t val, void *p)
+svga_writel_linear(uint32_t addr, uint32_t val, priv_t priv)
 {
-    svga_writel_common(addr, val, 1, p);
+    svga_writel_common(addr, val, 1, priv);
 }
 
 
 uint8_t
-svga_readb_linear(uint32_t addr, void *p)
+svga_readb_linear(uint32_t addr, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
 
     if (!svga->fast)
-	return svga_read_linear(addr, p);
+	return svga_read_linear(addr, priv);
 
     addr &= svga->decode_mask;
     if (addr >= svga->vram_max)
@@ -1335,12 +1335,12 @@ svga_readb_linear(uint32_t addr, void *p)
 
 
 uint16_t
-svga_readw_common(uint32_t addr, uint8_t linear, void *p)
+svga_readw_common(uint32_t addr, uint8_t linear, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
 
     if (!svga->fast)
-	return svga_read_common(addr, linear, p) | (svga_read_common(addr + 1, linear, p) << 8);
+	return svga_read_common(addr, linear, priv) | (svga_read_common(addr + 1, linear, priv) << 8);
 
     cycles -= video_timing_read_w;
 
@@ -1355,27 +1355,27 @@ svga_readw_common(uint32_t addr, uint8_t linear, void *p)
 
 
 uint16_t
-svga_readw(uint32_t addr, void *p)
+svga_readw(uint32_t addr, priv_t priv)
 {
-    return svga_readw_common(addr, 0, p);
+    return svga_readw_common(addr, 0, priv);
 }
 
 
 uint16_t
-svga_readw_linear(uint32_t addr, void *p)
+svga_readw_linear(uint32_t addr, priv_t priv)
 {
-    return svga_readw_common(addr, 1, p);
+    return svga_readw_common(addr, 1, priv);
 }
 
 
 uint32_t
-svga_readl_common(uint32_t addr, uint8_t linear, void *p)
+svga_readl_common(uint32_t addr, uint8_t linear, priv_t priv)
 {
-    svga_t *svga = (svga_t *)p;
+    svga_t *svga = (svga_t *)priv;
 
     if (!svga->fast) {
-	return svga_read_common(addr, linear, p) | (svga_read_common(addr + 1, linear, p) << 8) |
-	       (svga_read_common(addr + 2, linear, p) << 16) | (svga_read_common(addr + 3, linear, p) << 24);
+	return svga_read_common(addr, linear, priv) | (svga_read_common(addr + 1, linear, priv) << 8) |
+	       (svga_read_common(addr + 2, linear, priv) << 16) | (svga_read_common(addr + 3, linear, priv) << 24);
     }
 
     cycles -= video_timing_read_l;
@@ -1391,14 +1391,14 @@ svga_readl_common(uint32_t addr, uint8_t linear, void *p)
 
 
 uint32_t
-svga_readl(uint32_t addr, void *p)
+svga_readl(uint32_t addr, priv_t priv)
 {
-    return svga_readl_common(addr, 0, p);
+    return svga_readl_common(addr, 0, priv);
 }
 
 
 uint32_t
-svga_readl_linear(uint32_t addr, void *p)
+svga_readl_linear(uint32_t addr, priv_t priv)
 {
-    return svga_readl_common(addr, 1, p);
+    return svga_readl_common(addr, 1, priv);
 }

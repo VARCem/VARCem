@@ -8,7 +8,7 @@
  *
  *		Definitions for the SERIAL card.
  *
- * Version:	@(#)serial.h	1.0.10	2019/05/03
+ * Version:	@(#)serial.h	1.0.11	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -85,21 +85,21 @@ extern const device_t	serial_1_pcjr_device;
 extern void	serial_reset(void);
 
 extern void	serial_setup(int port, uint16_t addr, int8_t irq);
-extern void	*serial_attach(int port, serial_ops_t *ops, void *priv);
+extern void	*serial_attach(int port, serial_ops_t *ops, priv_t priv);
 extern int	serial_link(int port, const char *name);
 
-extern void	serial_clear(void *arg);
-extern void	serial_write(void *arg, uint8_t *ptr, uint8_t len);
+extern void	serial_clear(priv_t arg);
+extern void	serial_write(priv_t arg, uint8_t *ptr, uint8_t len);
 
 /* Platform serial driver support. */
-extern void	*plat_serial_open(const char *port, int tmo);
-extern void	plat_serial_close(void *);
-extern int	plat_serial_active(void *, int flg);
-extern int	plat_serial_params(void *, char dbit, char par, char sbit);
-extern int	plat_serial_flush(void *);
-extern int	plat_serial_speed(void *, long speed);
-extern int	plat_serial_write(void *, uint8_t val);
-extern int	plat_serial_read(void *, uint8_t *bufp, int max);
+extern priv_t	plat_serial_open(const char *port, int tmo);
+extern void	plat_serial_close(priv_t);
+extern int	plat_serial_active(priv_t, int flg);
+extern int	plat_serial_params(priv_t, char dbit, char par, char sbit);
+extern int	plat_serial_flush(priv_t);
+extern int	plat_serial_speed(priv_t, long speed);
+extern int	plat_serial_write(priv_t, uint8_t val);
+extern int	plat_serial_read(priv_t, uint8_t *bufp, int max);
 
 
 #endif	/*EMU_SERIAL_H*/

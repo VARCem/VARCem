@@ -8,7 +8,7 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.8	2019/04/09
+ * Version:	@(#)snd_wss.c	1.0.9	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -68,7 +68,7 @@ typedef struct {
 
     uint8_t	config;
 
-    ad1848_t	ad1848;        
+    ad1848_t	ad1848;
 
     opl_t	opl;
     int		opl_enabled;
@@ -78,7 +78,7 @@ typedef struct {
 
 
 static void
-get_buffer(int32_t *buffer, int len, void *priv)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     wss_t *dev = (wss_t *)priv;
     int c;
@@ -98,7 +98,7 @@ get_buffer(int32_t *buffer, int len, void *priv)
 
 
 static uint8_t
-wss_read(uint16_t addr, void *priv)
+wss_read(uint16_t addr, priv_t priv)
 {
     wss_t *dev = (wss_t *)priv;
     uint8_t ret;
@@ -110,7 +110,7 @@ wss_read(uint16_t addr, void *priv)
 
 
 static void
-wss_write(uint16_t addr, uint8_t val, void *priv)
+wss_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     wss_t *dev = (wss_t *)priv;
 
@@ -122,7 +122,7 @@ wss_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-ncr_audio_mca_read(int port, void *priv)
+ncr_audio_mca_read(int port, priv_t priv)
 {
     wss_t *dev = (wss_t *)priv;
 
@@ -131,7 +131,7 @@ ncr_audio_mca_read(int port, void *priv)
 
 
 static void
-ncr_audio_mca_write(int port, uint8_t val, void *priv)
+ncr_audio_mca_write(int port, uint8_t val, priv_t priv)
 {
     wss_t *dev = (wss_t *)priv;
     uint16_t ports[] = { 0x0530, 0x0E80, 0x0F40, 0x0604 };
@@ -148,7 +148,7 @@ ncr_audio_mca_write(int port, uint8_t val, void *priv)
 		     wss_read,NULL,NULL, wss_write,NULL,NULL, dev);
     io_removehandler(addr+4, 4,
 		     ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
-    INFO("%s: OPL=%d, I/O=%04XH\n", dev->name, dev->opl_enabled, addr);
+    INFO("%s: OPL=%i, I/O=%04XH\n", dev->name, dev->opl_enabled, addr);
 
     dev->pos_regs[port & 7] = val;
     if (dev->pos_regs[2] & 1) {
@@ -165,7 +165,25 @@ ncr_audio_mca_write(int port, uint8_t val, void *priv)
 }
 
 
-static void *
+static void
+wss_close(priv_t priv)
+{
+    wss_t *dev = (wss_t *)priv;
+
+    free(dev);
+}
+
+
+static void
+speed_changed(priv_t priv)
+{
+    wss_t *dev = (wss_t *)priv;
+
+    ad1848_speed_changed(&dev->ad1848);
+}
+
+
+static priv_t
 wss_init(const device_t *info, UNUSED(void *parent))
 {
     wss_t *dev;
@@ -182,7 +200,7 @@ wss_init(const device_t *info, UNUSED(void *parent))
 	case 1:		/* NCR Business Audio MCA */
 		dev->pos_regs[0] = 0x16;
 		dev->pos_regs[1] = 0x51;		
-		mca_add(ncr_audio_mca_read, ncr_audio_mca_write, dev);
+		mca_add(ncr_audio_mca_read, ncr_audio_mca_write, (priv_t)dev);
 		break;
     }
 
@@ -199,27 +217,9 @@ wss_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0534, 4,
 		  ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
 
-    sound_add_handler(get_buffer, dev);
+    sound_add_handler(get_buffer, (priv_t)dev);
 
-    return(dev);
-}
-
-
-static void
-wss_close(void *priv)
-{
-    wss_t *dev = (wss_t *)priv;
-
-    free(dev);
-}
-
-
-static void
-wss_speed_changed(void *priv)
-{
-    wss_t *dev = (wss_t *)priv;
-
-    ad1848_speed_changed(&dev->ad1848);
+    return((priv_t)dev);
 }
 
 
@@ -230,7 +230,7 @@ const device_t wss_device = {
     NULL,
     wss_init, wss_close, NULL,
     NULL,
-    wss_speed_changed,
+    speed_changed,
     NULL, NULL,
     NULL
 };
@@ -242,7 +242,7 @@ const device_t ncr_business_audio_device = {
     NULL,
     wss_init, wss_close, NULL,
     NULL,
-    wss_speed_changed,
+    speed_changed,
     NULL, NULL,
     NULL
 };

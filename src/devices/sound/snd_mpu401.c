@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.14	2019/04/25
+ * Version:	@(#)snd_mpu401.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,12 +69,12 @@ static int64_t	mpu401_eoi_callback = 0LL;
 static int64_t	mpu401_reset_callback = 0LL;
 
 
-static void	MPU401_WriteCommand(mpu_t *mpu, uint8_t val);
-static void	MPU401_EOIHandlerDispatch(void *p);
+static void	MPU401_WriteCommand(mpu_t *, uint8_t);
+static void	MPU401_EOIHandlerDispatch(priv_t);
 
 
 static void
-QueueByte(mpu_t *mpu, uint8_t data) 
+QueueByte(mpu_t *mpu, uint8_t data)
 {
     if (mpu->state.block_ack) {
 	mpu->state.block_ack = 0;
@@ -102,7 +102,7 @@ QueueByte(mpu_t *mpu, uint8_t data)
 
 
 static void
-ClrQueue(mpu_t *mpu) 
+ClrQueue(mpu_t *mpu)
 {
     mpu->queue_used=0;
     mpu->queue_pos=0;
@@ -110,7 +110,7 @@ ClrQueue(mpu_t *mpu)
 
 
 static void
-MPU401_Reset(mpu_t *mpu) 
+MPU401_Reset(mpu_t *mpu)
 {
     uint8_t i;
 
@@ -156,7 +156,7 @@ MPU401_Reset(mpu_t *mpu)
 
 
 static void
-MPU401_ResetDone(void *priv) 
+MPU401_ResetDone(priv_t priv)
 {
     mpu_t *mpu = (mpu_t *)priv;
 
@@ -357,7 +357,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
 
 
 static void
-MPU401_WriteData(mpu_t *mpu, uint8_t val) 
+MPU401_WriteData(mpu_t *mpu, uint8_t val)
 {
     static int length, cnt, posd;
 
@@ -370,7 +370,7 @@ MPU401_WriteData(mpu_t *mpu, uint8_t val)
 	mpu->state.command_byte = 0;
 	return;
     }
-	
+
     switch (mpu->state.command_byte) {	/* 0xe# command data */
 	case 0x00:
 		break;
@@ -587,7 +587,7 @@ MPU401_WriteData(mpu_t *mpu, uint8_t val)
 			case 0x90:
 			case 0xa0:
 			case 0xb0:
-			case 0xe0: 
+			case 0xe0:
 				mpu->playbuf[mpu->state.channel].type = T_MIDI_NORM;
 				length = mpu->playbuf[mpu->state.channel].length = 3;
 				break;
@@ -609,7 +609,7 @@ MPU401_WriteData(mpu_t *mpu, uint8_t val)
 
 
 static void
-MPU401_IntelligentOut(mpu_t *mpu, uint8_t chan) 
+MPU401_IntelligentOut(mpu_t *mpu, uint8_t chan)
 {
     uint8_t val;
     uint8_t i;
@@ -639,7 +639,7 @@ MPU401_IntelligentOut(mpu_t *mpu, uint8_t chan)
 
 
 static void
-UpdateTrack(mpu_t *mpu, uint8_t chan) 
+UpdateTrack(mpu_t *mpu, uint8_t chan)
 {
     MPU401_IntelligentOut(mpu, chan);
 
@@ -656,7 +656,7 @@ UpdateTrack(mpu_t *mpu, uint8_t chan)
 
 
 static void
-UpdateConductor(mpu_t *mpu) 
+UpdateConductor(mpu_t *mpu)
 {
     if (mpu->condbuf.value[0] == 0xfc) {
 	mpu->condbuf.value[0] = 0;
@@ -708,7 +708,7 @@ MPU401_EOIHandler(void *priv)
 
 
 static void
-MPU401_EOIHandlerDispatch(void *priv) 
+MPU401_EOIHandlerDispatch(priv_t priv)
 {
     mpu_t *mpu = (mpu_t *)priv;
 
@@ -721,7 +721,7 @@ MPU401_EOIHandlerDispatch(void *priv)
 
 
 static void
-imf_write(uint16_t addr, uint8_t val, void *priv)
+imf_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     DBGLOG(1, "IMF:Wr %4X,%X\n", addr, val);
 }
@@ -731,7 +731,7 @@ uint8_t
 MPU401_ReadData(mpu_t *mpu)
 {
     uint8_t ret;
-	
+
     ret = MSG_MPU_ACK;
     if (mpu->queue_used) {
 	if (mpu->queue_pos >= MPU401_QUEUE)
@@ -784,7 +784,7 @@ MPU401_ReadData(mpu_t *mpu)
 
 
 static void
-mpu401_write(uint16_t addr, uint8_t val, void *priv)
+mpu401_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     mpu_t *mpu = (mpu_t *)priv;
 
@@ -805,7 +805,7 @@ mpu401_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-mpu401_read(uint16_t addr, void *priv)
+mpu401_read(uint16_t addr, priv_t priv)
 {
     mpu_t *mpu = (mpu_t *)priv;
     uint8_t ret = 0;
@@ -833,7 +833,7 @@ mpu401_read(uint16_t addr, void *priv)
 
 
 static void
-MPU401_Event(void *priv) 
+MPU401_Event(priv_t priv) 
 {
     mpu_t *mpu = (mpu_t *)priv;
     int new_time;
@@ -916,11 +916,11 @@ mpu401_init(mpu_t *mpu, uint16_t addr, int irq, int mode)
     io_sethandler(0x2A20, 16,
 		  NULL, NULL, NULL, imf_write, NULL, NULL, mpu);
 
-    timer_add(MPU401_Event, mpu,
+    timer_add(MPU401_Event, (priv_t)mpu,
 	      &mpu401_event_callback, &mpu401_event_callback);
-    timer_add(MPU401_EOIHandler, mpu,
+    timer_add(MPU401_EOIHandler, (priv_t)mpu,
 	      &mpu401_eoi_callback, &mpu401_eoi_callback);
-    timer_add(MPU401_ResetDone, mpu,
+    timer_add(MPU401_ResetDone, (priv_t)mpu,
 	      &mpu401_reset_callback, &mpu401_reset_callback);
 
     MPU401_Reset(mpu);
@@ -930,7 +930,6 @@ mpu401_init(mpu_t *mpu, uint16_t addr, int irq, int mode)
 void
 mpu401_device_add(void)
 {
-
     if (MCA)
 	device_add(&mpu401_mca_device);
       else
@@ -939,7 +938,7 @@ mpu401_device_add(void)
 
 
 static uint8_t
-mpu401_mca_read(int port, void *priv)
+mpu401_mca_read(int port, priv_t priv)
 {
     mpu_t *dev = (mpu_t *)priv;
 
@@ -948,7 +947,7 @@ mpu401_mca_read(int port, void *priv)
 
 
 static void
-mpu401_mca_write(int port, uint8_t val, void *priv)
+mpu401_mca_write(int port, uint8_t val, priv_t priv)
 {
     mpu_t *dev = (mpu_t *)priv;
     uint16_t addr;
@@ -971,7 +970,7 @@ mpu401_mca_write(int port, uint8_t val, void *priv)
 }
 
 
-static void *
+static priv_t
 mpu401_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     mpu_t *dev;
@@ -995,12 +994,12 @@ mpu401_standalone_init(const device_t *info, UNUSED(void *parent))
 
     mpu401_init(dev, base, irq, M_INTELLIGENT);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-mpu401_standalone_close(void *priv)
+mpu401_standalone_close(priv_t priv)
 {
     mpu_t *dev = (mpu_t *)priv;
 

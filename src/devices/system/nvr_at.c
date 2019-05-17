@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.19	2019/05/05
+ * Version:	@(#)nvr_at.c	1.0.20	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -336,7 +336,7 @@ time_get(nvr_t *nvr, struct tm *tm)
 
 /* Set the current NVR time. */
 static void
-time_set(nvr_t *nvr, struct tm *tm)
+time_set(nvr_t *nvr, const struct tm *tm)
 {
     local_t *local = (local_t *)nvr->data;
     int year = (tm->tm_year + 1900);
@@ -398,7 +398,7 @@ check_alarm(nvr_t *nvr, int8_t addr)
 
 /* Update the NVR registers from the internal clock. */
 static void
-timer_update(void *priv)
+timer_update(priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     local_t *local = (local_t *)nvr->data;
@@ -467,7 +467,7 @@ timer_recalc(nvr_t *nvr, int add)
 
 
 static void
-timer_intr(void *priv)
+timer_intr(priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     local_t *local = (local_t *)nvr->data;
@@ -510,7 +510,7 @@ timer_tick(nvr_t *nvr)
 
 /* Write to one of the NVR registers. */
 static void
-nvr_write(uint16_t addr, uint8_t val, void *priv)
+nvr_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     local_t *local = (local_t *)nvr->data;
@@ -573,7 +573,7 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
 
 /* Read from one of the NVR registers. */
 static uint8_t
-nvr_read(uint16_t addr, void *priv)
+nvr_read(uint16_t addr, priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
     local_t *local = (local_t *)nvr->data;
@@ -659,7 +659,22 @@ nvr_recalc(void *priv)
 }
 
 
-static void *
+static void
+nvr_at_close(priv_t priv)
+{
+    nvr_t *nvr = (nvr_t *)priv;
+
+    if (nvr->fn != NULL)
+	free((wchar_t *)nvr->fn);
+
+    if (nvr->data != NULL)
+	free(nvr->data);
+
+    free(nvr);
+}
+
+
+static priv_t
 nvr_at_init(const device_t *info, UNUSED(void *parent))
 {
     local_t *local;
@@ -715,22 +730,7 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0070, 2,
 		  nvr_read,NULL,NULL, nvr_write,NULL,NULL, nvr);
 
-    return(nvr);
-}
-
-
-static void
-nvr_at_close(void *priv)
-{
-    nvr_t *nvr = (nvr_t *)priv;
-
-    if (nvr->fn != NULL)
-	free((wchar_t *)nvr->fn);
-
-    if (nvr->data != NULL)
-	free(nvr->data);
-
-    free(nvr);
+    return((priv_t)nvr);
 }
 
 

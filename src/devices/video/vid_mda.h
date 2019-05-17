@@ -8,7 +8,7 @@
  *
  *		Definitions for the MDA driver.
  *
- * Version:	@(#)vid_mda.h	1.0.1	2019/03/09
+ * Version:	@(#)vid_mda.h	1.0.2	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -74,12 +74,12 @@ extern const device_config_t mda_config[];
 
 
 extern void	mda_init(mda_t *);
-extern void	mda_out(uint16_t port, uint8_t val, void *priv);
-extern uint8_t	mda_in(uint16_t port, void *priv);
-extern void	mda_write(uint32_t addr, uint8_t val, void *priv);
-extern uint8_t	mda_read(uint32_t addr, void *priv);
+extern void	mda_out(uint16_t port, uint8_t val, priv_t);
+extern uint8_t	mda_in(uint16_t port, priv_t);
+extern void	mda_write(uint32_t addr, uint8_t val, priv_t);
+extern uint8_t	mda_read(uint32_t addr, priv_t);
 extern void	mda_recalctimings(mda_t *);
-extern void	mda_poll(void *priv);
+extern void	mda_poll(priv_t);
 extern void	mda_setcol(mda_t *, int chr, int blink, int fg, uint8_t ink);
 
 

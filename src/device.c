@@ -11,7 +11,7 @@
  *
  * **TODO**	Merge the various 'add' variants, its getting too messy.
  *
- * Version:	@(#)device.c	1.0.24	2019/05/05
+ * Version:	@(#)device.c	1.0.26	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,7 +67,7 @@ typedef struct clonedev {
 
 
 static device_t		*devices[DEVICE_MAX];
-static void		*device_priv[DEVICE_MAX];
+static priv_t		device_priv[DEVICE_MAX];
 static device_t		*device_current;
 static clonedev_t	*clones = NULL;
 
@@ -152,11 +152,11 @@ device_clone(const device_t *master)
 
 
 /* Add a new device to the system. */
-void *
-device_add_parent(const device_t *d, void *parent)
+priv_t
+device_add_parent(const device_t *d, priv_t parent)
 {
     wchar_t temp[1024];
-    void *priv = NULL;
+    priv_t priv = NULL;
     device_t *old;
     int c;
 
@@ -225,7 +225,7 @@ device_add_parent(const device_t *d, void *parent)
 }
 
 
-void *
+priv_t
 device_add(const device_t *d)
 {
     return(device_add_parent(d, device_priv[0]));
@@ -234,7 +234,7 @@ device_add(const device_t *d)
 
 /* For devices that do not have an init function (internal video etc.) */
 void
-device_add_ex(const device_t *d, void *priv)
+device_add_ex(const device_t *d, priv_t priv)
 {
     int c;
 
@@ -257,6 +257,33 @@ device_add_ex(const device_t *d, void *priv)
      * be valid until the next device is added.
      */
     device_current = (device_t *)d;
+}
+
+
+void
+device_remove(const device_t *d, priv_t priv)
+{
+    int c;
+
+    for (c = 0; c < DEVICE_MAX; c++) {
+	if ((devices[c] == (device_t *)d) && (device_priv[c] == priv)) {
+		/* Found it. Close the device. */
+		if (devices[c]->close != NULL)
+			devices[c]->close(device_priv[c]);
+
+		/* Now move up all slots. */
+		for (; c < DEVICE_MAX - 1; c++) {
+			devices[c] = devices[c + 1];
+			device_priv[c] = device_priv[c + 1];
+		}
+
+		/* Zap last slot. */
+		devices[c] = NULL;
+		device_priv[c] = NULL;
+
+		return;
+	}
+    }
 }
 
 
@@ -295,7 +322,7 @@ device_reset_all(int flags)
 }
 
 
-void *
+priv_t
 device_get_priv(const device_t *d)
 {
     int c;
@@ -443,17 +470,17 @@ device_get_config_int(const char *s)
 
 
 int
-device_get_config_int_ex(const char *s, int def)
+device_get_config_int_ex(const char *s, int dflt)
 {
     const device_config_t *c = device_current->config;
 
     while (c && c->name) {
 	if (! strcmp(s, c->name))
-		return(config_get_int(device_current->name, s, def));
+		return(config_get_int(device_current->name, s, dflt));
 	c++;
     }
 
-    return(def);
+    return(dflt);
 }
 
 
@@ -488,17 +515,17 @@ device_get_config_hex20(const char *s)
 
 
 int
-device_get_config_mac(const char *s, int def)
+device_get_config_mac(const char *s, int dflt)
 {
     const device_config_t *c = device_current->config;
 
     while (c && c->name) {
 	if (! strcmp(s, c->name))
-		return(config_get_mac(device_current->name, s, def));
+		return(config_get_mac(device_current->name, s, dflt));
 	c++;
     }
 
-    return(def);
+    return(dflt);
 }
 
 

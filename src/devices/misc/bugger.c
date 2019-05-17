@@ -44,7 +44,7 @@
  *		configuration register (CTRL_SPCFG bit set) but have to
  *		remember that stuff first...
  *
- * Version:	@(#)bugger.c	1.0.10	2019/04/08
+ * Version:	@(#)bugger.c	1.0.11	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -120,8 +120,8 @@ typedef struct {
 		seg1,			/* LEFT and RIGHT 7SEG displays */
 		seg2,
 		spcfg;			/* serial port configuration */
-     uint8_t	buff[FIFO_LEN],		/* serial port data buffer */
-		*bptr;
+     uint8_t	*bptr,			/* serial port data buffer */
+		buff[FIFO_LEN];
 } bugger_t;
 
 
@@ -293,7 +293,7 @@ bug_reset(bugger_t *dev)
 
 /* Handle a WRITE operation to one of our registers. */
 static void
-bug_write(uint16_t port, uint8_t val, UNUSED(void *priv))
+bug_write(uint16_t port, uint8_t val, priv_t priv)
 {
     bugger_t *dev = (bugger_t *)priv;
 
@@ -320,7 +320,7 @@ bug_write(uint16_t port, uint8_t val, UNUSED(void *priv))
 
 /* Handle a READ operation from one of our registers. */
 static uint8_t
-bug_read(uint16_t port, UNUSED(void *priv))
+bug_read(uint16_t port, priv_t priv)
 {
     bugger_t *dev = (bugger_t *)priv;
     uint8_t ret = 0xff;
@@ -349,8 +349,21 @@ bug_read(uint16_t port, UNUSED(void *priv))
 }
 
 
+/* Remove the ISA BusBugger emulator from the system. */
+static void
+bug_close(priv_t priv)
+{
+    bugger_t *dev = (bugger_t *)priv;
+
+    io_removehandler(dev->base, 2,
+		     bug_read,NULL,NULL, bug_write,NULL,NULL, dev);
+
+    free(dev);
+}
+
+
 /* Initialize the ISA BusBugger emulator. */
-static void *
+static priv_t
 bug_init(const device_t *info, UNUSED(void *parent))
 {
     bugger_t *dev;
@@ -369,19 +382,6 @@ bug_init(const device_t *info, UNUSED(void *parent))
 		  bug_read,NULL,NULL, bug_write,NULL,NULL, dev);
 
     return(dev);
-}
-
-
-/* Remove the ISA BusBugger emulator from the system. */
-static void
-bug_close(void *priv)
-{
-    bugger_t *dev = (bugger_t *)priv;
-
-    io_removehandler(dev->base, 2,
-		     bug_read,NULL,NULL, bug_write,NULL,NULL, dev);
-
-    free(dev);
 }
 
 

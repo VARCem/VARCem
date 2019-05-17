@@ -9,10 +9,12 @@
  *		Emulation of the memory I/O scratch registers on ports 0xE1
  *		and 0xE2, used by just about any emulated machine.
  *
- * Version:	@(#)memregs.c	1.0.3	2018/09/06
+ * Version:	@(#)memregs.c	1.0.4	2019/05/13
  *
- * Author:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *
+ *		Copyright 2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,54 +37,98 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../io.h"
+#include "../../device.h"
+#include "../../plat.h"
 #include "memregs.h"
 
 
-static uint8_t mem_regs[16] = {
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-};
-static uint8_t mem_reg_ffff = 0;
+typedef struct {
+    uint8_t	regs[16];
+
+    uint8_t	reg_ffff;
+} memregs_t;
 
 
 static void
-memregs_write(uint16_t port, uint8_t val, void *priv)
+memregs_write(uint16_t port, uint8_t val, priv_t priv)
 {
-    if (port == 0xffff)
-	mem_reg_ffff = 0;
+    memregs_t *dev = (memregs_t *)priv;
 
-    mem_regs[port & 0xf] = val;
+    if (port == 0xffff)
+	dev->reg_ffff = 0;
+
+    dev->regs[port & 0x0f] = val;
 }
 
 
 static uint8_t
-memregs_read(uint16_t port, void *priv)
+memregs_read(uint16_t port, priv_t priv)
 {
+    memregs_t *dev = (memregs_t *)priv;
+
     if (port == 0xffff)
-	return mem_reg_ffff;
+	return dev->reg_ffff;
 
-    return mem_regs[port & 0xf];
+    return dev->regs[port & 0xf];
 }
 
 
-void
-memregs_init(void)
+static void
+memregs_close(priv_t priv)
 {
-    io_sethandler(0x00e1, 2,
-		  memregs_read,NULL,NULL, memregs_write,NULL,NULL, NULL);
+    memregs_t *dev = (memregs_t *)priv;
+
+    free(dev);
 }
 
 
-void
-powermate_memregs_init(void)
+static priv_t
+memregs_init(const device_t *info, UNUSED(void *parent))
 {
-    io_sethandler(0x00ed, 2,
-		  memregs_read,NULL,NULL, memregs_write,NULL,NULL, NULL);
+    memregs_t *dev;
 
-    io_sethandler(0xffff, 1,
-		  memregs_read,NULL,NULL, memregs_write,NULL,NULL, NULL);
+    dev = (memregs_t *)mem_alloc(sizeof(memregs_t));
+    memset(dev, 0xff, sizeof(memregs_t));
+    dev->reg_ffff = 0;
+
+    switch(info->local) {
+	case 0:		/* default */
+		io_sethandler(0x00e1, 2,
+			      memregs_read,NULL,NULL,
+			      memregs_write,NULL,NULL, dev);
+		break;
+
+	case 1:		/* powermate */
+		io_sethandler(0x00ed, 2,
+			      memregs_read,NULL,NULL,
+			      memregs_write,NULL,NULL, dev);
+		io_sethandler(0xffff, 1,
+			      memregs_read,NULL,NULL,
+			      memregs_write,NULL,NULL, dev);
+		break;
+    }
+
+    return((priv_t)dev);
 }
+
+
+const device_t memregs_device = {
+    "Memory Registers",
+    0, 0, NULL,
+    memregs_init, memregs_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t memregs_powermate_device = {
+    "Memory Registers (PowerMate)",
+    0, 1, NULL,
+    memregs_init, memregs_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

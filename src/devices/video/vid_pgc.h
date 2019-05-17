@@ -8,7 +8,7 @@
  *
  *		Definitions for the PGC driver.
  *
- * Version:	@(#)vid_pgc.h	1.0.3	2019/03/04
+ * Version:	@(#)vid_pgc.h	1.0.4	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -139,18 +139,18 @@ typedef struct pgc {
 
 
 /* I/O functions and worker thread handlers. */
-extern void	pgc_out(uint16_t addr, uint8_t val, void *priv);
-extern uint8_t	pgc_in(uint16_t addr, void *priv);
-extern void	pgc_write(uint32_t addr, uint8_t val, void *priv);
-extern uint8_t	pgc_read(uint32_t addr, void *priv);
+extern void	pgc_out(uint16_t addr, uint8_t val, priv_t);
+extern uint8_t	pgc_in(uint16_t addr, priv_t);
+extern void	pgc_write(uint32_t addr, uint8_t val, priv_t);
+extern uint8_t	pgc_read(uint32_t addr, priv_t);
 extern void	pgc_recalctimings(pgc_t *);
-extern void	pgc_poll(void *priv);
+extern void	pgc_poll(priv_t);
 extern void	pgc_reset(pgc_t *);
 extern void	pgc_wake(pgc_t *);
 extern void	pgc_sleep(pgc_t *);
 extern void	pgc_setdisplay(pgc_t *, int cga);
-extern void	pgc_speed_changed(void *priv);
-extern void	pgc_close(void *priv);
+extern void	pgc_speed_changed(priv_t);
+extern void	pgc_close(priv_t);
 extern void	pgc_init(pgc_t *,
 			 int maxw, int maxh, int visw, int vish,
 			 int (*inpbyte)(pgc_t *, uint8_t *));

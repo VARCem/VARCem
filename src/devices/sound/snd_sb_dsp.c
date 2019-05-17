@@ -14,7 +14,7 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.9	2019/04/25
+ * Version:	@(#)snd_sb_dsp.c	1.0.10	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,8 +67,8 @@
 #define SB_DSP_REC_SAFEFTY_MARGIN 4096
 
 
-extern void pollsb(void *p);
-extern void sb_poll_i(void *p);
+extern void pollsb(priv_t);
+extern void sb_poll_i(priv_t);
 
 
 static const int sbe2dat[4][9] = {
@@ -673,7 +673,7 @@ void sb_exec_command(sb_dsp_t *dsp)
         }
 }
         
-void sb_write(uint16_t a, uint8_t v, void *priv)
+void sb_write(uint16_t a, uint8_t v, priv_t priv)
 {
         sb_dsp_t *dsp = (sb_dsp_t *)priv;
         switch (a&0xF)
@@ -723,7 +723,7 @@ void sb_write(uint16_t a, uint8_t v, void *priv)
         }
 }
 
-uint8_t sb_read(uint16_t a, void *priv)
+uint8_t sb_read(uint16_t a, priv_t priv)
 {
         sb_dsp_t *dsp = (sb_dsp_t *)priv;
         switch (a & 0xf)
@@ -763,9 +763,9 @@ uint8_t sb_read(uint16_t a, void *priv)
         return 0;
 }
 
-static void sb_wb_clear(void *p)
+static void sb_wb_clear(priv_t priv)
 {
-        sb_dsp_t *dsp = (sb_dsp_t *)p;
+        sb_dsp_t *dsp = (sb_dsp_t *)priv;
         
         dsp->wb_time = 0LL;
 }
@@ -815,9 +815,9 @@ void sb_dsp_set_stereo(sb_dsp_t *dsp, int stereo)
         dsp->stereo = stereo;
 }
 
-void pollsb(void *p)
+void pollsb(priv_t priv)
 {
-        sb_dsp_t *dsp = (sb_dsp_t *)p;
+        sb_dsp_t *dsp = (sb_dsp_t *)priv;
         int tempi,ref;
         
         dsp->sbcount += dsp->sblatcho;
@@ -1049,9 +1049,9 @@ void pollsb(void *p)
         }
 }
 
-void sb_poll_i(void *p)
+void sb_poll_i(priv_t priv)
 {
-        sb_dsp_t *dsp = (sb_dsp_t *)p;
+        sb_dsp_t *dsp = (sb_dsp_t *)priv;
         int processed=0;
         dsp->sb_count_i += dsp->sblatchi;
         if (dsp->sb_8_enable && !dsp->sb_8_pause && dsp->sb_pausetime < 0 && !dsp->sb_8_output)

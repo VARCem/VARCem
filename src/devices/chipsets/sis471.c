@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85C471 System Controller chip.
  *
- * Version:	@(#)sis471.c	1.0.14	2019/04/08
+ * Version:	@(#)sis471.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,7 @@ typedef struct {
 
 
 static void
-sis_write(uint16_t port, uint8_t val, void *priv)
+sis_write(uint16_t port, uint8_t val, priv_t priv)
 {
     sis471_t *dev = (sis471_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -110,7 +110,7 @@ sis_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-sis_read(uint16_t port, void *priv)
+sis_read(uint16_t port, priv_t priv)
 {
     sis471_t *dev = (sis471_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -130,7 +130,7 @@ sis_read(uint16_t port, void *priv)
 
 
 static void
-sis_close(void *priv)
+sis_close(priv_t priv)
 {
     sis471_t *dev = (sis471_t *)priv;
 
@@ -138,7 +138,7 @@ sis_close(void *priv)
 }
 
 
-static void *
+static priv_t
 sis_init(const device_t *info, UNUSED(void *parent))
 {
     int mem_size_mb, i;
@@ -274,7 +274,7 @@ sis_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0022, 2,
 		  sis_read,NULL,NULL, sis_write,NULL,NULL, dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

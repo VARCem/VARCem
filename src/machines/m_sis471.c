@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85c471 based machines.
  *
- * Version:	@(#)m_sis471.c	1.0.14	2019/04/08
+ * Version:	@(#)m_sis471.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,11 +49,11 @@
 #include "machine.h"
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Add machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     device_add(&sis_85c471_device);
 
@@ -65,9 +65,9 @@ common_init(const device_t *info, void *arg)
 
     device_add(&fdc_at_device);
 
-    memregs_init();
+    device_add(&memregs_device);
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

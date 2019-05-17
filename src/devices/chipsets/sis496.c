@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496/497 chipset.
  *
- * Version:	@(#)sis49x.c	1.0.11	2019/04/08
+ * Version:	@(#)sis49x.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,7 @@ typedef struct {
 
 
 static void
-sis497_write(uint16_t port, uint8_t val, void *priv)
+sis497_write(uint16_t port, uint8_t val, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -82,7 +82,7 @@ sis497_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-sis497_read(uint16_t port, void *priv)
+sis497_read(uint16_t port, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -272,7 +272,7 @@ recalc_mapping(sis49x_t *dev)
 
 
 static void
-sis496_write(int func, int addr, uint8_t val, void *priv)
+sis496_write(int func, int addr, uint8_t val, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
 
@@ -331,7 +331,7 @@ sis496_write(int func, int addr, uint8_t val, void *priv)
 
 
 static uint8_t
-sis496_read(int func, int addr, void *priv)
+sis496_read(int func, int addr, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
 
@@ -355,7 +355,7 @@ sis496_reset(void *priv)
 
 
 static void
-sis496_close(void *priv)
+sis496_close(priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
 
@@ -363,7 +363,7 @@ sis496_close(void *priv)
 }
 
 
-static void *
+static priv_t
 sis496_init(const device_t *info, UNUSED(void *parent))
 {
     sis49x_t *dev = (sis49x_t *)mem_alloc(sizeof(sis49x_t));
@@ -391,7 +391,7 @@ sis496_init(const device_t *info, UNUSED(void *parent))
 
     sis497_reset(dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

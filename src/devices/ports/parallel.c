@@ -8,7 +8,7 @@
  *
  *		Implementation of the "LPT" style parallel ports.
  *
- * Version:	@(#)parallel.c	1.0.18 	2019/05/03
+ * Version:	@(#)parallel.c	1.0.19 	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,13 +60,13 @@ typedef struct {
 			ctrl;			/* port control register */
 
     /* Port overloading stuff. */
-    void		*func_priv;
-    uint8_t		(*func_read)(uint16_t, void *);
+    priv_t		func_priv;
+    uint8_t		(*func_read)(uint16_t, priv_t);
 
     /* Device stuff. */
     int			dev_id;			/* attached device */
     const lpt_device_t	*dev_ts;
-    void		*dev_ps;
+    priv_t		dev_ps;
 } parallel_t;
 
 
@@ -102,7 +102,7 @@ parallel_log(int level, const char *fmt, ...)
 
 /* Write a value to a port (and/or its attached device.) */
 static void
-parallel_write(uint16_t port, uint8_t val, void *priv)
+parallel_write(uint16_t port, uint8_t val, priv_t priv)
 {
     parallel_t *dev = (parallel_t *)priv;
 
@@ -129,7 +129,7 @@ parallel_write(uint16_t port, uint8_t val, void *priv)
 
 /* Read a value from a port (and/or its attached device.) */
 static uint8_t
-parallel_read(uint16_t port, void *priv)
+parallel_read(uint16_t port, priv_t priv)
 {
     parallel_t *dev = (parallel_t *)priv;
     uint8_t ret = 0xff;
@@ -170,7 +170,7 @@ parallel_read(uint16_t port, void *priv)
 
 
 static void
-parallel_close(void *priv)
+parallel_close(priv_t priv)
 {
     parallel_t *dev = (parallel_t *)priv;
 
@@ -196,7 +196,7 @@ parallel_close(void *priv)
 }
 
 
-static void *
+static priv_t
 parallel_init(const device_t *info, UNUSED(void *parent))
 {
     parallel_t *dev;
@@ -211,8 +211,7 @@ parallel_init(const device_t *info, UNUSED(void *parent))
 
     /* Enable the I/O handler for this port. */
     io_sethandler(dev->base, 4,
-		  parallel_read,NULL,NULL,
-		  parallel_write,NULL,NULL, dev);
+		  parallel_read,NULL,NULL, parallel_write,NULL,NULL, dev);
 
     /* If the user configured a device for this port, attach it. */
     if (config.parallel_device[port] != 0) {
@@ -224,7 +223,7 @@ parallel_init(const device_t *info, UNUSED(void *parent))
     INFO("PARALLEL: %s (I/O=%04X, device=%i)\n",
 	info->name, dev->base, config.parallel_device[port]);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
@@ -288,7 +287,7 @@ parallel_setup(int id, uint16_t port)
 
 
 void
-parallel_set_func(void *arg, uint8_t (*rfunc)(uint16_t, void *), void *priv)
+parallel_set_func(priv_t arg, uint8_t (*rfunc)(uint16_t, priv_t), priv_t priv)
 {
     parallel_t *dev = (parallel_t *)arg;
 

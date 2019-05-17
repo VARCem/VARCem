@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.19	2019/05/05
+ * Version:	@(#)vid_ega.c	1.0.20	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -324,7 +324,7 @@ ega_recalctimings(ega_t *dev)
 
 
 void
-ega_poll(void *priv)
+ega_poll(priv_t priv)
 {
     ega_t *dev = (ega_t *)priv;
     int y_add = enable_overscan ? (overscan_y >> 1) : 0;
@@ -554,7 +554,7 @@ ega_poll(void *priv)
 
 
 void
-ega_out(uint16_t port, uint8_t val, void *priv)
+ega_out(uint16_t port, uint8_t val, priv_t priv)
 {
     ega_t *dev = (ega_t *)priv;
     uint8_t o, old;
@@ -692,7 +692,7 @@ ega_out(uint16_t port, uint8_t val, void *priv)
 
 
 uint8_t
-ega_in(uint16_t port, void *priv)
+ega_in(uint16_t port, priv_t priv)
 {
     ega_t *dev = (ega_t *)priv;
     uint8_t ret = 0xff;
@@ -759,7 +759,7 @@ ega_in(uint16_t port, void *priv)
 
 
 void
-ega_write(uint32_t addr, uint8_t val, void *priv)
+ega_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     ega_t *dev = (ega_t *)priv;
     uint8_t vala, valb, valc, vald;
@@ -940,7 +940,7 @@ ega_write(uint32_t addr, uint8_t val, void *priv)
 
 
 uint8_t
-ega_read(uint32_t addr, void *priv)
+ega_read(uint32_t addr, priv_t priv)
 {
     ega_t *dev = (ega_t *)priv;
     uint8_t temp, temp2, temp3, temp4;
@@ -1113,7 +1113,7 @@ ega_init(ega_t *dev, int monitor_type, int is_mono)
 
 
 static void
-ega_close(void *priv)
+ega_close(priv_t priv)
 {
     ega_t *dev = (ega_t *)priv;
 
@@ -1124,7 +1124,7 @@ ega_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     ega_t *dev = (ega_t *)priv;
 	
@@ -1132,7 +1132,7 @@ speed_changed(void *priv)
 }
 
 
-static void *
+static priv_t
 ega_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     ega_t *dev;
@@ -1187,17 +1187,17 @@ ega_standalone_init(const device_t *info, UNUSED(void *parent))
 
     mem_map_add(&dev->mapping, 0xa0000, 0x20000,
 		ega_read,NULL,NULL, ega_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
-    timer_add(ega_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(ega_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     io_sethandler(0x03a0, 64,
-		  ega_in,NULL,NULL, ega_out,NULL,NULL, dev);
+		  ega_in,NULL,NULL, ega_out,NULL,NULL, (priv_t)dev);
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

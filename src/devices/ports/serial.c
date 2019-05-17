@@ -32,7 +32,7 @@
  *		The lower half of the driver can interface to the host system
  *		serial ports, or other channels, for real-world access.
  *
- * Version:	@(#)serial.c	1.0.17	2019/05/03
+ * Version:	@(#)serial.c	1.0.18	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -196,11 +196,11 @@ typedef struct serial {
 
     /* Callback data. */
     serial_ops_t *ops;
-    void	*ops_arg;
+    priv_t	ops_arg;
 
     int64_t	delay;
 
-    void	*bh;			/* BottomHalf handler */
+    priv_t	bh;				/* BottomHalf handler */
 
     int		fifo_read,
 		fifo_write;
@@ -259,7 +259,7 @@ update_ints(serial_t *dev)
 	dev->iir = IID_IDMDM;
     }
 
-    DEBUG("Serial%d: intr, IIR=%02X, type=%d, mcr=%02X\n",
+    DEBUG("Serial%d: intr, IIR=%02X, type=%i, mcr=%02X\n",
 		dev->port, dev->iir, dev->type, dev->mcr);
 
     /* Are hardware interrupts enabled? */
@@ -342,7 +342,7 @@ read_fifo(serial_t *dev)
 
 
 static void
-receive_callback(void *priv)
+receive_callback(priv_t priv)
 {
     serial_t *dev = (serial_t *)priv;
 
@@ -368,7 +368,7 @@ reset_port(serial_t *dev)
 
 
 static void
-read_timer(void *priv)
+read_timer(priv_t priv)
 {
     serial_t *dev = (serial_t *)priv;
 
@@ -385,7 +385,7 @@ read_timer(void *priv)
 #ifdef USE_HOST_SERIAL
 /* Platform module has data, so read it! */
 static void
-read_done(void *arg, int num)
+read_done(priv_t arg, int num)
 {
     serial_t *dev = (serial_t *)arg;
 
@@ -405,7 +405,7 @@ read_done(void *arg, int num)
 
 
 static void
-ser_write(uint16_t addr, uint8_t val, void *priv)
+ser_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     serial_t *dev = (serial_t *)priv;
 #if defined(_LOGGING) || defined(USE_HOST_SERIAL)
@@ -601,7 +601,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 
 
 static uint8_t
-ser_read(uint16_t addr, void *priv)
+ser_read(uint16_t addr, priv_t priv)
 {
     serial_t *dev = (serial_t *)priv;
     uint8_t ret = 0x00;
@@ -699,7 +699,27 @@ ser_read(uint16_t addr, void *priv)
 }
 
 
-static void *
+static void
+ser_close(priv_t priv)
+{
+    serial_t *dev = (serial_t *)priv;
+
+#ifdef USE_HOST_SERIAL
+    /* Close the host device. */
+    if (dev->bh != NULL)
+	(void)serial_link(dev->port, NULL);
+#endif
+
+    /* Remove the I/O handler. */
+    io_removehandler(dev->base, 8,
+		     ser_read,NULL,NULL, ser_write,NULL,NULL, dev);
+
+    /* Clear port. */
+    reset_port(dev);
+}
+
+
+static priv_t
 ser_init(const device_t *info, UNUSED(void *parent))
 {
     serial_t *dev;
@@ -722,27 +742,7 @@ ser_init(const device_t *info, UNUSED(void *parent))
     INFO("SERIAL: COM%i (I/O=%04X, IRQ=%i)\n",
 	 info->local & 127, dev->base, dev->irq);
 
-    return(dev);
-}
-
-
-static void
-ser_close(void *priv)
-{
-    serial_t *dev = (serial_t *)priv;
-
-#ifdef USE_HOST_SERIAL
-    /* Close the host device. */
-    if (dev->bh != NULL)
-	(void)serial_link(dev->port, NULL);
-#endif
-
-    /* Remove the I/O handler. */
-    io_removehandler(dev->base, 8,
-		     ser_read,NULL,NULL, ser_write,NULL,NULL, dev);
-
-    /* Clear port. */
-    reset_port(dev);
+    return((priv_t)dev);
 }
 
 
@@ -844,7 +844,7 @@ serial_setup(int id, uint16_t port, int8_t irq)
 
 /* API: attach another device to a serial port. */
 void *
-serial_attach(int port, serial_ops_t *ops, void *arg)
+serial_attach(int port, serial_ops_t *ops, priv_t arg)
 {
     serial_t *dev;
 
@@ -910,7 +910,7 @@ serial_link(int port, const char *arg)
 
 /* API: clear the FIFO buffers of a serial port. */
 void
-serial_clear(void *arg)
+serial_clear(priv_t arg)
 {
     serial_t *dev = (serial_t *)arg;
 
@@ -920,7 +920,7 @@ serial_clear(void *arg)
 
 /* API: write data to a serial port. */
 void
-serial_write(void *arg, uint8_t *ptr, uint8_t len)
+serial_write(priv_t arg, uint8_t *ptr, uint8_t len)
 {
     serial_t *dev = (serial_t *)arg;
 

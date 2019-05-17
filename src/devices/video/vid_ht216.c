@@ -8,7 +8,7 @@
  *
  *		Video7 VGA 1024i emulation.
  *
- * Version:	@(#)vid_ht216.c	1.0.4	2019/05/11
+ * Version:	@(#)vid_ht216.c	1.0.5	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -96,7 +96,7 @@ typedef struct {
 
     int		ext_reg_enable;
     int		clk_sel;
-        
+
     uint8_t	read_bank_reg[2],
 		write_bank_reg[2];
     uint32_t	read_bank[2],
@@ -104,9 +104,9 @@ typedef struct {
     uint8_t	misc,
 		pad;
     uint16_t	id;
-        
+
     uint8_t	bg_latch[8];
-        
+
     uint8_t	ht_regs[256];
 } ht216_t;
 
@@ -188,255 +188,6 @@ recalc_timings(svga_t *svga)
 
     if ((svga->bpp == 8) && !svga->lowres)
 	svga->render = svga_render_8bpp_highres;
-}
-
-
-static uint8_t
-ht216_in(uint16_t addr, void *priv)
-{
-    ht216_t *dev = (ht216_t *)priv;
-    svga_t *svga = &dev->svga;
-
-    if (((addr & 0xfff0) == 0x03d0 ||
-	 (addr & 0xfff0) == 0x03b0) && !(svga->miscout & 1)) addr ^= 0x60;
-
-    switch (addr) {
-	case 0x03c2:
-		break;
-
-	case 0x03c5:
-		if (svga->seqaddr == 6)
-			return dev->ext_reg_enable;
-
-		if (svga->seqaddr >= 0x80) {
-			if (dev->ext_reg_enable) {
-				switch (svga->seqaddr & 0xff) {
-					case 0x83:
-						if (svga->attrff)
-							return svga->attraddr | 0x80;
-						return svga->attraddr;
-
-					case 0x8e:
-						return dev->id & 0xff;
-
-					case 0x8f:
-						return (dev->id >> 8) & 0xff;
-
-					case 0xa0:
-						return svga->latch & 0xff;
-
-					case 0xa1:
-						return (svga->latch >> 8) & 0xff;
-					case 0xa2:
-						return (svga->latch >> 16) & 0xff;
-					case 0xa3:
-						return (svga->latch >> 24) & 0xff;
-					case 0xf7:
-						return 0x01;
-
-					case 0xff:
-						return 0x80;
-				}
-
-				return dev->ht_regs[svga->seqaddr & 0xff];
-			} else
-				return 0xff;
-		}
-		break;
-
-	case 0x03d4:
-		return svga->crtcreg;
-
-	case 0x03d5:
-		if (svga->crtcreg == 0x1f)
-			return svga->crtc[0xc] ^ 0xea;
-		return svga->crtc[svga->crtcreg];
-    }
-
-    return svga_in(addr, svga);
-}
-
-
-static void
-ht216_out(uint16_t addr, uint8_t val, void *priv)
-{
-    ht216_t *dev = (ht216_t *)priv;
-    svga_t *svga = &dev->svga;
-    uint8_t old;
-
-    if (((addr & 0xfff0) == 0x03d0 ||
-	 (addr & 0xfff0) == 0x03b0) && !(svga->miscout & 1)) addr ^= 0x60;
-
-    switch (addr) {
-	case 0x03c2:
-		dev->clk_sel = (dev->clk_sel & ~3) | ((val & 0x0c) >> 2);
-		dev->misc = val;
-                dev->read_bank_reg[0] = (dev->read_bank_reg[0] & ~0x20) | ((val & HT_MISC_PAGE_SEL) ? 0x20 : 0);
-                dev->write_bank_reg[0] = (dev->write_bank_reg[0] & ~0x20) | ((val & HT_MISC_PAGE_SEL) ? 0x20 : 0);
-		ht216_remap(dev);
-		svga_recalctimings(&dev->svga);
-		break;
-
-	case 0x03c5:
-		if (svga->seqaddr == 4) {
-			svga->chain4 = val & 8;
-			ht216_remap(dev);
-		} else if (svga->seqaddr == 6) {
-			if (val == 0xea)
-				dev->ext_reg_enable = 1;
-			else if (val == 0xae)
-				dev->ext_reg_enable = 0;
-		} else if (svga->seqaddr >= 0x80 && dev->ext_reg_enable) {
-			old = dev->ht_regs[svga->seqaddr & 0xff];
-			dev->ht_regs[svga->seqaddr & 0xff] = val;
-			switch (svga->seqaddr & 0xff) {
-				case 0x83:
-					svga->attraddr = val & 0x1f;
-					svga->attrff = (val & 0x80) ? 1 : 0;
-					break;
-
-				case 0x94:
-					svga->hwcursor.addr = ((val << 6) | (3 << 14) | ((dev->ht_regs[0xff] & 0x60) << 11)) << 2;
-					break;
-
-				case 0x9c:
-				case 0x9d:
-					svga->hwcursor.x = dev->ht_regs[0x9d] | ((dev->ht_regs[0x9c] & 7) << 8);
-					break;
-
-				case 0x9e:
-				case 0x9f:
-					svga->hwcursor.y = dev->ht_regs[0x9f] | ((dev->ht_regs[0x9e] & 3) << 8);
-					break;
-
-				case 0xa0:
-					svga->latch = (svga->latch & 0xffffff00) | val;
-					break;
-
-				case 0xa1:
-					svga->latch = (svga->latch & 0xffff00ff) | (val << 8);
-					break;
-
-				case 0xa2:
-					svga->latch = (svga->latch & 0xff00ffff) | (val << 16);
-					break;
-
-				case 0xa3:
-					svga->latch = (svga->latch & 0x00ffffff) | (val << 24);
-					break;
-
-				case 0xa4:
-					dev->clk_sel = (val >> 2) & 0xf;
-					svga->miscout = (svga->miscout & ~0xc) | ((dev->clk_sel & 3) << 2);
-					break;
-
-				case 0xa5:
-					svga->hwcursor.ena = val & 0x80;
-					break;
-
-				case 0xc8:
-					if ((old ^ val) & 0x10) {
-						svga->fullchange = changeframecount;
-						svga_recalctimings(svga);
-					}
-					break;
-
-				case 0xe8:
-					dev->read_bank_reg[0] = val;
-					dev->write_bank_reg[0] = val;
-					break;
-
-				case 0xe9:
-					dev->read_bank_reg[1] = val;
-					dev->write_bank_reg[1] = val;
-					break;
-
-				case 0xf6:
-					svga->vram_display_mask = (val & 0x40) ? dev->vram_mask : 0x3ffff;
-					dev->read_bank_reg[0]  = (dev->read_bank_reg[0] & ~0xc0) | ((val & 0xc) << 4);
-					dev->write_bank_reg[0] = (dev->write_bank_reg[0] & ~0xc0) | ((val & 0x3) << 6);
-					break;
-
-				case 0xf9:
-					dev->read_bank_reg[0]  = (dev->read_bank_reg[0] & ~0x10) | ((val & 1) ? 0x10 : 0);
-					dev->write_bank_reg[0] = (dev->write_bank_reg[0] & ~0x10) | ((val & 1) ? 0x10 : 0);
-					break;
-
-				case 0xff:
-					svga->hwcursor.addr = ((dev->ht_regs[0x94] << 6) | (3 << 14) | ((val & 0x60) << 11)) << 2;
-					break;
-			}
-
-			switch (svga->seqaddr & 0xff) {
-				case 0xa4:
-				case 0xf6:
-				case 0xfc:
-					svga->fullchange = changeframecount;
-					svga_recalctimings(&dev->svga);
-					break;
-			}
-
-			switch (svga->seqaddr & 0xff) {
-				case 0xc8:
-				case 0xc9:
-				case 0xcf:
-				case 0xe0:
-				case 0xe8:
-				case 0xe9:
-				case 0xf6:
-				case 0xf9:
-					ht216_remap(dev);
-					break;
-			}
-			return;
-		}
-		break;
-
-	case 0x03cf:
-		if (svga->gdcaddr == 6) {
-			if (val & 8)
-				svga->banked_mask = 0x7fff;
-			else
-				svga->banked_mask = 0xffff;
-		}
-		break;
-
-	case 0x03d4:
-		svga->crtcreg = val & 0x3f;
-		return;
-
-	case 0x03d5:
-		if ((svga->crtcreg < 7) && (svga->crtc[0x11] & 0x80))
-			return;
-		if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
-			val = (svga->crtc[7] & ~0x10) | (val & 0x10);
-
-		old = svga->crtc[svga->crtcreg];
-		svga->crtc[svga->crtcreg] = val;
-
-		if (old != val) {
-			if (svga->crtcreg < 0xe ||  svga->crtcreg > 0x10) {
-				svga->fullchange = changeframecount;
-				svga_recalctimings(&dev->svga);
-			}
-		}
-		break;
-
-	case 0x46e8:
-		io_removehandler(0x03c0, 32,
-				 ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
-		mem_map_disable(&dev->svga.mapping);
-		mem_map_disable(&dev->linear_mapping);
-		if (val & 8) {
-			io_sethandler(0x03c0, 32,
-				      ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
-			mem_map_enable(&dev->svga.mapping);
-			ht216_remap(dev);
-		}
-		break;
-    }
-
-    svga_out(addr, val, svga);
 }
 
 
@@ -861,7 +612,7 @@ write_common(ht216_t *dev, uint32_t addr, uint8_t val)
 
 
 static void
-ht216_write(uint32_t addr, uint8_t val, void *priv)
+ht216_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -877,7 +628,7 @@ ht216_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-ht216_writew(uint32_t addr, uint16_t val, void *priv)
+ht216_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -893,7 +644,7 @@ ht216_writew(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-ht216_writel(uint32_t addr, uint32_t val, void *priv)
+ht216_writel(uint32_t addr, uint32_t val, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -912,7 +663,7 @@ ht216_writel(uint32_t addr, uint32_t val, void *priv)
 
 
 static void
-write_linear(uint32_t addr, uint8_t val, void *priv)
+write_linear(uint32_t addr, uint8_t val, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -928,7 +679,7 @@ write_linear(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-writew_linear(uint32_t addr, uint16_t val, void *priv)
+writew_linear(uint32_t addr, uint16_t val, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -945,7 +696,7 @@ writew_linear(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-writel_linear(uint32_t addr, uint32_t val, void *priv)
+writel_linear(uint32_t addr, uint32_t val, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1069,7 +820,7 @@ read_common(ht216_t *dev, uint32_t addr)
 
 
 static uint8_t
-ht216_read(uint32_t addr, void *priv)
+ht216_read(uint32_t addr, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1082,7 +833,7 @@ ht216_read(uint32_t addr, void *priv)
 
 
 static uint8_t
-read_linear(uint32_t addr, void *priv)
+read_linear(uint32_t addr, priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
     svga_t *svga = &dev->svga;
@@ -1094,8 +845,257 @@ read_linear(uint32_t addr, void *priv)
 }
 
 
+static uint8_t
+ht216_in(uint16_t addr, priv_t priv)
+{
+    ht216_t *dev = (ht216_t *)priv;
+    svga_t *svga = &dev->svga;
+
+    if (((addr & 0xfff0) == 0x03d0 ||
+	 (addr & 0xfff0) == 0x03b0) && !(svga->miscout & 1)) addr ^= 0x60;
+
+    switch (addr) {
+	case 0x03c2:
+		break;
+
+	case 0x03c5:
+		if (svga->seqaddr == 6)
+			return dev->ext_reg_enable;
+
+		if (svga->seqaddr >= 0x80) {
+			if (dev->ext_reg_enable) {
+				switch (svga->seqaddr & 0xff) {
+					case 0x83:
+						if (svga->attrff)
+							return svga->attraddr | 0x80;
+						return svga->attraddr;
+
+					case 0x8e:
+						return dev->id & 0xff;
+
+					case 0x8f:
+						return (dev->id >> 8) & 0xff;
+
+					case 0xa0:
+						return svga->latch & 0xff;
+
+					case 0xa1:
+						return (svga->latch >> 8) & 0xff;
+					case 0xa2:
+						return (svga->latch >> 16) & 0xff;
+					case 0xa3:
+						return (svga->latch >> 24) & 0xff;
+					case 0xf7:
+						return 0x01;
+
+					case 0xff:
+						return 0x80;
+				}
+
+				return dev->ht_regs[svga->seqaddr & 0xff];
+			} else
+				return 0xff;
+		}
+		break;
+
+	case 0x03d4:
+		return svga->crtcreg;
+
+	case 0x03d5:
+		if (svga->crtcreg == 0x1f)
+			return svga->crtc[0xc] ^ 0xea;
+		return svga->crtc[svga->crtcreg];
+    }
+
+    return svga_in(addr, svga);
+}
+
+
 static void
-ht216_close(void *priv)
+ht216_out(uint16_t addr, uint8_t val, priv_t priv)
+{
+    ht216_t *dev = (ht216_t *)priv;
+    svga_t *svga = &dev->svga;
+    uint8_t old;
+
+    if (((addr & 0xfff0) == 0x03d0 ||
+	 (addr & 0xfff0) == 0x03b0) && !(svga->miscout & 1)) addr ^= 0x60;
+
+    switch (addr) {
+	case 0x03c2:
+		dev->clk_sel = (dev->clk_sel & ~3) | ((val & 0x0c) >> 2);
+		dev->misc = val;
+                dev->read_bank_reg[0] = (dev->read_bank_reg[0] & ~0x20) | ((val & HT_MISC_PAGE_SEL) ? 0x20 : 0);
+                dev->write_bank_reg[0] = (dev->write_bank_reg[0] & ~0x20) | ((val & HT_MISC_PAGE_SEL) ? 0x20 : 0);
+		ht216_remap(dev);
+		svga_recalctimings(&dev->svga);
+		break;
+
+	case 0x03c5:
+		if (svga->seqaddr == 4) {
+			svga->chain4 = val & 8;
+			ht216_remap(dev);
+		} else if (svga->seqaddr == 6) {
+			if (val == 0xea)
+				dev->ext_reg_enable = 1;
+			else if (val == 0xae)
+				dev->ext_reg_enable = 0;
+		} else if (svga->seqaddr >= 0x80 && dev->ext_reg_enable) {
+			old = dev->ht_regs[svga->seqaddr & 0xff];
+			dev->ht_regs[svga->seqaddr & 0xff] = val;
+			switch (svga->seqaddr & 0xff) {
+				case 0x83:
+					svga->attraddr = val & 0x1f;
+					svga->attrff = (val & 0x80) ? 1 : 0;
+					break;
+
+				case 0x94:
+					svga->hwcursor.addr = ((val << 6) | (3 << 14) | ((dev->ht_regs[0xff] & 0x60) << 11)) << 2;
+					break;
+
+				case 0x9c:
+				case 0x9d:
+					svga->hwcursor.x = dev->ht_regs[0x9d] | ((dev->ht_regs[0x9c] & 7) << 8);
+					break;
+
+				case 0x9e:
+				case 0x9f:
+					svga->hwcursor.y = dev->ht_regs[0x9f] | ((dev->ht_regs[0x9e] & 3) << 8);
+					break;
+
+				case 0xa0:
+					svga->latch = (svga->latch & 0xffffff00) | val;
+					break;
+
+				case 0xa1:
+					svga->latch = (svga->latch & 0xffff00ff) | (val << 8);
+					break;
+
+				case 0xa2:
+					svga->latch = (svga->latch & 0xff00ffff) | (val << 16);
+					break;
+
+				case 0xa3:
+					svga->latch = (svga->latch & 0x00ffffff) | (val << 24);
+					break;
+
+				case 0xa4:
+					dev->clk_sel = (val >> 2) & 0xf;
+					svga->miscout = (svga->miscout & ~0xc) | ((dev->clk_sel & 3) << 2);
+					break;
+
+				case 0xa5:
+					svga->hwcursor.ena = val & 0x80;
+					break;
+
+				case 0xc8:
+					if ((old ^ val) & 0x10) {
+						svga->fullchange = changeframecount;
+						svga_recalctimings(svga);
+					}
+					break;
+
+				case 0xe8:
+					dev->read_bank_reg[0] = val;
+					dev->write_bank_reg[0] = val;
+					break;
+
+				case 0xe9:
+					dev->read_bank_reg[1] = val;
+					dev->write_bank_reg[1] = val;
+					break;
+
+				case 0xf6:
+					svga->vram_display_mask = (val & 0x40) ? dev->vram_mask : 0x3ffff;
+					dev->read_bank_reg[0]  = (dev->read_bank_reg[0] & ~0xc0) | ((val & 0xc) << 4);
+					dev->write_bank_reg[0] = (dev->write_bank_reg[0] & ~0xc0) | ((val & 0x3) << 6);
+					break;
+
+				case 0xf9:
+					dev->read_bank_reg[0]  = (dev->read_bank_reg[0] & ~0x10) | ((val & 1) ? 0x10 : 0);
+					dev->write_bank_reg[0] = (dev->write_bank_reg[0] & ~0x10) | ((val & 1) ? 0x10 : 0);
+					break;
+
+				case 0xff:
+					svga->hwcursor.addr = ((dev->ht_regs[0x94] << 6) | (3 << 14) | ((val & 0x60) << 11)) << 2;
+					break;
+			}
+
+			switch (svga->seqaddr & 0xff) {
+				case 0xa4:
+				case 0xf6:
+				case 0xfc:
+					svga->fullchange = changeframecount;
+					svga_recalctimings(&dev->svga);
+					break;
+			}
+
+			switch (svga->seqaddr & 0xff) {
+				case 0xc8:
+				case 0xc9:
+				case 0xcf:
+				case 0xe0:
+				case 0xe8:
+				case 0xe9:
+				case 0xf6:
+				case 0xf9:
+					ht216_remap(dev);
+					break;
+			}
+			return;
+		}
+		break;
+
+	case 0x03cf:
+		if (svga->gdcaddr == 6) {
+			if (val & 8)
+				svga->banked_mask = 0x7fff;
+			else
+				svga->banked_mask = 0xffff;
+		}
+		break;
+
+	case 0x03d4:
+		svga->crtcreg = val & 0x3f;
+		return;
+
+	case 0x03d5:
+		if ((svga->crtcreg < 7) && (svga->crtc[0x11] & 0x80))
+			return;
+		if ((svga->crtcreg == 7) && (svga->crtc[0x11] & 0x80))
+			val = (svga->crtc[7] & ~0x10) | (val & 0x10);
+
+		old = svga->crtc[svga->crtcreg];
+		svga->crtc[svga->crtcreg] = val;
+
+		if (old != val) {
+			if (svga->crtcreg < 0xe ||  svga->crtcreg > 0x10) {
+				svga->fullchange = changeframecount;
+				svga_recalctimings(&dev->svga);
+			}
+		}
+		break;
+
+	case 0x46e8:
+		io_removehandler(0x03c0, 32,
+				 ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
+		mem_map_disable(&dev->svga.mapping);
+		mem_map_disable(&dev->linear_mapping);
+		if (val & 8) {
+			io_sethandler(0x03c0, 32,
+				      ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
+			mem_map_enable(&dev->svga.mapping);
+			ht216_remap(dev);
+		}
+		break;
+    }
+
+    svga_out(addr, val, svga);
+}
+
+
+static void
+ht216_close(priv_t priv)
 {
     ht216_t *dev = (ht216_t *)priv;
 
@@ -1105,7 +1105,25 @@ ht216_close(void *priv)
 }
 
 
-static void *
+static void
+speed_changed(priv_t priv)
+{
+    ht216_t *dev = (ht216_t *)priv;
+
+    svga_recalctimings(&dev->svga);
+}
+
+
+static void
+force_redraw(priv_t priv)
+{
+    ht216_t *dev = (ht216_t *)priv;
+
+    dev->svga.fullchange = changeframecount;
+}
+
+
+static priv_t
 ht216_init(const device_t *info, UNUSED(void *parent))
 {
     ht216_t *dev;
@@ -1130,16 +1148,16 @@ ht216_init(const device_t *info, UNUSED(void *parent))
     dev->ht_regs[0xb4] = 0x08; /*32-bit DRAM bus*/
 
     io_sethandler(0x03c0, 32,
-		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
+		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, (priv_t)dev);
     io_sethandler(0x46e8, 1,
-		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, dev);
+		  ht216_in,NULL,NULL, ht216_out,NULL,NULL, (priv_t)dev);
 
     if (info->path != NULL)
 	rom_init(&dev->bios_rom, info->path,
 		 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
     svga = &dev->svga;
-    svga_init(svga, dev, vram_sz,
+    svga_init(svga, (priv_t)dev, vram_sz,
 	      recalc_timings, ht216_in, ht216_out, hwcursor_draw, NULL);
     svga->hwcursor.ysize = 32;
     svga->decode_mask = vram_sz - 1;
@@ -1149,34 +1167,16 @@ ht216_init(const device_t *info, UNUSED(void *parent))
     mem_map_set_handler(&svga->mapping,
 			ht216_read,NULL,NULL,
 			ht216_write,ht216_writew,ht216_writel);
-    mem_map_set_p(&svga->mapping, dev);
+    mem_map_set_p(&svga->mapping, (priv_t)dev);
 
     mem_map_add(&dev->linear_mapping, 0, 0,
 		read_linear,NULL,NULL,
 		write_linear,writew_linear,writel_linear,
-		NULL, 0, svga);
+		NULL, 0, (priv_t)svga);
 
     video_inform(VID_TYPE_SPEC, &v7vga_timings);
 
-    return(dev);
-}
-
-
-static void
-speed_changed(void *priv)
-{
-    ht216_t *dev = (ht216_t *)priv;
-
-    svga_recalctimings(&dev->svga);
-}
-
-
-static void
-force_redraw(void *priv)
-{
-    ht216_t *dev = (ht216_t *)priv;
-
-    dev->svga.fullchange = changeframecount;
+    return((priv_t)dev);
 }
 
 

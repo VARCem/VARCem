@@ -16,7 +16,7 @@
  *		 it either will not process ctrl-alt-esc, or it will not do
  *		 ANY input.
  *
- * Version:	@(#)keyboard_at.c	1.0.27	2019/04/30
+ * Version:	@(#)keyboard_at.c	1.0.28	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,11 +67,12 @@
 #include "../../plat.h"
 #include "keyboard.h"
 
-#define USE_SET1		0
-#define USE_IGNORE		0
-
 //FIXME: get rid of this!
 #include "../../machines/m_tosh3100e.h"
+
+
+#define USE_SET1		0
+#define USE_IGNORE		0
 
 
 #define STAT_PARITY		0x80
@@ -117,7 +118,7 @@
 #define KBC_VENDOR(x)		((x)->flags & KBC_VEN_MASK)
 
 
-typedef struct {
+typedef struct atkbd {
     int		initialized;
     int		want60,
 		wantirq,
@@ -154,13 +155,13 @@ typedef struct {
     int64_t	pulse_cb;
     uint8_t	ami_stat;
 
-    uint8_t	(*write60_ven)(void *p, uint8_t val);
-    uint8_t	(*write64_ven)(void *p, uint8_t val);
+    uint8_t	(*write60_ven)(struct atkbd *, uint8_t val);
+    uint8_t	(*write64_ven)(struct atkbd *, uint8_t val);
 
     /* Custom machine-dependent keyboard stuff. */
-    uint8_t	(*read_func)(void *priv);
-    void	(*write_func)(void *priv, uint8_t val);
-    void	*func_priv;
+    uint8_t	(*read_func)(priv_t priv);
+    void	(*write_func)(priv_t priv, uint8_t val);
+    priv_t	func_priv;
 } atkbd_t;
 
 
@@ -183,8 +184,8 @@ static uint8_t	key_queue[16];
 static int	key_queue_start = 0,
 		key_queue_end = 0;
 static uint8_t	mouse_queue[16];
-static void	(*mouse_write)(uint8_t val, void *priv) = NULL;
-static void	*mouse_p = NULL;
+static void	(*mouse_write)(uint8_t val, priv_t priv) = NULL;
+static priv_t	mouse_p = NULL;
 static uint8_t	sc_or = 0;
 static atkbd_t	*SavedKbd = NULL;		// FIXME: remove!!! --FvK
 
@@ -1759,7 +1760,7 @@ set_scancode_map(atkbd_t *dev)
 
 
 static void
-kbd_poll(void *priv)
+kbd_poll(priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
 
@@ -2159,7 +2160,7 @@ pulse_output(atkbd_t *dev, uint8_t mask)
 
 
 static void
-pulse_poll(void *priv)
+pulse_poll(priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
 
@@ -2194,9 +2195,8 @@ set_enable_mouse(atkbd_t *dev, uint8_t enable)
 
 
 static uint8_t
-write64_generic(void *priv, uint8_t val)
+write64_generic(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
     uint8_t current_drive;
 
     switch (val) {
@@ -2293,11 +2293,9 @@ write64_generic(void *priv, uint8_t val)
 
 
 static uint8_t
-write60_acer(void *priv, uint8_t val)
+write60_acer(atkbd_t *dev, uint8_t val)
 {
 #if 0
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch(dev->command) {
 	case 0xc0:	/* sent by Acer V30 BIOS */
 		return 0;
@@ -2309,10 +2307,8 @@ write60_acer(void *priv, uint8_t val)
 
 
 static uint8_t
-write64_acer(void *priv, uint8_t val)
+write64_acer(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     INFO("ACER: write64(%02x, %02x)\n", dev->command, val);
 
 #if 0
@@ -2327,10 +2323,8 @@ write64_acer(void *priv, uint8_t val)
 
 
 static uint8_t
-write60_ami(void *priv, uint8_t val)
+write60_ami(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch(dev->command) {
 	/* 0x40 - 0x5F are aliases for 0x60-0x7F */
 	case 0x40: case 0x41: case 0x42: case 0x43:
@@ -2369,10 +2363,8 @@ write60_ami(void *priv, uint8_t val)
 
 
 static uint8_t
-write64_ami(void *priv, uint8_t val)
+write64_ami(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch (val) {
 	case 0x00: case 0x01: case 0x02: case 0x03:
 	case 0x04: case 0x05: case 0x06: case 0x07:
@@ -2544,10 +2536,8 @@ write64_ami(void *priv, uint8_t val)
 
 
 static uint8_t
-write64_ibm_mca(void *priv, uint8_t val)
+write64_ibm_mca(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch (val) {
 	case 0xc1: /*Copy bits 0 to 3 of input port to status bits 4 to 7*/
 		DEBUG("ATkbd: copy bits 0 to 3 of input port to status bits 4 to 7\n");
@@ -2579,10 +2569,8 @@ write64_ibm_mca(void *priv, uint8_t val)
 
 
 static uint8_t
-write60_quadtel(void *priv, uint8_t val)
+write60_quadtel(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch(dev->command) {
 	case 0xcf:	/*??? - sent by MegaPC BIOS*/
 		DEBUG("ATkbd: ??? - sent by MegaPC BIOS\n");
@@ -2594,10 +2582,8 @@ write60_quadtel(void *priv, uint8_t val)
 
 
 static uint8_t
-write64_quadtel(void *priv, uint8_t val)
+write64_quadtel(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch (val) {
 	case 0xaf:
 		DEBUG("ATkbd: bad KBC command AF\n");
@@ -2614,10 +2600,8 @@ write64_quadtel(void *priv, uint8_t val)
 
 
 static uint8_t
-write60_toshiba(void *priv, uint8_t val)
+write60_toshiba(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch(dev->command) {
 	case 0xb6:	/* T3100e - set color/mono switch */
 		t3100e_mono_set(dev->func_priv, val);
@@ -2629,10 +2613,8 @@ write60_toshiba(void *priv, uint8_t val)
 
 
 static uint8_t
-write64_toshiba(void *priv, uint8_t val)
+write64_toshiba(atkbd_t *dev, uint8_t val)
 {
-    atkbd_t *dev = (atkbd_t *)priv;
-
     switch (val) {
 	case 0xaf:
 		DEBUG("ATkbd: bad KBC command AF\n");
@@ -2700,7 +2682,7 @@ write64_toshiba(void *priv, uint8_t val)
 
 
 static void
-kbd_write(uint16_t port, uint8_t val, void *priv)
+kbd_write(uint16_t port, uint8_t val, priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
     int i = 0;
@@ -3134,7 +3116,7 @@ do_command:
 
 
 static uint8_t
-kbd_read(uint16_t port, void *priv)
+kbd_read(uint16_t port, priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
     uint8_t ret = 0xff;
@@ -3190,7 +3172,7 @@ kbd_read(uint16_t port, void *priv)
 
 
 static void
-kbd_refresh(void *priv)
+kbd_refresh(priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
 
@@ -3200,7 +3182,7 @@ kbd_refresh(void *priv)
 
 
 static void
-kbd_reset(void *priv)
+kbd_reset(priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
 
@@ -3241,7 +3223,7 @@ kbd_reset(void *priv)
 
 
 static void
-kbd_close(void *priv)
+kbd_close(priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)priv;
 
@@ -3261,20 +3243,19 @@ kbd_close(void *priv)
 }
 
 
-static void *
+static priv_t
 kbd_init(const device_t *info, UNUSED(void *parent))
 {
     atkbd_t *dev;
 
     dev = (atkbd_t *)mem_alloc(sizeof(atkbd_t));
     memset(dev, 0x00, sizeof(atkbd_t));
-
     dev->flags = info->local;
 
     kbd_reset(dev);
 
     io_sethandler(0x0060, 5,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
+		  kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
     keyboard_send = add_data_kbd;
 
     timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
@@ -3321,7 +3302,7 @@ kbd_init(const device_t *info, UNUSED(void *parent))
     /* We need this, sadly. */
     SavedKbd = dev;
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
@@ -3471,7 +3452,7 @@ const device_t keyboard_ps2_xi8088_device = {
 
 
 void
-keyboard_at_set_mouse(void (*func)(uint8_t val, void *priv), void *priv)
+keyboard_at_set_mouse(void (*func)(uint8_t val, priv_t), priv_t priv)
 {
     mouse_write = func;
     mouse_p = priv;
@@ -3496,7 +3477,7 @@ keyboard_at_adddata_mouse(uint8_t val)
 
 /* Set custom machine-dependent keyboard stuff. */
 void
-keyboard_at_set_funcs(void *arg, uint8_t (*readfunc)(void *), void (*writefunc)(void *, uint8_t), void *priv)
+keyboard_at_set_funcs(priv_t arg, uint8_t (*readfunc)(priv_t), void (*writefunc)(priv_t, uint8_t), priv_t priv)
 {
     atkbd_t *dev = (atkbd_t *)arg;
 

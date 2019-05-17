@@ -8,7 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.16	2019/04/19
+ * Version:	@(#)vid_et4000.c	1.0.17	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -141,7 +141,7 @@ et4000_in(uint16_t addr, void *priv)
 
 
 static uint8_t
-et4000k_in(uint16_t addr, void *priv)
+et4000k_in(uint16_t addr, priv_t priv)
 {
     et4000_t *dev = (et4000_t *)priv;
     uint8_t val = 0xff;
@@ -207,7 +207,7 @@ et4000k_in(uint16_t addr, void *priv)
 
 
 static void
-et4000_out(uint16_t addr, uint8_t val, void *priv)
+et4000_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     et4000_t *dev = (et4000_t *)priv;
     svga_t *svga = &dev->svga;
@@ -329,7 +329,7 @@ et4000_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static void
-et4000k_out(uint16_t addr, uint8_t val, void *priv)
+et4000k_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     et4000_t *dev = (et4000_t *)priv;
 
@@ -453,7 +453,7 @@ et4000_recalctimings(svga_t *svga)
 
 
 static uint8_t
-et4000_mca_read(int port, void *priv)
+et4000_mca_read(int port, priv_t priv)
 {
     et4000_t *et4000 = (et4000_t *)priv;
 
@@ -462,7 +462,7 @@ et4000_mca_read(int port, void *priv)
 
 
 static void
-et4000_mca_write(int port, uint8_t val, void *priv)
+et4000_mca_write(int port, uint8_t val, priv_t priv)
 {
     et4000_t *et4000 = (et4000_t *)priv;
 
@@ -474,7 +474,7 @@ et4000_mca_write(int port, uint8_t val, void *priv)
 }
 
 
-static void *
+static priv_t
 et4000_init(const device_t *info, UNUSED(void *parent))
 {
     et4000_t *dev;
@@ -552,12 +552,12 @@ et4000_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-et4000_close(void *priv)
+et4000_close(priv_t priv)
 {
     et4000_t *dev = (et4000_t *)priv;
 
@@ -568,7 +568,7 @@ et4000_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     et4000_t *dev = (et4000_t *)priv;
 
@@ -577,7 +577,7 @@ speed_changed(void *priv)
 
 
 static void
-force_redraw(void *priv)
+force_redraw(priv_t priv)
 {
     et4000_t *dev = (et4000_t *)priv;
 

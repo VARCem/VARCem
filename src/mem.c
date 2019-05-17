@@ -12,7 +12,7 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.35	2019/05/03
+ * Version:	@(#)mem.c	1.0.37	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -113,9 +113,6 @@ static uint8_t		*_mem_exec[0x40000];
 static int		_mem_state[0x40000];
 
 static uint8_t		ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
-
-static uint8_t		port_92_reg = 0,
-			port_92_mask = 0;
 
 
 int
@@ -1582,6 +1579,7 @@ mem_remap_top(int kb)
     uint32_t start = (mem_size >= 1024) ? mem_size : 1024;
     int size = mem_size - 640;
     uint32_t i;
+    int offset;
 
     INFO("MEM: remapping top %iKB (mem=%i)\n", kb, mem_size);
 
@@ -1598,10 +1596,16 @@ mem_remap_top(int kb)
 	size = kb;
 
     for (i = ((start * 1024) >> 12); i < (((start + size) * 1024) >> 12); i++) {
-	pages[i].mem = &ram[0xA0000 + ((i - ((start * 1024) >> 12)) << 12)];
+	offset = i - ((start * 1024) >> 12);
+	pages[i].mem = &ram[0xA0000 + (offset << 12)];
 	pages[i].write_b = mem_write_ramb_page;
 	pages[i].write_w = mem_write_ramw_page;
 	pages[i].write_l = mem_write_raml_page;
+#if 0	/* new CPU code only */
+	pages[c].evict_prev = EVICT_NOT_IN_LIST;
+	pages[c].byte_dirty_mask = &byte_dirty_mask[offset * 64];
+	pages[c].byte_code_present_mask = &byte_code_present_mask[offset * 64];
+#endif
     }
 
     mem_set_mem_state(start * 1024, size * 1024,
@@ -1655,65 +1659,4 @@ mem_a20_recalc(void)
     }
 
     mem_a20_state = state;
-}
-
-
-uint8_t
-port_92_read(uint16_t port, void *priv)
-{
-    return port_92_reg | port_92_mask;
-}
-
-
-void
-port_92_write(uint16_t port, uint8_t val, void *priv)
-{
-    if ((mem_a20_alt ^ val) & 2) {
-	mem_a20_alt = (val & 2);
-	mem_a20_recalc();
-    }
-
-    if ((~port_92_reg & val) & 1) {
-	cpu_reset(0);
-	cpu_set_edx();
-    }
-
-    port_92_reg = val | port_92_mask;
-}
-
-
-void
-port_92_clear_reset(void)
-{
-    port_92_reg &= 2;
-}
-
-
-void
-port_92_add(int inv)
-{
-    port_92_mask = (inv) ? 0xfc : 0x00;
-
-    io_sethandler(0x0092, 1,
-		  port_92_read,NULL,NULL, port_92_write, NULL,NULL,NULL);
-}
-
-
-void
-port_92_remove(void)
-{
-    io_removehandler(0x0092, 1,
-		     port_92_read,NULL,NULL, port_92_write,NULL,NULL, NULL);
-}
-
-
-void
-port_92_reset(void)
-{
-    port_92_reg = 0;
-
-    mem_a20_alt = 0;
-    mem_a20_recalc();
-
-    flushmmucache();
 }

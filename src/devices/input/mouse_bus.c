@@ -55,7 +55,7 @@
  *		  Microsoft Windows 98 SE
  *		  Linux kernel 1.2.13-ELF
  *
- * Version:	@(#)mouse_bus.c	1.1.10	2019/05/09
+ * Version:	@(#)mouse_bus.c	1.1.11	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -189,7 +189,7 @@ static const double periods[4] = { 30.0, 50.0, 100.0, 200.0 };
 
 /* Handle a READ operation from one of the Logitech registers. */
 static uint8_t
-lt_read(uint16_t port, void *priv)
+lt_read(uint16_t port, priv_t priv)
 {
     mouse_t *dev = (mouse_t *)priv;
     uint8_t ret = 0xff;
@@ -264,7 +264,7 @@ lt_read(uint16_t port, void *priv)
 
 /* Handle a WRITE operation to one of the Logitech registers. */
 static void
-lt_write(uint16_t port, uint8_t val, void *priv)
+lt_write(uint16_t port, uint8_t val, priv_t priv)
 {
     mouse_t *dev = (mouse_t *)priv;
     uint8_t bit;
@@ -351,7 +351,7 @@ lt_write(uint16_t port, uint8_t val, void *priv)
 
 /* Handle a READ operation from one of the MS InPort registers. */
 static uint8_t
-ms_read(uint16_t port, void *priv)
+ms_read(uint16_t port, priv_t priv)
 {
     mouse_t *dev = (mouse_t *)priv;
     uint8_t ret = 0xff;
@@ -403,7 +403,7 @@ ms_read(uint16_t port, void *priv)
 
 /* Handle a WRITE operation to one of the MS InPort registers. */
 static void
-ms_write(uint16_t port, uint8_t val, void *priv)
+ms_write(uint16_t port, uint8_t val, priv_t priv)
 {
     mouse_t *dev = (mouse_t *)priv;
 
@@ -496,7 +496,7 @@ ms_write(uint16_t port, uint8_t val, void *priv)
 
 /* The emulator calls us with an update on the host mouse device. */
 static int
-bm_poll(int x, int y, int z, int b, void *priv)
+bm_poll(int x, int y, int z, int b, priv_t priv)
 {
     mouse_t *dev = (mouse_t *)priv;
     int xor;
@@ -568,7 +568,7 @@ bm_poll(int x, int y, int z, int b, void *priv)
  * 45 times per second (MS/Logitech Bus mouse).
  */
 static void
-bm_timer(void *priv)
+bm_timer(priv_t priv)
 {
     mouse_t *dev = (mouse_t *)priv;
     int delta_x, delta_y;
@@ -647,7 +647,7 @@ bm_timer(void *priv)
 
 /* Release all resources held by the device. */
 static void
-bm_close(void *priv)
+bm_close(priv_t priv)
 {
     mouse_t *dev = (mouse_t *)priv;
 
@@ -657,7 +657,7 @@ bm_close(void *priv)
 
 
 /* Initialize the device for use by the user. */
-static void *
+static priv_t
 bm_init(const device_t *info, UNUSED(void *parent))
 {
     mouse_t *dev;
@@ -745,7 +745,7 @@ bm_init(const device_t *info, UNUSED(void *parent))
     INFO("MOUSE: %s (I/O=%04x, IRQ=%i, buttons=%i\n",
 		dev->name, dev->base, dev->irq, dev->bn);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
@@ -943,7 +943,7 @@ const device_t mouse_msinport_onboard_device = {
  * currently needed for onboard devices.
  */
 void
-mouse_bus_set_irq(void *priv, int irq)
+mouse_bus_set_irq(priv_t priv, int irq)
 {
     mouse_t *dev = (mouse_t *)priv;
 

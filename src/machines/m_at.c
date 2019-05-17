@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.14	2019/05/05
+ * Version:	@(#)m_at.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,10 +115,10 @@ m_at_ps2_ide_init(void)
 }
 
 
-static void *
+static priv_t
 ibm_at_init(const device_t *info, void *arg)
 {
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     m_at_init();
 
@@ -126,7 +126,7 @@ ibm_at_init(const device_t *info, void *arg)
 
     device_add(&fdc_at_device);
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

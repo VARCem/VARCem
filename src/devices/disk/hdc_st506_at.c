@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.15	2019/04/25
+ * Version:	@(#)hdc_st506_at.c	1.0.16	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -361,7 +361,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 
 
 static void
-hdc_writew(uint16_t port, uint16_t val, void *priv)
+hdc_writew(uint16_t port, uint16_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -382,7 +382,7 @@ hdc_writew(uint16_t port, uint16_t val, void *priv)
 
 
 static void
-hdc_write(uint16_t port, uint8_t val, void *priv)
+hdc_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -454,7 +454,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint16_t
-hdc_readw(uint16_t port, void *priv)
+hdc_readw(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint16_t ret;
@@ -484,7 +484,7 @@ hdc_readw(uint16_t port, void *priv)
 
 
 static uint8_t
-hdc_read(uint16_t port, void *priv)
+hdc_read(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
@@ -549,7 +549,7 @@ do_seek(hdc_t *dev)
 
 
 static void
-do_callback(void *priv)
+do_callback(priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     drive_t *drive = &dev->drives[dev->drvsel];
@@ -696,7 +696,25 @@ loadhd(hdc_t *dev, int c, int d, const wchar_t *fn)
 }
 
 
-static void *
+static void
+st506_close(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    int d;
+
+    for (d = 0; d < 2; d++) {
+	drive_t *drive = &dev->drives[d];
+
+	hdd_image_close(drive->hdd_num);		
+    }
+
+    free(dev);
+
+    ui_sb_icon_update(SB_DISK|HDD_BUS_ST506, 0);
+}
+
+
+static priv_t
 st506_init(const device_t *info, UNUSED(void *parent))
 {
     hdc_t *dev;
@@ -733,25 +751,7 @@ st506_init(const device_t *info, UNUSED(void *parent))
 
     timer_add(do_callback, dev, &dev->callback, &dev->callback);	
 
-    return(dev);
-}
-
-
-static void
-st506_close(void *priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-    int d;
-
-    for (d = 0; d < 2; d++) {
-	drive_t *drive = &dev->drives[d];
-
-	hdd_image_close(drive->hdd_num);		
-    }
-
-    free(dev);
-
-    ui_sb_icon_update(SB_DISK|HDD_BUS_ST506, 0);
+    return((priv_t)dev);
 }
 
 

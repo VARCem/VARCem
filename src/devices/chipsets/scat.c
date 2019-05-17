@@ -8,7 +8,7 @@
  *
  *		Implementation of the C&T 82C235 ("SCAT") chipset.
  *
- * Version:	@(#)scat.c	1.0.17	2019/05/03
+ * Version:	@(#)scat.c	1.0.18	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -124,8 +124,8 @@ static const uint8_t scatsx_external_is_RAS[33] = {
 };
 
 
-static uint8_t	scat_read(uint16_t port, void *priv);
-static void	scat_write(uint16_t port, uint8_t val, void *priv);
+static uint8_t	scat_read(uint16_t port, priv_t priv);
+static void	scat_write(uint16_t port, uint8_t val, priv_t priv);
 
 
 static void
@@ -1038,7 +1038,7 @@ memmap_state_update(scat_t *dev)
 
 
 static void
-scat_write(uint16_t port, uint8_t val, void *priv)
+scat_write(uint16_t port, uint8_t val, priv_t priv)
 {
     scat_t *dev = (scat_t *)priv;
     uint8_t reg_valid = 0,
@@ -1245,7 +1245,7 @@ scat_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-scat_read(uint16_t port, void *priv)
+scat_read(uint16_t port, priv_t priv)
 {
     scat_t *dev = (scat_t *)priv;
     uint8_t ret = 0xff, indx;
@@ -1318,7 +1318,7 @@ scat_read(uint16_t port, void *priv)
 
 
 static uint8_t
-mem_read_scatb(uint32_t addr, void *priv)
+mem_read_scatb(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     scat_t *dev = (scat_t *)map->dev;
@@ -1334,7 +1334,7 @@ mem_read_scatb(uint32_t addr, void *priv)
 
 
 static uint16_t
-mem_read_scatw(uint32_t addr, void *priv)
+mem_read_scatw(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     scat_t *dev = (scat_t *)map->dev;
@@ -1350,7 +1350,7 @@ mem_read_scatw(uint32_t addr, void *priv)
 
 
 static uint32_t
-mem_read_scatl(uint32_t addr, void *priv)
+mem_read_scatl(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     scat_t *dev = (scat_t *)map->dev;
@@ -1366,7 +1366,7 @@ mem_read_scatl(uint32_t addr, void *priv)
 
 
 static void
-mem_write_scatb(uint32_t addr, uint8_t val, void *priv)
+mem_write_scatb(uint32_t addr, uint8_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     scat_t *dev = (scat_t *)map->dev;
@@ -1385,7 +1385,7 @@ mem_write_scatb(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-mem_write_scatw(uint32_t addr, uint16_t val, void *priv)
+mem_write_scatw(uint32_t addr, uint16_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     scat_t *dev = (scat_t *)map->dev;
@@ -1404,7 +1404,7 @@ mem_write_scatw(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-mem_write_scatl(uint32_t addr, uint32_t val, void *priv)
+mem_write_scatl(uint32_t addr, uint32_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     scat_t *dev = (scat_t *)map->dev;
@@ -1422,7 +1422,7 @@ mem_write_scatl(uint32_t addr, uint32_t val, void *priv)
 
 
 static void
-scat_close(void *priv)
+scat_close(priv_t priv)
 {
     scat_t *dev = (scat_t *)priv;
 
@@ -1430,7 +1430,7 @@ scat_close(void *priv)
 }
 
 
-static void *
+static priv_t
 scat_init(const device_t *info, UNUSED(void *parent))
 {
     scat_t *dev;
@@ -1607,7 +1607,7 @@ scat_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0092, 1,
 		  scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

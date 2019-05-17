@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.17	2019/04/25
+ * Version:	@(#)scsi_x54x.c	1.0.18	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,10 +67,6 @@
 #define X54X_RESET_DURATION_US	UINT64_C(50000)
 
 
-static void	x54x_cmd_callback(void *priv);
-static x54x_t	*x54x_dev;
-
-
 static void
 x54x_irq(x54x_t *dev, int set)
 {
@@ -79,7 +75,7 @@ x54x_irq(x54x_t *dev, int set)
 
     if (dev->ven_get_irq)
 	irq = dev->ven_get_irq(dev);
-      else
+    else
 	irq = dev->Irq;
 
     if (dev->bus & DEVICE_PCI) {
@@ -245,9 +241,8 @@ completion_code(uint8_t *sense)
 }
 
 
-
 static uint8_t
-x54x_bios_scsi_command(scsi_device_t *dev, uint8_t *cdb, uint8_t *buf, int len, uint32_t addr)
+bios_scsi_command(scsi_device_t *dev, uint8_t *cdb, uint8_t *buf, int len, uint32_t addr)
 {
     dev->buffer_length = -1;
 
@@ -285,7 +280,7 @@ x54x_bios_scsi_command(scsi_device_t *dev, uint8_t *cdb, uint8_t *buf, int len, 
 
 
 static uint8_t
-x54x_bios_read_capacity(scsi_device_t *sd, uint8_t *buf)
+bios_read_capacity(scsi_device_t *sd, uint8_t *buf)
 {
     uint8_t *cdb;
     uint8_t ret;
@@ -296,7 +291,7 @@ x54x_bios_read_capacity(scsi_device_t *sd, uint8_t *buf)
 
     memset(buf, 0, 8);
 
-    ret = x54x_bios_scsi_command(sd, cdb, buf, 8, 0);
+    ret = bios_scsi_command(sd, cdb, buf, 8, 0);
 
     free(cdb);
 
@@ -305,7 +300,7 @@ x54x_bios_read_capacity(scsi_device_t *sd, uint8_t *buf)
 
 
 static uint8_t
-x54x_bios_inquiry(scsi_device_t *sd, uint8_t *buf)
+bios_inquiry(scsi_device_t *sd, uint8_t *buf)
 {
     uint8_t *cdb;
     uint8_t ret;
@@ -317,7 +312,7 @@ x54x_bios_inquiry(scsi_device_t *sd, uint8_t *buf)
 
     memset(buf, 0, 36);
 
-    ret = x54x_bios_scsi_command(sd, cdb, buf, 36, 0);
+    ret = bios_scsi_command(sd, cdb, buf, 36, 0);
 
     free(cdb);
 
@@ -326,7 +321,7 @@ x54x_bios_inquiry(scsi_device_t *sd, uint8_t *buf)
 
 
 static uint8_t
-x54x_bios_command_08(scsi_device_t *sd, uint8_t *buffer)
+bios_command_08(scsi_device_t *sd, uint8_t *buffer)
 {
     uint8_t *rcbuf;
     uint8_t ret;
@@ -336,7 +331,7 @@ x54x_bios_command_08(scsi_device_t *sd, uint8_t *buffer)
 
     rcbuf = (uint8_t *)mem_alloc(8);
 
-    ret = x54x_bios_read_capacity(sd, rcbuf);
+    ret = bios_read_capacity(sd, rcbuf);
     if (ret) {
 	free(rcbuf);
 	return(ret);
@@ -358,7 +353,7 @@ x54x_bios_command_08(scsi_device_t *sd, uint8_t *buffer)
 
 
 static int
-x54x_bios_command_15(scsi_device_t *sd, uint8_t *buffer)
+bios_command_15(scsi_device_t *sd, uint8_t *buffer)
 {
     uint8_t *inqbuf, *rcbuf;
     uint8_t ret;
@@ -367,7 +362,7 @@ x54x_bios_command_15(scsi_device_t *sd, uint8_t *buffer)
     memset(buffer, 0x00, 6);
 
     inqbuf = (uint8_t *)mem_alloc(36);
-    ret = x54x_bios_inquiry(sd, inqbuf);
+    ret = bios_inquiry(sd, inqbuf);
     if (ret) {
 	free(inqbuf);
 	return(ret);
@@ -377,7 +372,7 @@ x54x_bios_command_15(scsi_device_t *sd, uint8_t *buffer)
     buffer[5] = inqbuf[1];
 
     rcbuf = (uint8_t *)mem_alloc(8);
-    ret = x54x_bios_read_capacity(sd, rcbuf);
+    ret = bios_read_capacity(sd, rcbuf);
     if (ret) {
 	free(rcbuf);
 	free(inqbuf);
@@ -399,7 +394,7 @@ x54x_bios_command_15(scsi_device_t *sd, uint8_t *buffer)
 
 /* This returns the completion code. */
 static uint8_t
-x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
+bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 {
     const int bios_cmd_to_scsi[18] = {
 	0, 0, GPCMD_READ_10, GPCMD_WRITE_10, GPCMD_VERIFY_10, 0, 0,
@@ -504,7 +499,7 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 		DBGLOG(1, "BIOS CMD(READ/WRITE/VERIFY, %08lx, %d)\n",
 						lba, cmd->secount);
 
-		ret = x54x_bios_scsi_command(dev, cdb, NULL, sector_len, dma_address);
+		ret = bios_scsi_command(dev, cdb, NULL, sector_len, dma_address);
 		if (cmd->command == 0x0c)
 			ret = !!ret;
 		break;
@@ -536,7 +531,7 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 		cdb[0] = bios_cmd_to_scsi[cmd->command];
 		cdb[1] = (cmd->lun & 7) << 5;
 
-		ret = x54x_bios_scsi_command(dev, cdb, NULL, sector_len, dma_address);
+		ret = bios_scsi_command(dev, cdb, NULL, sector_len, dma_address);
 		break;
 
 	case 0x08:	/* Read Drive Parameters */
@@ -549,9 +544,9 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 
 		buf = (uint8_t *) malloc(6);
 		if (cmd->command == 0x08)
-			ret = x54x_bios_command_08(dev, buf);
+			ret = bios_command_08(dev, buf);
 		else
-			ret = x54x_bios_command_15(dev, buf);
+			ret = bios_command_15(dev, buf);
 
 		DEBUG("BIOS DMA: Reading 4 bytes at %08X\n", dma_address);
 		DMAPageWrite(dma_address, buf, 4);
@@ -576,7 +571,7 @@ x54x_bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 
 
 static void
-x54x_cmd_done(x54x_t *dev, int suppress)
+cmd_done(x54x_t *dev, int suppress)
 {
     int fast = 0;
 
@@ -598,15 +593,15 @@ x54x_cmd_done(x54x_t *dev, int suppress)
 
 
 static void
-x54x_add_to_period(int TransferLength)
+add_to_period(x54x_t *dev, int TransferLength)
 {
-    x54x_dev->temp_period += (int64_t)TransferLength;
+    dev->temp_period += (int64_t)TransferLength;
 }
 
 
 static void
-x54x_mbi_setup(x54x_t *dev, uint32_t CCBPointer, CCBU *CmdBlock,
-	       uint8_t HostStatus, uint8_t TargetStatus, uint8_t mbcc)
+mbi_setup(x54x_t *dev, uint32_t CCBPointer, CCBU *CmdBlock,
+	  uint8_t HostStatus, uint8_t TargetStatus, uint8_t mbcc)
 {
     Req_t *req = &dev->Req;
 
@@ -633,7 +628,7 @@ x54x_ccb(x54x_t *dev)
     DMAPageWrite(req->CCBPointer + 0x000D, &(req->MailboxCompletionCode), 1);
     DMAPageWrite(req->CCBPointer + 0x000E, &(req->HostStatus), 1);
     DMAPageWrite(req->CCBPointer + 0x000F, &(req->TargetStatus), 1);
-    x54x_add_to_period(3);
+    add_to_period(dev, 3);
 
     if (dev->MailboxOutInterrupts)
 	dev->ToRaise = INTR_MBOA | INTR_ANY;
@@ -644,7 +639,7 @@ x54x_ccb(x54x_t *dev)
 
 static void
 x54x_mbi(x54x_t *dev)
-{	
+{
     Req_t *req = &dev->Req;
     addr24 CCBPointer;
     CCBU *CmdBlock = &(req->CmdBlock);
@@ -663,7 +658,7 @@ x54x_mbi(x54x_t *dev)
 	DEBUG("CCB statuses rewritten (pointer %08X)\n", req->CCBPointer);
     	DMAPageWrite(req->CCBPointer + 0x000E, &(req->HostStatus), 1);
 	DMAPageWrite(req->CCBPointer + 0x000F, &(req->TargetStatus), 1);
-	x54x_add_to_period(2);
+	add_to_period(dev, 2);
     } else {
 	DEBUG("Mailbox not found!\n");
     }
@@ -675,7 +670,7 @@ x54x_mbi(x54x_t *dev)
 	DEBUG("Mailbox 24-bit: Status=0x%02X, CCB at 0x%04X\n", req->MailboxCompletionCode, CCBPointer);
 	DMAPageWrite(Incoming, &(req->MailboxCompletionCode), 1);
 	DMAPageWrite(Incoming + 1, (uint8_t *)&CCBPointer, 3);
-	x54x_add_to_period(4);
+	add_to_period(dev, 4);
 	DEBUG("%i bytes of 24-bit mailbox written to: %08X\n", sizeof(Mailbox_t), Incoming);
     } else {
 	U32_TO_ADDR(CCBPointer, req->CCBPointer);
@@ -684,13 +679,13 @@ x54x_mbi(x54x_t *dev)
 	DMAPageWrite(Incoming + 4, &(req->HostStatus), 1);
 	DMAPageWrite(Incoming + 5, &(req->TargetStatus), 1);
 	DMAPageWrite(Incoming + 7, &(req->MailboxCompletionCode), 1);
-	x54x_add_to_period(7);
+	add_to_period(dev, 7);
 	DEBUG("%i bytes of 32-bit mailbox written to: %08X\n", sizeof(Mailbox32_t), Incoming);
     }
 
     dev->MailboxInPosCur++;
     if (dev->MailboxInPosCur >= dev->MailboxCount)
-		dev->MailboxInPosCur = 0;
+	dev->MailboxInPosCur = 0;
 
     dev->ToRaise = INTR_MBIF | INTR_ANY;
     if (dev->MailboxOutInterrupts)
@@ -699,13 +694,13 @@ x54x_mbi(x54x_t *dev)
 
 
 static void
-x54x_rd_sge(int Is24bit, uint32_t Address, SGE32 *SG)
+read_sge(x54x_t *dev, int Is24bit, uint32_t Address, SGE32 *SG)
 {
     SGE SGE24;
 
     if (Is24bit) {
 	DMAPageRead(Address, (uint8_t *)&SGE24, sizeof(SGE));
-	x54x_add_to_period(sizeof(SGE));
+	add_to_period(dev, sizeof(SGE));
 
 	/* Convert the 24-bit entries into 32-bit entries. */
 	DEBUG("Read S/G block: %06X, %06X\n", SGE24.Segment, SGE24.SegmentPointer);
@@ -713,13 +708,13 @@ x54x_rd_sge(int Is24bit, uint32_t Address, SGE32 *SG)
 	SG->SegmentPointer = ADDR_TO_U32(SGE24.SegmentPointer);
     } else {
 	DMAPageRead(Address, (uint8_t *)SG, sizeof(SGE32));
-	x54x_add_to_period(sizeof(SGE32));
+	add_to_period(dev, sizeof(SGE32));
     }
 }
 
 
 static int
-x54x_get_length(Req_t *req, int Is24bit)
+get_length(x54x_t *dev, Req_t *req, int Is24bit)
 {
     uint32_t DataPointer, DataLength;
     uint32_t SGEntryLength = (Is24bit ? sizeof(SGE) : sizeof(SGE32));
@@ -744,7 +739,7 @@ x54x_get_length(Req_t *req, int Is24bit)
 	if (req->CmdBlock.common.Opcode == SCATTER_GATHER_COMMAND ||
 	    req->CmdBlock.common.Opcode == SCATTER_GATHER_COMMAND_RES) {
 		for (i = 0; i < DataLength; i += SGEntryLength) {
-			x54x_rd_sge(Is24bit, DataPointer + i, &SGBuffer);
+			read_sge(dev, Is24bit, DataPointer + i, &SGBuffer);
 
 			DataToTransfer += SGBuffer.Segment;
 		}
@@ -752,17 +747,16 @@ x54x_get_length(Req_t *req, int Is24bit)
 	} else if (req->CmdBlock.common.Opcode == SCSI_INITIATOR_COMMAND ||
 		   req->CmdBlock.common.Opcode == SCSI_INITIATOR_COMMAND_RES) {
 		return(DataLength);
-	} else {
-		return(0);
 	}
-    } else {
 	return(0);
     }
+
+    return(0);
 }
 
 
 static void
-x54x_set_residue(Req_t *req, int32_t TransferLength)
+set_residue(x54x_t *dev, Req_t *req, int32_t TransferLength)
 {
     uint32_t Residue = 0;
     addr24 Residue24;
@@ -780,11 +774,11 @@ x54x_set_residue(Req_t *req, int32_t TransferLength)
 	if (req->Is24bit) {
 		U32_TO_ADDR(Residue24, Residue);
     		DMAPageWrite(req->CCBPointer + 0x0004, (uint8_t *)&Residue24, 3);
-		x54x_add_to_period(3);
+		add_to_period(dev, 3);
 		DEBUG("24-bit Residual data length for reading: %d\n", Residue);
 	} else {
     		DMAPageWrite(req->CCBPointer + 0x0004, (uint8_t *)&Residue, 4);
-		x54x_add_to_period(4);
+		add_to_period(dev, 4);
 		DEBUG("32-bit Residual data length for reading: %d\n", Residue);
 	}
     }
@@ -792,7 +786,7 @@ x54x_set_residue(Req_t *req, int32_t TransferLength)
 
 
 static void
-x54x_buf_dma_transfer(Req_t *req, int Is24bit, int TransferLength, int dir)
+buf_dma_transfer(x54x_t *dev, Req_t *req, int Is24bit, int TransferLength, int dir)
 {
     uint32_t DataPointer, DataLength;
     uint32_t SGEntryLength = (Is24bit ? sizeof(SGE) : sizeof(SGE32));
@@ -826,7 +820,7 @@ x54x_buf_dma_transfer(Req_t *req, int Is24bit, int TransferLength, int dir)
 		   checking its length, so do this procedure for both no read/write commands. */
 		if ((DataLength > 0) && (req->CmdBlock.common.ControlByte < 0x03)) {
 			for (i = 0; i < DataLength; i += SGEntryLength) {
-				x54x_rd_sge(Is24bit, DataPointer + i, &SGBuffer);
+				read_sge(dev, Is24bit, DataPointer + i, &SGBuffer);
 
 				Address = SGBuffer.SegmentPointer;
 				DataToTransfer = MIN((int)SGBuffer.Segment, BufLen);
@@ -925,7 +919,7 @@ SenseBufferPointer(Req_t *req)
 
 
 static void
-SenseBufferFree(Req_t *req, int Copy)
+SenseBufferFree(x54x_t *dev, Req_t *req, int Copy)
 {
     uint8_t SenseLength = ConvertSenseLength(req->CmdBlock.common.RequestSenseLength);
     uint32_t SenseBufferAddress;
@@ -946,7 +940,7 @@ SenseBufferFree(Req_t *req, int Copy)
 	DEBUG("SenseBufferFree(): Writing %i bytes at %08X\n",
 					SenseLength, SenseBufferAddress);
 	DMAPageWrite(SenseBufferAddress, temp_sense, SenseLength);
-	x54x_add_to_period(SenseLength);
+	add_to_period(dev, SenseLength);
 	DEBUG("Sense data written to buffer: %02X %02X %02X\n",
 		temp_sense[2], temp_sense[12], temp_sense[13]);
     }
@@ -954,7 +948,7 @@ SenseBufferFree(Req_t *req, int Copy)
 
 
 static void
-x54x_scsi_cmd(x54x_t *dev)
+scsi_cmd(x54x_t *dev)
 {
     Req_t *req = &dev->Req;
     uint8_t phase, bit24 = !!req->Is24bit;
@@ -968,7 +962,7 @@ x54x_scsi_cmd(x54x_t *dev)
     sd = &scsi_devices[req->TargetID][req->LUN];
 
     target_cdb_len = 12;
-    target_data_len = x54x_get_length(req, bit24);
+    target_data_len = get_length(dev, req, bit24);
 
     if (! scsi_device_valid(sd))
 	fatal("SCSI target on %i:%i has disappeared\n", req->TargetID, req->LUN);
@@ -983,10 +977,10 @@ x54x_scsi_cmd(x54x_t *dev)
     if (req->CmdBlock.common.CdbLength <= target_cdb_len) {
 	memcpy(temp_cdb, req->CmdBlock.common.Cdb,
 	       req->CmdBlock.common.CdbLength);
-	x54x_add_to_period(req->CmdBlock.common.CdbLength);
+	add_to_period(dev, req->CmdBlock.common.CdbLength);
     } else {
 	memcpy(temp_cdb, req->CmdBlock.common.Cdb, target_cdb_len);
-	x54x_add_to_period(target_cdb_len);
+	add_to_period(dev, target_cdb_len);
     }
 
     dev->Residue = 0;
@@ -1011,38 +1005,38 @@ x54x_scsi_cmd(x54x_t *dev)
 		if ((sd->status != SCSI_STATUS_OK) && (*BufLen > 0)) {
 			SenseBufferAddress = SenseBufferPointer(req);
 			DMAPageWrite(SenseBufferAddress, sd->cmd_buffer, *BufLen);
-			x54x_add_to_period(*BufLen);
+			add_to_period(dev, *BufLen);
 		}
 	} else {
 		p = scsi_device_get_callback(sd);
 		if (p <= 0LL)
-			x54x_add_to_period(*BufLen);
+			add_to_period(dev, *BufLen);
 		else
 			dev->media_period += p;
 	    	x54x_buf_alloc(sd, MIN(target_data_len, *BufLen));
 		if (phase == SCSI_PHASE_DATA_OUT)
-			x54x_buf_dma_transfer(req, bit24, target_data_len, 1);
+			buf_dma_transfer(dev, req, bit24, target_data_len, 1);
 		scsi_device_command_phase1(sd);
 		if (phase == SCSI_PHASE_DATA_IN)
-			x54x_buf_dma_transfer(req, bit24, target_data_len, 0);
+			buf_dma_transfer(dev, req, bit24, target_data_len, 0);
 
-		SenseBufferFree(req, (sd->status != SCSI_STATUS_OK));
+		SenseBufferFree(dev, req, (sd->status != SCSI_STATUS_OK));
 	}
     } else
-	SenseBufferFree(req, (sd->status != SCSI_STATUS_OK));
+	SenseBufferFree(dev, req, (sd->status != SCSI_STATUS_OK));
 
-    x54x_set_residue(req, target_data_len);
+    set_residue(dev, req, target_data_len);
 
     x54x_buf_free(sd);
 
     DEBUG("Request complete\n");
 
     if (sd->status == SCSI_STATUS_OK) {
-	x54x_mbi_setup(dev, req->CCBPointer, &req->CmdBlock,
-		       CCB_COMPLETE, SCSI_STATUS_OK, MBI_SUCCESS);
+	mbi_setup(dev, req->CCBPointer, &req->CmdBlock,
+		  CCB_COMPLETE, SCSI_STATUS_OK, MBI_SUCCESS);
     } else if (sd->status == SCSI_STATUS_CHECK_CONDITION) {
-	x54x_mbi_setup(dev, req->CCBPointer, &req->CmdBlock,
-		       CCB_COMPLETE, SCSI_STATUS_CHECK_CONDITION, MBI_ERROR);
+	mbi_setup(dev, req->CCBPointer, &req->CmdBlock,
+		  CCB_COMPLETE, SCSI_STATUS_CHECK_CONDITION, MBI_ERROR);
     }
 
     DEBUG("scsi_devices[%i][%i].status = %02X\n", req->TargetID, req->LUN, sd->status);
@@ -1054,20 +1048,20 @@ x54x_notify(x54x_t *dev)
 {
     if (dev->MailboxIsBIOS)
 	x54x_ccb(dev);
-      else
+    else
 	x54x_mbi(dev);
 }
 
 
 static void
-x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
+req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 {	
     Req_t *req = &dev->Req;
     scsi_device_t *sd;
 
     /* Fetch data from the Command Control Block. */
     DMAPageRead(CCBPointer, (uint8_t *)&req->CmdBlock, sizeof(CCB32));
-    x54x_add_to_period(sizeof(CCB32));
+    add_to_period(dev, sizeof(CCB32));
 
     req->Is24bit = dev->Mbx24bit;
     req->CCBPointer = CCBPointer;
@@ -1076,8 +1070,8 @@ x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 
     if ((req->TargetID > dev->max_id) || (req->LUN > 7)) {
 	DEBUG("SCSI Target ID %i or LUN %i is not valid\n", req->TargetID, req->LUN);
-	x54x_mbi_setup(dev, CCBPointer, &req->CmdBlock,
-		      CCB_SELECTION_TIMEOUT, SCSI_STATUS_OK, MBI_ERROR);
+	mbi_setup(dev, CCBPointer, &req->CmdBlock,
+		  CCB_SELECTION_TIMEOUT, SCSI_STATUS_OK, MBI_ERROR);
 	DEBUG("%s: Callback: Send incoming mailbox\n", dev->name);
 	x54x_notify(dev);
 	return;
@@ -1091,8 +1085,8 @@ x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
     /* If there is no device at ID:0, timeout the selection - the LUN is then checked later. */
     if (! scsi_device_present(sd)) {
 	DEBUG("SCSI Target ID %i and LUN %i have no device attached\n", req->TargetID, req->LUN);
-	x54x_mbi_setup(dev, CCBPointer, &req->CmdBlock,
-		       CCB_SELECTION_TIMEOUT, SCSI_STATUS_OK, MBI_ERROR);
+	mbi_setup(dev, CCBPointer, &req->CmdBlock,
+		  CCB_SELECTION_TIMEOUT, SCSI_STATUS_OK, MBI_ERROR);
 	DEBUG("%s: Callback: Send incoming mailbox\n", dev->name);
 	x54x_notify(dev);
     } else {
@@ -1105,7 +1099,7 @@ x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 		DEBUG("Invalid opcode: %02X\n",
 		      req->CmdBlock.common.ControlByte);
 
-		x54x_mbi_setup(dev, CCBPointer, &req->CmdBlock, CCB_INVALID_OP_CODE, SCSI_STATUS_OK, MBI_ERROR);
+		mbi_setup(dev, CCBPointer, &req->CmdBlock, CCB_INVALID_OP_CODE, SCSI_STATUS_OK, MBI_ERROR);
 		DEBUG("%s: Callback: Send incoming mailbox\n", dev->name);
 		x54x_notify(dev);
 		return;
@@ -1114,8 +1108,8 @@ x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 		DEBUG("Bus reset opcode\n");
 
 		scsi_device_reset(sd);
-		x54x_mbi_setup(dev, req->CCBPointer, &req->CmdBlock,
-			       CCB_COMPLETE, SCSI_STATUS_OK, MBI_SUCCESS);
+		mbi_setup(dev, req->CCBPointer, &req->CmdBlock,
+			  CCB_COMPLETE, SCSI_STATUS_OK, MBI_SUCCESS);
 
 		DEBUG("%s: Callback: Send incoming mailbox\n", dev->name);
 		x54x_notify(dev);
@@ -1125,14 +1119,14 @@ x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 	if (req->CmdBlock.common.ControlByte > 0x03) {
 		DEBUG("Invalid control byte: %02X\n",
 			req->CmdBlock.common.ControlByte);
-		x54x_mbi_setup(dev, CCBPointer, &req->CmdBlock, CCB_INVALID_DIRECTION, SCSI_STATUS_OK, MBI_ERROR);
+		mbi_setup(dev, CCBPointer, &req->CmdBlock, CCB_INVALID_DIRECTION, SCSI_STATUS_OK, MBI_ERROR);
 		DEBUG("%s: Callback: Send incoming mailbox\n", dev->name);
 		x54x_notify(dev);
 		return;
 	}
 
 	DEBUG("%s: Callback: Process SCSI request\n", dev->name);
-	x54x_scsi_cmd(dev);
+	scsi_cmd(dev);
 
 	DEBUG("%s: Callback: Send incoming mailbox\n", dev->name);
 	x54x_notify(dev);
@@ -1141,16 +1135,15 @@ x54x_req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 
 
 static void
-x54x_req_abort(x54x_t *dev, uint32_t CCBPointer)
+req_abort(x54x_t *dev, uint32_t CCBPointer)
 {
     CCBU CmdBlock;
 
     /* Fetch data from the Command Control Block. */
     DMAPageRead(CCBPointer, (uint8_t *)&CmdBlock, sizeof(CCB32));
-    x54x_add_to_period(sizeof(CCB32));
+    add_to_period(dev, sizeof(CCB32));
 
-    x54x_mbi_setup(dev, CCBPointer, &CmdBlock,
-		  0x26, SCSI_STATUS_OK, MBI_NOT_FOUND);
+    mbi_setup(dev, CCBPointer, &CmdBlock, 0x26, SCSI_STATUS_OK, MBI_NOT_FOUND);
     DEBUG("%s: Callback: Send incoming mailbox\n", dev->name);
     x54x_notify(dev);
 }
@@ -1158,7 +1151,7 @@ x54x_req_abort(x54x_t *dev, uint32_t CCBPointer)
 
 static uint32_t
 x54x_mbo(x54x_t *dev, Mailbox32_t *Mailbox32)
-{	
+{
     Mailbox_t MailboxOut;
     uint32_t Outgoing;
     uint32_t ccbp;
@@ -1176,7 +1169,7 @@ x54x_mbo(x54x_t *dev, Mailbox32_t *Mailbox32)
     if (dev->Mbx24bit) {
 	Outgoing = Addr + (Cur * sizeof(Mailbox_t));
 	DMAPageRead(Outgoing, (uint8_t *)&MailboxOut, sizeof(Mailbox_t));
-	x54x_add_to_period(sizeof(Mailbox_t));
+	add_to_period(dev, sizeof(Mailbox_t));
 
 	ccbp = *(uint32_t *) &MailboxOut;
 	Mailbox32->CCBPointer = (ccbp >> 24) | ((ccbp >> 8) & 0xff00) | ((ccbp << 8) & 0xff0000);
@@ -1185,7 +1178,7 @@ x54x_mbo(x54x_t *dev, Mailbox32_t *Mailbox32)
 	Outgoing = Addr + (Cur * sizeof(Mailbox32_t));
 
 	DMAPageRead(Outgoing, (uint8_t *)Mailbox32, sizeof(Mailbox32_t));
-	x54x_add_to_period(sizeof(Mailbox32_t));
+	add_to_period(dev, sizeof(Mailbox32_t));
     }
 
     return(Outgoing);
@@ -1206,10 +1199,10 @@ x54x_mbo_process(x54x_t *dev)
 
     if (mb32.u.out.ActionCode == MBO_START) {
 	DEBUG("Start Mailbox Command\n");
-	x54x_req_setup(dev, mb32.CCBPointer, &mb32);
+	req_setup(dev, mb32.CCBPointer, &mb32);
     } else if (!dev->MailboxIsBIOS && (mb32.u.out.ActionCode == MBO_ABORT)) {
 	DEBUG("Abort Mailbox Command\n");
-	x54x_req_abort(dev, mb32.CCBPointer);
+	req_abort(dev, mb32.CCBPointer);
     } /* else {
 	DEBUG("Invalid action code: %02X\n", mb32.u.out.ActionCode);
     } */
@@ -1218,7 +1211,7 @@ x54x_mbo_process(x54x_t *dev)
 	/* We got the mailbox, mark it as free in the guest. */
 	DEBUG("x54x_do_mail(): Writing %i bytes at %08X\n", sizeof(CmdStatus), Outgoing + CodeOffset);
 	DMAPageWrite(Outgoing + CodeOffset, &CmdStatus, 1);
-	x54x_add_to_period(1);
+	add_to_period(dev, 1);
 
 	if (dev->ToRaise)
 		raise_irq(dev, 0, dev->ToRaise);
@@ -1236,7 +1229,7 @@ x54x_mbo_process(x54x_t *dev)
 
 
 static void
-x54x_do_mail(x54x_t *dev)
+do_mail(x54x_t *dev)
 {
     int aggressive = 1;
 
@@ -1272,13 +1265,10 @@ x54x_do_mail_again:
 }
 
 
-static void x54x_cmd_done(x54x_t *dev, int suppress);
-
-
 static void
-x54x_cmd_callback(void *priv)
+cmd_callback(priv_t priv)
 {
-    x54x_t *dev = (x54x_t *) x54x_dev;
+    x54x_t *dev = (x54x_t *)priv;
     double period;
     int mailboxes_present, bios_mailboxes_present;
 
@@ -1297,18 +1287,18 @@ x54x_cmd_callback(void *priv)
 	dev->ven_callback(dev);
     } else if (!bios_mailboxes_present) {
 	/* Do only normal mailboxes. */
-	x54x_do_mail(dev);
+	do_mail(dev);
     } else {
 	/* Do both kinds of mailboxes. */
 	if (dev->callback_phase)
 		dev->ven_callback(dev);
 	else
-		x54x_do_mail(dev);
+		do_mail(dev);
 
 	dev->callback_phase = (dev->callback_phase + 1) & 0x01;
     }
 
-    period = (1000000.0 / x54x_dev->ha_bps) * ((double) TIMER_USEC) * ((double) dev->temp_period);
+    period = (1000000.0 / dev->ha_bps) * ((double) TIMER_USEC) * ((double) dev->temp_period);
     dev->timer_period = dev->media_period + ((int64_t) period) + (40LL * TIMER_USEC);
 
     DEBUG("Temporary period: %" PRId64 " us (%" PRIi64 " periods)\n",
@@ -1317,7 +1307,7 @@ x54x_cmd_callback(void *priv)
 
 
 static uint8_t
-x54x_in(uint16_t port, void *priv)
+x54x_in(uint16_t port, priv_t priv)
 {
     x54x_t *dev = (x54x_t *)priv;
     uint8_t ret;
@@ -1334,7 +1324,7 @@ x54x_in(uint16_t port, void *priv)
 			dev->DataReply++;
 			dev->DataReplyLeft--;
 			if (! dev->DataReplyLeft)
-				x54x_cmd_done(dev, 0);
+				cmd_done(dev, 0);
 		}
 		break;
 
@@ -1380,42 +1370,42 @@ x54x_in(uint16_t port, void *priv)
 
 
 static uint16_t
-x54x_inw(uint16_t port, void *priv)
+x54x_inw(uint16_t port, priv_t priv)
 {
     return((uint16_t) x54x_in(port, priv));
 }
 
 
 static uint32_t
-x54x_inl(uint16_t port, void *priv)
+x54x_inl(uint16_t port, priv_t priv)
 {
     return((uint32_t) x54x_in(port, priv));
 }
 
 
 static uint8_t
-x54x_read(uint32_t port, void *priv)
+x54x_read(uint32_t port, priv_t priv)
 {
     return(x54x_in(port & 3, priv));
 }
 
 
 static uint16_t
-x54x_readw(uint32_t port, void *priv)
+x54x_readw(uint32_t port, priv_t priv)
 {
     return(x54x_inw(port & 3, priv));
 }
 
 
 static uint32_t
-x54x_readl(uint32_t port, void *priv)
+x54x_readl(uint32_t port, priv_t priv)
 {
     return(x54x_inl(port & 3, priv));
 }
 
 
 static void
-x54x_reset_poll(void *priv)
+x54x_reset_poll(priv_t priv)
 {
     x54x_t *dev = (x54x_t *)priv;
 
@@ -1477,7 +1467,7 @@ x54x_reset_ctrl(x54x_t *dev, uint8_t Reset)
 
 
 static void
-x54x_out(uint16_t port, uint8_t val, void *priv)
+x54x_out(uint16_t port, uint8_t val, priv_t priv)
 {
     ReplyInquireSetupInformation *ReplyISI;
     x54x_t *dev = (x54x_t *)priv;
@@ -1630,7 +1620,7 @@ x54x_out(uint16_t port, uint8_t val, void *priv)
 							cmd->u.chs.head,
 							cmd->u.chs.sec);
 					}
-					dev->DataBuf[0] = x54x_bios_command(dev, dev->max_id, cmd, (dev->lba_bios)?1:0);
+					dev->DataBuf[0] = bios_command(dev, dev->max_id, cmd, (dev->lba_bios)?1:0);
 					DEBUG("BIOS Completion/Status Code %x\n", dev->DataBuf[0]);
 					dev->DataReplyLeft = 1;
 					break;
@@ -1782,7 +1772,7 @@ x54x_out(uint16_t port, uint8_t val, void *priv)
 		if (dev->DataReplyLeft)
 			dev->Status |= STAT_DFULL;
 		else if (!dev->CmdParamLeft)
-			x54x_cmd_done(dev, suppress);
+			cmd_done(dev, suppress);
 		break;
 
 	case 2:
@@ -1799,35 +1789,35 @@ x54x_out(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-x54x_outw(uint16_t port, uint16_t val, void *priv)
+x54x_outw(uint16_t port, uint16_t val, priv_t priv)
 {
     x54x_out(port, val & 0xFF, priv);
 }
 
 
 static void
-x54x_outl(uint16_t port, uint32_t val, void *priv)
+x54x_outl(uint16_t port, uint32_t val, priv_t priv)
 {
     x54x_out(port, val & 0xFF, priv);
 }
 
 
 static void
-x54x_write(uint32_t port, uint8_t val, void *priv)
+x54x_write(uint32_t port, uint8_t val, priv_t priv)
 {
     x54x_out(port & 3, val, priv);
 }
 
 
 static void
-x54x_writew(uint32_t port, uint16_t val, void *priv)
+x54x_writew(uint32_t port, uint16_t val, priv_t priv)
 {
     x54x_outw(port & 3, val, priv);
 }
 
 
 static void
-x54x_writel(uint32_t port, uint32_t val, void *priv)
+x54x_writel(uint32_t port, uint32_t val, priv_t priv)
 {
     x54x_outl(port & 3, val, priv);
 }
@@ -1926,39 +1916,12 @@ x54x_mem_disable(x54x_t *dev)
 }
 
 
-/* General initialization routine for all boards. */
-void *
-x54x_init(const device_t *info)
-{
-    x54x_t *dev;
-
-    /* Allocate control block and set up basic stuff. */
-    dev = (x54x_t *)mem_alloc(sizeof(x54x_t));
-    if (dev == NULL) return(dev);
-    memset(dev, 0x00, sizeof(x54x_t));
-    dev->type = info->local;
-
-    dev->bus = info->flags;
-    dev->callback_phase = 0;
-
-    timer_add(x54x_reset_poll, dev, &dev->ResetCB, &dev->ResetCB);
-    dev->timer_period = 10LL * TIMER_USEC;
-    timer_add(x54x_cmd_callback, dev, &dev->timer_period, TIMER_ALWAYS_ENABLED);
-
-    x54x_dev = dev;
-
-    return(dev);
-}
-
-
 void
-x54x_close(void *priv)
+x54x_close(priv_t priv)
 {
     x54x_t *dev = (x54x_t *)priv;
 
     if (dev) {
-	x54x_dev = NULL;
-
 	/* Tell the timer to terminate. */
 	dev->timer_period = 0LL;
 
@@ -1978,11 +1941,32 @@ x54x_close(void *priv)
 }
 
 
-void
-x54x_device_reset(void *priv)
+/* General initialization routine for all boards. */
+priv_t
+x54x_init(const device_t *info)
 {
-    x54x_t *dev = (x54x_t *)priv;
+    x54x_t *dev;
 
+    /* Allocate control block and set up basic stuff. */
+    dev = (x54x_t *)mem_alloc(sizeof(x54x_t));
+    if (dev == NULL) return(dev);
+    memset(dev, 0x00, sizeof(x54x_t));
+    dev->type = info->local;
+
+    dev->bus = info->flags;
+    dev->callback_phase = 0;
+
+    timer_add(x54x_reset_poll, dev, &dev->ResetCB, &dev->ResetCB);
+    dev->timer_period = 10LL * TIMER_USEC;
+    timer_add(cmd_callback, dev, &dev->timer_period, TIMER_ALWAYS_ENABLED);
+
+    return(dev);
+}
+
+
+void
+x54x_device_reset(x54x_t *dev)
+{
     x54x_reset_ctrl(dev, 1);
 
     dev->ResetCB = 0LL;

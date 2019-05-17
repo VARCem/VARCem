@@ -8,13 +8,13 @@
  *
  *		Definitions for the NMI handler.
  *
- * Version:	@(#)nmi.h	1.0.2	2018/05/06
+ * Version:	@(#)nmi.h	1.0.3	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -40,13 +40,12 @@
 # define EMU_NMI_H
 
 
-extern int	nmi_mask;
 extern int	nmi;
+extern int	nmi_mask;
 extern int	nmi_auto_clear;
 
 
 extern void	nmi_init(void);
-//extern void	nmi_write(uint16_t port, uint8_t val, void *p);
 
 
 #endif	/*EMU_NMI_H*/

@@ -54,7 +54,7 @@
  *		is well, but some strange mishaps with cursor positioning
  *		occur.
  *
- * Version:	@(#)vid_sigma.c	1.0.10	2019/05/08
+ * Version:	@(#)vid_sigma.c	1.0.11	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -276,7 +276,7 @@ recalc_timings(sigma_t *dev)
 
 
 static void
-sigma_out(uint16_t port, uint8_t val, void *priv)
+sigma_out(uint16_t port, uint8_t val, priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
     uint8_t old;
@@ -359,7 +359,7 @@ sigma_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-sigma_in(uint16_t port, void *priv)
+sigma_in(uint16_t port, priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
     uint8_t ret = 0xff;
@@ -424,7 +424,7 @@ sigma_in(uint16_t port, void *priv)
 
 
 static void
-sigma_write(uint32_t addr, uint8_t val, void *priv)
+sigma_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
 
@@ -435,7 +435,7 @@ sigma_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-sigma_read(uint32_t addr, void *priv)
+sigma_read(uint32_t addr, priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
 
@@ -447,7 +447,7 @@ sigma_read(uint32_t addr, void *priv)
 
 /* Write to the RAM part of the 8K ROM/RAM area. */
 static void
-sigma_bwrite(uint32_t addr, uint8_t val, void *priv)
+sigma_bwrite(uint32_t addr, uint8_t val, priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
 
@@ -459,7 +459,7 @@ sigma_bwrite(uint32_t addr, uint8_t val, void *priv)
 
 /* Read from the 8K ROM/RAM area. */
 static uint8_t
-sigma_bread(uint32_t addr, void *priv)
+sigma_bread(uint32_t addr, priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
     uint8_t ret = 0xff;
@@ -703,7 +703,7 @@ sigma_gfx4col(sigma_t *dev)
 
 
 static void
-sigma_poll(void *priv)
+sigma_poll(priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
     uint8_t cols[4];
@@ -930,7 +930,7 @@ load_font(sigma_t *dev, const wchar_t *fn)
 
 
 static void
-sigma_close(void *priv)
+sigma_close(priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
 
@@ -941,7 +941,7 @@ sigma_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     sigma_t *dev = (sigma_t *)priv;
 
@@ -949,7 +949,7 @@ speed_changed(void *priv)
 }
 
 
-static void *
+static priv_t
 sigma_init(const device_t *info, UNUSED(void *parent))
 {
     sigma_t *dev;
@@ -974,8 +974,8 @@ sigma_init(const device_t *info, UNUSED(void *parent))
     dev->vram = (uint8_t *)mem_alloc(131072);
 
     mem_map_add(&dev->mapping, 0xb8000, 0x08000, 
-		sigma_read,NULL,NULL, sigma_write,NULL,NULL,  
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		sigma_read,NULL,NULL, sigma_write,NULL,NULL,
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     rom_init(&dev->bios_rom, info->path,
 	     0xc0000, 0x2000, 0x1fff, 0, MEM_MAPPING_EXTERNAL);
@@ -988,15 +988,15 @@ sigma_init(const device_t *info, UNUSED(void *parent))
     memcpy(dev->bram, &dev->bios_rom.rom[0x1800], 0x0800);
 
     mem_map_add(&dev->bios_ram, 0xc0000, 0x2000,
-		sigma_bread,NULL,NULL, sigma_bwrite,NULL,NULL,  
-		dev->bios_rom.rom, MEM_MAPPING_EXTERNAL, dev);
+		sigma_bread,NULL,NULL, sigma_bwrite,NULL,NULL,
+		dev->bios_rom.rom, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03d0, 16, 
-		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, dev);
+		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, (priv_t)dev);
     io_sethandler(0x02d0, 16, 
-		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, dev);
+		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, (priv_t)dev);
 
-    timer_add(sigma_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(sigma_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Start with ROM paged in, BIOS RAM paged out */
     dev->rom_paged = 1;
@@ -1006,7 +1006,7 @@ sigma_init(const device_t *info, UNUSED(void *parent))
 
     video_inform(DEVICE_VIDEO_GET(info->flags), &sigma_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

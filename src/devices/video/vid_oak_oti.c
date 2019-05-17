@@ -8,7 +8,7 @@
  *
  *		Oak OTI037C/67/077 emulation.
  *
- * Version:	@(#)vid_oak_oti.c	1.0.16	2019/04/19
+ * Version:	@(#)vid_oak_oti.c	1.0.17	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,7 +83,7 @@ typedef struct {
 
 
 static void
-oti_out(uint16_t addr, uint8_t val, void *priv)
+oti_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     oti_t *dev = (oti_t *)priv;
     svga_t *svga = &dev->svga;
@@ -200,7 +200,7 @@ oti_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-oti_in(uint16_t addr, void *priv)
+oti_in(uint16_t addr, priv_t priv)
 {
     oti_t *dev = (oti_t *)priv;
     svga_t *svga = &dev->svga;
@@ -318,7 +318,7 @@ oti_in(uint16_t addr, void *priv)
 
 
 static void
-oti_pos_out(uint16_t addr, uint8_t val, void *priv)
+oti_pos_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     oti_t *dev = (oti_t *)priv;
 
@@ -336,7 +336,7 @@ oti_pos_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-oti_pos_in(uint16_t addr, void *priv)
+oti_pos_in(uint16_t addr, priv_t priv)
 {
     oti_t *dev = (oti_t *)priv;
 
@@ -358,7 +358,7 @@ recalc_timings(svga_t *svga)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     oti_t *dev = (oti_t *)priv;
 
@@ -367,7 +367,7 @@ speed_changed(void *priv)
 
 
 static void
-force_redraw(void *priv)
+force_redraw(priv_t priv)
 {
     oti_t *dev = (oti_t *)priv;
 
@@ -375,7 +375,7 @@ force_redraw(void *priv)
 }
 
 
-static void *
+static priv_t
 oti_init(const device_t *info, UNUSED(void *parent))
 {
     oti_t *dev;
@@ -453,19 +453,19 @@ oti_init(const device_t *info, UNUSED(void *parent))
 	      recalc_timings, oti_in, oti_out, NULL, NULL);
 
     io_sethandler(0x03c0, 32,
-		  oti_in,NULL,NULL, oti_out,NULL,NULL, dev);
+		  oti_in,NULL,NULL, oti_out,NULL,NULL, (priv_t)dev);
 
     dev->svga.miscout = 1;
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-oti_close(void *priv)
+oti_close(priv_t priv)
 {
     oti_t *dev = (oti_t *)priv;
 

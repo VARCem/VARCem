@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.10	2019/04/11
+ * Version:	@(#)dma.c	1.0.11	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -189,7 +189,7 @@ dma_ps2_run(int channel)
 
 
 static uint8_t
-dma_ps2_read(uint16_t addr, UNUSED(void *priv))
+dma_ps2_read(uint16_t addr, UNUSED(priv_t priv))
 {
     dma_t *dma_c = &dma[dma_ps2.xfr_channel];
     uint8_t temp = 0xff;
@@ -256,7 +256,7 @@ dma_ps2_read(uint16_t addr, UNUSED(void *priv))
 
 
 static void
-dma_ps2_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
+dma_ps2_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 {
     dma_t *dma_c = &dma[dma_ps2.xfr_channel];
     uint8_t mode;
@@ -347,7 +347,7 @@ dma_ps2_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 
 
 static uint8_t
-dma_read(uint16_t addr, UNUSED(void *priv))
+dma_read(uint16_t addr, UNUSED(priv_t priv))
 {
     int channel = (addr >> 1) & 3;
     uint8_t temp;
@@ -387,7 +387,7 @@ dma_read(uint16_t addr, UNUSED(void *priv))
 
 
 static void
-dma_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
+dma_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 {
     int channel = (addr >> 1) & 3;
 
@@ -459,7 +459,7 @@ dma_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 
 
 static uint8_t
-dma16_read(uint16_t addr, UNUSED(void *priv))
+dma16_read(uint16_t addr, UNUSED(priv_t priv))
 {
     int channel = ((addr >> 2) & 3) + 4;
     uint8_t temp;
@@ -502,7 +502,7 @@ dma16_read(uint16_t addr, UNUSED(void *priv))
 
 
 static void
-dma16_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
+dma16_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 {
     int channel = ((addr >> 2) & 3) + 4;
     addr >>= 1;
@@ -581,14 +581,14 @@ dma16_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 
 
 static uint8_t
-dma_page_read(uint16_t addr, UNUSED(void *priv))
+dma_page_read(uint16_t addr, UNUSED(priv_t priv))
 {
     return(dmapages[addr & 0xf]);
 }
 
 
 static void
-dma_page_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
+dma_page_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 {
     dmapages[addr & 0xf] = val;
 

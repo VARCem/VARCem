@@ -8,7 +8,7 @@
  *
  *		Implement I/O ports and their operations.
  *
- * Version:	@(#)io.c	1.0.4	2019/04/12
+ * Version:	@(#)io.c	1.0.5	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,15 +50,15 @@
 
 
 typedef struct _io_ {
-    uint8_t  (*inb)(uint16_t addr, void *priv);
-    uint16_t (*inw)(uint16_t addr, void *priv);
-    uint32_t (*inl)(uint16_t addr, void *priv);
+    uint8_t  (*inb)(uint16_t addr, priv_t);
+    uint16_t (*inw)(uint16_t addr, priv_t);
+    uint32_t (*inl)(uint16_t addr, priv_t);
 
-    void     (*outb)(uint16_t addr, uint8_t  val, void *priv);
-    void     (*outw)(uint16_t addr, uint16_t val, void *priv);
-    void     (*outl)(uint16_t addr, uint32_t val, void *priv);
+    void     (*outb)(uint16_t addr, uint8_t  val, priv_t);
+    void     (*outw)(uint16_t addr, uint16_t val, priv_t);
+    void     (*outl)(uint16_t addr, uint32_t val, priv_t);
 
-    void	*priv;
+    priv_t	priv;
 
     struct _io_ *prev, *next;
 } io_t;
@@ -70,12 +70,12 @@ static io_t	*io[NPORTS],
   
 
 #ifdef IO_CATCH
-static uint8_t null_inb(uint16_t addr, void *priv) { DEBUG("IO: read(%04x)\n"); return(0xff); }
-static uint16_t null_inw(uint16_t addr, void *priv) { DEBUG("IO: readw(%04x)\n"); return(0xffff); }
-static uint32_t null_inl(uint16_t addr, void *priv) { DEBUG("IO: readl(%04x)\n"); return(0xffffffff); }
-static void null_outb(uint16_t addr, uint8_t val, void *priv) { DEBUG("IO: write(%04x, %02x)\n", val); }
-static void null_outw(uint16_t addr, uint16_t val, void *priv) { DEBUG("IO: writew(%04x, %04x)\n", val); }
-static void null_outl(uint16_t addr, uint32_t val, void *priv) { DEBUG("IO: writel(%04x, %08lx)\n", val); }
+static uint8_t null_inb(uint16_t addr, priv_t p) { DEBUG("IO: read(%04x)\n"); return(0xff); }
+static uint16_t null_inw(uint16_t addr, priv_t p) { DEBUG("IO: readw(%04x)\n"); return(0xffff); }
+static uint32_t null_inl(uint16_t addr, priv_t p) { DEBUG("IO: readl(%04x)\n"); return(0xffffffff); }
+static void null_outb(uint16_t addr, uint8_t val, priv_t p) { DEBUG("IO: write(%04x, %02x)\n", val); }
+static void null_outw(uint16_t addr, uint16_t val, priv_t p) { DEBUG("IO: writew(%04x, %04x)\n", val); }
+static void null_outl(uint16_t addr, uint32_t val, priv_t p) { DEBUG("IO: writel(%04x, %08lx)\n", val); }
 #endif
 
 
@@ -127,13 +127,13 @@ io_reset(void)
 
 void
 io_sethandler(uint16_t base, int size, 
-	      uint8_t (*f_inb)(uint16_t addr, void *priv),
-	      uint16_t (*f_inw)(uint16_t addr, void *priv),
-	      uint32_t (*f_inl)(uint16_t addr, void *priv),
-	      void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
-	      void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
-	      void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
-	      void *priv)
+	      uint8_t (*f_inb)(uint16_t addr, priv_t priv),
+	      uint16_t (*f_inw)(uint16_t addr, priv_t priv),
+	      uint32_t (*f_inl)(uint16_t addr, priv_t priv),
+	      void (*f_outb)(uint16_t addr, uint8_t val, priv_t priv),
+	      void (*f_outw)(uint16_t addr, uint16_t val, priv_t priv),
+	      void (*f_outl)(uint16_t addr, uint32_t val, priv_t priv),
+	      priv_t priv)
 {
     io_t *p, *q = NULL;
     int c;
@@ -164,13 +164,13 @@ io_sethandler(uint16_t base, int size,
 
 void
 io_removehandler(uint16_t base, int size,
-	uint8_t (*f_inb)(uint16_t addr, void *priv),
-	uint16_t (*f_inw)(uint16_t addr, void *priv),
-	uint32_t (*f_inl)(uint16_t addr, void *priv),
-	void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
-	void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
-	void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
-	void *priv)
+	uint8_t (*f_inb)(uint16_t addr, priv_t priv),
+	uint16_t (*f_inw)(uint16_t addr, priv_t priv),
+	uint32_t (*f_inl)(uint16_t addr, priv_t priv),
+	void (*f_outb)(uint16_t addr, uint8_t val, priv_t priv),
+	void (*f_outw)(uint16_t addr, uint16_t val, priv_t priv),
+	void (*f_outl)(uint16_t addr, uint32_t val, priv_t priv),
+	priv_t priv)
 {
     io_t *p;
     int c;
@@ -205,13 +205,13 @@ io_removehandler(uint16_t base, int size,
 #ifdef PC98
 void
 io_sethandler_interleaved(uint16_t base, int size,
-	uint8_t (*f_inb)(uint16_t addr, void *priv),
-	uint16_t (*f_inw)(uint16_t addr, void *priv),
-	uint32_t (*f_inl)(uint16_t addr, void *priv),
-	void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
-	void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
-	void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
-	void *priv)
+	uint8_t (*f_inb)(uint16_t addr, priv_t priv),
+	uint16_t (*f_inw)(uint16_t addr, priv_t priv),
+	uint32_t (*f_inl)(uint16_t addr, priv_t priv),
+	void (*f_outb)(uint16_t addr, uint8_t val, priv_t priv),
+	void (*f_outw)(uint16_t addr, uint16_t val, priv_t priv),
+	void (*f_outl)(uint16_t addr, uint32_t val, priv_t priv),
+	priv_t priv)
 {
     io_t *p, *q;
     int c;
@@ -240,13 +240,13 @@ io_sethandler_interleaved(uint16_t base, int size,
 
 void
 io_removehandler_interleaved(uint16_t base, int size,
-	uint8_t (*f_inb)(uint16_t addr, void *priv),
-	uint16_t (*f_inw)(uint16_t addr, void *priv),
-	uint32_t (*f_inl)(uint16_t addr, void *priv),
-	void (*f_outb)(uint16_t addr, uint8_t val, void *priv),
-	void (*f_outw)(uint16_t addr, uint16_t val, void *priv),
-	void (*f_outl)(uint16_t addr, uint32_t val, void *priv),
-	void *priv)
+	uint8_t (*f_inb)(uint16_t addr, priv_t priv),
+	uint16_t (*f_inw)(uint16_t addr, priv_t priv),
+	uint32_t (*f_inl)(uint16_t addr, priv_t priv),
+	void (*f_outb)(uint16_t addr, uint8_t val, priv_t priv),
+	void (*f_outw)(uint16_t addr, uint16_t val, priv_t priv),
+	void (*f_outl)(uint16_t addr, uint32_t val, priv_t priv),
+	priv_t priv)
 {
     io_t *p;
     int c;

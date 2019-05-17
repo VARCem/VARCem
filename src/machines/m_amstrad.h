@@ -8,7 +8,7 @@
  *
  *		Definitions for the Amstrad machines.
  *
- * Version:	@(#)m_amstrad.h	1.0.2	2019/04/14
+ * Version:	@(#)m_amstrad.h	1.0.3	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -67,13 +67,13 @@ extern const device_t	m_amstrad_mega;
 #endif
 
 
-extern void	*m_amstrad_1512_vid_init(const wchar_t *fn, int fnt, int cp);
+extern priv_t	m_amstrad_1512_vid_init(const wchar_t *fn, int fnt, int cp);
 
-extern void	*m_amstrad_1640_vid_init(const wchar_t *fn, int sz);
+extern priv_t	m_amstrad_1640_vid_init(const wchar_t *fn, int sz);
 
-extern void	*m_amstrad_ida_init(int type, const wchar_t *fn,
+extern priv_t	m_amstrad_ida_init(int type, const wchar_t *fn,
 				    int cp, int em, int dt);
-extern uint8_t	m_amstrad_ida_ddm(void *arg);
+extern uint8_t	m_amstrad_ida_ddm(priv_t);
 
 
 #endif	/*MACHINE_AMSTRAD_H*/

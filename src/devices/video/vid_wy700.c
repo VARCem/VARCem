@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.12	2019/05/05
+ * Version:	@(#)vid_wy700.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -226,7 +226,7 @@ typedef struct {
 
     int64_t	dispontime, dispofftime;
     int64_t	vidtime;
-	
+
     int		linepos, displine;
     int		vc;
     int		dispon, blink;
@@ -243,6 +243,9 @@ typedef struct {
 
     uint8_t	*vram;
 } wy700_t;
+
+
+static const video_timings_t wy700_timings = { VID_ISA,8,16,32,8,16,32 };
 
 
 static void
@@ -287,15 +290,15 @@ check_changes(wy700_t *dev)
 			dev->enabled = 1;
 			dev->detach  = 0;
 			break;
-			
+
 		case 2:	/* Font 1 */
 			dev->font    = 0;
 			break;
-			
+
 		case 3:	/* Font 2 */
 			dev->font    = 1;
 			break;
-			
+
 /* Even with the microprogram from an original card, I can't really work out 
  * what commands 4 and 5 (which I've called 'cursor detach' / 'cursor attach')
  * do. Command 4 sets a flag in microcontroller RAM, and command 5 clears 
@@ -309,15 +312,15 @@ check_changes(wy700_t *dev)
 		case 4:	/* Detach cursor */
 			dev->detach  = 1;
 			break;
-			
+
 		case 5:	/* Attach cursor */
 			dev->detach  = 0;
 			break;
-			
+
 		case 6:	/* Disable display */
 			dev->enabled = 0;
 			break;
-			
+
 		case 7:	/* Enable display */
 			dev->enabled = 1;
 			break;
@@ -392,7 +395,7 @@ check_changes(wy700_t *dev)
 
 
 static void
-wy700_out(uint16_t port, uint8_t val, void *priv)
+wy700_out(uint16_t port, uint8_t val, priv_t priv)
 {
     wy700_t *dev = (wy700_t *)priv;
 
@@ -446,7 +449,7 @@ wy700_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-wy700_in(uint16_t port, void *priv)
+wy700_in(uint16_t port, priv_t priv)
 {
     wy700_t *dev = (wy700_t *)priv;
 
@@ -477,7 +480,7 @@ wy700_in(uint16_t port, void *priv)
 
 
 static void
-wy700_write(uint32_t addr, uint8_t val, void *priv)
+wy700_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     wy700_t *dev = (wy700_t *)priv;
 
@@ -498,7 +501,7 @@ wy700_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-wy700_read(uint32_t addr, void *priv)
+wy700_read(uint32_t addr, priv_t priv)
 {
     wy700_t *dev = (wy700_t *)priv;
 
@@ -746,7 +749,7 @@ hires_line(wy700_t *dev)
 
 
 static void
-wy700_poll(void *priv)
+wy700_poll(priv_t priv)
 {
     wy700_t *dev = (wy700_t *)priv;
     int mode;
@@ -856,14 +859,14 @@ wy700_poll(void *priv)
 
 
 static int
-load_font(wy700_t *dev, const wchar_t *s)
+load_font(wy700_t *dev, const wchar_t *fn)
 {
     FILE *fp;
     int c;
 
-    fp = rom_fopen(s, L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
-	ERRLOG("%s: cannot load font '%ls'\n", dev->name, s);
+	ERRLOG("%s: cannot load font '%ls'\n", dev->name, fn);
 	return(0);
     }
 
@@ -876,7 +879,27 @@ load_font(wy700_t *dev, const wchar_t *s)
 }
 
 
-static void *
+static void
+wy700_close(priv_t priv)
+{
+    wy700_t *dev = (wy700_t *)priv;
+
+    free(dev->vram);
+
+    free(dev);
+}
+
+
+static void
+speed_changed(priv_t priv)
+{
+    wy700_t *dev = (wy700_t *)priv;
+	
+    recalc_timings(dev);
+}
+
+
+static priv_t
 wy700_init(const device_t *info, UNUSED(void *parent))
 {
     wy700_t *dev;
@@ -894,20 +917,20 @@ wy700_init(const device_t *info, UNUSED(void *parent))
     /* 128K video RAM */
     dev->vram = (uint8_t *)mem_alloc(0x20000);
 
-    timer_add(wy700_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(wy700_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     /* Occupy memory between 0xB0000 and 0xBFFFF (moves to 0xA0000 in
      * high-resolution modes)
      */
     mem_map_add(&dev->mapping, 0xb0000, 0x10000,
 		wy700_read,NULL,NULL, wy700_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     /* Respond to both MDA and CGA I/O ports */
     io_sethandler(0x03b0, 12,
-		  wy700_in,NULL,NULL, wy700_out,NULL,NULL, dev);
+		  wy700_in,NULL,NULL, wy700_out,NULL,NULL, (priv_t)dev);
     io_sethandler(0x03d0, 16,
-		  wy700_in,NULL,NULL, wy700_out,NULL,NULL, dev);
+		  wy700_in,NULL,NULL, wy700_out,NULL,NULL, (priv_t)dev);
 
     /* Set up the emulated attributes. 
      * CGA is done in four groups: 00-0F, 10-7F, 80-8F, 90-FF */
@@ -986,34 +1009,11 @@ wy700_init(const device_t *info, UNUSED(void *parent))
     dev->enabled    = 1;
     memcpy(dev->real_crtc, mode_80x24, sizeof(mode_80x24));
 
-    video_inform(DEVICE_VIDEO_GET(info->flags),
-		 (const video_timings_t *)info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags), &wy700_timings);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
-
-static void
-wy700_close(void *priv)
-{
-    wy700_t *dev = (wy700_t *)priv;
-
-    free(dev->vram);
-
-    free(dev);
-}
-
-
-static void
-speed_changed(void *priv)
-{
-    wy700_t *dev = (wy700_t *)priv;
-	
-    recalc_timings(dev);
-}
-
-
-static const video_timings_t wy700_timings = { VID_ISA,8,16,32,8,16,32 };
 
 const device_t wy700_device = {
     "Wyse 700",
@@ -1024,6 +1024,6 @@ const device_t wy700_device = {
     NULL,
     speed_changed,
     NULL,
-    &wy700_timings,
+    NULL,
     NULL
 };

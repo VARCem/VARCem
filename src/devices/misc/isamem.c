@@ -32,7 +32,7 @@
  * TODO:	The EV159 is supposed to support 16b EMS transfers, but the
  *		EMM.sys driver for it doesn't seem to want to do that..
  *
- * Version:	@(#)isamem.c	1.0.9	2019/05/03
+ * Version:	@(#)isamem.c	1.0.10	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -142,7 +142,7 @@ static const device_t *instance[ISAMEM_MAX] = {
 
 /* Read one byte from onboard RAM. */
 static uint8_t
-ram_readb(uint32_t addr, void *priv)
+ram_readb(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -157,7 +157,7 @@ ram_readb(uint32_t addr, void *priv)
 
 /* Read one word from onboard RAM. */
 static uint16_t
-ram_readw(uint32_t addr, void *priv)
+ram_readw(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -172,7 +172,7 @@ ram_readw(uint32_t addr, void *priv)
 
 /* Write one byte to onboard RAM. */
 static void
-ram_writeb(uint32_t addr, uint8_t val, void *priv)
+ram_writeb(uint32_t addr, uint8_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -184,7 +184,7 @@ ram_writeb(uint32_t addr, uint8_t val, void *priv)
 
 /* Write one word to onboard RAM. */
 static void
-ram_writew(uint32_t addr, uint16_t val, void *priv)
+ram_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -196,7 +196,7 @@ ram_writew(uint32_t addr, uint16_t val, void *priv)
 
 /* Read one byte from onboard paged RAM. */
 static uint8_t
-ems_readb(uint32_t addr, void *priv)
+ems_readb(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -215,7 +215,7 @@ ems_readb(uint32_t addr, void *priv)
 
 /* Read one word from onboard paged RAM. */
 static uint16_t
-ems_readw(uint32_t addr, void *priv)
+ems_readw(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -234,7 +234,7 @@ ems_readw(uint32_t addr, void *priv)
 
 /* Write one byte to onboard paged RAM. */
 static void
-ems_writeb(uint32_t addr, uint8_t val, void *priv)
+ems_writeb(uint32_t addr, uint8_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -250,7 +250,7 @@ ems_writeb(uint32_t addr, uint8_t val, void *priv)
 
 /* Write one word to onboard paged RAM. */
 static void
-ems_writew(uint32_t addr, uint16_t val, void *priv)
+ems_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     memdev_t *dev = (memdev_t *)map->dev;
@@ -266,7 +266,7 @@ ems_writew(uint32_t addr, uint16_t val, void *priv)
 
 /* Handle a READ operation from one of our registers. */
 static uint8_t
-ems_read(uint16_t port, void *priv)
+ems_read(uint16_t port, priv_t priv)
 {
     memdev_t *dev = (memdev_t *)priv;
     uint8_t ret = 0xff;
@@ -295,7 +295,7 @@ ems_read(uint16_t port, void *priv)
 
 /* Handle a WRITE operation to one of our registers. */
 static void
-ems_write(uint16_t port, uint8_t val, void *priv)
+ems_write(uint16_t port, uint8_t val, priv_t priv)
 {
     memdev_t *dev = (memdev_t *)priv;
     int vpage;
@@ -364,8 +364,32 @@ DEBUG("EMS: write(%02x) to register 1 !\n");
 }
 
 
+/* Remove the device from the system. */
+static void
+isamem_close(priv_t priv)
+{
+    memdev_t *dev = (memdev_t *)priv;
+    int i;
+
+    if (dev->flags & FLAG_EMS) {
+	for (i = 0; i < EMS_MAXPAGE; i++) {
+		io_removehandler(dev->base_addr + (EMS_PGSIZE*i), 2,
+				 ems_read,NULL,NULL, ems_write,NULL,NULL, dev);
+
+	}
+    }
+
+    if (dev->ram != NULL)
+	free(dev->ram);
+
+    instance[dev->instance] = NULL;
+
+    free(dev);
+}
+
+
 /* Initialize the device for use. */
-static void *
+static priv_t
 isamem_init(const device_t *info, UNUSED(void *parent))
 {
     memdev_t *dev;
@@ -620,31 +644,7 @@ dev->frame_addr = 0xE0000;
     }
 
     /* Let them know our device instance. */
-    return((void *)dev);
-}
-
-
-/* Remove the device from the system. */
-static void
-isamem_close(void *priv)
-{
-    memdev_t *dev = (memdev_t *)priv;
-    int i;
-
-    if (dev->flags & FLAG_EMS) {
-	for (i = 0; i < EMS_MAXPAGE; i++) {
-		io_removehandler(dev->base_addr + (EMS_PGSIZE*i), 2,
-				 ems_read,NULL,NULL, ems_write,NULL,NULL, dev);
-
-	}
-    }
-
-    if (dev->ram != NULL)
-	free(dev->ram);
-
-    instance[dev->instance] = NULL;
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 

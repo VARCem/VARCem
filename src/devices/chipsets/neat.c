@@ -13,7 +13,7 @@
  *		8MB of DRAM chips', because it works fine with bus-based
  *		memory expansion.
  *
- * Version:	@(#)neat.c	1.0.5	2019/04/08
+ * Version:	@(#)neat.c	1.0.6	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -258,7 +258,7 @@ typedef struct {
 
 /* Read one byte from paged RAM. */
 static uint8_t
-ems_readb(uint32_t addr, void *priv)
+ems_readb(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     neat_t *dev = (neat_t *)map->dev;
@@ -277,7 +277,7 @@ ems_readb(uint32_t addr, void *priv)
 
 /* Read one word from paged RAM. */
 static uint16_t
-ems_readw(uint32_t addr, void *priv)
+ems_readw(uint32_t addr, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     neat_t *dev = (neat_t *)map->dev;
@@ -296,7 +296,7 @@ ems_readw(uint32_t addr, void *priv)
 
 /* Write one byte to paged RAM. */
 static void
-ems_writeb(uint32_t addr, uint8_t val, void *priv)
+ems_writeb(uint32_t addr, uint8_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     neat_t *dev = (neat_t *)map->dev;
@@ -312,7 +312,7 @@ ems_writeb(uint32_t addr, uint8_t val, void *priv)
 
 /* Write one word to paged RAM. */
 static void
-ems_writew(uint32_t addr, uint16_t val, void *priv)
+ems_writew(uint32_t addr, uint16_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
     neat_t *dev = (neat_t *)map->dev;
@@ -355,7 +355,7 @@ ems_recalc(neat_t *dev, emspage_t *ems)
 
 
 static void
-ems_write(uint16_t port, uint8_t val, void *priv)
+ems_write(uint16_t port, uint8_t val, priv_t priv)
 {
     neat_t *dev = (neat_t *)priv;
     emspage_t *ems;
@@ -380,7 +380,7 @@ ems_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-ems_read(uint16_t port, void *priv)
+ems_read(uint16_t port, priv_t priv)
 {
     neat_t *dev = (neat_t *)priv;
     uint8_t ret = 0xff;
@@ -467,7 +467,7 @@ ems_init(neat_t *dev, int en)
 
 
 static void
-neat_write(uint16_t port, uint8_t val, void *priv)
+neat_write(uint16_t port, uint8_t val, priv_t priv)
 {
     neat_t *dev = (neat_t *)priv;
     uint8_t xval, *reg;
@@ -629,7 +629,7 @@ neat_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-neat_read(uint16_t port, void *priv)
+neat_read(uint16_t port, priv_t priv)
 {
     neat_t *dev = (neat_t *)priv;
     uint8_t ret = 0xff;
@@ -654,7 +654,7 @@ neat_read(uint16_t port, void *priv)
 
 
 static void
-neat_close(void *priv)
+neat_close(priv_t priv)
 {
     neat_t *dev = (neat_t *)priv;
 
@@ -662,7 +662,7 @@ neat_close(void *priv)
 }
 
 
-static void *
+static priv_t
 neat_init(const device_t *info, UNUSED(void *parent))
 {
     neat_t *dev;
@@ -817,7 +817,7 @@ neat_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x0022, 2,
 		  neat_read,NULL,NULL, neat_write,NULL,NULL, dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

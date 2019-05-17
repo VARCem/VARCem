@@ -8,13 +8,13 @@
  *
  *		Intel 82335 SX emulation, used by the Phoenix 386 clone.
  *
- * Version:	@(#)i82335.c	1.0.5	2018/10/07
+ * Version:	@(#)i82335.c	1.0.6	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -52,26 +52,26 @@ typedef struct {
 } i82335_t;
 
 
-static i82335_t i82335;
-
-
 static uint8_t
-i82335_read(uint16_t addr, UNUSED(void *priv))
+i82335_read(uint16_t addr, priv_t priv)
 {
+    i82335_t *dev = (i82335_t *)priv;
+
     DBGLOG(1, "i82335_read(%04X)\n", addr);
     if (addr == 0x22)
-	return(i82335.reg_22);
+	return(dev->reg_22);
 
     if (addr == 0x23)
-	return(i82335.reg_23);
+	return(dev->reg_23);
 
     return(0);
 }
 
 
 static void
-i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
+i82335_write(uint16_t addr, uint8_t val, priv_t priv)
 {
+    i82335_t *dev = (i82335_t *)priv;
     int mem_write = 0;
     int i = 0;
 
@@ -79,7 +79,7 @@ i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 
     switch (addr) {
 	case 0x22:
-		if ((val ^ i82335.reg_22) & 1) {
+		if ((val ^ dev->reg_22) & 1) {
 			if (val & 1) {
 				for (i = 0; i < 8; i++)
 					mem_set_mem_state(0xe0000, 0x20000, MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
@@ -93,13 +93,13 @@ i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 			flushmmucache();
 		}
 
-		i82335.reg_22 = val | 0xd8;
+		dev->reg_22 = val | 0xd8;
 		break;
 
 	case 0x23:
-		i82335.reg_23 = val;
+		dev->reg_23 = val;
 
-		if ((val ^ i82335.reg_22) & 2) {
+		if ((val ^ dev->reg_22) & 2) {
 			if (val & 2) {
 				for (i = 0; i < 8; i++)
 					mem_set_mem_state(0xc0000, 0x20000, MEM_READ_INTERNAL | MEM_WRITE_INTERNAL);
@@ -111,7 +111,7 @@ i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 			}
 		}
 
-		if ((val ^ i82335.reg_22) & 0xc) {
+		if ((val ^ dev->reg_22) & 0xc) {
 			if (val & 2) {
 				for (i = 0; i < 8; i++) {
 					mem_write = (val & 8) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
@@ -127,26 +127,51 @@ i82335_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 			}
 		}
 
-		if ((val ^ i82335.reg_22) & 0xe)
+		if ((val ^ dev->reg_22) & 0xe)
 			flushmmucache();
 
 		if (val & 0x80) {
 			io_removehandler(0x0022, 1,
 					 i82335_read,NULL,NULL,
-					 i82335_write,NULL,NULL, NULL);
+					 i82335_write,NULL,NULL, dev);
 		}
 		break;
     }
 }
 
 
-void
-i82335_init(void)
+static void
+i82335_close(priv_t priv)
 {
-    memset(&i82335, 0x00, sizeof(i82335_t));
+    i82335_t *dev = (i82335_t *)priv;
 
-    i82335.reg_22 = 0xd8;
+    free(dev);
+}
+
+
+static priv_t
+i82335_init(const device_t *info, UNUSED(void *parent))
+{
+    i82335_t *dev;
+
+    dev = (i82335_t *)mem_alloc(sizeof(i82335_t));
+    memset(dev, 0x00, sizeof(i82335_t));
+
+    dev->reg_22 = 0xd8;
 
     io_sethandler(0x0022, 20,
-		  i82335_read,NULL,NULL, i82335_write,NULL,NULL, NULL);
+		  i82335_read,NULL,NULL, i82335_write,NULL,NULL, dev);
+
+    return((priv_t)dev);
 }
+
+
+const device_t i82335sx_device = {
+    "Intel 82335SX",
+    0,
+    0,
+    NULL,
+    sx_init, sx_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};

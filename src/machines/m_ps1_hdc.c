@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.12	2018/04/25
+ * Version:	@(#)m_ps1_hdc.c	1.0.13	2018/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -388,7 +388,7 @@ typedef struct {
 		status,			/* Status register (ASR) */
 		intstat;		/* Interrupt Status register (ISR) */
 
-    void	*sys;			/* handle to system board */
+    priv_t	sys;			/* handle to system board */
 
     /* Controller state. */
     int64_t	callback;
@@ -1231,7 +1231,7 @@ hdc_send_ssb(hdc_t *dev)
 
 /* Read one of the controller registers. */
 static uint8_t
-hdc_read(uint16_t port, void *priv)
+hdc_read(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
@@ -1276,7 +1276,7 @@ hdc_read(uint16_t port, void *priv)
 
 /* Write to one of the controller registers. */
 static void
-hdc_write(uint16_t port, uint8_t val, void *priv)
+hdc_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -1381,7 +1381,7 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-hdc_close(void *priv)
+hdc_close(priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     drive_t *drive;
@@ -1404,7 +1404,7 @@ hdc_close(void *priv)
 }
 
 
-static void *
+static priv_t
 hdc_init_ps1(const device_t *info, void *parent)
 {
     drive_t *drive;
@@ -1414,7 +1414,7 @@ hdc_init_ps1(const device_t *info, void *parent)
     /* Allocate and initialize device block. */
     dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
-    dev->sys = parent;
+    dev->sys = (priv_t)parent;
 
     /* Set up controller parameters for PS/1 2011. */
     dev->base = 0x0320;
@@ -1468,7 +1468,7 @@ hdc_init_ps1(const device_t *info, void *parent)
     /* Create a timer for command delays. */
     timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

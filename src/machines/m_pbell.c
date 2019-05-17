@@ -15,7 +15,7 @@
  *		_MUST_ enable the Internal mouse, or the PS/2 mouse as
  *		this is onboard. There is a jumper for this as well.
  *
- * Version:	@(#)m_pbell.c	1.0.3	2019/05/05
+ * Version:	@(#)m_pbell.c	1.0.4	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,7 +74,7 @@
 /* Read out the configuration port. */
 //FIXME: bit5 makes it sound an alarm of some kind!
 static uint8_t 
-port78_read(uint16_t addr, void *priv)
+port78_read(uint16_t addr, priv_t priv)
 {
     uint8_t ret = 0x00;
 
@@ -92,11 +92,11 @@ port78_read(uint16_t addr, void *priv)
 }
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     /* Allocate machine device to system. */
-    device_add_ex(info, arg);
+    device_add_ex(info, (priv_t)arg);
 
     switch(info->local) {
 	/* PB410A/PB430/ACC2168/ACC3221 */
@@ -104,7 +104,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&acc2168_device);
 		io_sethandler(0x0078, 1,
 			      port78_read,NULL,NULL, NULL,NULL,NULL, NULL);	
-		memregs_init();
+		device_add(&memregs_device);
 		m_at_common_ide_init();
 		device_add(&keyboard_ps2_device);
 		device_add(&acc3221_device);
@@ -121,7 +121,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&intel_flash_bxt_ami_device);
 		m_at_common_init();
 		device_add(&keyboard_ps2_ami_pci_device);
-		memregs_init();
+		device_add(&memregs_device);
 
 		pci_init(PCI_CONFIG_TYPE_1);
 		pci_register_slot(0x00, PCI_CARD_SPECIAL, 0, 0, 0, 0);
@@ -139,7 +139,7 @@ common_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

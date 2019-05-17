@@ -19,7 +19,7 @@
  *		plasma display. The code for this was taken from the code
  *		for the Toshiba 3100e machine, which used a similar display.
  *
- * Version:	@(#)m_compaq_vid.c	1.0.2	2019/04/25
+ * Version:	@(#)m_compaq_vid.c	1.0.3	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,6 +60,7 @@
 #include "../rom.h"
 #include "../device.h"
 #include "../timer.h"
+#include "../plat.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pit.h"
 #include "../devices/video/video.h"
@@ -245,7 +246,7 @@ recalc_attrs(vid_t *dev)
 
 
 static void
-vid_poll_plasma(void *priv)
+vid_poll_plasma(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     cga_t *cga = &dev->cga;
@@ -500,7 +501,7 @@ vid_poll_plasma(void *priv)
 
 
 static void
-vid_poll(void *priv)
+vid_poll(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -518,7 +519,7 @@ INFO("CPQ: poll (mode=%i)\n", dev->mode);
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, void *priv)
+vid_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     mda_t *mda = &dev->mda;
@@ -595,7 +596,7 @@ INFO("CPQ: write(%04x, %02x)\n", addr, val);
 
 
 static uint8_t
-vid_in(uint16_t addr, void *priv)
+vid_in(uint16_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     mda_t *mda = &dev->mda;
@@ -643,7 +644,7 @@ INFO("%02x\n", ret);
 
 
 static void
-vid_write(uint32_t addr, uint8_t val, void *priv)
+vid_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -654,7 +655,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 	
 
 static uint8_t
-vid_read(uint32_t addr, void *priv)
+vid_read(uint32_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     uint8_t ret;
@@ -668,7 +669,7 @@ vid_read(uint32_t addr, void *priv)
 
 
 static void
-vid_close(void *priv)
+vid_close(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -680,7 +681,7 @@ vid_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -693,8 +694,8 @@ INFO("CPQ: speed_changed(mode=%i)\n", dev->mode);
 }
 
 
-static void *
-vid_init(const device_t *info, void *arg)
+static priv_t
+vid_init(const device_t *info, UNUSED(void *parent))
 {
     vid_t *dev;
 
@@ -751,7 +752,7 @@ INFO("CPQ: video_init(type=%i)\n", dev->type);
 	video_inform(VID_TYPE_CGA, &cpq_timing);
 #endif
 
-    return(dev);
+    return((priv_t)dev);
 }
 		
 

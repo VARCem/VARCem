@@ -8,7 +8,7 @@
  *
  *		Hercules Plus emulation.
  *
- * Version:	@(#)vid_hercules_plus.c	1.0.21	2019/05/05
+ * Version:	@(#)vid_hercules_plus.c	1.0.22	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -130,7 +130,7 @@ recalc_timings(herculesplus_t *dev)
 
 
 static void
-herculesplus_out(uint16_t port, uint8_t val, void *priv)
+herculesplus_out(uint16_t port, uint8_t val, priv_t priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
     uint8_t old;
@@ -179,7 +179,7 @@ herculesplus_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-herculesplus_in(uint16_t port, void *priv)
+herculesplus_in(uint16_t port, priv_t priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
     uint8_t ret = 0xff;
@@ -211,7 +211,7 @@ herculesplus_in(uint16_t port, void *priv)
 
 
 static void
-herculesplus_write(uint32_t addr, uint8_t val, void *priv)
+herculesplus_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
 
@@ -220,7 +220,7 @@ herculesplus_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-herculesplus_read(uint32_t addr, void *priv)
+herculesplus_read(uint32_t addr, priv_t priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
 
@@ -510,7 +510,7 @@ graphics_line(herculesplus_t *dev)
 
 
 static void
-herculesplus_poll(void *priv)
+herculesplus_poll(priv_t priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -637,7 +637,7 @@ herculesplus_poll(void *priv)
 }
 
 
-static void *
+static priv_t
 herculesplus_init(const device_t *info, UNUSED(void *parent))
 {
     herculesplus_t *dev;
@@ -655,15 +655,15 @@ herculesplus_init(const device_t *info, UNUSED(void *parent))
 
     dev->vram = (uint8_t *)mem_alloc(0x10000);	/* 64k VRAM */
 
-    timer_add(herculesplus_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(herculesplus_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     mem_map_add(&dev->mapping, 0xb0000, 0x10000,
 		herculesplus_read,NULL,NULL,
 		herculesplus_write,NULL,NULL,
-		dev->vram, MEM_MAPPING_EXTERNAL, dev);
+		dev->vram, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03b0, 16,
-		  herculesplus_in,NULL, NULL, herculesplus_out,NULL,NULL, dev);
+		  herculesplus_in,NULL, NULL, herculesplus_out,NULL,NULL, (priv_t)dev);
 
     for (c = 0; c < 256; c++) {
 	dev->cols[c][0][0] = dev->cols[c][1][0] = dev->cols[c][1][1] = 16;
@@ -696,12 +696,12 @@ herculesplus_init(const device_t *info, UNUSED(void *parent))
     config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
-    return dev;
+    return (priv_t)dev;
 }
 
 
 static void
-herculesplus_close(void *priv)
+herculesplus_close(priv_t priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
 
@@ -716,7 +716,7 @@ herculesplus_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     herculesplus_t *dev = (herculesplus_t *)priv;
 

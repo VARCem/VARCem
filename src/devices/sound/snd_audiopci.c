@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.17	2019/04/25
+ * Version:	@(#)snd_audiopci.c	1.0.18	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -206,7 +206,7 @@ es1371_update_irqs(es1371_t *dev)
 
 
 static uint8_t
-es1371_inb(uint16_t port, void *priv)
+es1371_inb(uint16_t port, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
     uint8_t ret = 0;
@@ -287,7 +287,7 @@ es1371_inb(uint16_t port, void *priv)
 
 
 static uint16_t
-es1371_inw(uint16_t port, void *priv)
+es1371_inw(uint16_t port, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
     uint16_t ret = 0;
@@ -346,7 +346,7 @@ es1371_inw(uint16_t port, void *priv)
 
 
 static uint32_t
-es1371_inl(uint16_t port, void *priv)
+es1371_inl(uint16_t port, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
     uint32_t ret = 0;
@@ -408,7 +408,7 @@ es1371_inl(uint16_t port, void *priv)
 
 
 static void
-es1371_outb(uint16_t port, uint8_t val, void *priv)
+es1371_outb(uint16_t port, uint8_t val, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
 
@@ -491,7 +491,7 @@ es1371_outb(uint16_t port, uint8_t val, void *priv)
 
 
 static void
-es1371_outw(uint16_t port, uint16_t val, void *priv)
+es1371_outw(uint16_t port, uint16_t val, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
 
@@ -517,7 +517,7 @@ es1371_outw(uint16_t port, uint16_t val, void *priv)
 
 
 static void
-es1371_outl(uint16_t port, uint32_t val, void *priv)
+es1371_outl(uint16_t port, uint32_t val, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
 
@@ -707,7 +707,7 @@ es1371_outl(uint16_t port, uint32_t val, void *priv)
 
 
 static void
-capture_event(void *priv, int type, int rw, uint16_t port)
+capture_event(priv_t priv, int type, int rw, uint16_t port)
 {
     es1371_t *dev = (es1371_t *)priv;
 
@@ -728,92 +728,92 @@ capture_event(void *priv, int type, int rw, uint16_t port)
 
 
 static void
-cap_write_sscape(uint16_t port, uint8_t val, void *p)
+cap_write_sscape(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SSCAPE, 1, port);
+    capture_event(priv, LEGACY_EVENT_SSCAPE, 1, port);
 }
 static void
-cap_write_codec(uint16_t port, uint8_t val, void *p)
+cap_write_codec(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_CODEC, 1, port);
+    capture_event(priv, LEGACY_EVENT_CODEC, 1, port);
 }
 static void
-cap_write_sb(uint16_t port, uint8_t val, void *p)
+cap_write_sb(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SB, 1, port);
+    capture_event(priv, LEGACY_EVENT_SB, 1, port);
 }
 static void
-cap_write_adlib(uint16_t port, uint8_t val, void *p)
+cap_write_adlib(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_ADLIB, 1, port);
+    capture_event(priv, LEGACY_EVENT_ADLIB, 1, port);
 }
 static void
-cap_write_master_pic(uint16_t port, uint8_t val, void *p)
+cap_write_master_pic(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_MASTER_PIC, 1, port);
+    capture_event(priv, LEGACY_EVENT_MASTER_PIC, 1, port);
 }
 static void
-cap_write_master_dma(uint16_t port, uint8_t val, void *p)
+cap_write_master_dma(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_MASTER_DMA, 1, port);
+    capture_event(priv, LEGACY_EVENT_MASTER_DMA, 1, port);
 }
 static void
-cap_write_slave_pic(uint16_t port, uint8_t val, void *p)
+cap_write_slave_pic(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SLAVE_PIC, 1, port);
+    capture_event(priv, LEGACY_EVENT_SLAVE_PIC, 1, port);
 }
 static void
-cap_write_slave_dma(uint16_t port, uint8_t val, void *p)
+cap_write_slave_dma(uint16_t port, uint8_t val, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SLAVE_DMA, 1, port);
+    capture_event(priv, LEGACY_EVENT_SLAVE_DMA, 1, port);
 }
 
 static uint8_t
-cap_read_sscape(uint16_t port, void *p)
+cap_read_sscape(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SSCAPE, 0, port);
+    capture_event(priv, LEGACY_EVENT_SSCAPE, 0, port);
     return 0xff;
 }
 static uint8_t
-cap_read_codec(uint16_t port, void *p)
+cap_read_codec(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_CODEC, 0, port);
+    capture_event(priv, LEGACY_EVENT_CODEC, 0, port);
     return 0xff;
 }
 static uint8_t
-cap_read_sb(uint16_t port, void *p)
+cap_read_sb(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SB, 0, port);
+    capture_event(priv, LEGACY_EVENT_SB, 0, port);
     return 0xff;
 }
 static uint8_t
-cap_read_adlib(uint16_t port, void *p)
+cap_read_adlib(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_ADLIB, 0, port);
+    capture_event(priv, LEGACY_EVENT_ADLIB, 0, port);
     return 0xff;
 }
 static uint8_t
-cap_read_master_pic(uint16_t port, void *p)
+cap_read_master_pic(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_MASTER_PIC, 0, port);
+    capture_event(priv, LEGACY_EVENT_MASTER_PIC, 0, port);
     return 0xff;
 }
 static uint8_t
-cap_read_master_dma(uint16_t port, void *p)
+cap_read_master_dma(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_MASTER_DMA, 0, port);
+    capture_event(priv, LEGACY_EVENT_MASTER_DMA, 0, port);
     return 0xff;
 }
 static uint8_t
-cap_read_slave_pic(uint16_t port, void *p)
+cap_read_slave_pic(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SLAVE_PIC, 0, port);
+    capture_event(priv, LEGACY_EVENT_SLAVE_PIC, 0, port);
     return 0xff;
 }
 static uint8_t
-cap_read_slave_dma(uint16_t port, void *p)
+cap_read_slave_dma(uint16_t port, priv_t priv)
 {
-    capture_event(p, LEGACY_EVENT_SLAVE_DMA, 0, port);
+    capture_event(priv, LEGACY_EVENT_SLAVE_DMA, 0, port);
     return 0xff;
 }
 
@@ -1064,7 +1064,7 @@ es1371_update(es1371_t *dev)
 
 
 static void
-es1371_poll(void *priv)
+es1371_poll(priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
 
@@ -1135,7 +1135,7 @@ es1371_poll(void *priv)
 
 
 static void
-es1371_get_buffer(int32_t *buffer, int len, void *priv)
+es1371_get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
     int c;
@@ -1190,7 +1190,7 @@ generate_es1371_filter(void)
 
 
 static uint8_t
-es1371_pci_read(int func, int addr, void *priv)
+es1371_pci_read(int func, int addr, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
 
@@ -1249,9 +1249,9 @@ es1371_pci_read(int func, int addr, void *priv)
 
 
 static void
-es1371_pci_write(int func, int addr, uint8_t val, void *p)
+es1371_pci_write(int func, int addr, uint8_t val, priv_t priv)
 {
-    es1371_t *dev = (es1371_t *)p;
+    es1371_t *dev = (es1371_t *)priv;
 
     if (func)
 	return;
@@ -1330,7 +1330,7 @@ es1371_pci_write(int func, int addr, uint8_t val, void *p)
 }
 
 
-static void *
+static priv_t
 es1371_init(const device_t *info, UNUSED(void *parent))
 {
     es1371_t *dev = (es1371_t *)mem_alloc(sizeof(es1371_t));
@@ -1345,12 +1345,12 @@ es1371_init(const device_t *info, UNUSED(void *parent))
 
     generate_es1371_filter();
 		
-    return dev;
+    return (priv_t)dev;
 }
 
 
 static void
-es1371_close(void *priv)
+es1371_close(priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
 	
@@ -1359,7 +1359,7 @@ es1371_close(void *priv)
 
 
 static void
-es1371_speed_changed(void *priv)
+es1371_speed_changed(priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
 	

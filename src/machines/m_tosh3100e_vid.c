@@ -22,7 +22,7 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_t3100e_vid.c	1.0.12	2019/05/05
+ * Version:	@(#)m_t3100e_vid.c	1.0.13	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -241,7 +241,7 @@ recalc_attrs(vid_t *dev)
 
 
 static void
-vid_out(uint16_t port, uint8_t val, void *priv)
+vid_out(uint16_t port, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -279,7 +279,7 @@ vid_out(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_in(uint16_t port, void *priv)
+vid_in(uint16_t port, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     uint8_t ret;
@@ -300,7 +300,7 @@ vid_in(uint16_t port, void *priv)
 
 
 static void
-vid_write(uint32_t addr, uint8_t val, void *priv)
+vid_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -311,7 +311,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 	
 
 static uint8_t
-vid_read(uint32_t addr, void *priv)
+vid_read(uint32_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -557,7 +557,7 @@ cga_line4(vid_t *dev)
 
 
 static void
-vid_poll(void *priv)
+vid_poll(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -656,14 +656,14 @@ vid_poll(void *priv)
 
 
 static int
-load_font(vid_t *dev, const wchar_t *s)
+load_font(vid_t *dev, const wchar_t *fn)
 {
     FILE *fp;
     int c, d;
 
-    fp = rom_fopen(s, L"rb");
+    fp = rom_fopen(fn, L"rb");
     if (fp == NULL) {
-	ERRLOG("T3100e: cannot load font '%ls'\n", s);
+	ERRLOG("T3100e: cannot load font '%ls'\n", fn);
 	return(0);
     }
 
@@ -693,7 +693,27 @@ load_font(vid_t *dev, const wchar_t *s)
 }
 
 
-static void *
+static void
+vid_close(priv_t priv)
+{
+    vid_t *dev = (vid_t *)priv;
+
+    free(dev->vram);
+
+    free(dev);
+}
+
+
+static void
+speed_changed(priv_t priv)
+{
+    vid_t *dev = (vid_t *)priv;
+	
+    recalc_timings(dev);
+}
+
+
+static priv_t
 vid_init(const device_t *info, UNUSED(void *parent))
 {
     vid_t *dev;
@@ -734,27 +754,7 @@ vid_init(const device_t *info, UNUSED(void *parent))
 
     video_inform(VID_TYPE_CGA, &t3100e_timing);
 
-    return(dev);
-}
-
-
-static void
-vid_close(void *priv)
-{
-    vid_t *dev = (vid_t *)priv;
-
-    free(dev->vram);
-
-    free(dev);
-}
-
-
-static void
-speed_changed(void *priv)
-{
-    vid_t *dev = (vid_t *)priv;
-	
-    recalc_timings(dev);
+    return((priv_t)dev);
 }
 
 

@@ -17,7 +17,7 @@
  *		done on implementing other parts of the Yamaha V6355 chip
  *		that implements the video controller.
  *
- * Version:	@(#)m_zenith_vid.c	1.0.3	2019/04/25
+ * Version:	@(#)m_zenith_vid.c	1.0.4	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *              John Elliott, <jce@seasip.info>
@@ -330,7 +330,7 @@ vid_cgaline4(vid_t *dev)
 
 
 static void
-vid_poll(void *priv)
+vid_poll(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -525,7 +525,7 @@ recalc_attrs(vid_t *dev)
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, void *priv)
+vid_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -560,7 +560,7 @@ INFO("Zenith: vid_out(%04x, %02x)\n", addr, val);
 
 
 static uint8_t
-vid_in(uint16_t addr, void *priv)
+vid_in(uint16_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     uint8_t ret = 0xff;
@@ -585,7 +585,7 @@ INFO("Zenith: vid_in(%04x) = %02x\n", addr, ret);
 
 
 static void
-vid_write(uint32_t addr, uint8_t val, void *priv)
+vid_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -596,7 +596,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_read(uint32_t addr, void *priv)
+vid_read(uint32_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -607,7 +607,7 @@ vid_read(uint32_t addr, void *priv)
 
 
 static void
-vid_close(void *priv)
+vid_close(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -618,7 +618,7 @@ vid_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 	
@@ -626,7 +626,7 @@ speed_changed(void *priv)
 }
 
 
-static void *
+static priv_t
 vid_init(const device_t *info, UNUSED(void *parent))
 {
     vid_t *dev;
@@ -662,7 +662,7 @@ vid_init(const device_t *info, UNUSED(void *parent))
 
     video_inform(VID_TYPE_CGA, &timing_zenith);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

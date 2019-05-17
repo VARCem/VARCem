@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.14	2019/04/25
+ * Version:	@(#)hdc_ide_xta.c	1.0.15	2019/05/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -430,7 +430,7 @@ do_fmt:
 
 /* Execute the DCB we just received. */
 static void
-hdc_callback(void *priv)
+hdc_callback(priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     dcb_t *dcb = &dev->dcb;
@@ -907,7 +907,7 @@ do_recv:
 
 /* Read one of the controller registers. */
 static uint8_t
-hdc_read(uint16_t port, void *priv)
+hdc_read(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
@@ -954,7 +954,7 @@ hdc_read(uint16_t port, void *priv)
 
 /* Write to one of the controller registers. */
 static void
-hdc_write(uint16_t port, uint8_t val, void *priv)
+hdc_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -1013,7 +1013,30 @@ hdc_write(uint16_t port, uint8_t val, void *priv)
 }
 
 
-static void *
+static void
+xta_close(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    drive_t *drive;
+    int d;
+
+    /* Remove the I/O handler. */
+    io_removehandler(dev->base, 4,
+		     hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
+
+    /* Close all disks and their images. */
+    for (d = 0; d < XTA_NUM; d++) {
+	drive = &dev->drives[d];
+
+	hdd_image_close(drive->hdd_num);
+    }
+
+    /* Release the device. */
+    free(dev);
+}
+
+
+static priv_t
 xta_init(const device_t *info, UNUSED(void *parent))
 {
     drive_t *drive;
@@ -1095,8 +1118,7 @@ xta_init(const device_t *info, UNUSED(void *parent))
     }
 
     /* Enable the I/O block. */
-    io_sethandler(dev->base, 4,
-		  hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
+    io_sethandler(dev->base, 4, hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
 
     /* Load BIOS if it has one. */
     if (dev->rom_addr != 0x000000)
@@ -1106,30 +1128,7 @@ xta_init(const device_t *info, UNUSED(void *parent))
     /* Create a timer for command delays. */
     timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
-    return(dev);
-}
-
-
-static void
-xta_close(void *priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-    drive_t *drive;
-    int d;
-
-    /* Remove the I/O handler. */
-    io_removehandler(dev->base, 4,
-		     hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
-
-    /* Close all disks and their images. */
-    for (d = 0; d < XTA_NUM; d++) {
-	drive = &dev->drives[d];
-
-	hdd_image_close(drive->hdd_num);
-    }
-
-    /* Release the device. */
-    free(dev);
+    return((priv_t)dev);
 }
 
 

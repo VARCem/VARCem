@@ -10,7 +10,7 @@
  *
  * **NOTE**	The key_queue stuff should be in the device data.
  *
- * Version:	@(#)keyboard_xt.c	1.0.18	2019/04/26
+ * Version:	@(#)keyboard_xt.c	1.0.19	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,8 +94,8 @@ typedef struct {
     int8_t	blocked;
     uint8_t	key_waiting;
 
-    uint8_t	(*read_func)(void *);
-    void	*func_priv;
+    uint8_t	(*read_func)(priv_t);
+    priv_t	func_priv;
 } xtkbd_t;
 
 
@@ -622,7 +622,7 @@ static int	key_queue_start,
 
 
 static void
-kbd_poll(void *priv)
+kbd_poll(priv_t priv)
 {
     xtkbd_t *dev = (xtkbd_t *)priv;
 
@@ -662,7 +662,7 @@ kbd_adddata_ex(uint16_t val)
 
 
 static void
-kbd_write(uint16_t port, uint8_t val, void *priv)
+kbd_write(uint16_t port, uint8_t val, priv_t priv)
 {
     xtkbd_t *dev = (xtkbd_t *)priv;
 
@@ -724,7 +724,7 @@ kbd_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-kbd_read(uint16_t port, void *priv)
+kbd_read(uint16_t port, priv_t priv)
 {
     xtkbd_t *dev = (xtkbd_t *)priv;
     uint8_t ret = 0xff;
@@ -797,7 +797,7 @@ kbd_read(uint16_t port, void *priv)
 
 
 static void
-kbd_reset(void *priv)
+kbd_reset(priv_t priv)
 {
     xtkbd_t *dev = (xtkbd_t *)priv;
 
@@ -813,7 +813,27 @@ kbd_reset(void *priv)
 }
 
 
-static void *
+static void
+kbd_close(priv_t priv)
+{
+    xtkbd_t *dev = (xtkbd_t *)priv;
+
+    /* Stop the timer. */
+    keyboard_delay = 0;
+
+    /* Disable scanning. */
+    keyboard_scan = 0;
+
+    keyboard_send = NULL;
+
+    io_removehandler(0x0060, 4,
+		     kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
+
+    free(dev);
+}
+
+
+static priv_t
 kbd_init(const device_t *info, UNUSED(void *parent))
 {
     int i, fdd_count = 0;
@@ -933,27 +953,7 @@ kbd_init(const device_t *info, UNUSED(void *parent))
 
     keyboard_set_table(scancode_xt);
 
-    return(dev);
-}
-
-
-static void
-kbd_close(void *priv)
-{
-    xtkbd_t *dev = (xtkbd_t *)priv;
-
-    /* Stop the timer. */
-    keyboard_delay = 0;
-
-    /* Disable scanning. */
-    keyboard_scan = 0;
-
-    keyboard_send = NULL;
-
-    io_removehandler(0x0060, 4,
-		     kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
-
-    free(dev);
+    return((priv_t)dev);
 }
 
 
@@ -1029,7 +1029,7 @@ const device_t keyboard_laserxt3_device = {
 
 
 void
-keyboard_xt_set_funcs(void *arg, uint8_t (*func)(void *), void *priv)
+keyboard_xt_set_funcs(priv_t arg, uint8_t (*func)(priv_t), priv_t priv)
 {
     xtkbd_t *dev = (xtkbd_t *)arg;
 

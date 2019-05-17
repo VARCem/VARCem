@@ -9,7 +9,7 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_tosh1x00_vid.c	1.0.11	2019/04/25
+ * Version:	@(#)m_tosh1x00_vid.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -346,7 +346,7 @@ vid_cgaline4(vid_t *dev)
 
 
 static void
-vid_poll(void *priv)
+vid_poll(priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -556,7 +556,7 @@ recalc_attrs(vid_t *dev)
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, void *priv)
+vid_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -596,7 +596,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_in(uint16_t addr, void *priv)
+vid_in(uint16_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
     uint8_t ret;
@@ -620,7 +620,7 @@ vid_in(uint16_t addr, void *priv)
 
 
 static void
-vid_write(uint32_t addr, uint8_t val, void *priv)
+vid_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -631,7 +631,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_read(uint32_t addr, void *priv)
+vid_read(uint32_t addr, priv_t priv)
 {
     vid_t *dev = (vid_t *)priv;
 
@@ -641,7 +641,27 @@ vid_read(uint32_t addr, void *priv)
 }
 
 
-static void *
+static void
+vid_close(priv_t priv)
+{
+    vid_t *dev = (vid_t *)priv;
+
+    free(dev->vram);
+
+    free(dev);
+}
+
+
+static void
+speed_changed(priv_t priv)
+{
+    vid_t *dev = (vid_t *)priv;
+	
+    recalc_timings(dev);
+}
+
+
+static priv_t
 vid_init(const device_t *info, UNUSED(void *parent))
 {
     vid_t *dev;
@@ -679,27 +699,7 @@ vid_init(const device_t *info, UNUSED(void *parent))
 
     video_inform(VID_TYPE_CGA, &timing_t1000);
 
-    return(dev);
-}
-
-
-static void
-vid_close(void *priv)
-{
-    vid_t *dev = (vid_t *)priv;
-
-    free(dev->vram);
-
-    free(dev);
-}
-
-
-static void
-speed_changed(void *priv)
-{
-    vid_t *dev = (vid_t *)priv;
-	
-    recalc_timings(dev);
+    return((priv_t)dev);
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.14	2019/05/05
+ * Version:	@(#)snd_emu8k.c	1.0.15	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -396,9 +396,9 @@ static inline void EMU8K_WRITE(emu8k_t *emu8k, uint32_t addr, uint16_t val)
         emu8k->ram[addr - EMU8K_RAM_MEM_START] = val;
 }
 
-uint16_t emu8k_inw(uint16_t addr, void *p)
+uint16_t emu8k_inw(uint16_t addr, priv_t priv)
 {
-        emu8k_t *emu8k = (emu8k_t *)p;
+        emu8k_t *emu8k = (emu8k_t *)priv;
         uint16_t ret = 0xffff;
         
 #ifdef EMU8K_DEBUG_REGISTERS
@@ -764,9 +764,9 @@ uint16_t emu8k_inw(uint16_t addr, void *p)
         return 0xffff;
 }
 
-void emu8k_outw(uint16_t addr, uint16_t val, void *p)
+void emu8k_outw(uint16_t addr, uint16_t val, priv_t priv)
 {
-        emu8k_t *emu8k = (emu8k_t *)p;
+        emu8k_t *emu8k = (emu8k_t *)priv;
 
         /*TODO: I would like to not call this here, but i found it was needed or else cubic player would not finish opening (take a looot more of time than usual).
          * Basically, being here means that the audio is generated in the emulation thread, instead of the audio thread.*/
@@ -1530,23 +1530,23 @@ void emu8k_outw(uint16_t addr, uint16_t val, void *p)
 
 }
 
-uint8_t emu8k_inb(uint16_t addr, void *p)
+uint8_t emu8k_inb(uint16_t addr, priv_t priv)
 {
         /* Reading a single byte is a feature that at least Impulse tracker uses,
          * but only on detection code and not for odd addresses.*/
         if (addr & 1)
-                return emu8k_inw(addr & ~1, p) >> 1;
-        return emu8k_inw(addr, p) & 0xff;
+                return emu8k_inw(addr & ~1, priv) >> 1;
+        return emu8k_inw(addr, priv) & 0xff;
 }
 
-void emu8k_outb(uint16_t addr, uint8_t val, void *p)
+void emu8k_outb(uint16_t addr, uint8_t val, priv_t priv)
 {
         /* TODO: AWE32 docs says that you cannot write in bytes, but if
          * an app were to use this implementation, the content of the LS Byte would be lost.*/
         if (addr & 1)
-                emu8k_outw(addr & ~1, val << 8, p);
+                emu8k_outw(addr & ~1, val << 8, priv);
         else
-                emu8k_outw(addr, val, p);
+                emu8k_outw(addr, val, priv);
 }
 
 /* TODO: This is not a correct emulation, just a workalike implementation. */

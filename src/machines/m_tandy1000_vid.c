@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.4	2019/05/05
+ * Version:	@(#)m_tandy1000_vid.c	1.0.5	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,8 +119,8 @@ static const uint8_t crtcmask_sl[32] = {
 static const video_timings_t tandy_timing = { VID_BUS,1,2,4,1,2,4 };
 
 
-static uint8_t	vid_in(uint16_t addr, void *priv);
-static void	vid_out(uint16_t addr, uint8_t val, void *priv);
+static uint8_t	vid_in(uint16_t, priv_t);
+static void	vid_out(uint16_t, uint8_t, priv_t);
 
 
 static void
@@ -196,7 +196,7 @@ recalc_address(t1kvid_t *dev, int sl)
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, void *priv)
+vid_out(uint16_t addr, uint8_t val, priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
     uint8_t old;
@@ -264,7 +264,7 @@ vid_out(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_in(uint16_t addr, void *priv)
+vid_in(uint16_t addr, priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
     uint8_t ret = 0xff;
@@ -288,7 +288,7 @@ vid_in(uint16_t addr, void *priv)
 
 
 static void
-vid_write(uint32_t addr, uint8_t val, void *priv)
+vid_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
 
@@ -308,7 +308,7 @@ vid_write(uint32_t addr, uint8_t val, void *priv)
 
 
 static uint8_t
-vid_read(uint32_t addr, void *priv)
+vid_read(uint32_t addr, priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
     uint8_t ret = 0xff;
@@ -328,7 +328,7 @@ vid_read(uint32_t addr, void *priv)
 
 
 static void
-vid_poll(void *priv)
+vid_poll(priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -662,7 +662,7 @@ vid_poll(void *priv)
 
 
 static void
-vid_poll_sl(void *priv)
+vid_poll_sl(priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -1006,7 +1006,7 @@ vid_poll_sl(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
 
@@ -1015,7 +1015,7 @@ speed_changed(void *priv)
 
 
 static void
-vid_close(void *priv)
+vid_close(priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
 

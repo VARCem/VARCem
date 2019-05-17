@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.16	2019/05/05
+ * Version:	@(#)vid_mda.c	1.0.17	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -75,7 +75,7 @@ mda_recalctimings(mda_t *dev)
 
 
 void
-mda_out(uint16_t port, uint8_t val, void *priv)
+mda_out(uint16_t port, uint8_t val, priv_t priv)
 {
     mda_t *dev = (mda_t *)priv;
 
@@ -109,7 +109,7 @@ mda_out(uint16_t port, uint8_t val, void *priv)
 
 
 uint8_t
-mda_in(uint16_t port, void *priv)
+mda_in(uint16_t port, priv_t priv)
 {
     mda_t *dev = (mda_t *)priv;
     uint8_t ret = 0xff;
@@ -142,7 +142,7 @@ mda_in(uint16_t port, void *priv)
 
 
 void
-mda_write(uint32_t addr, uint8_t val, void *priv)
+mda_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     mda_t *dev = (mda_t *)priv;
 
@@ -151,7 +151,7 @@ mda_write(uint32_t addr, uint8_t val, void *priv)
 
 
 uint8_t
-mda_read(uint32_t addr, void *priv)
+mda_read(uint32_t addr, priv_t priv)
 {
     mda_t *dev = (mda_t *)priv;
 
@@ -160,7 +160,7 @@ mda_read(uint32_t addr, void *priv)
 
 
 void
-mda_poll(void *priv)
+mda_poll(priv_t priv)
 {
     mda_t *dev = (mda_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
@@ -347,7 +347,7 @@ mda_init(mda_t *dev)
 }
 
 
-static void *
+static priv_t
 mda_standalone_init(const device_t *info, UNUSED(void *parent))
 {
     mda_t *dev;
@@ -362,12 +362,12 @@ mda_standalone_init(const device_t *info, UNUSED(void *parent))
 
     mem_map_add(&dev->mapping, 0xb0000, 0x08000,
 		mda_read,NULL,NULL, mda_write,NULL,NULL,
-		NULL, MEM_MAPPING_EXTERNAL, dev);
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     io_sethandler(0x03b0, 16,
-		  mda_in,NULL,NULL, mda_out,NULL,NULL, dev);
+		  mda_in,NULL,NULL, mda_out,NULL,NULL, (priv_t)dev);
 
-    timer_add(mda_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
+    timer_add(mda_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)&mda_timings);
@@ -376,12 +376,12 @@ mda_standalone_init(const device_t *info, UNUSED(void *parent))
     config.parallel_enabled[2] = 1;
     parallel_setup(2, 0x03bc);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-mda_close(void *priv)
+mda_close(priv_t priv)
 {
     mda_t *dev = (mda_t *)priv;
 
@@ -392,7 +392,7 @@ mda_close(void *priv)
 
 
 static void
-speed_changed(void *priv)
+speed_changed(priv_t priv)
 {
     mda_t *dev = (mda_t *)priv;
 

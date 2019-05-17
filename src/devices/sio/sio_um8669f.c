@@ -29,7 +29,7 @@
  *			70 - IRQ
  *			74 - DMA
  *
- * Version:	@(#)sio_um8669f.c	1.0.11	2019/04/09
+ * Version:	@(#)sio_um8669f.c	1.0.12	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -110,7 +110,7 @@ typedef struct {
 
 
 static void
-pnp_write(uint16_t port, uint8_t val, void *priv)
+pnp_write(uint16_t port, uint8_t val, priv_t priv)
 {
     um8669f_t *dev = (um8669f_t *)priv;
     uint8_t valxor = 0;
@@ -191,7 +191,7 @@ pnp_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-pnp_read(uint16_t port, void *priv)
+pnp_read(uint16_t port, priv_t priv)
 {
     um8669f_t *dev = (um8669f_t *)priv;
     uint8_t ret = 0xff;
@@ -227,7 +227,7 @@ pnp_read(uint16_t port, void *priv)
 
 
 static void
-um8669f_write(uint16_t port, uint8_t val, void *priv)
+um8669f_write(uint16_t port, uint8_t val, priv_t priv)
 {
     um8669f_t *dev = (um8669f_t *)priv;
     int new_pnp_active;
@@ -271,7 +271,7 @@ um8669f_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-um8669f_read(uint16_t port, void *priv)
+um8669f_read(uint16_t port, priv_t priv)
 {
     um8669f_t *dev = (um8669f_t *)priv;
     uint8_t ret = 0xff;
@@ -338,7 +338,7 @@ um8669f_reset(um8669f_t *dev)
 
 
 static void
-um8669f_close(void *priv)
+um8669f_close(priv_t priv)
 {
     um8669f_t *dev = (um8669f_t *)priv;
 
@@ -346,7 +346,7 @@ um8669f_close(void *priv)
 }
 
 
-static void *
+static priv_t
 um8669f_init(const device_t *info, UNUSED(void *parent))
 {
     um8669f_t *dev = (um8669f_t *)mem_alloc(sizeof(um8669f_t));
@@ -359,7 +359,7 @@ um8669f_init(const device_t *info, UNUSED(void *parent))
 
     um8669f_reset(dev);
 
-    return dev;
+    return((priv_t)dev);
 }
 
 

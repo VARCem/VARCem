@@ -8,7 +8,7 @@
  *
  *		Definitions for the Toshiba T3100e system.
  *
- * Version:	@(#)m_tosh3100e.h	1.0.4	2019/03/31
+ * Version:	@(#)m_tosh3100e.h	1.0.5	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,11 +44,11 @@ extern const device_t t3100e_vid_device;
 
 
 /* Used by the AT keyboard driver. */
-extern void	t3100e_notify_set(void *priv, uint8_t value);
-extern uint8_t	t3100e_config_get(void *priv);
-extern void	t3100e_turbo_set(void *priv, uint8_t value);
-extern uint8_t	t3100e_mono_get(void *priv);
-extern void	t3100e_mono_set(void *priv, uint8_t value);
+extern void	t3100e_notify_set(priv_t, uint8_t value);
+extern uint8_t	t3100e_config_get(priv_t);
+extern void	t3100e_turbo_set(priv_t, uint8_t value);
+extern uint8_t	t3100e_mono_get(priv_t);
+extern void	t3100e_mono_set(priv_t, uint8_t value);
 
 extern void	t3100e_video_options_set(uint8_t options);
 extern void	t3100e_display_set(uint8_t value);

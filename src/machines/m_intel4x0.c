@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440-based machines.
  *
- * Version:	@(#)m_intel4x0.c	1.0.7	2019/05/03
+ * Version:	@(#)m_intel4x0.c	1.0.8	2019/05/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,7 +73,7 @@ premiere_init(int nx)
     pci_register_slot(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4);
     pci_register_slot(0x02, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-    memregs_init();
+    device_add(&memregs_device);
 
     if (nx)
 	device_add(&i430nx_device);
@@ -94,7 +94,7 @@ premiere_init(int nx)
 }
 
 
-static void *
+static priv_t
 common_init(const device_t *info, void *arg)
 {
     static video_timings_t endeavor_timing = {VID_BUS,3,2,4,25,25,40};
@@ -124,7 +124,7 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		memregs_init();
+		device_add(&memregs_device);
 
 		device_add(&i430fx_device);
 		device_add(&piix_device);
@@ -148,7 +148,7 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		memregs_init();
+		device_add(&memregs_device);
 
 		device_add(&i430fx_device);
 		device_add(&piix_device);
@@ -170,7 +170,7 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x10, PCI_CARD_NORMAL, 4, 3, 2, 1);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		memregs_init();
+		device_add(&memregs_device);
 
 		device_add(&i430fx_device);
 		device_add(&piix_device);
@@ -181,7 +181,7 @@ common_init(const device_t *info, void *arg)
 		break;
     }
 
-    return(arg);
+    return((priv_t)arg);
 }
 
 

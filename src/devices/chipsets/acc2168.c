@@ -8,7 +8,7 @@
  *
  *		Implementation of the ACC 2168 chipset.
  *
- * Version:	@(#)acc2168.c	1.0.2	2019/05/05
+ * Version:	@(#)acc2168.c	1.0.3	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/port92.h"
 #include "acc2168.h"
 
 
@@ -113,7 +114,7 @@ shadow_recalc(acc2168_t *dev)
 
 
 static void 
-acc2168_write(uint16_t addr, uint8_t val, void *priv)
+acc2168_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     acc2168_t *dev = (acc2168_t *)priv;
 
@@ -131,7 +132,7 @@ acc2168_write(uint16_t addr, uint8_t val, void *priv)
 
 
 static uint8_t 
-acc2168_read(uint16_t addr, void *priv)
+acc2168_read(uint16_t addr, priv_t priv)
 {
     acc2168_t *dev = (acc2168_t *)priv;
 
@@ -143,7 +144,7 @@ acc2168_read(uint16_t addr, void *priv)
 
 
 static void
-acc2168_close(void *priv)
+acc2168_close(priv_t priv)
 {
     acc2168_t *dev = (acc2168_t *)priv;
 
@@ -151,7 +152,7 @@ acc2168_close(void *priv)
 }
 
 
-static void *
+static priv_t
 acc2168_init(const device_t *info, UNUSED(void *parent))
 {
     acc2168_t *dev;
@@ -162,9 +163,9 @@ acc2168_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x00f2, 2,
 		  acc2168_read,NULL,NULL, acc2168_write,NULL,NULL, dev);	
 
-    port_92_add(1);
+    device_add_parent(&port92_inverted_device, (priv_t)dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 

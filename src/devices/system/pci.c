@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.11	2019/04/20
+ * Version:	@(#)pci.c	1.0.12	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,9 +59,9 @@ typedef struct {
     uint8_t	id, type;
     uint8_t	irq_routing[4];
 
-    void	*priv;
-    void	(*write)(int func, int addr, uint8_t val, void *priv);
-    uint8_t	(*read)(int func, int addr, void *priv);
+    priv_t	priv;
+    void	(*write)(int func, int addr, uint8_t val, priv_t priv);
+    uint8_t	(*read)(int func, int addr, priv_t priv);
 } pci_card_t;
 
 typedef struct {
@@ -110,7 +110,7 @@ pcilog(int level, const char *fmt, ...)
 
 
 static void
-pci_cf8_write(uint16_t port, uint32_t val, UNUSED(void *priv))
+pci_cf8_write(uint16_t port, uint32_t val, UNUSED(priv_t priv))
 {
     pci_index = val & 0xff;
     pci_func = (val >> 8) & 7;
@@ -121,7 +121,7 @@ pci_cf8_write(uint16_t port, uint32_t val, UNUSED(void *priv))
 
 
 static uint32_t
-pci_cf8_read(uint16_t port, UNUSED(void *priv))
+pci_cf8_read(uint16_t port, UNUSED(priv_t priv))
 {
     return pci_index | (pci_func << 8) |
 	   (pci_card << 11) | (pci_bus << 16) | (pci_enable << 31);
@@ -129,7 +129,7 @@ pci_cf8_read(uint16_t port, UNUSED(void *priv))
 
 
 static void
-pci_write(uint16_t port, uint8_t val, UNUSED(void *priv))
+pci_write(uint16_t port, uint8_t val, UNUSED(priv_t priv))
 {
     uint8_t slot = 0;
 
@@ -154,7 +154,7 @@ pci_write(uint16_t port, uint8_t val, UNUSED(void *priv))
 
 
 static uint8_t
-pci_read(uint16_t port, UNUSED(void *priv))
+pci_read(uint16_t port, UNUSED(priv_t priv))
 {
     uint8_t slot = 0;
 
@@ -181,7 +181,7 @@ pci_read(uint16_t port, UNUSED(void *priv))
 
 
 static void
-elcr_write(uint16_t port, uint8_t val, UNUSED(void *priv))
+elcr_write(uint16_t port, uint8_t val, UNUSED(priv_t priv))
 {
     DBGLOG(1, "ELCR%i: WRITE %02X\n", port & 1, val);
 
@@ -206,7 +206,7 @@ elcr_write(uint16_t port, uint8_t val, UNUSED(void *priv))
 
 
 static uint8_t
-elcr_read(uint16_t port, UNUSED(void *priv))
+elcr_read(uint16_t port, UNUSED(priv_t priv))
 {
     DBGLOG(1, "ELCR%i: READ %02X\n", port & 1, elcr[port & 1]);
 
@@ -224,12 +224,12 @@ elcr_reset(void)
 }
 
 
-static void	pci_type2_write(uint16_t port, uint8_t val, void *priv);
-static uint8_t	pci_type2_read(uint16_t port, UNUSED(void *priv));
+static void	pci_type2_write(uint16_t, uint8_t, priv_t);
+static uint8_t	pci_type2_read(uint16_t, priv_t);
 
 
 static void
-pci_type2_write(uint16_t port, uint8_t val, void *priv)
+pci_type2_write(uint16_t port, uint8_t val, priv_t priv)
 {
     uint8_t slot = 0;
 
@@ -265,7 +265,7 @@ pci_type2_write(uint16_t port, uint8_t val, void *priv)
 
 
 static uint8_t
-pci_type2_read(uint16_t port, UNUSED(void *priv))
+pci_type2_read(uint16_t port, UNUSED(priv_t priv))
 {
     uint8_t slot = 0;
 
@@ -605,7 +605,7 @@ pci_slots_clear(void)
 
 
 static uint8_t
-trc_read(uint16_t port, UNUSED(void *priv))
+trc_read(uint16_t port, UNUSED(priv_t priv))
 {
     return trc_reg & 0xfb;
 }
@@ -617,8 +617,6 @@ trc_reset(uint8_t val)
     if (val & 2) {
 	device_reset_all(DEVICE_PCI);
 
-	port_92_reset();
-
 	pci_reset();
     }
 
@@ -627,7 +625,7 @@ trc_reset(uint8_t val)
 
 
 static void
-trc_write(uint16_t port, uint8_t val, UNUSED(void *priv))
+trc_write(uint16_t port, uint8_t val, UNUSED(priv_t priv))
 {
     DEBUG("TRC Write: %02X\n", val);
 
@@ -734,7 +732,7 @@ pci_register_slot(int card, int type, int inta, int intb, int intc, int intd)
 
 
 uint8_t
-pci_add_card(uint8_t add_type, uint8_t (*read)(int func, int addr, void *priv), void (*write)(int func, int addr, uint8_t val, void *priv), void *priv)
+pci_add_card(uint8_t add_type, uint8_t (*read)(int, int, priv_t), void (*write)(int, int, uint8_t, priv_t), priv_t priv)
 {
     pci_card_t *dev;
     uint8_t i;
