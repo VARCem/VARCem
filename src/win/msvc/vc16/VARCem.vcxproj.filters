@@ -934,6 +934,9 @@
     <ClCompile Include="..\..\..\devices\video\vid_ht216.c">
       <Filter>devices\video</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\devices\system\port92.c">
+      <Filter>devices\system</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\config.h" />
@@ -1699,6 +1702,9 @@
       <Filter>devices\chipsets</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\devices\system\clk.h">
+      <Filter>devices\system</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\system\port92.h">
       <Filter>devices\system</Filter>
     </ClInclude>
   </ItemGroup>
