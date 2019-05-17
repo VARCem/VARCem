@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory control module.
  *
- * Version:	@(#)memregs.h	1.0.2	2019/05/13
+ * Version:	@(#)memregs.h	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,13 @@
 
 
 extern const device_t	memregs_device;
-extern const device_t	memregs_powermate_device;
+extern const device_t	memregs_ffff_device;
+
+extern const device_t	memregs_eb_device;
+extern const device_t	memregs_eb_ffff_device;
+
+extern const device_t	memregs_ed_device;
+extern const device_t	memregs_ed_ffff_device;
 
 
 #endif	/*EMU_MEMREGS_H*/

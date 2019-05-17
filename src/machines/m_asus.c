@@ -8,7 +8,7 @@
  *
  *		Implementation of several ASUS mainboards.
  *
- * Version:	@(#)m_asus.c	1.0.2	2019/05/13
+ * Version:	@(#)m_asus.c	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,11 +77,10 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-
 		device_add(&i430fx_device);
 		device_add(&piix_device);
 		device_add(&intel_flash_bxt_device);
+		device_add(&memregs_ffff_device);
 
 		m_at_common_init();
 
@@ -99,11 +98,10 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-
 		device_add(&i430hx_device);
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
+		device_add(&memregs_ffff_device);
 
 		m_at_common_init();
 
@@ -121,11 +119,10 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-
 		device_add(&i430vx_device);
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
+		device_add(&memregs_ffff_device);
 
 		m_at_common_init();
 

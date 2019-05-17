@@ -8,7 +8,7 @@
  *
  *		Implementation of various A/Open mainboards.
  *
- * Version:	@(#)m_aopen.c	1.0.2	2019/05/13
+ * Version:	@(#)m_aopen.c	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,12 +81,10 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 		pci_register_slot(0x06, PCI_CARD_ONBOARD, 1, 2, 3, 4);
 
-		device_add(&memregs_device);
-		device_add(&memregs_powermate_device);
-
 		device_add(&i430hx_device);
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
+		device_add(&memregs_eb_device);
 
 		m_at_common_init();
 

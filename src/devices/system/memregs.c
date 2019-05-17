@@ -9,7 +9,7 @@
  *		Emulation of the memory I/O scratch registers on ports 0xE1
  *		and 0xE2, used by just about any emulated machine.
  *
- * Version:	@(#)memregs.c	1.0.4	2019/05/13
+ * Version:	@(#)memregs.c	1.0.5	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,7 +74,7 @@ memregs_read(uint16_t port, priv_t priv)
     if (port == 0xffff)
 	return dev->reg_ffff;
 
-    return dev->regs[port & 0xf];
+    return dev->regs[port & 0x0f];
 }
 
 
@@ -94,24 +94,33 @@ memregs_init(const device_t *info, UNUSED(void *parent))
 
     dev = (memregs_t *)mem_alloc(sizeof(memregs_t));
     memset(dev, 0xff, sizeof(memregs_t));
-    dev->reg_ffff = 0;
 
     switch(info->local) {
-	case 0:		/* default */
+	case 0:		/* e1 */
+	case 1:		/* e1 + ffff */
 		io_sethandler(0x00e1, 2,
 			      memregs_read,NULL,NULL,
 			      memregs_write,NULL,NULL, dev);
 		break;
 
-	case 1:		/* powermate */
-		io_sethandler(0x00ed, 2,
+	case 2:		/* eb */
+	case 3:		/* eb + ffff */
+		io_sethandler(0x00eb, 1,
 			      memregs_read,NULL,NULL,
 			      memregs_write,NULL,NULL, dev);
-		io_sethandler(0xffff, 1,
+		break;
+
+	case 4:		/* ed */
+	case 5:		/* ed + ffff */
+		io_sethandler(0x00ed, 1,
 			      memregs_read,NULL,NULL,
 			      memregs_write,NULL,NULL, dev);
 		break;
     }
+
+    if (info->local & 1)
+	io_sethandler(0xffff, 1,
+		      memregs_read,NULL,NULL, memregs_write,NULL,NULL, dev);
 
     return((priv_t)dev);
 }
@@ -125,9 +134,41 @@ const device_t memregs_device = {
     NULL
 };
 
-const device_t memregs_powermate_device = {
-    "Memory Registers (PowerMate)",
+const device_t memregs_ffff_device = {
+    "Memory Registers (FFFF)",
     0, 1, NULL,
+    memregs_init, memregs_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t memregs_eb_device = {
+    "Memory Registers (EB)",
+    0, 2, NULL,
+    memregs_init, memregs_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t memregs_eb_ffff_device = {
+    "Memory Registers (EB,FFFF)",
+    0, 3, NULL,
+    memregs_init, memregs_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t memregs_ed_device = {
+    "Memory Registers (ED)",
+    0, 4, NULL,
+    memregs_init, memregs_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t memregs_ed_ffff_device = {
+    "Memory Registers (ED,FFFF)",
+    0, 5, NULL,
     memregs_init, memregs_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

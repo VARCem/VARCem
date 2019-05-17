@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.29	2019/05/13
+ * Version:	@(#)m_ps1.c	1.0.30	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,6 +68,7 @@
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
 #include "../devices/system/nmi.h"
+#include "../devices/system/memregs.h"
 #include "../devices/ports/game.h"
 #include "../devices/ports/parallel.h"
 #include "../devices/ports/serial.h"
@@ -567,6 +568,8 @@ ps1_init(const device_t *info, void *arg)
 
 	/* Enable the builtin IDE port. */
 	device_add(&ide_isa_device);
+
+	device_add(&memregs_ed_device);
 
 	nmi_mask = 0x80;
     }

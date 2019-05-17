@@ -8,7 +8,7 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.13	2019/05/15
+ * Version:	@(#)device.h	1.0.14	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,17 +54,18 @@
 
 enum {
     DEVICE_ALL = 0x00000000,		/* any/all device */
-    DEVICE_UNSTABLE = 0x00000001,	/* unstable device, be cautious */
-    DEVICE_PCJR = 0x00000002,		/* requires an IBM PCjr */
-    DEVICE_AT = 0x00000004,		/* requires an AT-compatible system */
-    DEVICE_PS2 = 0x00000008,		/* requires a PS/1 or PS/2 system */
-    DEVICE_ISA = 0x00000100,		/* requires the ISA bus */
-    DEVICE_EISA = 0x00000200,		/* requires the EISA bus */
-    DEVICE_VLB = 0x00000400,		/* requires the VLB bus */
-    DEVICE_PCI = 0x00000800,		/* requires the PCI bus */
-    DEVICE_AGP = 0x00001000,		/* requires the AGP bus */
-    DEVICE_MCA = 0x00002000,		/* requires the MCA bus */
-    DEVICE_CBUS = 0x00004000,		/* requires the C-BUS bus (PC98) */
+    DEVICE_PCJR = 0x00000001,		/* requires an IBM PCjr */
+    DEVICE_AT = 0x00000002,		/* requires an AT-compatible system */
+    DEVICE_PS2 = 0x00000004,		/* requires a PS/1 or PS/2 system */
+    DEVICE_S100 = 0x0000100,		/* requires an S-100 bus slot */
+    DEVICE_ISA = 0x00000200,		/* requires an ISA bus slot */
+    DEVICE_EISA = 0x00000400,		/* requires an EISA bus slot */
+    DEVICE_MCA = 0x00000800,		/* requires an MCA bus slot */
+    DEVICE_VLB = 0x00001000,		/* requires a VLB bus slot */
+    DEVICE_PCI = 0x00002000,		/* requires a PCI bus slot */
+    DEVICE_AGP = 0x00004000,		/* requires an AGP bus slot */
+    DEVICE_CBUS = 0x00008000,		/* requires a C-BUS bus slot (PC98) */
+    DEVICE_UNSTABLE = 0x20000000,	/* unstable device, be cautious */
     DEVICE_VIDTYPE = 0xc0000000,	/* video type bits in device flags */
     DEVICE_ROOT = 0xffffffff		/* machine root device */
 };

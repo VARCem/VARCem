@@ -8,7 +8,7 @@
  *
  *		Implementation of the Opti 82C495 based machines.
  *
- * Version:	@(#)m_opti495.c	1.0.12	2019/05/13
+ * Version:	@(#)m_opti495.c	1.0.13	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
+#include "../devices/system/memregs.h"
 #include "../devices/chipsets/opti495.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
@@ -71,6 +72,7 @@ common_init(const device_t *info, void *arg)
 		break;
 
 	case 1:		/* Generic with Award BIOS */
+		device_add(&memregs_device);
 		device_add(&keyboard_at_device);
 		break;
 

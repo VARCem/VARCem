@@ -27,7 +27,7 @@
  *		As stated above, it is hoped that by re-adding these, more
  *		testing will get done so they can be 'completed' sometime.
  *
- * Version:	@(#)m_tyan.c	1.0.2	2019/05/13
+ * Version:	@(#)m_tyan.c	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -100,9 +100,9 @@ common_init(const device_t *info, void *arg)
 		device_add(&i440fx_device);
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
+		device_add(&memregs_eb_ffff_device);
 		m_at_common_init();
 		device_add(&keyboard_ps2_pci_device);
-		device_add(&memregs_device);
 
 		device_add(&fdc37c669_device);
 		break;
@@ -121,9 +121,9 @@ common_init(const device_t *info, void *arg)
 		device_add(&i440fx_device);
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
+		device_add(&memregs_eb_ffff_device);
 		m_at_common_init();
 		device_add(&keyboard_ps2_ami_pci_device);
-		device_add(&memregs_device);
 
 		device_add(&fdc37c665_device);
 		break;

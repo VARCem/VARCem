@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430xx-based Acer machines.
  *
- * Version:	@(#)m_acer.c	1.0.4	2019/05/13
+ * Version:	@(#)m_acer.c	1.0.5	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -128,7 +128,7 @@ acer_init(const device_t *info, void *arg)
 		pci_register_slot(0x1F, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x10, PCI_CARD_ONBOARD, 4, 0, 0, 0);
 
-		device_add(&memregs_powermate_device);
+		device_add(&memregs_ed_device);
 
 		device_add(&i430hx_device);
 		device_add(&piix3_device);
@@ -151,7 +151,7 @@ acer_init(const device_t *info, void *arg)
 		pci_register_slot(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4);
 
-		device_add(&memregs_powermate_device);
+		device_add(&memregs_ed_device);
 
 		device_add(&i430hx_device);
 		device_add(&piix3_device);
@@ -174,7 +174,7 @@ acer_init(const device_t *info, void *arg)
 		pci_register_slot(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4);
 
-		device_add(&memregs_powermate_device);
+		device_add(&memregs_ed_device);
 
 		device_add(&i430fx_device);
 		device_add(&piix3_device);

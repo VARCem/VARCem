@@ -15,7 +15,7 @@
  *		_MUST_ enable the Internal mouse, or the PS/2 mouse as
  *		this is onboard. There is a jumper for this as well.
  *
- * Version:	@(#)m_pbell.c	1.0.4	2019/05/13
+ * Version:	@(#)m_pbell.c	1.0.5	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -104,7 +104,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&acc2168_device);
 		io_sethandler(0x0078, 1,
 			      port78_read,NULL,NULL, NULL,NULL,NULL, NULL);	
-		device_add(&memregs_device);
+		device_add(&memregs_ed_device);
 		m_at_common_ide_init();
 		device_add(&keyboard_ps2_device);
 		device_add(&acc3221_device);

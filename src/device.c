@@ -11,7 +11,7 @@
  *
  * **TODO**	Merge the various 'add' variants, its getting too messy.
  *
- * Version:	@(#)device.c	1.0.26	2019/05/15
+ * Version:	@(#)device.c	1.0.27	2019/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -92,6 +92,98 @@ device_reset(void)
 
 
 #ifdef _DEBUG
+static char *
+device_flags(uint32_t flags)
+{
+    static char buff[80];
+    char *sp = buff;
+    char *p = NULL;
+
+    if (flags == DEVICE_ROOT)
+	return("[ROOT]");
+
+    strcpy(sp, "[ "); sp += strlen(sp);
+
+    /* System types. */
+    switch(flags & 0x000f) {
+	case DEVICE_ALL:		/* any/all system */
+		p = "ANY";
+		break;
+
+	case DEVICE_PCJR:		/* requires an IBM PCjr */
+		p = "PCjr";
+		break;
+
+	case DEVICE_AT:			/* requires an AT-compatible system */
+		p = "AT";
+		break;
+
+	case DEVICE_PS2:		/* requires a PS/1 or PS/2 system */
+		p = "PS/2";
+		break;
+    }
+    strcat(sp, p); sp += strlen(sp);
+
+    /* Buses. */
+    if (flags & 0xff00) {
+	strcat(sp, ", ");
+	sp += strlen(sp);
+
+	switch(flags & 0xff00) {
+		case DEVICE_S100:	/* requires an S100 bus slot */
+			p = "S-100";
+			break;
+
+		case DEVICE_ISA:	/* requires an ISA bus slot */
+			p = "ISA";
+			break;
+
+		case DEVICE_EISA:	/* requires an EISA bus slot */
+			p = "EISA";
+			break;
+
+		case DEVICE_VLB:	/* requires a VLB bus slot */
+			p = "VLB";
+			break;
+
+		case DEVICE_PCI:	/* requires a PCI bus slot */
+			p = "PCI";
+			break;
+
+		case DEVICE_AGP:	/* requires an AGP bus slot */
+			p = "AGP";
+			break;
+
+		case DEVICE_MCA:	/* requires an MCA bus slot */
+			p = "MCA";
+			break;
+
+		case DEVICE_CBUS:	/* requires a C-BUS bus slot (PC98) */
+			p = "CBUS";
+			break;
+	}
+	strcat(sp, p); sp += strlen(sp);
+    }
+
+    /* Options. */
+    if (flags & 0xffff0000) switch(flags & 0xffff0000) {
+	case DEVICE_UNSTABLE:		/* unstable device, be cautious */
+		strcat(sp, ", <UNS>");
+		sp += strlen(sp);
+		break;
+
+	default:
+		flags &= DEVICE_VIDTYPE;
+		flags >>= 30;
+		sprintf(sp, ", VID=%i", flags);
+    }
+
+    strcat(sp, " ]");
+
+    return(buff);
+}
+
+
 void
 device_dump(void)
 {
@@ -100,8 +192,9 @@ device_dump(void)
     for (c = 0; c < DEVICE_MAX; c++) {
 	if (devices[c] == NULL) continue;
 
-	INFO("DEVICE [%3i] = '%s' flags=%08lx local=%08lx\n",
-		c, devices[c]->name, devices[c]->flags, devices[c]->local);
+	INFO("DEV[%2i] = '%s' flags=%s local=%08lx\n",
+		c, devices[c]->name,
+		device_flags(devices[c]->flags), devices[c]->local);
     }
 }
 #endif

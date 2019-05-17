@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85c471 based machines.
  *
- * Version:	@(#)m_sis471.c	1.0.15	2019/05/13
+ * Version:	@(#)m_sis471.c	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,6 +57,8 @@ common_init(const device_t *info, void *arg)
 
     device_add(&sis_85c471_device);
 
+    device_add(&memregs_device);
+
     switch(info->local) {
 	default:
 		m_at_ide_init();
@@ -64,8 +66,6 @@ common_init(const device_t *info, void *arg)
     }
 
     device_add(&fdc_at_device);
-
-    device_add(&memregs_device);
 
     return((priv_t)arg);
 }

@@ -8,7 +8,7 @@
  *
  *		Implementation of various systems and mainboards.
  *
- * Version:	@(#)m_misc.c	1.0.2	2019/05/13
+ * Version:	@(#)m_misc.c	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -80,11 +80,11 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-
 		device_add(&i430vx_device);
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
+
+		device_add(&memregs_eb_device);
 
 		m_at_common_init();
 
@@ -106,6 +106,8 @@ common_init(const device_t *info, void *arg)
 		device_add(&piix_device);
 		device_add(&intel_flash_bxt_device);
 
+		device_add(&memregs_eb_device);
+
 		m_at_common_init();
 
 		device_add(&fdc37c665_device);
@@ -122,7 +124,7 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
+		device_add(&memregs_eb_device);
 
 		device_add(&i430fx_device);
 		device_add(&piix_device);
@@ -148,6 +150,8 @@ common_init(const device_t *info, void *arg)
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
 
+		device_add(&memregs_eb_device);
+
 		m_at_common_init();
 
 		device_add(&fdc37c932fr_device);
@@ -167,6 +171,8 @@ common_init(const device_t *info, void *arg)
 		device_add(&piix3_device);
 		device_add(&intel_flash_bxt_device);
 
+		device_add(&memregs_eb_device);
+
 		m_at_common_init();
 
 		device_add(&fdc37c669_device);
@@ -183,8 +189,7 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-		device_add(&memregs_powermate_device);
+		device_add(&memregs_eb_device);
 
 		device_add(&i430hx_device);
 		device_add(&piix3_device);

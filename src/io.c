@@ -8,7 +8,7 @@
  *
  *		Implement I/O ports and their operations.
  *
- * Version:	@(#)io.c	1.0.5	2019/05/13
+ * Version:	@(#)io.c	1.0.6	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,13 +50,14 @@
 
 
 typedef struct _io_ {
-    uint8_t  (*inb)(uint16_t addr, priv_t);
-    uint16_t (*inw)(uint16_t addr, priv_t);
-    uint32_t (*inl)(uint16_t addr, priv_t);
+    uint8_t	(*inb)(uint16_t, priv_t);
+    void	(*outb)(uint16_t, uint8_t, priv_t);
 
-    void     (*outb)(uint16_t addr, uint8_t  val, priv_t);
-    void     (*outw)(uint16_t addr, uint16_t val, priv_t);
-    void     (*outl)(uint16_t addr, uint32_t val, priv_t);
+    uint16_t	(*inw)(uint16_t, priv_t);
+    void	(*outw)(uint16_t, uint16_t, priv_t);
+
+    uint32_t	(*inl)(uint16_t, priv_t);
+    void	(*outl)(uint16_t, uint32_t, priv_t);
 
     priv_t	priv;
 
@@ -64,18 +65,118 @@ typedef struct _io_ {
 } io_t;
 
 
-static int	initialized = 0;
-static io_t	*io[NPORTS],
-		*io_last[NPORTS];
+static io_t	**io = NULL,
+		**io_last = NULL;
   
 
+/* Add an I/O handler to the chain. */
+static void
+io_insert(int c, io_t *q)
+{
+    io_t *p;
+
+    p = io_last[c];
+    if (p != NULL) {
+	p->next = q;
+	q->prev = p;
+    } else {
+	io[c] = q;
+	q->prev = NULL;
+    }
+    io_last[c] = q;
+}
+
+
+/* Remove I/O handler from the chain. */
+static void
+io_unlink(int c)
+{
+    io_t *p = io[c];
+
+    if (p->prev != NULL)
+	p->prev->next = p->next;
+    else
+	io[c] = p->next;
+
+    if (p->next != NULL)
+	p->next->prev = p->prev;
+    else
+	io_last[c] = p->prev;
+
+    free(p);
+}
+
+
 #ifdef IO_CATCH
-static uint8_t null_inb(uint16_t addr, priv_t p) { DEBUG("IO: read(%04x)\n"); return(0xff); }
-static uint16_t null_inw(uint16_t addr, priv_t p) { DEBUG("IO: readw(%04x)\n"); return(0xffff); }
-static uint32_t null_inl(uint16_t addr, priv_t p) { DEBUG("IO: readl(%04x)\n"); return(0xffffffff); }
-static void null_outb(uint16_t addr, uint8_t val, priv_t p) { DEBUG("IO: write(%04x, %02x)\n", val); }
-static void null_outw(uint16_t addr, uint16_t val, priv_t p) { DEBUG("IO: writew(%04x, %04x)\n", val); }
-static void null_outl(uint16_t addr, uint32_t val, priv_t p) { DEBUG("IO: writel(%04x, %08lx)\n", val); }
+static uint8_t
+catch_inb(uint16_t addr, priv_t p)
+{
+    DEBUG("IO: inb(%04x)\n", addr);
+    return(0xff);
+}
+
+static uint16_t
+catch_inw(uint16_t addr, priv_t p)
+{
+    DEBUG("IO: inw(%04x)\n", addr);
+    return(0xffff);
+}
+
+static uint32_t
+catch_inl(uint16_t addr, priv_t p)
+{
+    DEBUG("IO: inl(%04x)\n", addr);
+    return(0xffffffff);
+}
+
+
+static void
+catch_outb(uint16_t addr, uint8_t val, priv_t p)
+{
+    DEBUG("IO: outb(%04x, %02x)\n", addr, val);
+}
+
+static void
+catch_outw(uint16_t addr, uint16_t val, priv_t p)
+{
+    DEBUG("IO: outw(%04x, %04x)\n", addr, val);
+}
+
+static void
+catch_outl(uint16_t addr, uint32_t val, priv_t p)
+{
+    DEBUG("IO: outl(%04x, %08lx)\n", addr, val);
+}
+
+
+/* Add a catch handler to a port. */
+static void
+catch_add(int port)
+{
+    io_t *p;
+
+    /* Create new handler. */
+    p = (io_t *)mem_alloc(sizeof(io_t));
+    memset(p, 0x00, sizeof(io_t));
+    p->inb  = catch_inb;
+    p->outb = catch_outb;
+    p->inw  = catch_inw;
+    p->outw = catch_outw;
+    p->inl  = catch_inl;
+    p->outl = catch_outl;
+
+    /* Add to chain. */
+    io_insert(port, p);
+}
+
+
+/* If the only handler is the catcher, remove it. */
+static void
+catch_del(int port)
+{
+    if ((io[port] != NULL) && (io[port]->inb == catch_inb))
+	io_unlink(port);
+}
 #endif
 
 
@@ -86,40 +187,33 @@ io_reset(void)
     int c;
 
     INFO("IO: initializing\n");
-    if (! initialized) {
-	for (c = 0; c < NPORTS; c++)
-		io[c] = io_last[c] = NULL;
-	initialized = 1;
+    if (io == NULL) {
+	/* Allocate the arrays, one-time only. */
+	c = sizeof(io_t **) * NPORTS;
+	io = (io_t **)mem_alloc(c);
+	memset(io, 0x00, c);
+	io_last = (io_t **)mem_alloc(c);
+	memset(io_last, 0x00, c);
     }
 
+    /* Clear both arrays. */
     for (c = 0; c < NPORTS; c++) {
-        if (io_last[c] != NULL) {
-		/* Port has at least one handler. */
+       	if (io_last[c] != NULL) {
+		/* At least one handler, free all handlers. */
 		p = io_last[c];
 		while (p != NULL) {
 			q = p->prev;
 			free(p);
 			p = q;
 		}
-		p = NULL;
 	}
 
-#ifdef IO_CATCH
-	/* Set up a default (catch) handler. */
-	p = (io_t *)mem_alloc(sizeof(io_t));
-	memset(p, 0x00, sizeof(io_t));
-	io[c] = io_last[c] = p;
-	p->next = NULL;
-	p->prev = NULL;
-	p->inb  = null_inb;
-	p->outb = null_outb;
-	p->inw  = null_inw;
-	p->outw = null_outw;
-	p->inl  = null_inl;
-	p->outl = null_outl;
-	p->priv = NULL;
-#else
+	/* Reset handler. */
 	io[c] = io_last[c] = NULL;
+
+#ifdef IO_CATCH
+	/* Add a default (catch) handler. */
+	catch_add(c);
 #endif
     }
 }
@@ -135,29 +229,25 @@ io_sethandler(uint16_t base, int size,
 	      void (*f_outl)(uint16_t addr, uint32_t val, priv_t priv),
 	      priv_t priv)
 {
-    io_t *p, *q = NULL;
+    io_t *p;
     int c;
 
     for (c = 0; c < size; c++) {
-	p = io_last[base + c];
-	q = (io_t *)mem_alloc(sizeof(io_t));
-	memset(q, 0x00, sizeof(io_t));
-	if (p != NULL) {
-		p->next = q;
-		q->prev = p;
-	} else {
-		io[base + c] = q;
-		q->prev = NULL;
-	}
+	/* Create entry for the new handler. */
+	p = (io_t *)mem_alloc(sizeof(io_t));
+	memset(p, 0x00, sizeof(io_t));
+	p->inb = f_inb; p->inw = f_inw; p->inl = f_inl;
+	p->outb = f_outb; p->outw = f_outw; p->outl = f_outl;
+	p->priv = priv;
 
-	q->inb = f_inb; q->inw = f_inw; q->inl = f_inl;
+#ifdef IO_CATCH
+	/* Unlink the catcher if that is the only handler. */
+	if (log_level < LOG_DETAIL)
+		catch_del(base + c);
+#endif
 
-	q->outb = f_outb; q->outw = f_outw; q->outl = f_outl;
-
-	q->priv = priv;
-	q->next = NULL;
-
-	io_last[base + c] = q;
+	/* Insert this new handler. */
+	io_insert(base + c, p);
     }
 }
 
@@ -179,24 +269,16 @@ io_removehandler(uint16_t base, int size,
 	p = io[base + c];
 	if (p == NULL)
 		continue;
-	while (p != NULL) {
+
+	for (; p != NULL; p = p->next) {
 		if ((p->inb == f_inb) && (p->inw == f_inw) &&
 		    (p->inl == f_inl) && (p->outb == f_outb) &&
 		    (p->outw == f_outw) && (p->outl == f_outl) &&
 		    (p->priv == priv)) {
-			if (p->prev != NULL)
-				p->prev->next = p->next;
-			  else
-				io[base + c] = p->next;
-			if (p->next != NULL)
-				p->next->prev = p->prev;
-			  else
-				io_last[base + c] = p->prev;
-			free(p);
+			io_unlink(base + c);
 			p = NULL;
 			break;
 		}
-		p = p->next;
 	}
     }
 }
@@ -290,7 +372,7 @@ inb(uint16_t port)
 
 #ifdef IO_TRACE
     if (CS == IO_TRACE)
-	DEBUG("IOTRACE(%04X): inb(%04x)=%02x\n", IO_TRACE, port, r);
+	DEBUG("IOTRACE(%04x): inb(%04x)=%02x\n", IO_TRACE, port, r);
 #endif
 
     return(r);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496/497 based machines.
  *
- * Version:	@(#)m_sis49x.c	1.0.12	2019/05/13
+ * Version:	@(#)m_sis49x.c	1.0.13	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -99,9 +99,8 @@ common_init(const device_t *info, void *arg)
 		pci_set_irq_routing(PCI_INTC, PCI_IRQ_DISABLED);
 		pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 
-		device_add(&memregs_device);
-
 		device_add(&sis_85c496_device);
+		device_add(&memregs_eb_device);
 		m_at_common_init();
 		device_add(&keyboard_ps2_pci_device);
 		device_add(&ide_pci_device);
