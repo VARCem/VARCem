@@ -174,6 +174,7 @@
     <ClCompile Include="..\..\..\devices\system\pci.c" />
     <ClCompile Include="..\..\..\devices\system\pic.c" />
     <ClCompile Include="..\..\..\devices\system\pit.c" />
+    <ClCompile Include="..\..\..\devices\system\port92.c" />
     <ClCompile Include="..\..\..\devices\system\ppi.c" />
     <ClCompile Include="..\..\..\devices\floppy\fdc.c" />
     <ClCompile Include="..\..\..\devices\floppy\fdd.c" />
@@ -515,6 +516,7 @@
     <ClInclude Include="..\..\..\devices\system\pci.h" />
     <ClInclude Include="..\..\..\devices\system\pic.h" />
     <ClInclude Include="..\..\..\devices\system\pit.h" />
+    <ClInclude Include="..\..\..\devices\system\port92.h" />
     <ClInclude Include="..\..\..\devices\system\ppi.h" />
     <ClInclude Include="..\..\..\devices\video\vid_ati.h" />
     <ClInclude Include="..\..\..\devices\video\vid_att20c49x_ramdac.h" />
