@@ -622,9 +622,9 @@ d3d_screenshot(const wchar_t *fn)
     D3DLOCKED_RECT d3dlr;
     uint8_t *bits, *pixels, *ptr;
     HRESULT hr;
+    int i;
 #if USE_LIBPNG
     wchar_t temp[512];
-    int i;
 #endif
 
     if (! d3dTexture) return;
