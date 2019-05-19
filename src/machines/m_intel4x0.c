@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440-based machines.
  *
- * Version:	@(#)m_intel4x0.c	1.0.8	2019/05/13
+ * Version:	@(#)m_intel4x0.c	1.0.9	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,6 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/sio/sio.h"
 #include "../devices/disk/hdc.h"
-#include "../devices/disk/hdc_ide.h"
 #include "../devices/video/video.h"
 #include "machine.h"
 

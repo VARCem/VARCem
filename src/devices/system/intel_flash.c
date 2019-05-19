@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../device.h"
 #include "../../mem.h"
 #include "../../rom.h"

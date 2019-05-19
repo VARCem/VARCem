@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24 built-in video controller.
  *
- * Version:	@(#)m_olim24_vid.c	1.0.5	2019/05/13
+ * Version:	@(#)m_olim24_vid.c	1.0.6	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,9 +44,9 @@
 #include <wchar.h>
 #define dbglog kbd_log
 #include "../emu.h"
+#include "../timer.h"
 #include "../io.h"
 #include "../mem.h"
-#include "../timer.h"
 #include "../device.h"
 #include "../devices/system/clk.h"
 #include "../devices/video/video.h"
@@ -70,13 +70,15 @@ typedef struct {
     int		linepos, displine;
     int		sc, vc;
     int		con, coff, cursoron, blink;
-    int64_t	vsynctime;
     int		vadj;
     int		lineff;
     uint16_t	ma, maback;
     int		dispon;
-    int64_t	dispontime, dispofftime;
-    int64_t	vidtime;
+
+    tmrval_t	vsynctime,
+		dispontime, dispofftime,
+		vidtime;
+
     int		firstline, lastline;
 } olivid_t;
 
@@ -105,8 +107,8 @@ recalc_timings(olivid_t *dev)
     _dispofftime = disptime - _dispontime;
     _dispontime  *= CGACONST / 2;
     _dispofftime *= CGACONST / 2;
-    dev->dispontime  = (int64_t)(_dispontime  * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

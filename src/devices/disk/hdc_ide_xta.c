@@ -46,7 +46,7 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.15	2019/05/13
+ * Version:	@(#)hdc_ide_xta.c	1.0.16	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -94,10 +94,10 @@
 #include <wchar.h>
 #define dbglog hdc_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -258,7 +258,8 @@ typedef struct {
     uint8_t	sense;			/* current SENSE ERROR value	*/
     uint8_t	status;			/* current operational status	*/
     uint8_t	intr;
-    int64_t	callback;
+
+    tmrval_t	callback;
 
     /* Data transfer. */
     int16_t	buf_idx,		/* buffer index and pointer */

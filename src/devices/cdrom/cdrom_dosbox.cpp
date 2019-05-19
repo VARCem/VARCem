@@ -15,7 +15,7 @@
  * **NOTE**	This code will very soon be replaced with a C variant, so
  *		no more changes will be done.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.14	2019/04/12
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.15	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,7 +60,10 @@
 #include <vector>
 #include "../../emu.h"
 #include "../../plat.h"
+#include "cdrom.h"
+#include "cdrom_image.h"
 #include "cdrom_dosbox.h"
+
 
 using namespace std;
 
@@ -147,14 +150,16 @@ CDROM_Interface_Image::InitNewMedia(void)
 
 
 bool
-CDROM_Interface_Image::SetDevice(const wchar_t *path, int forceCD)
+CDROM_Interface_Image::SetDevice(const wchar_t *path, int type, int forceCD)
 {
     (void)forceCD;
 
-    if (CueLoadSheet(path)) return true;
+    if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_CUE)
+	if (CueLoadSheet(path)) return true;
 
-    if (IsoLoadFile(path)) return true;
-	
+    if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_ISO)
+	if (IsoLoadFile(path)) return true;
+
     return false;
 }
 
@@ -400,9 +405,12 @@ CDROM_Interface_Image::IsoLoadFile(const wchar_t *filename)
 	track.sectorSize = RAW_SECTOR_SIZE;
 	track.mode2 = true;		
     } else {
-	/* Unknown mode: Assume regular 2048-byte sectors, this is needed so Apple Rhapsody ISO's can be mounted. */
-		track.sectorSize = COOKED_SECTOR_SIZE;
-		track.mode2 = false;
+	/*
+	 * Unknown mode: assume regular 2048-byte sectors.
+	 * (This is needed so Apple Rhapsody ISO's can be mounted.)
+	 */
+	track.sectorSize = COOKED_SECTOR_SIZE;
+	track.mode2 = false;
     }
 
     track.length = track.file->getLength() / track.sectorSize;

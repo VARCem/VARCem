@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.20	2019/03/05
+ * Version:	@(#)cdrom_image.cpp	1.0.21	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -143,7 +143,7 @@ audio_callback(cdrom_t *dev, int16_t *output, int len)
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int ret = 1;
 
-    if (!dev->sound_on || (dev->cd_state != CD_PLAYING) || dev->img_is_iso) {
+    if (!dev->sound_on || (dev->cd_state != CD_PLAYING) || dev->img_type == IMAGE_TYPE_ISO) {
 	DEBUG("image_audio_callback(i): Not playing\n", dev->id);
 	if (dev->cd_state == CD_PLAYING)
 		dev->seek_pos += (len >> 11);
@@ -253,7 +253,7 @@ audio_pause(cdrom_t *dev)
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if (!img || dev->img_is_iso) return;
+    if (!img || dev->img_type == IMAGE_TYPE_ISO) return;
 
     if (dev->cd_state == CD_PLAYING)
 	dev->cd_state = CD_PAUSED;
@@ -265,7 +265,7 @@ audio_resume(cdrom_t *dev)
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if (!img || dev->img_is_iso) return;
+    if (!img || dev->img_type == IMAGE_TYPE_ISO) return;
 
     if (dev->cd_state == CD_PAUSED)
 	dev->cd_state = CD_PLAYING;
@@ -285,7 +285,7 @@ image_ready(cdrom_t *dev)
 
 
 static int
-image_get_last_block(cdrom_t *dev)
+image_get_capacity(cdrom_t *dev)
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
     int first_track, last_track;
@@ -326,7 +326,7 @@ image_getcurrentsubchannel(cdrom_t *dev, uint8_t *b, int msf)
 
     img->GetAudioSub(cdpos, attr, track, index, relPos, absPos);
 
-    if (dev->img_is_iso)
+    if (dev->img_type == IMAGE_TYPE_ISO)
 	ret = 0x15;
     else {
 	if (dev->cd_state == CD_PLAYING)
@@ -378,7 +378,7 @@ image_is_track_audio(cdrom_t *dev, uint32_t pos, int is_msf)
     int m, s, f;
     int number;
 
-    if (!img || dev->img_is_iso) return 0;
+    if (!img || dev->img_type == IMAGE_TYPE_ISO) return 0;
 
     if (is_msf) {
 	m = (pos >> 16) & 0xff;
@@ -494,7 +494,7 @@ read_mode1(cdrom_t *dev, int flags, uint32_t lba, uint32_t msf, int mode2, uint8
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2048))
+    if ((dev->img_type == IMAGE_TYPE_ISO) || (img->GetSectorSize(lba) == 2048))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
     else if (img->GetSectorSize(lba) == 2352)
 	img->ReadSector(raw_buffer, true, lba);
@@ -547,7 +547,7 @@ read_mode2_non_xa(cdrom_t *dev, int flags, uint32_t lba, uint32_t msf, int mode2
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2336))
+    if ((dev->img_type == IMAGE_TYPE_ISO) || (img->GetSectorSize(lba) == 2336))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2336);
     else if (img->GetSectorSize(lba) == 2352)
 	img->ReadSector(raw_buffer, true, lba);
@@ -592,7 +592,7 @@ read_mode2_xa_form1(cdrom_t *dev, int flags, uint32_t lba, uint32_t msf, int mod
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2048))
+    if ((dev->img_type == IMAGE_TYPE_ISO) || (img->GetSectorSize(lba) == 2048))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
     else if (img->GetSectorSize(lba) == 2352)
 	img->ReadSector(raw_buffer, true, lba);
@@ -643,7 +643,7 @@ read_mode2_xa_form2(cdrom_t *dev, int flags, uint32_t lba, uint32_t msf, int mod
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if ((dev->img_is_iso) || (img->GetSectorSize(lba) == 2324))
+    if ((dev->img_type == IMAGE_TYPE_ISO) || (img->GetSectorSize(lba) == 2324))
 	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2324);
     else if (img->GetSectorSize(lba) == 2352)
 	img->ReadSector(raw_buffer, true, lba);
@@ -709,7 +709,7 @@ image_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int is_msf,
 	msf = cdrom_lba_to_msf_accurate(sector);
     }
 
-    if (dev->img_is_iso) {
+    if (dev->img_type == IMAGE_TYPE_ISO) {
 	audio = 0;
 	mode2 = img->IsMode2(lba) ? 1 : 0;
     } else {
@@ -734,7 +734,7 @@ image_readsector_raw(cdrom_t *dev, uint8_t *buffer, int sector, int is_msf,
 	DEBUG("CD-ROM %i: Attempting to read an unrecognized sector type from an image\n", dev->id);
 	return 0;
     } else if (type == 1) {
-	if (!audio || dev->img_is_iso) {
+	if (!audio || dev->img_type == IMAGE_TYPE_ISO) {
 		DEBUG("CD-ROM %i: [Audio] Attempting to read an audio sector from a data image\n", dev->id);
 		return 0;
 	}
@@ -985,7 +985,7 @@ image_status(cdrom_t *dev)
 
     if (!img) return CD_STATUS_EMPTY;
 
-    if (dev->img_is_iso)
+    if (dev->img_type == IMAGE_TYPE_ISO)
 	return ret;
 
     if (img->HasAudioTracks()) {
@@ -1014,7 +1014,7 @@ image_stop(cdrom_t *dev)
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if (!img || dev->img_is_iso) return;
+    if (!img || dev->img_type == IMAGE_TYPE_ISO) return;
 
     dev->cd_state = CD_STOPPED;
 }
@@ -1043,7 +1043,7 @@ image_media_type_id(cdrom_t *dev)
     if (image_size(dev) > 405000)
 	return 65;	/* DVD. */
 
-    if (dev->img_is_iso)
+    if (dev->img_type == IMAGE_TYPE_ISO)
 	return 1;	/* Data CD. */
 
     return 3;		/* Mixed mode CD. */
@@ -1087,16 +1087,18 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
     wcscpy(dev->image_path, fn);
 
     if (! wcscasecmp(plat_get_extension(fn), L"ISO"))
-	dev->img_is_iso = 1;
+	dev->img_type = 1;
+    else if (! wcscasecmp(plat_get_extension(fn), L"CUE"))
+	dev->img_type = 2;
     else
-	dev->img_is_iso = 0;
+	dev->img_type = 0;
 
     /* Create new instance of the CDROM_Image class. */
     img = new CDROM_Interface_Image();
     dev->local = img;
 
     /* Open the image. */
-    if (! img->SetDevice(fn, false)) {
+    if (! img->SetDevice(fn, dev->img_type, false)) {
 	image_close(dev);
 	dev->ops = NULL;
 	dev->host_drive = 0;
@@ -1111,7 +1113,9 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
     dev->cd_state = CD_STOPPED;
     dev->seek_pos = 0;
     dev->cd_buflen = 0;
-    dev->cdrom_capacity = image_get_last_block(dev) + 1;
+    dev->cdrom_capacity = image_get_capacity(dev);
+    DEBUG("CD-ROM: capacity %i sectors (%i bytes)\n",
+	dev->cdrom_capacity, dev->cdrom_capacity << 11);
 
     return 0;
 }

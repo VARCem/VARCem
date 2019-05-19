@@ -8,7 +8,7 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.12	2019/02/10
+ * Version:	@(#)scsi_cdrom.c	1.0.13	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -717,9 +717,9 @@ command_common(scsi_cdrom_t *dev)
 			/* Seek time is in us. */
 			period = cdrom_seek_time(dev->drv);
 			DEBUG("CD-ROM %i: Seek period: %" PRIu64 " us\n",
-				  dev->id, (int64_t)period);
+				  dev->id, (tmrval_t)period);
 			period = period * ((double) TIMER_USEC);
-			dev->callback += ((int64_t) period);
+			dev->callback += ((tmrval_t)period);
 			set_callback(dev);
 			return;
 
@@ -729,9 +729,9 @@ command_common(scsi_cdrom_t *dev)
 			/* Seek time is in us. */
 			period = cdrom_seek_time(dev->drv);
 			DEBUG("CD-ROM %i: Seek period: %" PRIu64 " us\n",
-				  dev->id, (int64_t) period);
+				  dev->id, (tmrval_t)period);
 			period = period * ((double) TIMER_USEC);
-			dev->callback += ((int64_t) period);
+			dev->callback += ((tmrval_t)period);
 			/*FALLTHROUGH*/
 
 		case 0x25:
@@ -745,7 +745,7 @@ command_common(scsi_cdrom_t *dev)
 		case 0xb9:
 		case 0xbe:
 			if (dev->current_cdb[0] == 0x42)
-				dev->callback += 200LL * CDROM_TIME;
+				dev->callback += (tmrval_t)200 * CDROM_TIME;
 
 			/* Account for seek time. */
 			bytes_per_second = 176.0 * 1024.0;
@@ -763,11 +763,11 @@ command_common(scsi_cdrom_t *dev)
 	}
 
 	period = 1000000.0 / bytes_per_second;
-	DEBUG("CD-ROM %i: Byte transfer period: %" PRIu64 " us\n", dev->id, (int64_t) period);
+	DEBUG("CD-ROM %i: Byte transfer period: %" PRIu64 " us\n", dev->id, (tmrval_t) period);
 	period = period * (double) (dev->packet_len);
-	DEBUG("CD-ROM %i: Sector transfer period: %" PRIu64 " us\n", dev->id, (int64_t) period);
+	DEBUG("CD-ROM %i: Sector transfer period: %" PRIu64 " us\n", dev->id, (tmrval_t) period);
 	dusec = period * ((double) TIMER_USEC);
-	dev->callback += ((int64_t) dusec);
+	dev->callback += ((tmrval_t) dusec);
     }
 
     set_callback(dev);

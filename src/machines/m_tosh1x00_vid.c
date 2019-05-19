@@ -9,7 +9,7 @@
  *		Implementation of the Toshiba T1000 plasma display, which
  *		has a fixed resolution of 640x200 pixels.
  *
- * Version:	@(#)m_tosh1x00_vid.c	1.0.12	2019/05/13
+ * Version:	@(#)m_tosh1x00_vid.c	1.0.13	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,10 +43,10 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
-#include "../timer.h"
 #include "../device.h"
 #include "../devices/video/video.h"
 #include "../devices/video/vid_cga.h"
@@ -85,7 +85,7 @@ typedef struct {
     int		internal;	/* using internal display? */
     uint8_t	attrmap;	/* attribute mapping register */
 
-    int64_t	dispontime,
+    tmrval_t	dispontime,
 		dispofftime,
  		vsynctime;
 
@@ -115,8 +115,8 @@ recalc_timings(vid_t *dev)
 	_dispontime = 640;
 	_dispofftime = disptime - _dispontime;
 
-	dev->dispontime  = (int64_t)(_dispontime  * (1 << TIMER_SHIFT));
-	dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+	dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+	dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
     } else
 	cga_recalctimings(&dev->cga);
 }

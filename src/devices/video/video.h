@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.35	2019/05/03
+ * Version:	@(#)video.h	1.0.36	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,9 +71,8 @@ enum {
 enum {
     FULLSCR_SCALE_FULL = 0,
     FULLSCR_SCALE_43,
-    FULLSCR_SCALE_SQ,
-    FULLSCR_SCALE_INT,
-    FULLSCR_SCALE_KEEPRATIO
+    FULLSCR_SCALE_KEEPRATIO,
+    FULLSCR_SCALE_INT
 };
 
 typedef enum {

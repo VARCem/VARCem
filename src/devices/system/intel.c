@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel mainboards.
  *
- * Version:	@(#)intel.c	1.0.12	2019/05/13
+ * Version:	@(#)intel.c	1.0.13	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,10 +42,10 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "intel.h"
@@ -54,7 +54,7 @@
 
 typedef struct {
     uint16_t	timer_latch;
-    int64_t	timer;
+    tmrval_t	timer;
 } batman_t;
 
 

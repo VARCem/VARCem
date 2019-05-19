@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem.str	1.0.14	2019/02/11
+ * Version:	@(#)VARCem.str	1.0.15	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -357,7 +357,7 @@
 #define  STR_4040	"Fullscreen &stretch mode"
 #define   STR_4041	"&Full screen stretch"
 #define   STR_4042	"&4:3"
-#define   STR_4043	"&Square pixels"
+/* 4043 unused */
 #define   STR_4044	"&Integer scale"
 #define   STR_4045	"&Keep size"
 

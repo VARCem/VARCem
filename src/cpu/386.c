@@ -8,7 +8,7 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.9	2019/04/21
+ * Version:	@(#)386.c	1.0.10	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -46,16 +46,16 @@
 # define INFINITY   (__builtin_inff())
 #endif
 #include "../emu.h"
+#include "../timer.h"
+#include "../mem.h"
+#include "../devices/system/nmi.h"
+#include "../devices/system/pic.h"
+#include "../devices/system/pit.h"
+#include "../devices/floppy/fdd.h"
+#include "../devices/floppy/fdc.h"
 #include "cpu.h"
 #include "x86.h"
 #include "x87.h"
-#include "../devices/system/nmi.h"
-#include "../mem.h"
-#include "../devices/system/pic.h"
-#include "../devices/system/pit.h"
-#include "../timer.h"
-#include "../devices/floppy/fdd.h"
-#include "../devices/floppy/fdc.h"
 #include "386_common.h"
 
 

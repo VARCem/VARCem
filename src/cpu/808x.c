@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.19	2019/05/15
+ * Version:	@(#)808x.c	1.0.20	2019/05/17
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -294,11 +294,16 @@ static void	set_pzs(int bits);
 static int
 irq_pending(void)
 {
-    if ((nmi && nmi_enable && nmi_mask) ||
-	((flags & I_FLAG) && (pic.pend & ~pic.mask) && !noint))
-	return 1;
+    int temp;
 
-    return 0;
+    if (takeint && !noint)
+	temp = 1;
+    else
+	temp = (nmi && nmi_enable && nmi_mask) || ((flags & T_FLAG) && !noint);
+
+    takeint = (flags & I_FLAG) && (pic.pend &~ pic.mask);
+
+    return temp;
 }
 
 
@@ -1500,6 +1505,8 @@ opcodestart:
 			} else
 				loadseg(do_pop(), _opseg[(opcode >> 3) & 0x03]);
 			cpu_wait(1, 0);
+
+			/* All POP segment instructions suppress interrupts for one instruction. */
 			noint = 1;
 			break;
 
@@ -2588,14 +2595,14 @@ opcodestart:
 						AX = cpu_data;
 						DX = cpu_dest;
 						cpu_data |= DX;
-						set_co_do_mul((DX != ((AX & 0x8000) == 0) || ((rmdat & 0x38) == 0x20) ? 0 : 0xffff));
+						set_co_do_mul(DX != ((AX & 0x8000) == 0 || (rmdat & 0x38) == 0x20 ? 0 : 0xffff));
 					} else {
 						do_mul(AL, cpu_data);
 						AL = (uint8_t)cpu_data;
 						AH = (uint8_t)cpu_dest;
 						if (! is_nec)
 							cpu_data |= AH;
-						set_co_do_mul(AH != (((AL & 0x80) == 0) || ((rmdat & 0x38) == 0x20) ? 0 : 0xff));
+						set_co_do_mul(AH != ((AL & 0x80) == 0 || (rmdat & 0x38) == 0x20 ? 0 : 0xff));
 					}
 					set_zf(bits);
 					if (cpu_mod != 3)
@@ -2860,6 +2867,7 @@ cpu_reset(int hard)
 	mmu_perm = 4;
 	pfq_size = (is8086) ? 6 : 4;
     }
+    takeint = 0;
 
     x86seg_reset();
 #ifdef USE_DYNAREC

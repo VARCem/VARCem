@@ -13,7 +13,7 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.17	2019/05/05
+ * Version:	@(#)scsi_buslogic.c	1.0.18	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,10 +47,10 @@
 #include <wchar.h>
 #define dbglog scsi_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"

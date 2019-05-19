@@ -8,7 +8,7 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.13	2019/05/13
+ * Version:	@(#)hdc_ide.h	1.0.15	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,7 +119,7 @@ typedef struct {
 
 extern int	ideboard;
 extern ide_t	*ide_drives[IDE_NUM+XTIDE_NUM];
-extern int64_t	idecallback[5];
+extern tmrval_t	idecallback[5];
 
 
 extern void	ide_irq_raise(ide_t *);
@@ -151,9 +151,7 @@ extern void	ide_pri_disable(void);
 extern void	ide_sec_enable(void);
 extern void	ide_sec_disable(void);
 
-extern void	ide_set_callback(uint8_t channel, int64_t callback);
-extern void	secondary_ide_check(void);
-
+extern void	ide_set_callback(uint8_t channel, tmrval_t callback);
 
 extern void	ide_padstr(char *str, const char *src, int len);
 extern void	ide_padstr8(uint8_t *buf, int buf_size, const char *src);

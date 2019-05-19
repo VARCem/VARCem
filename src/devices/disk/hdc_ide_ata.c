@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.33	2019/05/13
+ * Version:	@(#)hdc_ide_ata.c	1.0.35	2019/05/17
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -53,11 +53,11 @@
 #define dbglog hdc_log
 #include "../../emu.h"
 #include "../../version.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -138,7 +138,7 @@
 typedef struct {
     int bit32, cur_dev,
 	irq;
-    int64_t callback;
+    tmrval_t callback;
 } ide_board_t;
 
 static ide_board_t	*ide_boards[4];
@@ -150,7 +150,6 @@ int	(*ide_bus_master_write)(int channel, uint8_t *data, int transfer_length, pri
 void	(*ide_bus_master_set_irq)(int channel, priv_t priv);
 priv_t	ide_bus_master_priv[2];
 int	ide_inited = 0;
-int	ide_sec_optional = 0;
 int	ide_ter_enabled = 0, ide_qua_enabled = 0;
 
 static uint16_t	ide_base_main[4] = { 0x1f0, 0x170, 0x168, 0x1e8 };
@@ -169,7 +168,7 @@ getstat(ide_t *ide)
 }
 
 
-int64_t
+tmrval_t
 ide_get_period(ide_t *ide, int size)
 {
     double period = 10.0 / 3.0;
@@ -249,12 +248,12 @@ ide_get_period(ide_t *ide, int size)
     period *= (double) TIMER_USEC;
     period *= (double) size;
 
-    return (int64_t) period;
+    return (tmrval_t) period;
 }
 
 
 #if 0
-int64_t
+tmrval_t
 ide_get_seek_time(ide_t *ide, uint32_t new_pos)
 {
     double dusec, time;
@@ -276,7 +275,7 @@ ide_get_seek_time(ide_t *ide, uint32_t new_pos)
 	t = ABS(t - nt);
 	time += ((40000.0 * dusec) / ((double) ide->tracks)) * ((double) t);
     }
-    return (int64_t) time;
+    return (tmrval_t) time;
 }
 #endif
 
@@ -954,7 +953,7 @@ ide_board_init(int board)
 
 
 void
-ide_set_callback(uint8_t board, int64_t callback)
+ide_set_callback(uint8_t board, tmrval_t callback)
 {
     ide_board_t *dev = ide_boards[board];
 
@@ -2395,7 +2394,7 @@ ide_clear_bus_master(void)
 }
 
 
-void *
+priv_t
 ide_xtide_init(void)
 {
     ide_board_t *dev;
@@ -2445,16 +2444,6 @@ ide_set_bus_master(int (*read)(int channel, uint8_t *data, int transfer_length, 
 }
 
 
-void
-secondary_ide_check(void)
-{
-    /* If secondary IDE is optional and the secondary master is not present or not ATAPI,
-       disable secondary IDE. */
-    if (ide_sec_optional && (!ide_drives[4] || (ide_drives[4]->type != IDE_ATAPI)))
-	ide_remove_handlers(1);
-}
-
-
 static priv_t
 ide_init(const device_t *info, void *parent)
 {
@@ -2463,7 +2452,6 @@ ide_init(const device_t *info, void *parent)
     switch(info->local & 255) {
 	case 0:		/* ISA, single-channel */
 	case 2:		/* ISA, dual-channel */
-	case 3:		/* ISA, dual-channel, optional 2nd channel */
 	case 4:		/* VLB, single-channel */
 	case 6:		/* VLB, dual-channel */
 	case 8:		/* PCI, single-channel */
@@ -2509,8 +2497,6 @@ ide_init(const device_t *info, void *parent)
 			DEBUG("Callback 1 pointer: %08X\n", &ide_boards[1]->callback);
 
 			ide_board_init(1);
-
-			ide_sec_optional = (info->local & 1);
 
 			ide_inited |= 2;
 		}
@@ -2609,16 +2595,6 @@ const device_t ide_isa_2ch_device = {
     "PC/AT IDE Controller (Dual-Channel)",
     DEVICE_ISA | DEVICE_AT,
     (HDD_BUS_IDE << 8) | 2,
-    NULL,
-    ide_init, ide_close, ide_reset,
-    NULL, NULL, NULL, NULL,
-    NULL
-};
-
-const device_t ide_isa_2ch_opt_device = {
-    "PC/AT IDE Controller (Single/Dual)",
-    DEVICE_ISA | DEVICE_AT,
-    (HDD_BUS_IDE << 8) | 3,
     NULL,
     ide_init, ide_close, ide_reset,
     NULL, NULL, NULL, NULL,

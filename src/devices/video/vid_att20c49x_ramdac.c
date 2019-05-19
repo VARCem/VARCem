@@ -8,7 +8,7 @@
  *
  *		Emulation of a AT&T 20c490/491 and 492/493 RAMDAC.
  *
- * Version:	@(#)vid_att20c49x_ramdac.c	1.0.3	2019/04/10
+ * Version:	@(#)vid_att20c49x_ramdac.c	1.0.4	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../mem.h"
 #include "../../device.h"
 #include "../../plat.h"

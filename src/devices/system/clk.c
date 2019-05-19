@@ -8,7 +8,7 @@
  *
  *		Implement the Intel 8284 Clock Generator functionality.
  *
- * Version:	@(#)clk.c	1.0.1	2019/05/05
+ * Version:	@(#)clk.c	1.0.2	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,10 +42,10 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../device.h"
-#include "../../timer.h"
 #include "clk.h"
 
 
@@ -123,7 +123,7 @@ clk_setup(uint32_t freq)
     VGACONST2 = (float) (cpuclock / 28322000.0);
     RTCCONST = (float) (cpuclock / 32768.0);
 
-    TIMER_USEC = (int64_t)((cpuclock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
+    TIMER_USEC = (tmrval_t)((cpuclock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
 
     bus_timing = (float) (cpuclock / (double)cpu_busspeed);
 

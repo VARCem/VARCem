@@ -53,7 +53,7 @@
  *		What doesn't work, is untested or not well understood:
  *		  - Cursor detach (commands 4 and 5)
  *
- * Version:	@(#)vid_wy700.c	1.0.13	2019/05/13
+ * Version:	@(#)vid_wy700.c	1.0.14	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -87,10 +87,10 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -224,13 +224,13 @@ typedef struct {
     int		enabled;	/* Display enabled, 0 or 1 */
     int		detach;		/* Detach cursor, 0 or 1 */
 
-    int64_t	dispontime, dispofftime;
-    int64_t	vidtime;
+    tmrval_t	dispontime, dispofftime;
+    tmrval_t	vidtime;
 
     int		linepos, displine;
     int		vc;
     int		dispon, blink;
-    int64_t	vsynctime;
+    tmrval_t	vsynctime;
 
     /* Mapping of attributes to colors, in CGA emulation... */
     uint8_t	cgacols[256][2][2];
@@ -260,8 +260,8 @@ recalc_timings(wy700_t *dev)
     _dispontime  *= MDACONST;
     _dispofftime *= MDACONST;
 
-    dev->dispontime  = (int64_t)(_dispontime  * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

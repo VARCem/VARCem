@@ -8,7 +8,7 @@
  *
  *		Define all known processor types.
  *
- * Version:	@(#)cpu_table.c	1.0.9	2019/05/09
+ * Version:	@(#)cpu_table.c	1.0.10	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

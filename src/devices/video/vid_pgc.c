@@ -44,7 +44,7 @@
  *
  *		This is expected to be done shortly.
  *
- * Version:	@(#)vid_pgc.c	1.0.6	2019/05/13
+ * Version:	@(#)vid_pgc.c	1.0.7	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -78,10 +78,10 @@
 #include <ctype.h>
 #include <math.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/pit.h"

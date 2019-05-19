@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.22	2019/05/03
+ * Version:	@(#)machine.c	1.0.23	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../rom.h"

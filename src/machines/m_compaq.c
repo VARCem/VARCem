@@ -14,7 +14,7 @@
  *		(which is in m_compaq_vid.c), the Portable 3 needs the
  *		Plasma driver, there are some ROM issues, etc.
  *
- * Version:	@(#)m_compaq.c	1.0.14	2019/05/13
+ * Version:	@(#)m_compaq.c	1.0.15	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,6 +50,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../rom.h"
@@ -61,7 +62,6 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
-#include "../devices/disk/hdc_ide.h"
 #include "../devices/video/video.h"
 #include "machine.h"
 #include "m_compaq.h"

@@ -8,12 +8,12 @@
  *
  *		Implementation of the New Floppy/ZIP Image dialog.
  *
- * Version:	@(#)win_new_image.c	1.0.22	2018/10/25
+ * Version:	@(#)win_new_image.c	1.0.23	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../ui/ui.h"
 #include "../plat.h"
 #include "../devices/scsi/scsi_device.h"

@@ -8,7 +8,7 @@
  *
  *		Definitions for the CGA driver.
  *
- * Version:	@(#)vid_cga.h	1.0.9	2019/05/13
+ * Version:	@(#)vid_cga.h	1.0.10	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -64,9 +64,9 @@ typedef struct {
     uint16_t	ma, maback;
     int		oddeven;
 
-    int64_t	dispontime,
+    tmrval_t	dispontime,
 		dispofftime;
-    int64_t	vidtime;
+    tmrval_t	vidtime;
 
     int		firstline,
 		lastline;

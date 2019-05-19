@@ -8,7 +8,7 @@
  *
  *		Definitions for the MDA driver.
  *
- * Version:	@(#)vid_mda.h	1.0.2	2019/05/13
+ * Version:	@(#)vid_mda.h	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,8 +49,9 @@ typedef struct {
 
     uint8_t	ctrl, stat;
 
-    int64_t	dispontime, dispofftime;
-    int64_t	vidtime;
+    tmrval_t	dispontime, dispofftime;
+    tmrval_t	vidtime;
+    tmrval_t	vsynctime;
 
     int		firstline, lastline;
 
@@ -59,7 +60,6 @@ typedef struct {
     uint16_t	ma, maback;
     int		con, coff, cursoron;
     int		dispon, blink;
-    int64_t	vsynctime;
     int		vadj;
 
     uint8_t	cols[256][2][2];

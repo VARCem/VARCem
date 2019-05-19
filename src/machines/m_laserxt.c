@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_laserxt.c	1.0.13	2019/05/13
+ * Version:	@(#)m_laserxt.c	1.0.14	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"

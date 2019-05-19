@@ -8,13 +8,13 @@
  *
  *		Definitions for the Emu8K emulator.
  *
- * Version:	@(#)snd_emu8k.h	1.0.2	2018/09/22
+ * Version:	@(#)snd_emu8k.h	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -366,7 +366,7 @@ typedef struct emu8k_voice_t
         emu8k_envelope_t vol_envelope;
         emu8k_envelope_t mod_envelope;
         
-        int64_t lfo1_speed, lfo2_speed;
+        tmrval_t lfo1_speed, lfo2_speed;
         emu8k_mem_internal_t lfo1_count, lfo2_count;
         int32_t lfo1_delay_samples, lfo2_delay_samples;
         int vol_l, vol_r;

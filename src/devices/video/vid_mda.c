@@ -8,7 +8,7 @@
  *
  *		MDA emulation.
  *
- * Version:	@(#)vid_mda.c	1.0.17	2019/05/13
+ * Version:	@(#)vid_mda.c	1.0.18	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,10 +43,10 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../config.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -69,8 +69,8 @@ mda_recalctimings(mda_t *dev)
     _dispontime *= MDACONST;
     _dispofftime *= MDACONST;
 
-    dev->dispontime = (int64_t)(_dispontime * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime = (tmrval_t)(_dispontime * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

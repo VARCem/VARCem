@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.88	2019/05/15
+# Version:	@(#)Makefile.mingw	1.0.89	2019/05/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -451,21 +451,6 @@ ifneq ($(D2D), n)
   LIBS		+= -ld2d1
  endif
  D2DOBJ		:= win_d2d.o
-endif
-
-# D3DX (always hard-linked)
-ifndef D3DX
- D3DX		:= y
- ifeq ($(ARM), y)
-  D3DX		:= n
- endif
- ifeq ($(ARM64), y)
-  D3DX		:= n
- endif
-endif
-ifeq ($(D3DX), y)
- OPTS		+= -DUSE_D3DX
- LIBS		+= -ld3dx9
 endif
 
 # DINPUT and XInput (always hard-linked)

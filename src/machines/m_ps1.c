@@ -56,12 +56,12 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../config.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../timer.h"
 #include "../device.h"
 #include "../nvr.h"
 #include "../devices/system/dma.h"
@@ -89,10 +89,12 @@
 typedef struct {
     sn76489_t	sn76489;
     uint8_t	status, ctrl;
-    int64_t	timer_latch, timer_count;
-    int64_t	timer_enable;
+    tmrval_t	timer_latch,
+		timer_count;
+    tmrval_t	timer_enable;
     uint8_t	fifo[2048];
-    int		fifo_read_idx, fifo_write_idx;
+    int		fifo_read_idx,
+		fifo_write_idx;
     int		fifo_threshold;
     uint8_t	dac_val;
     int16_t	buffer[SOUNDBUFLEN];
@@ -193,7 +195,7 @@ snd_write(uint16_t port, uint8_t val, priv_t priv)
 
 	case 3:		/* timer reload value */
 		snd->timer_latch = val;
-		snd->timer_count = (int64_t) ((0xff-val) * TIMER_USEC);
+		snd->timer_count = (tmrval_t) ((0xff-val) * TIMER_USEC);
 		snd->timer_enable = (val != 0);
 		break;
 

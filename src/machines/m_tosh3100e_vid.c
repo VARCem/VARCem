@@ -22,7 +22,7 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_t3100e_vid.c	1.0.13	2019/05/13
+ * Version:	@(#)m_t3100e_vid.c	1.0.14	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,11 +56,11 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../timer.h"
 #include "../device.h"
 #include "../devices/video/video.h"
 #include "../devices/video/vid_cga.h"
@@ -96,7 +96,7 @@ typedef struct {
     int		internal;		/* using internal display? */
     uint8_t	attrmap;		/* attribute mapping register */
 
-    int64_t	dispontime,
+    tmrval_t	dispontime,
 		dispofftime,
 		vsynctime;
 

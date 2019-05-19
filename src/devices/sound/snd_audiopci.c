@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.18	2019/05/13
+ * Version:	@(#)snd_audiopci.c	1.0.19	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,10 +43,10 @@
 #include <math.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"		/* for the debugging stuff */
 #include "../../io.h"
 #include "../../mem.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/nmi.h"
@@ -93,7 +93,7 @@ typedef struct {
 
 	uint16_t samp_ct, curr_samp_ct;
 
-	int64_t time, latch;
+	tmrval_t time, latch;
 
 	uint32_t vf, ac;
 
@@ -108,7 +108,7 @@ typedef struct {
 	int32_t vol_l, vol_r;
     } dac[2], adc;
 
-    int64_t dac_latch, dac_time;
+    tmrval_t dac_latch, dac_time;
 
     int master_vol_l, master_vol_r;
 

@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.25	2018/11/02
+ * Version:	@(#)zip.c	1.0.26	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -840,7 +840,7 @@ command_common(zip_t *dev)
 	period = 1000000.0 / bytes_per_second;
 	dusec = (double) TIMER_USEC;
 	dusec = dusec * period * ((double)dev->packet_len);
-	dev->callback = (int64_t)dusec;
+	dev->callback = (tmrval_t)dusec;
     }
 
     set_callback(dev);

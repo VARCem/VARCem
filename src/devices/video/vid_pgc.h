@@ -8,7 +8,7 @@
  *
  *		Definitions for the PGC driver.
  *
- * Version:	@(#)vid_pgc.h	1.0.4	2019/05/13
+ * Version:	@(#)vid_pgc.h	1.0.5	2019/05/73
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -110,7 +110,7 @@ typedef struct pgc {
 
     thread_t	*pgc_thread;
     event_t	*pgc_wake_thread;
-    int64_t	wake_timer;
+    tmrval_t	wake_timer;
 
     int		waiting_input_fifo;
     int		waiting_output_fifo;
@@ -128,7 +128,7 @@ typedef struct pgc {
     uint16_t	ma, maback;
     int		oddeven;
 
-    int64_t	dispontime,
+    tmrval_t	dispontime,
 		dispofftime,
 		vidtime;
 

@@ -8,12 +8,12 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.16	2018/10/25
+ * Version:	@(#)cdrom.h	1.0.17	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -138,7 +138,7 @@ typedef struct cdrom {
     }		bus_id;
 
     FILE	*img_fp;
-    int		img_is_iso;
+    int		img_type;
     int		host_drive, prev_host_drive;
 
     int		cd_status, prev_status,

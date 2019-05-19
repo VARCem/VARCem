@@ -28,7 +28,7 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.9	2019/05/13
+ * Version:	@(#)isartc.c	1.0.10	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -72,6 +72,7 @@
 #include <time.h>
 #include "../../emu.h"
 #include "../../config.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../device.h"

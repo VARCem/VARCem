@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.23	2019/05/03
+ * Version:	@(#)ui_main.c	1.0.24	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -310,7 +310,7 @@ main_reset_all(void)
 
     menu_set_item(IDM_FULLSCREEN, config.vid_fullscreen);
 
-    menu_set_radio_item(IDM_STRETCH, 5, config.vid_fullscreen_scale);
+    menu_set_radio_item(IDM_STRETCH, 4, config.vid_fullscreen_scale);
 
     menu_set_item(IDM_RCTRL_IS_LALT, config.rctrl_is_lalt);
 
@@ -442,11 +442,10 @@ ui_menu_command(int idm)
 
 	case IDM_STRETCH:			/* VIEW menu */
 	case IDM_STRETCH_43:
-	case IDM_STRETCH_SQ:                                
-	case IDM_STRETCH_INT:
 	case IDM_STRETCH_KEEP:
+	case IDM_STRETCH_INT:
 		config.vid_fullscreen_scale = (idm - IDM_STRETCH);
-		menu_set_radio_item(IDM_STRETCH, 5, config.vid_fullscreen_scale);
+		menu_set_radio_item(IDM_STRETCH, 4, config.vid_fullscreen_scale);
 		device_force_redraw();
 		config_save();
 		break;

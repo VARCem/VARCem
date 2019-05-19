@@ -52,7 +52,7 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.18	2019/05/13
+ * Version:	@(#)hdc_esdi_mca.c	1.0.19	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -85,10 +85,10 @@
 #include <wchar.h>
 #define dbglog hdc_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../../ui/ui.h"
@@ -144,7 +144,7 @@ typedef struct {
     int		cmd_state;
 
     int		in_reset;
-    int64_t	callback;
+    tmrval_t	callback;
 
     uint32_t	rba;
 

@@ -8,7 +8,7 @@
  *
  *		x87 FPU instructions core.
  *
- * Version:	@(#)x87_ops.h	1.0.8	2019/03/21
+ * Version:	@(#)x87_ops.h	1.0.9	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -369,8 +369,10 @@ static INLINE uint16_t x87_compare(double a, double b)
         return result & (C0|C2|C3);
 #endif
 
-        /* Generic C version is known to give incorrect results in some
-         * situations, eg comparison of infinity (Unreal) */
+        /*
+	 * Generic C version is known to give incorrect results
+	 * in some situations, eg comparison of infinity (Unreal).
+	 */
 	if (!is386)
 	{
 		if (((a == INFINITY) || (a == -INFINITY)) && ((b == INFINITY) || (b == -INFINITY)))

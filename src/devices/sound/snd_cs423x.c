@@ -8,7 +8,7 @@
  *
  *		Implementation of Cirrus Logic Crystal 423x sound devices.
  *
- * Version:	@(#)snd_cs423x.c	1.0.3	2019/04/25
+ * Version:	@(#)snd_cs423x.c	1.0.4	2019/05/17
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -54,9 +54,9 @@
 #include <math.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../device.h"
-#include "../../timer.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "sound.h"
@@ -89,7 +89,7 @@ cs423x_setdma(cs423x_t *dev, int dma_ch)
 
 
 uint8_t
-cs423x_read(uint16_t addr, void *priv)
+cs423x_read(uint16_t addr, priv_t priv)
 {
     cs423x_t *dev = (cs423x_t *)priv;
     uint8_t ret = 0xff;
@@ -126,7 +126,7 @@ cs423x_read(uint16_t addr, void *priv)
 
 
 void
-cs423x_write(uint16_t addr, uint8_t val, void *priv)
+cs423x_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     cs423x_t *dev = (cs423x_t *)priv;
     double freq;
@@ -154,8 +154,8 @@ cs423x_write(uint16_t addr, uint8_t val, void *priv)
 					case 6: freq /= 512;  break;
 					case 7: freq /= 2560; break;
 				}
-				dev->freq = (int64_t)freq;
-				dev->timer_latch = (int64_t)((double)TIMER_USEC * (1000000.0 / (double)dev->freq));
+				dev->freq = (tmrval_t)freq;
+				dev->timer_latch = (tmrval_t)((double)TIMER_USEC * (1000000.0 / (double)dev->freq));
 				break;
 
 			case 9:
@@ -208,7 +208,7 @@ cs423x_update(cs423x_t *dev)
 
 
 static void
-cs423x_poll(void *priv)
+cs423x_poll(priv_t priv)
 {
     cs423x_t *dev = (cs423x_t *)priv;
     int32_t temp;
@@ -356,5 +356,5 @@ cs423x_init(cs423x_t *dev)
 void
 cs423x_speed_changed(cs423x_t *dev)
 {
-    dev->timer_latch = (int64_t)((double)TIMER_USEC * (1000000.0 / (double)dev->freq));
+    dev->timer_latch = (tmrval_t)((double)TIMER_USEC * (1000000.0 / (double)dev->freq));
 }

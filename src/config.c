@@ -12,7 +12,7 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.47	2019/05/04
+ * Version:	@(#)config.c	1.0.48	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include <wchar.h>
 #include "emu.h"
 #include "config.h"
+#include "timer.h"
 #include "cpu/cpu.h"
 #include "nvr.h"
 #include "device.h"
@@ -1124,22 +1125,22 @@ load_floppy(config_t *cfg, const char *cat)
     int c;
 
     for (c = 0; c < FDD_NUM; c++) {
-	sprintf(temp, "fdd_%i_type", c+1);
+	sprintf(temp, "fdd_%02i_type", c+1);
 	p = config_get_string(cat, temp, (c < 2) ? "525_2dd" : "none");
        	fdd_set_type(c, fdd_get_from_internal_name(p));
 	if (fdd_get_type(c) > 13)
 		fdd_set_type(c, 13);
 
 	/* Try to make paths relative, and copy to destination. */
-	sprintf(temp, "fdd_%i_fn", c + 1);
+	sprintf(temp, "fdd_%02i_fn", c + 1);
 	wp = config_get_wstring(cat, temp, L"");
 	pc_path(floppyfns[c], sizeof_w(floppyfns[c]), wp);
 
-	sprintf(temp, "fdd_%i_writeprot", c+1);
+	sprintf(temp, "fdd_%02i_writeprot", c+1);
 	ui_writeprot[c] = !!config_get_int(cat, temp, 0);
-	sprintf(temp, "fdd_%i_turbo", c + 1);
+	sprintf(temp, "fdd_%02i_turbo", c + 1);
 	fdd_set_turbo(c, !!config_get_int(cat, temp, 0));
-	sprintf(temp, "fdd_%i_check_bpb", c+1);
+	sprintf(temp, "fdd_%02i_check_bpb", c+1);
 	fdd_set_check_bpb(c, !!config_get_int(cat, temp, 1));
 
 	/*
@@ -1148,23 +1149,23 @@ load_floppy(config_t *cfg, const char *cat)
          * saved.
 	 */
 	if (fdd_get_type(c) == ((c < 2) ? 2 : 0)) {
-		sprintf(temp, "fdd_%i_type", c+1);
+		sprintf(temp, "fdd_%02i_type", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (wcslen(floppyfns[c]) == 0) {
-		sprintf(temp, "fdd_%i_fn", c+1);
+		sprintf(temp, "fdd_%02i_fn", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (! ui_writeprot[c]) {
-		sprintf(temp, "fdd_%i_writeprot", c+1);
+		sprintf(temp, "fdd_%02i_writeprot", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (! fdd_get_turbo(c)) {
-		sprintf(temp, "fdd_%i_turbo", c+1);
+		sprintf(temp, "fdd_%02i_turbo", c+1);
 		config_delete_var(cat, temp);
 	}
 	if (! fdd_get_check_bpb(c)) {
-		sprintf(temp, "fdd_%i_check_bpb", c+1);
+		sprintf(temp, "fdd_%02i_check_bpb", c+1);
 		config_delete_var(cat, temp);
 	}
     }
@@ -1179,37 +1180,37 @@ save_floppy(const config_t *cfg, const char *cat)
     int c;
 
     for (c = 0; c < FDD_NUM; c++) {
-	sprintf(temp, "fdd_%i_type", c+1);
+	sprintf(temp, "fdd_%02i_type", c+1);
 	if (fdd_get_type(c) == ((c < 2) ? 2 : 0))
 		config_delete_var(cat, temp);
 	  else
 		config_set_string(cat, temp,
 				  fdd_get_internal_name(fdd_get_type(c)));
 
-	sprintf(temp, "fdd_%i_fn", c+1);
+	sprintf(temp, "fdd_%02i_fn", c+1);
 	if (wcslen(floppyfns[c]) == 0) {
 		config_delete_var(cat, temp);
 
 		ui_writeprot[c] = 0;
 
-		sprintf(temp, "fdd_%i_writeprot", c+1);
+		sprintf(temp, "fdd_%02i_writeprot", c+1);
 		config_delete_var(cat, temp);
 	} else
 		config_set_wstring(cat, temp, floppyfns[c]);
 
-	sprintf(temp, "fdd_%i_writeprot", c+1);
+	sprintf(temp, "fdd_%02i_writeprot", c+1);
 	if (ui_writeprot[c] == 0)
 		config_delete_var(cat, temp);
 	else
 		config_set_int(cat, temp, ui_writeprot[c]);
 
-	sprintf(temp, "fdd_%i_turbo", c+1);
+	sprintf(temp, "fdd_%02i_turbo", c+1);
 	if (fdd_get_turbo(c) == 0)
 		config_delete_var(cat, temp);
 	else
 		config_set_int(cat, temp, fdd_get_turbo(c));
 
-	sprintf(temp, "fdd_%i_check_bpb", c+1);
+	sprintf(temp, "fdd_%02i_check_bpb", c+1);
 	if (fdd_get_check_bpb(c) == 1)
 		config_delete_var(cat, temp);
 	else

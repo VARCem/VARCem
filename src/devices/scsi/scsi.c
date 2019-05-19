@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.17	2019/05/03
+ * Version:	@(#)scsi.c	1.0.18	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,7 @@
 #define dbglog scsi_card_log
 #include "../../emu.h"
 #include "../../config.h"
+#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../disk/hdc.h"

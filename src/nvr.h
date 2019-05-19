@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic NVRAM/CMOS driver.
  *
- * Version:	@(#)nvr.h	1.0.9	2019/04/26
+ * Version:	@(#)nvr.h	1.0.10	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -71,7 +71,7 @@ typedef struct _nvr_ {
     int8_t		irq;
 
     uint8_t		onesec_cnt;
-    int64_t		onesec_time;
+    tmrval_t		onesec_time;
 
     void		*data;			/* local data */
 

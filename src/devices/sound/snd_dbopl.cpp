@@ -10,7 +10,7 @@
  *
  * NOTE:	See MSC_ macros for allocation on stack. --FvK
  *
- * Version:	@(#)snd_dbopl.cpp	1.0.9	2019/05/03
+ * Version:	@(#)snd_dbopl.cpp	1.0.10	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,6 +45,7 @@
 #define dbglog sound_log
 #include "../../emu.h"
 #include "../../config.h"
+#include "../../timer.h"
 #include "dbopl.h"
 #include "nukedopl.h"
 #include "sound.h"
@@ -62,8 +63,8 @@ static struct
         uint8_t status;
         int is_opl3;
 
-        void (*timer_callback)(void *param, int timer, int64_t period);
-        void *timer_param;
+        void (*timer_callback)(priv_t param, int timer, tmrval_t period);
+        priv_t timer_param;
 } opl[2];
 
 enum
@@ -82,7 +83,7 @@ enum
         CTRL_TIMER1_CTRL = 0x01
 };
 
-void opl_init(void (*timer_callback)(void *param, int timer, int64_t period), void *timer_param, int nr, int is_opl3)
+void opl_init(void (*timer_callback)(priv_t param, int timer, tmrval_t period), priv_t timer_param, int nr, int is_opl3)
 {
 	opl[nr].timer_callback = timer_callback;
 	opl[nr].timer_param = timer_param;

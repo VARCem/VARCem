@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.18	2019/04/08
+ * Version:	@(#)fdd_86f.c	1.0.19	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,7 +45,6 @@
 #define HAVE_STDARG_H
 #define dbglog d86f_log
 #include "../../emu.h"
-#include "../../nvr.h"
 #include "../../random.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"

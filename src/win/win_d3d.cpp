@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.18	2019/05/03
+ * Version:	@(#)win_d3d.cpp	1.0.19	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,7 +39,6 @@
 #define UNICODE
 #include <windows.h>
 #include <d3d9.h>
-#include <d3dx9tex.h>
 #include <stdio.h>
 #include <stdint.h>
 #include "../emu.h"
@@ -47,6 +46,10 @@
 #include "../version.h"
 #include "../device.h"
 #include "../plat.h"
+#include "../ui/ui.h"
+#if USE_LIBPNG
+# include "../png.h"
+#endif
 #ifdef _MSC_VER
 # pragma warning(disable: 4200)
 #endif
@@ -105,7 +108,12 @@ static void
 d3d_size(RECT w_rect, double *l, double *t, double *r, double *b, int w, int h)
 {
     int ratio_w, ratio_h;
-    double hsr, gsr, ra, d;
+    double hsr, gsr, d, sh, sw, wh, ww, mh, mw;
+
+    sh = (double)(w_rect.bottom - w_rect.top);
+    sw = (double)(w_rect.right - w_rect.left);
+    wh = (double)h;
+    ww = (double)w;
 
     switch (config.vid_fullscreen_scale) {
 	case FULLSCR_SCALE_FULL:
@@ -113,30 +121,39 @@ d3d_size(RECT w_rect, double *l, double *t, double *r, double *b, int w, int h)
 		break;
 
 	case FULLSCR_SCALE_43:
-		*t = -0.5;
-		*b = (w_rect.bottom - w_rect.top) - 0.5;
-		*l = ((w_rect.right  - w_rect.left) / 2) - (((w_rect.bottom - w_rect.top) * 4) / (3 * 2)) - 0.5;
-		*r = ((w_rect.right  - w_rect.left) / 2) + (((w_rect.bottom - w_rect.top) * 4) / (3 * 2)) - 0.5;
-		if (*l < -0.5) {
-			*l = -0.5;
-			*r = (w_rect.right  - w_rect.left) - 0.5;
-			*t = ((w_rect.bottom - w_rect.top) / 2) - (((w_rect.right - w_rect.left) * 3) / (4 * 2)) - 0.5;
-			*b = ((w_rect.bottom - w_rect.top) / 2) + (((w_rect.right - w_rect.left) * 3) / (4 * 2)) - 0.5;
+	case FULLSCR_SCALE_KEEPRATIO:
+		if (config.vid_fullscreen_scale == FULLSCR_SCALE_43) {
+			mw = 4.0;
+			mh = 3.0;
+		} else {
+			mw = ww;
+			mh = wh;
 		}
-		break;
 
-	case FULLSCR_SCALE_SQ:
-		*t = -0.5;
-		*b = (w_rect.bottom - w_rect.top) - 0.5;
-		*l = ((w_rect.right  - w_rect.left) / 2) - (((w_rect.bottom - w_rect.top) * w) / (h * 2)) - 0.5;
-		*r = ((w_rect.right  - w_rect.left) / 2) + (((w_rect.bottom - w_rect.top) * w) / (h * 2)) - 0.5;
-		if (*l < -0.5) {
-			*l = -0.5;
-			*r = (w_rect.right  - w_rect.left) - 0.5;
-			*t = ((w_rect.bottom - w_rect.top) / 2) - (((w_rect.right - w_rect.left) * h) / (w * 2)) - 0.5;
-			*b = ((w_rect.bottom - w_rect.top) / 2) + (((w_rect.right - w_rect.left) * h) / (w * 2)) - 0.5;
-		}
-		break;
+		hsr = sw / sh;
+		gsr = mw / mh;
+
+ 		if (hsr > gsr) {
+ 			/* Host ratio is bigger than guest ratio. */
+			d = (sw - (mw * (sh / mh))) / 2.0;
+ 
+ 			*l = ((int) d) - 0.5;
+			*r = ((int) (sw - d)) - 0.5;
+ 			*t = -0.5;
+			*b = ((int) sh)  - 0.5;
+ 		} else if (hsr < gsr) {
+ 			/* Host ratio is smaller or rqual than guest ratio. */
+			d = (sh - (mh * (sw / mw))) / 2.0;
+ 
+ 			*l = -0.5;
+			*r = ((int) sw) - 0.5;
+ 			*t = ((int) d) - 0.5;
+			*b = ((int) (sh - d)) - 0.5;
+ 		} else {
+ 			/* Host ratio is equal to guest ratio. */
+ 			d3d_size_default(w_rect, l, t, r, b);
+ 		}
+ 		break;
 
 	case FULLSCR_SCALE_INT:
 		ratio_w = (w_rect.right  - w_rect.left) / w;
@@ -147,38 +164,6 @@ d3d_size(RECT w_rect, double *l, double *t, double *r, double *b, int w, int h)
 		*r = ((w_rect.right  - w_rect.left) / 2) + ((w * ratio_w) / 2) - 0.5;
 		*t = ((w_rect.bottom - w_rect.top)  / 2) - ((h * ratio_w) / 2) - 0.5;
 		*b = ((w_rect.bottom - w_rect.top)  / 2) + ((h * ratio_w) / 2) - 0.5;
-		break;
-
-	case FULLSCR_SCALE_KEEPRATIO:
-		hsr = ((double) (w_rect.right  - w_rect.left)) / ((double) (w_rect.bottom - w_rect.top));
-		gsr = ((double) w) / ((double) h);
-
-		if (hsr > gsr) {
-			/* Host ratio is bigger than guest ratio. */
-			ra = ((double) (w_rect.bottom - w_rect.top)) / ((double) h);
-
-			d = ((double) w) * ra;
-			d = (((double) (w_rect.right  - w_rect.left)) - d) / 2.0;
-
-			*l = ((int) d) - 0.5;
-			*r = (w_rect.right  - w_rect.left) - ((int) d) - 0.5;
-			*t = -0.5;
-			*b = (w_rect.bottom - w_rect.top)  - 0.5;
-		} else if (hsr < gsr) {
-			/* Host ratio is smaller or rqual than guest ratio. */
-			ra = ((double) (w_rect.right  - w_rect.left)) / ((double) w);
-
-			d = ((double) h) * ra;
-			d = (((double) (w_rect.bottom - w_rect.top)) - d) / 2.0;
-
-			*l = -0.5;
-			*r = (w_rect.right  - w_rect.left) - 0.5;
-			*t = ((int) d) - 0.5;
-			*b = (w_rect.bottom - w_rect.top)  - ((int) d) - 0.5;
-		} else {
-			/* Host ratio is equal to guest ratio. */
-			d3d_size_default(w_rect, l, t, r, b);
-		}
 		break;
     }
 }
@@ -631,20 +616,91 @@ d3d_enable(int yes)
 static void
 d3d_screenshot(const wchar_t *fn)
 {
-#ifdef USE_D3DX
     LPDIRECT3DSURFACE9 d3dSurface = NULL;
+    LPDIRECT3DSURFACE9 copy = NULL;
+    D3DSURFACE_DESC desc;
+    D3DLOCKED_RECT d3dlr;
+    uint8_t *bits, *pixels, *ptr;
+    HRESULT hr;
+#if USE_LIBPNG
+    wchar_t temp[512];
+    int i;
+#endif
 
     if (! d3dTexture) return;
 
-    d3ddev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &d3dSurface);
-    D3DXSaveSurfaceToFile(fn, D3DXIFF_PNG, d3dSurface, NULL, NULL);
+    hr = d3ddev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &d3dSurface);
+    if (FAILED(hr)) {
+	ERRLOG("D3D: GetBackBuffer failed, result = %08lx\n", hr);
+	return;
+    }
 
+    d3dSurface->GetDesc(&desc);
+
+    hr = d3ddev->CreateOffscreenPlainSurface(desc.Width, desc.Height,
+					     desc.Format, D3DPOOL_SYSTEMMEM,
+					     &copy, NULL);
+    if (FAILED(hr)) {
+	ERRLOG("D3D: CreateOffscreenPlainSurface failed, result = %08lx\n", hr);
+	copy->Release();
+	d3dSurface->Release();
+	return;
+    }
+
+    hr = d3ddev->GetRenderTargetData(d3dSurface, copy);
+    if (FAILED(hr)) {
+	ERRLOG("D3D: GetTargetData failed, result = %08lx\n", hr);
+	copy->Release();
+	d3dSurface->Release();
+	return;
+    }
+
+    hr = copy->LockRect(&d3dlr, NULL, D3DLOCK_NO_DIRTY_UPDATE|D3DLOCK_READONLY);
+    if (FAILED(hr)) {
+	ERRLOG("D3D: LockRect failed, result = %08lx\n", hr);
+	copy->Release();
+	d3dSurface->Release();
+	return;
+    }
+    bits = (uint8_t *)d3dlr.pBits;
+
+    INFO("D3D: surface %ix%i pixels, pitch %i, at %08lx\n",
+		desc.Width, desc.Height, d3dlr.Pitch, bits);
+
+    /* Allocate a linear buffer for the pixel data. */
+    pixels = (uint8_t *)mem_alloc(desc.Width * desc.Height * 4);
+
+    /* Copy all pixels from the offscreen copy into the linear buffer. */
+    ptr = pixels;
+    for (i = 0; i < (int)desc.Height; i++) {
+	memcpy(ptr, &bits[(d3dlr.Pitch * i)], d3dlr.Pitch);
+	ptr += d3dlr.Pitch;
+    }
+
+    /* Unlock and release the copy. */
+    copy->UnlockRect();
+    copy->Release();
+
+    /* Unlock and release the back buffer. */
+    d3dSurface->UnlockRect();
     d3dSurface->Release();
-    d3dSurface = NULL;
+
+#if USE_LIBPNG
+    i = png_write_rgb(fn, 0, pixels,
+		      (int16_t)desc.Width, (int16_t)desc.Height);
+
+    /* Show error message if needed. */
+    if (i == 0) {
+        swprintf(temp, sizeof_w(temp),
+                 get_string(IDS_ERR_SCRSHOT), fn);
+        ui_msgbox(MBX_ERROR, temp);
+    }
 #else
-    /* OK, screenshots not yet possible without D3DX. */
     (void)fn;
 #endif
+
+    /* Release the linear buffer. */
+    free(pixels);
 }
 
 

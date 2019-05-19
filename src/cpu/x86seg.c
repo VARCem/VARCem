@@ -8,7 +8,7 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.7	2019/04/29
+ * Version:	@(#)x86seg.c	1.0.8	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,9 +44,10 @@
 #include <wchar.h>
 #define HAVE_STDARG_H
 #include "../emu.h"
-#include "cpu.h"
+#include "../timer.h"
 #include "../mem.h"
 #include "../nvr.h"
+#include "cpu.h"
 #include "x86.h"
 #include "386.h"
 #include "386_common.h"
@@ -349,7 +350,11 @@ void loadseg(uint16_t seg, x86seg *s)
                 addr=seg&~7;
                 if (seg&4)
                 {
+#if 0
                         if (addr>=ldt.limit)
+#else
+                        if ((addr+7)>ldt.limit)
+#endif
                         {
                                 x86gpf("loadseg(): Bigger than LDT limit",seg&~3);
                                 return;
@@ -358,7 +363,11 @@ void loadseg(uint16_t seg, x86seg *s)
                 }
                 else
                 {
+#if 0
                         if (addr>=gdt.limit)
+#else
+                        if ((addr+7)>gdt.limit)
+#endif
                         {
                                 x86gpf("loadseg(): Bigger than GDT limit",seg&~3);
                                 return;
@@ -1110,7 +1119,11 @@ void loadcscall(uint16_t seg)
                                                 addr=newss&~7;
                                                 if (newss&4)
                                                 {
+#if 0
                                                         if (addr>=ldt.limit)
+#else
+                                                        if ((addr+7)>ldt.limit)
+#endif
                                                         {
                                                                 x86abort("Bigger than LDT limit %04X %08X %04X CSC SS\n",newss,addr,ldt.limit);
                                                                 x86ts(NULL,newss&~3);
@@ -1120,7 +1133,11 @@ void loadcscall(uint16_t seg)
                                                 }
                                                 else
                                                 {
+#if 0
                                                         if (addr>=gdt.limit)
+#else
+                                                        if ((addr+7)>gdt.limit)
+#endif
                                                         {
                                                                 x86abort("Bigger than GDT limit %04X %04X CSC\n",newss,gdt.limit);
                                                                 x86ts(NULL,newss&~3);

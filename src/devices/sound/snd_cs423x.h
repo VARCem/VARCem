@@ -8,7 +8,7 @@
  *
  *		Definitions for the Crystal CS423x driver.
  *
- * Version:	@(#)snd_cs423x.h	1.0.1	2019/01/13
+ * Version:	@(#)snd_cs423x.h	1.0.2	2019/05/17
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -65,13 +65,12 @@ typedef struct {
 
     int16_t	out_l, out_r;
 
-    int64_t	enable;
-
     int		irq, dma;
 
-    int64_t	freq;
+    tmrval_t	freq;
 
-    int64_t	timer_count,
+    tmrval_t	enable;
+    tmrval_t	timer_count,
 		timer_latch;
 
     int16_t	buffer[SOUNDBUFLEN * 2];

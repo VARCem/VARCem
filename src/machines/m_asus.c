@@ -56,7 +56,6 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/sio/sio.h"
 #include "../devices/disk/hdc.h"
-#include "../devices/disk/hdc_ide.h"
 #include "machine.h"
 
 

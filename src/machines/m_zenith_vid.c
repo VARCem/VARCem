@@ -17,7 +17,7 @@
  *		done on implementing other parts of the Yamaha V6355 chip
  *		that implements the video controller.
  *
- * Version:	@(#)m_zenith_vid.c	1.0.4	2019/05/13
+ * Version:	@(#)m_zenith_vid.c	1.0.5	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *              John Elliott, <jce@seasip.info>
@@ -49,10 +49,10 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
-#include "../timer.h"
 #include "../device.h"
 #include "../devices/video/video.h"
 #include "../devices/video/vid_cga.h"
@@ -80,7 +80,7 @@ typedef struct {
     uint8_t	bank_indx;		/* V6355 extended bank */
     uint8_t	bank_data[0x6a];	/* V6355 extended bank */
 
-    int64_t	dispontime,
+    tmrval_t	dispontime,
 		dispofftime,
  		vsynctime;
 
@@ -109,8 +109,8 @@ recalc_timings(vid_t *dev)
 	_dispontime = 640;
 	_dispofftime = disptime - _dispontime;
 
-	dev->dispontime  = (int64_t)(_dispontime  * (1 << TIMER_SHIFT));
-	dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+	dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+	dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
     } else
 	cga_recalctimings(&dev->cga);
 }

@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.15	2019/05/13
+ * Version:	@(#)snd_mpu401.c	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,8 +47,8 @@
 #include <wchar.h>
 #define dbglog sound_midi_log
 #include "../../emu.h"
-#include "../../io.h"
 #include "../../timer.h"
+#include "../../io.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/pic.h"
@@ -64,9 +64,9 @@ enum {
 };
 
 
-static int64_t	mpu401_event_callback = 0LL;
-static int64_t	mpu401_eoi_callback = 0LL;
-static int64_t	mpu401_reset_callback = 0LL;
+static tmrval_t	mpu401_event_callback = 0;
+static tmrval_t	mpu401_eoi_callback = 0;
+static tmrval_t	mpu401_reset_callback = 0;
 
 
 static void	MPU401_WriteCommand(mpu_t *, uint8_t);
@@ -80,7 +80,7 @@ QueueByte(mpu_t *mpu, uint8_t data)
 	mpu->state.block_ack = 0;
 	return;
     }
-	
+
     if ((mpu->queue_used == 0) && (mpu->mode == M_INTELLIGENT)) {
 	mpu->state.irq_pending = 1;
 	picint(1 << mpu->irq);
@@ -216,7 +216,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
 		case 0x8:	/* Play */
 			DEBUG("MPU-401:Intelligent mode playback started");
 			mpu->state.playing = 1;
-			mpu401_event_callback = (int64_t) ((MPU401_TIMECONSTANT / (mpu->clock.tempo*mpu->clock.timebase)) * 1000LL * TIMER_USEC);
+			mpu401_event_callback = (tmrval_t) ((MPU401_TIMECONSTANT / (mpu->clock.tempo*mpu->clock.timebase)) * 1000LL * TIMER_USEC);
 			ClrQueue(mpu);
 			break;
 	}
@@ -334,7 +334,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
 
 	case 0xff:	/* Reset MPU-401 */
 		DEBUG("MPU-401:Reset %X\n", val);
-		mpu401_reset_callback = (int64_t) (MPU401_RESETBUSY * 33LL * TIMER_USEC);
+		mpu401_reset_callback = (tmrval_t) (MPU401_RESETBUSY * 33LL * TIMER_USEC);
 		mpu->state.reset = 1;
 		was_uart = (mpu->mode == M_UART);
 		MPU401_Reset(mpu);
@@ -875,12 +875,11 @@ MPU401_Event(priv_t priv)
 				MPU401_EOIHandler(mpu);
 
 next_event:
-    /* mpu401_event_callback = 0LL; */
     new_time = ((mpu->clock.tempo * mpu->clock.timebase * mpu->clock.tempo_rel) / 0x40);
     if (new_time == 0)
-	mpu401_event_callback = 0LL;
+	mpu401_event_callback = 0;
       else
-	mpu401_event_callback += (int64_t) ((MPU401_TIMECONSTANT / new_time) * 1000LL * TIMER_USEC);
+	mpu401_event_callback += (tmrval_t) ((MPU401_TIMECONSTANT / new_time) * 1000LL * TIMER_USEC);
 }
 
 

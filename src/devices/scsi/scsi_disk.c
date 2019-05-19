@@ -12,7 +12,7 @@
  *		until this is fixed, we return the actual device properties,
  *		and keep the sense data unmodifyable.
  *
- * Version:	@(#)scsi_disk.c	1.0.23	2019/04/23
+ * Version:	@(#)scsi_disk.c	1.0.24	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

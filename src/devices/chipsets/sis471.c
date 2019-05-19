@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85C471 System Controller chip.
  *
- * Version:	@(#)sis471.c	1.0.15	2019/05/13
+ * Version:	@(#)sis471.c	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../device.h"

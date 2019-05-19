@@ -58,7 +58,6 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
-#include "../devices/disk/hdc_ide.h"
 #include "../devices/video/video.h"
 #include "machine.h"
 

@@ -8,7 +8,7 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.21	2019/05/13
+ * Version:	@(#)vid_hercules.c	1.0.22	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,12 +42,12 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../config.h"
 #include "../../io.h"
 #include "../../cpu/cpu.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -65,9 +65,10 @@ typedef struct {
 		ctrl2,
 		stat;
 
-    int64_t	dispontime,
+    tmrval_t	dispontime,
 		dispofftime;
-    int64_t	vidtime;
+    tmrval_t	vidtime;
+    tmrval_t	vsynctime;
 
     int		firstline,
 		lastline;
@@ -84,7 +85,6 @@ typedef struct {
 		blink;
     int		vadj;
     int		blend;
-    int64_t	vsynctime;
 
     uint8_t	cols[256][2][2];
 
@@ -107,8 +107,8 @@ recalc_timings(hercules_t *dev)
     _dispontime  *= MDACONST;
     _dispofftime *= MDACONST;
 
-    dev->dispontime  = (int64_t)(_dispontime  * (1LL << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1LL << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1LL << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1LL << TIMER_SHIFT));
 }
 
 

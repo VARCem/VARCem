@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.19	2019/05/03
+ * Version:	@(#)ui_stbar.c	1.0.20	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
+#include "../timer.h"
 #include "../device.h"
 #include "../plat.h"
 #include "../machines/machine.h"

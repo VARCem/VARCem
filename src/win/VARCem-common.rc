@@ -8,11 +8,11 @@
  *
  *		Common resources for the application.
  *
- * Version:	@(#)VARCem-common.rc	1.0.11	2018/10/20
+ * Version:	@(#)VARCem-common.rc	1.0.12	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -97,9 +97,8 @@ BEGIN
         BEGIN
             MENUITEM STR_4041,IDM_STRETCH
             MENUITEM STR_4042,IDM_STRETCH_43
-            MENUITEM STR_4043,IDM_STRETCH_SQ
-            MENUITEM STR_4044,IDM_STRETCH_INT
             MENUITEM STR_4045,IDM_STRETCH_KEEP
+            MENUITEM STR_4044,IDM_STRETCH_INT
         END
     END
 

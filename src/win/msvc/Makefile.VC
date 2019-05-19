@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.72	2019/05/15
+# Version:	@(#)Makefile.VC	1.0.73	2019/05/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -398,21 +398,6 @@ ifneq ($(D2D), n)
   LIBS		+= d2d1.lib
  endif
  D2DOBJ		:= win_d2d.obj
-endif
-
-# D3DX (always hard-linked)
-ifndef D3DX
- D3DX		:= y
- ifeq ($(ARM), y)
-  D3DX		:= n
- endif
- ifeq ($(ARM64), y)
-  D3DX		:= n
- endif
-endif
-ifeq ($(D3DX), y)
- OPTS		+= -DUSE_D3DX
- LIBS		+= d3dx9.lib
 endif
 
 # DINPUT and XInput (always hard-linked)

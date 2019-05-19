@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.76	2019/05/10
+ * Version:	@(#)pc.c	1.0.77	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,6 +47,7 @@
 #include "emu.h"
 #include "version.h"
 #include "config.h"
+#include "timer.h"
 #include "cpu/cpu.h"
 #ifdef USE_DYNAREC
 # include "cpu/x86.h"
@@ -60,7 +61,6 @@
 #include "devices/system/dma.h"
 #include "devices/system/pic.h"
 #include "random.h"
-#include "timer.h"
 #include "device.h"
 #include "nvr.h"
 #include "devices/ports/game.h"

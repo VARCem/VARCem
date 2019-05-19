@@ -43,7 +43,7 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.13	2018/05/13
+ * Version:	@(#)m_ps1_hdc.c	1.0.14	2018/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -92,8 +92,8 @@
 #include <wchar.h>
 #define dbglog hdc_log
 #include "../emu.h"
-#include "../io.h"
 #include "../timer.h"
+#include "../io.h"
 #include "../device.h"
 #include "../devices/system/dma.h"
 #include "../devices/system/pic.h"
@@ -391,7 +391,7 @@ typedef struct {
     priv_t	sys;			/* handle to system board */
 
     /* Controller state. */
-    int64_t	callback;
+    tmrval_t	callback;
     int8_t	state,			/* controller state */
 		reset;			/* reset state counter */
 

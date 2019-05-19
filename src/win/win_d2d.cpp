@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct2D.
  *
- * Version:	@(#)win_d2d.cpp	1.0.8	2019/05/03
+ * Version:	@(#)win_d2d.cpp	1.0.9	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		David Hrdlicka, <hrdlickadavid@outlook.com>
@@ -105,39 +105,38 @@ d2d_stretch(float *w, float *h, float *x, float *y)
 		break;
 
 	case FULLSCR_SCALE_43:
+	case FULLSCR_SCALE_KEEPRATIO:
 		dw = (double)d2d_screen_width;
 		dh = (double)d2d_screen_height;
-		temp = (dh / 3.0) * 4.0;
-		dx = (dw - temp) / 2.0;
-		dw = temp;
-		*w = (float)dw;
-		*h = (float)dh;
-		*x = (float)dx;
-		*y = 0;
-		break;
 
-	case FULLSCR_SCALE_SQ:
-		dw = (double)d2d_screen_width;
-		dh = (double)d2d_screen_height;
-		temp = ((double) *w);
-		temp2 = ((double) *h);
-		dx = (dw / 2.0) - ((dh * temp) / (temp2 * 2.0));
-		dy = 0.0;
-		if (dx < 0.0) {
-			dx = 0.0;
-			dy = (dw / 2.0) - ((dh * temp2) / (temp * 2.0));
+		hsr = dw / dh;
+		if (config.vid_fullscreen_scale == FULLSCR_SCALE_43)
+			gsr = 4.0 / 3.0;
+		else
+			gsr = ((double) *w) / ((double) *h);
+
+		if (gsr <= hsr) {
+			temp = dh * gsr;
+			dx = (dw - temp) / 2.0;
+			dw = temp;
+			*w = (float) dw;
+			*h = (float) dh;
+			*x = (float) dx;
+			*y = 0;
+		} else {
+			temp = dw / gsr;
+			dy = (dh - temp) / 2.0;
+			dh = temp;
+			*w = (float) dw;
+			*h = (float) dh;
+			*x = 0;
+			*y = (float) dy;
 		}
-		dw -= (dx * 2.0);
-		dh -= (dy * 2.0);
-		*w = (float)dw;
-		*h = (float)dh;
-		*x = (float)dx;
-		*y = (float)dy;
 		break;
-
+ 
 	case FULLSCR_SCALE_INT:
-		dw = (double)d2d_screen_width;
-		dh = (double)d2d_screen_height;
+		dw = (double) d2d_screen_width;
+		dh = (double) d2d_screen_height;
 		temp = ((double) *w);
 		temp2 = ((double) *h);
 		ratio_w = dw / ((double) *w);
@@ -148,34 +147,10 @@ d2d_stretch(float *w, float *h, float *x, float *y)
 		dy = (dh / 2.0) - ((temp2 * ratio_h) / 2.0);
 		dw -= (dx * 2.0);
 		dh -= (dy * 2.0);
-		*w = (float)dw;
-		*h = (float)dh;
-		*x = (float)dx;
-		*y = (float)dy;
-		break;
-
-	case FULLSCR_SCALE_KEEPRATIO:
-		dw = (double)d2d_screen_width;
-		dh = (double)d2d_screen_height;
-		hsr = dw / dh;
-		gsr = ((double) *w) / ((double) *h);
-		if (gsr <= hsr) {
-			temp = dh * gsr;
-			dx = (dw - temp) / 2.0;
-			dw = temp;
-			*w = (float)dw;
-			*h = (float)dh;
-			*x = (float)dx;
-			*y = 0;
-		} else {
-			temp = dw / gsr;
-			dy = (dh - temp) / 2.0;
-			dh = temp;
-			*w = (float)dw;
-			*h = (float)dh;
-			*x = 0;
-			*y = (float)dy;
-		}
+		*w = (float) dw;
+		*h = (float) dh;
+		*x = (float) dx;
+		*y = (float) dy;
 		break;
     }
 }

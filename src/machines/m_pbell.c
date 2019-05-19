@@ -47,6 +47,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"

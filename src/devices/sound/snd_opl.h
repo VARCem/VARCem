@@ -8,14 +8,14 @@
  *
  *		Definitions for the OPL interface.
  *
- * Version:	@(#)snd_opl.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_opl.h	1.0.2	2010/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -41,36 +41,34 @@
 # define SOUND_OPL_H
 
 
-typedef struct opl_t
-{
-        int chip_nr[2];
-        
-        int64_t timers[2][2];
-        int64_t timers_enable[2][2];
+typedef struct {
+    int		chip_nr[2];
 
-        int16_t filtbuf[2];
+    tmrval_t	timers[2][2];
+    tmrval_t	timers_enable[2][2];
 
-        int16_t buffer[SOUNDBUFLEN * 2];
-        int     pos;
+    int16_t	filtbuf[2];
+
+    int		pos;
+    int16_t	buffer[SOUNDBUFLEN * 2];
 } opl_t;
 
-uint8_t opl2_read(uint16_t a, void *priv);
-void opl2_write(uint16_t a, uint8_t v, void *priv);
-uint8_t opl2_l_read(uint16_t a, void *priv);
-void opl2_l_write(uint16_t a, uint8_t v, void *priv);
-uint8_t opl2_r_read(uint16_t a, void *priv);
-void opl2_r_write(uint16_t a, uint8_t v, void *priv);
-uint8_t opl3_read(uint16_t a, void *priv);
-void opl3_write(uint16_t a, uint8_t v, void *priv);
 
-void opl2_poll(opl_t *opl, int16_t *bufl, int16_t *bufr);
-void opl3_poll(opl_t *opl, int16_t *bufl, int16_t *bufr);
+extern void	opl2_poll(opl_t *opl, int16_t *bufl, int16_t *bufr);
+extern void	opl2_update2(opl_t *opl);
+extern uint8_t	opl2_read(uint16_t a, priv_t);
+extern void	opl2_write(uint16_t a, uint8_t v, priv_t);
+extern uint8_t	opl2_l_read(uint16_t a, priv_t);
+extern void	opl2_l_write(uint16_t a, uint8_t v, priv_t);
+extern uint8_t	opl2_r_read(uint16_t a, priv_t);
+extern void	opl2_r_write(uint16_t a, uint8_t v, priv_t);
+extern void	opl2_init(opl_t *opl);
 
-void opl2_init(opl_t *opl);
-void opl3_init(opl_t *opl);
-
-void opl2_update2(opl_t *opl);
-void opl3_update2(opl_t *opl);
+extern void	opl3_poll(opl_t *opl, int16_t *bufl, int16_t *bufr);
+extern void	opl3_update2(opl_t *opl);
+extern uint8_t	opl3_read(uint16_t a, priv_t);
+extern void	opl3_write(uint16_t a, uint8_t v, priv_t);
+extern void	opl3_init(opl_t *opl);
 
 
 #endif	/*SOUND_OPL_H*/

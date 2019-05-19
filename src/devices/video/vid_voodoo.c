@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.20	2019/04/30
+ * Version:	@(#)vid_voodoo.c	1.0.21	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,9 +46,9 @@
 #include <wchar.h>
 #include <math.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../mem.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
@@ -299,7 +299,7 @@ typedef struct voodoo_t
         int swap_count;
         
         int disp_buffer, draw_buffer;
-        int64_t timer_count;
+        tmrval_t timer_count;
         
         int line;
         svga_t *svga;
@@ -435,9 +435,9 @@ typedef struct voodoo_t
         int fb_write_buffer, fb_draw_buffer;
         int buffer_cutoff;
 
-        int64_t read_time, write_time, burst_time;
+        tmrval_t read_time, write_time, burst_time;
 
-        int64_t wake_timer;
+        tmrval_t wake_timer;
                 
         uint8_t thefilter[256][256]; // pixel filter, feeding from one or two
         uint8_t thefilterg[256][256]; // for green

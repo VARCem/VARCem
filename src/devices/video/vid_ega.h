@@ -8,7 +8,7 @@
  *
  *		Definitions for the IBM EGA driver.
  *
- * Version:	@(#)vid_ega.h	1.0.6	2019/05/13
+ * Version:	@(#)vid_ega.h	1.0.7	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -120,8 +120,8 @@ typedef struct {
         
     int		vres;
         
-    int64_t	dispontime, dispofftime;
-    int64_t	vidtime;
+    tmrval_t	dispontime, dispofftime;
+    tmrval_t	vidtime;
         
     uint8_t	scrblank;
         

@@ -25,7 +25,7 @@
  *		to be done on implementing other parts of the Yamaha V6355
  *		chip that implements the video controller.
  *
- * Version:	@(#)m_zenith.c	1.0.8	2019/05/13
+ * Version:	@(#)m_zenith.c	1.0.9	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original patch for PCem by 'Tux'
@@ -58,6 +58,7 @@
 #include <time.h>
 #include "../emu.h"
 #include "../config.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"

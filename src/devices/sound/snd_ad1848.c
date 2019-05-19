@@ -8,7 +8,7 @@
  *
  *		Emulation of the AD1848 (Windows Sound System) CODEC.
  *
- * Version:	@(#)snd_ad1848.c	1.0.7	2019/04/25
+ * Version:	@(#)snd_ad1848.c	1.0.8	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,9 +63,9 @@ void ad1848_setdma(ad1848_t *ad1848, int dma_ch)
         ad1848->dma = dma_ch;
 }
 
-uint8_t ad1848_read(uint16_t addr, void *p)
+uint8_t ad1848_read(uint16_t addr, priv_t priv)
 {
-        ad1848_t *ad1848 = (ad1848_t *)p;
+        ad1848_t *ad1848 = (ad1848_t *)priv;
         uint8_t temp = 0xff;
         switch (addr & 3)
         {
@@ -82,9 +82,9 @@ uint8_t ad1848_read(uint16_t addr, void *p)
         return temp;
 }
 
-void ad1848_write(uint16_t addr, uint8_t val, void *p)
+void ad1848_write(uint16_t addr, uint8_t val, priv_t priv)
 {
-        ad1848_t *ad1848 = (ad1848_t *)p;
+        ad1848_t *ad1848 = (ad1848_t *)priv;
         double freq;
         switch (addr & 3)
         {
@@ -148,9 +148,9 @@ void ad1848_update(ad1848_t *ad1848)
         }
 }
 
-static void ad1848_poll(void *p)
+static void ad1848_poll(priv_t priv)
 {
-        ad1848_t *ad1848 = (ad1848_t *)p;
+        ad1848_t *ad1848 = (ad1848_t *)priv;
  
         if (ad1848->timer_latch)
                 ad1848->timer_count += ad1848->timer_latch;

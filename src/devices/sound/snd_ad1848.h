@@ -8,13 +8,13 @@
  *
  *		Definitions for the AD1848 driver.
  *
- * Version:	@(#)snd_ad1848.h	1.0.1	2018/02/14
+ * Version:	@(#)snd_ad1848.h	1.0.2	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -53,13 +53,13 @@ typedef struct ad1848_t
         
         int16_t out_l, out_r;
                 
-        int64_t enable;
+        tmrval_t enable;
 
         int irq, dma;
         
-        int64_t freq;
+        tmrval_t freq;
         
-        int64_t timer_count, timer_latch;
+        tmrval_t timer_count, timer_latch;
 
         int16_t buffer[SOUNDBUFLEN * 2];
         int pos;
@@ -68,8 +68,8 @@ typedef struct ad1848_t
 void ad1848_setirq(ad1848_t *ad1848, int irq);
 void ad1848_setdma(ad1848_t *ad1848, int dma);
 
-uint8_t ad1848_read(uint16_t addr, void *p);
-void ad1848_write(uint16_t addr, uint8_t val, void *p);
+uint8_t ad1848_read(uint16_t addr, priv_t);
+void ad1848_write(uint16_t addr, uint8_t val, priv_t);
 
 void ad1848_update(ad1848_t *ad1848);
 void ad1848_speed_changed(ad1848_t *ad1848);

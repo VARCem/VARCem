@@ -8,7 +8,7 @@
  *
  *		Definitions for Intel 8253 timer module.
  *
- * Version:	@(#)pit.h	1.0.7	2019/05/05
+ * Version:	@(#)pit.h	1.0.8	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,7 @@ typedef struct {
 
 typedef struct PIT {
     uint32_t	l[3];
-    int64_t	c[3];
+    tmrval_t	c[3];
     uint8_t	m[3];
     uint8_t	ctrl,
 		ctrls[3];
@@ -60,7 +60,7 @@ typedef struct PIT {
     int		rereadlatch[3];
     int		gate[3];
     int		out[3];
-    int64_t	running[3];
+    tmrval_t	running[3];
     int		enabled[3];
     int		newcount[3];
     int		count[3];

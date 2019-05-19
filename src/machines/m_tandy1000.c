@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy1000.c	1.0.23	2019/05/13
+ * Version:	@(#)m_tandy1000.c	1.0.24	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,11 +43,11 @@
 #include <wchar.h>
 #include <math.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../timer.h"
 #include "../nvr.h"
 #include "../device.h"
 #include "../devices/system/dma.h"
@@ -88,7 +88,8 @@ typedef struct {
     int		amplitude;
 
     int		irq;
-    int64_t	timer_count,
+
+    tmrval_t	timer_count,
 		enable;
 
     int		wave_pos;
@@ -798,7 +799,7 @@ snd_callback(priv_t priv)
 	dev->wave_pos = (dev->wave_pos + 1) & 31;
     }
 
-    dev->timer_count += (int64_t)(TIMER_USEC * (1000000.0 / 3579545.0) * (double)(dev->freq ? dev->freq : 0x400));
+    dev->timer_count += (tmrval_t)(TIMER_USEC * (1000000.0 / 3579545.0) * (double)(dev->freq ? dev->freq : 0x400));
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.9	2019/05/13
+ * Version:	@(#)snd_wss.c	1.0.10	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -46,6 +46,7 @@
 #include <math.h>  
 #define dbglog sound_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../device.h"
 #include "../../plat.h"

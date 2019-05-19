@@ -8,7 +8,7 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.17	2019/05/13
+ * Version:	@(#)hdc_esdi_at.c	1.0.18	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,12 +46,12 @@
 #include <wchar.h>
 #define dbglog hdc_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
-#include "../../timer.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "../system/pic.h"
@@ -116,7 +116,7 @@ typedef struct {
     uint16_t	buffer[256];
     int		irqstat;
 
-    int64_t	callback;
+    tmrval_t	callback;
 
     drive_t	drives[2];
 

@@ -8,11 +8,11 @@
  *
  *		Handle the UI part of CD-ROM/ZIP/DISK media changes.
  *
- * Version:	@(#)ui_cdrom.c	1.0.6	2018/10/25
+ * Version:	@(#)ui_cdrom.c	1.0.7	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018,2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -50,6 +50,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../config.h"
 #include "../plat.h"
 #include "../devices/floppy/fdd.h"

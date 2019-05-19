@@ -24,7 +24,7 @@
  * FIXME:	Make sure this works with the new IDE stuff, the AT and PS/2
  *		controllers do not have dev->ide set to anything...
  *
- * Version:	@(#)hdc_xtide.c	1.0.13	2019/05/13
+ * Version:	@(#)hdc_xtide.c	1.0.14	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,6 +57,7 @@
 #include <wchar.h>
 #define dbglog hdc_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"

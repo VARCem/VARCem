@@ -8,7 +8,7 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.7	2019/05/03
+ * Version:	@(#)ui_vidapi.c	1.0.8	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -222,7 +222,7 @@ vidapi_screenshot(void)
     DEBUG("VIDAPI: screenshot (api=%i)\n", config.vid_api);
 
     if ((config.vid_api < 0) ||
-        (plat_vidapis[config.vid_api]->screenshot != NULL)) return;
+        (plat_vidapis[config.vid_api]->screenshot == NULL)) return;
 
     (void)time(&now);
     info = localtime(&now);

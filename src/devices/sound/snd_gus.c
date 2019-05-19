@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.14	2019/05/13
+ * Version:	@(#)snd_gus.c	1.0.15	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,8 +43,8 @@
 #include <wchar.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
-#include "../../io.h"
 #include "../../timer.h"
+#include "../../io.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/dma.h"
@@ -120,7 +120,7 @@ typedef struct {
     int32_t	out_l,
 		out_r;
 
-    int64_t	samp_timer,
+    tmrval_t	samp_timer,
 		samp_latch;
 
     uint8_t	*ram;
@@ -130,7 +130,7 @@ typedef struct {
 
     int		irqnext;
 
-    int64_t	timer_1,
+    tmrval_t	timer_1,
 		timer_2;
 
     int		irq,
@@ -1183,7 +1183,7 @@ gus_init(const device_t *info, UNUSED(void *parent))
 
     dev->voices = 14;
 
-    dev->samp_timer = dev->samp_latch = (int64_t)(TIMER_USEC * (1000000.0 / 44100.0));
+    dev->samp_timer = dev->samp_latch = (tmrval_t)(TIMER_USEC * (1000000.0 / 44100.0));
 
     dev->t1l = dev->t2l = 0xff;
 

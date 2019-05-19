@@ -9,7 +9,7 @@
  *		Emulation of the EGA, Chips & Technologies SuperEGA, and
  *		AX JEGA graphics cards.
  *
- * Version:	@(#)vid_ega.c	1.0.20	2019/05/13
+ * Version:	@(#)vid_ega.c	1.0.21	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,11 +43,11 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -318,8 +318,8 @@ ega_recalctimings(ega_t *dev)
     _dispontime  = _dispontime * crtcconst;
     _dispofftime = _dispofftime * crtcconst;
 
-    dev->dispontime  = (int64_t)(_dispontime  * (1LL << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1LL << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1LL << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1LL << TIMER_SHIFT));
 }
 
 

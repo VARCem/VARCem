@@ -19,7 +19,7 @@
  *		plasma display. The code for this was taken from the code
  *		for the Toshiba 3100e machine, which used a similar display.
  *
- * Version:	@(#)m_compaq_vid.c	1.0.3	2019/05/13
+ * Version:	@(#)m_compaq_vid.c	1.0.4	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,12 +54,12 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
-#include "../timer.h"
 #include "../plat.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pit.h"
@@ -90,11 +90,10 @@ typedef struct {
     cga_t	cga;
     mem_map_t	cga_mapping;
 
-    int64_t	dispontime,
+    tmrval_t	dispontime,
 		dispofftime;
-    int64_t	vsynctime;
-
-    int64_t	vidtime;
+    tmrval_t	vsynctime;
+    tmrval_t	vidtime;
 
     int		linepos, displine;
     int		lineff;
@@ -140,8 +139,8 @@ recalc_timings(vid_t *dev)
     _dispontime = 640;
     _dispofftime = disptime - _dispontime;
 
-    dev->dispontime  = (int64_t)(_dispontime  * (1LL << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1LL << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1LL << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1LL << TIMER_SHIFT));
 }
 
 

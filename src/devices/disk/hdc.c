@@ -8,7 +8,7 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.20	2019/05/03
+ * Version:	@(#)hdc.c	1.0.21	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,7 +47,6 @@
 #include "../../device.h"
 #include "hdc.h"
 #include "hdd.h"
-#include "hdc_ide.h"
 
 
 #ifdef ENABLE_HDC_LOG

@@ -25,7 +25,7 @@
  *		 by the ROS.
  *  PPC:	MDA Monitor results in half-screen, half-cell-height display??
  *
- * Version:	@(#)m_amstrad_vid.c	1.0.5	2019/05/13
+ * Version:	@(#)m_amstrad_vid.c	1.0.6	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -60,11 +60,11 @@
 #include <wchar.h>
 #define dbglog video_card_log
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../timer.h"
 #include "../device.h"
 #include "../devices/system/clk.h"
 #include "../devices/system/nmi.h"
@@ -123,14 +123,16 @@ typedef struct {
     int		con, coff,
 		cursoron,
 		cgablink;
-    int64_t	vsynctime;
     int		vadj;
     uint16_t	ma, maback;
     int		dispon;
     int		blink;
-    int64_t	dispontime,		/* 1512/1640 */
+
+    tmrval_t	vsynctime;
+    tmrval_t	dispontime,		/* 1512/1640 */
 		dispofftime;		/* 1512/1640 */
-    int64_t	vidtime;		/* 1512/1640 */
+    tmrval_t	vidtime;		/* 1512/1640 */
+
     int		firstline,
 		lastline;
     uint8_t	*vram;
@@ -205,8 +207,8 @@ pc1512_recalc_timings(vid_t *dev)
     _dispontime  *= CGACONST;
     _dispofftime *= CGACONST;
 
-    dev->dispontime  = (int64_t)(_dispontime * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

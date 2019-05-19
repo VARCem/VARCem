@@ -8,7 +8,7 @@
  *
  *		Implementation of the ACC 3221 Super I/O Chip.
  *
- * Version:	@(#)sio_acc3221.c	1.0.2	2019/05/13
+ * Version:	@(#)sio_acc3221.c	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../device.h"
 #include "../system/pci.h"

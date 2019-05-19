@@ -8,7 +8,7 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.19	2019/05/03
+ * Version:	@(#)sound.c	1.0.20	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,8 +49,6 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
-#include "../disk/hdc.h" 
-#include "../disk/hdc_ide.h" 
 #include "../cdrom/cdrom.h"
 #include "sound.h"
 #include "midi.h"
@@ -80,7 +78,7 @@ int		sound_pos_global = 0;
 
 static sndhnd_t	handlers[8];
 static int	handlers_num;
-static int64_t	poll_time = 0LL,
+static tmrval_t	poll_time = 0,
 		poll_latch;
 static int32_t	*outbuffer;
 static float	*outbuffer_ex;
@@ -458,8 +456,6 @@ sound_cd_stop(void)
     }
 
     cd_thread_enable = drives ? 1 : 0;
-
-    secondary_ide_check();
 }
 
 
@@ -483,5 +479,5 @@ sound_add_handler(void (*get_buffer)(int32_t *buffer, int len, void *p), void *p
 void
 sound_speed_changed(void)
 {
-    poll_latch = (int64_t)((double)TIMER_USEC * (1000000.0 / 48000.0));
+    poll_latch = (tmrval_t)((double)TIMER_USEC * (1000000.0 / 48000.0));
 }

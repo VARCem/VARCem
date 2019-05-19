@@ -8,12 +8,12 @@
  *
  *		Definitions for the generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.h	1.0.7	2019/04/23
+ * Version:	@(#)scsi_device.h	1.0.8	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -343,7 +343,7 @@ typedef struct {
     uint32_t sector_pos, sector_len,
 	     packet_len, pos;
 
-    int64_t callback;
+    tmrval_t callback;
 } scsi_device_data_t;
 
 
@@ -359,7 +359,7 @@ extern int	mode_select_terminate(int force);
 extern int	mode_select_write(uint8_t val);
 
 extern uint8_t	*scsi_device_sense(scsi_device_t *dev);
-extern int64_t	scsi_device_get_callback(scsi_device_t *dev);
+extern tmrval_t	scsi_device_get_callback(scsi_device_t *dev);
 extern void	scsi_device_request_sense(scsi_device_t *dev, uint8_t *buffer,
 					  uint8_t alloc_length);
 

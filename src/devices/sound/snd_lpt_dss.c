@@ -8,7 +8,7 @@
  *
  *		Implementation of the LPT-based DSS sound device.
  *
- * Version:	@(#)snd_lpt_dss.c	1.0.11	2019/04/25
+ * Version:	@(#)snd_lpt_dss.c	1.0.12	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,8 +43,8 @@
 #include <wchar.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
-#include "../../cpu/cpu.h"
 #include "../../timer.h"
+#include "../../cpu/cpu.h"
 #include "../ports/parallel_dev.h"
 #include "sound.h"
 #include "filters.h"
@@ -58,7 +58,7 @@ typedef struct {
 
     uint8_t	dac_val;
 
-    int64_t	time;
+    tmrval_t	time;
 
     int16_t	buffer[SOUNDBUFLEN];
     int		pos;
@@ -76,7 +76,7 @@ dss_update(dss_t *dev)
 
 
 static void
-dss_write_data(uint8_t val, void *priv)
+write_data(uint8_t val, priv_t priv)
 {
     dss_t *dev = (dss_t *)priv;
 
@@ -90,24 +90,25 @@ dss_write_data(uint8_t val, void *priv)
 
 
 static void
-dss_write_ctrl(uint8_t val, void *priv)
+write_ctrl(uint8_t val, priv_t priv)
 {
 }
 
 
 static uint8_t
-dss_read_status(void *priv)
+read_status(priv_t priv)
 {
     dss_t *dev = (dss_t *)priv;
 
     if ((dev->write_idx - dev->read_idx) >= 16)
-		return 0x40;
+	return 0x40;
+
     return 0;
 }
 
 
 static void
-dss_get_buffer(int32_t *buffer, int len, void *priv)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     dss_t *dev = (dss_t *)priv;
     int16_t val;
@@ -127,7 +128,7 @@ dss_get_buffer(int32_t *buffer, int len, void *priv)
 
 
 static void
-dss_callback(void *priv)
+dss_callback(priv_t priv)
 {
     dss_t *dev = (dss_t *)priv;
 
@@ -138,11 +139,11 @@ dss_callback(void *priv)
 	dev->read_idx++;
     }
 
-    dev->time += (int64_t) (TIMER_USEC * (1000000.0 / 7000.0));
+    dev->time += (tmrval_t) (TIMER_USEC * (1000000.0 / 7000.0));
 }
 
 
-static void *
+static priv_t
 dss_init(const lpt_device_t *info)
 {
     dss_t *dev;
@@ -153,16 +154,16 @@ dss_init(const lpt_device_t *info)
     memset(dev, 0x00, sizeof(dss_t));
     dev->name = info->name;
 
-    sound_add_handler(dss_get_buffer, dev);
+    sound_add_handler(get_buffer, (priv_t)dev);
 
-    timer_add(dss_callback, dev, &dev->time, TIMER_ALWAYS_ENABLED);
+    timer_add(dss_callback, (priv_t)dev, &dev->time, TIMER_ALWAYS_ENABLED);
 	
-    return dev;
+    return (priv_t)dev;
 }
 
 
 static void
-dss_close(void *priv)
+dss_close(priv_t priv)
 {
     dss_t *dev = (dss_t *)priv;
 
@@ -177,7 +178,7 @@ const lpt_device_t dss_device = {
     0,
     dss_init,
     dss_close,
-    dss_write_data,
-    dss_write_ctrl,
-    dss_read_status
+    write_data,
+    write_ctrl,
+    read_status
 };

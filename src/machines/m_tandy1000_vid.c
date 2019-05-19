@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.5	2019/05/13
+ * Version:	@(#)m_tandy1000_vid.c	1.0.6	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,10 +43,10 @@
 #include <wchar.h>
 #include <math.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
-#include "../timer.h"
 #include "../nvr.h"
 #include "../device.h"
 #include "../devices/system/clk.h"
@@ -88,13 +88,14 @@ typedef struct {
     int		con, coff,
 		cursoron,
 		blink;
-    int64_t	vsynctime;
     int		vadj;
     uint16_t	ma, maback;
 
-    int64_t	dispontime,
+    tmrval_t	vsynctime,
+		dispontime,
 		dispofftime,
 		vidtime;
+
     int		firstline,
 		lastline;
 
@@ -158,8 +159,8 @@ recalc_timings(t1kvid_t *dev)
     _dispontime  *= CGACONST;
     _dispofftime *= CGACONST;
 
-    dev->dispontime  = (int64_t)(_dispontime  * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

@@ -79,7 +79,7 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.15	2019/05/13
+ * Version:	@(#)snd_pas16.c	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -114,9 +114,9 @@
 #include <wchar.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -151,7 +151,7 @@ typedef struct pas16_t
         struct
         {
                 uint32_t l[3];
-                int64_t c[3];
+                tmrval_t c[3];
                 uint8_t m[3];
                 uint8_t ctrl, ctrls[2];
                 int wp, rm[3], wm[3];
@@ -159,7 +159,7 @@ typedef struct pas16_t
                 int thit[3];
                 int delay[3];
                 int rereadlatch[3];
-                int64_t enable[3];
+                tmrval_t enable[3];
         } pit;
 
         opl_t    opl;
@@ -467,7 +467,7 @@ static void pas16_pit_out(uint16_t port, uint8_t val, priv_t priv)
                         pas16->pit.thit[t] = 0;
                         pas16->pit.c[t] = pas16->pit.l[t];
                         if (!t)
-                                pas16->pit.c[t] *= (int64_t) (PITCONST * (1 << TIMER_SHIFT));
+                                pas16->pit.c[t] *= (tmrval_t) (PITCONST * (1 << TIMER_SHIFT));
                         pas16->pit.enable[t] = 1;
                         break;
                         case 2:
@@ -475,7 +475,7 @@ static void pas16_pit_out(uint16_t port, uint8_t val, priv_t priv)
                         pas16->pit.thit[t] = 0;
                         pas16->pit.c[t] = pas16->pit.l[t];
                         if (!t)
-                                pas16->pit.c[t] *= (int64_t) (PITCONST * (1 << TIMER_SHIFT));
+                                pas16->pit.c[t] *= (tmrval_t) (PITCONST * (1 << TIMER_SHIFT));
                         pas16->pit.enable[t] = 1;
                         break;
                         case 0:
@@ -483,7 +483,7 @@ static void pas16_pit_out(uint16_t port, uint8_t val, priv_t priv)
                         pas16->pit.l[t] |= (val << 8);
                         pas16->pit.c[t] = pas16->pit.l[t];
                         if (!t)
-                                pas16->pit.c[t] *= (int64_t) (PITCONST * (1 << TIMER_SHIFT));
+                                pas16->pit.c[t] *= (tmrval_t) (PITCONST * (1 << TIMER_SHIFT));
                         pas16->pit.thit[t] = 0;
                         pas16->pit.wm[t] = 3;
                         pas16->pit.enable[t] = 1;
@@ -499,7 +499,7 @@ static void pas16_pit_out(uint16_t port, uint8_t val, priv_t priv)
                         pas16->pit.l[t] |= 0x10000;
                         pas16->pit.c[t] = pas16->pit.l[t];
                         if (!t)
-                                pas16->pit.c[t] *= (int64_t) (PITCONST * (1 << TIMER_SHIFT));
+                                pas16->pit.c[t] *= (tmrval_t) (PITCONST * (1 << TIMER_SHIFT));
                 }
                 break;
         }
@@ -571,9 +571,9 @@ static void pas16_pcm_poll(priv_t priv)
         if (pas16->pit.m[0] & 2)
         {
                 if (pas16->pit.l[0]) 
-                        pas16->pit.c[0] += (int64_t) ((pas16->pit.l[0] * PITCONST * (1 << TIMER_SHIFT)));
+                        pas16->pit.c[0] += (tmrval_t) ((pas16->pit.l[0] * PITCONST * (1 << TIMER_SHIFT)));
                 else                
-                        pas16->pit.c[0] += (int64_t) ((0x10000 * PITCONST * (1 << TIMER_SHIFT)));
+                        pas16->pit.c[0] += (tmrval_t) ((0x10000 * PITCONST * (1 << TIMER_SHIFT)));
         }
         else
         {

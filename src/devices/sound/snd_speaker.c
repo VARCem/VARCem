@@ -8,7 +8,7 @@
  *
  *		Implementation of the PC-Speaker device.
  *
- * Version:	@(#)snd_speaker.c	1.0.7	2019/05/05
+ * Version:	@(#)snd_speaker.c	1.0.8	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <wchar.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../system/pit.h"
 #include "../system/ppi.h"
 #include "sound.h"
@@ -62,7 +63,7 @@ static int	speaker_pos;
 
 
 static void
-get_buffer(int32_t *buffer, int len, void *p)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     int32_t val;
     int c;
@@ -111,11 +112,11 @@ speaker_update(void)
 void
 speaker_timer(int new_out, int old_out)
 {
-    int64_t l;
+    tmrval_t l;
 
     speaker_update();
 
-    l = pit.l[2] ? pit.l[2] : 0x10000LL;
+    l = pit.l[2] ? pit.l[2] : (tmrval_t)0x10000;
     if (l < 25LL)
         speaker_on = 0;
       else

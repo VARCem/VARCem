@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.22	2019/05/13
+ * Version:	@(#)m_pcjr.c	1.0.23	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,10 +44,10 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
-#include "../timer.h"
 #include "../device.h"
 #include "../devices/system/clk.h"
 #include "../devices/system/nmi.h"
@@ -101,10 +101,12 @@ typedef struct {
     int		sc, vc;
     int		dispon;
     int		con, coff, cursoron, blink;
-    int64_t	vsynctime;
     int		vadj;
     uint16_t	ma, maback;
-    int64_t	dispontime, dispofftime, vidtime;
+
+    tmrval_t	vsynctime,
+		dispontime, dispofftime, vidtime;
+
     int		firstline, lastline;
     void	*cpriv;
 
@@ -159,8 +161,8 @@ recalc_timings(pcjr_t *dev)
     _dispofftime = disptime - _dispontime;
     _dispontime  *= CGACONST;
     _dispofftime *= CGACONST;
-    dev->dispontime  = (int64_t)(_dispontime  * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

@@ -12,7 +12,7 @@
  *		    word 0 - base address
  *		    word 1 - bits 1-15 = byte count, bit 31 = end of transfer
  *
- * Version:	@(#)intel_piix.c	1.0.12	2019/05/15
+ * Version:	@(#)intel_piix.c	1.0.13	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,6 +46,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../device.h"
@@ -60,8 +61,8 @@
 #include "pci.h"
 #include "dma.h"
 #include "pic.h"
-#include "intel_piix.h"
 #include "port92.h"
+#include "intel_piix.h"
 
 
 typedef struct

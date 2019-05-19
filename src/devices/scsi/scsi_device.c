@@ -8,7 +8,7 @@
  *
  *		The generic SCSI device command handler.
  *
- * Version:	@(#)scsi_device.c	1.0.14	2019/04/23
+ * Version:	@(#)scsi_device.c	1.0.15	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #define HAVE_STDARG_H
 #define dbglog scsi_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../device.h"
 #include "../disk/hdd.h"
 #include "scsi.h"
@@ -89,7 +90,7 @@ target_err_stat_to_scsi(scsi_device_t *dev)
 }
 
 
-int64_t
+tmrval_t
 scsi_device_get_callback(scsi_device_t *dev)
 {
     scsi_device_data_t *sdd = (scsi_device_data_t *)dev->p;
@@ -97,7 +98,7 @@ scsi_device_get_callback(scsi_device_t *dev)
     if (sdd)
 	return sdd->callback;
 
-    return -1LL;
+    return (tmrval_t)-1;
 }
 
 

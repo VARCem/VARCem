@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.10	2019/04/27
+ * Version:	@(#)386_dynarec.c	1.0.11	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,19 +46,19 @@
 # define INFINITY   (__builtin_inff())
 #endif
 #include "../emu.h"
-#include "cpu.h"
-#include "x86.h"
-#include "x86_ops.h"
-#include "x87.h"
+#include "../timer.h"
 #include "../io.h"
+#include "cpu.h"
 #include "../mem.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
-#include "../timer.h"
-#ifdef USE_DYNAREC
-#include "codegen.h"
-#endif
+#include "x86.h"
+#include "x86_ops.h"
+#include "x87.h"
 #include "386_common.h"
+#ifdef USE_DYNAREC
+# include "codegen.h"
+#endif
 
 
 #define CPU_BLOCK_END() cpu_block_end = 1

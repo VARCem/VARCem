@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.7	2019/05/13
+ * Version:	@(#)vid_svga.h	1.0.8	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -93,7 +93,7 @@ typedef struct svga_t
 
     PALETTE vgapal;
 
-    int64_t dispontime, dispofftime,
+    tmrval_t dispontime, dispofftime,
 	    vidtime;
 
     double clock;

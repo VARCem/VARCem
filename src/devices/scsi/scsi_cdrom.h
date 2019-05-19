@@ -8,12 +8,12 @@
  *
  *		Definitions for the SCSI CD-ROM module.
  *
- * Version:	@(#)scsi_cdrom.h	1.0.3	2018/10/19
+ * Version:	@(#)scsi_cdrom.h	1.0.4	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -66,7 +66,7 @@ typedef struct {
     uint32_t sector_pos, sector_len,
 	     packet_len, pos;
 
-    int64_t callback;
+    tmrval_t callback;
 
     int media_status, data_pos,
 	request_pos, total_read,
@@ -81,9 +81,6 @@ typedef struct {
 #define scsi_cdrom_sense_key	dev->sense[2]
 #define scsi_cdrom_asc		dev->sense[12]
 #define scsi_cdrom_ascq		dev->sense[13]
-
-
-//extern void	scsi_cdrom_reset(void *p);
 
 
 #endif	/*EMU_SCSI_CDROM_H*/

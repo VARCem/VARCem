@@ -8,7 +8,7 @@
  *
  *		Hercules InColor emulation.
  *
- * Version:	@(#)vid_incolor.c	1.0.20	2019/05/13
+ * Version:	@(#)vid_incolor.c	1.0.21	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,10 +43,10 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../config.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -185,8 +185,9 @@ typedef struct {
 
     uint8_t	ctrl, ctrl2, stat;
 
-    int64_t	dispontime, dispofftime;
-    int64_t	vidtime;
+    tmrval_t	dispontime, dispofftime;
+    tmrval_t	vidtime;
+    tmrval_t	vsynctime;
 
     int		firstline, lastline;
 
@@ -195,7 +196,6 @@ typedef struct {
     uint16_t	ma, maback;
     int		con, coff, cursoron;
     int		dispon, blink;
-    int64_t	vsynctime;
     int		vadj;
 
     uint8_t	palette[16];	/* EGA-style 16 -> 64 palette registers */
@@ -220,8 +220,8 @@ recalc_timings(incolor_t *dev)
     _dispontime  *= MDACONST;
     _dispofftime *= MDACONST;
 
-    dev->dispontime  = (int64_t)(_dispontime  * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

@@ -8,14 +8,14 @@
  *
  *		Definitions for the NukedOPL3 driver.
  *
- * Version:	@(#)nukedopl.h	1.0.2	2018/09/04
+ * Version:	@(#)nukedopl.h	1.0.3	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Alexey Khokholov (Nuke.YKT)
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2013-2018 Alexey Khokholov.

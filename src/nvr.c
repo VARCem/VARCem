@@ -8,7 +8,7 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.20	2019/05/13
+ * Version:	@(#)nvr.c	1.0.21	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -52,8 +52,8 @@
 #include <wchar.h>
 #include "emu.h"
 #include "config.h"
-#include "machines/machine.h"
 #include "timer.h"
+#include "machines/machine.h"
 #include "plat.h"
 #include "nvr.h"
 

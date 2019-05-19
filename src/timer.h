@@ -8,7 +8,7 @@
  *
  *		Definitions for the system timer module.
  *
- * Version:	@(#)timer.h	1.0.4	2019/05/13
+ * Version:	@(#)timer.h	1.0.5	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,10 +45,13 @@
 #define TIMER_ALWAYS_ENABLED	&timer_one
 
 
-extern int64_t	TIMER_USEC;
-extern int64_t	timer_one;
-extern int64_t	timer_start;
-extern int64_t	timer_count;
+typedef int64_t	tmrval_t;
+
+
+extern tmrval_t	TIMER_USEC;
+extern tmrval_t	timer_one;
+extern tmrval_t	timer_start;
+extern tmrval_t	timer_count;
 
 
 #define timer_start_period(cycles)				\
@@ -56,7 +59,7 @@ extern int64_t	timer_count;
 
 #define timer_end_period(cycles)				\
 	do {							\
-                int64_t __diff = timer_start - (cycles);	\
+                tmrval_t __diff = timer_start - (cycles);	\
 		timer_count -= __diff;				\
                 timer_start = cycles;				\
 		if (timer_count <= 0) {				\
@@ -67,7 +70,7 @@ extern int64_t	timer_count;
 
 #define timer_clock()						\
 	do {							\
-                int64_t __diff;					\
+                tmrval_t __diff;					\
                 if (AT) {					\
                         __diff = timer_start - (cycles << TIMER_SHIFT);	\
                         timer_start = cycles << TIMER_SHIFT;	\
@@ -85,7 +88,7 @@ extern void	timer_process(void);
 extern void	timer_update_outstanding(void);
 extern void	timer_reset(void);
 extern int	timer_add(void (*callback)(priv_t), priv_t priv,
-			  int64_t *count, int64_t *enable);
+			  tmrval_t *count, tmrval_t *enable);
 
 
 #endif	/*EMU_TIMER_H*/

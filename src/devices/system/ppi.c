@@ -14,7 +14,7 @@
  *		  CX is loops between bit 4 of $62 changing
  *		  BX is timer difference between calls
  *
- * Version:	@(#)ppi.c	1.0.2	2018/05/06
+ * Version:	@(#)ppi.c	1.0.3	2018/05/17
  *
  * Author:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
@@ -42,6 +42,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#include "../../emu.h"
+#include "../../timer.h"
 #include "pit.h"
 #include "ppi.h"
 

@@ -13,7 +13,7 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.16	2019/05/13
+ * Version:	@(#)pit.c	1.0.17	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,10 +47,10 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../device.h"
-#include "../../timer.h"
 #include "../sound/sound.h"
 #include "../sound/snd_speaker.h"
 #ifdef USE_CASSETTE
@@ -78,7 +78,7 @@ set_out(PIT *dev, int t, int out)
 static void
 set_gate_no_timer(PIT *dev, int t, int gate)
 {
-    int64_t l = dev->l[t] ? dev->l[t] : 0x10000LL;
+    tmrval_t l = dev->l[t] ? dev->l[t] : 0x10000LL;
 
     if (dev->disabled[t]) {
 	dev->gate[t] = gate;
@@ -95,7 +95,7 @@ set_gate_no_timer(PIT *dev, int t, int gate)
 	case 5:		/* hardware triggered strobe */
 		if (gate && !dev->gate[t]) {
 			dev->count[t] = (int)l;
-                        dev->c[t] = (int64_t)((l << TIMER_SHIFT) * PITCONST);
+                        dev->c[t] = (tmrval_t)((l << TIMER_SHIFT) * PITCONST);
 			set_out(dev, t, 0);
 			dev->thit[t] = 0;
 			dev->enabled[t] = 1;
@@ -105,7 +105,7 @@ set_gate_no_timer(PIT *dev, int t, int gate)
 	case 2:		/* rate generator */
 		if (gate && !dev->gate[t]) {
 			dev->count[t] = (int)(l - 1);
-                        dev->c[t] = (int64_t)((l << TIMER_SHIFT) * PITCONST);
+                        dev->c[t] = (tmrval_t)((l << TIMER_SHIFT) * PITCONST);
 			set_out(dev, t, 1);
 			dev->thit[t] = 0;
 		}		
@@ -115,7 +115,7 @@ set_gate_no_timer(PIT *dev, int t, int gate)
 	case 3:		/* square wave mode */
 		if (gate && !dev->gate[t]) {
 			dev->count[t] = (int)l;
-			dev->c[t] = (int64_t)((((l+1)>>1)<<TIMER_SHIFT)*PITCONST);
+			dev->c[t] = (tmrval_t)((((l+1)>>1)<<TIMER_SHIFT)*PITCONST);
 			set_out(dev, t, 1);
 			dev->thit[t] = 0;
 		}
@@ -132,11 +132,11 @@ set_gate_no_timer(PIT *dev, int t, int gate)
 static void
 do_over(PIT *dev, int t)
 {
-    int64_t l = dev->l[t] ? dev->l[t] : 0x10000LL;
+    tmrval_t l = dev->l[t] ? dev->l[t] : 0x10000LL;
 
     if (dev->disabled[t]) {
 	dev->count[t] += 0xffff;
-	dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+	dev->c[t] += (tmrval_t)(((tmrval_t)0xffff << TIMER_SHIFT) * PITCONST);
 	return;
     }
 
@@ -147,12 +147,12 @@ do_over(PIT *dev, int t)
 			set_out(dev, t, 1);
 		dev->thit[t] = 1;
 		dev->count[t] += 0xffff;
-		dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+		dev->c[t] += (tmrval_t)(((tmrval_t)0xffff << TIMER_SHIFT) * PITCONST);
 		break;
 
 	case 2:		/* rate generator */
 		dev->count[t] += (int)l;
-		dev->c[t] += (int64_t)((l << TIMER_SHIFT) * PITCONST);
+		dev->c[t] += (tmrval_t)((l << TIMER_SHIFT) * PITCONST);
 		set_out(dev, t, 0);
 		set_out(dev, t, 1);
 		break;
@@ -161,11 +161,11 @@ do_over(PIT *dev, int t)
 		if (dev->out[t]) {
 			set_out(dev, t, 0);
 			dev->count[t] += (int)(l >> 1);
-			dev->c[t] += (int64_t)(((l >> 1) << TIMER_SHIFT) * PITCONST);
+			dev->c[t] += (tmrval_t)(((l >> 1) << TIMER_SHIFT) * PITCONST);
 		} else {
 			set_out(dev, t, 1);
 			dev->count[t] += (int)((l + 1) >> 1);
-			dev->c[t] = (int64_t)((((l + 1) >> 1) << TIMER_SHIFT) * PITCONST);
+			dev->c[t] = (tmrval_t)((((l + 1) >> 1) << TIMER_SHIFT) * PITCONST);
 		}
 		break;
 
@@ -177,11 +177,11 @@ do_over(PIT *dev, int t)
 		if (dev->newcount[t]) {
 			dev->newcount[t] = 0;
 			dev->count[t] += (int)l;
-			dev->c[t] += (int64_t)((l << TIMER_SHIFT) * PITCONST);
+			dev->c[t] += (tmrval_t)((l << TIMER_SHIFT) * PITCONST);
 		} else {
 			dev->thit[t] = 1;
 			dev->count[t] += 0xffff;
-			dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+			dev->c[t] += (tmrval_t)(((tmrval_t)0xffff << TIMER_SHIFT) * PITCONST);
 		}
 		break;
 
@@ -192,7 +192,7 @@ do_over(PIT *dev, int t)
 		}
 		dev->thit[t] = 1;
 		dev->count[t] += 0xffff;
-		dev->c[t] += (int64_t)(((int64_t)0xffff << TIMER_SHIFT) * PITCONST);
+		dev->c[t] += (tmrval_t)(((tmrval_t)0xffff << TIMER_SHIFT) * PITCONST);
 		break;
     }
 
@@ -254,7 +254,7 @@ load_timer(PIT *dev, int t)
     switch (dev->m[t]) {
 	case 0:		/* interrupt on terminal count */
                 dev->count[t] = l;
-                dev->c[t] = (int64_t)((((int64_t) l) << TIMER_SHIFT) * PITCONST);
+                dev->c[t] = (tmrval_t)((((tmrval_t) l) << TIMER_SHIFT) * PITCONST);
 		set_out(dev, t, 0);
 		dev->thit[t] = 0;
 		dev->enabled[t] = dev->gate[t];
@@ -267,7 +267,7 @@ load_timer(PIT *dev, int t)
 	case 2:		/* rate generator */
 		if (dev->initial[t]) {
                         dev->count[t] = l - 1;
-                        dev->c[t] = (int64_t)(((((int64_t) l) - 1LL) << TIMER_SHIFT) * PITCONST);
+                        dev->c[t] = (tmrval_t)(((((tmrval_t) l) - 1LL) << TIMER_SHIFT) * PITCONST);
 			set_out(dev, t, 1);
 			dev->thit[t] = 0;
 		}
@@ -277,7 +277,7 @@ load_timer(PIT *dev, int t)
 	case 3:		/* square wave mode */
 		if (dev->initial[t]) {
                         dev->count[t] = l;
-                        dev->c[t] = (int64_t)((((((int64_t) l) + 1LL) >> 1) << TIMER_SHIFT) * PITCONST);
+                        dev->c[t] = (tmrval_t)((((((tmrval_t) l) + 1LL) >> 1) << TIMER_SHIFT) * PITCONST);
 			set_out(dev, t, 1);
 			dev->thit[t] = 0;
 		}
@@ -289,7 +289,7 @@ load_timer(PIT *dev, int t)
 			dev->newcount[t] = 1;
 		} else {
                         dev->count[t] = l;
-                        dev->c[t] = (int64_t)((l << TIMER_SHIFT) * PITCONST);
+                        dev->c[t] = (tmrval_t)((l << TIMER_SHIFT) * PITCONST);
 			set_out(dev, t, 0);
 			dev->thit[t] = 0;
 		}
@@ -592,7 +592,7 @@ pit_reset(PIT *dev)
 	dev->m[i] = 0;
 	dev->gate[i] = 1;
 	dev->l[i] = 0xffff;
-	dev->c[i] = (int64_t)(0xffffLL * PITCONST);
+	dev->c[i] = (tmrval_t)(0xffffLL * PITCONST);
 	dev->using_timer[i] = 1;
     }
 
@@ -630,21 +630,21 @@ pit_set_gate(PIT *dev, int t, int gate)
 }
 
 
-static int64_t
+static tmrval_t
 read_timer_ex(PIT *pit, int t)
 {
-    int64_t r;
+    tmrval_t r;
 
     timer_clock();
 
     if (pit->using_timer[t] && !(pit->m[t] == 3 && !pit->gate[t])) {
 	r = (int)(pit->c[t] + ((1 << TIMER_SHIFT) - 1));
 	if (pit->m[t] == 2)
-		r += (int64_t)((1LL << TIMER_SHIFT) * PITCONST);
+		r += (tmrval_t)((1LL << TIMER_SHIFT) * PITCONST);
 	if (r < 0)
 		r = 0;
 	if (r > ((0x10000LL << TIMER_SHIFT) * PITCONST))
-		r = (int64_t)((0x10000LL << TIMER_SHIFT) * PITCONST);
+		r = (tmrval_t)((0x10000LL << TIMER_SHIFT) * PITCONST);
 	if (pit->m[t] == 3)
 		r <<= 1;
 
@@ -652,12 +652,12 @@ read_timer_ex(PIT *pit, int t)
     }
 
     if (pit->m[t] == 2) {
-	r = (int64_t) (((pit->count[t] + 1LL) << TIMER_SHIFT) * PITCONST);
+	r = (tmrval_t) (((pit->count[t] + 1LL) << TIMER_SHIFT) * PITCONST);
 
 	return r;
     }
 
-    r = (int64_t) ((pit->count[t] << TIMER_SHIFT) * PITCONST);
+    r = (tmrval_t) ((pit->count[t] << TIMER_SHIFT) * PITCONST);
 
     return r;
 }

@@ -8,7 +8,7 @@
  *
  *		Definitions for the CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.h	1.0.4	2019/03/07
+ * Version:	@(#)cdrom_dosbox.h	1.0.5	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -84,7 +84,7 @@ public:
 
     virtual ~CDROM_Interface(void) {};
 
-    virtual bool	SetDevice(const wchar_t *path, int forceCD) = 0;
+    virtual bool	SetDevice(const wchar_t *path, int type, int forceCD) = 0;
 
     virtual bool	GetUPC(uint8_t& attr, char* upc) = 0;
 
@@ -139,7 +139,7 @@ public:
     CDROM_Interface_Image();
     virtual ~CDROM_Interface_Image(void);
     void	InitNewMedia(void);
-    bool	SetDevice(const wchar_t* path, int forceCD);
+    bool	SetDevice(const wchar_t* path, int type, int forceCD);
     bool	GetUPC(uint8_t& attr, char* upc);
     bool	GetAudioTracks(int& stTrack, int& end, TMSF& leadOut);
     bool	GetAudioTrackInfo(int track, int& number, TMSF& start, uint8_t& attr);

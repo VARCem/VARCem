@@ -15,7 +15,7 @@
  *
  *		Reworked to have its data on the heap.
  *
- * Version:	@(#)vid_cga_comp.c	1.0.8	2019/05/13
+ * Version:	@(#)vid_cga_comp.c	1.0.9	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,6 +50,7 @@
 #include <wchar.h>
 #include <math.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../mem.h"
 #include "video.h"
 #include "vid_cga.h"

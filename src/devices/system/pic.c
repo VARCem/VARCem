@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel 8259 interrupt controller.
  *
- * Version:	@(#)pic.c	1.0.8	2019/05/13
+ * Version:	@(#)pic.c	1.0.9	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "pci.h"
 #include "pic.h"
@@ -434,7 +435,7 @@ pic_process(PIC *dev, int c)
 	if (dev->icw4 & 0x02)
 		(AT && (c >= 8)) ? pic2_autoeoi() : pic_autoeoi();
 
-	if (! c)
+	if (c == 0)
 		pit_set_gate(&pit2, 0, 0);
 
 	return(pic_int + dev->vector);

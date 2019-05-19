@@ -10,7 +10,7 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.14	2019/05/13
+ * Version:	@(#)snd_adlibgold.c	1.0.15	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -45,8 +45,8 @@
 #include <wchar.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
-#include "../../io.h"
 #include "../../timer.h"
+#include "../../io.h"
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
@@ -78,7 +78,7 @@ typedef struct {
         int16_t adgold_mma_out[2];
         int adgold_mma_intpos[2];
 
-        int64_t adgold_mma_timer_count;
+        tmrval_t adgold_mma_timer_count;
 
         struct {
                 int timer0_latch, timer0_count;
@@ -618,7 +618,7 @@ void adgold_timer_poll(priv_t priv)
         
         while (adgold->adgold_mma_timer_count <= 0LL)
         {
-                adgold->adgold_mma_timer_count += (int64_t)((double)TIMER_USEC * 1.88964);
+                adgold->adgold_mma_timer_count += (tmrval_t)((double)TIMER_USEC * 1.88964);
                 if (adgold->adgold_mma_regs[0][8] & 0x01) /*Timer 0*/
                 {
                         adgold->adgold_mma.timer0_count--;

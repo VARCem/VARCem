@@ -8,7 +8,7 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.16	2019/04/23
+ * Version:	@(#)hdc.h	1.0.17	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,7 +76,6 @@ extern const device_t	xtide_acculogic_device;		/* xtide_ps2 */
 
 extern const device_t	ide_isa_device;			/* isa_ide */
 extern const device_t	ide_isa_2ch_device;		/* isa_ide_2ch */
-extern const device_t	ide_isa_2ch_opt_device;		/* isa_ide_2ch_opt */
 extern const device_t	ide_vlb_device;			/* vlb_ide */
 extern const device_t	ide_vlb_2ch_device;		/* vlb_ide_2ch */
 extern const device_t	ide_pci_device;			/* pci_ide */

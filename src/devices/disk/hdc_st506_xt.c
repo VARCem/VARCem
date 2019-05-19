@@ -41,7 +41,7 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.21	2019/05/13
+ * Version:	@(#)hdc_st506_xt.c	1.0.22	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -77,10 +77,10 @@
 #include <wchar.h>
 #define dbglog hdc_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -252,7 +252,8 @@ typedef struct {
     uint8_t	error;
     uint8_t	status;
     int8_t	cyl_off;		/* for ST-11, cylinder0 offset */
-    int64_t	callback;
+
+    tmrval_t	callback;
 
     uint8_t	command[6];		/* current command request */
     int		drive_sel;

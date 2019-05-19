@@ -8,7 +8,7 @@
  *
  *		Trident TKD8001 RAMDAC emulation.
  *
- * Version:	@(#)vid_tkd8001_ramdac.c	1.0.5	2019/04/10
+ * Version:	@(#)vid_tkd8001_ramdac.c	1.0.6	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../mem.h"
 #include "../../device.h"
 #include "../../plat.h"

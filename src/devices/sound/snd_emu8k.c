@@ -8,7 +8,7 @@
  *
  *		Implementation of Emu8000 emulator.
  *
- * Version:	@(#)snd_emu8k.c	1.0.15	2019/05/13
+ * Version:	@(#)snd_emu8k.c	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -46,10 +46,10 @@
 #include <math.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "sound.h"
@@ -210,7 +210,7 @@ static const int32_t env_decay_to_millis[128] = {
 /* Table represeting the LFO waveform (signed 16bits with 32768 max int. >> 15 to move back to +/-1 range). */
 static int32_t *lfotable;
 /* Table to transform the speed parameter to emu8k_mem_internal_t range. */
-static int64_t *lfofreqtospeed;
+static tmrval_t *lfofreqtospeed;
 
 /* LFO used for the chorus. a sine wave.(signed 16bits with 32768 max int. >> 15 to move back to +/-1 range). */
 static double *chortable;
@@ -2187,7 +2187,7 @@ void emu8k_init(emu8k_t *emu8k, const wchar_t *romfile, uint16_t emu_addr, int o
 	env_mod_hertz_to_octave = (int32_t *)mem_alloc(65537*sizeof(int32_t));
 	env_attack_to_samples = (int32_t *)mem_alloc(128*sizeof(int32_t));
 	lfotable = (int32_t *)mem_alloc(65536*sizeof(int32_t));
-	lfofreqtospeed = (int64_t *)mem_alloc(256*sizeof(int64_t));
+	lfofreqtospeed = (tmrval_t *)mem_alloc(256*sizeof(tmrval_t));
 	chortable = (double *)mem_alloc(65536*sizeof(double));
 
         int j=0;

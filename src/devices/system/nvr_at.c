@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.20	2019/05/13
+ * Version:	@(#)nvr_at.c	1.0.21	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -227,10 +227,10 @@
 #include <time.h>
 #include "../../emu.h"
 #include "../../config.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../machines/machine.h"
 #include "../../io.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
@@ -290,7 +290,7 @@ typedef struct {
 
     uint8_t	addr;
 
-    int64_t     ecount,
+    tmrval_t     ecount,
                 rtctime;
 } local_t;
 
@@ -451,10 +451,10 @@ static void
 timer_recalc(nvr_t *nvr, int add)
 {
     local_t *local = (local_t *)nvr->data;
-    int64_t c, nt;
+    tmrval_t c, nt;
 
     c = 1ULL << ((nvr->regs[RTC_REGA] & REGA_RS) - 1);
-    nt = (int64_t)(RTCCONST * c * (1LL << TIMER_SHIFT));
+    nt = (tmrval_t)(RTCCONST * c * (1LL << TIMER_SHIFT));
 
     if (add == 2) {
 	local->rtctime = nt;
@@ -504,7 +504,7 @@ timer_tick(nvr_t *nvr)
     local->stat = REGA_UIP;
 
     /* Schedule the actual update. */
-    local->ecount = (int64_t)((244.0 + 1984.0) * TIMER_USEC);
+    local->ecount = (tmrval_t)((244.0 + 1984.0) * TIMER_USEC);
 }
 
 

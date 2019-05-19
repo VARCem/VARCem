@@ -8,7 +8,7 @@
  *
  *		Implementation of the ALi-based machines.
  *
- * Version:	@(#)m_ali.c	1.0.9	2019/05/13
+ * Version:	@(#)m_ali.c	1.0.10	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,6 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
-#include "../devices/disk/hdc_ide.h"
 #include "machine.h"
 
 

@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.16	2019/05/13
+ * Version:	@(#)hdc_st506_at.c	1.0.17	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -48,9 +48,9 @@
 #include <wchar.h>
 #define dbglog hdc_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
@@ -119,7 +119,8 @@ typedef struct {
 		pad;
 
     int		pos;			/* offset within data buffer */
-    int64_t	callback;		/* callback delay timer */
+
+    tmrval_t	callback;		/* callback delay timer */
 
     uint16_t	buffer[256];		/* data buffer (16b wide) */
 

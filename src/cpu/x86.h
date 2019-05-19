@@ -8,7 +8,7 @@
  *
  *		Definitions for the X86 architecture.
  *
- * Version:	@(#)x86.h	1.0.1	2018/02/19
+ * Version:	@(#)x86.h	1.0.2	2019/05/17
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>

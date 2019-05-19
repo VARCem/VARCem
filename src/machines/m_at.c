@@ -8,7 +8,7 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.15	2019/05/13
+ * Version:	@(#)m_at.c	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,6 +41,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../mem.h"
 #include "../device.h"
@@ -93,7 +94,7 @@ m_at_common_ide_init(void)
 {
     m_at_common_init();
 
-    device_add(&ide_isa_2ch_opt_device);
+    device_add(&ide_isa_device);
 }
 
 
@@ -102,7 +103,7 @@ m_at_ide_init(void)
 {
     m_at_init();
 
-    device_add(&ide_isa_2ch_opt_device);
+    device_add(&ide_isa_device);
 }
 
 
@@ -111,7 +112,7 @@ m_at_ps2_ide_init(void)
 {
     m_at_ps2_init();
 
-    device_add(&ide_isa_2ch_opt_device);
+    device_add(&ide_isa_device);
 }
 
 

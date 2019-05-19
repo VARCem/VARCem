@@ -8,7 +8,7 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.19	2019/05/13
+ * Version:	@(#)vid_cga.c	1.0.20	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,11 +43,11 @@
 #include <wchar.h>
 #include <math.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -140,8 +140,8 @@ cga_recalctimings(cga_t *dev)
     _dispontime = _dispontime * CGACONST;
     _dispofftime = _dispofftime * CGACONST;
 
-    dev->dispontime = (int64_t)(_dispontime * (1LL << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1LL << TIMER_SHIFT));
+    dev->dispontime = (tmrval_t)(_dispontime * (1LL << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1LL << TIMER_SHIFT));
 }
 
 

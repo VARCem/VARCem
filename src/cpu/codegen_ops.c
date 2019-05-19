@@ -8,7 +8,7 @@
  *
  *		Instruction parsing and generation.
  *
- * Version:	@(#)codegen_ops.c	1.0.3	2019/03/21
+ * Version:	@(#)codegen_ops.c	1.0.4	2019/05/17
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>

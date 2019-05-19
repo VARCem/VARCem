@@ -54,7 +54,7 @@
  *		is well, but some strange mishaps with cursor positioning
  *		occur.
  *
- * Version:	@(#)vid_sigma.c	1.0.11	2019/05/13
+ * Version:	@(#)vid_sigma.c	1.0.12	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,11 +88,11 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -226,13 +226,13 @@ typedef struct {
     int		vsynctime, vadj;
     int		oddeven;
 
-    int64_t	dispontime, dispofftime;
+    tmrval_t	dispontime,
+		dispofftime;
+    tmrval_t	vidtime;
 
     int		firstline, lastline;
 
     int		plane;
-
-    int64_t	vidtime;
 
     uint8_t	*vram;
     uint8_t	fontdat[256][8];		/* 8x8 font */
@@ -270,8 +270,8 @@ recalc_timings(sigma_t *dev)
     _dispontime *= CGACONST;
     _dispofftime *= CGACONST;
 
-    dev->dispontime = (int)(_dispontime * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->dispontime = (tmrval_t)(_dispontime * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 

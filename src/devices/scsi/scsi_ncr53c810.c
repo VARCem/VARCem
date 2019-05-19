@@ -10,7 +10,7 @@
  *		NCR and later Symbios and LSI. This controller was designed
  *		for the PCI bus.
  *
- * Version:	@(#)scsi_ncr53c810.c	1.0.16	2019/05/13
+ * Version:	@(#)scsi_ncr53c810.c	1.0.17	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,10 +48,10 @@
 #include <wchar.h>
 #define dbglog scsi_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
@@ -300,8 +300,8 @@ typedef struct {
     uint8_t regop;
     uint32_t adder;
 
-    int64_t timer_period;
-    int64_t timer_enabled;
+    tmrval_t timer_period;
+    tmrval_t timer_enabled;
 } ncr53c810_t;
 
 
@@ -685,7 +685,7 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
     scsi_device_t *sd;
     uint8_t buf[12];
     double period;
-    int64_t p;
+    tmrval_t p;
 
     memset(buf, 0, 12);
     DMAPageRead(dev->dnad, buf, MIN(12, dev->dbc));
@@ -730,7 +730,7 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
 	p = scsi_device_get_callback(sd);
 	if (p <= 0LL) {
 	        period = ((double) sd->buffer_length) * 0.1 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
-		dev->timer_period += (int64_t) period;
+		dev->timer_period += (tmrval_t) period;
 	} else
 		dev->timer_period += p;
 	return(1);
@@ -740,7 +740,7 @@ ncr53c810_do_command(ncr53c810_t *dev, uint8_t id)
 	p = scsi_device_get_callback(sd);
 	if (p <= 0LL) {
 	        period = ((double) sd->buffer_length) * 0.1 * ((double) TIMER_USEC);	/* Fast SCSI: 10000000 bytes per second */
-		dev->timer_period += (int64_t) period;
+		dev->timer_period += (tmrval_t) period;
 	} else
 		dev->timer_period += p;
 	return(1);

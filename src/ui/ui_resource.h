@@ -12,7 +12,7 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.20	2019/02/12
+ * Version:	@(#)ui_resource.h	1.0.21	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -90,9 +90,8 @@
 #define IDM_FULL_STRETCH	(IDM_FULLSCREEN+1)
 # define IDM_STRETCH		(IDM_FULLSCREEN+2)
 # define IDM_STRETCH_43		(IDM_FULLSCREEN+3)
-# define IDM_STRETCH_SQ		(IDM_FULLSCREEN+4)
+# define IDM_STRETCH_KEEP	(IDM_FULLSCREEN+4)
 # define IDM_STRETCH_INT	(IDM_FULLSCREEN+5)
-# define IDM_STRETCH_KEEP	(IDM_FULLSCREEN+6)
 #define IDM_RCTRL_IS_LALT	(IDM_VIEW+5)
 #define IDM_VIEW_END		(IDM_RCTRL_IS_LALT+1)
 
@@ -542,7 +541,7 @@
 #define IDS_4040	4040		/* "Fullscreen &stretch mode" */
 #define IDS_4041	4041		/* "&Full screen stretch" */
 #define IDS_4042	4042		/* "&4:3" */
-#define IDS_4043	4043		/* "&Square pixels" */
+/* 4043 available */
 #define IDS_4044	4044		/* "&Integer scale" */
 #define IDS_4045	4045		/* "&Keep size" */
 

@@ -12,7 +12,7 @@
  *		format handlers, and re-integrated with that code. This is
  *		just the wrong place for it..
  *
- * Version:	@(#)ui_new_image.c	1.0.6	2019/02/10
+ * Version:	@(#)ui_new_image.c	1.0.7	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../timer.h"
 #include "../random.h"
 #include "../ui/ui.h"
 #include "../plat.h"

@@ -32,11 +32,11 @@
  *
  *		We discard the latter two ones.
  *
- * Version:	@(#)cdrom_speed.c	1.0.2	2018/10/05
+ * Version:	@(#)cdrom_speed.c	1.0.3	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2019 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -73,7 +73,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
-#include "../../version.h"
+#include "../../timer.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "../scsi/scsi_device.h"

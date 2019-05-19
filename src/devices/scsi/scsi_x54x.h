@@ -8,7 +8,7 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.8	2019/05/13
+ * Version:	@(#)scsi_x54x.h	1.0.9	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -379,23 +379,23 @@ typedef struct {
 typedef struct {
     int8_t	type;				/* type of device */
 
-    char	vendor[16];			/* name of device vendor */
-    char	name[16];			/* name of device */
-
-    int64_t	timer_period, temp_period;
-    uint8_t	callback_phase;
-    int64_t	media_period;
-    double	ha_bps;				/* bytes per second */
-
     int8_t	Irq;
-    uint8_t	IrqEnabled;
-
     int8_t	DmaChannel;
     int8_t	HostID;
     uint32_t	Base;
+    uint8_t	IrqEnabled;
+    const wchar_t *bios_path;			/* path to BIOS image file */
+
+    char	name[16];			/* name of device */
+    char	vendor[16];			/* name of device vendor */
+
+    tmrval_t	timer_period,
+		temp_period;
+    tmrval_t	media_period;
+    double	ha_bps;				/* bytes per second */
+
     uint8_t	pos_regs[8];			/* MCA */
 
-    const wchar_t *bios_path;			/* path to BIOS image file */
     uint32_t	rom_addr;			/* address of BIOS ROM */
     uint16_t	rom_ioaddr;			/* offset in BIOS of I/O addr */
     uint16_t	rom_shram;			/* index to shared RAM */
@@ -409,11 +409,13 @@ typedef struct {
     wchar_t	*nvr_path;			/* path to NVR image file */
     uint8_t	*nvr;				/* EEPROM buffer */
 
-    int64_t	ResetCB;
+    tmrval_t	ResetCB;
 
     volatile uint8_t				/* for multi-threading, keep */
 		Status,				/* these volatile */
 		Interrupt;
+
+    uint8_t	callback_phase;
 
     Req_t	Req;
     uint8_t	Geometry;

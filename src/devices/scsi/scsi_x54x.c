@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.18	2019/05/13
+ * Version:	@(#)scsi_x54x.c	1.0.19	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,10 +47,10 @@
 #include <wchar.h>
 #define dbglog scsi_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
@@ -595,7 +595,7 @@ cmd_done(x54x_t *dev, int suppress)
 static void
 add_to_period(x54x_t *dev, int TransferLength)
 {
-    dev->temp_period += (int64_t)TransferLength;
+    dev->temp_period += (tmrval_t)TransferLength;
 }
 
 
@@ -956,7 +956,7 @@ scsi_cmd(x54x_t *dev)
     int target_data_len, target_cdb_len = 12;
     uint8_t temp_cdb[12];
     int32_t *BufLen;
-    int64_t p;
+    tmrval_t p;
     scsi_device_t *sd;
 
     sd = &scsi_devices[req->TargetID][req->LUN];
@@ -1299,7 +1299,7 @@ cmd_callback(priv_t priv)
     }
 
     period = (1000000.0 / dev->ha_bps) * ((double) TIMER_USEC) * ((double) dev->temp_period);
-    dev->timer_period = dev->media_period + ((int64_t) period) + (40LL * TIMER_USEC);
+    dev->timer_period = dev->media_period + ((tmrval_t) period) + (40LL * TIMER_USEC);
 
     DEBUG("Temporary period: %" PRId64 " us (%" PRIi64 " periods)\n",
 	  dev->timer_period, dev->temp_period);

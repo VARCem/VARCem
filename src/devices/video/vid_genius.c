@@ -63,7 +63,7 @@
  *		reducing the height of characters so they fit in an 8x12 cell
  *		if necessary.
  *
- * Version:	@(#)vid_genius.c	1.0.16	2019/05/13
+ * Version:	@(#)vid_genius.c	1.0.17	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -97,10 +97,10 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -144,13 +144,13 @@ typedef struct {
     int		enabled;	/* Display enabled, 0 or 1 */
     int		detach;		/* Detach cursor, 0 or 1 */
 
-    int64_t	dispontime, dispofftime;
-    int64_t	vidtime;
+    tmrval_t	dispontime, dispofftime;
+    tmrval_t	vidtime;
+    tmrval_t	vsynctime;
 	
     int		linepos, displine;
     int		vc;
     int		dispon, blink;
-    int64_t	vsynctime;
 
     uint32_t	pal[4];
 
@@ -174,8 +174,8 @@ recalc_timings(genius_t *dev)
     _dispontime  *= MDACONST;
     _dispofftime *= MDACONST;
 
-    dev->dispontime  = (int64_t)(_dispontime  * (1LL << TIMER_SHIFT));
-    dev->dispofftime = (int64_t)(_dispofftime * (1LL << TIMER_SHIFT));
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1LL << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1LL << TIMER_SHIFT));
 }
 
 

@@ -12,7 +12,7 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.11	2019/05/03
+ * Version:	@(#)win_sdl.c  	1.0.12	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
@@ -86,6 +86,7 @@ static void		*sdl_handle = NULL;	/* handle to libSDL2 DLL */
 static SDL_Window	*sdl_win = NULL;
 static SDL_Renderer	*sdl_render = NULL;
 static SDL_Texture	*sdl_tex = NULL;
+static SDL_mutex*	sdl_mutex = NULL;
 static HWND		sdl_hwnd = NULL;
 static HWND		sdl_parent_hwnd = NULL;
 static int		sdl_w, sdl_h;
@@ -115,6 +116,10 @@ static void	 	(*sdl_RenderPresent)(SDL_Renderer *);
 static int		(*sdl_RenderReadPixels)(SDL_Renderer *,
 					        const SDL_Rect *,
                                                 Uint32, void *, int);
+static SDL_mutex	*(*sdl_CreateMutex)(void);
+static void		(*sdl_DestroyMutex)(SDL_mutex *mutex);
+static int		(*sdl_LockMutex)(SDL_mutex *mutex);
+static int		(*sdl_UnlockMutex)(SDL_mutex *mutex);
 
 
 static const dllimp_t sdl_imports[] = {
@@ -134,6 +139,10 @@ static const dllimp_t sdl_imports[] = {
   { "SDL_RenderCopy",		&sdl_RenderCopy		},
   { "SDL_RenderPresent",	&sdl_RenderPresent	},
   { "SDL_RenderReadPixels",	&sdl_RenderReadPixels	},
+  { "SDL_CreateMutex",		&sdl_CreateMutex	},
+  { "SDL_DestroyMutex",		&sdl_DestroyMutex	},
+  { "SDL_LockMutex",		&sdl_LockMutex		},
+  { "SDL_UnlockMutex",		&sdl_UnlockMutex	},
   { NULL,			NULL			}
 };
 
@@ -152,67 +161,23 @@ sdl_stretch(int *w, int *h, int *x, int *y)
 		break;
 
 	case FULLSCR_SCALE_43:
-		dw = (double) sdl_w;
-		dh = (double) sdl_h;
-		temp = (dh / 3.0) * 4.0;
-		dx = (dw - temp) / 2.0;
-		dw = temp;
-		*w = (int) dw;
-		*h = (int) dh;
-		*x = (int) dx;
-		*y = 0;
-		break;
-
-	case FULLSCR_SCALE_SQ:
-		dw = (double) sdl_w;
-		dh = (double) sdl_h;
-		temp = ((double) *w);
-		temp2 = ((double) *h);
-		dx = (dw / 2.0) - ((dh * temp) / (temp2 * 2.0));
-		dy = 0.0;
-		if (dx < 0.0) {
-			dx = 0.0;
-			dy = (dw / 2.0) - ((dh * temp2) / (temp * 2.0));
-		}
-		dw -= (dx * 2.0);
-		dh -= (dy * 2.0);
-		*w = (int) dw;
-		*h = (int) dh;
-		*x = (int) dx;
-		*y = (int) dy;
-		break;
-
-	case FULLSCR_SCALE_INT:
-		dw = (double) sdl_w;
-		dh = (double) sdl_h;
-		temp = ((double) *w);
-		temp2 = ((double) *h);
-		ratio_w = dw / ((double) *w);
-		ratio_h = dh / ((double) *h);
-		if (ratio_h < ratio_w)
-			ratio_w = ratio_h;
-		dx = (dw / 2.0) - ((temp * ratio_w) / 2.0);
-		dy = (dh / 2.0) - ((temp2 * ratio_h) / 2.0);
-		dw -= (dx * 2.0);
-		dh -= (dy * 2.0);
-		*w = (int) dw;
-		*h = (int) dh;
-		*x = (int) dx;
-		*y = (int) dy;
-		break;
-
 	case FULLSCR_SCALE_KEEPRATIO:
-		dw = (double) sdl_w;
-		dh = (double) sdl_h;
-		hsr = dw / dh;
-		gsr = ((double) *w) / ((double) *h);
-		if (gsr <= hsr) {
-			temp = dh * gsr;
-			dx = (dw - temp) / 2.0;
+ 		dw = (double)sdl_w;
+ 		dh = (double)sdl_h;
+
+ 		hsr = dw / dh;
+		if (config.vid_fullscreen_scale == FULLSCR_SCALE_43)
+			gsr = 4.0 / 3.0;
+		else
+			gsr = ((double) *w) / ((double) *h);
+
+ 		if (gsr <= hsr) {
+ 			temp = dh * gsr;
+ 			dx = (dw - temp) / 2.0;
 			dw = temp;
-			*w = (int) dw;
-			*h = (int) dh;
-			*x = (int) dx;
+			*w = (int)dw;
+			*h = (int)dh;
+			*x = (int)dx;
 			*y = 0;
 		} else {
 			temp = dw / gsr;
@@ -224,6 +189,24 @@ sdl_stretch(int *w, int *h, int *x, int *y)
 			*y = (int) dy;
 		}
 		break;
+
+	case FULLSCR_SCALE_INT:
+		dw = (double)sdl_w;
+		dh = (double)sdl_h;
+		temp = ((double) *w);
+		temp2 = ((double) *h);
+		ratio_w = dw / ((double) *w);
+		ratio_h = dh / ((double) *h);
+		if (ratio_h < ratio_w)
+			ratio_w = ratio_h;
+		dx = (dw / 2.0) - ((temp * ratio_w) / 2.0);
+		dy = (dh / 2.0) - ((temp2 * ratio_h) / 2.0);
+		dw -= (dx * 2.0);
+		dh -= (dy * 2.0);
+		*w = (int)dw;
+		*h = (int)dh;
+		*x = (int)dx;
+		*y = (int)dy;
     }
 }
 
@@ -233,7 +216,7 @@ sdl_resize(int x, int y)
 {
     int ww = 0, wh = 0, wx = 0, wy = 0;
 
-    DEBUG("SDL: resizing to %dx%d\n", x, y);
+    DEBUG("SDL: resizing to %ix%i\n", x, y);
 
     if ((x == cur_w) && (y == cur_h)) return;
 
@@ -242,7 +225,8 @@ sdl_resize(int x, int y)
     wh = y;
     sdl_stretch(&ww, &wh, &wx, &wy);
 
-    MoveWindow(sdl_hwnd, wx, wy, ww, wh, TRUE);
+    if (sdl_fs)
+	MoveWindow(sdl_hwnd, wx, wy, ww, wh, TRUE);
 
     cur_w = x;
     cur_h = y;
@@ -262,10 +246,12 @@ sdl_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 	return;
     }
 
-    if ((y1 == y2) || (scr == NULL)) {
+    if ((y1 == y2) || (h <= 0) || (scr == NULL)) {
 	video_blit_done();
 	return;
     }
+
+    sdl_LockMutex(sdl_mutex);
 
     /*
      * TODO:
@@ -305,6 +291,8 @@ sdl_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
 	DEBUG("SDL: unable to copy texture to renderer (%s)\n", sdl_GetError());
 
     sdl_RenderPresent(sdl_render);
+
+    sdl_UnlockMutex(sdl_mutex);
 }
 
 
@@ -313,6 +301,11 @@ sdl_close(void)
 {
     /* Unregister our renderer! */
     video_blit_set(NULL);
+
+    if (sdl_mutex != NULL) {
+	sdl_DestroyMutex(sdl_mutex);
+	sdl_mutex = NULL;
+    }
 
     if (sdl_tex != NULL) {
 	sdl_DestroyTexture(sdl_tex);
@@ -335,7 +328,8 @@ sdl_close(void)
 	ShowWindow(hwndRender, TRUE);
 	SetFocus(hwndMain);
 
-	DestroyWindow(sdl_hwnd);
+	if (sdl_fs)
+		DestroyWindow(sdl_hwnd);
 	sdl_hwnd = NULL;
     }
 
@@ -470,6 +464,8 @@ sdl_init(int fs)
 
     /* Register our renderer! */
     video_blit_set(sdl_blit);
+
+    sdl_mutex = sdl_CreateMutex();
 
     is_enabled = 1;
 

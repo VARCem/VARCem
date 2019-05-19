@@ -11,7 +11,7 @@
  *
  * NOTE:	This code now only supports targets at LUN=0 !!
  *
- * Version:	@(#)scsi_ncr5380.c	1.0.18	2019/05/13
+ * Version:	@(#)scsi_ncr5380.c	1.0.19	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,12 +48,12 @@
 #include <wchar.h>
 #define dbglog scsi_card_log
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../nvr.h"
-#include "../../timer.h"
 #include "../../plat.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
@@ -159,8 +159,8 @@ typedef struct {
     int		buffer_pos;
     int		buffer_host_pos;
 
-    int64_t	timer_period;
-    int64_t	timer_enabled;
+    tmrval_t	timer_period;
+    tmrval_t	timer_enabled;
     double	period;
 
     ncr_t	ncr;
@@ -327,7 +327,7 @@ ncr_callback(void *priv)
     ncr_t *ncr = &ncr_dev->ncr;
     scsi_device_t *dev = &scsi_devices[ncr->target_id][ncr->target_lun];
     int req_len, c = 0;
-    int64_t p;
+    tmrval_t p;
     uint8_t temp, data;
 
     DEBUG("NCR: DMA mode=%d\n", ncr->dma_mode);
@@ -335,7 +335,7 @@ ncr_callback(void *priv)
     ncr_dev->timer_enabled = 0;
 
     if (((ncr->state == STATE_DATAIN) || (ncr->state == STATE_DATAOUT)) && (ncr->dma_mode != DMA_IDLE))
-	ncr_dev->timer_period = (int64_t) ncr_dev->period;
+	ncr_dev->timer_period = (tmrval_t) ncr_dev->period;
     else
 	ncr_dev->timer_period += 40LL * TIMER_USEC;
 

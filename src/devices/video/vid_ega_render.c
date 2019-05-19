@@ -9,7 +9,7 @@
  *		EGA renderers.
  * NOTE:	FIXME: make sure this works (line 99 shadow parameter)
  *
- * Version:	@(#)vid_ega_render.c	1.0.6	2019/05/05
+ * Version:	@(#)vid_ega_render.c	1.0.7	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"

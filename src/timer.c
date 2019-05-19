@@ -8,7 +8,7 @@
  *
  *		System timer module.
  *
- * Version:	@(#)timer.c	1.0.4	2019/05/13
+ * Version:	@(#)timer.c	1.0.5	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -47,30 +47,30 @@
 #define TIMERS_MAX 64
 
 
-int64_t		TIMER_USEC;
-int64_t		timer_one = 1;
-int64_t		timer_start = 0;
-int64_t		timer_count = 0;
+tmrval_t		TIMER_USEC;
+tmrval_t		timer_one = 1;
+tmrval_t		timer_start = 0;
+tmrval_t		timer_count = 0;
 
 
 static struct {
     int		present;
 
-    int64_t	*count;
-    int64_t	*enable;
+    tmrval_t	*count;
+    tmrval_t	*enable;
 
     void	(*callback)(priv_t);
     priv_t	priv;
 }		timers[TIMERS_MAX];
 static int	present = 0;
-static int64_t	latch = 0;
+static tmrval_t	latch = 0;
 
 
 void
 timer_process(void)
 {
-    int64_t diff = latch - timer_count;	/* get actual elapsed time */
-    int64_t enable[TIMERS_MAX];
+    tmrval_t diff = latch - timer_count;	/* get actual elapsed time */
+    tmrval_t enable[TIMERS_MAX];
     int c, process = 0;
 
     latch = 0;
@@ -83,7 +83,7 @@ timer_process(void)
 	enable[c] = *timers[c].enable;
 	if (enable[c]) {
 		*timers[c].count = *timers[c].count - diff;
-		if (*timers[c].count <= 0LL)
+		if (*timers[c].count <= (tmrval_t)0)
 			process = 1;
 	}
     }
@@ -92,7 +92,7 @@ timer_process(void)
 	return;
 
     for (;;) {
-	int64_t lowest = 1LL;
+	tmrval_t lowest = 1LL;
 	int lowest_c;
 
 	for (c = 0; c < present; c++) {
@@ -140,7 +140,7 @@ timer_reset(void)
 
 
 int
-timer_add(void (*callback)(priv_t), priv_t priv, int64_t *count, int64_t *enable)
+timer_add(void (*func)(priv_t), priv_t priv, tmrval_t *count, tmrval_t *enable)
 {
     int i = 0;
 
@@ -156,7 +156,7 @@ timer_add(void (*callback)(priv_t), priv_t priv, int64_t *count, int64_t *enable
 	 */
 	for (i = 0; i < present; i++) {
 		if (timers[i].present &&
-		    (timers[i].callback == callback) &&
+		    (timers[i].callback == func) &&
 		    (timers[i].priv == priv) &&
 		    (timers[i].count == count) && (timers[i].enable == enable))
 			return 0;
@@ -164,7 +164,7 @@ timer_add(void (*callback)(priv_t), priv_t priv, int64_t *count, int64_t *enable
     }
 
     timers[present].present = 1;
-    timers[present].callback = callback;
+    timers[present].callback = func;
     timers[present].priv = priv;
     timers[present].count = count;
     timers[present].enable = enable;

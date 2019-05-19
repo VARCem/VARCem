@@ -8,7 +8,7 @@
  *
  *		Implemantation of LPT-based sound devices.
  *
- * Version:	@(#)snd_lpt_dac.c	1.0.10	2019/04/11
+ * Version:	@(#)snd_lpt_dac.c	1.0.11	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -43,8 +43,8 @@
 #include <wchar.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
-#include "../../cpu/cpu.h"
 #include "../../timer.h"
+#include "../../cpu/cpu.h"
 #include "../ports/parallel_dev.h"
 #include "sound.h"
 #include "filters.h"
@@ -76,7 +76,7 @@ dac_update(lpt_dac_t *dev)
 
 
 static void
-dac_write_data(uint8_t val, void *priv)
+write_data(uint8_t val, priv_t priv)
 {
     lpt_dac_t *dev = (lpt_dac_t *)priv;
 
@@ -96,7 +96,7 @@ dac_write_data(uint8_t val, void *priv)
 
 
 static void
-dac_write_ctrl(uint8_t val, void *priv)
+write_ctrl(uint8_t val, priv_t priv)
 {
     lpt_dac_t *dev = (lpt_dac_t *)priv;
 
@@ -106,14 +106,14 @@ dac_write_ctrl(uint8_t val, void *priv)
 
 
 static uint8_t
-dac_read_status(void *priv)
+read_status(priv_t priv)
 {
     return(0x00);
 }
 
 
 static void
-dac_get_buffer(int32_t *buffer, int len, void *priv)
+get_buffer(int32_t *buffer, int len, priv_t priv)
 {
     lpt_dac_t *dev = (lpt_dac_t *)priv;
     int c;
@@ -129,13 +129,12 @@ dac_get_buffer(int32_t *buffer, int len, void *priv)
 }
 
 
-static void *
+static priv_t
 dac_init(const lpt_device_t *info)
 {
     lpt_dac_t *dev;
 
-    INFO("SOUND: LPT device '%s' [%d] initializing!\n",
-				info->name, info->type);
+    INFO("SOUND: LPT device '%s' [%d] initializing!\n", info->name, info->type);
 
     dev = (lpt_dac_t *)mem_alloc(sizeof(lpt_dac_t));
     memset(dev, 0x00, sizeof(lpt_dac_t));
@@ -147,14 +146,14 @@ dac_init(const lpt_device_t *info)
 		break;
     }
 
-    sound_add_handler(dac_get_buffer, dev);
+    sound_add_handler(get_buffer, (priv_t)dev);
 
-    return(dev);
+    return((priv_t)dev);
 }
 
 
 static void
-dac_close(void *priv)
+dac_close(priv_t priv)
 {
     lpt_dac_t *dev = (lpt_dac_t *)priv;
 
@@ -169,9 +168,9 @@ const lpt_device_t lpt_dac_device = {
     0,
     dac_init,
     dac_close,
-    dac_write_data,
-    dac_write_ctrl,
-    dac_read_status
+    write_data,
+    write_ctrl,
+    read_status
 };
 
 const lpt_device_t lpt_dac_stereo_device = {
@@ -179,7 +178,7 @@ const lpt_device_t lpt_dac_stereo_device = {
     1,
     dac_init,
     dac_close,
-    dac_write_data,
-    dac_write_ctrl,
-    dac_read_status
+    write_data,
+    write_ctrl,
+    read_status
 };
