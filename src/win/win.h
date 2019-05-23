@@ -10,13 +10,13 @@
  *		only things used globally within the Windows platform; the
  *		generic platform defintions are in the plat.h file.
  *
- * Version:	@(#)win.h	1.0.24	2019/03/21
+ * Version:	@(#)win.h	1.0.25	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -103,14 +103,12 @@ extern const vidapi_t	d3d_vidapi;
 
 
 /* Internal platform support functions. */
-#ifdef USE_CRASHDUMP
-extern void	InitCrashDump(void);
-#endif
 extern HICON	LoadIconEx(PCTSTR name);
 extern void	keyboard_getkeymap(void);
 extern void	keyboard_handle(LPARAM lParam, int focus);
 extern void     win_mouse_init(void);
 extern void     win_mouse_close(void);
+extern void	mouse_handle(LPARAM lParam, int focus);
 
 /* Internal dialog functions. */
 extern void	dialog_center(HWND hdlg);

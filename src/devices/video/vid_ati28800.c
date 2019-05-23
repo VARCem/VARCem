@@ -49,6 +49,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -372,26 +373,26 @@ ati28800_recalctimings(svga_t *svga)
     ati28800_t *dev = (ati28800_t *)svga->p;
 
     switch(((dev->regs[0xbe] & 0x10) >> 1) | ((dev->regs[0xb9] & 2) << 1) | ((svga->miscout & 0x0C) >> 2)) {
-	case 0x00: svga->clock = cpuclock / 42954000.0; break;
-	case 0x01: svga->clock = cpuclock / 48771000.0; break;
+	case 0x00: svga->clock = cpu_clock / 42954000.0; break;
+	case 0x01: svga->clock = cpu_clock / 48771000.0; break;
 #if 0
 	case 0x02: INFO("ATI: Clock 2\n", break;
 #endif
-	case 0x03: svga->clock = cpuclock / 36000000.0; break;
-	case 0x04: svga->clock = cpuclock / 50350000.0; break;
-	case 0x05: svga->clock = cpuclock / 56640000.0; break;
+	case 0x03: svga->clock = cpu_clock / 36000000.0; break;
+	case 0x04: svga->clock = cpu_clock / 50350000.0; break;
+	case 0x05: svga->clock = cpu_clock / 56640000.0; break;
 #if 0
 	case 0x06: INFO("ATI: Clock 2\n", break;
 #endif
-	case 0x07: svga->clock = cpuclock / 44900000.0; break;
-	case 0x08: svga->clock = cpuclock / 30240000.0; break;
-	case 0x09: svga->clock = cpuclock / 32000000.0; break;
-	case 0x0A: svga->clock = cpuclock / 37500000.0; break;
-	case 0x0B: svga->clock = cpuclock / 39000000.0; break;
-	case 0x0C: svga->clock = cpuclock / 40000000.0; break;
-	case 0x0D: svga->clock = cpuclock / 56644000.0; break;
-	case 0x0E: svga->clock = cpuclock / 75000000.0; break;
-	case 0x0F: svga->clock = cpuclock / 65000000.0; break;
+	case 0x07: svga->clock = cpu_clock / 44900000.0; break;
+	case 0x08: svga->clock = cpu_clock / 30240000.0; break;
+	case 0x09: svga->clock = cpu_clock / 32000000.0; break;
+	case 0x0A: svga->clock = cpu_clock / 37500000.0; break;
+	case 0x0B: svga->clock = cpu_clock / 39000000.0; break;
+	case 0x0C: svga->clock = cpu_clock / 40000000.0; break;
+	case 0x0D: svga->clock = cpu_clock / 56644000.0; break;
+	case 0x0E: svga->clock = cpu_clock / 75000000.0; break;
+	case 0x0F: svga->clock = cpu_clock / 65000000.0; break;
 	default: break;
     }
 

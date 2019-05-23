@@ -8,14 +8,14 @@
  *
  *		Definitions for the floppy disk	controller driver.
  *
- * Version:	@(#)fdc.h	1.0.8	2019/05/13
+ * Version:	@(#)fdc.h	1.0.9	2019/05/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,12 @@
 # define EMU_FDC_H
 
 
+/* Controller types. */
+#define FDC_NONE		0
+#define FDC_INTERNAL		1
+
+
+/* FDC internal flags. */
 #define FDC_FLAG_PCJR		0x01	/* PCjr */
 #define FDC_FLAG_DISKCHG_ACTLOW	0x02	/* Amstrad, PS/1, PS/2 ISA */
 #define FDC_FLAG_AT		0x04	/* AT+, PS/x */
@@ -49,6 +55,8 @@
 #define FDC_FLAG_MORE_TRACKS	0x40	/* W83877F, W83977F, PC87306, PC87309 */
 #define FDC_FLAG_NSC		0x80	/* PC87306, PC87309 */
 #define FDC_FLAG_TOSHIBA	0x100	/* Toshiba TC8565 (T1200) */
+#define FDC_FLAG_AMSTRAD	0x200	/* Non-AT Amstrad machines */
+#define FDC_FLAG_NSDP		0x400	/* DP8473N, DP8473V */
 
 
 typedef struct {
@@ -105,7 +113,9 @@ typedef struct {
 
 #ifdef EMU_DEVICE_H
 extern const device_t	fdc_xt_device;
+extern const device_t	fdc_xt_amstrad_device;
 extern const device_t	fdc_toshiba_device;
+extern const device_t	fdc_dp8473_device;
 extern const device_t	fdc_pcjr_device;
 extern const device_t	fdc_at_device;
 extern const device_t	fdc_at_actlow_device;
@@ -115,6 +125,8 @@ extern const device_t	fdc_at_winbond_device;
 extern const device_t	fdc_at_nsc_device;
 #endif
 
+
+extern void	fdc_log(int level, const char *fmt, ...);
 
 extern void	fdc_remove(fdc_t *fdc);
 extern void	fdc_poll(fdc_t *fdc);

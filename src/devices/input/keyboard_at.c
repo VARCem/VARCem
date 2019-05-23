@@ -16,7 +16,7 @@
  *		 it either will not process ctrl-alt-esc, or it will not do
  *		 ANY input.
  *
- * Version:	@(#)keyboard_at.c	1.0.28	2019/05/13
+ * Version:	@(#)keyboard_at.c	1.0.29	2019/05/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2739,14 +2739,13 @@ kbd_write(uint16_t port, uint8_t val, priv_t priv)
 				case 0xd4: /* write to mouse */
 					DEBUG("ATkbd: write to mouse (%02x)\n", val);
 
+					/* FIXME: What does this do? --FvK */
 					if (val == 0xbb)
 						break;
 
 					set_enable_mouse(dev, 1);
 					if (mouse_write && (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF))
 						mouse_write(val, mouse_p);
-					else if (!mouse_write && (KBC_TYPE(dev) >= KBC_TYPE_PS2_NOREF))
-						keyboard_at_adddata_mouse(0xff);
 					break;
 
 				default:

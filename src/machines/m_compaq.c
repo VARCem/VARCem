@@ -22,7 +22,7 @@
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -177,7 +177,7 @@ cpq_init(const device_t *info, void *arg)
 		/* Set up our DRAM refresh timer. */
 		pit_set_out_func(&pit, 1, m_xt_refresh_timer);
 
-		device_add(&keyboard_xt_device);
+		device_add(&keyboard_xt_compaq_device);
 		parallel_setup(0, 0x03bc);
 
 		if (config.video_card == VID_INTERNAL)

@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.24	2019/05/17
+ * Version:	@(#)fdc.c	1.0.24	2019/05/20
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -105,17 +105,19 @@ static const int command_has_drivesel[256] = {
 #ifdef ENABLE_FDC_LOG
 int	fdc_do_log = ENABLE_FDC_LOG;
 #endif
-uint8_t	current_drive = 0;
-int	lastbyte = 0;
 int	floppymodified[FDD_NUM];
 int	floppyrate[FDD_NUM];
+
+
+static int	lastbyte = 0;
+static uint8_t	current_drive = 0;
 
 
 static void fdc_callback(priv_t priv);
 
 
 #ifdef _LOGGING
-static void
+void
 fdc_log(int level, const char *fmt, ...)
 {
 # ifdef ENABLE_FDC_LOG
@@ -2141,7 +2143,7 @@ fdc_set_base(fdc_t *fdc, int base)
 {
     int super_io = (fdc->flags & FDC_FLAG_SUPERIO);
 
-    if (fdc->flags & FDC_FLAG_AT) {
+    if ((fdc->flags & FDC_FLAG_AT) || (fdc->flags & FDC_FLAG_AMSTRAD)) {
 	io_sethandler(base + (super_io ? 2 : 0), super_io ? 4 : 6,
 		      fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
 	io_sethandler(base+7, 1,
@@ -2165,7 +2167,7 @@ fdc_remove(fdc_t *fdc)
 {
     int super_io = (fdc->flags & FDC_FLAG_SUPERIO);
 
-    if (fdc->flags & FDC_FLAG_AT) {
+    if ((fdc->flags & FDC_FLAG_AT) || (fdc->flags & FDC_FLAG_AMSTRAD)) {
 	io_removehandler(fdc->base_address + (super_io?2:0), super_io?4:6,
 			 fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
 	io_removehandler(fdc->base_address+7, 1,
@@ -2283,7 +2285,8 @@ fdc_init(const device_t *info, UNUSED(void *parent))
     else
 	fdc->dma_ch = 2;
 
-    DEBUG("FDC: %04X (flags: %08X)\n", fdc->base_address, fdc->flags);
+    DEBUG("FDC: %s (I/O=%04X, flags=%08x)\n",
+	info->name, fdc->base_address, fdc->flags);
 
     timer_add(fdc_callback, fdc, &fdc->time, &fdc->time);
 
@@ -2312,6 +2315,16 @@ const device_t fdc_xt_device = {
     "PC/XT Floppy Drive Controller",
     0,
     0,
+    NULL,
+    fdc_init, fdc_close, fdc_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t fdc_xt_amstrad_device = {
+    "PC/XT Floppy Drive Controller (Amstrad)",
+    0,
+    FDC_FLAG_DISKCHG_ACTLOW | FDC_FLAG_AMSTRAD,
     NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,
@@ -2392,6 +2405,16 @@ const device_t fdc_toshiba_device = {
     "Toshiba TC8565 Floppy Drive Controller",
     0,
     FDC_FLAG_TOSHIBA,
+    NULL,
+    fdc_init, fdc_close, fdc_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t fdc_dp8473_device = {
+    "NS DP8473 Floppy Drive Controller",
+    0,
+    FDC_FLAG_NSDP,
     NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,

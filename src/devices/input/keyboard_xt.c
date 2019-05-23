@@ -10,7 +10,7 @@
  *
  * **NOTE**	The key_queue stuff should be in the device data.
  *
- * Version:	@(#)keyboard_xt.c	1.0.19	2019/05/13
+ * Version:	@(#)keyboard_xt.c	1.0.20	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -686,13 +686,6 @@ kbd_write(uint16_t port, uint8_t val, priv_t priv)
 		speaker_gated = val & 1;
 		speaker_enable = val & 2;
 
-#ifdef USE_CASSETTE
-		if (dev->type <= KBC_PC82) {
-			if (cassette_enabled)
-				cassette_motor(! (val & 0x08));
-		}
-#endif
-
 		if (speaker_enable) 
 			speaker_was_enable = 1;
 		pit_set_gate(&pit, 2, val & 1);
@@ -701,6 +694,15 @@ kbd_write(uint16_t port, uint8_t val, priv_t priv)
 			dev->pa = 0;
 			dev->blocked = 0;
 			picintc(2);
+		}
+
+		if (dev->type <= KBC_PC82) {
+#ifdef USE_CASSETTE
+			if (cassette_enabled)
+				cassette_motor(! (val & 0x08));
+#endif
+			DEBUG("PPI: cassette motor is %s\n", (val & 0x08) ? "OFF" : "ON");
+			DEBUG("PPI: cassette IN is %i\n", !!(val & 0x10));
 		}
 		break;
 
@@ -779,7 +781,6 @@ kbd_read(uint16_t port, priv_t priv)
 		/* Make the IBM PC BIOS happy (Cassette Interface.) */
 		if (dev->type <= KBC_PC82)
 			ret |= (ppispeakon ? 0x10 : 0);
-
 		break;
 
 	case 0x63:
@@ -991,6 +992,16 @@ const device_t keyboard_xt86_device = {
     "IBM PC/XT (1986) Keyboard",
     0,
     KBC_XT86,
+    NULL,
+    kbd_init, kbd_close, kbd_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t keyboard_xt_compaq_device = {
+    "Compaq Portable Keyboard",
+    0,
+    KBC_GENERIC,		/* wrong */
     NULL,
     kbd_init, kbd_close, kbd_reset,
     NULL, NULL, NULL, NULL,

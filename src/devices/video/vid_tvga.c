@@ -48,6 +48,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -148,12 +149,12 @@ recalc_timings(svga_t *svga)
 	svga->rowoffset >>= 1;
 
     switch (((svga->miscout >> 2) & 3) | ((dev->newctrl2 << 2) & 4)) {
-	case 2: svga->clock = cpuclock/44900000.0; break;
-	case 3: svga->clock = cpuclock/36000000.0; break;
-	case 4: svga->clock = cpuclock/57272000.0; break;
-	case 5: svga->clock = cpuclock/65000000.0; break;
-	case 6: svga->clock = cpuclock/50350000.0; break;
-	case 7: svga->clock = cpuclock/40000000.0; break;
+	case 2: svga->clock = cpu_clock/44900000.0; break;
+	case 3: svga->clock = cpu_clock/36000000.0; break;
+	case 4: svga->clock = cpu_clock/57272000.0; break;
+	case 5: svga->clock = cpu_clock/65000000.0; break;
+	case 6: svga->clock = cpu_clock/50350000.0; break;
+	case 7: svga->clock = cpu_clock/40000000.0; break;
     }
 
     if (dev->oldctrl2 & 0x10) {

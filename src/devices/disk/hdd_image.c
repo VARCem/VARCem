@@ -14,13 +14,13 @@
  *		merged with hdd.c, since that is the scope of hdd.c. The
  *		actual format handlers can then be in hdd_format.c etc.
  *
- * Version:	@(#)hdd_image.c	1.0.9	2018/10/24
+ * Version:	@(#)hdd_image.c	1.0.10	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -781,11 +781,23 @@ void
 hdd_image_read(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 {
     hdd_image_t *img = &hdd_images[id];
+    uint32_t i;
 
-    img->pos = sector;
-
+    /* Move to the desired position in the image. */
     fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
-    fread(buffer, 1, count << 9, img->file);
+
+    /* Now read all (consecutive) blocks from the image. */
+    for (i = 0; i < count; i++) {
+	/* If past end of image, give up. */
+	if (feof(img->file))
+		break;
+
+	/* Read a block. */
+	fread(buffer + (i << 9), 1, 512, img->file);
+
+	/* Update position. */
+	img->pos = sector + i;
+    }
 }
 
 
@@ -826,11 +838,23 @@ void
 hdd_image_write(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 {
     hdd_image_t *img = &hdd_images[id];
+    uint32_t i;
 
-    img->pos = sector;
-
+    /* Move to the desired position in the image. */
     fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
-    fwrite(buffer, count << 9, 1, img->file);
+
+    /* Now write all (consecutive) blocks to the image. */
+    for (i = 0; i < count; i++) {
+	/* If past end of image, give up. */
+	if (feof(img->file))
+		break;
+
+	/* Write a block. */
+	fwrite(buffer + (i << 9), 512, 1, img->file);
+
+	/* Update position. */
+	img->pos = sector + i;
+    }
 }
 
 
@@ -865,12 +889,21 @@ hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
 
     memset(empty, 0x00, sizeof(empty));
 
-    img->pos = sector;
-
+    /* Move to the desired position in the image. */
     fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-    for (i = 0; i < count; i++)
-	fwrite(empty, 512, 1, img->file);
+    /* Now write all (consecutive) blocks to the image. */
+    for (i = 0; i < count; i++) {
+	/* If past end of image, give up. */
+	if (feof(img->file))
+		break;
+
+	/* Write a block. */
+  	fwrite(empty, 512, 1, img->file);
+
+	/* Update position. */
+	img->pos = sector + i;
+    }
 }
 
 

@@ -8,7 +8,7 @@
  *
  *		Definitions for the PGC driver.
  *
- * Version:	@(#)vid_pgc.h	1.0.5	2019/05/73
+ * Version:	@(#)vid_pgc.h	1.0.6	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		John Elliott, <jce@seasip.info>
@@ -63,7 +63,7 @@ typedef struct pgc_cl {
 } pgc_cl_t;
 
 typedef struct pgc_cmd {
-    char	ascii[6];
+    const char	*ascii;
     uint8_t	hex;
     void	(*handler)(struct pgc *);
     int		(*parser) (struct pgc *, pgc_cl_t *, int);
@@ -105,6 +105,10 @@ typedef struct pgc {
     uint8_t	tjust_h;		/* hor alignment 1=left 2=ctr 3=right*/
     uint8_t	tjust_v;		/* vert alignment 1=bottom 2=ctr 3=top*/
     int32_t	tsize;			/* horizontal spacing */
+
+    uint8_t	fontx[256];
+    uint8_t	fonty[256];
+    uint8_t	font[256][128];
 
     int32_t	x, y, z;		/* drawing position */
 

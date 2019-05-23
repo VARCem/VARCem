@@ -298,6 +298,25 @@ kbd_read(uint16_t port, priv_t priv)
 }
 
 
+static void
+kbd_reset(olim24_t *dev)
+{
+    dev->status = STAT_LOCK | STAT_CD;
+    dev->wantirq = 0;
+    dev->param = dev->param_total = 0;
+    dev->mouse_mode = 0;
+    dev->scan[0] = 0x1c;
+    dev->scan[1] = 0x53;
+    dev->scan[2] = 0x01;
+    dev->scan[3] = 0x4b;
+    dev->scan[4] = 0x4d;
+    dev->scan[5] = 0x48;
+    dev->scan[6] = 0x50;   
+
+    keyboard_scan = 1;
+}
+
+
 static int
 mse_poll(int x, int y, int z, int b, priv_t priv)
 {
@@ -675,35 +694,27 @@ olim24_init(const device_t *info, void *arg)
     dev->nvr.tick = rtc_ticker;
     nvr_init(&dev->nvr);
     io_sethandler(0x0070, 16,
-		  rtc_read,NULL,NULL, rtc_write,NULL,NULL, &dev->nvr);
+		  rtc_read,NULL,NULL, rtc_write,NULL,NULL, (priv_t)&dev->nvr);
 
     io_sethandler(0x0066, 2,
-		  m24_read,NULL,NULL, NULL,NULL,NULL, dev);
+		  m24_read,NULL,NULL, NULL,NULL,NULL, (priv_t)dev);
 
     /* Initialize the video adapter. */
     m_olim24_vid_init(0);
 
     /* Initialize the keyboard. */
-    dev->status = STAT_LOCK | STAT_CD;
-    dev->scan[0] = 0x1c;
-    dev->scan[1] = 0x53;
-    dev->scan[2] = 0x01;
-    dev->scan[3] = 0x4b;
-    dev->scan[4] = 0x4d;
-    dev->scan[5] = 0x48;
-    dev->scan[6] = 0x50;
     io_sethandler(0x0060, 2,
-		  kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
+		  kbd_read,NULL,NULL, kbd_write,NULL,NULL, (priv_t)dev);
     io_sethandler(0x0064, 1,
-		  kbd_read,NULL,NULL, kbd_write,NULL,NULL, dev);
-    keyboard_set_table(scancode_xt);
+		  kbd_read,NULL,NULL, kbd_write,NULL,NULL, (priv_t)dev);
+    kbd_reset(dev);
     keyboard_send = kbd_adddata_ex;
-    keyboard_scan = 1;
-    timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
+    keyboard_set_table(scancode_xt);
+    timer_add(kbd_poll, (priv_t)dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
 
     /* Tell mouse driver about our internal mouse. */
     mouse_reset();
-    mouse_set_poll(mse_poll, dev);
+    mouse_set_poll(mse_poll, (priv_t)dev);
 
     device_add(&fdc_xt_device);
 

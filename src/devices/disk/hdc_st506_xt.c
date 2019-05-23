@@ -41,12 +41,14 @@
  *		Since all controllers (including the ones made by DTC) use
  *		(mostly) the same API, we keep them all in this module.
  *
- * Version:	@(#)hdc_st506_xt.c	1.0.22	2019/05/17
+ * Version:	@(#)hdc_st506_xt.c	1.0.23	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -108,7 +110,7 @@
 
 
 /* Status register. */
-#define STAT_REQ		0x01		/* controller ready */
+#define STAT_REQ		0x01		/* ready for new request */
 #define STAT_IO			0x02		/* input, data to host */
 #define STAT_CD			0x04		/* command mode (else data) */
 #define STAT_BSY		0x08		/* controller is busy */
@@ -291,6 +293,9 @@ st506_complete(hdc_t *dev)
     dev->status = STAT_REQ | STAT_CD | STAT_IO | STAT_BSY;
     dev->state = STATE_COMPLETION_BYTE;
 
+    if (dev->irq_dma & DMA_ENA)
+	dma_set_drq(dev->dma, 0);
+
     if (dev->irq_dma & IRQ_ENA) {
 	dev->status |= STAT_IRQ;
 	picint(1 << dev->irq);
@@ -395,7 +400,7 @@ st506_callback(priv_t priv)
     int val;
 
     /* Cancel the timer for now. */
-    dev->callback = 0LL;
+    dev->callback = 0;
 
     /* Get the drive info. Note that the API supports up to 8 drives! */
     dev->drive_sel = (dev->command[1] >> 5) & 0x07;
@@ -409,7 +414,7 @@ st506_callback(priv_t priv)
 		DEBUG("ST506: TEST_READY(%i) = %i\n",
 			dev->drive_sel, drive->present);
 		if (! drive->present)
-			st506_error(dev, ERR_NOT_READY);	//AVAILABLE
+			st506_error(dev, ERR_NOT_READY);
 		st506_complete(dev);
 		break;
 
@@ -420,7 +425,7 @@ st506_callback(priv_t priv)
 					dev->drive_sel, drive->present);
 				if (! drive->present) {
 					st506_error(dev, ERR_NOT_READY);
-					st506_complete(dev);	//AVAILABLE
+					st506_complete(dev);
 					break;
 				}
 
@@ -600,13 +605,12 @@ st506_callback(priv_t priv)
 				dev->status = STAT_BSY | STAT_IO | STAT_REQ;
 				if (dev->irq_dma & DMA_ENA) {
 					dev->callback = ST506_TIME;
-					dev->status |= STAT_DRQ;
+					dma_set_drq(dev->dma, 1);
 				}
 				dev->state = STATE_SEND_DATA;
 				break;
 
 			case STATE_SEND_DATA:
-				dev->status &= ~STAT_DRQ;
 				for (; dev->buff_pos < dev->buff_cnt; dev->buff_pos++) {
 					val = dma_channel_write(dev->dma, dev->buff[dev->buff_pos]);
 					if (val == DMA_NODATA) {
@@ -615,9 +619,10 @@ st506_callback(priv_t priv)
 						st506_complete(dev);
 						return;
 					}
-					dev->callback = ST506_TIME;
-					dev->state = STATE_SENT_DATA;
 				}
+				dma_set_drq(dev->dma, 0);
+				dev->callback = ST506_TIME;
+				dev->state = STATE_SENT_DATA;
 				break;
 
 			case STATE_SENT_DATA:
@@ -645,7 +650,7 @@ st506_callback(priv_t priv)
 				dev->status = STAT_BSY | STAT_IO | STAT_REQ;
 				if (dev->irq_dma & DMA_ENA) {
 					dev->callback = ST506_TIME;
-					dev->status |= STAT_DRQ;
+					dma_set_drq(dev->dma, 1);
 				}
 				dev->state = STATE_SEND_DATA;
 				break;
@@ -681,13 +686,12 @@ st506_callback(priv_t priv)
 				dev->status = STAT_BSY | STAT_REQ;
 				if (dev->irq_dma & DMA_ENA) {
 					dev->callback = ST506_TIME;
-					dev->status |= STAT_DRQ;
+					dma_set_drq(dev->dma, 1);
 				}
 				dev->state = STATE_RECEIVE_DATA;
 				break;
 
 			case STATE_RECEIVE_DATA:
-				dev->status &= ~STAT_DRQ;
 				for (; dev->buff_pos < dev->buff_cnt; dev->buff_pos++) {
 					val = dma_channel_read(dev->dma);
 					if (val == DMA_NODATA) {
@@ -697,10 +701,11 @@ st506_callback(priv_t priv)
 						return;
 					}
 					dev->buff[dev->buff_pos] = val & 0xff;
-
-					dev->callback = ST506_TIME;
-					dev->state = STATE_RECEIVED_DATA;
 				}
+
+				dma_set_drq(dev->dma, 0);
+				dev->callback = ST506_TIME;
+				dev->state = STATE_RECEIVED_DATA;
 				break;
 
 			case STATE_RECEIVED_DATA:
@@ -728,7 +733,7 @@ st506_callback(priv_t priv)
 				dev->status = STAT_BSY | STAT_REQ;
 				if (dev->irq_dma & DMA_ENA) {
 					dev->callback = ST506_TIME;
-					dev->status |= STAT_DRQ;
+					dma_set_drq(dev->dma, 1);
 				}
 				dev->state = STATE_RECEIVE_DATA;
 				break;
@@ -794,13 +799,12 @@ st506_callback(priv_t priv)
 				dev->status = STAT_BSY | STAT_IO | STAT_REQ;
 				if (dev->irq_dma & DMA_ENA) {
 					dev->callback = ST506_TIME;
-					dev->status |= STAT_DRQ;
+					dma_set_drq(dev->dma, 1);
 				}
 				dev->state = STATE_SEND_DATA;
 				break;
 
 			case STATE_SEND_DATA:
-				dev->status &= ~STAT_DRQ;
 				for (; dev->buff_pos < dev->buff_cnt; dev->buff_pos++) {
 					val = dma_channel_write(dev->dma, dev->buff[dev->buff_pos]);
 					if (val == DMA_NODATA) {
@@ -809,9 +813,11 @@ st506_callback(priv_t priv)
 						st506_complete(dev);
 						return;
 					}
-					dev->callback = ST506_TIME;
-					dev->state = STATE_SENT_DATA;
 				}
+
+				dma_set_drq(dev->dma, 0);
+				dev->callback = ST506_TIME;
+				dev->state = STATE_SENT_DATA;
 				break;
 
 			case STATE_SENT_DATA:
@@ -831,13 +837,12 @@ st506_callback(priv_t priv)
 				dev->status = STAT_BSY | STAT_REQ;
 				if (dev->irq_dma & DMA_ENA) {
 					dev->callback = ST506_TIME;
-					dev->status |= STAT_DRQ;
+					dma_set_drq(dev->dma, 1);
 				}
 				dev->state = STATE_RECEIVE_DATA;
 				break;
 
 			case STATE_RECEIVE_DATA:
-				dev->status &= ~STAT_DRQ;
 				for (; dev->buff_pos < dev->buff_cnt; dev->buff_pos++) {
 					val = dma_channel_read(dev->dma);
 					if (val == DMA_NODATA) {
@@ -847,10 +852,11 @@ st506_callback(priv_t priv)
 						return;
 					}
 					dev->buff[dev->buff_pos] = val & 0xff;
-
-					dev->state = STATE_RECEIVED_DATA;
-					dev->callback = ST506_TIME;
 				}
+
+				dma_set_drq(dev->dma, 0);
+				dev->callback = ST506_TIME;
+				dev->state = STATE_RECEIVED_DATA;
 				break;
 
 			case STATE_RECEIVED_DATA:
@@ -1188,6 +1194,8 @@ st506_read(uint16_t port, priv_t priv)
 
 	case 1:		/* read status */
 		ret = dev->status;
+		if ((dev->irq_dma & DMA_ENA) && dma_get_drq(dev->dma))
+			ret |= STAT_DRQ;
 		break;
 
 	case 2:		/* read option jumpers */
@@ -1248,6 +1256,13 @@ st506_write(uint16_t port, uint8_t val, priv_t priv)
 
 	case 3:		/* DMA/IRQ enable register */
 		dev->irq_dma = val;
+		if (! (dev->irq_dma & DMA_ENA))
+			dma_set_drq(dev->dma, 0);
+
+		if (! (dev->irq_dma & IRQ_ENA)) {
+			dev->status &= ~STAT_IRQ;
+			picintc(1 << dev->irq);
+		}
 		break;
     }
 }

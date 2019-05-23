@@ -8,7 +8,7 @@
  *
  *		Definitions for the keyboard interface.
  *
- * Version:	@(#)keyboard.h	1.0.15	2019/05/13
+ * Version:	@(#)keyboard.h	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -85,6 +85,7 @@ extern const device_t	keyboard_pc_device;
 extern const device_t	keyboard_pc82_device;
 extern const device_t	keyboard_xt_device;
 extern const device_t	keyboard_xt86_device;
+extern const device_t	keyboard_xt_compaq_device;
 extern const device_t	keyboard_generic_device;
 extern const device_t	keyboard_tandy_device;
 extern const device_t	keyboard_laserxt3_device;

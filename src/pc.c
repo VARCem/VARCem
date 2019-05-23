@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.77	2019/05/17
+ * Version:	@(#)pc.c	1.0.77	2019/05/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,6 +71,8 @@
 #include "devices/input/mouse.h"
 #include "devices/floppy/fdd.h"
 #include "devices/floppy/fdd_common.h"
+#include "devices/floppy/fdc.h"
+#include "devices/floppy/fdc_pii15xb.h"
 #include "devices/disk/hdd.h"
 #include "devices/disk/hdc.h"
 #include "devices/scsi/scsi.h"
@@ -922,11 +924,29 @@ pc_reset_hard_init(void)
     /* Reset sound system. This MAY add a game port, so before joystick! */
     sound_reset();
 
-    /* Reset the Floppy and Hard Disk modules. */
+    /* Reset the Floppy module. */
+//FIXME: move to floppy_reset()
+    switch(config.fdc_type) {
+	case FDC_NONE:
+	case FDC_INTERNAL:
+		break;
+
+	case 10:
+		device_add(&fdc_pii151b_device);
+		break;
+
+	case 11:
+		device_add(&fdc_pii158b_device);
+		break;
+    }
     fdd_reset();
+
+    /* Reset the Hard Disk module. */
+//FIXME: move to disk_reset()
     hdc_reset();
 
     /* Reset and reconfigure the SCSI layer. */
+//FIXME: move to scsi_reset()
     scsi_card_init();
 
     cdrom_hard_reset();
@@ -1086,7 +1106,9 @@ pc_thread(void *param)
 			execx86(clockrate/100);
 		}
 
-		mouse_process();
+#ifdef USE_DINPUT
+		mouse_poll();
+#endif
 
 		joystick_process();
 

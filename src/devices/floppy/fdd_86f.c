@@ -3074,7 +3074,7 @@ d86f_write_tracks(int drive, FILE **f, uint32_t *track_table)
     if (track_table)
 	tbl = track_table;
 
-    if (!fdd_doublestep_40(drive)) {
+    if (! fdd_doublestep_40(drive)) {
 	d86f_decompose_encoded_buffer(drive, 0);
 	if (sides == 2)
 		d86f_decompose_encoded_buffer(drive, 1);

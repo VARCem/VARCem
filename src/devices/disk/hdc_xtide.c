@@ -240,7 +240,7 @@ const device_t xtide_acculogic_device = {
 
 const device_t xtide_at_ps2_device = {
     "PS/2 AT XTIDE (1.1.5)",
-    DEVICE_ISA | DEVICE_PS2,
+    DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 3,
     ROM_PATH_PS2_AT,
     xtide_init, xtide_close, NULL,

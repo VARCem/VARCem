@@ -750,7 +750,7 @@ ctl_read(uint16_t addr, priv_t priv)
 	case 0x0f:	/* Detect EMS board */
 		switch (dev->sys_ctl[0x0e]) {
 			case 0x50:
-				if (mem_size > 512) break;
+				if (mem_size > 512)
 					ret = (0x90 | dev->ems_port_index);
 				break;
 

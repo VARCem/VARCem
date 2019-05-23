@@ -8,7 +8,7 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.38	2019/05/03
+ * Version:	@(#)win_ui.c	1.0.39	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -589,6 +589,9 @@ input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
 	case WM_INPUT:
 		keyboard_handle(lParam, infocus);
+#ifndef USE_DINPUT
+		mouse_handle(lParam, infocus);
+#endif
 		break;
 
 	case WM_SETFOCUS:

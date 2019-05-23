@@ -8,6 +8,18 @@
  *
  *		Implement the Intel 8284 Clock Generator functionality.
  *
+ *		The clock generator is responsible for providing clocks for
+ *		all peripheral components on the board. Originally, it used
+ *		a single crystal oscillator (the 14.3MHz one) from which all
+ *		others were derived (the 1.8Mhz clock for the PIT, the 4.77M
+ *		for the processor and bus, and a buffered 14.3M for the video
+ *		cards) but later, a second oscillator was added, allowing for
+ *		a 'turbo' mode for the processor, where the processor speed
+ *		was higher than the bus and peripheral speeds.
+ *
+ *		On more modern systems, this functionality of course has been
+ *		integrated into the chipsets.
+ *
  * Version:	@(#)clk.c	1.0.2	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
@@ -49,15 +61,16 @@
 #include "clk.h"
 
 
-float	cpuclock;
-float	bus_timing;
+float	cpu_clock;		/* clock for the processor */
+float	bus_timing;		/* clock divider for the bus clock */
 
-double	PITCONST;
-float	CGACONST;
-float	MDACONST;
-float	VGACONST1,
+double	PITCONST;		/* divider for the PIT (i8254) */
+
+float	CGACONST;		/* divider for the CGA controller */
+float	MDACONST;		/* divider for the MDA controller */
+float	VGACONST1,		/* divider for the VGA controllers */
 	VGACONST2;
-float	RTCCONST;
+float	RTCCONST;		/* divider for the RTC */
 
 
 /* Set default CPU/crystal clock and xt_cpu_multi. */
@@ -68,13 +81,13 @@ clk_setup(uint32_t freq)
 
     if (cpu_get_type() >= CPU_286) {
 	/* For 286 and up, this is easy. */
-	cpuclock = (float)freq;
-	PITCONST = cpuclock / 1193182.0;
-	CGACONST = (float) (cpuclock  / (19687503.0 / 11.0));
+	cpu_clock = (float)freq;
+	PITCONST = cpu_clock / 1193182.0;
+	CGACONST = (float) (cpu_clock  / (19687503.0 / 11.0));
 	xt_cpu_multi = 1;
     } else {
 	/* Not so much for XT-class systems. */
-	cpuclock = 14318184.0;
+	cpu_clock = 14318184.0;
        	PITCONST = 12.0;
         CGACONST = 8.0;
 	xt_cpu_multi = 3;
@@ -85,7 +98,7 @@ clk_setup(uint32_t freq)
 	switch (speed) {
 		case 7159092:	/* 7.16 MHz */
 			if (cpu_get_flags() & CPU_ALTERNATE_XTAL) {
-				cpuclock = 28636368.0;
+				cpu_clock = 28636368.0;
 				xt_cpu_multi = 4;
 			} else
 				xt_cpu_multi = 2;
@@ -96,39 +109,39 @@ clk_setup(uint32_t freq)
 		case 10000000:	/* 10 MHz */
 		case 12000000:	/* 12 MHz */
 		case 16000000:	/* 16 MHz */
-			cpuclock = ((float)speed * xt_cpu_multi);
+			cpu_clock = ((float)speed * xt_cpu_multi);
 			break;
 
 		default:
 			if (cpu_get_flags() & CPU_ALTERNATE_XTAL) {
-				cpuclock = 28636368.0;
+				cpu_clock = 28636368.0;
 				xt_cpu_multi = 6;
 			}
 			break;
 	}
 
-	if (cpuclock == 28636368.0) {
+	if (cpu_clock == 28636368.0) {
         	PITCONST = 24.0;
 	        CGACONST = 16.0;
-	} else if (cpuclock != 14318184.0) {
-		PITCONST = cpuclock / 1193182.0;
-		CGACONST = (float) (cpuclock / (19687503.0 / 11.0));
+	} else if (cpu_clock != 14318184.0) {
+		PITCONST = cpu_clock / 1193182.0;
+		CGACONST = (float) (cpu_clock / (19687503.0 / 11.0));
 	}
    }
 
     xt_cpu_multi <<= TIMER_SHIFT;
 
-    MDACONST = (float) (cpuclock / 2032125.0);
-    VGACONST1 = (float) (cpuclock / 25175000.0);
-    VGACONST2 = (float) (cpuclock / 28322000.0);
-    RTCCONST = (float) (cpuclock / 32768.0);
+    MDACONST = (float) (cpu_clock / 2032125.0);
+    VGACONST1 = (float) (cpu_clock / 25175000.0);
+    VGACONST2 = (float) (cpu_clock / 28322000.0);
+    RTCCONST = (float) (cpu_clock / 32768.0);
 
-    TIMER_USEC = (tmrval_t)((cpuclock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
+    TIMER_USEC = (tmrval_t)((cpu_clock / 1000000.0f) * (float)(1 << TIMER_SHIFT));
 
-    bus_timing = (float) (cpuclock / (double)cpu_busspeed);
+    bus_timing = (float) (cpu_clock / (double)cpu_busspeed);
 
     INFO("CLK: cpu=%.2f xt=%d PIT=%.2f RTC=%.2f CGA=%.2f MDA=%.2f TMR=%" PRIu64 "\n",
-	cpuclock, xt_cpu_multi, (float)PITCONST, RTCCONST, CGACONST, MDACONST,
+	cpu_clock, xt_cpu_multi, (float)PITCONST, RTCCONST, CGACONST, MDACONST,
 	TIMER_USEC);
 
     device_speed_changed();

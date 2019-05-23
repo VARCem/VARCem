@@ -49,6 +49,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/mca.h"
 #include "video.h"
 #include "vid_svga.h"
@@ -420,15 +421,15 @@ et4000_recalctimings(svga_t *svga)
 		break;
 
 	case 3:
-		svga->clock = cpuclock / 40000000.0;
+		svga->clock = cpu_clock / 40000000.0;
 		break;
 
 	case 5:
-		svga->clock = cpuclock / 65000000.0;
+		svga->clock = cpu_clock / 65000000.0;
 		break;
 
 	default:
-		svga->clock = cpuclock / 36000000.0;
+		svga->clock = cpu_clock / 36000000.0;
 		break;
     }
         

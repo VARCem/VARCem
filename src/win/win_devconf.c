@@ -12,7 +12,7 @@
  *		and builds a complete Win32 DIALOG resource block in a
  *		buffer in memory, and then passes that to the API handler.
  *
- * Version:	@(#)win_devconf.c	1.0.24	2019/05/13
+ * Version:	@(#)win_devconf.c	1.0.25	2019/05/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -517,7 +517,7 @@ dlg_devconf(HWND hwnd, const device_t *device)
 			itm->style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX;
 			itm->x = 10;
 			itm->y = y;
-			itm->cx = 80;
+			itm->cx = 180;
 			itm->cy = 15;
 			itm->id = id++;
 

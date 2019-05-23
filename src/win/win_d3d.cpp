@@ -8,7 +8,7 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.19	2019/05/17
+ * Version:	@(#)win_d3d.cpp	1.0.20	2019/05/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -622,16 +622,20 @@ d3d_screenshot(const wchar_t *fn)
     D3DLOCKED_RECT d3dlr;
     uint8_t *bits, *pixels, *ptr;
     HRESULT hr;
-    int i;
+    int i, old;
 #if USE_LIBPNG
     wchar_t temp[512];
 #endif
 
     if (! d3dTexture) return;
 
+    old = is_enabled;
+    is_enabled = 0;
+
     hr = d3ddev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &d3dSurface);
     if (FAILED(hr)) {
 	ERRLOG("D3D: GetBackBuffer failed, result = %08lx\n", hr);
+	is_enabled = old;
 	return;
     }
 
@@ -644,6 +648,7 @@ d3d_screenshot(const wchar_t *fn)
 	ERRLOG("D3D: CreateOffscreenPlainSurface failed, result = %08lx\n", hr);
 	copy->Release();
 	d3dSurface->Release();
+	is_enabled = old;
 	return;
     }
 
@@ -652,6 +657,7 @@ d3d_screenshot(const wchar_t *fn)
 	ERRLOG("D3D: GetTargetData failed, result = %08lx\n", hr);
 	copy->Release();
 	d3dSurface->Release();
+	is_enabled = old;
 	return;
     }
 
@@ -660,6 +666,7 @@ d3d_screenshot(const wchar_t *fn)
 	ERRLOG("D3D: LockRect failed, result = %08lx\n", hr);
 	copy->Release();
 	d3dSurface->Release();
+	is_enabled = old;
 	return;
     }
     bits = (uint8_t *)d3dlr.pBits;
@@ -684,6 +691,8 @@ d3d_screenshot(const wchar_t *fn)
     /* Unlock and release the back buffer. */
     d3dSurface->UnlockRect();
     d3dSurface->Release();
+
+    is_enabled = old;
 
 #if USE_LIBPNG
     i = png_write_rgb(fn, 0, pixels,

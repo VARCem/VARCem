@@ -54,6 +54,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/pci.h"
 #include "video.h"
 #include "vid_svga.h"
@@ -460,7 +461,7 @@ recalc_timings(svga_t *svga)
     clocksel = (svga->miscout >> 2) & 3;
 
     if (!dev->vclk_n[clocksel] || !dev->vclk_d[clocksel])
-	svga->clock = cpuclock / ((svga->miscout & 0xc) ? 28322000.0 : 25175000.0);
+	svga->clock = cpu_clock / ((svga->miscout & 0xc) ? 28322000.0 : 25175000.0);
     else {
 	int n = dev->vclk_n[clocksel] & 0x7f;
 	int d = (dev->vclk_d[clocksel] & 0x3e) >> 1;
@@ -479,7 +480,7 @@ recalc_timings(svga_t *svga)
 		}
 	}
 
-	svga->clock = cpuclock / freq;
+	svga->clock = cpu_clock / freq;
     }
 
     if (dev->vram_size == (1 << 19)) /* Note : why 512KB VRAM cards does not wrap */

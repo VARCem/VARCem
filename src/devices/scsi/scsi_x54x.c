@@ -49,6 +49,7 @@
 #include "../../emu.h"
 #include "../../timer.h"
 #include "../../io.h"
+#include "../../cpu/cpu.h"
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"

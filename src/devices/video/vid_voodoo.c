@@ -52,6 +52,7 @@
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/pci.h"
 #include "video.h"
 #include "vid_svga.h"
@@ -6262,7 +6263,7 @@ static void voodoo_pixelclock_update(voodoo_t *voodoo)
         
         voodoo->pixel_clock = t;
 
-        clock_const = cpuclock / t;
+        clock_const = cpu_clock / t;
         voodoo->line_time = (int)((double)line_length * clock_const * (double)(1 << TIMER_SHIFT));
 }
 

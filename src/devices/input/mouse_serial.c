@@ -10,13 +10,13 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.15	2019/04/25
+ * Version:	@(#)mouse_serial.c	1.0.16	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2018 Miran Grca.
+ *		Copyright 2018,2019 Miran Grca.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -112,8 +112,8 @@ data_msystems(mouse_t *dev, int x, int y, int b)
 {
     dev->data[0] = 0x80;
     dev->data[0] |= (b & 0x01) ? 0x00 : 0x04;	/* left button */
-    dev->data[0] |= (b & 0x02) ? 0x00 : 0x01;	/* middle button */
-    dev->data[0] |= (b & 0x04) ? 0x00 : 0x02;	/* right button */
+    dev->data[0] |= (b & 0x04) ? 0x00 : 0x01;	/* middle button */
+    dev->data[0] |= (b & 0x02) ? 0x00 : 0x02;	/* right button */
     dev->data[1] = x;
     dev->data[2] = -y;
     dev->data[3] = x;				/* same as byte 1 */
@@ -127,8 +127,8 @@ static uint8_t
 data_3bp(mouse_t *dev, int x, int y, int b)
 {
     dev->data[0] |= (b & 0x01) ? 0x00 : 0x04;	/* left button */
-    dev->data[0] |= (b & 0x02) ? 0x00 : 0x02;	/* middle button */
-    dev->data[0] |= (b & 0x04) ? 0x00 : 0x01;	/* right button */
+    dev->data[0] |= (b & 0x04) ? 0x00 : 0x02;	/* middle button */
+    dev->data[0] |= (b & 0x02) ? 0x00 : 0x01;	/* right button */
     dev->data[1] = x;
     dev->data[2] = -y;
 
@@ -150,8 +150,8 @@ data_mmseries(mouse_t *dev, int x, int y, int b)
     if (y < 0)
 	dev->data[0] |= 0x08;
     dev->data[0] |= (b & 0x01) ? 0x04 : 0x00;	/* left button */
-    dev->data[0] |= (b & 0x02) ? 0x02 : 0x00;	/* middle button */
-    dev->data[0] |= (b & 0x04) ? 0x01 : 0x00;	/* right button */
+    dev->data[0] |= (b & 0x04) ? 0x02 : 0x00;	/* middle button */
+    dev->data[0] |= (b & 0x02) ? 0x01 : 0x00;	/* right button */
     dev->data[1] = abs(x);
     dev->data[2] = abs(y);
 
@@ -164,8 +164,8 @@ data_bp1(mouse_t *dev, int x, int y, int b)
 {
     dev->data[0] = 0x80;
     dev->data[0] |= (b & 0x01) ? 0x10 : 0x00;	/* left button */
-    dev->data[0] |= (b & 0x02) ? 0x08 : 0x00;	/* middle button */
-    dev->data[0] |= (b & 0x04) ? 0x04 : 0x00;	/* right button */
+    dev->data[0] |= (b & 0x04) ? 0x08 : 0x00;	/* middle button */
+    dev->data[0] |= (b & 0x02) ? 0x04 : 0x00;	/* right button */
     dev->data[1] = (x & 0x3f);
     dev->data[2] = (x >> 6);
     dev->data[3] = (y & 0x3f);
@@ -227,8 +227,8 @@ data_hex(mouse_t *dev, int x, int y, int b)
 
     but = 0x00;
     but |= (b & 0x01) ? 0x04 : 0x00;	/* left button */
-    but |= (b & 0x02) ? 0x02 : 0x00;	/* middle button */
-    but |= (b & 0x04) ? 0x01 : 0x00;	/* right button */
+    but |= (b & 0x04) ? 0x02 : 0x00;	/* middle button */
+    but |= (b & 0x02) ? 0x01 : 0x00;	/* right button */
 
     /* Encode the packet as HEX values. */
     sprintf(temp, "%02X%02X%01X", (int8_t)y, (int8_t)x, but & 0x0f);
@@ -247,6 +247,10 @@ ser_report(mouse_t *dev, int x, int y, int z, int b)
     int len = 0;
 
     memset(dev->data, 0x00, sizeof(dev->data));
+
+    /* If the mouse is 2-button, ignore the middle button. */
+    if (dev->but == 2)
+	b &= ~0x04;
 
     switch(dev->type) {
 	case MOUSE_MSYSTEMS:
@@ -304,7 +308,6 @@ ser_report(mouse_t *dev, int x, int y, int z, int b)
 
     if (! dev->delay)
 	dev->delay = dev->period;
-//pclog(0,"SerMouse%d: report(%d), len=%d\n", dev->port,dev->type,dev->data_len);
 }
 
 
@@ -315,7 +318,6 @@ ser_timer(void *priv)
     mouse_t *dev = (mouse_t *)priv;
     uint8_t b = 0x00;
 
-//pclog(0,"SerMouse%d: timer, phase=%d pos=%d\n",dev->port,dev->phase,dev->pos);
     switch (dev->phase) {
 	case PHASE_ID:
 		/* Grab next ID byte. */
@@ -381,7 +383,6 @@ ser_timer(void *priv)
     /* Send byte if we can. */
     if (dev->serial != NULL) {
 	serial_write(dev->serial, &b, 1);
-//pclog(0,"SerMouse%d: writing %02x\n",dev->port, b);
 }
 }
 
@@ -392,7 +393,6 @@ ser_callback(void *serial, void *priv)
 {
     mouse_t *dev = (mouse_t *)priv;
 
-pclog(0,"Serial%d: callback @%08lx\n", dev->port, dev->serial);
     if (serial == NULL) return;
 
     serial_clear(serial);

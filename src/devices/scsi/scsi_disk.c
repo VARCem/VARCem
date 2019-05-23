@@ -813,7 +813,7 @@ disk_command(void *p, uint8_t *cdb)
 				break;
 		}
 
-		if ((dev->sector_pos > last_sector) || ((dev->sector_pos + dev->sector_len - 1) > last_sector)) {
+		if (dev->sector_pos > last_sector) {
 			lba_out_of_range(dev);
 			return;
 		}
@@ -879,8 +879,7 @@ disk_command(void *p, uint8_t *cdb)
 				break;
 		}
 
-		if ((dev->sector_pos > last_sector) ||
-		    ((dev->sector_pos + dev->sector_len - 1) > last_sector)) {
+		if (dev->sector_pos > last_sector) {
 			lba_out_of_range(dev);
 			return;
 		}
@@ -918,8 +917,7 @@ disk_command(void *p, uint8_t *cdb)
 		DEBUG("SCSI DISK %i: Length: %i, LBA: %i\n",
 		      dev->id, dev->sector_len, dev->sector_pos);
 
-		if ((dev->sector_pos > last_sector) ||
-		    ((dev->sector_pos + dev->sector_len - 1) > last_sector)) {
+		if (dev->sector_pos > last_sector) {
 			lba_out_of_range(dev);
 			return;
 		}

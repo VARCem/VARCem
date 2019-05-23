@@ -1110,15 +1110,22 @@ read_data(scsi_cdrom_t *dev, int msf, int type, int flags, int32_t *len)
 	cdsize = dev->drv->ops->size(dev->drv);
     else {
 	not_ready(dev);
-	return 0;
+	return -1;
     }
 
+    /* FIXME:
+     * Temporarily disabled this because the Triones ATAPI DMA driver
+     * seems to always request a 4-sector read but sets the DMA bus
+     * master to transfer less data than that.
+     */
+#if 0
     if (dev->sector_pos >= cdsize) {
 	DEBUG("CD-ROM %i: Trying to read from beyond the end of disc (%i >= %i)\n", dev->id,
 		  dev->sector_pos, cdsize);
 	lba_out_of_range(dev);
-	return 0;
+	return -1;
     }
+#endif
 
     if ((dev->sector_pos + dev->sector_len - 1) >= cdsize) {
 	DEBUG("CD-ROM %i: Trying to read to beyond the end of disc (%i >= %i)\n", dev->id,
@@ -1188,6 +1195,9 @@ read_blocks(scsi_cdrom_t *dev, int32_t *len, int first_batch)
     ret = read_data(dev, msf, type, flags, len);
 
     DEBUG("Read %i bytes of blocks...\n", *len);
+
+    if (ret == -1)
+	return 0;
 
     if (!ret || ((dev->old_len != *len) && !first_batch)) {
 	if ((dev->old_len != *len) && !first_batch)
@@ -2163,17 +2173,17 @@ do_command(void *p, uint8_t *cdb)
 		memset(dev->buffer, 0, 36);
 		dev->buffer[0] = 0;
 		dev->buffer[1] = 34;
-		dev->buffer[2] = 1; /* track number (LSB) */
-		dev->buffer[3] = 1; /* session number (LSB) */
-		dev->buffer[5] = (0 << 5) | (0 << 4) | (4 << 0); /* not damaged, primary copy, data track */
-		dev->buffer[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | (1 << 0); /* not reserved track, not blank, not packet writing, not fixed packet, data mode 1 */
-		dev->buffer[7] = (0 << 1) | (0 << 0); /* last recorded address not valid, next recordable address not valid */
+		dev->buffer[2] = 1;	/* track number (LSB) */
+		dev->buffer[3] = 1;	/* session number (LSB) */
+		dev->buffer[5] = (0 << 5) | (0 << 4) | (4 << 0);/* not damaged, primary copy, data track */
+		dev->buffer[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | (1 << 0);	/* not reserved track, not blank, not packet writing, not fixed packet, data mode 1 */
+		dev->buffer[7] = (0 << 1) | (0 << 0);		/* last recorded address not valid, next recordable address not valid */
 
 		if (dev->drv->ops && dev->drv->ops->size) {
-			dev->buffer[24] = (dev->drv->ops->size(dev->drv) >> 24) & 0xff; /* track size */
-			dev->buffer[25] = (dev->drv->ops->size(dev->drv) >> 16) & 0xff; /* track size */
-			dev->buffer[26] = (dev->drv->ops->size(dev->drv) >> 8) & 0xff; /* track size */
-			dev->buffer[27] = dev->drv->ops->size(dev->drv) & 0xff; /* track size */
+			dev->buffer[24] = ((dev->drv->ops->size(dev->drv) - 1) >> 24) & 0xff; /* track size */
+			dev->buffer[25] = ((dev->drv->ops->size(dev->drv) - 1) >> 16) & 0xff; /* track size */
+			dev->buffer[26] = ((dev->drv->ops->size(dev->drv) - 1) >> 8) & 0xff; /* track size */
+			dev->buffer[27] = (dev->drv->ops->size(dev->drv) - 1) & 0xff; /* track size */
 		} else {
 			not_ready(dev);
 			buf_free(dev);

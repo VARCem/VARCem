@@ -234,10 +234,14 @@ pic_read(uint16_t addr, priv_t priv)
 
     if (dev->read) {
 	DBGLOG(1, "PIC1: read ins %02X\n", dev->ins);
+#if 0
 	if (AT)
 		return(dev->ins | (pic2.ins ? 4 : 0));
 	else
 		return(dev->ins);
+#else
+	return(dev->ins | (pic2.ins ? 4 : 0));
+#endif
     }
 
     return(dev->pend);
@@ -320,6 +324,7 @@ pic2_write(uint16_t addr, uint8_t val, priv_t priv)
 	dev->icw = 1;
 	dev->icw1 = val;
 	dev->ins = 0;
+	pic.pend &= ~4;
 	update_pending();
 
 	return;

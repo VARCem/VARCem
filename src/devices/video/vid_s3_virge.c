@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.20	2019/05/73
+ * Version:	@(#)vid_s3_virge.c	1.0.20	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,6 +48,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/pci.h"
 #include "video.h"
 #include "vid_svga.h"
@@ -707,7 +708,7 @@ static void s3_virge_recalctimings(svga_t *svga)
                 int m = svga->seqregs[0x13] & 0x7f;
                 double freq = (((double)m + 2) / (((double)n + 2) * (double)(1 << r))) * 14318184.0;
 
-                svga->clock = cpuclock / freq;
+                svga->clock = cpu_clock / freq;
         }
 }
 

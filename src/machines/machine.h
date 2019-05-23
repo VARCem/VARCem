@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.33	2019/05/02
+ * Version:	@(#)machine.h	1.0.34	2019/05/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -52,13 +52,14 @@
 #define MACHINE_MCA		0x000100	/* sys has MCA bus */
 #define MACHINE_PCI		0x000200	/* sys has PCI bus */
 #define MACHINE_AGP		0x000400	/* sys has AGP bus */
-#define MACHINE_HDC		0x010000	/* sys has int HDC */
-#define MACHINE_HDC_PS2		0x020000	/* sys has int PS/2 HDC */
-#define MACHINE_MOUSE		0x040000	/* sys has int mouse */
-#define MACHINE_SOUND		0x080000	/* sys has int sound */
-#define MACHINE_VIDEO		0x100000	/* sys has int video */
-#define MACHINE_SCSI		0x200000	/* sys has int SCSI */
-#define MACHINE_NETWORK		0x400000	/* sys has int network */
+#define MACHINE_FDC		0x010000	/* sys has int FDC */
+#define MACHINE_HDC		0x020000	/* sys has int HDC */
+#define MACHINE_HDC_PS2		0x040000	/* sys has int PS/2 HDC */
+#define MACHINE_MOUSE		0x080000	/* sys has int mouse */
+#define MACHINE_SOUND		0x100000	/* sys has int sound */
+#define MACHINE_VIDEO		0x200000	/* sys has int video */
+#define MACHINE_SCSI		0x400000	/* sys has int SCSI */
+#define MACHINE_NETWORK		0x800000	/* sys has int network */
 
 #define IS_ARCH(a)		(machine->flags & (a)) ? 1 : 0;
 

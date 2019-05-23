@@ -9,7 +9,7 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.26	2019/05/17
+ * Version:	@(#)zip.c	1.0.27	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1096,6 +1096,8 @@ data_phase_error(zip_t *dev)
 static int
 zip_blocks(zip_t *dev, int32_t *len, int first_batch, int out)
 {
+    int i;
+
     *len = 0;
 
     if (! dev->sector_len) {
@@ -1114,10 +1116,16 @@ zip_blocks(zip_t *dev, int32_t *len, int first_batch, int out)
     *len = dev->requested_blocks << 9;
 
     fseek(dev->drv->f, dev->drv->base + (dev->sector_pos << 9), SEEK_SET);
-    if (out)
-	fwrite(dev->buffer, 1, *len, dev->drv->f);
-    else
-	fread(dev->buffer, 1, *len, dev->drv->f);
+
+    for (i = 0; i < dev->requested_blocks; i++) {
+	if (feof(dev->drv->f))
+		break;
+
+	if (out)
+		fwrite(dev->buffer + (i << 9), 1, 512, dev->drv->f);
+	else
+		fread(dev->buffer + (i << 9), 1, 512, dev->drv->f);
+    }
 
     DEBUG("%s %i bytes of blocks...\n", out ? "Written" : "Read", *len);
 
@@ -1590,8 +1598,12 @@ do_command(void *p, uint8_t *cdb)
 				break;
 		}
 
+#if 0
 		if ((dev->sector_pos >= dev->drv->medium_size) ||
 		    ((dev->sector_pos + dev->sector_len - 1) >= dev->drv->medium_size)) {
+#else
+		if ((dev->sector_pos >= dev->drv->medium_size)) {
+#endif
 			lba_out_of_range(dev);
 			return;
 		}
@@ -1648,8 +1660,12 @@ do_command(void *p, uint8_t *cdb)
 		dev->sector_len = (cdb[7] << 8) | cdb[8];
 		dev->sector_pos = (cdb[2] << 24) | (cdb[3] << 16) | (cdb[4] << 8) | cdb[5];
 
+#if 0
 		if ((dev->sector_pos >= dev->drv->medium_size) ||
 		    ((dev->sector_pos + dev->sector_len - 1) >= dev->drv->medium_size)) {
+#else
+		if ((dev->sector_pos >= dev->drv->medium_size)) {
+#endif
 			lba_out_of_range(dev);
 			return;
 		}

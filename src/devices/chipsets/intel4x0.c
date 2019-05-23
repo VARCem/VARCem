@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440 PCISet chipsets.
  *
- * Version:	@(#)intel4x0.c	1.0.7	2019/05/13
+ * Version:	@(#)intel4x0.c	1.0.7	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -336,7 +336,7 @@ i4x0_init(const device_t *info, UNUSED(void *parent))
     else
 	dev->regs[0x57] = 0x31;
     dev->regs[0x60] = dev->regs[0x61] = dev->regs[0x62] = \
-						dev->regs[0x63] = 0x02;
+					dev->regs[0x63] = 0x02;
     dev->regs[0x64] = 0x02;
     if (dev->chip >= INTEL_430FX)
 	dev->regs[0x72] = 0x02;

@@ -14,14 +14,14 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.10	2019/05/13
+ * Version:	@(#)snd_sb_dsp.c	1.0.11	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -249,12 +249,12 @@ void sb_dsp_speed_changed(sb_dsp_t *dsp)
         if (dsp->sb_timeo < 256LL)
                 dsp->sblatcho = TIMER_USEC * (256LL - dsp->sb_timeo);
         else
-                dsp->sblatcho = (int)(TIMER_USEC * (1000000.0f / (float)(dsp->sb_timeo - 256LL)));
+                dsp->sblatcho = (tmrval_t)(TIMER_USEC * (1000000.0f / (float)(dsp->sb_timeo - 256LL)));
 
         if (dsp->sb_timei < 256LL)
                 dsp->sblatchi = TIMER_USEC * (256LL - dsp->sb_timei);
         else
-                dsp->sblatchi = (int)(TIMER_USEC * (1000000.0f / (float)(dsp->sb_timei - 256LL)));
+                dsp->sblatchi = (tmrval_t)(TIMER_USEC * (1000000.0f / (float)(dsp->sb_timei - 256LL)));
 }
 
 void sb_add_data(sb_dsp_t *dsp, uint8_t v)
@@ -455,7 +455,7 @@ void sb_exec_command(sb_dsp_t *dsp)
                 case 0x41: /*Set output sampling rate*/
                 case 0x42: /*Set input sampling rate*/
                 if (dsp->sb_type < SB16) break;
-                dsp->sblatcho = (int)(TIMER_USEC * (1000000.0f / (float)(dsp->sb_data[1] + (dsp->sb_data[0] << 8))));
+                dsp->sblatcho = (tmrval_t)(TIMER_USEC * (1000000.0f / (float)(dsp->sb_data[1] + (dsp->sb_data[0] << 8))));
                 DBGLOG(1, "Sample rate - %ihz (%i)\n",dsp->sb_data[1]+(dsp->sb_data[0]<<8), dsp->sblatcho);
                 temp = dsp->sb_freq;
                 dsp->sb_freq = dsp->sb_data[1] + (dsp->sb_data[0] << 8);

@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel DMA controllers.
  *
- * Version:	@(#)dma.c	1.0.11	2019/05/13
+ * Version:	@(#)dma.c	1.0.12	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -61,8 +61,10 @@ static int	dma_wp,
 static uint8_t	dma_m;
 static uint8_t	dma_stat;
 static uint8_t	dma_stat_rq;
+static uint8_t	dma_stat_rq_pc;
 static uint8_t	dma_command,
 		dma16_command;
+
 static struct {	
     int	xfr_command,
 	xfr_channel;
@@ -374,7 +376,9 @@ dma_read(uint16_t addr, UNUSED(priv_t priv))
 		return(temp);
 
 	case 8: /*Status register*/
-		temp = dma_stat & 0xf;
+		temp = dma_stat_rq_pc & 0xf;
+		temp <<= 4;
+		temp |= dma_stat & 0xf;
 		dma_stat &= ~0xf;
 		return(temp);
 
@@ -417,12 +421,22 @@ dma_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 		dma[channel].cc = dma[channel].cb;
 		return;
 
-	case 8: /*Control register*/
+	case 8:	/*Control register*/
 		dma_command = val;
+		if (val & 0x01)
+			fatal("DMA: memory-to-memory enable!\n");
 		return;
 
+	case 9: /*Request register */
+		channel = (val & 0x03);
+		if (val & 0x04)
+			dma_stat_rq_pc |= (1 << channel);
+		else
+			dma_stat_rq_pc &= ~(1 << channel);
+		break;
+
 	case 0xa: /*Mask*/
-		if (val & 4)
+		if (val & 0x04)
 			dma_m |=  (1 << (val & 3));
 		  else
 			dma_m &= ~(1 << (val & 3));
@@ -449,6 +463,7 @@ dma_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 	case 0xd: /*Master clear*/
 		dma_wp = 0;
 		dma_m |= 0xf;
+		dma_stat_rq_pc &= ~0x0f;
 		return;
 
 	case 0xf: /*Mask write*/
@@ -492,7 +507,8 @@ dma16_read(uint16_t addr, UNUSED(priv_t priv))
 		return(temp);
 
 	case 8: /*Status register*/
-		temp = dma_stat >> 4;
+		temp = (dma_stat_rq_pc & 0xf0);
+		temp |= dma_stat >> 4;
 		dma_stat &= ~0xf0;
 		return(temp);
     }
@@ -543,6 +559,14 @@ dma16_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 	case 8: /*Control register*/
 		return;
 
+	case 9: /*Request register */
+		channel = (val & 3) + 4;
+		if (val & 4)
+			dma_stat_rq_pc |= (1 << channel);
+		else
+			dma_stat_rq_pc &= ~(1 << channel);
+		break;
+
 	case 0xa: /*Mask*/
 		if (val & 4)
 			dma_m |=  (0x10 << (val & 3));
@@ -571,6 +595,7 @@ dma16_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 	case 0xd: /*Master clear*/
 		dma16_wp = 0;
 		dma_m |= 0xf0;
+		dma_stat_rq_pc &= ~0xf0;
 		return;
 
 	case 0xf: /*Mask write*/
@@ -662,12 +687,18 @@ dma_reset(void)
 	dma[c].cb = 0;
 	dma[c].size = (c & 4) ? 1 : 0;
     }
+
+    dma_stat = 0x00;
+    dma_stat_rq = 0x00;
+    dma_stat_rq_pc = 0x00;
 }
 
 
 void
 dma_init(void)
 {
+    dma_reset();
+
     io_sethandler(0x0000, 16,
 		  dma_read,NULL,NULL, dma_write,NULL,NULL, NULL);
     io_sethandler(0x0080, 8,
@@ -679,7 +710,9 @@ dma_init(void)
 void
 dma16_init(void)
 {
-    io_sethandler(0x00C0, 32,
+    dma_reset();
+
+    io_sethandler(0x00c0, 32,
 		  dma16_read,NULL,NULL, dma16_write,NULL,NULL, NULL);
     io_sethandler(0x0088, 8,
 		  dma_page_read,NULL,NULL, dma_page_write,NULL,NULL, NULL);
@@ -711,7 +744,7 @@ dma_alias_remove_piix(void)
 		     dma_page_read,NULL,NULL, dma_page_write,NULL,NULL, NULL);
     io_removehandler(0x0098, 1,
 		     dma_page_read,NULL,NULL, dma_page_write,NULL,NULL, NULL);
-    io_removehandler(0x009C, 3,
+    io_removehandler(0x009c, 3,
 		     dma_page_read,NULL,NULL, dma_page_write,NULL,NULL, NULL);
 }
 
@@ -719,11 +752,29 @@ dma_alias_remove_piix(void)
 void
 ps2_dma_init(void)
 {
+    dma_reset();
+
     io_sethandler(0x0018, 1,
 		  dma_ps2_read,NULL,NULL, dma_ps2_write,NULL,NULL, NULL);
     io_sethandler(0x001a, 1,
 		  dma_ps2_read,NULL,NULL, dma_ps2_write,NULL,NULL, NULL);
     dma_ps2.is_ps2 = 1;
+}
+
+
+int
+dma_get_drq(int channel)
+{
+    return !!(dma_stat_rq_pc & (1 << channel));
+}
+
+
+void
+dma_set_drq(int channel, int set)
+{
+    dma_stat_rq_pc &= ~(1 << channel);
+    if (set)
+	dma_stat_rq_pc |= (1 << channel);
 }
 
 

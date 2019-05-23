@@ -8,7 +8,7 @@
  *
  *		Definitions for Intel 8284 driver.
  *
- * Version:	@(#)clk.h	1.0.1	2019/05/05
+ * Version:	@(#)clk.h	1.0.2	2019/05/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -35,6 +35,9 @@
 #ifndef EMU_CLK_H
 # define EMU_CLK_H
 
+
+extern float	cpu_clock;
+extern float	bus_timing;
 
 extern double	PITCONST;
 

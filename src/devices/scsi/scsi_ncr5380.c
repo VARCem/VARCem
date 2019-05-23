@@ -1411,7 +1411,7 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 		break;
 
 	case 10:	/* Longshine LCS6821N */
-		ncr_dev->rom_addr = 0xDC000;
+		ncr_dev->rom_addr = device_get_config_hex20("bios_addr");
 		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
 			 0, MEM_MAPPING_EXTERNAL);
@@ -1424,7 +1424,7 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 		break;
 
 	case 11:	/* Rancho RT1000B */
-		ncr_dev->rom_addr = 0xDC000;
+		ncr_dev->rom_addr = device_get_config_hex20("bios_addr");
 		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
 			 0, MEM_MAPPING_EXTERNAL);
@@ -1437,12 +1437,13 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 		break;
 
 	case 12:		/* Trantor T130B */
-		ncr_dev->rom_addr = 0xDC000;
+		ncr_dev->rom_addr = device_get_config_hex20("bios_addr");
 		ncr_dev->base = device_get_config_hex16("base");
 		ncr_dev->irq = device_get_config_int("irq");
 		rom_init(&ncr_dev->bios_rom, info->path,
 			 ncr_dev->rom_addr, 0x4000, 0x3fff,
 			 0, MEM_MAPPING_EXTERNAL);
+		mem_map_disable(&ncr_dev->bios_rom.mapping);	 
 
 		mem_map_add(&ncr_dev->mapping, ncr_dev->rom_addr, 0x4000, 
 			    t130b_read, NULL, NULL,
@@ -1493,6 +1494,35 @@ ncr_init(const device_t *info, UNUSED(void *parent))
 }
 
 
+static const device_config_t ncr5380_mmio_config[] = {
+    {
+	"bios_addr", "BIOS Address", CONFIG_HEX20, "", 0xd8000,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"C800H", 0xc8000
+		},
+		{
+			"CC00H", 0xcc000
+		},
+		{
+			"D800H", 0xd8000
+		},
+		{
+			"DC00H", 0xdc000
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	NULL
+    }
+};
+
 static const device_config_t t130b_config[] = {
     {
         "base", "Address", CONFIG_HEX16, "", 0x0350,
@@ -1530,6 +1560,29 @@ static const device_config_t t130b_config[] = {
                         NULL
                 }
         }
+    },
+    {
+	"bios_addr", "BIOS Address", CONFIG_HEX20, "", 0xd8000,
+	{
+		{
+			"Disabled", 0
+		},
+		{
+			"C800H", 0xc8000
+		},
+		{
+			"CC00H", 0xcc000
+		},
+		{
+			"D800H", 0xd8000
+		},
+		{
+			"DC00H", 0xdc000
+		},
+		{
+			NULL
+		}
+	}
     },
     {
         NULL
@@ -1650,7 +1703,7 @@ const device_t scsi_lcs6821n_device = {
     LCS6821N_ROM,
     ncr_init, ncr_close, NULL,
     NULL, NULL, NULL, NULL,
-    NULL
+    ncr5380_mmio_config
 };
 
 const device_t scsi_rt1000b_device = {
@@ -1660,7 +1713,7 @@ const device_t scsi_rt1000b_device = {
     RT1000B_ROM,
     ncr_init, ncr_close, NULL,
     NULL, NULL, NULL, NULL,
-    NULL
+    ncr5380_mmio_config
 };
 
 const device_t scsi_t130b_device = {

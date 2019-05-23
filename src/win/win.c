@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.30	2019/05/03
+ * Version:	@(#)win.c	1.0.31	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -230,11 +230,6 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 	lang = 0x0409;
 	(void)ui_lang_set(lang);
     }
-
-#ifdef USE_CRASHDUMP
-    /* Enable crash dump services. */
-    InitCrashDump();
-#endif
 
     /* Create console window. */
     if (force_debug)

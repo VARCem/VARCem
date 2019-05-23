@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.73	2019/05/17
+# Version:	@(#)Makefile.VC	1.0.73	2019/05/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -63,7 +63,6 @@ endif
 
 # Which modules to include a development build.
 ifeq ($(DEV_BUILD), y)
- CRASHDUMP	:= y
  DEV_BRANCH	:= y
  AMD_K		:= y
  SIS471		:= y
@@ -207,6 +206,7 @@ else
  LOPTS_C	:= -SUBSYSTEM:CONSOLE,5.01
  LOPTS_W	:= -SUBSYSTEM:WINDOWS,5.01
 endif
+O		:= .obj
 
 
 # Add general build options from the environment.
@@ -247,9 +247,6 @@ endif
 ifeq ($(LOGGING), y)
  OPTS		+= -D_LOGGING
  RFLAGS		+= -D_LOGGING
-endif
-ifeq ($(CRASHDUMP), y)
- OPTS		+= -DUSE_CRASHDUMP
 endif
 ifeq ($(RELEASE), y)
  OPTS		+= -DRELEASE_BUILD
@@ -585,17 +582,17 @@ ifeq ($(DEV_BRANCH), y)
 
  ifeq ($(EL1), y)
   OPTS		+= -DUSE_EL1
-  DEVBROBJ	+= net_3c501.o
+  DEVBROBJ	+= net_3c501.obj
  endif
 
  ifeq ($(PCNET), y)
   OPTS		+= -DUSE_IBMPCNET
-  DEVBROBJ	+= net_ibmpcnet.o
+  DEVBROBJ	+= net_ibmpcnet.obj
  endif
 
  ifeq ($(ARTI), y)
   OPTS		+= -DUSE_ARTISOFT
-  DEVBROBJ	+= net_arti2m.o
+  DEVBROBJ	+= net_arti2m.obj
  endif
 
 endif
@@ -677,6 +674,7 @@ DEVOBJ		:= bugger.obj \
 		    js_sw_pad.obj js_tm_fcs.obj
 
 FDDOBJ		:= fdc.obj \
+		    fdc_pii15xb.obj \
 		   fdd.obj \
 		    fdd_common.obj fdd_86f.obj \
 		    fdd_fdi.obj fdi2raw.obj lzf_c.obj lzf_d.obj \
@@ -770,9 +768,6 @@ PLATOBJ		:= win.obj \
 		    win_lang.obj win_opendir.obj win_dynld.obj win_thread.obj \
 		    win_cdrom.obj win_keyboard.obj win_mouse.obj \
 		    win_joystick.obj win_midi.obj
-ifeq ($(CRASHDUMP), y)
-PLATOBJ		+= win_crashdump.obj
-endif
 
 
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \

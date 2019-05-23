@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.89	2019/05/17
+# Version:	@(#)Makefile.mingw	1.0.89	2019/05/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -63,7 +63,6 @@ endif
 
 # Which modules to include a development build.
 ifeq ($(DEV_BUILD), y)
- CRASHDUMP	:= y
  DEV_BRANCH	:= y
  AMD_K		:= y
  SIS471		:= y
@@ -231,6 +230,7 @@ OPTS		:= $(EXTRAS) $(STUFF) \
 		   -D__USE_MINGW_ANSI_STDIO_X
 RFLAGS		:= --input-format=rc -O coff
 LDFLAGS		:=
+O		:= .o
 
 # Options fow Windows, X86.
 AFLAGS		:= -msse2 -mfpmath=sse
@@ -305,9 +305,6 @@ endif
 ifeq ($(LOGGING), y)
  OPTS		+= -D_LOGGING
  RFLAGS		+= -D_LOGGING
-endif
-ifeq ($(CRASHDUMP), y)
- OPTS		+= -DUSE_CRASHDUMP
 endif
 ifeq ($(RELEASE), y)
  OPTS		+= -DRELEASE_BUILD
@@ -767,6 +764,7 @@ DEVOBJ		:= bugger.o \
 		    js_sw_pad.o js_tm_fcs.o \
 
 FDDOBJ		:= fdc.o \
+		    fdc_pii15xb.o \
 		   fdd.o \
 		    fdd_common.o fdd_86f.o \
 		    fdd_fdi.o fdi2raw.o lzf_c.o lzf_d.o \
@@ -856,15 +854,8 @@ VIDOBJ		:= video.o \
 
 PLATOBJ		:= win.o \
 		    win_lang.o win_dynld.o win_opendir.o win_thread.o \
-		    win_cdrom.o win_keyboard.o win_serial.o win_midi.o
-ifeq ($(DINPUT), y)
- PLATOBJ	+= win_mouse.o win_joystick.o
-else
- PLATOBJ	+= win_mouse_ri.o win_joystick_xi.o
-endif
-ifeq ($(CRASHDUMP), y)
-PLATOBJ		+= win_crashdump.o
-endif
+		    win_cdrom.o win_keyboard.o win_serial.o win_midi.o \
+		    win_mouse.o win_joystick.o
 
 
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \

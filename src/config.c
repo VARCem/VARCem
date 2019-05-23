@@ -12,7 +12,7 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.48	2019/05/17
+ * Version:	@(#)config.c	1.0.48	2019/05/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -818,6 +818,32 @@ load_other(config_t *cfg, const char *cat)
     char temp[128], *p;
     int c;
 
+    if (machine_get_flags_fixed() & MACHINE_FDC) {
+	config_delete_var(cat, "fdc");
+	cfg->fdc_type = FDC_INTERNAL;
+    } else {
+	p = config_get_string(cat, "fdc", NULL);
+	if (p == NULL) {
+		if (machine_get_flags() & MACHINE_FDC)
+			p = "internal";
+	  	else
+			p = "none";
+	}
+#if 0	/* not yet */
+	cfg->fdc_type = fdc_get_from_internal_name(p);
+#else
+	if (! strcmp(p, "none"))
+		cfg->fdc_type = 0;
+	if (! strcmp(p, "internal"))
+		cfg->fdc_type = 1;
+
+	if (! strcmp(p, "dtk_pii151b"))
+		cfg->fdc_type = 10;
+	if (! strcmp(p, "dtk_pii158b"))
+		cfg->fdc_type = 11;
+#endif
+    }
+
     if (machine_get_flags_fixed() & MACHINE_HDC) {
 	config_delete_var(cat, "hdc");
 	cfg->hdc_type = HDC_INTERNAL;
@@ -873,6 +899,29 @@ save_other(const config_t *cfg, const char *cat)
 {
     char temp[512];
     int c;
+
+    if (cfg->fdc_type == FDC_NONE)
+	config_delete_var(cat, "fdc");
+    else {
+#if 0	/* not yet */
+	config_set_string(cat, "fdc",
+			  fdc_get_internal_name(cfg->fdc_type));
+#else
+	switch(cfg->fdc_type) {
+		case FDC_NONE:
+			strcpy(temp, "none");		break;
+
+		case FDC_INTERNAL:
+			strcpy(temp, "internal");	break;
+
+		case 10:
+			strcpy(temp, "dtk_pii151b");	break;
+
+		case 11:
+			strcpy(temp, "dtk_pii158b");	break;
+	}
+#endif
+    }
 
     if (cfg->hdc_type == HDC_NONE)
 	config_delete_var(cat, "hdc");

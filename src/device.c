@@ -100,7 +100,7 @@ device_flags(uint32_t flags)
     char *p = NULL;
 
     if (flags == DEVICE_ROOT)
-	return("[ROOT]");
+	return("[ ROOT ]");
 
     strcpy(sp, "[ "); sp += strlen(sp);
 

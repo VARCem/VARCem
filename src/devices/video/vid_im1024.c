@@ -82,17 +82,20 @@
 #include "vid_pgc.h"
 
 
+#define FONT_ROM_PATH		L"video/im1024/im1024font.bin"
+#define FONT_WIDTH		12
+#define FONT_HEIGHT		18
+
+
 typedef struct {
     pgc_t	pgc;
-
-    uint8_t	fontx[256];
-    uint8_t	fonty[256];
-    uint8_t	font[256][128];
 
     uint8_t	*fifo;
     unsigned	fifo_len,
 		fifo_wrptr,
 		fifo_rdptr;
+
+    uint8_t	fontdat[256][36];	/* IM1024 12x18 font */
 } im1024_t;
 
 
@@ -167,7 +170,8 @@ input_byte(pgc_t *pgc, uint8_t *result)
 	pgc_sleep(pgc);	
     }
 
-    if (pgc->stopped) return(0);
+    if (pgc->stopped)
+	return(0);
 
     if (pgc->mapram[0x3ff]) {
 	/* Reset triggered. */
@@ -638,40 +642,9 @@ hndl_rect(pgc_t *pgc)
 
 
 /*
- * FIXME:
- * Define a font character.
- *
- * Text drawing should probably be implemented in
- * vid_pgc.c rather than here..
+ * Override the PGC TSIZE command to parse its
+ * parameters as words rather than coordinates.
  */
-static void
-hndl_tdefin(pgc_t *pgc)
-{
-    im1024_t *dev = (im1024_t *)pgc;
-    uint8_t ch, bt;
-    uint8_t rows, cols;
-    unsigned len, n;
-
-    if (! pgc_param_byte(pgc, &ch)) return;
-    if (! pgc_param_byte(pgc, &cols)) return;
-    if (! pgc_param_byte(pgc, &rows)) return;
-
-    DEBUG("IM1024: TDEFIN (%i,%i,%i) 0x%02x 0x%02x\n",
-	ch, rows, cols, pgc->mapram[0x300], pgc->mapram[0x301]);
-
-    len = ((cols + 7) / 8) * rows;
-    for (n = 0; n < len; n++) {
-	if (! pgc_param_byte(pgc, &bt)) return;
-
-	if (n < sizeof(dev->font[ch]))
-		dev->font[ch][n] = bt;
-    }
-
-    dev->fontx[ch] = cols;
-    dev->fonty[ch] = rows;
-}
-
-
 static void
 hndl_tsize(pgc_t *pgc)
 {
@@ -684,50 +657,7 @@ hndl_tsize(pgc_t *pgc)
 }
 
 
-static void
-hndl_twrite(pgc_t *pgc)
-{
-    uint8_t buf[256];
-    im1024_t *dev = (im1024_t *)pgc;
-    uint8_t count, mask, *row;
-    int x, y, wb, n;
-    int16_t x0 = pgc->x >> 16;
-    int16_t y0 = pgc->y >> 16;
-
-    if (! pgc_param_byte(pgc, &count)) return;
-
-    for (n = 0; n < count; n++)
-	if (! pgc_param_byte(pgc, &buf[n])) return;
-    buf[count] = 0;
-
-    pgc_sto_raster(pgc, &x0, &y0);
-
-    DEBUG("IM1024: TWRITE (%i) x0=%i y0=%i\n", count, x0, y0);
-
-    for (n = 0; n < count; n++) {
-	wb = (dev->fontx[buf[n]] + 7) / 8;
-	DEBUG("IM1024: ch=0x%02x w=%i h=%i wb=%i\n", 
-		buf[n], dev->fontx[buf[n]], dev->fonty[buf[n]], wb);
-
-	for (y = 0; y < dev->fonty[buf[n]]; y++) {
-		mask = 0x80;
-		row = &dev->font[buf[n]][y * wb];
-		for (x = 0; x < dev->fontx[buf[n]]; x++) {
-			if (row[0] & mask)
-				pgc_plot(pgc, x + x0, y0 - y);
-			mask = mask >> 1;
-			if (mask == 0) {
-				mask = 0x80;
-				row++;
-			}
-		}
-	}
-
-	x0 += dev->fontx[buf[n]];
-    }
-}
-
-
+/* Write text, using the builtin ROM font. */
 static void
 hndl_txt88(pgc_t *pgc)
 {
@@ -737,7 +667,7 @@ hndl_txt88(pgc_t *pgc)
     int16_t x0 = pgc->x >> 16;
     int16_t y0 = pgc->y >> 16;
     unsigned n;
-    int x, y, wb;
+    int x, y;
 
     if (! pgc_param_byte(pgc, &count)) return;
 
@@ -747,17 +677,15 @@ hndl_txt88(pgc_t *pgc)
 
     pgc_sto_raster(pgc, &x0, &y0);
 
-    DEBUG("IM204: TWRITE (%i) x0=%i y0=%i\n", count, x0, y0);
+    DEBUG("IM204: TXT88 (%i) x0=%i y0=%i\n", count, x0, y0);
 
     for (n = 0; n < count; n++) {
-	wb = (dev->fontx[buf[n]] + 7) / 8;
-	DEBUG("IM1024: ch=0x%02x w=%i h=%i wb=%i\n", 
-		buf[n], dev->fontx[buf[n]], dev->fonty[buf[n]], wb);
+	DEBUG("IM1024: ch=0x%02x w=%i h=%i\n", buf[n], FONT_WIDTH, FONT_HEIGHT);
 
-	for (y = 0; y < dev->fonty[buf[n]]; y++) {
+	for (y = 0; y < FONT_HEIGHT; y++) {
 		mask = 0x80;
-		row = &dev->font[buf[n]][y * wb];
-		for (x = 0; x < dev->fontx[buf[n]]; x++) {
+		row = &dev->fontdat[buf[n]][y * 2];
+		for (x = 0; x < FONT_WIDTH; x++) {
 			if (row[0] & mask) pgc_plot(pgc, x + x0, y0 - y);
 			mask = mask >> 1;
 			if (mask == 0) {
@@ -767,7 +695,7 @@ hndl_txt88(pgc_t *pgc)
 		}
 	}
 
-	x0 += dev->fontx[buf[n]];
+	x0 += FONT_WIDTH;
     }
 }
 
@@ -917,11 +845,8 @@ static const pgc_cmd_t im1024_commands[] = {
     { "LUT8",   0xe6,	pgc_hndl_lut8,	NULL,			0	},
     { "LUT8RD", 0x53,	pgc_hndl_lut8rd,NULL,			0	},
     { "L8RD",   0x53,	pgc_hndl_lut8rd,NULL,			0	},
-    { "TDEFIN", 0x84,	hndl_tdefin,	NULL,			0	},
-    { "TD",     0x84,	hndl_tdefin,	NULL,			0	},
     { "TSIZE",  0x81,	hndl_tsize,	NULL,			0	},
     { "TS",     0x81,	hndl_tsize,	NULL,			0	},
-    { "TWRITE", 0x8b,	hndl_twrite,	NULL,			0	},
     { "TXT88",  0x88,	hndl_txt88,	NULL,			0	},
     { "PAN",    0xb7,	hndl_pan,	NULL,			0	},
     { "POLY",   0x30,	hndl_poly,	parse_poly,		0	},
@@ -934,6 +859,27 @@ static const pgc_cmd_t im1024_commands[] = {
     { "R",      0x34,	hndl_rect,	NULL,			0	},
     { "******", 0x00,	NULL,		NULL,			0	}
 };
+
+
+static int
+load_font(im1024_t *dev, const wchar_t *fn)
+{
+    FILE *fp;
+    int c;
+
+    fp = rom_fopen(fn, L"rb");
+    if (fp == NULL) {
+	ERRLOG("IM1024: cannot load font '%ls'\n", fn);
+	return(0);
+    }
+
+    for (c = 0; c < 256; c++)
+	fread(&dev->fontdat[c][0], 1, 36, fp);
+
+    (void)fclose(fp);
+
+    return(1);
+}
 
 
 static void
@@ -963,6 +909,11 @@ im1024_init(const device_t *info, UNUSED(void *parent))
 
     dev = (im1024_t *)mem_alloc(sizeof(im1024_t));
     memset(dev, 0x00, sizeof(im1024_t));
+
+    if (! load_font(dev, FONT_ROM_PATH)) {
+	free(dev);
+	return(NULL);
+    }
 
     dev->fifo_len = 4096;
     dev->fifo = (uint8_t *)mem_alloc(dev->fifo_len);
@@ -994,7 +945,7 @@ const device_t im1024_device = {
     "ImageManager 1024",
     DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
     0,
-    NULL,
+    FONT_ROM_PATH,
     im1024_init, im1024_close, NULL,
     NULL,
     speed_changed,

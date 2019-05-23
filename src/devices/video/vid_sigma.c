@@ -54,7 +54,7 @@
  *		is well, but some strange mishaps with cursor positioning
  *		occur.
  *
- * Version:	@(#)vid_sigma.c	1.0.12	2019/05/17
+ * Version:	@(#)vid_sigma.c	1.0.12	2019/05/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -101,8 +101,7 @@
 #include "vid_cga.h"
 
 
-#define ENABLE_CGA	1		/* set to 1 to enable CGA mode */
-#define SHORT_CARD	0		/* set to 1 to use the new ROMs */
+#define SHORT_CARD	1		/* set to 1 to use the new ROMs */
 
 
 #if SHORT_CARD
@@ -183,9 +182,10 @@
  *                    plane 0-3 
  */
  
-
-#define COMPOSITE_OLD 0
-#define COMPOSITE_NEW 1
+enum {
+    COMPOSITE_OLD = 0,
+    COMPOSITE_NEW
+};
 
 
 typedef struct {
@@ -195,6 +195,7 @@ typedef struct {
 		bios_ram;
 
     rom_t	bios_rom; 
+    uint32_t	bios_addr;
 
     uint8_t	crtc[32];	/* CRTC: real values */
     int		crtcreg;	/* CRTC: Real selected register */        
@@ -213,7 +214,8 @@ typedef struct {
 				 */
     uint8_t	crtc_value;	/* value to return from a CRTC register read */
 
-    uint8_t	sigma_stat;	/* status register [0x02da] */
+    uint8_t	sigma_stat,	/* status register [0x02da] */
+		fake_stat;	/* see sigma_in() for comment */
 
     uint8_t	sigma_mode;	/* mode control register [0x02d8] */
 
@@ -275,223 +277,19 @@ recalc_timings(sigma_t *dev)
 }
 
 
-static void
-sigma_out(uint16_t port, uint8_t val, priv_t priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-    uint8_t old;
-
-    DBGLOG(1, "SIGMA: out(%04x, %02x)\n", port, val);
-
-    if (port >= 0x03d0 && port < 0x03e0) {
-	dev->lastport = port & 0x0f;
-	dev->lastwrite = val;
-
-	/* If set to NMI on video I/O... */
-	if (dev->enable_nmi && (dev->sigma_ctl & CTL_NMI)) {
-		dev->lastport |= 0x80; 	/* card raised NMI */
-		nmi = 1;
-	}
-
-	/*
-	 * For CRTC emulation, the card BIOS sets the
-	 * value to be read from port 0x03d1 like this.
-	 */
-	if (port == 0x03d1)
-		dev->crtc_value = val;
-
-	return;
-    }
-
-    switch (port) {
-	case 0x02d0:
-	case 0x02d2:
-	case 0x02d4:
-	case 0x02d6:
-		dev->crtcreg = val & 0x1f;
-		break;
-
-	case 0x02d1:
-	case 0x02d3:
-	case 0x02d5:
-	case 0x02d7:
-		old = dev->crtc[dev->crtcreg];
-		dev->crtc[dev->crtcreg] = val & crtcmask[dev->crtcreg];
-		if (old != val) {
-			if (dev->crtcreg < 0x0e || dev->crtcreg > 0x10) {
-				fullchange = changeframecount;
-				recalc_timings(dev);
-			} 
-		}
-		break;
-
-	case 0x02d8:
-		dev->sigma_mode = val;
-		break;
-
-	case 0x02d9:
-		dev->sigma_ctl = val;
-		break;
-
-	case 0x02db:
-		dev->lastport &= 0x7f;
-		break;
-
-	case 0x02dc:	/* reset NMI */
-		nmi = 0;
-		dev->lastport &= 0x7f;
-		break;
-
-	case 0x02dd:	/* page in RAM at 0x0c1800 */
-		if (dev->rom_paged)
-			mmu_invalidate(0x0c0000);
-		dev->rom_paged = 0;
-		break;
-
-	case 0x02de:
-		if (dev->sigma_ctl & CTL_PALETTE)
-			dev->palette[val >> 4] = (val & 0x0f) ^ 0x0f;
-		else
-			dev->plane = val & 3;
-		break;
-    }
-}
-
-
-static uint8_t
-sigma_in(uint16_t port, priv_t priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-    uint8_t ret = 0xff;
-
-    switch (port) {
-	case 0x02d0:
-	case 0x02d2:
-	case 0x02d4:
-	case 0x02d6:
-		ret = dev->crtcreg;
-		break;
-
-	case 0x02d1:
-	case 0x02d3:
-	case 0x02d5:
-	case 0x02d7:
-		ret = dev->crtc[dev->crtcreg & 0x1f];
-		break;
-
-	case 0x2da:
-		ret = (dev->sigma_ctl & 0xe0) | (dev->sigma_stat & 0x1f);
-		break;
-
-	case 0x2db:	/* return value that triggered NMI */
-		ret = dev->lastwrite;
-		break;
-
-	case 0x2dc:	/* port that triggered NMI */
-		ret = dev->lastport;
-		break;
-
-	case 0x2dd:	/* page in ROM at 0x0c1800 */
-		ret = (dev->rom_paged ? 0x80 : 0);
-		if (dev->rom_paged)
-			mmu_invalidate(0x0c0000);
-		dev->rom_paged = 1;
-		break;
-
-	case 0x03d1:
-	case 0x03d3:
-	case 0x03d5:
-	case 0x03d7:
-		ret = dev->crtc_value;
-		break;
-
-	/*
-	 * For CGA compatibility we have to return something palatable
-	 * on this port. On a real card this functionality can be turned
-	 * on or off with SW1/6.
-	 */
-	case 0x03da:
-		ret = dev->sigma_stat & 0x07;
-		if (dev->sigma_stat & STATUS_RETR_V)
-			ret |= 0x08;
-		break;
-    }
-
-    DBGLOG(1, "SIGMA: in(%04x) = %02x\n", port, ret);
-
-    return(ret);
-}
-
-
-static void
-sigma_write(uint32_t addr, uint8_t val, priv_t priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-
-    cycles -= 4;
-
-    dev->vram[dev->plane * 0x8000 + (addr & 0x7fff)] = val;
-}
-
-
-static uint8_t
-sigma_read(uint32_t addr, priv_t priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-
-    cycles -= 4;        
-
-    return(dev->vram[dev->plane * 0x8000 + (addr & 0x7fff)]);
-}
-
-
-/* Write to the RAM part of the 8K ROM/RAM area. */
-static void
-sigma_bwrite(uint32_t addr, uint8_t val, priv_t priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-
-    addr &= 0x3fff;
-    if ((addr >= 0x1800) && (addr < 0x2000) && !dev->rom_paged)
-	dev->bram[addr & 0x07ff] = val;
-}
-
-
-/* Read from the 8K ROM/RAM area. */
-static uint8_t
-sigma_bread(uint32_t addr, priv_t priv)
-{
-    sigma_t *dev = (sigma_t *)priv;
-    uint8_t ret = 0xff;
-
-    /* If address higher than 8K, no go. */
-    addr &= 0x3fff;
-    if (addr < 0x2000) {
-	if (addr < 0x1800 || dev->rom_paged) {
-		/* Read from the ROM. */
-		ret = dev->bios_rom.rom[addr];
-	} else {
-		/* Read from the RAM. */
-		ret = dev->bram[addr & 0x07ff];
-	}
-    }
-
-    return(ret);
-}
-
-
 /* Render a line in 80-column text mode. */
 static void
 sigma_text80(sigma_t *dev)
 {
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8));
-    uint16_t ma = ((dev->ma & 0x3fff) << 1);
+    uint16_t ma = ((dev->ma << 1) & 0x3fff);
     uint8_t *vram = dev->vram + (ma << 1);
     int drawcursor, x, c;
     uint8_t chr, attr;
     uint8_t cols[4];
 
-    ca = ca << 1;
+    /* Update cursor address (in words) to reflect bytes. */
+    ca <<= 1;
     if (dev->sigma_ctl & CTL_CURSOR)
 	ca++;
     ca &= 0x3fff;
@@ -800,7 +598,7 @@ sigma_poll(priv_t priv)
 		dev->vadj--;
 		if (! dev->vadj) {
 			dev->cgadispon = 1;
-			dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
+			dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x1fff;
 			dev->sc = 0;
 		}
 	} else if (dev->sc == dev->crtc[9]) {
@@ -819,7 +617,7 @@ sigma_poll(priv_t priv)
 			if (! dev->vadj)
 				dev->cgadispon = 1;
 			if (! dev->vadj)
-				dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
+				dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x1fff;
 
 			if ((dev->crtc[10] & 0x60) == 0x20)
 				dev->cursoron = 0;
@@ -901,6 +699,232 @@ sigma_poll(priv_t priv)
 }
 
 
+static uint8_t
+sigma_in(uint16_t port, priv_t priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+    uint8_t ret = 0xff;
+
+    switch (port) {
+	case 0x02d0:
+	case 0x02d2:
+	case 0x02d4:
+	case 0x02d6:
+		ret = dev->crtcreg;
+		break;
+
+	case 0x02d1:
+	case 0x02d3:
+	case 0x02d5:
+	case 0x02d7:
+		ret = dev->crtc[dev->crtcreg & 0x1f];
+		break;
+
+	case 0x2da:
+		ret = (dev->sigma_ctl & 0xe0) | (dev->sigma_stat & 0x1f);
+		break;
+
+	case 0x2db:	/* return value that triggered NMI */
+		ret = dev->lastwrite;
+		break;
+
+	case 0x2dc:	/* port that triggered NMI */
+		ret = dev->lastport;
+		break;
+
+	case 0x2dd:	/* page in ROM at 0x0c1800 */
+		ret = (dev->rom_paged ? 0x80 : 0);
+		if (dev->rom_paged)
+			mmu_invalidate(0x0c0000);
+		dev->rom_paged = 1;
+		break;
+
+	case 0x03d1:
+	case 0x03d3:
+	case 0x03d5:
+	case 0x03d7:
+		ret = dev->crtc_value;
+		break;
+
+	/*
+	 * For CGA compatibility we have to return something palatable
+	 * on this port. On a real card this functionality can be turned
+	 * on or off with SW1/6.
+	 */
+	case 0x03da:
+		if (dev->sigma_mode & MODE_ENABLE) {
+			ret = dev->sigma_stat & 0x07;
+			if (dev->sigma_stat & STATUS_RETR_V)
+				ret |= 0x08;
+		} else {
+			/*
+			 * The card is not running yet, and someone
+			 * (probably the system BIOS) is trying to
+			 * read our status in CGA mode.
+			 *
+			 * One of the systems that do this, is the
+			 * DTK XT (PIM-10TB-Z board) with ERSO 2.42
+			 * BIOS. If this test fails (i.e. it doesnt
+			 * see valid HS and VS bits alternate) it
+			 * will generate lots of annoying beeps..
+			 *
+			 * So, the trick here is to just send it
+			 * some alternating bits, making it think
+			 * the CGA circuitry is operational.
+			 */
+			dev->fake_stat ^= (0x08 | 0x01);
+			ret = dev->fake_stat;
+		}
+		break;
+    }
+
+    DBGLOG(1, "SIGMA: in(%04x) = %02x\n", port, ret);
+
+    return(ret);
+}
+
+
+static void
+sigma_out(uint16_t port, uint8_t val, priv_t priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+    uint8_t old;
+
+    DBGLOG(1, "SIGMA: out(%04x, %02x)\n", port, val);
+
+    if (port >= 0x03d0 && port < 0x03e0) {
+	dev->lastport = port & 0x0f;
+	dev->lastwrite = val;
+
+	/* If set to NMI on video I/O... */
+	if (dev->enable_nmi && (dev->sigma_ctl & CTL_NMI)) {
+		dev->lastport |= 0x80; 	/* card raised NMI */
+		nmi = 1;
+	}
+
+	/*
+	 * For CRTC emulation, the card BIOS sets the
+	 * value to be read from port 0x03d1 like this.
+	 */
+	if ((port == 0x03d1) || (port == 0x03d3) ||
+	    (port == 0x03d5) || (port == 0x03d7))
+		dev->crtc_value = val;
+
+	return;
+    }
+
+    switch (port) {
+	case 0x02d0:
+	case 0x02d2:
+	case 0x02d4:
+	case 0x02d6:
+		dev->crtcreg = val & 0x1f;
+		break;
+
+	case 0x02d1:
+	case 0x02d3:
+	case 0x02d5:
+	case 0x02d7:
+		old = dev->crtc[dev->crtcreg];
+		dev->crtc[dev->crtcreg] = val & crtcmask[dev->crtcreg];
+		if (old != val) {
+			if (dev->crtcreg < 0x0e || dev->crtcreg > 0x10) {
+				fullchange = changeframecount;
+				recalc_timings(dev);
+			} 
+		}
+		break;
+
+	case 0x02d8:
+		dev->sigma_mode = val;
+		break;
+
+	case 0x02d9:
+		dev->sigma_ctl = val;
+		break;
+
+	case 0x02db:
+		dev->lastport &= 0x7f;
+		break;
+
+	case 0x02dc:	/* reset NMI */
+		nmi = 0;
+		dev->lastport &= 0x7f;
+		break;
+
+	case 0x02dd:	/* page in RAM at 0x0c1800 */
+		if (dev->rom_paged)
+			mmu_invalidate(0x0c0000);
+		dev->rom_paged = 0;
+		break;
+
+	case 0x02de:
+		if (dev->sigma_ctl & CTL_PALETTE)
+			dev->palette[val >> 4] = (val & 0x0f) ^ 0x0f;
+		else
+			dev->plane = val & 3;
+		break;
+    }
+}
+
+
+static uint8_t
+sigma_read(uint32_t addr, priv_t priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+
+    cycles -= 4;        
+
+    return(dev->vram[dev->plane * 0x8000 + (addr & 0x7fff)]);
+}
+
+
+static void
+sigma_write(uint32_t addr, uint8_t val, priv_t priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+
+    cycles -= 4;
+
+    dev->vram[dev->plane * 0x8000 + (addr & 0x7fff)] = val;
+}
+
+
+/* Read from the 8K ROM/RAM area. */
+static uint8_t
+sigma_bread(uint32_t addr, priv_t priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+    uint8_t ret = 0xff;
+
+    /* If address higher than 8K, no go. */
+    addr &= 0x3fff;
+    if (addr < 0x2000) {
+	if (addr < 0x1800 || dev->rom_paged) {
+		/* Read from the ROM. */
+		ret = dev->bios_rom.rom[addr];
+	} else {
+		/* Read from the RAM. */
+		ret = dev->bram[addr & 0x07ff];
+	}
+    }
+
+    return(ret);
+}
+
+
+/* Write to the RAM part of the 8K ROM/RAM area. */
+static void
+sigma_bwrite(uint32_t addr, uint8_t val, priv_t priv)
+{
+    sigma_t *dev = (sigma_t *)priv;
+
+    addr &= 0x3fff;
+    if ((addr >= 0x1800) && (addr < 0x2000) && !dev->rom_paged)
+	dev->bram[addr & 0x07ff] = val;
+}
+
+
 static int
 load_font(sigma_t *dev, const wchar_t *fn)
 {
@@ -953,6 +977,7 @@ static priv_t
 sigma_init(const device_t *info, UNUSED(void *parent))
 {
     sigma_t *dev;
+    int spec;
 
     dev = (sigma_t *)mem_alloc(sizeof(sigma_t));
     memset(dev, 0x00, sizeof(sigma_t));
@@ -963,7 +988,11 @@ sigma_init(const device_t *info, UNUSED(void *parent))
 	return(NULL);
     }
 
+    spec = device_get_config_int("enable_spec");
+
     dev->enable_nmi = device_get_config_int("enable_nmi");
+
+    dev->bios_addr = device_get_config_hex20("bios_addr");
 
     cga_palette = device_get_config_int("rgb_type") << 1;
     if (cga_palette > 6)
@@ -978,7 +1007,7 @@ sigma_init(const device_t *info, UNUSED(void *parent))
 		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
     rom_init(&dev->bios_rom, info->path,
-	     0xc0000, 0x2000, 0x1fff, 0, MEM_MAPPING_EXTERNAL);
+	     dev->bios_addr, 0x2000, 0x1fff, 0, MEM_MAPPING_EXTERNAL);
 
     /*
      * The BIOS ROM is overlaid by RAM, so remove its default
@@ -987,13 +1016,14 @@ sigma_init(const device_t *info, UNUSED(void *parent))
     mem_map_disable(&dev->bios_rom.mapping);
     memcpy(dev->bram, &dev->bios_rom.rom[0x1800], 0x0800);
 
-    mem_map_add(&dev->bios_ram, 0xc0000, 0x2000,
+    mem_map_add(&dev->bios_ram, dev->bios_addr, 0x2000,
 		sigma_bread,NULL,NULL, sigma_bwrite,NULL,NULL,
 		dev->bios_rom.rom, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 
-    io_sethandler(0x03d0, 16, 
-		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, (priv_t)dev);
     io_sethandler(0x02d0, 16, 
+		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, (priv_t)dev);
+
+    io_sethandler(0x03d0, 16, 
 		  sigma_in,NULL,NULL, sigma_out,NULL,NULL, (priv_t)dev);
 
     timer_add(sigma_poll, (priv_t)dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
@@ -1004,7 +1034,31 @@ sigma_init(const device_t *info, UNUSED(void *parent))
     if (dev->enable_nmi)
 	dev->sigma_stat = STATUS_LPEN_T;
 
-    video_inform(DEVICE_VIDEO_GET(info->flags), &sigma_timing);
+    /*
+     * We can report ourselves as either a CGA card, or as
+     * an EGA/VGA ("Special") card. The latter is what my
+     * real Color400 does on my real DTK-1000, but that has
+     * two drawbacks:
+     *
+     * - on some BIOSes (such as the DTK's ERSO) this can
+     *   confuse it into thinking it is an EGA. Some really
+     *   weird behavior has been observed because of this.
+     *
+     * - the real Color 400 has its BIOS at CC00:0 (maybe
+     *   because the system BIOS assumes EGA if at C000:0)
+     *   and this means it will not initialize until other
+     *   ROMs have been initialized. System BIOS usually
+     *   does a quick check to see if a video ROM exists,
+     *   and, if so, initializes that before any others.
+     *
+     * So, if you have a system that does not like it on
+     * C000:0, select another location for it, depending
+     * on your machine's configuration.
+     */
+    if (spec)
+	video_inform(VID_TYPE_SPEC, &sigma_timing);
+      else
+	video_inform(DEVICE_VIDEO_GET(info->flags), &sigma_timing);
 
     return((priv_t)dev);
 }
@@ -1042,6 +1096,50 @@ static const device_config_t sigma_config[] = {
 	}
     },
     {
+	"bios_addr", "BIOS address", CONFIG_HEX20, "", 0x0c0000,
+	{
+		{
+			"C000H (default)", 0x0c0000
+		},
+		{
+			"C800H", 0x0c8000
+		},
+		{
+			"CC00H", 0x0cc000
+		},
+		{
+			"D000H", 0x0d0000
+		},
+		{
+			"D400H", 0x0d4000
+		},
+		{
+			"D800H", 0x0d8000
+		},
+		{
+			"DC00H", 0x0dc000
+		},
+		{
+			"E000H", 0x0e0000
+		},
+		{
+			"E400H", 0x0e4000
+		},
+		{
+			"E800H", 0x0e8000
+		},
+		{
+			"EC00H", 0x0ec000
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+	"enable_spec", "Enable Standalone Mode", CONFIG_BINARY, "", 0
+    },
+    {
 	"enable_nmi", "Enable NMI for CGA emulation", CONFIG_BINARY, "", 1
     },
     {
@@ -1052,11 +1150,7 @@ static const device_config_t sigma_config[] = {
 
 const device_t sigma_device = {
     "Sigma Color 400",
-#if ENABLE_CGA
     DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
-#else
-    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_ISA,
-#endif
     0,
     BIOS_ROM_PATH,
     sigma_init, sigma_close, NULL,

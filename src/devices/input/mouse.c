@@ -8,7 +8,7 @@
  *
  *		Common driver module for MOUSE devices.
  *
- * Version:	@(#)mouse.c	1.0.21	2019/05/13
+ * Version:	@(#)mouse.c	1.0.22	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -156,7 +156,7 @@ mouse_set_buttons(int buttons)
 
 
 void
-mouse_process(void)
+mouse_poll(void)
 {
     static int poll_delay = 2;
 
@@ -165,7 +165,10 @@ mouse_process(void)
 
     if (--poll_delay) return;
 
-    mouse_poll();
+#ifdef USE_DINPUT
+    /* Grab mouse data from platform. */
+    mouse_process();
+#endif
 
     if (mouse_func != NULL) {
     	if (! mouse_func(mouse_x,mouse_y,mouse_z,mouse_buttons, mouse_priv)) {

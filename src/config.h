@@ -8,7 +8,7 @@
  *
  *		Configuration file handler header.
  *
- * Version:	@(#)config.h	1.0.4	2019/05/04
+ * Version:	@(#)config.h	1.0.5	2019/05/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -115,6 +115,8 @@ typedef struct {
     // FIXME: CDROM
 
     // FIXME: ZIP
+
+    int		fdc_type;			/* FDC type (ISA) */
 
     int		hdc_type,			/* HDC type */
 		ide_ter_enabled,

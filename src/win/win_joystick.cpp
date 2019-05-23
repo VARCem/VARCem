@@ -13,13 +13,15 @@
  * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
  *		be updated to 11 or 12 or so.  --FvK
  *
- * Version:	@(#)win_joystick.cpp	1.0.21	2019/05/03
+ * Version:	@(#)win_joystick.cpp	1.0.22	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *              GH Cao, <driver1998.ms@outlook.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2019 GH Cao.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -43,13 +45,17 @@
  */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
-#ifndef DIDEVTYPE_JOYSTICK
+#ifdef USE_DINPUT
+# define DIRECTINPUT_VERSION 0x0800
+# include <dinput.h>
+# ifndef DIDEVTYPE_JOYSTICK
   /* TODO: This is a crude hack to fix compilation on MSVC ...
    * it needs a rework at some point
    */
-# define DIDEVTYPE_JOYSTICK 4
+#  define DIDEVTYPE_JOYSTICK 4
+# endif
+#else
+# include <Xinput.h>
 #endif
 #include <stdio.h>
 #include <stdint.h>
@@ -70,6 +76,29 @@
 
 #define MAX_PLAT_JOYSTICKS	8
 #define STR_FONTNAME		"Segoe UI"
+
+#ifndef USE_DINPUT
+# define XINPUT_MAX_JOYSTICKS	4
+# define XINPUT_NAME		"Xinput compatible controller"
+# define XINPUT_NAME_LX		"Left Stick X"
+# define XINPUT_NAME_LY		"Left Stick Y"
+# define XINPUT_NAME_RX		"Right Stick X"
+# define XINPUT_NAME_RY		"Right Stick Y"
+# define XINPUT_NAME_DPAD_X	"D-pad X"
+# define XINPUT_NAME_DPAD_Y	"D-pad Y"
+# define XINPUT_NAME_LB		"LB"
+# define XINPUT_NAME_RB		"RB"
+# define XINPUT_NAME_LT		"LT"
+# define XINPUT_NAME_RT		"RT"
+# define XINPUT_NAME_A		"A"
+# define XINPUT_NAME_B		"B"
+# define XINPUT_NAME_X		"X"
+# define XINPUT_NAME_Y		"Y"
+# define XINPUT_NAME_BACK	"Back/View"
+# define XINPUT_NAME_START	"Start/Menu"
+# define XINPUT_NAME_LS		"Left Stick"
+# define XINPUT_NAME_RS		"Right Stick"
+#endif
 
 
 typedef struct {
@@ -96,12 +125,17 @@ typedef struct {
 } plat_joystick_t;
 
 
-static plat_joystick_t plat_joystick_state[MAX_PLAT_JOYSTICKS];
+static plat_joystick_t	plat_joystick_state[MAX_PLAT_JOYSTICKS];
+#ifdef USE_DINPUT
 static LPDIRECTINPUTDEVICE8 lpdi_joystick[2] = {NULL, NULL};
-static GUID joystick_guids[MAX_JOYSTICKS];
-static LPDIRECTINPUT8 lpdi;
+static GUID		joystick_guids[MAX_JOYSTICKS];
+static LPDIRECTINPUT8	lpdi;
+#else
+static XINPUT_STATE	controllers[XINPUT_MAX_JOYSTICKS];
+#endif
 
 
+#ifdef USE_DINPUT
 /* Callback for DirectInput. */
 static BOOL CALLBACK
 enum_callback(LPCDIDEVICEINSTANCE lpddi, UNUSED(LPVOID data))
@@ -171,11 +205,21 @@ obj_callback(LPCDIDEVICEOBJECTINSTANCE lpddoi, LPVOID pvRef)
 	
     return(DIENUM_CONTINUE);
 }
+#endif
 
 
 void
 joystick_init(void)
 {
+    plat_joystick_t *js;
+#ifdef USE_DINPUT
+    LPDIRECTINPUTDEVICE8 temp;
+    DIPROPRANGE joy_axis_range;
+    DIDEVICEINSTANCE instance;
+    DIDEVCAPS devcaps;
+#else
+    int val;
+#endif
     int c;
 
     /* Only initialize if the game port is enabled. */
@@ -184,44 +228,39 @@ joystick_init(void)
     INFO("JOYSTICK: initializing (type=%i)\n", config.joystick_type);
 
     atexit(joystick_close);
-	
+
     joysticks_present = 0;
-	
+
+#ifdef USE_DINPUT
     if (FAILED(DirectInput8Create(hInstance,
-	       DIRECTINPUT_VERSION, IID_IDirectInput8A,
-	       (void **) &lpdi, NULL)))
+	       DIRECTINPUT_VERSION, IID_IDirectInput8A, (void **)&lpdi, NULL)))
 	fatal("joystick_init : DirectInputCreate failed\n"); 
 
     if (FAILED(lpdi->EnumDevices(DIDEVTYPE_JOYSTICK,
 	       enum_callback, NULL, DIEDFL_ATTACHEDONLY)))
 	fatal("joystick_init : EnumDevices failed\n");
 
-    INFO("JOYSTICK: %i game device(s) found.\n", joysticks_present);
-
     for (c = 0; c < joysticks_present; c++) {		
-	LPDIRECTINPUTDEVICE8 lpdi_joystick_temp = NULL;
-	DIPROPRANGE joy_axis_range;
-	DIDEVICEINSTANCE device_instance;
-	DIDEVCAPS devcaps;
+	js = &plat_joystick_state[c];
 
-	if (FAILED(lpdi->CreateDevice(joystick_guids[c],
-				      &lpdi_joystick_temp, NULL)))
+	temp = NULL;
+
+	if (FAILED(lpdi->CreateDevice(joystick_guids[c], &temp, NULL)))
 		fatal("joystick_init : CreateDevice failed\n");
-	if (FAILED(lpdi_joystick_temp->QueryInterface(IID_IDirectInputDevice8,
+	if (FAILED(temp->QueryInterface(IID_IDirectInputDevice8,
 		   (void **)&lpdi_joystick[c])))
 		fatal("joystick_init : CreateDevice failed\n");
-	lpdi_joystick_temp->Release();
+	temp->Release();
 
-	memset(&device_instance, 0, sizeof(device_instance));
-	device_instance.dwSize = sizeof(device_instance);
-	if (FAILED(lpdi_joystick[c]->GetDeviceInfo(&device_instance)))
+	memset(&instance, 0x00, sizeof(instance));
+	instance.dwSize = sizeof(instance);
+	if (FAILED(lpdi_joystick[c]->GetDeviceInfo(&instance)))
 		fatal("joystick_init : GetDeviceInfo failed\n");
 
 	DEBUG("Joystick%i:\n", c);
-	DEBUG(" Name        = %s\n", device_instance.tszInstanceName);
-	DEBUG(" ProductName = %s\n", device_instance.tszProductName);
-	strncpy(plat_joystick_state[c].name,
-		device_instance.tszInstanceName, 64);
+	DEBUG(" Name        = %s\n", instance.tszInstanceName);
+	DEBUG(" ProductName = %s\n", instance.tszProductName);
+	strncpy(js->name, instance.tszInstanceName, 64);
 
 	memset(&devcaps, 0, sizeof(devcaps));
 	devcaps.dwSize = sizeof(devcaps);
@@ -231,8 +270,7 @@ joystick_init(void)
 	DEBUG(" Buttons     = %i\n", devcaps.dwButtons);
 	DEBUG(" POVs        = %i\n", devcaps.dwPOVs);
 
-	lpdi_joystick[c]->EnumObjects(obj_callback,
-				      &plat_joystick_state[c], DIDFT_ALL); 
+	lpdi_joystick[c]->EnumObjects(obj_callback, js, DIDFT_ALL); 
 	if (FAILED(lpdi_joystick[c]->SetCooperativeLevel(hwndMain,
 				DISCL_BACKGROUND | DISCL_NONEXCLUSIVE)))
 		fatal("joystick_init : SetCooperativeLevel failed\n");
@@ -260,12 +298,68 @@ joystick_init(void)
 	if (FAILED(lpdi_joystick[c]->Acquire()))
 		fatal("joystick_init : Acquire failed\n");
     }
+#else
+    memset(controllers, 0x00, sizeof(controllers));
+
+    for (c = 0; c < XINPUT_MAX_JOYSTICKS; c++) {
+	js = &plat_joystick_state[c];
+
+	val = XInputGetState(c, &controllers[c]);
+	if (val != ERROR_SUCCESS) continue;
+
+	strcpy(js->name, XINPUT_NAME);
+	js->nr_axes = 8;
+
+	/* analog stick */
+	strcpy(js->axis[0].name, XINPUT_NAME_LX);
+	js->axis[0].id = 0;  /* X axis */
+	strcpy(js->axis[1].name, XINPUT_NAME_LY);
+	js->axis[1].id = 1;  /* Y axis */
+	strcpy(js->axis[2].name, XINPUT_NAME_RX);
+	js->axis[2].id = 3;  /* RX axis */
+	strcpy(js->axis[3].name, XINPUT_NAME_RY);
+	js->axis[3].id = 4;  /* RY axis */
+
+	/* d-pad, assigned to Z and RZ */
+	strcpy(js->axis[4].name, XINPUT_NAME_DPAD_X);
+	js->axis[4].id = 2;
+	strcpy(js->name, XINPUT_NAME_DPAD_Y);
+	js->axis[5].id = 5;
+
+	/* Analog trigger */
+	strcpy(js->axis[6].name, XINPUT_NAME_LT);
+	js->axis[6].id = 6;
+	strcpy(js->axis[7].name, XINPUT_NAME_RT);
+	js->axis[7].id = 7;
+
+	js->nr_buttons = 12;
+	strcpy(js->button[0].name, XINPUT_NAME_A);
+	strcpy(js->button[1].name, XINPUT_NAME_B);
+	strcpy(js->button[2].name, XINPUT_NAME_X);
+	strcpy(js->button[3].name, XINPUT_NAME_Y);
+	strcpy(js->button[4].name, XINPUT_NAME_LB);
+	strcpy(js->button[5].name, XINPUT_NAME_RB);
+	strcpy(js->button[6].name, XINPUT_NAME_LT);
+	strcpy(js->button[7].name, XINPUT_NAME_RT);
+	strcpy(js->button[8].name, XINPUT_NAME_BACK);
+	strcpy(js->button[9].name, XINPUT_NAME_START);
+	strcpy(js->button[10].name, XINPUT_NAME_LS);
+	strcpy(js->button[11].name, XINPUT_NAME_RS);
+
+	js->nr_povs = 0;
+
+	joysticks_present++;
+    }
+#endif
+
+    INFO("JOYSTICK: %i game device(s) found.\n", joysticks_present);
 }
 
 
 void
 joystick_close(void)
 {
+#ifdef USE_DINPUT
     if (lpdi_joystick[1]) {
 	lpdi_joystick[1]->Release();
 	lpdi_joystick[1] = NULL;
@@ -275,42 +369,43 @@ joystick_close(void)
 	lpdi_joystick[0]->Release();
 	lpdi_joystick[0] = NULL;
     }
+#endif
 }
 
 
 static int
 get_axis(int joystick_nr, int mapping)
 {
+    int pov = plat_joystick_state[joystick_nr].p[mapping & 3];
+
+    if (LOWORD(pov) == 0xFFFF)
+	return 0;
+
     if (mapping & POV_X) {
-	int pov = plat_joystick_state[joystick_nr].p[mapping & 3];
-
-	if (LOWORD(pov) == 0xFFFF)
-		return 0;
-	else
-		return (int)sin((2*M_PI * (double)pov) / 36000.0) * 32767;
+	return (int)sin((2*M_PI * (double)pov) / 36000.0) * 32767;
     } else if (mapping & POV_Y) {
-	int pov = plat_joystick_state[joystick_nr].p[mapping & 3];
+	return (int)-cos((2*M_PI * (double)pov) / 36000.0) * 32767;
+    }
 
-	if (LOWORD(pov) == 0xFFFF)
-		return 0;
-	else
-		return (int)-cos((2*M_PI * (double)pov) / 36000.0) * 32767;
-    } else
-	return plat_joystick_state[joystick_nr].a[plat_joystick_state[joystick_nr].axis[mapping].id];
+    return plat_joystick_state[joystick_nr].a[plat_joystick_state[joystick_nr].axis[mapping].id];
 }
 
 
 void
 joystick_process(void)
 {
+    plat_joystick_t *js;
+#ifdef USE_DINPUT
+    DIJOYSTATE joystate;
+#endif
     int c, d;
 
     if (config.joystick_type == JOYSTICK_NONE) return;
 
     for (c = 0; c < joysticks_present; c++) {		
-	DIJOYSTATE joystate;
-	int b;
+	js = &plat_joystick_state[c];
 
+#ifdef USE_DINPUT
 	if (FAILED(lpdi_joystick[c]->Poll())) {
 		lpdi_joystick[c]->Acquire();
 		lpdi_joystick[c]->Poll();
@@ -320,18 +415,55 @@ joystick_process(void)
 		lpdi_joystick[c]->GetDeviceState(sizeof(DIJOYSTATE), (LPVOID)&joystate);
 	}
 
-	plat_joystick_state[c].a[0] = joystate.lX;
-	plat_joystick_state[c].a[1] = joystate.lY;
-	plat_joystick_state[c].a[2] = joystate.lZ;
-	plat_joystick_state[c].a[3] = joystate.lRx;
-	plat_joystick_state[c].a[4] = joystate.lRy;
-	plat_joystick_state[c].a[5] = joystate.lRz;
+	js->a[0] = joystate.lX;
+	js->a[1] = joystate.lY;
+	js->a[2] = joystate.lZ;
+	js->a[3] = joystate.lRx;
+	js->a[4] = joystate.lRy;
+	js->a[5] = joystate.lRz;
 
-	for (b = 0; b < 16; b++)
-		plat_joystick_state[c].b[b] = joystate.rgbButtons[b] & 0x80;
+	for (d = 0; d < 16; d++)
+		js->b[d] = joystate.rgbButtons[d] & 0x80;
 
-	for (b = 0; b < 4; b++)
-		plat_joystick_state[c].p[b] = joystate.rgdwPOV[b];
+	for (d = 0; d < 4; d++)
+		js->p[d] = joystate.rgdwPOV[d];
+#else
+	d = XInputGetState(c, &controllers[c]);
+	if (d != ERROR_SUCCESS) continue;
+
+	js->a[0] = controllers[c].Gamepad.sThumbLX;
+	js->a[1] = controllers[c].Gamepad.sThumbLY;
+	js->a[3] = controllers[c].Gamepad.sThumbRX;
+	js->a[4] = controllers[c].Gamepad.sThumbRY;
+	js->a[6] = controllers[c].Gamepad.bLeftTrigger << 7;
+	js->a[7] = controllers[c].Gamepad.bLeftTrigger << 7;
+
+	js->b[0] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_A) ? 128 : 0;
+	js->b[1] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_B) ? 128 : 0;
+	js->b[2] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_X) ? 128 : 0;
+	js->b[3] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_Y) ? 128 : 0;
+	js->b[4] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) ? 128 : 0;
+	js->b[5] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) ? 128 : 0;
+	js->b[6] = (controllers[c].Gamepad.bLeftTrigger > 127) ? 128 : 0;
+	js->b[7] = (controllers[c].Gamepad.bRightTrigger > 127) ? 128 : 0;
+	js->b[8] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ? 128 : 0;
+	js->b[9] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_START) ? 128 : 0;
+	js->b[10] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) ? 128 : 0;
+	js->b[11] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) ? 128 : 0;
+
+	int dpad_x = 0, dpad_y = 0;
+	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
+		dpad_y += 32767;
+	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
+		dpad_y -= 32767;
+	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
+		dpad_x += 32767;
+	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
+		dpad_x -= 32767;
+
+	js->a[2] = dpad_x;
+	js->a[5] = dpad_y;
+#endif
     }
 
     for (c = 0; c < gamedev_get_max_joysticks(config.joystick_type); c++) {

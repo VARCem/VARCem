@@ -139,24 +139,25 @@ static int
 output_byte(pgc_t *dev, uint8_t val)
 {
     /* If output buffer full, wait for it to empty. */
-    while (!dev->stopped && dev->mapram[0x302] == (uint8_t)(dev->mapram[0x303] - 1)) {
+    while (!dev->stopped &&
+	   (dev->mapram[0x0302] == (uint8_t)(dev->mapram[0x0303] - 1))) {
 	DEBUG("PGC: output buffer state: %02x %02x  Sleeping\n",
-		dev->mapram[0x302], dev->mapram[0x303]);
+		dev->mapram[0x0302], dev->mapram[0x0303]);
 	dev->waiting_output_fifo = 1;
 	pgc_sleep(dev);	
     }
 
-    if (dev->mapram[0x3ff]) {
+    if (dev->mapram[0x03ff]) {
 	/* Reset triggered. */
 	pgc_reset(dev);
 	return 0;
     }
 
-    dev->mapram[0x100 + dev->mapram[0x302]] = val;
-    dev->mapram[0x302]++;
+    dev->mapram[0x0100 + dev->mapram[0x0302]] = val;
+    dev->mapram[0x0302]++;
 
     DBGLOG(1, "PGC: output %02x: new state: %02x %02x\n", val,
-		dev->mapram[0x302], dev->mapram[0x303]);
+		dev->mapram[0x0302], dev->mapram[0x0303]);
 
     return 1;
 }
@@ -180,19 +181,20 @@ static int
 error_byte(pgc_t *dev, uint8_t val)
 {
     /* If error buffer full, wait for it to empty. */
-    while (!dev->stopped && dev->mapram[0x304] == dev->mapram[0x305] - 1) {
+    while (!dev->stopped &&
+	   (dev->mapram[0x0304] == dev->mapram[0x0305] - 1)) {
 	dev->waiting_error_fifo = 1;
 	pgc_sleep(dev);	
     }
 
-    if (dev->mapram[0x3ff]) {
+    if (dev->mapram[0x03ff]) {
 	/* Reset triggered. */
 	pgc_reset(dev);
 	return 0;
     }
 
-    dev->mapram[0x200 + dev->mapram[0x304]] = val;
-    dev->mapram[0x304]++;
+    dev->mapram[0x0200 + dev->mapram[0x0304]] = val;
+    dev->mapram[0x0304]++;
 
     return 1;
 }
@@ -221,21 +223,23 @@ static int
 input_byte(pgc_t *dev, uint8_t *result)
 {
     /* If input buffer empty, wait for it to fill. */
-    while (!dev->stopped && dev->mapram[0x300] == dev->mapram[0x301]) {
+    while (!dev->stopped &&
+	   (dev->mapram[0x0300] == dev->mapram[0x0301])) {
 	dev->waiting_input_fifo = 1;
 	pgc_sleep(dev);	
     }
 
-    if (dev->stopped) return 0;
+    if (dev->stopped)
+	return 0;
 
-    if (dev->mapram[0x3ff]) {
+    if (dev->mapram[0x03ff]) {
 	/* Reset triggered. */
 	pgc_reset(dev);
 	return 0;
     }
 
-    *result = dev->mapram[dev->mapram[0x301]];
-    dev->mapram[0x301]++;
+    *result = dev->mapram[dev->mapram[0x0301]];
+    dev->mapram[0x0301]++;
 
     return 1;
 }
@@ -271,15 +275,21 @@ input_char(pgc_t *dev, char *result)
 static int
 read_command(pgc_t *dev)
 {
+    int count  = 0;
+    char ch;	
+
     if (dev->clcur)
 	return pgc_clist_byte(dev, &dev->hex_command);
 
-    if (dev->ascii_mode) {
-	char ch;	
-	int count  = 0;
+    if (dev->stopped)
+	return 0;
 
+    if (dev->ascii_mode) {
 	while (count < 7) {
 		if (! input_char(dev, &ch)) return 0;
+
+		if (dev->stopped)
+			return 0;
 
 		if (is_whitespace(ch)) {
 			/* Pad to 6 characters */
@@ -320,9 +330,9 @@ parse_command(pgc_t *dev, const pgc_cmd_t **pcmd)
      * Scan the list of valid commands.
      *
      * dev->commands may be a subclass list (terminated with '*')
-     * or the core list (terminated with '@')
+     * or the core list (terminated with NULL)
      */
-    for (cmd = dev->commands; cmd->ascii[0] != '@'; cmd++) {
+    for (cmd = dev->commands; cmd->ascii != NULL; cmd++) {
 	/* End of subclass command list, chain to core. */
 	if (cmd->ascii[0] == '*')
 		cmd = dev->master;
@@ -372,6 +382,7 @@ hndl_clbeg(pgc_t *dev)
 		/* PGC has been reset. */
 		return;	
 	} 
+
 	if (!cmd) {
 		pgc_error(dev, PGC_ERROR_OPCODE);
 		return;		
@@ -379,16 +390,16 @@ hndl_clbeg(pgc_t *dev)
 		/* CLEND */
 		dev->clist[param] = cl;
 		return;
-	} else {		
-		if (! pgc_cl_append(&cl, dev->hex_command)) {
-			pgc_error(dev, PGC_ERROR_OVERFLOW);
-			return;
-		}		
+	}
 
-		if (cmd->parser) {
-			if (! (*cmd->parser)(dev, &cl, cmd->p))
-				return;
-		}
+	if (! pgc_cl_append(&cl, dev->hex_command)) {
+		pgc_error(dev, PGC_ERROR_OVERFLOW);
+		return;
+	}		
+
+	if (cmd->parser) {
+		if (! (*cmd->parser)(dev, &cl, cmd->p))
+			return;
 	}
     }
 }
@@ -1240,6 +1251,34 @@ hndl_resetf(pgc_t *dev)
 }
 
 
+/* Define a font character. */
+static void
+hndl_tdefin(pgc_t *dev)
+{
+    uint8_t ch, bt;
+    uint8_t rows, cols;
+    unsigned len, n;
+
+    if (! pgc_param_byte(dev, &ch)) return;
+    if (! pgc_param_byte(dev, &cols)) return;
+    if (! pgc_param_byte(dev, &rows)) return;
+
+    DEBUG("PGC: TDEFIN (%i,%i,%i) 0x%02x 0x%02x\n",
+	ch, rows, cols, dev->mapram[0x0300], dev->mapram[0x0301]);
+
+    len = ((cols + 7) / 8) * rows;
+    for (n = 0; n < len; n++) {
+	if (! pgc_param_byte(dev, &bt)) return;
+
+	if (n < sizeof(dev->font[ch]))
+		dev->font[ch][n] = bt;
+    }
+
+    dev->fontx[ch] = cols;
+    dev->fonty[ch] = rows;
+}
+
+
 /* TJUST sets text justify settings. */
 static void
 hndl_tjust(pgc_t *dev)
@@ -1259,14 +1298,58 @@ hndl_tjust(pgc_t *dev)
 
 /* TSIZE controls text horizontal spacing. */
 static void
-hndl_tsize(pgc_t *pgc)
+hndl_tsize(pgc_t *dev)
 {
     int32_t param = 0;
 
-    if (! pgc_param_coord(pgc, &param)) return;
+    if (! pgc_param_coord(dev, &param)) return;
 
     DEBUG("PGC: TSIZE %i\n", param);
-    pgc->tsize = param;
+    dev->tsize = param;
+}
+
+
+/* Write text, using the user-uploaded RAM font. */
+static void
+hndl_twrite(pgc_t *dev)
+{
+    uint8_t buf[256];
+    uint8_t count, mask, *row;
+    int x, y, wb, n;
+    int16_t x0 = dev->x >> 16;
+    int16_t y0 = dev->y >> 16;
+
+    if (! pgc_param_byte(dev, &count)) return;
+
+    for (n = 0; n < count; n++)
+	if (! pgc_param_byte(dev, &buf[n])) return;
+    buf[count] = 0;
+
+    pgc_sto_raster(dev, &x0, &y0);
+
+    DEBUG("PGC: TWRITE (%i) x0=%i y0=%i\n", count, x0, y0);
+
+    for (n = 0; n < count; n++) {
+	wb = (dev->fontx[buf[n]] + 7) / 8;
+	DEBUG("PGC: ch=0x%02x w=%i h=%i wb=%i\n", 
+		buf[n], dev->fontx[buf[n]], dev->fonty[buf[n]], wb);
+
+	for (y = 0; y < dev->fonty[buf[n]]; y++) {
+		mask = 0x80;
+		row = &dev->font[buf[n]][y * wb];
+		for (x = 0; x < dev->fontx[buf[n]]; x++) {
+			if (row[0] & mask)
+				pgc_plot(dev, x + x0, y0 - y);
+			mask = mask >> 1;
+			if (mask == 0) {
+				mask = 0x80;
+				row++;
+			}
+		}
+	}
+
+	x0 += dev->fontx[buf[n]];
+    }
 }
 
 
@@ -1331,7 +1414,7 @@ hndl_window(pgc_t *dev)
  * The following ASCII entries have special meaning:
  * ~~~~~~  command is valid only in hex mode
  * ******  end of subclass command list, now process core command list
- * @@@@@@  end of core command list
+ * <NULL>  end of core command list
  *
  */
 static const pgc_cmd_t pgc_commands[] = {
@@ -1384,16 +1467,19 @@ static const pgc_cmd_t pgc_commands[] = {
     { "P",      0x30, hndl_poly,	parse_poly,		0	},
     { "RESETF", 0x04, hndl_resetf,	NULL,			0	},
     { "RF",     0x04, hndl_resetf,	NULL,			0	},
+    { "TDEFIN", 0x84, hndl_tdefin,	NULL,			0	},
+    { "TD",     0x84, hndl_tdefin,	NULL,			0	},
     { "TJUST",  0x85, hndl_tjust,	pgc_parse_bytes,	2	},
     { "TJ",     0x85, hndl_tjust,	pgc_parse_bytes,	2	},
     { "TSIZE",  0x81, hndl_tsize,	pgc_parse_coords,	1	},
     { "TS",     0x81, hndl_tsize,	pgc_parse_coords,	1	},
+    { "TWRITE", 0x8b, hndl_twrite,	NULL,			0	},
     { "VWPORT", 0xb2, hndl_vwport,	pgc_parse_words,	4	},
     { "VWP",    0xb2, hndl_vwport,	pgc_parse_words,	4	},
     { "WINDOW", 0xb3, hndl_window,	pgc_parse_words,	4	},
     { "WI",     0xb3, hndl_window,	pgc_parse_words,	4	}, 
 
-    { "@@@@@@", 0x00, NULL,		NULL,			0	}
+    { NULL								}
 };
 
 
@@ -1427,7 +1513,6 @@ pgc_thread(void *priv)
 	if (! parse_command(dev, &cmd)) {
 		/* Are we shutting down? */
 		if (dev->stopped) {
-INFO("PGC: thread stopping..\n");
 			dev->stopped = 0;
 			break;
 		}
@@ -1493,7 +1578,7 @@ pgc_result_word(pgc_t *dev, int16_t val)
     char buf[20];
 
     if (! dev->ascii_mode) {
-	if (! output_byte(dev, val & 0xFF)) return 0;
+	if (! output_byte(dev, val & 0xff)) return 0;
 	return output_byte(dev, val >> 8);
     }
 
@@ -1511,7 +1596,7 @@ pgc_result_word(pgc_t *dev, int16_t val)
 int
 pgc_error(pgc_t *dev, int err)
 {
-    if (dev->mapram[0x307]) {
+    if (dev->mapram[0x0307]) {
 	/* Errors enabled? */
 	if (dev->ascii_mode) {
 		if (err >= PGC_ERROR_RANGE && err <= PGC_ERROR_MISSING)
@@ -1535,16 +1620,16 @@ pgc_reset(pgc_t *dev)
     memset(dev->mapram, 0x00, sizeof(dev->mapram));
 
     /* The 'CGA disable' jumper is not currently implemented. */
-    dev->mapram[0x30b] = dev->cga_enabled = 1;
-    dev->mapram[0x30c] = dev->cga_enabled;
-    dev->mapram[0x30d] = dev->cga_enabled;
+    dev->mapram[0x030b] = dev->cga_enabled = 1;
+    dev->mapram[0x030c] = dev->cga_enabled;
+    dev->mapram[0x030d] = dev->cga_enabled;
 
-    dev->mapram[0x3f8] = 0x03;		/* minor version */
-    dev->mapram[0x3f9] = 0x01;		/* minor version */
-    dev->mapram[0x3fb] = 0xa5;		/* } */
-    dev->mapram[0x3fc] = 0x5a;		/* PGC self-test passed */
-    dev->mapram[0x3fd] = 0x55;		/* } */
-    dev->mapram[0x3fe] = 0x5a;		/* } */
+    dev->mapram[0x03f8] = 0x03;		/* minor version */
+    dev->mapram[0x03f9] = 0x01;		/* minor version */
+    dev->mapram[0x03fb] = 0xa5;		/* } */
+    dev->mapram[0x03fc] = 0x5a;		/* PGC self-test passed */
+    dev->mapram[0x03fd] = 0x55;		/* } */
+    dev->mapram[0x03fe] = 0x5a;		/* } */
 
     dev->ascii_mode = 1;		/* start off in ASCII mode */
     dev->line_pattern = 0xffff;
@@ -1631,25 +1716,33 @@ pgc_wake(pgc_t *dev)
 void
 pgc_sleep(pgc_t *dev)
 {
+    uint8_t *n = NULL;
+
     DEBUG("PGC: sleeping on %i %i %i %i 0x%02x 0x%02x\n",
 	dev->stopped,
 	dev->waiting_input_fifo, dev->waiting_output_fifo,
-	dev->waiting_error_fifo, dev->mapram[0x300], dev->mapram[0x301]); 
+	dev->waiting_error_fifo, dev->mapram[0x0300], dev->mapram[0x0301]); 
 
     /* Avoid entering waiting state. */
-    if (dev->stopped) return;
+    if (dev->stopped) {
+	dev->waiting_input_fifo = 0;
+	dev->waiting_output_fifo = 0;
+	if (n != NULL)
+		*n = 0;
+	return;
+    }
 
     /* Race condition: If host wrote to the PGC during the that
      * won't be noticed */
     if (dev->waiting_input_fifo &&
-	dev->mapram[0x300] != dev->mapram[0x301]) {
+	dev->mapram[0x0300] != dev->mapram[0x0301]) {
 	dev->waiting_input_fifo = 0;
 	return;
     }
 
     /* Same if they read. */
     if (dev->waiting_output_fifo &&
-	dev->mapram[0x302] != (uint8_t)(dev->mapram[0x303] - 1)) {
+	dev->mapram[0x0302] != (uint8_t)(dev->mapram[0x0303] - 1)) {
 	dev->waiting_output_fifo = 0;
 	return;
     }
@@ -2074,14 +2167,16 @@ pgc_ito_raster(pgc_t *dev, int32_t *x, int32_t *y)
 void
 pgc_recalctimings(pgc_t *dev)
 {
-    double disptime, _dispontime, _dispofftime;
+    double _dispontime, _dispofftime;
+    double disptime;
 
     /* Use a fixed 640x400 display. */
     disptime = dev->screenw + 11;
     _dispontime = dev->screenw;
     _dispofftime = disptime - _dispontime;
-    dev->dispontime  = (int)(_dispontime  * (1 << TIMER_SHIFT));
-    dev->dispofftime = (int)(_dispofftime * (1 << TIMER_SHIFT));
+
+    dev->dispontime  = (tmrval_t)(_dispontime  * (1 << TIMER_SHIFT));
+    dev->dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 
@@ -2092,10 +2187,10 @@ pgc_cga_text(pgc_t *dev, int w)
     uint8_t chr, attr;
     int drawcursor = 0;
     uint32_t cols[2];
-    int pitch = (dev->mapram[0x3e9] + 1) * 2;
+    int pitch = (dev->mapram[0x03e9] + 1) * 2;
     uint16_t sc = (dev->displine & 0x0f) % pitch;
-    uint16_t ma = (dev->mapram[0x3ed] | (dev->mapram[0x3ec] << 8)) & 0x3fff;
-    uint16_t ca = (dev->mapram[0x3ef] | (dev->mapram[0x3ee] << 8)) & 0x3fff;
+    uint16_t ma = (dev->mapram[0x03ed] | (dev->mapram[0x03ec] << 8)) & 0x3fff;
+    uint16_t ca = (dev->mapram[0x03ef] | (dev->mapram[0x03ee] << 8)) & 0x3fff;
     uint8_t *addr;
     uint32_t val;
     int x, c;
@@ -2110,13 +2205,13 @@ pgc_cga_text(pgc_t *dev, int w)
 
 	/* Cursor enabled? */           
 	if (ma == ca && (dev->cgablink & 8) &&
-	    (dev->mapram[0x3ea] & 0x60) != 0x20) {
-		drawcursor = ((dev->mapram[0x3ea] & 0x1f) <= (sc >> 1)) &&
-			      ((dev->mapram[0x3eb] & 0x1f) >= (sc >> 1));
+	    (dev->mapram[0x03ea] & 0x60) != 0x20) {
+		drawcursor = ((dev->mapram[0x03ea] & 0x1f) <= (sc >> 1)) &&
+			      ((dev->mapram[0x03eb] & 0x1f) >= (sc >> 1));
 	} else
 		drawcursor = 0;
 
-	if (dev->mapram[0x3d8] & 0x20) {
+	if (dev->mapram[0x03d8] & 0x20) {
 		cols[1] = (attr & 15) + 16;
 		cols[0] = ((attr >> 4) & 7) + 16;
 		if ((dev->cgablink & 8) && (attr & 0x80) && !drawcursor) 
@@ -2143,24 +2238,30 @@ pgc_cga_text(pgc_t *dev, int w)
 void
 pgc_cga_gfx40(pgc_t *dev)
 {
-    int x, c;
+    uint16_t ma = (dev->mapram[0x03ed] | (dev->mapram[0x03ec] << 8)) & 0x3fff;
     uint8_t cols[4];
-    int col;
-    uint16_t ma = (dev->mapram[0x3ed] | (dev->mapram[0x3ec] << 8)) & 0x3fff;
     uint8_t *addr;
     uint16_t dat;
+    int c, col, x;
 
-    cols[0] = (dev->mapram[0x3d9] & 15) + 16;
-    col = ((dev->mapram[0x3d9] & 16) ? 8 : 0) + 16;
+    cols[0] = (dev->mapram[0x03d9] & 15) + 16;
+    col = ((dev->mapram[0x03d9] & 16) ? 8 : 0) + 16;
 
-    if (dev->mapram[0x3d8] & 4) { 
-	cols[1] = col | 3; 
-	cols[2] = col | 4; 
-	cols[3] = col | 7;
-    } else if (dev->mapram[0x3d9] & 32) { 
+    /*
+     * On a real CGA, if bit 2 of port 03D8h and bit 5 of port 03D9h are
+     * both set, the palette used in graphics modes is red/cyan/white. On
+     * a PGC, it's magenta/cyan/white. You still get red/cyan/white if
+     * bit 5 of port 03D9h is not set. This is a firmware issue rather
+     * than hardware.
+     */
+    if (dev->mapram[0x03d9] & 32) {
 	cols[1] = col | 3; 
 	cols[2] = col | 5; 
 	cols[3] = col | 7; 
+    } else if (dev->mapram[0x03d8] & 4) {
+	cols[1] = col | 3; 
+	cols[2] = col | 4; 
+	cols[3] = col | 7;
     } else { 
 	cols[1] = col | 2; 
 	cols[2] = col | 4; 
@@ -2183,14 +2284,14 @@ pgc_cga_gfx40(pgc_t *dev)
 void
 pgc_cga_gfx80(pgc_t *dev)
 {
-    int x, c;
+    uint16_t ma = (dev->mapram[0x03ed] | (dev->mapram[0x03ec] << 8)) & 0x3fff;
     uint8_t cols[2];
-    uint16_t ma = (dev->mapram[0x3ed] | (dev->mapram[0x3ec] << 8)) & 0x3fff;
     uint8_t *addr;
     uint16_t dat;
+    int c, x;
 
     cols[0] = 16;
-    cols[1] = (dev->mapram[0x3d9] & 15) + 16;
+    cols[1] = (dev->mapram[0x03d9] & 15) + 16;
 
     for (x = 0; x < 40; x++) {
 	addr = &dev->cga_vram[(ma + 2 * x + 80 * (dev->displine >> 2) + 0x2000 * ((dev->displine >> 1) & 1)) & 0x3fff];
@@ -2233,17 +2334,17 @@ pgc_cga_poll(pgc_t *dev)
 	}
 
 	if (++dev->displine == PGC_CGA_HEIGHT) {
-               	dev->mapram[0x3da] |= 8;
+               	dev->mapram[0x03da] |= 8;
                	dev->cgadispon = 0;
 	}
 	if (dev->displine == PGC_CGA_HEIGHT + 32) {
-               	dev->mapram[0x3da] &= ~8;
+               	dev->mapram[0x03da] &= ~8;
                	dev->cgadispon = 1;
 		dev->displine = 0;
 	}
     } else {
 	if (dev->cgadispon)
-		dev->mapram[0x3da] &= ~1;
+		dev->mapram[0x03da] &= ~1;
 	dev->vidtime += dev->dispontime;
 	dev->linepos = 0;
 
@@ -2262,7 +2363,7 @@ pgc_cga_poll(pgc_t *dev)
 		/* We have a fixed 640x400 screen for CGA modes. */
 		video_res_x = PGC_CGA_WIDTH; 
 		video_res_y = PGC_CGA_HEIGHT; 
-		switch (dev->mapram[0x3d8] & 0x12) {
+		switch (dev->mapram[0x03d8] & 0x12) {
 			case 0x12:
 				video_bpp = 1;
 				break;
@@ -2296,7 +2397,7 @@ pgc_poll(priv_t priv)
     /* Not CGA, so must be native mode. */
     if (! dev->linepos) {
 	dev->vidtime += dev->dispofftime;
-	dev->mapram[0x3da] |= 1;
+	dev->mapram[0x03da] |= 1;
 	dev->linepos = 1;
 	if (dev->cgadispon && (uint32_t)dev->displine < dev->maxh) {
 		if (dev->displine == 0)
@@ -2318,18 +2419,18 @@ pgc_poll(priv_t priv)
 	}
 
 	if (++dev->displine == dev->screenh) {
-               	dev->mapram[0x3da] |= 8;
+               	dev->mapram[0x03da] |= 8;
                	dev->cgadispon = 0;
 	}
 
 	if (dev->displine == dev->screenh + 32) {
-               	dev->mapram[0x3da] &= ~8;
+               	dev->mapram[0x03da] &= ~8;
                	dev->cgadispon = 1;
 		dev->displine = 0;
 	}
     } else {
 	if (dev->cgadispon)
-		dev->mapram[0x3da] &= ~1;
+		dev->mapram[0x03da] &= ~1;
 	dev->vidtime += dev->dispontime;
 	dev->linepos = 0;
 
@@ -2444,7 +2545,7 @@ pgc_write(uint32_t addr, uint8_t val, priv_t priv)
      *
      * Map 2K here in case a clone requires it.
      */
-    if (addr >= 0xc6000 && addr < 0xc6800) {
+    if (addr >= 0x0c6000 && addr < 0x0c6800) {
 	addr &= 0x7ff;
 
 	/* If one of the FIFOs has been updated, this may cause
@@ -2454,48 +2555,48 @@ pgc_write(uint32_t addr, uint8_t val, priv_t priv)
 		dev->mapram[addr] = val;
 
 		switch (addr) {
-			case 0x300:	/* input write pointer */
+			case 0x0300:	/* input write pointer */
 				if (dev->waiting_input_fifo &&
-				    dev->mapram[0x300] != dev->mapram[0x301]) {
+				    dev->mapram[0x0300] != dev->mapram[0x0301]) {
 					dev->waiting_input_fifo = 0;
 					pgc_wake(dev);
 				}
 				break;
 
-			case 0x303:	/* output read pointer */
+			case 0x0303:	/* output read pointer */
 				if (dev->waiting_output_fifo &&
-				    dev->mapram[0x302] != (uint8_t)(dev->mapram[0x303] - 1)) {
+				    dev->mapram[0x0302] != (uint8_t)(dev->mapram[0x0303] - 1)) {
 					dev->waiting_output_fifo = 0;
 					pgc_wake(dev);
 				}
 				break;
 			
-			case 0x305:	/* error read pointer */
+			case 0x0305:	/* error read pointer */
 				if (dev->waiting_error_fifo &&
-				    dev->mapram[0x304] != (uint8_t)(dev->mapram[0x305] - 1)) {
+				    dev->mapram[0x0304] != (uint8_t)(dev->mapram[0x0305] - 1)) {
 					dev->waiting_error_fifo = 0;
 					pgc_wake(dev);
 				}
 				break;
 
-			case 0x306:	/* cold start flag */
+			case 0x0306:	/* cold start flag */
 				/* XXX This should be in IM-1024 specific code */
-				dev->mapram[0x306] = 0;
+				dev->mapram[0x0306] = 0;
 				break;
 
-			case 0x30c:	/* display type */
-				pgc_setdisplay(priv, dev->mapram[0x30c]);
-				dev->mapram[0x30d] = dev->mapram[0x30c];
+			case 0x030c:	/* display type */
+				pgc_setdisplay(priv, dev->mapram[0x030c]);
+				dev->mapram[0x030d] = dev->mapram[0x030c];
 				break;
 
-			case 0x3ff:	/* reboot the PGC */
+			case 0x03ff:	/* reboot the PGC */
 				pgc_wake(dev);
 				break;
 		}
 	}
     }
 
-    if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
+    if (addr >= 0x0b8000 && addr < 0x0c0000 && dev->cga_selected) {
 	addr &= 0x3fff;
 	dev->cga_vram[addr] = val;
     }
@@ -2508,10 +2609,10 @@ pgc_read(uint32_t addr, priv_t priv)
     pgc_t *dev = (pgc_t *)priv;
     uint8_t ret = 0xff;
 
-    if (addr >= 0xc6000 && addr < 0xc6800) {
+    if (addr >= 0x0c6000 && addr < 0x0c6800) {
 	addr &= 0x7ff;
 	ret = dev->mapram[addr];
-    } else if (addr >= 0xb8000 && addr < 0xc0000 && dev->cga_selected) {
+    } else if (addr >= 0x0b8000 && addr < 0x0c0000 && dev->cga_selected) {
 	addr &= 0x3fff;
 	ret = dev->cga_vram[addr];
     }
@@ -2541,14 +2642,14 @@ pgc_close(priv_t priv)
      * stops reading data.
      */
     dev->stopped = 1;
-    dev->mapram[0x3ff] = 1;
+    dev->mapram[0x03ff] = 1;
     if (dev->waiting_input_fifo || dev->waiting_output_fifo) {
 	/* Do an immediate wake-up. */
 	wake_timer(priv);
     }
 
     /* Wait for thread to stop. */
-    while (dev->stopped);
+    thread_wait(dev->pgc_thread, -1);
 
     if (dev->cga_vram)
        	free(dev->cga_vram);
@@ -2572,10 +2673,20 @@ pgc_init(pgc_t *dev, int maxw, int maxh, int visw, int vish,
 {
     int i;
 
-    mem_map_add(&dev->mapping, 0xc6000, 2048, 
+    /*
+     * Make it a 16k mapping at C4000 (will be C4000-C7FFF),
+     * because of the emulator's granularity - the original
+     * mapping will conflict with hard disk controller BIOS'es.
+     */
+#if 0
+    mem_map_add(&dev->mapping, 0x0c6000, 2048,
+#else
+    mem_map_add(&dev->mapping, 0x0c4000, 16384,
+#endif
 		pgc_read,NULL,NULL, pgc_write,NULL,NULL,
 		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
-    mem_map_add(&dev->cga_mapping, 0xb8000, 32768, 
+
+    mem_map_add(&dev->cga_mapping, 0x0b8000, 32768, 
 		pgc_read,NULL,NULL, pgc_write,NULL,NULL,
 		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 

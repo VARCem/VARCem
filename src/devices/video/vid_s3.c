@@ -50,6 +50,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/pci.h"
 #include "video.h"
 #include "vid_svga.h"
@@ -1342,18 +1343,18 @@ void s3_recalctimings(svga_t *svga)
 		if (ramdac->cr3 & 0x08)
 			svga->hdisp *= 2;	/* x2 clock multiplier */
 		if (((svga->miscout >> 2) & 3) == 3)
-			svga->clock = cpuclock / svga->getclock(svga->crtc[0x42] & 0x0f, svga->clock_gen);
+			svga->clock = cpu_clock / svga->getclock(svga->crtc[0x42] & 0x0f, svga->clock_gen);
 		else
-			svga->clock = cpuclock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
+			svga->clock = cpu_clock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
 	} else if (s3->chip == S3_86C801 || s3->chip == S3_86C805) {
 		svga->interlace = svga->crtc[0x42] & 0x20;
 		if (((svga->miscout >> 2) & 3) == 3)
-			svga->clock = cpuclock / svga->getclock(svga->crtc[0x42] & 0x0f, svga->clock_gen);
+			svga->clock = cpu_clock / svga->getclock(svga->crtc[0x42] & 0x0f, svga->clock_gen);
 		else
-			svga->clock = cpuclock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
+			svga->clock = cpu_clock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
 	} else {
 		svga->interlace = svga->crtc[0x42] & 0x20;
-		svga->clock = cpuclock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
+		svga->clock = cpu_clock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
 	}
 	
 	switch (svga->crtc[0x67] >> 4)
@@ -3442,7 +3443,7 @@ const device_t s3_phoenix_vision864_pci_device = {
 
 const device_t s3_diamond_stealth64_vlb_device = {
     "S3 Trio64 (Diamond Stealth64 DRAM)",
-    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_PCI,
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     S3_DIAMOND_STEALTH64_764,
     ROM_DIAMOND_STEALTH64_764,
     s3_init, s3_close, NULL,

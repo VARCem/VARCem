@@ -8,7 +8,7 @@
  *
  *		Implementation of CGA used by Compaq PC's.
  *
- * Version:	@(#)vid_cga_compaq.c	1.0.12	2019/05/13
+ * Version:	@(#)vid_cga_compaq.c	1.0.13	2019/05/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,11 +42,11 @@
 #include <wchar.h>
 #include <math.h>
 #include "../../emu.h"
+#include "../../timer.h"
 #include "../../cpu/cpu.h"
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
@@ -55,8 +55,10 @@
 #include "vid_cga_comp.h"
 
 
-#define CGA_RGB		0
-#define CGA_COMPOSITE	1
+enum {
+    CGA_RGB = 0,
+    CGA_COMPOSITE
+};
 
 
 typedef struct {
@@ -78,8 +80,8 @@ recalc_timings(compaq_cga_t *dev)
     _dispontime *= MDACONST;
     _dispofftime *= MDACONST;
 
-    dev->cga.dispontime = (int)(_dispontime * (1 << TIMER_SHIFT));
-    dev->cga.dispofftime = (int)(_dispofftime * (1 << TIMER_SHIFT));
+    dev->cga.dispontime = (tmrval_t)(_dispontime * (1 << TIMER_SHIFT));
+    dev->cga.dispofftime = (tmrval_t)(_dispofftime * (1 << TIMER_SHIFT));
 }
 
 
@@ -123,7 +125,7 @@ compaq_poll(priv_t priv)
 		}
 		dev->cga.lastline = dev->cga.displine;
 
-		cols[0] = (dev->cga.cgacol & 15);
+		cols[0] = (dev->cga.cgacol & 15) + 16;
 
 		for (c = 0; c < 8; c++) {
 			screen->line[dev->cga.displine][c].val = cols[0];
@@ -360,6 +362,32 @@ compaq_poll(priv_t priv)
 }
 
 
+static void
+compaq_cga_close(priv_t priv)
+{
+    compaq_cga_t *dev = (compaq_cga_t *)priv;
+
+    if (dev->cga.cpriv != NULL)
+	cga_comp_close(dev->cga.cpriv);
+
+    free(dev->cga.vram);
+
+    free(dev);
+}
+
+
+static void
+speed_changed(priv_t priv)
+{
+    compaq_cga_t *dev = (compaq_cga_t *)priv;
+ 
+    if (dev->cga.crtc[9] == 13)		/* character height */
+	recalc_timings(dev);
+      else
+	cga_recalctimings(&dev->cga);
+}
+
+
 static priv_t
 compaq_cga_init(const device_t *info, UNUSED(void *parent))
 {
@@ -368,12 +396,14 @@ compaq_cga_init(const device_t *info, UNUSED(void *parent))
 
     dev = (compaq_cga_t *)mem_alloc(sizeof(compaq_cga_t));
     memset(dev, 0x00, sizeof(compaq_cga_t));
+    dev->flags = info->local;
 
     display_type = device_get_config_int("display_type");
     dev->cga.composite = (display_type != CGA_RGB);
     dev->cga.revision = device_get_config_int("composite_type");
     dev->cga.snow_enabled = device_get_config_int("snow_enabled");
     dev->cga.rgb_type = device_get_config_int("rgb_type");
+    dev->cga.crtc[9] = 13;	/* character height */
 
     dev->cga.vram = (uint8_t *)mem_alloc(0x4000);
 
@@ -381,14 +411,21 @@ compaq_cga_init(const device_t *info, UNUSED(void *parent))
 
     timer_add(compaq_poll, (priv_t)dev, &dev->cga.vidtime, TIMER_ALWAYS_ENABLED);
 
+#if 0
+    /* FIXME: setting it to dev->cga.vram apparently causes problems. */
     mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
 		cga_read,NULL,NULL, cga_write,NULL,NULL,
 		dev->cga.vram, MEM_MAPPING_EXTERNAL, (priv_t)dev);
+#else
+    mem_map_add(&dev->cga.mapping, 0xb8000, 0x08000,
+		cga_read,NULL,NULL, cga_write,NULL,NULL,
+		NULL, MEM_MAPPING_EXTERNAL, (priv_t)dev);
+#endif
 
     io_sethandler(0x03d0, 16,
 		  cga_in,NULL,NULL, cga_out,NULL,NULL, (priv_t)dev);
 
-    if (info->local) {
+    if (dev->flags) {
 	for (c = 0; c < 256; c++) {
 		dev->attr[c][0][0] = dev->attr[c][1][0] = dev->attr[c][1][1] = 16;
 		if (c & 8)
@@ -410,8 +447,6 @@ compaq_cga_init(const device_t *info, UNUSED(void *parent))
 	dev->attr[0x88][0][1] = dev->attr[0x88][1][1] = 16;
     }
 
-    dev->flags = info->local;
-
     overscan_x = overscan_y = 16;
 
     cga_palette = (dev->cga.rgb_type << 1);
@@ -421,32 +456,6 @@ compaq_cga_init(const device_t *info, UNUSED(void *parent))
 		 (const video_timings_t *)info->vid_timing);
 
     return((priv_t)dev);
-}
-
-
-static void
-compaq_cga_close(priv_t priv)
-{
-    compaq_cga_t *dev = (compaq_cga_t *)priv;
-
-    if (dev->cga.cpriv != NULL)
-	cga_comp_close(dev->cga.cpriv);
-
-    free(dev->cga.vram);
-
-    free(dev);
-}
-
-
-static void
-speed_changed(priv_t priv)
-{
-    compaq_cga_t *dev = (compaq_cga_t *)priv;
- 
-    if (dev->cga.crtc[9] == 13)		/* Character height */
-	recalc_timings(dev);
-      else
-	cga_recalctimings(&dev->cga);
 }
 
 

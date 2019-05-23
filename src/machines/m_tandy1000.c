@@ -15,7 +15,7 @@
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -66,9 +66,11 @@
 
 #define TANDY_EEP_SIZE	64
 
-#define TANDY_RGB	0
-#define TANDY_COMPOSITE	1
 
+enum {
+    TANDY_RGB = 0,
+    TANDY_COMPOSITE
+};
 
 enum {
     EEPROM_IDLE = 0,

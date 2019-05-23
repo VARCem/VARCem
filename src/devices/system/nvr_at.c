@@ -197,7 +197,7 @@
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -290,7 +290,7 @@ typedef struct {
 
     uint8_t	addr;
 
-    tmrval_t     ecount,
+    tmrval_t	ecount,
                 rtctime;
 } local_t;
 
@@ -446,23 +446,73 @@ timer_update(priv_t priv)
 }
 
 
-/* Re-calculate the timer values. */
-static void
-timer_recalc(nvr_t *nvr, int add)
+static double
+nvr_period(nvr_t *nvr)
 {
-    local_t *local = (local_t *)nvr->data;
-    tmrval_t c, nt;
+    double dusec = (double)TIMER_USEC;
+    double ret = 0.0;
 
-    c = 1ULL << ((nvr->regs[RTC_REGA] & REGA_RS) - 1);
-    nt = (tmrval_t)(RTCCONST * c * (1LL << TIMER_SHIFT));
+    switch (nvr->regs[RTC_REGA] & REGA_RS) {
+	case 0:
+	default:
+		break;
 
-    if (add == 2) {
-	local->rtctime = nt;
-	return;
-    } else if (add == 1)
-	local->rtctime += nt;
-    else if (local->rtctime > nt)
-	local->rtctime = nt;
+	case 1:
+	case 8:
+		ret = 3906.25;
+		break;
+
+	case 2:
+	case 9:
+		ret = 7812.5;
+		break;
+
+	case 3:
+		ret = 122.070;
+		break;
+
+	case 4:
+		ret = 244.141;
+		break;
+
+	case 5:
+		ret = 488.281;
+		break;
+
+	case 6:
+		ret = 976.5625;
+		break;
+
+	case 7:
+		ret = 1953.125;
+		break;
+
+	case 10:
+		ret = 15625.0;
+		break;
+
+	case 11:
+		ret = 31250.0;
+		break;
+
+	case 12:
+		ret = 62500.0;
+		break;
+
+	case 13:
+		ret = 125000.0;
+		break;
+
+	case 14:
+		ret = 250000.0;
+		break;
+
+	case 15:
+		ret = 500000.0;
+		break;
+    }
+
+    return(ret * dusec);
 }
 
 
@@ -472,13 +522,12 @@ timer_intr(priv_t priv)
     nvr_t *nvr = (nvr_t *)priv;
     local_t *local = (local_t *)nvr->data;
 
-    if (! (nvr->regs[RTC_REGA] & REGA_RS)) {
-	local->rtctime = 0x7fffffff;
+    if (nvr->regs[RTC_REGA] & REGA_RS) {
+	local->rtctime += (tmrval_t)nvr_period(nvr);
+    } else {
+	local->rtctime = 0;
 	return;
     }
-
-    /* Update our timer interval. */
-    timer_recalc(nvr, 1);
 
     nvr->regs[RTC_REGC] |= REGC_PF;
     if (nvr->regs[RTC_REGB] & REGB_PIE) {
@@ -525,10 +574,13 @@ nvr_write(uint16_t addr, uint8_t val, priv_t priv)
 	switch(local->addr) {
 		case RTC_REGA:
 			nvr->regs[RTC_REGA] = val;
-			if (val & REGA_RS)
-				timer_recalc(nvr, 1);
-			  else
-				local->rtctime = 0x7fffffff;
+			if (val & REGA_RS) {
+				if ((val & 0x70) == 0x20)
+					local->rtctime = TIMER_USEC * 500000;
+				else
+					local->rtctime = 0;
+			} else
+				local->rtctime = 0LL;
 			break;
 
 		case RTC_REGB:
@@ -646,16 +698,16 @@ nvr_start(nvr_t *nvr)
     /* Start the RTC. */
     nvr->regs[RTC_REGA] = (REGA_RS2|REGA_RS1);
     nvr->regs[RTC_REGB] = REGB_2412;
-    timer_recalc(nvr, 1);
 }
 
 
 static void
-nvr_recalc(void *priv)
+nvr_recalc(priv_t priv)
 {
     nvr_t *nvr = (nvr_t *)priv;
+    local_t *local = (local_t *)nvr->data;
 
-    timer_recalc(nvr, 0);
+    local->rtctime = TIMER_USEC * 500000;
 }
 
 
@@ -723,12 +775,12 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
     nvr_init(nvr);
 
     /* Start the timers. */
-    timer_add(timer_update, nvr, &local->ecount, &local->ecount);
-    timer_add(timer_intr, nvr, &local->rtctime, TIMER_ALWAYS_ENABLED);
+    timer_add(timer_update, (priv_t)nvr, &local->ecount, &local->ecount);
+    timer_add(timer_intr, (priv_t)nvr, &local->rtctime, &local->rtctime);
 
     /* Set up the I/O handler for this device. */
     io_sethandler(0x0070, 2,
-		  nvr_read,NULL,NULL, nvr_write,NULL,NULL, nvr);
+		  nvr_read,NULL,NULL, nvr_write,NULL,NULL, (priv_t)nvr);
 
     return((priv_t)nvr);
 }

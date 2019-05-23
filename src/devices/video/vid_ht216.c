@@ -50,6 +50,7 @@
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -170,15 +171,15 @@ recalc_timings(svga_t *svga)
 
     switch (dev->clk_sel) {
 	case 5:
-		svga->clock = (cpuclock * (double)(1ULL << 32)) / 65000000.0;
+		svga->clock = (cpu_clock * (double)(1ULL << 32)) / 65000000.0;
 		break;
 
 	case 6:
-		svga->clock = (cpuclock * (double)(1ULL << 32)) / 40000000.0;
+		svga->clock = (cpu_clock * (double)(1ULL << 32)) / 40000000.0;
 		break;
 
 	case 10:
-		svga->clock = (cpuclock * (double)(1ULL << 32)) / 80000000.0;
+		svga->clock = (cpu_clock * (double)(1ULL << 32)) / 80000000.0;
 		break;
     }
 
