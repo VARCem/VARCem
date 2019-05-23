@@ -14,7 +14,7 @@
  *		merged with hdd.c, since that is the scope of hdd.c. The
  *		actual format handlers can then be in hdd_format.c etc.
  *
- * Version:	@(#)hdd_image.c	1.0.10	2019/05/17
+ * Version:	@(#)hdd_image.c	1.0.11	2019/05/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -789,11 +789,15 @@ hdd_image_read(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     /* Now read all (consecutive) blocks from the image. */
     for (i = 0; i < count; i++) {
 	/* If past end of image, give up. */
-	if (feof(img->file))
+	if (ferror(img->file) || feof(img->file))
 		break;
 
 	/* Read a block. */
 	fread(buffer + (i << 9), 1, 512, img->file);
+
+	/* If error during read, give up. */
+	if (ferror(img->file))
+		break;
 
 	/* Update position. */
 	img->pos = sector + i;
@@ -827,7 +831,7 @@ hdd_image_read_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
     fread(buffer, 1, transfer_sectors << 9, img->file);
 
-    if (count != transfer_sectors)
+    if (ferror(img->file) || (count != transfer_sectors))
 	return 1;
 
     return 0;
@@ -845,12 +849,12 @@ hdd_image_write(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 
     /* Now write all (consecutive) blocks to the image. */
     for (i = 0; i < count; i++) {
-	/* If past end of image, give up. */
-	if (feof(img->file))
-		break;
-
 	/* Write a block. */
 	fwrite(buffer + (i << 9), 512, 1, img->file);
+
+	/* If error during write, give up. */
+	if (ferror(img->file))
+		break;
 
 	/* Update position. */
 	img->pos = sector + i;
@@ -873,7 +877,7 @@ hdd_image_write_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
     fwrite(buffer, transfer_sectors << 9, 1, img->file);
 
-    if (count != transfer_sectors)
+    if (ferror(img->file) || (count != transfer_sectors))
 	return 1;
 
     return 0;
@@ -894,12 +898,12 @@ hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
 
     /* Now write all (consecutive) blocks to the image. */
     for (i = 0; i < count; i++) {
-	/* If past end of image, give up. */
-	if (feof(img->file))
-		break;
-
 	/* Write a block. */
   	fwrite(empty, 512, 1, img->file);
+
+	/* If error during write, give up. */
+	if (ferror(img->file))
+		break;
 
 	/* Update position. */
 	img->pos = sector + i;
@@ -925,10 +929,16 @@ hdd_image_zero_ex(uint8_t id, uint32_t sector, uint32_t count)
 
     fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-    for (i = 0; i < transfer_sectors; i++)
+    for (i = 0; i < transfer_sectors; i++) {
 	fwrite(empty, 1, 512, img->file);
 
-    if (count != transfer_sectors)
+	/* If error during write, give up. */
+	if (ferror(img->file))
+		break;
+
+    }
+
+    if (ferror(img->file) || (count != transfer_sectors))
 	return 1;
 
     return 0;
@@ -1013,5 +1023,4 @@ hdd_image_close(uint8_t id)
     }
 
     memset(img, 0x00, sizeof(hdd_image_t));
-    img->loaded = 0;	/* redundant --FvK */
 }

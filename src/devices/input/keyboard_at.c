@@ -16,7 +16,7 @@
  *		 it either will not process ctrl-alt-esc, or it will not do
  *		 ANY input.
  *
- * Version:	@(#)keyboard_at.c	1.0.29	2019/05/20
+ * Version:	@(#)keyboard_at.c	1.0.30	2019/05/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2739,7 +2739,7 @@ kbd_write(uint16_t port, uint8_t val, priv_t priv)
 				case 0xd4: /* write to mouse */
 					DEBUG("ATkbd: write to mouse (%02x)\n", val);
 
-					/* FIXME: What does this do? --FvK */
+					/* OS/2 Warp 3 sends this command. */
 					if (val == 0xbb)
 						break;
 
