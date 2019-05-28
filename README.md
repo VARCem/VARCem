@@ -35,6 +35,10 @@ Information, downloads, additional modules and such can be found on our
 [Website](http://www.VARCem.com/). Live support and general help can
 also be found on our [IRC channel](https://kiwiirc.com/client/irc.freenode.net/?nick=VARCem_Guest|?#VARCem)
 
+Additionally, documentation can be found (once it is written..) on the [Wiki](http://www.VARCem.com/?page=wiki),
+and general discussions and support can be found at the [Forum](http://www.VARCem.com/?page=forum) where you
+can find announcements, leave bug reports, and so on.
+
 
 LEGAL
 -----
