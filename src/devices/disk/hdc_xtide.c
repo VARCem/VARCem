@@ -24,7 +24,7 @@
  * FIXME:	Make sure this works with the new IDE stuff, the AT and PS/2
  *		controllers do not have dev->ide set to anything...
  *
- * Version:	@(#)hdc_xtide.c	1.0.14	2019/05/17
+ * Version:	@(#)hdc_xtide.c	1.0.15	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -172,7 +172,7 @@ xtide_init(const device_t *info, UNUSED(void *parent))
     dev = (hdc_t *)mem_alloc(sizeof(hdc_t));
     memset(dev, 0x00, sizeof(hdc_t));
 
-    switch(info->local) {
+    switch(info->local & 0xff) {
 	case 0:
 		rom_sz = 0x4000;
 		io = 0x300;

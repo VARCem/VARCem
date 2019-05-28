@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.20	2019/05/17
+ * Version:	@(#)ui_stbar.c	1.0.21	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -503,7 +503,7 @@ ui_sb_reset(void)
     /* Check all (active) hard disks. */
     for (drive = 0; drive < HDD_NUM; drive++) {
 	if ((hdd[drive].bus == HDD_BUS_IDE) &&
-	    !(hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
+	    !(hdint || !strcmp(hdc, "ide") || !strcmp(hdc, "xtide") || !strcmp(hdc, "xta"))) {
 		/* Disk, but no controller for it. */
 		continue;
 	}
@@ -520,7 +520,7 @@ ui_sb_reset(void)
     for (drive = 0; drive < CDROM_NUM; drive++) {
 	/* Could be Internal or External IDE.. */
 	if ((cdrom[drive].bus_type == CDROM_BUS_ATAPI) &&
-	    !(hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
+	    !(hdint || !strcmp(hdc, "ide"))) {
 		continue;
 	}
 
@@ -535,7 +535,7 @@ ui_sb_reset(void)
     for (drive = 0; drive < ZIP_NUM; drive++) {
 	/* Could be Internal or External IDE.. */
 	if ((zip_drives[drive].bus_type == ZIP_BUS_ATAPI) &&
-	    !(hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
+	    !(hdint || !strcmp(hdc, "ide"))) {
 		continue;
 	}
 
@@ -584,7 +584,7 @@ ui_sb_reset(void)
 
     for (drive = 0; drive < HDD_NUM; drive++) {
 	if ((hdd[drive].bus == HDD_BUS_IDE) &&
-	    !(hdint || !strncmp(hdc, "ide", 3) || !strncmp(hdc, "xta", 3))) {
+	    !(hdint || !strcmp(hdc, "ide") || !strcmp(hdc, "xtide") || !strcmp(hdc, "xta"))) {
 		/* Disk, but no controller for it. */
 		continue;
 	}
@@ -604,7 +604,7 @@ ui_sb_reset(void)
     for (drive = 0; drive < CDROM_NUM; drive++) {
 	/* Could be Internal or External IDE.. */
 	if ((cdrom[drive].bus_type == CDROM_BUS_ATAPI) &&
-	    !(hdint || !strncmp(hdc, "ide", 3))) {
+	    !(hdint || !strcmp(hdc, "ide"))) {
 		continue;
 	}
 
@@ -621,7 +621,7 @@ ui_sb_reset(void)
     for (drive = 0; drive < ZIP_NUM; drive++) {
 	/* Could be Internal or External IDE.. */
 	if ((zip_drives[drive].bus_type == ZIP_BUS_ATAPI) &&
-	    !(hdint || !strncmp(hdc, "ide", 3))) {
+	    !(hdint || !strcmp(hdc, "ide"))) {
 		continue;
 	}
 
