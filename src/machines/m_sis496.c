@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496/497 based machines.
  *
- * Version:	@(#)m_sis49x.c	1.0.13	2019/05/17
+ * Version:	@(#)m_sis49x.c	1.0.14	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -103,7 +103,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&memregs_eb_device);
 		m_at_common_init();
 		device_add(&keyboard_ps2_pci_device);
-		device_add(&ide_pci_device);
+		device_add(&ide_pci_2ch_device);
 		device_add(&fdc37c665_device);
     }
 

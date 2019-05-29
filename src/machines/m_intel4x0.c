@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440-based machines.
  *
- * Version:	@(#)m_intel4x0.c	1.0.9	2019/05/17
+ * Version:	@(#)m_intel4x0.c	1.0.10	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,18 +39,20 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include "../emu.h"
 #include "../config.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
 #include "../devices/chipsets/intel4x0.h"
+#include "../devices/system/clk.h"
 #include "../devices/system/pci.h"
 #include "../devices/system/memregs.h"
-#include "../devices/system/intel.h"
 #include "../devices/system/intel_flash.h"
 #include "../devices/system/intel_sio.h"
 #include "../devices/system/intel_piix.h"
@@ -58,12 +60,141 @@
 #include "../devices/sio/sio.h"
 #include "../devices/disk/hdc.h"
 #include "../devices/video/video.h"
+#include "../plat.h"
 #include "machine.h"
+
+
+typedef struct {
+    uint8_t	port73,		/* board config reg, also 0x78 */
+		port75;		/* board config reg, also 0x79 */
+
+    uint16_t	timer_latch;
+    tmrval_t	timer;
+} batman_t;
+
+
+static uint8_t
+config_read(uint16_t port, priv_t priv)
+{
+    batman_t *dev = (batman_t *)priv;
+    uint8_t ret = 0x00;
+
+    switch (port) {
+	case 0x0073:			/* board configuration register */
+		ret = dev->port73;
+		break;
+
+	case 0x0075:			/* board configuration register */
+		ret = dev->port75;
+		break;
+    }
+
+    return(ret);
+}
+
+
+static void
+timer_over(priv_t priv)
+{
+    batman_t *dev = (batman_t *)priv;
+
+    dev->timer = 0;
+}
+
+
+static void
+timer_write(uint16_t port, uint8_t val, priv_t priv)
+{
+    batman_t *dev = (batman_t *)priv;
+
+    if (port & 1)
+	dev->timer_latch = (dev->timer_latch & 0xff) | (val << 8);
+    else
+	dev->timer_latch = (dev->timer_latch & 0xff00) | val;
+
+    dev->timer = dev->timer_latch * TIMER_USEC;
+}
+
+
+static uint8_t
+timer_read(uint16_t port, priv_t priv)
+{
+    batman_t *dev = (batman_t *)priv;
+    uint16_t latch;
+    uint8_t ret;
+
+    cycles -= (int)PITCONST;
+
+    timer_clock();
+
+    if (dev->timer < 0)
+	return 0;
+
+    latch = (uint16_t)(dev->timer / TIMER_USEC);
+
+    if (port & 1)
+	ret = latch >> 8;
+    else
+	ret = latch & 0xff;
+
+    return(ret);
+}
+
+
+static void
+batman_close(priv_t priv)
+{
+    batman_t *dev = (batman_t *)priv;
+
+    free(dev);
+}
+
+
+static priv_t
+batman_init(const device_t *info, UNUSED(void *parent))
+{
+    batman_t *dev;
+
+    dev = (batman_t *)mem_alloc(sizeof(batman_t));
+    memset(dev, 0x00, sizeof(batman_t));
+
+    io_sethandler(0x0073, 1,
+		  config_read,NULL,NULL, NULL,NULL,NULL, dev);
+    io_sethandler(0x0075, 1,
+		  config_read,NULL,NULL, NULL,NULL,NULL, dev);
+
+    io_sethandler(0x0078, 2,
+		  timer_read,NULL,NULL, timer_write,NULL,NULL, dev);
+
+    timer_add(timer_over, dev, &dev->timer, &dev->timer);
+
+    return((priv_t)dev);
+}
+
+
+static const device_t batman_device = {
+    "Intel Batman support",
+    0, 0, NULL,
+    batman_init, batman_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
 
 
 static void
 premiere_init(int nx)
 {
+    batman_t *dev;
+
+    /* Create the board registers. */
+    dev = (batman_t *)device_add(&batman_device);
+
+    /* Add configuration bits for port 75. */
+    dev->port73 = 0xff;		/* 1111 1111, probably wrong */
+    dev->port75 = 0xc0;		/* 1100 0000, " */
+    if (machine_get_config_int("setup_disable"))
+	dev->port75 |= 0x20;	/* "disable Setup" */
+
     pci_init(PCI_CONFIG_TYPE_2);
     pci_register_slot(0x00, PCI_CARD_SPECIAL, 0, 0, 0, 0);
     pci_register_slot(0x01, PCI_CARD_SPECIAL, 0, 0, 0, 0);
@@ -72,16 +203,14 @@ premiere_init(int nx)
     pci_register_slot(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4);
     pci_register_slot(0x02, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-    device_add(&memregs_device);
-
     if (nx)
 	device_add(&i430nx_device);
     else
 	device_add(&i430lx_device);
 
     device_add(&sio_device);
-    device_add(&intel_batman_device);
     device_add(&intel_flash_bxt_ami_device);
+    device_add(&memregs_device);
 
     m_at_common_init();
 
@@ -123,12 +252,13 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-
 		device_add(&i430fx_device);
 		device_add(&piix_device);
 		device_add(&intel_flash_bxt_ami_device);
+		device_add(&memregs_device);
+
 		m_at_common_init();
+
 		device_add(&keyboard_ps2_ami_pci_device);
 		device_add(&pc87306_device);
 
@@ -147,12 +277,13 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-
 		device_add(&i430fx_device);
 		device_add(&piix_device);
 		device_add(&intel_flash_bxt_ami_device);
+		device_add(&memregs_device);
+
 		m_at_common_init();
+
 		device_add(&keyboard_ps2_ami_pci_device);
 		device_add(&pc87306_device);
 		break;
@@ -169,12 +300,13 @@ common_init(const device_t *info, void *arg)
 		pci_register_slot(0x10, PCI_CARD_NORMAL, 4, 3, 2, 1);
 		pci_register_slot(0x07, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 
-		device_add(&memregs_device);
-
 		device_add(&i430fx_device);
 		device_add(&piix_device);
 		device_add(&intel_flash_bxt_ami_device);
+		device_add(&memregs_device);
+
 		m_at_common_init();
+
 		device_add(&keyboard_ps2_ami_pci_device);
 		device_add(&pc87306_device);
 		break;
@@ -182,6 +314,16 @@ common_init(const device_t *info, void *arg)
 
     return((priv_t)arg);
 }
+
+
+static const device_config_t batman_config[] = {
+    {
+	"setup_disable", "Disable SETUP", CONFIG_BINARY, "", 0
+    },
+    {
+	NULL
+    }
+};
 
 
 static const machine_t revenge_info = {
@@ -199,7 +341,7 @@ const device_t m_batman = {
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &revenge_info,
-    NULL
+    batman_config
 };
 
 
@@ -218,7 +360,7 @@ const device_t m_plato = {
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &plato_info,
-    NULL
+    batman_config
 };
 
 

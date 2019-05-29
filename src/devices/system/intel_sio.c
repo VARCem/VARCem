@@ -6,9 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Emulation of Intel System I/O PCI chip.
+ *		Emulation of Intel 82378IB System I/O Bridge chip.
  *
- * Version:	@(#)intel_sio.c	1.0.8	2019/05/15
+ * Version:	@(#)intel_sio.c	1.0.9	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

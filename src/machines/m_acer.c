@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430xx-based Acer machines.
  *
- * Version:	@(#)m_acer.c	1.0.5	2019/05/17
+ * Version:	@(#)m_acer.c	1.0.6	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,6 @@
 #include "../devices/chipsets/intel4x0.h"
 #include "../devices/system/pci.h"
 #include "../devices/system/memregs.h"
-#include "../devices/system/intel.h"
 #include "../devices/system/intel_flash.h"
 #include "../devices/system/intel_sio.h"
 #include "../devices/system/intel_piix.h"

@@ -27,7 +27,7 @@
  *		As stated above, it is hoped that by re-adding these, more
  *		testing will get done so they can be 'completed' sometime.
  *
- * Version:	@(#)m_tyan.c	1.0.3	2019/05/17
+ * Version:	@(#)m_tyan.c	1.0.4	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,7 +68,6 @@
 #include "../devices/chipsets/intel4x0.h"
 #include "../devices/system/pci.h"
 #include "../devices/system/memregs.h"
-#include "../devices/system/intel.h"
 #include "../devices/system/intel_flash.h"
 #include "../devices/system/intel_sio.h"
 #include "../devices/system/intel_piix.h"

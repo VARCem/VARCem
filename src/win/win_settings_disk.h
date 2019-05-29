@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.19	2019/03/21
+ * Version:	@(#)win_settings_disk.h	1.0.20	2019/05/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1125,6 +1125,7 @@ hd_add_ok_common:
 				return TRUE;
 
 			case IDC_CFILE:
+				memset(temp_path, 0x00, sizeof(temp_path));
 				memset(hd_file_name, 0x00, sizeof(hd_file_name));
 				b = (existing&1)?DLG_FILE_LOAD:DLG_FILE_SAVE;
 				if (! dlg_file_ex(hdlg, get_string(IDS_3536), NULL, temp_path, b)) {
