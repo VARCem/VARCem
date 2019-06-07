@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.19	2019/05/17
+ * Version:	@(#)vid_s3.c	1.0.20	2019/06/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2879,15 +2879,23 @@ s3_init(const device_t *info, UNUSED(void *parent))
 	memset(s3, 0x00, sizeof(s3_t));
 	svga = &s3->svga;
 
+	vram = device_get_config_int("memory");
+
 	switch(info->local) {
 		case S3_V7MIRAGE_86C801:
 			chip = S3_86C801;
-			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_86c801);
+			if (info->path != NULL)
+				video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_86c801);
+			else
+				vram = 512;
 			break;
 
 		case S3_PHOENIX_86C805:
 			chip = S3_86C805;
-			video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_86c805);
+			if (info->path != NULL)
+				video_inform(DEVICE_VIDEO_GET(info->flags), &timing_s3_86c805);
+			else
+				vram = 1024;
 			break;
 
 		case S3_PARADISE_BAHAMAS64:
@@ -2934,8 +2942,6 @@ s3_init(const device_t *info, UNUSED(void *parent))
 			free(s3);
 			return NULL;
 	}
-
-	vram = device_get_config_int("memory");
 
 	if (vram)
 		vram_size = vram << 20;
@@ -3259,6 +3265,19 @@ const device_t s3_v7mirage_86c801_isa_device = {
     s3_9fx_config
 };
 
+const device_t s3_onboard_86c801_isa_device = {
+    "Onboard S3 86c801 ISA",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
+    S3_V7MIRAGE_86C801,
+    NULL,
+    s3_init, s3_close, NULL,
+    NULL,
+    s3_speed_changed,
+    s3_force_redraw,
+    NULL,
+    NULL
+};
+
 const device_t s3_phoenix_86c805_vlb_device = {
     "Phoenix S3 86c805 VLB",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
@@ -3270,6 +3289,19 @@ const device_t s3_phoenix_86c805_vlb_device = {
     s3_force_redraw,
     NULL,
     s3_9fx_config
+};
+
+const device_t s3_onboard_86c805_vlb_device = {
+    "Onboard S3 86c805 VLB",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
+    S3_PHOENIX_86C805,
+    NULL,
+    s3_init, s3_close, NULL,
+    NULL,
+    s3_speed_changed,
+    s3_force_redraw,
+    NULL,
+    NULL
 };
 
 const device_t s3_bahamas64_vlb_device = {

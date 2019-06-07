@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.36	2019/05/17
+ * Version:	@(#)video.h	1.0.37	2019/06/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -272,7 +272,9 @@ extern const device_t	ht216_32_pb410a_device;
 
 /* S3, Inc standard series cards. */
 extern const device_t	s3_v7mirage_86c801_isa_device;
+extern const device_t	s3_onboard_86c801_isa_device;
 extern const device_t	s3_phoenix_86c805_vlb_device;
+extern const device_t	s3_onboard_86c805_vlb_device;
 extern const device_t	s3_bahamas64_vlb_device;
 extern const device_t	s3_bahamas64_pci_device;
 extern const device_t	s3_9fx_vlb_device;
