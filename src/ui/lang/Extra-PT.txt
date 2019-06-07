@@ -1,0 +1,85 @@
+**** Additional strings for the Installer itself ****
+**** (keep the > lines, add translation after :  ****
+
+
+> Select the setup language:
+:Seleccionar linguagem de setup
+
+> Desktop (as in "Desktop icons")
+:
+
+
+> Executing file removal operations
+:Executar operações de remoção de ficheiros
+
+> Preparing files for removal
+:Preparar ficheiros para remoção
+
+> Restoring removed files
+:Retaurar ficheiros removidos
+
+> Extracting files from archive
+:Extrair ficheiros do arquivo
+
+> Executing file removal
+:Executar remoção de ficheiro
+
+> Preparing file
+:Preparação de ficheiro
+
+> Restoring file
+:Restauro de ficheiro
+
+> This package can only be run from a bootstrapper.
+:Este pacote apenas pode ser executador de um bootstrapper
+
+
+> Several commandline tools
+:Várias ferramentas de linha de comandos
+
+> A set of example configurations to get you started.
+:Alguns exemplos de configuração para iniciar
+
+> Generic Turbo-XT Clone.
+:Clone Turbo-XT genérico
+
+> The original IBM-PC model.
+:Modelo IBM-PC original
+
+> The new model of the IBM-PC
+:Novo modelo do IBM-PC
+
+> Segoe UI Fonts for Windows XP
+:
+
+
+> Additional Languages support files.
+:Ficheiros adicionais de suporte de linguagem
+
+> Your virtual machines.
+:Máquinas virtuais
+
+> Runtime files for the FluidSynth MIDI synthesizer
+:Ficheiros Runtime para o sintetizador FluidSynth MIDI
+
+> Various runtime files needed by the application.
+:Vários ficheiros runtime necessários pela aplicação
+
+> ROM BIOS image files of emulated machines and devices.
+:Ficheiros de imagem ROM BIOS de dispositivos e máquinas emuladas
+
+> Runtime files needed for the SDL2 renderer.
+:Ficheiros Runtime necessários para o renderizador SDL2
+
+> The VARCem Application
+:Aplicação VARCem
+
+> License Agreement
+:Acordo de Licenciamento
+
+> Installer for the [ProductName] application.
+:Instalador para a aplicação [ProductName]
+
+> The VARCem Team
+:Equipa VARCem
+
