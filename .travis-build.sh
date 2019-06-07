@@ -9,7 +9,7 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.7	2019/04/30
+# Version:	@(#).travis-build.sh	1.0.8	2019/06/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -62,7 +62,7 @@
     export COMMIT=${TRAVIS_COMMIT::7}
 
     echo ; echo "Downloading VARCem build dependencies.."
-    curl -# ${EXTDEP_URL} | tar xzf -
+    curl -# "${EXTDEP_URL}" | tar xzf -
 
     # Build the project.
     echo ; echo "Building VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
