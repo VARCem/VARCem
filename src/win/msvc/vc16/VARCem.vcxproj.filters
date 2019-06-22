@@ -70,9 +70,6 @@
     <ClCompile Include="..\..\..\win\win_cdrom.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_crashdump.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_d3d.cpp">
       <Filter>win</Filter>
     </ClCompile>
@@ -518,9 +515,6 @@
     <ClCompile Include="..\..\..\devices\system\dma.c">
       <Filter>devices\system</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\system\intel.c">
-      <Filter>devices\system</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\devices\system\intel_flash.c">
       <Filter>devices\system</Filter>
     </ClCompile>
@@ -936,6 +930,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\devices\system\port92.c">
       <Filter>devices\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\floppy\fdc_pii15xb.c">
+      <Filter>devices\floppy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1472,9 +1469,6 @@
     <ClInclude Include="..\..\..\devices\system\dma.h">
       <Filter>devices\system</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\devices\system\intel.h">
-      <Filter>devices\system</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\devices\system\intel_flash.h">
       <Filter>devices\system</Filter>
     </ClInclude>
@@ -1706,6 +1700,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\devices\system\port92.h">
       <Filter>devices\system</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\floppy\fdc_pii15xb.h">
+      <Filter>devices\floppy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
