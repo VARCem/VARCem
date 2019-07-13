@@ -10,7 +10,7 @@
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_CRT_STDIO_ISO_WIDE_SPECIFIERS;USE_DYNAREC;USE_OPENAL;USE_SDL;USE_FLUIDSYNTH;USE_MUNT;USE_D2D=2;USE_D3DX;USE_WONDER;USE_XL24;USE_GUSMAX;USE_PAS16;USE_WD1002;USE_ST11;USE_MICRAL;USE_COMPAQ;USE_SIS496;USE_SIS471</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;xinput.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;xinput9_1_0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
