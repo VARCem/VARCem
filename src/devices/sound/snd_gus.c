@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.15	2019/05/17
+ * Version:	@(#)snd_gus.c	1.0.16	2019/06/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -136,6 +136,7 @@ typedef struct {
     int		irq,
 		dma,
 		irq_midi;
+	uint16_t base;
     int		latch_enable;
 
     uint8_t	sb_2xa,
@@ -692,8 +693,9 @@ gus_read(uint16_t addr, priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
     uint8_t val = 0xff;
+	uint16_t port = addr - dev->base;
 
-    switch (addr) {
+    switch (port) {
 	case 0x340: /*MIDI status*/
 		val = dev->midi_status;
 		break;
@@ -1189,11 +1191,11 @@ gus_init(const device_t *info, UNUSED(void *parent))
 
     switch(info->local) {
 	case 0:		/* Standard GUS */
-		io_sethandler(0x0240, 16,
+		io_sethandler(dev->base, 16,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
-		io_sethandler(0x0340, 16,
+		io_sethandler(dev->base+0x0100, 16,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
-		io_sethandler(0x0746, 1,
+		io_sethandler(dev->base+0x0506, 1,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
 		io_sethandler(0x0388, 2,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
@@ -1206,15 +1208,15 @@ gus_init(const device_t *info, UNUSED(void *parent))
 		cs423x_setirq(&dev->cs423x, 5); /*Default irq and dma from GUS SDK*/
 		cs423x_setdma(&dev->cs423x, 3);
 
-		io_sethandler(0x0240, 16,
+		io_sethandler(dev->base, 16,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
-		io_sethandler(0x0340, 9,
+		io_sethandler(dev->base+0x0100, 9,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
-		io_sethandler(0x0746, 1,
+		io_sethandler(dev->base+0x0506, 1,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
 		io_sethandler(0x0388, 2,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
-		io_sethandler(0x034c, 4,
+		io_sethandler(dev->base+0x010c, 4,
 			      cs423x_read,NULL,NULL, cs423x_write,NULL,NULL, &dev->cs423x);
 
 		break;
@@ -1259,8 +1261,39 @@ speed_changed(priv_t priv)
 #endif
 }
 
+static const device_config_t gus_config[] = {
+	{
+		"base", "Address", CONFIG_HEX16, "", 0x0350,
+		{
+				{
+						"210H", 0x0210
+				},
+				{
+						"220H", 0x0220
+				},
+				{
+						"230H", 0x0230
+				},
+				{
+						"240H", 0x0240
+				},
+				{
+						"250H", 0x0250
+				},
+				{
+						"260H", 0x0260
+				},
+				{
+						""
+				}
+		},
+	},
+	{
+			"", "", -1
+	}
+};
 
-const device_t gus_device = {
+static const device_t gus_device = {
     "Gravis UltraSound",
     DEVICE_ISA,
     0,
@@ -1272,7 +1305,7 @@ const device_t gus_device = {
 };
 
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-const device_t gusmax_device = {
+static const device_t gusmax_device = {
     "Gravis UltraSound MAX",
     DEVICE_ISA,
     1,
