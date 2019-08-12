@@ -124,6 +124,7 @@ typedef struct {
 		samp_latch;
 
     uint8_t	*ram;
+	uint32_t gus_end_ram;
 
     int		pos;
     int16_t	buffer[2][SOUNDBUFLEN];
@@ -246,12 +247,18 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
     uint16_t ioport;
 #endif
     int c, d, old;
+	uint16_t port;
 
-    if (dev->latch_enable && addr != 0x24b)
-	dev->latch_enable = 0;
+	if ((addr == 0x388) || (addr == 0x389))
+		port = addr;
+	else
+		port = addr & 0xf0f; /* Bit masking GUS dynamic IO*/
 
-    switch (addr) {
-	case 0x340: /*MIDI control*/
+    if (dev->latch_enable && port != 0x20b)
+		dev->latch_enable = 0;
+
+    switch (port) {
+	case 0x300: /*MIDI control*/
 		old = dev->midi_ctrl;
 		dev->midi_ctrl = val;
 
@@ -262,7 +269,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 		midi_update_int_status(dev);
 		break;
 
-	case 0x341: /*MIDI data*/
+	case 0x301: /*MIDI data*/
 		if (dev->midi_loopback) {
 			dev->midi_status |= MIDI_INT_RECEIVE;
 			dev->midi_data = val;
@@ -271,15 +278,15 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 			dev->midi_status |= MIDI_INT_TRANSMIT;
 		break;
 
-	case 0x342: /*Voice select*/
+	case 0x302: /*Voice select*/
 		dev->voice = val & 31;
 		break;
 
-	case 0x343: /*Global select*/
+	case 0x303: /*Global select*/
 		dev->global = val;
 		break;
 
-	case 0x344: /*Global low*/
+	case 0x304: /*Global low*/
 		switch (dev->global) {
 			case 0: /*Voice control*/
 				dev->ctrl[dev->voice] = val;
@@ -338,7 +345,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 		}
 		break;
 
-	case 0x345: /*Global high*/
+	case 0x305: /*Global high*/
 			switch (dev->global) {
 			case 0: /*Voice control*/
 				if (!(val & 1) && dev->ctrl[dev->voice] & 1) {
@@ -532,12 +539,13 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 		}
 		break;
 
-	case 0x347: /*DRAM access*/
-		dev->ram[dev->addr] = val;
+	case 0x307: /*DRAM access*/
 		dev->addr &= 0xfffff;
+		if (dev->addr < dev->gus_end_ram)
+			dev->ram[dev->addr] = val;
 		break;
 
-	case 0x248:
+	case 0x208:
 	case 0x388:
 		dev->adcommand = val;
 		break;
@@ -573,12 +581,12 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 		}
 		break;
 
-	case 0x240:
+	case 0x200:
 		dev->midi_loopback = val & 0x20;
 		dev->latch_enable = (val & 0x40) ? 2 : 1;
 		break;
 
-	case 0x24b:
+	case 0x20b:
 		switch (dev->reg_ctrl & 0x07) {
 			case 0:
 				if (dev->latch_enable == 1)
@@ -629,7 +637,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 		}
 		break;
 
-	case 0x246:
+	case 0x206:
 		dev->ad_status |= 0x08;
 		if (dev->sb_ctrl & 0x20) {
 			if (dev->sb_nmi)
@@ -639,11 +647,11 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 		}
 		break;
 
-	case 0x24a:
+	case 0x20a:
 		dev->sb_2xa = val;
 		break;
 
-	case 0x24c:
+	case 0x20c:
 		dev->ad_status |= 0x10;
 		if (dev->sb_ctrl & 0x20) {
 			if (dev->sb_nmi)
@@ -653,19 +661,19 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 		}
 		/*FALLTHOUGH*/
 
-	case 0x24d:
+	case 0x20d:
 		dev->sb_2xc = val;
 		break;
 
-	case 0x24e:
+	case 0x20e:
 		dev->sb_2xe = val;
 		break;
 
-	case 0x24f:
+	case 0x20f:
 		dev->reg_ctrl = val;
 		break;
 
-	case 0x346: case 0x746:
+	case 0x306: case 0x706:
 		if (dev->dma >= 4)
 			val |= 0x30;
 		dev->max_ctrl = (val >> 6) & 1;
@@ -693,45 +701,51 @@ gus_read(uint16_t addr, priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
     uint8_t val = 0xff;
-	uint16_t port = addr - dev->base;
+	uint16_t port;
+
+	if ((addr == 0x388) || (addr == 0x389))
+		port = addr;
+	else
+		port = addr & 0xf0f; /* Bit masking GUS dynamic IO*/
+
 
     switch (port) {
-	case 0x340: /*MIDI status*/
+	case 0x300: /*MIDI status*/
 		val = dev->midi_status;
 		break;
 
-	case 0x341: /*MIDI data*/
+	case 0x301: /*MIDI data*/
 		val = dev->midi_data;
 		dev->midi_status &= ~MIDI_INT_RECEIVE;
 		midi_update_int_status(dev);
 		break;
 
-	case 0x240:
+	case 0x200:
 		val = 0x00;
 		break;
 
-	case 0x246: /*IRQ status*/
+	case 0x206: /*IRQ status*/
 		val = dev->irqstatus & ~0x10;
 		if (dev->ad_status & 0x19)
 			val |= 0x10;
 		break;
 
-	case 0x24F:
+	case 0x20F:
 		if (dev->max_ctrl)
 			val = 0x02;
 		else
 			val = 0x00;
 		break;
 
-	case 0x342:
+	case 0x302: /*GF1 Page Register*/
 		val = dev->voice;
 		break;
 
-	case 0x343:
+	case 0x303: /*GF1 Global Register Select*/
 		val = dev->global;
 		break;
 
-	case 0x344: /*Global low*/
+	case 0x304: /*Global low*/
 		switch (dev->global) {
 		case 0x82: /*Start addr high*/
 			val = dev->start[dev->voice] >> 16;
@@ -769,7 +783,7 @@ gus_read(uint16_t addr, priv_t priv)
 		}
 		break;
 
-	case 0x345: /*Global high*/
+	case 0x305: /*Global high*/
 		switch (dev->global) {
 		case 0x80: /*Voice control*/
 			val = dev->ctrl[dev->voice] | (dev->waveirqs[dev->voice] ? 0x80 : 0);
@@ -832,23 +846,26 @@ gus_read(uint16_t addr, priv_t priv)
 		}
 		break;
 
-	case 0x346: case 0x746:
+	case 0x306: case 0x706:
 		if (dev->max_ctrl)
 			val = 0x0a; /* GUS MAX */
 		else
 			val = 0xff; /*Pre 3.7 - no mixer*/
 		break;
 
-	case 0x347: /*DRAM access*/
-		val = dev->ram[dev->addr];
+	case 0x307: /*DRAM access*/
 		dev->addr &= 0xFFFFF;
+		if (dev->addr < dev->gus_end_ram)
+			val = dev->ram[dev->addr];
+		else
+			val = 0;
 		break;
 
-	case 0x349:
+	case 0x309:
 		val = 0x00;
 		break;
 
-	case 0x24b:
+	case 0x20B:
 		switch (dev->reg_ctrl & 0x07) {
 		case 1:
 			val = dev->gp1;
@@ -868,17 +885,17 @@ gus_read(uint16_t addr, priv_t priv)
 		}
 		break;
 
-	case 0x24c:
+	case 0x20C:
 		val = dev->sb_2xc;
 		if (dev->reg_ctrl & 0x20)
 			dev->sb_2xc &= 0x80;
 		break;
 
-	case 0x24e:
+	case 0x20E:
 		val = dev->sb_2xe;
 		break;
 
-	case 0x248:
+	case 0x208: /* Timer Control Register */
 	case 0x388:
 		if (dev->tctrl & GUS_TIMER_CTRL_AUTO)
 			val = dev->sb_2xa;
@@ -889,16 +906,16 @@ gus_read(uint16_t addr, priv_t priv)
 		}
 		break;
 
-	case 0x249:
+	case 0x209: /* Timer Data */
 		dev->ad_status &= ~0x01;
 		nmi = 0;
 		/*FALLTHROUGH?*/
 
-	case 0x389:
+	case 0x389:/* Adlib port 389 */
 		val = dev->ad_data;
 		break;
 
-	case 0x24A:
+	case 0x20A:
 		val = dev->adcommand;
 		break;
 
@@ -1163,12 +1180,14 @@ gus_init(const device_t *info, UNUSED(void *parent))
     gus_t *dev;
     double out = 1.0;
     int c;
+	uint8_t gus_ram = device_get_config_int("gus_ram");
 
     dev = (gus_t *)mem_alloc(sizeof(gus_t));
     memset(dev, 0x00, sizeof(gus_t));
 
-    dev->ram = (uint8_t *)mem_alloc(1 << 20);
-    memset(dev->ram, 0x00, 1 << 20);
+	dev->gus_end_ram = 1 << (18 + gus_ram);
+	dev->ram = (uint8_t *)mem_alloc(dev->gus_end_ram);
+    memset(dev->ram, 0x00, (dev->gus_end_ram));
 
     for (c = 0; c < 32; c++) {
 	dev->ctrl[c] = 1;
@@ -1189,13 +1208,15 @@ gus_init(const device_t *info, UNUSED(void *parent))
 
     dev->t1l = dev->t2l = 0xff;
 
+	dev->base = device_get_config_hex16("base");
+
     switch(info->local) {
 	case 0:		/* Standard GUS */
 		io_sethandler(dev->base, 16,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
-		io_sethandler(dev->base+0x0100, 16,
+		io_sethandler(0x0100+dev->base, 16,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
-		io_sethandler(dev->base+0x0506, 1,
+		io_sethandler(0x0506+dev->base, 1,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
 		io_sethandler(0x0388, 2,
 			      gus_read,NULL,NULL, gus_write,NULL,NULL, dev);
@@ -1210,13 +1231,13 @@ gus_init(const device_t *info, UNUSED(void *parent))
 
 		io_sethandler(dev->base, 16,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
-		io_sethandler(dev->base+0x0100, 9,
+		io_sethandler(0x0100+dev->base, 9,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
-		io_sethandler(dev->base+0x0506, 1,
+		io_sethandler(0x0506+dev->base, 1,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
 		io_sethandler(0x0388, 2,
 			      gus_read,NULL,NULL, gus_write,NULL, NULL, dev);
-		io_sethandler(dev->base+0x010c, 4,
+		io_sethandler(0x10C+dev->base, 4,
 			      cs423x_read,NULL,NULL, cs423x_write,NULL,NULL, &dev->cs423x);
 
 		break;
@@ -1263,37 +1284,94 @@ speed_changed(priv_t priv)
 
 static const device_config_t gus_config[] = {
 	{
-		"base", "Address", CONFIG_HEX16, "", 0x0350,
+		"base", "Address", CONFIG_HEX16, "", 0x220,
 		{
 				{
-						"210H", 0x0210
+						"210H", 0x210
 				},
 				{
-						"220H", 0x0220
+						"220H", 0x220
 				},
 				{
-						"230H", 0x0230
+						"230H", 0x230
 				},
 				{
-						"240H", 0x0240
+						"240H", 0x240
 				},
 				{
-						"250H", 0x0250
+						"250H", 0x250
 				},
 				{
-						"260H", 0x0260
+						"260H", 0x260
 				},
-				{
-						""
-				}
 		},
 	},
+    {
+		 "gus_ram", "Onboard RAM", CONFIG_SELECTION, "", 0,
+		{
+				{
+						"256 KB", 0
+				},
+				{
+						"512 KB", 1
+				},
+				{
+						"1 MB", 2
+				},
+				{
+						NULL
+				}
+		}
+	 },
 	{
 			"", "", -1
 	}
 };
 
-static const device_t gus_device = {
+static const device_config_t gus_max_config[] = {
+	{
+		"base", "Address", CONFIG_HEX16, "", 0x220,
+{
+				{
+					"210H", 0x210
+				},
+				{
+					"220H", 0x220
+				},
+				{
+					"230H", 0x230
+				},
+				{
+					"240H", 0x240
+				},
+				{
+					"250H", 0x250
+				},
+				{
+					"260H", 0x260
+				},
+},
+	},
+	{
+		"gus_ram", "Onboard RAM", CONFIG_SELECTION, "", 1,
+{
+				{
+					"512 KB", 1
+				},
+				{
+					"1 MB", 2
+				},
+				{
+					NULL
+				}
+}
+	},
+	{
+		"", "", -1
+	}
+};
+
+const device_t gus_device = {
     "Gravis UltraSound",
     DEVICE_ISA,
     0,
@@ -1301,11 +1379,11 @@ static const device_t gus_device = {
     gus_init, gus_close, NULL,
     NULL,
     speed_changed, NULL, NULL,
-    NULL
+    gus_config
 };
 
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-static const device_t gusmax_device = {
+const device_t gusmax_device = {
     "Gravis UltraSound MAX",
     DEVICE_ISA,
     1,
@@ -1313,6 +1391,6 @@ static const device_t gusmax_device = {
     gus_init, gus_close, NULL,
     NULL,
     speed_changed, NULL, NULL,
-    NULL
+    gus_max_config
 };
 #endif
