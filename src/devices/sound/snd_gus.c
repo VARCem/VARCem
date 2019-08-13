@@ -137,7 +137,7 @@ typedef struct {
     int		irq,
 		dma,
 		irq_midi;
-	uint16_t base;
+    uint16_t base;
     int		latch_enable;
 
     uint8_t	sb_2xa,
@@ -701,13 +701,12 @@ gus_read(uint16_t addr, priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
     uint8_t val = 0xff;
-	uint16_t port;
+    uint16_t port;
 
-	if ((addr == 0x388) || (addr == 0x389))
-		port = addr;
-	else
-		port = addr & 0xf0f; /* Bit masking GUS dynamic IO*/
-
+    if ((addr == 0x388) || (addr == 0x389))
+	port = addr;
+    else
+	port = addr & 0xf0f; /* Bit masking GUS dynamic IO*/
 
     switch (port) {
 	case 0x300: /*MIDI status*/
@@ -1286,41 +1285,41 @@ static const device_config_t gus_config[] = {
 	{
 		"base", "Address", CONFIG_HEX16, "", 0x220,
 		{
-				{
-						"210H", 0x210
-				},
-				{
-						"220H", 0x220
-				},
-				{
-						"230H", 0x230
-				},
-				{
-						"240H", 0x240
-				},
-				{
-						"250H", 0x250
-				},
-				{
-						"260H", 0x260
-				},
+			{
+					"210H", 0x210
+			},
+			{
+					"220H", 0x220
+			},
+			{
+					"230H", 0x230
+			},
+			{
+					"240H", 0x240
+			},
+			{
+					"250H", 0x250
+			},
+			{
+					"260H", 0x260
+			},
 		},
 	},
     {
 		 "gus_ram", "Onboard RAM", CONFIG_SELECTION, "", 0,
 		{
-				{
-						"256 KB", 0
-				},
-				{
-						"512 KB", 1
-				},
-				{
-						"1 MB", 2
-				},
-				{
-						NULL
-				}
+			{
+					"256 KB", 0
+			},
+			{
+					"512 KB", 1
+			},
+			{
+					"1 MB", 2
+			},
+			{
+					NULL
+			}
 		}
 	 },
 	{
@@ -1331,40 +1330,40 @@ static const device_config_t gus_config[] = {
 static const device_config_t gus_max_config[] = {
 	{
 		"base", "Address", CONFIG_HEX16, "", 0x220,
-{
-				{
-					"210H", 0x210
-				},
-				{
-					"220H", 0x220
-				},
-				{
-					"230H", 0x230
-				},
-				{
-					"240H", 0x240
-				},
-				{
-					"250H", 0x250
-				},
-				{
-					"260H", 0x260
-				},
-},
+		{
+			{
+				"210H", 0x210
+			},
+			{
+				"220H", 0x220
+			},
+			{
+				"230H", 0x230
+			},
+			{
+				"240H", 0x240
+			},
+			{
+				"250H", 0x250
+			},
+			{
+				"260H", 0x260
+			},
+		},
 	},
 	{
 		"gus_ram", "Onboard RAM", CONFIG_SELECTION, "", 1,
-{
-				{
-					"512 KB", 1
-				},
-				{
-					"1 MB", 2
-				},
-				{
-					NULL
-				}
-}
+		{
+			{
+				"512 KB", 1
+			},
+			{
+				"1 MB", 2
+			},
+			{
+				NULL
+			}
+		}
 	},
 	{
 		"", "", -1
