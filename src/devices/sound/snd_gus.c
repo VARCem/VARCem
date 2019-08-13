@@ -124,7 +124,7 @@ typedef struct {
 		samp_latch;
 
     uint8_t	*ram;
-	uint32_t gus_end_ram;
+    uint32_t gus_end_ram;
 
     int		pos;
     int16_t	buffer[2][SOUNDBUFLEN];
@@ -244,10 +244,10 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 {
     gus_t *dev = (gus_t *)priv;
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-    uint16_t ioport;
+    uint16_t csioport;
 #endif
     int c, d, old;
-	uint16_t port;
+    uint16_t port;
 
 	if ((addr == 0x388) || (addr == 0x389))
 		port = addr;
@@ -680,12 +680,12 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
 		if (val & 0x40) {
 			if ((val & 0xF) != ((addr >> 4) & 0xF)) { /* Fix me : why is DOS application attempting to relocate the CODEC ? */
-				ioport = 0x30c | ((addr >> 4) & 0xf);
-				io_removehandler(ioport, 4,
+				csioport = 0x30c | ((addr >> 4) & 0xf);
+				io_removehandler(csioport, 4,
 						 cs423x_read,NULL,NULL,
 						 cs423x_write,NULL,NULL,&dev->cs423x);
-				ioport = 0x30c | ((val & 0xf) << 4);
-				io_sethandler(ioport, 4,
+				csioport = 0x30c | ((val & 0xf) << 4);
+				io_sethandler(csioport, 4,
 					      cs423x_read,NULL,NULL,
 					      cs423x_write,NULL,NULL, &dev->cs423x);
 			}
@@ -1180,13 +1180,13 @@ gus_init(const device_t *info, UNUSED(void *parent))
     gus_t *dev;
     double out = 1.0;
     int c;
-	uint8_t gus_ram = device_get_config_int("gus_ram");
+    uint8_t gus_ram = device_get_config_int("gus_ram");
 
     dev = (gus_t *)mem_alloc(sizeof(gus_t));
     memset(dev, 0x00, sizeof(gus_t));
 
-	dev->gus_end_ram = 1 << (18 + gus_ram);
-	dev->ram = (uint8_t *)mem_alloc(dev->gus_end_ram);
+    dev->gus_end_ram = 1 << (18 + gus_ram);
+    dev->ram = (uint8_t *)mem_alloc(dev->gus_end_ram);
     memset(dev->ram, 0x00, (dev->gus_end_ram));
 
     for (c = 0; c < 32; c++) {
@@ -1208,7 +1208,7 @@ gus_init(const device_t *info, UNUSED(void *parent))
 
     dev->t1l = dev->t2l = 0xff;
 
-	dev->base = device_get_config_hex16("base");
+    dev->base = device_get_config_hex16("base");
 
     switch(info->local) {
 	case 0:		/* Standard GUS */
