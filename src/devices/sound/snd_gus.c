@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.16	2019/06/27
+ * Version:	@(#)snd_gus.c	1.0.16	2019/08/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1286,22 +1286,22 @@ static const device_config_t gus_config[] = {
 		"base", "Address", CONFIG_HEX16, "", 0x220,
 		{
 			{
-					"210H", 0x210
+				"210H", 0x210
 			},
 			{
-					"220H", 0x220
+				"220H", 0x220
 			},
 			{
-					"230H", 0x230
+				"230H", 0x230
 			},
 			{
-					"240H", 0x240
+				"240H", 0x240
 			},
 			{
-					"250H", 0x250
+				"250H", 0x250
 			},
 			{
-					"260H", 0x260
+				"260H", 0x260
 			},
 		},
 	},
@@ -1309,16 +1309,16 @@ static const device_config_t gus_config[] = {
 		 "gus_ram", "Onboard RAM", CONFIG_SELECTION, "", 0,
 		{
 			{
-					"256 KB", 0
+				"256 KB", 0
 			},
 			{
-					"512 KB", 1
+				"512 KB", 1
 			},
 			{
-					"1 MB", 2
+				"1 MB", 2
 			},
 			{
-					NULL
+				NULL
 			}
 		}
 	 },
