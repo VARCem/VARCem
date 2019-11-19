@@ -125,6 +125,8 @@ extern dbcs_font_t	*fontdatk,
 
 extern bitmap_t		*screen;
 extern uint32_t		*video_6to8,
+			*video_8togs,
+			*video_8to32,
 			*video_15to32,
 			*video_16to32;
 extern uint32_t		pal_lookup[256];

@@ -60,8 +60,14 @@ extern void	svga_render_4bpp_lowres(svga_t *svga);
 extern void	svga_render_4bpp_highres(svga_t *svga);
 extern void	svga_render_8bpp_lowres(svga_t *svga);
 extern void	svga_render_8bpp_highres(svga_t *svga);
+extern void 	svga_render_8bpp_gs_lowres(svga_t *svga);
+extern void 	svga_render_8bpp_gs_highres(svga_t *svga);
+extern void 	svga_render_8bpp_rgb_lowres(svga_t *svga);
+extern void 	svga_render_8bpp_rgb_highres(svga_t *svga);
 extern void	svga_render_15bpp_lowres(svga_t *svga);
 extern void	svga_render_15bpp_highres(svga_t *svga);
+extern void	svga_render_mixed_lowres(svga_t *svga);
+extern void	svga_render_mixed_highres(svga_t *svga);
 extern void	svga_render_16bpp_lowres(svga_t *svga);
 extern void	svga_render_16bpp_highres(svga_t *svga);
 extern void	svga_render_24bpp_lowres(svga_t *svga);
@@ -72,7 +78,6 @@ extern void	svga_render_ABGR8888_lowres(svga_t *svga);
 extern void	svga_render_ABGR8888_highres(svga_t *svga);
 extern void	svga_render_RGBA8888_lowres(svga_t *svga);
 extern void	svga_render_RGBA8888_highres(svga_t *svga);
-extern void	svga_render_mixed_highres(svga_t *svga);
 
 extern void	(*svga_render)(svga_t *svga);
 
