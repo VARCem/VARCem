@@ -631,11 +631,7 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 						val &= 0xbf;
 					svga->seqregs[8] = val;
 					break;
-							
-				case 0x09:
-					svga->seqregs[9] = 0xfc;
-					break;
-					
+											
 				case 0x0a:
 					if (is_5426(svga)) {
 						svga->seqregs[0x0a] = val;
@@ -1092,8 +1088,6 @@ gd54xx_in(uint16_t addr, priv_t priv)
 				case 0x1b: case 0x1c: case 0x1d: case 0x1e:
 					return dev->vclk_d[svga->seqaddr-0x1b];
 			}
-			
-			DBGLOG(0,"SEQREG read %x, value %x\n", (svga->seqaddr & 0x3f), svga->seqregs[svga->seqaddr & 0x3f]);
 			return svga->seqregs[svga->seqaddr & 0x3f];
 		}
 		break;

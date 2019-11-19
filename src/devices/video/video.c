@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.31	2019/05/05
+ * Version:	@(#)video.c	1.0.32	2019/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>

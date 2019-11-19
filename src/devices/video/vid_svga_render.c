@@ -570,7 +570,6 @@ svga_render_8bpp_highres(svga_t *svga)
     }
 }
 
-// VERIFY
 void svga_render_8bpp_gs_lowres(svga_t *svga)
 {
 	int y_add = enable_overscan ? (overscan_y >> 1) : 0;
@@ -712,7 +711,6 @@ void svga_render_8bpp_rgb_highres(svga_t *svga)
                 svga->ma &= svga->vram_display_mask;
         }
 }
-// VERIFY
 
 void
 svga_render_15bpp_lowres(svga_t *svga)
@@ -789,7 +787,6 @@ svga_render_15bpp_highres(svga_t *svga)
     }
 }
 
-//VERIFY
 void 
 svga_render_mixed_lowres(svga_t *svga)
 {
@@ -825,7 +822,6 @@ svga_render_mixed_lowres(svga_t *svga)
                 svga->ma &= svga->vram_display_mask;
         }
 }
-//VERIFY
 
 void
 svga_render_mixed_highres(svga_t *svga)

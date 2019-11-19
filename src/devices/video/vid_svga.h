@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.8	2019/05/17
+ * Version:	@(#)vid_svga.h	1.0.9	2019/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,7 +40,7 @@
 # define VIDEO_SVGA_H
 
 #define FLAG_EXTRA_BANKS	1
-#define	FLAG_ADDR_BY8		2
+#define FLAG_ADDR_BY8		2
 #define FLAG_LATCH8		4
 
 typedef struct {
