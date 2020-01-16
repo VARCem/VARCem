@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.37	2019/06/05
+ * Version:	@(#)video.h	1.0.38	2019/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -125,6 +125,8 @@ extern dbcs_font_t	*fontdatk,
 
 extern bitmap_t		*screen;
 extern uint32_t		*video_6to8,
+			*video_8togs,
+			*video_8to32,
 			*video_15to32,
 			*video_16to32;
 extern uint32_t		pal_lookup[256];

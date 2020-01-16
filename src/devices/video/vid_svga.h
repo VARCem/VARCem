@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.8	2019/05/17
+ * Version:	@(#)vid_svga.h	1.0.9	2019/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,9 @@
 #ifndef VIDEO_SVGA_H
 # define VIDEO_SVGA_H
 
+#define FLAG_EXTRA_BANKS	1
+#define FLAG_ADDR_BY8		2
+#define FLAG_LATCH8		4
 
 typedef struct {
     int ena,
@@ -70,8 +73,8 @@ typedef struct svga_t
 	displine, fullchange,
 	video_res_x, video_res_y, video_bpp, frames, fps,
 	vram_display_mask,
-	hwcursor_on, overlay_on,
-	hwcursor_oddeven, overlay_oddeven;
+	hwcursor_on, dac_hwcursor_on, overlay_on,
+	hwcursor_oddeven, dac_hwcursor_oddeven, overlay_oddeven;
 
     /*The three variables below allow us to implement memory maps like that seen on a 1MB Trio64 :
       0MB-1MB - VRAM
@@ -84,13 +87,16 @@ typedef struct svga_t
     uint32_t decode_mask, vram_max,
 	     vram_mask,
 	     charseta, charsetb,
-	     latch, ma_latch,
+	     adv_flags, ma_latch,
 	     ma, maback,
 	     write_bank, read_bank,
+	     extra_banks[2],
 	     banked_mask,
 	     ca, overscan_color,
-	     pallook[256];
+	     *map8, pallook[256];
 
+    uint64_t latch;
+    
     PALETTE vgapal;
 
     tmrval_t dispontime, dispofftime,
@@ -99,6 +105,7 @@ typedef struct svga_t
     double clock;
 
     hwcursor_t hwcursor, hwcursor_latch,
+	       dac_hwcursor, dac_hwcursor_latch,
 	       overlay, overlay_latch;
 
     void (*render)(struct svga_t *svga);
@@ -106,6 +113,7 @@ typedef struct svga_t
     void    (*video_out)(uint16_t addr, uint8_t val, priv_t);
     uint8_t (*video_in) (uint16_t addr, priv_t);
     void (*hwcursor_draw)(struct svga_t *svga, int displine);
+    void (*dac_hwcursor_draw)(struct svga_t *svga, int displine);
     void (*overlay_draw)(struct svga_t *svga, int displine);
     void (*vblank_start)(struct svga_t *svga);
     void (*ven_write)(struct svga_t *svga, uint8_t val, uint32_t addr);

@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.31	2019/05/05
+ * Version:	@(#)video.c	1.0.32	2019/10/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,6 +73,8 @@ dbcs_font_t	*fontdatk = NULL,		/* Korean KSC-5601 font */
 bitmap_t	*screen = NULL;
 
 uint32_t	*video_6to8 = NULL,
+		*video_8togs = NULL,
+		*video_8to32 = NULL,
 		*video_15to32 = NULL,
 		*video_16to32 = NULL;
 uint32_t	pal_lookup[256];
@@ -631,6 +633,28 @@ calc_6to8(int c)
     return(i8 & 0xff);
 }
 
+static int
+calc_8to32(int c)
+{
+    int b, g, r;
+    double db, dg, dr;
+
+    b = (c & 3);
+    g = ((c >> 2) & 7);
+    r = ((c >> 5) & 7);
+    db = (((double) b) /  3.0) * 255.0;
+    dg = (((double) g) /  7.0) * 255.0;
+    dr = (((double) r) /  7.0) * 255.0;
+    b = (int) db;
+    g = ((int) dg) << 8;
+    r = ((int) dr) << 16;
+
+    return(b | g | r);
+}
+
+
+
+
 
 static int
 calc_15to32(int c)
@@ -768,6 +792,15 @@ video_init(void)
     video_6to8 = (uint32_t *)mem_alloc(4 * 256);
     for (c = 0; c < 256; c++)
 	video_6to8[c] = calc_6to8(c);
+	
+    video_8togs = malloc(4 * 256);
+    for (c = 0; c < 256; c++)
+	video_8togs[c] = c | (c << 16) | (c << 24);
+
+    video_8to32 = malloc(4 * 256);
+    for (c = 0; c < 256; c++)
+	video_8to32[c] = calc_8to32(c);
+    
     video_15to32 = (uint32_t *)mem_alloc(4 * 65536);
     for (c = 0; c < 65536; c++)
 	video_15to32[c] = calc_15to32(c);
@@ -795,6 +828,8 @@ video_close(void)
     thread_destroy_event(video_blit.wake_ev);
 
     free(video_6to8);
+    free(video_8togs);
+    free(video_8to32);
     free(video_15to32);
     free(video_16to32);
 
