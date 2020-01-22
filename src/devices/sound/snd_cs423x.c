@@ -8,7 +8,7 @@
  *
  *		Implementation of Cirrus Logic Crystal 423x sound devices.
  *
- * Version:	@(#)snd_cs423x.c	1.0.4	2019/05/17
+ * Version:	@(#)snd_cs423x.c	1.0.5	2020/01/21
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -284,9 +284,6 @@ cs423x_poll(priv_t priv)
 	dev->out_r = 0;
     else
 	dev->out_r = (dev->out_r * cs423x_vols[dev->regs[7] & 0x3f]) >> 16;
-
-    if (dev->regs[26] & 0x40) // Mono Output Mute
-	dev->out_l = dev->out_r = 0;
 
     if (dev->count < 0) {
 	dev->count = dev->regs[15] | (dev->regs[14] << 8);
