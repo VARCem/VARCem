@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.6	2019/05/17
+ * Version:	@(#)m_tandy1000_vid.c	1.0.7	2020/01/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,7 +71,11 @@ typedef struct {
     int		crtcreg;
 
     int		array_index;
+#if 0
     uint8_t	array[32];
+#else
+    uint8_t	array[256];
+#endif
     int		memctrl;
     uint8_t	mode, col;
     uint8_t	stat;
@@ -423,8 +427,8 @@ vid_poll(priv_t priv)
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 3) * 0x2000) + 1];
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					chr  =  (dat >>  7) & 1;
-					chr |= ((dat >> 14) & 2);
+					chr  =  (dat >>  6) & 2;
+					chr |= ((dat >> 15) & 1);
 					screen->line[dev->displine][(x << 3) + 8 + c].pal = dev->array[(chr & dev->array[1]) + 16] + 16;
 					dat <<= 1;
 				}
@@ -763,8 +767,8 @@ vid_poll_sl(priv_t priv)
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 3) * 0x2000) + 1];
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					chr  =  (dat >>  7) & 1;
-					chr |= ((dat >> 14) & 2);
+					chr  =  (dat >>  6) & 2;
+					chr |= ((dat >> 15) & 1);
 					screen->line[dev->displine][(x << 3) + 8 + c].pal = dev->array[(chr & dev->array[1]) + 16] + 16;
 					dat <<= 1;
 				}
