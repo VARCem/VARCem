@@ -74,7 +74,7 @@ common_init(const device_t *info, void *arg)
 static const machine_t ami_info = {
     MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
     0,
-    1, 128, 1, 128, 0,
+    1, 64, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
@@ -93,7 +93,7 @@ const device_t m_sis471_ami = {
 static const machine_t dtk_info = {
     MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
     0,
-    1, 128, 1, 128, 0,
+    1, 64, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
