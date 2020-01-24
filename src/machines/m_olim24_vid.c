@@ -8,7 +8,7 @@
  *
  *		Emulation of the Olivetti M24 built-in video controller.
  *
- * Version:	@(#)m_olim24_vid.c	1.0.6	2019/05/17
+ * Version:	@(#)m_olim24_vid.c	1.0.7	2020/01/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -216,7 +216,7 @@ vid_poll(priv_t priv)
     olivid_t *dev = (olivid_t *)priv;
     uint16_t ca = (dev->crtc[15] | (dev->crtc[14] << 8)) & 0x3fff;
     int drawcursor;
-    int x, c;
+    int x, c, xs_temp, ys_temp;
     int oldvc;
     uint8_t chr, attr;
     uint16_t dat, dat2;
@@ -423,21 +423,32 @@ vid_poll(priv_t priv)
 					  else
 						x = (dev->crtc[1] << 4) + 16;
 					dev->lastline++;
-					if ((x != xsize) || ((dev->lastline - dev->firstline) != ysize) || video_force_resize_get()) {
-						xsize = x;
-						ysize = dev->lastline - dev->firstline;
-						if (xsize < 64) xsize = 656;
-						if (ysize < 32) ysize = 200;
-						set_screen_size(xsize, ysize + 16);
 
+					xs_temp = x;
+					ys_temp = (dev->lastline - dev->firstline);
+					
+					if ((xs_temp > 0) && (ys_temp > 0)) {
+						if (xsize < 64) xs_temp = 656;
+						if (ysize < 32) ys_temp = 200;
+						if (!enable_overscan)
+							xs_temp -= 16;
+						if ((xs_temp != xsize) || (ys_temp != ysize) || video_force_resize_get()) {
+							xsize = xs_temp;
+							ysize = ys_temp;
+							set_screen_size(xsize, ysize + (enable_overscan ? 16:0));
 						if (video_force_resize_get())
 							video_force_resize_set(0);
+						}
+						
+						if (enable_overscan) {
+							video_blit_start(1, 0, dev->firstline - 8, 0, (dev->lastline - dev->firstline) + 16, xsize, (dev->lastline - dev->firstline) + 16);
+						} else
+							video_blit_start(1, 8, dev->firstline, 0, (dev->lastline - dev->firstline), xsize, (dev->lastline - dev->firstline));
 					}
 
-					video_blit_start(1, 0, dev->firstline - 8, 0, (dev->lastline - dev->firstline) + 16, xsize, (dev->lastline - dev->firstline) + 16);
 					frames++;
 
-					video_res_x = xsize - 16;
+					video_res_x = xsize;
 					video_res_y = ysize;
 					if (dev->cgamode & 1) {
 						video_res_x /= 8;
@@ -541,4 +552,6 @@ m_olim24_vid_init(int type)
     device_add_ex(&video_device, dev);
 
     video_inform(VID_TYPE_CGA, &m24_timing);
+    cga_palette = 0;
+    video_palette_rebuild();
 }
