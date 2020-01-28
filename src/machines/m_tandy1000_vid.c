@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.8	2020/01/24
+ * Version:	@(#)m_tandy1000_vid.c	1.0.9	2020/01/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -490,8 +490,8 @@ vid_poll(priv_t priv)
 				}
 			}
 		} else if (! (dev->mode& 16)) {
-			cols[0] = (dev->col & 15) | 16;
-			col = (dev->col & 16) ? 24 : 16;
+			cols[0] = (dev->col & 15);
+			col = (dev->col & 16) ? 8 : 0;
 			if (dev->mode & 4) {
 				cols[1] = col | 3;
 				cols[2] = col | 4;
@@ -505,6 +505,10 @@ vid_poll(priv_t priv)
 				cols[2] = col | 4;
 				cols[3] = col | 6;
 			}
+			cols[0] = dev->array[(cols[0] & dev->array[1]) + 16] + 16;
+			cols[1] = dev->array[(cols[1] & dev->array[1]) + 16] + 16;
+			cols[2] = dev->array[(cols[2] & dev->array[1]) + 16] + 16;
+			cols[3] = dev->array[(cols[3] & dev->array[1]) + 16] + 16;
 			for (x = 0; x < dev->crtc[1]; x++) {
 				dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | 
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
