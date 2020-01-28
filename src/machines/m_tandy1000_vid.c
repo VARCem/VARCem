@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.7	2020/01/23
+ * Version:	@(#)m_tandy1000_vid.c	1.0.8	2020/01/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1105,4 +1105,6 @@ tandy1k_video_init(int type, int display_type, uint32_t base, const wchar_t *fn)
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
 
     video_inform(VID_TYPE_CGA, &tandy_timing);
+    cga_palette = 0;
+    video_palette_rebuild();
 }
