@@ -8,7 +8,7 @@
  *
  *		Implementation of the C&T 82C235 ("SCAT") chipset.
  *
- * Version:	@(#)scat.c	1.0.18	2019/05/13
+ * Version:	@(#)scat.c	1.0.19	2020/01/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -1061,17 +1061,13 @@ scat_write(uint16_t port, uint8_t val, priv_t priv)
 				break;
 
 			case SCAT_EMS_CONTROL:
+				io_removehandler(0x0208, 3, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
+				io_removehandler(0x0218, 3, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
 				if (val & 0x40) {
-					if (val & 1) {
+					if (val & 1) 
 						io_sethandler(0x0218, 3, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
-						io_removehandler(0x0208, 3, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
-					} else {
+					else 
 						io_sethandler(0x0208, 3, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
-						io_removehandler(0x0218, 3, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
-					}
-				} else {
-					io_removehandler(0x0208, 0x0003, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
-					io_removehandler(0x0218, 0x0003, scat_read,NULL,NULL, scat_write,NULL,NULL, dev);
 				}
 				set_global_EMS_state(dev, val & 0x80);
 				reg_valid = 1;
@@ -1369,14 +1365,24 @@ static void
 mem_write_scatb(uint32_t addr, uint8_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
-    scat_t *dev = (scat_t *)map->dev;
+    scat_t *dev;
     ems_page_t *page = (ems_page_t *)map->p2;
     uint32_t oldaddr = addr, chkaddr;
 
-    addr = get_addr(dev, addr, page);
-    chkaddr = page ? addr : oldaddr;
+    if (map == NULL)
+	dev = NULL;
+    else
+	dev = (scat_t *)map->dev;
+	
+    if (dev == NULL)
+	chkaddr = oldaddr;
+    else {
+	addr = get_addr(dev, addr, page);
+	chkaddr = addr;
+    }
     if (chkaddr >= 0xc0000 && chkaddr < 0x100000) {
-	if (dev->regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xc0000) >> 15))) return;
+	if (dev == NULL || (dev->regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xc0000) >> 15)))) 
+		return;
     }
 
     if (addr < ((uint32_t)mem_size << 10))
@@ -1388,14 +1394,25 @@ static void
 mem_write_scatw(uint32_t addr, uint16_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
-    scat_t *dev = (scat_t *)map->dev;
+    scat_t *dev;
     ems_page_t *page = (ems_page_t *)map->p2;
     uint32_t oldaddr = addr, chkaddr;
 
-    addr = get_addr(dev, addr, page);
-    chkaddr = page ? addr : oldaddr;
+    if (map == NULL)
+	dev = NULL;
+    else
+	dev = (scat_t *)map->dev;
+	
+    if (dev == NULL)
+	chkaddr = oldaddr;
+    else {
+	addr = get_addr(dev, addr, page);
+	chkaddr = addr;
+    }
+   
     if (chkaddr >= 0xc0000 && chkaddr < 0x100000) {
-	if (dev->regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xc0000) >> 15))) return;
+	if (dev != NULL && (dev->regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xc0000) >> 15))))
+		return;
     }
 
     if (addr < ((uint32_t)mem_size << 10))
@@ -1407,15 +1424,27 @@ static void
 mem_write_scatl(uint32_t addr, uint32_t val, priv_t priv)
 {
     mem_map_t *map = (mem_map_t *)priv;
-    scat_t *dev = (scat_t *)map->dev;
+    scat_t *dev;
     ems_page_t *page = (ems_page_t *)map->p2;
     uint32_t oldaddr = addr, chkaddr;
 
-    addr = get_addr(dev, addr, page);
-    chkaddr = page ? addr : oldaddr;
-    if (chkaddr >= 0xc0000 && chkaddr < 0x100000) {
-	if (dev->regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xc0000) >> 15))) return;
+    if (map == NULL)
+	dev = NULL;
+    else
+	dev = (scat_t *)map->dev;
+	
+    if (dev == NULL)
+	chkaddr = oldaddr;
+    else {
+	addr = get_addr(dev, addr, page);
+	chkaddr = addr;
     }
+    
+    if (chkaddr >= 0xc0000 && chkaddr < 0x100000) {
+	if (dev->regs[SCAT_RAM_WRITE_PROTECT] & (1 << ((chkaddr - 0xc0000) >> 15))) 
+		return;
+    }
+    
     if (addr < ((uint32_t)mem_size << 10))
 	*(uint32_t *)&ram[addr] = val;
 }
