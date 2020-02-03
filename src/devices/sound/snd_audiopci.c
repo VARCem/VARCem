@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.20	2020/01/29
+ * Version:	@(#)snd_audiopci.c	1.0.21	2020/02/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -96,7 +96,8 @@ typedef struct {
 	uint32_t addr, addr_latch;
 	uint16_t count, size;
 
-	uint16_t samp_ct, curr_samp_ct;
+	uint16_t samp_ct;
+	int curr_samp_ct;
 
 	tmrval_t time, latch;
 
@@ -701,8 +702,6 @@ es1371_outl(uint16_t port, uint32_t val, priv_t priv)
 			case 0xc:
 				dev->dac[0].size = val & 0xffff;
 				dev->dac[0].count = val >> 16;
-				if (dev->dac[0].count)
-					dev->dac[0].count -= 4;
 				break;
 			
 			case 0xd:
@@ -1177,15 +1176,13 @@ es1371_poll(priv_t priv)
 		es1371_next_sample_filtered(dev, 0, dev->dac[0].f_pos ? 16 : 0);
 		dev->dac[0].f_pos = (dev->dac[0].f_pos + 1) & 1;
 
-		dev->dac[0].curr_samp_ct++;
-		if (dev->dac[0].curr_samp_ct == dev->dac[0].samp_ct) {
+		dev->dac[0].curr_samp_ct--;
+		if (dev->dac[0].curr_samp_ct < 0) {
 //			DBGLOG(1, "DAC1 IRQ\n");
 			dev->int_status |= INT_STATUS_DAC1;
 			es1371_update_irqs(dev);
+			dev->dac[0].curr_samp_ct = dev->dac[0].samp_ct;
 		}
-
-		if (dev->dac[0].curr_samp_ct > dev->dac[0].samp_ct)
-			dev->dac[0].curr_samp_ct = 0;
 	}
     }
 
@@ -1206,16 +1203,14 @@ es1371_poll(priv_t priv)
 		es1371_next_sample_filtered(dev, 1, dev->dac[1].f_pos ? 16 : 0);
 		dev->dac[1].f_pos = (dev->dac[1].f_pos + 1) & 1;
 
-		dev->dac[1].curr_samp_ct++;
-		if (dev->dac[1].curr_samp_ct > dev->dac[1].samp_ct) {
+		dev->dac[1].curr_samp_ct--;
+		if (dev->dac[1].curr_samp_ct < 0) {
 //			dev->dac[1].curr_samp_ct = 0;
 //			DBGLOG(1, "DAC2 IRQ\n");
 			dev->int_status |= INT_STATUS_DAC2;
 			es1371_update_irqs(dev);
+			dev->dac[1].curr_samp_ct = dev->dac[1].samp_ct;
 		}
-
-		if (dev->dac[1].curr_samp_ct > dev->dac[1].samp_ct)
-			dev->dac[1].curr_samp_ct = 0;
 	}
     }
 }
