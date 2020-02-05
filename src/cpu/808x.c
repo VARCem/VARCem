@@ -2855,6 +2855,8 @@ cpu_reset(int hard)
     ovr_seg = NULL;
     in_lock = halt = 0;
 
+    EAX = EBX = ECX = EDX = ESI = EDI = EBP = ESP = 0; 
+    
     if (hard) {
 	makeznptable();
 	resetreadlookup();
@@ -2862,8 +2864,6 @@ cpu_reset(int hard)
 	resetmcr();
 	pfq_clear();
 	cpu_set_edx();
-	EAX = 0;
-	ESP = 0;
 	mmu_perm = 4;
 	pfq_size = (is8086) ? 6 : 4;
     }
