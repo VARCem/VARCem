@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x87 FPU Instructions.
  *
- * Version:	@(#)x87_ops_misc.h	1.0.2	2018/09/04
+ * Version:	@(#)x87_ops_misc.h	1.0.3	2020/02/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -77,6 +77,7 @@ static int opFINIT(uint32_t fetchdat)
         cpu_state.TOP = 0;
 	cpu_state.ismmx = 0;
         CLOCK_CYCLES(17);
+	CPU_BLOCK_END();
         return 0;
 }
 
