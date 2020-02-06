@@ -2039,7 +2039,7 @@ void pmodeiret(int is32)
                         loadseg(segs[3],&_gs);
                         do_seg_v86_init(&_gs);                        
                         
-                        cpu_state.pc=newpc;
+                        cpu_state.pc=newpc & 0xffff;
                         _cs.base=seg<<4;
                         _cs.limit=0xFFFF;
                         _cs.limit_low = 0;
