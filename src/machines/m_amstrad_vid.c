@@ -377,7 +377,7 @@ pc1512_poll(priv_t priv)
 				}
 				if (drawcursor) {
 					for (c = 0; c < 8; c++)
-					    screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 0xffffff;
+					    screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0] ^ 15;
 				} else {
 					for (c = 0; c < 8; c++)
 					    screen->line[dev->displine][(x << 3) + c + 8].pal = cols[(dev->fontdat[chr + dev->fontbase][dev->sc & 7] & (1 << (c ^ 7))) ? 1 : 0];
