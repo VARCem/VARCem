@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.9	2019/10/21
+ * Version:	@(#)vid_svga.h	1.0.10	2020/01/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,12 @@ typedef struct {
     uint32_t addr, pitch;
 } hwcursor_t;
 
+typedef union {
+    uint64_t	q;
+    uint32_t	d[2];
+    uint16_t	w[4];
+    uint8_t	b[8];
+} latch_t;
 
 typedef struct svga_t
 {
@@ -95,7 +101,7 @@ typedef struct svga_t
 	     ca, overscan_color,
 	     *map8, pallook[256];
 
-    uint64_t latch;
+    latch_t latch;
     
     PALETTE vgapal;
 
