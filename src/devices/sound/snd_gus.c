@@ -8,7 +8,7 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.16	2019/08/13
+ * Version:	@(#)snd_gus.c	1.0.17	2020/01/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -348,10 +348,6 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 	case 0x305: /*Global high*/
 			switch (dev->global) {
 			case 0: /*Voice control*/
-				if (!(val & 1) && dev->ctrl[dev->voice] & 1) {
-					//FIXME: what?
-				}
-
 				dev->ctrl[dev->voice] = val & 0x7f;
 
 				old = dev->waveirqs[dev->voice];
