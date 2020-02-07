@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.20	2019/06/05
+ * Version:	@(#)vid_s3.c	1.0.21	2020/02/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1319,6 +1319,10 @@ void s3_recalctimings(svga_t *svga)
 {
 	s3_t *s3 = (s3_t *)svga->p;
 	bt48x_ramdac_t *ramdac = (bt48x_ramdac_t *)svga->ramdac;
+	int clk_sel = (svga->miscout >> 2) & 3;
+
+        if (clk_sel == 3 && s3->chip == S3_VISION864)
+                clk_sel = svga->crtc[0x42] & 0xf;
 
 	svga->hdisp = svga->hdisp_old;
 
@@ -1354,7 +1358,7 @@ void s3_recalctimings(svga_t *svga)
 			svga->clock = cpu_clock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
 	} else {
 		svga->interlace = svga->crtc[0x42] & 0x20;
-		svga->clock = cpu_clock / svga->getclock((svga->miscout >> 2) & 3, svga->clock_gen);
+		svga->clock = cpu_clock / svga->getclock(clk_sel, svga->clock_gen);
 	}
 	
 	switch (svga->crtc[0x67] >> 4)
