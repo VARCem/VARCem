@@ -8,7 +8,7 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.19	2019/05/17
+ * Version:	@(#)snd_audiopci.c	1.0.21	2020/02/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,6 +51,8 @@
 #include "../../plat.h"
 #include "../system/nmi.h"
 #include "../system/pci.h"
+#include "midi.h"
+#include "snd_mpu401.h"
 #include "sound.h"
 
 
@@ -61,6 +63,9 @@
 static float low_fir_es1371_coef[ES1371_NCoef];
 
 typedef struct {
+
+    mpu_t mpu;
+    
     uint8_t pci_command, pci_serr;
 
     uint32_t base_addr;
@@ -91,7 +96,8 @@ typedef struct {
 	uint32_t addr, addr_latch;
 	uint16_t count, size;
 
-	uint16_t samp_ct, curr_samp_ct;
+	uint16_t samp_ct;
+	int curr_samp_ct;
 
 	tmrval_t time, latch;
 
@@ -152,13 +158,23 @@ typedef struct {
 
 #define INT_DAC1_EN			(1<<6)
 #define INT_DAC2_EN			(1<<5)
+#define INT_UART_EN			(1<<3)
 
 #define SI_P2_INTR_EN			(1<<9)
 #define SI_P1_INTR_EN			(1<<8)
 
 #define INT_STATUS_INTR			(1<<31)
+#define INT_STATUS_UART			(1<<3)
 #define INT_STATUS_DAC1			(1<<2)
 #define INT_STATUS_DAC2			(1<<1)
+
+#define UART_CTRL_RXINTEN		(1<<7)
+#define UART_CTRL_TXINTEN		(1<<5)
+
+#define UART_STATUS_RXINT		(1<<7)
+#define UART_STATUS_TXINT		(1<<2)
+#define UART_STATUS_TXRDY		(1<<1)
+#define UART_STATUS_RXRDY		(1<<0)
 
 #define FORMAT_MONO_8			0
 #define FORMAT_STEREO_8			1
@@ -185,6 +201,10 @@ es1371_update_irqs(es1371_t *dev)
     if ((dev->int_status & INT_STATUS_DAC1) && (dev->si_cr & SI_P1_INTR_EN))
 	irq = 1;
     if ((dev->int_status & INT_STATUS_DAC2) && (dev->si_cr & SI_P2_INTR_EN))
+	irq = 1;
+	
+    /* MIDI input is unsupported for now */
+    if ((dev->int_status & INT_STATUS_UART) && (dev->uart_status & UART_STATUS_TXINT))
 	irq = 1;
 
     if (irq)
@@ -245,7 +265,7 @@ es1371_inb(uint16_t port, priv_t priv)
 		break;
 
 	case 0x09:
-		ret = dev->uart_status;
+		ret = dev->uart_status & 0xc7;
 		break;
 		
 	case 0x0c:
@@ -371,6 +391,14 @@ es1371_inl(uint16_t port, priv_t priv)
 		ret |= CODEC_READY;
 		break;
 
+	case 0x30:
+		switch (dev->mem_page) {
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x30 read UART FIFO: val=%x \n", ret & 0xff);
+				break;
+		}
+		break;
+		
 	case 0x34:
 		switch (dev->mem_page) {
 			case 0xc:
@@ -380,16 +408,32 @@ es1371_inl(uint16_t port, priv_t priv)
 			case 0xd:
 				ret = dev->adc.size | (dev->adc.count << 16);
 				break;
+				
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x34 read UART FIFO: val=%x \n", ret & 0xff);
+				break;
 
 			default:
 				DEBUG("Bad es1371_inl: mem_page=%x port=%04x\n", dev->mem_page, port);
 		}
 		break;
 
+	case 0x38:
+		switch (dev->mem_page) {
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x38 read UART FIFO: val=%x \n", ret & 0xff);
+				break;
+		}
+		break;
+		
 	case 0x3c:
 		switch (dev->mem_page) {
 			case 0xc:
 				ret = dev->dac[1].size | (dev->dac[1].count << 16);
+				break;
+				
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x3c read UART FIFO: val=%x \n", ret & 0xff);
 				break;
 						
 			default:
@@ -443,8 +487,12 @@ es1371_outb(uint16_t port, uint8_t val, priv_t priv)
 		dev->int_ctrl = (dev->int_ctrl & 0x00ffffff) | (val << 24);
 		break;
 		
+	case 0x08:
+		midi_write(val);
+		break;
+	
 	case 0x09:
-		dev->uart_ctrl = val;
+		dev->uart_ctrl = val & 0xe3;
 		break;
 		
 	case 0x0c:
@@ -634,6 +682,10 @@ es1371_outl(uint16_t port, uint32_t val, priv_t priv)
 				dev->dac[0].addr_latch = val;
 				DBGLOG(1, "DAC1 addr %08x\n", val);
 				break;
+				
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x30 write UART FIFO: val=%x \n", val & 0xff);
+				break;
 			
 			default:
 				DEBUG("Bad es1371_outl: mem_page=%x port=%04x val=%08x\n", dev->mem_page, port, val);
@@ -650,13 +702,15 @@ es1371_outl(uint16_t port, uint32_t val, priv_t priv)
 			case 0xc:
 				dev->dac[0].size = val & 0xffff;
 				dev->dac[0].count = val >> 16;
-				if (dev->dac[0].count)
-					dev->dac[0].count -= 4;
 				break;
 			
 			case 0xd:
 				dev->adc.size = val & 0xffff;
 				dev->adc.count = val >> 16;
+				break;
+				
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x34 write UART FIFO: val=%x \n", val & 0xff);
 				break;
 
 			default:
@@ -677,6 +731,10 @@ es1371_outl(uint16_t port, uint32_t val, priv_t priv)
 			
 			case 0xd:
 				break;
+		
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x38 write UART FIFO: val=%x \n", val & 0xff);
+				break;
 
 			default:
 				DEBUG("Bad es1371_outl: mem_page=%x port=%04x val=%08x\n", dev->mem_page, port, val);
@@ -693,6 +751,10 @@ es1371_outl(uint16_t port, uint32_t val, priv_t priv)
 			case 0xc:
 				dev->dac[1].size = val & 0xffff;
 				dev->dac[1].count = val >> 16;
+				break;
+			
+			case 0xe: case 0xf:
+			DEBUG("ES1371 0x3c write UART FIFO: val=%x \n", val & 0xff);
 				break;
 
 			default:
@@ -1072,6 +1134,30 @@ es1371_poll(priv_t priv)
 
     es1371_update(dev);
 
+#if 0 /* Todo : MIDI Input */
+    if (dev->int_ctrl & INT_UART_EN) { 
+	if (dev->uart_ctrl & UART_CTRL_RXINTEN) { 
+		if (dev->uart_ctrl & UART_CTRL_TXINTEN)
+			dev->int_status |= INT_STATUS_UART;
+		else
+			dev->int_status &= ~INT_STATUS_UART;
+		}
+		else if (!(dev->uart_ctrl & UART_CTRL_RXINTEN) && ((dev->uart_ctrl & UART_CTRL_TXINTEN))) {
+			dev->int_status |= INT_STATUS_UART;
+		}
+		
+		if (dev->uart_ctrl & UART_CTRL_RXINTEN) {
+			if (dev->uart_ctrl & UART_CTRL_TXINTEN) 
+				dev->uart_status |= (UART_STATUS_TXINT | UART_STATUS_TXRDY);
+			else
+				dev->uart_status &= ~(UART_STATUS_TXINT | UART_STATUS_TXRDY);
+		} else
+			dev->uart_status |= (UART_STATUS_TXINT | UART_STATUS_TXRDY);
+		
+		es1371_update_irqs(dev);	
+	}
+#endif
+					
     if (dev->int_ctrl & INT_DAC1_EN) {
 	int frac = dev->dac[0].ac & 0x7fff;
 	int idx = dev->dac[0].ac >> 15;
@@ -1090,15 +1176,13 @@ es1371_poll(priv_t priv)
 		es1371_next_sample_filtered(dev, 0, dev->dac[0].f_pos ? 16 : 0);
 		dev->dac[0].f_pos = (dev->dac[0].f_pos + 1) & 1;
 
-		dev->dac[0].curr_samp_ct++;
-		if (dev->dac[0].curr_samp_ct == dev->dac[0].samp_ct) {
+		dev->dac[0].curr_samp_ct--;
+		if (dev->dac[0].curr_samp_ct < 0) {
 //			DBGLOG(1, "DAC1 IRQ\n");
 			dev->int_status |= INT_STATUS_DAC1;
 			es1371_update_irqs(dev);
+			dev->dac[0].curr_samp_ct = dev->dac[0].samp_ct;
 		}
-
-		if (dev->dac[0].curr_samp_ct > dev->dac[0].samp_ct)
-			dev->dac[0].curr_samp_ct = 0;
 	}
     }
 
@@ -1119,16 +1203,14 @@ es1371_poll(priv_t priv)
 		es1371_next_sample_filtered(dev, 1, dev->dac[1].f_pos ? 16 : 0);
 		dev->dac[1].f_pos = (dev->dac[1].f_pos + 1) & 1;
 
-		dev->dac[1].curr_samp_ct++;
-		if (dev->dac[1].curr_samp_ct > dev->dac[1].samp_ct) {
+		dev->dac[1].curr_samp_ct--;
+		if (dev->dac[1].curr_samp_ct < 0) {
 //			dev->dac[1].curr_samp_ct = 0;
 //			DBGLOG(1, "DAC2 IRQ\n");
 			dev->int_status |= INT_STATUS_DAC2;
 			es1371_update_irqs(dev);
+			dev->dac[1].curr_samp_ct = dev->dac[1].samp_ct;
 		}
-
-		if (dev->dac[1].curr_samp_ct > dev->dac[1].samp_ct)
-			dev->dac[1].curr_samp_ct = 0;
 	}
     }
 }
@@ -1210,7 +1292,7 @@ es1371_pci_read(int func, int addr, priv_t priv)
 	case 0x05: return dev->pci_serr;
 
 	case 0x06: return 0x10; /*Supports ACPI*/
-	case 0x07: return 0;
+	case 0x07: return 0x00;
 
 	case 0x08: return 2; /*Revision ID*/
 	case 0x09: return 0x00; /*Multimedia audio device*/

@@ -8,7 +8,7 @@
  *
  *		Implementation of the PC-Speaker device.
  *
- * Version:	@(#)snd_speaker.c	1.0.8	2019/05/17
+ * Version:	@(#)snd_speaker.c	1.0.9	2020/01/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -86,20 +86,31 @@ void
 speaker_update(void)
 {
     int32_t val;
+    double timer2_count, amplitude;
+    
+    timer2_count = pit.l[2] ? ((double) pit.l[2]) : 65536.0;
+    amplitude = ((timer2_count / 64.0) * 10240.0) - 5120.0;
+    
+    if (amplitude > 5120.0)
+	amplitude = 5120.0;
 
     if (speaker_pos >= sound_pos_global)
 	return;
 
     for (; speaker_pos < sound_pos_global; speaker_pos++) {
 	if (speaker_gated && speaker_was_enable) {
-		if (!pit.m[2] || pit.m[2] == 4)
-			val = speaker_val;
+		if ((pit.m[2] == 0) || (pit.m[2] == 4))
+			val = (int32_t) amplitude;
 		else if (pit.l[2] < 0x40)
 			val = 0x0a00;
 		else 
 			val = speaker_on ? 0x1400 : 0;
-	} else
-		val = speaker_was_enable ? 0x1400 : 0;
+	} else {
+		if (pit.m[2] == 1)
+			val = speaker_was_enable ? (int32_t) amplitude : 0;
+		else
+			val = speaker_was_enable ? 0x1400 : 0;
+	}
 
 	if (! speaker_enable)
 		speaker_was_enable = 0;
