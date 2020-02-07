@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.22	2020/02/06
+ * Version:	@(#)vid_voodoo.c	1.0.23	2020/02/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -4359,7 +4359,7 @@ static void wait_for_swap_complete(voodoo_t *voodoo)
         {
                 thread_wait_event(voodoo->wake_fifo_thread, -1);
                 thread_reset_event(voodoo->wake_fifo_thread);
-                if ((voodoo->swap_pending && voodoo->flush) || FIFO_ENTRIES >= 65536)
+                if ((voodoo->swap_pending && voodoo->flush) || FIFO_FULL)
                 {
                         /*Main thread is waiting for FIFO to empty, so skip vsync wait and just swap*/
                         memset(voodoo->dirty_line, 1, 1024);
