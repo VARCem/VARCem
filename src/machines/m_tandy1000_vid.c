@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.6	2019/05/17
+ * Version:	@(#)m_tandy1000_vid.c	1.0.9	2020/01/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,7 +71,11 @@ typedef struct {
     int		crtcreg;
 
     int		array_index;
+#if 0
     uint8_t	array[32];
+#else
+    uint8_t	array[256];
+#endif
     int		memctrl;
     uint8_t	mode, col;
     uint8_t	stat;
@@ -423,8 +427,8 @@ vid_poll(priv_t priv)
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 3) * 0x2000) + 1];
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					chr  =  (dat >>  7) & 1;
-					chr |= ((dat >> 14) & 2);
+					chr  =  (dat >>  6) & 2;
+					chr |= ((dat >> 15) & 1);
 					screen->line[dev->displine][(x << 3) + 8 + c].pal = dev->array[(chr & dev->array[1]) + 16] + 16;
 					dat <<= 1;
 				}
@@ -486,8 +490,8 @@ vid_poll(priv_t priv)
 				}
 			}
 		} else if (! (dev->mode& 16)) {
-			cols[0] = (dev->col & 15) | 16;
-			col = (dev->col & 16) ? 24 : 16;
+			cols[0] = (dev->col & 15);
+			col = (dev->col & 16) ? 8 : 0;
 			if (dev->mode & 4) {
 				cols[1] = col | 3;
 				cols[2] = col | 4;
@@ -501,6 +505,10 @@ vid_poll(priv_t priv)
 				cols[2] = col | 4;
 				cols[3] = col | 6;
 			}
+			cols[0] = dev->array[(cols[0] & dev->array[1]) + 16] + 16;
+			cols[1] = dev->array[(cols[1] & dev->array[1]) + 16] + 16;
+			cols[2] = dev->array[(cols[2] & dev->array[1]) + 16] + 16;
+			cols[3] = dev->array[(cols[3] & dev->array[1]) + 16] + 16;
 			for (x = 0; x < dev->crtc[1]; x++) {
 				dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | 
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
@@ -763,8 +771,8 @@ vid_poll_sl(priv_t priv)
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 3) * 0x2000) + 1];
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					chr  =  (dat >>  7) & 1;
-					chr |= ((dat >> 14) & 2);
+					chr  =  (dat >>  6) & 2;
+					chr |= ((dat >> 15) & 1);
 					screen->line[dev->displine][(x << 3) + 8 + c].pal = dev->array[(chr & dev->array[1]) + 16] + 16;
 					dat <<= 1;
 				}
@@ -1101,4 +1109,6 @@ tandy1k_video_init(int type, int display_type, uint32_t base, const wchar_t *fn)
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
 
     video_inform(VID_TYPE_CGA, &tandy_timing);
+    cga_palette = 0;
+    video_palette_rebuild();
 }
