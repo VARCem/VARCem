@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_call.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_call.h	1.0.2	2020/02/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,14 +54,14 @@
         if (cgate32)                                                            \
         {                                                                       \
                 uint32_t old_esp = ESP;                                         \
-                PUSH_L(old_cs);                         if (cpu_state.abrt) { cgate16 = cgate32 = 0; return 1; }     \
-                PUSH_L(old_pc);                         if (cpu_state.abrt) { ESP = old_esp; return 1; } \
+                PUSH_L(old_cs);                         if (cpu_state.abrt) { CS = old_cs; cgate16 = cgate32 = 0; return 1; }     \
+                PUSH_L(old_pc);                         if (cpu_state.abrt) { CS = old_cs; ESP = old_esp; return 1; } \
         }                                                                       \
         else                                                                    \
         {                                                                       \
                 uint32_t old_esp = ESP;                                         \
-                PUSH_W(old_cs);                         if (cpu_state.abrt) { cgate16 = cgate32 = 0; return 1; }     \
-                PUSH_W(old_pc);                         if (cpu_state.abrt) { ESP = old_esp; return 1; } \
+                PUSH_W(old_cs);                         if (cpu_state.abrt) { CS = old_cs; cgate16 = cgate32 = 0; return 1; }     \
+                PUSH_W(old_pc);                         if (cpu_state.abrt) { CS = old_cs; ESP = old_esp; return 1; } \
         }
         
 #define CALL_FAR_l(new_seg, new_pc)                                             \
@@ -83,8 +83,8 @@
         if (cgate16)                                                            \
         {                                                                       \
                 uint32_t old_esp = ESP;                                         \
-                PUSH_W(old_cs);                         if (cpu_state.abrt) { cgate16 = cgate32 = 0; return 1; }     \
-                PUSH_W(old_pc);                         if (cpu_state.abrt) { ESP = old_esp; return 1; } \
+                PUSH_W(old_cs);                         if (cpu_state.abrt) { CS = old_cs; cgate16 = cgate32 = 0; return 1; }     \
+                PUSH_W(old_pc);                         if (cpu_state.abrt) { CS = old_cs; ESP = old_esp; return 1; } \
         }                                                                       \
         else                                                                    \
         {                                                                       \

@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.20	2019/05/17
+ * Version:	@(#)808x.c	1.0.21	2020/02/05
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -2855,6 +2855,8 @@ cpu_reset(int hard)
     ovr_seg = NULL;
     in_lock = halt = 0;
 
+    EAX = EBX = ECX = EDX = ESI = EDI = EBP = ESP = 0; 
+    
     if (hard) {
 	makeznptable();
 	resetreadlookup();
@@ -2862,8 +2864,6 @@ cpu_reset(int hard)
 	resetmcr();
 	pfq_clear();
 	cpu_set_edx();
-	EAX = 0;
-	ESP = 0;
 	mmu_perm = 4;
 	pfq_size = (is8086) ? 6 : 4;
     }
@@ -2874,5 +2874,7 @@ cpu_reset(int hard)
     if (hard)
 	codegen_reset();
 #endif
+    if (!hard)
+	flushmmucache();
     x86_was_reset = 1;
 }
