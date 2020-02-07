@@ -8,7 +8,7 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_laserxt.c	1.0.14	2019/05/17
+ * Version:	@(#)m_laserxt.c	1.0.15	2020/02/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,6 +62,7 @@ typedef struct {
     int		ems_baseaddr_index;
     int		ems_page[4];
     int		ems_control[4];
+    int		turbo;
     mem_map_t	ems_mapping[4];
 } laser_t;
 
@@ -104,6 +105,17 @@ ems_write(uint32_t addr, uint8_t val, priv_t priv)
 	ram[addr] = val;
 }
 
+static void
+turbo_set(laser_t *dev, uint8_t value)
+{
+    if (value == dev->turbo) 
+	return;
+
+    dev->turbo = value;
+
+    pc_set_speed(dev->turbo);
+}
+
 
 static uint8_t
 do_read(uint16_t port, priv_t priv)
@@ -111,16 +123,13 @@ do_read(uint16_t port, priv_t priv)
     laser_t *dev = (laser_t *)priv;
 
     switch (port) {
-	case 0x0208:
-	case 0x4208:
-	case 0x8208:
-	case 0xc208:
+	case 0x01F0:
+		return dev->turbo;
+	
+	case 0x0208: case 0x4208: case 0x8208: case 0xc208:
 		return dev->ems_page[port >> 14];
 
-	case 0x0209:
-	case 0x4209:
-	case 0x8209:
-	case 0xc209:
+	case 0x0209: case 0x4209: case 0x8209: case 0xc209:
 		return dev->ems_control[port >> 14];
     }
 
@@ -136,10 +145,11 @@ do_write(uint16_t port, uint8_t val, priv_t priv)
     int i;
 
     switch (port) {
-	case 0x0208:
-	case 0x4208:
-	case 0x8208:
-	case 0xc208:
+	case 0x01F0:
+		turbo_set(dev, (val & 0x80) ? 1 : 0);
+		break;
+		
+	case 0x0208: case 0x4208: case 0x8208: case 0xc208:
 		dev->ems_page[port >> 14] = val;
 		paddr = 0xc0000 + (port & 0xC000) + (((dev->ems_baseaddr_index + (4 - (port >> 14))) & 0x0c) << 14);
 		if (val & 0x80) {
@@ -152,10 +162,7 @@ do_write(uint16_t port, uint8_t val, priv_t priv)
 		flushmmucache();
 		break;
 
-	case 0x0209:
-	case 0x4209:
-	case 0x8209:
-	case 0xc209:
+	case 0x0209: case 0x4209: case 0x8209: case 0xc209:
 		dev->ems_control[port >> 14] = val;
 		dev->ems_baseaddr_index = 0;
 		for (i = 0; i < 4; i++)
@@ -169,7 +176,6 @@ do_write(uint16_t port, uint8_t val, priv_t priv)
 		break;
     }
 }
-
 
 static void
 laser_close(priv_t priv)
@@ -211,6 +217,10 @@ laser_init(const device_t *info, void *arg)
     }
 
     device_add(&fdc_xt_device);
+    
+    io_sethandler(0x01F0, 1,
+    		      do_read,NULL,NULL, do_write,NULL,NULL, dev);
+    dev->turbo = 0x80;
 
     if (mem_size > 640) {
 	io_sethandler(0x0208, 2,
@@ -238,7 +248,7 @@ laser_init(const device_t *info, void *arg)
 	mem_map_disable(&dev->ems_mapping[i]);
     }
 
-    mem_set_mem_state(0x0c0000, 0x40000,
+    mem_set_mem_state(0x0a0000, 0x60000,
 		      MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
 
     return((priv_t)dev);
