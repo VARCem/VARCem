@@ -13,7 +13,7 @@
  *		8MB of DRAM chips', because it works fine with bus-based
  *		memory expansion.
  *
- * Version:	@(#)neat.c	1.0.6	2019/05/13
+ * Version:	@(#)neat.c	1.0.7	2020/01/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -548,7 +548,8 @@ neat_write(uint16_t port, uint8_t val, priv_t priv)
 
 			case REG_RB7: 
 				val &= RB7_MASK;
-				*reg = (*reg & ~RB7_MASK) | val;
+				//*reg = (*reg & ~RB7_MASK) | val;
+				*reg = val;
 				DBGLOG(2, "NEAT: RB7=%02x(%02x)\n", val, *reg);
 				if (val & RB7_EMSEN)
 					ems_init(dev, 1);
