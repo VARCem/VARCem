@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.23	2020/02/07
+ * Version:	@(#)vid_voodoo.c	1.0.24	2020/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -5760,7 +5760,7 @@ static void voodoo_fb_writel(uint32_t addr, uint32_t val, void *p)
                 colour_data[0].b = val & 0xff;
                 colour_data[0].g = (val >> 8) & 0xff;
                 colour_data[0].r = (val >> 16) & 0xff;
-                alpha_data[0] = (val >> 24) & 0xff;
+                colour_data[0].a = alpha_data[0] = (val >> 24) & 0xff;
                 write_mask = LFB_WRITE_COLOUR;
                 addr >>= 1;
                 break;
