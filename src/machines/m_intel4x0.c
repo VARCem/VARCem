@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440-based machines.
  *
- * Version:	@(#)m_intel4x0.c	1.0.10	2019/05/28
+ * Version:	@(#)m_intel4x0.c	1.0.11	2020/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -327,7 +327,7 @@ static const device_config_t batman_config[] = {
 
 
 static const machine_t revenge_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
     2, 128, 2, 128, -1,
     {{"Intel",cpus_Pentium5V}}
@@ -344,9 +344,19 @@ const device_t m_batman = {
     batman_config
 };
 
+const device_t m_ambradp60 = {
+    "Ambra DP60PCI",
+    DEVICE_ROOT,
+    0,
+    L"ambra/dp60",
+    common_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &revenge_info,
+    batman_config
+};
 
 static const machine_t plato_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
     2, 128, 2, 128, -1,
     {{"Intel",cpus_PentiumS5},{"IDT",cpus_WinChip},CPU_AMD_K5}
@@ -357,6 +367,17 @@ const device_t m_plato = {
     DEVICE_ROOT,
     1,
     L"intel/plato",
+    common_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &plato_info,
+    batman_config
+};
+
+const device_t m_ambradp90 = {
+    "Ambra DP90PCI",
+    DEVICE_ROOT,
+    1,
+    L"ambra/dp90",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &plato_info,

@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.34	2019/05/20
+ * Version:	@(#)machine.h	1.0.35	2020/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -201,10 +201,16 @@ extern const device_t	m_sis496_ami;
 #endif
 extern const device_t	m_rise418;
 
+/* Acer boards */
 extern const device_t	m_acer_m3a;
 extern const device_t	m_acer_v30;
 extern const device_t	m_acer_v35n;
 
+/* Ambra machines */
+extern const device_t	m_ambradp60;
+extern const device_t	m_ambradp90;
+
+/* Intel boards */
 extern const device_t	m_batman;
 extern const device_t	m_plato;
 extern const device_t	m_endeavor;
@@ -212,6 +218,7 @@ extern const device_t	m_zappa;
 extern const device_t	m_thor;
 extern const device_t	m_thor_mr;
 
+/* Asus Boards */
 extern const device_t	m_p54tp4xe;
 extern const device_t	m_p55t2p4;
 extern const device_t	m_p55tvp4;
@@ -224,9 +231,11 @@ extern const device_t	m_p55va;
 extern const device_t	m_j656vxd;
 extern const device_t	m_p55t2s;
 
+/* Packard Bell machines */
 extern const device_t	m_pb410a;
 extern const device_t	m_pb640;
 
+/* Tyan boards */
 extern const device_t	m_tyan_1662_ami;
 extern const device_t	m_tyan_1662_award;
 extern const device_t	m_tyan_1668_ami;

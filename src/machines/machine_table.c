@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.43	2019/05/17
+ * Version:	@(#)machine_table.c	1.0.44	2020/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -176,9 +176,11 @@ static const struct {
     { "[486 PCI] Rise Computer R418",		"rise_r418",		&m_rise418		},
 
     /* Pentium, Socket4 (LX) */
+    { "[Socket 4 LX] Ambra Achiever DP60PCI",	"ambra_dp60",		&m_ambradp60		},
     { "[Socket 4 LX] Intel Premiere/PCI",	"intel_revenge",	&m_batman		},
 
     /* Pentium, Socket5 (NX) */
+    { "[Socket 5 NX] Ambra Achiever DP90   ",	"ambra_dp90",		&m_ambradp90		},
     { "[Socket 5 NX] Intel Premiere/PCI II",	"intel_plato",		&m_plato		},
 
     /* Pentium, Socket5 (FX) */
