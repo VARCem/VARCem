@@ -10,7 +10,7 @@
  *		data in the form of FM/MFM-encoded transitions) which also
  *		forms the core of the emulator's floppy disk emulation.
  *
- * Version:	@(#)fdd_86f.c	1.0.19	2019/05/17
+ * Version:	@(#)fdd_86f.c	1.0.20	2020/02/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1140,10 +1140,8 @@ d86f_get_bit(int drive, int side)
 	if (! surface_bit)
 		dev->last_word[side] |= current_bit;
 	else {
-		if (current_bit) {
-			/* Bit is 1 and is set to fuzzy, we randomly generate it. */
-			dev->last_word[side] |= (random_generate() & 1);
-		}
+		/* Bit is either 0 or 1 and is set to fuzzy, we randomly generate it. */
+		dev->last_word[side] |= (random_generate() & 1);
 	}
     } else
 	dev->last_word[side] |= current_bit;
@@ -2798,9 +2796,9 @@ d86f_prepare_sector(int drive, int side, int prev_pos, uint8_t *id_buf, uint8_t 
  *	- One is regular and one is fuzzy -> Output is fuzzy;
  *	- Both are fuzzy -> Output is fuzzy;
  *	- Both are physical holes -> Output is a physical hole;
- *	- One is regular and one is a physical hole -> Output is puzzy,
+ *	- One is regular and one is a physical hole -> Output is fuzzy,
  *	  the hole half is handled appropriately on writeback;
- *	- One is fuzzy and one is a physical hole -> Output is puzzy,
+ *	- One is fuzzy and one is a physical hole -> Output is fuzzy,
  *	  the hole half is handled appropriately on writeback;
  * - On write back, apart from the above notes, the final two tracks
  *   are written;
