@@ -12,7 +12,7 @@
  *		addition of get_last_head and C++ callability by Thomas
  *		Harte.
  *
- * Version:	@(#)fdi2raw.c	1.0.5	2018/09/22
+ * Version:	@(#)fdi2raw.c	1.0.6	2020/02/13
  *
  * Authors:	Toni Wilen, <twilen@arabuusimiehet.com>
  *		and Vincent Joguin,
@@ -172,10 +172,14 @@ static uae_u8 temp, temp2;
 static uae_u8 *expand_tree (uae_u8 *stream, NODE *node)
 {
 	if (temp & temp2) {
-		fdi_free (node->left);
-		node->left = 0;
-		fdi_free (node->right);
-		node->right = 0;
+		if (node->left) {
+			fdi_free (node->left);
+			node->left = 0;
+		}
+		if (node->right) {
+			fdi_free (node->right);
+			node->right = 0;
+		}
 		temp2 >>= 1;
 		if (!temp2) {
 			temp = *stream++;
@@ -307,7 +311,9 @@ static void fdi_decode (uae_u8 *stream, int size, uae_u8 *out)
 			((uae_u32*)out)[i] = v;
 		}
 		free_nodes (root.left);
+		root.left = 0;
 		free_nodes (root.right);
+		root.right = 0;
 	}
 }
 
@@ -2026,6 +2032,10 @@ FDI *fdi2raw_header(FILE *f)
 	memset (fdi, 0, sizeof (FDI));
 	fdi->file = f;
 	oldseek = ftell (fdi->file);
+	if (oldseek == -1) {
+		fdi_free(fdi);
+		return NULL;
+	}
 	fseek (fdi->file, 0, SEEK_SET);
 	fread (fdi->header, 2048, 1, fdi->file);
 	fseek (fdi->file, oldseek, SEEK_SET);
