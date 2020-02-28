@@ -155,6 +155,28 @@ hdd_bus_to_string(int bus)
     return(ret);
 }
 
+const char *
+vhd_type_to_string(int vhd_type)
+{
+    const char *ret = "none";
+
+    switch (vhd_type) {
+	case MVHD_TYPE_FIXED:
+	default:
+		ret = "fixed";
+		break;
+
+	case MVHD_TYPE_DYNAMIC:
+		ret = "dynamic";
+		break;
+
+	case MVHD_TYPE_DIFF:
+		ret = "differential";
+		break;
+    }
+
+    return(ret);
+}
 
 int
 hdd_is_valid(int c)
@@ -180,6 +202,16 @@ hdd_bus_to_ids(int bus)
     return(get_string(bus));
 }
 
+const wchar_t *
+vhd_type_to_ids(int vhd_type)
+{
+    if (vhd_type == 0)
+        vhd_type = IDS_DISABLED;
+      else
+	vhd_type = IDS_3521 + vhd_type - 2;
+
+    return(get_string(vhd_type));
+}
 
 void
 hdd_active(int drive, int active)

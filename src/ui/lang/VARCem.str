@@ -130,6 +130,8 @@
 #define STR_OPEN_WRITE	"Unable to open the file for write"
 #define STR_DEVCONF_1	"Configuration"
 #define STR_DEVCONF_2	"Device:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
 
 
 /* UI dialog: About (3200.) */
@@ -260,6 +262,10 @@
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
 
+#define  STR_3521	"Fixed"
+#define  STR_3522	"Sparse"
+#define  STR_3523	"Differential"
+
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Add Hard Disk"
 #define  STR_3526	"Add New Hard Disk"
@@ -274,6 +280,7 @@
 #define  STR_3535	"HDI or HDX image with a sector size that is not 512 are not supported"
 #define  STR_3536	"Hard disk images\0*.hd?;*.im?;*.vhd\0All files\0*.*\0"
 #define  STR_3537	"Remember to partition and format the new drive"
+#define  STR_3538	"Hard disk images\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Floppy drives:"

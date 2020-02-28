@@ -34,6 +34,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef WIN_SETTINGS_DISK_H
+#define WIN_SETTINGS_DISK_H
 
 
 /************************************************************************
@@ -41,6 +43,7 @@
  *			     (Hard) Disk Dialog				*
  *									*
  ************************************************************************/
+ 
 
 /* Global variables needed for the Hard Disk dialogs. */
 static uint64_t st506_tracking, esdi_tracking,
@@ -63,6 +66,11 @@ static int	hd_listview_items;
 static int	hdlv_current_sel;
 static int	next_free_id = 0;
 
+MVHDMeta *vhdmini; //
+MVHDGeom vhd_geom_t; //
+MVHDError *err = 0; //
+static uint8_t created_type_vhd = 2;
+static wchar_t	hd_file_name_parent[512];
 
 static void
 disk_track_init(void)
@@ -181,6 +189,11 @@ disk_add_locations(HWND hdlg)
     for (i = 0; i < 8; i++) {
 	swprintf(temp, sizeof_w(temp), L"%01i:%01i", i >> 1, i & 1);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+     }
+     
+    h = GetDlgItem(hdlg,  IDC_COMBO_VHD_TYPE);
+     for (i = 2; i < 5; i++) {
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_type_to_ids(i)); /* Convert VHD Type to strings ? */
     }
 }
 
@@ -798,6 +811,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     uint8_t channel = 0;
     uint8_t id = 0, lun = 0;
     wchar_t *twcs;
+    wchar_t temp_path_parent[512];
 
     switch (message) {
 	case WM_INITDIALOG:
@@ -924,6 +938,14 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
 
+/* VHD parameters */
+		h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE);
+		EnableWindow(h, FALSE);
+		h = GetDlgItem(hdlg, IDC_EDIT_HD_PARENT_NAME);
+		EnableWindow(h, FALSE);
+		h = GetDlgItem(hdlg, IDC_PARFILE);
+		EnableWindow(h, FALSE);
+/*****************/
 		no_update = 0;
 		return TRUE;
 
@@ -1008,95 +1030,125 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				if (!(existing & 1) && (wcslen(hd_file_name) > 0)) {
 					f = _wfopen(hd_file_name, L"wb");
 
-					if (image_is_hdi(hd_file_name)) {
-						if (size >= 0x100000000ll) {
-							fclose(f);
-							settings_msgbox(MBX_ERROR, (wchar_t *)IDS_3536);
-							return TRUE;
+					if (! image_is_vhd(hd_file_name, 0)) { /* BYPASS Varcem internal func for VHD */
+						if (image_is_hdi(hd_file_name)) {
+							if (size >= 0x100000000ll) {
+								fclose(f);
+								settings_msgbox(MBX_ERROR, (wchar_t *)IDS_3536);
+								return TRUE;
+							}
+
+							fwrite(&zero, 1, 4, f);			/* 00000000: Zero/unknown */
+							fwrite(&zero, 1, 4, f);			/* 00000004: Zero/unknown */
+							fwrite(&base, 1, 4, f);			/* 00000008: Offset at which data starts */
+							fwrite(&size, 1, 4, f);			/* 0000000C: Full size of the data (32-bit) */
+							fwrite(&sector_size, 1, 4, f);		/* 00000010: Sector size in bytes */
+							fwrite(&spt, 1, 4, f);			/* 00000014: Sectors per cylinder */
+							fwrite(&hpc, 1, 4, f);			/* 00000018: Heads per cylinder */
+							fwrite(&tracks, 1, 4, f);		/* 0000001C: Cylinders */
+
+							for (i = 0; i < 0x3f8; i++) {
+								fwrite(&zero, 1, 4, f);
+							}
+						} else if (image_is_hdx(hd_file_name, 0)) {
+							if (size > 0xffffffffffffffffll) {
+								fclose(f);
+								settings_msgbox(MBX_ERROR, (wchar_t *)IDS_3537);
+								return TRUE;							
+							}
+
+							fwrite(&signature, 1, 8, f);		/* 00000000: Signature */
+							fwrite(&size, 1, 8, f);			/* 00000008: Full size of the data (64-bit) */
+							fwrite(&sector_size, 1, 4, f);		/* 00000010: Sector size in bytes */
+							fwrite(&spt, 1, 4, f);			/* 00000014: Sectors per cylinder */
+							fwrite(&hpc, 1, 4, f);			/* 00000018: Heads per cylinder */
+							fwrite(&tracks, 1, 4, f);		/* 0000001C: Cylinders */
+							fwrite(&zero, 1, 4, f);			/* 00000020: [Translation] Sectors per cylinder */
+							fwrite(&zero, 1, 4, f);			/* 00000004: [Translation] Heads per cylinder */
+						}
+					
+						INFO("DISK: new_image(size=%i, sector=%i)", size, sector_size);
+						memset(buf, 0, 512);
+						size >>= 9;
+						r = (size >> 11) << 11;
+						size -= r;
+						r >>= 11;
+						INFO(" = %i blocks (+%i sectors)\n", size, r);
+
+						if (size || r) {
+							/* Hide filename controls. */
+							h = GetDlgItem(hdlg, IDT_1731);
+							EnableWindow(h, FALSE);
+							ShowWindow(h, SW_HIDE);
+
+							h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
+							EnableWindow(h, FALSE);
+							ShowWindow(h, SW_HIDE);
+
+							h = GetDlgItem(hdlg, IDC_CFILE);
+							EnableWindow(h, FALSE);
+							ShowWindow(h, SW_HIDE);
+
+							/* Enable PB label. */
+							h = GetDlgItem(hdlg, IDT_1752);
+							EnableWindow(h, TRUE);
+							ShowWindow(h, SW_SHOW);
+
+							/* Create progress bar. */
+							h = GetDlgItem(hdlg, IDC_PBAR_IMG_CREATE);
+							EnableWindow(h, TRUE);
+							SendMessage(h, PBM_SETRANGE32, (WPARAM)0, (LPARAM)(size + r - 1));
+							SendMessage(h, PBM_SETPOS, (WPARAM)0, (LPARAM)0);
+							ShowWindow(h, SW_SHOW);
 						}
 
-						fwrite(&zero, 1, 4, f);			/* 00000000: Zero/unknown */
-						fwrite(&zero, 1, 4, f);			/* 00000004: Zero/unknown */
-						fwrite(&base, 1, 4, f);			/* 00000008: Offset at which data starts */
-						fwrite(&size, 1, 4, f);			/* 0000000C: Full size of the data (32-bit) */
-						fwrite(&sector_size, 1, 4, f);		/* 00000010: Sector size in bytes */
-						fwrite(&spt, 1, 4, f);			/* 00000014: Sectors per cylinder */
-						fwrite(&hpc, 1, 4, f);			/* 00000018: Heads per cylinder */
-						fwrite(&tracks, 1, 4, f);		/* 0000001C: Cylinders */
-
-						for (i = 0; i < 0x3f8; i++) {
-							fwrite(&zero, 1, 4, f);
-						}
-					} else if (image_is_hdx(hd_file_name, 0)) {
-						if (size > 0xffffffffffffffffll) {
-							fclose(f);
-							settings_msgbox(MBX_ERROR, (wchar_t *)IDS_3537);
-							return TRUE;							
+						if (size) {
+							for (i = 0; i < size; i++) {
+								fwrite(buf, 1, 512, f);
+								SendMessage(h, PBM_SETPOS, (WPARAM)i, (LPARAM)0);
+							}
 						}
 
-						fwrite(&signature, 1, 8, f);		/* 00000000: Signature */
-						fwrite(&size, 1, 8, f);			/* 00000008: Full size of the data (64-bit) */
-						fwrite(&sector_size, 1, 4, f);		/* 00000010: Sector size in bytes */
-						fwrite(&spt, 1, 4, f);			/* 00000014: Sectors per cylinder */
-						fwrite(&hpc, 1, 4, f);			/* 00000018: Heads per cylinder */
-						fwrite(&tracks, 1, 4, f);		/* 0000001C: Cylinders */
-						fwrite(&zero, 1, 4, f);			/* 00000020: [Translation] Sectors per cylinder */
-						fwrite(&zero, 1, 4, f);			/* 00000004: [Translation] Heads per cylinder */
+						if (r) {
+							big_buf = (char *)mem_alloc(1048576);
+							memset(big_buf, 0, 1048576);
+							for (i = 0; i < r; i++) {
+								fwrite(big_buf, 1, 1048576, f);
+								SendMessage(h, PBM_SETPOS, (WPARAM)(size + i), (LPARAM)0);
+							}
+							free(big_buf);
+						}
+					} else {
+
+						char *shortpath = (char *)malloc (255);
+						char *fullpath = (char *)malloc (255);
+						char *shortpathparent = (char *)malloc (255);
+						char *fullpathparent = (char *)malloc (255);
+						int *pos = 0;
+						
+						wcstombs(shortpath, hd_file_name, 255);
+						_fullpath(fullpath, shortpath, 255); /* May break linux */
+						
+						vhd_geom_t = mvhd_calculate_geometry(size);
+						h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE);
+						created_type_vhd = ((uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff) + 2;
+						switch (created_type_vhd) {
+							case MVHD_TYPE_FIXED :
+							default :
+								mvhd_create_fixed(fullpath, vhd_geom_t, pos, err); /* Gerer les erreurs */
+								break;
+							case MVHD_TYPE_DYNAMIC :
+								mvhd_create_sparse(fullpath, vhd_geom_t, err);
+								break;
+							case MVHD_TYPE_DIFF :
+								wcstombs(shortpathparent, hd_file_name_parent, 255);
+								_fullpath(fullpathparent, shortpathparent, 255); /* May break linux */
+								mvhd_create_diff(fullpath, fullpathparent, err);
+								break;
+						}
+						free(shortpath);
+						free(fullpath);
 					}
-
-INFO("DISK: new_image(size=%i, sector=%i)", size, sector_size);
-					memset(buf, 0, 512);
-					size >>= 9;
-					r = (size >> 11) << 11;
-					size -= r;
-					r >>= 11;
-INFO(" = %i blocks (+%i sectors)\n", size, r);
-
-					if (size || r) {
-						/* Hide filename controls. */
-						h = GetDlgItem(hdlg, IDT_1731);
-						EnableWindow(h, FALSE);
-						ShowWindow(h, SW_HIDE);
-
-						h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
-						EnableWindow(h, FALSE);
-						ShowWindow(h, SW_HIDE);
-
-						h = GetDlgItem(hdlg, IDC_CFILE);
-						EnableWindow(h, FALSE);
-						ShowWindow(h, SW_HIDE);
-
-						/* Enable PB label. */
-						h = GetDlgItem(hdlg, IDT_1752);
-						EnableWindow(h, TRUE);
-						ShowWindow(h, SW_SHOW);
-
-						/* Create progress bar. */
-						h = GetDlgItem(hdlg, IDC_PBAR_IMG_CREATE);
-						EnableWindow(h, TRUE);
-						SendMessage(h, PBM_SETRANGE32, (WPARAM)0, (LPARAM)(size + r - 1));
-						SendMessage(h, PBM_SETPOS, (WPARAM)0, (LPARAM)0);
-						ShowWindow(h, SW_SHOW);
-
-					}
-
-					if (size) {
-						for (i = 0; i < size; i++) {
-							fwrite(buf, 1, 512, f);
-							SendMessage(h, PBM_SETPOS, (WPARAM)i, (LPARAM)0);
-						}
-					}
-
-					if (r) {
-						big_buf = (char *)mem_alloc(1048576);
-						memset(big_buf, 0, 1048576);
-						for (i = 0; i < r; i++) {
-							fwrite(big_buf, 1, 1048576, f);
-							SendMessage(h, PBM_SETPOS, (WPARAM)(size + i), (LPARAM)0);
-						}
-						free(big_buf);
-					}
-
 					/* Hide progress bar and label. */
 					EnableWindow(h, FALSE);
 					ShowWindow(h, SW_HIDE);
@@ -1171,7 +1223,21 @@ hdd_add_file_open_error:
 						fread(&spt, 1, 4, f);
 						fread(&hpc, 1, 4, f);
 						fread(&tracks, 1, 4, f);
-					} else {
+					}
+					else if (image_is_vhd(temp_path, 1)) { /* VHD */
+						char *shortpath = (char *)malloc (255);
+						char *fullpath = (char *)malloc (255);
+						wcstombs(shortpath, temp_path, 255);
+						_fullpath(fullpath, shortpath, 255); /* May break linux */
+						vhdmini = mvhd_open(fullpath, 0, err);
+						spt = vhdmini->footer.geom.spt;
+						hpc = vhdmini->footer.geom.heads;
+						tracks = vhdmini->footer.geom.cyl;
+						size = vhdmini->footer.orig_sz;
+						free(shortpath);
+						free(fullpath);
+					}			
+					else { /* RAW */
 						fseeko64(f, 0, SEEK_END);
 						size = ftello64(f);
 						fclose(f);
@@ -1227,6 +1293,11 @@ hdd_add_file_open_error:
 					fclose(f);
 				}
 
+				if (image_is_vhd(temp_path, 0)) { /* OK it's probably an empty vhd */
+					h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE); /* Enable VHD Type Selection */
+					EnableWindow(h, TRUE);
+				}
+				
 				h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
 				SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path);
 				wcscpy(hd_file_name, temp_path);
@@ -1510,6 +1581,32 @@ hdd_add_file_open_error:
 hd_add_bus_skip:
 				no_update = 0;
 				break;
+		
+			case IDC_COMBO_VHD_TYPE:
+				h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE);
+				created_type_vhd = ((uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff) + 2;
+				if (created_type_vhd == MVHD_TYPE_DIFF) {
+					h = GetDlgItem(hdlg, IDC_PARFILE);
+					EnableWindow(h, TRUE);
+				}
+				break;
+				
+			case IDC_PARFILE:
+				memset(temp_path_parent, 0x00, sizeof(temp_path_parent));
+				memset(hd_file_name_parent, 0x00, sizeof(hd_file_name_parent));
+				
+				h = GetDlgItem(hdlg, IDC_EDIT_HD_PARENT_NAME);
+				if (dlg_file_ex(hdlg, get_string(IDS_3538), NULL, temp_path_parent, DLG_FILE_LOAD)) {
+				
+				f = _wfopen(temp_path_parent, L"rb");
+				//h = GetDlgItem(hdlg, IDC_EDIT_HD_PARENT_NAME);
+				SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path_parent);
+				wcscpy(hd_file_name_parent, temp_path_parent);
+				
+				//Check here if parent is already listed
+				
+				} // Check if parent path is null and return error message
+				break;				
 		}
 
 		return FALSE;
@@ -1801,3 +1898,4 @@ hd_bus_skip:
 
     return FALSE;
 }
+#endif

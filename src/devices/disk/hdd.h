@@ -40,6 +40,8 @@
 
 #define HDD_NUM		30	/* total of 30 images supported */
 
+#include "../../minivhd/minivhd.h"
+#include "../../minivhd/minivhd_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,6 +80,7 @@ typedef struct {
     uint8_t	uuid[16];
     uint8_t	saved_state;
     uint8_t	reserved[427];
+    
 } vhd_footer_t;
 
 /* Define a hard disk table entry. */
@@ -118,6 +121,7 @@ typedef struct {
 
     wchar_t	fn[260];		/* name of current image file */
     wchar_t	prev_fn[260];		/* name of previous image file */
+    
 } hard_disk_t;
 
 
@@ -134,6 +138,9 @@ extern const char *hdd_bus_to_string(int bus);
 extern const wchar_t *hdd_bus_to_ids(int bus);
 extern int	hdd_is_valid(int c);
 extern void	hdd_active(int c, int active);
+
+extern const char *vhd_type_to_string(int vhd_type);
+extern const wchar_t *vhd_type_to_ids(int vhd_type);
 
 extern void	hdd_image_log(int level, const char *fmt, ...);
 extern void	hdd_image_init(void);

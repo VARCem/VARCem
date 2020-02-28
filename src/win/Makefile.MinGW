@@ -131,6 +131,7 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
 		    devices/sound devices/video \
+			minivhd \
 		   machines ui win
 
 #
@@ -780,6 +781,11 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_SL
   DEVBROBJ	+= m_sl82c460.o
  endif
+ 
+ ifeq ($(MINIVHD), y)
+  OPTS		+= -DUSE_MINIVHD
+  MISCOBJ	+= minivhd_util.o minivhd_manage.o minivhd_io.o minivhd_struct_rw.o minivhd_create.o cwalk.o libxml2_encoding.o
+endif
 
 endif
 
