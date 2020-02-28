@@ -57,6 +57,7 @@
 #include "../../plat.h"
 #include "../../random.h"
 #include "hdd.h"
+#include <stdbool.h>
 
 
 #define VHD_OFFSET_COOKIE 0
@@ -86,6 +87,7 @@ typedef struct {
 		pos;
     uint8_t	type;
     uint8_t	loaded;
+    MVHDMeta    *vhdmini; /* Pointer to vhd needed for minivhd functions */
 } hdd_image_t;
 
 
@@ -93,7 +95,6 @@ typedef struct {
 int		hdd_image_do_log = ENABLE_HDD_LOG;
 #endif
 hdd_image_t	hdd_images[HDD_NUM];
-
 
 void
 hdd_image_log(int level, const char *fmt, ...)
@@ -168,21 +169,24 @@ image_is_vhd(const wchar_t *s, int check_signature)
 {
     int len;
     FILE *f;
-    uint64_t filelen;
-    uint64_t signature;
+    //uint64_t filelen;
+    //uint64_t signature;
     char *ws = (char *) s;
     wchar_t ext[5] = { 0, 0, 0, 0, 0 };
-
+    
     len = (int)wcslen(s);
     if ((len < 4) || (s[0] == L'.'))
 	return 0;
 
     memcpy(ext, ws + ((len - 4) << 1), 8);
-    if (wcscasecmp(ext, L".VHD") == 0) {
+    if (wcscasecmp(ext, L".VHD") == 0) {	
 	if (check_signature) {
 		f = plat_fopen((wchar_t *)s, L"rb");
 		if (!f)
 			return 0;
+		bool x = mvhd_file_is_vhd (f); /* Note : find a better way to do this */
+		fclose(f);
+#if 0
 		fseeko64(f, 0, SEEK_END);
 		filelen = ftello64(f);
 		fseeko64(f, -512, SEEK_END);
@@ -191,6 +195,8 @@ image_is_vhd(const wchar_t *s, int check_signature)
 		fread(&signature, 1, 8, f);
 		fclose(f);
 		if (signature == 0x78697463656E6F63ll)
+#endif
+		if (x)
 			return 1;
 		else
 			return 0;
@@ -538,11 +544,12 @@ hdd_image_load(int id)
     int is_vhd[2] = { 0, 0 };
     vhd_footer_t *vft = NULL;
     uint8_t *empty;
-
+    MVHDError *vhd_err = 0;
+     
     img->base = 0;
 
     is_vhd[0] = image_is_vhd(fn, 0);
-    is_vhd[1] = image_is_vhd(fn, 1);
+    is_vhd[1] = image_is_vhd(fn, 1); 
 
     if (img->loaded) {
 	if (img->file) {
@@ -607,6 +614,7 @@ hdd_image_load(int id)
 				fwrite(&zero, 1, 4, img->file);
 				img->type = 2;
 			} else if (is_vhd[1]) {
+#if 0
 				empty = (uint8_t *)mem_alloc(512);
 				memset(empty, 0x00, 512);
 				fseeko64(img->file, -512, SEEK_END);
@@ -639,6 +647,7 @@ hdd_image_load(int id)
 				img->last_sector = (uint32_t) (full_size >> 9) - 1;
 				img->loaded = 1;
 				return 1;
+#endif
 			}
 			else
 				img->type = 0;
@@ -722,27 +731,24 @@ hdd_image_load(int id)
 		fread(&(hdd[id].at_spt), 1, 4, img->file);
 		fread(&(hdd[id].at_hpc), 1, 4, img->file);
 		img->type = 2;
-	} else {
-		full_size = ((uint64_t) hdd[id].spt) *
-			    ((uint64_t) hdd[id].hpc) *
-			    ((uint64_t) hdd[id].tracks) << 9LL;
-		img->type = 0;
-	}
-    }
+	} else if (is_vhd[1]) /* Real VHD . Perhaps use is_vhd(0) to convert file to vhd ? */ {
+	char *path = (char *)malloc (255);
+	wcstombs(path, fn, 255);
+	
+	/* let's close file already opened and use the minivhd struct*/	
+	fclose(img->file);
+	img->vhdmini = mvhd_open(path, 0, vhd_err);
+	free (path);
 
-    fseeko64(img->file, 0, SEEK_END);
-    s = ftello64(img->file);
-    if (s < (full_size + img->base)) {
-	ret = prepare_new_hard_disk(img, full_size);
-    } else {
-	img->last_sector = (uint32_t) (full_size >> 9) - 1;
-	img->loaded = 1;
-	ret = 1;
-    }
-
-    if (is_vhd[0]) {
+	hdd[id].spt = img->vhdmini->footer.geom.spt;
+	hdd[id].hpc = img->vhdmini->footer.geom.heads;
+	hdd[id].tracks = img->vhdmini->footer.geom.cyl;
+		
+	img->file = img->vhdmini->f;
+	img->type = 3;
+#if 0
 	fseeko64(img->file, 0, SEEK_END);
-	s = ftello64(img->file);
+	s = ftello64(img->file);	
 	if (s == (full_size + img->base)) {
 		/* VHD image: generate new footer. */
 		empty = (uint8_t *)mem_alloc(512);
@@ -759,6 +765,24 @@ hdd_image_load(int id)
 		free(empty);
 		img->type = 3;
 	}
+#endif
+    }
+    else { /* RAW image */
+		full_size = ((uint64_t) hdd[id].spt) *
+			    ((uint64_t) hdd[id].hpc) *
+			    ((uint64_t) hdd[id].tracks) << 9LL;
+		img->type = 0;
+	}
+    }
+
+    fseeko64(img->file, 0, SEEK_END);
+    s = ftello64(img->file);
+    if (s < (full_size + img->base)) {
+	ret = prepare_new_hard_disk(img, full_size);
+    } else {
+	img->last_sector = (uint32_t) (full_size >> 9) - 1;
+	img->loaded = 1;
+	ret = 1;
     }
 
     return ret;
@@ -782,25 +806,30 @@ hdd_image_read(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 {
     hdd_image_t *img = &hdd_images[id];
     uint32_t i;
+ 
+    if (img->type == 3) {
+	mvhd_read_sectors(img->vhdmini, sector, count, buffer);
+    }
+    else {
+	/* Move to the desired position in the image. */
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-    /* Move to the desired position in the image. */
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+	/* Now read all (consecutive) blocks from the image. */
+	for (i = 0; i < count; i++) {
+		/* If past end of image, give up. */
+		if (ferror(img->file) || feof(img->file))
+			break;
 
-    /* Now read all (consecutive) blocks from the image. */
-    for (i = 0; i < count; i++) {
-	/* If past end of image, give up. */
-	if (ferror(img->file) || feof(img->file))
-		break;
+		/* Read a block. */
+		fread(buffer + (i << 9), 1, 512, img->file);
 
-	/* Read a block. */
-	fread(buffer + (i << 9), 1, 512, img->file);
+		/* If error during read, give up. */
+		if (ferror(img->file))
+			break;
 
-	/* If error during read, give up. */
-	if (ferror(img->file))
-		break;
-
-	/* Update position. */
-	img->pos = sector + i;
+		/* Update position. */
+		img->pos = sector + i;
+	}
     }
 }
 
@@ -822,19 +851,24 @@ hdd_image_read_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     hdd_image_t *img = &hdd_images[id];
     uint32_t transfer_sectors = count;
     uint32_t sectors = hdd_sectors(id);
+    
+    if (img->type == 3) {
+	return mvhd_read_sectors(img->vhdmini, sector, transfer_sectors, buffer);
+    }
+    else {
+	if ((sectors - sector) < transfer_sectors)
+		transfer_sectors = sectors - sector;
 
-    if ((sectors - sector) < transfer_sectors)
-	transfer_sectors = sectors - sector;
+	img->pos = sector;
 
-    img->pos = sector;
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+	fread(buffer, 1, transfer_sectors << 9, img->file);
 
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
-    fread(buffer, 1, transfer_sectors << 9, img->file);
+	if (ferror(img->file) || (count != transfer_sectors))
+		return 1;
 
-    if (ferror(img->file) || (count != transfer_sectors))
-	return 1;
-
-    return 0;
+	return 0;
+    }
 }
 
 
@@ -844,20 +878,25 @@ hdd_image_write(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     hdd_image_t *img = &hdd_images[id];
     uint32_t i;
 
-    /* Move to the desired position in the image. */
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+    if (img->type == 3) {
+	mvhd_write_sectors(img->vhdmini, sector, count, buffer);
+    }
+    else {
+	/* Move to the desired position in the image. */
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-    /* Now write all (consecutive) blocks to the image. */
-    for (i = 0; i < count; i++) {
-	/* Write a block. */
-	fwrite(buffer + (i << 9), 512, 1, img->file);
+	/* Now write all (consecutive) blocks to the image. */
+	for (i = 0; i < count; i++) {
+		/* Write a block. */
+		fwrite(buffer + (i << 9), 512, 1, img->file);
 
-	/* If error during write, give up. */
-	if (ferror(img->file))
-		break;
+		/* If error during write, give up. */
+		if (ferror(img->file))
+			break;
 
-	/* Update position. */
-	img->pos = sector + i;
+		/* Update position. */
+		img->pos = sector + i;
+	}
     }
 }
 
@@ -869,18 +908,22 @@ hdd_image_write_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     uint32_t transfer_sectors = count;
     uint32_t sectors = hdd_sectors(id);
 
-    if ((sectors - sector) < transfer_sectors)
-	transfer_sectors = sectors - sector;
+     if (img->type == 3) {
+	return mvhd_write_sectors(img->vhdmini, sector, transfer_sectors, buffer);
+    }
+    else {
+        if ((sectors - sector) < transfer_sectors)
+		transfer_sectors = sectors - sector;
 
-    img->pos = sector;
+	img->pos = sector;
 
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
-    fwrite(buffer, transfer_sectors << 9, 1, img->file);
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+	fwrite(buffer, transfer_sectors << 9, 1, img->file);
 
-    if (ferror(img->file) || (count != transfer_sectors))
-	return 1;
-
+	if (ferror(img->file) || (count != transfer_sectors))
+		return 1;
     return 0;
+    }
 }
 
 
@@ -891,22 +934,27 @@ hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
     uint8_t empty[512];
     uint32_t i = 0;
 
-    memset(empty, 0x00, sizeof(empty));
+    if (img->type == 3) {
+	mvhd_format_sectors (img->vhdmini, sector, count);
+    }
+    else {
+	memset(empty, 0x00, sizeof(empty));
 
-    /* Move to the desired position in the image. */
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+	/* Move to the desired position in the image. */
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-    /* Now write all (consecutive) blocks to the image. */
-    for (i = 0; i < count; i++) {
-	/* Write a block. */
-  	fwrite(empty, 512, 1, img->file);
+	/* Now write all (consecutive) blocks to the image. */
+	for (i = 0; i < count; i++) {
+		/* Write a block. */
+		fwrite(empty, 512, 1, img->file);
 
-	/* If error during write, give up. */
-	if (ferror(img->file))
-		break;
+		/* If error during write, give up. */
+		if (ferror(img->file))
+			break;
 
-	/* Update position. */
-	img->pos = sector + i;
+		/* Update position. */
+		img->pos = sector + i;
+	}
     }
 }
 
@@ -993,7 +1041,10 @@ hdd_image_unload(uint8_t id, int fn_preserve)
 
     if (img->loaded) {
 	if (img->file != NULL) {
-		(void)fclose(img->file);
+		if (img->type == 3)
+			mvhd_close(img->vhdmini);
+		else
+			(void)fclose(img->file);
 		img->file = NULL;
 	}
 	img->loaded = 0;
@@ -1014,13 +1065,16 @@ hdd_image_close(uint8_t id)
     hdd_image_t *img = &hdd_images[id];
 
     DEBUG("hdd_image_close(%i)\n", id);
+  
+	if (! img->loaded) return;
 
-    if (! img->loaded) return;
-
-    if (img->file != NULL) {
-	(void)fclose(img->file);
-	img->file = NULL;
-    }
+	if (img->file != NULL) {
+		 if (img->type == 3)
+			mvhd_close(img->vhdmini);
+		else
+			(void)fclose(img->file);
+		img->file = NULL;
+	}
 
     memset(img, 0x00, sizeof(hdd_image_t));
 }

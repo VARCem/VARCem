@@ -449,6 +449,11 @@
 #define  IDS_3518	3518		/* "SCSI" */
 #define  IDS_3519	3519		/* "USB" */
 
+/* VHD Type*/
+#define  IDS_3521	3521		/* "Fixed" */
+#define  IDS_3522	3522		/* "Sparse" */
+#define  IDS_3523	3523		/* "Differential" */
+
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  IDS_3525	3525		/* "Add Hard Disk" */
 #define  IDS_3526	3526		/* "Add New Hard Disk" */
@@ -463,6 +468,7 @@
 #define  IDS_3535	3535		/* "HDI or HDX image with a sect.." */
 #define  IDS_3536	3536		/* "Hard disk images (*.HDI;*.HD.." */
 #define  IDS_3537	3537		/* "Remember to partition and fo.." */
+#define  IDS_3538	3538		/* "Hard disk images (*.VHD)" */
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  IDS_3550	3550		/* "Floppy drives:" */

@@ -98,7 +98,8 @@
 #define IDT_1741		1741	/* ID: */
 #define IDT_1742		1742	/* LUN: */
 #define IDT_1743		1743	/* Channel: */
-/* 1744/1745 unused */
+#define IDT_1744		1744	/* VHD Type: */
+#define IDT_1745		1745	/* VHD Parent: */
 #define IDT_1746		1746	/* Gain */
 #define IDT_1749		1749	/* File name: */
 #define IDT_1750		1750	/* Disk size: */
@@ -229,6 +230,10 @@
 #define IDC_EDIT_HD_SIZE	1164
 #define IDC_COMBO_HD_TYPE	1165
 #define IDC_PBAR_IMG_CREATE	1166
+#define IDC_PARFILE		1167	/* vhd config */
+#define IDC_COMBO_VHD_TYPE	1168	
+#define IDC_EDIT_HD_PARENT_NAME	1169	
+	
 
 #define IDC_REMOV_DEVICES	1170	/* removable dev config */
 #define IDC_LIST_FLOPPY_DRIVES	1171

@@ -79,7 +79,6 @@
 #include "win.h"
 #include "resource.h"
 
-
 /* Defined in the Video module. */
 extern const device_t voodoo_device;
 
