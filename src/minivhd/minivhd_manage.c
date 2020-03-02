@@ -137,6 +137,7 @@ static void mvhd_calc_sparse_values(MVHDMeta* vhdm) {
  */
 static int mvhd_init_sector_bitmap(MVHDMeta* vhdm, MVHDError* err) {
     vhdm->bitmap.curr_bitmap = calloc(vhdm->bitmap.sector_count, MVHD_SECTOR_SIZE);
+    //vhdm->bitmap.curr_bitmap = calloc(vhdm->bitmap.sector_count, 512);
     if (vhdm->bitmap.curr_bitmap == NULL) {
         *err = MVHD_ERR_MEM;
         return -1;

@@ -733,12 +733,15 @@ hdd_image_load(int id)
 		img->type = 2;
 	} else if (is_vhd[1]) /* Real VHD . Perhaps use is_vhd(0) to convert file to vhd ? */ {
 	char *path = (char *)malloc (255);
+	char *fullpath = (char *)malloc (255);
 	wcstombs(path, fn, 255);
+	_fullpath(fullpath, path, 255); /* May break linux */
 	
 	/* let's close file already opened and use the minivhd struct*/	
 	fclose(img->file);
-	img->vhdmini = mvhd_open(path, 0, vhd_err);
+	img->vhdmini = mvhd_open(fullpath, 0, vhd_err);
 	free (path);
+	free (fullpath);
 
 	hdd[id].spt = img->vhdmini->footer.geom.spt;
 	hdd[id].hpc = img->vhdmini->footer.geom.heads;
