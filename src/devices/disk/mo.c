@@ -1450,15 +1450,18 @@ do_command(void *p, uint8_t *cdb)
 		set_phase(dev, SCSI_PHASE_STATUS);
 
 		switch(cdb[4] & 3) {
-			case 0:		/* Stop the disc. */
+			case 0:
+				/* Stop the disk */
+				break;
+			case 1:
+				/* Start unit */
+				break;
+			case 2:
+				/* Eject the disk */
 				ui_mo_eject(dev->id);
 				break;
-			case 1:		/* Start the disc and read the TOC. */
-				break;
-			case 2:		/* Eject the disc if possible. */
-				/* mo_eject(dev->id); */
-				break;
-			case 3:		/* Load the disc (close tray). */
+			case 3:
+				/* Load the disk */
 				ui_mo_reload(dev->id);
 				break;
 		}
