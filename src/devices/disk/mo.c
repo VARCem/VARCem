@@ -1319,20 +1319,6 @@ do_command(void *p, uint8_t *cdb)
 		data_command_finish(dev, len, len, cdb[4], 0);
 		break;
 
-	case GPCMD_MECHANISM_STATUS:
-		set_phase(dev, SCSI_PHASE_DATA_IN);
-		len = (cdb[7] << 16) | (cdb[8] << 8) | cdb[9];
-
-		buf_alloc(dev, 8);
-
-		set_buf_len(dev, BufLen, &len);
-
-		memset(dev->buffer, 0, 8);
-		dev->buffer[5] = 1;
-
-		data_command_finish(dev, 8, 8, len, 0);
-		break;
-
 	case GPCMD_READ_6:
 	case GPCMD_READ_10:
 	case GPCMD_READ_12:
@@ -1494,68 +1480,6 @@ do_command(void *p, uint8_t *cdb)
 		set_buf_len(dev, BufLen, (int32_t *) &dev->packet_len);
 
 		data_command_finish(dev, dev->packet_len, dev->drv->sector_size, dev->packet_len, 1);
-
-		if (dev->packet_status != PHASE_COMPLETE)
-			ui_sb_icon_update(SB_MO | dev->id, 1);
-		else
-			ui_sb_icon_update(SB_MO | dev->id, 0);
-		return;
-
-	case GPCMD_WRITE_SAME_10:
-		set_phase(dev, SCSI_PHASE_DATA_OUT);
-		alloc_length = 512;
-
-		if ((cdb[1] & 6) == 6) {
-			invalid_field(dev);
-			return;
-		}
-
-		if (dev->drv->read_only) {
-			write_protected(dev);
-			return;
-		}
-
-		dev->sector_len = (cdb[7] << 8) | cdb[8];
-		dev->sector_pos = (cdb[2] << 24) | (cdb[3] << 16) | (cdb[4] << 8) | cdb[5];
-
-#if 0
-		if ((dev->sector_pos >= dev->drv->medium_size) ||
-		    ((dev->sector_pos + dev->sector_len - 1) >= dev->drv->medium_size)) {
-#else
-		if ((dev->sector_pos >= dev->drv->medium_size)) {
-#endif
-			lba_out_of_range(dev);
-			return;
-		}
-
-		if (! dev->sector_len) {
-			set_phase(dev, SCSI_PHASE_STATUS);
-			DBGLOG(1, "MO %i: All done - callback set\n", dev->id);
-			dev->packet_status = PHASE_COMPLETE;
-			dev->callback = 20LL * MO_TIME;
-
-			set_callback(dev);
-			break;
-		}
-
-		/*
-		 * If we are writing all blocks in one go for DMA, why
-		 * not also for PIO, it should NOT matter anyway, this
-		 * step should be identical and only the way the data
-		 * written is transferred to the host should be different.
-		 */
-		max_len = dev->sector_len;
-		dev->requested_blocks = max_len;
-
-		dev->packet_len = max_len * alloc_length;
-		buf_alloc(dev, dev->packet_len);
-
-		dev->requested_blocks = max_len;
-		dev->packet_len = alloc_length;
-
-		set_buf_len(dev, BufLen, (int32_t *) &dev->packet_len);
-
-		data_command_finish(dev, dev->packet_len, 512, dev->packet_len, 1);
 
 		if (dev->packet_status != PHASE_COMPLETE)
 			ui_sb_icon_update(SB_MO | dev->id, 1);
@@ -1786,60 +1710,6 @@ atapi_out:
 		if (read_capacity(dev, dev->current_cdb, dev->buffer, (uint32_t *) &len) == 0) {
 			buf_free(dev);
 			return;
-		}
-
-		set_buf_len(dev, BufLen, &len);
-
-		data_command_finish(dev, len, len, len, 0);
-		break;
-
-	case GPCMD_READ_FORMAT_CAPACITIES:
-		len = (cdb[7] << 8) | cdb[8];
-
-		buf_alloc(dev, len);
-		memset(dev->buffer, 0, len);
-
-		pos = 0;
-
-		/* List header */
-		dev->buffer[pos++] = 0;
-		dev->buffer[pos++] = 0;
-		dev->buffer[pos++] = 0;
-		if (dev->drv->f != NULL)
-			dev->buffer[pos++] = 16;
-		else
-			dev->buffer[pos++] = 8;
-
-		if (dev->drv->f != NULL) {
-			dev->buffer[pos++] = (dev->drv->medium_size >> 24) & 0xff;
-			dev->buffer[pos++] = (dev->drv->medium_size >> 16) & 0xff;
-			dev->buffer[pos++] = (dev->drv->medium_size >> 8)  & 0xff;
-			dev->buffer[pos++] =  dev->drv->medium_size        & 0xff;
-			dev->buffer[pos++] = 2;	/* Current medium capacity */
-			dev->buffer[pos++] = 0;
-			dev->buffer[pos++] = (dev->drv->sector_size >> 8)  & 0xff;
-			dev->buffer[pos++] =  dev->drv->sector_size        & 0xff;
-		} else {
-			dev->buffer[pos++] = (MO_SECTORS_GIGAMO2 >> 24) & 0xff;
-			dev->buffer[pos++] = (MO_SECTORS_GIGAMO2 >> 16) & 0xff;
-			dev->buffer[pos++] = (MO_SECTORS_GIGAMO2 >> 8)  & 0xff;
-			dev->buffer[pos++] =  MO_SECTORS_GIGAMO2        & 0xff;
-			dev->buffer[pos++] = 3;	/* Maximum medium capacity */
-			dev->buffer[pos++] = 0;
-			dev->buffer[pos++] = (MO_BPS_GIGAMO2 >> 8)  & 0xff;
-			dev->buffer[pos++] =  MO_BPS_GIGAMO2        & 0xff;
-		}
-
-		if (dev->drv->f != NULL) {
-			/* Formattable capacity descriptor */
-			dev->buffer[pos++] = (dev->drv->medium_size >> 24) & 0xff;
-			dev->buffer[pos++] = (dev->drv->medium_size >> 16) & 0xff;
-			dev->buffer[pos++] = (dev->drv->medium_size >> 8)  & 0xff;
-			dev->buffer[pos++] =  dev->drv->medium_size        & 0xff;
-			dev->buffer[pos++] = 0;
-			dev->buffer[pos++] = 0;
-			dev->buffer[pos++] = (dev->drv->sector_size >> 8)  & 0xff;
-			dev->buffer[pos++] =  dev->drv->sector_size        & 0xff;
 		}
 
 		set_buf_len(dev, BufLen, &len);
