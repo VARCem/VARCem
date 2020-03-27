@@ -1122,6 +1122,7 @@ do_command(void *p, uint8_t *cdb)
     unsigned preamble_len;
     int32_t blen = 0;
     int32_t *BufLen;
+	uint32_t previous_pos = 0;
 
     if (dev->drv->bus_type == MO_BUS_SCSI) {
 	BufLen = &scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun].buffer_length;
@@ -1586,7 +1587,56 @@ atapi_out:
 		data_command_finish(dev, len, len, len, 0);
 		break;
 
-	default:
+	case GPCMD_ERASE_10:
+	case GPCMD_ERASE_12:
+		// Relative address
+		if((cdb[1] & 1))
+			previous_pos = dev->sector_pos;
+
+		switch(cdb[0]) {
+			case GPCMD_ERASE_10:
+				dev->sector_len = (cdb[7] << 8) | cdb[8];
+				break;
+
+			case GPCMD_ERASE_12:
+				dev->sector_len = ((uint32_t) cdb[6]) << 24) | (((uint32_t) cdb[7]) << 16) | (((uint32_t) cdb[8]) << 8) | ((uint32_t) cdb[9]);
+				break;
+		}
+
+		// Erase all remaining sectors
+		if((cdb[1] & 4))
+		{
+			// Cannot have a sector number when erase all
+			if(dev->sector_len)
+			{
+				invalid_field(dev);
+				return;
+			}
+
+			mo_format(dev);
+			set_phase(dev, SCSI_PHASE_STATUS);
+			command_complete(dev);
+			break;
+		}
+
+		switch(cdb[0]) {
+			case GPCMD_ERASE_10:
+			dev->sector_pos = (cdb[2] << 24) | (cdb[3] << 16) | (cdb[4] << 8) | cdb[5];
+				break;
+
+			case GPCMD_ERASE_12:
+			dev->sector_pos = (((uint32_t) cdb[2]) << 24) | (((uint32_t) cdb[3]) << 16) | (((uint32_t) cdb[4]) << 8) | ((uint32_t) cdb[5]);
+				break;
+		}
+
+		dev->sector_pos += previous_pos;
+
+		mo_erase(dev);
+		set_phase(dev, SCSI_PHASE_STATUS);
+		command_complete(dev);
+		break;
+
+		default:
 		illegal_opcode(dev);
 		break;
     }
@@ -2556,4 +2606,40 @@ mo_format(mo_t *dev)
 		return;
 	}
 #endif
+}
+
+static int
+mo_erase(mo_t *dev)
+{
+	if (! dev->sector_len) {
+		command_complete(dev);
+		return -1;
+	}
+
+	DEBUG("Erasing %i blocks starting from %i...\n", dev->sector_len, dev->sector_pos);
+
+	if (dev->sector_pos >= dev->drv->medium_size) {
+		DEBUG("MO %i: Trying to erase beyond the end of disk\n", dev->id);
+		lba_out_of_range(dev);
+		return 0;
+	}
+
+	buf_alloc(dev->drv->sector_size);
+	memset(dev->buffer, 0, dev->drv->sector_size);
+
+	fseek(dev->drv->f, dev->drv->base + (dev->sector_pos * dev->drv->sector_size), SEEK_SET);
+
+	for (i = 0; i < dev->requested_blocks; i++) {
+		if (feof(dev->drv->f))
+			break;
+
+		fwrite(dev->buffer, 1, dev->drv->sector_size, dev->drv->f);
+	}
+
+	DEBUG("Erased %i bytes of blocks...\n", i * dev->drv->sector_size);
+
+	dev->sector_pos += i;
+	dev->sector_len -= i;
+
+	return 1;
 }
