@@ -118,7 +118,7 @@ static const uint8_t command_flags[0x100] = {
     IMPLEMENTED | CHECK_READY,						/* 0x2E: WRITE AND VERIFY(10) */
     IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x2F: VERIFY(10) */
     0, 0, 0, 0, 0, 0, 0, 0,
-    IMPLEMENTED | CHECK_READY,						/* 0x38: MEDIUM SCAN */
+    0, // TODO: Implement -> IMPLEMENTED | CHECK_READY,	/* 0x38: MEDIUM SCAN */
     0, 0, 0, 0,
     IMPLEMENTED | CHECK_READY,						/* 0x3D: UPDATE BLOCK */
     IMPLEMENTED | CHECK_READY,						/* 0x3E: READ LONG(10) */
