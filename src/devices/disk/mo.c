@@ -149,71 +149,14 @@ static const uint8_t command_flags[0x100] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static uint64_t mode_sense_page_flags = (GPMODEP_R_W_ERROR_PAGE |
-					 GPMODEP_DISCONNECT_PAGE |
-					 GPMODEP_ALL_PAGES);
-static uint64_t mode_sense_page_flags250 = (GPMODEP_R_W_ERROR_PAGE |
-					    GPMODEP_FLEXIBLE_DISK_PAGE |
-					    GPMODEP_CACHING_PAGE |
-					    GPMODEP_ALL_PAGES);
+static uint64_t mode_sense_page_flags = (GPMODEP_ALL_PAGES);
 
 
 static const mode_sense_pages_t mode_sense_pages_default = {
     {
     {                        0,    0 },
-    {    GPMODE_R_W_ERROR_PAGE, 0x0a, 0xc8, 22, 0,  0, 0, 0, 90, 0, 0x50, 0x20 },
-    {   GPMODE_DISCONNECT_PAGE, 0x0e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 }
-}   };
-
-static const mode_sense_pages_t mode_sense_pages_default_scsi = {
-    {
-    {                        0,    0 },
-    {    GPMODE_R_W_ERROR_PAGE, 0x0a, 0xc8, 22, 0,  0, 0, 0, 90, 0, 0x50, 0x20 },
-    {   GPMODE_DISCONNECT_PAGE, 0x0e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{                        0,    0 },
+	{                        0,    0 },
     {                        0,    0 },
     {                        0,    0 },
     {                        0,    0 },
@@ -263,9 +206,8 @@ static const mode_sense_pages_t mode_sense_pages_default_scsi = {
 static const mode_sense_pages_t mode_sense_pages_changeable = {
     {
     {                        0,    0 },
-
-    {    GPMODE_R_W_ERROR_PAGE, 0x0a, 0xFF, 0xFF, 0,  0, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF },
-    {   GPMODE_DISCONNECT_PAGE, 0x0e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{                        0,    0 },
+	{                        0,    0 },
     {                        0,    0 },
     {                        0,    0 },
     {                        0,    0 },
@@ -311,58 +253,6 @@ static const mode_sense_pages_t mode_sense_pages_changeable = {
     {                        0,    0 },
     {                        0,    0 }
 }   };
-
-static const mode_sense_pages_t mode_sense_pages_default250 = {
-    {
-    {                        0,    0 },
-    {    GPMODE_R_W_ERROR_PAGE, 0x06, 0xc8, 0x64, 0,  0, 0, 0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {GPMODE_FLEXIBLE_DISK_PAGE, 0x1e, 0x80, 0, 0x40, 0x20, 2, 0, 0, 0xef, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0b, 0x7d, 0, 0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {      GPMODE_CACHING_PAGE, 0x0a, 4, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0xff, 0xff },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 },
-    {                        0,    0 }
-}   };
-
 
 static void	do_callback(void *p);
 
@@ -572,8 +462,6 @@ mode_sense_read(mo_t *dev, uint8_t page_control, uint8_t page, uint8_t pos)
 		return mode_sense_pages_changeable.pages[page][pos];
 
 	case 2:
-		if (dev->drv->bus_type == MO_BUS_SCSI)
-			return mode_sense_pages_default_scsi.pages[page][pos];
 		return mode_sense_pages_default.pages[page][pos];
 
 	default:
@@ -602,7 +490,7 @@ mode_sense(mo_t *dev, uint8_t *buf, uint32_t pos, uint8_t page, uint8_t block_de
 	buf[pos++] = ((dev->drv->medium_size >>  8) & 0xff);
 	buf[pos++] = ( dev->drv->medium_size        & 0xff);
 	buf[pos++] = 0;		/* Reserved. */
-	buf[pos++] = 0;		/* Block length (0x200 = 512 bytes). */
+	buf[pos++] = 0;
 	buf[pos++] = ((dev->drv->sector_size >>  8) & 0xff);
 	buf[pos++] = ( dev->drv->sector_size        & 0xff);
     }
@@ -1491,10 +1379,7 @@ do_command(void *p, uint8_t *cdb)
 	case GPCMD_MODE_SENSE_10:
 		set_phase(dev, SCSI_PHASE_DATA_IN);
 
-		if (dev->drv->bus_type == MO_BUS_SCSI)
-			block_desc = ((cdb[1] >> 3) & 1) ? 0 : 1;
-		else
-			block_desc = 0;
+		block_desc = ((cdb[1] >> 3) & 1) ? 0 : 1;
 
 		if (cdb[0] == GPCMD_MODE_SENSE_6) {
 			len = cdb[4];
@@ -1517,7 +1402,8 @@ do_command(void *p, uint8_t *cdb)
 			len = mode_sense(dev, dev->buffer, 4, cdb[2], block_desc);
 			len = MIN(len, alloc_length);
 			dev->buffer[0] = len - 1;
-			dev->buffer[1] = 0;
+			dev->buffer[1] = 3; // Medium type
+			dev->buffer[2] = 0; // Device specific parameters
 			if (block_desc)
 				dev->buffer[3] = 8;
 		} else {
@@ -1525,7 +1411,8 @@ do_command(void *p, uint8_t *cdb)
 			len = MIN(len, alloc_length);
 			dev->buffer[0]=(len - 2) >> 8;
 			dev->buffer[1]=(len - 2) & 255;
-			dev->buffer[2] = 0;
+			dev->buffer[2] = 3; // Medium type
+			dev->buffer[3] = 0; // Device specific parameters
 			if (block_desc) {
 				dev->buffer[6] = 0;
 				dev->buffer[7] = 8;
@@ -1759,38 +1646,6 @@ phase_data_out(mo_t *dev)
 			mo_blocks(dev, &len, 1, 1);
 		break;
 		
-// TODO: Check SCSI-2
-// 	case GPCMD_WRITE_SAME_10:
-// 		if (!dev->current_cdb[7] && !dev->current_cdb[8]) {
-// 			last_to_write = (dev->drv->medium_size - 1);
-// 		} else
-// 			last_to_write = dev->sector_pos + dev->sector_len - 1;
-//
-// 		for (i = dev->sector_pos; i <= last_to_write; i++) {
-// 			if (dev->current_cdb[1] & 2) {
-// 				dev->buffer[0] = (i >> 24) & 0xff;
-// 				dev->buffer[1] = (i >> 16) & 0xff;
-// 				dev->buffer[2] = (i >> 8) & 0xff;
-// 				dev->buffer[3] = i & 0xff;
-// 			} else if (dev->current_cdb[1] & 4) {
-// 				/* CHS are 96,1,2048 (ZIP 100) and 239,1,2048 (ZIP 250) */
-// 				s = (i % 2048);
-// 				h = ((i - s) / 2048) % 1;
-// 				c = ((i - s) / 2048) / 1;
-// 				dev->buffer[0] = (c >> 16) & 0xff;
-// 				dev->buffer[1] = (c >> 8) & 0xff;
-// 				dev->buffer[2] = c & 0xff;
-// 				dev->buffer[3] = h & 0xff;
-// 				dev->buffer[4] = (s >> 24) & 0xff;
-// 				dev->buffer[5] = (s >> 16) & 0xff;
-// 				dev->buffer[6] = (s >> 8) & 0xff;
-// 				dev->buffer[7] = s & 0xff;
-// 			}
-// 			fseek(dev->drv->f, dev->drv->base + (i << 9), SEEK_SET);
-// 			fwrite(dev->buffer, 1, 512, dev->drv->f);
-// 		}
-// 		break;
-
 	case GPCMD_MODE_SELECT_6:
 	case GPCMD_MODE_SELECT_10:
 		if (dev->current_cdb[0] == GPCMD_MODE_SELECT_10)
@@ -1842,10 +1697,7 @@ phase_data_out(mo_t *dev)
 
 			pos += page_len;
 
-			if (dev->drv->bus_type == MO_BUS_SCSI)
-				val = mode_sense_pages_default_scsi.pages[page][0] & 0x80;
-			else
-				val = mode_sense_pages_default.pages[page][0] & 0x80;
+			val = mode_sense_pages_default.pages[page][0] & 0x80;
 			if (dev->do_page_save && val)
 				mode_sense_save(dev);
 
