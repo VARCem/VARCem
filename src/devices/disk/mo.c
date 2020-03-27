@@ -78,68 +78,66 @@ MO_drive_t	mo_drives[MO_NUM];
 
 /* Table of all SCSI commands and their flags. */
 static const uint8_t command_flags[0x100] = {
-    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x00 */
-    IMPLEMENTED | ALLOW_UA | NONDATA | SCSI_ONLY,		/* 0x01 */
+    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x00: TEST UNIT READY */
+    IMPLEMENTED | ALLOW_UA | NONDATA,				/* 0x01: REZERO UNIT */
     0,
-    IMPLEMENTED | ALLOW_UA,					/* 0x03 */
-    IMPLEMENTED | CHECK_READY | ALLOW_UA | NONDATA | SCSI_ONLY,	/* 0x04 */
-    0,
-    IMPLEMENTED,						/* 0x06 */
-    0,
-    IMPLEMENTED | CHECK_READY,					/* 0x08 */
-    0,
-    IMPLEMENTED | CHECK_READY,					/* 0x0A */
-    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x0B */
-    IMPLEMENTED,						/* 0x0C */
-    IMPLEMENTED | ATAPI_ONLY,					/* 0x0D */
-    0, 0, 0, 0,
-    IMPLEMENTED | ALLOW_UA,					/* 0x12 */
-    IMPLEMENTED | CHECK_READY | NONDATA | SCSI_ONLY,		/* 0x13 */
-    0,
-    IMPLEMENTED,						/* 0x15 */
-    IMPLEMENTED | SCSI_ONLY,					/* 0x16 */
-    IMPLEMENTED | SCSI_ONLY,					/* 0x17 */
-    0, 0,
-    IMPLEMENTED,						/* 0x1A */
-    IMPLEMENTED | CHECK_READY,					/* 0x1B */
-    0,
-    IMPLEMENTED,						/* 0x1D */
-    IMPLEMENTED | CHECK_READY,					/* 0x1E */
-    0, 0, 0, 0,
-    IMPLEMENTED | ATAPI_ONLY,					/* 0x23 */
-    0,
-    IMPLEMENTED | CHECK_READY,					/* 0x25 */
-    0, 0,
-    IMPLEMENTED | CHECK_READY,					/* 0x28 */
-    0,
-    IMPLEMENTED | CHECK_READY,					/* 0x2A */
-    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x2B */
-    0, 0,
-    IMPLEMENTED | CHECK_READY,					/* 0x2E */
-    IMPLEMENTED | CHECK_READY | NONDATA | SCSI_ONLY,		/* 0x2F */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0,
-    IMPLEMENTED | CHECK_READY,					/* 0x41 */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    IMPLEMENTED,						/* 0x55 */
-    0, 0, 0, 0,
-    IMPLEMENTED,						/* 0x5A */
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    IMPLEMENTED | CHECK_READY,					/* 0xA8 */
-    0,
-    IMPLEMENTED | CHECK_READY,					/* 0xAA */
+    IMPLEMENTED | ALLOW_UA,							/* 0x03: REQUEST SENSE */
+    IMPLEMENTED | CHECK_READY | ALLOW_UA | NONDATA,	/* 0x04: FORMAT UNIT */
     0, 0, 0,
-    IMPLEMENTED | CHECK_READY,					/* 0xAE */
-    IMPLEMENTED | CHECK_READY | NONDATA | SCSI_ONLY,		/* 0xAF */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    IMPLEMENTED,						/* 0xBD */
+    IMPLEMENTED | CHECK_READY,						/* 0x08: READ(6) */
+    0,
+    IMPLEMENTED | CHECK_READY,						/* 0x0A: WRITE(6) */
+    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x0B: SEEK(6) */
+    0, 0, 0, 0, 0, 0,
+    IMPLEMENTED | ALLOW_UA,							/* 0x12: INQUIRY */
+	IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x13: VERIFY(6) */
+    0,
+    IMPLEMENTED,									/* 0x15: MODE SELECT(6) */
+    IMPLEMENTED,									/* 0x16: RESERVE */
+    IMPLEMENTED,									/* 0x17: RELEASE */
     0, 0,
+    IMPLEMENTED,									/* 0x1A: MODE SENSE(6) */
+    IMPLEMENTED | CHECK_READY,						/* 0x1B: START STOP UNIT */
+    0,
+    IMPLEMENTED,									/* 0x1D: SEND DIAGNOSTIC */
+    IMPLEMENTED | CHECK_READY,						/* 0x1E: PREVENT ALLOW MEDIUM REMOVAL */
+    0, 0, 0, 0, 0, 0,
+    IMPLEMENTED | CHECK_READY,						/* 0x25: READ CAPACITY */
+    0, 0,
+    IMPLEMENTED | CHECK_READY,						/* 0x28: READ(10) */
+    IMPLEMENTED | CHECK_READY,          	        /* 0x29: READ GENERATION */
+    IMPLEMENTED | CHECK_READY,						/* 0x2A: WRITE(10) */
+    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x2B: SEEK(10) */
+	IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x2C: ERASE(10) */
+	IMPLEMENTED | CHECK_READY,						/* 0x2D: READ UPDATED BLOCK */
+    IMPLEMENTED | CHECK_READY,						/* 0x2E: WRITE AND VERIFY(10) */
+    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0x2F: VERIFY(10) */
+    0, 0, 0, 0, 0, 0, 0, 0,
+    IMPLEMENTED | CHECK_READY,						/* 0x38: MEDIUM SCAN */
+    0, 0, 0, 0,
+    IMPLEMENTED | CHECK_READY,						/* 0x3D: UPDATE BLOCK */
+    IMPLEMENTED | CHECK_READY,						/* 0x3E: READ LONG(10) */
+	IMPLEMENTED | CHECK_READY,						/* 0x3F: WRITE LONG(10) */
+    IMPLEMENTED,									/* 0x40: CHANGE DEFINITION */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0,
+    IMPLEMENTED,									/* 0x55: MODE SELECT(10) */
+    0, 0, 0, 0,
+    IMPLEMENTED,									/* 0x5A: MODE SENSE(10) */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    IMPLEMENTED | CHECK_READY,						/* 0xA8: READ(12) */
+    0,
+    IMPLEMENTED | CHECK_READY,						/* 0xAA: WRITE(12) */
+    0,
+    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0xAC: ERASE(12) */
+    0,
+    IMPLEMENTED | CHECK_READY,						/* 0xAE: WRITE AND VERIFY(12) */
+    IMPLEMENTED | CHECK_READY | NONDATA,			/* 0xAF: VERIFY(12) */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
