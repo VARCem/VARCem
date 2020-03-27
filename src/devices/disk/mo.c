@@ -1430,7 +1430,7 @@ do_command(void *p, uint8_t *cdb)
 	case GPCMD_WRITE_12:
 	case GPCMD_WRITE_AND_VERIFY_12:
 		set_phase(dev, SCSI_PHASE_DATA_OUT);
-		alloc_length = 512;
+		alloc_length = dev->drv->sector_size;
 
 		if (dev->drv->read_only) {
 			write_protected(dev);
@@ -1438,21 +1438,20 @@ do_command(void *p, uint8_t *cdb)
 		}
 
 		switch(cdb[0]) {
-			case GPCMD_VERIFY_6:
 			case GPCMD_WRITE_6:
 				dev->sector_len = cdb[4];
 				dev->sector_pos = ((((uint32_t) cdb[1]) & 0x1f) << 16) | (((uint32_t) cdb[2]) << 8) | ((uint32_t) cdb[3]);
+
+				if(dev->sector_len)
+					dev->sector_len = 256;
 				break;
 
-			case GPCMD_VERIFY_10:
 			case GPCMD_WRITE_10:
 			case GPCMD_WRITE_AND_VERIFY_10:
 				dev->sector_len = (cdb[7] << 8) | cdb[8];
 				dev->sector_pos = (cdb[2] << 24) | (cdb[3] << 16) | (cdb[4] << 8) | cdb[5];
-				DEBUG("MO %i: Length: %i, LBA: %i\n", dev->id, dev->sector_len, dev->sector_pos);
 				break;
 
-			case GPCMD_VERIFY_12:
 			case GPCMD_WRITE_12:
 			case GPCMD_WRITE_AND_VERIFY_12:
 				dev->sector_len = (((uint32_t) cdb[6]) << 24) | (((uint32_t) cdb[7]) << 16) | (((uint32_t) cdb[8]) << 8) | ((uint32_t) cdb[9]);
@@ -1460,12 +1459,9 @@ do_command(void *p, uint8_t *cdb)
 				break;
 		}
 
-#if 0
-		if ((dev->sector_pos >= dev->drv->medium_size) ||
-		    ((dev->sector_pos + dev->sector_len - 1) >= dev->drv->medium_size)) {
-#else
+		DEBUG("MO %i: Length: %i, LBA: %i\n", dev->id, dev->sector_len, dev->sector_pos);
+
 		if ((dev->sector_pos >= dev->drv->medium_size)) {
-#endif
 			lba_out_of_range(dev);
 			return;
 		}
@@ -1497,7 +1493,7 @@ do_command(void *p, uint8_t *cdb)
 
 		set_buf_len(dev, BufLen, (int32_t *) &dev->packet_len);
 
-		data_command_finish(dev, dev->packet_len, 512, dev->packet_len, 1);
+		data_command_finish(dev, dev->packet_len, dev->drv->sector_size, dev->packet_len, 1);
 
 		if (dev->packet_status != PHASE_COMPLETE)
 			ui_sb_icon_update(SB_MO | dev->id, 1);
