@@ -56,6 +56,11 @@
 #include "../disk/hdc_ide.h"
 #include "mo.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 /* Bits of 'status' */
 #define ERR_STAT		0x01
@@ -1281,6 +1286,7 @@ do_command(void *p, uint8_t *cdb)
 			return;
 		}
 
+		mo_format(dev);
 		set_phase(dev, SCSI_PHASE_STATUS);
 		command_complete(dev);
 		break;
@@ -2763,4 +2769,75 @@ void
 mo_insert(mo_t *dev)
 {
     dev->unit_attention = 1;
+}
+
+
+void
+mo_format(mo_t *dev)
+{
+	long size;
+	int ret;
+	int fd;
+
+	DEBUG("Formatting media...\n");
+
+	fseek(dev->drv->f, 0, SEEK_END);
+	size = ftell(dev->drv->f);
+
+#ifdef _WIN32
+	HANDLE fh;
+
+	fd = _fileno(dev->drv->f);
+	fh = (HANDLE)_get_osfhandle(fd);
+
+	ret = (int)SetFilePointerEx(fh, 0, NULL, FILE_BEGIN);
+
+	if(!ret)
+	{
+		DEBUG("MO %i: Failed seek to start of image file\n", dev->id);
+		return;
+	}
+
+	ret = (int)SetEndOfFile(fh);
+
+	if(ret)
+	{
+		DEBUG("MO %i: Failed to truncate image file to 0\n", dev->id);
+		return;
+	}
+
+	ret = (int)SetFilePointerEx(fh, size, NULL, FILE_BEGIN);
+
+	if(!ret)
+	{
+		DEBUG("MO %i: Failed seek to end of image file\n", dev->id);
+		return;
+	}
+
+	ret = (int)SetEndOfFile(fh);
+
+	if(ret)
+	{
+		DEBUG("MO %i: Failed to truncate image file to %llu\n", dev->id, size);
+		return;
+	}
+#else
+	fd = fileno(dev->drv->f);
+
+	ret = ftruncate(fd, 0);
+
+	if(ret)
+	{
+		DEBUG("MO %i: Failed to truncate image file to 0\n", dev->id);
+		return;
+	}
+
+	ret = ftruncate(fd, size);
+
+	if(ret)
+	{
+		DEBUG("MO %i: Failed to truncate image file to %llu", dev->id, size);
+		return;
+	}
+#endif
 }
