@@ -1636,6 +1636,23 @@ atapi_out:
 		command_complete(dev);
 		break;
 
+		// Never seen media that supports generations but it's interesting to know if any implementation calls this commmand
+		case GPCMD_READ_GENERATION:
+			set_phase(dev, SCSI_PHASE_DATA_IN);
+
+			buf_alloc(dev, 4);
+			len = 4;
+
+			dev->buffer[0] = 0;
+			dev->buffer[1] = 0;
+			dev->buffer[2] = 0;
+			dev->buffer[3] = 0;
+
+			set_buf_len(dev, BufLen, &len);
+
+			data_command_finish(dev, len, len, len, 0);
+			break;
+
 		default:
 		illegal_opcode(dev);
 		break;
