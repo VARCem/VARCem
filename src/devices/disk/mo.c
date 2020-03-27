@@ -1407,11 +1407,22 @@ do_command(void *p, uint8_t *cdb)
 	case GPCMD_VERIFY_6:
 	case GPCMD_VERIFY_10:
 	case GPCMD_VERIFY_12:
-		if (! (cdb[1] & 2)) {
+		// Data and blank verification cannot be set at the same time
+		if((cdb[1] & 2) && (cdb[1] & 4))
+		{
+			invalid_field(dev);
+			return;
+		}
+
+		if (! (cdb[1] & 2) || (cdb[1] & 4)) {
 			set_phase(dev, SCSI_PHASE_STATUS);
 			command_complete(dev);
 			break;
 		}
+
+		// TODO: Implement
+		invalid_field(dev);
+		return;
 
 	case GPCMD_WRITE_6:
 	case GPCMD_WRITE_10:
