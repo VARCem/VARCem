@@ -1482,7 +1482,7 @@ do_command(void *p, uint8_t *cdb)
 			preamble_len = 4;
 			size_idx = 3;
 
-			dev->buffer[idx++] = 05;
+			dev->buffer[idx++] = 7; // Optical disk
 			dev->buffer[idx++] = cdb[2];
 			dev->buffer[idx++] = 0;
 
@@ -1491,35 +1491,14 @@ do_command(void *p, uint8_t *cdb)
 			switch (cdb[2]) {
 				case 0x00:
 					dev->buffer[idx++] = 0x00;
-					dev->buffer[idx++] = 0x83;
+					dev->buffer[idx++] = 0x80;
 					break;
 
-				case 0x83:
-					if (idx + 24 > max_len) {
-						data_phase_error(dev);
-						buf_free(dev);
-						return;
-					}
-
-					dev->buffer[idx++] = 0x02;
-					dev->buffer[idx++] = 0x00;
-					dev->buffer[idx++] = 0x00;
-					dev->buffer[idx++] = 20;
+				// Unit serial number page
+				case 0x80:
+					dev->buffer[idx++] = strlen("VCM!10") + 1;
 					ide_padstr8(dev->buffer + idx, 20, "VCM!10");	/* Serial */
-					idx += 20;
-
-					if (idx + 72 > cdb[4])
-						goto atapi_out;
-					dev->buffer[idx++] = 0x02;
-					dev->buffer[idx++] = 0x01;
-					dev->buffer[idx++] = 0x00;
-					dev->buffer[idx++] = 68;
-					ide_padstr8(dev->buffer + idx, 8, "VARCEM  "); /* Vendor */
-					idx += 8;
-					ide_padstr8(dev->buffer + idx, 40, "MAGNETO OPTICAL "); /* Product */
-					idx += 40;
-					ide_padstr8(dev->buffer + idx, 20, "VCM!10"); /* Serial */
-					idx += 20;
+					idx += strlen("VCM!10");
 					break;
 
 				default:
@@ -1536,7 +1515,7 @@ do_command(void *p, uint8_t *cdb)
 			if (cdb[1] & 0xe0)
 				dev->buffer[0] = 0x60; /*No physical device on this LUN*/
 			else
-				dev->buffer[0] = 0x00; /*Hard disk*/
+				dev->buffer[0] = 0x07; /*Optical disk*/
 			dev->buffer[1] = 0x80; /*Removable*/
 			dev->buffer[2] = (dev->drv->bus_type == MO_BUS_SCSI) ? 0x02 : 0x00; /*SCSI-2 compliant*/
 			dev->buffer[3] = (dev->drv->bus_type == MO_BUS_SCSI) ? 0x02 : 0x21;
