@@ -1580,6 +1580,138 @@ save_iomega(UNUSED(const config_t* cfg), const char* cat)
     delete_section_if_empty(cat);
 }
 
+/* Load "Magneto-optical Devices" section. */
+//FIXME: stuff should be loaded into config_t !
+static void
+load_mo(config_t* cfg, const char* cat)
+{
+    char temp[512], tmp2[512], * p;
+    char s[512];
+    unsigned int board = 0, dev = 0;
+    wchar_t* wp;
+    int c;
+
+    for (c = 0; c < MO_NUM; c++) {
+	sprintf(temp, "mo_%02i_parameters", c + 1);
+	p = config_get_string(cat, temp, "0, none");
+	sscanf(p, "%s", s);
+	mo_drives[c].bus_type = mo_string_to_bus(s);
+
+	/* Default values, needed for proper operation of the Settings dialog. */
+	mo_drives[c].bus_id.ide_channel = mo_drives[c].bus_id.scsi.id = c + 2;
+
+	sprintf(temp, "mo_%02i_ide_channel", c + 1);
+	if (mo_drives[c].bus_type == MO_BUS_ATAPI) {
+	    sprintf(tmp2, "%01u:%01u", (c + 2) >> 1, (c + 2) & 1);
+	    p = config_get_string(cat, temp, tmp2);
+	    sscanf(p, "%01u:%01u", &board, &dev);
+
+	    board &= 3;
+	    dev &= 1;
+	    mo_drives[c].bus_id.ide_channel = (board << 1) + dev;
+
+	    if (mo_drives[c].bus_id.ide_channel > 7)
+		mo_drives[c].bus_id.ide_channel = 7;
+	}
+	else {
+	    sprintf(temp, "mo_%02i_scsi_location", c + 1);
+	    if (mo_drives[c].bus_type == MO_BUS_SCSI) {
+		sprintf(tmp2, "%02u:%02u", c + 2, 0);
+		p = config_get_string(cat, temp, tmp2);
+		sscanf(p, "%02u:%02u",
+		    (unsigned*)&mo_drives[c].bus_id.scsi.id,
+		    (unsigned*)&mo_drives[c].bus_id.scsi.lun);
+
+		if (mo_drives[c].bus_id.scsi.id > 15)
+		    mo_drives[c].bus_id.scsi.id = 15;
+		if (mo_drives[c].bus_id.scsi.lun > 7)
+		    mo_drives[c].bus_id.scsi.lun = 7;
+	    }
+	    else {
+		config_delete_var(cat, temp);
+	    }
+	}
+
+	sprintf(temp, "mo_%02i_image_path", c + 1);
+	wp = config_get_wstring(cat, temp, L"");
+
+	/* Try to make relative, and copy to destination. */
+	pc_path(mo_drives[c].image_path, sizeof_w(mo_drives[c].image_path), wp);
+
+	/* If the MO is disabled, delete all its variables. */
+	if (mo_drives[c].bus_type == MO_BUS_DISABLED) {
+	    sprintf(temp, "mo_%02i_host_drive", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_parameters", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_ide_channel", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_scsi_location", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_image_path", c + 1);
+	    config_delete_var(cat, temp);
+	}
+
+	sprintf(temp, "mo_%02i_iso_path", c + 1);
+	config_delete_var(cat, temp);
+    }
+}
+
+/* Save "Magneto-optical Devices" section. */
+static void
+save_mo(const config_t* cfg, const char* cat)
+{
+    char temp[512], tmp2[512];
+    int c;
+
+    for (c = 0; c < MO_NUM; c++) {
+	sprintf(temp, "mo_%02i_parameters", c + 1);
+	if (zip_drives[c].bus_type == 0) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%s",
+		mo_bus_to_string(mo_drives[c].bus_type));
+	    config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "mo_%02i_ide_channel", c + 1);
+	if (mo_drives[c].bus_type != MO_BUS_ATAPI) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%01u:%01u", mo_drives[c].bus_id.ide_channel >> 1,
+		mo_drives[c].bus_id.ide_channel & 1);
+	    config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "mo_%02i_scsi_location", c + 1);
+	if (mo_drives[c].bus_type != MO_BUS_SCSI) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%02u:%02u", mo_drives[c].bus_id.scsi.id,
+		mo_drives[c].bus_id.scsi.lun);
+	    config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "mo_%02i_image_path", c + 1);
+	if ((mo_drives[c].bus_type == 0) ||
+	    (wcslen(mo_drives[c].image_path) == 0)) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    config_set_wstring(cat, temp, mo_drives[c].image_path);
+	}
+    }
+
+    delete_section_if_empty(cat);
+}
+
 
 static const struct {
     const char	*name;
@@ -1598,6 +1730,7 @@ static const struct {
   { "Floppy drives",	load_floppy,		save_floppy		},
   { "CD/DVD devices",load_multimedia,	save_multimedia		},
   { "IOMEGA devices",load_iomega,	save_iomega		},
+  { "Magneto-optical devices",load_mo,	save_mo		},
   { NULL,		NULL,			NULL			}
 };
 
