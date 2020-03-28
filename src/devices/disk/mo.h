@@ -145,7 +145,7 @@ extern const char *mo_bus_to_string(int bus);
 extern int	       mo_load(mo_t *dev, const wchar_t *fn);
 extern void	       mo_close(void);
 extern void        mo_format(mo_t *dev);
-static int         mo_erase(mo_t *dev)
+static int         mo_erase(mo_t* dev);
 #ifdef __cplusplus
 }
 #endif
