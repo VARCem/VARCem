@@ -56,6 +56,8 @@
 #include "../disk/hdc_ide.h"
 #include "mo.h"
 
+#include <corecrt_io.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -78,7 +80,7 @@
 #ifdef ENABLE_MO_LOG
 int		mo_do_log = ENABLE_MO_LOG;
 #endif
-MO_drive_t	mo_drives[MO_NUM];
+mo_drive_t	mo_drives[MO_NUM];
 
 
 /* Table of all SCSI commands and their flags. */
@@ -380,10 +382,7 @@ mode_sense_load(mo_t *dev)
     const mode_sense_pages_t *ptr;
     FILE *fp;
 
-	if (mo_drives[dev->id].bus_type == MO_BUS_SCSI)
-		ptr = &mode_sense_pages_default_scsi;
-	  else
-		ptr = &mode_sense_pages_default;
+    ptr = &mode_sense_pages_default;
     memcpy(&dev->ms_pages_saved, ptr, sizeof(mode_sense_pages_t));
 
     memset(temp, 0, sizeof(temp));
@@ -719,7 +718,7 @@ set_phase(mo_t *dev, uint8_t phase)
 
 
 static void
-cmd_error(MO_t *dev)
+cmd_error(mo_t *dev)
 {
     set_phase(dev, SCSI_PHASE_STATUS);
 
@@ -1599,7 +1598,7 @@ atapi_out:
 				break;
 
 			case GPCMD_ERASE_12:
-				dev->sector_len = ((uint32_t) cdb[6]) << 24) | (((uint32_t) cdb[7]) << 16) | (((uint32_t) cdb[8]) << 8) | ((uint32_t) cdb[9]);
+				dev->sector_len = (((uint32_t) cdb[6]) << 24) | (((uint32_t) cdb[7]) << 16) | (((uint32_t) cdb[8]) << 8) | ((uint32_t) cdb[9]);
 				break;
 		}
 
@@ -2244,7 +2243,6 @@ static void
 do_identify(void *p, int ide_has_dma)
 {
     ide_t *ide = (ide_t *)p;
-    mo_t *mo = (mo_t *)mo->p;
 
     ide->buffer[0] = 0x8000 | (0<<8) | 0x80 | (1<<5); /* ATAPI device, direct-access device, removable media, interrupt DRQ */
     ide_padstr((char *) (ide->buffer + 10), "", 20); /* Serial Number */
@@ -2569,11 +2567,14 @@ mo_format(mo_t *dev)
 
 #ifdef _WIN32
 	HANDLE fh;
+	LARGE_INTEGER liSize;
 
 	fd = _fileno(dev->drv->f);
 	fh = (HANDLE)_get_osfhandle(fd);
 
-	ret = (int)SetFilePointerEx(fh, 0, NULL, FILE_BEGIN);
+	liSize.QuadPart = 0;
+
+	ret = (int)SetFilePointerEx(fh, liSize, NULL, FILE_BEGIN);
 
 	if(!ret)
 	{
@@ -2589,7 +2590,8 @@ mo_format(mo_t *dev)
 		return;
 	}
 
-	ret = (int)SetFilePointerEx(fh, size, NULL, FILE_BEGIN);
+	liSize.QuadPart = size;
+	ret = (int)SetFilePointerEx(fh, liSize, NULL, FILE_BEGIN);
 
 	if(!ret)
 	{
@@ -2628,6 +2630,8 @@ mo_format(mo_t *dev)
 static int
 mo_erase(mo_t *dev)
 {
+        int i;
+
 	if (! dev->sector_len) {
 		command_complete(dev);
 		return -1;
@@ -2641,7 +2645,7 @@ mo_erase(mo_t *dev)
 		return 0;
 	}
 
-	buf_alloc(dev->drv->sector_size);
+	buf_alloc(dev, dev->drv->sector_size);
 	memset(dev->buffer, 0, dev->drv->sector_size);
 
 	fseek(dev->drv->f, dev->drv->base + (dev->sector_pos * dev->drv->sector_size), SEEK_SET);
