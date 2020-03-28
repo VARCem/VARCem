@@ -2437,7 +2437,7 @@ mo_string_to_bus(const char *str)
 
 
 const char *
-MO_BUS_to_string(int bus)
+mo_bus_to_string(int bus)
 {
     const char *ret = "none";
 
