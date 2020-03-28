@@ -721,7 +721,7 @@ zip_track_all(void)
 
 
 static WIN_RESULT CALLBACK
-rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+mmc_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND h = NULL;
     int old_sel = 0;
@@ -743,22 +743,6 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		b = temp_cdrom_drives[cdlv_current_sel].bus_type;
 		SendMessage(h, CB_SETCURSEL, b, 0);
 		cdrom_recalc_location_controls(hdlg, 0);
-
-		zdlv_current_sel = 0;
-		h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
-		zip_init_columns(h);
-		zip_image_list_init(h);
-		zip_recalc_list(h);
-		zip_add_locations(hdlg);
-		h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
-		b = temp_zip_drives[zdlv_current_sel].bus_type;
-		SendMessage(h, CB_SETCURSEL, b, 0);
-		zip_recalc_location_controls(hdlg, 0);
-		h = GetDlgItem(hdlg, IDC_CHECK250);
-		SendMessage(h, BM_SETCHECK,
-			    temp_zip_drives[zdlv_current_sel].is_250, 0);
-		rd_ignore_change = 0;
-		return TRUE;
 
 	case WM_NOTIFY:
 		if (rd_ignore_change)
@@ -783,29 +767,6 @@ rmv_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			b = temp_cdrom_drives[cdlv_current_sel].bus_type;
 			SendMessage(h, CB_SETCURSEL, b, 0);
 			cdrom_recalc_location_controls(hdlg, 0);
-		} else if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_LIST_ZIP_DRIVES)) {
-			old_sel = zdlv_current_sel;
-			h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
-			zdlv_current_sel = zip_get_selected(hdlg);
-			if (zdlv_current_sel == old_sel)
-				return FALSE;
-
-			if (zdlv_current_sel == -1) {
-				rd_ignore_change = 1;
-				zdlv_current_sel = old_sel;
-				ListView_SetItemState(h, zdlv_current_sel, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);
-				rd_ignore_change = 0;
-				return FALSE;
-			}
-			rd_ignore_change = 1;
-
-			h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
-			b = temp_zip_drives[zdlv_current_sel].bus_type;
-			SendMessage(h, CB_SETCURSEL, b, 0);
-			zip_recalc_location_controls(hdlg, 0);
-			h = GetDlgItem(hdlg, IDC_CHECK250);
-			SendMessage(h, BM_SETCHECK,
-				temp_zip_drives[zdlv_current_sel].is_250, 0);
 		}
 		rd_ignore_change = 0;
 		break;
@@ -892,88 +853,159 @@ cdrom_bus_skip:
 				rd_ignore_change = 0;
 				return FALSE;
 
-			case IDC_COMBO_ZIP_BUS:
-				if (rd_ignore_change)
-					return FALSE;
-
-				rd_ignore_change = 1;
-				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
-				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-				if (temp_zip_drives[zdlv_current_sel].bus_type == b)
-					goto zip_bus_skip;
-				zip_untrack(zdlv_current_sel);
-				assign = (temp_zip_drives[zdlv_current_sel].bus_type == b) ? 0 : 1;
-				temp_zip_drives[zdlv_current_sel].bus_type = b;
-				zip_recalc_location_controls(hdlg, assign);
-				zip_track(zdlv_current_sel);
-				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
-				zip_update_item(h, zdlv_current_sel);
-zip_bus_skip:
-				rd_ignore_change = 0;
-				return FALSE;
-
-			case IDC_COMBO_ZIP_ID:
-				if (rd_ignore_change)
-					return FALSE;
-
-				rd_ignore_change = 1;
-				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_ID);
-				zip_untrack(zdlv_current_sel);
-				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_zip_drives[zdlv_current_sel].bus_id.scsi.id = (uint8_t)b;
-				zip_track(zdlv_current_sel);
-				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
-				zip_update_item(h, zdlv_current_sel);
-				rd_ignore_change = 0;
-				return FALSE;
-
-			case IDC_COMBO_ZIP_LUN:
-				if (rd_ignore_change)
-					return FALSE;
-
-				rd_ignore_change = 1;
-				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_LUN);
-				zip_untrack(zdlv_current_sel);
-				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_zip_drives[zdlv_current_sel].bus_id.scsi.lun = (uint8_t)b;
-				zip_track(zdlv_current_sel);
-				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
-				zip_update_item(h, zdlv_current_sel);
-				rd_ignore_change = 0;
-				return FALSE;
-
-			case IDC_COMBO_ZIP_CHANNEL_IDE:
-				if (rd_ignore_change)
-					return FALSE;
-
-				rd_ignore_change = 1;
-				h = GetDlgItem(hdlg, IDC_COMBO_ZIP_CHANNEL_IDE);
-				zip_untrack(zdlv_current_sel);
-				b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
-				temp_zip_drives[zdlv_current_sel].bus_id.ide_channel = (uint8_t)b;
-				zip_track(zdlv_current_sel);
-				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
-				zip_update_item(h, zdlv_current_sel);
-				rd_ignore_change = 0;
-				return FALSE;
-
-			case IDC_CHECK250:
-				if (rd_ignore_change)
-						return FALSE;
-
-				rd_ignore_change = 1;
-				h = GetDlgItem(hdlg, IDC_CHECK250);
-				b = (int)SendMessage(h, BM_GETCHECK, 0, 0);
-				temp_zip_drives[zdlv_current_sel].is_250 = (int8_t)b;
-				h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
-				zip_update_item(h, zdlv_current_sel);
-				rd_ignore_change = 0;
-				return FALSE;
 		}
 		return FALSE;
 
 	default:
 		break;
+    }
+
+    return FALSE;
+}
+
+static WIN_RESULT CALLBACK
+iomega_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    HWND h = NULL;
+    int old_sel = 0;
+    int assign = 0;
+    int b;
+
+    switch (message) {
+    case WM_INITDIALOG:
+	rd_ignore_change = 1;
+
+	zdlv_current_sel = 0;
+	h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
+	zip_init_columns(h);
+	zip_image_list_init(h);
+	zip_recalc_list(h);
+	zip_add_locations(hdlg);
+	h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
+	b = temp_zip_drives[zdlv_current_sel].bus_type;
+	SendMessage(h, CB_SETCURSEL, b, 0);
+	zip_recalc_location_controls(hdlg, 0);
+	h = GetDlgItem(hdlg, IDC_CHECK250);
+	SendMessage(h, BM_SETCHECK,
+	    temp_zip_drives[zdlv_current_sel].is_250, 0);
+	rd_ignore_change = 0;
+	return TRUE;
+
+    case WM_NOTIFY:
+	if (rd_ignore_change)
+	    return FALSE;
+
+	if ((((LPNMHDR)lParam)->code == LVN_ITEMCHANGED) && (((LPNMHDR)lParam)->idFrom == IDC_LIST_ZIP_DRIVES)) {
+	    old_sel = zdlv_current_sel;
+	    h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
+	    zdlv_current_sel = zip_get_selected(hdlg);
+	    if (zdlv_current_sel == old_sel)
+		return FALSE;
+
+	    if (zdlv_current_sel == -1) {
+		rd_ignore_change = 1;
+		zdlv_current_sel = old_sel;
+		ListView_SetItemState(h, zdlv_current_sel, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);
+		rd_ignore_change = 0;
+		return FALSE;
+	    }
+	    rd_ignore_change = 1;
+
+	    h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
+	    b = temp_zip_drives[zdlv_current_sel].bus_type;
+	    SendMessage(h, CB_SETCURSEL, b, 0);
+	    zip_recalc_location_controls(hdlg, 0);
+	    h = GetDlgItem(hdlg, IDC_CHECK250);
+	    SendMessage(h, BM_SETCHECK,
+		temp_zip_drives[zdlv_current_sel].is_250, 0);
+	}
+	rd_ignore_change = 0;
+	break;
+
+    case WM_COMMAND:
+	switch (LOWORD(wParam)) {
+	case IDC_COMBO_ZIP_BUS:
+	    if (rd_ignore_change)
+		return FALSE;
+
+	    rd_ignore_change = 1;
+	    h = GetDlgItem(hdlg, IDC_COMBO_ZIP_BUS);
+	    b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+	    if (temp_zip_drives[zdlv_current_sel].bus_type == b)
+		goto zip_bus_skip;
+	    zip_untrack(zdlv_current_sel);
+	    assign = (temp_zip_drives[zdlv_current_sel].bus_type == b) ? 0 : 1;
+	    temp_zip_drives[zdlv_current_sel].bus_type = b;
+	    zip_recalc_location_controls(hdlg, assign);
+	    zip_track(zdlv_current_sel);
+	    h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
+	    zip_update_item(h, zdlv_current_sel);
+	zip_bus_skip:
+	    rd_ignore_change = 0;
+	    return FALSE;
+
+	case IDC_COMBO_ZIP_ID:
+	    if (rd_ignore_change)
+		return FALSE;
+
+	    rd_ignore_change = 1;
+	    h = GetDlgItem(hdlg, IDC_COMBO_ZIP_ID);
+	    zip_untrack(zdlv_current_sel);
+	    b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+	    temp_zip_drives[zdlv_current_sel].bus_id.scsi.id = (uint8_t)b;
+	    zip_track(zdlv_current_sel);
+	    h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
+	    zip_update_item(h, zdlv_current_sel);
+	    rd_ignore_change = 0;
+	    return FALSE;
+
+	case IDC_COMBO_ZIP_LUN:
+	    if (rd_ignore_change)
+		return FALSE;
+
+	    rd_ignore_change = 1;
+	    h = GetDlgItem(hdlg, IDC_COMBO_ZIP_LUN);
+	    zip_untrack(zdlv_current_sel);
+	    b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+	    temp_zip_drives[zdlv_current_sel].bus_id.scsi.lun = (uint8_t)b;
+	    zip_track(zdlv_current_sel);
+	    h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
+	    zip_update_item(h, zdlv_current_sel);
+	    rd_ignore_change = 0;
+	    return FALSE;
+
+	case IDC_COMBO_ZIP_CHANNEL_IDE:
+	    if (rd_ignore_change)
+		return FALSE;
+
+	    rd_ignore_change = 1;
+	    h = GetDlgItem(hdlg, IDC_COMBO_ZIP_CHANNEL_IDE);
+	    zip_untrack(zdlv_current_sel);
+	    b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+	    temp_zip_drives[zdlv_current_sel].bus_id.ide_channel = (uint8_t)b;
+	    zip_track(zdlv_current_sel);
+	    h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
+	    zip_update_item(h, zdlv_current_sel);
+	    rd_ignore_change = 0;
+	    return FALSE;
+
+	case IDC_CHECK250:
+	    if (rd_ignore_change)
+		return FALSE;
+
+	    rd_ignore_change = 1;
+	    h = GetDlgItem(hdlg, IDC_CHECK250);
+	    b = (int)SendMessage(h, BM_GETCHECK, 0, 0);
+	    temp_zip_drives[zdlv_current_sel].is_250 = (int8_t)b;
+	    h = GetDlgItem(hdlg, IDC_LIST_ZIP_DRIVES);
+	    zip_update_item(h, zdlv_current_sel);
+	    rd_ignore_change = 0;
+	    return FALSE;
+	}
+	return FALSE;
+
+    default:
+	break;
     }
 
     return FALSE;

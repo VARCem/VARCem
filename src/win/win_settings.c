@@ -275,8 +275,10 @@ settings_save(void)
 #define PAGE_PERIPHERALS		6
 #define PAGE_HARD_DISKS			7
 #define PAGE_FLOPPY_DRIVES		8
-#define PAGE_OTHER_REMOVABLE_DEVICES	9
-#define PAGE_MAX			10
+#define PAGE_MULTIMEDIA_DEVICES		9
+#define PAGE_IOMEGA_DEVICES		10
+#define PAGE_MAGNETO_OPTICAL_DEVICES	11
+#define PAGE_MAX			12
 
 /* Icon, Bus, File, C, H, S, Size. */
 #define C_COLUMNS_HARD_DISKS		6
@@ -348,11 +350,23 @@ show_child(HWND hwndParent, DWORD child_id)
 					       hwndParent, floppy_proc);
 		break;
 
-	case PAGE_OTHER_REMOVABLE_DEVICES:
-		hwndChildDialog = CreateDialog(plat_lang_dll(),
-					       (LPCWSTR)DLG_CFG_RMV_DEVICES,
-					       hwndParent, rmv_devices_proc);
-		break;
+	case PAGE_MULTIMEDIA_DEVICES:
+	    hwndChildDialog = CreateDialog(plat_lang_dll(),
+		(LPCWSTR)DLG_CFG_MMC_DEVICES,
+		hwndParent, mmc_devices_proc);
+	    break;
+
+	case PAGE_IOMEGA_DEVICES:
+	    hwndChildDialog = CreateDialog(plat_lang_dll(),
+		(LPCWSTR)DLG_CFG_IOMEGA_DEVICES,
+		hwndParent, iomega_devices_proc);
+	    break;
+
+	case PAGE_MAGNETO_OPTICAL_DEVICES:
+	    hwndChildDialog = CreateDialog(plat_lang_dll(),
+		(LPCWSTR)DLG_CFG_IOMEGA_DEVICES,
+		hwndParent, iomega_devices_proc);
+	    break;
 
 	default:
 		fatal("Invalid child dialog ID\n");
@@ -376,6 +390,8 @@ image_list_init(HWND hwndList)
 	ICON_PERIPH,
 	ICON_DISK,
 	ICON_FLOPPY,
+	ICON_REMOV,
+	ICON_REMOV,
 	ICON_REMOV
     };
     HICON hiconItem;

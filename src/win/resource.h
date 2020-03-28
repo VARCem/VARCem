@@ -56,8 +56,8 @@
 #define  DLG_CFG_DISK		1038	/* sub-dialog of config */
 #define  DLG_CFG_DISK_ADD	1039	/* sub-dialog of config */
 #define  DLG_CFG_FLOPPY		1040	/* sub-dialog of config */
-#define  DLG_CFG_RMV_DEVICES	1041	/* sub-dialog of config */
-
+#define  DLG_CFG_MMC_DEVICES	1041	/* sub-dialog of config */
+#define  DLG_CFG_IOMEGA_DEVICES	1042	/* sub-dialog of config */
 
 /* Static text label IDs. */
 #define IDT_1700		1700	/* Language: */
