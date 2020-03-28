@@ -228,6 +228,10 @@
 #define ICON_ZIP_A		49	/* "zip_active.ico" */
 #define ICON_ZIP_E		176	/* "zip_empty.ico" */
 #define ICON_ZIP_I		177	/* "zip_empty_active.ico" */
+#define ICON_MO	        	251     /* "mo.ico" */
+#define ICON_MO_A		252	/* "mo_active.ico" */
+#define ICON_MO_E		253	/* "mo_empty.ico" */
+#define ICON_MO_I		254	/* "mo_empty_active.ico" */
 #define ICON_DISK		64	/* "hard_disk.ico" */
 #define ICON_DISK_A		65	/* "hard_disk_active.ico" */
 #define ICON_NETWORK		80	/* "network.ico" */

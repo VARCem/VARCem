@@ -178,6 +178,11 @@ ICON_ZIP_E		ICON		"icons/zip_empty.ico"
 ICON_ZIP_A		ICON		"icons/zip_active.ico"
 ICON_ZIP_I		ICON		"icons/zip_empty_active.ico"
 
+ICON_MO 		ICON		"icons/mo.ico"
+ICON_MO_E		ICON		"icons/mo_empty.ico"
+ICON_MO_A		ICON		"icons/mo_active.ico"
+ICON_MO_I		ICON		"icons/mo_empty_active.ico"
+
 ICON_DISK		ICON		"icons/hard_disk.ico"
 ICON_DISK_A		ICON		"icons/hard_disk_active.ico"
 
@@ -196,6 +201,7 @@ ICON_REMOV		ICON		"icons/other_removable_devices.ico"
 ICON_FLOPPY_D		ICON		"icons/floppy_disabled.ico"
 ICON_CDROM_D		ICON		"icons/cdrom_disabled.ico"
 ICON_ZIP_D		ICON		"icons/zip_disabled.ico"
+ICON_MO_D		ICON		"icons/mo_disabled.ico"
 
 1			RT_MANIFEST	"VARCem.manifest"
 
