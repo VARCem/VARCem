@@ -1593,7 +1593,7 @@ load_mo(config_t* cfg, const char* cat)
 
     for (c = 0; c < MO_NUM; c++) {
 	sprintf(temp, "mo_%02i_parameters", c + 1);
-	p = config_get_string(cat, temp, "0, none");
+	p = config_get_string(cat, temp, "none");
 	sscanf(p, "%s", s);
 	mo_drives[c].bus_type = mo_string_to_bus(s);
 
@@ -1670,7 +1670,7 @@ save_mo(const config_t* cfg, const char* cat)
 
     for (c = 0; c < MO_NUM; c++) {
 	sprintf(temp, "mo_%02i_parameters", c + 1);
-	if (zip_drives[c].bus_type == 0) {
+	if (mo_drives[c].bus_type == 0) {
 	    config_delete_var(cat, temp);
 	}
 	else {
