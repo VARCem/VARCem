@@ -43,6 +43,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+
 #include "../emu.h"
 #include "../timer.h"
 #include "../plat.h"
@@ -50,6 +51,7 @@
 #include "../misc/random.h"
 #include "../devices/scsi/scsi_device.h"
 #include "../devices/disk/zip.h"
+#include "../devices/disk/mo.h"
 
 
 typedef struct {
@@ -543,6 +545,62 @@ zip_create_image(const wchar_t *fn, int8_t ds, int8_t is_zdi)
 	fwrite(&empty[i << 11], 1, 2048, f);
 #if 0
 	SendMessage(h, PBM_SETPOS, (WPARAM) i + 2, (LPARAM) 0);
+#endif
+    }
+
+    free(empty);
+
+    fclose(f);
+
+    return 1;
+}
+
+/* This function should be moved to the MO drive module. */
+int
+mo_create_image(const wchar_t* fn, int8_t ds)
+{
+    const mo_type_t* dp = &mo_types[ds];
+    uint8_t* empty;
+    FILE* f;
+
+    uint32_t pbar_max = 0;
+    int64_t i;
+
+    f = plat_fopen(fn, L"wb");
+    if (f == NULL)
+	return 0;
+
+    pbar_max = dp->sectors >> 11;
+    pbar_max--;
+
+    //FIXME: we will implement a ProgressBar handler.  --FvK
+#if 0
+    h = GetDlgItem(hwnd, IDC_COMBO_RPM_MODE);
+    EnableWindow(h, FALSE);
+    ShowWindow(h, SW_HIDE);
+    h = GetDlgItem(hwnd, IDT_1751);
+    EnableWindow(h, FALSE);
+    ShowWindow(h, SW_HIDE);
+    h = GetDlgItem(hwnd, IDC_PBAR_IMG_CREATE);
+    SendMessage(h, PBM_SETRANGE32, (WPARAM)0, (LPARAM)pbar_max);
+    SendMessage(h, PBM_SETPOS, (WPARAM)0, (LPARAM)0);
+    EnableWindow(h, TRUE);
+    ShowWindow(h, SW_SHOW);
+    h = GetDlgItem(hwnd, IDT_1757);
+    EnableWindow(h, TRUE);
+    ShowWindow(h, SW_SHOW);
+
+    h = GetDlgItem(hwnd, IDC_PBAR_IMG_CREATE);
+#endif
+    pbar_max++;
+
+    empty = (uint8_t*)mem_alloc(dp->bytes_per_sector);
+    memset(empty, 0x00, dp->bytes_per_sector);
+
+    for (i = 0; i < dp->sectors; i++) {
+	fwrite(empty, dp->bytes_per_sector, 1, f);
+#if 0
+	SendMessage(h, PBM_SETPOS, (WPARAM)i + 2, (LPARAM)0);
 #endif
     }
 

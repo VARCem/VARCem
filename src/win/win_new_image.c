@@ -164,8 +164,8 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				} else {
 					if (is_zip)
 						ret = zip_create_image(fd_file_name, disk_size, file_type);
-    				//else if (is_mo)
-					//	ret = mo_create_image(fd_file_name, disk_size);
+					else if (is_mo)
+						ret = mo_create_image(fd_file_name, disk_size);
 					else
 						ret = floppy_create_image(fd_file_name, disk_size, file_type);
 				}
