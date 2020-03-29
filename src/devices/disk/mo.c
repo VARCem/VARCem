@@ -2477,6 +2477,7 @@ mo_load(mo_t *dev, const wchar_t *fn)
 {
     int read_only = dev->drv->ui_writeprot;
     int size = 0;
+    unsigned int i, found = 0;
 
     dev->drv->f = plat_fopen(fn, dev->drv->ui_writeprot ? L"rb" : L"rb+");
     if (!dev->drv->ui_writeprot && !dev->drv->f) {
@@ -2487,36 +2488,26 @@ mo_load(mo_t *dev, const wchar_t *fn)
 	fseek(dev->drv->f, 0, SEEK_END);
 	size = ftell(dev->drv->f);
 
-	switch(size)
+	for(i = 0; i < sizeof(mo_types); i++)
 	{
-		case MO_SECTORS_ISO10090 * MO_BPS_ISO10090:
-			dev->drv->medium_size = MO_SECTORS_ISO10090;
-			dev->drv->sector_size = MO_BPS_ISO10090;
-			break;
-		case MO_SECTORS_ISO13963 * MO_BPS_ISO13963:
-			dev->drv->medium_size = MO_SECTORS_ISO13963;
-			dev->drv->sector_size = MO_BPS_ISO13963;
-			break;
-		case MO_SECTORS_ISO15498 * MO_BPS_ISO15498:
-			dev->drv->medium_size = MO_SECTORS_ISO15498;
-			dev->drv->sector_size = MO_BPS_ISO15498;
-			break;
-		case MO_SECTORS_GIGAMO * MO_BPS_GIGAMO:
-			dev->drv->medium_size = MO_SECTORS_GIGAMO;
-			dev->drv->sector_size = MO_BPS_GIGAMO;
-			break;
-		case MO_SECTORS_GIGAMO2 * MO_BPS_GIGAMO2:
-			dev->drv->medium_size = MO_SECTORS_GIGAMO2;
-			dev->drv->sector_size = MO_BPS_GIGAMO2;
-			break;
-		default:
-			DEBUG("File is incorrect size for a magneto-optical image\n");
-			fclose(dev->drv->f);
-			dev->drv->f = NULL;
-			dev->drv->medium_size = 0;
-			dev->drv->sector_size = 0;
-			ui_mo_eject(dev->id);	/* Make sure the host OS knows we've rejected (and ejected) the image. */
-			return 0;
+	    if(size == mo_types[i].disk_size)
+	    {
+		found = 1;
+		dev->drv->medium_size = mo_types[i].sectors;
+		dev->drv->sector_size = mo_types[i].bytes_per_sector;
+		break;
+	    }
+	}
+
+	if(!found)
+	{
+	    DEBUG("File is incorrect size for a magneto-optical image\n");
+	    fclose(dev->drv->f);
+	    dev->drv->f = NULL;
+	    dev->drv->medium_size = 0;
+	    dev->drv->sector_size = 0;
+	    ui_mo_eject(dev->id);	/* Make sure the host OS knows we've rejected (and ejected) the image. */
+	    return 0;
 	}
 
 	fseek(dev->drv->f, dev->drv->base, SEEK_SET);

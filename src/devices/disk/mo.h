@@ -44,19 +44,21 @@
 
 #define MO_TIME		(5LL * 100LL * (1LL << TIMER_SHIFT))
 
-// TODO: Create arrays with media-type, sectors, bps
-// 3.5" standard M.O. disks
-#define MO_SECTORS_ISO10090		(248826)
-#define MO_SECTORS_ISO13963		(446325)
-#define MO_SECTORS_ISO15498		(310352)
-#define MO_SECTORS_GIGAMO		(605846)
-#define MO_SECTORS_GIGAMO2		(1063146)
+typedef struct {
+    uint32_t	sectors;
+    uint16_t	bytes_per_sector;
+    int64_t	disk_size;
+    char	name[255];
+} mo_type_t;
 
-#define MO_BPS_ISO10090		(512)
-#define MO_BPS_ISO13963		(512)
-#define MO_BPS_ISO15498		(2048)
-#define MO_BPS_GIGAMO		(2048)
-#define MO_BPS_GIGAMO2		(2048)
+static const mo_type_t mo_types[5] = {
+    // 3.5" standard M.O. disks
+    {	248826,  512, 127398912, "3.5\" 128Mb M.O. (ISO 10090)" },
+    {	446325,  512, 228518400, "3.5\" 230Mb M.O. (ISO 13963)" },
+    {	310352,  2048, 635600896, "3.5\" 640Mb M.O. (ISO 15498)" },
+    {	605846,  2048, 1240772608, "3.5\" 1.3Gb M.O. (GigaMO)" },
+    {	1063146,  2048, 2177323008, "3.5\" 2.3Gb M.O. (GigaMO 2)" }
+};
 
 enum {
     MO_BUS_DISABLED = 0,
