@@ -141,8 +141,14 @@ set_logging_item(int idm, int val)
 
 # ifdef ENABLE_ZIP_LOG
 	case IDM_LOG_ZIP:
-		ptr = (val != -3) ? &zip_do_log : (void *)"ZIP";
-		break;
+	    ptr = (val != -3) ? &zip_do_log : (void*)"ZIP";
+	    break;
+# endif
+
+# ifdef ENABLE_MO_LOG
+	case IDM_LOG_MO:
+	    ptr = (val != -3) ? &zip_do_log : (void*)"MO";
+	    break;
 # endif
 
 # ifdef ENABLE_CDROM_LOG
