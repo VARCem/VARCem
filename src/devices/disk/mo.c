@@ -2576,7 +2576,7 @@ mo_format(mo_t *dev)
 
 	ret = (int)SetEndOfFile(fh);
 
-	if(ret)
+	if(!ret)
 	{
 		DEBUG("MO %i: Failed to truncate image file to 0\n", dev->id);
 		return;
@@ -2593,7 +2593,7 @@ mo_format(mo_t *dev)
 
 	ret = (int)SetEndOfFile(fh);
 
-	if(ret)
+	if(!ret)
 	{
 		DEBUG("MO %i: Failed to truncate image file to %llu\n", dev->id, size);
 		return;
@@ -2656,3 +2656,4 @@ mo_erase(mo_t *dev)
 
 	return 1;
 }
+
