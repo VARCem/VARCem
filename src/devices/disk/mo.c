@@ -1390,12 +1390,6 @@ do_command(void *p, uint8_t *cdb)
 			buf_alloc(dev, 65536);
 		}
 
-		if (!(mode_sense_page_flags & (1LL << (uint64_t) (cdb[2] & 0x3f)))) {
-			invalid_field(dev);
-			buf_free(dev);
-			return;
-		}
-
 		memset(dev->buffer, 0, len);
 		alloc_length = len;
 
@@ -1526,9 +1520,9 @@ do_command(void *p, uint8_t *cdb)
 				dev->buffer[7] = 0x20;	/* Wide bus supported */
 			}
 
-			ide_padstr8(dev->buffer + 8, 8, "VARCEM  "); /* Vendor */
-			ide_padstr8(dev->buffer + 16, 16, "MAGNETO OPTICAL "); /* Product */
-			ide_padstr8(dev->buffer + 32, 4, "1.00"); /* Revision */
+			ide_padstr8(dev->buffer + 8, 8, mo_drive_types[dev->drv->type].vendor); /* Vendor */
+			ide_padstr8(dev->buffer + 16, 16, mo_drive_types[dev->drv->type].model); /* Product */
+			ide_padstr8(dev->buffer + 32, 4, mo_drive_types[dev->drv->type].revision); /* Revision */
 			idx = 36;
 
 			if (max_len == 96) {
@@ -2177,8 +2171,14 @@ packet_write(void *p, uint32_t val, int length)
 static void
 mo_identify(ide_t *ide, int ide_has_dma)
 {
-    ide_padstr((char *) (ide->buffer + 23), "1.00", 8); /* Firmware */
-    ide_padstr((char *) (ide->buffer + 27), "VARCEM MAGNETO OPTICAL", 40); /* Model */
+    char model[40];
+    mo_t* mo = (mo_t*)ide->p;
+
+    memset(model, 0, 40);
+    snprintf(model, 40, "%s %s", mo_drive_types[mo_drives[mo->id].type].vendor, mo_drive_types[mo_drives[mo->id].type].model);
+
+    ide_padstr((char *) (ide->buffer + 23), mo_drive_types[mo_drives[mo->id].type].revision, 8); /* Firmware */
+    ide_padstr((char *) (ide->buffer + 27), model, 40); /* Model */
 
     if (ide_has_dma) {
 	ide->buffer[80] = 0x30; /*Supported ATA versions : ATA/ATAPI-4 ATA/ATAPI-5*/
@@ -2488,7 +2488,7 @@ mo_load(mo_t *dev, const wchar_t *fn)
 	fseek(dev->drv->f, 0, SEEK_END);
 	size = ftell(dev->drv->f);
 
-	for(i = 0; i < sizeof(mo_types); i++)
+	for(i = 0; i < KNOWN_MO_TYPES; i++)
 	{
 	    if(size == mo_types[i].disk_size)
 	    {

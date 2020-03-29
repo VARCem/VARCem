@@ -127,6 +127,7 @@ typedef struct {
     uint32_t	medium_size,
 		base;
     uint16_t sector_size;
+    uint8_t type;
 
     void	*priv;
 

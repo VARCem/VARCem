@@ -1593,8 +1593,8 @@ load_mo(config_t* cfg, const char* cat)
 
     for (c = 0; c < MO_NUM; c++) {
 	sprintf(temp, "mo_%02i_parameters", c + 1);
-	p = config_get_string(cat, temp, "none");
-	sscanf(p, "%s", s);
+	p = config_get_string(cat, temp, "0, none");
+	sscanf(p, "%u, %s", (unsigned*)&mo_drives[c].type, s);
 	mo_drives[c].bus_type = mo_string_to_bus(s);
 
 	/* Default values, needed for proper operation of the Settings dialog. */
@@ -1674,7 +1674,7 @@ save_mo(const config_t* cfg, const char* cat)
 	    config_delete_var(cat, temp);
 	}
 	else {
-	    sprintf(tmp2, "%s",
+	    sprintf(tmp2, "%u, %s", mo_drives[c].type,
 		mo_bus_to_string(mo_drives[c].bus_type));
 	    config_set_string(cat, temp, tmp2);
 	}
