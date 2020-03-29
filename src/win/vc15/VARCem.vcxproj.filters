@@ -1746,6 +1746,15 @@
     <ClInclude Include="..\..\..\devices\sound\munt\SampleRateConverter.h">
       <Filter>devices\sound\munt</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\win_settings_mmc.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_iomega.h">
+      <Filter>win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_settings_mo.h">
+      <Filter>win</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cpu">
