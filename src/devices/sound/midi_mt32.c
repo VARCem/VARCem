@@ -247,29 +247,30 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 
     /* buf_size = samplerate/RENDER_RATE*2; */
     if (config.sound_is_float) {
-	buf_size = (samplerate/RENDER_RATE)*2*BUFFER_SEGMENTS*sizeof(float);
-	buffer = (float *)mem_alloc(buf_size);
-	buffer_int16 = NULL;
+	    buf_size = (samplerate/RENDER_RATE)*2*BUFFER_SEGMENTS*sizeof(float);
+	    buffer = (float *)mem_alloc(buf_size);
+	    buffer_int16 = NULL;
     } else {
-	buf_size = (samplerate/RENDER_RATE)*2*BUFFER_SEGMENTS*sizeof(int16_t);
-	buffer = NULL;
-	buffer_int16 = (int16_t *)mem_alloc(buf_size);
+	    buf_size = (samplerate/RENDER_RATE)*2*BUFFER_SEGMENTS*sizeof(int16_t);
+	    buffer = NULL;
+	    buffer_int16 = (int16_t *)mem_alloc(buf_size);
     }
 
-    mt32emu_set_output_gain(context, device_get_config_int("output_gain")/100.0f);
+    //mt32emu_set_output_gain(context, device_get_config_int("output_gain")/100.0f);
+    mt32emu_set_output_gain(context, 10000.0f/100.0f);
     mt32emu_set_reverb_enabled(context, (mt32emu_boolean) !!device_get_config_int("reverb"));
     mt32emu_set_reverb_output_gain(context, device_get_config_int("reverb_output_gain")/100.0f);
     mt32emu_set_reversed_stereo_enabled(context, (mt32emu_boolean) !!device_get_config_int("reversed_stereo"));
     mt32emu_set_nice_amp_ramp_enabled(context, (mt32emu_boolean) !!device_get_config_int("nice_ramp"));
 
-    /* DEBUG("mt32 output gain: %f\n", mt32emu_get_output_gain(context));
+    DEBUG("mt32 output gain: %f\n", mt32emu_get_output_gain(context));
     DEBUG("mt32 reverb output gain: %f\n", mt32emu_get_reverb_output_gain(context));
     DEBUG("mt32 reverb: %d\n", mt32emu_is_reverb_enabled(context));
-    DEBUG("mt32 reversed stereo: %d\n", mt32emu_is_reversed_stereo_enabled(context)); */
+    DEBUG("mt32 reversed stereo: %d\n", mt32emu_is_reversed_stereo_enabled(context));
 
     openal_set_midi(samplerate, buf_size);
 
-    /* DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n", mt32emu_get_library_version_string(), samplerate, buf_size); */
+    DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n", mt32emu_get_library_version_string(), samplerate, buf_size);
 
     dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
     memset(dev, 0, sizeof(midi_device_t));
