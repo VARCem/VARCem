@@ -256,8 +256,7 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 	    buffer_int16 = (int16_t *)mem_alloc(buf_size);
     }
 
-    //mt32emu_set_output_gain(context, device_get_config_int("output_gain")/100.0f);
-    mt32emu_set_output_gain(context, 10000.0f/100.0f);
+    mt32emu_set_output_gain(context, device_get_config_int("output_gain")/100.0f);
     mt32emu_set_reverb_enabled(context, (mt32emu_boolean) !!device_get_config_int("reverb"));
     mt32emu_set_reverb_output_gain(context, device_get_config_int("reverb_output_gain")/100.0f);
     mt32emu_set_reversed_stereo_enabled(context, (mt32emu_boolean) !!device_get_config_int("reversed_stereo"));
