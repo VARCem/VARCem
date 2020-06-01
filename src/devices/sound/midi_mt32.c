@@ -338,7 +338,6 @@ mt32_close(void *priv)
 
 static const device_config_t mt32_config[] =
 {
-#if 0
 	{
 		"output_gain","Output Gain",CONFIG_SPINNER,"",100,
 		.spinner =
@@ -346,11 +345,9 @@ static const device_config_t mt32_config[] =
 			0, 100
 		}
 	},
-#endif
 	{
 		"reverb","Reverb",CONFIG_BINARY,"",1
 	},
-#if 0
 	{
 		"reverb_output_gain","Reverb Output Gain",CONFIG_SPINNER,"",100,
 		.spinner =
@@ -358,7 +355,6 @@ static const device_config_t mt32_config[] =
 			0, 100
 		}
 	},
-#endif
 	{
 		"reversed_stereo","Reversed stereo",CONFIG_BINARY,"",0
 	},
