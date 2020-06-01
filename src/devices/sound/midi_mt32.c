@@ -262,14 +262,14 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
     mt32emu_set_reversed_stereo_enabled(context, (mt32emu_boolean) !!device_get_config_int("reversed_stereo"));
     mt32emu_set_nice_amp_ramp_enabled(context, (mt32emu_boolean) !!device_get_config_int("nice_ramp"));
 
-    DEBUG("mt32 output gain: %f\n", mt32emu_get_output_gain(context));
-    DEBUG("mt32 reverb output gain: %f\n", mt32emu_get_reverb_output_gain(context));
-    DEBUG("mt32 reverb: %d\n", mt32emu_is_reverb_enabled(context));
-    DEBUG("mt32 reversed stereo: %d\n", mt32emu_is_reversed_stereo_enabled(context));
+    //DEBUG("mt32 output gain: %f\n", mt32emu_get_output_gain(context));
+    //DEBUG("mt32 reverb output gain: %f\n", mt32emu_get_reverb_output_gain(context));
+    //DEBUG("mt32 reverb: %d\n", mt32emu_is_reverb_enabled(context));
+    //DEBUG("mt32 reversed stereo: %d\n", mt32emu_is_reversed_stereo_enabled(context));
 
     openal_set_midi(samplerate, buf_size);
 
-    DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n", mt32emu_get_library_version_string(), samplerate, buf_size);
+    //DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n", mt32emu_get_library_version_string(), samplerate, buf_size);
 
     dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
     memset(dev, 0, sizeof(midi_device_t));

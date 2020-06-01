@@ -248,8 +248,7 @@ midi_poll(void)
 void
 play_msg(uint8_t *msg)
 {
-    //if (midi && midi->device && midi->device->play_msg)
-    if (midi->device->play_msg)
+    if (midi && midi->device && midi->device->play_msg)
 		midi->device->play_msg(msg);
 }
 
@@ -257,8 +256,7 @@ play_msg(uint8_t *msg)
 void
 play_sysex(uint8_t *sysex, unsigned int len)
 {
-    //if (midi && midi->device && midi->device->play_sysex)
-	if (midi->device->play_sysex)
+    if (midi && midi->device && midi->device->play_sysex)
 		midi->device->play_sysex(sysex, len);
 }
 
