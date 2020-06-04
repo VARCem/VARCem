@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.16	2019/05/17
+ * Version:	@(#)scsi_aha154x.c	1.0.17	2020/06/01
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -62,6 +62,7 @@
 #include "scsi_x54x.h"
 
 
+#define AHA1540A_BIOS_PATH	L"scsi/adaptec/aha1540a307.bin"
 #define AHA1540B_330_BIOS_PATH	L"scsi/adaptec/aha1540b320_330.bin"
 #define AHA1540B_334_BIOS_PATH	L"scsi/adaptec/aha1540b320_334.bin"
 #define AHA1540C_BIOS_PATH	L"scsi/adaptec/aha1542c102.bin"
@@ -71,6 +72,7 @@
 
 
 enum {
+    AHA_154xA,
     AHA_154xB,
     AHA_154xC,
     AHA_154xCF,
@@ -296,7 +298,7 @@ param_len(void *priv)
 		break;	
 
 	case CMD_WR_EEPROM:
-		return(3+32);
+		return(35);
 		break;
 
 	case CMD_RD_EEPROM:
@@ -365,7 +367,8 @@ aha_cmds(void *priv)
 
 	case CMD_BIOS_MBINIT: /* BIOS Mailbox Initialization */
 		/* Sent by CF BIOS. */
-		dev->Mbx24bit = 1;
+		//dev->Mbx24bit = 1;
+                dev->flags |= X54X_MBX_24BIT;
 
 		mbi = (MailboxInit_t *)dev->CmdBuf;
 
@@ -580,6 +583,15 @@ aha_mca_write(int port, uint8_t val, void *priv)
     }
 }
 
+#if 0
+static uint8_t
+aha_mca_feedb(void *priv)
+{
+    x54x_t *dev = (x54x_t *)priv;
+
+    return (dev->pos_regs[2] & 0x01);
+}
+#endif
 
 /* Initialize the board's ROM BIOS. */
 static void
@@ -754,10 +766,7 @@ aha_init(const device_t *info, UNUSED(void *parent))
     dev->HostID = 7;		/* default HA ID */
     dev->setup_info_len = sizeof(aha_setup_t);
     dev->max_id = 7;
-    dev->int_geom_writable = 0;
-    dev->cdrom_boot = 0;
-    dev->bit32 = 0;
-    dev->lba_bios = 0;
+    dev->flags = 0;
 
     dev->ven_callback = call_back;
     dev->ven_cmd_is_fast = cmd_is_fast;
@@ -770,6 +779,16 @@ aha_init(const device_t *info, UNUSED(void *parent))
 
     /* Perform per-board initialization. */
     switch(dev->type) {
+        case AHA_154xA:
+		strcpy(dev->name, "AHA-154xA");
+		dev->fw_rev = "A003";	/* The 3.07 microcode says A006. */
+		//dev->bios_path = L"roms/scsi/adaptec/aha1540a307.bin"; /*Only for port 0x330*/
+		/* This is configurable from the configuration for the 154xB, the rest of the controllers read it from the EEPROM. */
+		dev->HostID = device_get_config_int("hostid");
+		dev->rom_shram = 0x3F80;	/* shadow RAM address base */
+		dev->rom_shramsz = 128;		/* size of shadow RAM */
+		dev->ha_bps = 5000000.0;	/* normal SCSI */
+		break;
 	case AHA_154xB:
 		strcpy(dev->name, "AHA-154xB");
 		switch(dev->Base) {
@@ -794,6 +813,7 @@ aha_init(const device_t *info, UNUSED(void *parent))
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
 		dev->rom_ioaddr = 0x3f7e;	/* [2:0] idx into addr table */
 		dev->rom_fwhigh = 0x0022;	/* firmware version (hi/lo) */
+                dev->flags |= X54X_CDROM_BOOT;
 		dev->ven_get_host_id = get_host_id;	/* function to return host ID from EEPROM */
 		dev->ven_get_irq = get_irq;	/* function to return IRQ from EEPROM */
 		dev->ven_get_dma = get_dma;	/* function to return DMA channel from EEPROM */
@@ -833,13 +853,14 @@ aha_init(const device_t *info, UNUSED(void *parent))
 		strcpy(dev->name, "AHA-1640");
 		dev->fw_rev = "BB01";
 
-		dev->lba_bios = 1;
+		dev->flags |= X54X_LBA_BIOS;
 
 		/* Enable MCA. */
 		dev->pos_regs[0] = 0x1f;	/* MCA board ID */
 		dev->pos_regs[1] = 0x0f;	
+		//mca_add(aha_mca_read, aha_mca_write, aha_mca_feedb, dev);
 		mca_add(aha_mca_read, aha_mca_write, dev);
-		dev->ha_bps = 5000000.0;	/* normal SCSI */
+                dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
     }	
 
@@ -1098,6 +1119,15 @@ static const device_config_t aha_154x_config[] = {
     }
 };
 
+const device_t aha1540a_device = {
+    "Adaptec AHA-1540A",
+    DEVICE_ISA | DEVICE_AT,
+    AHA_154xA,
+    AHA1540A_BIOS_PATH,
+    aha_init, x54x_close, NULL,
+    NULL, NULL, NULL, NULL,
+    aha_154xb_config
+};
 
 const device_t aha1540b_device = {
     "Adaptec AHA-1540B",

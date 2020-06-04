@@ -8,7 +8,7 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.18	2019/05/17
+ * Version:	@(#)scsi.c	1.0.19	2020/06/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -75,10 +75,12 @@ static const struct {
     { "none",		NULL				},
     { "internal",	NULL				},
 
+    { "aha1540a",	&aha1540a_device		},
     { "aha1540b",	&aha1540b_device		},
     { "aha1542c",	&aha1542c_device		},
     { "aha1542cf",	&aha1542cf_device		},
     { "bt542bh",	&buslogic_device		},
+    { "bt542b", 	&buslogic_542b_device	},
     { "bt545s",		&buslogic_545s_device		},
     { "lcs6821n",	&scsi_lcs6821n_device		},
     { "rt1000b",	&scsi_rt1000b_device		},
