@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.19	2019/05/13
+ * Version:	@(#)net_ne2000.c	1.0.20	2020/06/05
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -25,7 +25,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Peter Grehan, <grehan@iprg.nokia.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Portions Copyright (C) 2002  MandrakeSoft S.A.
  *
@@ -2658,7 +2658,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
 	 dev->is_pci?"PCI":"ISA", dev->base_address, dev->base_irq);
 
     /* Set up our BIOS ROM space, if any. */
-    if ((fn != NULL) && (dev->bios_addr > 0))
+    if ((fn != NULL) && (dev->bios_addr > 0) && dev->has_bios)
 	nic_rom_init(dev, fn);
 
     return((priv_t)dev);
