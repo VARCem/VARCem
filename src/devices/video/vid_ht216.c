@@ -14,7 +14,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2019 Fred N. van Kempen.
+ *		Copyright 2019,2020 Fred N. van Kempen.
  *		Copyright 2019 Miran Grca.
  *		Copyright 2019 Sarah Walker.
  *
@@ -59,10 +59,7 @@
 #define BIOS_VIDEO7_VGA_1024I_PATH	L"video/video7/video seven vga 1024i - bios - v2.19 - 435-0062-05 - u17 - 27c256.bin"
 
 
-
 #define HT_MISC_PAGE_SEL (1 << 5)
-
-
 
 
 /*Shifts CPU VRAM read address by 3 bits, for use with fat pixel colour expansion*/

@@ -8,13 +8,13 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.17	2020/01/21
+ * Version:	@(#)snd_gus.c	1.0.18	2020/06/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -1323,6 +1323,18 @@ static const device_config_t gus_config[] = {
 	}
 };
 
+const device_t gus_device = {
+    "Gravis UltraSound",
+    DEVICE_ISA,
+    0,
+    NULL,
+    gus_init, gus_close, NULL,
+    NULL,
+    speed_changed, NULL, NULL,
+    gus_config
+};
+
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
 static const device_config_t gus_max_config[] = {
 	{
 		"base", "Address", CONFIG_HEX16, "", 0x220,
@@ -1366,18 +1378,6 @@ static const device_config_t gus_max_config[] = {
 	}
 };
 
-const device_t gus_device = {
-    "Gravis UltraSound",
-    DEVICE_ISA,
-    0,
-    NULL,
-    gus_init, gus_close, NULL,
-    NULL,
-    speed_changed, NULL, NULL,
-    gus_config
-};
-
-#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
 const device_t gusmax_device = {
     "Gravis UltraSound MAX",
     DEVICE_ISA,

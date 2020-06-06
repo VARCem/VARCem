@@ -15,7 +15,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2018 TheCollector1995.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
@@ -227,6 +227,7 @@ wss_init(const device_t *info, UNUSED(void *parent))
     return((priv_t)dev);
 }
 
+
 static const 
 device_config_t wss_config[] =
 {
@@ -234,16 +235,16 @@ device_config_t wss_config[] =
                 "base", "Address", CONFIG_HEX16, "", 0x530,
                 {
                         {
-                                "0x530", 0x530
+                                "530H", 0x530
                         },
                         {
-                                "0x604", 0x604
+                                "604H", 0x604
                         },
                         {
-                                "0xe80", 0xe80
+                                "E80H", 0xe80
                         },
                         {
-                                "0xf40", 0xf40
+                                "F40H", 0xf40
                         },
                 }
         },

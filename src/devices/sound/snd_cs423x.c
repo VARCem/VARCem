@@ -13,8 +13,8 @@
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
- *		Copyright 2018,2019 Altheos.
+ *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2020 Altheos.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the

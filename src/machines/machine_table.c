@@ -8,13 +8,13 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.44	2020/02/12
+ * Version:	@(#)machine_table.c	1.0.45	2020/06/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -157,7 +157,7 @@ static const struct {
     /* 80486 */
     { "[486 ISA] IBM PS/1 model 2133",		"ibm_ps1_2133",		&m_ps1_2133		},
 
-    { "[486 ISA] AMI 486 (ALi1429)",		"ami_486_ali1429",	&m_ali1429_ami		},
+    { "[486 ISA] Olystar LIL1429 (ALi-1429)",	"ami_486_ali1429",	&m_ali1429_ami		},
 #if defined(DEV_BRANCH) && defined(USE_SIS471)
     { "[486 ISA] AMI 486 (SiS471)",		"ami_486_sis471",	&m_sis471_ami		},
 #endif

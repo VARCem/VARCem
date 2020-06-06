@@ -17,7 +17,7 @@
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -112,7 +112,7 @@ static const struct {
     { "orchid_86c911_isa",	&s3_orchid_86c911_isa_device	},
     { "px_s3_v7_801_isa",	&s3_v7mirage_86c801_isa_device	},
 #if defined(DEV_BRANCH)    
-    { "s3_metheus_86c928_isa",  &s3_metheus_86c928_isa_device   },
+    { "s3_metheus_86c928_isa",	&s3_metheus_86c928_isa_device	},
 #endif    
     { "video7_vga_1024i",	&video7_vga_1024i_device	},
     { "wd90c11",		&paradise_wd90c11_device	},
@@ -175,7 +175,7 @@ static const struct {
     { "n9_9fx_vlb",		&s3_9fx_vlb_device		},
     { "bahamas64_vlb",		&s3_bahamas64_vlb_device	},
 #if defined(DEV_BRANCH)
-    { "s3_metheus_86c928_vlb",  &s3_metheus_86c928_vlb_device   },
+    { "s3_metheus_86c928_vlb",	&s3_metheus_86c928_vlb_device	},
 #endif
     { "px_86c805_vlb",		&s3_phoenix_86c805_vlb_device	},
     { "px_vision864_vlb",	&s3_phoenix_vision864_vlb_device},

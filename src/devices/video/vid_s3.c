@@ -16,7 +16,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -62,8 +62,8 @@
 #include "vid_av9194.h"
 
 
-#define ROM_ORCHID_86C911		L"video/s3/s3/BIOS.BIN"
-#define ROM_METHEUS_86C928		L"video/s3/s3/928.vbi"
+#define ROM_ORCHID_86C911		L"video/s3/s3/orchid.bin"  //bios.bin
+#define ROM_METHEUS_86C928		L"video/s3/s3/metheus928.vbi"
 #define ROM_PARADISE_BAHAMAS64		L"video/s3/s3/bahamas64.bin"
 #define ROM_V7MIRAGE_86C801		L"video/s3/s3/v7mirage.vbi"
 #define ROM_PHOENIX_86C805		L"video/s3/s3/805.vbi"
@@ -74,6 +74,7 @@
 #define ROM_NUMBER9_9FX			L"video/s3/s3/s3_764.bin"
 #define ROM_PHOENIX_TRIO64		L"video/s3/s3/86c764x1.bin"
 #define ROM_DIAMOND_STEALTH64_764	L"video/s3/s3/stealth64-dram.bin"
+
 
 enum {
     S3_NUMBER9_9FX,
@@ -242,7 +243,8 @@ static const video_timings_t timing_s3_vision964 = {VID_BUS,2,2,4,20,20,35};
 static const video_timings_t timing_s3_trio32	 = {VID_BUS,4,3,5,26,26,42};
 static const video_timings_t timing_s3_trio64	 = {VID_BUS,3,2,4,25,25,40};
 
-void s3_updatemapping();
+
+void s3_updatemapping(s3_t *s3);
 
 void s3_accel_write(uint32_t addr, uint8_t val, priv_t);
 void s3_accel_write_w(uint32_t addr, uint16_t val, priv_t);
