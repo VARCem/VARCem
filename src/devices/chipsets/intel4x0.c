@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440 PCISet chipsets.
  *
- * Version:	@(#)intel4x0.c	1.0.7	2019/05/17
+ * Version:	@(#)intel4x0.c	1.0.8	2020/01/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -146,6 +146,13 @@ i4x0_write(int func, int addr, uint8_t val, priv_t priv)
 			val = 0x02;
 			if (dev->chip == INTEL_430FX_PB640)
 				val |= 0x20;
+		}
+		break;
+		
+	case 0x52: /*Cache Control*/
+		if (dev->chip < INTEL_440FX) {
+			cpu_cache_ext_enabled = (val & 0x01);
+			cpu_update_waitstates();
 		}
 		break;
 
@@ -340,6 +347,11 @@ i4x0_init(const device_t *info, UNUSED(void *parent))
     dev->regs[0x64] = 0x02;
     if (dev->chip >= INTEL_430FX)
 	dev->regs[0x72] = 0x02;
+	
+    if (dev->chip == INTEL_440FX) {
+	cpu_cache_ext_enabled = 1;
+	cpu_update_waitstates();
+    }
 
     pci_add_card(0, i4x0_read, i4x0_write, dev);
 

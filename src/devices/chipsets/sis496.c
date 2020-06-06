@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496/497 chipset.
  *
- * Version:	@(#)sis49x.c	1.0.12	2019/05/13
+ * Version:	@(#)sis49x.c	1.0.13	2020/01/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -277,6 +277,11 @@ sis496_write(int func, int addr, uint8_t val, priv_t priv)
     sis49x_t *dev = (sis49x_t *)priv;
 
     switch (addr) {
+	case 0x42: /*Cache configure*/
+		cpu_cache_ext_enabled = (val & 0x01);
+		cpu_update_waitstates();
+		break;
+	
 	case 0x44: /*Shadow configure*/
 		if ((dev->pci_conf[0x44] & val) ^ 0xf0) {
 			dev->pci_conf[0x44] = val;
