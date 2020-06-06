@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.32	2019/10/15
+ * Version:	@(#)vid_cl54xx.c	1.0.33	2020/01/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,6 +76,7 @@
 #define BIOS_GD5480_PATH	L"video/cirruslogic/gd5480.rom"
 
 
+#define CIRRUS_ID_AVGA2			0x18
 #define CIRRUS_ID_CLGD5402	  	0x89
 #define CIRRUS_ID_CLGD5420	  	0x8a
 #define CIRRUS_ID_CLGD5422  		0x8c
@@ -216,13 +217,10 @@ typedef struct {
     uint32_t		lfb_base;
 
     int			mmio_vram_overlap;
-
+    
     uint32_t		extpallook[256];
     PALETTE		extpal;
 } gd54xx_t;
-
-
-
 
 static void	
 gd543x_mmio_write(uint32_t addr, uint8_t val, priv_t);
@@ -328,6 +326,8 @@ recalc_banking(gd54xx_t *dev)
 	} else
 		svga->extra_banks[1] = svga->extra_banks[0] + 0x8000;
     }
+    
+    svga->write_bank = svga->read_bank = svga->extra_banks[0];
 }
 
 
@@ -532,10 +532,7 @@ recalc_timings(svga_t *svga)
 	//svga->clock = (cpu_clock * (double)(1ull << 32)) / freq;
     }
 
-    if (dev->vram_size == (1 << 19)) /* Note : why 512KB VRAM cards does not wrap */
-	svga->vram_display_mask = dev->vram_mask;
-    else
-	svga->vram_display_mask = (svga->crtc[0x1b] & 2) ? dev->vram_mask : 0x3ffff;
+    svga->vram_display_mask = (svga->crtc[0x1b] & 2) ? dev->vram_mask : 0x3ffff;
 }
 
 
@@ -622,7 +619,7 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 					if (val == 0x12)
 						svga->seqregs[6] = 0x12;
 					    else
-						svga->seqregs[6] = (svga->crtc[0x27] >= CIRRUS_ID_CLGD5446) ? 0xff : 0x0f;
+						svga->seqregs[6] = 0x0f;
 					is_locked(svga);
 					break;
 
@@ -759,7 +756,12 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 		dev->ramdac.state = 0;
 		break;
 
+	case 0x03c7: case 0x03c8:
+		dev->ramdac.state = 0;
+		break;
+	
 	case 0x03c9:
+		dev->ramdac.state = 0;
 		svga->dac_status = 0;
 		svga->fullchange = changeframecount;
 		switch (svga->dac_pos) {
@@ -859,17 +861,19 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 			        svga_recalctimings(svga);
 		} else {
 			switch (svga->gdcaddr) {
-				case 0x09: case 0x0a: case 0x0b:
-					recalc_banking(dev);
+				case 0x09: case 0x0a: case 0x0b:		
 					if (svga->gdcreg[0xb] & 0x04)
 						svga->writemode = svga->gdcreg[5] & 7;
 					else
 						svga->writemode = svga->gdcreg[5] & 3;
-					svga->adv_flags = FLAG_EXTRA_BANKS;
+					svga->adv_flags = 0;
+					if (svga->gdcreg[0xb] & 0x01)
+						svga->adv_flags = FLAG_EXTRA_BANKS;
 					if(svga->gdcreg[0xb] & 0x02)
 						svga->adv_flags |= FLAG_ADDR_BY8;
 					if (svga->gdcreg[0xb] & 0x08)
 						svga->adv_flags |= FLAG_LATCH8;
+					recalc_banking(dev);
 					break;
 					
 				case 0x10:
@@ -1066,21 +1070,25 @@ gd54xx_in(uint16_t addr, priv_t priv)
 					return dev->vclk_n[svga->seqaddr-0x0b];
 
 				case 0x17:
-					temp = svga->seqregs[0x17] & ~(7 << 3);
-					if (svga->crtc[0x27] <= CIRRUS_ID_CLGD5429) {
-						if (dev->vlb)
-							temp |= (CL_GD5429_SYSTEM_BUS_VESA << 3);
-						else
-							temp |= (CL_GD5429_SYSTEM_BUS_ISA << 3);
-					} else {
-						if (dev->pci)
-							temp |= (CL_GD543X_SYSTEM_BUS_PCI << 3);
-						else if (dev->vlb)
-							temp |= (CL_GD543X_SYSTEM_BUS_VESA << 3);
-						else
-							temp |= (CL_GD543X_SYSTEM_BUS_ISA << 3);
+					if (is_5422(svga)) { 
+						temp = svga->seqregs[0x17] & ~(7 << 3);
+						if (svga->crtc[0x27] <= CIRRUS_ID_CLGD5429) {
+							if (dev->vlb)
+								temp |= (CL_GD5429_SYSTEM_BUS_VESA << 3);
+							else
+								temp |= (CL_GD5429_SYSTEM_BUS_ISA << 3);
+						} else {
+							if (dev->pci)
+								temp |= (CL_GD543X_SYSTEM_BUS_PCI << 3);
+							else if (dev->vlb)
+								temp |= (CL_GD543X_SYSTEM_BUS_VESA << 3);
+							else
+								temp |= (CL_GD543X_SYSTEM_BUS_ISA << 3);
+						}
+						return temp;
 					}
-					return temp;
+					else
+						break;
 				
 				case 0x18: /* TODO Signature Generator */
 					return svga->seqregs[0x18];
@@ -1096,14 +1104,25 @@ gd54xx_in(uint16_t addr, priv_t priv)
 		if (is_locked(svga))
 			return svga_in(addr, svga);
 		if (dev->ramdac.state == 4) {
-			dev->ramdac.state = 0;
+			if (svga->crtc[0x27] != CIRRUS_ID_CLGD5428)
+				dev->ramdac.state = 0;
 			return dev->ramdac.ctrl;
 		} else {
 			dev->ramdac.state++;
-			return svga_in(addr, svga);
+			if (dev->ramdac.state == 4)
+				return dev->ramdac.ctrl;
+			else
+				return svga_in(addr, svga);
 		}
 		break;
+	
+	case 0x03c7: case 0x03c8:
+		dev->ramdac.state = 0;
+		return svga_in(addr, svga);
+	break;
+	
 	case 0x03c9:
+		dev->ramdac.state = 0;
 		svga->dac_status = 3;
 		indx = (svga->dac_addr - 1) & 0xff;
 		if (svga->seqregs[0x12] & 2)
@@ -1285,7 +1304,7 @@ gd54xx_in(uint16_t addr, priv_t priv)
 		
 			case 0x22: /*Graphis Data Latches Readback Register*/
 				/*Should this be & 7 if 8 byte latch is enabled? */
-				return (svga->latch >> ((svga->gdcreg[4] & 3) << 3)) & 0xff;
+				return (svga->latch.b[svga->gdcreg[4] & 3]);
 			case 0x24: /*Attribute controller toggle readback (R)*/
 				return svga->attrff << 7;
 
@@ -2038,9 +2057,6 @@ gd54xx_writel_linear(uint32_t addr, uint32_t val, priv_t priv)
 		case 3:
 			return;
 	}
-
-	if (svga->fast)
-        	cycles -= video_timing_write_l;
     } else {
 	switch(ap) {
 		case 0:
@@ -3240,7 +3256,7 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
     mem_map_add(&dev->linear_mapping, 0, 0,
 		gd54xx_readb_linear, gd54xx_readw_linear, gd54xx_readl_linear,
 		gd54xx_writeb_linear, gd54xx_writew_linear, gd54xx_writel_linear,
-		NULL, MEM_MAPPING_EXTERNAL, svga);
+		NULL, MEM_MAPPING_EXTERNAL, dev);
     mem_map_disable(&dev->linear_mapping);
    
     mem_map_add(&dev->aperture2_mapping, 0, 0,
@@ -3287,7 +3303,6 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
     dev->pci_regs[0x33] = 0x00;
 	
     svga->crtc[0x27] = id;
-    svga->adv_flags = FLAG_EXTRA_BANKS;
     
     svga->seqregs[0x06] = 0x0f;
 
@@ -3410,6 +3425,7 @@ static const device_config_t gd5434_config[] =
         }
 };
 
+static const video_timings_t cl_gd_avga_timing = {VID_ISA,3,3,6,5,5,10};
 static const video_timings_t cl_gd_isa_timing = {VID_ISA,3,3,6,8,8,12};
 static const video_timings_t cl_gd_vlb_timing = {VID_BUS,4,4,8,10,10,20};
 static const video_timings_t cl_gd_pci_timing = {VID_BUS,4,4,8,10,10,20};
@@ -3423,7 +3439,7 @@ const device_t gd5402_isa_device = {
     NULL,
     gd54xx_speed_changed,
     gd54xx_force_redraw,
-    &cl_gd_isa_timing,
+    &cl_gd_avga_timing,
     NULL,
 };
 
