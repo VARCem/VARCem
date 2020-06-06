@@ -8,7 +8,7 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.10	2019/05/17
+ * Version:	@(#)snd_wss.c	1.0.11	2020/01/31
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -193,7 +193,9 @@ wss_init(const device_t *info, UNUSED(void *parent))
     memset(dev, 0x00, sizeof(wss_t));
     dev->name = info->name;
     dev->board = info->local;
-
+    uint16_t addr = device_get_config_hex16("base");
+    dev->opl_enabled = device_get_config_int("opl");
+    
     switch(info->local) {
 	case 0:		/* standard ISA controller */
 		break;
@@ -205,17 +207,19 @@ wss_init(const device_t *info, UNUSED(void *parent))
 		break;
     }
 
-    opl3_init(&dev->opl);
-
     ad1848_init(&dev->ad1848);
     ad1848_setirq(&dev->ad1848, 7);
     ad1848_setdma(&dev->ad1848, 3);
 
-    io_sethandler(0x0388, 4,
-		  opl3_read,NULL,NULL, opl3_write,NULL,NULL, &dev->opl);
-    io_sethandler(0x0530, 4,
+    if (dev->opl_enabled) {
+	opl3_init(&dev->opl);
+	io_sethandler(0x0388, 4,
+			opl3_read,NULL,NULL, opl3_write,NULL,NULL, &dev->opl);
+    }
+    
+    io_sethandler(addr, 4,
 		  wss_read,NULL,NULL, wss_write,NULL,NULL, dev);
-    io_sethandler(0x0534, 4,
+    io_sethandler(addr + 4, 4,
 		  ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
 
     sound_add_handler(get_buffer, (priv_t)dev);
@@ -223,17 +227,44 @@ wss_init(const device_t *info, UNUSED(void *parent))
     return((priv_t)dev);
 }
 
+static const 
+device_config_t wss_config[] =
+{
+        {
+                "base", "Address", CONFIG_HEX16, "", 0x530,
+                {
+                        {
+                                "0x530", 0x530
+                        },
+                        {
+                                "0x604", 0x604
+                        },
+                        {
+                                "0xe80", 0xe80
+                        },
+                        {
+                                "0xf40", 0xf40
+                        },
+                }
+        },
+	{
+		"opl", "Enable OPL", CONFIG_BINARY, "", 1
+	},
+        {
+                "", "", -1
+        }
+};
 
 const device_t wss_device = {
     "Windows Sound System",
-    DEVICE_ISA,
+    DEVICE_ISA | DEVICE_AT,
     0,
     NULL,
     wss_init, wss_close, NULL,
     NULL,
     speed_changed,
     NULL, NULL,
-    NULL
+    wss_config
 };
 
 const device_t ncr_business_audio_device = {

@@ -8,7 +8,7 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)snd_sb.c	1.0.14	2019/05/17
+ * Version:	@(#)snd_sb.c	1.0.15	2020/01/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -595,7 +595,7 @@ void sb_ct1345_mixer_write(uint16_t addr, uint8_t val, priv_t priv)
                         {
                                 /* Compatibility: chain registers 0x02 and 0x22 as well as 0x06 and 0x26 */
                                 case 0x02: case 0x06: case 0x08:
-                                mixer->regs[mixer->index+0x20]=((val&0xE) << 4)|(val&0xE) << 4;
+                                mixer->regs[mixer->index+0x20]=((val&0xE) << 4)|(val&0xE);
                                 break;
                                 
                                 case 0x22: case 0x26: case 0x28:
