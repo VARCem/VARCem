@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.38	2019/05/02
+ * Version:	@(#)video_dev.c	1.0.39	2020/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -109,7 +109,11 @@ static const struct {
     { "oti077",			&oti077_device			},
     { "pvga1a",			&paradise_pvga1a_device		},
     { "sigma400",		&sigma_device			},
+    { "orchid_86c911_isa",	&s3_orchid_86c911_isa_device	},
     { "px_s3_v7_801_isa",	&s3_v7mirage_86c801_isa_device	},
+#if defined(DEV_BRANCH)    
+    { "s3_metheus_86c928_isa",  &s3_metheus_86c928_isa_device   },
+#endif    
     { "video7_vga_1024i",	&video7_vga_1024i_device	},
     { "wd90c11",		&paradise_wd90c11_device	},
     { "wd90c30",		&paradise_wd90c30_device	},
@@ -125,6 +129,7 @@ static const struct {
     { "wy700",			&wy700_device			},
 
     { "et4000ax_mca",		&et4000_mca_device		},
+//  { "ibm_gd5428_mca",		&ibm_gd5428_mca_device		},
 
     { "mach64gx_pci",		&mach64gx_pci_device		},
     { "mach64vt2",		&mach64vt2_device		},
@@ -140,6 +145,8 @@ static const struct {
     { "stealth3d_3000_pci",	&s3_virge_988_pci_device	},
     { "stealth64d_pci",		&s3_diamond_stealth64_pci_device},
     { "stealth64v_pci",		&s3_diamond_stealth64_964_pci_device},
+//    { "mystique_pci",		&mystique_device		},
+//    { "mystique_220_pci",	&mystique_220_device		},
     { "n9_9fx_pci",		&s3_9fx_pci_device		},
     { "bahamas64_pci",		&s3_bahamas64_pci_device	},
     { "px_vision864_pci",	&s3_phoenix_vision864_pci_device},
@@ -167,6 +174,9 @@ static const struct {
     { "stealth64v_vlb",		&s3_diamond_stealth64_964_vlb_device},
     { "n9_9fx_vlb",		&s3_9fx_vlb_device		},
     { "bahamas64_vlb",		&s3_bahamas64_vlb_device	},
+#if defined(DEV_BRANCH)
+    { "s3_metheus_86c928_vlb",  &s3_metheus_86c928_vlb_device   },
+#endif
     { "px_86c805_vlb",		&s3_phoenix_86c805_vlb_device	},
     { "px_vision864_vlb",	&s3_phoenix_vision864_vlb_device},
     { "px_trio32_vlb",		&s3_phoenix_trio32_vlb_device	},

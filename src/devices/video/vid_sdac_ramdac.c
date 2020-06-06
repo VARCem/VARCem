@@ -8,7 +8,7 @@
  *
  *		87C716 'SDAC' true colour RAMDAC emulation.
  *
- * Version:	@(#)vid_sdac_ramdac.c	1.0.9	2019/05/17
+ * Version:	@(#)vid_sdac_ramdac.c	1.0.10	2020/02/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,27 +56,20 @@ sdac_control_write(sdac_ramdac_t *dev, svga_t *svga, uint8_t val)
 {
     dev->command = val;
 
-    switch (val >> 4) {
-	case 0x2:
-	case 0x3:
-	case 0xa:
+    switch (val & 0xf0) {
+	case 0x20: case 0x30: case 0x80: case 0xa0:
 		svga->bpp = 15;
 		break;
-	case 0x4:
-	case 0xe:
+	case 0x40: case 0x90: case 0xe0:
 		svga->bpp = 24;
 		break;
-	case 0x5:
-	case 0x6:
-	case 0xc:
+	case 0x50: case 0x60: case 0xc0:
 		svga->bpp = 16;
 		break;
-	case 0x7:
+	case 0x70:
 		svga->bpp = 32;
 		break;
-	case 0x0:
-	case 0x1:
-	default:
+	case 0x00: case 0x10: default:
 		svga->bpp = 8;
 		break;
     }
@@ -154,7 +147,6 @@ sdac_ramdac_out(uint16_t addr, int rs2, uint8_t val, sdac_ramdac_t *dev, svga_t 
 uint8_t
 sdac_ramdac_in(uint16_t addr, int rs2, sdac_ramdac_t *dev, svga_t *svga)
 {
-    uint8_t temp = 0xff;
     uint8_t rs = (addr & 0x03);
     rs |= (!!rs2 << 8);
 
@@ -163,34 +155,29 @@ sdac_ramdac_in(uint16_t addr, int rs2, sdac_ramdac_t *dev, svga_t *svga)
 		if (dev->magic_count < 5)
 			dev->magic_count++;
 		if (dev->magic_count == 4)
-			temp = 0x70; /*SDAC ID*/
+			return 0x70; /* SDAC ID*/
 		else if (dev->magic_count == 5) {
-			temp = dev->command;
 			dev->magic_count = 0;
+			return dev->command;
 		} else
-			temp = svga_in(addr, svga);
+			return svga_in(addr, svga);
 		break;
 	case 0x00:
 	case 0x01:
 	case 0x03:
 		dev->magic_count=0;
-		temp = svga_in(addr, svga);
-		break;
+		return svga_in(addr, svga);
 	case 0x04:
-		temp = dev->windex;
-		break;
+		return dev->windex;
 	case 0x05:
-		temp = sdac_reg_read(dev, dev->rindex & 0xff);
-		break;
+		return sdac_reg_read(dev, dev->rindex & 0xff);
 	case 0x06:
-		temp = dev->command;
-		break;
+		return dev->command;
 	case 0x07:
-		temp = dev->rindex;
-		break;
+		return dev->rindex;
     }
-
-    return temp;
+    
+    return 0xff;
 }
 
 
@@ -201,12 +188,15 @@ sdac_getclock(int clock, void *priv)
     float t;
     int m, n1, n2;
 
+    if (dev->regs[0xe] & (1 << 5))
+	clock = dev->regs[0xe] & 7;
+
+    clock &= 7;
     if (clock == 0)
 	return 25175000.0;
     if (clock == 1)
 	return 28322000.0;
 
-    clock ^= 1; /*Clocks 2 and 3 seem to be reversed*/
     m  =  (dev->regs[clock] & 0x7f) + 2;
     n1 = ((dev->regs[clock] >>  8) & 0x1f) + 2;
     n2 = ((dev->regs[clock] >> 13) & 0x07);
