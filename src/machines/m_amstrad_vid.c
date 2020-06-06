@@ -25,7 +25,7 @@
  *		 by the ROS.
  *  PPC:	MDA Monitor results in half-screen, half-cell-height display??
  *
- * Version:	@(#)m_amstrad_vid.c	1.0.6	2019/05/17
+ * Version:	@(#)m_amstrad_vid.c	1.0.7	2020/02/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -200,7 +200,7 @@ pc1512_recalc_timings(vid_t *dev)
 {
     double _dispontime, _dispofftime, disptime;
 
-    disptime = 128; /*Fixed on PC1512*/
+    disptime = 114; /*Fixed on PC1512*/
 
     _dispontime = 80;
     _dispofftime = disptime - _dispontime;
@@ -273,9 +273,11 @@ pc1512_in(uint16_t addr, priv_t priv)
 
 	case 0x03d5:
 		ret = dev->crtc[dev->crtcreg];
+		break;
 
 	case 0x03da:
 		ret = dev->stat;
+		break;
     }
 
     return(ret);
@@ -643,6 +645,8 @@ m_amstrad_1512_vid_init(const wchar_t *fn, int fnt, int cp)
 
     overscan_x = overscan_y = 16;
 
+    cga_palette = 0;
+    
     video_palette_rebuild();
 
     video_inform(VID_TYPE_CGA, &pc1512_timing);
