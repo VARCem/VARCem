@@ -123,9 +123,10 @@ video_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		/* Machine with fixed video card have this disabled. */
 		EnableWindow(h, (m->flags_fixed&MACHINE_VIDEO) ? FALSE : TRUE);
 
-		/* Disable Voodoo on PCI machine? */
+		/* Disable Voodoo on non-PCI machine? */
 		h = GetDlgItem(hdlg, IDC_CHECK_VOODOO);
 		EnableWindow(h, (m->flags & MACHINE_PCI) ? TRUE:FALSE);
+		SendMessage(h, BM_SETCHECK, temp_cfg.voodoo_enabled, 0);
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_VOODOO);
 		EnableWindow(h, ((m->flags & MACHINE_PCI) && temp_cfg.voodoo_enabled) ? TRUE : FALSE);
 
