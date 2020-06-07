@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.74	2019/05/28
+# Version:	@(#)Makefile.VC	1.0.75	2020/06/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017-2019 Fred N. van Kempen.
+#		Copyright 2017-2020 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -130,10 +130,14 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/network devices/printer devices/misc \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
-		    devices/sound \
-		     devices/sound/munt devices/sound/munt/c_interface \
-		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
-		     devices/sound/resid-fp \
+		    devices/sound
+ifeq ($(MUNT), y)
+VPATH		+=   devices/sound/munt \
+		      devices/sound/munt/c_interface \
+		      devices/sound/munt/sha1 devices/sound/munt/srchelper \
+		      devices/sound/munt/srchelper/srctools/src
+endif
+VPATH		+=   devices/sound/resid-fp \
 		    devices/video \
 		   machines ui win
 
@@ -345,8 +349,11 @@ ifeq ($(MUNT), y)
 		    LA32Ramp.obj LA32FloatWaveGenerator.obj \
 		    LA32WaveGenerator.obj MidiStreamParser.obj Part.obj \
 		    Partial.obj PartialManager.obj Poly.obj ROMInfo.obj \
-		    SampleRateConverter_dummy.obj Synth.obj Tables.obj \
-		    TVA.obj TVF.obj TVP.obj sha1.obj c_interface.obj
+		    SampleRateConverter.obj FIRResampler.obj \
+		    IIR2xResampler.obj LinearResampler.obj \
+		    ResamplerModel.obj SincResampler.obj \
+		    InternalResampler.obj Synth.obj Tables.obj TVA.obj \
+		    TVF.obj TVP.obj sha1.obj c_interface.obj
 endif
 
 # SDL: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static

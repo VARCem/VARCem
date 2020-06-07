@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.90	2019/05/28
+# Version:	@(#)Makefile.mingw	1.0.91	2020/06/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017-2019 Fred N. van Kempen.
+#		Copyright 2017-2020 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -129,10 +129,14 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/network devices/printer devices/misc \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
-		    devices/sound \
-		     devices/sound/munt devices/sound/munt/c_interface \
-		     devices/sound/munt/sha1 devices/sound/munt/srchelper \
-		     devices/sound/munt/srchelper/srctools/src devices/sound/resid-fp \
+		    devices/sound
+ifeq ($(MUNT), y)
+VPATH		+=   devices/sound/munt \
+		      devices/sound/munt/c_interface \
+		      devices/sound/munt/sha1 devices/sound/munt/srchelper \
+		      devices/sound/munt/srchelper/srctools/src
+endif
+VPATH		+=   devices/sound/resid-fp \
 		    devices/video \
 		   machines ui win
 
@@ -399,8 +403,8 @@ ifeq ($(MUNT), y)
 		    LA32FloatWaveGenerator.o LA32WaveGenerator.o \
 		    MidiStreamParser.o Part.o Partial.o PartialManager.o \
 		    Poly.o ROMInfo.o SampleRateConverter.o \
-		    FIRResampler.o IIR2xResampler.o LinearResampler.o ResamplerModel.o \
-		    SincResampler.o InternalResampler.o \
+		    FIRResampler.o IIR2xResampler.o LinearResampler.o \
+		    ResamplerModel.o SincResampler.o InternalResampler.o \
 		    Synth.o Tables.o TVA.o TVF.o TVP.o sha1.o c_interface.o
 endif
 
