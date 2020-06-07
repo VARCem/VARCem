@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.91	2020/06/06
+# Version:	@(#)Makefile.mingw	1.0.92	2020/06/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -129,14 +129,12 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/network devices/printer devices/misc \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
-		    devices/sound
-ifeq ($(MUNT), y)
-VPATH		+=   devices/sound/munt \
+		    devices/sound \
+		     devices/sound/munt \
 		      devices/sound/munt/c_interface \
 		      devices/sound/munt/sha1 devices/sound/munt/srchelper \
 		      devices/sound/munt/srchelper/srctools/src
-endif
-VPATH		+=   devices/sound/resid-fp \
+		     devices/sound/resid-fp \
 		    devices/video \
 		   machines ui win
 
