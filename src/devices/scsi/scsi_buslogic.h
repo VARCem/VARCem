@@ -12,7 +12,7 @@
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
