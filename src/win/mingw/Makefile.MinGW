@@ -133,7 +133,7 @@ VPATH		:= $(EXPATH) . cpu \
 		     devices/sound/munt \
 		      devices/sound/munt/c_interface \
 		      devices/sound/munt/sha1 devices/sound/munt/srchelper \
-		      devices/sound/munt/srchelper/srctools/src
+		      devices/sound/munt/srchelper/srctools/src \
 		     devices/sound/resid-fp \
 		    devices/video \
 		   machines ui win
