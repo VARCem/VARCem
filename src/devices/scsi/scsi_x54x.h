@@ -8,7 +8,7 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.9	2019/05/17
+ * Version:	@(#)scsi_x54x.h	1.0.10	2020/06/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -376,6 +376,12 @@ typedef struct {
 } SGE;
 #pragma pack(pop)
 
+#define		X54X_CDROM_BOOT		 1
+#define		X54X_32BIT		 2
+#define		X54X_LBA_BIOS		 4
+#define		X54X_INT_GEOM_WRITABLE	 8
+#define		X54X_MBX_24BIT		16
+
 typedef struct {
     int8_t	type;				/* type of device */
 
@@ -412,8 +418,10 @@ typedef struct {
     tmrval_t	ResetCB;
 
     volatile uint8_t				/* for multi-threading, keep */
-		Status,				/* these volatile */
-		Interrupt;
+		Status,				          /* these volatile */
+		Interrupt,
+    MailboxIsBIOS, ToRaise,
+		flags;
 
     uint8_t	callback_phase;
 
@@ -446,10 +454,6 @@ typedef struct {
 		Lock;
 
     uint8_t	shadow_ram[128];
-
-    volatile uint8_t
-		MailboxIsBIOS,
-		ToRaise;
 
     uint8_t	shram_mode;
 
