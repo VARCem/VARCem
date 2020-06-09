@@ -70,9 +70,6 @@
     <ClCompile Include="..\..\..\win\win_cdrom.c">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\win\win_crashdump.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\win\win_d3d.cpp">
       <Filter>win</Filter>
     </ClCompile>
@@ -497,9 +494,6 @@
     <ClCompile Include="..\..\..\devices\sound\munt\ROMInfo.cpp">
       <Filter>devices\sound\munt</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\devices\sound\munt\SampleRateConverter_dummy.cpp">
-      <Filter>devices\sound\munt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\devices\sound\munt\Synth.cpp">
       <Filter>devices\sound\munt</Filter>
     </ClCompile>
@@ -516,9 +510,6 @@
       <Filter>devices\sound\munt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\system\dma.c">
-      <Filter>devices\system</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\devices\system\intel.c">
       <Filter>devices\system</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\devices\system\intel_flash.c">
@@ -930,6 +921,35 @@
     </ClCompile>
     <ClCompile Include="..\..\..\devices\video\vid_ht216.c">
       <Filter>devices\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\floppy\fdc_pii15xb.c">
+      <Filter>devices\floppy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\system\port92.c">
+      <Filter>devices\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\munt\c_interface\c_interface.cpp" />
+    <ClCompile Include="..\..\win_d2d.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\InternalResampler.cpp">
+      <Filter>devices\sound\munt\srchelper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\ResamplerModel.cpp">
+      <Filter>devices\sound\munt\srchelper\srctools\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\SincResampler.cpp">
+      <Filter>devices\sound\munt\srchelper\srctools\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\FIRResampler.cpp">
+      <Filter>devices\sound\munt\srchelper\srctools\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\IIR2xResampler.cpp">
+      <Filter>devices\sound\munt\srchelper\srctools\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\LinearResampler.cpp">
+      <Filter>devices\sound\munt\srchelper\srctools\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\devices\sound\munt\SampleRateConverter.cpp">
+      <Filter>devices\sound\munt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1466,9 +1486,6 @@
     <ClInclude Include="..\..\..\devices\system\dma.h">
       <Filter>devices\system</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\devices\system\intel.h">
-      <Filter>devices\system</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\devices\system\intel_flash.h">
       <Filter>devices\system</Filter>
     </ClInclude>
@@ -1695,6 +1712,40 @@
     <ClInclude Include="..\..\..\devices\system\clk.h">
       <Filter>devices\system</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\devices\floppy\fdc_pii15xb.h">
+      <Filter>devices\floppy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\system\port92.h">
+      <Filter>devices\system</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_d2d.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\InternalResampler.h">
+      <Filter>devices\sound\munt\srchelper</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\ResamplerStage.h">
+      <Filter>devices\sound\munt\srchelper\srctools\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\SincResampler.h">
+      <Filter>devices\sound\munt\srchelper\srctools\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\FIRResampler.h">
+      <Filter>devices\sound\munt\srchelper\srctools\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\FloatSampleProvider.h">
+      <Filter>devices\sound\munt\srchelper\srctools\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\IIR2xResampler.h">
+      <Filter>devices\sound\munt\srchelper\srctools\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\LinearResampler.h">
+      <Filter>devices\sound\munt\srchelper\srctools\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\ResamplerModel.h">
+      <Filter>devices\sound\munt\srchelper\srctools\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\devices\sound\munt\SampleRateConverter.h">
+      <Filter>devices\sound\munt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cpu">
@@ -1771,6 +1822,18 @@
     </Filter>
     <Filter Include="devices\chipsets">
       <UniqueIdentifier>{552b793b-68ef-4307-a736-304825db0e67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="devices\sound\munt\srchelper">
+      <UniqueIdentifier>{4fc72222-59ca-4c3c-b6a7-98df45814a59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="devices\sound\munt\srchelper\srctools">
+      <UniqueIdentifier>{08d04d8f-de2c-4c43-a091-c35afd08bc83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="devices\sound\munt\srchelper\srctools\src">
+      <UniqueIdentifier>{cef41be2-9e33-4e31-9b6a-932c1a6199aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="devices\sound\munt\srchelper\srctools\include">
+      <UniqueIdentifier>{e4891749-6300-44fe-9073-aeedcac3e2db}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
