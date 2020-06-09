@@ -30,6 +30,7 @@
     <ClCompile Include="..\..\..\devices\chipsets\sis471.c" />
     <ClCompile Include="..\..\..\devices\chipsets\sis496.c" />
     <ClCompile Include="..\..\..\devices\chipsets\wd76c10.c" />
+    <ClCompile Include="..\..\..\devices\floppy\fdc_pii15xb.c" />
     <ClCompile Include="..\..\..\devices\floppy\fdd_mfm.c" />
     <ClCompile Include="..\..\..\devices\misc\bugger.c" />
     <ClCompile Include="..\..\..\devices\cdrom\cdrom.c" />
@@ -110,7 +111,13 @@
     <ClCompile Include="..\..\..\devices\sound\munt\PartialManager.cpp" />
     <ClCompile Include="..\..\..\devices\sound\munt\Poly.cpp" />
     <ClCompile Include="..\..\..\devices\sound\munt\ROMInfo.cpp" />
-    <ClCompile Include="..\..\..\devices\sound\munt\SampleRateConverter_dummy.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\SampleRateConverter.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\InternalResampler.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\FIRResampler.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\IIR2xResampler.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\LinearResampler.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\ResamplerModel.cpp" />
+    <ClCompile Include="..\..\..\devices\sound\munt\srchelper\srctools\src\SincResampler.cpp" />
     <ClCompile Include="..\..\..\devices\sound\munt\Synth.cpp" />
     <ClCompile Include="..\..\..\devices\sound\munt\Tables.cpp" />
     <ClCompile Include="..\..\..\devices\sound\munt\TVA.cpp" />
@@ -161,7 +168,6 @@
     <ClCompile Include="..\..\..\devices\sound\sound_dev.c" />
     <ClCompile Include="..\..\..\devices\system\clk.c" />
     <ClCompile Include="..\..\..\devices\system\dma.c" />
-    <ClCompile Include="..\..\..\devices\system\intel.c" />
     <ClCompile Include="..\..\..\devices\system\intel_flash.c" />
     <ClCompile Include="..\..\..\devices\system\intel_piix.c" />
     <ClCompile Include="..\..\..\devices\system\intel_sio.c" />
@@ -174,6 +180,7 @@
     <ClCompile Include="..\..\..\devices\system\pci.c" />
     <ClCompile Include="..\..\..\devices\system\pic.c" />
     <ClCompile Include="..\..\..\devices\system\pit.c" />
+    <ClCompile Include="..\..\..\devices\system\port92.c" />
     <ClCompile Include="..\..\..\devices\system\ppi.c" />
     <ClCompile Include="..\..\..\devices\floppy\fdc.c" />
     <ClCompile Include="..\..\..\devices\floppy\fdd.c" />
@@ -319,7 +326,6 @@
     <ClCompile Include="..\..\..\win\win.c" />
     <ClCompile Include="..\..\..\win\win_about.c" />
     <ClCompile Include="..\..\..\win\win_cdrom.c" />
-    <ClCompile Include="..\..\..\win\win_crashdump.c" />
     <ClCompile Include="..\..\..\win\win_d3d.cpp" />
     <ClCompile Include="..\..\..\win\win_ddraw.cpp" />
     <ClCompile Include="..\..\..\win\win_devconf.c" />
@@ -334,6 +340,7 @@
     <ClCompile Include="..\..\..\win\win_snd_gain.c" />
     <ClCompile Include="..\..\..\win\win_thread.c" />
     <ClCompile Include="..\..\..\win\win_ui.c" />
+    <ClCompile Include="..\..\win_d2d.cpp" />
     <ClCompile Include="..\..\win_lang.c" />
     <ClCompile Include="..\..\win_new_image.c" />
     <ClCompile Include="..\..\win_sdl.c" />
@@ -349,6 +356,7 @@
     <ClInclude Include="..\..\..\devices\chipsets\sis471.h" />
     <ClInclude Include="..\..\..\devices\chipsets\sis496.h" />
     <ClInclude Include="..\..\..\devices\chipsets\wd76c10.h" />
+    <ClInclude Include="..\..\..\devices\floppy\fdc_pii15xb.h" />
     <ClInclude Include="..\..\..\devices\floppy\fdd_mfm.h" />
     <ClInclude Include="..\..\..\devices\misc\bugger.h" />
     <ClInclude Include="..\..\..\devices\cdrom\cdrom.h" />
@@ -470,6 +478,15 @@
     <ClInclude Include="..\..\..\devices\sound\munt\PartialManager.h" />
     <ClInclude Include="..\..\..\devices\sound\munt\Poly.h" />
     <ClInclude Include="..\..\..\devices\sound\munt\ROMInfo.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\SampleRateConverter.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\InternalResampler.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\FIRResampler.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\FloatSampleProvider.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\IIR2xResampler.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\LinearResampler.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\ResamplerModel.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\ResamplerStage.h" />
+    <ClInclude Include="..\..\..\devices\sound\munt\srchelper\srctools\include\SincResampler.h" />
     <ClInclude Include="..\..\..\devices\sound\munt\Structures.h" />
     <ClInclude Include="..\..\..\devices\sound\munt\Synth.h" />
     <ClInclude Include="..\..\..\devices\sound\munt\Tables.h" />
@@ -503,7 +520,6 @@
     <ClInclude Include="..\..\..\devices\sound\sound.h" />
     <ClInclude Include="..\..\..\devices\system\clk.h" />
     <ClInclude Include="..\..\..\devices\system\dma.h" />
-    <ClInclude Include="..\..\..\devices\system\intel.h" />
     <ClInclude Include="..\..\..\devices\system\intel_flash.h" />
     <ClInclude Include="..\..\..\devices\system\intel_piix.h" />
     <ClInclude Include="..\..\..\devices\system\intel_sio.h" />
@@ -514,6 +530,7 @@
     <ClInclude Include="..\..\..\devices\system\pci.h" />
     <ClInclude Include="..\..\..\devices\system\pic.h" />
     <ClInclude Include="..\..\..\devices\system\pit.h" />
+    <ClInclude Include="..\..\..\devices\system\port92.h" />
     <ClInclude Include="..\..\..\devices\system\ppi.h" />
     <ClInclude Include="..\..\..\devices\video\vid_ati.h" />
     <ClInclude Include="..\..\..\devices\video\vid_att20c49x_ramdac.h" />
@@ -589,6 +606,7 @@
     <ClInclude Include="..\..\..\devices\video\vid_voodoo_dither.h" />
     <ClInclude Include="..\..\..\win\resource.h" />
     <ClInclude Include="..\..\..\win\win.h" />
+    <ClInclude Include="..\..\win_d2d.h" />
     <ClInclude Include="..\..\win_opendir.h" />
     <ClInclude Include="..\..\win_sdl.h" />
     <ClInclude Include="..\..\win_settings_disk.h" />
@@ -636,7 +654,7 @@
     <ProjectGuid>{6E445F28-CA8F-430F-8CCF-C59C53516AC5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>VARCem</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -673,23 +691,27 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
+    <Import Project="localdirs.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
+    <Import Project="localdirs.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
+    <Import Project="localdirs.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
+    <Import Project="localdirs.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.17134.0</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -718,7 +740,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;xinput.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
@@ -753,18 +775,20 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;xinput.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SKIP_MANIFEST</PreprocessorDefinitions>
+      <Culture>0x040c</Culture>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
