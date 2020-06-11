@@ -8,13 +8,13 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.20	2019/05/03
+ * Version:	@(#)fdd.c	1.0.21	2020/06/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -70,25 +70,18 @@ typedef struct {
 } fdd_t;
 
 
-/* FIXME: these should be combined. */
-DRIVE		drives[FDD_NUM];
-wchar_t		floppyfns[4][512];
 fdd_t		fdd[FDD_NUM];
+DRIVE		drives[FDD_NUM];
+wchar_t		floppyfns[FDD_NUM][512];
 int		ui_writeprot[FDD_NUM] = {0, 0, 0, 0};
-int		fdd_cur_track[FDD_NUM];
-int		writeprot[FDD_NUM], fwriteprot[FDD_NUM];
-int64_t		fdd_poll_time[FDD_NUM] = { 16LL, 16LL, 16LL, 16LL };
-int		drive_type[FDD_NUM];
+int		writeprot[FDD_NUM],
+		fwriteprot[FDD_NUM];
 int		drive_empty[FDD_NUM] = {1, 1, 1, 1};
 int		fdd_changed[FDD_NUM];
+int64_t		fdd_poll_time[FDD_NUM] = { 16LL, 16LL, 16LL, 16LL };
 int64_t		motoron[FDD_NUM];
-int		oldtrack[FDD_NUM] = {0, 0, 0, 0};
 d86f_handler_t	d86f_handler[FDD_NUM];
 
-int		defaultwriteprot = 0;
-int		curdrive = 0;
-int		motorspin;
-int		fdc_indexcount = 52;
 int		fdd_notfound = 0;
 #ifdef ENABLE_FDD_LOG
 int		fdd_do_log = ENABLE_FDD_LOG;
@@ -96,7 +89,6 @@ int		fdd_do_log = ENABLE_FDD_LOG;
 
 
 static fdc_t	*fdd_fdc;
-static int	fdd_period = 32;
 
 
 static const struct {
@@ -652,7 +644,6 @@ fdd_poll(int drive)
     }
 
     fdd_poll_time[drive] += (int64_t) fdd_real_period(drive);
-
     if (drives[drive].poll)
 	drives[drive].poll(drive);
 
@@ -697,9 +688,6 @@ fdd_reset(void)
 {
     INFO("FDD: reset\n");
 
-    curdrive = 0;
-    fdd_period = 32;
-
     timer_add(fdd_poll_0, NULL, &fdd_poll_time[0], &motoron[0]);
     timer_add(fdd_poll_1, NULL, &fdd_poll_time[1], &motoron[1]);
     timer_add(fdd_poll_2, NULL, &fdd_poll_time[2], &motoron[2]);
@@ -731,41 +719,6 @@ fdd_get_bitcell_period(int rate)
     }
 
     return 1000000 / bit_rate*2; /*Bitcell period in ns*/
-}
-
-
-void
-fdd_set_rate(int drive, int drvden, int rate)
-{
-    switch (rate) {
-	case 0: /*High density*/
-		fdd_period = 16;
-		break;
-
-	case 1:
-		switch(drvden) {
-			case 0: /*Double density (360 rpm)*/
-				fdd_period = 26;
-				break;
-
-			case 1: /*High density (360 rpm)*/
-				fdd_period = 16;
-				break;
-
-			case 2:
-				fdd_period = 4;
-				break;
-		}
-		break;
-
-	case 2: /*Double density*/
-		fdd_period = 32;
-		break;
-
-	case 3: /*Extended density*/
-		fdd_period = 8;
-		break;
-    }
 }
 
 

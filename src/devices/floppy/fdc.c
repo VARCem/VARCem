@@ -9,12 +9,12 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.24	2019/05/20
+ * Version:	@(#)fdc.c	1.0.25	2020/06/10
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,9 +56,6 @@
 #include "../../plat.h"
 #include "fdd.h"
 #include "fdc.h"
-
-
-extern int64_t motoron[FDD_NUM];
 
 
 static const int command_has_drivesel[256] = {
@@ -105,8 +102,6 @@ static const int command_has_drivesel[256] = {
 #ifdef ENABLE_FDC_LOG
 int	fdc_do_log = ENABLE_FDC_LOG;
 #endif
-int	floppymodified[FDD_NUM];
-int	floppyrate[FDD_NUM];
 
 
 static int	lastbyte = 0;
@@ -605,8 +600,6 @@ static void
 fdc_rate(fdc_t *fdc, int drive)
 {
     fdc_update_rate(fdc, drive);
-
-    fdd_set_rate(drive, fdc->drvrate[drive], fdc->rate);
 
     DEBUG("FDD %c: setting rate: %i, %i, %i (%i, %i)\n",
 	  'A' + drive, fdc->drvrate[drive], fdc->rate,

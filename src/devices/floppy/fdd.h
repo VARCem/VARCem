@@ -8,13 +8,13 @@
  *
  *		Definitions for the floppy drive emulation.
  *
- * Version:	@(#)fdd.h	1.0.10	2019/02/10
+ * Version:	@(#)fdd.h	1.0.11	2020/06/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -67,15 +67,13 @@ typedef struct {
 
 extern DRIVE	drives[FDD_NUM];
 extern wchar_t	floppyfns[FDD_NUM][512];
-extern int	driveempty[FDD_NUM];
+extern int64_t	motoron[FDD_NUM];
 extern int64_t	fdd_poll_time[FDD_NUM];
 extern int	ui_writeprot[FDD_NUM];
-
-extern int	fdd_time;
-extern int64_t	floppytime;
-
-
-extern int	fdd_swap;
+extern int	writeprot[FDD_NUM],
+		fwriteprot[FDD_NUM];
+extern int	fdd_changed[FDD_NUM];
+extern int	drive_empty[FDD_NUM];
 
 
 extern void	fdd_log(int level, const char *fmt, ...);
@@ -113,7 +111,6 @@ extern int	fdd_current_track(int drive);
 
 
 extern int	fdd_load(int drive, const wchar_t *fn);
-extern void	fdd_new(int drive, const char *fn);
 extern void	fdd_close(int drive);
 extern void	fdd_init(void);
 extern void	fdd_reset(void);
@@ -134,21 +131,6 @@ extern void	fdd_format(int drive, int side, int density, uint8_t fill);
 extern int	fdd_hole(int drive);
 extern double	fdd_byteperiod(int drive);
 extern void	fdd_stop(int drive);
-extern void	fdd_set_rate(int drive, int drvden, int rate);
-
-extern int	motorspin;
-extern int64_t	motoron[FDD_NUM];
-
-extern int	swwp;
-extern int	disable_write;
-
-extern int	defaultwriteprot;
-
-extern int	writeprot[FDD_NUM], fwriteprot[FDD_NUM];
-extern int	fdd_cur_track[FDD_NUM];
-extern int	fdd_changed[FDD_NUM];
-extern int	drive_empty[FDD_NUM];
-extern int	drive_type[FDD_NUM];
 
 /*Used in the Read A Track command. Only valid for fdd_readsector(). */
 #define SECTOR_FIRST -2
