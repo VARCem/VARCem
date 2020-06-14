@@ -8,13 +8,13 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.31	2019/05/17
+ * Version:	@(#)win.c	1.0.32	2019/06/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -57,9 +57,6 @@
 #ifdef USE_SDL
 # include "win_sdl.h"
 #endif
-#ifdef USE_D2D
-# include "win_d2d.h"
-#endif
 #ifdef USE_VNC
 # include "../vnc.h"
 #endif
@@ -92,9 +89,6 @@ const vidapi_t *plat_vidapis[] = {
 #else
     &ddraw_vidapi,
     &d3d_vidapi,
-#endif
-#ifdef USE_D2D
-    &d2d_vidapi,
 #endif
 
 #ifdef USE_SDL

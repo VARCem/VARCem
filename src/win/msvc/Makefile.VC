@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.76	2020/06/06
+# Version:	@(#)Makefile.VC	1.0.77	2020/06/14
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -378,30 +378,6 @@ ifneq ($(SDL), n)
  SDLOBJ		:= win_sdl.obj
 endif
 
-# D2D: N=no, Y=yes,linked, D=yes,dynamic
-ifndef D2D
- D2D		:= n
-endif
-ifneq ($(D2D), n)
- ifeq ($(D2D), d)
-  OPTS		+= -DUSE_D2D=2
- else
-  OPTS		+= -DUSE_D2D=1
- endif
- ifneq ($(D2D_PATH), )
-  OPTS		+= -I$(D2D_PATH)/include
-  ifeq ($(X64), y)
-   LOPTS	+= -LIBPATH:$(D2D_PATH)/lib/x64
-  else
-   LOPTS	+= -LIBPATH:$(D2D_PATH)/lib/x86
-  endif
- endif
- ifeq ($(D2D), y)
-  LIBS		+= d2d1.lib
- endif
- D2DOBJ		:= win_d2d.obj
-endif
-
 # DINPUT and XInput (always hard-linked)
 ifndef DINPUT
  DINPUT		:= y
@@ -507,7 +483,7 @@ ifneq ($(WX), n)
  UIOBJ		:= wx_main.obj wx_ui.obj wx_stbar.obj wx_render.obj
 else
  UIOBJ		:= win_ui.obj \
-		   win_ddraw.obj win_d3d.obj $(SDLOBJ) $(D2DOBJ) \
+		   win_ddraw.obj win_d3d.obj $(SDLOBJ) \
 		   win_dialog.obj win_about.obj win_settings.obj \
 		   win_devconf.obj win_snd_gain.obj win_new_image.obj
 endif
