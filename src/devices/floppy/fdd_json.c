@@ -8,11 +8,11 @@
  *
  *		Implementation of the PCjs JSON floppy image format.
  *
- * Version:	@(#)fdd_json.c	1.0.8	2018/10/05
+ * Version:	@(#)fdd_json.c	1.0.9	2020/06/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -218,6 +218,10 @@ load_image(json_t *dev)
 		state = -1;
 		break;
 	}
+
+	/* Allow whitespace in the input. */
+	if (c == '\n' || c == '\r' || c == ' ' || c == '\t')
+		continue;
 
 	/* Process it. */
 	switch(state) {
