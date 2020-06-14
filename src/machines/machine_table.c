@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.45	2020/06/05
+ * Version:	@(#)machine_table.c	1.0.46	2020/06/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -205,11 +205,11 @@ static const struct {
 
     /* Pentium, Socket7 (VX) */
     { "[Socket 7 VX] ASUS P/I-P55TVP4",		"asus_p55tvp4",		&m_p55tvp4		},
-    { "[Socket 7 VX] Award 430VX PCI",		"award_430vx",		&m_aw430vx		},
     { "[Socket 7 VX] Epox P55-VA",		"epox_p55va",		&m_p55va		},
     { "[Socket 7 VX] Jetway J656VXD",		"jetway_j656vxd",	&m_j656vxd		},
+    { "[Socket 7 VX] Shuttle HOT-557",		"award_430vx",		&m_aw430vx		},
 
-    /* Pentium, Socket5 */
+    /* Pentium Pro, Socket 8 (FX) */
     { "[Socket 8 FX] Tyan Titan-Pro AT (S1662, AMI)","tyan_s1662_ami",		&m_tyan_1662_ami	},
     { "[Socket 8 FX] Tyan Titan-Pro AT (S1662, Award)","tyan_s1662_award",	&m_tyan_1662_award	},
     { "[Socket 8 FX] Tyan Titan-Pro ATX (S1668, AMI)","tyan_s1668_ami",		&m_tyan_1668_ami	},
