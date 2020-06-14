@@ -8,13 +8,13 @@
  *
  *		Implementation of various systems and mainboards.
  *
- * Version:	@(#)m_misc.c	1.0.4	2019/05/28
+ * Version:	@(#)m_misc.c	1.0.5	2020/06/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -68,7 +68,7 @@ common_init(const device_t *info, void *arg)
     device_add_ex(info, (priv_t)arg);
 
     switch(info->local) {
-	/* 430VX: Award 430VX PCI/430VX/Award/UMC UM8669F*/
+	/* Shuttle HOT-557: Award 430VX PCI/430VX/Award/UMC UM8669F*/
 	case 0:
 		pci_init(PCI_CONFIG_TYPE_1);
 		pci_register_slot(0x00, PCI_CARD_SPECIAL, 0, 0, 0, 0);
@@ -212,7 +212,7 @@ static const machine_t aw430vx_info = {
 };
 
 const device_t m_aw430vx = {
-    "Award 430VX",
+    "Shuttle HOT-557",
     DEVICE_ROOT,
     0,
     L"generic/430vx/award",
