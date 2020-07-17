@@ -79,7 +79,7 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.17	2020/07/14
+ * Version:	@(#)snd_pas16.c	1.0.17	2020/07/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -715,7 +715,7 @@ void pas16_get_buffer(int32_t *buffer, int len, priv_t priv)
         pas16_t *pas16 = (pas16_t *)priv;
         int c;
 
-        opl3_update2(&pas16->opl);
+        opl3_update(&pas16->opl);
         sb_dsp_update(&pas16->dsp);
         pas16_update(pas16);
         for (c = 0; c < len * 2; c++)
