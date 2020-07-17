@@ -8,13 +8,13 @@
  *
  *		Sound emulation core.
  *
- * Version:	@(#)sound.c	1.0.20	2019/05/17
+ * Version:	@(#)sound.c	1.0.21	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -52,21 +52,16 @@
 #include "../cdrom/cdrom.h"
 #include "sound.h"
 #include "midi.h"
-#ifdef USE_FLUIDSYNTH
-# include "midi_fluidsynth.h"
-#endif
-#include "snd_dbopl.h"
 #include "snd_mpu401.h"
 #include "snd_opl.h"
 #include "snd_sb.h"
 #include "snd_sb_dsp.h"
 #include "snd_speaker.h"
-#include "filters.h"
 
 
 typedef struct {
-    void (*get_buffer)(int32_t *buffer, int len, void *p);
-    void *priv;
+    void	(*get_buffer)(int32_t *buffer, int len, priv_t);
+    priv_t	priv;
 } sndhnd_t;
 
 
@@ -377,6 +372,14 @@ sound_init(void)
 #ifdef USE_FLUIDSYNTH
     /* Initialize the FluidSynth module. */
     fluidsynth_global_init();
+#endif
+
+#if defined(USE_MUNT) && USE_MUNT > 0
+    munt_init();
+#endif
+
+#if defined(USE_RESID) && USE_RESID > 0
+    resid_init();
 #endif
 
     handlers_num = 0;

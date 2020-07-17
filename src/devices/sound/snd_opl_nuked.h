@@ -6,18 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the OPL interface.
+ *		Definitions for the NukedOPL3 driver.
  *
- * Version:	@(#)snd_opl.h	1.0.3	2020/07/15
+ * Version:	@(#)snd_opl_nuked.h	1.0.5	2020/07/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
- *		TheCollector1995, <mariogplayer@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,47 +34,20 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#ifndef SOUND_OPL_H
-# define SOUND_OPL_H
+#ifndef SOUND_OPL_NUKED_H
+# define SOUND_OPL_NUKED_H
 
 
-typedef void	(*tmrfunc)(priv_t, int timer, tmrval_t period);
+extern priv_t	nuked_init(uint32_t sample_rate);
+extern void	nuked_close(priv_t);
 
-/* Define an OPLx chip. */
-typedef struct {
-#ifdef SOUND_OPL_NUKED_H
-    nuked_t	*opl;
-#else
-    void	*opl;
-#endif
-    int8_t	is_opl3;
+extern uint16_t	nuked_write_addr(priv_t, uint16_t port, uint8_t val);
+extern void	nuked_write_reg(priv_t, uint16_t reg, uint8_t v);
+extern void	nuked_write_reg_buffered(priv_t, uint16_t reg, uint8_t v);
 
-    uint16_t	port;
-    uint8_t	status;
-    uint8_t	status_mask;
-    uint8_t	timer_ctrl;
-    uint16_t	timer[2];
-
-    tmrval_t	timers[2];
-    tmrval_t	timers_enable[2];
-
-    int		pos;
-#if 0
-    int32_t	filtbuf;
-#endif
-    int32_t	buffer[SOUNDBUFLEN * 2];
-} opl_t;
+extern void	nuked_generate(priv_t, int32_t *buf);
+extern void	nuked_generate_resampled(priv_t, int32_t *buf);
+extern void	nuked_generate_stream(priv_t, int32_t *sndptr, uint32_t num);
 
 
-extern uint8_t	opl2_read(uint16_t port, priv_t);
-extern void	opl2_write(uint16_t port, uint8_t val, priv_t);
-extern void	opl2_init(opl_t *);
-extern void	opl2_update(opl_t *);
-
-extern uint8_t	opl3_read(uint16_t port, priv_t);
-extern void	opl3_write(uint16_t port, uint8_t val, priv_t);
-extern void	opl3_init(opl_t *);
-extern void	opl3_update(opl_t *);
-
-
-#endif	/*SOUND_OPL_H*/
+#endif	/*SOUND_OPL_NUKED_H*/

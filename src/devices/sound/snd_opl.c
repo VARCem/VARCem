@@ -8,14 +8,18 @@
  *
  *		Interface to the actual OPL emulator.
  *
- * Version:	@(#)snd_opl.c	1.0.7	2019/05/17
+ * TODO:	Finish re-working this into a device_t, which requires a
+ *		poll-like function for "update" so the sound card can call
+ *		that and get a buffer-full of sample data.
+ *
+ * Version:	@(#)snd_opl.c	1.0.8	2020/07/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -49,227 +53,257 @@
 #include "../../io.h"
 #include "sound.h"
 #include "snd_opl.h"
-#include "snd_dbopl.h"
+#include "snd_opl_nuked.h"
+
+
+enum {
+    STATUS_TIMER_1 = 0x40,
+    STATUS_TIMER_2 = 0x20,
+    STATUS_TIMER_ALL = 0x80
+};
+
+enum {
+    CTRL_IRQ_RESET   = 0x80,
+    CTRL_TIMER1_MASK = 0x40,
+    CTRL_TIMER2_MASK = 0x20,
+    CTRL_TIMER2_CTRL = 0x02,
+    CTRL_TIMER1_CTRL = 0x01
+};
 
 
 static void
-timer_callback00(priv_t priv)
+status_update(opl_t *dev)
 {
-    opl_t *opl = (opl_t *)priv;
-
-    opl->timers_enable[0][0] = 0;
-    opl_timer_over(0, 0);
+    if (dev->status & (STATUS_TIMER_1 | STATUS_TIMER_2) & dev->status_mask)
+	dev->status |= STATUS_TIMER_ALL;
+    else
+	dev->status &= ~STATUS_TIMER_ALL;
 }
 
 
 static void
-timer_callback01(priv_t priv)
+timer_set(opl_t *dev, int timer, tmrval_t period)
 {
-    opl_t *opl = (opl_t *)priv;
+    dev->timers[timer] = period * TIMER_USEC * 20LL;
 
-    opl->timers_enable[0][1] = 0;
-    opl_timer_over(0, 1);
+    if (! dev->timers[timer])
+	dev->timers[timer] = 1;
+
+    dev->timers_enable[timer] = period ? 1 : 0;
 }
 
 
 static void
-timer_callback10(priv_t priv)
+timer_over(opl_t *dev, int tmr)
 {
-    opl_t *opl = (opl_t *)priv;
+    if (tmr) {
+	dev->status |= STATUS_TIMER_2;
+	timer_set(dev, 1, dev->timer[1] * 16);
+    } else {
+	dev->status |= STATUS_TIMER_1;
+	timer_set(dev, 0, dev->timer[0] * 4);
+    }
 
-    opl->timers_enable[1][0] = 0;
-    opl_timer_over(1, 0);
+    status_update(dev);
 }
 
 
 static void
-timer_callback11(priv_t priv)
+timer_1(priv_t priv)
 {
-    opl_t *opl = (opl_t *)priv;
+    opl_t *dev = (opl_t *)priv;
 
-    opl->timers_enable[1][1] = 0;
-    opl_timer_over(1, 1);
+    dev->timers_enable[0] = 0;
+
+    timer_over(dev, 0);
 }
-	
+
+
+static void
+timer_2(priv_t priv)
+{
+    opl_t *dev = (opl_t *)priv;
+
+    dev->timers_enable[1] = 0;
+
+    timer_over(dev, 1);
+}
+
+
+static uint8_t
+opl_read(opl_t *dev, uint16_t port)
+{
+    if (! (port & 1))
+	return((dev->status & dev->status_mask) | (dev->is_opl3 ? 0x00 : 0x06));
+
+    if (dev->is_opl3 && ((port & 0x03) == 0x03))
+	return(0x00);
+
+    return(dev->is_opl3 ? 0x00 : 0xff);
+}
+
+
+static void
+opl_write(opl_t *dev, uint16_t port, uint8_t val)
+{
+    if (! (port & 1)) {
+	dev->port = nuked_write_addr(dev->opl, port, val) & 0x01ff;
+
+	if (! dev->is_opl3)
+		dev->port &= 0x00ff;
+
+	return;
+    }
+
+    nuked_write_reg_buffered(dev->opl, dev->port, val);
+
+    switch (dev->port) {
+	case 0x02:	// timer 1
+		dev->timer[0] = 256 - val;
+		break;
+
+	case 0x03:	// timer 2
+		dev->timer[1] = 256 - val;
+		break;
+
+	case 0x04:	// timer control
+		if (val & CTRL_IRQ_RESET) {
+			dev->status &= ~(STATUS_TIMER_1 | STATUS_TIMER_2);
+			status_update(dev);
+			return;
+		}
+		if ((val ^ dev->timer_ctrl) & CTRL_TIMER1_CTRL) {
+			if (val & CTRL_TIMER1_CTRL)
+				timer_set(dev, 0, dev->timer[0] * 4);
+			else
+				timer_set(dev, 0, 0);
+		}
+		if ((val ^ dev->timer_ctrl) & CTRL_TIMER2_CTRL) {
+			if (val & CTRL_TIMER2_CTRL)
+				timer_set(dev, 1, dev->timer[1] * 16);
+			else
+				timer_set(dev, 1, 0);
+		}
+		dev->status_mask = (~val & (CTRL_TIMER1_MASK | CTRL_TIMER2_MASK)) | 0x80;
+		dev->timer_ctrl = val;
+		break;
+    }
+}
+
+
+static void
+opl_init(opl_t *dev, int is_opl3)
+{
+    memset(dev, 0x00, sizeof(opl_t));
+    dev->is_opl3 = is_opl3;
+
+    /* Create a NukedOPL object. */
+    dev->opl = nuked_init(48000);
+
+    timer_add(timer_1, dev, &dev->timers[0], &dev->timers_enable[0]);
+    timer_add(timer_2, dev, &dev->timers[1], &dev->timers_enable[1]);
+}
+
 
 void
-opl2_update2(opl_t *opl)
+opl_close(opl_t *dev)
 {
-    if (opl->pos < sound_pos_global) {
-	opl2_update(0, &opl->buffer[opl->pos*2], sound_pos_global - opl->pos);
-	opl2_update(1, &opl->buffer[opl->pos*2 + 1], sound_pos_global - opl->pos);
-	for (; opl->pos < sound_pos_global; opl->pos++) {
-		opl->filtbuf[0] = opl->buffer[opl->pos*2]   = (opl->buffer[opl->pos*2]   / 2);
-		opl->filtbuf[1] = opl->buffer[opl->pos*2+1] = (opl->buffer[opl->pos*2+1] / 2);
-	}
+    /* Release the NukedOPL object. */
+    if (dev->opl) {
+	nuked_close(dev->opl);
+	dev->opl = NULL;
     }
 }
 
 
 uint8_t
-opl2_read(uint16_t a, priv_t priv)
+opl2_read(uint16_t port, priv_t priv)
 {
-    opl_t *opl = (opl_t *)priv;
+    opl_t *dev = (opl_t *)priv;
 
     cycles -= ISA_CYCLES(8);
-    opl2_update2(opl);
 
-    return opl_read(0, a);
+    opl2_update(dev);
+
+    return(opl_read(dev, port));
 }
 
 
 void
-opl2_write(uint16_t a, uint8_t v, priv_t priv)
+opl2_write(uint16_t port, uint8_t val, priv_t priv)
 {
-    opl_t *opl = (opl_t *)priv;
+    opl_t *dev = (opl_t *)priv;
 
-    opl2_update2(opl);
-    opl_write(0, a, v);
-    opl_write(1, a, v);
+    opl2_update(dev);
+
+    opl_write(dev, port, val);
+}
+
+
+void
+opl2_init(opl_t *dev)
+{
+    opl_init(dev, 0);
+}
+
+
+void
+opl2_update(opl_t *dev)
+{
+    if (dev->pos >= sound_pos_global)
+	return;
+
+    nuked_generate_stream(dev->opl,
+			  &dev->buffer[dev->pos * 2],
+			  sound_pos_global - dev->pos);
+
+    for (dev->pos = 0; dev->pos < sound_pos_global; dev->pos++)
+	dev->buffer[(dev->pos * 2) + 1] = dev->buffer[dev->pos * 2];
 }
 
 
 uint8_t
-opl2_l_read(uint16_t a, priv_t priv)
+opl3_read(uint16_t port, priv_t priv)
 {
-    opl_t *opl = (opl_t *)priv;
+    opl_t *dev = (opl_t *)priv;
 
     cycles -= ISA_CYCLES(8);
-    opl2_update2(opl);
 
-    return opl_read(0, a);
+    opl3_update(dev);
+
+    return(opl_read(dev, port));
 }
 
 
 void
-opl2_l_write(uint16_t a, uint8_t v, priv_t priv)
+opl3_write(uint16_t port, uint8_t val, priv_t priv)
 {
-    opl_t *opl = (opl_t *)priv;
+    opl_t *dev = (opl_t *)priv;
+	
+    opl3_update(dev);
 
-    opl2_update2(opl);
-    opl_write(0, a, v);
-}
-
-
-uint8_t
-opl2_r_read(uint16_t a, priv_t priv)
-{
-    opl_t *opl = (opl_t *)priv;
-
-    cycles -= ISA_CYCLES(8);
-    opl2_update2(opl);
-
-    return opl_read(1, a);
+    opl_write(dev, port, val);
 }
 
 
 void
-opl2_r_write(uint16_t a, uint8_t v, priv_t priv)
+opl3_init(opl_t *dev)
 {
-    opl_t *opl = (opl_t *)priv;
-
-    opl2_update2(opl);
-    opl_write(1, a, v);
+    opl_init(dev, 1);
 }
 
 
+/* API to sound interface. */
 void
-opl3_update2(opl_t *opl)
+opl3_update(opl_t *dev)
 {
-    if (opl->pos < sound_pos_global) {
-	opl3_update(0, &opl->buffer[opl->pos*2], sound_pos_global - opl->pos);
+    if (dev->pos >= sound_pos_global)
+	return;
 
-	for (; opl->pos < sound_pos_global; opl->pos++) {
-		opl->filtbuf[0] = opl->buffer[opl->pos*2]   = (opl->buffer[opl->pos*2]   / 2);
-		opl->filtbuf[1] = opl->buffer[opl->pos*2+1] = (opl->buffer[opl->pos*2+1] / 2);
-	}
+    nuked_generate_stream(dev->opl,
+			  &dev->buffer[dev->pos * 2],
+			  sound_pos_global - dev->pos);
+
+    for (dev->pos = sound_pos_global; dev->pos < sound_pos_global; dev->pos++) {
     }
 }
-
-
-uint8_t
-opl3_read(uint16_t a, priv_t priv)
-{
-    opl_t *opl = (opl_t *)priv;
-
-    cycles -= ISA_CYCLES(8);
-    opl3_update2(opl);
-
-    return opl_read(0, a);
-}
-
-
-void
-opl3_write(uint16_t a, uint8_t v, priv_t priv)
-{
-    opl_t *opl = (opl_t *)priv;
-	
-    opl3_update2(opl);
-    opl_write(0, a, v);
-}
-
-
-void
-ym3812_timer_set_0(priv_t param, int timer, tmrval_t period)
-{
-    opl_t *opl = (opl_t *)param;
-	
-    opl->timers[0][timer] = period * TIMER_USEC * 20LL;
-    if (! opl->timers[0][timer])
-	opl->timers[0][timer] = 1;
-    opl->timers_enable[0][timer] = period ? 1 : 0;
-}
-
-
-void
-ym3812_timer_set_1(priv_t param, int timer, tmrval_t period)
-{
-    opl_t *opl = (opl_t *)param;
-
-    opl->timers[1][timer] = period * TIMER_USEC * 20LL;
-    if (! opl->timers[1][timer])
-	opl->timers[1][timer] = 1;
-    opl->timers_enable[1][timer] = period ? 1 : 0;
-}
-
-
-void
-ymf262_timer_set(priv_t param, int timer, tmrval_t period)
-{
-    opl_t *opl = (opl_t *)param;
-
-    opl->timers[0][timer] = period * TIMER_USEC * 20LL;
-    if (! opl->timers[0][timer])
-	opl->timers[0][timer] = 1;
-    opl->timers_enable[0][timer] = period ? 1 : 0;
-}
-
-
-void
-opl2_init(opl_t *opl)
-{
-    opl_init(ym3812_timer_set_0, opl, 0, 0);
-    opl_init(ym3812_timer_set_1, opl, 1, 0);
-
-    timer_add(timer_callback00, (priv_t)opl,
-	      &opl->timers[0][0], &opl->timers_enable[0][0]);
-    timer_add(timer_callback01, (priv_t)opl,
-	      &opl->timers[0][1], &opl->timers_enable[0][1]);
-    timer_add(timer_callback10, (priv_t)opl,
-	      &opl->timers[1][0], &opl->timers_enable[1][0]);
-    timer_add(timer_callback11, (priv_t)opl,
-	      &opl->timers[1][1], &opl->timers_enable[1][1]);
-}
-
-
-void
-opl3_init(opl_t *opl)
-{
-    opl_init(ymf262_timer_set, opl, 0, 1);
-
-    timer_add(timer_callback00, (priv_t)opl,
-	      &opl->timers[0][0], &opl->timers_enable[0][0]);
-    timer_add(timer_callback01, (priv_t)opl,
-	      &opl->timers[0][1], &opl->timers_enable[0][1]);
-}
-

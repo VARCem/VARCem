@@ -1,0 +1,985 @@
+#
+# VARCem	Virtual ARchaeological Computer EMulator.
+#		An emulator of (mostly) x86-based PC systems and devices,
+#		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+#		spanning the era between 1981 and 1995.
+#
+#		This file is part of the VARCem Project.
+#
+#		Makefile for Windows systems using the MinGW32 environment.
+#
+# Version:	@(#)Makefile.mingw	1.0.94	2020/07/15
+#
+# Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+#
+#		Copyright 2017-2020 Fred N. van Kempen.
+#
+#		Redistribution and  use  in source  and binary forms, with
+#		or  without modification, are permitted  provided that the
+#		following conditions are met:
+#
+#		1. Redistributions of  source  code must retain the entire
+#		   above notice, this list of conditions and the following
+#		   disclaimer.
+#
+#		2. Redistributions in binary form must reproduce the above
+#		   copyright  notice,  this list  of  conditions  and  the
+#		   following disclaimer in  the documentation and/or other
+#		   materials provided with the distribution.
+#
+#		3. Neither the  name of the copyright holder nor the names
+#		   of  its  contributors may be used to endorse or promote
+#		   products  derived from  this  software without specific
+#		   prior written permission.
+#
+# THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+# "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+# HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+# THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+# Various compile-time options.
+ifndef STUFF
+ STUFF		:=
+endif
+
+# Add feature selections here.
+ifndef EXTRAS
+ EXTRAS		:=
+endif
+
+# Defaults for several build options (possibly defined in a chained file.)
+ifndef WX
+ WX		:= n
+endif
+
+
+# Which modules to include a development build.
+ifeq ($(DEV_BUILD), y)
+ DEV_BRANCH	:= y
+ AMD_K		:= y
+ SIS471		:= y
+ SIS496		:= y
+ COMPAQ		:= y
+ MICRAL		:= y
+ SUPERSPORT	:= y
+ ST11		:= y
+ WD1002		:= y
+ PAS16		:= y
+ GUSMAX		:= y
+ XL24		:= y
+ WONDER		:= y
+ HOSTCD		:= y
+endif
+
+
+# What is the location of our external dependencies?
+ifeq ($(EXT_PATH), )
+ EXT_PATH	:= ../external
+endif
+
+
+# WxWidgets basic info. Extract using the config program.
+ifneq ($(WX), n)
+ EXPATH		+= wx
+ WX_CONFIG	:= wx-config.exe
+ ifeq ($(WX), y)
+  WX_PATH	:= C:/MinGW32/WxWidgets
+  WX_FLAGS	:= -I$(WX_PATH)/lib/wx/include/msw-unicode-3.0 \
+		   -I$(WX_PATH)/include/wx-3.0 \
+		   -D__WXMSW__ -DWX_PRECOMP -D_FILE_OFFSET_BITS=64 -pthread
+#		   -lwx_mswu_gl-3.0 -lwxtiff-3.0 -llzma
+  WX_LIBS	:= -mwindows -mthreads -L$(WX_PATH)/lib \
+		   -lwx_mswu-3.0.dll \
+		   -lrpcrt4 -loleaut32 -lole32 -luuid \
+		   -lwinspool -lwinmm -lshell32 -lcomctl32 \
+		   -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
+ endif
+ ifeq ($(WX), static)
+  WX_PATH	:= C:/MinGW32/WxWidgets
+  WX_FLAGS	:= -I$(WX_PATH)/lib/wx/include/msw-unicode-3.0 \
+		   -I$(WX_PATH)/include/wx-3.0 \
+		   -D__WXMSW__ -DWX_PRECOMP -D_FILE_OFFSET_BITS=64 -pthread
+#		   -lwx_mswu_gl-3.0 -lwxtiff-3.0 -llzma
+  WX_LIBS	:= -mwindows -mthreads -L$(WX_PATH)/lib \
+		   -lwx_mswu-3.0 -lwxscintilla-3.0 \
+		   -lwxjpeg-3.0 -lwxpng-3.0 -lwxzlib-3.0 \
+		   -lwxregexu-3.0 -lwxexpat-3.0 \
+		   -lrpcrt4 -loleaut32 -lole32 -luuid \
+		   -lwinspool -lwinmm -lshell32 -lcomctl32 \
+		   -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
+ endif
+endif
+
+
+#########################################################################
+#		Nothing should need changing from here on..		#
+#########################################################################
+VPATH		:= $(EXPATH) . cpu \
+		   devices \
+		    devices/chipsets devices/system devices/sio \
+		    devices/input devices/input/game devices/ports \
+		    devices/network devices/printer devices/misc \
+		    devices/floppy devices/floppy/lzf \
+		    devices/disk devices/cdrom devices/scsi \
+		    devices/sound devices/video \
+		   machines ui win
+
+#
+# Name of the executable.
+#
+NETIF		:= pcap_if
+ifndef PROG
+ ifneq ($(WX), n)
+  PROG		:= WxVARCem
+ else
+  PROG		:= VARCem
+ endif
+endif
+ifeq ($(DEBUG), y)
+ PROG		:= $(PROG)-d
+ NETIF		:= $(NETIF)-d
+ override LOGGING := y
+else
+ ifeq ($(LOGGING), y)
+  PROG		:= $(PROG)-l
+ endif
+endif
+
+#
+# Select the required build environment. We have, uhm, many..
+#
+ifeq ($(CROSS), y)
+ # Cross-compiling (under Linux), select proper version.
+ ifeq ($(X64), y)
+  MINGW		:= x86_64-w64-mingw32
+ else
+  MINGW		:= i686-w64-mingw32
+ endif
+
+ ifeq ($(X64), y)
+  CPP		:= /usr/bin/$(MINGW)-g++ -m64
+  CC		:= /usr/bin/$(MINGW)-gcc -m64
+ else
+  CPP		:= /usr/bin/$(MINGW)-g++ -m32
+  CC		:= /usr/bin/$(MINGW)-gcc -m32
+ endif
+ PREPROC	:= /usr/bin/$(MINGW)-cpp
+ WINDRES	:= /usr/bin/$(MINGW)-windres
+ STRIP		:= /usr/bin/$(MINGW)-strip
+ ifndef CAT
+  CAT		:= cat
+ endif
+
+ SYSINC		:= -I$(EXT_PATH)
+ SYSLIB		:=
+else
+ # Native compilation using MinGW for Windows.
+ CPP		:= g++ -m32
+ CC		:= gcc -m32
+ PREPROC	:= cpp
+ WINDRES	:= windres
+ STRIP		:= strip
+ ifndef CAT
+  CAT		:= cat
+ endif
+
+ # Overrides for Windows, X64.
+ ifeq ($(X64), y)
+  CPP		:= g++ -m64
+  CC		:= gcc -m64
+ endif
+
+ # Overrides for Windows, ARM.
+ ifeq ($(ARM), y)
+  CPP		:= armv7-w64-mingw32-g++
+  CC		:= armv7-w64-mingw32-gcc
+  WINDRES	:= armv7-w64-mingw32-windres
+  STRIP		:= armv7-w64-mingw32-strip
+ endif
+
+ # Overrides for Windows, ARM64.
+ ifeq ($(ARM64), y)
+  CPP		:= aarch64-w64-mingw32-g++
+  CC		:= aarch64-w64-mingw32-gcc
+  WINDRES	:= aarch64-w64-mingw32-windres
+  STRIP		:= aarch64-w64-mingw32-strip
+ endif
+
+ SYSINC		:= -Iwin/mingw/include
+ SYSLIB		:=
+endif
+
+DEPS		= -MMD -MF $*.d -c $<
+DEPFILE		:= win/.depends-mingw
+
+# Set up the correct toolchain flags.
+OPTS		:= $(EXTRAS) $(STUFF) \
+		   -D_CRT_NON_CONFORMING_SWPRINTFS \
+		   -D__USE_MINGW_ANSI_STDIO_X
+RFLAGS		:= --input-format=rc -O coff
+LDFLAGS		:=
+O		:= .o
+
+# Options fow Windows, X86.
+AFLAGS		:= -msse2 -mfpmath=sse
+ifeq ($(OPTIM), y)
+ DFLAGS		:= -march=native
+else
+ DFLAGS		:= -march=i686
+endif
+
+# Options for Windows, X64.
+ifeq ($(X64), y)
+ ifeq ($(OPTIM), y)
+  DFLAGS	:= -march=native
+ endif
+endif
+
+# Options for Windows, ARM.
+ifeq ($(ARM), y)
+ AFLAGS		:= -mfloat-abi=hard
+ DFLAGS		:= -march=armv7-a
+endif
+
+# Options for Windows, ARM64.
+ifeq ($(ARM64), y)
+ AFLAGS		:= -mfloat-abi=hard
+ DFLAGS		:= -march=armv8-a
+endif
+
+
+# Add general build options from the environment.
+ifdef BUILD
+ OPTS		+= -DBUILD=$(BUILD)
+endif
+ifdef COMMIT
+ OPTS		+= -DCOMMIT=0x$(COMMIT)
+endif
+ifdef UPSTREAM
+ OPTS		+= -DUPSTREAM=0x$(UPSTREAM)
+endif
+ifdef EXFLAGS
+ OPTS		+= $(EXFLAGS)
+endif
+ifdef EXINC
+ OPTS		+= -I$(EXINC)
+endif
+ OPTS		+= $(SYSINC)
+ifeq ($(CROSS), y)
+  OPTS		+= -DUSE_CROSS
+endif
+ifeq ($(DEBUG), y)
+ DFLAGS		+= -ggdb -D_DEBUG
+ RFLAGS		+= -D_DEBUG
+ AOPTIM		:=
+ ifndef COPTIM
+  COPTIM	:= -Og
+ endif
+else
+ ifeq ($(OPTIM), y)
+  AOPTIM	:= -mtune=native
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
+ else
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
+ endif
+endif
+ifeq ($(PROFILER), y)
+ LDFLAGS	+= -Xlinker -Map=$(PROG).map
+endif
+ifeq ($(LOGGING), y)
+ OPTS		+= -D_LOGGING
+ RFLAGS		+= -D_LOGGING
+endif
+ifeq ($(RELEASE), y)
+ OPTS		+= -DRELEASE_BUILD
+ RFLAGS		+= -DRELEASE_BUILD
+endif
+ifeq ($(X64), y)
+ PLATCG		:= codegen_x86-64.o
+ CGOPS		:= codegen_ops_x86-64.h
+ VCG		:= vid_voodoo_codegen_x86-64.h
+else
+ PLATCG		:= codegen_x86.o
+ CGOPS		:= codegen_ops_x86.h
+ VCG		:= vid_voodoo_codegen_x86.h
+endif
+LIBS		:= -mwindows \
+		   -lddraw -ldxguid -ld3d9 -lversion -lcomctl32 -lwinmm
+
+
+# Optional modules.
+MISCOBJ		:=
+
+# Dynamic Recompiler (compiled-in)
+ifndef DYNAREC
+ DYNAREC	:= y
+ ifeq ($(ARM), y)
+  DYNAREC	:= n
+ endif
+ ifeq ($(ARM64), y)
+  DYNAREC	:= n
+ endif
+endif
+ifeq ($(DYNAREC), y)
+ OPTS		+= -DUSE_DYNAREC
+ RFLAGS		+= -DUSE_DYNAREC
+ DYNARECOBJ	:= 386_dynarec_ops.o \
+		    codegen.o \
+		    codegen_ops.o \
+		    codegen_timing_common.o codegen_timing_486.o \
+		    codegen_timing_686.o codegen_timing_pentium.o \
+		    codegen_timing_winchip.o $(PLATCG)
+endif
+
+# (Win)Pcap (always dynamic)
+ifndef PCAP
+ PCAP		:= d
+endif
+ifeq ($(PCAP), d)
+ OPTS		+= -DUSE_PCAP -I$(EXT_PATH)/pcap/include
+endif
+
+# VNS: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef VNS
+ VNS		:= n
+endif
+ifneq ($(VNS), n)
+ OPTS		+= -DUSE_VNS
+ ifeq ($(VNS_PATH), )
+  VNS_PATH	:= $(EXT_PATH)/vns
+ endif
+ OPTS		+= -I$(VNS_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(VNS_PATH)/lib/x64
+ else
+  LIBS		+= -L$(VNS_PATH)/lib/x86
+ endif
+ ifeq ($(VNS), y)
+  LIBS		+= -lvns.dll
+ endif
+ ifeq ($(VNS), s)
+  LIBS		+= -lvns
+ endif
+ MISCOBJ	+= net_vns.o
+endif
+
+# OpenAL (always dynamic)
+ifndef OPENAL
+ OPENAL		:= d
+endif
+ifeq ($(OPENAL), d)
+ OPTS		+= -DUSE_OPENAL -I$(EXT_PATH)/openal/include
+endif
+
+# FluidSynth (always dynamic)
+ifndef FLUIDSYNTH
+ FLUIDSYNTH	:= d
+endif
+ifeq ($(FLUIDSYNTH), d)
+ OPTS		+= -DUSE_FLUIDSYNTH -I$(EXT_PATH)/fluidsynth/include
+endif
+
+# MunT: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef MUNT
+ MUNT		:= d
+endif
+ifneq ($(MUNT), n)
+ ifeq ($(MUNT), d)
+  OPTS		+= -DUSE_MUNT=2
+ else
+  OPTS		+= -DUSE_MUNT=1
+ endif
+ ifeq ($(MUNT_PATH), )
+  MUNT_PATH	:= $(EXT_PATH)/munt
+ endif
+ OPTS		+= -I$(MUNT_PATH)
+ ifeq ($(X64), y)
+  LIBS		+= -L$(MUNT_PATH)/lib/x64
+ else
+  LIBS		+= -L$(MUNT_PATH)/lib/x86
+ endif
+ ifeq ($(MUNT), y)
+  LIBS		+= -lmunt.dll
+ endif
+ ifeq ($(MUNT), s)
+  LIBS		+= -lmunt
+ endif
+endif
+
+# reSID: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef RESID
+ RESID		:= d
+endif
+ifneq ($(RESID), n)
+ ifeq ($(RESID), d)
+  OPTS		+= -DUSE_RESID=2
+ else
+  OPTS		+= -DUSE_RESID=1
+ endif
+ ifeq ($(RESID_PATH), )
+  RESID_PATH	:= $(EXT_PATH)/resid
+ endif
+ OPTS		+= -I$(EXT_PATH)
+ ifeq ($(X64), y)
+  LIBS		+= -L$(RESID_PATH)/lib/x64
+ else
+  LIBS		+= -L$(RESID_PATH)/lib/x86
+ endif
+ ifeq ($(RESID), y)
+  LIBS		+= -lmunt.dll
+ endif
+ ifeq ($(RESID), s)
+  LIBS		+= -lmunt
+ endif
+endif
+
+# SDL: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef SDL
+ SDL		:= n
+endif
+ifneq ($(SDL), n)
+ OPTS		+= -DUSE_SDL
+ ifeq ($(SDL_PATH), )
+  SDL_PATH	:= $(EXT_PATH)/sdl
+ endif
+ OPTS		+= -I$(SDL_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(SDL_PATH)/lib/x64
+ else
+  LIBS		+= -L$(SDL_PATH)/lib/x86
+ endif
+ ifeq ($(SDL), y)
+  LIBS		+= -lsdl2.dll
+ endif
+ ifeq ($(SDL), s)
+  LIBS		+= -lsdl2
+ endif
+ SDLOBJ		:= win_sdl.o
+endif
+
+# DINPUT and XInput (always hard-linked)
+ifndef DINPUT
+ DINPUT		:= y
+ ifeq ($(ARM), y)
+  DINPUT	:= n
+ endif
+endif
+ifeq ($(DINPUT), y)
+ OPTS		+= -DUSE_DINPUT
+ LIBS		+= -ldinput8
+else
+ LIBS		+= -lxinput
+endif
+
+# VNC: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef VNC
+ VNC		:= n
+endif
+ifneq ($(VNC), n)
+ ZLIB		:= (VNC)
+ ifeq ($(VNC), d)
+  OPTS		+= -DUSE_VNC=2
+ else
+  OPTS		+= -DUSE_VNC=1
+ endif
+ ifeq ($(VNC_PATH), )
+  VNC_PATH	:= $(EXT_PATH)/vnc
+ endif
+ OPTS		+= -I$(VNC_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(VNC_PATH)/lib/x64
+ else
+  LIBS		+= -L$(VNC_PATH)/lib/x86
+ endif
+ ifeq ($(VNC), y)
+  LIBS		+= -lvncserver.dll
+ endif
+ ifeq ($(VNC), s)
+  LIBS		+= -lvncserver -lz -static -lpthread
+ endif
+ MISCOBJ	+= vnc.o vnc_keymap.o
+endif
+
+# RDP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef RDP
+ RDP		:= n
+endif
+ifneq ($(RDP), n)
+ ifeq ($(RDP), d)
+  OPTS		+= -DUSE_RDP=2
+ else
+  OPTS		+= -DUSE_RDP=1
+ endif
+ ifeq ($(RDP_PATH), )
+  RDP_PATH	:= $(EXT_PATH)/rdp
+ endif
+ OPTS		+= -I$(RDP_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(RDP_PATH)/lib/x64
+ else
+  LIBS		+= -L$(RDP_PATH)/lib/x86
+ endif
+ ifeq ($(RDP), y)
+  LIBS		+= -lrdp.dll
+ endif
+ ifeq ($(RDP), s)
+  LIBS		+= -lrdp
+ endif
+ MISCOBJ	+= rdp.o
+endif
+
+# PNG: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef PNG
+ PNG		:= n
+endif
+ifneq ($(PNG), n)
+ ZLIB		:= $(PNG)
+ ifeq ($(PNG), d)
+  OPTS		+= -DUSE_LIBPNG=2
+ else
+  OPTS		+= -DUSE_LIBPNG=1
+ endif
+ ifeq ($(PNG_PATH), )
+  PNG_PATH	:= $(EXT_PATH)/png
+ endif
+ OPTS		+= -I$(PNG_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(PNG_PATH)/lib/x64
+ else
+  LIBS		+= -L$(PNG_PATH)/lib/x86
+ endif
+ ifeq ($(PNG), y)
+  # FIXME: should be -lpng.dll
+  LIBS		+= -lpng -lz
+ endif
+ ifeq ($(PNG), s)
+  LIBS		+= -lpng -lz
+ endif
+ MISCOBJ	+= png.o
+endif
+
+# ZLIB: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef ZLIB
+ ZLIB		:= n
+endif
+ifneq ($(ZLIB), n)
+ ifeq ($(ZLIB), d)
+  OPTS		+= -DUSE_ZLIB=2
+ else
+  OPTS		+= -DUSE_ZLIB=1
+ endif
+ ifeq ($(ZLIB_PATH), )
+  ZLIB_PATH	:= $(EXT_PATH)/zlib
+ endif
+ OPTS		+= -I$(ZLIB_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(ZLIB_PATH)/lib/x64
+ else
+  LIBS		+= -L$(ZLIB_PATH)/lib/x86
+ endif
+ ifeq ($(ZLIB), y)
+  LIBS		+= -lz
+ endif
+ ifeq ($(ZLIB), s)
+  LIBS		+= -lz_static
+ endif
+endif
+
+# WX: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifneq ($(WX), n)
+ OPTS		+= -DUSE_WX=$(WX) $(WX_FLAGS)
+ LIBS		+= $(WX_LIBS) -lm
+ UIOBJ		:= wx_main.o wx_ui.o wx_stbar.o wx_render.o
+else
+ UIOBJ		:= win_ui.o \
+		   win_ddraw.o win_d3d.o $(SDLOBJ) \
+		   win_dialog.o win_about.o win_settings.o \
+		   win_devconf.o win_snd_gain.o win_new_image.o
+endif
+
+
+# Options for the DEV branch.
+ifeq ($(DEV_BRANCH), y)
+ OPTS		+= -DDEV_BRANCH
+ DEVBROBJ	:=
+
+ ifeq ($(AMD_K), y)
+  OPTS		+= -DUSE_AMD_K
+ endif
+
+ ifeq ($(SIS471), y)
+  OPTS		+= -DUSE_SIS471
+ endif
+
+ ifeq ($(SIS496), y)
+  OPTS		+= -DUSE_SIS496
+ endif
+
+ ifeq ($(COMPAQ), y)
+  OPTS		+= -DUSE_COMPAQ
+  DEVBROBJ	+= m_compaq.o m_compaq_vid.o vid_cga_compaq.o
+ endif
+
+ ifeq ($(MICRAL), y)
+  OPTS		+= -DUSE_MICRAL
+  DEVBROBJ	+= m_bull.o
+ endif
+
+ ifeq ($(SUPERSPORT), y)
+  OPTS		+= -DUSE_SUPERSPORT
+  DEVBROBJ	+= m_zenith.o m_zenith_vid.o
+ endif
+
+ ifeq ($(ST11), y)
+  OPTS		+= -DUSE_ST11
+ endif
+
+ ifeq ($(WD1002), y)
+  OPTS		+= -DUSE_WD1002
+ endif
+
+ ifeq ($(PAS16), y)
+  OPTS		+= -DUSE_PAS16
+  DEVBROBJ	+= snd_pas16.o
+ endif
+
+ ifeq ($(GUSMAX), y)
+  OPTS		+= -DUSE_GUSMAX
+  DEVBROBJ	+= snd_cs423x.o
+ endif
+
+ ifeq ($(WONDER), y)
+  OPTS		+= -DUSE_WONDER
+ endif
+
+ ifeq ($(XL24), y)
+  OPTS		+= -DUSE_XL24
+ endif
+
+ ifeq ($(PRINTER), y)
+  OPTS		+= -DUSE_PRINTER
+  DEVBROBJ	+= prt_parallel.o
+ endif
+
+ ifeq ($(HOSTCD), y)
+  OPTS		+= -DUSE_HOST_CDROM
+ endif
+
+ ifeq ($(CASSETTE), y)
+  OPTS		+= -DUSE_CASSETTE
+  DEVBROBJ	+= cassette.o
+ endif
+
+ ifeq ($(EL1), y)
+  OPTS		+= -DUSE_EL1
+  DEVBROBJ	+= net_3c501.o
+ endif
+
+ ifeq ($(PCNET), y)
+  OPTS		+= -DUSE_IBMPCNET
+  DEVBROBJ	+= net_ibmpcnet.o
+ endif
+
+ ifeq ($(ARTI), y)
+  OPTS		+= -DUSE_ARTISOFT
+  DEVBROBJ	+= net_arti2m.o
+ endif
+
+endif
+
+
+# Finalize the list of libraries to load.
+LIBS		+= -lws2_32 -lwsock32 -liphlpapi -lpsapi
+LIBS		+= -static -lstdc++ -lgcc
+#ifneq ($(X64), y)
+# LIBS		+= -Wl,--large-address-aware
+#endif
+
+
+# Final versions of the toolchain flags.
+# FIXME: add the -Wsign-compare option soon!
+CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
+		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
+		   -fno-strict-aliasing \
+		   -Wall -Wundef #-Wshadow #-Wunused-parameter -Wmissing-declarations
+
+CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
+		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
+		   -fno-strict-aliasing \
+		   -Wall -Wundef -Wunused-parameter -Wmissing-declarations \
+		   -Wno-ctor-dtor-privacy -Woverloaded-virtual
+#		   -fvisibility=hidden -fvisibility-inlines-hidden
+
+
+#########################################################################
+#		Create the (final) list of objects to build.		#
+#########################################################################
+
+MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
+		   rom.o rom_load.o device.o nvr.o
+
+UIOBJ		+= ui_main.o ui_lang.o ui_stbar.o ui_vidapi.o \
+		   ui_cdrom.o ui_new_image.o ui_misc.o
+
+CPUOBJ		:= cpu.o cpu_table.o \
+		    808x.o 386.o x86seg.o x87.o \
+		    386_dynarec.o $(DYNARECOBJ)
+
+SYSOBJ		:= clk.o dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o \
+		   mcr.o memregs.o nvr_at.o nvr_ps2.o port92.o
+
+CHIPOBJ		:= neat.o scat.o headland.o \
+		    acc2168.o ali1429.o opti495.o sis471.o sis496.o \
+		    wd76c10.o intel4x0.o
+
+MCHOBJ		:= machine.o machine_table.o \
+		    m_xt.o \
+		    m_amstrad.o m_amstrad_vid.o \
+		    m_europc.o m_laserxt.o \
+		    m_olim24.o m_olim24_vid.o \
+		    m_tandy1000.o m_tandy1000_vid.o \
+		    m_tosh1x00.o m_tosh1x00_vid.o \
+		    m_xi8088.o \
+		    m_pcjr.o \
+		    m_ps1.o m_ps1_hdc.o \
+		    m_ps2_isa.o m_ps2_mca.o \
+		    m_at.o \
+		    m_neat.o m_headland.o m_scat.o \
+		    m_commodore.o \
+		    m_tosh3100e.o m_tosh3100e_vid.o \
+		    m_ali.o m_opti495.o m_sis471.o m_sis496.o \
+		    m_wd76c10.o m_intel4x0.o \
+		    m_acer.o m_aopen.o m_asus.o m_pbell.o m_tyan.o \
+		    m_misc.o
+
+DEVOBJ		:= bugger.o \
+		   isamem.o isartc.o \
+		   game.o game_dev.o \
+		   parallel.o parallel_dev.o \
+		    prt_text.o prt_cpmap.o prt_escp.o \
+		   serial.o \
+		   sio_acc3221.o sio_fdc37c66x.o sio_fdc37c669.o \
+		   sio_fdc37c93x.o sio_pc87306.o sio_w83877f.o \
+		   sio_um8669f.o \
+		   intel_flash.o intel_sio.o intel_piix.o \
+		   keyboard.o \
+		    keyboard_xt.o keyboard_at.o \
+		   mouse.o \
+		    mouse_serial.o mouse_ps2.o mouse_bus.o \
+		   joystick.o \
+		    js_standard.o js_ch_fs_pro.o \
+		    js_sw_pad.o js_tm_fcs.o \
+
+FDDOBJ		:= fdc.o \
+		    fdc_pii15xb.o \
+		   fdd.o \
+		    fdd_common.o fdd_86f.o \
+		    fdd_fdi.o fdi2raw.o lzf_c.o lzf_d.o \
+		    fdd_imd.o fdd_img.o fdd_json.o fdd_mfm.o fdd_td0.o
+
+HDDOBJ		:= hdd.o \
+		    hdd_image.o hdd_table.o \
+		   hdc.o \
+		    hdc_st506_xt.o hdc_st506_at.o \
+		    hdc_esdi_at.o hdc_esdi_mca.o \
+		    hdc_ide_ata.o hdc_ide_xta.o hdc_xtide.o
+
+CDROMOBJ	:= cdrom.o \
+		    cdrom_speed.o \
+		    cdrom_dosbox.o cdrom_image.o
+
+ZIPOBJ		:= zip.o
+
+ifeq ($(USB), y)
+USBOBJ		:= usb.o
+endif
+
+SCSIOBJ		:= scsi.o \
+		    scsi_device.o scsi_disk.o scsi_cdrom.o \
+		    scsi_x54x.o scsi_aha154x.o scsi_buslogic.o \
+		    scsi_ncr5380.o scsi_ncr53c810.o
+
+NETOBJ		:= network.o \
+		    network_dev.o \
+		    net_pcap.o net_slirp.o \
+		    net_dp8390.o \
+		    net_ne2000.o net_wd80x3.o net_3c503.o
+
+SNDOBJ		:= sound.o \
+		    sound_dev.o \
+		    openal.o \
+		    snd_opl.o snd_opl_nuked.o \
+		    midi.o \
+		     midi_system.o midi_mt32.o midi_fluidsynth.o \
+		    snd_speaker.o \
+		    snd_lpt_dac.o snd_lpt_dss.o \
+		    snd_adlib.o snd_adlibgold.o \
+		    snd_ad1848.o \
+		    snd_audiopci.o \
+		    snd_cms.o \
+		    snd_gus.o \
+		    snd_sb.o snd_sb_dsp.o \
+		    snd_emu8k.o \
+		    snd_mpu401.o \
+		    snd_sn76489.o \
+		    snd_ssi2001.o \
+		    snd_wss.o \
+		    snd_ym7128.o
+
+VIDOBJ		:= video.o \
+		    video_dev.o \
+		    vid_cga.o vid_cga_comp.o \
+		    vid_mda.o \
+		    vid_hercules.o vid_herculesplus.o vid_incolor.o \
+		    vid_colorplus.o \
+		    vid_genius.o \
+		    vid_pgc.o vid_im1024.o \
+		    vid_sigma.o \
+		    vid_wy700.o \
+		    vid_ega.o vid_ega_render.o \
+		    vid_svga.o vid_svga_render.o \
+		    vid_vga.o \
+		    vid_ati_eeprom.o \
+		    vid_ati18800.o vid_ati28800.o \
+		    vid_ati_mach64.o vid_ati68860_ramdac.o \
+                    vid_att20c49x_ramdac.o vid_bt48x_ramdac.o \
+                    vid_av9194.o vid_icd2061.o vid_ics2595.o \
+		    vid_cl54xx.o \
+		    vid_et4000.o vid_sc1502x_ramdac.o \
+		    vid_et4000w32.o vid_stg_ramdac.o \
+		    vid_ht216.o \
+		    vid_oak_oti.o \
+		    vid_paradise.o \
+		    vid_ti_cf62011.o \
+		    vid_tvga.o \
+		    vid_tgui9440.o vid_tkd8001_ramdac.o \
+		    vid_s3.o vid_s3_virge.o \
+		    vid_sdac_ramdac.o \
+		    vid_voodoo.o
+
+PLATOBJ		:= win.o \
+		    win_lang.o win_dynld.o win_opendir.o win_thread.o \
+		    win_cdrom.o win_keyboard.o win_serial.o win_midi.o \
+		    win_mouse.o win_joystick.o
+
+
+OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \
+		   $(DEVOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
+		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
+		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
+ifdef EXOBJ
+OBJ		+= $(EXOBJ)
+endif
+
+
+# Build module rules.
+ifeq ($(AUTODEP), y)
+%.o:		%.c
+		@echo $<
+		@$(CC) $(CFLAGS) $(DEPS) -c $<
+
+%.o:		%.cpp
+		@echo $<
+		@$(CPP) $(CXXFLAGS) $(DEPS) -c $<
+else
+%.o:		%.c
+		@echo $<
+		@$(CC) $(CFLAGS) -c $<
+
+%.o:		%.cpp
+		@echo $<
+		@$(CPP) $(CXXFLAGS) -c $<
+
+%.d:		%.c $(wildcard $*.d)
+		@echo $<
+		@$(CC) $(CFLAGS) $(DEPS) -E $< >NUL
+
+%.d:		%.cpp $(wildcard $*.d)
+		@echo $<
+		@$(CPP) $(CXXFLAGS) $(DEPS) -E $< >NUL
+endif
+
+
+all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
+
+
+VARCem.res:	VARCem.rc VARCem.mpp
+		@echo Generating Manifest file..
+		@-rm -f VARCem.manifest 2>NUL
+		@$(PREPROC) -P win/VARCem.mpp >VARCem.manifest
+		@echo Processing $<
+		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o VARCem.res
+
+$(PROG).exe:	$(OBJ) VARCem.res
+		@echo Linking $(PROG).exe ..
+		@$(CC) $(LDFLAGS) -o $@ \
+			$(OBJ) VARCem.res $(LIBS)
+ifneq ($(DEBUG), y)
+		@$(STRIP) $(PROG).exe
+endif
+
+pcap_if.res:	pcap_if.rc
+		@echo Processing $<
+		@$(WINDRES) $(RFLAGS) -i $< -o pcap_if.res
+
+$(NETIF).exe:	pcap_if.o win_dynld.o pcap_if.res
+		@echo Linking $(NETIF).exe ..
+		@$(CC) $(LDFLAGS) -o $@ \
+			pcap_if.o win_dynld.o pcap_if.res
+ifneq ($(DEBUG), y)
+		@$(STRIP) $(NETIF).exe
+endif
+
+
+clean:
+		@echo Cleaning objects..
+		@-rm -f *.o
+		@-rm -f *.res
+
+clobber:	clean
+		@echo Cleaning executables..
+		@-rm -f *.d
+		@-rm -f *.exe
+ifeq ($(PROFILER), y)
+		@-rm -f *.map
+endif
+		@-rm -f *.manifest
+#		@-rm -f $(DEPFILE)
+
+ifneq ($(AUTODEP), y)
+depclean:
+		@-rm -f $(DEPFILE)
+		@echo Creating dependencies..
+		@echo # Run "make depends" to re-create this file. >$(DEPFILE)
+
+depends:	DEPOBJ=$(OBJ:%.o=%.d)
+depends:	depclean $(OBJ:%.o=%.d)
+		@$(CAT) $(DEPOBJ) >>$(DEPFILE)
+#		@-rm -f $(DEPOBJ)
+
+$(DEPFILE):
+endif
+
+
+# Module dependencies.
+ifeq ($(AUTODEP), y)
+#-include $(OBJ:%.o=%.d)  (better, but sloooowwwww)
+-include *.d
+else
+include $(wildcard $(DEPFILE))
+endif
+
+
+# End of Makefile.mingw.

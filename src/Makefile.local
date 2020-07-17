@@ -10,11 +10,11 @@
 #		settings, so we can avoid changing the main one for all of
 #		our local setups.
 #
-# Version:	@(#)Makefile.local	1.0.10	2018/10/16
+# Version:	@(#)Makefile.local	1.0.11	2020/07/15
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017,2018 Fred N. van Kempen.
+#		Copyright 2017-2020 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -55,7 +55,7 @@
 #PROG	:= yourexe
 
 # Build Platform.
-SCRIPT	:= mingw/Makefile.MinGW
+SCRIPT	:= Makefile.MinGW
 
 # Various compile-time options.
 # -DROM_TRACE=0xc800 traces ROM access from segment C800

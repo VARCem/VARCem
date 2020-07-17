@@ -405,8 +405,7 @@
 #define  IDS_3400	3400		/* "Sound card:" */
 #define  IDS_3401	3401		/* "MIDI Out Device:" */
 #define  IDS_3402	3402		/* "Standalone MPU-401" */
-#define  IDS_3403	3403		/* "Use Nuked OPL" */
-#define  IDS_3404	3404		/* "Use FLOAT32 sound" */
+#define  IDS_3403	3403		/* "Use FLOAT32 sound" */
 
 /* UI dialog: Settings (Network, 3425.) */
 #define  IDS_3425	3425		/* "Network type:" */

@@ -8,13 +8,13 @@
  *
  *		Interface to system MIDI driver.
  *
- * Version:	@(#)midi_system.c	1.0.7	2019/04/09
+ * Version:	@(#)midi_system.c	1.0.8	2020/07/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -46,16 +46,15 @@
 #include "../../device.h"
 #include "../../plat.h"
 #include "midi.h"
-#include "midi_system.h"
 
 
-void *
+static void *
 system_midi_init(const device_t *info, UNUSED(void *parent))
 {
     midi_device_t *dev;
 
     dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
-    memset(dev, 0, sizeof(midi_device_t));
+    memset(dev, 0x00, sizeof(midi_device_t));
 
     dev->play_msg = plat_midi_play_msg;
     dev->play_sysex = plat_midi_play_sysex;
@@ -65,11 +64,11 @@ system_midi_init(const device_t *info, UNUSED(void *parent))
 
     midi_init(dev);
 
-    return dev;
+    return(dev);
 }
 
 
-void
+static void
 system_midi_close(void *priv)
 {
     plat_midi_close();
@@ -80,10 +79,10 @@ system_midi_close(void *priv)
 }
 
 
-int
+static int
 system_midi_available(void)
 {
-    return plat_midi_get_num_devs();
+    return(plat_midi_get_num_devs());
 }
 
 

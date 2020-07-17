@@ -10,14 +10,14 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.16	2020/01/29
+ * Version:	@(#)snd_adlibgold.c	1.0.17	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "sound.h"
-#include "filters.h"
+#include "snd_filters.h"
 #include "snd_opl.h"
 #include "snd_ym7128.h"
 
@@ -703,7 +703,8 @@ static void adgold_get_buffer(int32_t *buffer, int len, priv_t priv)
         
         int c;
 
-        opl3_update2(&adgold->opl);
+        opl3_update(&adgold->opl);
+
         adgold_update(adgold);
         
         for (c = 0; c < len * 2; c += 2)

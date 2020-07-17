@@ -8,13 +8,13 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.11	2018/10/25
+ * Version:	@(#)sound.h	1.0.12	2020/07/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -89,6 +89,8 @@ extern void	openal_buffer(void *buf);
 extern void	openal_buffer_cd(void *buf);
 extern void	openal_buffer_midi(void *buf, uint32_t size);
 extern void	openal_set_midi(int freq, int buf_size);
+
+extern void	resid_init(void);
 
 #ifdef __cplusplus
 }

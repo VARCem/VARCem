@@ -13,11 +13,11 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem.str	1.0.15	2019/05/17
+ * Version:	@(#)VARCem.str	1.0.16	2020/07/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -216,8 +216,7 @@
 #define  STR_3400	"Sound card:"
 #define  STR_3401	"MIDI Out Device:"
 #define  STR_3402	"Standalone MPU-401"
-#define  STR_3403	"Use Nuked OPL"
-#define  STR_3404	"Use FLOAT32 sound"
+#define  STR_3403	"Use FLOAT32 sound"
 
 /* UI dialog: Settings (Network, 3425.) */
 #define  STR_3425	"Network type:"

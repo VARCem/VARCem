@@ -8,14 +8,14 @@
  *
  *		Implementation of the ADLIB sound device.
  *
- * Version:	@(#)snd_adlib.c	1.0.11	2019/05/17
+ * Version:	@(#)snd_adlib.c	1.0.12	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -65,7 +65,7 @@ get_buffer(int32_t *buffer, int len, priv_t priv)
     adlib_t *dev = (adlib_t *)priv;
     int c;
 
-    opl2_update2(&dev->opl);
+    opl2_update(&dev->opl);
 
     for (c = 0; c < len * 2; c++)
 	buffer[c] += (int32_t)dev->opl.buffer[c];

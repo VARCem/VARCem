@@ -14,7 +14,7 @@
  *		  486-50 - 32kHz
  *		  Pentium - 45kHz
  *
- * Version:	@(#)snd_sb_dsp.c	1.0.13	2020/06/05
+ * Version:	@(#)snd_sb_dsp.c	1.0.14	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,7 +58,7 @@
 #include "sound.h"
 #include "midi.h"
 #include "snd_mpu401.h"
-#include "filters.h"
+#include "snd_filters.h"
 #include "snd_sb.h"
 #include "snd_sb_dsp.h"
 

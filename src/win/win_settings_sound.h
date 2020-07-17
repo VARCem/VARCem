@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_sound.h	1.0.16	2019/05/03
+ * Version:	@(#)win_settings_sound.h	1.0.17	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -184,9 +184,6 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_CONFIGURE_MPU401);
 		EnableWindow(h, (mpu401_standalone_allow() && temp_cfg.mpu401_standalone_enable) ? TRUE : FALSE);
 
-		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
-		SendMessage(h, BM_SETCHECK, temp_cfg.opl_type, 0);
-
 		h = GetDlgItem(hdlg, IDC_CHECK_FLOAT);
 		SendMessage(h, BM_SETCHECK, temp_cfg.sound_is_float, 0);
 
@@ -271,9 +268,6 @@ sound_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		h = GetDlgItem(hdlg, IDC_CHECK_MPU401);
 		temp_cfg.mpu401_standalone_enable = (int)SendMessage(h, BM_GETCHECK, 0, 0);
-
-		h = GetDlgItem(hdlg, IDC_CHECK_NUKEDOPL);
-		temp_cfg.opl_type = (int)SendMessage(h, BM_GETCHECK, 0, 0);
 
 		h = GetDlgItem(hdlg, IDC_CHECK_FLOAT);
 		temp_cfg.sound_is_float = (int)SendMessage(h, BM_GETCHECK, 0, 0);

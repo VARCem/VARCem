@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.17	2019/05/03
+ * Version:	@(#)midi_fluidsynth.c	1.0.18	2020/07/11
  *
  *		Code borrowed from scummvm.
  *
@@ -25,7 +25,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -60,8 +60,10 @@
 #include "../../ui/ui.h"
 #include "../../plat.h"
 #include "midi.h"
-#include "midi_fluidsynth.h"
 #include "sound.h"
+
+
+#ifdef USE_FLUIDSYNTH
 
 
 #define RENDER_RATE 100
@@ -568,3 +570,6 @@ const device_t fluidsynth_device = {
     NULL,
     fluidsynth_config
 };
+
+
+#endif	/*USE_FLUIDSYNTH*/

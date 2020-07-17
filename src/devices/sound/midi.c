@@ -8,13 +8,13 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.11	2019/05/03
+ * Version:	@(#)midi.c	1.0.12	2020/07/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -50,13 +50,6 @@
 #include "../../plat.h"
 #include "sound.h"
 #include "midi.h"
-#include "midi_system.h"
-#ifdef USE_FLUIDSYNTH
-# include "midi_fluidsynth.h"
-#endif
-#ifdef USE_MUNT
-# include "midi_mt32.h"
-#endif
 
 
 #define SYSEX_SIZE	1024

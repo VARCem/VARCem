@@ -8,7 +8,7 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.11	2020/06/05
+ * Version:	@(#)midi_mt32.c	1.0.12	2020/07/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,23 +41,80 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "munt/c_interface/c_interface.h"
+#include <c_interface/c_interface.h>
 #define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../config.h"
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
+#include "../../ui/ui.h"
 #include "../../plat.h"
 #include "sound.h"
 #include "midi.h"
-#include "midi_mt32.h"
 
+
+#ifdef USE_MUNT
+
+
+#ifdef _WIN32
+# define PATH_MUNT_DLL		"libmunt.dll"
+#else
+# define PATH_MUNT_DLL		"libmunt.so"
+#endif
 
 #define MT32_CTRL_ROM_PATH	L"sound/mt32/mt32_control.rom"
 #define MT32_PCM_ROM_PATH	L"sound/mt32/mt32_pcm.rom"
 #define CM32_CTRL_ROM_PATH	L"sound/cm32l/cm32l_control.rom"
 #define CM32_PCM_ROM_PATH	L"sound/cm32l/cm32l_pcm.rom"
+
+
+static void			*munt_handle = NULL;	/* handle to DLL */
+#if USE_MUNT == 1
+# define FUNC(x)		mt32emu_ ## x
+#else
+# define FUNC(x)		MT32EMU_ ## x
+
+
+/* Pointers to the real functions. */
+static char		*const (*MT32EMU_get_library_version_string)(void);
+static mt32emu_context	(*MT32EMU_create_context)(mt32emu_report_handler_i report_handler, void *instance_data);
+static void		(*MT32EMU_free_context)(mt32emu_context context);
+static mt32emu_return_code (*MT32EMU_open_synth)(mt32emu_const_context context);
+static void		(*MT32EMU_close_synth)(mt32emu_const_context context);
+static mt32emu_return_code (*MT32EMU_add_rom_file)(mt32emu_context context, const char *filename);
+static void		(*MT32EMU_render_float)(mt32emu_const_context context, float *stream, mt32emu_bit32u len);
+static void		(*MT32EMU_render_bit16s)(mt32emu_const_context context, mt32emu_bit16s *stream, mt32emu_bit32u len);
+static mt32emu_return_code (*MT32EMU_play_sysex)(mt32emu_const_context context, const mt32emu_bit8u *sysex, mt32emu_bit32u len);
+static mt32emu_return_code (*MT32EMU_play_msg)(mt32emu_const_context context, mt32emu_bit32u msg);
+static mt32emu_bit32u	(*MT32EMU_get_actual_stereo_output_samplerate)(mt32emu_const_context context);
+static void		(*MT32EMU_set_output_gain)(mt32emu_const_context context, float gain);
+static void		(*MT32EMU_set_reverb_enabled)(mt32emu_const_context context, const mt32emu_boolean reverb_enabled);
+static void		(*MT32EMU_set_reverb_output_gain)(mt32emu_const_context context, float gain);
+static void		(*MT32EMU_set_reversed_stereo_enabled)(mt32emu_const_context context, const mt32emu_boolean enabled);
+static void		(*MT32EMU_set_nice_amp_ramp_enabled)(mt32emu_const_context context, const mt32emu_boolean enabled);
+
+
+static const dllimp_t munt_imports[] = {
+  { "mt32emu_get_library_version_string", &MT32EMU_get_library_version_string	},
+  { "mt32emu_create_context",	&MT32EMU_create_context		},
+  { "mt32emu_free_context",	&MT32EMU_free_context		},
+  { "mt32emu_open_synth",	&MT32EMU_open_synth		},
+  { "mt32emu_close_synth",	&MT32EMU_close_synth		},
+  { "mt32emu_add_rom_file",	&MT32EMU_add_rom_file		},
+  { "mt32emu_render_float",	&MT32EMU_render_float		},
+  { "mt32emu_render_bit16s",	&MT32EMU_render_bit16s		},
+  { "mt32emu_play_sysex",	&MT32EMU_play_sysex		},
+  { "mt32emu_play_msg",		&MT32EMU_play_msg		},
+  { "mt32emu_get_actual_stereo_output_samplerate", &MT32EMU_get_actual_stereo_output_samplerate },
+  { "mt32emu_set_output_gain",	&MT32EMU_set_output_gain	},
+  { "mt32emu_set_reverb_enabled", &MT32EMU_set_reverb_enabled	},
+  { "mt32emu_set_reverb_output_gain", &MT32EMU_set_reverb_output_gain },
+  { "mt32emu_set_reversed_stereo_enabled", &MT32EMU_set_reversed_stereo_enabled },
+  { "mt32emu_set_nice_amp_ramp_enabled", &MT32EMU_set_nice_amp_ramp_enabled },
+  { NULL								}
+};
+#endif
 
 
 static const mt32emu_report_handler_i_v0 handler_v0 = {
@@ -115,7 +172,7 @@ static mt32emu_context	context = NULL;
 static int		mtroms_present[2] = {-1, -1};
 
 
-int	/*mt32emu_return_code*/
+static int
 mt32_check(const char *func, mt32emu_return_code ret, mt32emu_return_code expected)
 {
     if (ret != expected) {
@@ -127,45 +184,27 @@ mt32_check(const char *func, mt32emu_return_code ret, mt32emu_return_code expect
 }
 
 
-int
-mt32_available(void)
+static void
+mt32_stream(float *stream, int len)
 {
-    if (mtroms_present[0] < 0)
-	mtroms_present[0] = (rom_present(MT32_CTRL_ROM_PATH) &&
-			     rom_present(MT32_PCM_ROM_PATH));
-    return mtroms_present[0];
+    if (context)
+	FUNC(render_float)(context, stream, len);
 }
 
 
-int
-cm32l_available(void)
+static void
+mt32_stream_int16(int16_t *stream, int len)
 {
-    if (mtroms_present[1] < 0)
-	mtroms_present[1] = (rom_present(CM32_CTRL_ROM_PATH) &&
-			     rom_present(CM32_PCM_ROM_PATH));
-    return mtroms_present[1];
+    if (context)
+	FUNC(render_bit16s)(context, stream, len);
 }
 
 
-void
-mt32_stream(float* stream, int len)
-{
-    if (context) mt32emu_render_float(context, stream, len);
-}
-
-
-void
-mt32_stream_int16(int16_t* stream, int len)
-{
-    if (context) mt32emu_render_bit16s(context, stream, len);
-}
-
-
-void
+static void
 mt32_poll(void)
 {
     midi_pos++;
-    if (midi_pos == 48000/RENDER_RATE) {
+    if (midi_pos == (48000 / RENDER_RATE)) {
 	midi_pos = 0;
 	thread_set_event(event);
     }
@@ -210,17 +249,19 @@ mt32_thread(void *param)
 }
 
 
-void
-mt32_msg(uint8_t* val)
+static void
+mt32_msg(uint8_t *val)
 {
-    if (context) mt32_check("mt32emu_play_msg", mt32emu_play_msg(context, *(uint32_t*)val), MT32EMU_RC_OK);
+    if (context)
+	mt32_check("mt32emu_play_msg", FUNC(play_msg)(context, *(uint32_t*)val), MT32EMU_RC_OK);
 }
 
 
-void
+static void
 mt32_sysex(uint8_t* data, unsigned int len)
 {
-    if (context) mt32_check("mt32emu_play_sysex", mt32emu_play_sysex(context, data, len), MT32EMU_RC_OK);
+    if (context)
+	mt32_check("mt32emu_play_sysex", FUNC(play_sysex)(context, data, len), MT32EMU_RC_OK);
 }
 
 
@@ -231,19 +272,27 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
     midi_device_t *dev;
     char fn[1024];
 
-    context = mt32emu_create_context(handler, NULL);
+    /* If no handle, abort early. */
+    if (munt_handle == NULL)
+	return(NULL);
 
+    context = FUNC(create_context)(handler, NULL);
+ERRLOG("MT32: context=%08lx\n", context);
     pc_path(path, sizeof_w(path), rom_path(control_rom));
     wcstombs(fn, path, sizeof(fn));
-    if (!mt32_check("mt32emu_add_rom_file", mt32emu_add_rom_file(context, fn), MT32EMU_RC_ADDED_CONTROL_ROM)) return 0;
+    if (!mt32_check("mt32emu_add_rom_file",
+	    FUNC(add_rom_file)(context, fn), MT32EMU_RC_ADDED_CONTROL_ROM))
+		return 0;
 
     pc_path(path, sizeof_w(path), rom_path(pcm_rom));
     wcstombs(fn, path, sizeof(fn));
-    if (!mt32_check("mt32emu_add_rom_file", mt32emu_add_rom_file(context, fn), MT32EMU_RC_ADDED_PCM_ROM)) return 0;
+    if (!mt32_check("mt32emu_add_rom_file",
+	FUNC(add_rom_file)(context, fn), MT32EMU_RC_ADDED_PCM_ROM)) return 0;
 
-    if (!mt32_check("mt32emu_open_synth", mt32emu_open_synth(context), MT32EMU_RC_OK)) return 0;
+    if (!mt32_check("mt32emu_open_synth",
+	FUNC(open_synth)(context), MT32EMU_RC_OK)) return 0;
 
-    samplerate = mt32emu_get_actual_stereo_output_samplerate(context);
+    samplerate = FUNC(get_actual_stereo_output_samplerate)(context);
 
     /* buf_size = samplerate/RENDER_RATE*2; */
     if (config.sound_is_float) {
@@ -256,20 +305,23 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 	    buffer_int16 = (int16_t *)mem_alloc(buf_size);
     }
 
-    mt32emu_set_output_gain(context, device_get_config_int("output_gain")/100.0f);
-    mt32emu_set_reverb_enabled(context, (mt32emu_boolean) !!device_get_config_int("reverb"));
-    mt32emu_set_reverb_output_gain(context, device_get_config_int("reverb_output_gain")/100.0f);
-    mt32emu_set_reversed_stereo_enabled(context, (mt32emu_boolean) !!device_get_config_int("reversed_stereo"));
-    mt32emu_set_nice_amp_ramp_enabled(context, (mt32emu_boolean) !!device_get_config_int("nice_ramp"));
+    FUNC(set_output_gain)(context, device_get_config_int("output_gain")/100.0f);
+    FUNC(set_reverb_enabled)(context, (mt32emu_boolean) !!device_get_config_int("reverb"));
+    FUNC(set_reverb_output_gain)(context, device_get_config_int("reverb_output_gain")/100.0f);
+    FUNC(set_reversed_stereo_enabled)(context, (mt32emu_boolean) !!device_get_config_int("reversed_stereo"));
+    FUNC(set_nice_amp_ramp_enabled)(context, (mt32emu_boolean) !!device_get_config_int("nice_ramp"));
 
-    //DEBUG("mt32 output gain: %f\n", mt32emu_get_output_gain(context));
-    //DEBUG("mt32 reverb output gain: %f\n", mt32emu_get_reverb_output_gain(context));
-    //DEBUG("mt32 reverb: %d\n", mt32emu_is_reverb_enabled(context));
-    //DEBUG("mt32 reversed stereo: %d\n", mt32emu_is_reversed_stereo_enabled(context));
+    //DEBUG("mt32 output gain: %f\n", FUNC(get_output_gain)(context));
+    //DEBUG("mt32 reverb output gain: %f\n", FUNC(get_reverb_output_gain)(context));
+    //DEBUG("mt32 reverb: %d\n", FUNC(is_reverb_enabled)(context));
+    //DEBUG("mt32 reversed stereo: %d\n", FUNC(is_reversed_stereo_enabled)(context));
 
     openal_set_midi(samplerate, buf_size);
 
-    //DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n", mt32emu_get_library_version_string(), samplerate, buf_size);
+#if 0
+    DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n",
+	FUNC(emu_get_library_version_string)(), samplerate, buf_size);
+#endif
 
     dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
     memset(dev, 0, sizeof(midi_device_t));
@@ -321,8 +373,8 @@ mt32_close(void *priv)
     thread_h = NULL;
 
     if (context) {
-	mt32emu_close_synth(context);
-	mt32emu_free_context(context);
+	FUNC(close_synth)(context);
+	FUNC(free_context)(context);
     }
     context = NULL;
 
@@ -333,6 +385,36 @@ mt32_close(void *priv)
     if (buffer_int16)
 	free(buffer_int16);
     buffer_int16 = NULL;
+
+#if 0
+    /* Do not unload. */
+# if USE_MUNT == 2
+    /* Unload the DLL if possible. */
+    if (munt_handle != NULL)
+	dynld_close(munt_handle);
+# endif
+    munt_handle = NULL;
+#endif
+}
+
+
+static int
+mt32_available(void)
+{
+    if (mtroms_present[0] < 0)
+	mtroms_present[0] = (rom_present(MT32_CTRL_ROM_PATH) &&
+			     rom_present(MT32_PCM_ROM_PATH));
+    return mtroms_present[0];
+}
+
+
+static int
+cm32l_available(void)
+{
+    if (mtroms_present[1] < 0)
+	mtroms_present[1] = (rom_present(CM32_CTRL_ROM_PATH) &&
+			     rom_present(CM32_PCM_ROM_PATH));
+    return mtroms_present[1];
 }
 
 
@@ -384,3 +466,37 @@ const device_t cm32l_device = {
     NULL, NULL, NULL,
     mt32_config
 };
+
+
+/* Prepare for use, load DLL if needed. */
+void
+munt_init(void)
+{
+#if USE_MUNT == 2
+    wchar_t temp[512];
+    const char *fn = PATH_MUNT_DLL;
+#endif
+
+    /* If already loaded, good! */
+    if (munt_handle != NULL)
+	return;
+
+#if USE_MUNT == 2
+    /* Try loading the DLL. */
+    munt_handle = dynld_module(fn, munt_imports);
+    if (munt_handle == NULL) {
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_NOLIB), "MunT", fn);
+	ui_msgbox(MBX_ERROR, temp);
+	ERRLOG("SOUND: unable to load '%s'; module disabled!\n", fn);
+	return;
+    } else
+	INFO("SOUND: module '%s' loaded, version %s.\n",
+		fn, FUNC(get_library_version_string)());
+#else
+    munt_handle = (void *)1;	/* just to indicate always therse */
+#endif
+}
+
+
+#endif	/*USE_MUNT*/

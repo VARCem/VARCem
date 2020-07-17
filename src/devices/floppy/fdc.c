@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.25	2020/06/10
+ * Version:	@(#)fdc.c	1.0.26	2020/06/18
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -206,7 +206,6 @@ fdc_get_drive(fdc_t *fdc)
 
 int		fdc_get_bitcell_period(fdc_t *fdc);
 int		fdc_get_bit_rate(fdc_t *fdc);
-static void	fdc_rate(fdc_t *fdc, int drive);
 
 
 int
@@ -289,7 +288,7 @@ fdc_get_format_sectors(fdc_t *fdc)
 
 
 static void
-fdc_reset_fifo_buf(fdc_t *fdc)
+fifo_buf_reset(fdc_t *fdc)
 {
     memset(fdc->fifobuf, 0x00, 16);
 
@@ -298,7 +297,7 @@ fdc_reset_fifo_buf(fdc_t *fdc)
 
 
 static void
-fdc_fifo_buf_advance(fdc_t *fdc)
+fifo_buf_advance(fdc_t *fdc)
 {
     if (fdc->fifobufpos == fdc->tfifo)
 	fdc->fifobufpos = 0;
@@ -308,19 +307,19 @@ fdc_fifo_buf_advance(fdc_t *fdc)
 
 
 static void
-fdc_fifo_buf_write(fdc_t *fdc, uint8_t val)
+fifo_buf_write(fdc_t *fdc, uint8_t val)
 {
     fdc->fifobuf[fdc->fifobufpos] = val;
-    fdc_fifo_buf_advance(fdc);
+    fifo_buf_advance(fdc);
 }
 
 
 static int
-fdc_fifo_buf_read(fdc_t *fdc)
+fifo_buf_read(fdc_t *fdc)
 {
     int ret = fdc->fifobuf[fdc->fifobufpos];
 
-    fdc_fifo_buf_advance(fdc);
+    fifo_buf_advance(fdc);
     if (fdc->fifobufpos == 0)
 	fdc->data_ready = 0;
 
@@ -344,7 +343,7 @@ fdc_int(fdc_t *fdc)
 
 
 static void
-fdc_watchdog_poll(priv_t priv)
+watchdog_poll(priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
 
@@ -356,6 +355,105 @@ fdc_watchdog_poll(priv_t priv)
 	if (fdc->dor & 0x20)
 		picint(1 << fdc->irq);
     }
+}
+
+
+static void
+update_rate(fdc_t *fdc, int drive)
+{
+    if (fdc->enh_mode) {
+	if ((fdc->rwc[drive] == 1) || (fdc->rwc[drive] == 2))
+		fdc->bit_rate = 500;
+	else if (fdc->rwc[drive] == 3)
+		fdc->bit_rate = 250;
+    } else switch (fdc->rate) {
+	case 0: /*High density*/
+		fdc->bit_rate = 500;
+		break;
+
+	case 1: /*Double density (360 rpm)*/
+		switch(fdc->drvrate[drive]) {
+			case 0:
+				fdc->bit_rate = 300;
+				break;
+
+			case 1:
+				fdc->bit_rate = 500;
+				break;
+
+			case 2:
+				fdc->bit_rate = 2000;
+				break;
+		}
+		break;
+
+	case 2: /*Double density*/
+		fdc->bit_rate = 250;
+		break;
+
+	case 3: /*Extended density*/
+		fdc->bit_rate = 1000;
+		break;
+    }
+
+    /*Bitcell period in ns*/
+    fdc->bitcell_period = 1000000 / fdc->bit_rate * 2;
+INFO("FDC: update_rate(%d) bitcell_period=%d\n", drive, fdc->bit_rate, fdc->bitcell_period);
+}
+
+
+static int
+get_densel(fdc_t *fdc, int drive)
+{
+    if (fdc->enh_mode) switch (fdc->rwc[drive]) {
+	case 1:
+	case 3:
+		return(0);
+
+	case 2:
+		return(1);
+    }
+
+    if (fdc->flags & FDC_FLAG_NSC) switch (fdc->densel_force) {
+	case 0:
+		return(0);
+
+	case 1:
+		return(1);
+    } else switch (fdc->densel_force) {
+	case 2:
+		return(1);
+
+	case 3:
+		return(0);
+    }
+
+    switch (fdc->rate) {
+	case 0:
+	case 3:
+		return(fdc->densel_polarity ? 1 : 0);
+
+	case 1:
+	case 2:
+		return(fdc->densel_polarity ? 0 : 1);
+    }
+
+    return(0);
+}
+
+
+static void
+set_rate(fdc_t *fdc, int drive)
+{
+    update_rate(fdc, drive);
+
+//    DEBUG("FDC: set_rate(%i) %i, %i (%i, %i)\n",
+INFO("FDC: set_rate(%i) %i, %i (%i, %i)\n",
+	  drive, fdc->drvrate[drive], fdc->rate,
+	  get_densel(fdc, drive),
+	  fdc->rwc[drive], fdc->densel_force);
+
+    fdd_set_densel(get_densel(fdc, drive));
 }
 
 
@@ -374,10 +472,10 @@ fdc_watchdog_poll(priv_t priv)
 void
 fdc_update_rates(fdc_t *fdc)
 {
-    fdc_rate(fdc, 0);
-    fdc_rate(fdc, 1);
-    fdc_rate(fdc, 2);
-    fdc_rate(fdc, 3);
+    set_rate(fdc, 0);
+    set_rate(fdc, 1);
+    set_rate(fdc, 2);
+    set_rate(fdc, 3);
 }
 
 
@@ -408,7 +506,7 @@ fdc_update_rwc(fdc_t *fdc, int drive, int rwc)
 {
     DEBUG("FDC: %c: new RWC is %i\n", 0x41 + drive, rwc);
     fdc->rwc[drive] = rwc;
-    fdc_rate(fdc, drive);
+    set_rate(fdc, drive);
 }
 
 
@@ -456,7 +554,7 @@ fdc_update_drvrate(fdc_t *fdc, int drive, int drvrate)
 {
     DEBUG("FDD %c: new drive rate is %i\n", 0x41 + drive, drvrate);
     fdc->drvrate[drive] = drvrate;
-    fdc_rate(fdc, drive);
+    set_rate(fdc, drive);
 }
 
 
@@ -464,48 +562,6 @@ void
 fdc_update_drv2en(fdc_t *fdc, int drv2en)
 {
     fdc->drv2en = drv2en;
-}
-
-
-void
-fdc_update_rate(fdc_t *fdc, int drive)
-{
-    if (((fdc->rwc[drive] == 1) || (fdc->rwc[drive] == 2)) && fdc->enh_mode)
-	fdc->bit_rate = 500;
-    else if ((fdc->rwc[drive] == 3) && fdc->enh_mode)
-	fdc->bit_rate = 250;
-    else switch (fdc->rate) {
-	case 0: /*High density*/
-		fdc->bit_rate = 500;
-		break;
-
-	case 1: /*Double density (360 rpm)*/
-		switch(fdc->drvrate[drive]) {
-			case 0:
-				fdc->bit_rate = 300;
-				break;
-
-			case 1:
-				fdc->bit_rate = 500;
-				break;
-
-			case 2:
-				fdc->bit_rate = 2000;
-				break;
-		}
-		break;
-
-	case 2: /*Double density*/
-		fdc->bit_rate = 250;
-		break;
-
-	case 3: /*Extended density*/
-		fdc->bit_rate = 1000;
-		break;
-    }
-
-    /*Bitcell period in ns*/
-    fdc->bitcell_period = 1000000 / fdc->bit_rate * 2;
 }
 
 
@@ -547,66 +603,6 @@ int
 fdc_get_bitcell_period(fdc_t *fdc)
 {
     return(fdc->bitcell_period);
-}
-
-
-static int
-fdc_get_densel(fdc_t *fdc, int drive)
-{
-    if (fdc->enh_mode) {
-	switch (fdc->rwc[drive]) {
-		case 1:
-		case 3:
-			return(0);
-
-		case 2:
-			return(1);
-	}
-    }
-
-    if (!(fdc->flags & FDC_FLAG_NSC)) {
-	switch (fdc->densel_force) {
-		case 2:
-			return(1);
-
-		case 3:
-			return(0);
-	}
-    } else {
-	switch (fdc->densel_force) {
-		case 0:
-			return(0);
-
-		case 1:
-			return(1);
-	}
-    }
-
-    switch (fdc->rate) {
-	case 0:
-	case 3:
-		return(fdc->densel_polarity ? 1 : 0);
-
-	case 1:
-	case 2:
-		return(fdc->densel_polarity ? 0 : 1);
-    }
-
-    return(0);
-}
-
-
-static void
-fdc_rate(fdc_t *fdc, int drive)
-{
-    fdc_update_rate(fdc, drive);
-
-    DEBUG("FDD %c: setting rate: %i, %i, %i (%i, %i)\n",
-	  'A' + drive, fdc->drvrate[drive], fdc->rate,
-	  fdc_get_densel(fdc, drive),
-	  fdc->rwc[drive], fdc->densel_force);
-
-    fdd_set_densel(fdc_get_densel(fdc, drive));
 }
 
 
@@ -657,8 +653,8 @@ fdc_bad_command(fdc_t *fdc)
 static void
 fdc_io_command_phase1(fdc_t *fdc, int out)
 {
-    fdc_reset_fifo_buf(fdc);
-    fdc_rate(fdc, fdc->drive);
+    fifo_buf_reset(fdc);
+    set_rate(fdc, fdc->drive);
     fdc->head = fdc->params[2];
     fdd_set_head(real_drive(fdc, fdc->drive), (fdc->params[0] & 4) ? 1 : 0);
     fdc->sector=fdc->params[3];
@@ -826,7 +822,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 				fdc->dat = val;
 				fdc->stat &= ~0x80;
 			} else {
-				fdc_fifo_buf_write(fdc, val);
+				fifo_buf_write(fdc, val);
 				if (fdc->fifobufpos == 0)
 					fdc->stat &= ~0x80;
 			}
@@ -1122,7 +1118,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 						break;
 
 					case 0x0d: /*Format*/
-						fdc_rate(fdc, fdc->drive);
+						set_rate(fdc, fdc->drive);
 						fdc->head = (fdc->params[0] & 4) ? 1 : 0;
 						fdd_set_head(real_drive(fdc, fdc->drive), (fdc->params[0] & 4) ? 1 : 0);
 						fdc->gap = fdc->params[3];
@@ -1207,7 +1203,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 						break;
 
 					case 10: /*Read sector ID*/
-						fdc_rate(fdc, fdc->drive);
+						set_rate(fdc, fdc->drive);
 						fdc->time = 0LL;
 						fdc->head = (fdc->params[0] & 4) ? 1 : 0;                                        
 						fdd_set_head(real_drive(fdc, fdc->drive), (fdc->params[0] & 4) ? 1 : 0);
@@ -1356,7 +1352,7 @@ fdc_read(uint16_t addr, priv_t priv)
 				fdc->data_ready = 0;
 				ret = fdc->dat;
 			} else
-				ret = fdc_fifo_buf_read(fdc);
+				ret = fifo_buf_read(fdc);
 			break;
 		}
 		fdc->stat &= ~0x80;
@@ -1878,7 +1874,7 @@ fdc_data(fdc_t *fdc, uint8_t data)
 		fdc->stat = 0xf0;
 	} else {
 		/* FIFO enabled */
-		fdc_fifo_buf_write(fdc, data);
+		fifo_buf_write(fdc, data);
 		if (fdc->fifobufpos == 0) {
 			/* We have wrapped around, means FIFO is over */
 			fdc->data_ready = 1;
@@ -1902,7 +1898,7 @@ fdc_data(fdc_t *fdc, uint8_t data)
 		fdc->data_ready = 1;
 		fdc->stat = 0xd0;
 	} else {
-		fdc_fifo_buf_advance(fdc);
+		fifo_buf_advance(fdc);
 		if (fdc->fifobufpos == 0) {
 			/* We have wrapped around, means FIFO is over */
 			fdc->data_ready = 1;
@@ -2040,7 +2036,7 @@ fdc_getdata(fdc_t *fdc, int last)
 		if (!last)
 			fdc->stat = 0xb0;
 	} else {
-		data = fdc_fifo_buf_read(fdc);
+		data = fifo_buf_read(fdc);
 
 		if (!last && (fdc->fifobufpos == 0))
 			fdc->stat = 0xb0;
@@ -2052,7 +2048,7 @@ fdc_getdata(fdc_t *fdc, int last)
 		if (!last)
 			fdc->stat = 0x90;
 	} else {
-		fdc_fifo_buf_advance(fdc);
+		fifo_buf_advance(fdc);
 
 		if (!last && (fdc->fifobufpos == 0))
 			fdc->stat = 0x90;
@@ -2273,7 +2269,7 @@ fdc_init(const device_t *info, UNUSED(void *parent))
     fdc->irq = 6;
 
     if (fdc->flags & FDC_FLAG_PCJR)
-	timer_add(fdc_watchdog_poll, fdc,
+	timer_add(watchdog_poll, fdc,
 		  &fdc->watchdog_timer, &fdc->watchdog_timer);
     else
 	fdc->dma_ch = 2;

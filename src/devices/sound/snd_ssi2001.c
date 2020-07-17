@@ -8,13 +8,13 @@
  *
  *		Implementation of the SSI2001 sound device.
  *
- * Version:	@(#)snd_ssi2001.c	1.0.10	2019/05/13
+ * Version:	@(#)snd_ssi2001.c	1.0.11	2020/07/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -41,13 +41,51 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <resid/c_interface.h>
 #define dbglog sound_card_log
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../../ui/ui.h"
 #include "sound.h"
-#include "snd_resid.h"
+
+
+#ifdef _WIN32
+# define PATH_RESID_DLL		"libresid.dll"
+#else
+# define PATH_RESID_DLL		"libresid.so"
+#endif
+
+
+static void		*sid_handle = NULL;	/* handle to DLL */
+#if USE_RESID == 1
+# define FUNC(x)	sid_ ## x
+#else
+# define FUNC(x)	SID_ ## x
+
+
+/* Pointers to the real functions. */
+static char		*const (*SID_version)(void);
+static void		*(*SID_init)(void);
+static void		(*SID_close)(void *priv);
+static void		(*SID_reset)(void *priv);
+static uint8_t		(*SID_read)(uint16_t addr, void *priv);
+static void		(*SID_write)(uint16_t addr, uint8_t val, void *priv);
+static void		(*SID_fillbuf)(int16_t *buf, int len, void *priv);
+
+
+static const dllimp_t resid_imports[] = {
+  { "sid_version",	&SID_version		},
+  { "sid_init",		&SID_init		},
+  { "sid_close",	&SID_close		},
+  { "sid_reset",	&SID_reset		},
+  { "sid_read",		&SID_read		},
+  { "sid_write",	&SID_write		},
+  { "sid_fillbuf",	&SID_fillbuf		},
+  { NULL					}
+};
+#endif
 
 
 typedef struct {
@@ -66,7 +104,8 @@ ssi_update(ssi2001_t *dev)
 {
     if (dev->pos >= sound_pos_global) return;
 
-    sid_fillbuf(&dev->buffer[dev->pos], sound_pos_global-dev->pos, dev->psid);
+    FUNC(fillbuf)(&dev->buffer[dev->pos],
+		  sound_pos_global - dev->pos, dev->psid);
 
     dev->pos = sound_pos_global;
 }
@@ -94,7 +133,7 @@ ssi_read(uint16_t addr, priv_t priv)
 
     ssi_update(dev);
 
-    return(sid_read(addr, priv));
+    return(FUNC(read)(addr, priv));
 }
 
 
@@ -105,7 +144,7 @@ ssi_write(uint16_t addr, uint8_t val, priv_t priv)
 
     ssi_update(dev);
 
-    sid_write(addr, val, priv);
+    FUNC(write)(addr, val, priv);
 }
 
 
@@ -119,7 +158,7 @@ ssi_close(priv_t priv)
 		     ssi_read,NULL,NULL, ssi_write,NULL,NULL, (priv_t)dev);
 
     /* Close the SID. */
-    sid_close(dev->psid);
+    FUNC(close)(dev->psid);
 
     free(dev);
 }
@@ -130,6 +169,12 @@ ssi_init(const device_t *info, UNUSED(void *parent))
 {
     ssi2001_t *dev;
 
+    /* If we do not have the reSID library, no can do. */
+    if (sid_handle == NULL) {
+	ERRLOG("SSI2001: reSID module not available, cannot initialize!");
+	return(NULL);
+    }
+
     dev = (ssi2001_t *)mem_alloc(sizeof(ssi2001_t));
     memset(dev, 0x00, sizeof(ssi2001_t));
 
@@ -138,8 +183,8 @@ ssi_init(const device_t *info, UNUSED(void *parent))
     dev->game = !!device_get_config_int("game_port");
 
     /* Initialize the 6581 SID. */
-    dev->psid = sid_init();
-    sid_reset(dev->psid);
+    dev->psid = FUNC(init)();
+    FUNC(reset)(dev->psid);
 
     /* Set up our I/O handler. */
     io_sethandler(dev->base, 32,
@@ -147,7 +192,7 @@ ssi_init(const device_t *info, UNUSED(void *parent))
 
     sound_add_handler(get_buffer, dev);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
@@ -201,3 +246,34 @@ const device_t ssi2001_device = {
     NULL, NULL, NULL, NULL,
     ssi2001_config
 };
+
+
+/* Prepare for use, load DLL if needed. */
+void
+resid_init(void)
+{
+#if USE_RESID == 2
+    wchar_t temp[512];
+    const char *fn = PATH_RESID_DLL;
+#endif
+
+    /* If already loaded, good! */
+    if (sid_handle != NULL)
+	return;
+
+#if USE_RESID == 2
+    /* Try loading the DLL. */
+    sid_handle = dynld_module(fn, resid_imports);
+    if (sid_handle == NULL) {
+	swprintf(temp, sizeof_w(temp),
+		 get_string(IDS_ERR_NOLIB), "reSID", fn);
+	ui_msgbox(MBX_ERROR, temp);
+	ERRLOG("SOUND: unable to load '%s'; module disabled!\n", fn);
+	return;
+    } else
+	INFO("SOUND: module '%s' loaded, version %s.\n",
+		fn, FUNC(version)());
+#else
+    sid_handle = (void *)1;	/* just to indicate always therse */
+#endif
+}

@@ -8,7 +8,9 @@
  *
  *		Sound Blaster emulation.
  *
- * Version:	@(#)snd_sb.c	1.0.15	2020/01/23
+ * FIXME:	THIS FILE IS A HORRIBLE NIGHTMARE
+ *
+ * Version:	@(#)snd_sb.c	1.0.17	2020/07/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,8 +55,7 @@
 #include "../../plat.h"
 #include "../system/mca.h"
 #include "sound.h"
-#include "filters.h"
-#include "snd_dbopl.h"
+#include "snd_filters.h"
 #include "snd_emu8k.h"
 #include "snd_mpu401.h"
 #include "snd_opl.h"
@@ -154,18 +155,22 @@ typedef struct
 typedef struct
 {
 	uint8_t		opl_enabled;
-        opl_t           opl;
+        opl_t           opl,			// OPL2-L on SBProv1
+			opl2;			// OPL2-R on SBProv1
+
         sb_dsp_t        dsp;
+
         union {
                 sb_ct1335_mixer_t mixer_sb2;
                 sb_ct1345_mixer_t mixer_sbpro;
                 sb_ct1745_mixer_t mixer_sb16;
         };
+
         mpu_t		*mpu;
+
         emu8k_t         emu8k;
 
         int pos;
-        
         uint8_t pos_regs[8];
         
         int opl_emu;
@@ -181,140 +186,159 @@ const float sb_bass_treble_4bits[]= {
 
 /* Attenuation tables for the mixer. Max volume = 32767 in order to give 6dB of 
  * headroom and avoid integer overflow */
-const int32_t sb_att_2dbstep_5bits[]=
-{
-        25,32,41,51,65,82,103,130,164,206,260,327,412,519,653,
-        822,1036,1304,1641,2067,2602,3276,4125,5192,6537,8230,10362,13044,
-        16422,20674,26027,32767
+static const int32_t sb_att_2dbstep_5bits[] = {
+       25,   32,41,51,65,82,103,130,164,206,260,327,412,519,653,
+      822, 1036,1304,1641,2067,2602,3276,4125,5192,6537,8230,10362,13044,
+    16422,20674,26027,32767
 };
-const int32_t sb_att_4dbstep_3bits[]=
-{
-        164,2067,3276,5193,8230,13045,20675,32767
+static const int32_t sb_att_4dbstep_3bits[] = {
+    164,2067,3276,5193,8230,13045,20675,32767
 };
-const int32_t sb_att_7dbstep_2bits[]=
-{
-        164,6537,14637,32767
+static const int32_t sb_att_7dbstep_2bits[] = {
+    164,6537,14637,32767
 };
 
 
 /* sb 1, 1.5, 2, 2 mvc do not have a mixer, so signal is hardwired */
-static void sb_get_buffer_sb2(int32_t *buffer, int len, priv_t priv)
+static void
+sb_get_buffer_sb2(int32_t *buffer, int len, priv_t priv)
 {
-        sb_t *sb = (sb_t *)priv;
-                
-        int c;
+    sb_t *sb = (sb_t *)priv;
+    int32_t out;
+    int c;
+
+    if (sb->opl_enabled)
+       	opl2_update(&sb->opl);
+
+    sb_dsp_update(&sb->dsp);
+
+    for (c = 0; c < len * 2; c += 2) {
+	out = 0;
 
 	if (sb->opl_enabled)
-        	opl2_update2(&sb->opl);
-        sb_dsp_update(&sb->dsp);
-        for (c = 0; c < len * 2; c += 2)
-        {
-                int32_t out = 0;
-		if (sb->opl_enabled)
-                	out = ((sb->opl.buffer[c]     * 51000) >> 16);
-                //TODO: Recording: Mic and line In with AGC
-                out += (int32_t)(((sb_iir(0, (float)sb->dsp.buffer[c]) / 1.3) * 65536) / 3) >> 16;
+               	out = ((sb->opl.buffer[c] * 51000) >> 16);
+
+	//TODO: Recording: Mic and line In with AGC
+	out += (int32_t)(((sb_iir(0,
+			 (float)sb->dsp.buffer[c]) / 1.3) * 65536) / 3) >> 16;
         
-                buffer[c]     += out;
-                buffer[c + 1] += out;
-        }
+	buffer[c]     += out;
+	buffer[c + 1] += out;
+    }
+    sb->pos = 0;
 
-        sb->pos = 0;
-        sb->opl.pos = 0;
-        sb->dsp.pos = 0;
+    if (sb->opl_enabled)
+       	sb->opl.pos = 0;
+
+    sb->dsp.pos = 0;
 }
 
-static void sb_get_buffer_sb2_mixer(int32_t *buffer, int len, priv_t priv)
-{
-        sb_t *sb = (sb_t *)priv;
-        sb_ct1335_mixer_t *mixer = &sb->mixer_sb2;
-                
-        int c;
 
+static void
+sb_get_buffer_sb2_mixer(int32_t *buffer, int len, priv_t priv)
+{
+    sb_t *sb = (sb_t *)priv;
+    sb_ct1335_mixer_t *mixer = &sb->mixer_sb2;
+    int32_t out;
+    int c;
+
+    if (sb->opl_enabled)
+       	opl2_update(&sb->opl);
+
+    sb_dsp_update(&sb->dsp);
+
+    for (c = 0; c < len * 2; c += 2) {
+	out = 0;
+                
 	if (sb->opl_enabled)
-        	opl2_update2(&sb->opl);
-        sb_dsp_update(&sb->dsp);
-        for (c = 0; c < len * 2; c += 2)
-        {
-                int32_t out = 0;
-                
-		if (sb->opl_enabled)
-                	out = ((((sb->opl.buffer[c]     * mixer->fm) >> 16) * 51000) >> 15);
-                /* TODO: Recording : I assume it has direct mic and line in like sb2 */
-                /* It is unclear from the docs if it has a filter, but it probably does */
-                out += (int32_t)(((sb_iir(0, (float)sb->dsp.buffer[c])     / 1.3) * mixer->voice) / 3) >> 15;
-                
-                out = (out * mixer->master) >> 15;
-                        
-                buffer[c]     += out;
-                buffer[c + 1] += out;
-        }
+		out = ((((sb->opl.buffer[c] * mixer->fm) >> 16) * 51000) >> 15);
 
-        sb->pos = 0;
-        sb->opl.pos = 0;
-        sb->dsp.pos = 0;
+	/* TODO: Recording : I assume it has direct mic and line in like sb2 */
+	/* It is unclear from the docs if it has a filter, but it probably does */
+	out += (int32_t)(((sb_iir(0,
+		(float)sb->dsp.buffer[c]) / 1.3) * mixer->voice) / 3) >> 15;
+
+	out = (out * mixer->master) >> 15;
+                       
+	buffer[c]     += out;
+	buffer[c + 1] += out;
+    }
+
+    sb->pos = 0;
+    if (sb->opl_enabled)
+       	sb->opl.pos = 0;
+    sb->dsp.pos = 0;
 }
 
-static void sb_get_buffer_sbpro(int32_t *buffer, int len, priv_t priv)
+
+static void
+sb_get_buffer_sbpro(int32_t *buffer, int len, priv_t priv)
 {
-        sb_t *sb = (sb_t *)priv;
-        sb_ct1345_mixer_t *mixer = &sb->mixer_sbpro;
-                
-        int c;
+    sb_t *sb = (sb_t *)priv;
+    sb_ct1345_mixer_t *mixer = &sb->mixer_sbpro;
+    int32_t out_l, out_r;
+    int c;
+
+    if (sb->opl_enabled) {
+       	if (sb->dsp.sb_type == SBPRO) {
+               	opl2_update(&sb->opl);		// LEFT
+               	opl2_update(&sb->opl2);		// RIGHT
+       	} else
+               	opl3_update(&sb->opl);
+    }
+
+    sb_dsp_update(&sb->dsp);
+
+    for (c = 0; c < len * 2; c += 2) {
+	out_l = out_r = 0;
 
 	if (sb->opl_enabled) {
-        	if (sb->dsp.sb_type == SBPRO)
-                	opl2_update2(&sb->opl);
-        	else
-                	opl3_update2(&sb->opl);
+		/*
+		 * Two chips for LEFT and RIGHT channels.
+		 * Each chip stores data into the LEFT channel
+		 * only (no sample alternating.)
+		 */
+               	out_l = ((((sb->opl.buffer[c] * mixer->fm_l) >> 16) * (sb->opl_emu ? 47000 : 51000)) >> 15);
+               	out_r = ((((sb->opl2.buffer[c] * mixer->fm_r) >> 16) * (sb->opl_emu ? 47000 : 51000)) >> 15);
+	}
+                
+	/*TODO: Implement the stereo switch on the mixer instead of on the dsp? */
+	if (mixer->output_filter) {
+		out_l += (int32_t)(((sb_iir(0, (float)sb->dsp.buffer[c])     / 1.3) * mixer->voice_l) / 3) >> 15;
+		out_r += (int32_t)(((sb_iir(1, (float)sb->dsp.buffer[c + 1]) / 1.3) * mixer->voice_r) / 3) >> 15;
+	} else {
+		out_l += ((int32_t)(sb->dsp.buffer[c]     * mixer->voice_l) / 3) >> 15;
+		out_r += ((int32_t)(sb->dsp.buffer[c + 1] * mixer->voice_r) / 3) >> 15;
 	}
 
-        sb_dsp_update(&sb->dsp);
-        for (c = 0; c < len * 2; c += 2)
-        {
-                int32_t out_l = 0, out_r = 0;
-                
-		if (sb->opl_enabled) {
-                	out_l = ((((sb->opl.buffer[c]     * mixer->fm_l) >> 16) * (sb->opl_emu ? 47000 : 51000)) >> 15);
-                	out_r = ((((sb->opl.buffer[c + 1] * mixer->fm_r) >> 16) * (sb->opl_emu ? 47000 : 51000)) >> 15);
-		}
-                
-                /*TODO: Implement the stereo switch on the mixer instead of on the dsp? */
-                if (mixer->output_filter)
-                {
-                        out_l += (int32_t)(((sb_iir(0, (float)sb->dsp.buffer[c])     / 1.3) * mixer->voice_l) / 3) >> 15;
-                        out_r += (int32_t)(((sb_iir(1, (float)sb->dsp.buffer[c + 1]) / 1.3) * mixer->voice_r) / 3) >> 15;
-                }
-                else
-                {
-                        out_l += ((int32_t)(sb->dsp.buffer[c]     * mixer->voice_l) / 3) >> 15;
-                        out_r += ((int32_t)(sb->dsp.buffer[c + 1] * mixer->voice_r) / 3) >> 15;
-                }
-                //TODO: recording CD, Mic with AGC or line in. Note: mic volume does not affect recording.
-                
-                out_l = (out_l * mixer->master_l) >> 15;
-                out_r = (out_r * mixer->master_r) >> 15;
+	//TODO: recording CD, Mic with AGC or line in. Note: mic volume does not affect recording.
 
-                buffer[c]     += out_l;
-                buffer[c + 1] += out_r;
-        }
+	out_l = (out_l * mixer->master_l) >> 15;
+	buffer[c]     += out_l;
+	out_r = (out_r * mixer->master_r) >> 15;
+	buffer[c + 1] += out_r;
+    }
 
-        sb->pos = 0;
-        sb->opl.pos = 0;
-        sb->dsp.pos = 0;
+    sb->pos = 0;
+    if (sb->opl_enabled) {
+	sb->opl.pos = 0;
+	sb->opl2.pos = 0;
+    }
+    sb->dsp.pos = 0;
 }
 
 static void sb_get_buffer_sb16(int32_t *buffer, int len, priv_t priv)
 {
         sb_t *sb = (sb_t *)priv;
         sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
-                
+        int dsp_rec_pos = sb->dsp.record_pos_write;
         int c;
 
 	if (sb->opl_enabled)
-        	opl3_update2(&sb->opl);
+        	opl3_update(&sb->opl);
+
         sb_dsp_update(&sb->dsp);
-        const int dsp_rec_pos = sb->dsp.record_pos_write;
+
         for (c = 0; c < len * 2; c += 2)
         {
                 int32_t out_l = 0, out_r = 0, in_l, in_r;
@@ -378,25 +402,20 @@ static void sb_get_buffer_sb16(int32_t *buffer, int len, priv_t priv)
 }
 
 
-#ifdef SB_DSP_RECORD_DEBUG
-int old_dsp_rec_pos=0;
-int buf_written=0;
-int last_crecord=0;
-#endif
-
-
 static void sb_get_buffer_emu8k(int32_t *buffer, int len, priv_t priv)
 {
         sb_t *sb = (sb_t *)priv;
         sb_ct1745_mixer_t *mixer = &sb->mixer_sb16;
-                
+        int dsp_rec_pos = sb->dsp.record_pos_write;
         int c;
 
 	if (sb->opl_enabled)
-        	opl3_update2(&sb->opl);
+        	opl3_update(&sb->opl);
+
         emu8k_update(&sb->emu8k);
+
         sb_dsp_update(&sb->dsp);
-        const int dsp_rec_pos = sb->dsp.record_pos_write;
+
         for (c = 0; c < len * 2; c += 2)
         {
                 int32_t out_l = 0, out_r = 0, in_l, in_r;
@@ -475,13 +494,6 @@ static void sb_get_buffer_emu8k(int32_t *buffer, int len, priv_t priv)
                 buffer[c]     += (out_l << mixer->output_gain_L);
                 buffer[c + 1] += (out_r << mixer->output_gain_R);
         }
-        #ifdef SB_DSP_RECORD_DEBUG
-        if (old_dsp_rec_pos > dsp_rec_pos)
-        {
-                buf_written=0;
-                old_dsp_rec_pos=dsp_rec_pos;
-        }
-        #endif
         
         sb->dsp.record_pos_write+=((len * sb->dsp.sb_freq) / 48000)*2;
         sb->dsp.record_pos_write&=0xFFFF;
@@ -1036,6 +1048,7 @@ sb_1_init(const device_t *info, UNUSED(void *parent))
 	sb->opl_enabled = device_get_config_int("opl");
 	if (sb->opl_enabled)
         	opl2_init(&sb->opl);
+
         sb_dsp_init(&sb->dsp, SB1);
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
@@ -1063,6 +1076,7 @@ sb_15_init(const device_t *info, UNUSED(void *parent))
 	sb->opl_enabled = device_get_config_int("opl");
 	if (sb->opl_enabled)
         	opl2_init(&sb->opl);
+
         sb_dsp_init(&sb->dsp, SB15);
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
@@ -1089,6 +1103,7 @@ sb_mcv_init(const device_t *info, UNUSED(void *parent))
 	sb->opl_enabled = device_get_config_int("opl");
 	if (sb->opl_enabled)
         	opl2_init(&sb->opl);
+
         sb_dsp_init(&sb->dsp, SB15);
         sb_dsp_setaddr(&sb->dsp, 0);//addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
@@ -1123,6 +1138,7 @@ sb_2_init(const device_t *info, UNUSED(void *parent))
 	sb->opl_enabled = device_get_config_int("opl");
 	if (sb->opl_enabled)
         	opl2_init(&sb->opl);
+
         sb_dsp_init(&sb->dsp, SB2);
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
@@ -1151,39 +1167,78 @@ sb_2_init(const device_t *info, UNUSED(void *parent))
         return (priv_t)sb;
 }
 
+
+static uint8_t
+sb_pro_v1_opl_read(uint16_t port, priv_t priv)
+{
+    sb_t *sb = (sb_t *)priv;
+
+    (void)opl2_read(port, &sb->opl2);	// read, but ignore
+    return(opl2_read(port, &sb->opl));
+}
+
+
+static void
+sb_pro_v1_opl_write(uint16_t port, uint8_t val, priv_t priv)
+{
+    sb_t *sb = (sb_t *)priv;
+
+    opl2_write(port, val, &sb->opl);
+    opl2_write(port, val, &sb->opl2);
+}
+
+
+/*sbpro port mappings. 220h or 240h.
+  2x0 to 2x1 -> FM chip, Left (9*2 voices)
+  2x1 to 2x3 -> FM chip, Right (9*2 voices)
+  2x4 to 2x5 -> Mixer interface
+  2x6, 2xA, 2xC, 2xE -> DSP chip
+  2x8, 2x9, 388 and 389 FM chip (9 voices)
+  2x0+10 to 2x0+13 CDROM interface.
+*/
 priv_t
 sb_pro_v1_init(const device_t *info, UNUSED(void *parent))
 {
-        /*sbpro port mappings. 220h or 240h.
-          2x0 to 2x3 -> FM chip, Left and Right (9*2 voices)
-          2x4 to 2x5 -> Mixer interface
-          2x6, 2xA, 2xC, 2xE -> DSP chip
-          2x8, 2x9, 388 and 389 FM chip (9 voices)
-          2x0+10 to 2x0+13 CDROM interface.*/
-        sb_t *sb = (sb_t *)mem_alloc(sizeof(sb_t));
-        uint16_t addr = device_get_config_hex16("base");
-        memset(sb, 0, sizeof(sb_t));
+    uint16_t addr;
+    sb_t *sb;
 
-	sb->opl_enabled = device_get_config_int("opl");
-	if (sb->opl_enabled)
+    sb = (sb_t *)mem_alloc(sizeof(sb_t));
+    memset(sb, 0x00, sizeof(sb_t));
+
+    addr = device_get_config_hex16("base");
+
+    sb->opl_enabled = device_get_config_int("opl");
+    if (sb->opl_enabled) {
         	opl2_init(&sb->opl);
-        sb_dsp_init(&sb->dsp, SBPRO);
-        sb_dsp_setaddr(&sb->dsp, addr);
-        sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
-        sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
-        sb_ct1345_mixer_reset(sb);
-        /* DSP I/O handler is activated in sb_dsp_setaddr */
-	if (sb->opl_enabled) {
-        	io_sethandler(addr+0, 0x0002, opl2_l_read, NULL, NULL, opl2_l_write, NULL, NULL, &sb->opl);
-        	io_sethandler(addr+2, 0x0002, opl2_r_read, NULL, NULL, opl2_r_write, NULL, NULL, &sb->opl);
-        	io_sethandler(addr+8, 0x0002, opl2_read,   NULL, NULL, opl2_write,   NULL, NULL, &sb->opl);
-        	io_sethandler(0x0388, 0x0002, opl2_read,   NULL, NULL, opl2_write,   NULL, NULL, &sb->opl);
-	}
-        io_sethandler(addr+4, 0x0002, sb_ct1345_mixer_read, NULL, NULL, sb_ct1345_mixer_write, NULL, NULL, sb);
-        sound_add_handler(sb_get_buffer_sbpro, (priv_t)sb);
+		opl2_init(&sb->opl2);
+    }
+    sb_dsp_init(&sb->dsp, SBPRO);
+    sb_dsp_setaddr(&sb->dsp, addr);
+    sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
+    sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
 
-        return (priv_t)sb;
+    sb_ct1345_mixer_reset(sb);
+
+    /* DSP I/O handler is activated in sb_dsp_setaddr */
+    if (sb->opl_enabled) {
+       	io_sethandler(addr + 0, 2,
+		      opl2_read,NULL,NULL, opl2_write,NULL,NULL, &sb->opl);
+       	io_sethandler(addr + 2, 2,
+		      opl2_read,NULL,NULL, opl2_write,NULL,NULL, &sb->opl2);
+       	io_sethandler(addr + 8, 2,
+		      sb_pro_v1_opl_read,NULL,NULL, sb_pro_v1_opl_write,NULL,NULL, sb);
+       	io_sethandler(0x0388, 2,
+		      sb_pro_v1_opl_read,NULL,NULL, sb_pro_v1_opl_write,NULL,NULL, sb);
+    }
+
+    io_sethandler(addr + 4, 2,
+		  sb_ct1345_mixer_read,NULL,NULL, sb_ct1345_mixer_write,NULL,NULL, sb);
+
+    sound_add_handler(sb_get_buffer_sbpro, (priv_t)sb);
+
+    return(sb);
 }
+
 
 priv_t
 sb_pro_v2_init(const device_t *info, UNUSED(void *parent))
@@ -1201,6 +1256,7 @@ sb_pro_v2_init(const device_t *info, UNUSED(void *parent))
 	sb->opl_enabled = device_get_config_int("opl");
 	if (sb->opl_enabled)
         	opl3_init(&sb->opl);
+
         sb_dsp_init(&sb->dsp, SBPRO2);
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));
@@ -1231,6 +1287,7 @@ sb_pro_mcv_init(const device_t *info, UNUSED(void *parent))
 
 	sb->opl_enabled = 1;
         opl3_init(&sb->opl);
+
         sb_dsp_init(&sb->dsp, SBPRO2);
         sb_ct1345_mixer_reset(sb);
         /* I/O handlers activated in sb_mcv_write */
@@ -1255,6 +1312,7 @@ sb_16_init(const device_t *info, UNUSED(void *parent))
 	sb->opl_enabled = device_get_config_int("opl");
 	if (sb->opl_enabled)
 	        opl3_init(&sb->opl);
+
         sb_dsp_init(&sb->dsp, SB16);
         sb_dsp_setaddr(&sb->dsp, addr);
         sb_dsp_setirq(&sb->dsp, device_get_config_int("irq"));

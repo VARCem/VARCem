@@ -12,14 +12,14 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.48	2019/05/20
+ * Version:	@(#)config.c	1.0.49	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		David Simunic, <simunic.david@outlook.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -624,12 +624,6 @@ load_sound(config_t *cfg, const char *cat)
     cfg->midi_device = midi_device_get_from_internal_name(p);
 
     cfg->mpu401_standalone_enable = !!config_get_int(cat, "mpu401_standalone", 0);
-
-    p = config_get_string(cat, "opl_type", "dbopl");
-    if (!strcmp(p, "nukedopl") || !strcmp(p, "1"))
-	cfg->opl_type = 1;
-    else
-	cfg->opl_type = 0;
 }
 
 
@@ -658,11 +652,6 @@ save_sound(const config_t *cfg, const char *cat)
 	config_delete_var(cat, "mpu401_standalone");
     else
 	config_set_int(cat, "mpu401_standalone", cfg->mpu401_standalone_enable);
-
-    if (cfg->opl_type == 0)
-	config_delete_var(cat, "opl_type");
-    else
-	config_set_string(cat, "opl_type", (cfg->opl_type == 1) ? "nukedopl" : "dbopl");
 
     delete_section_if_empty(cat);
 }
@@ -1756,7 +1745,6 @@ config_init(config_t *cfg)
 
     cfg->sound_is_float = 1;			/* sound uses FP values */
     cfg->sound_gain = 0;			/* sound volume gain */
-    cfg->opl_type = 0;				/* sound option */
     cfg->sound_card = SOUND_NONE;		/* selected sound card */
     cfg->mpu401_standalone_enable = 0;		/* sound option */
     cfg->midi_device = 0;			/* selected midi device */

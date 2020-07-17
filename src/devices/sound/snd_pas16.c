@@ -79,13 +79,13 @@
  *		FF88 - board model
  *		  3 = PAS16
  *
- * Version:	@(#)snd_pas16.c	1.0.16	2019/05/17
+ * Version:	@(#)snd_pas16.c	1.0.17	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -124,7 +124,7 @@
 #include "../system/pic.h"
 #include "../system/pit.h"
 #include "sound.h"
-#include "filters.h"
+#include "snd_filters.h"
 #include "snd_mpu401.h"
 #include "snd_opl.h"
 #include "snd_sb.h"

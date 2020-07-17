@@ -8,7 +8,7 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.11	2020/01/31
+ * Version:	@(#)snd_wss.c	1.0.12	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -16,6 +16,7 @@
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2018 TheCollector1995.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
@@ -84,7 +85,7 @@ get_buffer(int32_t *buffer, int len, priv_t priv)
     wss_t *dev = (wss_t *)priv;
     int c;
 
-    opl3_update2(&dev->opl);
+    opl3_update(&dev->opl);
 
     ad1848_update(&dev->ad1848);
 
@@ -194,6 +195,7 @@ wss_init(const device_t *info, UNUSED(void *parent))
     dev->name = info->name;
     dev->board = info->local;
     uint16_t addr = device_get_config_hex16("base");
+
     dev->opl_enabled = device_get_config_int("opl");
     
     switch(info->local) {
@@ -210,17 +212,17 @@ wss_init(const device_t *info, UNUSED(void *parent))
     ad1848_init(&dev->ad1848);
     ad1848_setirq(&dev->ad1848, 7);
     ad1848_setdma(&dev->ad1848, 3);
+    io_sethandler(addr + 4, 4,
+		  ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
 
     if (dev->opl_enabled) {
 	opl3_init(&dev->opl);
 	io_sethandler(0x0388, 4,
-			opl3_read,NULL,NULL, opl3_write,NULL,NULL, &dev->opl);
+		      opl3_read,NULL,NULL, opl3_write,NULL,NULL, &dev->opl);
     }
     
     io_sethandler(addr, 4,
 		  wss_read,NULL,NULL, wss_write,NULL,NULL, dev);
-    io_sethandler(addr + 4, 4,
-		  ad1848_read,NULL,NULL, ad1848_write,NULL,NULL, &dev->ad1848);
 
     sound_add_handler(get_buffer, (priv_t)dev);
 

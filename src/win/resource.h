@@ -8,13 +8,13 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.19	2018/09/09
+ * Version:	@(#)resource.h	1.0.20	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -166,10 +166,9 @@
 #define IDC_CONFIGURE_SOUND	1072
 #define IDC_COMBO_MIDI		1073
 #define IDC_CONFIGURE_MIDI	1074
-#define IDC_CHECK_NUKEDOPL	1075
-#define IDC_CHECK_FLOAT		1076
-#define IDC_CHECK_MPU401	1077
-#define IDC_CONFIGURE_MPU401	1078
+#define IDC_CHECK_FLOAT		1075
+#define IDC_CHECK_MPU401	1076
+#define IDC_CONFIGURE_MPU401	1077
 
 #define IDC_COMBO_NET_TYPE	1090	/* network config */
 #define IDC_CONFIGURE_NET_TYPE	1091

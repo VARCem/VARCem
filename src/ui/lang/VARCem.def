@@ -8,11 +8,11 @@
  *
  *		String table for the application, shared by all platforms.
  *
- * Version:	@(#)VARCem.def	1.0.5	2019/05/17
+ * Version:	@(#)VARCem.def	1.0.6	2020/07/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -202,7 +202,6 @@ STRTBL( IDS_3400, STR_3400 )
 STRTBL( IDS_3401, STR_3401 )
 STRTBL( IDS_3402, STR_3402 )
 STRTBL( IDS_3403, STR_3403 )
-STRTBL( IDS_3404, STR_3404 )
 
 /* UI dialog: Settings (Network, 3425.) */
 STRTBL( IDS_3425, STR_3425 )

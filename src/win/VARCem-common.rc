@@ -8,11 +8,11 @@
  *
  *		Common resources for the application.
  *
- * Version:	@(#)VARCem-common.rc	1.0.12	2019/05/17
+ * Version:	@(#)VARCem-common.rc	1.0.13	2020/07/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -361,10 +361,7 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,45,199,10
     PUSHBUTTON      STR_CONFIGURE,IDC_CONFIGURE_MPU401,214,44,46,12
 
-    CONTROL         STR_3403,IDC_CHECK_NUKEDOPL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,63,120,10
-
-    CONTROL         STR_3404,IDC_CHECK_FLOAT,"Button",
+    CONTROL         STR_3403,IDC_CHECK_FLOAT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,81,120,10
 END
 

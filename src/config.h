@@ -8,14 +8,14 @@
  *
  *		Configuration file handler header.
  *
- * Version:	@(#)config.h	1.0.5	2019/05/20
+ * Version:	@(#)config.h	1.0.6	2020/07/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -92,7 +92,6 @@ typedef struct {
 
     int		sound_is_float,			/* sound uses FP values */
 		sound_gain,			/* sound volume gain */
-		opl_type,			/* sound option */
 		sound_card,			/* selected sound card */
 		mpu401_standalone_enable,	/* sound option */
 		midi_device;			/* selected midi device */

@@ -8,13 +8,13 @@
  *
  *		Definitions for the MIDI module.
  *
- * Version:	@(#)midi.h	1.0.6	2018/09/15
+ * Version:	@(#)midi.h	1.0.7	2020/07/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -57,21 +57,41 @@ typedef struct {
 } midi_device_t;
 
 
-extern int	midi_device_available(int card);
-extern const char *midi_device_getname(int card);
 #ifdef EMU_DEVICE_H
-extern const device_t *midi_device_getdevice(int card);
+extern const device_t	system_midi_device;
+# ifdef USE_FLUIDSYNTH
+extern const device_t	fluidsynth_device;
+# endif
+# ifdef USE_MUNT
+extern const device_t	mt32_device;
+extern const device_t	cm32l_device;
+# endif
 #endif
-extern int	midi_device_has_config(int card);
-extern const char *midi_device_get_internal_name(int card);
-extern int	midi_device_get_from_internal_name(const char *s);
-extern void	midi_device_init(void);
 
-extern void	sound_midi_log(int level, const char *fmt, ...);
-extern void	midi_init(const midi_device_t *device);
-extern void	midi_close(void);
-extern void	midi_write(uint8_t val);
-extern void	midi_poll(void);
+
+extern int		midi_device_available(int card);
+extern const char	*midi_device_getname(int card);
+#ifdef EMU_DEVICE_H
+extern const device_t	*midi_device_getdevice(int card);
+#endif
+extern int		midi_device_has_config(int card);
+extern const char *midi_device_get_internal_name(int card);
+extern int		midi_device_get_from_internal_name(const char *s);
+extern void		midi_device_init(void);
+
+extern void		sound_midi_log(int level, const char *fmt, ...);
+extern void		midi_init(const midi_device_t *device);
+extern void		midi_close(void);
+extern void		midi_write(uint8_t val);
+extern void		midi_poll(void);
+
+#ifdef USE_FLUIDSYNTH
+extern void     	fluidsynth_global_init(void);
+#endif
+
+#ifdef USE_MUNT
+extern void     	munt_init(void);
+#endif
 
 
 #endif	/*EMU_SOUND_MIDI_H*/
