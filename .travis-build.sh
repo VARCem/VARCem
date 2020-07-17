@@ -9,11 +9,11 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.8	2019/06/06
+# Version:	@(#).travis-build.sh	1.0.9	2019/07/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2018,2019 Fred N. van Kempen.
+#		Copyright 2018-2020 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -70,7 +70,7 @@
 
     cd src
 
-    make -f win/mingw/Makefile.MinGW ${OPTS} BUILD=${TRAVIS_BUILD_NUMBER}
+    make -f win/Makefile.MinGW ${OPTS} BUILD=${TRAVIS_BUILD_NUMBER}
     if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 
 

@@ -3,7 +3,7 @@
 
 #### Fred N. van Kempen, <decwiz@yahoo.com>
 
-#### Last Updated: 04/18/2018
+#### Last Updated: 07/15/2020
 
 
 These instructions guide you in building the **VARCem** emulator from
@@ -27,7 +27,7 @@ unpack them (if needed) into a folder:
   
   `cd src`
   
-  `unzip varcem-0.1.5.zip`
+  `unzip varcem-1.7.3.zip`
 
 which puts the source tree into the *D:\VARCem\src* folder.
 
@@ -39,7 +39,7 @@ fairly easy process.
 
 1.  Install the Visual Studio system (the *Community* release is sufficient) and make sure it works.
 
-2.  Go to the *win\msvc* folder, then to the *vc14* folder for Visual Studio 2015, or to the *vc15* folder for the 2017 release of Visual Studio.
+2.  Go to the *win\* folder, then to the *vc14* folder for Visual Studio 2015, or to the *vc15* folder for the 2017 release of Visual Studio.
 
 3.  Double-click on the *VARCem.sln* solution file, and Visual Studio will load the project for you.
 
@@ -53,7 +53,7 @@ For those who prefer to use **command-line tools** to process a *Makefile* (the 
 
   `cd \VARCem\src`
 
-  `make -f win\msvc\Makefile.VC`
+  `make -f win\Makefile.VC`
   
 and voila, there it goes. If things are set up properly, this is about the fastest way to compile the sources on Windows.
 
@@ -113,7 +113,7 @@ Building the emulator is also possible using the free **MinGW** compiler toolset
 
     You are now ready to build, using a command like:
 
-      `make -f win/mingw/Makefile.MinGW`
+      `make -f win/Makefile.MinGW`
 
     which will hopefully build the application's executables.
 
