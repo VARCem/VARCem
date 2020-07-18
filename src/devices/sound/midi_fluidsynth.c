@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.18	2020/07/11
+ * Version:	@(#)midi_fluidsynth.c	1.0.19	2020/07/17
  *
  *		Code borrowed from scummvm.
  *
@@ -101,7 +101,7 @@ static int (*f_fluid_synth_write_s16)(fluid_synth_t *synth, int len, void *lout,
 static int (*f_fluid_synth_write_float)(fluid_synth_t *synth, int len, void *lout, int loff, int lincr, void *rout, int roff, int rincr);
 static char *(*f_fluid_version_str)(void);
 
-static dllimp_t fluidsynth_imports[] = {
+static const dllimp_t imports[] = {
   { "new_fluid_settings",		&f_new_fluid_settings		},
   { "delete_fluid_settings",		&f_delete_fluid_settings	},
   { "fluid_settings_setnum",		&f_fluid_settings_setnum	},
@@ -411,14 +411,15 @@ fluidsynth_global_init(void)
     const char *fn = PATH_FS_DLL;
 
     /* Try loading the DLL. */
-    fluidsynth_handle = dynld_module(fn, fluidsynth_imports);
+    fluidsynth_handle = dynld_module(fn, imports);
     if (fluidsynth_handle == NULL) {
 	swprintf(temp, sizeof_w(temp),
 		 get_string(IDS_ERR_NOLIB), "FluidSynth", fn);
 	ui_msgbox(MBX_ERROR, temp);
 	ERRLOG("SOUND: unable to load '%s', FluidSynth not available!\n", fn);
     } else {
-	INFO("SOUND: module '%s' loaded.\n", fn);
+	INFO("SOUND: module '%s' loaded, version %s.\n",
+				fn, f_fluid_version_str());
     }
 }
 

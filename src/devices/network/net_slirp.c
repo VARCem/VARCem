@@ -8,11 +8,11 @@
  *
  *		Handle SLiRP library processing.
  *
- * Version:	@(#)net_slirp.c	1.0.7	2019/05/02
+ * Version:	@(#)net_slirp.c	1.0.8	2020/07/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -50,11 +50,6 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <stdarg.h>
-#ifdef USE_LIBSLIRP
-# include <libslirp.h>
-#else
-typedef void slirp_t;				/* nicer than void.. */
-#endif
 #define HAVE_STDARG_H
 #define netdbg network_log
 #include "../../emu.h"
@@ -64,21 +59,29 @@ typedef void slirp_t;				/* nicer than void.. */
 #include "network.h"
 
 
+#ifdef USE_SLIRP
+//# include <libslirp.h>
+typedef void slirp_t;				// nicer than void
+
+
 #ifdef _WIN32
-# define SLIRP_DLL_PATH	"libslirp.dll"
+# define SLIRP_DLL_PATH		"libslirp.dll"
 #else
-# define SLIRP_DLL_PATH	"libslirp.so"
+# define SLIRP_DLL_PATH		"libslirp.so"
 #endif
 
 
-static volatile void		*slirp_handle;	/* handle to SLiRP DLL */
-static slirp_t			*slirp;		/* SLiRP library handle */
-static volatile thread_t	*poll_tid;
-static event_t			*poll_state;
+#if USE_SLIRP == 1
+# define FUNC(x)		slirp_ ## x
+#else
+# define FUNC(x)		SLIRP_ ## x
+
+
+static volatile void		*slirp_handle;	// handle to DLL
 
 
 /* Pointers to the real functions. */
-static void	(*SLIRP_debug)(void (*func)(slirp_t *, const char *fmt, va_list));
+static void	(*SLIRP_debug)(void (*func)(slirp_t *, const char *, va_list));
 static int	(*SLIRP_version)(char *, int);
 static slirp_t	*(*SLIRP_init)(void);
 static void	(*SLIRP_close)(slirp_t *);
@@ -86,7 +89,8 @@ static void	(*SLIRP_poll)(slirp_t *);
 static int	(*SLIRP_recv)(slirp_t *, uint8_t *);
 static int	(*SLIRP_send)(slirp_t *, const uint8_t *, int);
 
-static const dllimp_t slirp_imports[] = {
+
+static const dllimp_t imports[] = {
   { "slirp_debug",		&SLIRP_debug	},
   { "slirp_version",		&SLIRP_version	},
   { "slirp_init",		&SLIRP_init	},
@@ -94,8 +98,14 @@ static const dllimp_t slirp_imports[] = {
   { "slirp_poll",		&SLIRP_poll	},
   { "slirp_recv",		&SLIRP_recv	},
   { "slirp_send",		&SLIRP_send	},
-  { NULL,			NULL		},
+  { NULL					}
 };
+#endif
+
+
+static slirp_t			*slirp;		// SLiRP library handle
+static volatile thread_t	*poll_tid;
+static event_t			*poll_state;
 
 
 /* Forward module debugging into to our logfile. */
@@ -131,13 +141,13 @@ poll_thread(void *arg)
 	network_poll();
 
 	/* See if there is any work. */
-	SLIRP_poll(slirp);
+	FUNC(poll)(slirp);
 
 	/* Our queue may have been nuked.. */
 	if (slirp == NULL) break;
 
 	/* Wait for the next packet to arrive. */
-	len = SLIRP_recv(slirp, pktbuff);
+	len = FUNC(recv)(slirp, pktbuff);
 	if (len > 0) {
 		/* Received MAC. */
 		mac_cmp32[0] = *(uint32_t *)(pktbuff+6);
@@ -208,30 +218,31 @@ slirp_can_output(void)
 static int
 do_init(netdev_t *list)
 {
+#if USE_SLIRP == 2
     char temp[128];
     const char *fn = SLIRP_DLL_PATH;
 
     /* Try loading the DLL. */
-    slirp_handle = dynld_module(fn, slirp_imports);
+    slirp_handle = dynld_module(fn, imports);
     if (slirp_handle == NULL) {
 	/* Forward module name back to caller. */
 	strcpy(list->description, fn);
 
-        ERRLOG("SLIRP: unable to load '%s', SLiRP not available!\n", fn);
+        ERRLOG("NETWORK: unable to load '%s', SLiRP not available!\n", fn);
 	return(-1);
     } else {
-        INFO("SLiRP: module '%s' loaded.\n", fn);
+	if (SLIRP_version(temp, sizeof(temp)) <= 0) {
+		ERRLOG("SLiRP: could not get version!\n");
+		return(-1);
+	}
+        INFO("NETWORK: module '%s' loaded, version %s.\n", fn, temp);
     }
+#else
+    slirp_handle = (void *)1;	/* just to indicate always therse */
+#endif
 
     /* Link the module to our logging. */
-    SLIRP_debug(handle_logging);
-
-    /* Get the library version. */
-    if (SLIRP_version(temp, sizeof(temp)) <= 0) {
-	ERRLOG("SLiRP could not get version!\n");
-	return(-1);
-    }
-    INFO("SLiRP: initializing, version %s ..\n", temp);
+    FUNC(debug)(handle_logging);
 
     return(1);
 }
@@ -246,7 +257,7 @@ do_reset(uint8_t *mac)
     poll_state = NULL;
 
     /* Get a handle to a SLIRP instance. */
-    slirp = SLIRP_init();
+    slirp = FUNC(init());
     if (slirp == NULL) {
 	ERRLOG("SLiRP could not be initialized!\n");
 	return(-1);
@@ -287,7 +298,16 @@ do_close(void)
     }
 
     /* OK, now shut down SLiRP itself. */
-    SLIRP_close(sl);
+    FUNC(close)(sl);
+
+#if 0	/* do not unload */
+# if USE_SLIRP == 2
+    /* Unload the DLL if possible. */
+    if (slirp_handle != NULL)
+	dynld_close(slirp_handle);
+# endif
+    slirp_handle = NULL;
+#endif
 
     INFO("SLiRP: closed.\n");
 }
@@ -308,7 +328,7 @@ do_send(uint8_t *pkt, int pkt_len)
     if (slirp != NULL) {
 	network_busy(1);
 
-	SLIRP_send(slirp, (const uint8_t *)pkt, pkt_len);
+	FUNC(send)(slirp, (const uint8_t *)pkt, pkt_len);
 
 	network_busy(0);
     }
@@ -323,3 +343,6 @@ const network_t network_slirp = {
     do_available,
     do_send
 };
+
+
+#endif	/*USE_SLIRP*/

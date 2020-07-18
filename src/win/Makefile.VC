@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.78	2020/07/15
+# Version:	@(#)Makefile.VC	1.0.79	2020/07/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -290,12 +290,58 @@ ifeq ($(DYNAREC), y)
 		    codegen_timing_winchip.obj $(PLATCG)
 endif
 
-# (Win)Pcap (always dynamic)
+# SLiRP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static (always dynamic)
+ifndef SLIRP
+ SLIRP		:= d
+endif
+ifneq ($(SLIRP), n)
+ ifeq ($(SLIRP), d)
+  OPTS		+= -DUSE_SLIRP=2
+ else
+  OPTS		+= -DUSE_SLIRP=1
+ endif
+ ifeq ($(SLIRP_PATH), )
+  SLIRP_PATH	:= $(EXT_PATH)/slirp
+ endif
+ OPTS		+= -I$(SLIRP_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -LIBPATH:$(SLIRP_PATH)/lib/x64
+ else
+  LIBS		+= -LIBPATH:$(SLIRP_PATH)/lib/x86
+ endif
+ ifeq ($(SLIRP), y)
+  LIBS		+= libslirp.dll.lib
+ endif
+ ifeq ($(SLIRP), s)
+  LIBS		+= libslirp.lib
+ endif
+endif
+
+# (Win)Pcap: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static (always dynamic)
 ifndef PCAP
  PCAP		:= d
 endif
-ifeq ($(PCAP), d)
- OPTS		+= -DUSE_PCAP -I$(EXT_PATH)/pcap/include
+ifneq ($(PCAP), n)
+ ifeq ($(PCAP), d)
+  OPTS		+= -DUSE_PCAP=2
+ else
+  OPTS		+= -DUSE_PCAP=1
+ endif
+ ifeq ($(PCAP_PATH), )
+  PCAP_PATH	:= $(EXT_PATH)/pcap
+ endif
+ OPTS		+= -I$(PCAP_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -LIBPATH:$(PCAP_PATH)/lib/x64
+ else
+  LIBS		+= -LIBPATH:$(PCAP_PATH)/lib/x86
+ endif
+ ifeq ($(PCAP), y)
+  LIBS		+= libwpcap.dll.lib
+ endif
+ ifeq ($(PCAP), s)
+  LIBS		+= libwpcap.lib
+ endif
 endif
 
 # VNS: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -303,7 +349,11 @@ ifndef VNS
  VNS		:= n
 endif
 ifneq ($(VNS), n)
- OPTS		+= -DUSE_VNS
+ ifeq ($(VNS), d)
+  OPTS		+= -DUSE_VNS=2
+ else
+  OPTS		+= -DUSE_VNS=1
+ endif
  ifeq ($(VNS_PATH), )
   VNS_PATH	:= $(EXT_PATH)/vns
  endif
@@ -314,10 +364,10 @@ ifneq ($(VNS), n)
   LIBS		+= -LIBPATH:$(VNS_PATH)/lib/x86
  endif
  ifeq ($(VNS), y)
-  LIBS		+= libvns.lib
+  LIBS		+= libvns.dll.lib
  endif
  ifeq ($(VNS), s)
-  LIBS		+= libvns_static.lib
+  LIBS		+= libvns.lib
  endif
  MISCOBJ	+= net_vns.obj
 endif
@@ -358,10 +408,10 @@ ifneq ($(MUNT), n)
   LIBS		+= -LIBPATH:$(MUNT_PATH)/lib/x86
  endif
  ifeq ($(MUNT), y)
-  LIBS		+= -lmunt.dll
+  LIBS		+= libmunt.dll.lib
  endif
  ifeq ($(MUNT), s)
-  LIBS		+= -lmunt
+  LIBS		+= libmunt.lib
  endif
 endif
 
@@ -385,10 +435,10 @@ ifneq ($(RESID), n)
   LIBS		+= -LIBPATH:$(RESID_PATH)/lib/x86
  endif
  ifeq ($(RESID), y)
-  LIBS		+= -lmunt.dll
+  LIBS		+= libmunt.dll.lib
  endif
  ifeq ($(RESID), s)
-  LIBS		+= -lmunt
+  LIBS		+= libmunt.lib
  endif
 endif
 

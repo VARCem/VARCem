@@ -8,7 +8,7 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.20	2019/06/05
+ * Version:	@(#)openal.c	1.0.21	2020/07/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -80,6 +80,8 @@ static int		nbuffers,
 static void		*openal_handle = NULL;	/* handle to (open) DLL */
 
 /* Pointers to the real functions. */
+static ALC_API const ALchar* (ALC_APIENTRY *f_alGetString)(ALenum param);
+static ALC_API ALenum (ALC_APIENTRY *f_alGetError)(void);
 static ALC_API ALCdevice* (ALC_APIENTRY *f_alcOpenDevice)(const ALCchar *devicename);
 static ALC_API ALCboolean (ALC_APIENTRY *f_alcCloseDevice)(ALCdevice *device);
 static ALC_API ALCcontext* (ALC_APIENTRY *f_alcCreateContext)(ALCdevice *device, const ALCint* attrlist);
@@ -101,7 +103,9 @@ static AL_API void (AL_APIENTRY *f_alGenSources)(ALsizei n, ALuint *sources);
 static AL_API void (AL_APIENTRY *f_alDeleteSources)(ALsizei n, const ALuint *sources);
 static AL_API void (AL_APIENTRY *f_alDeleteBuffers)(ALsizei n, const ALuint *buffers);
 
-static dllimp_t openal_imports[] = {
+static dllimp_t imports[] = {
+  { "alGetString",		&f_alGetString			},
+  { "alGetError",		&f_alGetError			},
   { "alcOpenDevice",		&f_alcOpenDevice		},
   { "alcCloseDevice",		&f_alcCloseDevice		},
   { "alcCreateContext",		&f_alcCreateContext		},
@@ -122,7 +126,7 @@ static dllimp_t openal_imports[] = {
   { "alGenSources",		&f_alGenSources			},
   { "alDeleteBuffers",		&f_alDeleteBuffers		},
   { "alDeleteSources",		&f_alDeleteSources		},
-  { NULL,			NULL				}
+  { NULL							}
 };
 #endif
 
@@ -212,10 +216,12 @@ openal_init(void)
 #ifdef USE_OPENAL
     wchar_t temp[512];
     const char *fn = PATH_AL_DLL;
+    const char *str;
+    char *sp;
 
     /* Try loading the DLL if needed. */
     if (openal_handle == NULL) {
-	openal_handle = dynld_module(fn, openal_imports);
+	openal_handle = dynld_module(fn, imports);
 	if (openal_handle == NULL) {
 		ERRLOG("SOUND: unable to load '%s' - sound disabled!\n", fn);
 		swprintf(temp, sizeof_w(temp),
@@ -223,7 +229,28 @@ openal_init(void)
 		ui_msgbox(MBX_ERROR, temp);
 		return;
 	} else {
-		INFO("SOUND: module '%s' loaded.\n", fn);
+		/* Create a temporary context. */
+		alutInit(NULL, NULL);
+
+		str = f_alGetString(AL_VERSION);
+		if (str != NULL) {
+			strcpy((char *)temp, str);
+			sp = strchr((char *)temp, ' ');
+			if (sp != NULL) {
+				sp++;		// skip the space
+				*sp++ = '(';	// add a (
+				strcpy(sp, str + (sp - (char *)temp) - 1);
+				strcat(sp, ")");
+			}
+			str = (const char *)temp;
+		} else {
+			sprintf((char *)temp, "<error %i>", f_alGetError());
+			str = (const char *)temp;
+		}
+		INFO("SOUND: module '%s' loaded, version %s.\n", fn, str);
+
+		/* Release the temporary context. */
+		alutExit();
 	}
     }
 

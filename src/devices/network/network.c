@@ -8,11 +8,11 @@
  *
  *		Implementation of the network module.
  *
- * Version:	@(#)network.c	1.0.21	2019/05/07
+ * Version:	@(#)network.c	1.0.22	2020/07/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -94,8 +94,12 @@ static const struct {
 } networks[] = {
     { "none",		NULL		},
 
+#ifdef USE_SLIRP
     { "slirp",		&network_slirp	},
+#endif
+#ifdef USE_PCAP
     { "pcap",		&network_pcap	},
+#endif
 #ifdef USE_VNS
     { "vns",		&network_vns	},
 #endif

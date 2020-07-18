@@ -8,7 +8,7 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.12	2020/07/15
+ * Version:	@(#)midi_mt32.c	1.0.13	2020/07/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -277,7 +277,6 @@ mt32emu_init(wchar_t *control_rom, wchar_t *pcm_rom)
 	return(NULL);
 
     context = FUNC(create_context)(handler, NULL);
-ERRLOG("MT32: context=%08lx\n", context);
     pc_path(path, sizeof_w(path), rom_path(control_rom));
     wcstombs(fn, path, sizeof(fn));
     if (!mt32_check("mt32emu_add_rom_file",
@@ -317,11 +316,6 @@ ERRLOG("MT32: context=%08lx\n", context);
     //DEBUG("mt32 reversed stereo: %d\n", FUNC(is_reversed_stereo_enabled)(context));
 
     openal_set_midi(samplerate, buf_size);
-
-#if 0
-    DEBUG("mt32 (Munt %s) initialized, samplerate %d, buf_size %d\n",
-	FUNC(emu_get_library_version_string)(), samplerate, buf_size);
-#endif
 
     dev = (midi_device_t *)mem_alloc(sizeof(midi_device_t));
     memset(dev, 0, sizeof(midi_device_t));
@@ -386,8 +380,7 @@ mt32_close(void *priv)
 	free(buffer_int16);
     buffer_int16 = NULL;
 
-#if 0
-    /* Do not unload. */
+#if 0	/* do not unload */
 # if USE_MUNT == 2
     /* Unload the DLL if possible. */
     if (munt_handle != NULL)

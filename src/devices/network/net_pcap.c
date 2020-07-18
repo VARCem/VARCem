@@ -8,11 +8,11 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.11	2019/05/03
+ * Version:	@(#)net_pcap.c	1.0.12	2020/07/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -87,7 +87,7 @@ static uint8_t	*const (*PCAP_next)(pcap_t *, struct pcap_pkthdr *);
 static int	(*PCAP_sendpacket)(pcap_t *, const uint8_t *, int);
 static void	(*PCAP_close)(pcap_t *);
 
-static const dllimp_t pcap_imports[] = {
+static const dllimp_t imports[] = {
   { "pcap_lib_version",	&PCAP_lib_version	},
   { "pcap_findalldevs",	&PCAP_findalldevs	},
   { "pcap_freealldevs",	&PCAP_freealldevs	},
@@ -176,31 +176,31 @@ static int
 do_init(netdev_t *list)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
+    char *str = PCAP_DLL_PATH, *sp;
     pcap_if_t *devlist, *dev;
-    char *str = PCAP_DLL_PATH;
     int i = 0;
 
     /* Local variables. */
     pcap = NULL;
 
     /* Try loading the DLL. */
-    pcap_handle = dynld_module(str, pcap_imports);
+    pcap_handle = dynld_module(str, imports);
     if (pcap_handle == NULL) {
 	/* Forward module name back to caller. */
 	strcpy(list->description, str);
 
-        ERRLOG("PCAP: unable to load '%s', PCAP not available!\n", str);
+        ERRLOG("NETWORK: unable to load '%s', PCAP not available!\n", str);
         return(-1);
     } else {
-        INFO("PCAP: module '%s' loaded.\n", str);
+	strcpy(errbuf, PCAP_lib_version());
+	sp = strchr(errbuf, '(');
+	if (sp != NULL)
+		*(sp-1) = '\0';
+	sp = strrchr(errbuf, ' ');
+	if (sp != NULL)
+		strcpy(errbuf, ++sp);
+        INFO("NETWORK: module '%s' loaded, version %s.\n", str, errbuf);
     }
-
-    /* Get the PCAP library name and version. */
-    strcpy(errbuf, PCAP_lib_version());
-    str = strchr(errbuf, '(');
-    if (str != NULL)
-	*(str-1) = '\0';
-    INFO("PCAP: initializing, %s\n", errbuf);
 
     /* Retrieve the device list from the local machine */
     if (PCAP_findalldevs(&devlist, errbuf) == -1) {
