@@ -8,7 +8,7 @@
  *
  *		Common resources for the application.
  *
- * Version:	@(#)VARCem-common.rc	1.0.13	2020/07/14
+ * Version:	@(#)VARCem-common.rc	1.0.14	2020/07/17
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -362,7 +362,7 @@ BEGIN
     PUSHBUTTON      STR_CONFIGURE,IDC_CONFIGURE_MPU401,214,44,46,12
 
     CONTROL         STR_3403,IDC_CHECK_FLOAT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,81,120,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,63,120,10
 END
 
 DLG_CFG_NETWORK DIALOG 97, 0, 267, 200
