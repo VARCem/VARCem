@@ -257,8 +257,10 @@ opl2_update(opl_t *dev)
 			  &dev->buffer[dev->pos * 2],
 			  sound_pos_global - dev->pos);
 
-    for (dev->pos = 0; dev->pos < sound_pos_global; dev->pos++)
+    for (; dev->pos < sound_pos_global; dev->pos++) {
+	dev->buffer[dev->pos * 2] /= 2;
 	dev->buffer[(dev->pos * 2) + 1] = dev->buffer[dev->pos * 2];
+    }
 }
 
 
@@ -304,6 +306,8 @@ opl3_update(opl_t *dev)
 			  &dev->buffer[dev->pos * 2],
 			  sound_pos_global - dev->pos);
 
-    for (dev->pos = sound_pos_global; dev->pos < sound_pos_global; dev->pos++) {
+    for (; dev->pos < sound_pos_global; dev->pos++) {
+	dev->buffer[dev->pos * 2] /= 2;
+	dev->buffer[(dev->pos * 2) + 1] /= 2;
     }
 }
