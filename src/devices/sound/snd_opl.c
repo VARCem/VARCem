@@ -230,7 +230,7 @@ opl2_read(uint16_t port, priv_t priv)
 {
     opl_t *dev = (opl_t *)priv;
 
-    if (do_cycles)
+    if (dev->do_cycles)
 	cycles -= ISA_CYCLES(8);
 
     opl2_update(dev);
@@ -279,7 +279,7 @@ opl3_read(uint16_t port, priv_t priv)
 {
     opl_t *dev = (opl_t *)priv;
 
-    if (do_cycles)
+    if (dev->do_cycles)
 	cycles -= ISA_CYCLES(8);
 
     opl3_update(dev);
