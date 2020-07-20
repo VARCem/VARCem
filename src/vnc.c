@@ -10,12 +10,12 @@
  *
  * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)vnc.c	1.0.12	2019/05/03
+ * Version:	@(#)vnc.c	1.0.13	2020/07/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -53,8 +53,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <wchar.h>
-//#define LIBVNCSERVER_HAVE_LIBPTHREAD
-#include <rfb/rfb.h>
 #include "emu.h"
 #include "config.h"
 #include "device.h"
@@ -63,17 +61,16 @@
 #include "devices/input/mouse.h"
 #include "ui/ui.h"
 #include "plat.h"
-#if USE_LIBPNG
-# include "png.h"
-#endif
-#include "vnc.h"
 
 
-#ifdef _WIN32
-# define PATH_VNC_DLL	"libvncserver.dll"
-#else
-# define PATH_VNC_DLL	"libvncserver.so"
-#endif
+#ifdef USE_VNC
+//#define LIBVNCSERVER_HAVE_LIBPTHREAD
+# include <rfb/rfb.h>
+# if USE_LIBPNG
+#  include "png.h"
+# endif
+# include "vnc.h"
+
 
 #define VNC_MIN_X	320
 #define VNC_MAX_X	2048
@@ -81,21 +78,22 @@
 #define VNC_MAX_Y	2048
 
 
-static rfbScreenInfoPtr	rfb = NULL;
-static int	clients;
-static int	updatingSize;
-static int	allowedX,
-		allowedY;
-static int	ptr_x, ptr_y, ptr_but;
+#if USE_VNC == 1
+# define FUNC(x)	rfb##x
+#else
+# define FUNC(x)	rfb_##x
 
+# ifdef _WIN32
+#  define PATH_VNC_DLL	"libvncserver.dll"
+# else
+#  define PATH_VNC_DLL	"libvncserver.so"
+# endif
 
-#if USE_VNC == 2
-# define DLLFUNC(x)		rfb_##x
-
-static void	*vnc_handle = NULL;	/* handle to libVNCserver DLL */
+static void		*vnc_handle = NULL;	// handle to DLL
 
 
 /* Pointers to the real functions. */
+static char		*const (*rfb_Version)(void);
 static rfbScreenInfoPtr (*rfb_GetScreen)(int *,char **,int,int,int,int,int);
 static void		(*rfb_InitServer)(rfbScreenInfoPtr);
 static void		(*rfb_RunEventLoop)(rfbScreenInfoPtr, long, rfbBool);
@@ -105,14 +103,17 @@ static rfbClientPtr	(*rfb_ClientIteratorNext)(rfbClientIteratorPtr);
 static void		(*rfb_MarkRectAsModified)(rfbScreenInfoPtr,
 						  int,int,int,int);
 static void		(*rfb_DefaultPtrAddEvent)(int,int,int,rfbClientPtr);
+#if 0
 static void		(*rfb_ClientLock)(rfbClientPtr);
 static void		(*rfb_ClientUnlock)(rfbClientPtr);
+#endif
 static void		(*rfb_LogEnable)(int);
 static void		(*rfb_Log)(const char *fmt, ...);
 static void		(*rfb_Err)(const char *fmt, ...);
 
 
-static const dllimp_t vnc_imports[] = {
+static const dllimp_t imports[] = {
+  { "rfbVersion",			&rfb_Version			},
   { "rfbGetScreen",			&rfb_GetScreen			},
   { "rfbInitServerWithPthreadsAndZRLE",	&rfb_InitServer			},
   { "rfbRunEventLoop",			&rfb_RunEventLoop		},
@@ -121,16 +122,24 @@ static const dllimp_t vnc_imports[] = {
   { "rfbClientIteratorNext",		&rfb_ClientIteratorNext		},
   { "rfbMarkRectAsModified",		&rfb_MarkRectAsModified		},
   { "rfbDefaultPtrAddEvent",		&rfb_DefaultPtrAddEvent		},
+#if 0
   { "rfbClientLock",			&rfb_ClientLock			},
   { "rfbClientUnlock",			&rfb_ClientUnlock		},
+#endif
   { "rfbLogEnable",			&rfb_LogEnable			},
   { "rfbLog",				&rfb_Log			},
   { "rfbErr",				&rfb_Err			},
   { NULL,				NULL				}
 };
-#else
-# define DLLFUNC(x)		rfb##x
 #endif
+
+
+static rfbScreenInfoPtr	rfb = NULL;
+static int		clients;
+static int		updatingSize;
+static int		allowedX,
+			allowedY;
+static int		ptr_x, ptr_y, ptr_but;
 
 
 /* Local handlers for VNCserver event logging. */
@@ -191,7 +200,7 @@ vnc_ptrevent(int but, int x, int y, rfbClientPtr cl)
 	}
    }
 
-   DLLFUNC(DefaultPtrAddEvent)(but, x, y, cl);
+   FUNC(DefaultPtrAddEvent)(but, x, y, cl);
 }
 
 
@@ -263,7 +272,7 @@ vnc_blit(bitmap_t *scr, int x, int y, int y1, int y2, int w, int h)
     uint32_t *p;
     int yy;
 
-INFO("VNC: blit(%i,%i, %i,%i, %i,%i)\n", x,y, y1,y2, w,h);
+//INFO("VNC: blit(%i,%i, %i,%i, %i,%i)\n", x,y, y1,y2, w,h);
 
     for (yy = y1; yy < y2; yy++) {
 	p = (uint32_t *)&(((uint32_t *)rfb->frameBuffer)[yy*VNC_MAX_X]);
@@ -279,7 +288,7 @@ INFO("VNC: blit(%i,%i, %i,%i, %i,%i)\n", x,y, y1,y2, w,h);
     video_blit_done();
 
     if (! updatingSize)
-	DLLFUNC(MarkRectAsModified)(rfb, 0,0, allowedX,allowedY);
+	FUNC(MarkRectAsModified)(rfb, 0,0, allowedX,allowedY);
 }
 
 
@@ -291,17 +300,21 @@ vnc_close(void)
     if (rfb != NULL) {
 	free(rfb->frameBuffer);
 
-	DLLFUNC(ScreenCleanup)(rfb);
+	FUNC(ScreenCleanup)(rfb);
 
 	rfb = NULL;
     }
 
-#if USE_VNC == 2
+#if 0		// do not unload
+# if USE_VNC == 2
     /* Unload the DLL if possible. */
     if (vnc_handle != NULL) {
 	dynld_close(vnc_handle);
 	vnc_handle = NULL;
     }
+# else
+    vnc_handle = NULL;
+# endif
 #endif
 }
 
@@ -327,6 +340,7 @@ vnc_init(int fs)
     wchar_t temp[512];
     const char *fn = PATH_VNC_DLL;
 #endif
+    const char *str;
 
     /* We do not support fullscreen, folks. */
     if (fs) {
@@ -336,7 +350,7 @@ vnc_init(int fs)
 
 #if USE_VNC == 2
     /* Try loading the DLL. */
-    vnc_handle = dynld_module(fn, vnc_imports);
+    vnc_handle = dynld_module(fn, imports);
     if (vnc_handle == NULL) {
 	swprintf(temp, sizeof_w(temp),
 		 get_string(IDS_ERR_NOLIB), "VNCserver", fn);
@@ -344,16 +358,19 @@ vnc_init(int fs)
 	vnc_errlog("unable to load '%s', VNC not available.\n", fn);
 	return(0);
     } else {
-        INFO("VNC: module '%s' loaded.\n", fn);
+        str = FUNC(Version)();
+        INFO("VNC: module '%s' loaded, version %s.\n", fn, str);
     }
+#else
+    vnc_handle = (void *)1;
 #endif
 
 #ifdef _WIN32
     //FIXME: these are defined in Linux version, but not present.. --FvK
     /* Set up and enable VNC server logging. */
-    DLLFUNC(Log) = vnc_dbglog;
-    DLLFUNC(Err) = vnc_errlog;
-    DLLFUNC(LogEnable)(1);
+    FUNC(Log) = vnc_dbglog;
+    FUNC(Err) = vnc_errlog;
+    FUNC(LogEnable)(1);
 #endif
 
     if (rfb == NULL) {
@@ -362,7 +379,7 @@ vnc_init(int fs)
 	allowedX = scrnsz_x;
 	allowedY = scrnsz_y;
  
-	rfb = DLLFUNC(GetScreen)(0, NULL, VNC_MAX_X, VNC_MAX_Y, 8, 3, 4);
+	rfb = FUNC(GetScreen)(0, NULL, VNC_MAX_X, VNC_MAX_Y, 8, 3, 4);
 	rfb->desktopName = title;
 	rfb->frameBuffer = (char *)mem_alloc(VNC_MAX_X*VNC_MAX_Y*4);
 
@@ -377,9 +394,9 @@ vnc_init(int fs)
 	rfb->width = allowedX;
 	rfb->height = allowedY;
  
-	DLLFUNC(InitServer)(rfb);
+	FUNC(InitServer)(rfb);
 
-	DLLFUNC(RunEventLoop)(rfb, -1, TRUE);
+	FUNC(RunEventLoop)(rfb, -1, TRUE);
     }
  
     /* Set up our BLIT handlers. */
@@ -416,11 +433,15 @@ vnc_resize(int x, int y)
 	rfb->width = x;
 	rfb->height = y;
  
-	iterator = DLLFUNC(GetClientIterator)(rfb);
-	while ((cl = DLLFUNC(ClientIteratorNext)(iterator)) != NULL) {
-		DLLFUNC(ClientLock)(cl);
+	iterator = FUNC(GetClientIterator)(rfb);
+	while ((cl = FUNC(ClientIteratorNext)(iterator)) != NULL) {
+#if 0
+		FUNC(ClientLock)(cl);
+#endif
 		cl->newFBSizePending = 1;
-		DLLFUNC(ClientUnlock)(cl);
+#if 0
+		FUNC(ClientUnlock)(cl);
+#endif
 	}
     }
 }
@@ -472,3 +493,6 @@ const vidapi_t vnc_vidapi = {
     vnc_screenshot,
     vnc_available
 };
+
+
+#endif	/*USE_VNC*/
