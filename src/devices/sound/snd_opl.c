@@ -191,11 +191,20 @@ opl_write(opl_t *dev, uint16_t port, uint8_t val)
 }
 
 
+void
+opl_set_do_cycles(opl_t *dev, int8_t do_cycles)
+{
+    dev->do_cycles = do_cycles;
+}
+
+
 static void
 opl_init(opl_t *dev, int is_opl3)
 {
     memset(dev, 0x00, sizeof(opl_t));
+
     dev->is_opl3 = is_opl3;
+    dev->do_cycles = 1;
 
     /* Create a NukedOPL object. */
     dev->opl = nuked_init(48000);
@@ -221,7 +230,8 @@ opl2_read(uint16_t port, priv_t priv)
 {
     opl_t *dev = (opl_t *)priv;
 
-    cycles -= ISA_CYCLES(8);
+    if (dev->do_cycles)
+	cycles -= ISA_CYCLES(8);
 
     opl2_update(dev);
 
@@ -257,8 +267,10 @@ opl2_update(opl_t *dev)
 			  &dev->buffer[dev->pos * 2],
 			  sound_pos_global - dev->pos);
 
-    for (dev->pos = 0; dev->pos < sound_pos_global; dev->pos++)
+    for (; dev->pos < sound_pos_global; dev->pos++) {
+	dev->buffer[dev->pos * 2] /= 2;
 	dev->buffer[(dev->pos * 2) + 1] = dev->buffer[dev->pos * 2];
+    }
 }
 
 
@@ -267,7 +279,8 @@ opl3_read(uint16_t port, priv_t priv)
 {
     opl_t *dev = (opl_t *)priv;
 
-    cycles -= ISA_CYCLES(8);
+    if (dev->do_cycles)
+	cycles -= ISA_CYCLES(8);
 
     opl3_update(dev);
 
@@ -304,6 +317,8 @@ opl3_update(opl_t *dev)
 			  &dev->buffer[dev->pos * 2],
 			  sound_pos_global - dev->pos);
 
-    for (dev->pos = sound_pos_global; dev->pos < sound_pos_global; dev->pos++) {
+    for (; dev->pos < sound_pos_global; dev->pos++) {
+	dev->buffer[dev->pos * 2] /= 2;
+	dev->buffer[(dev->pos * 2) + 1] /= 2;
     }
 }
