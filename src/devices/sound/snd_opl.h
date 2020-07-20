@@ -8,7 +8,7 @@
  *
  *		Definitions for the OPL interface.
  *
- * Version:	@(#)snd_opl.h	1.0.3	2020/07/15
+ * Version:	@(#)snd_opl.h	1.0.4	2020/07/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -16,7 +16,7 @@
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,8 @@ typedef struct {
 #else
     void	*opl;
 #endif
-    int8_t	is_opl3, do_cycles;
+    int8_t	is_opl3,
+		do_cycles;
 
     uint16_t	port;
     uint8_t	status;
@@ -62,9 +63,6 @@ typedef struct {
     tmrval_t	timers_enable[2];
 
     int		pos;
-#if 0
-    int32_t	filtbuf;
-#endif
     int32_t	buffer[SOUNDBUFLEN * 2];
 } opl_t;
 
