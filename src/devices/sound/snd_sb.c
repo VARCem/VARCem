@@ -10,7 +10,7 @@
  *
  * FIXME:	THIS FILE IS A HORRIBLE NIGHTMARE
  *
- * Version:	@(#)snd_sb.c	1.0.17	2020/07/16
+ * Version:	@(#)snd_sb.c	1.0.18	2020/07/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,6 +49,7 @@
 #include "../../emu.h"
 #include "../../timer.h"
 #include "../../io.h"
+#include "../../cpu/cpu.h"
 #include "../../mem.h"
 #include "../../rom.h"
 #include "../../device.h"
@@ -1211,10 +1212,10 @@ sb_pro_v1_init(const device_t *info, UNUSED(void *parent))
 
     sb->opl_enabled = device_get_config_int("opl");
     if (sb->opl_enabled) {
-        	opl2_init(&sb->opl);
-		opl_set_do_cycles(&sb->opl, 0);
-		opl2_init(&sb->opl2);
-		opl_set_do_cycles(&sb->opl2, 0);
+       	opl2_init(&sb->opl);
+	opl_set_do_cycles(&sb->opl, 0);
+	opl2_init(&sb->opl2);
+	opl_set_do_cycles(&sb->opl2, 0);
     }
     sb_dsp_init(&sb->dsp, SBPRO);
     sb_dsp_setaddr(&sb->dsp, addr);
