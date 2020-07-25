@@ -8,14 +8,14 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.9	2019/04/25
+ * Version:	@(#)prt_escp.c	1.0.10	2020/07/24
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Based on code by Frederic Weymann (originally for DosBox.)
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *		Copyright 2018 Michael Drüing.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -2029,8 +2029,8 @@ escp_init(const lpt_device_t *info)
 			 get_string(IDS_ERR_NOLIB), "FreeType", fn);
 		ui_msgbox(MBX_ERROR, temp);
 		ERRLOG("ESC/P: error initializing FreeType !\n");
-		dynld_close(ft_lib);
-		ft_lib = NULL;
+		dynld_close(ft_handle);
+		ft_handle = NULL;
 		return(NULL);
 	}
     }

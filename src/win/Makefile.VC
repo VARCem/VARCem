@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.79	2020/07/17
+# Version:	@(#)Makefile.VC	1.0.80	2020/07/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -863,10 +863,10 @@ else
 		@$(CPP) $(CXXFLAGS) -Fo$@ -c $<
 
 %.d:		%.c $(wildcard $*.d)
-		$(MCPP) $(OPTS) $(DEPS) $< >NUL
+		@$(MCPP) $(OPTS) $(DEPS) $< >NUL
 
 %.d:		%.cpp $(wildcard $*.d)
-		$(MCPP) $(OPTS) $(DEPS) $< >NUL
+		@$(MCPP) $(OPTS) $(DEPS) $< >NUL
 endif
 
 
