@@ -8,11 +8,11 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.7	2019/05/03
+ * Version:	@(#)png.c	1.0.8	2020/07/27
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -366,8 +366,8 @@ png_write_rgb(const wchar_t *fn, int flip, uint8_t *pix, int16_t w, int16_t h)
     png_bytepp rows;
     uint8_t *r, *b;
     uint32_t *rgb;
+    int k, y, x;
     FILE *fp;
-    int y, x;
 
     /* Load the DLL if needed, give up if that fails. */
     if (! png_load()) return(0);
@@ -431,10 +431,17 @@ error:
 
     /* Process all scanlines in the image. */
     for (y = 0; y < h; y++) {
+	/*
+	 * If the bitmap is in 'bottom-up' mode, we have
+	 * to 'flip' the image to the normal top-down mode.
+	 */
+	k = (flip) ? (h - 1) - y : y;
+
 	/* Create a buffer for this scanline. */
-	rows[y] = (png_bytep)mem_alloc(PNGFUNC(get_rowbytes)(png, info));
+	rows[k] = (png_bytep)mem_alloc(PNGFUNC(get_rowbytes)(png, info));
 
 	/* Process all pixels on this line */
+	r = rows[k];
 	for (x = 0; x < w; x++) {
                	b = &pix[((y * w) + x) * 4];
 
@@ -445,28 +452,15 @@ error:
 		}
 
 		if (flip) {
-			/*
-			 * Since the bitmap is in 'bottom-up' mode, we
-			 * have to convert all pixels to RGB mode, but
-			 * also 'flip' the image to the normal top-down
-			 * mode.
-			 */
-
-			/* Get pointer to png row data. */
-			r = &rows[(h - 1) - y][x * 3];
-
-               		/* Copy the pixel data. */
-               		r[0] = b[2];
-               		r[1] = b[1];
-               		r[2] = b[0];
+			/* Convert all pixels to RGB mode. */
+               		*r++ = b[2];
+               		*r++ = b[1];
+               		*r++ = b[0];
 		} else {
-			/* Get pointer to png row data. */
-			r = &rows[y][x * 3];
-
                		/* Copy the pixel data. */
-               		r[0] = b[0];
-               		r[1] = b[1];
-               		r[2] = b[2];
+               		*r++ = b[0];
+               		*r++ = b[1];
+               		*r++ = b[2];
 		}
 	}
     }
