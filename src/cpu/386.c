@@ -80,20 +80,20 @@ uint32_t	dr[8];
 int		timetolive = 0;
 
 /* Also in 386_dynarec.c: */
-cpu_state_t	cpu_state;
-int		inscounts[256];
-uint32_t	oxpc;
-int		trap;
-int		inttype;
-int		optype;
-int		cgate32;
-uint16_t	rds;
-uint16_t	ea_rseg;
-uint32_t	*eal_r, *eal_w;
-uint16_t	*mod1add[2][8];
-uint32_t	*mod1seg[8];
+extern cpu_state_t	cpu_state;
+extern int		inscounts[256];
+extern uint32_t	oxpc;
+extern int		trap;
+extern int		inttype;
+extern int		optype;
+extern int		cgate32;
+extern uint16_t	rds;
+extern uint16_t	ea_rseg;
+extern uint32_t	*eal_r, *eal_w;
+extern uint16_t	*mod1add[2][8];
+extern uint32_t	*mod1seg[8];
 
-uint32_t	rmdat32;
+extern uint32_t	rmdat32;
 #define	rmdat	rmdat32
 #define fetchdat rmdat32
 

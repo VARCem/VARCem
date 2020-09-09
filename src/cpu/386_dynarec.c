@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.11	2019/05/17
+ * Version:	@(#)386_dynarec.c	1.0.12	2020/09/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,15 +67,15 @@
 cpu_state_t	cpu_state;
 int		inscounts[256];
 uint32_t	oxpc;
-int		trap;
+extern int		trap;
 int		inttype;
 int		optype;
-int		cgate32;
+extern int		cgate32;
 uint16_t	rds;
 uint16_t	ea_rseg;
 uint32_t	*eal_r, *eal_w;
-uint16_t	*mod1add[2][8];
-uint32_t	*mod1seg[8];
+extern uint16_t	*mod1add[2][8];
+extern uint32_t	*mod1seg[8];
 
 
 uint32_t	cpu_cur_status = 0;
