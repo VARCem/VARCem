@@ -813,7 +813,8 @@ SYSOBJ		:= clk.o dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o \
 
 CHIPOBJ		:= neat.o scat.o headland.o \
 		    acc2168.o ali1429.o opti495.o sis471.o sis496.o \
-		    wd76c10.o intel4x0.o
+		    wd76c10.o intel4x0.o \
+			sl82c460.o
 
 MCHOBJ		:= machine.o machine_table.o \
 		    m_xt.o \
