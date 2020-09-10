@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.4	2019/05/17
+ * Version:	@(#)386_common.h	1.0.5	2020/02/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,17 +67,6 @@ extern uint16_t ea_rseg;
                         } \
                 }
 
-#define checkio_perm(port) \
-		if (msw&1 && ((CPL > IOPL) || (eflags&VM_FLAG))) \
-                { \
-                        tempi = checkio(port); \
-                        if (cpu_state.abrt) break; \
-                        if (tempi) \
-                        { \
-                                x86gpf("checkio_perm(): no permission",0); \
-                                break; \
-                        } \
-                }
 
 #define CHECK_READ(chseg, low, high) \
                 if ((low < (chseg)->limit_low) || \

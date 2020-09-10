@@ -165,6 +165,8 @@ exec386(int cycs)
 	timer_start_period(cycles << TIMER_SHIFT);
 
 	while (cycdiff < cycle_period) {
+		int ins_cycles = cycles;
+		
 		oldcs = CS;
 		cpu_state.oldpc = cpu_state.pc;
 		oldcpl = CPL;
@@ -221,6 +223,9 @@ exec386(int cycs)
 				}
 			}
 		}
+		
+		ins_cycles -= cycles;
+		tsc += ins_cycles;
 
 		cycdiff = oldcyc - cycles;
 
@@ -280,7 +285,6 @@ exec386(int cycs)
 		}
 	}
                 
-	tsc += cycdiff;
                
 	timer_end_period(cycles << TIMER_SHIFT);
     }
