@@ -8,13 +8,13 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.9	2020/06/13
+ * Version:	@(#)x86seg.c	1.0.9	2020/09/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <http://pcem-emulator.co.uk/>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *

@@ -8,12 +8,12 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.5	2020/02/05
+ * Version:	@(#)386_common.h	1.0.5	2020/09/10
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2019 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify

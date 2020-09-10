@@ -8,13 +8,13 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.21	2020/02/05
+ * Version:	@(#)808x.c	1.0.21	2020/09/10
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2019 Fred N. van Kempen.
+ *		Copyright 2016-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2015-2018 Andrew Jenner.
  *		Copyright 2008-2018 Sarah Walker.
