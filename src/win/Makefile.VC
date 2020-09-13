@@ -81,7 +81,7 @@ endif
 
 # What is the location of our external dependencies?
 ifeq ($(EXT_PATH), )
- EXT_PATH	:= ../external
+ EXT_PATH	:= external
 endif
 
 
@@ -697,9 +697,10 @@ SYSOBJ		:= clk.obj dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj \
 		   port92.obj
 
 CHIPOBJ		:= neat.obj scat.obj headland.obj \
-		    acc2168.obj ali1429.obj opti495.obj sis471.obj sis496.obj \
+		    acc2036.obj acc2168.obj ali1429.obj \
+			opti495.obj sis471.obj sis496.obj \
 		    wd76c10.obj intel4x0.obj \
-			sl82c460.obj vl82c480.obj
+			scamp.obj sl82c460.obj vl82c480.obj
 
 MCHOBJ		:= machine.obj machine_table.obj \
 		    m_xt.obj \
