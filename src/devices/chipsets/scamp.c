@@ -13,7 +13,7 @@
  *		8MB of DRAM chips', because it works fine with bus-based
  *		memory expansion.
  *
- * Version:	@(#)scamp.c	1.0.0	2020/09/09
+ * Version:	@(#)scamp.c	1.0.1	2020/09/15
  *
  * Authors:	Sarah Walker, <http://pcem-emulator.co.uk/>
  *
@@ -643,9 +643,17 @@ static uint8_t
 scamp_read(uint16_t addr, priv_t priv)
 {
 	uint8_t ret = 0xff;
+	scamp_t *dev = (scamp_t *) priv;
         
 	switch (addr) {
-        case 0xee:
+         case 0xed:
+            if (dev->cfg_enable) {
+            	if (dev->cfg_index >= 0x00 && dev->cfg_index <= 0x16)
+                    ret = dev->cfg_regs[dev->cfg_index];
+            }
+            break;
+        
+		case 0xee:
             if (!mem_a20_alt)
                 outb(0x92, inb(0x92) | 2);
             break;
