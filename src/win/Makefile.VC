@@ -660,6 +660,11 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= net_arti2m.obj
  endif
 
+ ifeq ($(SYMPHONY), y)
+  OPTS		+= -DUSE_SL
+  DEVBROBJ	+= m_sl82c460.obj
+ endif
+
 endif
 
 
