@@ -153,6 +153,10 @@ static const struct {
     { "[386DX ISA] Award 386DX (Opti495)",	"award_386dx_opti495",	&m_opti495_386dx_award	},
     { "[386DX ISA] MR 386DX (Opti495)",		"mr_386dx_opti495",	&m_opti495_386dx_mr	},
 
+#if defined(DEV_BRANCH) && defined(USE_SL)
+    { "[386DX ISA] AMI 386DX (SL Haydn)",   "ami_386dx_sl460",  &m_sl82c460_386dx_ami   },
+#endif
+
     { "[386DX ISA] Amstrad MegaPC 386DX",	"amstrad_megapc_dx",	&m_amstrad_mega_dx	},
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
     { "[386DX ISA] Compaq Portable III (386)",  "portable3_386",	&m_cpq_p3_386		},
