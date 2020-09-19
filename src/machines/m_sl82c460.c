@@ -68,17 +68,17 @@ common_init(const device_t *info, void *arg)
 }
 
 static const machine_t sl386dx_ami_info = {
-    MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
+    MACHINE_ISA | MACHINE_AT ,
     0,
     1, 32, 1, 128, 0,
     {{"Intel",cpus_i386DX},{"AMD",cpus_Am386DX},{"Cyrix",cpus_486DLC}}
 };
 
 const device_t m_sl82c460_386dx_ami = {
-    "SL460 386DX (AMI)",
+    "FIC 386-SC-HG (AMI)",
     DEVICE_ROOT,
     0,
-    L"generic/ami/386sl",
+    L"fic/386sc",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &sl386dx_ami_info,
