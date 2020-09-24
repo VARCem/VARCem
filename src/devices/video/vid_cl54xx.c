@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.33	2020/01/20
+ * Version:	@(#)vid_cl54xx.c	1.0.34	2020/09/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3383,6 +3383,27 @@ static const device_config_t gd5428_config[] =
         }
 };
 
+static const device_config_t gd5428_onboard_config[] =
+{
+        {
+                "memory","Video memory size",CONFIG_SELECTION,"",0,
+                {
+                        {
+                                "512 KB",0
+                        },
+                        {
+                                "1 MB",1
+                        },
+                        {
+                                NULL
+                        }
+                },
+        },
+        {
+                NULL
+        }
+};
+
 static const device_config_t gd5440_onboard_config[] =
 {
         {
@@ -3519,6 +3540,19 @@ const device_t gd5428_vlb_device = {
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
     gd5428_config
+};
+
+const device_t gd5428_onboard_vlb_device = {
+    "Onboard Cirrus Logic GD-5428",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
+    CIRRUS_ID_CLGD5428,
+    NULL,
+    gd54xx_init, gd54xx_close, NULL,
+    NULL,
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_vlb_timing,
+    gd5428_onboard_config
 };
 
 const device_t gd5429_isa_device = {

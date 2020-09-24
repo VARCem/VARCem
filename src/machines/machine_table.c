@@ -177,6 +177,7 @@ static const struct {
     { "[486 ISA] MR 486 (Opti495)",		"mr_486dx_opti495",	&m_opti495_486_mr	},
 
     { "[486 ISA] DTK PKM-0038S E-2",		"dtk_486",		&m_dtk486		},
+    { "[486 ISA] HP Vectra 486 33VL",       "hp_v486",      &m_hpv486       },
     { "[486 ISA] Packard Bell PB410A",		"pbell_pb410a",		&m_pb410a		},
 
     { "[486 MCA] IBM PS/2 model 70 (type 4)",	"ibm_ps2_m70_type4",	&m_ps2_m70_4		},
