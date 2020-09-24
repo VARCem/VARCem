@@ -845,11 +845,11 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_ps2_isa.o m_ps2_mca.o \
 		    m_at.o \
 		    m_neat.o m_headland.o m_scat.o \
-		    m_commodore.o \
+		    m_commodore.o m_hp.o m_pbell.o \
 		    m_tosh3100e.o m_tosh3100e_vid.o \
 		    m_ali.o m_opti495.o m_sis471.o m_sis496.o \
 		    m_wd76c10.o m_intel4x0.o \
-		    m_acer.o m_aopen.o m_asus.o m_pbell.o m_tyan.o \
+		    m_acer.o m_aopen.o m_asus.o m_tyan.o \
 		    m_misc.o
 
 DEVOBJ		:= bugger.o \

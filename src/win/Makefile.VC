@@ -730,11 +730,11 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_ps2_isa.obj m_ps2_mca.obj \
 		    m_at.obj \
 		    m_neat.obj m_headland.obj m_scat.obj \
-		    m_commodore.obj \
+		    m_commodore.obj m_hp.obj m_pbell.obj \
 		    m_tosh3100e.obj m_tosh3100e_vid.obj \
 		    m_ali.obj m_opti495.obj m_sis471.obj m_sis496.obj \
 		    m_wd76c10.obj m_intel4x0.obj \
-		    m_acer.obj m_aopen.obj m_asus.obj m_pbell.obj m_tyan.obj \
+		    m_acer.obj m_aopen.obj m_asus.obj m_tyan.obj \
 		    m_misc.obj
 
 DEVOBJ		:= bugger.obj \
