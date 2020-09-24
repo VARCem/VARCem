@@ -242,7 +242,7 @@ extern const device_t	m_j656vxd;
 extern const device_t	m_p55t2s;
 
 /* HP machines. */
-extern const device_t	&_hpv486;
+extern const device_t	m_hpv486;
 
 /* Packard Bell machines. */
 extern const device_t	m_pb410a;

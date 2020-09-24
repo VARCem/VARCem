@@ -746,7 +746,7 @@ DEVOBJ		:= bugger.obj \
 		   serial.obj \
 		   sio_acc3221.obj sio_fdc37c66x.obj sio_fdc37c669.obj \
 		   sio_fdc37c93x.obj sio_pc87306.obj sio_w83877f.obj \
-		   sio_um8669f.obj \
+		   sio_um8669f.obj sio_detect.obj \
 		   intel_flash.obj intel_sio.obj intel_piix.obj \
 		   keyboard.obj \
 		    keyboard_xt.obj keyboard_at.obj \
