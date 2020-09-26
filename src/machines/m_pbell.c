@@ -15,12 +15,12 @@
  *		_MUST_ enable the Internal mouse, or the PS/2 mouse as
  *		this is onboard. There is a jumper for this as well.
  *
- * Version:	@(#)m_pbell.c	1.0.6	2019/05/28
+ * Version:	@(#)m_pbell.c	1.0.7	2020/09/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,7 @@
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
+#include "../devices/chipsets/acc2036.h"
 #include "../devices/chipsets/acc2168.h"
 #include "../devices/chipsets/intel4x0.h"
 #include "../devices/system/pci.h"
@@ -99,6 +100,17 @@ common_init(const device_t *info, void *arg)
     device_add_ex(info, (priv_t)arg);
 
     switch(info->local) {
+	/* PB300SX */
+	case 300:
+		device_add(&acc2036_device);
+		m_at_common_ide_init();
+		device_add(&keyboard_ps2_device);
+		// Missing SIO : UM82C862F
+		/* if (config.video_card == VID_INTERNAL)
+			device_add(&oti067_onboard_device); */
+		if (config.mouse_type == MOUSE_INTERNAL)
+			device_add(&mouse_ps2_device);	
+		break;
 	/* PB410A/PB430/ACC2168/ACC3221 */
 	case 410:
 		device_add(&acc2168_device);
@@ -177,5 +189,23 @@ const device_t m_pb410a = {
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &pb410a_info,
+    NULL
+};
+
+static const machine_t pb300_info = {
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,
+    0,
+    1, 16, 1, 128, -1,
+    {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
+};
+
+const device_t m_pb300 = {
+    "Packard Bell Legend 300SX",
+    DEVICE_ROOT,
+    300,
+    L"pbell/pb300",
+    common_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &pb300_info,
     NULL
 };

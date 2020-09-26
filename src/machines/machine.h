@@ -245,6 +245,7 @@ extern const device_t	m_p55t2s;
 extern const device_t	m_hpv486;
 
 /* Packard Bell machines. */
+extern const device_t	m_pb300;
 extern const device_t	m_pb410a;
 extern const device_t	m_pb640;
 
