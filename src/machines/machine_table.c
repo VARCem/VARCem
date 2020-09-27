@@ -83,6 +83,9 @@ static const struct {
     { "[8088] Schneider EuroPC",		"schneider_europc",	&m_europc		},
     { "[8088] Tandy 1000",			"tandy_1000",		&m_tandy_1k		},
     { "[8088] Tandy 1000 HX",			"tandy_1000hx",		&m_tandy_1k_hx		},
+#if defined(DEV_BRANCH)
+    { "[8088] Thomson TO16",				"thom_to16",		&m_thom_to16		},
+#endif
     { "[8088] Toshiba T1000",			"toshiba_t1000",	&m_tosh_1000		},
     { "[8088] VTech Laser Turbo XT",		"vtech_ltxt",		&m_laser_xt		},
     { "[8088] Xi8088",				"malinov_xi8088",	&m_xi8088		},

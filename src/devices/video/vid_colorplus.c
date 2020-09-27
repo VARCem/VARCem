@@ -486,3 +486,15 @@ const device_t colorplus_device = {
     &colorplus_timings,
     colorplus_config
 };
+
+const device_t colorplus_onboard_device = {
+    "Onboard Plantronics ColorPlus",
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
+    0,
+    NULL,
+    colorplus_init, colorplus_close, NULL,
+    NULL,
+    speed_changed,
+    NULL,
+    &colorplus_timings,
+    colorplus_config};

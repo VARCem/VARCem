@@ -8,11 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.37	2021/03/09
  *
- * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
- *		Miran Grca, <mgrca8@gmail.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
@@ -130,6 +126,10 @@ extern const device_t	m_tandy_1k;
 extern const device_t	m_tandy_1k_hx;
 extern const device_t	m_tandy_1k_sl2;
 
+#if defined(DEV_BRANCH)
+extern const device_t	m_thom_to16;
+#endif
+
 extern const device_t	m_tosh_1000;
 extern const device_t	m_tosh_1200;
 
@@ -242,10 +242,14 @@ extern const device_t	m_j656vxd;
 extern const device_t	m_p55t2s;
 
 /* HP machines. */
+#if defined(DEV_BRANCH)
 extern const device_t	m_hpv486;
+#endif
 
 /* Packard Bell machines. */
+#if defined(DEV_BRANCH)
 extern const device_t	m_pb300;
+#endif
 extern const device_t	m_pb410a;
 extern const device_t	m_pb640;
 
