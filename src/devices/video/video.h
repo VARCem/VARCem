@@ -252,6 +252,7 @@ extern const device_t	incolor_device;
 
 /* Hercules ColorPlus series cards and compatibles. */
 extern const device_t	colorplus_device;
+extern const device_t   colorplus_onboard_device;
 
 /* Matrox MGA series cards. */
 //extern const device_t	mystique_device;

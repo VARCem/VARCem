@@ -8,13 +8,13 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.20	2019/05/17
+ * Version:	@(#)m_xt.c	1.0.21	2020/09/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -42,6 +42,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
 #include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../mem.h"
@@ -53,6 +54,7 @@
 #include "../devices/ports/parallel.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../devices/video/video.h"
 #ifdef USE_CASSETTE
 # include <cassette.h>
 #endif
@@ -118,6 +120,12 @@ xt_common_init(const device_t *info, void *arg)
 		else
 			device_add(&keyboard_xt_device);
 		break;
+
+    case 106: /* TO16 */
+        if (config.video_card == VID_INTERNAL)
+            device_add(&colorplus_onboard_device); /* Real chip is Paradise PVC-2 */
+        device_add(&keyboard_xt86_device);
+        break;
 
 	default:	/* clones */
 		device_add(&keyboard_xt86_device);
@@ -352,6 +360,24 @@ const device_t m_xt_juko = {
     xt_common_init, xt_close, NULL,
     NULL, NULL, NULL,
     &juko_info,
+    xt_config
+};
+
+static const machine_t to16_info = {
+    MACHINE_ISA | MACHINE_VIDEO,
+    0,
+    512, 640, 128, 16, 0,
+    {{"Intel",cpus_8088}}
+};
+
+const device_t m_thom_to16 = {
+    "Thomson TO16",
+    DEVICE_ROOT,
+    106,
+    L"thomson/to16",
+    xt_common_init, xt_close, NULL,
+    NULL, NULL, NULL,
+    &to16_info,
     xt_config
 };
 
