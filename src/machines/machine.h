@@ -197,6 +197,8 @@ extern const device_t	m_opti495_386sx_mr;
 extern const device_t	m_opti495_386dx_mr;
 extern const device_t	m_opti495_486_mr;
 
+extern const device_t 	m_opti895_hot419;
+
 #if defined(DEV_BRANCH) && defined(USE_SL)
 extern const device_t	m_sl82c460_386dx_ami;
 #endif

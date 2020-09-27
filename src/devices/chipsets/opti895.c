@@ -90,16 +90,16 @@ shadow_recalc(opti895_t *dev)
 
         if (dev->regs[0x23] & (1 << i)) {
             shflags = MEM_READ_INTERNAL;
-		shflags |= (dev->regs[0x22] & ((base >= 0xe0000) ? 0x08 : 0x10)) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
-	} else {
-		if (dev->regs[0x26] & 0x40) {
-			shflags = MEM_READ_EXTERNAL;
-			shflags |= (dev->regs[0x22] & ((base >= 0xe0000) ? 0x08 : 0x10)) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
-		} else
-			shflags = MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL;
-	}
+		    shflags |= (dev->regs[0x22] & ((base >= 0xe0000) ? 0x08 : 0x10)) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
+	    } else {
+		    if (dev->regs[0x26] & 0x40) {
+			    shflags = MEM_READ_EXTERNAL;
+			    shflags |= (dev->regs[0x22] & ((base >= 0xe0000) ? 0x08 : 0x10)) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
+		    } else
+			    shflags = MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL;
+	    }
 
-	mem_set_mem_state(base, 0x4000, shflags);
+	    mem_set_mem_state(base, 0x4000, shflags);
     }
 
     for (i = 0; i < 4; i++) {
@@ -176,7 +176,7 @@ opti895_read(uint16_t addr, priv_t priv)
         case 0x23:
             if (dev->indx == 0x01)
                 ret = dev->regs[dev->indx];
-                break;
+            break;
 	    case 0x24:
 		    if (((dev->indx >= 0x20) && (dev->indx <= 0x2c)) ||
                 ((dev->indx >= 0xe0) && (dev->indx <= 0xef))) {                 
