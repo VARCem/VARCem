@@ -183,6 +183,8 @@ static const struct {
     { "[486 ISA] Award 486 (Opti495)",		"award_486_opti495",	&m_opti495_486_award	},
     { "[486 ISA] MR 486 (Opti495)",		"mr_486dx_opti495",	&m_opti495_486_mr	},
 
+    { "[486 ISA] Shuttle Hot-419 (Opti895)",		"hot419_opti895",	&m_opti895_hot419	},
+    
     { "[486 ISA] DTK PKM-0038S E-2",		"dtk_486",		&m_dtk486		},
 #if defined(DEV_BRANCH)    
     { "[486 ISA] HP Vectra 486 33VL",       "hp_v486",      &m_hpv486       },
