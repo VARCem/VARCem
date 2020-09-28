@@ -146,6 +146,7 @@ static const struct {
 
     { "[386SX ISA] Amstrad MegaPC",		"amstrad_megapc",	&m_amstrad_mega_sx	},
     { "[386SX ISA] Arche AMA-932J",		"arche_ama932j",	&m_ama932j		},
+    { "[386SX ISA] Commodore SL386SX",		"commodore_sl386sx",		&m_cbm_sl386sx		},
     { "[386SX ISA] DTK 386SX clone",		"dtk_386",		&m_neat_dtk		},
     { "[386SX ISA] KMX-C-02",			"kmxc02",		&m_kmxc02		},
 
@@ -184,7 +185,7 @@ static const struct {
     { "[486 ISA] MR 486 (Opti495)",		"mr_486dx_opti495",	&m_opti495_486_mr	},
 
     { "[486 ISA] Shuttle Hot-419 (Opti895)",		"hot419_opti895",	&m_opti895_hot419	},
-    
+
     { "[486 ISA] DTK PKM-0038S E-2",		"dtk_486",		&m_dtk486		},
 #if defined(DEV_BRANCH)    
     { "[486 ISA] HP Vectra 486 33VL",       "hp_v486",      &m_hpv486       },

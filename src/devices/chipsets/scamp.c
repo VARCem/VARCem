@@ -790,7 +790,7 @@ scamp_init(const device_t *info, UNUSED(void *parent))
 }
 
 
-const device_t vlsi_scamp_device = {
+const device_t scamp_device = {
     "VLSI 82c311",
     0, 0, NULL,
     scamp_init, scamp_close, NULL,
