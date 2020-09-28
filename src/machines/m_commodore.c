@@ -6,15 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the Commodore PC-30 system.
+ *		Implementation of various Commodore systems.
  *
- * Version:	@(#)m_commodore.c	1.0.15	2019/05/13
+ * Version:	@(#)m_commodore.c	1.0.16	2020/09/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -42,14 +42,23 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../config.h"
+#include "../timer.h"
 #include "../cpu/cpu.h"
 #include "../io.h"
 #include "../mem.h"
+#include "../rom.h"
 #include "../device.h"
+#include "../devices/chipsets/scamp.h"
+#include "../devices/input/keyboard.h"
+#include "../devices/input/mouse.h"
 #include "../devices/ports/parallel.h"
 #include "../devices/ports/serial.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../devices/disk/hdc.h"
+#include "../devices/disk/hdc_ide.h"
+#include "../devices/video/video.h"
 #include "machine.h"
 
 
@@ -67,7 +76,7 @@ pc30_write(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 2:
-       		parallel_setup(0, 0x0378);
+       	parallel_setup(0, 0x0378);
 		break;
 
 	case 3:
@@ -95,29 +104,39 @@ pc30_close(priv_t priv)
     free(dev);
 }
 
-
 static priv_t
-pc30_init(const device_t *info, void *arg)
+common_init(const device_t *info, void *arg)
 {
     pc30_t *dev;
 
-    dev = (pc30_t *)mem_alloc(sizeof(pc30_t));
-    memset(dev, 0x00, sizeof(pc30_t));
-    dev->type = info->local;
-
     /* Add machine device to system. */
-    device_add_ex(info, (priv_t)dev);
+    device_add_ex(info, (priv_t)arg);
 
-    m_at_ide_init();
+    switch(info->local) {
+        case 30: /* PC30 */
+            dev = (pc30_t *)mem_alloc(sizeof(pc30_t));
+            memset(dev, 0x00, sizeof(pc30_t));
+            dev->type = info->local;
+            m_at_ide_init();
+            mem_remap_top(384);
+            device_add(&fdc_at_device);
+            io_sethandler(0x0230, 1,
+		      NULL,NULL,NULL, pc30_write,NULL,NULL, NULL);
+            break;
+        case 53: /* SL386SX */
+            device_add(&scamp_device);
+            m_at_common_ide_init();
+            device_add(&fdc_at_device);
+            device_add(&keyboard_ps2_device);
+            //device_add(&keyboard_at_device);
+            if (config.mouse_type == MOUSE_INTERNAL)
+			    device_add(&mouse_ps2_device);	
+            if (config.video_card == VID_INTERNAL)
+			    device_add(&gd5402_onboard_device);
+            break;
+    }
 
-    mem_remap_top(384);
-
-    device_add(&fdc_at_device);
-
-    io_sethandler(0x0230, 1,
-		  NULL,NULL,NULL, pc30_write,NULL,NULL, NULL);
-
-    return((priv_t)dev);
+    return((priv_t)arg);
 }
 
 
@@ -131,10 +150,28 @@ static const machine_t pc30_info = {
 const device_t m_cbm_pc30 = {
     "Commodore PC-30",
     DEVICE_ROOT,
-    0,
+    30,
     L"commodore/pc30",
-    pc30_init, pc30_close, NULL,
+    common_init, pc30_close, NULL,
     NULL, NULL, NULL,
     &pc30_info,
+    NULL
+};
+
+static const machine_t sl386sx_info = {
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC | MACHINE_MOUSE,
+    0,
+    1024, 8192, 512, 128, 16,
+        {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
+};
+
+const device_t m_cbm_sl386sx = {
+    "Commodore SL-386SX",
+    DEVICE_ROOT,
+    53,
+    L"commodore/sl386sx",
+    common_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &sl386sx_info,
     NULL
 };

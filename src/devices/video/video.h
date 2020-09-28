@@ -179,13 +179,11 @@ extern const device_t	cga_device;
 extern const device_t	pgc_device;
 
 /* Cirrus Logic GD-series cards. */
-#if defined(DEV_BRANCH)
-//extern const device_t gd5402_onboard_isa_device;
+extern const device_t   gd5402_onboard_device;
 extern const device_t	gd5402_isa_device;
 extern const device_t	gd5420_isa_device;
 extern const device_t	gd5422_isa_device;
 extern const device_t	gd5424_vlb_device;
-#endif
 extern const device_t	gd5426_vlb_device;
 extern const device_t	gd5428_isa_device;
 //extern const device_t ibm_gd5428_mca_device;

@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.34	2020/09/20
+ * Version:	@(#)vid_cl54xx.c	1.0.35	2020/09/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3450,6 +3450,19 @@ static const video_timings_t cl_gd_avga_timing = {VID_ISA,3,3,6,5,5,10};
 static const video_timings_t cl_gd_isa_timing = {VID_ISA,3,3,6,8,8,12};
 static const video_timings_t cl_gd_vlb_timing = {VID_BUS,4,4,8,10,10,20};
 static const video_timings_t cl_gd_pci_timing = {VID_BUS,4,4,8,10,10,20};
+
+const device_t gd5402_onboard_device = {
+    "Onboard Cirrus Logic GD-5402 (ACUMOS AVGA2)",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
+    CIRRUS_ID_CLGD5402,
+    NULL,		/* Common BIOS between 5402 and 5420 */
+    gd54xx_init, gd54xx_close, NULL,
+    NULL,
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_avga_timing,
+    NULL,
+};
 
 const device_t gd5402_isa_device = {
     "Cirrus Logic GD-5402 (ACUMOS AVGA2)",
