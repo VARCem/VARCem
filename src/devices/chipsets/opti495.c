@@ -258,13 +258,13 @@ Note:	the block address is forced to be a multiple of the block size by
 	  ignoring the appropriate number of the least-significant bits
 SeeAlso: #P0178,#P0187
  *
- * Version:	@(#)opti495.c	1.0.12	2019/05/13
+ * Version:	@(#)opti495.c	1.0.13	2020/10/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -298,16 +298,68 @@ SeeAlso: #P0178,#P0187
 #include "../../rom.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/port92.h"
 #include "opti495.h"
 
 
 typedef struct {
-    int		type;
-
-    int		indx;
-    uint8_t	regs[0x10];
+    uint8_t		type,
+    			indx,
+				regs[0x10];
 } opti_t;
 
+static void 
+shadow_recalc(opti_t *dev)
+{
+    uint32_t base;
+	uint32_t i, mem_write = 0;
+
+	shadowbios = 0;
+	shadowbios_write = 0;
+	
+	if (dev->regs[0x02] & 0x80) {
+		shadowbios = 1;
+		shadowbios_write = 0;
+		mem_set_mem_state(0xf0000, 0x10000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);		
+	} else {
+		shadowbios = 0;
+		shadowbios_write = 1;
+		mem_set_mem_state(0xf0000, 0x10000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
+	}
+	
+    for (i = 0; i < 8; i++) {
+		base = 0xd0000 + (i << 14);
+
+		if ((dev->regs[0x02] & ((base >= 0xe0000) ? 0x20 : 0x40)) &&
+			(dev->regs[0x03] & (1 << i))) {
+				mem_write = (dev->regs[0x02] & ((base >= 0xe0000) ? 0x08 : 0x10)) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
+				mem_set_mem_state(base, 0x4000, MEM_READ_INTERNAL | mem_write);
+		} else {
+			if (dev->regs[0x06] & 0x40) {
+				mem_write = (dev->regs[0x02] & ((base >= 0xe0000) ? 0x08 : 0x10)) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
+				mem_set_mem_state(base, 0x4000, MEM_READ_EXTERNAL | mem_write);
+			} else
+				mem_set_mem_state(base, 0x4000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
+		}
+	}
+
+	for (i = 0; i < 4; i++) {
+		base = 0xc0000 + (i << 14);
+
+		if ((dev->regs[0x06] & 0x10) && (dev->regs[0x06] & (1 << i))) {
+				mem_write = (dev->regs[0x06] & 0x20) ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
+				mem_set_mem_state(base, 0x4000, MEM_READ_INTERNAL | mem_write);
+		} else {
+			if (dev->regs[0x06] & 0x40) {
+				mem_write = dev->regs[0x06] & 0x20 ? MEM_WRITE_DISABLED : MEM_WRITE_INTERNAL;
+				mem_set_mem_state(base, 0x4000, MEM_READ_EXTERNAL | mem_write);
+			} else
+				mem_set_mem_state(base, 0x4000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
+		}
+	}
+
+	flushmmucache();
+}
 
 static void
 opti495_write(uint16_t addr, uint8_t val, priv_t priv)
@@ -326,14 +378,8 @@ opti495_write(uint16_t addr, uint8_t val, priv_t priv)
 				cpu_cache_ext_enabled = val & 0x10;
 				cpu_update_waitstates();
 			}
-			if (dev->indx == 0x22) {
-				shadowbios = !(val & 0x80);
-				shadowbios_write = val & 0x80;
-				if (shadowbios)
-					mem_set_mem_state(0xf0000, 0x10000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
-				else
-					mem_set_mem_state(0xf0000, 0x10000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
-			}
+			if (dev->indx == 0x22 || dev->indx == 0x23 || dev->indx == 0x26)
+				shadow_recalc(dev);
 		}
 		break;
     }
@@ -375,7 +421,16 @@ opti_init(const device_t *info, UNUSED(void *parent))
     memset(dev, 0x00, sizeof(opti_t));
     dev->type = info->local;
 
-    dev->regs[0x22 - 0x20] = 0x80;
+	device_add(&port92_device);
+
+    dev->regs[0x00] = 0x02;
+	dev->regs[0x01] = 0x20;
+	dev->regs[0x02] = 0xe4;
+	dev->regs[0x05] = 0xf0;
+	dev->regs[0x06] = 0x80;
+	dev->regs[0x07] = 0xb1;
+	dev->regs[0x08] = 0x80;
+	dev->regs[0x09] = 0x10;
 
     io_sethandler(0x0022, 1,
 		  opti495_read,NULL,NULL, opti495_write,NULL,NULL, dev);
