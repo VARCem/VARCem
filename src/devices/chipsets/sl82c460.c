@@ -8,7 +8,7 @@
  *
  *		Implementation of the Symphony 'Haydn II' chipset (SL82C460).
  *
- * Version:	@(#)sl82c460.c	1.0.1	2020/09/20
+ * Version:	@(#)sl82c460.c	1.0.2	2020/10/07
  *
  * Authors:
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -56,17 +56,21 @@ typedef struct {
 } sl82c460_t;
 
 #ifdef _LOGGING
+int	sl_do_log = ENABLE_SL_LOG;
+#endif
+
+#ifdef _LOGGING
 void
 sl82c460_log(int level, const char *fmt, ...)
 {
 # ifdef ENABLE_SL_LOG
     va_list ap;
 
-    //if (sl_do_log >= level) {
+    if (sl_do_log >= level) {
 	va_start(ap, fmt);
 	pclog_ex(fmt, ap);
 	va_end(ap);
-    //}
+    }
 # endif
 }
 #endif
@@ -95,22 +99,18 @@ static void sl82c460_shadow_set(uint32_t base, uint32_t size, int state)
 static void 
 shadow_recalc(sl82c460_t *dev)
 {
-    uint32_t base;
-    uint32_t i, shflags = 0;
-
     shadowbios = 0;
     shadowbios_write = 0;
 
     if (dev->regs[0x31] & 0x80) {
         shadowbios = 0;
         shadowbios_write = 1;
-        shflags = MEM_READ_INTERNAL | MEM_WRITE_DISABLED;
+            mem_set_mem_state(0xf0000, 0X10000, MEM_READ_INTERNAL | MEM_WRITE_DISABLED);
     } else {
         shadowbios = 1;
         shadowbios_write = 0;
-        shflags = MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL;
+        mem_set_mem_state(0xf0000, 0X10000, MEM_READ_EXTERNAL | MEM_WRITE_INTERNAL);
     }
-    mem_set_mem_state(0xf0000, 0X10000, shflags);
 
     sl82c460_shadow_set(0xc0000, 0x4000, dev->regs[0x2e] & 3);
     sl82c460_shadow_set(0xc4000, 0x4000, ((dev->regs[0x2e] >> 2) & 3));
@@ -131,7 +131,6 @@ sl82c460_write(uint16_t addr, uint8_t val, priv_t priv)
 
     if (addr & 1) {
 	    dev->regs[dev->reg_idx] = val;
-        sl82c460_log(0, "Register %x write %x\n", dev->reg_idx, val);
 
 	    switch (dev->reg_idx) {
 	    	case 0X2e: case 0x2f: case 0x30: case 0x31:
@@ -151,7 +150,6 @@ sl82c460_read(uint16_t addr, priv_t priv)
 
   if (addr & 1)
     {
-	    sl82c460_log(0, "Register %x read %x\n", dev->reg_idx, dev->regs[dev->reg_idx]);
         return(dev->regs[dev->reg_idx]);
     }
 
