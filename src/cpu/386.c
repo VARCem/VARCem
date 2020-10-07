@@ -8,13 +8,13 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.10	2019/05/17
+ * Version:	@(#)386.c	1.0.11	2020/09/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -80,20 +80,20 @@ uint32_t	dr[8];
 int		timetolive = 0;
 
 /* Also in 386_dynarec.c: */
-cpu_state_t	cpu_state;
-int		inscounts[256];
-uint32_t	oxpc;
-int		trap;
-int		inttype;
-int		optype;
-int		cgate32;
-uint16_t	rds;
-uint16_t	ea_rseg;
-uint32_t	*eal_r, *eal_w;
-uint16_t	*mod1add[2][8];
-uint32_t	*mod1seg[8];
+extern cpu_state_t	cpu_state;
+extern int		inscounts[256];
+extern uint32_t	oxpc;
+extern int		trap;
+extern int		inttype;
+extern int		optype;
+extern int		cgate32;
+extern uint16_t	rds;
+extern uint16_t	ea_rseg;
+extern uint32_t	*eal_r, *eal_w;
+extern uint16_t	*mod1add[2][8];
+extern uint32_t	*mod1seg[8];
 
-uint32_t	rmdat32;
+extern uint32_t	rmdat32;
 #define	rmdat	rmdat32
 #define fetchdat rmdat32
 
@@ -165,6 +165,8 @@ exec386(int cycs)
 	timer_start_period(cycles << TIMER_SHIFT);
 
 	while (cycdiff < cycle_period) {
+		int ins_cycles = cycles;
+		
 		oldcs = CS;
 		cpu_state.oldpc = cpu_state.pc;
 		oldcpl = CPL;
@@ -221,6 +223,9 @@ exec386(int cycs)
 				}
 			}
 		}
+		
+		ins_cycles -= cycles;
+		tsc += ins_cycles;
 
 		cycdiff = oldcyc - cycles;
 
@@ -280,7 +285,6 @@ exec386(int cycs)
 		}
 	}
                 
-	tsc += cycdiff;
                
 	timer_end_period(cycles << TIMER_SHIFT);
     }

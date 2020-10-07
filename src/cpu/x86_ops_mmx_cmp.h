@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mmx_cmp.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_mmx_cmp.h	1.0.2	2020/02/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -203,7 +203,7 @@ static int opPCMPEQD_a32(uint32_t fetchdat)
         
         MMX_ENTER();
         
-        fetch_ea_16(fetchdat);
+        fetch_ea_32(fetchdat);
         MMX_GETSRC();
 
         cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].l[0] == src.l[0]) ? 0xffffffff : 0;
@@ -232,7 +232,7 @@ static int opPCMPGTD_a32(uint32_t fetchdat)
         
         MMX_ENTER();
         
-        fetch_ea_16(fetchdat);
+        fetch_ea_32(fetchdat);
         MMX_GETSRC();
 
         cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].sl[0] > src.sl[0]) ? 0xffffffff : 0;

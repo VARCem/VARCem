@@ -8,13 +8,13 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.9	2020/06/13
+ * Version:	@(#)x86seg.c	1.0.9	2020/09/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <http://pcem-emulator.co.uk/>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -1087,7 +1087,8 @@ void loadcscall(uint16_t seg)
                                         case 0x1800: case 0x1900: case 0x1A00: case 0x1B00: /*Non-conforming code*/
                                         if (DPL < CPL)
                                         {
-                                                oaddr = addr;
+                                                uint16_t oldcs = CS;
+						oaddr = addr;
                                                 /*Load new stack*/
                                                 oldss=SS;
                                                 oldsp=oldsp2=ESP;
@@ -1214,6 +1215,7 @@ void loadcscall(uint16_t seg)
                                                         {
                                                                 SS = oldss;
                                                                 ESP = oldsp2;
+								CS = oldcs;
                                                                 return;
                                                         }
                                                         if (count)
@@ -1226,6 +1228,7 @@ void loadcscall(uint16_t seg)
                                                                         {
                                                                                 SS = oldss;
                                                                                 ESP = oldsp2;
+										CS = oldcs;
                                                                                 return;
                                                                         }
                                                                 }
@@ -1245,6 +1248,7 @@ void loadcscall(uint16_t seg)
                                                         {
                                                                 SS = oldss;
                                                                 ESP = oldsp2;
+								CS = oldcs;
                                                                 return;
                                                         }
 #if 0
@@ -1264,6 +1268,7 @@ void loadcscall(uint16_t seg)
                                                                         {
                                                                                 SS = oldss;
                                                                                 ESP = oldsp2;
+										CS = oldcs;
                                                                                 return;
                                                                         }
                                                                 }
@@ -2037,7 +2042,7 @@ void pmodeiret(int is32)
                         loadseg(segs[3],&_gs);
                         do_seg_v86_init(&_gs);                        
                         
-                        cpu_state.pc=newpc;
+                        cpu_state.pc=newpc & 0xffff;
                         _cs.base=seg<<4;
                         _cs.limit=0xFFFF;
                         _cs.limit_low = 0;
