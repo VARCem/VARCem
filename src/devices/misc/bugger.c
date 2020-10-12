@@ -44,11 +44,11 @@
  *		configuration register (CTRL_SPCFG bit set) but have to
  *		remember that stuff first...
  *
- * Version:	@(#)bugger.c	1.0.11	2019/05/13
+ * Version:	@(#)bugger.c	1.0.12	2020/09/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -93,16 +93,23 @@
 #include "bugger.h"
 
 
+/* I/O port range used. */
+#define BUG_ADDR	0x007a
+# define BUG_ADDRLEN	2
+#define POST_ADDR	0x0080
+# define POST_ADDRLEN	1
+
+
 /* BugBugger registers. */
 #define BUG_CTRL	0
-# define CTRL_RLED	0x00		/* write to the RED LED block */
-# define CTRL_GLED	0x01		/* write to the GREEN LED block */
-# define CTRL_SEG1	0x02		/* write to the RIGHT 7SEG displays */
-# define CTRL_SEG2	0x04		/* write to the LEFT 7SEG displays */
-# define CTRL_SPORT	0x20		/* enable the serial port */
-# define CTRL_SPCFG	0x40		/* set up the serial port */
-# define CTRL_INIT	0x80		/* enable and reset the card */
-# define CTRL_RESET	0xff		/* this resets the board */
+# define CTRL_RLED	0x00		// write to the RED LED block
+# define CTRL_GLED	0x01		// write to the GREEN LED block
+# define CTRL_SEG1	0x02		// write to the RIGHT 7SEG displays
+# define CTRL_SEG2	0x04		// write to the LEFT 7SEG displays
+# define CTRL_SPORT	0x20		// enable the serial port
+# define CTRL_SPCFG	0x40		// set up the serial port
+# define CTRL_INIT	0x80		// enable and reset the card
+# define CTRL_RESET	0xff		// this resets the board
 #define BUG_DATA	1
 
 #define FIFO_LEN	256
@@ -111,16 +118,15 @@
 
 typedef struct {
     const char	*name;
-    uint16_t	base;
 
-    uint8_t	ctrl,			/* control register */
-		data,			/* data register */
-		ledr,			/* RED and GREEN LEDs */
+    uint8_t	ctrl,			// control register
+		data,			// data register
+		ledr,			// RED and GREEN LEDs
 		ledg,
-		seg1,			/* LEFT and RIGHT 7SEG displays */
+		seg1,			// LEFT and RIGHT 7SEG displays
 		seg2,
-		spcfg;			/* serial port configuration */
-     uint8_t	*bptr,			/* serial port data buffer */
+		spcfg;			// serial port configuration
+     uint8_t	*bptr,			// serial port data buffer
 		buff[FIFO_LEN];
 } bugger_t;
 
@@ -291,33 +297,6 @@ bug_reset(bugger_t *dev)
 }
 
 
-/* Handle a WRITE operation to one of our registers. */
-static void
-bug_write(uint16_t port, uint8_t val, priv_t priv)
-{
-    bugger_t *dev = (bugger_t *)priv;
-
-    switch (port - dev->base) {
-	case BUG_CTRL:		/* control register */
-		if (val == CTRL_RESET) {
-			/* Perform a full reset. */
-			bug_reset(dev);
-		} else if (dev->ctrl & CTRL_INIT) {
-			/* Only allow writes if initialized. */
-			bug_wctrl(dev, val);
-		}
-		break;
-
-	case BUG_DATA:		/* data register */
-		if (dev->ctrl & CTRL_INIT) {
-			bug_wdata(dev, val);
-		}
-		break;
-
-    }
-}
-
-
 /* Handle a READ operation from one of our registers. */
 static uint8_t
 bug_read(uint16_t port, priv_t priv)
@@ -325,16 +304,16 @@ bug_read(uint16_t port, priv_t priv)
     bugger_t *dev = (bugger_t *)priv;
     uint8_t ret = 0xff;
 
-    if (dev->ctrl & CTRL_INIT) switch (port - dev->base) {
-	case BUG_CTRL:		/* control register */
+    if (dev->ctrl & CTRL_INIT) switch (port) {
+	case BUG_ADDR + BUG_CTRL:	// control register
 		ret = dev->ctrl;
 		break;
 
-	case BUG_DATA:		/* data register */
+	case BUG_ADDR + BUG_DATA:	// data register
 		if (dev->ctrl & CTRL_SPCFG) {
 			ret = dev->spcfg;
 		} else if (dev->ctrl & CTRL_SPORT) {
-			ret = 0x00;		/* input not supported */
+			ret = 0x00;	// input not supported
 		} else {
 			/* Just read the DIP switch. */
 			ret = dev->data;
@@ -349,14 +328,46 @@ bug_read(uint16_t port, priv_t priv)
 }
 
 
+/* Handle a WRITE operation to one of our registers. */
+static void
+bug_write(uint16_t port, uint8_t val, priv_t priv)
+{
+    bugger_t *dev = (bugger_t *)priv;
+
+    switch (port) {
+	case BUG_ADDR + BUG_CTRL:	// control register
+		if (val == CTRL_RESET) {
+			/* Perform a full reset. */
+			bug_reset(dev);
+		} else if (dev->ctrl & CTRL_INIT) {
+			/* Only allow writes if initialized. */
+			bug_wctrl(dev, val);
+		}
+		break;
+
+	case BUG_ADDR + BUG_DATA:	// data register
+		if (dev->ctrl & CTRL_INIT) {
+			bug_wdata(dev, val);
+		}
+		break;
+
+	case POST_ADDR:			// POST register
+		INFO("POST: code = %02XH\n", val);
+		break;
+    }
+}
+
+
 /* Remove the ISA BusBugger emulator from the system. */
 static void
 bug_close(priv_t priv)
 {
     bugger_t *dev = (bugger_t *)priv;
 
-    io_removehandler(dev->base, 2,
+    io_removehandler(BUG_ADDR, BUG_ADDRLEN,
 		     bug_read,NULL,NULL, bug_write,NULL,NULL, dev);
+    io_removehandler(POST_ADDR, POST_ADDRLEN,
+		     NULL,NULL,NULL, bug_write,NULL,NULL, dev);
 
     free(dev);
 }
@@ -371,15 +382,17 @@ bug_init(const device_t *info, UNUSED(void *parent))
     dev = (bugger_t *)mem_alloc(sizeof(bugger_t));
     memset(dev, 0x00, sizeof(bugger_t));
     dev->name = info->name;
-    dev->base = BUGGER_ADDR;
 
-    INFO("BUGGER: %s (I/O=%04x)\n", dev->name, dev->base);
+    INFO("BUGGER: %s (I/O=%04XH)\n", dev->name, BUG_ADDR);
 
     /* Initialize local registers. */
     bug_reset(dev);
 
-    io_sethandler(dev->base, 2,
+    io_sethandler(BUG_ADDR, BUG_ADDRLEN,
 		  bug_read,NULL,NULL, bug_write,NULL,NULL, dev);
+
+    io_sethandler(POST_ADDR, POST_ADDRLEN,
+		  NULL,NULL,NULL, bug_write,NULL,NULL, dev);
 
     return(dev);
 }

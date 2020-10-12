@@ -8,11 +8,11 @@
  *
  *		Definitions for the BUGGER card.
  *
- * Version:	@(#)bugger.h	1.0.3	2018/09/13
+ * Version:	@(#)bugger.h	1.0.4	2020/09/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -48,23 +48,8 @@
 # define BUGGER_H
 
 
-/* I/O port range used. */
-#define BUGGER_ADDR	0x007a
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Global variables. */
 extern const device_t bugger_device;
-
-
-/* Functions. */
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #endif	/*BUGGER_H*/

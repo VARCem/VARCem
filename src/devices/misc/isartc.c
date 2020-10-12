@@ -28,11 +28,11 @@
  * NOTE:	The IRQ functionalities have been implemented, but not yet
  *		tested, as I need to write test software for them first :)
  *
- * Version:	@(#)isartc.c	1.0.10	2019/05/17
+ * Version:	@(#)isartc.c	1.0.11	2020/10/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -262,50 +262,50 @@ mm67_tick(nvr_t *nvr)
 
 /* Get the current NVR time. */
 static void
-mm67_time_get(nvr_t *nvr, struct tm *tm)
+mm67_time_get(const nvr_t *nvr, intclk_t *clk)
 {
     rtcdev_t *dev = (rtcdev_t *)nvr->data;
-    uint8_t *regs = nvr->regs;
+    const uint8_t *regs = nvr->regs;
 
     /* NVR is in BCD data mode. */
-    tm->tm_sec = RTC_DCB(regs[MM67_SEC]);
-    tm->tm_min = RTC_DCB(regs[MM67_MIN]);
-    tm->tm_hour = RTC_DCB(regs[MM67_HOUR]);
-    tm->tm_wday = (RTC_DCB(regs[MM67_DOW]) - 1);
-    tm->tm_mday = RTC_DCB(regs[MM67_DOM]);
-    tm->tm_mon = (RTC_DCB(regs[MM67_MON]) - 1);
+    clk->tm_sec = RTC_DCB(regs[MM67_SEC]);
+    clk->tm_min = RTC_DCB(regs[MM67_MIN]);
+    clk->tm_hour = RTC_DCB(regs[MM67_HOUR]);
+    clk->tm_wday = (RTC_DCB(regs[MM67_DOW]) - 1);
+    clk->tm_mday = RTC_DCB(regs[MM67_DOM]);
+    clk->tm_mon = (RTC_DCB(regs[MM67_MON]) - 1);
     if (dev->year != -1) {
 	if (dev->flags & FLAG_YEARBCD)
-    		tm->tm_year = RTC_DCB(regs[dev->year]);
+    		clk->tm_year = RTC_DCB(regs[dev->year]);
 	  else
-    		tm->tm_year = regs[dev->year];
+    		clk->tm_year = regs[dev->year];
 	if (dev->flags & FLAG_YEAR80)
-    		tm->tm_year += 80;
+    		clk->tm_year += 80;
 #ifdef MM67_CENTURY
-	tm->tm_year += (regs[MM67_CENTURY] * 100) - 1900;
+	clk->tm_year += (regs[MM67_CENTURY] * 100) - 1900;
 #endif
-	DBGLOG(1, "ISARTC: get_time: year=%i [%02x]\n", tm->tm_year, regs[dev->year]);
+	DBGLOG(1, "ISARTC: get_time: year=%i [%02x]\n", clk->tm_year, regs[dev->year]);
     }
 }
 
 
 /* Set the current NVR time. */
 static void
-mm67_time_set(nvr_t *nvr, const struct tm *tm)
+mm67_time_set(nvr_t *nvr, const intclk_t *clk)
 {
     rtcdev_t *dev = (rtcdev_t *)nvr->data;
     uint8_t *regs = nvr->regs;
     int year;
 
     /* NVR is in BCD data mode. */
-    regs[MM67_SEC] = RTC_BCD(tm->tm_sec);
-    regs[MM67_MIN] = RTC_BCD(tm->tm_min);
-    regs[MM67_HOUR] = RTC_BCD(tm->tm_hour);
-    regs[MM67_DOW] = RTC_BCD(tm->tm_wday + 1);
-    regs[MM67_DOM] = RTC_BCD(tm->tm_mday);
-    regs[MM67_MON] = RTC_BCD(tm->tm_mon + 1);
+    regs[MM67_SEC] = RTC_BCD(clk->tm_sec);
+    regs[MM67_MIN] = RTC_BCD(clk->tm_min);
+    regs[MM67_HOUR] = RTC_BCD(clk->tm_hour);
+    regs[MM67_DOW] = RTC_BCD(clk->tm_wday + 1);
+    regs[MM67_DOM] = RTC_BCD(clk->tm_mday);
+    regs[MM67_MON] = RTC_BCD(clk->tm_mon + 1);
     if (dev->year != -1) {
-	year = tm->tm_year;
+	year = clk->tm_year;
 	if (dev->flags & FLAG_YEAR80)
 		year -= 80;
 	if (dev->flags & FLAG_YEARBCD)
@@ -315,7 +315,7 @@ mm67_time_set(nvr_t *nvr, const struct tm *tm)
 #ifdef MM67_CENTURY
 	regs[MM67_CENTURY] = (year + 1900) / 100;
 #endif
-	DBGLOG(1, "ISARTC: set_time: [%02x] year=%i (%i)\n", regs[dev->year], year, tm->tm_year);
+	DBGLOG(1, "ISARTC: set_time: [%02x] year=%i (%i)\n", regs[dev->year], year, clk->tm_year);
     }
 }
 
@@ -323,17 +323,17 @@ mm67_time_set(nvr_t *nvr, const struct tm *tm)
 static void
 mm67_start(nvr_t *nvr)
 {
-    struct tm tm;
+    intclk_t clk;
 
     /* Initialize the internal and chip times. */
     if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
-	nvr_time_get(&tm);
-	mm67_time_set(nvr, &tm);
+	nvr_time_get(nvr, &clk);
+	mm67_time_set(nvr, &clk);
     } else {
 	/* Set the internal clock from the chip time. */
-	mm67_time_get(nvr, &tm);
-	nvr_time_set(&tm);
+	mm67_time_get(nvr, &clk);
+	nvr_time_set(&clk, nvr);
     }
 }
 

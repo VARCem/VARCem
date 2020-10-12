@@ -96,13 +96,13 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_tosh1x00.c	1.0.24	2019/05/17
+ * Version:	@(#)m_tosh1x00.c	1.0.25	2020/10/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		John Elliott, <jce@seasip.info>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
  *		Copyright 2017,2018 John Elliott.
  *
@@ -228,46 +228,46 @@ typedef struct {
 
 /* Set the chip time. */
 static void
-tc8521_time_set(uint8_t *regs, const struct tm *tm)
+tc8521_time_set(uint8_t *regs, const intclk_t *clk)
 {
-    regs[TC8521_SECOND1] = (tm->tm_sec % 10);
-    regs[TC8521_SECOND10] = (tm->tm_sec / 10);
-    regs[TC8521_MINUTE1] = (tm->tm_min % 10);
-    regs[TC8521_MINUTE10] = (tm->tm_min / 10);
+    regs[TC8521_SECOND1] = (clk->tm_sec % 10);
+    regs[TC8521_SECOND10] = (clk->tm_sec / 10);
+    regs[TC8521_MINUTE1] = (clk->tm_min % 10);
+    regs[TC8521_MINUTE10] = (clk->tm_min / 10);
     if (regs[TC8521_24HR] & 0x01) {
-	regs[TC8521_HOUR1] = (tm->tm_hour % 10);
-	regs[TC8521_HOUR10] = (tm->tm_hour / 10);
+	regs[TC8521_HOUR1] = (clk->tm_hour % 10);
+	regs[TC8521_HOUR10] = (clk->tm_hour / 10);
     } else {
-	regs[TC8521_HOUR1] = ((tm->tm_hour % 12) % 10);
-	regs[TC8521_HOUR10] = (((tm->tm_hour % 12) / 10) |
-			       ((tm->tm_hour >= 12) ? 2 : 0));
+	regs[TC8521_HOUR1] = ((clk->tm_hour % 12) % 10);
+	regs[TC8521_HOUR10] = (((clk->tm_hour % 12) / 10) |
+			       ((clk->tm_hour >= 12) ? 2 : 0));
     }
-    regs[TC8521_WEEKDAY] = tm->tm_wday;
-    regs[TC8521_DAY1] = (tm->tm_mday % 10);
-    regs[TC8521_DAY10] = (tm->tm_mday / 10);
-    regs[TC8521_MONTH1] = ((tm->tm_mon + 1) % 10);
-    regs[TC8521_MONTH10] = ((tm->tm_mon + 1) / 10);
-    regs[TC8521_YEAR1] = ((tm->tm_year - 80) % 10);
-    regs[TC8521_YEAR10] = (((tm->tm_year - 80) % 100) / 10);
+    regs[TC8521_WEEKDAY] = clk->tm_wday;
+    regs[TC8521_DAY1] = (clk->tm_mday % 10);
+    regs[TC8521_DAY10] = (clk->tm_mday / 10);
+    regs[TC8521_MONTH1] = ((clk->tm_mon + 1) % 10);
+    regs[TC8521_MONTH10] = ((clk->tm_mon + 1) / 10);
+    regs[TC8521_YEAR1] = ((clk->tm_year - 80) % 10);
+    regs[TC8521_YEAR10] = (((clk->tm_year - 80) % 100) / 10);
 }
 
 
 /* Get the chip time. */
 #define nibbles(a)	(regs[(a##1)] + 10 * regs[(a##10)])
 static void
-tc8521_time_get(uint8_t *regs, struct tm *tm)
+tc8521_time_get(const uint8_t *regs, intclk_t *clk)
 {
-    tm->tm_sec = nibbles(TC8521_SECOND);
-    tm->tm_min = nibbles(TC8521_MINUTE);
+    clk->tm_sec = nibbles(TC8521_SECOND);
+    clk->tm_min = nibbles(TC8521_MINUTE);
     if (regs[TC8521_24HR] & 0x01)
-	tm->tm_hour = nibbles(TC8521_HOUR);
+	clk->tm_hour = nibbles(TC8521_HOUR);
       else
-	tm->tm_hour = ((nibbles(TC8521_HOUR) % 12) +
+	clk->tm_hour = ((nibbles(TC8521_HOUR) % 12) +
 		      (regs[TC8521_HOUR10] & 0x02) ? 12 : 0);
 //FIXME: wday
-    tm->tm_mday = nibbles(TC8521_DAY);
-    tm->tm_mon = (nibbles(TC8521_MONTH) - 1);
-    tm->tm_year = (nibbles(TC8521_YEAR) + 1980);
+    clk->tm_mday = nibbles(TC8521_DAY);
+    clk->tm_mon = (nibbles(TC8521_MONTH) - 1);
+    clk->tm_year = (nibbles(TC8521_YEAR) + 1980);
 }
 
 
@@ -282,17 +282,17 @@ tc8521_tick(nvr_t *nvr)
 static void
 tc8521_start(nvr_t *nvr)
 {
-    struct tm tm;
+    intclk_t clk;
 
     /* Initialize the internal and chip times. */
     if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
-	nvr_time_get(&tm);
-	tc8521_time_set(nvr->regs, &tm);
+	nvr_time_get(nvr, &clk);
+	tc8521_time_set(nvr->regs, &clk);
     } else {
 	/* Set the internal clock from the chip time. */
-	tc8521_time_get(nvr->regs, &tm);
-	nvr_time_set(&tm);
+	tc8521_time_get(nvr->regs, &clk);
+	nvr_time_set(&clk, nvr);
     }
 
 #if 0

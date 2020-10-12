@@ -8,11 +8,11 @@
  *
  *		Definitions for the generic NVRAM/CMOS driver.
  *
- * Version:	@(#)nvr.h	1.0.10	2019/05/17
+ * Version:	@(#)nvr.h	1.0.12	2020/10/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -48,7 +48,7 @@
 # define EMU_NVR_H
 
 
-#define NVR_MAXSIZE	128			/* max size of NVR data */
+#define NVR_MAXSIZE	256			/* max size of NVR data */
 
 /* Conversion from BCD to Binary and vice versa. */
 #define RTC_BCD(x)      (((x) % 10) | (((x) / 10) << 4))
@@ -63,6 +63,9 @@ enum {
     TIME_SYNC_ENABLED_UTC
 };
 
+
+/* Local variant of the 'struct tm' type. */
+typedef struct tm intclk_t;
 
 /* Define a generic RTC/NVRAM device. */
 typedef struct _nvr_ {
@@ -80,29 +83,42 @@ typedef struct _nvr_ {
     void		(*start)(struct _nvr_ *);
     void		(*tick)(struct _nvr_ *);
 
+    intclk_t            clk;			/* our internal clock */
     uint8_t		regs[NVR_MAXSIZE];	/* these are the registers */
 } nvr_t;
 
 
 extern int		nvr_dosave;
 #ifdef EMU_DEVICE_H
-
 extern const device_t	at_nvr_old_device;
 extern const device_t	at_nvr_device;
-extern const device_t	ps_nvr_device;
+extern const device_t	ibmat_nvr_device;
 extern const device_t	amstrad_nvr_device;
+extern const device_t	ps_nvr_device;
+extern const device_t	piix4_nvr_device;
+extern const device_t	ls486e_nvr_device;
+extern const device_t	via_nvr_device;
 #endif
 
 
+/* Functions. */
 extern void		nvr_init(nvr_t *);
+extern void		nvr_close(nvr_t *);
 extern wchar_t		*nvr_path(const wchar_t *fn);
 extern int		nvr_load(void);
 extern int		nvr_save(void);
 
 extern int		nvr_is_leap(int year);
 extern int		nvr_get_days(int month, int year);
-extern void		nvr_time_get(struct tm *);
-extern void		nvr_time_set(struct tm *);
+extern void             nvr_time_get(const nvr_t *, intclk_t *);
+extern void             nvr_time_set(const intclk_t *, nvr_t *);
+
+extern void		nvr_read_addr_set(priv_t, int set);
+extern void		nvr_wp_set(priv_t, int set, int h);
+extern void		nvr_bank_set(priv_t, int base, uint8_t bank);
+extern void		nvr_lock_set(priv_t, int base, int size, int lock);
+extern void		nvr_at_handler(priv_t, int set, uint16_t base);
+extern void		nvr_at_sec_handler(priv_t, int set, uint16_t base);
 
 
 #endif	/*EMU_NVR_H*/

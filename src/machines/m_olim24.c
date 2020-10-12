@@ -21,13 +21,13 @@
  *		data at all, so there seems to not be a way to properly do
  *		that..  The chip's interrupt pin is not connected.
  *
- * Version:	@(#)m_olim24.c	1.0.21	2019/05/13
+ * Version:	@(#)m_olim24.c	1.0.22	2020/10/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -405,30 +405,30 @@ mse_poll(int x, int y, int z, int b, priv_t priv)
 /* Set the current NVR time. */
 #define set_nibbles(a, v) regs[(a##10)] = ((v)/10) ; regs[(a##1)] = ((v)%10)
 static void
-rtc_time_set(uint8_t *regs, const struct tm *tm)
+rtc_time_set(uint8_t *regs, const intclk_t *clk)
 {
-    set_nibbles(RTC_SECOND, tm->tm_sec);
-    set_nibbles(RTC_MINUTE, tm->tm_min);
-    set_nibbles(RTC_HOUR, tm->tm_hour);
-    regs[RTC_WEEKDAY] = tm->tm_wday;
-    set_nibbles(RTC_DAY, tm->tm_mday);
-    set_nibbles(RTC_MONTH, (tm->tm_mon + 1));
-    regs[RTC_YEAR] = ((tm->tm_year - 84) % 4);
+    set_nibbles(RTC_SECOND, clk->tm_sec);
+    set_nibbles(RTC_MINUTE, clk->tm_min);
+    set_nibbles(RTC_HOUR, clk->tm_hour);
+    regs[RTC_WEEKDAY] = clk->tm_wday;
+    set_nibbles(RTC_DAY, clk->tm_mday);
+    set_nibbles(RTC_MONTH, (clk->tm_mon + 1));
+    regs[RTC_YEAR] = ((clk->tm_year - 84) % 4);
 }
 
 
 /* Get the current NVR time. */
 #define get_nibbles(a) ((regs[(a##10)]*10)+regs[(a##1)])
 static void
-rtc_time_get(uint8_t *regs, struct tm *tm)
+rtc_time_get(const uint8_t *regs, intclk_t *clk)
 {
-    tm->tm_sec = get_nibbles(RTC_SECOND);
-    tm->tm_min = get_nibbles(RTC_MINUTE);
-    tm->tm_hour = get_nibbles(RTC_HOUR);
-    tm->tm_wday = regs[RTC_WEEKDAY];
-    tm->tm_mday = get_nibbles(RTC_DAY);
-    tm->tm_mon = (get_nibbles(RTC_MONTH) - 1);
-    tm->tm_year = (regs[RTC_YEAR] + 1984);
+    clk->tm_sec = get_nibbles(RTC_SECOND);
+    clk->tm_min = get_nibbles(RTC_MINUTE);
+    clk->tm_hour = get_nibbles(RTC_HOUR);
+    clk->tm_wday = regs[RTC_WEEKDAY];
+    clk->tm_mday = get_nibbles(RTC_DAY);
+    clk->tm_mon = (get_nibbles(RTC_MONTH) - 1);
+    clk->tm_year = (regs[RTC_YEAR] + 1984);
 }
 
 
@@ -489,17 +489,17 @@ rtc_ticker(nvr_t *nvr)
 static void
 rtc_start(nvr_t *nvr)
 {
-    struct tm tm;
+    intclk_t clk;
 
     /* Initialize the internal and chip times. */
     if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
-	nvr_time_get(&tm);
-	rtc_time_set(nvr->regs, &tm);
+	nvr_time_get(nvr, &clk);
+	rtc_time_set(nvr->regs, &clk);
     } else {
 	/* Set the internal clock from the chip time. */
-	rtc_time_get(nvr->regs, &tm);
-	nvr_time_set(&tm);
+	rtc_time_get(nvr->regs, &clk);
+	nvr_time_set(&clk, nvr);
     }
 
     /* Start the RTC. */

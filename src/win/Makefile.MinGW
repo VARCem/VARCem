@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.95	2020/07/17
+# Version:	@(#)Makefile.mingw	1.0.96	2020/09/29
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -348,13 +348,13 @@ ifndef SLIRP
  SLIRP		:= d
 endif
 ifneq ($(SLIRP), n)
+ ifeq ($(SLIRP_PATH), )
+  SLIRP_PATH	:= $(EXT_PATH)/slirp
+ endif
  ifeq ($(SLIRP), d)
   OPTS		+= -DUSE_SLIRP=2
  else
   OPTS		+= -DUSE_SLIRP=1
- endif
- ifeq ($(SLIRP_PATH), )
-  SLIRP_PATH	:= $(EXT_PATH)/slirp
  endif
  OPTS		+= -I$(SLIRP_PATH)/include
  ifeq ($(X64), y)
@@ -375,13 +375,13 @@ ifndef PCAP
  PCAP		:= d
 endif
 ifneq ($(PCAP), n)
+ ifeq ($(PCAP_PATH), )
+  PCAP_PATH	:= $(EXT_PATH)/pcap
+ endif
  ifeq ($(PCAP), d)
   OPTS		+= -DUSE_PCAP=2
  else
   OPTS		+= -DUSE_PCAP=1
- endif
- ifeq ($(PCAP_PATH), )
-  PCAP_PATH	:= $(EXT_PATH)/pcap
  endif
  OPTS		+= -I$(PCAP_PATH)/include
  ifeq ($(X64), y)
@@ -402,13 +402,13 @@ ifndef VNS
  VNS		:= n
 endif
 ifneq ($(VNS), n)
+ ifeq ($(VNS_PATH), )
+  VNS_PATH	:= $(EXT_PATH)/vns
+ endif
  ifeq ($(VNS), d)
   OPTS		+= -DUSE_VNS=2
  else
   OPTS		+= -DUSE_VNS=1
- endif
- ifeq ($(VNS_PATH), )
-  VNS_PATH	:= $(EXT_PATH)/vns
  endif
  OPTS		+= -I$(VNS_PATH)/include
  ifeq ($(X64), y)
@@ -425,20 +425,43 @@ ifneq ($(VNS), n)
  MISCOBJ	+= net_vns.o
 endif
 
+# FreeType (always dynamic)
+ifndef FREETYPE
+ FREETYPE	:= d
+endif
+ifneq ($(FREETYPE), n)
+ ifeq ($(FREETYPE_PATH), )
+  FREETYPE_PATH	:= $(EXT_PATH)/freetype
+ endif
+ OPTS		+= -DUSE_FREETYPE -I$(FREETYPE_PATH)/include
+ ifeq ($(FREETYPE), d)
+ endif
+endif
+
 # OpenAL (always dynamic)
 ifndef OPENAL
  OPENAL		:= d
 endif
-ifeq ($(OPENAL), d)
- OPTS		+= -DUSE_OPENAL -I$(EXT_PATH)/openal/include
+ifneq ($(OPENAL), n)
+ ifeq ($(OPENAL_PATH), )
+  OPENAL_PATH	:= $(EXT_PATH)/openal
+ endif
+ OPTS		+= -DUSE_OPENAL -I$(OPENAL_PATH)/include
+ ifeq ($(OPENAL), d)
+ endif
 endif
 
 # FluidSynth (always dynamic)
 ifndef FLUIDSYNTH
  FLUIDSYNTH	:= d
 endif
-ifeq ($(FLUIDSYNTH), d)
- OPTS		+= -DUSE_FLUIDSYNTH -I$(EXT_PATH)/fluidsynth/include
+ifneq ($(FLUIDSYNTH), n)
+ ifeq ($(FLUIDSYNTH_PATH), )
+  FLUIDSYNTH_PATH	:= $(EXT_PATH)/fluidsynth
+ endif
+ ifeq ($(FLUIDSYNTH), d)
+ endif
+ OPTS		+= -DUSE_FLUIDSYNTH -I$(FLUIDSYNTH_PATH)/include
 endif
 
 # MunT: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -446,15 +469,15 @@ ifndef MUNT
  MUNT		:= d
 endif
 ifneq ($(MUNT), n)
+ ifeq ($(MUNT_PATH), )
+  MUNT_PATH	:= $(EXT_PATH)/munt
+ endif
  ifeq ($(MUNT), d)
   OPTS		+= -DUSE_MUNT=2
  else
   OPTS		+= -DUSE_MUNT=1
  endif
- ifeq ($(MUNT_PATH), )
-  MUNT_PATH	:= $(EXT_PATH)/munt
- endif
- OPTS		+= -I$(MUNT_PATH)
+ OPTS		+= -I$(MUNT_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -L$(MUNT_PATH)/lib/x64
  else
@@ -473,15 +496,15 @@ ifndef RESID
  RESID		:= d
 endif
 ifneq ($(RESID), n)
+ ifeq ($(RESID_PATH), )
+  RESID_PATH	:= $(EXT_PATH)/resid
+ endif
  ifeq ($(RESID), d)
   OPTS		+= -DUSE_RESID=2
  else
   OPTS		+= -DUSE_RESID=1
  endif
- ifeq ($(RESID_PATH), )
-  RESID_PATH	:= $(EXT_PATH)/resid
- endif
- OPTS		+= -I$(EXT_PATH)
+ OPTS		+= -I$(RESID_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -L$(RESID_PATH)/lib/x64
  else
@@ -500,10 +523,10 @@ ifndef SDL
  SDL		:= n
 endif
 ifneq ($(SDL), n)
- OPTS		+= -DUSE_SDL
  ifeq ($(SDL_PATH), )
   SDL_PATH	:= $(EXT_PATH)/sdl
  endif
+ OPTS		+= -DUSE_SDL
  OPTS		+= -I$(SDL_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -L$(SDL_PATH)/lib/x64
@@ -538,14 +561,13 @@ ifndef VNC
  VNC		:= n
 endif
 ifneq ($(VNC), n)
- ZLIB		:= (VNC)
+ ifeq ($(VNC_PATH), )
+  VNC_PATH	:= $(EXT_PATH)/vnc
+ endif
  ifeq ($(VNC), d)
   OPTS		+= -DUSE_VNC=2
  else
   OPTS		+= -DUSE_VNC=1
- endif
- ifeq ($(VNC_PATH), )
-  VNC_PATH	:= $(EXT_PATH)/vnc
  endif
  OPTS		+= -I$(VNC_PATH)/include
  ifeq ($(X64), y)
@@ -560,6 +582,7 @@ ifneq ($(VNC), n)
   LIBS		+= -lvncserver -lz -static -lpthread
  endif
  MISCOBJ	+= vnc.o vnc_keymap.o
+ ZLIB		:= $(VNC)
 endif
 
 # RDP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -567,13 +590,13 @@ ifndef RDP
  RDP		:= n
 endif
 ifneq ($(RDP), n)
+ ifeq ($(RDP_PATH), )
+  RDP_PATH	:= $(EXT_PATH)/rdp
+ endif
  ifeq ($(RDP), d)
   OPTS		+= -DUSE_RDP=2
  else
   OPTS		+= -DUSE_RDP=1
- endif
- ifeq ($(RDP_PATH), )
-  RDP_PATH	:= $(EXT_PATH)/rdp
  endif
  OPTS		+= -I$(RDP_PATH)/include
  ifeq ($(X64), y)
@@ -595,14 +618,13 @@ ifndef PNG
  PNG		:= n
 endif
 ifneq ($(PNG), n)
- ZLIB		:= $(PNG)
+ ifeq ($(PNG_PATH), )
+  PNG_PATH	:= $(EXT_PATH)/png
+ endif
  ifeq ($(PNG), d)
   OPTS		+= -DUSE_LIBPNG=2
  else
   OPTS		+= -DUSE_LIBPNG=1
- endif
- ifeq ($(PNG_PATH), )
-  PNG_PATH	:= $(EXT_PATH)/png
  endif
  OPTS		+= -I$(PNG_PATH)/include
  ifeq ($(X64), y)
@@ -618,6 +640,7 @@ ifneq ($(PNG), n)
   LIBS		+= -lpng -lz
  endif
  MISCOBJ	+= png.o
+ ZLIB		:= $(PNG)
 endif
 
 # ZLIB: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -625,13 +648,13 @@ ifndef ZLIB
  ZLIB		:= n
 endif
 ifneq ($(ZLIB), n)
+ ifeq ($(ZLIB_PATH), )
+  ZLIB_PATH	:= $(EXT_PATH)/zlib
+ endif
  ifeq ($(ZLIB), d)
   OPTS		+= -DUSE_ZLIB=2
  else
   OPTS		+= -DUSE_ZLIB=1
- endif
- ifeq ($(ZLIB_PATH), )
-  ZLIB_PATH	:= $(EXT_PATH)/zlib
  endif
  OPTS		+= -I$(ZLIB_PATH)/include
  ifeq ($(X64), y)

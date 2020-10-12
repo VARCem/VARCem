@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.27	2019/05/17
+ * Version:	@(#)m_europc.c	1.0.28	2020/10/11
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -78,7 +78,7 @@
  *		Schneider's schematics and technical manuals, and the
  *		input from people with real EuroPC hardware.
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -217,36 +217,36 @@ rtc_ticker(nvr_t *nvr)
 
 /* Get the current NVR time. */
 static void
-rtc_time_get(uint8_t *regs, struct tm *tm)
+rtc_time_get(const uint8_t *regs, intclk_t *clk)
 {
     /* NVR is in BCD data mode. */
-    tm->tm_sec = RTC_DCB(regs[MRTC_SECONDS]);
-    tm->tm_min = RTC_DCB(regs[MRTC_MINUTES]);
-    tm->tm_hour = RTC_DCB(regs[MRTC_HOURS]);
-    tm->tm_wday = (RTC_DCB(regs[MRTC_WEEKDAY]) - 1);
-    tm->tm_mday = RTC_DCB(regs[MRTC_DAYS]);
-    tm->tm_mon = (RTC_DCB(regs[MRTC_MONTHS]) - 1);
-    tm->tm_year = RTC_DCB(regs[MRTC_YEARS]);
+    clk->tm_sec = RTC_DCB(regs[MRTC_SECONDS]);
+    clk->tm_min = RTC_DCB(regs[MRTC_MINUTES]);
+    clk->tm_hour = RTC_DCB(regs[MRTC_HOURS]);
+    clk->tm_wday = (RTC_DCB(regs[MRTC_WEEKDAY]) - 1);
+    clk->tm_mday = RTC_DCB(regs[MRTC_DAYS]);
+    clk->tm_mon = (RTC_DCB(regs[MRTC_MONTHS]) - 1);
+    clk->tm_year = RTC_DCB(regs[MRTC_YEARS]);
 #ifdef MRTC_CENTURY
-    tm->tm_year += (RTC_DCB(regs[MRTC_CENTURY]) * 100) - 1900;
+    clk->tm_year += (RTC_DCB(regs[MRTC_CENTURY]) * 100) - 1900;
 #endif
 }
 
 
 /* Set the current NVR time. */
 static void
-rtc_time_set(uint8_t *regs, const struct tm *tm)
+rtc_time_set(uint8_t *regs, const intclk_t *clk)
 {
     /* NVR is in BCD data mode. */
-    regs[MRTC_SECONDS] = RTC_BCD(tm->tm_sec);
-    regs[MRTC_MINUTES] = RTC_BCD(tm->tm_min);
-    regs[MRTC_HOURS] = RTC_BCD(tm->tm_hour);
-    regs[MRTC_WEEKDAY] = RTC_BCD(tm->tm_wday + 1);
-    regs[MRTC_DAYS] = RTC_BCD(tm->tm_mday);
-    regs[MRTC_MONTHS] = RTC_BCD(tm->tm_mon + 1);
-    regs[MRTC_YEARS] = RTC_BCD(tm->tm_year % 100);
+    regs[MRTC_SECONDS] = RTC_BCD(clk->tm_sec);
+    regs[MRTC_MINUTES] = RTC_BCD(clk->tm_min);
+    regs[MRTC_HOURS] = RTC_BCD(clk->tm_hour);
+    regs[MRTC_WEEKDAY] = RTC_BCD(clk->tm_wday + 1);
+    regs[MRTC_DAYS] = RTC_BCD(clk->tm_mday);
+    regs[MRTC_MONTHS] = RTC_BCD(clk->tm_mon + 1);
+    regs[MRTC_YEARS] = RTC_BCD(clk->tm_year % 100);
 #ifdef MRTC_CENTURY
-    regs[MRTC_CENTURY] = RTC_BCD((tm->tm_year+1900) / 100);
+    regs[MRTC_CENTURY] = RTC_BCD((clk->tm_year+1900) / 100);
 #endif
 }
 
@@ -254,17 +254,17 @@ rtc_time_set(uint8_t *regs, const struct tm *tm)
 static void
 rtc_start(nvr_t *nvr)
 {
-    struct tm tm;
+    intclk_t clk;
 
     /* Initialize the internal and chip times. */
     if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Use the internal clock's time. */
-	nvr_time_get(&tm);
-	rtc_time_set(nvr->regs, &tm);
+	nvr_time_get(nvr, &clk);
+	rtc_time_set(nvr->regs, &clk);
     } else {
 	/* Set the internal clock from the chip time. */
-	rtc_time_get(nvr->regs, &tm);
-	nvr_time_set(&tm);
+	rtc_time_get(nvr->regs, &clk);
+	nvr_time_set(&clk, nvr);
     }
 }
 

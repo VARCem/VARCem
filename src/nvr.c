@@ -8,11 +8,11 @@
  *
  *		Implement a generic NVRAM/CMOS/RTC device.
  *
- * Version:	@(#)nvr.c	1.0.21	2019/05/17
+ * Version:	@(#)nvr.c	1.0.23	2020/10/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -64,7 +64,6 @@ int	nvr_dosave;		/* NVR is dirty, needs saved */
 static const int8_t days_in_month[12] = {
     31,28,31,30,31,30,31,31,30,31,30,31
 };
-static struct tm intclk;
 static nvr_t	*saved_nvr = NULL;
 
 
@@ -93,21 +92,21 @@ nvr_get_days(int month, int year)
 
 /* One more second has passed, update the internal clock. */
 static void
-rtc_tick(void)
+rtc_tick(nvr_t *nvr)
 {
     /* Ping the internal clock. */
-    if (++intclk.tm_sec == 60) {
-	intclk.tm_sec = 0;
-	if (++intclk.tm_min == 60) {
-		intclk.tm_min = 0;
-    		if (++intclk.tm_hour == 24) {
-			intclk.tm_hour = 0;
-    			if (++intclk.tm_mday == (nvr_get_days(intclk.tm_mon,
-							intclk.tm_year) + 1)) {
-				intclk.tm_mday = 1;
-    				if (++intclk.tm_mon == 13) {
-					intclk.tm_mon = 1;
-					intclk.tm_year++;
+    if (++nvr->clk.tm_sec == 60) {
+	nvr->clk.tm_sec = 0;
+	if (++nvr->clk.tm_min == 60) {
+		nvr->clk.tm_min = 0;
+    		if (++nvr->clk.tm_hour == 24) {
+			nvr->clk.tm_hour = 0;
+    			if (++nvr->clk.tm_mday == (nvr_get_days(nvr->clk.tm_mon,
+							nvr->clk.tm_year) + 1)) {
+				nvr->clk.tm_mday = 1;
+    				if (++nvr->clk.tm_mon == 13) {
+					nvr->clk.tm_mon = 1;
+					nvr->clk.tm_year++;
 				}
 			}
 		}
@@ -124,7 +123,7 @@ onesec_timer(priv_t priv)
 
     if (++nvr->onesec_cnt >= 100) {
 	/* Update the internal clock. */
-	rtc_tick();
+	rtc_tick(nvr);
 
 	/* Update the RTC device if needed. */
 	if (nvr->tick != NULL)
@@ -133,7 +132,7 @@ onesec_timer(priv_t priv)
 	nvr->onesec_cnt = 0;
     }
 
-    nvr->onesec_time += (int64_t)(10000 * TIMER_USEC);
+    nvr->onesec_time += (tmrval_t)(TIMER_USEC * 10000);
 }
 
 
@@ -197,7 +196,6 @@ nvr_init(nvr_t *nvr)
     nvr->fn = (const wchar_t *)sp;
 
     /* Initialize the internal clock as needed. */
-    memset(&intclk, 0x00, sizeof(intclk));
     if (config.time_sync != TIME_SYNC_DISABLED) {
 	/* Get the current time of day, and convert to local time. */
 	(void)time(&now);
@@ -208,11 +206,11 @@ nvr_init(nvr_t *nvr)
 		tm = localtime(&now);
 
 	/* Set the internal clock. */
-	nvr_time_set(tm);
+	nvr_time_set(tm, nvr);
     } else {
 	/* Reset the internal clock to 1980/01/01 00:00. */
-	intclk.tm_mon = 1;
-	intclk.tm_year = 1980;
+	nvr->clk.tm_mon = 1;
+	nvr->clk.tm_year = 1980;
     }
 
     /* Set up our timer. */
@@ -226,6 +224,21 @@ nvr_init(nvr_t *nvr)
 
     /* Try to load the saved data. */
     (void)nvr_load();
+}
+
+
+/* Close an NVR, releasing its memory. */
+void
+nvr_close(nvr_t *nvr)
+{
+    wchar_t *str = (wchar_t *)nvr->fn;
+
+    if (str != NULL)
+        free(str);
+
+    free(nvr);
+
+    saved_nvr = NULL;
 }
 
 
@@ -328,36 +341,36 @@ nvr_save(void)
 
 /* Get current time from internal clock. */
 void
-nvr_time_get(struct tm *tm)
+nvr_time_get(const nvr_t *nvr, intclk_t *clk)
 {
     uint8_t dom, mon, sum, wd;
     uint16_t cent, yr;
 
-    tm->tm_sec = intclk.tm_sec;
-    tm->tm_min = intclk.tm_min;
-    tm->tm_hour = intclk.tm_hour;
-     dom = intclk.tm_mday;
-     mon = intclk.tm_mon;
-     yr = (intclk.tm_year % 100);
-     cent = ((intclk.tm_year - yr) / 100) % 4;
+    clk->tm_sec = nvr->clk.tm_sec;
+    clk->tm_min = nvr->clk.tm_min;
+    clk->tm_hour = nvr->clk.tm_hour;
+     dom = nvr->clk.tm_mday;
+     mon = nvr->clk.tm_mon;
+     yr = (nvr->clk.tm_year % 100);
+     cent = ((nvr->clk.tm_year - yr) / 100) % 4;
      sum = dom+mon+yr+cent;
      wd = ((sum + 6) % 7);
-    tm->tm_wday = wd;
-    tm->tm_mday = intclk.tm_mday;
-    tm->tm_mon = (intclk.tm_mon - 1);
-    tm->tm_year = (intclk.tm_year - 1900);
+    clk->tm_wday = wd;
+    clk->tm_mday = nvr->clk.tm_mday;
+    clk->tm_mon = (nvr->clk.tm_mon - 1);
+    clk->tm_year = (nvr->clk.tm_year - 1900);
 }
 
 
 /* Set internal clock time. */
 void
-nvr_time_set(struct tm *tm)
+nvr_time_set(const intclk_t *clk, nvr_t *nvr)
 {
-    intclk.tm_sec = tm->tm_sec;
-    intclk.tm_min = tm->tm_min;
-    intclk.tm_hour = tm->tm_hour;
-    intclk.tm_mday = tm->tm_mday;
-    intclk.tm_wday = tm->tm_wday;
-    intclk.tm_mon = (tm->tm_mon + 1);
-    intclk.tm_year = (tm->tm_year + 1900);
+    nvr->clk.tm_sec = clk->tm_sec;
+    nvr->clk.tm_min = clk->tm_min;
+    nvr->clk.tm_hour = clk->tm_hour;
+    nvr->clk.tm_mday = clk->tm_mday;
+    nvr->clk.tm_wday = clk->tm_wday;
+    nvr->clk.tm_mon = (clk->tm_mon + 1);
+    nvr->clk.tm_year = (clk->tm_year + 1900);
 }
