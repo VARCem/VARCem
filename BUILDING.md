@@ -3,7 +3,7 @@
 
 #### Fred N. van Kempen, <decwiz@yahoo.com>
 
-#### Last Updated: 07/15/2020
+#### Last Updated: 10/20/2020
 
 
 These instructions guide you in building the **VARCem** emulator from
@@ -20,16 +20,28 @@ by downloading a ZIP archive from GIT, or from the website) and
 unpack them (if needed) into a folder:
 
   `D:`
-  
+
   `cd \VARCem`
-  
+
   `mkdir src`
-  
+
   `cd src`
-  
-  `unzip varcem-1.7.3.zip`
+
+  `unzip varcem-1.7.4.zip`
 
 which puts the source tree into the *D:\VARCem\src* folder.
+
+You will also need the **externals** package, which is a single archive containing all the files from other libraries and packages the emulator depends on. You can find this package on the Downloads page of the website, near the bottom of the page. The ZIP file is intended for Windows systems, and the tar.gz file is for UNIX and Linux systems (although these, too, can use the ZIP file.) The contents are the same.
+
+  `D:`
+
+  `cd \VARCem`
+
+  `unzip externals.zip`
+
+The default placement of this package is in the folder "external" at the same level as where the "src" folder is located. This may seem odd, but it was done to allow for more than one "src" folder, for example, one for a version that you are working on.
+
+With the default placement, all is ready.  If you used a different path for the package, make sure to update the EXT_PATH variable in the Makefile.
 
 For the Windows environment, two methods of compiling these sources are currently possible:
 
@@ -49,7 +61,7 @@ fairly easy process.
 
 For those who prefer to use **command-line tools** to process a *Makefile* (the author is such an oddity), you can also open up a **Visual Studio Command Prompt** from the Start Menu, and type the command:
 
-  `d:`
+  `D:`
 
   `cd \VARCem\src`
 
