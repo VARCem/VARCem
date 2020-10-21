@@ -58,7 +58,7 @@ common_init(const device_t *info, void *arg)
 
     device_add(&sl82c460_device);
 
-    m_at_common_ide_init();
+    m_at_common_init();
 
     device_add(&fdc_at_device);
 
