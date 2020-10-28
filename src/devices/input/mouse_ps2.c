@@ -8,13 +8,13 @@
  *
  *		Implementation of PS/2 series Mouse devices.
  *
- * Version:	@(#)mouse_ps2.c	1.0.10	2019/04/11
+ * Version:	@(#)mouse_ps2.c	1.0.11	2020/11/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -135,6 +135,26 @@ ps2_write(uint8_t val, void *priv)
 			keyboard_at_adddata_mouse(dev->resolution);
 			keyboard_at_adddata_mouse(dev->sample_rate);
 			break;
+
+		case 0xeb: /*Get mouse data*/
+            keyboard_at_adddata_mouse(0xfa);
+            temp = 0;
+            if (dev->x < 0)
+             	temp |= 0x10;
+            if (dev->y < 0)
+            	temp |= 0x20;
+            if (mouse_buttons & 1)
+            	temp |= 1;
+            if (mouse_buttons & 2)
+            	temp |= 2;
+            if ((mouse_buttons & 4) && (dev->flags & FLAG_INTELLI))
+            	temp |= 4;
+            keyboard_at_adddata_mouse(temp);
+            keyboard_at_adddata_mouse(dev->x & 0xff);
+            keyboard_at_adddata_mouse(dev->y & 0xff);
+            if (dev->flags & FLAG_INTELLI)
+            	keyboard_at_adddata_mouse(dev->z);
+            break;
 
 		case 0xf2:	/* read ID */
 			keyboard_at_adddata_mouse(0xfa);
