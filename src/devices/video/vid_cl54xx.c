@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.35	2020/09/28
+ * Version:	@(#)vid_cl54xx.c	1.0.36	2020/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -208,9 +208,6 @@ typedef struct {
 
     uint8_t		pci_regs[256];
     uint8_t		int_line;
-
-    /* FIXME: move to SVGA?  --FvK */
-    uint8_t		fc;			/* Feature Connector */
 
     int			card;
 
@@ -543,57 +540,12 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
     svga_t *svga = &dev->svga;
     uint8_t o, indx, old;
     uint32_t o32, mask;
-    int c;
 
     if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) &&
 	!(svga->miscout & 1)) 
 	addr ^= 0x60;
 
     switch (addr) {
-	case 0x03ba:
-	case 0x03da:
-		dev->fc = val;		//FIXME: move to SVGA? --FvK
-		break;
-
-	case 0x03c0:
-	case 0x03c1:
-		if (! svga->attrff) {
-			svga->attraddr = val & 0x3f;
-			if ((val & 0x20) != svga->attr_palette_enable) {
-				svga->fullchange = 3;
-				svga->attr_palette_enable = val & 0x20;
-				svga_recalctimings(svga);
-			}
-		} else {
-			o = svga->attrregs[svga->attraddr & 0x3f];
-			if ((svga->attraddr < 0x20) || (svga->attraddr >= 0x30))
-				svga->attrregs[svga->attraddr & 0x3f] = val;
-			if (svga->attraddr < 0x10) 
-				svga->fullchange = changeframecount;
-			if (svga->attraddr <= 0x10 || svga->attraddr == 0x14) {
-				for (c = 0; c < 16; c++) {
-					if (svga->attrregs[0x10] & 0x80) svga->egapal[c] = (svga->attrregs[c] &  0xf) | ((svga->attrregs[0x14] & 0xf) << 4);
-					else                             svga->egapal[c] = (svga->attrregs[c] & 0x3f) | ((svga->attrregs[0x14] & 0xc) << 4);
-				}
-			}
-
-			/* Recalculate timings on change of attribute register 0x11 (overscan border color) too. */
-			if (svga->attraddr == 0x10) {
-				if (o != val)
-					svga_recalctimings(svga);
-			} else if (svga->attraddr == 0x11) {
-				if (! (svga->seqregs[0x12] & 0x80)) {
-					svga->overscan_color = svga->pallook[svga->attrregs[0x11]];
-					if (o != val)  svga_recalctimings(svga);
-				}
-			} else if (svga->attraddr == 0x12) {
-				if ((val & 0xf) != svga->plane_mask)
-					svga->fullchange = changeframecount;
-				svga->plane_mask = val & 0xf;
-			}
-		}
-		svga->attrff ^= 1;
-                return;
 
 	case 0x03c4:
 		svga->seqaddr = val;
@@ -681,7 +633,6 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 					        svga->hwcursor.xsize = svga->hwcursor.ysize = (val & CIRRUS_CURSOR_LARGE) ? 64 : 32;
 					else
 						svga->hwcursor.xsize = 32;
-					svga->hwcursor.yoff = (svga->hwcursor.ysize == 32) ? 32 : 0;
 					if ((! is_5426(svga)) || (svga->crtc[0x1b] & 2))
 						mask = svga->vram_display_mask;
 					else
@@ -1150,9 +1101,6 @@ gd54xx_in(uint16_t addr, priv_t priv)
                 }
                 return 0xff;
 	
-	case 0x03ca:
-		return dev->fc;		//FIXME: move to SVGA? --FvK
-		
 	case 0x03ce:
 		return svga->gdcaddr & 0x3f;
 
@@ -3268,8 +3216,7 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03c0, 32,
 		  gd54xx_in,NULL,NULL, gd54xx_out,NULL,NULL, (priv_t)dev);
 
-    svga->hwcursor.yoff = 32;
-    svga->hwcursor.xoff = 0;
+    svga->hwcursor.yoff = svga->hwcursor.xoff = 0;
 
     if (id >= CIRRUS_ID_CLGD5420) {
 	dev->vclk_n[0] = 0x4a;

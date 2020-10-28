@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.21	2020/02/07
+ * Version:	@(#)vid_s3.c	1.0.22	2020/11/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1582,7 +1582,7 @@ void s3_recalctimings(svga_t *svga)
 	if (svga->crtc[0x5e] & 0x40) svga->split       += 0x400;
 	if (svga->crtc[0x51] & 0x30)      svga->rowoffset  += (svga->crtc[0x51] & 0x30) << 4;
 	else if (svga->crtc[0x43] & 0x04) svga->rowoffset  += 0x100;
-	if (!svga->rowoffset) svga->rowoffset = 256;
+	//if (!svga->rowoffset) svga->rowoffset = 256;
 
 	if (s3->chip == S3_VISION964 || s3->chip == S3_86C928) {
 		svga->interlace = ramdac->cr2 & 0x08;
@@ -3350,6 +3350,8 @@ s3_init(const device_t *info, UNUSED(void *parent))
 		svga_init(&s3->svga, s3, vram_size, s3_recalctimings,
 			  s3_in, s3_out, s3_hwcursor_draw, NULL);
 
+	s3->svga.hwcursor.ysize = 64;
+	
 	if (chip == S3_VISION964)
 		svga->dac_hwcursor_draw = bt48x_hwcursor_draw;
 

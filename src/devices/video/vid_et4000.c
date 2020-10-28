@@ -8,14 +8,14 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.18	2019/05/17
+ * Version:	@(#)vid_et4000.c	1.0.10	2020/11/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		GreatPsycho, <greatpsycho@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -411,7 +411,6 @@ et4000_recalctimings(svga_t *svga)
     if (svga->crtc[0x35] & 4)    svga->dispend += 0x400;
     if (svga->crtc[0x35] & 8)    svga->vsyncstart += 0x400;
     if (svga->crtc[0x35] & 0x10) svga->split += 0x400;
-    if (!svga->rowoffset)        svga->rowoffset = 0x100;
     if (svga->crtc[0x3f] & 1)    svga->htotal += 256;
     if (svga->attrregs[0x16] & 0x20) svga->hdisp <<= 1;
 
