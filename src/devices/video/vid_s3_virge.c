@@ -8,13 +8,13 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.20	2019/05/17
+ * Version:	@(#)vid_s3_virge.c	1.0.21	2020/11/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -3892,6 +3892,8 @@ s3_virge_init(const device_t *info, UNUSED(void *parent))
               s3_virge_hwcursor_draw,
               s3_virge_overlay_draw);
     virge->svga.vblank_start = s3_virge_vblank_start;
+
+    virge->svga.hwcursor.ysize = 64;
 
     virge->pci = !!(info->flags & DEVICE_PCI);
 

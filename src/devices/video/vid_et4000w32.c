@@ -12,7 +12,7 @@
  *
  * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
  *
- * Version:	@(#)vid_et4000w32.c	1.0.23	2019/05/17
+ * Version:	@(#)vid_et4000w32.c	1.0.24	2020/11/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1253,6 +1253,8 @@ et4000w32p_init(const device_t *info, UNUSED(void *parent))
               et4000w32p_in, et4000w32p_out,
               et4000w32p_hwcursor_draw,
               NULL);
+
+    et4000->svga.hwcursor.ysize = 64;
 
     et4000->svga.ramdac = device_add(&stg_ramdac_device);
 

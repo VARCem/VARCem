@@ -8,13 +8,13 @@
  *
  *		ATi Mach64 graphics card emulation.
  *
- * Version:	@(#)vid_ati_mach64.c	1.0.21	2019/05/17
+ * Version:	@(#)vid_ati_mach64.c	1.0.22	2020/11/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -3333,6 +3333,8 @@ mach64_common_init(const device_t *info)
         mem_map_disable(&mach64->mmio_mapping);
 
         mach64_io_set(mach64);
+
+        mach64->svga.dac_hwcursor.ysize = 64;
 
 	if (info->flags & DEVICE_PCI)
 	{

@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.25	2020/01/20
+ * Version:	@(#)vid_svga.c	1.0.26	2020/10/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,10 +94,15 @@ svga_out(uint16_t addr, uint8_t val, priv_t priv)
     int c;
 
     switch (addr) {
+	case 0x3ba:
+	case 0x3da:
+		svga->fc = val;
+		break;
+	
 	case 0x3c0:
 	case 0x3c1:
 		if (!svga->attrff) {
-			svga->attraddr = val & 31;
+			svga->attraddr = val & 0x1f;
 			if ((val & 0x20) != svga->attr_palette_enable) {
 				svga->fullchange = 3;
 				svga->attr_palette_enable = val & 0x20;
@@ -135,7 +140,7 @@ svga_out(uint16_t addr, uint8_t val, priv_t priv)
 					svga->fullchange = changeframecount;
 				svga->plane_mask = val & 0xf;
 			}
-		}
+		} 
 		svga->attrff ^= 1;
 		break;
 
@@ -213,7 +218,7 @@ svga_out(uint16_t addr, uint8_t val, priv_t priv)
 				svga->dac_pos++; 
 				break;
 
-                        case 2:
+            case 2:
 				indx = svga->dac_addr & 255;
 				svga->vgapal[indx].r = svga->dac_r;
 				svga->vgapal[indx].g = svga->dac_g;
@@ -360,6 +365,9 @@ svga_in(uint16_t addr, priv_t priv)
 					ret = svga->vgapal[indx].b & 0x3f;
 				break;
 		}
+		break;
+	case 0x3ca:
+		ret = svga->fc;
 		break;
 	case 0x3cc:
 		ret = svga->miscout;
@@ -589,24 +597,24 @@ svga_poll(priv_t priv)
 
     if (!svga->linepos) {
 	if (svga->displine == svga->hwcursor_latch.y && svga->hwcursor_latch.ena) {
-		svga->hwcursor_on = 64 - svga->hwcursor_latch.yoff;
+		svga->hwcursor_on = svga->hwcursor.ysize - svga->hwcursor_latch.yoff;
 		svga->hwcursor_oddeven = 0;
 	}
 
 	if (svga->displine == (svga->hwcursor_latch.y + 1) && svga->hwcursor_latch.ena &&
 			       svga->interlace) {
-		svga->hwcursor_on = 64 - (svga->hwcursor_latch.yoff + 1);
+		svga->hwcursor_on = svga->hwcursor.ysize - (svga->hwcursor_latch.yoff + 1);
 		svga->hwcursor_oddeven = 1;
 	}
 
 	if (svga->displine == svga->dac_hwcursor_latch.y && svga->dac_hwcursor_latch.ena) {
-		svga->dac_hwcursor_on = 64 - svga->dac_hwcursor_latch.yoff;
+		svga->dac_hwcursor_on = svga->hwcursor.ysize - svga->dac_hwcursor_latch.yoff;
 		svga->dac_hwcursor_oddeven = 0;
 	}
 
 	if (svga->displine == (svga->dac_hwcursor_latch.y + 1) && svga->dac_hwcursor_latch.ena &&
 			       svga->interlace) {
-		svga->dac_hwcursor_on = 64 - (svga->dac_hwcursor_latch.yoff + 1);
+		svga->dac_hwcursor_on = svga->hwcursor.ysize - (svga->dac_hwcursor_latch.yoff + 1);
 		svga->dac_hwcursor_oddeven = 1;
 	}
 	if (svga->displine == svga->overlay_latch.y && svga->overlay_latch.ena) {
@@ -709,7 +717,14 @@ svga_poll(priv_t priv)
 	svga->vc &= 2047;
 
 	if (svga->vc == svga->split) {
-		svga->ma = svga->maback = 0;
+
+		if (svga->interlace && svga->oddeven)
+				svga->ma = svga->maback = (svga->rowoffset << 1) + ((svga->crtc[5] & 0x60) >> 5);
+			else
+				svga->ma = svga->maback = ((svga->crtc[5] & 0x60) >> 5);
+			svga->ma = (svga->ma << 2);
+			svga->maback = (svga->maback << 2);
+
 		svga->sc = 0;
 		if (svga->attrregs[0x10] & 0x20) 
 			svga->scrollcache = 0;
@@ -747,7 +762,7 @@ svga_poll(priv_t priv)
 		wx = x;
 		wy = svga->lastline - svga->firstline;
 
-		if (!svga->override)
+		if (!svga->override && (wx > 0) && (wy > 0))
 			svga_doblit(svga->firstline_draw, svga->lastline_draw + 1, wx, wy, svga);
 
 		svga->firstline = 2000;
@@ -856,10 +871,8 @@ svga_init(svga_t *svga, priv_t priv, int vramsize,
     svga->overlay_draw = overlay_draw;
 
     svga->hwcursor.xsize = svga->hwcursor.ysize = 32;
-    svga->hwcursor.yoff = 32;
 
     svga->dac_hwcursor.xsize = svga->dac_hwcursor.ysize = 32;
-    svga->dac_hwcursor.yoff = 32;
     mem_map_add(&svga->mapping, 0xa0000, 0x20000,
 		svga_read, svga_readw, svga_readl,
 		svga_write, svga_writew, svga_writel,
@@ -1198,6 +1211,7 @@ svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
     int y_add = (enable_overscan) ? overscan_y : 0;
     int x_add = (enable_overscan) ? 16 : 0;
     int i, j;
+	int xs_temp, ys_temp;
 
     svga->frames++;
 
@@ -1213,14 +1227,18 @@ svga_doblit(int y1, int y2, int wx, int wy, svga_t *svga)
 	return;
     }
 
-    if ((wx != xsize) || ((wy + 1) != ysize) || video_force_resize_get()) {
+    xs_temp = wx;
+    ys_temp = wy + 1;
+    if (xs_temp < 64)
+		xs_temp = 640;
+    if (ys_temp < 32)
+		ys_temp = 200;
+
+    if ((xs_temp != xsize) || (ys_temp != ysize) || video_force_resize_get()) {
 	/* Screen res has changed.. fix up, and let them know. */
-	xsize = wx;
+	xsize = xs_temp;
 	ysize = wy + 1;
-	if (xsize < 64)
-		xsize = 640;
-	if (ysize < 32)
-		ysize = 200;
+	ysize = ys_temp;
 
 	set_screen_size(xsize+x_add,ysize+y_add);
 

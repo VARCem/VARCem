@@ -139,7 +139,7 @@ typedef struct svga_t
 	    plane_mask, writemask,
 	    colourcompare, colournocare,
 	    dac_mask, dac_status,
-	    ksc5601_sbyte_mask;
+	    ksc5601_sbyte_mask, fc;
 
     priv_t	ramdac,
 		clock_gen;
