@@ -109,6 +109,7 @@ extern const device_t	m_amstrad_200;
 extern const device_t	m_amstrad_ppc;
 extern const device_t	m_amstrad_2086;
 extern const device_t	m_amstrad_3086;
+extern const device_t	m_amstrad_5086;
 
 extern const device_t	m_amstrad_mega_sx;
 extern const device_t	m_amstrad_mega_dx;

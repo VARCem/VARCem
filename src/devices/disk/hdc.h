@@ -8,12 +8,12 @@
  *
  *		Definitions for the common disk controller handler.
  *
- * Version:	@(#)hdc.h	1.0.17	2019/05/17
+ * Version:	@(#)hdc.h	1.0.18	2020/11/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -70,6 +70,7 @@ extern const device_t	esdi_ps2_device;		/* esdi_mca */
 extern const device_t	xta_wdxt150_device;		/* xta_wdxt150 */
 extern const device_t	xta_hd20_device;		/* EuroPC internal */
 extern const device_t	xta_t1200_device;		/* T1200 internal */
+extern const device_t	xta_pc5086_device;		/* T1200 internal */
 
 extern const device_t	xtide_device;			/* xtide_xt */
 extern const device_t	xtide_acculogic_device;		/* xtide_ps2 */

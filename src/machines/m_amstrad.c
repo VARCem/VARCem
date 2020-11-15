@@ -8,20 +8,20 @@
  *
  *		Emulation of the Amstrad series of PC's: PC1512, PPC512,
  *		PC1640 and PC200, including their keyboard/mouse devices,
- *		as well as the PC2086 and PC3086 systems.
+ *		as well as the PC2086, PC3086 and PC5086 systems.
  *
  * **NOTE**	The PC200 still has the weirdness that if Television mode
  *		is selected, it will ignore that, and select CGA mode in
  *		80 columns. To be fixed...
  *		Also, the DDM bits stuff needs to be verified.
  *
- * Version:	@(#)m_amstrad.c	1.0.29	2019/05/13
+ * Version:	@(#)m_amstrad.c	1.0.30	2020/11/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *              John Elliott, <jce@seasip.info>
  *
- *              Copyright 2017-2019 Fred N. van Kempen.
+ *              Copyright 2017-2020 Fred N. van Kempen.
  *              Copyright 2016-2018 Miran Grca.
  *              Copyright 2017-2018 John Elliott.
  *
@@ -59,6 +59,7 @@
 #include "../device.h"
 #include "../machines/machine.h"
 #include "../nvr.h"
+#include "../devices/chipsets/cs82c100.h"
 #include "../devices/system/nmi.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
@@ -68,6 +69,8 @@
 #include "../devices/input/mouse.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../devices/disk/hdc.h"
+#include "../devices/sio/sio.h"
 #include "../devices/sound/sound.h"
 #include "../devices/sound/snd_speaker.h"
 #include "../devices/video/video.h"
@@ -601,6 +604,18 @@ amstrad_init(const device_t *info, void *arg)
 		}
 		device_add(&fdc_at_actlow_device);
 		break;
+
+	case 7:		/* PC 5086 */
+		//if (config.video_card == VID_INTERNAL) {
+			//device_add(&ct82c451_pc5086_device);
+			//video_inform(VID_TYPE_SPEC, &ct82c451_timing);
+		//}
+		if (config.hdc_type == HDC_INTERNAL)
+			(void)device_add(&xta_pc5086_device);
+		device_add(&cs82c100_device);
+		device_add(&f82c710_device);
+		break;
+
     }
     config.parallel_enabled[0] = 1;
 
@@ -614,7 +629,7 @@ amstrad_init(const device_t *info, void *arg)
     keyboard_send = kbd_adddata_ex;
     keyboard_scan = 1;
 
-    /* Initialize the (custom) mouse intercace if needed. */
+    /* Initialize the (custom) mouse interface if needed. */
     if (config.mouse_type == MOUSE_INTERNAL) {
 	io_sethandler(0x0078, 1, mse_read,NULL,NULL, mse_write,NULL,NULL, dev);
 	io_sethandler(0x007a, 1, mse_read,NULL,NULL, mse_write,NULL,NULL, dev);
@@ -1093,5 +1108,23 @@ const device_t m_amstrad_3086 = {
     amstrad_init, amstrad_close, NULL,
     NULL, NULL, NULL,
     &pc3086_info,
+    NULL
+};
+
+static const machine_t pc5086_info = {
+    MACHINE_ISA | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO ,
+    0,
+    640, 640, 0, 64, -1,
+    {{"Intel",cpus_8086}}
+};
+
+const device_t m_amstrad_5086 = {
+    "Amstrad 5086",
+    DEVICE_ROOT,
+    7,
+    L"amstrad/pc5086",
+    amstrad_init, amstrad_close, NULL,
+    NULL, NULL, NULL,
+    &pc5086_info,
     NULL
 };
