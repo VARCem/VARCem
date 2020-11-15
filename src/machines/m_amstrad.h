@@ -8,11 +8,11 @@
  *
  *		Definitions for the Amstrad machines.
  *
- * Version:	@(#)m_amstrad.h	1.0.3	2019/05/13
+ * Version:	@(#)m_amstrad.h	1.0.4	2020/11/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2019 Fred N. van Kempen.
+ *		Copyright 2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -63,6 +63,7 @@ extern const device_t	m_amstrad_200;
 extern const device_t	m_amstrad_ppc;
 extern const device_t	m_amstrad_2086;
 extern const device_t	m_amstrad_3086;
+extern const device_t	m_amstrad_5086;
 extern const device_t	m_amstrad_mega;
 #endif
 

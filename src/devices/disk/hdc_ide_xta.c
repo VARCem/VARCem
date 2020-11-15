@@ -46,13 +46,14 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.16	2019/05/17
+ * Version:	@(#)hdc_ide_xta.c	1.0.17	2020/11/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Based on my earlier HD20 driver for the EuroPC.
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
+ *				  2020		Altheos.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -111,7 +112,7 @@
 #define XTA_NUM		2			/* #supported drives */
 
 #define WD_BIOS_FILE	L"disk/xta/idexywd2.bin"
-
+#define SEAGATE_BIOS_FILE	L"machines/amstrad/pc5086/c800.bin"
 
 enum {
     STATE_IDLE = 0,
@@ -1078,6 +1079,15 @@ xta_init(const device_t *info, UNUSED(void *parent))
 		dev->rom_addr = 0xc8000;
 		dev->spt = 34;
 		break;
+
+	case 3:		/* Amstrad PC5086 */
+		dev->name = "PC5086-HD";
+		dev->base = 0x0320;
+		dev->irq = 5;
+		dev->dma = 3;
+		dev->rom_addr = 0xc8000;
+		dev->spt = 17;
+		break;
     }
 
     INFO("%s: initializing (I/O=%04X, IRQ=%i, DMA=%i",
@@ -1208,6 +1218,16 @@ const device_t xta_t1200_device = {
     DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 2,
     NULL,
+    xta_init, xta_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t xta_pc5086_device = {
+    "Amstrad PC5086 Fixed Disk Controller",
+    DEVICE_ISA,
+    (HDD_BUS_IDE << 8) | 3,
+    SEAGATE_BIOS_FILE,
     xta_init, xta_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

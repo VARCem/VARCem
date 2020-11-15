@@ -98,6 +98,7 @@ static const struct {
     { "[8086] Amstrad PC1640",			"amstrad_pc1640",	&m_amstrad_1640		},
     { "[8086] Amstrad PC2086",			"amstrad_pc2086",	&m_amstrad_2086		},
     { "[8086] Amstrad PC3086",			"amstrad_pc3086",	&m_amstrad_3086		},
+    { "[8086] Amstrad PC5086",			"amstrad_pc5086",	&m_amstrad_5086		},
     { "[8086] Amstrad PC20(0)",			"amstrad_pc200",	&m_amstrad_200		},
     { "[8086] Amstrad PPC512/640",		"amstrad_ppc512",	&m_amstrad_ppc		},
     { "[8086] AT&T PC6300",			"att_6300",		&m_att_6300		},
