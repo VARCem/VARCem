@@ -11,7 +11,7 @@
  *		This is intended to be used by another SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.26	2020/10/23
+ * Version:	@(#)vid_svga.c	1.0.27	2020/11/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -471,7 +471,7 @@ svga_recalctimings(svga_t *svga)
 	svga->vblankstart |= 0x200;
     svga->vblankstart++;
 
-    svga->hdisp = svga->crtc[1];
+    svga->hdisp = svga->crtc[1] - ((svga->crtc[5] & 0x60) >> 5);
     svga->hdisp++;
 
     svga->htotal = svga->crtc[0];
@@ -485,7 +485,8 @@ svga_recalctimings(svga_t *svga)
 
     svga->interlace = 0;
 
-    svga->ma_latch = (svga->crtc[0xc] << 8) | svga->crtc[0xd];
+    svga->ma_latch = ((svga->crtc[0xc] << 8) | svga->crtc[0xd]) + ((svga->crtc[8] & 0x60) >> 5);
+	svga->ca_adj = 0;
 
     svga->hdisp_time = svga->hdisp;
     svga->render = svga_render_blank;
@@ -777,9 +778,9 @@ svga_poll(priv_t priv)
 		svga->vslines = 0;
 
 		if (svga->interlace && svga->oddeven)
-			svga->ma = svga->maback = svga->ma_latch + (svga->rowoffset << 1);
+			svga->ma = svga->maback = svga->ma_latch + (svga->rowoffset << 1) + ((svga->crtc[5] & 0x60) >> 5);
 		else
-			svga->ma = svga->maback = svga->ma_latch;
+			svga->ma = svga->maback = svga->ma_latch + ((svga->crtc[5] & 0x60) >> 5) + svga->ca_adj;
 		svga->ca = (svga->crtc[0xe] << 8) | svga->crtc[0xf];
 
 		svga->ma <<= 2;

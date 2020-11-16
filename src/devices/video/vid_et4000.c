@@ -8,7 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.10	2020/11/01
+ * Version:	@(#)vid_et4000.c	1.0.11	2020/11/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -445,6 +445,10 @@ et4000_recalctimings(svga_t *svga)
 
     if (dev->type == 2 || dev->type == 3) {
 	if ((svga->render == svga_render_text_80) && ((svga->crtc[0x37] & 0x0A) == 0x0A)) {
+		if(dev->port_32cb_val & 0x80) {
+            svga->ma_latch -= 2;
+            svga->ca_adj = -2;
+        }
 		if ((dev->port_32cb_val & 0xB4) == ((svga->crtc[0x37] & 3) == 2 ? 0xB4 : 0xB0)) {
 			svga->render = svga_render_text_80_ksc5601;
 		}
