@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.10	2020/01/20
+ * Version:	@(#)vid_svga.h	1.0.11	2020/11/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,7 +98,8 @@ typedef struct svga_t
 	     write_bank, read_bank,
 	     extra_banks[2],
 	     banked_mask,
-	     ca, overscan_color,
+	     ca, ca_adj, 
+		 overscan_color,
 	     *map8, pallook[256];
 
     latch_t latch;
