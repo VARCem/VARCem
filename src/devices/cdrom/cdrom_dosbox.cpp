@@ -15,7 +15,7 @@
  * **NOTE**	This code will very soon be replaced with a C variant, so
  *		no more changes will be done.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.15	2019/05/17
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.16	2020/11/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -179,7 +179,7 @@ CDROM_Interface_Image::GetAudioTracks(int& stTrack, int& end, TMSF& leadOut)
 {
     stTrack = 1;
     end = (int)(tracks.size() - 1);
-    FRAMES_TO_MSF(tracks[tracks.size() - 1].start + 150, &leadOut.min, &leadOut.sec, &leadOut.fr);
+    FRAMES_TO_MSF(tracks[tracks.size() - 1].start, &leadOut.min, &leadOut.sec, &leadOut.fr);
 
     return true;
 }
@@ -380,6 +380,7 @@ CDROM_Interface_Image::IsoLoadFile(const wchar_t *filename)
     track.file = new BinaryFile(filename, error);
     if (error) {
 	delete track.file;
+    track.file = NULL;
 	return false;
     }
     track.number = 1;
