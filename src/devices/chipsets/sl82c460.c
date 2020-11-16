@@ -11,10 +11,9 @@
  * Version:	@(#)sl82c460.c	1.0.2	2020/10/07
  *
  * Authors:
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *      Altheos
  *
- *		Copyright 2020 Sarah Walker, Altheos.
+ *		Copyright 2020 Altheos.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,26 +53,6 @@ typedef struct {
     int		reg_idx;
     uint8_t	regs[256];
 } sl82c460_t;
-
-#ifdef _LOGGING
-int	sl_do_log = ENABLE_SL_LOG;
-#endif
-
-#ifdef _LOGGING
-void
-sl82c460_log(int level, const char *fmt, ...)
-{
-# ifdef ENABLE_SL_LOG
-    va_list ap;
-
-    if (sl_do_log >= level) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
-    }
-# endif
-}
-#endif
 
 static void sl82c460_shadow_set(uint32_t base, uint32_t size, int state)
 {
