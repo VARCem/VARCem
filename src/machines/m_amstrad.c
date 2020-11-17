@@ -610,10 +610,14 @@ amstrad_init(const device_t *info, void *arg)
 			//device_add(&ct82c451_pc5086_device);
 			//video_inform(VID_TYPE_SPEC, &ct82c451_timing);
 		//}
-		if (config.hdc_type == HDC_INTERNAL)
+		/* Enable the builtin FDC. */
+		//device_add(&fdc_at_actlow_device);
+		/* Enable the builtin HDC. Fix Me : Check if it should be tied to chipset */
+		if (config.hdc_type == HDC_INTERNAL) {
 			(void)device_add(&xta_pc5086_device);
+		}
 		device_add(&cs82c100_device);
-		device_add(&f82c710_device);
+		device_add(&f82c710_device);		
 		break;
 
     }
