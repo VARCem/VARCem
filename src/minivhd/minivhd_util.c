@@ -9,12 +9,14 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "libxml2_encoding.h"
 #include "minivhd_internal.h"
 #include "minivhd_util.h"
 
 const char MVHD_CONECTIX_COOKIE[] = "conectix";
-const char MVHD_CREATOR[] = "VARC";
+const char MVHD_CREATOR[] = "pcem";
 const char MVHD_CREATOR_HOST_OS[] = "Wi2k";
 const char MVHD_CXSPARSE_COOKIE[] = "cxsparse";
 
@@ -66,14 +68,14 @@ uint32_t mvhd_to_be32(uint32_t val) {
 uint64_t mvhd_to_be64(uint64_t val) {
     uint64_t ret = 0;
     uint8_t *tmp = (uint8_t*)&ret;
-    tmp[0] = (val & 0xff00000000000000) >> 56;
-    tmp[1] = (val & 0x00ff000000000000) >> 48;
-    tmp[2] = (val & 0x0000ff0000000000) >> 40;
-    tmp[3] = (val & 0x000000ff00000000) >> 32;
-    tmp[4] = (val & 0x00000000ff000000) >> 24;
-    tmp[5] = (val & 0x0000000000ff0000) >> 16;
-    tmp[6] = (val & 0x000000000000ff00) >> 8;
-    tmp[7] = (val & 0x00000000000000ff) >> 0;
+    tmp[0] = (uint8_t)((val & 0xff00000000000000) >> 56);
+    tmp[1] = (uint8_t)((val & 0x00ff000000000000) >> 48);
+    tmp[2] = (uint8_t)((val & 0x0000ff0000000000) >> 40);
+    tmp[3] = (uint8_t)((val & 0x000000ff00000000) >> 32);
+    tmp[4] = (uint8_t)((val & 0x00000000ff000000) >> 24);
+    tmp[5] = (uint8_t)((val & 0x0000000000ff0000) >> 16);
+    tmp[6] = (uint8_t)((val & 0x000000000000ff00) >> 8);
+    tmp[7] = (uint8_t)((val & 0x00000000000000ff) >> 0);
     return ret;
 }
 
@@ -88,7 +90,7 @@ bool mvhd_is_conectix_str(const void* buffer) {
 void mvhd_generate_uuid(uint8_t* uuid)
 {
     /* We aren't doing crypto here, so using system time as seed should be good enough */
-    srand(time(0));
+    srand((unsigned int)time(0));
     for (int n = 0; n < 16; n++) {
         uuid[n] = rand();
     }
@@ -107,6 +109,15 @@ uint32_t vhd_calc_timestamp(void)
         curr_time = time(NULL);
         vhd_time = difftime(curr_time, start_time);
         return (uint32_t)vhd_time;
+}
+
+uint32_t mvhd_epoch_to_vhd_ts(time_t ts) {
+    time_t start_time = MVHD_START_TS;
+    if (ts < start_time) {
+        return start_time;
+    }
+    double vhd_time = difftime(ts, start_time);
+    return (uint32_t)vhd_time;
 }
 
 time_t vhd_get_created_time(MVHDMeta *vhdm)
@@ -168,6 +179,11 @@ uint32_t mvhd_calc_size_sectors(MVHDGeom *geom) {
     return sector_size;
 }
 
+MVHDGeom mvhd_get_geometry(MVHDMeta* vhdm) {
+    MVHDGeom geometry = { .cyl = vhdm->footer.geom.cyl, .heads = vhdm->footer.geom.heads, .spt = vhdm->footer.geom.spt };
+    return geometry;
+}
+
 uint32_t mvhd_gen_footer_checksum(MVHDFooter* footer) {
     uint32_t new_chk = 0;
     uint32_t orig_chk = footer->checksum;
@@ -220,6 +236,10 @@ const char* mvhd_strerr(MVHDError err) {
         return "UUID mismatch between child and parent VHD";
     case MVHD_ERR_INVALID_GEOM:
         return "invalid geometry detected";
+    case MVHD_ERR_INVALID_SIZE:
+        return "invalid size";
+    case MVHD_ERR_INVALID_BLOCK_SIZE:
+        return "invalid block size";
     case MVHD_ERR_INVALID_PARAMS:
         return "invalid parameters passed to function";
     case MVHD_ERR_CONV_SIZE:
@@ -227,4 +247,77 @@ const char* mvhd_strerr(MVHDError err) {
     default:
         return "unknown error";
     }
+}
+
+int64_t mvhd_ftello64(FILE* stream)
+{
+#ifdef _MSC_VER
+    return _ftelli64(stream);
+#else
+    return ftello64(stream);
+#endif
+}
+
+int mvhd_fseeko64(FILE* stream, int64_t offset, int origin)
+{
+#ifdef _MSC_VER
+    return _fseeki64(stream, offset, origin);
+#else
+    return fseeko64(stream, offset, origin);
+#endif
+}
+
+uint32_t mvhd_crc32_for_byte(uint32_t r) {
+    for (int j = 0; j < 8; ++j)
+        r = (r & 1 ? 0 : (uint32_t)0xEDB88320L) ^ r >> 1;
+    return r ^ (uint32_t)0xFF000000L;
+}
+
+uint32_t mvhd_crc32(const void* data, size_t n_bytes) {
+    static uint32_t table[0x100];
+    if (!*table)
+        for (size_t i = 0; i < 0x100; ++i)
+            table[i] = mvhd_crc32_for_byte(i);
+
+    uint32_t crc = 0;
+    for (size_t i = 0; i < n_bytes; ++i)
+        crc = table[(uint8_t)crc ^ ((uint8_t*)data)[i]] ^ crc >> 8;
+
+    return crc;
+}
+
+uint32_t mvhd_file_mod_timestamp(const char* path, int *err) {
+    *err = 0;
+#ifdef _WIN32
+    struct _stat file_stat;
+    size_t path_len = strlen(path);
+    mvhd_utf16 new_path[260] = {0};
+    int new_path_len = (sizeof new_path) - 2;
+    int path_res = UTF8ToUTF16LE((unsigned char*)new_path, &new_path_len, (const unsigned char*)path, (int*)&path_len);
+    if (path_res > 0) {
+        int stat_res = _wstat(new_path, &file_stat);
+        if (stat_res != 0) {
+            mvhd_errno = errno;
+            *err = MVHD_ERR_FILE;
+            return 0;
+        }
+        return mvhd_epoch_to_vhd_ts(file_stat.st_mtime);
+    } else {
+        if (path_res == -1) {
+            *err = MVHD_ERR_UTF_SIZE;
+        } else if (path_res == -2) {
+            *err = MVHD_ERR_UTF_TRANSCODING_FAILED;
+        }
+        return 0;
+    }
+#else
+    struct stat file_stat;
+    int stat_res = stat(path, &file_stat);
+    if (stat_res != 0) {
+            mvhd_errno = errno;
+            *err = MVHD_ERR_FILE;
+            return 0;
+        }
+    return mvhd_epoch_to_vhd_ts(file_stat.st_mtime);
+#endif
 }
