@@ -66,11 +66,13 @@ static int	hd_listview_items;
 static int	hdlv_current_sel;
 static int	next_free_id = 0;
 
+#ifdef USE_MINIVHD
 MVHDMeta *vhdmini; //
 MVHDGeom vhd_geom_t; //
 MVHDError *err = 0; //
 static uint8_t created_type_vhd = 2;
 static wchar_t	hd_file_name_parent[512];
+#endif
 
 static void
 disk_track_init(void)
@@ -190,11 +192,13 @@ disk_add_locations(HWND hdlg)
 	swprintf(temp, sizeof_w(temp), L"%01i:%01i", i >> 1, i & 1);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
      }
-     
+
+#ifdef USE_MINIVHD     
     h = GetDlgItem(hdlg,  IDC_COMBO_VHD_TYPE);
      for (i = 2; i < 5; i++) {
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_type_to_ids(i)); /* Convert VHD Type to strings ? */
     }
+#endif
 }
 
 
@@ -797,21 +801,25 @@ static WIN_RESULT CALLBACK
 disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     wchar_t temp_path[512];
-    char buf[512], *big_buf;
+
     HWND h = INVALID_HANDLE_VALUE;
     uint64_t i = 0;
     uint64_t temp;
     FILE *f;
     uint32_t sector_size = 512;
-    uint32_t zero = 0;
-    uint32_t base = 0x1000;
-    uint64_t signature = 0xD778A82044445459ll;
     int b = 0;
-    uint64_t r = 0;
     uint8_t channel = 0;
     uint8_t id = 0, lun = 0;
     wchar_t *twcs;
+#ifdef USE_MINIVHD
     wchar_t temp_path_parent[512];
+#else
+    char buf[512], *big_buf;
+    uint32_t zero = 0;
+    uint32_t base = 0x1000;
+    uint64_t signature = 0xD778A82044445459ll;
+    uint64_t r = 0;
+#endif
 
     switch (message) {
 	case WM_INITDIALOG:
@@ -946,6 +954,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_PARFILE);
 		EnableWindow(h, FALSE);
 /*****************/
+
 		no_update = 0;
 		return TRUE;
 
@@ -1030,7 +1039,8 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				if (!(existing & 1) && (wcslen(hd_file_name) > 0)) {
 					f = _wfopen(hd_file_name, L"wb");
 
-					if (! image_is_vhd(hd_file_name, 0)) { /* BYPASS Varcem internal func for VHD */
+					//if (! image_is_vhd(hd_file_name, 0)) { /* BYPASS Varcem internal func for VHD */
+#ifndef USE_MINIVHD
 						if (image_is_hdi(hd_file_name)) {
 							if (size >= 0x100000000ll) {
 								fclose(f);
@@ -1118,8 +1128,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 							}
 							free(big_buf);
 						}
-					} else {
-
+#else
 						char *shortpath = (char *)malloc (255);
 						char *fullpath = (char *)malloc (255);
 						char *shortpathparent = (char *)malloc (255);
@@ -1148,7 +1157,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						}
 						free(shortpath);
 						free(fullpath);
-					}
+#endif
 					/* Hide progress bar and label. */
 					EnableWindow(h, FALSE);
 					ShowWindow(h, SW_HIDE);
@@ -1224,6 +1233,7 @@ hdd_add_file_open_error:
 						fread(&hpc, 1, 4, f);
 						fread(&tracks, 1, 4, f);
 					}
+#ifdef USE_MINIVHD
 					else if (image_is_vhd(temp_path, 1)) { /* VHD */
 						char *shortpath = (char *)malloc (255);
 						char *fullpath = (char *)malloc (255);
@@ -1236,7 +1246,8 @@ hdd_add_file_open_error:
 						size = vhdmini->footer.orig_sz;
 						free(shortpath);
 						free(fullpath);
-					}			
+					}
+#endif			
 					else { /* RAW */
 						fseeko64(f, 0, SEEK_END);
 						size = ftello64(f);
@@ -1293,10 +1304,12 @@ hdd_add_file_open_error:
 					fclose(f);
 				}
 
+#ifdef USE_MINIVHD
 				if (image_is_vhd(temp_path, 0)) { /* OK it's probably an empty vhd */
 					h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE); /* Enable VHD Type Selection */
 					EnableWindow(h, TRUE);
 				}
+#endif
 				
 				h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
 				SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path);
@@ -1581,7 +1594,8 @@ hdd_add_file_open_error:
 hd_add_bus_skip:
 				no_update = 0;
 				break;
-		
+
+#ifdef USE_MINIVHD		
 			case IDC_COMBO_VHD_TYPE:
 				h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE);
 				created_type_vhd = ((uint8_t)SendMessage(h, CB_GETCURSEL, 0, 0) & 0xff) + 2;
@@ -1606,7 +1620,8 @@ hd_add_bus_skip:
 				//Check here if parent is already listed
 				
 				} // Check if parent path is null and return error message
-				break;				
+				break;
+#endif				
 		}
 
 		return FALSE;

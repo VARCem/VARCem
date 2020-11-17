@@ -547,8 +547,9 @@ hdd_image_load(int id)
     int is_vhd[2] = { 0, 0 };
     vhd_footer_t *vft = NULL;
     uint8_t *empty;
+#ifdef USE_MINIVHD
     MVHDError *vhd_err = 0;
-     
+#endif
     img->base = 0;
 
     is_vhd[0] = image_is_vhd(fn, 0);
@@ -814,29 +815,31 @@ hdd_image_read(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     hdd_image_t *img = &hdd_images[id];
     uint32_t i;
  
+ #ifdef USE_MINIVHD
     if (img->type == 3) {
-	mvhd_read_sectors(img->vhdmini, sector, count, buffer);
+		mvhd_read_sectors(img->vhdmini, sector, count, buffer);
     }
-    else {
-	/* Move to the desired position in the image. */
-	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+#endif
+	if (img->type != 3) {
+		/* Move to the desired position in the image. */
+		fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-	/* Now read all (consecutive) blocks from the image. */
-	for (i = 0; i < count; i++) {
-		/* If past end of image, give up. */
-		if (ferror(img->file) || feof(img->file))
-			break;
+		/* Now read all (consecutive) blocks from the image. */
+		for (i = 0; i < count; i++) {
+			/* If past end of image, give up. */
+			if (ferror(img->file) || feof(img->file))
+				break;
 
-		/* Read a block. */
-		fread(buffer + (i << 9), 1, 512, img->file);
+			/* Read a block. */
+			fread(buffer + (i << 9), 1, 512, img->file);
 
-		/* If error during read, give up. */
-		if (ferror(img->file))
-			break;
+			/* If error during read, give up. */
+			if (ferror(img->file))
+				break;
 
-		/* Update position. */
-		img->pos = sector + i;
-	}
+			/* Update position. */
+			img->pos = sector + i;
+		}
     }
 }
 
@@ -859,23 +862,27 @@ hdd_image_read_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     uint32_t transfer_sectors = count;
     uint32_t sectors = hdd_sectors(id);
     
+#ifdef USE_MINIVHD
     if (img->type == 3) {
 	return mvhd_read_sectors(img->vhdmini, sector, transfer_sectors, buffer);
     }
-    else {
-	if ((sectors - sector) < transfer_sectors)
-		transfer_sectors = sectors - sector;
+	else {
+#endif
+		if ((sectors - sector) < transfer_sectors)
+			transfer_sectors = sectors - sector;
 
-	img->pos = sector;
+		img->pos = sector;
 
-	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
-	fread(buffer, 1, transfer_sectors << 9, img->file);
+		fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+		fread(buffer, 1, transfer_sectors << 9, img->file);
 
-	if (ferror(img->file) || (count != transfer_sectors))
-		return 1;
+		if (ferror(img->file) || (count != transfer_sectors))
+			return 1;
 
-	return 0;
-    }
+		return 0;
+#ifdef USE_MINIVHD    
+	}
+#endif
 }
 
 
@@ -885,26 +892,30 @@ hdd_image_write(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     hdd_image_t *img = &hdd_images[id];
     uint32_t i;
 
+#ifdef USE_MINIVHD
     if (img->type == 3) {
 	mvhd_write_sectors(img->vhdmini, sector, count, buffer);
     }
-    else {
-	/* Move to the desired position in the image. */
-	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+	else {
+#endif
+		/* Move to the desired position in the image. */
+		fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-	/* Now write all (consecutive) blocks to the image. */
-	for (i = 0; i < count; i++) {
-		/* Write a block. */
-		fwrite(buffer + (i << 9), 512, 1, img->file);
+		/* Now write all (consecutive) blocks to the image. */
+		for (i = 0; i < count; i++) {
+			/* Write a block. */
+			fwrite(buffer + (i << 9), 512, 1, img->file);
 
-		/* If error during write, give up. */
-		if (ferror(img->file))
-			break;
+			/* If error during write, give up. */
+			if (ferror(img->file))
+				break;
 
-		/* Update position. */
-		img->pos = sector + i;
-	}
+			/* Update position. */
+			img->pos = sector + i;
+		}
+#ifdef USE_MINIVHD		
     }
+#endif
 }
 
 
@@ -915,22 +926,27 @@ hdd_image_write_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     uint32_t transfer_sectors = count;
     uint32_t sectors = hdd_sectors(id);
 
-     if (img->type == 3) {
-	return mvhd_write_sectors(img->vhdmini, sector, transfer_sectors, buffer);
+#ifdef USE_MINIVHD
+    if (img->type == 3) {
+		return mvhd_write_sectors(img->vhdmini, sector, transfer_sectors, buffer);
     }
-    else {
+	else {
+#endif
         if ((sectors - sector) < transfer_sectors)
-		transfer_sectors = sectors - sector;
+			transfer_sectors = sectors - sector;
 
-	img->pos = sector;
+		img->pos = sector;
 
-	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
-	fwrite(buffer, transfer_sectors << 9, 1, img->file);
+		fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+		fwrite(buffer, transfer_sectors << 9, 1, img->file);
 
-	if (ferror(img->file) || (count != transfer_sectors))
-		return 1;
-    return 0;
+		if (ferror(img->file) || (count != transfer_sectors))
+			return 1;
+    	
+		return 0;
+#ifdef USE_MINIVHD
     }
+#endif
 }
 
 
@@ -941,19 +957,21 @@ hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
     uint8_t empty[512];
     uint32_t i = 0;
 
+#ifdef USE_MINIVHD
     if (img->type == 3) {
-	mvhd_format_sectors (img->vhdmini, sector, count);
+		mvhd_format_sectors (img->vhdmini, sector, count);
     }
-    else {
-	memset(empty, 0x00, sizeof(empty));
+#endif
+	if (img->type != 3) {
+		memset(empty, 0x00, sizeof(empty));
 
-	/* Move to the desired position in the image. */
-	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+		/* Move to the desired position in the image. */
+		fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-	/* Now write all (consecutive) blocks to the image. */
-	for (i = 0; i < count; i++) {
-		/* Write a block. */
-		fwrite(empty, 512, 1, img->file);
+		/* Now write all (consecutive) blocks to the image. */
+		for (i = 0; i < count; i++) {
+			/* Write a block. */
+			fwrite(empty, 512, 1, img->file);
 
 		/* If error during write, give up. */
 		if (ferror(img->file))
@@ -961,7 +979,7 @@ hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
 
 		/* Update position. */
 		img->pos = sector + i;
-	}
+		}
     }
 }
 
@@ -1048,9 +1066,11 @@ hdd_image_unload(uint8_t id, int fn_preserve)
 
     if (img->loaded) {
 	if (img->file != NULL) {
+#ifdef USE_MINIVHD
 		if (img->type == 3)
 			mvhd_close(img->vhdmini);
 		else
+#endif
 			(void)fclose(img->file);
 		img->file = NULL;
 	}
@@ -1076,9 +1096,11 @@ hdd_image_close(uint8_t id)
 	if (! img->loaded) return;
 
 	if (img->file != NULL) {
+#ifdef USE_MINIVHD
 		 if (img->type == 3)
 			mvhd_close(img->vhdmini);
 		else
+#endif
 			(void)fclose(img->file);
 		img->file = NULL;
 	}
