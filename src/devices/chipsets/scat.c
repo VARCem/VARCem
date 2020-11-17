@@ -8,7 +8,7 @@
  *
  *		Implementation of the C&T 82C235 ("SCAT") chipset.
  *
- * Version:	@(#)scat.c	1.0.19	2020/01/29
+ * Version:	@(#)scat.c	1.0.20	2020/11/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Original by GreatPsycho for PCem.
@@ -162,9 +162,16 @@ shadow_state_update(scat_t *dev)
 {
     int i, val;
 
-    for (i = 0; i < 24; i++) {
-	val = ((dev->regs[SCAT_SHADOW_RAM_ENABLE_1 + (i >> 3)] >> (i & 7)) & 1) ? MEM_READ_INTERNAL | MEM_WRITE_INTERNAL : MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL;
-	mem_set_mem_state((i + 40) << 14, 0x4000, val);
+    if ((dev->regs[SCAT_DRAM_CONFIGURATION] & 0xF) < 4) {
+		/*Less than 1MB low memory, no shadow RAM available*/
+        mem_set_mem_state((i + 40) << 14, 0x4000, val);
+        for (i = 0; i < 24; i++)
+            mem_set_mem_state((i + 40) << 14, 0x4000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
+	} else {
+		for (i = 0; i < 24; i++) {
+			val = ((dev->regs[SCAT_SHADOW_RAM_ENABLE_1 + (i >> 3)] >> (i & 7)) & 1) ? MEM_READ_INTERNAL | MEM_WRITE_INTERNAL : MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL;
+			mem_set_mem_state((i + 40) << 14, 0x4000, val);
+		}
     }
 
     flushmmucache();
@@ -1089,6 +1096,7 @@ scat_write(uint16_t port, uint8_t val, priv_t priv)
 				}
 
 				reg_valid = 1;
+				shadow_update = 1;
 				break;
 
 			case SCAT_EXTENDED_BOUNDARY:
