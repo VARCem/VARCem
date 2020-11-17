@@ -8,7 +8,7 @@
  *
  *		String definitions for "French (France)" language.
  *
- * Version:	@(#)VARCem-FR.str	1.0.13	2020/07/14
+ * Version:	@(#)VARCem-FR.str	1.0.14	2020/11/17
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -127,6 +127,8 @@
 #define STR_OPEN_WRITE	"Impossible d'ouvrir le fichier en écriture"
 #define STR_DEVCONF_1	"Configuration"
 #define STR_DEVCONF_2	"Appareil:"
+#define STR_VHD_TYPE	"Type de VHD:"
+#define STR_PARENT_NAME	"VHD Parent:"
 
 
 /* UI dialog: About (3200.) */
@@ -257,6 +259,10 @@
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
 
+#define  STR_3521	"Statique"
+#define  STR_3522	"Dynamique"
+#define  STR_3523	"Différentielle"
+
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Ajout d'un disque dur"
 #define  STR_3526	"Ajout d'un nouveau disque dur"
@@ -269,8 +275,9 @@
 #define  STR_3533	"Tentative de création d'une image HDI de plus de 4 Go"
 #define  STR_3534	"Tentative erronée de création d'une image de disque dur large"
 #define  STR_3535	"La taille de secteur des images disques au format HDI ou HDX doit être de 512."
-#define  STR_3536	"Images disque durs\0*.hd?;*.im?;*.vhd\0Tous les fichiers\0*.*\0"
+#define  STR_3536	"Images disques durs\0*.hd?;*.im?;*.vhd\0Tous les fichiers\0*.*\0"
 #define  STR_3537	"Pensez à partitionner et formater ce nouveau disque"
+#define  STR_3538	"Images disques durs \0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Lecteurs de disquettes:"
