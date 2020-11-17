@@ -169,8 +169,10 @@ image_is_vhd(const wchar_t *s, int check_signature)
 {
     int len;
     FILE *f;
-    //uint64_t filelen;
-    //uint64_t signature;
+#ifndef USE_MINIVHD
+    uint64_t filelen;
+    uint64_t signature;
+#endif
     char *ws = (char *) s;
     wchar_t ext[5] = { 0, 0, 0, 0, 0 };
     
@@ -184,9 +186,11 @@ image_is_vhd(const wchar_t *s, int check_signature)
 		f = plat_fopen((wchar_t *)s, L"rb");
 		if (!f)
 			return 0;
+#ifdef USE_MINIVHD
 		bool x = mvhd_file_is_vhd (f); /* Note : find a better way to do this */
 		fclose(f);
-#if 0
+		if (x)
+#else
 		fseeko64(f, 0, SEEK_END);
 		filelen = ftello64(f);
 		fseeko64(f, -512, SEEK_END);
@@ -196,7 +200,6 @@ image_is_vhd(const wchar_t *s, int check_signature)
 		fclose(f);
 		if (signature == 0x78697463656E6F63ll)
 #endif
-		if (x)
 			return 1;
 		else
 			return 0;
@@ -614,7 +617,7 @@ hdd_image_load(int id)
 				fwrite(&zero, 1, 4, img->file);
 				img->type = 2;
 			} else if (is_vhd[1]) {
-#if 0
+#ifndef USE_MINIVHD
 				empty = (uint8_t *)mem_alloc(512);
 				memset(empty, 0x00, 512);
 				fseeko64(img->file, -512, SEEK_END);
@@ -650,7 +653,7 @@ hdd_image_load(int id)
 #endif
 			}
 			else
-				img->type = 0;
+			img->type = 0;
 			img->last_sector = 0;
 		}
 
@@ -737,6 +740,7 @@ hdd_image_load(int id)
 	wcstombs(path, fn, 255);
 	_fullpath(fullpath, path, 255); /* May break linux */
 	
+#ifdef USE_MINIVHD
 	/* let's close file already opened and use the minivhd struct*/	
 	fclose(img->file);
 	img->vhdmini = mvhd_open(fullpath, 0, vhd_err);
@@ -749,7 +753,7 @@ hdd_image_load(int id)
 		
 	img->file = img->vhdmini->f;
 	img->type = 3;
-#if 0
+#else
 	fseeko64(img->file, 0, SEEK_END);
 	s = ftello64(img->file);	
 	if (s == (full_size + img->base)) {
