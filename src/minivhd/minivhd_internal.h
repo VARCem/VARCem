@@ -8,8 +8,9 @@
 #define MVHD_SPARSE_SIZE 1024
 
 #define MVHD_SECTOR_SIZE 512
-#define MVHD_SECT_PER_BLOCK 4096 /* 2MB block size */
 #define MVHD_BAT_ENT_PER_SECT 128
+
+#define MVHD_MAX_SIZE_IN_BYTES 0x1fe00000000
 
 #define MVHD_SPARSE_BLK 0xffffffff
 /* For simplicity, we don't handle paths longer than this 
@@ -21,12 +22,6 @@
 
 #define MVHD_DIF_LOC_W2RU 0x57327275
 #define MVHD_DIF_LOC_W2KU 0x57326B75
-
-typedef enum MVHDType {
-    MVHD_TYPE_FIXED = 2,
-    MVHD_TYPE_DYNAMIC = 3,
-    MVHD_TYPE_DIFF = 4
-} MVHDType;
 
 typedef struct MVHDSectorBitmap {
     uint8_t* curr_bitmap;
@@ -90,8 +85,8 @@ struct MVHDMeta {
     uint32_t* block_offset;
     int sect_per_block;
     MVHDSectorBitmap bitmap;
-    int (*read_sectors)(MVHDMeta*, int, int, void*);
-    int (*write_sectors)(MVHDMeta*, int, int, void*);
+    int (*read_sectors)(MVHDMeta*, uint32_t, int, void*);
+    int (*write_sectors)(MVHDMeta*, uint32_t, int, void*);
     struct {
         uint8_t* zero_data;
         int sector_count;
