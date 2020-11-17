@@ -988,7 +988,11 @@ video_load_font(const wchar_t *fn, fontformat_t num)
                        	(void)fread(&fontdatm[c][0], 1, 8, fp);
 		for (c = 0; c < 256; c++)
                        	(void)fread(&fontdatm[c][8], 1, 8, fp);
+		(void)fseek(fp, 6144, SEEK_SET);
+		for (c = 0; c < 256; c++)
+                       	(void)fread(&fontdat[c][0], 1, 8, fp);
 		break;
+
 
 	case FONT_CGA_THIN:	/* CGA, thin font */
 	case FONT_CGA_THICK:	/* CGA, thick font */

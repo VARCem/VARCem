@@ -8,15 +8,15 @@
  *
  *		Definitions for the SVGA renderers.
  *
- * Version:	@(#)vid_svga_render.h	1.0.3	2018/10/22
+ * Version:	@(#)vid_svga_render.h	1.0.4	2020/11/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ extern int	scrollcache;
 extern uint8_t	edatlookup[4][4];
 
 
+extern void svga_render_null(svga_t *svga);
 extern void	svga_render_blank(svga_t *svga);
 extern void	svga_render_text_40(svga_t *svga);
 extern void	svga_render_text_80(svga_t *svga);
