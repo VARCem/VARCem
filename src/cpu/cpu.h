@@ -72,18 +72,19 @@
 #define CPU_iDX4	16
 #define CPU_Cx5x86	17
 #define CPU_WINCHIP	18		/* 586 class CPUs */
-#define CPU_PENTIUM	19
-#define CPU_PENTIUM_MMX	20
-#define CPU_Cx6x86 	21
-#define CPU_Cx6x86MX 	22
-#define CPU_Cx6x86L 	23
-#define CPU_CxGX1 	24
-#define CPU_K5		25
-#define CPU_5K86	26
-#define CPU_K6		27
-#define CPU_PENTIUM_PRO	28		/* 686 class CPUs */
-#define CPU_PENTIUM_2	29
-#define CPU_PENTIUM_2D	30
+#define CPU_WINCHIP2 19		/* 586 class CPUs */
+#define CPU_PENTIUM	20
+#define CPU_PENTIUM_MMX	21
+#define CPU_Cx6x86 	22
+#define CPU_Cx6x86MX 	23
+#define CPU_Cx6x86L 	24
+#define CPU_CxGX1 	25
+#define CPU_K5		26
+#define CPU_5K86	27
+#define CPU_K6		28
+#define CPU_PENTIUM_PRO	29		/* 686 class CPUs */
+#define CPU_PENTIUM_2	30
+#define CPU_PENTIUM_2D	31
 
 #define CPU_SUPPORTS_DYNAREC 1
 #define CPU_REQUIRES_DYNAREC 2
@@ -128,6 +129,7 @@ extern const CPU	cpus_i486[];
 extern const CPU	cpus_Am486[];
 extern const CPU	cpus_Cx486[];
 extern const CPU	cpus_WinChip[];
+extern const CPU	cpus_WinChipSS7[];
 extern const CPU	cpus_Pentium5V[];
 extern const CPU	cpus_Pentium5V50[];
 extern const CPU	cpus_PentiumS5[];
@@ -200,6 +202,7 @@ typedef union {
     int16_t	sw[4];
     uint8_t	b[8];
     int8_t	sb[8];
+    float	f[2];
 } MMX_REG;
 
 typedef struct {
@@ -344,6 +347,8 @@ extern int		cpu_hasMSR;
 extern int		cpu_hasMMX;
 extern int		cpu_hasCR4;
 extern int		cpu_hasVME;
+extern int    cpu_hasCX8;
+extern int		cpu_has3DNOW;
 
 extern uint32_t		cpu_cur_status;
 extern uint64_t		cpu_CR4_mask;

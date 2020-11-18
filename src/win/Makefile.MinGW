@@ -340,7 +340,7 @@ ifeq ($(DYNAREC), y)
 		    codegen_ops.o \
 		    codegen_timing_common.o codegen_timing_486.o \
 		    codegen_timing_686.o codegen_timing_pentium.o \
-		    codegen_timing_winchip.o $(PLATCG)
+		    codegen_timing_winchip.o codegen_timing_winchip2.o $(PLATCG)
 endif
 
 # SLiRP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static (always dynamic)

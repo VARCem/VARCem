@@ -8,12 +8,12 @@
  *
  *		Generic timing for code generator.
  *
- * Version:	@(#)codegen_timing_common.c	1.0.2	2018/11/13
+ * Version:	@(#)codegen_timing_common.c	1.0.3	2020/11/18
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -318,7 +318,7 @@ uint64_t opcode_deps_0f[256] =
 /*00*/  MODRM,  MODRM,   MODRM,   MODRM,
         0,      0,       0,       0,
         0,      0,       0,       0,
-        0,      0,       0,       0,
+        0,      MODRM,   0,       MODRM,
 
 /*10*/  0,      0,       0,       0,
         0,      0,       0,       0,
@@ -400,7 +400,7 @@ uint64_t opcode_deps_0f_mod3[256] =
 /*00*/  MODRM,  MODRM,   MODRM,   MODRM,
         0,      0,       0,       0,
         0,      0,       0,       0,
-        0,      0,       0,       0,
+        0,      MODRM,   0,       MODRM,
 
 /*10*/  0,      0,       0,       0,
         0,      0,       0,       0,

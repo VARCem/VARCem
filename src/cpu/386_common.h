@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.5	2020/09/10
+ * Version:	@(#)386_common.h	1.0.6	2020/11/18
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -67,7 +67,26 @@ extern uint16_t ea_rseg;
                         } \
                 }
 
+#define SEG_CHECK_READ(seg)                             \
+        do                                              \
+        {                                               \
+                if ((seg)->base == 0xffffffff)          \
+                {                                       \
+                        x86gpf("Segment can't read", 0);\
+                        return 1;                       \
+                }                                       \
+        } while (0)
 
+#define SEG_CHECK_WRITE(seg)                    \
+        do                                              \
+        {                                               \
+                if ((seg)->base == 0xffffffff)          \
+                {                                       \
+                        x86gpf("Segment can't write", 0);\
+                        return 1;                       \
+                }                                       \
+        } while (0)
+        
 #define CHECK_READ(chseg, low, high) \
                 if ((low < (chseg)->limit_low) || \
                     (high > (chseg)->limit_high) || \
