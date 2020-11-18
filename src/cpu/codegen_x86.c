@@ -8,13 +8,13 @@
  *
  *		Dynamic Recompiler for Intel 32-bit systems.
  *
- * Version:	@(#)codegen_x86.c	1.0.6	2019/05/17
+ * Version:	@(#)codegen_x86.c	1.0.7	2020/11/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2020 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
@@ -1652,7 +1652,7 @@ static int opcode_modrm[256] =
 };
 int opcode_0f_modrm[256] =
 {
-        1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*00*/
+        1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 1, /*00*/
         0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*10*/
         1, 1, 1, 1,  1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
         0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/

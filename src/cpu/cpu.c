@@ -69,6 +69,11 @@ enum {
     CPUID_FXSR = (1 << 24)
 };
 
+/*Addition flags returned by CPUID function 0x80000001*/
+enum
+{
+	CPUID_3DNOW = (1 << 31)
+};
 
 const OpFn	*x86_opcodes;
 const OpFn	*x86_opcodes_0f;
@@ -90,6 +95,7 @@ const OpFn	*x86_opcodes_df_a16;
 const OpFn	*x86_opcodes_df_a32;
 const OpFn	*x86_opcodes_REPE;
 const OpFn	*x86_opcodes_REPNE;
+const OpFn	*x86_opcodes_3DNOW;
 #ifdef USE_DYNAREC
 const OpFn	*x86_dynarec_opcodes;
 const OpFn	*x86_dynarec_opcodes_0f;
@@ -111,6 +117,7 @@ const OpFn	*x86_dynarec_opcodes_df_a16;
 const OpFn	*x86_dynarec_opcodes_df_a32;
 const OpFn	*x86_dynarec_opcodes_REPE;
 const OpFn	*x86_dynarec_opcodes_REPNE;
+const OpFn  *x86_dynarec_opcodes_3DNOW;
 #endif
 
 
@@ -141,7 +148,9 @@ int		cpu_hasrdtsc,
 		cpu_hasMMX,
 		cpu_hasMSR,
 		cpu_hasCR4,
-		cpu_hasVME;
+		cpu_hasCX8,
+		cpu_hasVME,
+		cpu_has3DNOW;
 
 uint64_t	tsc = 0;
 msr_t		msr;
@@ -335,6 +344,8 @@ cpu_activate(void)
     cpu_hasMMX = 0;
     cpu_hasMSR = 0;
     cpu_hasCR4 = 0;
+	cpu_hasCX8 = 0;
+	cpu_has3DNOW = 0;
     ccr0 = ccr1 = ccr2 = ccr3 = ccr4 = ccr5 = ccr6 = 0;
 
     if ((cpu->type == CPU_286) || (cpu->type == CPU_386SX) ||
@@ -370,9 +381,11 @@ cpu_activate(void)
 #endif
     x86_opcodes_REPE = ops_REPE;
     x86_opcodes_REPNE = ops_REPNE;
+	x86_opcodes_3DNOW = ops_3DNOW;
 #ifdef USE_DYNAREC
     x86_dynarec_opcodes_REPE = dynarec_ops_REPE;
     x86_dynarec_opcodes_REPNE = dynarec_ops_REPNE;
+	x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOW;
 #endif
 
 #ifdef USE_DYNAREC
@@ -874,7 +887,7 @@ cpu_activate(void)
 		timing_bt  = 3-1; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
 		cpu_hasrdtsc = 1;
-		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
+		msr.fcr = (1 << 8) | (1 << 16);
 		cpu_hasMMX = cpu_hasMSR = 1;
 		cpu_hasCR4 = 1;
 		cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_MCE | CR4_PCE;
@@ -902,6 +915,52 @@ cpu_activate(void)
 #endif
 		timing_misaligned = 2;
 		cpu_cyrix_alignment = 1;
+		break;
+
+		case CPU_WINCHIP2:
+#ifdef USE_DYNAREC
+		x86_setopcodes(ops_386, ops_winchip2_0f, dynarec_ops_386, dynarec_ops_winchip2_0f);
+#else
+		x86_setopcodes(ops_386, ops_winchip2_0f);
+#endif
+		timing_rr  = 1; /*register dest - register src*/
+		timing_rm  = 2; /*register dest - memory src*/
+		timing_mr  = 2; /*memory dest   - register src*/
+		timing_mm  = 3;
+		timing_rml = 2; /*register dest - memory src long*/
+		timing_mrl = 2; /*memory dest   - register src long*/
+		timing_mml = 3;
+		timing_bt  = 3-1; /*branch taken*/
+		timing_bnt = 1; /*branch not taken*/
+		cpu_hasrdtsc = 1;
+		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 18) | (1 << 19) | (1 << 20) | (1 << 21);
+		cpu_hasMMX = cpu_hasMSR = cpu_has3DNOW = 1;
+		cpu_hasCR4 = 1;
+		cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_MCE | CR4_PCE;
+		/*unknown*/
+		timing_int_rm       = 26;
+		timing_int_v86      = 82;
+		timing_int_pm       = 44;
+		timing_int_pm_outer = 71;
+		timing_iret_rm       = 7;
+		timing_iret_v86      = 26;
+		timing_iret_pm       = 10;
+		timing_iret_pm_outer = 26;
+		timing_call_rm = 4;
+		timing_call_pm = 15;
+		timing_call_pm_gate = 26;
+		timing_call_pm_gate_inner = 35;
+		timing_retf_rm       = 4;
+		timing_retf_pm       = 7;
+		timing_retf_pm_outer = 23;
+		timing_jmp_rm      = 5;
+		timing_jmp_pm      = 7;
+		timing_jmp_pm_gate = 17;
+		timing_misaligned = 2;
+		cpu_cyrix_alignment = 1;
+#ifdef USE_DYNAREC
+		codegen_timing_set(&codegen_timing_winchip2);
+#endif
 		break;
 
 	case CPU_PENTIUM:
@@ -1601,12 +1660,66 @@ cpu_CPUID(void)
 			EAX = 0x540;
 			EBX = ECX = 0;
 			EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR;
-			if (msr.fcr & (1 << 1))
+			if (cpu_hasCX8)
 				EDX |= CPUID_CMPXCHG8B;
 			if (msr.fcr & (1 << 9))
 				EDX |= CPUID_MMX;
 		} else
 			EAX = EBX = ECX = EDX = 0;
+		break;
+	
+	case CPU_WINCHIP2:
+		switch(EAX) {
+			case 0:
+				EAX = 1;
+				if (msr.fcr2 & (1 << 14)) {
+					EBX = msr.fcr3 >> 32;
+					ECX = msr.fcr3 & 0xffffffff;
+					EDX = msr.fcr2 >> 32;
+				} else {
+					EBX = 0x746e6543; /*CentaurHauls*/
+					ECX = 0x736c7561;			
+					EDX = 0x48727561;
+				}
+				break;
+			case 1:
+				EAX = 0x580;
+				EBX = ECX = 0;
+				EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR;
+				if (cpu_hasCX8)
+					EDX |= CPUID_CMPXCHG8B;
+				if (msr.fcr & (1 << 9))
+					EDX |= CPUID_MMX;
+				break;
+			case 0x80000000:
+				EAX = 0x80000005;
+				break;
+			case 0x80000001:
+				EAX = 0x58U;
+				EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR;
+				if (cpu_hasCX8)
+					EDX |= CPUID_CMPXCHG8B;
+				if (msr.fcr & (1 << 9))
+					EDX |= CPUID_3DNOW;
+				break;
+
+			case 0x80000002: /*Processor name string*/
+				EAX = 0x20544449; /*IDT WinChip 2-3D*/
+                EBX = 0x436e6957;
+                ECX = 0x20706968;
+                EDX = 0x44332d32;
+				break;
+			
+			case 0x80000005: /*Cache information*/
+                EBX = 0x08800880; /*TLBs*/
+                ECX = 0x20040120; /*L1 data cache*/
+                EDX = 0x20020120; /*L1 instruction cache*/
+                break;
+
+			default:
+				EAX = EBX = ECX = EDX = 0;
+			break;
+		}
 		break;
 
 	case CPU_PENTIUM:
@@ -1851,7 +1964,7 @@ void
 cpu_RDMSR(void)
 {
     switch (cpu->type) {
-	case CPU_WINCHIP:
+	case CPU_WINCHIP: case CPU_WINCHIP2:
 		EAX = EDX = 0;
 		switch (ECX) {
 			case 0x02:
@@ -2102,7 +2215,7 @@ void
 cpu_WRMSR(void)
 {
     switch (cpu->type) {
-	case CPU_WINCHIP:
+	case CPU_WINCHIP: case CPU_WINCHIP2:
 		switch (ECX) {
 			case 0x02:
 				msr.tr1 = EAX & 2;
@@ -2123,6 +2236,14 @@ cpu_WRMSR(void)
 			case 0x107:
 				msr.fcr = EAX;
 				cpu_hasMMX = EAX & (1 << 9);
+				if (EAX & (1 << 1))
+					cpu_hasCX8 = 1;
+				else
+					cpu_hasCX8 = 0;
+				if ((EAX & (1 << 20)) && cpu->type >= CPU_WINCHIP2)
+					cpu_has3DNOW = 1;
+				else
+					cpu_has3DNOW = 0;				
 				if (EAX & (1 << 29))
 					CPUID = 0;
 				else

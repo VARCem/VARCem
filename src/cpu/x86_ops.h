@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops.h	1.0.3	2019/04/11
+ * Version:	@(#)x86_ops.h	1.0.4	2020/11/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2020 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
@@ -70,6 +70,7 @@ extern const OpFn *x86_dynarec_opcodes_df_a16;
 extern const OpFn *x86_dynarec_opcodes_df_a32;
 extern const OpFn *x86_dynarec_opcodes_REPE;
 extern const OpFn *x86_dynarec_opcodes_REPNE;
+extern const OpFn *x86_dynarec_opcodes_3DNOW;
 
 extern const OpFn dynarec_ops_286[1024];
 extern const OpFn dynarec_ops_286_0f[1024];
@@ -80,6 +81,7 @@ extern const OpFn dynarec_ops_386_0f[1024];
 extern const OpFn dynarec_ops_486_0f[1024];
 
 extern const OpFn dynarec_ops_winchip_0f[1024];
+extern const OpFn dynarec_ops_winchip2_0f[1024];
 
 extern const OpFn dynarec_ops_pentium_0f[1024];
 extern const OpFn dynarec_ops_pentiummmx_0f[1024];
@@ -136,6 +138,8 @@ extern const OpFn dynarec_ops_fpu_686_df_a32[256];
 
 extern const OpFn dynarec_ops_REPE[1024];
 extern const OpFn dynarec_ops_REPNE[1024];
+
+extern const OpFn dynarec_ops_3DNOW[256];
 #else
 void x86_setopcodes(const OpFn *opcodes, const OpFn *opcodes_0f);
 #endif
@@ -160,6 +164,7 @@ extern const OpFn *x86_opcodes_df_a16;
 extern const OpFn *x86_opcodes_df_a32;
 extern const OpFn *x86_opcodes_REPE;
 extern const OpFn *x86_opcodes_REPNE;
+extern const OpFn *x86_opcodes_3DNOW;
 
 extern const OpFn ops_286[1024];
 extern const OpFn ops_286_0f[1024];
@@ -170,6 +175,7 @@ extern const OpFn ops_386_0f[1024];
 extern const OpFn ops_486_0f[1024];
 
 extern const OpFn ops_winchip_0f[1024];
+extern const OpFn ops_winchip2_0f[1024];
 
 extern const OpFn ops_pentium_0f[1024];
 extern const OpFn ops_pentiummmx_0f[1024];
@@ -224,6 +230,7 @@ extern const OpFn ops_fpu_686_db_a16[256];
 extern const OpFn ops_fpu_686_db_a32[256];
 extern const OpFn ops_fpu_686_df_a16[256];
 extern const OpFn ops_fpu_686_df_a32[256];
+extern const OpFn ops_3DNOW[256];
 
 extern const OpFn ops_REPE[1024];
 extern const OpFn ops_REPNE[1024];

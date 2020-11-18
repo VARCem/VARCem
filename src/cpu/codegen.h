@@ -8,12 +8,12 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen.h	1.0.6	2019/05/17
+ * Version:	@(#)codegen.h	1.0.7	2020/11/18
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -168,6 +168,7 @@ extern codegen_timing_t	codegen_timing_pentium;
 extern codegen_timing_t	codegen_timing_686;
 extern codegen_timing_t	codegen_timing_486;
 extern codegen_timing_t	codegen_timing_winchip;
+extern codegen_timing_t	codegen_timing_winchip2;
 
 extern void	codegen_timing_set(codegen_timing_t *timing);
 
