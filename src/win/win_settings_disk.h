@@ -1150,7 +1150,6 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						char *fullpath = (char *)malloc (255);
 						char *shortpathparent = (char *)malloc (255);
 						char *fullpathparent = (char *)malloc (255);
-						int *pos = 0;
 						
 						wcstombs(shortpath, hd_file_name, 255);
 						_fullpath(fullpath, shortpath, 255); /* May break linux */
@@ -1161,7 +1160,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						switch (created_type_vhd) {
 							case MVHD_TYPE_FIXED :
 							default :
-								mvhd_create_fixed(fullpath, vhd_geom_t, pos, err); /* Gerer les erreurs */
+								mvhd_create_fixed(fullpath, vhd_geom_t, &err, NULL); 
 								break;
 							case MVHD_TYPE_DYNAMIC :
 								mvhd_create_sparse(fullpath, vhd_geom_t, err);
