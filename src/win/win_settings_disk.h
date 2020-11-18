@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.20	2019/05/28
+ * Version:	@(#)win_settings_disk.h	1.0.21	2020/11/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1133,7 +1133,6 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						char *fullpath = (char *)malloc (255);
 						char *shortpathparent = (char *)malloc (255);
 						char *fullpathparent = (char *)malloc (255);
-						int *pos = 0;
 						
 						wcstombs(shortpath, hd_file_name, 255);
 						_fullpath(fullpath, shortpath, 255); /* May break linux */
@@ -1144,7 +1143,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 						switch (created_type_vhd) {
 							case MVHD_TYPE_FIXED :
 							default :
-								mvhd_create_fixed(fullpath, vhd_geom_t, pos, err); /* Gerer les erreurs */
+								mvhd_create_fixed(fullpath, vhd_geom_t, &err, NULL); 
 								break;
 							case MVHD_TYPE_DYNAMIC :
 								mvhd_create_sparse(fullpath, vhd_geom_t, err);
