@@ -8,7 +8,7 @@
  *
  *		Define all known processor types.
  *
- * Version:	@(#)cpu_table.c	1.0.11	2020/11/18
+ * Version:	@(#)cpu_table.c	1.0.12	2020/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -280,6 +280,8 @@ const CPU cpus_WinChip[] = {
     { "WinChip 240",			CPU_WINCHIP,	 240000000, 6, 30000000, 0x0540, 0x0540, 0, CPU_SUPPORTS_DYNAREC, 24,24,12,12, 28 },
     { "WinChip 2/200",		   CPU_WINCHIP2,	 200000000, 3, 33333333, 0x0580, 0x0580, 0, CPU_SUPPORTS_DYNAREC, 18,18,9,9, 24 },
     { "WinChip 2/240",		   CPU_WINCHIP2,	 240000000, 6, 30000000, 0x0580, 0x0580, 0, CPU_SUPPORTS_DYNAREC, 24,24,12,12, 28 },
+    { "WinChip 2A/200",        CPU_WINCHIP2,     200000000, 3, 33333333, 0x0587, 0x0587, 0, CPU_SUPPORTS_DYNAREC, 18,18,9,9, 24 },
+    { "WinChip 2A/233",        CPU_WINCHIP2,     233333333, 3, 33333333, 0x0587, 0x0587, 0, CPU_SUPPORTS_DYNAREC, 18,18,9,9, 27 },
     { NULL }
 };
 
@@ -292,6 +294,10 @@ const CPU cpus_WinChip_SS7[] = {
     { "WinChip 2/225",		   CPU_WINCHIP2,	 225000000, 3, 37500000, 0x0580, 0x0580, 0, CPU_SUPPORTS_DYNAREC, 18,18,9,9, 27 },
     { "WinChip 2/240",		   CPU_WINCHIP2,	 240000000, 6, 30000000, 0x0580, 0x0580, 0, CPU_SUPPORTS_DYNAREC, 24,24,12,12, 28 },
     { "WinChip 2/240",		   CPU_WINCHIP2,	 240000000, 6, 30000000, 0x0580, 0x0580, 0, CPU_SUPPORTS_DYNAREC, 24,24,12,12, 28 },
+    { "WinChip 2A/200",		   CPU_WINCHIP2,	 200000000, 3, 33333333, 0x0587, 0x0587, 0, CPU_SUPPORTS_DYNAREC, 18,18,9,9, 24 },
+    { "WinChip 2A/233",		   CPU_WINCHIP2,	 233333333, 3, 33333333, 0x0587, 0x0587, 0, CPU_SUPPORTS_DYNAREC, 18,18,9,9, 27 },
+    { "WinChip 2A/266",		   CPU_WINCHIP2,	 233333333, 6, 33333333, 0x0587, 0x0587, 0, CPU_SUPPORTS_DYNAREC, 24,24,12,12, 28 },
+    { "WinChip 2A/300",		   CPU_WINCHIP2,	 250000000, 6, 33333333, 0x0587, 0x0587, 0, CPU_SUPPORTS_DYNAREC, 24,24,12,12, 28 },
     { NULL }
 };
 
