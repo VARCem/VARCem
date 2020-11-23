@@ -129,6 +129,7 @@
 #define STR_DEVCONF_2	"Appareil:"
 #define STR_VHD_TYPE	"Type de VHD:"
 #define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Taille de bloc:"
 
 
 /* UI dialog: About (3200.) */
@@ -259,9 +260,13 @@
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
 
-#define  STR_3521	"Statique"
-#define  STR_3522	"Dynamique"
-#define  STR_3523	"Différentielle"
+#define  STR_3520	"Statique"
+#define  STR_3521	"Dynamique"
+#define  STR_3522	"Différentiel"
+#define  STR_3523   "L'horadatage entre le VHD parent et le VHD différentiel ne correspond pas : corriger ?"
+#define  STR_3524   "Impossible de corriger l'horodatage"
+#define  STR_3540   "Petite taille de block (512 Ko)"
+#define  STR_3541   "Grande taille de block (2 Mo)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Ajout d'un disque dur"

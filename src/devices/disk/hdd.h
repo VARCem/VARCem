@@ -141,6 +141,7 @@ extern void	hdd_active(int c, int active);
 
 extern const char *vhd_type_to_string(int vhd_type);
 extern const wchar_t *vhd_type_to_ids(int vhd_type);
+extern const wchar_t *vhd_blksize_to_ids(int blk_size);
 
 extern void	hdd_image_log(int level, const char *fmt, ...);
 extern void	hdd_image_init(void);

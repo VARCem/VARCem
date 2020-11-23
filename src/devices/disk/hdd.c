@@ -8,12 +8,12 @@
  *
  *		Common code to handle all sorts of hard disk images.
  *
- * Version:	@(#)hdd.c	1.0.11	2018/10/20
+ * Version:	@(#)hdd.c	1.0.12	2020/11/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -202,16 +202,27 @@ hdd_bus_to_ids(int bus)
     return(get_string(bus));
 }
 
+#ifdef USE_MINIVHD
 const wchar_t *
 vhd_type_to_ids(int vhd_type)
 {
     if (vhd_type == 0)
         vhd_type = IDS_DISABLED;
       else
-	vhd_type = IDS_3521 + vhd_type - 2;
+	vhd_type = IDS_3520 + vhd_type - 2;
 
     return(get_string(vhd_type));
 }
+
+const wchar_t *
+vhd_blksize_to_ids(int blk_size)
+{
+	blk_size = IDS_3540 + blk_size;
+
+    return(get_string(blk_size));
+}
+
+#endif
 
 void
 hdd_active(int drive, int active)

@@ -8,7 +8,7 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.20	2020/07/14
+ * Version:	@(#)resource.h	1.0.21	2020/11/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -118,6 +118,7 @@
 #define IDT_1765		1765	/* ISAMEM #3: */
 #define IDT_1766		1766	/* ISAMEM #4: */
 #define IDT_1767		1767	/* ISARTC: */
+#define IDT_1769        1769    /* Block Size: */
 
 #define IDT_TITLE		1790	/* "VARCem for Plaform" */
 #define IDT_VERSION		1791	/* "version.." */
@@ -232,36 +233,37 @@
 #define IDC_PBAR_IMG_CREATE	1166
 #define IDC_PARFILE		1167	/* vhd config */
 #define IDC_COMBO_VHD_TYPE	1168	
-#define IDC_EDIT_HD_PARENT_NAME	1169	
+#define IDC_EDIT_HD_PARENT_NAME	1169
+#define IDC_COMBO_HD_BLOCK_SIZE 1170
 	
 
-#define IDC_REMOV_DEVICES	1170	/* removable dev config */
-#define IDC_LIST_FLOPPY_DRIVES	1171
-#define IDC_COMBO_FD_TYPE	1172
-#define IDC_CHECKTURBO		1173
-#define IDC_CHECKBPB		1174
-#define IDC_LIST_CDROM_DRIVES	1175
-#define IDC_COMBO_CD_BUS	1176
-#define IDC_COMBO_CD_ID		1177
-#define IDC_COMBO_CD_LUN	1178
-#define IDC_COMBO_CD_CHANNEL_IDE 1179
-#define IDC_LIST_ZIP_DRIVES	1180
-#define IDC_COMBO_ZIP_BUS	1181
-#define IDC_COMBO_ZIP_ID	1182
-#define IDC_COMBO_ZIP_LUN	1183
-#define IDC_COMBO_ZIP_CHANNEL_IDE 1184
-#define IDC_CHECK250		1185
-#define IDC_COMBO_CD_SPEED	1186
+#define IDC_REMOV_DEVICES	1180	/* removable dev config */
+#define IDC_LIST_FLOPPY_DRIVES	1181
+#define IDC_COMBO_FD_TYPE	1182
+#define IDC_CHECKTURBO		1183
+#define IDC_CHECKBPB		1184
+#define IDC_LIST_CDROM_DRIVES	1185
+#define IDC_COMBO_CD_BUS	1186
+#define IDC_COMBO_CD_ID		1187
+#define IDC_COMBO_CD_LUN	1188
+#define IDC_COMBO_CD_CHANNEL_IDE 1189
+#define IDC_LIST_ZIP_DRIVES	1190
+#define IDC_COMBO_ZIP_BUS	1191
+#define IDC_COMBO_ZIP_ID	1192
+#define IDC_COMBO_ZIP_LUN	1193
+#define IDC_COMBO_ZIP_CHANNEL_IDE 1194
+#define IDC_CHECK250		1195
+#define IDC_COMBO_CD_SPEED	1196
 
-#define IDC_SLIDER_GAIN		1190	/* sound gain dialog */
+#define IDC_SLIDER_GAIN		1200	/* sound gain dialog */
 
-#define IDC_EDIT_FILE_NAME	1195	/* new floppy image dialog */
-#define IDC_COMBO_DISK_SIZE	1196
-#define IDC_COMBO_RPM_MODE	1197
+#define IDC_EDIT_FILE_NAME	1210	/* new floppy image dialog */
+#define IDC_COMBO_DISK_SIZE	1211
+#define IDC_COMBO_RPM_MODE	1212
 
 /* Misc items. */
-#define IDC_CONFIGURE_DEV	1200	/* dynamic DeviceConfig code */
-#define IDC_STATBAR		1201	/* status bar events */
+#define IDC_CONFIGURE_DEV	1220	/* dynamic DeviceConfig code */
+#define IDC_STATBAR		1221	/* status bar events */
 
 
 /* HELP menu. */

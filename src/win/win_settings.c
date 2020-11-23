@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.42	2019/05/17
+ * Version:	@(#)win_settings.c	1.0.43	2020/11/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -78,6 +78,7 @@
 #include "../devices/video/video.h"
 #include "win.h"
 #include "resource.h"
+#include "../minivhd/minivhd_util.h"
 
 /* Defined in the Video module. */
 extern const device_t voodoo_device;

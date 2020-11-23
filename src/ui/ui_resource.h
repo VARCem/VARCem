@@ -12,11 +12,11 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.21	2019/05/17
+ * Version:	@(#)ui_resource.h	1.0.22	2020/11/21
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -450,9 +450,13 @@
 #define  IDS_3519	3519		/* "USB" */
 
 /* VHD Type*/
-#define  IDS_3521	3521		/* "Fixed" */
-#define  IDS_3522	3522		/* "Sparse" */
-#define  IDS_3523	3523		/* "Differential" */
+#define  IDS_3520	3520		/* "Fixed" */
+#define  IDS_3521	3521		/* "Sparse" */
+#define  IDS_3522	3522		/* "Differential" */
+#define  IDS_3523	3523		// "Parent and child disk timestamps..."
+#define  IDS_3524   3524        // "Could not fix VHD timestamp."
+#define  IDS_3540   3540        // "Small blocks (512 KB)"
+#define  IDS_3541   3541        // "Large Blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  IDS_3525	3525		/* "Add Hard Disk" */
