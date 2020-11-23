@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem.str	1.0.16	2020/07/14
+ * Version:	@(#)VARCem.str	1.0.17	2020/11/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -132,6 +132,7 @@
 #define STR_DEVCONF_2	"Device:"
 #define STR_VHD_TYPE	"VHD Type:"
 #define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -262,9 +263,13 @@
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
 
-#define  STR_3521	"Fixed"
-#define  STR_3522	"Sparse"
-#define  STR_3523	"Differential"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523   "Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524   "Could not fix VHD timestamp"
+#define  STR_3540   "Small blocks (512 KB)"
+#define  STR_3541   "Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Add Hard Disk"

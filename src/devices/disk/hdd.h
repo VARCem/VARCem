@@ -8,12 +8,12 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.14	2018/11/08
+ * Version:	@(#)hdd.h	1.0.15	2020/11/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -141,6 +141,7 @@ extern void	hdd_active(int c, int active);
 
 extern const char *vhd_type_to_string(int vhd_type);
 extern const wchar_t *vhd_type_to_ids(int vhd_type);
+extern const wchar_t *vhd_blksize_to_ids(int blk_size);
 
 extern void	hdd_image_log(int level, const char *fmt, ...);
 extern void	hdd_image_init(void);
