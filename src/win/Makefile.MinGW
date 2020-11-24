@@ -165,15 +165,15 @@ ifeq ($(CROSS), y)
  endif
 
  ifeq ($(X64), y)
-  CPP		:= /usr/bin/$(MINGW)-g++ -m64
-  CC		:= /usr/bin/$(MINGW)-gcc -m64
+  CPP		:= /opt/bin/$(MINGW)-g++ -m64
+  CC		:= /opt/bin/$(MINGW)-gcc -m64
  else
-  CPP		:= /usr/bin/$(MINGW)-g++ -m32
-  CC		:= /usr/bin/$(MINGW)-gcc -m32
+  CPP		:= /opt/bin/$(MINGW)-g++ -m32
+  CC		:= /opt/bin/$(MINGW)-gcc -m32
  endif
- PREPROC	:= /usr/bin/$(MINGW)-cpp -P
- WINDRES	:= /usr/bin/$(MINGW)-windres
- STRIP		:= /usr/bin/$(MINGW)-strip
+ PREPROC	:= /opt/bin/$(MINGW)-cpp
+ WINDRES	:= /opt/bin/$(MINGW)-windres
+ STRIP		:= /opt/bin/$(MINGW)-strip
  ifndef CAT
   CAT		:= cat
  endif
@@ -238,10 +238,10 @@ endif
 
 # Options for Windows, X64.
 ifeq ($(X64), y)
- ifeq ($(OPTIM), y)
   DFLAGS	:= -march=native
+ else
+  DFLAGS	:= -march=x86-64
  endif
-endif
 
 # Options for Windows, ARM.
 ifeq ($(ARM), y)
