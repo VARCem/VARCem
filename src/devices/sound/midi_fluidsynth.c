@@ -52,7 +52,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#ifdef USE_FLUIDSYNTH
 #include <fluidsynth.h>
+#endif
 #define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../config.h"
