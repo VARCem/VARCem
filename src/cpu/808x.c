@@ -140,9 +140,9 @@ cpu_dumpregs(int force)
     }
     if (is386) {
 	INFO("FS : base=%06X limit=%08X access=%02X  low=%08X limit_high=%08X\n",
-		  seg_fs, _fs.limit, _fs.access, _fs.limit_low, _fs.limit_high);
+		  cpu_state.seg_fs.base, cpu_state.seg_fs.limit, cpu_state.seg_fs.access, cpu_state.seg_fs.limit_low, cpu_state.seg_fs.limit_high);
 	INFO("GS : base=%06X limit=%08X access=%02X  low=%08X limit_high=%08X\n",
-		  gs, _gs.limit, _gs.access, _gs.limit_low, _gs.limit_high);
+		  gs, cpu_state.seg_gs.limit, cpu_state.seg_gs.access, cpu_state.seg_gs.limit_low, cpu_state.seg_gs.limit_high);
 	INFO("GDT : base=%06X limit=%04X\n", gdt.base, gdt.limit);
 	INFO("LDT : base=%06X limit=%04X\n", ldt.base, ldt.limit);
 	INFO("IDT : base=%06X limit=%04X\n", idt.base, idt.limit);
@@ -202,10 +202,10 @@ makemod1table(void)
     opseg[1] = &cs;
     opseg[2] = &ss;
     opseg[3] = &ds;
-    _opseg[0] = &_es;
-    _opseg[1] = &_cs;
-    _opseg[2] = &_ss;
-    _opseg[3] = &_ds;
+    _opseg[0] = &cpu_state.seg_es;
+    _opseg[1] = &cpu_state.seg_cs;
+    _opseg[2] = &cpu_state.seg_ss;
+    _opseg[3] = &cpu_state.seg_ds;
 }
 
 
@@ -1881,7 +1881,7 @@ opcodestart:
 			tempw = geteaw();
 			switch (rmdat & 0x38) {
 				case 0x00:	/* ES */
-					loadseg(tempw, &_es);
+					loadseg(tempw, &cpu_state.seg_es);
 					break;
 
 				case 0x08:	/* CS - 8088/8086 only */
@@ -1890,11 +1890,11 @@ opcodestart:
 					break;
 
 				case 0x18:	/* DS */
-					loadseg(tempw, &_ds);
+					loadseg(tempw, &cpu_state.seg_ds);
 					break;
 
 				case 0x10:	/* SS */
-					loadseg(tempw, &_ss);
+					loadseg(tempw, &cpu_state.seg_ss);
 					break;
 			}
 			cpu_wait(1, 0);
@@ -2206,7 +2206,7 @@ opcodestart:
 			do_access(52, bits);
 			cpu_state.regs[cpu_reg].w = readmemw(easeg, cpu_state.eaaddr);
 			tempw = readmemw(easeg, (cpu_state.eaaddr + 2) & 0xFFFF);
-			loadseg(tempw, (opcode & 0x01) ? &_ds : &_es);
+			loadseg(tempw, (opcode & 0x01) ? &cpu_state.seg_ds : &cpu_state.seg_es);
 			cpu_wait(1, 0);
 			noint = 1;
 			break;

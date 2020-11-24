@@ -48,6 +48,7 @@
 #define MANU_CYRIX	2
 #define MANU_IDT	3
 #define MANU_NEC	4
+#define MANU_IBM 5
 
 /*
  * Supported CPU types.
@@ -72,7 +73,7 @@
 #define CPU_iDX4	16
 #define CPU_Cx5x86	17
 #define CPU_WINCHIP	18		/* 586 class CPUs */
-#define CPU_WINCHIP2 19		/* 586 class CPUs */
+#define CPU_WINCHIP2 19	
 #define CPU_PENTIUM	20
 #define CPU_PENTIUM_MMX	21
 #define CPU_Cx6x86 	22
@@ -169,7 +170,7 @@ extern const CPU	cpus_Pentium2D[];
 #define CR4_PVI		(1 << 1)
 #define CR4_PSE		(1 << 4)
 
-#define CPL		((_cs.access>>5)&3)
+#define CPL		((cpu_state.seg_cs.access>>5)&3)
 #define IOPL		((flags>>12)&3)
 #define IOPLp		((!(msw&1)) || (CPL<=IOPL))
 
@@ -184,13 +185,11 @@ typedef union {
 } x86reg;
 
 typedef struct {
-    uint32_t	base;
-    uint32_t	limit;
     uint8_t	access;
+    int8_t	checked; /*Non-zero if selector is known to be valid*/
     uint16_t	seg;
-    uint32_t	limit_low,
+    uint32_t	base, limit, limit_low,
 		limit_high;
-    int		checked; /*Non-zero if selector is known to be valid*/
 } x86seg;
 
 typedef union {
@@ -265,6 +264,10 @@ typedef struct {
     uint16_t	old_npxc,
 		new_npxc;
     uint32_t	last_ea;
+
+    x86seg	seg_cs, seg_ds, seg_es, seg_ss,
+		seg_fs, seg_gs;
+
 } cpu_state_t;
 
 extern cpu_state_t cpu_state;
@@ -383,25 +386,21 @@ extern uint32_t		dr[8];
 
 
 /*Segments -
-  _cs,_ds,_es,_ss are the segment structures
-  CS,DS,ES,SS is the 16-bit data
-  cs,ds,es,ss are defines to the bases*/
+  CS,DS,ES,SS,FS,GS is the 16-bit data
+  cs,ds,es,ss,gs are defines to the bases*/
 extern x86seg	gdt,ldt,idt,tr;
-extern x86seg	_cs,_ds,_es,_ss,_fs,_gs;
 extern x86seg	_oldds;
-#define CS	_cs.seg
-#define DS	_ds.seg
-#define ES	_es.seg
-#define SS	_ss.seg
-#define FS	_fs.seg
-#define GS	_gs.seg
-#define cs	_cs.base
-#define ds	_ds.base
-#define es	_es.base
-#define ss	_ss.base
-#define seg_fs	_fs.base
-#define gs	_gs.base
-
+#define CS	cpu_state.seg_cs.seg
+#define DS	cpu_state.seg_ds.seg
+#define ES	cpu_state.seg_es.seg
+#define SS	cpu_state.seg_ss.seg
+#define FS	cpu_state.seg_fs.seg
+#define GS	cpu_state.seg_gs.seg
+#define cs	cpu_state.seg_cs.base
+#define ds	cpu_state.seg_ds.base
+#define es	cpu_state.seg_es.base
+#define ss	cpu_state.seg_ss.base
+#define gs	cpu_state.seg_gs.base
 
 #if 1
 # define ISA_CYCLES_SHIFT 6

@@ -8,7 +8,7 @@
  *
  *		Instruction parsing and generation.
  *
- * Version:	@(#)codegen.c	1.0.2	2018/05/06
+ * Version:	@(#)codegen.c	1.0.3	2020/11/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -63,3 +63,9 @@ void codegen_timing_set(codegen_timing_t *timing)
 }
 
 int codegen_in_recompile;
+
+/* This is for compatibility with new x87 code. */
+void codegen_set_rounding_mode(int mode)
+{
+	cpu_state.new_npxc = (cpu_state.old_npxc & ~0xc00) | (mode << 10);
+}

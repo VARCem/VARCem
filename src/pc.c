@@ -246,7 +246,7 @@ pclog_dump(int num)
     /* Disable the repeat-detection. */
     pclog_repeat(0);
 
-    addr = (uint32_t)(_cs.base | cpu_state.pc);
+    addr = (uint32_t)(cs | cpu_state.pc);
 
     while (i < num) {
 	if (sp == NULL) {

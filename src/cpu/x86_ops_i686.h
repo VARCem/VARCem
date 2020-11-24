@@ -99,12 +99,12 @@ static int opSYSENTER(uint32_t fetchdat)
 
 	CS = (cs_msr & 0xFFFC);
 	make_seg_data(sysenter_cs_seg_data, 0, 0xFFFFF, 11, 1, 0, 1, 1, 1, 0);
-	do_seg_load(&_cs, sysenter_cs_seg_data);
+	do_seg_load(&cpu_state.seg_cs, sysenter_cs_seg_data);
 	use32 = 0x300;
 
 	SS = ((cs_msr + 8) & 0xFFFC);
 	make_seg_data(sysenter_ss_seg_data, 0, 0xFFFFF, 3, 1, 0, 1, 1, 1, 0);
-	do_seg_load(&_ss, sysenter_ss_seg_data);
+	do_seg_load(&cpu_state.seg_ss, sysenter_ss_seg_data);
 	stack32 = 1;
 
 	cycles -= timing_call_pm;
@@ -139,8 +139,8 @@ static int opSYSEXIT(uint32_t fetchdat)
 
 #ifdef SYSEXIT_LOG
 	DEBUG("SYSEXIT start:\n");
-	DEBUG("CS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", CS, _cs.base, _cs.limit, _cs.access, _cs.seg, _cs.limit_low, _cs.limit_high, _cs.checked);
-	DEBUG("SS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", SS, _ss.base, _ss.limit, _ss.access, _ss.seg, _ss.limit_low, _ss.limit_high, _ss.checked);
+	DEBUG("CS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", CS, cs, cpu_state.seg_cs.limit, cpu_state.seg_cs.access, CS, cpu_state.seg_cs.limit_low, cpu_state.seg_cs.limit_high, cpu_state.seg_cs.checked);
+	DEBUG("SS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", SS, ss, cpu_state.seg_ss.limit, cpu_state.seg_ss.access, SS, cpu_state.seg_ss.limit_low, cpu_state.seg_ss.limit_high, cpu_state.seg_ss.checked);
 	DEBUG("Model specific registers: cs_msr=%04X, esp_msr=%08X, eip_msr=%08X\n", cs_msr, esp_msr, eip_msr);
 	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i ECX=%08X EDX=%08X\n", cpu_state.pc, ESP, eflags, flags, use32, stack32, ECX, EDX);
 #endif
@@ -155,12 +155,12 @@ static int opSYSEXIT(uint32_t fetchdat)
 
 	CS = ((cs_msr + 16) & 0xFFFC) | 3;
 	make_seg_data(sysexit_cs_seg_data, 0, 0xFFFFF, 11, 1, 3, 1, 1, 1, 0);
-	do_seg_load(&_cs, sysexit_cs_seg_data);
+	do_seg_load(&cpu_state.seg_cs, sysexit_cs_seg_data);
 	use32 = 0x300;
 
 	SS = CS + 8;
 	make_seg_data(sysexit_ss_seg_data, 0, 0xFFFFF, 3, 1, 3, 1, 1, 1, 0);
-	do_seg_load(&_ss, sysexit_ss_seg_data);
+	do_seg_load(&cpu_state.seg_ss, sysexit_ss_seg_data);
 	stack32 = 1;
 
 	flushmmucache_cr3();
