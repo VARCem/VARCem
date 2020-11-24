@@ -8,12 +8,12 @@
  *
  *		Code generator definitions (32-bit)
  *
- * Version:	@(#)x86_ops_x86.h	1.0.2	2018/10/24
+ * Version:	@(#)x86_ops_x86.h	1.0.3	2020/11/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -651,11 +651,11 @@ static INLINE void CHECK_SEG_READ(x86seg *seg)
         if (!(cr0 & 1) || (eflags & VM_FLAG))
                 return;
         /*CS and SS must always be valid*/
-        if (seg == &_cs || seg == &_ss)
+        if (seg == &cpu_state.seg_cs || seg == &cpu_state.seg_ss)
                 return;
         if (seg->checked)
                 return;
-        if (seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS))
+        if (seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS))
                 return;
 
         addbyte(0x83); /*CMP seg->base, -1*/
@@ -674,11 +674,11 @@ static INLINE void CHECK_SEG_WRITE(x86seg *seg)
         if (!(cr0 & 1) || (eflags & VM_FLAG))
                 return;
         /*CS and SS must always be valid*/
-        if (seg == &_cs || seg == &_ss)
+        if (seg == &cpu_state.seg_cs || seg == &cpu_state.seg_ss)
                 return;
         if (seg->checked)
                 return;
-        if (seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS))
+        if (seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS))
                 return;
                 
         addbyte(0x83); /*CMP seg->base, -1*/
@@ -693,7 +693,7 @@ static INLINE void CHECK_SEG_WRITE(x86seg *seg)
 }
 static INLINE void CHECK_SEG_LIMITS(x86seg *seg, int end_offset)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
                 return;
 
         addbyte(0x3b); /*CMP EAX, seg->limit_low*/
@@ -721,7 +721,7 @@ static INLINE void CHECK_SEG_LIMITS(x86seg *seg, int end_offset)
 
 static INLINE void MEM_LOAD_ADDR_EA_B(x86seg *seg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -739,7 +739,7 @@ static INLINE void MEM_LOAD_ADDR_EA_B(x86seg *seg)
 }
 static INLINE int MEM_LOAD_ADDR_EA_B_NO_ABRT(x86seg *seg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -759,7 +759,7 @@ static INLINE int MEM_LOAD_ADDR_EA_B_NO_ABRT(x86seg *seg)
 }
 static INLINE void MEM_LOAD_ADDR_EA_W(x86seg *seg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -777,7 +777,7 @@ static INLINE void MEM_LOAD_ADDR_EA_W(x86seg *seg)
 }
 static INLINE void MEM_LOAD_ADDR_EA_W_OFFSET(x86seg *seg, int offset)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -798,7 +798,7 @@ static INLINE void MEM_LOAD_ADDR_EA_W_OFFSET(x86seg *seg, int offset)
 }
 static INLINE int MEM_LOAD_ADDR_EA_W_NO_ABRT(x86seg *seg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -818,7 +818,7 @@ static INLINE int MEM_LOAD_ADDR_EA_W_NO_ABRT(x86seg *seg)
 }
 static INLINE void MEM_LOAD_ADDR_EA_L(x86seg *seg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -837,7 +837,7 @@ static INLINE void MEM_LOAD_ADDR_EA_L(x86seg *seg)
 }
 static INLINE int MEM_LOAD_ADDR_EA_L_NO_ABRT(x86seg *seg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -858,7 +858,7 @@ static INLINE int MEM_LOAD_ADDR_EA_L_NO_ABRT(x86seg *seg)
 
 static INLINE void MEM_LOAD_ADDR_EA_Q(x86seg *seg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR EDX, EDX*/
                 addbyte(0xd2);
@@ -896,7 +896,7 @@ static INLINE void MEM_LOAD_ADDR_IMM_L(x86seg *seg, uint32_t addr)
 
 static INLINE void MEM_STORE_ADDR_EA_B(x86seg *seg, int host_reg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -917,7 +917,7 @@ static INLINE void MEM_STORE_ADDR_EA_B(x86seg *seg, int host_reg)
 }
 static INLINE void MEM_STORE_ADDR_EA_B_NO_ABRT(x86seg *seg, int host_reg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -938,7 +938,7 @@ static INLINE void MEM_STORE_ADDR_EA_B_NO_ABRT(x86seg *seg, int host_reg)
 }
 static INLINE void MEM_STORE_ADDR_EA_W(x86seg *seg, int host_reg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -959,7 +959,7 @@ static INLINE void MEM_STORE_ADDR_EA_W(x86seg *seg, int host_reg)
 }
 static INLINE void MEM_STORE_ADDR_EA_W_NO_ABRT(x86seg *seg, int host_reg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -980,7 +980,7 @@ static INLINE void MEM_STORE_ADDR_EA_W_NO_ABRT(x86seg *seg, int host_reg)
 }
 static INLINE void MEM_STORE_ADDR_EA_L(x86seg *seg, int host_reg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -1001,7 +1001,7 @@ static INLINE void MEM_STORE_ADDR_EA_L(x86seg *seg, int host_reg)
 }
 static INLINE void MEM_STORE_ADDR_EA_L_NO_ABRT(x86seg *seg, int host_reg)
 {
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -1032,7 +1032,7 @@ static INLINE void MEM_STORE_ADDR_EA_Q(x86seg *seg, int host_reg, int host_reg2)
                 addbyte(0x89); /*MOV ECX, host_reg2*/
                 addbyte(0xc0 | REG_ECX | (host_reg2 << 3));
         }
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -1124,7 +1124,7 @@ static INLINE x86seg *FETCH_EA_16(x86seg *op_ea_seg, uint32_t fetchdat, int op_s
                 addlong(0xffff);
 
                 if (mod1seg[rm] == &ss && !op_ssegs)
-                        op_ea_seg = &_ss;
+                        op_ea_seg = &cpu_state.seg_ss;
         }
         return op_ea_seg;
 }
@@ -1191,7 +1191,7 @@ static INLINE x86seg *FETCH_EA_32(x86seg *op_ea_seg, uint32_t fetchdat, int op_s
                         }
                 }
                 if (((sib & 7) == 4 || (mod && (sib & 7) == 5)) && !op_ssegs)
-                        op_ea_seg = &_ss;
+                        op_ea_seg = &cpu_state.seg_ss;
                 if (((sib >> 3) & 7) != 4)
                 {
                         switch (sib >> 6)
@@ -1236,7 +1236,7 @@ static INLINE x86seg *FETCH_EA_32(x86seg *op_ea_seg, uint32_t fetchdat, int op_s
                 if (mod) 
                 {
                         if (rm == 5 && !op_ssegs)
-                                op_ea_seg = &_ss;
+                                op_ea_seg = &cpu_state.seg_ss;
                         if (mod == 1) 
                         {
                                 addbyte(0x83); /*ADD EAX, imm8*/
@@ -3956,7 +3956,7 @@ static INLINE void LOAD_EA()
 static INLINE void MEM_CHECK_WRITE(x86seg *seg)
 {
         CHECK_SEG_WRITE(seg);
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -3974,7 +3974,7 @@ static INLINE void MEM_CHECK_WRITE(x86seg *seg)
 static INLINE void MEM_CHECK_WRITE_W(x86seg *seg)
 {
         CHECK_SEG_WRITE(seg);
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);
@@ -3992,7 +3992,7 @@ static INLINE void MEM_CHECK_WRITE_W(x86seg *seg)
 static INLINE void MEM_CHECK_WRITE_L(x86seg *seg)
 {
         CHECK_SEG_WRITE(seg);
-        if ((seg == &_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
+        if ((seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS)))
         {
                 addbyte(0x31); /*XOR ESI, ESI*/
                 addbyte(0xf6);

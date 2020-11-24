@@ -8,12 +8,12 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_rep.h	1.0.3	2019/05/03
+ * Version:	@(#)x86_ops_rep.h	1.0.4	2020/11/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2019 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -211,7 +211,7 @@ static int opREP_MOVSB_ ## size(uint32_t fetchdat)                              
         {                                                                       \
                 uint8_t temp;                                                   \
                                                                                 \
-                CHECK_WRITE_REP(&_es, DEST_REG, DEST_REG);                      \
+                CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG);         \
                 temp = readmemb(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;    \
                 writememb(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
@@ -244,7 +244,7 @@ static int opREP_MOVSW_ ## size(uint32_t fetchdat)                              
         {                                                                       \
                 uint16_t temp;                                                  \
                                                                                 \
-                CHECK_WRITE_REP(&_es, DEST_REG, DEST_REG);                      \
+                CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG);         \
                 temp = readmemw(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;    \
                 writememw(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
@@ -277,7 +277,7 @@ static int opREP_MOVSL_ ## size(uint32_t fetchdat)                              
         {                                                                       \
                 uint32_t temp;                                                  \
                                                                                 \
-                CHECK_WRITE_REP(&_es, DEST_REG, DEST_REG);                      \
+                CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG);         \
                 temp = readmeml(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;    \
                 writememl(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
@@ -310,7 +310,7 @@ static int opREP_STOSB_ ## size(uint32_t fetchdat)                              
                 cycles_end = cycles+1; /*Force the instruction to end after only one iteration when trap flag set*/     \
         while (CNT_REG > 0)                                                     \
         {                                                                       \
-                CHECK_WRITE_REP(&_es, DEST_REG, DEST_REG);                      \
+                CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG);         \
                 writememb(es, DEST_REG, AL); if (cpu_state.abrt) return 1;         \
                 if (flags & D_FLAG) DEST_REG--;                                 \
                 else                DEST_REG++;                                 \
@@ -338,7 +338,7 @@ static int opREP_STOSW_ ## size(uint32_t fetchdat)                              
                 cycles_end = cycles+1; /*Force the instruction to end after only one iteration when trap flag set*/     \
         while (CNT_REG > 0)                                                     \
         {                                                                       \
-                CHECK_WRITE_REP(&_es, DEST_REG, DEST_REG+1);                    \
+                CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG+1);       \
                 writememw(es, DEST_REG, AX); if (cpu_state.abrt) return 1;         \
                 if (flags & D_FLAG) DEST_REG -= 2;                              \
                 else                DEST_REG += 2;                              \
@@ -366,7 +366,7 @@ static int opREP_STOSL_ ## size(uint32_t fetchdat)                              
                 cycles_end = cycles+1; /*Force the instruction to end after only one iteration when trap flag set*/     \
         while (CNT_REG > 0)                                                     \
         {                                                                       \
-                CHECK_WRITE_REP(&_es, DEST_REG, DEST_REG+3);                    \
+                CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG+3);       \
                 writememl(es, DEST_REG, EAX); if (cpu_state.abrt) return 1;        \
                 if (flags & D_FLAG) DEST_REG -= 4;                              \
                 else                DEST_REG += 4;                              \

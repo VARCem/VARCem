@@ -8,12 +8,12 @@
  *
  *		Dynamic Recompiler for Intel x64 systems.
  *
- * Version:	@(#)codegen_x86-64.c	1.0.4	2018/10/24
+ * Version:	@(#)codegen_x86-64.c	1.0.4	2020/11/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -411,7 +411,7 @@ void codegen_block_start_recompile(codeblock_t *block)
         codegen_fpu_loaded_iq[0] = codegen_fpu_loaded_iq[1] = codegen_fpu_loaded_iq[2] = codegen_fpu_loaded_iq[3] =
         codegen_fpu_loaded_iq[4] = codegen_fpu_loaded_iq[5] = codegen_fpu_loaded_iq[6] = codegen_fpu_loaded_iq[7] = 0;
         
-        _ds.checked = _es.checked = _fs.checked = _gs.checked = (cr0 & 1) ? 0 : 1;
+        cpu_state.seg_ds.checked = cpu_state.seg_es.checked = cpu_state.seg_fs.checked = cpu_state.seg_gs.checked = (cr0 & 1) ? 0 : 1;
 
         codegen_reg_loaded[0] = codegen_reg_loaded[1] = codegen_reg_loaded[2] = codegen_reg_loaded[3] =
         codegen_reg_loaded[4] = codegen_reg_loaded[5] = codegen_reg_loaded[6] = codegen_reg_loaded[7] = 0;
@@ -585,7 +585,7 @@ static int opcode_modrm[256] =
 };
 int opcode_0f_modrm[256] =
 {
-        1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*00*/
+        1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 1, /*00*/
         0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*10*/
         1, 1, 1, 1,  1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
         0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
@@ -729,7 +729,7 @@ static x86seg *codegen_generate_ea_16_long(x86seg *op_ea_seg, uint32_t fetchdat,
                 addbyte((uint8_t)cpu_state_offset(eaaddr));
 
                 if (mod1seg[cpu_rm] == &ss && !op_ssegs)
-                        op_ea_seg = &_ss;
+                        op_ea_seg = &cpu_state.seg_ss;
         }
         return op_ea_seg;
 }
@@ -877,7 +877,7 @@ static x86seg *codegen_generate_ea_32_long(x86seg *op_ea_seg, uint32_t fetchdat,
                         addlong(stack_offset);
                 }
                 if (((sib & 7) == 4 || (cpu_mod && (sib & 7) == 5)) && !op_ssegs)
-                        op_ea_seg = &_ss;
+                        op_ea_seg = &cpu_state.seg_ss;
 
                 addbyte(0x89); /*MOV eaaddr, EAX*/
                 addbyte(0x45);
@@ -901,7 +901,7 @@ static x86seg *codegen_generate_ea_32_long(x86seg *op_ea_seg, uint32_t fetchdat,
                 if (cpu_mod) 
                 {
                         if (cpu_rm == 5 && !op_ssegs)
-                                op_ea_seg = &_ss;
+                                op_ea_seg = &cpu_state.seg_ss;
                         if (cpu_mod == 1) 
                         {
                                 addbyte(0x67); /*LEA EAX, base_reg+imm8*/
@@ -950,7 +950,7 @@ void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t 
         int test_modrm = 1;
         int c;
         
-        op_ea_seg = &_ds;
+        op_ea_seg = &cpu_state.seg_ds;
         op_ssegs = 0;
         op_old_pc = old_pc;
         
@@ -972,27 +972,27 @@ void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t 
                         break;
                         
                         case 0x26: /*ES:*/
-                        op_ea_seg = &_es;
+                        op_ea_seg = &cpu_state.seg_es;
                         op_ssegs = 1;
                         break;
                         case 0x2e: /*CS:*/
-                        op_ea_seg = &_cs;
+                        op_ea_seg = &cpu_state.seg_cs;
                         op_ssegs = 1;
                         break;
                         case 0x36: /*SS:*/
-                        op_ea_seg = &_ss;
+                        op_ea_seg = &cpu_state.seg_ss;
                         op_ssegs = 1;
                         break;
                         case 0x3e: /*DS:*/
-                        op_ea_seg = &_ds;
+                        op_ea_seg = &cpu_state.seg_ds;
                         op_ssegs = 1;
                         break;
                         case 0x64: /*FS:*/
-                        op_ea_seg = &_fs;
+                        op_ea_seg = &cpu_state.seg_fs;
                         op_ssegs = 1;
                         break;
                         case 0x65: /*GS:*/
-                        op_ea_seg = &_gs;
+                        op_ea_seg = &cpu_state.seg_gs;
                         op_ssegs = 1;
                         break;
                         

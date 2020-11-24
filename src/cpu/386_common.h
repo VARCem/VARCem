@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.6	2020/11/18
+ * Version:	@(#)386_common.h	1.0.7	2020/11/24
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -98,7 +98,7 @@ extern uint16_t ea_rseg;
 	        } \
 	        if (msw&1 && !(eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
 	        { \
-		        if ((chseg) == &_ss) \
+		        if ((chseg) == &cpu_state.seg_ss) \
 			        x86ss(NULL,(chseg)->seg & 0xfffc); \
 		        else \
 			        x86np("Read from seg not present", (chseg)->seg & 0xfffc); \
@@ -116,7 +116,7 @@ extern uint16_t ea_rseg;
 	        } \
 	        if (msw&1 && !(eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
 	        { \
-		        if ((chseg) == &_ss) \
+		        if ((chseg) == &cpu_state.seg_ss) \
 			        x86ss(NULL,(chseg)->seg & 0xfffc); \
 		        else \
 			        x86np("Write to seg not present", (chseg)->seg & 0xfffc); \
@@ -132,7 +132,7 @@ extern uint16_t ea_rseg;
 	        } \
 	        if (msw&1 && !(eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
 	        { \
-		        if ((chseg) == &_ss) \
+		        if ((chseg) == &cpu_state.seg_ss) \
 			        x86ss(NULL,(chseg)->seg & 0xfffc); \
 		        else \
 			        x86np("Write (REP) to seg not present", (chseg)->seg & 0xfffc); \
