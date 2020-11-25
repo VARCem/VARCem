@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.22	2020/11/21
+ * Version:	@(#)win_settings_disk.h	1.0.23	2020/11/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -285,6 +285,8 @@ bus_full(uint64_t *tracking, int count)
     }
 }
 
+#ifdef USE_MINIVHD
+
 HWND vhd_progress_hdlg;
 
 static void vhd_progress_callback(uint32_t current_sector, uint32_t total_sectors)
@@ -448,7 +450,7 @@ static MVHDGeom create_drive_vhd_diff(char* filename, char* parent_filename, int
 
 		return vhd_geometry;
 }
-
+#endif
 
 static void
 disk_recalc_location_controls(HWND hdlg, int is_add_dlg, int assign_id)
