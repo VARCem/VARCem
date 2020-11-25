@@ -14,7 +14,7 @@
  *		merged with hdd.c, since that is the scope of hdd.c. The
  *		actual format handlers can then be in hdd_format.c etc.
  *
- * Version:	@(#)hdd_image.c	1.0.12	2020/11/20
+ * Version:	@(#)hdd_image.c	1.0.13	2020/11/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1161,6 +1161,7 @@ hdd_image_close(uint8_t id)
 			img->vhd = NULL;
 	}
 #endif
+	}
     memset(img, 0x00, sizeof(hdd_image_t));
 	img->loaded = 0;
 }

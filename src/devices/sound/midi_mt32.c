@@ -8,7 +8,7 @@
  *
  *		Interface to the MuNT32 MIDI synthesizer.
  *
- * Version:	@(#)midi_mt32.c	1.0.13	2020/07/17
+ * Version:	@(#)midi_mt32.c	1.0.14	2020/11/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,7 +41,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
+#ifdef USE_MUNT
 #include <c_interface/c_interface.h>
+#endif
 #define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../config.h"
