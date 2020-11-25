@@ -8,10 +8,10 @@
  *
  *		Generic SVGA handling.
  *
- *		This is intended to be used by another SVGA driver,
+ *		This is intended to be used by another VGA/SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.27	2020/11/16
+ * Version:	@(#)vid_svga.c	1.0.28	2020/11/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1111,12 +1111,15 @@ svga_read_common(uint32_t addr, uint8_t linear, priv_t priv)
     count = (1 << count);
 
     if (svga->adv_flags & FLAG_ADDR_BY8)
-	addr <<= 3;
+		addr <<= 3;
     else if (svga->chain4 || svga->fb_only) {
-	addr &= svga->decode_mask;
-	if (addr >= svga->vram_max)
-		return 0xff;
-	return svga->vram[addr & svga->vram_mask];
+		addr &= svga->decode_mask;
+		if (addr >= svga->vram_max)
+			return 0xff;
+		latch_addr = addr & svga->vram_mask & ~3;
+		for (i = 0; i < count; i++)
+			svga->latch.b[i] = svga->vram[latch_addr | i];
+		return svga->vram[addr & svga->vram_mask];
     } else if (svga->chain2_read) {
 	readplane = (readplane & 2) | (addr & 1);
 	addr &= ~1;
