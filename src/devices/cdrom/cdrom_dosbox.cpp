@@ -8,13 +8,13 @@
  *
  *		CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.cpp	1.0.10	2018/10/23
+ * Version:	@(#)cdrom_dosbox.cpp	1.0.15	2020/11/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		The DOSBox Team, <unknown>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2002-2015 The DOSBox Team.
  *
@@ -38,33 +38,26 @@
  */
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
-#ifdef _WIN32
-//FIXME: should not be needed. */
-# define _GNU_SOURCE
-#endif
+#define __STDC_FORMAT_MACROS
+
+#include <inttypes.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <sys/stat.h>
-#include <cctype>
-#include <cmath>
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <sstream>
-#include <vector>
-#ifdef ERROR
-# undef ERROR
+#include <ctype.h>
+#ifdef _WIN32
+# include <string.h>
+#else
+# include <libgen.h>
 #endif
+#include <wchar.h>
+#include <vector>
+#include <sys/stat.h>
 #include "../../emu.h"
 #include "../../plat.h"
+#include "cdrom.h"
+#include "cdrom_image.h"
 #include "cdrom_dosbox.h"
-
-#ifndef _WIN32
-# include <libgen.h>
-#else
-# include <string.h>
-#endif
 
 using namespace std;
 
@@ -72,40 +65,43 @@ using namespace std;
 #define MAX_FILENAME_LENGTH 256
 #define CROSS_LEN 512
 
-#define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
-
-
-
-//FIXME: update to use plat_fopen and wchar!
-CDROM_Interface_Image::BinaryFile::BinaryFile(const char *filename, bool &error)
+CDROM_Interface_Image::BinaryFile::BinaryFile(const wchar_t *filename, bool &error)
 {
+     const wstring cwstr(L"rb");
+    
     memset(fn, 0x00, sizeof(fn));
-    strcpy(fn, filename);
-    file = fopen64(fn, "rb");
+    wcscpy(fn, filename);
+    file = plat_fopen64(fn, (const wchar_t *)cwstr.c_str());
+    DEBUG("CDROM: binary_open(%ls) = %08lx\n", fn, file);
+
     if (file == NULL)
-	error = true;
+	    error = true;
     else
-	error = false;
+	    error = false;
 }
 
 
 CDROM_Interface_Image::BinaryFile::~BinaryFile(void)
 {
     if (file != NULL) {
-	fclose(file);
-	file = NULL;
+	    fclose(file);
+	    file = NULL;
     }
     memset(fn, 0x00, sizeof(fn));
 }
 
 
 bool
-CDROM_Interface_Image::BinaryFile::read(Bit8u *buffer, uint64_t seek, size_t count)
+CDROM_Interface_Image::BinaryFile::read(uint8_t *buffer, uint64_t seek, size_t count)
 {
     if (file == NULL) return 0;
 
     fseeko64(file, seek, SEEK_SET);
-    if (fread(buffer, count, 1, file) != 1) return 0;
+    
+    if (fread(buffer, count, 1, file) != 1) {
+	    ERRLOG("CDROM: binary_read failed!\n");
+	    return 0;
+    }
 
     return 1;
 }
@@ -114,11 +110,17 @@ CDROM_Interface_Image::BinaryFile::read(Bit8u *buffer, uint64_t seek, size_t cou
 uint64_t
 CDROM_Interface_Image::BinaryFile::getLength(void)
 {
-    if (file == NULL) return 0;
+    off64_t len;
+    
+    DEBUG("CDROM: binary_length(%08lx)\n", file);
+    if (file == NULL) 
+        return 0;
 
     fseeko64(file, 0, SEEK_END);
+    len = (off64_t)ftello64(file);
+    DEBUG("CDROM: binary_length(%08lx) = %" PRIu64 "\n", file, (uint64_t)len);
 
-    return ftello64(file);
+    return len;
 }
 
 
@@ -140,20 +142,22 @@ CDROM_Interface_Image::InitNewMedia(void)
 
 
 bool
-CDROM_Interface_Image::SetDevice(char* path, int forceCD)
+CDROM_Interface_Image::SetDevice(const wchar_t *path, int type, int forceCD)
 {
     (void)forceCD;
-    if (LoadCueSheet(path)) return true;
-    if (LoadIsoFile(path)) return true;
+
+    if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_CUE)
+        if (LoadCueSheet(path)) return true;
+    
+    if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_ISO)
+        if (LoadIsoFile(path)) return true;
 	
-    // print error message on dosbox console
-    //printf("Could not load image file: %s\n", path);
     return false;
 }
 
 
 bool
-CDROM_Interface_Image::GetUPC(unsigned char& attr, char* upc)
+CDROM_Interface_Image::GetUPC(uint8_t& attr, char* upc)
 {
     attr = 0;
     strcpy(upc, this->mcn.c_str());
@@ -174,11 +178,11 @@ CDROM_Interface_Image::GetAudioTracks(int& stTrack, int& end, TMSF& leadOut)
 
 
 bool
-CDROM_Interface_Image::GetAudioTrackInfo(int track, int& track_number, TMSF& start, unsigned char& attr)
+CDROM_Interface_Image::GetAudioTrackInfo(int track, int& track_number, TMSF& start, uint8_t& attr)
 {
     if (track < 1 || track > (int)tracks.size()) return false;
 
-    FRAMES_TO_MSF(tracks[track - 1].start + 150, &start.min, &start.sec, &start.fr);
+    FRAMES_TO_MSF(tracks[track - 1].start, &start.min, &start.sec, &start.fr);
     track_number = tracks[track - 1].track_number;
     attr = tracks[track - 1].attr;
 
@@ -187,23 +191,23 @@ CDROM_Interface_Image::GetAudioTrackInfo(int track, int& track_number, TMSF& sta
 
 
 bool
-CDROM_Interface_Image::GetAudioSub(int sector, unsigned char& attr, unsigned char& track, unsigned char& index, TMSF& relPos, TMSF& absPos)
+CDROM_Interface_Image::GetAudioSub(int sector, uint8_t& attr, uint8_t& track, uint8_t& index, TMSF& relPos, TMSF& absPos)
 {
     int cur_track = GetTrack(sector);
 
     if (cur_track < 1) return false;
 
-    track = (unsigned char)cur_track;
+    track = (uint8_t)cur_track;
     attr = tracks[track - 1].attr;
     index = 1;
 
 #if 1
     FRAMES_TO_MSF(sector + 150, &absPos.min, &absPos.sec, &absPos.fr);
 #else
-    FRAMES_TO_MSF(sector - tracks[track - 1].start + 150, &relPos.min, &relPos.sec, &relPos.fr);
+    FRAMES_TO_MSF(sector - tracks[track - 1].start, &relPos.min, &relPos.sec, &relPos.fr);
 #endif
 
-    /* Yes, the absolute position should be adjusted by 150, but not the relative position. */
+    /* Absolute position should be adjusted by 150, not the relative ones. */
     FRAMES_TO_MSF(sector - tracks[track - 1].start, &relPos.min, &relPos.sec, &relPos.fr);
 
     return true;
@@ -222,16 +226,19 @@ CDROM_Interface_Image::GetMediaTrayStatus(bool& mediaPresent, bool& mediaChanged
 
 
 bool
-CDROM_Interface_Image::ReadSectors(PhysPt buffer, bool raw, unsigned long sector, unsigned long num)
+CDROM_Interface_Image::ReadSectors(size_t buffer, bool raw, uint32_t sector, uint32_t num)
 {
     int sectorSize = raw ? RAW_SECTOR_SIZE : COOKED_SECTOR_SIZE;
-    Bitu buflen = num * sectorSize;
-    Bit8u* buf = new Bit8u[buflen];
+    uint8_t buflen = num * sectorSize;
+    uint8_t* buf = new uint8_t[buflen];
+    uint32_t i;
 	
     bool success = true; //Gobliiins reads 0 sectors
-    for (unsigned long i = 0; i < num; i++) {
-	success = ReadSector(&buf[i * sectorSize], raw, sector + i);
-	if (!success) break;
+
+    for (i = 0; i < num; i++) {
+	    success = ReadSector(&buf[i * sectorSize], raw, sector + i);
+	    if (! success) 
+            break;
     }
 
     memcpy((void*)buffer, buf, buflen);
@@ -257,10 +264,11 @@ CDROM_Interface_Image::GetTrack(unsigned int sector)
     vector<Track>::iterator end = tracks.end() - 1;
 	
     while (i != end) {
-	Track &curr = *i;
-	Track &next = *(i + 1);
-	if (curr.start <= sector && sector < next.start) return curr.number;
-	i++;
+	    Track &curr = *i;
+	    Track &next = *(i + 1);
+	    if (curr.start <= sector && sector < next.start) 
+            return curr.number;
+	    i++;
     }
 
     return -1;
@@ -268,7 +276,7 @@ CDROM_Interface_Image::GetTrack(unsigned int sector)
 
 
 bool
-CDROM_Interface_Image::ReadSector(Bit8u *buffer, bool raw, unsigned long sector)
+CDROM_Interface_Image::ReadSector(uint8_t *buffer, bool raw, uint32_t sector)
 {
     size_t length;
 
@@ -290,7 +298,7 @@ CDROM_Interface_Image::ReadSector(Bit8u *buffer, bool raw, unsigned long sector)
 
 
 bool
-CDROM_Interface_Image::ReadSectorSub(Bit8u *buffer, unsigned long sector)
+CDROM_Interface_Image::ReadSectorSub(uint8_t *buffer, uint32_t sector)
 {
     int track = GetTrack(sector) - 1;
     if (track < 0) return false;
@@ -304,7 +312,7 @@ CDROM_Interface_Image::ReadSectorSub(Bit8u *buffer, unsigned long sector)
 
 
 int
-CDROM_Interface_Image::GetSectorSize(unsigned long sector)
+CDROM_Interface_Image::GetSectorSize(uint32_t sector)
 {
     int track = GetTrack(sector) - 1;
     if (track < 0) return 0;
@@ -314,21 +322,22 @@ CDROM_Interface_Image::GetSectorSize(unsigned long sector)
 
 
 bool
-CDROM_Interface_Image::IsMode2(unsigned long sector)
+CDROM_Interface_Image::IsMode2(uint32_t sector)
 {
     int track = GetTrack(sector) - 1;
-    if (track < 0) return false;
+    
+    if (track < 0) 
+        return false;
 	
-    if (tracks[track].mode2) {
-	return true;
-    } else {
+    if (tracks[track].mode2)
+	    return true;
+    
 	return false;
-    }
 }
 
 
 int
-CDROM_Interface_Image::GetMode2Form(unsigned long sector)
+CDROM_Interface_Image::GetMode2Form(uint32_t sector)
 {
     int track = GetTrack(sector) - 1;
     if (track < 0) return false;
@@ -336,19 +345,37 @@ CDROM_Interface_Image::GetMode2Form(unsigned long sector)
     return tracks[track].form;
 }
 
+bool
+CDROM_Interface_Image::CanReadPVD(TrackFile *file, uint64_t sectorSize, bool mode2)
+{
+    uint8_t pvd[COOKED_SECTOR_SIZE];
+    uint64_t seek = 16 * sectorSize;	// first vd is located at sector 16
+
+    if (sectorSize == RAW_SECTOR_SIZE && !mode2) 
+        seek += 16;
+    if (mode2) 
+        seek += 24;
+
+    file->read(pvd, seek, COOKED_SECTOR_SIZE);
+
+    return ((pvd[0] == 1 && !strncmp((char*)(&pvd[1]), "CD001", 5) && pvd[6] == 1) ||
+            (pvd[8] == 1 && !strncmp((char*)(&pvd[9]), "CDROM", 5) && pvd[14] == 1));
+}
 
 bool
-CDROM_Interface_Image::LoadIsoFile(char* filename)
+CDROM_Interface_Image::LoadIsoFile(const wchar_t *filename)
 {
     tracks.clear();
 	
     // data track
     Track track = {0, 0, 0, 0, 0, 0, 0, 0, false, NULL};
     bool error;
+
     track.file = new BinaryFile(filename, error);
     if (error) {
-	delete track.file;
-	return false;
+	    delete track.file;
+        track.file = NULL;
+	    return false;
     }
     track.number = 1;
     track.track_number = 1;	//IMPORTANT: This is needed.
@@ -357,23 +384,26 @@ CDROM_Interface_Image::LoadIsoFile(char* filename)
 
     // try to detect iso type
     if (CanReadPVD(track.file, COOKED_SECTOR_SIZE, false)) {
-	track.sectorSize = COOKED_SECTOR_SIZE;
-	track.mode2 = false;
+	    track.sectorSize = COOKED_SECTOR_SIZE;
+	    track.mode2 = false;
     } else if (CanReadPVD(track.file, RAW_SECTOR_SIZE, false)) {
-	track.sectorSize = RAW_SECTOR_SIZE;
-	track.mode2 = false;		
+	    track.sectorSize = RAW_SECTOR_SIZE;
+	    track.mode2 = false;		
     } else if (CanReadPVD(track.file, 2336, true)) {
-	track.sectorSize = 2336;
-	track.mode2 = true;
+	    track.sectorSize = 2336;
+	    track.mode2 = true;
     } else if (CanReadPVD(track.file, 2324, true)) {
-	track.sectorSize = 2324;
-	track.form = 2;
-	track.mode2 = true;
+	    track.sectorSize = 2324;
+	    track.form = 2;
+	    track.mode2 = true;
     } else if (CanReadPVD(track.file, RAW_SECTOR_SIZE, true)) {
-	track.sectorSize = RAW_SECTOR_SIZE;
-	track.mode2 = true;		
+	    track.sectorSize = RAW_SECTOR_SIZE;
+	    track.mode2 = true;		
     } else {
-	/* Unknown mode: Assume regular 2048-byte sectors, this is needed so Apple Rhapsody ISO's can be mounted. */
+	/* 
+     * Unknown mode: Assume regular 2048-byte sectors.
+     * this is needed so Apple Rhapsody ISO's can be mounted. 
+     */
 		track.sectorSize = COOKED_SECTOR_SIZE;
 		track.mode2 = false;
     }
@@ -393,92 +423,196 @@ CDROM_Interface_Image::LoadIsoFile(char* filename)
     return true;
 }
 
-
 bool
-CDROM_Interface_Image::CanReadPVD(TrackFile *file, uint64_t sectorSize, bool mode2)
+CDROM_Interface_Image::CueGetBuffer(char *str, char **line, bool up)
 {
-    Bit8u pvd[COOKED_SECTOR_SIZE];
-    uint64_t seek = 16 * sectorSize;	// first vd is located at sector 16
+    char *s = *line;
+    char *p = str;
+    int quote = 0;
+    int done = 0;
+    int space = 1;
 
-    if (sectorSize == RAW_SECTOR_SIZE && !mode2) seek += 16;
-    if (mode2) seek += 24;
+    /* Copy to local buffer until we have end of string or whitespace. */
+    while (! done) {
+	switch(*s) {
+		case '\0':
+			if (quote) {
+				/* Ouch, unterminated string.. */
+				return false;
+			}
+			done = 1;
+			break;
 
-    file->read(pvd, seek, COOKED_SECTOR_SIZE);
+		case '\"':
+			quote ^= 1;
+			break;
 
-#if 0
-    pvd[0] = descriptor type, pvd[1..5] = standard identifier, pvd[6] = iso version (+8 for High Sierra)
-#endif
+		case ' ':
+		case '\t':
+			if (space)
+				break;
 
-    return ((pvd[0] == 1 && !strncmp((char*)(&pvd[1]), "CD001", 5) && pvd[6] == 1) ||
-            (pvd[8] == 1 && !strncmp((char*)(&pvd[9]), "CDROM", 5) && pvd[14] == 1));
-}
+			if (! quote) {
+				done = 1;
+				break;
+			}
+			/*FALLTHROUGH*/
 
+		default:
+			if (up && islower((int) *s))
+				*p++ = toupper((int) *s);
+			else
+				*p++ = *s;
+			space = 0;
+			break;
+	}
 
-#ifdef _WIN32
-static string
-dirname(char * file)
-{
-    char *sep = strrchr(file, '\\');
-
-    if (sep == NULL)
-	sep = strrchr(file, '/');
-    if (sep == NULL)
-	return "";
-    else {
-	int len = (int)(sep - file);
-	char tmp[MAX_FILENAME_LENGTH];
-	safe_strncpy(tmp, file, len+1);
-	return tmp;
+	if (! done)
+		s++;
     }
-}
-#endif
+    *p = '\0';
 
+    *line = s;
+
+    return true;
+}
+
+/* Get a filename string from the input line. */
+bool
+CDROM_Interface_Image::GetCueString(string &dest, char **line)
+{
+    char temp[1024];
+    bool success;
+
+    success = CueGetBuffer(temp, line, false);
+    if (success)
+	    dest = temp;
+    return success;
+}
+
+/* Get a keyword from the input line, handling uppercasing. */
+bool
+CDROM_Interface_Image::CueGetKeyword(string &dest, char **line)
+{
+    char temp[1024];
+    bool success;
+
+    success = CueGetBuffer(temp,line, true);
+    if (success)
+        dest=temp;
+    
+    return success;
+}    
+
+/* Get a number from the input line. */
+bool
+CDROM_Interface_Image::CueGetNumber(int &arg, char **line)
+{
+    char temp[128];
+    uint64_t num = 0;
+
+
+    if(! CueGetBuffer(temp, line, false))
+        return false;
+    
+    if (sscanf(temp, "%" PRIu64, &num) != 1)
+        return false;
+           
+    arg = num;
+    return true;
+}
+
+/* Get a frame ID from the input line. */
+bool
+CDROM_Interface_Image::CueGetFrame(uint64_t &arg, char **line)
+{
+    char temp[128];
+    unsigned int min, sec, fr;
+    bool success;
+
+    success = CueGetBuffer(temp, line, false);
+    
+    if (success)
+        success = (sscanf(temp, "%u:%u:%u", &min, &sec, &fr) == 3);
+
+    if (success)
+        arg = MSF_TO_FRAMES(min, sec, fr);
+
+    return success;
+}
 
 bool
-CDROM_Interface_Image::LoadCueSheet(char *cuefile)
+CDROM_Interface_Image::LoadCueSheet(const wchar_t *cuefile)
 {
     Track track = {0, 0, 0, 0, 0, 0, 0, 0, false, NULL};
-    tracks.clear();
+    wchar_t pathname[MAX_FILENAME_LENGTH];
+    wchar_t filename[MAX_FILENAME_LENGTH];
+    wchar_t temp[MAX_FILENAME_LENGTH];
+    char ansi[MAX_FILENAME_LENGTH];
+    char buf[MAX_LINE_LENGTH], *line;
+    const wstring cwstr(L"r");
+    
 
     uint64_t shift = 0;
     uint64_t currPregap = 0;
     uint64_t totalPregap = 0;
     uint64_t prestart = 0;
-    bool success;
+    uint64_t frame;
+    int index;
+    string command, type;
     bool canAddTrack = false;
-    char tmp[MAX_FILENAME_LENGTH];	// dirname can change its argument
+    bool success;
+    FILE *fp;
 
-    safe_strncpy(tmp, cuefile, MAX_FILENAME_LENGTH);
-    string pathname(dirname(tmp));
-    ifstream in;
-    in.open(cuefile, ios::in);
-    if (in.fail()) return false;
+    tracks.clear();
 
-    while (!in.eof()) {
-	// get next line
-	char buf[MAX_LINE_LENGTH];
-	in.getline(buf, MAX_LINE_LENGTH);
-	if (in.fail() && !in.eof()) return false;  // probably a binary file
-	istringstream line(buf);
+    /* Get a copy of the filename into pathname, we need it later. */
+    plat_get_dirname(pathname, cuefile);
+    
+    /* Open the file. */
+    fp = plat_fopen(cuefile, (wchar_t *)cwstr.c_str());
+    if (fp == NULL)
+	    return false;
 
-	string command;
-	GetCueKeyword(command, line);
+    success = false;
+
+    for (;;) {
+
+	line = buf;
+
+	/* Read a line from the cuesheet file. */
+	if (fgets(line, sizeof(buf), fp) == NULL || ferror(fp) || feof(fp))
+    	break;
+    buf[strlen(line) - 1] = '\0';	/* nuke trailing newline */
+
+    /* Ignore empty lines, and 'comment' lines. */
+	if (*line == '\0' || *line == '#' || *line == ';') continue;
+
+	success = CueGetKeyword(command, &line);
 
 	if (command == "TRACK") {
-		if (canAddTrack) success = AddTrack(track, shift, prestart, totalPregap, currPregap);
-		else success = true;
+		if (canAddTrack) 
+            success = AddTrack(track, shift, prestart, totalPregap, currPregap);
+		else 
+            success = true;
 
+        if (! success)
+            break;
+        
+        success = CueGetNumber(track.number, &line);
+        if (! success)
+            break;
+
+        track.track_number = track.number;
 		track.start = 0;
 		track.skip = 0;
+        track.form = 0;
 		currPregap = 0;
 		prestart = 0;
 
-		line >> track.number;
-		track.track_number = track.number;
-		string type;
-		GetCueKeyword(type, line);
-
-		track.form = 0;
+        success = CueGetKeyword(type, &line);
+        if (! success)
+            break;
 
 		if (type == "AUDIO") {
 			track.sectorSize = RAW_SECTOR_SIZE;
@@ -526,49 +660,93 @@ CDROM_Interface_Image::LoadCueSheet(char *cuefile)
 		} else success = false;
 
 		canAddTrack = true;
-	} else if (command == "INDEX") {
-		uint64_t index;
-		line >> index;
-		uint64_t frame;
-		success = GetCueFrame(frame, line);
+	} else if (command == "INDEX") { 
+		success = CueGetNumber(index, &line);
+        if (! success)
+            break;
 
-		if (index == 1) track.start = frame;
-		else if (index == 0) prestart = frame;
-		// ignore other indices
+        success = CueGetFrame(frame, &line);
+        if (! success)
+            break;
+
+		switch(index) {
+			case 0:
+				prestart = frame;
+				break;
+
+			case 1:
+				track.start = frame;
+				break;
+
+			default:
+				/* ignore other indices */
+				break;
+		}
 	} else if (command == "FILE") {
-		if (canAddTrack) success = AddTrack(track, shift, prestart, totalPregap, currPregap);
-		else success = true;
+		if (canAddTrack) 
+            success = AddTrack(track, shift, prestart, totalPregap, currPregap);
+		else 
+            success = true;
+        if (! success)
+            break;
+
 		canAddTrack = false;
 
-		string filename;
-		GetCueString(filename, line);
-		GetRealFileName(filename, pathname);
-		string type;
-		GetCueKeyword(type, line);
+		success = CueGetBuffer(ansi, &line, false);
+        if (! success) break;
+        success = CueGetKeyword(type, &line);
+        if (! success) break;
 
-		track.file = NULL;
+        track.file = NULL;
 		bool error = true;
-		if (type == "BINARY") {
-			track.file = new BinaryFile(filename.c_str(), error);
+		
+        if (type == "BINARY") {
+			mbstowcs(temp, ansi, sizeof_w(temp));
+
+			memset(filename, 0x00, sizeof(filename));
+            plat_append_filename(filename, pathname, temp);
+			track.file = new BinaryFile(filename, error);
+        }    
+        else {
+			ERRLOG("CUE: unsupported track format '%s' in cue sheet!\n",
+								type.c_str());
+			success = false;
+			break;
 		}
 		if (error) {
+            ERRLOG("CUE: cannot open fille '%ls' in cue sheet!\n",
+								filename);
 			delete track.file;
+            track.file = NULL;
 			success = false;
+            break;
 		}
-	} else if (command == "PREGAP") success = GetCueFrame(currPregap, line);
-	else if (command == "CATALOG") success = GetCueString(mcn, line);
+	} else if (command == "PREGAP") 
+        success = CueGetFrame(currPregap, &line);
+	else if (command == "CATALOG") 
+        success = GetCueString(mcn, &line);
 	// ignored commands
-	else if (command == "CDTEXTFILE" || command == "FLAGS" || command == "ISRC"
-		|| command == "PERFORMER" || command == "POSTGAP" || command == "REM"
-		|| command == "SONGWRITER" || command == "TITLE" || command == "") success = true;
+	else if (command == "CDTEXTFILE" || command == "FLAGS" || command == "ISRC" ||
+		 command == "PERFORMER" || command == "POSTGAP" || command == "REM" ||
+		 command == "SONGWRITER" || command == "TITLE" || command == "") 
+        success = true;
 	// failure
-	else success = false;
-
-	if (!success) return false;
+	else {
+       	ERRLOG("CUE: unsupported command '%s' in cue sheet!\n",
+							command.c_str());
+        success = false;
+    }
+	if (!success) 
+        break;
     }
 
+    fclose(fp);
+    if (! success)
+        return false;
+
     // add last track
-    if (!AddTrack(track, shift, prestart, totalPregap, currPregap)) return false;
+    if (!AddTrack(track, shift, prestart, totalPregap, currPregap)) 
+        return false;
 
     // add leadout track
     track.number++;
@@ -578,7 +756,8 @@ CDROM_Interface_Image::LoadCueSheet(char *cuefile)
     track.start = 0;
     track.length = 0;
     track.file = NULL;
-    if(!AddTrack(track, shift, 0, totalPregap, 0)) return false;
+    if(!AddTrack(track, shift, 0, totalPregap, 0)) 
+        return false;
 
     return true;
 }
@@ -640,9 +819,10 @@ CDROM_Interface_Image::AddTrack(Track &curr, uint64_t &shift, uint64_t prestart,
 bool
 CDROM_Interface_Image::HasDataTrack(void)
 {
-    //Data track has attribute 0x14
-    for (track_it it = tracks.begin(); it != tracks.end(); it++) {
-	if ((*it).attr == DATA_TRACK) return true;
+    for (const auto &track : tracks) {
+        if (track.attr == DATA_TRACK) {
+            return true;
+        } 
     }
     return false;
 }
@@ -651,95 +831,12 @@ CDROM_Interface_Image::HasDataTrack(void)
 bool
 CDROM_Interface_Image::HasAudioTracks(void)
 {
-    for (track_it it = tracks.begin(); it != tracks.end(); it++) {
-	if ((*it).attr == AUDIO_TRACK) return true;
+    for (const auto &track : tracks) {
+        if (track.attr == AUDIO_TRACK) {
+            return true;
+        } 
     }
     return false;
-}
-
-
-bool
-CDROM_Interface_Image::GetRealFileName(string &filename, string &pathname)
-{
-    // check if file exists
-    struct stat test;
-    if (stat(filename.c_str(), &test) == 0) return true;
-
-    // check if file with path relative to cue file exists
-    string tmpstr(pathname + "/" + filename);
-    if (stat(tmpstr.c_str(), &test) == 0) {
-	filename = tmpstr;
-	return true;
-    }
-
-#if defined (_WIN32) || defined(OS2)
-    //Nothing
-#else
-    //Consider the possibility that the filename has a windows directory seperator (inside the CUE file)
-    //which is common for some commercial rereleases of DOS games using DOSBox
-
-    string copy = filename;
-    size_t l = copy.size();
-    for (size_t i = 0; i < l;i++) {
-	if(copy[i] == '\\') copy[i] = '/';
-    }
-
-    if (stat(copy.c_str(), &test) == 0) {
-	filename = copy;
-	return true;
-    }
-
-    tmpstr = pathname + "/" + copy;
-    if (stat(tmpstr.c_str(), &test) == 0) {
-	filename = tmpstr;
-		return true;
-    }
-#endif
-    return false;
-}
-
-
-bool
-CDROM_Interface_Image::GetCueKeyword(string &keyword, istream &in)
-{
-    in >> keyword;
-    for (Bitu i = 0; i < keyword.size(); i++) keyword[i] = toupper(keyword[i]);
-
-    return true;
-}
-
-
-bool
-CDROM_Interface_Image::GetCueFrame(uint64_t &frames, istream &in)
-{
-    string msf;
-    in >> msf;
-    int min, sec, fr;
-    bool success = sscanf(msf.c_str(), "%d:%d:%d", &min, &sec, &fr) == 3;
-    frames = MSF_TO_FRAMES(min, sec, fr);
-
-    return success;
-}
-
-
-bool
-CDROM_Interface_Image::GetCueString(string &str, istream &in)
-{
-    int pos = (int)in.tellg();
-    in >> str;
-    if (str[0] == '\"') {
-	if (str[str.size() - 1] == '\"') {
-		str.assign(str, 1, str.size() - 2);
-	} else {
-		in.seekg(pos, ios::beg);
-		char buffer[MAX_FILENAME_LENGTH];
-		in.getline(buffer, MAX_FILENAME_LENGTH, '\"');	// skip
-		in.getline(buffer, MAX_FILENAME_LENGTH, '\"');
-		str = buffer;
-	}
-    }
-
-    return true;
 }
 
 

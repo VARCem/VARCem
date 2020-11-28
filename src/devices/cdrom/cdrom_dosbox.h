@@ -8,13 +8,13 @@
  *
  *		Definitions for the CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.h	1.0.2	2018/03/09
+ * Version:	@(#)cdrom_dosbox.h	1.0.5	2020/11/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		The DOSBox Team, <unknown>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2002-2015 The DOSBox Team.
  *
@@ -36,30 +36,17 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef CDROM_INTERFACE
+# define CDROM_INTERFACE
 
-/* Modified for use with PCem by bit */
 
-#ifndef __CDROM_INTERFACE__
-#define __CDROM_INTERFACE__
-
+#include <stdint.h>
 #include <string.h>
 #include <string>
 #include <iostream>
 #include <vector>
 #include <fstream>
 #include <sstream>
-
-#include <stdint.h>
-typedef signed int Bits;
-typedef unsigned int Bitu;
-typedef int8_t   Bit8s;
-typedef uint8_t  Bit8u;
-typedef int16_t  Bit16s;
-typedef uint16_t Bit16u;
-typedef int32_t  Bit32s;
-typedef uint32_t Bit32u;
-
-typedef size_t PhysPt;
 
 #define RAW_SECTOR_SIZE		2352
 #define COOKED_SECTOR_SIZE	2048
@@ -80,59 +67,55 @@ typedef size_t PhysPt;
 
 
 typedef struct SMSF {
-	unsigned char min;
-	unsigned char sec;
-	unsigned char fr;
+	uint8_t min;
+	uint8_t sec;
+	uint8_t fr;
 } TMSF;
 
 typedef struct SCtrl {
-	Bit8u	out[4];			// output channel
-	Bit8u	vol[4];			// channel volume
+	uint8_t	out[4];			// output channel
+	uint8_t	vol[4];			// channel volume
 } TCtrl;
 
-extern int CDROM_GetMountType(char* path, int force);
-
-class CDROM_Interface
-{
+class CDROM_Interface {
 public:
 //	CDROM_Interface						(void);
 	virtual ~CDROM_Interface			(void) {};
 
-	virtual bool	SetDevice			(char* path, int forceCD) = 0;
+	virtual bool	SetDevice			(const wchar_t *path, int type, int forceCD) = 0;
 
-	virtual bool	GetUPC				(unsigned char& attr, char* upc) = 0;
+	virtual bool	GetUPC				(uint8_t& attr, char* upc) = 0;
 
 	virtual bool	GetAudioTracks		(int& stTrack, int& end, TMSF& leadOut) = 0;
 	virtual bool	GetAudioTrackInfo	(int track, int& number, TMSF& start, unsigned char& attr) = 0;
-	virtual bool    GetAudioSub             (int sector, unsigned char& attr, unsigned char& track, unsigned char& index, TMSF& relPos, TMSF& absPos) = 0;
+	virtual bool    GetAudioSub         (int sector, unsigned char& attr, unsigned char& track, unsigned char& index, TMSF& relPos, TMSF& absPos) = 0;
 	virtual bool	GetMediaTrayStatus	(bool& mediaPresent, bool& mediaChanged, bool& trayOpen) = 0;
 
-	virtual bool	ReadSectors			(PhysPt buffer, bool raw, unsigned long sector, unsigned long num) = 0;
+	virtual bool	ReadSectors			(size_t buffer, bool raw, uint32_t sector, uint32_t num) = 0;
 
 	virtual bool	LoadUnloadMedia		(bool unload) = 0;
 
 	virtual void	InitNewMedia		(void) {};
 };
 
-class CDROM_Interface_Image : public CDROM_Interface
-{
+class CDROM_Interface_Image : public CDROM_Interface {
 private:
 	class TrackFile {
 	public:
-		virtual bool read(Bit8u *buffer, uint64_t seek, size_t count) = 0;
+		virtual bool read(uint8_t *buffer, uint64_t seek, size_t count) = 0;
 		virtual uint64_t getLength() = 0;
 		virtual ~TrackFile() { };
 	};
 	
 	class BinaryFile : public TrackFile {
 	public:
-		BinaryFile(const char *filename, bool &error);
+		BinaryFile(const wchar_t *filename, bool &error);
 		~BinaryFile();
-		bool read(Bit8u *buffer, uint64_t seek, size_t count);
+		bool read(uint8_t *buffer, uint64_t seek, size_t count);
 		uint64_t getLength();
 	private:
 		BinaryFile();
-		char fn[260];
+		wchar_t fn[260];
 		FILE *file;
 	};
 	
@@ -153,44 +136,48 @@ public:
 	CDROM_Interface_Image		();
 	virtual ~CDROM_Interface_Image	(void);
 	void	InitNewMedia		(void);
-	bool	SetDevice		(char* path, int forceCD);
-	bool	GetUPC			(unsigned char& attr, char* upc);
+	bool	SetDevice		    (const wchar_t* path, int type, int forceCD);
+	bool	GetUPC			    (uint8_t& attr, char* upc);
 	bool	GetAudioTracks		(int& stTrack, int& end, TMSF& leadOut);
-	bool	GetAudioTrackInfo	(int track, int& number, TMSF& start, unsigned char& attr);
-	bool    GetAudioSub             (int sector, unsigned char& attr, unsigned char& track, unsigned char& index, TMSF& relPos, TMSF& absPos);
+	bool	GetAudioTrackInfo	(int track, int& number, TMSF& start, uint8_t& attr);
+	bool    GetAudioSub         (int sector, uint8_t& attr, uint8_t& track, uint8_t& index, TMSF& relPos, TMSF& absPos);
 	bool	GetMediaTrayStatus	(bool& mediaPresent, bool& mediaChanged, bool& trayOpen);
-	bool	ReadSectors		(PhysPt buffer, bool raw, unsigned long sector, unsigned long num);
+	bool	ReadSectors		    (size_t buffer, bool raw, uint32_t sector, uint32_t num);
 	bool	LoadUnloadMedia		(bool unload);
-	bool	ReadSector		(Bit8u *buffer, bool raw, unsigned long sector);
-	bool	ReadSectorSub		(Bit8u *buffer, unsigned long sector);
-	int	GetSectorSize		(unsigned long sector);
-  	bool	IsMode2			(unsigned long sector);
-	int	GetMode2Form		(unsigned long sector);
+	bool	ReadSector		    (uint8_t *buffer, bool raw, uint32_t sector);
+	bool	ReadSectorSub		(uint8_t *buffer, uint32_t sector);
+	int	    GetSectorSize		(uint32_t sector);
+  	bool	IsMode2		    	(uint32_t sector);
+	int	    GetMode2Form		(uint32_t sector);
 	bool	HasDataTrack		(void);
-        bool    HasAudioTracks          (void);
+    bool    HasAudioTracks      (void);
 	
-        int     GetTrack                (unsigned int sector);
+    int     GetTrack            (unsigned int sector);
 
 private:
 	// player
-static	void	CDAudioCallBack(Bitu len);
+static	void	CDAudioCallBack(unsigned int len);
 
 	void 	ClearTracks();
-	bool	LoadIsoFile(char *filename);
+	bool	LoadIsoFile(const wchar_t *filename);
 	bool	CanReadPVD(TrackFile *file, uint64_t sectorSize, bool mode2);
-	// cue sheet processing
-	bool	LoadCueSheet(char *cuefile);
-	bool	GetRealFileName(std::string& filename, std::string& pathname);
-	bool	GetCueKeyword(std::string &keyword, std::istream &in);
-	bool	GetCueFrame(uint64_t &frames, std::istream &in);
-	bool	GetCueString(std::string &str, std::istream &in);
+	
+    // cue sheet processing
+    bool	CueGetBuffer(char *str, char **line, bool up);
+	bool	LoadCueSheet(const wchar_t *cuefile);
+    bool	CueGetKeyword(std::string &keyword, char **line);
+    bool    CueGetNumber(int &number, char **line);
+    bool	CueGetFrame(uint64_t &frames, char **line);
+    bool	GetCueString(std::string &str, char **line);
 	bool	AddTrack(Track &curr, uint64_t &shift, uint64_t prestart, uint64_t &totalPregap, uint64_t currPregap);
 
 	std::vector<Track>	tracks;
-typedef	std::vector<Track>::iterator	track_it;
 	std::string	mcn;
 };
 
-void cdrom_image_log(const char *format, ...);
+extern int CDROM_GetMountType(char* path, int force);
+
+
+extern void cdrom_image_log(const char *format, ...);
 
 #endif /* __CDROM_INTERFACE__ */

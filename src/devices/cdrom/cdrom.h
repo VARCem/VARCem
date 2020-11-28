@@ -139,7 +139,6 @@ typedef struct cdrom {
 
     FILE	*img_fp;
     int		img_type;
-    int   img_is_iso;
     int		host_drive, prev_host_drive;
 
     int		cd_status, prev_status,
