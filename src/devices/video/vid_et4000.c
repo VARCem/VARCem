@@ -8,7 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.11	2020/11/16
+ * Version:	@(#)vid_et4000.c	1.0.12	2020/11/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -235,12 +235,21 @@ et4000_out(uint16_t addr, uint8_t val, priv_t priv)
 		return;
 
 	case 0x3cf:
-		if ((svga->gdcaddr & 15) == 6) {
+		if ((svga->gdcaddr & 0x0f) == 6) {
 			if (!(svga->crtc[0x36] & 0x10) && !(val & 0x08)) {
 				svga->write_bank = (dev->banking & 0x0f) * 0x10000;
 				svga->read_bank = ((dev->banking >> 4) & 0x0f) * 0x10000;
 			} else
 				svga->write_bank = svga->read_bank = 0;
+		
+			old = svga->gdcreg[6];
+            svga_out(addr, val, svga);
+            if ((old & 0xc) != 0 && (val & 0xc) == 0) {
+                /*override mask - ET4000 supports linear 128k at A0000*/
+                svga->banked_mask = 0x1ffff;
+            }
+            return;	
+		
 		}
 		break;
 
