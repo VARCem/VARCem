@@ -76,6 +76,7 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
+ MINIVHD	:= y
 endif
 
 
@@ -128,7 +129,7 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/network devices/printer devices/misc \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
-			minivhd \
+			../external/minivhd \
 			../external/libchdr ../external/libchdr/FLAC ../external/libchdr/LZMA \
 			devices/sound devices/video \
 		   machines ui win
@@ -686,6 +687,18 @@ ifneq ($(ZLIB), n)
  endif
 endif
 
+#MiniVHD
+ifndef MINIVHD
+ MINIVHD		:= n
+endif
+ifneq ($(MINIVHD), n)
+ ifeq ($(MINIVHD_PATH), )
+  MINIVHD_PATH	:= $(EXT_PATH)/minivhd
+ endif
+  OPTS		+= -DUSE_MINIVHD -I$(MINIVHD_PATH)
+  MISCOBJ	+= minivhd_util.o minivhd_manage.o minivhd_io.o minivhd_struct_rw.o minivhd_create.o cwalk.o libxml2_encoding.o
+endif
+
 # WX: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(WX), n)
  OPTS		+= -DUSE_WX=$(WX) $(WX_FLAGS)
@@ -786,11 +799,6 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_SL
   DEVBROBJ	+= m_sl82c460.o
  endif
- 
- ifeq ($(MINIVHD), y)
-  OPTS		+= -DUSE_MINIVHD
-  MISCOBJ	+= minivhd_util.o minivhd_manage.o minivhd_io.o minivhd_struct_rw.o minivhd_create.o cwalk.o libxml2_encoding.o
-endif
 
 endif
 
