@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem.str	1.0.18	2020/11/29
+ * Version:	@(#)VARCem.str	1.0.19	2020/12/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -325,7 +325,10 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Host CD/DVD Drive (%c:)"
-#define STR_3922	"CD-ROM images\0*.iso;*.cue;*.chd\0;All files (*.*)\0*.*\0"
+
+#define STR_3922	"CD-ROM images\0*.iso;*.cue\0;All files (*.*)\0*.*\0"
+#define STR_3924	"CD-ROM images\0*.iso;*.cue;*.chd\0;All files (*.*)\0*.*\0"
+
 #define STR_3923	"&Mute"
 
 #define STR_3930	"Disk %i (%ls): %ls"

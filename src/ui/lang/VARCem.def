@@ -8,7 +8,7 @@
  *
  *		String table for the application, shared by all platforms.
  *
- * Version:	@(#)VARCem.def	1.0.7	2020/11/21
+ * Version:	@(#)VARCem.def	1.0.8	2020/12/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -315,6 +315,7 @@ STRTBL( IDS_3920, STR_3920 )
 STRTBL( IDS_3921, STR_3921 )
 STRTBL( IDS_3922, STR_3922 )
 STRTBL( IDS_3923, STR_3923 )
+STRTBL( IDS_3924, STR_3924 )
 STRTBL( IDS_3930, STR_3930 )
 STRTBL( IDS_3950, STR_3950 )
 STRTBL( IDS_3951, STR_3951 )

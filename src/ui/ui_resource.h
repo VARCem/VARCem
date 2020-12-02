@@ -12,7 +12,7 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.22	2020/11/21
+ * Version:	@(#)ui_resource.h	1.0.23	2020/12/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -512,6 +512,7 @@
 #define  IDS_3921	3921		/* "Host CD/DVD Drive (%c:)" */
 #define  IDS_3922	3922		/* "CD-ROM images (*.iso;*.cu.." */
 #define  IDS_3923	3923		/* "&Mute" */
+#define  IDS_3924	3924		/* "CD-ROM images (*.iso;*.cu.." */
 #define IDS_3930	3930		/* "Disk %i (%ls): %ls" */
 #define IDS_3950	3950		/* "ZIP%03i %i (%ls): %ls" */
 #define  IDS_3951	3951		/* "ZIP images (*.im?)\0*.im..." */

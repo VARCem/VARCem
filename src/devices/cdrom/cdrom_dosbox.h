@@ -8,7 +8,7 @@
  *
  *		Definitions for the CD-ROM image file handling module.
  *
- * Version:	@(#)cdrom_dosbox.h	1.0.5	2020/11/27
+ * Version:	@(#)cdrom_dosbox.h	1.0.6	2020/12/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -49,9 +49,9 @@
 #include <sstream>
 #include <cstring>
 #include <thread>
-//#ifdef USE_CHD
+#ifdef USE_CHD
 #include "chd.h"
-//#endif
+#endif
 
 #define RAW_SECTOR_SIZE		2352
 #define COOKED_SECTOR_SIZE	2048
@@ -127,6 +127,7 @@ private:
 		FILE *file;
 	};
 
+#ifdef USE_CHD 
     class CHDFile : public TrackFile {
     public:
         CHDFile(const wchar_t* filename, bool& error);
@@ -161,6 +162,7 @@ private:
     public:
               bool         skip_sync         = false; 
     };
+#endif
 	
 	struct Track {
 		int number;
@@ -214,9 +216,9 @@ static	void	CDAudioCallBack(unsigned int len);
     bool	GetCueString(std::string &str, char **line);
 	bool	AddTrack(Track &curr, uint64_t &shift, uint64_t prestart, uint64_t &totalPregap, uint64_t currPregap);
 
-    //chd
+#ifdef USE_CHD
     bool  LoadChdFile(const wchar_t *chdfile);
-
+#endif
 	std::vector<Track>	tracks;
 	std::string	mcn;
 };

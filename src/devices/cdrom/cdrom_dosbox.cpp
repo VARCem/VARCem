@@ -53,8 +53,6 @@
 #include <wchar.h>
 #include <vector>
 #include <fstream>
-//#include <cstring>
-//#include <cassert>
 #include <sys/stat.h>
 #include "../../emu.h"
 #include "../../plat.h"
@@ -130,7 +128,7 @@ CDROM_Interface_Image::BinaryFile::getLength(void)
     return len;
 }
 
-
+#ifdef USE_CHD
 CDROM_Interface_Image::CHDFile::CHDFile(const wchar_t* filename, bool& error)
     :TrackFile(RAW_SECTOR_SIZE)
 {
@@ -268,7 +266,7 @@ uint16_t CDROM_Interface_Image::CHDFile::decode(uint8_t* buffer)
 #endif
     return 0;
 }
-
+#endif
 
 CDROM_Interface_Image::CDROM_Interface_Image(void)
 {
@@ -298,9 +296,11 @@ CDROM_Interface_Image::SetDevice(const wchar_t *path, int type, int forceCD)
     if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_ISO)
         if (LoadIsoFile(path)) return true;
 
+#ifdef USE_CHD
     if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_CHD)
         if (LoadChdFile(path)) return true;
-	
+#endif
+
     return false;
 }
 
@@ -909,6 +909,7 @@ CDROM_Interface_Image::LoadCueSheet(const wchar_t *cuefile)
     return true;
 }
 
+#ifdef USE_CHD
 std::vector<string> split_string_to_list(const std::string& str, const std::string& delim)
 {
     std::vector<string> tokens;
@@ -1044,6 +1045,7 @@ bool CDROM_Interface_Image::LoadChdFile(const wchar_t *chdfile)
         return false;
     }
 }
+#endif
 
 bool
 CDROM_Interface_Image::AddTrack(Track &curr, uint64_t &shift, uint64_t prestart, uint64_t &totalPregap, uint64_t currPregap)
