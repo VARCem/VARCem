@@ -8,7 +8,7 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.24	2020/11/25
+ * Version:	@(#)vid_ati28800.c	1.0.25	2020/11/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -403,14 +403,6 @@ ati28800_recalctimings(svga_t *svga)
 	svga->hdisp <<= 1;
 	svga->htotal <<= 1;
 	svga->rowoffset <<= 1;
-    }
-
-    if (svga->crtc[0x17] & 4) {
-	svga->vtotal <<= 1;
-	svga->dispend <<= 1;
-	svga->vsyncstart <<= 1;
-	svga->split <<= 1;
-	svga->vblankstart <<= 1;
     }
 
     if (!svga->scrblank && (dev->regs[0xb0] & 0x20)) {
