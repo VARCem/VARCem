@@ -130,8 +130,9 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/network devices/printer devices/misc \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
-		    devices/sound devices/video \
 			minivhd \
+			../external/libchdr ../external/libchdr/FLAC ../external/libchdr/LZMA \
+			devices/sound devices/video \
 		   machines ui win
 
 #
@@ -645,6 +646,21 @@ ifneq ($(PNG), n)
  ZLIB		:= $(PNG)
 endif
 
+# libchd: N=no, Y=yes
+ifndef LIBCHD
+ LIBCHD		:= n
+endif
+ifneq ($(LIBCHD), n)
+ ifeq ($(LIBCHD_PATH), )
+  LIBCHD_PATH	:= $(EXT_PATH)/libchdr
+ endif
+  OPTS		+= -DUSE_CHD -DHAVE_CONFIG_H -I$(LIBCHD_PATH) -I$(LIBCHD_PATH)/lzma -I$(LIBCHD_PATH)/FLAC
+  MISCOBJ	+= libchdr_chd.o libchdr_cdrom.o libchdr_flac.o libchdr_huffman.o libchdr_bitstream.o
+  MISCOBJ   += stream_decoder.o bitreader.o format.o cpu_flac.o crc.o fixed.o lpc.o md5.o memory.o windows_unicode_filenames.o
+  MISCOBJ   += LzmaDec.o LzmaEnc.o LzFind.o
+  ZLIB = $(LIBCHD)
+endif
+
 # ZLIB: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifndef ZLIB
  ZLIB		:= n
@@ -683,7 +699,6 @@ else
 		   win_dialog.o win_about.o win_settings.o \
 		   win_devconf.o win_snd_gain.o win_new_image.o
 endif
-
 
 # Options for the DEV branch.
 ifeq ($(DEV_BRANCH), y)

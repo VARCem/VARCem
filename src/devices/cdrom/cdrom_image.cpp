@@ -8,7 +8,7 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.21	2020/11/28
+ * Version:	@(#)cdrom_image.cpp	1.0.22	2020/11/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -51,7 +51,6 @@
 #include "cdrom.h"
 #include "cdrom_image.h"
 #include "cdrom_dosbox.h"
-
 
 #ifdef ENABLE_CDROM_IMAGE_LOG
 int cdrom_image_do_log = ENABLE_CDROM_IMAGE_LOG;
@@ -494,12 +493,12 @@ read_mode1(cdrom_t *dev, int flags, uint32_t lba, uint32_t msf, int mode2, uint8
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if ((dev->img_type == IMAGE_TYPE_ISO) || (img->GetSectorSize(lba) == 2048))
-	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
+    if ((dev->img_type == IMAGE_TYPE_ISO) || (dev->img_type == IMAGE_TYPE_CHD) || (img->GetSectorSize(lba) == 2048))
+		read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
     else if (img->GetSectorSize(lba) == 2352)
-	img->ReadSector(raw_buffer, true, lba);
+		img->ReadSector(raw_buffer, true, lba);
     else
-	img->ReadSectorSub(raw_buffer, lba);
+		img->ReadSectorSub(raw_buffer, lba);
 
     cdrom_sector_size = 0;
 

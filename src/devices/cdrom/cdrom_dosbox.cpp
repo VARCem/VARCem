@@ -52,12 +52,18 @@
 #endif
 #include <wchar.h>
 #include <vector>
+#include <fstream>
+//#include <cstring>
+//#include <cassert>
 #include <sys/stat.h>
 #include "../../emu.h"
 #include "../../plat.h"
 #include "cdrom.h"
 #include "cdrom_image.h"
 #include "cdrom_dosbox.h"
+#ifdef USE_CHD
+# include "chd.h"
+#endif
 
 using namespace std;
 
@@ -66,8 +72,9 @@ using namespace std;
 #define CROSS_LEN 512
 
 CDROM_Interface_Image::BinaryFile::BinaryFile(const wchar_t *filename, bool &error)
+        :TrackFile(RAW_SECTOR_SIZE)
 {
-     const wstring cwstr(L"rb");
+    const wstring cwstr(L"rb");
     
     memset(fn, 0x00, sizeof(fn));
     wcscpy(fn, filename);
@@ -124,6 +131,145 @@ CDROM_Interface_Image::BinaryFile::getLength(void)
 }
 
 
+CDROM_Interface_Image::CHDFile::CHDFile(const wchar_t* filename, bool& error)
+    :TrackFile(RAW_SECTOR_SIZE)
+{
+    char temp[1024];
+    memset(temp, '\0', sizeof(temp));
+    wcstombs(temp, filename, sizeof(temp));
+     
+    error = chd_open(temp, CHD_OPEN_READ, NULL, &this->chd) != CHDERR_NONE;
+    if (!error) {
+        this->header           = chd_get_header(this->chd);
+        this->hunk_buffer      = new uint8_t[this->header->hunkbytes];
+        this->hunk_buffer_next = new uint8_t[this->header->hunkbytes];
+    }
+}
+
+CDROM_Interface_Image::CHDFile::~CHDFile() 
+{
+    if (this->chd) {
+        chd_close(this->chd);
+        this->chd = nullptr;
+    }
+
+    if (this->hunk_buffer) {
+        delete[] this->hunk_buffer;
+        this->hunk_buffer = nullptr;
+    }
+ 
+    if (this->hunk_thread) {
+        this->hunk_thread->join();
+        delete hunk_thread;
+        this->hunk_thread = nullptr;
+    }
+}
+
+void hunk_thread_func(chd_file* chd, int hunk_index, uint8_t* buffer, bool* error)
+{
+    // loads one hunk into buffer
+    *error = chd_read(chd, hunk_index, buffer) != CHDERR_NONE;
+}
+
+bool CDROM_Interface_Image::CHDFile::read(uint8_t* buffer, uint64_t offset, size_t count)
+{
+    if (count > RAW_SECTOR_SIZE) {
+        return false;
+    }
+
+    uint32_t needed_hunk = offset / this->header->hunkbytes;
+
+    if (needed_hunk > this->header->totalhunks) {
+        return false;
+    }
+
+    if (needed_hunk != this->hunk_buffer_index) {
+        if (this->hunk_thread) this->hunk_thread->join();
+
+         if ((needed_hunk == (this->hunk_buffer_index + 1)) && (!this->hunk_thread_error)) {
+            // swap pointers and we're good :)
+            std::swap(this->hunk_buffer, this->hunk_buffer_next);
+
+        } else {
+            bool error = true;
+            hunk_thread_func(this->chd, needed_hunk, this->hunk_buffer, &error);
+            if (error) {
+                return false;
+            }
+        }
+
+        this->hunk_buffer_index = needed_hunk;
+
+        if (hunk_thread) delete this->hunk_thread;
+        this->hunk_thread = new std::thread(
+            [this, needed_hunk]() {
+                hunk_thread_func(this->chd, needed_hunk + 1, this->hunk_buffer_next, &this->hunk_thread_error);
+            }
+        );
+    }
+
+    uint8_t* source = this->hunk_buffer + ((uint64_t)offset - (uint64_t)needed_hunk * this->header->hunkbytes) - ((uint64_t)16 * this->skip_sync);
+    memcpy(buffer, source, __min(count, RAW_SECTOR_SIZE));
+
+    return true;
+}
+
+uint64_t CDROM_Interface_Image::CHDFile::getLength()
+{
+    return this->header->logicalbytes;
+}
+
+uint16_t CDROM_Interface_Image::CHDFile::getEndian()
+{
+    return 0;
+}
+
+bool CDROM_Interface_Image::CHDFile::seek(uint32_t offset)
+{
+    if ((offset / this->header->hunkbytes) < this->header->hunkcount) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static void Endian_A16_Swap(void* src, uint32_t nelements)
+{
+    uint32_t i;
+    uint8_t* nsrc = (uint8_t*)src;
+
+    for (i = 0; i < nelements; i++)
+    {
+        uint8_t tmp = nsrc[i * 2];
+
+        nsrc[i * 2] = nsrc[i * 2 + 1];
+        nsrc[i * 2 + 1] = tmp;
+    }
+}
+
+uint16_t CDROM_Interface_Image::CHDFile::decode(uint8_t* buffer)
+{
+// audio_pos is sdl2 mixer
+#if 0    
+    // reads one sector of CD audio ?
+
+    assert(this->audio_pos % 2448 == 0);
+
+    if (this->read(buffer, this->audio_pos, RAW_SECTOR_SIZE)) {
+        // chd uses 2448
+        this->audio_pos += 2448;
+
+        // no idea if other platforms need this but on windows this is needed or there is only noise
+        Endian_A16_Swap(buffer, 588 * 2);
+
+        // we only read the raw audio nothing else
+        return RAW_SECTOR_SIZE;
+    }
+#endif
+    return 0;
+}
+
+
 CDROM_Interface_Image::CDROM_Interface_Image(void)
 {
 }
@@ -151,6 +297,9 @@ CDROM_Interface_Image::SetDevice(const wchar_t *path, int type, int forceCD)
     
     if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_ISO)
         if (LoadIsoFile(path)) return true;
+
+    if (type == IMAGE_TYPE_NONE || type == IMAGE_TYPE_CHD)
+        if (LoadChdFile(path)) return true;
 	
     return false;
 }
@@ -201,13 +350,9 @@ CDROM_Interface_Image::GetAudioSub(int sector, uint8_t& attr, uint8_t& track, ui
     attr = tracks[track - 1].attr;
     index = 1;
 
-#if 1
-    FRAMES_TO_MSF(sector + 150, &absPos.min, &absPos.sec, &absPos.fr);
-#else
-    FRAMES_TO_MSF(sector - tracks[track - 1].start, &relPos.min, &relPos.sec, &relPos.fr);
-#endif
-
     /* Absolute position should be adjusted by 150, not the relative ones. */
+    FRAMES_TO_MSF(sector + 150, &absPos.min, &absPos.sec, &absPos.fr);
+
     FRAMES_TO_MSF(sector - tracks[track - 1].start, &relPos.min, &relPos.sec, &relPos.fr);
 
     return true;
@@ -290,7 +435,7 @@ CDROM_Interface_Image::ReadSector(uint8_t *buffer, bool raw, uint32_t sector)
     else
 	length = (raw ? RAW_SECTOR_SIZE : COOKED_SECTOR_SIZE);
     if (tracks[track].sectorSize != RAW_SECTOR_SIZE && raw) return false;
-    if (tracks[track].sectorSize == RAW_SECTOR_SIZE && !tracks[track].mode2 && !raw) seek += 16;
+    if ((tracks[track].sectorSize == RAW_SECTOR_SIZE || tracks[track].sectorSize == 2448) && !tracks[track].mode2 && !raw) seek += 16;
     if (tracks[track].mode2 && !raw) seek += 24;
 
     return tracks[track].file->read(buffer, seek, length);
@@ -351,7 +496,7 @@ CDROM_Interface_Image::CanReadPVD(TrackFile *file, uint64_t sectorSize, bool mod
     uint8_t pvd[COOKED_SECTOR_SIZE];
     uint64_t seek = 16 * sectorSize;	// first vd is located at sector 16
 
-    if (sectorSize == RAW_SECTOR_SIZE && !mode2) 
+    if ((sectorSize == RAW_SECTOR_SIZE || sectorSize == 2448) && !mode2) 
         seek += 16;
     if (mode2) 
         seek += 24;
@@ -399,6 +544,9 @@ CDROM_Interface_Image::LoadIsoFile(const wchar_t *filename)
     } else if (CanReadPVD(track.file, RAW_SECTOR_SIZE, true)) {
 	    track.sectorSize = RAW_SECTOR_SIZE;
 	    track.mode2 = true;		
+    } else if(CanReadPVD(track.file, 2448, false)) {
+        track.sectorSize = 2448;
+        track.mode2 = false;
     } else {
 	/* 
      * Unknown mode: Assume regular 2048-byte sectors.
@@ -751,7 +899,6 @@ CDROM_Interface_Image::LoadCueSheet(const wchar_t *cuefile)
     // add leadout track
     track.number++;
     track.track_number = 0xAA;
-    // track.attr = 0;//sync with load iso
     track.attr = 0x16;	/* Was 0x00 but I believe 0x16 is appropriate. */
     track.start = 0;
     track.length = 0;
@@ -762,6 +909,141 @@ CDROM_Interface_Image::LoadCueSheet(const wchar_t *cuefile)
     return true;
 }
 
+std::vector<string> split_string_to_list(const std::string& str, const std::string& delim)
+{
+    std::vector<string> tokens;
+    size_t prev = 0, pos = 0;
+    do
+    {
+        pos = str.find(delim, prev);
+        if (pos == string::npos) pos = str.length();
+        string token = str.substr(prev, pos - prev);
+        if (!token.empty()) tokens.push_back(token);
+        prev = pos + delim.length();
+    } while (pos < str.length() && prev < str.length());
+    return tokens;
+}
+
+bool CDROM_Interface_Image::LoadChdFile(const wchar_t *chdfile)
+{
+    tracks.clear();
+    bool     error       = true;
+    CHDFile  *file       = new CHDFile(chdfile, error);
+    Track    track       = { 0, 0, 0, 0, 0, 0, 0, 0, false, file };
+    uint64_t shift = 0;
+    int      currPregap  = 0;
+    uint64_t  totalPregap = 0;
+    int      prestart    = 0;
+    
+    if (!error) {
+        // iterate over all track entries
+        char     metadata[256];
+        int      index        = 0;
+        uint32_t count        = 0;
+        uint32_t tag          = 0;
+        uint8_t  flags        = 0;
+        int    total_frames = 0;
+        while (chd_get_metadata(file->getChd(), CDROM_TRACK_METADATA2_TAG, index, &metadata, 256, &count, &tag, &flags) == CHDERR_NONE) {
+            // parse track
+            // TRACK:1 TYPE:MODE1_RAW SUBTYPE:NONE FRAMES:206931 PREGAP:0 P
+            std::vector<string> tokens = split_string_to_list(metadata, " ");
+            track.start= 0;
+            track.skip = 0;
+            track.form = 0;
+            currPregap = 0;
+            prestart = 0;
+            for (int i = 0; i < tokens.size(); i++) {
+                std::vector<string> track_meta = split_string_to_list(tokens[i], ":");
+                std::string         key        = track_meta[0];
+                std::string         value      = track_meta[1];
+
+                if (key == "TRACK") {
+                    track.number = std::stoi(value);
+                    track.track_number = track.number;
+                } else if (key == "TYPE") {
+                    if (value == "AUDIO") {
+                        track.sectorSize = RAW_SECTOR_SIZE;
+                        track.attr       = AUDIO_TRACK;
+                        track.mode2      = false;
+                    } else if (value == "MODE1") {
+                        track.sectorSize = COOKED_SECTOR_SIZE;
+                        track.attr       = DATA_TRACK;
+                        track.mode2      = false;
+                        file->skip_sync  = true;
+                    } else if (value == "MODE1_RAW") {
+                        track.sectorSize = RAW_SECTOR_SIZE;
+                        track.attr       = DATA_TRACK;
+                        track.mode2      = false;
+                    } else if (value == "MODE2") {
+                        track.sectorSize = 2336;
+                        track.attr       = DATA_TRACK;
+                        track.mode2      = true;
+                    } else if (value == "MODE2_FORM1") {
+                        track.sectorSize = COOKED_SECTOR_SIZE;
+                        track.attr       = DATA_TRACK;
+                        track.mode2      = true;
+                        file->skip_sync  = true;
+                    } else if (value == "MODE2_FORM2") {
+                        track.sectorSize = 2336;
+                        track.attr       = DATA_TRACK;
+                        track.mode2      = true;
+                    } else if (value == "MODE2_RAW") {
+                        track.sectorSize = RAW_SECTOR_SIZE;
+                        track.attr       = DATA_TRACK;
+                        track.mode2      = true;
+                    } else {
+                        // unknown track mode
+                        return false;
+                    };
+                } else if (key == "SUBTYPE") {
+                    if (value == "RAW") {
+                        //track.sectorSize += 96;
+                        // is subchannel data even supported?
+                    }
+                } else if (key == "FRAMES") {
+                    int frames    = std::stoi(value);
+                    track.start   = total_frames;
+                    total_frames += frames;
+                    track.length  = frames;
+
+                } else if (key == "PREGAP") {
+                    currPregap = std::stoi(value);
+                }
+
+            }
+
+            if (currPregap) {
+                prestart      = track.start;
+                track.start  += currPregap;
+                track.length -= currPregap;
+            }
+
+            track.sectorSize = 2448;
+            if (!AddTrack(track, shift, prestart, totalPregap, 0)) {
+                return false;
+            }
+
+            index += 1;
+        }
+
+        // no tracks found
+        if (tracks.empty()) return false;
+
+        // add leadout track
+        track.number++;
+        track.track_number = 0xAA;
+        track.attr = 0x16;
+        track.start  = 0;
+        track.length = 0;
+        track.file   = NULL;
+        if (!AddTrack(track, shift, 0, totalPregap, 0)) return false;
+
+        return true;
+
+    } else {
+        return false;
+    }
+}
 
 bool
 CDROM_Interface_Image::AddTrack(Track &curr, uint64_t &shift, uint64_t prestart, uint64_t &totalPregap, uint64_t currPregap)
