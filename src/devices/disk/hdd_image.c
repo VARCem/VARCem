@@ -1159,7 +1159,6 @@ hdd_image_close(uint8_t id)
 	 } else if (img->vhd != NULL) {
 			mvhd_close(img->vhd);
 			img->vhd = NULL;
-	}
 #endif
 	}
     memset(img, 0x00, sizeof(hdd_image_t));
