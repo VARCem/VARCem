@@ -325,7 +325,7 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Host CD/DVD Drive (%c:)"
-#define STR_3922	"CD-ROM images\0*.iso;*.cue\0All files (*.*)\0*.*\0"
+#define STR_3922	"CD-ROM images\0*.iso;*.cue;*.chd\0;All files (*.*)\0*.*\0"
 #define STR_3923	"&Mute"
 
 #define STR_3930	"Disk %i (%ls): %ls"

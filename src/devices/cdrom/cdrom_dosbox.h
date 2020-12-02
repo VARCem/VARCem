@@ -47,6 +47,11 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <cstring>
+#include <thread>
+//#ifdef USE_CHD
+#include "chd.h"
+//#endif
 
 #define RAW_SECTOR_SIZE		2352
 #define COOKED_SECTOR_SIZE	2048
@@ -101,9 +106,12 @@ public:
 class CDROM_Interface_Image : public CDROM_Interface {
 private:
 	class TrackFile {
+	protected:
+		TrackFile(uint16_t _chunkSize) : chunkSize(_chunkSize) {}
 	public:
 		virtual bool read(uint8_t *buffer, uint64_t seek, size_t count) = 0;
 		virtual uint64_t getLength() = 0;
+		const uint16_t chunkSize = 0;
 		virtual ~TrackFile() { };
 	};
 	
@@ -118,6 +126,41 @@ private:
 		wchar_t fn[260];
 		FILE *file;
 	};
+
+    class CHDFile : public TrackFile {
+    public:
+        CHDFile(const wchar_t* filename, bool& error);
+        ~CHDFile();
+
+        //CHDFile() = delete;
+        //CHDFile(const CHDFile&) = delete;
+        //CHDFile& operator= (const CHDFile&) = delete;
+
+        bool            read(uint8_t* buffer, uint64_t seek, size_t count);
+        bool            seek(uint32_t offset);
+        uint16_t        decode(uint8_t* buffer);
+        uint16_t        getEndian();
+        uint32_t        getRate() { return 44100; }
+        uint8_t         getChannels() { return 2; }
+        uint64_t        getLength();
+        //void          setAudioPosition(uint32_t pos) { audio_pos = pos; }
+        chd_file*       getChd() { return this->chd; }
+    private:
+              CHDFile();
+              wchar_t fn[260];
+              chd_file*   chd               = nullptr;
+        const chd_header* header            = nullptr; // chd header
+                /*
+                    TODO: cache more than one hunk
+                */
+			  uint8_t*     hunk_buffer       = nullptr;
+              uint8_t*     hunk_buffer_next  = nullptr;
+              int          hunk_buffer_index = -1;     
+              std::thread* hunk_thread       = nullptr;
+              bool         hunk_thread_error = true;
+    public:
+              bool         skip_sync         = false; 
+    };
 	
 	struct Track {
 		int number;
@@ -170,6 +213,9 @@ static	void	CDAudioCallBack(unsigned int len);
     bool	CueGetFrame(uint64_t &frames, char **line);
     bool	GetCueString(std::string &str, char **line);
 	bool	AddTrack(Track &curr, uint64_t &shift, uint64_t prestart, uint64_t &totalPregap, uint64_t currPregap);
+
+    //chd
+    bool  LoadChdFile(const wchar_t *chdfile);
 
 	std::vector<Track>	tracks;
 	std::string	mcn;
