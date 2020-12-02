@@ -164,7 +164,6 @@ shadow_state_update(scat_t *dev)
 
     if ((dev->regs[SCAT_DRAM_CONFIGURATION] & 0xF) < 4) {
 		/*Less than 1MB low memory, no shadow RAM available*/
-        mem_set_mem_state((i + 40) << 14, 0x4000, val);
         for (i = 0; i < 24; i++)
             mem_set_mem_state((i + 40) << 14, 0x4000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);
 	} else {
