@@ -57,8 +57,10 @@
 #include "../../plat.h"
 #include "../../random.h"
 #include "hdd.h"
-#include "../../minivhd/minivhd.h"
-#include "../../minivhd/minivhd_internal.h"
+#ifdef USE_MINIVHD
+#include "minivhd.h"
+#include "minivhd_internal.h"
+#endif
 #include <stdbool.h>
 
 
@@ -94,7 +96,9 @@ typedef struct {
 				pos;
     uint8_t	type;
     uint8_t	loaded;
+#ifdef USE_MINIVHD
 	MVHDMeta*    vhd; /* Pointer to vhd needed for minivhd functions */
+#endif
 } hdd_image_t;
 
 
@@ -788,8 +792,6 @@ hdd_image_load(int id)
 			_fullpath(fullpath, opath, sizeof(fullpath)); /* May break linux */
 	
 			img->vhd = mvhd_open(fullpath, (bool)0, &vhd_error);
-			//free (path);
-			//free (fullpath);
 
 			if (img->vhd == NULL) {
 				if (vhd_error == MVHD_ERR_FILE)

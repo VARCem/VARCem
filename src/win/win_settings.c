@@ -78,7 +78,9 @@
 #include "../devices/video/video.h"
 #include "win.h"
 #include "resource.h"
-#include "../minivhd/minivhd_util.h"
+#ifdef USE_MINIVHD
+#include "minivhd_util.h"
+#endif
 
 /* Defined in the Video module. */
 extern const device_t voodoo_device;

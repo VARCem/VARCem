@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.23	2020/11/25
+ * Version:	@(#)win_settings_disk.h	1.0.24	2020/12/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -200,7 +200,7 @@ disk_add_locations(HWND hdlg)
 #ifdef USE_MINIVHD     
     h = GetDlgItem(hdlg,  IDC_COMBO_VHD_TYPE);
      for (i = 2; i < 5; i++) {
-	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_type_to_ids(i)); /* Convert VHD Type to strings ? */
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_type_to_ids(i)); 
     }
 
 	h = GetDlgItem(hdlg, IDC_COMBO_HD_BLOCK_SIZE);
@@ -1457,6 +1457,11 @@ hdd_add_file_open_error:
 						hpc = vhd->footer.geom.heads;
 						tracks = vhd->footer.geom.cyl;
 						size = (uint64_t)tracks * hpc * spt * 512;
+						created_type_vhd = vhd->footer.disk_type;
+						h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE);
+						SendMessage(h, CB_SETCURSEL, (created_type_vhd - 2) , 0);
+						EnableWindow(h, FALSE);
+
 						mvhd_close(vhd);
 					}
 #endif			
@@ -1498,6 +1503,7 @@ hdd_add_file_open_error:
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
 					disk_recalc_selection(hdlg);
 
+#if 0
 					h = GetDlgItem(hdlg, IDC_EDIT_HD_SPT);
 					EnableWindow(h, TRUE);
 					h = GetDlgItem(hdlg, IDC_EDIT_HD_HPC);
@@ -1508,25 +1514,25 @@ hdd_add_file_open_error:
 					EnableWindow(h, TRUE);
 					h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
 					EnableWindow(h, TRUE);
-
+#endif
 					chs_enabled = 1;
 
 					no_update = 0;
 				} else {
+#ifdef USE_MINIVHD
+					if (image_is_vhd(temp_path, 0)) { /* OK it's probably an empty vhd */
+						h = GetDlgItem(hdlg, IDT_1744);
+						EnableWindow(h, TRUE);
+						ShowWindow(h, SW_SHOW);
+						h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE); /* Enable VHD Type Selection */
+						EnableWindow(h, TRUE);
+						ShowWindow(h, SW_SHOW);
+				}
+#endif
 					fclose(f);
 				}
 
-#ifdef USE_MINIVHD
-				if (image_is_vhd(temp_path, 0)) { /* OK it's probably an empty vhd */
-					h = GetDlgItem(hdlg, IDT_1744);
-					EnableWindow(h, TRUE);
-					ShowWindow(h, SW_SHOW);
-					h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE); /* Enable VHD Type Selection */
-					EnableWindow(h, TRUE);
-					ShowWindow(h, SW_SHOW);
-				}
-#endif
-				
+			
 				h = GetDlgItem(hdlg, IDC_EDIT_HD_FILE_NAME);
 				SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp_path);
 				wcscpy(hd_file_name, temp_path);
