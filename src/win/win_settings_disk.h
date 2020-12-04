@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.24	2020/12/04
+ * Version:	@(#)win_settings_disk.h	1.0.25	2020/12/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -994,6 +994,9 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
     uint32_t base = 0x1000;
     uint64_t signature = 0xD778A82044445459ll;
     uint64_t r = 0;
+	RECT rect;
+	POINT point;
+	int dlg_height_adjust;
 
     switch (message) {
 	case WM_INITDIALOG:
@@ -1033,6 +1036,25 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			EnableWindow(h, FALSE);
 			h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
 			EnableWindow(h, FALSE);
+
+			/* adjust window size */
+			GetWindowRect(hdlg, &rect);
+			OffsetRect(&rect, -rect.left, -rect.top);
+			dlg_height_adjust = rect.bottom / 5;
+			SetWindowPos(hdlg, NULL, 0, 0, rect.right, rect.bottom - dlg_height_adjust, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			h = GetDlgItem(hdlg, IDOK);
+			GetWindowRect(h, &rect);
+			point.x = rect.left;
+			point.y = rect.top;
+			ScreenToClient(hdlg, &point);
+			SetWindowPos(h, NULL, point.x, point.y - dlg_height_adjust, 0, 0, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			h = GetDlgItem(hdlg, IDCANCEL);
+			GetWindowRect(h, &rect);
+			point.x = rect.left;
+			point.y = rect.top;
+			ScreenToClient(hdlg, &point);
+			SetWindowPos(h, NULL, point.x, point.y - dlg_height_adjust, 0, 0, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+
 			chs_enabled = 0;
 		} else {
 			chs_enabled = 1;
