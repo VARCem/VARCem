@@ -155,29 +155,6 @@ hdd_bus_to_string(int bus)
     return(ret);
 }
 
-const char *
-vhd_type_to_string(int vhd_type)
-{
-    const char *ret = "none";
-
-    switch (vhd_type) {
-	case MVHD_TYPE_FIXED:
-	default:
-		ret = "fixed";
-		break;
-
-	case MVHD_TYPE_DYNAMIC:
-		ret = "dynamic";
-		break;
-
-	case MVHD_TYPE_DIFF:
-		ret = "differential";
-		break;
-    }
-
-    return(ret);
-}
-
 int
 hdd_is_valid(int c)
 {

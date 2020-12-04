@@ -40,8 +40,10 @@
 
 #define HDD_NUM		30		// total of 30 images supported
 
-#include "../../minivhd/minivhd.h"
-#include "../../minivhd/minivhd_internal.h"
+#ifdef USE_MINIVHD
+#include "minivhd.h"
+#include "minivhd_internal.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
