@@ -3,7 +3,7 @@
 
 
 > Select the setup language:
-:Selecionar o idioma da configuração
+:Selecione o idioma da instalação
 
 > Desktop (as in "Desktop icons")
 :Área de trabalho (nos "Ícones da área de trabalho")
@@ -50,7 +50,7 @@
 :Novo modelo do IBM-PC
 
 > Segoe UI Fonts for Windows XP
-:Fontes de interface do usuário Segoe para Windows XP
+:Fontes Segoe UI para Windows XP
 
 
 > Additional Languages support files.
