@@ -1,0 +1,85 @@
+**** Additional strings for the Installer itself ****
+**** (keep the > lines, add translation after :  ****
+
+
+> Select the setup language:
+:Selecionar o idioma da configuração
+
+> Desktop (as in "Desktop icons")
+:Área de trabalho (nos "Ícones da área de trabalho")
+
+
+> Executing file removal operations
+:Executar operações de remoção de arquivo
+
+> Preparing files for removal
+:Preparando arquivos para remoção
+
+> Restoring removed files
+:Restaurando arquivos removidos
+
+> Extracting files from archive
+:Extraindo arquivos arquivados
+
+> Executing file removal
+:Executando a remoção do arquivo
+
+> Preparing file
+:Preparando arquivo
+
+> Restoring file
+:Restaurando arquivo
+
+> This package can only be run from a bootstrapper.
+:Este pacote só pode ser executado a partir de um bootstrapper.
+
+
+> Several commandline tools
+:Várias ferramentas de linha de comando
+
+> A set of example configurations to get you started.
+:Um conjunto de configurações de exemplo para você começar.
+
+> Generic Turbo-XT Clone.
+:Clone Turbo-XT genérico
+
+> The original IBM-PC model.
+:Modelo IBM-PC original
+
+> The new model of the IBM-PC
+:Novo modelo do IBM-PC
+
+> Segoe UI Fonts for Windows XP
+:Fontes de interface do usuário Segoe para Windows XP
+
+
+> Additional Languages support files.
+:Arquivos de suporte de idiomas adicionais.
+
+> Your virtual machines.
+:Suas máquinas virtuais.
+
+> Runtime files for the FluidSynth MIDI synthesizer
+:Arquivos de tempo de execução para o sintetizador FluidSynth MIDI
+
+> Various runtime files needed by the application.
+:Vários arquivos de tempo de execução necessários para o aplicativo.
+
+> ROM BIOS image files of emulated machines and devices.
+:Arquivos de imagem ROM BIOS de máquinas e dispositivos emulados.
+
+> Runtime files needed for the SDL2 renderer.
+:Arquivos de tempo de execução necessários para o renderizador SDL2.
+
+> The VARCem Application
+:O aplicativo VARCem
+
+> License Agreement
+:Acordo de licença
+
+> Installer for the [ProductName] application.
+:Instalador para o aplicativo [ProductName]
+
+> The VARCem Team
+:A equipe VARCem
+
