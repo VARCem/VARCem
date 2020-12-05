@@ -107,7 +107,7 @@
 /* UI: dialog shared strings (3100.) */
 #define STR_NONE	"Nenhum"
 #define STR_INTERNAL	"Interna"
-#define STR_DISABLED	"Desativada"
+#define STR_DISABLED	"Desativado"
 #define STR_ENABLED	"Ativada"
 #define STR_OFF		"Desl."
 #define STR_ON		"Lig."
@@ -180,7 +180,7 @@
 #define STR_3316	"Outros periféricos"
 #define STR_3317	"Discos rígidos"
 #define STR_3318	"Unidades de disquete"
-#define STR_3319	"Outros dispositivos removíveis"
+#define STR_3319	"Dispositivos removíveis"
 
 /* UI dialog: Settings (Machine, 3325.) */
 #define  STR_3325	"Máquina:"
@@ -189,7 +189,7 @@
 #define  STR_3328	"Estados de espera:"
 #define  STR_3329	"Memória:"
 #define  STR_3330	"MB"
-#define  STR_3331	"Sincronização da hora:"
+#define  STR_3331	"Sincronizar hora:"
 #define  STR_3332	"Ativar FPU"
 #define  STR_3333	"Recompilador dinâmico"
 #define  STR_3334	"KB"
@@ -234,7 +234,7 @@
 #define  STR_3478	"IDE quaternário"
 #define  STR_3479	"Placa ISABugger"
 #define  STR_3480	"Placa de expansão de memória ISA"
-#define  STR_3481	"Placa ISA relógio/RTC"
+#define  STR_3481	"Placa ISA relóg./RTC"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Discos rígidos:"
@@ -302,13 +302,13 @@
 #define STR_3908	"&Notificar mudança de disco"
 
 #define STR_3910	"Disquete %i (%s): %ls"
-#define STR_3911	"Todas as imagens\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.json;*.mfm;*.td0;*.*fd?;*.xdf\0Imagens de setor avançado\0*.imd;*.json;*.mfm;*.td0\0Imagens de setor básico\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Imagens Flux\0*.fdi\0Imagens de superfície\0*.86f;*.mfm\0Todos os arquivos\0*.*\0"
+#define STR_3911	"Todas as imagens\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.json;*.mfm;*.td0;*.*fd?;*.xdf\0Imagens de setor avançado\0*.imd;*.json;*.mfm;*.td0\0Imagens de setor básico\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.ddi;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Imagens de fluxo\0*.fdi\0Imagens de superfície\0*.86f;*.mfm\0Todos os arquivos\0*.*\0"
 #define STR_3912	"Todas as imagens\0*.86f;*.ddi;*.dsk;*.flp;*.im?;*.mfm;*.*fd?\0Imagens de setor básico\0*.ddi;*.dsk;*.flp;*.im?;*.img;*.*fd?\0Imagens de superfície\0*.86f;*.mfm\0"
 #define STR_3913	"Imagens de superfície\0*.86f;*.mfm\0"
 #define STR_3914	"E&xportar para..."
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
-#define STR_3921	"Unidade de CD/DVD do anfitrição (%c:)"
+#define STR_3921	"Unidade de CD/DVD do anfitrião (%c:)"
 #define STR_3922	"Imagens CD-ROM\0*.iso;*.cue\0Todos os arquivos (*.*)\0*.*\0"
 #define STR_3923	"&Silenciar"
 
