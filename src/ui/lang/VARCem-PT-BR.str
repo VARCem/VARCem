@@ -6,13 +6,14 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		String definitions for "English (United States)" language.
+ *		String definitions for "Portuguese (Brazil)" language.
  *
  * Version:	@(#)VARCem-PT-BR.str	1.0.16	2020/07/14
  *
- * Author:	Altieres Lima da Silva, <altieres@gmail.com>
+ * Authors:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
+ *		Copyright 2020 Altieres Lima da Silva.
  *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -47,9 +48,9 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,1
+#define STR_VERSION	1,0,16
 #define STR_AUTHOR	"Altieres Lima da Silva"
-#define STR_EMAIL	"altieres@gmail.com"
+#define STR_EMAIL	"altieres.lima@gmail.com"
 #define STR_NAME	"VARCem"
 #define STR_TITLE	"Virtual ARchaeological Computer EMulator"
 
@@ -74,7 +75,7 @@
 #define STR_2300	"O sistema está sem memória!"
 #define STR_2301	"Nenhuma imagem ROM utilizável encontrada!"
 #define STR_2302	"Nenhuma configuração válida encontrada.\n\nDeseja entrar na tela de Configurações para criar uma?"
-#define STR_2303	"A configuração %ls:\n\n  %s\n\nnão está disponível.\n\nDeseja entrar na tela de Configurações?"
+#define STR_2303	"O %ls configurado:\n\n  %s\n\nnão está disponível.\n\nDeseja entrar na tela de Configurações?"
 #define STR_2304	"O renderizador selecionado:\n\n  %s\n\nnão está disponível. Restaurar ao padrão?"
 #define STR_2305	"Você deve salvar suas configurações primeiro!"
 #define STR_2306	"Não foi possível criar o arquivo bitmap: %ls"
@@ -198,7 +199,7 @@
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Vídeo:"
-#define  STR_3351	"Voodoo Graphics"
+#define  STR_3351	"3DFX Voodoo"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Mouse:"
@@ -349,7 +350,7 @@
 #define   STR_4034	"&2x"
 
 /* UI menu: View > Fullscreen Stretch Mode (4040.) */
-#define  STR_4040	"Modo tela cheia &esticada"
+#define  STR_4040	"Modo de &tela cheia"
 #define   STR_4041	"&Esticar tela cheia"
 #define   STR_4042	"&4:3"
 /* 4043 unused */
@@ -358,14 +359,14 @@
 
 
 /* UI menu: Display (4050.) */
-#define STR_DISPLAY	"&Exibição"
-#define  STR_4051	"Exibição &invertida"
+#define STR_DISPLAY	"&Tela"
+#define  STR_4051	"Tela &invertida"
 #define  STR_4052	"Ativar &overscan"
-#define  STR_4053	"F&orçar exibição em aspecto 4:3"
-#define  STR_4054	"Alterar o &contraste para exibição monocromática"
+#define  STR_4053	"F&orçar proporção da tela em 4:3"
+#define  STR_4054	"Alterar o &contraste para tela monocromática"
 
 /* UI menu: Display > Display Type (4060.) */
-#define  STR_DISPTYPE	"&Tipo de exibição"
+#define  STR_DISPTYPE	"&Tipo de tela"
 #define   STR_4061	"Monitor &colorido RGB"
 #define   STR_4062	"Monitor em &escala de cinza"
 #define   STR_4063	"Monitor &âmbar"
@@ -386,9 +387,9 @@
 #define	 STR_4083	"&Relatório"
 #define  STR_4084	"Relatório de interrupção"
 #define  STR_4085	"Alternar %s relatório"
-#define  STR_4086	"Carregar &configuração"
+#define  STR_4086	"Ca&rregar configuração"
 #define  STR_4087	"S&alvar configuração"
-#define  STR_4088	"&Obter captura de tela"
+#define  STR_4088	"Ca&pturar tela"
 
 
 /* UI menu: Help (4090.) */
