@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.13	2019/05/03
+ * Version:	@(#)sound_dev.c	1.0.14	2020/12/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -79,7 +79,9 @@ extern const device_t sb_pro_v2_device;
 extern const device_t sb_pro_mcv_device;
 extern const device_t sb_16_device;
 extern const device_t sb_awe32_device;
+#if defined(USE_RESID)
 extern const device_t ssi2001_device;
+#endif
 extern const device_t wss_device;
 extern const device_t ncr_business_audio_device;
 
@@ -98,7 +100,9 @@ static const struct {
 #if defined(DEV_BRANCH) && defined(USE_GUSMAX)
     { "gusmax",		&gusmax_device			},
 #endif
+#if defined(USE_RESID)
     { "ssi2001",	&ssi2001_device			},
+#endif
     { "sb",		&sb_1_device			},
     { "sb1.5",		&sb_15_device			},
     { "sb2.0",		&sb_2_device			},

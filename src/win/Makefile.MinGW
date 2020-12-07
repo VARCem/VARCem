@@ -500,6 +500,7 @@ endif
 ifneq ($(RESID), n)
  ifeq ($(RESID_PATH), )
   RESID_PATH	:= $(EXT_PATH)/resid
+  MISCOBJ	+= snd_ssi2001.o
  endif
  ifeq ($(RESID), d)
   OPTS		+= -DUSE_RESID=2
@@ -943,7 +944,6 @@ SNDOBJ		:= sound.o \
 		    snd_emu8k.o \
 		    snd_mpu401.o \
 		    snd_sn76489.o \
-		    snd_ssi2001.o \
 		    snd_wss.o \
 		    snd_ym7128.o
 
