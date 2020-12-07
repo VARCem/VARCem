@@ -8,7 +8,7 @@
  *
  *		Code generator definitions (64-bit)
  *
- * Version:	@(#)x86_ops_x86-64.h	1.0.3	2020/11/24
+ * Version:	@(#)x86_ops_x86-64.h	1.0.4	2020/12/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -884,7 +884,7 @@ static x86seg *FETCH_EA_32(x86seg *op_ea_seg, uint32_t fetchdat, int op_ssegs, u
 
 static INLINE x86seg *FETCH_EA(x86seg *op_ea_seg, uint32_t fetchdat, int op_ssegs, uint32_t *op_pc, uint32_t op_32)
 {
-        if (op_32 & 0x200)
+        if (op_32 & 0x200)w
                 return FETCH_EA_32(op_ea_seg, fetchdat, op_ssegs, op_pc, 0);
         return FETCH_EA_16(op_ea_seg, fetchdat, op_ssegs, op_pc);
 }
@@ -894,7 +894,7 @@ static INLINE x86seg *FETCH_EA(x86seg *op_ea_seg, uint32_t fetchdat, int op_sseg
 static INLINE void CHECK_SEG_READ(x86seg *seg)
 {
         /*Segments always valid in real/V86 mode*/
-        if (!(cr0 & 1) || (eflags & VM_FLAG))
+        if (!(cr0 & 1) || (cpu_state.eflags & VM_FLAG))
                 return;
         /*CS and SS must always be valid*/
         if (seg == &cpu_state.seg_cs || seg == &cpu_state.seg_ss)
@@ -930,7 +930,7 @@ static INLINE void CHECK_SEG_READ(x86seg *seg)
 static INLINE void CHECK_SEG_WRITE(x86seg *seg)
 {
         /*Segments always valid in real/V86 mode*/
-        if (!(cr0 & 1) || (eflags & VM_FLAG))
+        if (!(cr0 & 1) || (cpu_state.eflags & VM_FLAG))
                 return;
         /*CS and SS must always be valid*/
         if (seg == &cpu_state.seg_cs || seg == &cpu_state.seg_ss)

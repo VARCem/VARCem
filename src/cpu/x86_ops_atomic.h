@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_atomic.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_atomic.h	1.0.2	2020/12/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -171,9 +171,9 @@ static int opCMPXCHG8B_a16(uint32_t fetchdat)
         if (cpu_state.abrt) return 0;
         flags_rebuild();
         if (temp == temp2 && temp_hi == temp2_hi)
-                flags |= Z_FLAG;
+                cpu_state.flags |= Z_FLAG;
         else
-                flags &= ~Z_FLAG;        
+                cpu_state.flags &= ~Z_FLAG;        
         cycles -= (cpu_mod == 3) ? 6 : 10;
         return 0;
 }
@@ -202,9 +202,9 @@ static int opCMPXCHG8B_a32(uint32_t fetchdat)
         if (cpu_state.abrt) return 0;
         flags_rebuild();
         if (temp == temp2 && temp_hi == temp2_hi)
-                flags |= Z_FLAG;
+                cpu_state.flags |= Z_FLAG;
         else
-                flags &= ~Z_FLAG;        
+                cpu_state.flags &= ~Z_FLAG;        
         cycles -= (cpu_mod == 3) ? 6 : 10;
         return 0;
 }

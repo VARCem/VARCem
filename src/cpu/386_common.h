@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.7	2020/11/24
+ * Version:	@(#)386_common.h	1.0.8	2020/12/04
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,7 +56,7 @@ extern uint16_t ea_rseg;
 
 
 #define check_io_perm(port) \
-		if (msw&1 && ((CPL > IOPL) || (eflags&VM_FLAG))) \
+		if (msw&1 && ((CPL > IOPL) || (cpu_state.eflags&VM_FLAG))) \
                 { \
                         int tempi = checkio(port); \
                         if (cpu_state.abrt) return 1; \
@@ -90,13 +90,13 @@ extern uint16_t ea_rseg;
 #define CHECK_READ(chseg, low, high) \
                 if ((low < (chseg)->limit_low) || \
                     (high > (chseg)->limit_high) || \
-                    ((msw & 1) && !(eflags & VM_FLAG) && \
+                    ((msw & 1) && !(cpu_state.eflags & VM_FLAG) && \
                      (((chseg)->access & 10) == 8))) \
                 { \
                         x86gpf("Limit check (READ)", 0); \
                         return 1; \
 	        } \
-	        if (msw&1 && !(eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
+	        if (msw&1 && !(cpu_state.eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
 	        { \
 		        if ((chseg) == &cpu_state.seg_ss) \
 			        x86ss(NULL,(chseg)->seg & 0xfffc); \
@@ -109,12 +109,12 @@ extern uint16_t ea_rseg;
                 if ((low < (chseg)->limit_low) || \
                     (high > (chseg)->limit_high) || \
                     !((chseg)->access & 2) || ((msw & 1) && \
-                    !(eflags & VM_FLAG) && ((chseg)->access & 8))) \
+                    !(cpu_state.eflags & VM_FLAG) && ((chseg)->access & 8))) \
                 { \
                         x86gpf("Limit check (WRITE)", 0); \
                         return 1; \
 	        } \
-	        if (msw&1 && !(eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
+	        if (msw&1 && !(cpu_state.eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
 	        { \
 		        if ((chseg) == &cpu_state.seg_ss) \
 			        x86ss(NULL,(chseg)->seg & 0xfffc); \
@@ -130,7 +130,7 @@ extern uint16_t ea_rseg;
                         x86gpf("Limit check (WRITE REP)", 0); \
                         break; \
 	        } \
-	        if (msw&1 && !(eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
+	        if (msw&1 && !(cpu_state.eflags&VM_FLAG) && !((chseg)->access & 0x80)) \
 	        { \
 		        if ((chseg) == &cpu_state.seg_ss) \
 			        x86ss(NULL,(chseg)->seg & 0xfffc); \
@@ -140,7 +140,7 @@ extern uint16_t ea_rseg;
                 }
 
 
-#define NOTRM   if (!(msw & 1) || (eflags & VM_FLAG)) \
+#define NOTRM   if (!(msw & 1) || (cpu_state.eflags & VM_FLAG)) \
                 { \
                         x86_int(6); \
                         return 1; \

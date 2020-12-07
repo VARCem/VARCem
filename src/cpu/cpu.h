@@ -171,7 +171,7 @@ extern const CPU	cpus_Pentium2D[];
 #define CR4_PSE		(1 << 4)
 
 #define CPL		((cpu_state.seg_cs.access>>5)&3)
-#define IOPL		((flags>>12)&3)
+#define IOPL		((cpu_state.flags>>12)&3)
 #define IOPLp		((!(msw&1)) || (CPL<=IOPL))
 
 
@@ -252,8 +252,8 @@ typedef struct {
     int		_cycles;
     int		cpu_recomp_ins;
 
-    uint16_t	npxs,
-		npxc;
+    uint16_t	npxs,	npxc, flags,eflags,
+              old_npxc,	new_npxc;
 
     double	ST[8];
 
@@ -261,8 +261,6 @@ typedef struct {
 
     MMX_REG	MM[8];
 
-    uint16_t	old_npxc,
-		new_npxc;
     uint32_t	last_ea;
 
     x86seg	seg_cs, seg_ds, seg_es, seg_ss,
@@ -365,7 +363,6 @@ extern int		cpl_override;
 extern int		CPUID;
 extern int		isa_cycles;
 
-extern uint16_t		flags,eflags;
 extern uint32_t		oldds,oldss,olddslimit,oldsslimit,olddslimitw,oldsslimitw;
 extern int		ins;		// FIXME: get rid of this!
 
