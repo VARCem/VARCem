@@ -8,11 +8,11 @@
  *
  *		x86 i686 (Pentium Pro/Pentium II) CPU Instructions.
  *
- * Version:	@(#)x86_ops_i686.h	1.0.2	2018/10/05
+ * Version:	@(#)x86_ops_i686.h	1.0.3	2020/12/05
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ static int opSYSENTER(uint32_t fetchdat)
 	DEBUG("CS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", CS, _cs.base, _cs.limit, _cs.access, _cs.seg, _cs.limit_low, _cs.limit_high, _cs.checked);
 	DEBUG("SS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", SS, _ss.base, _ss.limit, _ss.access, _ss.seg, _ss.limit_low, _ss.limit_high, _ss.checked);
 	DEBUG("Model specific registers: cs_msr=%04X, esp_msr=%08X, eip_msr=%08X\n", cs_msr, esp_msr, eip_msr);
-	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i\n", cpu_state.pc, ESP, eflags, flags, use32, stack32);
+	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i\n", cpu_state.pc, ESP, cpu_state.eflags, cpu_state.flags, use32, stack32);
 #endif
 
 	if (cpu_state.abrt)  return 1;
@@ -94,8 +94,8 @@ static int opSYSENTER(uint32_t fetchdat)
         cgate16 = cgate32 = 0;                                                  \
 
 	/* Set VM, RF, and IF to 0. */
-	eflags &= ~0x0003;
-	flags &= ~0x0200;
+	cpu_state.eflags &= ~0x0003;
+	cpu_state.flags &= ~0x0200;
 
 	CS = (cs_msr & 0xFFFC);
 	make_seg_data(sysenter_cs_seg_data, 0, 0xFFFFF, 11, 1, 0, 1, 1, 1, 0);
@@ -118,7 +118,7 @@ static int opSYSENTER(uint32_t fetchdat)
 	DEBUG("CS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", CS, _cs.base, _cs.limit, _cs.access, _cs.seg, _cs.limit_low, _cs.limit_high, _cs.checked);
 	DEBUG("SS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", SS, _ss.base, _ss.limit, _ss.access, _ss.seg, _ss.limit_low, _ss.limit_high, _ss.checked);
 	DEBUG("Model specific registers: cs_msr=%04X, esp_msr=%08X, eip_msr=%08X\n", cs_msr, esp_msr, eip_msr);
-	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i\n", cpu_state.pc, ESP, eflags, flags, use32, stack32);
+	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i\n", cpu_state.pc, ESP, cpu_state.eflags, cpu_state.flags, use32, stack32);
 #endif
 
 	return 0;
@@ -142,7 +142,7 @@ static int opSYSEXIT(uint32_t fetchdat)
 	DEBUG("CS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", CS, cs, cpu_state.seg_cs.limit, cpu_state.seg_cs.access, CS, cpu_state.seg_cs.limit_low, cpu_state.seg_cs.limit_high, cpu_state.seg_cs.checked);
 	DEBUG("SS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", SS, ss, cpu_state.seg_ss.limit, cpu_state.seg_ss.access, SS, cpu_state.seg_ss.limit_low, cpu_state.seg_ss.limit_high, cpu_state.seg_ss.checked);
 	DEBUG("Model specific registers: cs_msr=%04X, esp_msr=%08X, eip_msr=%08X\n", cs_msr, esp_msr, eip_msr);
-	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i ECX=%08X EDX=%08X\n", cpu_state.pc, ESP, eflags, flags, use32, stack32, ECX, EDX);
+	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i ECX=%08X EDX=%08X\n", cpu_state.pc, ESP, cpu_state.eflags, cpu_state.flags, use32, stack32, ECX, EDX);
 #endif
 
 	if (cpu_state.abrt)  return 1;
@@ -176,7 +176,7 @@ static int opSYSEXIT(uint32_t fetchdat)
 	DEBUG("CS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", CS, _cs.base, _cs.limit, _cs.access, _cs.seg, _cs.limit_low, _cs.limit_high, _cs.checked);
 	DEBUG("SS (%04X): base=%08X, limit=%08X, access=%02X, seg=%04X, limit_low=%08X, limit_high=%08X, checked=%i\n", SS, _ss.base, _ss.limit, _ss.access, _ss.seg, _ss.limit_low, _ss.limit_high, _ss.checked);
 	DEBUG("Model specific registers: cs_msr=%04X, esp_msr=%08X, eip_msr=%08X\n", cs_msr, esp_msr, eip_msr);
-	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i ECX=%08X EDX=%08X\n", cpu_state.pc, ESP, eflags, flags, use32, stack32, ECX, EDX);
+	DEBUG("Other information: eip=%08X esp=%08X eflags=%04X flags=%04X use32=%04X stack32=%i ECX=%08X EDX=%08X\n", cpu_state.pc, ESP, cpu_state.eflags, cpu_state.flags, use32, stack32, ECX, EDX);
 #endif
 
 	return 0;

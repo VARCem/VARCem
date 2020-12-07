@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_rep.h	1.0.4	2020/11/24
+ * Version:	@(#)x86_ops_rep.h	1.0.5	2020/12/04
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -50,7 +50,7 @@ static int opREP_INSB_ ## size(uint32_t fetchdat)                               
                 temp = inb(DX);                                                 \
                 writememb(es, DEST_REG, temp); if (cpu_state.abrt) return 1;    \
                                                                                 \
-                if (flags & D_FLAG) DEST_REG--;                                 \
+                if (cpu_state.flags & D_FLAG) DEST_REG--;                                 \
                 else                DEST_REG++;                                 \
                 CNT_REG--;                                                      \
                 cycles -= 15;                                                   \
@@ -78,7 +78,7 @@ static int opREP_INSW_ ## size(uint32_t fetchdat)                               
                 temp = inw(DX);                                                 \
                 writememw(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
-                if (flags & D_FLAG) DEST_REG -= 2;                              \
+                if (cpu_state.flags & D_FLAG) DEST_REG -= 2;                              \
                 else                DEST_REG += 2;                              \
                 CNT_REG--;                                                      \
                 cycles -= 15;                                                   \
@@ -108,7 +108,7 @@ static int opREP_INSL_ ## size(uint32_t fetchdat)                               
                 temp = inl(DX);                                                 \
                 writememl(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
-                if (flags & D_FLAG) DEST_REG -= 4;                              \
+                if (cpu_state.flags & D_FLAG) DEST_REG -= 4;                              \
                 else                DEST_REG += 4;                              \
                 CNT_REG--;                                                      \
                 cycles -= 15;                                                   \
@@ -133,7 +133,7 @@ static int opREP_OUTSB_ ## size(uint32_t fetchdat)                              
                 uint8_t temp = readmemb(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;    \
                 check_io_perm(DX);                                               \
                 outb(DX, temp);                                                 \
-                if (flags & D_FLAG) SRC_REG--;                                  \
+                if (cpu_state.flags & D_FLAG) SRC_REG--;                                  \
                 else                SRC_REG++;                                  \
                 CNT_REG--;                                                      \
                 cycles -= 14;                                                   \
@@ -158,7 +158,7 @@ static int opREP_OUTSW_ ## size(uint32_t fetchdat)                              
                 check_io_perm(DX);                                               \
                 check_io_perm(DX+1);                                             \
                 outw(DX, temp);                                                 \
-                if (flags & D_FLAG) SRC_REG -= 2;                               \
+                if (cpu_state.flags & D_FLAG) SRC_REG -= 2;                               \
                 else                SRC_REG += 2;                               \
                 CNT_REG--;                                                      \
                 cycles -= 14;                                                   \
@@ -185,7 +185,7 @@ static int opREP_OUTSL_ ## size(uint32_t fetchdat)                              
                 check_io_perm(DX+2);                                             \
                 check_io_perm(DX+3);                                             \
                 outl(DX, temp);                                                 \
-                if (flags & D_FLAG) SRC_REG -= 4;                               \
+                if (cpu_state.flags & D_FLAG) SRC_REG -= 4;                               \
                 else                SRC_REG += 4;                               \
                 CNT_REG--;                                                      \
                 cycles -= 14;                                                   \
@@ -215,7 +215,7 @@ static int opREP_MOVSB_ ## size(uint32_t fetchdat)                              
                 temp = readmemb(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;    \
                 writememb(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
-                if (flags & D_FLAG) { DEST_REG--; SRC_REG--; }                  \
+                if (cpu_state.flags & D_FLAG) { DEST_REG--; SRC_REG--; }                  \
                 else                { DEST_REG++; SRC_REG++; }                  \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 3 : 4;                                        \
@@ -248,7 +248,7 @@ static int opREP_MOVSW_ ## size(uint32_t fetchdat)                              
                 temp = readmemw(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;    \
                 writememw(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
-                if (flags & D_FLAG) { DEST_REG -= 2; SRC_REG -= 2; }            \
+                if (cpu_state.flags & D_FLAG) { DEST_REG -= 2; SRC_REG -= 2; }            \
                 else                { DEST_REG += 2; SRC_REG += 2; }            \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 3 : 4;                                        \
@@ -281,7 +281,7 @@ static int opREP_MOVSL_ ## size(uint32_t fetchdat)                              
                 temp = readmeml(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;    \
                 writememl(es, DEST_REG, temp); if (cpu_state.abrt) return 1;       \
                                                                                 \
-                if (flags & D_FLAG) { DEST_REG -= 4; SRC_REG -= 4; }            \
+                if (cpu_state.flags & D_FLAG) { DEST_REG -= 4; SRC_REG -= 4; }            \
                 else                { DEST_REG += 4; SRC_REG += 4; }            \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 3 : 4;                                        \
@@ -312,7 +312,7 @@ static int opREP_STOSB_ ## size(uint32_t fetchdat)                              
         {                                                                       \
                 CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG);         \
                 writememb(es, DEST_REG, AL); if (cpu_state.abrt) return 1;         \
-                if (flags & D_FLAG) DEST_REG--;                                 \
+                if (cpu_state.flags & D_FLAG) DEST_REG--;                                 \
                 else                DEST_REG++;                                 \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 4 : 5;                                        \
@@ -340,7 +340,7 @@ static int opREP_STOSW_ ## size(uint32_t fetchdat)                              
         {                                                                       \
                 CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG+1);       \
                 writememw(es, DEST_REG, AX); if (cpu_state.abrt) return 1;         \
-                if (flags & D_FLAG) DEST_REG -= 2;                              \
+                if (cpu_state.flags & D_FLAG) DEST_REG -= 2;                              \
                 else                DEST_REG += 2;                              \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 4 : 5;                                        \
@@ -368,7 +368,7 @@ static int opREP_STOSL_ ## size(uint32_t fetchdat)                              
         {                                                                       \
                 CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG+3);       \
                 writememl(es, DEST_REG, EAX); if (cpu_state.abrt) return 1;        \
-                if (flags & D_FLAG) DEST_REG -= 4;                              \
+                if (cpu_state.flags & D_FLAG) DEST_REG -= 4;                              \
                 else                DEST_REG += 4;                              \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 4 : 5;                                        \
@@ -396,7 +396,7 @@ static int opREP_LODSB_ ## size(uint32_t fetchdat)                              
         while (CNT_REG > 0)                                                     \
         {                                                                       \
                 AL = readmemb(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;      \
-                if (flags & D_FLAG) SRC_REG--;                                  \
+                if (cpu_state.flags & D_FLAG) SRC_REG--;                                  \
                 else                SRC_REG++;                                  \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 4 : 5;                                        \
@@ -423,7 +423,7 @@ static int opREP_LODSW_ ## size(uint32_t fetchdat)                              
         while (CNT_REG > 0)                                                     \
         {                                                                       \
                 AX = readmemw(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;      \
-                if (flags & D_FLAG) SRC_REG -= 2;                               \
+                if (cpu_state.flags & D_FLAG) SRC_REG -= 2;                               \
                 else                SRC_REG += 2;                               \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 4 : 5;                                        \
@@ -450,7 +450,7 @@ static int opREP_LODSL_ ## size(uint32_t fetchdat)                              
         while (CNT_REG > 0)                                                     \
         {                                                                       \
                 EAX = readmeml(cpu_state.ea_seg->base, SRC_REG); if (cpu_state.abrt) return 1;     \
-                if (flags & D_FLAG) SRC_REG -= 4;                               \
+                if (cpu_state.flags & D_FLAG) SRC_REG -= 4;                               \
                 else                SRC_REG += 4;                               \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 4 : 5;                                        \
@@ -481,7 +481,7 @@ static int opREP_CMPSB_ ## size(uint32_t fetchdat)                              
                 uint8_t temp = readmemb(cpu_state.ea_seg->base, SRC_REG);       \
                 uint8_t temp2 = readmemb(es, DEST_REG); if (cpu_state.abrt) return 1;      \
                                                                                 \
-                if (flags & D_FLAG) { DEST_REG--; SRC_REG--; }                  \
+                if (cpu_state.flags & D_FLAG) { DEST_REG--; SRC_REG--; }                  \
                 else                { DEST_REG++; SRC_REG++; }                  \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 7 : 9;                                        \
@@ -508,7 +508,7 @@ static int opREP_CMPSW_ ## size(uint32_t fetchdat)                              
                 uint16_t temp = readmemw(cpu_state.ea_seg->base, SRC_REG);      \
                 uint16_t temp2 = readmemw(es, DEST_REG); if (cpu_state.abrt) return 1;     \
                                                                                 \
-                if (flags & D_FLAG) { DEST_REG -= 2; SRC_REG -= 2; }            \
+                if (cpu_state.flags & D_FLAG) { DEST_REG -= 2; SRC_REG -= 2; }            \
                 else                { DEST_REG += 2; SRC_REG += 2; }            \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 7 : 9;                                        \
@@ -535,7 +535,7 @@ static int opREP_CMPSL_ ## size(uint32_t fetchdat)                              
                 uint32_t temp = readmeml(cpu_state.ea_seg->base, SRC_REG);      \
                 uint32_t temp2 = readmeml(es, DEST_REG); if (cpu_state.abrt) return 1;     \
                                                                                 \
-                if (flags & D_FLAG) { DEST_REG -= 4; SRC_REG -= 4; }            \
+                if (cpu_state.flags & D_FLAG) { DEST_REG -= 4; SRC_REG -= 4; }            \
                 else                { DEST_REG += 4; SRC_REG += 4; }            \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 7 : 9;                                        \
@@ -565,7 +565,7 @@ static int opREP_SCASB_ ## size(uint32_t fetchdat)                              
                 uint8_t temp = readmemb(es, DEST_REG); if (cpu_state.abrt) break;\
                 setsub8(AL, temp);                                              \
                 tempz = (ZF_SET()) ? 1 : 0;                                     \
-                if (flags & D_FLAG) DEST_REG--;                                 \
+                if (cpu_state.flags & D_FLAG) DEST_REG--;                                 \
                 else                DEST_REG++;                                 \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 5 : 8;                                        \
@@ -596,7 +596,7 @@ static int opREP_SCASW_ ## size(uint32_t fetchdat)                              
                 uint16_t temp = readmemw(es, DEST_REG); if (cpu_state.abrt) break;\
                 setsub16(AX, temp);                                             \
                 tempz = (ZF_SET()) ? 1 : 0;                                     \
-                if (flags & D_FLAG) DEST_REG -= 2;                              \
+                if (cpu_state.flags & D_FLAG) DEST_REG -= 2;                              \
                 else                DEST_REG += 2;                              \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 5 : 8;                                        \
@@ -627,7 +627,7 @@ static int opREP_SCASL_ ## size(uint32_t fetchdat)                              
                 uint32_t temp = readmeml(es, DEST_REG); if (cpu_state.abrt) break;\
                 setsub32(EAX, temp);                                            \
                 tempz = (ZF_SET()) ? 1 : 0;                                     \
-                if (flags & D_FLAG) DEST_REG -= 4;                              \
+                if (cpu_state.flags & D_FLAG) DEST_REG -= 4;                              \
                 else                DEST_REG += 4;                              \
                 CNT_REG--;                                                      \
                 cycles -= is486 ? 5 : 8;                                        \

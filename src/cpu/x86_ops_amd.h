@@ -8,7 +8,7 @@
  *
  *		AMD SYSCALL and SYSRET CPU Instructions.
  *
- * Version:	@(#)x86_ops_amd.h	1.0.3	2020/11/24
+ * Version:	@(#)x86_ops_amd.h	1.0.4	2020/12/04
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -70,14 +70,14 @@ static int opSYSCALL(uint32_t fetchdat)
 	if (!AMD_SYSCALL_SB)  return internal_illegal("SYSCALL: AMD SYSCALL SB MSR is zero");
 
 	/* Set VM, IF, RF to 0. */
-	/* eflags &= ~0x00030200;
-	flags &= ~0x0200; */
+	/* cpu_state.eflags &= ~0x00030200;
+	cpu_state.flags &= ~0x0200; */
 
 	/* Let's do this by the AMD spec. */
 	ECX = cpu_state.pc;
 
-	eflags &= ~0x0002;
-	flags &= ~0x0200;
+	cpu_state.eflags &= ~0x0002;
+	cpu_state.flags &= ~0x0200;
 
 	/* CS */
 	cpu_state.seg_cs.seg = AMD_SYSCALL_SB & ~7;
@@ -155,7 +155,7 @@ static int opSYSRET(uint32_t fetchdat)
 
 	cpu_state.pc = ECX;
 
-	eflags |= (1 << 1);
+	cpu_state.eflags |= (1 << 1);
 
 	/* CS */
 	cpu_state.seg_cs.seg = AMD_SYSRET_SB & ~7;

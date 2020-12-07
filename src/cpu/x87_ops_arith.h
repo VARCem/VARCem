@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x87 FPU Instructions.
  *
- * Version:	@(#)x87_ops_arith.h	1.0.2	2018/10/05
+ * Version:	@(#)x87_ops_arith.h	1.0.3	2020/12/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -238,9 +238,9 @@ static int opFCOMI(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FICOM\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         CLOCK_CYCLES(4);
         return 0;
 }
@@ -250,9 +250,9 @@ static int opFCOMIP(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FICOMP\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         x87_pop();
         CLOCK_CYCLES(4);
         return 0;
@@ -447,9 +447,9 @@ static int opFUCOMI(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FUCOMI\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         CLOCK_CYCLES(4);
         return 0;
 }
@@ -459,9 +459,9 @@ static int opFUCOMIP(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FUCOMIP\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         x87_pop();
         CLOCK_CYCLES(4);
         return 0;

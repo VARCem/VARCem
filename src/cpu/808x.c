@@ -8,7 +8,11 @@
  *
  *		808x CPU emulation.
  *
+<<<<<<< HEAD
  * Version:	@(#)808x.c	1.0.22	2021/03/12
+=======
+ * Version:	@(#)808x.c	1.0.23	2020/12/04
+>>>>>>> 636a17e4 (Move flag and eflag to cpu struct)
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -131,7 +135,7 @@ cpu_dumpregs(int force)
 	return;
 
     INFO("EIP=%08X CS=%04X DS=%04X ES=%04X SS=%04X FLAGS=%04X\n",
-	      cpu_state.pc, CS, DS, ES, SS, flags);
+	      cpu_state.pc, CS, DS, ES, SS, cpu_state.flags);
     INFO("Old CS:EIP: %04X:%08X; %i ins\n", oldcs, cpu_state.oldpc, ins);
     for (c = 0; c < 4; c++) {
 	INFO("%s : base=%06X limit=%08X access=%02X  low=%08X high=%08X\n",
@@ -148,7 +152,7 @@ cpu_dumpregs(int force)
 	INFO("IDT : base=%06X limit=%04X\n", idt.base, idt.limit);
 	INFO("TR  : base=%06X limit=%04X\n", tr.base, tr.limit);
 	INFO("386 in %s mode: %i-bit data, %-i-bit stack\n",
-		  (msw & 1) ? ((eflags & VM_FLAG) ? "V86" : "protected") : "real",
+		  (msw & 1) ? ((cpu_state.eflags & VM_FLAG) ? "V86" : "protected") : "real",
 		  (use32) ? 32 : 16, (stack32) ? 32 : 16);
 	INFO("CR0=%08X CR2=%08X CR3=%08X CR4=%08x\n", cr0, cr2, cr3, cr4);
 	INFO("EAX=%08X EBX=%08X ECX=%08X EDX=%08X\nEDI=%08X ESI=%08X EBP=%08X ESP=%08X\n",
@@ -293,9 +297,9 @@ irq_pending(void)
     if (takeint && !noint)
 	temp = 1;
     else
-	temp = (nmi && nmi_enable && nmi_mask) || ((flags & T_FLAG) && !noint);
+	temp = (nmi && nmi_enable && nmi_mask) || ((cpu_state.flags & T_FLAG) && !noint);
 
-    takeint = (flags & I_FLAG) && (pic.pend &~ pic.mask);
+    takeint = (cpu_state.flags & I_FLAG) && (pic.pend &~ pic.mask);
 
     return temp;
 }
@@ -858,10 +862,10 @@ do_intr(uint16_t addr, int cli)
     do_access(6, 16);
     new_cs = readmemw(0, (addr + 2) & 0xffff);
     do_access(39, 16);
-    do_push(flags & 0x0fd7);
+    do_push(cpu_state.flags & 0x0fd7);
     if (cli)
-	flags &= ~I_FLAG;
-    flags &= ~T_FLAG;
+	cpu_state.flags &= ~I_FLAG;
+    cpu_state.flags &= ~T_FLAG;
     do_access(40, 16);
     do_push(old_cs);
     old_ip = cpu_state.pc;
@@ -963,21 +967,21 @@ do_jcc(uint8_t opcode, int cond)
 static void
 set_cf(int cond)
 {
-    flags = (flags & ~C_FLAG) | (cond ? C_FLAG : 0);
+    cpu_state.flags = (cpu_state.flags & ~C_FLAG) | (cond ? C_FLAG : 0);
 }
 
 
 static void
 set_if(int cond)
 {
-    flags = (flags & ~I_FLAG) | (cond ? I_FLAG : 0);
+    cpu_state.flags = (cpu_state.flags & ~I_FLAG) | (cond ? I_FLAG : 0);
 }
 
 
 static void
 set_df(int cond)
 {
-    flags = (flags & ~D_FLAG) | (cond ? D_FLAG : 0);
+    cpu_state.flags = (cpu_state.flags & ~D_FLAG) | (cond ? D_FLAG : 0);
 }
 
 
@@ -985,7 +989,7 @@ static void
 bitwise(int bits, uint16_t data)
 {
     cpu_data = data;
-    flags &= ~(C_FLAG | A_FLAG | V_FLAG);
+    cpu_state.flags &= ~(C_FLAG | A_FLAG | V_FLAG);
     set_pzs(bits);
 }
 
@@ -1002,7 +1006,7 @@ do_test(int bits, uint16_t dest, uint16_t src)
 static void
 set_of(int of)
 {
-    flags = (flags & ~0x800) | (of ? 0x800 : 0);
+    cpu_state.flags = (cpu_state.flags & ~0x800) | (of ? 0x800 : 0);
 }
 
 
@@ -1033,7 +1037,7 @@ set_of_sub(int bits)
 static void
 set_af(int af)
 {
-    flags = (flags & ~0x10) | (af ? 0x10 : 0);
+    cpu_state.flags = (cpu_state.flags & ~0x10) | (af ? 0x10 : 0);
 }
 
 
@@ -1063,8 +1067,8 @@ do_add(int bits)
 
     /* Anything - FF with carry on is basically anything + 0x100: value stays
        unchanged but carry goes on. */
-    if ((cpu_alu_op == 2) && !(cpu_src & size_mask) && (flags & C_FLAG))
-	flags |= C_FLAG;
+    if ((cpu_alu_op == 2) && !(cpu_src & size_mask) && (cpu_state.flags & C_FLAG))
+	cpu_state.flags |= C_FLAG;
     else
 	set_cf((cpu_src & size_mask) > (cpu_data & size_mask));
 }
@@ -1081,8 +1085,8 @@ do_sub(int bits)
 
     /* Anything - FF with carry on is basically anything - 0x100: value stays
        unchanged but carry goes on. */
-    if ((cpu_alu_op == 3) && !(cpu_src & size_mask) && (flags & C_FLAG))
-	flags |= C_FLAG;
+    if ((cpu_alu_op == 3) && !(cpu_src & size_mask) && (cpu_state.flags & C_FLAG))
+	cpu_state.flags |= C_FLAG;
     else
 	set_cf((cpu_src & size_mask) > (cpu_dest & size_mask));
 }
@@ -1097,7 +1101,7 @@ alu_op(int bits)
 		break;
 
 	case 2:
-		if (flags & C_FLAG)
+		if (cpu_state.flags & C_FLAG)
 			cpu_src++;
 		/*FALLTHROUGH*/
 
@@ -1106,7 +1110,7 @@ alu_op(int bits)
 		break;
 
 	case 3:
-		if (flags & C_FLAG)
+		if (cpu_state.flags & C_FLAG)
 			cpu_src++;
 		/*FALLTHROUGH*/
 
@@ -1129,7 +1133,7 @@ alu_op(int bits)
 static void
 set_sf(int bits)
 {
-    flags = (flags & ~0x80) | (top_bit(cpu_data, bits) ? 0x80 : 0);
+    cpu_state.flags = (cpu_state.flags & ~0x80) | (top_bit(cpu_data, bits) ? 0x80 : 0);
 }
 
 
@@ -1154,7 +1158,7 @@ set_pf(void)
 	0, 4, 4, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0, 4, 4, 0,
 	4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4};
 
-    flags = (flags & ~4) | table[cpu_data & 0xff];
+    cpu_state.flags = (cpu_state.flags & ~4) | table[cpu_data & 0xff];
 }
 
 
@@ -1215,7 +1219,7 @@ do_mul(uint16_t a, uint16_t b)
 		do_add(bit_count);
 		c = cpu_data & size_mask;
 		cpu_wait(1, 0);
-		carry = !!(flags & C_FLAG);
+		carry = !!(cpu_state.flags & C_FLAG);
 	}
 	r = (c >> 1) + (carry ? high_bit : 0);
 	carry = (c & 1) != 0;
@@ -1252,7 +1256,7 @@ set_zf(int bits)
 {
     int size_mask = (1 << bits) - 1;
 
-    flags = (flags & ~0x40) | (((cpu_data & size_mask) == 0) ? 0x40 : 0);
+    cpu_state.flags = (cpu_state.flags & ~0x40) | (((cpu_data & size_mask) == 0) ? 0x40 : 0);
 }
 
 
@@ -1385,7 +1389,7 @@ do_lods(int bits)
 	cpu_data = readmemw((ovr_seg ? *ovr_seg : ds), SI);
     else
 	cpu_data = readmemb((ovr_seg ? *ovr_seg : ds) + SI);
-    if (flags & D_FLAG)
+    if (cpu_state.flags & D_FLAG)
 	SI -= (bits >> 3);
     else
 	SI += (bits >> 3);
@@ -1399,7 +1403,7 @@ do_stos(int bits)
 	writememw(es, DI, cpu_data);
     else
 	writememb(es + DI, (uint8_t)(cpu_data & 0xff));
-    if (flags & D_FLAG)
+    if (cpu_state.flags & D_FLAG)
 	DI -= (bits >> 3);
     else
 	DI += (bits >> 3);
@@ -1468,8 +1472,8 @@ opcodestart:
 
 	if (! repeating) {
 		opcode = pfq_fetchb();
-		oldc = flags & C_FLAG;
-		trap = flags & T_FLAG;
+		oldc = cpu_state.flags & C_FLAG;
+		trap = cpu_state.flags & T_FLAG;
 		cpu_wait(1, 0);
 
 #if 0
@@ -1586,14 +1590,14 @@ opcodestart:
 
 		case 0x27:	/* DAA */
 			cpu_wait(1, 0);
-			if ((flags & A_FLAG) || (AL & 0x0f) > 9) {
+			if ((cpu_state.flags & A_FLAG) || (AL & 0x0f) > 9) {
 				cpu_data = AL + 6;
 				AL = (uint8_t)cpu_data;
 				set_af(1);
 				if ((cpu_data & 0x0100) != 0)
 					set_cf(1);
 			}
-			if ((flags & C_FLAG) || AL > 0x9f) {
+			if ((cpu_state.flags & C_FLAG) || AL > 0x9f) {
 				AL += 0x60;
 				set_cf(1);
 			}
@@ -1603,14 +1607,14 @@ opcodestart:
 		case 0x2f:	/* DAS */
 			cpu_wait(1, 0);
 			temp = AL;
-			if ((flags & A_FLAG) || ((AL & 0x0f) > 9)) {
+			if ((cpu_state.flags & A_FLAG) || ((AL & 0x0f) > 9)) {
 				cpu_data = AL - 6;
 				AL = (uint8_t)cpu_data;
 				set_af(1);
 				if ((cpu_data & 0x0100) != 0)
 					set_cf(1);
 			}
-			if ((flags & C_FLAG) || temp > 0x9f) {
+			if ((cpu_state.flags & C_FLAG) || temp > 0x9f) {
 				AL -= 0x60;
 				set_cf(1);
 			}
@@ -1619,7 +1623,7 @@ opcodestart:
 
 		case 0x37:	/* AAA */
 			cpu_wait(1, 0);
-			if ((flags & A_FLAG) || ((AL & 0x0f) > 9)) {
+			if ((cpu_state.flags & A_FLAG) || ((AL & 0x0f) > 9)) {
 				AL += 6;
 				AH++;
 				set_ca();
@@ -1632,7 +1636,7 @@ opcodestart:
 
 		case 0x3f:	/* AAS */
 			cpu_wait(1, 0);
-			if ((flags & A_FLAG) || ((AL & 0x0f) > 9)) {
+			if ((cpu_state.flags & A_FLAG) || ((AL & 0x0f) > 9)) {
 				AL -= 6;
 				AH--;
 				set_ca();
@@ -1684,50 +1688,50 @@ opcodestart:
 		case 0x70:	/* JO */
 		case 0x61:	/* JNO alias */
 		case 0x71:	/* JNO */
-			do_jcc(opcode, flags & V_FLAG);
+			do_jcc(opcode, cpu_state.flags & V_FLAG);
 			break;
 
 		case 0x62:	/* JB alias */
 		case 0x72:	/* JB */
 		case 0x63:	/* JNB alias */
 		case 0x73:	/* JNB */
-			do_jcc(opcode, flags & C_FLAG);
+			do_jcc(opcode, cpu_state.flags & C_FLAG);
 			break;
 
 		case 0x64:	/* JE alias */
 		case 0x74:	/* JE */
 		case 0x65:	/* JNE alias */
 		case 0x75:	/* JNE */
-			do_jcc(opcode, flags & Z_FLAG);
+			do_jcc(opcode, cpu_state.flags & Z_FLAG);
 			break;
 
 		case 0x66:	/* JBE alias */
 		case 0x76:	/* JBE */
 		case 0x67:	/* JNBE alias */
 		case 0x77:	/* JNBE */
-			do_jcc(opcode, flags & (C_FLAG | Z_FLAG));
+			do_jcc(opcode, cpu_state.flags & (C_FLAG | Z_FLAG));
 			break;
 
 		case 0x68:	/* JS alias */
 		case 0x78:	/* JS */
 		case 0x69:	/* JNS alias */
 		case 0x79:	/* JNS */
-			do_jcc(opcode, flags & N_FLAG);
+			do_jcc(opcode, cpu_state.flags & N_FLAG);
 			break;
 
 		case 0x6a:	/* JP alias */
 		case 0x7a:	/* JP */
 		case 0x6b:	/* JNP alias */
 		case 0x7b:	/* JNP */
-			do_jcc(opcode, flags & P_FLAG);
+			do_jcc(opcode, cpu_state.flags & P_FLAG);
 			break;
 
 		case 0x6c:	/* JL alias */
 		case 0x7c:	/* JL */
 		case 0x6d:	/* JNL alias */
 		case 0x7d:	/* JNL */
-			temp = (flags & N_FLAG) ? 1 : 0;
-			temp2 = (flags & V_FLAG) ? 1 : 0;
+			temp = (cpu_state.flags & N_FLAG) ? 1 : 0;
+			temp2 = (cpu_state.flags & V_FLAG) ? 1 : 0;
 			do_jcc(opcode, temp ^ temp2);
 			break;
 
@@ -1735,9 +1739,9 @@ opcodestart:
 		case 0x7e:	/* JLE */
 		case 0x6f:	/* JNLE alias */
 		case 0x7f:	/* JNLE */
-			temp = (flags & N_FLAG) ? 1 : 0;
-			temp2 = (flags & V_FLAG) ? 1 : 0;
-			do_jcc(opcode, (flags & Z_FLAG) || (temp != temp2));
+			temp = (cpu_state.flags & N_FLAG) ? 1 : 0;
+			temp2 = (cpu_state.flags & V_FLAG) ? 1 : 0;
+			do_jcc(opcode, (cpu_state.flags & Z_FLAG) || (temp != temp2));
 			break;
 
 		case 0x80: case 0x81: case 0x82: case 0x83: /* alu rm, imm */
@@ -1962,24 +1966,24 @@ opcodestart:
 
 		case 0x9c:	/* PUSHF */
 			do_access(33, 16);
-			do_push((flags & 0x0fd7) | 0xf000);
+			do_push((cpu_state.flags & 0x0fd7) | 0xf000);
 			break;
 
 		case 0x9d:	/* POPF */
 			do_access(25, 16);
-			flags = do_pop() | 2;
+			cpu_state.flags = do_pop() | 2;
 			cpu_wait(1, 0);
 			break;
 
 		case 0x9e:	/* SAHF */
 			cpu_wait(1, 0);
-			flags = (flags & 0xff02) | AH;
+			cpu_state.flags = (cpu_state.flags & 0xff02) | AH;
 			cpu_wait(2, 0);
 			break;
 
 		case 0x9f:	/* LAHF */
 			cpu_wait(1, 0);
-			AH = flags & 0xd7;
+			AH = cpu_state.flags & 0xd7;
 			break;
 
 		case 0xa0:	/* MOV A, [iw] */
@@ -2076,7 +2080,7 @@ opcodestart:
 				cpu_data = readmemw(es, DI);
 			else
 				cpu_data = readmemb(es + DI);
-			if (flags & D_FLAG)
+			if (cpu_state.flags & D_FLAG)
 				DI -= (bits >> 3);
 			else
 				DI += (bits >> 3);
@@ -2087,7 +2091,7 @@ opcodestart:
 				cpu_wait(3, 0);
 				break;
 			}
-			if ((!!(flags & Z_FLAG)) == (in_rep == 1)) {
+			if ((!!(cpu_state.flags & Z_FLAG)) == (in_rep == 1)) {
 				cpu_wait(4, 0);
 				break;
 			}
@@ -2242,7 +2246,7 @@ opcodestart:
 
 		case 0xce:	/* INTO */
 			cpu_wait(3, 0);
-			if (flags & V_FLAG) {
+			if (cpu_state.flags & V_FLAG) {
 				cpu_wait(2, 0);
 				do_intr(4, 1);
 			}
@@ -2258,7 +2262,7 @@ opcodestart:
 			do_access(62, 8);
 			cpu_state.pc = new_ip;
 			do_access(45, 8);
-			flags = do_pop() | 2;
+			cpu_state.flags = do_pop() | 2;
 			cpu_wait(5, 0);
 			noint = 1;
 			nmi_enable = 1;
@@ -2287,19 +2291,19 @@ opcodestart:
 			}
 			while (cpu_src != 0) {
 				cpu_dest = cpu_data;
-				oldc = flags & C_FLAG;
+				oldc = cpu_state.flags & C_FLAG;
 				switch (rmdat & 0x38) {
 					case 0x00:	/* ROL */
 						set_cf(top_bit(cpu_data, bits));
 						cpu_data <<= 1;
-						cpu_data |= ((flags & C_FLAG) ? 1 : 0);
+						cpu_data |= ((cpu_state.flags & C_FLAG) ? 1 : 0);
 						set_of_rotate(bits);
 						break;
 
 					case 0x08:	/* ROR */
 						set_cf((cpu_data & 1) != 0);
 						cpu_data >>= 1;
-						if (flags & C_FLAG)
+						if (cpu_state.flags & C_FLAG)
 							cpu_data |= (!(opcode & 1) ? 0x80 : 0x8000);
 						set_of_rotate(bits);
 						break;
@@ -2382,7 +2386,7 @@ opcodestart:
 
 		case 0xd6:	/* SALC */
 			cpu_wait(1, 0);
-			AL = (flags & C_FLAG) ? 0xff : 0x00;
+			AL = (cpu_state.flags & C_FLAG) ? 0xff : 0x00;
 			cpu_wait(1, 0);
 			break;
 
@@ -2423,12 +2427,12 @@ opcodestart:
 				oldc = (CX != 0);
 				switch (opcode) {
 					case 0xe0:
-						if (flags & Z_FLAG)
+						if (cpu_state.flags & Z_FLAG)
 							oldc = 0;
 						break;
 
 					case 0xe1:
-						if (!(flags & Z_FLAG))
+						if (!(cpu_state.flags & Z_FLAG))
 							oldc = 0;
 						break;
 				}
@@ -2536,7 +2540,7 @@ opcodestart:
 
 		case 0xf5:	/* CMC */
 			cpu_wait(1, 0);
-			flags ^= C_FLAG;
+			cpu_state.flags ^= C_FLAG;
 			break;
 
 		case 0xf6:
@@ -2755,7 +2759,7 @@ on_halt:
 
 	timer_end_period(cycles * cpu_clock_multi);
 
-	if (trap && (flags & T_FLAG) && !noint) {
+	if (trap && (cpu_state.flags & T_FLAG) && !noint) {
 		halt = 0;
 		do_intr(1, 1);
 	} else if (nmi && nmi_enable && nmi_mask) {
@@ -2769,7 +2773,7 @@ on_halt:
 			do_intr(temp, 1);
 		}
 	}
-	takeint = (flags & I_FLAG) && (pic.pend &~ pic.mask);
+	takeint = (cpu_state.flags & I_FLAG) && (pic.pend &~ pic.mask);
 
 	if (noint)
 		noint = 0;
@@ -2829,7 +2833,7 @@ cpu_reset(int hard)
     cpu_cache_int_enabled = 0;
     cpu_update_waitstates();
     cr4 = 0;
-    eflags = 0;
+    cpu_state.eflags = 0;
     cgate32 = 0;
 
     if (AT) {
@@ -2844,7 +2848,7 @@ cpu_reset(int hard)
 
     idt.base = 0;
     idt.limit = is386 ? 0x03FF : 0xFFFF;
-    flags = 2;
+    cpu_state.flags = 2;
     trap = 0;
     ovr_seg = NULL;
     in_lock = halt = 0;

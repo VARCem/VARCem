@@ -8,7 +8,7 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.10	2020/11/24
+ * Version:	@(#)x86seg.c	1.0.11	2020/12/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -141,21 +141,21 @@ void x86_doabrt(int x86_abrt)
                 uint32_t addr = (x86_abrt << 2) + idt.base;
                 if (stack32)
                 {
-                        writememw(ss,ESP-2,flags);
+                        writememw(ss,ESP-2,cpu_state.flags);
                         writememw(ss,ESP-4,CS);
                         writememw(ss,ESP-6,cpu_state.pc);
                         ESP-=6;
                 }
                 else
                 {
-                        writememw(ss,((SP-2)&0xFFFF),flags);
+                        writememw(ss,((SP-2)&0xFFFF),cpu_state.flags);
                         writememw(ss,((SP-4)&0xFFFF),CS);
                         writememw(ss,((SP-6)&0xFFFF),cpu_state.pc);
                         SP-=6;
                 }
 
-                flags&=~I_FLAG;
-                flags&=~T_FLAG;
+                cpu_state.flags&=~I_FLAG;
+                cpu_state.flags&=~T_FLAG;
                 oxpc=cpu_state.pc;
                 cpu_state.pc=readmemw(0,addr);
                 loadcs(readmemw(0,addr+2));
@@ -331,7 +331,7 @@ void loadseg(uint16_t seg, x86seg *s)
         uint32_t addr;
         int dpl;
 
-        if (msw&1 && !(eflags&VM_FLAG))
+        if (msw&1 && !(cpu_state.eflags&VM_FLAG))
         {
                 if (!(seg&~3))
                 {
@@ -472,7 +472,7 @@ void loadseg(uint16_t seg, x86seg *s)
                 if (s == &cpu_state.seg_ss)
                         codegen_flat_ss = 0;
 #endif
-                if (s == &cpu_state.seg_ss && (eflags & VM_FLAG))
+                if (s == &cpu_state.seg_ss && (cpu_state.eflags & VM_FLAG))
                         set_stack32(0);
         }
         
@@ -503,7 +503,7 @@ void loadcs(uint16_t seg)
 #if 0
         DEBUG("Load CS %04X\n",seg);
 #endif
-        if (msw&1 && !(eflags&VM_FLAG))
+        if (msw&1 && !(cpu_state.eflags&VM_FLAG))
         {
                 if (!(seg&~3))
                 {
@@ -598,7 +598,7 @@ void loadcs(uint16_t seg)
                 cpu_state.seg_cs.limit_low = 0;
                 cpu_state.seg_cs.limit_high = 0xffff;
                 CS=seg & 0xFFFF;
-                if (eflags&VM_FLAG) cpu_state.seg_cs.access=(3<<5) | 2 | 0x80;
+                if (cpu_state.eflags&VM_FLAG) cpu_state.seg_cs.access=(3<<5) | 2 | 0x80;
                 else                cpu_state.seg_cs.access=(0<<5) | 2 | 0x80;
                 if (CPL==3 && oldcpl!=3) flushmmucache_cr3();
         }
@@ -610,7 +610,7 @@ void loadcsjmp(uint16_t seg, uint32_t oxpc)
         uint32_t addr;
         uint16_t type,seg2;
         uint32_t newpc;
-        if (msw&1 && !(eflags&VM_FLAG))
+        if (msw&1 && !(cpu_state.eflags&VM_FLAG))
         {
                 if (!(seg&~3))
                 {
@@ -802,7 +802,7 @@ void loadcsjmp(uint16_t seg, uint32_t oxpc)
                                 optype=JMP;
                                 cpl_override=1;
                                 taskswitch286(seg,segdat,segdat[2]&0x800);
-                                flags &= ~NT_FLAG;
+                                cpu_state.flags &= ~NT_FLAG;
                                 cpl_override=0;
                                 return;
 
@@ -819,7 +819,7 @@ void loadcsjmp(uint16_t seg, uint32_t oxpc)
                 cpu_state.seg_cs.limit_low = 0;
                 cpu_state.seg_cs.limit_high = 0xffff;
                 CS=seg;
-                if (eflags&VM_FLAG) cpu_state.seg_cs.access=(3<<5) | 2 | 0x80;
+                if (cpu_state.eflags&VM_FLAG) cpu_state.seg_cs.access=(3<<5) | 2 | 0x80;
                 else                cpu_state.seg_cs.access=(0<<5) | 2 | 0x80;
                 if (CPL==3 && oldcpl!=3) flushmmucache_cr3();
                 cycles -= timing_jmp_rm;
@@ -902,7 +902,7 @@ void loadcscall(uint16_t seg)
         int type;
         uint16_t tempw;
         
-        if (msw&1 && !(eflags&VM_FLAG))
+        if (msw&1 && !(cpu_state.eflags&VM_FLAG))
         {
 #if 0
                 DEBUG("Protected mode CS load! %04X\n",seg);
@@ -1324,7 +1324,7 @@ void loadcscall(uint16_t seg)
                 cpu_state.seg_cs.limit_low = 0;
                 cpu_state.seg_cs.limit_high = 0xffff;
                 CS=seg;
-                if (eflags&VM_FLAG) cpu_state.seg_cs.access=(3<<5) | 2 | 0x80;
+                if (cpu_state.eflags&VM_FLAG) cpu_state.seg_cs.access=(3<<5) | 2 | 0x80;
                 else                cpu_state.seg_cs.access=(0<<5) | 2 | 0x80;
                 if (CPL==3 && oldcpl!=3) flushmmucache_cr3();
         }
@@ -1338,7 +1338,7 @@ void pmoderetf(int is32, uint16_t off)
         uint16_t segdat[4],segdat2[4],seg,newss;
         uint32_t oldsp=ESP;
 #if 0
-        DEBUG("RETF %i %04X:%04X  %08X %04X\n",is32,CS,cpu_state.pc,cr0,eflags);
+        DEBUG("RETF %i %04X:%04X  %08X %04X\n",is32,CS,cpu_state.pc,cr0,cpu_state.eflags);
 #endif
         if (is32)
         {
@@ -1621,7 +1621,7 @@ void pmodeint(int num, int soft)
         uint16_t seg = 0;
         int new_cpl;
         
-        if (eflags&VM_FLAG && IOPL!=3 && soft)
+        if (cpu_state.eflags&VM_FLAG && IOPL!=3 && soft)
         {
 #if 0
                 DEBUG("V86 banned int\n");
@@ -1726,7 +1726,7 @@ void pmodeint(int num, int soft)
                                                 x86np("Int gate CS not present\n", segdat[1] & 0xfffc);
                                                 return;
                                         }
-                                        if ((eflags&VM_FLAG) && DPL2)
+                                        if ((cpu_state.eflags&VM_FLAG) && DPL2)
                                         {
                                                 x86gpf(NULL,segdat[1]&0xFFFC);
                                                 return;
@@ -1810,7 +1810,7 @@ void pmodeint(int num, int soft)
                                         cpl_override=1;
                                         if (type>=0x800)
                                         {
-                                                if (eflags & VM_FLAG)
+                                                if (cpu_state.eflags & VM_FLAG)
                                                 {
                                                         PUSHL(GS);
                                                         PUSHL(FS);
@@ -1823,7 +1823,7 @@ void pmodeint(int num, int soft)
                                                 }
                                                 PUSHL(oldss);
                                                 PUSHL(oldsp);
-                                                PUSHL(flags|(eflags<<16));
+                                                PUSHL(cpu_state.flags|(cpu_state.eflags<<16));
                                                 PUSHL(CS);
                                                 PUSHL(cpu_state.pc); if (cpu_state.abrt) return;
                                         }
@@ -1831,7 +1831,7 @@ void pmodeint(int num, int soft)
                                         {
                                                 PUSHW(oldss);
                                                 PUSHW(oldsp);
-                                                PUSHW(flags);
+                                                PUSHW(cpu_state.flags);
                                                 PUSHW(CS);
                                                 PUSHW(cpu_state.pc); if (cpu_state.abrt) return;
                                         }
@@ -1851,20 +1851,20 @@ void pmodeint(int num, int soft)
                                         x86np("Int gate CS not present\n", segdat[1] & 0xfffc);
                                         return;
                                 }
-                                if ((eflags & VM_FLAG) && DPL2<CPL)
+                                if ((cpu_state.eflags & VM_FLAG) && DPL2<CPL)
                                 {
                                         x86gpf(NULL,seg&~3);
                                         return;
                                 }
                                 if (type>0x800)
                                 {
-                                        PUSHL(flags|(eflags<<16));
+                                        PUSHL(cpu_state.flags|(cpu_state.eflags<<16));
                                         PUSHL(CS);
                                         PUSHL(cpu_state.pc); if (cpu_state.abrt) return;
                                 }
                                 else
                                 {
-                                        PUSHW(flags);
+                                        PUSHW(cpu_state.flags);
                                         PUSHW(CS);
                                         PUSHW(cpu_state.pc); if (cpu_state.abrt) return;
                                 }
@@ -1888,13 +1888,13 @@ void pmodeint(int num, int soft)
                 cpl_override = 0;
 #endif
                         
-                eflags&=~VM_FLAG;
+                cpu_state.eflags&=~VM_FLAG;
                 cpu_cur_status &= ~CPU_STATUS_V86;
                 if (!(type&0x100))
                 {
-                        flags&=~I_FLAG;
+                        cpu_state.flags&=~I_FLAG;
                 }
-                flags&=~(T_FLAG|NT_FLAG);
+                cpu_state.flags&=~(T_FLAG|NT_FLAG);
                 cycles -= timing_int_pm;
                 break;
                 
@@ -1953,7 +1953,7 @@ void pmodeiret(int is32)
         uint16_t seg;
         uint32_t addr, oaddr;
         uint32_t oldsp=ESP;
-        if (is386 && (eflags&VM_FLAG))
+        if (is386 && (cpu_state.eflags&VM_FLAG))
         {
                 if (IOPL!=3)
                 {
@@ -1980,12 +1980,12 @@ void pmodeiret(int is32)
                 cpu_state.seg_cs.limit_high = 0xffff;
 		cpu_state.seg_cs.access |= 0x80;
                 CS=seg;
-                flags=(flags&0x3000)|(tempflags&0xCFD5)|2;
+                cpu_state.flags=(cpu_state.flags&0x3000)|(tempflags&0xCFD5)|2;
                 cycles -= timing_iret_rm;
                 return;
         }
 
-        if (flags&NT_FLAG)
+        if (cpu_state.flags&NT_FLAG)
         {
                 seg=readmemw(tr.base,0);
                 addr=seg&~7;
@@ -2030,7 +2030,7 @@ void pmodeiret(int is32)
                         segs[1]=POPL();
                         segs[2]=POPL();
                         segs[3]=POPL(); if (cpu_state.abrt) { ESP = oldsp; return; }
-                        eflags=tempflags>>16;
+                        cpu_state.eflags=tempflags>>16;
                         cpu_cur_status |= CPU_STATUS_V86;
 			loadseg(segs[0],&cpu_state.seg_es);
                         do_seg_v86_init(&cpu_state.seg_es);
@@ -2057,7 +2057,7 @@ void pmodeiret(int is32)
 			cpu_cur_status |= CPU_STATUS_NOTFLATSS;
                         use32=0;
 			cpu_cur_status &= ~CPU_STATUS_USE32;
-                        flags=(tempflags&0xFFD5)|2;
+                        cpu_state.flags=(tempflags&0xFFD5)|2;
                         cycles -= timing_iret_v86;
                         return;
                 }
@@ -2261,8 +2261,8 @@ void pmodeiret(int is32)
                 cycles -= timing_iret_pm_outer;
         }
         cpu_state.pc=newpc;
-        flags=(flags&~flagmask)|(tempflags&flagmask&0xFFD5)|2;
-        if (is32) eflags=tempflags>>16;
+        cpu_state.flags=(cpu_state.flags&~flagmask)|(tempflags&flagmask&0xFFD5)|2;
+        if (is32) cpu_state.eflags=tempflags>>16;
 }
 
 void taskswitch286(uint16_t seg, uint16_t *segdat, int is32)
@@ -2309,12 +2309,12 @@ void taskswitch286(uint16_t seg, uint16_t *segdat, int is32)
                 }
                 if (cpu_state.abrt) return;
 
-                if (optype==IRET) flags&=~NT_FLAG;
+                if (optype==IRET) cpu_state.flags&=~NT_FLAG;
 
                 cpu_386_flags_rebuild();
                 writememl(tr.base,0x1C,cr3);
                 writememl(tr.base,0x20,cpu_state.pc);
-                writememl(tr.base,0x24,flags|(eflags<<16));
+                writememl(tr.base,0x24,cpu_state.flags|(cpu_state.eflags<<16));
                 
                 writememl(tr.base,0x28,EAX);
                 writememl(tr.base,0x2C,ECX);
@@ -2380,8 +2380,8 @@ void taskswitch286(uint16_t seg, uint16_t *segdat, int is32)
                 flushmmucache();
 
                 cpu_state.pc=new_pc;
-                flags=new_flags;
-                eflags=new_flags>>16;
+                cpu_state.flags=new_flags;
+                cpu_state.eflags=new_flags>>16;
                 cpu_386_flags_extract();
 
                 ldt.seg=new_ldt;
@@ -2394,7 +2394,7 @@ void taskswitch286(uint16_t seg, uint16_t *segdat, int is32)
                 }
                 ldt.base=(readmemw(0,templ+2))|(readmemb(0,templ+4)<<16)|(readmemb(0,templ+7)<<24);
 
-                if (eflags & VM_FLAG)
+                if (cpu_state.eflags & VM_FLAG)
                 {
                         loadcs(new_cs);
                         set_use32(0);
@@ -2497,11 +2497,11 @@ void taskswitch286(uint16_t seg, uint16_t *segdat, int is32)
                 }
                 if (cpu_state.abrt) return;
 
-                if (optype==IRET) flags&=~NT_FLAG;
+                if (optype==IRET) cpu_state.flags&=~NT_FLAG;
 
                 cpu_386_flags_rebuild();
                 writememw(tr.base,0x0E,cpu_state.pc);
-                writememw(tr.base,0x10,flags);
+                writememw(tr.base,0x10,cpu_state.flags);
                 
                 writememw(tr.base,0x12,AX);
                 writememw(tr.base,0x14,CX);
@@ -2558,7 +2558,7 @@ void taskswitch286(uint16_t seg, uint16_t *segdat, int is32)
                 msw |= 8;
                
                 cpu_state.pc=new_pc;
-                flags=new_flags;
+                cpu_state.flags=new_flags;
                 cpu_386_flags_extract();
 
                 ldt.seg=new_ldt;

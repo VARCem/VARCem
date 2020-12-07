@@ -8,7 +8,7 @@
  *
  *		Miscellaneous Instructions.
  *
- * Version:	@(#)codegen_ops_misc.h	1.0.2	2020/11/24
+ * Version:	@(#)codegen_ops_misc.h	1.0.3	2020/12/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,12 +42,12 @@ static uint32_t ropNOP(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32
 
 static uint32_t ropCLD(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
-        CLEAR_BITS((uintptr_t)&flags, D_FLAG);
+        CLEAR_BITS((uintptr_t)&cpu_state.flags, D_FLAG);
         return op_pc;
 }
 static uint32_t ropSTD(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
-        SET_BITS((uintptr_t)&flags, D_FLAG);
+        SET_BITS((uintptr_t)&cpu_state.flags, D_FLAG);
         return op_pc;
 }
 
@@ -55,14 +55,14 @@ static uint32_t ropCLI(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32
 {
         if (!IOPLp && (cr4 & (CR4_VME | CR4_PVI)))
                 return 0;
-        CLEAR_BITS((uintptr_t)&flags, I_FLAG);
+        CLEAR_BITS((uintptr_t)&cpu_state.flags, I_FLAG);
         return op_pc;
 }
 static uint32_t ropSTI(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
         if (!IOPLp && (cr4 & (CR4_VME | CR4_PVI)))
                 return 0;
-        SET_BITS((uintptr_t)&flags, I_FLAG);
+        SET_BITS((uintptr_t)&cpu_state.flags, I_FLAG);
         return op_pc;
 }
 
