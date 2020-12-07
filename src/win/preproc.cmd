@@ -7,11 +7,11 @@ REM		spanning the era between 1981 and 1995.
 REM
 REM		This file is part of the VARCem Project.
 REM
-REM		Preprocessor script for Windows using Visual Studio 2015.
+REM		Preprocessor script for Windows systems.
 REM
 REM		Needed by the IDE building environment.
 REM
-REM Version:	@(#)preproc.cmd	1.0.2	2020/07/15
+REM Version:	@(#)preproc.cmd	1.0.3	2020/12/06
 REM
 REM Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 REM
@@ -48,12 +48,13 @@ REM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
 REM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   SETLOCAL
-  SET CPP=cl -nologo -EP
   SET infile=%1
   SET outfile=%2
-  SET args=%3 %4 %5 %6 %7 %8 %9
+  SET CPP=%3
+SET CPP=cpp -P
+  SET args=%4 %5 %6 %7 %8 %9
 
   ECHO Preprocessing %infile% ..
   DEL %outfile% 2>NUL
-  %CPP% %args% %infile% >%outfile%
+  %CPP% %args% %infile% >%outfile% 2>NUL
   ENDLOCAL

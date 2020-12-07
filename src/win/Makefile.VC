@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.80	2020/07/24
+# Version:	@(#)Makefile.VC	1.0.81	2020/12/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -169,7 +169,7 @@ else
  CPP		:= cl -nologo
  CC		:= cl -nologo #-TP
 endif
-PREPROC		:= cl -nologo -EP
+PREPROC		:= cl -EP
 MCPP		:= mcpp.exe
 LINK		:= link -nologo
 WINDRES		:= rc -nologo -r -d_MSC_VER
@@ -899,7 +899,7 @@ endif
 		@-del win\Mklang.cmd
 
 $(RESDLL).rc:	VARCem.rpp
-		@win\preproc.cmd $< $@ "-DPREAMBLE=" "-DLANG=$(LANG)" "-DLANGID=$(LANGID)" "-DPRILANG=$(PRILANG)" "-DSUBLANG=$(SUBLANG)"
+		@win\preproc.cmd $< $@ $(PREPROC) "-DPREAMBLE=" "-DLANG=$(LANG)" "-DLANGID=$(LANGID)" "-DPRILANG=$(PRILANG)" "-DSUBLANG=$(SUBLANG)"
 
 $(RESDLL).res:	$(RESDLL).rc VARCem-common.rc
 		@echo Processing $(RESDLL).rc ..

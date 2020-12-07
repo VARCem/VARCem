@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.21	2020/09/10
+ * Version:	@(#)808x.c	1.0.21	2020/12/04
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -890,7 +890,7 @@ rep_action(int *completed, int *repeating, int in_rep, int bits)
 
     cpu_wait(2, 0);
     t = CX;
-    if (irq_pending()) {
+    if (irq_pending() && (*repeating != 0)) {
 	do_access(71, bits);
 	pfq_clear();
 	cpu_state.pc = cpu_state.pc - 2;

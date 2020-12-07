@@ -8,9 +8,9 @@
  *
  *		String definitions for "Portuguese (Brazil)" language.
  *
- * Version:	@(#)VARCem-PT-BR.str	1.0.16	2020/07/14
+ * Version:	@(#)VARCem-PT_BR.str	1.0.1	2020/12/06
  *
- * Authors:	Altieres Lima da Silva, <altieres.lima@gmail.com>
+ * Author:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2020 Altieres Lima da Silva.
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,16
+#define STR_VERSION	1,0,1
 #define STR_AUTHOR	"Altieres Lima da Silva"
 #define STR_EMAIL	"altieres.lima@gmail.com"
 #define STR_NAME	"VARCem"

@@ -10,11 +10,11 @@
  *		which require some weird processing. This file allows us
  *		to use a single master for all those languages.
  *
- * Version:	@(#)VARCem.rpp	1.0.4	2019/01/13
+ * Version:	@(#)VARCem.rpp	1.0.5	2020/12/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -49,6 +49,7 @@
 PREAMBLE #pragma code_page(65001)
 PREAMBLE #include <inttypes.h>
 PREAMBLE #include <windows.h>
+PREAMBLE #include <CommCtrl.h>
 PREAMBLE #include "version.h"
 PREAMBLE #include "ui/ui.h"
 PREAMBLE #include "win/resource.h"
@@ -63,9 +64,12 @@ PREAMBLE #include "win/resource.h"
 #define INCLUDE(l)	__INCL(VARCem,l,str)
 #define DLLNAME(l)	__DLLNM(VARCem,l,dll)
 #define BLOCKNAME(l)	__BLKNM(l)
+#define LANGNUM(l)      __HEX4(l)
 
-PREAMBLE #define TEXT_(x)	#x
-PREAMBLE #define CATSTR(a,b)	TEXT_(a##b)
+/* .. more! */
+PREAMBLE #define _STR_RC(a,b,c) STR_STRING(a##.##b##.##c)
+PREAMBLE #define STR_RC(x) _STR_RC(x)
+
 
 PREAMBLE #ifndef SUBLANG
 PREAMBLE # define SUBLANG	0x01		/* Lithuanian, for example */
@@ -79,6 +83,8 @@ PREAMBLE #include INCLUDE(LANG)
 
 PREAMBLE #include "win/VARCem-common.rc"
 
+
+#define foo(x) x
 
 PREAMBLE #pragma code_page(DEFAULT)
 VS_VERSION_INFO VERSIONINFO
@@ -94,19 +100,19 @@ VS_VERSION_INFO VERSIONINFO
     BEGIN
         BLOCK BLOCKNAME(LANGID)
         BEGIN
-            VALUE "CompanyName", "IRC #VARCem on FreeNode"
+            VALUE "CompanyName", EMU_COMPANY
             VALUE "FileDescription", "VARCem Language Module"
-            VALUE "FileVersion", STR(STR_VERSION)
+            VALUE "FileVersion", STR_RC(STR_VERSION)
             VALUE "InternalName", EMU_NAME
-            VALUE "LegalCopyright", "Copyright 2018,2019 The VARCem Team"
+            VALUE "LegalCopyright", EMU_COPYRIGHT
             VALUE "OriginalFilename", DLLNAME(LANG)
-            VALUE "ProductName", "VARCem Emulator"
+            VALUE "ProductName", EMU_PRODUCT
             VALUE "ProductVersion", EMU_VERSION
-            VALUE "Comments", STR_RC(STR_AUTHOR,STR_EMAIL)
+            VALUE "Comments", STR_AUTHOR "," STR_EMAIL "\0"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", __HEX4(LANGID), 65001
+        VALUE "Translation", LANGNUM(LANGID), 65001
     END
 END

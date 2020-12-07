@@ -8,7 +8,7 @@
  *
  *		Define application version and build info.
  *
- * Version:	@(#)version.h	1.0.26	2020/10/11
+ * Version:	@(#)version.h	1.0.27	2020/12/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -50,18 +50,21 @@
 
 /* Application name. */
 #define EMU_NAME	"VARCem"
+#define EMU_PRODUCT	"VARCem Emulator"
+#define EMU_COMPANY	"The VARCem Team"
+#define EMU_TITLE	"Virtual ARchaeological Computer EMulator"
+#define EMU_COPYRIGHT	"Copyright 2018-2020 Fred N. van Kempen, The VARCem Team and others. Released under a mixed BSD 3-Clause and GPL License"
 
 /* Version info. */
 #define EMU_VER_MAJOR	1
 #define EMU_VER_MINOR	7
 #define EMU_VER_REV	4
-#define EMU_VER_PATCH	0
+#define EMU_VER_PATCH	1
 
 
 /* Standard C preprocessor macros. */
 #define STR_STRING(x)	#x
 #define STR(x)		STR_STRING(x)
-#define STR_RC(a,e)	a ## , ## e
 
 
 /* These are used in the application. */

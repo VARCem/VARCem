@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.96	2020/09/29
+# Version:	@(#)Makefile.mingw	1.0.97	2020/12/06
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -171,7 +171,7 @@ ifeq ($(CROSS), y)
   CPP		:= /usr/bin/$(MINGW)-g++ -m32
   CC		:= /usr/bin/$(MINGW)-gcc -m32
  endif
- PREPROC	:= /usr/bin/$(MINGW)-cpp
+ PREPROC	:= /usr/bin/$(MINGW)-cpp -P
  WINDRES	:= /usr/bin/$(MINGW)-windres
  STRIP		:= /usr/bin/$(MINGW)-strip
  ifndef CAT
@@ -184,7 +184,7 @@ else
  # Native compilation using MinGW for Windows.
  CPP		:= g++ -m32
  CC		:= gcc -m32
- PREPROC	:= cpp
+ PREPROC	:= cpp -P
  WINDRES	:= windres
  STRIP		:= strip
  ifndef CAT
@@ -800,6 +800,8 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 #		Create the (final) list of objects to build.		#
 #########################################################################
 
+RESDLL		:= VARCem-$(LANG)
+
 MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
 		   rom.o rom_load.o device.o nvr.o
 
@@ -988,10 +990,44 @@ endif
 all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
 
 
+# This rule creates a script (command file) that figures out which
+# language we want to make (its argument is the 2-letter language
+# name, or none) by looking it up in the database of supported ones,
+# and then it calls the (this) Makefile back with the proper args
+# for that target.
+win/Mklang.cmd:	win/Makefile.MinGW
+		@echo @SET PATH=$(PATH) >>win\Mklang.cmd
+		@echo @SETLOCAL >>win\Mklang.cmd
+		@echo @SET WANT=none >>win\Mklang.cmd
+		@echo @FOR /F "eol=# tokens=1,2,3,4* delims=, " %%%%i in (ui\lang\VARCem.lang) do @if "%%1"=="%%%%i" set WANT=LANG=%%%%i LANGID=%%%%j PRILANG=%%%%k SUBLANG=%%%%l >>win\Mklang.cmd
+		@echo @IF NOT "%%WANT%%"=="none" @$(MAKE) -fwin/Makefile.MinGW "RFLAGS=$(RFLAGS) $(EXTRAS)" %%WANT%% VARCem-%%1.dll >>win\Mklang.cmd
+
+langs:		win/Mklang.cmd
+ifdef LANG
+		@echo Generating localization $(LANG) ..
+		@win\Mklang $(LANG)
+else
+		@echo Generating localizations..
+		@FOR /F "eol=# tokens=1 delims=, " %%i in (ui\lang\VARCem.lang) do @win\Mklang %%i
+endif
+		@-del win\Mklang.cmd
+
+$(RESDLL).rc:	VARCem.rpp
+		@win\preproc.cmd $< $@ $(PREPROC) "-DPREAMBLE=" "-DLANG=$(LANG)" "-DLANGID=$(LANGID)" "-DPRILANG=$(PRILANG)" "-DSUBLANG=$(SUBLANG)"
+
+$(RESDLL).res:	$(RESDLL).rc VARCem-common.rc
+		@echo Processing $(RESDLL).rc ..
+		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o $@
+
+$(RESDLL).dll:	$(RESDLL).res
+		@echo Linking $(RESDLL).dll ..
+		@$(CC) $(LDFLAGS) -shared -o $@ $(RESDLL).res
+		@strip --strip-unneeded $@
+#		@-del $(RESDLL).rc
+
 VARCem.res:	VARCem.rc VARCem.mpp
 		@echo Generating Manifest file..
-		@-rm -f VARCem.manifest 2>NUL
-		@$(PREPROC) -P win/VARCem.mpp >VARCem.manifest
+		@$(PREPROC) win/VARCem.mpp >VARCem.manifest
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o VARCem.res
 
