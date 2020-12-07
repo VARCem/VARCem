@@ -130,6 +130,8 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
 		    devices/sound devices/video \
+		    minivhd \
+		    ../external/libchdr ../external/libchdr/FLAC ../external/libchdr/LZMA \
 		   machines ui win
 
 
@@ -664,6 +666,16 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_SL
   DEVBROBJ	+= m_sl82c460.obj
  endif
+
+  ifeq ($(MINIVHD), y)
+  OPTS		+= -DUSE_MINIVHD
+  MISCSOBJ	+= minivhd_util.obj minivhd_manage.obj minivhd_io.obj minivhd_struct_rw.obj minivhd_create.obj cwalk.obj libxml2_encoding.obj
+endif
+
+ifeq ($(LIBCHD), y)
+  OPTS		+= -DUSE_CHD
+  MISCOBJ   +=
+endif
 
 endif
 
