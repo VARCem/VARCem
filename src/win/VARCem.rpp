@@ -10,7 +10,7 @@
  *		which require some weird processing. This file allows us
  *		to use a single master for all those languages.
  *
- * Version:	@(#)VARCem.rpp	1.0.5	2020/12/06
+ * Version:	@(#)VARCem.rpp	1.0.6	2020/12/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -49,7 +49,7 @@
 PREAMBLE #pragma code_page(65001)
 PREAMBLE #include <inttypes.h>
 PREAMBLE #include <windows.h>
-PREAMBLE #include <CommCtrl.h>
+PREAMBLE #include <commctrl.h>
 PREAMBLE #include "version.h"
 PREAMBLE #include "ui/ui.h"
 PREAMBLE #include "win/resource.h"

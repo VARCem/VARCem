@@ -8,7 +8,7 @@
  *
  *		Application resource script for Windows.
  *
- * Version:	@(#)VARCem.rc	1.0.37	2020/12/06
+ * Version:	@(#)VARCem.rc	1.0.38	2020/12/06
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -45,7 +45,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <windows.h>
-#include <CommCtrl.h>
+#include <commctrl.h>
 #include "../emu.h"
 #include "../version.h"
 #include "../ui/ui.h"

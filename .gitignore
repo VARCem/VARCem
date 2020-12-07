@@ -3,10 +3,10 @@
 # Used by Code::Blocks
 src/win/codeblocks/*
 # Used by MSVC.
-src/win/msvc/.depends
-src/win/msvc/vc*/.vs/
-src/win/msvc/vc*/Debug/
-src/win/msvc/vc*/Release/
+src/win/.depends*
+src/win/.vs/
+src/win/vc*/Debug/
+src/win/vc*/Release/
 # Used by MinGW
 src/win/mingw/.depends
 # Used by the UNIX backends.
