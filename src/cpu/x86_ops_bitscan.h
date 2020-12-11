@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_bitscan.h	1.0.2	2020/12/05
+ * Version:	@(#)x86_ops_bitscan.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -62,6 +62,8 @@ static int opBSF_w_a16(uint32_t fetchdat)
         int instr_cycles = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         
         BS_common(0, 16, 1, cpu_state.regs[cpu_reg].w, (is486) ? 1 : 3);
@@ -77,6 +79,8 @@ static int opBSF_w_a32(uint32_t fetchdat)
         int instr_cycles = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         
         BS_common(0, 16, 1, cpu_state.regs[cpu_reg].w, (is486) ? 1 : 3);
@@ -92,6 +96,8 @@ static int opBSF_l_a16(uint32_t fetchdat)
         int instr_cycles = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         
         BS_common(0, 32, 1, cpu_state.regs[cpu_reg].l, (is486) ? 1 : 3);
@@ -107,6 +113,8 @@ static int opBSF_l_a32(uint32_t fetchdat)
         int instr_cycles = 0;
 
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         
         BS_common(0, 32, 1, cpu_state.regs[cpu_reg].l, (is486) ? 1 : 3);
@@ -123,6 +131,8 @@ static int opBSR_w_a16(uint32_t fetchdat)
         int instr_cycles = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         
         BS_common(15, -1, -1, cpu_state.regs[cpu_reg].w, 3);
@@ -138,6 +148,8 @@ static int opBSR_w_a32(uint32_t fetchdat)
         int instr_cycles = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         
         BS_common(15, -1, -1, cpu_state.regs[cpu_reg].w, 3);
@@ -153,6 +165,8 @@ static int opBSR_l_a16(uint32_t fetchdat)
         int instr_cycles = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         
         BS_common(31, -1, -1, cpu_state.regs[cpu_reg].l, 3);
@@ -168,6 +182,8 @@ static int opBSR_l_a32(uint32_t fetchdat)
         int instr_cycles = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_READ(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         
         BS_common(31, -1, -1, cpu_state.regs[cpu_reg].l, 3);

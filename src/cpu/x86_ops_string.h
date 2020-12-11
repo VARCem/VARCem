@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_string.h	1.0.3	2020/12/05
+ * Version:	@(#)x86_ops_string.h	1.0.3	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,7 +37,11 @@
 
 static int opMOVSB_a16(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
+        temp = readmemb(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         writememb(es, DI, temp);                if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) { DI--; SI--; }
         else                { DI++; SI++; }
@@ -47,7 +51,11 @@ static int opMOVSB_a16(uint32_t fetchdat)
 }
 static int opMOVSB_a32(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
+        temp = readmemb(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         writememb(es, EDI, temp);               if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) { EDI--; ESI--; }
         else                { EDI++; ESI++; }
@@ -58,7 +66,11 @@ static int opMOVSB_a32(uint32_t fetchdat)
 
 static int opMOVSW_a16(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
+        temp = readmemw(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         writememw(es, DI, temp);                if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) { DI -= 2; SI -= 2; }
         else                { DI += 2; SI += 2; }
@@ -68,7 +80,11 @@ static int opMOVSW_a16(uint32_t fetchdat)
 }
 static int opMOVSW_a32(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
+        temp = readmemw(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         writememw(es, EDI, temp);               if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) { EDI -= 2; ESI -= 2; }
         else                { EDI += 2; ESI += 2; }
@@ -79,7 +95,11 @@ static int opMOVSW_a32(uint32_t fetchdat)
 
 static int opMOVSL_a16(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint32_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
+        temp = readmeml(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         writememl(es, DI, temp);                if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) { DI -= 4; SI -= 4; }
         else                { DI += 4; SI += 4; }
@@ -89,7 +109,11 @@ static int opMOVSL_a16(uint32_t fetchdat)
 }
 static int opMOVSL_a32(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint32_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
+        temp = readmeml(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         writememl(es, EDI, temp);               if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) { EDI -= 4; ESI -= 4; }
         else                { EDI += 4; ESI += 4; }
@@ -101,8 +125,12 @@ static int opMOVSL_a32(uint32_t fetchdat)
 
 static int opCMPSB_a16(uint32_t fetchdat)
 {
-        uint8_t src = readmemb(cpu_state.ea_seg->base, SI);
-        uint8_t dst = readmemb(es, DI);         if (cpu_state.abrt) return 1;
+        uint8_t src, dst;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        src = readmemb(cpu_state.ea_seg->base, SI);
+        dst = readmemb(es, DI);         if (cpu_state.abrt) return 1;
         setsub8(src, dst);
         if (cpu_state.flags & D_FLAG) { DI--; SI--; }
         else                { DI++; SI++; }
@@ -112,8 +140,12 @@ static int opCMPSB_a16(uint32_t fetchdat)
 }
 static int opCMPSB_a32(uint32_t fetchdat)
 {
-        uint8_t src = readmemb(cpu_state.ea_seg->base, ESI);
-        uint8_t dst = readmemb(es, EDI);        if (cpu_state.abrt) return 1;
+        uint8_t src, dst;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        src = readmemb(cpu_state.ea_seg->base, ESI);
+        dst = readmemb(es, EDI);        if (cpu_state.abrt) return 1;
         setsub8(src, dst);
         if (cpu_state.flags & D_FLAG) { EDI--; ESI--; }
         else                { EDI++; ESI++; }
@@ -124,8 +156,12 @@ static int opCMPSB_a32(uint32_t fetchdat)
 
 static int opCMPSW_a16(uint32_t fetchdat)
 {
-        uint16_t src = readmemw(cpu_state.ea_seg->base, SI);
-        uint16_t dst = readmemw(es, DI);        if (cpu_state.abrt) return 1;
+        uint16_t src, dst;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        src = readmemw(cpu_state.ea_seg->base, SI);
+        dst = readmemw(es, DI);        if (cpu_state.abrt) return 1;
         setsub16(src, dst);
         if (cpu_state.flags & D_FLAG) { DI -= 2; SI -= 2; }
         else                { DI += 2; SI += 2; }
@@ -135,8 +171,12 @@ static int opCMPSW_a16(uint32_t fetchdat)
 }
 static int opCMPSW_a32(uint32_t fetchdat)
 {
-        uint16_t src = readmemw(cpu_state.ea_seg->base, ESI);
-        uint16_t dst = readmemw(es, EDI);        if (cpu_state.abrt) return 1;
+        uint16_t src, dst;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        src = readmemw(cpu_state.ea_seg->base, ESI);
+        dst = readmemw(es, EDI);        if (cpu_state.abrt) return 1;
         setsub16(src, dst);
         if (cpu_state.flags & D_FLAG) { EDI -= 2; ESI -= 2; }
         else                { EDI += 2; ESI += 2; }
@@ -147,8 +187,12 @@ static int opCMPSW_a32(uint32_t fetchdat)
 
 static int opCMPSL_a16(uint32_t fetchdat)
 {
-        uint32_t src = readmeml(cpu_state.ea_seg->base, SI);
-        uint32_t dst = readmeml(es, DI);        if (cpu_state.abrt) return 1;
+        uint32_t src, dst;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        src = readmeml(cpu_state.ea_seg->base, SI);
+        dst = readmeml(es, DI);        if (cpu_state.abrt) return 1;
         setsub32(src, dst);
         if (cpu_state.flags & D_FLAG) { DI -= 4; SI -= 4; }
         else                { DI += 4; SI += 4; }
@@ -158,8 +202,12 @@ static int opCMPSL_a16(uint32_t fetchdat)
 }
 static int opCMPSL_a32(uint32_t fetchdat)
 {
-        uint32_t src = readmeml(cpu_state.ea_seg->base, ESI);
-        uint32_t dst = readmeml(es, EDI);        if (cpu_state.abrt) return 1;
+        uint32_t src, dst;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        src = readmeml(cpu_state.ea_seg->base, ESI);
+        dst = readmeml(es, EDI);        if (cpu_state.abrt) return 1;
         setsub32(src, dst);
         if (cpu_state.flags & D_FLAG) { EDI -= 4; ESI -= 4; }
         else                { EDI += 4; ESI += 4; }
@@ -170,6 +218,7 @@ static int opCMPSL_a32(uint32_t fetchdat)
 
 static int opSTOSB_a16(uint32_t fetchdat)
 {
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         writememb(es, DI, AL);                  if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) DI--;
         else                DI++;
@@ -179,6 +228,7 @@ static int opSTOSB_a16(uint32_t fetchdat)
 }
 static int opSTOSB_a32(uint32_t fetchdat)
 {
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         writememb(es, EDI, AL);                 if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) EDI--;
         else                EDI++;
@@ -189,6 +239,7 @@ static int opSTOSB_a32(uint32_t fetchdat)
 
 static int opSTOSW_a16(uint32_t fetchdat)
 {
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         writememw(es, DI, AX);                  if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) DI -= 2;
         else                DI += 2;
@@ -198,6 +249,7 @@ static int opSTOSW_a16(uint32_t fetchdat)
 }
 static int opSTOSW_a32(uint32_t fetchdat)
 {
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         writememw(es, EDI, AX);                 if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) EDI -= 2;
         else                EDI += 2;
@@ -208,6 +260,7 @@ static int opSTOSW_a32(uint32_t fetchdat)
 
 static int opSTOSL_a16(uint32_t fetchdat)
 {
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         writememl(es, DI, EAX);                 if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) DI -= 4;
         else                DI += 4;
@@ -217,6 +270,7 @@ static int opSTOSL_a16(uint32_t fetchdat)
 }
 static int opSTOSL_a32(uint32_t fetchdat)
 {
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         writememl(es, EDI, EAX);                if (cpu_state.abrt) return 1;
         if (cpu_state.flags & D_FLAG) EDI -= 4;
         else                EDI += 4;
@@ -228,7 +282,10 @@ static int opSTOSL_a32(uint32_t fetchdat)
 
 static int opLODSB_a16(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemb(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         AL = temp;
         if (cpu_state.flags & D_FLAG) SI--;
         else                SI++;
@@ -238,7 +295,10 @@ static int opLODSB_a16(uint32_t fetchdat)
 }
 static int opLODSB_a32(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemb(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         AL = temp;
         if (cpu_state.flags & D_FLAG) ESI--;
         else                ESI++;
@@ -249,7 +309,10 @@ static int opLODSB_a32(uint32_t fetchdat)
 
 static int opLODSW_a16(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemw(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         AX = temp;
         if (cpu_state.flags & D_FLAG) SI -= 2;
         else                SI += 2;
@@ -259,7 +322,10 @@ static int opLODSW_a16(uint32_t fetchdat)
 }
 static int opLODSW_a32(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemw(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         AX = temp;
         if (cpu_state.flags & D_FLAG) ESI -= 2;
         else                ESI += 2;
@@ -270,7 +336,10 @@ static int opLODSW_a32(uint32_t fetchdat)
 
 static int opLODSL_a16(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint32_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmeml(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         EAX = temp;
         if (cpu_state.flags & D_FLAG) SI -= 4;
         else                SI += 4;
@@ -280,7 +349,10 @@ static int opLODSL_a16(uint32_t fetchdat)
 }
 static int opLODSL_a32(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint32_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmeml(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         EAX = temp;
         if (cpu_state.flags & D_FLAG) ESI -= 4;
         else                ESI += 4;
@@ -292,7 +364,10 @@ static int opLODSL_a32(uint32_t fetchdat)
 
 static int opSCASB_a16(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(es, DI);        if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        temp = readmemb(es, DI);        if (cpu_state.abrt) return 1;
         setsub8(AL, temp);
         if (cpu_state.flags & D_FLAG) DI--;
         else                DI++;
@@ -302,7 +377,10 @@ static int opSCASB_a16(uint32_t fetchdat)
 }
 static int opSCASB_a32(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(es, EDI);       if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        temp  = readmemb(es, EDI);       if (cpu_state.abrt) return 1;
         setsub8(AL, temp);
         if (cpu_state.flags & D_FLAG) EDI--;
         else                EDI++;
@@ -313,7 +391,10 @@ static int opSCASB_a32(uint32_t fetchdat)
 
 static int opSCASW_a16(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(es, DI);       if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        temp = readmemw(es, DI);       if (cpu_state.abrt) return 1;
         setsub16(AX, temp);
         if (cpu_state.flags & D_FLAG) DI -= 2;
         else                DI += 2;
@@ -323,7 +404,10 @@ static int opSCASW_a16(uint32_t fetchdat)
 }
 static int opSCASW_a32(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(es, EDI);      if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        temp = readmemw(es, EDI);      if (cpu_state.abrt) return 1;
         setsub16(AX, temp);
         if (cpu_state.flags & D_FLAG) EDI -= 2;
         else                EDI += 2;
@@ -334,7 +418,10 @@ static int opSCASW_a32(uint32_t fetchdat)
 
 static int opSCASL_a16(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(es, DI);       if (cpu_state.abrt) return 1;
+        uint32_t temp;
+        
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        temp = readmeml(es, DI);       if (cpu_state.abrt) return 1;
         setsub32(EAX, temp);
         if (cpu_state.flags & D_FLAG) DI -= 4;
         else                DI += 4;
@@ -344,7 +431,10 @@ static int opSCASL_a16(uint32_t fetchdat)
 }
 static int opSCASL_a32(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(es, EDI);      if (cpu_state.abrt) return 1;
+        uint32_t temp;
+
+        SEG_CHECK_READ(&cpu_state.seg_es);
+        temp = readmeml(es, EDI);      if (cpu_state.abrt) return 1;
         setsub32(EAX, temp);
         if (cpu_state.flags & D_FLAG) EDI -= 4;
         else                EDI += 4;
@@ -356,6 +446,8 @@ static int opSCASL_a32(uint32_t fetchdat)
 static int opINSB_a16(uint32_t fetchdat)
 {
         uint8_t temp;
+
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         check_io_perm(DX);
         temp = inb(DX);
         writememb(es, DI, temp);                if (cpu_state.abrt) return 1;
@@ -368,6 +460,8 @@ static int opINSB_a16(uint32_t fetchdat)
 static int opINSB_a32(uint32_t fetchdat)
 {
         uint8_t temp;
+
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         check_io_perm(DX);
         temp = inb(DX);
         writememb(es, EDI, temp);               if (cpu_state.abrt) return 1;
@@ -381,6 +475,8 @@ static int opINSB_a32(uint32_t fetchdat)
 static int opINSW_a16(uint32_t fetchdat)
 {
         uint16_t temp;
+
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         check_io_perm(DX);
         check_io_perm(DX + 1);
         temp = inw(DX);
@@ -394,6 +490,8 @@ static int opINSW_a16(uint32_t fetchdat)
 static int opINSW_a32(uint32_t fetchdat)
 {
         uint16_t temp;
+
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         check_io_perm(DX);
         check_io_perm(DX + 1);
         temp = inw(DX);
@@ -408,6 +506,8 @@ static int opINSW_a32(uint32_t fetchdat)
 static int opINSL_a16(uint32_t fetchdat)
 {
         uint32_t temp;
+
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         check_io_perm(DX);
         check_io_perm(DX + 1);
         check_io_perm(DX + 2);
@@ -423,6 +523,8 @@ static int opINSL_a16(uint32_t fetchdat)
 static int opINSL_a32(uint32_t fetchdat)
 {
         uint32_t temp;
+
+        SEG_CHECK_WRITE(&cpu_state.seg_es);
         check_io_perm(DX);
         check_io_perm(DX + 1);
         check_io_perm(DX + 2);
@@ -438,7 +540,10 @@ static int opINSL_a32(uint32_t fetchdat)
 
 static int opOUTSB_a16(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemb(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         check_io_perm(DX);
         if (cpu_state.flags & D_FLAG) SI--;
         else                SI++;
@@ -449,7 +554,10 @@ static int opOUTSB_a16(uint32_t fetchdat)
 }
 static int opOUTSB_a32(uint32_t fetchdat)
 {
-        uint8_t temp = readmemb(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint8_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemb(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         check_io_perm(DX);
         if (cpu_state.flags & D_FLAG) ESI--;
         else                ESI++;
@@ -461,7 +569,10 @@ static int opOUTSB_a32(uint32_t fetchdat)
 
 static int opOUTSW_a16(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemw(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         check_io_perm(DX);
         check_io_perm(DX + 1);
         if (cpu_state.flags & D_FLAG) SI -= 2;
@@ -473,7 +584,10 @@ static int opOUTSW_a16(uint32_t fetchdat)
 }
 static int opOUTSW_a32(uint32_t fetchdat)
 {
-        uint16_t temp = readmemw(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint16_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmemw(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         check_io_perm(DX);
         check_io_perm(DX + 1);
         if (cpu_state.flags & D_FLAG) ESI -= 2;
@@ -486,7 +600,10 @@ static int opOUTSW_a32(uint32_t fetchdat)
 
 static int opOUTSL_a16(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
+        uint32_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmeml(cpu_state.ea_seg->base, SI); if (cpu_state.abrt) return 1;
         check_io_perm(DX);
         check_io_perm(DX + 1);
         check_io_perm(DX + 2);
@@ -500,7 +617,10 @@ static int opOUTSL_a16(uint32_t fetchdat)
 }
 static int opOUTSL_a32(uint32_t fetchdat)
 {
-        uint32_t temp = readmeml(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
+        uint32_t temp;
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        temp = readmeml(cpu_state.ea_seg->base, ESI); if (cpu_state.abrt) return 1;
         check_io_perm(DX);
         check_io_perm(DX + 1);
         check_io_perm(DX + 2);

@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_inc_dec.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_inc_dec.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -86,7 +86,9 @@ static int opINCDEC_b_a16(uint32_t fetchdat)
 {
         uint8_t temp;
         
-        fetch_ea_16(fetchdat);       
+        fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);       
         temp=geteab();                  if (cpu_state.abrt) return 1;
 
         if (rmdat&0x38)
@@ -107,7 +109,9 @@ static int opINCDEC_b_a32(uint32_t fetchdat)
 {
         uint8_t temp;
         
-        fetch_ea_32(fetchdat);       
+        fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);       
         temp=geteab();                  if (cpu_state.abrt) return 1;
 
         if (rmdat&0x38)

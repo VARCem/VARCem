@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mmx_mov.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_mmx_mov.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ static int opMOVD_l_mm_a16(uint32_t fetchdat)
         {
                 uint32_t dst;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 cpu_state.MM[cpu_reg].l[0] = dst;
                 cpu_state.MM[cpu_reg].l[1] = 0;
@@ -73,6 +74,7 @@ static int opMOVD_l_mm_a32(uint32_t fetchdat)
         {
                 uint32_t dst;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 cpu_state.MM[cpu_reg].l[0] = dst;
                 cpu_state.MM[cpu_reg].l[1] = 0;
@@ -94,6 +96,7 @@ static int opMOVD_mm_l_a16(uint32_t fetchdat)
         }
         else
         {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
                 CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
                 writememl(easeg, cpu_state.eaaddr, cpu_state.MM[cpu_reg].l[0]); if (cpu_state.abrt) return 1;
                 CLOCK_CYCLES(2);
@@ -112,6 +115,7 @@ static int opMOVD_mm_l_a32(uint32_t fetchdat)
         }
         else
         {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
                 CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
                 writememl(easeg, cpu_state.eaaddr, cpu_state.MM[cpu_reg].l[0]); if (cpu_state.abrt) return 1;
                 CLOCK_CYCLES(2);
@@ -133,6 +137,7 @@ static int opMOVQ_q_mm_a16(uint32_t fetchdat)
         {
                 uint64_t dst;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 dst = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 cpu_state.MM[cpu_reg].q = dst;
                 CLOCK_CYCLES(2);
@@ -153,6 +158,7 @@ static int opMOVQ_q_mm_a32(uint32_t fetchdat)
         {
                 uint64_t dst;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 dst = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 cpu_state.MM[cpu_reg].q = dst;
                 CLOCK_CYCLES(2);
@@ -172,6 +178,7 @@ static int opMOVQ_mm_q_a16(uint32_t fetchdat)
         }
         else
         {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
                 CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
                 writememq(easeg, cpu_state.eaaddr,     cpu_state.MM[cpu_reg].q); if (cpu_state.abrt) return 1;
                 CLOCK_CYCLES(2);
@@ -190,6 +197,7 @@ static int opMOVQ_mm_q_a32(uint32_t fetchdat)
         }
         else
         {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
                 CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
                 writememq(easeg, cpu_state.eaaddr,     cpu_state.MM[cpu_reg].q); if (cpu_state.abrt) return 1;
                 CLOCK_CYCLES(2);

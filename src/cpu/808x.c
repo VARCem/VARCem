@@ -8,11 +8,7 @@
  *
  *		808x CPU emulation.
  *
-<<<<<<< HEAD
  * Version:	@(#)808x.c	1.0.22	2021/03/12
-=======
- * Version:	@(#)808x.c	1.0.23	2020/12/04
->>>>>>> 636a17e4 (Move flag and eflag to cpu struct)
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>

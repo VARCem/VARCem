@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mmx_shift.h	1.0.2	2018/10/05
+ * Version:	@(#)x86_ops_mmx_shift.h	1.0.3	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@
         }                                                               \
         else                                                            \
         {                                                               \
+                SEG_CHECK_READ(cpu_state.ea_seg);                       \
                 shift = readmemb(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 0;    \
                 CLOCK_CYCLES(2);                                        \
         }
