@@ -96,32 +96,6 @@ int oddeven=0;
 uint32_t rmdat32;
 
 
-static INLINE uint32_t
-get_phys(uint32_t addr)
-{
-    if (! ((addr ^ get_phys_virt) & ~0xfff))
-	return get_phys_phys | (addr & 0xfff);
-
-    get_phys_virt = addr;
-
-    if (! (cr0 >> 31)) {
-	get_phys_phys = (addr & rammask) & ~0xfff;
-
-	return addr & rammask;
-    }
-
-    if (readlookup2[addr >> 12] != -1)
-	get_phys_phys = ((uintptr_t)readlookup2[addr >> 12] + (addr & ~0xfff)) - (uintptr_t)ram;
-    else {
-	get_phys_phys = (mmutranslatereal(addr, 0) & rammask) & ~0xfff;
-
-	if (!cpu_state.abrt && mem_addr_is_ram(get_phys_phys))
-		addreadlookup(get_phys_virt, get_phys_phys);
-    }
-
-    return get_phys_phys | (addr & 0xfff);
-}
-
 static INLINE void
 fetch_ea_32_long(uint32_t rmdat)
 {
@@ -588,7 +562,6 @@ void exec386_dynarec(int cycs)
         {
                 oldcs = CS;
                 cpu_state.oldpc = cpu_state.pc;
-                oldcpl = CPL;
                 cpu_state.op32 = use32;
 
 
@@ -602,7 +575,6 @@ void exec386_dynarec(int cycs)
                         {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
-                                oldcpl=CPL;
                                 cpu_state.op32 = use32;
 
                                 cpu_state.ea_seg = &cpu_state.seg_ds;
@@ -749,7 +721,6 @@ inrecomp=0;
                         {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
-                                oldcpl=CPL;
                                 cpu_state.op32 = use32;
 
                                 cpu_state.ea_seg = &cpu_state.seg_ds;
@@ -819,7 +790,6 @@ inrecomp=0;
                         {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
-                                oldcpl=CPL;
                                 cpu_state.op32 = use32;
 
                                 cpu_state.ea_seg = &cpu_state.seg_ds;

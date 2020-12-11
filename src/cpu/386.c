@@ -8,7 +8,7 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.13	2020/12/05
+ * Version:	@(#)386.c	1.0.13	2020/12/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -167,9 +167,7 @@ exec386(int cycs)
 		
 		oldcs = CS;
 		cpu_state.oldpc = cpu_state.pc;
-		oldcpl = CPL;
 		cpu_state.op32 = use32;
-
 		x86_was_reset = 0;
 
 		cpu_state.ea_seg = &cpu_state.seg_ds;
