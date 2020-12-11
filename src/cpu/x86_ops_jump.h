@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_jump.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_jump.h	1.0.2	2020/12/12
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -132,6 +132,8 @@ static int opLOOPNE_w(uint32_t fetchdat)
         if (CX && !ZF_SET())
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CPU_BLOCK_END();
                 PREFETCH_FLUSH();
                 return 1;
@@ -147,6 +149,8 @@ static int opLOOPNE_l(uint32_t fetchdat)
         if (ECX && !ZF_SET()) 
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CPU_BLOCK_END();
                 PREFETCH_FLUSH();
                 return 1;
@@ -163,6 +167,8 @@ static int opLOOPE_w(uint32_t fetchdat)
         if (CX && ZF_SET())
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CPU_BLOCK_END();
                 PREFETCH_FLUSH();
                 return 1;
@@ -178,6 +184,8 @@ static int opLOOPE_l(uint32_t fetchdat)
         if (ECX && ZF_SET())
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CPU_BLOCK_END();
                 PREFETCH_FLUSH();
                 return 1;
@@ -194,6 +202,8 @@ static int opLOOP_w(uint32_t fetchdat)
         if (CX)
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CPU_BLOCK_END();
                 PREFETCH_FLUSH();
                 return 1;
@@ -209,6 +219,8 @@ static int opLOOP_l(uint32_t fetchdat)
         if (ECX)
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CPU_BLOCK_END();
                 PREFETCH_FLUSH();
                 return 1;
@@ -223,6 +235,8 @@ static int opJCXZ(uint32_t fetchdat)
         if (!CX)
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CLOCK_CYCLES(4);
                 CPU_BLOCK_END();
                 PREFETCH_RUN(9, 2, -1, 0,0,0,0, 0);
@@ -239,6 +253,8 @@ static int opJECXZ(uint32_t fetchdat)
         if (!ECX)
         {
                 cpu_state.pc += offset;
+                if (!(cpu_state.op32 & 0x100))
+                        cpu_state.pc &= 0xffff;
                 CLOCK_CYCLES(4);
                 CPU_BLOCK_END();
                 PREFETCH_RUN(9, 2, -1, 0,0,0,0, 0);
