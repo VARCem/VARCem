@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_stack.h	1.0.2	2020/11/24
+ * Version:	@(#)x86_ops_stack.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -272,6 +272,8 @@ static int opPOPW_a16(uint32_t fetchdat)
         temp = POP_W();                                 if (cpu_state.abrt) return 1;
 
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         seteaw(temp);
         if (cpu_state.abrt)
         {
@@ -291,6 +293,8 @@ static int opPOPW_a32(uint32_t fetchdat)
         temp = POP_W();                                 if (cpu_state.abrt) return 1;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         seteaw(temp);
         if (cpu_state.abrt)
         {
@@ -310,7 +314,9 @@ static int opPOPL_a16(uint32_t fetchdat)
 
         temp = POP_L();                                 if (cpu_state.abrt) return 1;
 
-        fetch_ea_16(fetchdat);        
+        fetch_ea_16(fetchdat); 
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);       
         seteal(temp);
         if (cpu_state.abrt)
         {
@@ -330,6 +336,8 @@ static int opPOPL_a32(uint32_t fetchdat)
         temp = POP_L();                                 if (cpu_state.abrt) return 1;
 
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         seteal(temp);
         if (cpu_state.abrt)
         {

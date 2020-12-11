@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.14	2020/12/04
+ * Version:	@(#)386_dynarec.c	1.0.14	2020/12/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -474,7 +474,7 @@ int checkio(uint32_t port)
         if (cpu_state.abrt) return 0;
         if ((t+(port>>3))>tr.limit) return 1;
         cpl_override = 1;
-        d = readmemb386l(0, tr.base + t + (port >> 3));
+        d = readmemb386l(tr.base + t + (port >> 3));
         cpl_override = 0;
         return d&(1<<(port&7));
 }

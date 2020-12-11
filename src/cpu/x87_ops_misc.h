@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x87 FPU Instructions.
  *
- * Version:	@(#)x87_ops_misc.h	1.0.3	2020/02/05
+ * Version:	@(#)x87_ops_misc.h	1.0.4	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -180,6 +180,7 @@ static int opFSTOR_a16(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_16(fetchdat);
+        SEG_CHECK_READ(cpu_state.ea_seg);
         FSTOR();
         return cpu_state.abrt;
 }
@@ -187,6 +188,7 @@ static int opFSTOR_a32(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_32(fetchdat);
+        SEG_CHECK_READ(cpu_state.ea_seg);
         FSTOR();
         return cpu_state.abrt;
 }
@@ -343,6 +345,7 @@ static int opFSAVE_a16(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         FSAVE();
         return cpu_state.abrt;
 }
@@ -350,6 +353,7 @@ static int opFSAVE_a32(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         FSAVE();
         return cpu_state.abrt;
 }
@@ -358,6 +362,7 @@ static int opFSTSW_a16(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         if (fplog) DEBUG("FSTSW %08X:%08X\n", easeg, cpu_state.eaaddr);
         seteaw((cpu_state.npxs & 0xC7FF) | (cpu_state.TOP << 11));
         CLOCK_CYCLES(3);
@@ -367,6 +372,7 @@ static int opFSTSW_a32(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         if (fplog) DEBUG("FSTSW %08X:%08X\n", easeg, cpu_state.eaaddr);
         seteaw((cpu_state.npxs & 0xC7FF) | (cpu_state.TOP << 11));
         CLOCK_CYCLES(3);
@@ -754,6 +760,7 @@ static int opFLDENV_a16(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_16(fetchdat);
+        SEG_CHECK_READ(cpu_state.ea_seg);
         FLDENV();
         return cpu_state.abrt;
 }
@@ -761,6 +768,7 @@ static int opFLDENV_a32(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_32(fetchdat);
+        SEG_CHECK_READ(cpu_state.ea_seg);
         FLDENV();
         return cpu_state.abrt;
 }
@@ -770,6 +778,7 @@ static int opFLDCW_a16(uint32_t fetchdat)
         uint16_t tempw;
         FP_ENTER();
         fetch_ea_16(fetchdat);
+        SEG_CHECK_READ(cpu_state.ea_seg);
         if (fplog) DEBUG("FLDCW %08X:%08X\n", easeg, cpu_state.eaaddr);                        
         tempw = geteaw();
         if (cpu_state.abrt) return 1;
@@ -783,6 +792,7 @@ static int opFLDCW_a32(uint32_t fetchdat)
         uint16_t tempw;
         FP_ENTER();
         fetch_ea_32(fetchdat);
+        SEG_CHECK_READ(cpu_state.ea_seg);
         if (fplog) DEBUG("FLDCW %08X:%08X\n", easeg, cpu_state.eaaddr);                        
         tempw = geteaw();
         if (cpu_state.abrt) return 1;
@@ -840,6 +850,7 @@ static int opFSTENV_a16(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         FSTENV();
         return cpu_state.abrt;
 }
@@ -847,6 +858,7 @@ static int opFSTENV_a32(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         FSTENV();
         return cpu_state.abrt;
 }
@@ -855,6 +867,7 @@ static int opFSTCW_a16(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         if (fplog) DEBUG("FSTCW %08X:%08X\n", easeg, cpu_state.eaaddr);
         seteaw(cpu_state.npxc);
         CLOCK_CYCLES(3);
@@ -864,6 +877,7 @@ static int opFSTCW_a32(uint32_t fetchdat)
 {
         FP_ENTER();
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         if (fplog) DEBUG("FSTCW %08X:%08X\n", easeg, cpu_state.eaaddr);
         seteaw(cpu_state.npxc);
         CLOCK_CYCLES(3);

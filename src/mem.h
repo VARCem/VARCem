@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.18	2019/05/15
+ * Version:	@(#)mem.h	1.0.19	2020/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -142,25 +142,23 @@ extern int		mem_a20_state,
 		: *(uint8_t *)(readlookup2[(a) >> 12] + (a)))
 
 #define readmemw(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]== (uintptr_t)-1 || \
-		       (s)==0xFFFFFFFF || (((s)+(a)) & 1)) \
-		? readmemwl(s,a) \
+		       (((s)+(a)) & 1)) ? readmemwl((s)+(a)) \
 		: *(uint16_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 #define readmeml(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]== (uintptr_t)-1 || \
-		       (s)==0xFFFFFFFF || (((s)+(a)) & 3)) \
-		? readmemll(s,a) \
+		       (((s)+(a)) & 3)) ? readmemll((s)+(a)) \
 		: *(uint32_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 
 
 extern uint8_t	readmembl(uint32_t addr);
 extern void	writemembl(uint32_t addr, uint8_t val);
-extern uint8_t	readmemb386l(uint32_t seg, uint32_t addr);
-extern void	writememb386l(uint32_t seg, uint32_t addr, uint8_t val);
-extern uint16_t	readmemwl(uint32_t seg, uint32_t addr);
-extern void	writememwl(uint32_t seg, uint32_t addr, uint16_t val);
-extern uint32_t	readmemll(uint32_t seg, uint32_t addr);
-extern void	writememll(uint32_t seg, uint32_t addr, uint32_t val);
-extern uint64_t	readmemql(uint32_t seg, uint32_t addr);
-extern void	writememql(uint32_t seg, uint32_t addr, uint64_t val);
+extern uint8_t	readmemb386l(uint32_t addr);
+extern void	writememb386l(uint32_t addr, uint8_t val);
+extern uint16_t	readmemwl(uint32_t addr);
+extern void	writememwl(uint32_t addr, uint16_t val);
+extern uint32_t	readmemll(uint32_t addr);
+extern void	writememll(uint32_t addr, uint32_t val);
+extern uint64_t	readmemql(uint32_t addr);
+extern void	writememql(uint32_t addr, uint64_t val);
 
 extern uint8_t	*getpccache(uint32_t a);
 extern uint32_t	mmutranslatereal(uint32_t addr, int rw);

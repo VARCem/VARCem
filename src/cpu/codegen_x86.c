@@ -8,7 +8,7 @@
  *
  *		Dynamic Recompiler for Intel 32-bit systems.
  *
- * Version:	@(#)codegen_x86.c	1.0.8	2020/11/24
+ * Version:	@(#)codegen_x86.c	1.0.8	2020/12/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -16,7 +16,7 @@
  *
  *		Copyright 2018,2020 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -150,13 +150,14 @@ static uint32_t gen_MEM_LOAD_ADDR_EA_B()
         addbyte(0x3a);
         addbyte(0xc3); /*RET*/
 
-        addbyte(0x50); /*slowpath: PUSH EAX*/
+        addbyte(0x01); /*slowpath: ADD ESI,EAX*/
+        addbyte(0xc6);
         addbyte(0x56); /*PUSH ESI*/
         addbyte(0xe8); /*CALL readmembl*/
-        addlong((uint32_t)readmemb386l - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 8*/
+        addlong((uint32_t)readmembl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
+        addbyte(0x83); /*ADD ESP, 4*/
         addbyte(0xc4);
-        addbyte(8);
+        addbyte(4);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -205,13 +206,14 @@ static uint32_t gen_MEM_LOAD_ADDR_EA_W()
         addbyte(0x3a);
         addbyte(0xc3); /*RET*/
 
-        addbyte(0x50); /*slowpath: PUSH EAX*/
+        addbyte(0x01); /*slowpath: ADD ESI,EAX*/
+        addbyte(0xc6);
         addbyte(0x56); /*PUSH ESI*/
         addbyte(0xe8); /*CALL readmemwl*/
         addlong((uint32_t)readmemwl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 8*/
+        addbyte(0x83); /*ADD ESP, 4*/
         addbyte(0xc4);
-        addbyte(8);
+        addbyte(4);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -259,13 +261,14 @@ static uint32_t gen_MEM_LOAD_ADDR_EA_L()
         addbyte(0x3a);
         addbyte(0xc3); /*RET*/
 
-        addbyte(0x50); /*slowpath: PUSH EAX*/
+        addbyte(0x01); /*slowpath: ADD ESI,EAX*/
+        addbyte(0xc6);
         addbyte(0x56); /*PUSH ESI*/
         addbyte(0xe8); /*CALL readmemll*/
         addlong((uint32_t)readmemll - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 8*/
+        addbyte(0x83); /*ADD ESP, 4*/
         addbyte(0xc4);
-        addbyte(8);
+        addbyte(4);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -314,13 +317,14 @@ static uint32_t gen_MEM_LOAD_ADDR_EA_Q()
         addbyte(4);
         addbyte(0xc3); /*RET*/
 
-        addbyte(0x50); /*slowpath: PUSH EAX*/
+        addbyte(0x01); /*slowpath: ADD ESI,EAX*/
+        addbyte(0xc6);
         addbyte(0x56); /*PUSH ESI*/
         addbyte(0xe8); /*CALL readmemql*/
         addlong((uint32_t)readmemql - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 8*/
+        addbyte(0x83); /*ADD ESP, 4*/
         addbyte(0xc4);
-        addbyte(8);
+        addbyte(4);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -362,13 +366,14 @@ static uint32_t gen_MEM_STORE_ADDR_EA_B()
         addbyte(0xc3); /*RET*/
 
         addbyte(0x51); /*slowpath: PUSH ECX*/
-        addbyte(0x50); /*PUSH EAX*/
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xC3);
         addbyte(0x53); /*PUSH EBX*/
-        addbyte(0xe8); /*CALL writememb386l*/
-        addlong((uint32_t)writememb386l - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 12*/
+        addbyte(0xe8); /*CALL writemembl*/
+        addlong((uint32_t)writemembl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
+        addbyte(0x83); /*ADD ESP, 8*/
         addbyte(0xc4);
-        addbyte(12);
+        addbyte(8);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -416,13 +421,14 @@ static uint32_t gen_MEM_STORE_ADDR_EA_W()
         addbyte(0xc3); /*RET*/
 
         addbyte(0x51); /*slowpath: PUSH ECX*/
-        addbyte(0x50); /*PUSH EAX*/
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xC3);
         addbyte(0x53); /*PUSH EBX*/
         addbyte(0xe8); /*CALL writememwl*/
         addlong((uint32_t)writememwl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 12*/
+        addbyte(0x83); /*ADD ESP, 8*/
         addbyte(0xc4);
-        addbyte(12);
+        addbyte(8);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -469,13 +475,14 @@ static uint32_t gen_MEM_STORE_ADDR_EA_L()
         addbyte(0xc3); /*RET*/
 
         addbyte(0x51); /*slowpath: PUSH ECX*/
-        addbyte(0x50); /*PUSH EAX*/
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xC3);
         addbyte(0x53); /*PUSH EBX*/
         addbyte(0xe8); /*CALL writememll*/
         addlong((uint32_t)writememll - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 12*/
+        addbyte(0x83); /*ADD ESP, 8*/
         addbyte(0xc4);
-        addbyte(12);
+        addbyte(8);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -527,13 +534,14 @@ static uint32_t gen_MEM_STORE_ADDR_EA_Q()
 
         addbyte(0x51); /*slowpath: PUSH ECX*/
         addbyte(0x53); /*PUSH EBX*/
-        addbyte(0x50); /*PUSH EAX*/
+        addbyte(0x01); /*ADD EDX,EAX*/
+        addbyte(0xC2);
         addbyte(0x52); /*PUSH EDX*/
         addbyte(0xe8); /*CALL writememql*/
         addlong((uint32_t)writememql - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 16*/
+        addbyte(0x83); /*ADD ESP, 12*/
         addbyte(0xc4);
-        addbyte(16);
+        addbyte(12);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -577,13 +585,14 @@ static uint32_t gen_MEM_LOAD_ADDR_EA_B_NO_ABRT()
         addbyte(0x3a);
         addbyte(0xc3); /*RET*/
 
-        addbyte(0x50); /*slowpath: PUSH EAX*/
+        addbyte(0x01); /*slowpath: ADD ESI,EAX*/
+        addbyte(0xc6);
         addbyte(0x56); /*PUSH ESI*/
         addbyte(0xe8); /*CALL readmembl*/
-        addlong((uint32_t)readmemb386l - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 8*/
+        addlong((uint32_t)readmembl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
+        addbyte(0x83); /*ADD ESP, 4*/
         addbyte(0xc4);
-        addbyte(8);
+        addbyte(4);
 #ifndef RELEASE_BUILD
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -646,13 +655,14 @@ static uint32_t gen_MEM_LOAD_ADDR_EA_W_NO_ABRT()
         addbyte(0x3a);
         addbyte(0xc3); /*RET*/
 
-        addbyte(0x50); /*slowpath: PUSH EAX*/
+        addbyte(0x01); /*slowpath: ADD ESI,EAX*/
+        addbyte(0xc6);
         addbyte(0x56); /*PUSH ESI*/
         addbyte(0xe8); /*CALL readmemwl*/
         addlong((uint32_t)readmemwl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 8*/
+        addbyte(0x83); /*ADD ESP, 4*/
         addbyte(0xc4);
-        addbyte(8);
+        addbyte(4);
 #ifndef RELEASE_BUILD
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -714,13 +724,14 @@ static uint32_t gen_MEM_LOAD_ADDR_EA_L_NO_ABRT()
         addbyte(0x3a);
         addbyte(0xc3); /*RET*/
 
-        addbyte(0x50); /*slowpath: PUSH EAX*/
+        addbyte(0x01); /*slowpath: ADD ESI,EAX*/
+        addbyte(0xc6);
         addbyte(0x56); /*PUSH ESI*/
         addbyte(0xe8); /*CALL readmemll*/
         addlong((uint32_t)readmemll - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 8*/
+        addbyte(0x83); /*ADD ESP, 4*/
         addbyte(0xc4);
-        addbyte(8);
+        addbyte(4);
         addbyte(0x89); /*MOV ECX, EAX*/
         addbyte(0xc1);
 #ifndef RELEASE_BUILD
@@ -779,13 +790,14 @@ static uint32_t gen_MEM_STORE_ADDR_EA_B_NO_ABRT()
         addbyte(0xc3); /*RET*/
 
         addbyte(0x51); /*slowpath: PUSH ECX*/
-        addbyte(0x50); /*PUSH EAX*/
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xc3);
         addbyte(0x53); /*PUSH EBX*/
-        addbyte(0xe8); /*CALL writememb386l*/
-        addlong((uint32_t)writememb386l - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 12*/
+        addbyte(0xe8); /*CALL writemembl*/
+        addlong((uint32_t)writemembl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
+        addbyte(0x83); /*ADD ESP, 8*/
         addbyte(0xc4);
-        addbyte(12);
+        addbyte(8);
 #ifndef RELEASE_BUILD
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -845,13 +857,14 @@ static uint32_t gen_MEM_STORE_ADDR_EA_W_NO_ABRT()
         addbyte(0xc3); /*RET*/
 
         addbyte(0x51); /*slowpath: PUSH ECX*/
-        addbyte(0x50); /*PUSH EAX*/
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xC3);
         addbyte(0x53); /*PUSH EBX*/
         addbyte(0xe8); /*CALL writememwl*/
         addlong((uint32_t)writememwl - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 12*/
+        addbyte(0x83); /*ADD ESP, 8*/
         addbyte(0xc4);
-        addbyte(12);
+        addbyte(8);
 #ifndef RELEASE_BUILD
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -910,13 +923,14 @@ static uint32_t gen_MEM_STORE_ADDR_EA_L_NO_ABRT()
         addbyte(0xc3); /*RET*/
 
         addbyte(0x51); /*slowpath: PUSH ECX*/
-        addbyte(0x50); /*PUSH EAX*/
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xC3);
         addbyte(0x53); /*PUSH EBX*/
         addbyte(0xe8); /*CALL writememll*/
         addlong((uint32_t)writememll - (uint32_t)(&codeblock[block_current].data[block_pos + 4]));
-        addbyte(0x83); /*ADD ESP, 12*/
+        addbyte(0x83); /*ADD ESP, 8*/
         addbyte(0xc4);
-        addbyte(12);
+        addbyte(8);
 #ifndef RELEASE_BUILD
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);

@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_shift.h	1.0.3	2020/12/04
+ * Version:	@(#)x86_ops_shift.h	1.0.3	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -318,6 +318,8 @@ static int opC0_a16(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteab();                if (cpu_state.abrt) return 1;
@@ -331,6 +333,8 @@ static int opC0_a32(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteab();                if (cpu_state.abrt) return 1;
@@ -344,6 +348,8 @@ static int opC1_w_a16(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteaw();                if (cpu_state.abrt) return 1;
@@ -357,6 +363,8 @@ static int opC1_w_a32(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteaw();                if (cpu_state.abrt) return 1;
@@ -370,6 +378,8 @@ static int opC1_l_a16(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteal();                if (cpu_state.abrt) return 1;
@@ -383,6 +393,8 @@ static int opC1_l_a32(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteal();                if (cpu_state.abrt) return 1;
@@ -397,6 +409,8 @@ static int opD0_a16(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 0);
         return 0;
@@ -408,6 +422,8 @@ static int opD0_a32(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 1);
         return 0;
@@ -419,6 +435,8 @@ static int opD1_w_a16(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 0);
         return 0;
@@ -430,6 +448,8 @@ static int opD1_w_a32(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 1);
         return 0;
@@ -441,6 +461,8 @@ static int opD1_l_a16(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 0);
         return 0;
@@ -452,6 +474,8 @@ static int opD1_l_a32(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 1);
         return 0;
@@ -464,6 +488,8 @@ static int opD2_a16(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 0);
@@ -476,6 +502,8 @@ static int opD2_a32(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 1);
@@ -488,6 +516,8 @@ static int opD3_w_a16(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 0);
@@ -500,6 +530,8 @@ static int opD3_w_a32(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 1);
@@ -512,6 +544,8 @@ static int opD3_l_a16(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 0);
@@ -524,6 +558,8 @@ static int opD3_l_a32(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 1);
@@ -595,6 +631,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_16(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = getbyte() & 31;                                         \
                 operation()                                                     \
                                                                                 \
@@ -607,6 +645,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_16(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = CL & 31;                                                \
                 operation()                                                     \
                                                                                 \
@@ -619,6 +659,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_32(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = getbyte() & 31;                                         \
                 operation()                                                     \
                                                                                 \
@@ -631,6 +673,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_32(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = CL & 31;                                                \
                 operation()                                                     \
                                                                                 \

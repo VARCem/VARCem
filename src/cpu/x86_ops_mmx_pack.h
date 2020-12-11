@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mmx_pack.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_mmx_pack.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ static int opPUNPCKLDQ_a16(uint32_t fetchdat)
         {
                 uint32_t src;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 0;
                 cpu_state.MM[cpu_reg].l[1] = src;
 
@@ -70,6 +71,7 @@ static int opPUNPCKLDQ_a32(uint32_t fetchdat)
         {
                 uint32_t src;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 0;
                 cpu_state.MM[cpu_reg].l[1] = src;
 

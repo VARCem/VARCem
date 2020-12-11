@@ -8,13 +8,13 @@
  *
  *		Code generator definitions (64-bit)
  *
- * Version:	@(#)x86_ops_x86-64.h	1.0.4	2020/12/05
+ * Version:	@(#)x86_ops_x86-64.h	1.0.4	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2008-2020 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -160,6 +160,32 @@ static INLINE void load_param_2_64(codeblock_t *block, uint64_t param)
         addbyte(0xbe); /*MOVL $fetchdat,%esi*/
 #endif
         addquad(param);
+}
+
+static inline void load_param_2_reg_64(int reg)
+{
+        if (reg & 8) {
+#if WIN64
+                addbyte(0x4c); /*MOVL EDX,reg*/
+                addbyte(0x89);
+                addbyte(0xc0 | REG_EDX | ((reg & 7) << 3));
+#else
+                addbyte(0x4c); /*MOVL ESI,reg*/
+                addbyte(0x89);
+                addbyte(0xc0 | REG_ESI | ((reg & 7) << 3));
+#endif
+        }
+        else {
+#if WIN64
+                addbyte(0x48); /*MOVL EDX,reg*/
+                addbyte(0x89);
+                addbyte(0xc0 | REG_EDX | ((reg & 7) << 3));
+#else
+                addbyte(0x48); /*MOVL ESI,reg*/
+                addbyte(0x89);
+                addbyte(0xc0 | REG_ESI | ((reg & 7) << 3));
+#endif
+        }
 }
 
 static INLINE void load_param_3_reg_32(int reg)
@@ -884,7 +910,7 @@ static x86seg *FETCH_EA_32(x86seg *op_ea_seg, uint32_t fetchdat, int op_ssegs, u
 
 static INLINE x86seg *FETCH_EA(x86seg *op_ea_seg, uint32_t fetchdat, int op_ssegs, uint32_t *op_pc, uint32_t op_32)
 {
-        if (op_32 & 0x200)w
+        if (op_32 & 0x200)
                 return FETCH_EA_32(op_ea_seg, fetchdat, op_ssegs, op_pc, 0);
         return FETCH_EA_16(op_ea_seg, fetchdat, op_ssegs, op_pc);
 }
@@ -1063,9 +1089,10 @@ static INLINE void MEM_LOAD_ADDR_EA_B(x86seg *seg)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+12+4+6);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
-        call_long((uintptr_t)readmemb386l);
+        call_long((uintptr_t)readmembl);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -1142,8 +1169,9 @@ static INLINE void MEM_LOAD_ADDR_EA_W(x86seg *seg)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+12+4+6);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
         call_long((uintptr_t)readmemwl);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -1227,8 +1255,9 @@ static INLINE void MEM_LOAD_ADDR_EA_L(x86seg *seg)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+12+4+6);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
         call_long((uintptr_t)readmemll);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -1306,8 +1335,9 @@ static INLINE void MEM_LOAD_ADDR_EA_Q(x86seg *seg)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+12+4+6);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
         call_long((uintptr_t)readmemql);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -1429,12 +1459,17 @@ static INLINE void MEM_STORE_ADDR_EA_B(x86seg *seg, int host_reg)
                 addbyte(REG_EDI | (REG_ESI << 3));
         }
         addbyte(0xeb); /*JMP done*/
-        addbyte(2+2+3+12+4+6);
+        if (host_reg & 8) {
+		addbyte(2+2+3+12+4+6);
+	} else {
+		addbyte(2+2+2+12+4+6);
+	}
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
-        load_param_3_reg_32(host_reg);
-        call_long((uintptr_t)writememb386l);
+        load_param_2_reg_32(host_reg);
+        call_long((uintptr_t)writemembl);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
         addbyte((uint8_t)cpu_state_offset(abrt));
@@ -1520,11 +1555,16 @@ static INLINE void MEM_STORE_ADDR_EA_W(x86seg *seg, int host_reg)
                 addbyte(REG_EDI | (REG_ESI << 3));
         }
         addbyte(0xeb); /*JMP done*/
-        addbyte(2+2+3+12+4+6);
+        if (host_reg & 8) {
+		addbyte(2+2+3+12+4+6);
+	} else {
+		addbyte(2+2+2+12+4+6);
+	}
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
-        load_param_3_reg_32(host_reg);
+        load_param_2_reg_32(host_reg);
         call_long((uintptr_t)writememwl);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -1609,11 +1649,16 @@ static INLINE void MEM_STORE_ADDR_EA_L(x86seg *seg, int host_reg)
                 addbyte(REG_EDI | (REG_ESI << 3));
         }
         addbyte(0xeb); /*JMP done*/
-        addbyte(2+2+3+12+4+6);
+        if (host_reg & 8) {
+	        addbyte(2+2+3+12+4+6);
+	} else {
+	        addbyte(2+2+2+12+4+6);
+	}
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
-        load_param_3_reg_32(host_reg);
+        load_param_2_reg_32(host_reg);
         call_long((uintptr_t)writememll);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -1701,9 +1746,10 @@ static INLINE void MEM_STORE_ADDR_EA_Q(x86seg *seg, int host_reg, int host_reg2)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+3+12+4+6);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
-        load_param_3_reg_64(host_reg);
+        load_param_2_reg_64(host_reg);
         call_long((uintptr_t)writememql);
         addbyte(0x80); /*CMP abrt, 0*/
         addbyte(0x7d);
@@ -5774,9 +5820,10 @@ static INLINE int MEM_LOAD_ADDR_EA_B_NO_ABRT(x86seg *seg)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+12);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
-        call_long((uintptr_t)readmemb386l);
+        call_long((uintptr_t)readmembl);
         addbyte(0x89); /*MOV ECX, EAX*/
         addbyte(0xc1);
         /*done:*/
@@ -5852,8 +5899,9 @@ static INLINE int MEM_LOAD_ADDR_EA_W_NO_ABRT(x86seg *seg)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+12);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
         call_long((uintptr_t)readmemwl);
         addbyte(0x89); /*MOV ECX, EAX*/
         addbyte(0xc1);
@@ -5929,8 +5977,9 @@ static INLINE int MEM_LOAD_ADDR_EA_L_NO_ABRT(x86seg *seg)
         addbyte(0xeb); /*JMP done*/
         addbyte(2+2+12);
         /*slowpath:*/
+        addbyte(0x01); /*ADD ECX,EAX*/
+        addbyte(0xc1);
         load_param_1_reg_32(REG_ECX);
-        load_param_2_reg_32(REG_EAX);
         call_long((uintptr_t)readmemll);
         addbyte(0x89); /*MOV ECX, EAX*/
         addbyte(0xc1);
@@ -6032,12 +6081,17 @@ static INLINE void MEM_STORE_ADDR_EA_B_NO_ABRT(x86seg *seg, int host_reg)
                 addbyte(REG_EDI | (REG_ESI << 3));
         }
         addbyte(0xeb); /*JMP done*/
-        addbyte(2+2+3+12);
+        if (host_reg & 8) {
+	        addbyte(2+2+3+12);
+	} else {
+	        addbyte(2+2+2+12);
+	}
         /*slowpath:*/
-        load_param_3_reg_32(host_reg);
+        load_param_2_reg_32(host_reg);
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xc3);
         load_param_1_reg_32(REG_EBX);
-        load_param_2_reg_32(REG_EAX);
-        call_long((uintptr_t)writememb386l);
+        call_long((uintptr_t)writemembl);
         /*done:*/
 }
 static INLINE void MEM_STORE_ADDR_EA_W_NO_ABRT(x86seg *seg, int host_reg)
@@ -6116,11 +6170,16 @@ static INLINE void MEM_STORE_ADDR_EA_W_NO_ABRT(x86seg *seg, int host_reg)
                 addbyte(REG_EDI | (REG_ESI << 3));
         }
         addbyte(0xeb); /*JMP done*/
-        addbyte(2+2+3+12);
+        if (host_reg & 8) {
+        	addbyte(2+2+3+12);
+	} else {
+        	addbyte(2+2+2+12);
+	}
         /*slowpath:*/
-        load_param_3_reg_32(host_reg);
+        load_param_2_reg_32(host_reg);
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xc3);
         load_param_1_reg_32(REG_EBX);
-        load_param_2_reg_32(REG_EAX);
         call_long((uintptr_t)writememwl);
         /*done:*/
 }
@@ -6198,11 +6257,16 @@ static INLINE void MEM_STORE_ADDR_EA_L_NO_ABRT(x86seg *seg, int host_reg)
                 addbyte(REG_EDI | (REG_ESI << 3));
         }
         addbyte(0xeb); /*JMP done*/
-        addbyte(2+2+3+12);
+        if (host_reg & 8) {
+		addbyte(2+2+3+12);
+	} else {
+		addbyte(2+2+2+12);
+	}
         /*slowpath:*/
-        load_param_3_reg_32(host_reg);
+        load_param_2_reg_32(host_reg);
+        addbyte(0x01); /*ADD EBX,EAX*/
+        addbyte(0xc3);
         load_param_1_reg_32(REG_EBX);
-        load_param_2_reg_32(REG_EAX);
         call_long((uintptr_t)writememll);
         /*done:*/
 }

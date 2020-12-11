@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_set.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_set.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@
         static int opSET ## condition ## _a16(uint32_t fetchdat)        \
         {                                                               \
                 fetch_ea_16(fetchdat);                                  \
+                if (cpu_mod != 3)                                       \
+                        SEG_CHECK_READ(cpu_state.ea_seg);               \
                 seteab((cond_ ## condition) ? 1 : 0);                   \
                 CLOCK_CYCLES(4);                                        \
                 return cpu_state.abrt;                                            \
@@ -47,6 +49,8 @@
         static int opSET ## condition ## _a32(uint32_t fetchdat)        \
         {                                                               \
                 fetch_ea_32(fetchdat);                                  \
+                if (cpu_mod != 3)                                       \
+                        SEG_CHECK_READ(cpu_state.ea_seg);               \
                 seteab((cond_ ## condition) ? 1 : 0);                   \
                 CLOCK_CYCLES(4);                                        \
                 return cpu_state.abrt;                                            \
