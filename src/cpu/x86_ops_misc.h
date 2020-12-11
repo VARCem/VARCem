@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_misc.h	1.0.7	2020/12/11
+ * Version:	@(#)x86_ops_misc.h	1.0.8	2020/12/12
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -963,6 +963,7 @@ static int opLOADALL386(uint32_t fetchdat)
 	loadall_load_segment(la_addr + 0xc0, &cpu_state.seg_es);
 
 	if (CPL==3 && oldcpl!=3) flushmmucache_cr3();
+        oldcpl = CPL;
 
 	CLOCK_CYCLES(350);
         return 0;
