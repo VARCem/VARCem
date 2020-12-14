@@ -82,8 +82,7 @@ uint32_t	cpu_cur_status = 0;
 int		cpu_reps, cpu_reps_latched;
 int		cpu_notreps, cpu_notreps_latched;
 int		cpu_recomp_blocks, cpu_recomp_full_ins, cpu_new_blocks;
-int		cpu_recomp_blocks_latched, cpu_recomp_ins_latched,
-		cpu_recomp_full_ins_latched, cpu_new_blocks_latched;
+int		cpu_new_blocks_latched;
 
 int		inrecomp = 0;
 int		cpu_block_end = 0;
@@ -448,7 +447,7 @@ int checkio(uint32_t port)
         if (cpu_state.abrt) return 0;
         if ((t+(port>>3))>tr.limit) return 1;
         cpl_override = 1;
-        d = readmemb386l(tr.base + t + (port >> 3));
+        d = readmembl(tr.base + t + (port >> 3));
         cpl_override = 0;
         return d&(1<<(port&7));
 }
