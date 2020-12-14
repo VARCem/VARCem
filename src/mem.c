@@ -509,21 +509,6 @@ writemembl(uint32_t addr, uint8_t val)
 	map->write_b(addr, val, map->p);
 }
 
-
-uint8_t
-readmemb386l(uint32_t addr)
-{
-    return readmembl(addr);
-}
-
-
-void
-writememb386l(uint32_t addr, uint8_t val)
-{
-    writemembl(addr, val);
-}
-
-
 uint16_t
 readmemwl(uint32_t addr)
 {
@@ -538,8 +523,7 @@ readmemwl(uint32_t addr)
 			if (mmutranslate_read(addr)   == 0xffffffff) return 0xffff;
 			if (mmutranslate_read(addr+1) == 0xffffffff) return 0xffff;
 		}
-		if (is386) return readmemb386l(addr)|((uint16_t)(readmemb386l(addr+1))<<8);
-		else       return readmembl(addr)|((uint16_t)(readmembl(addr+1))<<8);
+        return readmembl(addr)|((uint16_t)(readmembl(addr+1))<<8);
 	}
 	else if (readlookup2[addr >> 12] != (uintptr_t)-1)
 		return *(uint16_t *)(readlookup2[addr >> 12] + addr);
@@ -597,13 +581,8 @@ writememwl(uint32_t addr, uint16_t val)
 			if (mmutranslate_write(addr)   == 0xffffffff) return;
 			if (mmutranslate_write(addr+1) == 0xffffffff) return;
 		}
-		if (is386) {
-			writememb386l(addr,(uint8_t)(val&0xff));
-			writememb386l(addr+1,(uint8_t)(val>>8));
-		} else {
-			writemembl(addr,(uint8_t)(val&0xff));
-			writemembl(addr+1,(uint8_t)(val>>8));
-		}
+		writemembl(addr,(uint8_t)(val&0xff));
+		writemembl(addr+1,(uint8_t)(val>>8));
 		return;
 	} else if (writelookup2[addr >> 12] != (uintptr_t)-1) {
 		*(uint16_t *)(writelookup2[addr >> 12] + addr) = val;

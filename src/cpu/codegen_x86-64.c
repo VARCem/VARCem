@@ -83,7 +83,6 @@ int block_current = 0;
 static int block_num;
 int block_pos;
 
-int cpu_recomp_flushes, cpu_recomp_flushes_latched;
 int cpu_recomp_evicted, cpu_recomp_evicted_latched;
 int cpu_recomp_reuse, cpu_recomp_reuse_latched;
 int cpu_recomp_removed, cpu_recomp_removed_latched;
@@ -336,6 +335,7 @@ void codegen_block_start_recompile(codeblock_t *block)
         block->status = cpu_cur_status;
         
         block_pos = BLOCK_GPF_OFFSET;
+#if 0 /* OLDGPF */
 #if WIN64
         addbyte(0x48); /*XOR RCX, RCX*/
         addbyte(0x31);
@@ -350,8 +350,18 @@ void codegen_block_start_recompile(codeblock_t *block)
         addbyte(0xf6);
 #endif
 	call(block, (uintptr_t)x86gpf);
-	while (block_pos < BLOCK_EXIT_OFFSET)
-	       addbyte(0x90); /*NOP*/
+        while (block_pos < BLOCK_EXIT_OFFSET)
+	addbyte(0x90); /*NOP*/
+#endif
+	addbyte(0xc6);	/* mov byte ptr[&(cpu_state.abrt)],ABRT_GPF */
+	addbyte(0x05);
+	addlong((uint32_t) (uintptr_t) &(cpu_state.abrt));
+	addbyte(ABRT_GPF);
+	addbyte(0x31);	/* xor eax,eax */
+	addbyte(0xc0);
+	addbyte(0x67);	/* mov [&(abrt_error)],eax */
+	addbyte(0xa3);
+	addlong((uint32_t) (uintptr_t) &(abrt_error));
         block_pos = BLOCK_EXIT_OFFSET; /*Exit code*/
         addbyte(0x48); /*ADDL $40,%rsp*/
         addbyte(0x83);

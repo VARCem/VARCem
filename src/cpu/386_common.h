@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.8	2020/12/11
+ * Version:	@(#)386_common.h	1.0.8	2020/12/14
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,14 +39,14 @@ extern uint16_t ea_rseg;
 
 #undef readmemb
 
-#define readmemb(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1)?readmemb386l((s)+(a)) \
+#define readmemb(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1)?readmembl((s)+(a)) \
 		: *(uint8_t *)(readlookup2[(uint32_t)((s)+(a))>>12] + (uint32_t)((s) + (a))) )
 #define readmemq(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (((s)+(a)) & 7))?readmemql((s)+(a)) \
                 : *(uint64_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 
 #undef writememb
 
-#define writememb(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1) writememb386l((s)+(a),v); else *(uint8_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
+#define writememb(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1) writemembl((s)+(a),v); else *(uint8_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
 #define writememw(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (((s)+(a)) & 1)) writememwl((s)+(a),v); else *(uint16_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
 #define writememl(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (((s)+(a)) & 3)) writememll((s)+(a),v); else *(uint32_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
 #define writememq(s,a,v) if (writelookup2[(uint32_t)((s)+(a))>>12]==(uintptr_t)-1 || (((s)+(a)) & 7)) writememql((s)+(a),v); else *(uint64_t *)(writelookup2[(uint32_t)((s) + (a)) >> 12] + (uint32_t)((s) + (a))) = v
@@ -282,11 +282,11 @@ static INLINE void seteaq(uint64_t v)
         writememql(easeg + cpu_state.eaaddr, v);
 }
 
-# define seteab(v) if (cpu_mod!=3) { CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr); if (eal_w) *(uint8_t *)eal_w=v;  else { writememb386l(easeg+cpu_state.eaaddr,v); } } else if (cpu_rm&4) cpu_state.regs[cpu_rm&3].b.h=v; else cpu_state.regs[cpu_rm].b.l=v
+# define seteab(v) if (cpu_mod!=3) { CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr); if (eal_w) *(uint8_t *)eal_w=v;  else { writemembl(easeg+cpu_state.eaaddr,v); } } else if (cpu_rm&4) cpu_state.regs[cpu_rm&3].b.h=v; else cpu_state.regs[cpu_rm].b.l=v
 # define seteaw(v) if (cpu_mod!=3) { CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1); if (eal_w) *(uint16_t *)eal_w=v; else { writememwl(easeg+cpu_state.eaaddr,v); } } else cpu_state.regs[cpu_rm].w=v
 # define seteal(v) if (cpu_mod!=3) { CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3); if (eal_w) *eal_w=v;             else { writememll(easeg+cpu_state.eaaddr,v); } } else cpu_state.regs[cpu_rm].l=v
  
-#define seteab_mem(v) if (eal_w) *(uint8_t *)eal_w=v;  else writememb386l(easeg+cpu_state.eaaddr,v);
+#define seteab_mem(v) if (eal_w) *(uint8_t *)eal_w=v;  else writemembl(easeg+cpu_state.eaaddr,v);
 #define seteaw_mem(v) if (eal_w) *(uint16_t *)eal_w=v; else writememwl(easeg+cpu_state.eaaddr,v);
 #define seteal_mem(v) if (eal_w) *eal_w=v;             else writememll(easeg+cpu_state.eaaddr,v);
  

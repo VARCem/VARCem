@@ -8,7 +8,7 @@
  *
  *		Code generator definitions (64-bit)
  *
- * Version:	@(#)x86_ops_x86-64.h	1.0.4	2020/12/11
+ * Version:	@(#)x86_ops_x86-64.h	1.0.5	2020/12/13
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -333,6 +333,12 @@ static INLINE void STORE_REG_TARGET_B_RELEASE(int host_reg, int guest_reg)
                         addbyte(0x44);
                         addbyte(0x89);
                         addbyte(0xc0 | ((host_reg & 3) << 3));
+                }
+                else if (host_reg & 3) {
+			addbyte(0x66); /*MOV AX, host_reg*/
+			addbyte(0x89);
+			addbyte(0xc0 | ((host_reg & 3) << 3));
+                }
                         if (host_reg & 0x10)
                         {                        
                                 addbyte(0x66); /*AND AX, 0xff00*/
@@ -346,20 +352,6 @@ static INLINE void STORE_REG_TARGET_B_RELEASE(int host_reg, int guest_reg)
                                 addbyte(0xe0);
                                 addbyte(0x08);
                         }
-                }
-                else
-                {
-                        if (host_reg)
-                        {
-                                addbyte(0x66); /*MOV AX, host_reg*/
-                                addbyte(0x89);
-                                addbyte(0xc0 | ((host_reg & 3) << 3));
-                        }
-                        addbyte(0x66); /*SHL AX, 8*/
-                        addbyte(0xc1);
-                        addbyte(0xe0);
-                        addbyte(0x08);
-                }
                 addbyte(0x66); /*AND dest_reg, 0x00ff*/
                 addbyte(0x41);
                 addbyte(0x81);
@@ -3048,6 +3040,37 @@ static INLINE void SUB_HOST_REG_IMM(int host_reg, uint32_t imm)
         addbyte(0x81); /*SUBL host_reg, imm*/
         addbyte(0xE8 | (host_reg & 7));
         addlong(imm);
+}
+
+static inline void INC_HOST_REG_W(int host_reg)
+{
+        addbyte(0x66); /*INCW host_reg*/
+        if (host_reg & 8)
+                addbyte(0x41);
+        addbyte(0xff);
+        addbyte(0xc0 | (host_reg & 7));
+}
+static inline void INC_HOST_REG(int host_reg)
+{
+        if (host_reg & 8)
+                addbyte(0x41);
+        addbyte(0xff); /*INCL host_reg*/
+        addbyte(0xc0 | (host_reg & 7));
+}
+static inline void DEC_HOST_REG_W(int host_reg)
+{
+        addbyte(0x66); /*DECW host_reg*/
+        if (host_reg & 8)
+                addbyte(0x41);
+        addbyte(0xff);
+        addbyte(0xc8 | (host_reg & 7));
+}
+static inline void DEC_HOST_REG(int host_reg)
+{
+        if (host_reg & 8)
+                addbyte(0x41);
+        addbyte(0xff); /*DECL host_reg*/
+        addbyte(0xc8 | (host_reg & 7));
 }
 
 static INLINE int CMP_HOST_REG_IMM_B(int host_reg, uint8_t imm)
