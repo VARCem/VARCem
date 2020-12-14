@@ -284,9 +284,6 @@ cyrix_read(uint16_t addr, priv_t priv)
 		case 0xff: return cpu->cyrix_id >> 8;
 	}
 
-	if ((cyrix_addr & 0xf0) == 0xc0)
-		return 0xff;
-
 	if (cyrix_addr == 0x20 && cpu->type == CPU_Cx5x86)
 		return 0xff;
     }
@@ -1913,7 +1910,9 @@ cpu_CPUID(void)
 			EBX = ECX = 0;
 			EDX = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B | CPUID_SEP | CPUID_CMOV;
 		} else if (EAX == 2) {
-			//FIXME: ??
+            EAX = 0x03020101;
+            EBX = ECX = 0;
+            EDX = 0x06040a42;
 		} else
 			EAX = EBX = ECX = EDX = 0;
 		break;
@@ -1932,7 +1931,7 @@ cpu_CPUID(void)
 		} else if (EAX == 2) {
 			EAX = 0x03020101;
 			EBX = ECX = 0;
-			EDX = 0x0C040843;
+			EDX = 0x08040C43;
 		}
 		else
 			EAX = EBX = ECX = EDX = 0;
@@ -1952,7 +1951,7 @@ cpu_CPUID(void)
 		} else if (EAX == 2) {
 			EAX = 0x03020101;
 			EBX = ECX = 0;
-			EDX = 0x0C040844;
+			EDX = 0x08040C44;
 		} else
 			EAX = EBX = ECX = EDX = 0;
 		break;
