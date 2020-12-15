@@ -20,13 +20,13 @@
  *		  - PMMX decode queue
  *		  - MMX latencies
  *
- * Version:	@(#)codegen_timing_pentium.c	1.0.4	2018/12/24
+ * Version:	@(#)codegen_timing_pentium.c	1.0.5	2020/12/15
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -856,7 +856,7 @@ static INLINE int COUNT(uint64_t timings, uint64_t deps, int op_32)
                 case CYCLES_RMW:
                 return 3;
                 case CYCLES_BRANCH:
-                return cpu_hasMMX ? 1 : 2;
+                return cpu_has_feature(CPU_FEATURE_MMX) ? 1 : 2;
         }
         
         fatal("Illegal COUNT %016llx\n", timings);
@@ -996,13 +996,13 @@ static void codegen_timing_pentium_prefix(uint8_t prefix, uint32_t fetchdat)
                 last_prefix = prefix;
                 return;
         }
-        if (cpu_hasMMX && prefix == 0x0f)
+        if (cpu_has_feature(CPU_FEATURE_MMX) && prefix == 0x0f)
         {
                 /*On Pentium MMX 0fh prefix is 'free'*/
                 last_prefix = prefix;
                 return;
         }
-        if (cpu_hasMMX && (prefix == 0x66 || prefix == 0x67))
+        if (cpu_has_feature(CPU_FEATURE_MMX) && (prefix == 0x66 || prefix == 0x67))
         {
                 /*On Pentium MMX 66h and 67h prefixes take 2 clocks*/
                 decode_delay_offset += 2;
@@ -1269,7 +1269,7 @@ static void codegen_timing_pentium_opcode(uint8_t opcode, uint32_t fetchdat, int
                         else
                                 has_displacement = 0;
                                 
-                        if (!has_displacement && (!cpu_hasMMX || codegen_timing_instr_length(timings[opcode], fetchdat, op_32) <= 7))
+                        if (!has_displacement && (!cpu_has_feature(CPU_FEATURE_MMX) || codegen_timing_instr_length(timings[opcode], fetchdat, op_32) <= 7))
                         {
                                 int t1 = u_pipe_timings[u_pipe_opcode] & CYCLES_MASK;
                                 int t2 = timings[opcode] & CYCLES_MASK;
@@ -1322,7 +1322,7 @@ nopair:
                 else
                         has_displacement = 0;
                 
-                if ((!has_displacement || cpu_hasMMX) && (!cpu_hasMMX || codegen_timing_instr_length(timings[opcode], fetchdat, op_32) <= 7))
+                if ((!has_displacement || cpu_has_feature(CPU_FEATURE_MMX)) && (!cpu_has_feature(CPU_FEATURE_MMX) || codegen_timing_instr_length(timings[opcode], fetchdat, op_32) <= 7))
                 {                
                         /*Instruction might pair with next*/
                         u_pipe_full = 1;

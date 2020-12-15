@@ -8,12 +8,12 @@
  *
  *		AMD 3DNow! CPU Instructions.
  *
- * Version:	@(#)x86_ops_3dnow.h	1.0.0	2020/11/18
+ * Version:	@(#)x86_ops_3dnow.h	1.0.1	2020/12/15
  *
  * Author:	Sarah Walker, <tommowalker@tommowalker.co.uk>,
- * 			altheos
+ * 		Altheos
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ static int opPREFETCH_a32(uint32_t fetchdat)
 
 static int opFEMMS(uint32_t fetchdat)
 {
-        ILLEGAL_ON(!cpu_hasMMX);
+        ILLEGAL_ON(!cpu_has_feature(CPU_FEATURE_MMX));
         if (cr0 & 0x0c)
         {
                 x86_int(7);

@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mov_ctrl.h	1.0.3	2020/12/05
+ * Version:	@(#)x86_ops_mov_ctrl.h	1.0.3	2020/12/15
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,7 +58,7 @@ static int opMOV_r_CRx_a16(uint32_t fetchdat)
                 cpu_state.regs[cpu_rm].l = cr3;
                 break;
                 case 4:
-                if (cpu_hasCR4)
+                if (cpu_has_feature(CPU_FEATURE_CR4))
                 {
                         cpu_state.regs[cpu_rm].l = cr4;
                         break;
@@ -96,7 +96,7 @@ static int opMOV_r_CRx_a32(uint32_t fetchdat)
                 cpu_state.regs[cpu_rm].l = cr3;
                 break;
                 case 4:
-                if (cpu_hasCR4)
+                if (cpu_has_feature(CPU_FEATURE_CR4))
                 {
                         cpu_state.regs[cpu_rm].l = cr4;
                         break;
@@ -181,7 +181,7 @@ static int opMOV_CRx_r_a16(uint32_t fetchdat)
                 flushmmucache();
                 break;
                 case 4:
-                if (cpu_hasCR4)
+                if (cpu_has_feature(CPU_FEATURE_CR4))
                 {
                         cr4 = cpu_state.regs[cpu_rm].l & cpu_CR4_mask;
                         break;
@@ -237,7 +237,7 @@ static int opMOV_CRx_r_a32(uint32_t fetchdat)
                 flushmmucache();
                 break;
                 case 4:
-                if (cpu_hasCR4)
+                if (cpu_has_feature(CPU_FEATURE_CR4))
                 {
                         cr4 = cpu_state.regs[cpu_rm].l & cpu_CR4_mask;
                         break;
