@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mmx.h	1.0.2	2020/12/11
+ * Version:	@(#)x86_ops_mmx.h	1.0.2	2020/12/15
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,9 +54,9 @@
         }
 
 #define MMX_ENTER()                                                     \
-        if (!cpu_hasMMX)                                                \
+        if (!cpu_has_feature(CPU_FEATURE_MMX))                          \
         {                                                               \
-                cpu_state.pc = cpu_state.oldpc;                                   \
+                cpu_state.pc = cpu_state.oldpc;                         \
                 x86illegal();                                           \
                 return 1;                                               \
         }                                                               \
@@ -69,7 +69,7 @@
 
 static int opEMMS(uint32_t fetchdat)
 {
-        if (!cpu_hasMMX)
+        if (!cpu_has_feature(CPU_FEATURE_MMX))
         {
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();

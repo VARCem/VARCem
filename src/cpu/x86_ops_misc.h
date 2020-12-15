@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_misc.h	1.0.8	2020/12/12
+ * Version:	@(#)x86_ops_misc.h	1.0.8	2020/12/15
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2008-2020 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -984,7 +984,7 @@ static int opCPUID(uint32_t fetchdat)
 
 static int opRDMSR(uint32_t fetchdat)
 {
-        if (cpu_hasMSR)
+        if (cpu_has_feature(CPU_FEATURE_MSR))
         {
                 cpu_RDMSR();
                 CLOCK_CYCLES(9);
@@ -997,7 +997,7 @@ static int opRDMSR(uint32_t fetchdat)
 
 static int opWRMSR(uint32_t fetchdat)
 {
-        if (cpu_hasMSR)
+        if (cpu_has_feature(CPU_FEATURE_MSR))
         {
                 cpu_WRMSR();
                 CLOCK_CYCLES(9);

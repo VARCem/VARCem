@@ -344,13 +344,16 @@ extern int		cpu_cyrix_alignment;	/*Cyrix 5x86/6x86 only has data misalignment
 
 extern int		is8086,	is186, is286, is386, is486;
 extern int		is_nec, is_rapidcad, is_cyrix, is_pentium;
-extern int		cpu_hasrdtsc;
-extern int		cpu_hasMSR;
-extern int		cpu_hasMMX;
-extern int		cpu_hasCR4;
-extern int		cpu_hasVME;
-extern int    cpu_hasCX8;
-extern int		cpu_has3DNOW;
+
+#define CPU_FEATURE_RDTSC (1 << 0)
+#define CPU_FEATURE_MSR   (1 << 1)
+#define CPU_FEATURE_MMX   (1 << 2)
+#define CPU_FEATURE_CR4   (1 << 3)
+#define CPU_FEATURE_VME   (1 << 4)
+#define CPU_FEATURE_CX8   (1 << 5)
+#define CPU_FEATURE_3DNOW (1 << 6)
+
+extern uint32_t cpu_features;
 
 extern uint32_t		cpu_cur_status;
 extern uint64_t		cpu_CR4_mask;
@@ -407,6 +410,8 @@ extern x86seg	_oldds;
 # define ISA_CYCLES(x)    (x * isa_cycles)
 #endif
 
+/* Functions. */
+extern int cpu_has_feature(int feature);
 
 extern int	cpu_cycles_read, cpu_cycles_read_l,
 		cpu_cycles_write, cpu_cycles_write_l;

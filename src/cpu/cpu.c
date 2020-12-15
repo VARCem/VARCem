@@ -54,6 +54,11 @@
 # include "codegen.h"
 #endif
 
+uint32_t cpu_features;
+int cpu_has_feature(int feature)
+{
+        return cpu_features & feature;
+}
 
 enum {
     CPUID_FPU = (1 << 0),
@@ -144,13 +149,6 @@ int		is186,			/* 80186 */
 		is_rapidcad,		/* RapidCAD */
 		is_pentium;		/* Pentium+ */
 
-int		cpu_hasrdtsc,
-		cpu_hasMMX,
-		cpu_hasMSR,
-		cpu_hasCR4,
-		cpu_hasCX8,
-		cpu_hasVME,
-		cpu_has3DNOW;
 
 uint64_t	tsc = 0;
 msr_t		msr;
@@ -337,12 +335,6 @@ cpu_activate(void)
     if (cpu->multi) 
 	   cpu_busspeed = cpu->rspeed / cpu->multi;
 
-    cpu_hasrdtsc = 0;
-    cpu_hasMMX = 0;
-    cpu_hasMSR = 0;
-    cpu_hasCR4 = 0;
-	cpu_hasCX8 = 0;
-	cpu_has3DNOW = 0;
     ccr0 = ccr1 = ccr2 = ccr3 = ccr4 = ccr5 = ccr6 = 0;
 
     if ((cpu->type == CPU_286) || (cpu->type == CPU_386SX) ||
@@ -710,8 +702,7 @@ cpu_activate(void)
 		break;
 
 	case CPU_iDX4:
-		cpu_hasCR4 = 1;
-		cpu_hasVME = 1;
+		cpu_features = CPU_FEATURE_CR4 | CPU_FEATURE_VME;
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_VME;
 		/*FALLTHROUGH*/
 
@@ -883,10 +874,8 @@ cpu_activate(void)
 		timing_mml = 3;
 		timing_bt  = 3-1; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MMX | CPU_FEATURE_MSR | CPU_FEATURE_CR4;
 		msr.fcr = (1 << 8) | (1 << 16);
-		cpu_hasMMX = cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
 		cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_MCE | CR4_PCE;
 		/*unknown*/
 		timing_int_rm       = 26;
@@ -929,10 +918,8 @@ cpu_activate(void)
 		timing_mml = 3;
 		timing_bt  = 3-1; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MMX | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_3DNOW;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 18) | (1 << 19) | (1 << 20) | (1 << 21);
-		cpu_hasMMX = cpu_hasMSR = cpu_has3DNOW = 1;
-		cpu_hasCR4 = 1;
 		cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_MCE | CR4_PCE;
 		/*unknown*/
 		timing_int_rm       = 26;
@@ -995,12 +982,8 @@ cpu_activate(void)
 		timing_jmp_pm      = 3;
 		timing_jmp_pm_gate = 18;
 		timing_misaligned = 3;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 0;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
-		cpu_hasVME = 1;
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE;
 #ifdef USE_DYNAREC
 		codegen_timing_set(&codegen_timing_pentium);
@@ -1042,12 +1025,8 @@ cpu_activate(void)
 		timing_jmp_pm      = 3;
 		timing_jmp_pm_gate = 18;
 		timing_misaligned = 3;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 1;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
-		cpu_hasVME = 1;
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE;
 #ifdef USE_DYNAREC
 		codegen_timing_set(&codegen_timing_pentium);
@@ -1089,11 +1068,8 @@ cpu_activate(void)
 		timing_jmp_pm_gate = 14;
 		timing_misaligned = 2;
 		cpu_cyrix_alignment = 1;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 0;
-		cpu_hasMSR = 0;
-		cpu_hasCR4 = 0;
 #ifdef USE_DYNAREC
 		codegen_timing_set(&codegen_timing_686);
 #endif
@@ -1135,11 +1111,8 @@ cpu_activate(void)
 		timing_jmp_pm_gate = 14;
 		timing_misaligned = 2;
 		cpu_cyrix_alignment = 1;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 0;
-		cpu_hasMSR = 0;
-		cpu_hasCR4 = 0;
 #ifdef USE_DYNAREC
  		codegen_timing_set(&codegen_timing_686);
 #endif
@@ -1163,11 +1136,8 @@ cpu_activate(void)
 		timing_bnt = 1; /*branch not taken*/
 		timing_misaligned = 2;
 		cpu_cyrix_alignment = 1;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 0;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
 		cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_PCE;
 #ifdef USE_DYNAREC
  		codegen_timing_set(&codegen_timing_686);
@@ -1222,11 +1192,8 @@ cpu_activate(void)
 		timing_jmp_pm_gate = 14;
 		timing_misaligned = 2;
 		cpu_cyrix_alignment = 1;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_MMX;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 1;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
 		cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_PCE;
 #ifdef USE_DYNAREC
  		codegen_timing_set(&codegen_timing_686);
@@ -1252,11 +1219,8 @@ cpu_activate(void)
 		timing_bt  = 0; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
 		timing_misaligned = 3;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 1;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
 		cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_MCE | CR4_PCE;
 		break;
 
@@ -1276,12 +1240,8 @@ cpu_activate(void)
 		timing_bt  = 0; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
 		timing_misaligned = 3;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 1;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
-		cpu_hasVME = 1;
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE;
 # ifdef USE_DYNAREC
 		codegen_timing_set(&codegen_timing_pentium);
@@ -1318,12 +1278,8 @@ cpu_activate(void)
 		timing_bt  = 0; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
 		timing_misaligned = 3;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 0;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
-		cpu_hasVME = 1;
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE;
 #ifdef USE_DYNAREC
  		codegen_timing_set(&codegen_timing_686);
@@ -1360,12 +1316,8 @@ cpu_activate(void)
 		timing_bt  = 0; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
 		timing_misaligned = 3;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 1;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
-		cpu_hasVME = 1;
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE;
 #ifdef USE_DYNAREC
  		codegen_timing_set(&codegen_timing_686);
@@ -1402,12 +1354,8 @@ cpu_activate(void)
 		timing_bt  = 0; /*branch taken*/
 		timing_bnt = 1; /*branch not taken*/
 		timing_misaligned = 3;
-		cpu_hasrdtsc = 1;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
-		cpu_hasMMX = 1;
-		cpu_hasMSR = 1;
-		cpu_hasCR4 = 1;
-		cpu_hasVME = 1;
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE | CR4_OSFXSR;
 #ifdef USE_DYNAREC
   		codegen_timing_set(&codegen_timing_686);
@@ -1657,7 +1605,7 @@ cpu_CPUID(void)
 			EAX = 0x540;
 			EBX = ECX = 0;
 			EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR;
-			if (cpu_hasCX8)
+			if (cpu_has_feature(CPU_FEATURE_CX8))
 				EDX |= CPUID_CMPXCHG8B;
 			if (msr.fcr & (1 << 9))
 				EDX |= CPUID_MMX;
@@ -1683,7 +1631,7 @@ cpu_CPUID(void)
 				EAX = 0x580;
 				EBX = ECX = 0;
 				EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR;
-				if (cpu_hasCX8)
+				if (cpu_has_feature(CPU_FEATURE_CX8))
 					EDX |= CPUID_CMPXCHG8B;
 				if (msr.fcr & (1 << 9))
 					EDX |= CPUID_MMX;
@@ -1694,7 +1642,7 @@ cpu_CPUID(void)
 			case 0x80000001:
 				EAX = 0x58U;
 				EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR;
-				if (cpu_hasCX8)
+				if (cpu_has_feature(CPU_FEATURE_CX8))
 					EDX |= CPUID_CMPXCHG8B;
 				if (msr.fcr & (1 << 9))
 					EDX |= CPUID_3DNOW;
@@ -2234,15 +2182,18 @@ cpu_WRMSR(void)
 
 			case 0x107:
 				msr.fcr = EAX;
-				cpu_hasMMX = EAX & (1 << 9);
+				if (EAX & (1 << 9))
+                	cpu_features |= CPU_FEATURE_MMX;
+                else
+                    cpu_features &= ~CPU_FEATURE_MMX;
 				if (EAX & (1 << 1))
-					cpu_hasCX8 = 1;
+					cpu_features |= CPU_FEATURE_CX8;
 				else
-					cpu_hasCX8 = 0;
+					cpu_features &= ~CPU_FEATURE_CX8;
 				if ((EAX & (1 << 20)) && cpu->type >= CPU_WINCHIP2)
-					cpu_has3DNOW = 1;
+					cpu_features |= CPU_FEATURE_3DNOW;
 				else
-					cpu_has3DNOW = 0;				
+					cpu_features &= ~CPU_FEATURE_3DNOW;
 				if (EAX & (1 << 29))
 					CPUID = 0;
 				else
