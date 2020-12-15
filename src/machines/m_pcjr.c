@@ -8,13 +8,13 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.23	2019/05/17
+ * Version:	@(#)m_pcjr.c	1.0.24	2020/12/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -195,8 +195,10 @@ vid_out(uint16_t addr, uint8_t val, priv_t priv)
 			if (dev->array_index & 0x10)
 				val &= 0x0f;
 			dev->array[dev->array_index & 0x1f] = val;
-			if (!(dev->array_index & 0x1f))
-				cga_comp_update(dev->cpriv, val);
+			if (!(dev->array_index & 0x1f)) {/* Mode Control 1 register ? */
+				//if (val & 0x10)
+					cga_comp_update(dev->cpriv, val);
+			}
 		}
 		dev->array_ff = !dev->array_ff;
 		break;
@@ -776,7 +778,9 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     dev->display_type = machine_get_config_int("display_type");
     dev->composite = (dev->display_type != PCJR_RGB);
     if (dev->composite)
-	dev->cpriv = cga_comp_init(0);
+		dev->cpriv = cga_comp_init(1);
+	else
+		dev->cpriv = cga_comp_init(0);
 
     pic_init();
 
