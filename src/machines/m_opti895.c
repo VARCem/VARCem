@@ -51,6 +51,7 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "machine.h"
+#include "../devices/system/apm.h"
 
 static priv_t
 common_init(const device_t *info, void *arg)
@@ -61,6 +62,8 @@ common_init(const device_t *info, void *arg)
     device_add(&opti895_device);
 
     device_add(&fdc_at_device);
+
+    device_add(&apm_device);
     
     switch(info->local) {
 	case 0:		
