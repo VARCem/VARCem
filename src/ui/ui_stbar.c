@@ -8,20 +8,12 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
-<<<<<<< HEAD
  * Version:	@(#)ui_stbar.c	1.0.22	2021/03/09
-=======
- * Version:	@(#)ui_stbar.c	1.0.22	2020/12/02
->>>>>>> be1408f0 (Some compile fix for optional modules)
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
-<<<<<<< HEAD
  *		Copyright 2017-2021 Fred N. van Kempen.
-=======
- *		Copyright 2017-2020 Fred N. van Kempen.
->>>>>>> be1408f0 (Some compile fix for optional modules)
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
