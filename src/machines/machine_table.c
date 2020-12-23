@@ -196,7 +196,7 @@ static const struct {
     { "[486 MCA] IBM PS/2 model 70 (type 4)",	"ibm_ps2_m70_type4",	&m_ps2_m70_4		},
 
 #if defined(DEV_BRANCH) && defined(USE_SIS496)
-    { "[486 PCI] AMI 486 (SiS496)",		"ami_486_sis496",	&m_sis496_ami		},
+    { "[486 PCI] Lucky Star LS-486E (SiS496)",		"ami_486_sis496",	&m_sis496_ami		},
 #endif
     { "[486 PCI] Rise Computer R418",		"rise_r418",		&m_rise418		},
 
