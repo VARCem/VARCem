@@ -179,7 +179,7 @@ static const struct {
 
     { "[486 ISA] Olystar LIL1429 (ALi-1429)",	"ami_486_ali1429",	&m_ali1429_ami		},
 #if defined(DEV_BRANCH) && defined(USE_SIS471)
-    { "[486 ISA] AMI 486 (SiS471)",		"ami_486_sis471",	&m_sis471_ami		},
+    { "[486 ISA] EPOX 486 (SiS471)",		"ami_486_sis471",	&m_sis471_ami		},
 #endif
     { "[486 ISA] AMI WinBIOS486 (ALi1429)",	"ami_win486_ali1429",	&m_ali1429_win		},
     { "[486 ISA] Award 486 (Opti495)",		"award_486_opti495",	&m_opti495_486_award	},
