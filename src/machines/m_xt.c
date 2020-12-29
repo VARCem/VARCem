@@ -122,8 +122,12 @@ xt_common_init(const device_t *info, void *arg)
 		break;
 
     case 106: /* TO16 */
-        if (config.video_card == VID_INTERNAL)
+        if (config.video_card == VID_INTERNAL) {
+            video_load_font(L"video/ibm/mda/mda.rom", 0);
             device_add(&colorplus_onboard_device); /* Real chip is Paradise PVC-2 */
+            cga_palette = 0;
+            video_palette_rebuild();
+        }
         device_add(&keyboard_xt86_device);
         break;
 
