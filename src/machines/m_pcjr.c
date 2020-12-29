@@ -795,13 +795,16 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     }
 
     /* Initialize the video controller. */
-    mem_map_add(&dev->mapping, 0xb8000, 0x08000,
+    video_load_font(L"video/ibm/mda/mda.rom", 0);
+	mem_map_add(&dev->mapping, 0xb8000, 0x08000,
 		vid_read, NULL, NULL,
 		vid_write, NULL, NULL,  NULL, 0, dev);
     io_sethandler(0x03d0, 16,
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
     timer_add(vid_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
     video_inform(VID_TYPE_CGA, &pcjr_timings);
+	cga_palette = 0;
+    video_palette_rebuild();
 
     /* Initialize the keyboard. */
     keyboard_scan = 1;
