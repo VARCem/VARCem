@@ -153,9 +153,9 @@ static const struct {
 
 #if defined(DEV_BRANCH)
     { "[386SX ISA] Packard Bell Legend 300SX",	"pbell_pb300",	&m_pb300		},
-#endif    
 
     { "[386SX MCA] IBM PS/2 model 55SX",	"ibm_ps2_m55sx",	&m_ps2_m55sx		},
+#endif    
 
     /* 80386DX */
     { "[386DX ISA] AMI 386DX (Opti495)",	"ami_386dx_opti495",	&m_opti495_386dx_ami	},
