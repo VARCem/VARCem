@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_xchg.h	1.0.2	2020/12/11
+ * Version:	@(#)x86_ops_xchg.h	1.0.3	2021/01/01
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2020 Sarah Walker.
- *		Copyright 2016-2020 Miran Grca.
+ *		Copyright 2008-2021 Sarah Walker.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,9 +39,10 @@ static int opXCHG_b_a16(uint32_t fetchdat)
 {
         uint8_t temp;
 
+	fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-        fetch_ea_16(fetchdat);
+        
         temp = geteab();                        if (cpu_state.abrt) return 1;
         seteab(getr8(cpu_reg));                     if (cpu_state.abrt) return 1;
         setr8(cpu_reg, temp);
@@ -53,9 +54,10 @@ static int opXCHG_b_a32(uint32_t fetchdat)
 {
         uint8_t temp;
 
+	fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-        fetch_ea_32(fetchdat);
+        
         temp = geteab();                        if (cpu_state.abrt) return 1;
         seteab(getr8(cpu_reg));                     if (cpu_state.abrt) return 1;
         setr8(cpu_reg, temp);
@@ -68,9 +70,10 @@ static int opXCHG_w_a16(uint32_t fetchdat)
 {
         uint16_t temp;
 
+	fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-        fetch_ea_16(fetchdat);
+        
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         seteaw(cpu_state.regs[cpu_reg].w);          if (cpu_state.abrt) return 1;
         cpu_state.regs[cpu_reg].w = temp;
@@ -82,9 +85,10 @@ static int opXCHG_w_a32(uint32_t fetchdat)
 {
         uint16_t temp;
 
+	fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-        fetch_ea_32(fetchdat);
+        
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         seteaw(cpu_state.regs[cpu_reg].w);          if (cpu_state.abrt) return 1;
         cpu_state.regs[cpu_reg].w = temp;
@@ -97,9 +101,10 @@ static int opXCHG_l_a16(uint32_t fetchdat)
 {
         uint32_t temp;
 
+	fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-        fetch_ea_16(fetchdat);
+        
         temp = geteal();                        if (cpu_state.abrt) return 1;
         seteal(cpu_state.regs[cpu_reg].l);          if (cpu_state.abrt) return 1;
         cpu_state.regs[cpu_reg].l = temp;
@@ -111,9 +116,10 @@ static int opXCHG_l_a32(uint32_t fetchdat)
 {
         uint32_t temp;
 
+	fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-        fetch_ea_32(fetchdat);
+        
         temp = geteal();                        if (cpu_state.abrt) return 1;
         seteal(cpu_state.regs[cpu_reg].l);          if (cpu_state.abrt) return 1;
         cpu_state.regs[cpu_reg].l = temp;
