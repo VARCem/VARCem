@@ -20,13 +20,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\devices\cdrom\cdrom_speed.c" />
+    <ClCompile Include="..\..\devices\chipsets\acc2036.c" />
     <ClCompile Include="..\..\devices\chipsets\acc2168.c" />
     <ClCompile Include="..\..\devices\chipsets\ali1429.c" />
+    <ClCompile Include="..\..\devices\chipsets\cs82c100.c" />
     <ClCompile Include="..\..\devices\chipsets\headland.c" />
     <ClCompile Include="..\..\devices\chipsets\intel4x0.c" />
     <ClCompile Include="..\..\devices\chipsets\neat.c" />
     <ClCompile Include="..\..\devices\chipsets\opti495.c" />
+    <ClCompile Include="..\..\devices\chipsets\opti895.c" />
     <ClCompile Include="..\..\devices\chipsets\scat.c" />
+    <ClCompile Include="..\..\devices\chipsets\scamp.c" />
     <ClCompile Include="..\..\devices\chipsets\sis471.c" />
     <ClCompile Include="..\..\devices\chipsets\sis496.c" />
     <ClCompile Include="..\..\devices\chipsets\wd76c10.c" />
@@ -48,6 +52,7 @@
     <ClCompile Include="..\..\cpu\codegen_timing_common.c" />
     <ClCompile Include="..\..\cpu\codegen_timing_pentium.c" />
     <ClCompile Include="..\..\cpu\codegen_timing_winchip.c" />
+    <ClCompile Include="..\..\cpu\codegen_timing_winchip2.c" />
     <ClCompile Include="..\..\cpu\codegen_x86-64.c" />
     <ClCompile Include="..\..\cpu\codegen_x86.c" />
     <ClCompile Include="..\..\cpu\cpu.c" />
@@ -87,62 +92,67 @@
     <ClCompile Include="..\..\devices\scsi\scsi_x54x.c" />
     <ClCompile Include="..\..\devices\sio\sio_acc3221.c" />
     <ClCompile Include="..\..\devices\sio\sio_detect.c" />
+    <ClCompile Include="..\..\devices\sio\sio_f82c710.c" />
     <ClCompile Include="..\..\devices\sio\sio_fdc37c669.c" />
     <ClCompile Include="..\..\devices\sio\sio_fdc37c66x.c" />
     <ClCompile Include="..\..\devices\sio\sio_fdc37c93x.c" />
     <ClCompile Include="..\..\devices\sio\sio_pc87306.c" />
     <ClCompile Include="..\..\devices\sio\sio_um8669f.c" />
     <ClCompile Include="..\..\devices\sio\sio_w83877f.c" />
-    <ClCompile Include="..\..\devices\sound\dbopl.cpp" />
     <ClCompile Include="..\..\devices\sound\midi.c" />
     <ClCompile Include="..\..\devices\sound\midi_fluidsynth.c" />
     <ClCompile Include="..\..\devices\sound\midi_mt32.c" />
     <ClCompile Include="..\..\devices\sound\midi_system.c" />
-    <ClCompile Include="..\..\devices\sound\munt\Analog.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\BReverbModel.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\File.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\FileStream.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\LA32FloatWaveGenerator.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\LA32Ramp.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\LA32WaveGenerator.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\MidiStreamParser.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\Part.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\Partial.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\PartialManager.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\Poly.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\ROMInfo.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\SampleRateConverter_dummy.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\Synth.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\Tables.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\TVA.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\TVF.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\TVP.cpp" />
-    <ClCompile Include="..\..\devices\sound\nukedopl.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\Analog.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\BReverbModel.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\File.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\FileStream.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\LA32FloatWaveGenerator.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\LA32Ramp.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\LA32WaveGenerator.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\MidiStreamParser.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\Part.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\Partial.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\PartialManager.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\Poly.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\ROMInfo.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\SampleRateConverter.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\Synth.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\Tables.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\TVA.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\TVF.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\TVP.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\srchelper\InternalResampler.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\srchelper\srctools\src\FIRResampler.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\srchelper\srctools\src\IIR2xResampler.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\srchelper\srctools\src\LinearResampler.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\srchelper\srctools\src\ResamplerModel.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\srchelper\srctools\src\SincResampler.cpp" />
     <ClCompile Include="..\..\devices\sound\openal.c" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\convolve-sse.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\convolve.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\envelope.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\extfilt.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\filter.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\pot.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\sid.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\voice.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave6581_PST.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave6581_PS_.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave6581_P_T.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave6581__ST.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave8580_PST.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave8580_PS_.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave8580_P_T.cpp" />
-    <ClCompile Include="..\..\devices\sound\resid-fp\wave8580__ST.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\convolve-sse.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\convolve.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\envelope.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\extfilt.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\filter.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\pot.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\sid.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\voice.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave6581_PST.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave6581_PS_.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave6581_P_T.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave6581__ST.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave8580_PST.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave8580_PS_.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave8580_P_T.cpp" />
+    <ClCompile Include="..\..\..\external\resid\src\wave8580__ST.cpp" />
     <ClCompile Include="..\..\devices\sound\snd_ad1848.c" />
     <ClCompile Include="..\..\devices\sound\snd_adlib.c" />
     <ClCompile Include="..\..\devices\sound\snd_adlibgold.c" />
     <ClCompile Include="..\..\devices\sound\snd_audiopci.c" />
     <ClCompile Include="..\..\devices\sound\snd_cms.c" />
     <ClCompile Include="..\..\devices\sound\snd_cs423x.c" />
-    <ClCompile Include="..\..\devices\sound\snd_dbopl.cpp" />
+    <ClCompile Include="..\..\devices\sound\snd_opl_nuked.c" />
     <ClCompile Include="..\..\devices\sound\snd_emu8k.c" />
     <ClCompile Include="..\..\devices\sound\snd_gus.c" />
     <ClCompile Include="..\..\devices\sound\snd_lpt_dac.c" />
@@ -150,7 +160,6 @@
     <ClCompile Include="..\..\devices\sound\snd_mpu401.c" />
     <ClCompile Include="..\..\devices\sound\snd_opl.c" />
     <ClCompile Include="..\..\devices\sound\snd_pas16.c" />
-    <ClCompile Include="..\..\devices\sound\snd_resid.cpp" />
     <ClCompile Include="..\..\devices\sound\snd_sb.c" />
     <ClCompile Include="..\..\devices\sound\snd_sb_dsp.c" />
     <ClCompile Include="..\..\devices\sound\snd_sn76489.c" />
@@ -160,6 +169,7 @@
     <ClCompile Include="..\..\devices\sound\snd_ym7128.c" />
     <ClCompile Include="..\..\devices\sound\sound.c" />
     <ClCompile Include="..\..\devices\sound\sound_dev.c" />
+    <ClCompile Include="..\..\devices\system\apm.c" />
     <ClCompile Include="..\..\devices\system\clk.c" />
     <ClCompile Include="..\..\devices\system\dma.c" />
     <ClCompile Include="..\..\devices\system\intel_flash.c" />
@@ -232,6 +242,7 @@
     <ClCompile Include="..\..\machines\m_olim24.c" />
     <ClCompile Include="..\..\machines\m_olim24_vid.c" />
     <ClCompile Include="..\..\machines\m_opti495.c" />
+    <ClCompile Include="..\..\machines\m_opti895.c" />
     <ClCompile Include="..\..\machines\m_pbell.c" />
     <ClCompile Include="..\..\machines\m_pcjr.c" />
     <ClCompile Include="..\..\machines\m_ps1.c" />
@@ -270,8 +281,8 @@
     <ClCompile Include="..\..\random.c" />
     <ClCompile Include="..\..\rom.c" />
     <ClCompile Include="..\..\rom_load.c" />
-    <ClCompile Include="..\..\devices\sound\munt\c_interface\c_interface.cpp" />
-    <ClCompile Include="..\..\devices\sound\munt\sha1\sha1.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\c_interface\c_interface.cpp" />
+    <ClCompile Include="..\..\..\external\munt\src\sha1\sha1.cpp" />
     <ClCompile Include="..\..\timer.c" />
     <ClCompile Include="..\..\ui\ui_cdrom.c" />
     <ClCompile Include="..\..\ui\ui_lang.c" />
@@ -334,19 +345,22 @@
     <ClCompile Include="..\..\win\win_snd_gain.c" />
     <ClCompile Include="..\..\win\win_thread.c" />
     <ClCompile Include="..\..\win\win_ui.c" />
-    <ClCompile Include="..\..\win_d2d.cpp" />
     <ClCompile Include="..\win_lang.c" />
     <ClCompile Include="..\win_new_image.c" />
     <ClCompile Include="..\win_sdl.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\devices\chipsets\acc2036.h" />
     <ClInclude Include="..\..\devices\chipsets\acc2168.h" />
     <ClInclude Include="..\..\devices\chipsets\ali1429.h" />
+    <ClInclude Include="..\..\devices\chipsets\cs82c100.h" />
     <ClInclude Include="..\..\devices\chipsets\headland.h" />
     <ClInclude Include="..\..\devices\chipsets\intel4x0.h" />
     <ClInclude Include="..\..\devices\chipsets\neat.h" />
     <ClInclude Include="..\..\devices\chipsets\opti495.h" />
+    <ClInclude Include="..\..\devices\chipsets\opti895.h" />
     <ClInclude Include="..\..\devices\chipsets\scat.h" />
+    <ClInclude Include="..\..\devices\chipsets\scamp.h" />
     <ClInclude Include="..\..\devices\chipsets\sis471.h" />
     <ClInclude Include="..\..\devices\chipsets\sis496.h" />
     <ClInclude Include="..\..\devices\chipsets\wd76c10.h" />
@@ -448,46 +462,46 @@
     <ClInclude Include="..\..\devices\sound\midi.h" />
     <ClInclude Include="..\..\devices\sound\midi_mt32.h" />
     <ClInclude Include="..\..\devices\sound\midi_system.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Analog.h" />
-    <ClInclude Include="..\..\devices\sound\munt\BReverbModel.h" />
-    <ClInclude Include="..\..\devices\sound\munt\config.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Enumerations.h" />
-    <ClInclude Include="..\..\devices\sound\munt\File.h" />
-    <ClInclude Include="..\..\devices\sound\munt\FileStream.h" />
-    <ClInclude Include="..\..\devices\sound\munt\globals.h" />
-    <ClInclude Include="..\..\devices\sound\munt\internals.h" />
-    <ClInclude Include="..\..\devices\sound\munt\LA32FloatWaveGenerator.h" />
-    <ClInclude Include="..\..\devices\sound\munt\LA32Ramp.h" />
-    <ClInclude Include="..\..\devices\sound\munt\LA32WaveGenerator.h" />
-    <ClInclude Include="..\..\devices\sound\munt\MemoryRegion.h" />
-    <ClInclude Include="..\..\devices\sound\munt\MidiEventQueue.h" />
-    <ClInclude Include="..\..\devices\sound\munt\MidiStreamParser.h" />
-    <ClInclude Include="..\..\devices\sound\munt\mmath.h" />
-    <ClInclude Include="..\..\devices\sound\munt\mt32emu.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Part.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Partial.h" />
-    <ClInclude Include="..\..\devices\sound\munt\PartialManager.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Poly.h" />
-    <ClInclude Include="..\..\devices\sound\munt\ROMInfo.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Structures.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Synth.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Tables.h" />
-    <ClInclude Include="..\..\devices\sound\munt\TVA.h" />
-    <ClInclude Include="..\..\devices\sound\munt\TVF.h" />
-    <ClInclude Include="..\..\devices\sound\munt\TVP.h" />
-    <ClInclude Include="..\..\devices\sound\munt\Types.h" />
-    <ClInclude Include="..\..\devices\sound\nukedopl.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\envelope.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\extfilt.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\filter.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\pot.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\sid.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\siddefs-fp.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\voice.h" />
-    <ClInclude Include="..\..\devices\sound\resid-fp\wave.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Analog.h" />
+    <ClInclude Include="..\..\..\external\munt\src\BReverbModel.h" />
+    <ClInclude Include="..\..\..\external\munt\src\config.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Enumerations.h" />
+    <ClInclude Include="..\..\..\external\munt\src\File.h" />
+    <ClInclude Include="..\..\..\external\munt\src\FileStream.h" />
+    <ClInclude Include="..\..\..\external\munt\src\globals.h" />
+    <ClInclude Include="..\..\..\external\munt\src\internals.h" />
+    <ClInclude Include="..\..\..\external\munt\src\LA32FloatWaveGenerator.h" />
+    <ClInclude Include="..\..\..\external\munt\src\LA32Ramp.h" />
+    <ClInclude Include="..\..\..\external\munt\src\LA32WaveGenerator.h" />
+    <ClInclude Include="..\..\..\external\munt\src\MemoryRegion.h" />
+    <ClInclude Include="..\..\..\external\munt\src\MidiEventQueue.h" />
+    <ClInclude Include="..\..\..\external\munt\src\MidiStreamParser.h" />
+    <ClInclude Include="..\..\..\external\munt\src\mmath.h" />
+    <ClInclude Include="..\..\..\external\munt\src\mt32emu.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Part.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Partial.h" />
+    <ClInclude Include="..\..\..\external\munt\src\PartialManager.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Poly.h" />
+    <ClInclude Include="..\..\..\external\munt\src\ROMInfo.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Structures.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Synth.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Tables.h" />
+    <ClInclude Include="..\..\..\external\munt\src\TVA.h" />
+    <ClInclude Include="..\..\..\external\munt\src\TVF.h" />
+    <ClInclude Include="..\..\..\external\munt\src\TVP.h" />
+    <ClInclude Include="..\..\..\external\munt\src\Types.h" />
+    <ClInclude Include="..\..\..\external\munt\src\srchelper\InternalResampler.h" />
+    <ClInclude Include="..\..\devices\sound\snd_opl_nuked.h" />
+    <ClInclude Include="..\..\..\external\resid\src\envelope.h" />
+    <ClInclude Include="..\..\..\external\resid\src\extfilt.h" />
+    <ClInclude Include="..\..\..\external\resid\src\filter.h" />
+    <ClInclude Include="..\..\..\external\resid\src\pot.h" />
+    <ClInclude Include="..\..\..\external\resid\src\sid.h" />
+    <ClInclude Include="..\..\..\external\resid\src\siddefs-fp.h" />
+    <ClInclude Include="..\..\..\external\resid\src\voice.h" />
+    <ClInclude Include="..\..\..\external\resid\src\wave.h" />
     <ClInclude Include="..\..\devices\sound\snd_ad1848.h" />
     <ClInclude Include="..\..\devices\sound\snd_cs423x.h" />
-    <ClInclude Include="..\..\devices\sound\snd_dbopl.h" />
     <ClInclude Include="..\..\devices\sound\snd_emu8k.h" />
     <ClInclude Include="..\..\devices\sound\snd_lpt_dac.h" />
     <ClInclude Include="..\..\devices\sound\snd_lpt_dss.h" />
@@ -561,10 +575,10 @@
     <ClInclude Include="..\..\png.h" />
     <ClInclude Include="..\..\random.h" />
     <ClInclude Include="..\..\rom.h" />
-    <ClInclude Include="..\..\devices\sound\munt\c_interface\cpp_interface.h" />
-    <ClInclude Include="..\..\devices\sound\munt\c_interface\c_interface.h" />
-    <ClInclude Include="..\..\devices\sound\munt\c_interface\c_types.h" />
-    <ClInclude Include="..\..\devices\sound\munt\sha1\sha1.h" />
+    <ClInclude Include="..\..\..\external\munt\include\c_interface\c_interface.h" />
+    <ClInclude Include="..\..\..\external\munt\include\c_interface\c_types.h" />
+    <ClInclude Include="..\..\..\external\munt\src\srchelper\srctools\include\SincResampler.h" />
+    <ClInclude Include="..\..\..\external\munt\src\srchelper\srctools\include\ResamplerModel.h" />
     <ClInclude Include="..\..\timer.h" />
     <ClInclude Include="..\..\ui\ui.h" />
     <ClInclude Include="..\..\ui\ui_resource.h" />
@@ -588,7 +602,6 @@
     <ClInclude Include="..\..\devices\video\vid_voodoo_dither.h" />
     <ClInclude Include="..\..\win\resource.h" />
     <ClInclude Include="..\..\win\win.h" />
-    <ClInclude Include="..\..\win_d2d.h" />
     <ClInclude Include="..\..\win_opendir.h" />
     <ClInclude Include="..\..\win_sdl.h" />
     <ClInclude Include="..\..\win_settings_disk.h" />
@@ -693,8 +706,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(DXSDK_DIR)Lib\x86</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
+    <IncludePath>$(INCLUDE);$(IncludePath);$(DXSDK_DIR)Include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -717,8 +731,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\external\freetype\include;..\..\..\external\fluidsynth\include;..\..\..\external\munt\include;..\..\..\external\munt\include\c_interface;..\..\..\external\openal\include;..\..\..\external\pcap\include;..\..\..\external\png\include;..\..\..\external\resid\include;..\..\..\external\sdl\include;..\..\..\external\slirp\include;..\..\..\external\vnc\include;..\..\..\external\zlib\include;..\..\..\external\libchdr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;MT32EMU_WITH_INTERNAL_RESAMPLER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\external\freetype\include;..\..\..\external\fluidsynth\include;..\..\..\external\munt\include;..\..\..\external\munt\include\c_interface;..\..\..\external\munt\src\srchelper\srctools\include;..\..\..\external\openal\include;..\..\..\external\pcap\include;..\..\..\external\png\include;..\..\..\external\resid\include;..\..\..\external\sdl\include;..\..\..\external\slirp\include;..\..\..\external\vnc\include;..\..\..\external\zlib\include;..\..\..\external\libchdr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
