@@ -14,7 +14,7 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.35	2019/05/17
+ * Version:	@(#)hdc_ide_ata.c	1.0.36	2021/01/05
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -850,16 +850,17 @@ ide_board_close(int board)
 		}
 	}
 
-	if (dev->buffer) {
-		free(dev->buffer);
-		dev->buffer = NULL;
-	}
+	if (dev) {
+		if (dev->buffer) {
+			free(dev->buffer);
+			dev->buffer = NULL;
+		}
 
-	if (dev->sector_buffer) {
-		free(dev->sector_buffer);
-		dev->sector_buffer = NULL;
+		if (dev->sector_buffer) {
+			free(dev->sector_buffer);
+			dev->sector_buffer = NULL;
+		}
 	}
-
 	ide_drives[c] = NULL;
 
 	free(dev);
