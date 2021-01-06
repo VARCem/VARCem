@@ -848,11 +848,10 @@ nvr_at_close(priv_t priv)
     dev->ptimer = 0;
     dev->utimer = 0;
 
-    nvr_close(nvr);
-
     free(dev->lock);
 
-    free(dev);
+    nvr_close(nvr);
+
 }
 
 
