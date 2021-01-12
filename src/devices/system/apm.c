@@ -8,7 +8,7 @@
  *
  *		Implementation of the APM handler.
  *
- * Version:	@(#)apm.c	1.0.0	2020/12/15
+ * Version:	@(#)apm.c	1.0.1	2021/01/12
  *
  * Authors:	
  *		Miran Grca, <mgrca8@gmail.com>
@@ -132,8 +132,10 @@ apm_init(const device_t *info, UNUSED(void *parent))
 {
     apm_t *dev;
     
-    dev = (apm_t *) malloc(sizeof(apm_t));
-    memset(dev, 0, sizeof(apm_t));
+    dev = (apm_t *) mem_alloc(sizeof(apm_t));
+    
+    if (dev)
+        memset(dev, 0, sizeof(apm_t));
 
     io_sethandler(0x00b2, 0x0002, apm_in, NULL, NULL, apm_out, NULL, NULL, dev);
 

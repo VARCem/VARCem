@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.36	2020/10/22
+ * Version:	@(#)vid_cl54xx.c	1.0.37	2021/01/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -16,7 +16,7 @@
  *		Barry Rodewald,
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2018 Barry Rodewald.
  *		Copyright 2008-2018 Sarah Walker.
@@ -1263,7 +1263,7 @@ gd54xx_in(uint16_t addr, priv_t priv)
 				return svga->crtc[0x27]; /*GD542x/GD543x*/
 
 			case 0x28: /*Class ID*/
-				if ((svga->crtc[0x27] == CIRRUS_ID_CLGD5430) || (svga->crtc[0x27] == CIRRUS_ID_CLGD5440))
+				if (svga->crtc[0x27] == CIRRUS_ID_CLGD5430)
 					return 0xff; /*Standard CL-GD5430/40*/
 		}
 		return svga->crtc[svga->crtcreg];

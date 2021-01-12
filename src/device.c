@@ -11,14 +11,14 @@
  *
  * **TODO**	Merge the various 'add' variants, its getting too messy.
  *
- * Version:	@(#)device.c	1.0.27	2019/05/15
+ * Version:	@(#)device.c	1.0.28	2021/01/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -121,7 +121,11 @@ device_flags(uint32_t flags)
 	case DEVICE_PS2:		/* requires a PS/1 or PS/2 system */
 		p = "PS/2";
 		break;
-    }
+    
+	default:		
+		p = "ANY";
+		break;
+	}
     strcat(sp, p); sp += strlen(sp);
 
     /* Buses. */

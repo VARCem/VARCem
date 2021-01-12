@@ -794,11 +794,11 @@ video_init(void)
     for (c = 0; c < 256; c++)
 	video_6to8[c] = calc_6to8(c);
 	
-    video_8togs = malloc(4 * 256);
+    video_8togs = (uint32_t *)mem_alloc(4 * 256);
     for (c = 0; c < 256; c++)
 	video_8togs[c] = c | (c << 16) | (c << 24);
 
-    video_8to32 = malloc(4 * 256);
+    video_8to32 = (uint32_t *)mem_alloc(4 * 256);
     for (c = 0; c < 256; c++)
 	video_8to32[c] = calc_8to32(c);
     
