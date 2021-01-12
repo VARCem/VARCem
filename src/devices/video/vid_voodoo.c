@@ -8,15 +8,15 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.24	2020/02/10
+ * Version:	@(#)vid_voodoo.c	1.0.25	2021/01/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		leilei,
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 leilei.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -7239,7 +7239,7 @@ static void voodoo_filterline_v1(voodoo_t *voodoo, uint8_t *fil, int column, uin
             DEBUG("voodoo_filterline_v1: possible stack overflow detected. h_disp is %d", voodoo->h_disp);
             return;
         }
-        uint8_t *fil3 = (uint8_t *)_alloca((voodoo->h_disp) * 3);
+        uint8_t *fil3 = (uint8_t *)_malloca((voodoo->h_disp) * 3);
 #else
         uint8_t fil3[(voodoo->h_disp) * 3];  
 #endif
@@ -7432,7 +7432,7 @@ void voodoo_callback(void *priv)
                                         DEBUG("voodoo_callback: possible stack overflow detected. h_disp is %d", voodoo->h_disp);
                                         return;
                                     }
-                                    uint8_t *fil = (uint8_t *)_alloca((voodoo->h_disp) * 3);
+                                    uint8_t *fil = (uint8_t *)_malloca((voodoo->h_disp) * 3);
 #else
                                     uint8_t fil[(voodoo->h_disp) * 3];              /* interleaved 24-bit RGB */
 #endif
