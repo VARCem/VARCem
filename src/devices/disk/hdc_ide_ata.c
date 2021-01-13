@@ -14,12 +14,14 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.36	2021/01/05
+ * Version:	@(#)hdc_ide_ata.c	1.0.37	2021/01/13
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -681,13 +683,13 @@ loadhd(ide_t *ide, int d, const wchar_t *fn)
 void
 ide_set_signature(ide_t *ide)
 {
-    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->p;
+    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->sc;
 
     ide->sector=1;
     ide->head=0;
 
     if (ide_drive_is_atapi(ide)) {
-	ide->set_signature(ide->p);
+	ide->set_signature(ide->sc);
 	ide->secount = atapi->phase;
 	ide->cylinder = atapi->request_length;
     } else {
@@ -832,25 +834,26 @@ ide_board_close(int board)
     int c, d;
     scsi_device_data_t *atapi;
 
-    /* Close hard disk image files (if previously open) */
+	/* Close hard disk image files (if previously open) */
     for (d = 0; d < 2; d++) {
-	c = (board << 1) + d;
-	dev = ide_drives[c];
-	if (dev == NULL) continue;
+		c = (board << 1) + d;
+		dev = ide_drives[c];
+	
+		if (dev == NULL) 
+			continue;
 
-	if ((dev->type == IDE_HDD) && (dev->hdd_num != -1)) {
-		hdd_image_close(dev->hdd_num);
-		dev->hdd_num = -1;
-	}
-
-	if (board < 4) {
-		if (ide_drive_is_atapi(dev)) {
-			atapi = (scsi_device_data_t *) dev->p;
-			atapi->status = DRDY_STAT | DSC_STAT;
+		if ((dev->type == IDE_HDD) && (dev->hdd_num != -1)) {
+			hdd_image_close(dev->hdd_num);
+			dev->hdd_num = -1;
 		}
-	}
 
-	if (dev) {
+		if (board < 4) {
+			if (dev->type == IDE_ATAPI) {
+				atapi = dev->sc;
+				atapi->status = DRDY_STAT | DSC_STAT;
+			}
+		}
+
 		if (dev->buffer) {
 			free(dev->buffer);
 			dev->buffer = NULL;
@@ -860,11 +863,13 @@ ide_board_close(int board)
 			free(dev->sector_buffer);
 			dev->sector_buffer = NULL;
 		}
-	}
-	ide_drives[c] = NULL;
 
-	free(dev);
-    }
+		if (dev)
+			free(dev);
+		
+		ide_drives[c] = NULL;
+
+	}
 }
 
 
@@ -986,7 +991,7 @@ ide_write_data(ide_t *ide, uint32_t val, int length)
 		return;
 
 	if (ide_drive_is_atapi(ide))
-		ide->packet_write(ide->p, val, length);
+		ide->packet_write(ide->sc, val, length);
 	return;
     }
 
@@ -1086,7 +1091,7 @@ ide_write_devctl(uint16_t addr, uint8_t val, priv_t priv)
     DEBUG("ide_write_devctl %04X %02X from %04X(%08X):%08X\n", addr, val, CS, cs, cpu_state.pc);
 
     if ((ide->fdisk & 4) && !(val&4) && (ide->type != IDE_NONE || ide_other->type != IDE_NONE)) {
-	atapi = (scsi_device_data_t *) ide->p;
+	atapi = (scsi_device_data_t *) ide->sc;
 
 	timer_process();
 	if (ide_drive_is_atapi(ide))
@@ -1134,8 +1139,8 @@ ide_writeb(uint16_t addr, uint8_t val, priv_t priv)
     if ((ide->type == IDE_NONE) && ((addr == 0x0) || (addr == 0x7)))
 	return;
 
-    atapi = (scsi_device_data_t *) ide->p;
-    atapi_other = (scsi_device_data_t *) ide_other->p;
+    atapi = (scsi_device_data_t *) ide->sc;
+    atapi_other = (scsi_device_data_t *) ide_other->sc;
 
     switch (addr) {
 	case 0x0: /* Data */
@@ -1478,7 +1483,7 @@ ide_bad_command:
 static uint32_t
 ide_read_data(ide_t *ide, int length)
 {
-    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->p;
+    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->sc;
     uint32_t temp = 0;
 
     if (!ide->buffer) {
@@ -1501,7 +1506,7 @@ ide_read_data(ide_t *ide, int length)
     if (ide->command == WIN_PACKETCMD) {
 	ide->pos = 0;
 	if (ide_drive_is_atapi(ide)) {
-		temp = ide->packet_read(ide->p, length);
+		temp = ide->packet_read(ide->sc, length);
 	} else {
 		DEBUG("Drive not ATAPI (position: %i)\n", ide->pos);
 		return 0;
@@ -1556,7 +1561,7 @@ ide_read_data(ide_t *ide, int length)
 static uint8_t
 ide_status(ide_t *ide, int ch)
 {
-    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->p;
+    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->sc;
 
     if (ide->type == IDE_NONE)
 	return 0;
@@ -1579,7 +1584,7 @@ ide_readb(uint16_t addr, priv_t priv)
 
     ch = dev->cur_dev;
     ide = ide_drives[ch];
-    atapi = (scsi_device_data_t *) ide->p;
+    atapi = (scsi_device_data_t *) ide->sc;
 
     uint8_t temp = 0xff;
     uint16_t tempw;
@@ -1749,9 +1754,9 @@ ide_callback(priv_t priv)
     ch = dev->cur_dev;
 
     ide = ide_drives[ch];
-    atapi = (scsi_device_data_t *) ide->p;
+    atapi = (scsi_device_data_t *) ide->sc;
     ide_other = ide_drives[ch ^ 1];
-    atapi_other = (scsi_device_data_t *) ide_other->p;
+    atapi_other = (scsi_device_data_t *) ide_other->sc;
 
     ide_set_callback(ide->board, 0LL);
 
@@ -1775,7 +1780,7 @@ ide_callback(priv_t priv)
 		atapi->status = DRDY_STAT | DSC_STAT;
 		atapi->error = 1;
 		if (ide->stop)
-			ide->stop(ide->p);
+			ide->stop(ide->sc);
 	}
 
 	ide_set_signature(ide_other);
@@ -1783,7 +1788,7 @@ ide_callback(priv_t priv)
 		atapi_other->status = DRDY_STAT | DSC_STAT;
 		atapi_other->error = 1;
 		if (ide_other->stop)
-			ide_other->stop(ide_other->p);
+			ide_other->stop(ide_other->sc);
 	}
 
 	return;
@@ -1821,7 +1826,7 @@ ide_callback(priv_t priv)
 			atapi->status = DRDY_STAT | DSC_STAT;
 			atapi->error = 1;
 			if (ide->device_reset)
-				ide->device_reset(ide->p);
+				ide->device_reset(ide->sc);
 		}
 		ide_irq_raise(ide);
 		if (ide_drive_is_atapi(ide))
@@ -2185,7 +2190,7 @@ ide_callback(priv_t priv)
 		if (!ide_drive_is_atapi(ide) || !ide->packet_callback)
 			goto abort_cmd;
 
-		ide->packet_callback(ide->p);
+		ide->packet_callback(ide->sc);
 		return;
 
 	case 0xFF:

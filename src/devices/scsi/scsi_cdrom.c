@@ -8,13 +8,13 @@
  *
  *		Emulation of SCSI (and ATAPI) CD-ROM drives.
  *
- * Version:	@(#)scsi_cdrom.c	1.0.13	2019/05/17
+ * Version:	@(#)scsi_cdrom.c	1.0.14	2021/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,13 +50,12 @@
 #include "../../nvr.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
+#include "scsi_device.h"
 #include "../disk/hdc.h"
 #include "../disk/hdc_ide.h"
 #include "../cdrom/cdrom.h"
 #include "../cdrom/cdrom_image.h"
-#include "scsi_device.h"
 #include "scsi_cdrom.h"
-
 
 /* Bits of 'status' */
 #define ERR_STAT		0x01
@@ -3168,7 +3167,7 @@ do_identify(void *priv, int ide_has_dma)
 {
     ide_t *ide = (ide_t *)priv;
 #ifdef _LOGGING
-    scsi_cdrom_t *dev = (scsi_cdrom_t *)ide->p;
+    scsi_cdrom_t *dev = (scsi_cdrom_t *)ide->sc;
     char device_identify[9] = { 'E', 'M', 'U', '_', 'C', 'D', '0', '0', 0 };
 
 
@@ -3286,7 +3285,7 @@ scsi_cdrom_drive_reset(int c)
 	   otherwise, we do nothing - it's going to be a drive
 	   that's not attached to anything. */
 	if (id != NULL) {
-		id->p = dev;
+		id->sc = dev;
 		id->get_max = get_max;
 		id->get_timings = get_timings;
 		id->identify = do_identify;

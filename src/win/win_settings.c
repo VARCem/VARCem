@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.43	2020/11/21
+ * Version:	@(#)win_settings.c	1.0.44	2021/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -227,6 +227,9 @@ settings_save(void)
 
     /* Hard disks category */
     memcpy(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
+	for (i = 0; i < HDD_NUM; i++) {
+		hdd[i].priv = NULL;
+    }
 
     /* Floppy drives category */
     for (i = 0; i < FDD_NUM; i++) {
@@ -237,7 +240,23 @@ settings_save(void)
 
     /* Removable devices category */
     memcpy(cdrom, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_t));
+	for (i = 0; i < CDROM_NUM; i++) {
+		cdrom[i].img_fp = NULL;
+		cdrom[i].priv = NULL;
+		cdrom[i].ops = NULL;
+		cdrom[i].local = NULL;
+		cdrom[i].insert = NULL;
+		cdrom[i].close = NULL;
+		cdrom[i].reset = NULL;
+		cdrom[i].get_volume = NULL;
+		cdrom[i].get_channel = NULL;
+    }
+
     memcpy(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+	for (i = 0; i < ZIP_NUM; i++) {
+		zip_drives[i].f = NULL;
+		zip_drives[i].priv = NULL;
+    }
 
     /* Mark configuration as changed. */
     config_changed = 1;
