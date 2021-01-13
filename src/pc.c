@@ -833,25 +833,25 @@ pc_close(thread_t *ptr)
 
     ui_mouse_capture(0);
 
-    zip_close();
-
-    scsi_disk_close();
-
 //    floppy_close();
 
     if (dump_on_exit)
 	pic_dump();
     cpu_dumpregs(0);
 
-    device_close_all();
-
     video_close();
+
+    device_close_all();
 
     network_close();
 
     sound_close();
 
     cdrom_close();
+
+	zip_close();
+
+    scsi_disk_close();
 }
 
 
@@ -861,6 +861,8 @@ pc_reset_hard_close(void)
     nvr_save();
 
     mouse_close();
+
+    device_close_all();
 
     cdrom_close();
 
@@ -872,7 +874,6 @@ pc_reset_hard_close(void)
     sound_close();
 #endif
 
-    device_close_all();
 }
 
 
@@ -942,6 +943,7 @@ pc_reset_hard_init(void)
     }
     fdd_reset();
 
+ 	mouse_reset();
     /* Reset the Hard Disk module. */
 //FIXME: move to disk_reset()
     hdc_reset();

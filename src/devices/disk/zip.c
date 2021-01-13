@@ -9,12 +9,12 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.27	2019/05/17
+ * Version:	@(#)zip.c	1.0.28	2021/01/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Miran Grca.
+ *		Copyright 2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2659,7 +2659,7 @@ static void
 do_identify(void *p, int ide_has_dma)
 {
     ide_t *ide = (ide_t *)p;
-    zip_t *zip = (zip_t *)ide->p;
+    zip_t *zip = (zip_t *)ide->sc;
 
     /* Using (2<<5) below makes the ASUS P/I-P54TP4XE misdentify the ZIP drive
        as a LS-120. */
@@ -2744,7 +2744,7 @@ pclog(0,"ZIP: attaching to IDE device %d\n", dev->drv->bus_id.ide_channel);
 		 */
 		if (id == NULL) break;
 
-		id->p = dev;
+		id->sc = dev;
 		id->get_max = get_max;
 		id->get_timings = get_timings;
 		id->identify = do_identify;
