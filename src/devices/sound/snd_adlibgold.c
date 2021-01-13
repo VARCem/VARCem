@@ -56,7 +56,9 @@
 #include "snd_filters.h"
 #include "snd_opl.h"
 #include "snd_ym7128.h"
-
+#ifdef _MSC_VER
+#include <malloc.h>
+#endif
 
 typedef struct {
         int adgold_irq_status;
@@ -809,7 +811,9 @@ static void adgold_get_buffer(int32_t *buffer, int len, priv_t priv)
 #ifdef _MSC_VER
 # ifdef __cplusplus
 	free(adgold_buffer);
-# endif
+# else
+        _freea(adgold_buffer);
+#endif
 #endif
 }
 
