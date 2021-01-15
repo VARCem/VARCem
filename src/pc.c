@@ -943,7 +943,6 @@ pc_reset_hard_init(void)
     }
     fdd_reset();
 
- 	mouse_reset();
     /* Reset the Hard Disk module. */
 //FIXME: move to disk_reset()
     hdc_reset();
@@ -1105,9 +1104,7 @@ pc_thread(void *param)
 
 		plat_blitter(0);
 
-#ifdef USE_DINPUT
 		mouse_poll();
-#endif
 
 		joystick_process();
 
