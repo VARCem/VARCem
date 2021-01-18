@@ -32,11 +32,11 @@
  *		The lower half of the driver can interface to the host system
  *		serial ports, or other channels, for real-world access.
  *
- * Version:	@(#)serial.c	1.0.18	2019/05/13
+ * Version:	@(#)serial.c	1.0.19	2021/01/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -553,7 +553,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 #endif
 		}
 
-                dev->mcr = val;
+        dev->mcr = val;
 
 		if (val & MCR_LMS) {	/* loopback mode */
 			msr = (val & 0x0c) << 4;
@@ -566,7 +566,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 				msr |= MSR_DDSR;
 			if ((dev->msr ^ msr) & MSR_DCD)
 				msr |= MSR_DDCD;
-			if ((dev->msr & MSR_TERI) && !(msr & MSR_RI))
+			if ((dev->msr & MSR_RI) && !(msr & MSR_RI))
 				msr |= MSR_TERI;
 
 			dev->msr = msr;
@@ -729,7 +729,7 @@ ser_init(const device_t *info, UNUSED(void *parent))
 
     /* Set up local/weird stuff. */
     if (info->local & 128)
-	dev->is_pcjr = 1;
+		dev->is_pcjr = 1;
 
     /* Clear port. */
     reset_port(dev);
@@ -788,7 +788,7 @@ serial_reset(void)
 	dev = &ports[i];
 	memset(dev, 0x00, sizeof(serial_t));
 	dev->port = i;
-#if 1
+#if 0
 	dev->type = UART_TYPE_16550;
 #else
 	dev->type = UART_TYPE_8250;

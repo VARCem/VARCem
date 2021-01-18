@@ -10,13 +10,13 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.16	2019/05/17
+ * Version:	@(#)mouse_serial.c	1.0.17 2021/01/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2018,2019 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2018,2021 Miran Grca.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -62,12 +62,19 @@
 #include "mouse.h"
 
 
-#define PHASE_IDLE	0
-#define PHASE_ID	1
-#define PHASE_DATA	2
-#define PHASE_STATUS	3
-#define PHASE_DIAG	4
-#define PHASE_FMT_REV	5
+enum {
+	PHASE_IDLE,
+	PHASE_ID,
+	PHASE_DATA,
+	PHASE_STATUS,
+	PHASE_DIAG,
+	PHASE_FMT_REV
+};
+
+enum {
+    REPORT_PHASE_PREPARE,
+    REPORT_PHASE_TRANSMIT
+};
 
 
 typedef struct {
@@ -190,27 +197,27 @@ data_ms(mouse_t *dev, int x, int y, int z, int b)
     dev->data[1] = x & 0x3f;
     dev->data[2] = y & 0x3f;
     if (dev->type == MOUSE_MSWHEEL) {
-	len = 4;
-	dev->data[3] = z & 0x0f;
-	if (b & 0x04)
-		dev->data[3] |= 0x10;
-    } else if (dev->flags & FLAG_3BTN) {
-	len = 3;
-	if (dev->type == MOUSE_LOGITECH) {
-		if (b & 0x04) {
-			dev->data[3] = 0x20;
-			len++;
+		len = 4;
+		dev->data[3] = z & 0x0f;
+		if (b & 0x04)
+			dev->data[3] |= 0x10;
+	 } else if (dev->flags & FLAG_3BTN) {
+		len = 3;
+		if (dev->type == MOUSE_LOGITECH) {
+			if (b & 0x04) {
+				dev->data[3] = 0x20;
+				len++;
+			}
+		} else {
+			if ((b ^ dev->oldb) & 0x04) {
+				/*
+				 * Microsoft 3-button mice send a fourth byte of
+				 * 0x00 when the middle button has changed.
+				 */
+				dev->data[3] = 0x00;
+				len++;
+			}
 		}
-	} else {
-		if ((b ^ dev->oldb) & 0x04) {
-			/*
-			 * Microsoft 3-button mice send a fourth byte of
-			 * 0x00 when the middle button has changed.
-			 */
-			dev->data[3] = 0x00;
-			len++;
-		}
-	}
     } else
 	len = 3;
 
@@ -250,52 +257,38 @@ ser_report(mouse_t *dev, int x, int y, int z, int b)
 
     /* If the mouse is 2-button, ignore the middle button. */
     if (dev->but == 2)
-	b &= ~0x04;
+		b &= ~0x04;
 
-    switch(dev->type) {
-	case MOUSE_MSYSTEMS:
-		len = data_msystems(dev, x, y, b);
-		break;
+    switch(dev->format) {
+		case 0:
+			len = data_msystems(dev, x, y, b);
+			break;
 
-	case MOUSE_MICROSOFT:
-	case MOUSE_MSWHEEL:
-		len = data_ms(dev, x, y, z, b);
-		break;
+		case 1:
+			len = data_3bp(dev, x, y, b);
+			break;
 
-	case MOUSE_LOGITECH:
-		switch (dev->format) {
-			case 0:
-				len = data_msystems(dev, x, y, b);
-				break;
+		case 2:
+			len = data_hex(dev, x, y, b);
+			break;
 
-			case 1:
-				len = data_3bp(dev, x, y, b);
-				break;
+		case 3: /* Relative */
+			len = data_bp1(dev, x, y, b);
+			break;
+		
+		case 5:
+			len = data_mmseries(dev, x, y, b);
+			break;
 
-			case 2:
-				len = data_hex(dev, x, y, b);
-				break;
+		case 6:
+			len = data_bp1(dev, x, y, b);
+			break;
 
-			case 3:	/* Relative */
-				len = data_bp1(dev, x, y, b);
-				break;
-
-			case 5:
-				len = data_mmseries(dev, x, y, b);
-				break;
-
-			case 6:	/* Absolute */
-				len = data_bp1(dev, dev->abs_x, dev->abs_y, b);
-				break;
-
-			case 7:
-				len = data_ms(dev, x, y, z, b);
-				break;
-		}
-		break;
-
-	default:
-		ERRLOG("MOUSE: unsupported mouse type %d?\n", dev->type);
+		case 7:
+			len = data_ms(dev, x, y, z, b);
+			break;
+		default:
+		ERRLOG("MOUSE: unsupported mouse format %d?\n", dev->format);
     }
 
     dev->oldb = b;
@@ -310,6 +303,47 @@ ser_report(mouse_t *dev, int x, int y, int z, int b)
 	dev->delay = dev->period;
 }
 
+static double
+ser_transmit_period(mouse_t *dev, int bps, int rps)
+{
+    double dbps = (double) bps;
+    double temp = 0.0;
+    int word_len;
+
+    switch (dev->format) {
+
+	case 0:
+	case 1:		/* Mouse Systems and Three Byte Packed formats: 8 data, no parity, 2 stop, 1 start */
+		word_len = 11;
+		break;
+	case 2:		/* Hexadecimal format - 8 data, no parity, 1 stop, 1 start - number of stop bits is a guess because
+			   it is not documented anywhere. */
+		word_len = 10;
+		break;
+	case 3:
+	case 6:		/* Bit Pad One formats: 7 data, even parity, 2 stop, 1 start */
+		word_len = 11;
+		break;
+	case 5:		/* MM Series format: 8 data, odd parity, 1 stop, 1 start */
+		word_len = 11;
+		break;
+	default:
+	case 7:		/* Microsoft-compatible format: 7 data, no parity, 1 stop, 1 start */
+		word_len = 9;
+		break;
+    }
+
+    if (rps == -1)
+		temp = (double) word_len;
+    else {
+		temp = (double) rps;
+		temp = (9600.0 - (temp * 33.0));
+		temp /= rps;
+    }
+    temp = (1000000.0 / dbps) * temp;
+
+    return temp;
+}
 
 /* Timer expired, now send data (back) to the serial port. */
 static void
@@ -410,7 +444,7 @@ ser_poll(int x, int y, int z, int b, void *priv)
 {
     mouse_t *dev = (mouse_t *)priv;
 
-    if (!x && !y && (b == dev->oldb) && dev->continuous)
+    if (!x && !y && !z && (b == dev->oldb) && dev->continuous)
 	return(0);
 
     DBGLOG(1, "MOUSE: poll(%i,%i,%i,%02x)\n", x, y, z, b);
@@ -476,25 +510,24 @@ ltser_write(void *serial, void *priv, uint8_t data)
 
 		switch (data) {
 			case 0x6e:
-				dev->period = 7500LL;	/* 1200 bps */
+				dev->period = ser_transmit_period(dev, 1200, -1); /*1200 bps */
 				break;
 
 			case 0x6f:
-				dev->period = 3750LL;	/* 2400 bps */
+				dev->period = ser_transmit_period(dev, 2400, -1);	/* 2400 bps */
 				break;
 
 			case 0x70:
-				dev->period = 1875LL;	/* 4800 bps */
+				dev->period = ser_transmit_period(dev, 4800, -1);	/* 4800 bps */
 				break;
 
 			case 0x71:
-				dev->period = 938LL;	/* 9600 bps */
+				dev->period = ser_transmit_period(dev, 9600, -1);	/* 9600 bps */
 				break;
 
 			default:
 				ERRLOG("MOUSE: invalid period %02X, using 1200 bps\n", data);
 		}
-		dev->period *= TIMER_USEC;
 		break;
 
     } else switch (data) {
@@ -619,36 +652,34 @@ ser_init(const device_t *info, UNUSED(void *parent))
 	dev->flags |= FLAG_3BTN;
 
     if (dev->type == MOUSE_MSYSTEMS) {
-	/* 1200:8N1 */
-	dev->period = 8333LL * TIMER_USEC;
-	dev->type = info->local;
-	dev->id_len = 1;
-	dev->id[0] = 'H';
+		dev->type = info->local;
+		dev->id_len = 1;
+		dev->id[0] = 'H';
     } else {
-	/* 1200:7N1 */
-	dev->period = 7500LL * TIMER_USEC;
-	dev->format = 7;
-	dev->status = 0x0f;
-	dev->id_len = 1;
-	dev->id[0] = 'M';
+		dev->format = 7;
+		dev->status = 0x0f;
+		dev->id_len = 1;
+		dev->id[0] = 'M';
 
-	switch(i) {
-		case 3:
-			dev->id_len = 2;
-			dev->id[1] = '3';
-			break;
+		switch(i) {
+			case 3:
+				dev->id_len = 2;
+				dev->id[1] = '3';
+				break;
 
-		case 4:
-			dev->type = MOUSE_MSWHEEL;
-			dev->id_len = 6;
-			dev->id[1] = 'Z';
-			dev->id[2] = '@';
-			break;
+			case 4:
+				dev->type = MOUSE_MSWHEEL;
+				dev->id_len = 6;
+				dev->id[1] = 'Z';
+				dev->id[2] = '@';
+				break;
 
-		default:
-			break;
-	}
+			default:
+				break;
+		}
     }
+
+	dev->period = ser_transmit_period(dev, 1200, -1);
 
     /* Attach a serial port to the mouse. */
     dev->serial = serial_attach(dev->port, &ops, dev);
@@ -738,7 +769,6 @@ static const device_config_t ltser_config[] = {
     }
 };
 
-
 const device_t mouse_mssystems_device = {
     "Mouse Systems Serial Mouse",
     0,
@@ -746,8 +776,9 @@ const device_t mouse_mssystems_device = {
     NULL,
     ser_init, ser_close, NULL,
     ser_poll, NULL, NULL, NULL,
-    ser_config
+    NULL
 };
+
 
 const device_t mouse_msserial_device = {
     "Microsoft Serial Mouse",
