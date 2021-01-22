@@ -40,37 +40,42 @@
 # define EMU_PIC_H
 
 
-typedef struct {
+typedef struct PIC {
     uint8_t	icw1,
 		icw3,
 		icw4,
 		mask,
 		ins,
 		pend,
-		mask2;
-    uint8_t	vector;
-    int8_t	words;
-    int		icw;
-    int		read;
+		mask2,
+		vector,
+		ocw2, 
+		ocw3;
+	int8_t	words;
+    int		icw,
+    		read;
 } PIC;
 
 
 extern PIC	pic,
 		pic2;
-extern int	pic_pending;		/*FIXME: used by x86_ops_misc.h */
+extern int	pic_pending;
 
 
 extern void	pic_init(void);
 extern void	pic_init_ex(uint16_t, int8_t words);
 extern void	pic2_init(void);
 extern void	pic_reset(void);
-extern uint8_t	pic_interrupt(void);
-extern void	pic_clear(int num);
-extern void	pic_dump(void);
+extern void	pic_init_pcjr(void);
 
 extern void	picint(uint16_t num);
 extern void	picintlevel(uint16_t num);
 extern void	picintc(uint16_t num);
+extern uint8_t	pic_interrupt(void);
+extern void	pic_clear(int num);
+extern void	pic_dump(void);
+
+extern void	pic_set_shadow(int sh);
 
 
 #endif	/*EMU_PIC_H*/
