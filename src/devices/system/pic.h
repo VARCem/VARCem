@@ -8,14 +8,14 @@
  *
  *		Definitions for the Intel 8259 module.
  *
- * Version:	@(#)pic.h	1.0.3	2019/02/28
+ * Version:	@(#)pic.h	1.0.3	2021/01/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017,2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,35 +40,40 @@
 # define EMU_PIC_H
 
 
-typedef struct {
+typedef struct PIC {
     uint8_t	icw1,
 		icw3,
 		icw4,
 		mask,
 		ins,
 		pend,
-		mask2;
-    uint8_t	vector;
-    int		icw;
-    int		read;
+		mask2,
+		vector,
+		ocw2, 
+		ocw3;
+    int		icw,
+    		read;
 } PIC;
 
 
 extern PIC	pic,
 		pic2;
-extern int	pic_pending;		/*FIXME: used by x86_ops_misc.h */
+extern int	pic_pending;
 
 
 extern void	pic_init(void);
 extern void	pic2_init(void);
 extern void	pic_reset(void);
-extern uint8_t	pic_interrupt(void);
-extern void	pic_clear(int num);
-extern void	pic_dump(void);
+extern void	pic_init_pcjr(void);
 
 extern void	picint(uint16_t num);
 extern void	picintlevel(uint16_t num);
 extern void	picintc(uint16_t num);
+extern uint8_t	pic_interrupt(void);
+extern void	pic_clear(int num);
+extern void	pic_dump(void);
+
+extern void	pic_set_shadow(int sh);
 
 
 #endif	/*EMU_PIC_H*/

@@ -8,7 +8,7 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.24	2020/12/15
+ * Version:	@(#)m_pcjr.c	1.0.25	2021/01/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -782,7 +782,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
 	else
 		dev->cpriv = cga_comp_init(0);
 
-    pic_init();
+    pic_init_pcjr();
 
     pit_init();
     pit_set_out_func(&pit, 0, irq0_timer);
