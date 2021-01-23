@@ -8,7 +8,7 @@
  *
  *		Implementation of PS/2 series Mouse devices.
  *
- * Version:	@(#)mouse_ps2.c	1.0.11	2020/11/01
+ * Version:	@(#)mouse_ps2.c	1.0.12	2021/01/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -333,7 +333,7 @@ static const device_config_t ps2_config[] = {
 
 const device_t mouse_ps2_device = {
     "Standard PS/2 Mouse",
-    0,
+    DEVICE_PS2,
     MOUSE_PS2,
     NULL,
     mouse_ps2_init, ps2_close, NULL,

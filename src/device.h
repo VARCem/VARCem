@@ -8,13 +8,13 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.14	2019/05/15
+ * Version:	@(#)device.h	1.0.15	2021/01/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -56,7 +56,7 @@ enum {
     DEVICE_ALL = 0x00000000,		/* any/all device */
     DEVICE_PCJR = 0x00000001,		/* requires an IBM PCjr */
     DEVICE_AT = 0x00000002,		/* requires an AT-compatible system */
-    DEVICE_PS2 = 0x00000004,		/* requires a PS/1 or PS/2 system */
+    DEVICE_PS2 = 0x00000004,		/* requires PS/2 ports */
     DEVICE_S100 = 0x0000100,		/* requires an S-100 bus slot */
     DEVICE_ISA = 0x00000200,		/* requires an ISA bus slot */
     DEVICE_EISA = 0x00000400,		/* requires an EISA bus slot */
