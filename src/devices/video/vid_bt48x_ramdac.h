@@ -8,14 +8,14 @@
  *
  *		Definitions for the Bt48x RAMDAC series driver.
  *
- * Version:	@(#)vid_bt485_ramdac.h	1.0.4	2019/02/10
+ * Version:	@(#)vid_bt485_ramdac.h	1.0.5	2021/01/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -69,6 +69,8 @@ extern void	bt48x_ramdac_out(uint16_t addr, int rs2, int rs3, uint8_t val,
 
 extern uint8_t	bt48x_ramdac_in(uint16_t addr, int rs2, int rs3,
 				bt48x_ramdac_t *dev, svga_t *svga);
+
+extern void	bt48x_recalctimings(bt48x_ramdac_t *dev, svga_t *svga);
 
 extern void	bt48x_hwcursor_draw(svga_t *svga, int displine);
 
