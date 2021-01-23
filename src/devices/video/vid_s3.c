@@ -10,14 +10,18 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
+<<<<<<< HEAD
  * Version:	@(#)vid_s3.c	1.0.22	2020/11/01
+=======
+ * Version:	@(#)vid_s3.c	1.0.24	2021/01/23
+>>>>>>> 8aafb52 (Move BT485 ramdac recalctimings out of s3 file)
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1562,7 +1566,6 @@ uint8_t s3_in(uint16_t addr, priv_t priv)
 void s3_recalctimings(svga_t *svga)
 {
 	s3_t *s3 = (s3_t *)svga->p;
-	bt48x_ramdac_t *ramdac = (bt48x_ramdac_t *)svga->ramdac;
 	int clk_sel = (svga->miscout >> 2) & 3;
 
 
@@ -1582,14 +1585,10 @@ void s3_recalctimings(svga_t *svga)
 	if (svga->crtc[0x5e] & 0x40) svga->split       += 0x400;
 	if (svga->crtc[0x51] & 0x30)      svga->rowoffset  += (svga->crtc[0x51] & 0x30) << 4;
 	else if (svga->crtc[0x43] & 0x04) svga->rowoffset  += 0x100;
-	//if (!svga->rowoffset) svga->rowoffset = 256;
 
-	if (s3->chip == S3_VISION964 || s3->chip == S3_86C928) {
-		svga->interlace = ramdac->cr2 & 0x08;
-		if (ramdac->cr3 & 0x08)
-			svga->hdisp *= 2;	/* x2 clock multiplier */
-	
-	} else 
+	if (s3->chip == S3_VISION964 || s3->chip == S3_86C928)
+		bt48x_recalctimings(svga->ramdac, svga);
+	else 
 		svga->interlace = svga->crtc[0x42] & 0x20;
 		
 	if (clk_sel == 3 && s3->chip == S3_VISION864)
@@ -2347,9 +2346,27 @@ void s3_accel_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat
 	uint32_t rd_mask = s3->accel.rd_mask;
 	int cmd = s3->accel.cmd >> 13;
 	int read = 0, byte_cnt = 0, i;
+	uint32_t srcbase, dstbase;
 
 	if ((s3->chip == S3_TRIO64) && (s3->accel.cmd & (1 << 11)))
 		cmd |= 8;
+	
+	if ((s3->accel.multifunc[13] >> 4) & 7)
+    	srcbase = 0x100000 * ((s3->accel.multifunc[13] >> 4) & 3);
+		else
+		   	srcbase = 0x100000 * ((s3->accel.multifunc[14] >> 2) & 3);
+	if ((s3->accel.multifunc[13] >> 0) & 7)
+    	dstbase = 0x100000 * ((s3->accel.multifunc[13] >> 0) & 3);
+    	else
+    		dstbase = 0x100000 * ((s3->accel.multifunc[14] >> 0) & 3);
+	
+	if (s3->bpp == 1) {
+    	srcbase >>= 1;
+        dstbase >>= 1;
+    } else if (s3->bpp == 3) {
+        srcbase >>= 2;
+        dstbase >>= 2;
+	}
 
 	if (!cpu_input) s3->accel.dat_count = 0;
 	if (cpu_input && (s3->accel.multifunc[0xa] & 0xc0) != 0x80)
@@ -3792,6 +3809,19 @@ const device_t s3_bahamas64_pci_device = {
     s3_force_redraw,
     NULL,
     s3_config
+};
+
+const device_t s3_onboard_86c864_vlb_device = {
+    "Onboard S3 86c864 VLB",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
+    S3_PHOENIX_VISION864,
+    NULL,
+    s3_init, s3_close, NULL,
+    NULL,
+    s3_speed_changed,
+    s3_force_redraw,
+    NULL,
+    s3_9fx_config
 };
 
 const device_t s3_diamond_stealth64_964_vlb_device = {
