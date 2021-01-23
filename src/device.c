@@ -11,7 +11,7 @@
  *
  * **TODO**	Merge the various 'add' variants, its getting too messy.
  *
- * Version:	@(#)device.c	1.0.28	2021/01/12
+ * Version:	@(#)device.c	1.0.29	2021/01/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -709,7 +709,8 @@ device_is_valid(const device_t *device, int mflags)
 
     if ((device->flags & DEVICE_PCI) && !(mflags & MACHINE_PCI)) return(0);
 
-    if ((device->flags & DEVICE_PS2) && !(mflags & MACHINE_HDC_PS2)) return(0);
+	if ((device->flags & DEVICE_PS2) && (!(mflags & MACHINE_HDC_PS2) && !(mflags & MACHINE_PS2))) return(0);
+
     if ((device->flags & DEVICE_AGP) && !(mflags & MACHINE_AGP)) return(0);
 
     return(1);
