@@ -93,6 +93,7 @@
 #define SER_INT_RX	0x02
 #define SER_INT_TX	0x04
 #define SER_INT_MSR	0x08
+#define SER_INT_TMO 0x10
 
 /* IER register bits. */
 #define IER_RDAIE	0x01
@@ -188,7 +189,7 @@ typedef struct serial {
 
     uint8_t	lsr, thr, mcr, rcr,	/* UART registers */
 		iir, ier, lcr, msr;
-    uint8_t	dlab1, dlab2;
+    uint16_t	dlab;
     uint8_t	dat,
 		hold;
     uint8_t	scratch;
@@ -242,21 +243,25 @@ update_ints(serial_t *dev)
     dev->iir = IIR_IP;
 
     if ((dev->ier & IER_RXLSIE) && (dev->int_status & SER_INT_LSR)) {
-	/* Line Status interrupt. */
-	stat = 1;
-	dev->iir = IID_IDERR;
+		/* Line Status interrupt. */
+		stat = 1;
+		dev->iir = IID_IDERR;
+	} else if ((dev->ier & IER_RDAIE) && (dev->int_status & SER_INT_TMO)) {
+	/* Received data available */
+		stat = 1;
+		dev->iir = IID_IDTMO;
     } else if ((dev->ier & IER_RDAIE) && (dev->int_status & SER_INT_RX)) {
-	/* Received Data available. */
-	stat = 1;
-	dev->iir = IID_IDRX;
+		/* Received Data available. */
+		stat = 1;
+		dev->iir = IID_IDRX;
     } else if ((dev->ier & IER_THREIE) && (dev->int_status & SER_INT_TX)) {
-	/* Transmit Data empty. */
-	stat = 1;
-	dev->iir = IID_IDTX;
+		/* Transmit Data empty. */
+		stat = 1;
+		dev->iir = IID_IDTX;
     } else if ((dev->ier & IER_MSIE) && (dev->int_status & SER_INT_MSR)) {
-	/* Modem Status interrupt. */
-	stat = 1;
-	dev->iir = IID_IDMDM;
+		/* Modem Status interrupt. */
+		stat = 1;
+		dev->iir = IID_IDMDM;
     }
 
     DEBUG("Serial%d: intr, IIR=%02X, type=%i, mcr=%02X\n",
@@ -346,6 +351,7 @@ receive_callback(priv_t priv)
 {
     serial_t *dev = (serial_t *)priv;
 
+
     dev->delay = 0;
 
     if (dev->fifo_read != dev->fifo_write) {
@@ -415,14 +421,13 @@ ser_write(uint16_t addr, uint8_t val, priv_t priv)
     uint32_t baud;
     uint8_t msr;
 
-
     DEBUG("Serial%i: write(%i, %02x)\n", dev->port, (addr & 0x0007), val);
 
     switch (addr & 0x0007) {
 	case 0:		/* DATA,DLAB1 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, set DLAB low byte. */
-                        dev->dlab1 = val;
+                        dev->dlab = (dev->dlab & 0xff00) | val;
                         return;
                 }
 
@@ -456,7 +461,7 @@ ser_write(uint16_t addr, uint8_t val, priv_t priv)
 	case 1:		/* IER,DLAB2 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, set DLAB high byte. */
-                        dev->dlab2 = val;
+                        dev->dlab = (dev->dlab & 0x00ff) | (val << 8);
                         return;
                 }
 
@@ -479,7 +484,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 	case 3:		/* LCR */
 		if ((dev->lcr & LCR_DLAB) && !(val & LCR_DLAB)) {
 			/* We dropped DLAB, so handle baudrate. */
-			baud = ((dev->dlab2 << 8) | dev->dlab1);
+			baud = dev->dlab;
 			if (baud > 0) {
 #if defined(_LOGGING) || defined(USE_HOST_SERIAL)
 				speed = 115200UL / baud;
@@ -553,6 +558,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 #endif
 		}
 
+
         dev->mcr = val;
 
 		if (val & MCR_LMS) {	/* loopback mode */
@@ -606,11 +612,13 @@ ser_read(uint16_t addr, priv_t priv)
     serial_t *dev = (serial_t *)priv;
     uint8_t ret = 0x00;
 
-    switch (addr & 0x0007) {
+    DEBUG ("Serial read addr %x \n", addr);
+	
+	switch (addr & 0x0007) {
 	case 0:		/* DATA / DLAB1 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, read DLAB low byte. */
-                        ret = dev->dlab1;
+                        ret = dev->dlab & 0xff;
                         break;
                 }
 
@@ -633,7 +641,7 @@ ser_read(uint16_t addr, priv_t priv)
 	case 1:		/* LCR / DLAB2 */
 		if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, read DLAB high byte. */
-			ret = dev->dlab2;
+			ret = (dev->dlab >> 8) & 0xff;
 		} else {
 			/* DLAB clear, read IER register bits. */
 			ret = dev->ier;
@@ -916,6 +924,7 @@ serial_clear(priv_t arg)
 
     clear_fifo(dev);
 }
+
 
 
 /* API: write data to a serial port. */
