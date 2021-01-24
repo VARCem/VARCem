@@ -86,7 +86,7 @@ static const machine_t hot419_info = {
     MACHINE_ISA | MACHINE_VLB | MACHINE_AT,
     0,
     1, 128, 1, 128, 0,
-    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}} /* Note : this board only supports 5V CPU */
 };
 
 const device_t m_opti895_hot419 = {
@@ -104,7 +104,7 @@ static const machine_t opti8xx_info = {
     MACHINE_ISA | MACHINE_VLB | MACHINE_AT,
     0,
     1, 64, 1, 128, 0,
-    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}} /* Supports 3.3 and 5V CPU */
 };
 
 const device_t m_opti895_dp4044 = {
