@@ -8,6 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
+ * Version:	@(#)machine.h	1.0.37	2021/03/09
  *
  *
  *		Copyright 2017-2021 Fred N. van Kempen.
@@ -199,7 +200,10 @@ extern const device_t	m_opti495_386sx_mr;
 extern const device_t	m_opti495_386dx_mr;
 extern const device_t	m_opti495_486_mr;
 
+#if defined(DEV_BRANCH)
 extern const device_t 	m_opti895_hot419;
+extern const device_t	m_opti895_dp4044;
+#endif
 
 #if defined(DEV_BRANCH) && defined(USE_SL)
 extern const device_t	m_sl82c460_386dx_ami;
