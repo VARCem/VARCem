@@ -8,12 +8,12 @@
  *
  *		Implementation of the Opti 82C495 based machines.
  *
- * Version:	@(#)m_opti8xx.c	1.0.0	2020/11/16
+ * Version:	@(#)m_opti8xx.c	1.0.1	2021/01/24
  *
  * Authors:	   Altheos
  *             Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *      Copyright 2020 Altheos
+ *      Copyright 2021 Altheos
  *		Copyright 2020 Fred N. van Kempen.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -83,7 +83,7 @@ common_init(const device_t *info, void *arg)
 }
 
 static const machine_t hot419_info = {
-    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT,
     0,
     1, 128, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
@@ -101,14 +101,14 @@ const device_t m_opti895_hot419 = {
 };
 
 static const machine_t opti8xx_info = {
-    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT,
     0,
-    1, 128, 1, 128, 0,
+    1, 64, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
-const device_t m_opti_dp4044 = {
-    "Data Expert DP4044",
+const device_t m_opti895_dp4044 = {
+    "DataExpert EXP4044",
     DEVICE_ROOT,
     0,
     L"opti8xx/dataexpert",
