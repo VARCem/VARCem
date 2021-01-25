@@ -97,6 +97,7 @@
     <ClCompile Include="..\..\devices\sio\sio_fdc37c66x.c" />
     <ClCompile Include="..\..\devices\sio\sio_fdc37c93x.c" />
     <ClCompile Include="..\..\devices\sio\sio_pc87306.c" />
+    <ClCompile Include="..\..\devices\sio\sio_pc87332.c" />
     <ClCompile Include="..\..\devices\sio\sio_um8669f.c" />
     <ClCompile Include="..\..\devices\sio\sio_w83877f.c" />
     <ClCompile Include="..\..\devices\sound\midi.c" />

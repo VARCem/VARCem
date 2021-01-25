@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.37	2021/01/12
+ * Version:	@(#)vid_cl54xx.c	1.0.38	2021/01/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -3461,6 +3461,19 @@ const device_t gd5424_vlb_device = {
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
     gd5422_config,
+};
+
+const device_t gd5426_onboard_vlb_device = {
+    "Cirrus Logic GD-5426",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
+    CIRRUS_ID_CLGD5426,
+    NULL,
+    gd54xx_init, gd54xx_close, NULL,
+    NULL,
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_vlb_timing,
+    gd5428_onboard_config
 };
 
 const device_t gd5426_vlb_device = {

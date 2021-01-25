@@ -64,6 +64,7 @@
 #include "../rom.h"
 #include "../device.h"
 #include "../nvr.h"
+#include "../devices/chipsets/vl82c480.h"
 #include "../devices/system/dma.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
@@ -78,6 +79,7 @@
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
 #include "../devices/disk/hdc_ide.h"
+#include "../devices/sio/sio.h"
 #include "../devices/sound/sound.h"
 #include "../devices/sound/snd_sn76489.h"
 #include "../devices/video/video.h"
@@ -517,6 +519,9 @@ ps1_init(const device_t *info, void *arg)
 		}
 	}
 
+	/* Set up the parallel port. */
+    parallel_setup(0, 0x03bc);
+
 	/* Enable the PS/1 VGA controller. */
 	device_add(&vga_ps1_device);
 
@@ -535,6 +540,9 @@ ps1_init(const device_t *info, void *arg)
 	/* Force some configuration settings. */
 	config.video_card = VID_INTERNAL;
 	config.mouse_type = MOUSE_PS2;
+
+	/* Set up the parallel port. */
+    parallel_setup(0, 0x03bc);
 
 	io_sethandler(0x00e0, 2, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
 
@@ -565,11 +573,15 @@ ps1_init(const device_t *info, void *arg)
 	config.hdc_type = HDC_INTERNAL;
 	config.mouse_type = MOUSE_PS2;
 
-	/* Enable the builtin FDC. */
-	device_add(&fdc_at_device);
-
 	/* Enable the builtin IDE port. */
 	device_add(&ide_isa_device);
+
+	/* Enable the chipset & SIO */
+	device_add(&vl82c480_device);
+	device_add(&pc87332_ps1_device);
+
+	if (config.video_card == VID_INTERNAL)
+		device_add(&gd5426_onboard_vlb_device);
 
 	device_add(&memregs_ed_device);
 
@@ -581,9 +593,6 @@ ps1_init(const device_t *info, void *arg)
     io_sethandler(0x0094, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
     io_sethandler(0x0102, 4, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
     io_sethandler(0x0190, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
-
-    /* Set up the parallel port. */
-    parallel_setup(0, 0x03bc);
 
     /* Hack to prevent Game from being initialized there. */
     i = config.game_enabled;
@@ -602,12 +611,12 @@ ps1_init(const device_t *info, void *arg)
     device_add(&ps_nvr_device);
 
     device_add(&keyboard_ps2_ps1_device);
-
-    device_add(&mouse_ps2_device);
+	
+	device_add(&mouse_ps2_device);
 
     /* Audio uses ports 200h,202-207h, so only initialize gameport on 201h. */
     if (config.game_enabled)
-	device_add(&game_201_device);
+		device_add(&game_201_device);
 
     return((priv_t)dev);
 }
@@ -678,7 +687,7 @@ const device_t m_ps1_2121 = {
 
 
 static const machine_t m2133_info = {
-    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_NONMI,
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO | MACHINE_NONMI,
     0,
     1, 64, 1, 128, -1,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
