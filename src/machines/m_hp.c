@@ -9,13 +9,13 @@
  *		Implementation of various HP machines.
  *
  *
- * Version:	@(#)m_hp.c	1.0.0	2020/09/20
+ * Version:	@(#)m_hp.c	1.0.1	2021/01/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *			Altheos
  *
- *		Copyright 2020 Fred N. van Kempen.
- *		Copyright 2020 Altheos.
+ *		Copyright 2021 Fred N. van Kempen.
+ *		Copyright 2021 Altheos.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,13 +67,16 @@ common_init(const device_t *info, void *arg)
     device_add_ex(info, (priv_t)arg);
 
 	device_add(&vl82c480_device);
-	m_at_common_init(); /* This machine has only one IDE port */
-	device_add(&keyboard_ps2_device);
-	if (config.video_card == VID_INTERNAL)
-			device_add(&gd5428_onboard_vlb_device);	
+	m_at_common_init(); 
+	device_add(&ide_vlb_device); /* This machine has only one IDE port (VLB ?) : no LBA & CD drive support */
+    device_add(&fdc37c932fr_device);
+    
+    device_add(&keyboard_ps2_device); /* VLSI 82c113A SCAMP IO*/
 	if (config.mouse_type == MOUSE_INTERNAL)
 			device_add(&mouse_ps2_device);
-    device_add(&fdc37c932fr_device);
+    
+    if (config.video_card == VID_INTERNAL)
+			device_add(&gd5426_onboard_vlb_device);	/* 5426-80QC-B */
 
     return((priv_t)arg);
 }
@@ -83,16 +86,16 @@ static const machine_t hpv486_info = {
     MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO | MACHINE_MOUSE,
     0,
     1, 32, 1, 128, -1,
-    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}} /* 5V only */
 };
 
 const device_t m_hpv486 = {
-    "HP Vectra 486/33VL",
+    "HP Vectra 486VL series",
     DEVICE_ROOT,
     0,
     L"hp/vectra486",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &hpv486_info,
-    NULL //&gd5428_onboard_vlb_device
+    NULL
 };
