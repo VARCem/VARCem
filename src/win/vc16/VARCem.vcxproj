@@ -33,6 +33,7 @@
     <ClCompile Include="..\..\devices\chipsets\scamp.c" />
     <ClCompile Include="..\..\devices\chipsets\sis471.c" />
     <ClCompile Include="..\..\devices\chipsets\sis496.c" />
+    <ClCompile Include="..\..\devices\chipsets\vl82c480.c" />
     <ClCompile Include="..\..\devices\chipsets\wd76c10.c" />
     <ClCompile Include="..\..\devices\floppy\fdc_pii15xb.c" />
     <ClCompile Include="..\..\devices\floppy\fdd_mfm.c" />
@@ -364,6 +365,7 @@
     <ClInclude Include="..\..\devices\chipsets\scamp.h" />
     <ClInclude Include="..\..\devices\chipsets\sis471.h" />
     <ClInclude Include="..\..\devices\chipsets\sis496.h" />
+    <ClInclude Include="..\..\devices\chipsets\vl82c480.h" />
     <ClInclude Include="..\..\devices\chipsets\wd76c10.h" />
     <ClInclude Include="..\..\devices\floppy\fdc_pii15xb.h" />
     <ClInclude Include="..\..\devices\floppy\fdd_mfm.h" />

@@ -48,13 +48,13 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.27	2019/05/17
+ * Version:	@(#)m_ps2_mca.c	1.0.28	2021/01/25
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -1366,7 +1366,7 @@ ps2_mca_write(uint16_t port, uint8_t val, priv_t priv)
 	case 0x0101:
 		if (!(dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
-		else if ((dev->setup & PS2_SETUP_VGA) && (dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
+		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			mca_write(port, val);
 		break;
 

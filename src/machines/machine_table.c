@@ -191,7 +191,7 @@ static const struct {
 #endif
     { "[486 ISA] DTK PKM-0038S E-2",		"dtk_486",		&m_dtk486		},
 #if defined(DEV_BRANCH)    
-    { "[486 ISA] HP Vectra 486 33VL",       "hp_v486",      &m_hpv486       },
+    { "[486 ISA] HP Vectra 486VL Series",       "hp_v486",      &m_hpv486       },
 #endif    
     { "[486 ISA] Packard Bell PB410A",		"pbell_pb410a",		&m_pb410a		},
 

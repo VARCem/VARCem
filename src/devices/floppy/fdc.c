@@ -9,12 +9,12 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.26	2020/06/18
+ * Version:	@(#)fdc.c	1.0.27	2021/01/25
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2020 Miran Grca.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -843,7 +843,16 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 			fdc->stat |= 0x10;
 			DEBUG("FDC: starting command %02X\n",fdc->command);
 
-			switch (fdc->command & 0x1f) {
+			if (((fdc->command & 0x1f) == 0x02) || ((fdc->command & 0x1f) == 0x05) ||
+				((fdc->command & 0x1f) == 0x06) || ((fdc->command & 0x1f) == 0x0a) ||
+				((fdc->command & 0x1f) == 0x0c) || ((fdc->command & 0x1f) == 0x0d) ||
+				((fdc->command & 0x1f) == 0x11) || ((fdc->command & 0x1f) == 0x16) ||
+				((fdc->command & 0x1f) == 0x19) || ((fdc->command & 0x1f) == 0x1d))
+				fdc->processed_cmd = fdc->command & 0x1f;
+			else
+				fdc->processed_cmd = fdc->command;
+
+			switch (fdc->processed_cmd) {
 				case 0x01: /*Mode*/
 					if (fdc->flags & FDC_FLAG_NSC) {
 						fdc->pnum = 0;
@@ -1004,7 +1013,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 			}
                         if (fdc->pnum == fdc->ptot) {
 				DEBUG("FDC: got all params %02X\n", fdc->command);
-				fdc->interrupt = fdc->command & 0x1F;
+				fdc->interrupt = fdc->processed_cmd;
 				timer_process();
 				fdc->time = 1024LL * (1LL << TIMER_SHIFT);
 				timer_update_outstanding();
