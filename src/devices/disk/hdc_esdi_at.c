@@ -124,6 +124,8 @@ typedef struct {
     rom_t	bios_rom;
 } hdc_t;
 
+static uint8_t	hdc_read(uint16_t port, priv_t priv);
+static void		hdc_write(uint16_t port, uint8_t val, priv_t priv);
 
 static __inline void
 irq_raise(hdc_t *dev)
@@ -141,12 +143,19 @@ irq_raise(hdc_t *dev)
 static __inline void
 irq_lower(hdc_t *dev)
 {
-    if (dev->irqstat) {
-	if (! (dev->fdisk & 0x02))
+    //if (dev->irqstat) {
+	//if (! (dev->fdisk & 0x02))
 		picintc(1 << 14);
 
-	dev->irqstat = 0;
-    }
+	//dev->irqstat = 0;
+    //}
+}
+
+static __inline void
+irq_update(hdc_t *dev)
+{
+    if (dev->irqstat && !((pic2.pend | pic2.ins) & 0x40) && !(dev->fdisk & 2))
+	picint(1 << 14);
 }
 
 
@@ -216,6 +225,11 @@ hdc_writew(uint16_t port, uint16_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
+if (port > 0x01f0) {
+	hdc_write(port, val & 0xff, priv);
+	if (port != 0x01f7)
+		hdc_write(port + 1, (val >> 8) & 0xff, priv);
+    } else {
     dev->buffer[dev->pos >> 1] = val;
     dev->pos += 2;
 
@@ -228,6 +242,7 @@ hdc_writew(uint16_t port, uint16_t val, priv_t priv)
 	dev->callback = (3125LL * TIMER_USEC) / 8LL;
 
 	timer_update_outstanding();
+    }
     }
 }
 
@@ -267,11 +282,10 @@ hdc_write(uint16_t port, uint8_t val, priv_t priv)
 	case 0x1f6: /* drive/Head */
 		dev->head = val & 0xF;
 		dev->drive_sel = (val & 0x10) ? 1 : 0;
-		if (dev->drives[dev->drive_sel].present) {
+		if (dev->drives[dev->drive_sel].present)
 			dev->status = STAT_READY|STAT_DSC;
-		} else {
+		else
 			dev->status = 0;
-		}
 		return;
 
 	case 0x1f7:	/* command register */
@@ -398,9 +412,8 @@ hdc_write(uint16_t port, uint8_t val, priv_t priv)
 		}
 		dev->fdisk = val;
 
-		/* Lower IRQ on IRQ disable. */
-		if ((val & 0x02) && !(dev->fdisk & 0x02))
-			picintc(1 << 14);
+		irq_update(dev);
+
 		break;
 	}
 }
@@ -410,8 +423,16 @@ static uint16_t
 hdc_readw(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
+	drive_t *drive = &dev->drives[dev->drive_sel];
     uint16_t temp;
 
+    if (port > 0x01f0) {
+	temp = hdc_read(port, priv);
+	if (port == 0x01f7)
+		temp |= 0xff00;
+	else
+		temp |= (hdc_read(port + 1, priv) << 8);
+    } else {
     temp = dev->buffer[dev->pos >> 1];
     dev->pos += 2;
 
@@ -429,7 +450,9 @@ hdc_readw(uint16_t port, priv_t priv)
 			dev->callback = (3125LL * TIMER_USEC) / 8LL;
 
 			timer_update_outstanding();
-		}
+		} else
+			hdd_active(drive->hdd_num, 0);
+	}
 	}
     }
 
@@ -469,7 +492,7 @@ hdc_read(uint16_t port, priv_t priv)
 		break;
 
 	case 0x1f6:	/* drive/Head */
-		temp = (uint8_t)(0xa0|dev->head|(dev->drive_sel?0x10:0));
+		temp = (uint8_t) (dev->head | (dev->drive_sel ? 0x10:0) | 0xa0);
 		break;
 
 	case 0x1f7:	/* status */
@@ -524,9 +547,8 @@ hdc_callback(priv_t priv)
 		if (! drive->present) {
 			dev->status = STAT_READY|STAT_ERR|STAT_DSC;
 			dev->error = ERR_ABRT;
-		} else {
+		} else
 			dev->status = STAT_READY|STAT_DSC;
-		}
 		irq_raise(dev);
 		break;
 
@@ -535,24 +557,21 @@ hdc_callback(priv_t priv)
 			dev->status = STAT_READY|STAT_ERR|STAT_DSC;
 			dev->error = ERR_ABRT;
 			irq_raise(dev);
-			break;
-		}
-
+		} else {
 		if (get_sector(dev, &addr)) {
-			dev->error = ERR_ID_NOT_FOUND;
-			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
-			irq_raise(dev);
-			break;
-		}
-
-		hdd_active(drive->hdd_num, 1);
-
-		hdd_image_read(drive->hdd_num, addr, 1,
-			      (uint8_t *)dev->buffer);
+				dev->error = ERR_ID_NOT_FOUND;
+				dev->status = STAT_READY | STAT_DSC | STAT_ERR;
+				irq_raise(dev);
+				break;
+			}
+		
+		hdd_image_read(drive->hdd_num, addr, 1, (uint8_t *)dev->buffer);
 
 		dev->pos = 0;
 		dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
 		irq_raise(dev);
+		hdd_active(drive->hdd_num, 1);
+		}
 		break;
 
 	case CMD_WRITE:
@@ -561,28 +580,26 @@ hdc_callback(priv_t priv)
 			dev->error = ERR_ABRT;
 			irq_raise(dev);
 			break;
-		}
-
-		if (get_sector(dev, &addr)) {
-			dev->error = ERR_ID_NOT_FOUND;
-			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
-			irq_raise(dev);
-			break;
-		}
-
-		hdd_active(drive->hdd_num, 1);
-
-		hdd_image_write(drive->hdd_num, addr, 1,
-				(uint8_t *)dev->buffer);
-
-		irq_raise(dev);
-		dev->secount = (dev->secount - 1) & 0xff;
-		if (dev->secount) {
-			dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
-			dev->pos = 0;
-			next_sector(dev);
 		} else {
-			dev->status = STAT_READY|STAT_DSC;
+			if (get_sector(dev, &addr)) {
+				dev->error = ERR_ID_NOT_FOUND;
+				dev->status = STAT_READY|STAT_DSC|STAT_ERR;
+				irq_raise(dev);
+				break;
+			}
+			hdd_image_write (drive->hdd_num, addr, 1, (uint8_t *)dev->buffer);
+			
+			irq_raise(dev);
+			dev->secount = (dev->secount - 1) & 0xff;
+			
+			if (dev->secount) {
+				dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
+				dev->pos = 0;
+				next_sector(dev);
+			} else
+				dev->status = STAT_READY|STAT_DSC;
+		
+			hdd_active(drive->hdd_num, 1);
 		}
 		break;
 
@@ -592,28 +609,26 @@ hdc_callback(priv_t priv)
 			dev->error = ERR_ABRT;
 			irq_raise(dev);
 			break;
-		}
+		} else {
+			if (get_sector(dev, &addr)) {
+				dev->error = ERR_ID_NOT_FOUND;
+				dev->status = STAT_READY|STAT_DSC|STAT_ERR;
+				irq_raise(dev);
+				break;
+			}
 
-		if (get_sector(dev, &addr)) {
-			dev->error = ERR_ID_NOT_FOUND;
-			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
-			irq_raise(dev);
-			break;
-		}
-
-		hdd_active(drive->hdd_num, 1);
-
-		hdd_image_read(drive->hdd_num, addr, 1,
-			      (uint8_t *)dev->buffer);
-
-		next_sector(dev);
-		dev->secount = (dev->secount - 1) & 0xff;
-		if (dev->secount)
-			dev->callback = 6LL*HDC_TIME;
-		else {
-			dev->pos = 0;
-			dev->status = STAT_READY|STAT_DSC;
-			irq_raise(dev);
+			hdd_image_read(drive->hdd_num, addr, 1, (uint8_t *)dev->buffer);
+			
+			hdd_active(drive->hdd_num, 1);
+			next_sector(dev);
+			dev->secount = (dev->secount - 1) & 0xff;
+			if (dev->secount)
+				dev->callback = 6LL*HDC_TIME;
+			else {
+				dev->pos = 0;
+				dev->status = STAT_READY|STAT_DSC;
+				irq_raise(dev);
+			}
 		}
 		break;
 
@@ -623,44 +638,47 @@ hdc_callback(priv_t priv)
 			dev->error = ERR_ABRT;
 			irq_raise(dev);
 			break;
-		}
+		} else {
+			if (get_sector(dev, &addr)) {
+				dev->error = ERR_ID_NOT_FOUND;
+				dev->status = STAT_READY|STAT_DSC|STAT_ERR;
+				irq_raise(dev);
+				break;
+			}
+			
+			hdd_image_zero(drive->hdd_num, addr, dev->secount);
 
-		if (get_sector(dev, &addr)) {
-			dev->error = ERR_ID_NOT_FOUND;
-			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
+			dev->status = STAT_READY|STAT_DSC;
 			irq_raise(dev);
-			break;
+			hdd_active(drive->hdd_num, 1);
 		}
-
-		hdd_active(drive->hdd_num, 1);
-
-		hdd_image_zero(drive->hdd_num, addr, dev->secount);
-
-		dev->status = STAT_READY|STAT_DSC;
-		irq_raise(dev);
 		break;
 
 	case CMD_DIAGNOSE:
+		/* This is basically controller diagnostics - it resets drive select to 0,
+		   and resets error and status to ready, DSC, and no error detected. */
+		dev->drive_sel = 0;
+		drive = &dev->drives[dev->drive_sel];
 		dev->error = 1;	 /*no error detected*/
 		dev->status = STAT_READY|STAT_DSC;
 		irq_raise(dev);
 		break;
 
 	case CMD_SET_PARAMETERS: /* Initialize Drive Parameters */
-		if (drive->present == 0) {
+		if (! drive->present)  {
 			dev->status = STAT_READY|STAT_ERR|STAT_DSC;
 			dev->error = ERR_ABRT;
 			irq_raise(dev);
-			break;
+		} else {
+			drive->cfg_spt = dev->secount;
+			drive->cfg_hpc = dev->head+1;
+			DEBUG("WD1007: parameters: spt=%i hpc=%i\n", drive->cfg_spt,drive->cfg_hpc);
+			if (! dev->secount)
+				fatal("WD1007: secount=0\n");
+		
+			dev->status = STAT_READY|STAT_DSC;
+			irq_raise(dev);
 		}
-
-		drive->cfg_spt = dev->secount;
-		drive->cfg_hpc = dev->head+1;
-		DEBUG("WD1007: parameters: spt=%i hpc=%i\n", drive->cfg_spt,drive->cfg_hpc);
-		if (! dev->secount)
-			fatal("WD1007: secount=0\n");
-		dev->status = STAT_READY|STAT_DSC;
-		irq_raise(dev);
 		break;
 
 	case CMD_NOP:
@@ -675,32 +693,31 @@ hdc_callback(priv_t priv)
 			dev->error = ERR_ABRT;
 			irq_raise(dev);
 			break;
+		} else {
+			switch (dev->cylinder >> 8) {
+				case 0x31:
+					dev->cylinder = drive->real_tracks;
+					break;
+
+				case 0x33:
+					dev->cylinder = drive->real_hpc;
+					break;
+
+				case 0x35:
+					dev->cylinder = 0x200;
+					break;
+
+				case 0x36:
+					dev->cylinder = drive->real_spt;
+					break;
+
+				default:
+					DEBUG("WD1007: bad read config %02x\n",
+							dev->cylinder >> 8);
+			}
+			dev->status = STAT_READY|STAT_DSC;
+			irq_raise(dev);
 		}
-
-		switch (dev->cylinder >> 8) {
-			case 0x31:
-				dev->cylinder = drive->real_tracks;
-				break;
-
-			case 0x33:
-				dev->cylinder = drive->real_hpc;
-				break;
-
-			case 0x35:
-				dev->cylinder = 0x200;
-				break;
-
-			case 0x36:
-				dev->cylinder = drive->real_spt;
-				break;
-
-			default:
-				DEBUG("WD1007: bad read config %02x\n",
-						dev->cylinder >> 8);
-				break;
-		}
-		dev->status = STAT_READY|STAT_DSC;
-		irq_raise(dev);
 		break;
 
 	case 0xa0:
@@ -721,35 +738,34 @@ hdc_callback(priv_t priv)
 			dev->status = STAT_READY|STAT_ERR|STAT_DSC;
 			dev->error = ERR_ABRT;
 			irq_raise(dev);
-			break;
+		} else {
+			memset(dev->buffer, 0x00, 512);
+			dev->buffer[0] = 0x44;	/* general configuration */
+			dev->buffer[1] = drive->real_tracks; /* number of non-removable cylinders */
+			dev->buffer[2] = 0;	/* number of removable cylinders */
+			dev->buffer[3] = drive->real_hpc;    /* number of heads */
+			dev->buffer[4] = 600;	/* number of unformatted bytes/track */
+			dev->buffer[5] = dev->buffer[4] * drive->real_spt; /* number of unformatted bytes/sector */
+			dev->buffer[6] = drive->real_spt; /* number of sectors */
+			dev->buffer[7] = 0;	/*minimum bytes in inter-sector gap*/
+			dev->buffer[8] = 0;	/* minimum bytes in postamble */
+			dev->buffer[9] = 0;	/* number of words of vendor status */
+			/* controller info */
+			dev->buffer[20] = 2; 	/* controller type */
+			dev->buffer[21] = 1;	/* sector buffer size, in sectors */
+			dev->buffer[22] = 0;	/* ecc bytes appended */
+			dev->buffer[27] = 'W' | ('D' << 8);
+			dev->buffer[28] = '1' | ('0' << 8);
+			dev->buffer[29] = '0' | ('7' << 8);
+			dev->buffer[30] = 'V' | ('-' << 8);
+			dev->buffer[31] = 'S' | ('E' << 8);
+			dev->buffer[32] = '1';
+			dev->buffer[47] = 0;	/* sectors per interrupt */
+			dev->buffer[48] = 0;	/* can use double word read/write? */
+			dev->pos = 0;
+			dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
+			irq_raise(dev);
 		}
-
-		memset(dev->buffer, 0x00, 512);
-		dev->buffer[0] = 0x44;	/* general configuration */
-		dev->buffer[1] = drive->real_tracks; /* number of non-removable cylinders */
-		dev->buffer[2] = 0;	/* number of removable cylinders */
-		dev->buffer[3] = drive->real_hpc;    /* number of heads */
-		dev->buffer[4] = 600;	/* number of unformatted bytes/track */
-		dev->buffer[5] = dev->buffer[4] * drive->real_spt; /* number of unformatted bytes/sector */
-		dev->buffer[6] = drive->real_spt; /* number of sectors */
-		dev->buffer[7] = 0;	/*minimum bytes in inter-sector gap*/
-		dev->buffer[8] = 0;	/* minimum bytes in postamble */
-		dev->buffer[9] = 0;	/* number of words of vendor status */
-		/* controller info */
-		dev->buffer[20] = 2; 	/* controller type */
-		dev->buffer[21] = 1;	/* sector buffer size, in sectors */
-		dev->buffer[22] = 0;	/* ecc bytes appended */
-		dev->buffer[27] = 'W' | ('D' << 8);
-		dev->buffer[28] = '1' | ('0' << 8);
-		dev->buffer[29] = '0' | ('7' << 8);
-		dev->buffer[30] = 'V' | ('-' << 8);
-		dev->buffer[31] = 'S' | ('E' << 8);
-		dev->buffer[32] = '1';
-		dev->buffer[47] = 0;	/* sectors per interrupt */
-		dev->buffer[48] = 0;	/* can use double word read/write? */
-		dev->pos = 0;
-		dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
-		irq_raise(dev);
 		break;
 
 	default:
@@ -778,13 +794,23 @@ loadhd(hdc_t *dev, int hdd_num, int d, const wchar_t *fn)
 	return;
     }
 
-    drive->cfg_spt = drive->real_spt = (uint8_t)hdd[d].spt;
-    drive->cfg_hpc = drive->real_hpc = (uint8_t)hdd[d].hpc;
-    drive->real_tracks = (uint8_t)hdd[d].tracks;
+    drive->cfg_spt = drive->real_spt = hdd[d].spt;
+    drive->cfg_hpc = drive->real_hpc = hdd[d].hpc;
+    drive->real_tracks = hdd[d].tracks;
     drive->hdd_num = d;
     drive->present = 1;
 }
 
+static void
+esdi_rom_write(uint32_t addr, uint8_t val, priv_t priv)
+{
+    rom_t *dev = (rom_t *)priv;
+
+    addr &= dev->mask;
+
+    if (addr >= 0x1f00 && addr < 0x2000)
+		dev->rom[addr] = val;
+}
 
 static void
 wd1007vse1_close(priv_t priv)
@@ -831,12 +857,16 @@ wd1007vse1_init(const device_t *info, UNUSED(void *parent))
     rom_init(&dev->bios_rom, info->path,
 	     0xc8000, 0x4000, 0x3fff, 0, MEM_MAPPING_EXTERNAL);
 
+	mem_map_set_handler(&dev->bios_rom.mapping,
+			    rom_read, rom_readw, rom_readl,
+			    esdi_rom_write, NULL, NULL);
+
     io_sethandler(0x01f0, 1,
 		  hdc_read, hdc_readw, NULL,
 		  hdc_write, hdc_writew, NULL, dev);
     io_sethandler(0x01f1, 7,
-		  hdc_read, NULL, NULL,
-		  hdc_write, NULL, NULL, dev);
+		  hdc_read, hdc_readw, NULL,
+		  hdc_write, hdc_writew, NULL, dev);
     io_sethandler(0x03f6, 1, NULL, NULL, NULL,
 		  hdc_write, NULL, NULL, dev);
 
