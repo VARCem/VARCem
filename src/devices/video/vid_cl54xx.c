@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.38	2021/01/25
+ * Version:	@(#)vid_cl54xx.c	1.0.39	2021/01/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,6 +55,7 @@
 #include "../../plat.h"
 #include "../system/clk.h"
 #include "../system/pci.h"
+#include "../system/mca.h"
 #include "video.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
@@ -79,8 +80,8 @@
 #define CIRRUS_ID_AVGA2			0x18
 #define CIRRUS_ID_CLGD5402	  	0x89
 #define CIRRUS_ID_CLGD5420	  	0x8a
-#define CIRRUS_ID_CLGD5422  		0x8c
-#define CIRRUS_ID_CLGD5424  		0x94
+#define CIRRUS_ID_CLGD5422  	0x8c
+#define CIRRUS_ID_CLGD5424  	0x94
 #define CIRRUS_ID_CLGD5426		0x90
 #define CIRRUS_ID_CLGD5428		0x98
 #define CIRRUS_ID_CLGD5429		0x9c
@@ -105,13 +106,13 @@
 
 /* sequencer 0x12 */
 #define CIRRUS_CURSOR_SHOW		0x01
-#define CIRRUS_CURSOR_HIDDENPEL		0x02
+#define CIRRUS_CURSOR_HIDDENPEL	0x02
 #define CIRRUS_CURSOR_LARGE		0x04	/* 64x64 if set, else 32x32 */
 
 /* sequencer 0x17 */
-#define CIRRUS_BUSTYPE_VLBFAST		0x10
+#define CIRRUS_BUSTYPE_VLBFAST	0x10
 #define CIRRUS_BUSTYPE_PCI		0x20
-#define CIRRUS_BUSTYPE_VLBSLOW		0x30
+#define CIRRUS_BUSTYPE_VLBSLOW	0x30
 #define CIRRUS_BUSTYPE_ISA		0x38
 #define CIRRUS_MMIO_ENABLE		0x04
 #define CIRRUS_MMIO_USE_PCIADDR		0x40	/* 0xb8000 if cleared. */
@@ -139,8 +140,8 @@
 #define CIRRUS_BLT_START                0x02
 #define CIRRUS_BLT_RESET                0x04
 #define CIRRUS_BLT_FIFOUSED             0x10 /* 5436 only */
-#define CIRRUS_BLT_PAUSED		0x20 /* 5436 only */
-#define CIRRUS_BLT_APERTURE2		0x40
+#define CIRRUS_BLT_PAUSED				0x20 /* 5436 only */
+#define CIRRUS_BLT_APERTURE2			0x40
 #define CIRRUS_BLT_AUTOSTART            0x80 /* 5436 only */
 
 /* graphic controller 0x33 */
@@ -149,13 +150,12 @@
 #define CIRRUS_BLTMODEEXT_COLOREXPINV      0x02
 #define CIRRUS_BLTMODEEXT_DWORDGRANULARITY 0x01
 
-#define CL_GD5429_SYSTEM_BUS_VESA	5
-#define CL_GD5429_SYSTEM_BUS_ISA	7
-
-#define CL_GD543X_SYSTEM_BUS_PCI	4
-#define CL_GD543X_SYSTEM_BUS_VESA	6
-#define CL_GD543X_SYSTEM_BUS_ISA	7
-
+#define CL_543X_BUS_SELECT_VLB40 2
+#define CL_542X_BUS_SELECT_VLB40 4
+#define CL_BUS_SELECT_PCI 	 	 4
+#define CL_BUS_SELECT_MCA 	 	 5
+#define CL_BUS_SELECT_VLB33 	 6
+#define CL_BUS_SELECT_ISA 	 	 7
 
 typedef struct {
     mem_map_t		mmio_mapping;
@@ -165,7 +165,7 @@ typedef struct {
     svga_t		svga;
 
     int			has_bios,
-			rev;
+				rev;
 
     rom_t		bios_rom;
 
@@ -203,10 +203,12 @@ typedef struct {
 	int		unlock_special;	
     }			blt;
 
-    int			pci, vlb;
+    int			pci, vlb, isa, mca;
     int			countminusone;    
 
     uint8_t		pci_regs[256];
+	uint8_t		pos_regs[8]; /* mca */
+
     uint8_t		int_line;
 
     int			card;
@@ -575,32 +577,10 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 					is_locked(svga);
 					break;
 
-				case 0x08:
+				case 0x08: /* EEPROM */
 					if ((dev->pci) || (dev->vlb))
 						val &= 0xbf;
 					svga->seqregs[8] = val;
-					break;
-											
-				case 0x0a:
-					if (is_5426(svga)) {
-						svga->seqregs[0x0a] = val;
-					} else {
-						/* FIXME : Hack to force memory size on some GD-542x BIOSes*/
-						val &= 0xe7;
-						switch (dev->vram_size) {
-							case 0x080000:
-								svga->seqregs[0x0a] = val | 0x08;
-								break;
-
-							case 0x100000:
-								svga->seqregs[0x0a] = val | 0x10;
-								break;
-
-							case 0x200000:
-								svga->seqregs[0x0a] = (val | 0x18);
-								break;
-						}
-					}
 					break;
 
 				case 0x0b: case 0x0c: case 0x0d: case 0x0e: /* VCLK stuff */
@@ -652,27 +632,6 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((val & 0x3c) * 256)) & mask;
 					else
 						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((val & 0x3f) * 256)) & mask;
-					break;
-			
-				case 0x15:
-					if (is_5426(svga)) {
-						/* FIXME : Hack to force memory size on some GD-542x BIOSes*/
-						val &= 0xf8;
-						switch (dev->vram_size) {				
-							case 0x100000:
-								svga->seqregs[0x15] = val | 0x02;
-								break;
-
-							case 0x200000:
-								svga->seqregs[0x15] = (val | 0x03);
-								break;
-
-							case 0x400000:
-								svga->seqregs[0x15] = val | 0x04;
-								break;
-						}
-					} else
-						return;
 					break;
 
 				case 0x07:
@@ -1023,19 +982,21 @@ gd54xx_in(uint16_t addr, priv_t priv)
 				case 0x17:
 					if (is_5422(svga)) { 
 						temp = svga->seqregs[0x17] & ~(7 << 3);
-						if (svga->crtc[0x27] <= CIRRUS_ID_CLGD5429) {
-							if (dev->vlb)
-								temp |= (CL_GD5429_SYSTEM_BUS_VESA << 3);
-							else
-								temp |= (CL_GD5429_SYSTEM_BUS_ISA << 3);
-						} else {
-							if (dev->pci)
-								temp |= (CL_GD543X_SYSTEM_BUS_PCI << 3);
-							else if (dev->vlb)
-								temp |= (CL_GD543X_SYSTEM_BUS_VESA << 3);
-							else
-								temp |= (CL_GD543X_SYSTEM_BUS_ISA << 3);
-						}
+						
+						if (dev->isa)
+								temp |= (CL_BUS_SELECT_ISA << 3);
+						else if (dev->mca)
+								temp |= (CL_BUS_SELECT_MCA << 3);
+						else if (dev->pci)
+								temp |= (CL_BUS_SELECT_PCI << 3);
+						else if (dev->vlb) { 
+								if (svga->crtc[0x27] == CIRRUS_ID_CLGD5429)
+									temp |= (CL_542X_BUS_SELECT_VLB40 << 3);
+								else if (svga->crtc[0x27 > CIRRUS_ID_CLGD5429])
+									temp |= (CL_543X_BUS_SELECT_VLB40 << 3); /* Could be 4 << 2 */
+								else
+									temp |= (CL_BUS_SELECT_VLB33 << 3);
+						}				
 						return temp;
 					}
 					else
@@ -3094,6 +3055,35 @@ cl_pci_write(int func, int addr, uint8_t val, priv_t priv)
     }
 }
 
+static uint8_t 
+gd5428_mca_read(int port, priv_t priv)
+{
+        gd54xx_t *dev = (gd54xx_t *)priv;
+
+        return dev->pos_regs[port & 7];
+}
+
+static void 
+gd5428_mca_write(int port, uint8_t val, priv_t priv)
+{
+	gd54xx_t *dev = (gd54xx_t *)priv;
+
+        if (port < 0x102)
+			return;
+
+        dev->pos_regs[port & 7] = val;
+	recalc_mapping(dev);
+}
+
+#if 0
+static uint8_t 
+gd5428_mca_feedb(priv_t priv)
+{
+        gd54xx_t *dev = (gd54xx_t *)priv;
+
+        return dev->pos_regs[2] & 1;
+}
+#endif
 
 static priv_t
 gd54xx_init(const device_t *info, UNUSED(void *parent))
@@ -3105,8 +3095,11 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
     int vram;
 
     memset(dev, 0x00, sizeof(gd54xx_t));
+
     dev->pci = !!(info->flags & DEVICE_PCI);
     dev->vlb = !!(info->flags & DEVICE_VLB);
+	dev->mca = !!(info->flags & DEVICE_MCA);
+	dev->isa = !!(info->flags & DEVICE_ISA);
     dev->rev = 0;
     dev->has_bios = 1;
 
@@ -3167,19 +3160,24 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
 		break;
     }
 
-    if (id >= CIRRUS_ID_CLGD5420)
-	vram = device_get_config_int("memory");
-    else
-	vram = 0;
+    if (dev->mca) 
+		vram = 1;
+	else {
+		if (id >= CIRRUS_ID_CLGD5420)
+			vram = device_get_config_int("memory");
+    	else
+			vram = 0;
+	}
 
     if (vram)
-	dev->vram_size = vram << 20;
+		dev->vram_size = vram << 20;
     else
-	dev->vram_size = 1 << 19;
-    dev->vram_mask = dev->vram_size - 1;
+		dev->vram_size = 1 << 19;
+    
+	dev->vram_mask = dev->vram_size - 1;
 
     if (vram <= 1)
-	svga->decode_mask = dev->vram_mask;
+		svga->decode_mask = dev->vram_mask;
     
     if (romfn)
 	rom_init(&dev->bios_rom, romfn, 0xc0000, 0x8000, 0x7fff,
@@ -3252,6 +3250,12 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
     svga->crtc[0x27] = id;
     
     svga->seqregs[0x06] = 0x0f;
+
+	if (dev->mca) {
+		dev->pos_regs[0] = 0x7b;
+		dev->pos_regs[1] = 0x91;
+		mca_add(gd5428_mca_read, gd5428_mca_write, dev);
+    }
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
@@ -3450,6 +3454,19 @@ const device_t gd5422_isa_device = {
     gd5422_config,
 };
 
+const device_t gd5422_onboard_device = {
+    "Onboard Cirrus Logic GD-5422",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_AT | DEVICE_ISA,
+    CIRRUS_ID_CLGD5422,
+    NULL,
+    gd54xx_init, gd54xx_close, NULL,
+    NULL,
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_isa_timing,
+    gd5422_config,
+};
+
 const device_t gd5424_vlb_device = {
     "Cirrus Logic GD-5424",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
@@ -3464,7 +3481,7 @@ const device_t gd5424_vlb_device = {
 };
 
 const device_t gd5426_onboard_vlb_device = {
-    "Cirrus Logic GD-5426",
+    "Onboard Cirrus Logic GD-5426",
     DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_VLB,
     CIRRUS_ID_CLGD5426,
     NULL,
@@ -3526,6 +3543,20 @@ const device_t gd5428_onboard_vlb_device = {
     gd54xx_force_redraw,
     &cl_gd_vlb_timing,
     gd5428_onboard_config
+};
+
+const device_t gd5428_mca_device =
+{
+    "Cirrus Logic CL-GD 5428 (IBM SVGA Adapter/A)",
+    DEVICE_VIDEO(VID_TYPE_SPEC) | DEVICE_MCA,
+    CIRRUS_ID_CLGD5428,
+    NULL,
+	gd54xx_init, gd54xx_close, NULL, 
+    NULL,
+    gd54xx_speed_changed,
+    gd54xx_force_redraw,
+    &cl_gd_vlb_timing,
+	NULL
 };
 
 const device_t gd5429_isa_device = {

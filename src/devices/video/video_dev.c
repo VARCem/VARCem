@@ -12,12 +12,12 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.39	2020/02/11
+ * Version:	@(#)video_dev.c	1.0.40	2021/01/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -129,24 +129,25 @@ static const struct {
     { "wy700",			&wy700_device			},
 
     { "et4000ax_mca",		&et4000_mca_device		},
-//  { "ibm_gd5428_mca",		&ibm_gd5428_mca_device		},
+    { "ibm_gd5428_mca",		&gd5428_mca_device		},
 
     { "mach64gx_pci",		&mach64gx_pci_device		},
     { "mach64vt2",		&mach64vt2_device		},
     { "et4000w32p_pci",		&et4000w32p_cardex_pci_device	},
+    { "stealth32_pci",		&et4000w32p_pci_device		},
     { "cl_gd5430_pci",		&gd5430_pci_device		},
     { "cl_gd5434_pci",		&gd5434_pci_device		},
     { "cl_gd5436_pci",		&gd5436_pci_device		},
     { "cl_gd5440_pci",		&gd5440_pci_device		},
     { "cl_gd5446_pci",		&gd5446_pci_device		},
+    { "cl_gd5446_stb_pci",	&gd5446_stb_pci_device		},
     { "cl_gd5480_pci",		&gd5480_pci_device		},
-    { "stealth32_pci",		&et4000w32p_pci_device		},
+//  { "mystique_pci",		&mystique_device		},
+//  { "mystique_220_pci",	&mystique_220_device		},
     { "stealth3d_2000_pci",	&s3_virge_pci_device		},
     { "stealth3d_3000_pci",	&s3_virge_988_pci_device	},
     { "stealth64d_pci",		&s3_diamond_stealth64_pci_device},
     { "stealth64v_pci",		&s3_diamond_stealth64_964_pci_device},
-//    { "mystique_pci",		&mystique_device		},
-//    { "mystique_220_pci",	&mystique_220_device		},
     { "n9_9fx_pci",		&s3_9fx_pci_device		},
     { "bahamas64_pci",		&s3_bahamas64_pci_device	},
     { "px_vision864_pci",	&s3_phoenix_vision864_pci_device},
@@ -154,38 +155,36 @@ static const struct {
     { "px_trio64_pci",		&s3_phoenix_trio64_pci_device	},
     { "virge375_pci",		&s3_virge_375_pci_device	},
     { "virge375_vbe20_pci",	&s3_virge_375_4_pci_device	},
-    { "cl_gd5446_stb_pci",	&gd5446_stb_pci_device		},
     { "tgui9440_pci",		&tgui9440_pci_device		},
 
     { "mach64gx_vlb",		&mach64gx_vlb_device		},
-    { "et4000w32p_vlb",		&et4000w32p_cardex_vlb_device	},
 #if defined(DEV_BRANCH)
     { "cl_gd5424_vlb",		&gd5424_vlb_device		},
 #endif
+    { "cl_gd5426_vlb",		&gd5426_vlb_device		},
     { "cl_gd5428_vlb",		&gd5428_vlb_device		},
     { "cl_gd5429_vlb",		&gd5429_vlb_device		},
-    { "cl_gd5434_vlb",		&gd5434_vlb_device		},
-    { "stealth32_vlb",		&et4000w32p_vlb_device		},
-    { "cl_gd5426_vlb",		&gd5426_vlb_device		},
     { "cl_gd5430_vlb",		&gd5430_vlb_device		},
-    { "stealth3d_2000_vlb",	&s3_virge_vlb_device		},
-    { "stealth3d_3000_vlb",	&s3_virge_988_vlb_device	},
-    { "stealth64d_vlb",		&s3_diamond_stealth64_vlb_device},
-    { "stealth64v_vlb",		&s3_diamond_stealth64_964_vlb_device},
-    { "n9_9fx_vlb",		&s3_9fx_vlb_device		},
-    { "bahamas64_vlb",		&s3_bahamas64_vlb_device	},
+    { "cl_gd5434_vlb",		&gd5434_vlb_device		},
+    { "px_86c805_vlb",		&s3_phoenix_86c805_vlb_device	},
 #if defined(DEV_BRANCH)
     { "s3_metheus_86c928_vlb",	&s3_metheus_86c928_vlb_device	},
 #endif
-    { "px_86c805_vlb",		&s3_phoenix_86c805_vlb_device	},
+    { "bahamas64_vlb",		&s3_bahamas64_vlb_device	},
     { "px_vision864_vlb",	&s3_phoenix_vision864_vlb_device},
+    { "stealth64v_vlb",		&s3_diamond_stealth64_964_vlb_device},
     { "px_trio32_vlb",		&s3_phoenix_trio32_vlb_device	},
+    { "n9_9fx_vlb",		    &s3_9fx_vlb_device		},
     { "px_trio64_vlb",		&s3_phoenix_trio64_vlb_device	},
+    { "stealth64d_vlb",		&s3_diamond_stealth64_vlb_device},
+    { "stealth3d_2000_vlb",	&s3_virge_vlb_device		},
+    { "stealth3d_3000_vlb",	&s3_virge_988_vlb_device	},
     { "virge375_vlb",		&s3_virge_375_vlb_device	},
     { "virge375_vbe20_vlb",	&s3_virge_375_4_vlb_device	},
     { "tgui9400cxi_vlb",	&tgui9400cxi_device		},
     { "tgui9440_vlb",		&tgui9440_vlb_device		},
-
+    { "et4000w32p_vlb",		&et4000w32p_cardex_vlb_device	},
+    { "stealth32_vlb",		&et4000w32p_vlb_device		},
     { NULL,			NULL				}
 };
 
