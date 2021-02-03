@@ -8,14 +8,14 @@
  *
  *		Implementation of the SiS 85C496/497 based machines.
  *
- * Version:	@(#)m_sis49x.c	1.0.15	2020/12/23
+ * Version:	@(#)m_sis49x.c	1.0.16	2021/02/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2016-2020 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -106,6 +106,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&keyboard_ps2_pci_device);
 		device_add(&ide_pci_2ch_device);
 		device_add(&fdc37c665_device);
+		break;
     }
 
     return((priv_t)arg);
@@ -132,7 +133,7 @@ const device_t m_sis496_ami = {
 
 
 static const machine_t rise_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
     1, 255, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
