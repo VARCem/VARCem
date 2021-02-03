@@ -8,7 +8,7 @@
  *
  *		Implementation of the APM handler.
  *
- * Version:	@(#)apm.c	1.0.1	2021/01/12
+ * Version:	@(#)apm.c	1.0.2	2021/02/02
  *
  * Authors:	
  *		Miran Grca, <mgrca8@gmail.com>
@@ -58,70 +58,68 @@ typedef struct
 
 
 static void
-apm_out(uint16_t port, uint8_t val, void *p)
+apm_out(uint16_t port, uint8_t val, priv_t priv)
 {
-    apm_t *apm = (apm_t *) p;
+    apm_t *dev = (apm_t *)priv;
 
     DEBUG("[%04X:%08X] APM write: %04X = %02X (BX = %04X, CX = %04X)\n", CS, cpu_state.pc, port, val, BX, CX);
 
     port &= 0x0001;
 
     if (port == 0x0000) {
-	    apm->cmd = val;
+	    dev->cmd = val;
 
-	        switch (apm->cmd) {
-		        case 0x07:			/* Set Power State */
-			        if (CH == 0x00)
-                        switch (CX) {
-		        		    case 0x0000:
+	    switch (dev->cmd) {
+		    case 0x07:			/* Set Power State */
+		        if (CH == 0x00)
+                    switch (CX) {
+		       		    case 0x0000:
 #ifdef ENABLE_APM_LOG
-				        	    DEBUG("APM Set Power State: APM Enabled\n");
+			        	    DEBUG("APM Set Power State: APM Enabled\n");
 #endif
-					            break;
-				            case 0x0001:
+				            break;
+			            case 0x0001:
 #ifdef ENABLE_APM_LOG
-    					        DEBUG("APM Set Power State: Standby\n");
+    				        DEBUG("APM Set Power State: Standby\n");
 #endif
-					            break;
-				            case 0x0002:
+				            break;
+			            case 0x0002:
 #ifdef ENABLE_APM_LOG
-					            DEBUG("APM Set Power State: Suspend\n");
+				            DEBUG("APM Set Power State: Suspend\n");
 #endif
-	        				    break;
-			        	    case 0x0003:	/* Off */
+	       				    break;
+		        	    case 0x0003:	/* Off */
 #ifdef ENABLE_APM_LOG
-					            DEBUG("APM Set Power State: Off\n");
+				            DEBUG("APM Set Power State: Off\n");
 #endif
-				        	    exit(-1);
-					            break;
-			            }
+			        	    exit(-1);
+				            break;
+		            }
 			        break;
-	        }
+	    }
     } else
-	apm->stat = val;
+	dev->stat = val;
 }
 
 
 static uint8_t
-apm_in(uint16_t port, void *p)
+apm_in(uint16_t port, priv_t priv)
 {
-    apm_t *apm = (apm_t *) p;
-
-    //apm_log("[%04X:%08X] APM read: %04X = FF\n", CS, cpu_state.pc, port);
+    apm_t *dev = (apm_t *)priv;
 
     port &= 0x0001;
 
     if (port == 0x0000)
-	    return apm->cmd;
+	    return dev->cmd;
     else
-	    return apm->stat;
+	    return dev->stat;
 }
 
 
 static void
-apm_close(void *p)
+apm_close(priv_t priv)
 {
-    apm_t *dev = (apm_t *)p;
+    apm_t *dev = (apm_t *)priv;
 
     free(dev);
 }
