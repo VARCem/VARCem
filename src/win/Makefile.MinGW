@@ -890,6 +890,7 @@ DEVOBJ		:= bugger.o \
 		   parallel.o parallel_dev.o \
 		    prt_text.o prt_cpmap.o prt_escp.o \
 		   serial.o \
+		   i2c.o i2c_eeprom.o i2c_gpio.o \
 		   sio_acc3221.o sio_f82c710.o sio_fdc37c66x.o \
 		   sio_fdc37c669.o sio_fdc37c93x.o \
 		   sio_pc87306.o sio_pc87332.o \
@@ -971,6 +972,7 @@ VIDOBJ		:= video.o \
 		    vid_ega.o vid_ega_render.o \
 		    vid_svga.o vid_svga_render.o \
 		    vid_vga.o \
+			vid_ddc.o \
 		    vid_ati_eeprom.o \
 		    vid_ati18800.o vid_ati28800.o \
 		    vid_ati_mach64.o vid_ati68860_ramdac.o \
