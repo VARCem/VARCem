@@ -132,7 +132,7 @@ static const struct {
     { "ibm_gd5428_mca",		&gd5428_mca_device		},
 
     { "mach64gx_pci",		&mach64gx_pci_device		},
-    { "mach64vt2",		&mach64vt2_device		},
+    { "mach64vt2",		    &mach64vt2_device		},
     { "et4000w32p_pci",		&et4000w32p_cardex_pci_device	},
     { "stealth32_pci",		&et4000w32p_pci_device		},
     { "cl_gd5430_pci",		&gd5430_pci_device		},
@@ -141,9 +141,11 @@ static const struct {
     { "cl_gd5440_pci",		&gd5440_pci_device		},
     { "cl_gd5446_pci",		&gd5446_pci_device		},
     { "cl_gd5446_stb_pci",	&gd5446_stb_pci_device		},
+#if defined(DEV_BRANCH)
     { "cl_gd5480_pci",		&gd5480_pci_device		},
 //  { "mystique_pci",		&mystique_device		},
 //  { "mystique_220_pci",	&mystique_220_device		},
+#endif
     { "stealth3d_2000_pci",	&s3_virge_pci_device		},
     { "stealth3d_3000_pci",	&s3_virge_988_pci_device	},
     { "stealth64d_pci",		&s3_diamond_stealth64_pci_device},
