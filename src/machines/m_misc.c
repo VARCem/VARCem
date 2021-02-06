@@ -288,7 +288,7 @@ static const machine_t jetway_info = {
 };
 
 const device_t m_j656vxd = {
-    " ",
+    "Jetway 656VXD",
     DEVICE_ROOT,
     13,
     L"jetway/j656vxd",
