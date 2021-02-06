@@ -50,6 +50,7 @@
 #define MACHINE_PCI		0x000200	/* sys has PCI bus */
 #define MACHINE_AGP		0x000400	/* sys has AGP bus */
 #define MACHINE_FDC		0x010000	/* sys has int FDC */
+#define MACHINE_FDC_PS2 0x012000	/* sys has int PS/2 FDC */    
 #define MACHINE_HDC		0x020000	/* sys has int HDC */
 #define MACHINE_HDC_PS2		0x040000	/* sys has int PS/2 HDC */
 #define MACHINE_MOUSE		0x080000	/* sys has int mouse */
