@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.28	2021/01/25
+ * Version:	@(#)m_ps2_mca.c	1.0.29	2021/02/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1504,7 +1504,7 @@ static const CPU cpus_ps2_m50[] = {
 };
 
 static const machine_t m50_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     0,
     1, 10, 1, 64, -1,
     {{"",cpus_ps2_m50}}
@@ -1523,7 +1523,7 @@ const device_t m_ps2_m50 = {
 
 
 static const machine_t m55_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     0,
     1, 8, 1, 64, 16,
     {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
@@ -1542,7 +1542,7 @@ const device_t m_ps2_m55sx = {
 
 
 static const machine_t m70_3_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     0,
     2, 16, 2, 64, -1,
     {{"Intel",cpus_i386DX},{"AMD",cpus_Am386DX},{"Cyrix",cpus_486DLC}}
@@ -1561,7 +1561,7 @@ const device_t m_ps2_m70_3 = {
 
 
 static const machine_t m70_4_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     MACHINE_VIDEO,
     2, 16, 2, 64, -1,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}

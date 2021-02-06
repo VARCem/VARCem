@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.21	2019/05/17
+ * Version:	@(#)m_ps2_isa.c	1.0.22	2021/02/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -271,7 +271,7 @@ static const CPU cpus_ps2_m30_286[] = {
 };
 
 static const machine_t m30_info = {
-    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     MACHINE_VIDEO,
     1, 16, 1, 64, -1,
     {{"",cpus_ps2_m30_286}}

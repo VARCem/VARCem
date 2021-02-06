@@ -8,13 +8,13 @@
  *
  *		Implementation of the floppy drive emulation.
  *
- * Version:	@(#)fdd.c	1.0.21	2020/06/10
+ * Version:	@(#)fdd.c	1.0.22	2021/02/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -133,32 +133,6 @@ static const struct {
 };
 
 static int driveloaders[4];
-
-
-/* Flags:
-   Bit  0:	300 rpm supported;
-   Bit  1:	360 rpm supported;
-   Bit  2:	size (0 = 3.5", 1 = 5.25");
-   Bit  3:	sides (0 = 1, 1 = 2);
-   Bit  4:	double density supported;
-   Bit  5:	high density supported;
-   Bit  6:	extended density supported;
-   Bit  7:	double step for 40-track media;
-   Bit  8:	invert DENSEL polarity;
-   Bit  9:	ignore DENSEL;
-   Bit 10:	drive is a PS/2 drive;
-*/
-#define FLAG_RPM_300		1
-#define FLAG_RPM_360		2
-#define FLAG_525		   4
-#define FLAG_DS			   8
-#define FLAG_HOLE0		  16
-#define FLAG_HOLE1		  32
-#define FLAG_HOLE2		  64
-#define FLAG_DOUBLE_STEP	 128
-#define FLAG_INVERT_DENSEL	 256
-#define FLAG_IGNORE_DENSEL	 512
-#define FLAG_PS2		1024
 
 
 static const struct {
@@ -428,6 +402,11 @@ fdd_get_flags(int drive)
     return drive_types[fdd[drive].type].flags;
 }
 
+int
+fdd_get_flags_from_type(int type)
+{
+    return drive_types[type].flags;
+}
 
 int
 fdd_is_525(int drive)
