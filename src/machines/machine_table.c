@@ -15,6 +15,7 @@
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2021 Fred N. van Kempen.
+ *      Copyright 2021 Altheos.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -101,7 +102,7 @@ static const struct {
     { "[8086] Amstrad PC5086",			"amstrad_pc5086",	&m_amstrad_5086		},
     { "[8086] Amstrad PC20(0)",			"amstrad_pc200",	&m_amstrad_200		},
     { "[8086] Amstrad PPC512/640",		"amstrad_ppc512",	&m_amstrad_ppc		},
-    { "[8086] AT&T PC6300",			"att_6300",		&m_att_6300		},
+    { "[8086] AT&T PC6300",			    "att_6300",		    &m_att_6300		},
     { "[8086] Olivetti M24",			"olivetti_m24",		&m_oli_m24		},
     { "[8086] Olivetti M240",			"olivetti_m240",	&m_oli_m240		},
     { "[8086] Tandy 1000 SL/2",			"tandy_1000sl2",	&m_tandy_1k_sl2		},
@@ -147,7 +148,10 @@ static const struct {
 
     { "[386SX ISA] Amstrad MegaPC",		"amstrad_megapc",	&m_amstrad_mega_sx	},
     { "[386SX ISA] Arche AMA-932J",		"arche_ama932j",	&m_ama932j		},
-    { "[386SX ISA] Commodore SL386SX",		"commodore_sl386sx",		&m_cbm_sl386sx		},
+#if defined(DEV_BRANCH)
+    { "[386SX ISA] Commodore SL386SX-16",		"commodore_sl386sx",		&m_cbm_sl386sx		},
+    { "[386SX ISA] Commodore SL386SX-25",		"commodore_sl386sx25",		&m_cbm_sl386sx25	},
+#endif
     { "[386SX ISA] DTK 386SX clone",		"dtk_386",		&m_neat_dtk		},
     { "[386SX ISA] KMX-C-02",			"kmxc02",		&m_kmxc02		},
 

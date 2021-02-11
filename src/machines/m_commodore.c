@@ -8,13 +8,14 @@
  *
  *		Implementation of various Commodore systems.
  *
- * Version:	@(#)m_commodore.c	1.0.16	2020/09/28
+ * Version:	@(#)m_commodore.c	1.0.17	2021/02/08
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *      Copyright 2021 Altheos.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -49,6 +50,7 @@
 #include "../mem.h"
 #include "../rom.h"
 #include "../device.h"
+#include "../devices/chipsets/neat.h"
 #include "../devices/chipsets/scamp.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/input/mouse.h"
@@ -123,12 +125,21 @@ common_init(const device_t *info, void *arg)
             io_sethandler(0x0230, 1,
 		      NULL,NULL,NULL, pc30_write,NULL,NULL, NULL);
             break;
-        case 53: /* SL386SX */
+        case 53: /* SL386SX-16 */
+            device_add(&neat_device);
+            m_at_common_ide_init();
+            device_add(&fdc_at_device);
+            device_add(&keyboard_at_device);
+            if (config.mouse_type == MOUSE_INTERNAL)
+			    device_add(&mouse_ps2_device);	
+            //if (config.video_card == VID_INTERNAL)
+			    //device_add(&gd5402_onboard_device); /* WD Paradise according to MAME */
+            break;
+        case 69: /* SL386SX-25 */
             device_add(&scamp_device);
             m_at_common_ide_init();
             device_add(&fdc_at_device);
-            device_add(&keyboard_ps2_device);
-            //device_add(&keyboard_at_device);
+            device_add(&keyboard_ps2_ami_device);
             if (config.mouse_type == MOUSE_INTERNAL)
 			    device_add(&mouse_ps2_device);	
             if (config.video_card == VID_INTERNAL)
@@ -159,7 +170,7 @@ const device_t m_cbm_pc30 = {
 };
 
 static const machine_t sl386sx_info = {
-    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC | MACHINE_MOUSE,
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_MOUSE,
     0,
     1024, 8192, 512, 128, 16,
         {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
@@ -173,5 +184,23 @@ const device_t m_cbm_sl386sx = {
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &sl386sx_info,
+    NULL
+};
+
+static const machine_t sl386sx25_info = {
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC | MACHINE_MOUSE,
+    0,
+    1024, 8192, 512, 128, 16,
+        {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
+};
+
+const device_t m_cbm_sl386sx25 = {
+    "Commodore SL-386SX25",
+    DEVICE_ROOT,
+    69,
+    L"commodore/sl386sx25",
+    common_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &sl386sx25_info,
     NULL
 };
