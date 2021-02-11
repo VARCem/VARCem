@@ -8,7 +8,7 @@
  *
  *		Definitions for the X86 architecture.
  *
- * Version:	@(#)x86.h	1.0.2	2019/05/17
+ * Version:	@(#)x86.h	1.0.3	2020/11/19
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -34,6 +34,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef EMU_CPU_X86_H
+# define EMU_CX86_PU_H
 
 
 #ifdef _MSC_VER
@@ -44,27 +46,6 @@
 #else
 # define INLINE __inline
 #endif
-
-
-extern uint16_t oldcs;
-extern uint32_t rmdat32;
-extern int oldcpl;
-
-extern int nmi_enable;
-
-extern int tempc;
-extern int output;
-extern int firstrepcycle;
-
-extern uint32_t easeg,ealimit,ealimitw;
-
-extern int skipnextprint;
-extern int inhlt;
-
-extern uint8_t opcode;
-
-extern uint16_t lastcs,lastpc;
-extern int timetolive,keyboardtimer;
 
 #define setznp168 setznp16
 
@@ -77,11 +58,32 @@ extern int timetolive,keyboardtimer;
 #define setr16(r,v) cpu_state.regs[r].w=v
 #define setr32(r,v) cpu_state.regs[r].l=v
 
-extern uint8_t znptable8[256];
-extern uint16_t znptable16[65536];
 
-extern int use32;
-extern int stack32;
+extern uint16_t		oldcs;
+extern uint32_t		rmdat32;
+extern int		oldcpl;
+
+extern int		nmi_enable;
+
+extern int		tempc;
+extern int		output;
+extern int		firstrepcycle;
+
+extern uint32_t		easeg,ealimit,ealimitw;
+
+extern int		skipnextprint;
+extern int		inhlt;
+
+extern uint8_t		opcode;
+
+extern uint16_t		lastcs,lastpc;
+extern int		timetolive,keyboardtimer;
+
+extern uint8_t		znptable8[256];
+extern uint16_t		znptable16[65536];
+
+extern int		use32;
+extern int		stack32;
 
 #define fetchea()   { rmdat=readmemb(cs+pc); pc++;  \
                     reg=(rmdat>>3)&7;               \
@@ -139,14 +141,22 @@ extern uint32_t rmdat32;
 
 extern int inscounts[256];
 
-extern void x86illegal();
-
-extern void x86seg_reset();
-extern void x86gpf(char *s, uint16_t error);
-
 extern uint16_t zero;
 
 extern int x86_was_reset;
 
 extern int codegen_flat_ds;
 extern int codegen_flat_ss;
+
+
+extern void	x86illegal(void);
+
+extern void	x86seg_reset(void);
+extern void	x86gpf(char *s, uint16_t error);
+
+extern void	execx86(int cycs);
+extern void	exec386(int cycs);
+extern void	exec386_dynarec(int cycs);
+
+
+#endif	/*EMU_CPU_X86_H*/

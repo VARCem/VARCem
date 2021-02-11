@@ -8,11 +8,11 @@
  *
  *		Define application version and build info.
  *
- * Version:	@(#)version.h	1.0.27	2020/12/06
+ * Version:	@(#)version.h	1.0.28	2021/02/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -53,13 +53,13 @@
 #define EMU_PRODUCT	"VARCem Emulator"
 #define EMU_COMPANY	"The VARCem Team"
 #define EMU_TITLE	"Virtual ARchaeological Computer EMulator"
-#define EMU_COPYRIGHT	"Copyright 2018-2020 Fred N. van Kempen, The VARCem Team and others. Released under a mixed BSD 3-Clause and GPL License"
+#define EMU_COPYRIGHT	"Copyright 2018-2021 Fred N. van Kempen, The VARCem Team and others. Released under a mixed BSD 3-Clause and GPL License."
 
 /* Version info. */
 #define EMU_VER_MAJOR	1
 #define EMU_VER_MINOR	7
 #define EMU_VER_REV	4
-#define EMU_VER_PATCH	1
+#define EMU_VER_PATCH	2
 
 
 /* Standard C preprocessor macros. */

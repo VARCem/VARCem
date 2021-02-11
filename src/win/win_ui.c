@@ -8,13 +8,13 @@
  *
  *		Implement the user Interface module.
  *
- * Version:	@(#)win_ui.c	1.0.39	2019/05/17
+ * Version:	@(#)win_ui.c	1.0.40	2020/12/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -959,8 +959,6 @@ ui_resize(int x, int y)
 
     /* First, see if we should resize the UI window. */
     if (config.vid_resize) return;
-
-    video_blit_wait();
 
     /* Re-position and re-size the main window. */
     GetWindowRect(hwndMain, &r);

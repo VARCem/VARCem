@@ -11,7 +11,7 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.24	2019/05/17
+ * Version:	@(#)ui_main.c	1.0.25	2020/12/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -272,7 +272,6 @@ static void
 toggle_video_item(int idm, int *val)
 {
     plat_startblit();
-    video_blit_wait();
     *val ^= 1;
     plat_endblit();
 

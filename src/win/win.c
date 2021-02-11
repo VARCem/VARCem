@@ -8,13 +8,13 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.32	2019/06/14
+ * Version:	@(#)win.c	1.0.33	2021/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -42,6 +42,7 @@
 #ifdef _MSC_VER
 # include <io.h>			/* for _open_osfhandle() */
 #endif
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -269,21 +270,8 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpszArg, int nCmdShow)
 void
 plat_start(void)
 {
-    LARGE_INTEGER qpc;
-#ifdef _LOGGING
-    uint64_t freq;
-#endif
-
     /* We have not stopped yet. */
     quited = 0;
-
-    /* Initialize the high-precision timer. */
-    timeBeginPeriod(1);
-    QueryPerformanceFrequency(&qpc);
-#ifdef _LOGGING
-    freq = qpc.QuadPart;
-    DEBUG("WIN: main timer precision: %llu\n", freq);
-#endif
 
     /* Start the emulator, really. */
     thMain = thread_create(pc_thread, &quited);
@@ -541,21 +529,27 @@ plat_dir_create(const wchar_t *path)
 }
 
 
-uint64_t
+uint32_t
 plat_timer_read(void)
 {
+    static uint64_t freq = 0;
     LARGE_INTEGER li;
 
+    if (freq == 0) {
+	/* Attempt to allow for 1-msec delays with Sleep. */
+	timeBeginPeriod(1);
+
+	/* Initialize the high-precision timer. */
+	QueryPerformanceFrequency(&li);
+	freq = li.QuadPart;
+#ifdef _LOGGING
+	DEBUG("WIN: main timer precision: %" PRIu64 "\n", freq);
+#endif
+    }
+
     QueryPerformanceCounter(&li);
-
-    return(li.QuadPart);
-}
-
-
-uint32_t
-plat_get_ticks(void)
-{
-    return(GetTickCount());
+    li.QuadPart *= 1000000;
+    return((uint32_t)(li.QuadPart / freq));
 }
 
 

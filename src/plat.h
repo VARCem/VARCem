@@ -8,11 +8,11 @@
  *
  *		Define the various platform support functions.
  *
- * Version:	@(#)plat.h	1.0.25	2019/04/29
+ * Version:	@(#)plat.h	1.0.26	2021/02/10
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -157,8 +157,7 @@ extern void	plat_append_slash(wchar_t *path);
 extern int	plat_path_abs(const wchar_t *path);
 extern int	plat_dir_check(const wchar_t *path);
 extern int	plat_dir_create(const wchar_t *path);
-extern uint64_t	plat_timer_read(void);
-extern uint32_t	plat_get_ticks(void);
+extern uint32_t	plat_timer_read(void);
 extern void	plat_delay_ms(uint32_t count);
 extern void	plat_mouse_capture(int on);
 extern int	plat_get_kbd_state(void);

@@ -8,13 +8,13 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.77	2019/05/20
+ * Version:	@(#)pc.c	1.0.78	2020/11/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -1063,83 +1063,67 @@ void
 pc_thread(void *param)
 {
     wchar_t temp[200];
-    uint64_t start_time, end_time;
-    int64_t main_time;
     uint32_t old_time, new_time;
-    uint32_t clockrate;
-    int done, drawits, frm;
+    int32_t elapsed_time;
     int *quitp = (int *)param;
+    int frm;
 
     INFO("PC: starting main thread...\n");
 
-    main_time = 0;
     title_update = 1;
-    old_time = plat_get_ticks();
-    done = drawits = frm = 0;
+    frm = 0;
 
     while (! *quitp) {
-	/* See if it is time to run a frame of code. */
-	new_time = plat_get_ticks();
-	drawits += (new_time - old_time);
-	old_time = new_time;
-	if (drawits > 0 && !dopause) {
-		/* Yes, so do one frame now. */
-		start_time = plat_timer_read();
-		drawits -= 10;
-		if (drawits > 50)
-			drawits = 0;
+	/* Just so we dont overload the host OS. */
+	if (dopause) {
+		plat_delay_ms(100);
+		continue;
+	}
 
-		/* Run a block of code. */
-		plat_startblit();
-		clockrate = machine_get_speed(1);
+	old_time = plat_timer_read();
 
-		if (is386) {
-#ifdef USE_DYNAREC
-			if (config.cpu_use_dynarec)
-				exec386_dynarec(clockrate/100);
-			  else
-#endif
-				exec386(clockrate/100);
-		} else if (cpu_get_type() >= CPU_286) {
-			exec386(clockrate/100);
-		} else {
-			execx86(clockrate/100);
-		}
+	/* Run a frame of code. */
+	cpu_exec();
+
+	/* Get the current time (in usec.) */
+	new_time = plat_timer_read();
+	elapsed_time = new_time - old_time;
+
+	/*
+	 * Now wait for 10.000 - elapsed_usec microseconds.
+	 *
+	 * Since not all platforms can do microsecond-delays,
+	 * we will add 500 to round up to the next millisec.
+	 */
+	elapsed_time = 10000 - elapsed_time;
+	if (elapsed_time > 0)
+		plat_delay_ms((elapsed_time + 500) / 1000);
 
 #ifdef USE_DINPUT
-		mouse_poll();
+	mouse_poll();
 #endif
 
-		joystick_process();
+	joystick_process();
 
-		plat_endblit();
+	/* One more frame done! */
+	framecount++;
 
-		if (title_update) {
-			swprintf(temp, sizeof_w(temp),
-				 L"%s %s - %i%% - %s - %s",
-				 EMU_NAME, emu_version, fps,
-				 machine_get_name(), cpu_get_name());
-			ui_window_title(temp);
+	/* Every 200 frames we save the machine status. */
+	if (nvr_dosave && (++frm >= 200)) {
+		nvr_save();
+		nvr_dosave = 0;
+		frm = 0;
+	}
 
-			title_update = 0;
-		}
+	/* If needed, update the title bar. */
+	if (title_update) {
+		swprintf(temp, sizeof_w(temp),
+			 L"%s %s - %3i%% - %s - %s",
+			 EMU_NAME, emu_version, fps,
+			 machine_get_name(), cpu_get_name());
+		ui_window_title(temp);
 
-		/* One more frame done! */
-		framecount++;
-		done++;
-
-		/* Every 200 frames we save the machine status. */
-		if (++frm >= 200 && nvr_dosave) {
-			nvr_save();
-			nvr_dosave = 0;
-			frm = 0;
-		}
-
-		end_time = plat_timer_read();
-		main_time += (end_time - start_time);
-	} else {
-		/* Just so we dont overload the host OS. */
-		plat_delay_ms(1);
+		title_update = 0;
 	}
 
 	/* If needed, handle a screen resize. */
@@ -1294,7 +1278,6 @@ set_screen_size(int x, int y)
 
 	/* Account for possible overscan. */
 	vid = video_type();
-INFO("SetScreenSize(%d,%d) type=%d\n", x, y, vid);
 	if ((vid == VID_TYPE_CGA) && (temp_overscan_y == 16)) {
 		/* CGA */
 		dy = (((dx - dtx) / 4.0) * 3.0) + dty;

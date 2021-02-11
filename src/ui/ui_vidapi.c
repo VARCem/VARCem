@@ -8,11 +8,11 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.8	2019/05/17
+ * Version:	@(#)ui_vidapi.c	1.0.9	2020/12/28
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -125,9 +125,6 @@ vidapi_set(int api)
     /* Lock the blitter. */
     plat_startblit();
 
-    /* Wait for it to be ours. */
-    video_blit_wait();
-
     /* Close the (old) API. */
     plat_vidapis[config.vid_api]->close();
 
@@ -162,9 +159,6 @@ vidapi_resize(int x, int y)
     /* Lock the blitter. */
     plat_startblit();
 
-    /* Wait for it to be ours. */
-    video_blit_wait();
-
     plat_vidapis[config.vid_api]->resize(x, y);
 
     /* Release the blitter. */
@@ -190,9 +184,6 @@ vidapi_enable(int yes)
 
     /* Lock the blitter. */
     plat_startblit();
-
-    /* Wait for it to be ours. */
-    video_blit_wait();
 
     plat_vidapis[config.vid_api]->enable(yes);
 

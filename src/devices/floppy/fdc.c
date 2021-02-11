@@ -398,7 +398,6 @@ update_rate(fdc_t *fdc, int drive)
 
     /*Bitcell period in ns*/
     fdc->bitcell_period = 1000000 / fdc->bit_rate * 2;
-INFO("FDC: update_rate(%d) bitcell_period=%d\n", drive, fdc->bit_rate, fdc->bitcell_period);
 }
 
 
@@ -447,8 +446,7 @@ set_rate(fdc_t *fdc, int drive)
 {
     update_rate(fdc, drive);
 
-//    DEBUG("FDC: set_rate(%i) %i, %i (%i, %i)\n",
-INFO("FDC: set_rate(%i) %i, %i (%i, %i)\n",
+    DEBUG("FDC: set_rate(%i) %i, %i (%i, %i)\n",
 	  drive, fdc->drvrate[drive], fdc->rate,
 	  get_densel(fdc, drive),
 	  fdc->rwc[drive], fdc->densel_force);

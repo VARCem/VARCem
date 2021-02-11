@@ -8,14 +8,14 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.14	2019/05/13
+ * Version:	@(#)cpu.c	1.0.15	2020/11/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
@@ -200,6 +200,7 @@ static int	cpu_turbo = -1,
 		cpu_effective = -1,
 		cpu_waitstates,
 		cpu_extfpu;
+static uint32_t	cpu_speed;
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
 /* Variables for the AMD "K" processors. */
@@ -326,6 +327,7 @@ cpu_activate(void)
     cpu_16bitbus = ((cpu->type == CPU_286) || \
 		    (cpu->type == CPU_386SX) || \
 		    (cpu->type == CPU_486SLC));
+    cpu_speed = cpu->rspeed;
     if (cpu->multi) 
 	   cpu_busspeed = cpu->rspeed / cpu->multi;
 
@@ -1425,6 +1427,14 @@ cpu_get_flags(void)
 }
 
 
+/* Return the operating speed of the currently-selected CPU. */
+uint32_t
+cpu_get_speed(void)
+{
+    return(cpu->rspeed);
+}
+
+
 /*
  * Select a new operating speed for the currently-selected CPU.
  *
@@ -1448,14 +1458,6 @@ cpu_set_speed(int new_speed)
     cpu_activate();
 
     return(old_speed);
-}
-
-
-/* Return the operating speed of the currently-selected CPU. */
-uint32_t
-cpu_get_speed(void)
-{
-    return(cpu->rspeed);
 }
 
 
@@ -2303,6 +2305,25 @@ i686_invalid_wrmsr:
 				break;
 		}
 		break;
+    }
+}
+
+
+/* Run a block of code. */
+void
+cpu_exec(void)
+{
+    if (is386) {
+#ifdef USE_DYNAREC
+	if (cpu_dynarec)
+		exec386_dynarec(cpu_speed/100);
+	  else
+#endif
+		exec386(cpu_speed/100);
+    } else if (cpu->type >= CPU_286) {
+	exec386(cpu_speed/100);
+    } else {
+	execx86(cpu_speed/100);
     }
 }
 

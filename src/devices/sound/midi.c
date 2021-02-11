@@ -8,13 +8,13 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.12	2020/07/11
+ * Version:	@(#)midi.c	1.0.13	2021/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -257,16 +257,16 @@ play_sysex(uint8_t *sysex, unsigned int len)
 void
 midi_write(uint8_t val)
 {
-    uint32_t passed_ticks;
+    uint32_t passed_msec;
 
     if (!midi || !midi->device) return;
 
     if (midi->device->write && midi->device->write(val)) return;
 
     if (midi->sysex_start) {
-	passed_ticks = plat_get_ticks() - midi->sysex_start;
-	if (passed_ticks < midi->sysex_delay)
-		plat_delay_ms(midi->sysex_delay - passed_ticks);
+	passed_msec = (plat_timer_read() / 1000);
+	if (passed_msec < midi->sysex_delay)
+		plat_delay_ms(midi->sysex_delay - passed_msec);
     }
 
     /* Test for a realtime MIDI message */
@@ -304,7 +304,7 @@ midi_write(uint8_t val)
 					midi->sysex_delay = 30;	/* Dark Sun 1 */
 				else
 					midi->sysex_delay = (unsigned int) (((float) (midi->pos) * 1.25f) * 1000.0f / 3125.0f) + 2;
-				midi->sysex_start = plat_get_ticks();
+				midi->sysex_start = plat_timer_read();
 			}
 		}
 	}
