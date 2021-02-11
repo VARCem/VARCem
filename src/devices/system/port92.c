@@ -8,13 +8,13 @@
  *
  *		Implementation of the "port 92" pseudo-device.
  *
- * Version:	@(#)port92.c	1.0.1	2019/05/15
+ * Version:	@(#)port92.c	1.0.2	2021/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2019 Sarah Walker.
  *
@@ -48,12 +48,6 @@
 #include "../../device.h"
 #include "../../plat.h"
 #include "port92.h"
-
-
-typedef struct {
-    uint8_t	reg,
-		mask;
-} port92_t;
 
 
 static void
