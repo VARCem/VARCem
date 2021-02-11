@@ -11,7 +11,7 @@
  *		This is intended to be used by another VGA/SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.29	2021/02/03
+ * Version:	@(#)vid_svga.c	1.0.30	2021/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -471,7 +471,7 @@ svga_recalctimings(svga_t *svga)
 	svga->vblankstart |= 0x200;
     svga->vblankstart++;
 
-    svga->hdisp = svga->crtc[1] - ((svga->crtc[5] & 0x60) >> 5);
+    svga->hdisp = svga->crtc[1];
     svga->hdisp++;
 
     svga->htotal = svga->crtc[0];
@@ -778,10 +778,10 @@ svga_poll(priv_t priv)
 		svga->vslines = 0;
 
 		if (svga->interlace && svga->oddeven)
-			svga->ma = svga->maback = svga->ma_latch + (svga->rowoffset << 1) + ((svga->crtc[5] & 0x60) >> 5);
+			svga->ma = svga->maback = svga->ma_latch + (svga->rowoffset << 1);
 		else
-			svga->ma = svga->maback = svga->ma_latch + ((svga->crtc[5] & 0x60) >> 5) + svga->ca_adj;
-		svga->ca = (svga->crtc[0xe] << 8) | svga->crtc[0xf];
+			svga->ma = svga->maback = svga->ma_latch;
+		svga->ca = ((svga->crtc[0xe] << 8) | svga->crtc[0xf]) + svga->ca_adj;
 
 		svga->ma <<= 2;
 		svga->maback <<= 2;
