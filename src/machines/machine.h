@@ -165,7 +165,10 @@ extern const device_t	m_kmxc02;
 extern const device_t	m_tosh_3100e;
 
 extern const device_t	m_cbm_pc30;
+#if defined(DEV_BRANCH)
 extern const device_t	m_cbm_sl386sx;
+extern const device_t	m_cbm_sl386sx25;
+#endif
 
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
 extern const device_t	m_cpq_p1;
