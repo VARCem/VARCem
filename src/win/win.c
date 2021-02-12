@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.33	2021/02/10
+ * Version:	@(#)win.c	1.0.34	2021/02/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -273,6 +273,9 @@ plat_start(void)
     /* We have not stopped yet. */
     quited = 0;
 
+    /* Attempt to allow for 1-msec delays with Sleep. */
+    timeBeginPeriod(1);
+
     /* Start the emulator, really. */
     thMain = thread_create(pc_thread, &quited);
     SetThreadPriority(thMain, THREAD_PRIORITY_HIGHEST);
@@ -529,22 +532,28 @@ plat_dir_create(const wchar_t *path)
 }
 
 
-uint32_t
+uint64_t
 plat_timer_read(void)
+{
+    LARGE_INTEGER li;
+
+    QueryPerformanceCounter(&li);
+
+    return(li.QuadPart);
+}
+
+
+uint32_t
+plat_timer_us(void)
 {
     static uint64_t freq = 0;
     LARGE_INTEGER li;
 
     if (freq == 0) {
-	/* Attempt to allow for 1-msec delays with Sleep. */
-	timeBeginPeriod(1);
-
 	/* Initialize the high-precision timer. */
 	QueryPerformanceFrequency(&li);
 	freq = li.QuadPart;
-#ifdef _LOGGING
 	DEBUG("WIN: main timer precision: %" PRIu64 "\n", freq);
-#endif
     }
 
     QueryPerformanceCounter(&li);

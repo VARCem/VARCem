@@ -1080,17 +1080,17 @@ pc_thread(void *param)
 		continue;
 	}
 
-	old_time = plat_timer_read();
+	old_time = plat_timer_us();
 
 	/* Run a frame of code. */
 	cpu_exec();
 
 	/* Get the current time (in usec.) */
-	new_time = plat_timer_read();
+	new_time = plat_timer_us();
 	elapsed_time = new_time - old_time;
 
 	/*
-	 * Now wait for 10.000 - elapsed_usec microseconds.
+	 * Now wait for (10.000 - elapsed_usec) microseconds.
 	 *
 	 * Since not all platforms can do microsecond-delays,
 	 * we will add 500 to round up to the next millisec.

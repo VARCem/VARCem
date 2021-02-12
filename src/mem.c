@@ -12,13 +12,13 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.37	2019/05/15
+ * Version:	@(#)mem.c	1.0.38	2021/02/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2019 Sarah Walker.
  *
@@ -103,7 +103,6 @@ int		mem_a20_key = 0,
 		mem_a20_alt = 0,
 		mem_a20_state = 0;
 
-int		mmuflush = 0;
 int		mmu_perm = 4;
 
 
@@ -167,7 +166,6 @@ flushmmucache(void)
 		writelookup[c] = 0xffffffff;
 	}
     }
-    mmuflush++;
 
     pccache = (uint32_t)0xffffffff;
 #ifdef _MSC_VER
