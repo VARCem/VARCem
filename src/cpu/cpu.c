@@ -8,14 +8,14 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.15	2020/11/19
+ * Version:	@(#)cpu.c	1.0.16	2021/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
@@ -2311,19 +2311,19 @@ i686_invalid_wrmsr:
 
 /* Run a block of code. */
 void
-cpu_exec(void)
+cpu_exec(int slice)
 {
     if (is386) {
 #ifdef USE_DYNAREC
 	if (cpu_dynarec)
-		exec386_dynarec(cpu_speed/100);
+		exec386_dynarec(cpu_speed/slice);
 	  else
 #endif
-		exec386(cpu_speed/100);
+		exec386(cpu_speed/slice);
     } else if (cpu->type >= CPU_286) {
-	exec386(cpu_speed/100);
+	exec386(cpu_speed/slice);
     } else {
-	execx86(cpu_speed/100);
+	execx86(cpu_speed/slice);
     }
 }
 

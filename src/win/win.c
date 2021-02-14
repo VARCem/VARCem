@@ -73,6 +73,12 @@
 #include "win.h"
 
 
+#define NtDelayExecution NtDelayExecution
+extern NTSYSAPI NTSTATUS NTAPI NtDelayExecution(
+				IN BOOLEAN              Alertable,
+				IN PLARGE_INTEGER       DelayInterval );
+
+
 /* Platform Public data, specific. */
 HINSTANCE	hInstance;			/* application instance */
 int		quited;				/* system exit requested */
@@ -544,9 +550,10 @@ plat_timer_read(void)
 
 
 uint32_t
-plat_timer_us(void)
+plat_timer_ms(void)
 {
     static uint64_t freq = 0;
+    static uint64_t start;
     LARGE_INTEGER li;
 
     if (freq == 0) {
@@ -554,11 +561,16 @@ plat_timer_us(void)
 	QueryPerformanceFrequency(&li);
 	freq = li.QuadPart;
 	DEBUG("WIN: main timer precision: %" PRIu64 "\n", freq);
+
+	QueryPerformanceCounter(&li);
+	start = li.QuadPart;
     }
 
+    /* Get the elapsed time in microseconds. */
     QueryPerformanceCounter(&li);
-    li.QuadPart *= 1000000;
-    return((uint32_t)(li.QuadPart / freq));
+    li.QuadPart = ((li.QuadPart - start) * 1000000) / freq;
+
+    return((uint32_t)(li.QuadPart / 1000));
 }
 
 

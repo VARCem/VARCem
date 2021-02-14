@@ -8,14 +8,14 @@
  *
  *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.15	2020/11/19
+ * Version:	@(#)cpu.h	1.0.16	2021/02/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		leilei,
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2018 leilei.
@@ -443,7 +443,7 @@ extern void	cpu_set_edx(void);
 extern void	cpu_reset(int hard);
 extern void	cpu_dumpregs(int __force);
 
-extern void	cpu_exec(void);
+extern void	cpu_exec(int slice);
 
 extern void	cpu_CPUID(void);
 extern void	cpu_RDMSR(void);

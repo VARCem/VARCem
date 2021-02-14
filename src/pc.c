@@ -1059,19 +1059,20 @@ pc_reload(const wchar_t *fn)
  * setting the variable 'quited' there to 1. We get a pointer
  * to that variable as our function argument.
  */
+#define SLICE	10		/* time-slice in msec per frame */
 void
 pc_thread(void *param)
 {
     wchar_t temp[200];
     uint32_t old_time, new_time;
-    int32_t elapsed_time;
     int *quitp = (int *)param;
-    int frm;
+    int frm, msec;
 
     INFO("PC: starting main thread...\n");
 
+    old_time = plat_timer_ms();
     title_update = 1;
-    frm = 0;
+    msec = frm = 0;
 
     while (! *quitp) {
 	/* Just so we dont overload the host OS. */
@@ -1080,39 +1081,44 @@ pc_thread(void *param)
 		continue;
 	}
 
-	old_time = plat_timer_us();
-
-	/* Run a frame of code. */
-	cpu_exec();
-
 	/* Get the current time (in usec.) */
-	new_time = plat_timer_us();
-	elapsed_time = new_time - old_time;
+	new_time = plat_timer_ms();
+	msec += (new_time - old_time);
+	old_time = new_time;
 
-	/*
-	 * Now wait for (10.000 - elapsed_usec) microseconds.
-	 *
-	 * Since not all platforms can do microsecond-delays,
-	 * we will add 500 to round up to the next millisec.
-	 */
-	elapsed_time = 10000 - elapsed_time;
-	if (elapsed_time > 0)
-		plat_delay_ms((elapsed_time + 500) / 1000);
+	if (msec > 0) {
+		msec -= SLICE;
+		if (msec > 50)
+			msec = 0;
+
+		/* Run a frame of code. */
+		cpu_exec(1000 / SLICE);
 
 #ifdef USE_DINPUT
-	mouse_poll();
+		mouse_poll();
 #endif
 
-	joystick_process();
+		joystick_process();
 
-	/* One more frame done! */
-	framecount++;
+		/* One more frame done! */
+		framecount++;
+	}
 
-	/* Every 200 frames we save the machine status. */
+	/*
+	 * If the NVR needs to be saved, wait 200 frames before
+	 * we actually do, to reduce "nvr file hammering".
+	 */
+#if 0
+if (nvr_dosave)INFO("PC: NVR save=%d frm=%d\n", nvr_dosave, frm);
 	if (nvr_dosave && (++frm >= 200)) {
+#else
+	if (nvr_dosave) {
+#endif
 		nvr_save();
 		nvr_dosave = 0;
+#if 0
 		frm = 0;
+#endif
 	}
 
 	/* If needed, update the title bar. */

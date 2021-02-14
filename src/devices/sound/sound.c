@@ -482,5 +482,5 @@ sound_add_handler(void (*get_buffer)(int32_t *buffer, int len, void *p), void *p
 void
 sound_speed_changed(void)
 {
-    poll_latch = (tmrval_t)((double)TIMER_USEC * (1000000.0 / 48000.0));
+    poll_latch = (tmrval_t)((TIMER_USEC * 1000000) / 48000);
 }
