@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.16	2021/02/12
+ * Version:	@(#)cpu.c	1.0.17	2021/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -16,8 +16,8 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2018-2021 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 leilei.
  *
  * This program is free software; you can redistribute it and/or modify
