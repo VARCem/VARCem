@@ -8,14 +8,14 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.21	2020/11/01
+ * Version:	@(#)vid_s3_virge.c	1.0.22	2021/02/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2020 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,8 +49,10 @@
 #include "../../device.h"
 #include "../../plat.h"
 #include "../system/clk.h"
+#include "../system/i2c.h"
 #include "../system/pci.h"
 #include "video.h"
+#include "vid_ddc.h"
 #include "vid_svga.h"
 #include "vid_svga_render.h"
 
@@ -230,7 +232,8 @@ typedef struct virge_t
                 
                 uint32_t pattern_8[8*8];
                 uint32_t pattern_16[8*8];
-                uint32_t pattern_32[8*8];
+                uint32_t pattern_24[8*8];
+                uint32_t pattern_32[8*8]; 
 
                 uint32_t prdx;
                 uint32_t prxstart;
@@ -289,6 +292,10 @@ typedef struct virge_t
         int virge_busy;
 
 	uint8_t subsys_stat, subsys_cntl;
+
+        uint8_t serialport;
+
+        void *i2c, *ddc;
 } virge_t;
 
 static video_timings_t timing_diamond_stealth3d_2000	= {VID_BUS, 2,  2,  3,  28, 28, 45};
@@ -364,6 +371,10 @@ enum
 #define INT_3DF_EMP  (1 << 6)
 #define INT_MASK 0xff
 
+#define SERIAL_PORT_SCW (1 << 0)
+#define SERIAL_PORT_SDW (1 << 1)
+#define SERIAL_PORT_SCR (1 << 2)
+#define SERIAL_PORT_SDR (1 << 3)
 
 #ifdef ENABLE_S3_VIRGE_LOG
 int s3_virge_do_log = ENABLE_S3_VIRGE_LOG;
@@ -836,7 +847,7 @@ static uint8_t s3_virge_mmio_read(uint32_t addr, priv_t priv)
                         wake_fifo_thread(virge);
                 return ret;
                 
-                 case 0x83b0: case 0x83b1: case 0x83b2: case 0x83b3:
+                case 0x83b0: case 0x83b1: case 0x83b2: case 0x83b3:
                 case 0x83b4: case 0x83b5: case 0x83b6: case 0x83b7:
                 case 0x83b8: case 0x83b9: case 0x83ba: case 0x83bb:
                 case 0x83bc: case 0x83bd: case 0x83be: case 0x83bf:
@@ -849,6 +860,14 @@ static uint8_t s3_virge_mmio_read(uint32_t addr, priv_t priv)
                 case 0x83d8: case 0x83d9: case 0x83da: case 0x83db:
                 case 0x83dc: case 0x83dd: case 0x83de: case 0x83df:
                 return s3_virge_in(addr & 0x3ff, priv);
+
+                case 0xff20: case 0xff21:
+                ret = virge->serialport & ~(SERIAL_PORT_SCR | SERIAL_PORT_SDR);
+                if ((virge->serialport & SERIAL_PORT_SCW) && i2c_gpio_get_scl(virge->i2c))
+                        ret |= SERIAL_PORT_SCR;
+                if ((virge->serialport & SERIAL_PORT_SDW) && i2c_gpio_get_sda(virge->i2c))
+                        ret |= SERIAL_PORT_SDR;
+                return ret;		
         }
         return 0xff;
 }
@@ -1091,6 +1110,9 @@ static void fifo_thread(void *param)
                                                 {
                                                         int x = (fifo->addr_type & FIFO_ADDR) & 4;
                                                         int y = ((fifo->addr_type & FIFO_ADDR) >> 3) & 7;
+                					int color, xx;
+							int byte, addr;
+                
                                                         virge->s3d.pattern_8[y*8 + x]     = val & 0xff;
                                                         virge->s3d.pattern_8[y*8 + x + 1] = val >> 8;
                                                         virge->s3d.pattern_8[y*8 + x + 2] = val >> 16;
@@ -1100,6 +1122,16 @@ static void fifo_thread(void *param)
                                                         y = ((fifo->addr_type & FIFO_ADDR) >> 4) & 7;
                                                         virge->s3d.pattern_16[y*8 + x]     = val & 0xffff;
                                                         virge->s3d.pattern_16[y*8 + x + 1] = val >> 16;
+
+                                                        addr = ((fifo->addr_type & FIFO_ADDR) & 0x00ff);
+							for (xx = 0; xx < 4; xx++) {
+					                        x = ((addr + xx) / 3) % 8;
+				        	                y = ((addr + xx) / 24) % 8;
+								color = ((addr + xx) % 3) << 3;
+								byte = (xx << 3);
+								virge->s3d.pattern_24[y*8 + x] &= ~(0xff << color);
+				                	        virge->s3d.pattern_24[y*8 + x] |= ((val >> byte) & 0xff) << color;
+							}
 
                                                         x = ((fifo->addr_type & FIFO_ADDR) >> 2) & 7;
                                                         y = ((fifo->addr_type & FIFO_ADDR) >> 5) & 7;
@@ -1391,12 +1423,10 @@ static void s3_virge_mmio_write(uint32_t addr, uint8_t val, priv_t priv)
         virge_t *virge = (virge_t *)priv;
         
         reg_writes++;       
-        if ((addr & 0xfffc) < 0x8000)
-        {
+        if ((addr & 0xfffc) < 0x8000) {
                 s3_virge_queue(virge, addr, val, FIFO_WRITE_BYTE);
         }
-        else switch (addr & 0xffff)
-        {
+        else switch (addr & 0xffff) {
                 case 0x83b0: case 0x83b1: case 0x83b2: case 0x83b3:
                 case 0x83b4: case 0x83b5: case 0x83b6: case 0x83b7:
                 case 0x83b8: case 0x83b9: case 0x83ba: case 0x83bb:
@@ -1409,8 +1439,13 @@ static void s3_virge_mmio_write(uint32_t addr, uint8_t val, priv_t priv)
                 case 0x83d4: case 0x83d5: case 0x83d6: case 0x83d7:
                 case 0x83d8: case 0x83d9: case 0x83da: case 0x83db:
                 case 0x83dc: case 0x83dd: case 0x83de: case 0x83df:
-                s3_virge_out(addr & 0x3ff, val, priv);
-                break;
+                        s3_virge_out(addr & 0x3ff, val, priv);
+                        break;
+
+                case 0xff20:
+			virge->serialport = val;
+			i2c_gpio_set(virge->i2c, !!(val & SERIAL_PORT_SCW), !!(val & SERIAL_PORT_SDW));;
+			break;
         }
 
                 
@@ -1426,9 +1461,13 @@ static void s3_virge_mmio_write_w(uint32_t addr, uint16_t val, priv_t priv)
         else switch (addr & 0xfffe)
         {
                 case 0x83d4:
-                s3_virge_mmio_write(addr, val & 0xff, priv);
-                s3_virge_mmio_write(addr + 1, val >> 8, priv);
-                break;
+                        s3_virge_mmio_write(addr, val & 0xff, priv);
+                        s3_virge_mmio_write(addr + 1, val >> 8, priv);
+                        break;
+
+                case 0xff20:
+		        s3_virge_mmio_write(addr, val, virge);
+                        break;
         }
 }
 static void s3_virge_mmio_write_l(uint32_t addr, uint32_t val, priv_t priv)
@@ -1616,6 +1655,9 @@ static void s3_virge_mmio_write_l(uint32_t addr, uint32_t val, priv_t priv)
                 {
                         int x = addr & 4;
                         int y = (addr >> 3) & 7;
+                        int color, xx;
+	                int byte;
+                        
                         virge->s3d.pattern_8[y*8 + x]     = val & 0xff;
                         virge->s3d.pattern_8[y*8 + x + 1] = val >> 8;
                         virge->s3d.pattern_8[y*8 + x + 2] = val >> 16;
@@ -1625,6 +1667,16 @@ static void s3_virge_mmio_write_l(uint32_t addr, uint32_t val, priv_t priv)
                         y = (addr >> 4) & 7;
                         virge->s3d.pattern_16[y*8 + x]     = val & 0xffff;
                         virge->s3d.pattern_16[y*8 + x + 1] = val >> 16;
+
+                        addr &= 0x00ff;
+			for (xx = 0; xx < 4; xx++) {
+	                        x = ((addr + xx) / 3) % 8;
+        	                y = ((addr + xx) / 24) % 8;
+				color = ((addr + xx) % 3) << 3;
+				byte = (xx << 3);
+				virge->s3d.pattern_24[y*8 + x] &= ~(0xff << color);
+                	        virge->s3d.pattern_24[y*8 + x] |= ((val >> byte) & 0xff) << color;
+			}
 
                         x = (addr >> 2) & 7;
                         y = (addr >> 5) & 7;
@@ -1869,6 +1921,10 @@ static void s3_virge_mmio_write_l(uint32_t addr, uint32_t val, priv_t priv)
                 if (virge->s3d_tri.cmd_set & CMD_SET_AE)
                         queue_triangle(virge);
                 break;
+
+                case 0xff20:
+			s3_virge_mmio_write(addr, val, virge);
+			break;
         }
 }
 
@@ -2008,7 +2064,7 @@ static void s3_virge_bitblt(virge_t *virge, int count, uint32_t cpu_dat)
                 bpp = 2;
                 x_mul = 3;
                 cpu_dat_shift = 24;
-                pattern_data = virge->s3d.pattern_32;
+                pattern_data = virge->s3d.pattern_24;
                 src_fg_clr = virge->s3d.src_fg_clr;
                 src_bg_clr = virge->s3d.src_bg_clr;
                 break;
@@ -2032,18 +2088,16 @@ static void s3_virge_bitblt(virge_t *virge, int count, uint32_t cpu_dat)
         if (virge->s3d.cmd_set & CMD_SET_MP)
         {
                 int x, y;
-                for (y = 0; y < 4; y++)
-                {
-                        for (x = 0; x < 8; x++)
-                        {
+                for (y = 0; y < 4; y++) {
+                        for (x = 0; x < 8; x++) {
                                 if (virge->s3d.mono_pat_0 & (1 << (x + y*8)))
-                                        mono_pattern[y*8 + x] = virge->s3d.pat_fg_clr;
+                                        mono_pattern[y*8 + (7 - x)] = virge->s3d.pat_fg_clr;
                                 else
-                                        mono_pattern[y*8 + x] = virge->s3d.pat_bg_clr;
+                                        mono_pattern[y*8 + (7 - x)] = virge->s3d.pat_bg_clr;
                                 if (virge->s3d.mono_pat_1 & (1 << (x + y*8)))
-                                        mono_pattern[(y+4)*8 + x] = virge->s3d.pat_fg_clr;
+                                        mono_pattern[(y+4)*8 + (7 - x)] = virge->s3d.pat_fg_clr;
                                 else
-                                        mono_pattern[(y+4)*8 + x] = virge->s3d.pat_bg_clr;
+                                        mono_pattern[(y+4)*8 + (7 - x)] = virge->s3d.pat_bg_clr;
                         }
                 }
         }
@@ -2205,7 +2259,8 @@ static void s3_virge_bitblt(virge_t *virge, int count, uint32_t cpu_dat)
                 while (count && virge->s3d.h)
                 {
                         uint32_t dest_addr = virge->s3d.dest_base + (virge->s3d.dest_x * x_mul) + (virge->s3d.dest_y * virge->s3d.dest_str);
-                        uint32_t source = 0, dest = 0, pattern = virge->s3d.pat_fg_clr;
+                        uint32_t source = virge->s3d.pat_fg_clr;
+                        uint32_t dest = 0, pattern = virge->s3d.pat_fg_clr;
                         uint32_t out = 0;
                         int update = 1;
 
@@ -3036,7 +3091,7 @@ static void tri(virge_t *virge, s3d_t *s3d_tri, s3d_state_t *state, int yc, int3
                         state->x1 += (dx1 * diff_y);
                         state->x2 += (dx2 * diff_y);
                         state->y -= diff_y;
-                        dest_offset -= s3d_tri->dest_str;
+                        dest_offset -= s3d_tri->dest_str * diff_y;
                         z_offset -= s3d_tri->z_str;
                         y_count -= diff_y;
                 }
@@ -3985,6 +4040,9 @@ s3_virge_init(const device_t *info, UNUSED(void *parent))
     virge->fifo_not_full_event = thread_create_event();
     virge->fifo_thread = thread_create(fifo_thread, virge);
 
+    virge->i2c = i2c_gpio_init("ddc_s3_virge");
+    virge->ddc = ddc_init(i2c_gpio_get_bus(virge->i2c));
+    
     return (priv_t)virge;
 }
 
@@ -4004,6 +4062,9 @@ s3_virge_close(priv_t priv)
     thread_destroy_event(virge->fifo_not_full_event);
 
     svga_close(&virge->svga);
+
+    ddc_close(virge->ddc);
+    i2c_gpio_close(virge->i2c);
 
     free(virge);
 }
