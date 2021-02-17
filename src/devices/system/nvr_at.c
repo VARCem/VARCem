@@ -189,14 +189,14 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.22	2020/10/10
+ * Version:	@(#)nvr_at.c	1.0.24	2021/02/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Mahod,
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2020 Miran Grca.
  *		Copyright 2008-2020 Sarah Walker.
  *
@@ -284,17 +284,22 @@
 #define RTC_CENTURY_VIA	0x7f		// century register for VIA VT82C586B
 #define RTC_ALDAY	0x7d		// VIA VT82C586B - alarm day
 #define RTC_ALMONTH	0x7e		// VIA VT82C586B - alarm month
-#define RTC_REGS	14		// number of registers
-
-#define FLAG_LS_HACK	0x01
-#define FLAG_PIIX4	0x02
+#define RTC_VALID	14		// "data valid" register (0x00 valid)
+# define VALID_DNV	0xff		//  indicate "data not valid"
+#define RTC_SUMH	46		// checksum, HIGH byte (some machines)
+#define RTC_SUML	47		// checksum, LOW byte (some machines)
 
 
 typedef struct {
     nvr_t	nvr;
 
-    uint8_t	flags, cent,
-		def, read_addr;
+    uint8_t	flags;
+#define FLAG_LS_HACK	0x01
+#define FLAG_PIIX4	0x02
+
+    uint8_t	cent,
+		dflt,
+		read_addr;
 
     uint8_t     stat;
 
@@ -520,7 +525,7 @@ period_load(local_t *dev)
 /*
  * Handle the periodic timer.
  *
- * This timer drives the SQW outpin (which we do not have)
+ * This timer drives the SQW OUT pin (which we do not have)
  * as well as the periodic interrupt. The rate is selected
  * through the RS3:RS0 bits in REGA, with the DV bits set
  * to enable the oscillator.
@@ -568,7 +573,7 @@ timer_tick(nvr_t *nvr)
     dev->stat = REGA_UIP;
 
     /* Schedule the actual update. */
-    dev->ecount = (TIMER_USEC * 244.0);		//FIXME: +1984.0 ?
+    dev->ecount = (TIMER_USEC * 244.0);
     dev->utimer = dev->ecount;
 }
 
@@ -579,9 +584,9 @@ nvr_read(uint16_t port, priv_t priv)
 {
     local_t *dev = (local_t *)priv;
     nvr_t *nvr = &dev->nvr;
+    uint8_t addr_id = (port & 0x0e) >> 1;
     uint16_t sum;
     uint8_t ret = 0xff;
-    uint8_t addr_id = (port & 0x0e) >> 1;
 
     cycles -= ISA_CYCLES(8);
 
@@ -604,19 +609,19 @@ nvr_read(uint16_t port, priv_t priv)
 		ret = nvr->regs[RTC_REGD];
 		break;
 
-	case 0x2c:
+	case 0x2c:		//FIXME: ??
 		ret = nvr->regs[dev->addr[addr_id]];
 		if (dev->flags & FLAG_LS_HACK)
 			ret &= 0x7f;
 		break;
 
-	case 0x2e:
-	case 0x2f:
+	case RTC_SUMH:
+	case RTC_SUML:
 		if (dev->flags & FLAG_LS_HACK) {
-			sum = (nvr->regs[0x2e] << 8) | nvr->regs[0x2f];
+			sum = (nvr->regs[RTC_SUMH] << 8) | nvr->regs[RTC_SUML];
 			if (nvr->regs[0x2c] & 0x80)
 				sum -= 0x80;
-			if (dev->addr[addr_id] == 0x2e)
+			if (dev->addr[addr_id] == RTC_SUMH)
 				ret = sum >> 8;
 			else
 				ret = sum & 0xff;
@@ -631,7 +636,7 @@ nvr_read(uint16_t port, priv_t priv)
 	ret = dev->addr[addr_id];
 	if (! dev->read_addr)
 		ret &= 0x80;
-   }
+    }
 
     return(ret);
 }
@@ -676,26 +681,26 @@ nvr_reg_write(uint16_t reg, uint8_t val, priv_t priv)
 	case RTC_REGD:          /* R/O */
 		break;
 
-        case 0x2e:
-        case 0x2f:
+        case RTC_SUML:
+        case RTC_SUMH:
 		if (dev->flags & FLAG_LS_HACK) {
 			/*
 			 * Registers 2EH and 2FH are a simple
 			 * sum of the values of 0EH to 2DH.
 			 */
 			sum = 0x0000;
-			for (i = 0x0e; i < 0x2e; i++)
+			for (i = RTC_VALID; i < RTC_SUMH; i++)
 				sum += (uint16_t)nvr->regs[i];
-			nvr->regs[0x2e] = sum >> 8;
-			nvr->regs[0x2f] = sum & 0xff;
+			nvr->regs[RTC_SUMH] = sum >> 8;
+			nvr->regs[RTC_SUML] = sum & 0xff;
 			break;
 		}
 		/*FALLTHROUGH*/
 
 	default:		/* non-RTC registers are just NVRAM */
-		if ((reg >= 0x38) && (reg <= 0x3f) && dev->wp[0])
+		if (dev->wp[0] && (reg >= 0x38) && (reg <= 0x3f))
 			break;
-		if ((reg >= 0xb8) && (reg <= 0xbf) && dev->wp[1])
+		if (dev->wp[1] && (reg >= 0xb8) && (reg <= 0xbf))
 			break;
 		if (dev->lock[reg])
 			break;
@@ -706,7 +711,7 @@ nvr_reg_write(uint16_t reg, uint8_t val, priv_t priv)
 		break;
     }
 
-    if ((old != val) && (config.time_sync == TIME_SYNC_ENABLED)) {
+    if ((old != val) && (config.time_sync != TIME_SYNC_ENABLED)) {
 	if ((reg < RTC_REGA) ||
 	    ((dev->cent != 0xff) && (reg == dev->cent))) {
 		/* Update internal clock. */
@@ -744,11 +749,11 @@ nvr_write(uint16_t port, uint8_t val, priv_t priv)
      */
     dev->addr[addr_id] = (val & (nvr->size - 1));
 
-    if (addr_id == 0x0)
+    if (addr_id == 0x00)
 	dev->addr[addr_id] &= 0x7f;
-    else if ((addr_id == 0x1) && (dev->flags & FLAG_PIIX4))
+    else if ((addr_id == 0x01) && (dev->flags & FLAG_PIIX4))
 	dev->addr[addr_id] = (dev->addr[addr_id] & 0x7f) | 0x80;
-    if (dev->bank[addr_id] > 0)
+    else if (dev->bank[addr_id] > 0)
 	dev->addr[addr_id] = (dev->addr[addr_id] & 0x7f) |
 			     (0x80 * dev->bank[addr_id]);
 
@@ -772,7 +777,7 @@ nvr_reset(nvr_t *nvr)
 {
     local_t *dev = (local_t *)nvr->data;
 
-    memset(nvr->regs, dev->def, nvr->size);
+    memset(nvr->regs, dev->dflt, nvr->size);
     nvr->regs[RTC_DOM] = 1;
     nvr->regs[RTC_MONTH] = 1;
     nvr->regs[RTC_YEAR] = RTC_BCD(80);
@@ -789,27 +794,23 @@ nvr_start(nvr_t *nvr)
     int i, found = 0;
     intclk_t clk;
 
+    /* Check if we are dealing with a blank NVR. */
     for (i = 0; i < nvr->size; i++) {
-	if (nvr->regs[i] == dev->def)
+	if (nvr->regs[i] == dev->dflt)
 		found++;
     }
-
-    /*
-     * If load failed or it loaded an uninitialized
-     * NVR, mark all content as invalid.
-     */
-    if (found == nvr->size)
-        nvr->regs[0x0e] = 0xff;
+    if (found == i)
+        nvr->regs[RTC_VALID] = VALID_DNV;
 
     /* Initialize the internal and chip times. */
-    if (config.time_sync != TIME_SYNC_DISABLED) {
-	/* Use the internal clock's time. */
-	nvr_time_get(nvr, &clk);
-	time_set(dev, &clk);
-    } else {
-	/* Set the internal clock from the chip time. */
+    if (config.time_sync == TIME_SYNC_DISABLED) {
+	/* TimeSync disabled, set internal clock from the chip time. */
 	time_get(dev, &clk);
 	nvr_time_set(&clk, nvr);
+    } else {
+	/* TimeSync enabled, set chip time to internal clock. */
+	nvr_time_get(nvr, &clk);
+	time_set(dev, &clk);
     }
 
     /* Start the RTC. */
@@ -870,7 +871,7 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
     memset(dev, 0x00, sizeof(local_t));
     dev->lock = (uint8_t *)mem_alloc(size);
     memset(dev->lock, 0x00, size);
-    dev->def = 0x00;
+    dev->dflt = 0x00;
     dev->flags = 0x00;
 
     nvr = &dev->nvr;
@@ -896,19 +897,19 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
 
 	case 2:		/* standard IBM PC/AT (FF cleared) */
 		dev->cent = RTC_CENTURY_AT;
-		dev->def = 0xff;
+		dev->dflt = 0xff;
 		nvr->irq = 8;
 		break;
 
 	case 3:		/* Amstrad PC's */
 		dev->cent = RTC_CENTURY_AT;
-		dev->def = 0xff;
+		dev->dflt = 0xff;
 		nvr->irq = 1;
 		break;
 
 	case 4:		/* PS/1 or PS/2 */
 		dev->cent = RTC_CENTURY_PS;
-		dev->def = 0xff;
+		dev->dflt = 0xff;
 		nvr->irq = 8;
 		break;
 
