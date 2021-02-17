@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.97	2020/12/06
+# Version:	@(#)Makefile.mingw	1.0.98	2021/02/15
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017-2020 Fred N. van Kempen.
+#		Copyright 2017-2021 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -68,6 +68,7 @@ ifeq ($(DEV_BUILD), y)
  SIS471		:= y
  SIS496		:= y
  COMPAQ		:= y
+ SANYO		:= y
  MICRAL		:= y
  SUPERSPORT	:= y
  ST11		:= y
@@ -705,6 +706,11 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_compaq.o m_compaq_vid.o vid_cga_compaq.o
  endif
 
+ ifeq ($(SANYO), y)
+  OPTS		+= -DUSE_SANYO
+  DEVBROBJ	+= m_sanyo.o
+ endif
+
  ifeq ($(MICRAL), y)
   OPTS		+= -DUSE_MICRAL
   DEVBROBJ	+= m_bull.o
@@ -841,6 +847,7 @@ MCHOBJ		:= machine.o machine_table.o \
 
 DEVOBJ		:= bugger.o \
 		   isamem.o isartc.o \
+		   amidisk.o \
 		   game.o game_dev.o \
 		   parallel.o parallel_dev.o \
 		    prt_text.o prt_cpmap.o prt_escp.o \

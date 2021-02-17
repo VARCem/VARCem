@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.81	2020/12/06
+# Version:	@(#)Makefile.VC	1.0.82	2021/02/15
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017-2020 Fred N. van Kempen.
+#		Copyright 2017-2021 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -68,6 +68,7 @@ ifeq ($(DEV_BUILD), y)
  SIS471		:= y
  SIS496		:= y
  COMPAQ		:= y
+ SANYO		:= y
  MICRAL		:= y
  SUPERSPORT	:= y
  ST11		:= y
@@ -599,6 +600,11 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_compaq.obj m_compaq_vid.obj vid_cga_compaq.obj
  endif
 
+ ifeq ($(SANYO), y)
+  OPTS		+= -DUSE_SANYO
+  DEVBROBJ	+= m_sanyo.obj
+ endif
+
  ifeq ($(MICRAL), y)
   OPTS		+= -DUSE_MICRAL
   DEVBROBJ	+= m_bull.obj
@@ -726,6 +732,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 
 DEVOBJ		:= bugger.obj \
 		   isamem.obj isartc.obj \
+		   amidisk.obj \
 		   game.obj game_dev.obj \
 		   parallel.obj parallel_dev.obj \
 		    prt_text.obj prt_cpmap.obj prt_escp.obj \

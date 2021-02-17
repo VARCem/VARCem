@@ -8,13 +8,13 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.78	2020/11/19
+ * Version:	@(#)pc.c	1.0.79	2021/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -86,6 +86,7 @@
 #include "devices/misc/bugger.h"
 #include "devices/misc/isamem.h"
 #include "devices/misc/isartc.h"
+#include "devices/misc/amidisk.h"
 #include "ui/ui.h"
 #include "plat.h"
 
@@ -944,6 +945,10 @@ pc_reset_hard_init(void)
     /* Reset the Hard Disk module. */
 //FIXME: move to disk_reset()
     hdc_reset();
+
+    /* Enable AMIDISK card if configured. */
+    if (config.ami_disk)
+	device_add(&amidisk_device);
 
     /* Reset and reconfigure the SCSI layer. */
 //FIXME: move to scsi_reset()

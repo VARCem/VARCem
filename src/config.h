@@ -8,13 +8,13 @@
  *
  *		Configuration file handler header.
  *
- * Version:	@(#)config.h	1.0.6	2020/07/14
+ * Version:	@(#)config.h	1.0.7	2021/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -133,6 +133,7 @@ typedef struct {
 
     int		isartc_type;			/* enable ISA RTC card */
 
+    int		ami_disk;			/* AMIDISK card enabled */
 #ifdef WALTJE
     int		romdos_enabled;			/* enable ROM DOS */
 #endif

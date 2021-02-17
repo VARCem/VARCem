@@ -12,14 +12,14 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.49	2020/07/14
+ * Version:	@(#)config.c	1.0.50	2021/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		David Simunic, <simunic.david@outlook.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -875,6 +875,8 @@ load_other(config_t *cfg, const char *cat)
 
     p = config_get_string(cat, "isartc_type", "none");
     cfg->isartc_type = isartc_get_from_internal_name(p);
+
+    cfg->ami_disk = !!config_get_int(cat, "amidisk", 0);
 
 #ifdef WALTJE
     cfg->romdos_enabled = !!config_get_int(cat, "romdos_enabled", 0);
