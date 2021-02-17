@@ -68,7 +68,7 @@ ifeq ($(DEV_BUILD), y)
  SIS471		:= y
  SIS496		:= y
  COMPAQ		:= y
- SANYO		:= y
+ SANYO		:= n
  MICRAL		:= y
  SUPERSPORT	:= y
  ST11		:= y
