@@ -8,7 +8,7 @@
  *
  *		MIDI support module, main file.
  *
- * Version:	@(#)midi.c	1.0.13	2021/02/10
+ * Version:	@(#)midi.c	1.0.14	2021/02/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -264,7 +264,7 @@ midi_write(uint8_t val)
     if (midi->device->write && midi->device->write(val)) return;
 
     if (midi->sysex_start) {
-	passed_msec = (plat_timer_read() / 1000);
+	passed_msec = plat_timer_ms() - midi->sysex_start;
 	if (passed_msec < midi->sysex_delay)
 		plat_delay_ms(midi->sysex_delay - passed_msec);
     }
@@ -304,7 +304,7 @@ midi_write(uint8_t val)
 					midi->sysex_delay = 30;	/* Dark Sun 1 */
 				else
 					midi->sysex_delay = (unsigned int) (((float) (midi->pos) * 1.25f) * 1000.0f / 3125.0f) + 2;
-				midi->sysex_start = plat_timer_read();
+				midi->sysex_start = plat_timer_ms();
 			}
 		}
 	}
