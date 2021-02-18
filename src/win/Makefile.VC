@@ -843,6 +843,7 @@ VIDOBJ		:= video.obj \
 		    vid_ati18800.obj vid_ati28800.obj \
 		    vid_ati_mach64.obj vid_ati68860_ramdac.obj \
 		    vid_att20c49x_ramdac.obj vid_bt48x_ramdac.obj \
+			vid_sc1148x_ramdac.obj \
 		    vid_av9194.obj vid_icd2061.obj vid_ics2595.obj \
 		    vid_cl54xx.obj \
 		    vid_et4000.obj vid_sc1502x_ramdac.obj \
