@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.82	2021/02/15
+# Version:	@(#)Makefile.VC	1.0.83	2021/02/18
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -506,7 +506,7 @@ ifneq ($(VNC), n)
  ifeq ($(VNC), s)
   LIBS		+= libvncserver_static.lib zlib.lib
  endif
- MISCOBJ	+= vnc.obj vnc_keymap.obj
+ MISCOBJ	+= ui_vnc.obj ui_vnc_keymap.obj
 endif
 
 # RDP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static

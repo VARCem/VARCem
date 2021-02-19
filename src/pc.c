@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.79	2021/02/15
+ * Version:	@(#)pc.c	1.0.80	2021/02/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -817,7 +817,7 @@ pc_close(thread_t *ptr)
     plat_delay_ms(200);
 
     /* Claim the video blitter. */
-    plat_startblit();
+    plat_blitter(1);
 
     /* Terminate the main thread. */
     if (ptr != NULL) {
@@ -1096,8 +1096,12 @@ pc_thread(void *param)
 		if (msec > 50)
 			msec = 0;
 
+		plat_blitter(1);
+
 		/* Run a frame of code. */
 		cpu_exec(1000 / SLICE);
+
+		plat_blitter(0);
 
 #ifdef USE_DINPUT
 		mouse_poll();
@@ -1110,20 +1114,13 @@ pc_thread(void *param)
 	}
 
 	/*
-	 * If the NVR needs to be saved, wait 200 frames before
+	 * If the NVR needs to be saved, wait 10 frames before
 	 * we actually do, to reduce "nvr file hammering".
 	 */
-#if 0
-if (nvr_dosave)INFO("PC: NVR save=%d frm=%d\n", nvr_dosave, frm);
-	if (nvr_dosave && (++frm >= 200)) {
-#else
-	if (nvr_dosave) {
-#endif
+	if (nvr_dosave && (++frm >= 10)) {
 		nvr_save();
 		nvr_dosave = 0;
-#if 0
 		frm = 0;
-#endif
 	}
 
 	/* If needed, update the title bar. */

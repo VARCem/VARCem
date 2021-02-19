@@ -8,11 +8,11 @@
  *
  *		Definitions for the VNC renderer.
  *
- * Version:	@(#)vnc.h	1.0.2	2018/05/07
+ * Version:	@(#)ui_vnc.h	1.0.3	2021/02/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -44,8 +44,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef EMU_VNC_H
-# define EMU_VNC_H
+#ifndef EMU_UI_VNC_H
+# define EMU_UI_VNC_H
 
 
 #ifdef __cplusplus
@@ -62,4 +62,4 @@ extern void		vnc_kbinput(int, int);
 #endif
 
 
-#endif	/*EMU_VNC_H*/
+#endif	/*EMU_UI_VNC_H*/

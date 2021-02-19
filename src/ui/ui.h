@@ -8,11 +8,11 @@
  *
  *		Define the various UI functions.
  *
- * Version:	@(#)ui.h	1.0.18	2019/04/29
+ * Version:	@(#)ui.h	1.0.19	2021/02/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -204,8 +204,6 @@ extern int	vidapi_pause(void);
 extern void	vidapi_enable(int yes);
 extern void	vidapi_reset(void);
 extern void	vidapi_screenshot(void);
-extern void	plat_startblit(void);
-extern void	plat_endblit(void);
 
 /* Floppy image creation. */
 extern int	floppy_create_86f(const wchar_t *, int8_t sz, int8_t rpm_mode);

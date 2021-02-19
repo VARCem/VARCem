@@ -8,11 +8,11 @@
  *
  *		Handle the various video renderer modules.
  *
- * Version:	@(#)ui_vidapi.c	1.0.9	2020/12/28
+ * Version:	@(#)ui_vidapi.c	1.0.10	2021/02/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -123,7 +123,7 @@ vidapi_set(int api)
     INFO("VIDAPI: initializing (api=%i)\n", api);
 
     /* Lock the blitter. */
-    plat_startblit();
+    plat_blitter(1);
 
     /* Close the (old) API. */
     plat_vidapis[config.vid_api]->close();
@@ -139,7 +139,7 @@ vidapi_set(int api)
     menu_set_radio_item(IDM_RENDER_1, vidapi_count(), config.vid_api);
 
     /* OK, release the blitter. */
-    plat_endblit();
+    plat_blitter(0);
 
     /* If all OK, redraw the rendering area. */
     if (i)
@@ -157,12 +157,12 @@ vidapi_resize(int x, int y)
     if (plat_vidapis[config.vid_api]->resize == NULL) return;
 
     /* Lock the blitter. */
-    plat_startblit();
+    plat_blitter(1);
 
     plat_vidapis[config.vid_api]->resize(x, y);
 
     /* Release the blitter. */
-    plat_endblit();
+    plat_blitter(0);
 }
 
 
@@ -183,12 +183,12 @@ vidapi_enable(int yes)
     if (plat_vidapis[config.vid_api]->enable == NULL) return;
 
     /* Lock the blitter. */
-    plat_startblit();
+    plat_blitter(1);
 
     plat_vidapis[config.vid_api]->enable(yes);
 
     /* Release the blitter. */
-    plat_endblit();
+    plat_blitter(0);
 }
 
 

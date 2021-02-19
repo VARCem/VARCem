@@ -160,6 +160,7 @@ extern int	plat_dir_create(const wchar_t *path);
 extern uint64_t	plat_timer_read(void);
 extern uint32_t	plat_timer_ms(void);
 extern void	plat_delay_ms(uint32_t count);
+extern void	plat_blitter(int own);
 extern void	plat_mouse_capture(int on);
 extern int	plat_get_kbd_state(void);
 extern void	plat_set_kbd_state(int flags);

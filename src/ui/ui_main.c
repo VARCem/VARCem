@@ -11,11 +11,11 @@
  *		This code is called by the UI frontend modules, and, also,
  *		depends on those same modules for lower-level functions.
  *
- * Version:	@(#)ui_main.c	1.0.25	2020/12/28
+ * Version:	@(#)ui_main.c	1.0.26	2021/02/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -271,9 +271,9 @@ set_logging_item(int idm, int val)
 static void
 toggle_video_item(int idm, int *val)
 {
-    plat_startblit();
+    plat_blitter(1);
     *val ^= 1;
-    plat_endblit();
+    plat_blitter(0);
 
     menu_set_item(idm, *val);
 
@@ -369,37 +369,37 @@ ui_menu_command(int idm)
     int i;
 
     switch (idm) {
-	case IDM_RESET_HARD:			/* ACTION menu */
+	case IDM_RESET_HARD:			// ACTION menu
 		pc_reset(1);
 		break;
 
-	case IDM_RESET:				/* ACTION menu */
+	case IDM_RESET:				// ACTION menu
 		pc_reset(0);
 		break;
 
-	case IDM_CAE:				/* ACTION menu */
+	case IDM_CAE:				// ACTION menu
 		keyboard_cae();
 		break;
 
-	case IDM_CAB:				/* ACTION menu */
+	case IDM_CAB:				// ACTION menu
 		keyboard_cab();
 		break;
 
-	case IDM_PAUSE:				/* ACTION menu */
+	case IDM_PAUSE:				// ACTION menu
 		pc_pause(dopause ^ 1);
 		break;
 
 #ifdef IDM_Test
-	case IDM_Test:				/* ACTION menu */
+	case IDM_Test:				// ACTION menu
 		pclog(LOG_ALWAYS, "TEST\n");
 		break;
 #endif
 
-	case IDM_EXIT:				/* ACTION menu */
+	case IDM_EXIT:				// ACTION menu
 		/*NOTHANDLED*/
 		return(0);
 
-	case IDM_RESIZE:			/* VIEW menu */
+	case IDM_RESIZE:			// VIEW menu
 		config.vid_resize ^= 1;
 		menu_set_item(idm, config.vid_resize);
 		if (config.vid_resize) {
@@ -417,12 +417,12 @@ ui_menu_command(int idm)
 		config_save();
 		return(0);
 
-	case IDM_REMEMBER:			/* VIEW menu */
+	case IDM_REMEMBER:			// VIEW menu
 		config.window_remember ^= 1;
 		menu_set_item(idm, config.window_remember);
 		return(0);
 
-	case IDM_RENDER_1:			/* VIEW menu */
+	case IDM_RENDER_1:			// VIEW menu
 	case IDM_RENDER_2:
 	case IDM_RENDER_3:
 	case IDM_RENDER_4:
@@ -434,22 +434,22 @@ ui_menu_command(int idm)
 		config_save();
 		break;
 
-	case IDM_FULLSCREEN:			/* VIEW menu */
+	case IDM_FULLSCREEN:			// VIEW menu
 		ui_fullscreen(1);
-		config_save();
 		break;
 
-	case IDM_STRETCH:			/* VIEW menu */
+	case IDM_STRETCH:			// VIEW menu
 	case IDM_STRETCH_43:
 	case IDM_STRETCH_KEEP:
 	case IDM_STRETCH_INT:
 		config.vid_fullscreen_scale = (idm - IDM_STRETCH);
-		menu_set_radio_item(IDM_STRETCH, 4, config.vid_fullscreen_scale);
+		menu_set_radio_item(IDM_STRETCH, 4,
+				    config.vid_fullscreen_scale);
 		device_force_redraw();
 		config_save();
 		break;
 
-	case IDM_SCALE_1:			/* VIEW menu */
+	case IDM_SCALE_1:			// VIEW menu
 	case IDM_SCALE_2:
 	case IDM_SCALE_3:
 	case IDM_SCALE_4:
@@ -460,30 +460,30 @@ ui_menu_command(int idm)
 		config_save();
 		break;
 
-	case IDM_FORCE_43:			/* VIEW menu */
+	case IDM_FORCE_43:			// VIEW menu
 		toggle_video_item(idm, &config.force_43);
 		video_force_resize_set(1);
 		config_save();
 		break;
 
-	case IDM_RCTRL_IS_LALT:			/* VIEW menu */
+	case IDM_RCTRL_IS_LALT:			// VIEW menu
 		config.rctrl_is_lalt ^= 1;
 		menu_set_item(idm, config.rctrl_is_lalt);
 		config_save();
 		break;
 
-	case IDM_INVERT:			/* DISPLAY menu */
+	case IDM_INVERT:			// DISPLAY menu
 		toggle_video_item(idm, &config.invert_display);
 		config_save();
 		break;
 
-	case IDM_OVERSCAN:			/* DISPLAY menu */
+	case IDM_OVERSCAN:			// DISPLAY menu
 		toggle_video_item(idm, &config.enable_overscan);
 		video_force_resize_set(1);
 		config_save();
 		break;
 
-	case IDM_SCREEN_RGB:			/* DISPLAY menu */
+	case IDM_SCREEN_RGB:			// DISPLAY menu
 	case IDM_SCREEN_GRAYSCALE:
 	case IDM_SCREEN_AMBER:
 	case IDM_SCREEN_GREEN:
@@ -494,7 +494,7 @@ ui_menu_command(int idm)
 		config_save();
 		break;
 
-	case IDM_GRAY_601:			/* DISPLAY menu */
+	case IDM_GRAY_601:			// DISPLAY menu
 	case IDM_GRAY_709:
 	case IDM_GRAY_AVE:
 		config.vid_graytype = (idm - IDM_GRAY_601);
@@ -503,21 +503,21 @@ ui_menu_command(int idm)
 		config_save();
 		break;
 
-	case IDM_CGA_CONTR:			/* DISPLAY menu */
+	case IDM_CGA_CONTR:			// DISPLAY menu
 		config.vid_cga_contrast ^= 1;
 		menu_set_item(idm, config.vid_cga_contrast);
 		video_palette_rebuild();
 		config_save();
 		break;
 
-	case IDM_SETTINGS:			/* TOOLS menu */
+	case IDM_SETTINGS:			// TOOLS menu
 		pc_pause(1);
 		if (dlg_settings(1) == 2)
 			pc_reset_hard_init();
 		pc_pause(0);
 		break;
 
-	case IDM_LANGUAGE+1:			/* select language */
+	case IDM_LANGUAGE+1:			// select language
 	case IDM_LANGUAGE+2:
 	case IDM_LANGUAGE+3:
 	case IDM_LANGUAGE+4:
@@ -543,11 +543,11 @@ ui_menu_command(int idm)
 		break;
 
 #ifdef _LOGGING
-	case IDM_LOG_BREAKPOINT:		/* TOOLS menu */
+	case IDM_LOG_BREAKPOINT:		// TOOLS menu
 		pclog(LOG_ALWAYS, "---- LOG BREAKPOINT ----\n");
 		break;
 
-	case IDM_LOG_BEGIN:			/* TOOLS menu */
+	case IDM_LOG_BEGIN:			// TOOLS menu
 	case IDM_LOG_BEGIN+1:
 	case IDM_LOG_BEGIN+2:
 	case IDM_LOG_BEGIN+3:
@@ -582,7 +582,7 @@ ui_menu_command(int idm)
 #endif
 
 	/* FIXME: need to fix these.. */
-	case IDM_LOAD:				/* TOOLS menu */
+	case IDM_LOAD:				// TOOLS menu
 		pc_pause(1);
 		i = dlg_file(get_string(IDS_2500), NULL, temp, DLG_FILE_LOAD);
 		if (i && (ui_msgbox(MBX_QUESTION, (wchar_t *)IDS_WARNING) == 0)) {
@@ -593,7 +593,7 @@ ui_menu_command(int idm)
 		pc_pause(0);
 		break;                        
 
-	case IDM_SAVE:				/* TOOLS menu */
+	case IDM_SAVE:				// TOOLS menu
 		pc_pause(1);
 		if (dlg_file(get_string(IDS_2500), NULL, temp, DLG_FILE_SAVE)) {
 			config_write(temp);
@@ -601,17 +601,17 @@ ui_menu_command(int idm)
 		pc_pause(0);
 		break;                                                
 
-	case IDM_SCREENSHOT:			/* TOOLS menu */
+	case IDM_SCREENSHOT:			// TOOLS menu
 		vidapi_screenshot();
 		break;
 
-	case IDM_ABOUT:				/* HELP menu */
+	case IDM_ABOUT:				// HELP menu
 		pc_pause(1);
 		dlg_about();
 		pc_pause(0);
 		break;
 
-	case IDM_LOCALIZE:			/* HELP MENU */	
+	case IDM_LOCALIZE:			// HELP MENU 
 		pc_pause(1);
 		dlg_localize();
 		pc_pause(0);
@@ -626,11 +626,8 @@ ui_menu_command(int idm)
 void
 ui_fullscreen(int on)
 {
-    /* Want off and already off? */
-    if (!on && !config.vid_fullscreen) return;
-
-    /* Want on and already on? */
-    if (on && config.vid_fullscreen) return;
+    /* Mode change? */
+    if (on == config.vid_fullscreen) return;
 
     if (on && config.vid_fullscreen_first) {
 	config.vid_fullscreen_first = 0;
@@ -638,10 +635,8 @@ ui_fullscreen(int on)
     }
 
     /* OK, claim the video. */
-    plat_startblit();
-    video_blit_wait();
-
-//  plat_mouse_close();
+    plat_blitter(1);
+//    video_blit_wait();
 
     /* Close the current mode, and open the new one. */
     plat_vidapis[config.vid_api]->close();
@@ -650,10 +645,8 @@ ui_fullscreen(int on)
 
     plat_fullscreen(on);
 
-//  plat_mouse_init();
-
     /* Release video and make it redraw the screen. */
-    plat_endblit();
+    plat_blitter(0);
     device_force_redraw();
 
     /* Finally, handle the host's mouse cursor. */
@@ -692,9 +685,8 @@ ui_mouse_capture(int on)
 		str = get_string(IDS_MSG_MRLS_1);
 	  else
 		str = get_string(IDS_MSG_MRLS_2);
-    } else {
+    } else
 	str = get_string(IDS_MSG_CAPTURE);
-    }
 
     /* Set the correct message on the status bar. */
     ui_sb_text_set_w(SB_TEXT, str);

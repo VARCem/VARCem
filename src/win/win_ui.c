@@ -6,15 +6,15 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implement the user Interface module.
+ *		Implement the User Interface module for Win32 API.
  *
- * Version:	@(#)win_ui.c	1.0.40	2020/12/28
+ * Version:	@(#)win_ui.c	1.0.41	2021/02/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -63,15 +63,15 @@
 #include "resource.h"
 
 
-#define TIMER_1SEC	1		/* ID of the one-second timer */
-#define ICONS_MAX	256		/* number of icons we can cache */
+#define TIMER_1SEC	1		// ID of the one-second timer
+#define ICONS_MAX	256		// number of icons we can cache
 
 
 /* Platform Public data, specific. */
-HWND		hwndMain = NULL,	/* application main window */
-		hwndRender = NULL;	/* machine render window */
-HICON		hIcon[ICONS_MAX];	/* icon data loaded from resources */
-RECT		oldclip;		/* mouse rect */
+HWND		hwndMain = NULL,	// application main window
+		hwndRender = NULL;	// machine render window
+HICON		hIcon[ICONS_MAX];	// icon data loaded from resources
+RECT		oldclip;		// mouse rect
 
 
 /* Local data. */
@@ -80,9 +80,9 @@ static HHOOK	hKeyboardHook;
 static LONG_PTR	input_orig_proc,
 		stbar_orig_proc;
 static HWND	input_orig_hwnd = NULL,
-		hwndSBAR = NULL;	/* application status bar */
-static HMENU	menuMain = NULL,	/* application menu bar */
-		menuSBAR = NULL,	/* status bar menu bar */
+		hwndSBAR = NULL;	// application status bar
+static HMENU	menuMain = NULL,	// application menu bar
+		menuSBAR = NULL,	// status bar menu bar
 		*sb_menu = NULL;
 static int	sb_nparts = 0;
 static const sbpart_t *sb_parts = NULL;
@@ -93,8 +93,8 @@ static int	save_window_pos = 0;
 static int	cruft_x = 0,
 		cruft_y = 0,
 		cruft_sb = 0;
-static int	kbd_flags,		/* current keyboard flags */
-		win_kbd_flags;		/* original host keyboard flags */
+static int	kbd_flags,		// current keyboard flags
+		win_kbd_flags;		// original host keyboard flags
 
 
 static VOID APIENTRY
@@ -102,8 +102,8 @@ PopupMenu(HWND hwnd, POINT pt, int part)
 {
     if (part >= (sb_nparts - 1)) return;
 
-    pt.x = part * SB_ICON_WIDTH;	/* justify to the left */
-    pt.y = 1;				/* justify to the top */
+    pt.x = part * SB_ICON_WIDTH;	// justify to the left
+    pt.y = 1;				// justify to the top
 
     ClientToScreen(hwnd, (LPPOINT)&pt);
 
@@ -123,8 +123,8 @@ sb_dlg_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message) {
 	case WM_COMMAND:
-		idm = LOWORD(wParam) & 0xff00;		/* low 8 bits */
-		tag = LOWORD(wParam) & 0x00ff;		/* high 8 bits */
+		idm = LOWORD(wParam) & 0xff00;		// low 8 bits
+		tag = LOWORD(wParam) & 0x00ff;		// high 8 bits
 		ui_sb_menu_command(idm, tag);
 		return(0);
 
@@ -504,9 +504,9 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_RESET_D3D:
-		plat_startblit();
+		plat_blitter(1);
 		vidapi_reset();
-		plat_endblit();
+		plat_blitter(0);
 		break;
 
 	case WM_LEAVE_FS:
@@ -662,7 +662,7 @@ plat_set_input(HWND h)
 void
 ui_plat_reset(void)
 {
-    /* Load the main menu from the appropriate DLL. */
+    /* Load the main menu from the appropriate (resource) DLL. */
     menuMain = LoadMenu(plat_lang_dll(), MENU_MAIN_NAME);
 
     SetMenu(hwndMain, menuMain);
@@ -677,11 +677,11 @@ int
 ui_init(int nCmdShow)
 {
     WCHAR title[200];
-    WNDCLASSEX wincl;			/* buffer for main window's class */
-    INITCOMMONCONTROLSEX icex;		/* common controls, new style */
-    RAWINPUTDEVICE ridev;		/* RawInput device */
-    MSG messages;			/* received-messages buffer */
-    HACCEL haccel;			/* handle to accelerator table */
+    WNDCLASSEX wincl;			// buffer for main window's class
+    INITCOMMONCONTROLSEX icex;		// common controls, new style
+    RAWINPUTDEVICE ridev;		// RawInput device
+    MSG messages;			// received-messages buffer
+    HACCEL haccel;			// handle to accelerator table
     DWORD flags;
     int ret;
 
@@ -707,7 +707,7 @@ ui_init(int nCmdShow)
     wincl.hInstance = hInstance;
     wincl.lpszClassName = CLASS_NAME;
     wincl.lpfnWndProc = MainWindowProcedure;
-    wincl.style = CS_DBLCLKS;		/* Catch double-clicks */
+    wincl.style = CS_DBLCLKS;		// catch double-clicks
     wincl.cbSize = sizeof(WNDCLASSEX);
     wincl.hIcon = LoadIcon(hInstance, (LPCTSTR)ICON_MAIN);
     wincl.hIconSm = LoadIcon(hInstance, (LPCTSTR)ICON_MAIN);
@@ -748,20 +748,20 @@ ui_init(int nCmdShow)
      */
     swprintf(title, sizeof_w(title), L"%s %s", EMU_NAME, emu_version);
     hwndMain = CreateWindowEx(
-#if 0
+#ifdef USE_RTL
 		WS_EX_LAYOUTRTL | WS_EX_RIGHT,
 #else
 		0,
 #endif
-		CLASS_NAME,			/* class name */
-		title,				/* Title Text */
-		flags,				/* style flags */
-		CW_USEDEFAULT, CW_USEDEFAULT,	/* no preset position */
-		scrnsz_x, scrnsz_y,		/* window size in pixels */
-		HWND_DESKTOP,			/* child of desktop */
-		NULL,				/* menu */
-		hInstance,			/* Program Instance handler */
-		NULL);				/* no Window Creation data */
+		CLASS_NAME,			// class name
+		title,				// Title Text
+		flags,				// style flags
+		CW_USEDEFAULT, CW_USEDEFAULT,	// no preset position
+		scrnsz_x, scrnsz_y,		// window size in pixels
+		HWND_DESKTOP,			// child of desktop
+		NULL,				// menu
+		hInstance,			// Program Instance handler
+		NULL);				// no Window Creation data
 
     /* Create the status bar window. */
     StatusBarCreate(IDC_STATBAR);
@@ -817,16 +817,16 @@ ui_init(int nCmdShow)
 
     /* That looks good, now continue setting up the machine. */
     switch (pc_init()) {
-	case -1:	/* General failure during init, give up. */
+	case -1:	// general failure during init, give up
 		return(6);
 
-	case 0:		/* Configuration error, user wants to exit. */
+	case 0:		// configuration error, user wants to exit
 		return(0);
 
-	case 1:		/* All good. */
+	case 1:		// all good
 		break;
 
-	case 2:		/* Configuration error, user wants to re-config. */
+	case 2:		// configuration error, user wants to re-config
 		if (dlg_settings(0)) {
 			/* Save the new configuration to file. */
 			config_save();
@@ -902,14 +902,14 @@ again:
 
     /* Run the message loop. It will run until GetMessage() returns 0 */
     while (! quited) {
-	ret = GetMessage(&messages, NULL, 0, 0);
+	if ((ret = GetMessage(&messages, NULL, 0, 0)) < 0) {
+		fatal("Failed to get Windows message!\n");
+		/*NOTREACHED*/
+	}
 	if ((ret == 0) || quited) break;
 
-	if (ret == -1) {
-		fatal("ret is -1\n");
-	}
-
 	if (messages.message == WM_QUIT) {
+		/* Signal "end of mainloop" to main thread. */
 		quited = 1;
 		break;
 	}
@@ -926,15 +926,12 @@ again:
 
 	if (config.vid_fullscreen && keyboard_isfsexit()) {
 		/* Signal "exit fullscreen mode". */
-		/* INFO("leave full screen though key combination\n"); */
 		ui_fullscreen(0);
 	}
     }
 
-    timeEndPeriod(1);
-
     if (mouse_capture)
-	ui_mouse_capture(0);
+	plat_mouse_capture(0);
 
     /* Close down the emulator. */
     plat_stop();
@@ -1273,8 +1270,11 @@ sb_set_text(int part, const wchar_t *str)
 {
     int flags;
 
-//    flags = (part  < (sb_nparts - 2)) ? SBT_NOBORDERS : SBT_POPOUT;
+#if 1
+    flags = (part  < (sb_nparts - 2)) ? SBT_NOBORDERS : SBT_POPOUT;
+#else
     flags = (part  < (sb_nparts - 2)) ? SBT_NOBORDERS : 0;
+#endif
 
     SendMessage(hwndSBAR, SB_SETTEXT, part | flags, (LPARAM)str);
 }

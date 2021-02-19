@@ -8,13 +8,13 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.32	2019/10/15
+ * Version:	@(#)video.c	1.0.33	2021/02/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -381,8 +381,8 @@ static const uint32_t	shade[5][256] = {
 };
 static uint32_t	cga_2_table[16];
 static uint8_t	rotatevga[8][256];
-static int	video_force_resize;
-static int	video_card_type;
+static int	force_resize;
+static int	card_type;
 static const video_timings_t *video_timing;
 
 
@@ -399,7 +399,7 @@ static struct blitter {
     event_t	*wake_ev;
 
     void	(*func)(bitmap_t *,int x, int y, int y1, int y2, int w, int h);
-}		video_blit;
+}		blitter;
 
 
 static void
@@ -425,7 +425,7 @@ blit_thread(void *param)
 void
 video_blit_set(void(*blit)(bitmap_t *,int,int,int,int,int,int))
 {
-    video_blit.func = blit;
+    blitter.func = blit;
 }
 
 
@@ -433,29 +433,29 @@ video_blit_set(void(*blit)(bitmap_t *,int,int,int,int,int,int))
 void
 video_blit_done(void)
 {
-    video_blit.inuse = 0;
+    blitter.inuse = 0;
 
-    thread_set_event(video_blit.inuse_ev);
-}
-
-
-void
-video_blit_wait(void)
-{
-    while (video_blit.busy)
-	thread_wait_event(video_blit.busy_ev, -1);
-
-    thread_reset_event(video_blit.busy_ev);
+    thread_set_event(blitter.inuse_ev);
 }
 
 
 void
 video_blit_wait_buffer(void)
 {
-    while (video_blit.inuse)
-	thread_wait_event(video_blit.inuse_ev, -1);
+    while (blitter.inuse)
+	thread_wait_event(blitter.inuse_ev, -1);
 
-    thread_reset_event(video_blit.inuse_ev);
+    thread_reset_event(blitter.inuse_ev);
+}
+
+
+void
+video_blit_wait(void)
+{
+    while (blitter.busy)
+	thread_wait_event(blitter.busy_ev, -1);
+
+    thread_reset_event(blitter.busy_ev);
 }
 
 
@@ -526,11 +526,12 @@ video_blend(int x, int y)
 void
 video_blit_start(int pal, int x, int y, int y1, int y2, int w, int h)
 {
-    int yy, xx;
     uint32_t val;
+    int yy, xx;
     pel_t *p;
 
-    if (h <= 0) return;
+    if (h <= 0)
+	return;
 
     if (pal) {
 	/* In palette mode, first convert the values. */
@@ -548,18 +549,18 @@ video_blit_start(int pal, int x, int y, int y1, int y2, int w, int h)
     /* Wait for access to the blitter. */
     video_blit_wait();
 
-    video_blit.busy = 1;
-    video_blit.inuse = 1;
+    blitter.busy = 1;
+    blitter.inuse = 1;
 
-    video_blit.x = x;
-    video_blit.y = y;
-    video_blit.y1 = y1;
-    video_blit.y2 = y2;
-    video_blit.w = w;
-    video_blit.h = h;
+    blitter.x = x;
+    blitter.y = y;
+    blitter.y1 = y1;
+    blitter.y2 = y2;
+    blitter.w = w;
+    blitter.h = h;
 
     /* Wake up the blitter. */
-    thread_set_event(video_blit.wake_ev);
+    thread_set_event(blitter.wake_ev);
 }
 
 
@@ -748,7 +749,7 @@ video_init(void)
     int c, d, e;
 
     /* Initialize video type and timing. */
-    video_card_type = -1;
+    card_type = -1;
     video_timing = &timing_default;
 
     for (c = 0; c < 16; c++) {
@@ -812,20 +813,20 @@ video_init(void)
     /* Create the screen buffer. */
     screen = create_bitmap(2048, 2048);
 
-    video_blit.wake_ev = thread_create_event();
-    video_blit.busy_ev = thread_create_event();
-    video_blit.inuse_ev = thread_create_event();
-    video_blit.thread = thread_create(blit_thread, &video_blit);
+    blitter.wake_ev = thread_create_event();
+    blitter.busy_ev = thread_create_event();
+    blitter.inuse_ev = thread_create_event();
+    blitter.thread = thread_create(blit_thread, &blitter);
 }
 
 
 void
 video_close(void)
 {
-    thread_kill(video_blit.thread);
-    thread_destroy_event(video_blit.inuse_ev);
-    thread_destroy_event(video_blit.busy_ev);
-    thread_destroy_event(video_blit.wake_ev);
+    thread_kill(blitter.thread);
+    thread_destroy_event(blitter.inuse_ev);
+    thread_destroy_event(blitter.busy_ev);
+    thread_destroy_event(blitter.wake_ev);
 
     free(video_6to8);
     free(video_8togs);
@@ -838,7 +839,7 @@ video_close(void)
     video_reset_font();
 
     /* Close up. */
-    video_card_type = -1;
+    card_type = -1;
     video_timing = &timing_default;
 }
 
@@ -888,7 +889,7 @@ void
 video_inform(int type, const video_timings_t *ptr)
 {
     /* Save the video card type. */
-    video_card_type = (type == VID_TYPE_DFLT) ? VID_TYPE_SPEC : type;
+    card_type = (type == VID_TYPE_DFLT) ? VID_TYPE_SPEC : type;
 
     /* Save the card's timing parameters. */
     video_timing = (ptr == NULL) ? &timing_default : ptr;
@@ -898,7 +899,7 @@ video_inform(int type, const video_timings_t *ptr)
 
     if (type != VID_TYPE_DFLT)
         DEBUG("VIDEO: card type %i, timings {%i: %i,%i,%i %i,%i,%i}\n",
-	      video_card_type, video_timing->type,
+	      card_type, video_timing->type,
 	      video_timing->write_b,video_timing->write_w,video_timing->write_l,
 	      video_timing->read_b,video_timing->read_w,video_timing->read_l);
 }
@@ -911,13 +912,13 @@ video_type(void)
     const device_t *dev;
     int type = -1;
 
-    if (video_card_type == -1) {
+    if (card_type == -1) {
 	/* No video device loaded yet. */
 	dev = video_card_getdevice(config.video_card);
 	if (dev != NULL)
 		type = DEVICE_VIDEO_GET(dev->flags);
     } else
-	type = video_card_type;
+	type = card_type;
 
     return(type);
 }
@@ -1009,14 +1010,14 @@ video_load_font(const wchar_t *fn, fontformat_t num)
 uint8_t
 video_force_resize_get(void)
 {
-    return video_force_resize;
+    return(force_resize);
 }
 
 
 void
 video_force_resize_set(uint8_t res)
 {
-    video_force_resize = res;
+    force_resize = res;
 }
 
 

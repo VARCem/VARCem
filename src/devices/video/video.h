@@ -8,13 +8,13 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.39	2020/02/11
+ * Version:	@(#)video.h	1.0.40	2020/02/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -45,13 +45,13 @@
 
 
 enum {
-    VID_NONE = 0,
-    VID_INTERNAL,
-    VID_MDA,			/* IBM MDA */
-    VID_CGA,			/* IBM CGA */
-    VID_EGA,			/* IBM EGA */
-    VID_VGA,        		/* IBM VGA */
-    VID_HERCULES		/* Hercules */
+    VID_NONE = 0,			// none
+    VID_INTERNAL,			// on-board
+    VID_MDA,				// IBM MDA
+    VID_CGA,				// IBM CGA
+    VID_EGA,				// IBM EGA
+    VID_VGA,    	    		// IBM VGA
+    VID_HERCULES			// Hercules
 };
 
 enum {
@@ -76,9 +76,9 @@ enum {
 };
 
 typedef enum {
-    FONT_MDA = 0,		/* MDA 8x14 */
-    FONT_CGA_THIN,		/* CGA 8x8, thin lines */
-    FONT_CGA_THICK,		/* CGA 8x8, thick lines */
+    FONT_MDA = 0,			// MDA 8x14
+    FONT_CGA_THIN,			// CGA 8x8, thin lines
+    FONT_CGA_THICK,			// CGA 8x8, thick lines
 } fontformat_t;
 
 
@@ -97,15 +97,15 @@ typedef struct {
 } rgb_t;
 
 typedef union {
-    uint32_t	val;			/* pel, accessed as 32b value */
-    uint8_t	pal;			/* pel, accessed as 8b palette index */
-    rgb_t	rgb;			/* pel, accessed as RGB value */
+    uint32_t	val;			// pel, accessed as 32b value
+    uint8_t	pal;			// pel, accessed as 8b palette index
+    rgb_t	rgb;			// pel, accessed as RGB value
 } pel_t;
 
 typedef struct {
-    int		w, h;			/* screen buffer sizes */
-    pel_t	*pels;			/* pointer to actual pels */
-    pel_t	*line[];		/* array with line pointers */
+    int		w, h;			// screen buffer sizes
+    pel_t	*pels;			// pointer to actual pels
+    pel_t	*line[];		// array with line pointers
 } bitmap_t;
 
 typedef rgb_t PALETTE[256];
@@ -118,8 +118,8 @@ typedef struct {
 extern int		changeframecount;
 
 /* These will go away soon. */
-extern uint8_t		fontdat[2048][8];		/* 2048!! characters */
-extern uint8_t		fontdatm[2048][16];		/* 2048!! characters */
+extern uint8_t		fontdat[2048][8];	// 2048!! characters
+extern uint8_t		fontdatm[2048][16];	// 2048!! characters
 extern dbcs_font_t	*fontdatk,
 			*fontdatk_user;
 
@@ -131,7 +131,7 @@ extern uint32_t		*video_6to8,
 			*video_16to32;
 extern uint32_t		pal_lookup[256];
 extern int		fullchange;
-extern int		xsize,ysize;
+extern int		xsize,ysize;		// TBR
 extern int		enable_overscan,
 			update_overscan,
 			suppress_overscan;

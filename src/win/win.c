@@ -8,7 +8,7 @@
  *
  *		Platform main support module for Windows.
  *
- * Version:	@(#)win.c	1.0.34	2021/02/11
+ * Version:	@(#)win.c	1.0.35	2021/02/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,7 @@
 # include "win_sdl.h"
 #endif
 #ifdef USE_VNC
-# include "../vnc.h"
+# include "../ui/ui_vnc.h"
 #endif
 #ifdef USE_RDP
 # include <rdp.h>
@@ -71,12 +71,6 @@
 # include "../wx/wx_ui.h"
 #endif
 #include "win.h"
-
-
-#define NtDelayExecution NtDelayExecution
-extern NTSYSAPI NTSTATUS NTAPI NtDelayExecution(
-				IN BOOLEAN              Alertable,
-				IN PLARGE_INTEGER       DelayInterval );
 
 
 /* Platform Public data, specific. */
@@ -279,7 +273,7 @@ plat_start(void)
     /* We have not stopped yet. */
     quited = 0;
 
-    /* Attempt to allow for 1-msec delays with Sleep. */
+    /* Attempt to set 1-msec Sleep resolution. */
     timeBeginPeriod(1);
 
     /* Start the emulator, really. */
@@ -294,10 +288,14 @@ plat_stop(void)
 {
     quited = 1;
 
+    /* Attempt to restore previous Sleep resolution. */
+    timeEndPeriod(1);
+
+    /* Wait a while for things to shut down. */
     plat_delay_ms(100);
 
+    /* Now close down the virtual machine. */
     pc_close(thMain);
-
     thMain = NULL;
 }
 
@@ -581,6 +579,16 @@ plat_delay_ms(uint32_t count)
 }
 
 
+void
+plat_blitter(int own)
+{
+    if (own)
+	WaitForSingleObject(hBlitMutex, INFINITE);
+    else
+	ReleaseMutex(hBlitMutex);
+}
+
+
 /*
  * Get number of VidApi entries.
  *
@@ -600,18 +608,4 @@ LPARAM
 win_string(int id)
 {
     return((LPARAM)get_string(id));
-}
-
-
-void
-plat_startblit(void)
-{
-    WaitForSingleObject(hBlitMutex, INFINITE);
-}
-
-
-void
-plat_endblit(void)
-{
-    ReleaseMutex(hBlitMutex);
 }
