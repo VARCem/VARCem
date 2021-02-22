@@ -909,7 +909,6 @@ nvr_at_init(const device_t *info, UNUSED(void *parent))
 	case 4:		/* PS/1 or PS/2 */
 		dev->cent = RTC_CENTURY_PS;
 		dev->dflt = 0xff;
-		//dev->def = 0xff;
 		nvr->irq = 8;
 		break;
 
