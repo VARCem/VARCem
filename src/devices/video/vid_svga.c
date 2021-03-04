@@ -599,23 +599,31 @@ svga_poll(priv_t priv)
     if (!svga->linepos) {
 	if (svga->displine == svga->hwcursor_latch.y && svga->hwcursor_latch.ena) {
 		svga->hwcursor_on = svga->hwcursor.ysize - svga->hwcursor_latch.yoff;
+		if (svga->hwcursor_on < 0)
+            svga->hwcursor_on = 0;
 		svga->hwcursor_oddeven = 0;
 	}
 
 	if (svga->displine == (svga->hwcursor_latch.y + 1) && svga->hwcursor_latch.ena &&
 			       svga->interlace) {
 		svga->hwcursor_on = svga->hwcursor.ysize - (svga->hwcursor_latch.yoff + 1);
+		if (svga->hwcursor_on < 0)
+            svga->hwcursor_on = 0;
 		svga->hwcursor_oddeven = 1;
 	}
 
 	if (svga->displine == svga->dac_hwcursor_latch.y && svga->dac_hwcursor_latch.ena) {
 		svga->dac_hwcursor_on = svga->hwcursor.ysize - svga->dac_hwcursor_latch.yoff;
+		if (svga->dac_hwcursor_on < 0)
+            svga->dac_hwcursor_on = 0;
 		svga->dac_hwcursor_oddeven = 0;
 	}
 
 	if (svga->displine == (svga->dac_hwcursor_latch.y + 1) && svga->dac_hwcursor_latch.ena &&
 			       svga->interlace) {
 		svga->dac_hwcursor_on = svga->hwcursor.ysize - (svga->dac_hwcursor_latch.yoff + 1);
+		if (svga->dac_hwcursor_on < 0)
+            svga->dac_hwcursor_on = 0;
 		svga->dac_hwcursor_oddeven = 1;
 	}
 	if (svga->displine == svga->overlay_latch.y && svga->overlay_latch.ena) {
@@ -872,8 +880,8 @@ svga_init(svga_t *svga, priv_t priv, int vramsize,
     svga->overlay_draw = overlay_draw;
 
     svga->hwcursor.xsize = svga->hwcursor.ysize = 32;
-
     svga->dac_hwcursor.xsize = svga->dac_hwcursor.ysize = 32;
+
     mem_map_add(&svga->mapping, 0xa0000, 0x20000,
 		svga_read, svga_readw, svga_readl,
 		svga_write, svga_writew, svga_writel,
