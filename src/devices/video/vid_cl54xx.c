@@ -155,8 +155,6 @@
 #define CIRRUS_BLTMODEEXT_COLOREXPINV      0x02
 #define CIRRUS_BLTMODEEXT_DWORDGRANULARITY 0x01
 
-#define CL_543X_BUS_SELECT_VLB40 2
-#define CL_542X_BUS_SELECT_VLB40 4
 #define CL_BUS_SELECT_PCI 	 	 4
 #define CL_BUS_SELECT_MCA 	 	 5
 #define CL_BUS_SELECT_VLB33 	 6
@@ -171,6 +169,7 @@ typedef struct {
     svga_t		svga;
 
     int			has_bios,
+				type,
 				rev;
 
     rom_t		bios_rom;
@@ -937,7 +936,7 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
     gd54xx_t *dev = (gd54xx_t *)priv;
     svga_t *svga = &dev->svga;
     uint8_t o, indx, old;
-    uint32_t o32, mask;
+    uint32_t o32;
 
     if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) &&
 	!(svga->miscout & 1)) 
@@ -1029,30 +1028,23 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 					if (is_5422(svga))
 					        svga->hwcursor.xsize = svga->hwcursor.ysize = (val & CIRRUS_CURSOR_LARGE) ? 64 : 32;
 					else
-						svga->hwcursor.xsize = 32;
-					if ((! is_5426(svga)) || (svga->crtc[0x1b] & 2))
-						mask = svga->vram_display_mask;
+						svga->hwcursor.xsize = svga->hwcursor.ysize = 32;
+					if (svga->seqregs[0x12] & CIRRUS_CURSOR_LARGE)
+						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((svga->seqregs[0x13] & 0x3c) * 256));
 					else
-						mask = svga->vram_mask;
-					if ((svga->seqregs[0x12] & CIRRUS_CURSOR_LARGE) && (is_5422(svga)))
-						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((svga->seqregs[0x13] & 0x3c) * 256)) & mask;
-					else
-						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((svga->seqregs[0x13] & 0x3f) * 256)) & mask;
+						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((svga->seqregs[0x13] & 0x3f) * 256));
 					break;
+
 
 				case 0x13:
-					if ((! is_5426(svga)) || (svga->crtc[0x1b] & 2))
-						mask = svga->vram_display_mask;
+					if (svga->seqregs[0x12] & CIRRUS_CURSOR_LARGE)
+						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((val & 0x3c) * 256));
 					else
-						mask = svga->vram_mask;
-					if ((svga->seqregs[0x12] & CIRRUS_CURSOR_LARGE) && (is_5422(svga)))
-						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((val & 0x3c) * 256)) & mask;
-					else
-						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((val & 0x3f) * 256)) & mask;
+						svga->hwcursor.addr = ((dev->vram_size - 0x4000) + ((val & 0x3f) * 256));
 					break;
 
+
 				case 0x15:
-					if (is_5426(svga)) {
 						/* FIXME : Hack to force memory size on some GD-542x BIOSes*/
 						val &= 0xf8;
 						switch (dev->vram_size) {				
@@ -1068,8 +1060,6 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 								svga->seqregs[0x15] = val | 0x04;
 								break;
 						}
-					} else
-						return;
 					break;
 
 				case 0x07:
@@ -1123,7 +1113,7 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 				svga->dac_pos++; 
 				break;
 
-                        case 2:
+            case 2:
 				indx = svga->dac_addr & 0xff;
 				if (svga->seqregs[0x12] & 2) {
 					indx &= 0x0f;
@@ -1195,6 +1185,13 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 				case 0x06:
 					if ((o ^ val) & 0x0c)
 						recalc_mapping(dev);
+					
+					if (dev->type == CIRRUS_ID_CLGD5426 || dev->type == CIRRUS_ID_CLGD5428 || dev->type >= CIRRUS_ID_CLGD5430) {
+                            if (val & 2) /*Odd/Even*/
+                                svga->decode_mask = (svga->vram_mask << 1) + 1;
+							else
+                                svga->decode_mask = svga->vram_mask;
+                    }
 					break;
 					
 				case 0x07:
@@ -1392,7 +1389,7 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 		if (old != val) {
 			/* Overlay registers */
 			switch (svga->crtcreg) {
-				case 0x1d: /* Overlay mode control GD5425 & 5429 only */
+				case 0x1d: /* Overlay mode control GD5425 & 5429+ only */
 					if (((old >> 3) & 7) != ((val >> 3) & 7)) {
 						dev->overlay.colorkeymode = (val >> 3) & 7;
 						update_overlay(dev);
@@ -1531,6 +1528,7 @@ gd54xx_in(uint16_t addr, priv_t priv)
 					return ((svga->seqregs[6] & 0x17) == 0x12) ? 0x12 : 0x0f;
 
 				case 0x08:
+					temp = svga->seqregs[svga->seqaddr];
 					if (dev->i2c) {
 						temp &= 0x7b;
 						if (i2c_gpio_get_scl(dev->i2c))
@@ -1544,8 +1542,9 @@ gd54xx_in(uint16_t addr, priv_t priv)
 					return dev->vclk_n[svga->seqaddr-0x0b];
 
 				case 0x17:
-					if (is_5422(svga)) { 
-						temp = svga->seqregs[0x17] & ~(7 << 3);
+					if (is_5426(svga)) { 
+						temp = svga->seqregs[0x17];
+						temp &= ~(7 << 3);
 						
 						if (dev->isa)
 								temp |= (CL_BUS_SELECT_ISA << 3);
@@ -1553,21 +1552,15 @@ gd54xx_in(uint16_t addr, priv_t priv)
 								temp |= (CL_BUS_SELECT_MCA << 3);
 						else if (dev->pci)
 								temp |= (CL_BUS_SELECT_PCI << 3);
-						else if (dev->vlb) { 
-								if (svga->crtc[0x27] == CIRRUS_ID_CLGD5429)
-									temp |= (CL_542X_BUS_SELECT_VLB40 << 3);
-								else if (svga->crtc[0x27 > CIRRUS_ID_CLGD5429])
-									temp |= (CL_543X_BUS_SELECT_VLB40 << 3); /* Could be 4 << 2 */
-								else
-									temp |= (CL_BUS_SELECT_VLB33 << 3);
-						}				
+						else if (dev->vlb)
+									temp |= (CL_BUS_SELECT_VLB33 << 3);	
 						return temp;
 					}
 					else
 						break;
 				
 				case 0x18: /* TODO Signature Generator */
-					return svga->seqregs[0x18];
+					return svga->seqregs[0x18] & 0xfe;
 
 				case 0x1b: case 0x1c: case 0x1d: case 0x1e:
 					return dev->vclk_d[svga->seqaddr-0x1b];
@@ -1806,8 +1799,8 @@ gd54xx_in(uint16_t addr, priv_t priv)
 static void
 hwcursor_draw(svga_t *svga, int displine)
 {
-    gd54xx_t *dev = (gd54xx_t *)svga->p;	
-    int x, xx, comb, b0, b1;
+    gd54xx_t *dev = (gd54xx_t *)svga->p;	  
+	int x, xx, comb, b0, b1;
     uint8_t dat[2];
     int offset = svga->hwcursor_latch.x - svga->hwcursor_latch.xoff;
     int y_add, x_add;
@@ -1825,11 +1818,11 @@ hwcursor_draw(svga_t *svga, int displine)
 		svga->hwcursor_latch.addr += pitch;
 
     for (x = 0; x < svga->hwcursor.xsize; x += 8) {
-	dat[0] = svga->vram[svga->hwcursor_latch.addr & svga->vram_display_mask];
+	dat[0] = svga->vram[svga->hwcursor_latch.addr];
 	if (svga->hwcursor.xsize == 64)
-		dat[1] = svga->vram[(svga->hwcursor_latch.addr + 0x08) & svga->vram_display_mask];
+		dat[1] = svga->vram[(svga->hwcursor_latch.addr + 0x08)];
 	else
-		dat[1] = svga->vram[(svga->hwcursor_latch.addr + 0x80) & svga->vram_display_mask];
+		dat[1] = svga->vram[(svga->hwcursor_latch.addr + 0x80)];
 	for (xx = 0; xx < 8; xx++) {
 		b0 = (dat[0] >> (7 - xx)) & 1;
 		b1 = (dat[1] >> (7 - xx)) & 1;
@@ -3858,6 +3851,8 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
 		break;
     }
 
+	dev->type = id;
+
     if (dev->mca) 
 		vram = 1;
 	else {
@@ -3974,7 +3969,7 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
 		dev->ddc = ddc_init(i2c_gpio_get_bus(dev->i2c));
     }
 
-	if (svga->crtc[0x27] >= CIRRUS_ID_CLGD5446)
+	if (dev->type >= CIRRUS_ID_CLGD5446)
 		dev->crtcreg_mask = 0x7f;
     else
 		dev->crtcreg_mask = 0x3f;
@@ -4024,7 +4019,7 @@ gd54xx_force_redraw(priv_t priv)
 static const device_config_t gd5422_config[] =
 {
         {
-                "memory","Memory size",CONFIG_SELECTION,"",1,
+                "memory","Memory size",CONFIG_SELECTION,"",0,
                 {
                         {
                                 "512 KB",0
