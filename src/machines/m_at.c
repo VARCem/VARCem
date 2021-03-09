@@ -54,6 +54,7 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
+#include "../plat.h"
 #include "machine.h"
 
 
