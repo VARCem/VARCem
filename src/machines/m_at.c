@@ -8,13 +8,13 @@
  *
  *		Standard PC/AT implementation.
  *
- * Version:	@(#)m_at.c	1.0.16	2019/05/17
+ * Version:	@(#)m_at.c	1.0.17	2021/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -117,17 +117,26 @@ m_at_ps2_ide_init(void)
 
 
 static priv_t
-ibm_at_init(const device_t *info, void *arg)
+at_init(const device_t *info, UNUSED(void *arg))
 {
     device_add_ex(info, (priv_t)arg);
 
     m_at_init();
 
+    switch (info->local) {
+	case 0:			/* IBM PC-AT */
+	case 1:			/* IBM PC-XT286 */
+		break;
+
+	default:		/* clones */
+		break;
+    }
+
     mem_remap_top(384);
 
     device_add(&fdc_at_device);
 
-    return((priv_t)arg);
+    return(arg);
 }
 
 
@@ -149,7 +158,7 @@ const device_t m_at = {
     DEVICE_ROOT,
     0,
     L"ibm/at",
-    ibm_at_init, NULL, NULL,
+    at_init, NULL, NULL,
     NULL, NULL, NULL,
     &at_info,
     NULL
@@ -173,9 +182,29 @@ const device_t m_xt286 = {
     DEVICE_ROOT,
     1,
     L"ibm/xt286",
-    ibm_at_init, NULL, NULL,
+    at_init, NULL, NULL,
     NULL, NULL, NULL,
     &xt286_info,
+    NULL
+};
+
+
+static const machine_t dtk286_info = {
+    MACHINE_ISA | MACHINE_AT,
+    0,
+    256, 15872, 128, 64, -1,
+    {{"",cpus_286}}
+};
+
+/* DTK PTM-1xxx (1010, 1030, 1230, 1630, 1739) 80286. */
+const device_t m_dtk_ptm1000 = {
+    "DTK 286 (PTM-1xxx)",
+    DEVICE_ROOT,
+    10,
+    L"dtk/286",
+    at_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &dtk286_info,
     NULL
 };
 

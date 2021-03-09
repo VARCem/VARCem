@@ -8,13 +8,13 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.35	2020/02/12
+ * Version:	@(#)machine.h	1.0.37	2021/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -102,6 +102,11 @@ extern const device_t	m_xt_juko;
 
 extern const device_t	m_pcjr;
 
+extern const device_t	m_sanyo_mbc550;
+extern const device_t	m_sanyo_mbc555;
+extern const device_t	m_sanyo_mbc555_2;
+extern const device_t	m_sanyo_mbc555_3;
+
 extern const device_t	m_amstrad_1512;
 extern const device_t	m_amstrad_1640;
 extern const device_t	m_amstrad_200;
@@ -135,6 +140,7 @@ extern const device_t	m_zenith_ss;
 extern const device_t	m_at;
 extern const device_t	m_xt286;
 
+extern const device_t	m_dtk_ptm1000;
 extern const device_t	m_neat_ami;
 extern const device_t	m_neat_dtk;
 

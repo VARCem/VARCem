@@ -8,13 +8,13 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.46	2020/06/14
+ * Version:	@(#)machine_table.c	1.0.48	2021/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -72,6 +72,12 @@ static const struct {
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
     { "[8088] Compaq Portable",			"compaq_portable",	&m_cpq_p1		},
 #endif
+#if defined(DEV_BRANCH) && defined(USE_SANYO)
+    { "[8088] Sanyo MBC-550",			"sanyo_mbc550",		&m_sanyo_mbc550		},
+    { "[8088] Sanyo MBC-555",			"sanyo_mbc555",		&m_sanyo_mbc555		},
+    { "[8088] Sanyo MBC-555-2",			"sanyo_mbc555_3",	&m_sanyo_mbc555_2	},
+    { "[8088] Sanyo MBC-555-3",			"sanyo_mbc555_3",	&m_sanyo_mbc555_3	},
+#endif
     { "[8088] DTK XT",				"dtk_xt",		&m_xt_dtk		},
     { "[8088] Juko XT",				"juko_pc",		&m_xt_juko		},
     { "[8088] Schneider EuroPC",		"schneider_europc",	&m_europc		},
@@ -104,6 +110,7 @@ static const struct {
     { "[286 ISA] IBM PS/1 model 2011",		"ibm_ps1_2011",		&m_ps1_2011		},
     { "[286 ISA] IBM PS/2 model 30-286",	"ibm_ps2_m30_286",	&m_ps2_m30_286		},
 
+    { "[286 ISA] DTK 286 (PTM-1xxx)",		"dtk_286",		&m_dtk_ptm1000		},
     { "[286 ISA] AMI 286 (NEAT)",		"ami_286",		&m_neat_ami		},
     { "[286 ISA] Award 286 (SCAT)",		"award_286",		&m_scat_award		},
 
