@@ -240,7 +240,9 @@ typedef struct {
     uint32_t	extpallook[256];
     PALETTE		extpal;
 
-	 void		*i2c, *ddc;
+	int vidsys_ena;
+
+	void		*i2c, *ddc;
 } gd54xx_t;
 
 static void	
@@ -258,10 +260,10 @@ uint16_t	gd543x_mmio_readw(uint32_t addr, priv_t);
 static 
 uint32_t	gd543x_mmio_readl(uint32_t addr, priv_t);
 static void	
-reset_blit(gd54xx_t *gd54xx);
+reset_blit(gd54xx_t *dev);
 static void	
 start_blit(uint32_t cpu_dat, uint32_t count,
-				  gd54xx_t *gd54xx, svga_t *svga);
+				  gd54xx_t *dev, svga_t *svga);
 
 #define CLAMP(x) do                                     \
         {                                               \
@@ -944,6 +946,15 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 
     switch (addr) {
 
+#if 0
+	 case 0x3c3:
+    	if (dev->mca) {
+        	dev->vidsys_ena = val & 1;
+        	gd5428_mca_map_update(dev);
+		}
+        break;
+#endif
+
 	case 0x03c4:
 		svga->seqaddr = val;
 		break;
@@ -1500,6 +1511,13 @@ gd54xx_in(uint16_t addr, priv_t priv)
 		temp = svga_in(addr, svga);
 		temp |= dev->vblank_irq > 0 ? 0x80 : 0x00;
 		break;
+
+#if 0
+    case 0x3c3:
+    	if (dev->mca)
+    	    return dev->vidsys_ena;
+        break;
+#endif
 	
 	case 0x03c4:
 		if (!is_locked(svga)) {
@@ -3600,7 +3618,6 @@ request_more_data:
     }
 }
 
-//
 static void
 start_blit(uint32_t cpu_dat, uint32_t count, gd54xx_t *dev, svga_t *svga)
 {
@@ -3765,15 +3782,23 @@ gd5428_mca_write(int port, uint8_t val, priv_t priv)
 	recalc_mapping(dev);
 }
 
-#if 0
 static uint8_t 
 gd5428_mca_feedb(priv_t priv)
 {
         gd54xx_t *dev = (gd54xx_t *)priv;
 
-        return dev->pos_regs[2] & 1;
+        return (dev->pos_regs[2] & 1);
 }
-#endif
+
+static void 
+gd5428_mca_reset(priv_t priv)
+{
+        gd54xx_t *dev = (gd54xx_t *)priv;
+
+        dev->vidsys_ena = 0;
+        gd5428_mca_write(0x102, 0, dev);
+}
+
 
 static priv_t
 gd54xx_init(const device_t *info, UNUSED(void *parent))
@@ -3961,7 +3986,8 @@ gd54xx_init(const device_t *info, UNUSED(void *parent))
 	if (dev->mca) {
 		dev->pos_regs[0] = 0x7b;
 		dev->pos_regs[1] = 0x91;
-		mca_add(gd5428_mca_read, gd5428_mca_write, dev);
+		dev->pos_regs[2] = 0;
+		mca_add(gd5428_mca_read, gd5428_mca_write, gd5428_mca_feedb, gd5428_mca_reset, dev);
     }
 
 	if (is_5434(svga)) {

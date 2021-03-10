@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.17	2020/06/01
+ * Version:	@(#)scsi_aha154x.c	1.0.18	2021/03/05
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -18,7 +18,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -583,15 +583,13 @@ aha_mca_write(int port, uint8_t val, void *priv)
     }
 }
 
-#if 0
 static uint8_t
-aha_mca_feedb(void *priv)
+aha_mca_feedb(priv_t priv)
 {
     x54x_t *dev = (x54x_t *)priv;
 
     return (dev->pos_regs[2] & 0x01);
 }
-#endif
 
 /* Initialize the board's ROM BIOS. */
 static void
@@ -859,7 +857,7 @@ aha_init(const device_t *info, UNUSED(void *parent))
 		dev->pos_regs[0] = 0x1f;	/* MCA board ID */
 		dev->pos_regs[1] = 0x0f;	
 		//mca_add(aha_mca_read, aha_mca_write, aha_mca_feedb, dev);
-		mca_add(aha_mca_read, aha_mca_write, dev);
+		mca_add(aha_mca_read, aha_mca_write, aha_mca_feedb, NULL, dev);
                 dev->ha_bps = 5000000.0;	/* normal SCSI */
 		break;
     }	

@@ -8,14 +8,14 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.12	2020/11/27
+ * Version:	@(#)vid_et4000.c	1.0.13	2021/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		GreatPsycho, <greatpsycho@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -487,6 +487,13 @@ et4000_mca_write(int port, uint8_t val, priv_t priv)
     et4000->pos_regs[port & 7] = val;
 }
 
+static uint8_t 
+et4000_mca_feedb(priv_t priv)
+{
+        et4000_t *dev = (et4000_t *)priv;
+
+        return (dev->pos_regs[2] & 1);
+}
 
 static priv_t
 et4000_init(const device_t *info, UNUSED(void *parent))
@@ -523,7 +530,7 @@ et4000_init(const device_t *info, UNUSED(void *parent))
 
 		dev->pos_regs[0] = 0xf2;	/* ET4000 MCA board ID */
 		dev->pos_regs[1] = 0x80;	
-		mca_add(et4000_mca_read, et4000_mca_write, dev);
+		mca_add(et4000_mca_read, et4000_mca_write, et4000_mca_feedb, NULL, dev);
 		break;
 
 	case 2:		/* Korean ET4000 */

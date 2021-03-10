@@ -1608,15 +1608,13 @@ buslogic_mca_write(int port, uint8_t val, void *priv)
     }
 }
 
-#if 0
 static uint8_t
-buslogic_mca_feedb(void *priv)
+buslogic_mca_feedb(priv_t priv)
 {
     x54x_t *dev = (x54x_t *)priv;
 
     return (dev->pos_regs[2] & 0x01);
 }
-#endif
 
 void
 BuslogicDeviceReset(void *priv)
@@ -1745,7 +1743,7 @@ buslogic_init(const device_t *info, UNUSED(void *parent))
 		dev->bit32 = 1;
 		dev->pos_regs[0] = 0x08;	/* MCA board ID */
 		dev->pos_regs[1] = 0x07;	
-		mca_add(buslogic_mca_read, buslogic_mca_write, dev);
+		mca_add(buslogic_mca_read, buslogic_mca_write, buslogic_mca_feedb, NULL, dev);
 		dev->ha_bps = 5000000.0;	/* normal SCSI */
 		dev->max_id = 7;		/* narrow SCSI */
 		break;

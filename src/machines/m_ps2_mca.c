@@ -376,6 +376,13 @@ exp_write(int port, uint8_t val, priv_t priv)
 	mem_map_disable(&dev->exp_mapping);
 }
 
+static uint8_t 
+exp_feedb(priv_t priv)
+{
+	ps2_t *dev = (ps2_t *)priv;
+
+	return (dev->mem_pos_regs[2] & 1);
+}
 
 static void
 mem_fffc_init(ps2_t *dev, int start_mb)
@@ -429,7 +436,7 @@ mem_fffc_init(ps2_t *dev, int start_mb)
 		break;
     }
 
-    mca_add(exp_read, exp_write, dev);
+    mca_add(exp_read, exp_write, exp_feedb, NULL, dev);
 
     mem_map_add(&dev->exp_mapping, exp_start, (mem_size - (start_mb << 10)) << 10,
 		mem_read_ram, mem_read_ramw, mem_read_raml,
@@ -1254,10 +1261,17 @@ ps2_mca_read(uint16_t port, priv_t priv)
 
     switch (port) {
 	case 0x0091:
-		fatal("Read 91 setup=%02x adapter=%02x\n",
-				dev->setup, dev->adapter_setup);
 		/*NOTREACHED*/
-
+		if (!(dev->setup & PS2_SETUP_IO))
+			ret = 0x00;
+    	else if (!(dev->setup & PS2_SETUP_VGA))
+			ret = 0x00;
+    	else if (dev->adapter_setup & PS2_CARD_SETUP)
+			ret = 0x00;
+		else
+			ret = !mca_feedb();
+		ret |= 0xfe;
+		break;
 	case 0x0094:
 		ret = dev->setup;
 		break;
@@ -1352,6 +1366,8 @@ ps2_mca_write(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 0x0096:
+		if ((val & 0x80) && !(dev->adapter_setup & 0x80))
+        	mca_reset();
 		dev->adapter_setup = val;
 		mca_set_index(val & 7);
 		break;
