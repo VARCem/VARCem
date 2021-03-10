@@ -14,14 +14,14 @@
  *
  *		as well as a number of compatibles.
  *
- * Version:	@(#)net_wd80x3.c	1.0.8	2019/05/13
+ * Version:	@(#)net_wd80x3.c	1.0.9	2021/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1363,6 +1363,12 @@ nic_mca_write(int port, uint8_t val, priv_t priv)
     }
 }
 
+static uint8_t
+nic_mca_feedb(priv_t priv)
+{
+    return 1;
+}
+
 
 static void
 nic_close(priv_t priv)
@@ -1421,7 +1427,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
 	dev->base_irq = device_get_config_int("irq");
 	dev->ram_addr = device_get_config_hex20("ram_addr");
     } else {
-	mca_add(nic_mca_read, nic_mca_write, dev);	
+	mca_add(nic_mca_read, nic_mca_write, nic_mca_feedb, NULL, dev);	
     }
 
     /* See if we have a local MAC address configured. */

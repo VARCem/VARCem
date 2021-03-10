@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.20	2020/06/05
+ * Version:	@(#)net_ne2000.c	1.0.21	2021/03/05
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -25,7 +25,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Peter Grehan, <grehan@iprg.nokia.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Portions Copyright (C) 2002  MandrakeSoft S.A.
  *
@@ -2326,6 +2326,13 @@ nic_mca_write(int port, uint8_t val, priv_t priv)
     }
 }
 
+static uint8_t
+nic_mca_feedb(priv_t priv)
+{
+    nic_t *dev = (nic_t *)priv;
+
+    return (dev->pos_regs[2] & 0x01);
+}
 
 static void
 nic_rom_init(nic_t *dev, const wchar_t *fn)
@@ -2459,7 +2466,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
 	}
     } else if (dev->is_mca) {
 	/* Let MCA do its thing. */
-	mca_add(nic_mca_read, nic_mca_write, dev);	
+	mca_add(nic_mca_read, nic_mca_write, nic_mca_feedb, NULL, dev);	
     } else {
 	/* Manual configuration. */
 	dev->base_address = device_get_config_hex16("base");
