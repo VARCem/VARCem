@@ -633,8 +633,7 @@ scamp_write(uint16_t addr, uint8_t val, priv_t priv)
 				    dev->port92->reg &= 0xfd;
 					mem_a20_alt = 0;
 					mem_a20_recalc();
-		}
-		break;
+				}
 			    break;
         }
 }
@@ -782,6 +781,8 @@ scamp_init(const device_t *info, UNUSED(void *parent))
     }
         
     mem_set_mem_state(0xfe0000, 0x20000, MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL);	
+
+	dev->port92 = device_add(&port92_device);
 	
 	return dev;
 }
