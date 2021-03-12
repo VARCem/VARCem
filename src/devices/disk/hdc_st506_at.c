@@ -12,12 +12,12 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.17	2019/05/17
+ * Version:	@(#)hdc_st506_at.c	1.0.18	2021/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,9 +38,6 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-#define __USE_LARGEFILE64
-#define _LARGEFILE_SOURCE
-#define _LARGEFILE64_SOURCE
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -59,23 +56,35 @@
 #include "hdd.h"
 
 
-#define ST506_TIME		(TIMER_USEC*10LL)
+#define ST506_TIME		(TIMER_USEC * 10LL)
+
+/*
+ * Rough estimate - MFM drives spin at 3600 RPM, with 17 sectors
+ * per track, meaning (3600/60)*17 = 1020 sectors per second, or
+ * 980us per sector.
+ *
+ * This is required for OS/2 on slow 286 systems, as the hard
+ * drive formatter will crash with 'internal processing error'
+ * if write sector interrupts are too close in time.
+ */
+#define SECTOR_TIME		(TIMER_USEC * 980LL)
+
 
 #define STAT_ERR		0x01
 #define STAT_INDEX		0x02
 #define STAT_ECC		0x04
-#define STAT_DRQ		0x08	/* data request */
+#define STAT_DRQ		0x08	// data request
 #define STAT_DSC		0x10
 #define STAT_WRFLT		0x20
 #define STAT_READY		0x40
 #define STAT_BUSY		0x80
 
-#define ERR_DAM_NOT_FOUND	0x01	/* Data Address Mark not found */
-#define ERR_TR000		0x02	/* track 0 not found */
-#define ERR_ABRT		0x04	/* command aborted */
-#define ERR_ID_NOT_FOUND	0x10	/* ID not found */
-#define ERR_DATA_CRC		0x40	/* data CRC error */
-#define ERR_BAD_BLOCK		0x80	/* bad block detected */
+#define ERR_DAM_NOT_FOUND	0x01	// Data Address Mark not found
+#define ERR_TR000		0x02	// track 0 not found
+#define ERR_ABRT		0x04	// command aborted
+#define ERR_ID_NOT_FOUND	0x10	// ID not found
+#define ERR_DATA_CRC		0x40	// data CRC error
+#define ERR_BAD_BLOCK		0x80	// bad block detected
 
 #define CMD_RESTORE		0x10
 #define CMD_READ		0x20
@@ -88,43 +97,47 @@
 
 
 typedef struct {
-    int8_t	present,		/* drive is present */
-		hdd_num,		/* drive number in system */
-		steprate,		/* current servo step rate */
-		spt,			/* physical #sectors per track */
-		hpc,			/* physical #heads per cylinder */
+    int8_t	present,		// drive is present
+		hdd_num,		// drive number in system
+		steprate,		// current servo step rate
+		spt,			// physical #sectors per track
+		hpc,			// physical #heads per cylinder
 		pad;
-    int16_t	tracks;			/* physical #tracks per cylinder */
+    int16_t	tracks;			// physical #tracks per cylinder
 
-    int8_t	cfg_spt,		/* configured #sectors per track */
-		cfg_hpc;		/* configured #heads per track */
+    int8_t	cfg_spt,		// configured #sectors per track
+		cfg_hpc;		// configured #heads per track
 
-    int16_t	curcyl;			/* current track number */
+    int16_t	curcyl;			// current track number
 } drive_t;
 
 typedef struct {
-    uint8_t	precomp,		/* 1: precomp/error register */
-		error,
-		secount,		/* 2: sector count register */
-		sector,			/* 3: sector number */
-		head,			/* 6: head number + drive select */
-		command,		/* 7: command/status */
-		status,
-		fdisk;			/* 8: control register */
-    uint16_t	cylinder;		/* 4/5: cylinder LOW and HIGH */
+    uint16_t	base_addr;		// I/O base address
+    int8_t	dma,			// ... DMA channel
+		irq;			// ... IRQ channel
 
-    int8_t	reset,			/* controller in reset */
-		irqstat,		/* current IRQ status */
-		drvsel,			/* current selected drive */
+    uint8_t	precomp,		// 1: precomp/error register
+		error,
+		secount,		// 2: sector count register
+		sector,			// 3: sector number
+		head,			// 6: head number + drive select
+		command,		// 7: command/status
+		status,
+		fdisk;			// 8: control register
+    uint16_t	cylinder;		// 4/5: cylinder LOW and HIGH
+
+    int8_t	reset,			// controller in reset
+		irqstat,		// current IRQ status
+		drvsel,			// current selected drive
 		pad;
 
-    int		pos;			/* offset within data buffer */
+    int		pos;			// offset within data buffer
 
-    tmrval_t	callback;		/* callback delay timer */
+    tmrval_t	callback;		// callback delay timer
 
-    uint16_t	buffer[256];		/* data buffer (16b wide) */
+    uint16_t	buffer[256];		// data buffer (16b wide)
 
-    drive_t	drives[ST506_NUM];	/* attached drives */
+    drive_t	drives[ST506_NUM];	// attached drives
 } hdc_t;
 
 
@@ -132,7 +145,7 @@ static __inline void
 irq_raise(hdc_t *dev)
 {
     if (! (dev->fdisk & 0x02))
-	picint(1 << 14);
+	picint(1 << dev->irq);
 
     dev->irqstat = 1;
 }
@@ -141,11 +154,15 @@ irq_raise(hdc_t *dev)
 static __inline void
 irq_lower(hdc_t *dev)
 {
-    if (dev->irqstat) {
-	if (! (dev->fdisk & 0x02))
-		picintc(1<<14);
-	dev->irqstat = 0;
-    }
+    picintc(1 << dev->irq);
+}
+
+
+static void
+irq_update(hdc_t *dev)
+{
+    if (dev->irqstat && !((pic2.pend | pic2.ins) & 0x40) && !(dev->fdisk & 2))
+	picint(1 << dev->irq);
 }
 
 
@@ -162,23 +179,27 @@ irq_lower(hdc_t *dev)
  * geometry information...
  */
 static int
-get_sector(hdc_t *dev, off64_t *addr)
+get_sector(hdc_t *dev, off_t *addr)
 {
     drive_t *drive = &dev->drives[dev->drvsel];
 
+    /* FIXME:
+     * See if this is even needed - if the code is present, IBM AT
+     * diagnostics v2.07 will error with: ERROR 152 - SYSTEM BOARD.
+     */
     if (drive->curcyl != dev->cylinder) {
-	DEBUG("WD1003(%d) sector: wrong cylinder\n");
+	DEBUG("WD1003(%i) sector: wrong cylinder\n", dev->drvsel);
 	return(1);
     }
 
     if (dev->head > drive->cfg_hpc) {
-	DEBUG("WD1003(%d) get_sector: past end of configured heads\n",
+	DEBUG("WD1003(%i) get_sector: past end of configured heads\n",
 							dev->drvsel);
 	return(1);
     }
 
     if (dev->sector >= drive->cfg_spt+1) {
-	DEBUG("WD1003(%d) get_sector: past end of configured sectors\n",
+	DEBUG("WD1003(%i) get_sector: past end of configured sectors\n",
 							dev->drvsel);
 	return(1);
     }
@@ -186,18 +207,18 @@ get_sector(hdc_t *dev, off64_t *addr)
 #if 1
     /* We should check this in the SET_DRIVE_PARAMETERS command!  --FvK */
     if (dev->head > drive->hpc) {
-	DEBUG("WD1003(%d) get_sector: past end of heads\n", dev->drvsel);
+	DEBUG("WD1003(%i) get_sector: past end of heads\n", dev->drvsel);
 	return(1);
     }
 
     if (dev->sector >= drive->spt+1) {
-	DEBUG("WD1003(%d) get_sector: past end of sectors\n", dev->drvsel);
+	DEBUG("WD1003(%i) get_sector: past end of sectors\n", dev->drvsel);
 	return(1);
     }
 #endif
 
-    *addr = ((((off64_t) dev->cylinder * drive->cfg_hpc) + dev->head) *
-			 drive->cfg_spt) + (dev->sector - 1);
+    *addr = ((((off_t) dev->cylinder * drive->cfg_hpc) + dev->head) *
+		      		drive->cfg_spt) + (dev->sector - 1);
 
     return(0);
 }
@@ -228,12 +249,12 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 
     if (! drive->present) {
 	/* This happens if sofware polls all drives. */
-	DEBUG("WD1003(%d) command %02x on non-present drive\n",
+	DEBUG("WD1003(%i) command %02x on non-present drive\n",
 					dev->drvsel, val);
 	dev->command = 0xff;
 	dev->status = STAT_BUSY;
 	timer_clock();
-	dev->callback = 200LL*ST506_TIME;
+	dev->callback = 200LL * ST506_TIME;
 	timer_update_outstanding();
 
 	return;
@@ -246,7 +267,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
     switch (val & 0xf0) {
 	case CMD_RESTORE:
 		drive->steprate = (val & 0x0f);
-		DEBUG("WD1003(%d) restore, step=%d\n",
+		DEBUG("WD1003(%i) restore, step=%i\n",
 			dev->drvsel, drive->steprate);
 		drive->curcyl = 0;
 		dev->status = STAT_READY|STAT_DSC;
@@ -269,7 +290,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 			case CMD_READ+1:
 			case CMD_READ+2:
 			case CMD_READ+3:
-				DEBUG("WD1003(%d) read, opt=%d\n",
+				DEBUG("WD1003(%i) read, opt=%i\n",
 					dev->drvsel, val&0x03);
 				dev->command &= 0xfc;
 				if (val & 2)
@@ -284,7 +305,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 			case CMD_WRITE+1:
 			case CMD_WRITE+2:
 			case CMD_WRITE+3:
-				DEBUG("WD1003(%d) write, opt=%d\n",
+				DEBUG("WD1003(%i) write, opt=%i\n",
 					dev->drvsel, val & 0x03);
 				dev->command &= 0xfc;
 				if (val & 2)
@@ -335,14 +356,10 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 					/* Only accept after RESET or DIAG. */
 					drive->cfg_spt = dev->secount;
 					drive->cfg_hpc = dev->head+1;
-					DEBUG("WD1003(%d) parameters: tracks=%d, spt=%i, hpc=%i\n",
-					      dev->drvsel, drive->tracks,
-					      drive->cfg_spt, drive->cfg_hpc);
-				} else {
-					DEBUG("WD1003(%d) parameters: tracks=%d,spt=%i,hpc=%i (IGNORED)\n",
-					      dev->drvsel, drive->tracks,
-					      drive->cfg_spt, drive->cfg_hpc);
 				}
+				DEBUG("WD1003(%i) parameters: tracks=%i, spt=%i, hpc=%i\n",
+				      dev->drvsel, drive->tracks,
+				      drive->cfg_spt, drive->cfg_hpc);
 				dev->command = 0x00;
 				dev->status = STAT_READY|STAT_DSC;
 				dev->error = 1;
@@ -361,26 +378,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 }
 
 
-static void
-hdc_writew(uint16_t port, uint16_t val, priv_t priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-
-    dev->buffer[dev->pos >> 1] = val;
-    dev->pos += 2;
-
-    if (dev->pos >= 512) {
-	dev->pos = 0;
-	dev->status = STAT_BUSY;
-	timer_clock();
-
-	/* 781.25 us per sector at 5 Mbit/s = 640 kB/s. */
-	dev->callback = ((3125LL * TIMER_USEC) / 4LL);
-
-	timer_update_outstanding();
-    }
-}
-
+static void hdc_writew(uint16_t port, uint16_t val, priv_t priv);
 
 static void
 hdc_write(uint16_t port, uint8_t val, priv_t priv)
@@ -415,7 +413,7 @@ hdc_write(uint16_t port, uint8_t val, priv_t priv)
 		return;
 
 	case 0x01f6:	/* drive/head */
-		dev->head = val & 0xF;
+		dev->head = val & 0x0f;
 		dev->drvsel = (val & 0x10) ? 1 : 0;
 		if (dev->drives[dev->drvsel].present)
 			dev->status = STAT_READY|STAT_DSC;
@@ -445,44 +443,37 @@ hdc_write(uint16_t port, uint8_t val, priv_t priv)
 			dev->status = STAT_BUSY;
 		}
 		dev->fdisk = val;
-
-		/* Lower IRQ on IRQ disable. */
-		if ((val & 0x02) && !(dev->fdisk & 0x02))
-			picintc(1 << 14);
+		irq_update(dev);
 		break;
     }
 }
 
 
-static uint16_t
-hdc_readw(uint16_t port, priv_t priv)
+static void
+hdc_writew(uint16_t port, uint16_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
-    uint16_t ret;
 
-    ret = dev->buffer[dev->pos >> 1];
-    dev->pos += 2;
-    if (dev->pos >= 512) {
-	dev->pos = 0;
-	dev->status = STAT_READY|STAT_DSC;
-	if (dev->command == CMD_READ) {
-		dev->secount = (dev->secount - 1) & 0xff;
-		if (dev->secount) {
-			next_sector(dev);
-			dev->status = STAT_BUSY;
-			timer_clock();
+    if (port > 0x01f0) {
+	hdc_write(port, val & 0xff, priv);
+	if (port != 0x01f7)
+		hdc_write(port + 1, (val >> 8) & 0xff, priv);
+    } else {
+	dev->buffer[dev->pos >> 1] = val;
+	dev->pos += 2;
 
-			/* 781.25 us per sector at 5 Mbit/s = 640 kB/s. */
-			dev->callback = ((3125LL * TIMER_USEC) / 4LL);
-
-			timer_update_outstanding();
-		}
+	if (dev->pos >= 512) {
+		dev->pos = 0;
+		dev->status = STAT_BUSY;
+		timer_clock();
+		dev->callback = SECTOR_TIME;
+		timer_update_outstanding();
 	}
     }
-
-    return(ret);
 }
 
+
+static uint16_t hdc_readw(uint16_t port, priv_t priv);
 
 static uint8_t
 hdc_read(uint16_t port, priv_t priv)
@@ -508,11 +499,11 @@ hdc_read(uint16_t port, priv_t priv)
 		break;
 
 	case 0x01f4:	/* CYlinder low */
-		ret = (uint8_t)(dev->cylinder&0xff);
+		ret = (uint8_t)(dev->cylinder & 0xff);
 		break;
 
 	case 0x01f5:	/* Cylinder high */
-		ret = (uint8_t)(dev->cylinder>>8);
+		ret = (uint8_t)(dev->cylinder >> 8);
 		break;
 
 	case 0x01f6:	/* drive/head */
@@ -520,8 +511,8 @@ hdc_read(uint16_t port, priv_t priv)
 		break;
 
 	case 0x01f7:	/* Status */
-		irq_lower(dev);
 		ret = dev->status;
+		irq_lower(dev);
 		break;
 
 	default:
@@ -534,13 +525,48 @@ hdc_read(uint16_t port, priv_t priv)
 }
 
 
+static uint16_t
+hdc_readw(uint16_t port, priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    uint16_t ret;
+
+    if (port > 0x01f0) {
+	ret = hdc_read(port, priv);
+	if (port == 0x01f7)
+		ret |= 0xff00;
+	else
+		ret |= (hdc_read(port + 1, priv) << 8);
+    } else {
+	ret = dev->buffer[dev->pos >> 1];
+	dev->pos += 2;
+	if (dev->pos >= 512) {
+		dev->pos = 0;
+		dev->status = STAT_READY|STAT_DSC;
+		if (dev->command == CMD_READ) {
+			dev->secount = (dev->secount - 1) & 0xff;
+			if (dev->secount) {
+				next_sector(dev);
+				dev->status = STAT_BUSY | STAT_READY | STAT_DSC;
+				timer_clock();
+				dev->callback = SECTOR_TIME;
+				timer_update_outstanding();
+			}
+		}
+	}
+    }
+
+    return(ret);
+}
+
+
 static void
 do_seek(hdc_t *dev)
 {
     drive_t *drive = &dev->drives[dev->drvsel];
 
-    DEBUG("WD1003(%d) seek(%d) max=%d\n",
-	  dev->drvsel,dev->cylinder,drive->tracks);
+    DEBUG("WD1003(%i) seek(%i) max=%i\n",
+	  dev->drvsel, dev->cylinder, drive->tracks);
 
     if (dev->cylinder < drive->tracks)
 	drive->curcyl = dev->cylinder;
@@ -554,11 +580,12 @@ do_callback(priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     drive_t *drive = &dev->drives[dev->drvsel];
-    off64_t addr;
+    off_t addr;
 
-    dev->callback = 0LL;
+    dev->callback = 0;
+
     if (dev->reset) {
-	DEBUG("WD1003(%d) reset\n", dev->drvsel);
+	DEBUG("WD1003(%i) reset\n", dev->drvsel);
 
 	dev->status = STAT_READY|STAT_DSC;
 	dev->error = 1;
@@ -579,7 +606,7 @@ do_callback(priv_t priv)
 
     switch (dev->command) {
 	case CMD_SEEK:
-		DEBUG("WD1003(%d) seek, step=%d\n",
+		DEBUG("WD1003(%i) seek, step=%i\n",
 		      dev->drvsel, drive->steprate);
 		do_seek(dev);
 		dev->status = STAT_READY|STAT_DSC;
@@ -587,7 +614,7 @@ do_callback(priv_t priv)
 		break;
 
 	case CMD_READ:
-		DEBUG("WD1003(%d) read(%d,%d,%d)\n",
+		DEBUG("WD1003(%i) read(%i,%i,%i)\n",
 		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
 		do_seek(dev);
 		if (get_sector(dev, &addr)) {
@@ -606,7 +633,7 @@ do_callback(priv_t priv)
 		break;
 
 	case CMD_WRITE:
-		DEBUG("WD1003(%d) write(%d,%d,%d)\n",
+		DEBUG("WD1003(%i) write(%i,%i,%i)\n",
 		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
 		do_seek(dev);
 		if (get_sector(dev, &addr)) {
@@ -632,7 +659,7 @@ do_callback(priv_t priv)
 		break;
 
 	case CMD_VERIFY:
-		DEBUG("WD1003(%d) verify(%d,%d,%d)\n",
+		DEBUG("WD1003(%i) verify(%i,%i,%i)\n",
 		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
 		do_seek(dev);
 		dev->pos = 0;
@@ -642,7 +669,7 @@ do_callback(priv_t priv)
 		break;
 
 	case CMD_FORMAT:
-		DEBUG("WD1003(%d) format(%d,%d)\n",
+		DEBUG("WD1003(%i) format(%i,%i)\n",
 		      dev->drvsel, dev->cylinder, dev->head);
 		do_seek(dev);
 		if (get_sector(dev, &addr)) {
@@ -660,7 +687,14 @@ do_callback(priv_t priv)
 		break;
 
 	case CMD_DIAGNOSE:
-		DEBUG("WD1003(%d) diag\n", dev->drvsel);
+		/*
+		 * This is basically controller diagnostics - it resets
+		 * drive select to 0, error and status to ready, DSC,
+		 * and no error detected.
+		 */
+		DEBUG("WD1003(%i) diag\n", dev->drvsel);
+		dev->drvsel = 0;
+		drive = &dev->drives[dev->drvsel];
 		drive->steprate = 0x0f;
 		dev->error = 1;
 		dev->status = STAT_READY|STAT_DSC;
@@ -668,7 +702,7 @@ do_callback(priv_t priv)
 		break;
 
 	default:
-		DEBUG("WD1003(%d) callback on unknown command %02x\n",
+		DEBUG("WD1003(%i) callback on unknown command %02x\n",
 					dev->drvsel, dev->command);
 		dev->status = STAT_READY|STAT_ERR|STAT_DSC;
 		dev->error = ERR_ABRT;
@@ -691,7 +725,7 @@ loadhd(hdc_t *dev, int c, int d, const wchar_t *fn)
 
     drive->spt = (uint8_t)hdd[d].spt;
     drive->hpc = (uint8_t)hdd[d].hpc;
-    drive->tracks = (uint8_t)hdd[d].tracks;
+    drive->tracks = (uint16_t)hdd[d].tracks;
     drive->hdd_num = d;
     drive->present = 1;
 }
@@ -733,7 +767,7 @@ st506_init(const device_t *info, UNUSED(void *parent))
 
 		hdd_active(d, 0);
 
-		INFO("WD1003(%d): (%ls) geometry %d/%d/%d\n", c, hdd[d].fn,
+		INFO("WD1003(%i): (%ls) geometry %i/%i/%i\n", c, hdd[d].fn,
 		     (int)hdd[d].tracks, (int)hdd[d].hpc, (int)hdd[d].spt);
 
 		if (++c >= ST506_NUM) break;
@@ -743,16 +777,26 @@ st506_init(const device_t *info, UNUSED(void *parent))
     dev->status = STAT_READY|STAT_DSC;		/* drive is ready */
     dev->error = 1;				/* no errors */
 
-    io_sethandler(0x01f0, 1,
+    dev->base_addr = 0x01f0;
+    dev->dma = -1;
+    dev->irq = 14;
+
+    io_sethandler(dev->base_addr, 1,
 		  hdc_read, hdc_readw, NULL, hdc_write, hdc_writew, NULL, dev);
-    io_sethandler(0x01f1, 7,
+#if 0
+    io_sethandler(dev->base_addr + 1, 7,
 		  hdc_read, NULL,      NULL, hdc_write, NULL,       NULL, dev);
+#else
+    //FIXME: I thought only register 0 was 16bit ??
+    io_sethandler(dev->base_addr + 1, 7,
+		  hdc_read, hdc_readw, NULL, hdc_write, hdc_writew, NULL, dev);
+#endif
     io_sethandler(0x03f6, 1,
 		  NULL,     NULL,      NULL, hdc_write, NULL,       NULL, dev);
 
     timer_add(do_callback, dev, &dev->callback, &dev->callback);	
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
