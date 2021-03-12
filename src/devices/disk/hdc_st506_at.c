@@ -12,7 +12,7 @@
  *		based design. Most cards were WD1003-WA2 or -WAH, where the
  *		-WA2 cards had a floppy controller as well (to save space.)
  *
- * Version:	@(#)hdc_st506_at.c	1.0.18	2021/03/10
+ * Version:	@(#)hdc_st506_at.c	1.0.19	2021/03/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -158,7 +158,7 @@ irq_lower(hdc_t *dev)
 }
 
 
-static void
+static __inline void
 irq_update(hdc_t *dev)
 {
     if (dev->irqstat && !((pic2.pend | pic2.ins) & 0x40) && !(dev->fdisk & 2))
@@ -188,39 +188,39 @@ get_sector(hdc_t *dev, off_t *addr)
      * diagnostics v2.07 will error with: ERROR 152 - SYSTEM BOARD.
      */
     if (drive->curcyl != dev->cylinder) {
-	DEBUG("WD1003(%i) sector: wrong cylinder\n", dev->drvsel);
-	return(1);
+	DEBUG("WD1003(%i): sector: wrong cylinder\n", dev->drvsel);
+	return(0);
     }
 
     if (dev->head > drive->cfg_hpc) {
-	DEBUG("WD1003(%i) get_sector: past end of configured heads\n",
+	DEBUG("WD1003(%i): sector: past end of configured heads\n",
 							dev->drvsel);
-	return(1);
+	return(0);
     }
 
     if (dev->sector >= drive->cfg_spt+1) {
-	DEBUG("WD1003(%i) get_sector: past end of configured sectors\n",
+	DEBUG("WD1003(%i): sector: past end of configured sectors\n",
 							dev->drvsel);
-	return(1);
+	return(0);
     }
 
 #if 1
     /* We should check this in the SET_DRIVE_PARAMETERS command!  --FvK */
     if (dev->head > drive->hpc) {
-	DEBUG("WD1003(%i) get_sector: past end of heads\n", dev->drvsel);
-	return(1);
+	DEBUG("WD1003(%i): sector: past end of heads\n", dev->drvsel);
+	return(0);
     }
 
     if (dev->sector >= drive->spt+1) {
-	DEBUG("WD1003(%i) get_sector: past end of sectors\n", dev->drvsel);
-	return(1);
+	DEBUG("WD1003(%i): sector: past end of sectors\n", dev->drvsel);
+	return(0);
     }
 #endif
 
     *addr = ((((off_t) dev->cylinder * drive->cfg_hpc) + dev->head) *
 		      		drive->cfg_spt) + (dev->sector - 1);
 
-    return(0);
+    return(1);
 }
 
 
@@ -243,13 +243,167 @@ next_sector(hdc_t *dev)
 
 
 static void
+do_seek(hdc_t *dev)
+{
+    drive_t *drive = &dev->drives[dev->drvsel];
+
+    DEBUG("WD1003(%i): seek(%i) max=%i\n",
+	  dev->drvsel, dev->cylinder, drive->tracks);
+
+    if (dev->cylinder < drive->tracks)
+	drive->curcyl = dev->cylinder;
+    else
+	drive->curcyl = drive->tracks - 1;
+}
+
+
+static void
+call_back(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+    drive_t *drive = &dev->drives[dev->drvsel];
+    off_t addr;
+
+    dev->callback = 0;
+
+    if (dev->reset) {
+	DEBUG("WD1003(%i): reset\n", dev->drvsel);
+
+	dev->status = STAT_READY|STAT_DSC;
+	dev->error = 1;
+	dev->secount = 1;
+	dev->sector = 1;
+	dev->head = 0;
+	dev->cylinder = 0;
+
+	drive->steprate = 0x0f;		// default steprate
+	drive->cfg_spt = 0;		// need new parameters
+
+	dev->reset = 0;
+
+	hdd_active(drive->hdd_num, 0);
+
+	return;
+    }
+
+    switch (dev->command) {
+	case CMD_RESTORE:
+		DEBUG("WD1003(%i): restore, step=%i\n",
+			dev->drvsel, drive->steprate);
+		drive->curcyl = 0;
+		dev->status = STAT_READY|STAT_DSC;
+		hdd_active(drive->hdd_num, 0);
+		irq_raise(dev);
+		break;
+
+	case CMD_SEEK:
+		DEBUG("WD1003(%i): seek, step=%i\n",
+		      dev->drvsel, drive->steprate);
+		do_seek(dev);
+		dev->status = STAT_READY|STAT_DSC;
+		hdd_active(drive->hdd_num, 0);
+		irq_raise(dev);
+		break;
+
+	case CMD_READ:
+		DEBUG("WD1003(%i): read(%i,%i,%i)\n",
+		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
+		do_seek(dev);
+		if (! get_sector(dev, &addr)) {
+			dev->error = ERR_ID_NOT_FOUND;
+			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
+			irq_raise(dev);
+			break;
+		}
+		hdd_image_read(drive->hdd_num, addr, 1, (uint8_t *)dev->buffer);
+		dev->pos = 0;
+		dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
+		irq_raise(dev);
+		break;
+
+	case CMD_WRITE:
+		DEBUG("WD1003(%i): write(%i,%i,%i)\n",
+		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
+		do_seek(dev);
+		if (! get_sector(dev, &addr)) {
+			dev->error = ERR_ID_NOT_FOUND;
+			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
+			irq_raise(dev);
+			break;
+		}
+		hdd_image_write(drive->hdd_num, addr, 1,(uint8_t *)dev->buffer);
+		dev->status = STAT_READY|STAT_DSC;
+		dev->secount = (dev->secount - 1) & 0xff;
+		if (dev->secount) {
+			/* More sectors to do.. */
+			dev->status |= STAT_DRQ;
+			dev->pos = 0;
+			next_sector(dev);
+		} else
+			hdd_active(drive->hdd_num, 0);
+		irq_raise(dev);
+		break;
+
+	case CMD_VERIFY:
+		DEBUG("WD1003(%i): verify(%i,%i,%i)\n",
+		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
+		do_seek(dev);
+		dev->pos = 0;
+		dev->status = STAT_READY|STAT_DSC;
+		hdd_active(drive->hdd_num, 0);
+		irq_raise(dev);
+		break;
+
+	case CMD_FORMAT:
+		DEBUG("WD1003(%i): format(%i,%i)\n",
+		      dev->drvsel, dev->cylinder, dev->head);
+		do_seek(dev);
+		if (! get_sector(dev, &addr)) {
+			dev->error = ERR_ID_NOT_FOUND;
+			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
+			irq_raise(dev);
+			break;
+		}
+		hdd_image_zero(drive->hdd_num, addr, dev->secount);
+		dev->status = STAT_READY|STAT_DSC;
+		hdd_active(drive->hdd_num, 0);
+		irq_raise(dev);
+		break;
+
+	case CMD_DIAGNOSE:
+		/*
+		 * This is basically controller diagnostics - it resets
+		 * drive select to 0, error and status to ready, DSC,
+		 * and no error detected.
+		 */
+		DEBUG("WD1003(%i): diag\n", dev->drvsel);
+		dev->drvsel = 0;
+		drive = &dev->drives[dev->drvsel];
+		drive->steprate = 0x0f;
+		dev->error = 1;
+		dev->status = STAT_READY|STAT_DSC;
+		irq_raise(dev);
+		break;
+
+	default:
+		DEBUG("WD1003(%i): callback on unknown command %02x\n",
+					dev->drvsel, dev->command);
+		dev->status = STAT_READY|STAT_ERR|STAT_DSC;
+		dev->error = ERR_ABRT;
+		irq_raise(dev);
+		break;
+    }
+}
+
+
+static void
 hdc_cmd(hdc_t *dev, uint8_t val)
 {
     drive_t *drive = &dev->drives[dev->drvsel];
 
     if (! drive->present) {
 	/* This happens if sofware polls all drives. */
-	DEBUG("WD1003(%i) command %02x on non-present drive\n",
+	DEBUG("WD1003(%i): command %02x on non-present drive\n",
 					dev->drvsel, val);
 	dev->command = 0xff;
 	dev->status = STAT_BUSY;
@@ -267,12 +421,12 @@ hdc_cmd(hdc_t *dev, uint8_t val)
     switch (val & 0xf0) {
 	case CMD_RESTORE:
 		drive->steprate = (val & 0x0f);
-		DEBUG("WD1003(%i) restore, step=%i\n",
-			dev->drvsel, drive->steprate);
-		drive->curcyl = 0;
-		dev->status = STAT_READY|STAT_DSC;
 		dev->command &= 0xf0;
-		irq_raise(dev);
+		dev->status = STAT_BUSY;
+		timer_clock();
+		dev->callback = 100LL*ST506_TIME;
+		timer_update_outstanding();
+		hdd_active(drive->hdd_num, 1);
 		break;
 
 	case CMD_SEEK:
@@ -282,6 +436,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 		timer_clock();
 		dev->callback = 200LL*ST506_TIME;
 		timer_update_outstanding();
+		hdd_active(drive->hdd_num, 1);
 		break;
 
 	default:
@@ -290,7 +445,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 			case CMD_READ+1:
 			case CMD_READ+2:
 			case CMD_READ+3:
-				DEBUG("WD1003(%i) read, opt=%i\n",
+				DEBUG("WD1003(%i): read, opt=%i\n",
 					dev->drvsel, val&0x03);
 				dev->command &= 0xfc;
 				if (val & 2)
@@ -299,19 +454,21 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 				timer_clock();
 				dev->callback = 200LL*ST506_TIME;
 				timer_update_outstanding();
+				hdd_active(drive->hdd_num, 1);
 				break;
 
 			case CMD_WRITE:
 			case CMD_WRITE+1:
 			case CMD_WRITE+2:
 			case CMD_WRITE+3:
-				DEBUG("WD1003(%i) write, opt=%i\n",
+				DEBUG("WD1003(%i): write, opt=%i\n",
 					dev->drvsel, val & 0x03);
 				dev->command &= 0xfc;
 				if (val & 2)
 					fatal("WD1003: WRITE with ECC\n");
 				dev->status = STAT_DRQ|STAT_DSC;
 				dev->pos = 0;
+				hdd_active(drive->hdd_num, 1);
 				break;
 
 			case CMD_VERIFY:
@@ -321,11 +478,13 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 				timer_clock();
 				dev->callback = 200LL*ST506_TIME;
 				timer_update_outstanding();
+				hdd_active(drive->hdd_num, 1);
 				break;
 
 			case CMD_FORMAT:
 				dev->status = STAT_DRQ|STAT_BUSY;
 				dev->pos = 0;
+				hdd_active(drive->hdd_num, 1);
 				break;
 
 			case CMD_DIAGNOSE:
@@ -333,6 +492,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 				timer_clock();
 				dev->callback = 200LL*ST506_TIME;
 				timer_update_outstanding();
+				hdd_active(drive->hdd_num, 1);
 				break;
 
 			case CMD_SET_PARAMETERS:
@@ -357,7 +517,7 @@ hdc_cmd(hdc_t *dev, uint8_t val)
 					drive->cfg_spt = dev->secount;
 					drive->cfg_hpc = dev->head+1;
 				}
-				DEBUG("WD1003(%i) parameters: tracks=%i, spt=%i, hpc=%i\n",
+				DEBUG("WD1003(%i): parameters: tracks=%i, spt=%i, hpc=%i\n",
 				      dev->drvsel, drive->tracks,
 				      drive->cfg_spt, drive->cfg_hpc);
 				dev->command = 0x00;
@@ -385,7 +545,7 @@ hdc_write(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
-    DBGLOG(2, "WD1003 write(%04x, %02x)\n", port, val);
+    DBGLOG(2, "WD1003: write(%04x, %02x)\n", port, val);
 
     switch (port) {
 	case 0x01f0:	/* data */
@@ -519,7 +679,7 @@ hdc_read(uint16_t port, priv_t priv)
 		break;
     }
 
-    DBGLOG(2, "WD1003 read(%04x) = %02x\n", port, ret);
+    DBGLOG(2, "WD1003: read(%04x) = %02x\n", port, ret);
 
     return(ret);
 }
@@ -529,6 +689,7 @@ static uint16_t
 hdc_readw(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
+    drive_t *drive = &dev->drives[dev->drvsel];
     uint16_t ret;
 
     if (port > 0x01f0) {
@@ -551,164 +712,13 @@ hdc_readw(uint16_t port, priv_t priv)
 				timer_clock();
 				dev->callback = SECTOR_TIME;
 				timer_update_outstanding();
-			}
+			} else
+				hdd_active(drive->hdd_num, 0);
 		}
 	}
     }
 
     return(ret);
-}
-
-
-static void
-do_seek(hdc_t *dev)
-{
-    drive_t *drive = &dev->drives[dev->drvsel];
-
-    DEBUG("WD1003(%i) seek(%i) max=%i\n",
-	  dev->drvsel, dev->cylinder, drive->tracks);
-
-    if (dev->cylinder < drive->tracks)
-	drive->curcyl = dev->cylinder;
-      else
-	drive->curcyl = drive->tracks-1;
-}
-
-
-static void
-do_callback(priv_t priv)
-{
-    hdc_t *dev = (hdc_t *)priv;
-    drive_t *drive = &dev->drives[dev->drvsel];
-    off_t addr;
-
-    dev->callback = 0;
-
-    if (dev->reset) {
-	DEBUG("WD1003(%i) reset\n", dev->drvsel);
-
-	dev->status = STAT_READY|STAT_DSC;
-	dev->error = 1;
-	dev->secount = 1;
-	dev->sector = 1;
-	dev->head = 0;
-	dev->cylinder = 0;
-
-	drive->steprate = 0x0f;		/* default steprate */
-	drive->cfg_spt = 0;		/* need new parameters */
-
-	dev->reset = 0;
-
-	hdd_active(drive->hdd_num, 0);
-
-	return;
-    }
-
-    switch (dev->command) {
-	case CMD_SEEK:
-		DEBUG("WD1003(%i) seek, step=%i\n",
-		      dev->drvsel, drive->steprate);
-		do_seek(dev);
-		dev->status = STAT_READY|STAT_DSC;
-		irq_raise(dev);
-		break;
-
-	case CMD_READ:
-		DEBUG("WD1003(%i) read(%i,%i,%i)\n",
-		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
-		do_seek(dev);
-		if (get_sector(dev, &addr)) {
-			dev->error = ERR_ID_NOT_FOUND;
-			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
-			irq_raise(dev);
-			break;
-		}
-
-		hdd_image_read(drive->hdd_num, addr, 1, (uint8_t *)dev->buffer);
-
-		dev->pos = 0;
-		dev->status = STAT_DRQ|STAT_READY|STAT_DSC;
-		irq_raise(dev);
-		hdd_active(drive->hdd_num, 1);
-		break;
-
-	case CMD_WRITE:
-		DEBUG("WD1003(%i) write(%i,%i,%i)\n",
-		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
-		do_seek(dev);
-		if (get_sector(dev, &addr)) {
-			dev->error = ERR_ID_NOT_FOUND;
-			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
-			irq_raise(dev);
-			break;
-		}
-
-		hdd_image_write(drive->hdd_num, addr, 1,(uint8_t *)dev->buffer);
-		irq_raise(dev);
-		dev->secount = (dev->secount - 1) & 0xff;
-
-		dev->status = STAT_READY|STAT_DSC;
-		if (dev->secount) {
-			/* More sectors to do.. */
-			dev->status |= STAT_DRQ;
-			dev->pos = 0;
-			next_sector(dev);
-			hdd_active(drive->hdd_num, 1);
-		} else
-			hdd_active(drive->hdd_num, 0);
-		break;
-
-	case CMD_VERIFY:
-		DEBUG("WD1003(%i) verify(%i,%i,%i)\n",
-		      dev->drvsel, dev->cylinder, dev->head, dev->sector);
-		do_seek(dev);
-		dev->pos = 0;
-		dev->status = STAT_READY|STAT_DSC;
-		irq_raise(dev);
-		hdd_active(drive->hdd_num, 1);
-		break;
-
-	case CMD_FORMAT:
-		DEBUG("WD1003(%i) format(%i,%i)\n",
-		      dev->drvsel, dev->cylinder, dev->head);
-		do_seek(dev);
-		if (get_sector(dev, &addr)) {
-			dev->error = ERR_ID_NOT_FOUND;
-			dev->status = STAT_READY|STAT_DSC|STAT_ERR;
-			irq_raise(dev);
-			break;
-		}
-
-		hdd_image_zero(drive->hdd_num, addr, dev->secount);
-
-		dev->status = STAT_READY|STAT_DSC;
-		irq_raise(dev);
-		hdd_active(drive->hdd_num, 1);
-		break;
-
-	case CMD_DIAGNOSE:
-		/*
-		 * This is basically controller diagnostics - it resets
-		 * drive select to 0, error and status to ready, DSC,
-		 * and no error detected.
-		 */
-		DEBUG("WD1003(%i) diag\n", dev->drvsel);
-		dev->drvsel = 0;
-		drive = &dev->drives[dev->drvsel];
-		drive->steprate = 0x0f;
-		dev->error = 1;
-		dev->status = STAT_READY|STAT_DSC;
-		irq_raise(dev);
-		break;
-
-	default:
-		DEBUG("WD1003(%i) callback on unknown command %02x\n",
-					dev->drvsel, dev->command);
-		dev->status = STAT_READY|STAT_ERR|STAT_DSC;
-		dev->error = ERR_ABRT;
-		irq_raise(dev);
-		break;
-    }
 }
 
 
@@ -737,15 +747,15 @@ st506_close(priv_t priv)
     hdc_t *dev = (hdc_t *)priv;
     int d;
 
-    for (d = 0; d < 2; d++) {
+    for (d = 0; d < ST506_NUM; d++) {
 	drive_t *drive = &dev->drives[d];
 
 	hdd_image_close(drive->hdd_num);		
+
+	hdd_active(drive->hdd_num, 0);
     }
 
     free(dev);
-
-    ui_sb_icon_update(SB_DISK|HDD_BUS_ST506, 0);
 }
 
 
@@ -794,7 +804,7 @@ st506_init(const device_t *info, UNUSED(void *parent))
     io_sethandler(0x03f6, 1,
 		  NULL,     NULL,      NULL, hdc_write, NULL,       NULL, dev);
 
-    timer_add(do_callback, dev, &dev->callback, &dev->callback);	
+    timer_add(call_back, dev, &dev->callback, &dev->callback);	
 
     return(dev);
 }
