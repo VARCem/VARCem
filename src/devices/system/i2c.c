@@ -250,13 +250,13 @@ uint8_t
 i2c_start(void *bus_handle, uint8_t addr, uint8_t read)
 {
     uint8_t ret = 0;
-    i2c_bus_t *dev = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
     i2c_t *p;
 
-    if (!dev)
+    if (!bus)
 	return(ret);
 
-    p = dev->devices[addr];
+    p = bus->devices[addr];
     if (p) {
 	while(p) {
 		if (p->start) {
@@ -266,7 +266,7 @@ i2c_start(void *bus_handle, uint8_t addr, uint8_t read)
 	}
     }
 
-    i2c_log("I2C: start(%s, %02X)\n", dev->name, addr);
+    i2c_log("I2C: start(%s, %02X)\n", bus->name, addr);
 
     return(ret);
 }
@@ -276,13 +276,13 @@ uint8_t
 i2c_read(void *bus_handle, uint8_t addr)
 {
     uint8_t ret = 0;
-    i2c_bus_t *dev = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
     i2c_t *p;
 
-    if (!dev)
+    if (!bus)
 		return(ret);
 
-    p = dev->devices[addr];
+    p = bus->devices[addr];
     if (p) {
 	while(p) {
 		if (p->read) {
@@ -293,7 +293,7 @@ i2c_read(void *bus_handle, uint8_t addr)
 	}
     }
 
-    i2c_log("I2C: read(%s, %02X) = %02X\n", dev->name, addr, ret);
+    i2c_log("I2C: read(%s, %02X) = %02X\n", bus->name, addr, ret);
 
     return(ret);
 }
@@ -304,12 +304,12 @@ i2c_write(void *bus_handle, uint8_t addr, uint8_t data)
 {
     uint8_t ret = 0;
     i2c_t *p;
-    i2c_bus_t *dev = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
 
-    if (!dev)
+    if (!bus)
 		return(ret);
 
-    p = dev->devices[addr];
+    p = bus->devices[addr];
     if (p) {
 	while(p) {
 		if (p->write) {
@@ -319,7 +319,7 @@ i2c_write(void *bus_handle, uint8_t addr, uint8_t data)
 	}
     }
 
-    i2c_log("I2C: write(%s, %02X, %02X) = %d\n", dev->name, addr, data, ret);
+    i2c_log("I2C: write(%s, %02X, %02X) = %d\n", bus->name, addr, data, ret);
 
     return(ret);
 }
@@ -328,13 +328,13 @@ i2c_write(void *bus_handle, uint8_t addr, uint8_t data)
 void
 i2c_stop(void *bus_handle, uint8_t addr)
 {
-    i2c_bus_t *dev = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
     i2c_t *p;
 
-    if (!dev)
+    if (!bus)
 		return;
 
-    p = dev->devices[addr];
+    p = bus->devices[addr];
     if (p) {
 	while(p) {
 		if (p->stop) {
@@ -344,5 +344,5 @@ i2c_stop(void *bus_handle, uint8_t addr)
 	}
     }
 
-    i2c_log("I2C: stop(%s, %02X)\n", dev->name, addr);
+    i2c_log("I2C: stop(%s, %02X)\n", bus->name, addr);
 }
