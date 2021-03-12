@@ -8,7 +8,7 @@
  *
  *		Emulation of the 24Cxx series of I2C EEPROMs.
  *
- * Version:	@(#)i2c_eeprom.c	1.0.0	2021/02/02
+ * Version:	@(#)i2c_eeprom.c	1.0.1	2021/03/12
  *
  * Authors:	RichardG, <richardg867@gmail.com>
  *          Fred N. van Kempen, <decwiz@yahoo.com>
@@ -73,36 +73,38 @@ i2c_eeprom_log(const char *fmt, ...)
 #endif
 
 
-uint8_t
+static uint8_t
 i2c_eeprom_start(void *bus, uint8_t addr, uint8_t read, priv_t priv)
 {
     i2c_eeprom_t *dev = (i2c_eeprom_t *) priv;
 
     i2c_eeprom_log("I2C EEPROM %s %02X: start()\n", i2c_getbusname(dev->i2c), dev->addr);
 
+    if (!read) {
     dev->addr_pos = 0;
     dev->addr_register = (addr << dev->addr_len) & dev->addr_mask;
+    }
 
     return 1;
 }
 
 
-uint8_t
-i2c_eeprom_read(void *bus, uint8_t addr, void *priv)
+static uint8_t
+i2c_eeprom_read(void *bus, uint8_t addr, priv_t priv)
 {
     i2c_eeprom_t *dev = (i2c_eeprom_t *) priv;
     uint8_t ret = dev->data[dev->addr_register];
 
     i2c_eeprom_log("I2C EEPROM %s %02X: read(%06X) = %02X\n", i2c_getbusname(dev->i2c), dev->addr, dev->addr_register, ret);
-    if (++dev->addr_register > dev->addr_mask) /* roll-over */
-	dev->addr_register = 0;
+    dev->addr_register++;
+    dev->addr_register &= dev->addr_mask; /* roll-over */
 
     return ret;
 }
 
 
-uint8_t
-i2c_eeprom_write(void *bus, uint8_t addr, uint8_t data, void *priv)
+static uint8_t
+i2c_eeprom_write(void *bus, uint8_t addr, uint8_t data, priv_t priv)
 {
     i2c_eeprom_t *dev = (i2c_eeprom_t *) priv;
 
@@ -112,14 +114,14 @@ i2c_eeprom_write(void *bus, uint8_t addr, uint8_t data, void *priv)
 	dev->addr_register &= (1 << dev->addr_len) - 1;
 	dev->addr_register |= addr << dev->addr_len;
 	dev->addr_register &= dev->addr_mask;
-	i2c_eeprom_log("I2C EEPROM %s %02X: write(address, %04X)\n", i2c_getbusname(dev->i2c), dev->addr, dev->addr_register);
+	i2c_eeprom_log("I2C EEPROM %s %02X: write(address, %06X)\n", i2c_getbusname(dev->i2c), dev->addr, dev->addr_register);
 	dev->addr_pos += 8;
     } else {
 	i2c_eeprom_log("I2C EEPROM %s %02X: write(%06X, %02X) = %d\n", i2c_getbusname(dev->i2c), dev->addr, dev->addr_register, data, !!dev->writable);
 	if (dev->writable)
 		dev->data[dev->addr_register] = data;
-	if (++dev->addr_register > dev->addr_mask) /* roll-over */
-		dev->addr_register = 0;
+	dev->addr_register++;
+	dev->addr_register &= dev->addr_mask; /* roll-over */
 	return dev->writable;
     }
 
@@ -127,12 +129,36 @@ i2c_eeprom_write(void *bus, uint8_t addr, uint8_t data, void *priv)
 }
 
 
+static void
+i2c_eeprom_stop(void *bus, uint8_t addr, priv_t priv)
+{
+    i2c_eeprom_t *dev = (i2c_eeprom_t *) priv;
+
+    i2c_eeprom_log("I2C EEPROM %s %02X: stop()\n", i2c_getbusname(dev->i2c), dev->addr);
+
+    dev->addr_pos = 0;
+}
+
+
+uint8_t
+log2i(uint32_t i)
+{
+    uint8_t ret = 0;
+    while ((i >>= 1))
+	ret++;
+    return ret;
+}
+
 void *
 i2c_eeprom_init(void *i2c, uint8_t addr, uint8_t *data, uint32_t size, uint8_t writable)
 {
     i2c_eeprom_t *dev = (i2c_eeprom_t *) malloc(sizeof(i2c_eeprom_t));
     memset(dev, 0, sizeof(i2c_eeprom_t));
 
+    /* Round size up to the next power of 2. */
+    uint32_t pow_size = 1 << log2i(size);
+    if (pow_size < size)
+	size = pow_size << 1;
     size &= 0x7fffff; /* address space limit of 8 MB = 7 bits from I2C address + 16 bits */
 
     i2c_eeprom_log("I2C EEPROM %s %02X: init(%d, %d)\n", i2c_getbusname(i2c), addr, size, writable);
@@ -145,7 +171,7 @@ i2c_eeprom_init(void *i2c, uint8_t addr, uint8_t *data, uint32_t size, uint8_t w
     dev->addr_len = (size >= 4096) ? 16 : 8; /* use 16-bit addresses on 24C32 and above */
     dev->addr_mask = size - 1;
 
-    i2c_sethandler(dev->i2c, dev->addr & ~(dev->addr_mask >> dev->addr_len), (dev->addr_mask >> dev->addr_len) + 1, i2c_eeprom_start, i2c_eeprom_read, i2c_eeprom_write, NULL, dev);
+    i2c_sethandler(dev->i2c, dev->addr & ~(dev->addr_mask >> dev->addr_len), (dev->addr_mask >> dev->addr_len) + 1, i2c_eeprom_start, i2c_eeprom_read, i2c_eeprom_write, i2c_eeprom_stop, dev);
 
     return dev;
 }
@@ -158,7 +184,7 @@ i2c_eeprom_close(void *dev_handle)
 
     i2c_eeprom_log("I2C EEPROM %s %02X: close()\n", i2c_getbusname(dev->i2c), dev->addr);
 
-    i2c_removehandler(dev->i2c, dev->addr & ~(dev->addr_mask >> dev->addr_len), (dev->addr_mask >> dev->addr_len) + 1, i2c_eeprom_start, i2c_eeprom_read, i2c_eeprom_write, NULL, dev);
+    i2c_removehandler(dev->i2c, dev->addr & ~(dev->addr_mask >> dev->addr_len), (dev->addr_mask >> dev->addr_len) + 1, i2c_eeprom_start, i2c_eeprom_read, i2c_eeprom_write, i2c_eeprom_stop, dev);
 
     free(dev);
 }
