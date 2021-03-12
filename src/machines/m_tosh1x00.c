@@ -264,7 +264,7 @@ tc8521_time_get(const uint8_t *regs, intclk_t *clk)
       else
 	clk->tm_hour = ((nibbles(TC8521_HOUR) % 12) +
 		      (regs[TC8521_HOUR10] & 0x02) ? 12 : 0);
-//FIXME: wday
+    clk->tm_wday = regs[TC8521_WEEKDAY];
     clk->tm_mday = nibbles(TC8521_DAY);
     clk->tm_mon = (nibbles(TC8521_MONTH) - 1);
     clk->tm_year = (nibbles(TC8521_YEAR) + 1980);

@@ -12,7 +12,7 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.50	2021/02/15
+ * Version:	@(#)config.c	1.0.52	2021/03/10
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,15 +88,18 @@ typedef struct _list_ {
 
 typedef struct {
     list_t	list;
-    char	name[128];
+    char	name[32];
     list_t	entry_head;
 } section_t;
 
 typedef struct {
     list_t	list;
-    char	name[128];
+    section_t	*sec;
+    int8_t	quoted;
+    int8_t	comment;
+    char	name[64];
     char	data[256];
-    wchar_t	wdata[512];
+    wchar_t	wdata[256];
 } entry_t;
 
 #define list_add(new, head) {		\
@@ -251,7 +254,13 @@ config_free(void)
 static void
 load_general(config_t *cfg, const char *cat)
 {
+    wchar_t *w;
     char *p;
+
+    memset(cfg->title, 0x00, sizeof(cfg->title));
+    w = config_get_wstring(cat, "title", NULL);
+    if (w != NULL)
+	wcsncpy(cfg->title, w, TITLE_MAX);
 
     cfg->language = config_get_hex16(cat, "language", emu_lang_id);
 
@@ -299,6 +308,11 @@ save_general(const config_t *cfg, const char *cat)
 {
     char temp[512];
     const char *str;
+
+    if (cfg->title[0] == L'\0')
+	config_delete_var(cat, "title");
+    else
+	config_set_wstring(cat, "title", cfg->title);
 
     if (emu_lang_id == 0x0409)
 	config_delete_var(cat, "language");
@@ -1542,58 +1556,225 @@ static const struct {
 };
 
 
-/* Read and parse the configuration file into memory. */
+/*
+ * Read and parse the configuration file into memory.
+ *
+ * This is not trivial, since we allow for a fairly standard
+ * Unix-style ASCII-based text file, including the usual line
+ * extenders and character escapes.
+ *
+ * We also allow for multi-lingual (wide) characters to be in
+ * the file, so care must be taken reading from it.
+ */
 static int
 config_read(const wchar_t *fn)
 {
-    char sname[128], ename[128];
-    wchar_t buff[1024];
+    char sname[32], ename[32];
+    wchar_t cline[1024], *cp;
+    wchar_t line[1024], *p;
+    int dolit, quoted, comment;
     section_t *sec, *ns;
     entry_t *ne;
-    int c, d;
-    FILE *f;
+    FILE *fp;
+    int c, l;
 
+    /* See if we can open the file for reading. */
 #if defined(ANSI_CFG) || !defined(_WIN32)
-    f = plat_fopen(fn, L"rt");
+    fp = plat_fopen(fn, L"rt");
 #else
-    f = plat_fopen(fn, L"rt, ccs=UNICODE");
+    fp = plat_fopen(fn, L"rt, ccs=UNICODE");
 #endif
-    if (f == NULL) return(0);
-	
+    if (fp == NULL) return(0);
+
     sec = (section_t *)mem_alloc(sizeof(section_t));
     memset(sec, 0x00, sizeof(section_t));
     memset(&config_head, 0x00, sizeof(list_t));
     list_add(&sec->list, &config_head);
 
-    while (1) {
-	memset(buff, 0x00, sizeof(buff));
-	fgetws(buff, sizeof_w(buff), f);
-	if (ferror(f) || feof(f)) break;
+    l = 1;
 
-	/* Make sure there are no stray newlines or hard-returns in there. */
-	if (buff[wcslen(buff)-1] == L'\n') buff[wcslen(buff)-1] = L'\0';
-	if (buff[wcslen(buff)-1] == L'\r') buff[wcslen(buff)-1] = L'\0';
+    for (;;) {
+	/* Clear the per-line stuff. */
+	dolit = comment = quoted = 0;
+	p = line;
+	cp = cline;
 
-	/* Skip any leading whitespace. */
-	c = 0;
-	while ((buff[c] == L' ') || (buff[c] == L'\t'))
-		  c++;
+	/* Get the next logical line from the file. */
+	while ((c = fgetwc(fp)) != WEOF) {
+		/* Literals come first... */
+		if (dolit) {
+			switch (c) {
+				case L'\r':	// raw CR, ignore it
+					continue;
 
-	/* Skip empty lines. */
-	if (buff[c] == L'\0') continue;
+				case L'\n':	// line continuation!
+					l++;
+					break;
 
-	/* Skip lines that (only) have a comment. */
-	if ((buff[c] == L'#') || (buff[c] == L';')) continue;
+				case L'n':
+					*p++ = L'\n';
+					break;
 
-	if (buff[c] == L'[') {	/*Section*/
-		c++;
-		d = 0;
-		while (buff[c] && (buff[c] != L']'))
-			wctomb(&(sname[d++]), buff[c++]);
-		sname[d] = '\0';
+				case L'r':
+					*p++ = L'\r';
+					break;
+
+				case L'b':
+					*p++ = L'\b';
+					break;
+
+				case L'e':
+					*p++ = 27;
+					break;
+
+				case L'"':
+					*p++ = L'"';
+					break;
+
+				case L'#':
+					*p++ = L'#';
+					break;
+
+				case L'!':
+					*p++ = L'!';
+					break;
+
+				case L'\\':
+					*p++ = L'\\';
+					break;
+
+				default:
+					ERRLOG("CONFIG: syntax error: escape '\\%c' on line %i", c, l);
+					config_ro = 1;
+					return(0);
+			}
+
+			dolit = 0;
+			continue;
+		}
+
+		/* Are we starting a literal character? */
+		if (c == L'\\') {
+			dolit = 1;
+			continue;
+		}
+
+		/* Raw CRs are common in DOS-originated files. */
+		if (c == L'\r')
+			continue;
+
+		/* A raw newline terminates the logical line. */
+		if (c == L'\n')
+			break;
+
+		/* Are we in a comment? */
+		if (comment) {
+			/* Save into comment buffer. */
+			if (c != L'\n')
+				*cp++ = (wchar_t)c;
+			else
+				break;
+
+			continue;
+		}
+
+		/* Are we starting a comment? */
+		if ((c == L';') || (c == L'#')) {
+			/* Terminate value string. */
+			*p = L'\0';
+
+			/*
+			 * Normally, one would just skip all the comments
+			 * in a file. However, as these might be used to
+			 * manually document settings, we try to preserve
+			 * them.
+			 *
+			 * We save the current variable pointer to SP, and
+			 * set P to (ascii) string buffer which will not be
+			 * used otherwise for this line. It has some extra
+			 * space in the 'name' field, just in case.
+			 */
+			comment++;
+			cp = cline;
+
+			/* Save the actual marker as well! */
+			*cp++ = (wchar_t)c;
+
+			continue;
+		}
+
+		/* Quoting means raw insertion. */
+		if (quoted) {
+			/* We are quoting, so insert as is. */
+			if (c == L'\n') {
+				ERRLOG("CONFIG: syntax error: unexpected newline, expected (\") on line %i\n", l);
+				config_ro = 1;
+				return(0);
+			}
+			*p++ = (wchar_t)c;
+			continue;
+		}
+
+		/* Are we starting a quote? */
+		if (c == L'"') {
+			quoted ^= 1;
+			continue;
+		}
+
+		/*
+		 * Quoted text will not be modified or (stripped),
+		 * and for that reason, we also consider the [ and
+	 	 * ] characters (for section names) such.
+		 */
+		if ((c == L'[') || (c == L']'))
+			quoted ^= 1;
+
+		/*
+		 * Everything else, normal character insertion.
+		 *
+		 * This means, we process each character as if it
+		 * was typed in.  We assume the usual rules for
+		 * skipping whitespace, blank lines and so forth.
+		 *
+		 */
+		if (!quoted && ((c == L' ') || (c == L'\t')))
+			continue;
+
+		*p++ = (wchar_t)c;
+	}
+	*p = L'\0';
+	*cp++ = L'\0';
+
+	if (feof(fp)) break;
+
+	if (ferror(fp)) {
+		ERRLOG("CONFIG: Read Error on line %i\n", l);
+		config_ro = 1;
+		return(0);
+	}
+	DEBUG("CONGIG: [%3i] '%ls'\n", l, line);
+
+	/* Now parse the line we just read. */
+	p = line;
+	if ((*p == L'\0') && !comment)
+		continue;
+
+	/* We seem to have a valid line. */
+	if (*p == L'[') {
+		/* We are starting a new section. */
+		p++;
+		c = 0;
+		while (*p && *p != L']')
+			wctomb(&sname[c++], *p++);
+		sname[c] = '\0';
+		DEBUG("CONFIG: section: '%s'\n", sname);
 
 		/* Is the section name properly terminated? */
-		if (buff[c] != L']') continue;
+		if (*p != L']') {
+			ERRLOG("CONFIG: malformed section name on line %i\n", l);
+			config_ro = 1;
+			continue;
+		}
 
 		/* Create a new section and insert it. */
 		ns = (section_t *)mem_alloc(sizeof(section_t));
@@ -1603,43 +1784,50 @@ config_read(const wchar_t *fn)
 
 		/* New section is now the current one. */
 		sec = ns;			
+
+		/* Get next line. */
 		continue;
 	}
 
-	/* Get the variable name. */
-	d = 0;
-	while ((buff[c] != L'=') && (buff[c] != L' ') && buff[c])
-		wctomb(&(ename[d++]), buff[c++]);
-	ename[d] = L'\0';
-
-	/* Skip incomplete lines. */
-	if (buff[c] == L'\0') continue;
-
-	/* Look for =, skip whitespace. */
-	while ((buff[c] == L'=' || buff[c] == L' ') && buff[c])
-		c++;
-
-	/* Skip incomplete lines. */
-	if (buff[c] == L'\0') continue;
-
-	/* This is where the value part starts. */
-	d = c;
-
-	/* Allocate a new variable entry.. */
+	/* Allocate a new configuration entry.. */
 	ne = (entry_t *)mem_alloc(sizeof(entry_t));
 	memset(ne, 0x00, sizeof(entry_t));
-	strncpy(ne->name, ename, sizeof(ne->name));
-	wcsncpy(ne->wdata, &buff[d], sizeof_w(ne->wdata));
-	ne->wdata[sizeof_w(ne->wdata)-1] = L'\0';
-	wcstombs(ne->data, ne->wdata, sizeof(ne->data));
-	ne->data[sizeof(ne->data)-1] = '\0';
+	ne->sec = sec;
+	ne->quoted = quoted;
+	ne->comment = comment;
+
+	if (!comment && (*p != L'\0')) {
+		/* Get the variable name. */
+		c = 0;
+		while (*p && *p != L'=')
+			wctomb(&ename[c++], *p++);
+		ename[c] = '\0';
+		DEBUG("CONFIG, variable: '%s'\n", ename);
+
+		/* Skip incomplete lines. */
+		if ((*p != L'=') || (*p+1 == L'\0')) {
+			ERRLOG("CONFIG: syntax error on line %i\n", l);
+			config_ro = 1;
+			continue;
+		}
+		p++;
+		DEBUG("CONFIG: value: '%ls'\n", p);
+
+		strncpy(ne->name, ename, sizeof(ne->name));
+		wcstombs(ne->data, p, sizeof(ne->data));
+		wcsncpy(ne->wdata, p, sizeof_w(ne->wdata));
+	} else
+		wcsncpy(ne->wdata, cline, sizeof_w(ne->wdata));
 
 	/* .. and insert it. */
 	list_add(&ne->list, &sec->entry_head);
+
+	/* Next line, please! */
+	l++;
     }
 
-    c = !ferror(f);
-    (void)fclose(f);
+    c = !ferror(fp);
+    (void)fclose(fp);
 
     if (do_dump_config)
 	config_dump();
@@ -1658,49 +1846,50 @@ config_read(const wchar_t *fn)
 void
 config_write(const wchar_t *fn)
 {
-    wchar_t wtemp[512];
+    wchar_t temp[512];
     section_t *sec;
-    FILE *f;
+    entry_t *ent;
     int fl = 0;
+    FILE *fp;
 
 #if defined(ANSI_CFG) || !defined(_WIN32)
-    f = plat_fopen(fn, L"wt");
+    fp = plat_fopen(fn, L"wt");
 #else
-    f = plat_fopen(fn, L"wt, ccs=UNICODE");
+    fp = plat_fopen(fn, L"wt, ccs=UNICODE");
 #endif
-    if (f == NULL) return;
+    if (fp == NULL) return;
 
     sec = (section_t *)config_head.next;
     while (sec != NULL) {
-	entry_t *ent;
-
 	if (sec->name[0]) {
-		mbstowcs(wtemp, sec->name, strlen(sec->name)+1);
+		mbstowcs(temp, sec->name, sizeof_w(temp));
 		if (fl)
-			fwprintf(f, L"\n[%ls]\n", wtemp);
-		  else
-			fwprintf(f, L"[%ls]\n", wtemp);
-		fl++;
+			fwprintf(fp, L"\n");
+		else
+			fl = 1;
+		fwprintf(fp, L"[%ls]\n", temp);
 	}
 
 	ent = (entry_t *)sec->entry_head.next;
 	while (ent != NULL) {
-		if (ent->name[0] != '\0') {
-			mbstowcs(wtemp, ent->name, sizeof_w(wtemp));
-			if (ent->wdata[0] == L'\0')
-				fwprintf(f, L"%ls = \n", wtemp);
-			  else
-				fwprintf(f, L"%ls = %ls\n", wtemp, ent->wdata);
-			fl++;
-		}
+		if (! ent->comment) {
+			if (ent->name[0] != '\0') {
+				mbstowcs(temp, ent->name, sizeof_w(temp));
+				if (ent->quoted)
+					fwprintf(fp, L"%ls = \"%ls\"\n", temp, ent->wdata);
+			  	else
+					fwprintf(fp, L"%ls = %ls\n", temp, ent->wdata);
+			}
+		} else
+			fwprintf(fp, L"%ls\n", ent->wdata);
 
 		ent = (entry_t *)ent->list.next;
 	}
 
 	sec = (section_t *)sec->list.next;
     }
-	
-    (void)fclose(f);
+
+    (void)fclose(fp);
 }
 
 
@@ -1710,55 +1899,58 @@ config_init(config_t *cfg)
 {
     int i;
 
-    cfg->language = 0x0000;			/* language ID */
-    cfg->rctrl_is_lalt = 0;			/* set R-CTRL as L-ALT */
+    /* Start with a clean slate. */
+    memset(cfg, 0x00, sizeof(config_t));
 
-    cfg->window_remember = 0;			/* window size and */
-    cfg->win_w = 0; cfg->win_h = 0;		/* position info */
+    cfg->language = 0x0000;			// language ID
+    cfg->rctrl_is_lalt = 0;			// set R-CTRL as L-ALT
+
+    cfg->window_remember = 0;			// window size and
+    cfg->win_w = 0; cfg->win_h = 0;		// position info
     cfg->win_x = 0; cfg->win_y = 0;
 
-    cfg->machine_type = -1;			/* current machine ID */
-    cfg->cpu_manuf = 0;				/* cpu manufacturer */
-    cfg->cpu_type = 3;				/* cpu type */
-    cfg->cpu_use_dynarec = 0,			/* cpu uses/needs Dyna */
-    cfg->enable_ext_fpu = 0;			/* enable external FPU */
-    cfg->mem_size = 256;			/* memory size */
-    cfg->time_sync = TIME_SYNC_DISABLED;	/* enable time sync */
+    cfg->machine_type = -1;			// current machine ID
+    cfg->cpu_manuf = 0;				// cpu manufacturer
+    cfg->cpu_type = 3;				// cpu type
+    cfg->cpu_use_dynarec = 0,			// cpu uses/needs Dyna
+    cfg->enable_ext_fpu = 0;			// enable external FPU
+    cfg->mem_size = 256;			// memory size
+    cfg->time_sync = TIME_SYNC_DISABLED;	// enable time sync
 
-    i = vidapi_from_internal_name("default");	/* video renderer */
-    cfg->vid_api = i;				/* video renderer */
+    i = vidapi_from_internal_name("default");	// video renderer
+    cfg->vid_api = i;				// video renderer
 
-    cfg->video_card = VID_CGA,			/* graphics/video card */
-    cfg->voodoo_enabled = 0;			/* video option */
-    cfg->scale = 1;				/* screen scale factor */
-    cfg->vid_resize = 0;				/* allow resizing */
-    cfg->vid_cga_contrast = 0;			/* video */
-    cfg->vid_fullscreen = 0;			/* video */
-    cfg->vid_fullscreen_scale = 0;		/* video */
-    cfg->vid_fullscreen_first = 0;		/* video */
-    cfg->vid_grayscale = 0;			/* video */
-    cfg->vid_graytype = 0;			/* video */
-    cfg->invert_display = 0;			/* invert the display */
-    cfg->enable_overscan = 0;			/* enable overscans */
-    cfg->force_43 = 0;				/* video */
+    cfg->video_card = VID_CGA,			// graphics/video card
+    cfg->voodoo_enabled = 0;			// video option
+    cfg->scale = 1;				// screen scale factor
+    cfg->vid_resize = 0;			// allow resizing
+    cfg->vid_cga_contrast = 0;			// video
+    cfg->vid_fullscreen = 0;			// video
+    cfg->vid_fullscreen_scale = 0;		// video
+    cfg->vid_fullscreen_first = 0;		// video
+    cfg->vid_grayscale = 0;			// video
+    cfg->vid_graytype = 0;			// video
+    cfg->invert_display = 0;			// invert the display
+    cfg->enable_overscan = 0;			// enable overscans
+    cfg->force_43 = 0;				// video
 
-    cfg->mouse_type = MOUSE_NONE;		/* selected mouse type */
-    cfg->joystick_type = 0;			/* joystick type */
+    cfg->mouse_type = MOUSE_NONE;		// selected mouse type
+    cfg->joystick_type = 0;			// joystick type
 
-    cfg->sound_is_float = 1;			/* sound uses FP values */
-    cfg->sound_gain = 0;			/* sound volume gain */
-    cfg->sound_card = SOUND_NONE;		/* selected sound card */
-    cfg->mpu401_standalone_enable = 0;		/* sound option */
-    cfg->midi_device = 0;			/* selected midi device */
+    cfg->sound_is_float = 1;			// sound uses FP values
+    cfg->sound_gain = 0;			// sound volume gain
+    cfg->sound_card = SOUND_NONE;		// selected sound card
+    cfg->mpu401_standalone_enable = 0;		// sound option
+    cfg->midi_device = 0;			// selected midi device
 
-    cfg->game_enabled = 0;			/* enable game port */
+    cfg->game_enabled = 0;			// enable game port
 
-    for (i = 0; i < SERIAL_MAX; i++)		/* enable serial ports */
+    for (i = 0; i < SERIAL_MAX; i++)		// enable serial ports
 	cfg->serial_enabled[i] = 0;
 
-    for (i = 0; i < PARALLEL_MAX; i++) {	/* enable LPT ports */
+    for (i = 0; i < PARALLEL_MAX; i++) {	// enable LPT ports
 	cfg->parallel_enabled[i] = 0;
-	cfg->parallel_device[i] = 0;		/* set up LPT devices */
+	cfg->parallel_device[i] = 0;		// set up LPT devices
     }
 
     fdd_set_type(0, 2);
@@ -1766,22 +1958,22 @@ config_init(config_t *cfg)
     fdd_set_type(1, 2);
     fdd_set_check_bpb(1, 1);
 
-    cfg->hdc_type = HDC_NONE;			/* HDC type */
+    cfg->hdc_type = HDC_NONE;			// HDC type
 
-    cfg->scsi_card = SCSI_NONE;			/* selected SCSI card */
+    cfg->scsi_card = SCSI_NONE;			// selected SCSI card
 
-    cfg->network_type = NET_NONE;		/* network provider type */
-    cfg->network_card = NET_CARD_NONE;		/* network interface num */
-    strcpy(cfg->network_host, "");		/* host network intf */
+    cfg->network_type = NET_NONE;		// network provider type
+    cfg->network_card = NET_CARD_NONE;		// network interface num
+    strcpy(cfg->network_host, "");		// host network intf
 
-    cfg->bugger_enabled = 0;			/* enable ISAbugger */
+    cfg->bugger_enabled = 0;			// enable ISAbugger
 
-    for (i = 0; i < ISAMEM_MAX; i++)		/* enable ISA mem cards */
+    for (i = 0; i < ISAMEM_MAX; i++)		// enable ISA mem cards
 	cfg->isamem_type[i] = 0;
-    cfg->isartc_type = 0;			/* enable ISA RTC card */
+    cfg->isartc_type = 0;			// enable ISA RTC card
 
 #ifdef WALTJE
-    cfg->romdos_enabled = 0;			/* enable ROM DOS */
+    cfg->romdos_enabled = 0;			// enable ROM DOS
 #endif
 
     /* Mark the configuration as clean. */
@@ -1820,8 +2012,10 @@ config_save(void)
     int i;
 
     /* Save all the categories. */
-    for (i = 0; categories[i].name != NULL; i++)
-	categories[i].save(cfg, categories[i].name);
+    for (i = 0; categories[i].name != NULL; i++) {
+	if (categories[i].save != NULL)
+		categories[i].save(cfg, categories[i].name);
+    }
 
     /* Write it back to file if enabled. */
     if (! config_ro)

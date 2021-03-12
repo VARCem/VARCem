@@ -8,7 +8,7 @@
  *
  *		Configuration file handler header.
  *
- * Version:	@(#)config.h	1.0.7	2021/02/15
+ * Version:	@(#)config.h	1.0.8	2021/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -40,6 +40,9 @@
 # define EMU_CONFIG_H
 
 
+/* Configured limits. */
+#define TITLE_MAX	80			/* max length of title */
+
 /* Maximum units for certain devices. */
 #define SERIAL_MAX	2			/* two ports supported */
 #define PARALLEL_MAX	3			/* three ports supported */
@@ -53,6 +56,8 @@ extern "C" {
 #endif
 
 typedef struct {
+    wchar_t	title[TITLE_MAX];		/* name/title of config */
+
     int		language;			/* language ID */
     int		rctrl_is_lalt;			/* set R-CTRL as L-ALT */
 
