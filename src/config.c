@@ -1703,6 +1703,12 @@ config_read(const wchar_t *fn)
 			continue;
 		}
 
+		/* Are we starting a quote? */
+		if (c == L'"') {
+			quoted ^= 1;
+			continue;
+		}
+
 		/* Quoting means raw insertion. */
 		if (quoted) {
 			/* We are quoting, so insert as is. */
@@ -1712,12 +1718,6 @@ config_read(const wchar_t *fn)
 				return(0);
 			}
 			*p++ = (wchar_t)c;
-			continue;
-		}
-
-		/* Are we starting a quote? */
-		if (c == L'"') {
-			quoted ^= 1;
 			continue;
 		}
 
