@@ -1572,7 +1572,8 @@ config_read(const wchar_t *fn)
     char sname[32], ename[32];
     wchar_t cline[1024], *cp;
     wchar_t line[1024], *p;
-    int dolit, quoted, comment;
+    int quoted, comment;
+    int doquot, dolit;
     section_t *sec, *ns;
     entry_t *ne;
     FILE *fp;
@@ -1595,7 +1596,7 @@ config_read(const wchar_t *fn)
 
     for (;;) {
 	/* Clear the per-line stuff. */
-	dolit = comment = quoted = 0;
+	dolit = doquot = comment = quoted = 0;
 	p = line;
 	cp = cline;
 
@@ -1705,12 +1706,21 @@ config_read(const wchar_t *fn)
 
 		/* Are we starting a quote? */
 		if (c == L'"') {
-			quoted ^= 1;
+			doquot ^= 1;
+			quoted = 1;
 			continue;
 		}
 
+		/*
+		 * Quoted text will not be modified or (stripped),
+		 * and for that reason, we also consider the [ and
+	 	 * ] characters (for section names) such.
+		 */
+		if ((c == L'[') || (c == L']'))
+			doquot ^= 1;
+
 		/* Quoting means raw insertion. */
-		if (quoted) {
+		if (doquot) {
 			/* We are quoting, so insert as is. */
 			if (c == L'\n') {
 				ERRLOG("CONFIG: syntax error: unexpected newline, expected (\") on line %i\n", l);
@@ -1722,14 +1732,6 @@ config_read(const wchar_t *fn)
 		}
 
 		/*
-		 * Quoted text will not be modified or (stripped),
-		 * and for that reason, we also consider the [ and
-	 	 * ] characters (for section names) such.
-		 */
-		if ((c == L'[') || (c == L']'))
-			quoted ^= 1;
-
-		/*
 		 * Everything else, normal character insertion.
 		 *
 		 * This means, we process each character as if it
@@ -1737,7 +1739,7 @@ config_read(const wchar_t *fn)
 		 * skipping whitespace, blank lines and so forth.
 		 *
 		 */
-		if (!quoted && ((c == L' ') || (c == L'\t')))
+		if (!doquot && ((c == L' ') || (c == L'\t')))
 			continue;
 
 		*p++ = (wchar_t)c;
