@@ -47,7 +47,7 @@
  *		access size or host data has any affect, but the Windows 3.1
  *		driver always reads bytes and write words of 0xffff.
  *
- * Version:	@(#)vid_tgui9440.c	1.0.18	2021/03/12
+ * Version:	@(#)vid_tgui9440.c	1.0.19	2021/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -679,7 +679,7 @@ void tgui_recalcmapping(tgui_t *dev)
         }
 }
 
-void tgui_hwcursor_draw(svga_t *svga, int disp_line)
+void tgui_hwcursor_draw(svga_t *svga, int displine)
 {
         uint32_t dat[2];
         int xx;
@@ -692,12 +692,12 @@ void tgui_hwcursor_draw(svga_t *svga, int disp_line)
         if (svga->interlace && svga->hwcursor_oddeven)
                 svga->hwcursor_latch.addr += 8;
 
-        dat[0] = (svga->vram[svga->hwcursor_latch.addr]     << 24) | (svga->vram[svga->hwcursor_latch.addr + 1] << 16) | (svga->vram[svga->hwcursor_latch.addr + 2] << 8) | svga->vram[svga->hwcursor_latch.addr + 3];
-        dat[1] = (svga->vram[svga->hwcursor_latch.addr + 4] << 24) | (svga->vram[svga->hwcursor_latch.addr + 5] << 16) | (svga->vram[svga->hwcursor_latch.addr + 6] << 8) | svga->vram[svga->hwcursor_latch.addr + 7];
-        for (xx = 0; xx < 32; xx++)
-        {
-                if (offset >= svga->hwcursor_latch.x)
-                {
+        dat[0] = (svga->vram[svga->hwcursor_latch.addr]     << 24) | (svga->vram[svga->hwcursor_latch.addr + 1] << 16) 
+                 | (svga->vram[svga->hwcursor_latch.addr + 2] << 8) | svga->vram[svga->hwcursor_latch.addr + 3];
+        dat[1] = (svga->vram[svga->hwcursor_latch.addr + 4] << 24) | (svga->vram[svga->hwcursor_latch.addr + 5] << 16) 
+                 | (svga->vram[svga->hwcursor_latch.addr + 6] << 8) | svga->vram[svga->hwcursor_latch.addr + 7];
+        for (xx = 0; xx < 32; xx++) {
+                if (offset >= svga->hwcursor_latch.x) {
                         if (!(dat[0] & 0x80000000))
                                 screen->line[displine + y_add][offset + 32 + x_add].val  = (dat[1] & 0x80000000) ? 0xffffff : 0;
                         else if (dat[1] & 0x80000000)
