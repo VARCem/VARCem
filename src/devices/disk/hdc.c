@@ -8,12 +8,12 @@
  *
  *		Common code to handle all sorts of disk controllers.
  *
- * Version:	@(#)hdc.c	1.0.21	2019/05/17
+ * Version:	@(#)hdc.c	1.0.22	2021/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,14 +63,12 @@ static const struct {
 
     { "st506_xt",		&st506_xt_xebec_device		},
     { "st506_dtc5150x",		&st506_xt_dtc5150x_device	},
-#ifdef USE_ST11
+
     { "st506_st11_m",		&st506_xt_st11_m_device		},
     { "st506_st11_r",		&st506_xt_st11_r_device		},
-#endif
-#ifdef USE_WD1002
+
     { "st506_wd1002a_wx1",	&st506_xt_wd1002a_wx1_device	},
     { "st506_wd1002a_27x",	&st506_xt_wd1002a_27x_device	},
-#endif
 
     { "xta_wdxt150",		&xta_wdxt150_device		},
 

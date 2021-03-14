@@ -8,13 +8,13 @@
  *
  *		String definitions for "French (France)" language.
  *
- * Version:	@(#)VARCem-FR.str	1.0.15	2020/11/21
+ * Version:	@(#)VARCem-FR.str	1.0.15	2021/03/13
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2018-2020 Altheos.
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -251,7 +251,7 @@
 #define  STR_3507	"H"
 #define  STR_3508	"S"
 #define  STR_3509	"Mo"
-#define  STR_3510	"Mo (CHS: %u, %u, %u)"
+#define  STR_3510	"(CHS: %u, %u, %u)"
 #define  STR_3511	"Personnalisé..."
 #define  STR_3512	"Personnalisé (grande capacité)..."
 #define  STR_3515	"ST506"

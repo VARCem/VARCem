@@ -184,39 +184,44 @@ FILE *
 rom_fopen(const wchar_t *fn, const wchar_t *mode)
 {
     wchar_t temp[512];
-    const wchar_t *sp;
-    int state = 3;
+    const wchar_t *sp = fn;
+    int state = 1;
     FILE *fp = NULL;
 
     while (state > 0) {
-	switch(state) {
+	switch (state) {
 		case 1:		/* try vm short path */
 			sp = wcsrchr(fn, L'/');
 			if (sp != NULL)
-				fn = sp + 1;
-			/*FALLTHROUGH*/
+				sp++;
+			wcscpy(temp, usr_path);
+			state = 2;
+			break;
 
 		case 2:		/* try vm path */
 			wcscpy(temp, usr_path);
+			sp = fn;
+			state = 3;
 			break;
 
 		case 3:		/* try system path */
 			wcscpy(temp, emu_path);
+			state = 9;
 			break;
 	}
 
 	/* Build complete path. */
-	wcscat(temp, ROMS_PATH);
-	plat_append_slash(temp);
-	wcscat(temp, fn);
-	pc_path(temp, sizeof_w(temp), NULL);
+	if (state > 0) {
+		wcscat(temp, ROMS_PATH);
+		plat_append_slash(temp);
+		wcscat(temp, sp);
+		pc_path(temp, sizeof_w(temp), NULL);
 
-	/* Try opening the file. */
-	fp = plat_fopen(temp, mode);
-	if (fp != NULL)
-		state = 0;
-  	else
-		state--;
+		/* Try opening the file. */
+		fp = plat_fopen(temp, mode);
+		if ((fp != NULL) || (state == 9))
+			state = 0;
+	}
     }
 
     return(fp);

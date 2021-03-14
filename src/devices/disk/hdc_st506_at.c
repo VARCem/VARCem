@@ -51,6 +51,7 @@
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/pic.h"
 #include "hdc.h"
 #include "hdd.h"

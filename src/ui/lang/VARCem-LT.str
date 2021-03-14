@@ -8,12 +8,12 @@
  *
  *		String definitions for "Lithuanian (Lithuania)" language.
  *
- * Version:	@(#)VARCem-LT.str	1.0.6	2020/07/14
+ * Version:	@(#)VARCem-LT.str	1.0.6	2021/03/13
  *
  * Author:	Vegas (emu-land.net)
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -247,7 +247,7 @@
 #define  STR_3507	"H"
 #define  STR_3508	"S"
 #define  STR_3509	"MB"
-#define  STR_3510	"MB (CHS: %u, %u, %u)"
+#define  STR_3510	"(CHS: %u, %u, %u)"
 #define  STR_3511	"įprastas..."
 #define  STR_3512	"įprastas (didelis)..."
 #define  STR_3515	"ST506"

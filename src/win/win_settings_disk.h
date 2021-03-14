@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.25	2020/12/04
+ * Version:	@(#)win_settings_disk.h	1.0.26	2021/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -57,8 +57,9 @@ static int	max_hpc = 255;
 static int	max_tracks = 266305;
 static int	no_update = 0;
 static int	existing = 0;
-static uint64_t	selection = 127;
-static uint64_t	spt, hpc, tracks, size;
+static int	selection = 0;
+static int	spt, hpc, tracks;
+static int64_t	size;
 static int	chs_enabled = 0;
 static int	ignore_change = 0;
 static int	hdc_id_to_listview_index[HDD_NUM];
@@ -920,18 +921,28 @@ disk_initialize_hdt(HWND hdlg)
     uint64_t temp_size = 0;
     uint64_t size_mb = 0;
     HWND h;
-    int i;
+    int i, k;
 
-    selection = 127;
+    /* Get the number of entries in our DriveType Table. */
+    for (k = 0; hdd_table[k].cyls != 0; k++)
+			;
+
+    selection = k - 1;
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
-    for (i = 0; i < 127; i++) {	
+    for (i = 0; i < k; i++) {	
 	temp_size = hdd_table[i].cyls * hdd_table[i].head * hdd_table[i].sect;
 	size_mb = temp_size >> 11;
-	swprintf(temp, sizeof_w(temp), L"%" PRIu64, size_mb);
-	swprintf(temp2, sizeof_w(temp2), get_string(IDS_3510),
-		 hdd_table[i].cyls, hdd_table[i].head, hdd_table[i].sect);
-	wcscat(temp, L" ");
+	swprintf(temp, sizeof_w(temp),
+		 L"%" PRIu64 "%ls ", size_mb, get_string(IDS_3330));
+	if (hdd_table[i].model != NULL) {
+		/* We have an actual drive model name here. */
+		swprintf(temp2, sizeof_w(temp2), L"%s", hdd_table[i].model);
+	} else {
+		/* No drive model, just show geometry. */
+		swprintf(temp2, sizeof_w(temp2), get_string(IDS_3510),
+			hdd_table[i].cyls,hdd_table[i].head,hdd_table[i].sect);
+	}
 	wcscat(temp, temp2);
 	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
 	if ((tracks == hdd_table[i].cyls) && (hpc == hdd_table[i].head) && (spt == hdd_table[i].sect))
@@ -955,18 +966,23 @@ static void
 disk_recalc_selection(HWND hdlg)
 {
     HWND h;
-    int i;
+    int i, k;
 
-    selection = 127;
+    /* Get the number of entries in our DriveType Table. */
+    for (k = 0; hdd_table[k].cyls != 0; k++)
+		;
+
+    selection = k - 1;
     h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
-    for (i = 0; i < 127; i++) {	
+    for (i = 0; i < (k - 1); i++) {	
 	if ((tracks == hdd_table[i].cyls) &&
 	    (hpc == hdd_table[i].head) && (spt == hdd_table[i].sect))
 		selection = i;
     }
 
-    if ((selection == 127) && (hpc == 16) && (spt == 63))
-	selection = 128;
+    /* Hack for IDE/SCSI drives. */
+    if ((selection == (k = 1)) && (hpc == 16) && (spt == 63))
+	selection = k;
 
     SendMessage(h, CB_SETCURSEL, selection & 0xffff, 0);
 }
@@ -997,6 +1013,7 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 	RECT rect;
 	POINT point;
 	int dlg_height_adjust;
+    int k;
 
     switch (message) {
 	case WM_INITDIALOG:
@@ -1662,8 +1679,13 @@ hdd_add_file_open_error:
 					return FALSE;
 
 				no_update = 1;
+
+				/* Get the number of entries in our DriveType Table. */
+				for (k = 0; hdd_table[k].cyls != 0; k++)
+							;
+
 				get_combo_box_selection(hdlg, IDC_COMBO_HD_TYPE, &temp);
-				if ((temp != selection) && (temp != 127) && (temp != 128)) {
+				if ((temp != selection) && (temp != (k - 1)) && (temp != k)) {
 					selection = temp;
 					tracks = hdd_table[selection].cyls;
 					hpc = hdd_table[selection].head;
@@ -1673,9 +1695,9 @@ hdd_add_file_open_error:
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_HPC, hpc);
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, spt);
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
-				} else if ((temp != selection) && (temp == 127)) {
+				} else if ((temp != selection) && (temp == (k - 1))) {
 					selection = temp;
-				} else if ((temp != selection) && (temp == 128)) {
+				} else if ((temp != selection) && (temp == k)) {
 					selection = temp;
 					hpc = 16;
 					spt = 63;
@@ -1732,14 +1754,14 @@ hdd_add_file_open_error:
 
 					case HDD_BUS_ST506:
 						max_spt = 26;
-						max_hpc = 15;
-						max_tracks = 1023;
+						max_hpc = 16;
+						max_tracks = 1024;
 						break;
 
 					case HDD_BUS_ESDI:
 						max_spt = 63;
 						max_hpc = 16;
-						max_tracks = 1023;
+						max_tracks = 1024;
 						break;
 
 					case HDD_BUS_IDE:

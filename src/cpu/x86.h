@@ -35,7 +35,7 @@
  *   USA.
  */
 #ifndef EMU_CPU_X86_H
-# define EMU_CX86_PU_H
+# define EMU_CPU_X86_H
 
 
 #ifdef _MSC_VER

@@ -8,13 +8,13 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.c	1.0.23	2019/05/17
+ * Version:	@(#)machine.c	1.0.24	2021/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -246,7 +246,7 @@ machine_available(int id)
     romdef_t r;
     int i;
 
-    dev = machine_get_device_ex(config.machine_type);
+    dev = machine_get_device_ex(id);
 
     wcscpy(temp, MACHINES_PATH);
     plat_append_slash(temp);

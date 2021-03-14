@@ -8,12 +8,12 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * Version:	@(#)VARCem-BY.str	1.0.7	2020/07/14
+ * Version:	@(#)VARCem-BY.str	1.0.7	2021/03/13
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -245,7 +245,7 @@
 #define  STR_3507	"H"
 #define  STR_3508	"S"
 #define  STR_3509	"МБ"
-#define  STR_3510	"МБ (CHS: %u, %u, %u)"
+#define  STR_3510	"(CHS: %u, %u, %u)"
 #define  STR_3511	"Параметры..."
 #define  STR_3512	"Параметры (вялікі)..."
 #define  STR_3515	"ST506"

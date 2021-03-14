@@ -8,11 +8,11 @@
  *
  *		Common resources for the application.
  *
- * Version:	@(#)VARCem-common.rc	1.0.15	2020/11/21
+ * Version:	@(#)VARCem-common.rc	1.0.15	2021/03/13
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -51,8 +51,6 @@
 # define MENUSEPARATOR	MENUITEM SEPARATOR
 #endif
 
-//#define _MKSTR(...)	#__VA_ARGS__
-//#define _CATSTR(a,b,...)	_MKSTR(a ## b)
 
 #define FONT_NAME	"Segoe UI"
 
@@ -508,11 +506,11 @@ BEGIN
     LTEXT           STR_3530,IDT_1726,154,35,27,10
     EDITTEXT        IDC_EDIT_HD_SPT,183,34,28,12
 
-    LTEXT           STR_3531,IDT_1729,7,54,33,8
-    EDITTEXT        IDC_EDIT_HD_SIZE,42,52,28,12
+    LTEXT           STR_3531,IDT_1729,7,54,25,8
+    EDITTEXT        IDC_EDIT_HD_SIZE,42,52,20,12
 
-    LTEXT           STR_3532,IDT_1730,86,54,24,8
-    COMBOBOX        IDC_COMBO_HD_TYPE,113,52,98,120,
+    LTEXT           STR_3532,IDT_1730,80,54,20,8
+    COMBOBOX        IDC_COMBO_HD_TYPE,102,52,110,120,
                     CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     LTEXT           STR_BUS,IDT_1721,7,73,24,8

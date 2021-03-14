@@ -62,6 +62,7 @@ extern int	pic_pending;
 
 
 extern void	pic_init(void);
+extern void	pic_init_ex(uint16_t, int8_t words);
 extern void	pic2_init(void);
 extern void	pic_reset(void);
 extern void	pic_init_pcjr(void);

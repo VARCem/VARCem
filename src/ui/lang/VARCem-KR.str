@@ -8,13 +8,13 @@
  *
  *		String definitions for "Korean (South Korea)" language.
  *
- * Version:	@(#)VARCem-KR.str	1.0.13	2020/07/14
+ * Version:	@(#)VARCem-KR.str	1.0.13	2021/03/13
  *
  * Authors:	Yeong Uk Jo, <greatpsycho@yahoo.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2018 Yeong Uk Jo.
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -248,7 +248,7 @@
 #define  STR_3507	"H"
 #define  STR_3508	"S"
 #define  STR_3509	"MB"
-#define  STR_3510	"MB (CHS: %u, %u, %u)"
+#define  STR_3510	"(CHS: %u, %u, %u)"
 #define  STR_3511	"사용자 설정..."
 #define  STR_3512	"사용자 설정 (대용량)..."
 #define  STR_3515	"ST506"

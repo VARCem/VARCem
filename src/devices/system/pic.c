@@ -8,7 +8,7 @@
  *
  *		Implementation of Intel 8259 interrupt controller.
  *
- * Version:	@(#)pic.c	1.0.10	2021/01/22
+ * Version:	@(#)pic.c	1.0.10	2021/02/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -129,6 +129,9 @@ pic_write(uint16_t addr, uint8_t val, priv_t priv)
 
 	addr &= ~0x06;
 
+    if (dev->words)
+	addr >>= 1;
+
     if (addr & 1) {
 	switch (dev->icw) {
 		case 0: /*OCW1*/
@@ -246,7 +249,6 @@ pic_read(uint16_t addr, priv_t priv)
 			ret = dev->ins;
     } else
 		ret = dev->pend;
-
 #if 0
     DEBUG("%04X:%04X: Read PIC 1 port %04X, value %02X\n", CS, cpu_state.pc, addr, val);
 #endif
@@ -571,6 +573,18 @@ pic_init_pcjr()
 	io_sethandler(0x0020, 0x0008, 
 		  pic_read, NULL, NULL, pic_write, NULL, NULL, &pic);
 }
+
+/* Used by the Sanyo MBC-550. */
+void
+pic_init_ex(uint16_t port, int8_t words)
+{
+    memset(&pic, 0x00, sizeof(PIC));
+    pic.words = words;
+
+    io_sethandler(port, 2 << words,
+		  pic_read,NULL,NULL, pic_write,NULL,NULL, &pic);
+}
+
 
 void
 pic2_init(void)
