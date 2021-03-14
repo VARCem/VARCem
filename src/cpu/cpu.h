@@ -334,7 +334,6 @@ extern int		cpu_manuf;		/* cpu manufacturer */
 extern int		cpu_dynarec;		/* dynamic recompiler enabled */
 extern int		cpu_busspeed;
 extern int		cpu_16bitbus;
-extern int		xt_cpu_multi;
 extern int		cpu_cyrix_alignment;	/*Cyrix 5x86/6x86 only has data misalignment
 					  penalties when crossing 8-byte boundaries*/
 

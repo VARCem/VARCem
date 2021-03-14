@@ -12,7 +12,7 @@
  *		The Port92 stuff should be moved to devices/system/memctl.c
  *		 as a standard device.
  *
- * Version:	@(#)mem.c	1.0.38	2021/02/10
+ * Version:	@(#)mem.c	1.0.39	2021/02/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -117,7 +117,7 @@ static uint8_t		ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
 int
 mem_addr_is_ram(uint32_t addr)
 {
-    mem_map_t *map = read_mapping[addr >> 14];
+    mem_map_t *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
 
     return (map == &ram_low_mapping) ||
  	   (map == &ram_high_mapping) ||
@@ -240,7 +240,7 @@ mem_flush_write_page(uint32_t addr, uint32_t virt)
 
 #define mmutranslate_read(addr) mmutranslatereal(addr,0)
 #define mmutranslate_write(addr) mmutranslatereal(addr,1)
-#define rammap(x)	((uint32_t *)(_mem_exec[(x) >> 14]))[((x) >> 2) & 0xfff]
+#define rammap(x)	((uint32_t *)(_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 2) & 0xfff]
 
 uint32_t
 mmutranslatereal(uint32_t addr, int rw)
@@ -420,8 +420,8 @@ getpccache(uint32_t a)
 
     a2 = a;
 
-    if (a2 < 0x100000 && ram_mapped_addr[a2 >> 14]) {
-	a = (ram_mapped_addr[a2 >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? a2 : (ram_mapped_addr[a2 >> 14] & ~0x3FFF) + (a2 & 0x3FFF);
+    if (a2 < 0x100000 && ram_mapped_addr[a2 >> MEM_GRANULARITY_BITS]) {
+	a = (ram_mapped_addr[a2 >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? a2 : (ram_mapped_addr[a2 >> MEM_GRANULARITY_BITS] & ~0x3FFF) + (a2 & 0x3FFF);
 	return &ram[(uintptr_t)(a & 0xFFFFF000) - (uintptr_t)(a2 & ~0xFFF)];
     }
 
@@ -434,20 +434,132 @@ getpccache(uint32_t a)
     }
     a &= rammask;
 
-    if (_mem_exec[a >> 14]) {
+    if (_mem_exec[a >> MEM_GRANULARITY_BITS]) {
 	if (is286) {
-		if (read_mapping[a >> 14]->flags & MEM_MAPPING_ROM)
+		if (read_mapping[a >> MEM_GRANULARITY_BITS]->flags & MEM_MAPPING_ROM)
 			cpu_prefetch_cycles = cpu_rom_prefetch_cycles;
 		else
 			cpu_prefetch_cycles = cpu_mem_prefetch_cycles;
 	}
 	
-	return &_mem_exec[a >> 14][(uintptr_t)(a & 0x3000) - (uintptr_t)(a2 & ~0xfff)];
+	return &_mem_exec[a >> MEM_GRANULARITY_BITS][(uintptr_t)(a & 0x3000) - (uintptr_t)(a2 & ~0xfff)];
     }
 
     ERRLOG("Bad getpccache %08X\n", a);
 
     return (uint8_t *)&ff_pccache;
+}
+
+
+/* Read a byte from physical memory (for 808x.) */
+uint8_t
+read_mem_b(uint32_t addr)
+{
+    mem_map_t *map;
+    uint8_t ret = 0xff;
+#ifdef USE_NEW_CPU
+    int old_cycles = cycles;
+#endif
+
+    mem_logical_addr = addr;
+    addr &= rammask;
+
+    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    if (map && map->read_b)
+	ret = map->read_b(addr, map->p);
+
+#ifdef USE_NEW_CPU
+    resub_cycles(old_cycles);
+#endif
+
+    return ret;
+}
+
+
+/* Read a word from physical memory (for 808x.) */
+uint16_t
+read_mem_w(uint32_t addr)
+{
+    mem_map_t *map;
+    uint16_t ret = 0xffff;
+#ifdef USE_NEW_CPU
+    int old_cycles = cycles;
+#endif
+
+    mem_logical_addr = addr;
+    addr &= rammask;
+
+    if (addr & 1)
+	ret = read_mem_b(addr) | (read_mem_b(addr + 1) << 8);
+    else {
+	map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+
+	if (map && map->read_w)
+		ret = map->read_w(addr, map->p);
+	else if (map && map->read_b)
+		ret = map->read_b(addr, map->p) | (map->read_b(addr + 1, map->p) << 8);
+    }
+
+#ifdef USE_NEW_CPU
+    resub_cycles(old_cycles);
+#endif
+
+    return ret;
+}
+
+
+/* Write a byte to physical memory (for 808x.) */
+void
+write_mem_b(uint32_t addr, uint8_t val)
+{
+    mem_map_t *map;
+#ifdef USE_NEW_CPU
+    int old_cycles = cycles;
+#endif
+
+    mem_logical_addr = addr;
+    addr &= rammask;
+
+    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    if (map && map->write_b)
+	map->write_b(addr, val, map->p);
+
+#ifdef USE_NEW_CPU
+    resub_cycles(old_cycles);
+#endif
+}
+
+
+/* Write a word to physical memory (for 808x.) */
+void
+write_mem_w(uint32_t addr, uint16_t val)
+{
+    mem_map_t *map;
+#ifdef USE_NEW_CPU
+    int old_cycles = cycles;
+#endif
+
+    mem_logical_addr = addr;
+    addr &= rammask;
+
+    if (addr & 1) {
+	write_mem_b(addr, val);
+	write_mem_b(addr + 1, val >> 8);
+    } else {
+	map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+	if (map) {
+		if (map->write_w)
+			map->write_w(addr, val, map->p);
+		else if (map->write_b) {
+			map->write_b(addr, val, map->p);
+			map->write_b(addr + 1, val >> 8, map->p);
+		}
+	}
+    }
+
+#ifdef USE_NEW_CPU
+    resub_cycles(old_cycles);
+#endif
 }
 
 
@@ -458,8 +570,8 @@ readmembl(uint32_t addr)
 
     mem_logical_addr = addr;
 
-    if (addr < 0x100000 && ram_mapped_addr[addr >> 14]) {
-	addr = (ram_mapped_addr[addr >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr : (ram_mapped_addr[addr >> 14] & ~0x3fff) + (addr & 0x3fff);
+    if (addr < 0x100000 && ram_mapped_addr[addr >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr : (ram_mapped_addr[addr >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size)) return ram[addr];
 	return 0xff;
     }
@@ -470,7 +582,7 @@ readmembl(uint32_t addr)
     }
     addr &= rammask;
 
-    map = read_mapping[addr >> 14];
+    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
     if (map && map->read_b)
 	return map->read_b(addr, map->p);
 
@@ -485,8 +597,8 @@ writemembl(uint32_t addr, uint8_t val)
 
     mem_logical_addr = addr;
 
-    if (addr < 0x100000 && ram_mapped_addr[addr >> 14]) {
-	addr = (ram_mapped_addr[addr >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr : (ram_mapped_addr[addr >> 14] & ~0x3fff) + (addr & 0x3fff);
+    if (addr < 0x100000 && ram_mapped_addr[addr >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr : (ram_mapped_addr[addr >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size))
 		ram[addr] = val;
 	return;
@@ -504,7 +616,7 @@ writemembl(uint32_t addr, uint8_t val)
     }
     addr &= rammask;
 
-    map = write_mapping[addr >> 14];
+    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
     if (map && map->write_b)
 	map->write_b(addr, val, map->p);
 }
@@ -561,8 +673,8 @@ readmemwl(uint32_t seg, uint32_t addr)
 		return *(uint16_t *)(readlookup2[addr2 >> 12] + addr2);
     }
 
-    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> 14]) {
-	addr = (ram_mapped_addr[addr2 >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> 14] & ~0x3fff) + (addr2 & 0x3fff);
+    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr2 & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size))
 		return *((uint16_t *)&ram[addr]);
 	return 0xffff;
@@ -576,7 +688,7 @@ readmemwl(uint32_t seg, uint32_t addr)
 
     addr2 &= rammask;
 
-    map = read_mapping[addr2 >> 14];
+    map = read_mapping[addr2 >> MEM_GRANULARITY_BITS];
 
     if (map && map->read_w)
 	return map->read_w(addr2, map->p);
@@ -603,8 +715,8 @@ writememwl(uint32_t seg, uint32_t addr, uint16_t val)
 	return;
     }
 
-    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> 14]) {
-	addr = (ram_mapped_addr[addr2 >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> 14] & ~0x3fff) + (addr2 & 0x3fff);
+    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr2 & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size))
 		*((uint16_t *)&ram[addr]) = val;
 	return;
@@ -644,7 +756,7 @@ writememwl(uint32_t seg, uint32_t addr, uint16_t val)
 
     addr2 &= rammask;
 
-    map = write_mapping[addr2 >> 14];
+    map = write_mapping[addr2 >> MEM_GRANULARITY_BITS];
     if (map && map->write_w) {
 	map->write_w(addr2, val, map->p);
 	return;
@@ -668,8 +780,8 @@ readmemll(uint32_t seg, uint32_t addr)
 	return -1;
     }
 
-    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> 14]) {
-	addr = (ram_mapped_addr[addr2 >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> 14] & ~0x3fff) + (addr2 & 0x3fff);
+    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr2 & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size))
 		return *((uint32_t *)&ram[addr]);
 	return 0xffffffff;
@@ -696,7 +808,7 @@ readmemll(uint32_t seg, uint32_t addr)
 
     addr2 &= rammask;
 
-    map = read_mapping[addr2 >> 14];
+    map = read_mapping[addr2 >> MEM_GRANULARITY_BITS];
 
     if (map && map->read_l)
 	return map->read_l(addr2, map->p);
@@ -726,8 +838,8 @@ writememll(uint32_t seg, uint32_t addr, uint32_t val)
 	return;
     }
 
-    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> 14]) {
-	addr = (ram_mapped_addr[addr2 >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> 14] & ~0x3fff) + (addr2 & 0x3fff);
+    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr2 & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size))
 		*((uint32_t *)&ram[addr]) = val;
 	return;
@@ -762,7 +874,7 @@ writememll(uint32_t seg, uint32_t addr, uint32_t val)
 
     addr2 &= rammask;
 
-    map = write_mapping[addr2 >> 14];
+    map = write_mapping[addr2 >> MEM_GRANULARITY_BITS];
 
     if (map && map->write_l) {
 	map->write_l(addr2, val, map->p);
@@ -795,8 +907,8 @@ readmemql(uint32_t seg, uint32_t addr)
 	return -1;
     }
 
-    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> 14]) {
-	addr = (ram_mapped_addr[addr2 >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> 14] & ~0x3fff) + (addr2 & 0x3fff);
+    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr2 & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size))
 		return *((uint64_t *)&ram[addr]);
 	return -1;
@@ -822,7 +934,7 @@ readmemql(uint32_t seg, uint32_t addr)
 
     addr2 &= rammask;
 
-    map = read_mapping[addr2 >> 14];
+    map = read_mapping[addr2 >> MEM_GRANULARITY_BITS];
     if (map && map->read_l)
 	return map->read_l(addr2, map->p) | ((uint64_t)map->read_l(addr2 + 4, map->p) << 32);
 
@@ -841,8 +953,8 @@ writememql(uint32_t seg, uint32_t addr, uint64_t val)
 	return;
     }
 
-    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> 14]) {
-	addr = (ram_mapped_addr[addr2 >> 14] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> 14] & ~0x3fff) + (addr2 & 0x3fff);
+    if (addr2 < 0x100000 && ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS]) {
+	addr = (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & MEM_MAP_TO_SHADOW_RAM_MASK) ? addr2 : (ram_mapped_addr[addr2 >> MEM_GRANULARITY_BITS] & ~0x3fff) + (addr2 & 0x3fff);
 	if (addr < (uint32_t)(1024UL * mem_size))
 		*((uint64_t *)&ram[addr]) = val;
 	return;
@@ -877,7 +989,7 @@ writememql(uint32_t seg, uint32_t addr, uint64_t val)
 
     addr2 &= rammask;
 
-    map = write_mapping[addr2 >> 14];
+    map = write_mapping[addr2 >> MEM_GRANULARITY_BITS];
 
     if (map && map->write_l) {
 	map->write_l(addr2, (val & 0xffffffff), map->p);
@@ -909,10 +1021,10 @@ writememql(uint32_t seg, uint32_t addr, uint64_t val)
 uint8_t
 mem_readb_phys(uint32_t addr)
 {
-    mem_map_t *map = read_mapping[addr >> 14];
+    mem_map_t *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
 
-    if (_mem_exec[addr >> 14])
-	return _mem_exec[addr >> 14][addr & 0x3fff];
+    if (_mem_exec[addr >> MEM_GRANULARITY_BITS])
+	return _mem_exec[addr >> MEM_GRANULARITY_BITS][addr & 0x3fff];
 
     if (map && map->read_b)
        	return map->read_b(addr, map->p);
@@ -924,11 +1036,11 @@ mem_readb_phys(uint32_t addr)
 uint16_t
 mem_readw_phys(uint32_t addr)
 {
-    mem_map_t *map = read_mapping[addr >> 14];
+    mem_map_t *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
     uint16_t temp;
 
-    if (_mem_exec[addr >> 14])
-	return ((uint16_t *) _mem_exec[addr >> 14])[(addr >> 1) & 0x1fff];
+    if (_mem_exec[addr >> MEM_GRANULARITY_BITS])
+	return ((uint16_t *) _mem_exec[addr >> MEM_GRANULARITY_BITS])[(addr >> 1) & 0x1fff];
 
     if (map && map->read_w)
        	return map->read_w(addr, map->p);
@@ -943,10 +1055,10 @@ mem_readw_phys(uint32_t addr)
 void
 mem_writeb_phys(uint32_t addr, uint8_t val)
 {
-    mem_map_t *map = write_mapping[addr >> 14];
+    mem_map_t *map = write_mapping[addr >> MEM_GRANULARITY_BITS];
 
-    if (_mem_exec[addr >> 14])
-	_mem_exec[addr >> 14][addr & 0x3fff] = val;
+    if (_mem_exec[addr >> MEM_GRANULARITY_BITS])
+	_mem_exec[addr >> MEM_GRANULARITY_BITS][addr & 0x3fff] = val;
     else if (map && map->write_b)
        	map->write_b(addr, val, map->p);
 }
@@ -1221,8 +1333,8 @@ mem_map_recalc(uint64_t base, uint64_t size)
 
     /* Clear out old mappings. */
     for (c = base; c < base + size; c += 0x4000) {
-	read_mapping[c >> 14] = NULL;
-	write_mapping[c >> 14] = NULL;
+	read_mapping[c >> MEM_GRANULARITY_BITS] = NULL;
+	write_mapping[c >> MEM_GRANULARITY_BITS] = NULL;
     }
 
     /* Walk mapping list. */
@@ -1236,16 +1348,16 @@ mem_map_recalc(uint64_t base, uint64_t size)
 
 		for (c = start; c < end; c += 0x4000) {
 			if ((map->read_b || map->read_w || map->read_l) &&
-			     mem_map_read_allowed(map->flags, _mem_state[c >> 14])) {
+			     mem_map_read_allowed(map->flags, _mem_state[c >> MEM_GRANULARITY_BITS])) {
 				if (map->exec)
-					_mem_exec[c >> 14] = map->exec + (c - map->base);
+					_mem_exec[c >> MEM_GRANULARITY_BITS] = map->exec + (c - map->base);
 				else
-					_mem_exec[c >> 14] = NULL;
-				read_mapping[c >> 14] = map;
+					_mem_exec[c >> MEM_GRANULARITY_BITS] = NULL;
+				read_mapping[c >> MEM_GRANULARITY_BITS] = map;
 			}
 			if ((map->write_b || map->write_w || map->write_l) &&
-			     mem_map_write_allowed(map->flags, _mem_state[c >> 14]))
-				write_mapping[c >> 14] = map;
+			     mem_map_write_allowed(map->flags, _mem_state[c >> MEM_GRANULARITY_BITS]))
+				write_mapping[c >> MEM_GRANULARITY_BITS] = map;
 		}
 	}
 	map = map->next;
@@ -1404,7 +1516,7 @@ mem_set_mem_state(uint32_t base, uint32_t size, int state)
     uint32_t c;
 
     for (c = 0; c < size; c += 0x4000)
-	_mem_state[(c + base) >> 14] = state;
+	_mem_state[(c + base) >> MEM_GRANULARITY_BITS] = state;
 
     mem_map_recalc(base, size);
 }
@@ -1482,7 +1594,8 @@ mem_reset(void)
      */
     if (pages_sz != m || pages_sz == 0) {
 	pages_sz = m;
-	free(pages);
+	if (pages != NULL)
+		free(pages);
 	pages = (page_t *)mem_alloc(m * sizeof(page_t));
 	memset(pages, 0x00, m * sizeof(page_t));
     }

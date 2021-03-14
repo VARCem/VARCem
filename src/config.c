@@ -12,7 +12,7 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.52	2021/03/10
+ * Version:	@(#)config.c	1.0.54	2021/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -88,7 +88,7 @@ typedef struct _list_ {
 
 typedef struct {
     list_t	list;
-    char	name[32];
+    char	name[64];
     list_t	entry_head;
 } section_t;
 
@@ -1002,15 +1002,15 @@ load_disks(config_t *cfg, const char *cat)
 			break;
 
 		case HDD_BUS_ST506:
-			max_spt = 26;	/* 17=MFM, 26=RLL */
-			max_hpc = 15;
-			max_tracks = 1023;
+			max_spt = 26;		// 17=MFM, 26=RLL, 31=RLL
+			max_hpc = 16;
+			max_tracks = 1024;
 			break;
 
 		case HDD_BUS_ESDI:
 			max_spt = 63;
 			max_hpc = 16;
-			max_tracks = 1023;
+			max_tracks = 1024;
 			break;
 
 		case HDD_BUS_IDE:

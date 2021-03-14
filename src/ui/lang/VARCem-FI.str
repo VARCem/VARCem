@@ -8,13 +8,13 @@
  *
  *		String definitions for "Finnish (Finland)" language.
  *
- * Version:	@(#)VARCem-FI.str	1.0.10	2020/07/14
+ * Version:	@(#)VARCem-FI.str	1.0.10	2021/03/13
  *
  * Authors:	Daniel Gurney, <dgurney@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2018 Daniel Gurney.
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -248,7 +248,7 @@
 #define  STR_3507	"H"
 #define  STR_3508	"S"
 #define  STR_3509	"MT"
-#define  STR_3510	"MT (CHS: %u, %u, %u)"
+#define  STR_3510	"(CHS: %u, %u, %u)"
 #define  STR_3511	"Oma..."
 #define  STR_3512	"Oma (suuri)..."
 #define  STR_3515	"ST506"

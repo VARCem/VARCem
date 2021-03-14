@@ -8,13 +8,13 @@
  *
  *		Driver for the ESDI controller (WD1007-vse1) for PC/AT.
  *
- * Version:	@(#)hdc_esdi_at.c	1.0.18	2019/05/17
+ * Version:	@(#)hdc_esdi_at.c	1.0.19	2021/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -54,6 +54,7 @@
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../system/pic.h"
 #include "hdc.h"
 #include "hdd.h"

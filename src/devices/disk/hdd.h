@@ -8,12 +8,12 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.14	2018/11/08
+ * Version:	@(#)hdd.h	1.0.15	2021/03/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017,2018 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 # define EMU_HDD_H
 
 
-#define HDD_NUM		30	/* total of 30 images supported */
+#define HDD_NUM		30		// total of 30 images supported
 
 
 #ifdef __cplusplus
@@ -54,7 +54,7 @@ enum {
     HDD_BUS_SCSI,
     HDD_BUS_USB
 };
-#define HDD_BUS_MAX	(HDD_BUS_USB)	/* USB exclusive */
+#define HDD_BUS_MAX	(HDD_BUS_USB)	// USB exclusive
 
 
 typedef struct {
@@ -85,18 +85,19 @@ typedef struct {
     uint16_t	cyls;
     uint8_t	head;
     uint8_t	sect;
+    const char	*model;
 } hddtab_t;
 
 /* Define the virtual Hard Disk. */
 typedef struct {
-    int8_t	is_hdi;			/* image type (should rename) */
-    int8_t	wp;			/* disk has been mounted READ-ONLY */
-    int8_t	removable;		/* disk is removable type */
+    int8_t	is_hdi;			// image type (should rename)
+    int8_t	wp;			// disk has been mounted READ-ONLY
+    int8_t	removable;		// disk is removable type
     uint8_t	bus;
-    int		num;			/* global disk number */
+    int		num;			// global disk number
 
     union {
-	uint8_t	st506_channel;		/* bus channel ID's */
+	uint8_t	st506_channel;		// bus channel ID's
 	uint8_t	esdi_channel;
 	uint8_t	ide_channel;
 	struct {
@@ -107,21 +108,21 @@ typedef struct {
 
     uint32_t	base;
 
-    uint32_t	spt,			/* physical geometry parameters */
+    uint32_t	spt,			// physical geometry parameters
 		hpc;
     uint32_t	tracks;
 
-    uint32_t	at_spt,			/* [Translation] parameters */
+    uint32_t	at_spt,			// [Translation] parameters
 		at_hpc;
 
     void	*priv;
 
-    wchar_t	fn[260];		/* name of current image file */
-    wchar_t	prev_fn[260];		/* name of previous image file */
+    wchar_t	fn[260];		// name of current image file
+    wchar_t	prev_fn[260];		// name of previous image file
 } hard_disk_t;
 
 
-extern const hddtab_t 	hdd_table[128];
+extern const hddtab_t 	hdd_table[];
 extern hard_disk_t      hdd[HDD_NUM];
 extern int		hdd_do_log;
 

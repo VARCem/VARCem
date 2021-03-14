@@ -8,13 +8,13 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.21	2020/12/04
+ * Version:	@(#)808x.c	1.0.22	2021/03/12
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2020 Fred N. van Kempen.
+ *		Copyright 2016-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2015-2018 Andrew Jenner.
  *		Copyright 2008-2018 Sarah Walker.
@@ -46,8 +46,9 @@
 #include "cpu.h"
 #include "x86.h"
 #include "../io.h"
-#include "../devices/system/pic.h"
+#include "../devices/system/clk.h"
 #include "../devices/system/nmi.h"
+#include "../devices/system/pic.h"
 #include "../mem.h"
 #include "../rom.h"
 #include "../timer.h"
@@ -76,15 +77,8 @@ uint16_t	*mod1add[2][8];
 uint32_t	*mod1seg[8];
 int		rmdat;
 
-/* XT CPU multiplier. */
-int		xt_cpu_multi;
-
 /* Is the CPU 8088 or 8086. */
 int		is8086 = 0;
-
-/* Variables for handling the non-maskable interrupts. */
-int		nmi = 0, nmi_auto_clear = 0;
-int		nmi_enable = 1;
 
 /* Was the CPU ever reset? */
 int		x86_was_reset = 0;
@@ -1461,7 +1455,7 @@ execx86(int cycs)
     cycles += cycs;
 
     while (cycles > 0) {
-	timer_start_period(cycles * xt_cpu_multi);
+	timer_start_period(cycles * cpu_clock_multi);
 	cpu_state.oldpc = cpu_state.pc;
 	in_rep = repeating = 0;
 	completed = 0;
@@ -2051,7 +2045,7 @@ opcodestart:
 				break;
 			}
 			repeating = 1;
-			timer_end_period(cycles * xt_cpu_multi);
+			timer_end_period(cycles * cpu_clock_multi);
 			goto opcodestart;
 
 		case 0xa6:	/* CMPS */
@@ -2098,7 +2092,7 @@ opcodestart:
 				break;
 			}
 			repeating = 1;
-			timer_end_period(cycles * xt_cpu_multi);
+			timer_end_period(cycles * cpu_clock_multi);
 			goto opcodestart;
 
 		case 0xa8:	/* TEST A, imm */
@@ -2136,7 +2130,7 @@ opcodestart:
 				break;
 			}
 			repeating = 1;
-			timer_end_period(cycles * xt_cpu_multi);
+			timer_end_period(cycles * cpu_clock_multi);
 			goto opcodestart;
 
 		case 0xb0:	/* MOV cpu_reg,#8 */
@@ -2759,7 +2753,7 @@ on_halt:
 	if (in_lock)
 		in_lock = 0;
 
-	timer_end_period(cycles * xt_cpu_multi);
+	timer_end_period(cycles * cpu_clock_multi);
 
 	if (trap && (flags & T_FLAG) && !noint) {
 		halt = 0;

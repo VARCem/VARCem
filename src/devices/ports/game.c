@@ -8,12 +8,12 @@
  *
  *		Implementation of a generic Game Port.
  *
- * Version:	@(#)game.c	1.0.23	2019/05/13
+ * Version:	@(#)game.c	1.0.24	2021/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,7 @@
 #include "../../timer.h"
 #include "../../device.h"
 #include "../../plat.h"
+#include "../system/clk.h"
 #include "../input/game/joystick.h"
 #include "game.h"
 #include "game_dev.h"

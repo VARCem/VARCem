@@ -8,11 +8,11 @@
  *
  *		Definitions for Intel 8284 driver.
  *
- * Version:	@(#)clk.h	1.0.2	2019/05/17
+ * Version:	@(#)clk.h	1.0.3	2021/02/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 
 
 extern float	cpu_clock;
+extern int	cpu_clock_multi;
 extern float	bus_timing;
 
 extern double	PITCONST;

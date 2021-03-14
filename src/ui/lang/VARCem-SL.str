@@ -8,13 +8,13 @@
  *
  *		String definitions for "Slovenian (Slovenia)" language.
  *
- * Version:	@(#)VARCem-SL.str	1.0.8	2020/07/14
+ * Version:	@(#)VARCem-SL.str	1.0.8	2021/03/13
  *
  * Authors:	David Simunic, <simunic.david@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2018 David Simunic.
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -248,7 +248,7 @@
 #define  STR_3507	"G"
 #define  STR_3508	"S"
 #define  STR_3509	"MB"
-#define  STR_3510	"MB (CGS: %u, %u, %u)"
+#define  STR_3510	"(CGS: %u, %u, %u)"
 #define  STR_3511	"Po meri..."
 #define  STR_3512	"Po meri (velik)..."
 #define  STR_3515	"ST506"

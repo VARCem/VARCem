@@ -8,7 +8,7 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.18	2019/05/15
+ * Version:	@(#)mem.h	1.0.19	2021/02/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -56,6 +56,35 @@
 #define MEM_WRITE_EXTERNAL	0x02
 #define MEM_WRITE_DISABLED	0x03
 #define MEM_WRITE_MASK		0x0f
+
+/*
+ * Macros for memory granularity, currently 16K.
+ * This may change in the future - 4K works, less
+ * does not because of internal 4K pages.
+ */
+#if defined(DEFAULT_GRANULARITY) || !defined(MEM_GRANULARITY_BITS)
+# define MEM_GRANULARITY_BITS	14
+# define MEM_GRANULARITY_SIZE	(1 << MEM_GRANULARITY_BITS)
+# define MEM_GRANULARITY_HBOUND	(MEM_GRANULARITY_SIZE - 2)
+# define MEM_GRANULARITY_QBOUND	(MEM_GRANULARITY_SIZE - 4)
+# define MEM_GRANULARITY_MASK	(MEM_GRANULARITY_SIZE - 1)
+# define MEM_GRANULARITY_HMASK	((1 << (MEM_GRANULARITY_BITS - 1)) - 1)
+# define MEM_GRANULARITY_QMASK	((1 << (MEM_GRANULARITY_BITS - 2)) - 1)
+# define MEM_GRANULARITY_PMASK	((1 << (MEM_GRANULARITY_BITS - 3)) - 1)
+# define MEM_MAPPINGS_NO	((0x100000 >> MEM_GRANULARITY_BITS) << 12)
+# define MEM_GRANULARITY_PAGE	(MEM_GRANULARITY_MASK & ~0xfff)
+#else
+# define MEM_GRANULARITY_BITS	12
+# define MEM_GRANULARITY_SIZE	(1 << MEM_GRANULARITY_BITS)
+# define MEM_GRANULARITY_HBOUND	(MEM_GRANULARITY_SIZE - 2)
+# define MEM_GRANULARITY_QBOUND	(MEM_GRANULARITY_SIZE - 4)
+# define MEM_GRANULARITY_MASK	(MEM_GRANULARITY_SIZE - 1)
+# define MEM_GRANULARITY_HMASK	((1 << (MEM_GRANULARITY_BITS - 1)) - 1)
+# define MEM_GRANULARITY_QMASK	((1 << (MEM_GRANULARITY_BITS - 2)) - 1)
+# define MEM_GRANULARITY_PMASK	((1 << (MEM_GRANULARITY_BITS - 3)) - 1)
+# define MEM_MAPPINGS_NO	((0x100000 >> MEM_GRANULARITY_BITS) << 12)
+# define MEM_GRANULARITY_PAGE	(MEM_GRANULARITY_MASK & ~0xfff)
+#endif
 
 
 typedef struct _memmap_ {
@@ -150,6 +179,12 @@ extern int		mem_a20_state,
 		? readmemll(s,a) \
 		: *(uint32_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 
+
+/* Memory access for the 808x CPUs. */
+extern uint8_t	read_mem_b(uint32_t addr);
+extern uint16_t	read_mem_w(uint32_t addr);
+extern void	write_mem_b(uint32_t addr, uint8_t val);
+extern void	write_mem_w(uint32_t addr, uint16_t val);
 
 extern uint8_t	readmembl(uint32_t addr);
 extern void	writemembl(uint32_t addr, uint8_t val);

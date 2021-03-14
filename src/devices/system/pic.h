@@ -8,13 +8,13 @@
  *
  *		Definitions for the Intel 8259 module.
  *
- * Version:	@(#)pic.h	1.0.3	2019/02/28
+ * Version:	@(#)pic.h	1.0.4	2021/02/17
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -49,6 +49,7 @@ typedef struct {
 		pend,
 		mask2;
     uint8_t	vector;
+    int8_t	words;
     int		icw;
     int		read;
 } PIC;
@@ -60,6 +61,7 @@ extern int	pic_pending;		/*FIXME: used by x86_ops_misc.h */
 
 
 extern void	pic_init(void);
+extern void	pic_init_ex(uint16_t, int8_t words);
 extern void	pic2_init(void);
 extern void	pic_reset(void);
 extern uint8_t	pic_interrupt(void);

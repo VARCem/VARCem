@@ -8,13 +8,13 @@
  *
  *		Implementation of the NMI handler.
  *
- * Version:	@(#)nmi.c	1.0.3	2019/05/13
+ * Version:	@(#)nmi.c	1.0.4	2021/03/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -45,7 +45,10 @@
 #include "nmi.h"
 
 
-int	nmi_mask;
+int	nmi = 0,
+	nmi_auto_clear = 0;
+int	nmi_enable = 1;
+int	nmi_mask = 0;
 
 
 static void

@@ -8,13 +8,13 @@
  *
  *		String definitions for "German (Germany)" language.
  *
- * Version:	@(#)VARCem-DE.str	1.0.14	2020/07/14
+ * Version:	@(#)VARCem-DE.str	1.0.14	2021/03/13
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2018 Michael Drüing.
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -261,7 +261,7 @@
 #define  STR_3507	"H"
 #define  STR_3508	"S"
 #define  STR_3509	"MB"
-#define  STR_3510	"MB (CHS: %u, %u, %u)"
+#define  STR_3510	"(CHS: %u, %u, %u)"
 #define  STR_3511	"Benutzerdefiniert..."
 #define  STR_3512	"Benutzerdefiniert (groß)..."
 #define  STR_3515	"ST506"

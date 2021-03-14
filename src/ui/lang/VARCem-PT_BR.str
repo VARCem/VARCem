@@ -8,13 +8,13 @@
  *
  *		String definitions for "Portuguese (Brazil)" language.
  *
- * Version:	@(#)VARCem-PT_BR.str	1.0.1	2020/12/06
+ * Version:	@(#)VARCem-PT_BR.str	1.0.1	2021/03/13
  *
  * Author:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2020 Altieres Lima da Silva.
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -248,7 +248,7 @@
 #define  STR_3507	"C"
 #define  STR_3508	"S"
 #define  STR_3509	"MB"
-#define  STR_3510	"MB (CHS: %u, %u, %u)"
+#define  STR_3510	"(CHS: %u, %u, %u)"
 #define  STR_3511	"Personalizado..."
 #define  STR_3512	"Personalizado (grande)..."
 #define  STR_3515	"ST506"

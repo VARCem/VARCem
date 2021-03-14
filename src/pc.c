@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.80	2021/02/18
+ * Version:	@(#)pc.c	1.0.81	2021/03/09
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1125,10 +1125,15 @@ pc_thread(void *param)
 
 	/* If needed, update the title bar. */
 	if (title_update) {
-		swprintf(temp, sizeof_w(temp),
-			 L"%s %s - %3i%% - %s - %s",
-			 EMU_NAME, emu_version, fps,
-			 machine_get_name(), cpu_get_name());
+		if (config.title[0] != L'\0') {
+			swprintf(temp, sizeof_w(temp), L"%s %s - %3i%% - %ls",
+				 EMU_NAME, emu_version, fps, config.title);
+		} else {
+			swprintf(temp, sizeof_w(temp),
+				 L"%s %s - %3i%% - %s - %s",
+				 EMU_NAME, emu_version, fps,
+				 machine_get_name(), cpu_get_name());
+		}
 		ui_window_title(temp);
 
 		title_update = 0;

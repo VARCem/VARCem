@@ -8,13 +8,13 @@
  *
  *		Definitions for the system timer module.
  *
- * Version:	@(#)timer.h	1.0.5	2019/05/17
+ * Version:	@(#)timer.h	1.0.6	2021/03/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -75,8 +75,8 @@ extern tmrval_t	timer_count;
                         __diff = timer_start - (cycles << TIMER_SHIFT);	\
                         timer_start = cycles << TIMER_SHIFT;	\
                 } else {					\
-                        __diff = timer_start - (cycles * xt_cpu_multi); \
-                        timer_start = cycles * xt_cpu_multi;	\
+                        __diff = timer_start - (cycles * cpu_clock_multi); \
+                        timer_start = cycles * cpu_clock_multi;	\
                 }						\
 		timer_count -= __diff;				\
 		timer_process();				\

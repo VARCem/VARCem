@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.83	2021/02/18
+# Version:	@(#)Makefile.VC	1.0.84	2021/03/12
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -71,8 +71,6 @@ ifeq ($(DEV_BUILD), y)
  SANYO		:= n
  MICRAL		:= y
  SUPERSPORT	:= y
- ST11		:= y
- WD1002		:= y
  PAS16		:= y
  GUSMAX		:= y
  XL24		:= y
@@ -613,14 +611,6 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(SUPERSPORT), y)
   OPTS		+= -DUSE_SUPERSPORT
   DEVBROBJ	+= m_zenith.obj m_zenith_vid.obj
- endif
-
- ifeq ($(ST11), y)
-  OPTS		+= -DUSE_ST11
- endif
-
- ifeq ($(WD1002), y)
-  OPTS		+= -DUSE_WD1002
  endif
 
  ifeq ($(PAS16), y)
