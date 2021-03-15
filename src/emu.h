@@ -8,11 +8,11 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.36	2019/05/13
+ * Version:	@(#)emu.h	1.0.37	2021/03/14
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -172,6 +172,7 @@ extern int	force_debug;			/* (O) force debug output */
 extern int	video_fps;			/* (O) render speed in fps */
 #endif
 extern int	config_ro;			/* (O) dont modify cfg file */
+extern int	config_keep_space;		/* (O) keep spaces in cfg */
 extern int	settings_only;			/* (O) only the settings dlg */
 extern int	log_level;			/* (O) global logging level */
 extern wchar_t	log_path[1024];			/* (O) full path of logfile */

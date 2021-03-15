@@ -12,7 +12,7 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.54	2021/03/13
+ * Version:	@(#)config.c	1.0.55	2021/03/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1602,64 +1602,6 @@ config_read(const wchar_t *fn)
 
 	/* Get the next logical line from the file. */
 	while ((c = fgetwc(fp)) != WEOF) {
-		/* Literals come first... */
-		if (dolit) {
-			switch (c) {
-				case L'\r':	// raw CR, ignore it
-					continue;
-
-				case L'\n':	// line continuation!
-					l++;
-					break;
-
-				case L'n':
-					*p++ = L'\n';
-					break;
-
-				case L'r':
-					*p++ = L'\r';
-					break;
-
-				case L'b':
-					*p++ = L'\b';
-					break;
-
-				case L'e':
-					*p++ = 27;
-					break;
-
-				case L'"':
-					*p++ = L'"';
-					break;
-
-				case L'#':
-					*p++ = L'#';
-					break;
-
-				case L'!':
-					*p++ = L'!';
-					break;
-
-				case L'\\':
-					*p++ = L'\\';
-					break;
-
-				default:
-					ERRLOG("CONFIG: syntax error: escape '\\%c' on line %i", c, l);
-					config_ro = 1;
-					return(0);
-			}
-
-			dolit = 0;
-			continue;
-		}
-
-		/* Are we starting a literal character? */
-		if (c == L'\\') {
-			dolit = 1;
-			continue;
-		}
-
 		/* Raw CRs are common in DOS-originated files. */
 		if (c == L'\r')
 			continue;
@@ -1731,6 +1673,64 @@ config_read(const wchar_t *fn)
 			continue;
 		}
 
+		/* Are we starting a literal character? */
+		if (c == L'\\') {
+			dolit = 1;
+			continue;
+		}
+
+		/* Handle literals. */
+		if (dolit) {
+			switch (c) {
+				case L'\r':	// raw CR, ignore it
+					continue;
+
+				case L'\n':	// line continuation!
+					l++;
+					break;
+
+				case L'n':
+					*p++ = L'\n';
+					break;
+
+				case L'r':
+					*p++ = L'\r';
+					break;
+
+				case L'b':
+					*p++ = L'\b';
+					break;
+
+				case L'e':
+					*p++ = 27;
+					break;
+
+				case L'"':
+					*p++ = L'"';
+					break;
+
+				case L'#':
+					*p++ = L'#';
+					break;
+
+				case L'!':
+					*p++ = L'!';
+					break;
+
+				case L'\\':
+					*p++ = L'\\';
+					break;
+
+				default:
+					ERRLOG("CONFIG: syntax error: escape '\\%c' on line %i", c, l);
+					config_ro = 1;
+					return(0);
+			}
+
+			dolit = 0;
+			continue;
+		}
+
 		/*
 		 * Everything else, normal character insertion.
 		 *
@@ -1739,7 +1739,7 @@ config_read(const wchar_t *fn)
 		 * skipping whitespace, blank lines and so forth.
 		 *
 		 */
-		if (!doquot && ((c == L' ') || (c == L'\t')))
+		if (!config_keep_space && !doquot && ((c == L' ') || (c == L'\t')))
 			continue;
 
 		*p++ = (wchar_t)c;
@@ -1801,10 +1801,14 @@ config_read(const wchar_t *fn)
 	if (!comment && (*p != L'\0')) {
 		/* Get the variable name. */
 		c = 0;
-		while (*p && *p != L'=')
+		while (*p && *p != L'=' && *p != ' ' && *p != '\t')
 			wctomb(&ename[c++], *p++);
 		ename[c] = '\0';
 		DEBUG("CONFIG, variable: '%s'\n", ename);
+
+		/* Skip whitespace. */
+		while (*p == ' ' || *p == '\t')
+			p++;
 
 		/* Skip incomplete lines. */
 		if ((*p != L'=') || (*p+1 == L'\0')) {
@@ -1813,8 +1817,12 @@ config_read(const wchar_t *fn)
 			continue;
 		}
 		p++;
-		DEBUG("CONFIG: value: '%ls'\n", p);
 
+		/* Skip whitespace. */
+		while (*p == ' ' || *p == '\t')
+			p++;
+
+		DEBUG("CONFIG: value: '%ls'\n", p);
 		strncpy(ne->name, ename, sizeof(ne->name));
 		wcstombs(ne->data, p, sizeof(ne->data));
 		wcsncpy(ne->wdata, p, sizeof_w(ne->wdata));
@@ -2373,6 +2381,7 @@ config_set_string(const char *cat, const char *name, const char *val)
     if (ent == NULL)
 	ent = create_entry(section, name);
 
+    ent->quoted = 1;
     strncpy(ent->data, val, sizeof(ent->data));
     mbstowcs(ent->wdata, ent->data, sizeof_w(ent->wdata));
 }
@@ -2392,6 +2401,7 @@ config_set_wstring(const char *cat, const char *name, const wchar_t *val)
     if (ent == NULL)
 	ent = create_entry(section, name);
 
+    ent->quoted = 1;
     wcsncpy(ent->wdata, val, sizeof_w(ent->wdata));
     wcstombs(ent->data, ent->wdata, sizeof(ent->data));
 }

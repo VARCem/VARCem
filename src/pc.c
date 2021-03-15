@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.81	2021/03/09
+ * Version:	@(#)pc.c	1.0.82	2021/03/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -106,6 +106,7 @@ int		video_fps = RENDER_FPS;		/* (O) render speed in fps */
 #endif
 int		settings_only = 0;		/* (O) only the settings dlg */
 int		config_ro = 0;			/* (O) dont modify cfg file */
+int		config_keep_space = 0;		/* (O) keep spaces in cfg */
 int		log_level = LOG_INFO;		/* (O) global logging level */
 wchar_t 	log_path[1024] = { L'\0'};	/* (O) full path of logfile */
 
@@ -523,6 +524,7 @@ usage:
 #endif
 		printf("  -S or --settings     - show only the settings dialog\n");
 		printf("  -W or --readonly     - do not modify the config file\n");
+		printf("  -K or --keep_space   - keep whitespace in config file\n");
 		printf("\nA config file can be specified. If none is, the default file will be used.\n");
 		return(ret);
 	} else if (!wcscasecmp(argv[c], L"--dumpcfg") ||
@@ -566,9 +568,9 @@ usage:
 	} else if (!wcscasecmp(argv[c], L"--settings") ||
 		   !wcscasecmp(argv[c], L"-S")) {
 		settings_only = 1;
-	} else if (!wcscasecmp(argv[c], L"--readonly") ||
-		   !wcscasecmp(argv[c], L"-W")) {
-		config_ro = 1;
+	} else if (!wcscasecmp(argv[c], L"--keep_space") ||
+		   !wcscasecmp(argv[c], L"-K")) {
+		config_keep_space = 1;
 	} else if (!wcscasecmp(argv[c], L"--test")) {
 		/* some (undocumented) test function here.. */
 
